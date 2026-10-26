@@ -75,7 +75,8 @@ public static partial class GpuBigIntDivRem
     /// <exception cref="DivideByZeroException">Thrown when <paramref name="targetOperand"/> is zero.</exception>
     /// <remarks>
     /// The Newton-Raphson result is <c>floor(2^T / b)</c> or one less; the kernel then computes <c>r = 2^T - b * x</c>
-    /// and moves <c>x</c> by the steps that bring <c>r</c> into <c>[0, b)</c>, without a host synchronization.
+    /// and moves <c>x</c> by the steps that bring <c>r</c> into <c>[0, b)</c>, without a host synchronization. If 1000 steps
+    /// do not suffice, the next read of the workspace stream throws <see cref="InvalidOperationException"/>.
     /// </remarks>
     internal static void Reciprocal(GpuBigUInt targetOperand, GpuBigUInt resultBuffer, int targetBits,
         int marginWords = 0)
@@ -377,7 +378,8 @@ public static partial class GpuBigIntDivRem
     /// <remarks>
     /// The quotient estimate <c>floor(a * reciprocalOfB / 2^targetBits)</c> is corrected on the device, and the
     /// quotient and the remainder are exact (<c>q * b + r == a</c>, <c>0 &lt;= r &lt; b</c>) when the estimate is within
-    /// 1000 steps of the quotient.
+    /// 1000 steps of the quotient. Otherwise the kernel records the failure in the correction status of the workspace,
+    /// and the next read of the workspace stream throws <see cref="InvalidOperationException"/>.
     /// </remarks>
     /// <param name="leftOperand">The left operand.</param>
     /// <param name="rightOperand">The right operand.</param>
@@ -430,7 +432,9 @@ public static partial class GpuBigIntDivRem
         // Zero-sync correction using single block kernel: the remainder and the quotient move by the same steps.
         GpuBigIntDivRemKernels.LaunchBarrettCorrectionKernelPtr(
             remainderExtended.DevicePointer, bPaddedExtended.DevicePointer, quotientBuffer.DevicePointer, evalWords,
-            quotientBuffer.NumWords, gridDimX: 1, blockDimX: 1024, hStream: rightOperand.Workspace.Stream);
+            quotientBuffer.NumWords, rightOperand.Workspace.CorrectionStatusPointer, gridDimX: 1, blockDimX: 1024,
+            hStream: rightOperand.Workspace.Stream);
+        rightOperand.Workspace.CorrectionStatus?.MarkPending();
 
         remainderBuffer.Clear();
         remainderBuffer.CopyFrom(remainderExtended, numWords: Math.Min(remainderBuffer.NumWords, evalWords));

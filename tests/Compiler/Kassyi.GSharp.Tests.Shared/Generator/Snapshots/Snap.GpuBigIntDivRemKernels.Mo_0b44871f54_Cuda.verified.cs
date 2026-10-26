@@ -264,15 +264,17 @@ __gsharp_ty_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Algorithms__DimensionContex
 __gsharp_ty_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Algorithms__Ntt __gsharp_mb_Ntt;
 __gsharp_ty_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Algorithms__WorkspaceStateContext __gsharp_mb_Workspace;
 GSharpArray<long long> __gsharp_mb_CarryBuffer;
+GSharpArray<unsigned int> __gsharp_mb_CorrectionStatus;
 }
 ;
-static_assert(sizeof(__gsharp_ty_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Algorithms__NewtonRaphsonContext)==672,""Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.NewtonRaphsonContext: size"");
+static_assert(sizeof(__gsharp_ty_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Algorithms__NewtonRaphsonContext)==688,""Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.NewtonRaphsonContext: size"");
 static_assert(alignof(__gsharp_ty_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Algorithms__NewtonRaphsonContext)==8,""Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.NewtonRaphsonContext: alignment"");
 static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Algorithms__NewtonRaphsonContext,__gsharp_mb_Operands)==0,""Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.NewtonRaphsonContext.Operands: offset"");
 static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Algorithms__NewtonRaphsonContext,__gsharp_mb_Dimensions)==112,""Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.NewtonRaphsonContext.Dimensions: offset"");
 static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Algorithms__NewtonRaphsonContext,__gsharp_mb_Ntt)==152,""Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.NewtonRaphsonContext.Ntt: offset"");
 static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Algorithms__NewtonRaphsonContext,__gsharp_mb_Workspace)==400,""Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.NewtonRaphsonContext.Workspace: offset"");
 static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Algorithms__NewtonRaphsonContext,__gsharp_mb_CarryBuffer)==656,""Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.NewtonRaphsonContext.CarryBuffer: offset"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Algorithms__NewtonRaphsonContext,__gsharp_mb_CorrectionStatus)==672,""Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.NewtonRaphsonContext.CorrectionStatus: offset"");
 #endif
 #ifndef __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Algorithms__NttGridContext__
 #define __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Algorithms__NttGridContext__
@@ -547,15 +549,17 @@ __gsharp_ty_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Algorithms__DimensionContex
 __gsharp_ty_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Algorithms__Ntt __gsharp_mb_Ntt;
 __gsharp_ty_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Algorithms__WorkspaceStateContext __gsharp_mb_Workspace;
 GSharpArray<long long> __gsharp_mb_CarryBuffer;
+GSharpArray<unsigned int> __gsharp_mb_CorrectionStatus;
 }
 ;
-static_assert(sizeof(__gsharp_ty_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Algorithms__NewtonRaphsonContext)==672,""Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.NewtonRaphsonContext: size"");
+static_assert(sizeof(__gsharp_ty_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Algorithms__NewtonRaphsonContext)==688,""Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.NewtonRaphsonContext: size"");
 static_assert(alignof(__gsharp_ty_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Algorithms__NewtonRaphsonContext)==8,""Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.NewtonRaphsonContext: alignment"");
 static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Algorithms__NewtonRaphsonContext,__gsharp_mb_Operands)==0,""Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.NewtonRaphsonContext.Operands: offset"");
 static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Algorithms__NewtonRaphsonContext,__gsharp_mb_Dimensions)==112,""Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.NewtonRaphsonContext.Dimensions: offset"");
 static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Algorithms__NewtonRaphsonContext,__gsharp_mb_Ntt)==152,""Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.NewtonRaphsonContext.Ntt: offset"");
 static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Algorithms__NewtonRaphsonContext,__gsharp_mb_Workspace)==400,""Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.NewtonRaphsonContext.Workspace: offset"");
 static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Algorithms__NewtonRaphsonContext,__gsharp_mb_CarryBuffer)==656,""Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.NewtonRaphsonContext.CarryBuffer: offset"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Algorithms__NewtonRaphsonContext,__gsharp_mb_CorrectionStatus)==672,""Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.NewtonRaphsonContext.CorrectionStatus: offset"");
 #endif
 #ifndef __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Algorithms__GpuBigIntContext__
 #define __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Algorithms__GpuBigIntContext__
@@ -661,17 +665,17 @@ public partial class GpuBigIntDivRemKernels
 public static partial class AotContexts
 {
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
-[System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Explicit, Size = 720)]
+[System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Explicit, Size = 736)]
 public unsafe partial struct ModPowNtt
 {
 public const string DebugName_Core = "global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.NewtonRaphsonContext";
 [System.Runtime.InteropServices.FieldOffset(0)]
 public AotContexts.NewtonRaphson Core;
 public const string DebugName_ReciprocalMod = "global::System.UInt32[]";
-[System.Runtime.InteropServices.FieldOffset(672)]
+[System.Runtime.InteropServices.FieldOffset(688)]
 public global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy ReciprocalMod;
 public const string DebugName_Exponent = "global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.ExponentSliceContext";
-[System.Runtime.InteropServices.FieldOffset(688)]
+[System.Runtime.InteropServices.FieldOffset(704)]
 public AotContexts.ExponentSlice Exponent;
 }
 public static unsafe void Marshal_ModPowNttContext(ref global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.ModPowNttContext host, ref AotContexts.ModPowNtt native, bool isDevicePtr, System.Collections.Generic.List<IntPtr>? allocatedPtrs, IntPtr hStream = default)
@@ -727,7 +731,7 @@ handle.Free();
 }
 Unmarshal_ExponentSliceContext(ref host.Exponent, ref native.Exponent, isDevicePtr, hStream);
 }
-[System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Explicit, Size = 672)]
+[System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Explicit, Size = 688)]
 public unsafe partial struct NewtonRaphson
 {
 public const string DebugName_Operands = "global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.OperandContext";
@@ -745,6 +749,9 @@ public AotContexts.WorkspaceState Workspace;
 public const string DebugName_CarryBuffer = "global::System.Int64[]";
 [System.Runtime.InteropServices.FieldOffset(656)]
 public global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy CarryBuffer;
+public const string DebugName_CorrectionStatus = "global::System.UInt32[]";
+[System.Runtime.InteropServices.FieldOffset(672)]
+public global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy CorrectionStatus;
 }
 public static unsafe void Marshal_NewtonRaphsonContext(ref global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.NewtonRaphsonContext host, ref AotContexts.NewtonRaphson native, bool isDevicePtr, System.Collections.Generic.List<IntPtr>? allocatedPtrs, IntPtr hStream = default)
 {
@@ -779,6 +786,32 @@ handle.Free();
 native.CarryBuffer.Length = host.CarryBuffer.Length;
 }
 }
+if (host.CorrectionStatus != null)
+{
+if (isDevicePtr)
+{
+throw new System.NotSupportedException("Passing a struct with arrays is not supported when isDevicePtr is true.");
+}
+else
+{
+int size = host.CorrectionStatus.Length * sizeof(global::System.UInt32);
+if (size > 0)
+{
+CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out native.CorrectionStatus.Data, (IntPtr)size, hStream));
+allocatedPtrs?.Add(native.CorrectionStatus.Data);
+var handle = System.Runtime.InteropServices.GCHandle.Alloc(host.CorrectionStatus, System.Runtime.InteropServices.GCHandleType.Pinned);
+try
+{
+CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoDAsync_v2(native.CorrectionStatus.Data, handle.AddrOfPinnedObject(), (IntPtr)size, hStream));
+}
+finally
+{
+handle.Free();
+}
+}
+native.CorrectionStatus.Length = host.CorrectionStatus.Length;
+}
+}
 }
 public static unsafe void Unmarshal_NewtonRaphsonContext(ref global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.NewtonRaphsonContext host, ref AotContexts.NewtonRaphson native, bool isDevicePtr, IntPtr hStream = default)
 {
@@ -795,6 +828,22 @@ var handle = System.Runtime.InteropServices.GCHandle.Alloc(host.CarryBuffer, Sys
 try
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoHAsync_v2(handle.AddrOfPinnedObject(), native.CarryBuffer.Data, (IntPtr)size, hStream));
+}
+finally
+{
+handle.Free();
+}
+}
+}
+if (host.CorrectionStatus != null && !isDevicePtr && native.CorrectionStatus.Data != IntPtr.Zero)
+{
+int size = host.CorrectionStatus.Length * sizeof(global::System.UInt32);
+if (size > 0)
+{
+var handle = System.Runtime.InteropServices.GCHandle.Alloc(host.CorrectionStatus, System.Runtime.InteropServices.GCHandleType.Pinned);
+try
+{
+CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoHAsync_v2(handle.AddrOfPinnedObject(), native.CorrectionStatus.Data, (IntPtr)size, hStream));
 }
 finally
 {
@@ -2917,15 +2966,17 @@ __gsharp_ty_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Algorithms__DimensionContex
 __gsharp_ty_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Algorithms__Ntt __gsharp_mb_Ntt;
 __gsharp_ty_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Algorithms__WorkspaceStateContext __gsharp_mb_Workspace;
 GSharpArray<long long> __gsharp_mb_CarryBuffer;
+GSharpArray<unsigned int> __gsharp_mb_CorrectionStatus;
 }
 ;
-static_assert(sizeof(__gsharp_ty_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Algorithms__NewtonRaphsonContext)==672,""Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.NewtonRaphsonContext: size"");
+static_assert(sizeof(__gsharp_ty_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Algorithms__NewtonRaphsonContext)==688,""Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.NewtonRaphsonContext: size"");
 static_assert(alignof(__gsharp_ty_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Algorithms__NewtonRaphsonContext)==8,""Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.NewtonRaphsonContext: alignment"");
 static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Algorithms__NewtonRaphsonContext,__gsharp_mb_Operands)==0,""Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.NewtonRaphsonContext.Operands: offset"");
 static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Algorithms__NewtonRaphsonContext,__gsharp_mb_Dimensions)==112,""Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.NewtonRaphsonContext.Dimensions: offset"");
 static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Algorithms__NewtonRaphsonContext,__gsharp_mb_Ntt)==152,""Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.NewtonRaphsonContext.Ntt: offset"");
 static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Algorithms__NewtonRaphsonContext,__gsharp_mb_Workspace)==400,""Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.NewtonRaphsonContext.Workspace: offset"");
 static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Algorithms__NewtonRaphsonContext,__gsharp_mb_CarryBuffer)==656,""Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.NewtonRaphsonContext.CarryBuffer: offset"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Algorithms__NewtonRaphsonContext,__gsharp_mb_CorrectionStatus)==672,""Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.NewtonRaphsonContext.CorrectionStatus: offset"");
 #endif
 #ifndef __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Algorithms__ExponentSliceContext__
 #define __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Algorithms__ExponentSliceContext__
@@ -2953,11 +3004,11 @@ GSharpArray<unsigned int> __gsharp_mb_ReciprocalMod;
 __gsharp_ty_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Algorithms__ExponentSliceContext __gsharp_mb_Exponent;
 }
 ;
-static_assert(sizeof(__gsharp_ty_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Algorithms__ModPowNttContext)==720,""Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.ModPowNttContext: size"");
+static_assert(sizeof(__gsharp_ty_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Algorithms__ModPowNttContext)==736,""Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.ModPowNttContext: size"");
 static_assert(alignof(__gsharp_ty_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Algorithms__ModPowNttContext)==8,""Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.ModPowNttContext: alignment"");
 static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Algorithms__ModPowNttContext,__gsharp_mb_Core)==0,""Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.ModPowNttContext.Core: offset"");
-static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Algorithms__ModPowNttContext,__gsharp_mb_ReciprocalMod)==672,""Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.ModPowNttContext.ReciprocalMod: offset"");
-static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Algorithms__ModPowNttContext,__gsharp_mb_Exponent)==688,""Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.ModPowNttContext.Exponent: offset"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Algorithms__ModPowNttContext,__gsharp_mb_ReciprocalMod)==688,""Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.ModPowNttContext.ReciprocalMod: offset"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Algorithms__ModPowNttContext,__gsharp_mb_Exponent)==704,""Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.ModPowNttContext.Exponent: offset"");
 #endif
 extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuBigIntDivRemKernels__ModPowNttMegaKernel(__gsharp_ty_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Algorithms__ModPowNttContext __gsharp_id_0_ctx){
 auto __gsharp_id_1_core = __gsharp_id_0_ctx.__gsharp_mb_Core;

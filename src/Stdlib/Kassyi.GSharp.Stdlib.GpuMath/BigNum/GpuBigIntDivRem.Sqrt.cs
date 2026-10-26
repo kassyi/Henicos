@@ -15,7 +15,8 @@ public static partial class GpuBigIntDivRem
     /// <exception cref="DivideByZeroException">Thrown when <paramref name="targetOperand"/> is zero.</exception>
     /// <remarks>
     /// The kernel computes <c>s = 2^(2B) - a * x^2</c> after the iterations and moves <c>x</c> one step at a time until
-    /// <c>0 &lt;= s &lt; a * (2x + 1)</c>, without a host synchronization.
+    /// <c>0 &lt;= s &lt; a * (2x + 1)</c>, without a host synchronization. If 1000 steps do not
+    /// suffice, the next read of the workspace stream throws <see cref="InvalidOperationException"/>.
     /// </remarks>
     internal static void InverseSqrt(GpuBigUInt targetOperand, GpuBigUInt resultBuffer, int marginWords = 0)
     {

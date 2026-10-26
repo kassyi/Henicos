@@ -29,13 +29,27 @@ public sealed class KernelBasicMathHandler : IGpuBasicMathProvider
 
         launchKernel(resultBuf.DevicePointer);
 
+        // This wait also carries the correction status words (GpuCorrectionStatus).
+        var status = workspace.CorrectionStatus?.BeginRead();
+
         T result;
-        using (new GpuKernelLoader.CudaContextScope())
+        try
         {
-            CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoHAsync_v2((IntPtr)(&result), resultBuf.DevicePointer,
-                byteSize, workspace.Stream));
-            CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(workspace.Stream));
+            using (new GpuKernelLoader.CudaContextScope())
+            {
+                CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoHAsync_v2((IntPtr)(&result), resultBuf.DevicePointer,
+                    byteSize, workspace.Stream));
+                CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(workspace.Stream));
+            }
         }
+        catch
+        {
+            // The wait did not complete, so the next read copies the status words again.
+            status?.AbandonRead();
+            throw;
+        }
+
+        status?.EndRead();
 
         return result;
     }
