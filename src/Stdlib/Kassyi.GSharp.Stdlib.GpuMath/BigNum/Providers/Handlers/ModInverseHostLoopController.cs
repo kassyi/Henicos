@@ -12,6 +12,15 @@ internal static class ModInverseHostLoopController
         GpuBigUInt modulus,
         GpuBigUInt resultBuffer)
     {
+        // Every residue modulo 1 is 0. The loop below starts from d = 1 without reducing it, so for value 1 it would
+        // return 1. KernelAdvancedMathHandler.ModInverse sends odd moduli (1 included) to the binary GCD kernel, so
+        // this guard is not reached through the public API today.
+        if (modulus.IsOne())
+        {
+            resultBuffer.Clear();
+            return;
+        }
+
         var numWords = value.NumWords;
         using var i = workspace.RentTemp(numWords);
         using var a = workspace.RentTemp(numWords);
