@@ -116,13 +116,14 @@ internal static class StructMarshalingEmitter
     private static void WriteMarshalMethod(SourceWriter writer, INamedTypeSymbol s, StructLayoutInfo structLayout,
         ITranspilerDialect dialect)
     {
+        var hasMirror = NativeStructEmitter.NeedsHostMirror(s, structLayout);
         writer.Append("public static unsafe void ");
         writer.AppendMarshalMethodName(s);
         using (writer.Parentheses())
         {
             writer.Append("ref ");
             writer.AppendFullyQualifiedCsharpName(s);
-            writer.Append(" host, ref ");
+            writer.Append(hasMirror ? $" {MirroredHostParameter}, ref " : " host, ref ");
             writer.AppendAotStructPath(s);
             writer.Append(
                 " native, bool isDevicePtr, System.Collections.Generic.List<IntPtr>? allocatedPtrs, IntPtr hStream = default");
@@ -144,6 +145,7 @@ internal static class StructMarshalingEmitter
                 // [WHY] The native value may be a reused ArrayPool shadow: a member that is not written (a null array
                 // field) must read as empty, not as a device pointer that an earlier launch freed
                 writer.AppendLine("native = default;");
+                WriteHostMirrorBinding(writer, s, hasMirror);
                 foreach (var member in StructAbiMembers.Get(s))
                 {
                     WriteMarshalMember(writer, member, dialect);
@@ -152,6 +154,47 @@ internal static class StructMarshalingEmitter
         }
 
         writer.AppendLine();
+    }
+
+    // The host value of a struct with a host mirror arrives under this name, and `host` is then the mirror
+    private const string MirroredHostParameter = "hostValue";
+
+    // if (Unsafe.SizeOf<S>() != Unsafe.SizeOf<Mirror>()) LayoutGuard.ThrowSizeMismatch(...);
+    // if (!Mirror.FieldOffsetsMatch) LayoutGuard.ThrowFieldOffsetMismatch(...);
+    // ref var host = ref Unsafe.As<S, Mirror>(ref hostValue);
+    // [WHY] The members are then read and written by the names of the mirror, whose fields name the hidden fields of
+    // the captured primary constructor parameters (NativeStructEmitter.NeedsHostMirror). The size and offset checks
+    // catch a mirror that does not have the CLR layout of S.
+    private static void WriteHostMirrorBinding(SourceWriter writer, INamedTypeSymbol s, bool hasMirror)
+    {
+        if (!hasMirror)
+        {
+            return;
+        }
+
+        writer.Append("if (System.Runtime.CompilerServices.Unsafe.SizeOf<");
+        writer.AppendFullyQualifiedCsharpName(s);
+        writer.Append(">() != System.Runtime.CompilerServices.Unsafe.SizeOf<");
+        writer.AppendAotStructPath(s);
+        writer.Append($".{NativeStructEmitter.HostMirrorName}>()) ");
+        writer.Append("global::Kassyi.GSharp.Runtime.Interop.LayoutGuard.ThrowSizeMismatch(\"");
+        writer.Append(TypeLayoutCalculator.FormatTypeName(s));
+        writer.Append("\", System.Runtime.CompilerServices.Unsafe.SizeOf<");
+        writer.AppendAotStructPath(s);
+        writer.Append($".{NativeStructEmitter.HostMirrorName}>(), System.Runtime.CompilerServices.Unsafe.SizeOf<");
+        writer.AppendFullyQualifiedCsharpName(s);
+        writer.AppendLine(">());");
+        writer.Append("if (!");
+        writer.AppendAotStructPath(s);
+        writer.Append($".{NativeStructEmitter.HostMirrorName}.{NativeStructEmitter.HostMirrorOffsetsMatch}) ");
+        writer.Append("global::Kassyi.GSharp.Runtime.Interop.LayoutGuard.ThrowFieldOffsetMismatch(\"");
+        writer.Append(TypeLayoutCalculator.FormatTypeName(s));
+        writer.AppendLine("\");");
+        writer.Append("ref var host = ref System.Runtime.CompilerServices.Unsafe.As<");
+        writer.AppendFullyQualifiedCsharpName(s);
+        writer.Append(", ");
+        writer.AppendAotStructPath(s);
+        writer.AppendLine($".{NativeStructEmitter.HostMirrorName}>(ref {MirroredHostParameter});");
     }
 
     // [WHY] An [InlineArray(N)] struct and a fixed buffer are copied as one block of ElementCount elements: the element
@@ -373,13 +416,14 @@ internal static class StructMarshalingEmitter
     private static void WriteUnmarshalMethod(SourceWriter writer, INamedTypeSymbol s, StructLayoutInfo structLayout,
         ITranspilerDialect dialect)
     {
+        var hasMirror = NativeStructEmitter.NeedsHostMirror(s, structLayout);
         writer.Append("public static unsafe void ");
         writer.AppendUnmarshalMethodName(s);
         using (writer.Parentheses())
         {
             writer.Append("ref ");
             writer.AppendFullyQualifiedCsharpName(s);
-            writer.Append(" host, ref ");
+            writer.Append(hasMirror ? $" {MirroredHostParameter}, ref " : " host, ref ");
             writer.AppendAotStructPath(s);
             writer.Append(" native, bool isDevicePtr, IntPtr hStream = default");
         }
@@ -397,6 +441,7 @@ internal static class StructMarshalingEmitter
             }
             else
             {
+                WriteHostMirrorBinding(writer, s, hasMirror);
                 foreach (var member in StructAbiMembers.Get(s))
                 {
                     WriteUnmarshalMember(writer, member, dialect);
