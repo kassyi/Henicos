@@ -20,6 +20,8 @@ public class GeneratorSadPathTests
     [InlineData("SYN-04", "Analyzers/GpuKernel/ReferenceNullCoalescing_InGpuKernel.cu.cs", "GSH0002")]
     [InlineData("GSH-01", "Analyzers/GpuKernel/StringTernary_InGpuKernel.cu.cs", "GSH0002")]
     [InlineData("GEN-52", "Analyzers/InvalidMappingSadPath.cs", "GSH0001")]
+    // A struct field of a reference type other than an array (the generated code no longer states it as #error)
+    [InlineData("GEN-33", "Analyzers/UnsupportedStructFieldsSadPath.cs", "GSH0078")]
     public async Task Test_SadPath_AnalyzerReportsExpectedError(string featureId, string testCasePath, string expectedErrorId)
     {
         var diagnostics = await KernelDiagnostics.RunTestCaseAsync(testCasePath, DialectName);
@@ -66,7 +68,6 @@ public class GeneratorSadPathTests
 
     [Theory]
     [Scenario(TestScenario.SadPath)]
-    [InlineData("GEN-33", "Analyzers/UnsupportedStructFieldsSadPath.cs")]
     [InlineData("SYN-91_92", "Analyzers/InvalidParenthesesSadPath.cs")]
     public async Task Test_GeneratorSadPath_HasErrors(string featureId, string testCasePath)
     {

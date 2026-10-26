@@ -136,6 +136,7 @@ public global::System.Int32 N;
 }
 public static unsafe void Marshal_BlackScholesKernels_BlackScholesContext(ref global::Henicos.Benchmarks.ComputeBenchmarks.BlackScholesKernels.BlackScholesContext host, ref AotContexts.BlackScholes native, bool isDevicePtr, System.Collections.Generic.List<IntPtr>? allocatedPtrs, IntPtr hStream = default)
 {
+native = default;
 if (host.S != null)
 {
 if (isDevicePtr)

@@ -230,7 +230,7 @@ internal readonly record struct KernelClassModel(
 
         var emissions = ImmutableArray.CreateBuilder<KernelEmission>(kernels.Count);
         var structs = ImmutableArray.CreateBuilder<StructHostSource>();
-        var structPaths = new HashSet<string>(StringComparer.Ordinal);
+        var structIndices = new Dictionary<string, int>(StringComparer.Ordinal);
         for (var i = 0; i < kernels.Count; i++)
         {
             var kernel = kernels[i];
@@ -248,9 +248,19 @@ internal readonly record struct KernelClassModel(
                 kernel.ManagedCSharpSource,
                 kernel.InternalError));
 
-            kernel.Host.Structs
-                .AsStackEnumerable()
-                .AddIf(structs, structPaths, static (s, paths) => paths.Add(s.AotStructPath));
+            foreach (var s in kernel.Host.Structs)
+            {
+                if (!structIndices.TryGetValue(s.AotStructPath, out var index))
+                {
+                    structIndices.Add(s.AotStructPath, structs.Count);
+                    structs.Add(s);
+                }
+                else if (structs[index].CpuText.Length == 0 && s.CpuText.Length > 0)
+                {
+                    // One kernel converts an array of the struct on CUDA only, another passes the struct on the CPU too
+                    structs[index] = s;
+                }
+            }
         }
 
         return new KernelClassModel(

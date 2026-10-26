@@ -161,3 +161,8 @@ Wmma:
     Accumulator: { Value: __gsharp_wmma_accumulator, Prelude: WarpAndHints.hpp }
     RowMajor: { Value: __gsharp_wmma_row_major, Prelude: WarpAndHints.hpp }
     ColMajor: { Value: __gsharp_wmma_col_major, Prelude: WarpAndHints.hpp }
+
+Struct:
+  Summary: Members that the device definition of an explicit layout struct adds to fill the gaps between its fields.
+  Names:
+    PaddingPrefix: __gsharp_pad_
