@@ -188,8 +188,12 @@ public abstract class StateMachineTestBase
 | ID | Severity | Reports |
 | ----- | ----- | ----- |
 | HNT0002 | Error | A test method without `[Category]`, `[TestTarget]`, `[Scenario]` or `[Trait("Category", ...)]` on the method or its class |
+| HNT0004 | Warning | A test method that reaches no `Xunit.Assert`, `VerifyXunit.Verifier` or FluentAssertions call, also through the methods of the same assembly it calls and the overrides and interface implementations they dispatch to |
+| HNT0005 | Warning | `System.Diagnostics.Debug.Assert` in a test method (removed in Release) |
+| HNT0006 | Warning | An unseeded random source anywhere in a test assembly: `new Random()`, `Random.Shared`, `RandomNumberGenerator` |
+| HNT0007 | Warning | `catch` or `catch (Exception)` without a `when` filter in a test method whose handler drops the exception: it neither assigns it, passes it to a method other than a Console / test output / Debug / Trace writer, asserts, nor ends in a `throw` (not a skip) with no `return`, `break` or `continue` before it |
 
-HNT0001 (a required test base class) was removed (#597). HNT0003 is the compiler-side `TypeNameCheckAnalyzer`. What a strong test needs beyond these checks: [property-test-design](../skills/property-test-design/SKILL.md) §8.
+HNT0001 (a required test base class) was removed (#597). HNT0003 is the compiler-side `TypeNameCheckAnalyzer`. The Warnings become Errors once the existing tests are clean. What a strong test needs beyond these checks: [property-test-design](../skills/property-test-design/SKILL.md) §8.
 
 ---
 
