@@ -39,5 +39,8 @@ cannot run bash or PowerShell. Write them so that any agent can run them.
 | `node scripts/update_usings.js` | Promotes `using` directives used in 3+ files to `GlobalUsings.cs` |
 | `node .agents/skills/gsharp-transpiler-guidelines/scripts/check-helpers.js` | Checks that the helper catalog names only existing members |
 | `dotnet run --project src/Compiler/Kassyi.GSharp.Compiler.Generators -- demangle <log> [symbols]` | Turns `__gsharp_*` names in a log back into C# names (`just gsharp-demangle`) |
+| `dotnet run tools/collect-env/collect-env.cs [--json] [--output <file>]` | Prints the bug-report environment (OS, GPU, CUDA, host C++, .NET, checkout) with no user name, host name, serial or profile path (`just env-info`). `/issue.prompt` Step 2 runs it for bug reports |
+
+`tools/collect-env/` is a user-facing native tool (a .NET file-based app, published as a NativeAOT executable for people without the SDK or a clone), so the Node-only rule above does not apply to it. It must not reference the compiler projects.
 
 Add a row when you add a script.

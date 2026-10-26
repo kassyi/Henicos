@@ -69,7 +69,11 @@ body:
     id: environment
     attributes:
       label: Environment Info
-      description: Please share your hardware and software setup.
+      description: |
+        Run the environment report tool and paste its output (it leaves out your user name, host name, serial numbers and profile paths).
+        From a clone with the .NET 10 SDK: `dotnet run tools/collect-env/collect-env.cs` (or `just env-info`).
+        Without a clone: download `collect-env-win-x64.exe` or `collect-env-linux-x64` from the latest release and run it.
+        If you cannot run it, fill in the list below by hand.
       value: |
         - OS: [e.g. Windows 11 / Ubuntu 22.04]
         - .NET SDK: [e.g. 9.0.100]
