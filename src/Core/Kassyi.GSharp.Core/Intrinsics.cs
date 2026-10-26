@@ -189,8 +189,19 @@ public static partial class Gpu
     /// <para>Because this macro performs literal source code duplication during transpilation, using it for loops with high iteration counts will drastically bloat the generated C++ code and may cause the backend compiler to crash. For general performance tuning and ILP improvements, use <see cref="Hint.Unroll(int)"/> instead.</para>
     /// <para>Note that executing this method on the C# CPU host will inevitably allocate a delegate closure, which violates zero-allocation principles.</para>
     /// </remarks>
-    /// <exception cref="GpuOnlyException">Thrown when evaluated on the host CPU.</exception>
-    public static void ForUnroll(int start, int count, Action<int> body) => GpuOnlyException.Throw();
+    /// <exception cref="GpuOnlyException">Thrown when evaluated on the host CPU outside managed execution.</exception>
+    public static void ForUnroll(int start, int count, Action<int> body)
+    {
+        if (!ManagedGpuContext.IsActive)
+        {
+            GpuOnlyException.Throw();
+        }
+
+        for (int index = start; index < start + count; index++)
+        {
+            body(index);
+        }
+    }
 
     /// <summary>Delegate for compile-time unrolled loops with a passed execution context.</summary>
     /// <typeparam name="TContext">The state structure type passed by reference across loop iterations.</typeparam>
@@ -207,15 +218,44 @@ public static partial class Gpu
     /// <param name="count">The constant loop iteration count.</param>
     /// <param name="body">The loop body delegate receiving the context and index.</param>
     /// <inheritdoc cref="ForUnroll(int, int, System.Action{int})"/>
-    public static void ForUnroll<TContext>(ref TContext ctx, int start, int count, UnrollAction<TContext> body) => GpuOnlyException.Throw();
+    public static void ForUnroll<TContext>(ref TContext ctx, int start, int count, UnrollAction<TContext> body)
+    {
+        if (!ManagedGpuContext.IsActive)
+        {
+            GpuOnlyException.Throw();
+        }
+
+        for (int index = start; index < start + count; index++)
+        {
+            body(ref ctx, index);
+        }
+    }
 
     /// <summary>
     /// Generates a standard CUDA Grid-Stride Loop over the specified bound across all threads and blocks.
     /// </summary>
     /// <param name="maxBounds">The total element count to process.</param>
     /// <param name="body">The loop body delegate receiving the current thread stride index.</param>
-    /// <exception cref="GpuOnlyException">Thrown when evaluated on the host CPU.</exception>
-    public static void GridStrideLoop(int maxBounds, Action<int> body) => GpuOnlyException.Throw();
+    /// <remarks>
+    /// Under managed execution the calling thread starts at <c>BlockDim.X * BlockIdx.X + ThreadIdx.X</c> and steps by
+    /// <c>BlockDim.X * GridDim.X</c>, the loop that the G# compiler writes for the kernels it rewrites.
+    /// </remarks>
+    /// <exception cref="GpuOnlyException">Thrown when evaluated on the host CPU outside managed execution.</exception>
+    public static void GridStrideLoop(int maxBounds, Action<int> body)
+    {
+        if (!ManagedGpuContext.IsActive)
+        {
+            GpuOnlyException.Throw();
+        }
+
+        int step = ManagedGpuContext.BlockDimX * ManagedGpuContext.GridDimX;
+        for (int index = ManagedGpuContext.BlockDimX * ManagedGpuContext.BlockIdxX + ManagedGpuContext.ThreadIdxX;
+             index < maxBounds;
+             index += step)
+        {
+            body(index);
+        }
+    }
 
     /// <summary>Delegate for grid-stride loops with a passed execution context.</summary>
     /// <typeparam name="TContext">The state structure type passed by reference across thread loop strides.</typeparam>
@@ -230,7 +270,22 @@ public static partial class Gpu
     /// <param name="ctx">The execution context passed by reference.</param>
     /// <param name="maxBounds">The total element count to process.</param>
     /// <param name="body">The loop body delegate receiving the context and current stride index.</param>
-    public static void GridStrideLoop<TContext>(ref TContext ctx, int maxBounds, GridStrideAction<TContext> body) => GpuOnlyException.Throw();
+    /// <inheritdoc cref="GridStrideLoop(int, System.Action{int})"/>
+    public static void GridStrideLoop<TContext>(ref TContext ctx, int maxBounds, GridStrideAction<TContext> body)
+    {
+        if (!ManagedGpuContext.IsActive)
+        {
+            GpuOnlyException.Throw();
+        }
+
+        int step = ManagedGpuContext.BlockDimX * ManagedGpuContext.GridDimX;
+        for (int index = ManagedGpuContext.BlockDimX * ManagedGpuContext.BlockIdxX + ManagedGpuContext.ThreadIdxX;
+             index < maxBounds;
+             index += step)
+        {
+            body(ref ctx, index);
+        }
+    }
 
     /// <summary>
     /// Ensures that the enclosed action is executed exclusively by thread 0 of block 0 (<c>threadIdx.x == 0 &amp;&amp; blockIdx.x == 0</c>).

@@ -971,13 +971,13 @@ return false;
 __gsharp_ctx.wordShift = targetBits / 32;
 __gsharp_ctx.bitShift = targetBits % 32;
 __gsharp_ctx.destWords = __gsharp_ctx.nA;
-for (int idx = global::Kassyi.GSharp.Core.ManagedGpuContext.BlockDimX * global::Kassyi.GSharp.Core.ManagedGpuContext.BlockIdxX + global::Kassyi.GSharp.Core.ManagedGpuContext.ThreadIdxX; idx < (__gsharp_ctx.destWords); idx += global::Kassyi.GSharp.Core.ManagedGpuContext.BlockDimX * global::Kassyi.GSharp.Core.ManagedGpuContext.GridDimX)
+for (int __gsharp_unroll_0 = global::Kassyi.GSharp.Core.ManagedGpuContext.BlockDimX * global::Kassyi.GSharp.Core.ManagedGpuContext.BlockIdxX + global::Kassyi.GSharp.Core.ManagedGpuContext.ThreadIdxX; __gsharp_unroll_0 < (__gsharp_ctx.destWords); __gsharp_unroll_0 += global::Kassyi.GSharp.Core.ManagedGpuContext.BlockDimX * global::Kassyi.GSharp.Core.ManagedGpuContext.GridDimX)
 {
-int srcIdx = idx + __gsharp_ctx.wordShift;
+int srcIdx = __gsharp_unroll_0 + __gsharp_ctx.wordShift;
 uint w0 = (srcIdx < __gsharp_ctx.nA + __gsharp_ctx.targetWords) ? __gsharp_ctx.iterScratch.CurrentProduct[srcIdx] : 0u;
 uint w1 = (srcIdx + 1 < __gsharp_ctx.nA + __gsharp_ctx.targetWords) ? __gsharp_ctx.iterScratch.CurrentProduct[srcIdx + 1] : 0u;
 uint shiftedValue = (w0 >> __gsharp_ctx.bitShift) | (__gsharp_ctx.bitShift == 0 ? 0u : (w1 << (32 - __gsharp_ctx.bitShift)));
-quotientBuffer[idx] = shiftedValue;
+quotientBuffer[__gsharp_unroll_0] = shiftedValue;
 }
 
 __gsharp_ctx.__gsharp_yielded_for_grid_sync = true;
@@ -1009,9 +1009,9 @@ CarryBuffer = core.CarryBuffer
 },
 NumberOfWords = __gsharp_ctx.evalWords
 };
-for (int idx = global::Kassyi.GSharp.Core.ManagedGpuContext.BlockDimX * global::Kassyi.GSharp.Core.ManagedGpuContext.BlockIdxX + global::Kassyi.GSharp.Core.ManagedGpuContext.ThreadIdxX; idx < (__gsharp_ctx.evalWords); idx += global::Kassyi.GSharp.Core.ManagedGpuContext.BlockDimX * global::Kassyi.GSharp.Core.ManagedGpuContext.GridDimX)
+for (int __gsharp_unroll_1 = global::Kassyi.GSharp.Core.ManagedGpuContext.BlockDimX * global::Kassyi.GSharp.Core.ManagedGpuContext.BlockIdxX + global::Kassyi.GSharp.Core.ManagedGpuContext.ThreadIdxX; __gsharp_unroll_1 < (__gsharp_ctx.evalWords); __gsharp_unroll_1 += global::Kassyi.GSharp.Core.ManagedGpuContext.BlockDimX * global::Kassyi.GSharp.Core.ManagedGpuContext.GridDimX)
 {
-__gsharp_ctx.iterScratch.Diff[idx] = idx < __gsharp_ctx.nA ? leftOperand[idx] : 0u;
+__gsharp_ctx.iterScratch.Diff[__gsharp_unroll_1] = __gsharp_unroll_1 < __gsharp_ctx.nA ? leftOperand[__gsharp_unroll_1] : 0u;
 }
 
 __gsharp_ctx.__gsharp_yielded_for_grid_sync = true;
@@ -1114,9 +1114,9 @@ goto case 16;
 
 case 16:
 {
-for (int idx = global::Kassyi.GSharp.Core.ManagedGpuContext.BlockDimX * global::Kassyi.GSharp.Core.ManagedGpuContext.BlockIdxX + global::Kassyi.GSharp.Core.ManagedGpuContext.ThreadIdxX; idx < (aActualWords); idx += global::Kassyi.GSharp.Core.ManagedGpuContext.BlockDimX * global::Kassyi.GSharp.Core.ManagedGpuContext.GridDimX)
+for (int __gsharp_unroll_2 = global::Kassyi.GSharp.Core.ManagedGpuContext.BlockDimX * global::Kassyi.GSharp.Core.ManagedGpuContext.BlockIdxX + global::Kassyi.GSharp.Core.ManagedGpuContext.ThreadIdxX; __gsharp_unroll_2 < (aActualWords); __gsharp_unroll_2 += global::Kassyi.GSharp.Core.ManagedGpuContext.BlockDimX * global::Kassyi.GSharp.Core.ManagedGpuContext.GridDimX)
 {
-remainderBuffer[idx] = idx < __gsharp_ctx.n ? __gsharp_ctx.iterScratch.Diff[idx] : 0u;
+remainderBuffer[__gsharp_unroll_2] = __gsharp_unroll_2 < __gsharp_ctx.n ? __gsharp_ctx.iterScratch.Diff[__gsharp_unroll_2] : 0u;
 }
 
 __gsharp_ctx.__gsharp_yielded_for_grid_sync = true;
@@ -3796,15 +3796,15 @@ __gsharp_ctx.targetWords = (__gsharp_ctx.targetBits + 31) / 32;
 __gsharp_ctx.outWords = __gsharp_ctx.aActualWords + __gsharp_ctx.targetWords;
 if (!(__gsharp_ctx.expSlice.StartWord == 0))
 goto case 2;
-for (int idx = global::Kassyi.GSharp.Core.ManagedGpuContext.BlockDimX * global::Kassyi.GSharp.Core.ManagedGpuContext.BlockIdxX + global::Kassyi.GSharp.Core.ManagedGpuContext.ThreadIdxX; idx < (__gsharp_ctx.outWords); idx += global::Kassyi.GSharp.Core.ManagedGpuContext.BlockDimX * global::Kassyi.GSharp.Core.ManagedGpuContext.GridDimX)
+for (int __gsharp_unroll_0 = global::Kassyi.GSharp.Core.ManagedGpuContext.BlockDimX * global::Kassyi.GSharp.Core.ManagedGpuContext.BlockIdxX + global::Kassyi.GSharp.Core.ManagedGpuContext.ThreadIdxX; __gsharp_unroll_0 < (__gsharp_ctx.outWords); __gsharp_unroll_0 += global::Kassyi.GSharp.Core.ManagedGpuContext.BlockDimX * global::Kassyi.GSharp.Core.ManagedGpuContext.GridDimX)
 {
-if (idx < 2 * __gsharp_ctx.n)
+if (__gsharp_unroll_0 < 2 * __gsharp_ctx.n)
 {
-__gsharp_ctx.iterScratch.AxSquared[idx] = idx == 0 ? 1u : 0u; // TempResult
-__gsharp_ctx.iterScratch.XSquared[idx] = idx < __gsharp_ctx.n ? __gsharp_ctx.core.Operands.TargetOperand[idx] : 0u; // TempBase
+__gsharp_ctx.iterScratch.AxSquared[__gsharp_unroll_0] = __gsharp_unroll_0 == 0 ? 1u : 0u; // TempResult
+__gsharp_ctx.iterScratch.XSquared[__gsharp_unroll_0] = __gsharp_unroll_0 < __gsharp_ctx.n ? __gsharp_ctx.core.Operands.TargetOperand[__gsharp_unroll_0] : 0u; // TempBase
 }
 
-__gsharp_ctx.iterScratch.ModulusExpanded[idx] = idx < __gsharp_ctx.n ? __gsharp_ctx.core.Operands.Constant[idx] : 0u;
+__gsharp_ctx.iterScratch.ModulusExpanded[__gsharp_unroll_0] = __gsharp_unroll_0 < __gsharp_ctx.n ? __gsharp_ctx.core.Operands.Constant[__gsharp_unroll_0] : 0u;
 }
 
 __gsharp_ctx.__gsharp_yielded_for_grid_sync = true;
@@ -3940,9 +3940,9 @@ case 13:
 {
 if (!(__gsharp_ctx.expSlice.EndWord == __gsharp_ctx.expWords))
 goto case 15;
-for (int idx = global::Kassyi.GSharp.Core.ManagedGpuContext.BlockDimX * global::Kassyi.GSharp.Core.ManagedGpuContext.BlockIdxX + global::Kassyi.GSharp.Core.ManagedGpuContext.ThreadIdxX; idx < (__gsharp_ctx.n); idx += global::Kassyi.GSharp.Core.ManagedGpuContext.BlockDimX * global::Kassyi.GSharp.Core.ManagedGpuContext.GridDimX)
+for (int __gsharp_unroll_1 = global::Kassyi.GSharp.Core.ManagedGpuContext.BlockDimX * global::Kassyi.GSharp.Core.ManagedGpuContext.BlockIdxX + global::Kassyi.GSharp.Core.ManagedGpuContext.ThreadIdxX; __gsharp_unroll_1 < (__gsharp_ctx.n); __gsharp_unroll_1 += global::Kassyi.GSharp.Core.ManagedGpuContext.BlockDimX * global::Kassyi.GSharp.Core.ManagedGpuContext.GridDimX)
 {
-__gsharp_ctx.core.Operands.ResultBuffer[idx] = __gsharp_ctx.iterScratch.AxSquared[idx];
+__gsharp_ctx.core.Operands.ResultBuffer[__gsharp_unroll_1] = __gsharp_ctx.iterScratch.AxSquared[__gsharp_unroll_1];
 }
 
 __gsharp_ctx.__gsharp_yielded_for_grid_sync = true;

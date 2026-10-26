@@ -8,6 +8,42 @@ internal sealed partial class ManagedExecutionRewriter(SemanticModel semanticMod
 {
     private int _inLambdaOrLocalFuncCount;
 
+    // The number of the next loop variable that a Gpu.ForUnroll becomes; found on the first visit, which is the body
+    private int _nextUnrollId = -1;
+
+    public override SyntaxNode? Visit(SyntaxNode? node)
+    {
+        if (_nextUnrollId < 0 && node is not null)
+        {
+            _nextUnrollId = FindNextUnrollId(node);
+        }
+
+        return base.Visit(node);
+    }
+
+    // A loop that PreLoweringExpander made of a barrier-bearing ForUnroll already uses these names. Its variable lives
+    // in the context, so the two never clash; counting on from it only keeps the variables apart in the generated code
+    private static int FindNextUnrollId(SyntaxNode root)
+    {
+        var next = 0;
+        foreach (var token in root.DescendantTokens())
+        {
+            if (token.IsKind(SyntaxKind.IdentifierToken) &&
+                token.ValueText.StartsWith(GSharpInternalNames.Lowering.UnrollIndexPrefix, StringComparison.Ordinal) &&
+                int.TryParse(
+                    token.ValueText[GSharpInternalNames.Lowering.UnrollIndexPrefix.Length..],
+                    NumberStyles.None,
+                    CultureInfo.InvariantCulture,
+                    out var id) &&
+                id >= next)
+            {
+                next = id + 1;
+            }
+        }
+
+        return next;
+    }
+
     public override SyntaxNode? VisitObjectCreationExpression(ObjectCreationExpressionSyntax node) =>
         VisitCreation(node, base.VisitObjectCreationExpression(node));
 

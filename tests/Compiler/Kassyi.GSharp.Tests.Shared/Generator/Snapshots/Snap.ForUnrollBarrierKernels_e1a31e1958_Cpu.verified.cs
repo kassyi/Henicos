@@ -1383,10 +1383,11 @@ return;
 case 2:
 {
 __gsharp_ctx.sum += buffer[(__gsharp_ctx.tid + 1) % 4];
-Gpu.ForUnroll(0, 3, j =>
+for (int __gsharp_unroll_1 = 0; __gsharp_unroll_1 < unchecked(0 + 3); __gsharp_unroll_1++)
 {
-__gsharp_ctx.sum += __gsharp_ctx.__gsharp_unroll_0 * 10 + j;
-});
+__gsharp_ctx.sum += __gsharp_ctx.__gsharp_unroll_0 * 10 + __gsharp_unroll_1;
+}
+
 __gsharp_ctx.__gsharp_state = 3;
 return;
 }
@@ -1653,9 +1654,9 @@ case 1:
 if (!(__gsharp_ctx.__gsharp_unroll_0 < 3))
 goto case 5;
 __gsharp_ctx.src = __gsharp_ctx.__gsharp_unroll_0 == 0 ? input : temp;
-for (int i = global::Kassyi.GSharp.Core.ManagedGpuContext.BlockDimX * global::Kassyi.GSharp.Core.ManagedGpuContext.BlockIdxX + global::Kassyi.GSharp.Core.ManagedGpuContext.ThreadIdxX; i < (n); i += global::Kassyi.GSharp.Core.ManagedGpuContext.BlockDimX * global::Kassyi.GSharp.Core.ManagedGpuContext.GridDimX)
+for (int __gsharp_unroll_1 = global::Kassyi.GSharp.Core.ManagedGpuContext.BlockDimX * global::Kassyi.GSharp.Core.ManagedGpuContext.BlockIdxX + global::Kassyi.GSharp.Core.ManagedGpuContext.ThreadIdxX; __gsharp_unroll_1 < (n); __gsharp_unroll_1 += global::Kassyi.GSharp.Core.ManagedGpuContext.BlockDimX * global::Kassyi.GSharp.Core.ManagedGpuContext.GridDimX)
 {
-scratch[i] = __gsharp_ctx.src[(i + 1) % n] + 1;
+scratch[__gsharp_unroll_1] = __gsharp_ctx.src[(__gsharp_unroll_1 + 1) % n] + 1;
 }
 
 __gsharp_ctx.__gsharp_state = 2;
@@ -1664,9 +1665,9 @@ return;
 
 case 2:
 {
-for (int i = global::Kassyi.GSharp.Core.ManagedGpuContext.BlockDimX * global::Kassyi.GSharp.Core.ManagedGpuContext.BlockIdxX + global::Kassyi.GSharp.Core.ManagedGpuContext.ThreadIdxX; i < (n); i += global::Kassyi.GSharp.Core.ManagedGpuContext.BlockDimX * global::Kassyi.GSharp.Core.ManagedGpuContext.GridDimX)
+for (int __gsharp_unroll_2 = global::Kassyi.GSharp.Core.ManagedGpuContext.BlockDimX * global::Kassyi.GSharp.Core.ManagedGpuContext.BlockIdxX + global::Kassyi.GSharp.Core.ManagedGpuContext.ThreadIdxX; __gsharp_unroll_2 < (n); __gsharp_unroll_2 += global::Kassyi.GSharp.Core.ManagedGpuContext.BlockDimX * global::Kassyi.GSharp.Core.ManagedGpuContext.GridDimX)
 {
-temp[i] = scratch[i];
+temp[__gsharp_unroll_2] = scratch[__gsharp_unroll_2];
 }
 
 __gsharp_ctx.__gsharp_state = 3;
