@@ -241,4 +241,262 @@ public class GSharpKernelFloatProviderTests : IDisposable
             Assert.Equal(0u, rem);
         }
     }
+
+    private static GpuBigIntExecutionContext CreateContext(GpuWorkspace workspace) =>
+        new(workspace, workspace.MemoryManager, new LegacyProviderArithmeticAdapter(), workspace.Stream);
+
+    private static void AssertExactValue(BigInteger num, BigInteger den, GpuBigUInt sig, GpuFloatResult res)
+    {
+        var actual = sig.ToBigInteger();
+        Assert.True(
+            BigFloatReference.EqualsRational(actual, res.Exponent, res.IsNegative, num, den),
+            $"expected {num}/{den}, actual {BigFloatReference.Describe(actual, res.Exponent, res.IsNegative)}");
+    }
+
+    // An addition whose exponent gap exceeds one word is still exact while the result fits the result words.
+    // (0xFFFFFFFF << 33) +- 1 has 65 bits, so a 4-word result holds it without rounding.
+    [SkippableTheory]
+    [TestTarget(ExecutionTarget.GpuExecution)]
+    [Category(TestCategory.Stdlib)]
+    [Scenario(TestScenario.Boundary)]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void Add_WideExponentGap_IsExact(bool rightIsNegative)
+    {
+        using var workspace = new GpuWorkspace(1024, GpuExecutionEngine.GSharpAot);
+        var context = CreateContext(workspace);
+        var arith = GSharpKernelFloatProvider.Instance;
+
+        using var leftSig = new GpuBigUInt(workspace, [0xFFFFFFFFu]);
+        using var rightSig = new GpuBigUInt(workspace, [1u]);
+        using var resSig = new GpuBigUInt(workspace, 4);
+        var left = new GpuFloatOperand(leftSig.Handle, 33);
+        var right = new GpuFloatOperand(rightSig.Handle, 0, rightIsNegative);
+
+        var res = arith.Add(ref context, in left, in right, resSig.Handle);
+
+        // mutant: GSharpKernelFloatProvider.cs:116 `Math.Max` -> `Math.Min`, `NumWords + ...` -> `NumWords - ...`,
+        // `(expDiff + 31) / 32` -> `(expDiff - 31) / 32` (the aligned buffer becomes 2 words and the 65-bit sum is cut)
+        var expected = (new BigInteger(0xFFFFFFFFu) << 33) + (rightIsNegative ? -1 : 1);
+        AssertExactValue(expected, 1, resSig, res);
+    }
+
+    // Zero operands give an unsigned zero with exponent 0 and a cleared result; invalid operands throw.
+    [SkippableFact]
+    [TestTarget(ExecutionTarget.GpuExecution)]
+    [Category(TestCategory.Stdlib)]
+    [Scenario(TestScenario.SadPath)]
+    public void ZeroAndSadPaths()
+    {
+        using var workspace = new GpuWorkspace(1024, GpuExecutionEngine.GSharpAot);
+        var arith = GSharpKernelFloatProvider.Instance;
+
+        using var zeroSig = new GpuBigUInt(workspace, [0u]);
+        using var threeSig = new GpuBigUInt(workspace, [3u]);
+        using var twoSig = new GpuBigUInt(workspace, [2u]);
+        using var resSig = new GpuBigUInt(workspace, 4);
+
+        // Normalize(-0 * 2^5) is +0 * 2^0.
+        // mutant: GSharpKernelFloatProvider.cs:47 `return new GpuFloatResult(0, false);` removed / `false` -> `true`
+        {
+            var context = CreateContext(workspace);
+            var negZero = new GpuFloatOperand(zeroSig.Handle, 5, true);
+            var res = arith.Normalize(ref context, in negZero, resSig.Handle);
+            Assert.Equal(new GpuFloatResult(0, false), res);
+        }
+
+        // 0 / 0 is a division by zero, not the early return for a zero dividend.
+        // mutant: GSharpKernelFloatProvider.cs:184 `throw` removed
+        Assert.Throws<DivideByZeroException>(() =>
+        {
+            var context = CreateContext(workspace);
+            var zero = new GpuFloatOperand(zeroSig.Handle, 0);
+            arith.Divide(ref context, in zero, in zero, resSig.Handle);
+        });
+
+        // 0 / -3 is +0 and clears every word of a result that held garbage.
+        // mutant: GSharpKernelFloatProvider.cs:196 ClearMemoryAsync removed, L197 `false` -> `true`
+        {
+            using var dirty = new GpuBigUInt(workspace, [0xFFFFFFFFu, 0xFFFFFFFFu, 0xFFFFFFFFu, 0xFFFFFFFFu]);
+            var context = CreateContext(workspace);
+            var zero = new GpuFloatOperand(zeroSig.Handle, 0);
+            var negThree = new GpuFloatOperand(threeSig.Handle, 0, true);
+            var res = arith.Divide(ref context, in zero, in negThree, dirty.Handle);
+            Assert.Equal(new GpuFloatResult(0, false), res);
+            Assert.Equal(BigInteger.Zero, dirty.ToBigInteger());
+        }
+
+        // Sqrt(0) is +0 and clears the result.
+        // mutant: GSharpKernelFloatProvider.cs:272 ClearMemoryAsync removed, L273 `false` -> `true`
+        {
+            using var dirty = new GpuBigUInt(workspace, [0xFFFFFFFFu, 0xFFFFFFFFu, 0xFFFFFFFFu, 0xFFFFFFFFu]);
+            var context = CreateContext(workspace);
+            var zero = new GpuFloatOperand(zeroSig.Handle, 0);
+            var res = arith.Sqrt(ref context, in zero, dirty.Handle);
+            Assert.Equal(new GpuFloatResult(0, false), res);
+            Assert.Equal(BigInteger.Zero, dirty.ToBigInteger());
+        }
+
+        // ln 0 is undefined.
+        // mutant: GSharpKernelFloatProvider.cs:469 `throw` removed
+        Assert.Throws<InvalidOperationException>(() =>
+        {
+            var context = CreateContext(workspace);
+            var zero = new GpuFloatOperand(zeroSig.Handle, 0);
+            arith.Log(ref context, in zero, resSig.Handle);
+        });
+
+        // (-2)^3 through exp(3 ln(-2)) is not supported.
+        // mutant: GSharpKernelFloatProvider.cs:569 `throw` removed (Log would then throw for the negative base instead,
+        // so the check is that the message comes from Pow)
+        var powError = Assert.Throws<InvalidOperationException>(() =>
+        {
+            var context = CreateContext(workspace);
+            var negTwo = new GpuFloatOperand(twoSig.Handle, 0, true);
+            var three = new GpuFloatOperand(threeSig.Handle, 0);
+            arith.Pow(ref context, in negTwo, in three, resSig.Handle);
+        });
+        Assert.Contains("Pow", powError.Message, StringComparison.Ordinal);
+    }
+
+    // With a 4-word result, Exp and Log are accurate to a few ulps: relative error at most 2^-124
+    // (128-bit result truncated by Normalize: 2^-127, plus the series truncation of the 192-bit fraction).
+    // Reference: BigInteger fixed point with 400 fraction bits (BigFloatReference).
+    [SkippableTheory]
+    [TestTarget(ExecutionTarget.GpuExecution)]
+    [Category(TestCategory.Stdlib)]
+    [Scenario(TestScenario.Boundary)]
+    // mutant: GSharpKernelFloatProvider.cs:408 `NumWords + 2` -> `NumWords - 2` (64-bit fraction, error ~2^-64)
+    [InlineData(1)]
+    // e^60 ~ 2^86.6 needs more than the 2-word minimum of the integer part.
+    // mutant: L406 `Math.Max` -> `Math.Min`, `Exponent + actualBits` -> `Exponent - actualBits`;
+    // L407 `/ 20 + 2` -> `/ 20 - 2`, `1 << ...` -> `1 >> ...` / `1 >>> ...` (intWords falls to 2, the integer part overflows)
+    [InlineData(60)]
+    // e^-1 = 1 / e^1 goes through a temporary of NumWords + 2 words.
+    // mutant: GSharpKernelFloatProvider.cs:401 `NumWords + 2` -> `NumWords - 2` (2-word e^1, error ~2^-64)
+    [InlineData(-1)]
+    public void Exp_HighPrecision(int x)
+    {
+        using var workspace = new GpuWorkspace(1024, GpuExecutionEngine.GSharpAot);
+        var context = CreateContext(workspace);
+        var arith = GSharpKernelFloatProvider.Instance;
+
+        using var xSig = new GpuBigUInt(workspace, [(uint)Math.Abs(x)]);
+        using var resSig = new GpuBigUInt(workspace, 4);
+        var operand = new GpuFloatOperand(xSig.Handle, 0, x < 0);
+
+        var res = arith.Exp(ref context, in operand, resSig.Handle);
+
+        Assert.False(res.IsNegative);
+        var actual = BigFloatReference.ToFixed(resSig.ToBigInteger(), res.Exponent);
+        var expected = BigFloatReference.ExpFixed(x);
+        Assert.True(
+            BigFloatReference.IsWithinRelative(actual, expected, 124),
+            $"exp({x}): actual {BigFloatReference.Describe(resSig.ToBigInteger(), res.Exponent, false)}");
+    }
+
+    [SkippableFact]
+    [TestTarget(ExecutionTarget.GpuExecution)]
+    [Category(TestCategory.Stdlib)]
+    [Scenario(TestScenario.Boundary)]
+    public void Log_HighPrecision()
+    {
+        using var workspace = new GpuWorkspace(1024, GpuExecutionEngine.GSharpAot);
+        var context = CreateContext(workspace);
+        var arith = GSharpKernelFloatProvider.Instance;
+
+        using var twoSig = new GpuBigUInt(workspace, [2u]);
+        using var resSig = new GpuBigUInt(workspace, 4);
+        var two = new GpuFloatOperand(twoSig.Handle, 0);
+
+        var res = arith.Log(ref context, in two, resSig.Handle);
+
+        // ln 2 to a relative error of 2^-124 (same bound as Exp_HighPrecision).
+        // mutant: GSharpKernelFloatProvider.cs:472 `NumWords + 2` -> `NumWords - 2` (64-bit fraction)
+        Assert.False(res.IsNegative);
+        var actual = BigFloatReference.ToFixed(resSig.ToBigInteger(), res.Exponent);
+        Assert.True(
+            BigFloatReference.IsWithinRelative(actual, BigFloatReference.Ln2Fixed(), 124),
+            $"ln 2: actual {BigFloatReference.Describe(resSig.ToBigInteger(), res.Exponent, false)}");
+    }
+
+    // A square root or inverse square root that is exactly representable comes out exact:
+    // the guard-word rounding offset absorbs the truncation of the Newton iteration.
+    [SkippableTheory]
+    [TestTarget(ExecutionTarget.GpuExecution)]
+    [Category(TestCategory.Stdlib)]
+    [Scenario(TestScenario.Boundary)]
+    // mutant: GSharpKernelFloatProvider.cs:349 `GpuBigIntMath.Add(rsqrtRaw, 4u, rsqrtRaw)` removed (0.4999...)
+    [InlineData(4u, false, 2, 1)]
+    [InlineData(4u, true, 1, 2)]
+    [InlineData(16u, true, 1, 4)]
+    public void Sqrt_Rsqrt_PerfectSquares_AreExact(uint value, bool inverse, int num, int den)
+    {
+        using var workspace = new GpuWorkspace(1024, GpuExecutionEngine.GSharpAot);
+        var context = CreateContext(workspace);
+        var arith = GSharpKernelFloatProvider.Instance;
+
+        using var sig = new GpuBigUInt(workspace, [value]);
+        using var resSig = new GpuBigUInt(workspace, 4);
+        var operand = new GpuFloatOperand(sig.Handle, 0);
+
+        var res = inverse
+            ? arith.Rsqrt(ref context, in operand, resSig.Handle)
+            : arith.Sqrt(ref context, in operand, resSig.Handle);
+
+        AssertExactValue(num, den, resSig, res);
+    }
+
+    // An irrational square root of a 1-word operand is still computed to the 4-word result precision:
+    // relative error at most 2^-124 (truncation to 128 bits plus the Newton and product truncations).
+    [SkippableTheory]
+    [TestTarget(ExecutionTarget.GpuExecution)]
+    [Category(TestCategory.Stdlib)]
+    [Scenario(TestScenario.Boundary)]
+    // mutant: GSharpKernelFloatProvider.cs:324 `Math.Max(operand words, result words)` -> `Math.Min` (1-word work buffer)
+    [InlineData(2u, false)]
+    [InlineData(2u, true)]
+    [InlineData(3u, false)]
+    [InlineData(3u, true)]
+    public void Sqrt_Rsqrt_HighPrecision(uint value, bool inverse)
+    {
+        using var workspace = new GpuWorkspace(1024, GpuExecutionEngine.GSharpAot);
+        var context = CreateContext(workspace);
+        var arith = GSharpKernelFloatProvider.Instance;
+
+        using var sig = new GpuBigUInt(workspace, [value]);
+        using var resSig = new GpuBigUInt(workspace, 4);
+        var operand = new GpuFloatOperand(sig.Handle, 0);
+
+        var res = inverse
+            ? arith.Rsqrt(ref context, in operand, resSig.Handle)
+            : arith.Sqrt(ref context, in operand, resSig.Handle);
+
+        Assert.False(res.IsNegative);
+        var actual = BigFloatReference.ToFixed(resSig.ToBigInteger(), res.Exponent);
+        var expected = inverse ? BigFloatReference.InverseSqrtFixed(value) : BigFloatReference.SqrtFixed(value);
+        Assert.True(
+            BigFloatReference.IsWithinRelative(actual, expected, 124),
+            $"{(inverse ? "rsqrt" : "sqrt")}({value}): actual {BigFloatReference.Describe(resSig.ToBigInteger(), res.Exponent, false)}");
+    }
+
+    // exp(0) is exactly 1, whatever the result buffer held before.
+    [SkippableFact]
+    [TestTarget(ExecutionTarget.GpuExecution)]
+    [Category(TestCategory.Stdlib)]
+    [Scenario(TestScenario.Boundary)]
+    public void Exp_Zero_IntoDirtyBuffer_IsExactlyOne()
+    {
+        using var workspace = new GpuWorkspace(1024, GpuExecutionEngine.GSharpAot);
+        var context = CreateContext(workspace);
+        var arith = GSharpKernelFloatProvider.Instance;
+
+        using var zeroSig = new GpuBigUInt(workspace, [0u]);
+        using var dirty = new GpuBigUInt(workspace, [0x12345678u, 0x9ABCDEF0u, 0x0F0F0F0Fu, 0x00000001u]);
+        var zero = new GpuFloatOperand(zeroSig.Handle, 0);
+
+        // mutant: GSharpKernelFloatProvider.cs:393 ClearMemoryAsync removed (the low words keep the old value)
+        var res = arith.Exp(ref context, in zero, dirty.Handle);
+        AssertExactValue(1, 1, dirty, res);
+    }
 }
