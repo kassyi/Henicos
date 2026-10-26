@@ -84,6 +84,11 @@ The G# compiler and Roslyn analyzers enforce GPU safety and memory management ru
 | [GSH0075](GSH0075.md) | Error | Gpu.CopyAsync requires a SharedMemory<T> destination and a global memory source |
 | [GSH0076](GSH0076.md) | Error | Unsupported warp matrix (WMMA) type or operation |
 | [GSH0077](GSH0077.md) | Warning | Dynamic SharedMemory<T> reached by only some threads or with a thread-dependent count |
+| [GSH0078](GSH0078.md) | Error | Struct cannot be laid out on the device |
+| [GSH0079](GSH0079.md) | Error | Struct field type has no device representation |
+| [GSH0080](GSH0080.md) | Warning | Struct array is converted element by element |
+| [GSH0081](GSH0081.md) | Warning | Struct array allocates the array field of each element |
+| [GSH0082](GSH0082.md) | Error | Struct cannot be passed to a CPU kernel yet |
 | [SLQ0001](SLQ0001.md) | Warning | Excessive StackLinq chain depth |
 | [RS0030](RS0030.md) | Error | GPU intrinsic invoked from host code or banned API used in kernel |
 

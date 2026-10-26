@@ -365,4 +365,125 @@ public class StructLayoutParityTests
         Assert.Equal(700UL, s.UL4.X);
         Assert.Equal(1300UL, s.UL4.W);
     }
+
+    [Fact]
+    public void ExplicitUnion_DeviceShadowAndHostLayout_MatchAndRoundtrip()
+    {
+        var s = new ExplicitUnionStruct { AsFloat = 1.5f, Tail = 9 };
+        var layout = new int[4];
+
+        StructLayoutParityKernels.LaunchMeasureExplicitUnionKernel(ref s, layout);
+
+        AssertShadowParity(nameof(ExplicitUnionStruct), layout,
+            nameof(ExplicitUnionStruct.AsInt),
+            nameof(ExplicitUnionStruct.AsFloat),
+            nameof(ExplicitUnionStruct.Tail));
+
+        Assert.Equal(Unsafe.SizeOf<ExplicitUnionStruct>(), layout[0]);
+        Assert.Equal(HostOffset(ref s, ref s.AsInt), layout[1]);
+        Assert.Equal(HostOffset(ref s, ref s.AsFloat), layout[2]);
+        Assert.Equal(HostOffset(ref s, ref s.Tail), layout[3]);
+
+        Assert.Equal(3f, s.AsFloat);
+        Assert.Equal(BitConverter.SingleToInt32Bits(3f), s.AsInt);
+        Assert.Equal((byte)10, s.Tail);
+    }
+
+    [Fact]
+    public void ExplicitGapWithSize_DeviceShadowAndHostLayout_MatchAndArrayRoundtrips()
+    {
+        var items = new[]
+        {
+            new ExplicitGapWithSizeStruct { First = 1, Middle = 2, Last = 3 },
+            new ExplicitGapWithSizeStruct { First = 4, Middle = 5, Last = 6 }
+        };
+        var probe = new ExplicitGapWithSizeStruct { First = 7, Middle = 8, Last = 9 };
+        var layout = new int[4];
+
+        StructLayoutParityKernels.LaunchMeasureExplicitGapArrayKernel(ref probe, items, layout, blockDimX: 2);
+
+        AssertShadowParity(nameof(ExplicitGapWithSizeStruct), layout,
+            nameof(ExplicitGapWithSizeStruct.First),
+            nameof(ExplicitGapWithSizeStruct.Middle),
+            nameof(ExplicitGapWithSizeStruct.Last));
+
+        var s = items[0];
+        Assert.Equal(Unsafe.SizeOf<ExplicitGapWithSizeStruct>(), layout[0]);
+        Assert.Equal(HostOffset(ref s, ref s.First), layout[1]);
+        Assert.Equal(HostOffset(ref s, ref s.Middle), layout[2]);
+        Assert.Equal(HostOffset(ref s, ref s.Last), layout[3]);
+
+        Assert.Equal(9, probe.Middle);
+        Assert.Equal((short)9, probe.Last);
+        Assert.Equal((byte)2, items[0].First);
+        Assert.Equal(20, items[0].Middle);
+        Assert.Equal((short)2, items[0].Last);
+        Assert.Equal((byte)5, items[1].First);
+        Assert.Equal(50, items[1].Middle);
+        Assert.Equal((short)5, items[1].Last);
+    }
+
+    // CPU passes the struct in its managed layout until L4
+#if GSHARP_CPU
+    [Fact(Skip = "L4")]
+#else
+    [Fact]
+#endif
+    public void InlineArrayOfArrays_ByRef_CopiesEachElementArray()
+    {
+        var h = new ArrayFieldPairHolder { Tag = 3 };
+        h.Arrays[0] = [10, 20];
+        h.Arrays[1] = [30, 40, 50];
+        var o = new int[3];
+
+        StructLayoutParityKernels.LaunchInlineArrayOfArraysKernel(ref h, o);
+
+        Assert.Equal([3, 20, 3], o);
+        Assert.Equal(77, h.Arrays[1][0]);
+        Assert.Equal([10, 20], h.Arrays[0]);
+    }
+
+    [Fact]
+    public void ExplicitAutoProperties_LocalAndArgument_KeepSeparateFields()
+    {
+        var input = new ExplicitAutoPropertyStruct { A = 11, B = 4.5f };
+        var o = new int[3];
+        var f = new float[2];
+
+        StructLayoutParityKernels.LaunchExplicitAutoPropertyKernel(input, o, f);
+
+        Assert.Equal([7, 11, Unsafe.SizeOf<ExplicitAutoPropertyStruct>()], o);
+        Assert.Equal([2.5f, 4.5f], f);
+    }
+
+    // An auxiliary check: the stack is often zero already, so it stays green on the CPU even when the union order is
+    // wrong. ExplicitUnionEmissionTests pins the order itself.
+    [Fact]
+    public void IntLongUnion_ValueInitialization_ZeroesTheWholeUnion()
+    {
+        var o = new long[2];
+
+        StructLayoutParityKernels.LaunchIntLongUnionKernel(o);
+
+        Assert.Equal([0L, -1L], o);
+    }
+
+    [Fact]
+    public void ExplicitPacked_DeviceShadowAndHostLayout_MatchAndRoundtrip()
+    {
+        var s = new ExplicitPackedStruct { Head = 3, Value = 1.25 };
+        var layout = new int[3];
+
+        StructLayoutParityKernels.LaunchMeasureExplicitPackedKernel(ref s, layout);
+
+        AssertShadowParity(nameof(ExplicitPackedStruct), layout,
+            nameof(ExplicitPackedStruct.Head),
+            nameof(ExplicitPackedStruct.Value));
+
+        Assert.Equal(Unsafe.SizeOf<ExplicitPackedStruct>(), layout[0]);
+        Assert.Equal(HostOffset(ref s, ref s.Head), layout[1]);
+        Assert.Equal(HostOffset(ref s, ref s.Value), layout[2]);
+        Assert.Equal((byte)4, s.Head);
+        Assert.Equal(2.5, s.Value);
+    }
 }

@@ -27,6 +27,13 @@ internal static class NativeStructEmitter
         {
             foreach (var (field, offset, fieldLayout) in structLayout.DeviceFields)
             {
+                // [WHY] A reference type other than an array has no device layout: GSH0078 reports it, and the shadow
+                // leaves it out so that the generated code still compiles.
+                if (IsUnrepresentableReference(field))
+                {
+                    continue;
+                }
+
                 writer.Append($"public const string DebugName_{field.Name} = \"");
                 writer.AppendFullyQualifiedCsharpName(field.Type);
                 writer.AppendLine("\";");
@@ -44,6 +51,13 @@ internal static class NativeStructEmitter
         writer.AppendLine();
     }
 
+    /// <summary>
+    /// Whether <paramref name="member"/> is a reference type other than an array-like one, which the shadow struct and
+    /// its marshaling leave out (GSH0078).
+    /// </summary>
+    internal static bool IsUnrepresentableReference(StructAbiMember member) =>
+        member.Type.IsReferenceType && !member.Type.IsArrayLikeType();
+
     private static void MapToNativeField(SourceWriter writer, StructAbiMember field, int fieldSize)
     {
         if (field.Kind is StructAbiMemberKind.FixedBuffer or StructAbiMemberKind.InlineArrayElement)
@@ -60,10 +74,6 @@ internal static class NativeStructEmitter
             writer.Append("public ");
             writer.AppendAotStructPath(field.Type);
             writer.AppendLine($" {field.Name.ToCSharpIdentifier()};");
-        }
-        else if (field.Type.IsReferenceType)
-        {
-            writer.AppendLine($"#error Unsupported reference type in struct field: {field.Name.ToCSharpIdentifier()}");
         }
         else if (field.Type.SpecialType != SpecialType.None)
         {

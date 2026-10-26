@@ -1,3 +1,4 @@
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using Kassyi.GSharp.Core;
 
@@ -8,6 +9,19 @@ public struct CharFieldRoundtripStruct
 {
     public char Ch;
     public int Value;
+}
+
+// An inline array of arrays: each element is copied to the device on its own (S-26)
+[InlineArray(2)]
+public struct ArrayFieldPair
+{
+    private int[] _element0;
+}
+
+public struct ArrayFieldPairHolder
+{
+    public int Tag;
+    public ArrayFieldPair Arrays;
 }
 
 [SkipSnapshotConsistency]
@@ -224,6 +238,113 @@ public static unsafe partial class StructLayoutParityKernels
             s.Tag3 = (byte)(s.Tag3 + 1);
             s.UL2 = new ULong2(s.UL2.X + 100UL, s.UL2.Y + 200UL);
             s.UL4 = new ULong4(s.UL4.X + 100UL, s.UL4.Y + 200UL, s.UL4.Z + 300UL, s.UL4.W + 400UL);
+        }
+    }
+
+    // AsInt and AsFloat share offset 0: one union on the device
+    [GpuKernel]
+    public static void MeasureExplicitUnionKernel(ref ExplicitUnionStruct s, int[] outLayout)
+    {
+        if (ThreadIndex.X == 0 && BlockIndex.X == 0)
+        {
+            ExplicitUnionStruct local = default;
+            ExplicitUnionStruct* p = &local;
+            byte* basePtr = (byte*)p;
+            outLayout[0] = (int)((byte*)(p + 1) - basePtr);
+            outLayout[1] = (int)((byte*)&local.AsInt - basePtr);
+            outLayout[2] = (int)((byte*)&local.AsFloat - basePtr);
+            outLayout[3] = (int)((byte*)&local.Tail - basePtr);
+
+            s.AsFloat = s.AsFloat * 2f;
+            s.Tail = (byte)(s.Tail + 1);
+        }
+    }
+
+    // The gaps between the fields and up to Size = 24 are padding on the device
+    [GpuKernel]
+    public static void MeasureExplicitGapArrayKernel(ref ExplicitGapWithSizeStruct probe,
+        ExplicitGapWithSizeStruct[] items, int[] outLayout)
+    {
+        int idx = ThreadIndex.X;
+        if (idx == 0)
+        {
+            ExplicitGapWithSizeStruct local = default;
+            ExplicitGapWithSizeStruct* p = &local;
+            byte* basePtr = (byte*)p;
+            outLayout[0] = (int)((byte*)(p + 1) - basePtr);
+            outLayout[1] = (int)((byte*)&local.First - basePtr);
+            outLayout[2] = (int)((byte*)&local.Middle - basePtr);
+            outLayout[3] = (int)((byte*)&local.Last - basePtr);
+            probe.Middle = probe.Middle + 1;
+        }
+
+        if (idx < items.Length)
+        {
+            items[idx].First = (byte)(items[idx].First + 1);
+            items[idx].Middle = items[idx].Middle * 10;
+            items[idx].Last = (short)(items[idx].Last - 1);
+        }
+    }
+
+    [GpuKernel]
+    public static void InlineArrayOfArraysKernel(ref ArrayFieldPairHolder h, int[] o)
+    {
+        if (ThreadIndex.X == 0 && BlockIndex.X == 0)
+        {
+            o[0] = h.Tag;
+            o[1] = h.Arrays[0][1];
+            o[2] = h.Arrays[1].Length;
+            h.Arrays[1][0] = 77;
+        }
+    }
+
+    // A and B are auto-properties at offsets 0 and 4 ([field: FieldOffset]): not one union
+    [GpuKernel]
+    public static void ExplicitAutoPropertyKernel(ExplicitAutoPropertyStruct input, int[] o, float[] f)
+    {
+        if (ThreadIndex.X == 0 && BlockIndex.X == 0)
+        {
+            ExplicitAutoPropertyStruct local = default;
+            local.A = 7;
+            local.B = 2.5f;
+            ExplicitAutoPropertyStruct* p = &local;
+            o[0] = local.A;
+            f[0] = local.B;
+            o[1] = input.A;
+            f[1] = input.B;
+            o[2] = (int)((byte*)(p + 1) - (byte*)p);
+        }
+    }
+
+    // new IntLongUnion() zeroes all 8 bytes only when L is the first member of the device union
+    [GpuKernel]
+    public static void IntLongUnionKernel(long[] o)
+    {
+        if (ThreadIndex.X == 0 && BlockIndex.X == 0)
+        {
+            IntLongUnion dirty = default;
+            dirty.L = -1L;
+            o[1] = dirty.L;
+            IntLongUnion u = new IntLongUnion();
+            o[0] = u.L;
+        }
+    }
+
+    // [StructLayout(LayoutKind.Explicit, Pack = 2)]: Value at offset 2
+    [GpuKernel]
+    public static void MeasureExplicitPackedKernel(ref ExplicitPackedStruct s, int[] outLayout)
+    {
+        if (ThreadIndex.X == 0 && BlockIndex.X == 0)
+        {
+            ExplicitPackedStruct local = default;
+            ExplicitPackedStruct* p = &local;
+            byte* basePtr = (byte*)p;
+            outLayout[0] = (int)((byte*)(p + 1) - basePtr);
+            outLayout[1] = (int)((byte*)&local.Head - basePtr);
+            outLayout[2] = (int)((byte*)&local.Value - basePtr);
+
+            s.Head = (byte)(s.Head + 1);
+            s.Value = s.Value * 2.0;
         }
     }
 }

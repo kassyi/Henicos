@@ -118,7 +118,7 @@ public class TypeLayoutCalculatorTests
     [Fact]
     [Category(TestCategory.Compiler)]
     [Scenario(TestScenario.Boundary)]
-    public void HostLayout_ExplicitLayout_MatchesRuntimeAndClassifiesAsConvert()
+    public void HostLayout_ExplicitLayout_MatchesRuntimeAndClassifiesAsIdentical()
     {
         var unionLayout = TypeLayoutCalculator.GetStructLayout(GetStructSymbol(nameof(ExplicitUnionStruct)), s_cudaDialect);
         Assert.Equal(TypeLayoutKind.Explicit, unionLayout.Kind);
@@ -128,8 +128,12 @@ public class TypeLayoutCalculatorTests
         AssertFieldOffset(unionLayout.Host, nameof(ExplicitUnionStruct.AsInt), OffsetOf(ref u, ref u.AsInt));
         AssertFieldOffset(unionLayout.Host, nameof(ExplicitUnionStruct.AsFloat), OffsetOf(ref u, ref u.AsFloat));
         AssertFieldOffset(unionLayout.Host, nameof(ExplicitUnionStruct.Tail), OffsetOf(ref u, ref u.Tail));
-        // Device emits sequential C++ struct in L1, so AsFloat is at offset 4 while Host has AsFloat at offset 0
-        Assert.Equal(TransferClass.Convert, unionLayout.Transfer);
+        // The device puts AsInt and AsFloat into one union at offset 0, as the host does
+        Assert.Equal(
+            0,
+            unionLayout.DeviceFields.First(f => f.Member.Name == nameof(ExplicitUnionStruct.AsFloat)).Offset);
+        Assert.Equal(unionLayout.Host.Size, unionLayout.Device.Size);
+        Assert.Equal(TransferClass.Identical, unionLayout.Transfer);
 
         var gapLayout = TypeLayoutCalculator.GetStructLayout(GetStructSymbol(nameof(ExplicitGapWithSizeStruct)), s_cudaDialect);
         Assert.Equal(TypeLayoutKind.Explicit, gapLayout.Kind);
@@ -139,7 +143,9 @@ public class TypeLayoutCalculatorTests
         AssertFieldOffset(gapLayout.Host, nameof(ExplicitGapWithSizeStruct.First), OffsetOf(ref g, ref g.First));
         AssertFieldOffset(gapLayout.Host, nameof(ExplicitGapWithSizeStruct.Middle), OffsetOf(ref g, ref g.Middle));
         AssertFieldOffset(gapLayout.Host, nameof(ExplicitGapWithSizeStruct.Last), OffsetOf(ref g, ref g.Last));
-        Assert.Equal(TransferClass.Convert, gapLayout.Transfer);
+        // The gaps and the trailing bytes up to Size = 24 are padding on the device
+        Assert.Equal(24, gapLayout.Device.Size);
+        Assert.Equal(TransferClass.Identical, gapLayout.Transfer);
 
         var explicitPacked = TypeLayoutCalculator.GetStructLayout(GetStructSymbol(nameof(ExplicitPackedStruct)), s_cudaDialect);
         Assert.Equal(TypeLayoutKind.Explicit, explicitPacked.Kind);
@@ -171,11 +177,12 @@ public class TypeLayoutCalculatorTests
 
         var inlineWithArray = TypeLayoutCalculator.GetStructLayout(GetStructSymbol(nameof(InlineArrayWithArrayElement)), s_cudaDialect);
         Assert.False(inlineWithArray.Host.IsKnown);
-        Assert.Equal(TransferClass.Unsupported, inlineWithArray.Transfer);
+        // Each element is copied with its array field (S-26)
+        Assert.Equal(TransferClass.Convert, inlineWithArray.Transfer);
 
         var outerWithInlineArray = TypeLayoutCalculator.GetStructLayout(GetStructSymbol(nameof(OuterWithInlineArrayOfArrayElement)), s_cudaDialect);
         Assert.False(outerWithInlineArray.Host.IsKnown);
-        Assert.Equal(TransferClass.Unsupported, outerWithInlineArray.Transfer);
+        Assert.Equal(TransferClass.Convert, outerWithInlineArray.Transfer);
     }
 
     [Fact]
@@ -293,7 +300,9 @@ public class TypeLayoutCalculatorTests
         Assert.Equal(TransferClass.Convert, core64Cuda.Transfer);
         Assert.Equal(TransferClass.Identical, core64Cpu.Transfer);
 
-        // InlineArray with Float2 directly (Float2 size=8, align=8 on CUDA vs size=8, align=4 on Host; stride=8 on both, but alignment differs -> Convert on CUDA)
+        // InlineArray with Float2 directly (Float2 size=8, align=8 on CUDA vs size=8, align=4 on Host): the stride
+        // and the offsets are the same, so the bytes are the same and only the alignment differs -> Identical
+        // (design §3.3)
         var inlineFloat2Cuda = TypeLayoutCalculator.GetStructLayout(GetStructSymbol(nameof(InlineThreeFloat2)), s_cudaDialect);
         var inlineFloat2Cpu = TypeLayoutCalculator.GetStructLayout(GetStructSymbol(nameof(InlineThreeFloat2)), s_cpuDialect);
         Assert.True(inlineFloat2Cuda.Host.IsKnown);
@@ -301,7 +310,7 @@ public class TypeLayoutCalculatorTests
         Assert.Equal(24, inlineFloat2Cuda.Device.Size);
         Assert.Equal(8, inlineFloat2Cuda.Device.Alignment);
         Assert.Equal(4, inlineFloat2Cuda.Host.Alignment);
-        Assert.Equal(TransferClass.Convert, inlineFloat2Cuda.Transfer);
+        Assert.Equal(TransferClass.Identical, inlineFloat2Cuda.Transfer);
         Assert.Equal(TransferClass.Identical, inlineFloat2Cpu.Transfer);
 
         // InlineArray with DivergentInlineElem (Host size=12, Cuda size=16)
@@ -313,5 +322,53 @@ public class TypeLayoutCalculatorTests
         Assert.Equal(40, divInlineCuda.Device.Size);
         Assert.Equal(TransferClass.Convert, divInlineCuda.Transfer);
         Assert.Equal(TransferClass.Identical, divInlineCpu.Transfer);
+    }
+
+    [Theory]
+    [Category(TestCategory.Compiler)]
+    [Scenario(TestScenario.Boundary)]
+    [InlineData(nameof(WideVectorsFirst))]
+    [InlineData(nameof(SystemVectorFirst))]
+    public void HostAndDeviceLayout_AlignmentOnlyDifference_IsIdentical(string structName)
+    {
+        var cuda = TypeLayoutCalculator.GetStructLayout(GetStructSymbol(structName), s_cudaDialect);
+        var cpu = TypeLayoutCalculator.GetStructLayout(GetStructSymbol(structName), s_cpuDialect);
+
+        var hostSize = structName == nameof(WideVectorsFirst)
+            ? Unsafe.SizeOf<WideVectorsFirst>()
+            : Unsafe.SizeOf<SystemVectorFirst>();
+        Assert.Equal(hostSize, cuda.Host.Size);
+        Assert.Equal(hostSize, cuda.Device.Size);
+        Assert.Equal(4, cuda.Host.Alignment);
+        Assert.True(cuda.Device.Alignment > cuda.Host.Alignment);
+        Assert.Equal(
+            cuda.Host.Fields.Select(static f => f.Offset),
+            cuda.DeviceFields.Select(static f => f.Offset));
+        Assert.Equal(TransferClass.Identical, cuda.Transfer);
+        Assert.Equal(TransferClass.Identical, cpu.Transfer);
+    }
+
+    [Fact]
+    [Category(TestCategory.Compiler)]
+    [Scenario(TestScenario.Boundary)]
+    public void HostLayout_ExplicitAutoProperties_ReadTheBackingFieldOffsets()
+    {
+        var layout = TypeLayoutCalculator.GetStructLayout(
+            GetStructSymbol(nameof(ExplicitAutoPropertyStruct)),
+            s_cudaDialect);
+
+        var s = new ExplicitAutoPropertyStruct { A = 0x01020304, B = 2.5f };
+        var bytes = System.Runtime.InteropServices.MemoryMarshal.AsBytes(
+            System.Runtime.InteropServices.MemoryMarshal.CreateSpan(ref s, 1));
+        Assert.Equal(0x01020304, BitConverter.ToInt32(bytes[..4]));
+        Assert.Equal(2.5f, BitConverter.ToSingle(bytes[4..8]));
+
+        Assert.True(layout.Host.IsKnown);
+        Assert.Equal(Unsafe.SizeOf<ExplicitAutoPropertyStruct>(), layout.Host.Size);
+        AssertFieldOffset(layout.Host, nameof(ExplicitAutoPropertyStruct.A), 0);
+        AssertFieldOffset(layout.Host, nameof(ExplicitAutoPropertyStruct.B), 4);
+        Assert.Equal(4, layout.DeviceFields.First(f => f.Member.Name == nameof(ExplicitAutoPropertyStruct.B)).Offset);
+        Assert.Equal(8, layout.Device.Size);
+        Assert.Equal(TransferClass.Identical, layout.Transfer);
     }
 }

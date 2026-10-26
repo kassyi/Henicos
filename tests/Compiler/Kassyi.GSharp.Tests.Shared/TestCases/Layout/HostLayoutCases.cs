@@ -260,3 +260,41 @@ public struct CoreVectors64BitStruct
 public struct EmptyUserStruct
 {
 }
+
+// The fields land at the same offsets on both sides; only the alignment of Float4 / Float2 / Vector2 differs on CUDA
+public struct WideVectorsFirst
+{
+    public Float4 W;
+    public Float2 V;
+    public float A;
+    public float B;
+}
+
+public struct SystemVectorFirst
+{
+    public Vector2 V;
+    public float A;
+    public float B;
+}
+
+// [field: FieldOffset] on auto-properties is read from the backing field
+[StructLayout(LayoutKind.Explicit)]
+public struct ExplicitAutoPropertyStruct
+{
+    [field: FieldOffset(0)]
+    public int A { get; set; }
+
+    [field: FieldOffset(4)]
+    public float B { get; set; }
+}
+
+// The larger member goes first in the device union, so that value initialization zeroes all 8 bytes
+[StructLayout(LayoutKind.Explicit)]
+public struct IntLongUnion
+{
+    [FieldOffset(0)]
+    public int I;
+
+    [FieldOffset(0)]
+    public long L;
+}

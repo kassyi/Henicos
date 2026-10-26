@@ -696,6 +696,51 @@
     "isEnabledByDefault": true
   },
   {
+    "name": "StructLayoutNotRepresentable",
+    "id": "GSH0078",
+    "title": "Struct cannot be laid out on the device",
+    "messageFormat": "The struct '{0}' cannot be laid out on the device: {1}.",
+    "category": "GSharpTranspiler",
+    "defaultSeverity": "Error",
+    "isEnabledByDefault": true
+  },
+  {
+    "name": "FieldTypeHasNoDeviceRepresentation",
+    "id": "GSH0079",
+    "title": "Struct field type has no device representation",
+    "messageFormat": "The type '{0}' of field '{1}' has no device representation.",
+    "category": "GSharpTranspiler",
+    "defaultSeverity": "Error",
+    "isEnabledByDefault": true
+  },
+  {
+    "name": "StructArrayConvertedPerElement",
+    "id": "GSH0080",
+    "title": "Struct array is converted element by element",
+    "messageFormat": "The array of '{0}' is converted element by element because its host and device layouts differ ({1}). Reorder the fields or avoid array fields to transfer it as one block.",
+    "category": "GSharpTranspiler",
+    "defaultSeverity": "Warning",
+    "isEnabledByDefault": true
+  },
+  {
+    "name": "StructArrayFieldAllocatedPerElement",
+    "id": "GSH0081",
+    "title": "Struct array allocates the array field of each element",
+    "messageFormat": "Each element of the array of '{0}' allocates and copies its array field '{1}' separately.",
+    "category": "GSharpTranspiler",
+    "defaultSeverity": "Warning",
+    "isEnabledByDefault": true
+  },
+  {
+    "name": "StructTransferNotSupportedOnCpu",
+    "id": "GSH0082",
+    "title": "Struct cannot be passed to a CPU kernel yet",
+    "messageFormat": "The struct '{0}' cannot be passed to a kernel on the CPU dialect yet because its host and device layouts differ ({1}). The CPU launcher copies it in the host layout, so the kernel would read garbled values.",
+    "category": "GSharpTranspiler",
+    "defaultSeverity": "Error",
+    "isEnabledByDefault": true
+  },
+  {
     "name": "StackLinqChainTooDeep",
     "id": "SLQ0001",
     "title": "StackLinq method chain is too deep",
