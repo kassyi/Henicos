@@ -205,20 +205,25 @@ internal static class Collector
             result = result.Replace(s_userProfile.Replace('\\', '/'), "~", StringComparison.OrdinalIgnoreCase);
         }
 
+        // The longer name goes first: a host name often contains the user name ("runner" in "runnervm..."), and
+        // replacing the user name first would leave the rest of the host name in the report.
         string user = Environment.UserName;
-        if (user.Length >= 3)
-        {
-            result = result.Replace(user, "<user>", StringComparison.OrdinalIgnoreCase);
-        }
-
         string host = Environment.MachineName;
-        if (host.Length >= 3)
+        if (host.Length >= user.Length)
         {
-            result = result.Replace(host, "<host>", StringComparison.OrdinalIgnoreCase);
+            result = ReplaceName(ReplaceName(result, host, "<host>"), user, "<user>");
+        }
+        else
+        {
+            result = ReplaceName(ReplaceName(result, user, "<user>"), host, "<host>");
         }
 
         return result;
     }
+
+    // Names shorter than 3 characters are left alone: replacing them would corrupt unrelated words.
+    private static string ReplaceName(string value, string name, string placeholder) =>
+        name.Length >= 3 ? value.Replace(name, placeholder, StringComparison.OrdinalIgnoreCase) : value;
 
     private static string Join(List<string> items) => items.Count == 0 ? NotFound : string.Join(", ", items);
 
