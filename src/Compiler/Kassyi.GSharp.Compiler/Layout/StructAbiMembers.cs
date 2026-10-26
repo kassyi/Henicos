@@ -16,12 +16,21 @@ public enum StructAbiMemberKind
     InlineArrayElement,
 
     /// <summary>A property without a backing field. Listed only when asked for (see <see cref="StructAbiMembers.Get"/>).</summary>
-    ComputedProperty
+    ComputedProperty,
+
+    /// <summary>
+    /// The hidden field (<c>&lt;a&gt;P</c>) that Roslyn declares for a primary constructor parameter that members read,
+    /// named after the parameter.
+    /// </summary>
+    CapturedParameter
 }
 
 /// <summary>One member of a user struct's native layout.</summary>
 /// <param name="Symbol">The symbol that names the member: the field, or the property for an auto-property.</param>
-/// <param name="Name">The declared name; an auto-property keeps the name of the property.</param>
+/// <param name="Name">
+/// The declared name; an auto-property keeps the name of the property, a captured primary constructor parameter the
+/// name of the parameter.
+/// </param>
 /// <param name="Type">The type of one element: the pointed-at type of a <c>fixed</c> buffer, the field type otherwise.</param>
 /// <param name="ElementCount">The number of elements: 1, or N for a <c>fixed</c> buffer or the element of an <c>[InlineArray(N)]</c> struct.</param>
 /// <param name="Kind">What the member was declared as.</param>
@@ -39,7 +48,10 @@ public readonly record struct StructAbiMember(
 /// </summary>
 /// <remarks>
 /// The set holds instance fields, auto-properties (through the backing field, under the property name), <c>fixed</c>
-/// buffers and the element of an <c>[InlineArray(N)]</c> struct, in declaration order, each with its element count.
+/// buffers, the element of an <c>[InlineArray(N)]</c> struct and the hidden fields of captured primary constructor
+/// parameters (under the parameter name), in the order of <c>GetMembers()</c>, each with its element count. That is
+/// the order in which the C# compiler emits the fields, so it is the host layout of a sequential struct: Roslyn lists
+/// the hidden fields of the captured parameters first.
 /// The layout, the shadow struct and the marshaling size a member as element layout times
 /// <see cref="StructAbiMember.ElementCount"/> and copy a <c>fixed</c> buffer as one block; an <c>[InlineArray(N)]</c>
 /// struct is one block when its element lays out the same on both sides, and is copied element by element otherwise.
@@ -66,6 +78,32 @@ internal static class StructAbiMembers
     /// <summary>Whether <paramref name="property"/> is an auto-property, which the device stores as a field.</summary>
     public static bool IsAutoProperty(IPropertySymbol property) =>
         HasBackingField(property.ContainingType.GetMembers(), property);
+
+    /// <summary>
+    /// Whether <paramref name="field"/> is the hidden field that Roslyn declares for a primary constructor parameter
+    /// that members read, and the name of that parameter.
+    /// </summary>
+    /// <remarks>
+    /// [WHY] Roslyn names the field <c>&lt;name&gt;P</c> (<c>GeneratedNames.MakePrimaryConstructorParameterFieldName</c>)
+    /// and lists it in <c>GetMembers()</c> before the declared members, in the order in which it emits the fields; no
+    /// public API links it to the parameter. A struct from metadata carries the same name.
+    /// </remarks>
+    public static bool TryGetCapturedParameterName(IFieldSymbol field, [NotNullWhen(true)] out string? parameterName)
+    {
+        const string Suffix = ">P";
+        var name = field.Name;
+        if (field is { IsStatic: false, AssociatedSymbol: null, CanBeReferencedByName: false } &&
+            name.Length > Suffix.Length + 1 &&
+            name[0] == '<' &&
+            name.EndsWith(Suffix, StringComparison.Ordinal))
+        {
+            parameterName = name[1..(name.Length - Suffix.Length)];
+            return true;
+        }
+
+        parameterName = null;
+        return false;
+    }
 
     private static bool HasBackingField(ImmutableArray<ISymbol> members, IPropertySymbol property) =>
         members
@@ -128,6 +166,12 @@ internal static class StructAbiMembers
             if (field.AssociatedSymbol is IPropertySymbol property)
             {
                 member = new StructAbiMember(property, property.Name, field.Type, 1, StructAbiMemberKind.AutoProperty);
+                return true;
+            }
+
+            if (TryGetCapturedParameterName(field, out var parameterName))
+            {
+                member = new StructAbiMember(field, parameterName, field.Type, 1, StructAbiMemberKind.CapturedParameter);
                 return true;
             }
 

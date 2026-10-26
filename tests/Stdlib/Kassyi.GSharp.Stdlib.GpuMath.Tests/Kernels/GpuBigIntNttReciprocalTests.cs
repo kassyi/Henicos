@@ -112,8 +112,7 @@ public class GpuBigIntNttReciprocalTests
         // Retrieve result
         BigInteger actualReciprocal = resultBuffer.ToBigInteger();
 
-        // Newton-Raphson approximation may differ by 1 or 2 at the LSBs.
-        BigInteger difference = BigInteger.Abs(expectedReciprocal - actualReciprocal);
-        Assert.True(difference <= 2, $"Reciprocal difference too large. Expected: {expectedReciprocal}, Actual: {actualReciprocal}, Diff: {difference}");
+        // ReciprocalMega corrects the Newton-Raphson result on the device, so it is exactly floor(2^(2k) / D).
+        Assert.Equal(expectedReciprocal, actualReciprocal);
     }
 }

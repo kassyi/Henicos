@@ -33,7 +33,7 @@ public class StructConstructorTests : TranspilerTestBase
 
         for (int i = 0; i < Count; i++)
         {
-            Assert.Equal((i + 5) * 100 + 2, output[i]);
+            Assert.Equal((i * 10 + 5) * 100 + 2, output[i]);
         }
     }
 
@@ -47,7 +47,7 @@ public class StructConstructorTests : TranspilerTestBase
 
         for (int i = 0; i < Count; i++)
         {
-            Assert.Equal(i + 10, output[i]);
+            Assert.Equal(i * 10 + 10, output[i]);
         }
     }
 
@@ -61,7 +61,10 @@ public class StructConstructorTests : TranspilerTestBase
 
         for (int i = 0; i < Count; i++)
         {
-            Assert.Equal(i + 1, output[i]);
+            // CtorScaled(b: 1, a: tid): Sum = a * 10 + b
+            // mutant: ObjectCreationHelper.AppendReorderedArguments passes the temporaries of a call whose parameters have one
+            // type in the reverse parameter order -> this test fails
+            Assert.Equal(i * 10 + 1, output[i]);
         }
     }
 
@@ -75,7 +78,7 @@ public class StructConstructorTests : TranspilerTestBase
 
         for (int i = 0; i < Count; i++)
         {
-            Assert.Equal((i + 5) * 100 + 9, output[i]);
+            Assert.Equal((i * 10 + 5) * 100 + 9, output[i]);
         }
     }
 

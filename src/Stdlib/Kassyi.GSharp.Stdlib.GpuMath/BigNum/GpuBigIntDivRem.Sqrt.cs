@@ -2,6 +2,22 @@ namespace Kassyi.GSharp.Stdlib.GpuMath.BigNum;
 
 public static partial class GpuBigIntDivRem
 {
+    /// <summary>
+    /// Computes the inverse square root <c>floor(2^B / sqrt(a))</c>, <c>B = (n + marginWords) * 32</c>, of the operand
+    /// <c>a</c> using Newton-Raphson iterations on the GPU, followed by an exact correction on the device.
+    /// </summary>
+    /// <param name="targetOperand">The operand <c>a</c> of <c>n</c> words, normalized with an even shift (its bit length
+    /// is <c>32n</c> or <c>32n - 1</c>), as every caller passes it.</param>
+    /// <param name="resultBuffer">Receives exactly <c>floor(2^B / sqrt(a))</c>, the largest <c>x</c> with
+    /// <c>a * x^2 &lt;= 2^(2B)</c>; it must hold <c>n + marginWords</c> words.</param>
+    /// <param name="marginWords">The extra words of precision above the operand size.</param>
+    /// <exception cref="ArgumentException">Thrown when <paramref name="resultBuffer"/> does not hold <c>n + marginWords</c> words.</exception>
+    /// <exception cref="DivideByZeroException">Thrown when <paramref name="targetOperand"/> is zero.</exception>
+    /// <remarks>
+    /// The kernel computes <c>s = 2^(2B) - a * x^2</c> after the iterations and moves <c>x</c> one step at a time until
+    /// <c>0 &lt;= s &lt; a * (2x + 1)</c>, without a host synchronization. If 1000 steps do not
+    /// suffice, the next read of the workspace stream throws <see cref="InvalidOperationException"/>.
+    /// </remarks>
     internal static void InverseSqrt(GpuBigUInt targetOperand, GpuBigUInt resultBuffer, int marginWords = 0)
     {
         var n = targetOperand.NumWords;

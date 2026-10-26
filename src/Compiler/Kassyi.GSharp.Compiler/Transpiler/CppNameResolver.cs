@@ -87,6 +87,10 @@ internal static class CppNameResolver
     {
         ILocalSymbol or IParameterSymbol or ILabelSymbol or IMethodSymbol { MethodKind: MethodKind.LocalFunction } =>
             CppName.FunctionScope(GetDeclarationOrdinal(symbol), symbol.Name, region),
+        // [WHY] The hidden field of a captured primary constructor parameter (<a>P) is named after the parameter. No
+        // member can take that name: a member named like the parameter hides it, and then nothing captures it.
+        IFieldSymbol field when StructAbiMembers.TryGetCapturedParameterName(field, out var parameterName) &&
+                                IsEmittedStructMember(field, dialect) => CppName.Member(parameterName),
         IFieldSymbol { IsStatic: false } or IPropertySymbol { IsStatic: false } when IsEmittedStructMember(symbol, dialect)
             => CppName.Member(symbol.Name),
         ITypeParameterSymbol parameter => CppName.Global(GlobalCppNames.GetTypeParameterName(parameter)),
@@ -121,6 +125,23 @@ internal static class CppNameResolver
     /// <summary>Emits the name of <paramref name="symbol"/>.</summary>
     public static void AppendSymbolName(ISymbol symbol, ref TranspileContext context) =>
         context.Emitter.Writer.AppendCppName(Resolve(symbol, symbol.Name, context.Emitter.Dialect));
+
+    /// <summary>
+    /// Whether a reference to <paramref name="parameter"/> reads the struct member that holds a captured primary
+    /// constructor parameter (<c>__gsharp_mb_a</c>) rather than the parameter itself.
+    /// </summary>
+    /// <remarks>
+    /// Only the primary constructor sees the parameter; it is emitted as a factory function
+    /// (<see cref="Emitter.StructConstructorType"/> is set). Any other member that reads it (a property accessor or
+    /// <c>Dispose</c>, emitted as member functions) reads the hidden field, as in C#. Another constructor cannot read
+    /// it (CS9105).
+    /// </remarks>
+    public static bool IsCapturedParameterReference(IParameterSymbol parameter, ref TranspileContext context) =>
+        context.Emitter.StructConstructorType == null &&
+        parameter.ContainingSymbol is IMethodSymbol constructor &&
+        constructor.IsPrimaryConstructor() &&
+        constructor.ContainingType is { } type &&
+        GlobalCppNames.IsEncodedUserType(type, context.Emitter.Dialect);
 
     public static ref readonly SourceWriter AppendCppName(this in SourceWriter writer, in CppName name)
     {

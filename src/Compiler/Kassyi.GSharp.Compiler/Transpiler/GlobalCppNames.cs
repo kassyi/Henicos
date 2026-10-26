@@ -141,7 +141,8 @@ internal static class GlobalCppNames
         var count = 0;
         foreach (var candidate in constructors)
         {
-            if (!candidate.IsImplicitlyDeclared && candidate.TryGetDeclaringSyntax<ConstructorDeclarationSyntax>(out _))
+            if (!candidate.IsImplicitlyDeclared &&
+                (candidate.TryGetDeclaringSyntax<ConstructorDeclarationSyntax>(out _) || candidate.IsPrimaryConstructor()))
             {
                 candidates[count++] = candidate;
             }
