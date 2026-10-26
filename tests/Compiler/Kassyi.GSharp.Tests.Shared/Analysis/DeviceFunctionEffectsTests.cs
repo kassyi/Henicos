@@ -19,6 +19,7 @@ public class DeviceFunctionEffectsTests
     [InlineData("CallsNone")]
     [InlineData("ReadsMemory")]
     [InlineData("LambdaLocal")]
+    [InlineData("InitializerOnly")]
     public void Test_Classify_WritesOnlyOwnLocals_IsNone(string name) =>
         Assert.Equal(DeviceFunctionEffect.None, Classify("EffectCases.Effects", name));
 

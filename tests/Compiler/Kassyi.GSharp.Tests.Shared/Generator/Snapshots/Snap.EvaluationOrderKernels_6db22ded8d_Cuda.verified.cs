@@ -1419,15 +1419,35 @@ finally
 #pragma warning restore CS8500
 public const string BinaryOperatorKernel_Source = @"extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__EvaluationOrderKernels__BinaryOperatorKernel(GSharpArray<int> __gsharp_id_0_data, GSharpArray<int> __gsharp_id_1_result){
 int __gsharp_id_2_i = 0;
-__gsharp_id_1_result[0]=__gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__EvaluationOrderKernels__Next(&__gsharp_id_2_i)-__gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__EvaluationOrderKernels__Next(&__gsharp_id_2_i);
+__gsharp_id_1_result[0]=([&]() {
+auto __gsharp_seq_0 = __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__EvaluationOrderKernels__Next(&__gsharp_id_2_i);
+auto __gsharp_seq_1 = __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__EvaluationOrderKernels__Next(&__gsharp_id_2_i);
+return __gsharp_seq_0-__gsharp_seq_1;
+}());
 int __gsharp_id_3_j = 0;
-__gsharp_id_1_result[1]=__gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__EvaluationOrderKernels__Next(&__gsharp_id_3_j)*10+__gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__EvaluationOrderKernels__Next(&__gsharp_id_3_j);
+__gsharp_id_1_result[1]=([&]() {
+auto __gsharp_seq_2 = __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__EvaluationOrderKernels__Next(&__gsharp_id_3_j)*10;
+auto __gsharp_seq_3 = __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__EvaluationOrderKernels__Next(&__gsharp_id_3_j);
+return __gsharp_seq_2+__gsharp_seq_3;
+}());
 __gsharp_id_0_data[0]=7;
-__gsharp_id_1_result[2]=__gsharp_id_0_data[0]+__gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__EvaluationOrderKernels__Bump(__gsharp_id_0_data);
+__gsharp_id_1_result[2]=([&]() {
+auto __gsharp_seq_4 = __gsharp_id_0_data[0];
+auto __gsharp_seq_5 = __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__EvaluationOrderKernels__Bump(__gsharp_id_0_data);
+return __gsharp_seq_4+__gsharp_seq_5;
+}());
 int __gsharp_id_4_k = 0;
-__gsharp_id_1_result[3]=(__gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__EvaluationOrderKernels__Next(&__gsharp_id_4_k)<<4)|__gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__EvaluationOrderKernels__Next(&__gsharp_id_4_k);
+__gsharp_id_1_result[3]=([&]() {
+auto __gsharp_seq_6 = (__gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__EvaluationOrderKernels__Next(&__gsharp_id_4_k)<<4);
+auto __gsharp_seq_7 = __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__EvaluationOrderKernels__Next(&__gsharp_id_4_k);
+return __gsharp_seq_6|__gsharp_seq_7;
+}());
 int __gsharp_id_5_m = 0;
-__gsharp_id_1_result[4]=(__gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__EvaluationOrderKernels__Next(&__gsharp_id_5_m)<__gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__EvaluationOrderKernels__Next(&__gsharp_id_5_m)?1:0);
+__gsharp_id_1_result[4]=(([&]() {
+auto __gsharp_seq_8 = __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__EvaluationOrderKernels__Next(&__gsharp_id_5_m);
+auto __gsharp_seq_9 = __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__EvaluationOrderKernels__Next(&__gsharp_id_5_m);
+return __gsharp_seq_8<__gsharp_seq_9;
+}())?1:0);
 }
 ";
 public static readonly string BinaryOperatorKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +BinaryOperatorKernel_Source;

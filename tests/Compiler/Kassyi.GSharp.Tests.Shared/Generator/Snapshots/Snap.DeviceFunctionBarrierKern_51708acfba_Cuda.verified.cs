@@ -898,7 +898,11 @@ finally
 #pragma warning restore CS8500
 public const string ArgumentEvaluatedOnceKernel_Source = @"extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__DeviceFunctionBarrierKernels__ArgumentEvaluatedOnceKernel(GSharpArray<int> __gsharp_id_0_input, GSharpArray<int> __gsharp_id_1_output, GSharpArray<int> __gsharp_id_2_tickets, int __gsharp_id_3_length){
 int __gsharp_id_4_tid = threadIdx.x;
-__gsharp_id_1_output[__gsharp_id_4_tid]=__gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__DeviceFunctionBarrierKernels__ReverseThroughSharedMemory(__gsharp_id_0_input[__gsharp_id_4_tid]+__gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__DeviceFunctionBarrierKernels__TakeTicket(__gsharp_id_2_tickets,__gsharp_id_4_tid),__gsharp_id_3_length)+1;
+__gsharp_id_1_output[__gsharp_id_4_tid]=__gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__DeviceFunctionBarrierKernels__ReverseThroughSharedMemory(([&]() {
+auto __gsharp_seq_0 = __gsharp_id_0_input[__gsharp_id_4_tid];
+auto __gsharp_seq_1 = __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__DeviceFunctionBarrierKernels__TakeTicket(__gsharp_id_2_tickets,__gsharp_id_4_tid);
+return __gsharp_seq_0+__gsharp_seq_1;
+}()),__gsharp_id_3_length)+1;
 }
 ";
 public static readonly string ArgumentEvaluatedOnceKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +ArgumentEvaluatedOnceKernel_Source;

@@ -198,6 +198,9 @@ internal static class DeviceFunctionEffects
     {
         switch (node)
         {
+            // A member assigned in an object or with initializer belongs to the new object
+            case AssignmentExpressionSyntax { Parent: InitializerExpressionSyntax }:
+                return DeviceFunctionEffect.None;
             case AssignmentExpressionSyntax assignment:
                 return ClassifyTarget(assignment.Left, method, body, model);
             case PrefixUnaryExpressionSyntax prefix when prefix.IsKind(SyntaxKind.PreIncrementExpression,

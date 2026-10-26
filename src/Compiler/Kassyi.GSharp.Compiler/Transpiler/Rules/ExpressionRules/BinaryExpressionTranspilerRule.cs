@@ -46,8 +46,19 @@ public sealed class BinaryExpressionTranspilerRule : SyntaxNodeTranspilerRuleBas
             }
         }
 
-        context.Visitor.Visit(node.Left);
+        if (IsUnsequencedInCpp(node) && OperandsInterfere(node, ref context))
+        {
+            TranspileSequenced(node, ref context);
+            return;
+        }
 
+        context.Visitor.Visit(node.Left);
+        AppendOperator(node, ref context);
+        context.Visitor.Visit(node.Right);
+    }
+
+    private static void AppendOperator(BinaryExpressionSyntax node, ref TranspileContext context)
+    {
         var opText = node.OperatorToken.Text;
         if (opText.Length > 0 && char.IsLetter(opText[0]))
         {
@@ -57,7 +68,39 @@ public sealed class BinaryExpressionTranspilerRule : SyntaxNodeTranspilerRuleBas
         {
             context.Emitter.Writer.Append(opText);
         }
+    }
 
-        context.Visitor.Visit(node.Right);
+    // [WHY] C# evaluates the left operand first (C# spec §12.4.1); C++ leaves the operands of the arithmetic, comparison
+    // and bitwise operators unsequenced. <<, >> (C++17 [expr.shift]), &&, || and ?? (emitted in order) keep the C# order;
+    // is and as have a type on the right; >>> has no C++ operator of its own.
+    private static bool IsUnsequencedInCpp(BinaryExpressionSyntax node) =>
+        !node.IsKind(SyntaxKind.LeftShiftExpression) &&
+        !node.IsKind(SyntaxKind.RightShiftExpression) &&
+        !node.IsKind(SyntaxKind.UnsignedRightShiftExpression) &&
+        !node.IsKind(SyntaxKind.LogicalAndExpression) &&
+        !node.IsKind(SyntaxKind.LogicalOrExpression) &&
+        !node.IsKind(SyntaxKind.IsExpression) &&
+        !node.IsKind(SyntaxKind.AsExpression);
+
+    // The left operand changes what the right one reads, or the other way round (#608)
+    private static bool OperandsInterfere(BinaryExpressionSyntax node, ref TranspileContext context)
+    {
+        var model = context.Query.SemanticModel;
+        return EvaluationOrder.LastSpilledOperand(
+            [ExpressionEffects.Of(node.Left, model), ExpressionEffects.Of(node.Right, model)]) >= 0;
+    }
+
+    // ([&]() { auto __gsharp_seq_0 = <left>; auto __gsharp_seq_1 = <right>; return __gsharp_seq_0 <op> __gsharp_seq_1; }())
+    // auto keeps the C++ type of each operand, so the operator promotes them as it would in place.
+    private static void TranspileSequenced(BinaryExpressionSyntax node, ref TranspileContext context)
+    {
+        var writer = context.Emitter.Writer;
+        using var sequence = EvaluationOrder.BeginSequence(writer);
+        var left = EvaluationOrder.DeclareTemp(ref context, node.Left, reference: false);
+        var right = EvaluationOrder.DeclareTemp(ref context, node.Right, reference: false);
+        sequence.Return();
+        EvaluationOrder.AppendTempName(writer, left);
+        AppendOperator(node, ref context);
+        EvaluationOrder.AppendTempName(writer, right);
     }
 }

@@ -67,6 +67,9 @@ public static class Effects
         return x;
     }
 
+    [GpuDeviceFunction]
+    public static Counter InitializerOnly(int x) => new Counter { Value = x };
+
     // --- RefParameters ---
 
     [GpuDeviceFunction]
