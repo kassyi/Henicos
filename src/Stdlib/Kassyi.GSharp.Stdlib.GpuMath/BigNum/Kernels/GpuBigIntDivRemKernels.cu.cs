@@ -97,11 +97,14 @@ public static partial class GpuBigIntDivRemKernels
         int n = dims.NumberOfWords;
         int resultWords = (dims.TargetBits + 31) / 32;
 
+        // The carry chunk of every product is one block of threads (see ExecuteResolveNttCarriesBlocked).
+        int chunkSize = BlockDimension.X;
+
         for (int i = 0; i < dims.Iterations; i++)
         {
             // 1. currentProduct = targetOperand * resultBuffer (n, resultWords -> n + resultWords)
             ExecuteNttMultiplyMacro(core, ops.TargetOperand, ops.ResultBuffer,
-                iterScratch.CurrentProduct, n, resultWords, n + resultWords, 1024);
+                iterScratch.CurrentProduct, n, resultWords, n + resultWords, chunkSize);
 
             // 2. diff = constant - currentProduct
             Gpu.SyncGrid();
@@ -119,7 +122,7 @@ public static partial class GpuBigIntDivRemKernels
 
             // 3. nextIter = resultBuffer * diff (resultWords, n + resultWords -> n + 2 * resultWords)
             ExecuteNttMultiplyMacro(core, ops.ResultBuffer, iterScratch.Diff, iterScratch.NextIter,
-                resultWords, n + resultWords, n + 2 * resultWords, 1024);
+                resultWords, n + resultWords, n + 2 * resultWords, chunkSize);
 
             // 4. copy resultBuffer = nextIter >> (2 * numBits + marginBits)
             int shiftTotal = dims.TargetBits;
@@ -140,44 +143,119 @@ public static partial class GpuBigIntDivRemKernels
             });
             Gpu.SyncGrid();
         }
+
+        // Final correction to x = floor(2^T / b): r = 2^T - b * x, then r moves into [0, b) and x by the same steps.
+        // The Newton result is floor(2^T / b) or one less, so this takes at most one step after convergence.
+        ExecuteNttMultiplyMacro(core, ops.TargetOperand, ops.ResultBuffer, iterScratch.CurrentProduct, n, resultWords,
+            n + resultWords, chunkSize);
+
+        // Constant holds 2^(T+1) in n + 2 * resultWords words; reading it shifted right by one bit gives 2^T.
+        int remainderWords = n + resultWords;
+        GpuBigIntKernels.DeviceAddSubAlignedParallel(iterScratch.CurrentProduct, remainderWords, ops.Constant,
+            n + 2 * resultWords, iterScratch.Diff, remainderWords, 0, 1, -2, true);
+        var delta = CorrectIntoDivisorRange(iterScratch.Diff, ops.TargetOperand, remainderWords, n, 1000);
+        Gpu.SingleThread(() => AddSmallSigned(ops.ResultBuffer, resultWords, delta));
     }
 
+    /// <summary>
+    /// Corrects the remainder <c>diff = a - q * b</c> into <c>[0, b)</c> and the quotient <paramref name="quotient"/> by
+    /// the same number of steps, so that both are exact when the estimate is within 1000 steps of <c>q</c>.
+    /// </summary>
+    /// <remarks>Launched with one block; runs on the stream without a host synchronization.</remarks>
     [GpuKernel]
-    public static void BarrettCorrectionKernel(uint[] diff, uint[] rightOperand, int evalWords)
+    public static void BarrettCorrectionKernel(uint[] diff, [GpuReadOnly] uint[] rightOperand, uint[] quotient,
+        int evalWords, int quotientWords)
     {
-        for (int iter = 0; iter < 1000; iter++)
+        var delta = CorrectIntoDivisorRange(diff, rightOperand, evalWords, evalWords, 1000);
+        Gpu.SingleThread(() => AddSmallSigned(quotient, quotientWords, delta));
+    }
+
+    /// <summary>
+    /// Moves a signed remainder (two's complement over <paramref name="remainderWords"/> words) into
+    /// <c>[0, divisor)</c> by adding or subtracting the divisor one step at a time.
+    /// </summary>
+    /// <returns>The number of steps to add to the quotient: +1 per subtraction, -1 per addition of the divisor.</returns>
+    /// <remarks>
+    /// Runs on block 0 only (the other blocks return 0 at once). Every thread of block 0 reads the same sign word after a
+    /// barrier, so all of them take the same branches and return the same count. The remainder needs one word more than
+    /// its magnitude so that the top bit is the sign.
+    /// </remarks>
+    [GpuDeviceFunction]
+    public static int CorrectIntoDivisorRange(uint[] remainder, [GpuReadOnly] uint[] divisor, int remainderWords,
+        int divisorWords, int maxSteps)
+    {
+        if (BlockIndex.X != 0)
         {
-            uint topWord = diff[evalWords - 1];
-            bool underflow = (topWord & 0x80000000u) != 0;
+            return 0;
+        }
+
+        int delta = 0;
+        for (int step = 0; step < maxSteps; step++)
+        {
+            var negative = (remainder[remainderWords - 1] & 0x80000000u) != 0;
             Gpu.SyncThreads();
 
-            if (underflow)
+            if (negative)
             {
-                GpuBigIntKernels.DeviceAddSubParallel(diff, rightOperand, diff, evalWords, 1, false);
-            }
-            else
-            {
-                GpuBigIntKernels.DeviceAddSubParallel(diff, rightOperand, diff, evalWords, -1, false);
-            }
-
-            Gpu.SyncThreads();
-
-            uint top2 = diff[evalWords - 1];
-            bool underflow2 = (top2 & 0x80000000u) != 0;
-            Gpu.SyncThreads();
-
-            bool done = false;
-            if (!underflow && underflow2)
-            {
-                GpuBigIntKernels.DeviceAddSubParallel(diff, rightOperand, diff, evalWords, 1, false);
-                done = true;
+                // r < 0: the quotient estimate was too large.
+                GpuBigIntKernels.DeviceAddSubAlignedParallel(remainder, remainderWords, divisor, divisorWords,
+                    remainder, remainderWords, 0, 0, 1, true);
+                delta--;
+                continue;
             }
 
+            GpuBigIntKernels.DeviceAddSubAlignedParallel(remainder, remainderWords, divisor, divisorWords, remainder,
+                remainderWords, 0, 0, -1, true);
+            var belowZero = (remainder[remainderWords - 1] & 0x80000000u) != 0;
             Gpu.SyncThreads();
 
-            if (done)
+            if (belowZero)
             {
+                // r was already below the divisor: undo the subtraction and stop.
+                GpuBigIntKernels.DeviceAddSubAlignedParallel(remainder, remainderWords, divisor, divisorWords,
+                    remainder, remainderWords, 0, 0, 1, true);
                 break;
+            }
+
+            delta++;
+        }
+
+        return delta;
+    }
+
+    /// <summary>
+    /// Adds a small signed count to a multi-word unsigned value in place, propagating the carry or the borrow.
+    /// </summary>
+    /// <remarks>Serial; call it from one thread (<see cref="Gpu.SingleThread"/>).</remarks>
+    [GpuDeviceFunction]
+    public static void AddSmallSigned(uint[] value, int numWords, int delta)
+    {
+        if (delta > 0)
+        {
+            ulong carry = (ulong)delta;
+            for (int i = 0; i < numWords && carry != 0; i++)
+            {
+                ulong sum = value[i] + carry;
+                value[i] = (uint)sum;
+                carry = sum >> 32;
+            }
+        }
+        else if (delta < 0)
+        {
+            long borrow = -(long)delta;
+            for (int i = 0; i < numWords && borrow != 0; i++)
+            {
+                long difference = (long)value[i] - borrow;
+                if (difference < 0)
+                {
+                    value[i] = (uint)(difference + 4294967296L);
+                    borrow = 1;
+                }
+                else
+                {
+                    value[i] = (uint)difference;
+                    borrow = 0;
+                }
             }
         }
     }
