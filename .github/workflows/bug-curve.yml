@@ -4,7 +4,8 @@ name: Bug Curve
 # `metrics` branch, which README.md embeds. main is never written.
 on:
   schedule:
-    - cron: "0 0 * * *"
+    # 00:05 JST, just after the day of the chart ends.
+    - cron: "5 15 * * *"
   issues:
     types: [opened, closed, reopened, deleted, milestoned, demilestoned]
   workflow_dispatch:
