@@ -7,6 +7,7 @@ namespace Kassyi.ZeroAlloc.Linq.Tests;
 /// Overloads that pass a state value to a <see langword="static"/> lambda, so that a query using an outer value does not
 /// allocate a closure.
 /// </summary>
+[Category(TestCategory.Unit)]
 public class StackLinqStateTests
 {
     private static readonly int[] s_data = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];

@@ -1,0 +1,8 @@
+﻿HNT0006 at (8,50)-(8,62): new Random() gives different inputs on every run, so a failure cannot be reproduced. Use new Random(seed) with a fixed seed.
+HNT0006 at (15,25)-(15,37): new Random() gives different inputs on every run, so a failure cannot be reproduced. Use new Random(seed) with a fixed seed.
+HNT0006 at (22,28)-(22,33): new Random() gives different inputs on every run, so a failure cannot be reproduced. Use new Random(seed) with a fixed seed.
+HNT0006 at (43,27)-(43,40): Random.Shared gives different inputs on every run, so a failure cannot be reproduced. Use new Random(seed) with a fixed seed.
+HNT0006 at (50,12)-(50,45): RandomNumberGenerator.Fill gives different inputs on every run, so a failure cannot be reproduced. Use new Random(seed) with a fixed seed.
+HNT0006 at (51,34)-(51,64): RandomNumberGenerator.Create gives different inputs on every run, so a failure cannot be reproduced. Use new Random(seed) with a fixed seed.
+HNT0006 at (52,12)-(52,37): RandomNumberGenerator.GetBytes gives different inputs on every run, so a failure cannot be reproduced. Use new Random(seed) with a fixed seed.
+HNT0006 at (53,27)-(53,61): RandomNumberGenerator.GetInt32 gives different inputs on every run, so a failure cannot be reproduced. Use new Random(seed) with a fixed seed.

@@ -2,6 +2,7 @@ using Henicos.Benchmarks.Repositories;
 
 namespace Henicos.Benchmarks.Tests.Repositories;
 
+[Category(TestCategory.Unit)]
 public class FileCheckpointRepositoryTests : IDisposable
 {
     private readonly string _checkpointFile;

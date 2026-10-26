@@ -8,6 +8,7 @@ using Xunit;
 namespace Kassyi.GSharp.Tests.Shared.Core;
 
 [Collection(TestCollections.GlobalStateSequential)]
+[Category(TestCategory.Runtime)]
 public class CudaEnvironmentExtendedTests : IDisposable
 {
     public void Dispose()

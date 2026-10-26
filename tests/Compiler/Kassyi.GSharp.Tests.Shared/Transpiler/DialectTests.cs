@@ -1,5 +1,6 @@
 namespace Kassyi.GSharp.Tests.Shared.Transpiler;
 
+[Category(TestCategory.Compiler)]
 public class DialectTests
 {
         [Fact]

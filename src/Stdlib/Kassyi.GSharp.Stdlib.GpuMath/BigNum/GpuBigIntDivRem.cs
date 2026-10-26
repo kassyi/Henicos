@@ -41,9 +41,42 @@ public static partial class GpuBigIntDivRem
         }
     }
 
+    // [WHY] DivRem writes the whole quotient and remainder; a shorter buffer would silently drop their high words.
+    // The quotient of an aBits-bit dividend by a bBits-bit divisor (bBits >= 1) has at most aBits - bBits + 1 bits.
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static void ThrowIfDivRemBufferTooSmall(GpuBigUInt rightOperand, int aActualBits, int bActualBits,
+        GpuBigUInt quotientBuffer, GpuBigUInt remainderBuffer)
+    {
+        var divisorWords = rightOperand.NumWords;
+        var requiredQuotientWords = Math.Max((aActualBits - bActualBits + 1 + 31) / 32, 1);
+        if (quotientBuffer.NumWords < requiredQuotientWords)
+        {
+            throw new ArgumentException(
+                $"The quotient buffer must hold at least {requiredQuotientWords} words. a: {aActualBits} bits, b: {bActualBits} bits, quotient: {quotientBuffer.NumWords} words.");
+        }
+
+        if (remainderBuffer.NumWords < divisorWords)
+        {
+            throw new ArgumentException(
+                $"The remainder buffer must hold at least {divisorWords} words. b: {divisorWords}, remainder: {remainderBuffer.NumWords} words.");
+        }
+    }
+
     /// <summary>
-    /// Computes the reciprocal approximation of the operand using Newton-Raphson iterations on the GPU.
+    /// Computes the reciprocal <c>floor(2^targetBits / b)</c> of the operand <c>b</c> using Newton-Raphson iterations on
+    /// the GPU, followed by an exact correction on the device.
     /// </summary>
+    /// <param name="targetOperand">The divisor <c>b</c>, normalized (the top bit of its top word set), as every caller
+    /// passes it.</param>
+    /// <param name="resultBuffer">Receives exactly <c>floor(2^targetBits / b)</c>; it must hold
+    /// at least <c>(targetBits + 31) / 32</c> words.</param>
+    /// <param name="targetBits">The exponent <c>T</c> of the numerator <c>2^T</c>; <c>2^T &gt;= 4b</c>.</param>
+    /// <param name="marginWords">The margin words passed to the provider.</param>
+    /// <exception cref="DivideByZeroException">Thrown when <paramref name="targetOperand"/> is zero.</exception>
+    /// <remarks>
+    /// The Newton-Raphson result is <c>floor(2^T / b)</c> or one less; the kernel then computes <c>r = 2^T - b * x</c>
+    /// and moves <c>x</c> by the steps that bring <c>r</c> into <c>[0, b)</c>, without a host synchronization.
+    /// </remarks>
     internal static void Reciprocal(GpuBigUInt targetOperand, GpuBigUInt resultBuffer, int targetBits,
         int marginWords = 0)
     {
@@ -84,8 +117,13 @@ public static partial class GpuBigIntDivRem
     /// </summary>
     /// <param name="leftOperand">The dividend operand ($A$).</param>
     /// <param name="rightOperand">The divisor operand ($B$).</param>
-    /// <param name="quotientBuffer">The destination buffer receiving the quotient ($\lfloor A / B \rfloor$).</param>
-    /// <param name="remainderBuffer">The destination buffer receiving the remainder ($A \bmod B$).</param>
+    /// <param name="quotientBuffer">The destination buffer receiving the quotient ($\lfloor A / B \rfloor$). It must hold
+    /// at least as many words as the quotient of these values may need, <c>max(ceil((aBits - bBits + 1) / 32), 1)</c>
+    /// for the bit lengths <c>aBits</c> and <c>bBits</c> of the values; a buffer as long as
+    /// <paramref name="leftOperand"/> is always enough. Words above the quotient are set to zero.</param>
+    /// <param name="remainderBuffer">The destination buffer receiving the remainder ($A \bmod B$). It must hold at least
+    /// <c>n</c> words; words above the remainder are set to zero.</param>
+    /// <exception cref="ArgumentException">Thrown when <paramref name="quotientBuffer"/> or <paramref name="remainderBuffer"/> is shorter than stated above.</exception>
     /// <exception cref="DivideByZeroException">Thrown when <paramref name="rightOperand"/> is zero.</exception>
     /// <remarks>
     /// <para><b>Algorithm:</b> Evaluates division via normalized reciprocal multiplication on GPU followed by quotient-remainder correction.</para>
@@ -102,9 +140,16 @@ public static partial class GpuBigIntDivRem
         }
 
         var aActualBits = GetActualBits(leftOperand);
+        ThrowIfDivRemBufferTooSmall(rightOperand, aActualBits, bActualBits, quotientBuffer, remainderBuffer);
+
         if (aActualBits < bActualBits)
         {
             quotientBuffer.Clear();
+            if (remainderBuffer.NumWords > nA)
+            {
+                remainderBuffer.Clear();
+            }
+
             remainderBuffer.CopyFrom(leftOperand, numWords: Math.Min(remainderBuffer.NumWords, nA));
             return;
         }
@@ -272,6 +317,12 @@ public static partial class GpuBigIntDivRem
         using var productWithReciprocal = new GpuBigUInt(rightOperand.Workspace, nA + targetWords);
         GpuBigIntMath.Mul(leftOperand, reciprocalOfB, productWithReciprocal);
 
+        // The estimate fills at most nA words; the words above it take part in q * b and must be zero.
+        if (quotientBuffer.NumWords > nA)
+        {
+            quotientBuffer.Clear();
+        }
+
         quotientBuffer.CopyFrom(productWithReciprocal, destOffsetWords: 0, srcOffsetWords: targetBits / 32,
             numWords: Math.Min(quotientBuffer.NumWords, nA));
 
@@ -323,6 +374,11 @@ public static partial class GpuBigIntDivRem
     /// Performs a zero-sync Barrett reduction using a precomputed reciprocal.
     /// This method does not synchronize with the CPU for remainder correction, enabling CUDA Graph capture.
     /// </summary>
+    /// <remarks>
+    /// The quotient estimate <c>floor(a * reciprocalOfB / 2^targetBits)</c> is corrected on the device, and the
+    /// quotient and the remainder are exact (<c>q * b + r == a</c>, <c>0 &lt;= r &lt; b</c>) when the estimate is within
+    /// 1000 steps of the quotient.
+    /// </remarks>
     /// <param name="leftOperand">The left operand.</param>
     /// <param name="rightOperand">The right operand.</param>
     /// <param name="reciprocalOfB">The precomputed reciprocal of the right operand.</param>
@@ -339,6 +395,13 @@ public static partial class GpuBigIntDivRem
 
         using var productWithReciprocal = new GpuBigUInt(rightOperand.Workspace, nA + targetWords);
         GpuBigIntMath.Mul(leftOperand, reciprocalOfB, productWithReciprocal);
+
+        // As in Reduce: the words above the estimate take part in q * b. The clear is a stream-ordered upload, like the
+        // other clears in this method, and needs no host synchronization.
+        if (quotientBuffer.NumWords > nA)
+        {
+            quotientBuffer.Clear();
+        }
 
         quotientBuffer.CopyFrom(productWithReciprocal, destOffsetWords: 0, srcOffsetWords: targetBits / 32,
             numWords: Math.Min(quotientBuffer.NumWords, nA));
@@ -364,10 +427,10 @@ public static partial class GpuBigIntDivRem
         bPaddedExtended.Clear();
         bPaddedExtended.CopyFrom(rightOperand, numWords: Math.Min(n, evalWords));
 
-        // Zero-sync correction using single block kernel
+        // Zero-sync correction using single block kernel: the remainder and the quotient move by the same steps.
         GpuBigIntDivRemKernels.LaunchBarrettCorrectionKernelPtr(
-            remainderExtended.DevicePointer, bPaddedExtended.DevicePointer, evalWords,
-            gridDimX: 1, blockDimX: 1024, hStream: rightOperand.Workspace.Stream);
+            remainderExtended.DevicePointer, bPaddedExtended.DevicePointer, quotientBuffer.DevicePointer, evalWords,
+            quotientBuffer.NumWords, gridDimX: 1, blockDimX: 1024, hStream: rightOperand.Workspace.Stream);
 
         remainderBuffer.Clear();
         remainderBuffer.CopyFrom(remainderExtended, numWords: Math.Min(remainderBuffer.NumWords, evalWords));

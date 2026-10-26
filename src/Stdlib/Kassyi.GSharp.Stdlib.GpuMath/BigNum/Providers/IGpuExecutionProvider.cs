@@ -328,6 +328,11 @@ public interface IGpuAdvancedMathProvider
     /// <param name="marginWords">The safety limb margin allocated for intermediate expansion.</param>
     /// <param name="actualBits">The target precision in bits.</param>
     /// <param name="iterations">The number of Newton-Raphson refinement iterations.</param>
+    /// <remarks>
+    /// The result is exactly <c>floor(2^B / sqrt(a))</c> with <c>B = (targetOperand.NumWords + marginWords) * 32</c>,
+    /// the largest <c>x</c> with <c>a * x^2 &lt;= 2^(2B)</c>: the GPU provider corrects the Newton-Raphson result on the
+    /// device after the iterations. <paramref name="resultBuffer"/> holds the initial approximation on entry.
+    /// </remarks>
     void InverseSqrtMega(GpuWorkspace workspace, GpuBigUInt targetOperand, GpuBigUInt resultBuffer, int marginWords,
         int actualBits, int iterations);
 
@@ -342,6 +347,10 @@ public interface IGpuAdvancedMathProvider
     /// <param name="marginBits">Additional precision guard bits.</param>
     /// <param name="iterations">The number of Newton-Raphson iterations.</param>
     /// <param name="targetBits">The final desired precision in bits.</param>
+    /// <remarks>
+    /// The result is exactly <c>floor(2^targetBits / b)</c>: the GPU provider corrects the Newton-Raphson result on the
+    /// device after the iterations. <paramref name="resultBuffer"/> holds the initial approximation on entry.
+    /// </remarks>
     void ReciprocalMega(GpuWorkspace workspace, GpuBigUInt targetOperand, GpuBigUInt resultBuffer, int marginWords,
         int numBits, int marginBits, int iterations, int targetBits);
 

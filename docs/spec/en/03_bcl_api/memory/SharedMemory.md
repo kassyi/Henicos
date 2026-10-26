@@ -136,11 +136,118 @@ public static void ExchangeKernel(int[] data)
 }
 ```
 
-**Why it matters.** The CPU and managed dialects allocate shared memory at run time instead of reserving it statically. If they allocated by call site or by the order of allocations, a caller and its callee could receive the same buffer, or a device function called from two places could receive two buffers, and the same kernel would compute different results on the CPU and on the GPU. To keep the CUDA semantics, the compiler gives every declaration a **site key**: the 64-bit FNV-1a hash of the documentation comment ID of the declaring method and the ordinal of the declaration in that method. The CPU and managed runtimes look the block's buffer up by that key and by the element type, so the instantiations of a generic device function do not share a buffer, as on CUDA.
+**Why it matters.** The CPU and managed dialects allocate shared memory at run time instead of reserving it statically. If they allocated by call site or by the order of allocations, a caller and its callee could receive the same buffer, or a device function called from two places could receive two buffers, and the same kernel would compute different results on the CPU and on the GPU. To keep the CUDA semantics, the compiler gives every declaration a **site key**: the 64-bit FNV-1a hash of the documentation comment ID of the declaring method and the ordinal of the declaration in that method. The CPU runtime looks the block's buffer up by that key alone; the managed runtime looks it up by that key and by the element type. The key is computed from the generic definition, so the instantiations of a generic device function share the buffer of a declaration on the CPU, and on CUDA when the declaration is dynamic (see [Generic device functions](#generic-device-functions)).
 
-Under managed execution every declaration has a buffer of its own, which other declarations never move, so the `SharedMemory<T>` a thread already holds stays valid while other threads declare more shared memory. A declaration that is reached again with a larger size, for example a device function whose dynamic size differs between calls, grows its buffer and keeps its contents, as a CUDA launch whose `sharedMemBytes` fits the largest call would.
+Under managed execution every declaration has a buffer of its own, which other declarations never move, so the `SharedMemory<T>` a thread already holds stays valid while other threads declare more shared memory. A declaration that is reached again with a larger size, for example a device function whose dynamic size differs between calls, grows its buffer and keeps its contents. On CUDA the same request succeeds only while the buffer is the last dynamic one placed (see [Growing a declaration](#growing-a-declaration)).
 
 Managed execution runs a device function that never reaches a barrier as ordinary C#, without the compiler's rewrite. There the constructor identifies the declaration by its file, line and method name (`[CallerFilePath]`, `[CallerLineNumber]`, `[CallerMemberName]`), the only facts about the caller that C# passes to a constructor; it cannot see parameter types or the position within a line. Two `SharedMemory<T>` declarations of one method, or of overloads of one name, written on the same line therefore share a buffer in managed execution; the analyzer reports them as [GSH0063](../diagnostics/GSH0063.md). Write each declaration on its own line.
+
+### Dynamic Shared Memory
+
+A declaration whose count is a C# constant (`new SharedMemory<float>(256)`, or a `const` field) is **static**: on CUDA it becomes `__shared__ T name[N]`, its size is fixed at compile time, and [GSH0013](../diagnostics/GSH0013.md) warns above 32 KB. Any other count (a parameter, `BlockDimension.X`, a non-constant expression) makes the declaration **dynamic**. Dynamic declarations live in the dynamic shared memory of the launch, whose size the host passes as `sharedMemBytes`:
+
+```csharp
+// TileKernel declares two dynamic SharedMemory<float>(n) with n = 256: two 1024-byte regions, each starting at a
+// multiple of 16 bytes
+Kernels.LaunchTileKernel(data, n, blockDimX: 256, sharedMemBytes: 2 * 256 * sizeof(float));
+```
+
+#### Placement
+
+On CUDA the compiler carves every dynamic declaration out of the one dynamic buffer of the launch. The rules of [One Buffer per Declaration per Block](#one-buffer-per-declaration-per-block) hold for dynamic declarations in every dialect (rule 1 below); rules 2 to 4 describe how CUDA places them:
+
+1. **One region per declaration per block.** A declaration reached again (a second call of the device function, another caller, a loop, recursion) returns the same region.
+2. **On CUDA, placed in the order a thread first reaches each declaration.** The first dynamic declaration a thread reaches starts at offset 0; each one it reaches later for the first time starts after the end of the previous one. The order is the run-time order, not the order in the source: a region in a device function is placed where the thread is when it first calls that function.
+3. **On CUDA, aligned to 16 bytes.** Each region starts at a multiple of `max(alignof(T), 16)` bytes, and the dynamic buffer itself is 16-byte aligned, so `cp.async` (`Gpu.CopyAsync`) and 16-byte vector loads and stores are aligned for every element of a 16-byte type. Static declarations are not part of the dynamic buffer and do not count toward `sharedMemBytes`.
+4. **Device functions.** A dynamic declaration in a `[GpuDeviceFunction]` is placed in the same buffer as those of the kernel that calls it, and never overlaps them. A device function called from two kernels is placed independently in each kernel's launch.
+
+The other dialects place regions differently, so a layout computed for CUDA does not describe them:
+
+- The CPU (native) runtime keeps one table per block: the first thread of the block to reach a declaration places its region at the end of the buffer, aligned to `alignof(T)` only. Static declarations are placed the same way, in the same 64 KB buffer, and count toward its limit of 64 KB and 64 declarations per block.
+- Managed execution gives every declaration an array of its own; there is no shared buffer, no offset and no alignment beyond the element type.
+
+On CUDA every thread of a kernel keeps a table of the regions, with one entry (slot) for each dynamic declaration the kernel can reach, numbered in the order of the site keys; the offsets in it are filled in the run-time order above. A device function that reaches a dynamic declaration receives the table as a hidden last parameter. Such a device function therefore cannot be passed as a delegate (a method group, as in `Func<int, int> f = Scratch;`) and cannot be reached from a member of a struct (a method, a computed property, an operator): the compiler reports [GSH0003](../diagnostics/GSH0003.md), in every dialect, because the analyzer checks the CUDA translation. Call it directly, from a kernel, another device function, or a local function or lambda written inside one of them.
+
+#### Computing `sharedMemBytes`
+
+Because of the alignment, the size is **not** the sum of `n * sizeof(T)`. Walk the dynamic declarations in the order a thread first reaches them:
+
+```text
+offset = 0
+for each dynamic declaration, in the order first reached:
+    offset = align_up(offset, max(alignof(T), 16))
+    offset = offset + n * sizeof(T)
+sharedMemBytes >= offset
+```
+
+For example, two declarations of 3 `int` each need **28** bytes, not 24: the first region takes bytes 0 to 11, and the second starts at 16 and ends at 28. A kernel that passed the packed sum (24) traps on CUDA. When every element type is aligned to 16 bytes or less, `Σ (n_i * sizeof(T_i) + 15)` is always enough. A declaration that is reached with several counts needs its largest count.
+
+The same calculation in C#, for the host code that launches the kernel:
+
+```csharp
+static int AlignUp(int offset, int alignment) => (offset + alignment - 1) / alignment * alignment;
+
+int n = 3;
+int bytes = 0;
+bytes = AlignUp(bytes, 16) + n * sizeof(int); // first declaration:  0 .. 12
+bytes = AlignUp(bytes, 16) + n * sizeof(int); // second declaration: 16 .. 28
+Console.WriteLine(bytes); // 28
+```
+
+#### Growing a declaration
+
+A declaration reached again with a larger count grows its region:
+
+- CUDA and the CPU: while the region is the last one placed, it grows in place and keeps its contents. A region first reached with a count of 0 starts at the current end of the buffer, so it can grow in place as long as no other region is placed after it.
+- CUDA: when another region has been placed after it, the region cannot move (moving would need every thread of the block at the same point), so the launch traps.
+- CPU: when another region has been placed after it, the runtime moves the region to the end of the buffer and copies its contents.
+- Managed: the order does not matter. The region keeps its array when the array is large enough for the new count, and otherwise moves to a new array with its contents copied.
+
+Declare a region that grows last, or declare it with its largest count first.
+
+#### Run-time checks
+
+| Condition | CUDA | CPU (native) | Managed |
+| --- | --- | --- | --- |
+| The regions end past `sharedMemBytes` | Trap | Not checked (`sharedMemBytes` is not read); above 64 KB or 64 declarations of one block the process ends (`std::abort`) | Not checked |
+| A negative count | Trap | Not checked: the byte count wraps around, so the region may overlap the others or the process ends (`std::abort`) | No region; the first element access throws `IndexOutOfRangeException` |
+| A count of 0 | Empty region | Empty region | No region; the first element access throws `IndexOutOfRangeException` |
+| A larger count for a region that is not the last | Trap | Moved and copied | Grows; copied to a new array when the old one is too small |
+
+On CUDA the check is `bytes > sharedMemBytes || offset + bytes > sharedMemBytes`, so a negative count, which arrives as at least 2^63 bytes, traps instead of wrapping. A trap surfaces as a `CudaException` from the launch, and it leaves the CUDA context of the process unusable: later CUDA calls in the same process fail too. Size `sharedMemBytes` from the calculation above, and keep counts non-negative.
+
+#### Threads must reach dynamic declarations alike
+
+The CUDA table of regions belongs to each **thread**: a thread places a region where its own table says the end of the buffer is, with the count it computed. Every thread of the block gets the same layout only when all threads reach the dynamic declarations in the same order and with the same counts. The CPU and managed runtimes keep one set of regions per block, set up by the first thread to reach each declaration, so a kernel that breaks this rule may also give different results in different dialects.
+
+The analyzer reports [GSH0077](../diagnostics/GSH0077.md) (a warning) for a dynamic declaration, or a call to a device function that reaches one, under a thread-variant condition, and for a dynamic declaration whose count depends on the thread. Declare the shared memory before the branch, with a count every thread computes alike:
+
+```csharp
+[GpuKernel]
+public static void HalfKernel(int[] output, int n)
+{
+    int tid = ThreadIndex.X;
+    var half = new SharedMemory<int>(n);   // every thread reaches it, with the same n
+    if (tid < 16)
+    {
+        half[tid] = tid;
+        output[tid] = half[tid];
+    }
+}
+```
+
+#### Generic device functions
+
+The site key, and so the CUDA slot, comes from the generic definition, not from an instantiation. Managed execution looks a region up by site key and element type, so it separates element types, not instantiations. For the instantiations of a generic device function (`Fill<int>` and `Fill<float>`) this gives:
+
+| Declaration in the generic device function | CUDA | CPU (native) | Managed |
+| --- | --- | --- | --- |
+| Dynamic, element type is a type parameter (`SharedMemory<T>(n)`) | Shared by all instantiations | Shared | One region per element type |
+| Dynamic, element type is not a type parameter (`SharedMemory<int>(n)`) | Shared | Shared | Shared |
+| Static, element type is a type parameter (`SharedMemory<T>(256)`) | One array per instantiation (each template instantiation has its own `__shared__` array) | Shared | One region per element type |
+| Static, element type is not a type parameter (`SharedMemory<int>(256)`) | One array per instantiation | Shared | Shared |
+
+The dialects agree only on the dynamic declaration whose element type is not a type parameter, and even there the instantiations share one region. Do not declare dynamic `SharedMemory<T>` in a generic device function.
 
 ### CPU Emulation (Testing)
 

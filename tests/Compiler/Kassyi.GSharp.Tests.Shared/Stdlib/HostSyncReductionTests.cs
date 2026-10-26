@@ -101,10 +101,8 @@ public class HostSyncReductionTests
 
     private static void AssertReciprocal(BigInteger divisor, BigInteger actual)
     {
+        // ReciprocalMega corrects the Newton-Raphson result on the device, so it is exactly floor(2^(2k) / D).
         var expected = (BigInteger.One << (2 * KBits)) / divisor;
-
-        // Newton-Raphson may differ from the exact quotient in the least significant bits.
-        var difference = BigInteger.Abs(expected - actual);
-        Assert.True(difference <= 2, $"Reciprocal difference too large. Expected: {expected}, Actual: {actual}");
+        Assert.Equal(expected, actual);
     }
 }

@@ -5,6 +5,7 @@ using Kassyi.GSharp.Compiler.Tasks;
 
 namespace Kassyi.GSharp.Tests.Tasks;
 
+[Category(TestCategory.Compiler)]
 public class NvccOutputParserTests
 {
     static NvccOutputParserTests()

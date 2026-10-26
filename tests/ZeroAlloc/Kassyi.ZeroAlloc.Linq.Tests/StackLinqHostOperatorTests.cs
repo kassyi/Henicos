@@ -7,6 +7,7 @@ namespace Kassyi.ZeroAlloc.Linq.Tests;
 /// Host-only operators: adding to a caller-owned collection, running an action per element, flattening, and searches
 /// that report whether they found anything.
 /// </summary>
+[Category(TestCategory.Unit)]
 public class StackLinqHostOperatorTests
 {
     private static readonly int[] s_data = [1, 2, 3, 4, 5, 6];

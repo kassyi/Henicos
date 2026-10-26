@@ -1,0 +1,7 @@
+﻿HNT0004 at (15,20)-(15,29): Test method 'CallsOnly' never reaches an assertion (Xunit.Assert, VerifyXunit.Verifier or FluentAssertions), not even through the methods it calls. Check its results.
+HNT0004 at (39,20)-(39,48): Test method 'CallsHelperThatChecksNothing' never reaches an assertion (Xunit.Assert, VerifyXunit.Verifier or FluentAssertions), not even through the methods it calls. Check its results.
+HNT0004 at (65,20)-(65,57): Test method 'CallsRecursiveHelperThatChecksNothing' never reaches an assertion (Xunit.Assert, VerifyXunit.Verifier or FluentAssertions), not even through the methods it calls. Check its results.
+HNT0004 at (72,20)-(72,35): Test method 'TheoryCallsOnly' never reaches an assertion (Xunit.Assert, VerifyXunit.Verifier or FluentAssertions), not even through the methods it calls. Check its results.
+HNT0004 at (78,20)-(78,42): Test method 'SkippableFactCallsOnly' never reaches an assertion (Xunit.Assert, VerifyXunit.Verifier or FluentAssertions), not even through the methods it calls. Check its results.
+HNT0004 at (84,20)-(84,44): Test method 'CallsUserTypeNamedAssert' never reaches an assertion (Xunit.Assert, VerifyXunit.Verifier or FluentAssertions), not even through the methods it calls. Check its results.
+HNT0004 at (173,20)-(173,66): Test method 'CallsInterfaceWhoseImplementationsCheckNothing' never reaches an assertion (Xunit.Assert, VerifyXunit.Verifier or FluentAssertions), not even through the methods it calls. Check its results.
