@@ -297,7 +297,9 @@ public static partial class ChudnovskyAlgorithm
 
         const int CheckIndex = DropWords + TruncationSafetyWords;
 
-        if (CheckIndex + 1 <= actualTopIndex)
+        // The tail words CheckIndex + 1 and CheckIndex start at fractional hex digit (actualTopIndex - CheckIndex - 2) * 8,
+        // which is non-negative only when word CheckIndex + 1 lies below the integer word.
+        if (CheckIndex + 2 <= actualTopIndex)
         {
             var computedHexTail =
                 hostData[CheckIndex + 1].ToString("X8") + hostData[CheckIndex].ToString("X8");
