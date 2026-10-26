@@ -103,7 +103,6 @@ dist-ssr/
 /.claude/commands/design-pattern-refactor.prompt.md
 /.claude/commands/grill-you.ja.prompt.md
 /.claude/commands/issue.prompt.md
-/.claude/commands/jules.ja.prompt.md
 /.claude/commands/kickoff.prompt.md
 /.claude/commands/make-pr.prompt.md
 /.claude/commands/qodo.en.prompt.md
@@ -122,9 +121,8 @@ dist-ssr/
 /.claude/skills/file-enumerator/
 /.claude/skills/gpu-code-review/
 /.claude/skills/gsharp-transpiler-guidelines/
-/.claude/skills/jules-wave-orchestration/
-/.claude/skills/jules-wave-spec/
 /.claude/skills/phased-session-manager/
+/.claude/skills/property-test-design/
 /.claude/skills/qa-testing-guidelines/
 /.claude/skills/qodo/
 # --- END Antigravity global AGENTS MANAGED FILES ---

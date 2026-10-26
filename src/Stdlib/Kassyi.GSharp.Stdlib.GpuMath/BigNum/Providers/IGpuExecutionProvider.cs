@@ -331,7 +331,8 @@ public interface IGpuAdvancedMathProvider
     /// <remarks>
     /// The result is exactly <c>floor(2^B / sqrt(a))</c> with <c>B = (targetOperand.NumWords + marginWords) * 32</c>,
     /// the largest <c>x</c> with <c>a * x^2 &lt;= 2^(2B)</c>: the GPU provider corrects the Newton-Raphson result on the
-    /// device after the iterations. <paramref name="resultBuffer"/> holds the initial approximation on entry.
+    /// device after the iterations. <paramref name="resultBuffer"/> holds the initial approximation on entry. When the
+    /// correction does not converge, the next read of the stream throws <see cref="InvalidOperationException"/>.
     /// </remarks>
     void InverseSqrtMega(GpuWorkspace workspace, GpuBigUInt targetOperand, GpuBigUInt resultBuffer, int marginWords,
         int actualBits, int iterations);
@@ -349,7 +350,8 @@ public interface IGpuAdvancedMathProvider
     /// <param name="targetBits">The final desired precision in bits.</param>
     /// <remarks>
     /// The result is exactly <c>floor(2^targetBits / b)</c>: the GPU provider corrects the Newton-Raphson result on the
-    /// device after the iterations. <paramref name="resultBuffer"/> holds the initial approximation on entry.
+    /// device after the iterations. <paramref name="resultBuffer"/> holds the initial approximation on entry. When the
+    /// correction does not converge, the next read of the stream throws <see cref="InvalidOperationException"/>.
     /// </remarks>
     void ReciprocalMega(GpuWorkspace workspace, GpuBigUInt targetOperand, GpuBigUInt resultBuffer, int marginWords,
         int numBits, int marginBits, int iterations, int targetBits);
