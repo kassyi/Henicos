@@ -1,0 +1,11 @@
+{
+  "stryker-config": {
+    "project": "Kassyi.GSharp.Stdlib.GpuMath.csproj",
+    "test-projects": ["Kassyi.GSharp.Stdlib.GpuMath.Tests.csproj"],
+    "mutate": ["!**/*.cu.cs", "!**/*.g.cs"],
+    "coverage-analysis": "perTest",
+    "concurrency": 4,
+    "reporters": ["json", "html", "cleartext"],
+    "verbosity": "info"
+  }
+}

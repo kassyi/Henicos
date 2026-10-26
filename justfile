@@ -346,6 +346,28 @@ bench-pi-cpu digits="10k" *args="":
 doctest file_path assemblies="":
     node scripts/test-doc-snippet.js --file-path "{{file_path}}" --assemblies "{{assemblies}}"
 
+# e.g. `just mutate gpumath`, `just mutate compiler main`, `just mutate compiler "" -m "**/Layout/**/*.cs"`
+# Mutation testing with Stryker.NET. phase: gpumath | compiler. since: a git ref to mutate only the files changed after it (empty = all files). Reports go to tmp/stryker/<phase>
+[windows]
+mutate phase="gpumath" since="" *args="":
+    $root = (Get-Location).Path; $dir = switch ('{{phase}}') { 'gpumath' { 'tests/Stdlib/Kassyi.GSharp.Stdlib.GpuMath.Tests' } 'compiler' { 'tests/Compiler/Kassyi.GSharp.Tests.Cpu' } default { throw "phase must be gpumath or compiler" } }; dotnet tool restore; Set-Location $dir; $sinceArgs = @(); if ('{{since}}' -ne '') { $sinceArgs = @('--since:{{since}}') }; dotnet stryker -f stryker-config.json -L --skip-version-check -O "$root/tmp/stryker/{{phase}}" @sinceArgs {{args}}
+
+[unix]
+mutate phase="gpumath" since="" *args="":
+    #!/usr/bin/env bash
+    set -eu
+    root=$(pwd)
+    case '{{phase}}' in
+        gpumath) dir=tests/Stdlib/Kassyi.GSharp.Stdlib.GpuMath.Tests ;;
+        compiler) dir=tests/Compiler/Kassyi.GSharp.Tests.Cpu ;;
+        *) echo 'phase must be gpumath or compiler' >&2; exit 1 ;;
+    esac
+    dotnet tool restore
+    cd "$dir"
+    since=()
+    if [ -n '{{since}}' ]; then since=(--since:'{{since}}'); fi
+    dotnet stryker -f stryker-config.json -L --skip-version-check -O "$root/tmp/stryker/{{phase}}" "${since[@]}" {{args}}
+
 rebuild-and-test:
     dotnet build --no-incremental && just test
 

@@ -1,0 +1,11 @@
+{
+  "stryker-config": {
+    "project": "Kassyi.GSharp.Compiler.csproj",
+    "test-projects": ["Kassyi.GSharp.Tests.Cpu.csproj"],
+    "mutate": ["!**/*.g.cs"],
+    "coverage-analysis": "perTest",
+    "concurrency": 6,
+    "reporters": ["json", "html", "cleartext"],
+    "verbosity": "info"
+  }
+}
