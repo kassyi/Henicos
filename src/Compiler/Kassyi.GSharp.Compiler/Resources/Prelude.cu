@@ -349,5 +349,52 @@ enum class GSharpErrorCode : int {
 };
 __device__ __forceinline__ void __gsharp_trap(GSharpErrorCode, const char*) { asm("trap;"); }
 
+// --- Dynamic shared memory ---
+// [WHY] Every dynamic SharedMemory<T> declaration is one region per block (static storage, like __shared__). Regions are
+// carved out of the one dynamic buffer in the order a thread first reaches them; each thread keeps its own table.
+extern __shared__ __align__(16) unsigned char __gsharp_dynamic_smem[];
+#define __GSHARP_DSMEM_UNSET 0xFFFFFFFFu
+#define __GSHARP_DSMEM_ALIGN(T) ((alignof(T) > 16) ? alignof(T) : 16)
+
+// [WHY] Not volatile: %dynamic_smem_size is fixed for a launch, so the compiler may hoist the read out of a loop.
+__device__ __forceinline__ unsigned int __gsharp_dynamic_smem_size() {
+    unsigned int size;
+    asm("mov.u32 %0, %%dynamic_smem_size;" : "=r"(size));
+    return size;
+}
+
+template <typename TDsmem>
+__device__ __forceinline__ void __gsharp_dsmem_init(TDsmem* s) {
+    s->cursor = 0;
+    #pragma unroll
+    for (int i = 0; i < TDsmem::Slots; i++) { s->offset[i] = __GSHARP_DSMEM_UNSET; s->size[i] = 0; }
+}
+
+template <int Slot, typename TDsmem>
+__device__ __forceinline__ unsigned char* __gsharp_dsmem_place(TDsmem* s, unsigned long long bytes, unsigned int align) {
+    static_assert(Slot >= 0 && Slot < TDsmem::Slots, "G#: shared memory declaration has no slot in this kernel");
+    unsigned int offset = s->offset[Slot];
+    if (offset == __GSHARP_DSMEM_UNSET) {
+        offset = (s->cursor + align - 1) & ~(align - 1);
+        s->offset[Slot] = offset;
+        s->size[Slot] = 0;
+        // An empty region ends at its own offset and stays the last one until another region is placed
+        s->cursor = offset;
+    } else if (bytes > s->size[Slot] && offset + s->size[Slot] != s->cursor) {
+        __gsharp_trap(GSharpErrorCode::InvalidOperation, "G#: a shared memory declaration grew after a later declaration");
+    }
+    if (bytes > s->size[Slot]) {
+        // [WHY] bytes is checked alone first: a negative count arrives as at least 2^63 bytes, and adding the offset to
+        // it would wrap past 2^64 to a small end
+        unsigned long long limit = __gsharp_dynamic_smem_size();
+        if (bytes > limit || (unsigned long long)offset + bytes > limit) {
+            __gsharp_trap(GSharpErrorCode::ArgumentOutOfRange, "G#: dynamic shared memory exceeds sharedMemBytes");
+        }
+        s->size[Slot] = (unsigned int)bytes;
+        s->cursor = offset + (unsigned int)bytes;
+    }
+    return __gsharp_dynamic_smem + offset;
+}
+
 // --- ZeroAlloc.Linq (StackLinq) ---
 #include "StackLinq.cuh"

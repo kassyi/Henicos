@@ -28,6 +28,8 @@ public class KernelDiagnosticsInventoryTests
         "Diagnostics/WithExpressionUnsupported.cu.cs",
         // GSH0003 in the getter of a computed property (#471)
         "Diagnostics/ComputedPropertyGetterFailure.cu.cs",
+        // GSH0003 (dynamic SharedMemory<T> reached from a struct member or through a delegate, #439)
+        "Diagnostics/DynamicSharedMemoryWithoutTable.cu.cs",
         // GSH0003 (dynamic array size)
         "Analyzers/DynamicStackAllocSadPath.cs",
         // GSH0003 (switch expression)
@@ -47,6 +49,8 @@ public class KernelDiagnosticsInventoryTests
         "Analyzers/MacroArgumentSadPath.cs",
         // GSH0011
         "Diagnostics/MacroLambdaWithoutParameter.cu.cs",
+        // GSH0003 (return, assignment to the loop variable)
+        "Diagnostics/MacroLoopBodyRestrictions.cu.cs",
         // GSH0016, GSH0017
         "Analyzers/UnrollHintSadPath.cs",
         // GSH0004

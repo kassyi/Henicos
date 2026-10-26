@@ -33,6 +33,12 @@ public class GpuKernelGeneratorCachingTests(ITestOutputHelper output)
     private static readonly string s_deviceFunctionsOnly =
         RoslynTestUtility.ReadTestCase("Generators/GpuDevice_FunctionsOnly.cu.cs");
 
+    private static readonly string s_dynamicSharedMemoryCaller =
+        RoslynTestUtility.ReadTestCase("Generators/GpuKernel_DynamicSharedMemoryCaller.cu.cs");
+
+    private static readonly string s_dynamicSharedMemoryCallee =
+        RoslynTestUtility.ReadTestCase("Generators/GpuDevice_DynamicSharedMemoryCallee.cu.cs");
+
     private static readonly CSharpParseOptions s_parseOptions = new(LanguageVersion.Preview);
 
     [Theory]
@@ -264,6 +270,46 @@ public class GpuKernelGeneratorCachingTests(ITestOutputHelper output)
         Assert.DoesNotContain("+10", wrapper.SourceText.ToString(), StringComparison.Ordinal);
 
         AssertSameOutput(CreateDriver(dialect).RunGenerators(after), incremental);
+    }
+
+    // #439: on CUDA a kernel owns the table of the dynamic shared memory regions its callees reach, so an edit that makes a
+    // callee in another file declare dynamic shared memory must re-emit the caller
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void Test_CalleeInAnotherFileGainsDynamicSharedMemory_ReemitsCallerKernel()
+    {
+        var calleeAfter = s_dynamicSharedMemoryCallee.Replace(
+            "new SharedMemory<int>(32)", "new SharedMemory<int>(n)", StringComparison.Ordinal);
+        Assert.NotEqual(s_dynamicSharedMemoryCallee, calleeAfter);
+
+        var kernelTree = CSharpSyntaxTree.ParseText(s_dynamicSharedMemoryCaller, s_parseOptions, path: "kernel.cs");
+        var calleeTreeBefore = CSharpSyntaxTree.ParseText(s_dynamicSharedMemoryCallee, s_parseOptions, path: "callee.cs");
+        var calleeTreeAfter = CSharpSyntaxTree.ParseText(calleeAfter, s_parseOptions, path: "callee.cs");
+
+        var before = CreateCompilation(kernelTree, calleeTreeBefore);
+        var after = before.ReplaceSyntaxTree(calleeTreeBefore, calleeTreeAfter);
+
+        var first = CreateDriver("Cuda").RunGenerators(before);
+        var wrapperBefore = Assert.Single(
+            first.GetRunResult().Results.Single().GeneratedSources,
+            static s => s.HintName.EndsWith("DynamicSharedMemoryCachingKernels.g.cs", StringComparison.Ordinal));
+        Assert.DoesNotContain("__gsharp_dsmem", wrapperBefore.SourceText.ToString(), StringComparison.Ordinal);
+
+        var incremental = first.RunGenerators(after);
+
+        var result = incremental.GetRunResult().Results.Single();
+        Assert.Null(result.Exception);
+        var kernelOutput = Assert.Single(result.TrackedSteps[GpuKernelGenerator.KernelTrackingName]
+            .SelectMany(static run => run.Outputs));
+        Assert.Equal(IncrementalStepRunReason.Modified, kernelOutput.Reason);
+
+        var wrapper = Assert.Single(
+            result.GeneratedSources,
+            static s => s.HintName.EndsWith("DynamicSharedMemoryCachingKernels.g.cs", StringComparison.Ordinal));
+        Assert.Contains("__gsharp_dsmem_storage;", wrapper.SourceText.ToString(), StringComparison.Ordinal);
+        Assert.Contains("__gsharp_id_2_tid,__gsharp_dsmem)", wrapper.SourceText.ToString(), StringComparison.Ordinal);
+
+        AssertSameOutput(CreateDriver("Cuda").RunGenerators(after), incremental);
     }
 
     // The paths fix the declaration order of the partial class's parts

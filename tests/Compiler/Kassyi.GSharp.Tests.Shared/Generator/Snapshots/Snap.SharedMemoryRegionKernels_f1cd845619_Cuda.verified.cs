@@ -57,15 +57,11 @@ namespace Kassyi.GSharp.Generated
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 internal static class GSharpSharedCudaDeviceCode
 {
-public const string Source = @"inline __device__ int __gsharp_fn_Kassyi__GSharp__Tests__Shared__Core__SharedMemoryRegionKernels__RotateThroughDynamicSharedMemory(int __gsharp_id_0_value, int __gsharp_id_1_count);
+public const string Source = @"template <typename TDsmem> inline __device__ int __gsharp_fn_Kassyi__GSharp__Tests__Shared__Core__SharedMemoryRegionKernels__RotateThroughDynamicSharedMemory(int __gsharp_id_0_value, int __gsharp_id_1_count, TDsmem* __gsharp_dsmem);
 
-inline __device__ int __gsharp_fn_Kassyi__GSharp__Tests__Shared__Core__SharedMemoryRegionKernels__RotateThroughDynamicSharedMemory(int __gsharp_id_0_value, int __gsharp_id_1_count){
+template <typename TDsmem> inline __device__ int __gsharp_fn_Kassyi__GSharp__Tests__Shared__Core__SharedMemoryRegionKernels__RotateThroughDynamicSharedMemory(int __gsharp_id_0_value, int __gsharp_id_1_count, TDsmem* __gsharp_dsmem){
 int __gsharp_id_2_tid = threadIdx.x;
-extern __shared__ char __gsharp_dynamic_smem[];
-size_t __gsharp_smem_offset = 0;
-__gsharp_smem_offset = (__gsharp_smem_offset + alignof(int) - 1) & ~(alignof(int) - 1);
-int* __gsharp_id_3_shared = (int*)(__gsharp_dynamic_smem + __gsharp_smem_offset);
-__gsharp_smem_offset += (__gsharp_id_1_count) * sizeof(int);
+int* __gsharp_id_3_shared = (int*)__gsharp_dsmem_place<TDsmem::template Slot<0xa8ee59f66f63ce77ull>>(__gsharp_dsmem, (unsigned long long)(long long)(__gsharp_id_1_count) * sizeof(int), __GSHARP_DSMEM_ALIGN(int));
 if(__gsharp_id_2_tid<__gsharp_id_1_count)
 {
 __gsharp_id_3_shared[__gsharp_id_2_tid]=__gsharp_id_0_value;
@@ -332,10 +328,21 @@ finally
 }
 }
 #pragma warning restore CS8500
-public const string GrowingDeclarationKernel_Source = @"extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Core__SharedMemoryRegionKernels__GrowingDeclarationKernel(GSharpArray<int> __gsharp_id_0_output, int __gsharp_id_1_smallCount, int __gsharp_id_2_largeCount){
+public const string GrowingDeclarationKernel_Source = @"// GrowingDeclarationKernel reaches 1 dynamic shared memory declaration
+struct __gsharp_dsmem_Kassyi__GSharp__Tests__Shared__Core__SharedMemoryRegionKernels__GrowingDeclarationKernel {
+static constexpr int Slots = 1;
+template <unsigned long long Key> static constexpr int Slot = Key == 0xa8ee59f66f63ce77ull ? 0 : -1;
+unsigned int cursor;
+unsigned int offset[1];
+unsigned int size[1];
+};
+extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Core__SharedMemoryRegionKernels__GrowingDeclarationKernel(GSharpArray<int> __gsharp_id_0_output, int __gsharp_id_1_smallCount, int __gsharp_id_2_largeCount){
+__gsharp_dsmem_Kassyi__GSharp__Tests__Shared__Core__SharedMemoryRegionKernels__GrowingDeclarationKernel __gsharp_dsmem_storage;
+__gsharp_dsmem_Kassyi__GSharp__Tests__Shared__Core__SharedMemoryRegionKernels__GrowingDeclarationKernel* __gsharp_dsmem = &__gsharp_dsmem_storage;
+__gsharp_dsmem_init(__gsharp_dsmem);
 int __gsharp_id_3_tid = threadIdx.x;
-int __gsharp_id_4_small = __gsharp_fn_Kassyi__GSharp__Tests__Shared__Core__SharedMemoryRegionKernels__RotateThroughDynamicSharedMemory(__gsharp_id_3_tid+1,__gsharp_id_1_smallCount);
-int __gsharp_id_5_large = __gsharp_fn_Kassyi__GSharp__Tests__Shared__Core__SharedMemoryRegionKernels__RotateThroughDynamicSharedMemory(__gsharp_id_3_tid+1,__gsharp_id_2_largeCount);
+int __gsharp_id_4_small = __gsharp_fn_Kassyi__GSharp__Tests__Shared__Core__SharedMemoryRegionKernels__RotateThroughDynamicSharedMemory(__gsharp_id_3_tid+1,__gsharp_id_1_smallCount,__gsharp_dsmem);
+int __gsharp_id_5_large = __gsharp_fn_Kassyi__GSharp__Tests__Shared__Core__SharedMemoryRegionKernels__RotateThroughDynamicSharedMemory(__gsharp_id_3_tid+1,__gsharp_id_2_largeCount,__gsharp_dsmem);
 __gsharp_id_0_output[__gsharp_id_3_tid]=__gsharp_id_4_small*100+__gsharp_id_5_large;
 }
 ";

@@ -5,10 +5,24 @@ namespace Kassyi.GSharp.Compiler.Transpiler;
 /// </summary>
 internal static class HoistedFieldTypeResolver
 {
+    /// <summary>
+    /// Returns the type of the hoisted field that <paramref name="field"/> declares, trying the declared symbol, the
+    /// initializer type, a predefined declared type and the <c>foreach</c> index annotation in this order.
+    /// </summary>
+    /// <exception cref="InvalidOperationException">No lookup produced a usable type (an internal compiler error).</exception>
+    /// <remarks>
+    /// The first lookup takes the declared symbol: a local, or a parameter when an expansion turned the parameter into a
+    /// local whose declarator carries the parameter's span.
+    /// </remarks>
     public static ITypeSymbol Resolve(VariableDeclaratorSyntax field, SemanticModel semanticModel, string kernelName)
     {
-        var declaredSymbol = semanticModel.GetDeclaredSymbol<ILocalSymbol>(field);
-        var type1 = declaredSymbol?.Type;
+        var declaredSymbol = semanticModel.GetDeclaredSymbol<ISymbol>(field);
+        var type1 = declaredSymbol switch
+        {
+            ILocalSymbol local => local.Type,
+            IParameterSymbol parameter => parameter.Type,
+            _ => null
+        };
         var type2 = field.Initializer != null ? semanticModel.GetTypeSymbol(field.Initializer.Value) : null;
 
         if (IsAcceptable(type1))
@@ -58,7 +72,7 @@ internal static class HoistedFieldTypeResolver
         VariableDeclaratorSyntax field,
         SemanticModel semanticModel,
         string kernelName,
-        ILocalSymbol? declaredSymbol,
+        ISymbol? declaredSymbol,
         ITypeSymbol? type1,
         ITypeSymbol? type2)
     {

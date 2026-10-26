@@ -75,4 +75,75 @@ public class MacroDiagnosticsTests
 
         Assert.Empty(diagnostics.Ranges(GSharpDiagnostics.MacroLambdaRequiresParameter.Id));
     }
+
+    // A return in the body ends the kernel in the generated code, not the iteration. Only the sad kernels report: the
+    // lists hold every report of the case, so the kernels that keep to the rules are checked as well
+    [Theory]
+    [InlineData("Cpu")]
+    [InlineData("Cuda")]
+    [Scenario(TestScenario.SadPath)]
+    public async Task Test_ReturnInLoopMacroBody_ReportsGsh0003AtTheReturn(string dialect)
+    {
+        var diagnostics =
+            await KernelDiagnostics.RunTestCaseAsync("Diagnostics/MacroLoopBodyRestrictions.cu.cs", dialect);
+
+        Assert.Equal(
+            [(Analyzer, 32, 25, 32, 32), (Analyzer, 55, 25, 55, 32)],
+            diagnostics.Ranges(GSharpDiagnostics.UnsupportedSyntax.Id, "return in a Gpu.ForUnroll body"));
+        Assert.Equal(
+            [(Analyzer, 43, 25, 43, 32), (Analyzer, 68, 25, 68, 32)],
+            diagnostics.Ranges(GSharpDiagnostics.UnsupportedSyntax.Id, "return in a Gpu.GridStrideLoop body"));
+    }
+
+    // The loop variable is replaced by the iteration index in the generated code, which cannot be assigned
+    [Theory]
+    [InlineData("Cpu")]
+    [InlineData("Cuda")]
+    [Scenario(TestScenario.SadPath)]
+    public async Task Test_AssignmentToLoopVariable_ReportsGsh0003AtTheWrite(string dialect)
+    {
+        var diagnostics =
+            await KernelDiagnostics.RunTestCaseAsync("Diagnostics/MacroLoopBodyRestrictions.cu.cs", dialect);
+
+        Assert.Equal(
+            [
+                (Analyzer, 80, 13, 80, 18),
+                (Analyzer, 81, 13, 81, 19),
+                (Analyzer, 82, 13, 82, 16),
+                (Analyzer, 83, 13, 83, 16),
+                (Analyzer, 84, 18, 84, 23),
+                (Analyzer, 85, 19, 85, 24),
+                (Analyzer, 86, 13, 86, 34)
+            ],
+            diagnostics.Ranges(
+                GSharpDiagnostics.UnsupportedSyntax.Id,
+                "assignment to the Gpu.ForUnroll loop variable 'i'"));
+        Assert.Equal(
+            [(Analyzer, 97, 13, 97, 19)],
+            diagnostics.Ranges(
+                GSharpDiagnostics.UnsupportedSyntax.Id,
+                "assignment to the Gpu.GridStrideLoop loop variable 'i'"));
+    }
+
+    // An in argument or an address would be the address of the iteration index
+    [Theory]
+    [InlineData("Cpu")]
+    [InlineData("Cuda")]
+    [Scenario(TestScenario.SadPath)]
+    public async Task Test_ReferenceToLoopVariable_ReportsGsh0003AtTheReference(string dialect)
+    {
+        var diagnostics =
+            await KernelDiagnostics.RunTestCaseAsync("Diagnostics/MacroLoopBodyRestrictions.cu.cs", dialect);
+
+        Assert.Equal(
+            [(Analyzer, 108, 31, 108, 35), (Analyzer, 109, 28, 109, 30)],
+            diagnostics.Ranges(
+                GSharpDiagnostics.UnsupportedSyntax.Id,
+                "reference to the Gpu.ForUnroll loop variable 'i'"));
+        Assert.Equal(
+            [(Analyzer, 119, 31, 119, 35)],
+            diagnostics.Ranges(
+                GSharpDiagnostics.UnsupportedSyntax.Id,
+                "reference to the Gpu.GridStrideLoop loop variable 'i'"));
+    }
 }

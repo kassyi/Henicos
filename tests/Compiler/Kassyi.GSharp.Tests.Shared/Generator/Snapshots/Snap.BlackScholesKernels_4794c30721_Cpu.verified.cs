@@ -424,11 +424,11 @@ switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-for (int tid = global::Kassyi.GSharp.Core.ManagedGpuContext.BlockDimX * global::Kassyi.GSharp.Core.ManagedGpuContext.BlockIdxX + global::Kassyi.GSharp.Core.ManagedGpuContext.ThreadIdxX; tid < (ctx.N); tid += global::Kassyi.GSharp.Core.ManagedGpuContext.BlockDimX * global::Kassyi.GSharp.Core.ManagedGpuContext.GridDimX)
+for (int __gsharp_unroll_0 = global::Kassyi.GSharp.Core.ManagedGpuContext.BlockDimX * global::Kassyi.GSharp.Core.ManagedGpuContext.BlockIdxX + global::Kassyi.GSharp.Core.ManagedGpuContext.ThreadIdxX; __gsharp_unroll_0 < (ctx.N); __gsharp_unroll_0 += global::Kassyi.GSharp.Core.ManagedGpuContext.BlockDimX * global::Kassyi.GSharp.Core.ManagedGpuContext.GridDimX)
 {
-CalculateOptionPrice(ctx.S[tid], ctx.X[tid], ctx.T[tid], ctx.R, ctx.V, out var c, out var p);
-ctx.CallResult[tid] = c;
-ctx.PutResult[tid] = p;
+CalculateOptionPrice(ctx.S[__gsharp_unroll_0], ctx.X[__gsharp_unroll_0], ctx.T[__gsharp_unroll_0], ctx.R, ctx.V, out var c, out var p);
+ctx.CallResult[__gsharp_unroll_0] = c;
+ctx.PutResult[__gsharp_unroll_0] = p;
 }
 
 __gsharp_ctx.__gsharp_state = -1;

@@ -1,8 +1,8 @@
 # Identifiers the compiler emits into generated host and device code. Each top-level key becomes a nested class of
 # GSharpInternalNames. A name is either `Name: value` or `Name: { Value: value, Prelude: File.hpp }`; Prelude names the
-# Resources/Prelude file that declares the identifier, which the build and PreludeInternalNamesTests check. A name may
-# also carry `Managed: File.cs`, a Kassyi.GSharp.Core source that declares the same identifier for managed (C#) kernels;
-# the build checks that too.
+# file that declares the identifier, relative to Resources/Prelude (`../Prelude.cu` is the CUDA prelude), which the build
+# and PreludeInternalNamesTests check. A name may also carry `Managed: File.cs`, a Kassyi.GSharp.Core source that
+# declares the same identifier for managed (C#) kernels; the build checks that too.
 # A name ending in Prefix is followed by a counter or another name, and its value ends in `_`.
 # Only names that something outside one emitter also spells belong here; see the remarks on GSharpInternalNames.
 
@@ -35,6 +35,17 @@ SuspendingCall:
     Result: __gsharp_result
     # Marks a call to a device function that may suspend: __gsharp_resume(call, frameIndex[, result]).
     ResumeCall: __gsharp_resume
+
+DynamicSharedMemory:
+  Summary: >-
+    The placement of dynamic SharedMemory<T> declarations (CUDA). A kernel that reaches one owns a per-thread table of
+    the regions, one slot per declaration; the device functions that reach one receive a pointer to it as their last
+    parameter.
+  Names:
+    # Followed by the body of the kernel's entry point name (GlobalCppNames.GetKernelDerivedName).
+    TableTypePrefix: __gsharp_dsmem_
+    Table: __gsharp_dsmem
+    TableStorage: __gsharp_dsmem_storage
 
 Lowering:
   Summary: Lowering temporaries and labels. Prefixes are followed by a counter or a user-derived name.
@@ -114,7 +125,13 @@ Prelude:
     Trap: { Value: __gsharp_trap, Prelude: ErrorChannel.hpp }
     ConsumeLastError: { Value: __gsharp_consume_last_error, Prelude: ErrorChannel.hpp }
     SetThreadIndex: { Value: __gsharp_set_thread_idx, Prelude: ThreadAndMemory.hpp }
+    # Declared by ThreadAndMemory.hpp for the CPU dialects and by the CUDA prelude (../Prelude.cu) as the extern dynamic
+    # shared memory buffer.
     DynamicSharedMemory: { Value: __gsharp_dynamic_smem, Prelude: ThreadAndMemory.hpp }
+    # Declared by the CUDA prelude only.
+    DynamicSharedMemorySize: { Value: __gsharp_dynamic_smem_size, Prelude: ../Prelude.cu }
+    DynamicSharedMemoryInit: { Value: __gsharp_dsmem_init, Prelude: ../Prelude.cu }
+    DynamicSharedMemoryPlace: { Value: __gsharp_dsmem_place, Prelude: ../Prelude.cu }
     ResetSharedMemory: { Value: __gsharp_reset_smem, Prelude: ThreadAndMemory.hpp }
     AllocateSharedMemory: { Value: __gsharp_allocate_smem, Prelude: ThreadAndMemory.hpp }
     WarpExchangeAssign: { Value: __gsharp_warp_exchange_assign, Prelude: WarpAndHints.hpp, Managed: ManagedGpuContext.cs }

@@ -59,6 +59,7 @@ public sealed class InvocationExpressionTranspilerRule : SyntaxNodeTranspilerRul
         using (context.Emitter.Writer.Parentheses())
         {
             TranspileArguments(symbol.Parameters, node.ArgumentList.Arguments, ref context);
+            DynamicSharedMemoryEmitter.AppendTableArgument(node, symbol, ref context);
         }
     }
 

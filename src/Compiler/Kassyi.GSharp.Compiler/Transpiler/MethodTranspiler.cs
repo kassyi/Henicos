@@ -66,6 +66,8 @@ public static class MethodTranspiler
                     using var dummyWriter = new SourceWriter();
                     ref var iteratorContext = ref iteratorSession.Context;
                     iteratorContext.Emitter.Writer = dummyWriter;
+                    // Inlined into its consumer, which passes the table of dynamic shared memory regions on
+                    DynamicSharedMemoryEmitter.BeginMethod(in plan, ref iteratorContext);
                     var expanded = IteratorInliner.ExpandStandalone(
                         plan.Declaration,
                         plan.Symbol,
@@ -105,6 +107,7 @@ public static class MethodTranspiler
         using var disposeWriter = new SourceWriter();
 
         context.Emitter.Writer = bodyWriter;
+        DynamicSharedMemoryEmitter.BeginMethod(in plan, ref context);
 
         // A plan with a state machine always has a symbol
         if (lowered != null && plan.Symbol is { } loweredSymbol)
@@ -128,6 +131,9 @@ public static class MethodTranspiler
         }
 
         WriteMethodBody(in plan, lowered, ref context);
+
+        // The struct members and Dispose bodies written below have no table of dynamic shared memory regions
+        context.Emitter.DynamicSharedMemorySlotScope = null;
 
         if (!isDevice && !context.Emitter.Dialect.IsCuda)
         {
@@ -287,6 +293,8 @@ public static class MethodTranspiler
             var methodSymbol = plan.Symbol;
             var isKernelWithReturn = plan.HasAutoResult;
             var isFrame = context.Emitter.IsSuspendingDeviceFunction;
+
+            DynamicSharedMemoryEmitter.WriteKernelPrologue(in plan, ref context);
 
             if (isKernelWithReturn)
             {

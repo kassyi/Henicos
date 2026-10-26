@@ -1,7 +1,14 @@
+using System;
+using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using Kassyi.GSharp.Compiler;
 using Kassyi.GSharp.Compiler.Lowering;
 using Kassyi.GSharp.Compiler.Transpiler;
+using Kassyi.GSharp.Compiler.Transpiler.Dialects;
+using Kassyi.GSharp.Tests.Shared.Helpers;
+using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Xunit;
@@ -28,6 +35,114 @@ public class IdentityTests : StateMachineTestBase
                 var copy2 = LoweringAnnotations.StampRegion(innerBlock, region: 2, model);
                 return annotatedBody.WithStatements(SyntaxFactory.List([tidDecl, copy1, copy2]));
             });
+
+    [Fact]
+    [Scenario(TestScenario.HappyPath)]
+    public Task Managed_DupDemo_DistinguishesContextFieldsPerRegion() =>
+        VerifyManagedPipelineLowerFromTestCase(
+            "DupDemo.cs",
+            static (annotatedBody, model) =>
+            {
+                var tidDecl = annotatedBody.Statements[0];
+                var innerBlock = (BlockSyntax)annotatedBody.Statements[1];
+                var copy1 = LoweringAnnotations.StampRegion(innerBlock, region: 1, model);
+                var copy2 = LoweringAnnotations.StampRegion(innerBlock, region: 2, model);
+                return annotatedBody.WithStatements(SyntaxFactory.List([tidDecl, copy1, copy2]));
+            },
+            static (localInitNames, fieldNames, _) =>
+            {
+                Assert.Empty(localInitNames);
+                Assert.Equal(["tid", "__gsharp_il_1_2_s", "__gsharp_il_2_2_s"], fieldNames);
+            });
+
+    // A ref struct local is declared again on every resume instead of living in the context class
+    // (ManagedContextFields.LocalInits). Its copies need their own local names, the declarator-derived initialization
+    // of each copy is removed, and the reassignment after the barrier stays.
+    [Fact]
+    [Scenario(TestScenario.HappyPath)]
+    public Task Managed_DupSpanDemo_DistinguishesRefStructLocalsPerRegion() =>
+        VerifyManagedPipelineLowerFromTestCase(
+            "DupSpanDemo.cs",
+            static (annotatedBody, model) =>
+            {
+                var tidDecl = annotatedBody.Statements[0];
+                var innerBlock = (BlockSyntax)annotatedBody.Statements[1];
+                var copy1 = LoweringAnnotations.StampRegion(innerBlock, region: 1, model);
+                var copy2 = LoweringAnnotations.StampRegion(innerBlock, region: 2, model);
+                return annotatedBody.WithStatements(SyntaxFactory.List([tidDecl, copy1, copy2]));
+            },
+            static (localInitNames, fieldNames, body) =>
+            {
+                Assert.Equal(["__gsharp_il_1_3_view", "__gsharp_il_2_3_view"], localInitNames);
+                Assert.Equal(["tid", "__gsharp_il_1_2_s", "__gsharp_il_2_2_s"], fieldNames);
+
+                // No context access to a ref struct local is left; every reference is the bare local name
+                Assert.DoesNotContain(
+                    body.DescendantNodes().OfType<MemberAccessExpressionSyntax>(),
+                    static m => ContextLocalRewriter.IsContextPointerAccess(m) &&
+                                m.Name.Identifier.ValueText.EndsWith("view", StringComparison.Ordinal));
+
+                // The initialization `view = output` of each copy is removed; the reassignment after the barrier stays
+                var viewAssignments = body.DescendantNodes()
+                    .OfType<AssignmentExpressionSyntax>()
+                    .Select(static a => a.Left)
+                    .OfType<IdentifierNameSyntax>()
+                    .Select(static name => name.Identifier.ValueText)
+                    .Where(static name => name.EndsWith("view", StringComparison.Ordinal))
+                    .ToArray();
+                Assert.Equal(["__gsharp_il_1_3_view", "__gsharp_il_2_3_view"], viewAssignments);
+
+                var viewReads = body.DescendantNodes()
+                    .OfType<ElementAccessExpressionSyntax>()
+                    .Select(static e => e.Expression)
+                    .OfType<IdentifierNameSyntax>()
+                    .Select(static name => name.Identifier.ValueText)
+                    .ToArray();
+                Assert.Equal(["__gsharp_il_1_3_view", "__gsharp_il_2_3_view"], viewReads);
+            });
+
+    // Checks the IteratorInliner half of the boundary: seeded with RegionCount, the highest region a pre-lowering
+    // expansion used, an inline iterator expansion takes the next number. The seeding itself
+    // (MethodTranspiler.GenerateCudaSource sets Emitter.IteratorExpansionCounter from LoweredStateMachine.RegionCount)
+    // is checked when PreLoweringExpander starts to set RegionCount.
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void IteratorExpansion_AfterTwoPreLoweringRegions_TakesTheNextRegion()
+    {
+        const int RegionCount = 2;
+        var (_, tree, model) = RoslynTestUtility.GetTestCaseContext(
+            Path.Combine("StateMachines", "RegionCounterIterator.cs"));
+        var forEach = tree.GetRoot()
+            .DescendantNodes()
+            .OfType<ForEachStatementSyntax>()
+            .Single();
+        var invocation = Assert.IsType<InvocationExpressionSyntax>(forEach.Expression);
+        var iteratorMethod = Assert.IsAssignableFrom<IMethodSymbol>(model.GetSymbolInfo(invocation).Symbol);
+        var failures = new List<TranspileFailure>();
+
+        var regionCounter = RegionCount;
+        var argumentTempCounter = 0;
+        var expanded = IteratorInliner.Expand(
+            forEach,
+            iteratorMethod,
+            invocation,
+            model,
+            ref regionCounter,
+            ref argumentTempCounter,
+            new StandardCppDialect(),
+            new Reporter(failures.Add, model));
+
+        Assert.Empty(failures);
+        var endLabel = Assert.IsType<LabeledStatementSyntax>(expanded.Statements[1]);
+        Assert.Equal($"{GSharpInternalNames.Iterator.EndLabelPrefix}{RegionCount + 1}", endLabel.Identifier.ValueText);
+        var stampedRegions = expanded.DescendantNodes()
+            .Select(LoweringIdentity.GetRegion)
+            .Where(static region => region > 0)
+            .Distinct()
+            .ToArray();
+        Assert.NotEmpty(stampedRegions);
+        Assert.All(stampedRegions, static region => Assert.True(region > RegionCount));
+    }
 
     [Fact]
     [Scenario(TestScenario.Boundary)]

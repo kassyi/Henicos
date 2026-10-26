@@ -48,7 +48,8 @@ public static class LoweringIdentity
     /// Creates the <see cref="DeclarationKey"/> for a declaration syntax node (<see cref="VariableDeclaratorSyntax"/>,
     /// <see cref="LabeledStatementSyntax"/>, <see cref="ParameterSyntax"/>, <see cref="SingleVariableDesignationSyntax"/>,
     /// <see cref="ForEachStatementSyntax"/>, <see cref="LocalFunctionStatementSyntax"/>, or
-    /// <see cref="CatchDeclarationSyntax"/>).
+    /// <see cref="CatchDeclarationSyntax"/>), or for a <see cref="SimpleNameSyntax"/> that lowering synthesized with a
+    /// declarator's span (the member name of a hoisted local's initialization, <c>__gsharp_ctx-&gt;x = …</c>).
     /// </summary>
     public static DeclarationKey ForDeclaration(SyntaxNode declaration, SemanticModel? model)
     {
@@ -103,6 +104,7 @@ public static class LoweringIdentity
         LocalFunctionStatementSyntax l => l.Identifier.ValueText,
         LabeledStatementSyntax l => l.Identifier.ValueText,
         CatchDeclarationSyntax c => c.Identifier.ValueText,
+        SimpleNameSyntax s => s.Identifier.ValueText,
         _ => string.Empty
     };
 }

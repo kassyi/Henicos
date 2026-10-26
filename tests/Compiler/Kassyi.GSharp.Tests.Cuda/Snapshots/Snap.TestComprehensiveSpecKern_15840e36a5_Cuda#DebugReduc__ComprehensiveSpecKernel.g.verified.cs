@@ -176,7 +176,18 @@ static_assert(alignof(__gsharp_ty_DebugReduc__ComprehensiveSpecKernel__PhysicsSt
 static_assert(offsetof(__gsharp_ty_DebugReduc__ComprehensiveSpecKernel__PhysicsState,__gsharp_mb_Buffer)==0,""DebugReduc.ComprehensiveSpecKernel.PhysicsState.Buffer: offset"");
 static_assert(offsetof(__gsharp_ty_DebugReduc__ComprehensiveSpecKernel__PhysicsState,__gsharp_mb_Flags)==64,""DebugReduc.ComprehensiveSpecKernel.PhysicsState.Flags: offset"");
 #endif
+// ProcessPhysics reaches 1 dynamic shared memory declaration
+struct __gsharp_dsmem_DebugReduc__ComprehensiveSpecKernel__ProcessPhysics {
+static constexpr int Slots = 1;
+template <unsigned long long Key> static constexpr int Slot = Key == 0xe20e18017ad9544dull ? 0 : -1;
+unsigned int cursor;
+unsigned int offset[1];
+unsigned int size[1];
+};
 extern ""C"" __global__ void __gsharp_k_DebugReduc__ComprehensiveSpecKernel__ProcessPhysics(GSharpArray<__gsharp_ty_DebugReduc__PhysicsVector> __gsharp_id_0_particles, float* __gsharp_id_1_totalMagnitude, bool* __gsharp_id_2_successFlag, __gsharp_ty_DebugReduc__SpecTypes __gsharp_id_3_largeStructVal, int __gsharp_id_4_particleCount, int __gsharp_id_5_unrollFactor){
+__gsharp_dsmem_DebugReduc__ComprehensiveSpecKernel__ProcessPhysics __gsharp_dsmem_storage;
+__gsharp_dsmem_DebugReduc__ComprehensiveSpecKernel__ProcessPhysics* __gsharp_dsmem = &__gsharp_dsmem_storage;
+__gsharp_dsmem_init(__gsharp_dsmem);
 (*__gsharp_id_2_successFlag)=false;
 float __gsharp_id_6_Gravity = 9.8f;
 int __gsharp_id_7_tx = threadIdx.x;
@@ -193,11 +204,7 @@ int __gsharp_id_17_gdimY = gridDim.y;
 int __gsharp_id_18_gdimZ = gridDim.z;
 int __gsharp_id_19_tid = __gsharp_id_7_tx+__gsharp_id_10_bx*__gsharp_id_13_bdimX;
 __shared__ int __gsharp_id_20_staticCache[10000];
-extern __shared__ char __gsharp_dynamic_smem[];
-size_t __gsharp_smem_offset = 0;
-__gsharp_smem_offset = (__gsharp_smem_offset + alignof(float) - 1) & ~(alignof(float) - 1);
-float* __gsharp_id_21_dynamicCache = (float*)(__gsharp_dynamic_smem + __gsharp_smem_offset);
-__gsharp_smem_offset += (__gsharp_id_4_particleCount) * sizeof(float);
+float* __gsharp_id_21_dynamicCache = (float*)__gsharp_dsmem_place<__gsharp_dsmem_DebugReduc__ComprehensiveSpecKernel__ProcessPhysics::Slot<0xe20e18017ad9544dull>>(__gsharp_dsmem, (unsigned long long)(long long)(__gsharp_id_4_particleCount) * sizeof(float), __GSHARP_DSMEM_ALIGN(float));
 __shared__ int __gsharp_id_22_targetTypedCache[256];
 if(__gsharp_id_19_tid<__gsharp_id_4_particleCount)
 {
