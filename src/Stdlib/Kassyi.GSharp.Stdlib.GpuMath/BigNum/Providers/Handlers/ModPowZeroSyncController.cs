@@ -17,7 +17,10 @@ internal static class ModPowZeroSyncController
 
         using var tempResult = new GpuBigUInt(baseVal.Workspace, 2 * n);
         tempResult.Clear();
-        tempResult.Workspace.Provider.CopyHostToDevice(tempResult.DevicePointer, [1u], 1, tempResult.Workspace.Stream);
+        // tempResult = 1 mod mod, written on the device (0 for modulus 1) so that exponent 0 returns a reduced value.
+        GpuBigIntDivRemKernels.LaunchInitializeOneModuloKernelPtr(
+            tempResult.DevicePointer, mod.DevicePointer, n,
+            gridDimX: 1, blockDimX: 1, hStream: baseVal.Workspace.Stream);
 
         using var tempBase = new GpuBigUInt(baseVal.Workspace, 2 * n);
         tempBase.Clear();

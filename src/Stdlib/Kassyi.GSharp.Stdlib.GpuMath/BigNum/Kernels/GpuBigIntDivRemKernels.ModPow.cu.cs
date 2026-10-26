@@ -3,6 +3,39 @@ namespace Kassyi.GSharp.Stdlib.GpuMath.BigNum.Kernels;
 
 public static partial class GpuBigIntDivRemKernels
 {
+    /// <summary>
+    /// Returns the low word of <c>1 mod m</c> for an <paramref name="numWords"/>-word modulus <c>m &gt; 0</c>:
+    /// 0 when <c>m</c> is 1, otherwise 1 (and every higher word of <c>1 mod m</c> is 0).
+    /// </summary>
+    /// <remarks>
+    /// ModPow starts its result at <c>1 mod m</c>, not at 1: with exponent 0 the result is never reduced, so starting
+    /// at 1 would return 1 for modulus 1. Computed on the device so that neither ModPow path reads the modulus back.
+    /// </remarks>
+    [GpuDeviceFunction]
+    private static uint OneModulo(uint[] modulus, int numWords)
+    {
+        uint highWords = 0u;
+        for (int i = 1; i < numWords; i++)
+        {
+            highWords |= modulus[i];
+        }
+
+        return modulus[0] == 1u && highWords == 0u ? 0u : 1u;
+    }
+
+    /// <summary>
+    /// Writes the low word of <c>1 mod m</c> into <paramref name="result"/>[0]; the caller clears the other words.
+    /// Launch with one block of one thread.
+    /// </summary>
+    [GpuKernel]
+    public static void InitializeOneModuloKernel(uint[] result, uint[] modulus, int numWords)
+    {
+        if (ThreadIndex.X == 0 && BlockIndex.X == 0)
+        {
+            result[0] = OneModulo(modulus, numWords);
+        }
+    }
+
     [GpuDeviceFunction]
     private static void ExecuteNttMultiplyMacroModPow(
         NewtonRaphsonContext core,
@@ -181,14 +214,15 @@ public static partial class GpuBigIntDivRemKernels
         int targetWords = (targetBits + 31) / 32;
         int outWords = aActualWords + targetWords;
 
-        // Initialize tempResult = 1, tempBase = Base, ModulusExpanded = Constant
+        // Initialize tempResult = 1 mod Constant, tempBase = Base, ModulusExpanded = Constant
         if (expSlice.StartWord == 0)
         {
+            uint oneModulo = OneModulo(core.Operands.Constant, n);
             Gpu.GridStrideLoop(outWords, idx =>
             {
                 if (idx < 2 * n)
                 {
-                    iterScratch.AxSquared[idx] = idx == 0 ? 1u : 0u; // TempResult
+                    iterScratch.AxSquared[idx] = idx == 0 ? oneModulo : 0u; // TempResult
                     iterScratch.XSquared[idx] = idx < n ? core.Operands.TargetOperand[idx] : 0u; // TempBase
                 }
 

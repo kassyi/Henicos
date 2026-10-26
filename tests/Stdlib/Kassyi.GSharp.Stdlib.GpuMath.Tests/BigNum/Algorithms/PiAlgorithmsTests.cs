@@ -42,6 +42,68 @@ public class PiAlgorithmsTests
         Assert.Contains(expected.ToUpperInvariant(), output.ToUpperInvariant());
     }
 
+    // Hex output keeps floor(digits * log2(10) / 32) words of fraction above the dropped margin, so the top word of
+    // the result sits at index 40 + that count. 86 digits -> 8 words (index 48, below the BBP self-check);
+    // 87..96 -> 9 words (index 49, the self-check's 64-bit tail would start inside the integer part);
+    // 97 -> 10 words (index 50, first case with a valid self-check offset).
+    [SkippableTheory]
+    [Category(TestCategory.Stdlib)]
+    [Scenario(TestScenario.Boundary)]
+    [InlineData(86)]
+    [InlineData(87)]
+    [InlineData(90)]
+    [InlineData(96)]
+    [InlineData(97)]
+    public void Test_ChudnovskyAlgorithm_Gpu_Hex_MatchesMachinReference(int digits)
+    {
+        CudaCapability.EnsureGpuAvailable();
+        using var sw = new StringWriter();
+
+        // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/BigNum/Algorithms/ChudnovskyAlgorithm.cs:302 `CheckIndex + 2 <= actualTopIndex` -> `CheckIndex + 1 <= actualTopIndex`
+        // input: 87, 90, 96 (ArgumentOutOfRangeException from BbpAlgorithm.ExtractHexDigits)
+        ChudnovskyAlgorithm.ComputePi(digits, sw, thresholdTerms: 8, asHex: true);
+
+        var output = sw.ToString().Trim().ToUpperInvariant();
+        var fractionHexDigits = (int)Math.Floor(digits * Math.Log2(10) / 32) * 8;
+
+        // Every printed hex digit is a digit of pi: the reference is Machin's formula in BigInteger, independent of
+        // both the Chudnovsky series and the BBP digit extraction that the algorithm uses for its own self-check.
+        Assert.Equal("3." + MachinPiHexFraction(fractionHexDigits), output);
+    }
+
+    /// <summary>
+    /// Returns the first <paramref name="hexDigits"/> hexadecimal digits of the fraction of pi, computed with
+    /// Machin's formula <c>pi = 16 atan(1/5) - 4 atan(1/239)</c> in fixed point with 64 guard bits.
+    /// </summary>
+    private static string MachinPiHexFraction(int hexDigits)
+    {
+        const int GuardBits = 64;
+        var scaleBits = hexDigits * 4 + GuardBits;
+        var one = BigInteger.One << scaleBits;
+        var pi = 16 * ArctanInverse(5, one) - 4 * ArctanInverse(239, one);
+
+        // Each series term is truncated, so pi is off by at most a few units of 2^-scaleBits; 64 guard bits absorb
+        // that unless pi has 64 equal bits in a row right after the requested digits (it does not at these sizes).
+        var fraction = (pi >> GuardBits) - (new BigInteger(3) << (hexDigits * 4));
+        return fraction.ToString("X").TrimStart('0').PadLeft(hexDigits, '0');
+    }
+
+    // atan(1/x) * one = sum_k (-1)^k * one / ((2k + 1) * x^(2k + 1)), truncated term by term.
+    private static BigInteger ArctanInverse(int x, BigInteger one)
+    {
+        var sum = BigInteger.Zero;
+        var power = one / x;
+        var xSquared = x * x;
+        for (var k = 0; !power.IsZero; k++)
+        {
+            var term = power / (2 * k + 1);
+            sum += k % 2 == 0 ? term : -term;
+            power /= xSquared;
+        }
+
+        return sum;
+    }
+
     [Fact]
     [Scenario(TestScenario.HappyPath)]
     public void PiVerifier_VerifyWithBbp_ValidatesCorrectAndIncorrectHexTails()

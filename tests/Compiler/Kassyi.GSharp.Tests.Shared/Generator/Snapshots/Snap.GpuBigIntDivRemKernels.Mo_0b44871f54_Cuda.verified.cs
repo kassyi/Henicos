@@ -43,6 +43,7 @@ public static void Warmup()
 {
 // Force load the module first
 GetOrLoadModule();
+global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Kernels.GpuBigIntDivRemKernels.WarmupFunctionPointerInitializeOneModuloKernel();
 global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Kernels.GpuBigIntDivRemKernels.WarmupFunctionPointerModPowNttMegaKernel();
 }}}
 
@@ -55,7 +56,9 @@ namespace Kassyi.GSharp.Generated
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 internal static class GSharpSharedCudaDeviceCode
 {
-public const string Source = @"struct __gsharp_ty_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Algorithms__OperandContext;
+public const string Source = @"inline __device__ unsigned int __gsharp_fn_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuBigIntDivRemKernels__OneModulo(GSharpArray<unsigned int> __gsharp_id_0_modulus, int __gsharp_id_1_numWords);
+
+struct __gsharp_ty_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Algorithms__OperandContext;
 struct __gsharp_ty_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Algorithms__DimensionContext;
 struct __gsharp_ty_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Algorithms__BufferContext;
 struct __gsharp_ty_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Algorithms__TwiddleFactorContext;
@@ -76,6 +79,15 @@ struct __gsharp_ty_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Algorithms__NttConvo
 struct __gsharp_ty_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Algorithms__WorkspaceStateContext;
 struct __gsharp_ty_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Algorithms__NewtonRaphsonContext;
 inline __device__ void __gsharp_fn_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuBigIntDivRemKernels__ExecuteBarrettReductionMacro(__gsharp_ty_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Algorithms__NewtonRaphsonContext __gsharp_id_0_core, GSharpArray<unsigned int> __gsharp_id_1_leftOperand, GSharpArray<unsigned int> __gsharp_id_2_rightOperand, GSharpArray<unsigned int> __gsharp_id_3_reciprocalOfB, int __gsharp_id_4_targetBits, int __gsharp_id_5_aActualWords, GSharpArray<unsigned int> __gsharp_id_6_quotientBuffer, GSharpArray<unsigned int> __gsharp_id_7_remainderBuffer);
+
+inline __device__ unsigned int __gsharp_fn_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuBigIntDivRemKernels__OneModulo(GSharpArray<unsigned int> __gsharp_id_0_modulus, int __gsharp_id_1_numWords){
+unsigned int __gsharp_id_2_highWords = 0u;
+for(int __gsharp_id_3_i = 1;__gsharp_id_3_i<__gsharp_id_1_numWords;__gsharp_id_3_i++)
+{
+__gsharp_id_2_highWords|=__gsharp_id_0_modulus[__gsharp_id_3_i];
+}
+return (__gsharp_id_0_modulus[0]==1u&&__gsharp_id_2_highWords==0u?0u:1u);
+}
 
 #ifndef __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Algorithms__OperandContext__
 #define __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Algorithms__OperandContext__
@@ -2779,6 +2791,158 @@ host.EndWord = native.EndWord;
 }
 #pragma warning restore CS8500
 }
+public const string InitializeOneModuloKernel_Source = @"extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuBigIntDivRemKernels__InitializeOneModuloKernel(GSharpArray<unsigned int> __gsharp_id_0_result, GSharpArray<unsigned int> __gsharp_id_1_modulus, int __gsharp_id_2_numWords){
+if(threadIdx.x==0&&blockIdx.x==0)
+{
+__gsharp_id_0_result[0]=__gsharp_fn_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuBigIntDivRemKernels__OneModulo(__gsharp_id_1_modulus,__gsharp_id_2_numWords);
+}
+}
+";
+public static readonly string InitializeOneModuloKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +InitializeOneModuloKernel_Source;
+private static IntPtr? s_hfunc_InitializeOneModuloKernel;
+/// <summary>Preloads the CUDA module and resolves the function pointer for this kernel.</summary>
+public static void WarmupFunctionPointerInitializeOneModuloKernel()
+{
+if (s_hfunc_InitializeOneModuloKernel.HasValue) return;
+IntPtr hModule = global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetOrLoadModule();
+s_hfunc_InitializeOneModuloKernel = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.GetFunction(hModule, "__gsharp_k_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuBigIntDivRemKernels__InitializeOneModuloKernel");
+}
+#pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
+[global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
+[global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
+public static unsafe void LaunchInitializeOneModuloKernel(global::System.UInt32[] result, global::System.UInt32[] modulus, global::System.Int32 numWords, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, IntPtr hStream = default, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
+{
+if (result is null){
+throw new global::System.ArgumentNullException(nameof(result));
+}
+if (result.Length == 0){
+throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(result));
+}
+if (modulus is null){
+throw new global::System.ArgumentNullException(nameof(modulus));
+}
+if (modulus.Length == 0){
+throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(modulus));
+}
+using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
+{
+WarmupFunctionPointerInitializeOneModuloKernel();
+IntPtr hfunc = s_hfunc_InitializeOneModuloKernel!.Value;
+IntPtr d_result = IntPtr.Zero;
+IntPtr d_modulus = IntPtr.Zero;
+try
+{
+void** kernelParams = stackalloc void*[3];
+// Marshal array: result
+int result_size = result.Length * sizeof(global::System.UInt32);
+IntPtr* proxy_result = stackalloc IntPtr[2];
+proxy_result[0] = IntPtr.Zero;
+((int*)(proxy_result + 1))[0] = result.Length;
+if (result_size > 0)
+{
+CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_result, (IntPtr)result_size, hStream));
+proxy_result[0] = d_result;
+fixed (global::System.UInt32* p_result = result)
+{
+CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoDAsync_v2(d_result, (IntPtr)p_result, (IntPtr)result_size, hStream));
+CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
+}
+}
+kernelParams[0] = proxy_result;
+// Marshal array: modulus
+int modulus_size = modulus.Length * sizeof(global::System.UInt32);
+IntPtr* proxy_modulus = stackalloc IntPtr[2];
+proxy_modulus[0] = IntPtr.Zero;
+((int*)(proxy_modulus + 1))[0] = modulus.Length;
+if (modulus_size > 0)
+{
+CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_modulus, (IntPtr)modulus_size, hStream));
+proxy_modulus[0] = d_modulus;
+fixed (global::System.UInt32* p_modulus = modulus)
+{
+CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoDAsync_v2(d_modulus, (IntPtr)p_modulus, (IntPtr)modulus_size, hStream));
+CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
+}
+}
+kernelParams[1] = proxy_modulus;
+// Marshal scalar: numWords
+kernelParams[2] = &numWords;
+CudaException.ThrowIfError(CudaDriverApi.cuLaunchKernel(
+hfunc,
+gridDimX, gridDimY, gridDimZ, // Grid dim
+blockDimX, blockDimY, blockDimZ, // Block dim
+sharedMemBytes, // Shared mem
+hStream, // Stream
+kernelParams,
+IntPtr.Zero // Extra
+));
+// Copy back array: result
+if (result_size > 0 && d_result != IntPtr.Zero)
+{
+fixed (global::System.UInt32* p_result = result)
+{
+CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoHAsync_v2((IntPtr)p_result, d_result, (IntPtr)result_size, hStream));
+CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
+}
+}
+// Copy back array: modulus
+if (modulus_size > 0 && d_modulus != IntPtr.Zero)
+{
+fixed (global::System.UInt32* p_modulus = modulus)
+{
+CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoHAsync_v2((IntPtr)p_modulus, d_modulus, (IntPtr)modulus_size, hStream));
+CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
+}
+}
+}
+finally
+{
+if (d_result != IntPtr.Zero) CudaDriverApi.cuMemFreeAsync(d_result, hStream);
+if (d_modulus != IntPtr.Zero) CudaDriverApi.cuMemFreeAsync(d_modulus, hStream);
+}
+}
+}
+#pragma warning restore CS8500
+#pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
+[global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
+[global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
+public static unsafe void LaunchInitializeOneModuloKernelPtr(IntPtr result, IntPtr modulus, global::System.Int32 numWords, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, IntPtr hStream = default, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
+{
+using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
+{
+WarmupFunctionPointerInitializeOneModuloKernel();
+IntPtr hfunc = s_hfunc_InitializeOneModuloKernel!.Value;
+try
+{
+void** kernelParams = stackalloc void*[3];
+// Marshal device array: result
+IntPtr* proxy_result = stackalloc IntPtr[2];
+proxy_result[0] = result;
+((int*)(proxy_result + 1))[0] = 0; // Length is unknown for raw IntPtr
+kernelParams[0] = proxy_result;
+// Marshal device array: modulus
+IntPtr* proxy_modulus = stackalloc IntPtr[2];
+proxy_modulus[0] = modulus;
+((int*)(proxy_modulus + 1))[0] = 0; // Length is unknown for raw IntPtr
+kernelParams[1] = proxy_modulus;
+// Marshal scalar: numWords
+kernelParams[2] = &numWords;
+CudaException.ThrowIfError(CudaDriverApi.cuLaunchKernel(
+hfunc,
+gridDimX, gridDimY, gridDimZ, // Grid dim
+blockDimX, blockDimY, blockDimZ, // Block dim
+sharedMemBytes, // Shared mem
+hStream, // Stream
+kernelParams,
+IntPtr.Zero // Extra
+));
+}
+finally
+{
+}
+}
+}
+#pragma warning restore CS8500
 public const string ModPowNttMegaKernel_Source = @"#ifndef __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Algorithms__OperandContext__
 #define __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Algorithms__OperandContext__
 struct __gsharp_ty_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Algorithms__OperandContext
@@ -3023,40 +3187,41 @@ int __gsharp_id_9_targetWords = (__gsharp_id_6_targetBits+31)/32;
 int __gsharp_id_10_outWords = __gsharp_id_8_aActualWords+__gsharp_id_9_targetWords;
 if(__gsharp_id_3_expSlice.__gsharp_mb_StartWord==0)
 {
-for(int __gsharp_id_11_idx = blockIdx.x * blockDim.x + threadIdx.x; __gsharp_id_11_idx < __gsharp_id_10_outWords; __gsharp_id_11_idx += gridDim.x * blockDim.x)
+unsigned int __gsharp_id_11_oneModulo = __gsharp_fn_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuBigIntDivRemKernels__OneModulo(__gsharp_id_1_core.__gsharp_mb_Operands.__gsharp_mb_Constant,__gsharp_id_4_n);
+for(int __gsharp_id_12_idx = blockIdx.x * blockDim.x + threadIdx.x; __gsharp_id_12_idx < __gsharp_id_10_outWords; __gsharp_id_12_idx += gridDim.x * blockDim.x)
 {
-if(__gsharp_id_11_idx<2*__gsharp_id_4_n)
+if(__gsharp_id_12_idx<2*__gsharp_id_4_n)
 {
-__gsharp_id_2_iterScratch.__gsharp_mb_AxSquared[__gsharp_id_11_idx]=(__gsharp_id_11_idx==0?1u:0u);
-__gsharp_id_2_iterScratch.__gsharp_mb_XSquared[__gsharp_id_11_idx]=(__gsharp_id_11_idx<__gsharp_id_4_n?__gsharp_id_1_core.__gsharp_mb_Operands.__gsharp_mb_TargetOperand[__gsharp_id_11_idx]:0u);
+__gsharp_id_2_iterScratch.__gsharp_mb_AxSquared[__gsharp_id_12_idx]=(__gsharp_id_12_idx==0?__gsharp_id_11_oneModulo:0u);
+__gsharp_id_2_iterScratch.__gsharp_mb_XSquared[__gsharp_id_12_idx]=(__gsharp_id_12_idx<__gsharp_id_4_n?__gsharp_id_1_core.__gsharp_mb_Operands.__gsharp_mb_TargetOperand[__gsharp_id_12_idx]:0u);
 }
-__gsharp_id_2_iterScratch.__gsharp_mb_ModulusExpanded[__gsharp_id_11_idx]=(__gsharp_id_11_idx<__gsharp_id_4_n?__gsharp_id_1_core.__gsharp_mb_Operands.__gsharp_mb_Constant[__gsharp_id_11_idx]:0u);
+__gsharp_id_2_iterScratch.__gsharp_mb_ModulusExpanded[__gsharp_id_12_idx]=(__gsharp_id_12_idx<__gsharp_id_4_n?__gsharp_id_1_core.__gsharp_mb_Operands.__gsharp_mb_Constant[__gsharp_id_12_idx]:0u);
 }
 cg::this_grid().sync();
 }
-for(int __gsharp_id_12_i = __gsharp_id_3_expSlice.__gsharp_mb_StartWord;__gsharp_id_12_i<__gsharp_id_3_expSlice.__gsharp_mb_EndWord;__gsharp_id_12_i++)
+for(int __gsharp_id_13_i = __gsharp_id_3_expSlice.__gsharp_mb_StartWord;__gsharp_id_13_i<__gsharp_id_3_expSlice.__gsharp_mb_EndWord;__gsharp_id_13_i++)
 {
-unsigned int __gsharp_id_13_e = __gsharp_id_3_expSlice.__gsharp_mb_Words[__gsharp_id_12_i];
-if(__gsharp_id_13_e==0)
+unsigned int __gsharp_id_14_e = __gsharp_id_3_expSlice.__gsharp_mb_Words[__gsharp_id_13_i];
+if(__gsharp_id_14_e==0)
 {
 }
-for(int __gsharp_id_14_bit = 0;__gsharp_id_14_bit<32;__gsharp_id_14_bit++)
+for(int __gsharp_id_15_bit = 0;__gsharp_id_15_bit<32;__gsharp_id_15_bit++)
 {
-if((__gsharp_id_13_e&1)==1)
+if((__gsharp_id_14_e&1)==1)
 {
 __gsharp_fn_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuBigIntDivRemKernels__ExecuteNttMultiplyMacroModPow(__gsharp_id_1_core,__gsharp_id_2_iterScratch.__gsharp_mb_AxSquared,__gsharp_id_2_iterScratch.__gsharp_mb_XSquared,__gsharp_id_2_iterScratch.__gsharp_mb_NextXUnshifted,2*__gsharp_id_4_n,2*__gsharp_id_4_n,4*__gsharp_id_4_n);
 __gsharp_fn_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuBigIntDivRemKernels__ExecuteBarrettReductionMacro(__gsharp_id_1_core,__gsharp_id_2_iterScratch.__gsharp_mb_NextXUnshifted,__gsharp_id_2_iterScratch.__gsharp_mb_ModulusExpanded,__gsharp_id_0_ctx.__gsharp_mb_ReciprocalMod,__gsharp_id_6_targetBits,__gsharp_id_8_aActualWords,__gsharp_id_2_iterScratch.__gsharp_mb_NextXShifted,__gsharp_id_2_iterScratch.__gsharp_mb_AxSquared);
 }
 __gsharp_fn_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuBigIntDivRemKernels__ExecuteNttMultiplyMacroModPow(__gsharp_id_1_core,__gsharp_id_2_iterScratch.__gsharp_mb_XSquared,__gsharp_id_2_iterScratch.__gsharp_mb_XSquared,__gsharp_id_2_iterScratch.__gsharp_mb_NextXUnshifted,2*__gsharp_id_4_n,2*__gsharp_id_4_n,4*__gsharp_id_4_n);
 __gsharp_fn_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuBigIntDivRemKernels__ExecuteBarrettReductionMacro(__gsharp_id_1_core,__gsharp_id_2_iterScratch.__gsharp_mb_NextXUnshifted,__gsharp_id_2_iterScratch.__gsharp_mb_ModulusExpanded,__gsharp_id_0_ctx.__gsharp_mb_ReciprocalMod,__gsharp_id_6_targetBits,__gsharp_id_8_aActualWords,__gsharp_id_2_iterScratch.__gsharp_mb_NextXShifted,__gsharp_id_2_iterScratch.__gsharp_mb_XSquared);
-__gsharp_id_13_e>>=1;
+__gsharp_id_14_e>>=1;
 }
 }
 if(__gsharp_id_3_expSlice.__gsharp_mb_EndWord==__gsharp_id_5_expWords)
 {
-for(int __gsharp_id_15_idx = blockIdx.x * blockDim.x + threadIdx.x; __gsharp_id_15_idx < __gsharp_id_4_n; __gsharp_id_15_idx += gridDim.x * blockDim.x)
+for(int __gsharp_id_16_idx = blockIdx.x * blockDim.x + threadIdx.x; __gsharp_id_16_idx < __gsharp_id_4_n; __gsharp_id_16_idx += gridDim.x * blockDim.x)
 {
-__gsharp_id_1_core.__gsharp_mb_Operands.__gsharp_mb_ResultBuffer[__gsharp_id_15_idx]=__gsharp_id_2_iterScratch.__gsharp_mb_AxSquared[__gsharp_id_15_idx];
+__gsharp_id_1_core.__gsharp_mb_Operands.__gsharp_mb_ResultBuffer[__gsharp_id_16_idx]=__gsharp_id_2_iterScratch.__gsharp_mb_AxSquared[__gsharp_id_16_idx];
 }
 cg::this_grid().sync();
 }
