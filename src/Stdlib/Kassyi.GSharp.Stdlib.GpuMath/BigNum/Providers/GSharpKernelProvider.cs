@@ -61,33 +61,126 @@ public sealed class GSharpKernelProvider : IGpuExecutionProvider
         MemoryProvider.CopyHostToDevice(devicePointer, hostData, numWords, stream);
 
     /// <inheritdoc />
-    public void CopyDeviceToHost(uint[] hostData, IntPtr devicePointer, int numWords, IntPtr stream = 0) =>
-        MemoryProvider.CopyDeviceToHost(hostData, devicePointer, numWords, stream);
+    /// <exception cref="InvalidOperationException">An on-device correction on the stream did not converge since the
+    /// previous read (see <see cref="GpuCorrectionStatus"/>).</exception>
+    public void CopyDeviceToHost(uint[] hostData, IntPtr devicePointer, int numWords, IntPtr stream = 0)
+    {
+        // The copy waits for the stream only when it moves data, so only then can it carry the status words.
+        var status = numWords > 0 ? GpuCorrectionStatus.BeginRead(stream) : null;
+        try
+        {
+            MemoryProvider.CopyDeviceToHost(hostData, devicePointer, numWords, stream);
+        }
+        catch
+        {
+            // The read did not wait, so the next read copies the status words again.
+            status?.AbandonRead();
+            throw;
+        }
+
+        status?.EndRead();
+    }
 
     /// <inheritdoc />
+    /// <exception cref="InvalidOperationException">The returned task completes with it when an on-device correction on
+    /// the stream did not converge since the previous read (see <see cref="GpuCorrectionStatus"/>).</exception>
     public ValueTask CopyDeviceToHostAsync(Memory<uint> hostData, IntPtr devicePointer, int numWords, IntPtr stream,
-        CancellationToken cancellationToken = default) =>
-        MemoryProvider.CopyDeviceToHostAsync(hostData, devicePointer, numWords, stream, cancellationToken);
+        CancellationToken cancellationToken = default)
+    {
+        if (cancellationToken.IsCancellationRequested)
+        {
+            // Nothing is read, so the status is left for the next read.
+            return ValueTask.FromCanceled(cancellationToken);
+        }
+
+        var status = numWords > 0 ? GpuCorrectionStatus.BeginRead(stream) : null;
+        ValueTask read;
+        try
+        {
+            read = MemoryProvider.CopyDeviceToHostAsync(hostData, devicePointer, numWords, stream, cancellationToken);
+        }
+        catch
+        {
+            status?.AbandonRead();
+            throw;
+        }
+
+        return status is null ? read : status.EndReadAfter(read);
+    }
 
     /// <inheritdoc />
     public void CopyDeviceToDevice(IntPtr destPointer, IntPtr srcPointer, int numWords, IntPtr stream = 0) =>
         MemoryProvider.CopyDeviceToDevice(destPointer, srcPointer, numWords, stream);
 
     /// <inheritdoc />
-    public uint ReadWord(IntPtr devicePointer, int wordOffset = 0, IntPtr stream = 0) =>
-        MemoryProvider.ReadWord(devicePointer, wordOffset, stream);
+    /// <exception cref="InvalidOperationException">An on-device correction on the stream did not converge since the
+    /// previous read (see <see cref="GpuCorrectionStatus"/>).</exception>
+    public uint ReadWord(IntPtr devicePointer, int wordOffset = 0, IntPtr stream = 0)
+    {
+        var status = GpuCorrectionStatus.BeginRead(stream);
+        uint word;
+        try
+        {
+            word = MemoryProvider.ReadWord(devicePointer, wordOffset, stream);
+        }
+        catch
+        {
+            status?.AbandonRead();
+            throw;
+        }
+
+        status?.EndRead();
+        return word;
+    }
 
     /// <inheritdoc />
     public void WriteWord(IntPtr devicePointer, int wordOffset, uint value, IntPtr stream = 0) =>
         MemoryProvider.WriteWord(devicePointer, wordOffset, value, stream);
 
     /// <inheritdoc />
-    public void SynchronizeStream(IntPtr stream) =>
-        MemoryProvider.SynchronizeStream(stream);
+    /// <exception cref="InvalidOperationException">An on-device correction on the stream did not converge since the
+    /// previous read (see <see cref="GpuCorrectionStatus"/>).</exception>
+    public void SynchronizeStream(IntPtr stream)
+    {
+        var status = GpuCorrectionStatus.BeginRead(stream);
+        try
+        {
+            MemoryProvider.SynchronizeStream(stream);
+        }
+        catch
+        {
+            status?.AbandonRead();
+            throw;
+        }
+
+        status?.EndRead();
+    }
 
     /// <inheritdoc />
-    public ValueTask SynchronizeStreamAsync(IntPtr stream, CancellationToken cancellationToken = default) =>
-        MemoryProvider.SynchronizeStreamAsync(stream, cancellationToken);
+    /// <exception cref="InvalidOperationException">The returned task completes with it when an on-device correction on
+    /// the stream did not converge since the previous read (see <see cref="GpuCorrectionStatus"/>).</exception>
+    public ValueTask SynchronizeStreamAsync(IntPtr stream, CancellationToken cancellationToken = default)
+    {
+        if (cancellationToken.IsCancellationRequested)
+        {
+            // Nothing is awaited, so the status is left for the next read.
+            return ValueTask.FromCanceled(cancellationToken);
+        }
+
+        var status = GpuCorrectionStatus.BeginRead(stream);
+        ValueTask read;
+        try
+        {
+            read = MemoryProvider.SynchronizeStreamAsync(stream, cancellationToken);
+        }
+        catch
+        {
+            status?.AbandonRead();
+            throw;
+        }
+
+        return status is null ? read : status.EndReadAfter(read);
+    }
 
     #endregion
 
@@ -207,7 +300,14 @@ public sealed class GSharpKernelProvider : IGpuExecutionProvider
     public IntPtr InstantiateGraph(IntPtr graph) => GraphProvider.InstantiateGraph(graph);
 
     /// <inheritdoc />
-    public void LaunchGraph(IntPtr graphExec, IntPtr stream) => GraphProvider.LaunchGraph(graphExec, stream);
+    public void LaunchGraph(IntPtr graphExec, IntPtr stream)
+    {
+        GraphProvider.LaunchGraph(graphExec, stream);
+
+        // A graph may contain a correction kernel, so the next read checks the correction status. Marked after the
+        // launch, so that a read on another thread cannot consume the request before the kernel is on the stream.
+        GpuCorrectionStatus.Find(stream)?.MarkPending();
+    }
 
     /// <inheritdoc />
     public void DestroyGraph(IntPtr graph, IntPtr graphExec) => GraphProvider.DestroyGraph(graph, graphExec);

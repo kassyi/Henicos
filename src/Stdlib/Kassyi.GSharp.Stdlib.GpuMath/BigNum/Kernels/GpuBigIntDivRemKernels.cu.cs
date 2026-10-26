@@ -4,6 +4,15 @@ namespace Kassyi.GSharp.Stdlib.GpuMath.BigNum.Kernels;
 [ExcludeFromCodeCoverage]
 public static partial class GpuBigIntDivRemKernels
 {
+    /// <summary>The correction status written when the ReduceZeroSync correction does not converge.</summary>
+    public const uint ReduceZeroSyncCorrectionFailed = 1u;
+
+    /// <summary>The correction status written when the reciprocal correction does not converge.</summary>
+    public const uint ReciprocalCorrectionFailed = 2u;
+
+    /// <summary>The correction status written when the inverse square root correction does not converge.</summary>
+    public const uint InverseSqrtCorrectionFailed = 3u;
+
     // Dummy kernel to force the generator to emit the DualNtt struct definition before we use it
     [GpuDeviceFunction]
     private static void ForceEmitDualNtt_DivRem(DualNtt args)
@@ -153,7 +162,8 @@ public static partial class GpuBigIntDivRemKernels
         int remainderWords = n + resultWords;
         GpuBigIntKernels.DeviceAddSubAlignedParallel(iterScratch.CurrentProduct, remainderWords, ops.Constant,
             n + 2 * resultWords, iterScratch.Diff, remainderWords, 0, 1, -2, true);
-        var delta = CorrectIntoDivisorRange(iterScratch.Diff, ops.TargetOperand, remainderWords, n, 1000);
+        var delta = CorrectIntoDivisorRange(iterScratch.Diff, ops.TargetOperand, remainderWords, n, 1000,
+            core.CorrectionStatus, ReciprocalCorrectionFailed);
         Gpu.SingleThread(() => AddSmallSigned(ops.ResultBuffer, resultWords, delta));
     }
 
@@ -161,12 +171,16 @@ public static partial class GpuBigIntDivRemKernels
     /// Corrects the remainder <c>diff = a - q * b</c> into <c>[0, b)</c> and the quotient <paramref name="quotient"/> by
     /// the same number of steps, so that both are exact when the estimate is within 1000 steps of <c>q</c>.
     /// </summary>
-    /// <remarks>Launched with one block; runs on the stream without a host synchronization.</remarks>
+    /// <remarks>
+    /// Launched with one block; runs on the stream without a host synchronization. When the estimate is further away,
+    /// <see cref="ReduceZeroSyncCorrectionFailed"/> is written to <paramref name="status"/>.
+    /// </remarks>
     [GpuKernel]
     public static void BarrettCorrectionKernel(uint[] diff, [GpuReadOnly] uint[] rightOperand, uint[] quotient,
-        int evalWords, int quotientWords)
+        int evalWords, int quotientWords, uint[] status)
     {
-        var delta = CorrectIntoDivisorRange(diff, rightOperand, evalWords, evalWords, 1000);
+        var delta = CorrectIntoDivisorRange(diff, rightOperand, evalWords, evalWords, 1000, status,
+            ReduceZeroSyncCorrectionFailed);
         Gpu.SingleThread(() => AddSmallSigned(quotient, quotientWords, delta));
     }
 
@@ -178,11 +192,13 @@ public static partial class GpuBigIntDivRemKernels
     /// <remarks>
     /// Runs on block 0 only (the other blocks return 0 at once). Every thread of block 0 reads the same sign word after a
     /// barrier, so all of them take the same branches and return the same count. The remainder needs one word more than
-    /// its magnitude so that the top bit is the sign.
+    /// its magnitude so that the top bit is the sign. When the remainder is not confirmed inside the range within
+    /// <paramref name="maxSteps"/> steps, thread 0 adds 1 to <c>status[0]</c> and writes <paramref name="failureCode"/> to
+    /// <c>status[1]</c>; the host reports it at the next read of the stream.
     /// </remarks>
     [GpuDeviceFunction]
     public static int CorrectIntoDivisorRange(uint[] remainder, [GpuReadOnly] uint[] divisor, int remainderWords,
-        int divisorWords, int maxSteps)
+        int divisorWords, int maxSteps, uint[] status, uint failureCode)
     {
         if (BlockIndex.X != 0)
         {
@@ -190,13 +206,22 @@ public static partial class GpuBigIntDivRemKernels
         }
 
         int delta = 0;
-        for (int step = 0; step < maxSteps; step++)
+        bool converged = false;
+
+        // At most maxSteps moves; the pass after the last move only checks the range, so a remainder exactly maxSteps
+        // steps away is still confirmed.
+        for (int step = 0; step <= maxSteps; step++)
         {
             var negative = (remainder[remainderWords - 1] & 0x80000000u) != 0;
             Gpu.SyncThreads();
 
             if (negative)
             {
+                if (step == maxSteps)
+                {
+                    break;
+                }
+
                 // r < 0: the quotient estimate was too large.
                 GpuBigIntKernels.DeviceAddSubAlignedParallel(remainder, remainderWords, divisor, divisorWords,
                     remainder, remainderWords, 0, 0, 1, true);
@@ -209,15 +234,23 @@ public static partial class GpuBigIntDivRemKernels
             var belowZero = (remainder[remainderWords - 1] & 0x80000000u) != 0;
             Gpu.SyncThreads();
 
-            if (belowZero)
+            if (belowZero || step == maxSteps)
             {
-                // r was already below the divisor: undo the subtraction and stop.
+                // r was already below the divisor (or no move is left): undo the subtraction and stop.
                 GpuBigIntKernels.DeviceAddSubAlignedParallel(remainder, remainderWords, divisor, divisorWords,
                     remainder, remainderWords, 0, 0, 1, true);
+                converged = belowZero;
                 break;
             }
 
             delta++;
+        }
+
+        if (!converged && ThreadIndex.X == 0)
+        {
+            // status[0] counts the failures (it only grows) and status[1] keeps the code of the last one.
+            Gpu.AtomicAdd(ref status[0], 1u);
+            status[1] = failureCode;
         }
 
         return delta;

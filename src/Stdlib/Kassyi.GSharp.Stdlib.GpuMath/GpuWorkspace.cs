@@ -76,6 +76,18 @@ public class GpuWorkspace : IGpuResourceScope
     }
 
     /// <summary>
+    /// Gets the device words through which unconverged on-device corrections are reported, or <see langword="null"/> in
+    /// CPU fallback mode.
+    /// </summary>
+    internal GpuCorrectionStatus? CorrectionStatus
+    {
+        get;
+    }
+
+    /// <summary>Gets the device address of <see cref="CorrectionStatus"/>, or <see cref="IntPtr.Zero"/> without one.</summary>
+    internal IntPtr CorrectionStatusPointer => CorrectionStatus?.DevicePointer ?? IntPtr.Zero;
+
+    /// <summary>
     /// Gets or sets the bit length threshold for algorithm selection in poly-algorithms like ModPow.
     /// Values smaller than the threshold will use intermediate-scale algorithms (e.g., Host-Loop or RNS),
     /// while values greater than or equal to the threshold will dispatch to giant-scale MegaKernels (e.g., NTT).
@@ -131,7 +143,7 @@ public class GpuWorkspace : IGpuResourceScope
             }
 
             scope = new GpuKernelLoader.CudaContextScope(_isolatedContext);
-            CudaDriverApi.cuStreamCreate(out var stream, 0); // CU_STREAM_DEFAULT
+            CudaException.ThrowIfError(CudaDriverApi.cuStreamCreate(out var stream, 0)); // CU_STREAM_DEFAULT
             Stream = stream;
 
             CudaDriverApi.cuCtxGetDevice(out var device);
@@ -143,6 +155,10 @@ public class GpuWorkspace : IGpuResourceScope
         try
         {
             MemoryManager = new DefaultGpuMemoryManager(Provider, Stream);
+            if (Stream != IntPtr.Zero)
+            {
+                CorrectionStatus = new GpuCorrectionStatus(Provider, Stream, _isolatedContext);
+            }
         }
         finally
         {
@@ -198,6 +214,21 @@ public class GpuWorkspace : IGpuResourceScope
             AbortLeakedCapture(exceptions);
             DisposeTrackedResources(exceptions);
             DisposeMemoryManager(exceptions);
+            try
+            {
+                // Stream-ordered release of the device words; the page-locked slot goes back to the process-wide pool
+                // once no read copies into it.
+                // Written out here (not '?.' in a helper) so that the ownership analyzer (GSH0022) sees the call.
+                if (CorrectionStatus != null)
+                {
+                    CorrectionStatus.Dispose();
+                }
+            }
+            catch (Exception ex)
+            {
+                exceptions?.Add(ex);
+            }
+
             DisposeEngineResources(exceptions);
         }
         finally

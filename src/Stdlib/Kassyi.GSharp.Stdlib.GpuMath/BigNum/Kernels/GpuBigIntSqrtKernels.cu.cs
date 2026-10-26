@@ -100,7 +100,8 @@ public static partial class GpuBigIntSqrtKernels
             iterScratch.Diff, slackWords, 0, 0, -1, true);
 
         var delta = CorrectInverseSqrtSlack(iterScratch.Diff, iterScratch.NextXUnshifted, ops.TargetOperand,
-            iterScratch.NextXShifted, slackWords, axWords, n, 1000);
+            iterScratch.NextXShifted, slackWords, axWords, n, 1000, core.CorrectionStatus,
+            GpuBigIntDivRemKernels.InverseSqrtCorrectionFailed);
         Gpu.SingleThread(() => GpuBigIntDivRemKernels.AddSmallSigned(ops.ResultBuffer, xWords, delta));
     }
 
@@ -116,6 +117,10 @@ public static partial class GpuBigIntSqrtKernels
     /// <param name="axWords">The word count of <paramref name="ax"/>.</param>
     /// <param name="operandWords">The word count of <paramref name="operand"/>.</param>
     /// <param name="maxSteps">The upper bound on the number of steps.</param>
+    /// <param name="status">The correction status words; thread 0 adds 1 to <c>status[0]</c> and writes
+    /// <paramref name="failureCode"/> to <c>status[1]</c> when <c>x</c> is not confirmed within
+    /// <paramref name="maxSteps"/> steps.</param>
+    /// <param name="failureCode">The status code that names the failed operation.</param>
     /// <returns>The number of steps to add to <c>x</c>.</returns>
     /// <remarks>
     /// Runs on block 0 only (the other blocks return 0 at once); all threads of block 0 read the same sign words after a
@@ -124,7 +129,7 @@ public static partial class GpuBigIntSqrtKernels
     /// </remarks>
     [GpuDeviceFunction]
     public static int CorrectInverseSqrtSlack(uint[] slack, uint[] ax, [GpuReadOnly] uint[] operand, uint[] trial,
-        int slackWords, int axWords, int operandWords, int maxSteps)
+        int slackWords, int axWords, int operandWords, int maxSteps, uint[] status, uint failureCode)
     {
         if (BlockIndex.X != 0)
         {
@@ -132,13 +137,22 @@ public static partial class GpuBigIntSqrtKernels
         }
 
         int delta = 0;
-        for (int step = 0; step < maxSteps; step++)
+        bool converged = false;
+
+        // At most maxSteps moves; the pass after the last move only checks, so an x exactly maxSteps steps away is still
+        // confirmed.
+        for (int step = 0; step <= maxSteps; step++)
         {
             var negative = (slack[slackWords - 1] & 0x80000000u) != 0;
             Gpu.SyncThreads();
 
             if (negative)
             {
+                if (step == maxSteps)
+                {
+                    break;
+                }
+
                 // a * x^2 > 2^(2B): x -> x - 1. Reading ax with word shift -1 and bit shift 31 gives 2 * ax.
                 GpuBigIntKernels.DeviceAddSubAlignedParallel(slack, slackWords, ax, axWords, slack, slackWords, -1, 31,
                     1, true);
@@ -158,8 +172,9 @@ public static partial class GpuBigIntSqrtKernels
             var trialNegative = (trial[slackWords - 1] & 0x80000000u) != 0;
             Gpu.SyncThreads();
 
-            if (trialNegative)
+            if (trialNegative || step == maxSteps)
             {
+                converged = trialNegative;
                 break;
             }
 
@@ -172,6 +187,13 @@ public static partial class GpuBigIntSqrtKernels
             GpuBigIntKernels.DeviceAddSubAlignedParallel(ax, axWords, operand, operandWords, ax, axWords, 0, 0, 1,
                 true);
             delta++;
+        }
+
+        if (!converged && ThreadIndex.X == 0)
+        {
+            // status[0] counts the failures (it only grows) and status[1] keeps the code of the last one.
+            Gpu.AtomicAdd(ref status[0], 1u);
+            status[1] = failureCode;
         }
 
         return delta;

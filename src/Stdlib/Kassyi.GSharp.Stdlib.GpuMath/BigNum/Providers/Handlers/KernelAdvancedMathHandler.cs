@@ -234,10 +234,13 @@ public sealed class KernelAdvancedMathHandler : IGpuAdvancedMathProvider
 
         var ctx = BuildSqrtContext(targetOperand, resultBuffer, constant3, n, marginWords, actualBits, marginBits,
             iterations, buffers, xSquared, axSquared, diff, nextXUnshifted, nextXShifted, carryBuffer);
+        // The status words of the workspace whose stream runs the kernel, which its reads check.
+        ctx.Core.CorrectionStatus = workspace.CorrectionStatusPointer;
 
         GpuBigIntSqrtKernels.LaunchInverseSqrtNewtonRaphsonMegaKernelPtr(
             ctx,
             gridDimX: gridDim, blockDimX: BlockDim, sharedMemBytes: sharedMemBytes, hStream: workspace.Stream);
+        workspace.CorrectionStatus?.MarkPending();
     }
 
     private static GpuBigIntSqrtKernels.AotContexts.SqrtNewtonRaphson BuildSqrtContext(
@@ -364,11 +367,14 @@ public sealed class KernelAdvancedMathHandler : IGpuAdvancedMathProvider
 
         var ctx = BuildReciprocalContext(targetOperand, resultBuffer, constant, n, marginWords, targetBits,
             iterations, buffers, currentProduct, diff, nextIter, carryBuffer);
+        // The status words of the workspace whose stream runs the kernel, which its reads check.
+        ctx.Core.CorrectionStatus = workspace.CorrectionStatusPointer;
 
         GpuBigIntDivRemKernels.LaunchReciprocalNewtonRaphsonMegaKernelPtr(
             ctx,
             gridDimX: gridDim, blockDimX: BlockDim, sharedMemBytes: sharedMemBytes
             , hStream: workspace.Stream);
+        workspace.CorrectionStatus?.MarkPending();
     }
 
     private static GpuBigIntDivRemKernels.AotContexts.ReciprocalNewtonRaphson BuildReciprocalContext(
@@ -814,8 +820,19 @@ public sealed class KernelAdvancedMathHandler : IGpuAdvancedMathProvider
                 gridDimX: gridDim, blockDimX: blockDim, sharedMemBytes: sharedMemBytes,
                 hStream: workspace.Stream);
 
-            // Sync after each chunk to let the TDR watchdog reset
-            CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(workspace.Stream));
+            // Sync after each chunk to let the TDR watchdog reset; the wait also carries the correction status words.
+            var status = workspace.CorrectionStatus?.BeginRead();
+            try
+            {
+                CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(workspace.Stream));
+            }
+            catch
+            {
+                status?.AbandonRead();
+                throw;
+            }
+
+            status?.EndRead();
         }
     }
 
