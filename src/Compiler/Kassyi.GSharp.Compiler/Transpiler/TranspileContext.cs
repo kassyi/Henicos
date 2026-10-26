@@ -70,6 +70,12 @@ public struct Emitter(
     /// <summary>Monotonically increasing ordinal for <c>__gsharp_arg_temp_&lt;n&gt;</c> temporaries synthesized for out-of-order named arguments.</summary>
     public int ArgumentTempCounter;
 
+    /// <summary>
+    /// Numbers the <c>__gsharp_seq_&lt;n&gt;</c> temporaries that keep the C# order of evaluation in the method
+    /// (<see cref="EvaluationOrder"/>).
+    /// </summary>
+    public int SequenceTempCounter;
+
     /// <summary>Numbers the guards and the resource temporaries of the <c>using</c>s of the method (UsingTranspiler).</summary>
     public int UsingCounter;
 

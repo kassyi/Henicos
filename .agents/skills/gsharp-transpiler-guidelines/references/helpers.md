@@ -39,6 +39,7 @@ Script conventions and the catalog of agent scripts are in [agent-scripts.md](..
 | Which `Gpu` macro is this call (`SyncGrid`, `SingleThread`, `ForUnroll` ...)? | `GpuMacroClassifier.Classify` | `symbol.Name == "SyncGrid"` |
 | Does a device function reach a barrier, which device functions a body calls, does a method have a device function body? | `SuspensionAnalysis.IsSuspendingFunction`, `SuspensionAnalysis.ReachesBlockBarrier`, `SuspensionAnalysis.GetDeviceFunctionCallees`, `SuspensionAnalysis.TryGetDeviceFunctionBody` | a walk of `DescendantNodes()` for invocations of `[GpuDeviceFunction]` methods |
 | Is a `SharedMemory<T>` declaration dynamic (its count is not a C# constant), does a device function reach one, which ones does a kernel reach? | `DynamicSharedMemoryAnalysis.TryGetCount`, `DynamicSharedMemoryAnalysis.ReachesDynamicSharedMemory`, `DynamicSharedMemoryAnalysis.GetReachableSites` | `GetSafeConstantValue` on the first argument in each rule, or a call graph walk of its own |
+| What may a call of a device function, struct member or intrinsic write (nothing, its `ref` / `out` arguments, or memory)? What does an expression read and write, and does an operand interfere with a later one? | `DeviceFunctionEffects.Classify`, `ExpressionEffects.Of`, `ExpressionEffects.OfLocation`, `.InterferesWith` | a walk of the callee body in the rule, or treating every call as a side effect |
 
 Type and namespace names: `TypeConstants` (`TypeConstants.GpuType`, `TypeConstants.GpuMacros`). Attribute short names:
 `KnownAttributes`. Never spell `"Gpu"`, `"SharedMemory"` or an attribute name as a literal.
@@ -120,6 +121,7 @@ A rule is stateless and gets everything through `ref TranspileContext context`:
 | Null test of an array-like value, `??`, `??=` | `NullRepresentation.IsArrayNullComparable`, `NullRepresentation.AppendArrayNullTest`, `NullRepresentation.AppendCoalesce`, `NullRepresentation.AppendCoalesceAssignment` |
 | Match invocation arguments to parameters (named arguments / defaults) | `ArgumentMatchingHelper.MatchArgumentsToParameters`, `ArgumentMatchingHelper.CreateDefaultArgument` |
 | Substitute a generic struct's type parameters with concrete type arguments during emission | `StructTranspiler.SubstituteTypeParameters` |
+| Keep the C# order of evaluation of the operands of a C++ form that does not sequence them (call arguments, binary operands, assignment): which operands go into temporaries, and the immediately invoked lambda that evaluates them in order (`__gsharp_seq_<n>`) | `EvaluationOrder.LastSpilledOperand`, `EvaluationOrder.BeginCall` with `.AppendArgument`, `EvaluationOrder.BeginSequence` with `EvaluationOrder.DeclareTemp`, `EvaluationOrder.DeclareCopy`, `EvaluationOrder.AppendTempName` |
 
 The smallest example is `Transpiler/Rules/ExpressionRules/ParenthesizedExpressionTranspilerRule.cs`.
 
