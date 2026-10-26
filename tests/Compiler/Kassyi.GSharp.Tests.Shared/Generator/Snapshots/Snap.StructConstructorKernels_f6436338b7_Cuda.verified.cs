@@ -101,7 +101,7 @@ static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__CtorSc
 static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__CtorScaled,__gsharp_mb_Scale)==4,""Kassyi.GSharp.Tests.Shared.Syntax.CtorScaled.Scale: offset"");
 __device__ inline __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__CtorScaled __gsharp_ctor_Kassyi__GSharp__Tests__Shared__Syntax__CtorScaled_o0(int __gsharp_id_0_a, int __gsharp_id_1_b) {
 __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__CtorScaled __gsharp_self{};
-__gsharp_self.__gsharp_mb_Sum=__gsharp_id_0_a+__gsharp_id_1_b;
+__gsharp_self.__gsharp_mb_Sum=__gsharp_id_0_a*10+__gsharp_id_1_b;
 __gsharp_self.__gsharp_mb_Scale=2;
 return __gsharp_self;
 }
@@ -234,7 +234,7 @@ static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__CtorSc
 static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__CtorScaled,__gsharp_mb_Scale)==4,""Kassyi.GSharp.Tests.Shared.Syntax.CtorScaled.Scale: offset"");
 __device__ inline __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__CtorScaled __gsharp_ctor_Kassyi__GSharp__Tests__Shared__Syntax__CtorScaled_o0(int __gsharp_id_0_a, int __gsharp_id_1_b) {
 __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__CtorScaled __gsharp_self{};
-__gsharp_self.__gsharp_mb_Sum=__gsharp_id_0_a+__gsharp_id_1_b;
+__gsharp_self.__gsharp_mb_Sum=__gsharp_id_0_a*10+__gsharp_id_1_b;
 __gsharp_self.__gsharp_mb_Scale=2;
 return __gsharp_self;
 }
@@ -367,7 +367,7 @@ static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__CtorSc
 static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__CtorScaled,__gsharp_mb_Scale)==4,""Kassyi.GSharp.Tests.Shared.Syntax.CtorScaled.Scale: offset"");
 __device__ inline __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__CtorScaled __gsharp_ctor_Kassyi__GSharp__Tests__Shared__Syntax__CtorScaled_o0(int __gsharp_id_0_a, int __gsharp_id_1_b) {
 __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__CtorScaled __gsharp_self{};
-__gsharp_self.__gsharp_mb_Sum=__gsharp_id_0_a+__gsharp_id_1_b;
+__gsharp_self.__gsharp_mb_Sum=__gsharp_id_0_a*10+__gsharp_id_1_b;
 __gsharp_self.__gsharp_mb_Scale=2;
 return __gsharp_self;
 }
@@ -379,7 +379,11 @@ return __gsharp_self;
 #endif
 extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__StructConstructorKernels__ConstructorNamedArgumentKernel(GSharpArray<int> __gsharp_id_0_output){
 int __gsharp_id_1_tid = threadIdx.x;
-auto __gsharp_id_2_s = __gsharp_ctor_Kassyi__GSharp__Tests__Shared__Syntax__CtorScaled_o0(__gsharp_id_1_tid, 1);
+auto __gsharp_id_2_s = ([&]() {
+int __gsharp_named_arg_0 = 1;
+int __gsharp_named_arg_1 = __gsharp_id_1_tid;
+return __gsharp_ctor_Kassyi__GSharp__Tests__Shared__Syntax__CtorScaled_o0(__gsharp_named_arg_1, __gsharp_named_arg_0);
+}());
 __gsharp_id_0_output[__gsharp_id_1_tid]=__gsharp_id_2_s.__gsharp_mb_Sum;
 }
 ";
@@ -500,7 +504,7 @@ static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__CtorSc
 static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__CtorScaled,__gsharp_mb_Scale)==4,""Kassyi.GSharp.Tests.Shared.Syntax.CtorScaled.Scale: offset"");
 __device__ inline __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__CtorScaled __gsharp_ctor_Kassyi__GSharp__Tests__Shared__Syntax__CtorScaled_o0(int __gsharp_id_0_a, int __gsharp_id_1_b) {
 __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__CtorScaled __gsharp_self{};
-__gsharp_self.__gsharp_mb_Sum=__gsharp_id_0_a+__gsharp_id_1_b;
+__gsharp_self.__gsharp_mb_Sum=__gsharp_id_0_a*10+__gsharp_id_1_b;
 __gsharp_self.__gsharp_mb_Scale=2;
 return __gsharp_self;
 }

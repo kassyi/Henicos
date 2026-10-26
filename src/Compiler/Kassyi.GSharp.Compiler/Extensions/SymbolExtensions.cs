@@ -236,6 +236,31 @@ internal static class SymbolExtensions
     }
 
     /// <summary>
+    /// Whether <paramref name="constructor"/> is the primary constructor of its type (<c>struct S(int a)</c>,
+    /// <c>record struct R(int X)</c>), declared in source by the parameter list of the type declaration.
+    /// </summary>
+    public static bool IsPrimaryConstructor(this IMethodSymbol? constructor) =>
+        constructor.TryGetPrimaryConstructorDeclaration(out _);
+
+    /// <summary>
+    /// Gets the type declaration whose parameter list declares <paramref name="constructor"/>, when it is a primary
+    /// constructor declared in source.
+    /// </summary>
+    public static bool TryGetPrimaryConstructorDeclaration(this IMethodSymbol? constructor,
+        [NotNullWhen(true)] out TypeDeclarationSyntax? declaration)
+    {
+        if (constructor is { MethodKind: MethodKind.Constructor, IsStatic: false, IsImplicitlyDeclared: false } &&
+            constructor.TryGetDeclaringSyntax(out declaration) &&
+            declaration.ParameterList != null)
+        {
+            return true;
+        }
+
+        declaration = null;
+        return false;
+    }
+
+    /// <summary>
     /// Checks if the attribute matches the specified short name (e.g. "GpuKernel" matches both "GpuKernel" and "GpuKernelAttribute").
     /// Zero-allocation inspection using ReadOnlySpan.
     /// </summary>
@@ -266,6 +291,21 @@ internal static class SymbolExtensions
             ? p
             : 0;
         return pack > 0;
+    }
+
+    /// <summary>Reads <c>Size</c> from the first <c>[StructLayout]</c> of <paramref name="type"/>, when it is greater than zero.</summary>
+    public static bool TryGetStructLayoutSize(this INamedTypeSymbol type, out int size)
+    {
+        size = type.GetAttributes()
+                   .AsStackEnumerable()
+                   .TryFirst(static attr => attr.IsStructLayoutAttribute(), out var layout) &&
+               layout.NamedArguments
+                   .AsStackEnumerable()
+                   .TryFirst(static kvp => kvp is { Key: "Size", Value.IsNull: false }, out var sizeArgument) &&
+               sizeArgument.Value.Value is int n and > 0
+            ? n
+            : 0;
+        return size > 0;
     }
 
     /// <summary>

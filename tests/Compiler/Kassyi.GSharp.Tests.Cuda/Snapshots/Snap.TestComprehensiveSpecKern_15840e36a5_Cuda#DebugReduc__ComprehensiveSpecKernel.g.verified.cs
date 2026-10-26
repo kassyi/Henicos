@@ -125,6 +125,12 @@ static_assert(sizeof(__gsharp_ty_DebugReduc__Point)==8,""DebugReduc.Point: size"
 static_assert(alignof(__gsharp_ty_DebugReduc__Point)==4,""DebugReduc.Point: alignment"");
 static_assert(offsetof(__gsharp_ty_DebugReduc__Point,__gsharp_mb_X)==0,""DebugReduc.Point.X: offset"");
 static_assert(offsetof(__gsharp_ty_DebugReduc__Point,__gsharp_mb_Y)==4,""DebugReduc.Point.Y: offset"");
+__device__ inline __gsharp_ty_DebugReduc__Point __gsharp_ctor_DebugReduc__Point(float __gsharp_id_0_X, float __gsharp_id_1_Y) {
+__gsharp_ty_DebugReduc__Point __gsharp_self{};
+__gsharp_self.__gsharp_mb_X = __gsharp_id_0_X;
+__gsharp_self.__gsharp_mb_Y = __gsharp_id_1_Y;
+return __gsharp_self;
+}
 #endif
 #ifndef __GSHARP_STRUCT___gsharp_ty_DebugReduc__NestedPhysicsState__
 #define __GSHARP_STRUCT___gsharp_ty_DebugReduc__NestedPhysicsState__
@@ -210,7 +216,7 @@ if(__gsharp_id_19_tid<__gsharp_id_4_particleCount)
 {
 __gsharp_ty_DebugReduc__PhysicsVector __gsharp_id_23_p = __gsharp_id_0_particles[__gsharp_id_19_tid];
 __gsharp_ty_DebugReduc__SpecTypes __gsharp_id_24_types = __gsharp_id_3_largeStructVal;
-auto __gsharp_id_25_origin = __gsharp_ty_DebugReduc__Point{0, 0};
+auto __gsharp_id_25_origin = __gsharp_ctor_DebugReduc__Point(0, 0);
 auto __gsharp_id_26_distance = __gsharp_id_25_origin.__gsharp_mb_X+__gsharp_id_23_p.__gsharp_mb_X;
 auto __gsharp_id_27_nested = ([&]() {
 __gsharp_ty_DebugReduc__NestedPhysicsState __gsharp_tmp{}; __gsharp_tmp.__gsharp_mb_Position = __gsharp_id_23_p; __gsharp_tmp.__gsharp_mb_Velocity = __gsharp_id_23_p; __gsharp_tmp.__gsharp_mb_StatusFlag = 1; return __gsharp_tmp; }

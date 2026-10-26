@@ -33,6 +33,9 @@ public sealed class ImplicitObjectCreationExpressionTranspilerRule : SyntaxNodeT
 /// </summary>
 internal static class ObjectCreationHelper
 {
+    // The temporaries of the arguments of a constructor written in another order than its parameters
+    private const string NamedArgumentPrefix = "__gsharp_named_arg_";
+
     public static void TranspileObjectCreation(BaseObjectCreationExpressionSyntax node, ref TranspileContext context)
     {
         var typeSymbol = StructTranspiler.SubstituteTypeParameters(
@@ -85,37 +88,139 @@ internal static class ObjectCreationHelper
         }
 
         // IsSupportedObjectCreation leaves only a struct here
-        TranspileStructCreationCore(typeSymbol, constructor, initializer, argumentList, ref context);
-    }
-
-    private static void TranspileStructCreationCore(ITypeSymbol typeSymbol, IMethodSymbol? constructor,
-        InitializerExpressionSyntax? initializer, ArgumentListSyntax? argumentList, ref TranspileContext context)
-    {
         if (initializer != null)
         {
-            TranspileStructCreationWithInitializer(typeSymbol, constructor, initializer, argumentList, ref context);
+            TranspileStructCreationWithInitializer(node, typeSymbol, constructor, initializer, argumentList,
+                ref context);
         }
         else
         {
-            TranspileStructCreationWithoutInitializer(typeSymbol, constructor, argumentList, ref context);
+            AppendStructCreation(node, typeSymbol, constructor, argumentList, ref context);
         }
     }
 
-    private static void TranspileStructCreationWithoutInitializer(ITypeSymbol typeSymbol, IMethodSymbol? constructor,
-        ArgumentListSyntax? argumentList, ref TranspileContext context)
+    // How `new T(args)` reaches the device
+    private enum StructCreationKind
     {
+        // A user constructor with a body, or a primary constructor: __gsharp_ctor_...(args) (StructTranspiler)
+        Factory,
+
+        // A constructor that the dialect YAML maps to a function: <mapped>(args) (Vector3(float), ...)
+        Mapped,
+
+        // Aggregate initialization T{args}: no arguments, or a constructor whose parameters are the members in order
+        Braces,
+
+        // Neither: reported (GSH0003), since T{args} would store the arguments in the members in order (#499)
+        Unsupported
+    }
+
+    private static StructCreationKind Classify(ITypeSymbol typeSymbol, IMethodSymbol? constructor,
+        ref TranspileContext context, out string mappedFunction)
+    {
+        mappedFunction = string.Empty;
         if (constructor != null && StructTranspiler.IsEmittedStructConstructor(constructor))
         {
-            TranspileConstructorCall(typeSymbol, constructor, argumentList, ref context);
-            return;
+            return StructCreationKind.Factory;
         }
 
-        context.Emitter.Dialect.AppendType(ref context, typeSymbol);
-        TranspileArgumentListAsBraces(argumentList, ref context);
+        if (constructor is null or { Parameters.Length: 0 })
+        {
+            return StructCreationKind.Braces;
+        }
+
+        if (context.Emitter.Dialect.TryMapIntrinsic(constructor, out mappedFunction))
+        {
+            return StructCreationKind.Mapped;
+        }
+
+        return IsPositionalConstructor(typeSymbol, constructor)
+            ? StructCreationKind.Braces
+            : StructCreationKind.Unsupported;
     }
 
-    private static void TranspileStructCreationWithInitializer(ITypeSymbol typeSymbol, IMethodSymbol? constructor,
-        InitializerExpressionSyntax initializer, ArgumentListSyntax? argumentList, ref TranspileContext context)
+    // [WHY] A constructor from metadata has no body to emit, so T{args} is right only where G# knows the meaning: the
+    // component constructors of the vector types (System.Numerics.Vector2/3/4, Kassyi.GSharp.Core.Float3 ...), whose
+    // parameters are the fields in order; Nullable<T>(T), which the C++ constructor of the device type takes; and a
+    // span over a pointer and a length, or over an array, which the C++ constructors of GSharpArray take.
+    private static bool IsPositionalConstructor(ITypeSymbol typeSymbol, IMethodSymbol constructor)
+    {
+        var parameters = constructor.Parameters;
+        if (typeSymbol.IsSystemNumericsVector() && typeSymbol is INamedTypeSymbol vectorType)
+        {
+            var index = 0;
+            foreach (var member in StructAbiMembers.Get(vectorType))
+            {
+                if (index >= parameters.Length || !parameters[index].Type.IsEqualTo(member.Type))
+                {
+                    return false;
+                }
+
+                index++;
+            }
+
+            return index == parameters.Length;
+        }
+
+        if (typeSymbol.OriginalDefinition.SpecialType == SpecialType.System_Nullable_T)
+        {
+            return parameters.Length == 1;
+        }
+
+        if (typeSymbol.IsArrayLikeType())
+        {
+            return parameters switch
+            {
+                [{ Type: IPointerTypeSymbol }, { Type.SpecialType: SpecialType.System_Int32 }] => true,
+                [var source] => source.Type.IsArrayLikeType(),
+                _ => false
+            };
+        }
+
+        return false;
+    }
+
+    // constructor 'System.Numerics.Vector3(System.ReadOnlySpan<float>)' without a device equivalent
+    private static string DescribeUnsupportedConstructor(ITypeSymbol typeSymbol, IMethodSymbol constructor)
+    {
+        var parameters = new string[constructor.Parameters.Length];
+        for (var i = 0; i < parameters.Length; i++)
+        {
+            parameters[i] = TypeLayoutCalculator.FormatTypeName(constructor.Parameters[i].Type);
+        }
+
+        return $"constructor '{TypeLayoutCalculator.FormatTypeName(typeSymbol)}({string.Join(", ", parameters)})' " +
+               "without a device equivalent";
+    }
+
+    // __gsharp_ctor_<T>(args) | <mapped>(args) | T{args} (named arguments reordered by AppendBraces)
+    private static void AppendStructCreation(BaseObjectCreationExpressionSyntax node, ITypeSymbol typeSymbol,
+        IMethodSymbol? constructor, ArgumentListSyntax? argumentList, ref TranspileContext context)
+    {
+        switch (Classify(typeSymbol, constructor, ref context, out var mappedFunction))
+        {
+            // Classify returns Factory, Mapped and Unsupported only for a constructor it was given
+            case StructCreationKind.Factory when constructor != null:
+                TranspileConstructorCall(typeSymbol, constructor, argumentList, ref context);
+                break;
+            case StructCreationKind.Mapped when constructor != null:
+                TranspileCall(mappedFunction, constructor, argumentList, ref context);
+                break;
+            case StructCreationKind.Unsupported when constructor != null:
+                context.Reporter.Fail(GSharpDiagnostics.UnsupportedSyntax, node,
+                    DescribeUnsupportedConstructor(typeSymbol, constructor));
+                context.Visitor.AppendUnsupportedPlaceholder(node);
+                break;
+            default:
+                AppendBraces(typeSymbol, constructor, argumentList, ref context);
+                break;
+        }
+    }
+
+    // ([&]() { T __gsharp_tmp<{args} | = <creation>>; __gsharp_tmp.<member> = <value>; ... return __gsharp_tmp; }())
+    private static void TranspileStructCreationWithInitializer(BaseObjectCreationExpressionSyntax node,
+        ITypeSymbol typeSymbol, IMethodSymbol? constructor, InitializerExpressionSyntax initializer,
+        ArgumentListSyntax? argumentList, ref TranspileContext context)
     {
         using (context.Emitter.Writer.Parentheses())
         {
@@ -124,14 +229,15 @@ internal static class ObjectCreationHelper
             {
                 context.Emitter.Dialect.AppendType(ref context, typeSymbol);
                 context.Emitter.Writer.Append(' ').Append(GSharpInternalNames.Lowering.AggregateTemp);
-                if (constructor != null && StructTranspiler.IsEmittedStructConstructor(constructor))
+                if (Classify(typeSymbol, constructor, ref context, out _) == StructCreationKind.Braces &&
+                    (constructor == null || IsInParameterOrder(constructor, argumentList)))
                 {
-                    context.Emitter.Writer.Append(" = ");
-                    TranspileConstructorCall(typeSymbol, constructor, argumentList, ref context);
+                    TranspileArgumentListAsBraces(argumentList, ref context);
                 }
                 else
                 {
-                    TranspileArgumentListAsBraces(argumentList, ref context);
+                    context.Emitter.Writer.Append(" = ");
+                    AppendStructCreation(node, typeSymbol, constructor, argumentList, ref context);
                 }
 
                 context.Emitter.Writer.Append(';');
@@ -160,10 +266,23 @@ internal static class ObjectCreationHelper
         ArgumentListSyntax? argumentList, ref TranspileContext context)
     {
         StructTranspiler.RegisterUsedStructIfApplicable(typeSymbol, ref context);
-        context.Emitter.Writer.Append(GlobalCppNames.GetConstructorName(constructor));
+        TranspileCall(GlobalCppNames.GetConstructorName(constructor), constructor, argumentList, ref context);
+    }
 
+    // <function>(<the arguments matched to the parameters of constructor, defaults filled in>); arguments written in
+    // another order than the parameters go through TranspileReordered, which evaluates them in the written order
+    private static void TranspileCall(string function, IMethodSymbol constructor, ArgumentListSyntax? argumentList,
+        ref TranspileContext context)
+    {
         var matched = ArgumentMatchingHelper.MatchArgumentsToParameters(
             argumentList?.Arguments ?? default, constructor);
+        if (!IsWrittenInParameterOrder(argumentList?.Arguments ?? default, matched))
+        {
+            TranspileReordered(constructor.ContainingType, function, constructor, argumentList, ref context);
+            return;
+        }
+
+        context.Emitter.Writer.Append(function);
         using (context.Emitter.Writer.Parentheses())
         {
             for (var i = 0; i < constructor.Parameters.Length; i++)
@@ -204,6 +323,160 @@ internal static class ObjectCreationHelper
         }
 
         context.Visitor.Visit(defaultExpr);
+    }
+
+    // T{args}; arguments in another order than the parameters (named arguments) or omitted ones go through
+    // TranspileReordered, so that each lands in its parameter's member
+    private static void AppendBraces(ITypeSymbol typeSymbol, IMethodSymbol? constructor, ArgumentListSyntax? argumentList,
+        ref TranspileContext context)
+    {
+        if (constructor != null && !IsInParameterOrder(constructor, argumentList))
+        {
+            TranspileReordered(typeSymbol, null, constructor, argumentList, ref context);
+            return;
+        }
+
+        context.Emitter.Dialect.AppendType(ref context, typeSymbol);
+        TranspileArgumentListAsBraces(argumentList, ref context);
+    }
+
+    // Whether the arguments are written one per parameter, in the parameter order
+    private static bool IsInParameterOrder(IMethodSymbol constructor, ArgumentListSyntax? argumentList)
+    {
+        var arguments = argumentList?.Arguments ?? default;
+        if (arguments.Count != constructor.Parameters.Length)
+        {
+            return false;
+        }
+
+        var matched = ArgumentMatchingHelper.MatchArgumentsToParameters(arguments, constructor);
+        for (var i = 0; i < matched.Length; i++)
+        {
+            if (matched[i] != arguments[i])
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    // ([&]() { <P0> __gsharp_named_arg_0 = <first written argument>; ...;
+    //   return <T{<argument of each parameter>} | <function>(<argument of each parameter>)>; })()
+    // [WHY] C# evaluates the arguments in the written order and passes them in the parameter order
+    // (Roslyn's LocalRewriter.ReorderArguments stores them in temporaries the same way). A null function builds T{...}.
+    private static void TranspileReordered(ITypeSymbol typeSymbol, string? function, IMethodSymbol constructor,
+        ArgumentListSyntax? argumentList, ref TranspileContext context)
+    {
+        var arguments = argumentList?.Arguments ?? default;
+        var matched = ArgumentMatchingHelper.MatchArgumentsToParameters(arguments, constructor);
+        using (context.Emitter.Writer.ImmediatelyInvokedLambda())
+        {
+            for (var i = 0; i < arguments.Count; i++)
+            {
+                var parameter = constructor.Parameters[IndexOfParameter(matched, arguments[i])];
+                if (IsByReadOnlyReference(parameter))
+                {
+                    // An in argument stays the variable it names (its address is passed); an rvalue lives as long as the call
+                    context.Emitter.Writer.Append("auto&&");
+                }
+                else if (parameter.Type is IPointerTypeSymbol)
+                {
+                    // A pointer keeps the type of its argument: GSharpArray<T> takes T*, not the void* of Span(void*, int)
+                    context.Emitter.Writer.Append("auto");
+                }
+                else
+                {
+                    context.Emitter.Dialect.AppendType(ref context, parameter.Type);
+                }
+
+                context.Emitter.Writer.Append($" {NamedArgumentPrefix}{i} = ");
+                context.Visitor.Visit(function != null && IsByReadOnlyReference(parameter)
+                    ? arguments[i].Expression
+                    : arguments[i]);
+                context.Emitter.Writer.AppendLine(";");
+            }
+
+            context.Emitter.Writer.Append("return ");
+            if (function == null)
+            {
+                context.Emitter.Dialect.AppendType(ref context, typeSymbol);
+                using (context.Emitter.Writer.Braces())
+                {
+                    AppendReorderedArguments(constructor, arguments, matched, isCall: false, ref context);
+                }
+            }
+            else
+            {
+                context.Emitter.Writer.Append(function);
+                using (context.Emitter.Writer.Parentheses())
+                {
+                    AppendReorderedArguments(constructor, arguments, matched, isCall: true, ref context);
+                }
+            }
+
+            context.Emitter.Writer.AppendLine(";");
+        }
+    }
+
+    // __gsharp_named_arg_<written index of the argument of each parameter>, or the default of an omitted one; a call
+    // passes an in parameter by address, as TranspileCall does
+    private static void AppendReorderedArguments(IMethodSymbol constructor, SeparatedSyntaxList<ArgumentSyntax> arguments,
+        ArgumentSyntax?[] matched, bool isCall, ref TranspileContext context)
+    {
+        for (var p = 0; p < matched.Length; p++)
+        {
+            context.Emitter.Writer.AppendIf(p > 0, ", ");
+            if (matched[p] is { } argument)
+            {
+                context.Emitter.Writer.AppendIf(
+                    isCall &&
+                    IsByReadOnlyReference(constructor.Parameters[p]) &&
+                    RefSyntaxHelper.NeedsAddressOf(argument.Expression, context.Query.SemanticModel),
+                    "&");
+                context.Emitter.Writer.Append($"{NamedArgumentPrefix}{arguments.IndexOf(argument)}");
+            }
+            else
+            {
+                EmitDefaultArgument(constructor.Parameters[p], ref context);
+            }
+        }
+    }
+
+    private static bool IsByReadOnlyReference(IParameterSymbol parameter) =>
+        parameter.RefKind is RefKind.In or RefKind.RefReadOnlyParameter;
+
+    // Whether each written argument goes to a later parameter than the one before it: the call can pass the arguments
+    // as written. Omitted parameters in between are filled with their defaults.
+    private static bool IsWrittenInParameterOrder(SeparatedSyntaxList<ArgumentSyntax> arguments,
+        ArgumentSyntax?[] matched)
+    {
+        var previous = -1;
+        foreach (var argument in arguments)
+        {
+            var index = IndexOfParameter(matched, argument);
+            if (index < previous)
+            {
+                return false;
+            }
+
+            previous = index;
+        }
+
+        return true;
+    }
+
+    private static int IndexOfParameter(ArgumentSyntax?[] matched, ArgumentSyntax argument)
+    {
+        for (var p = 0; p < matched.Length; p++)
+        {
+            if (matched[p] == argument)
+            {
+                return p;
+            }
+        }
+
+        throw new InvalidOperationException("An argument of a constructor call does not match a parameter.");
     }
 
     private static void TranspileArgumentListAsBraces(ArgumentListSyntax? argumentList, ref TranspileContext context)
