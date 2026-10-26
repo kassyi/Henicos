@@ -1,7 +1,8 @@
 namespace Kassyi.GSharp.Compiler.Diagnostics.Kernel;
 
 /// <summary>
-/// Roslyn analyzer that enforces GPU kernel barrier synchronization and state machine constraints (GSH0037 - GSH0047, GSH0061, GSH0062).
+/// Roslyn analyzer that enforces GPU kernel barrier synchronization and state machine constraints (GSH0037 - GSH0047,
+/// GSH0061, GSH0062), and the thread divergence of dynamic shared memory placement (GSH0077).
 /// Optimized for minimal AST passes, zero-allocation traversal, and fast-path exits.
 /// </summary>
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
@@ -23,7 +24,8 @@ public class BarrierUsageAnalyzer : DiagnosticAnalyzer
             GSharpDiagnostics.RecursiveDeviceFunctionBarrierProhibited, // GSH0061
             GSharpDiagnostics.SuspendingCallInUnsupportedContext, // GSH0062
             GSharpDiagnostics.IteratorShapeNotSupported, // GSH0070
-            GSharpDiagnostics.IteratorBodyConstructNotSupported // GSH0072
+            GSharpDiagnostics.IteratorBodyConstructNotSupported, // GSH0072
+            GSharpDiagnostics.DivergentDynamicSharedMemory // GSH0077
         );
 
     public override void Initialize(AnalysisContext context)
@@ -83,6 +85,9 @@ public class BarrierUsageAnalyzer : DiagnosticAnalyzer
 
         if (methodSymbol.HasAttribute(KnownAttributes.GpuDeviceFunction))
         {
+            // GSH0077: in every device function, as a device function without a barrier may declare one
+            DynamicSharedMemoryDivergenceValidator.Analyze(context, methodDecl, semanticModel);
+
             // GSH0061: the frame of a recursive barrier-reaching device function would contain itself
             if (SuspensionAnalysis.IsRecursiveSuspendingFunction(methodSymbol, semanticModel.Compilation))
             {
@@ -109,6 +114,7 @@ public class BarrierUsageAnalyzer : DiagnosticAnalyzer
         }
 
         new KernelBarrierValidator(context, methodDecl, semanticModel, isKernel: true).Analyze();
+        DynamicSharedMemoryDivergenceValidator.Analyze(context, methodDecl, semanticModel);
     }
 
     // GSH0062: the state machine splits only the statements of a kernel or device function body, and the operands that
