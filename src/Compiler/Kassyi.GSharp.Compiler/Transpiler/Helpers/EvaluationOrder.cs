@@ -1,3 +1,5 @@
+using System.Buffers;
+
 namespace Kassyi.GSharp.Compiler.Transpiler.Helpers;
 
 /// <summary>
@@ -43,10 +45,21 @@ internal static class EvaluationOrder
     }
 
     /// <summary>
-    /// Opens the lambda of a sequence: <c>([&amp;]() {</c>. <see cref="SequenceScope.Return"/> starts its value and
-    /// <see cref="SequenceScope.Dispose"/> closes it: <c>; }())</c>.
+    /// Opens the lambda of a sequence: <c>([&amp;]() {</c>, or <c>([&amp;]() -&gt; &lt;returnType&gt; {</c>.
+    /// <see cref="SequenceScope.Return"/> starts its value and <see cref="SequenceScope.Dispose"/> closes it:
+    /// <c>; }())</c>.
     /// </summary>
-    public static SequenceScope BeginSequence(SourceWriter writer) => new(writer);
+    public static SequenceScope BeginSequence(SourceWriter writer, string? returnType = null) => new(writer, returnType);
+
+    /// <summary>
+    /// The return type of the lambda around a call of <paramref name="callee"/>: <c>decltype(auto)</c> for a call that
+    /// returns by reference, which stays a reference (an assignment target, a <c>ref</c> argument), otherwise none (the
+    /// value).
+    /// </summary>
+    public static string? GetReturnType(IMethodSymbol? callee) =>
+        callee is { RefKind: not RefKind.None } ? ReferenceReturnType : null;
+
+    private const string ReferenceReturnType = "decltype(auto)";
 
     /// <summary>
     /// Writes <c>auto __gsharp_seq_&lt;n&gt; = &lt;expression&gt;;</c>, or <c>auto&amp;&amp;</c> for a
@@ -119,50 +132,59 @@ internal static class EvaluationOrder
         }
 
         var model = context.Query.SemanticModel;
-        var effects = new ExpressionEffects[count];
-        for (var i = 0; i < count; i++)
+        var effects = ArrayPool<ExpressionEffects>.Shared.Rent(count);
+        try
         {
-            effects[i] = IsByReference(arguments[i], FindParameter(callee, arguments, i))
-                ? ExpressionEffects.OfLocation(arguments[i].Expression, model)
-                : ExpressionEffects.Of(arguments[i].Expression, model);
-        }
+            for (var i = 0; i < count; i++)
+            {
+                // A converted rvalue passed to an in parameter is a value, copied when it is evaluated
+                effects[i] = IsByReference(arguments[i], callee?.FindParameter(arguments, i)) &&
+                             !NeedsConversion(arguments[i].Expression, model)
+                    ? ExpressionEffects.OfLocation(arguments[i].Expression, model)
+                    : ExpressionEffects.Of(arguments[i].Expression, model);
+            }
 
-        var last = spillAll ? count - 1 : LastSpilledOperand(effects);
-        if (last < 0 && !spillAll)
-        {
-            return default;
-        }
+            var last = spillAll ? count - 1 : LastSpilledOperand(effects.AsSpan(0, count));
+            if ((last < 0 && !spillAll) || (receiver != null && !spillAll && InterferesWithReceiver(receiver, effects, last, model)))
+            {
+                return default;
+            }
 
-        var temps = new int[count];
-        for (var i = 0; i < count; i++)
-        {
-            temps[i] = -1;
-        }
-
-        if (receiver != null && !spillAll)
-        {
-            var receiverEffects = ExpressionEffects.OfLocation(receiver, model);
+            // CallSequence.Dispose closes the lambda and returns the temporaries to the pool
+            var temps = ArrayPool<int>.Shared.Rent(count);
+            temps.AsSpan(0, count).Fill(-1);
+            var sequence = new CallSequence(context.Emitter.Writer, arguments, temps, isCall, GetReturnType(callee));
             for (var i = 0; i <= last; i++)
             {
-                if (!effects[i].IsEmpty && receiverEffects.InterferesWith(effects[i]))
+                if (spillAll || !effects[i].IsEmpty)
                 {
-                    return default;
+                    temps[i] = DeclareArgument(ref context, arguments[i], callee?.FindParameter(arguments, i), isCall);
                 }
             }
-        }
 
-        // CallSequence.Dispose closes the lambda
-        var sequence = new CallSequence(context.Emitter.Writer, arguments, temps, isCall);
+            context.Emitter.Writer.Append("return ");
+            return sequence;
+        }
+        finally
+        {
+            ArrayPool<ExpressionEffects>.Shared.Return(effects, clearArray: true);
+        }
+    }
+
+    // Whether an argument up to last interferes with the receiver, which the lambda would evaluate after it
+    private static bool InterferesWithReceiver(ExpressionSyntax receiver, ExpressionEffects[] effects, int last,
+        SemanticModel model)
+    {
+        var receiverEffects = ExpressionEffects.OfLocation(receiver, model);
         for (var i = 0; i <= last; i++)
         {
-            if (spillAll || !effects[i].IsEmpty)
+            if (!effects[i].IsEmpty && receiverEffects.InterferesWith(effects[i]))
             {
-                temps[i] = DeclareArgument(ref context, arguments[i], FindParameter(callee, arguments, i), isCall);
+                return true;
             }
         }
 
-        context.Emitter.Writer.Append("return ");
-        return sequence;
+        return false;
     }
 
     // <P> __gsharp_seq_<n> = <argument>; where <P> is the parameter type (a value is converted when it is evaluated, as
@@ -228,45 +250,19 @@ internal static class EvaluationOrder
         _ => false
     };
 
-    /// <summary>The parameter that the argument at <paramref name="index"/> is passed to, or <see langword="null"/>.</summary>
-    public static IParameterSymbol? FindParameter(IMethodSymbol? callee, SeparatedSyntaxList<ArgumentSyntax> arguments,
-        int index)
-    {
-        if (callee == null)
-        {
-            return null;
-        }
-
-        var parameters = callee.Parameters;
-        if (arguments[index].NameColon is { } nameColon)
-        {
-            return parameters
-                .AsStackEnumerable()
-                .FirstOrDefault(nameColon.Name.Identifier.ValueText, static (p, name) => p.Name == name);
-        }
-
-        if (index < parameters.Length)
-        {
-            return parameters[index];
-        }
-
-        return parameters.Length > 0 && parameters[parameters.Length - 1].IsParams
-            ? parameters[parameters.Length - 1]
-            : null;
-    }
-
     /// <summary>The lambda of a sequence: <c>([&amp;]() {</c> ... <c>return &lt;value&gt;; }())</c>.</summary>
     /// <remarks>The default value writes nothing, for a form that may or may not need the sequence.</remarks>
     public readonly ref struct SequenceScope
     {
         private readonly SourceWriter _writer;
+        private readonly SourceWriterImmediatelyInvokedLambdaScope _lambda;
         private readonly bool _isOpen;
 
-        public SequenceScope(SourceWriter writer)
+        public SequenceScope(SourceWriter writer, string? returnType = null)
         {
             _writer = writer;
             _isOpen = true;
-            _writer.AppendLine("([&]() {");
+            _lambda = writer.ImmediatelyInvokedLambda(returnType);
         }
 
         /// <summary>Starts the value of the sequence, after its temporaries.</summary>
@@ -286,7 +282,7 @@ internal static class EvaluationOrder
             }
 
             _writer.AppendLine(";");
-            _writer.Append("}())");
+            _lambda.Dispose();
         }
     }
 
@@ -297,20 +293,24 @@ internal static class EvaluationOrder
     public readonly ref struct CallSequence
     {
         private readonly SourceWriter _writer;
+        private readonly SourceWriterImmediatelyInvokedLambdaScope _lambda;
         private readonly SeparatedSyntaxList<ArgumentSyntax> _arguments;
+
+        // The temporary of each written argument (-1: in place), rented from ArrayPool and longer than the arguments
         private readonly int[]? _temps;
 
         // A brace initialization T{...} rather than a call: no argument is passed by address. False in the default
         // value, which emits the arguments of a call as written.
         private readonly bool _isBraces;
 
-        public CallSequence(SourceWriter writer, SeparatedSyntaxList<ArgumentSyntax> arguments, int[] temps, bool isCall)
+        public CallSequence(SourceWriter writer, SeparatedSyntaxList<ArgumentSyntax> arguments, int[] temps, bool isCall,
+            string? returnType)
         {
             _writer = writer;
             _arguments = arguments;
             _temps = temps;
             _isBraces = !isCall;
-            _writer.AppendLine("([&]() {");
+            _lambda = writer.ImmediatelyInvokedLambda(returnType);
         }
 
         /// <summary>Whether the call is emitted inside a lambda with temporaries.</summary>
@@ -370,7 +370,8 @@ internal static class EvaluationOrder
             }
 
             _writer.AppendLine(";");
-            _writer.Append("}())");
+            _lambda.Dispose();
+            ArrayPool<int>.Shared.Return(_temps);
         }
     }
 }

@@ -34,6 +34,28 @@ public class EvaluationOrderManagedTests : TranspilerTestBase
 
     [Fact]
     [Scenario(TestScenario.HappyPath)]
+    public void Test_Managed_RefReadsAndAliases_AreEvaluatedFromLeftToRight() =>
+        EvaluationOrderScenarios.ReadsAndAliases(s_runManaged);
+
+    [Fact]
+    [Scenario(TestScenario.HappyPath)]
+    public void Test_Managed_RefReturningCalls_KeepTheirTargetAndAliases() =>
+        EvaluationOrderScenarios.RefReturn(s_runManaged);
+
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void Test_Managed_ConvertedValues_KeepTheCSharpConversions() =>
+        EvaluationOrderScenarios.Conversions(s_runManaged);
+
+    [Theory]
+    [Scenario(TestScenario.Boundary)]
+    [InlineData(1)]
+    [InlineData(0)]
+    public void Test_Managed_InterferingOperandsInABranch_RunOnlyInThatBranch(int selector) =>
+        EvaluationOrderScenarios.ConditionalBranches(s_runManaged, selector);
+
+    [Fact]
+    [Scenario(TestScenario.HappyPath)]
     public void Test_Managed_Assignment_EvaluatesTheTargetBeforeTheValue() =>
         EvaluationOrderScenarios.Assignment(s_runManaged);
 

@@ -190,27 +190,23 @@ public class WarpInstructionRewriter(SemanticModel? semanticModel = null) : CSha
             }
 
             var model = parent._semanticModel;
-            var read = model != null ? ExpressionEffects.Of(identifier, model) : default;
-            for (var j = index + 1; j < arguments.Count; j++)
+            if (model == null)
             {
-                var later = arguments[j];
-                if (model != null)
-                {
-                    var effects = later.RefKindKeyword.IsKind(SyntaxKind.None)
-                        ? ExpressionEffects.Of(later.Expression, model)
-                        : ExpressionEffects.OfLocation(later.Expression, model);
-                    if (read.InterferesWith(effects))
-                    {
-                        return true;
-                    }
-                }
-                else if (WritesByName(later, identifier.Identifier.ValueText))
-                {
-                    return true;
-                }
+                return arguments
+                    .AsStackEnumerable()
+                    .Skip(index + 1)
+                    .Any(identifier.Identifier.ValueText, static (later, name) => WritesByName(later, name));
             }
 
-            return false;
+            var read = ExpressionEffects.Of(identifier, model);
+            return arguments
+                .AsStackEnumerable()
+                .Skip(index + 1)
+                .Any((Read: read, Model: model), static (later, s) => s.Read.InterferesWith(
+                    later.RefKindKeyword.IsKind(SyntaxKind.None)
+                        ? ExpressionEffects.Of(later.Expression, s.Model)
+                        : ExpressionEffects.OfLocation(later.Expression, s.Model)
+                ));
         }
 
         // Without a semantic model: whether argument holds a ref / out argument, an assignment or an increment of the

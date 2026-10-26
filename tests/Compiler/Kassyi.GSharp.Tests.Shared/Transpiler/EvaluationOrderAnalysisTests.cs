@@ -23,6 +23,11 @@ public class EvaluationOrderAnalysisTests
     [InlineData("InterferenceBeforeLastArgument", 1)]
     [InlineData("BinaryOperands", 1)]
     [InlineData("CapturingLambdaCall", 1)]
+    [InlineData("WriteThenRefRead", 1)]
+    [InlineData("RefLocalAlias", 1)]
+    [InlineData("PointerAlias", 1)]
+    [InlineData("CapturedAlias", 1)]
+    [InlineData("RefReturnAlias", 1)]
     public void Test_LastSpilledOperand_InterferingOperands_IsTheLastOneThatInterferes(string method, int expected) =>
         Assert.Equal(expected, EvaluationOrder.LastSpilledOperand(GetOperandEffects(method)));
 
@@ -84,14 +89,93 @@ public class EvaluationOrderAnalysisTests
 
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_Of_CallWithRefArgument_WritesTheArgumentOnly()
+    public void Test_Of_CallWithRefArgument_ReadsAndWritesTheArgument()
     {
         var (effects, i) = GetEffects("RefCall", "i");
 
         Assert.True(effects.Writes.Contains(i));
         Assert.False(effects.Writes.Memory);
-        // The location of a ref argument is evaluated; the call reads the variable afterwards
-        Assert.False(effects.Reads.Contains(i));
+        // The callee reads the variable through the reference while the call is evaluated
+        Assert.True(effects.Reads.Contains(i));
+    }
+
+    [Theory]
+    [Scenario(TestScenario.Boundary)]
+    [InlineData("StaticFieldRead")]
+    [InlineData("RefLocalRead")]
+    [InlineData("SharedMemoryRead")]
+    [InlineData("PointerRead")]
+    public void Test_Of_ReadThroughAnotherName_ReadsMemory(string method)
+    {
+        var effects = GetEffects(method);
+
+        Assert.True(effects.Reads.Memory);
+        Assert.False(effects.Writes.Memory);
+    }
+
+    // Roslyn reuses the syntax tree of an unchanged file in the next compilation, with new symbols
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void Test_LastSpilledOperand_AliasInASecondCompilationOfTheSameTree_IsStillFound()
+    {
+        var options = (CSharpParseOptions)s_compilation.SyntaxTrees.First().Options;
+        var second = s_compilation.AddSyntaxTrees(
+            CSharpSyntaxTree.ParseText("namespace OtherCases { class Unrelated { } }", options));
+
+        Assert.Equal(1, EvaluationOrder.LastSpilledOperand(GetOperandEffects("PointerAlias", s_compilation)));
+        Assert.Equal(1, EvaluationOrder.LastSpilledOperand(GetOperandEffects("PointerAlias", second)));
+    }
+
+    [Theory]
+    [Scenario(TestScenario.SadPath)]
+    [InlineData("ExplicitConversion")]
+    [InlineData("ImplicitConversion")]
+    public void Test_Of_UserDefinedConversion_WritesWhatTheOperatorWrites(string method)
+    {
+        var effects = GetEffects(method);
+
+        Assert.True(effects.Writes.Memory);
+        Assert.True(effects.Reads.Memory);
+    }
+
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void Test_Of_FieldOfThis_ReadsMemory()
+    {
+        var effects = GetEffects("ThisFieldRead");
+
+        Assert.True(effects.Reads.Memory);
+        Assert.True(effects.Writes.IsEmpty);
+    }
+
+    [Fact]
+    [Scenario(TestScenario.HappyPath)]
+    public void Test_Of_FieldOfStructLocal_ReadsTheLocal()
+    {
+        var (effects, pair) = GetEffects("StructLocalFieldRead", "pair");
+
+        Assert.True(effects.Reads.Contains(pair));
+        Assert.False(effects.Reads.Memory);
+    }
+
+    [Fact]
+    [Scenario(TestScenario.HappyPath)]
+    public void Test_Of_OutVarArgument_WritesTheDeclaredLocal()
+    {
+        var (effects, y) = GetEffects("OutVarArgument", "y");
+
+        Assert.True(effects.Writes.Contains(y));
+        Assert.False(effects.Writes.Memory);
+    }
+
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void Test_Of_WithExpression_WritesOnlyTheCopy()
+    {
+        var (effects, pair) = GetEffects("WithExpression", "pair");
+
+        Assert.True(effects.Reads.Contains(pair));
+        Assert.True(effects.Writes.IsEmpty);
     }
 
     [Theory]
@@ -138,9 +222,11 @@ public class EvaluationOrderAnalysisTests
 
     // The operands of the result expression in the C# order: the arguments of a call (the location of a ref argument),
     // or the two sides of a binary operator
-    private static ExpressionEffects[] GetOperandEffects(string method)
+    private static ExpressionEffects[] GetOperandEffects(string method) => GetOperandEffects(method, s_compilation);
+
+    private static ExpressionEffects[] GetOperandEffects(string method, Compilation compilation)
     {
-        var (expression, model) = GetResult(method);
+        var (expression, model) = GetResult(method, compilation);
         return expression switch
         {
             InvocationExpressionSyntax invocation => invocation.ArgumentList.Arguments
@@ -166,17 +252,20 @@ public class EvaluationOrderAnalysisTests
         var declaration = expression.FirstAncestorOrSelf<MethodDeclarationSyntax>() ??
                           throw new InvalidOperationException($"'{method}' is not in a method.");
         var symbol = declaration.DescendantNodes()
-                         .Where(n => n is VariableDeclaratorSyntax or ParameterSyntax)
+                         .Where(n => n is VariableDeclaratorSyntax or ParameterSyntax or SingleVariableDesignationSyntax)
                          .Select(n => model.GetDeclaredSymbol(n))
                          .FirstOrDefault(s => s?.Name == local) ??
                      throw new InvalidOperationException($"'{method}' declares no local or parameter '{local}'.");
         return (ExpressionEffects.Of(expression, model), symbol);
     }
 
-    private static (ExpressionSyntax Expression, SemanticModel Model) GetResult(string method)
+    private static (ExpressionSyntax Expression, SemanticModel Model) GetResult(string method) =>
+        GetResult(method, s_compilation);
+
+    private static (ExpressionSyntax Expression, SemanticModel Model) GetResult(string method, Compilation compilation)
     {
-        var tree = s_compilation.SyntaxTrees.First(t => t.ToString().Contains("namespace OrderCases"));
-        var model = s_compilation.GetSemanticModel(tree);
+        var tree = compilation.SyntaxTrees.First(t => t.ToString().Contains("namespace OrderCases"));
+        var model = compilation.GetSemanticModel(tree);
         var declaration = tree.GetRoot()
             .DescendantNodes()
             .OfType<MethodDeclarationSyntax>()

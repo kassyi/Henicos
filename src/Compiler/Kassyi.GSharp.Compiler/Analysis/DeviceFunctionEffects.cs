@@ -47,8 +47,17 @@ internal static class DeviceFunctionEffects
         s_effects = new();
 
     /// <summary>What a call of <paramref name="method"/> may write.</summary>
-    public static DeviceFunctionEffect Classify(IMethodSymbol method, Compilation compilation) =>
-        Classify(GetDefinition(method), compilation, new HashSet<IMethodSymbol>(SymbolEqualityComparer.Default));
+    public static DeviceFunctionEffect Classify(IMethodSymbol method, Compilation compilation)
+    {
+        var definition = GetDefinition(method);
+        return GetCache(compilation).TryGetValue(definition, out var cached)
+            ? cached
+            : Classify(definition, compilation, new HashSet<IMethodSymbol>(SymbolEqualityComparer.Default));
+    }
+
+    private static ConcurrentDictionary<IMethodSymbol, DeviceFunctionEffect> GetCache(Compilation compilation) =>
+        s_effects.GetValue(compilation,
+            static _ => new ConcurrentDictionary<IMethodSymbol, DeviceFunctionEffect>(SymbolEqualityComparer.Default));
 
     // The declaration of a constructed generic method, or the static method of a reduced extension call
     private static IMethodSymbol GetDefinition(IMethodSymbol method) => (method.ReducedFrom ?? method).OriginalDefinition;
@@ -56,8 +65,7 @@ internal static class DeviceFunctionEffects
     private static DeviceFunctionEffect Classify(IMethodSymbol definition, Compilation compilation,
         HashSet<IMethodSymbol> visiting)
     {
-        var cache = s_effects.GetValue(compilation,
-            static _ => new ConcurrentDictionary<IMethodSymbol, DeviceFunctionEffect>(SymbolEqualityComparer.Default));
+        var cache = GetCache(compilation);
         if (cache.TryGetValue(definition, out var cached))
         {
             return cached;
@@ -134,7 +142,7 @@ internal static class DeviceFunctionEffects
     {
         var compilation = model.Compilation;
         if (!compilation.ContainsSyntaxTree(lambda.SyntaxTree) ||
-            compilation.GetSemanticModel(lambda.SyntaxTree).GetSymbolInfo(lambda).Symbol is not IMethodSymbol method)
+            compilation.GetCachedSemanticModel(lambda.SyntaxTree).GetSymbolInfo(lambda).Symbol is not IMethodSymbol method)
         {
             return DeviceFunctionEffect.Memory;
         }
@@ -179,7 +187,7 @@ internal static class DeviceFunctionEffects
         var effect = DeviceFunctionEffect.None;
         foreach (var body in bodies)
         {
-            var model = compilation.GetSemanticModel(body.SyntaxTree);
+            var model = compilation.GetCachedSemanticModel(body.SyntaxTree);
             foreach (var node in body.DescendantNodesAndSelf())
             {
                 effect = Max(effect, ClassifyNode(node, method, body, model, compilation, visiting));
@@ -194,6 +202,139 @@ internal static class DeviceFunctionEffects
     }
 
     private static DeviceFunctionEffect ClassifyNode(SyntaxNode node, IMethodSymbol method, SyntaxNode body,
+        SemanticModel model, Compilation compilation, HashSet<IMethodSymbol> visiting) =>
+        Max(ClassifyImplicitCalls(node, method, body, model, compilation, visiting),
+            ClassifyExplicitNode(node, method, body, model, compilation, visiting));
+
+    // The calls that no invocation spells: the Dispose of a using, a user-defined operator or conversion, the getter
+    // and setter of a computed property
+    private static DeviceFunctionEffect ClassifyImplicitCalls(SyntaxNode node, IMethodSymbol method, SyntaxNode body,
+        SemanticModel model, Compilation compilation, HashSet<IMethodSymbol> visiting)
+    {
+        switch (node)
+        {
+            case UsingStatementSyntax or LocalDeclarationStatementSyntax { UsingKeyword.RawKind: not (int)SyntaxKind.None }:
+                return ClassifyUsing(node, method, body, model, compilation, visiting);
+            case ExpressionSyntax expression:
+            {
+                var effect = DeviceFunctionEffect.None;
+                if (model.GetSymbol(expression) is IMethodSymbol { MethodKind: MethodKind.UserDefinedOperator or
+                        MethodKind.Conversion } operatorMethod &&
+                    expression is not InvocationExpressionSyntax)
+                {
+                    effect = ClassifyCalled(operatorMethod, receiver: null, method, body, model, compilation, visiting);
+                }
+
+                if (model.GetConversion(expression) is { IsUserDefined: true, MethodSymbol: { } conversion })
+                {
+                    effect = Max(effect,
+                        ClassifyCalled(conversion, receiver: null, method, body, model, compilation, visiting));
+                }
+
+                // s.Sum is classified once, at the member access rather than at its name
+                if (expression is MemberAccessExpressionSyntax ||
+                    (expression is IdentifierNameSyntax &&
+                     !(expression.Parent is MemberAccessExpressionSyntax parentAccess && parentAccess.Name == expression)))
+                {
+                    effect = Max(effect, ClassifyPropertyAccess(expression, method, body, model, compilation, visiting));
+                }
+
+                return effect;
+            }
+            default:
+                return DeviceFunctionEffect.None;
+        }
+    }
+
+    // The Dispose that a using calls on its resources, which are locals of the function
+    private static DeviceFunctionEffect ClassifyUsing(SyntaxNode node, IMethodSymbol method, SyntaxNode body,
+        SemanticModel model, Compilation compilation, HashSet<IMethodSymbol> visiting)
+    {
+        var declaration = node switch
+        {
+            UsingStatementSyntax statement => statement.Declaration,
+            LocalDeclarationStatementSyntax local => local.Declaration,
+            _ => null
+        };
+        var type = declaration != null
+            ? model.GetTypeSymbol(declaration.Type)
+            : node is UsingStatementSyntax { Expression: { } resource } ? model.GetTypeSymbol(resource) : null;
+        if (type is not INamedTypeSymbol named || UsingTranspiler.FindDisposeMethod(named, compilation) is not { } dispose)
+        {
+            return DeviceFunctionEffect.None;
+        }
+
+        var effect = Classify(GetDefinition(dispose), compilation, visiting);
+        if (effect != DeviceFunctionEffect.RefParameters)
+        {
+            return effect;
+        }
+
+        // Dispose changes its receiver: a local that the using declares, which the caller does not see, or the variable
+        // that 'using (<expression>)' names
+        return node is UsingStatementSyntax { Declaration: null, Expression: { } resourceExpression }
+            ? ClassifyTarget(resourceExpression, method, body, model)
+            : DeviceFunctionEffect.None;
+    }
+
+    // s.Sum, Sum (a computed property of a struct): its getter, and its setter when the access is assigned
+    private static DeviceFunctionEffect ClassifyPropertyAccess(ExpressionSyntax access, IMethodSymbol method,
+        SyntaxNode body, SemanticModel model, Compilation compilation, HashSet<IMethodSymbol> visiting)
+    {
+        if (model.GetSymbol(access) is not IPropertySymbol property || !StructAbiMembers.IsComputedProperty(property))
+        {
+            return DeviceFunctionEffect.None;
+        }
+
+        var receiver = access is MemberAccessExpressionSyntax memberAccess ? memberAccess.Expression : null;
+
+        // s.Value++ and ++s.Value read through the getter and write through the setter, as s.Value += 1 does
+        var assigned = access.Parent switch
+        {
+            AssignmentExpressionSyntax assignment => assignment.Left == access,
+            PrefixUnaryExpressionSyntax prefix => prefix.IsKind(SyntaxKind.PreIncrementExpression,
+                SyntaxKind.PreDecrementExpression),
+            PostfixUnaryExpressionSyntax postfix => postfix.IsKind(SyntaxKind.PostIncrementExpression,
+                SyntaxKind.PostDecrementExpression),
+            _ => false
+        };
+        var effect = DeviceFunctionEffect.None;
+        if (property.GetMethod is { } getter && (!assigned || !access.Parent.IsKind(SyntaxKind.SimpleAssignmentExpression)))
+        {
+            effect = ClassifyCalled(getter, receiver, method, body, model, compilation, visiting);
+        }
+
+        if (assigned && property.SetMethod is { } setter)
+        {
+            effect = Max(effect, ClassifyCalled(setter, receiver, method, body, model, compilation, visiting));
+        }
+
+        return effect;
+    }
+
+    // A call without arguments passed by reference: its effect, with a write to its receiver seen as a write to the
+    // variable the receiver names
+    private static DeviceFunctionEffect ClassifyCalled(IMethodSymbol callee, ExpressionSyntax? receiver,
+        IMethodSymbol method, SyntaxNode body, SemanticModel model, Compilation compilation,
+        HashSet<IMethodSymbol> visiting)
+    {
+        var effect = Classify(GetDefinition(callee), compilation, visiting);
+        if (effect != DeviceFunctionEffect.RefParameters)
+        {
+            return effect;
+        }
+
+        if (callee.IsStatic || !callee.ContainingType.IsValueType)
+        {
+            return DeviceFunctionEffect.None;
+        }
+
+        return receiver is null or ThisExpressionSyntax
+            ? ClassifyReceiverOfThis(method)
+            : ClassifyTarget(receiver, method, body, model);
+    }
+
+    private static DeviceFunctionEffect ClassifyExplicitNode(SyntaxNode node, IMethodSymbol method, SyntaxNode body,
         SemanticModel model, Compilation compilation, HashSet<IMethodSymbol> visiting)
     {
         switch (node)

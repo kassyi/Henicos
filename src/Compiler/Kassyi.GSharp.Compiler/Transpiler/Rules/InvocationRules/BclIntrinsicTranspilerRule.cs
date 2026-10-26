@@ -29,7 +29,7 @@ internal sealed class BclIntrinsicTranspilerRule : IInvocationTranspilerRule
                            ? context.Emitter.Writer.Parentheses()
                            : default)
                 {
-                    sequence.AppendArgument(arguments[i], EvaluationOrder.FindParameter(symbol, arguments, i),
+                    sequence.AppendArgument(arguments[i], symbol.FindParameter(arguments, i),
                         ref context);
                 }
 

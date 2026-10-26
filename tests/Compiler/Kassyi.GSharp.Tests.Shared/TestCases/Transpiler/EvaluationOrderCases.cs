@@ -2,6 +2,31 @@ using Kassyi.GSharp.Core;
 
 namespace OrderCases;
 
+public struct OrderBox
+{
+    public int[] Data;
+
+    // Writes memory when it converts
+    public static implicit operator int(OrderBox box)
+    {
+        box.Data[0] += 1;
+        return box.Data[1];
+    }
+}
+
+public struct OrderPair
+{
+    public int X;
+    public int Y;
+
+    // A field of the struct that a member reads is a field of this
+    public int ThisFieldRead()
+    {
+        var result = X;
+        return result;
+    }
+}
+
 // Each case method ends with 'var result = <expression>;': the expression whose operands are analysed
 public static class Order
 {
@@ -29,6 +54,37 @@ public static class Order
 
     [GpuDeviceFunction]
     public static int ReadRef(ref int value) => value;
+
+    [GpuDeviceFunction]
+    public static unsafe int SetThrough(int* target, int value)
+    {
+        *target = value;
+        return 0;
+    }
+
+    [GpuDeviceFunction]
+    public static int Invoke(System.Func<int, int> f, int value) => f(value);
+
+    [GpuDeviceFunction]
+    public static ref int Choose(ref int a, ref int b, bool first)
+    {
+        if (first)
+        {
+            return ref a;
+        }
+
+        return ref b;
+    }
+
+    public static void ExplicitConversion(OrderBox box)
+    {
+        var result = (int)box;
+    }
+
+    public static void ImplicitConversion(OrderBox box)
+    {
+        int result = box;
+    }
 
     // --- Arguments that interfere ---
 
@@ -65,6 +121,43 @@ public static class Order
     {
         int i = 0;
         var result = Next(ref i) - Next(ref i);
+    }
+
+    // A ref argument is read by its callee while the call is evaluated
+    public static void WriteThenRefRead()
+    {
+        int i = 0;
+        var result = Sub(Next(ref i), ReadRef(ref i));
+    }
+
+    // x is written through another name
+    public static void RefLocalAlias()
+    {
+        int x = 0;
+        ref int r = ref x;
+        var result = Sub(x, Next(ref r));
+    }
+
+    public static unsafe void PointerAlias()
+    {
+        int x = 0;
+        int* p = &x;
+        var result = Sub(x, SetThrough(p, 5));
+    }
+
+    // Choose returns a reference to x, so x has a second name
+    public static void RefReturnAlias()
+    {
+        int x = 0;
+        int y = 0;
+        var result = Sub(x, Next(ref Choose(ref x, ref y, true)));
+    }
+
+    public static void CapturedAlias()
+    {
+        int x = 0;
+        System.Func<int, int> f = v => x = v;
+        var result = Sub(x, Invoke(f, 5));
     }
 
     // --- Arguments that do not interfere ---
@@ -173,6 +266,54 @@ public static class Order
         int i = 0;
         var bump = () => i++;
         var result = Sub(i, bump());
+    }
+
+    private static int s_total;
+
+    public static void StaticFieldRead()
+    {
+        var result = s_total;
+    }
+
+    public static void RefLocalRead(int[] d)
+    {
+        ref int r = ref d[0];
+        var result = r;
+    }
+
+    public static void SharedMemoryRead()
+    {
+        var shared = new SharedMemory<int>(32);
+        var result = shared[ThreadIndex.X];
+    }
+
+    public static unsafe void PointerRead(int* p)
+    {
+        var result = *p;
+    }
+
+    public static void StructLocalFieldRead()
+    {
+        var pair = new OrderPair();
+        var result = pair.X;
+    }
+
+    public static void OutVarArgument()
+    {
+        var result = Split(out var y);
+    }
+
+    public static void WithExpression()
+    {
+        var pair = new OrderPair();
+        var result = pair with { X = 1 };
+    }
+
+    [GpuDeviceFunction]
+    public static int Split(out int y)
+    {
+        y = 1;
+        return 0;
     }
 
     public static void LocalFunctionCall()

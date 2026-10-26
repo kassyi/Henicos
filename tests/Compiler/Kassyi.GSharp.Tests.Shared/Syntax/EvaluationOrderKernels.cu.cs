@@ -16,6 +16,15 @@ public struct EoScalar
     public static EoScalar operator -(EoScalar a, EoScalar b) => throw new GpuOnlyException();
 }
 
+[System.Flags]
+public enum EoFlags
+{
+    None = 0,
+    A = 1,
+    B = 2,
+    C = 4
+}
+
 /// <summary>
 /// Expressions whose operands have side effects that another operand observes. C# evaluates the operands from left to
 /// right (C# spec §12.4.1); C++ leaves the order of function arguments and of binary operands unspecified and evaluates
@@ -93,6 +102,49 @@ public static partial class EvaluationOrderKernels
     [GpuDeviceFunction]
     public static EoScalar Take(ref int counter) => new EoScalar { Value = counter++ };
 
+    // Reads through ref: the read belongs to the evaluation of the call
+    [GpuDeviceFunction]
+    public static int ReadRef(ref int value) => value;
+
+    [GpuDeviceFunction]
+    public static unsafe int SetThrough(int* target, int value)
+    {
+        *target = value;
+        return 0;
+    }
+
+    [GpuDeviceFunction]
+    public static long ReadInLong(in long a, int b) => a * 10 + b;
+
+    [GpuDeviceFunction]
+    public static int BumpShort(ref short value)
+    {
+        value += 5;
+        return 0;
+    }
+
+    [GpuDeviceFunction]
+    public static ref int Pick(int[] a, int i, int j) => ref a[i + j];
+
+    // Returns one of its ref arguments, which then has a second name
+    [GpuDeviceFunction]
+    public static ref int Choose(ref int a, ref int b, bool first)
+    {
+        if (first)
+        {
+            return ref a;
+        }
+
+        return ref b;
+    }
+
+    [GpuDeviceFunction]
+    public static EoFlags Replace(ref EoFlags flags)
+    {
+        flags = EoFlags.C;
+        return EoFlags.B;
+    }
+
     // Suspends on the CPU dialects, so the state machine lowering spills its arguments
     [GpuDeviceFunction]
     public static int CombineAcrossBarrier(int a, int b)
@@ -169,6 +221,75 @@ public static partial class EvaluationOrderKernels
         int a = 0;
         result[0] = CombineAcrossBarrier(a, Next(ref a));
         result[1] = a;
+    }
+
+    // --- Reads and aliases ---
+
+    [GpuKernel]
+    public static unsafe void ReadsAndAliasesKernel(int[] result)
+    {
+        // K19: ReadRef reads i while it is evaluated, before Next increments it
+        int i = 0;
+        result[0] = Sub(ReadRef(ref i), Next(ref i));
+
+        // K20: y has another name (a pointer), through which the later argument writes it. G# does not accept ref
+        // locals (GSH0003), so the ref local alias is covered by the analysis tests only.
+        int y = 5;
+        int* p = &y;
+        result[1] = Sub(y, SetThrough(p, 9));
+
+        // K21: a short passed to an in long is converted, so its value is read where the argument is evaluated
+        short s = 1;
+        result[2] = (int)ReadInLong(s, BumpShort(ref s));
+
+        // K26: a nested call inside the first argument is evaluated before the second argument
+        int k = 0;
+        result[3] = Combine(Pure(Next(ref k)), Next(ref k));
+    }
+
+    // K22: a call that returns by reference stays an assignment target when its arguments are evaluated first
+    // (the lambda returns decltype(auto))
+    [GpuKernel]
+    public static void RefReturnKernel(int[] a, int[] b, int[] result)
+    {
+        int i = 0;
+        Pick(a, Next(ref i), i) = 5;
+
+        int m = 0;
+        Pick(b, Next(ref m), m) = Next(ref m);
+
+        // K28: Choose returns a reference to x, through which Next writes it after x is read
+        int x = 5;
+        int y = 0;
+        result[0] = Sub(x, Next(ref Choose(ref x, ref y, true)));
+    }
+
+    // K23 / K24 / K25: the value is converted to the target type, a compound assignment narrows, an enum target
+    [GpuKernel]
+    public static void ConversionsKernel(float[] floats, byte[] bytes, int[] result)
+    {
+        int i = 1;
+        floats[i] = Next(ref i);
+
+        int j = 0;
+        bytes[Next(ref j)] += (byte)(Next(ref j) + 250);
+
+        EoFlags flags = EoFlags.A;
+        flags |= Replace(ref flags);
+        result[0] = (int)flags;
+    }
+
+    // K27: an interfering form under ?: and && is evaluated in its own branch only
+    [GpuKernel]
+    public static void ConditionalBranchesKernel(int[] input, int[] result)
+    {
+        int i = 0;
+        result[0] = input[0] > 0 ? Sub(Next(ref i), Next(ref i)) : 100;
+        result[1] = i;
+
+        int j = 0;
+        result[2] = input[0] > 0 && Sub(Next(ref j), Next(ref j)) < 0 ? 1 : 0;
+        result[3] = j;
     }
 
     // --- Operator macros (the operands of the operator, from left to right) ---

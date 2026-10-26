@@ -26,6 +26,37 @@ public struct InitializerWrites(int[] log)
     public int X = Effects.WriteElement(log, 0);
 }
 
+public ref struct LogScope
+{
+    public int[] Log;
+
+    public void Dispose() => Log[0] += 1;
+}
+
+public ref struct QuietScope
+{
+    public int Closed;
+
+    public void Dispose() => Closed = 1;
+}
+
+public struct Box
+{
+    public int[] Data;
+
+    public int First
+    {
+        get => Data[0];
+        set => Data[0] = value;
+    }
+
+    public static implicit operator int(Box box)
+    {
+        box.Data[1] += 1;
+        return 0;
+    }
+}
+
 public static class Effects
 {
     private static int s_total;
@@ -70,6 +101,16 @@ public static class Effects
     [GpuDeviceFunction]
     public static Counter InitializerOnly(int x) => new Counter { Value = x };
 
+    [GpuDeviceFunction]
+    public static int QuietUsing()
+    {
+        using var scope = new QuietScope();
+        return 0;
+    }
+
+    [GpuDeviceFunction]
+    public static int GetterRead(Box box) => box.First;
+
     // --- RefParameters ---
 
     [GpuDeviceFunction]
@@ -91,6 +132,15 @@ public static class Effects
     public static void CarryIntrinsic(uint a, uint b, ref ulong carry)
     {
         Gpu.AddWithCarry(a, b, ref carry);
+    }
+
+    // using (<expression>) disposes the variable the expression names: here the caller's, through ref
+    [GpuDeviceFunction]
+    public static void CloseByExpression(ref QuietScope scope)
+    {
+        using (scope)
+        {
+        }
     }
 
     // --- Memory ---
@@ -124,6 +174,29 @@ public static class Effects
 
     [GpuDeviceFunction]
     public static int CallsMemory(int[] data) => WriteElement(data, 0);
+
+    [GpuDeviceFunction]
+    public static int LoggingUsing(int[] log)
+    {
+        using var scope = new LogScope { Log = log };
+        return 0;
+    }
+
+    [GpuDeviceFunction]
+    public static void SetterWrite(Box box) => box.First = 3;
+
+    [GpuDeviceFunction]
+    public static void PropertyIncrement(Box box) => box.First++;
+
+    [GpuDeviceFunction]
+    public static void PropertyPrefixDecrement(Box box) => --box.First;
+
+    [GpuDeviceFunction]
+    public static int ConversionWrite(Box box)
+    {
+        int value = box;
+        return value;
+    }
 
     [GpuDeviceFunction]
     public static void ForwardsElement(int[] data) => Increment(ref data[0]);

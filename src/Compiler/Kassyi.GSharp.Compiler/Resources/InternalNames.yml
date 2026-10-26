@@ -54,6 +54,8 @@ Lowering:
     WarpTempPrefix: __gsharp_warp_temp_
     CallTempPrefix: __gsharp_call_temp_
     ArgumentTempPrefix: __gsharp_arg_temp_
+    # The temporaries of EvaluationOrder: the emitter declares them, but like the lowering temporaries above they keep
+    # the C# order of evaluation, so they share the group
     SequenceTempPrefix: __gsharp_seq_
     ConditionTempPrefix: __gsharp_cond_temp_
     AggregateTemp: __gsharp_tmp

@@ -46,6 +46,28 @@ public class EvaluationOrderTests : TranspilerTestBase
 
     [SkippableFact]
     [Scenario(TestScenario.HappyPath)]
+    public void Test_RefReadsAndAliases_AreEvaluatedFromLeftToRight() =>
+        EvaluationOrderScenarios.ReadsAndAliases(s_runNative);
+
+    [SkippableFact]
+    [Scenario(TestScenario.HappyPath)]
+    public void Test_RefReturningCalls_KeepTheirTargetAndAliases() =>
+        EvaluationOrderScenarios.RefReturn(s_runNative);
+
+    [SkippableFact]
+    [Scenario(TestScenario.Boundary)]
+    public void Test_ConvertedValues_KeepTheCSharpConversions() =>
+        EvaluationOrderScenarios.Conversions(s_runNative);
+
+    [SkippableTheory]
+    [Scenario(TestScenario.Boundary)]
+    [InlineData(1)]
+    [InlineData(0)]
+    public void Test_InterferingOperandsInABranch_RunOnlyInThatBranch(int selector) =>
+        EvaluationOrderScenarios.ConditionalBranches(s_runNative, selector);
+
+    [SkippableFact]
+    [Scenario(TestScenario.HappyPath)]
     public void Test_Assignment_EvaluatesTheTargetBeforeTheValue() =>
         EvaluationOrderScenarios.Assignment(s_runNative);
 

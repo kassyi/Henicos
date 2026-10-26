@@ -65,7 +65,11 @@ public sealed class InvocationExpressionTranspilerRule : SyntaxNodeTranspilerRul
         }
     }
 
-    // The receiver of an instance (or reduced extension) call, which C# and C++ evaluate before the arguments
+    // The receiver of an instance (or reduced extension) call, which C# and C++ evaluate before the arguments.
+    // [WHY] G# emits neither the instance methods of a struct nor reduced extension calls today, so the receiver path
+    // (and its ReducedFrom branch) is not reached by valid output; when the receiver interferes with an argument,
+    // BeginCall leaves the whole call as written, which also leaves the arguments in C++ order (to be fixed with the
+    // instance methods).
     private static ExpressionSyntax? GetReceiver(InvocationExpressionSyntax node, IMethodSymbol symbol) =>
         node.Expression is MemberAccessExpressionSyntax access && (!symbol.IsStatic || symbol.ReducedFrom != null)
             ? access.Expression

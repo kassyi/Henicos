@@ -54,7 +54,7 @@ public sealed class AssignmentExpressionTranspilerRule : SyntaxNodeTranspilerRul
         {
             if (!ComputedPropertyGetterCall.IsComputedPropertyTarget(node.Left, ref context) &&
                 node.Right is not RefExpressionSyntax &&
-                OperandsInterfere(node, readsTarget: false, ref context))
+                OperandsInterfere(node, readsTarget: false, ref context, out _))
             {
                 TranspileSequencedAssignment(node, ref context);
                 return;
@@ -72,9 +72,10 @@ public sealed class AssignmentExpressionTranspilerRule : SyntaxNodeTranspilerRul
             return;
         }
 
-        if (GetCompoundOperator(node) is { } binaryOperator && OperandsInterfere(node, readsTarget: true, ref context))
+        if (GetCompoundOperator(node) is { } binaryOperator &&
+            OperandsInterfere(node, readsTarget: true, ref context, out var rightEffects))
         {
-            TranspileSequencedCompoundAssignment(node, binaryOperator, ref context);
+            TranspileSequencedCompoundAssignment(node, binaryOperator, rightEffects, ref context);
             return;
         }
 
@@ -87,11 +88,12 @@ public sealed class AssignmentExpressionTranspilerRule : SyntaxNodeTranspilerRul
     // right side, and stores last (C# spec §12.21.2, §12.21.4). C++17 evaluates the right side of an assignment first
     // ([expr.ass]), so the order differs whenever the right side changes what the target reads or the other way round
     // (#608): then the target is bound to a reference and the operands are evaluated in the C# order (EvaluationOrder).
-    private static bool OperandsInterfere(AssignmentExpressionSyntax node, bool readsTarget, ref TranspileContext context)
+    private static bool OperandsInterfere(AssignmentExpressionSyntax node, bool readsTarget, ref TranspileContext context,
+        out ExpressionEffects value)
     {
         var model = context.Query.SemanticModel;
         var target = ExpressionEffects.OfLocation(node.Left, model, readsTarget);
-        var value = ExpressionEffects.Of(node.Right, model);
+        value = ExpressionEffects.Of(node.Right, model);
         return EvaluationOrder.LastSpilledOperand([target, value]) >= 0;
     }
 
@@ -111,14 +113,19 @@ public sealed class AssignmentExpressionTranspilerRule : SyntaxNodeTranspilerRul
 
     // ([&]() { auto&& __gsharp_seq_0 = <left>; auto __gsharp_seq_1 = __gsharp_seq_0; auto __gsharp_seq_2 = <right>;
     //   return __gsharp_seq_0 = (<T>)(__gsharp_seq_1 <op> __gsharp_seq_2); }())
-    // The cast is C#'s x = (T)(x op y), which narrows the promoted result back to the type of the target.
+    // The cast is C#'s x = (T)(x op y), which narrows the promoted result back to the type of the target. The copy of
+    // the target is left out (its temporary read in place) when the right side cannot write the variable it belongs to.
     private static void TranspileSequencedCompoundAssignment(AssignmentExpressionSyntax node, string binaryOperator,
-        ref TranspileContext context)
+        in ExpressionEffects rightEffects, ref TranspileContext context)
     {
         var writer = context.Emitter.Writer;
+        var model = context.Query.SemanticModel;
+        var readsBeforeRight = rightEffects.Writes
+                                   .Overlaps(ExpressionEffects.RootOf(node.Left, model)) ||
+                               NeedsDecltype(model.GetTypeSymbol(node.Left));
         using var sequence = EvaluationOrder.BeginSequence(writer);
         var target = EvaluationOrder.DeclareTemp(ref context, node.Left, reference: true);
-        var current = EvaluationOrder.DeclareCopy(ref context, target);
+        var current = readsBeforeRight ? EvaluationOrder.DeclareCopy(ref context, target) : target;
         var value = EvaluationOrder.DeclareTemp(ref context, node.Right, reference: false);
         sequence.Return();
         EvaluationOrder.AppendTempName(writer, target);
@@ -136,12 +143,12 @@ public sealed class AssignmentExpressionTranspilerRule : SyntaxNodeTranspilerRul
         }
     }
 
-    // The C++ type of the target; decltype of its copy for an enum (the dialect writes its underlying type, which does
-    // not convert back) or a type parameter
+    // The C++ type of the target (an enum is its underlying type, as G# emits enum variables); decltype of the copy of
+    // the target for a type that the dialect cannot spell (a type parameter), which is why such a target is copied
     private static void AppendTargetType(ExpressionSyntax left, int copy, ref TranspileContext context)
     {
         var type = context.Query.SemanticModel.GetTypeSymbol(left);
-        if (type is null or ITypeParameterSymbol or { TypeKind: TypeKind.Enum or TypeKind.Error })
+        if (NeedsDecltype(type) || type is null)
         {
             context.Emitter.Writer.Append("decltype");
             using (context.Emitter.Writer.Parentheses())
@@ -154,6 +161,8 @@ public sealed class AssignmentExpressionTranspilerRule : SyntaxNodeTranspilerRul
 
         context.Emitter.Dialect.AppendType(ref context, type);
     }
+
+    private static bool NeedsDecltype(ITypeSymbol? type) => type is null or ITypeParameterSymbol or { TypeKind: TypeKind.Error };
 
     // The binary operator of a compound assignment (+= gives +), or null for one that the sequence does not rewrite
     // (>>>= has no C++ operator; ??= is handled before)

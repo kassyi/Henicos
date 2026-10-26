@@ -20,6 +20,8 @@ public class DeviceFunctionEffectsTests
     [InlineData("ReadsMemory")]
     [InlineData("LambdaLocal")]
     [InlineData("InitializerOnly")]
+    [InlineData("QuietUsing")]
+    [InlineData("GetterRead")]
     public void Test_Classify_WritesOnlyOwnLocals_IsNone(string name) =>
         Assert.Equal(DeviceFunctionEffect.None, Classify("EffectCases.Effects", name));
 
@@ -30,6 +32,7 @@ public class DeviceFunctionEffectsTests
     [InlineData("BumpField")]
     [InlineData("ForwardsRef")]
     [InlineData("CarryIntrinsic")]
+    [InlineData("CloseByExpression")]
     public void Test_Classify_WritesThroughRefParameters_IsRefParameters(string name) =>
         Assert.Equal(DeviceFunctionEffect.RefParameters, Classify("EffectCases.Effects", name));
 
@@ -42,6 +45,11 @@ public class DeviceFunctionEffectsTests
     [InlineData("Atomic")]
     [InlineData("CallsMemory")]
     [InlineData("ForwardsElement")]
+    [InlineData("LoggingUsing")]
+    [InlineData("SetterWrite")]
+    [InlineData("PropertyIncrement")]
+    [InlineData("PropertyPrefixDecrement")]
+    [InlineData("ConversionWrite")]
     public void Test_Classify_WritesMemory_IsMemory(string name) =>
         Assert.Equal(DeviceFunctionEffect.Memory, Classify("EffectCases.Effects", name));
 

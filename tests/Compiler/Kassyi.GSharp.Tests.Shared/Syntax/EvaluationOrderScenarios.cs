@@ -68,6 +68,61 @@ internal static class EvaluationOrderScenarios
         Assert.Equal(1, result[1]);
     }
 
+    public static void ReadsAndAliases(Action<Action> run)
+    {
+        var result = new int[4];
+
+        run(() => EvaluationOrderKernels.LaunchReadsAndAliasesKernel(result, blockDimX: 1));
+
+        // Sub(ReadRef(ref i), Next(ref i)) = 0 - 0; Sub(y, SetThrough(&y, 9)) = 5 - 0;
+        // ReadInLong(1, BumpShort(ref s)) = 1 * 10 + 0; Combine(Pure(0), 1) = 1 * 10 + 1
+        Assert.Equal([0, 5, 10, 11], result);
+    }
+
+    public static void RefReturn(Action<Action> run)
+    {
+        var a = new int[4];
+        var b = new int[4];
+        var result = new int[1];
+
+        run(() => EvaluationOrderKernels.LaunchRefReturnKernel(a, b, result, blockDimX: 1));
+
+        // Pick(a, 0, 1) = 5; Pick(b, 0, 1) = 1 (the target is found before the value runs Next again)
+        Assert.Equal([0, 5, 0, 0], a);
+        Assert.Equal([0, 1, 0, 0], b);
+        // Sub(x, Next(ref x)) = 5 - 5
+        Assert.Equal(0, result[0]);
+    }
+
+    public static void Conversions(Action<Action> run)
+    {
+        var floats = new float[4];
+        byte[] bytes = [10, 0, 0, 0];
+        var result = new int[1];
+
+        run(() => EvaluationOrderKernels.LaunchConversionsKernel(floats, bytes, result, blockDimX: 1));
+
+        // floats[1] = 1, converted to float
+        Assert.Equal([0f, 1f, 0f, 0f], floats);
+        // bytes[0] = (byte)(10 + (byte)(1 + 250)) = (byte)261 = 5
+        Assert.Equal([5, 0, 0, 0], bytes);
+        // flags = A | B: flags is read before Replace sets it to C
+        Assert.Equal((int)(EoFlags.A | EoFlags.B), result[0]);
+    }
+
+    public static void ConditionalBranches(Action<Action> run, int selector)
+    {
+        int[] input = [selector];
+        var result = new int[4];
+
+        run(() => EvaluationOrderKernels.LaunchConditionalBranchesKernel(input, result, blockDimX: 1));
+
+        Assert.Equal(selector > 0 ? -1 : 100, result[0]);
+        Assert.Equal(selector > 0 ? 2 : 0, result[1]);
+        Assert.Equal(selector > 0 ? 1 : 0, result[2]);
+        Assert.Equal(selector > 0 ? 2 : 0, result[3]);
+    }
+
     public static void OperatorMacro(Action<Action> run)
     {
         var result = new int[1];

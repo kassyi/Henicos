@@ -339,4 +339,30 @@ internal static class SymbolExtensions
         symbol.GetAttributes()
             .AsStackEnumerable()
             .FirstOrDefault(shortName, static (a, name) => a.IsAttribute(name));
+
+    /// <summary>
+    /// The parameter of <paramref name="method"/> that the argument at <paramref name="index"/> of
+    /// <paramref name="arguments"/> is passed to: by name, by position, or the <c>params</c> parameter for a trailing
+    /// argument; <see langword="null"/> when none matches.
+    /// </summary>
+    public static IParameterSymbol? FindParameter(this IMethodSymbol method, SeparatedSyntaxList<ArgumentSyntax> arguments,
+        int index)
+    {
+        var parameters = method.Parameters;
+        if (arguments[index].NameColon is { } nameColon)
+        {
+            return parameters
+                .AsStackEnumerable()
+                .FirstOrDefault(nameColon.Name.Identifier.ValueText, static (p, name) => p.Name == name);
+        }
+
+        if (index < parameters.Length)
+        {
+            return parameters[index];
+        }
+
+        return parameters.Length > 0 && parameters[parameters.Length - 1].IsParams
+            ? parameters[parameters.Length - 1]
+            : null;
+    }
 }
