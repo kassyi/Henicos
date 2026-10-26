@@ -90,6 +90,44 @@ public class GpuBigIntSqrtTests
         Assert.Equal(FloorSqrt(value), result.ToBigInteger());
     }
 
+    [SkippableTheory]
+    [Category(TestCategory.Stdlib)]
+    [Scenario(TestScenario.SadPath)]
+    [InlineData(5)]
+    [InlineData(3)]
+    public void Sqrt_MismatchedBufferSizes_ThrowsArgumentException(int resultWords)
+    {
+        // The result buffer has as many words as the operand. A one-word value takes the single-word path, whose
+        // own operations never check the sizes, so only this check rejects the buffer.
+        // mutant: GpuBigIntDivRem.Sqrt.cs:65 `ThrowIfSizeMismatch(leftOperand, resultBuffer)` removed
+        CudaCapability.EnsureGpuAvailable();
+        using var ctx = new GpuWorkspace(16, GpuExecutionEngine.GSharpAot);
+        using var a = new GpuBigUInt(ctx, new uint[] { 9, 0, 0, 0 });
+        using var result = new GpuBigUInt(ctx, resultWords);
+
+        Assert.Throws<ArgumentException>(() => GpuBigIntDivRem.Sqrt(a, result));
+    }
+
+    [SkippableTheory]
+    [Category(TestCategory.Stdlib)]
+    [Scenario(TestScenario.Boundary)]
+    [InlineData(0u, 0u)]
+    [InlineData(10000u, 100u)]
+    public void Sqrt_PrefilledResultBuffer_IsOverwritten(uint value, uint expectedRoot)
+    {
+        // The result buffer is filled with 0xFFFFFFFF first; every word above the root must be cleared.
+        // mutant: GpuBigIntDivRem.Sqrt.cs:70 `resultBuffer.Clear()` removed (value 0)
+        // mutant: GpuBigIntDivRem.Sqrt.cs:94 `resultBuffer.Clear()` removed (value 10000)
+        CudaCapability.EnsureGpuAvailable();
+        using var ctx = new GpuWorkspace(16, GpuExecutionEngine.GSharpAot);
+        using var a = new GpuBigUInt(ctx, new uint[] { value, 0, 0, 0 });
+        using var result = new GpuBigUInt(ctx, Enumerable.Repeat(uint.MaxValue, 4).ToArray());
+
+        GpuBigIntDivRem.Sqrt(a, result);
+
+        Assert.Equal(new BigInteger(expectedRoot), result.ToBigInteger());
+    }
+
     private static BigInteger FloorSqrt(BigInteger value)
     {
         if (value < 2)
