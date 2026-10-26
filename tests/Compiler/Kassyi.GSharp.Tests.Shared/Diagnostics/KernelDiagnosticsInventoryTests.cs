@@ -49,6 +49,8 @@ public class KernelDiagnosticsInventoryTests
         "Analyzers/MacroArgumentSadPath.cs",
         // GSH0011
         "Diagnostics/MacroLambdaWithoutParameter.cu.cs",
+        // GSH0003 (return, assignment to the loop variable)
+        "Diagnostics/MacroLoopBodyRestrictions.cu.cs",
         // GSH0016, GSH0017
         "Analyzers/UnrollHintSadPath.cs",
         // GSH0004

@@ -22,6 +22,9 @@ internal static class TypeLayoutCalculator
     }
 
     /// <summary>Recursively collects all user structs referenced within the type tree.</summary>
+    /// <remarks>
+    /// The element of an array field is collected too: its shadow carries the array's elements to the device.
+    /// </remarks>
     public static void CollectStructs(ITypeSymbol type, HashSet<INamedTypeSymbol> structs)
     {
         if (!IsUserStruct(type))
@@ -38,9 +41,18 @@ internal static class TypeLayoutCalculator
 
         foreach (var member in StructAbiMembers.Get(named))
         {
-            CollectStructs(member.Type, structs);
+            var memberType = member.Type.UnwrapNullableArrayLike() ?? member.Type;
+            CollectStructs(memberType.TryGetArrayLikeElementType(out var element) ? element : memberType, structs);
         }
     }
+
+    /// <summary>
+    /// The C# spelling of <paramref name="type"/> for a diagnostic message (<c>decimal</c>, <c>N.Pair</c>).
+    /// </summary>
+    public static string FormatTypeName(ITypeSymbol type) =>
+#pragma warning disable RS0030 // Message text only (not a hot path); keeps the C# spelling of the type.
+        type.ToDisplayString();
+#pragma warning restore RS0030
 
     /// <summary>Aligns a given byte offset up to the specified boundary.</summary>
     public static int AlignUp(int offset, int alignment)
@@ -93,20 +105,8 @@ internal static class TypeLayoutCalculator
 
         if (type is INamedTypeSymbol { TypeKind: TypeKind.Struct } namedStruct)
         {
-            var pack = namedStruct.TryGetStructLayoutPack(out var p) ? p : 0;
-            var end = 0;
-            var maxAlign = 1;
-            foreach (var member in StructAbiMembers.Get(namedStruct))
-            {
-                var elemLayout = GetDeviceLayout(member.Type, dialect);
-                var fieldSize = elemLayout.Size * member.ElementCount;
-                var effectiveAlign = pack > 0 ? Math.Min(elemLayout.Alignment, pack) : elemLayout.Alignment;
-                var offset = AlignUp(end, effectiveAlign);
-                end = offset + fieldSize;
-                maxAlign = Math.Max(maxAlign, effectiveAlign);
-            }
-
-            return new TypeLayout(Math.Max(AlignUp(end, maxAlign), 1), maxAlign);
+            ReadStructLayoutAttribute(namedStruct, out var kind, out var pack, out var explicitSize);
+            return ComputeDeviceStructLayout(namedStruct, dialect, kind, pack, explicitSize, fields: null);
         }
 
         return new TypeLayout(4, 4);
@@ -119,29 +119,257 @@ internal static class TypeLayoutCalculator
 
         // 1. Device (D)
         var deviceFieldsBuilder = ImmutableArray.CreateBuilder<FieldLayout>();
-        var deviceEnd = 0;
-        var deviceMaxAlign = 1;
-        foreach (var member in StructAbiMembers.Get(structType))
-        {
-            var elemLayout = GetDeviceLayout(member.Type, dialect);
-            var fieldSize = elemLayout.Size * member.ElementCount;
-            var effectiveAlign = pack > 0 ? Math.Min(elemLayout.Alignment, pack) : elemLayout.Alignment;
-            var offset = AlignUp(deviceEnd, effectiveAlign);
-            deviceEnd = offset + fieldSize;
-            deviceMaxAlign = Math.Max(deviceMaxAlign, effectiveAlign);
-            deviceFieldsBuilder.Add(new FieldLayout(member, offset, new TypeLayout(fieldSize, effectiveAlign)));
-        }
-
-        var deviceLayout = new TypeLayout(Math.Max(AlignUp(deviceEnd, deviceMaxAlign), 1), deviceMaxAlign);
+        var deviceLayout =
+            ComputeDeviceStructLayout(structType, dialect, kind, pack, explicitSize, deviceFieldsBuilder);
         var deviceFields = deviceFieldsBuilder.ToImmutable();
 
         // 2. Host (H)
         var hostLayout = ComputeStructHostLayout(structType, kind, pack, explicitSize);
 
         // 3. TransferClass
-        var transfer = ClassifyTransfer(structType, dialect, deviceLayout, deviceFields, hostLayout);
+        var unsupported = FindUnsupportedLayout(structType, dialect, kind, deviceFields);
+        var transfer = unsupported.HasValue
+            ? TransferClass.Unsupported
+            : ClassifyTransfer(dialect, deviceLayout, deviceFields, hostLayout);
 
-        return new StructLayoutInfo(kind, pack, deviceLayout, deviceFields, hostLayout, transfer);
+        return new StructLayoutInfo(kind, pack, deviceLayout, deviceFields, hostLayout, transfer, unsupported);
+    }
+
+    /// <summary>
+    /// Whether the device has a representation for a member of type <paramref name="type"/>: an array-like value,
+    /// a pointer, an enum, a type of the dialect's type map, a user struct, or a <c>Nullable&lt;T&gt;</c> of one.
+    /// </summary>
+    /// <remarks>
+    /// A reference type other than an array-like one is not asked about here; <see cref="GetStructLayout"/> reports it
+    /// with its own reason. <c>decimal</c>, <c>DateTime</c> and the other BCL structs without a mapping have none.
+    /// </remarks>
+    public static bool HasDeviceRepresentation(ITypeSymbol type, ITranspilerDialect dialect)
+    {
+        type = type.UnwrapNullableArrayLike() ?? type;
+        if (type.IsArrayLikeType() ||
+            type is IPointerTypeSymbol or IFunctionPointerTypeSymbol or ITypeParameterSymbol ||
+            type.SpecialType is SpecialType.System_IntPtr or SpecialType.System_UIntPtr ||
+            type.TypeKind == TypeKind.Enum ||
+            dialect.IsMappedType(type))
+        {
+            return true;
+        }
+
+        if (type is not INamedTypeSymbol named)
+        {
+            return false;
+        }
+
+        if (named is { OriginalDefinition.SpecialType: SpecialType.System_Nullable_T, TypeArguments.Length: 1 })
+        {
+            return HasDeviceRepresentation(named.TypeArguments[0], dialect);
+        }
+
+        return GlobalCppNames.IsEmittedUserType(named) || named.IsSharedMemoryType() || named.IsWmmaFragmentType() ||
+               named.IsWmmaMarkerType();
+    }
+
+    /// <summary>
+    /// Describes the first difference between the host and device layouts of a <see cref="TransferClass.Convert"/>
+    /// struct, as the <c>{1}</c> of GSH0080 (<c>field 'V' is at offset 4 on the host and 8 on the device</c>).
+    /// </summary>
+    public static string DescribeLayoutDifference(INamedTypeSymbol structType, ITranspilerDialect dialect)
+    {
+        var layout = GetStructLayout(structType, dialect);
+        if (layout.Kind == TypeLayoutKind.Auto)
+        {
+            return "LayoutKind.Auto lets the runtime reorder the fields on the host";
+        }
+
+        if (!layout.Host.IsKnown)
+        {
+            foreach (var member in StructAbiMembers.Get(structType))
+            {
+                if (member.Type.IsArrayLikeType() || member.Type.IsNullableArrayLike())
+                {
+                    return $"field '{member.Name}' is an array, so the runtime may reorder the fields on the host";
+                }
+
+                if (member.Type is INamedTypeSymbol { TypeKind: TypeKind.Struct } nested &&
+                    !TryGetHostElementLayout(nested, out _))
+                {
+                    return $"field '{member.Name}' of type '{FormatTypeName(nested)}': " +
+                           DescribeLayoutDifference(nested, dialect);
+                }
+            }
+
+            return "the host layout is not known";
+        }
+
+        for (var i = 0; i < layout.DeviceFields.Length && i < layout.Host.Fields.Length; i++)
+        {
+            var device = layout.DeviceFields[i];
+            var host = layout.Host.Fields[i];
+            if (device.Offset != host.Offset)
+            {
+                return $"field '{device.Member.Name}' is at offset {host.Offset} on the host " +
+                       $"and {device.Offset} on the device";
+            }
+
+            if (device.Layout.Size != host.Layout.Size)
+            {
+                return $"field '{device.Member.Name}' is {host.Layout.Size} bytes on the host " +
+                       $"and {device.Layout.Size} bytes on the device";
+            }
+
+            if (device.Member.Type is INamedTypeSymbol { TypeKind: TypeKind.Struct } nested &&
+                IsUserStruct(nested) &&
+                GetStructLayout(nested, dialect).Transfer != TransferClass.Identical)
+            {
+                return $"field '{device.Member.Name}' of type '{FormatTypeName(nested)}': " +
+                       DescribeLayoutDifference(nested, dialect);
+            }
+        }
+
+        return $"the struct is {layout.Host.Size} bytes on the host and {layout.Device.Size} bytes on the device";
+    }
+
+    /// <summary>
+    /// Finds the first array-like member of <paramref name="structType"/>, its nested structs and inline array
+    /// elements, as a dotted path (<c>Inner.Values</c>): the arrays that the launcher allocates and copies for each element.
+    /// </summary>
+    public static bool TryFindArrayField(INamedTypeSymbol structType, out string path)
+    {
+        foreach (var member in StructAbiMembers.Get(structType))
+        {
+            if (member.Type.IsArrayLikeType() || member.Type.IsNullableArrayLike())
+            {
+                path = member.Name;
+                return true;
+            }
+
+            if (member.Type is INamedTypeSymbol { TypeKind: TypeKind.Struct } nested &&
+                IsUserStruct(nested) &&
+                TryFindArrayField(nested, out var nestedPath))
+            {
+                path = member.Kind == StructAbiMemberKind.InlineArrayElement
+                    ? nestedPath
+                    : $"{member.Name}.{nestedPath}";
+                return true;
+            }
+        }
+
+        path = string.Empty;
+        return false;
+    }
+
+    // Sequential: declaration order, each field aligned up (Pack caps the alignment). Explicit: the [FieldOffset]
+    // values, with StructLayout.Size as the minimum size. Either way the size is rounded up to the largest alignment.
+    private static TypeLayout ComputeDeviceStructLayout(INamedTypeSymbol structType, ITranspilerDialect dialect,
+        TypeLayoutKind kind, int pack, int explicitSize, ImmutableArray<FieldLayout>.Builder? fields)
+    {
+        var end = 0;
+        var maxAlign = 1;
+        foreach (var member in StructAbiMembers.Get(structType))
+        {
+            var elemLayout = GetDeviceLayout(member.Type, dialect);
+            var fieldSize = elemLayout.Size * member.ElementCount;
+            var effectiveAlign = pack > 0 ? Math.Min(elemLayout.Alignment, pack) : elemLayout.Alignment;
+            int offset;
+            if (kind == TypeLayoutKind.Explicit)
+            {
+                offset = GetFieldOffset(member.Symbol);
+                end = Math.Max(end, offset + fieldSize);
+            }
+            else
+            {
+                offset = AlignUp(end, effectiveAlign);
+                end = offset + fieldSize;
+            }
+
+            maxAlign = Math.Max(maxAlign, effectiveAlign);
+            fields?.Add(new FieldLayout(member, offset, new TypeLayout(fieldSize, effectiveAlign)));
+        }
+
+        if (kind == TypeLayoutKind.Explicit && explicitSize > 0)
+        {
+            end = Math.Max(end, explicitSize);
+        }
+
+        return new TypeLayout(Math.Max(AlignUp(end, maxAlign), 1), maxAlign);
+    }
+
+    // [WHY] The device can express an explicit layout only as union groups (fields at the same offset) that do not
+    // overlap each other, each at an offset its alignment allows (design §3.3-4); a member must be a value the device
+    // has a type for. A nested struct passes its own reason up.
+    private static UnsupportedLayout? FindUnsupportedLayout(INamedTypeSymbol structType, ITranspilerDialect dialect,
+        TypeLayoutKind kind, ImmutableArray<FieldLayout> deviceFields)
+    {
+        if (kind == TypeLayoutKind.Explicit)
+        {
+            for (var i = 0; i < deviceFields.Length; i++)
+            {
+                var field = deviceFields[i];
+                if (field.Offset % field.Layout.Alignment != 0)
+                {
+                    return new UnsupportedLayout(
+                        $"field '{field.Member.Name}' at offset {field.Offset} is not a multiple of its " +
+                        $"{field.Layout.Alignment}-byte device alignment",
+                        null,
+                        null);
+                }
+
+                for (var j = 0; j < i; j++)
+                {
+                    var earlier = deviceFields[j];
+                    if (earlier.Offset != field.Offset &&
+                        earlier.Offset < field.Offset + field.Layout.Size &&
+                        field.Offset < earlier.Offset + earlier.Layout.Size)
+                    {
+                        return new UnsupportedLayout(
+                            $"field '{field.Member.Name}' at offset {field.Offset} partially overlaps " +
+                            $"field '{earlier.Member.Name}'",
+                            null,
+                            null);
+                    }
+                }
+            }
+        }
+
+        foreach (var member in StructAbiMembers.Get(structType))
+        {
+            var type = member.Type.UnwrapNullableArrayLike() ?? member.Type;
+            if (type.IsArrayLikeType())
+            {
+                continue;
+            }
+
+            if (type.IsReferenceType)
+            {
+                return new UnsupportedLayout(
+                    $"field '{member.Name}' has the reference type '{FormatTypeName(type)}'",
+                    null,
+                    null);
+            }
+
+            if (!HasDeviceRepresentation(type, dialect))
+            {
+                return new UnsupportedLayout(
+                    $"field '{member.Name}' has the type '{FormatTypeName(type)}', which has no device representation",
+                    member.Name,
+                    type);
+            }
+
+            if (type is INamedTypeSymbol { TypeKind: TypeKind.Struct } nested &&
+                IsUserStruct(nested) &&
+                GetStructLayout(nested, dialect).Unsupported is { } nestedProblem)
+            {
+                var path = member.Kind == StructAbiMemberKind.InlineArrayElement || nestedProblem.FieldPath is null
+                    ? nestedProblem.FieldPath
+                    : $"{member.Name}.{nestedProblem.FieldPath}";
+                return new UnsupportedLayout(
+                    $"field '{member.Name}' of type '{FormatTypeName(nested)}': {nestedProblem.Reason}",
+                    path,
+                    nestedProblem.FieldType);
+            }
+        }
+
+        return null;
     }
 
     private static HostLayout ComputeStructHostLayout(INamedTypeSymbol structType, TypeLayoutKind kind, int pack,
@@ -252,25 +480,19 @@ internal static class TypeLayoutCalculator
     }
 
     private static TransferClass ClassifyTransfer(
-        INamedTypeSymbol structType,
         ITranspilerDialect dialect,
         TypeLayout deviceLayout,
         ImmutableArray<FieldLayout> deviceFields,
         HostLayout hostLayout)
     {
-        if (HasUnsupportedInlineArray(structType, depth: 0))
-        {
-            return TransferClass.Unsupported;
-        }
-
         if (!hostLayout.IsKnown)
         {
             return TransferClass.Convert;
         }
 
-        if (deviceLayout.Size != hostLayout.Size ||
-            deviceLayout.Alignment != hostLayout.Alignment ||
-            deviceFields.Length != hostLayout.Fields.Length)
+        // [WHY] Only sizes and offsets decide (design §3.3): with the same stride and offsets the bytes are the same,
+        // and the device alignment (Float2 / Vector4 ...) is met by the allocation and the stride, not by the host
+        if (deviceLayout.Size != hostLayout.Size || deviceFields.Length != hostLayout.Fields.Length)
         {
             return TransferClass.Convert;
         }
@@ -279,7 +501,7 @@ internal static class TypeLayoutCalculator
         {
             var dField = deviceFields[i];
             var hField = hostLayout.Fields[i];
-            if (dField.Offset != hField.Offset || dField.Layout != hField.Layout)
+            if (dField.Offset != hField.Offset || dField.Layout.Size != hField.Layout.Size)
             {
                 return TransferClass.Convert;
             }
@@ -301,7 +523,7 @@ internal static class TypeLayoutCalculator
             } nullableType)
         {
             var elemD = GetDeviceLayout(nullableType.TypeArguments[0], dialect);
-            if (!TryGetHostElementLayout(nullableType.TypeArguments[0], out var elemH) || elemD != elemH)
+            if (!TryGetHostElementLayout(nullableType.TypeArguments[0], out var elemH) || elemD.Size != elemH.Size)
             {
                 return false;
             }
@@ -311,7 +533,7 @@ internal static class TypeLayoutCalculator
 
         if (dialect.TryGetTypeLayout(memberType, out var mappedD))
         {
-            return TryGetHostElementLayout(memberType, out var mappedH) && mappedD == mappedH;
+            return TryGetHostElementLayout(memberType, out var mappedH) && mappedD.Size == mappedH.Size;
         }
 
         if (memberType is INamedTypeSymbol { TypeKind: TypeKind.Struct } nestedStruct)
@@ -320,59 +542,6 @@ internal static class TypeLayoutCalculator
         }
 
         return true;
-    }
-
-    private static bool HasUnsupportedInlineArray(INamedTypeSymbol structType, int depth)
-    {
-        const int MaxDepth = 16;
-        if (depth > MaxDepth)
-        {
-            return false;
-        }
-
-        foreach (var member in StructAbiMembers.Get(structType))
-        {
-            if (member.Kind == StructAbiMemberKind.InlineArrayElement &&
-                ContainsReferenceOrArray(member.Type, depth + 1))
-            {
-                return true;
-            }
-
-            if (member.Type is INamedTypeSymbol { TypeKind: TypeKind.Struct } nestedStruct &&
-                HasUnsupportedInlineArray(nestedStruct, depth + 1))
-            {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    private static bool ContainsReferenceOrArray(ITypeSymbol type, int depth)
-    {
-        const int MaxDepth = 16;
-        if (depth > MaxDepth)
-        {
-            return false;
-        }
-
-        if (type.IsReferenceType || type.IsArrayLikeType() || type.IsNullableArrayLike())
-        {
-            return true;
-        }
-
-        if (type is INamedTypeSymbol { TypeKind: TypeKind.Struct } structType)
-        {
-            foreach (var member in StructAbiMembers.Get(structType))
-            {
-                if (ContainsReferenceOrArray(member.Type, depth + 1))
-                {
-                    return true;
-                }
-            }
-        }
-
-        return false;
     }
 
     private static void ReadStructLayoutAttribute(INamedTypeSymbol structType, out TypeLayoutKind kind, out int pack,
@@ -421,9 +590,15 @@ internal static class TypeLayoutCalculator
         }
     }
 
+    // [field: FieldOffset] on an auto-property sits on its backing field, not on the property
     private static int GetFieldOffset(ISymbol memberSymbol)
     {
-        if (memberSymbol.GetAttribute(KnownAttributes.FieldOffset) is { ConstructorArguments.Length: > 0 } attr &&
+        var fieldSymbol = memberSymbol is IPropertySymbol property
+            ? property.ContainingType.GetMembers()
+                .AsStackEnumerable()
+                .FirstOrDefault(property, static (m, p) => m is IFieldSymbol f && f.AssociatedSymbol.IsEqualTo(p))
+            : memberSymbol;
+        if (fieldSymbol?.GetAttribute(KnownAttributes.FieldOffset) is { ConstructorArguments.Length: > 0 } attr &&
             attr.ConstructorArguments[0].Value is int offset and >= 0)
         {
             return offset;

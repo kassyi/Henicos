@@ -44,7 +44,7 @@ The loop body delegate receiving the zero-based unrolled loop iteration index.
 #### Exceptions
 
 [GpuOnlyException](../01_diagnostics_and_exceptions.md#gpuonlyexception)<br>
-Thrown when evaluated on the host CPU.
+Thrown when evaluated on the host CPU outside managed execution.
 
 ## ForUnroll\<TContext\>(ref TContext, int, int, Gpu.UnrollAction\<TContext\>)
 
@@ -82,7 +82,7 @@ The loop body delegate receiving the context by reference and the iteration inde
 #### Exceptions
 
 [GpuOnlyException](../01_diagnostics_and_exceptions.md#gpuonlyexception)<br>
-Thrown when evaluated on the host CPU.
+Thrown when evaluated on the host CPU outside managed execution.
 
 ## Examples
 
@@ -116,6 +116,13 @@ This method should be used strictly when the loop variable needs to be evaluated
 
 On CPU dialects and in the managed state machine, if the lambda body contains a phase split point (such as `Gpu.SyncThreads`, `Gpu.SyncGrid`, `Gpu.Warp.*`, or a barrier-reaching `[GpuDeviceFunction]`), `Gpu.ForUnroll` is lowered into a `for` loop and compiled into the state machine so that each iteration suspends and resumes across threads.
 
+Under managed execution (a kernel that runs as a C# state machine, and the `[GpuDeviceFunction]` methods it calls), `Gpu.ForUnroll` runs the body `count` times, with the index going from `start` up to `start + count - 1`.
+
+The body is written into the surrounding code, so two things that are legal in an ordinary C# lambda are rejected with [GSH0003](../diagnostics/GSH0003.md):
+
+- A `return` statement. In C# it would end one iteration, but in the generated code it would end the kernel. A `return` inside a nested lambda or local function of the body belongs to that function and is allowed.
+- An assignment to the loop variable (`i = 0`, `i += 1`, `i++`, `--i`, or passing it as a `ref` / `out` argument), or a reference to it (an `in` argument, or `&i`). The generated code replaces the variable with the iteration index, which is a value and has no address. A local variable declared in the body, and the context parameter of the `ref TContext` overload, can be assigned.
+
 > [!CAUTION]
 > Because this macro performs literal source code duplication during transpilation, using it for loops with high iteration counts will drastically bloat the generated C++ code. For general performance tuning and Instruction-Level Parallelism (ILP) improvements, use [`Gpu.Hint.Unroll`](HintUnroll.md) instead.
 
@@ -125,4 +132,5 @@ On CPU dialects and in the managed state machine, if the lambda body contains a 
 
 - [Gpu Class](00_index.md)
 - [Gpu.Hint.Unroll Method (G#)](HintUnroll.md)
+- [GSH0003: Unsupported syntax in GPU kernel](../diagnostics/GSH0003.md)
 - [Gpu.GridStrideLoop Method (G#)](GridStrideLoop.md)

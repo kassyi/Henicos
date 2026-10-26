@@ -103,9 +103,40 @@ internal readonly record struct KernelParameterShape
     /// <summary>Whether the parameter is a user struct whose layout is <see cref="TransferClass.Identical"/> on CUDA.</summary>
     public bool IsCudaIdenticalStruct { get; init; }
 
+    /// <summary>
+    /// The <c>AotContexts</c> path of the element of an array-like parameter whose element is a user struct that is not
+    /// <see cref="TransferClass.Identical"/> on CUDA, so that the launcher converts it element by element through a
+    /// shadow array; otherwise <see langword="null"/>.
+    /// </summary>
+    public string? ConvertedElementAotStructPath { get; init; }
+
+    /// <summary>
+    /// <c>AotContexts.Marshal_{key}</c> of the element of <see cref="ConvertedElementAotStructPath"/>, otherwise
+    /// <see langword="null"/>.
+    /// </summary>
+    public string? ConvertedElementMarshalMethodName { get; init; }
+
+    /// <summary>
+    /// <c>AotContexts.Unmarshal_{key}</c> of the element of <see cref="ConvertedElementAotStructPath"/>, otherwise
+    /// <see langword="null"/>.
+    /// </summary>
+    public string? ConvertedElementUnmarshalMethodName { get; init; }
+
+    /// <summary>
+    /// Whether the converted element has array fields (<see cref="TypeLayoutCalculator.TryFindArrayField"/>), which
+    /// <c>Marshal_</c> allocates on the device even for an <c>[Out]</c> array.
+    /// </summary>
+    public bool ConvertedElementHasArrayFields { get; init; }
+
     public bool IsArray => Kind == KernelParameterKind.Array;
 
     public bool IsCustomStruct => Kind == KernelParameterKind.CustomStruct;
+
+    /// <summary>
+    /// Whether the CUDA launcher converts the elements of this array-like parameter
+    /// (<see cref="ConvertedElementAotStructPath"/>).
+    /// </summary>
+    public bool IsCudaConvertedArray => IsArray && ConvertedElementAotStructPath is not null;
 
     /// <summary>Whether the parameter is <c>ref</c> or <c>out</c>.</summary>
     public bool IsByRef => RefKind is RefKind.Ref or RefKind.Out;
@@ -211,17 +242,37 @@ internal readonly record struct KernelParameterShape
 
         if (marshaledType.TryGetArrayLikeElementType(out var elementType))
         {
+            var isConverted = IsConvertedOnCuda(elementType);
             return shape with
             {
                 Kind = KernelParameterKind.Array,
                 Container = GetContainer(marshaledType),
                 ElementTypeName = elementType.GetFullyQualifiedCsharpName(),
-                BufferElementTypeName = GetBufferElementTypeName(elementType)
+                BufferElementTypeName = GetBufferElementTypeName(elementType),
+                ConvertedElementAotStructPath = isConverted ? AotHostNames.GetAotStructPath(elementType) : null,
+                ConvertedElementMarshalMethodName = isConverted
+                    ? AotHostNames.GetQualifiedMarshalMethodName(elementType)
+                    : null,
+                ConvertedElementUnmarshalMethodName = isConverted
+                    ? AotHostNames.GetQualifiedUnmarshalMethodName(elementType)
+                    : null,
+                ConvertedElementHasArrayFields = isConverted &&
+                                                 elementType is INamedTypeSymbol namedElement &&
+                                                 TypeLayoutCalculator.TryFindArrayField(namedElement, out _)
             };
         }
 
         return shape.IsByRef ? shape with { BufferElementTypeName = GetBufferElementTypeName(parameter.Type) } : shape;
     }
+
+    /// <summary>
+    /// Whether an array of <paramref name="element"/> cannot be copied as one block on CUDA: a user struct whose host
+    /// and device layouts differ (any class but <see cref="TransferClass.Identical"/>).
+    /// </summary>
+    public static bool IsConvertedOnCuda(ITypeSymbol element) =>
+        element is INamedTypeSymbol named &&
+        TypeLayoutCalculator.IsUserStruct(named) &&
+        TypeLayoutCalculator.GetStructLayout(named, s_cudaDialect).Transfer != TransferClass.Identical;
 
     // A user struct lives on the device in its native shadow layout, which the wrapper class declares as AotContexts.*
     private static string? GetBufferElementTypeName(ITypeSymbol element) =>

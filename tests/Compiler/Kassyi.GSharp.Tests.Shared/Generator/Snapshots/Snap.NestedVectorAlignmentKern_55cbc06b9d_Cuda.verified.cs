@@ -104,6 +104,7 @@ public fixed byte Field5_Double2[16];
 }
 public static unsafe void Marshal_GEN56_AlignmentTestStruct(ref global::Kassyi.GSharp.Tests.Runtime.GEN56_AlignmentTestStruct host, ref AotContexts.GEN56_AlignmentTestStruct native, bool isDevicePtr, System.Collections.Generic.List<IntPtr>? allocatedPtrs, IntPtr hStream = default)
 {
+native = default;
 native.Field1_Byte = host.Field1_Byte;
 fixed (byte* pField = native.Field2_Float2)
 {

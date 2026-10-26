@@ -40,7 +40,7 @@ public static class AstLoweringPipeline
         annotatedBody = PreLoweringExpander.Expand(annotatedBody, bodyModel);
 
         var copiedParameters = deviceFunction != null
-            ? FindAssignedValueParameters(body, deviceFunction)
+            ? FindAssignedValueParameters(body, deviceFunction, bodyModel)
             : ImmutableArray<string>.Empty;
 
         // [WHY] A loop header is evaluated at its own place in every iteration. The first round leaves headers alone;
@@ -59,7 +59,8 @@ public static class AstLoweringPipeline
         hoistedBody = branchRewriter.Rewrite(hoistedBody);
 
         var (contextHoistedBody, contextFields) =
-            new ContextHoister(copiedParameters, isDeviceFunction: deviceFunction != null, bodyModel).Hoist(hoistedBody);
+            new ContextHoister(copiedParameters, isDeviceFunction: deviceFunction != null, bodyModel, deviceFunction)
+                .Hoist(hoistedBody);
         var lowerer = new StateMachineLowerer(isDeviceFunction: deviceFunction != null, bodyModel);
         var stateMachineBody = lowerer.Lower(contextHoistedBody);
 
@@ -106,8 +107,13 @@ public static class AstLoweringPipeline
     }
 
     // [WHY] The caller passes the original arguments again on every resume, so a parameter that the body changes has to
-    // live in the frame. Parameters are matched by name: C# forbids a local that shadows a parameter.
-    private static ImmutableArray<string> FindAssignedValueParameters(SyntaxNode body, IMethodSymbol deviceFunction)
+    // live in the frame. A change is a write whose target starts at the parameter itself (see FindWrittenStorageRoot):
+    // an assignment (each element of a deconstructing one), an increment or decrement, a ref / out argument, or the
+    // receiver of a struct instance method that may change it. With a semantic model the root is matched by symbol, so
+    // a lambda parameter of the same name is not taken for it; without one, or when the model cannot bind the root, it
+    // is matched by name (C# forbids a local that shadows a parameter), which can only copy too much.
+    private static ImmutableArray<string> FindAssignedValueParameters(SyntaxNode body, IMethodSymbol deviceFunction,
+        SemanticModel? model)
     {
         var candidates = new HashSet<string>(StringComparer.Ordinal);
         deviceFunction.Parameters
@@ -130,17 +136,115 @@ public static class AstLoweringPipeline
                                                         prefix.IsKind(SyntaxKind.PreDecrementExpression) => prefix.Operand,
                 PostfixUnaryExpressionSyntax postfix => postfix.Operand,
                 ArgumentSyntax { RefKindKeyword.RawKind: not (int)SyntaxKind.None } argument => argument.Expression,
+                InvocationExpressionSyntax
+                {
+                    Expression: MemberAccessExpressionSyntax
+                    {
+                        RawKind: (int)SyntaxKind.SimpleMemberAccessExpression
+                    } memberAccess
+                } invocation when MayChangeReceiver(invocation, model) => memberAccess.Expression,
                 _ => null
             };
 
-            if (target is IdentifierNameSyntax identifier &&
-                candidates.Remove(identifier.Identifier.ValueText))
+            if (target != null)
             {
-                assigned.Add(identifier.Identifier.ValueText);
+                MarkWrittenParameters(target, deviceFunction, model, candidates, assigned);
             }
         }
 
         return assigned.ToImmutable();
+    }
+
+    // Moves the parameter that a write target starts at from candidates to assigned. A tuple target writes each of its
+    // elements: (a, (v.X, b)) = ...
+    private static void MarkWrittenParameters(ExpressionSyntax target, IMethodSymbol deviceFunction,
+        SemanticModel? model, HashSet<string> candidates, ImmutableArray<string>.Builder assigned)
+    {
+        if (target is TupleExpressionSyntax tuple)
+        {
+            foreach (var element in tuple.Arguments)
+            {
+                MarkWrittenParameters(element.Expression, deviceFunction, model, candidates, assigned);
+            }
+
+            return;
+        }
+
+        if (FindWrittenStorageRoot(target, model) is not { } root)
+        {
+            return;
+        }
+
+        var isParameter = model?.GetSymbol(root) switch
+        {
+            null => true,
+            IParameterSymbol parameter =>
+                parameter.ContainingSymbol.OriginalDefinition.IsEqualTo(deviceFunction.OriginalDefinition),
+            _ => false
+        };
+        var name = root.Identifier.ValueText;
+        if (isParameter && candidates.Remove(name))
+        {
+            assigned.Add(name);
+        }
+    }
+
+    // [WHY] A struct instance method that is not readonly receives its receiver by reference and may change it. Without
+    // a semantic model every receiver counts as changed.
+    private static bool MayChangeReceiver(InvocationExpressionSyntax invocation, SemanticModel? model) =>
+        model == null ||
+        model.GetSymbol(invocation) is IMethodSymbol
+        {
+            IsStatic: false,
+            IsReadOnly: false,
+            ContainingType: { IsValueType: true, IsReadOnly: false }
+        };
+
+    // [WHY] A write changes the storage of the variable its target starts at when every step from that variable reaches
+    // a part the variable holds by value: a field (`v.X`, `v.A.B`) or an element of an [InlineArray] or fixed buffer
+    // (`v.Buffer[i]`). An array element, or memory behind a pointer or a Span<T>, is not part of the variable, and a
+    // resume sees it again, so the walk stops there. Without a semantic model the walk follows the syntax only.
+    private static IdentifierNameSyntax? FindWrittenStorageRoot(ExpressionSyntax target, SemanticModel? model)
+    {
+        var current = target;
+        while (true)
+        {
+            switch (current)
+            {
+                case IdentifierNameSyntax identifier:
+                    return identifier;
+                case ParenthesizedExpressionSyntax parenthesized:
+                    current = parenthesized.Expression;
+                    break;
+                case MemberAccessExpressionSyntax { RawKind: (int)SyntaxKind.SimpleMemberAccessExpression } memberAccess
+                    when HoldsPartsByValue(memberAccess.Expression, model):
+                    current = memberAccess.Expression;
+                    break;
+                case ElementAccessExpressionSyntax elementAccess
+                    when HoldsPartsByValue(elementAccess.Expression, model):
+                    current = elementAccess.Expression;
+                    break;
+                default:
+                    return null;
+            }
+        }
+    }
+
+    // [WHY] A fixed buffer field has a pointer type but lies inside its struct. Any other pointer refers to memory
+    // outside the variable; Roslyn reports a pointer type as a value type, so pointers are excluded before that test.
+    private static bool HoldsPartsByValue(ExpressionSyntax receiver, SemanticModel? model)
+    {
+        if (model == null || model.GetSymbol(receiver) is IFieldSymbol { IsFixedSizeBuffer: true })
+        {
+            return true;
+        }
+
+        return model.GetTypeSymbol(receiver) switch
+        {
+            null => true,
+            IPointerTypeSymbol => false,
+            var type => type is { IsValueType: true, IsRefLikeType: false }
+        };
     }
 
     private sealed class SpanAnnotationRewriter(Dictionary<TextSpan, bool> suspendingCalls, int treeOrdinal) : CSharpSyntaxRewriter

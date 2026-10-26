@@ -360,23 +360,23 @@ switch (__gsharp_ctx.__gsharp_state)
 case 0:
 {
 // SYN-94: Macro DSL
-for (int tid = global::Kassyi.GSharp.Core.ManagedGpuContext.BlockDimX * global::Kassyi.GSharp.Core.ManagedGpuContext.BlockIdxX + global::Kassyi.GSharp.Core.ManagedGpuContext.ThreadIdxX; tid < (count); tid += global::Kassyi.GSharp.Core.ManagedGpuContext.BlockDimX * global::Kassyi.GSharp.Core.ManagedGpuContext.GridDimX)
+for (int __gsharp_unroll_0 = global::Kassyi.GSharp.Core.ManagedGpuContext.BlockDimX * global::Kassyi.GSharp.Core.ManagedGpuContext.BlockIdxX + global::Kassyi.GSharp.Core.ManagedGpuContext.ThreadIdxX; __gsharp_unroll_0 < (count); __gsharp_unroll_0 += global::Kassyi.GSharp.Core.ManagedGpuContext.BlockDimX * global::Kassyi.GSharp.Core.ManagedGpuContext.GridDimX)
 {
 // Local function with AggressiveInlining
 [MethodImpl(MethodImplOptions.AggressiveInlining)]
 int LocalInlineFunc(int x) => x + 5 - 5; // effectively x
 // Tuple, tuple swap, & Inline out var (SYN-03)
-(int a, int b) = (LocalInlineFunc(tid), tid * 2);
+(int a, int b) = (LocalInlineFunc(__gsharp_unroll_0), __gsharp_unroll_0 * 2);
 (a, b) = (b, a); // Swap
 (a, b) = (b, a); // Swap back
-__gsharp_ctx.ok = TryProcess(intInput[tid], out var processed);
+__gsharp_ctx.ok = TryProcess(intInput[__gsharp_unroll_0], out var processed);
 __gsharp_ctx.bitwise = (a << 1) | (b >> 1) ^ 0xFF;
 __gsharp_ctx.bitwise &= ~1;
-__gsharp_ctx.mag = HelperMath(floatInput[tid], (float)processed);
+__gsharp_ctx.mag = HelperMath(floatInput[__gsharp_unroll_0], (float)processed);
 __gsharp_ctx.mag = HelperMathAggressive(__gsharp_ctx.mag); // SYN-28
 __gsharp_ctx.mag = (float)Math.Max(__gsharp_ctx.mag, config.FloatVal);
 // SYN-01: Switch expression
-__gsharp_ctx.mag += (tid % 3) switch
+__gsharp_ctx.mag += (__gsharp_unroll_0 % 3) switch
 {
 0 => 1.0f,
 1 => 2.0f,
@@ -388,13 +388,14 @@ __gsharp_ctx.arr[1] = __gsharp_ctx.mag * 2.0f;
 __gsharp_ctx.arr[2] = __gsharp_ctx.mag * 3.0f;
 __gsharp_ctx.arr[3] = __gsharp_ctx.mag * 4.0f;
 __gsharp_ctx.sum = 0;
-Gpu.ForUnroll(0, 4, i =>
+for (int __gsharp_unroll_1 = 0; __gsharp_unroll_1 < unchecked(0 + 4); __gsharp_unroll_1++)
 {
-if (i != 1)
+if (__gsharp_unroll_1 != 1)
 {
-__gsharp_ctx.sum += __gsharp_ctx.arr[i];
+__gsharp_ctx.sum += __gsharp_ctx.arr[__gsharp_unroll_1];
 }
-});
+}
+
 __gsharp_ctx.foreachSum = 0;
 foreach (var val in __gsharp_ctx.arr)
 {
@@ -477,7 +478,7 @@ finalVal -= 0.5f;
 loopCounter++;
 }
 while (loopCounter < 3);
-results[tid] = finalVal;
+results[__gsharp_unroll_0] = finalVal;
 }
 
 __gsharp_ctx.__gsharp_state = -1;
