@@ -1,6 +1,7 @@
 
 namespace Kassyi.GSharp.Tests.Integration
 {
+    [Category(TestCategory.Compiler)]
     public class BannedSymbolsValidationTests
     {
         [Fact]

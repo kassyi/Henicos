@@ -4,6 +4,7 @@ using Xunit;
 
 namespace Kassyi.GSharp.Tests.Shared.Runtime.Fatbin;
 
+[Category(TestCategory.Runtime)]
 public class FatbinImageTests
 {
     [Fact]

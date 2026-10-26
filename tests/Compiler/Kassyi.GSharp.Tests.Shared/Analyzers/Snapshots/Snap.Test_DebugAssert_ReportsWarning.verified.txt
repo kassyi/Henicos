@@ -1,0 +1,3 @@
+﻿HNT0004 at (9,20)-(9,35): Test method 'UsesDebugAssert' never reaches an assertion (Xunit.Assert, VerifyXunit.Verifier or FluentAssertions), not even through the methods it calls. Check its results.
+HNT0005 at (11,12)-(11,41): Debug.Assert is removed from Release builds, so this check does not run there. Use an xUnit Assert member.
+HNT0005 at (17,33)-(17,92): Debug.Assert is removed from Release builds, so this check does not run there. Use an xUnit Assert member.

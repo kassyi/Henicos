@@ -3,6 +3,7 @@ using Kassyi.GSharp.Compiler.Helpers;
 #nullable enable
 namespace Kassyi.GSharp.Tests.Shared.Generator;
 
+[Category(TestCategory.Compiler)]
 public partial class GeneratorSnapshotTests : Kassyi.GSharp.Tests.Shared.Helpers.TranspilerTestBase
 {
     private class GpuAttributeRemover : CSharpSyntaxRewriter

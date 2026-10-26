@@ -78,6 +78,7 @@ public class MegaCompilationCacheTests
     }
 
     [Fact]
+    [Category(TestCategory.Unit)]
     public void BaseCompilation_IsNotNullAndHasUnsafeAllowed()
     {
         var baseComp = MegaCompilationCache.BaseCompilation;

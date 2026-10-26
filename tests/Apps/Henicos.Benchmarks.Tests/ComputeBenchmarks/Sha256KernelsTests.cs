@@ -4,6 +4,7 @@ using System.Text;
 
 namespace Henicos.Benchmarks.Tests.ComputeBenchmarks;
 
+[Category(TestCategory.Runtime)]
 public class Sha256KernelsTests
 {
     [Fact]

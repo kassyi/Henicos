@@ -74,6 +74,8 @@ public class KernelDiagnosticsInventoryTests
         "Analyzers/InstanceDeviceFunction_SadPath.cs",
         // GSH0069
         "Analyzers/SharedMemoryDisposable_SadPath.cs",
+        // GSH0077
+        "Diagnostics/DivergentDynamicSharedMemory.cu.cs",
         // GSH0001 (new List<T>)
         "Analyzers/NewList_SadPath.cs"
     ];

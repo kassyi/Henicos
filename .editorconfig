@@ -231,6 +231,13 @@ dotnet_diagnostic.SA1602.severity = none
 dotnet_diagnostic.SA1611.severity = none
 dotnet_diagnostic.SA1615.severity = none
 dotnet_diagnostic.SA1618.severity = none
+# Test convention analyzers (tests/Shared/Kassyi.GSharp.Tests.Generators). A per-ID severity overrides the
+# category-wide none above; the analyzers opt in to generated code. Rules: .agents/rules/test-architecture.md §3.8
+dotnet_diagnostic.HNT0002.severity = error
+dotnet_diagnostic.HNT0004.severity = warning
+dotnet_diagnostic.HNT0005.severity = warning
+dotnet_diagnostic.HNT0006.severity = warning
+dotnet_diagnostic.HNT0007.severity = warning
 
 # ==============================================================================
 # G# Kernels (*.cu.cs) Constraints
