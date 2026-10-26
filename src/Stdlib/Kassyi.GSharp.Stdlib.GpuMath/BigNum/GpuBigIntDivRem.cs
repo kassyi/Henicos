@@ -362,6 +362,11 @@ public static partial class GpuBigIntDivRem
     /// Performs a zero-sync Barrett reduction using a precomputed reciprocal.
     /// This method does not synchronize with the CPU for remainder correction, enabling CUDA Graph capture.
     /// </summary>
+    /// <remarks>
+    /// The quotient estimate <c>floor(a * reciprocalOfB / 2^targetBits)</c> is corrected on the device, and the
+    /// quotient and the remainder are exact (<c>q * b + r == a</c>, <c>0 &lt;= r &lt; b</c>) when the estimate is within
+    /// 1000 steps of the quotient.
+    /// </remarks>
     /// <param name="leftOperand">The left operand.</param>
     /// <param name="rightOperand">The right operand.</param>
     /// <param name="reciprocalOfB">The precomputed reciprocal of the right operand.</param>
@@ -378,6 +383,13 @@ public static partial class GpuBigIntDivRem
 
         using var productWithReciprocal = new GpuBigUInt(rightOperand.Workspace, nA + targetWords);
         GpuBigIntMath.Mul(leftOperand, reciprocalOfB, productWithReciprocal);
+
+        // As in Reduce: the words above the estimate take part in q * b. The clear is a stream-ordered upload, like the
+        // other clears in this method, and needs no host synchronization.
+        if (quotientBuffer.NumWords > nA)
+        {
+            quotientBuffer.Clear();
+        }
 
         quotientBuffer.CopyFrom(productWithReciprocal, destOffsetWords: 0, srcOffsetWords: targetBits / 32,
             numWords: Math.Min(quotientBuffer.NumWords, nA));
@@ -403,10 +415,10 @@ public static partial class GpuBigIntDivRem
         bPaddedExtended.Clear();
         bPaddedExtended.CopyFrom(rightOperand, numWords: Math.Min(n, evalWords));
 
-        // Zero-sync correction using single block kernel
+        // Zero-sync correction using single block kernel: the remainder and the quotient move by the same steps.
         GpuBigIntDivRemKernels.LaunchBarrettCorrectionKernelPtr(
-            remainderExtended.DevicePointer, bPaddedExtended.DevicePointer, evalWords,
-            gridDimX: 1, blockDimX: 1024, hStream: rightOperand.Workspace.Stream);
+            remainderExtended.DevicePointer, bPaddedExtended.DevicePointer, quotientBuffer.DevicePointer, evalWords,
+            quotientBuffer.NumWords, gridDimX: 1, blockDimX: 1024, hStream: rightOperand.Workspace.Stream);
 
         remainderBuffer.Clear();
         remainderBuffer.CopyFrom(remainderExtended, numWords: Math.Min(remainderBuffer.NumWords, evalWords));
