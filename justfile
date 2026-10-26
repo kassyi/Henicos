@@ -350,7 +350,7 @@ doctest file_path assemblies="":
 # Mutation testing with Stryker.NET. phase: gpumath | compiler | compiler-cuda (the CUDA dialect snapshots only). since: a git ref to mutate only the files changed after it (empty = all files). Reports go to tmp/stryker/<phase>
 [windows]
 mutate phase="gpumath" since="" *args="":
-    $root = (Get-Location).Path; $dir = switch ('{{phase}}') { 'gpumath' { 'tests/Stdlib/Kassyi.GSharp.Stdlib.GpuMath.Tests' } 'compiler' { 'tests/Compiler/Kassyi.GSharp.Tests.Cpu' } 'compiler-cuda' { 'tests/Compiler/Kassyi.GSharp.Tests.Cuda' } default { throw "phase must be gpumath, compiler or compiler-cuda" } }; $clean = { Get-ChildItem -Path "$root/src","$root/tests" -Recurse -File -Filter 'Kassyi.GSharp.Kernels_*' -ErrorAction SilentlyContinue | Where-Object { $_.FullName -match '[\\/]obj[\\/]' -and $_.Name -match '\.g\.(cu|cpp)(\.gsym\.json)?$' } | Remove-Item -Force }; & $clean; try { dotnet tool restore; Set-Location $dir; $sinceArgs = @(); if ('{{since}}' -ne '') { $sinceArgs = @('--since:{{since}}') }; dotnet stryker -f stryker-config.json -L --skip-version-check -O "$root/tmp/stryker/{{phase}}" @sinceArgs {{args}}; $code = $LASTEXITCODE } finally { Set-Location $root; & $clean }; exit $code
+    $root = (Get-Location).Path; $dir = switch ('{{phase}}') { 'gpumath' { 'tests/Stdlib/Kassyi.GSharp.Stdlib.GpuMath.Tests' } 'compiler' { 'tests/Compiler/Kassyi.GSharp.Tests.Cpu' } 'compiler-cuda' { 'tests/Compiler/Kassyi.GSharp.Tests.Cuda' } default { throw "phase must be gpumath, compiler or compiler-cuda" } }; try { dotnet tool restore; Set-Location $dir; $sinceArgs = @(); if ('{{since}}' -ne '') { $sinceArgs = @('--since:{{since}}') }; dotnet stryker -f stryker-config.json -L --skip-version-check -O "$root/tmp/stryker/{{phase}}" @sinceArgs {{args}}; $code = $LASTEXITCODE } finally { Set-Location $root }; exit $code
 
 [unix]
 mutate phase="gpumath" since="" *args="":
@@ -363,10 +363,6 @@ mutate phase="gpumath" since="" *args="":
         compiler-cuda) dir=tests/Compiler/Kassyi.GSharp.Tests.Cuda ;;
         *) echo 'phase must be gpumath, compiler or compiler-cuda' >&2; exit 1 ;;
     esac
-    # Stryker does not write AOT artifacts itself (AotArtifactWriter.IsToolHost); remove any that a run left behind anyway
-    clean() { find "$root/src" "$root/tests" -path '*/obj/*' -name 'Kassyi.GSharp.Kernels_*' \( -name '*.g.cu' -o -name '*.g.cpp' -o -name '*.gsym.json' \) -delete; }
-    trap clean EXIT
-    clean
     dotnet tool restore
     cd "$dir"
     since=()
