@@ -63,8 +63,20 @@ public static partial class GpuBigIntDivRem
     }
 
     /// <summary>
-    /// Computes the reciprocal approximation of the operand using Newton-Raphson iterations on the GPU.
+    /// Computes the reciprocal <c>floor(2^targetBits / b)</c> of the operand <c>b</c> using Newton-Raphson iterations on
+    /// the GPU, followed by an exact correction on the device.
     /// </summary>
+    /// <param name="targetOperand">The divisor <c>b</c>, normalized (the top bit of its top word set), as every caller
+    /// passes it.</param>
+    /// <param name="resultBuffer">Receives exactly <c>floor(2^targetBits / b)</c>; it must hold
+    /// at least <c>(targetBits + 31) / 32</c> words.</param>
+    /// <param name="targetBits">The exponent <c>T</c> of the numerator <c>2^T</c>; <c>2^T &gt;= 4b</c>.</param>
+    /// <param name="marginWords">The margin words passed to the provider.</param>
+    /// <exception cref="DivideByZeroException">Thrown when <paramref name="targetOperand"/> is zero.</exception>
+    /// <remarks>
+    /// The Newton-Raphson result is <c>floor(2^T / b)</c> or one less; the kernel then computes <c>r = 2^T - b * x</c>
+    /// and moves <c>x</c> by the steps that bring <c>r</c> into <c>[0, b)</c>, without a host synchronization.
+    /// </remarks>
     internal static void Reciprocal(GpuBigUInt targetOperand, GpuBigUInt resultBuffer, int targetBits,
         int marginWords = 0)
     {

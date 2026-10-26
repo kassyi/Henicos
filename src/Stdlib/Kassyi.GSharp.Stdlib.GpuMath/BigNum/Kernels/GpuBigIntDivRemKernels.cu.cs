@@ -97,11 +97,14 @@ public static partial class GpuBigIntDivRemKernels
         int n = dims.NumberOfWords;
         int resultWords = (dims.TargetBits + 31) / 32;
 
+        // The carry chunk of every product is one block of threads (see ExecuteResolveNttCarriesBlocked).
+        int chunkSize = BlockDimension.X;
+
         for (int i = 0; i < dims.Iterations; i++)
         {
             // 1. currentProduct = targetOperand * resultBuffer (n, resultWords -> n + resultWords)
             ExecuteNttMultiplyMacro(core, ops.TargetOperand, ops.ResultBuffer,
-                iterScratch.CurrentProduct, n, resultWords, n + resultWords, 1024);
+                iterScratch.CurrentProduct, n, resultWords, n + resultWords, chunkSize);
 
             // 2. diff = constant - currentProduct
             Gpu.SyncGrid();
@@ -119,7 +122,7 @@ public static partial class GpuBigIntDivRemKernels
 
             // 3. nextIter = resultBuffer * diff (resultWords, n + resultWords -> n + 2 * resultWords)
             ExecuteNttMultiplyMacro(core, ops.ResultBuffer, iterScratch.Diff, iterScratch.NextIter,
-                resultWords, n + resultWords, n + 2 * resultWords, 1024);
+                resultWords, n + resultWords, n + 2 * resultWords, chunkSize);
 
             // 4. copy resultBuffer = nextIter >> (2 * numBits + marginBits)
             int shiftTotal = dims.TargetBits;
@@ -140,6 +143,18 @@ public static partial class GpuBigIntDivRemKernels
             });
             Gpu.SyncGrid();
         }
+
+        // Final correction to x = floor(2^T / b): r = 2^T - b * x, then r moves into [0, b) and x by the same steps.
+        // The Newton result is floor(2^T / b) or one less, so this takes at most one step after convergence.
+        ExecuteNttMultiplyMacro(core, ops.TargetOperand, ops.ResultBuffer, iterScratch.CurrentProduct, n, resultWords,
+            n + resultWords, chunkSize);
+
+        // Constant holds 2^(T+1) in n + 2 * resultWords words; reading it shifted right by one bit gives 2^T.
+        int remainderWords = n + resultWords;
+        GpuBigIntKernels.DeviceAddSubAlignedParallel(iterScratch.CurrentProduct, remainderWords, ops.Constant,
+            n + 2 * resultWords, iterScratch.Diff, remainderWords, 0, 1, -2, true);
+        var delta = CorrectIntoDivisorRange(iterScratch.Diff, ops.TargetOperand, remainderWords, n, 1000);
+        Gpu.SingleThread(() => AddSmallSigned(ops.ResultBuffer, resultWords, delta));
     }
 
     /// <summary>
