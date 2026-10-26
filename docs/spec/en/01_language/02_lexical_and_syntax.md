@@ -60,6 +60,12 @@ Standard C# operators map directly to their CUDA C++ counterparts with identical
 * **Ternary Conditional & Null-Coalescing:** `? :`, `??`, `??=`. Null-coalescing operators are fully supported with zero-allocation branching.
 * **Pointer Operators:** `*` (dereference), `&` (address-of), `->` (member access), as well as postfix increment/decrement (`ptr++`, `ptr--`). *Note: The `unsafe` keyword must be used in the C# method signature.*
 * **`sizeof(T)`:** Supported. Translated directly to `sizeof(T)` in C++.
+* **Order of evaluation:** As in C#, operands and arguments are evaluated from left to right, and an assignment finds
+  its target before it evaluates the value (compound assignments read the target first). C++ does not keep that order
+  for call arguments and binary operands, and evaluates the right side of an assignment first, so when one operand
+  changes what another reads (`F(Next(ref i), Next(ref i))`, `a[i] = Next(ref i)`, `x + Update(ref x)`), the
+  transpiler evaluates the operands into temporaries in the C# order. Calls are classified by what they write, so
+  operands without such an interference are emitted as written and cost nothing.
 
 ## 2.4 Preprocessor Directives
 
