@@ -412,6 +412,14 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker, IDisposable
                     DynamicSharedMemoryEmitter.FailIfReferencedWithoutCall(node, method, ref Context);
                 }
 
+                // A member function reads a captured primary constructor parameter from its hidden field (#495)
+                if (symbol is IParameterSymbol parameter &&
+                    CppNameResolver.IsCapturedParameterReference(parameter, ref Context))
+                {
+                    Context.Emitter.Writer.AppendCppName(CppName.Member(parameter.Name));
+                    break;
+                }
+
                 // In a lowered struct constructor function, unqualified instance members belong to __gsharp_self.
                 if (Context.Emitter.StructConstructorType is { } ctorType &&
                     symbol is IFieldSymbol { IsStatic: false, IsConst: false } or IPropertySymbol { IsStatic: false } &&

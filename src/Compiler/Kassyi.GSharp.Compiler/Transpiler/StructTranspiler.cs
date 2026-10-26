@@ -355,14 +355,35 @@ internal static class StructTranspiler
 
     /// <summary>
     /// Whether <paramref name="constructor"/> is a user-defined struct constructor emitted as a value-returning device
-    /// function (<c>__gsharp_ctor_...</c>) rather than aggregate initialization.
+    /// function (<c>__gsharp_ctor_...</c>) rather than aggregate initialization: a constructor with a body, or the
+    /// primary constructor (#495).
     /// </summary>
     public static bool IsEmittedStructConstructor(IMethodSymbol? constructor) =>
         constructor is { MethodKind: MethodKind.Constructor, IsImplicitlyDeclared: false, IsStatic: false } &&
         constructor.ContainingType is { } containingType &&
         GlobalCppNames.IsEmittedUserType(containingType) &&
-        constructor.TryGetDeclaringSyntax<ConstructorDeclarationSyntax>(out var declaration) &&
-        (declaration.Body != null || declaration.ExpressionBody != null);
+        TryGetConstructorDeclaration(constructor, out _, out _);
+
+    // The declaration of a constructor that has a body (`S(...) { }` or `=> expr`), or of a primary constructor (the
+    // type declaration, `struct S(int a)`)
+    private static bool TryGetConstructorDeclaration(IMethodSymbol constructor,
+        [NotNullWhen(true)] out SyntaxNode? declaration, out ConstructorDeclarationSyntax? explicitDeclaration)
+    {
+        if (constructor.TryGetDeclaringSyntax<ConstructorDeclarationSyntax>(out explicitDeclaration))
+        {
+            declaration = explicitDeclaration;
+            return explicitDeclaration.Body != null || explicitDeclaration.ExpressionBody != null;
+        }
+
+        if (constructor.TryGetPrimaryConstructorDeclaration(out var typeDeclaration))
+        {
+            declaration = typeDeclaration;
+            return true;
+        }
+
+        declaration = null;
+        return false;
+    }
 
     // [WHY] Defining a C++ constructor inside the struct makes it non-aggregate, which breaks CUDA __shared__ and brace
     // initialization. Instead, each user-defined constructor is emitted right after the struct as an inline factory
@@ -371,8 +392,7 @@ internal static class StructTranspiler
     private static void WriteStructConstructors(INamedTypeSymbol structSym, ref TranspileContext context)
     {
         var compilation = context.Query.SemanticModel.Compilation;
-        var ordered = ImmutableArray.CreateBuilder<(
-            IMethodSymbol Constructor, ConstructorDeclarationSyntax Declaration)>();
+        var ordered = ImmutableArray.CreateBuilder<(IMethodSymbol Constructor, SyntaxNode Declaration)>();
         var visited = new HashSet<IMethodSymbol>(SymbolEqualityComparer.Default);
 
         foreach (var constructor in structSym.InstanceConstructors)
@@ -389,13 +409,13 @@ internal static class StructTranspiler
         {
             if (!visited.Add(constructor) ||
                 !IsEmittedStructConstructor(constructor) ||
-                !constructor.TryGetDeclaringSyntax<ConstructorDeclarationSyntax>(out var declaration) ||
+                !TryGetConstructorDeclaration(constructor, out var declaration, out var explicitDeclaration) ||
                 !compilation.ContainsSyntaxTree(declaration.SyntaxTree))
             {
                 return;
             }
 
-            if (declaration.Initializer is { } initializer)
+            if (explicitDeclaration?.Initializer is { } initializer)
             {
                 var model = compilation.GetSemanticModel(declaration.SyntaxTree);
                 if (ResolveChainedConstructor(structSym, model.GetSymbol(initializer) as IMethodSymbol) is { } target)
@@ -455,12 +475,27 @@ internal static class StructTranspiler
     // <body>
     // return __gsharp_self;
     // }
+    // A primary constructor (declared by the type declaration) has no body and no initializer; its member
+    // initializers also store the captured parameters and, in a record struct, the positional properties.
     private static void WriteStructConstructor(INamedTypeSymbol structSym, IMethodSymbol constructor,
-        ConstructorDeclarationSyntax declaration, ref TranspileContext context)
+        SyntaxNode constructorDeclaration, ref TranspileContext context)
+    {
+        if (constructorDeclaration is TypeDeclarationSyntax { ParameterList: { } primaryParameters })
+        {
+            WriteStructConstructorCore(structSym, constructor, primaryParameters, null, ref context);
+        }
+        else if (constructorDeclaration is ConstructorDeclarationSyntax declaration)
+        {
+            WriteStructConstructorCore(structSym, constructor, declaration.ParameterList, declaration, ref context);
+        }
+    }
+
+    private static void WriteStructConstructorCore(INamedTypeSymbol structSym, IMethodSymbol constructor,
+        ParameterListSyntax parameterList, ConstructorDeclarationSyntax? declaration, ref TranspileContext context)
     {
         var query = context.Query;
         var reporter = context.Reporter;
-        var model = query.SemanticModel.Compilation.GetSemanticModel(declaration.SyntaxTree);
+        var model = query.SemanticModel.Compilation.GetSemanticModel(parameterList.SyntaxTree);
         context.Query = new Query(model, query.BclIntrinsicMap, query.UsedStructs);
         context.Reporter = reporter.WithSemanticModel(model);
         var previousCtorType = context.Emitter.StructConstructorType;
@@ -473,13 +508,13 @@ internal static class StructTranspiler
             context.Emitter.Writer.Append("__device__ inline ");
             context.Emitter.Dialect.AppendType(ref context, structSym);
             context.Emitter.Writer.Append(' ').Append(GlobalCppNames.GetConstructorName(constructor));
-            context.Visitor.Visit(declaration.ParameterList);
+            context.Visitor.Visit(parameterList);
             context.Emitter.Writer.Append(' ');
 
             using (context.Emitter.Writer.Scope())
             {
                 context.Emitter.Dialect.AppendType(ref context, structSym);
-                if (declaration.Initializer is { } initializer)
+                if (declaration?.Initializer is { } initializer)
                 {
                     var target = ResolveChainedConstructor(structSym, model.GetSymbol(initializer) as IMethodSymbol);
                     if (target != null && IsEmittedStructConstructor(target))
@@ -503,14 +538,14 @@ internal static class StructTranspiler
                 else
                 {
                     context.Emitter.Writer.AppendLine($" {GSharpInternalNames.Lowering.ConstructorSelf}{{}};");
-                    WriteStructMemberInitializers(structSym, ref context);
+                    WriteStructMemberInitializers(structSym, declaration == null ? constructor : null, ref context);
                 }
 
-                if (declaration.Body != null)
+                if (declaration?.Body != null)
                 {
                     context.Visitor.VisitBlock(declaration.Body);
                 }
-                else if (declaration.ExpressionBody != null)
+                else if (declaration?.ExpressionBody != null)
                 {
                     context.Visitor.Visit(declaration.ExpressionBody.Expression);
                     context.Emitter.Writer.AppendLine(";");
@@ -528,11 +563,25 @@ internal static class StructTranspiler
         }
     }
 
-    private static void WriteStructMemberInitializers(INamedTypeSymbol structSym, ref TranspileContext context)
+    // The member initializers in declaration order. The primary constructor first stores the parameters that members
+    // capture (__gsharp_self.__gsharp_mb_a = a;), which Roslyn lists before the declared members, and initializes the
+    // positional properties of a record struct from their parameters at the position of the parameter list.
+    private static void WriteStructMemberInitializers(INamedTypeSymbol structSym, IMethodSymbol? primaryConstructor,
+        ref TranspileContext context)
     {
         var compilation = context.Query.SemanticModel.Compilation;
         foreach (var member in StructAbiMembers.Get(structSym))
         {
+            if (primaryConstructor != null && TryGetPrimaryParameter(member, primaryConstructor, out var parameter))
+            {
+                context.Emitter.Writer.Append($"{GSharpInternalNames.Lowering.ConstructorSelf}.")
+                    .Append(GetMemberName(member.Symbol, ref context))
+                    .Append(" = ");
+                CppNameResolver.AppendSymbolName(parameter, ref context);
+                context.Emitter.Writer.AppendLine(";");
+                continue;
+            }
+
             if (!TryGetMemberInitializer(member.Symbol, compilation, out var initializer))
             {
                 continue;
@@ -558,6 +607,24 @@ internal static class StructTranspiler
                 context.Reporter = reporter;
             }
         }
+    }
+
+    // The parameter of the primary constructor that a member is initialized from without an initializer of its own:
+    // the hidden field of a captured parameter, or a positional property of a record struct (declared by the parameter)
+    private static bool TryGetPrimaryParameter(StructAbiMember member, IMethodSymbol primaryConstructor,
+        [NotNullWhen(true)] out IParameterSymbol? parameter)
+    {
+        parameter = null;
+        if (member.Kind == StructAbiMemberKind.CapturedParameter ||
+            (member is { Kind: StructAbiMemberKind.AutoProperty, Symbol: IPropertySymbol property } &&
+             property.TryGetDeclaringSyntax<ParameterSyntax>(out _)))
+        {
+            parameter = primaryConstructor.Parameters
+                .AsStackEnumerable()
+                .FirstOrDefault(member.Name, static (p, name) => p.Name == name);
+        }
+
+        return parameter != null;
     }
 
     /// <summary>

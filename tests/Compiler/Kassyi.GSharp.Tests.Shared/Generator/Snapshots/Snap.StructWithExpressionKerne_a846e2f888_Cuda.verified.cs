@@ -596,9 +596,15 @@ static_assert(sizeof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__WithReco
 static_assert(alignof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__WithRecordStruct)==4,""Kassyi.GSharp.Tests.Shared.Syntax.WithRecordStruct: alignment"");
 static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__WithRecordStruct,__gsharp_mb_X)==0,""Kassyi.GSharp.Tests.Shared.Syntax.WithRecordStruct.X: offset"");
 static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__WithRecordStruct,__gsharp_mb_Y)==4,""Kassyi.GSharp.Tests.Shared.Syntax.WithRecordStruct.Y: offset"");
+__device__ inline __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__WithRecordStruct __gsharp_ctor_Kassyi__GSharp__Tests__Shared__Syntax__WithRecordStruct(int __gsharp_id_0_X, int __gsharp_id_1_Y) {
+__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__WithRecordStruct __gsharp_self{};
+__gsharp_self.__gsharp_mb_X = __gsharp_id_0_X;
+__gsharp_self.__gsharp_mb_Y = __gsharp_id_1_Y;
+return __gsharp_self;
+}
 #endif
 extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__StructWithExpressionKernels__RecordStructKernel(GSharpArray<int> __gsharp_id_0_r){
-auto __gsharp_id_1_p = __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__WithRecordStruct{1, 2};
+auto __gsharp_id_1_p = __gsharp_ctor_Kassyi__GSharp__Tests__Shared__Syntax__WithRecordStruct(1, 2);
 auto __gsharp_id_2_q = ([&]() {
 __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__WithRecordStruct __gsharp_tmp = __gsharp_id_1_p;
 __gsharp_tmp.__gsharp_mb_X = 10;
@@ -724,9 +730,15 @@ static_assert(sizeof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__WithRead
 static_assert(alignof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__WithReadonlyRecordStruct)==4,""Kassyi.GSharp.Tests.Shared.Syntax.WithReadonlyRecordStruct: alignment"");
 static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__WithReadonlyRecordStruct,__gsharp_mb_X)==0,""Kassyi.GSharp.Tests.Shared.Syntax.WithReadonlyRecordStruct.X: offset"");
 static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__WithReadonlyRecordStruct,__gsharp_mb_Y)==4,""Kassyi.GSharp.Tests.Shared.Syntax.WithReadonlyRecordStruct.Y: offset"");
+__device__ inline __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__WithReadonlyRecordStruct __gsharp_ctor_Kassyi__GSharp__Tests__Shared__Syntax__WithReadonlyRecordStruct(int __gsharp_id_0_X, int __gsharp_id_1_Y) {
+__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__WithReadonlyRecordStruct __gsharp_self{};
+__gsharp_self.__gsharp_mb_X = __gsharp_id_0_X;
+__gsharp_self.__gsharp_mb_Y = __gsharp_id_1_Y;
+return __gsharp_self;
+}
 #endif
 extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__StructWithExpressionKernels__ReadonlyRecordStructKernel(GSharpArray<int> __gsharp_id_0_r){
-auto __gsharp_id_1_p = __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__WithReadonlyRecordStruct{1, 2};
+auto __gsharp_id_1_p = __gsharp_ctor_Kassyi__GSharp__Tests__Shared__Syntax__WithReadonlyRecordStruct(1, 2);
 auto __gsharp_id_2_q = ([&]() {
 __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__WithReadonlyRecordStruct __gsharp_tmp = __gsharp_id_1_p;
 __gsharp_tmp.__gsharp_mb_Y = 20;
