@@ -687,6 +687,15 @@
     "isEnabledByDefault": true
   },
   {
+    "name": "DivergentDynamicSharedMemory",
+    "id": "GSH0077",
+    "title": "Dynamic SharedMemory<T> reached by only some threads or with a thread-dependent count",
+    "messageFormat": "{0}. On CUDA each thread places the dynamic SharedMemory<T> regions of its block in the order it first reaches them, with the count it computes, so threads that reach them differently may disagree on where a region is.",
+    "category": "GSharpTranspiler",
+    "defaultSeverity": "Warning",
+    "isEnabledByDefault": true
+  },
+  {
     "name": "StackLinqChainTooDeep",
     "id": "SLQ0001",
     "title": "StackLinq method chain is too deep",
