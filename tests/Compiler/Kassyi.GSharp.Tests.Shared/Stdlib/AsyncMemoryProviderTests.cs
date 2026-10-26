@@ -92,6 +92,22 @@ public class AsyncMemoryProviderTests
         Assert.True(gate.IsReleased);
     }
 
+    [SkippableFact]
+    [Category(TestCategory.Stdlib)]
+    [Scenario(TestScenario.HappyPath)]
+    public void SynchronizeStream_WaitsForQueuedWork()
+    {
+        CudaCapability.EnsureGpuAvailable();
+
+        using var workspace = new GpuWorkspace(64);
+        using var gate = CudaTestEnvironment.InContext(() => StreamGate.Enqueue(workspace.Stream, GateHoldTime));
+
+        // The synchronous wait returns only after the work queued on the stream has finished.
+        // mutant: KernelMemoryHandler.cs:169 `stream == IntPtr.Zero` -> `!=`, L174 cuStreamSynchronize removed
+        workspace.Provider.SynchronizeStream(workspace.Stream);
+        Assert.True(gate.IsReleased);
+    }
+
     [Fact]
     [Category(TestCategory.Stdlib)]
     [Scenario(TestScenario.Boundary)]

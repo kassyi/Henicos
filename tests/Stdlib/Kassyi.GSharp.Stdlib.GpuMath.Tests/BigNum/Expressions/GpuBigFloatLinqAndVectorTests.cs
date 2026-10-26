@@ -554,4 +554,154 @@ public class GpuBigFloatLinqAndVectorTests : IDisposable
         using var mismatchedZipPow = zeroVec.AsVectorizedEnumerable().ZipPow(shortVec.AsVectorizedEnumerable());
         Assert.Throws<ArgumentException>(() => mismatchedZipPow.Evaluate(_context));
     }
+
+    // A slice must lie inside the array; the outer check reports the offending range as `elementOffset`.
+    // The inner GpuBigUIntArray.Slice throws the same exception type without a ParamName, so ParamName tells the
+    // outer check apart from the inner one.
+    [Theory]
+    [Category(TestCategory.Unit)]
+    [Scenario(TestScenario.Boundary)]
+    // mutant: GpuBigFloatArray.cs:147 `elementOffset < 0` -> `<= 0`, `> Length` -> `>= Length`
+    [InlineData(0, 4)]
+    [InlineData(4, 0)]
+    // mutant: GpuBigFloatArray.cs:147 `elementCount < 0` -> `<= 0`
+    [InlineData(1, 0)]
+    public void GpuBigFloatArray_Slice_InsideBounds_Succeeds(int offset, int count)
+    {
+        using var array = new GpuBigFloatArray(_context, 4, 2);
+
+        // The slice is a view of the array's memory; it is not disposed separately.
+        var slice = array.Slice(offset, count);
+
+        Assert.Equal(count, slice.Length);
+        Assert.Equal(count, slice.Exponents.Length);
+        Assert.Equal(count, slice.Signs.Length);
+    }
+
+    [Theory]
+    [Category(TestCategory.Unit)]
+    [Scenario(TestScenario.SadPath)]
+    // mutant: GpuBigFloatArray.cs:147 `||` -> `&&` (either), L149 `throw` removed
+    [InlineData(-1, 1)]
+    [InlineData(0, -1)]
+    // mutant: GpuBigFloatArray.cs:147 `elementOffset + elementCount` -> `elementOffset - elementCount`
+    [InlineData(1, 4)]
+    public void GpuBigFloatArray_Slice_OutsideBounds_Throws(int offset, int count)
+    {
+        using var array = new GpuBigFloatArray(_context, 4, 2);
+
+        var error = Assert.Throws<ArgumentOutOfRangeException>(() => array.Slice(offset, count));
+        Assert.Equal("elementOffset", error.ParamName);
+    }
+
+    // The three component arrays describe the same elements, so their lengths must agree.
+    [Fact]
+    [Category(TestCategory.Unit)]
+    [Scenario(TestScenario.SadPath)]
+    public void GpuBigFloatArray_InternalCtor_MismatchedLengths_Throws()
+    {
+        // The constructor throws before it takes ownership, so the test disposes the arrays.
+        using var significands = new GpuBigUIntArray(_context, 2, 4);
+        using var exponents = new GpuBigUIntArray(_context, 2, 1);
+        using var signs = new GpuBigUIntArray(_context, 3, 1);
+
+        // mutant: GpuBigFloatArray.cs:72 `||` -> `&&`, L74 `throw` removed
+        Assert.Throws<ArgumentException>(() => new GpuBigFloatArray(significands, exponents, signs));
+    }
+
+    // SetElement replaces the whole element: a shorter value leaves no stale upper words, and it never writes
+    // past the element into its neighbour.
+    [Fact]
+    [Category(TestCategory.Unit)]
+    [Scenario(TestScenario.Boundary)]
+    public void GpuBigFloatArray_SetElement_ShorterAndLongerValues()
+    {
+        using var array = new GpuBigFloatArray(_context, 2, 4);
+
+        // 1. A 4-word all-ones value, then a 1-word 5: the element reads back as exactly 5.
+        // mutant: GpuBigFloatArray.cs:116 `NumWords < WordsPerElement` -> `>` / negated, L118 ClearMemoryAsync removed
+        using var allOnes = new GpuBigFloat(
+            new GpuBigUInt(_context, [0xFFFFFFFFu, 0xFFFFFFFFu, 0xFFFFFFFFu, 0xFFFFFFFFu]), 0, false);
+        using var five = new GpuBigFloat(new GpuBigUInt(_context, [5u]), 3, true);
+        array.SetElement(0, allOnes);
+        array.SetElement(0, five);
+
+        // GetElement returns views of the array's memory; they are not disposed.
+        var element0 = array.GetElement(0);
+        Assert.Equal(new BigInteger(5), element0.UFloat.Significand.ToBigInteger());
+        Assert.Equal(3, element0.Exponent);
+        Assert.True(element0.IsNegative);
+
+        // 2. A 6-word value into element 0 must not touch element 1.
+        // (What element 0 holds afterwards is #629; only the neighbour is checked here.)
+        // mutant: GpuBigFloatArray.cs:121 `Math.Min` -> `Math.Max` (copies 6 words over element 1)
+        using var seven = new GpuBigFloat(new GpuBigUInt(_context, [7u, 0u, 0u, 0u]), -2, false);
+        array.SetElement(1, seven);
+        using var wide = new GpuBigFloat(new GpuBigUInt(_context, [1u, 2u, 3u, 4u, 5u, 6u]), 0, false);
+        array.SetElement(0, wide);
+
+        var element1 = array.GetElement(1);
+        Assert.Equal(new BigInteger(7), element1.UFloat.Significand.ToBigInteger());
+        Assert.Equal(-2, element1.Exponent);
+        Assert.False(element1.IsNegative);
+    }
+
+    private static void AssertExactSum<T>(string operation, BigInteger num, BigInteger den, T actual)
+        where T : struct, IGpuBigNumber<T>
+    {
+        var sig = actual.Magnitude.ToBigInteger();
+        Assert.True(
+            BigFloatReference.EqualsRational(sig, actual.Exponent, actual.IsNegative, num, den),
+            $"{typeof(T).Name} {operation}: expected {num}/{den}, actual {BigFloatReference.Describe(sig, actual.Exponent, actual.IsNegative)}");
+    }
+
+    private T CreateNumber<T>(uint value)
+        where T : struct, IGpuBigNumber<T> =>
+        T.Create(new GpuBigUInt(_context, [value, 0u, 0u, 0u]), 0, false);
+
+    // Each Select / Zip overload applies the operation it names, on the parallel and the sequential enumerable.
+    // a = [6, 9], scalar 3, b = [3, 2]: every sum differs from the sum of the swapped operation (+ <-> -, * <-> /).
+    // a >= b element-wise, so the unsigned subtraction stays non-negative (#629 is not involved).
+    private void AssertSelectZipOverloads<T>()
+        where T : struct, IGpuBigNumber<T>
+    {
+        var a = new[] { CreateNumber<T>(6), CreateNumber<T>(9) };
+        var b = new[] { CreateNumber<T>(3), CreateNumber<T>(2) };
+        var scalar = CreateNumber<T>(3);
+
+        // mutant: GpuBigNumberStackLinqExtensions.cs:47 / 55 / 63 / 71 (parallel Select*), and the generic operators
+        // GpuBigFloat.cs:312 / GpuBigUFloat.cs:343 `left - right` -> `left + right`, GpuBigUFloat.cs:347 `*` -> `/`
+        AssertExactSum("parallel SelectAdd", 21, 1, a.AsStackEnumerable().AsParallel().SelectAdd(scalar).Sum());
+        AssertExactSum("parallel SelectSubtract", 9, 1, a.AsStackEnumerable().AsParallel().SelectSubtract(scalar).Sum());
+        AssertExactSum("parallel SelectMultiply", 45, 1, a.AsStackEnumerable().AsParallel().SelectMultiply(scalar).Sum());
+        AssertExactSum("parallel SelectDivide", 5, 1, a.AsStackEnumerable().AsParallel().SelectDivide(scalar).Sum());
+
+        // mutant: GpuBigNumberStackLinqExtensions.cs:206 / 215 / 224 / 233 (sequential Select*)
+        AssertExactSum("SelectAdd", 21, 1, a.AsStackEnumerable().SelectAdd(scalar).Sum());
+        AssertExactSum("SelectSubtract", 9, 1, a.AsStackEnumerable().SelectSubtract(scalar).Sum());
+        AssertExactSum("SelectMultiply", 45, 1, a.AsStackEnumerable().SelectMultiply(scalar).Sum());
+        AssertExactSum("SelectDivide", 5, 1, a.AsStackEnumerable().SelectDivide(scalar).Sum());
+
+        // mutant: GpuBigNumberStackLinqExtensions.cs:281 / 300 / 319 / 338 (parallel Zip*)
+        AssertExactSum("parallel ZipAdd", 20, 1, a.AsStackEnumerable().AsParallel().ZipAdd(b.AsStackEnumerable().AsParallel()).Sum());
+        AssertExactSum("parallel ZipSubtract", 10, 1, a.AsStackEnumerable().AsParallel().ZipSubtract(b.AsStackEnumerable().AsParallel()).Sum());
+        AssertExactSum("parallel ZipMultiply", 36, 1, a.AsStackEnumerable().AsParallel().ZipMultiply(b.AsStackEnumerable().AsParallel()).Sum());
+        AssertExactSum("parallel ZipDivide", 13, 2, a.AsStackEnumerable().AsParallel().ZipDivide(b.AsStackEnumerable().AsParallel()).Sum());
+
+        // mutant: GpuBigNumberStackLinqExtensions.cs:396 / 415 / 434 / 453 (sequential Zip*)
+        AssertExactSum("ZipAdd", 20, 1, a.AsStackEnumerable().ZipAdd(b.AsStackEnumerable()).Sum());
+        AssertExactSum("ZipSubtract", 10, 1, a.AsStackEnumerable().ZipSubtract(b.AsStackEnumerable()).Sum());
+        AssertExactSum("ZipMultiply", 36, 1, a.AsStackEnumerable().ZipMultiply(b.AsStackEnumerable()).Sum());
+        AssertExactSum("ZipDivide", 13, 2, a.AsStackEnumerable().ZipDivide(b.AsStackEnumerable()).Sum());
+    }
+
+    [Fact]
+    [Category(TestCategory.Unit)]
+    [Scenario(TestScenario.HappyPath)]
+    public void GpuBigFloat_SelectZip_AllOverloads() => AssertSelectZipOverloads<GpuBigFloat>();
+
+    [Fact]
+    [Category(TestCategory.Unit)]
+    [Scenario(TestScenario.HappyPath)]
+    public void GpuBigUFloat_SelectZip_AllOverloads() => AssertSelectZipOverloads<GpuBigUFloat>();
 }

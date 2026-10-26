@@ -740,7 +740,8 @@ public class GpuBigIntCoreTests
         using var gpuA = new GpuBigUInt(context, TestSizeWords * 4);
         using var tempA = new GpuBigUInt(context, arrA);
         gpuA.CopyFrom(tempA);
-        gpuA.Square(TestSizeWords);
+        // Square reports success. mutant: KernelBasicMathHandler.cs:302 `return true` -> `return false`
+        Assert.True(gpuA.Square(TestSizeWords));
         var actual = ToBigInteger(gpuA.ToHostArray().Take(TestSizeWords * 2).ToArray());
         var expected = bigA * bigA;
 
@@ -1361,6 +1362,87 @@ public class GpuBigIntCoreTests
         });
 
         Assert.Empty(exceptions);
+    }
+
+    private static BigInteger WordsToBigInteger(uint[] words)
+    {
+        var bytes = new byte[words.Length * 4];
+        Buffer.BlockCopy(words, 0, bytes, 0, bytes.Length);
+        return new BigInteger(bytes, isUnsigned: true, isBigEndian: false);
+    }
+
+    // Scalar add / sub carry and borrow through every word, also beyond the 1024 threads of one block (mod 2^(32n)).
+    [SkippableTheory]
+    [Category(TestCategory.Stdlib)]
+    [Scenario(TestScenario.Boundary)]
+    // mutant: KernelBasicMathHandler.cs:61 / 73 `Math.Min(1024, NumWords)` -> `Math.Max` (a 1500-thread block fails to launch)
+    [InlineData(0xFFFFFFFFu, true, 1u)]
+    [InlineData(0u, false, 1u)]
+    [InlineData(0x9E3779B9u, true, 0x7F4A7C15u)]
+    [InlineData(0x9E3779B9u, false, 0x7F4A7C15u)]
+    public void ScalarAddSub_MoreThan1024Words_MatchesBigInteger(uint fill, bool add, uint scalar)
+    {
+        CudaCapability.EnsureGpuAvailable();
+        const int N = 1500;
+        using var ctx = new GpuWorkspace(4 * N, GpuExecutionEngine.GSharpAot);
+
+        var words = new uint[N];
+        Array.Fill(words, fill);
+        var value = WordsToBigInteger(words);
+        var modulus = BigInteger.One << (32 * N);
+        using var operand = new GpuBigUInt(ctx, words);
+        using var result = new GpuBigUInt(ctx, N);
+
+        if (add)
+        {
+            GpuBigIntMath.Add(operand, scalar, result);
+        }
+        else
+        {
+            GpuBigIntMath.Sub(operand, scalar, result);
+        }
+
+        var expected = ((add ? value + scalar : value - scalar) % modulus + modulus) % modulus;
+        Assert.Equal(expected, result.ToBigInteger());
+    }
+
+    [SkippableFact]
+    [Category(TestCategory.Stdlib)]
+    [Scenario(TestScenario.SadPath)]
+    public void DivideByUInt32_ZeroDivisor_Throws()
+    {
+        CudaCapability.EnsureGpuAvailable();
+        using var ctx = new GpuWorkspace(16, GpuExecutionEngine.GSharpAot);
+        using var dividend = new GpuBigUInt(ctx, [12345u, 1u, 0u, 0u]);
+        using var quotient = new GpuBigUInt(ctx, 4);
+
+        // mutant: KernelBasicMathHandler.cs:84-87 throw removed (the kernel divides by 0 without an error)
+        Assert.Throws<DivideByZeroException>(() => GpuBigIntMath.DivideByUInt32(dividend, 0u, quotient));
+    }
+
+    // Comparing operands of different word counts reads only the words of each operand: the shorter one is
+    // padded with zeros, not extended into whatever memory follows it.
+    [SkippableFact]
+    [Category(TestCategory.Stdlib)]
+    [Scenario(TestScenario.Boundary)]
+    public void CompareTo_ShorterOperand_IgnoresMemoryPastItsWords()
+    {
+        CudaCapability.EnsureGpuAvailable();
+        using var ctx = new GpuWorkspace(64, GpuExecutionEngine.GSharpAot);
+
+        // An 8-word buffer [v0, v1, garbage x 6]; `shortView` is a 2-word view of its start.
+        using var backing = new GpuBigUInt(ctx, [5u, 7u, 0xFFFFFFFFu, 0xFFFFFFFFu, 0xFFFFFFFFu, 0xFFFFFFFFu, 0xFFFFFFFFu, 0xFFFFFFFFu]);
+        // The view does not own the buffer (disposing it frees nothing), so it is not disposed.
+        var shortView = new GpuBigUInt(ctx, 2, backing.DevicePointer);
+        using var equal = new GpuBigUInt(ctx, [5u, 7u, 0u, 0u]);
+        using var larger = new GpuBigUInt(ctx, [6u, 7u, 0u, 0u]);
+
+        // mutant: KernelBasicMathHandler.cs:169 / 174 `<` -> `>` / negated, L171 / 176 PadTo removed,
+        // L181 / 182 the padded pointer replaced by the operand's own
+        Assert.Equal(0, shortView.CompareTo(equal));
+        Assert.Equal(0, equal.CompareTo(shortView));
+        Assert.Equal(-1, shortView.CompareTo(larger));
+        Assert.Equal(1, larger.CompareTo(shortView));
     }
 }
 

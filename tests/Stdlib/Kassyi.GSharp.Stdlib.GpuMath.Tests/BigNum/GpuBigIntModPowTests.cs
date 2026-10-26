@@ -57,6 +57,40 @@ public class GpuBigIntModPowTests
         Assert.Equal(expected, result.ToBigInteger());
     }
 
+    // Every bit of the top exponent word counts, up to its most significant bit (ZeroSync path, 64 words).
+    [SkippableFact]
+    [Category(TestCategory.Stdlib)]
+    [Scenario(TestScenario.Boundary)]
+    public void Test_ModPow_LargeValues_NonZeroTopExponentWord()
+    {
+        CudaCapability.EnsureGpuAvailable();
+        const int NumWords = 64; // > PolyAlgorithmThreshold -> ModPowZeroSyncController
+        using var ctx = new GpuWorkspace(256, GpuExecutionEngine.GSharpAot);
+
+        var aArr = new uint[NumWords];
+        var mArr = new uint[NumWords];
+        Array.Fill(aArr, 0x11111111u);
+        Array.Fill(mArr, 0x7FFFFFFFu);
+        mArr[0] |= 1;
+        // A 2-word exponent whose top word has its highest bit set.
+        uint[] eArr = [0x00000015u, 0x80000003u];
+
+        var baseValue = FromWords(aArr);
+        var exponent = FromWords(eArr);
+        var modulus = FromWords(mArr);
+
+        using var a = new GpuBigUInt(ctx, aArr);
+        using var e = new GpuBigUInt(ctx, eArr);
+        using var m = new GpuBigUInt(ctx, mArr);
+        using var result = new GpuBigUInt(ctx, NumWords);
+
+        // mutant: ModPowZeroSyncController.cs:108 `e == 0 && i == expWords - 1` -> `e != 0 && ...`
+        // (the last word would stop after its first bit)
+        GpuBigIntDivRem.ModPow(a, e, m, result);
+
+        Assert.Equal(BigInteger.ModPow(baseValue, exponent, modulus), result.ToBigInteger());
+    }
+
     /// <summary>
     /// Named moduli for the boundary tests: <c>1</c> (every residue is 0), <c>2</c> (the smallest modulus that keeps
     /// <c>1</c>) and a seeded random modulus that fills every word.
