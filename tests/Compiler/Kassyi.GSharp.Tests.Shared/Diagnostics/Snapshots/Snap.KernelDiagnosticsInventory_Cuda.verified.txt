@@ -172,6 +172,15 @@
 ## Analyzers/SharedMemoryDisposable_SadPath.cs
 (25,40)-(25,47) GSH0069 analyzer: SharedMemory<T> cannot hold the disposable type 'Handle'. Shared memory is released with the thread block, so its elements are never disposed.
 
+## Diagnostics/DivergentDynamicSharedMemory.cu.cs
+(29,24)-(29,48) GSH0077 analyzer: Only some threads of the block reach the dynamic SharedMemory<T> declaration 'half'. On CUDA each thread places the dynamic SharedMemory<T> regions of its block in the order it first reaches them, with the count it computes, so threads that reach them differently may disagree on where a region is.
+(40,32)-(40,42) GSH0077 analyzer: Only some threads of the block reach the call to 'Scratch', which reaches a dynamic SharedMemory<T> declaration. On CUDA each thread places the dynamic SharedMemory<T> regions of its block in the order it first reaches them, with the count it computes, so threads that reach them differently may disagree on where a region is.
+(43,18)-(43,35) GSH0077 analyzer: Only some threads of the block reach the call to 'ScratchThrough', which reaches a dynamic SharedMemory<T> declaration. On CUDA each thread places the dynamic SharedMemory<T> regions of its block in the order it first reaches them, with the count it computes, so threads that reach them differently may disagree on where a region is.
+(54,47)-(54,54) GSH0077 analyzer: The count of the dynamic SharedMemory<T> declaration 'perThread' depends on the thread. On CUDA each thread places the dynamic SharedMemory<T> regions of its block in the order it first reaches them, with the count it computes, so threads that reach them differently may disagree on where a region is.
+(66,23)-(66,47) GSH0077 analyzer: Only some threads of the block reach the dynamic SharedMemory<T> declaration 'row'. On CUDA each thread places the dynamic SharedMemory<T> regions of its block in the order it first reaches them, with the count it computes, so threads that reach them differently may disagree on where a region is.
+(90,30)-(90,54) GSH0077 analyzer: Only some threads of the block reach the dynamic SharedMemory<T> declaration 'nested'. On CUDA each thread places the dynamic SharedMemory<T> regions of its block in the order it first reaches them, with the count it computes, so threads that reach them differently may disagree on where a region is.
+(106,18)-(106,28) GSH0077 analyzer: Only some threads of the block reach the call to 'Scratch', which reaches a dynamic SharedMemory<T> declaration. On CUDA each thread places the dynamic SharedMemory<T> regions of its block in the order it first reaches them, with the count it computes, so threads that reach them differently may disagree on where a region is.
+
 ## Analyzers/NewList_SadPath.cs
 (11,20)-(11,35) GSH0001 analyzer: Object creation ('new') is not supported in GPU kernels. Only struct instantiation and SharedMemory<T> are allowed.
 
