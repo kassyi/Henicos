@@ -80,6 +80,63 @@ public class ModPowPolyAlgorithmTests : IDisposable
         Assert.Equal(expected, actual);
     }
 
+    // ModPowNttHostController launches ModPowNttMegaKernel with one block of 256 threads, and the kernel resolves the
+    // carries of each product in chunks of one block (BlockDimension.X), writing one block carry per chunk into
+    // BlockCarries. Its largest product (the Barrett step) has 2n + (3n + 16) = 5n + 16 words: n = 99 gives 511 words
+    // (2 chunks), n = 100 gives 516 words (3 chunks, one more than an allocation sized for 1024-word chunks holds) and
+    // n = 200 gives 1016 words (4 chunks). The product A * R of the Barrett step is below 2^(32 * (4n + 16)), so its top
+    // chunks are zero: only n = 200 carries a non-zero value across the second chunk boundary.
+    // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/BigNum/Providers/Handlers/KernelAdvancedMathHandler.cs
+    //   NttWorkspaceBuffers `ChunkSize = carryChunkSize;` -> `ChunkSize = 1024;` (the #606 allocation)
+    //   input: numWords 100 and 200 (ThrowIfBlockCarriesTooSmall throws before the launch)
+    // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/BigNum/Kernels/GpuBigIntDivRemKernels.ModPow.cu.cs:66
+    //   `int numBlocks = (numWordsResult + chunkSize - 1) / chunkSize;` -> `int numBlocks = 1;`
+    //   input: numWords 200 (the carry out of the second chunk is lost and the result differs from BigInteger.ModPow)
+    [SkippableTheory]
+    [Category(TestCategory.Stdlib)]
+    [Scenario(TestScenario.Boundary)]
+    [InlineData(99)]
+    [InlineData(100)]
+    [InlineData(200)]
+    public void Test_ModPow_NttPath_CarryChunksOfLaunchBlock(int numWords)
+    {
+        CudaCapability.EnsureGpuAvailable();
+
+        using var workspace = new GpuWorkspace(4096, GpuExecutionEngine.GSharpAot);
+        // Send numWords-word operands to the NTT MegaKernel (ModPowNttHostController) instead of the zero-sync loop.
+        workspace.PolyAlgorithmThreshold = numWords * 32;
+
+        var seed = 606 + numWords;
+        var random = new Random(seed);
+        // The top bit of the modulus is set so that every one of its numWords words is significant.
+        var modValue = GenerateFullWidthBigInteger(random, numWords * 32) | BigInteger.One;
+        var baseValue = GenerateFullWidthBigInteger(random, numWords * 32) % modValue;
+        // A 2-word exponent keeps the run at 64 square-and-multiply steps, each with full-width NTT products.
+        var expValue = GenerateFullWidthBigInteger(random, 64);
+
+        var expected = BigInteger.ModPow(baseValue, expValue, modValue);
+
+        using var gpuBase = GpuBigUInt.FromBigInteger(workspace, baseValue, numWords);
+        using var gpuExp = GpuBigUInt.FromBigInteger(workspace, expValue, 2);
+        using var gpuMod = GpuBigUInt.FromBigInteger(workspace, modValue, numWords);
+        using var gpuResult = new GpuBigUInt(workspace, numWords);
+
+        GpuBigIntDivRem.ModPow(gpuBase, gpuExp, gpuMod, gpuResult);
+
+        var actual = gpuResult.ToBigInteger();
+        // The result equals the reference modular power computed from the host-side inputs.
+        Assert.True(expected == actual, $"seed {seed}: expected {expected}, actual {actual}");
+    }
+
+    private static BigInteger GenerateFullWidthBigInteger(Random random, int bits)
+    {
+        var bytes = new byte[bits / 8 + 1];
+        random.NextBytes(bytes);
+        bytes[^1] = 0; // sign byte: keep the value non-negative
+        bytes[^2] |= 0x80; // top bit of the value
+        return new BigInteger(bytes);
+    }
+
     [SkippableFact]
     [Scenario(TestScenario.Boundary)]
     public void Test_ModPow_EdgeCases()

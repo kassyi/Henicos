@@ -207,12 +207,15 @@ public sealed class KernelAdvancedMathHandler : IGpuAdvancedMathProvider
         var maxOutWords = 4 * n + 3 * marginWords;
         var requiredLen = maxOutWords;
 
-        using var buffers = new NttWorkspaceBuffers(workspace, requiredLen, maxOutWords, this);
+        // The kernel resolves carries in chunks of one launch block, so the block size also sizes the block carries.
+        const uint BlockDim = 1024u;
+        using var buffers = new NttWorkspaceBuffers(workspace, requiredLen, maxOutWords, (int)BlockDim, this);
         using var carryBuffer = workspace.RentTemp(2); // long array for carry
 
         var m = buffers.TransformLength;
 
-        const uint BlockDim = 1024u;
+        // The kernel resolves the carries of its products (at most maxOutWords words) in chunks of one launch block.
+        ThrowIfBlockCarriesTooSmall(buffers.BlockCarries.NumWords, maxOutWords, (int)BlockDim);
         var gridDim = (uint)((m + BlockDim - 1) / BlockDim);
         var maxResidentBlocks = (uint)workspace.DeviceSmCount;
         if (gridDim > maxResidentBlocks)
@@ -340,12 +343,15 @@ public sealed class KernelAdvancedMathHandler : IGpuAdvancedMathProvider
         var maxOutWords = n + 2 * resultWords;
         var requiredLen = maxOutWords;
 
-        using var buffers = new NttWorkspaceBuffers(workspace, requiredLen, maxOutWords, this);
+        // The kernel resolves carries in chunks of one launch block, so the block size also sizes the block carries.
+        const uint BlockDim = 1024u;
+        using var buffers = new NttWorkspaceBuffers(workspace, requiredLen, maxOutWords, (int)BlockDim, this);
         using var carryBuffer = workspace.RentTemp(2);
 
         var m = buffers.TransformLength;
 
-        const uint BlockDim = 1024u;
+        // The kernel resolves the carries of its products (at most maxOutWords words) in chunks of one launch block.
+        ThrowIfBlockCarriesTooSmall(buffers.BlockCarries.NumWords, maxOutWords, (int)BlockDim);
         var gridDim = (uint)((m + BlockDim - 1) / BlockDim);
         var maxResidentBlocks = (uint)workspace.DeviceSmCount;
         if (gridDim > maxResidentBlocks)
@@ -447,7 +453,9 @@ public sealed class KernelAdvancedMathHandler : IGpuAdvancedMathProvider
         var outWords = leftOperand.NumWords + rightOperand.NumWords;
         var requiredLen = outWords;
 
-        using var buffers = new NttWorkspaceBuffers(workspace, requiredLen, outWords, this,
+        // ResolveNttCarriesBlockedKernel is launched with blocks of buffers.ChunkSize threads.
+        const int CarryChunkSize = 1024;
+        using var buffers = new NttWorkspaceBuffers(workspace, requiredLen, outWords, CarryChunkSize, this,
             allocateOperandB: !isSquaring);
         var m = buffers.TransformLength;
         var twiddle = buffers.Twiddle;
@@ -719,7 +727,8 @@ public sealed class KernelAdvancedMathHandler : IGpuAdvancedMathProvider
         var outWords = aActualWords + targetWords;
         var requiredLen = outWords;
 
-        using var buffers = new NttWorkspaceBuffers(workspace, requiredLen, outWords, this);
+        // The kernel resolves carries in chunks of one launch block (blockDim threads), not of a fixed size.
+        using var buffers = new NttWorkspaceBuffers(workspace, requiredLen, outWords, (int)blockDim, this);
         using var currentProduct = workspace.RentTemp(outWords);
         using var diff = workspace.RentTemp(outWords);
         using var nextIter = workspace.RentTemp(outWords);
@@ -728,6 +737,9 @@ public sealed class KernelAdvancedMathHandler : IGpuAdvancedMathProvider
         using var axSquared = workspace.RentTemp(2 * n);
         using var xSquared = workspace.RentTemp(2 * n);
         using var modulusExpanded = workspace.RentTemp(outWords);
+
+        // The kernel resolves the carries of its products (at most outWords words) in chunks of one launch block.
+        ThrowIfBlockCarriesTooSmall(buffers.BlockCarries.NumWords, outWords, (int)blockDim);
 
         // For Ntt
         var m = buffers.TransformLength;
@@ -836,6 +848,28 @@ public sealed class KernelAdvancedMathHandler : IGpuAdvancedMathProvider
         }
     }
 
+    /// <summary>
+    /// Throws when a block-carry buffer holds fewer words than the carry kernel writes for the largest product.
+    /// </summary>
+    /// <param name="blockCarryWords">The number of words allocated for the block carries.</param>
+    /// <param name="maxProductWords">The word count of the largest product whose carries are resolved.</param>
+    /// <param name="chunkSize">The carry chunk in words, which is the block size the carry kernel is launched with.</param>
+    /// <remarks>
+    /// <c>ExecuteResolveNttCarriesBlocked</c> resolves the carries of a product in chunks of one launch block and writes one
+    /// carry per chunk, so a product of <paramref name="maxProductWords"/> words writes
+    /// <c>ceil(maxProductWords / chunkSize)</c> carries.
+    /// </remarks>
+    /// <exception cref="InvalidOperationException">The buffer is smaller than the number of carries.</exception>
+    internal static void ThrowIfBlockCarriesTooSmall(int blockCarryWords, int maxProductWords, int chunkSize)
+    {
+        var carryCount = (maxProductWords + chunkSize - 1) / chunkSize;
+        if (blockCarryWords < carryCount)
+        {
+            throw new InvalidOperationException(
+                $"The NTT block-carry buffer holds {blockCarryWords} words, but a {maxProductWords}-word product resolved in {chunkSize}-word chunks writes {carryCount} carries.");
+        }
+    }
+
     private void LaunchSharedRow(GpuWorkspace workspace, IntPtr buffer, IntPtr tempBuffer, IntPtr twiddle, int m,
         int n1,
         int n2, uint p,
@@ -891,7 +925,16 @@ public sealed class KernelAdvancedMathHandler : IGpuAdvancedMathProvider
         public readonly int ChunkSize;
         private readonly bool _ownsOperandB;
 
-        public NttWorkspaceBuffers(GpuWorkspace workspace, int requiredLen, int maxOutWords,
+        /// <param name="workspace">The workspace whose temporary buffers are rented.</param>
+        /// <param name="requiredLen">The word count of the largest product, which decides the transform length.</param>
+        /// <param name="maxOutWords">The word count of the largest product whose carries are resolved.</param>
+        /// <param name="carryChunkSize">
+        /// The carry chunk in words: the block size of the launch that runs <c>ExecuteResolveNttCarriesBlocked</c>, which
+        /// writes one block carry per chunk.
+        /// </param>
+        /// <param name="handler">The handler that owns the twiddle-factor cache.</param>
+        /// <param name="allocateOperandB">Whether the second operand gets its own NTT buffers (not for squaring).</param>
+        public NttWorkspaceBuffers(GpuWorkspace workspace, int requiredLen, int maxOutWords, int carryChunkSize,
             KernelAdvancedMathHandler handler, bool allocateOperandB = true)
         {
             const int MaxNttTransformLength = 1 << 25;
@@ -921,7 +964,7 @@ public sealed class KernelAdvancedMathHandler : IGpuAdvancedMathProvider
             UncarriedLow = workspace.RentTemp(m);
             UncarriedHigh = workspace.RentTemp(m);
 
-            ChunkSize = 1024;
+            ChunkSize = carryChunkSize;
             NumBlocks = (maxOutWords + ChunkSize - 1) / ChunkSize;
             BlockCarries = workspace.RentTemp(NumBlocks * 2);
         }
