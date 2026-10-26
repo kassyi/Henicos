@@ -4,6 +4,7 @@ using Kassyi.GSharp.Cryptography;
 
 namespace Kassyi.GSharp.Tests.Shared.Cryptography;
 
+[Category(TestCategory.Unit)]
 public class Ed25519Tests
 {
     [Fact]

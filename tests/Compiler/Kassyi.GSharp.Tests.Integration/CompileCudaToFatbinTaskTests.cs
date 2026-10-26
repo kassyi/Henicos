@@ -2,6 +2,7 @@ using Kassyi.GSharp.Compiler.Tasks;
 
 namespace Kassyi.GSharp.Tests.Integration;
 
+[Category(TestCategory.Compiler)]
 public class CompileCudaToFatbinTaskTests
 {
     [Theory]

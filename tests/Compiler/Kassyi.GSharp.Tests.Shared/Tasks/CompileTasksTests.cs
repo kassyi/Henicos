@@ -34,6 +34,7 @@ public class CompileTasksTests
     [Theory]
     [InlineData(false, "kernel.cu", "nvcc", "-fatbin")]
     [InlineData(true, "kernel.cpp", "cl.exe", null)]
+    [Category(TestCategory.Compiler)]
     public void Test_CompileTask_RealCompilation_CallsCompiler(bool isCpp, string sourceName, string expectedExe,
         string? expectedArg)
     {
@@ -66,6 +67,7 @@ public class CompileTasksTests
     [InlineData(1)] // Cuda Combined
     [InlineData(2)] // Cpp
     [InlineData(3)] // KernelTaskBase
+    [Category(TestCategory.Compiler)]
     public void Test_CompileTask_EmptySources_ReturnsTrue(int taskKind)
     {
         using var ctx = new CompileTaskTestContext();
@@ -83,6 +85,7 @@ public class CompileTasksTests
     }
 
     [Fact]
+    [Category(TestCategory.Compiler)]
     public void Test_CompileCudaToFatbinTask_WhenNoCudaEnv_SkipsAndSucceeds()
     {
         using var ctx = new CompileTaskTestContext();
@@ -94,6 +97,7 @@ public class CompileTasksTests
     }
 
     [Fact]
+    [Category(TestCategory.Compiler)]
     public void Test_CompileCudaToFatbinTask_WhenNvccMissing_SkipsGracefully()
     {
         using var ctx = new CompileTaskTestContext();
@@ -110,6 +114,7 @@ public class CompileTasksTests
     [Theory]
     [InlineData(false, "kernel.cu")]
     [InlineData(true, "kernel.cpp")]
+    [Category(TestCategory.Compiler)]
     public void Test_CompileTask_AlwaysRecompiles_And_IgnoresCache(bool isCpp, string sourceName)
     {
         using var ctx = new CompileTaskTestContext();
@@ -137,6 +142,7 @@ public class CompileTasksTests
     }
 
     [Fact]
+    [Category(TestCategory.Compiler)]
     public void Test_CompileCudaToFatbinTask_CombinedFatbinName_Specified_ShouldBundleSources()
     {
         using var ctx = new CompileTaskTestContext();
@@ -158,6 +164,7 @@ public class CompileTasksTests
     [InlineData(false, "kernel.cu", "Mock NVCC Error", "")]
     [InlineData(true, "kernel.cpp", "Mock CL Error", "")]
     [InlineData(false, "kernel.cu", "nvcc compilation failed with exit code 1", "combined_fatbin")]
+    [Category(TestCategory.Compiler)]
     public void Test_CompileTask_ProcessFails_LogsErrorAndReturnsFalse(bool isCpp, string sourceName,
         string errorMessage, string? combinedName)
     {
@@ -177,6 +184,7 @@ public class CompileTasksTests
     [InlineData(new[] { "kernel1.cu", "kernel2.cu" }, "sm_86", "combined_fatbin")]
     [InlineData(new[] { "kernel.cu" }, "sm_86,compute_86;sm_89,compute_89", "combined_fatbin")]
     [InlineData(new[] { "combined_fatbin_bundle.cu", "kernel2.cu" }, "sm_86", "combined_fatbin")]
+    [Category(TestCategory.Compiler)]
     public void Test_CompileCudaToFatbinTask_CombinedFatbinName_SuccessCases(string[] sources, string targetArch,
         string combinedName)
     {
@@ -193,6 +201,7 @@ public class CompileTasksTests
     }
 
     [Fact]
+    [Category(TestCategory.Compiler)]
     public void Test_CompileCppToNativeTask_GSharpMultiTarget_CompilesForTwoArchitectures()
     {
         using var ctx = new CompileTaskTestContext();
@@ -210,6 +219,7 @@ public class CompileTasksTests
     }
 
     [Fact]
+    [Category(TestCategory.Compiler)]
     public void Test_CompileCppToNativeTask_VswhereFails_LogsErrorAndReturnsFalse()
     {
         using var ctx = new CompileTaskTestContext();
@@ -224,6 +234,7 @@ public class CompileTasksTests
     }
 
     [Fact]
+    [Category(TestCategory.Compiler)]
     public void Test_CompileCppToNativeTask_ClExePathResolvedFromPath()
     {
         using var ctx = new CompileTaskTestContext();
@@ -249,6 +260,7 @@ public class CompileTasksTests
     [InlineData("combined_fatbin", true)] // Combined, UpToDate
     [InlineData("combined_fatbin", false)] // Combined, NotUpToDate
     [InlineData("", true)] // Individual, UpToDate
+    [Category(TestCategory.Compiler)]
     public void Test_CompileCudaToFatbinTask_TimestampCheck(string? combinedName, bool isUpToDate)
     {
         using var ctx = new CompileTaskTestContext();
@@ -279,6 +291,7 @@ public class CompileTasksTests
     }
 
     [Fact]
+    [Category(TestCategory.Compiler)]
     public void Test_CompileCudaToFatbinTask_OnBeforeExecute_Fails()
     {
         using var ctx = new CompileTaskTestContext();
@@ -290,6 +303,7 @@ public class CompileTasksTests
     [Theory]
     [InlineData(false, "dummy.cu")]
     [InlineData(true, "dummy.cpp")]
+    [Category(TestCategory.Compiler)]
     public void Test_CompileTask_NoVswhere(bool isCpp, string sourceName)
     {
         using var ctx = new CompileTaskTestContext();
@@ -306,6 +320,7 @@ public class CompileTasksTests
     // --- Infrastructure Tests ---
 
     [Fact]
+    [Category(TestCategory.Compiler)]
     public void Test_MockBuildEngine_LogsCorrectly()
     {
         var buildEngine = new MockBuildEngine();
@@ -327,6 +342,7 @@ public class CompileTasksTests
     }
 
     [Fact]
+    [Category(TestCategory.Compiler)]
     public void Test_MockProcessRunner_RecordsInvocationsAndReturnsOutputs()
     {
         var runner = new MockProcessRunner("C:\\dummy");
@@ -347,6 +363,7 @@ public class CompileTasksTests
     }
 
     [Fact]
+    [Category(TestCategory.Compiler)]
     public void Test_MockProcessRunner_OverrideVswhere()
     {
         var runner = new MockProcessRunner("C:\\dummy");
@@ -362,6 +379,7 @@ public class CompileTasksTests
     [Theory]
     [InlineData(false, "kernel1.cu", "nvcc")]
     [InlineData(true, "kernel1.cpp", "cl.exe")]
+    [Category(TestCategory.Compiler)]
     public void Test_CompileTask_RunProcess_ThrowsException(bool isCpp, string sourceName, string expectedExe)
     {
         using var ctx = new CompileTaskTestContext();
@@ -375,6 +393,7 @@ public class CompileTasksTests
     }
 
     [Fact]
+    [Category(TestCategory.Compiler)]
     public async Task Test_ProcessRunner_CancellationRequested_BeforeStart()
     {
         var runner = new ProcessRunner();
@@ -386,6 +405,7 @@ public class CompileTasksTests
     }
 
     [Fact]
+    [Category(TestCategory.Compiler)]
     public async Task Test_ProcessRunner_ProcessStartFailed()
     {
         var runner = new ProcessRunner();
@@ -396,6 +416,7 @@ public class CompileTasksTests
     }
 
     [Fact]
+    [Category(TestCategory.Compiler)]
     public async Task Test_ProcessRunner_Cancellation_KillsProcess()
     {
         var runner = new ProcessRunner();
@@ -413,6 +434,7 @@ public class CompileTasksTests
     }
 
     [Fact]
+    [Category(TestCategory.Compiler)]
     public void Test_CompileKernelTaskBase_ProcessSourceReturnsNull_Fails()
     {
         using var ctx = new CompileTaskTestContext();
@@ -426,6 +448,7 @@ public class CompileTasksTests
     }
 
     [Fact]
+    [Category(TestCategory.Compiler)]
     public void Test_CompileKernelTaskBase_SafeDeleteFiles_IgnoresExceptions()
     {
         var task = new TestCompileKernelTask();
@@ -437,6 +460,7 @@ public class CompileTasksTests
     }
 
     [Fact]
+    [Category(TestCategory.Compiler)]
     public void Test_CompileKernelTaskBase_VcvarsCache_And_MissingVswhere()
     {
         using var ctx = new CompileTaskTestContext();
@@ -464,6 +488,7 @@ public class CompileTasksTests
     [InlineData("   ", 0)] // empty vswhere
     [InlineData("missing_bat_dir", 0)] // vcvarsall.bat not found
     [InlineData(null, 1)] // cmd.exe failed
+    [Category(TestCategory.Compiler)]
     public void Test_CompileKernelTaskBase_GetVcvarsEnvironment_FailureCases(string? vswhereOutput, int cmdExitCode)
     {
         using var ctx = new CompileTaskTestContext();
@@ -488,6 +513,7 @@ public class CompileTasksTests
     }
 
     [Fact]
+    [Category(TestCategory.Compiler)]
     public void Test_CompileCudaToFatbinTask_DetectRegisterSpillSuppressGs0001()
     {
         using var ctx = new CompileTaskTestContext();
@@ -502,6 +528,7 @@ public class CompileTasksTests
 
 
     [Fact]
+    [Category(TestCategory.Compiler)]
     public void Test_CompileCudaToFatbinTask_CombinedFatbinName_CreateOutputDirectory()
     {
         using var ctx = new CompileTaskTestContext();
@@ -518,6 +545,7 @@ public class CompileTasksTests
     }
 
     [Fact]
+    [Category(TestCategory.Compiler)]
     public void Test_CompileCudaToFatbinTask_CombinedFatbinName_BundleFile_WriteFailure()
     {
         using var ctx = new CompileTaskTestContext();
@@ -534,6 +562,7 @@ public class CompileTasksTests
     [Theory]
     [InlineData("combined_fatbin")]
     [InlineData(null)]
+    [Category(TestCategory.Compiler)]
     public void Test_CompileCudaToFatbinTask_OutputMissing_LogsError(string? combinedName)
     {
         using var ctx = new CompileTaskTestContext();
@@ -547,6 +576,7 @@ public class CompileTasksTests
     }
 
     [Fact]
+    [Category(TestCategory.Compiler)]
     public void Test_CompileCudaToFatbinTask_CombinedFatbinName_MissingSourceFile_NotUpToDate()
     {
         using var ctx = new CompileTaskTestContext();
@@ -563,6 +593,7 @@ public class CompileTasksTests
     [InlineData(false, "kernel.cu", null)]
     [InlineData(false, "kernel.cu", "combined_fatbin")]
     [InlineData(true, "kernel.cpp", null)]
+    [Category(TestCategory.Compiler)]
     public void Test_CompileTask_PropagatesCancellationToken_ToProcessRunner(bool isCpp, string sourceName, string? combinedName)
     {
         using var ctx = new CompileTaskTestContext();
@@ -584,6 +615,7 @@ public class CompileTasksTests
     [InlineData(false, "kernel.cu", null)]
     [InlineData(false, "kernel.cu", "combined_fatbin")]
     [InlineData(true, "kernel.cpp", null)]
+    [Category(TestCategory.Compiler)]
     public void Test_CompileTask_CancelBeforeExecute_ReturnsFalseAndLogsWarning(bool isCpp, string sourceName, string? combinedName)
     {
         using var ctx = new CompileTaskTestContext();
@@ -607,6 +639,7 @@ public class CompileTasksTests
     [InlineData(false, "kernel.cu", null)]
     [InlineData(false, "kernel.cu", "combined_fatbin")]
     [InlineData(true, "kernel.cpp", null)]
+    [Category(TestCategory.Compiler)]
     public void Test_CompileTask_CancelDuringProcessRun_ReturnsFalseAndLogsWarning(bool isCpp, string sourceName, string? combinedName)
     {
         using var ctx = new CompileTaskTestContext();

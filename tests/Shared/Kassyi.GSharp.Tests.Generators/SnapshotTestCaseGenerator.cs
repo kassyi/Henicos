@@ -9,6 +9,7 @@ namespace Kassyi.GSharp.Tests.Generators;
 public class SnapshotTestCaseGenerator : IIncrementalGenerator
 {
     private const string RepositoryRootMarker = "Henicos.slnx";
+    private const string OptInProperty = "GSharpGenerateSnapshotTestCases";
 
 #pragma warning disable RS2008 // Test-only generator; not shipped, so analyzer release tracking does not apply.
     private static readonly DiagnosticDescriptor s_rootNotFoundDescriptor = new(
@@ -26,20 +27,19 @@ public class SnapshotTestCaseGenerator : IIncrementalGenerator
 
     public void Initialize(IncrementalGeneratorInitializationContext context)
     {
-        var projectDirProvider = context.AnalyzerConfigOptionsProvider.Select(static (options, _) =>
+        // The compiler and every test project load this assembly for its HNT analyzers; only the projects that compile
+        // GeneratorSnapshotTests (Kassyi.GSharp.Tests.Cpu / .Cuda) opt in to the test case list
+        var inputProvider = context.AnalyzerConfigOptionsProvider.Select(static (options, _) =>
         {
             options.GlobalOptions.TryGetValue("build_property.MSBuildProjectDirectory", out var projDir);
-            return projDir ?? string.Empty;
+            options.GlobalOptions.TryGetValue($"build_property.{OptInProperty}", out var optIn);
+            return (ProjectDir: projDir ?? string.Empty, Enabled: string.Equals(optIn, "true", StringComparison.OrdinalIgnoreCase));
         });
 
-        // The compiler also loads this assembly for its HNT analyzers; the test case list belongs to test assemblies only
-        var isTestAssemblyProvider = context.CompilationProvider.Select(static (compilation, _) =>
-            compilation.AssemblyName?.Contains("Test") == true);
-
-        context.RegisterSourceOutput(projectDirProvider.Combine(isTestAssemblyProvider), static (spc, input) =>
+        context.RegisterSourceOutput(inputProvider, static (spc, input) =>
         {
-            var (projDir, isTestAssembly) = input;
-            if (!isTestAssembly)
+            var (projDir, enabled) = input;
+            if (!enabled)
             {
                 return;
             }

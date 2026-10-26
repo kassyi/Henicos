@@ -1,6 +1,7 @@
 
 namespace Kassyi.GSharp.Tests.Shared.Analyzers;
 
+[Category(TestCategory.Compiler)]
 public class GpuBigIntExprAnalyzerTests
 :  TranspilerTestBase{
     private static readonly GpuBigIntExprAnalyzer s_analyzer = new();

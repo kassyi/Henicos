@@ -3,6 +3,7 @@ using Kassyi.ZeroAlloc.Linq;
 
 namespace Kassyi.ZeroAlloc.Linq.Tests;
 
+[Category(TestCategory.Unit)]
 public class StackLinqTests
 {
     [Fact]

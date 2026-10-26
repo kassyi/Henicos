@@ -1,6 +1,7 @@
 
 namespace Kassyi.GSharp.Stdlib.GpuMath.Tests.Kernels;
 
+[Category(TestCategory.Stdlib)]
 public class GpuBigIntRnsMontgomeryKernelsTests
 {
     [Fact]

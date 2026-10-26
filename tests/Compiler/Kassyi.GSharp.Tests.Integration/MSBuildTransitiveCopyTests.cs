@@ -5,6 +5,7 @@ using Xunit.Abstractions;
 
 namespace Kassyi.GSharp.Tests.Integration;
 
+[Category(TestCategory.Compiler)]
 public class MSBuildTransitiveCopyTests : IDisposable
 {
     private readonly ITestOutputHelper _output;

@@ -1,0 +1,1 @@
+﻿HNT0002 at (7,16)-(7,35): Test method 'SkippableTestMethod' has no category. Add [Category(TestCategory.X)], [TestTarget(ExecutionTarget.X)], [Scenario(TestScenario.X)] or [Trait("Category", "...")] to the method or its class.

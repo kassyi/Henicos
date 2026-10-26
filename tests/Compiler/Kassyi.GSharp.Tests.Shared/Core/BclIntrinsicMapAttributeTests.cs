@@ -4,6 +4,7 @@ using Xunit;
 
 namespace Kassyi.GSharp.Tests.Shared.Core;
 
+[Category(TestCategory.Compiler)]
 public class BclIntrinsicMapAttributeTests
 {
     [Fact]

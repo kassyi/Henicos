@@ -22,6 +22,9 @@
       <_Parameter1>Kassyi.GSharp.Tests.Infrastructure.RandomTestCaseOrderer</_Parameter1>
       <_Parameter2>Kassyi.GSharp.Tests.Infrastructure</_Parameter2>
     </AssemblyAttribute>
+    <!-- Test convention analyzers (HNT0002...); severities are set in the tests sections of .editorconfig.
+         A project that also uses the analyzer types updates this item with ReferenceOutputAssembly="true". -->
+    <ProjectReference Include="$(MSBuildThisFileDirectory)Shared\Kassyi.GSharp.Tests.Generators\Kassyi.GSharp.Tests.Generators.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
   </ItemGroup>
 
   <ItemGroup>
