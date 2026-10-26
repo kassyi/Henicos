@@ -311,9 +311,17 @@ internal static class StructTranspiler
 
         using (context.Emitter.Writer.Scope())
         {
-            foreach (var member in StructAbiMembers.Get(structSym))
+            var layout = TypeLayoutCalculator.GetStructLayout(structSym, context.Emitter.Dialect);
+            if (layout.Kind == TypeLayoutKind.Explicit)
             {
-                WriteStructMember(ref context, member);
+                WriteExplicitLayoutMembers(ref context, layout);
+            }
+            else
+            {
+                foreach (var member in StructAbiMembers.Get(structSym))
+                {
+                    WriteStructMember(ref context, member);
+                }
             }
 
             foreach (var member in structSym.GetMembers())
@@ -551,6 +559,88 @@ internal static class StructTranspiler
             }
         }
     }
+
+    /// <summary>
+    /// Emits the members of a <c>[StructLayout(LayoutKind.Explicit)]</c> struct in offset order: the fields that share
+    /// an offset go into one anonymous <c>union</c>, the largest first, and a gap before a field or before
+    /// <c>StructLayout.Size</c> becomes <c>unsigned char __gsharp_pad_&lt;k&gt;[&lt;n&gt;];</c>.
+    /// </summary>
+    /// <remarks>
+    /// The members of an anonymous union are members of the struct, so member accesses keep their names. Partially
+    /// overlapping fields cannot be expressed (GSH0078 reports them); they are emitted in offset order without padding.
+    /// </remarks>
+    private static void WriteExplicitLayoutMembers(ref TranspileContext context, StructLayoutInfo layout)
+    {
+        const int MaxStackFields = 64;
+        var fields = layout.DeviceFields;
+        Span<int> order = fields.Length <= MaxStackFields ? stackalloc int[fields.Length] : new int[fields.Length];
+        for (var i = 0; i < order.Length; i++)
+        {
+            // [WHY] Insertion sort by offset, the larger field first at one offset: S{} initializes only the first
+            // member of an anonymous union, so the largest one zeroes the whole group. Ties keep the declaration order.
+            var j = i;
+            while (j > 0 && GoesAfter(fields[order[j - 1]], fields[i]))
+            {
+                order[j] = order[j - 1];
+                j--;
+            }
+
+            order[j] = i;
+        }
+
+        var cursor = 0;
+        var padCount = 0;
+        for (var start = 0; start < order.Length;)
+        {
+            var offset = fields[order[start]].Offset;
+            var end = start;
+            var groupEnd = offset;
+            while (end < order.Length && fields[order[end]].Offset == offset)
+            {
+                groupEnd = Math.Max(groupEnd, offset + fields[order[end]].Layout.Size);
+                end++;
+            }
+
+            if (offset > cursor)
+            {
+                WritePadding(ref context, padCount++, offset - cursor);
+            }
+
+            if (end - start > 1)
+            {
+                context.Emitter.Writer.Append("union");
+                using (context.Emitter.Writer.Scope())
+                {
+                    for (var k = start; k < end; k++)
+                    {
+                        WriteStructMember(ref context, fields[order[k]].Member);
+                    }
+                }
+
+                context.Emitter.Writer.AppendLine(";");
+            }
+            else
+            {
+                WriteStructMember(ref context, fields[order[start]].Member);
+            }
+
+            cursor = Math.Max(cursor, groupEnd);
+            start = end;
+        }
+
+        // [WHY] C++ rounds the size up to the alignment only; a larger StructLayout.Size needs explicit bytes
+        if (TypeLayoutCalculator.AlignUp(cursor, layout.Device.Alignment) < layout.Device.Size)
+        {
+            WritePadding(ref context, padCount, layout.Device.Size - cursor);
+        }
+    }
+
+    private static bool GoesAfter(FieldLayout earlier, FieldLayout field) =>
+        earlier.Offset > field.Offset || (earlier.Offset == field.Offset && earlier.Layout.Size < field.Layout.Size);
+
+    // unsigned char __gsharp_pad_<index>[<bytes>];
+    private static void WritePadding(ref TranspileContext context, int index, int bytes) =>
+        context.Emitter.Writer.AppendLine($"unsigned char {GSharpInternalNames.Struct.PaddingPrefix}{index}[{bytes}];");
 
     private static void WriteStructHeader(ref TranspileContext context, INamedTypeSymbol structSym)
     {

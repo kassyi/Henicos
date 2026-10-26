@@ -16,11 +16,16 @@ internal static class KernelLaunchEmitter
                 continue;
             }
 
-            if (shape.IsCustomStruct && !shape.IsDirectCudaValueStruct)
+            if ((shape.IsCustomStruct && !shape.IsDirectCudaValueStruct) || shape.IsCudaConvertedArray)
             {
                 writer.AppendLine(
                     $"System.Collections.Generic.List<IntPtr> {shape.Name}_allocatedPtrs =" +
                     " new System.Collections.Generic.List<IntPtr>();");
+            }
+
+            if (shape.IsCudaConvertedArray)
+            {
+                writer.AppendLine($"byte[]? {shape.Name}_shadow = null;");
             }
 
             if (shape.IsArray || shape.IsByRef)
@@ -230,6 +235,12 @@ internal static class KernelLaunchEmitter
 
     private static void WriteArrayMarshal(SourceWriter writer, in KernelParameterShape shape, int paramIndex)
     {
+        if (shape.IsCudaConvertedArray)
+        {
+            WriteConvertedArrayMarshal(writer, shape, paramIndex);
+            return;
+        }
+
         var elementType = GetElementTypeName(shape);
         var isOutOnly = !shape.CopyIn;
         var lenExpr = shape.LengthExpression;
@@ -266,6 +277,82 @@ internal static class KernelLaunchEmitter
         }
 
         writer.AppendLine($"kernelParams[{paramIndex}] = proxy_{shape.Name};");
+    }
+
+    // [WHY] The host and device layouts of the element differ (GSH0080), so the elements are converted into a shadow
+    // array of the device layout, rented from ArrayPool, and the shadow is copied in one transfer.
+    private static void WriteConvertedArrayMarshal(SourceWriter writer, in KernelParameterShape shape, int paramIndex)
+    {
+        var name = shape.Name;
+        var lenExpr = shape.LengthExpression;
+
+        writer.AppendLine($"// Marshal array element by element: {shape.Identifier}");
+        writer.AppendLine($"int {name}_size = {lenExpr} * sizeof({GetConvertedElementPath(shape)});");
+
+        writer.AppendLine($"IntPtr* proxy_{name} = stackalloc IntPtr[2];");
+        writer.AppendLine($"proxy_{name}[0] = IntPtr.Zero;");
+        writer.AppendLine($"((int*)(proxy_{name} + 1))[0] = {lenExpr};");
+
+        writer.AppendLine($"if ({name}_size > 0)");
+        using (writer.Scope())
+        {
+            writer.AppendLine(
+                "CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(" +
+                $"out d_{name}, (IntPtr){name}_size, hStream));");
+            writer.AppendLine($"proxy_{name}[0] = d_{name};");
+            writer.AppendLine($"{name}_shadow = System.Buffers.ArrayPool<byte>.Shared.Rent({name}_size);");
+
+            // [WHY] An [Out] array still needs its elements' array fields on the device: the kernel writes into
+            // them, and Unmarshal_ copies them back through the device pointers that Marshal_ stores
+            if (!shape.CopyIn && !shape.ConvertedElementHasArrayFields)
+            {
+                writer.AppendLine($"// Skip HtoD copy for [Out] array: {shape.Identifier}");
+            }
+            else
+            {
+                WriteShadowAndHostSpans(writer, shape);
+                WriteElementLoopHeader(writer, name);
+                using (writer.Scope())
+                {
+                    var hostElement = $"{name}_host[{name}_index]";
+                    if (shape.IsReadOnlyContainer)
+                    {
+                        // A read-only container gives no ref to its element; Marshal_ only reads its copy
+                        writer.AppendLine($"var {name}_element = {name}_host[{name}_index];");
+                        hostElement = $"{name}_element";
+                    }
+
+                    writer.AppendLine(
+                        $"{shape.ConvertedElementMarshalMethodName}(ref {hostElement}, " +
+                        $"ref {name}_native[{name}_index], false, {name}_allocatedPtrs, hStream);");
+                }
+
+                writer.AppendLine($"fixed (byte* p_{name} = {name}_shadow)");
+                using (writer.Scope())
+                {
+                    writer.AppendLine(
+                        "CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoDAsync_v2(" +
+                        $"d_{name}, (IntPtr)p_{name}, (IntPtr){name}_size, hStream));");
+                    writer.AppendLine("CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));");
+                }
+            }
+        }
+
+        writer.AppendLine($"kernelParams[{paramIndex}] = proxy_{name};");
+    }
+
+    // for (int <name>_index = 0; <name>_index < <name>_native.Length; <name>_index++)
+    private static void WriteElementLoopHeader(SourceWriter writer, string name) =>
+        writer.AppendLine($"for (int {name}_index = 0; {name}_index < {name}_native.Length; {name}_index++)");
+
+    // <name>_native spans the rented bytes in the device layout; <name>_host spans the argument
+    private static void WriteShadowAndHostSpans(SourceWriter writer, in KernelParameterShape shape)
+    {
+        writer.AppendLine(
+            $"var {shape.Name}_native = System.Runtime.InteropServices.MemoryMarshal" +
+            $".Cast<byte, {GetConvertedElementPath(shape)}>({shape.Name}_shadow.AsSpan(0, {shape.Name}_size));");
+        var span = shape.IsReadOnlyContainer ? "System.ReadOnlySpan" : "System.Span";
+        writer.AppendLine($"{span}<{GetElementTypeName(shape)}> {shape.Name}_host = {shape.SpanExpression};");
     }
 
     private static void WriteRefOrOutScalarMarshal(SourceWriter writer, in KernelParameterShape shape, int paramIndex)
@@ -397,6 +484,12 @@ internal static class KernelLaunchEmitter
             return;
         }
 
+        if (shape.IsCudaConvertedArray)
+        {
+            WriteConvertedArrayUnmarshal(writer, shape);
+            return;
+        }
+
         writer.AppendLine($"// Copy back array: {shape.Identifier}");
         writer.AppendLine($"if ({shape.Name}_size > 0 && d_{shape.Name} != IntPtr.Zero)");
         using (writer.Scope())
@@ -407,6 +500,33 @@ internal static class KernelLaunchEmitter
                 writer.AppendLine(
                     $"CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoHAsync_v2((IntPtr)p_{shape.Name}, d_{shape.Name}, (IntPtr){shape.Name}_size, hStream));");
                 writer.AppendLine("CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));");
+            }
+        }
+    }
+
+    private static void WriteConvertedArrayUnmarshal(SourceWriter writer, in KernelParameterShape shape)
+    {
+        var name = shape.Name;
+        writer.AppendLine($"// Copy back array element by element: {shape.Identifier}");
+        writer.AppendLine($"if ({name}_size > 0 && d_{name} != IntPtr.Zero && {name}_shadow != null)");
+        using (writer.Scope())
+        {
+            writer.AppendLine($"fixed (byte* p_{name} = {name}_shadow)");
+            using (writer.Scope())
+            {
+                writer.AppendLine(
+                    "CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoHAsync_v2(" +
+                    $"(IntPtr)p_{name}, d_{name}, (IntPtr){name}_size, hStream));");
+                writer.AppendLine("CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));");
+            }
+
+            WriteShadowAndHostSpans(writer, shape);
+            WriteElementLoopHeader(writer, name);
+            using (writer.Scope())
+            {
+                writer.AppendLine(
+                    $"{shape.ConvertedElementUnmarshalMethodName}(ref {name}_host[{name}_index], " +
+                    $"ref {name}_native[{name}_index], false, hStream);");
             }
         }
     }
@@ -441,10 +561,16 @@ internal static class KernelLaunchEmitter
             return;
         }
 
-        if (shape.IsCustomStruct && !shape.IsDirectCudaValueStruct)
+        if ((shape.IsCustomStruct && !shape.IsDirectCudaValueStruct) || shape.IsCudaConvertedArray)
         {
             writer.AppendLine(
                 $"foreach (var ptr in {shape.Name}_allocatedPtrs) CudaDriverApi.cuMemFreeAsync(ptr, hStream);");
+        }
+
+        if (shape.IsCudaConvertedArray)
+        {
+            writer.AppendLine(
+                $"if ({shape.Name}_shadow != null) System.Buffers.ArrayPool<byte>.Shared.Return({shape.Name}_shadow);");
         }
 
         if (shape.IsArray || shape.IsByRef)
@@ -452,6 +578,10 @@ internal static class KernelLaunchEmitter
             writer.AppendLine($"if (d_{shape.Name} != IntPtr.Zero) CudaDriverApi.cuMemFreeAsync(d_{shape.Name}, hStream);");
         }
     }
+
+    private static string GetConvertedElementPath(in KernelParameterShape shape) =>
+        shape.ConvertedElementAotStructPath ??
+        throw new InvalidOperationException($"Parameter '{shape.Identifier}' is not a converted array.");
 
     private static string GetElementTypeName(in KernelParameterShape shape) =>
         shape.ElementTypeName ??

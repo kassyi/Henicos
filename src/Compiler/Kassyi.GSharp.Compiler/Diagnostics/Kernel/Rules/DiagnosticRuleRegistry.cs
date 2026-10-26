@@ -20,6 +20,7 @@ internal static class DiagnosticRuleRegistry
         SharedMemoryDisposableRule.Instance,
         SharedMemorySizeRule.Instance,
         StaticMemberAccessRule.Instance,
+        StructLayoutRule.Instance,
         UnsupportedConstructRule.Instance,
         UserDefinedOperatorRule.Instance,
         WmmaRule.Instance

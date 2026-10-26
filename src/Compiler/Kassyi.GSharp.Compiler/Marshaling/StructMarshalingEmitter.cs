@@ -27,16 +27,28 @@ internal static class StructMarshalingEmitter
     /// Renders the native shadow struct and the marshaling methods of each custom struct of <paramref name="kernel"/>'s
     /// parameters, one per <c>AotContexts</c> name (<see cref="CollectUniqueStructs"/>).
     /// </summary>
+    /// <remarks>
+    /// The element of an array that only the CUDA launcher converts has no CPU text: the CPU launcher passes the array
+    /// as it is (until L4).
+    /// </remarks>
     internal static EquatableArray<StructHostSource> RenderStructs(IMethodSymbol kernel)
     {
         var structTypes = CollectUniqueStructs([kernel], null);
+        var cpuStructs = new HashSet<INamedTypeSymbol>(SymbolEqualityComparer.Default);
+        kernel.Parameters
+            .AsStackEnumerable()
+            .Do(
+                cpuStructs,
+                static (parameter, structs) => TypeLayoutCalculator.CollectStructs(parameter.Type, structs)
+            );
+
         var sources = ImmutableArray.CreateBuilder<StructHostSource>(structTypes.Length);
         foreach (var s in structTypes)
         {
             sources.Add(new StructHostSource(
                 AotHostNames.GetAotStructPath(s),
                 RenderStructForDialect(s, s_cudaDialect),
-                RenderStructForDialect(s, s_cpuDialect)));
+                cpuStructs.Contains(s) ? RenderStructForDialect(s, s_cpuDialect) : string.Empty));
         }
 
         return sources.MoveToImmutable().AsEquatableArray();
@@ -47,8 +59,8 @@ internal static class StructMarshalingEmitter
         var structLayout = TypeLayoutCalculator.GetStructLayout(s, dialect);
         using var writer = new SourceWriter();
         NativeStructEmitter.WriteNativeStructDeclaration(writer, s, structLayout);
-        WriteMarshalMethod(writer, s, structLayout);
-        WriteUnmarshalMethod(writer, s, structLayout);
+        WriteMarshalMethod(writer, s, structLayout, dialect);
+        WriteUnmarshalMethod(writer, s, structLayout, dialect);
         return writer.ToString();
     }
 
@@ -68,7 +80,7 @@ internal static class StructMarshalingEmitter
         {
             kernel.Parameters
                 .AsStackEnumerable()
-                .Do(structTypes, static (parameter, structs) => TypeLayoutCalculator.CollectStructs(parameter.Type, structs));
+                .Do(structTypes, static (parameter, structs) => CollectParameterStructs(parameter.Type, structs));
         }
 
         var byName = new Dictionary<string, INamedTypeSymbol>(StringComparer.Ordinal);
@@ -90,7 +102,19 @@ internal static class StructMarshalingEmitter
         return unique.ToImmutable();
     }
 
-    private static void WriteMarshalMethod(SourceWriter writer, INamedTypeSymbol s, StructLayoutInfo structLayout)
+    // An array-like parameter whose element the CUDA launcher converts goes through the element's shadow
+    private static void CollectParameterStructs(ITypeSymbol type, HashSet<INamedTypeSymbol> structs)
+    {
+        var marshaledType = type.UnwrapNullableArrayLike() ?? type;
+        TypeLayoutCalculator.CollectStructs(
+            marshaledType.TryGetArrayLikeElementType(out var element) && KernelParameterShape.IsConvertedOnCuda(element)
+                ? element
+                : type,
+            structs);
+    }
+
+    private static void WriteMarshalMethod(SourceWriter writer, INamedTypeSymbol s, StructLayoutInfo structLayout,
+        ITranspilerDialect dialect)
     {
         writer.Append("public static unsafe void ");
         writer.AppendMarshalMethodName(s);
@@ -117,9 +141,12 @@ internal static class StructMarshalingEmitter
             }
             else
             {
+                // [WHY] The native value may be a reused ArrayPool shadow: a member that is not written (a null array
+                // field) must read as empty, not as a device pointer that an earlier launch freed
+                writer.AppendLine("native = default;");
                 foreach (var member in StructAbiMembers.Get(s))
                 {
-                    WriteMarshalMember(writer, member);
+                    WriteMarshalMember(writer, member, dialect);
                 }
             }
         }
@@ -129,8 +156,11 @@ internal static class StructMarshalingEmitter
 
     // [WHY] An [InlineArray(N)] struct and a fixed buffer are copied as one block of ElementCount elements: the element
     // field of an inline array is usually private, and a fixed buffer cannot be assigned. The inline array's host value
-    // is the whole struct, so it is copied by its own address (Unsafe.Copy infers its type from host).
-    private static bool WriteBlockCopy(SourceWriter writer, StructAbiMember member, bool toNative)
+    // is the whole struct, so it is copied by its own address (Unsafe.Copy infers its type from host). An inline array
+    // whose element lays out differently on the device, or holds arrays, is copied element by element instead
+    // (host[k] is the element, whatever the field's accessibility).
+    private static bool WriteBlockCopy(SourceWriter writer, StructAbiMember member, bool toNative,
+        ITranspilerDialect dialect)
     {
         var name = member.Name.ToCSharpIdentifier();
         switch (member.Kind)
@@ -139,9 +169,16 @@ internal static class StructMarshalingEmitter
                 writer.AppendLine($"fixed (byte* pField = native.{name})");
                 using (writer.Scope())
                 {
-                    writer.AppendLine(toNative
-                        ? "System.Runtime.CompilerServices.Unsafe.Copy(pField, ref host);"
-                        : "System.Runtime.CompilerServices.Unsafe.Copy(ref host, pField);");
+                    if (NeedsElementCopy(member.Type, dialect))
+                    {
+                        WriteInlineArrayElementCopy(writer, member, toNative);
+                    }
+                    else
+                    {
+                        writer.AppendLine(toNative
+                            ? "System.Runtime.CompilerServices.Unsafe.Copy(pField, ref host);"
+                            : "System.Runtime.CompilerServices.Unsafe.Copy(ref host, pField);");
+                    }
                 }
 
                 return true;
@@ -165,16 +202,62 @@ internal static class StructMarshalingEmitter
         }
     }
 
-    private static void WriteMarshalMember(SourceWriter writer, StructAbiMember member)
+    // Whether an inline array element is copied one by one: a user struct that is not Identical, or an array-like value
+    // (a GSharpArray on the device, a reference on the host)
+    private static bool NeedsElementCopy(ITypeSymbol elementType, ITranspilerDialect dialect) =>
+        elementType.IsArrayLikeType() ||
+        elementType is INamedTypeSymbol named &&
+        TypeLayoutCalculator.IsUserStruct(named) &&
+        TypeLayoutCalculator.GetStructLayout(named, dialect).Transfer != TransferClass.Identical;
+
+    // for (int k = 0; k < <N>; k++) { <copy host[k] and ((<element shadow>*)pField)[k]> }
+    private static void WriteInlineArrayElementCopy(SourceWriter writer, StructAbiMember member, bool toNative)
     {
-        if (WriteBlockCopy(writer, member, toNative: true))
+        writer.AppendLine($"for (int k = 0; k < {member.ElementCount}; k++)");
+        using (writer.Scope())
+        {
+            if (member.Type.TryGetArrayLikeElementType(out var arrayElementType))
+            {
+                const string NativeElement = "((global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy*)pField)[k]";
+                if (toNative)
+                {
+                    WriteMarshalArrayMember(writer, "host[k]", NativeElement, arrayElementType);
+                }
+                else
+                {
+                    WriteUnmarshalArrayMember(writer, "host[k]", NativeElement, arrayElementType);
+                }
+
+                return;
+            }
+
+            var shadow = AotHostNames.GetAotStructPath(member.Type);
+            if (toNative)
+            {
+                writer.AppendMarshalMethodName(member.Type);
+                writer.AppendLine($"(ref host[k], ref (({shadow}*)pField)[k], isDevicePtr, allocatedPtrs, hStream);");
+            }
+            else
+            {
+                writer.AppendUnmarshalMethodName(member.Type);
+                writer.AppendLine($"(ref host[k], ref (({shadow}*)pField)[k], isDevicePtr, hStream);");
+            }
+        }
+    }
+
+    private static void WriteMarshalMember(SourceWriter writer, StructAbiMember member, ITranspilerDialect dialect)
+    {
+        // GSH0078 reports the member; the shadow struct leaves it out
+        if (NativeStructEmitter.IsUnrepresentableReference(member) ||
+            WriteBlockCopy(writer, member, toNative: true, dialect))
         {
             return;
         }
 
         if (member.Type.TryGetArrayLikeElementType(out var elementType))
         {
-            WriteMarshalArrayMember(writer, member, elementType);
+            var name = member.Name.ToCSharpIdentifier();
+            WriteMarshalArrayMember(writer, $"host.{name}", $"native.{name}", elementType);
         }
         else if (TypeLayoutCalculator.IsUserStruct(member.Type))
         {
@@ -205,9 +288,10 @@ internal static class StructMarshalingEmitter
         }
     }
 
-    private static void WriteMarshalArrayMember(SourceWriter writer, StructAbiMember member, ITypeSymbol elementType)
+    private static void WriteMarshalArrayMember(SourceWriter writer, string host, string native,
+        ITypeSymbol elementType)
     {
-        writer.AppendLine($"if (host.{member.Name.ToCSharpIdentifier()} != null)");
+        writer.AppendLine($"if ({host} != null)");
         using (writer.Scope())
         {
             writer.AppendLine("if (isDevicePtr)");
@@ -220,27 +304,28 @@ internal static class StructMarshalingEmitter
             writer.AppendLine("else");
             using (writer.Scope())
             {
-                WriteArrayElementSize(writer, "host.", member.Name.ToCSharpIdentifier(), elementType);
+                WriteArrayElementSize(writer, host, elementType);
 
                 writer.AppendLine("if (size > 0)");
                 using (writer.Scope())
                 {
                     writer.AppendLine(
-                        $"CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out native.{member.Name.ToCSharpIdentifier()}.Data, (IntPtr)size, hStream));");
-                    writer.AppendLine($"allocatedPtrs?.Add(native.{member.Name.ToCSharpIdentifier()}.Data);");
+                        "CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(" +
+                        $"out {native}.Data, (IntPtr)size, hStream));");
+                    writer.AppendLine($"allocatedPtrs?.Add({native}.Data);");
 
                     if (TypeLayoutCalculator.IsUserStruct(elementType))
                     {
                         writer.Append("var tempArray = new ");
                         writer.AppendAotStructPath(elementType);
-                        writer.AppendLine($"[host.{member.Name.ToCSharpIdentifier()}.Length];");
+                        writer.AppendLine($"[{host}.Length];");
 
-                        writer.AppendLine($"for (int i = 0; i < host.{member.Name.ToCSharpIdentifier()}.Length; i++)");
+                        writer.AppendLine($"for (int i = 0; i < {host}.Length; i++)");
                         using (writer.Scope())
                         {
                             writer.AppendMarshalMethodName(elementType);
                             writer.AppendLine(
-                                $"(ref host.{member.Name.ToCSharpIdentifier()}[i], ref tempArray[i], false, allocatedPtrs, hStream);");
+                                $"(ref {host}[i], ref tempArray[i], false, allocatedPtrs, hStream);");
                         }
 
                         writer.AppendLine(
@@ -249,7 +334,8 @@ internal static class StructMarshalingEmitter
                         using (writer.Scope())
                         {
                             writer.AppendLine(
-                                $"CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoDAsync_v2(native.{member.Name.ToCSharpIdentifier()}.Data, handle.AddrOfPinnedObject(), (IntPtr)size, hStream));");
+                                "CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoDAsync_v2(" +
+                                $"{native}.Data, handle.AddrOfPinnedObject(), (IntPtr)size, hStream));");
                         }
 
                         writer.AppendLine("finally");
@@ -261,12 +347,14 @@ internal static class StructMarshalingEmitter
                     else
                     {
                         writer.AppendLine(
-                            $"var handle = System.Runtime.InteropServices.GCHandle.Alloc(host.{member.Name.ToCSharpIdentifier()}, System.Runtime.InteropServices.GCHandleType.Pinned);");
+                            $"var handle = System.Runtime.InteropServices.GCHandle.Alloc({host}, " +
+                            "System.Runtime.InteropServices.GCHandleType.Pinned);");
                         writer.AppendLine("try");
                         using (writer.Scope())
                         {
                             writer.AppendLine(
-                                $"CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoDAsync_v2(native.{member.Name.ToCSharpIdentifier()}.Data, handle.AddrOfPinnedObject(), (IntPtr)size, hStream));");
+                                "CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoDAsync_v2(" +
+                                $"{native}.Data, handle.AddrOfPinnedObject(), (IntPtr)size, hStream));");
                         }
 
                         writer.AppendLine("finally");
@@ -277,12 +365,13 @@ internal static class StructMarshalingEmitter
                     }
                 }
 
-                writer.AppendLine($"native.{member.Name.ToCSharpIdentifier()}.Length = host.{member.Name.ToCSharpIdentifier()}.Length;");
+                writer.AppendLine($"{native}.Length = {host}.Length;");
             }
         }
     }
 
-    private static void WriteUnmarshalMethod(SourceWriter writer, INamedTypeSymbol s, StructLayoutInfo structLayout)
+    private static void WriteUnmarshalMethod(SourceWriter writer, INamedTypeSymbol s, StructLayoutInfo structLayout,
+        ITranspilerDialect dialect)
     {
         writer.Append("public static unsafe void ");
         writer.AppendUnmarshalMethodName(s);
@@ -310,7 +399,7 @@ internal static class StructMarshalingEmitter
             {
                 foreach (var member in StructAbiMembers.Get(s))
                 {
-                    WriteUnmarshalMember(writer, member);
+                    WriteUnmarshalMember(writer, member, dialect);
                 }
             }
         }
@@ -318,16 +407,18 @@ internal static class StructMarshalingEmitter
         writer.AppendLine();
     }
 
-    private static void WriteUnmarshalMember(SourceWriter writer, StructAbiMember member)
+    private static void WriteUnmarshalMember(SourceWriter writer, StructAbiMember member, ITranspilerDialect dialect)
     {
-        if (WriteBlockCopy(writer, member, toNative: false))
+        if (NativeStructEmitter.IsUnrepresentableReference(member) ||
+            WriteBlockCopy(writer, member, toNative: false, dialect))
         {
             return;
         }
 
         if (member.Type.TryGetArrayLikeElementType(out var elementType))
         {
-            WriteUnmarshalArrayMember(writer, member, elementType);
+            var name = member.Name.ToCSharpIdentifier();
+            WriteUnmarshalArrayMember(writer, $"host.{name}", $"native.{name}", elementType);
         }
         else if (TypeLayoutCalculator.IsUserStruct(member.Type))
         {
@@ -358,13 +449,14 @@ internal static class StructMarshalingEmitter
         }
     }
 
-    private static void WriteUnmarshalArrayMember(SourceWriter writer, StructAbiMember member, ITypeSymbol elementType)
+    private static void WriteUnmarshalArrayMember(SourceWriter writer, string host, string native,
+        ITypeSymbol elementType)
     {
         writer.AppendLine(
-            $"if (host.{member.Name.ToCSharpIdentifier()} != null && !isDevicePtr && native.{member.Name.ToCSharpIdentifier()}.Data != IntPtr.Zero)");
+            $"if ({host} != null && !isDevicePtr && {native}.Data != IntPtr.Zero)");
         using (writer.Scope())
         {
-            WriteArrayElementSize(writer, "host.", member.Name.ToCSharpIdentifier(), elementType);
+            WriteArrayElementSize(writer, host, elementType);
 
             writer.AppendLine("if (size > 0)");
             using (writer.Scope())
@@ -373,7 +465,7 @@ internal static class StructMarshalingEmitter
                 {
                     writer.Append("var tempArray = new ");
                     writer.AppendAotStructPath(elementType);
-                    writer.AppendLine($"[host.{member.Name.ToCSharpIdentifier()}.Length];");
+                    writer.AppendLine($"[{host}.Length];");
 
                     writer.AppendLine(
                         "var handle = System.Runtime.InteropServices.GCHandle.Alloc(tempArray, System.Runtime.InteropServices.GCHandleType.Pinned);");
@@ -381,7 +473,8 @@ internal static class StructMarshalingEmitter
                     using (writer.Scope())
                     {
                         writer.AppendLine(
-                            $"CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoHAsync_v2(handle.AddrOfPinnedObject(), native.{member.Name.ToCSharpIdentifier()}.Data, (IntPtr)size, hStream));");
+                            "CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoHAsync_v2(" +
+                                $"handle.AddrOfPinnedObject(), {native}.Data, (IntPtr)size, hStream));");
                     }
 
                     writer.AppendLine("finally");
@@ -390,22 +483,24 @@ internal static class StructMarshalingEmitter
                         writer.AppendLine("handle.Free();");
                     }
 
-                    writer.AppendLine($"for (int i = 0; i < host.{member.Name.ToCSharpIdentifier()}.Length; i++)");
+                    writer.AppendLine($"for (int i = 0; i < {host}.Length; i++)");
                     using (writer.Scope())
                     {
                         writer.AppendUnmarshalMethodName(elementType);
-                        writer.AppendLine($"(ref host.{member.Name.ToCSharpIdentifier()}[i], ref tempArray[i], false, hStream);");
+                        writer.AppendLine($"(ref {host}[i], ref tempArray[i], false, hStream);");
                     }
                 }
                 else
                 {
                     writer.AppendLine(
-                        $"var handle = System.Runtime.InteropServices.GCHandle.Alloc(host.{member.Name.ToCSharpIdentifier()}, System.Runtime.InteropServices.GCHandleType.Pinned);");
+                        $"var handle = System.Runtime.InteropServices.GCHandle.Alloc({host}, " +
+                            "System.Runtime.InteropServices.GCHandleType.Pinned);");
                     writer.AppendLine("try");
                     using (writer.Scope())
                     {
                         writer.AppendLine(
-                            $"CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoHAsync_v2(handle.AddrOfPinnedObject(), native.{member.Name.ToCSharpIdentifier()}.Data, (IntPtr)size, hStream));");
+                            "CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoHAsync_v2(" +
+                                $"handle.AddrOfPinnedObject(), {native}.Data, (IntPtr)size, hStream));");
                     }
 
                     writer.AppendLine("finally");
@@ -418,20 +513,18 @@ internal static class StructMarshalingEmitter
         }
     }
 
-    private static void WriteArrayElementSize(SourceWriter writer, string prefix, string name,
-        ITypeSymbol elementType)
+    private static void WriteArrayElementSize(SourceWriter writer, string host, ITypeSymbol elementType)
     {
+        writer.Append($"int size = {host}.Length * sizeof(");
         if (TypeLayoutCalculator.IsUserStruct(elementType))
         {
-            writer.Append($"int size = {prefix}{name}.Length * sizeof(");
             writer.AppendAotStructPath(elementType);
-            writer.AppendLine(");");
         }
         else
         {
-            writer.Append($"int size = {prefix}{name}.Length * sizeof(");
             writer.AppendFullyQualifiedCsharpName(elementType);
-            writer.AppendLine(");");
         }
+
+        writer.AppendLine(");");
     }
 }

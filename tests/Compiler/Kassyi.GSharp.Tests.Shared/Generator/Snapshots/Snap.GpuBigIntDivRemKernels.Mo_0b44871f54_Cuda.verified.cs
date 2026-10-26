@@ -676,6 +676,7 @@ public AotContexts.ExponentSlice Exponent;
 }
 public static unsafe void Marshal_ModPowNttContext(ref global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.ModPowNttContext host, ref AotContexts.ModPowNtt native, bool isDevicePtr, System.Collections.Generic.List<IntPtr>? allocatedPtrs, IntPtr hStream = default)
 {
+native = default;
 Marshal_NewtonRaphsonContext(ref host.Core, ref native.Core, isDevicePtr, allocatedPtrs, hStream);
 if (host.ReciprocalMod != null)
 {
@@ -747,6 +748,7 @@ public global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy CarryBuffer;
 }
 public static unsafe void Marshal_NewtonRaphsonContext(ref global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.NewtonRaphsonContext host, ref AotContexts.NewtonRaphson native, bool isDevicePtr, System.Collections.Generic.List<IntPtr>? allocatedPtrs, IntPtr hStream = default)
 {
+native = default;
 Marshal_OperandContext(ref host.Operands, ref native.Operands, isDevicePtr, allocatedPtrs, hStream);
 Marshal_DimensionContext(ref host.Dimensions, ref native.Dimensions, isDevicePtr, allocatedPtrs, hStream);
 Marshal_Ntt(ref host.Ntt, ref native.Ntt, isDevicePtr, allocatedPtrs, hStream);
@@ -828,6 +830,7 @@ public global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy CarryBuffer;
 }
 public static unsafe void Marshal_OperandContext(ref global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.OperandContext host, ref AotContexts.Operand native, bool isDevicePtr, System.Collections.Generic.List<IntPtr>? allocatedPtrs, IntPtr hStream = default)
 {
+native = default;
 if (host.LeftOperand != null)
 {
 if (isDevicePtr)
@@ -1183,6 +1186,7 @@ public AotContexts.TwiddleFactor TwiddleFactors;
 }
 public static unsafe void Marshal_Ntt(ref global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.Ntt host, ref AotContexts.Ntt native, bool isDevicePtr, System.Collections.Generic.List<IntPtr>? allocatedPtrs, IntPtr hStream = default)
 {
+native = default;
 native.TransformLength = host.TransformLength;
 Marshal_BufferContext(ref host.Buffers, ref native.Buffers, isDevicePtr, allocatedPtrs, hStream);
 Marshal_TwiddleFactorContext(ref host.TwiddleFactors, ref native.TwiddleFactors, isDevicePtr, allocatedPtrs, hStream);
@@ -1226,6 +1230,7 @@ public global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy CarryBuffer;
 }
 public static unsafe void Marshal_BufferContext(ref global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.BufferContext host, ref AotContexts.Buffer native, bool isDevicePtr, System.Collections.Generic.List<IntPtr>? allocatedPtrs, IntPtr hStream = default)
 {
+native = default;
 if (host.Buffer1 != null)
 {
 if (isDevicePtr)
@@ -1632,6 +1637,7 @@ public global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy Inverse3;
 }
 public static unsafe void Marshal_TwiddleFactorContext(ref global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.TwiddleFactorContext host, ref AotContexts.TwiddleFactor native, bool isDevicePtr, System.Collections.Generic.List<IntPtr>? allocatedPtrs, IntPtr hStream = default)
 {
+native = default;
 if (host.Forward1 != null)
 {
 if (isDevicePtr)
@@ -1900,6 +1906,7 @@ public AotContexts.NttConvolutionScratch NttScratch;
 }
 public static unsafe void Marshal_WorkspaceStateContext(ref global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.WorkspaceStateContext host, ref AotContexts.WorkspaceState native, bool isDevicePtr, System.Collections.Generic.List<IntPtr>? allocatedPtrs, IntPtr hStream = default)
 {
+native = default;
 Marshal_IterationScratchContext(ref host.Iteration, ref native.Iteration, isDevicePtr, allocatedPtrs, hStream);
 Marshal_NttConvolutionScratchContext(ref host.NttScratch, ref native.NttScratch, isDevicePtr, allocatedPtrs, hStream);
 }
@@ -1938,6 +1945,7 @@ public global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy ModulusExpanded;
 }
 public static unsafe void Marshal_IterationScratchContext(ref global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.IterationScratchContext host, ref AotContexts.IterationScratch native, bool isDevicePtr, System.Collections.Generic.List<IntPtr>? allocatedPtrs, IntPtr hStream = default)
 {
+native = default;
 if (host.XSquared != null)
 {
 if (isDevicePtr)
@@ -2308,6 +2316,7 @@ public global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy BlockCarries;
 }
 public static unsafe void Marshal_NttConvolutionScratchContext(ref global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.NttConvolutionScratchContext host, ref AotContexts.NttConvolutionScratch native, bool isDevicePtr, System.Collections.Generic.List<IntPtr>? allocatedPtrs, IntPtr hStream = default)
 {
+native = default;
 if (host.NttBuf1A != null)
 {
 if (isDevicePtr)
@@ -2666,6 +2675,7 @@ public global::System.Int32 EndWord;
 }
 public static unsafe void Marshal_ExponentSliceContext(ref global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.ExponentSliceContext host, ref AotContexts.ExponentSlice native, bool isDevicePtr, System.Collections.Generic.List<IntPtr>? allocatedPtrs, IntPtr hStream = default)
 {
+native = default;
 if (host.Words != null)
 {
 if (isDevicePtr)
