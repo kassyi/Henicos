@@ -114,4 +114,106 @@ public class GpuBigUFloatTests : IDisposable
         Assert.Throws<NotImplementedException>(() => a.AlignRadixPoint(a));
         Assert.Throws<NotImplementedException>(() => a.Round(GpuBigFloatRoundingMode.RoundToNearestEven, false, false, false));
     }
+
+    [SkippableFact]
+    [Category(TestCategory.Stdlib)]
+    [Scenario(TestScenario.Boundary)]
+    public void GpuBigUFloat_EffectiveScale_Create_StrictCompare()
+    {
+        CudaCapability.EnsureGpuAvailable();
+
+        // The value 12 * 2^-3 = 1.5 lies in [2^0, 2^1): EffectiveScale = bit length 4 + exponent -3 = 1.
+        // mutant: GpuBigUFloat.cs:46 `Exponent + GetBitLength()` -> `Exponent - GetBitLength()`
+        using var twelveSig = new GpuBigUInt(_context, [12u]);
+        using var scaled = new GpuBigUFloat(twelveSig, -3);
+        Assert.Equal(1L, scaled.EffectiveScale);
+
+        // An unsigned value cannot be negative, except zero, whose sign carries no value.
+        // mutant: GpuBigUFloat.cs:57 `isNegative && !IsZero()` -> `isNegative || !IsZero()` / `isNegative && IsZero()`,
+        // L59 `throw` removed
+        using var nonZero = new GpuBigUInt(_context, [7u]);
+        Assert.Throws<ArgumentOutOfRangeException>(() => GpuBigUFloat.Create(nonZero, 0, isNegative: true));
+        using var zero = new GpuBigUInt(_context, [0u]);
+        var negativeZero = GpuBigUFloat.Create(zero, 0, isNegative: true);
+        Assert.False(negativeZero.IsNegative);
+        var positive = GpuBigUFloat.Create(nonZero, 0, isNegative: false);
+        Assert.Equal(new BigInteger(7), positive.Significand.ToBigInteger());
+
+        // Equal values with different representations are neither greater nor less than each other.
+        // mutant: GpuBigUFloat.cs:275 `CompareTo(right) > 0` -> `>= 0` (and the same for `<` at L267)
+        using var aSig = new GpuBigUInt(_context, [12u]);
+        using var cSig = new GpuBigUInt(_context, [3u]);
+        using var a = new GpuBigUFloat(aSig, 0);
+        using var c = new GpuBigUFloat(cSig, 2);
+        Assert.False(a > c);
+        Assert.False(a < c);
+        Assert.False(c > a);
+        Assert.False(c < a);
+    }
+
+    public static TheoryData<uint, int, int, bool, uint, int> NormalizeCases => new()
+    {
+        // No carry and no shift keeps the value and its exponent.
+        // mutant: GpuBigUFloat.cs:133 `IsZero() && !carryOut` -> `IsZero() || !carryOut` / `!(...)` (returns exponent 0)
+        { 10u, 5, 0, false, 10u, 5 },
+        // Zero without a carry becomes the canonical zero with exponent 0.
+        // mutant: GpuBigUFloat.cs:133 `!carryOut` -> `carryOut`, L134 block removed
+        { 0u, 7, 0, false, 0u, 0 },
+        // A carry out halves the significand and raises the exponent by one.
+        // mutant: GpuBigUFloat.cs:143 `>> 1` -> `<< 1`, L147 `Exponent + 1` -> `Exponent - 1`
+        { 10u, 5, 0, true, 5u, 6 },
+        // Leading zeros shift the significand left and lower the exponent by the same amount.
+        // mutant: GpuBigUFloat.cs:152 `<< leadingZeros` -> `>> leadingZeros`, L156 `Exponent - leadingZeros` -> `+`
+        { 10u, 5, 3, false, 80u, 2 },
+    };
+
+    // Normalize keeps the value sig * 2^exp and changes only its representation (canonical zero has exponent 0).
+    [SkippableTheory]
+    [Category(TestCategory.Stdlib)]
+    [Scenario(TestScenario.Boundary)]
+    [MemberData(nameof(NormalizeCases))]
+    public void GpuBigUFloat_Normalize_Table(
+        uint sig, int exp, int leadingZeros, bool carryOut, uint expectedSig, int expectedExp)
+    {
+        CudaCapability.EnsureGpuAvailable();
+
+        using var sigBuffer = new GpuBigUInt(_context, [sig, 0u]);
+        var value = new GpuBigUFloat(sigBuffer, exp);
+
+        // The result may share the significand buffer with the input; sigBuffer owns it.
+        var normalized = value.Normalize(leadingZeros, carryOut);
+        try
+        {
+            Assert.Equal(new BigInteger(expectedSig), normalized.Significand.ToBigInteger());
+            Assert.Equal(expectedExp, normalized.Exponent);
+        }
+        finally
+        {
+            if (normalized.Significand.DevicePointer != sigBuffer.DevicePointer)
+            {
+                normalized.Dispose();
+            }
+        }
+    }
+
+    // Dividing by a scalar divides the significand and keeps the exponent: 10 * 2^3 / 3 = 3 * 2^3 remainder 1 * 2^3.
+    [SkippableFact]
+    [Category(TestCategory.Stdlib)]
+    [Scenario(TestScenario.HappyPath)]
+    public void GpuBigUFloat_DivideByUInt32_KeepsExponent()
+    {
+        CudaCapability.EnsureGpuAvailable();
+
+        using var sig = new GpuBigUInt(_context, [10u]);
+        var value = new GpuBigUFloat(sig, 3);
+
+        // mutant: GpuBigUFloat.cs:169 body removed / `Exponent` replaced
+        var (quotient, remainder) = value.DivideByUInt32(3);
+        using (quotient)
+        {
+            Assert.Equal(new BigInteger(3), quotient.Significand.ToBigInteger());
+            Assert.Equal(3, quotient.Exponent);
+            Assert.Equal(1u, remainder);
+        }
+    }
 }
