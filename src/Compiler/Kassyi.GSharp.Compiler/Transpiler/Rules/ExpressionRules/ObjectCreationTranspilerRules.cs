@@ -33,9 +33,6 @@ public sealed class ImplicitObjectCreationExpressionTranspilerRule : SyntaxNodeT
 /// </summary>
 internal static class ObjectCreationHelper
 {
-    // The temporaries of the arguments of a constructor written in another order than its parameters
-    private const string NamedArgumentPrefix = "__gsharp_named_arg_";
-
     public static void TranspileObjectCreation(BaseObjectCreationExpressionSyntax node, ref TranspileContext context)
     {
         var typeSymbol = StructTranspiler.SubstituteTypeParameters(
@@ -269,41 +266,40 @@ internal static class ObjectCreationHelper
         TranspileCall(GlobalCppNames.GetConstructorName(constructor), constructor, argumentList, ref context);
     }
 
-    // <function>(<the arguments matched to the parameters of constructor, defaults filled in>); arguments written in
-    // another order than the parameters go through TranspileReordered, which evaluates them in the written order
+    // <function>(<the arguments matched to the parameters of constructor, defaults filled in>)
+    // [WHY] C# evaluates the arguments in the written order and passes them in the parameter order (Roslyn's
+    // LocalRewriter.ReorderArguments stores them in temporaries the same way), and C++ evaluates the arguments of a call
+    // in no particular order: EvaluationOrder evaluates them into temporaries first when they are written in another
+    // order than the parameters, or when one of them changes what another reads (#608).
     private static void TranspileCall(string function, IMethodSymbol constructor, ArgumentListSyntax? argumentList,
         ref TranspileContext context)
     {
-        var matched = ArgumentMatchingHelper.MatchArgumentsToParameters(
-            argumentList?.Arguments ?? default, constructor);
-        if (!IsWrittenInParameterOrder(argumentList?.Arguments ?? default, matched))
-        {
-            TranspileReordered(constructor.ContainingType, function, constructor, argumentList, ref context);
-            return;
-        }
-
+        var arguments = argumentList?.Arguments ?? default;
+        var matched = ArgumentMatchingHelper.MatchArgumentsToParameters(arguments, constructor);
+        using var sequence = EvaluationOrder.BeginCall(ref context, arguments, constructor, receiver: null,
+            spillAll: !IsWrittenInParameterOrder(arguments, matched));
         context.Emitter.Writer.Append(function);
         using (context.Emitter.Writer.Parentheses())
         {
-            for (var i = 0; i < constructor.Parameters.Length; i++)
+            AppendMatchedArguments(constructor, matched, in sequence, ref context);
+        }
+    }
+
+    // <argument or temporary of each parameter>, or the default of an omitted one
+    private static void AppendMatchedArguments(IMethodSymbol constructor, ArgumentSyntax?[] matched,
+        in EvaluationOrder.CallSequence sequence, ref TranspileContext context)
+    {
+        for (var i = 0; i < constructor.Parameters.Length; i++)
+        {
+            context.Emitter.Writer.AppendIf(i > 0, ", ");
+            var parameter = constructor.Parameters[i];
+            if (matched[i] is { } argument)
             {
-                context.Emitter.Writer.AppendIf(i > 0, ", ");
-                var parameter = constructor.Parameters[i];
-                if (matched[i] is { } argument)
-                {
-                    if (parameter.RefKind is RefKind.In or RefKind.RefReadOnlyParameter)
-                    {
-                        RefSyntaxHelper.TranspileAsByRefArgument(ref context, argument.Expression);
-                    }
-                    else
-                    {
-                        context.Visitor.Visit(argument);
-                    }
-                }
-                else
-                {
-                    EmitDefaultArgument(parameter, ref context);
-                }
+                sequence.AppendArgument(argument, parameter, ref context);
+            }
+            else
+            {
+                EmitDefaultArgument(parameter, ref context);
             }
         }
     }
@@ -325,14 +321,24 @@ internal static class ObjectCreationHelper
         context.Visitor.Visit(defaultExpr);
     }
 
-    // T{args}; arguments in another order than the parameters (named arguments) or omitted ones go through
-    // TranspileReordered, so that each lands in its parameter's member
+    // T{args}; arguments in another order than the parameters (named arguments) or omitted ones are evaluated into
+    // temporaries in the written order first, so that each lands in its parameter's member:
+    // ([&]() { <P0> __gsharp_seq_0 = <first written argument>; ...; return T{<temporary or default of each parameter>}; }())
     private static void AppendBraces(ITypeSymbol typeSymbol, IMethodSymbol? constructor, ArgumentListSyntax? argumentList,
         ref TranspileContext context)
     {
         if (constructor != null && !IsInParameterOrder(constructor, argumentList))
         {
-            TranspileReordered(typeSymbol, null, constructor, argumentList, ref context);
+            var arguments = argumentList?.Arguments ?? default;
+            using var sequence = EvaluationOrder.BeginCall(ref context, arguments, constructor, receiver: null,
+                spillAll: true, isCall: false);
+            context.Emitter.Dialect.AppendType(ref context, typeSymbol);
+            using (context.Emitter.Writer.Braces())
+            {
+                AppendMatchedArguments(constructor, ArgumentMatchingHelper.MatchArgumentsToParameters(arguments, constructor),
+                    in sequence, ref context);
+            }
+
             return;
         }
 
@@ -360,91 +366,6 @@ internal static class ObjectCreationHelper
 
         return true;
     }
-
-    // ([&]() { <P0> __gsharp_named_arg_0 = <first written argument>; ...;
-    //   return <T{<argument of each parameter>} | <function>(<argument of each parameter>)>; })()
-    // [WHY] C# evaluates the arguments in the written order and passes them in the parameter order
-    // (Roslyn's LocalRewriter.ReorderArguments stores them in temporaries the same way). A null function builds T{...}.
-    private static void TranspileReordered(ITypeSymbol typeSymbol, string? function, IMethodSymbol constructor,
-        ArgumentListSyntax? argumentList, ref TranspileContext context)
-    {
-        var arguments = argumentList?.Arguments ?? default;
-        var matched = ArgumentMatchingHelper.MatchArgumentsToParameters(arguments, constructor);
-        using (context.Emitter.Writer.ImmediatelyInvokedLambda())
-        {
-            for (var i = 0; i < arguments.Count; i++)
-            {
-                var parameter = constructor.Parameters[IndexOfParameter(matched, arguments[i])];
-                if (IsByReadOnlyReference(parameter))
-                {
-                    // An in argument stays the variable it names (its address is passed); an rvalue lives as long as the call
-                    context.Emitter.Writer.Append("auto&&");
-                }
-                else if (parameter.Type is IPointerTypeSymbol)
-                {
-                    // A pointer keeps the type of its argument: GSharpArray<T> takes T*, not the void* of Span(void*, int)
-                    context.Emitter.Writer.Append("auto");
-                }
-                else
-                {
-                    context.Emitter.Dialect.AppendType(ref context, parameter.Type);
-                }
-
-                context.Emitter.Writer.Append($" {NamedArgumentPrefix}{i} = ");
-                context.Visitor.Visit(function != null && IsByReadOnlyReference(parameter)
-                    ? arguments[i].Expression
-                    : arguments[i]);
-                context.Emitter.Writer.AppendLine(";");
-            }
-
-            context.Emitter.Writer.Append("return ");
-            if (function == null)
-            {
-                context.Emitter.Dialect.AppendType(ref context, typeSymbol);
-                using (context.Emitter.Writer.Braces())
-                {
-                    AppendReorderedArguments(constructor, arguments, matched, isCall: false, ref context);
-                }
-            }
-            else
-            {
-                context.Emitter.Writer.Append(function);
-                using (context.Emitter.Writer.Parentheses())
-                {
-                    AppendReorderedArguments(constructor, arguments, matched, isCall: true, ref context);
-                }
-            }
-
-            context.Emitter.Writer.AppendLine(";");
-        }
-    }
-
-    // __gsharp_named_arg_<written index of the argument of each parameter>, or the default of an omitted one; a call
-    // passes an in parameter by address, as TranspileCall does
-    private static void AppendReorderedArguments(IMethodSymbol constructor, SeparatedSyntaxList<ArgumentSyntax> arguments,
-        ArgumentSyntax?[] matched, bool isCall, ref TranspileContext context)
-    {
-        for (var p = 0; p < matched.Length; p++)
-        {
-            context.Emitter.Writer.AppendIf(p > 0, ", ");
-            if (matched[p] is { } argument)
-            {
-                context.Emitter.Writer.AppendIf(
-                    isCall &&
-                    IsByReadOnlyReference(constructor.Parameters[p]) &&
-                    RefSyntaxHelper.NeedsAddressOf(argument.Expression, context.Query.SemanticModel),
-                    "&");
-                context.Emitter.Writer.Append($"{NamedArgumentPrefix}{arguments.IndexOf(argument)}");
-            }
-            else
-            {
-                EmitDefaultArgument(constructor.Parameters[p], ref context);
-            }
-        }
-    }
-
-    private static bool IsByReadOnlyReference(IParameterSymbol parameter) =>
-        parameter.RefKind is RefKind.In or RefKind.RefReadOnlyParameter;
 
     // Whether each written argument goes to a later parameter than the one before it: the call can pass the arguments
     // as written. Omitted parameters in between are filled with their defaults.

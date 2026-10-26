@@ -1320,31 +1320,31 @@ case 0:
 __gsharp_switch_1_state_0:
 {
 auto __gsharp_id_1_v3 = ([&]() {
-float __gsharp_named_arg_0 = 3.0f;
-float __gsharp_named_arg_1 = 1.0f;
-float __gsharp_named_arg_2 = 2.0f;
-return float3{__gsharp_named_arg_1, __gsharp_named_arg_2, __gsharp_named_arg_0};
+float __gsharp_seq_0 = 3.0f;
+float __gsharp_seq_1 = 1.0f;
+float __gsharp_seq_2 = 2.0f;
+return float3{__gsharp_seq_1, __gsharp_seq_2, __gsharp_seq_0};
 }());
 auto __gsharp_id_2_f3 = ([&]() {
-float __gsharp_named_arg_0 = 6.0f;
-float __gsharp_named_arg_1 = 4.0f;
-float __gsharp_named_arg_2 = 5.0f;
-return __gsharp_ty_Kassyi__GSharp__Core__Float3{__gsharp_named_arg_1, __gsharp_named_arg_2, __gsharp_named_arg_0};
+float __gsharp_seq_3 = 6.0f;
+float __gsharp_seq_4 = 4.0f;
+float __gsharp_seq_5 = 5.0f;
+return __gsharp_ty_Kassyi__GSharp__Core__Float3{__gsharp_seq_4, __gsharp_seq_5, __gsharp_seq_3};
 }());
 auto __gsharp_id_3_v4 = ([&]() {
-float __gsharp_named_arg_0 = 10.0f;
-float3 __gsharp_named_arg_1 = ([&]() {
-float __gsharp_named_arg_0 = 8.0f;
-float __gsharp_named_arg_1 = 9.0f;
-float __gsharp_named_arg_2 = 7.0f;
-return float3{__gsharp_named_arg_2, __gsharp_named_arg_0, __gsharp_named_arg_1};
+float __gsharp_seq_6 = 10.0f;
+float3 __gsharp_seq_7 = ([&]() {
+float __gsharp_seq_8 = 8.0f;
+float __gsharp_seq_9 = 9.0f;
+float __gsharp_seq_10 = 7.0f;
+return float3{__gsharp_seq_10, __gsharp_seq_8, __gsharp_seq_9};
 }());
-return __gsharp_vector4_create(__gsharp_named_arg_1, __gsharp_named_arg_0);
+return __gsharp_vector4_create(__gsharp_seq_7, __gsharp_seq_6);
 }());
 auto __gsharp_id_4_scaled = ([&]() {
-int __gsharp_named_arg_0 = 1;
-int __gsharp_named_arg_1 = 20;
-return __gsharp_ctor_Kassyi__GSharp__Tests__Shared__Syntax__VcScaled(__gsharp_named_arg_1, __gsharp_named_arg_0);
+int __gsharp_seq_11 = 1;
+int __gsharp_seq_12 = 20;
+return __gsharp_ctor_Kassyi__GSharp__Tests__Shared__Syntax__VcScaled(__gsharp_seq_12, __gsharp_seq_11);
 }());
 __gsharp_id_0_output[0]=__gsharp_id_1_v3.x;
 __gsharp_id_0_output[1]=__gsharp_id_1_v3.y;
@@ -1558,10 +1558,10 @@ __gsharp_switch_1_state_0:
 {
 int __gsharp_id_2_i = 0;
 auto __gsharp_id_3_v = ([&]() {
-float __gsharp_named_arg_0 = __gsharp_id_0_buffer[__gsharp_id_2_i++];
-float __gsharp_named_arg_1 = __gsharp_id_0_buffer[__gsharp_id_2_i++];
-float __gsharp_named_arg_2 = __gsharp_id_0_buffer[__gsharp_id_2_i++];
-return float3{__gsharp_named_arg_1, __gsharp_named_arg_2, __gsharp_named_arg_0};
+float __gsharp_seq_0 = __gsharp_id_0_buffer[__gsharp_id_2_i++];
+float __gsharp_seq_1 = __gsharp_id_0_buffer[__gsharp_id_2_i++];
+float __gsharp_seq_2 = __gsharp_id_0_buffer[__gsharp_id_2_i++];
+return float3{__gsharp_seq_1, __gsharp_seq_2, __gsharp_seq_0};
 }());
 __gsharp_id_1_output[0]=__gsharp_id_3_v.x;
 __gsharp_id_1_output[1]=__gsharp_id_3_v.y;
@@ -1782,9 +1782,9 @@ __gsharp_switch_1_state_0:
 {
 __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__VcTriple __gsharp_id_1_t = {};
 auto __gsharp_id_2_span = ([&]() {
-int __gsharp_named_arg_0 = 3;
-auto __gsharp_named_arg_1 = &__gsharp_id_1_t.__gsharp_mb_A;
-return GSharpArray<int>{__gsharp_named_arg_1, __gsharp_named_arg_0};
+int __gsharp_seq_0 = 3;
+auto __gsharp_seq_1 = &__gsharp_id_1_t.__gsharp_mb_A;
+return GSharpArray<int>{__gsharp_seq_1, __gsharp_seq_0};
 }());
 __gsharp_id_2_span[0]=7;
 __gsharp_id_2_span[1]=8;
@@ -2012,14 +2012,14 @@ __gsharp_switch_1_state_0:
 {
 int __gsharp_id_2_i = 0;
 auto __gsharp_id_3_scaled = ([&]() {
-int __gsharp_named_arg_0 = (int)__gsharp_id_0_buffer[__gsharp_id_2_i++];
-int __gsharp_named_arg_1 = (int)__gsharp_id_0_buffer[__gsharp_id_2_i++];
-return __gsharp_ctor_Kassyi__GSharp__Tests__Shared__Syntax__VcScaled(__gsharp_named_arg_1, __gsharp_named_arg_0);
+int __gsharp_seq_0 = (int)__gsharp_id_0_buffer[__gsharp_id_2_i++];
+int __gsharp_seq_1 = (int)__gsharp_id_0_buffer[__gsharp_id_2_i++];
+return __gsharp_ctor_Kassyi__GSharp__Tests__Shared__Syntax__VcScaled(__gsharp_seq_1, __gsharp_seq_0);
 }());
 auto __gsharp_id_4_v4 = ([&]() {
-float __gsharp_named_arg_0 = __gsharp_id_0_buffer[__gsharp_id_2_i++];
-float3 __gsharp_named_arg_1 = __gsharp_vector3_create(__gsharp_id_0_buffer[__gsharp_id_2_i++]);
-return __gsharp_vector4_create(__gsharp_named_arg_1, __gsharp_named_arg_0);
+float __gsharp_seq_2 = __gsharp_id_0_buffer[__gsharp_id_2_i++];
+float3 __gsharp_seq_3 = __gsharp_vector3_create(__gsharp_id_0_buffer[__gsharp_id_2_i++]);
+return __gsharp_vector4_create(__gsharp_seq_3, __gsharp_seq_2);
 }());
 __gsharp_id_1_output[0]=__gsharp_id_3_scaled.__gsharp_mb_Sum;
 __gsharp_id_1_output[1]=__gsharp_id_4_v4.x;

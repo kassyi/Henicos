@@ -460,8 +460,7 @@ internal readonly struct ExpressionEffects(VariableSet reads, VariableSet writes
             if (method.MethodKind is MethodKind.LocalFunction or MethodKind.DelegateInvoke or
                 MethodKind.AnonymousFunction)
             {
-                AddArgumentValues(invocation.ArgumentList.Arguments);
-                AddUnknown();
+                AddLocalCall(invocation, method);
                 return;
             }
 
@@ -482,6 +481,55 @@ internal readonly struct ExpressionEffects(VariableSet reads, VariableSet writes
             }
 
             AddCall(method, invocation.ArgumentList.Arguments, receiver);
+        }
+
+        // A local function, or a delegate held by a local that a lambda initializes and nothing reassigns: it may read
+        // any local it captures, and writes what its body writes (a captured local counts as any local). Any other
+        // delegate may do anything.
+        private void AddLocalCall(InvocationExpressionSyntax invocation, IMethodSymbol method)
+        {
+            DeviceFunctionEffect effect;
+            if (method.MethodKind == MethodKind.LocalFunction)
+            {
+                effect = DeviceFunctionEffects.Classify(method, model.Compilation);
+            }
+            else if (TryGetLambda(invocation.Expression) is { } lambda)
+            {
+                effect = DeviceFunctionEffects.ClassifyLambda(lambda, model);
+            }
+            else
+            {
+                AddArgumentValues(invocation.ArgumentList.Arguments);
+                AddUnknown();
+                return;
+            }
+
+            Reads.AllLocals = true;
+            AddCall(method, invocation.ArgumentList.Arguments, receiver: null, effect);
+            if (effect == DeviceFunctionEffect.Memory)
+            {
+                Writes.AllLocals = true;
+            }
+        }
+
+        // The lambda that initializes the local named by expression, when no assignment changes the local
+        private AnonymousFunctionExpressionSyntax? TryGetLambda(ExpressionSyntax expression)
+        {
+            if (model.GetSymbol(expression) is not ILocalSymbol { IsRef: false } local ||
+                !local.TryGetDeclaringSyntax<VariableDeclaratorSyntax>(out var declarator) ||
+                declarator.Initializer?.Value is not AnonymousFunctionExpressionSyntax lambda ||
+                declarator.FirstAncestorOrSelf<BlockSyntax>() is not { } scope)
+            {
+                return null;
+            }
+
+            var declaringModel = model.Compilation.GetSemanticModel(declarator.SyntaxTree);
+            var reassigned = scope.DescendantNodes()
+                .AsStackEnumerable()
+                .Any((Local: local, Model: declaringModel), static (node, s) =>
+                    node is AssignmentExpressionSyntax assignment && s.Model.GetSymbol(assignment.Left).IsEqualTo(s.Local)
+                );
+            return reassigned ? null : lambda;
         }
 
         private void AddObjectCreation(BaseObjectCreationExpressionSyntax creation)
@@ -526,7 +574,11 @@ internal readonly struct ExpressionEffects(VariableSet reads, VariableSet writes
             }
         }
 
-        private void AddCall(IMethodSymbol method, SeparatedSyntaxList<ArgumentSyntax> arguments, Root? receiver)
+        private void AddCall(IMethodSymbol method, SeparatedSyntaxList<ArgumentSyntax> arguments, Root? receiver) =>
+            AddCall(method, arguments, receiver, DeviceFunctionEffects.Classify(method, model.Compilation));
+
+        private void AddCall(IMethodSymbol method, SeparatedSyntaxList<ArgumentSyntax> arguments, Root? receiver,
+            DeviceFunctionEffect effect)
         {
             var references = ImmutableArray.CreateBuilder<Root>();
             for (var i = 0; i < arguments.Count; i++)
@@ -557,7 +609,6 @@ internal readonly struct ExpressionEffects(VariableSet reads, VariableSet writes
                 Reads.Memory = true;
             }
 
-            var effect = DeviceFunctionEffects.Classify(method, model.Compilation);
             if (effect == DeviceFunctionEffect.None)
             {
                 return;

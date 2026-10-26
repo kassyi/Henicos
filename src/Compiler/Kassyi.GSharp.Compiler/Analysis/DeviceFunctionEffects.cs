@@ -105,6 +105,7 @@ internal static class DeviceFunctionEffects
         {
             AddNonNull(builder, syntax switch
             {
+                LocalFunctionStatementSyntax local => (SyntaxNode?)local.Body ?? local.ExpressionBody,
                 BaseMethodDeclarationSyntax declaration => (SyntaxNode?)declaration.Body ?? declaration.ExpressionBody,
                 AccessorDeclarationSyntax accessor => (SyntaxNode?)accessor.Body ?? accessor.ExpressionBody,
                 ArrowExpressionClauseSyntax arrow => arrow,
@@ -118,11 +119,29 @@ internal static class DeviceFunctionEffects
         return false;
     }
 
-    // A [GpuDeviceFunction], or a member of a struct that G# defines on the device
+    // A [GpuDeviceFunction], a member of a struct that G# defines on the device, or a local function
     private static bool IsFunctionWithBody(IMethodSymbol method, SyntaxNode syntax) =>
-        syntax is BaseMethodDeclarationSyntax or AccessorDeclarationSyntax or ArrowExpressionClauseSyntax &&
-        (method.HasAttribute(KnownAttributes.GpuDeviceFunction) ||
-         (method.ContainingType is { } type && GlobalCppNames.IsEmittedUserType(type)));
+        (syntax is LocalFunctionStatementSyntax && method.MethodKind == MethodKind.LocalFunction) ||
+        (syntax is BaseMethodDeclarationSyntax or AccessorDeclarationSyntax or ArrowExpressionClauseSyntax &&
+         (method.HasAttribute(KnownAttributes.GpuDeviceFunction) ||
+          (method.ContainingType is { } type && GlobalCppNames.IsEmittedUserType(type))));
+
+    /// <summary>
+    /// What a call of <paramref name="lambda"/> (a node of the compilation) may write. A write to a local it captures is
+    /// <see cref="DeviceFunctionEffect.Memory"/>, as for a local function: the caller treats both as able to touch any local.
+    /// </summary>
+    public static DeviceFunctionEffect ClassifyLambda(AnonymousFunctionExpressionSyntax lambda, SemanticModel model)
+    {
+        var compilation = model.Compilation;
+        if (!compilation.ContainsSyntaxTree(lambda.SyntaxTree) ||
+            compilation.GetSemanticModel(lambda.SyntaxTree).GetSymbolInfo(lambda).Symbol is not IMethodSymbol method)
+        {
+            return DeviceFunctionEffect.Memory;
+        }
+
+        return ClassifyBodies(method, ImmutableArray.Create<SyntaxNode>(lambda.Body), compilation,
+            new HashSet<IMethodSymbol>(SymbolEqualityComparer.Default));
+    }
 
     private static void AddInstanceInitializers(TypeDeclarationSyntax declaration,
         ImmutableArray<SyntaxNode>.Builder bodies)

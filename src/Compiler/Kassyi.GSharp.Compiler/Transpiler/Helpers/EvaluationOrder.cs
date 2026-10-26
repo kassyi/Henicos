@@ -101,7 +101,7 @@ internal static class EvaluationOrder
         IMethodSymbol? callee, ExpressionSyntax? receiver, bool spillAll, bool isCall = true)
     {
         var count = arguments.Count;
-        if (count == 0 || (count == 1 && !spillAll))
+        if (count < 2 && !spillAll)
         {
             return default;
         }
@@ -116,7 +116,7 @@ internal static class EvaluationOrder
         }
 
         var last = spillAll ? count - 1 : LastSpilledOperand(effects);
-        if (last < 0)
+        if (last < 0 && !spillAll)
         {
             return default;
         }
@@ -244,21 +244,35 @@ internal static class EvaluationOrder
     }
 
     /// <summary>The lambda of a sequence: <c>([&amp;]() {</c> ... <c>return &lt;value&gt;; }())</c>.</summary>
+    /// <remarks>The default value writes nothing, for a form that may or may not need the sequence.</remarks>
     public readonly ref struct SequenceScope
     {
         private readonly SourceWriter _writer;
+        private readonly bool _isOpen;
 
         public SequenceScope(SourceWriter writer)
         {
             _writer = writer;
+            _isOpen = true;
             _writer.AppendLine("([&]() {");
         }
 
         /// <summary>Starts the value of the sequence, after its temporaries.</summary>
-        public void Return() => _writer.Append("return ");
+        public void Return()
+        {
+            if (_isOpen)
+            {
+                _writer.Append("return ");
+            }
+        }
 
         public void Dispose()
         {
+            if (!_isOpen)
+            {
+                return;
+            }
+
             _writer.AppendLine(";");
             _writer.Append("}())");
         }
@@ -273,14 +287,17 @@ internal static class EvaluationOrder
         private readonly SourceWriter _writer;
         private readonly SeparatedSyntaxList<ArgumentSyntax> _arguments;
         private readonly int[]? _temps;
-        private readonly bool _isCall;
+
+        // A brace initialization T{...} rather than a call: no argument is passed by address. False in the default
+        // value, which emits the arguments of a call as written.
+        private readonly bool _isBraces;
 
         public CallSequence(SourceWriter writer, SeparatedSyntaxList<ArgumentSyntax> arguments, int[] temps, bool isCall)
         {
             _writer = writer;
             _arguments = arguments;
             _temps = temps;
-            _isCall = isCall;
+            _isBraces = !isCall;
             _writer.AppendLine("([&]() {");
         }
 
@@ -297,14 +314,14 @@ internal static class EvaluationOrder
             if (TryGetTemp(argument, out var temp))
             {
                 context.Emitter.Writer.AppendIf(
-                    _isCall && byReference &&
+                    !_isBraces && byReference &&
                     RefSyntaxHelper.NeedsAddressOf(argument.Expression, context.Query.SemanticModel),
                     "&");
                 AppendTempName(context.Emitter.Writer, temp);
                 return;
             }
 
-            if (_isCall && parameter?.RefKind is RefKind.In or RefKind.RefReadOnlyParameter)
+            if (!_isBraces && parameter?.RefKind is RefKind.In or RefKind.RefReadOnlyParameter)
             {
                 // [WHY] An in or ref readonly parameter is a pointer in C++, as a ref parameter is, and C# accepts its
                 // argument with in, ref or no modifier; the C++ argument is the address whichever was written.

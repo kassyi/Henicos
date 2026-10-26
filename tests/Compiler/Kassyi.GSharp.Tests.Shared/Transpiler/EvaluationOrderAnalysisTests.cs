@@ -22,6 +22,7 @@ public class EvaluationOrderAnalysisTests
     [InlineData("IncrementThenRead", 1)]
     [InlineData("InterferenceBeforeLastArgument", 1)]
     [InlineData("BinaryOperands", 1)]
+    [InlineData("CapturingLambdaCall", 1)]
     public void Test_LastSpilledOperand_InterferingOperands_IsTheLastOneThatInterferes(string method, int expected) =>
         Assert.Equal(expected, EvaluationOrder.LastSpilledOperand(GetOperandEffects(method)));
 
@@ -33,6 +34,7 @@ public class EvaluationOrderAnalysisTests
     [InlineData("MathWithOneSideEffect")]
     [InlineData("LambdaIsNotEvaluated")]
     [InlineData("RefArgumentsOnly")]
+    [InlineData("PureLambdaCall")]
     public void Test_LastSpilledOperand_IndependentOperands_IsNone(string method) =>
         Assert.Equal(-1, EvaluationOrder.LastSpilledOperand(GetOperandEffects(method)));
 

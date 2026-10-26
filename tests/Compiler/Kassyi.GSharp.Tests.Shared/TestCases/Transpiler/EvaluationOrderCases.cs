@@ -97,6 +97,13 @@ public static class Order
         var result = Apply(v => v + i, Next(ref i));
     }
 
+    // A lambda that writes nothing next to a read of the local it is given
+    public static void PureLambdaCall(int v)
+    {
+        var twice = (int x) => x * 2;
+        var result = Sub(v, twice(v));
+    }
+
     public static void RefArgumentsOnly()
     {
         int i = 0;
@@ -158,6 +165,14 @@ public static class Order
     {
         int i = 0;
         var result = c > 0 ? Next(ref i) : d[0];
+    }
+
+    // A lambda that increments the local that the other argument reads
+    public static void CapturingLambdaCall()
+    {
+        int i = 0;
+        var bump = () => i++;
+        var result = Sub(i, bump());
     }
 
     public static void LocalFunctionCall()
