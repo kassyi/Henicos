@@ -4244,7 +4244,7 @@ if(!__gsharp_ctx->__gsharp_sg_done_0)
 {
 if(!__gsharp_fn_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__TryDouble(__gsharp_id_0_a,__gsharp_ctx->__gsharp_id_3_tid,&__gsharp_ctx->__gsharp_id_5_y))
 {
-__gsharp_ctx->__gsharp_id_5_y=-1;
+__gsharp_ctx->__gsharp_id_5_y=(-1);
 }
 }
 __gsharp_yielded_for_grid_sync=true;
