@@ -83,7 +83,7 @@ case 0:
 __gsharp_switch_1_state_0:
 {
 (*__gsharp_id_1_scalarOut)=0;
-if((*__gsharp_id_0_scalarRef)>__gsharp_id_4_constantVal)
+if((long long)(*__gsharp_id_0_scalarRef)>(long long)__gsharp_id_4_constantVal)
 {
 (*__gsharp_id_1_scalarOut)=__gsharp_id_2_arrayVal[0]+(*__gsharp_id_3_structRef).__gsharp_mb_A;
 (*__gsharp_id_3_structRef).__gsharp_mb_B=(*__gsharp_id_1_scalarOut);
