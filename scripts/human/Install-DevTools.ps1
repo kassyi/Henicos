@@ -14,11 +14,11 @@
     実際のインストールを行わず、現在のインストール状況と対象一覧のみを表示します。
 
 .EXAMPLE
-    pwsh ./scripts/Install-DevTools.ps1 -DryRun
+    pwsh ./scripts/human/Install-DevTools.ps1 -DryRun
     現在の環境でどのツールが未導入かを確認します。
 
 .EXAMPLE
-    pwsh ./scripts/Install-DevTools.ps1
+    pwsh ./scripts/human/Install-DevTools.ps1
     すべての未導入ツールをインストールします。
 #>
 
@@ -224,7 +224,7 @@ if ($toInstall.Count -eq 0) {
 if ($DryRun) {
     Write-Host "[DryRun モード] 実際のインストールはスキップされました。" -ForegroundColor Yellow
     Write-Host "インストールを実行するには、-DryRun を外して実行してください:" -ForegroundColor Gray
-    Write-Host "  pwsh ./scripts/Install-DevTools.ps1" -ForegroundColor White
+    Write-Host "  pwsh ./scripts/human/Install-DevTools.ps1" -ForegroundColor White
     exit 0
 }
 

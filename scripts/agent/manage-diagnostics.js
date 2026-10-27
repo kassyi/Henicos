@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // Maintenance helper for the GSHxxxx diagnostic registry (diagnostics.json). Node port of manage-diagnostics.ps1.
 // Usage (from anywhere in the repository):
-//   node scripts/manage-diagnostics.js [--next-id] [--check-gaps] [--check-docs] [--json-path <p>] [--docs-dir <p>] [--help]
+//   node scripts/agent/manage-diagnostics.js [--next-id] [--check-gaps] [--check-docs] [--json-path <p>] [--docs-dir <p>] [--help]
 //   --next-id     print the next free diagnostic ID
 //   --check-gaps  warn about missing numbers between GSH0001 and the highest ID
 //   --check-docs  fail (exit 1) when a diagnostic has no <ID>.md in the docs directory
@@ -12,7 +12,7 @@
 const fs = require('fs');
 const path = require('path');
 
-const repoRoot = path.resolve(__dirname, '..');
+const repoRoot = path.resolve(__dirname, '..', '..');
 
 const usage = 'Usage: manage-diagnostics.js [--check-gaps] [--next-id] [--check-docs] [--json-path <p>] [--docs-dir <p>]';
 

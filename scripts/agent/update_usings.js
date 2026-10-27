@@ -19,7 +19,7 @@ const __dirname = dirname(__filename);
 // =============================================================================
 
 const DEFAULT_THRESHOLD = 3;
-const DEFAULT_SRC_DIR = resolve(__dirname, "../src");
+const DEFAULT_SRC_DIR = resolve(__dirname, "../../src");
 
 function parseCliArgs() {
   const args = process.argv.slice(2);

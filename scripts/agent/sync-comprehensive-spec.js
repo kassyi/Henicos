@@ -1,7 +1,7 @@
 const fs = require('fs');
 const path = require('path');
 
-const repoRoot = path.join(__dirname, '..');
+const repoRoot = path.join(__dirname, '..', '..');
 const specFilePath = path.join(repoRoot, 'docs', 'spec', 'en', '02_architecture', '03_comprehensive_example.md');
 const sourceFile = path.join(repoRoot, 'tests', 'Compiler', 'Kassyi.GSharp.Tests.Shared', 'TestCases', 'ComprehensiveSpecKernel.cu.cs');
 const snapshotDir = path.join(repoRoot, 'tests', 'Compiler', 'Kassyi.GSharp.Tests.Cuda', 'Snapshots');

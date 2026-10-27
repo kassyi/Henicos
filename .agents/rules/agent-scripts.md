@@ -7,7 +7,7 @@ cannot run bash or PowerShell. Write them so that any agent can run them.
 
 - **Node.js, built-ins only**: `.js` run as `node <path>`. Use only Node built-in modules (`fs`, `path`, `child_process`,
   ...); no npm packages, no `package.json`. Start with `#!/usr/bin/env node` and `'use strict';` (CommonJS).
-- **No `.sh` and no `.ps1`**. The one exception is `scripts/Install-DevTools.ps1`, which installs Node itself through
+- **No `.sh` and no `.ps1`**. The one exception is `scripts/human/Install-DevTools.ps1`, which installs Node itself through
   winget on Windows.
 - **Logic the compiler owns goes in .NET, not in a script.** When a tool needs the compiler's own rules (name encoding,
   symbol files, diagnostics metadata), add a mode to `src/Compiler/Kassyi.GSharp.Compiler.Generators` that links the
@@ -29,14 +29,14 @@ cannot run bash or PowerShell. Write them so that any agent can run them.
 
 | Command | Purpose |
 | ----- | ----- |
-| `node scripts/check-internal-names.js` | Lists `__gsharp_*` names in snapshot output that no YAML, Prelude, NativeApi YAML or source spelling explains |
-| `node scripts/manage-diagnostics.js --next-id` / `--check-gaps` / `--check-docs` | Next free `GSHxxxx` ID, gaps in the IDs, diagnostics without a doc page |
-| `node scripts/test-doc-snippet.js <snippet> [--assemblies A,B]` | Runs a doc snippet as a DocTest with exactly the given project references (`just doctest`) |
-| `node scripts/coverage-diff.js [--run] [--base <ref>] [--coverage <file\|dir>]` | Lists the lines changed since `<ref>` (default `main`) that no test executed, from the merged cobertura reports (`just coverage-diff`) |
-| `node scripts/bug-curve.js --out <file.svg> [--repo <owner/name>]` | Draws the open issues of milestones M1–M3 per day as a stacked area SVG (CI: `bug-curve.yml` publishes it to the `metrics` branch for README.md) |
-| `node scripts/format-markdown-table.js [path]` | Compacts Markdown tables (default `docs/spec`) |
-| `node scripts/sync-comprehensive-spec.js` | Syncs the comprehensive example in the spec with its kernel and snapshot |
-| `node scripts/update_usings.js` | Promotes `using` directives used in 3+ files to `GlobalUsings.cs` |
+| `node scripts/agent/check-internal-names.js` | Lists `__gsharp_*` names in snapshot output that no YAML, Prelude, NativeApi YAML or source spelling explains |
+| `node scripts/agent/manage-diagnostics.js --next-id` / `--check-gaps` / `--check-docs` | Next free `GSHxxxx` ID, gaps in the IDs, diagnostics without a doc page |
+| `node scripts/human/test-doc-snippet.js <snippet> [--assemblies A,B]` | Runs a doc snippet as a DocTest with exactly the given project references (`just doctest`) |
+| `node scripts/human/coverage-diff.js [--run] [--base <ref>] [--coverage <file\|dir>]` | Lists the lines changed since `<ref>` (default `main`) that no test executed, from the merged cobertura reports (`just coverage-diff`) |
+| `node scripts/human/bug-curve.js --out <file.svg> [--repo <owner/name>]` | Draws the open issues of milestones M1–M3 per day as a stacked area SVG (CI: `bug-curve.yml` publishes it to the `metrics` branch for README.md) |
+| `node scripts/agent/format-markdown-table.js [path]` | Compacts Markdown tables (default `docs/spec`) |
+| `node scripts/agent/sync-comprehensive-spec.js` | Syncs the comprehensive example in the spec with its kernel and snapshot |
+| `node scripts/agent/update_usings.js` | Promotes `using` directives used in 3+ files to `GlobalUsings.cs` |
 | `node .agents/skills/gsharp-transpiler-guidelines/scripts/check-helpers.js` | Checks that the helper catalog names only existing members |
 | `dotnet run --project src/Compiler/Kassyi.GSharp.Compiler.Generators -- demangle <log> [symbols]` | Turns `__gsharp_*` names in a log back into C# names (`just gsharp-demangle`) |
 | `dotnet run tools/collect-env/collect-env.cs [--json] [--output <file>]` | Prints the bug-report environment (OS, GPU, CUDA, host C++, .NET, checkout) with no user name, host name, serial or profile path (`just env-info`). `/issue.prompt` Step 2 runs it for bug reports |

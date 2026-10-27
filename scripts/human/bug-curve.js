@@ -4,7 +4,7 @@
 // The milestone of an issue is its current one; GitHub keeps no cheap history of it.
 // Needs an authenticated `gh` (GH_TOKEN in GitHub Actions).
 //
-// Usage: node scripts/bug-curve.js --out <file.svg> [--repo <owner/name>]
+// Usage: node scripts/human/bug-curve.js --out <file.svg> [--repo <owner/name>]
 'use strict';
 
 const fs = require('fs');
@@ -30,7 +30,7 @@ function parseArgs(argv) {
       case '--out': options.out = argv[++i] || ''; break;
       case '--repo': options.repo = argv[++i] || ''; break;
       case '--help':
-        console.log('Usage: node scripts/bug-curve.js --out <file.svg> [--repo <owner/name>]');
+        console.log('Usage: node scripts/human/bug-curve.js --out <file.svg> [--repo <owner/name>]');
         process.exit(0);
       default:
         throw new Error(`Unknown option: ${argv[i]}`);

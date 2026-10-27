@@ -5,15 +5,15 @@
  * test-doc-snippet.js
  *
  * Purpose:
- *   Node.js port of scripts/Test-DocSnippet.ps1 (usable by agents that cannot run PowerShell).
+ *   Node.js port of Test-DocSnippet.ps1 (usable by agents that cannot run PowerShell).
  *   Runs a C# snippet (a .cs file, or the first ```csharp block under "## Examples" of a .md file)
  *   as a DocTest program with an explicit list of assembly dependencies, proving that the
  *   snippet compiles and runs against exactly those assemblies.
  *
  * Usage:
- *   node scripts/test-doc-snippet.js --file-path <snippet.cs|doc.md> [--assemblies <A,B,...>]
- *   node scripts/test-doc-snippet.js <snippet.cs|doc.md> [--assemblies <A,B,...>]
- *   node scripts/test-doc-snippet.js --help
+ *   node scripts/human/test-doc-snippet.js --file-path <snippet.cs|doc.md> [--assemblies <A,B,...>]
+ *   node scripts/human/test-doc-snippet.js <snippet.cs|doc.md> [--assemblies <A,B,...>]
+ *   node scripts/human/test-doc-snippet.js --help
  *
  *   --file-path    Snippet file (required, may also be given as the first positional argument).
  *   --assemblies   Comma-separated assembly (project) names, e.g. "Kassyi.GSharp.Core,Kassyi.GSharp.Runtime".
@@ -30,15 +30,15 @@ const fs = require('fs');
 const path = require('path');
 const { spawnSync } = require('child_process');
 
-// Paths (the repo root is the parent of the scripts/ directory).
-const repoRoot = path.resolve(__dirname, '..');
+// Paths (the repo root is two levels above this file (scripts/human/)).
+const repoRoot = path.resolve(__dirname, '..', '..');
 const docTestDir = path.join(repoRoot, 'tests', 'Compiler', 'Kassyi.GSharp.DocTest');
 const docTestProj = path.join(docTestDir, 'Kassyi.GSharp.DocTest.csproj');
 const programCs = path.join(docTestDir, 'Program.cs');
 
 const helpText = [
-  'Usage: node scripts/test-doc-snippet.js --file-path <snippet.cs|doc.md> [--assemblies <A,B,...>]',
-  '       node scripts/test-doc-snippet.js <snippet.cs|doc.md> [--assemblies <A,B,...>]',
+  'Usage: node scripts/human/test-doc-snippet.js --file-path <snippet.cs|doc.md> [--assemblies <A,B,...>]',
+  '       node scripts/human/test-doc-snippet.js <snippet.cs|doc.md> [--assemblies <A,B,...>]',
   '',
   '  --file-path    Snippet file (.cs, or .md with a csharp block under "## Examples"). Required.',
   '  --assemblies   Comma-separated assembly names whose projects are referenced by the DocTest.',
