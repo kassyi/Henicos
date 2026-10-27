@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // Lists the lines added or changed since a base ref that no test executed.
-// Usage: node scripts/coverage-diff.js [--run] [--base <ref>] [--coverage <file|dir>]
+// Usage: node scripts/human/coverage-diff.js [--run] [--base <ref>] [--coverage <file|dir>]
 //   --run clears the coverage directory and runs the tests with coverage.runsettings first (`just coverage-diff`).
 //   The diff is taken from the merge base with <ref> (default main) to the working tree, plus untracked files.
 //   Coverage comes from every coverage.cobertura.xml under <dir> (default TestResults/coverage), merged across the
@@ -12,10 +12,10 @@ const fs = require('fs');
 const path = require('path');
 const { execFileSync, spawnSync } = require('child_process');
 
-const repoRoot = path.resolve(__dirname, '..');
+const repoRoot = path.resolve(__dirname, '..', '..');
 
 const helpText = [
-    'Usage: node scripts/coverage-diff.js [--run] [--base <ref>] [--coverage <file|dir>]',
+    'Usage: node scripts/human/coverage-diff.js [--run] [--base <ref>] [--coverage <file|dir>]',
     '',
     '  --run        Clear the coverage directory and run the tests (no Stress / Benchmark) with coverage first.',
     '  --base       Ref to diff against, through its merge base with HEAD. Default: main.',

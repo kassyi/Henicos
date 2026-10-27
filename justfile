@@ -15,7 +15,7 @@ test-coverage *args="":
 
 # Run the tests with coverage and list the lines changed since base that no test executed
 coverage-diff base="main":
-    node scripts/coverage-diff.js --run --base {{base}}
+    node scripts/human/coverage-diff.js --run --base {{base}}
 
 # Run tests multiple times to detect flaky tests
 # count can take the time: 
@@ -344,7 +344,7 @@ bench-pi-cpu digits="10k" *args="":
 
 # Run a C# code snippet as a DocTest with explicitly defined dependencies
 doctest file_path assemblies="":
-    node scripts/test-doc-snippet.js --file-path "{{file_path}}" --assemblies "{{assemblies}}"
+    node scripts/human/test-doc-snippet.js --file-path "{{file_path}}" --assemblies "{{assemblies}}"
 
 # e.g. `just mutate gpumath`, `just mutate compiler main`, `just mutate compiler "" -m "**/Layout/**/*.cs"`
 # Mutation testing with Stryker.NET. phase: gpumath | compiler | compiler-cuda (the CUDA dialect snapshots only). since: a git ref to mutate only the files changed after it (empty = all files). Reports go to tmp/stryker/<phase>

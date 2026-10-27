@@ -4,7 +4,7 @@
 /*
  * format-markdown-table.js
  *
- * Node.js port of scripts/Format-MarkdownTable.ps1 (dependency-free, CommonJS).
+ * Node.js port of Format-MarkdownTable.ps1 (dependency-free, CommonJS).
  *
  * Compacts Markdown tables: trims every cell, rewrites rows as '| a | b |' and
  * minimizes alignment rows (:---, :---:, ---:, ---). Lines inside code fences
@@ -13,9 +13,9 @@
  * (CRLF when the file contains any CRLF, LF otherwise).
  *
  * Usage:
- *   node scripts/format-markdown-table.js [path]
- *   node scripts/format-markdown-table.js --path docs/spec/en/foo.md
- *   node scripts/format-markdown-table.js --help
+ *   node scripts/agent/format-markdown-table.js [path]
+ *   node scripts/agent/format-markdown-table.js --path docs/spec/en/foo.md
+ *   node scripts/agent/format-markdown-table.js --help
  *
  * path: a Markdown file or a directory scanned recursively for *.md
  *       (default: docs/spec, relative to the current directory).
@@ -28,8 +28,8 @@ const fs = require('fs');
 const path = require('path');
 
 const USAGE = [
-  'Usage: node scripts/format-markdown-table.js [path]',
-  '       node scripts/format-markdown-table.js --path <path>',
+  'Usage: node scripts/agent/format-markdown-table.js [path]',
+  '       node scripts/agent/format-markdown-table.js --path <path>',
   '',
   'Compacts Markdown tables in a file, or in every *.md under a directory.',
   '',

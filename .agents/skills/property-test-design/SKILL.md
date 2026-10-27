@@ -67,7 +67,7 @@ Branches that numeric code often misses:
 - Parallel boundaries: lengths around warp and block sizes (31 / 32 / 33, 1023 / 1024 / 1025), lengths that the thread count does not divide
 - Both sides of an algorithm-switch threshold (schoolbook / Karatsuba / NTT, ...)
 
-Confirm that each input runs the lines it targets with `just coverage-diff` (`scripts/coverage-diff.js` in [agent-scripts.md](../../rules/agent-scripts.md)). It lists the changed lines that no test executed. It cannot measure lines inside a GPU kernel; for those, build the input on the host so that it meets the branch condition, and write the reason in a comment on the test.
+Confirm that each input runs the lines it targets with `just coverage-diff` (`scripts/human/coverage-diff.js` in [agent-scripts.md](../../rules/agent-scripts.md)). It lists the changed lines that no test executed. It cannot measure lines inside a GPU kernel; for those, build the input on the host so that it meets the branch condition, and write the reason in a comment on the test.
 
 ## 5. Mutant: show that a one-line change makes the check fail
 

@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // Cross-checks the compiler-internal names that appear in the snapshot output against the places that spell them.
-// Usage (from anywhere in the repository): node scripts/check-internal-names.js
+// Usage (from anywhere in the repository): node scripts/agent/check-internal-names.js
 //   Section 1: __gsharp_* names in the output that no YAML value, Prelude declaration, source spelling or prefix explains.
 //   Section 2: other __ names in the output, minus CUDA/C++ builtins, for a manual look.
 'use strict';
@@ -9,7 +9,7 @@ const fs = require('fs');
 const path = require('path');
 const { execFileSync } = require('child_process');
 
-const repoRoot = path.resolve(__dirname, '..');
+const repoRoot = path.resolve(__dirname, '..', '..');
 const compiler = path.join(repoRoot, 'src', 'Compiler', 'Kassyi.GSharp.Compiler');
 
 function read(file) {
