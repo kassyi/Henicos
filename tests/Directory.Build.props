@@ -15,7 +15,7 @@
     <Using Include="System.Linq" />
   </ItemGroup>
 
-  <ItemGroup Condition="'$(MSBuildProjectName)' != 'Kassyi.GSharp.Tests.Infrastructure' and '$(IsRoslynComponent)' != 'true'">
+  <ItemGroup Condition="'$(MSBuildProjectName)' != 'Kassyi.GSharp.Tests.Infrastructure' and '$(IsRoslynComponent)' != 'true' and '$(GSharpTestLibrary)' != 'true'">
     <ProjectReference Include="$(MSBuildThisFileDirectory)Shared\Kassyi.GSharp.Tests.Infrastructure\Kassyi.GSharp.Tests.Infrastructure.csproj" />
     <Using Include="Kassyi.GSharp.Tests.Infrastructure" />
     <AssemblyAttribute Include="Xunit.TestCaseOrdererAttribute">

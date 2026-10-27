@@ -211,7 +211,10 @@ internal static class UsingTranspiler
             return false;
         }
 
-        if (!TryGetDisposeBody(dispose, compilation, out _, out _, out _))
+        // A struct of another assembly brings its Dispose definition with its record (DeviceExportTable)
+        if (!TryGetDisposeBody(dispose, compilation, out _, out _, out _) &&
+            !HasImportedDispose(named, compilation, context.Emitter.Dialect) &&
+            !HasUnusableRecord(named, compilation, context.Emitter.Dialect))
         {
             context.Reporter.Fail(GSharpDiagnostics.UnsupportedSyntax, node, DisposeWithoutBody);
             return false;
@@ -229,6 +232,17 @@ internal static class UsingTranspiler
         resourceType = named;
         return true;
     }
+
+    // A struct of another assembly whose record holds its Dispose definition for the dialect
+    private static bool HasImportedDispose(INamedTypeSymbol type, Compilation compilation, ITranspilerDialect dialect) =>
+        DeviceExportTable.IsOutside(type, compilation) && DeviceExportTable.TryFind(type, out var imported) &&
+        (dialect.IsCuda ? imported.Record.CudaDispose : imported.Record.CppDispose).Length > 0;
+
+    // A struct of another assembly whose record failed in the dialect or was written by another G#: the analyzer reports
+    // the using (GSH0089, ImportedDeviceCodeRule), not a Dispose without a body
+    private static bool HasUnusableRecord(INamedTypeSymbol type, Compilation compilation, ITranspilerDialect dialect) =>
+        DeviceExportTable.IsOutside(type, compilation) && DeviceExportTable.TryFind(type, out var imported) &&
+        (!imported.IsCompatible || imported.FailedFor(dialect.IsCuda));
 
     // The body of `void Dispose() { ... }` or `=> expr`, declared in a tree of the compilation
     private static bool TryGetDisposeBody(IMethodSymbol dispose, Compilation compilation,

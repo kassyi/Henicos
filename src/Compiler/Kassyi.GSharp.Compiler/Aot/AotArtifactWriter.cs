@@ -10,8 +10,13 @@ namespace Kassyi.GSharp.Compiler.Aot;
 internal static class AotArtifactWriter
 {
     /// <summary>Writes the artifact for <paramref name="bodySource"/>, unless this is an IDE design-time compilation.</summary>
+    /// <param name="target">Where the artifact goes.</param>
+    /// <param name="config">The generator options.</param>
+    /// <param name="bodySource">The module.</param>
+    /// <param name="context">The output context.</param>
+    /// <param name="findImportedFullName">The full name of a shortened name that another assembly recorded, or null.</param>
     public static void Write(in AotTarget target, GeneratorConfig config, string bodySource,
-        SourceProductionContext context)
+        SourceProductionContext context, Func<string, string?>? findImportedFullName = null)
     {
         if (target.IsDesignTimeCompilation)
         {
@@ -22,7 +27,8 @@ internal static class AotArtifactWriter
         var sourceHash = GSharpNameEncoding.ComputeSourceHash(bodySource);
         var fullSource = GSharpNameEncoding.FormatSymbolHeaderLine(sourceHash) + "\n" + bodySource;
         var dialectName = config.IsCuda ? "Cuda" : "Cpu";
-        var gsymContent = GSharpNameEncoding.BuildSymbolFileContent(bodySource, dialectName, static id => GlobalCppNames.TryGetFullName(id, out var full) ? full : null);
+        var gsymContent = GSharpNameEncoding.BuildSymbolFileContent(bodySource, dialectName,
+            id => GlobalCppNames.TryGetFullName(id, out var full) ? full : findImportedFullName?.Invoke(id));
 
         var ext = config.IsCuda ? ".g.cu" : ".g.cpp";
         var fileName = $"Kassyi.GSharp.Kernels_{safeAssemblyName}{ext}";

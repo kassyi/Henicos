@@ -80,6 +80,9 @@ During the MSBuild AOT code generation phase, the `Kassyi.Generators.GSharp` Ros
 | [**GSH0080**](diagnostics/GSH0080.md) | Warning | **Struct array is converted element by element.** The host and device layouts of an array element struct differ, so the CUDA launcher converts each element through a shadow array. |
 | [**GSH0081**](diagnostics/GSH0081.md) | Warning | **Struct array allocates the array field of each element.** Each element of a struct array parameter allocates and copies its array field separately (CUDA). |
 | [**GSH0082**](diagnostics/GSH0082.md) | Error | **Struct cannot be passed to a CPU kernel yet.** A kernel parameter on the CPU dialect uses a struct whose host and device layouts differ (`LayoutKind.Auto`, array fields), which the CPU launcher cannot convert yet. |
+| [**GSH0088**](diagnostics/GSH0088.md) | Error | **Device code of another assembly is not exported.** GPU code calls a `[GpuDeviceFunction]`, or uses the constructor or computed property of a struct, of a referenced assembly that holds no `[assembly: GpuDeviceExport]` record for it. |
+| [**GSH0089**](diagnostics/GSH0089.md) | Error | **Device code of another assembly cannot be used.** The record of a referenced assembly was written by another G# version, or its build could not transpile it for the consumer's dialect. |
+| [**GSH0090**](diagnostics/GSH0090.md) | Error | **Device code of two assemblies has the same C++ name.** Two referenced assemblies, or a reference and the compilation, declare the same path, which becomes one C++ name. |
 | [**SLQ0001**](diagnostics/SLQ0001.md) | Warning | **Excessive StackLinq chain depth.** Triggered when a StackLinq query chain exceeds recommended nesting depth, threatening GPU register spilling or stack frame bloat. |
 | [**RS0030**](diagnostics/RS0030.md) | Error | **Banned API in GPU kernel.** Triggered when a banned .NET API is used in GPU kernels or GPU intrinsics are invoked from host CPU code. |
 

@@ -32,6 +32,7 @@
     <Project Path="tests/Compiler/Kassyi.GSharp.Tests.Shared/Kassyi.GSharp.Tests.Shared.shproj" />
     <Project Path="tests/Compiler/Kassyi.GSharp.Tests.Cuda/Kassyi.GSharp.Tests.Cuda.csproj" />
     <Project Path="tests/Compiler/Kassyi.GSharp.Tests.Cpu/Kassyi.GSharp.Tests.Cpu.csproj" />
+    <Project Path="tests/Compiler/Kassyi.GSharp.Tests.DeviceLibrary/Kassyi.GSharp.Tests.DeviceLibrary.csproj" />
     <Project Path="tests/Compiler/Kassyi.GSharp.Tests.Integration/Kassyi.GSharp.Tests.Integration.csproj" />
   </Folder>
   <Folder Name="/tests/Shared/">

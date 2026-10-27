@@ -11,6 +11,8 @@ internal readonly record struct DeviceExportRecord(
     string CppName,
     string CppFullName,
     EquatableArray<string> DefinedNames,
+    EquatableArray<string> DefinedIds,
+    EquatableArray<string> DefinedFullNames,
     EquatableArray<string> CudaReferences,
     EquatableArray<string> CppReferences,
     string FrameName,

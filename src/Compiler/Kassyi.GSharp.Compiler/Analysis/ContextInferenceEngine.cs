@@ -9,10 +9,12 @@ public static class ContextInferenceEngine
             return false;
         }
 
-        // Fast path for external framework methods that we cannot traverse
+        // Fast path for external framework methods that we cannot traverse; a device function of another assembly is
+        // answered by its record (EvaluateParallelDependency)
         if (methodSymbol.ContainingAssembly?.Name != compilation.AssemblyName &&
             methodSymbol.ContainingAssembly?.Name != TypeConstants.CoreNamespace &&
-            methodSymbol.ContainingAssembly?.Name != "Kassyi.GSharp.Stdlib.GpuMath")
+            methodSymbol.ContainingAssembly?.Name != "Kassyi.GSharp.Stdlib.GpuMath" &&
+            !DeviceExportTable.TryFindFunction(methodSymbol, compilation, out _))
         {
             return false;
         }
@@ -36,6 +38,14 @@ public static class ContextInferenceEngine
             return cachedResult;
         }
 
+        // A device function of another assembly, called directly or by a function of this one: what its assembly
+        // recorded (#538 review m1)
+        if (DeviceExportTable.TryFindFunction(methodSymbol, compilation, out var imported))
+        {
+            cache[methodSymbol] = imported.Record.IsParallelDependent;
+            return imported.Record.IsParallelDependent;
+        }
+
         // Cycle detected, break infinite recursion. The false answer depends on the open method, so it is not cached.
         if (state.Visiting.TryGetValue(methodSymbol, out var openDepth))
         {
@@ -51,7 +61,8 @@ public static class ContextInferenceEngine
         }
 
         // AST Check: Get Syntax Reference
-        if (!methodSymbol.TryGetDeclaringSyntax<SyntaxNode>(out var syntaxNode))
+        if (!methodSymbol.TryGetDeclaringSyntax<SyntaxNode>(out var syntaxNode) ||
+            !compilation.ContainsSyntaxTree(syntaxNode.SyntaxTree))
         {
             // No source available. Fallback to false.
             cache[methodSymbol] = false;

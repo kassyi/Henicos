@@ -74,6 +74,29 @@ namespace DeviceExportCase
         [GpuDeviceFunction]
         public static void Bump(ref int target) => target += 1;
 
+        // Returns through a ref parameter and clears an array element: a caller must treat the call as writing memory
+        [GpuDeviceFunction]
+        public static int ReadAndClear(ref int target, int[] data)
+        {
+            data[0] = 0;
+            return target;
+        }
+
+        // Writes only through its ref parameter
+        [GpuDeviceFunction]
+        public static int TakeOne(ref int target)
+        {
+            target -= 1;
+            return target;
+        }
+
+        // Overloads: the C++ names carry the declaration order (_o0, _o1), which metadata does not have
+        [GpuDeviceFunction]
+        public static int Scale(int x) => x * 3;
+
+        [GpuDeviceFunction]
+        public static float Scale(float x) => x * 0.5f;
+
         [GpuDeviceFunction]
         public static int Scratch(int n, int value)
         {

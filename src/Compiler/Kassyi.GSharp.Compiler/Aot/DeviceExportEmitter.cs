@@ -80,33 +80,84 @@ internal static class DeviceExportEmitter
     /// dialect run that failed is marked failed for that dialect.
     /// </summary>
     /// <remarks>
+    /// <para>
+    /// Only the structs that <paramref name="compilation"/> declares are recorded (<see cref="IsOwnStruct"/>): the
+    /// records of a struct live in the assembly that declares it, so that two libraries never record one struct.
+    /// </para>
+    /// <para>
+    /// [WHY] A struct that no G# assembly records (<see cref="IsUnrecordedStruct"/>: a Kassyi.GSharp.Core vector type, a
+    /// struct of a referenced assembly without G#) has no record a consumer could import, so its definition stays in
+    /// the text of every record that names it, in front of that record's own definition (#538 review B1). Its include
+    /// guard keeps the copies from redefining it. A struct of another G# library stays a reference: the consumer imports
+    /// that library's record, with the members (computed properties, Dispose) that a definition from metadata lacks.
+    /// </para>
+    /// <para>
     /// A struct fails for a dialect only when its own parts do (<see cref="StructSourcePart.Failed"/>), not with the
     /// function or the struct whose transpilation wrote it.
+    /// </para>
     /// </remarks>
-    public static EquatableArray<DeviceExportRecord> CreateStructRecords(StructSourceCollector cuda,
-        StructSourceCollector cpp)
+    public static EquatableArray<DeviceExportRecord> CreateStructRecords(Compilation compilation,
+        StructSourceCollector cuda, StructSourceCollector cpp)
     {
         var types = ImmutableArray.CreateBuilder<INamedTypeSymbol>();
-        AddTypes(types, cuda.Definitions);
-        AddTypes(types, cuda.Discovered);
-        AddTypes(types, cpp.Definitions);
-        AddTypes(types, cpp.Discovered);
+        AddRecordedTypes(types, cuda.Definitions, compilation);
+        AddRecordedTypes(types, cuda.Discovered, compilation);
+        AddRecordedTypes(types, cpp.Definitions, compilation);
+        AddRecordedTypes(types, cpp.Discovered, compilation);
 
         var records = ImmutableArray.CreateBuilder<DeviceExportRecord>(types.Count);
         foreach (var type in types)
         {
-            records.Add(CreateStructRecord(type, ComposeStructText(type, cuda), ComposeStructText(type, cpp)));
+            records.Add(CreateStructRecord(type, compilation,
+                ComposeStructText(type, cuda, compilation, isCuda: true),
+                ComposeStructText(type, cpp, compilation, isCuda: false)));
         }
 
         return records.MoveToImmutable().AsEquatableArray();
     }
 
-    private static void AddTypes(ImmutableArray<INamedTypeSymbol>.Builder types,
-        ImmutableArray<StructSourcePart>.Builder parts)
+    /// <summary>Whether <paramref name="compilation"/> declares <paramref name="type"/>, so its records hold it.</summary>
+    public static bool IsOwnStruct(INamedTypeSymbol type, Compilation compilation) =>
+        !DeviceExportTable.IsOutside(type.OriginalDefinition, compilation);
+
+    /// <summary>
+    /// Whether no G# assembly records <paramref name="type"/> for the dialect: it is declared outside
+    /// <paramref name="compilation"/>, and its assembly has no record of it (a Kassyi.GSharp.Core vector type, a struct
+    /// of an assembly without G#, a construction of a generic struct that its library does not use), or one that the
+    /// dialect cannot use (written by another G#, or failed in the dialect: a consumer would not import it).
+    /// </summary>
+    public static bool IsUnrecordedStruct(INamedTypeSymbol type, Compilation compilation, bool isCuda) =>
+        DeviceExportTable.IsOutside(type.OriginalDefinition, compilation) &&
+        (!DeviceExportTable.TryFind(type, out var imported) || !imported.IsCompatible || imported.FailedFor(isCuda));
+
+    /// <summary>
+    /// The definitions and <c>Dispose</c> definitions of <paramref name="parts"/> whose structs no G# assembly records
+    /// (<see cref="IsUnrecordedStruct"/>), in their order, with the C++ names of those structs: a function record keeps
+    /// them in front of its body.
+    /// </summary>
+    public static string KeepUnrecorded(ImmutableArray<StructSourcePart>.Builder parts, Compilation compilation,
+        bool isCuda, ImmutableArray<string>.Builder names)
+    {
+        var text = new StringBuilder();
+        foreach (var part in parts)
+        {
+            if (IsUnrecordedStruct(part.Type, compilation, isCuda))
+            {
+                text.Append(part.Text);
+                names.Add(GlobalCppNames.GetTypeName(part.Type));
+            }
+        }
+
+        return text.ToString();
+    }
+
+    private static void AddRecordedTypes(ImmutableArray<INamedTypeSymbol>.Builder types,
+        ImmutableArray<StructSourcePart>.Builder parts, Compilation compilation)
     {
         foreach (var part in parts)
         {
-            if (!types
+            if (IsOwnStruct(part.Type, compilation) &&
+                !types
                     .AsStackEnumerable()
                     .Any(part.Type, static (seen, t) => seen.IsEqualTo(t)))
             {
@@ -115,18 +166,23 @@ internal static class DeviceExportEmitter
         }
     }
 
-    // The text of one struct for one dialect: its definition, its Dispose, and the includes of both
-    private static StructDialectText ComposeStructText(INamedTypeSymbol type, StructSourceCollector collector)
+    // The text of one struct for one dialect: the definitions of the unrecorded structs that its definition or its
+    // Dispose names (directly or through them), then its own definition; its Dispose; the includes of all of them
+    private static StructDialectText ComposeStructText(INamedTypeSymbol type, StructSourceCollector collector,
+        Compilation compilation, bool isCuda)
     {
         if (!TryFind(collector.Definitions, type, out var own) && !TryFind(collector.Discovered, type, out own))
         {
-            return new StructDialectText("", "", true, default, "");
+            return new StructDialectText("", "", true, default, default, "");
         }
 
+        var unrecorded = new Dictionary<string, StructSourcePart>(StringComparer.Ordinal);
+        AddUnrecorded(unrecorded, collector.Definitions, compilation, isCuda);
+        AddUnrecorded(unrecorded, collector.Discovered, compilation, isCuda);
+
+        var definition = new StringBuilder();
         var includes = new HashSet<string>(StringComparer.Ordinal);
-        own.Includes
-            .AsStackEnumerable()
-            .AddTo(includes);
+        var kept = ImmutableArray.CreateBuilder<string>();
         var failed = own.Failed;
         var internalError = own.InternalError;
         var dispose = "";
@@ -140,33 +196,90 @@ internal static class DeviceExportEmitter
             internalError = internalError.Length > 0 ? internalError : disposePart.InternalError;
         }
 
-        return new StructDialectText(own.Text, dispose, failed, StructTranspiler.ToIncludes(includes), internalError);
+        foreach (var name in CollectReferences(default, own.Text, dispose))
+        {
+            KeepUnrecordedDependency(name, unrecorded, definition, includes, kept, ref failed);
+        }
+
+        definition.Append(own.Text);
+        own.Includes
+            .AsStackEnumerable()
+            .AddTo(includes);
+
+        return new StructDialectText(definition.ToString(), dispose, failed, StructTranspiler.ToIncludes(includes),
+            kept.ToImmutable().AsEquatableArray(), internalError);
+    }
+
+    // An unrecorded struct after the unrecorded structs that its own text names
+    private static void KeepUnrecordedDependency(string name, Dictionary<string, StructSourcePart> unrecorded,
+        StringBuilder definition, HashSet<string> includes, ImmutableArray<string>.Builder kept, ref bool failed)
+    {
+        if (!unrecorded.TryGetValue(name, out var part) || kept.Contains(name))
+        {
+            return;
+        }
+
+        kept.Add(name);
+        foreach (var dependency in CollectReferences(default, part.Text))
+        {
+            KeepUnrecordedDependency(dependency, unrecorded, definition, includes, kept, ref failed);
+        }
+
+        definition.Append(part.Text);
+        part.Includes
+            .AsStackEnumerable()
+            .AddTo(includes);
+        failed |= part.Failed;
+    }
+
+    private static void AddUnrecorded(Dictionary<string, StructSourcePart> unrecorded,
+        ImmutableArray<StructSourcePart>.Builder parts, Compilation compilation, bool isCuda)
+    {
+        foreach (var part in parts)
+        {
+            if (IsUnrecordedStruct(part.Type, compilation, isCuda))
+            {
+                var name = GlobalCppNames.GetTypeName(part.Type);
+                if (!unrecorded.ContainsKey(name))
+                {
+                    unrecorded[name] = part;
+                }
+            }
+        }
     }
 
     /// <summary>
     /// The record of one struct from its texts for both dialects. The text of a dialect that failed is left out: the
     /// record says it failed, and a consumer copies none of it.
     /// </summary>
-    public static DeviceExportRecord CreateStructRecord(INamedTypeSymbol type, StructDialectText cuda, StructDialectText cpp)
+    public static DeviceExportRecord CreateStructRecord(INamedTypeSymbol type, Compilation compilation,
+        StructDialectText cuda, StructDialectText cpp)
     {
         var internalError = cuda.InternalError.Length > 0 ? cuda.InternalError : cpp.InternalError;
         if (cuda.Failed)
         {
-            cuda = new StructDialectText("", "", true, default, "");
+            cuda = new StructDialectText("", "", true, default, default, "");
         }
 
         if (cpp.Failed)
         {
-            cpp = new StructDialectText("", "", true, default, "");
+            cpp = new StructDialectText("", "", true, default, default, "");
         }
 
         var cppName = GlobalCppNames.GetTypeName(type);
         var constructors = ImmutableArray.CreateBuilder<string>();
-        type.InstanceConstructors
-            .AsStackEnumerable()
-            .Where(StructTranspiler.IsEmittedStructConstructor)
-            .Select(GlobalCppNames.GetConstructorName)
-            .AddTo(constructors);
+        var constructorIds = ImmutableArray.CreateBuilder<string>();
+        var constructorFullNames = ImmutableArray.CreateBuilder<string>();
+        foreach (var constructor in type.InstanceConstructors)
+        {
+            if (StructTranspiler.IsEmittedStructConstructor(constructor, compilation))
+            {
+                var name = GlobalCppNames.GetConstructorName(constructor);
+                constructors.Add(name);
+                constructorIds.Add(constructor.OriginalDefinition.GetDocumentationCommentId() ?? "");
+                constructorFullNames.Add(GlobalCppNames.TryGetFullName(name, out var full) ? full : "");
+            }
+        }
 
         var definedNames = constructors.ToImmutable().AsEquatableArray();
         return new DeviceExportRecord(
@@ -175,8 +288,14 @@ internal static class DeviceExportEmitter
             cppName,
             GlobalCppNames.TryGetFullName(cppName, out var fullName) ? fullName : "",
             definedNames,
-            CollectReferences(OwnNames(cppName, definedNames), cuda.Definition, cuda.Dispose),
-            CollectReferences(OwnNames(cppName, definedNames), cpp.Definition, cpp.Dispose),
+            constructorIds.ToImmutable().AsEquatableArray(),
+            constructorFullNames
+                .AsStackEnumerable()
+                .Any(static n => n.Length > 0)
+                ? constructorFullNames.ToImmutable().AsEquatableArray()
+                : default,
+            CollectReferences(OwnNames(cppName, definedNames, cuda.KeptNames), cuda.Definition, cuda.Dispose),
+            CollectReferences(OwnNames(cppName, definedNames, cpp.KeptNames), cpp.Definition, cpp.Dispose),
             "",
             default,
             Suspends: false,
@@ -199,12 +318,16 @@ internal static class DeviceExportEmitter
             internalError);
     }
 
-    /// <summary>The names that a text defines itself: its own name and the names it defines.</summary>
-    public static EquatableArray<string> OwnNames(string cppName, EquatableArray<string> definedNames)
+    /// <summary>The names that a text defines itself: its own name, the names it defines, the structs it keeps.</summary>
+    public static EquatableArray<string> OwnNames(string cppName, EquatableArray<string> definedNames,
+        EquatableArray<string> keptNames)
     {
         var names = ImmutableArray.CreateBuilder<string>();
         names.Add(cppName);
         definedNames
+            .AsStackEnumerable()
+            .AddTo(names);
+        keptNames
             .AsStackEnumerable()
             .AddTo(names);
         return names.ToImmutable().AsEquatableArray();
@@ -313,6 +436,8 @@ internal static class DeviceExportEmitter
             AppendStringProperty(writer, nameof(DeviceExportRecord.CppName), record.CppName);
             AppendStringProperty(writer, nameof(DeviceExportRecord.CppFullName), record.CppFullName);
             AppendArrayProperty(writer, nameof(DeviceExportRecord.DefinedNames), record.DefinedNames);
+            AppendArrayProperty(writer, nameof(DeviceExportRecord.DefinedIds), record.DefinedIds);
+            AppendArrayProperty(writer, nameof(DeviceExportRecord.DefinedFullNames), record.DefinedFullNames);
             AppendArrayProperty(writer, nameof(DeviceExportRecord.CudaReferences), record.CudaReferences);
             AppendArrayProperty(writer, nameof(DeviceExportRecord.CppReferences), record.CppReferences);
             AppendStringProperty(writer, nameof(DeviceExportRecord.FrameName), record.FrameName);
@@ -398,14 +523,16 @@ internal static class DeviceExportEmitter
 }
 
 /// <summary>The text of one struct for one dialect, as its record stores it.</summary>
-/// <param name="Definition">Its definition.</param>
+/// <param name="Definition">The definitions of the unrecorded structs it names, then its own definition.</param>
 /// <param name="Dispose">Its <c>Dispose</c> definition, or an empty string.</param>
 /// <param name="Failed">Whether the dialect could not transpile it.</param>
 /// <param name="Includes">The <c>#include</c> targets of the text.</param>
+/// <param name="KeptNames">The C++ names of the unrecorded structs that <paramref name="Definition"/> defines.</param>
 /// <param name="InternalError">The message of an exception that stopped writing it, or an empty string.</param>
 internal readonly record struct StructDialectText(
     string Definition,
     string Dispose,
     bool Failed,
     EquatableArray<string> Includes,
+    EquatableArray<string> KeptNames,
     string InternalError);

@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- A G# library whose device functions the kernels of Kassyi.GSharp.Tests.Cpu / .Cuda call (#433, #538). It is
+       built like the standard library, with the CUDA dialect and no kernels, and exports its device code. -->
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <IsPackable>false</IsPackable>
+    <GSharpTargetDialect>Cuda</GSharpTargetDialect>
+    <EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
+    <!-- Not a test project: tests/Directory.Build.props leaves out the test infrastructure -->
+    <GSharpTestLibrary>true</GSharpTestLibrary>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\src\Core\Kassyi.GSharp.Core\Kassyi.GSharp.Core.csproj" />
+    <ProjectReference Include="..\..\..\src\Compiler\Kassyi.GSharp.Compiler\Kassyi.GSharp.Compiler.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
+  </ItemGroup>
+
+  <Import Project="..\..\..\src\Compiler\Kassyi.GSharp.Compiler\build\Kassyi.GSharp.Compiler.targets" />
+</Project>

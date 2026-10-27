@@ -7,6 +7,11 @@ namespace Kassyi.GSharp.Compiler.Analysis;
 /// On the CPU dialects such a function suspends its caller, so it is lowered into its own state machine and every call
 /// to it becomes a suspension point. A barrier is what <see cref="BarrierHelper.IsPhaseBarrier"/> splits on, so a device
 /// function suspends exactly when kernel-level lowering would split on the same code.
+/// <para>
+/// A device function of another assembly has no body in the compilation; its assembly recorded the answers
+/// (<see cref="DeviceExportTable"/>, #538). One without a record is taken as not reaching a barrier, and the analyzer
+/// reports the call (GSH0088), so the build does not go on with that guess.
+/// </para>
 /// </remarks>
 internal static class SuspensionAnalysis
 {
@@ -20,15 +25,15 @@ internal static class SuspensionAnalysis
     public static bool IsSuspendingFunction(IMethodSymbol method, Compilation compilation)
     {
         var definition = method.OriginalDefinition;
-        if (!TryGetDeviceFunctionBody(definition, out _))
+        if (!TryGetDeviceFunctionBody(definition, compilation, out _))
         {
-            return false;
+            return DeviceExportTable.TryFindFunction(definition, compilation, out var imported) && imported.Record.Suspends;
         }
 
         var cache = s_suspending.GetValue(compilation,
             static _ => new ConcurrentDictionary<IMethodSymbol, bool>(SymbolEqualityComparer.Default));
         return cache.GetOrAdd(definition,
-            m => ReachesBarrier(m, BarrierHelper.IsPhaseBarrier, compilation,
+            m => ReachesBarrier(m, blockBarrier: false, compilation,
                 new HashSet<IMethodSymbol>(SymbolEqualityComparer.Default)));
     }
 
@@ -43,15 +48,16 @@ internal static class SuspensionAnalysis
     public static bool ReachesBlockBarrier(IMethodSymbol method, Compilation compilation)
     {
         var definition = method.OriginalDefinition;
-        if (!TryGetDeviceFunctionBody(definition, out _))
+        if (!TryGetDeviceFunctionBody(definition, compilation, out _))
         {
-            return false;
+            return DeviceExportTable.TryFindFunction(definition, compilation, out var imported) &&
+                   imported.Record.ReachesBlockBarrier;
         }
 
         var cache = s_blockBarrier.GetValue(compilation,
             static _ => new ConcurrentDictionary<IMethodSymbol, bool>(SymbolEqualityComparer.Default));
         return cache.GetOrAdd(definition,
-            m => ReachesBarrier(m, BarrierHelper.IsBlockBarrier, compilation,
+            m => ReachesBarrier(m, blockBarrier: true, compilation,
                 new HashSet<IMethodSymbol>(SymbolEqualityComparer.Default)));
     }
 
@@ -95,14 +101,23 @@ internal static class SuspensionAnalysis
         return callees.ToImmutable();
     }
 
-    private static bool ReachesBarrier(IMethodSymbol method, Func<InvocationExpressionSyntax, bool> isBarrier,
-        Compilation compilation, HashSet<IMethodSymbol> visited)
+    private static bool ReachesBarrier(IMethodSymbol method, bool blockBarrier, Compilation compilation,
+        HashSet<IMethodSymbol> visited)
     {
-        if (!visited.Add(method) || !TryGetDeviceFunctionBody(method, out var declaration))
+        if (!visited.Add(method))
         {
             return false;
         }
 
+        if (!TryGetDeviceFunctionBody(method, compilation, out var declaration))
+        {
+            // A device function of another assembly: what its assembly recorded
+            return DeviceExportTable.TryFindFunction(method, compilation, out var imported) &&
+                   (blockBarrier ? imported.Record.ReachesBlockBarrier : imported.Record.Suspends);
+        }
+
+        Func<InvocationExpressionSyntax, bool> isBarrier =
+            blockBarrier ? BarrierHelper.IsBlockBarrier : BarrierHelper.IsPhaseBarrier;
         var callsBarrier = declaration.DescendantNodes()
             .AsStackEnumerable()
             .Any(isBarrier, static (node, barrier) => node is InvocationExpressionSyntax invocation && barrier(invocation));
@@ -113,7 +128,7 @@ internal static class SuspensionAnalysis
 
         foreach (var callee in GetDeviceFunctionCallees(declaration, compilation))
         {
-            if (ReachesBarrier(callee, isBarrier, compilation, visited))
+            if (ReachesBarrier(callee, blockBarrier, compilation, visited))
             {
                 return true;
             }
@@ -125,7 +140,8 @@ internal static class SuspensionAnalysis
     private static bool CallsReach(IMethodSymbol method, IMethodSymbol target, Compilation compilation,
         HashSet<IMethodSymbol> visited)
     {
-        if (!visited.Add(method) || !TryGetDeviceFunctionBody(method, out var declaration))
+        // A device function of another assembly cannot call back into this one, which it does not reference
+        if (!visited.Add(method) || !TryGetDeviceFunctionBody(method, compilation, out var declaration))
         {
             return false;
         }
@@ -143,8 +159,9 @@ internal static class SuspensionAnalysis
     }
 
     /// <summary>
-    /// The definitions of the <c>[GpuDeviceFunction]</c> methods with a body that <paramref name="body"/> calls, in call
-    /// order, with repeats.
+    /// The definitions of the <c>[GpuDeviceFunction]</c> methods that <paramref name="body"/> calls, in call order, with
+    /// repeats: those with a body in the compilation, and those of another assembly that recorded them
+    /// (<see cref="DeviceExportTable"/>).
     /// </summary>
     internal static IEnumerable<IMethodSymbol> GetDeviceFunctionCallees(SyntaxNode body, Compilation compilation)
     {
@@ -153,19 +170,25 @@ internal static class SuspensionAnalysis
         {
             if (node is InvocationExpressionSyntax invocation &&
                 semanticModel.GetSymbolInfo(invocation).Symbol is IMethodSymbol callee &&
-                TryGetDeviceFunctionBody(callee.OriginalDefinition, out _))
+                (TryGetDeviceFunctionBody(callee.OriginalDefinition, compilation, out _) ||
+                 DeviceExportTable.TryFindFunction(callee, compilation, out _)))
             {
                 yield return callee.OriginalDefinition;
             }
         }
     }
 
-    /// <summary>Whether <paramref name="method"/> is a <c>[GpuDeviceFunction]</c> declared with a body in source.</summary>
-    internal static bool TryGetDeviceFunctionBody(IMethodSymbol method,
+    /// <summary>
+    /// Whether <paramref name="method"/> is a <c>[GpuDeviceFunction]</c> declared with a body in
+    /// <paramref name="compilation"/>. A function of another assembly has no body here, also when an IDE gives its
+    /// declaration through a referenced compilation.
+    /// </summary>
+    internal static bool TryGetDeviceFunctionBody(IMethodSymbol method, Compilation compilation,
         [NotNullWhen(true)] out MethodDeclarationSyntax? declaration)
     {
         if (method.HasAttribute(KnownAttributes.GpuDeviceFunction) &&
             method.TryGetDeclaringSyntax(out declaration) &&
+            compilation.ContainsSyntaxTree(declaration.SyntaxTree) &&
             (declaration.Body != null || declaration.ExpressionBody != null))
         {
             return true;

@@ -356,13 +356,16 @@ internal static class StructTranspiler
     /// <summary>
     /// Whether <paramref name="constructor"/> is a user-defined struct constructor emitted as a value-returning device
     /// function (<c>__gsharp_ctor_...</c>) rather than aggregate initialization: a constructor with a body, or the
-    /// primary constructor (#495).
+    /// primary constructor (#495). A constructor of another assembly (<see cref="DeviceExportTable.IsOutside"/>) is one
+    /// when its assembly recorded it with its struct (<see cref="DeviceExportTable"/>), whose definition the consumer
+    /// imports.
     /// </summary>
-    public static bool IsEmittedStructConstructor(IMethodSymbol? constructor) =>
+    public static bool IsEmittedStructConstructor(IMethodSymbol? constructor, Compilation compilation) =>
         constructor is { MethodKind: MethodKind.Constructor, IsImplicitlyDeclared: false, IsStatic: false } &&
         constructor.ContainingType is { } containingType &&
         GlobalCppNames.IsEmittedUserType(containingType) &&
-        TryGetConstructorDeclaration(constructor, out _, out _);
+        (TryGetConstructorDeclaration(constructor, out _, out _) ||
+         (DeviceExportTable.IsOutside(constructor, compilation) && DeviceExportTable.TryFind(constructor, out _)));
 
     // The declaration of a constructor that has a body (`S(...) { }` or `=> expr`), or of a primary constructor (the
     // type declaration, `struct S(int a)`)
@@ -408,7 +411,7 @@ internal static class StructTranspiler
         void VisitConstructor(IMethodSymbol constructor)
         {
             if (!visited.Add(constructor) ||
-                !IsEmittedStructConstructor(constructor) ||
+                !IsEmittedStructConstructor(constructor, compilation) ||
                 !TryGetConstructorDeclaration(constructor, out var declaration, out var explicitDeclaration) ||
                 !compilation.ContainsSyntaxTree(declaration.SyntaxTree))
             {
@@ -517,7 +520,7 @@ internal static class StructTranspiler
                 if (declaration?.Initializer is { } initializer)
                 {
                     var target = ResolveChainedConstructor(structSym, model.GetSymbol(initializer) as IMethodSymbol);
-                    if (target != null && IsEmittedStructConstructor(target))
+                    if (target != null && IsEmittedStructConstructor(target, model.Compilation))
                     {
                         context.Emitter.Writer.Append($" {GSharpInternalNames.Lowering.ConstructorSelf} = ");
                         ObjectCreationHelper.TranspileConstructorCall(structSym, target, initializer.ArgumentList,
@@ -1052,7 +1055,7 @@ internal static class StructTranspiler
 
         return type.InstanceConstructors
                    .AsStackEnumerable()
-                   .Any(IsEmittedStructConstructor) ||
+                   .Any(compilation, static (constructor, c) => IsEmittedStructConstructor(constructor, c)) ||
                type.GetMembers()
                    .AsStackEnumerable()
                    .OfType<IPropertySymbol>()

@@ -154,7 +154,7 @@ static_assert(offsetof(__gsharp_ty_DebugReduc__PhysicsVector,__gsharp_mb_Y)==4,"
 static_assert(offsetof(__gsharp_ty_DebugReduc__PhysicsVector,__gsharp_mb_Z)==8,""DebugReduc.PhysicsVector.Z: offset"");
 #endif
 ")]
-[assembly: global::Kassyi.GSharp.Core.GpuDeviceExportAttribute(1, @"{PreludeHash}", @"Struct", @"T:DebugReduc.Point", CppName = @"__gsharp_ty_DebugReduc__Point", DefinedNames = new string[] {@"__gsharp_ctor_DebugReduc__Point"}, Effect = @"Memory", CudaBody = @"#ifndef __GSHARP_STRUCT___gsharp_ty_DebugReduc__Point__
+[assembly: global::Kassyi.GSharp.Core.GpuDeviceExportAttribute(1, @"{PreludeHash}", @"Struct", @"T:DebugReduc.Point", CppName = @"__gsharp_ty_DebugReduc__Point", DefinedNames = new string[] {@"__gsharp_ctor_DebugReduc__Point"}, DefinedIds = new string[] {@"M:DebugReduc.Point.#ctor(System.Single,System.Single)"}, Effect = @"Memory", CudaBody = @"#ifndef __GSHARP_STRUCT___gsharp_ty_DebugReduc__Point__
 #define __GSHARP_STRUCT___gsharp_ty_DebugReduc__Point__
 struct __gsharp_ty_DebugReduc__Point
 {

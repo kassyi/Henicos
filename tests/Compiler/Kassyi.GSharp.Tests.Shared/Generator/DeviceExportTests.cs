@@ -39,8 +39,12 @@ public class DeviceExportTests
                 "M:DeviceExportCase.LibMath.Exchange(System.Int32[],System.Int32,System.Int32)",
                 "M:DeviceExportCase.LibMath.Helper(System.Int32)",
                 "M:DeviceExportCase.LibMath.Mu(System.UInt32)",
+                "M:DeviceExportCase.LibMath.ReadAndClear(System.Int32@,System.Int32[])",
                 "M:DeviceExportCase.LibMath.ReadUsed(DeviceExportCase.UsedOnly)",
+                "M:DeviceExportCase.LibMath.Scale(System.Int32)",
+                "M:DeviceExportCase.LibMath.Scale(System.Single)",
                 "M:DeviceExportCase.LibMath.Scratch(System.Int32,System.Int32)",
+                "M:DeviceExportCase.LibMath.TakeOne(System.Int32@)",
                 "M:DeviceExportCase.LibMath.Twice(System.Int32)",
                 "M:DeviceExportCase.LibMath.WriteThrough(System.Int32@,System.Int32[])"
             ],
@@ -85,6 +89,12 @@ public class DeviceExportTests
         Assert.Equal("RefParameters", Find("M:DeviceExportCase.LibMath.Bump(System.Int32@)").GetString("Effect"));
         Assert.Equal("Memory",
             Find("M:DeviceExportCase.LibMath.WriteThrough(System.Int32@,System.Int32[])").GetString("Effect"));
+
+        // The overloads keep the names of their declaration order
+        Assert.Equal("__gsharp_fn_DeviceExportCase__LibMath__Scale_o0",
+            Find("M:DeviceExportCase.LibMath.Scale(System.Int32)").GetString("CppName"));
+        Assert.Equal("__gsharp_fn_DeviceExportCase__LibMath__Scale_o1",
+            Find("M:DeviceExportCase.LibMath.Scale(System.Single)").GetString("CppName"));
 
         // The CUDA text of a function that reaches dynamic shared memory takes the table; its site is recorded
         var scratch = Find("M:DeviceExportCase.LibMath.Scratch(System.Int32,System.Int32)");
@@ -145,6 +155,46 @@ public class DeviceExportTests
             DeviceExportRecord.CurrentPreludeHash);
     }
 
+    // B1: the function's text keeps the definition of a struct that no record of the library holds (a Core vector
+    // type), and does not name it as a reference to import
+    [Theory]
+    [InlineData("Cpu")]
+    [InlineData("Cuda")]
+    [Scenario(TestScenario.Boundary)]
+    public void Test_FunctionBody_KeepsTheStructsTheLibraryDoesNotRecord(string dialect)
+    {
+        var dot3 = RunStructs(dialect).Single(static r => r.Id == "M:DeviceExportStructsCase.LibVector.Dot3(Kassyi.GSharp.Core.Float3)");
+
+        foreach (var prefix in new[] { "Cuda", "Cpp" })
+        {
+            if (!dot3.GetString(prefix + "Signature").Contains(Float3Name, StringComparison.Ordinal))
+            {
+                continue;
+            }
+
+            Assert.Contains(Float3Guard, dot3.GetString(prefix + "Body"), StringComparison.Ordinal);
+            Assert.DoesNotContain(Float3Name, dot3.GetArray(prefix + "References"));
+        }
+
+        Assert.Contains(Float3Name, dot3.GetString("CppSignature"), StringComparison.Ordinal);
+    }
+
+    // B1: a struct record keeps the definitions of the structs of its fields that no record holds, before its own
+    [Theory]
+    [InlineData("Cpu")]
+    [InlineData("Cuda")]
+    [Scenario(TestScenario.Boundary)]
+    public void Test_StructRecord_KeepsTheStructsOfItsFields(string dialect)
+    {
+        var particle = RunStructs(dialect).Single(static r => r.Id == "T:DeviceExportStructsCase.Particle");
+
+        var body = particle.GetString("CppBody");
+        var float3 = body.IndexOf(Float3Guard, StringComparison.Ordinal);
+        var own = body.IndexOf("#ifndef __GSHARP_STRUCT___gsharp_ty_DeviceExportStructsCase__Particle__", StringComparison.Ordinal);
+        Assert.True(float3 >= 0 && float3 < own, body);
+        Assert.DoesNotContain(Float3Name, particle.GetArray("CppReferences"));
+    }
+
     // A struct named only by a constructor of an exported struct (Box<int>) is recorded, and every name that a record
     // refers to is defined by a record of the library
     [Theory]
@@ -180,6 +230,20 @@ public class DeviceExportTests
         var sortedPair = RunStructs(dialect).Single(static r => r.Id == "T:DeviceExportStructsCase.SortedPair");
 
         Assert.Contains("<thrust/sort.h>", sortedPair.GetArray("CudaIncludes"));
+    }
+
+    // Minor 1 (3rd review): a struct that no G# assembly records and that only the Dispose names stays in the text
+    [Theory]
+    [InlineData("Cpu")]
+    [InlineData("Cuda")]
+    [Scenario(TestScenario.Boundary)]
+    public void Test_StructRecord_KeepsTheStructsItsDisposeNames(string dialect)
+    {
+        var lease = RunStructs(dialect).Single(static r => r.Id == "T:DeviceExportStructsCase.Lease3");
+
+        Assert.Contains(Float3Guard, lease.GetString("CppBody"), StringComparison.Ordinal);
+        Assert.Contains(Float3Name, lease.GetString("CppDispose"), StringComparison.Ordinal);
+        Assert.DoesNotContain(Float3Name, lease.GetArray("CppReferences"));
     }
 
     // Minor 1 (2nd review): a struct whose Dispose cannot be emitted fails alone; the struct its text names does not
@@ -281,6 +345,10 @@ public class DeviceExportTests
         Assert.Null(result.Exception);
         Assert.Empty(result.GeneratedSources);
     }
+
+    private const string Float3Name = "__gsharp_ty_Kassyi__GSharp__Core__Float3";
+
+    private const string Float3Guard = "#ifndef __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Core__Float3__";
 
     private static readonly string s_structs = RoslynTestUtility.ReadTestCase("Generators/DeviceExportStructs.cs");
 

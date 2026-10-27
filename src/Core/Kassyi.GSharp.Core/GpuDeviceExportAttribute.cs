@@ -61,6 +61,9 @@ public sealed class GpuDeviceExportAttribute : Attribute
     /// <summary>Gets or sets the other C++ names the record defines: the constructors of a struct.</summary>
     public string[] DefinedNames { get; set; } = [];
 
+    /// <summary>Gets or sets the documentation comment IDs of <see cref="DefinedNames"/>, in the same order.</summary>
+    public string[] DefinedIds { get; set; } = [];
+
     /// <summary>
     /// Gets or sets the global C++ names (functions, types, constructors) that the CUDA text refers to and does not
     /// define itself.
@@ -69,6 +72,12 @@ public sealed class GpuDeviceExportAttribute : Attribute
 
     /// <summary>Gets or sets the global C++ names that the C++ text refers to and does not define itself.</summary>
     public string[] CppReferences { get; set; } = [];
+
+    /// <summary>
+    /// Gets or sets the names of <see cref="DefinedNames"/> before shortening, in the same order; an empty string for a
+    /// name that was not shortened.
+    /// </summary>
+    public string[] DefinedFullNames { get; set; } = [];
 
     /// <summary>Gets or sets the frame type of a device function that suspends at a barrier on the CPU dialects.</summary>
     public string FrameName { get; set; } = "";
