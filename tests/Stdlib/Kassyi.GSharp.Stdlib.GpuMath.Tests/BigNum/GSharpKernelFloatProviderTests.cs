@@ -347,7 +347,7 @@ public class GSharpKernelFloatProviderTests : IDisposable
         });
 
         // (-2)^3: a negative base is not supported.
-        // mutant: GSharpKernelFloatProvider.cs:442 `throw` removed (GpuBigFloatTranscendentals.Pow ignores the sign of the
+        // mutant: GSharpKernelFloatProvider.cs:413 `throw` removed (GpuBigFloatTranscendentals.Pow ignores the sign of the
         // base and would return 8)
         var powError = Assert.Throws<InvalidOperationException>(() =>
         {
@@ -429,7 +429,7 @@ public class GSharpKernelFloatProviderTests : IDisposable
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Stdlib)]
     [Scenario(TestScenario.Boundary)]
-    // mutant: GSharpKernelFloatProvider.cs:376 `GpuBigIntMath.Add(rsqrtRaw, 4u, rsqrtRaw)` removed (0.4999...)
+    // mutant: GSharpKernelFloatProvider.cs:367 `- 32L * (words + marginWords)` -> `... + 1` (4 and 16, inverse)
     // mutant: GpuBigIntDivRem.Sqrt.cs:102 `SqrtFloorCorrection(...)` removed (9: the estimate 3 - 2^-126 is kept)
     [InlineData(4u, false, 2, 1)]
     [InlineData(9u, false, 3, 1)]
@@ -458,7 +458,7 @@ public class GSharpKernelFloatProviderTests : IDisposable
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Stdlib)]
     [Scenario(TestScenario.Boundary)]
-    // mutant: GSharpKernelFloatProvider.cs:351 `Math.Max(operand words, result words)` -> `Math.Min` (1-word work buffer)
+    // mutant: GSharpKernelFloatProvider.cs:360 `n - words / 2` -> `n - words` (2 and 3, inverse: 113 bits)
     [InlineData(2u, false)]
     [InlineData(2u, true)]
     [InlineData(3u, false)]

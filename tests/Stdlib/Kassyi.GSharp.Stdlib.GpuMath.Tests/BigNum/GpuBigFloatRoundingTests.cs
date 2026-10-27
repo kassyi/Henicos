@@ -480,6 +480,132 @@ public class GpuBigFloatRoundingTests : IDisposable
         return cases;
     }
 
+    private static readonly Dictionary<string, RootCase> s_rsqrtCases = CreateRsqrtCases();
+
+    public static TheoryData<string, string> RsqrtCasesOnBothEngines()
+    {
+        var data = new TheoryData<string, string>();
+        foreach (var name in s_rsqrtCases.Keys)
+        {
+            data.Add("Gpu", name);
+            data.Add("Cpu", name);
+        }
+
+        return data;
+    }
+
+    // P1: Rsqrt returns RZ_p(1 / sqrt(a)), the reference RzRsqrt (the test's own integer square root of
+    // floor(2^(2k) / s)). P2: the result satisfies the definition by itself, R²·2^(2e)·a <= 1 < (R + 1)²·2^(2e)·a with R of
+    // exactly p bits, so an exact inverse root (a power of four) is returned exactly.
+    // mutant: GSharpKernelFloatProvider.cs:360 `n - words / 2` -> `n - words` (Ladder3n4, Width1, Width4, Parity*: fewer than
+    // p bits)
+    // mutant: GSharpKernelFloatProvider.cs:347 `if (shift > 0)` -> `if (true)` (OddExponentFullWidth, OddExponentFullWidthWide:
+    // the radicand loses its lowest bit and the result is 1 ulp too large)
+    // mutant: GSharpKernelFloatProvider.cs:345 `% 2 != 0` -> `% 2 == 0` (every case with an odd shift)
+    // mutant: GSharpKernelFloatProvider.cs:367 `- 32L * (words + marginWords)` -> `... + 1` (every case: twice the value)
+    // mutant: GSharpKernelFloatProvider.cs:344 `long shift = 32L * ...` -> `int shift = 32 * ...` (ParityMin, ParityMinPlus1)
+    [SkippableTheory]
+    [Scenario(TestScenario.Boundary)]
+    [MemberData(nameof(RsqrtCasesOnBothEngines))]
+    public void Rsqrt_IsRoundedTowardZero(string engine, string caseName)
+    {
+        var rootCase = s_rsqrtCases[caseName];
+        var p = 32 * rootCase.ResultWords;
+        var a = new Dyadic(FromWords(rootCase.Words), rootCase.Exponent);
+        var (expectedSig, expectedExp) = BigFloatReference.RzRsqrt(a.Mantissa, a.Exponent, p);
+
+        using var value = new GpuBigUInt(_workspace, rootCase.Words);
+        using var result = new GpuBigUInt(_workspace, rootCase.ResultWords);
+        var context = CreateContext();
+        var operand = new GpuFloatOperand(value.Handle, rootCase.Exponent);
+        var rsqrt = Arithmetic(engine).Rsqrt(ref context, in operand, result.Handle);
+        var inverse = result.ToBigInteger();
+
+        Assert.True(
+            (expectedSig, expectedExp, false) == (inverse, (long)rsqrt.Exponent, rsqrt.IsNegative),
+            $"{caseName} [{engine}]: expected 0x{expectedSig:X} * 2^{expectedExp}, actual 0x{inverse:X} * 2^{rsqrt.Exponent}");
+        var low = new Dyadic(inverse * inverse, 2L * rsqrt.Exponent) * a;
+        var high = new Dyadic((inverse + 1) * (inverse + 1), 2L * rsqrt.Exponent) * a;
+        Assert.True(
+            inverse.GetBitLength() == p && low <= Dyadic.One && Dyadic.One < high,
+            $"{caseName} [{engine}]: 0x{inverse:X} * 2^{rsqrt.Exponent} is not RZ_{p}(1 / sqrt(a))");
+    }
+
+    // The inverse square root of a negative value is not defined, and that of zero is a division by zero.
+    [SkippableTheory]
+    [Scenario(TestScenario.SadPath)]
+    [InlineData("Gpu")]
+    [InlineData("Cpu")]
+    public void Rsqrt_NegativeAndZeroThrow(string engine)
+    {
+        var arithmetic = Arithmetic(engine);
+        using var value = new GpuBigUInt(_workspace, [9u]);
+        using var zero = new GpuBigUInt(_workspace, [0u, 0u]);
+        using var result = new GpuBigUInt(_workspace, 4);
+        var negative = new GpuFloatOperand(value.Handle, 0, true);
+        var zeroOperand = new GpuFloatOperand(zero.Handle, 5);
+
+        Assert.Throws<InvalidOperationException>(() =>
+        {
+            var c = CreateContext();
+            arithmetic.Rsqrt(ref c, in negative, result.Handle);
+        });
+        Assert.Throws<DivideByZeroException>(() =>
+        {
+            var c = CreateContext();
+            arithmetic.Rsqrt(ref c, in zeroOperand, result.Handle);
+        });
+    }
+
+    private static Dictionary<string, RootCase> CreateRsqrtCases()
+    {
+        var cases = new Dictionary<string, RootCase>
+        {
+            // Exact inverse roots (powers of four, either exponent parity) and an irrational one.
+            ["PowerOfFourEven"] = new([4u], 0, 4),
+            ["PowerOfFourOdd"] = new([2u], 1, 4),
+            ["PowerOfFourWide"] = new([0u, 0u, 1u], -64, 4),
+            // One above a power of four: the inverse root lies just below an exact value (2^-32 for 2^64 + 1), where a
+            // result rounded up would land on the exact value.
+            ["PowerOfFourPlus1"] = new([5u], 0, 4),
+            ["PowerOfFourPlus1Wide"] = new([1u, 0u, 1u], 0, 4),
+            ["Two"] = new([2u], 0, 4),
+            ["Nine"] = new([9u], 0, 8),
+
+            // The significand already fills its words (no leading zero bit) and the exponent is odd: the value has to
+            // move one word up instead of losing its lowest bit (losing it would round the inverse root up).
+            ["OddExponentFullWidth"] = new([0xFFFF_FFFFu], 1, 4),
+            ["OddExponentFullWidthWide"] = new([0x1234_5679u, 0x9ABC_DEF0u, 0x0FED_CBA9u, 0x8765_4321u], -3, 4),
+
+            // ExponentParity: the same significand at even, odd, large and extreme exponents (computed in long).
+            ["Parity0"] = new([0x9ABC_DEF0u, 0x1234_5678u], 0, 4),
+            ["Parity1"] = new([0x9ABC_DEF0u, 0x1234_5678u], 1, 4),
+            ["ParityMinus1"] = new([0x9ABC_DEF0u, 0x1234_5678u], -1, 4),
+            ["ParityMax"] = new([0x9ABC_DEF0u, 0x1234_5678u], int.MaxValue, 4),
+            ["ParityMin"] = new([0x9ABC_DEF0u, 0x1234_5678u], int.MinValue, 4),
+            ["ParityMinPlus1"] = new([0x9ABC_DEF0u, 0x1234_5678u], int.MinValue + 1, 4),
+        };
+
+        // PrecisionLadder: every result width that changes the margin m = max(1, n - floor(w/2)), and the widths of the
+        // old fixed 4-word margin (at 5 words and more only about 16n + 65 bits were right).
+        foreach (var n in new[] { 1, 2, 3, 4, 5, 6, 8, 9, 16, 17, 32, 33 })
+        {
+            cases[$"Ladder3n{n}"] = new([3u], 0, n);
+            cases[$"Ladder7n{n}"] = new([7u], 1, n);
+            cases[$"LadderRandomn{n}"] = new(RandomWords(new Random(42 + 37 * n), n), -5, n);
+        }
+
+        // InputWidth (n = 4): operands of 1, n, 2n, 2n + 1 and 4n words; the radicand is never truncated.
+        var widthRandom = new Random(662);
+        cases["Width1"] = new(RandomWords(widthRandom, 1), 0, 4);
+        cases["Width4"] = new(RandomWords(widthRandom, 4), 0, 4);
+        cases["Width8"] = new(RandomWords(widthRandom, 8), 1, 4);
+        cases["Width9"] = new(RandomWords(widthRandom, 9), 0, 4);
+        cases["Width16"] = new(RandomWords(widthRandom, 16), 1, 4);
+        cases["Width17"] = new(RandomWords(widthRandom, 17), 0, 4);
+        return cases;
+    }
+
     private static uint[] ToWords(BigInteger value) =>
         ToWords(value, Math.Max(1, (int)((value.GetBitLength() + 31) / 32)));
 

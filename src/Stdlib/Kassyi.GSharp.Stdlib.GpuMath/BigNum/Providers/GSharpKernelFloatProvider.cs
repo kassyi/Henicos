@@ -328,7 +328,8 @@ public sealed class GSharpKernelFloatProvider(IGpuBigFloatArithmetic fallbackStr
             return fallbackStrategy.Rsqrt(ref context, in value, resultSig);
         }
 
-        var valueOperand = value.Significand.AsBorrowedBigUInt(context.GpuWorkspace);
+        var workspace = context.GpuWorkspace;
+        var valueOperand = value.Significand.AsBorrowedBigUInt(workspace);
 
         var actualBits = valueOperand.GetBitLength();
         if (actualBits == 0)
@@ -336,65 +337,35 @@ public sealed class GSharpKernelFloatProvider(IGpuBigFloatArithmetic fallbackStr
             throw new DivideByZeroException("Cannot compute inverse square root of zero.");
         }
 
-        using var invSqrt = ComputeNormalizedInverseSqrt(new InverseSqrtRequest(
-            context.GpuWorkspace, valueOperand, value.Exponent, actualBits, resultSig.NumWords));
+        // 1/sqrt(S·2^E) = 2^(-(E - t)/2) / sqrt(A) with A = S·2^t of w words, bit length 32w or 32w - 1 (as InverseSqrt
+        // needs) and E - t even. A is never truncated: the inverse root decreases, so a smaller radicand would round the
+        // result up. When S already fills its words and E is odd, A moves one word up instead (#661).
+        var words = value.Significand.NumWords;
+        long shift = 32L * words - actualBits;
+        if ((value.Exponent - shift) % 2 != 0)
+        {
+            if (shift > 0)
+            {
+                shift--;
+            }
+            else
+            {
+                words++;
+                shift = 31;
+            }
+        }
+
+        // x = floor(2^B / sqrt(A)), B = 32(w + m), has at least B - 16w + 1 >= p + 1 bits for m = max(1, n - floor(w/2)),
+        // so its truncation to p bits is RZ_p of the inverse root.
+        var marginWords = Math.Max(1, resultSig.NumWords - words / 2);
+        using var scaled = workspace.RentTemp(words);
+        GpuBigIntMath.ShiftAndResize(valueOperand, checked((int)shift), scaled);
+        using var inverse = workspace.RentTemp(words + marginWords);
+        GpuBigIntDivRem.InverseSqrt(scaled, inverse, marginWords);
 
         // The exponents are computed in long; the exponent of the result must fit in int.
-        var tempExp = -(invSqrt.AdjustedExponent / 2) - invSqrt.EffectiveScaleBits;
-        return NormalizeScaled(context.GpuWorkspace, invSqrt.SlicedInverseSqrt.Handle, tempExp, false, resultSig);
-    }
-
-    private static NormalizedInverseSqrtScope ComputeNormalizedInverseSqrt(in InverseSqrtRequest request)
-    {
-        var workspace = request.Workspace;
-        var stream = workspace.Stream;
-        var workWords = Math.Max(request.ValueOperand.NumWords, request.TargetResultWords);
-        var lz = workWords * 32 - request.ActualBits;
-        var adjustedExp = (long)request.ValueExp - lz;
-        if (adjustedExp % 2 != 0)
-        {
-            lz--;
-            adjustedExp = (long)request.ValueExp - lz;
-        }
-
-        var aNorm = workspace.RentTemp(workWords);
-        try
-        {
-            GpuBigIntMath.ShiftAndResize(request.ValueOperand, lz, aNorm);
-
-            const int MarginWords = 4;
-            const int DiscardGuardWords = 2;
-            var rsqrtWords = workWords + MarginWords;
-            var rsqrtRaw = workspace.RentTemp(rsqrtWords);
-            try
-            {
-                workspace.Provider.ClearMemoryAsync(rsqrtRaw.DevicePointer, rsqrtWords, stream);
-
-                GpuBigIntDivRem.InverseSqrt(aNorm, rsqrtRaw, MarginWords);
-
-                // Add guard-word rounding offset to absorb Newton-Raphson right-shift truncation before slicing off the lowest 2 guard words
-                GpuBigIntMath.Add(rsqrtRaw, 4u, rsqrtRaw);
-
-                var slicedHandle = new GpuBigIntMemoryHandle(
-                    rsqrtRaw.Handle.Buffer,
-                    rsqrtRaw.Handle.WordOffset + DiscardGuardWords,
-                    rsqrtWords - DiscardGuardWords);
-                var rsqrtSliced = new GpuBigUInt(workspace, slicedHandle, isTemp: true);
-                var effectiveScaleBits = (rsqrtWords - DiscardGuardWords) * 32;
-
-                return new NormalizedInverseSqrtScope(aNorm, rsqrtRaw, rsqrtSliced, adjustedExp, effectiveScaleBits);
-            }
-            catch
-            {
-                rsqrtRaw.Dispose();
-                throw;
-            }
-        }
-        catch
-        {
-            aNorm.Dispose();
-            throw;
-        }
+        var exponent = -((value.Exponent - shift) / 2) - 32L * (words + marginWords);
+        return NormalizeScaled(workspace, inverse.Handle, exponent, false, resultSig);
     }
 
     /// <inheritdoc/>
@@ -467,39 +438,5 @@ public sealed class GSharpKernelFloatProvider(IGpuBigFloatArithmetic fallbackStr
         }
 
         return fallbackStrategy.DivideByUInt32(ref context, in value, divisor, resultSig);
-    }
-
-    private readonly struct InverseSqrtRequest(
-        GpuWorkspace workspace,
-        GpuBigUInt valueOperand,
-        int valueExp,
-        int actualBits,
-        int targetResultWords)
-    {
-        public GpuWorkspace Workspace => workspace;
-        public GpuBigUInt ValueOperand => valueOperand;
-        public int ValueExp => valueExp;
-        public int ActualBits => actualBits;
-        public int TargetResultWords => targetResultWords;
-    }
-
-    private readonly struct NormalizedInverseSqrtScope(
-        [TakesOwnership] GpuBigUInt normalizedOperand,
-        [TakesOwnership] GpuBigUInt rawInverseSqrt,
-        GpuBigUInt slicedInverseSqrt,
-        long adjustedExponent,
-        int effectiveScaleBits) : IDisposable
-    {
-        public GpuBigUInt NormalizedOperand => normalizedOperand;
-        public GpuBigUInt RawInverseSqrt => rawInverseSqrt;
-        public GpuBigUInt SlicedInverseSqrt => slicedInverseSqrt;
-        public long AdjustedExponent => adjustedExponent;
-        public int EffectiveScaleBits => effectiveScaleBits;
-
-        public void Dispose()
-        {
-            normalizedOperand.Dispose();
-            rawInverseSqrt.Dispose();
-        }
     }
 }

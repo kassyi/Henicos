@@ -37,7 +37,7 @@ public interface IGpuBigFloatArithmetic
 
 Every method takes its operands as `GpuFloatOperand` (a significand handle, an exponent and a sign: $\pm\text{Significand} \times 2^{\text{Exponent}}$) and writes the significand of the result to `resultSig`. The word count $n$ of `resultSig` sets the precision of the result, $p = 32n$ bits. The method returns the exponent and the sign of the result as a `GpuFloatResult`.
 
-`Normalize`, `Add`, `Multiply`, `Divide`, `Reciprocal`, `Sqrt`, `Exp`, `Log` and `Pow` return $\mathrm{RZ}_p(v)$: the exact value $v$ rounded toward zero to $p$ bits, with the significand normalized to its top bit. A value that fits in $p$ bits is returned exactly. The result depends only on the values of the operands, not on their word counts or leading zero words, and the GPU and the CPU provider return the same bits. When the exponent of the result does not fit in `int`, they throw `OverflowException`; an intermediate exponent outside `int` (such as the sum of two exponents in `Multiply`) is not an error when the result fits.
+`Normalize`, `Add`, `Multiply`, `Divide`, `Reciprocal`, `Sqrt`, `Rsqrt`, `Exp`, `Log` and `Pow` return $\mathrm{RZ}_p(v)$: the exact value $v$ rounded toward zero to $p$ bits, with the significand normalized to its top bit. A value that fits in $p$ bits is returned exactly. The result depends only on the values of the operands, not on their word counts or leading zero words, and the GPU and the CPU provider return the same bits. When the exponent of the result does not fit in `int`, they throw `OverflowException`; an intermediate exponent outside `int` (such as the sum of two exponents in `Multiply`) is not an error when the result fits.
 
 ## Add(ref GpuBigIntExecutionContext, in GpuFloatOperand, in GpuFloatOperand, GpuBigIntMemoryHandle)
 
@@ -266,6 +266,13 @@ GpuFloatResult Rsqrt(
 
 `InvalidOperationException`  
 `value` is negative.
+
+`DivideByZeroException`  
+`value` is zero.
+
+#### Remarks
+
+The result is $\mathrm{RZ}_p(1 / \sqrt{x})$, so an exact inverse root ($1 / \sqrt{4} = 1/2$) is returned exactly. The GPU provider scales the value to whole words with an even exponent without truncating it (a smaller radicand would round the result up), takes the exact $\lfloor 2^B / \sqrt{A} \rfloor$ with enough margin words for $p + 1$ bits, and truncates it.
 
 ## Sqrt(ref GpuBigIntExecutionContext, in GpuFloatOperand, GpuBigIntMemoryHandle)
 
