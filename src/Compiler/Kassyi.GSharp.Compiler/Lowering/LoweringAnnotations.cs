@@ -20,6 +20,34 @@ public static class LoweringAnnotations
     public const string ValueReturningCallAnnotationData = "Value";
 
     /// <summary>
+    /// Annotation kind that marks a call to a synchronization intrinsic that splits the state machine (a block or grid
+    /// barrier, a warp shuffle). The pipeline puts it on the original tree from the symbol of the call
+    /// (<see cref="SyncIntrinsicClassifier"/>), so the lowering passes, which work on trees outside the compilation,
+    /// recognize the call however it is spelled (a <c>using</c> alias, <c>using static</c>, the full name; #503). The data
+    /// is one of <see cref="BlockBarrierAnnotationData"/>, <see cref="GridBarrierAnnotationData"/> and the
+    /// <c>Shuffle*AnnotationData</c> constants.
+    /// </summary>
+    public const string SyncIntrinsicAnnotationKind = "GSharpSyncIntrinsic";
+
+    /// <summary>Data of a <see cref="SyncIntrinsicAnnotationKind"/> annotation on <c>Gpu.SyncThreads()</c>.</summary>
+    public const string BlockBarrierAnnotationData = "Block";
+
+    /// <summary>Data of a <see cref="SyncIntrinsicAnnotationKind"/> annotation on <c>Gpu.SyncGrid()</c>.</summary>
+    public const string GridBarrierAnnotationData = "Grid";
+
+    /// <summary>Data of a <see cref="SyncIntrinsicAnnotationKind"/> annotation on <c>Warp.ShuffleSync</c>.</summary>
+    public const string ShuffleSyncAnnotationData = "Shuffle:Sync";
+
+    /// <summary>Data of a <see cref="SyncIntrinsicAnnotationKind"/> annotation on <c>Warp.ShuffleDownSync</c>.</summary>
+    public const string ShuffleDownAnnotationData = "Shuffle:Down";
+
+    /// <summary>Data of a <see cref="SyncIntrinsicAnnotationKind"/> annotation on <c>Warp.ShuffleUpSync</c>.</summary>
+    public const string ShuffleUpAnnotationData = "Shuffle:Up";
+
+    /// <summary>Data of a <see cref="SyncIntrinsicAnnotationKind"/> annotation on <c>Warp.ShuffleXorSync</c>.</summary>
+    public const string ShuffleXorAnnotationData = "Shuffle:Xor";
+
+    /// <summary>
     /// Annotation kind that marks a <c>return</c> the state machine inserts to suspend (after storing the next state), as
     /// opposed to a <c>return</c> of the user's code. Emitters leave it as a plain suspension instead of finishing the
     /// thread or completing the device function call.
@@ -43,6 +71,34 @@ public static class LoweringAnnotations
     /// <c>RoslynToCudaVisitor.VisitBlock</c>.
     /// </summary>
     public const string ScopedBlockAnnotationKind = "GSharpScopedBlock";
+
+    /// <summary>
+    /// The <see cref="SyncIntrinsicAnnotationKind"/> annotation for a call to <paramref name="intrinsic"/>, or
+    /// <see langword="null"/> when the intrinsic does not split the state machine.
+    /// </summary>
+    internal static SyntaxAnnotation? CreateSyncIntrinsicAnnotation(SyncIntrinsicInfo intrinsic)
+    {
+        if (!intrinsic.SplitsStateMachine)
+        {
+            return null;
+        }
+
+        var data = intrinsic.Kind switch
+        {
+            SyncIntrinsicKind.BlockBarrier => BlockBarrierAnnotationData,
+            SyncIntrinsicKind.GridBarrier => GridBarrierAnnotationData,
+            SyncIntrinsicKind.WarpShuffle => intrinsic.Shuffle switch
+            {
+                WarpShuffleKind.Sync => ShuffleSyncAnnotationData,
+                WarpShuffleKind.Down => ShuffleDownAnnotationData,
+                WarpShuffleKind.Up => ShuffleUpAnnotationData,
+                WarpShuffleKind.Xor => ShuffleXorAnnotationData,
+                _ => null
+            },
+            _ => null
+        };
+        return data == null ? null : new SyntaxAnnotation(SyncIntrinsicAnnotationKind, data);
+    }
 
     /// <summary>Formats the <see cref="OriginalSpanAnnotationKind"/> payload for <paramref name="node"/>.</summary>
     public static string FormatOriginalSpanData(SyntaxNode node, int treeOrdinal = -1, int region = 0) =>

@@ -5,7 +5,7 @@ public static class AstLoweringPipeline
 {
     /// <summary>Lowers the body of a kernel or device function, block or expression body, into a flat state machine.</summary>
     /// <param name="method">A method that has a body (see <see cref="MethodDeclarationSyntaxExtensions.HasBody"/>).</param>
-    /// <param name="semanticModel">A semantic model of the compilation, used to find calls that suspend.</param>
+    /// <param name="semanticModel">A semantic model of the compilation, used to find the calls that split the state machine.</param>
     /// <param name="deviceFunction">The symbol of <paramref name="method"/> if it is a device function, or <see langword="null"/> for a kernel.</param>
     public static LoweredStateMachine Lower(MethodDeclarationSyntax method, SemanticModel? semanticModel,
         IMethodSymbol? deviceFunction = null)
@@ -19,8 +19,8 @@ public static class AstLoweringPipeline
     /// <summary>Lowers a kernel block into a flat state machine block and extracts hoisted context fields.</summary>
     /// <param name="body">The kernel or device function body.</param>
     /// <param name="semanticModel">
-    /// A semantic model of the compilation, used to find calls that suspend. Without it, only barriers written in the
-    /// body itself split the state machine.
+    /// A semantic model of the compilation, used to find the calls that split the state machine (barriers, warp shuffles,
+    /// calls that suspend). Without it, only the calls that already carry a split annotation split the state machine.
     /// </param>
     /// <param name="deviceFunction">The device function that owns <paramref name="body"/>, or <see langword="null"/> for a kernel.</param>
     public static LoweredStateMachine Lower(BlockSyntax body, SemanticModel? semanticModel = null,
@@ -34,9 +34,9 @@ public static class AstLoweringPipeline
 
         // [WHY] Annotate before wrapping an expression body: the annotations record spans of the original tree, which is
         // how later passes find the symbols of the synthesized block.
-        var suspendingCalls = CollectSuspendingCalls(body, bodyModel);
+        var splitPoints = CollectSplitPoints(body, bodyModel);
         var treeOrdinal = SemanticModelExtensions.GetSyntaxTreeOrdinal(bodyModel?.Compilation, body.SyntaxTree);
-        var annotatedBody = ToBlock(new SpanAnnotationRewriter(suspendingCalls, treeOrdinal).Visit(body) ?? body, returnsValue);
+        var annotatedBody = ToBlock(new SpanAnnotationRewriter(splitPoints, treeOrdinal).Visit(body) ?? body, returnsValue);
         annotatedBody = PreLoweringExpander.Expand(annotatedBody, bodyModel);
 
         var copiedParameters = deviceFunction != null
@@ -84,26 +84,40 @@ public static class AstLoweringPipeline
         _ => throw new InvalidOperationException($"Cannot lower a body of kind '{body.Kind()}'.")
     };
 
-    // Maps the span of each call that suspends to whether its callee returns a value
-    private static Dictionary<TextSpan, bool> CollectSuspendingCalls(SyntaxNode body, SemanticModel? bodyModel)
+    // Maps the span of each call that splits the state machine to its annotation: a call to a device function that
+    // suspends (whether its callee returns a value), or a synchronization intrinsic that splits the state machine,
+    // decided by symbol however the call is spelled (#503). Lambda bodies are included: PreLoweringExpander decides with
+    // the annotations whether a Gpu.ForUnroll body holds a split point. Without a semantic model nothing is annotated.
+    private static Dictionary<TextSpan, SyntaxAnnotation> CollectSplitPoints(SyntaxNode body, SemanticModel? bodyModel)
     {
-        var calls = new Dictionary<TextSpan, bool>();
+        var splitPoints = new Dictionary<TextSpan, SyntaxAnnotation>();
         if (bodyModel == null)
         {
-            return calls;
+            return splitPoints;
         }
 
         foreach (var node in body.DescendantNodes())
         {
-            if (node is InvocationExpressionSyntax invocation &&
-                bodyModel.GetSymbol(invocation) is IMethodSymbol callee &&
-                SuspensionAnalysis.IsSuspendingFunction(callee, bodyModel.Compilation))
+            if (node is not InvocationExpressionSyntax invocation ||
+                bodyModel.GetSymbol(invocation) is not IMethodSymbol callee)
             {
-                calls[invocation.Span] = !callee.ReturnsVoid;
+                continue;
+            }
+
+            if (SuspensionAnalysis.IsSuspendingFunction(callee, bodyModel.Compilation))
+            {
+                splitPoints[invocation.Span] = callee.ReturnsVoid
+                    ? new SyntaxAnnotation(LoweringAnnotations.SuspendingCallAnnotationKind)
+                    : new SyntaxAnnotation(LoweringAnnotations.SuspendingCallAnnotationKind,
+                        LoweringAnnotations.ValueReturningCallAnnotationData);
+            }
+            else if (LoweringAnnotations.CreateSyncIntrinsicAnnotation(SyncIntrinsicClassifier.Classify(callee)) is { } sync)
+            {
+                splitPoints[invocation.Span] = sync;
             }
         }
 
-        return calls;
+        return splitPoints;
     }
 
     // [WHY] The caller passes the original arguments again on every resume, so a parameter that the body changes has to
@@ -247,7 +261,7 @@ public static class AstLoweringPipeline
         };
     }
 
-    private sealed class SpanAnnotationRewriter(Dictionary<TextSpan, bool> suspendingCalls, int treeOrdinal) : CSharpSyntaxRewriter
+    private sealed class SpanAnnotationRewriter(Dictionary<TextSpan, SyntaxAnnotation> splitPoints, int treeOrdinal) : CSharpSyntaxRewriter
     {
         public override SyntaxNode? Visit(SyntaxNode? node)
         {
@@ -265,14 +279,9 @@ public static class AstLoweringPipeline
                         LoweringAnnotations.FormatOriginalSpanData(node, treeOrdinal)));
             }
 
-            if (node is not InvocationExpressionSyntax || !suspendingCalls.TryGetValue(node.Span, out var returnsValue))
-            {
-                return visited;
-            }
-
-            return visited.WithAdditionalAnnotations(returnsValue
-                ? new SyntaxAnnotation(LoweringAnnotations.SuspendingCallAnnotationKind, LoweringAnnotations.ValueReturningCallAnnotationData)
-                : new SyntaxAnnotation(LoweringAnnotations.SuspendingCallAnnotationKind));
+            return node is InvocationExpressionSyntax && splitPoints.TryGetValue(node.Span, out var splitPoint)
+                ? visited.WithAdditionalAnnotations(splitPoint)
+                : visited;
         }
     }
 }

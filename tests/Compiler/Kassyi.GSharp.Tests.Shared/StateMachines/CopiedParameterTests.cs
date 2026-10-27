@@ -218,6 +218,9 @@ public class CopiedParameterTests
         var symbol = model.GetDeclaredSymbol<IMethodSymbol>(method)
                      ?? throw new InvalidOperationException($"{methodName} has no symbol.");
 
-        return AstLoweringPipeline.Lower(method, withModel ? model : null, symbol);
+        // Without a model the barriers are annotated by spelling (TestSyncAnnotator), as the pipeline does by symbol
+        return withModel
+            ? AstLoweringPipeline.Lower(method, model, symbol)
+            : AstLoweringPipeline.Lower(TestSyncAnnotator.Annotate(method), null, symbol);
     }
 }

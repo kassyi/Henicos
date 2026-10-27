@@ -122,7 +122,7 @@ public class BarrierUsageAnalyzer : DiagnosticAnalyzer
     private static void AnalyzeSuspendingCallContext(SyntaxNodeAnalysisContext context,
         InvocationExpressionSyntax invocation)
     {
-        var unsupportedContext = FindUnsupportedContext(invocation);
+        var unsupportedContext = FindUnsupportedContext(invocation, context.SemanticModel);
         var byReferenceArgument = FindNonVariableByReferenceArgument(invocation);
         if (unsupportedContext == null && byReferenceArgument == null)
         {
@@ -151,7 +151,7 @@ public class BarrierUsageAnalyzer : DiagnosticAnalyzer
         }
     }
 
-    private static string? FindUnsupportedContext(InvocationExpressionSyntax invocation)
+    private static string? FindUnsupportedContext(InvocationExpressionSyntax invocation, SemanticModel semanticModel)
     {
         SyntaxNode child = invocation;
         for (var ancestor = invocation.Parent;
@@ -162,7 +162,7 @@ public class BarrierUsageAnalyzer : DiagnosticAnalyzer
             {
                 // The transpiler inlines the body (CUDA), and the lowering inlines a SyncGrid body and turns ForUnroll into a
                 // loop (CPU dialects, managed)
-                case AnonymousFunctionExpressionSyntax when IsInlinedIntrinsicArgument(ancestor):
+                case AnonymousFunctionExpressionSyntax when IsInlinedMacroBody(ancestor, semanticModel):
                     break;
                 case AnonymousFunctionExpressionSyntax:
                     return "in a lambda or anonymous method";
@@ -183,18 +183,19 @@ public class BarrierUsageAnalyzer : DiagnosticAnalyzer
         return null;
     }
 
-    private static bool IsInlinedIntrinsicArgument(SyntaxNode lambda) =>
-        lambda.Parent is ArgumentSyntax
+    // The body lambda of a Gpu.ForUnroll or Gpu.SyncGrid(body), however the call is spelled (#503)
+    private static bool IsInlinedMacroBody(SyntaxNode lambda, SemanticModel semanticModel)
+    {
+        if (lambda.Parent is not ArgumentSyntax { Parent: ArgumentListSyntax { Parent: InvocationExpressionSyntax macro } list } argument ||
+            semanticModel.GetSymbol(macro) is not IMethodSymbol symbol)
         {
-            Parent.Parent: InvocationExpressionSyntax
-            {
-                Expression: MemberAccessExpressionSyntax
-                {
-                    Expression: IdentifierNameSyntax { Identifier.ValueText: TypeConstants.GpuType },
-                    Name.Identifier.ValueText: TypeConstants.GpuMacros.SyncGrid or "ForUnroll"
-                }
-            }
-        };
+            return false;
+        }
+
+        var call = GpuMacroClassifier.Classify(symbol);
+        return call is { Kind: GpuMacroKind.ForUnroll or GpuMacroKind.SyncGrid, HasBody: true } &&
+               list.Arguments.IndexOf(argument) == call.LambdaArgumentIndex;
+    }
 
     private static ArgumentSyntax? FindNonVariableByReferenceArgument(InvocationExpressionSyntax invocation) =>
         invocation.ArgumentList.Arguments
@@ -216,29 +217,22 @@ public class BarrierUsageAnalyzer : DiagnosticAnalyzer
         return symbol is IMethodSymbol && GpuExecutionSpace.IsGpuFunction(symbol);
     }
 
+    /// <summary>
+    /// Whether <paramref name="invocation"/> calls <c>Gpu.SyncThreads()</c>, however it is spelled (<c>Gpu.</c>, a
+    /// <c>using</c> alias, <c>using static</c>, the full name), by its symbol (<see cref="SyncIntrinsicClassifier"/>).
+    /// </summary>
     internal static bool IsSyncThreadsInvocation(InvocationExpressionSyntax invocation, SemanticModel semanticModel)
     {
-        if (invocation.Expression is not MemberAccessExpressionSyntax ma)
+        // Fast path: a call whose name is not SyncThreads is not resolved
+        var name = invocation.Expression switch
         {
-            return false;
-        }
+            MemberAccessExpressionSyntax memberAccess => memberAccess.Name.Identifier.ValueText,
+            IdentifierNameSyntax identifier => identifier.Identifier.ValueText,
+            _ => null
+        };
 
-        if (ma.Name.Identifier.ValueText != "SyncThreads")
-        {
-            return false;
-        }
-
-        if (semanticModel.GetSymbol(invocation) is IMethodSymbol symbol)
-        {
-            return symbol.ContainingType is { Name: TypeConstants.GpuType } gpuType &&
-                   gpuType.ContainingNamespace.IsCoreNamespace();
-        }
-
-        if (ma.Expression is IdentifierNameSyntax idExpr)
-        {
-            return idExpr.Identifier.ValueText == TypeConstants.GpuType;
-        }
-
-        return false;
+        return name == TypeConstants.SyncThreadsMethod &&
+               semanticModel.GetSymbol(invocation) is IMethodSymbol symbol &&
+               SyncIntrinsicClassifier.Classify(symbol).Kind == SyncIntrinsicKind.BlockBarrier;
     }
 }
