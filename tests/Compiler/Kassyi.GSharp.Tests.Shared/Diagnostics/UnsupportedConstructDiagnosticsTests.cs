@@ -145,12 +145,71 @@ public class UnsupportedConstructDiagnosticsTests
         var diagnostics = await KernelDiagnostics.RunTestCaseAsync("Diagnostics/OperatorMacroContext.cu.cs", dialect);
 
         Assert.Equal(
-            [(Analyzer, 41, 9, 41, 18)],
+            [(Analyzer, 43, 9, 43, 18)],
             diagnostics.Ranges(GSharpDiagnostics.UnsupportedSyntax.Id, "no parameter or local of that type"));
         Assert.Equal(
-            [(Analyzer, 53, 9, 53, 18)],
+            [(Analyzer, 55, 9, 55, 18)],
             diagnostics.Ranges(GSharpDiagnostics.UnsupportedSyntax.Id, "2 parameters or locals of that type are in scope ('second', 'first')"));
         Assert.Equal(2, diagnostics.Length);
+    }
+
+    // #478: no overload applies (each candidate with its reason), two apply equally well (with and without a context, or
+    // by conversions that are not better than each other),
+    // a ref result parameter needs the operator's own type, and the assignment target does not convert to the result
+    // parameter of the chosen overload
+    [Theory]
+    [InlineData("Cpu")]
+    [InlineData("Cuda")]
+    [Scenario(TestScenario.SadPath)]
+    public async Task Test_OperatorMacroOverload_ReportsGsh0003AtTheAssignment(string dialect)
+    {
+        var diagnostics = await KernelDiagnostics.RunTestCaseAsync("Diagnostics/OperatorMacroOverload.cu.cs", dialect);
+
+        Assert.Equal(
+            [(Analyzer, 109, 9, 109, 19)],
+            diagnostics.Ranges(
+                GSharpDiagnostics.UnsupportedSyntax.Id,
+                "Operator macro target 'NoOverloadOps.Shift' has no overload that takes (OverloadValue result, OverloadValue value, int shift): " +
+                "Shift(OverloadCtx, int, int): 'OverloadValue' does not convert to 'OverloadCtx' for 'ctx'; " +
+                "Shift(ref OverloadCtx, uint[], uint[], int): 'OverloadValue' does not convert to 'uint[]' for 'result'"));
+        Assert.Equal(
+            [(Analyzer, 121, 9, 121, 18)],
+            diagnostics.Ranges(
+                GSharpDiagnostics.UnsupportedSyntax.Id,
+                "Operator macro target 'AmbiguousOps.Add' is ambiguous between Add(uint[], uint[], uint[]) and Add(ref OverloadCtx, uint[], uint[], uint[])"));
+        Assert.Equal(
+            [(Analyzer, 132, 9, 132, 18)],
+            diagnostics.Ranges(
+                GSharpDiagnostics.UnsupportedSyntax.Id,
+                "Add(ref uint[], uint[], uint[]): 'ref' parameter 'result' takes only 'uint[]', not 'OverloadRef'"));
+        Assert.Equal(
+            [(Analyzer, 143, 9, 143, 20)],
+            diagnostics.Ranges(
+                GSharpDiagnostics.UnsupportedSyntax.Id,
+                "The target 'raw' of operator macro 'TargetOps.Add' does not convert to 'OneWayRef' of parameter 'result'"));
+        // Better conversions (C# spec §12.6.4.5): a built-in conversion is not better than a user-defined one, and two
+        // types that convert to each other are not better conversion targets than each other
+        Assert.Equal(
+            [(Analyzer, 245, 9, 245, 19)],
+            diagnostics.Ranges(
+                GSharpDiagnostics.UnsupportedSyntax.Id,
+                "Operator macro target 'ShlOps.Shl' is ambiguous between Shl(uint[], uint[], long) and Shl(uint[], uint[], ShiftCount)"));
+        Assert.Equal(
+            [(Analyzer, 256, 9, 256, 18)],
+            diagnostics.Ranges(
+                GSharpDiagnostics.UnsupportedSyntax.Id,
+                "Operator macro target 'MutualOps.Add' is ambiguous between Add(uint[], uint[], uint[]) and Add(MutualRef, MutualRef, MutualRef)"));
+        Assert.Equal(
+            [(Analyzer, 267, 9, 267, 18)],
+            diagnostics.Ranges(
+                GSharpDiagnostics.UnsupportedSyntax.Id,
+                "Add(uint[], in uint[], uint[]): 'in' parameter 'left' takes only 'uint[]', not 'ConversionValue'"));
+        Assert.Equal(
+            [(Analyzer, 268, 9, 268, 18)],
+            diagnostics.Ranges(
+                GSharpDiagnostics.UnsupportedSyntax.Id,
+                "Add(uint[], ref readonly uint[], uint[]): 'ref readonly' parameter 'left' takes only 'uint[]', not 'ConversionValue'"));
+        Assert.Equal(8, diagnostics.Length);
     }
 
     // StructSizeDiagnostics: SharedMemory<double>(5000) is 40000 bytes; 4096 doubles (exactly 32768 bytes) and 10000

@@ -45,6 +45,8 @@ public class KernelDiagnosticsInventoryTests
         "Diagnostics/OperatorMacroMissingTarget.cu.cs",
         // GSH0003 (operator macro context: none, or more than one)
         "Diagnostics/OperatorMacroContext.cu.cs",
+        // GSH0003 (operator macro overload: none applies, ambiguous, ref result, assignment target)
+        "Diagnostics/OperatorMacroOverload.cu.cs",
         // GSH0003 (ForUnroll, SyncGrid), GSH0006, GSH0012
         "Analyzers/MacroArgumentSadPath.cs",
         // GSH0011
