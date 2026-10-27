@@ -38,7 +38,7 @@ var ptx = "nop;";
 // This will trigger GSharpDiagnostics.InlinePtxArgumentMustBeStringLiteral inside GpuMacroTranspilerRule
 throw new global::System.NotSupportedException("Gpu.InlinePtx is not supported by the StandardCppDialect dialect");
 // This will trigger TranspileConstant path inside GpuMacroTranspilerRule
-var c = Gpu.Constant("MyConst");
+var c = global::Kassyi.GSharp.Core.Gpu.Constant("MyConst");
 __gsharp_ctx.__gsharp_state = -1;
 return;
 }

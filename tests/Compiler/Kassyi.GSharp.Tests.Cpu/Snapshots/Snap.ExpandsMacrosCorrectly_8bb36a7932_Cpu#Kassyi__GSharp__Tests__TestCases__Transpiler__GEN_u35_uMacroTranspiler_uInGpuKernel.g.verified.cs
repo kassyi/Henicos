@@ -280,7 +280,7 @@ __gsharp_ctx.sum += __gsharp_unroll_1;
 }
 
 // SingleThread macro
-Gpu.SingleThread(() =>
+global::Kassyi.GSharp.Core.Gpu.SingleThread(() =>
 {
 __gsharp_ctx.sum += 100;
 });
@@ -433,7 +433,7 @@ return;
 
 case 11:
 {
-Gpu.SingleThread(() =>
+global::Kassyi.GSharp.Core.Gpu.SingleThread(() =>
 {
 __gsharp_ctx.sum += 2;
 __gsharp_ctx.sum += 3;

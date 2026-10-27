@@ -203,16 +203,16 @@ switch (__gsharp_ctx.__gsharp_state)
 case 0:
 {
 // '0' is 48, not the digit 0
-output[0] = Zero;
-output[1] = LetterA;
-output[2] = NewLine;
-output[3] = EAcute;
-output[4] = Nul;
-output[5] = Backslash;
-output[6] = Quote;
-output[7] = LastBmp;
-text[0] = LetterA;
-text[1] = LastBmp;
+output[0] = global::Kassyi.GSharp.Tests.Shared.Syntax.ConstFieldLiteralKernels.Zero;
+output[1] = global::Kassyi.GSharp.Tests.Shared.Syntax.ConstFieldLiteralKernels.LetterA;
+output[2] = global::Kassyi.GSharp.Tests.Shared.Syntax.ConstFieldLiteralKernels.NewLine;
+output[3] = global::Kassyi.GSharp.Tests.Shared.Syntax.ConstFieldLiteralKernels.EAcute;
+output[4] = global::Kassyi.GSharp.Tests.Shared.Syntax.ConstFieldLiteralKernels.Nul;
+output[5] = global::Kassyi.GSharp.Tests.Shared.Syntax.ConstFieldLiteralKernels.Backslash;
+output[6] = global::Kassyi.GSharp.Tests.Shared.Syntax.ConstFieldLiteralKernels.Quote;
+output[7] = global::Kassyi.GSharp.Tests.Shared.Syntax.ConstFieldLiteralKernels.LastBmp;
+text[0] = global::Kassyi.GSharp.Tests.Shared.Syntax.ConstFieldLiteralKernels.LetterA;
+text[1] = global::Kassyi.GSharp.Tests.Shared.Syntax.ConstFieldLiteralKernels.LastBmp;
 __gsharp_ctx.__gsharp_state = -1;
 return;
 }
@@ -624,11 +624,11 @@ switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-wide[0] = (ulong)ConstFieldLiteralWideEnum.Small;
-wide[1] = (ulong)ConstFieldLiteralWideEnum.Large;
-signed[0] = (int)ConstFieldLiteralSignedEnum.Lowest;
-signed[1] = (int)ConstFieldLiteralSignedEnum.Negative;
-signed[2] = (int)ConstFieldLiteralSignedEnum.Highest;
+wide[0] = (ulong)global::Kassyi.GSharp.Tests.Shared.Syntax.ConstFieldLiteralWideEnum.Small;
+wide[1] = (ulong)global::Kassyi.GSharp.Tests.Shared.Syntax.ConstFieldLiteralWideEnum.Large;
+signed[0] = (int)global::Kassyi.GSharp.Tests.Shared.Syntax.ConstFieldLiteralSignedEnum.Lowest;
+signed[1] = (int)global::Kassyi.GSharp.Tests.Shared.Syntax.ConstFieldLiteralSignedEnum.Negative;
+signed[2] = (int)global::Kassyi.GSharp.Tests.Shared.Syntax.ConstFieldLiteralSignedEnum.Highest;
 __gsharp_ctx.__gsharp_state = -1;
 return;
 }
@@ -830,15 +830,15 @@ switch (__gsharp_ctx.__gsharp_state)
 case 0:
 {
 // C++ needs a decimal point before "f" ("2f" is an integer with an unknown suffix)
-output[0] = WholeSingle;
-output[1] = HalfSingle;
+output[0] = global::Kassyi.GSharp.Tests.Shared.Syntax.ConstFieldLiteralKernels.WholeSingle;
+output[1] = global::Kassyi.GSharp.Tests.Shared.Syntax.ConstFieldLiteralKernels.HalfSingle;
 output[2] = float.Epsilon;
-output[3] = NegativeZeroSingle;
+output[3] = global::Kassyi.GSharp.Tests.Shared.Syntax.ConstFieldLiteralKernels.NegativeZeroSingle;
 output[4] = float.MaxValue;
 output[5] = float.NaN;
 output[6] = float.PositiveInfinity;
 output[7] = float.NegativeInfinity;
-output[8] = 3.0f * HalfSingle;
+output[8] = 3.0f * global::Kassyi.GSharp.Tests.Shared.Syntax.ConstFieldLiteralKernels.HalfSingle;
 __gsharp_ctx.__gsharp_state = -1;
 return;
 }
@@ -1034,16 +1034,16 @@ switch (__gsharp_ctx.__gsharp_state)
 case 0:
 {
 // C++ has no "d" suffix
-output[0] = HalfDouble;
-output[1] = WholeDouble;
-output[2] = HugeDouble;
+output[0] = global::Kassyi.GSharp.Tests.Shared.Syntax.ConstFieldLiteralKernels.HalfDouble;
+output[1] = global::Kassyi.GSharp.Tests.Shared.Syntax.ConstFieldLiteralKernels.WholeDouble;
+output[2] = global::Kassyi.GSharp.Tests.Shared.Syntax.ConstFieldLiteralKernels.HugeDouble;
 output[3] = double.Epsilon;
-output[4] = NegativeZeroDouble;
+output[4] = global::Kassyi.GSharp.Tests.Shared.Syntax.ConstFieldLiteralKernels.NegativeZeroDouble;
 output[5] = double.MaxValue;
 output[6] = double.NaN;
 output[7] = double.PositiveInfinity;
 output[8] = double.NegativeInfinity;
-output[9] = 3.0 * HalfDouble;
+output[9] = 3.0 * global::Kassyi.GSharp.Tests.Shared.Syntax.ConstFieldLiteralKernels.HalfDouble;
 __gsharp_ctx.__gsharp_state = -1;
 return;
 }
@@ -1237,15 +1237,15 @@ switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-singles[0] = ScaleBy(3f);
-singles[1] = ScaleByAttribute(3f);
-singles[2] = NaNByAttribute();
-doubles[0] = OffsetBy(0.5);
-doubles[1] = OffsetByAttribute(0.5);
-longs[0] = Widen();
-longs[1] = WidenByAttribute();
-codes[0] = CodeOf();
-codes[1] = CodeOfAttribute();
+singles[0] = global::Kassyi.GSharp.Tests.Shared.Syntax.ConstFieldLiteralKernels.ScaleBy(3f);
+singles[1] = global::Kassyi.GSharp.Tests.Shared.Syntax.ConstFieldLiteralKernels.ScaleByAttribute(3f);
+singles[2] = global::Kassyi.GSharp.Tests.Shared.Syntax.ConstFieldLiteralKernels.NaNByAttribute();
+doubles[0] = global::Kassyi.GSharp.Tests.Shared.Syntax.ConstFieldLiteralKernels.OffsetBy(0.5);
+doubles[1] = global::Kassyi.GSharp.Tests.Shared.Syntax.ConstFieldLiteralKernels.OffsetByAttribute(0.5);
+longs[0] = global::Kassyi.GSharp.Tests.Shared.Syntax.ConstFieldLiteralKernels.Widen();
+longs[1] = global::Kassyi.GSharp.Tests.Shared.Syntax.ConstFieldLiteralKernels.WidenByAttribute();
+codes[0] = global::Kassyi.GSharp.Tests.Shared.Syntax.ConstFieldLiteralKernels.CodeOf();
+codes[1] = global::Kassyi.GSharp.Tests.Shared.Syntax.ConstFieldLiteralKernels.CodeOfAttribute();
 __gsharp_ctx.__gsharp_state = -1;
 return;
 }
@@ -1874,15 +1874,15 @@ switch (__gsharp_ctx.__gsharp_state)
 case 0:
 {
 int x = values[0];
-ints[0] = x - Negative;
+ints[0] = x - global::Kassyi.GSharp.Tests.Shared.Syntax.ConstFieldLiteralKernels.Negative;
 ints[1] = x - -5;
 ints[2] = --x;
 ints[3] = x + +x;
 ints[4] = x - -x * 2;
 ints[5] = x - --x;
-longs[0] = x - NegativeLong;
-singles[0] = -NegativeZeroSingle;
-singles[1] = 1.0f - -NegativeZeroSingle;
+longs[0] = x - global::Kassyi.GSharp.Tests.Shared.Syntax.ConstFieldLiteralKernels.NegativeLong;
+singles[0] = -global::Kassyi.GSharp.Tests.Shared.Syntax.ConstFieldLiteralKernels.NegativeZeroSingle;
+singles[1] = 1.0f - -global::Kassyi.GSharp.Tests.Shared.Syntax.ConstFieldLiteralKernels.NegativeZeroSingle;
 __gsharp_ctx.__gsharp_state = -1;
 return;
 }
@@ -2297,10 +2297,10 @@ switch (__gsharp_ctx.__gsharp_state)
 case 0:
 {
 output[0] = uint.MaxValue * factor;
-output[1] = (ulong)(OneLong << shift);
-output[2] = OneULong << (shift + 23);
+output[1] = (ulong)(global::Kassyi.GSharp.Tests.Shared.Syntax.ConstFieldLiteralKernels.OneLong << shift);
+output[2] = global::Kassyi.GSharp.Tests.Shared.Syntax.ConstFieldLiteralKernels.OneULong << (shift + 23);
 // var keeps uint in C#, auto keeps the literal's type in C++: 7 - 8 wraps only when the literal is 7U
-var seven = SevenU;
+var seven = global::Kassyi.GSharp.Tests.Shared.Syntax.ConstFieldLiteralKernels.SevenU;
 output[3] = seven - 8;
 __gsharp_ctx.__gsharp_state = -1;
 return;
@@ -2489,9 +2489,9 @@ switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-singles[0] = NullableNaN();
-codes[0] = NullableCodeByAttribute();
-codes[1] = NullableCode();
+singles[0] = global::Kassyi.GSharp.Tests.Shared.Syntax.ConstFieldLiteralKernels.NullableNaN();
+codes[0] = global::Kassyi.GSharp.Tests.Shared.Syntax.ConstFieldLiteralKernels.NullableCodeByAttribute();
+codes[1] = global::Kassyi.GSharp.Tests.Shared.Syntax.ConstFieldLiteralKernels.NullableCode();
 __gsharp_ctx.__gsharp_state = -1;
 return;
 }
@@ -2805,26 +2805,26 @@ switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-var defaults = new ConstFieldLiteralDefaults(1);
+var defaults = new global::Kassyi.GSharp.Tests.Shared.Syntax.ConstFieldLiteralDefaults(1);
 longs[0] = defaults.First;
 longs[1] = defaults.Narrow;
 longs[2] = defaults.Wide;
 singles[0] = defaults.NaN;
 int k = 3;
-foreach (var value in DefaultValues())
+foreach (var value in global::Kassyi.GSharp.Tests.Shared.Syntax.ConstFieldLiteralKernels.DefaultValues())
 {
 longs[k] = value;
 k++;
 }
 
-foreach (var value in AttributeDefaultValues())
+foreach (var value in global::Kassyi.GSharp.Tests.Shared.Syntax.ConstFieldLiteralKernels.AttributeDefaultValues())
 {
 longs[k] = value;
 k++;
 }
 
 int d = 0;
-foreach (var value in AttributeNonFiniteValues())
+foreach (var value in global::Kassyi.GSharp.Tests.Shared.Syntax.ConstFieldLiteralKernels.AttributeNonFiniteValues())
 {
 doubles[d] = value;
 d++;

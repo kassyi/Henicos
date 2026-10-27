@@ -151,11 +151,11 @@ public partial class EmissionShapeTests
             cpu,
             StringComparison.Ordinal);
         Assert.Contains(
-            $"public static unsafe bool {StateMachine}SuspendingReadOnlyParameters(in int a, ref readonly int b, {Frame}SuspendingReadOnlyParameters __gsharp_ctx, ref int __gsharp_result) {{",
+            $"public static bool {StateMachine}SuspendingReadOnlyParameters(in int a, ref readonly int b, {Frame}SuspendingReadOnlyParameters __gsharp_ctx, ref int __gsharp_result) {{",
             cpu,
             StringComparison.Ordinal);
         Assert.Contains(
-            $"public static unsafe bool {StateMachine}SuspendingWithoutParameters({Frame}SuspendingWithoutParameters __gsharp_ctx, ref int __gsharp_result) {{",
+            $"public static bool {StateMachine}SuspendingWithoutParameters({Frame}SuspendingWithoutParameters __gsharp_ctx, ref int __gsharp_result) {{",
             cpu,
             StringComparison.Ordinal);
     }
