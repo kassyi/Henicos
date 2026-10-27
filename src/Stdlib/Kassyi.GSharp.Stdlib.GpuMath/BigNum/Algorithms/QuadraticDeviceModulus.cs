@@ -39,12 +39,15 @@ internal sealed class QuadraticDeviceModulus : ISquaringModulus
     private readonly KernelAdvancedMathHandler.NttSquareScratch? _squareScratch;
     private readonly KernelAdvancedMathHandler.NttMultiplyScratch? _multiplyScratch;
     private readonly Dictionary<int, (IntPtr Graph, IntPtr GraphExec)> _graphs = [];
+    private readonly IGpuGraphProvider _graphProvider;
     private bool _warmedUp;
 
     /// <summary>Allocates the registers and scratch for <paramref name="modulus"/>.</summary>
     /// <param name="modulus">The modulus (<c>E &gt;= 4</c>, where the fold is defined).</param>
     /// <param name="isCpu">Whether the instance runs in CPU fallback mode.</param>
-    public QuadraticDeviceModulus(QuadraticFoldModulus modulus, bool isCpu)
+    /// <param name="graphProvider">The CUDA Graph operations, or <see langword="null"/> for the workspace provider; tests
+    /// pass a wrapper to observe them.</param>
+    public QuadraticDeviceModulus(QuadraticFoldModulus modulus, bool isCpu, IGpuGraphProvider? graphProvider = null)
     {
         if (modulus.E < QuadraticFoldModulus.MinFoldExponent)
         {
@@ -55,6 +58,7 @@ internal sealed class QuadraticDeviceModulus : ISquaringModulus
         _modulus = modulus;
         _isCpu = isCpu;
         _workspace = new GpuWorkspace(modulus.ProductWords);
+        _graphProvider = graphProvider ?? _workspace.Provider;
         try
         {
             for (var i = 0; i < s_registerCount; i++)
@@ -83,6 +87,13 @@ internal sealed class QuadraticDeviceModulus : ISquaringModulus
     }
 
     public int Words => _modulus.Words;
+
+    /// <summary>
+    /// Gets or sets a test hook called before each squaring recorded into a CUDA Graph, with its index; an exception it
+    /// throws fails the capture, which must then be ended and its partial graph destroyed. <see langword="null"/> in
+    /// production.
+    /// </summary>
+    internal Action<int>? CaptureFault { get; set; }
 
     public BigInteger GetModulus() =>
         new(System.Runtime.InteropServices.MemoryMarshal.AsBytes(_modulus.Modulus), isUnsigned: true, isBigEndian: false);
@@ -158,7 +169,7 @@ internal sealed class QuadraticDeviceModulus : ISquaringModulus
             var graphExec = GetOrCaptureGraph(length);
             for (var r = 0; r < repeats; r++)
             {
-                _workspace.Provider.LaunchGraph(graphExec, _workspace.Stream);
+                _graphProvider.LaunchGraph(graphExec, _workspace.Stream);
             }
 
             count -= length * repeats;
@@ -210,7 +221,7 @@ internal sealed class QuadraticDeviceModulus : ISquaringModulus
             _graphs.Remove(length, out var entry);
             try
             {
-                _workspace.Provider.DestroyGraph(entry.Graph, entry.GraphExec);
+                _graphProvider.DestroyGraph(entry.Graph, entry.GraphExec);
             }
             catch (Exception ex)
             {
@@ -302,13 +313,14 @@ internal sealed class QuadraticDeviceModulus : ISquaringModulus
             return cached.GraphExec;
         }
 
-        var provider = _workspace.Provider;
+        var provider = _graphProvider;
         var stream = _workspace.Stream;
         provider.BeginCapture(stream);
         try
         {
             for (var i = 0; i < length; i++)
             {
+                CaptureFault?.Invoke(i);
                 SquareOnce(SquaringRegister.State);
             }
         }

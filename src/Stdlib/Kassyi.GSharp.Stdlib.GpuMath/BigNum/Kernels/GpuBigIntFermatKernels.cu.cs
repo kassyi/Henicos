@@ -210,28 +210,6 @@ public static partial class GpuBigIntFermatKernels
         }
     }
 
-    [GpuDeviceFunction]
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static uint GetShiftedLeftWord(
-        [GpuReadOnly] uint[] data,
-        int numWords,
-        int destIdx,
-        int wordShift,
-        int bitShift)
-    {
-        var srcIdx0 = destIdx - wordShift;
-        var srcIdx1 = srcIdx0 - 1;
-
-        var w0 = (srcIdx0 >= 0 && srcIdx0 < numWords) ? data[srcIdx0] : 0u;
-        if (bitShift == 0)
-        {
-            return w0;
-        }
-
-        var w1 = (srcIdx1 >= 0 && srcIdx1 < numWords) ? data[srcIdx1] : 0u;
-        return (w0 << bitShift) | (w1 >> (32 - bitShift));
-    }
-
     /// <summary>
     /// Returns word <paramref name="index"/> of the quotient <c>q = source &gt;&gt; (32 * foldWord + foldBit)</c>, reading words
     /// past <paramref name="sourceWords"/> as 0, and 0 for a negative index.

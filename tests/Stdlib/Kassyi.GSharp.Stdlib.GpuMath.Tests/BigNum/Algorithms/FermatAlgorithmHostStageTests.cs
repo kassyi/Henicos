@@ -126,12 +126,15 @@ public class FermatAlgorithmHostStageTests
     [Scenario(TestScenario.Boundary)]
     [InlineData(5)]
     [InlineData(13)]
+    [InlineData(21)]
     [InlineData(31)]
     public void Restore_EveryVerifiedPoint_ResumesToTheSameResult(int e)
     {
         // B = 7: for E = 5 and 13 the last point K' is past K = 2E + 1 and carries u_K; for E = 31, K = 63 is a block
         // boundary, so the last point is u_K itself and Load copies it from the state.
+        // E = 21 is itself a block boundary: the point at k = E holds u_E as its state, and Load copies it.
         // mutant: SquaringChainDriver.cs Load `_modulus.Copy(Final, State)` for Iteration == ChainLength removed (E = 31)
+        // mutant: SquaringChainDriver.cs Load `_modulus.Copy(Snapshot, State)` for Iteration == SnapshotAt removed (E = 21)
         var options = new FermatPrpOptions { BlockSize = 7, CheckIntervalBlocks = 1 };
         var checkpoints = new List<FermatPrpCheckpoint>();
         FermatPrpResult expected;
@@ -149,6 +152,7 @@ public class FermatAlgorithmHostStageTests
             var result = resumed.Run();
 
             Assert.True(expected.Residue64 == result.Residue64, $"E={e}, resumed from {checkpoint.Iteration}");
+            Assert.True(expected.CheckResidue64 == result.CheckResidue64, $"E={e}, u_E after resuming from {checkpoint.Iteration}");
             Assert.Equal(expected.IsProbablePrime, result.IsProbablePrime);
         }
     }

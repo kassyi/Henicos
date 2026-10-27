@@ -138,6 +138,17 @@ public sealed class FermatAlgorithm : IDisposable
     /// </summary>
     public long Iteration => _iteration;
 
+    /// <summary>
+    /// Gets or sets a test hook (internal): it receives the position after every squaring of the chain and, when it
+    /// returns <see langword="true"/>, corrupts the state there. It shows that the Gerbicz-Li check detects errors;
+    /// <see langword="null"/> (the default) costs one branch per block.
+    /// </summary>
+    internal Func<long, bool>? CorruptStateAt
+    {
+        get => _driver.FaultInjection;
+        set => _driver.FaultInjection = value;
+    }
+
     /// <summary>Returns <c>N = 2^(2E+1) - 2^E + 11</c>.</summary>
     /// <returns>The modulus; this allocates <c>O(E)</c> bits.</returns>
     public BigInteger GetModulus()

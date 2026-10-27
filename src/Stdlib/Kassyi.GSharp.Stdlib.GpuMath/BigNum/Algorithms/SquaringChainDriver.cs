@@ -86,6 +86,14 @@ internal sealed class SquaringChainDriver
     /// <summary>Gets <c>K' = roundUp(K, B)</c>, where the chain ends with its last check.</summary>
     public long EndIteration { get; }
 
+    /// <summary>
+    /// Gets or sets a test hook that receives the position after every squaring of the state and, when it returns
+    /// <see langword="true"/>, corrupts the state there (one bit of the low word). <see langword="null"/> in production;
+    /// when set, the state is squared one at a time so that every position is reached.
+    /// </summary>
+    /// <remarks>Shows that the Gerbicz-Li check detects an error and that the rollback recovers from it.</remarks>
+    internal Func<long, bool>? FaultInjection { get; set; }
+
     /// <summary>Returns the starting point <c>k = 0</c>: <c>u_0</c> and <c>d = u_0</c>.</summary>
     public static ChainPoint StartPoint(uint[] start) => new(0, start, start, [], [], 0, 0);
 
@@ -159,6 +167,12 @@ internal sealed class SquaringChainDriver
                     stop = Math.Min(stop, ChainLength);
                 }
 
+                var faultInjection = FaultInjection;
+                if (faultInjection != null)
+                {
+                    stop = Math.Min(stop, k + 1);
+                }
+
                 _modulus.SquareState((int)(stop - k));
                 iterations += stop - k;
                 k = stop;
@@ -170,6 +184,11 @@ internal sealed class SquaringChainDriver
                 if (k == ChainLength)
                 {
                     _modulus.Copy(SquaringRegister.Final, SquaringRegister.State);
+                }
+
+                if (faultInjection != null && faultInjection(k))
+                {
+                    CorruptState();
                 }
             }
 
@@ -230,6 +249,19 @@ internal sealed class SquaringChainDriver
 
         await WaitAsync(synchronous).ConfigureAwait(false);
         return new ChainOutcome(verified, iterations);
+    }
+
+    /// <summary>Flips one low bit of the state (bit 0, or bit 1 when bit 0 would make it <c>N</c>).</summary>
+    private void CorruptState()
+    {
+        var words = _modulus.ReadCanonical(SquaringRegister.State);
+        words[0] ^= 1u;
+        if (!_modulus.IsBelowModulus(words))
+        {
+            words[0] ^= 3u;
+        }
+
+        _modulus.Write(SquaringRegister.State, words);
     }
 
     private ValueTask<uint[]> ReadAsync(SquaringRegister register, bool synchronous) =>
