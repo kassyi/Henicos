@@ -9,12 +9,19 @@ public class CompileCudaToFatbinTask : CompileKernelTaskBase
     [Required]
     public ITaskItem[] CudaSources { get; set; } = [];
 
-    /// <summary>Gets or sets the target GPU architectures (e.g. compute_86,sm_86).</summary>
-    public string TargetArchitectures
-    {
-        get; set;
-    } =
-        "compute_86,sm_86";
+    /// <summary>
+    /// The architectures compiled when <see cref="TargetArchitectures"/> is not set (an empty
+    /// <c>GSharpTargetArchitectures</c> MSBuild property passes nothing): sm_86 SASS, and compute_86 PTX that the driver
+    /// JIT-compiles on GPUs the SASS cannot run on (compute capability 9.0 and newer). Both are generated from the same
+    /// compute_86 PTX, so the PTX costs only its space in the fatbin. 7.5 and 8.0 GPUs need their own entries.
+    /// </summary>
+    public const string DefaultTargetArchitectures = "compute_86,sm_86;compute_86,compute_86";
+
+    /// <summary>
+    /// Gets or sets the target GPU architectures as <c>arch,code</c> pairs separated by <c>;</c>; each pair becomes
+    /// <c>-gencode arch=&lt;arch&gt;,code=&lt;code&gt;</c> (e.g. <c>compute_86,sm_86;compute_86,compute_86</c>).
+    /// </summary>
+    public string TargetArchitectures { get; set; } = DefaultTargetArchitectures;
 
     /// <summary>Gets or sets the path or executable name for the NVIDIA CUDA compiler (nvcc).</summary>
     public string NvccPath { get; set; } = "nvcc";

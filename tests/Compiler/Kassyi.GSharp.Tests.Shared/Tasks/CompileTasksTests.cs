@@ -963,6 +963,24 @@ public class CompileTasksTests
         Assert.Contains("signing-key " + ArtifactHelper.GetSigningKeyFingerprint(), record);
     }
 
+    [Theory]
+    [InlineData("")]
+    [InlineData("combined_fatbin")]
+    [Category(TestCategory.Compiler)]
+    [Scenario(TestScenario.HappyPath)]
+    public void Test_CompileCudaToFatbinTask_DefaultArchitectures_EmitSass86AndPtx86(string combinedName)
+    {
+        using var ctx = new CompileTaskTestContext();
+        CreateOldSource(ctx);
+
+        var task = ctx.CreateCudaTask(["kernel1.cu"], combinedName);
+        Assert.True(task.Execute());
+
+        var nvcc = Assert.Single(ctx.Runner.Invocations, i => i.FileName.Contains("nvcc") && i.Arguments.Contains("--fatbin"));
+        Assert.Contains("-gencode arch=compute_86,code=sm_86 ", nvcc.Arguments);
+        Assert.Contains("-gencode arch=compute_86,code=compute_86 ", nvcc.Arguments);
+    }
+
     private static void CreateOldSource(CompileTaskTestContext ctx, string fileName = "kernel1.cu")
     {
         var source = ctx.CreateDummySource(fileName, "// cuda source");
