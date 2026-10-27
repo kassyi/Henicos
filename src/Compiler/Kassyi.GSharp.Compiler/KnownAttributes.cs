@@ -28,6 +28,8 @@ internal static class KnownAttributes
     public const string CudaImportMetadataName = $"{TypeConstants.CoreNamespace}.{CudaImport}Attribute";
     public const string BclIntrinsicMap = nameof(BclIntrinsicMap);
     public const string BclIntrinsicMapMetadataName = $"{TypeConstants.CoreNamespace}.{BclIntrinsicMap}Attribute";
+    public const string GpuDeviceExport = nameof(GpuDeviceExport);
+    public const string GpuDeviceExportMetadataName = $"{TypeConstants.CoreNamespace}.{GpuDeviceExport}Attribute";
     public const string StructLayout = nameof(StructLayout);
     public const string FieldOffset = nameof(FieldOffset);
     public const string In = nameof(In);
@@ -64,7 +66,8 @@ internal static class KnownAttributes
     public static bool IsDeclaredInOwnerNamespace(INamespaceSymbol? declaringNamespace, string shortName) => shortName switch
     {
         GpuKernel or GpuDeviceFunction or GpuReadOnly or GpuInline or GpuNoInline or GpuConstexpr or CudaIntrinsic
-            or CudaIntrinsicPattern or GpuOperatorMacro or GpuResource or TakesOwnership or CudaImport or BclIntrinsicMap =>
+            or CudaIntrinsicPattern or GpuOperatorMacro or GpuResource or TakesOwnership or CudaImport or BclIntrinsicMap
+            or GpuDeviceExport =>
             declaringNamespace.IsCoreNamespace(),
         MethodImpl or SkipLocalsInit or InlineArray => declaringNamespace.IsSystemRuntimeCompilerServices(),
         StructLayout or FieldOffset or In or Out => declaringNamespace.IsSystemRuntimeInteropServices(),

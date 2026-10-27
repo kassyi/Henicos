@@ -23,7 +23,11 @@ public struct Emitter(
     public SourceWriter Writer = writer;
     public OverrideScopeStack LocalVariableOverrides = localVariableOverrides;
     public ITranspilerDialect Dialect { get; } = dialect;
-    public HashSet<string> RequiredIncludes { get; } = new();
+    /// <summary>
+    /// The <c>#include</c> targets that the emitted code needs. A device code export replaces the set for a moment to
+    /// learn what one struct definition needs (<c>StructTranspiler.WriteDefinitionPart</c>).
+    /// </summary>
+    public HashSet<string> RequiredIncludes { get; set; } = new();
 
     /// <summary>
     /// The qualifier of <c>Slot&lt;Key&gt;</c> in the table of dynamic shared memory regions that <c>__gsharp_dsmem</c>
@@ -129,6 +133,24 @@ public readonly struct Reporter(Action<TranspileFailure>? reportFailure, Semanti
     /// its failures reach the same transpilation.
     /// </summary>
     public Reporter WithSemanticModel(SemanticModel model) => new(reportFailure, model);
+
+    /// <summary>
+    /// The same sink, which also calls <paramref name="onFailure"/> for each failure; with <paramref name="forward"/>
+    /// false the failures reach <paramref name="onFailure"/> only (a part of a device code export that keeps its own
+    /// failures, <c>StructSourcePart.Failed</c>).
+    /// </summary>
+    public Reporter Intercept(Action onFailure, bool forward)
+    {
+        var sink = reportFailure;
+        return new Reporter(failure =>
+        {
+            onFailure();
+            if (forward)
+            {
+                sink?.Invoke(failure);
+            }
+        }, semanticModel);
+    }
 }
 
 public struct TranspileContext(

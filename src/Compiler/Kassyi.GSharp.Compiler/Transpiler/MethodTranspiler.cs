@@ -53,8 +53,12 @@ public static class MethodTranspiler
     /// <param name="requiredIncludes">
     /// When this method returns, contains the set of header include directives required by the emitted code.
     /// </param>
+    /// <param name="structSources">
+    /// When given, receives each struct definition and <c>Dispose</c> definition written in front of the method, one by
+    /// one (a device code export records them apart from the function). The returned text is the same either way.
+    /// </param>
     internal static string GenerateCudaSource(in MethodEmissionPlan plan, Action<TranspileFailure>? reportFailure,
-        ITranspilerDialect dialect, out HashSet<string> requiredIncludes)
+        ITranspilerDialect dialect, out HashSet<string> requiredIncludes, StructSourceCollector? structSources = null)
     {
         if (plan.Kind == MethodEmissionKind.Iterator)
         {
@@ -142,13 +146,28 @@ public static class MethodTranspiler
 
         // Before the structs: a Dispose body can use more of them
         context.Emitter.Writer = disposeWriter;
-        UsingTranspiler.WriteDisposeDefinitions(ref context);
+        UsingTranspiler.WriteDisposeDefinitions(ref context, structSources?.Disposes);
 
         context.Emitter.Writer = mainWriter;
         var sortedStructs = StructTranspiler.GetTopologicallySortedStructs(ref context);
         foreach (var structSym in sortedStructs)
         {
-            StructTranspiler.WriteStructDefinition(structSym, ref context);
+            if (structSources == null)
+            {
+                StructTranspiler.WriteStructDefinition(structSym, ref context);
+                continue;
+            }
+
+            var part = StructTranspiler.WriteDefinitionPart(structSym, ref context, isolate: false);
+            mainWriter.Append(part.Text);
+            structSources.Definitions.Add(part);
+        }
+
+        // The structs that the definitions name (a constructor's parameter, an operator's result) without the method
+        // defining them, for the export only
+        if (structSources != null)
+        {
+            StructTranspiler.WriteDiscoveredDefinitions(ref context, structSources);
         }
 
         return mainWriter + disposeWriter.ToString() + bodyWriter.ToString();

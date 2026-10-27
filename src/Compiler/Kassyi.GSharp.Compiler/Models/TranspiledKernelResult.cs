@@ -14,6 +14,7 @@ namespace Kassyi.GSharp.Compiler.Models;
 /// <param name="CudaIncludes">The <c>#include</c> targets of the CUDA source.</param>
 /// <param name="CppIncludes">The <c>#include</c> targets of the C++ source.</param>
 /// <param name="InternalError">The exception that stopped the transpilation (GSH0048), or empty.</param>
+/// <param name="StructExports">The device code export records of the structs that the kernel uses.</param>
 internal readonly record struct TranspiledKernelResult(
     HostClassHeader Class,
     KernelHostModel Host,
@@ -22,7 +23,8 @@ internal readonly record struct TranspiledKernelResult(
     string ManagedCSharpSource,
     EquatableArray<string> CudaIncludes,
     EquatableArray<string> CppIncludes,
-    string InternalError)
+    string InternalError,
+    EquatableArray<DeviceExportRecord> StructExports = default)
 {
     public string GetSource(bool isCuda) => isCuda ? CudaSource : CppSource;
 

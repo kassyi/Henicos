@@ -20,7 +20,10 @@ public class GeneratorDiagnosticsTests : TranspilerTestBase
         var driver = await TestGenerator("ComprehensiveSpecKernel.cu.cs")
                                             .GetDriverAsync();
 
-        await Verify(driver);
+        // The hash of the preludes and the internal names changes with every edit of a prelude
+        await Verify(driver).ScrubLinesWithReplace(static line =>
+            System.Text.RegularExpressions.Regex.Replace(line, "GpuDeviceExportAttribute\\(1, @\"[0-9a-f]{16}\"",
+                "GpuDeviceExportAttribute(1, @\"{PreludeHash}\""));
     }
 
     [Fact]

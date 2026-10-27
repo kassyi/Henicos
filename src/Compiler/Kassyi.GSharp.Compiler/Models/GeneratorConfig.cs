@@ -1,9 +1,16 @@
 namespace Kassyi.GSharp.Compiler.Models;
 
+/// <param name="TargetDialect">The <c>GSharpTargetDialect</c> of the project.</param>
+/// <param name="EmitSource">Whether <c>GSharpEmitSource</c> embeds the generated C++ as constants.</param>
+/// <param name="IntermediateOutputPath">Where the AOT artifacts are written, or <see langword="null"/>.</param>
+/// <param name="ExportDeviceCode">
+/// Whether the assembly records its device code for other assemblies (<c>GSharpExportDeviceCode</c>, default true).
+/// </param>
 internal record struct GeneratorConfig(
     string TargetDialect,
     bool EmitSource,
-    string? IntermediateOutputPath)
+    string? IntermediateOutputPath,
+    bool ExportDeviceCode = true)
 {
     /// <summary>Whether <c>GSharpTargetDialect</c> selects the CUDA dialect; any other value selects the C++ dialect.</summary>
     public readonly bool IsCuda => TranspilerDialects.IsCuda(TargetDialect);

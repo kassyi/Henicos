@@ -31,6 +31,12 @@ public class GpuKernelGenerator : IIncrementalGenerator
     /// <summary>The tracking name of the input of the output that emits the CUDA module context.</summary>
     public const string ModuleContextTrackingName = "GpuModuleContextInput";
 
+    /// <summary>The tracking name of the step that renders each struct that the assembly exports on its own.</summary>
+    public const string StructExportTrackingName = "GpuStructExport";
+
+    /// <summary>The tracking name of the input of the output that writes the device code export records.</summary>
+    public const string DeviceExportsTrackingName = "GpuDeviceExportsInput";
+
     /// <summary>
     /// Collects what one dialect's transpilation could not emit (<see cref="TranspileFailure"/>), each reason once, and
     /// states the reasons in place of that dialect's output.
@@ -55,6 +61,9 @@ public class GpuKernelGenerator : IIncrementalGenerator
         /// </summary>
         public string Apply(string source) =>
             _failures.Count == 0 ? source : NativeModuleAssembler.FormatTranspileFailures(_failures);
+
+        /// <summary>Whether anything failed.</summary>
+        public bool HasFailures => _failures.Count > 0;
     }
 
     private static bool CheckSuppressGs0001(MethodDeclarationSyntax methodDeclaration)
@@ -117,7 +126,11 @@ public class GpuKernelGenerator : IIncrementalGenerator
                     ? Path.Combine(projDir, objPath)
                     : null;
 
-                return new GeneratorConfig(dialect, emitSource, intermediatePath);
+                // Exported unless the project turns it off
+                options.GlobalOptions.TryGetValue("build_property.GSharpExportDeviceCode", out var exportStr);
+                var exportDeviceCode = !string.Equals(exportStr, "false", StringComparison.OrdinalIgnoreCase);
+
+                return new GeneratorConfig(dialect, emitSource, intermediatePath, exportDeviceCode);
             });
 
         // The wrappers take only the assembly names from the compilation, so this value compares equal across edits and
@@ -152,6 +165,19 @@ public class GpuKernelGenerator : IIncrementalGenerator
         var allKernels = kernelMethods.Collect();
         var allDevices = deviceMethods.Collect();
 
+        // The structs that other assemblies can name and whose device definition a consumer cannot build from metadata;
+        // the structs that device code uses come with the functions
+        var standaloneStructs = context.SyntaxProvider
+            .CreateSyntaxProvider(
+                predicate: static (node, _) => node is StructDeclarationSyntax or RecordDeclarationSyntax
+                {
+                    ClassOrStructKeyword.RawKind: (int)SyntaxKind.StructKeyword
+                },
+                transform: static (ctx, _) => RenderStandaloneStruct(ctx))
+            .WithTrackingName(StructExportTrackingName)
+            .Where(static records => !records.IsDefaultOrEmpty)
+            .Collect();
+
         // A project without kernels gets nothing, not even the sources of its device functions
         var hasKernels = allKernels.Select(static (kernels, _) => !kernels.IsDefaultOrEmpty);
 
@@ -179,6 +205,14 @@ public class GpuKernelGenerator : IIncrementalGenerator
         context.RegisterSourceOutput(
             warmups.Combine(hostOptions).Combine(hasKernels).WithTrackingName(ModuleContextTrackingName),
             static (spc, input) => EmitModuleContext(spc, input.Left.Left, input.Left.Right, input.Right));
+        // A library without kernels exports its device functions as well. The records are gathered first, so an edit
+        // that changes no record (a kernel body) leaves the output cached
+        var deviceExports = allDevices.Combine(allKernels).Combine(standaloneStructs).Combine(configProvider)
+            .Select(static (input, _) => CollectDeviceExports(input.Left.Left.Left, input.Left.Left.Right,
+                input.Left.Right, input.Right.ExportDeviceCode));
+        context.RegisterSourceOutput(
+            deviceExports.Combine(configProvider).WithTrackingName(DeviceExportsTrackingName),
+            static (spc, input) => EmitDeviceExports(spc, input.Left, input.Right));
     }
 
     private static TranspiledKernelResult? TranspileKernel(GeneratorAttributeSyntaxContext context)
@@ -203,11 +237,14 @@ public class GpuKernelGenerator : IIncrementalGenerator
 
             var plan = MethodEmissionPlan.Create(methodDeclaration, context.SemanticModel, isKernel: true);
 
+            var cudaStructs = new StructSourceCollector();
+            var cppStructs = new StructSourceCollector();
             var cudaSource = cudaFailures.Apply(MethodTranspiler.GenerateCudaSource(in plan, cudaFailures.Fail, cudaDialect,
-                out var requiredIncludesCuda));
+                out var requiredIncludesCuda, cudaStructs));
             var cppSource = cppFailures.Apply(MethodTranspiler.GenerateCudaSource(in plan, cppFailures.Fail, cppDialect,
-                out var requiredIncludesCpp));
+                out var requiredIncludesCpp, cppStructs));
             var managedCSharpSource = MethodTranspiler.GenerateManagedCSharpSource(in plan);
+            var structExports = DeviceExportEmitter.CreateStructRecords(cudaStructs, cppStructs);
 
             if (!CheckSuppressGs0001(methodDeclaration))
             {
@@ -219,7 +256,8 @@ public class GpuKernelGenerator : IIncrementalGenerator
                     managedCSharpSource,
                     ToIncludes(requiredIncludesCuda),
                     ToIncludes(requiredIncludesCpp),
-                    ""
+                    "",
+                    structExports
                 );
             }
 
@@ -234,7 +272,8 @@ public class GpuKernelGenerator : IIncrementalGenerator
                 managedCSharpSource,
                 ToIncludes(requiredIncludesCuda),
                 ToIncludes(requiredIncludesCpp),
-                ""
+                "",
+                structExports
             );
         }
         catch (Exception ex)
@@ -267,10 +306,14 @@ public class GpuKernelGenerator : IIncrementalGenerator
             var cudaSignature = MethodTranspiler.GenerateCudaSignature(in plan, cudaFailures.Fail, cudaDialect);
             var cppSignature = MethodTranspiler.GenerateCudaSignature(in plan, cppFailures.Fail, cppDialect);
 
-            var cudaBody = cudaFailures.Apply(MethodTranspiler.GenerateCudaSource(in plan, cudaFailures.Fail, cudaDialect,
-                out var requiredIncludesCuda));
-            var cppBody = cppFailures.Apply(MethodTranspiler.GenerateCudaSource(in plan, cppFailures.Fail, cppDialect,
-                out var requiredIncludesCpp));
+            var cudaStructs = new StructSourceCollector();
+            var cppStructs = new StructSourceCollector();
+            var cudaSource = MethodTranspiler.GenerateCudaSource(in plan, cudaFailures.Fail, cudaDialect,
+                out var requiredIncludesCuda, cudaStructs);
+            var cppSource = MethodTranspiler.GenerateCudaSource(in plan, cppFailures.Fail, cppDialect,
+                out var requiredIncludesCpp, cppStructs);
+            var cudaBody = cudaFailures.Apply(cudaSource);
+            var cppBody = cppFailures.Apply(cppSource);
 
             // A device function that may suspend has a frame, which embeds the frames of the calls it makes
             var frameName = "";
@@ -288,6 +331,32 @@ public class GpuKernelGenerator : IIncrementalGenerator
                 managedCSharpSource = MethodTranspiler.GenerateManagedDeviceFunctionSource(in plan);
             }
 
+            var frames = new EquatableArray<string>(frameDependencies.ToImmutable());
+            DeviceExportRecord export = default;
+            var structExports = default(EquatableArray<DeviceExportRecord>);
+            // [WHY] The records are built apart from the transpilation: an exception there fails the records (with the
+            // message, which a consumer states in GSH0089) and leaves the library's own text as it is
+            try
+            {
+                export = plan.Kind == MethodEmissionKind.Iterator
+                    // An iterator is expanded where it is enumerated; another assembly gets GSH0003 for it
+                    ? default
+                    : CreateFunctionRecord(methodSymbol, context.SemanticModel.Compilation,
+                        ExportedText(cudaSignature, cudaSource, cudaStructs, cudaFailures.HasFailures,
+                            ToIncludes(requiredIncludesCuda)),
+                        ExportedText(cppSignature, cppSource, cppStructs, cppFailures.HasFailures,
+                            ToIncludes(requiredIncludesCpp)),
+                        frameName, frames);
+                structExports = DeviceExportEmitter.CreateStructRecords(cudaStructs, cppStructs);
+            }
+            catch (Exception exception) when (exception is not OperationCanceledException)
+            {
+                export = plan.Kind == MethodEmissionKind.Iterator
+                    ? default
+                    : CreateFailedFunctionRecord(methodSymbol, PartFailure.Describe(exception));
+                structExports = default;
+            }
+
             return new TranspiledDeviceMethodResult(
                 HostClassHeader.Create(methodSymbol.ContainingType),
                 methodSymbol.Name,
@@ -299,8 +368,10 @@ public class GpuKernelGenerator : IIncrementalGenerator
                 ToIncludes(requiredIncludesCpp),
                 "",
                 frameName,
-                new EquatableArray<string>(frameDependencies.ToImmutable()),
-                managedCSharpSource);
+                frames,
+                managedCSharpSource,
+                export,
+                structExports);
         }
         catch (Exception ex)
         {
@@ -313,11 +384,199 @@ public class GpuKernelGenerator : IIncrementalGenerator
         }
     }
 
+    // The text of one dialect as the function's record stores it: the signature, and the body without the struct and
+    // Dispose definitions written in front of it, which the struct records hold. Empty when the dialect failed (the
+    // record says so, and a consumer copies no text of it)
+    private static ExportedFunctionText ExportedText(string signature, string source, StructSourceCollector structs,
+        bool failed, EquatableArray<string> includes)
+    {
+        if (failed)
+        {
+            return new ExportedFunctionText("", "", true, includes);
+        }
+
+        var prefix = 0;
+        foreach (var part in structs.Definitions)
+        {
+            prefix += part.Text.Length;
+        }
+
+        foreach (var part in structs.Disposes)
+        {
+            prefix += part.Text.Length;
+        }
+
+        return new ExportedFunctionText(signature, source[prefix..], false, includes);
+    }
+
+    private readonly record struct ExportedFunctionText(
+        string Signature,
+        string Body,
+        bool Failed,
+        EquatableArray<string> Includes);
+
+    // The record of a function whose records could not be built: failed in both dialects, with the message
+    private static DeviceExportRecord CreateFailedFunctionRecord(IMethodSymbol method, string internalError)
+    {
+        var cppName = GlobalCppNames.GetFunctionName(method);
+        return default(DeviceExportRecord) with
+        {
+            Kind = DeviceExportRecord.FunctionKind,
+            Id = method.OriginalDefinition.GetDocumentationCommentId() ?? cppName,
+            CppName = cppName,
+            CppFullName = GlobalCppNames.TryGetFullName(cppName, out var fullName) ? fullName : "",
+            FrameName = "",
+            Effect = "Memory",
+            CudaSignature = "",
+            CudaBody = "",
+            CudaDispose = "",
+            CppSignature = "",
+            CppBody = "",
+            CppDispose = "",
+            CudaFailed = true,
+            CppFailed = true,
+            InternalError = internalError
+        };
+    }
+
+    private static DeviceExportRecord CreateFunctionRecord(IMethodSymbol method, Compilation compilation,
+        ExportedFunctionText cuda, ExportedFunctionText cpp, string frameName, EquatableArray<string> frameDependencies)
+    {
+        var cppName = GlobalCppNames.GetFunctionName(method);
+        var sites = DynamicSharedMemoryAnalysis.GetReachableSites(method, compilation);
+        var siteNames = ImmutableArray.CreateBuilder<string>(sites.Length);
+        foreach (var site in sites)
+        {
+            siteNames.Add(site.ToString("x16", CultureInfo.InvariantCulture));
+        }
+
+        return new DeviceExportRecord(
+            DeviceExportRecord.FunctionKind,
+            method.OriginalDefinition.GetDocumentationCommentId() ?? cppName,
+            cppName,
+            GlobalCppNames.TryGetFullName(cppName, out var fullName) ? fullName : "",
+            default,
+            DeviceExportEmitter.CollectReferences(DeviceExportEmitter.OwnNames(cppName, default), cuda.Signature,
+                cuda.Body),
+            DeviceExportEmitter.CollectReferences(DeviceExportEmitter.OwnNames(cppName, default), cpp.Signature,
+                cpp.Body),
+            frameName,
+            frameDependencies,
+            SuspensionAnalysis.IsSuspendingFunction(method, compilation),
+            SuspensionAnalysis.ReachesBlockBarrier(method, compilation),
+            ContextInferenceEngine.IsParallelDependent(method,
+                new ConcurrentDictionary<IMethodSymbol, bool>(SymbolEqualityComparer.Default), compilation),
+            DynamicSharedMemoryAnalysis.ReachesDynamicSharedMemory(method, compilation),
+            siteNames.MoveToImmutable().AsEquatableArray(),
+            DeviceExportEmitter.FormatEffect(DeviceFunctionEffects.Classify(method, compilation)),
+            cuda.Signature,
+            cuda.Body,
+            "",
+            cpp.Signature,
+            cpp.Body,
+            "",
+            cuda.Includes,
+            cpp.Includes,
+            cuda.Failed,
+            cpp.Failed,
+            ManagedStateMachine: false,
+            "");
+    }
+
+    // A struct that other assemblies can name, rendered for both dialects (StructTranspiler.IsExportedOnItsOwn), with
+    // the structs that its text names; a partial struct is rendered once, from its first declaration. Each struct keeps
+    // its own failures (StructSourcePart.Failed)
+    private static EquatableArray<DeviceExportRecord> RenderStandaloneStruct(GeneratorSyntaxContext context)
+    {
+        if (context.SemanticModel.GetDeclaredSymbol(context.Node) is not INamedTypeSymbol type ||
+            !StructTranspiler.IsExportedOnItsOwn(type, context.SemanticModel.Compilation) ||
+            !type.TryGetDeclaringSyntax<TypeDeclarationSyntax>(out var first) || first != context.Node)
+        {
+            return default;
+        }
+
+        var cudaFailures = new FailureCollector();
+        var cppFailures = new FailureCollector();
+        try
+        {
+            var cuda = StructTranspiler.RenderStandalone(type, context.SemanticModel, new GSharpCudaDialect(),
+                cudaFailures.Fail);
+            var cpp = StructTranspiler.RenderStandalone(type, context.SemanticModel, new StandardCppDialect(),
+                cppFailures.Fail);
+            return DeviceExportEmitter.CreateStructRecords(cuda, cpp);
+        }
+        catch (Exception exception) when (exception is not OperationCanceledException)
+        {
+            // [WHY] Not swallowed: the record is failed in both dialects and keeps the message (InternalError), which a
+            // consumer that uses the struct states in GSH0089. A struct exported on its own may be used by no device
+            // code of the library, so its failure does not stop the library's build (GSH0048)
+            var failed = new StructDialectText("", "", true, default, PartFailure.Describe(exception));
+            return ImmutableArray.Create(DeviceExportEmitter.CreateStructRecord(type, failed, failed))
+                .AsEquatableArray();
+        }
+    }
+
+    // [assembly: GpuDeviceExport(...)] for every exported device function and struct (GSharpExportDeviceCode)
+    private static void EmitDeviceExports(SourceProductionContext context, DeviceExportSet exports, GeneratorConfig config)
+    {
+        if (!config.ExportDeviceCode || (exports.Functions.IsDefaultOrEmpty && exports.Structs.IsDefaultOrEmpty))
+        {
+            return;
+        }
+
+        context.AddSource(DeviceExportEmitter.HintName,
+            SourceText.From(DeviceExportEmitter.Generate(exports.Functions.AsImmutableArray(),
+                exports.Structs.AsImmutableArray(), DeviceExportRecord.CurrentPreludeHash), Encoding.UTF8));
+    }
+
+    // The records of the device functions, of the structs that the kernels and device functions use, and of the structs
+    // exported on their own; none when the project exports nothing
+    private static DeviceExportSet CollectDeviceExports(ImmutableArray<TranspiledDeviceMethodResult> deviceMethods,
+        ImmutableArray<TranspiledKernelResult> kernelMethods,
+        ImmutableArray<EquatableArray<DeviceExportRecord>> standaloneStructs, bool exportDeviceCode)
+    {
+        if (!exportDeviceCode)
+        {
+            return default;
+        }
+
+        var functions = ImmutableArray.CreateBuilder<DeviceExportRecord>();
+        var structs = ImmutableArray.CreateBuilder<DeviceExportRecord>();
+        standaloneStructs
+            .AsStackEnumerable()
+            .SelectMany(static records => records
+                .AsStackEnumerable()
+            ).AddTo(structs);
+        foreach (var method in GetDistinctDeviceMethods(deviceMethods))
+        {
+            if (method.Export.IsValid)
+            {
+                functions.Add(method.Export);
+            }
+
+            method.StructExports
+                .AsStackEnumerable()
+                .AddTo(structs);
+        }
+
+        foreach (var kernel in kernelMethods)
+        {
+            kernel.StructExports
+                .AsStackEnumerable()
+                .AddTo(structs);
+        }
+
+        return new DeviceExportSet(functions.ToImmutable().AsEquatableArray(), structs.ToImmutable().AsEquatableArray());
+    }
+
     // The prelude and the device functions shared by every kernel, as C# constants for the JIT path
+    // [WHY] The generator's own failures (GSH0048) of the device functions are reported with the shared sources of a
+    // module with kernels, and also by an assembly without kernels that exports its device code: its consumers would
+    // otherwise only see GSH0088 for a function that has no record
     private static void EmitSharedSources(SourceProductionContext context,
         ImmutableArray<TranspiledDeviceMethodResult> deviceMethods, GeneratorConfig config, bool hasKernels)
     {
-        if (!hasKernels)
+        if (!hasKernels && !config.ExportDeviceCode)
         {
             return;
         }
@@ -326,6 +585,11 @@ public class GpuKernelGenerator : IIncrementalGenerator
         foreach (var method in distinctDeviceMethods)
         {
             ReportInternalError(context, method.InternalError);
+        }
+
+        if (!hasKernels)
+        {
+            return;
         }
 
         if (!config.EmitSource)
