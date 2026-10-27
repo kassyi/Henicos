@@ -1,44 +1,44 @@
-# 言語の意味の憲章（2026-10-28 決定）
+# Semantics Charter (decided 2026-10-28)
 
-C#、GPU（CUDA）、CPU（ネイティブ C++ と managed）の定義が食い違うとき、どれに従うかを定めます。
-設計、コンパイラーの変更、診断の追加は、すべてこれに従います。利用者向けの全文は
-[docs/spec/en/01_language/06_semantics.md](../../docs/spec/en/01_language/06_semantics.md) にあります。
+This rule fixes which definition wins when C#, the GPU (CUDA) and the CPU paths (native C++ and managed) disagree.
+Every design, compiler change and new diagnostic follows it. The full user-facing text is
+[docs/spec/en/01_language/06_semantics.md](../../docs/spec/en/01_language/06_semantics.md).
 
-## 1. 原則
+## 1. Principles
 
-1. **GPU が正解**: G# の G は GPU。CPU の経路は評価用で、GPU の結果を再現し、検査する。CPU に合わせて GPU を遅くしない。
-2. **書いたとおりに動く**: 各 GPU スレッドは、渡された C# をそのまま実行する。仕事・同期・実行回数を暗黙に足したり変えたりしない。
-3. **意味を足すのは印があるときだけ**: 糖衣構文は歓迎する。ただし、利用者が書いた印（`AsParallel()`、`Gpu.SyncGrid(body)` のような API、属性、`async` のような修飾子）があるときだけ。印があれば、約束した結果を守る範囲で最速の形に変換してよい。
-4. **未定義動作はエラー**: C# も GPU も結果を決めていない形は、G# が勝手に意味を決めず、エラーにする。
+1. **The GPU is the target**: the G in G# is the GPU. The CPU paths exist for evaluation: they reproduce the GPU result and check it. Never make the GPU slower to match the CPU.
+2. **What you write is what runs**: each GPU thread executes the C# it was given. Never implicitly add work or synchronization, or change how many times something runs.
+3. **Extra meaning needs a marker**: syntax sugar is welcome, but only behind a marker the user wrote (an API such as `AsParallel()` or `Gpu.SyncGrid(body)`, an attribute, a modifier such as `async`). With the marker, the compiler may use the fastest form that keeps the promised result.
+4. **Undefined behavior is an error**: when neither C# nor the GPU defines the result, G# does not pick a meaning; it reports an error.
 
-## 2. どの定義に従うか
+## 2. Which definition wins
 
-| C# | GPU | 従うもの |
+| C# | GPU | Follow |
 | :- | :- | :- |
-| 決めている | 同じ | 衝突なし |
-| 決めている | 未定義 | C#（GPU も CPU も）。シフト量、符号付きの桁あふれ、0 除算、範囲外、評価順 |
-| 決めている | 違う結果を決めている | GPU（数学関数の精度、FMA、非正規化数）。ただし C# が値を厳密に決めている約束（`Math.Round` の偶数丸め、比較、変換）は C# |
-| 決めていない（G# 独自の API） | 決めている | GPU。CPU が未定義でも、CPU と食い違っても GPU |
-| 決めていない | 未定義 | エラー（3 節） |
+| Defines the result | Same result | No conflict |
+| Defines the result | Undefined | C#, on the GPU and the CPU: shift counts, signed overflow, division by zero, out-of-range index, order of evaluation |
+| Defines the result | Defines a different result | The GPU (math accuracy, FMA, denormals), except value contracts C# fixes exactly (`Math.Round` to even, comparisons, conversions), which follow C# |
+| Does not define it (G#-specific APIs) | Defines the result | The GPU, even where the CPU leaves it undefined or gives a different result |
+| Does not define it | Undefined | Error (§3) |
 
-## 3. 未定義動作の扱い（`1 / 0` と同じ考え方）
+## 3. Undefined behavior (treated like `1 / 0`)
 
-- コンパイル時に確実に分かる形はコンパイルエラーにし、意図どおりに書く明示の形をメッセージで示す。
-- 実行しないと分からない形は、ネイティブ CPU、managed、検査つき CUDA ビルドで、位置を示して実行時エラーにする。本番の CUDA ビルドは確認しない。
-- 解析が「たぶん」としか言えない形はコンパイルエラーにしない（正しいコードを拒まない）。
-- CPU の経路でたまたま出た結果を正解として扱わない。CPU と GPU の結果が違えば、まず GPU の未定義動作を疑う。
+- A form that is certain at compile time is a compile error; the message shows the explicit form that does what the user meant.
+- A form known only at run time is a run-time error, with the source location, on the native CPU build, the managed path and the checked CUDA build. The release CUDA build does not check.
+- A form the analysis can only suspect is not a compile error (never reject correct code).
+- A result a CPU path happens to produce is never treated as correct. When the CPU and GPU results differ, suspect undefined behavior on the GPU first.
 
-## 4. C# に従う費用
+## 4. The cost of following C#
 
-- 範囲の確認や 0 除算の確認は、既定で入れる。範囲内と証明できる所は消す（.NET の JIT と同じ）。
-- 残りを速さのために外すのは、利用者が書く明示の印による（`[SkipLocalsInit]` と同じ考え方）。
+- Bounds checks and division-by-zero checks are on by default and removed where the compiler proves them unnecessary (as the .NET JIT does).
+- Turning off the rest for speed takes an explicit marker the user writes (the same idea as `[SkipLocalsInit]`).
 
-## 5. CPU の経路
+## 5. The CPU paths
 
-- CPU で GPU の結果を完全に再現できない形は、CPU ではサポートしない。技術的な壁は越えるが、形の定義そのものから来る限界は越えない。
+- A form whose GPU result the CPU cannot reproduce exactly is not supported on the CPU. Overcome technical obstacles, but not limits that come from the definition of the form itself.
 
-## 6. エージェントへの指示
+## 6. Instructions for agents
 
-- 設計で「暗黙に意味を足す」案（書いていない同期、実行回数の変更、協調起動の自動選択など）を推奨にしない。必要なら、明示の API・属性として提案する。
-- 未定義動作を、どれかの方言の結果に合わせて「定義」して消さない。上の 3 節の診断として扱う。
-- 既存の実装と設計のうち、この憲章に反するものの一覧は棚卸しで作り、Issue にする。
+- Never recommend a design that adds meaning implicitly (unwritten synchronization, changing how many times code runs, choosing cooperative launch automatically). If the behavior is needed, propose it as an explicit API or attribute.
+- Never "define away" undefined behavior by adopting one dialect's result. Treat it as a diagnostic under §3.
+- Existing code and designs that break this charter are listed by an inventory and filed as issues.
