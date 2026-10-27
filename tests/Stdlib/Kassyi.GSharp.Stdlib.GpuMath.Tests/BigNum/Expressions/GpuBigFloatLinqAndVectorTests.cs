@@ -295,6 +295,40 @@ public class GpuBigFloatLinqAndVectorTests : IDisposable
     [Fact]
     [Category(TestCategory.Unit)]
     [Scenario(TestScenario.Boundary)]
+    public void GpuBigFloatArray_CompareNegativeZero_EqualsZero()
+    {
+        // The float comparison takes the signs from its own sign arrays; a negative zero (sign 1, significand 0) must
+        // compare equal to zero, as the integer comparison does. Expected values: -0.0 == 0.0 in IEEE / System.Double.
+        using var vec = new GpuBigFloatArray(_context, 2, 4);
+        using var other = new GpuBigFloatArray(_context, 2, 4);
+        using var negativeZero = new GpuBigFloat(new GpuBigUInt(_context, new uint[4]), 0, isNegative: true);
+        using var zero = CreateFloat(0);
+        vec.SetElement(0, negativeZero);
+        vec.SetElement(1, zero);
+        other.SetElement(0, zero);
+        other.SetElement(1, negativeZero);
+        var signsHost = new uint[2];
+        _context.Provider.CopyDeviceToHost(signsHost, vec.Signs.DevicePointer, 2);
+        Assert.Equal([1u, 0u], signsHost); // the negative zero is really stored with sign 1
+
+        using var eqVector = vec.AsVectorizedEnumerable().IsEqualTo(other.AsVectorizedEnumerable());
+        using var ltVector = vec.AsVectorizedEnumerable().IsLessThan(other.AsVectorizedEnumerable());
+        using var eqScalar = vec.AsVectorizedEnumerable().IsEqualTo(negativeZero);
+        var eqVectorHost = new uint[2];
+        var ltVectorHost = new uint[2];
+        var eqScalarHost = new uint[2];
+        _context.Provider.CopyDeviceToHost(eqVectorHost, eqVector.Evaluate(_context).DevicePointer, 2);
+        _context.Provider.CopyDeviceToHost(ltVectorHost, ltVector.Evaluate(_context).DevicePointer, 2);
+        _context.Provider.CopyDeviceToHost(eqScalarHost, eqScalar.Evaluate(_context).DevicePointer, 2);
+
+        Assert.Equal([-0.0 == 0.0 ? 1u : 0u, 0.0 == -0.0 ? 1u : 0u], eqVectorHost);
+        Assert.Equal([-0.0 < 0.0 ? 1u : 0u, 0.0 < -0.0 ? 1u : 0u], ltVectorHost);
+        Assert.Equal([-0.0 == -0.0 ? 1u : 0u, 0.0 == -0.0 ? 1u : 0u], eqScalarHost);
+    }
+
+    [Fact]
+    [Category(TestCategory.Unit)]
+    [Scenario(TestScenario.Boundary)]
     public void GpuBigFloatArray_MultiChunk_SumMaxMin_ReduceCorrectlyOnGpu()
     {
         const int length = 300; // Crosses 256-element chunk boundary (2 passes)

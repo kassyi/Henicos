@@ -117,6 +117,8 @@ public static GpuBigIntExpr Count(this IGpuBigIntVectorExpression source);
 
 Compares each element of a vectorized expression against either a `GpuBigInt` scalar or another `IGpuBigIntVectorExpression`, returning an `IGpuBoolVectorExpression`.
 
+The comparison is signed and agrees with `BigInteger.CompareTo`: `-100 < 50`, `-3 != 3`, and `-100 < -3`. A negative zero (sign set, magnitude 0) equals zero. The two sides may have different word counts: each side is read with its own word count, and the missing upper words of the narrower side are 0, so a 4-word `3` equals an 8-word `3`. A scalar is read with its own word count, which may be smaller or larger than the elements'. Two vectors must have the same length (`ArgumentException`).
+
 ```csharp
 public static IGpuBoolVectorExpression IsEqualTo(this IGpuBigIntVectorExpression source, GpuBigInt scalar);
 public static IGpuBoolVectorExpression IsNotEqualTo(this IGpuBigIntVectorExpression source, GpuBigInt scalar);
