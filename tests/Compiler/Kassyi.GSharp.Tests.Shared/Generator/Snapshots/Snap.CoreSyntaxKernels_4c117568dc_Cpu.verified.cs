@@ -724,6 +724,7 @@ global::Kassyi.GSharp.Core.ManagedGpuContext.IsActive = false;
 }
 return;
 }
+if (global::System.Runtime.CompilerServices.Unsafe.SizeOf<global::Kassyi.GSharp.Tests.Shared.Syntax.Vector2>() != 8) global::Kassyi.GSharp.Runtime.Interop.LayoutGuard.ThrowSizeMismatch("Kassyi.GSharp.Tests.Shared.Syntax.Vector2", 8, global::System.Runtime.CompilerServices.Unsafe.SizeOf<global::Kassyi.GSharp.Tests.Shared.Syntax.Vector2>());
 var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<StructKernel_Delegate>("__gsharp_launch_Kassyi__GSharp__Tests__Shared__Syntax__CoreSyntaxKernels__StructKernel", dllPath);
 fixed (global::Kassyi.GSharp.Tests.Shared.Syntax.Vector2* p_vectors = vectors)
 {
@@ -946,6 +947,7 @@ global::Kassyi.GSharp.Core.ManagedGpuContext.IsActive = false;
 }
 return;
 }
+if (global::System.Runtime.CompilerServices.Unsafe.SizeOf<global::Kassyi.GSharp.Tests.Shared.Syntax.MixedPaddingStruct>() != 24) global::Kassyi.GSharp.Runtime.Interop.LayoutGuard.ThrowSizeMismatch("Kassyi.GSharp.Tests.Shared.Syntax.MixedPaddingStruct", 24, global::System.Runtime.CompilerServices.Unsafe.SizeOf<global::Kassyi.GSharp.Tests.Shared.Syntax.MixedPaddingStruct>());
 var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<PaddedStructKernel_Delegate>("__gsharp_launch_Kassyi__GSharp__Tests__Shared__Syntax__CoreSyntaxKernels__PaddedStructKernel", dllPath);
 fixed (global::Kassyi.GSharp.Tests.Shared.Syntax.MixedPaddingStruct* p_items = items)
 {

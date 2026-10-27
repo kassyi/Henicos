@@ -260,6 +260,7 @@ global::Kassyi.GSharp.Core.ManagedGpuContext.IsActive = false;
 }
 return;
 }
+if (global::System.Runtime.CompilerServices.Unsafe.SizeOf<global::Kassyi.GSharp.Tests.Shared.Core.StructSizePaddedInt>() != 16) global::Kassyi.GSharp.Runtime.Interop.LayoutGuard.ThrowSizeMismatch("Kassyi.GSharp.Tests.Shared.Core.StructSizePaddedInt", 16, global::System.Runtime.CompilerServices.Unsafe.SizeOf<global::Kassyi.GSharp.Tests.Shared.Core.StructSizePaddedInt>());
 var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<ReadSecondPaddedKernel_Delegate>("__gsharp_launch_Kassyi__GSharp__Tests__Shared__Core__StructSizeKernels__ReadSecondPaddedKernel", dllPath);
 fixed (global::Kassyi.GSharp.Tests.Shared.Core.StructSizePaddedInt* p_data = data)
 fixed (global::System.Int32* p_o = o)
@@ -702,6 +703,7 @@ global::Kassyi.GSharp.Core.ManagedGpuContext.IsActive = false;
 }
 return;
 }
+if (global::System.Runtime.CompilerServices.Unsafe.SizeOf<global::Kassyi.GSharp.Tests.Shared.Core.StructSizePacked>() != 7) global::Kassyi.GSharp.Runtime.Interop.LayoutGuard.ThrowSizeMismatch("Kassyi.GSharp.Tests.Shared.Core.StructSizePacked", 7, global::System.Runtime.CompilerServices.Unsafe.SizeOf<global::Kassyi.GSharp.Tests.Shared.Core.StructSizePacked>());
 var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<ReadSecondPackedKernel_Delegate>("__gsharp_launch_Kassyi__GSharp__Tests__Shared__Core__StructSizeKernels__ReadSecondPackedKernel", dllPath);
 fixed (global::Kassyi.GSharp.Tests.Shared.Core.StructSizePacked* p_data = data)
 fixed (global::System.Int32* p_o = o)
@@ -747,8 +749,9 @@ return;
 #undef __gsharp_state
 #undef __gsharp_yielded_for_grid_sync
 }
-extern ""C"" __declspec(dllexport) void __gsharp_launch_Kassyi__GSharp__Tests__Shared__Core__StructSizeKernels__ReadPaddedByValueKernel(uint32_t __gsharp_grid_dim_x, uint32_t __gsharp_grid_dim_y, uint32_t __gsharp_grid_dim_z, uint32_t __gsharp_block_dim_x, uint32_t __gsharp_block_dim_y, uint32_t __gsharp_block_dim_z, __gsharp_ty_Kassyi__GSharp__Tests__Shared__Core__StructSizePaddedInt __gsharp_id_0_value, GSharpArray<int> __gsharp_id_1_o)
+extern ""C"" __declspec(dllexport) void __gsharp_launch_Kassyi__GSharp__Tests__Shared__Core__StructSizeKernels__ReadPaddedByValueKernel(uint32_t __gsharp_grid_dim_x, uint32_t __gsharp_grid_dim_y, uint32_t __gsharp_grid_dim_z, uint32_t __gsharp_block_dim_x, uint32_t __gsharp_block_dim_y, uint32_t __gsharp_block_dim_z, const __gsharp_ty_Kassyi__GSharp__Tests__Shared__Core__StructSizePaddedInt* __gsharp_arg_0, GSharpArray<int> __gsharp_id_1_o)
 {
+__gsharp_ty_Kassyi__GSharp__Tests__Shared__Core__StructSizePaddedInt __gsharp_id_0_value = *__gsharp_arg_0;
 __gsharp_host_last_error.Reset();
 GSharpErrorSlot __gsharp_launch_error;
 int32_t __gsharp_total_blocks = (int32_t)(__gsharp_grid_dim_x * __gsharp_grid_dim_y * __gsharp_grid_dim_z);
@@ -814,7 +817,7 @@ return;
 }
 
 [System.Runtime.InteropServices.UnmanagedFunctionPointer(System.Runtime.InteropServices.CallingConvention.Cdecl)]
-private unsafe delegate void ReadPaddedByValueKernel_Delegate(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ, global::Kassyi.GSharp.Tests.Shared.Core.StructSizePaddedInt value, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy o);
+private unsafe delegate void ReadPaddedByValueKernel_Delegate(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ, global::Kassyi.GSharp.Tests.Shared.Core.StructSizePaddedInt* value, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy o);
 #pragma warning disable CS8500
 [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
@@ -901,10 +904,11 @@ global::Kassyi.GSharp.Core.ManagedGpuContext.IsActive = false;
 }
 return;
 }
+if (global::System.Runtime.CompilerServices.Unsafe.SizeOf<global::Kassyi.GSharp.Tests.Shared.Core.StructSizePaddedInt>() != 16) global::Kassyi.GSharp.Runtime.Interop.LayoutGuard.ThrowSizeMismatch("Kassyi.GSharp.Tests.Shared.Core.StructSizePaddedInt", 16, global::System.Runtime.CompilerServices.Unsafe.SizeOf<global::Kassyi.GSharp.Tests.Shared.Core.StructSizePaddedInt>());
 var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<ReadPaddedByValueKernel_Delegate>("__gsharp_launch_Kassyi__GSharp__Tests__Shared__Core__StructSizeKernels__ReadPaddedByValueKernel", dllPath);
 fixed (global::System.Int32* p_o = o)
 {
-hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, value, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (IntPtr)p_o, Length = o.Length });
+hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, &value, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (IntPtr)p_o, Length = o.Length });
 global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ThrowIfNativeError(dllPath);
 }
 }

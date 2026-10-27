@@ -13,6 +13,7 @@ namespace Kassyi.GSharp.Compiler.Marshaling;
 internal readonly record struct KernelHostModel
 {
     private static readonly ITranspilerDialect s_cudaDialect = new GSharpCudaDialect();
+    private static readonly ITranspilerDialect s_cpuDialect = new StandardCppDialect();
 
     public string Name { get; init; }
 
@@ -54,6 +55,12 @@ internal readonly record struct KernelHostModel
     /// <summary>The user structs with <see cref="TransferClass.Identical"/> on CUDA that the launcher block-copies.</summary>
     public EquatableArray<StructLayoutGuard> CudaLayoutGuards { get; init; }
 
+    /// <summary>
+    /// The user structs with <see cref="TransferClass.Identical"/> on the CPU dialect that the CPU launcher passes in the
+    /// host layout as it is (by pointer, pinned by <c>ref</c> or as a pinned array).
+    /// </summary>
+    public EquatableArray<StructLayoutGuard> CpuLayoutGuards { get; init; }
+
     public bool ReturnsValue => ReturnTypeName is not null;
 
     /// <summary>Reads the host launch ABI of <paramref name="kernel"/>.</summary>
@@ -85,23 +92,25 @@ internal readonly record struct KernelHostModel
             DisplaySignature = KernelHostNames.FormatSignature(kernel.Name, parameters),
             Parameters = parameters,
             Structs = structs,
-            CudaLayoutGuards = CollectCudaLayoutGuards(kernel)
+            CudaLayoutGuards = CollectLayoutGuards(kernel, s_cudaDialect),
+            CpuLayoutGuards = CollectLayoutGuards(kernel, s_cpuDialect)
         };
     }
 
-    private static EquatableArray<StructLayoutGuard> CollectCudaLayoutGuards(IMethodSymbol kernel)
+    private static EquatableArray<StructLayoutGuard> CollectLayoutGuards(IMethodSymbol kernel,
+        ITranspilerDialect dialect)
     {
         var visited = new HashSet<INamedTypeSymbol>(SymbolEqualityComparer.Default);
         var guards = ImmutableArray.CreateBuilder<StructLayoutGuard>();
 
         foreach (var parameter in kernel.Parameters)
         {
-            CollectBlockCopiedStructs(parameter.Type, s_cudaDialect, visited, guards);
+            CollectBlockCopiedStructs(parameter.Type, dialect, visited, guards);
         }
 
         if (kernel.ReturnType.SpecialType != SpecialType.System_Void)
         {
-            CollectBlockCopiedStructs(kernel.ReturnType, s_cudaDialect, visited, guards);
+            CollectBlockCopiedStructs(kernel.ReturnType, dialect, visited, guards);
         }
 
         return guards.ToImmutable().AsEquatableArray();

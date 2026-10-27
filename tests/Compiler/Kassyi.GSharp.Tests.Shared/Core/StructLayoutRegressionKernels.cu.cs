@@ -53,6 +53,39 @@ public struct LayoutReproTwoBools
     public int X;
 }
 
+[StructLayout(LayoutKind.Sequential, Pack = 1)]
+public struct LayoutReproPacked
+{
+    public byte B;
+    public int I;
+    public bool F;
+}
+
+public struct LayoutReproNested
+{
+    public LayoutReproTwoBools T;
+    public char C;
+    public int Y;
+}
+
+public struct LayoutReproCharInt
+{
+    public char C;
+    public int X;
+}
+
+public struct LayoutReproBox<T> where T : unmanaged
+{
+    public T V;
+    public int Tag;
+}
+
+public struct LayoutReproNullableInt
+{
+    public int? V;
+    public int X;
+}
+
 [StructLayout(LayoutKind.Explicit)]
 public struct LayoutReproIntFloatUnion
 {
@@ -177,6 +210,76 @@ public static partial class StructLayoutRegressionKernels
         o[0] = t.F ? 1 : 0;
         o[1] = t.G ? 1 : 0;
         o[2] = t.X;
+    }
+
+    // R5b: struct with a char passed by value (#511): the runtime marshaller makes a char one byte by default
+    [GpuKernel]
+    public static void CharIntByValKernel(LayoutReproCharInt c, int[] o)
+    {
+        o[0] = c.C;
+        o[1] = c.X;
+    }
+
+    // R5c: generic struct passed by value (#511)
+    [GpuKernel]
+    public static void GenericBoxByValKernel(LayoutReproBox<double> b, double[] o)
+    {
+        o[0] = b.V;
+        o[1] = b.Tag;
+    }
+
+    // R5d: struct with a Nullable<int> field passed by value (#511)
+    [GpuKernel]
+    public static void NullableFieldByValKernel(LayoutReproNullableInt n, int[] o)
+    {
+        o[0] = n.V ?? -1;
+        o[1] = n.X;
+    }
+
+    // R5e: struct with multiple bool fields passed as an in parameter (#511)
+    [GpuKernel]
+    public static void TwoBoolsByInKernel(in LayoutReproTwoBools t, int[] o)
+    {
+        o[0] = t.F ? 1 : 0;
+        o[1] = t.G ? 1 : 0;
+        o[2] = t.X;
+    }
+
+    // R5f: struct with multiple bool fields passed as a ref readonly parameter (#511)
+    [GpuKernel]
+    public static void TwoBoolsByRefReadOnlyKernel(ref readonly LayoutReproTwoBools t, int[] o)
+    {
+        o[0] = t.F ? 1 : 0;
+        o[1] = t.G ? 1 : 0;
+        o[2] = t.X;
+    }
+
+    // R5g: each thread changes its own copy of a value parameter
+    [GpuKernel]
+    public static void MutateByValKernel(LayoutReproTwoBools t, int[] o)
+    {
+        int tid = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
+        t.X += tid;
+        o[tid] = t.X;
+    }
+
+    // R5h: Pack = 1 struct passed by value
+    [GpuKernel]
+    public static void PackedByValKernel(LayoutReproPacked p, int[] o)
+    {
+        o[0] = p.B;
+        o[1] = p.I;
+        o[2] = p.F ? 1 : 0;
+    }
+
+    // R5i: struct holding a bool struct and a char passed by value
+    [GpuKernel]
+    public static void NestedByValKernel(LayoutReproNested n, int[] o)
+    {
+        o[0] = n.T.F ? 1 : 0;
+        o[1] = n.T.X;
+        o[2] = n.C;
+        o[3] = n.Y;
     }
 
     // R6a: explicit layout (union) passed by value (#515)

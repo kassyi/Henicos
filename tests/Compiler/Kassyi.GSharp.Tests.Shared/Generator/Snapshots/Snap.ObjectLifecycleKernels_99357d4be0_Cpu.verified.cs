@@ -261,6 +261,7 @@ global::Kassyi.GSharp.Core.ManagedGpuContext.IsActive = false;
 }
 return;
 }
+if (global::System.Runtime.CompilerServices.Unsafe.SizeOf<global::Kassyi.GSharp.Tests.Shared.Syntax.LifecycleObjectState>() != 12) global::Kassyi.GSharp.Runtime.Interop.LayoutGuard.ThrowSizeMismatch("Kassyi.GSharp.Tests.Shared.Syntax.LifecycleObjectState", 12, global::System.Runtime.CompilerServices.Unsafe.SizeOf<global::Kassyi.GSharp.Tests.Shared.Syntax.LifecycleObjectState>());
 var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<Kernel_LifecycleUpdate_Delegate>("__gsharp_launch_Kassyi__GSharp__Tests__Shared__Syntax__ObjectLifecycleKernels__Kernel_uLifecycleUpdate", dllPath);
 fixed (global::Kassyi.GSharp.Tests.Shared.Syntax.LifecycleObjectState* p_states = states)
 {
@@ -485,6 +486,7 @@ global::Kassyi.GSharp.Core.ManagedGpuContext.IsActive = false;
 }
 return;
 }
+if (global::System.Runtime.CompilerServices.Unsafe.SizeOf<global::Kassyi.GSharp.Tests.Shared.Syntax.LifecycleObjectState>() != 12) global::Kassyi.GSharp.Runtime.Interop.LayoutGuard.ThrowSizeMismatch("Kassyi.GSharp.Tests.Shared.Syntax.LifecycleObjectState", 12, global::System.Runtime.CompilerServices.Unsafe.SizeOf<global::Kassyi.GSharp.Tests.Shared.Syntax.LifecycleObjectState>());
 var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<Kernel_FactoryInitialization_Delegate>("__gsharp_launch_Kassyi__GSharp__Tests__Shared__Syntax__ObjectLifecycleKernels__Kernel_uFactoryInitialization", dllPath);
 fixed (global::System.Int32* p_inputValues = inputValues)
 fixed (global::Kassyi.GSharp.Tests.Shared.Syntax.LifecycleObjectState* p_outputStates = outputStates)

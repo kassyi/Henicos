@@ -352,8 +352,9 @@ return;
 #undef __gsharp_state
 #undef __gsharp_yielded_for_grid_sync
 }
-extern ""C"" __declspec(dllexport) void __gsharp_launch_DebugReduc__ComprehensiveSpecKernel__ProcessPhysics(uint32_t __gsharp_grid_dim_x, uint32_t __gsharp_grid_dim_y, uint32_t __gsharp_grid_dim_z, uint32_t __gsharp_block_dim_x, uint32_t __gsharp_block_dim_y, uint32_t __gsharp_block_dim_z, GSharpArray<__gsharp_ty_DebugReduc__PhysicsVector> __gsharp_id_0_particles, float* __gsharp_id_1_totalMagnitude, bool* __gsharp_id_2_successFlag, __gsharp_ty_DebugReduc__SpecTypes __gsharp_id_3_largeStructVal, int __gsharp_id_4_particleCount, int __gsharp_id_5_unrollFactor)
+extern ""C"" __declspec(dllexport) void __gsharp_launch_DebugReduc__ComprehensiveSpecKernel__ProcessPhysics(uint32_t __gsharp_grid_dim_x, uint32_t __gsharp_grid_dim_y, uint32_t __gsharp_grid_dim_z, uint32_t __gsharp_block_dim_x, uint32_t __gsharp_block_dim_y, uint32_t __gsharp_block_dim_z, GSharpArray<__gsharp_ty_DebugReduc__PhysicsVector> __gsharp_id_0_particles, float* __gsharp_id_1_totalMagnitude, bool* __gsharp_id_2_successFlag, const __gsharp_ty_DebugReduc__SpecTypes* __gsharp_arg_3, int __gsharp_id_4_particleCount, int __gsharp_id_5_unrollFactor)
 {
+__gsharp_ty_DebugReduc__SpecTypes __gsharp_id_3_largeStructVal = *__gsharp_arg_3;
 __gsharp_host_last_error.Reset();
 GSharpErrorSlot __gsharp_launch_error;
 int32_t __gsharp_total_blocks = (int32_t)(__gsharp_grid_dim_x * __gsharp_grid_dim_y * __gsharp_grid_dim_z);
@@ -578,7 +579,7 @@ return;
 }
 
 [System.Runtime.InteropServices.UnmanagedFunctionPointer(System.Runtime.InteropServices.CallingConvention.Cdecl)]
-private unsafe delegate void ProcessPhysics_Delegate(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy particles, global::System.Single* totalMagnitude, global::System.Boolean* successFlag, global::DebugReduc.SpecTypes largeStructVal, global::System.Int32 particleCount, global::System.Int32 unrollFactor);
+private unsafe delegate void ProcessPhysics_Delegate(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy particles, global::System.Single* totalMagnitude, global::System.Boolean* successFlag, global::DebugReduc.SpecTypes* largeStructVal, global::System.Int32 particleCount, global::System.Int32 unrollFactor);
 #pragma warning disable CS8500
 [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
@@ -666,12 +667,14 @@ global::Kassyi.GSharp.Core.ManagedGpuContext.IsActive = false;
 }
 return;
 }
+if (global::System.Runtime.CompilerServices.Unsafe.SizeOf<global::DebugReduc.PhysicsVector>() != 12) global::Kassyi.GSharp.Runtime.Interop.LayoutGuard.ThrowSizeMismatch("DebugReduc.PhysicsVector", 12, global::System.Runtime.CompilerServices.Unsafe.SizeOf<global::DebugReduc.PhysicsVector>());
+if (global::System.Runtime.CompilerServices.Unsafe.SizeOf<global::DebugReduc.SpecTypes>() != 48) global::Kassyi.GSharp.Runtime.Interop.LayoutGuard.ThrowSizeMismatch("DebugReduc.SpecTypes", 48, global::System.Runtime.CompilerServices.Unsafe.SizeOf<global::DebugReduc.SpecTypes>());
 var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<ProcessPhysics_Delegate>("__gsharp_launch_DebugReduc__ComprehensiveSpecKernel__ProcessPhysics", dllPath);
 fixed (global::DebugReduc.PhysicsVector* p_particles = particles)
 fixed (global::System.Single* p_totalMagnitude = &totalMagnitude)
 fixed (global::System.Boolean* p_successFlag = &successFlag)
 {
-hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (IntPtr)p_particles, Length = particles.Length }, p_totalMagnitude, p_successFlag, largeStructVal, particleCount, unrollFactor);
+hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (IntPtr)p_particles, Length = particles.Length }, p_totalMagnitude, p_successFlag, &largeStructVal, particleCount, unrollFactor);
 global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ThrowIfNativeError(dllPath);
 }
 }

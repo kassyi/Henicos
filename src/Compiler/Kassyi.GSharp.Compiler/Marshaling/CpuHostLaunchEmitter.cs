@@ -27,11 +27,33 @@ internal static class CpuHostLaunchEmitter
             WrapperEmitter.WriteArrayArgumentChecks(writer, kernel.Host);
             WrapperEmitter.WriteAutoResultAllocation(writer, kernel.Host);
             WriteManagedExecutionFallback(writer, kernel.Host, assemblyName);
-            WriteCpuDelegateGetOrCompile(writer, kernel);
-            WriteCpuFixedBlocksAndInvoke(writer, kernel.Host);
+
+            // [WHY] Only the native launcher reads the host bytes as the C++ layout; the managed fallback uses the values
+            if (!WriteNotSupportedThrow(writer, kernel.Host))
+            {
+                WrapperEmitter.WriteLayoutGuards(writer, kernel.Host.CpuLayoutGuards);
+                WriteCpuDelegateGetOrCompile(writer, kernel);
+                WriteCpuFixedBlocksAndInvoke(writer, kernel.Host);
+            }
         }
 
         writer.AppendLine("#pragma warning restore CS8500");
+    }
+
+    // throw new NotSupportedException("<GSH0082 text>"); in place of the native call, for the first struct parameter that
+    // the CPU launcher cannot convert yet
+    private static bool WriteNotSupportedThrow(SourceWriter writer, in KernelHostModel kernel)
+    {
+        foreach (var shape in kernel.Parameters)
+        {
+            if (shape.CpuNotSupportedMessage is { } message)
+            {
+                writer.AppendLine($"throw new System.NotSupportedException({SymbolDisplay.FormatLiteral(message, true)});");
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private static void WriteCpuDelegateDeclaration(SourceWriter writer, in KernelEmission kernel)
@@ -56,7 +78,9 @@ internal static class CpuHostLaunchEmitter
                 }
                 else
                 {
-                    writer.Append($"{p.TypeName}{(p.IsByRef ? "*" : "")} {p.Identifier}");
+                    // [WHY] A user struct by value goes as a pointer to the host value, so that the runtime marshaller
+                    // never converts it (bool, char, the x64 size rules); the native launcher copies it (#511)
+                    writer.Append($"{p.TypeName}{(p.IsByRef || p.IsCpuValueStruct ? "*" : "")} {p.Identifier}");
                 }
             }
 
@@ -290,6 +314,11 @@ internal static class CpuHostLaunchEmitter
                 else if (shape.IsByRef)
                 {
                     writer.Append($"p_{shape.Name}");
+                }
+                else if (shape.IsCpuValueStruct)
+                {
+                    // The parameter of Launch is a value parameter, a fixed variable whose address needs no pinning
+                    writer.Append($"&{shape.Identifier}");
                 }
                 else
                 {

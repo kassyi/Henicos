@@ -256,6 +256,7 @@ global::Kassyi.GSharp.Core.ManagedGpuContext.IsActive = false;
 }
 return;
 }
+if (global::System.Runtime.CompilerServices.Unsafe.SizeOf<global::Kassyi.GSharp.Tests.Shared.TestCases.MyCustomStruct>() != 8) global::Kassyi.GSharp.Runtime.Interop.LayoutGuard.ThrowSizeMismatch("Kassyi.GSharp.Tests.Shared.TestCases.MyCustomStruct", 8, global::System.Runtime.CompilerServices.Unsafe.SizeOf<global::Kassyi.GSharp.Tests.Shared.TestCases.MyCustomStruct>());
 var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<ComplexSignatureKernel_Delegate>("__gsharp_launch_Kassyi__GSharp__Tests__Shared__TestCases__WrapperOptimizationKernels__ComplexSignatureKernel", dllPath);
 fixed (global::System.Int32* p_scalarRef = &scalarRef)
 fixed (global::System.Single* p_scalarOut = &scalarOut)

@@ -4320,9 +4320,7 @@ global::Kassyi.GSharp.Core.ManagedGpuContext.IsActive = false;
 }
 return;
 }
-var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<ModPowNttMegaKernel_Delegate>("__gsharp_launch_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuBigIntDivRemKernels__ModPowNttMegaKernel", dllPath);
-hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, ctx);
-global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ThrowIfNativeError(dllPath);
+throw new System.NotSupportedException("The struct 'Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.ModPowNttContext' cannot be passed to a kernel on the CPU dialect yet because its host and device layouts differ (field 'Core' of type 'Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.NewtonRaphsonContext': field 'Operands' of type 'Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.OperandContext': field 'LeftOperand' is an array, so the runtime may reorder the fields on the host). The CPU launcher copies it in the host layout, so the kernel would read garbled values.");
 }
 #pragma warning restore CS8500
 }

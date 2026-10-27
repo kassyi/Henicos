@@ -575,6 +575,7 @@ global::Kassyi.GSharp.Core.ManagedGpuContext.IsActive = false;
 }
 return;
 }
+if (global::System.Runtime.CompilerServices.Unsafe.SizeOf<global::Kassyi.GSharp.Tests.Runtime.GEN56_AlignmentTestStruct>() != 48) global::Kassyi.GSharp.Runtime.Interop.LayoutGuard.ThrowSizeMismatch("Kassyi.GSharp.Tests.Runtime.GEN56_AlignmentTestStruct", 48, global::System.Runtime.CompilerServices.Unsafe.SizeOf<global::Kassyi.GSharp.Tests.Runtime.GEN56_AlignmentTestStruct>());
 var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<RoundtripKernel_Delegate>("__gsharp_launch_Kassyi__GSharp__Tests__Runtime__NestedVectorAlignmentKernels__RoundtripKernel", dllPath);
 fixed (global::Kassyi.GSharp.Tests.Runtime.GEN56_AlignmentTestStruct* p_data = &data)
 {

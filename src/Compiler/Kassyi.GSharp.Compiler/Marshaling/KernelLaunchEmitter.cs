@@ -304,7 +304,7 @@ internal static class KernelLaunchEmitter
 
             // [WHY] An [Out] array still needs its elements' array fields on the device: the kernel writes into
             // them, and Unmarshal_ copies them back through the device pointers that Marshal_ stores
-            if (!shape.CopyIn && !shape.ConvertedElementHasArrayFields)
+            if (!shape.CopyIn && !shape.Cuda.ConvertedElementHasArrayFields)
             {
                 writer.AppendLine($"// Skip HtoD copy for [Out] array: {shape.Identifier}");
             }
@@ -323,7 +323,7 @@ internal static class KernelLaunchEmitter
                     }
 
                     writer.AppendLine(
-                        $"{shape.ConvertedElementMarshalMethodName}(ref {hostElement}, " +
+                        $"{shape.Cuda.ConvertedElementMarshalMethodName}(ref {hostElement}, " +
                         $"ref {name}_native[{name}_index], false, {name}_allocatedPtrs, hStream);");
                 }
 
@@ -525,7 +525,7 @@ internal static class KernelLaunchEmitter
             using (writer.Scope())
             {
                 writer.AppendLine(
-                    $"{shape.ConvertedElementUnmarshalMethodName}(ref {name}_host[{name}_index], " +
+                    $"{shape.Cuda.ConvertedElementUnmarshalMethodName}(ref {name}_host[{name}_index], " +
                     $"ref {name}_native[{name}_index], false, hStream);");
             }
         }
@@ -580,7 +580,7 @@ internal static class KernelLaunchEmitter
     }
 
     private static string GetConvertedElementPath(in KernelParameterShape shape) =>
-        shape.ConvertedElementAotStructPath ??
+        shape.Cuda.ConvertedElementAotStructPath ??
         throw new InvalidOperationException($"Parameter '{shape.Identifier}' is not a converted array.");
 
     private static string GetElementTypeName(in KernelParameterShape shape) =>

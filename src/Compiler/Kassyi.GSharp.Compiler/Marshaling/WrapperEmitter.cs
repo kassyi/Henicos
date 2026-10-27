@@ -278,9 +278,10 @@ internal static class WrapperEmitter
         }
     }
 
-    internal static void WriteLayoutGuards(SourceWriter writer, in KernelHostModel kernel)
+    // if (Unsafe.SizeOf<S>() != <predicted host size>) LayoutGuard.ThrowSizeMismatch(...); for each block-copied struct
+    internal static void WriteLayoutGuards(SourceWriter writer, EquatableArray<StructLayoutGuard> guards)
     {
-        foreach (var guard in kernel.CudaLayoutGuards)
+        foreach (var guard in guards)
         {
             writer.AppendLine(
                 $"if (global::System.Runtime.CompilerServices.Unsafe.SizeOf<{guard.FullyQualifiedTypeName}>() != {guard.ExpectedSize}) " +

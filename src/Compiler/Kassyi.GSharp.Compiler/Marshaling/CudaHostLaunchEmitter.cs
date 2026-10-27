@@ -27,7 +27,7 @@ internal static class CudaHostLaunchEmitter
         {
             if (!isDevicePtr)
             {
-                WrapperEmitter.WriteLayoutGuards(writer, kernel.Host);
+                WrapperEmitter.WriteLayoutGuards(writer, kernel.Host.CudaLayoutGuards);
                 WrapperEmitter.WriteOutParameterDefaults(writer, kernel.Host);
                 WrapperEmitter.WriteArrayArgumentChecks(writer, kernel.Host);
             }

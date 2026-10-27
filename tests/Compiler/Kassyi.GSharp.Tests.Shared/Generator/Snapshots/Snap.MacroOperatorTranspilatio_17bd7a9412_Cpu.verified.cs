@@ -152,8 +152,9 @@ return;
 #undef __gsharp_state
 #undef __gsharp_yielded_for_grid_sync
 }
-extern ""C"" __declspec(dllexport) void __gsharp_launch_TestNamespace__TestKernels__MacroKernel(uint32_t __gsharp_grid_dim_x, uint32_t __gsharp_grid_dim_y, uint32_t __gsharp_grid_dim_z, uint32_t __gsharp_block_dim_x, uint32_t __gsharp_block_dim_y, uint32_t __gsharp_block_dim_z, __gsharp_ty_TestNamespace__DummyContext __gsharp_id_0_ctx, GSharpArray<unsigned int> __gsharp_id_1_dA, GSharpArray<unsigned int> __gsharp_id_2_dB, GSharpArray<unsigned int> __gsharp_id_3_dResult)
+extern ""C"" __declspec(dllexport) void __gsharp_launch_TestNamespace__TestKernels__MacroKernel(uint32_t __gsharp_grid_dim_x, uint32_t __gsharp_grid_dim_y, uint32_t __gsharp_grid_dim_z, uint32_t __gsharp_block_dim_x, uint32_t __gsharp_block_dim_y, uint32_t __gsharp_block_dim_z, const __gsharp_ty_TestNamespace__DummyContext* __gsharp_arg_0, GSharpArray<unsigned int> __gsharp_id_1_dA, GSharpArray<unsigned int> __gsharp_id_2_dB, GSharpArray<unsigned int> __gsharp_id_3_dResult)
 {
+__gsharp_ty_TestNamespace__DummyContext __gsharp_id_0_ctx = *__gsharp_arg_0;
 __gsharp_host_last_error.Reset();
 GSharpErrorSlot __gsharp_launch_error;
 int32_t __gsharp_total_blocks = (int32_t)(__gsharp_grid_dim_x * __gsharp_grid_dim_y * __gsharp_grid_dim_z);
@@ -224,7 +225,7 @@ return;
 }
 
 [System.Runtime.InteropServices.UnmanagedFunctionPointer(System.Runtime.InteropServices.CallingConvention.Cdecl)]
-private unsafe delegate void MacroKernel_Delegate(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ, global::TestNamespace.DummyContext ctx, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy dA, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy dB, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy dResult);
+private unsafe delegate void MacroKernel_Delegate(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ, global::TestNamespace.DummyContext* ctx, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy dA, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy dB, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy dResult);
 #pragma warning disable CS8500
 [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
@@ -323,12 +324,13 @@ global::Kassyi.GSharp.Core.ManagedGpuContext.IsActive = false;
 }
 return;
 }
+if (global::System.Runtime.CompilerServices.Unsafe.SizeOf<global::TestNamespace.DummyContext>() != 4) global::Kassyi.GSharp.Runtime.Interop.LayoutGuard.ThrowSizeMismatch("TestNamespace.DummyContext", 4, global::System.Runtime.CompilerServices.Unsafe.SizeOf<global::TestNamespace.DummyContext>());
 var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<MacroKernel_Delegate>("__gsharp_launch_TestNamespace__TestKernels__MacroKernel", dllPath);
 fixed (global::System.UInt32* p_dA = dA)
 fixed (global::System.UInt32* p_dB = dB)
 fixed (global::System.UInt32* p_dResult = dResult)
 {
-hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, ctx, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (IntPtr)p_dA, Length = dA.Length }, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (IntPtr)p_dB, Length = dB.Length }, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (IntPtr)p_dResult, Length = dResult.Length });
+hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, &ctx, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (IntPtr)p_dA, Length = dA.Length }, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (IntPtr)p_dB, Length = dB.Length }, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (IntPtr)p_dResult, Length = dResult.Length });
 global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ThrowIfNativeError(dllPath);
 }
 }

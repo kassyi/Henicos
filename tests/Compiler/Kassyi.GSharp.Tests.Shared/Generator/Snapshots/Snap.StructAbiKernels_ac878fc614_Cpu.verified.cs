@@ -615,6 +615,7 @@ global::Kassyi.GSharp.Core.ManagedGpuContext.IsActive = false;
 }
 return;
 }
+if (global::System.Runtime.CompilerServices.Unsafe.SizeOf<global::Kassyi.GSharp.Tests.Shared.Core.AbiPackedStruct>() != 13) global::Kassyi.GSharp.Runtime.Interop.LayoutGuard.ThrowSizeMismatch("Kassyi.GSharp.Tests.Shared.Core.AbiPackedStruct", 13, global::System.Runtime.CompilerServices.Unsafe.SizeOf<global::Kassyi.GSharp.Tests.Shared.Core.AbiPackedStruct>());
 var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<RoundtripPackedKernel_Delegate>("__gsharp_launch_Kassyi__GSharp__Tests__Shared__Core__StructAbiKernels__RoundtripPackedKernel", dllPath);
 fixed (global::Kassyi.GSharp.Tests.Shared.Core.AbiPackedStruct* p_data = &data)
 {
@@ -1069,6 +1070,7 @@ global::Kassyi.GSharp.Core.ManagedGpuContext.IsActive = false;
 }
 return;
 }
+if (global::System.Runtime.CompilerServices.Unsafe.SizeOf<global::Kassyi.GSharp.Tests.Shared.Core.AbiInlineArrayStruct>() != 24) global::Kassyi.GSharp.Runtime.Interop.LayoutGuard.ThrowSizeMismatch("Kassyi.GSharp.Tests.Shared.Core.AbiInlineArrayStruct", 24, global::System.Runtime.CompilerServices.Unsafe.SizeOf<global::Kassyi.GSharp.Tests.Shared.Core.AbiInlineArrayStruct>());
 var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<RoundtripInlineArrayKernel_Delegate>("__gsharp_launch_Kassyi__GSharp__Tests__Shared__Core__StructAbiKernels__RoundtripInlineArrayKernel", dllPath);
 fixed (global::Kassyi.GSharp.Tests.Shared.Core.AbiInlineArrayStruct* p_data = &data)
 {
@@ -1509,6 +1511,7 @@ global::Kassyi.GSharp.Core.ManagedGpuContext.IsActive = false;
 }
 return;
 }
+if (global::System.Runtime.CompilerServices.Unsafe.SizeOf<global::Kassyi.GSharp.Tests.Shared.Core.AbiCoreFieldStruct>() != 20) global::Kassyi.GSharp.Runtime.Interop.LayoutGuard.ThrowSizeMismatch("Kassyi.GSharp.Tests.Shared.Core.AbiCoreFieldStruct", 20, global::System.Runtime.CompilerServices.Unsafe.SizeOf<global::Kassyi.GSharp.Tests.Shared.Core.AbiCoreFieldStruct>());
 var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<RoundtripCoreFieldKernel_Delegate>("__gsharp_launch_Kassyi__GSharp__Tests__Shared__Core__StructAbiKernels__RoundtripCoreFieldKernel", dllPath);
 fixed (global::Kassyi.GSharp.Tests.Shared.Core.AbiCoreFieldStruct* p_data = &data)
 {
@@ -1963,6 +1966,7 @@ global::Kassyi.GSharp.Core.ManagedGpuContext.IsActive = false;
 }
 return;
 }
+if (global::System.Runtime.CompilerServices.Unsafe.SizeOf<global::Kassyi.GSharp.Tests.Shared.Core.AbiPrivateInlineArrayStruct>() != 24) global::Kassyi.GSharp.Runtime.Interop.LayoutGuard.ThrowSizeMismatch("Kassyi.GSharp.Tests.Shared.Core.AbiPrivateInlineArrayStruct", 24, global::System.Runtime.CompilerServices.Unsafe.SizeOf<global::Kassyi.GSharp.Tests.Shared.Core.AbiPrivateInlineArrayStruct>());
 var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<RoundtripPrivateInlineArrayKernel_Delegate>("__gsharp_launch_Kassyi__GSharp__Tests__Shared__Core__StructAbiKernels__RoundtripPrivateInlineArrayKernel", dllPath);
 fixed (global::Kassyi.GSharp.Tests.Shared.Core.AbiPrivateInlineArrayStruct* p_data = &data)
 {
@@ -2373,6 +2377,7 @@ global::Kassyi.GSharp.Core.ManagedGpuContext.IsActive = false;
 }
 return;
 }
+if (global::System.Runtime.CompilerServices.Unsafe.SizeOf<global::Kassyi.GSharp.Tests.Shared.Core.AbiFixedBufferStruct>() != 24) global::Kassyi.GSharp.Runtime.Interop.LayoutGuard.ThrowSizeMismatch("Kassyi.GSharp.Tests.Shared.Core.AbiFixedBufferStruct", 24, global::System.Runtime.CompilerServices.Unsafe.SizeOf<global::Kassyi.GSharp.Tests.Shared.Core.AbiFixedBufferStruct>());
 var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<RoundtripFixedBufferKernel_Delegate>("__gsharp_launch_Kassyi__GSharp__Tests__Shared__Core__StructAbiKernels__RoundtripFixedBufferKernel", dllPath);
 fixed (global::Kassyi.GSharp.Tests.Shared.Core.AbiFixedBufferStruct* p_data = &data)
 {
@@ -2785,6 +2790,7 @@ global::Kassyi.GSharp.Core.ManagedGpuContext.IsActive = false;
 }
 return;
 }
+if (global::System.Runtime.CompilerServices.Unsafe.SizeOf<global::Kassyi.GSharp.Tests.Shared.Core.AbiAutoPropertyStruct>() != 24) global::Kassyi.GSharp.Runtime.Interop.LayoutGuard.ThrowSizeMismatch("Kassyi.GSharp.Tests.Shared.Core.AbiAutoPropertyStruct", 24, global::System.Runtime.CompilerServices.Unsafe.SizeOf<global::Kassyi.GSharp.Tests.Shared.Core.AbiAutoPropertyStruct>());
 var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<RoundtripAutoPropertyKernel_Delegate>("__gsharp_launch_Kassyi__GSharp__Tests__Shared__Core__StructAbiKernels__RoundtripAutoPropertyKernel", dllPath);
 fixed (global::Kassyi.GSharp.Tests.Shared.Core.AbiAutoPropertyStruct* p_data = &data)
 {
@@ -3213,6 +3219,7 @@ global::Kassyi.GSharp.Core.ManagedGpuContext.IsActive = false;
 }
 return;
 }
+if (global::System.Runtime.CompilerServices.Unsafe.SizeOf<global::Kassyi.GSharp.Tests.Shared.Core.AbiComputedPropertyStruct>() != 8) global::Kassyi.GSharp.Runtime.Interop.LayoutGuard.ThrowSizeMismatch("Kassyi.GSharp.Tests.Shared.Core.AbiComputedPropertyStruct", 8, global::System.Runtime.CompilerServices.Unsafe.SizeOf<global::Kassyi.GSharp.Tests.Shared.Core.AbiComputedPropertyStruct>());
 var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<RoundtripComputedPropertyKernel_Delegate>("__gsharp_launch_Kassyi__GSharp__Tests__Shared__Core__StructAbiKernels__RoundtripComputedPropertyKernel", dllPath);
 fixed (global::Kassyi.GSharp.Tests.Shared.Core.AbiComputedPropertyStruct* p_data = &data)
 {
@@ -3653,6 +3660,7 @@ global::Kassyi.GSharp.Core.ManagedGpuContext.IsActive = false;
 }
 return;
 }
+if (global::System.Runtime.CompilerServices.Unsafe.SizeOf<global::Kassyi.GSharp.Tests.Shared.Core.AbiComputedPropertyStruct>() != 8) global::Kassyi.GSharp.Runtime.Interop.LayoutGuard.ThrowSizeMismatch("Kassyi.GSharp.Tests.Shared.Core.AbiComputedPropertyStruct", 8, global::System.Runtime.CompilerServices.Unsafe.SizeOf<global::Kassyi.GSharp.Tests.Shared.Core.AbiComputedPropertyStruct>());
 var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<ReadComputedPropertyThroughRefKernel_Delegate>("__gsharp_launch_Kassyi__GSharp__Tests__Shared__Core__StructAbiKernels__ReadComputedPropertyThroughRefKernel", dllPath);
 fixed (global::Kassyi.GSharp.Tests.Shared.Core.AbiComputedPropertyStruct* p_data = &data)
 fixed (global::System.Int32* p_result = result)
