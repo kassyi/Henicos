@@ -30,6 +30,7 @@ public static partial class GpuBigIntCmpKernels
 | [GetBitLengthKernel(uint[], uint[], int)](#getbitlengthkerneluint-uint-int) | A GPU kernel (`[GpuKernel]`) that calculates the bit length of a large integer. |
 | [IsOneKernel(uint[], uint[], int)](#isonekerneluint-uint-int) | A GPU kernel (`[GpuKernel]`) that checks if a large integer is equal to one. |
 | [IsZeroKernel(uint[], uint[], int)](#iszerokerneluint-uint-int) | A GPU kernel (`[GpuKernel]`) that checks if a large integer is zero. |
+| [LeadingBitsKernel(uint[], uint[], int)](#leadingbitskerneluint-uint-int) | A GPU kernel (`[GpuKernel]`) that writes the leading 64 bits of a large integer, given its bit length. |
 | [VectorAllTrueKernel(uint[], uint[], int)](#vectoralltruekerneluint-uint-int) | A GPU kernel (`[GpuKernel]`) that checks whether all elements in a boolean mask array are non-zero. |
 | [VectorAndKernel(uint[], uint[], uint[], int)](#vectorandkerneluint-uint-uint-int) | A GPU kernel (`[GpuKernel]`) that computes the element-wise logical AND of two boolean mask arrays. |
 | [VectorAnyTrueKernel(uint[], uint[], int)](#vectoranytruekerneluint-uint-int) | A GPU kernel (`[GpuKernel]`) that checks whether any element in a boolean mask array is non-zero. |
@@ -102,6 +103,15 @@ A GPU kernel (`[GpuKernel]`) that checks if a large integer is zero.
 ```csharp
 [GpuKernel]
 public static void IsZeroKernel(uint[] dA, uint[] dResult, int numWords);
+```
+
+## LeadingBitsKernel(uint[], uint[], int)
+
+A GPU kernel (`[GpuKernel]`) that writes the leading 64 bits of a large integer to `dResult[1]` (low word) and `dResult[2]` (high word), given its bit length in `dResult[0]` from `GetBitLengthKernel` on the same stream. The top set bit lands at bit 63; missing low bits are `0`.
+
+```csharp
+[GpuKernel]
+public static void LeadingBitsKernel(uint[] dA, uint[] dResult, int numWords);
 ```
 
 ## VectorAllTrueKernel(uint[], uint[], int)

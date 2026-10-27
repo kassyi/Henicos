@@ -121,6 +121,34 @@ public static partial class GpuBigIntCmpKernels
             }
         });
     }
+
+    /// <summary>
+    /// Writes the 64 bits below and including the top set bit of <paramref name="dA"/> to <c>dResult[1]</c> (low word)
+    /// and <c>dResult[2]</c> (high word), given its bit length in <c>dResult[0]</c> (from
+    /// <see cref="GetBitLengthKernel"/> on the same stream). The top set bit lands at bit 63; missing low bits are 0.
+    /// </summary>
+    [GpuKernel]
+    public static void LeadingBitsKernel(uint[] dA, uint[] dResult, int numWords)
+    {
+        if (ThreadIndex.X == 0 && BlockIndex.X == 0)
+        {
+            var bitLength = (int)dResult[0];
+            ulong leading = 0ul;
+            if (bitLength > 0 && bitLength <= numWords * 32)
+            {
+                var wordIndex = (bitLength - 1) / 32;
+                var leadingZeros = 31 - (bitLength - 1) % 32;
+                ulong high = dA[wordIndex];
+                ulong middle = wordIndex >= 1 ? dA[wordIndex - 1] : 0ul;
+                ulong low = wordIndex >= 2 ? dA[wordIndex - 2] : 0ul;
+                leading = (high << (32 + leadingZeros)) | (middle << leadingZeros) | (low >> (32 - leadingZeros));
+            }
+
+            dResult[1] = (uint)leading;
+            dResult[2] = (uint)(leading >> 32);
+        }
+    }
+
     [GpuKernel]
     public static void VectorCompareScalarKernel(uint[] dA, uint[] s, uint[] dResult, int numWords, int opType)
     {

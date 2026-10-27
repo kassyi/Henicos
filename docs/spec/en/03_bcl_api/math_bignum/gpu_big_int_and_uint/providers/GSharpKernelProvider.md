@@ -62,6 +62,7 @@ public static readonly GSharpKernelProvider Instance;
 | [IsZero(GpuWorkspace, GpuBigUInt)](#iszerogpuworkspace-gpubiguint) | Checks whether the operand equals zero on the GPU. |
 | [IsOne(GpuWorkspace, GpuBigUInt)](#isonegpuworkspace-gpubiguint) | Checks whether the operand equals one on the GPU. |
 | [GetBitLength(GpuWorkspace, GpuBigUInt)](#getbitlengthgpuworkspace-gpubiguint) | Gets the bit length of the operand on the GPU. |
+| [ReadLeadingBits(GpuWorkspace, GpuBigUInt, out int, out ulong)](#readleadingbitsgpuworkspace-gpubiguint-out-int-out-ulong) | Gets the bit length and the leading 64 bits of the operand with one wait for the GPU. |
 | [CompareTo(GpuWorkspace, GpuBigUInt, GpuBigUInt)](#comparetogpuworkspace-gpubiguint-gpubiguint) | Compares two operands on the GPU. |
 | [Mul(GpuWorkspace, GpuBigUInt, GpuBigUInt, GpuBigUInt)](#mulgpuworkspace-gpubiguint-gpubiguint-gpubiguint) | Computes multi-word NTT multiplication on the GPU. |
 | [Mul(GpuWorkspace, GpuBigUInt, UInt32, GpuBigUInt)](#mulgpuworkspace-gpubiguint-uint32-gpubiguint) | Computes scalar multiplication on the GPU. |
@@ -676,6 +677,28 @@ The operand.
 
 _Int32_<br>
 The number of significant bits required to represent the operand.
+
+## ReadLeadingBits(GpuWorkspace, GpuBigUInt, out int, out ulong)
+
+Gets the bit length and the leading 64 bits of the operand with one wait for the GPU.
+
+```csharp
+public void ReadLeadingBits(GpuWorkspace workspace, GpuBigUInt value, out int bitLength, out ulong leadingBits);
+```
+
+#### Parameters
+
+`workspace` _GpuWorkspace_<br>
+The GPU execution workspace.
+
+`value` _GpuBigUInt_<br>
+The operand.
+
+`bitLength` _Int32_<br>
+When this method returns, the number of significant bits of `value` (`0` for zero).
+
+`leadingBits` _UInt64_<br>
+When this method returns, the top 64 bits of `value`, its top set bit at bit 63 (missing low bits are `0`).
 
 ## CompareTo(GpuWorkspace, GpuBigUInt, GpuBigUInt)
 

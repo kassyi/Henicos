@@ -338,7 +338,7 @@ public class GSharpKernelFloatProviderTests : IDisposable
         }
 
         // ln 0 is undefined.
-        // mutant: GSharpKernelFloatProvider.cs:469 `throw` removed
+        // mutant: GpuBigFloatTranscendentals.cs:36 `throw` removed
         Assert.Throws<InvalidOperationException>(() =>
         {
             var context = CreateContext(workspace);
@@ -347,7 +347,7 @@ public class GSharpKernelFloatProviderTests : IDisposable
         });
 
         // (-2)^3 through exp(3 ln(-2)) is not supported.
-        // mutant: GSharpKernelFloatProvider.cs:569 `throw` removed (Log would then throw for the negative base instead,
+        // mutant: GSharpKernelFloatProvider.cs:473 `throw` removed (Log would then throw for the negative base instead,
         // so the check is that the message comes from Pow)
         var powError = Assert.Throws<InvalidOperationException>(() =>
         {
@@ -412,7 +412,8 @@ public class GSharpKernelFloatProviderTests : IDisposable
         var res = arith.Log(ref context, in two, resSig.Handle);
 
         // ln 2 to a relative error of 2^-124 (same bound as Exp_HighPrecision).
-        // mutant: GSharpKernelFloatProvider.cs:472 `NumWords + 2` -> `NumWords - 2` (64-bit fraction)
+        // mutant: GpuBigFloatTranscendentals.cs MultiplyLn2 `GetLn2(ln2FractionBits)` -> `GetLn2(ln2FractionBits - 96)`
+        // (ln 2 to 2^-96; 64 bits less still passes, the working precision has 36 bits to spare)
         Assert.False(res.IsNegative);
         var actual = BigFloatReference.ToFixed(resSig.ToBigInteger(), res.Exponent);
         Assert.True(

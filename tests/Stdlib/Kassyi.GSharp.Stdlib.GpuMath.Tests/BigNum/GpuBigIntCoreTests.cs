@@ -740,7 +740,7 @@ public class GpuBigIntCoreTests
         using var gpuA = new GpuBigUInt(context, TestSizeWords * 4);
         using var tempA = new GpuBigUInt(context, arrA);
         gpuA.CopyFrom(tempA);
-        // Square reports success. mutant: KernelBasicMathHandler.cs:302 `return true` -> `return false`
+        // Square reports success. mutant: KernelBasicMathHandler.cs:321 `return true` -> `return false`
         Assert.True(gpuA.Square(TestSizeWords));
         var actual = ToBigInteger(gpuA.ToHostArray().Take(TestSizeWords * 2).ToArray());
         var expected = bigA * bigA;

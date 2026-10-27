@@ -108,7 +108,7 @@ public class CorrectionStatusTests : IDisposable
 
             workspace.Provider.LaunchGraph(graphExec, workspace.Stream);
 
-            // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/BigNum/Providers/GSharpKernelProvider.cs:309 `GpuCorrectionStatus.Find(stream)?.MarkPending();` (LaunchGraph) -> removed
+            // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/BigNum/Providers/GSharpKernelProvider.cs:313 `GpuCorrectionStatus.Find(stream)?.MarkPending();` (LaunchGraph) -> removed
             // input: this test
             var exception = Assert.Throws<InvalidOperationException>(() => gpuR.ToBigInteger());
             Assert.Contains("ReduceZeroSync", exception.Message);

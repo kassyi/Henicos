@@ -1,3 +1,4 @@
+using Kassyi.GSharp.Stdlib.GpuMath.BigNum.Constants;
 
 namespace Kassyi.GSharp.Stdlib.GpuMath;
 
@@ -96,6 +97,15 @@ public class GpuWorkspace : IGpuResourceScope
     public int PolyAlgorithmThreshold { get; set; } = 1024;
 
     /// <summary>
+    /// Gets the device copies of the constants that the big-float transcendental functions share (ln 2), uploaded on
+    /// first use and released with the workspace.
+    /// </summary>
+    internal GpuBigFloatConstantCache Constants
+    {
+        get;
+    }
+
+    /// <summary>
     /// Registers a disposable resource to be tracked and deterministically disposed upon workspace disposal.
     /// </summary>
     /// <param name="resource">The disposable resource to track.</param>
@@ -127,6 +137,8 @@ public class GpuWorkspace : IGpuResourceScope
     {
         MaxWords = maxWords;
         Engine = engine;
+
+        Constants = new GpuBigFloatConstantCache(this);
 
         GpuKernelLoader.CudaContextScope? scope = null;
         if (GpuKernelLoader.IsCpuFallbackMode)
@@ -213,6 +225,16 @@ public class GpuWorkspace : IGpuResourceScope
             // discarded graph instead of releasing memory.
             AbortLeakedCapture(exceptions);
             DisposeTrackedResources(exceptions);
+            try
+            {
+                // Before the memory manager, which owns the buffers of the constants.
+                Constants.Dispose();
+            }
+            catch (Exception ex)
+            {
+                exceptions?.Add(ex);
+            }
+
             DisposeMemoryManager(exceptions);
             try
             {

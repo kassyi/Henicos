@@ -37,6 +37,7 @@ public sealed class KernelBasicMathHandler : IGpuBasicMathProvider
 | [IsZero(GpuWorkspace, GpuBigUInt)](#iszerogpuworkspace-gpubiguint) | Evaluates `GpuBigIntCmpKernels.IsZeroKernel` and returns `true` if all words are zero. |
 | [IsOne(GpuWorkspace, GpuBigUInt)](#isonegpuworkspace-gpubiguint) | Evaluates `GpuBigIntCmpKernels.IsOneKernel` and returns `true` if the operand equals `1`. |
 | [GetBitLength(GpuWorkspace, GpuBigUInt)](#getbitlengthgpuworkspace-gpubiguint) | Evaluates `GpuBigIntCmpKernels.GetBitLengthKernel` and returns the significant bit length. |
+| [ReadLeadingBits(GpuWorkspace, GpuBigUInt, out int, out ulong)](#readleadingbitsgpuworkspace-gpubiguint-out-int-out-ulong) | Evaluates `GpuBigIntCmpKernels.GetBitLengthKernel` and `GpuBigIntCmpKernels.LeadingBitsKernel` and reads both results back with one wait. |
 | [CompareTo(GpuWorkspace, GpuBigUInt, GpuBigUInt)](#comparetogpuworkspace-gpubiguint-gpubiguint) | Evaluates `GpuBigIntCmpKernels.CompareToKernel` (zero-padding mismatched word counts if necessary) and returns `-1`, `0`, or `1`. |
 
 ## Add(GpuWorkspace, GpuBigUInt, GpuBigUInt, GpuBigUInt)
@@ -407,6 +408,33 @@ The minimum number of bits required to represent `targetOperand`, or `0` if `tar
 
 `CudaException`<br>
 Thrown when the kernel launch or device scalar readback fails.
+
+## ReadLeadingBits(GpuWorkspace, GpuBigUInt, out int, out ulong)
+
+Evaluates `GpuBigIntCmpKernels.GetBitLengthKernel` and `GpuBigIntCmpKernels.LeadingBitsKernel` on the workspace stream and reads both results back with one wait.
+
+```csharp
+public void ReadLeadingBits(GpuWorkspace workspace, GpuBigUInt value, out int bitLength, out ulong leadingBits);
+```
+
+#### Parameters
+
+`workspace` _GpuWorkspace_<br>
+The GPU workspace managing temporary device scalars and the active CUDA stream.
+
+`value` _GpuBigUInt_<br>
+The unsigned big integer operand to inspect.
+
+`bitLength` _Int32_<br>
+When this method returns, the number of significant bits of `value` (`0` for zero).
+
+`leadingBits` _UInt64_<br>
+When this method returns, the top 64 bits of `value`, its top set bit at bit 63 (missing low bits are `0`).
+
+#### Exceptions
+
+`CudaException`<br>
+Thrown when a kernel launch or the device readback fails.
 
 ## CompareTo(GpuWorkspace, GpuBigUInt, GpuBigUInt)
 

@@ -58,6 +58,7 @@ public interface IGpuGraphProvider
 | [BitwiseXor(GpuWorkspace, GpuBigUInt, GpuBigUInt, GpuBigUInt)](#bitwisexorgpuworkspace-gpubiguint-gpubiguint-gpubiguint) | Computes the bitwise XOR of two arbitrary-precision integers on the GPU. |
 | [CompareTo(GpuWorkspace, GpuBigUInt, GpuBigUInt)](#comparetogpuworkspace-gpubiguint-gpubiguint) | Compares two arbitrary-precision unsigned integers on the GPU. |
 | [GetBitLength(GpuWorkspace, GpuBigUInt)](#getbitlengthgpuworkspace-gpubiguint) | Computes the active bit length of the given arbitrary-precision integer on the GPU. |
+| [ReadLeadingBits(GpuWorkspace, GpuBigUInt, out int, out ulong)](#readleadingbitsgpuworkspace-gpubiguint-out-int-out-ulong) | Reads the bit length and the leading 64 bits of an arbitrary-precision integer with one wait for the device. |
 | [IsOne(GpuWorkspace, GpuBigUInt)](#isonegpuworkspace-gpubiguint) | Evaluates whether the given arbitrary-precision integer is equal to one on the GPU. |
 | [IsZero(GpuWorkspace, GpuBigUInt)](#iszerogpuworkspace-gpubiguint) | Evaluates whether the given arbitrary-precision integer is equal to zero on the GPU. |
 | [ShiftLeft(GpuWorkspace, GpuBigUInt, Int32, GpuBigUInt)](#shiftleftgpuworkspace-gpubiguint-int32-gpubiguint) | Shifts an arbitrary-precision integer left by the specified bit count on the GPU. |
@@ -643,6 +644,28 @@ The integer operand.
 
 _Int32_<br>
 The number of significant bits required to represent the integer.
+
+## ReadLeadingBits(GpuWorkspace, GpuBigUInt, out int, out ulong)
+
+Reads the bit length and the leading 64 bits of an arbitrary-precision integer with one wait for the device.
+
+```csharp
+void ReadLeadingBits(GpuWorkspace workspace, GpuBigUInt value, out int bitLength, out ulong leadingBits);
+```
+
+#### Parameters
+
+`workspace` _GpuWorkspace_<br>
+The GPU workspace.
+
+`value` _GpuBigUInt_<br>
+The integer operand.
+
+`bitLength` _Int32_<br>
+When this method returns, the number of significant bits of `value` (`0` for zero).
+
+`leadingBits` _UInt64_<br>
+When this method returns, the top 64 bits of `value`, its top set bit at bit 63 (missing low bits are `0`; `0` for zero).
 
 ## CompareTo(GpuWorkspace, GpuBigUInt, GpuBigUInt)
 

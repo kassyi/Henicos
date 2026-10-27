@@ -30,6 +30,24 @@ public sealed class CSharpCpuBigFloatArithmetic : IGpuBigFloatArithmetic
     private static void ToWords(BigInteger value, Span<uint> destination, int maxWords) =>
         value.WriteLimbs(destination.Slice(0, maxWords));
 
+    // Writes a significand that fits the result words (zero-extended) to the result buffer.
+    private static void WriteResult(ref GpuBigIntExecutionContext context, BigInteger significand,
+        GpuBigIntMemoryHandle resultSig)
+    {
+        var resultWords = ArrayPool<uint>.Shared.Rent(resultSig.NumWords);
+        try
+        {
+            Array.Clear(resultWords, 0, resultSig.NumWords);
+            ToWords(significand, resultWords.AsSpan(0, resultSig.NumWords), resultSig.NumWords);
+            context.GpuWorkspace.Provider.CopyHostToDevice(resultSig.DevicePointer, resultWords, resultSig.NumWords,
+                context.Stream);
+        }
+        finally
+        {
+            ArrayPool<uint>.Shared.Return(resultWords);
+        }
+    }
+
 
     /// <inheritdoc/>
     public GpuFloatResult Normalize(
@@ -538,72 +556,10 @@ public sealed class CSharpCpuBigFloatArithmetic : IGpuBigFloatArithmetic
                 throw new InvalidOperationException("Log of zero.");
             }
 
-            var shiftBits = resultSig.NumWords * 32 + 64;
-
-            var xFixed = vValue;
-            var currentExp = value.Exponent;
-            if (currentExp < -shiftBits)
-            {
-                xFixed >>= (-shiftBits - currentExp);
-            }
-            else
-            {
-                xFixed <<= (currentExp + shiftBits);
-            }
-
-            var oneFixed = BigInteger.One << shiftBits;
-
-            // y = (x - 1) / (x + 1)
-            var num = xFixed - oneFixed;
-            var den = xFixed + oneFixed;
-            var y = (num << shiftBits) / den;
-
-            var sum = y;
-            var term = y;
-            var y2 = (y * y) >> shiftBits;
-            var k = 3;
-            while (!term.IsZero)
-            {
-                term = (term * y2) >> shiftBits;
-                var add = term / k;
-                if (add.IsZero)
-                {
-                    break;
-                }
-
-                sum += add;
-                k += 2;
-                if (k > 1000)
-                {
-                    break;
-                }
-            }
-
-            sum <<= 1;
-
-            var resultSign = sum.Sign < 0;
-            if (resultSign)
-            {
-                sum = -sum;
-            }
-
-            var tempExpFixed = -shiftBits;
-            var sumWords = Math.Max(1, (int)((sum.GetBitLength() + 31) / 32));
-
-            using var tempResult = context.GpuWorkspace.RentTemp(sumWords);
-            var tempHandle = tempResult.Handle;
-            var tempWordsArr = ArrayPool<uint>.Shared.Rent(tempResult.NumWords);
-            try
-            {
-                ToWords(sum, tempWordsArr.AsSpan(0, tempResult.NumWords), tempResult.NumWords);
-                context.GpuWorkspace.Provider.CopyHostToDevice(tempHandle.DevicePointer, tempWordsArr, tempResult.NumWords, context.Stream);
-            }
-            finally
-            {
-                ArrayPool<uint>.Shared.Return(tempWordsArr);
-            }
-
-            return Normalize(ref context, new GpuFloatOperand(tempHandle, tempExpFixed, resultSign), resultSig);
+            var (significand, exponent, isNegative) =
+                BigFloatTranscendentalMath.Log(vValue, value.Exponent, resultSig.NumWords * 32);
+            WriteResult(ref context, significand, resultSig);
+            return new GpuFloatResult(exponent, isNegative);
         }
         finally
         {

@@ -123,9 +123,23 @@ public interface IGpuBigFloatArithmetic
     /// Computes the natural logarithm (<c>ln(x)</c>) of an arbitrary-precision floating-point value.
     /// </summary>
     /// <param name="context">The execution context providing memory workspace and CUDA stream dispatch.</param>
-    /// <param name="value">The input argument floating-point operand.</param>
-    /// <param name="resultSig">The memory handle where the logarithm significand will be stored.</param>
+    /// <param name="value">The input argument floating-point operand; positive.</param>
+    /// <param name="resultSig">The memory handle where the logarithm significand will be stored. Its word count
+    /// <c>n</c> sets the precision of the result, <c>p = 32·n</c> bits.</param>
     /// <returns>A <see cref="GpuFloatResult"/> containing the resulting exponent and sign flag.</returns>
+    /// <exception cref="InvalidOperationException"><paramref name="value"/> is zero or negative.</exception>
+    /// <exception cref="OverflowException">The exponent of the result does not fit in <see cref="int"/>.</exception>
+    /// <remarks>
+    /// <para>
+    /// The significand fills <paramref name="resultSig"/> with its top bit set, or is zero for <c>ln 1 = 0</c>.
+    /// The result is within one unit in the last place of the exact logarithm (faithful rounding) for every positive
+    /// argument, whatever its exponent and however close it is to 1.
+    /// </para>
+    /// <para>
+    /// The argument is reduced to <c>x = m·2^e</c>, <c>m ∈ [3/4, 3/2)</c>, and <c>ln x = e·ln 2 + 2·atanh((m − 1) / (m + 1))</c>
+    /// is evaluated with a number of terms derived from the precision.
+    /// </para>
+    /// </remarks>
     GpuFloatResult Log(
         ref GpuBigIntExecutionContext context,
         in GpuFloatOperand value,
