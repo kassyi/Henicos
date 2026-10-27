@@ -141,7 +141,8 @@ public sealed class FermatAlgorithm : IDisposable
     /// <summary>
     /// Gets or sets a test hook (internal): it receives the position after every squaring of the chain and, when it
     /// returns <see langword="true"/>, corrupts the state there. It shows that the Gerbicz-Li check detects errors;
-    /// <see langword="null"/> (the default) costs one branch per block.
+    /// <see langword="null"/> (the default) costs two null checks at each stop of the chain (a block boundary, the
+    /// snapshot point, the end of the chain), not one per squaring.
     /// </summary>
     internal Func<long, bool>? CorruptStateAt
     {
@@ -334,8 +335,16 @@ public sealed class FermatAlgorithm : IDisposable
         }
 
         ThrowIfFallbackModeChanged();
-        _modulus.Dispose();
-        _disposed = true;
+        try
+        {
+            _modulus.Dispose();
+        }
+        finally
+        {
+            // A failed release (an AggregateException from the CUDA Graphs) still leaves the instance disposed, so a
+            // second Dispose does not release the buffers again.
+            _disposed = true;
+        }
     }
 
     private async ValueTask<FermatPrpResult> RunCoreAsync(bool synchronous, IProgress<FermatPrpProgress>? progress,

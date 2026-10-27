@@ -88,8 +88,9 @@ internal sealed class SquaringChainDriver
 
     /// <summary>
     /// Gets or sets a test hook that receives the position after every squaring of the state and, when it returns
-    /// <see langword="true"/>, corrupts the state there (one bit of the low word). <see langword="null"/> in production;
-    /// when set, the state is squared one at a time so that every position is reached.
+    /// <see langword="true"/>, corrupts the state there (one bit of the low word). <see langword="null"/> in production,
+    /// where it costs two null checks at each stop of the chain (a block boundary, the snapshot point, the end of the
+    /// chain); when set, the chain stops after every squaring so that every position is reached.
     /// </summary>
     /// <remarks>Shows that the Gerbicz-Li check detects an error and that the rollback recovers from it.</remarks>
     internal Func<long, bool>? FaultInjection { get; set; }

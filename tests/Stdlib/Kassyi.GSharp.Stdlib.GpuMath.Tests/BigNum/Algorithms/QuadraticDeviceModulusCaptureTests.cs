@@ -72,6 +72,29 @@ public class QuadraticDeviceModulusCaptureTests
         Assert.Equal(Squarings(E, Base, 3), FromWords(modulus.ReadCanonical(SquaringRegister.State)));
     }
 
+    [SkippableFact]
+    [Scenario(TestScenario.SadPath)]
+    public void Dispose_GraphDestroyFails_ReleasesEverythingOnceAndReportsIt()
+    {
+        CudaCapability.EnsureGpuAvailable();
+        using var scope = new GpuKernelLoader.CudaContextScope();
+        var provider = new CountingGraphProvider(GSharpKernelProvider.Instance);
+        var modulus = new QuadraticDeviceModulus(new QuadraticFoldModulus(E), isCpu: false, provider);
+        modulus.Write(SquaringRegister.State, ToWords(Base, modulus.Words));
+        modulus.SquareState(3); // the warm-up and one cached graph of length 2
+        provider.FailDestroy = true;
+
+        // The failure is reported after the buffers and the workspace are released; the graph left the cache first, so
+        // a second Dispose neither destroys it again nor throws (review m1).
+        // mutant: QuadraticDeviceModulus.cs Dispose `_graphs.Remove(length, out var entry)` -> `_graphs.TryGetValue(length, out var entry)`
+        var exception = Assert.Throws<AggregateException>(modulus.Dispose);
+        Assert.IsType<InvalidOperationException>(Assert.Single(exception.InnerExceptions));
+        Assert.Equal(1, provider.DestroyAttempts);
+
+        modulus.Dispose();
+        Assert.Equal(1, provider.DestroyAttempts);
+    }
+
     private sealed class InjectedCaptureException : Exception;
 
     /// <summary>Delegates every graph call and counts them; can fail right after ending a capture.</summary>
@@ -86,6 +109,10 @@ public class QuadraticDeviceModulusCaptureTests
         public int DestroyedGraphs { get; private set; }
 
         public bool FailAfterEndCapture { get; set; }
+
+        public bool FailDestroy { get; set; }
+
+        public int DestroyAttempts { get; private set; }
 
         public void BeginCapture(IntPtr stream)
         {
@@ -116,6 +143,14 @@ public class QuadraticDeviceModulusCaptureTests
 
         public void DestroyGraph(IntPtr graph, IntPtr graphExec)
         {
+            DestroyAttempts++;
+            if (FailDestroy)
+            {
+                // Release the graph for real, then report a failure, so that the test leaks nothing.
+                inner.DestroyGraph(graph, graphExec);
+                throw new InvalidOperationException("Injected failure destroying a graph.");
+            }
+
             if (graph != IntPtr.Zero && graphExec == IntPtr.Zero)
             {
                 DestroyedGraphs++;
