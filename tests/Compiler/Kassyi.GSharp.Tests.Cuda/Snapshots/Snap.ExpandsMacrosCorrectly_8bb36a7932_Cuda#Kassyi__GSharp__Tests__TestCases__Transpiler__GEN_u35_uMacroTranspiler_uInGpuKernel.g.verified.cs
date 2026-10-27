@@ -36,7 +36,7 @@ for(int __gsharp_id_2_j = blockIdx.x * blockDim.x + threadIdx.x; __gsharp_id_2_j
 {
 __gsharp_id_0_sum+=__gsharp_id_2_j;
 }
-if(threadIdx.x == 0 && blockIdx.x == 0)
+if((threadIdx.x|threadIdx.y|threadIdx.z|blockIdx.x|blockIdx.y|blockIdx.z)==0)
 {
 __gsharp_id_0_sum+=100;
 }
@@ -124,7 +124,7 @@ __gsharp_id_0_sum+=33;
 {
 __gsharp_id_0_sum+=1;
 cg::this_grid().sync();
-if(threadIdx.x == 0 && blockIdx.x == 0)
+if((threadIdx.x|threadIdx.y|threadIdx.z|blockIdx.x|blockIdx.y|blockIdx.z)==0)
 {
 __gsharp_id_0_sum+=2;
 __gsharp_id_0_sum+=3;

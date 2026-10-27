@@ -1,7 +1,8 @@
 namespace Kassyi.GSharp.Compiler.Transpiler.Rules.MacroRules;
 
 /// <summary>
-/// Transpiles <c>Gpu.SingleThread</c> blocks by wrapping them in a thread 0 / block 0 conditional execution guard.
+/// Transpiles <c>Gpu.SingleThread</c> blocks by wrapping them in the guard of <see cref="SingleThreadGuard"/>: only the
+/// thread whose six indices are all 0 runs the body.
 /// </summary>
 internal sealed class SingleThreadMacroRule : IMacroTranspilerRule
 {
@@ -25,7 +26,7 @@ internal sealed class SingleThreadMacroRule : IMacroTranspilerRule
         context.Emitter.Writer.Append("if");
         using (context.Emitter.Writer.Parentheses())
         {
-            context.Emitter.Writer.Append("threadIdx.x == 0 && blockIdx.x == 0");
+            SingleThreadGuard.AppendCppCondition(context.Emitter.Writer);
         }
 
         context.Emitter.Writer.AppendLine();

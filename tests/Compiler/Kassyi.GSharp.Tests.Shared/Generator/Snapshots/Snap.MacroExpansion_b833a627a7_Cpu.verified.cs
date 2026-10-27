@@ -60,7 +60,7 @@ return;
 case 1:
 __gsharp_switch_1_state_1:
 {
-if(threadIdx.x == 0 && blockIdx.x == 0)
+if((threadIdx.x|threadIdx.y|threadIdx.z|blockIdx.x|blockIdx.y|blockIdx.z)==0)
 {
 __gsharp_id_0_data[0]=999;
 }
@@ -147,10 +147,11 @@ return;
 case 1:
 {
 // SingleThread test
-global::Kassyi.GSharp.Core.Gpu.SingleThread(() =>
+if ((global::Kassyi.GSharp.Core.ManagedGpuContext.ThreadIdxX | global::Kassyi.GSharp.Core.ManagedGpuContext.ThreadIdxY | global::Kassyi.GSharp.Core.ManagedGpuContext.ThreadIdxZ | global::Kassyi.GSharp.Core.ManagedGpuContext.BlockIdxX | global::Kassyi.GSharp.Core.ManagedGpuContext.BlockIdxY | global::Kassyi.GSharp.Core.ManagedGpuContext.BlockIdxZ) == 0)
 {
 data[0] = 999;
-});
+}
+
 // InlinePtx test
 throw new global::System.NotSupportedException("Gpu.InlinePtx is not supported by the StandardCppDialect dialect");
 __gsharp_ctx.__gsharp_state = -1;

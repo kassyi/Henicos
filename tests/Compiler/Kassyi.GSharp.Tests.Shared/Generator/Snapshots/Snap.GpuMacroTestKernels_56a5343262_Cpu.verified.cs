@@ -60,7 +60,7 @@ return;
 case 1:
 __gsharp_switch_1_state_1:
 {
-if(threadIdx.x == 0 && blockIdx.x == 0)
+if((threadIdx.x|threadIdx.y|threadIdx.z|blockIdx.x|blockIdx.y|blockIdx.z)==0)
 {
 if(__gsharp_id_1_length>0)
 {
@@ -146,13 +146,14 @@ return;
 case 1:
 {
 // SingleThread to overwrite the first element
-global::Kassyi.GSharp.Core.Gpu.SingleThread(() =>
+if ((global::Kassyi.GSharp.Core.ManagedGpuContext.ThreadIdxX | global::Kassyi.GSharp.Core.ManagedGpuContext.ThreadIdxY | global::Kassyi.GSharp.Core.ManagedGpuContext.ThreadIdxZ | global::Kassyi.GSharp.Core.ManagedGpuContext.BlockIdxX | global::Kassyi.GSharp.Core.ManagedGpuContext.BlockIdxY | global::Kassyi.GSharp.Core.ManagedGpuContext.BlockIdxZ) == 0)
 {
 if (length > 0)
 {
 outputBuffer[0] = singleValue;
 }
-});
+}
+
 __gsharp_ctx.__gsharp_state = -1;
 return;
 }

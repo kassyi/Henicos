@@ -53,7 +53,7 @@ for(int __gsharp_id_2_j = blockIdx.x * blockDim.x + threadIdx.x; __gsharp_id_2_j
 {
 __gsharp_ctx->__gsharp_id_0_sum+=__gsharp_id_2_j;
 }
-if(threadIdx.x == 0 && blockIdx.x == 0)
+if((threadIdx.x|threadIdx.y|threadIdx.z|blockIdx.x|blockIdx.y|blockIdx.z)==0)
 {
 __gsharp_ctx->__gsharp_id_0_sum+=100;
 }
@@ -186,7 +186,7 @@ return;
 case 11:
 __gsharp_switch_1_state_11:
 {
-if(threadIdx.x == 0 && blockIdx.x == 0)
+if((threadIdx.x|threadIdx.y|threadIdx.z|blockIdx.x|blockIdx.y|blockIdx.z)==0)
 {
 __gsharp_ctx->__gsharp_id_0_sum+=2;
 __gsharp_ctx->__gsharp_id_0_sum+=3;
@@ -280,10 +280,11 @@ __gsharp_ctx.sum += __gsharp_unroll_1;
 }
 
 // SingleThread macro
-global::Kassyi.GSharp.Core.Gpu.SingleThread(() =>
+if ((global::Kassyi.GSharp.Core.ManagedGpuContext.ThreadIdxX | global::Kassyi.GSharp.Core.ManagedGpuContext.ThreadIdxY | global::Kassyi.GSharp.Core.ManagedGpuContext.ThreadIdxZ | global::Kassyi.GSharp.Core.ManagedGpuContext.BlockIdxX | global::Kassyi.GSharp.Core.ManagedGpuContext.BlockIdxY | global::Kassyi.GSharp.Core.ManagedGpuContext.BlockIdxZ) == 0)
 {
 __gsharp_ctx.sum += 100;
-});
+}
+
 {
 }
 
@@ -433,11 +434,12 @@ return;
 
 case 11:
 {
-global::Kassyi.GSharp.Core.Gpu.SingleThread(() =>
+if ((global::Kassyi.GSharp.Core.ManagedGpuContext.ThreadIdxX | global::Kassyi.GSharp.Core.ManagedGpuContext.ThreadIdxY | global::Kassyi.GSharp.Core.ManagedGpuContext.ThreadIdxZ | global::Kassyi.GSharp.Core.ManagedGpuContext.BlockIdxX | global::Kassyi.GSharp.Core.ManagedGpuContext.BlockIdxY | global::Kassyi.GSharp.Core.ManagedGpuContext.BlockIdxZ) == 0)
 {
 __gsharp_ctx.sum += 2;
 __gsharp_ctx.sum += 3;
-});
+}
+
 __gsharp_ctx.__gsharp_yielded_for_grid_sync = true;
 __gsharp_ctx.__gsharp_state = 12;
 return;
