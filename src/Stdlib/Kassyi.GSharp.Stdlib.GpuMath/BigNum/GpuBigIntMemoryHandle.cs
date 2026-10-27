@@ -14,6 +14,10 @@ namespace Kassyi.GSharp.Stdlib.GpuMath.BigNum;
 /// nothing. Equality, the hash code and <see cref="ToString"/> look at the handle only and never throw.
 /// </para>
 /// <para>
+/// Only the handle that the memory manager hands out for a whole buffer owns it (<see cref="OwnsBuffer"/>); every
+/// sub-range or other view of it is borrowed and is never freed.
+/// </para>
+/// <para>
 /// <b>Zero-Allocation:</b> As a readonly struct, instances are passed by value with no managed heap allocations.
 /// </para>
 /// </remarks>
@@ -51,12 +55,23 @@ public readonly struct GpuBigIntMemoryHandle : IEquatable<GpuBigIntMemoryHandle>
         get;
     }
 
-    private GpuBigIntMemoryHandle(GpuBigIntDeviceBuffer buffer, int wordOffset, int numWords, int generation)
+    /// <summary>
+    /// Gets a value indicating whether this handle owns its buffer: only the whole-buffer handle returned by the memory
+    /// manager does. A borrowed handle (an element, a slice or another view) is never freed.
+    /// </summary>
+    public bool OwnsBuffer
+    {
+        get;
+    }
+
+    private GpuBigIntMemoryHandle(
+        GpuBigIntDeviceBuffer buffer, int wordOffset, int numWords, int generation, bool ownsBuffer)
     {
         Buffer = buffer;
         WordOffset = wordOffset;
         NumWords = numWords;
         Generation = generation;
+        OwnsBuffer = ownsBuffer;
     }
 
     /// <summary>
@@ -65,13 +80,13 @@ public readonly struct GpuBigIntMemoryHandle : IEquatable<GpuBigIntMemoryHandle>
     /// <param name="buffer">A buffer of the calling manager.</param>
     /// <returns>A handle of all words of <paramref name="buffer"/> at its current generation.</returns>
     internal static GpuBigIntMemoryHandle CreateOwned(GpuBigIntDeviceBuffer buffer) =>
-        new(buffer, 0, buffer.TotalWords, buffer.Generation);
+        new(buffer, 0, buffer.TotalWords, buffer.Generation, ownsBuffer: true);
 
     /// <summary>
     /// Creates a handle of memory that belongs to someone outside GpuMath and is never freed here.
     /// </summary>
     /// <param name="buffer">A buffer without a manager.</param>
-    /// <returns>A handle of all words of <paramref name="buffer"/>.</returns>
+    /// <returns>A handle of all words of <paramref name="buffer"/>; it does not own the memory.</returns>
     /// <exception cref="ArgumentException"><paramref name="buffer"/> belongs to a memory manager.</exception>
     internal static GpuBigIntMemoryHandle CreateExternal(GpuBigIntDeviceBuffer buffer)
     {
@@ -80,7 +95,7 @@ public readonly struct GpuBigIntMemoryHandle : IEquatable<GpuBigIntMemoryHandle>
             throw new ArgumentException("An external handle must not wrap a buffer of a memory manager.", nameof(buffer));
         }
 
-        return new GpuBigIntMemoryHandle(buffer, 0, buffer.TotalWords, buffer.Generation);
+        return new GpuBigIntMemoryHandle(buffer, 0, buffer.TotalWords, buffer.Generation, ownsBuffer: false);
     }
 
     /// <summary>
@@ -117,14 +132,15 @@ public readonly struct GpuBigIntMemoryHandle : IEquatable<GpuBigIntMemoryHandle>
     }
 
     /// <summary>
-    /// Returns a handle of the same words in the same lease, for code that uses the memory without freeing it.
+    /// Returns a borrowed handle of the same words in the same lease, for code that uses the memory without freeing it.
     /// </summary>
-    /// <returns>A copy of this handle.</returns>
-    internal GpuBigIntMemoryHandle Borrow() => this;
+    /// <returns>This handle with <see cref="OwnsBuffer"/> cleared.</returns>
+    internal GpuBigIntMemoryHandle Borrow() =>
+        IsDefault ? this : new GpuBigIntMemoryHandle(Buffer, WordOffset, NumWords, Generation, ownsBuffer: false);
 
     /// <summary>
-    /// Returns a handle of <paramref name="numWords"/> words of this handle from word <paramref name="wordOffset"/>,
-    /// in the same lease.
+    /// Returns a borrowed handle of <paramref name="numWords"/> words of this handle from word
+    /// <paramref name="wordOffset"/>, in the same lease.
     /// </summary>
     /// <param name="wordOffset">The first word, relative to <see cref="WordOffset"/>.</param>
     /// <param name="numWords">The number of words.</param>
@@ -144,7 +160,9 @@ public readonly struct GpuBigIntMemoryHandle : IEquatable<GpuBigIntMemoryHandle>
                 $"The slice [{wordOffset}, {wordOffset} + {numWords}) is outside the {NumWords} words of the handle.");
         }
 
-        return IsDefault ? this : new GpuBigIntMemoryHandle(Buffer, WordOffset + wordOffset, numWords, Generation);
+        return IsDefault
+            ? this
+            : new GpuBigIntMemoryHandle(Buffer, WordOffset + wordOffset, numWords, Generation, ownsBuffer: false);
     }
 
     /// <summary>
@@ -155,7 +173,8 @@ public readonly struct GpuBigIntMemoryHandle : IEquatable<GpuBigIntMemoryHandle>
     internal GpuBigUInt AsBorrowedBigUInt(GpuWorkspace workspace) => new(workspace, Borrow(), isTemp: true);
 
     /// <summary>
-    /// Indicates whether two handles refer to the same words of the same lease of the same buffer.
+    /// Indicates whether two handles refer to the same words of the same lease of the same buffer;
+    /// <see cref="OwnsBuffer"/> is not compared (the owner and a borrowed view of it are the same memory).
     /// </summary>
     /// <param name="other">The handle to compare with.</param>
     /// <returns><see langword="true"/> if both handles are identical; otherwise, <see langword="false"/>.</returns>
@@ -175,7 +194,7 @@ public readonly struct GpuBigIntMemoryHandle : IEquatable<GpuBigIntMemoryHandle>
     /// </summary>
     /// <returns>A string for debugging.</returns>
     public override string ToString() =>
-        $"GpuBigIntMemoryHandle(WordOffset={WordOffset}, NumWords={NumWords}, Generation={Generation}, IsDefault={IsDefault})";
+        $"GpuBigIntMemoryHandle(WordOffset={WordOffset}, NumWords={NumWords}, Generation={Generation}, OwnsBuffer={OwnsBuffer}, IsDefault={IsDefault})";
 
     /// <summary>
     /// Determines whether two handles are identical.

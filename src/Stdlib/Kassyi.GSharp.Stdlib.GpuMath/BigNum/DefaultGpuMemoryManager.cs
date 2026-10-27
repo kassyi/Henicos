@@ -87,12 +87,19 @@ internal sealed class DefaultGpuMemoryManager(IGpuExecutionProvider provider, In
     /// <summary>
     /// Ends the lease of the buffer of <paramref name="handle"/> and returns the buffer to the pool.
     /// </summary>
-    /// <param name="handle">The memory handle to free or recycle.</param>
+    /// <param name="handle">
+    /// The owning handle of a whole buffer, as returned by <see cref="Allocate"/>. A borrowed handle (a view or a slice)
+    /// is rejected even when its lease has already ended.
+    /// </param>
     /// <remarks>
     /// Freeing a default handle, a handle of external memory, or a handle whose lease has already ended (a second free of
     /// a copy, or a free after <see cref="Dispose"/>) does nothing.
     /// </remarks>
     /// <exception cref="ArgumentException"><paramref name="handle"/> was allocated by another memory manager.</exception>
+    /// <exception cref="InvalidOperationException">
+    /// <paramref name="handle"/> is borrowed or covers only part of its buffer; only the owning handle of a whole buffer
+    /// can be freed. The public <c>Dispose</c> methods never pass such a handle, so this is an error inside GpuMath.
+    /// </exception>
     public void Free(GpuBigIntMemoryHandle handle)
     {
         if (handle.IsDefault || handle.Buffer.Manager is null)
@@ -107,6 +114,12 @@ internal sealed class DefaultGpuMemoryManager(IGpuExecutionProvider provider, In
         }
 
         var buffer = handle.Buffer;
+        if (!handle.OwnsBuffer || handle.WordOffset != 0 || handle.NumWords != buffer.TotalWords)
+        {
+            throw new InvalidOperationException(
+                "Only the owning handle of a whole buffer can be freed; a view or slice is borrowed.");
+        }
+
         if (!buffer.TryRetire(handle.Generation) || !_activeAllocations.TryRemove(buffer.Pointer, out _))
         {
             return;

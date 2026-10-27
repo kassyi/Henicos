@@ -114,6 +114,8 @@ Gets a scalar representation of the specified element.
 public GpuBigInt GetElement(int index);
 ```
 
+The result is borrowed: it points into this array's buffer and does not own it, so disposing it frees nothing. Do not use it after the array is disposed; its `DevicePointer` then throws `ObjectDisposedException`.
+
 #### Parameters
 
 `index` _int_<br>
@@ -131,6 +133,8 @@ Creates a zero-allocation sub-slice of this GPU array.
 ```csharp
 public GpuBigIntArray Slice(int elementOffset, int elementCount);
 ```
+
+The result is borrowed: it points into this array's buffer and does not own it, so disposing it frees nothing. Do not use it after the array is disposed; its `DevicePointer` then throws `ObjectDisposedException`.
 
 #### Parameters
 

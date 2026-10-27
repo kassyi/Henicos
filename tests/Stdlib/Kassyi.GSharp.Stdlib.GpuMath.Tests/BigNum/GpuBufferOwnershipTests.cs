@@ -257,6 +257,83 @@ public sealed class GpuBufferOwnershipTests : IDisposable
     private static uint[] Pattern(int numWords) =>
         Enumerable.Range(0, numWords).Select(static i => 0x9E3779B9u * (uint)(i + 1)).ToArray();
 
+    [SkippableFact]
+    [Scenario(TestScenario.HappyPath)]
+    public void UIntArrayElement_Dispose_KeepsParent()
+    {
+        // An element is a borrowed view: disposing it leaves the parent's buffer allocated, so the next allocation of the
+        // parent's size gets a new, whole buffer that does not overlap the parent (#630).
+        // mutant: GpuBigUIntArray.GetElement returns an owning handle (Handle.Slice -> an owned whole-buffer handle)
+        using var array = new GpuBigUIntArray(_workspace, 4, 2);
+        var start = array.DevicePointer;
+        var end = start + array.TotalWords * 4;
+
+        array.GetElement(1).Dispose();
+        array.Slice(1, 2).Dispose();
+        using var next = new GpuBigUInt(_workspace, array.TotalWords);
+
+        Assert.Equal(
+            (array.TotalWords, false),
+            (next.NumWords, next.DevicePointer >= start && next.DevicePointer < end)
+        );
+        Assert.Equal(start, array.DevicePointer);
+    }
+
+    [SkippableFact]
+    [Scenario(TestScenario.HappyPath)]
+    public void IntArrayElementAndSlice_Dispose_KeepParentValues()
+    {
+        // Disposing an element or a slice of a GpuBigIntArray keeps the parent's values (#630).
+        // mutant: GpuBigUIntArray.Dispose frees a borrowed handle (the OwnsBuffer check removed)
+        using var array = new GpuBigIntArray(_workspace, 3, 2);
+        uint[] values = [11u, 0u, 22u, 0u, 33u, 0u];
+        _workspace.Provider.CopyHostToDevice(array.Values.DevicePointer, values, values.Length, _workspace.Stream);
+
+        array.Slice(1, 2).Dispose();
+        array.GetElement(0).Dispose();
+
+        var host = new uint[values.Length];
+        _workspace.Provider.CopyDeviceToHost(host, array.Values.DevicePointer, host.Length, _workspace.Stream);
+        Assert.Equal(values, host);
+    }
+
+    [SkippableFact]
+    [Scenario(TestScenario.Boundary)]
+    public void FloatArrayElement_Dispose_KeepsParentSignificand()
+    {
+        // GpuBigFloatArray.GetElement builds its value from a significand element; disposing it frees nothing (#630).
+        // mutant: GpuBigUInt.Dispose frees a borrowed handle (the OwnsBuffer check removed)
+        using var array = new GpuBigFloatArray(_workspace, 2, 2);
+        uint[] significands = [5u, 6u, 7u, 8u];
+        _workspace.Provider.CopyHostToDevice(array.Significands.DevicePointer, significands, significands.Length,
+            _workspace.Stream);
+
+        array.GetElement(0).Dispose();
+
+        var host = new uint[significands.Length];
+        _workspace.Provider.CopyDeviceToHost(host, array.Significands.DevicePointer, host.Length, _workspace.Stream);
+        Assert.Equal(significands, host);
+    }
+
+    [SkippableFact]
+    [Scenario(TestScenario.SadPath)]
+    public void Free_BorrowedOrPartialHandle_Throws()
+    {
+        // Only the owning handle of a whole buffer can be freed. A whole-array slice has offset 0 and all words, so only
+        // the ownership check rejects it; an element is rejected as well. Neither reaches the pool.
+        // mutant: DefaultGpuMemoryManager.Free without the `!handle.OwnsBuffer` check
+        using var array = new GpuBigUIntArray(_workspace, PoolWords, 1);
+        var whole = array.Slice(0, array.Length).Handle;
+        var element = array.GetElement(1).Handle;
+        var before = _workspace.GetMemoryStatistics();
+
+        Assert.Equal((0, PoolWords), (whole.WordOffset, whole.NumWords));
+        Assert.Throws<InvalidOperationException>(() => _workspace.MemoryManager.Free(whole));
+        Assert.Throws<InvalidOperationException>(() => _workspace.MemoryManager.Free(element));
+        Assert.Equal(before, _workspace.GetMemoryStatistics());
+        Assert.Equal((true, false, false), (array.Handle.OwnsBuffer, whole.OwnsBuffer, element.OwnsBuffer));
+    }
+
     // (live, live words, pooled, driver allocations, driver frees) relative to `start`
     private static (int, long, int, long, long) Delta(GpuMemoryStatistics start, GpuMemoryStatistics now) => (
         now.LiveBuffers - start.LiveBuffers,

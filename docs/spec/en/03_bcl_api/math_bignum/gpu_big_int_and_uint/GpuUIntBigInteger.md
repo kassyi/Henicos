@@ -295,7 +295,7 @@ public void Dispose();
 
 #### Remarks
 
-`GpuBigUInt` is a value type, so copies of one value share one buffer. Only the first `Dispose` of the copies returns the buffer; disposing another copy later does nothing, also after the buffer has been handed to a new owner and after the workspace has been disposed.
+`GpuBigUInt` is a value type, so copies of one value share one buffer. Only the first `Dispose` of the copies returns the buffer; disposing another copy later does nothing, also after the buffer has been handed to a new owner and after the workspace has been disposed. A borrowed value, such as an element of a `GpuBigUIntArray`, does not own its buffer and frees nothing.
 
 ## Equals(GpuBigUInt)
 

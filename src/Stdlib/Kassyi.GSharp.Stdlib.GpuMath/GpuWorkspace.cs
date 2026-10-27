@@ -393,7 +393,8 @@ public class GpuWorkspace : IGpuResourceScope
 
     internal void ReturnTemp(GpuBigUInt temp)
     {
-        if (!temp.IsTemp)
+        // A borrowed temporary (a view of another buffer) is not returned; its owner frees the buffer
+        if (!temp.IsTemp || !temp.Handle.OwnsBuffer)
         {
             return;
         }

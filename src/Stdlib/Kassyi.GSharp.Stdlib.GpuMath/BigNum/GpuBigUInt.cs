@@ -390,13 +390,23 @@ public readonly partial struct GpuBigUInt : IGpuBigUIntExpression, IGpuBigNumber
     /// <summary>
     /// Releases the underlying GPU global device memory handle back to the workspace memory pool.
     /// </summary>
+    /// <remarks>
+    /// A borrowed value (an element or slice of an array, or another view that does not own its buffer) frees nothing.
+    /// Disposing a second copy of an owning value does nothing either.
+    /// </remarks>
     public void Dispose()
     {
-        if (Workspace != null && !Handle.IsDefault && !IsTemp)
+        if (Workspace != null && !Handle.IsDefault && !IsTemp && Handle.OwnsBuffer)
         {
             Workspace.MemoryManager.Free(Handle);
         }
     }
+
+    /// <summary>
+    /// Returns a view of the same words that does not own the buffer; disposing the view does nothing.
+    /// </summary>
+    /// <returns>A borrowed <see cref="GpuBigUInt"/>, valid while this value is not disposed.</returns>
+    internal GpuBigUInt AsBorrowed() => new(Workspace, Handle.Borrow());
 
     /// <summary>
     /// Determines whether the value of this instance is 0 (zero).

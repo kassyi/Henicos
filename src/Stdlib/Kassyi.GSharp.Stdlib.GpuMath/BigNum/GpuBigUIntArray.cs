@@ -71,7 +71,10 @@ public readonly struct GpuBigUIntArray : IDisposable
     /// Gets a slice representation of the specified element without allocating a new device buffer.
     /// </summary>
     /// <param name="index">The index of the element.</param>
-    /// <returns>A <see cref="GpuBigUInt"/> pointing to the element's device memory.</returns>
+    /// <returns>
+    /// A borrowed <see cref="GpuBigUInt"/> pointing to the element's device memory; it does not own the buffer, so
+    /// disposing it frees nothing. Do not use it after this array is disposed.
+    /// </returns>
     public GpuBigUInt GetElement(int index)
     {
         if (index < 0 || index >= Length)
@@ -88,7 +91,10 @@ public readonly struct GpuBigUIntArray : IDisposable
     /// </summary>
     /// <param name="elementOffset">The starting element index of the slice.</param>
     /// <param name="elementCount">The number of elements in the slice.</param>
-    /// <returns>A sliced view of the <see cref="GpuBigUIntArray"/>.</returns>
+    /// <returns>
+    /// A borrowed view of the elements; it does not own the buffer, so disposing it frees nothing. Do not use it after this
+    /// array is disposed.
+    /// </returns>
     public GpuBigUIntArray Slice(int elementOffset, int elementCount)
     {
         if (elementOffset < 0 || elementCount < 0 || elementOffset + elementCount > Length)
@@ -101,10 +107,24 @@ public readonly struct GpuBigUIntArray : IDisposable
     }
 
     /// <summary>
+    /// Returns a view of the same elements that does not own the buffer; disposing the view does nothing.
+    /// </summary>
+    /// <returns>A borrowed <see cref="GpuBigUIntArray"/>, valid while this array is not disposed.</returns>
+    internal GpuBigUIntArray AsBorrowed() => new(Workspace, Handle.Borrow(), Length, WordsPerElement, IsTemp);
+
+    /// <summary>
     /// Releases the GPU global device memory resources allocated for the underlying buffer.
     /// </summary>
+    /// <remarks>
+    /// A borrowed array (a slice, or another view that does not own its buffer) frees nothing.
+    /// </remarks>
     public void Dispose()
     {
+        if (!Handle.OwnsBuffer)
+        {
+            return;
+        }
+
         if (IsTemp)
         {
             // Allocate a dummy GpuBigUInt to use the ReturnTemp method, since ReturnTemp takes GpuBigUInt.
