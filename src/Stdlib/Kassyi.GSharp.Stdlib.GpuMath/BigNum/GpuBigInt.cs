@@ -79,6 +79,13 @@ public readonly struct GpuBigInt([TakesOwnership] GpuBigUInt value, bool isNegat
     public int CompareTo(GpuBigInt other) => GpuBigNumberAlgorithms.Compare(this, other);
 
     /// <summary>
+    /// Compares this instance to a view and returns an integer indicating their relative values; <c>+0</c> equals <c>-0</c>.
+    /// </summary>
+    /// <param name="other">The view to compare with this instance, for example an element of a <see cref="GpuBigIntArray"/>.</param>
+    /// <returns>Less than zero, zero or greater than zero as this value is less than, equal to or greater than <paramref name="other"/>.</returns>
+    public int CompareTo(scoped GpuBigIntView other) => CompareTo(other.AsBorrowed());
+
+    /// <summary>
     /// Indicates whether the current instance has the same magnitude buffer and the same sign as another
     /// <see cref="GpuBigInt"/>.
     /// </summary>

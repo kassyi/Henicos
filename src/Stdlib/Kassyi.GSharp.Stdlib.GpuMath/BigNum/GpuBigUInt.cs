@@ -237,13 +237,13 @@ public readonly partial struct GpuBigUInt : IGpuBigUIntExpression, IGpuBigNumber
     }
 
     /// <summary>
-    /// Copies limb words from another <see cref="GpuBigUInt"/> instance to this instance in GPU device memory.
+    /// Copies limb words from another value or view to this instance in GPU device memory.
     /// </summary>
-    /// <param name="source">The source <see cref="GpuBigUInt"/> buffer.</param>
+    /// <param name="source">The source words; a <see cref="GpuBigUInt"/> converts implicitly.</param>
     /// <param name="destOffsetWords">The word offset within this destination buffer.</param>
     /// <param name="srcOffsetWords">The word offset within the source buffer.</param>
     /// <param name="numWords">The number of words to copy, or <see langword="null"/> to copy as many words as fit.</param>
-    public void CopyFrom(GpuBigUInt source, int destOffsetWords = 0, int srcOffsetWords = 0,
+    public void CopyFrom(scoped GpuBigUIntView source, int destOffsetWords = 0, int srcOffsetWords = 0,
         int? numWords = null)
     {
         var wordsToCopy = numWords ?? Math.Min(NumWords - destOffsetWords, source.NumWords - srcOffsetWords);
@@ -309,6 +309,14 @@ public readonly partial struct GpuBigUInt : IGpuBigUIntExpression, IGpuBigNumber
     /// Greater than zero if this instance is greater than <paramref name="other"/>.
     /// </returns>
     public int CompareTo(GpuBigUInt other) => Workspace.Provider.CompareTo(Workspace, this, other);
+
+    /// <summary>
+    /// Compares this instance to a view and returns an integer indicating their relative magnitude.
+    /// </summary>
+    /// <param name="other">The view to compare with this instance, for example an element of a <see cref="GpuBigUIntArray"/>.</param>
+    /// <returns>Less than zero, zero or greater than zero as this value is less than, equal to or greater than <paramref name="other"/>.</returns>
+    public int CompareTo(scoped GpuBigUIntView other) =>
+        Workspace.Provider.CompareTo(Workspace, this, other.AsBorrowedBigUInt());
 
     /// <summary>
     /// Determines whether the specified object is equal to the current instance.
@@ -585,9 +593,9 @@ public readonly partial struct GpuBigUInt : IGpuBigUIntExpression, IGpuBigNumber
     /// <summary>
     /// Computes the modular multiplicative inverse of this instance modulo <paramref name="modulus"/>.
     /// </summary>
-    /// <param name="modulus">The modulus operand.</param>
+    /// <param name="modulus">The modulus operand; a <see cref="GpuBigUInt"/> converts implicitly.</param>
     /// <returns>A new <see cref="GpuBigUInt"/> containing the modular inverse ($x \equiv \text{this}^{-1} \pmod{\text{modulus}}$).</returns>
-    public GpuBigUInt ModInverse(GpuBigUInt modulus)
+    public GpuBigUInt ModInverse(scoped GpuBigUIntView modulus)
     {
         var result = new GpuBigUInt(Workspace, NumWords);
         GpuBigIntMath.ModInverse(this, modulus, result);

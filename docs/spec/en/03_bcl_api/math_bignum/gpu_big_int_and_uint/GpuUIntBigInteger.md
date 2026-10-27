@@ -148,7 +148,7 @@ public GpuWorkspace Workspace { get; }
 | [Clear(int, int?)](#clearint-int) | Clears (zeros out) a range of limb words in GPU device memory. |
 | [ClearWord(int)](#clearwordint) | Clears a single 32-bit limb word at the specified word index in GPU device memory. |
 | [CompareTo(GpuBigUInt)](#comparetogpubiguint) | Compares this instance to another `GpuBigUInt` and returns an integer indicating their relative magnitude. |
-| [CopyFrom(GpuBigUInt, int, int, int?)](#copyfromgpubiguint-int-int-int) | Copies limb words from another `GpuBigUInt` instance to this instance in GPU device memory. |
+| [CopyFrom(GpuBigUIntView, int, int, int?)](#copyfromgpubiguintview-int-int-int) | Copies limb words from another value or view to this instance in GPU device memory. |
 | [CreatePowerOfTwo(GpuWorkspace, int, int)](#createpoweroftwogpuworkspace-int-int) | Creates a new `GpuBigUInt` initialized to $2^{\text{bitIndex}}$. |
 | [Dispose()](#dispose) | Releases the underlying GPU global device memory handle back to the workspace memory pool. |
 | [Equals(GpuBigUInt)](#equalsgpubiguint) | Indicates whether the current instance refers to the same device buffer as another `GpuBigUInt`. |
@@ -163,7 +163,7 @@ public GpuWorkspace Workspace { get; }
 | [GetTopWordsAsync(int, CancellationToken)](#gettopwordsasyncint-cancellationtoken) | Asynchronously copies the most significant limb words from GPU device memory to a host array, without blocking the calling thread. |
 | [IsOne()](#isone) | Determines whether the value of this instance is 1 (one). |
 | [IsZero()](#iszero) | Determines whether the value of this instance is 0 (zero). |
-| [ModInverse(GpuBigUInt)](#modinversegpubiguint) | Computes the modular multiplicative inverse of this instance modulo `modulus`. |
+| [ModInverse(GpuBigUIntView)](#modinversegpubiguintview) | Computes the modular multiplicative inverse of this instance modulo `modulus`. |
 | [PadTo(int)](#padtoint) | Allocates a new `GpuBigUInt` with the specified target word capacity and copies this instance's limbs into it. |
 | [SetIsNegative(bool)](#setisnegativebool) | Sets or clears the most significant bit in the highest word (used for two's complement sign tracking). |
 | [Square(int)](#squareint) | Computes the square of this number in-place on the GPU. |
@@ -239,12 +239,12 @@ The `GpuBigUInt` to compare with this instance.
 _int_<br>
 -1 if this is less than `other`, 0 if equal, 1 if greater.
 
-## CopyFrom(GpuBigUInt, int, int, int?)
+## CopyFrom(GpuBigUIntView, int, int, int?)
 
 Copies limb words from another `GpuBigUInt` instance to this instance in GPU device memory.
 
 ```csharp
-public void CopyFrom(GpuBigUInt source, int destOffsetWords = 0, int srcOffsetWords = 0, int? numWords = null);
+public void CopyFrom(scoped GpuBigUIntView source, int destOffsetWords = 0, int srcOffsetWords = 0, int? numWords = null);
 ```
 
 #### Parameters
@@ -496,12 +496,12 @@ public bool IsZero();
 _bool_<br>
 `true` if all limb words equal 0; otherwise, `false`.
 
-## ModInverse(GpuBigUInt)
+## ModInverse(GpuBigUIntView)
 
 Computes the modular multiplicative inverse of this instance modulo `modulus`.
 
 ```csharp
-public GpuBigUInt ModInverse(GpuBigUInt modulus);
+public GpuBigUInt ModInverse(scoped GpuBigUIntView modulus);
 ```
 
 #### Parameters

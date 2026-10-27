@@ -78,9 +78,9 @@ internal sealed class FloatVectorWhereExpression(
 
         var finalCount = elementCount ?? (originalCount - elementOffset);
         return new GpuBigFloatArray(
-            _compactedSignificands.Slice(elementOffset, finalCount),
-            _compactedExponents.Slice(elementOffset, finalCount),
-            _compactedSigns.Slice(elementOffset, finalCount));
+            _compactedSignificands.BorrowSlice(elementOffset, finalCount),
+            _compactedExponents.BorrowSlice(elementOffset, finalCount),
+            _compactedSigns.BorrowSlice(elementOffset, finalCount));
     }
 
     public void Dispose()
