@@ -233,6 +233,19 @@ internal static class GpuCodeConstraints
     public const string SyncGridRequiresLambda = "Gpu.SyncGrid requires a lambda expression argument";
 
     /// <summary>
+    /// The GSH0003 text for a local declared after a <c>return</c> of a <c>Gpu.SyncGrid</c> body that cannot be declared at
+    /// the top of the body and assigned later (<see cref="SyncGridBody.IsUnsplittable"/>).
+    /// </summary>
+    public const string SyncGridUnsplittableDeclaration =
+        "ref, scoped, using, pattern or deconstruction local, or shared memory, array or iterator local, declared after a return in a Gpu.SyncGrid body";
+
+    /// <summary>The GSH0003 text for a <c>goto</c> that leaves its statement of a <c>Gpu.SyncGrid</c> body.</summary>
+    public const string SyncGridGotoAcrossGaps = "goto out of a statement of a Gpu.SyncGrid body";
+
+    /// <summary>The GSH0003 text for a <c>return</c> with a value in a <c>Gpu.SyncGrid</c> body (C# rejects it as well).</summary>
+    public const string SyncGridReturnWithValue = "return with a value in a Gpu.SyncGrid body";
+
+    /// <summary>
     /// The loop that the <c>Gpu.Hint.Unroll</c> statement <paramref name="hint"/> applies to: the next statement of the same
     /// block or switch section, when it is a <c>for</c>, <c>while</c> or <c>do</c> loop (GSH0017).
     /// </summary>

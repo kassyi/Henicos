@@ -160,7 +160,8 @@ public class BarrierUsageAnalyzer : DiagnosticAnalyzer
         {
             switch (ancestor)
             {
-                // The transpiler inlines the body (CUDA), and the lowering turns ForUnroll into a loop (CPU dialects, managed)
+                // The transpiler inlines the body (CUDA), and the lowering inlines a SyncGrid body and turns ForUnroll into a
+                // loop (CPU dialects, managed)
                 case AnonymousFunctionExpressionSyntax when IsInlinedIntrinsicArgument(ancestor):
                     break;
                 case AnonymousFunctionExpressionSyntax:

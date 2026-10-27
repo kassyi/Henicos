@@ -74,14 +74,18 @@ public abstract class TranspilerTestBase
     /// A convenient one-liner to generate and verify a source generator's output.
     /// Combines TestGenerator(path).GetDriverAsync() and Verify(driver).
     /// </summary>
-    protected async Task<SettingsTask> VerifyGeneratorAsync(
+    /// <remarks>
+    /// Verify compares the snapshot only when the <see cref="SettingsTask"/> itself is awaited, so it is awaited here
+    /// rather than returned (#505).
+    /// </remarks>
+    protected async Task VerifyGeneratorAsync(
         string relativePathToTestCases = "",
         [CallerFilePath] string callerFilePath = "",
         [CallerMemberName] string methodName = "")
     {
         var config = TestGenerator(relativePathToTestCases, callerFilePath);
         var driver = await config.GetDriverAsync();
-        return Verify(driver, methodName);
+        await Verify(driver, methodName);
     }
 }
 
