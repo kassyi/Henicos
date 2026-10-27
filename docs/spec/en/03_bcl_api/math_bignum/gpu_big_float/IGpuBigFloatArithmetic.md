@@ -37,7 +37,7 @@ public interface IGpuBigFloatArithmetic
 
 Every method takes its operands as `GpuFloatOperand` (a significand handle, an exponent and a sign: $\pm\text{Significand} \times 2^{\text{Exponent}}$) and writes the significand of the result to `resultSig`. The word count $n$ of `resultSig` sets the precision of the result, $p = 32n$ bits. The method returns the exponent and the sign of the result as a `GpuFloatResult`.
 
-`Normalize`, `Add`, `Multiply`, `Divide`, `Reciprocal`, `Exp`, `Log` and `Pow` return $\mathrm{RZ}_p(v)$: the exact value $v$ rounded toward zero to $p$ bits, with the significand normalized to its top bit. A value that fits in $p$ bits is returned exactly. The result depends only on the values of the operands, not on their word counts or leading zero words, and the GPU and the CPU provider return the same bits.
+`Normalize`, `Add`, `Multiply`, `Divide`, `Reciprocal`, `Exp`, `Log` and `Pow` return $\mathrm{RZ}_p(v)$: the exact value $v$ rounded toward zero to $p$ bits, with the significand normalized to its top bit. A value that fits in $p$ bits is returned exactly. The result depends only on the values of the operands, not on their word counts or leading zero words, and the GPU and the CPU provider return the same bits. When the exponent of the result does not fit in `int`, they throw `OverflowException`; an intermediate exponent outside `int` (such as the sum of two exponents in `Multiply`) is not an error when the result fits.
 
 ## Add(ref GpuBigIntExecutionContext, in GpuFloatOperand, in GpuFloatOperand, GpuBigIntMemoryHandle)
 
@@ -50,6 +50,11 @@ GpuFloatResult Add(
     in GpuFloatOperand right,
     GpuBigIntMemoryHandle resultSig);
 ```
+
+#### Exceptions
+
+`OverflowException`  
+The exponent of the result does not fit in `int`.
 
 #### Remarks
 
@@ -71,6 +76,9 @@ GpuFloatResult Divide(
 
 `DivideByZeroException`  
 The divisor is zero.
+
+`OverflowException`  
+The exponent of the result does not fit in `int`.
 
 #### Remarks
 
@@ -162,6 +170,11 @@ GpuFloatResult Multiply(
     GpuBigIntMemoryHandle resultSig);
 ```
 
+#### Exceptions
+
+`OverflowException`  
+The exponent of the result does not fit in `int`. A result whose exponent fits is returned even when the sum of the operand exponents does not.
+
 #### Remarks
 
 The result is $\mathrm{RZ}_p(a \times b)$, the exact product rounded toward zero to $p$ bits.
@@ -231,9 +244,12 @@ GpuFloatResult Reciprocal(
 `DivideByZeroException`  
 `value` is zero.
 
+`OverflowException`  
+The exponent of the result does not fit in `int` (the reciprocal of a value with an exponent near `int.MaxValue`).
+
 #### Remarks
 
-The result is $\mathrm{RZ}_p(1 / x)$, whatever the word count of `value` and its leading zero words.
+The result is $\mathrm{RZ}_p(1 / x)$, whatever the word count of `value` and its leading zero words; a significand of 1 gives the exact power of two.
 
 ## Rsqrt(ref GpuBigIntExecutionContext, in GpuFloatOperand, GpuBigIntMemoryHandle)
 

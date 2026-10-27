@@ -70,8 +70,12 @@ public static partial class GpuBigIntDivRem
     /// from its bit length, and the big-float <c>Reciprocal</c> passes significands with leading zero bits or words.</param>
     /// <param name="resultBuffer">Receives exactly <c>floor(2^targetBits / b)</c>; it must hold
     /// at least <c>(targetBits + 31) / 32</c> words.</param>
-    /// <param name="targetBits">The exponent <c>T</c> of the numerator <c>2^T</c>; <c>2^T &gt;= 4b</c>.</param>
-    /// <param name="marginWords">The margin words passed to the provider.</param>
+    /// <param name="targetBits">The exponent <c>T</c> of the numerator <c>2^T</c>; <c>2^T &gt;= 4b</c>. The result
+    /// must fit in <c>(T + 31) / 32</c> words: <c>floor(2^T / b) &lt;= 2^(T - 1)</c> does for every <c>b &gt;= 2</c>, but
+    /// <c>2^T / 1</c> needs <c>T + 1</c> bits, so a caller that may pass <c>b = 1</c> uses a <c>T</c> that is not a
+    /// multiple of 32 (the big-float <c>Reciprocal</c> uses <c>32·w - 1</c>).</param>
+    /// <param name="marginWords">Passed on to the provider's context; the reciprocal kernel does not read it, since
+    /// <paramref name="targetBits"/> sets the precision.</param>
     /// <exception cref="DivideByZeroException">Thrown when <paramref name="targetOperand"/> is zero.</exception>
     /// <remarks>
     /// The Newton-Raphson result is <c>floor(2^T / b)</c> or one less; the kernel then computes <c>r = 2^T - b * x</c>

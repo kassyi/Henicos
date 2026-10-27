@@ -844,7 +844,7 @@ public class GpuBigFloatLinqAndVectorTests : IDisposable
 
     // Rounding a wide value moves its top bit to the top of the element and raises the exponent by the same shift; an
     // exponent above int.MaxValue throws instead of wrapping around (#661 §4.10).
-    // mutant: GSharpKernelFloatProvider.cs:62 `checked(value.Exponent - shift)` -> `unchecked(...)`
+    // mutant: GSharpKernelFloatProvider.cs:70 `checked((int)(exponent - shift))` -> `unchecked(...)`
     [Fact]
     [Category(TestCategory.Stdlib)]
     [Scenario(TestScenario.SadPath)]

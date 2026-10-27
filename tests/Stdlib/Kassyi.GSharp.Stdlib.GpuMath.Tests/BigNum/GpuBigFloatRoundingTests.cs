@@ -35,8 +35,8 @@ public class GpuBigFloatRoundingTests : IDisposable
     // Normalize moves the top bit of the significand to the top of the result and changes the exponent by the same
     // shift; an exponent outside int throws OverflowException instead of wrapping around (#661 §4.10). The last value
     // on each side that fits is returned exactly.
-    // mutant: GSharpKernelFloatProvider.cs:62 `checked(value.Exponent - shift)` -> `unchecked(...)` (Gpu)
-    // mutant: CSharpCpuBigFloatArithmetic.cs:92 `checked(value.Exponent - shift)` -> `unchecked(...)` (Cpu)
+    // mutant: GSharpKernelFloatProvider.cs:70 `checked((int)(exponent - shift))` -> `unchecked(...)` (Gpu)
+    // mutant: CSharpCpuBigFloatArithmetic.cs:101 `checked((int)(exponent - shift))` -> `unchecked(...)` (Cpu)
     [SkippableTheory]
     [Scenario(TestScenario.SadPath)]
     [InlineData("Gpu")]
@@ -93,11 +93,11 @@ public class GpuBigFloatRoundingTests : IDisposable
     // P1: the significand, exponent and sign equal RZ_p of the exact rational value (BigFloatReference.RoundTowardZero).
     // P2: the result satisfies the definition of RZ by itself, R·2^e <= |v| < (R + 1)·2^e with R of exactly p bits, so a
     // mistake that the reference shares with the provider still fails.
-    // mutant: GSharpKernelFloatProvider.cs:214 / CSharpCpuBigFloatArithmetic.cs:254 `(resultSig.NumWords + rightSig.NumWords) * 32`
+    // mutant: GSharpKernelFloatProvider.cs:221 / CSharpCpuBigFloatArithmetic.cs:265 `(resultSig.NumWords + rightSig.NumWords) * 32`
     // -> `resultSig.NumWords * 32 * 2` (DivideNarrowByWide1, DivideNarrowByWide4 on both engines)
-    // mutant: GSharpKernelFloatProvider.cs:252 `valueSig.NumWords + resultSig.NumWords + 1` -> `2 * valueSig.NumWords + MarginWords`
+    // mutant: GSharpKernelFloatProvider.cs:259 `valueSig.NumWords + resultSig.NumWords + 1` -> `2 * valueSig.NumWords + MarginWords`
     // (ReciprocalOfThree8, Gpu)
-    // mutant: CSharpCpuBigFloatArithmetic.cs:317 `RentTemp(quotientWords)` -> `RentTemp(resultSig.NumWords * 2)`
+    // mutant: CSharpCpuBigFloatArithmetic.cs:328 `RentTemp(quotientWords)` -> `RentTemp(resultSig.NumWords * 2)`
     // (ReciprocalOfThreeInNineWords, Cpu)
     [SkippableTheory]
     [Scenario(TestScenario.Boundary)]
@@ -121,6 +121,178 @@ public class GpuBigFloatRoundingTests : IDisposable
             $"{caseName} [{engine}]: {BigFloatReference.Describe(sig, result.Exponent, result.IsNegative)} is not RZ_{p}");
     }
 
+    // P1 and P2 over a seeded sweep: operands of 1 to 5 words, some with leading zero words, exponents in [-300, 300],
+    // both signs, results of 1 to 5 words, for each of the four operations (the CPU takes more cases: it is fast).
+    [SkippableTheory]
+    [Scenario(TestScenario.Boundary)]
+    [InlineData("Gpu", 24)]
+    [InlineData("Cpu", 120)]
+    public void FourOperations_SeededSweep_AreRoundedTowardZero(string engine, int casesPerOperation)
+    {
+        // Seed 661 (the issue number) plus the engine, shown in every failure message.
+        var seed = 661 * 7 + (engine == "Gpu" ? 1 : 0);
+        var random = new Random(seed);
+        var arithmetic = Arithmetic(engine);
+        foreach (var operation in new[] { FloatOperation.Add, FloatOperation.Multiply, FloatOperation.Divide, FloatOperation.Reciprocal })
+        {
+            for (var i = 0; i < casesPerOperation; i++)
+            {
+                var left = SweepOperand(random, nonZero: operation == FloatOperation.Reciprocal);
+                var right = SweepOperand(random, nonZero: operation == FloatOperation.Divide);
+                var arithmeticCase = new ArithmeticCase(
+                    operation, left, operation == FloatOperation.Reciprocal ? null : right, random.Next(1, 6));
+                var p = 32 * arithmeticCase.Words;
+                var (num, den) = ExactValue(arithmeticCase);
+                var (expectedSig, expectedExp) = BigFloatReference.RoundTowardZero(BigInteger.Abs(num), den, p);
+
+                var (sig, result) = Run(arithmetic, arithmeticCase);
+
+                var label = $"seed {seed} {operation} #{i} [{engine}] n={arithmeticCase.Words}";
+                Assert.True(
+                    (expectedSig, expectedExp, num.Sign < 0) == (sig, (long)result.Exponent, result.IsNegative)
+                    && BigFloatReference.IsRoundedTowardZero(sig, result.Exponent, BigInteger.Abs(num), den, p),
+                    $"{label}: expected 0x{expectedSig:X} * 2^{expectedExp}, "
+                    + $"actual {BigFloatReference.Describe(sig, result.Exponent, result.IsNegative)}");
+            }
+        }
+    }
+
+    // 1 to 5 random words; a quarter of them get zero top words, so the value is stored wider than it is.
+    private static Operand SweepOperand(Random random, bool nonZero)
+    {
+        var count = random.Next(1, 6);
+        var words = new uint[count];
+        for (var i = 0; i < count; i++)
+        {
+            words[i] = (uint)random.NextInt64(0, 1L << 32);
+        }
+
+        if (random.Next(4) == 0)
+        {
+            var zeros = random.Next(0, count);
+            for (var i = count - zeros; i < count; i++)
+            {
+                words[i] = 0;
+            }
+        }
+
+        if (nonZero && FromWords(words).IsZero)
+        {
+            words[0] = 1;
+        }
+
+        return new Operand(words, random.Next(-300, 301), random.Next(2) == 0);
+    }
+
+    /// <summary>
+    /// Cases at the ends of the <see cref="int"/> exponent range, with one result word: results whose exponent fits
+    /// although an intermediate exponent (<c>eL + eR</c>, <c>eL - eR - shift</c>, <c>-e - shift</c>) does not, and
+    /// results whose exponent does not fit.
+    /// </summary>
+    private static readonly Dictionary<string, ArithmeticCase> s_limitCases = new()
+    {
+        // 2^(int.MaxValue + 1) is 2^31·2^(int.MaxValue - 30): it fits, but eL + eR does not.
+        ["MultiplyIntermediateAboveMax"] = Binary(FloatOperation.Multiply, new([1u], int.MaxValue), new([1u], 1), 1),
+        ["MultiplyAboveMax"] = Binary(FloatOperation.Multiply, new([0x8000_0000u], int.MaxValue), new([0x8000_0000u], int.MaxValue), 1),
+        ["MultiplyBelowMin"] = Binary(FloatOperation.Multiply, new([1u], int.MinValue), new([1u], int.MinValue), 1),
+        ["AddAtMax"] = Binary(FloatOperation.Add, new([1u], int.MaxValue), new([1u], int.MaxValue), 1),
+        // The sum carries into a 33rd bit, so its exponent is int.MaxValue + 1.
+        ["AddAboveMax"] = Binary(FloatOperation.Add, new([0x8000_0000u], int.MaxValue), new([0x8000_0000u], int.MaxValue), 1),
+        ["AddBelowMin"] = Binary(FloatOperation.Add, new([1u], int.MinValue), new([1u], int.MinValue), 1),
+        // 2^(int.MinValue + 40) fits, but eL - eR - shift (the dividend is shifted by 64 bits) does not.
+        ["DivideIntermediateBelowMin"] = Binary(FloatOperation.Divide, new([1u], int.MinValue + 40), new([1u], 0), 1),
+        ["DivideBelowMin"] = Binary(FloatOperation.Divide, new([1u], int.MinValue), new([1u], 1), 1),
+        ["DivideAboveMax"] = Binary(FloatOperation.Divide, new([1u], int.MaxValue), new([1u], -40), 1),
+        // 1 / (2^31·2^(int.MaxValue - 70)) = 2^31·2^(int.MinValue + 9) fits, but -e - shift does not.
+        ["ReciprocalIntermediateBelowMin"] = Unary(FloatOperation.Reciprocal, new([0x8000_0000u], int.MaxValue - 70), 1),
+        // -int.MinValue is not an int; the result (1/3)·2^(int.MaxValue + 1) fits.
+        ["ReciprocalOfMinExponent"] = Unary(FloatOperation.Reciprocal, new([3u], int.MinValue), 1),
+        ["ReciprocalBelowMin"] = Unary(FloatOperation.Reciprocal, new([3u], int.MaxValue), 1),
+        ["ReciprocalTopBitBelowMin"] = Unary(FloatOperation.Reciprocal, new([0x8000_0000u], int.MaxValue), 1),
+        // 1 / 2^(int.MinValue + 200) = 2^(int.MaxValue - 199) fits; the significand of 1 also needs the GPU working width
+        // that is not a multiple of 32.
+        ["ReciprocalOfOneNearMin"] = Unary(FloatOperation.Reciprocal, new([1u], int.MinValue + 200), 1),
+        // Far beyond the range: the wrapped exponents would land inside it again.
+        ["MultiplyFarAboveMax"] = Binary(FloatOperation.Multiply, new([1u], int.MaxValue), new([1u], 100), 1),
+        ["DivideFarAboveMax"] = Binary(FloatOperation.Divide, new([1u], int.MaxValue), new([1u], -100), 1),
+    };
+
+    public static TheoryData<string, string> LimitCasesOnBothEngines()
+    {
+        var data = new TheoryData<string, string>();
+        foreach (var name in s_limitCases.Keys)
+        {
+            data.Add("Gpu", name);
+            data.Add("Cpu", name);
+        }
+
+        return data;
+    }
+
+    // The exponent of the result is computed without wrapping around: a result whose exponent fits in int is RZ_p of the
+    // exact value even when an intermediate exponent does not, and a result whose exponent does not fit throws
+    // OverflowException (#661 §4.1). The reference keeps the power of two apart, so the exponents never become shifts.
+    // mutant: GSharpKernelFloatProvider.cs:70 / CSharpCpuBigFloatArithmetic.cs:101 `checked((int)(exponent - shift))` ->
+    // `unchecked(...)` (the *AboveMax and *BelowMin cases that reach NormalizeScaled)
+    // mutant: GSharpKernelFloatProvider.cs:185 / CSharpCpuBigFloatArithmetic.cs:210 `(long)left.Exponent + right.Exponent` ->
+    // int (Multiply*)
+    // mutant: GSharpKernelFloatProvider.cs:232 / CSharpCpuBigFloatArithmetic.cs:268 `(long)left.Exponent - right.Exponent` ->
+    // int (DivideIntermediateBelowMin, DivideBelowMin)
+    // mutant: GSharpKernelFloatProvider.cs:266 / CSharpCpuBigFloatArithmetic.cs:323 `-(long)value.Exponent` -> `-value.Exponent`
+    // (ReciprocalBelowMin; ReciprocalIntermediateBelowMin on the GPU)
+    // mutant: CSharpCpuBigFloatArithmetic.cs:179 `checked(smaller.Exponent - shift)` -> `unchecked(...)` (AddAboveMax, AddBelowMin)
+    [SkippableTheory]
+    [Scenario(TestScenario.Boundary)]
+    [MemberData(nameof(LimitCasesOnBothEngines))]
+    public void FourOperations_AtTheExponentLimits_RoundOrThrow(string engine, string caseName)
+    {
+        var arithmeticCase = s_limitCases[caseName];
+        var p = 32 * arithmeticCase.Words;
+        var (num, den, scale) = ScaledExactValue(arithmeticCase);
+        var (expectedSig, rzExp) = BigFloatReference.RoundTowardZero(BigInteger.Abs(num), den, p);
+        var expectedExp = expectedSig.IsZero ? 0 : rzExp + scale;
+        var arithmetic = Arithmetic(engine);
+
+        if (expectedExp is < int.MinValue or > int.MaxValue)
+        {
+            Assert.Throws<OverflowException>(() => Run(arithmetic, arithmeticCase));
+            return;
+        }
+
+        var (sig, result) = Run(arithmetic, arithmeticCase);
+        Assert.True(
+            (expectedSig, expectedExp, num.Sign < 0) == (sig, (long)result.Exponent, result.IsNegative),
+            $"{caseName} [{engine}]: expected 0x{expectedSig:X} * 2^{expectedExp}, "
+            + $"actual {BigFloatReference.Describe(sig, result.Exponent, result.IsNegative)}");
+    }
+
+    // The exact value as num / den · 2^scale (den > 0, the sign in num), with the powers of two of the exponents kept in
+    // scale.
+    private static (BigInteger Num, BigInteger Den, long Scale) ScaledExactValue(ArithmeticCase arithmeticCase)
+    {
+        var left = arithmeticCase.Left;
+        var leftSig = left.IsNegative ? -left.Significand : left.Significand;
+        if (arithmeticCase.Operation == FloatOperation.Reciprocal)
+        {
+            return (left.IsNegative ? BigInteger.MinusOne : BigInteger.One, left.Significand, -(long)left.Exponent);
+        }
+
+        var right = arithmeticCase.Right ?? throw new InvalidOperationException("A binary case needs a right operand.");
+        var rightSig = right.IsNegative ? -right.Significand : right.Significand;
+        switch (arithmeticCase.Operation)
+        {
+            case FloatOperation.Add:
+                long low = Math.Min(left.Exponent, right.Exponent);
+                return ((leftSig << (int)(left.Exponent - low)) + (rightSig << (int)(right.Exponent - low)), BigInteger.One, low);
+            case FloatOperation.Multiply:
+                return (leftSig * rightSig, BigInteger.One, (long)left.Exponent + right.Exponent);
+            case FloatOperation.Divide:
+                return (rightSig.Sign < 0 ? -leftSig : leftSig, right.Significand, (long)left.Exponent - right.Exponent);
+            default:
+                throw new InvalidOperationException($"Unexpected operation {arithmeticCase.Operation}.");
+        }
+    }
+
     /// <summary>
     /// Square root inputs <c>S·2^E</c> with the number of result words: perfect squares (9 and 25, 9 scaled by an odd
     /// power of two), a non-square with an odd exponent, the all-ones word with an odd exponent, and a 3-word value.
@@ -138,8 +310,8 @@ public class GpuBigFloatRoundingTests : IDisposable
     // The CPU provider's Sqrt and Rsqrt already return RZ_p (they take the integer square root of an exact scaled
     // value). These cases pin that, and check the references RzSqrt and RzRsqrt by their definitions:
     // R²·2^(2e) <= a < (R + 1)²·2^(2e) and R²·2^(2e)·a <= 1 < (R + 1)²·2^(2e)·a, with R of exactly p bits.
-    // mutant: CSharpCpuBigFloatArithmetic.cs:370 Sqrt `e--` -> `e++` (every odd exponent: 3, 1, 1, -7)
-    // mutant: CSharpCpuBigFloatArithmetic.cs:430 `(valueSig.NumWords + resultSig.NumWords * 2) * 32` -> `resultSig.NumWords * 32`
+    // mutant: CSharpCpuBigFloatArithmetic.cs:381 Sqrt `e--` -> `e++` (every odd exponent: 3, 1, 1, -7)
+    // mutant: CSharpCpuBigFloatArithmetic.cs:441 `(valueSig.NumWords + resultSig.NumWords * 2) * 32` -> `resultSig.NumWords * 32`
     // (the 3-word value and 0xFFFF_FFFF: fewer than p bits)
     [SkippableTheory]
     [Scenario(TestScenario.Boundary)]
@@ -218,6 +390,15 @@ public class GpuBigFloatRoundingTests : IDisposable
             ["ReciprocalOfWide"] = Unary(FloatOperation.Reciprocal, new(wide, 0), 4),
             ["ReciprocalOfThreeInNineWords"] = Unary(FloatOperation.Reciprocal, new(threeInNineWords, 0), 4),
             ["ReciprocalNegativeScaled"] = Unary(FloatOperation.Reciprocal, new([5u], -7, true), 4),
+
+            // A significand of 1: floor(2^T / 1) = 2^T needs T + 1 bits, so a working width of exactly T bits failed on
+            // the GPU (the device correction did not converge). 1 at several widths, and 1 stored in 9 words.
+            // mutant: GSharpKernelFloatProvider.cs:260 `reciprocalWords * 32 - 1` -> `reciprocalWords * 32 - 0` (all four on
+            // the GPU, and ReciprocalOfOneNearMin in the limit cases)
+            ["ReciprocalOfOne1"] = Unary(FloatOperation.Reciprocal, new([1u], 3), 1),
+            ["ReciprocalOfOne4"] = Unary(FloatOperation.Reciprocal, new([1u], 0), 4),
+            ["ReciprocalOfOne9"] = Unary(FloatOperation.Reciprocal, new([1u], 0), 9),
+            ["ReciprocalOfOneInNineWords"] = Unary(FloatOperation.Reciprocal, new([1u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u], 0), 4),
         };
     }
 
