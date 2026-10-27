@@ -11,17 +11,47 @@ internal static class FloatVectorReductionOrchestrator
 {
     private const int ChunkSize = 256;
 
+    /// <summary>
+    /// Reduces <paramref name="source"/>. An empty vector is decided before it is evaluated, so nothing is launched
+    /// for it.
+    /// </summary>
+    public static GpuBigFloat Reduce(
+        GpuWorkspace workspace,
+        IGpuBigFloatVectorExpression source,
+        FloatReductionKind kind)
+    {
+        if (source.Length == 0)
+        {
+            return ReduceEmpty(workspace, source.WordsPerElement, kind);
+        }
+
+        return Reduce(workspace, source.Evaluate(workspace), kind);
+    }
+
+    // As System.Linq: the sum of nothing is +0; Max / Min of nothing has no value.
+    private static GpuBigFloat ReduceEmpty(GpuWorkspace workspace, int numWords, FloatReductionKind kind)
+    {
+        if (kind == FloatReductionKind.Sum)
+        {
+            var zero = new GpuBigUInt(workspace, numWords);
+            workspace.Provider.ClearMemoryAsync(zero.DevicePointer, numWords, workspace.Stream);
+            return new GpuBigFloat(zero, 0, false);
+        }
+
+        throw new InvalidOperationException("Sequence contains no elements");
+    }
+
     public static GpuBigFloat Reduce(
         GpuWorkspace workspace,
         GpuBigFloatArray evaluated,
         FloatReductionKind kind)
     {
+        var numWords = evaluated.WordsPerElement;
         if (evaluated.Length == 0)
         {
-            throw new InvalidOperationException("Sequence contains no elements.");
+            return ReduceEmpty(workspace, numWords, kind);
         }
 
-        var numWords = evaluated.WordsPerElement;
         if (evaluated.Length == 1)
         {
             var first = evaluated.GetElement(0);
@@ -51,7 +81,8 @@ internal static class FloatVectorReductionOrchestrator
                 }
             }
 
-            var blockDimX = (uint)Math.Clamp(numWords, 32, 1024);
+            // Whole warps: the block-wide max reductions of the chunk kernels assume no partial warp.
+            var blockDimX = (uint)Math.Min(1024, (numWords + 31) & ~31);
             var currentInput = evaluated;
             var tempIdx = 0;
 

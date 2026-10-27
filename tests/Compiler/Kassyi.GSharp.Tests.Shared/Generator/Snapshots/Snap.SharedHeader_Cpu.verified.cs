@@ -17,6 +17,13 @@ public const string Source = @"#include <cmath>
 #include <cstring>
 #include <cstdio>
 #include <cstdlib>
+#include <limits>
+
+// NaN and infinity: a C# constant such as float.NaN has no C++ literal (ConstexprLiteral)
+#define __gsharp_nan_f (std::numeric_limits<float>::quiet_NaN())
+#define __gsharp_inf_f (std::numeric_limits<float>::infinity())
+#define __gsharp_nan_d (std::numeric_limits<double>::quiet_NaN())
+#define __gsharp_inf_d (std::numeric_limits<double>::infinity())
 
 #define __device__
 #define __global__

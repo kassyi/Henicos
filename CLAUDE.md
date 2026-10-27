@@ -8,6 +8,7 @@
 @.agents/rules/gsharp-naming-conventions.md
 @.agents/rules/issue-milestones.md
 @.agents/rules/model-routing.md
+@.agents/rules/semantics-charter.md
 @.agents/rules/test-architecture.md
 @.agents/rules/test-execution.md
 @.agents/rules/transpiler-emission.md

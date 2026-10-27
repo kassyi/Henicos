@@ -149,148 +149,120 @@ public static partial class GpuBigIntCmpKernels
         }
     }
 
-    [GpuKernel]
-    public static void VectorCompareScalarKernel(uint[] dA, uint[] s, uint[] dResult, int numWords, int opType)
+    /// <summary>
+    /// One side of a signed element-wise comparison: a batched vector, or a scalar broadcast to every element.
+    /// </summary>
+    public struct SignedCompareOperand
     {
-        DeviceVectorCompareScalarParallel(dA, s, dResult, numWords, opType);
+        [GpuReadOnly]
+        public uint[] Limbs;
+
+        /// <summary>
+        /// The sign word of each element (non-zero = negative), or <see langword="null"/> for a scalar.
+        /// </summary>
+        [GpuReadOnly]
+        public uint[] Signs;
+
+        /// <summary>The number of words this side stores per element.</summary>
+        public int NumWords;
+
+        /// <summary>The number of words between two elements; 0 for a scalar.</summary>
+        public int Stride;
+
+        /// <summary>
+        /// The sign of a scalar (non-zero = negative); used when <see cref="Signs"/> is <see langword="null"/>.
+        /// </summary>
+        public uint ScalarSign;
+    }
+
+    public struct VectorCompareContext
+    {
+        public SignedCompareOperand Left;
+        public SignedCompareOperand Right;
+        public uint[] Result;
+        public int OpType;
+    }
+
+    /// <summary>
+    /// Compares element <c>BlockIndex.X</c> of the left side with the right side as signed integers and writes 1 to
+    /// <c>Result</c> when the operator <c>OpType</c> (<see cref="Expressions.VectorCompareOperator"/>) holds, else 0.
+    /// </summary>
+    /// <remarks>
+    /// Launch one block per element with a multiple of 32 threads (at most 1024), so that no warp is partial; a block
+    /// narrower than the operands loops over the words, and lanes past the word count read nothing. The two sides may have different word counts; the missing upper words of the narrower side are 0. A negative
+    /// zero compares equal to zero.
+    /// </remarks>
+    [GpuKernel]
+    public static void VectorCompareKernel(VectorCompareContext ctx)
+    {
+        DeviceVectorCompareSignedParallel(ctx);
     }
 
     [GpuDeviceFunction]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static void DeviceVectorCompareScalarParallel(
-        [GpuReadOnly] uint[] a,
-        [GpuReadOnly] uint[] s,
-        uint[] result,
-        int numWords,
-        int opType)
+    public static uint ReadCompareWord(SignedCompareOperand operand, int element, int idx)
+    {
+        return idx < operand.NumWords ? operand.Limbs[(element * operand.Stride) + idx] : 0u;
+    }
+
+    [GpuDeviceFunction]
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static uint ReadCompareSign(SignedCompareOperand operand, int element)
+    {
+        return operand.Signs == null ? operand.ScalarSign : operand.Signs[element];
+    }
+
+    /// <summary>
+    /// Combines the signs with the magnitude comparison <paramref name="magCmp"/> (0 = EQ, 1 = LT, 2 = GT) into the
+    /// signed comparison, treating a negative zero as zero.
+    /// </summary>
+    [GpuDeviceFunction]
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static uint DecideSignedCompare(uint magCmp, uint signA, bool nonzeroA, uint signB, bool nonzeroB)
+    {
+        bool sa = signA != 0u && nonzeroA;
+        bool sb = signB != 0u && nonzeroB;
+        if (sa != sb)
+        {
+            return sa ? 1u : 2u;
+        }
+
+        if (magCmp == 0u)
+        {
+            return 0u;
+        }
+
+        return sa ? (3u - magCmp) : magCmp;
+    }
+
+    [GpuDeviceFunction]
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static void DeviceVectorCompareSignedParallel(VectorCompareContext ctx)
     {
         int tid = ThreadIndex.X;
         int bDim = BlockDimension.X;
-        int batchIdx = BlockIndex.X;
-        int elementOffset = batchIdx * numWords;
-
-        SharedMemory<ulong> warpMax = new SharedMemory<ulong>(32);
-
-        ulong myVal = 0;
-        for (int offset = 0; offset < numWords; offset += bDim)
-        {
-            int idx = offset + tid;
-            bool valid = idx < numWords;
-            uint wa = valid ? a[elementOffset + idx] : 0u;
-            uint ws = valid ? s[idx] : 0u;
-
-            if (valid && wa != ws)
-            {
-                long diff = wa - (long)ws;
-                ulong signMask = (ulong)(diff >> 63);
-                ulong resultBits = 2ul - (signMask & 1ul);
-                myVal = ((ulong)idx << 32) | resultBits;
-            }
-        }
-
-        uint mask = Warp.ActiveMask();
-        for (uint offset = 16; offset > 0; offset /= 2)
-        {
-            uint high = Warp.ShuffleDownSync(mask, (uint)(myVal >> 32), offset);
-            uint low = Warp.ShuffleDownSync(mask, (uint)myVal, offset);
-            ulong otherVal = ((ulong)high << 32) | low;
-            if (otherVal > myVal)
-            {
-                myVal = otherVal;
-            }
-        }
-
+        int element = BlockIndex.X;
         int laneId = tid % 32;
         int warpId = tid / 32;
-        if (laneId == 0)
-        {
-            warpMax[warpId] = myVal;
-        }
-
-        Gpu.SyncThreads();
-
-        if (warpId == 0)
-        {
-            int numWarps = (bDim + 31) / 32;
-            ulong val = laneId < numWarps ? warpMax[laneId] : 0ul;
-
-            uint activeMask = Warp.ActiveMask();
-            for (uint offset = 16; offset > 0; offset /= 2)
-            {
-                uint high = Warp.ShuffleDownSync(activeMask, (uint)(val >> 32), offset);
-                uint low = Warp.ShuffleDownSync(activeMask, (uint)val, offset);
-                ulong otherVal = ((ulong)high << 32) | low;
-                if (otherVal > val)
-                {
-                    val = otherVal;
-                }
-            }
-
-            if (laneId == 0)
-            {
-                warpMax[0] = val;
-            }
-        }
-        Gpu.SyncThreads();
-
-        if (tid == 0)
-        {
-            ulong finalVal = warpMax[0];
-            uint cmpRes = (uint)(finalVal & 0xFFFFFFFFul); // 0 = EQ, 1 = LT, 2 = GT
-            
-            bool isTrue = false;
-            switch (opType)
-            {
-                case 0: isTrue = (cmpRes == 0); break; // EQ
-                case 1: isTrue = (cmpRes != 0); break; // NEQ
-                case 2: isTrue = (cmpRes == 2); break; // GT
-                case 3: isTrue = (cmpRes == 2 || cmpRes == 0); break; // GTE
-                case 4: isTrue = (cmpRes == 1); break; // LT
-                case 5: isTrue = (cmpRes == 1 || cmpRes == 0); break; // LTE
-            }
-
-            result[batchIdx] = isTrue ? 1u : 0u;
-        }
-    }
-
-    [GpuKernel]
-    public static void VectorCompareVectorKernel(uint[] dA, uint[] dB, uint[] dResult, int numWords, int opType)
-    {
-        DeviceVectorCompareVectorParallel(dA, dB, dResult, numWords, opType);
-    }
-
-    // NOTE: The core logic of DeviceVectorCompareVectorParallel is nearly 99% identical to DeviceVectorCompareScalarParallel.
-    // While this could theoretically be abstracted using a generic Functor pattern (e.g., passing a struct implementing IFetchOp),
-    // we intentionally duplicate the code here. This is because these are critical, low-level math kernels heavily relying on 
-    // Warp-level synchronization primitives (Warp.ShuffleDownSync) and specific register allocation constraints.
-    // Relying on the C++ compiler (NVCC) to consistently and safely inline struct-based interface calls inside complex
-    // loop bounds without register spilling or performance degradation is risky. Thus, manual duplication (boilerplating) 
-    // is preferred for guaranteed zero-overhead performance and safety in the GSharp transpiler context.
-    [GpuDeviceFunction]
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static void DeviceVectorCompareVectorParallel(
-        [GpuReadOnly] uint[] a,
-        [GpuReadOnly] uint[] b,
-        uint[] result,
-        int numWords,
-        int opType)
-    {
-        int tid = ThreadIndex.X;
-        int bDim = BlockDimension.X;
-        int batchIdx = BlockIndex.X;
-        int elementOffset = batchIdx * numWords;
+        int numWords = ctx.Left.NumWords > ctx.Right.NumWords ? ctx.Left.NumWords : ctx.Right.NumWords;
 
         SharedMemory<ulong> warpMax = new SharedMemory<ulong>(32);
+        SharedMemory<uint> warpNonzero = new SharedMemory<uint>(32);
 
-        ulong myVal = 0;
+        // The most significant differing word, packed as (index << 32) | (1 = LT, 2 = GT), and whether each side has a
+        // non-zero word.
+        ulong myVal = 0ul;
+        bool myNonzeroA = false;
+        bool myNonzeroB = false;
         for (int offset = 0; offset < numWords; offset += bDim)
         {
             int idx = offset + tid;
-            bool valid = idx < numWords;
-            uint wa = valid ? a[elementOffset + idx] : 0u;
-            uint wb = valid ? b[elementOffset + idx] : 0u;
+            uint wa = ReadCompareWord(ctx.Left, element, idx);
+            uint wb = ReadCompareWord(ctx.Right, element, idx);
+            myNonzeroA = myNonzeroA || wa != 0u;
+            myNonzeroB = myNonzeroB || wb != 0u;
 
-            if (valid && wa != wb)
+            if (wa != wb)
             {
                 long diff = wa - (long)wb;
                 ulong signMask = (ulong)(diff >> 63);
@@ -299,68 +271,34 @@ public static partial class GpuBigIntCmpKernels
             }
         }
 
-        uint mask = Warp.ActiveMask();
-        for (uint offset = 16; offset > 0; offset /= 2)
-        {
-            uint high = Warp.ShuffleDownSync(mask, (uint)(myVal >> 32), offset);
-            uint low = Warp.ShuffleDownSync(mask, (uint)myVal, offset);
-            ulong otherVal = ((ulong)high << 32) | low;
-            if (otherVal > myVal)
-            {
-                myVal = otherVal;
-            }
-        }
-
-        int laneId = tid % 32;
-        int warpId = tid / 32;
+        uint activeMask = Warp.ActiveMask();
+        uint ballotA = Warp.BallotSync(activeMask, myNonzeroA);
+        uint ballotB = Warp.BallotSync(activeMask, myNonzeroB);
         if (laneId == 0)
         {
-            warpMax[warpId] = myVal;
+            warpNonzero[warpId] = (ballotA != 0u ? 1u : 0u) | (ballotB != 0u ? 2u : 0u);
         }
 
-        Gpu.SyncThreads();
-
-        if (warpId == 0)
-        {
-            int numWarps = (bDim + 31) / 32;
-            ulong val = laneId < numWarps ? warpMax[laneId] : 0ul;
-
-            uint activeMask = Warp.ActiveMask();
-            for (uint offset = 16; offset > 0; offset /= 2)
-            {
-                uint high = Warp.ShuffleDownSync(activeMask, (uint)(val >> 32), offset);
-                uint low = Warp.ShuffleDownSync(activeMask, (uint)val, offset);
-                ulong otherVal = ((ulong)high << 32) | low;
-                if (otherVal > val)
-                {
-                    val = otherVal;
-                }
-            }
-
-            if (laneId == 0)
-            {
-                warpMax[0] = val;
-            }
-        }
-        Gpu.SyncThreads();
+        // Synchronizes the block, so warpNonzero is complete afterwards.
+        ulong maxPacked = GpuBigIntVectorKernels.ReduceBlockMaxUInt64(myVal, warpMax);
 
         if (tid == 0)
         {
-            ulong finalVal = warpMax[0];
-            uint cmpRes = (uint)(finalVal & 0xFFFFFFFFul); // 0 = EQ, 1 = LT, 2 = GT
-            
-            bool isTrue = false;
-            switch (opType)
+            int numWarps = (bDim + 31) / 32;
+            uint nonzero = 0u;
+            for (int w = 0; w < numWarps; w++)
             {
-                case 0: isTrue = (cmpRes == 0); break; // EQ
-                case 1: isTrue = (cmpRes != 0); break; // NEQ
-                case 2: isTrue = (cmpRes == 2); break; // GT
-                case 3: isTrue = (cmpRes == 2 || cmpRes == 0); break; // GTE
-                case 4: isTrue = (cmpRes == 1); break; // LT
-                case 5: isTrue = (cmpRes == 1 || cmpRes == 0); break; // LTE
+                nonzero |= warpNonzero[w];
             }
 
-            result[batchIdx] = isTrue ? 1u : 0u;
+            uint cmpRes = DecideSignedCompare(
+                (uint)(maxPacked & 0xFFFFFFFFul),
+                ReadCompareSign(ctx.Left, element),
+                (nonzero & 1u) != 0u,
+                ReadCompareSign(ctx.Right, element),
+                (nonzero & 2u) != 0u);
+
+            ctx.Result[element] = GpuBigIntVectorKernels.EvaluateCompareOperator(cmpRes, ctx.OpType) ? 1u : 0u;
         }
     }
 

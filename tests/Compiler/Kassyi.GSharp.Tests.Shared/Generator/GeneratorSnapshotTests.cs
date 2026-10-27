@@ -55,14 +55,14 @@ public partial class GeneratorSnapshotTests : Kassyi.GSharp.Tests.Shared.Helpers
 
     public static TheoryData<string> GetSnapshotTestCases() => SnapshotTestCaseSource.GetTestCases();
 
-    private async Task VerifyGeneratorSnapshotAsync(string source, string testName, string sourceDir)
+    private async Task VerifyGeneratorSnapshotAsync(string source, string testName, string sourceDir, string dialect)
     {
 #pragma warning disable RS0030
         var parseOptions = new CSharpParseOptions(LanguageVersion.Preview);
 #pragma warning restore RS0030
         var compilation = await BuildCompilationAsync(source, testName, sourceDir, parseOptions);
-        var runResult = RunGenerator(compilation, parseOptions);
-        await VerifySnapshotAsync(runResult, testName);
+        var runResult = RunGenerator(compilation, parseOptions, dialect);
+        await VerifySnapshotAsync(runResult, testName, dialect);
     }
 
     private async Task<CSharpCompilation> BuildCompilationAsync(
@@ -165,7 +165,8 @@ public partial class GeneratorSnapshotTests : Kassyi.GSharp.Tests.Shared.Helpers
         return syntaxTrees;
     }
 
-    private GeneratorDriverRunResult RunGenerator(CSharpCompilation compilation, CSharpParseOptions parseOptions)
+    private static GeneratorDriverRunResult RunGenerator(
+        CSharpCompilation compilation, CSharpParseOptions parseOptions, string dialect)
     {
         var generator = new GpuKernelGenerator();
         var cudaGenerator = new CudaImportGenerator();
@@ -173,7 +174,7 @@ public partial class GeneratorSnapshotTests : Kassyi.GSharp.Tests.Shared.Helpers
             generators: new ISourceGenerator[] { generator.AsSourceGenerator(), cudaGenerator.AsSourceGenerator() },
             additionalTexts: null,
             parseOptions: parseOptions,
-            optionsProvider: new Kassyi.GSharp.Tests.Shared.Helpers.TestAnalyzerConfigOptionsProvider(DialectName));
+            optionsProvider: new Kassyi.GSharp.Tests.Shared.Helpers.TestAnalyzerConfigOptionsProvider(dialect));
 
         driver = driver.RunGeneratorsAndUpdateCompilation(compilation, out _, out var generatorDiagnostics);
 
@@ -205,7 +206,7 @@ public partial class GeneratorSnapshotTests : Kassyi.GSharp.Tests.Shared.Helpers
         }
     }
 
-    private async Task VerifySnapshotAsync(GeneratorDriverRunResult runResult, string testName)
+    private static async Task VerifySnapshotAsync(GeneratorDriverRunResult runResult, string testName, string dialect)
     {
         AssertLeftAligned(runResult);
         var nonSharedTrees = runResult.GeneratedTrees
@@ -216,12 +217,27 @@ public partial class GeneratorSnapshotTests : Kassyi.GSharp.Tests.Shared.Helpers
 
         await Verifier.Verify(combinedSource, "cs")
             .UseDirectory(GetSnapshotsDirectory())
-            .UseFastHashSnapshotName(testName, DialectName);
+            .UseFastHashSnapshotName(testName, dialect);
     }
 
     [SkippableTheory]
     [MemberData(nameof(GetSnapshotTestCases))]
-    public async Task Test_GeneratorSnapshots(string relativeFilePath)
+    public Task Test_GeneratorSnapshots(string relativeFilePath) => VerifyTestCaseSnapshotAsync(relativeFilePath, DialectName);
+
+#if GSHARP_CPU
+    // Mutation testing (just mutate compiler) runs only Kassyi.GSharp.Tests.Cpu; these test cases compare their CUDA
+    // output with the _Cuda snapshots from there too, so that the CUDA-only emission (the dynamic shared memory table,
+    // the template header and the table parameter of the device functions that reach it) is checked by that run
+    [Theory]
+    [Scenario(TestScenario.HappyPath)]
+    [InlineData("tests/Compiler/Kassyi.GSharp.Tests.Shared/Core/DeviceDynamicSharedMemoryKernels.cu.cs")]
+    [InlineData("tests/Compiler/Kassyi.GSharp.Tests.Shared/Core/SharedMemoryRegionKernels.cu.cs")]
+    [InlineData("tests/Compiler/Kassyi.GSharp.Tests.Shared/Syntax/ConcurrencyAndWarpKernels.cu.cs")]
+    public Task Test_GeneratorSnapshots_CudaDialectFromCpuTests(string relativeFilePath) =>
+        VerifyTestCaseSnapshotAsync(relativeFilePath, "Cuda");
+#endif
+
+    private async Task VerifyTestCaseSnapshotAsync(string relativeFilePath, string dialect)
     {
         var rootDir = RepositoryPaths.Root;
         var sourcePath = Path.Combine(rootDir, relativeFilePath);
@@ -236,7 +252,7 @@ public partial class GeneratorSnapshotTests : Kassyi.GSharp.Tests.Shared.Helpers
         var source = await File.ReadAllTextAsync(sourcePath);
         var testName = Path.GetFileNameWithoutExtension(sourcePath).Replace(".cu", "");
 
-        await VerifyGeneratorSnapshotAsync(source, testName, sourceDir);
+        await VerifyGeneratorSnapshotAsync(source, testName, sourceDir, dialect);
     }
 
     [Fact]

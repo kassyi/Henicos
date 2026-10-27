@@ -40,6 +40,33 @@ namespace Kassyi.GSharp.Tests.TestCases.Diagnostics
             UserTypes.GCHandle handle = default;
             output[0] = handle.Value;
         }
+
+        public const decimal Rate = 1.5m;
+
+        // decimal: the keyword, the literal, the var that stands for it and each reference to a field, local or parameter
+        [GpuKernel]
+        public static void DecimalKernel(double[] output)
+        {
+            output[0] = (double)Rate;
+            decimal local = 2.5m;
+            var copy = local;
+            output[1] = (double)copy + Halve(3.5m);
+        }
+
+        [GpuDeviceFunction]
+        public static double Halve(decimal value) => (double)value / 2;
+
+        // decimal through a property and through the return value of a call
+        [GpuKernel]
+        public static void DecimalMemberKernel(double[] output)
+        {
+            output[0] = (double)RateProperty + (double)ToDecimal(output[0]);
+        }
+
+        public static decimal RateProperty => 1.5m;
+
+        [GpuDeviceFunction]
+        public static decimal ToDecimal(double value) => (decimal)value;
     }
 }
 

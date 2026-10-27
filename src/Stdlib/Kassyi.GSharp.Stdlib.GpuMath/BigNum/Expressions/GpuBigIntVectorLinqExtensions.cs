@@ -159,6 +159,23 @@ public static class GpuBigIntVectorLinqExtensions
     /// </summary>
     /// <param name="source">The input vectorized expression.</param>
     /// <returns>A deferred expression tree representing the parallel sum reduction.</returns>
+    /// <remarks>
+    /// The result has the same number of words as the elements
+    /// (<see cref="IGpuBigIntVectorExpression.WordsPerElement"/>). The elements are accumulated in one word more, so a
+    /// running sum may leave that width as long as the final sum fits. Evaluating into a destination writes the
+    /// magnitude of the result into it and returns a value that wraps it with the sign. Without a destination, a new
+    /// buffer is allocated that the caller owns. Evaluation reads two words back from the device.
+    /// The sum of an empty vector is +0, as in <c>System.Linq</c>.
+    /// </remarks>
+    /// <exception cref="ArgumentException">
+    /// Thrown on evaluation into a destination that does not have
+    /// <see cref="IGpuBigIntVectorExpression.WordsPerElement"/> words; the destination is not touched.
+    /// </exception>
+    /// <exception cref="OverflowException">
+    /// Thrown on evaluation when the final sum does not fit in <see cref="IGpuBigIntVectorExpression.WordsPerElement"/>
+    /// words. Unlike the checked sum of <c>System.Linq</c>, a running sum that leaves the width and comes back does
+    /// not throw. The contents of a destination are then unspecified (currently the low words of the magnitude).
+    /// </exception>
     public static GpuBigIntExpr Sum(this IGpuBigIntVectorExpression source) => new(new VectorSumReductionExpression(source));
 
     /// <summary>
@@ -166,6 +183,20 @@ public static class GpuBigIntVectorLinqExtensions
     /// </summary>
     /// <param name="source">The input vectorized expression.</param>
     /// <returns>A deferred expression tree representing the parallel max reduction.</returns>
+    /// <remarks>
+    /// The result has the same number of words as the elements; the maximum always fits. Evaluating into a
+    /// destination writes the magnitude of the result into it and returns a value that wraps it with the sign.
+    /// Without a destination, a new buffer is allocated that the caller owns. Evaluation reads two words back from
+    /// the device.
+    /// </remarks>
+    /// <exception cref="ArgumentException">
+    /// Thrown on evaluation into a destination that does not have
+    /// <see cref="IGpuBigIntVectorExpression.WordsPerElement"/> words; the destination is not touched.
+    /// </exception>
+    /// <exception cref="InvalidOperationException">
+    /// Thrown on evaluation when the vector is empty, as in <c>System.Linq</c>. The vector is not evaluated, nothing
+    /// is launched, and a destination is not touched.
+    /// </exception>
     public static GpuBigIntExpr Max(this IGpuBigIntVectorExpression source) => new(new VectorMaxReductionExpression(source));
 
     /// <summary>
@@ -173,13 +204,27 @@ public static class GpuBigIntVectorLinqExtensions
     /// </summary>
     /// <param name="source">The input vectorized expression.</param>
     /// <returns>A deferred expression tree representing the parallel min reduction.</returns>
+    /// <remarks>
+    /// The result has the same number of words as the elements; the minimum always fits. Evaluating into a
+    /// destination writes the magnitude of the result into it and returns a value that wraps it with the sign.
+    /// Without a destination, a new buffer is allocated that the caller owns. Evaluation reads two words back from
+    /// the device.
+    /// </remarks>
+    /// <exception cref="ArgumentException">
+    /// Thrown on evaluation into a destination that does not have
+    /// <see cref="IGpuBigIntVectorExpression.WordsPerElement"/> words; the destination is not touched.
+    /// </exception>
+    /// <exception cref="InvalidOperationException">
+    /// Thrown on evaluation when the vector is empty, as in <c>System.Linq</c>. The vector is not evaluated, nothing
+    /// is launched, and a destination is not touched.
+    /// </exception>
     public static GpuBigIntExpr Min(this IGpuBigIntVectorExpression source) => new(new VectorMinReductionExpression(source));
 
     /// <summary>
     /// Computes the number of elements in the vectorized expression.
     /// </summary>
     /// <param name="source">The input vectorized expression.</param>
-    /// <returns>A deferred expression tree representing the element count.</returns>
+    /// <returns>A deferred expression tree representing the element count; 0 for an empty vector.</returns>
     public static GpuBigIntExpr Count(this IGpuBigIntVectorExpression source) => new(new VectorCountExpression(source));
 
     /// <summary>
@@ -216,6 +261,10 @@ public static class GpuBigIntVectorLinqExtensions
     /// <summary>
     /// Evaluates if each element is equal to a scalar.
     /// </summary>
+    /// <remarks>
+    /// The comparison is signed, as <see cref="System.Numerics.BigInteger.CompareTo(System.Numerics.BigInteger)"/> is; a
+    /// negative zero equals zero. The scalar is read with its own word count, which may differ from the elements'.
+    /// </remarks>
     /// <param name="source">The source vector expression.</param>
     /// <param name="scalar">The scalar value to compare against.</param>
     /// <returns>A boolean vector expression.</returns>
@@ -225,6 +274,10 @@ public static class GpuBigIntVectorLinqExtensions
     /// <summary>
     /// Evaluates if each element is not equal to a scalar.
     /// </summary>
+    /// <remarks>
+    /// The comparison is signed, as <see cref="System.Numerics.BigInteger.CompareTo(System.Numerics.BigInteger)"/> is; a
+    /// negative zero equals zero. The scalar is read with its own word count, which may differ from the elements'.
+    /// </remarks>
     /// <param name="source">The source vector expression.</param>
     /// <param name="scalar">The scalar value to compare against.</param>
     /// <returns>A boolean vector expression.</returns>
@@ -234,6 +287,10 @@ public static class GpuBigIntVectorLinqExtensions
     /// <summary>
     /// Evaluates if each element is greater than a scalar.
     /// </summary>
+    /// <remarks>
+    /// The comparison is signed, as <see cref="System.Numerics.BigInteger.CompareTo(System.Numerics.BigInteger)"/> is; a
+    /// negative zero equals zero. The scalar is read with its own word count, which may differ from the elements'.
+    /// </remarks>
     /// <param name="source">The source vector expression.</param>
     /// <param name="scalar">The scalar value to compare against.</param>
     /// <returns>A boolean vector expression.</returns>
@@ -243,6 +300,10 @@ public static class GpuBigIntVectorLinqExtensions
     /// <summary>
     /// Evaluates if each element is greater than or equal to a scalar.
     /// </summary>
+    /// <remarks>
+    /// The comparison is signed, as <see cref="System.Numerics.BigInteger.CompareTo(System.Numerics.BigInteger)"/> is; a
+    /// negative zero equals zero. The scalar is read with its own word count, which may differ from the elements'.
+    /// </remarks>
     /// <param name="source">The source vector expression.</param>
     /// <param name="scalar">The scalar value to compare against.</param>
     /// <returns>A boolean vector expression.</returns>
@@ -252,6 +313,10 @@ public static class GpuBigIntVectorLinqExtensions
     /// <summary>
     /// Evaluates if each element is less than a scalar.
     /// </summary>
+    /// <remarks>
+    /// The comparison is signed, as <see cref="System.Numerics.BigInteger.CompareTo(System.Numerics.BigInteger)"/> is; a
+    /// negative zero equals zero. The scalar is read with its own word count, which may differ from the elements'.
+    /// </remarks>
     /// <param name="source">The source vector expression.</param>
     /// <param name="scalar">The scalar value to compare against.</param>
     /// <returns>A boolean vector expression.</returns>
@@ -261,6 +326,10 @@ public static class GpuBigIntVectorLinqExtensions
     /// <summary>
     /// Evaluates if each element is less than or equal to a scalar.
     /// </summary>
+    /// <remarks>
+    /// The comparison is signed, as <see cref="System.Numerics.BigInteger.CompareTo(System.Numerics.BigInteger)"/> is; a
+    /// negative zero equals zero. The scalar is read with its own word count, which may differ from the elements'.
+    /// </remarks>
     /// <param name="source">The source vector expression.</param>
     /// <param name="scalar">The scalar value to compare against.</param>
     /// <returns>A boolean vector expression.</returns>
@@ -270,6 +339,11 @@ public static class GpuBigIntVectorLinqExtensions
     /// <summary>
     /// Evaluates if elements in the left vector are equal to the right vector element-wise.
     /// </summary>
+    /// <remarks>
+    /// The comparison is signed, as <see cref="System.Numerics.BigInteger.CompareTo(System.Numerics.BigInteger)"/> is; a
+    /// negative zero equals zero. The two vectors may have different word counts: the missing upper words of the
+    /// narrower side are 0. They must have the same length.
+    /// </remarks>
     /// <param name="left">The left vector expression.</param>
     /// <param name="right">The right vector expression.</param>
     /// <returns>A boolean vector expression.</returns>
@@ -279,6 +353,11 @@ public static class GpuBigIntVectorLinqExtensions
     /// <summary>
     /// Evaluates if elements in the left vector are not equal to the right vector element-wise.
     /// </summary>
+    /// <remarks>
+    /// The comparison is signed, as <see cref="System.Numerics.BigInteger.CompareTo(System.Numerics.BigInteger)"/> is; a
+    /// negative zero equals zero. The two vectors may have different word counts: the missing upper words of the
+    /// narrower side are 0. They must have the same length.
+    /// </remarks>
     /// <param name="left">The left vector expression.</param>
     /// <param name="right">The right vector expression.</param>
     /// <returns>A boolean vector expression.</returns>
@@ -288,6 +367,11 @@ public static class GpuBigIntVectorLinqExtensions
     /// <summary>
     /// Evaluates if elements in the left vector are greater than the right vector element-wise.
     /// </summary>
+    /// <remarks>
+    /// The comparison is signed, as <see cref="System.Numerics.BigInteger.CompareTo(System.Numerics.BigInteger)"/> is; a
+    /// negative zero equals zero. The two vectors may have different word counts: the missing upper words of the
+    /// narrower side are 0. They must have the same length.
+    /// </remarks>
     /// <param name="left">The left vector expression.</param>
     /// <param name="right">The right vector expression.</param>
     /// <returns>A boolean vector expression.</returns>
@@ -297,6 +381,11 @@ public static class GpuBigIntVectorLinqExtensions
     /// <summary>
     /// Evaluates if elements in the left vector are greater than or equal to the right vector element-wise.
     /// </summary>
+    /// <remarks>
+    /// The comparison is signed, as <see cref="System.Numerics.BigInteger.CompareTo(System.Numerics.BigInteger)"/> is; a
+    /// negative zero equals zero. The two vectors may have different word counts: the missing upper words of the
+    /// narrower side are 0. They must have the same length.
+    /// </remarks>
     /// <param name="left">The left vector expression.</param>
     /// <param name="right">The right vector expression.</param>
     /// <returns>A boolean vector expression.</returns>
@@ -306,6 +395,11 @@ public static class GpuBigIntVectorLinqExtensions
     /// <summary>
     /// Evaluates if elements in the left vector are less than the right vector element-wise.
     /// </summary>
+    /// <remarks>
+    /// The comparison is signed, as <see cref="System.Numerics.BigInteger.CompareTo(System.Numerics.BigInteger)"/> is; a
+    /// negative zero equals zero. The two vectors may have different word counts: the missing upper words of the
+    /// narrower side are 0. They must have the same length.
+    /// </remarks>
     /// <param name="left">The left vector expression.</param>
     /// <param name="right">The right vector expression.</param>
     /// <returns>A boolean vector expression.</returns>
@@ -315,6 +409,11 @@ public static class GpuBigIntVectorLinqExtensions
     /// <summary>
     /// Evaluates if elements in the left vector are less than or equal to the right vector element-wise.
     /// </summary>
+    /// <remarks>
+    /// The comparison is signed, as <see cref="System.Numerics.BigInteger.CompareTo(System.Numerics.BigInteger)"/> is; a
+    /// negative zero equals zero. The two vectors may have different word counts: the missing upper words of the
+    /// narrower side are 0. They must have the same length.
+    /// </remarks>
     /// <param name="left">The left vector expression.</param>
     /// <param name="right">The right vector expression.</param>
     /// <returns>A boolean vector expression.</returns>

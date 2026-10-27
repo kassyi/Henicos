@@ -25,17 +25,18 @@ public static partial class GpuBigIntCmpKernels
 | Name | Description |
 | --- | --- |
 | [CompareToKernel(uint[], uint[], ulong[], int)](#comparetokerneluint-uint-ulong-int) | A GPU kernel (`[GpuKernel]`) that compares two large integers. |
-| [DeviceVectorCompareScalarParallel(uint[], uint[], uint[], int, int)](#devicevectorcomparescalarparalleluint-uint-uint-int-int) | A GPU device function (`[GpuDeviceFunction]`) that compares each element of a batched vector against a scalar big integer in parallel. |
-| [DeviceVectorCompareVectorParallel(uint[], uint[], uint[], int, int)](#devicevectorcomparevectorparalleluint-uint-uint-int-int) | A GPU device function (`[GpuDeviceFunction]`) that compares corresponding elements of two batched vectors in parallel. |
+| [DecideSignedCompare(uint, uint, bool, uint, bool)](#decidesignedcompareuint-uint-bool-uint-bool) | A GPU device function (`[GpuDeviceFunction]`) that combines the signs of two integers with the comparison of their magnitudes. |
+| [DeviceVectorCompareSignedParallel(VectorCompareContext)](#devicevectorcomparesignedparallelvectorcomparecontext) | A GPU device function (`[GpuDeviceFunction]`) that compares one element of a batched vector with a vector or a scalar as signed integers. |
 | [GetBitLengthKernel(uint[], uint[], int)](#getbitlengthkerneluint-uint-int) | A GPU kernel (`[GpuKernel]`) that calculates the bit length of a large integer. |
 | [IsOneKernel(uint[], uint[], int)](#isonekerneluint-uint-int) | A GPU kernel (`[GpuKernel]`) that checks if a large integer is equal to one. |
 | [IsZeroKernel(uint[], uint[], int)](#iszerokerneluint-uint-int) | A GPU kernel (`[GpuKernel]`) that checks if a large integer is zero. |
 | [LeadingBitsKernel(uint[], uint[], int)](#leadingbitskerneluint-uint-int) | A GPU kernel (`[GpuKernel]`) that writes the leading 64 bits of a large integer, given its bit length. |
+| [ReadCompareSign(SignedCompareOperand, int)](#readcomparesignsignedcompareoperand-int) | A GPU device function (`[GpuDeviceFunction]`) that reads the sign of an element, or the sign of a scalar. |
+| [ReadCompareWord(SignedCompareOperand, int, int)](#readcomparewordsignedcompareoperand-int-int) | A GPU device function (`[GpuDeviceFunction]`) that reads one word of an element, or 0 at or above the operand's word count. |
 | [VectorAllTrueKernel(uint[], uint[], int)](#vectoralltruekerneluint-uint-int) | A GPU kernel (`[GpuKernel]`) that checks whether all elements in a boolean mask array are non-zero. |
 | [VectorAndKernel(uint[], uint[], uint[], int)](#vectorandkerneluint-uint-uint-int) | A GPU kernel (`[GpuKernel]`) that computes the element-wise logical AND of two boolean mask arrays. |
 | [VectorAnyTrueKernel(uint[], uint[], int)](#vectoranytruekerneluint-uint-int) | A GPU kernel (`[GpuKernel]`) that checks whether any element in a boolean mask array is non-zero. |
-| [VectorCompareScalarKernel(uint[], uint[], uint[], int, int)](#vectorcomparescalarkerneluint-uint-uint-int-int) | A GPU kernel (`[GpuKernel]`) that compares a batched vector of big integers against a scalar big integer. |
-| [VectorCompareVectorKernel(uint[], uint[], uint[], int, int)](#vectorcomparevectorkerneluint-uint-uint-int-int) | A GPU kernel (`[GpuKernel]`) that compares two batched vectors of big integers element-wise. |
+| [VectorCompareKernel(VectorCompareContext)](#vectorcomparekernelvectorcomparecontext) | A GPU kernel (`[GpuKernel]`) that compares a batched vector of signed big integers element-wise with another vector or a scalar. |
 | [VectorNotKernel(uint[], uint[], int)](#vectornotkerneluint-uint-int) | A GPU kernel (`[GpuKernel]`) that computes the element-wise logical NOT of a boolean mask array. |
 | [VectorOrKernel(uint[], uint[], uint[], int)](#vectororkerneluint-uint-uint-int) | A GPU kernel (`[GpuKernel]`) that computes the element-wise logical OR of two boolean mask arrays. |
 
@@ -48,34 +49,24 @@ A GPU kernel (`[GpuKernel]`) that compares two large integers.
 public static void CompareToKernel(uint[] dA, uint[] dB, ulong[] dResult, int numWords);
 ```
 
-## DeviceVectorCompareScalarParallel(uint[], uint[], uint[], int, int)
+## DecideSignedCompare(uint, uint, bool, uint, bool)
 
-A GPU device function (`[GpuDeviceFunction]`) that compares each element of a batched vector against a scalar big integer in parallel.
+A GPU device function (`[GpuDeviceFunction]`) that combines the signs of two integers with the comparison of their magnitudes `magCmp` (0 = equal, 1 = less, 2 = greater) and returns the signed comparison in the same encoding. A negative zero (sign set, magnitude 0) is treated as zero.
 
 ```csharp
 [GpuDeviceFunction]
 [MethodImpl(MethodImplOptions.AggressiveInlining)]
-public static void DeviceVectorCompareScalarParallel(
-    [GpuReadOnly] uint[] a,
-    [GpuReadOnly] uint[] s,
-    uint[] result,
-    int numWords,
-    int opType);
+public static uint DecideSignedCompare(uint magCmp, uint signA, bool nonzeroA, uint signB, bool nonzeroB);
 ```
 
-## DeviceVectorCompareVectorParallel(uint[], uint[], uint[], int, int)
+## DeviceVectorCompareSignedParallel(VectorCompareContext)
 
-A GPU device function (`[GpuDeviceFunction]`) that compares corresponding elements of two batched vectors in parallel.
+A GPU device function (`[GpuDeviceFunction]`) that compares element `BlockIndex.X` of `ctx.Left` with `ctx.Right` as signed integers and writes 1 to `ctx.Result[BlockIndex.X]` when the operator `ctx.OpType` holds, otherwise 0. The two sides may have different word counts; the missing upper words of the narrower side are 0.
 
 ```csharp
 [GpuDeviceFunction]
 [MethodImpl(MethodImplOptions.AggressiveInlining)]
-public static void DeviceVectorCompareVectorParallel(
-    [GpuReadOnly] uint[] a,
-    [GpuReadOnly] uint[] b,
-    uint[] result,
-    int numWords,
-    int opType);
+public static void DeviceVectorCompareSignedParallel(VectorCompareContext ctx);
 ```
 
 ## GetBitLengthKernel(uint[], uint[], int)
@@ -114,6 +105,26 @@ A GPU kernel (`[GpuKernel]`) that writes the leading 64 bits of a large integer 
 public static void LeadingBitsKernel(uint[] dA, uint[] dResult, int numWords);
 ```
 
+## ReadCompareSign(SignedCompareOperand, int)
+
+A GPU device function (`[GpuDeviceFunction]`) that returns the sign word of element `element`, or `ScalarSign` when the operand is a scalar (`Signs` is `null`).
+
+```csharp
+[GpuDeviceFunction]
+[MethodImpl(MethodImplOptions.AggressiveInlining)]
+public static uint ReadCompareSign(SignedCompareOperand operand, int element);
+```
+
+## ReadCompareWord(SignedCompareOperand, int, int)
+
+A GPU device function (`[GpuDeviceFunction]`) that returns word `idx` of element `element`, or 0 when `idx` is at or above the operand's `NumWords`.
+
+```csharp
+[GpuDeviceFunction]
+[MethodImpl(MethodImplOptions.AggressiveInlining)]
+public static uint ReadCompareWord(SignedCompareOperand operand, int element, int idx);
+```
+
 ## VectorAllTrueKernel(uint[], uint[], int)
 
 A GPU kernel (`[GpuKernel]`) that checks whether all elements in a boolean mask array are non-zero.
@@ -141,22 +152,30 @@ A GPU kernel (`[GpuKernel]`) that checks whether any element in a boolean mask a
 public static void VectorAnyTrueKernel(uint[] dA, uint[] dResult, int length);
 ```
 
-## VectorCompareScalarKernel(uint[], uint[], uint[], int, int)
+## VectorCompareKernel(VectorCompareContext)
 
-A GPU kernel (`[GpuKernel]`) that compares a batched vector of big integers against a scalar big integer.
-
-```csharp
-[GpuKernel]
-public static void VectorCompareScalarKernel(uint[] dA, uint[] s, uint[] dResult, int numWords, int opType);
-```
-
-## VectorCompareVectorKernel(uint[], uint[], uint[], int, int)
-
-A GPU kernel (`[GpuKernel]`) that compares two batched vectors of big integers element-wise.
+A GPU kernel (`[GpuKernel]`) that compares a batched vector of signed big integers element-wise with another vector or a scalar. Launch one block per element with a multiple of 32 threads (at most 1024), as many as the wider side's word count rounded up to whole warps, so that no warp is partial; a narrower block loops over the words, and lanes past the word count read nothing. An empty vector must not be launched (a grid of 0 blocks is invalid). Each side is read with its own word count and stride, so a scalar narrower than the elements is never read past its last word.
 
 ```csharp
 [GpuKernel]
-public static void VectorCompareVectorKernel(uint[] dA, uint[] dB, uint[] dResult, int numWords, int opType);
+public static void VectorCompareKernel(VectorCompareContext ctx);
+
+public struct SignedCompareOperand
+{
+    [GpuReadOnly] public uint[] Limbs;
+    [GpuReadOnly] public uint[] Signs;   // null for a scalar
+    public int NumWords;                 // words this side stores per element
+    public int Stride;                   // words between elements; 0 for a scalar
+    public uint ScalarSign;              // used when Signs is null
+}
+
+public struct VectorCompareContext
+{
+    public SignedCompareOperand Left;
+    public SignedCompareOperand Right;
+    public uint[] Result;
+    public int OpType;                   // VectorCompareOperator
+}
 ```
 
 ## VectorNotKernel(uint[], uint[], int)

@@ -24,6 +24,7 @@ public class StateMachineLowerer(bool isDeviceFunction = false, SemanticModel? s
         var cases = ImmutableArray.CreateBuilder<SwitchSectionSyntax>();
         var currentCaseStatements = ImmutableArray.CreateBuilder<StatementSyntax>();
         var state = 0;
+        LabeledStatementSyntax? sectionLabel = null;
 
         // 1. Pass 1: Identify all state boundaries (barriers AND labels) and assign sequential states.
         var labelStates = new Dictionary<DeclarationKey, int>();
@@ -49,6 +50,14 @@ public class StateMachineLowerer(bool isDeviceFunction = false, SemanticModel? s
             {
                 // A label boundary requires falling through to the next state case without yielding.
                 commitState(state + 1, isBarrier: false);
+
+                // [WHY] The label after a statement of a Gpu.SyncGrid body that returns stays in its section: the return
+                // jumps to it with goto from wherever it is, also from a switch of the user, where a goto case would bind
+                // to that switch (#626)
+                if (IsSyncGridNextLabel(labeled.Identifier.ValueText))
+                {
+                    sectionLabel = labeled;
+                }
 
                 if (labeled.Statement is not EmptyStatementSyntax)
                 {
@@ -162,14 +171,20 @@ public class StateMachineLowerer(bool isDeviceFunction = false, SemanticModel? s
             var label = SyntaxFactory.CaseSwitchLabel(
                 SyntaxFactory.LiteralExpression(SyntaxKind.NumericLiteralExpression, SyntaxFactory.Literal(state))
             );
+            var block = SyntaxFactory.Block(currentCaseStatements);
+            // case <state>: [<label>: ;] { <statements> }
+            var statements = sectionLabel != null
+                ? SyntaxFactory.List<StatementSyntax>([sectionLabel, block])
+                : SyntaxFactory.SingletonList<StatementSyntax>(block);
             cases.Add(
                 SyntaxFactory.SwitchSection(
                     SyntaxFactory.SingletonList<SwitchLabelSyntax>(label),
-                    SyntaxFactory.SingletonList<StatementSyntax>(SyntaxFactory.Block(currentCaseStatements))
+                    statements
                 )
             );
 
             currentCaseStatements.Clear();
+            sectionLabel = null;
         }
     }
 
@@ -229,7 +244,10 @@ public class StateMachineLowerer(bool isDeviceFunction = false, SemanticModel? s
     {
         public override SyntaxNode? VisitGotoStatement(GotoStatementSyntax node)
         {
-            if (!node.IsKind(SyntaxKind.GotoStatement) || node.Expression is not IdentifierNameSyntax id)
+            // A goto to the label after a returning statement of a Gpu.SyncGrid body stays a goto (see Lower)
+            if (!node.IsKind(SyntaxKind.GotoStatement) ||
+                node.Expression is not IdentifierNameSyntax id ||
+                IsSyncGridNextLabel(id.Identifier.ValueText))
             {
                 return base.VisitGotoStatement(node);
             }
@@ -243,6 +261,9 @@ public class StateMachineLowerer(bool isDeviceFunction = false, SemanticModel? s
             return base.VisitGotoStatement(node);
         }
     }
+
+    private static bool IsSyncGridNextLabel(string name) =>
+        name.StartsWith(GSharpInternalNames.Lowering.SyncGridNextLabelPrefix, StringComparison.Ordinal);
 
     // __gsharp_state = <stateValue>;
     private static StatementSyntax CreateStateAssignment(int stateValue)

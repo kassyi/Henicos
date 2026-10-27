@@ -64,7 +64,7 @@ public readonly struct SourceWriter : IDisposable, IEquatable<SourceWriter>
     [UnscopedRef]
     public ref readonly SourceWriter Append(int value)
     {
-        Builder.Append(value);
+        Builder.Append(value.ToString(System.Globalization.CultureInfo.InvariantCulture));
         return ref this;
     }
 
@@ -410,24 +410,35 @@ public readonly ref struct SourceWriterInterpolatedStringHandler
         }
     }
 
-    public void AppendFormatted<T>(T t) => _builder?.Append(t);
+    // Numbers become source text, so they never follow the build host's culture (sv-SE writes U+2212 for '-', de-DE a
+    // decimal comma)
+    public void AppendFormatted<T>(T t)
+    {
+        if (t is IFormattable formattable)
+        {
+            _builder?.Append(formattable.ToString(null, System.Globalization.CultureInfo.InvariantCulture));
+            return;
+        }
 
-    public void AppendFormatted(int t) => _builder?.Append(t);
-    public void AppendFormatted(uint t) => _builder?.Append(t);
-    public void AppendFormatted(long t) => _builder?.Append(t);
-    public void AppendFormatted(ulong t) => _builder?.Append(t);
-    public void AppendFormatted(short t) => _builder?.Append(t);
-    public void AppendFormatted(ushort t) => _builder?.Append(t);
-    public void AppendFormatted(byte t) => _builder?.Append(t);
-    public void AppendFormatted(sbyte t) => _builder?.Append(t);
-    public void AppendFormatted(float t) => _builder?.Append(t);
-    public void AppendFormatted(double t) => _builder?.Append(t);
-    public void AppendFormatted(decimal t) => _builder?.Append(t);
+        _builder?.Append(t);
+    }
+
+    public void AppendFormatted(int t) => _builder?.Append(t.ToString(System.Globalization.CultureInfo.InvariantCulture));
+    public void AppendFormatted(uint t) => _builder?.Append(t.ToString(System.Globalization.CultureInfo.InvariantCulture));
+    public void AppendFormatted(long t) => _builder?.Append(t.ToString(System.Globalization.CultureInfo.InvariantCulture));
+    public void AppendFormatted(ulong t) => _builder?.Append(t.ToString(System.Globalization.CultureInfo.InvariantCulture));
+    public void AppendFormatted(short t) => _builder?.Append(t.ToString(System.Globalization.CultureInfo.InvariantCulture));
+    public void AppendFormatted(ushort t) => _builder?.Append(t.ToString(System.Globalization.CultureInfo.InvariantCulture));
+    public void AppendFormatted(byte t) => _builder?.Append(t.ToString(System.Globalization.CultureInfo.InvariantCulture));
+    public void AppendFormatted(sbyte t) => _builder?.Append(t.ToString(System.Globalization.CultureInfo.InvariantCulture));
+    public void AppendFormatted(float t) => _builder?.Append(t.ToString(System.Globalization.CultureInfo.InvariantCulture));
+    public void AppendFormatted(double t) => _builder?.Append(t.ToString(System.Globalization.CultureInfo.InvariantCulture));
+    public void AppendFormatted(decimal t) => _builder?.Append(t.ToString(System.Globalization.CultureInfo.InvariantCulture));
     public void AppendFormatted(bool t) => _builder?.Append(t);
     public void AppendFormatted(char t) => _builder?.Append(t);
 
     public void AppendFormatted<T>(T? t, string format) where T : IFormattable =>
-        _builder?.Append(t?.ToString(format, null));
+        _builder?.Append(t?.ToString(format, System.Globalization.CultureInfo.InvariantCulture));
 }
 #pragma warning restore IDE0051
 #pragma warning restore IDE0060

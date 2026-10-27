@@ -305,7 +305,7 @@ internal static class StatementTranspilers
 
         context.Emitter.Writer.Append("goto ");
         if (node.Expression is IdentifierNameSyntax identifier &&
-            !IsSyntheticIteratorLabel(identifier.Identifier.ValueText))
+            !IsSyntheticLabel(identifier.Identifier.ValueText))
         {
             CppNameResolver.AppendReferencedName(identifier, identifier.Identifier, ref context);
             if (context.Emitter.LabelSuffix != null)
@@ -324,7 +324,7 @@ internal static class StatementTranspilers
     public static void TranspileLabeledStatement(LabeledStatementSyntax node, ref TranspileContext context)
     {
         CppNameResolver.AppendDeclaredName(node, node.Identifier, ref context);
-        if (context.Emitter.LabelSuffix != null && !IsSyntheticIteratorLabel(node.Identifier.ValueText))
+        if (context.Emitter.LabelSuffix != null && !IsSyntheticLabel(node.Identifier.ValueText))
         {
             context.Emitter.Writer.Append(context.Emitter.LabelSuffix);
         }
@@ -339,9 +339,11 @@ internal static class StatementTranspilers
         context.Visitor.Visit(node.Statement);
     }
 
-    private static bool IsSyntheticIteratorLabel(string name) =>
+    // Labels a compiler pass names uniquely by itself: written as they are, without the label suffix of an inlined copy
+    private static bool IsSyntheticLabel(string name) =>
         name.StartsWith(GSharpInternalNames.Iterator.EndLabelPrefix, StringComparison.Ordinal) ||
-        name.StartsWith(GSharpInternalNames.Iterator.NextLabelPrefix, StringComparison.Ordinal);
+        name.StartsWith(GSharpInternalNames.Iterator.NextLabelPrefix, StringComparison.Ordinal) ||
+        name.StartsWith(GSharpInternalNames.Lowering.SyncGridNextLabelPrefix, StringComparison.Ordinal);
 
     /// <summary>
     /// Transpiles a return statement, hoisting any inline declarations from the returned expression.

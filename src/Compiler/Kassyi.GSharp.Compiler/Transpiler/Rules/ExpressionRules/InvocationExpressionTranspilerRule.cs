@@ -198,7 +198,8 @@ public sealed class InvocationExpressionTranspilerRule : SyntaxNodeTranspilerRul
             return;
         }
 
-        context.Emitter.Writer.Append(FormatConstantLiteral(parameter.ExplicitDefaultValue, parameter.Type));
+        // No default clause in the syntax: [DefaultParameterValue], or a method from metadata
+        context.Emitter.Writer.Append(ConstexprLiteral.FormatCppConstant(parameter.Type, parameter.ExplicitDefaultValue));
     }
 
     private static ExpressionSyntax? GetDefaultValueSyntax(IParameterSymbol parameter) =>
@@ -206,34 +207,4 @@ public sealed class InvocationExpressionTranspilerRule : SyntaxNodeTranspilerRul
         paramSyntax is { Default: { } defaultClause }
             ? defaultClause.Value
             : null;
-
-    private static string FormatConstantLiteral(object? value, ITypeSymbol type) => value switch
-    {
-        null => "nullptr",
-        bool b => b ? "true" : "false",
-        float f => FormatFloat(f),
-        double d => FormatDouble(d),
-        IFormattable formattable => formattable.ToString(null, CultureInfo.InvariantCulture) +
-                                    GetIntegerSuffix(type.SpecialType),
-        _ => (value.ToString() ?? string.Empty) + GetIntegerSuffix(type.SpecialType)
-    };
-
-    private static string FormatFloat(float value) =>
-        FormatNonFinite(double.IsNaN(value), float.IsPositiveInfinity(value), float.IsNegativeInfinity(value))
-        ?? value.ToString(CultureInfo.InvariantCulture) + "f";
-
-    private static string FormatDouble(double value) =>
-        FormatNonFinite(double.IsNaN(value), double.IsPositiveInfinity(value), double.IsNegativeInfinity(value))
-        ?? value.ToString(CultureInfo.InvariantCulture);
-
-    private static string? FormatNonFinite(bool isNaN, bool isPosInf, bool isNegInf) =>
-        isNaN ? "NAN" : isPosInf ? "INFINITY" : isNegInf ? "-INFINITY" : null;
-
-    private static string GetIntegerSuffix(SpecialType specialType) => specialType switch
-    {
-        SpecialType.System_UInt32 => "u",
-        SpecialType.System_Int64 => "ll",
-        SpecialType.System_UInt64 => "ull",
-        _ => string.Empty
-    };
 }

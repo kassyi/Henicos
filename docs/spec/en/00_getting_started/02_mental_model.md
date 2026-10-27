@@ -18,10 +18,11 @@ By leveraging Microsoft's Roslyn compiler platform as its syntactic and type-che
 
 At build time, G# intercepts your C# kernel AST and directly transpiles it into optimized, native CUDA C++ and PTX Fatbin payloads, emitting zero-allocation host orchestration wrappers completely behind the scenes.
 
-### The Mental Model: C# Syntax, Native CUDA Semantics
+### The Mental Model: C# Syntax, GPU Execution
 
-While G# kernel code is syntactically valid C#, **its execution model and runtime semantics are 100% native CUDA**:
+G# kernel code is valid C#, and it runs on the GPU's native execution model:
 
+- **The Meaning is C# Where C# Defines It**: Each GPU thread runs the C# it was given. Where C# defines a result that CUDA leaves undefined (integer overflow, shift counts, order of evaluation, an out-of-range index), G# follows C#. Where C# says nothing (barriers, warp shuffles, shared memory), the GPU decides. Forms that neither defines are errors. See [6. Semantics Charter](../01_language/06_semantics.md).
 - **The Syntax is C#**: You express logic using familiar loops, value `struct`s, scalar primitives, local functions, and modern C# pattern matching.
 - **The Architecture is a GPU Dialect (eDSL)**: There is no .NET CLR, no managed heap allocations (`class`, `string`, LINQ), and no garbage collector inside the kernel. Standard BCL methods (such as `BitOperations` or `MathF`) serve strictly as zero-cost symbolic compile-time markers that lower directly into hardware PTX intrinsics.
 - **The Engine is Bare-Metal CUDA**: You program thousands of massively parallel hardware threads structured into Grids, Blocks, and 32-thread Warps, interacting directly with registers, Shared Memory, and high-bandwidth VRAM.

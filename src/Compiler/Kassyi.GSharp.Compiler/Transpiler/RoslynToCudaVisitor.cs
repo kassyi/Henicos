@@ -255,12 +255,6 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker, IDisposable
 
     public override void VisitBlock(BlockSyntax node)
     {
-        if (AutoSyncGrid.IsActive(Context))
-        {
-            AutoSyncGrid.VisitBlock(node, ref Context);
-            return;
-        }
-
         foreach (var statement in node.Statements)
         {
             // [WHY] A nested block is emitted without braces, since lowering wraps statements of one scope in blocks; a
@@ -466,6 +460,13 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker, IDisposable
         if (node.IsKind(SyntaxKind.NumericLiteralExpression) && node.Token.Value is float or double)
         {
             AppendFloatingPointLiteral(node.Token.Text, node.Token.Value is float);
+            return;
+        }
+
+        // A C# char is a UTF-16 code unit; the C++ character literal is a char in the source's encoding ('é' is two bytes).
+        if (node.IsKind(SyntaxKind.CharacterLiteralExpression) && node.Token.Value is char character)
+        {
+            Context.Emitter.Writer.Append(ConstexprLiteral.FormatCppChar(character));
             return;
         }
 

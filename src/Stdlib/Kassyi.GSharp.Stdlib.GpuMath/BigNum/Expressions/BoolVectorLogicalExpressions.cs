@@ -25,6 +25,12 @@ internal class VectorLogicalExpression(
             _allocated = true;
         }
 
+        // And / Or of empty vectors launches nothing: a grid of 0 blocks is an invalid launch.
+        if (Length == 0)
+        {
+            return _finalValues;
+        }
+
         var gridDimX = (Length + 255) / 256;
         var blockDimX = 256;
 
@@ -83,6 +89,12 @@ internal class VectorNotExpression([TakesOwnership] IGpuBoolVectorExpression sou
             _allocated = true;
         }
 
+        // Not of empty vectors launches nothing: a grid of 0 blocks is an invalid launch.
+        if (Length == 0)
+        {
+            return _finalValues;
+        }
+
         var gridDimX = (Length + 255) / 256;
         var blockDimX = 256;
 
@@ -115,6 +127,12 @@ internal class VectorAnyTrueExpression([TakesOwnership] IGpuBoolVectorExpression
     {
         var result = source.Evaluate(workspace);
 
+        // Any of nothing is false, as in System.Linq; nothing is launched.
+        if (source.Length == 0)
+        {
+            return false;
+        }
+
         using var tempResult = new GpuBigUIntArray(workspace, 1, 1);
         workspace.Provider.ClearMemoryAsync(tempResult.DevicePointer, 1, workspace.Stream);
 
@@ -140,6 +158,12 @@ internal class VectorAllTrueExpression([TakesOwnership] IGpuBoolVectorExpression
     public bool Evaluate(GpuWorkspace workspace)
     {
         var result = source.Evaluate(workspace);
+
+        // All of nothing is true, as in System.Linq; nothing is launched.
+        if (source.Length == 0)
+        {
+            return true;
+        }
 
         using var tempResult = new GpuBigUIntArray(workspace, 1, 1);
 

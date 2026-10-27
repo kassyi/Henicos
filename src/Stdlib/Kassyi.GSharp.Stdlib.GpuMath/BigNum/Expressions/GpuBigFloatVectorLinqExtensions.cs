@@ -331,14 +331,16 @@ public static class GpuBigFloatVectorLinqExtensions
         /// Computes the sum of all elements in a vectorized floating-point expression.
         /// </summary>
         /// <param name="workspace">The GPU workspace used for evaluation.</param>
-        /// <returns>A <see cref="GpuBigFloat"/> containing the sum of all elements.</returns>
+        /// <returns>
+        /// A <see cref="GpuBigFloat"/> containing the sum of all elements; +0 for an empty sequence, as
+        /// <c>System.Linq</c> returns.
+        /// </returns>
         public GpuBigFloat Sum(GpuWorkspace workspace)
         {
             ArgumentNullException.ThrowIfNull(source);
             ArgumentNullException.ThrowIfNull(workspace);
 
-            var evaluated = source.Evaluate(workspace);
-            return FloatVectorReductionOrchestrator.Reduce(workspace, evaluated, FloatReductionKind.Sum);
+            return FloatVectorReductionOrchestrator.Reduce(workspace, source, FloatReductionKind.Sum);
         }
 
         /// <summary>
@@ -346,13 +348,13 @@ public static class GpuBigFloatVectorLinqExtensions
         /// </summary>
         /// <param name="workspace">The GPU workspace used for evaluation.</param>
         /// <returns>A <see cref="GpuBigFloat"/> containing the maximum value.</returns>
+        /// <exception cref="InvalidOperationException">The sequence is empty (as in <c>System.Linq</c>).</exception>
         public GpuBigFloat Max(GpuWorkspace workspace)
         {
             ArgumentNullException.ThrowIfNull(source);
             ArgumentNullException.ThrowIfNull(workspace);
 
-            var evaluated = source.Evaluate(workspace);
-            return FloatVectorReductionOrchestrator.Reduce(workspace, evaluated, FloatReductionKind.Max);
+            return FloatVectorReductionOrchestrator.Reduce(workspace, source, FloatReductionKind.Max);
         }
 
         /// <summary>
@@ -360,13 +362,13 @@ public static class GpuBigFloatVectorLinqExtensions
         /// </summary>
         /// <param name="workspace">The GPU workspace used for evaluation.</param>
         /// <returns>A <see cref="GpuBigFloat"/> containing the minimum value.</returns>
+        /// <exception cref="InvalidOperationException">The sequence is empty (as in <c>System.Linq</c>).</exception>
         public GpuBigFloat Min(GpuWorkspace workspace)
         {
             ArgumentNullException.ThrowIfNull(source);
             ArgumentNullException.ThrowIfNull(workspace);
 
-            var evaluated = source.Evaluate(workspace);
-            return FloatVectorReductionOrchestrator.Reduce(workspace, evaluated, FloatReductionKind.Min);
+            return FloatVectorReductionOrchestrator.Reduce(workspace, source, FloatReductionKind.Min);
         }
 
         /// <summary>
@@ -374,10 +376,17 @@ public static class GpuBigFloatVectorLinqExtensions
         /// </summary>
         /// <param name="workspace">The GPU workspace used for evaluation.</param>
         /// <returns>A <see cref="GpuBigFloat"/> containing the average value.</returns>
+        /// <exception cref="InvalidOperationException">The sequence is empty (as in <c>System.Linq</c>).</exception>
         public GpuBigFloat Average(GpuWorkspace workspace)
         {
             ArgumentNullException.ThrowIfNull(source);
             ArgumentNullException.ThrowIfNull(workspace);
+
+            // The sum of nothing is 0; stop before dividing it by a count of 0.
+            if (source.Length == 0)
+            {
+                throw new InvalidOperationException("Sequence contains no elements");
+            }
 
             using var sum = source.Sum(workspace);
             var countWords = new uint[source.WordsPerElement];

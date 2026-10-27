@@ -218,6 +218,64 @@ internal sealed class GpuMacroArgumentRule : ISyntaxValidationRule<InvocationExp
                 invocation,
                 context.MethodSymbol.Name);
         }
+
+        // A body flattened into an enclosing body is checked with the statements of that body
+        if (call.HasBody &&
+            GpuCodeConstraints.TryGetSyncGridBody(invocation, out var body) &&
+            !SyncGridBody.IsFlattenedIntoEnclosingBody(invocation, context.SemanticModel))
+        {
+            CheckSyncGridBody(body, ref context);
+        }
+    }
+
+    // [WHY] A return of the body sets a done flag and jumps past its statement; the later statements run in guards. A
+    // goto across the gaps would skip the grid syncs and the guards, and a local that cannot be declared at the top of
+    // the body would disappear inside its guard (#626)
+    private static void CheckSyncGridBody(LambdaExpressionSyntax body, ref ValidationContext context)
+    {
+        var model = context.SemanticModel;
+        var statements = SyncGridBody.Flatten(body, model);
+        var gotos = ImmutableArray.CreateBuilder<GotoStatementSyntax>();
+        for (var i = 0; i < statements.Elements.Length; i++)
+        {
+            var node = statements.Elements[i].Node;
+            if (SyncGridBody.IsUnsplittable(node, model) && !statements.GetGuardBodies(i, model).IsEmpty)
+            {
+                context.ReportDiagnostic(
+                    GSharpDiagnostics.UnsupportedSyntax,
+                    node,
+                    GpuCodeConstraints.SyncGridUnsplittableDeclaration);
+            }
+
+            SyncGridBody.AddGotosLeaving(node, gotos);
+        }
+
+        foreach (var jump in gotos)
+        {
+            context.ReportDiagnostic(GSharpDiagnostics.UnsupportedSyntax, jump, GpuCodeConstraints.SyncGridGotoAcrossGaps);
+        }
+
+        // Defensive: the body is an Action, so C# rejects a return with a value as well
+        foreach (var element in statements.Elements)
+        {
+            if (!element.HasBodyReturn)
+            {
+                continue;
+            }
+
+            var nodes = element.Node.DescendantNodes(
+                static n => n is not (AnonymousFunctionExpressionSyntax or LocalFunctionStatementSyntax));
+            foreach (var node in nodes)
+            {
+                if (node is ReturnStatementSyntax { Expression: not null } returnWithValue)
+                {
+                    context.ReportDiagnostic(
+                        GSharpDiagnostics.UnsupportedSyntax,
+                        returnWithValue,
+                        GpuCodeConstraints.SyncGridReturnWithValue);
+                }
+            }
+        }
     }
 
     private void CheckUnrollHint(InvocationExpressionSyntax invocation, ref ValidationContext context)

@@ -77,6 +77,37 @@ public class BclIntrinsicMapBuilderTests
         Assert.True(missing.Count == 0, "No prelude declares: " + string.Join(", ", missing));
     }
 
+    // The user's assembly maps only the overloads whose parameter types all resolve and match one by one; an attribute
+    // of the same shape that is not BclIntrinsicMap maps nothing
+    [Theory]
+    [Category(TestCategory.Compiler)]
+    [Scenario(TestScenario.Boundary)]
+    [InlineData(Platform.X64, "unsigned long long int")]
+    [InlineData(Platform.X86, "unsigned int")]
+    public void UserAssemblyMappings_MapOnlyTheMatchingOverloads(Platform platform, string nativeSizedCast)
+    {
+        var source = RoslynTestUtility.ReadTestCase("Transpiler/BclIntrinsicMap/UserMappings.cs");
+        var compilation = RoslynTestUtility.CreateCompilation(source);
+        compilation = compilation.WithOptions(compilation.Options.WithPlatform(platform));
+        Assert.Empty(compilation.GetDiagnostics().Where(static d => d.Severity == DiagnosticSeverity.Error));
+
+        var map = BclIntrinsicMapBuilder.GetOrBuildMap(compilation);
+
+        var userMappings = map
+            .Where(static entry => entry.Value.CudaIntrinsicName.StartsWith("user_", StringComparison.Ordinal) ||
+                                   entry.Value.CudaIntrinsicName.StartsWith("fake_", StringComparison.Ordinal))
+            .Select(static entry => $"{entry.Key.ToDisplayString()} => {entry.Value.CudaIntrinsicName} ({entry.Value.CastFirstArgumentTo ?? "-"})")
+            .OrderBy(static line => line, StringComparer.Ordinal)
+            .ToArray();
+        Assert.Equal(
+            [
+                "System.Math.Abs(double) => user_fabs (-)",
+                "System.Math.Round(double) => user_round (-)",
+                $"System.Numerics.BitOperations.IsPow2(nint) => user_ispow2_nint ({nativeSizedCast})"
+            ],
+            userMappings);
+    }
+
     private static bool DeclaresIdentifier(string source, string identifier) =>
         Regex.IsMatch(source, $"(?<![A-Za-z0-9_]){Regex.Escape(identifier)}(?![A-Za-z0-9_])");
 
