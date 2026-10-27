@@ -212,6 +212,65 @@ public class UnsupportedConstructDiagnosticsTests
         Assert.Equal(8, diagnostics.Length);
     }
 
+    // c += a + b would call the target of + with c as the result and compute c = a + b; c += a has no call to expand into
+    [Theory]
+    [InlineData("Cpu")]
+    [InlineData("Cuda")]
+    [Scenario(TestScenario.SadPath)]
+    public async Task Test_OperatorMacroInCompoundAssignment_ReportsGsh0003(string dialect)
+    {
+        var diagnostics = await KernelDiagnostics.RunTestCaseAsync("Diagnostics/OperatorMacroUnsupportedForms.cu.cs", dialect);
+
+        Assert.Equal(
+            [(Analyzer, 67, 9, 67, 19), (Analyzer, 68, 9, 68, 15)],
+            diagnostics.Ranges(
+                GSharpDiagnostics.UnsupportedSyntax.Id,
+                "The compound assignment '+=' does not expand operator macros: give each operator macro a simple assignment of its own, as in 't = a + b; c = c + t;'"));
+    }
+
+    [Theory]
+    [InlineData("Cpu")]
+    [InlineData("Cuda")]
+    [Scenario(TestScenario.SadPath)]
+    public async Task Test_IncrementOperatorMacro_ReportsGsh0003(string dialect)
+    {
+        var diagnostics = await KernelDiagnostics.RunTestCaseAsync("Diagnostics/OperatorMacroUnsupportedForms.cu.cs", dialect);
+
+        Assert.Equal(
+            [(Analyzer, 78, 9, 78, 16)],
+            diagnostics.Ranges(GSharpDiagnostics.UnsupportedSyntax.Id, "Operator macro '++' is an increment or decrement operator"));
+    }
+
+    [Theory]
+    [InlineData("Cpu")]
+    [InlineData("Cuda")]
+    [Scenario(TestScenario.SadPath)]
+    public async Task Test_LiftedOperatorMacro_ReportsGsh0003(string dialect)
+    {
+        var diagnostics = await KernelDiagnostics.RunTestCaseAsync("Diagnostics/OperatorMacroUnsupportedForms.cu.cs", dialect);
+
+        Assert.Equal(
+            [(Analyzer, 89, 9, 89, 31)],
+            diagnostics.Ranges(GSharpDiagnostics.UnsupportedSyntax.Id, "Operator macro '+' is applied to nullable operands"));
+    }
+
+    [Theory]
+    [InlineData("Cpu")]
+    [InlineData("Cuda")]
+    [Scenario(TestScenario.SadPath)]
+    public async Task Test_GenericOperatorMacroTarget_IsNotACandidate(string dialect)
+    {
+        var diagnostics = await KernelDiagnostics.RunTestCaseAsync("Diagnostics/OperatorMacroUnsupportedForms.cu.cs", dialect);
+
+        Assert.Equal(
+            [(Analyzer, 101, 9, 101, 18)],
+            diagnostics.Ranges(
+                GSharpDiagnostics.UnsupportedSyntax.Id,
+                "Operator macro target 'FormOps.Mul' has no overload that takes (FormRef result, FormRef left, FormRef right): Mul(T, T, T): generic methods are not candidates"));
+        // The five forms above, and the type parameter T in the signature of Mul<T> (a generic device function, reported on its own)
+        Assert.Equal(6, diagnostics.Length);
+    }
+
     // StructSizeDiagnostics: SharedMemory<double>(5000) is 40000 bytes; 4096 doubles (exactly 32768 bytes) and 10000
     // bytes are not reported. ComprehensiveSpecKernel: SharedMemory<int>(10000); the dynamic size is not checked.
     [Theory]

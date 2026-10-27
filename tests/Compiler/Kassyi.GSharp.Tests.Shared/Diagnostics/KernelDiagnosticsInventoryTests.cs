@@ -47,6 +47,8 @@ public class KernelDiagnosticsInventoryTests
         "Diagnostics/OperatorMacroContext.cu.cs",
         // GSH0003 (operator macro overload: none applies, ambiguous, ref result, assignment target)
         "Diagnostics/OperatorMacroOverload.cu.cs",
+        // GSH0003 (operator macro forms that are not expanded: compound assignment, increment, lifted, generic target)
+        "Diagnostics/OperatorMacroUnsupportedForms.cu.cs",
         // GSH0003 (ForUnroll, SyncGrid), GSH0006, GSH0012
         "Analyzers/MacroArgumentSadPath.cs",
         // GSH0011

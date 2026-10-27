@@ -134,13 +134,14 @@ internal static class GpuOperatorMacroTranspiler
     /// <summary>
     /// The <c>[GpuOperatorMacro]</c> operator that the right side of <paramref name="assignment"/> calls, and the overload
     /// of its target that the call maps to. The analyzer reports a target that cannot be resolved (GSH0003) from the same
-    /// answer.
+    /// answer, and so are the forms an operator macro does not expand: a compound assignment whose operator or right
+    /// side is an operator macro, an increment or decrement, and a lifted (nullable) operator.
     /// </summary>
     /// <remarks>
     /// <para>
     /// The overload is chosen as C# overload resolution would choose it for a call with the operator's types (C# spec
     /// §12.6.4, Roslyn <c>OverloadResolution</c>), not by declaration order (#478): the result is the operator's return
-    /// type and the operands are its parameter types. A candidate is a static <c>[GpuDeviceFunction]</c>
+    /// type and the operands are its parameter types. A candidate is a static, non-generic <c>[GpuDeviceFunction]</c>
     /// method of that name that takes the result and the operands, optionally after a context of a value type. A value
     /// parameter takes an implicit conversion; a <c>ref</c>, <c>out</c>, <c>in</c> or <c>ref readonly</c> parameter
     /// takes only its own type, and only the result may be <c>ref</c> or <c>out</c>. Of the candidates that apply, the
@@ -160,16 +161,33 @@ internal static class GpuOperatorMacroTranspiler
     {
         macro = default;
         var operatorCall = UnwrapExpression(assignment.Right);
-        if (GetOperatorMethod(operatorCall, semanticModel) is not { } operatorMethod)
+        var (operatorMethod, isLifted, isIncrementOrDecrement) = GetOperator(operatorCall, semanticModel);
+        if (!assignment.IsKind(SyntaxKind.SimpleAssignmentExpression))
+        {
+            // c += a + b would become Add(c, a, b), which computes c = a + b; c += a has no call to become
+            if (GetMacroAttribute(operatorMethod) == null &&
+                GetMacroAttribute((semanticModel.GetSafeOperation(assignment) as ICompoundAssignmentOperation)?.OperatorMethod) == null)
+            {
+                return false;
+            }
+
+            macro = new OperatorMacro(operatorCall, null, false,
+                $"The compound assignment '{assignment.OperatorToken.Text}' does not expand operator macros: give each operator macro a simple assignment of its own, as in 't = a + b; c = c + t;'");
+            return true;
+        }
+
+        if (GetMacroAttribute(operatorMethod) is not { } macroAttr || operatorMethod == null)
         {
             return false;
         }
 
-        var macroAttr = operatorMethod.GetAttribute(KnownAttributes.GpuOperatorMacro);
-        if (macroAttr?.AttributeClass?.ContainingNamespace.IsCoreNamespace() != true ||
-            macroAttr.ConstructorArguments.Length < 2)
+        if (isIncrementOrDecrement || isLifted)
         {
-            return false;
+            var op = GetOperatorText(operatorCall);
+            macro = new OperatorMacro(operatorCall, null, false, isIncrementOrDecrement
+                ? $"Operator macro '{op}' is an increment or decrement operator, which assigns its operand and is not expanded; write the assignment with a binary operator macro"
+                : $"Operator macro '{op}' is applied to nullable operands (a lifted operator), which it does not expand; apply it to the values ('.Value')");
+            return true;
         }
 
         if (macroAttr.ConstructorArguments[0].Value is not INamedTypeSymbol targetType ||
@@ -242,12 +260,14 @@ internal static class GpuOperatorMacroTranspiler
         }
     }
 
-    // The user-defined operator that a binary or prefix operator expression calls
-    private static IMethodSymbol? GetOperatorMethod(ExpressionSyntax operatorCall, SemanticModel semanticModel)
+    // The user-defined operator that a binary, unary, increment or decrement expression calls, whether it is lifted to
+    // nullable operands, and whether it is an increment or decrement
+    private static (IMethodSymbol? Method, bool IsLifted, bool IsIncrementOrDecrement) GetOperator(
+        ExpressionSyntax operatorCall, SemanticModel semanticModel)
     {
-        if (operatorCall is not (BinaryExpressionSyntax or PrefixUnaryExpressionSyntax))
+        if (operatorCall is not (BinaryExpressionSyntax or PrefixUnaryExpressionSyntax or PostfixUnaryExpressionSyntax))
         {
-            return null;
+            return default;
         }
 
         var operation = semanticModel.GetSafeOperation(operatorCall);
@@ -258,11 +278,30 @@ internal static class GpuOperatorMacroTranspiler
 
         return operation switch
         {
-            IBinaryOperation binary => binary.OperatorMethod,
-            IUnaryOperation unary => unary.OperatorMethod,
-            _ => null
+            IBinaryOperation binary => (binary.OperatorMethod, binary.IsLifted, false),
+            IUnaryOperation unary => (unary.OperatorMethod, unary.IsLifted, false),
+            IIncrementOrDecrementOperation incrementOrDecrement =>
+                (incrementOrDecrement.OperatorMethod, incrementOrDecrement.IsLifted, true),
+            _ => default
         };
     }
+
+    // The [GpuOperatorMacro] of G# on <operatorMethod>, with its two arguments, or null
+    private static AttributeData? GetMacroAttribute(IMethodSymbol? operatorMethod) =>
+        operatorMethod?.GetAttribute(KnownAttributes.GpuOperatorMacro) is { } attribute &&
+        attribute.AttributeClass?.ContainingNamespace.IsCoreNamespace() == true &&
+        attribute.ConstructorArguments.Length >= 2
+            ? attribute
+            : null;
+
+    // +, ++ (the operator as written)
+    private static string GetOperatorText(ExpressionSyntax operatorCall) => operatorCall switch
+    {
+        BinaryExpressionSyntax binary => binary.OperatorToken.Text,
+        PrefixUnaryExpressionSyntax prefix => prefix.OperatorToken.Text,
+        PostfixUnaryExpressionSyntax postfix => postfix.OperatorToken.Text,
+        _ => string.Empty
+    };
 
     // The overload of <type>.<name> that a call with the operator's types (result, operands) selects, and whether it takes
     // a context; otherwise null, and <failure> completes "Operator macro target 'T.M' ..."
@@ -359,6 +398,12 @@ internal static class GpuOperatorMacroTranspiler
             !method.HasAttribute(KnownAttributes.GpuDeviceFunction))
         {
             reason = "not a static [GpuDeviceFunction] method";
+            return false;
+        }
+
+        if (method.IsGenericMethod)
+        {
+            reason = "generic methods are not candidates";
             return false;
         }
 

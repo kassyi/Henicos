@@ -110,6 +110,14 @@
 (267,9)-(267,18) GSH0003 analyzer: The syntax 'Operator macro target 'InOps.Add' has no overload that takes (ConversionValue result, ConversionValue left, ConversionValue right): Add(uint[], in uint[], uint[]): 'in' parameter 'left' takes only 'uint[]', not 'ConversionValue'' is not supported in GSharp GPU kernels
 (268,9)-(268,18) GSH0003 analyzer: The syntax 'Operator macro target 'RefReadOnlyOps.Add' has no overload that takes (ConversionValue result, ConversionValue left, ConversionValue right): Add(uint[], ref readonly uint[], uint[]): 'ref readonly' parameter 'left' takes only 'uint[]', not 'ConversionValue'' is not supported in GSharp GPU kernels
 
+## Diagnostics/OperatorMacroUnsupportedForms.cu.cs
+(19,28)-(19,29) GSH0003 analyzer: The syntax 'unsubstituted type parameter' is not supported in GSharp GPU kernels
+(67,9)-(67,19) GSH0003 analyzer: The syntax 'The compound assignment '+=' does not expand operator macros: give each operator macro a simple assignment of its own, as in 't = a + b; c = c + t;'' is not supported in GSharp GPU kernels
+(68,9)-(68,15) GSH0003 analyzer: The syntax 'The compound assignment '+=' does not expand operator macros: give each operator macro a simple assignment of its own, as in 't = a + b; c = c + t;'' is not supported in GSharp GPU kernels
+(78,9)-(78,16) GSH0003 analyzer: The syntax 'Operator macro '++' is an increment or decrement operator, which assigns its operand and is not expanded; write the assignment with a binary operator macro' is not supported in GSharp GPU kernels
+(89,9)-(89,31) GSH0003 analyzer: The syntax 'Operator macro '+' is applied to nullable operands (a lifted operator), which it does not expand; apply it to the values ('.Value')' is not supported in GSharp GPU kernels
+(101,9)-(101,18) GSH0003 analyzer: The syntax 'Operator macro target 'FormOps.Mul' has no overload that takes (FormRef result, FormRef left, FormRef right): Mul(T, T, T): generic methods are not candidates' is not supported in GSharp GPU kernels
+
 ## Analyzers/MacroArgumentSadPath.cs
 (5,14)-(5,41) GSH0036 analyzer: The class 'GEN_36_MacroArgumentSadPath' containing [GpuKernel] methods must be declared as partial to support source generation of contexts and launch methods.
 (14,26)-(14,31) GSH0012 analyzer: The argument 'count' of macro 'ForUnroll' must be a compile-time constant
