@@ -24,6 +24,8 @@ public interface IGpuBigFloatArithmetic
     /// <param name="value">The input floating-point operand to normalize.</param>
     /// <param name="resultSig">The memory handle where the normalized significand limbs will be written.</param>
     /// <returns>A <see cref="GpuFloatResult"/> containing the normalized exponent and sign flag.</returns>
+    /// <exception cref="OverflowException">The exponent of the normalized value, the input exponent minus the shift that
+    /// moves the top bit to the top of <paramref name="resultSig"/>, does not fit in <see cref="int"/>.</exception>
     GpuFloatResult Normalize(
         ref GpuBigIntExecutionContext context,
         in GpuFloatOperand value,

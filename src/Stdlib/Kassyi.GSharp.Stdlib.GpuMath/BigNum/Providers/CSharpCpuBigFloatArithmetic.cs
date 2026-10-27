@@ -88,7 +88,8 @@ public sealed class CSharpCpuBigFloatArithmetic : IGpuBigFloatArithmetic
             ToWords(vNormalized, resultWords.AsSpan(0, resultSig.NumWords), resultSig.NumWords);
             context.GpuWorkspace.Provider.CopyHostToDevice(resultSig.DevicePointer, resultWords, resultSig.NumWords, context.Stream);
 
-            return new GpuFloatResult(value.Exponent - shift, value.IsNegative);
+            // The exponent of the normalized value must fit in int (#661 §4.10).
+            return new GpuFloatResult(checked(value.Exponent - shift), value.IsNegative);
         }
         finally
         {

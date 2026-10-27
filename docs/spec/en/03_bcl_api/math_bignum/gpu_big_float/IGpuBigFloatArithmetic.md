@@ -159,6 +159,11 @@ GpuFloatResult Normalize(
     GpuBigIntMemoryHandle resultSig);
 ```
 
+#### Exceptions
+
+`OverflowException`  
+The exponent of the normalized value (the input exponent minus the shift that moves the top bit to the top of `resultSig`) does not fit in `int`.
+
 ## Pow(ref GpuBigIntExecutionContext, in GpuFloatOperand, in GpuFloatOperand, GpuBigIntMemoryHandle)
 
 Raises an arbitrary-precision floating-point base to an arbitrary-precision floating-point exponent ($x^y$).

@@ -58,7 +58,8 @@ public sealed class GSharpKernelFloatProvider(IGpuBigFloatArithmetic fallbackStr
             return new GpuFloatResult(0, false);
         }
 
-        return new GpuFloatResult(value.Exponent - shift, value.IsNegative);
+        // The exponent of the normalized value must fit in int (#661 §4.10).
+        return new GpuFloatResult(checked(value.Exponent - shift), value.IsNegative);
     }
 
     /// <inheritdoc/>

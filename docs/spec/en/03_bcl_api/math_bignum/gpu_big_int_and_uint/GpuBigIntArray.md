@@ -182,4 +182,5 @@ Console.WriteLine($"Signed array allocated: Length={signedArray.Length}, Slice L
 
 ### BCL API > Math Bignum
 - [GpuBigUIntArray Struct](GpuBigUIntArray.md)
+- [GpuBigFloatArray Struct](../gpu_big_float/GpuBigFloatArray.md)
 - [Arbitrary-Precision Integers (GpuBigInt)](00_index.md)

@@ -103,6 +103,15 @@ public readonly struct GpuBigFloatArray : IDisposable
     /// </summary>
     /// <param name="index">The target element index.</param>
     /// <param name="value">The floating-point value to store.</param>
+    /// <exception cref="OverflowException">The significand of <paramref name="value"/> is wider than the element and the
+    /// exponent of the rounded value does not fit in <see cref="int"/>.</exception>
+    /// <remarks>
+    /// A significand of <see cref="WordsPerElement"/> words or fewer is copied as it is (zero-extended), so the element
+    /// holds the value exactly. A wider significand is rounded toward zero to <c>32·WordsPerElement</c> bits, like the
+    /// other <see cref="GpuBigFloat"/> operations (<see cref="IGpuBigFloatArithmetic.Normalize"/>): its top bit moves to
+    /// the top of the element, the bits below the element are dropped and the exponent grows by the same shift; zero is
+    /// stored as positive zero. Storing a wide value reads its bit length back to the host once.
+    /// </remarks>
     public void SetElement(int index, GpuBigFloat value)
     {
         var destSig = Significands.GetElement(index);
@@ -112,22 +121,42 @@ public readonly struct GpuBigFloatArray : IDisposable
         var workspace = Workspace;
         var provider = workspace.Provider;
         var stream = workspace.Stream;
+        var valueWords = value.UFloat.Significand.NumWords;
 
-        if (value.UFloat.Significand.NumWords < WordsPerElement)
+        int exponent;
+        bool isNegative;
+        if (valueWords <= WordsPerElement)
         {
-            provider.ClearMemoryAsync(destSig.DevicePointer, WordsPerElement, stream);
-        }
+            if (valueWords < WordsPerElement)
+            {
+                provider.ClearMemoryAsync(destSig.DevicePointer, WordsPerElement, stream);
+            }
 
-        var wordsToCopy = Math.Min(value.UFloat.Significand.NumWords, WordsPerElement);
-        provider.CopyDeviceToDevice(destSig.DevicePointer, value.UFloat.Significand.DevicePointer, wordsToCopy, stream);
+            provider.CopyDeviceToDevice(destSig.DevicePointer, value.UFloat.Significand.DevicePointer, valueWords, stream);
+            exponent = value.UFloat.Exponent;
+            isNegative = value.IsNegative;
+        }
+        else
+        {
+            // Round toward zero to the element width (#629), with the arithmetic the expression visitor picks.
+            var arithmetic = workspace.Engine == GpuExecutionEngine.GSharpAot
+                ? GSharpKernelFloatProvider.Instance
+                : (IGpuBigFloatArithmetic)CSharpCpuBigFloatArithmetic.Instance;
+            var context = new GpuBigIntExecutionContext(workspace, workspace.MemoryManager,
+                new LegacyProviderArithmeticAdapter(), stream);
+            var operand = GpuFloatOperand.From(value);
+            var rounded = arithmetic.Normalize(ref context, in operand, destSig.Handle);
+            exponent = rounded.Exponent;
+            isNegative = rounded.IsNegative;
+        }
 
         var meta = ArrayPool<uint>.Shared.Rent(1);
         try
         {
-            meta[0] = unchecked((uint)value.UFloat.Exponent);
+            meta[0] = unchecked((uint)exponent);
             provider.CopyHostToDevice(destExp.DevicePointer, meta, 1, stream);
 
-            meta[0] = value.IsNegative ? 1u : 0u;
+            meta[0] = isNegative ? 1u : 0u;
             provider.CopyHostToDevice(destSign.DevicePointer, meta, 1, stream);
         }
         finally
