@@ -11,16 +11,13 @@
             __gsharp_ctx->tid = ThreadIndex.X;
             __gsharp_ctx->buffer = new SharedMemory<int>(4);
             __gsharp_ctx->buffer[__gsharp_ctx->tid] = __gsharp_ctx->tid + 1;
-            goto case 1;
-        }
-
-        case 1:
-        {
-            __gsharp_state = 2;
+            sync:
+                ;
+            __gsharp_state = 1;
             return;
         }
 
-        case 2:
+        case 1:
         {
             output[__gsharp_ctx->tid] = __gsharp_ctx->buffer[(__gsharp_ctx->tid + 1) % 4];
             __gsharp_state = -1;

@@ -15,6 +15,27 @@ public class UserLabelTests : TranspilerTestBase
     [Scenario(TestScenario.HappyPath)]
     public void Test_LabeledShuffle_RunsAgainOnEveryGoto() => UserLabelScenarios.LabeledShuffleLoop(s_runNative);
 
+    [SkippableTheory]
+    [Scenario(TestScenario.HappyPath)]
+    [InlineData(3)]
+    [InlineData(0)]
+    public void Test_LabelLoop_KeepsLocalsDeclaredBeforeTheLabel(int rounds) =>
+        UserLabelScenarios.LabelLoop(s_runNative, rounds);
+
+    [SkippableTheory]
+    [Scenario(TestScenario.HappyPath)]
+    [InlineData(0)]
+    [InlineData(1)]
+    public void Test_BranchExitLabel_GotoFromLaterStateReachesLabel(int flag) =>
+        UserLabelScenarios.BranchExitLabel(s_runNative, flag);
+
+    [SkippableTheory]
+    [Scenario(TestScenario.Boundary)]
+    [InlineData(0)]
+    [InlineData(1)]
+    public void Test_ChainedLabel_LabelSplitByAnotherSplitLabel(int flag) =>
+        UserLabelScenarios.ChainedLabel(s_runNative, flag);
+
     [SkippableFact]
     [Scenario(TestScenario.HappyPath)]
     public void Test_LabeledBarrier_SeparatesWritesFromReads()

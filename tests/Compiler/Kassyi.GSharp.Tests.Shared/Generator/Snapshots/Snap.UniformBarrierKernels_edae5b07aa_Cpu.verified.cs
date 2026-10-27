@@ -892,18 +892,14 @@ case 0:
 __gsharp_switch_1_state_0:
 {
 __gsharp_id_0_buffer[0]=1;
-goto __gsharp_switch_1_state_1;
-goto __gsharp_switch_1_state_1;
+goto __gsharp_id_1_LabelInSamePhase;
+__gsharp_id_1_LabelInSamePhase:
+__gsharp_id_0_buffer[0]=2;
+__gsharp_state=1;
+return;
 }
 case 1:
 __gsharp_switch_1_state_1:
-{
-__gsharp_id_0_buffer[0]=2;
-__gsharp_state=2;
-return;
-}
-case 2:
-__gsharp_switch_1_state_2:
 {
 __gsharp_id_0_buffer[0]=3;
 __gsharp_state=-1;
@@ -972,18 +968,14 @@ switch (__gsharp_ctx.__gsharp_state)
 case 0:
 {
 buffer[0] = 1;
-goto case 1;
-goto case 1;
-}
-
-case 1:
-{
+goto LabelInSamePhase;
+LabelInSamePhase:
 buffer[0] = 2;
-__gsharp_ctx.__gsharp_state = 2;
+__gsharp_ctx.__gsharp_state = 1;
 return;
 }
 
-case 2:
+case 1:
 {
 buffer[0] = 3;
 __gsharp_ctx.__gsharp_state = -1;

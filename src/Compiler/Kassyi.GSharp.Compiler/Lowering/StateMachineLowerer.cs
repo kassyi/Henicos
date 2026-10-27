@@ -9,7 +9,14 @@ namespace Kassyi.GSharp.Compiler.Lowering;
 /// The semantic model of the method's syntax tree, used to key user labels and <c>goto</c> targets by symbol and region
 /// (<see cref="DeclarationKey"/>).
 /// </param>
-public class StateMachineLowerer(bool isDeviceFunction = false, SemanticModel? semanticModel = null)
+/// <param name="stateLabels">
+/// The top-level labels that start a state (<see cref="StateLabelPlanner.FindStateLabels"/>), or <see langword="null"/>
+/// to find them in the lowered block. The pipeline passes the set it gave <see cref="ContextHoister"/>.
+/// </param>
+public class StateMachineLowerer(
+    bool isDeviceFunction = false,
+    SemanticModel? semanticModel = null,
+    HashSet<DeclarationKey>? stateLabels = null)
 {
     private readonly ImmutableArray<InvocationExpressionSyntax>.Builder _callSites =
         ImmutableArray.CreateBuilder<InvocationExpressionSyntax>();
@@ -26,12 +33,14 @@ public class StateMachineLowerer(bool isDeviceFunction = false, SemanticModel? s
         var state = 0;
         LabeledStatementSyntax? sectionLabel = null;
 
-        // 1. Pass 1: Identify all state boundaries (barriers AND labels) and assign sequential states.
+        // 1. Pass 1: Identify all state boundaries (barriers and the labels that start a state) and assign sequential
+        // states. Any other label stays a label inside its state.
+        var stateLabelKeys = stateLabels ?? StateLabelPlanner.FindStateLabels(block, semanticModel);
         var labelStates = new Dictionary<DeclarationKey, int>();
         int simulatedState = 0;
         foreach (var stmt in statements)
         {
-            if (stmt is LabeledStatementSyntax labeled)
+            if (stmt is LabeledStatementSyntax labeled && isStateLabel(labeled))
             {
                 simulatedState++;
                 labelStates[LoweringIdentity.ForDeclaration(labeled, semanticModel)] = simulatedState;
@@ -46,7 +55,7 @@ public class StateMachineLowerer(bool isDeviceFunction = false, SemanticModel? s
         // 2. Pass 2: Generate switch cases.
         foreach (var stmt in statements)
         {
-            if (stmt is LabeledStatementSyntax labeled)
+            if (stmt is LabeledStatementSyntax labeled && isStateLabel(labeled))
             {
                 // A label boundary requires falling through to the next state case without yielding.
                 commitState(state + 1, isBarrier: false);
@@ -142,6 +151,9 @@ public class StateMachineLowerer(bool isDeviceFunction = false, SemanticModel? s
         );
 
         return SyntaxFactory.Block(switchStmt);
+
+        bool isStateLabel(LabeledStatementSyntax labeled) =>
+            stateLabelKeys.Contains(LoweringIdentity.ForDeclaration(labeled, semanticModel));
 
         void commitState(int nextState, bool isBarrier)
         {

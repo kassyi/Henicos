@@ -73,6 +73,7 @@ checked the namespace, suppress it with `#pragma warning disable HNT0003 // <the
 | Expand a `Gpu.ForUnroll` statement that contains a phase barrier into a `for` loop before state machine lowering | `PreLoweringExpander.Expand` | unrolling barrier-containing `ForUnroll` bodies at the emission stage on state-machine targets |
 | Turn the lambda of `Gpu.ForUnroll` / `Gpu.GridStrideLoop` into a loop body: replace the loop parameter (and the `ref ctx` parameter) while a nested lambda or local function of the same name hides it | `MacroLambdaSubstituter` (used by `PreLoweringExpander` and `ManagedExecutionRewriter`) | a second identifier rewriter with its own shadowing rules |
 | Detach a label from a statement that holds a split point (`L: <stmt>` becomes `L: ; <stmt>`) before the other lowering passes | `LabeledStatementSplitter.Split` | handling a labeled statement separately in each pass (`WarpInstructionRewriter`, `BranchRewriter`, `StateMachineLowerer`) |
+| Which top-level labels of a flattened body start a state of the CPU state machine (a lowering label, a label reached by a `goto` in another state, a name used by two labels) | `StateLabelPlanner.FindStateLabels` | treating every label as a state boundary, or deciding it again in `ContextHoister` / `StateMachineLowerer` |
 
 ## 3. Emitting code
 

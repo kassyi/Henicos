@@ -35,9 +35,70 @@ public class UserLabelLoweringTests : StateMachineTestBase
     public Task Lower_LabeledBarrier_SplitsState() =>
         VerifyPipelineLowerFromTestCase("LabeledBarrier.cs", inspect: static (lowered, _) =>
         {
+            // The write, the first suspension (the barrier) and the read, in this order
             var text = lowered.LoweredBody.NormalizeWhitespace().ToFullString();
-            Assert.Contains("__gsharp_state = 2;", text);
-            Assert.DoesNotContain("Gpu.SyncThreads()", text);
+            var write = text.IndexOf("buffer[__gsharp_ctx->tid] =", StringComparison.Ordinal);
+            var suspend = text.IndexOf("return;", StringComparison.Ordinal);
+            var read = text.IndexOf("output[__gsharp_ctx->tid] =", StringComparison.Ordinal);
+            Assert.True(write >= 0 && write < suspend && suspend < read, text);
+            Assert.DoesNotContain("SyncThreads", text);
+        });
+
+    // No goto reaches the label from another state: one state, and the label and its goto stay as they are
+    [Fact]
+    [Scenario(TestScenario.HappyPath)]
+    public Task Lower_LabelLoop_StaysInOneState() =>
+        VerifyPipelineLowerFromTestCase("LabelLoop.cs", inspect: static (lowered, _) =>
+        {
+            var text = lowered.LoweredBody.NormalizeWhitespace().ToFullString();
+            Assert.DoesNotContain("case 1:", text);
+            Assert.Contains("loop:", text);
+            Assert.Contains("goto loop;", text);
+        });
+
+    [Fact]
+    [Scenario(TestScenario.HappyPath)]
+    public Task Managed_LabelLoop_StaysInOneState() =>
+        VerifyManagedPipelineLowerFromTestCase("LabelLoop.cs", inspect: static (_, fields, body) =>
+        {
+            Assert.Empty(fields);
+            Assert.Contains("goto loop;", body.ToFullString());
+        });
+
+    [Fact]
+    [Scenario(TestScenario.HappyPath)]
+    public Task Lower_BranchExitLabel_GotoBecomesGotoCase() =>
+        VerifyPipelineLowerFromTestCase("BranchExitLabel.cs", inspect: static (lowered, _) =>
+        {
+            var text = lowered.LoweredBody.NormalizeWhitespace().ToFullString();
+            Assert.DoesNotContain("goto done;", text);
+            Assert.DoesNotContain("done:", text);
+        });
+
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public Task Lower_ChainedLabel_BothLabelsStartStates() =>
+        VerifyPipelineLowerFromTestCase("ChainedLabel.cs", inspect: static (lowered, _) =>
+        {
+            var text = lowered.LoweredBody.NormalizeWhitespace().ToFullString();
+            Assert.DoesNotContain("goto a;", text);
+            Assert.DoesNotContain("goto b;", text);
+            Assert.DoesNotContain(" a:", text);
+            Assert.DoesNotContain(" b:", text);
+        });
+
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public Task Managed_ChainedLabel_BothLabelsStartStates() =>
+        VerifyManagedPipelineLowerFromTestCase("ChainedLabel.cs");
+
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public Task Lower_SameNameLabel_BothLabelsStartStates() =>
+        VerifyPipelineLowerFromTestCase("SameNameLabel.cs", inspect: static (lowered, _) =>
+        {
+            var text = lowered.LoweredBody.NormalizeWhitespace().ToFullString();
+            Assert.DoesNotContain("done:", text);
         });
 
     [Fact]

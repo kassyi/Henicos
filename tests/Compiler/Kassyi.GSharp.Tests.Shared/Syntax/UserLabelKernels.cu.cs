@@ -30,6 +30,68 @@ public static partial class UserLabelKernels
         data[tid] = acc;
     }
 
+    // A label without a barrier: the locals declared before it stay in scope after it
+    [GpuKernel]
+    public static void LabelLoopKernel(int[] data, int rounds)
+    {
+        int tid = ThreadIndex.X;
+        int acc = 0;
+        int i = 0;
+    loop:
+        if (i < rounds)
+        {
+            acc += data[tid];
+            i++;
+            goto loop;
+        }
+
+        data[tid] = acc;
+    }
+
+    // The goto is in a later state than its label (after the barrier), so the label must start a state
+    [GpuKernel]
+    public static void BranchExitLabelKernel(int[] data, int flag)
+    {
+        int tid = ThreadIndex.X;
+        int value = data[tid];
+        if (flag != 0)
+        {
+            Gpu.SyncThreads();
+            value += 1;
+            goto done;
+        }
+
+        value += 10;
+    done:
+        data[tid] = value * 2;
+    }
+
+    // On the first look b and its goto are in one state; once a starts a state, the goto b is in a later state than b
+    [GpuKernel]
+    public static void ChainedLabelKernel(int[] data, int flag)
+    {
+        int tid = ThreadIndex.X;
+        int x = data[tid];
+        if (flag != 0)
+        {
+            Gpu.SyncThreads();
+            x += 100;
+            goto a;
+        }
+
+        x += 1;
+    b:
+        x += 2;
+    a:
+        x += 3;
+        if (x < 20)
+        {
+            goto b;
+        }
+
+        data[tid] = x;
+    }
+
 #pragma warning disable CS0164 // The label under test has no goto
     // The barrier under the label still separates the write of every thread from the reads of its neighbour
     [GpuKernel]

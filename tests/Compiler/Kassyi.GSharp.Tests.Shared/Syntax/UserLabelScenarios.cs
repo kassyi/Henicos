@@ -35,6 +35,75 @@ internal static class UserLabelScenarios
         }
     }
 
+    public static void LabelLoop(Action<Action> run, int rounds)
+    {
+        var data = CreateSequence();
+
+        run(() => UserLabelKernels.LaunchLabelLoopKernel(data, rounds, blockDimX: WarpSize));
+
+        for (int i = 0; i < WarpSize; i++)
+        {
+            int expected = 0;
+            for (int round = 0; round < rounds; round++)
+            {
+                expected += i;
+            }
+
+            Assert.Equal(expected, data[i]);
+        }
+    }
+
+    public static void BranchExitLabel(Action<Action> run, int flag)
+    {
+        var data = CreateSequence();
+
+        run(() => UserLabelKernels.LaunchBranchExitLabelKernel(data, flag, blockDimX: WarpSize));
+
+        for (int i = 0; i < WarpSize; i++)
+        {
+            Assert.Equal((i + (flag != 0 ? 1 : 10)) * 2, data[i]);
+        }
+    }
+
+    public static void ChainedLabel(Action<Action> run, int flag)
+    {
+        var data = CreateSequence();
+
+        run(() => UserLabelKernels.LaunchChainedLabelKernel(data, flag, blockDimX: WarpSize));
+
+        for (int i = 0; i < WarpSize; i++)
+        {
+            // The kernel's control flow in plain C#
+            int x = i;
+            bool fromA = flag != 0;
+            if (fromA)
+            {
+                x += 100;
+            }
+            else
+            {
+                x += 1;
+            }
+
+            while (true)
+            {
+                if (!fromA)
+                {
+                    x += 2;
+                }
+
+                fromA = false;
+                x += 3;
+                if (x >= 20)
+                {
+                    break;
+                }
+            }
+
+            Assert.Equal(x, data[i]);
+        }
+    }
+
     public static void LabeledBarrier(Action<Action> run)
     {
         var output = new int[4];
@@ -42,5 +111,16 @@ internal static class UserLabelScenarios
         run(() => UserLabelKernels.LaunchLabeledBarrierKernel(output, blockDimX: 4));
 
         Assert.Equal([2, 3, 4, 1], output);
+    }
+
+    private static int[] CreateSequence()
+    {
+        var data = new int[WarpSize];
+        for (int i = 0; i < WarpSize; i++)
+        {
+            data[i] = i;
+        }
+
+        return data;
     }
 }
