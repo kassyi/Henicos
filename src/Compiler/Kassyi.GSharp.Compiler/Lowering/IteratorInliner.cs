@@ -203,7 +203,9 @@ internal static class IteratorInliner
 
     /// <summary>
     /// Returns the default argument expression for an omitted optional iterator parameter, preserving original-span
-    /// annotations when declared in source.
+    /// annotations when declared in source: the default clause, or else the argument of
+    /// <c>[DefaultParameterValue(x)]</c>. Either one binds through its annotation, so <c>float.NaN</c> reaches the
+    /// constant field path; an expression built from the value would be outside the compilation and bind to nothing.
     /// </summary>
     public static ExpressionSyntax GetDefaultArgumentExpression(
         IParameterSymbol parameter,
@@ -214,7 +216,51 @@ internal static class IteratorInliner
             return defaultSyntax;
         }
 
+        if (parameter.GetAttribute(KnownAttributes.DefaultParameterValue)?.ApplicationSyntaxReference is { } reference &&
+            FindAttributeArgument(annotatedParamSyntax, reference.Span) is { } attributeArgument)
+        {
+            return attributeArgument;
+        }
+
         return ArgumentMatchingHelper.CreateDefaultArgument(parameter);
+    }
+
+    // The first argument of the attribute of <parameterSyntax> whose original span is <span>
+    private static ExpressionSyntax? FindAttributeArgument(ParameterSyntax? parameterSyntax, TextSpan span)
+    {
+        if (parameterSyntax is null)
+        {
+            return null;
+        }
+
+        foreach (var list in parameterSyntax.AttributeLists)
+        {
+            foreach (var attribute in list.Attributes)
+            {
+                if (HasOriginalSpan(attribute, span))
+                {
+                    return attribute.ArgumentList is { Arguments: [var first, ..] } ? first.Expression : null;
+                }
+            }
+        }
+
+        return null;
+    }
+
+    // GetAnnotations is a lazy IEnumerable, which the embedded StackLinq does not take
+    private static bool HasOriginalSpan(SyntaxNode node, TextSpan span)
+    {
+        foreach (var annotation in node.GetAnnotations(LoweringAnnotations.OriginalSpanAnnotationKind))
+        {
+            if (LoweringAnnotations.TryParseOriginalSpanData(annotation.Data, out var start, out var length, out _, out _) &&
+                start == span.Start &&
+                length == span.Length)
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private static void EmitDirectCallParameterLocals(

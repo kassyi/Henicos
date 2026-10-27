@@ -1,6 +1,13 @@
 #include <cooperative_groups.h>
 #include <mma.h>
+#include <math_constants.h>
 namespace cg = cooperative_groups;
+
+// NaN and infinity: a C# constant such as float.NaN has no C++ literal (ConstexprLiteral)
+#define __gsharp_nan_f CUDART_NAN_F
+#define __gsharp_inf_f CUDART_INF_F
+#define __gsharp_nan_d CUDART_NAN
+#define __gsharp_inf_d CUDART_INF
 
 // --- Standard Types ---
 template <typename T>

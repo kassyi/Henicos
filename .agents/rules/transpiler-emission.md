@@ -51,7 +51,7 @@ Conditional text, generated-file headers and the name helpers are listed in
 ## 3. Dense, Left-Aligned Output
 
 1. **Zero indentation**: All generated lines (including `spc.AddSource` outputs) are fully left-aligned.
-2. **No decorative spacing**: do not add spaces, alignment or blank lines only for looks. Expression operators are written
+2. **No decorative spacing**: do not add spaces, alignment or blank lines only for looks. The one space the output needs is between an operator that ends in `-` or `+` and an operand that begins with the same sign (`x- -y`, not `x--y`); `OperatorSpacing` writes it. Expression operators are written
    as they are (`Append(op)`, giving `a+b`); declarations keep `int x = 1;`. Do not respace existing output: the byte
    savings are negligible and every snapshot would change.
 
