@@ -14,6 +14,11 @@ import { fileURLToPath } from "url";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
+if (process.argv.includes("--help")) {
+    console.log("usage: node scripts/agent/update_usings.js\nPromotes using directives used in 3+ files of src/ to GlobalUsings.cs and rewrites those files.");
+    process.exit(0);
+}
+
 // =============================================================================
 // Configurations & CLI Arguments
 // =============================================================================

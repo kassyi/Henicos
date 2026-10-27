@@ -1,6 +1,11 @@
 const fs = require('fs');
 const path = require('path');
 
+if (process.argv.includes('--help')) {
+    console.log('usage: node scripts/agent/sync-comprehensive-spec.js\nCopies the comprehensive example kernel and its Cuda snapshot into docs/spec/en/02_architecture/03_comprehensive_example.md.');
+    process.exit(0);
+}
+
 const repoRoot = path.join(__dirname, '..', '..');
 const specFilePath = path.join(repoRoot, 'docs', 'spec', 'en', '02_architecture', '03_comprehensive_example.md');
 const sourceFile = path.join(repoRoot, 'tests', 'Compiler', 'Kassyi.GSharp.Tests.Shared', 'TestCases', 'ComprehensiveSpecKernel.cu.cs');

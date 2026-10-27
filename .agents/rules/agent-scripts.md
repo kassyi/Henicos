@@ -1,7 +1,8 @@
 # Agent Scripts (`scripts/`)
 
-Every script under `scripts/` and `.agents/skills/*/scripts/` is run by AI agents, and some agents (Gemini-family models)
-cannot run bash or PowerShell. Write them so that any agent can run them.
+Every script under `scripts/agent/` and `.agents/skills/*/scripts/` is run by AI agents, and some agents (Gemini-family models)
+cannot run bash or PowerShell. Write them so that any agent can run them. The scripts under `scripts/human/` are run by people,
+but follow the same language and convention rules (§1, §3).
 
 ## 1. Language
 
@@ -17,7 +18,16 @@ cannot run bash or PowerShell. Write them so that any agent can run them.
   [helpers.md](../skills/gsharp-transpiler-guidelines/references/helpers.md) there as well.
 - `justfile` recipes may stay shell; they call the scripts above.
 
-## 2. Conventions
+## 2. Folders
+
+- `scripts/agent/`: checks and tools that an agent uses inside its own procedures (internal-name check, diagnostics registry,
+  spec sync, the GPU lock).
+- `scripts/human/`: what a person runs to prepare the development environment, in CI, or through a `just` recipe. Anything
+  that a `just` recipe calls goes here.
+- A new script goes in the folder of its caller. A script that both an agent procedure and a `just` recipe call is a `just`
+  recipe's script, so it goes in `human/`.
+
+## 3. Conventions
 
 - Resolve the repository root from the script location (`path.resolve(__dirname, '..')`), not from the current directory.
 - Options are `--kebab-case`; support `--help`. Exit with a non-zero code on failure.
@@ -25,7 +35,7 @@ cannot run bash or PowerShell. Write them so that any agent can run them.
 - Never change a file's line endings or BOM when rewriting it.
 - Write temporary output under `tmp/` or the agent's scratchpad, never in the repository root.
 
-## 3. Catalog
+## 4. Catalog
 
 | Command | Purpose |
 | ----- | ----- |
@@ -37,6 +47,7 @@ cannot run bash or PowerShell. Write them so that any agent can run them.
 | `node scripts/agent/format-markdown-table.js [path]` | Compacts Markdown tables (default `docs/spec`) |
 | `node scripts/agent/sync-comprehensive-spec.js` | Syncs the comprehensive example in the spec with its kernel and snapshot |
 | `node scripts/agent/update_usings.js` | Promotes `using` directives used in 3+ files to `GlobalUsings.cs` |
+| `node scripts/agent/gpu-lock.js [--poll-seconds <n>] [--timeout-minutes <n>] -- "<command>"` | Runs the command while holding the shared GPU lock `<main checkout>/tmp/gpu-test-lock` (the same for every worktree); waits while another run holds it, shows the owner on a timeout, releases only a lock it created, also on Ctrl+C |
 | `node .agents/skills/gsharp-transpiler-guidelines/scripts/check-helpers.js` | Checks that the helper catalog names only existing members |
 | `dotnet run --project src/Compiler/Kassyi.GSharp.Compiler.Generators -- demangle <log> [symbols]` | Turns `__gsharp_*` names in a log back into C# names (`just gsharp-demangle`) |
 | `dotnet run tools/collect-env/collect-env.cs [--json] [--output <file>]` | Prints the bug-report environment (OS, GPU, CUDA, host C++, .NET, checkout) with no user name, host name, serial or profile path (`just env-info`). `/issue.prompt` Step 2 runs it for bug reports |
