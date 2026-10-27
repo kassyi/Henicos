@@ -127,6 +127,12 @@ public readonly struct GpuBigIntMemoryHandle : IEquatable<GpuBigIntMemoryHandle>
                 ThrowFreed();
             }
 
+            // A CUDA graph being captured records the pointer; it checks before each launch that the handle is alive
+            if (Buffer.Manager is DefaultGpuMemoryManager manager)
+            {
+                manager.ObserveCaptured(this);
+            }
+
             return IntPtr.Add(Buffer.Pointer, WordOffset * 4);
         }
     }

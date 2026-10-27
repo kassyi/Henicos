@@ -50,6 +50,13 @@ public class GpuWorkspace : IGpuResourceScope
     /// <summary>
     /// Gets the dedicated CUDA Stream for this context, used for operations and CUDA Graph capture.
     /// </summary>
+    /// <remarks>
+    /// A buffer freed while this stream is captured stays out of the workspace pool, because the graph keeps using it.
+    /// A capture started by <c>GpuBigIntExpr.CompileToGraph</c> hands such buffers to its graph, which returns them when it
+    /// is disposed. A capture started directly on this stream cannot be tracked: buffers freed during it stay parked until
+    /// the workspace is disposed, and allocations during it come only from the pool. A capture runs on one thread and
+    /// does not fork this stream into others.
+    /// </remarks>
     public IntPtr Stream
     {
         get;

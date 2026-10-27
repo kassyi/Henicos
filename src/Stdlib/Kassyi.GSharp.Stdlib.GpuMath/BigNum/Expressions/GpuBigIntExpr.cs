@@ -115,14 +115,24 @@ public readonly struct GpuBigIntExpr
     /// </summary>
     /// <param name="destination">The pre-allocated GPU buffer to store the evaluated magnitude.</param>
     /// <returns>A new <see cref="GpuBigInt"/> instance wrapping the destination buffer with the evaluated sign.</returns>
-    public GpuBigInt Evaluate(GpuBigUInt destination) => Node.Evaluate(destination.Workspace, destination);
+    /// <exception cref="InvalidOperationException">The expression has been compiled into a CUDA graph that is alive.</exception>
+    public GpuBigInt Evaluate(GpuBigUInt destination)
+    {
+        GraphOwnership.ThrowIfOwned(Node);
+        return Node.Evaluate(destination.Workspace, destination);
+    }
 
     /// <summary>
     /// Evaluates this signed expression into a newly rented temporary GPU buffer.
     /// </summary>
     /// <param name="workspace">The GPU workspace used for temporary buffer allocation.</param>
     /// <returns>A new <see cref="GpuBigInt"/> instance wrapping the temporary buffer with the evaluated sign.</returns>
-    public GpuBigInt Evaluate(GpuWorkspace workspace) => Node.Evaluate(workspace);
+    /// <exception cref="InvalidOperationException">The expression has been compiled into a CUDA graph that is alive.</exception>
+    public GpuBigInt Evaluate(GpuWorkspace workspace)
+    {
+        GraphOwnership.ThrowIfOwned(Node);
+        return Node.Evaluate(workspace);
+    }
 
     /// <summary>
     /// Compiles this expression tree into an executable CUDA Graph, eliminating launch overhead for repeated executions.
@@ -131,54 +141,45 @@ public readonly struct GpuBigIntExpr
     /// <param name="workspace">The GPU workspace.</param>
     /// <param name="targetResult">An optional pre-allocated buffer for the final result.</param>
     /// <returns>An executable graph instance that can be launched repeatedly.</returns>
-    public GpuBigIntExecutableGraph CompileToGraph(GpuWorkspace workspace, GpuBigUInt? targetResult = null)
-    {
-        // 1. Warm-up execution to trigger all lazy memory allocations and JIT compilation
-        // before graph capture begins, otherwise cuMemAlloc invalidates the stream.
-        try
-        {
-            var warmupResult = Node.Evaluate(workspace, targetResult);
-            if (!targetResult.HasValue)
-            {
-                // We don't need the warmup result if it's dynamically allocated
-                warmupResult.Dispose();
-            }
-        }
-        catch (Exception ex)
-        {
-            throw new InvalidOperationException("Failed during warmup execution for CUDA Graph capture.", ex);
-        }
-
-        // 2. Capture the graph
-        workspace.Provider.BeginCapture(workspace.Stream);
-
-        GpuBigInt result;
-        try
-        {
-            result = Node.Evaluate(workspace, targetResult);
-        }
-        catch
-        {
-            workspace.Provider.EndCapture(workspace.Stream);
-            throw;
-        }
-
-        var graph = workspace.Provider.EndCapture(workspace.Stream);
-        var graphExec = workspace.Provider.InstantiateGraph(graph);
-        return new GpuBigIntExecutableGraph(workspace, graph, graphExec, result);
-    }
+    /// <remarks>
+    /// The graph takes the expression: until the graph is disposed, evaluating or compiling this expression (or a copy
+    /// of it) throws <see cref="InvalidOperationException"/>, because every launch of the graph reuses the buffers the
+    /// expression's nodes hold. The graph also owns its result buffer (unless <paramref name="targetResult"/> is given)
+    /// and the buffers its capture freed, and returns them when it is disposed. The operands and
+    /// <paramref name="targetResult"/> stay with the caller; a launch after one of them was freed throws
+    /// <see cref="ObjectDisposedException"/>.
+    /// </remarks>
+    /// <exception cref="InvalidOperationException">
+    /// The expression has already been compiled into a graph that is alive, or the warm-up evaluation failed.
+    /// </exception>
+    public GpuBigIntExecutableGraph CompileToGraph(GpuWorkspace workspace, GpuBigUInt? targetResult = null) =>
+        Compile(workspace, targetResult, ownsExpression: true);
 
     /// <summary>
     /// Evaluates this expression tree by dynamically compiling it into a CUDA Graph, launching it, and destroying it immediately.
     /// </summary>
     /// <param name="workspace">The GPU workspace.</param>
     /// <param name="targetResult">An optional pre-allocated buffer for the final result.</param>
-    /// <returns>A new <see cref="GpuBigInt"/> instance wrapping the evaluated result.</returns>
+    /// <returns>
+    /// The result. Without <paramref name="targetResult"/> the caller owns it and disposes it; with
+    /// <paramref name="targetResult"/> it is a borrowed value of that buffer.
+    /// </returns>
+    /// <remarks>
+    /// The expression stays usable afterwards: the internal graph holds it only while it runs (O15).
+    /// </remarks>
+    /// <exception cref="InvalidOperationException">The expression has been compiled into a CUDA graph that is alive.</exception>
     public GpuBigInt EvaluateWithCudaGraph(GpuWorkspace workspace, GpuBigUInt? targetResult = null)
     {
-        using var executableGraph = CompileToGraph(workspace, targetResult);
-        executableGraph.Execute();
-        return executableGraph.Result;
+        var executableGraph = Compile(workspace, targetResult, ownsExpression: false);
+        try
+        {
+            executableGraph.Execute();
+            return executableGraph.DetachResult();
+        }
+        finally
+        {
+            executableGraph.Dispose();
+        }
     }
 
     /// <summary>
@@ -190,7 +191,10 @@ public readonly struct GpuBigIntExpr
     /// <param name="cancellationToken">
     /// A token that stops waiting for the graph. The graph itself still runs to completion.
     /// </param>
-    /// <returns>A new <see cref="GpuBigInt"/> instance wrapping the evaluated result.</returns>
+    /// <returns>
+    /// The result. Without <paramref name="targetResult"/> the caller owns it and disposes it; with
+    /// <paramref name="targetResult"/> it is a borrowed value of that buffer.
+    /// </returns>
     /// <exception cref="OperationCanceledException"><paramref name="cancellationToken"/> was canceled.</exception>
     /// <remarks>
     /// <para>
@@ -200,8 +204,10 @@ public readonly struct GpuBigIntExpr
     /// <see cref="GpuBigIntExecutableGraph.ExecuteAsync"/>.
     /// </para>
     /// <para>
-    /// On cancellation, a result buffer allocated by this method is released in stream order behind the graph;
-    /// <paramref name="targetResult"/> is left to the caller and receives the result once the graph completes.
+    /// While the internal graph runs, evaluating or compiling this expression throws
+    /// <see cref="InvalidOperationException"/>; afterwards the expression is usable again (O15). On cancellation, a
+    /// result buffer allocated by this method is released in stream order behind the graph; <paramref name="targetResult"/>
+    /// is left to the caller and receives the result once the graph completes.
     /// </para>
     /// </remarks>
     public async ValueTask<GpuBigInt> EvaluateWithCudaGraphAsync(GpuWorkspace workspace,
@@ -209,25 +215,181 @@ public readonly struct GpuBigIntExpr
     {
         cancellationToken.ThrowIfCancellationRequested();
 
-        var executableGraph = CompileToGraph(workspace, targetResult);
+        var executableGraph = Compile(workspace, targetResult, ownsExpression: false);
         try
         {
             await executableGraph.ExecuteAsync(cancellationToken).ConfigureAwait(false);
-            return executableGraph.Result;
+            return executableGraph.DetachResult();
         }
-        catch (OperationCanceledException) when (!targetResult.HasValue)
+        finally
         {
-            // Continuations run on pool threads, so the workspace context is activated explicitly.
-            using (workspace.ActivateContext())
+            // Continuations run on pool threads; Dispose activates the workspace context itself. Without a detached
+            // result it releases the result buffer in stream order behind the still running graph.
+            executableGraph.Dispose();
+        }
+    }
+
+    // Warm-up, capture and instantiation. ownsExpression: CompileToGraph hands the expression to the graph for its whole
+    // life; EvaluateWithCudaGraph lends it only while its internal graph exists (O15).
+    private GpuBigIntExecutableGraph Compile(GpuWorkspace workspace, GpuBigUInt? targetResult, bool ownsExpression)
+    {
+        GraphOwnership.ThrowIfOwned(Node);
+
+        // 1. Warm-up execution to trigger all lazy memory allocations and JIT compilation
+        // before graph capture begins, otherwise cuMemAlloc invalidates the stream.
+        try
+        {
+            var warmupResult = Node.Evaluate(workspace, targetResult);
+            if (!targetResult.HasValue)
             {
-                executableGraph.Result.Dispose();
+                // The warm-up result goes back to the pool, where the capture finds it again
+                workspace.ReturnTemp(warmupResult.Value);
+            }
+        }
+        catch (Exception ex)
+        {
+            throw new InvalidOperationException("Failed during warmup execution for CUDA Graph capture.", ex);
+        }
+
+        // 2. Capture the graph; the frees of the capture are deferred, so the graph keeps the buffers it uses
+        var manager = (DefaultGpuMemoryManager)workspace.MemoryManager;
+        var deferral = manager.BeginDeferral();
+        try
+        {
+            workspace.Provider.BeginCapture(workspace.Stream);
+        }
+        catch
+        {
+            manager.EndDeferral(deferral);
+            throw;
+        }
+
+        GpuBigInt result;
+        try
+        {
+            result = Node.Evaluate(workspace, targetResult);
+        }
+        catch (Exception original)
+        {
+            AbortCapture(workspace, manager, deferral, original);
+            throw;
+        }
+
+        // The graph owns a result it allocated; a target stays with the caller, so the graph only borrows it
+        var owned = !targetResult.HasValue && result.Value.IsTemp && result.Value.Handle.OwnsBuffer;
+        if (!owned)
+        {
+            result = new GpuBigInt(result.Value.AsBorrowed(), result.IsNegative);
+        }
+
+        var graph = IntPtr.Zero;
+        var graphExec = IntPtr.Zero;
+        CapturedResources captured;
+        try
+        {
+            graph = workspace.Provider.EndCapture(workspace.Stream);
+        }
+        finally
+        {
+            captured = manager.EndDeferral(deferral);
+        }
+
+        try
+        {
+            graphExec = workspace.Provider.InstantiateGraph(graph);
+        }
+        catch
+        {
+            workspace.Provider.DestroyGraph(graph, IntPtr.Zero);
+            manager.ReturnDeferred(captured.Buffers);
+            if (owned)
+            {
+                manager.Free(result.Value.Handle);
             }
 
             throw;
         }
-        finally
+
+        var executable = new GpuBigIntExecutableGraph(workspace, graph, graphExec, result, owned, captured,
+            Node, ownsExpression);
+        return executable;
+    }
+
+    // The failure path of a capture (O14): end the capture, drop the partial graph and give back the deferred buffers.
+    // When that succeeds, the caller rethrows the original exception; when a step fails too, both are thrown together.
+    private static void AbortCapture(GpuWorkspace workspace, DefaultGpuMemoryManager manager, CaptureDeferral deferral,
+        Exception original)
+    {
+        List<Exception>? cleanupErrors = null;
+        var graph = IntPtr.Zero;
+        try
         {
-            executableGraph.Dispose();
+            graph = workspace.Provider.EndCapture(workspace.Stream);
+        }
+        catch (Exception ex)
+        {
+            (cleanupErrors ??= []).Add(ex);
+        }
+
+        var captured = manager.EndDeferral(deferral);
+        try
+        {
+            if (graph != IntPtr.Zero)
+            {
+                workspace.Provider.DestroyGraph(graph, IntPtr.Zero);
+            }
+        }
+        catch (Exception ex)
+        {
+            (cleanupErrors ??= []).Add(ex);
+        }
+
+        try
+        {
+            manager.ReturnDeferred(captured.Buffers);
+        }
+        catch (Exception ex)
+        {
+            (cleanupErrors ??= []).Add(ex);
+        }
+
+        if (cleanupErrors is not null)
+        {
+            cleanupErrors.Insert(0, original);
+            throw new AggregateException("CUDA graph capture failed, and so did its cleanup.", cleanupErrors);
+        }
+    }
+}
+
+/// <summary>
+/// Records which expression nodes a live CUDA graph owns (design 4.5.3-1).
+/// </summary>
+/// <remarks>
+/// A graph replays the buffers its expression's nodes hold, so the expression must not be evaluated, compiled again or
+/// changed while the graph is alive. The check sits in <see cref="GpuBigIntExpr"/>, through which every public
+/// evaluation of a signed expression goes.
+/// </remarks>
+internal static class GraphOwnership
+{
+    private static readonly ConditionalWeakTable<IGpuBigIntExpression, object> s_owned = new();
+
+    public static void Take(IGpuBigIntExpression node, object graph)
+    {
+        if (!s_owned.TryAdd(node, graph))
+        {
+            throw new InvalidOperationException(
+                "The expression was compiled into a CUDA graph; dispose the graph instead.");
+        }
+    }
+
+    public static void Release(IGpuBigIntExpression node) => s_owned.Remove(node);
+
+    public static void ThrowIfOwned(IGpuBigIntExpression node)
+    {
+        if (s_owned.TryGetValue(node, out _))
+        {
+            throw new InvalidOperationException(
+                "The expression was compiled into a CUDA graph; dispose the graph instead.");
         }
     }
 }
@@ -240,7 +402,13 @@ public readonly struct GpuBigIntExpr
 /// <b>Lifetime:</b> copies of this value share one set of graph handles. <see cref="Dispose"/> may be called on any copy
 /// and more than once; afterwards every copy rejects execution with <see cref="ObjectDisposedException"/>.
 /// Disposing while a launch is still running is safe and does not wait: the driver releases the executable graph once
-/// the launch completes. <see cref="Result"/> is not released by <see cref="Dispose"/>.
+/// the launch completes, and the buffers the graph owns go back to the pool in stream order behind it.
+/// </para>
+/// <para>
+/// <b>Ownership:</b> the graph owns the expression it was compiled from, its result buffer (unless a target was given)
+/// and the buffers its capture freed. <see cref="Result"/> is a view that is valid only while the graph is alive. The
+/// operands and the target stay with the caller; <see cref="Execute"/> and <see cref="ExecuteAsync"/> throw
+/// <see cref="ObjectDisposedException"/> instead of launching after one of them was freed.
 /// </para>
 /// <para>
 /// <b>Thread safety:</b> launches are ordered on the workspace stream. Disposing concurrently with a launch on another
@@ -252,28 +420,32 @@ public readonly struct GpuBigIntExecutableGraph : IDisposable
     private readonly GraphHandles? _handles;
 
     /// <summary>
-    /// Gets the buffer holding the result of the graph execution.
+    /// Gets a view of the result of the graph execution, valid while the graph is alive.
     /// </summary>
     /// <remarks>
     /// The contents are final once <see cref="Execute"/> returns or <see cref="ExecuteAsync"/> completes. After a
     /// canceled <see cref="ExecuteAsync"/> the graph is still running; reads ordered on the workspace stream (such as
-    /// <see cref="GpuBigUInt.ToBigInteger"/>) wait for it and observe the completed result.
+    /// <see cref="GpuBigUIntView.ToBigInteger"/>) wait for it and observe the completed result. After
+    /// <see cref="Dispose"/> the result buffer is back in the pool, and reading the view throws
+    /// <see cref="ObjectDisposedException"/>. To keep the value, pass a target to <see cref="GpuBigIntExpr.CompileToGraph"/>,
+    /// copy it with <see cref="GpuBigIntView.ToOwned"/>, or use <see cref="GpuBigIntExpr.EvaluateWithCudaGraph"/>.
     /// </remarks>
-    public GpuBigInt Result { get; }
+    public GpuBigIntView Result => _handles is { } handles ? handles.Result : default;
 
-    internal GpuBigIntExecutableGraph(GpuWorkspace workspace, IntPtr graph, IntPtr graphExec, GpuBigInt result)
+    internal GpuBigIntExecutableGraph(GpuWorkspace workspace, IntPtr graph, IntPtr graphExec, GpuBigInt result,
+        bool ownsResult, CapturedResources captured, IGpuBigIntExpression node, bool ownsExpression)
     {
-        _handles = new GraphHandles(workspace, graph, graphExec);
-        Result = result;
+        _handles = new GraphHandles(workspace, graph, graphExec, result, ownsResult, captured, node, ownsExpression);
     }
 
     /// <summary>
     /// Launches the executable graph on the GPU and waits for completion.
     /// </summary>
-    /// <exception cref="ObjectDisposedException">The graph has been disposed.</exception>
+    /// <exception cref="ObjectDisposedException">The graph, an operand or the target has been disposed.</exception>
     public void Execute()
     {
         var handles = GetLiveHandles();
+        handles.ThrowIfOperandFreed();
         handles.Workspace.Provider.LaunchGraph(handles.GraphExec, handles.Workspace.Stream);
         handles.Workspace.Provider.SynchronizeStream(handles.Workspace.Stream);
     }
@@ -286,11 +458,12 @@ public readonly struct GpuBigIntExecutableGraph : IDisposable
     /// running to completion (see <see cref="Result"/>).
     /// </param>
     /// <returns>A <see cref="ValueTask"/> that completes when the graph has finished.</returns>
-    /// <exception cref="ObjectDisposedException">The graph has been disposed.</exception>
+    /// <exception cref="ObjectDisposedException">The graph, an operand or the target has been disposed.</exception>
     /// <remarks>Does not allocate in steady state.</remarks>
     public ValueTask ExecuteAsync(CancellationToken cancellationToken = default)
     {
         var handles = GetLiveHandles();
+        handles.ThrowIfOperandFreed();
         if (cancellationToken.IsCancellationRequested)
         {
             return ValueTask.FromCanceled(cancellationToken);
@@ -301,9 +474,12 @@ public readonly struct GpuBigIntExecutableGraph : IDisposable
     }
 
     /// <summary>
-    /// Destroys the underlying CUDA Graph and executable graph instances.
+    /// Destroys the underlying CUDA Graph and executable graph instances and returns the buffers the graph owns.
     /// </summary>
     public void Dispose() => _handles?.Destroy();
+
+    // Hands the owned result to the caller once; Dispose then leaves it alone
+    internal GpuBigInt DetachResult() => GetLiveHandles().DetachResult();
 
     private GraphHandles GetLiveHandles() =>
         _handles is { IsDestroyed: false } handles
@@ -311,17 +487,58 @@ public readonly struct GpuBigIntExecutableGraph : IDisposable
             : throw new ObjectDisposedException(nameof(GpuBigIntExecutableGraph));
 
     /// <summary>
-    /// The graph handles shared by every copy of a <see cref="GpuBigIntExecutableGraph"/>.
+    /// The graph handles and the resources shared by every copy of a <see cref="GpuBigIntExecutableGraph"/>.
     /// </summary>
-    private sealed class GraphHandles(GpuWorkspace workspace, IntPtr graph, IntPtr graphExec)
+    private sealed class GraphHandles
     {
+        private readonly IntPtr _graph;
+        private readonly GpuBigInt _result;
+        private readonly CapturedResources _captured;
+        private readonly IGpuBigIntExpression _node;
+        private readonly bool _ownsExpression;
+        private int _ownsResult;
         private int _destroyed;
 
-        public GpuWorkspace Workspace { get; } = workspace;
+        public GraphHandles(GpuWorkspace workspace, IntPtr graph, IntPtr graphExec, GpuBigInt result, bool ownsResult,
+            CapturedResources captured, IGpuBigIntExpression node, bool ownsExpression)
+        {
+            Workspace = workspace;
+            _graph = graph;
+            GraphExec = graphExec;
+            _result = result;
+            _ownsResult = ownsResult ? 1 : 0;
+            _captured = captured;
+            _node = node;
+            _ownsExpression = ownsExpression;
+            GraphOwnership.Take(node, this);
+        }
 
-        public IntPtr GraphExec { get; } = graphExec;
+        public GpuWorkspace Workspace { get; }
+
+        public IntPtr GraphExec { get; }
+
+        public GpuBigIntView Result => _result;
 
         public bool IsDestroyed => Volatile.Read(ref _destroyed) != 0;
+
+        public GpuBigInt DetachResult()
+        {
+            Interlocked.Exchange(ref _ownsResult, 0);
+            return _result;
+        }
+
+        // The graph records raw pointers: a launch after an operand was freed would use memory of another owner
+        public void ThrowIfOperandFreed()
+        {
+            foreach (var operand in _captured.Operands)
+            {
+                if (!operand.IsAlive)
+                {
+                    throw new ObjectDisposedException(nameof(GpuBigIntExecutableGraph),
+                        $"An operand or the target of the graph ({operand}) has been disposed.");
+                }
+            }
+        }
 
         public void Destroy()
         {
@@ -330,10 +547,29 @@ public readonly struct GpuBigIntExecutableGraph : IDisposable
                 return;
             }
 
-            // Dispose may run on a pool thread after an await, where the workspace context is not current.
+            // Dispose may run on a pool thread after an await, where the workspace context is not current. The graph is
+            // destroyed first; the driver keeps a running launch alive, and the frees below are ordered behind it.
             using (Workspace.ActivateContext())
             {
-                Workspace.Provider.DestroyGraph(graph, GraphExec);
+                try
+                {
+                    Workspace.Provider.DestroyGraph(_graph, GraphExec);
+                }
+                finally
+                {
+                    var manager = (DefaultGpuMemoryManager)Workspace.MemoryManager;
+                    if (Interlocked.Exchange(ref _ownsResult, 0) != 0)
+                    {
+                        manager.Free(_result.Value.Handle);
+                    }
+
+                    manager.ReturnDeferred(_captured.Buffers);
+                    GraphOwnership.Release(_node);
+                    if (_ownsExpression && _node is IDisposable disposable)
+                    {
+                        disposable.Dispose();
+                    }
+                }
             }
         }
     }
