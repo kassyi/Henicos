@@ -157,6 +157,12 @@ Prelude:
     TrailingZeroCountFor32: { Value: __gsharp_tzc_32, Prelude: MathAndBitOps.hpp }
     TrailingZeroCountFor64: { Value: __gsharp_tzc_64, Prelude: MathAndBitOps.hpp }
     TempAddress: { Value: __gsharp_temp_address, Prelude: Types.hpp }
+    # NaN and infinity of float and double, which have no C++ literal (ConstexprLiteral). Declared by Platform.hpp for
+    # the CPU dialects and by the CUDA prelude (../Prelude.cu).
+    NaNSingle: { Value: __gsharp_nan_f, Prelude: Platform.hpp }
+    InfinitySingle: { Value: __gsharp_inf_f, Prelude: Platform.hpp }
+    NaNDouble: { Value: __gsharp_nan_d, Prelude: Platform.hpp }
+    InfinityDouble: { Value: __gsharp_inf_d, Prelude: Platform.hpp }
 
 Wmma:
   Summary: Tensor Core warp matrix fragment types and tags (nvcuda::wmma).

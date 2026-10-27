@@ -463,6 +463,13 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker, IDisposable
             return;
         }
 
+        // A C# char is a UTF-16 code unit; the C++ character literal is a char in the source's encoding ('é' is two bytes).
+        if (node.IsKind(SyntaxKind.CharacterLiteralExpression) && node.Token.Value is char character)
+        {
+            Context.Emitter.Writer.Append(ConstexprLiteral.FormatCppChar(character));
+            return;
+        }
+
         // C++ rejects '_' inside numbers (and "0x'FF"), so digit separators are dropped.
         if (node.IsKind(SyntaxKind.NumericLiteralExpression))
         {

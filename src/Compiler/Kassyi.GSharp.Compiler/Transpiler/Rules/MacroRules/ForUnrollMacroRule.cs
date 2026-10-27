@@ -45,11 +45,18 @@ internal sealed class ForUnrollMacroRule : IMacroTranspilerRule
         context.Emitter.Writer.AppendLine($"// [GpuUnroll] start={start}, count={count}");
 
         // [WHY] Unrolls the loop at C# source transpilation time by substituting the loop induction variable with literal constants, eliminating runtime branching in the GPU kernel.
+        var intType = context.Query.SemanticModel.Compilation.GetSpecialType(SpecialType.System_Int32);
         for (var i = start; i < start + count; i++)
         {
-            var iterationCookie = context.Emitter.PushOverrideScope(macroScope.ParamName, new OverrideValue(i.ToString()));
+            // A negative index is parenthesized ((-2)), and its labels spell the sign as a letter (_Unroll_m2)
+            var iterationCookie = context.Emitter.PushOverrideScope(
+                macroScope.ParamName,
+                new OverrideValue(ConstexprLiteral.FormatCppConstant(intType, i))
+            );
             var oldSuffix = context.Emitter.LabelSuffix;
-            context.Emitter.LabelSuffix = $"_Unroll_{i}";
+            context.Emitter.LabelSuffix = i < 0
+                ? "_Unroll_m" + (-(long)i).ToString(CultureInfo.InvariantCulture)
+                : "_Unroll_" + i.ToString(CultureInfo.InvariantCulture);
             try
             {
                 MacroTranspilerHelper.EmitUnrolledBody(ref context, lambdaExpr.Body);

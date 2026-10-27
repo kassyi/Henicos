@@ -88,7 +88,7 @@ __shared__ int __gsharp_id_4_shared[256];
 __gsharp_id_4_shared[__gsharp_id_3_tid]=__gsharp_id_0_input[__gsharp_id_3_tid];
 if(__gsharp_id_2_length<0)
 {
-__gsharp_id_1_output[__gsharp_id_3_tid]=-1;
+__gsharp_id_1_output[__gsharp_id_3_tid]=(-1);
 }
 else
 {
