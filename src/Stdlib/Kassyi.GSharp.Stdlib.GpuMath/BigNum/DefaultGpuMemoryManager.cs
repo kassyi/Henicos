@@ -18,8 +18,16 @@ internal sealed class DefaultGpuMemoryManager(IGpuExecutionProvider provider, In
     : IGpuMemoryManager, IDisposable
 {
     private readonly ConcurrentDictionary<int, Lazy<ConcurrentBag<GpuBigIntMemoryHandle>>> _tempPool = new();
-    private readonly ConcurrentDictionary<IntPtr, byte> _activeAllocations = new();
+    private readonly ConcurrentDictionary<IntPtr, GpuBigIntDeviceBuffer> _activeAllocations = new();
     private int _disposed;
+
+    // Allocation counters (GetStatistics); updated with Interlocked, read with Volatile
+    private int _liveBuffers;
+    private long _liveWords;
+    private int _peakLiveBuffers;
+    private int _pooledBuffers;
+    private long _driverAllocations;
+    private long _driverFrees;
 
     /// <summary>
     /// Allocates or reuses a device memory handle for the specified word count.
@@ -36,14 +44,18 @@ internal sealed class DefaultGpuMemoryManager(IGpuExecutionProvider provider, In
         if (_tempPool.TryGetValue(numWords, out var lazyBag) && lazyBag.IsValueCreated &&
             lazyBag.Value.TryTake(out var temp))
         {
-            _activeAllocations.TryAdd(temp.Buffer.Pointer, 0);
+            Interlocked.Decrement(ref _pooledBuffers);
+            _activeAllocations.TryAdd(temp.Buffer.Pointer, temp.Buffer);
+            CountLease(temp.Buffer.TotalWords);
             return temp;
         }
 
         var ptr = provider.AllocateMemory(numWords);
-        _activeAllocations.TryAdd(ptr, 0);
-        provider.ClearMemoryAsync(ptr, numWords, stream);
+        Interlocked.Increment(ref _driverAllocations);
         var buffer = new GpuBigIntDeviceBuffer(ptr, numWords);
+        _activeAllocations.TryAdd(ptr, buffer);
+        CountLease(numWords);
+        provider.ClearMemoryAsync(ptr, numWords, stream);
         return new GpuBigIntMemoryHandle(buffer, 0, numWords);
     }
 
@@ -87,12 +99,15 @@ internal sealed class DefaultGpuMemoryManager(IGpuExecutionProvider provider, In
             }
 
             provider.FreeMemory(handle.Buffer.Pointer);
+            Interlocked.Increment(ref _driverFrees);
+            CountRelease(handle.Buffer.TotalWords);
             handle.Buffer.Dispose();
             return;
         }
 
         if (handle.Buffer.Pointer != IntPtr.Zero)
         {
+            CountRelease(handle.Buffer.TotalWords);
             provider.ClearMemoryAsync(handle.Buffer.Pointer, handle.Buffer.TotalWords, stream);
         }
 
@@ -100,6 +115,43 @@ internal sealed class DefaultGpuMemoryManager(IGpuExecutionProvider provider, In
         var bag = _tempPool.GetOrAdd(handle.Buffer.TotalWords,
             _ => new Lazy<ConcurrentBag<GpuBigIntMemoryHandle>>(() => [])).Value;
         bag.Add(handle);
+        Interlocked.Increment(ref _pooledBuffers);
+    }
+
+    /// <summary>
+    /// Reads the allocation counters.
+    /// </summary>
+    /// <returns>A snapshot of the counters; see <see cref="GpuMemoryStatistics"/>.</returns>
+    internal GpuMemoryStatistics GetStatistics() => new(
+        Volatile.Read(ref _liveBuffers),
+        Volatile.Read(ref _liveWords),
+        Volatile.Read(ref _peakLiveBuffers),
+        Volatile.Read(ref _pooledBuffers),
+        Volatile.Read(ref _driverAllocations),
+        Volatile.Read(ref _driverFrees)
+    );
+
+    private void CountLease(int numWords)
+    {
+        var live = Interlocked.Increment(ref _liveBuffers);
+        Interlocked.Add(ref _liveWords, numWords);
+        var peak = Volatile.Read(ref _peakLiveBuffers);
+        while (live > peak)
+        {
+            var observed = Interlocked.CompareExchange(ref _peakLiveBuffers, live, peak);
+            if (observed == peak)
+            {
+                break;
+            }
+
+            peak = observed;
+        }
+    }
+
+    private void CountRelease(int numWords)
+    {
+        Interlocked.Decrement(ref _liveBuffers);
+        Interlocked.Add(ref _liveWords, -numWords);
     }
 
     /// <summary>
@@ -128,6 +180,7 @@ internal sealed class DefaultGpuMemoryManager(IGpuExecutionProvider provider, In
 
             while (lazyBag.Value.TryTake(out var handle))
             {
+                Interlocked.Decrement(ref _pooledBuffers);
                 if (handle.Buffer.Pointer == IntPtr.Zero)
                 {
                     continue;
@@ -136,6 +189,7 @@ internal sealed class DefaultGpuMemoryManager(IGpuExecutionProvider provider, In
                 try
                 {
                     provider.FreeMemory(handle.Buffer.Pointer, stream);
+                    Interlocked.Increment(ref _driverFrees);
                     handle.Buffer.Dispose();
                 }
                 catch (Exception ex)
@@ -147,7 +201,7 @@ internal sealed class DefaultGpuMemoryManager(IGpuExecutionProvider provider, In
 
         _tempPool.Clear();
 
-        foreach (var ptr in _activeAllocations.Keys)
+        foreach (var (ptr, buffer) in _activeAllocations)
         {
             if (ptr == IntPtr.Zero)
             {
@@ -156,7 +210,9 @@ internal sealed class DefaultGpuMemoryManager(IGpuExecutionProvider provider, In
 
             try
             {
+                CountRelease(buffer.TotalWords);
                 provider.FreeMemory(ptr, stream);
+                Interlocked.Increment(ref _driverFrees);
             }
             catch (Exception ex)
             {

@@ -376,6 +376,12 @@ public class GpuWorkspace : IGpuResourceScope
         Dispose(false);
     }
 
+    /// <summary>
+    /// Reads the allocation counters of <see cref="MemoryManager"/>, also after the workspace has been disposed.
+    /// </summary>
+    /// <returns>A snapshot of the counters; see <see cref="GpuMemoryStatistics"/>.</returns>
+    internal GpuMemoryStatistics GetMemoryStatistics() => ((DefaultGpuMemoryManager)MemoryManager).GetStatistics();
+
     internal GpuBigUInt RentTemp(int numWords)
     {
         ObjectDisposedException.ThrowIf(Volatile.Read(ref _disposed) == 1, this);
