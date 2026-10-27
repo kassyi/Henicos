@@ -1,79 +1,79 @@
 ---
 name: qa-testing-guidelines
-description: ガイドライン: C#およびGPU向けのテストコードを作成する際、ハッピーパスだけでなく、データ駆動境界値、並行ストレス、アライメント、異常系のテストを網羅し、Feature IDに基づくTrait属性や適切なファイル分離・命名規則を適用するための総合的QAルール。
+description: Guideline for writing test code for C# and the GPU. A comprehensive set of QA rules that covers not only the happy path but also data-driven boundary values, concurrency stress, alignment and sad paths, and applies Trait attributes based on Feature IDs together with proper file separation and naming rules.
 ---
 
-# QA Testing Guidelines (エージェント向け総合テスト作成指針)
+# QA Testing Guidelines (comprehensive test-writing guideline for agents)
 
-このプロジェクト（Henicos / GSharp）においてテストコード（xUnit）を新規作成または修正する際、エージェントは**必ず以下のQAテスト観点・構造ルール・Feature IDトレーサビリティ**を満たしているかを自己評価し、不足している場合は自律的にテストケースを拡張・追加・再構築しなければなりません。
+When creating or modifying test code (xUnit) in this project (Henicos / GSharp), the agent **must** self-assess whether the following QA test viewpoints, structure rules and Feature ID traceability are met, and when something is missing, extend, add or rebuild the test cases on its own.
 
-## 0. 【必須】テスト先行AIバイブコーディング (Phase 1)
+## 0. [Required] Test-first AI vibe coding (Phase 1)
 
-実装を開始する際は、**いかなるプロダクションコード（実装）を書くよりも先に、必ずテストコードを生成**してください（トランスパイラ関連タスクにおいては Golden Master / Snapshot Test を必須とし、それ以外は適切な Unit Test を記述します）。
+When you start an implementation, **always generate the test code before writing any production code (the implementation)** (for transpiler-related tasks a Golden Master / Snapshot Test is required; otherwise write an appropriate Unit Test).
 
-- ロードマップタスクに着手する際の「共通の第1フェーズ」です。
-- 正常系だけでなく、後述の「異常系テスト（Sad Path）」やQAの品質基準に基づき、**どのような例外がスローされるべきかまでを設計**してから実装をスタートさせます。
+- This is the "common first phase" when starting a roadmap task.
+- Based not only on the normal path but also on the "Sad Path tests" described below and the QA quality criteria, **design even which exceptions should be thrown** before starting the implementation.
 
-## 1. データ駆動境界値テスト (Data-Driven Edge Case Testing)
+## 1. Data-Driven Edge Case Testing
 
-ハッピーパス（正常値）のテストだけでなく、必ず `[Theory]` を用いて極端な境界値を注入してください。
+Do not stop at happy-path (normal value) tests; always inject extreme boundary values with `[Theory]`.
 
-- **数値型**: `0`, `1`, `-1`, 最小値（`MinValue`）、最大値（`MaxValue`）、最上位ビットのみ1（`0x80000000`）、交互ビット（`0x55555555`）など。
-- **制御構文**: `if` や `switch` の境界となる値（例: `> 10` なら `9`, `10`, `11`）、および `default` ルートへのフォールバック。
-- **配列・Span**: 空の配列（長さ0）、1要素の配列、メモリ境界ギリギリのサイズ。
+- **Numeric types**: `0`, `1`, `-1`, the minimum (`MinValue`), the maximum (`MaxValue`), only the most significant bit set (`0x80000000`), alternating bits (`0x55555555`), and so on.
+- **Control flow**: Values at the boundary of an `if` or `switch` (for example, for `> 10`: `9`, `10`, `11`), and the fallback to the `default` route.
+- **Arrays and Span**: An empty array (length 0), a one-element array, and a size right at the memory boundary.
 
-数値・アルゴリズムのテスト（GpuMath の BigInt / BigFloat / NTT、CPU と GPU の突き合わせなど）では、性質の決め方、各検査に届く入力、1 行壊せば落ちることの確認を [property-test-design](../property-test-design/SKILL.md) に従って揃えてください。
+For numeric and algorithm tests (BigInt / BigFloat / NTT in GpuMath, CPU-vs-GPU comparisons, and so on), settle how to define the properties, the input that reaches each check, and the confirmation that breaking one line makes it fail, following [property-test-design](../property-test-design/SKILL.md).
 
-## 2. GPU固有の並行性・ストレステスト (Concurrency & Stress Testing)
+## 2. GPU-specific Concurrency & Stress Testing
 
-スレッドやワープ（Warp）、共有メモリ、アトミック演算が絡む処理の場合、意図的に高負荷・高競合状態を作り出してテストしてください。
+For code that involves threads, warps, shared memory or atomic operations, deliberately create a high-load, high-contention situation and test it.
 
-- **アトミック演算**: 同一のメモリアドレスに対して、数千スレッド（例: 256スレッド × 16ブロック = 4096スレッド）から同時に書き込み・加算（`AtomicAdd`等）を行い、結果が完全一致するか。
-- **バリア同期**: `Gpu.SyncThreads()` の前後で、ワープ境界を越えた共有メモリの読み書きが正確に同期されているか。
-- **ホスト側 (C#)**: `Logger` や JIT コンパイラ（`NvrtcCompiler`）など、スレッドセーフティが求められるコンポーネントに対して `Parallel.For` などを使い、多重アクセス時のデッドロックやクラッシュが起きないか検証する。この際、CUDA APIのThread Local Context制約に注意し、必要に応じてワーカースレッド内でコンテキストをバインドすること。
+- **Atomic operations**: Write to and add to (`AtomicAdd`, etc.) the same memory address from thousands of threads at once (for example 256 threads x 16 blocks = 4096 threads), and check that the result matches exactly.
+- **Barrier synchronization**: Check that reads and writes of shared memory across warp boundaries are synchronized correctly before and after `Gpu.SyncThreads()`.
+- **Host side (C#)**: For components that require thread safety, such as `Logger` and the JIT compiler (`NvrtcCompiler`), use `Parallel.For` or similar to verify that concurrent access causes no deadlock or crash. Here, mind the Thread Local Context constraint of the CUDA API, and bind the context inside the worker thread as needed.
 
-## 3. アライメント・メモリレイアウト検証 (Alignment & Padding Testing)
+## 3. Alignment & Padding Testing
 
-構造体（`struct`）やメモリブロックを扱う際、C#側とGPU（CUDA C++）側でメモリレイアウトが一致しているかを検証してください。
+When handling structures (`struct`) and memory blocks, verify that the memory layout matches between the C# side and the GPU (CUDA C++) side.
 
-- `byte`, `double`, `short` などを混在させた構造体を定義し、意図しないパディングによるオフセットのズレ（アライメント違反）が起きないか。
-- `MemoryMarshal.Cast` やポインタ演算において、境界をまたいだアクセスが安全に行われるか。
+- Define a structure that mixes `byte`, `double`, `short` and so on, and check that unintended padding does not shift offsets (an alignment violation).
+- Check that accesses across a boundary are safe in `MemoryMarshal.Cast` and pointer arithmetic.
 
-## 4. サッドパス・異常系テスト (Sad Path / Exception Testing)
+## 4. Sad Path / Exception Testing
 
-エラーになるべき入力や状況を与えた際に、システムがクラッシュしたり無限ループに陥るのではなく、**適切にエラーを検知して安全に遮断すること**を検証してください。
+Verify that when input or a situation that should produce an error is given, the system does not crash or fall into an infinite loop, but **detects the error properly and shuts it down safely**.
 
-- **静的解析 (Analyzer) / Source Generator**: サポートされていない構文や無効な型を使用した場合、コンパイルを通すのではなく、適切な `Diagnostic` (例: `GSH0001` 等) が発出されてビルドが中断されること。
-- **実行時 (Runtime)**: 無効な引数（例: 存在しない関数名、壊れたPTX文字列、無効なアーキテクチャ指定 `sm_999`）を渡した際に、サイレントに無視するのではなく、明確な例外（`CudaException` など）がスローされること。
+- **Static analysis (Analyzer) / Source Generator**: When unsupported syntax or an invalid type is used, the build must stop with an appropriate `Diagnostic` (for example `GSH0001`) instead of passing compilation.
+- **Run time (Runtime)**: When an invalid argument is passed (for example a non-existent function name, a broken PTX string, or an invalid architecture such as `sm_999`), a clear exception (such as `CudaException`) must be thrown instead of being silently ignored.
 
-## 5. テスト命名規則とドメイン自然言語の徹底
+## 5. Test naming rules and consistent use of domain natural language
 
-コードベースが大規模化したため、**C# コード内への機能ID（Feature ID / チケット番号）のハードコードは廃止**されました。
-テストコードは C# Framework Design Guidelines に準拠し、ドメインの意図を直接表現する自然言語で命名してください。なお、ロードマップとのタスク連携はコード側ではなく外部メタデータ（JSON / `roadmap.json`）側で紐付けを管理します。
+Because the codebase has grown large, **hard-coding Feature IDs / ticket numbers in C# code has been abolished**.
+Name test code in natural language that directly expresses the domain intent, in line with the C# Framework Design Guidelines. The link between roadmap tasks and tests is managed in external metadata (JSON / `roadmap.json`), not in the code.
 
-- **直交3軸メタデータ属性（`TestTarget` / `Category` / `Scenario`）の適用**:
-    - チケット番号や Feature ID を `[Trait]` として付与しては**いけません**。
-    - テストの分類・フィルタリングには、以下の強い型付け（Enum）属性を使用してください（定義場所: `tests/Shared/Kassyi.GSharp.Tests.Infrastructure` / 名前空間 `Kassyi.GSharp.Tests.Infrastructure`、テストプロジェクト全体でグローバルインポート済み）：
-        - **Axis 1 (実行環境)**: `[TestTarget(ExecutionTarget.GpuExecution)]` / `[TestTarget(ExecutionTarget.CpuExecution)]` (`tests/Shared/Kassyi.GSharp.Tests.Infrastructure/ExecutionTarget.cs`)
-        - **Axis 2 (機能ドメイン)**: `[Category(TestCategory.Compiler)]` / `[Category(TestCategory.Runtime)]` / `[Category(TestCategory.Syntax)]` / `[Category(TestCategory.Stdlib)]` 等 (`tests/Shared/Kassyi.GSharp.Tests.Infrastructure/TestCategory.cs`)
-        - **Axis 3 (テストシナリオ)**: `[Scenario(TestScenario.HappyPath)]` / `[Scenario(TestScenario.SadPath)]` / `[Scenario(TestScenario.Boundary)]` (`tests/Shared/Kassyi.GSharp.Tests.Infrastructure/TestScenario.cs`)
+- **Applying the orthogonal 3-axis metadata attributes (`TestTarget` / `Category` / `Scenario`)**:
+    - Do **not** attach a ticket number or Feature ID as a `[Trait]`.
+    - For classifying and filtering tests, use the following strongly typed (Enum) attributes (defined in `tests/Shared/Kassyi.GSharp.Tests.Infrastructure` / namespace `Kassyi.GSharp.Tests.Infrastructure`, and globally imported across the test projects):
+        - **Axis 1 (execution target)**: `[TestTarget(ExecutionTarget.GpuExecution)]` / `[TestTarget(ExecutionTarget.CpuExecution)]` (`tests/Shared/Kassyi.GSharp.Tests.Infrastructure/ExecutionTarget.cs`)
+        - **Axis 2 (feature domain)**: `[Category(TestCategory.Compiler)]` / `[Category(TestCategory.Runtime)]` / `[Category(TestCategory.Syntax)]` / `[Category(TestCategory.Stdlib)]` and so on (`tests/Shared/Kassyi.GSharp.Tests.Infrastructure/TestCategory.cs`)
+        - **Axis 3 (test scenario)**: `[Scenario(TestScenario.HappyPath)]` / `[Scenario(TestScenario.SadPath)]` / `[Scenario(TestScenario.Boundary)]` (`tests/Shared/Kassyi.GSharp.Tests.Infrastructure/TestScenario.cs`)
     ```csharp
     [Theory]
     [Category(TestCategory.Compiler)]
     [Scenario(TestScenario.SadPath)]
     public async Task GeneratorSnapshots_ThrowsOnInvalidSyntax(string fileName)
     ```
-- **テストメソッド・クラス・ファイル命名規則**:
-    - ファイル名、クラス名、メソッド名に `GEN-08_` や `GBI-06_` などの機能IDプレフィックスを含めず、テスト対象の振る舞いを表す自然言語名を使用してください（例: `KernelFusionTests.cs`、`GpuBigIntegerTests.cs`、`Test_MemoryPoolAllocation`、`Test_SwitchExpression_Transpilation`）。
+- **Naming rules for test methods, classes and files**:
+    - Do not put a feature-ID prefix such as `GEN-08_` or `GBI-06_` in file names, class names or method names; use a natural-language name that expresses the behavior under test (for example `KernelFusionTests.cs`, `GpuBigIntegerTests.cs`, `Test_MemoryPoolAllocation`, `Test_SwitchExpression_Transpilation`).
 
-## 6. GPUカーネルファイルの配置戦略 (Colocation vs Centralization)
+## 6. Placement strategy for GPU kernel files (Colocation vs Centralization)
 
-テスト用カーネルや解析対象コード（`.cs` / `.cu.cs`）の配置は、用途に応じて以下の2つの戦略を厳密に使い分けてください。
+Use the following two strategies for placing test kernels and code under analysis (`.cs` / `.cu.cs`) strictly according to purpose.
 
-- **実行系テスト（Integration / Runtime / Syntax）: 同一フォルダへの併置 (Colocation)**
-    - 実際に `[GpuKernel]` をホストから Launch して実行結果を検証するテスト（例: `Syn01_91_ControlFlowTests.cs`）では、呼び出される対象のカーネルファイルを**テストファイルと同一のディレクトリ**に併置（例: `Syn01_91_ControlFlowKernels.cu.cs`）してください。
-    - 理由: テストとカーネル間の高い凝集度が保たれ、開発者が実行コンテキストを容易に行き来できるようになるため。
+- **Execution tests (Integration / Runtime / Syntax): colocate in the same folder (Colocation)**
+    - For a test that actually launches a `[GpuKernel]` from the host and verifies the execution result (for example `Syn01_91_ControlFlowTests.cs`), place the kernel file it calls **in the same directory as the test file** (for example `Syn01_91_ControlFlowKernels.cu.cs`).
+    - Reason: this keeps the test and the kernel highly cohesive and lets developers move between the execution contexts easily.
 
-- **静的解析・メタテスト（Analyzer / Generator）: TestCasesへの隔離 (Centralization)**
-    - 解析対象の文字列（SyntaxTree）として読み込ませるコードや、意図的にコンパイルエラー・警告を発生させるコード（Sad Path）は、メインのテストアセンブリやビルドツリーを汚染しないよう、必ず **`TestCases/` ディレクトリ配下に隔離（Source Separation）** してください。
-    - 配置先: `tests/Compiler/Kassyi.GSharp.Tests.Shared/TestCases/Analyzers/` 等。
+- **Static analysis and meta tests (Analyzer / Generator): isolate in TestCases (Centralization)**
+    - Code that is loaded as a string (SyntaxTree) to be analyzed, and code that deliberately produces compile errors or warnings (Sad Path), must always be **isolated under the `TestCases/` directory (Source Separation)** so that it does not pollute the main test assembly or the build tree.
+    - Location: `tests/Compiler/Kassyi.GSharp.Tests.Shared/TestCases/Analyzers/` and so on.

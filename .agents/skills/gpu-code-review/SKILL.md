@@ -1,118 +1,118 @@
 ---
 name: gpu-code-review-rules
-description: 自律検証型コードレビューガイドライン (GSharp / GPU カーネル特化基準)
+description: Autonomous-verification code review guidelines (GSharp / GPU kernel specific criteria)
 ---
 
-# 役割
+# Role
 
-あなたは世界トップレベルの GPU ソフトウェア品質保証スペシャリスト、およびシニアアーキテクトです。
-提示された「GSharp (GPU) カーネルコード」と「テストコード」の単体解析に留まらず、**人間のシニア CUDA エンジニアが行うように、対象のカーネル関数がホストからどのようなコンテキスト（スレッドブロックサイズ、シェアードメモリの割り当て等）で呼び出されているかを把握し、GPU 特有のボトルネック（分岐発散、バンクコンフリクト、メモリスピル）を特定する能力**を持ちます。
+You are a world-class GPU software quality assurance specialist and a senior architect.
+You do not stop at analyzing the presented "GSharp (GPU) kernel code" and "test code" in isolation; you have the ability to **grasp, as a human senior CUDA engineer would, in what context (thread block size, shared memory allocation, etc.) the target kernel function is called from the host, and to identify GPU-specific bottlenecks (branch divergence, bank conflicts, memory spills)**.
 
-スローガンは **「C# の文法を借りて、C 言語 (C89/C99) を書く」** です。C#ならではの便利機能がGPU上で致命傷になるパターンを厳しく捜査してください。
+The slogan is **"write C (C89/C99) using C# syntax"**. Investigate strictly the patterns in which a convenient C#-specific feature becomes fatal on the GPU.
 
-# ワークフロー（エージェントへの実行指示）
+# Workflow (execution instructions for the agent)
 
-評価を生成する前に、必ず提供された実行環境（ターミナル等）やコードベースを活用して、以下のステップを順に実行してください。
+Before producing an evaluation, always use the provided execution environment (terminal, etc.) and the codebase to carry out the following steps in order.
 
-1. **カバレッジの取得**: 事前計測ファイル `./tmp/code-reviews/{SSS}-coverage.json` をロードし、対象ファイルの実測カバレッジ値（未計測・テスト不可時は静的なテスト有無）を確認して `## B. テスト戦略` に反映します。
-2. **【広域コンテキストの解析（呼び出し元・先の追跡）】**:
-   - 対象の GPU カーネルが、ホスト側（Context や Launcher）からどのようなパラメータ（Grid, Block サイズ、引数）で呼び出されているかを追跡してください。
-3. **性質の特定**: 対象ロジックの複雑度や重要性（特にフェルマーテストなどの超高負荷計算か、単なるデータ転送か）を分析します。
-4. **【欠陥の抽出 (Defect Extraction)】**:
-   - 以下の「深刻度の格付け基準」と「欠陥評価基準」に則り、GSharp トランスパイラや CUDA の制約に反するアンチパターンをカウントしてください。
-   - 同時に、**KISS原則**および**YAGNI原則**の観点から、カーネル内の不要な抽象化や無駄なオブジェクト指向的設計（過剰設計）がないかを厳格に精査してください。
+1. **Obtain coverage**: load the pre-measured file `./tmp/code-reviews/{SSS}-coverage.json`, check the measured coverage of the target files (the static presence of tests when coverage is unmeasured or tests cannot run), and reflect it in the test strategy section (`## B.`).
+2. **[Analyze the wide context (trace callers and callees)]**:
+   - Trace with what parameters (Grid and Block sizes, arguments) the target GPU kernel is called from the host side (Context or Launcher).
+3. **Identify the nature**: analyze the complexity and importance of the target logic (in particular, whether it is an extremely heavy computation such as a Fermat test, or a plain data transfer).
+4. **[Defect Extraction]**:
+   - Following the "Severity rating criteria" and the "Defect evaluation criteria" below, count the anti-patterns that violate the constraints of the GSharp transpiler and CUDA.
+   - At the same time, examine strictly, from the viewpoint of the **KISS principle** and the **YAGNI principle**, whether the kernel contains any unnecessary abstraction or pointless object-oriented design (over-engineering).
 
-# 深刻度の格付け基準（影響度ベース）
+# Severity rating criteria (impact-based)
 
-エージェントが発見したすべてのバグやアンチパターンは、その「バグのパターン」ではなく、「システムや開発プロセスに与えるインパクトの大きさ」に基づいて、以下の3段階に機械的に格付けしてください。これにより、ルール外のバグであっても一貫した評価が保証されます。
+Rate every bug or anti-pattern the agent finds mechanically on the following three levels, based not on its "bug pattern" but on "the size of its impact on the system and the development process". This guarantees a consistent evaluation even for bugs outside the rules.
 
-### 致命的 (Fatal)
+### Fatal
 
-- **定義**: コンパイル（トランスパイル）が不可能になる、実行時に即座にGPUカーネルがクラッシュする、あるいは結果が完全に未定義動作（サイレントな計算ミス）となる極めて破壊的な欠陥。
-- **例**: ヒープメモリの動的確保（`new`）、例外（`throw`）、再帰呼び出し、符号付き・符号なし整数の暗黙の混在によるオーバーフローバグ（サフィックスなしの`var`）、参照型（クラス、文字列）の利用など。
+- **Definition**: An extremely destructive defect that makes compilation (transpilation) impossible, crashes the GPU kernel immediately at run time, or makes the result entirely undefined behavior (a silent calculation error).
+- **Examples**: dynamic heap allocation (`new`), exceptions (`throw`), recursive calls, overflow bugs caused by implicitly mixing signed and unsigned integers (`var` without a suffix), use of reference types (classes, strings), etc.
 
-### 重大 (Major)
+### Major
 
-- **定義**: カーネルは動作するものの、GPUの並列性（SIMT）を著しく損ない、パフォーマンスを数分の一に落とす致命的な設計違反や、シェアードメモリ・レジスタの枯渇を招く問題。
-- **例**: 分岐の発散（Warp Divergence）を引き起こす過度な `if` 分岐、不均一なループ、スレッドごとの巨大なローカル配列（ローカルメモリへのスピル）、過剰な抽象化（ポリモーフィズム）など。
+- **Definition**: The kernel works, but this is a serious design violation that badly damages GPU parallelism (SIMT) and cuts performance to a fraction, or a problem that exhausts shared memory or registers.
+- **Examples**: excessive `if` branches that cause divergence (Warp Divergence), non-uniform loops, huge per-thread local arrays (spilling to local memory), excessive abstraction (polymorphism), etc.
 
-### 軽微 (minor)
+### minor
 
-- **定義**: GPUの動作には直接影響しないが、トランスパイル後のC++コードが読みにくくなる、あるいはトランスパイラが意図しない冗長なコードを生成する恐れがあるもの。
-- **例**: 定数化可能なローカル変数の `var` 乱用、冗長な一時変数の確保、無駄な三項演算子のネストなど。
+- **Definition**: Does not directly affect GPU behavior, but makes the transpiled C++ code harder to read, or may make the transpiler generate redundant code that was not intended.
+- **Examples**: overuse of `var` for local variables that could be constants, redundant temporary variables, pointless nested ternary operators, etc.
 
-# 欠陥評価基準
+# Defect evaluation criteria
 
-評価は以下の5カテゴリで行います。以下に列挙されているのはあくまでも例です。基準は上記「深刻度の格付け基準」に従ってください。  
-優れた設計に対する【特別評価（ボーナス）】が存在する場合は抽出してください。
+The evaluation is done in the following five categories. What is listed below is only examples. Follow the "Severity rating criteria" above.
+If there is a [special evaluation (bonus)] for an excellent design, extract it.
 
-## 1. [堅牢性・GPU互換性・実行パフォーマンス]
+## 1. [Robustness, GPU compatibility, execution performance]
 
-- **【致命的】**
-  - **`new` の使用**: `var arr = new int[10];` や参照型（クラス）のインスタンス化。GPU側では `malloc` が走るかトランスパイルエラーになる。ただし、値型（struct）に対する `new MyStruct()` 等の構築は完全に許可されるため、一律で `new` を禁止しないこと。
-  - **`foreach` / LINQ の不適切使用**: `IEnumerable<T>` などの `IEnumerator` アロケーションやクロージャキャプチャを伴う利用は即死する。しかし、配列、`Span<T>`、`List<T>`、インライン配列など、コンパイラが特別にゼロアロケーションのポインタループに最適化（Lowering）する連続メモリ型に対する `foreach` は完全にサポートされているため、これらに対する `foreach` は許可すること。
-  - **動的ディスパッチ**: `virtual` や `interface` 経由の呼び出し。VTable解決ができないため不可。
-  - **型とサフィックスの不一致**: `var hoge = 0;` を使用している（C++側で符号付き `int` となり、オーバーフローのリスク大）。明示的な `uint` または `0U` サフィックスが必要。
-- **【重大】**
-  - **ローカルメモリへのスピル (動的インデックス)**: メソッド内に確保したローカル配列（`uint buffer[16];`など）に対し、コンパイル時に確定しない可変変数（`i`など）をインデックスにしてアクセスしている。NVCCはこれをレジスタに展開できず、激遅のローカルメモリに確実に退避（スピル）させる。代わりに `SharedMemory<T>` を利用するか、ループを展開（Unroll）して定数インデックス化すること。
+- **[Fatal]**
+  - **Use of `new`**: `var arr = new int[10];` or instantiating a reference type (class). On the GPU a `malloc` runs or a transpile error occurs. However, constructing a value type (struct), such as `new MyStruct()`, is fully allowed, so do not ban `new` across the board.
+  - **Inappropriate use of `foreach` / LINQ**: Use that involves `IEnumerator` allocation (e.g. `IEnumerable<T>`) or closure capture is fatal. However, `foreach` over contiguous-memory types that the compiler specially optimizes (lowers) into a zero-allocation pointer loop, such as arrays, `Span<T>`, `List<T>` and inline arrays, is fully supported, so allow `foreach` over these.
+  - **Dynamic dispatch**: calls through `virtual` or `interface`. Not possible because a VTable cannot be resolved.
+  - **Mismatch of type and suffix**: Using `var hoge = 0;` (it becomes a signed `int` on the C++ side, with a high risk of overflow). An explicit `uint` or a `0U` suffix is required.
+- **[Major]**
+  - **Spill to local memory (dynamic index)**: A local array allocated in a method (such as `uint buffer[16];`) is accessed with a variable index that is not fixed at compile time (such as `i`). NVCC cannot expand this into registers and surely evicts (spills) it to the very slow local memory. Use `SharedMemory<T>` instead, or unroll the loop to make the indexes constants.
 
-## 2. [責務の分離とGPUリソース管理]
+## 2. [Separation of responsibilities and GPU resource management]
 
-- **【致命的】**
-  - **再帰呼び出し**: GPUのコールスタックオーバーフローを引き起こすため厳禁。
-- **【重大】**
-  - **過剰な `ref` パラメータ（Aliasing）**: ポインタの別名参照の可能性により、NVCCコンパイラがレジスタキャッシュを諦める。構造体は値渡しするか最小限の `ref` に留める。
-  - **定数の未定義**: 定数値（ループ上限など）に `const` または `[GpuConst]` などを付与しておらず、コンパイラの Unrolling 最適化を阻害している。
-  - **[YAGNI原則違反]**: インターフェースや無駄なラッパーサービス層など、GPUカーネルでは害悪でしかない過剰なオブジェクト指向設計が残っている。
-- **【軽微】**
-  - 貧血ドメインモデルや不必要なカプセル化により、カーネルコードが無駄に肥大化している。
+- **[Fatal]**
+  - **Recursive calls**: Strictly forbidden because they cause a GPU call stack overflow.
+- **[Major]**
+  - **Excessive `ref` parameters (aliasing)**: The possibility of pointer aliasing makes the NVCC compiler give up register caching. Pass structs by value, or keep `ref` to a minimum.
+  - **Undefined constants**: Constant values (loop bounds, etc.) are not given `const` or `[GpuConst]`, which blocks the compiler's unrolling optimization.
+  - **[YAGNI violation]**: Excessive object-oriented design, such as interfaces and pointless wrapper service layers, which is nothing but harmful in a GPU kernel, is left in.
+- **[minor]**
+  - Anemic domain models and needless encapsulation bloat the kernel code for nothing.
 
-## 3. [認知負荷・可読性 / KISS原則の推奨]
+## 3. [Cognitive load, readability / recommended KISS principle]
 
-- **【重大】**
-  - **Warp Divergence (分岐発散)**: Warp内のスレッドごとに異なる `if` パスを通る設計。ビット演算や条件付き代入による Branchless プログラミングになっていない。
-  - **不均一なループ**: スレッドごとに反復回数が異なるループ。Warp全体が最大反復回数に引きずられてストールする。
-  - 意味を持たない数値が定数化されずにマジックナンバーとして直書きされている。
-- **【軽微】**
-  - 早期リターン（Guard Clause）を利用すればフラットに書ける処理において、不要な `else` ブロックを使用している。
-  - `const` 化可能な変数に `var` やミュータブルな宣言をしている。
+- **[Major]**
+  - **Warp Divergence**: A design in which the threads of a warp take different `if` paths. It is not branchless programming with bit operations or conditional assignment.
+  - **Non-uniform loops**: Loops whose iteration count differs per thread. The whole warp is dragged to the maximum iteration count and stalls.
+  - Meaningless numbers are written directly as magic numbers instead of constants.
+- **[minor]**
+  - An unnecessary `else` block is used in processing that could be written flat with an early return (guard clause).
+  - `var` or a mutable declaration is used for a variable that could be `const`.
 
-## 4. [リスク網羅性とエラー処理]
+## 4. [Risk coverage and error handling]
 
-- **【致命的】**
-  - `try-catch` (例外処理) をGPUカーネル内に記述している。GPUでは例外処理機構は存在しない。
-- **【重大】**
-  - 配列やポインタへのアクセス時に、スレッドIDやブロックサイズを超過する境界外アクセス (`Out of Bounds`) を防ぐガード句が欠如している。
+- **[Fatal]**
+  - A `try-catch` (exception handling) is written inside a GPU kernel. The GPU has no exception handling mechanism.
+- **[Major]**
+  - Guard clauses are missing to prevent out-of-bounds access (`Out of Bounds`) beyond the thread ID or block size when accessing arrays and pointers.
 
-## 5. [テストのROI]
+## 5. [Test ROI]
 
-- **【重大】**
-  - GPUカーネルのロジックがホスト側に過度に依存しており、C#単体としての互換テスト（CPUテスト）が著しく困難になっている。
-  - G# の仕様上不要なモックを多用している。
-  - 数値・アルゴリズムのテストが結果を検査していない、期待値を GPU から読み戻した値で作っている、または 1 行のミュータントで落ちない検査しかない（[property-test-design](../property-test-design/SKILL.md) の §8 のチェックリストで判定する）。
+- **[Major]**
+  - The GPU kernel logic depends too heavily on the host side, which makes compatibility tests as plain C# (CPU tests) extremely difficult.
+  - Mocks that are unnecessary under the G# specification are used heavily.
+  - A numeric or algorithm test does not check the result, builds the expected value from a value read back from the GPU, or has only checks that a one-line mutant does not fail (judge with the checklist in §8 of [property-test-design](../property-test-design/SKILL.md)).
 
-## ⭐ 特別評価: ボーナス加点
+## ⭐ Special evaluation: bonus points
 
-- **【ボーナス】** Warp Divergence を回避するために、条件分岐をビット演算等で見事に Branchless にリファクタリングしている。
-- **【ボーナス】** SharedMemory の利用においてバンクコンフリクトを回避するパディングやストライド計算が完璧である。
+- **[Bonus]** To avoid Warp Divergence, the conditional branches are refactored beautifully into branchless code with bit operations, etc.
+- **[Bonus]** The padding and stride calculation that avoid bank conflicts in the use of SharedMemory are perfect.
 
-# 出力フォーマット（厳格なJSONスキーマ）
+# Output format (strict JSON schema)
 
-あなたはMarkdownを一切出力してはなりません。代わりに、以下のJSONスキーマに完全に準拠した **1つの完全なJSONオブジェクト** のみを出力してください。
-コードブロック（`json ... `）で囲んでも構いませんが、JSONの前後に挨拶や説明のテキストを付加することは厳禁です。
+You must not output any Markdown. Instead, output only **one complete JSON object** that fully conforms to the JSON schema below.
+You may wrap it in a code block (`json ... `), but adding greetings or explanatory text before or after the JSON is strictly forbidden.
 
-### JSONスキーマの構造
+### JSON schema structure
 
 ```json
 {
-  "phase_title": "【Phase 1-01】[GPU / Kernel - RadixConvert] のようなコンポーネント名・機能名",
+  "phase_title": "【Phase 1-01】[GPU / Kernel - RadixConvert]-style component or feature name",
   "target_files": ["src/Kernels/RadixConvert.cu.cs"],
-  "architectural_summary": "現状のコードが抱える最大のボトルネックと、リファクタリングによって得られるROIについての総括。（ボーナス加点がある場合は賞賛も記載）",
-  "verification_summary": "エージェントが実行したテスト・ビルド・静的解析等の結果概要。",
+  "architectural_summary": "Summary of the biggest bottleneck in the current code and the ROI gained by refactoring. (If there are bonus points, include praise as well.)",
+  "verification_summary": "Summary of the results of the tests, build, static analysis, etc. that the agent ran.",
   "defects": {
     "robustness": {
       "fatal": [
-        "関数XXXでIEnumeratorアロケーションを伴うforeachループを使用している"
+        "Function XXX uses a foreach loop that involves an IEnumerator allocation"
       ],
       "major": []
     },
@@ -123,13 +123,13 @@ description: 自律検証型コードレビューガイドライン (GSharp / GP
     },
     "cognitive": {
       "major": [
-        "関数YでWarp内の分岐発散(Warp Divergence)が避けられないif文がある"
+        "Function Y has an if statement with unavoidable branch divergence (Warp Divergence) inside a warp"
       ],
-      "minor": ["関数Wで不要なelseブロックを使用している"]
+      "minor": ["Function W uses an unnecessary else block"]
     },
     "risk": {
       "fatal": [],
-      "major": ["スレッドIDの境界外アクセスを防止するガード句がない"]
+      "major": ["There is no guard clause that prevents out-of-bounds access by the thread ID"]
     },
     "roi": {
       "major": []
@@ -138,33 +138,33 @@ description: 自律検証型コードレビューガイドライン (GSharp / GP
       "patterns": true,
       "edge_cases": false,
       "details": [
-        "機能Aにおいてビット演算を用いて分岐を排除しておりGPU性能が極めて高い"
+        "Feature A removes branches with bit operations and has extremely high GPU performance"
       ]
     }
   },
   "refactoring_proposals": [
     {
       "priority": "fatal",
-      "what_why": "問題の現象と根本原因（言語仕様上のリスク、設計上の欠陥など）。",
-      "source_of_risk": "リスクの原因となっている具体的なコード箇所やデータフローの指摘。",
-      "how": "脆弱性の修正、関数の抽出、構造体への移行などの具体的な設計変更案。"
+      "what_why": "The phenomenon of the problem and its root cause (language-spec risks, design defects, etc.).",
+      "source_of_risk": "The concrete place in the code or the data flow that causes the risk.",
+      "how": "A concrete design change such as fixing a vulnerability, extracting a function or moving to a struct."
     },
     {
       "priority": "major",
-      "what_why": "Warp Divergence回避の提案など",
-      "source_of_risk": "GPUリソースの無駄遣いや発散箇所など",
-      "how": "改善案"
+      "what_why": "A proposal such as avoiding Warp Divergence",
+      "source_of_risk": "Wasted GPU resources, divergence points, etc.",
+      "how": "Improvement proposal"
     }
   ],
   "test_strategy": {
     "coverage_measured": "80%",
-    "additions": "カバレッジが不足しており、かつビジネス/セキュリティリスクが高いためROIが極めて高い実行パスの指摘。",
-    "reductions": "過剰なモックの指摘、または現状のカバレッジで十分という助言。"
+    "additions": "Points out an execution path with very high ROI because its coverage is insufficient and its business/security risk is high.",
+    "reductions": "Points out excessive mocks, or advises that the current coverage is sufficient."
   }
 }
 ```
 
-### ⚠️ JSON生成に関する絶対制約
+### ⚠️ Absolute constraints on JSON generation
 
-- **`defects` オブジェクト**: 各カテゴリの配列には、件数ではなく「ファイル名、行数、具体的な欠陥内容」を直接記述してください。該当する欠陥がない場合は空の配列 `[]` を指定してください。
-- **純粋なJSON**: 出力全体がパース可能な有効なJSONでなければなりません。途中でMarkdownのテキストを挿入したり、数式や計算メモを記載しないでください。
+- **`defects` object**: In the array of each category, write directly "the file name, line number and concrete defect content", not a count. If there is no applicable defect, specify an empty array `[]`.
+- **Pure JSON**: The whole output must be valid, parseable JSON. Do not insert Markdown text in the middle, or write formulas or calculation notes.
