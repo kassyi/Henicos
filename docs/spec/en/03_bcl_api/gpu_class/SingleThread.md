@@ -3,7 +3,7 @@ title: "Gpu.SingleThread Method (G#)"
 site: "G# Documentation"
 published: "2026-09-22T00:00:00.000Z"
 language: "en"
-description: "Wraps the provided body in a thread execution guard."
+description: "Runs the provided body once per launch, on the thread whose thread and block indices are all 0."
 ---
 
 ## Gpu.SingleThread Method
@@ -13,17 +13,17 @@ description: "Wraps the provided body in a thread execution guard."
 **Namespace:** `Kassyi.GSharp.Core`  
 **Assembly:** `Kassyi.GSharp.Core.dll`
 
-Wraps the provided body in a thread execution guard.
+Runs the provided body once per launch, on the thread whose thread and block indices are all 0.
 
 ## Overloads
 
 | Name | Description |
 | --- | --- |
-| [SingleThread(Action)](#singlethread-action) | Wraps the provided body in a thread execution guard. |
+| [SingleThread(Action)](#singlethread-action) | Runs the provided body once per launch. |
 
 ## SingleThread(Action)
 
-Wraps the provided body in a thread execution guard.
+Runs the provided body once per launch, on the thread whose thread and block indices are all 0.
 
 ```csharp
 public static void SingleThread(Action body);
@@ -37,7 +37,7 @@ A delegate or lambda expressing the body to execute once.
 #### Exceptions
 
 [GpuOnlyException](../01_diagnostics_and_exceptions.md#gpuonlyexception)<br>
-Thrown when evaluated on the host CPU.
+Thrown when evaluated on the host CPU outside a kernel launch.
 
 ## Examples
 
@@ -53,10 +53,10 @@ using Kassyi.GSharp.Core;
 // Execution Context: G# Kernel (GPU)
 
 try {
-    // Ensures the enclosed block only runs on thread 0 of block 0
+    // Ensures the enclosed block runs once, on thread (0,0,0) of block (0,0,0)
     Gpu.SingleThread(() => 
     {
-        Console.WriteLine("Executing exclusively on Thread 0, Block 0.");
+        Console.WriteLine("Executing exclusively on thread (0,0,0) of block (0,0,0).");
     });
 } catch (GpuOnlyException) {
     Console.WriteLine("Gpu.SingleThread can only be executed on the GPU.");
@@ -65,13 +65,34 @@ try {
 
 ## Remarks
 
-Expands into an execution guard:
+The body runs exactly once per launch, whatever the shape of the blocks and the grid: only the thread whose six indices
+(`threadIdx.x`, `.y`, `.z` and `blockIdx.x`, `.y`, `.z`) are all 0 runs it. It expands into an execution guard:
+
 ```cpp
 // Execution Context: Generated C++ (GPU)
-if (threadIdx.x == 0 && blockIdx.x == 0) 
-{ 
+if((threadIdx.x|threadIdx.y|threadIdx.z|blockIdx.x|blockIdx.y|blockIdx.z)==0)
+{
     // body...
 }
+```
+
+CUDA, the native CPU path and the managed CPU path use the same condition.
+
+A `return` in the body leaves the body only, as in C#: the statements after `Gpu.SingleThread` still run on that thread.
+The generated code jumps to a label after the guard instead of returning from the kernel:
+
+```csharp
+// Execution Context: G# Kernel (GPU)
+Gpu.SingleThread(() =>
+{
+    if (flag == 0)
+    {
+        return;      // leaves the body
+    }
+
+    a[0] = 1;
+});
+a[ThreadIndex.X + 1] = 2;  // thread (0,0,0) of block (0,0,0) still runs this
 ```
 
 ## See also

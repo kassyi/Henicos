@@ -352,6 +352,14 @@ internal static class StatementTranspilers
     {
         var isStateMachineReturn = node.HasAnnotations(LoweringAnnotations.StateMachineReturnAnnotationKind);
 
+        // A return of a Gpu.SingleThread body leaves the body, as in C#, not the kernel or device function
+        if (context.Emitter.SingleThreadEndLabel is { } singleThreadEnd &&
+            context.Emitter.CallableDepth == context.Emitter.SingleThreadCallableDepth)
+        {
+            context.Emitter.Writer.Append($"goto {singleThreadEnd};");
+            return;
+        }
+
         if (context.Emitter is { IsSuspendingDeviceFunction: true, CallableDepth: 0 })
         {
             TranspileSuspendingDeviceFunctionReturn(node, isStateMachineReturn, ref context);

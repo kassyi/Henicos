@@ -8,6 +8,12 @@ internal sealed partial class ManagedExecutionRewriter(SemanticModel semanticMod
 {
     private int _inLambdaOrLocalFuncCount;
 
+    // The label after the Gpu.SingleThread body being rewritten, when the body has a return, and the lambda depth of
+    // that body: a return at that depth jumps to the label (#693)
+    private string? _singleThreadEndLabel;
+    private int _singleThreadDepth;
+    private int _nextSingleThreadId;
+
     // The number of the next loop variable that a Gpu.ForUnroll becomes; found on the first visit, which is the body
     private int _nextUnrollId = -1;
 
