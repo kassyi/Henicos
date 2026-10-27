@@ -36,7 +36,7 @@ public sealed class GSharpKernelFloatProvider(IGpuBigFloatArithmetic fallbackStr
 | `Multiply(...)` | Computes normalized multiplication of two arbitrary-precision floating-point numbers. |
 | `Divide(...)` | Computes normalized division using hybrid routing via G# device kernels and Newton-Raphson reciprocals. |
 | `Reciprocal(...)` | Computes the normalized reciprocal ($1 / x$) via G# device kernels. |
-| `Sqrt(...)` | Computes the normalized square root ($\sqrt{x}$) via G# device kernels or fallback strategy. |
+| `Sqrt(...)` | Computes $\mathrm{RZ}_p(\sqrt{x})$: the exact integer square root of the value scaled to $2p$ bits, from an inverse square root estimate and a correction on the device. |
 | `Rsqrt(...)` | Computes the normalized reciprocal square root ($1 / \sqrt{x}$) by composing `Sqrt` and `Reciprocal`. |
 | `Exp(...)` | Computes $\mathrm{RZ}_p(e^x)$ on the GPU: reduction by $k \ln 2$ and $2^s$, a Paterson–Stockmeyer Taylor polynomial, $s$ squarings and the rounding check (see [Transcendental Functions](#transcendental-functions)). |
 | `Log(...)` | Computes $\mathrm{RZ}_p(\ln x)$ on the GPU: reduction by $2^e$ and an $\mathrm{atanh}$ series in Horner or Paterson–Stockmeyer form, with the rounding check. |

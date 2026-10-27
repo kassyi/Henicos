@@ -4,7 +4,7 @@ using Kassyi.GSharp.Stdlib.GpuMath.BigNum.Providers.Handlers;
 namespace Kassyi.GSharp.Stdlib.GpuMath.Tests.BigNum;
 
 // Properties checked here (property-test-design §1):
-// - A device correction (ReduceZeroSync, ReciprocalMega, InverseSqrtMega) that does not converge within its step limit
+// - A device correction (ReduceZeroSync, ReciprocalMega, InverseSqrtMega, SqrtFloor) that does not converge within its step limit
 //   is reported as InvalidOperationException, naming the operation, at the next read of the same workspace's stream.
 //   No synchronization is added: the status word travels with an existing read.
 // - After the exception the status is reset, so the same workspace computes correctly again, and a failure on one
@@ -360,6 +360,137 @@ public class CorrectionStatusTests : IDisposable
             // input: both offsets
             Assert.Throws<InvalidOperationException>(() => gpuX.ToBigInteger());
         }
+    }
+
+    /// <summary>
+    /// Offsets of an integer square root estimate from <c>floor(sqrt(a))</c> within the 4 steps of the SqrtFloor
+    /// correction, for a remainder <c>a - r²</c> of 0 (the smallest) and of <c>2r</c> (the largest).
+    /// </summary>
+    public static TheoryData<int, bool> SqrtFloorOffsets()
+    {
+        var data = new TheoryData<int, bool>();
+        foreach (var offset in new[] { -4, -1, 0, 1, 4 })
+        {
+            data.Add(offset, false);
+            data.Add(offset, true);
+        }
+
+        return data;
+    }
+
+    // SqrtFloorCorrection moves an estimate to floor(sqrt(a)) from below (stepping up while (r + 1)² <= a) and from
+    // above (stepping down while r² > a), up to its limit of 4 steps, and keeps an exact estimate. The largest
+    // remainder 2r is the boundary of the step-up test: r + 1 must not be taken there.
+    // mutant: GpuBigIntSqrtKernels.cu.cs:167 `AddSmallSigned(root, rootWords, -1)` removed (offsets 1 and 4)
+    // mutant: GpuBigIntSqrtKernels.cu.cs:166 `AddSmallSigned(slack, slackWords, -1)` removed (offsets 1 and 4 with the largest
+    // remainder: the slack after stepping down is one too large, so r + 1 looks allowed)
+    // mutant: GpuBigIntSqrtKernels.cu.cs:149 `step <= maxSteps` -> `step < maxSteps` (offsets -4 and 4)
+    [SkippableTheory]
+    [TestTarget(ExecutionTarget.GpuExecution)]
+    [Category(TestCategory.Stdlib)]
+    [Scenario(TestScenario.Boundary)]
+    [MemberData(nameof(SqrtFloorOffsets))]
+    public void SqrtFloorCorrection_EstimateWithinStepLimit_IsCorrected(int offset, bool largestRemainder)
+    {
+        var (workspace, buffers, floor) = CreateSqrtFloorEstimate(offset, largestRemainder);
+        using (workspace)
+        using (buffers)
+        {
+            workspace.Provider.SqrtFloorCorrection(workspace, buffers.Operand, buffers.RootSquared, buffers.Root,
+                buffers.Slack, buffers.Trial);
+
+            Assert.Equal(floor, buffers.Root.ToBigInteger());
+        }
+    }
+
+    // An estimate 5 steps away is not confirmed within the limit: the next read reports SqrtFloor, and the workspace
+    // corrects an estimate within the limit afterwards.
+    // mutant: KernelAdvancedMathHandler.cs:251 `SqrtCorrectionMaxSteps = 4` -> `5` (both offsets are confirmed)
+    [SkippableTheory]
+    [TestTarget(ExecutionTarget.GpuExecution)]
+    [Category(TestCategory.Stdlib)]
+    [Scenario(TestScenario.SadPath)]
+    [InlineData(-5)]
+    [InlineData(5)]
+    public void SqrtFloorCorrection_EstimateBeyondStepLimit_ThrowsOnNextReadAndRecovers(int offset)
+    {
+        var (workspace, buffers, floor) = CreateSqrtFloorEstimate(offset, largestRemainder: false);
+        using (workspace)
+        using (buffers)
+        {
+            workspace.Provider.SqrtFloorCorrection(workspace, buffers.Operand, buffers.RootSquared, buffers.Root,
+                buffers.Slack, buffers.Trial);
+            var exception = Assert.Throws<InvalidOperationException>(() => buffers.Root.ToBigInteger());
+            Assert.Contains("SqrtFloor", exception.Message);
+
+            var root = ToWords(floor - 1, buffers.Root.NumWords);
+            var square = ToWords((floor - 1) * (floor - 1), buffers.RootSquared.NumWords);
+            workspace.Provider.CopyHostToDevice(buffers.Root.DevicePointer, root, root.Length, workspace.Stream);
+            workspace.Provider.CopyHostToDevice(buffers.RootSquared.DevicePointer, square, square.Length, workspace.Stream);
+            workspace.Provider.SqrtFloorCorrection(workspace, buffers.Operand, buffers.RootSquared, buffers.Root,
+                buffers.Slack, buffers.Trial);
+            Assert.Equal(floor, buffers.Root.ToBigInteger());
+        }
+    }
+
+    // The kernel reads and writes its buffers without bounds checks, so the host rejects a short one.
+    [SkippableFact]
+    [TestTarget(ExecutionTarget.GpuExecution)]
+    [Category(TestCategory.Stdlib)]
+    [Scenario(TestScenario.SadPath)]
+    public void SqrtFloorCorrection_ShortBuffer_ThrowsArgumentException()
+    {
+        using var workspace = new GpuWorkspace(256, GpuExecutionEngine.GSharpAot);
+        using var operand = new GpuBigUInt(workspace, 8);
+        using var square = new GpuBigUInt(workspace, 8);
+        using var root = new GpuBigUInt(workspace, 4);
+        using var slack = new GpuBigUInt(workspace, 9);
+        using var shortTrial = new GpuBigUInt(workspace, 8);
+        using var shortSquare = new GpuBigUInt(workspace, 7);
+
+        // mutant: KernelAdvancedMathHandler.cs:259 `trial.NumWords < slackWords` -> `trial.NumWords < slackWords - 1`
+        Assert.Throws<ArgumentException>(() =>
+            workspace.Provider.SqrtFloorCorrection(workspace, operand, square, root, slack, shortTrial));
+        Assert.Throws<ArgumentException>(() =>
+            workspace.Provider.SqrtFloorCorrection(workspace, operand, shortSquare, root, slack, slack));
+    }
+
+    private sealed class SqrtFloorBuffers(GpuBigUInt operand, GpuBigUInt rootSquared, GpuBigUInt root, GpuBigUInt slack,
+        GpuBigUInt trial) : IDisposable
+    {
+        public GpuBigUInt Operand => operand;
+        public GpuBigUInt RootSquared => rootSquared;
+        public GpuBigUInt Root => root;
+        public GpuBigUInt Slack => slack;
+        public GpuBigUInt Trial => trial;
+
+        public void Dispose()
+        {
+            operand.Dispose();
+            rootSquared.Dispose();
+            root.Dispose();
+            slack.Dispose();
+            trial.Dispose();
+        }
+    }
+
+    // a = r² (+ 2r) for a random 4-word r with its top bit set, the estimate r + offset and its square.
+    private static (GpuWorkspace Workspace, SqrtFloorBuffers Buffers, BigInteger Floor) CreateSqrtFloorEstimate(
+        int offset, bool largestRemainder)
+    {
+        const int RootWords = 4;
+        var floor = FromWords(RandomWords(seed: 661 + offset, RootWords));
+        var a = floor * floor + (largestRemainder ? 2 * floor : BigInteger.Zero);
+        var estimate = floor + offset;
+
+        var workspace = new GpuWorkspace(256, GpuExecutionEngine.GSharpAot);
+        var buffers = new SqrtFloorBuffers(
+            new GpuBigUInt(workspace, ToWords(a, 2 * RootWords)),
+            new GpuBigUInt(workspace, ToWords(estimate * estimate, 2 * RootWords)),
+            new GpuBigUInt(workspace, ToWords(estimate, RootWords)),
+            new GpuBigUInt(workspace, 2 * RootWords + 1),
+            new GpuBigUInt(workspace, 2 * RootWords + 1));
+        return (workspace, buffers, floor);
     }
 
     // A read that fails before its wait (here the asynchronous copy rejects a host buffer shorter than numWords, after

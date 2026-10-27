@@ -284,27 +284,32 @@ public sealed class GSharpKernelFloatProvider(IGpuBigFloatArithmetic fallbackStr
             return fallbackStrategy.Sqrt(ref context, in value, resultSig);
         }
 
-        var stream = context.Stream;
-        var valueOperand = value.Significand.AsBorrowedBigUInt(context.GpuWorkspace);
+        var workspace = context.GpuWorkspace;
+        var valueOperand = value.Significand.AsBorrowedBigUInt(workspace);
 
         var actualBits = valueOperand.GetBitLength();
         if (actualBits == 0)
         {
-            context.GpuWorkspace.Provider.ClearMemoryAsync(resultSig.DevicePointer, resultSig.NumWords, stream);
+            workspace.Provider.ClearMemoryAsync(resultSig.DevicePointer, resultSig.NumWords, context.Stream);
             return new GpuFloatResult(0, false);
         }
 
-        using var invSqrt = ComputeNormalizedInverseSqrt(new InverseSqrtRequest(
-            context.GpuWorkspace, valueOperand, value.Exponent, actualBits, resultSig.NumWords));
+        // sqrt(S·2^E) = sqrt(S·2^t)·2^((E - t) / 2). With E - t even and S·2^t in [2^(2p-2), 2^(2p)), the integer square
+        // root of A = floor(S·2^t) has exactly p bits and is RZ_p of the root: floor(sqrt(floor(y))) = floor(sqrt(y)), so
+        // a negative t may truncate S (#661).
+        var n = resultSig.NumWords;
+        var shift = 2L * 32 * n - actualBits;
+        if ((value.Exponent - shift) % 2 != 0)
+        {
+            shift--;
+        }
 
-        var prodWords = invSqrt.NormalizedOperand.NumWords + invSqrt.SlicedInverseSqrt.NumWords;
-        using var prodResult = context.GpuWorkspace.RentTemp(prodWords);
-        context.GpuWorkspace.Provider.ClearMemoryAsync(prodResult.DevicePointer, prodWords, stream);
+        using var scaled = workspace.RentTemp(2 * n);
+        GpuBigIntMath.ShiftAndResize(valueOperand, checked((int)shift), scaled);
+        GpuBigIntDivRem.SqrtFloor(scaled, resultSig.AsBorrowedBigUInt(workspace));
 
-        GpuBigIntMath.Mul(invSqrt.NormalizedOperand, invSqrt.SlicedInverseSqrt, prodResult);
-
-        var tempExp = (invSqrt.AdjustedExponent / 2) - invSqrt.EffectiveScaleBits;
-        return Normalize(ref context, new GpuFloatOperand(prodResult.Handle, tempExp), resultSig);
+        // E - t is computed in long and is even; the exponent of the result must fit in int.
+        return new GpuFloatResult(checked((int)((value.Exponent - shift) / 2)), false);
     }
 
     /// <inheritdoc/>
@@ -334,8 +339,9 @@ public sealed class GSharpKernelFloatProvider(IGpuBigFloatArithmetic fallbackStr
         using var invSqrt = ComputeNormalizedInverseSqrt(new InverseSqrtRequest(
             context.GpuWorkspace, valueOperand, value.Exponent, actualBits, resultSig.NumWords));
 
+        // The exponents are computed in long; the exponent of the result must fit in int.
         var tempExp = -(invSqrt.AdjustedExponent / 2) - invSqrt.EffectiveScaleBits;
-        return Normalize(ref context, new GpuFloatOperand(invSqrt.SlicedInverseSqrt.Handle, tempExp), resultSig);
+        return NormalizeScaled(context.GpuWorkspace, invSqrt.SlicedInverseSqrt.Handle, tempExp, false, resultSig);
     }
 
     private static NormalizedInverseSqrtScope ComputeNormalizedInverseSqrt(in InverseSqrtRequest request)
@@ -344,11 +350,11 @@ public sealed class GSharpKernelFloatProvider(IGpuBigFloatArithmetic fallbackStr
         var stream = workspace.Stream;
         var workWords = Math.Max(request.ValueOperand.NumWords, request.TargetResultWords);
         var lz = workWords * 32 - request.ActualBits;
-        var adjustedExp = request.ValueExp - lz;
+        var adjustedExp = (long)request.ValueExp - lz;
         if (adjustedExp % 2 != 0)
         {
             lz--;
-            adjustedExp = request.ValueExp - lz;
+            adjustedExp = (long)request.ValueExp - lz;
         }
 
         var aNorm = workspace.RentTemp(workWords);
@@ -481,13 +487,13 @@ public sealed class GSharpKernelFloatProvider(IGpuBigFloatArithmetic fallbackStr
         [TakesOwnership] GpuBigUInt normalizedOperand,
         [TakesOwnership] GpuBigUInt rawInverseSqrt,
         GpuBigUInt slicedInverseSqrt,
-        int adjustedExponent,
+        long adjustedExponent,
         int effectiveScaleBits) : IDisposable
     {
         public GpuBigUInt NormalizedOperand => normalizedOperand;
         public GpuBigUInt RawInverseSqrt => rawInverseSqrt;
         public GpuBigUInt SlicedInverseSqrt => slicedInverseSqrt;
-        public int AdjustedExponent => adjustedExponent;
+        public long AdjustedExponent => adjustedExponent;
         public int EffectiveScaleBits => effectiveScaleBits;
 
         public void Dispose()

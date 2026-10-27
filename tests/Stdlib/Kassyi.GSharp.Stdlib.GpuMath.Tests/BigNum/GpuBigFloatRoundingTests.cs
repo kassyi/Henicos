@@ -340,6 +340,160 @@ public class GpuBigFloatRoundingTests : IDisposable
         Assert.True(inverse.GetBitLength() == p && low <= Dyadic.One && Dyadic.One < high, $"Rsqrt: 0x{inverse:X} * 2^{rsqrt.Exponent}");
     }
 
+    /// <summary>
+    /// A square root input <c>S·2^E</c> stored in exactly <c>Words.Length</c> words, with the number of result words.
+    /// </summary>
+    private sealed record RootCase(uint[] Words, int Exponent, int ResultWords);
+
+    private static readonly Dictionary<string, RootCase> s_sqrtCases = CreateSqrtCases();
+
+    public static TheoryData<string, string> SqrtCasesOnBothEngines()
+    {
+        var data = new TheoryData<string, string>();
+        foreach (var name in s_sqrtCases.Keys)
+        {
+            data.Add("Gpu", name);
+            data.Add("Cpu", name);
+        }
+
+        return data;
+    }
+
+    // P1: Sqrt returns RZ_p(sqrt(a)), the reference RzSqrt (an integer square root of the test's own, checked against
+    // r² <= A < (r + 1)²; not the product's). P2: the result satisfies the definition by itself,
+    // R²·2^(2e) <= a < (R + 1)²·2^(2e) with R of exactly p bits, so an exact root (PerfectSquares) is returned exactly.
+    // mutant: GSharpKernelFloatProvider.cs:302 `% 2 != 0` -> `% 2 == 0` (every case: the root of 2·a, or an odd shift)
+    // mutant: GSharpKernelFloatProvider.cs:308 `checked((int)shift)` -> `checked((int)Math.Max(shift, 0))` (Width9, Width16, Width16ZeroLow)
+    // mutant: GSharpKernelFloatProvider.cs:301 `2L * 32 * n` -> `2 * 32 * n` (ParityMin, ParityMinPlus1: E - t wraps)
+    // mutant: GpuBigIntDivRem.Sqrt.cs:117 `+ 48` -> `+ 47` (the estimate is twice the root)
+    // mutant: GpuBigIntSqrtKernels.cu.cs:176 `AddSmallSigned(trial, slackWords, -1)` removed (NearSquarePlus2R steps to r + 1,
+    // NearSquareMinus1)
+    // mutant: GpuBigIntSqrtKernels.cu.cs:192 `AddSmallSigned(root, rootWords, 1)` -> `0` (NearSquareExact, NearSquarePlus1,
+    // NearSquareNext, SquareWide: the estimate one below the root is not raised)
+    [SkippableTheory]
+    [Scenario(TestScenario.Boundary)]
+    [MemberData(nameof(SqrtCasesOnBothEngines))]
+    public void Sqrt_IsRoundedTowardZero(string engine, string caseName)
+    {
+        var rootCase = s_sqrtCases[caseName];
+        var p = 32 * rootCase.ResultWords;
+        var a = new Dyadic(FromWords(rootCase.Words), rootCase.Exponent);
+        var (expectedSig, expectedExp) = BigFloatReference.RzSqrt(a.Mantissa, a.Exponent, p);
+
+        using var value = new GpuBigUInt(_workspace, rootCase.Words);
+        using var result = new GpuBigUInt(_workspace, rootCase.ResultWords);
+        var context = CreateContext();
+        var operand = new GpuFloatOperand(value.Handle, rootCase.Exponent);
+        var sqrt = Arithmetic(engine).Sqrt(ref context, in operand, result.Handle);
+        var root = result.ToBigInteger();
+
+        Assert.True(
+            (expectedSig, expectedExp, false) == (root, (long)sqrt.Exponent, sqrt.IsNegative),
+            $"{caseName} [{engine}]: expected 0x{expectedSig:X} * 2^{expectedExp}, actual 0x{root:X} * 2^{sqrt.Exponent}");
+        var square = new Dyadic(root * root, 2L * sqrt.Exponent);
+        var nextSquare = new Dyadic((root + 1) * (root + 1), 2L * sqrt.Exponent);
+        Assert.True(
+            root.GetBitLength() == p && square <= a && a < nextSquare,
+            $"{caseName} [{engine}]: 0x{root:X} * 2^{sqrt.Exponent} is not RZ_{p}(sqrt(a))");
+    }
+
+    // The square root of a negative value is not defined; the square root of zero is positive zero.
+    [SkippableTheory]
+    [Scenario(TestScenario.SadPath)]
+    [InlineData("Gpu")]
+    [InlineData("Cpu")]
+    public void Sqrt_NegativeThrows_ZeroIsZero(string engine)
+    {
+        var arithmetic = Arithmetic(engine);
+        using var value = new GpuBigUInt(_workspace, [9u]);
+        using var zero = new GpuBigUInt(_workspace, [0u, 0u]);
+        using var result = new GpuBigUInt(_workspace, [0x1234_5678u, 1u, 2u, 3u]);
+        var context = CreateContext();
+
+        var negative = new GpuFloatOperand(value.Handle, 0, true);
+        Assert.Throws<InvalidOperationException>(() =>
+        {
+            var c = CreateContext();
+            arithmetic.Sqrt(ref c, in negative, result.Handle);
+        });
+
+        var zeroOperand = new GpuFloatOperand(zero.Handle, 5);
+        var sqrt = arithmetic.Sqrt(ref context, in zeroOperand, result.Handle);
+        Assert.Equal((BigInteger.Zero, 0, false), (result.ToBigInteger(), sqrt.Exponent, sqrt.IsNegative));
+    }
+
+    private static Dictionary<string, RootCase> CreateSqrtCases()
+    {
+        var cases = new Dictionary<string, RootCase>
+        {
+            // PerfectSquares: an exact root is returned exactly. Powers of two have an exact inverse square root
+            // (theta = 0 in the design); 9, 25 and the wide square do not, so the approximation lands below the root
+            // and the correction has to step up.
+            ["Square4n1"] = new([4u], 0, 1),
+            ["Square9n1"] = new([9u], 0, 1),
+            ["Square9n4"] = new([9u], 0, 4),
+            ["Square9n8"] = new([9u], 0, 8),
+            ["Square25n4"] = new([25u], 0, 4),
+            ["Square9Scaled"] = new([9u], 74, 4),
+            ["SquareWide"] = new(ToWords(BigInteger.Pow((BigInteger.One << 64) + (BigInteger.One << 33) + 1, 2)), 0, 4),
+
+            // ExponentParity: the same significand at even, odd, large and extreme exponents (E - t computed in long).
+            ["Parity0"] = new([0x9ABC_DEF0u, 0x1234_5678u], 0, 4),
+            ["Parity1"] = new([0x9ABC_DEF0u, 0x1234_5678u], 1, 4),
+            ["ParityMinus1"] = new([0x9ABC_DEF0u, 0x1234_5678u], -1, 4),
+            ["ParityLarge"] = new([0x9ABC_DEF0u, 0x1234_5678u], 1 << 30, 4),
+            ["ParityLargeNegative"] = new([0x9ABC_DEF0u, 0x1234_5678u], -(1 << 30), 4),
+            ["ParityMax"] = new([0x9ABC_DEF0u, 0x1234_5678u], int.MaxValue, 4),
+            ["ParityMin"] = new([0x9ABC_DEF0u, 0x1234_5678u], int.MinValue, 4),
+            ["ParityMinPlus1"] = new([0x9ABC_DEF0u, 0x1234_5678u], int.MinValue + 1, 4),
+        };
+
+        // NearSquares (n = 4): A = r² + d for a 128-bit r is used as it is (t = 0), so the root is r - 1, r or r + 1
+        // and the remainder spans its whole range [0, 2r]: r² - 1, r², r² + 1, r² + 2r (the largest remainder) and
+        // (r + 1)².
+        var r = (BigInteger.One << 127) + BigInteger.Parse("0123456789ABCDEF0123456789ABCDE", System.Globalization.NumberStyles.HexNumber);
+        cases["NearSquareMinus1"] = new(ToWords(r * r - 1, 8), 0, 4);
+        cases["NearSquareExact"] = new(ToWords(r * r, 8), 0, 4);
+        cases["NearSquarePlus1"] = new(ToWords(r * r + 1, 8), 0, 4);
+        cases["NearSquarePlus2R"] = new(ToWords(r * r + 2 * r, 8), 0, 4);
+        cases["NearSquareNext"] = new(ToWords((r + 1) * (r + 1), 8), 0, 4);
+
+        // PrecisionLadder: every result width that changes the margin of the approximation (m = ceil(n/2)) and the
+        // widths of the old fixed 4-word margin, for 3, 7 and a random n-word value (seed 42 + 37n).
+        foreach (var n in new[] { 1, 2, 3, 4, 5, 6, 8, 9, 16, 17, 32, 33 })
+        {
+            cases[$"Ladder3n{n}"] = new([3u], 0, n);
+            cases[$"Ladder7n{n}"] = new([7u], 1, n);
+            cases[$"LadderRandomn{n}"] = new(RandomWords(new Random(42 + 37 * n), n), -5, n);
+        }
+
+        // InputWidth (n = 4): operands of 1, n, 2n, 2n + 1 and 4n words, so A is shifted left (t > 0), taken as it
+        // is (t = 0) or truncated (t < 0, with set and with zero dropped bits).
+        var widthRandom = new Random(661);
+        cases["Width1"] = new(RandomWords(widthRandom, 1), 0, 4);
+        cases["Width4"] = new(RandomWords(widthRandom, 4), 0, 4);
+        cases["Width8"] = new(RandomWords(widthRandom, 8), 0, 4);
+        cases["Width9"] = new(RandomWords(widthRandom, 9), 1, 4);
+        cases["Width16"] = new(RandomWords(widthRandom, 16), 0, 4);
+        var high = RandomWords(widthRandom, 8);
+        cases["Width16ZeroLow"] = new([0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, .. high], 0, 4);
+        return cases;
+    }
+
+    private static uint[] ToWords(BigInteger value) =>
+        ToWords(value, Math.Max(1, (int)((value.GetBitLength() + 31) / 32)));
+
+    private static uint[] ToWords(BigInteger value, int count)
+    {
+        var words = new uint[count];
+        for (var i = 0; i < count; i++)
+        {
+            words[i] = (uint)((value >> (32 * i)) & uint.MaxValue);
+        }
+
+        return words;
+    }
+
     private static Dictionary<string, ArithmeticCase> CreateCases()
     {
         // Seed 661 (the issue number) keeps the values stable across runs.

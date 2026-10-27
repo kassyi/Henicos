@@ -37,7 +37,7 @@ public interface IGpuBigFloatArithmetic
 
 Every method takes its operands as `GpuFloatOperand` (a significand handle, an exponent and a sign: $\pm\text{Significand} \times 2^{\text{Exponent}}$) and writes the significand of the result to `resultSig`. The word count $n$ of `resultSig` sets the precision of the result, $p = 32n$ bits. The method returns the exponent and the sign of the result as a `GpuFloatResult`.
 
-`Normalize`, `Add`, `Multiply`, `Divide`, `Reciprocal`, `Exp`, `Log` and `Pow` return $\mathrm{RZ}_p(v)$: the exact value $v$ rounded toward zero to $p$ bits, with the significand normalized to its top bit. A value that fits in $p$ bits is returned exactly. The result depends only on the values of the operands, not on their word counts or leading zero words, and the GPU and the CPU provider return the same bits. When the exponent of the result does not fit in `int`, they throw `OverflowException`; an intermediate exponent outside `int` (such as the sum of two exponents in `Multiply`) is not an error when the result fits.
+`Normalize`, `Add`, `Multiply`, `Divide`, `Reciprocal`, `Sqrt`, `Exp`, `Log` and `Pow` return $\mathrm{RZ}_p(v)$: the exact value $v$ rounded toward zero to $p$ bits, with the significand normalized to its top bit. A value that fits in $p$ bits is returned exactly. The result depends only on the values of the operands, not on their word counts or leading zero words, and the GPU and the CPU provider return the same bits. When the exponent of the result does not fit in `int`, they throw `OverflowException`; an intermediate exponent outside `int` (such as the sum of two exponents in `Multiply`) is not an error when the result fits.
 
 ## Add(ref GpuBigIntExecutionContext, in GpuFloatOperand, in GpuFloatOperand, GpuBigIntMemoryHandle)
 
@@ -282,6 +282,10 @@ GpuFloatResult Sqrt(
 
 `InvalidOperationException`  
 `value` is negative.
+
+#### Remarks
+
+The result is $\mathrm{RZ}_p(\sqrt{x})$, so an exact root ($\sqrt{9} = 3$) is returned exactly; the square root of zero is positive zero. The GPU provider scales the value to $2p$ bits with an even exponent, gets an estimate of the integer square root from an inverse square root (the root or one less), and corrects it on the device.
 
 ## Remarks
 

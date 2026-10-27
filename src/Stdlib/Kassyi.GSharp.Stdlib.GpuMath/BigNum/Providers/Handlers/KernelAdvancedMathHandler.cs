@@ -246,6 +246,31 @@ public sealed class KernelAdvancedMathHandler : IGpuAdvancedMathProvider
         workspace.CorrectionStatus?.MarkPending();
     }
 
+    // An estimate within one step of floor(sqrt(a)) needs one; the rest is a safety margin before the status reports a
+    // failure.
+    private const int SqrtCorrectionMaxSteps = 4;
+
+    /// <inheritdoc />
+    public void SqrtFloorCorrection(GpuWorkspace workspace, GpuBigUInt operand, GpuBigUInt rootSquared,
+        GpuBigUInt root, GpuBigUInt slack, GpuBigUInt trial)
+    {
+        // The kernel reads and writes these words without bounds checks, so the sizes are checked on the host.
+        var slackWords = operand.NumWords + 1;
+        if (rootSquared.NumWords != operand.NumWords || slack.NumWords < slackWords || trial.NumWords < slackWords
+            || root.NumWords > operand.NumWords)
+        {
+            throw new ArgumentException(
+                $"SqrtFloorCorrection needs r^2 of {operand.NumWords} words, slack and trial of {slackWords} words and a root of at most {operand.NumWords} words; got {rootSquared.NumWords}, {slack.NumWords}, {trial.NumWords} and {root.NumWords}.");
+        }
+
+        // One block: the correction runs on block 0 with block-wide barriers, without a host synchronization.
+        GpuBigIntSqrtKernels.LaunchSqrtFloorCorrectionKernelPtr(operand.DevicePointer, rootSquared.DevicePointer,
+            root.DevicePointer, slack.DevicePointer, trial.DevicePointer, operand.NumWords, root.NumWords,
+            SqrtCorrectionMaxSteps, workspace.CorrectionStatusPointer, gridDimX: 1, blockDimX: 1024,
+            hStream: workspace.Stream);
+        workspace.CorrectionStatus?.MarkPending();
+    }
+
     private static GpuBigIntSqrtKernels.AotContexts.SqrtNewtonRaphson BuildSqrtContext(
         GpuBigUInt targetOperand, GpuBigUInt resultBuffer, GpuBigUInt constant3,
         int n, int marginWords, int actualBits, int marginBits, int iterations,

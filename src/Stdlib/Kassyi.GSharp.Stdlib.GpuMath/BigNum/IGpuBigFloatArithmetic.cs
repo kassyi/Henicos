@@ -127,6 +127,15 @@ public interface IGpuBigFloatArithmetic
     /// <param name="value">The input radicand floating-point operand.</param>
     /// <param name="resultSig">The memory handle where the square root significand will be stored.</param>
     /// <returns>A <see cref="GpuFloatResult"/> containing the resulting exponent and sign flag.</returns>
+    /// <exception cref="InvalidOperationException"><paramref name="value"/> is negative.</exception>
+    /// <remarks>
+    /// The result is the exact square root rounded toward zero to <c>p = 32·n</c> bits for the <c>n</c> words of
+    /// <paramref name="resultSig"/>, with the significand normalized to its top bit, so an exact root (<c>sqrt(9) = 3</c>)
+    /// is returned exactly; the square root of zero is positive zero. It depends only on the value, and the GPU and the
+    /// CPU provider return the same bits. The GPU provider takes the integer square root of the value scaled to
+    /// <c>2p</c> bits: an inverse square root gives an estimate that is the root or one less, and a correction on the
+    /// device makes it exact.
+    /// </remarks>
     GpuFloatResult Sqrt(
         ref GpuBigIntExecutionContext context,
         in GpuFloatOperand value,
