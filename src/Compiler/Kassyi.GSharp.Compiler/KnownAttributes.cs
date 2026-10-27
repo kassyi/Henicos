@@ -21,6 +21,7 @@ internal static class KnownAttributes
     public const string MethodImpl = nameof(MethodImpl);
     public const string SkipLocalsInit = nameof(SkipLocalsInit);
     public const string InlineArray = nameof(InlineArray);
+    public const string CompilerGenerated = nameof(CompilerGenerated);
     public const string GpuOperatorMacro = nameof(GpuOperatorMacro);
     public const string GpuResource = nameof(GpuResource);
     public const string TakesOwnership = nameof(TakesOwnership);
@@ -70,7 +71,8 @@ internal static class KnownAttributes
             or CudaIntrinsicPattern or GpuOperatorMacro or GpuResource or TakesOwnership or CudaImport or BclIntrinsicMap
             or GpuDeviceExport =>
             declaringNamespace.IsCoreNamespace(),
-        MethodImpl or SkipLocalsInit or InlineArray => declaringNamespace.IsSystemRuntimeCompilerServices(),
+        MethodImpl or SkipLocalsInit or InlineArray or CompilerGenerated =>
+            declaringNamespace.IsSystemRuntimeCompilerServices(),
         StructLayout or FieldOffset or In or Out or DefaultParameterValue => declaringNamespace.IsSystemRuntimeInteropServices(),
         _ => true
     };

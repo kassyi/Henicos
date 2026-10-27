@@ -197,11 +197,12 @@ internal static class NativeStructEmitter
             or Accessibility.ProtectedAndInternal);
 
     /// <summary>
-    /// Whether <paramref name="member"/> is a reference type other than an array-like one, which the shadow struct and
-    /// its marshaling leave out (GSH0078).
+    /// Whether <paramref name="member"/> is a reference type other than an array-like one, or a compiler-generated field
+    /// that G# does not know, which the shadow struct and its marshaling leave out (GSH0078).
     /// </summary>
     internal static bool IsUnrepresentableReference(StructAbiMember member) =>
-        member.Type.IsReferenceType && !member.Type.IsArrayLikeType();
+        member.Kind == StructAbiMemberKind.UnknownHiddenField ||
+        (member.Type.IsReferenceType && !member.Type.IsArrayLikeType());
 
     private static void MapToNativeField(SourceWriter writer, StructAbiMember field, int fieldSize)
     {

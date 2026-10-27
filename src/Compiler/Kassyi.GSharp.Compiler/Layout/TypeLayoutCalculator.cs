@@ -344,6 +344,14 @@ internal static class TypeLayoutCalculator
 
         foreach (var member in StructAbiMembers.Get(structType))
         {
+            if (member.Kind == StructAbiMemberKind.UnknownHiddenField)
+            {
+                return new UnsupportedLayout(
+                    $"field '{member.Name}' is a compiler-generated field that G# does not lay out",
+                    null,
+                    null);
+            }
+
             var type = member.Type.UnwrapNullableArrayLike() ?? member.Type;
             if (type.IsArrayLikeType())
             {
