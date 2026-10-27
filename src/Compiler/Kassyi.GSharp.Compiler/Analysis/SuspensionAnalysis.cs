@@ -5,8 +5,9 @@ namespace Kassyi.GSharp.Compiler.Analysis;
 /// </summary>
 /// <remarks>
 /// On the CPU dialects such a function suspends its caller, so it is lowered into its own state machine and every call
-/// to it becomes a suspension point. A barrier is what <see cref="BarrierHelper.IsPhaseBarrier"/> splits on, so a device
-/// function suspends exactly when kernel-level lowering would split on the same code.
+/// to it becomes a suspension point. A barrier is an intrinsic that splits the state machine
+/// (<see cref="SyncIntrinsicClassifier"/>, by symbol), so a device function suspends exactly when kernel-level lowering
+/// would split on the same code.
 /// <para>
 /// A device function of another assembly has no body in the compilation; its assembly recorded the answers
 /// (<see cref="DeviceExportTable"/>, #538). One without a record is taken as not reaching a barrier, and the analyzer
@@ -116,11 +117,14 @@ internal static class SuspensionAnalysis
                    (blockBarrier ? imported.Record.ReachesBlockBarrier : imported.Record.Suspends);
         }
 
-        Func<InvocationExpressionSyntax, bool> isBarrier =
-            blockBarrier ? BarrierHelper.IsBlockBarrier : BarrierHelper.IsPhaseBarrier;
+        var semanticModel = compilation.GetCachedSemanticModel(declaration.SyntaxTree);
         var callsBarrier = declaration.DescendantNodes()
             .AsStackEnumerable()
-            .Any(isBarrier, static (node, barrier) => node is InvocationExpressionSyntax invocation && barrier(invocation));
+            .Any((semanticModel, blockBarrier), static (node, state) =>
+                node is InvocationExpressionSyntax invocation &&
+                state.semanticModel.GetSymbol(invocation) is IMethodSymbol callee &&
+                IsBarrier(SyncIntrinsicClassifier.Classify(callee), state.blockBarrier)
+            );
         if (callsBarrier)
         {
             return true;
@@ -136,6 +140,13 @@ internal static class SuspensionAnalysis
 
         return false;
     }
+
+    // A block barrier is one that every thread of the block must reach (SyncThreads, SyncGrid); any other barrier is one
+    // that splits the state machine (also a warp shuffle)
+    private static bool IsBarrier(SyncIntrinsicInfo intrinsic, bool blockBarrier) =>
+        blockBarrier
+            ? intrinsic.Kind is SyncIntrinsicKind.BlockBarrier or SyncIntrinsicKind.GridBarrier
+            : intrinsic.SplitsStateMachine;
 
     private static bool CallsReach(IMethodSymbol method, IMethodSymbol target, Compilation compilation,
         HashSet<IMethodSymbol> visited)
