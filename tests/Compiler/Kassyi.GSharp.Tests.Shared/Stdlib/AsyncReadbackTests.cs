@@ -16,7 +16,8 @@ namespace Kassyi.GSharp.Tests.Shared.Stdlib;
 public class AsyncReadbackTests
 {
     private const int Words = 40;
-    private const int FermatExponent = 10;
+    // E <= 31 runs on the host; 40 is the device stage, whose squarings are queued on the workspace stream.
+    private const int FermatExponent = 40;
 
     private static readonly TimeSpan CompletionTimeout = TimeSpan.FromSeconds(10);
     private static readonly TimeSpan GateHoldTime = TimeSpan.FromMilliseconds(500);

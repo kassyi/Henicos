@@ -6,18 +6,46 @@ namespace Kassyi.GSharp.Stdlib.GpuMath.BigNum.Kernels;
 [ExcludeFromCodeCoverage]
 public static partial class GpuBigIntFermatKernels
 {
-    public struct FermatReduceContext
+    /// <summary>
+    /// The buffers and sizes of <see cref="QuadraticFoldReduceKernel"/>, which reduces the square of a residue modulo
+    /// <c>N = 2^m - c</c> (<c>m = 2E + 1</c>, <c>c = 2^E - ConstantTerm</c>).
+    /// </summary>
+    public struct QuadraticFoldContext
     {
-        public uint[] ValueT;
-        public uint[] MulResult;
-        public uint[] Quotient;
-        public uint[] Remainder;
-        public uint[] Temp;
-        [GpuReadOnly] public uint[] RemainderMask;
-        public int NumWords;
-        public int OutNumWords;
-        public int TotalShiftBits;
+        /// <summary>The square to reduce, <see cref="ProductWords"/> words.</summary>
+        /// <remarks>Only read, but not <c>[GpuReadOnly]</c>: it is passed to <see cref="QuadraticFoldPass"/>, whose source is
+        /// writable memory in the later folds.</remarks>
+        public uint[] Product;
+
+        /// <summary>The output of the first fold, <see cref="FirstFoldWords"/> words.</summary>
+        public uint[] FirstFold;
+
+        /// <summary>The output of the second fold, <see cref="SecondFoldWords"/> words.</summary>
+        public uint[] SecondFold;
+
+        /// <summary>Receives the output of the third fold, <see cref="ResidueWords"/> words.</summary>
+        public uint[] Residue;
+
+        /// <summary>The word count of <see cref="Product"/>.</summary>
+        public int ProductWords;
+
+        /// <summary>The word count of <see cref="FirstFold"/>: <c>m + E + 3</c> bits.</summary>
+        public int FirstFoldWords;
+
+        /// <summary>The word count of <see cref="SecondFold"/>: <c>m + 2</c> bits.</summary>
+        public int SecondFoldWords;
+
+        /// <summary>The word count of <see cref="Residue"/>: <c>ceil(m / 32)</c>.</summary>
+        public int ResidueWords;
+
+        /// <summary>The fold position <c>m = 2E + 1</c>.</summary>
+        public int ModulusBits;
+
+        /// <summary>The exponent <c>E</c>.</summary>
         public int Exponent;
+
+        /// <summary>The constant term <c>t</c> of <c>c = 2^E - t</c> (11).</summary>
+        public uint ConstantTerm;
     }
 
     [GpuDeviceFunction]
@@ -204,15 +232,67 @@ public static partial class GpuBigIntFermatKernels
         return (w0 << bitShift) | (w1 >> (32 - bitShift));
     }
 
+    /// <summary>
+    /// Returns word <paramref name="index"/> of the quotient <c>q = source &gt;&gt; (32 * foldWord + foldBit)</c>, reading words
+    /// past <paramref name="sourceWords"/> as 0, and 0 for a negative index.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// <see cref="GpuBigIntKernels.GetShiftedRightWord"/> shifts the whole value, so its word -1 holds the top bits of the
+    /// remainder below the fold; as a factor of <c>q * 2^E</c> and <c>t * q</c> those words must be 0.
+    /// </para>
+    /// <para>
+    /// <paramref name="source"/> is not <c>[GpuReadOnly]</c> (and this helper does not call the <c>[GpuReadOnly]</c>
+    /// <see cref="GpuBigIntKernels.GetShiftedRightWord"/>): the second and third folds read the temporaries that the fold
+    /// before them wrote in the same launch, so the reads must not go through the read-only (non-coherent) data path.
+    /// </para>
+    /// </remarks>
     [GpuDeviceFunction]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static void DeviceFermatFoldParallel(
-        [GpuReadOnly] uint[] remainder,
-        [GpuReadOnly] uint[] quotient,
+    public static uint GetQuotientWord(uint[] source, int sourceWords, int index, int foldWord, int foldBit)
+    {
+        if (index < 0)
+        {
+            return 0u;
+        }
+
+        var low = index + foldWord;
+        uint w0 = low < sourceWords ? source[low] : 0u;
+        if (foldBit == 0)
+        {
+            return w0;
+        }
+
+        uint w1 = low + 1 < sourceWords ? source[low + 1] : 0u;
+        return (w0 >> foldBit) | (w1 << (32 - foldBit));
+    }
+
+    /// <summary>
+    /// One fold of a value modulo <c>N = 2^m - c</c> with <c>c = 2^E - t</c>, run by one block:
+    /// <c>result = r + q * 2^E - t * q</c> with <c>r = source mod 2^m</c> and <c>q = floor(source / 2^m)</c>, modulo
+    /// <c>2^(32 * resultWords)</c>.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// <c>t * q</c> is split into two numbers whose words need no carry: <c>A</c> with word <c>i</c> the low half of the
+    /// 64-bit product <c>t * q_i</c>, and <c>B</c> with word <c>i</c> the high half of <c>t * q_(i-1)</c>, so that
+    /// <c>t * q = A + B</c>. Each is subtracted as its complement plus 1 (two's complement), so each word adds four 32-bit
+    /// terms and the running high word starts at 2. The caller sizes <paramref name="resultWords"/> so that the true result
+    /// fits, which makes the reduction modulo <c>2^(32 * resultWords)</c> exact (see <c>QuadraticFoldModulus</c>).
+    /// </para>
+    /// <para>The words are processed in chunks of one block; each chunk resolves its carries with a warp and block scan.</para>
+    /// </remarks>
+    [GpuDeviceFunction]
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static void QuadraticFoldPass(
+        // Not [GpuReadOnly]: see GetQuotientWord (the later folds read what the fold before them wrote in this launch).
+        uint[] source,
+        int sourceWords,
         uint[] result,
-        int numWords,
+        int resultWords,
+        int modulusBits,
         int exponent,
-        bool syncThreads = true)
+        uint constantTerm)
     {
         var tid = ThreadIndex.X;
         var bDim = BlockDimension.X;
@@ -223,41 +303,46 @@ public static partial class GpuBigIntFermatKernels
         var sharedCarry = new SharedMemory<uint>(32);
         var sharedOverlapH = new SharedMemory<uint>(32);
 
-        if (BlockIndex.X != 0)
-        {
-            if (syncThreads)
-            {
-                Gpu.SyncThreads();
-            }
+        // q = source >> m and the shift q << E, each as a word index and a bit offset.
+        var foldWord = modulusBits / 32;
+        var foldBit = modulusBits % 32;
+        var shiftWord = exponent / 32;
+        var shiftBit = exponent % 32;
 
-            return;
-        }
-
-        var wordShiftE = exponent / 32;
-        var bitShiftE = exponent % 32;
-
-        uint runningH = 3u;
+        // +1 for each of the two complemented subtrahends A and B.
+        uint runningH = 2u;
         uint runningCarry = 0u;
 
-        for (int offset = 0; offset < numWords; offset += bDim)
+        for (int offset = 0; offset < resultWords; offset += bDim)
         {
             var idx = offset + tid;
-            var valid = idx < numWords;
+            var valid = idx < resultWords;
 
             ulong localSum = 0UL;
             if (valid)
             {
-                uint rVal = remainder[idx];
-                uint qShiftE = GetShiftedLeftWord(quotient, numWords, idx, wordShiftE, bitShiftE);
-                uint qShift3 = GetShiftedLeftWord(quotient, numWords, idx, 0, 3);
-                uint qShift1 = GetShiftedLeftWord(quotient, numWords, idx, 0, 1);
-                uint qVal = quotient[idx];
+                // r_i: the bits of source below m.
+                uint word = idx < sourceWords ? source[idx] : 0u;
+                uint remainder = idx < foldWord ? word : (idx == foldWord ? word & ((1u << foldBit) - 1u) : 0u);
 
-                localSum = (ulong)rVal
-                           + qShiftE
-                           + (~qShift3)
-                           + (~qShift1)
-                           + (~qVal);
+                // q_j is word j of source >> m (0 for j < 0). (q << E)_i comes from q_(i - E/32) and q_(i - E/32 - 1);
+                // a shift by 32 would be undefined, so E % 32 == 0 takes the word as it is.
+                uint quotientHigh = GetQuotientWord(source, sourceWords, idx - shiftWord, foldWord, foldBit);
+                uint quotientLow = GetQuotientWord(source, sourceWords, idx - shiftWord - 1, foldWord, foldBit);
+                uint shiftedQuotient = shiftBit == 0
+                    ? quotientHigh
+                    : (quotientHigh << shiftBit) | (quotientLow >> (32 - shiftBit));
+
+                // A_i = low(t * q_i), B_i = high(t * q_(i-1)).
+                uint quotientHere = GetQuotientWord(source, sourceWords, idx, foldWord, foldBit);
+                uint quotientBelow = GetQuotientWord(source, sourceWords, idx - 1, foldWord, foldBit);
+                ulong termHere = (ulong)quotientHere * constantTerm;
+                ulong termBelow = (ulong)quotientBelow * constantTerm;
+
+                localSum = (ulong)remainder
+                           + shiftedQuotient
+                           + (~(uint)termHere)
+                           + (~(uint)(termBelow >> 32));
             }
 
             uint lowWord = (uint)(localSum & 0xFFFFFFFFUL);
@@ -333,10 +418,8 @@ public static partial class GpuBigIntFermatKernels
             runningCarry = nextRunningCarry;
         }
 
-        if (syncThreads)
-        {
-            Gpu.SyncThreads();
-        }
+        // Publish the result to the next pass of the block.
+        Gpu.SyncThreads();
     }
 
     [GpuKernel]
@@ -350,46 +433,26 @@ public static partial class GpuBigIntFermatKernels
         GpuBigIntKernels.DeviceAddSubParallel(a, b, result, numWords, sign);
     }
 
+    /// <summary>
+    /// Reduces the square of a residue modulo <c>N = 2^m - c</c> (<c>m = 2E + 1</c>, <c>c = 2^E - t</c>) with three folds,
+    /// writing a value congruent to the square and below <c>2^m + 2^(E+1)</c> to <see cref="QuadraticFoldContext.Residue"/>.
+    /// </summary>
+    /// <remarks>
+    /// Launch with one block (<c>gridDimX = 1</c>) of a multiple of 32 threads, at most 1024: the passes synchronize the
+    /// block between chunks. The product must be the square (or product) of values below <c>2^(m+1)</c>; the bounds that
+    /// size the passes and make the result fit are in <c>QuadraticFoldModulus</c>, whose <c>FoldReference</c> is the host
+    /// reference of this kernel. The residue may be one of the factors of the product: the product is complete before the
+    /// kernel starts and the kernel reads only the product and its own temporaries.
+    /// </remarks>
     [GpuKernel]
-    public static void KernelFermatReduceMega(FermatReduceContext ctx)
+    public static void QuadraticFoldReduceKernel(QuadraticFoldContext ctx)
     {
-        var wordShift = ctx.TotalShiftBits / 32;
-        var bitShift = ctx.TotalShiftBits % 32;
-
-        Gpu.ForUnroll(0, 3, iter =>
-        {
-            var sourceBuffer = iter == 0 ? ctx.MulResult : ctx.Temp;
-            var sourceWords = iter == 0 ? ctx.NumWords * 2 : ctx.OutNumWords;
-
-            Gpu.GridStrideLoop(ctx.OutNumWords, i =>
-            {
-                var srcIdx0 = i + wordShift;
-                var srcIdx1 = srcIdx0 + 1;
-
-                var safeIdx0 = srcIdx0 < 0 ? 0 : (srcIdx0 >= sourceWords ? sourceWords - 1 : srcIdx0);
-                var safeIdx1 = srcIdx1 < 0 ? 0 : (srcIdx1 >= sourceWords ? sourceWords - 1 : srcIdx1);
-
-                var w0 = sourceBuffer[safeIdx0];
-                var w1 = sourceBuffer[safeIdx1];
-
-                var mask0 = srcIdx0 >= 0 && srcIdx0 < sourceWords ? 0xFFFFFFFFu : 0u;
-                var mask1 = srcIdx1 >= 0 && srcIdx1 < sourceWords ? 0xFFFFFFFFu : 0u;
-
-                w0 &= mask0;
-                w1 &= mask1;
-
-                var shiftMask = bitShift == 0 ? 0u : 0xFFFFFFFFu;
-                ctx.Quotient[i] = (w0 >> bitShift) | ((w1 << (32 - bitShift)) & shiftMask);
-
-                var remWord = i < sourceWords ? sourceBuffer[i] : 0u;
-                ctx.Remainder[i] = remWord & ctx.RemainderMask[i];
-            });
-
-            Gpu.SyncThreads();
-
-            var destBuffer = iter < 2 ? ctx.Temp : ctx.Remainder;
-            DeviceFermatFoldParallel(ctx.Remainder, ctx.Quotient, destBuffer, ctx.OutNumWords, ctx.Exponent);
-        });
+        QuadraticFoldPass(ctx.Product, ctx.ProductWords, ctx.FirstFold, ctx.FirstFoldWords, ctx.ModulusBits,
+            ctx.Exponent, ctx.ConstantTerm);
+        QuadraticFoldPass(ctx.FirstFold, ctx.FirstFoldWords, ctx.SecondFold, ctx.SecondFoldWords, ctx.ModulusBits,
+            ctx.Exponent, ctx.ConstantTerm);
+        QuadraticFoldPass(ctx.SecondFold, ctx.SecondFoldWords, ctx.Residue, ctx.ResidueWords, ctx.ModulusBits,
+            ctx.Exponent, ctx.ConstantTerm);
     }
 }
 
