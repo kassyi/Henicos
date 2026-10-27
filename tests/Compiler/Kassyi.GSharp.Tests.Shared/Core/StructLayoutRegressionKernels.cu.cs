@@ -230,6 +230,16 @@ public static partial class StructLayoutRegressionKernels
         h.Elems[0].Items[0] = 5;
     }
 
+    // R4h: an array of structs whose array field holds converted elements (with arrays of their own): the kernel
+    // writes a value field of the outer element and of an inner element
+    [GpuKernel]
+    public static void ElemHolderArrayKernel(LayoutReproElemHolder[] hs)
+    {
+        hs[0].N = 4;
+        hs[0].Elems[0].Tag = 9;
+        hs[0].Elems[0].Items[0] = 5;
+    }
+
     // R4g: a construct the CPU dialect cannot run (inline PTX, GSH0054 where analyzers run), which the native code
     // reports as an error after the marshaling; the PTX is a comment, so CUDA runs it as nothing
     [GpuKernel]
@@ -363,6 +373,13 @@ public static partial class StructLayoutRegressionKernels
         o[1] = (int)a[0].B;
         o[2] = a[0].C;
         o[3] = a[1].A;
+    }
+
+    // R7b: an [Out] array of LayoutKind.Auto structs whose elements the kernel writes only in part
+    [GpuKernel]
+    public static void OutAutoArrayKernel([System.Runtime.InteropServices.Out] LayoutReproAutoLayout[] a)
+    {
+        a[0].A = 7;
     }
 
     // R9: [InlineArray] whose element contains an array field (S-26)

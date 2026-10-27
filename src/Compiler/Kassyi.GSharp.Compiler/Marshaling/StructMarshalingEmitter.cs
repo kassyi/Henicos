@@ -28,8 +28,8 @@ internal static class StructMarshalingEmitter
     /// parameters, one per <c>AotContexts</c> name (<see cref="CollectUniqueStructs"/>).
     /// </summary>
     /// <remarks>
-    /// The element of an array that only the CUDA launcher converts has no CPU text: the CPU launcher passes the array
-    /// as it is (until L4).
+    /// The element of an array has CPU text only when the CPU launcher converts it; an Identical element is passed as
+    /// the pinned array.
     /// </remarks>
     internal static EquatableArray<StructHostSource> RenderStructs(IMethodSymbol kernel)
     {
@@ -39,7 +39,7 @@ internal static class StructMarshalingEmitter
             .AsStackEnumerable()
             .Do(
                 cpuStructs,
-                static (parameter, structs) => TypeLayoutCalculator.CollectStructs(parameter.Type, structs)
+                static (parameter, structs) => CollectParameterStructs(parameter.Type, s_cpuDialect, structs)
             );
 
         var sources = ImmutableArray.CreateBuilder<StructHostSource>(structTypes.Length);
@@ -102,12 +102,25 @@ internal static class StructMarshalingEmitter
         return unique.ToImmutable();
     }
 
-    // An array-like parameter whose element the CUDA launcher converts goes through the element's shadow
+    // An array-like parameter whose element a launcher (CUDA or CPU) converts goes through the element's shadow
     private static void CollectParameterStructs(ITypeSymbol type, HashSet<INamedTypeSymbol> structs)
     {
         var marshaledType = type.UnwrapNullableArrayLike() ?? type;
         TypeLayoutCalculator.CollectStructs(
-            marshaledType.TryGetArrayLikeElementType(out var element) && KernelParameterShape.IsConvertedOnCuda(element)
+            marshaledType.TryGetArrayLikeElementType(out var element) &&
+            (KernelParameterShape.IsConvertedOnCuda(element) || KernelParameterShape.IsConverted(element, s_cpuDialect))
+                ? element
+                : type,
+            structs);
+    }
+
+    // The same for one dialect: the element of an array that this dialect's launcher converts
+    private static void CollectParameterStructs(ITypeSymbol type, ITranspilerDialect dialect,
+        HashSet<INamedTypeSymbol> structs)
+    {
+        var marshaledType = type.UnwrapNullableArrayLike() ?? type;
+        TypeLayoutCalculator.CollectStructs(
+            marshaledType.TryGetArrayLikeElementType(out var element) && KernelParameterShape.IsConverted(element, dialect)
                 ? element
                 : type,
             structs);

@@ -117,6 +117,22 @@ public class StructLayoutRegressionTests
         Assert.Equal([5, 2], items);
     }
 
+    [Fact]
+    [TestTarget(ExecutionTarget.GpuExecution)]
+    [Scenario(TestScenario.Boundary)]
+    public void R4h_ArrayOfStructsWithConvertedElementArrays_WritesBackOuterAndInnerFields()
+    {
+        var items = new int[] { 1, 2 };
+        var elems = new[] { new LayoutReproInnerBag { Tag = 1, Items = items } };
+        var holders = new[] { new LayoutReproElemHolder { N = 1, Elems = elems } };
+
+        StructLayoutRegressionKernels.LaunchElemHolderArrayKernel(holders);
+
+        Assert.Equal(4, holders[0].N);
+        Assert.Equal(9, elems[0].Tag);
+        Assert.Equal([5, 2], items);
+    }
+
     // Two array fields that hold one array: the CPU launcher pins the host array itself, so the kernel sees one array,
     // as C# does (design L5 a). The CUDA launcher copies each array field into its own device allocation and writes
     // them back one after the other, so the second copy overwrites the first ([0, 2]); that is the aliasing item M10 of
@@ -137,11 +153,7 @@ public class StructLayoutRegressionTests
         Assert.Equal([1, 2], x);
     }
 
-#if GSHARP_CPU
-    [Fact(Skip = "L4")]
-#else
     [Fact]
-#endif
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Scenario(TestScenario.HappyPath)]
     public void R4c_StructWithArrayField_Array_PreservesElements()
@@ -310,11 +322,7 @@ public class StructLayoutRegressionTests
         Assert.Equal(1065353216, o[0]);
     }
 
-#if GSHARP_CPU
-    [Fact(Skip = "L4")]
-#else
     [Fact]
-#endif
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Scenario(TestScenario.HappyPath)]
     public void R7_AutoLayoutStruct_Array_PreservesFieldValues()
@@ -336,6 +344,30 @@ public class StructLayoutRegressionTests
 public class StructLayoutRegressionSequentialTests
 {
 #if GSHARP_CPU
+    // The CPU launcher converts an [Out] array through a shadow rented from ArrayPool, which still holds the bytes of an
+    // earlier launch of the same size (R7 first leaves 1 to 6 in it); the shadow is cleared, so what the kernel does not
+    // write reads as 0. CUDA leaves an unwritten [Out] element undefined (device memory is not cleared)
+    [Fact]
+    [TestTarget(ExecutionTarget.CpuExecution)]
+    [Scenario(TestScenario.Boundary)]
+    public void R7b_OutArrayOfConvertedStructs_AfterAnotherLaunch_ReadsUnwrittenFieldsAsZero()
+    {
+        var o = new int[4];
+        StructLayoutRegressionKernels.LaunchAutoArrayKernel(
+            [new() { A = 1, B = 2, C = 3 }, new() { A = 4, B = 5, C = 6 }],
+            o);
+        var outs = new LayoutReproAutoLayout[]
+        {
+            new() { A = 11, B = 12, C = 13 },
+            new() { A = 14, B = 15, C = 16 }
+        };
+
+        StructLayoutRegressionKernels.LaunchOutAutoArrayKernel(outs);
+
+        Assert.Equal(((byte)7, 0L, (byte)0), (outs[0].A, outs[0].B, outs[0].C));
+        Assert.Equal(((byte)0, 0L, (byte)0), (outs[1].A, outs[1].B, outs[1].C));
+    }
+
     // The CPU launcher pins the array fields of a converted struct; every launch must free the pins, also when the
     // native code reports an error after the marshaling (R4g). A launch that leaked would leave 2 pinned arrays
     [Fact]

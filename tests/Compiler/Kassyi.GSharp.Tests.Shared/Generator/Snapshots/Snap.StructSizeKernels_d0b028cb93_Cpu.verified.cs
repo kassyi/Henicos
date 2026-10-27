@@ -33,6 +33,22 @@ public partial class StructSizeKernels
 public static partial class AotContexts
 {
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
+[System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Explicit, Size = 8)]
+public unsafe partial struct StructSizeOddInt
+{
+public const string DebugName_A = "global::System.Int32";
+[System.Runtime.InteropServices.FieldOffset(0)]
+public global::System.Int32 A;
+}
+public static unsafe void Marshal_StructSizeOddInt(ref global::Kassyi.GSharp.Tests.Shared.Core.StructSizeOddInt host, ref AotContexts.StructSizeOddInt native, bool isDevicePtr, System.Collections.Generic.List<IntPtr>? allocatedPtrs, IntPtr hStream = default)
+{
+native = default;
+native.A = host.A;
+}
+public static unsafe void Unmarshal_StructSizeOddInt(ref global::Kassyi.GSharp.Tests.Shared.Core.StructSizeOddInt host, ref AotContexts.StructSizeOddInt native, bool isDevicePtr, IntPtr hStream = default)
+{
+host.A = native.A;
+}
 [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Explicit, Size = 16)]
 public unsafe partial struct StructSizePaddedInt
 {
@@ -484,7 +500,35 @@ global::Kassyi.GSharp.Core.ManagedGpuContext.IsActive = false;
 }
 return;
 }
-throw new System.NotSupportedException("An array of the struct 'Kassyi.GSharp.Tests.Shared.Core.StructSizeOddInt' cannot be passed to a kernel on the CPU dialect yet because the struct's host and device layouts differ (the struct is 6 bytes on the host and 8 bytes on the device). The CPU launcher passes the array in the host layout, so the kernel would read garbled values.");
+var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<ReadSecondOddKernel_Delegate>("__gsharp_launch_Kassyi__GSharp__Tests__Shared__Core__StructSizeKernels__ReadSecondOddKernel", dllPath);
+byte[]? data_shadow = null;
+var data_allocatedPtrs = new System.Collections.Generic.List<IntPtr>();
+int data_size = checked(data.Length * sizeof(AotContexts.StructSizeOddInt));
+try
+{
+data_shadow = System.Buffers.ArrayPool<byte>.Shared.Rent(data_size);
+var data_native = System.Runtime.InteropServices.MemoryMarshal.Cast<byte, AotContexts.StructSizeOddInt>(data_shadow.AsSpan(0, data_size));
+System.Span<global::Kassyi.GSharp.Tests.Shared.Core.StructSizeOddInt> data_host = data;
+for (int data_index = 0; data_index < data_native.Length; data_index++)
+{
+AotContexts.Marshal_StructSizeOddInt(ref data_host[data_index], ref data_native[data_index], false, data_allocatedPtrs);
+}
+fixed (byte* p_data = data_shadow)
+fixed (global::System.Int32* p_o = o)
+{
+hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (IntPtr)p_data, Length = data.Length }, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (IntPtr)p_o, Length = o.Length });
+global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ThrowIfNativeError(dllPath);
+}
+for (int data_index = 0; data_index < data_native.Length; data_index++)
+{
+AotContexts.Unmarshal_StructSizeOddInt(ref data_host[data_index], ref data_native[data_index], false);
+}
+}
+finally
+{
+foreach (var handle in data_allocatedPtrs) System.Runtime.InteropServices.GCHandle.FromIntPtr(handle).Free();
+if (data_shadow != null) System.Buffers.ArrayPool<byte>.Shared.Return(data_shadow);
+}
 }
 #pragma warning restore CS8500
 public const string ReadSecondPackedKernel_Source = @"#pragma pack(push, 1)

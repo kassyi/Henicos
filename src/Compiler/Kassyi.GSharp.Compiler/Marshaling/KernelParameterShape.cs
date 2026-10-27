@@ -194,11 +194,10 @@ internal readonly record struct KernelParameterShape
     public bool IsCpuConvertedStruct => IsCustomStruct && !Cpu.IsIdenticalStruct;
 
     /// <summary>
-    /// The message of the <c>NotSupportedException</c> that the CPU launcher throws before it calls the native code, for
-    /// an array-like parameter whose element is a user struct that is not <see cref="TransferClass.Identical"/> on the CPU
-    /// dialect, which the CPU launcher cannot convert yet (the text of GSH0082); otherwise <see langword="null"/>.
+    /// Whether the CPU launcher converts the elements of this array-like parameter through a shadow array
+    /// (<see cref="ParameterTransfer.ConvertedElementAotStructPath"/> of <see cref="Cpu"/>).
     /// </summary>
-    public string? CpuNotSupportedMessage { get; init; }
+    public bool IsCpuConvertedArray => IsArray && Cpu.ConvertedElementAotStructPath is not null;
 
     /// <summary>
     /// Whether the <c>IntPtr</c> launch wrapper takes the parameter as a raw device pointer: an array-like or
@@ -304,8 +303,7 @@ internal readonly record struct KernelParameterShape
                 ElementTypeName = elementType.GetFullyQualifiedCsharpName(),
                 BufferElementTypeName = GetBufferElementTypeName(elementType),
                 Cuda = ParameterTransfer.Create(marshaledType, s_cudaDialect),
-                Cpu = ParameterTransfer.Create(marshaledType, s_cpuDialect),
-                CpuNotSupportedMessage = GetCpuNotSupportedMessage(elementType)
+                Cpu = ParameterTransfer.Create(marshaledType, s_cpuDialect)
             };
         }
 
@@ -326,22 +324,6 @@ internal readonly record struct KernelParameterShape
         element is INamedTypeSymbol named &&
         TypeLayoutCalculator.IsUserStruct(named) &&
         TypeLayoutCalculator.GetStructLayout(named, dialect).Transfer != TransferClass.Identical;
-
-    // [WHY] GSH0082 reports such an array at compile time, but an analyzer diagnostic does not reach every build
-    // (generated code, a suppression): the launcher must not hand the native code a host layout that it reads as another
-    private static string? GetCpuNotSupportedMessage(ITypeSymbol element)
-    {
-        if (element is not INamedTypeSymbol named || !IsConverted(named, s_cpuDialect))
-        {
-            return null;
-        }
-
-        return string.Format(
-            CultureInfo.InvariantCulture,
-            GSharpDiagnostics.StructTransferNotSupportedOnCpu.MessageFormat.ToString(CultureInfo.InvariantCulture),
-            TypeLayoutCalculator.FormatTypeName(named),
-            TypeLayoutCalculator.DescribeLayoutDifference(named, s_cpuDialect));
-    }
 
     // A user struct lives on the device in its native shadow layout, which the wrapper class declares as AotContexts.*
     private static string? GetBufferElementTypeName(ITypeSymbol element) =>

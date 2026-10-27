@@ -29,31 +29,12 @@ internal static class CpuHostLaunchEmitter
             WriteManagedExecutionFallback(writer, kernel.Host, assemblyName);
 
             // [WHY] Only the native launcher reads the host bytes as the C++ layout; the managed fallback uses the values
-            if (!WriteNotSupportedThrow(writer, kernel.Host))
-            {
-                WrapperEmitter.WriteLayoutGuards(writer, kernel.Host.CpuLayoutGuards);
-                WriteCpuDelegateGetOrCompile(writer, kernel);
-                WriteCpuFixedBlocksAndInvoke(writer, kernel.Host);
-            }
+            WrapperEmitter.WriteLayoutGuards(writer, kernel.Host.CpuLayoutGuards);
+            WriteCpuDelegateGetOrCompile(writer, kernel);
+            WriteCpuFixedBlocksAndInvoke(writer, kernel.Host);
         }
 
         writer.AppendLine("#pragma warning restore CS8500");
-    }
-
-    // throw new NotSupportedException("<GSH0082 text>"); in place of the native call, for the first struct array parameter
-    // that the CPU launcher cannot convert yet
-    private static bool WriteNotSupportedThrow(SourceWriter writer, in KernelHostModel kernel)
-    {
-        foreach (var shape in kernel.Parameters)
-        {
-            if (shape.CpuNotSupportedMessage is { } message)
-            {
-                writer.AppendLine($"throw new System.NotSupportedException({SymbolDisplay.FormatLiteral(message, true)});");
-                return true;
-            }
-        }
-
-        return false;
     }
 
     private static void WriteCpuDelegateDeclaration(SourceWriter writer, in KernelEmission kernel)
@@ -258,12 +239,15 @@ internal static class CpuHostLaunchEmitter
             $"var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<{kernel.MemberKey}_Delegate>(\"{exportName}\", dllPath);");
     }
 
-    // <shadow> <name>_native = default; var <name>_allocatedPtrs = new List<IntPtr>(); ... (each converted struct)
-    // try { Marshal_<S>(ref <name>, ref <name>_native, false, <name>_allocatedPtrs); ...; <fixed blocks and call>;
-    // Unmarshal_<S>(ref <name>, ref <name>_native, false); }
-    // finally { foreach (var handle in <name>_allocatedPtrs) GCHandle.FromIntPtr(handle).Free(); ... }
-    // [WHY] Marshal_ pins the array fields of a converted struct and records each handle; this one finally block frees
-    // them after the call and the copy back, also when the marshaling, the native call or its error check throws.
+    // <shadow> <name>_native = default; var <name>_allocatedPtrs = new List<IntPtr>(); (each converted struct)
+    // byte[]? <name>_shadow = null; var <name>_allocatedPtrs = ...; int <name>_size = ...; (each converted array)
+    // try { Marshal_<S>(ref <name>, ref <name>_native, false, <name>_allocatedPtrs); <the elements of each array>;
+    // <fixed blocks and call>; Unmarshal_<S>(ref <name>, ref <name>_native, false); <the elements back> }
+    // finally { foreach (var handle in <name>_allocatedPtrs) GCHandle.FromIntPtr(handle).Free(); ...;
+    // ArrayPool<byte>.Shared.Return(<name>_shadow); }
+    // [WHY] Marshal_ pins the array fields of a converted struct or element and records each handle; this one finally
+    // block frees them and returns the rented shadows after the call and the copy back, also when the marshaling, the
+    // native call or its error check throws.
     private static void WriteCpuFixedBlocksAndInvoke(SourceWriter writer, in KernelHostModel kernel)
     {
         var hasConverted = false;
@@ -274,6 +258,14 @@ internal static class CpuHostLaunchEmitter
                 writer.AppendLine($"{shadow} {shape.Name}_native = default;");
                 writer.AppendLine(
                     $"var {shape.Name}_allocatedPtrs = new System.Collections.Generic.List<IntPtr>();");
+                hasConverted = true;
+            }
+            else if (shape is { IsCpuConvertedArray: true, Cpu.ConvertedElementAotStructPath: { } element })
+            {
+                writer.AppendLine($"byte[]? {shape.Name}_shadow = null;");
+                writer.AppendLine(
+                    $"var {shape.Name}_allocatedPtrs = new System.Collections.Generic.List<IntPtr>();");
+                writer.AppendLine($"int {shape.Name}_size = checked({shape.LengthExpression} * sizeof({element}));");
                 hasConverted = true;
             }
         }
@@ -295,6 +287,10 @@ internal static class CpuHostLaunchEmitter
                     writer.AppendLine(
                         $"{marshal}(ref {shape.Identifier}, ref {shape.Name}_native, false, {shape.Name}_allocatedPtrs);");
                 }
+                else if (shape.IsCpuConvertedArray)
+                {
+                    WriteConvertedArrayMarshal(writer, shape);
+                }
             }
 
             WriteFixedBlocksAndInvoke(writer, kernel);
@@ -307,6 +303,10 @@ internal static class CpuHostLaunchEmitter
                 {
                     writer.AppendLine($"{unmarshal}(ref {shape.Identifier}, ref {shape.Name}_native, false);");
                 }
+                else if (shape is { IsCpuConvertedArray: true, CopyOut: true, IsReadOnlyContainer: false })
+                {
+                    WriteConvertedArrayUnmarshal(writer, shape);
+                }
             }
         }
 
@@ -315,15 +315,80 @@ internal static class CpuHostLaunchEmitter
         {
             foreach (var shape in kernel.Parameters)
             {
-                if (shape.IsCpuConvertedStruct)
+                if (shape.IsCpuConvertedStruct || shape.IsCpuConvertedArray)
                 {
                     writer.AppendLine(
                         $"foreach (var handle in {shape.Name}_allocatedPtrs) System.Runtime.InteropServices.GCHandle.FromIntPtr(handle).Free();");
+                }
+
+                if (shape.IsCpuConvertedArray)
+                {
+                    writer.AppendLine(
+                        $"if ({shape.Name}_shadow != null) System.Buffers.ArrayPool<byte>.Shared.Return({shape.Name}_shadow);");
                 }
             }
         }
 
         WrapperEmitter.WriteAutoResultReturn(writer, kernel);
+    }
+
+    // <name>_shadow = ArrayPool<byte>.Shared.Rent(<name>_size); <spans>;
+    // for (...) Marshal_<E>(ref <name>_host[i], ref <name>_native[i], false, <name>_allocatedPtrs);   ([In] / in-out)
+    // <name>_native.Clear();                                       ([Out] of an element without array fields)
+    // [WHY] The elements differ in layout, so they are converted into a rented shadow array of the device layout, which
+    // the kernel reads in place (the CUDA launcher copies the same shadow to the device). An [Out] element with array
+    // fields is still marshaled: the kernel writes into its pinned arrays. A rented array holds the bytes of an earlier
+    // use, so an [Out] shadow is cleared rather than left to the kernel.
+    private static void WriteConvertedArrayMarshal(SourceWriter writer, in KernelParameterShape shape)
+    {
+        var name = shape.Name;
+        writer.AppendLine($"{name}_shadow = System.Buffers.ArrayPool<byte>.Shared.Rent({name}_size);");
+        WriteShadowAndHostSpans(writer, shape);
+        if (!shape.CopyIn && !shape.Cpu.ConvertedElementHasArrayFields)
+        {
+            writer.AppendLine($"{name}_native.Clear();");
+            return;
+        }
+
+        writer.AppendLine($"for (int {name}_index = 0; {name}_index < {name}_native.Length; {name}_index++)");
+        using (writer.Scope())
+        {
+            var hostElement = $"{name}_host[{name}_index]";
+            if (shape.IsReadOnlyContainer)
+            {
+                // A read-only container gives no ref to its element; Marshal_ only reads its copy
+                writer.AppendLine($"var {name}_element = {name}_host[{name}_index];");
+                hostElement = $"{name}_element";
+            }
+
+            writer.AppendLine(
+                $"{shape.Cpu.ConvertedElementMarshalMethodName}(ref {hostElement}, " +
+                $"ref {name}_native[{name}_index], false, {name}_allocatedPtrs);");
+        }
+    }
+
+    // for (...) Unmarshal_<E>(ref <name>_host[i], ref <name>_native[i], false); after the call, through the spans that
+    // the marshaling declared in the same try block
+    private static void WriteConvertedArrayUnmarshal(SourceWriter writer, in KernelParameterShape shape)
+    {
+        var name = shape.Name;
+        writer.AppendLine($"for (int {name}_index = 0; {name}_index < {name}_native.Length; {name}_index++)");
+        using (writer.Scope())
+        {
+            writer.AppendLine(
+                $"{shape.Cpu.ConvertedElementUnmarshalMethodName}(ref {name}_host[{name}_index], " +
+                $"ref {name}_native[{name}_index], false);");
+        }
+    }
+
+    // <name>_native spans the rented bytes in the device layout; <name>_host spans the argument
+    private static void WriteShadowAndHostSpans(SourceWriter writer, in KernelParameterShape shape)
+    {
+        writer.AppendLine(
+            $"var {shape.Name}_native = System.Runtime.InteropServices.MemoryMarshal" +
+            $".Cast<byte, {shape.Cpu.ConvertedElementAotStructPath}>({shape.Name}_shadow.AsSpan(0, {shape.Name}_size));");
+        var span = shape.IsReadOnlyContainer ? "System.ReadOnlySpan" : "System.Span";
+        writer.AppendLine($"{span}<{shape.ElementTypeName}> {shape.Name}_host = {shape.SpanExpression};");
     }
 
     private static void WriteFixedBlocksAndInvoke(SourceWriter writer, in KernelHostModel kernel)
@@ -332,7 +397,12 @@ internal static class CpuHostLaunchEmitter
 
         foreach (var shape in kernel.Parameters)
         {
-            if (shape is { IsArray: true, ElementTypeName: { } elementType })
+            if (shape.IsCpuConvertedArray)
+            {
+                writer.AppendLine($"fixed (byte* p_{shape.Name} = {shape.Name}_shadow)");
+                hasFixed = true;
+            }
+            else if (shape is { IsArray: true, ElementTypeName: { } elementType })
             {
                 writer.AppendLine($"fixed ({elementType}* p_{shape.Name} = {shape.SpanExpression})");
                 hasFixed = true;
