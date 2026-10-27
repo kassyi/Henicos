@@ -23,6 +23,7 @@ Do not stop at happy-path (normal value) tests; always inject extreme boundary v
 - **Arrays and Span**: An empty array (length 0), a one-element array, and a size right at the memory boundary.
 
 For numeric and algorithm tests (BigInt / BigFloat / NTT in GpuMath, CPU-vs-GPU comparisons, and so on), settle how to define the properties, the input that reaches each check, and the confirmation that breaking one line makes it fail, following [property-test-design](../property-test-design/SKILL.md).
+When reviewing (including with `gpu-code-review`), treat it as a major finding when a numeric or algorithm test does not check the result, builds the expected value from a value read back from the GPU, or has only checks that a one-line mutant does not fail (judge with the checklist in §8 of property-test-design).
 
 ## 2. GPU-specific Concurrency & Stress Testing
 

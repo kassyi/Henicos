@@ -120,7 +120,7 @@ When you finish a test, or when you review existing tests, confirm:
 - [qa-testing-guidelines](../qa-testing-guidelines/SKILL.md): test attributes (`TestTarget` / `Category` / `Scenario`), naming, file placement, and the general boundary / stress / sad-path matrix.
 - [test-architecture.md](../../rules/test-architecture.md): the test-first workflow (Phase 1) that this skill plugs into.
 - [test-failed.ja.prompt.md](../../workflows/test-failed.ja.prompt.md): when a numeric test fails, fix the cause; never weaken a check to make it pass.
-- [gpu-code-review](../gpu-code-review/SKILL.md): reviews numeric tests against the checklist of §8.
+- `gpu-code-review` (synced from the shared agent package): reviews numeric tests against the checklist of §8, as `qa-testing-guidelines` §1 asks.
 
 ## Attribution
 
