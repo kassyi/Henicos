@@ -1,9 +1,15 @@
 namespace Kassyi.GSharp.Compiler.Lowering;
 
 /// <summary>
-/// Expands macro statements (<c>Gpu.ForUnroll</c>) that contain phase barriers into standard <c>for</c> loops before
-/// the state-machine lowering passes run.
+/// Expands macro statements before the state-machine lowering passes run: a <c>Gpu.ForUnroll</c> that contains phase
+/// barriers into a standard <c>for</c> loop, and a <c>Gpu.SyncGrid(body)</c> into the statements of its body with a
+/// <c>Gpu.SyncGrid()</c> in each gap (<see cref="SyncGridBody"/>).
 /// </summary>
+/// <remarks>
+/// The state machine splits only at barriers that are statements of the method (as Roslyn lifts every <c>await</c> to
+/// the statement level before its state machine rewriter runs), so a body that runs between grid syncs must become
+/// statements first (#626).
+/// </remarks>
 public sealed class PreLoweringExpander(SemanticModel? semanticModel = null) : CSharpSyntaxRewriter
 {
     private int _expansionCounter;
@@ -23,6 +29,12 @@ public sealed class PreLoweringExpander(SemanticModel? semanticModel = null) : C
 
     public override SyntaxNode? VisitExpressionStatement(ExpressionStatementSyntax node)
     {
+        if (SyncGridBody.TryGetBody(node, semanticModel, out var syncGridBody))
+        {
+            // Top-down expansion: nested macros in the body (in loops, ForUnroll bodies) are expanded in turn
+            return Visit(ExpandSyncGrid(node, syncGridBody));
+        }
+
         if (node.Expression is not InvocationExpressionSyntax invocation ||
             !TryClassifyForUnroll(invocation, out var call))
         {
@@ -105,6 +117,49 @@ public sealed class PreLoweringExpander(SemanticModel? semanticModel = null) : C
         // Top-down expansion: revisit the expanded loop so nested barrier-bearing constructs receive subsequent IDs
         return Visit(forStatement);
     }
+
+    // { <statement 1> Gpu.SyncGrid(); <statement 2> ... }: a sync in each gap that SyncGridBody.IsSyncPoint places
+    private BlockSyntax ExpandSyncGrid(ExpressionStatementSyntax node, LambdaExpressionSyntax body)
+    {
+        var annotations = ImmutableArray.CreateRange(
+            node.GetAnnotations(LoweringAnnotations.OriginalSpanAnnotationKind)
+        );
+        var elements = SyncGridBody.Flatten(body, semanticModel).Elements;
+        var statements = new List<StatementSyntax>(elements.Length * 2);
+        for (var i = 0; i < elements.Length; i++)
+        {
+            statements.Add(ToStatement(elements[i].Node, annotations));
+            if (SyncGridBody.IsSyncPoint(elements, i, semanticModel))
+            {
+                statements.Add(CreateGridSync(annotations));
+            }
+        }
+
+        return SyntaxFactory.Block(statements).WithAdditionalAnnotations(annotations);
+    }
+
+    // Gpu.SyncGrid();
+    // The statement carries the span of the Gpu.SyncGrid(body) it came from, for diagnostics; BarrierHelper and the state
+    // machine recognize the call by its syntax.
+    private static ExpressionStatementSyntax CreateGridSync(ImmutableArray<SyntaxAnnotation> annotations) =>
+        SyntaxFactory.ExpressionStatement(
+            SyntaxFactory.InvocationExpression(
+                SyntaxFactory.MemberAccessExpression(
+                    SyntaxKind.SimpleMemberAccessExpression,
+                    SyntaxFactory.IdentifierName(TypeConstants.GpuType),
+                    SyntaxFactory.IdentifierName(TypeConstants.GpuMacros.SyncGrid)
+                )
+            )
+        ).WithAdditionalAnnotations(annotations);
+
+    // An expression body of a lambda becomes <expression>;
+    private static StatementSyntax ToStatement(CSharpSyntaxNode node, ImmutableArray<SyntaxAnnotation> annotations) =>
+        node switch
+        {
+            StatementSyntax statement => statement,
+            ExpressionSyntax expression => SyntaxFactory.ExpressionStatement(expression).WithAdditionalAnnotations(annotations),
+            _ => throw new InvalidOperationException($"Cannot expand a SyncGrid body element of kind '{node.Kind()}'.")
+        };
 
     private bool TryClassifyForUnroll(InvocationExpressionSyntax invocation, out GpuMacroCall call)
     {
