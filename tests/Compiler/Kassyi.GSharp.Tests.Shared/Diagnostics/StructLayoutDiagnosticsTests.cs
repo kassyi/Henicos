@@ -224,4 +224,114 @@ public class StructLayoutDiagnosticsTests
                  d.Location.SourceTree is { } tree &&
                  !inputTrees.Contains(tree));
     }
+
+    // An [InlineArray] struct with StructLayout.Size (line 19), which the runtime does not load (#621); the inline array
+    // without Size reports nothing
+    [Theory]
+    [InlineData("Cpu")]
+    [InlineData("Cuda")]
+    [Scenario(TestScenario.SadPath)]
+    public async Task Test_InlineArrayWithStructLayoutSize_ReportsGsh0078AtTheType(string dialect)
+    {
+        var diagnostics = await KernelDiagnostics.RunTestCaseAsync("Diagnostics/StructLayoutSizeDiagnostics.cs", dialect);
+
+        Assert.Equal(
+            [(Analyzer, 19, 46, 19, 57)],
+            diagnostics.Ranges(GSharpDiagnostics.StructLayoutNotRepresentable.Id));
+        var diagnostic = Assert.Single(
+            diagnostics,
+            static d => d.Id == GSharpDiagnostics.StructLayoutNotRepresentable.Id);
+        Assert.Contains("'StructLayoutSizeDiagnosticsTest.SizedInline'", diagnostic.Message);
+        Assert.Contains("an [InlineArray] struct cannot have StructLayout.Size", diagnostic.Message);
+    }
+
+    private const string EventTestCase = "Diagnostics/StructLayoutEventDiagnostics.cs";
+
+    // The hidden delegate field of a field-like event (#621): WithEvent by value (line 20), as an array (line 23) and as
+    // a local (line 28). The event with add and remove (line 33) stores nothing and reports nothing
+    [Theory]
+    [InlineData("Cpu")]
+    [InlineData("Cuda")]
+    [Scenario(TestScenario.SadPath)]
+    public async Task Test_StructWithFieldLikeEvent_ReportsGsh0078AtTheType(string dialect)
+    {
+        var diagnostics = await KernelDiagnostics.RunTestCaseAsync(EventTestCase, dialect);
+
+        Assert.Equal(
+            [
+                (Analyzer, 20, 47, 20, 56),
+                (Analyzer, 23, 45, 23, 56),
+                (Analyzer, 28, 13, 28, 22)
+            ],
+            diagnostics.Ranges(GSharpDiagnostics.StructLayoutNotRepresentable.Id));
+        Assert.Empty(diagnostics.Ranges(GSharpDiagnostics.StructLayoutNotRepresentable.Id, "WithAccessorEvent"));
+    }
+
+    [Theory]
+    [InlineData("Cpu")]
+    [InlineData("Cuda")]
+    [Scenario(TestScenario.SadPath)]
+    public async Task Test_StructWithFieldLikeEvent_StatesTheDelegateField(string dialect)
+    {
+        var diagnostics = await KernelDiagnostics.RunTestCaseAsync(EventTestCase, dialect);
+
+        var messages = diagnostics
+            .Where(static d => d.Id == GSharpDiagnostics.StructLayoutNotRepresentable.Id)
+            .Select(static d => d.Message)
+            .ToList();
+        Assert.Equal(3, messages.Count);
+        Assert.All(messages, static message => Assert.Contains("'StructLayoutEventDiagnosticsTest.WithEvent'", message));
+        Assert.All(
+            messages,
+            static message => Assert.Contains("field 'Changed' has the reference type 'System.Action'", message));
+    }
+
+    // A field-like event of a struct of another assembly (line 9), whose hidden field the consumer cannot see; the
+    // event with add and remove reports nothing
+    [Theory]
+    [InlineData("Cpu")]
+    [InlineData("Cuda")]
+    [Scenario(TestScenario.SadPath)]
+    public async Task Test_StructWithFieldLikeEventFromMetadata_ReportsGsh0078AtTheType(string dialect)
+    {
+        var library = DeviceLibraryBuilder.Build(
+            "EventLib",
+            null,
+            RoslynTestUtility.ReadTestCase("Diagnostics/StructLayoutEventLibrary.cs"));
+        var consumer = DeviceLibraryBuilder.CreateConsumer(
+            RoslynTestUtility.ReadTestCase("Diagnostics/StructLayoutEventConsumer.cs"),
+            library);
+
+        var run = await KernelDiagnostics.RunCompilationAsync(consumer, dialect);
+        var diagnostics = run.Analyzer
+            .Select(static d => ReportedDiagnostic.From(Analyzer, d))
+            .ToImmutableArray();
+
+        Assert.Equal(
+            [(Analyzer, 9, 47, 9, 63)],
+            diagnostics.Ranges(GSharpDiagnostics.StructLayoutNotRepresentable.Id));
+        var diagnostic = Assert.Single(
+            diagnostics,
+            static d => d.Id == GSharpDiagnostics.StructLayoutNotRepresentable.Id);
+        Assert.Contains("field 'Changed' has the reference type 'System.Action'", diagnostic.Message);
+    }
+
+    // The generated wrapper leaves the delegate field out of the shadow struct and compiles
+    [Theory]
+    [InlineData("Cpu")]
+    [InlineData("Cuda")]
+    [Scenario(TestScenario.SadPath)]
+    public async Task Test_StructWithFieldLikeEvent_LeavesGeneratedCodeValid(string dialect)
+    {
+        var source = RoslynTestUtility.ReadTestCase(EventTestCase);
+
+        var run = await KernelDiagnostics.RunCompilationAsync(RoslynTestUtility.CreateCompilation(source), dialect);
+
+        var inputTrees = run.Input.SyntaxTrees.ToHashSet();
+        Assert.DoesNotContain(
+            run.Output.GetDiagnostics(),
+            d => d.Severity == DiagnosticSeverity.Error &&
+                 d.Location.SourceTree is { } tree &&
+                 !inputTrees.Contains(tree));
+    }
 }

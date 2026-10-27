@@ -322,6 +322,14 @@ internal static class StructTranspiler
                 {
                     WriteStructMember(ref context, member);
                 }
+
+                var end = 0;
+                foreach (var field in layout.DeviceFields)
+                {
+                    end = Math.Max(end, field.Offset + field.Layout.Size);
+                }
+
+                WriteTailPadding(ref context, 0, end, layout);
             }
 
             foreach (var member in structSym.GetMembers())
@@ -698,10 +706,23 @@ internal static class StructTranspiler
             start = end;
         }
 
-        // [WHY] C++ rounds the size up to the alignment only; a larger StructLayout.Size needs explicit bytes
+        WriteTailPadding(ref context, padCount, cursor, layout);
+    }
+
+    /// <summary>
+    /// Pads a struct whose members end at <paramref name="cursor"/> up to its device size, which
+    /// <c>StructLayout.Size</c> can make larger than the members rounded up to the alignment:
+    /// <c>unsigned char __gsharp_pad_&lt;padIndex&gt;[&lt;n&gt;];</c>.
+    /// </summary>
+    /// <remarks>
+    /// [WHY] C++ rounds the size up to the alignment only; a larger StructLayout.Size needs explicit bytes (#621).
+    /// </remarks>
+    internal static void WriteTailPadding(ref TranspileContext context, int padIndex, int cursor,
+        StructLayoutInfo layout)
+    {
         if (TypeLayoutCalculator.AlignUp(cursor, layout.Device.Alignment) < layout.Device.Size)
         {
-            WritePadding(ref context, padCount, layout.Device.Size - cursor);
+            WritePadding(ref context, padIndex, layout.Device.Size - cursor);
         }
     }
 

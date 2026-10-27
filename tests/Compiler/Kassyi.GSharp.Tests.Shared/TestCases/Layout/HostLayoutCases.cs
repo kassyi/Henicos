@@ -298,3 +298,61 @@ public struct IntLongUnion
     [FieldOffset(0)]
     public long L;
 }
+
+// StructLayout.Size (#621): the CLR uses max(Size, end of the last field) without rounding up to the alignment; C++
+// rounds sizeof up to the alignment, so a Size that is not a multiple of it gives a different stride
+[StructLayout(LayoutKind.Sequential, Size = 16)]
+public struct SizedPaddedInt
+{
+    public int A;
+}
+
+[StructLayout(LayoutKind.Sequential, Size = 6)]
+public struct SizedOddInt
+{
+    public int A;
+}
+
+// Size smaller than the fields: the fields win (5 bytes on the host, 8 on the device)
+[StructLayout(LayoutKind.Sequential, Size = 1)]
+public struct SizedBelowFields
+{
+    public int A;
+    public byte B;
+}
+
+[StructLayout(LayoutKind.Explicit, Size = 6)]
+public struct SizedExplicitOdd
+{
+    [FieldOffset(0)]
+    public int I;
+}
+
+[StructLayout(LayoutKind.Sequential, Pack = 1, Size = 7)]
+public struct SizedPacked
+{
+    public byte B;
+    public int I;
+}
+
+// A sized struct as a field: the next field follows its 6 bytes on the host (B at 6, 8 bytes in all), its 8 bytes on
+// the device
+public struct SizedNestedOuter
+{
+    public SizedOddInt O;
+    public byte B;
+}
+
+// 20 bytes on the host; CUDA aligns Vector4 to 16 bytes, so the device rounds Size up to 32
+[StructLayout(LayoutKind.Sequential, Size = 20)]
+public struct SizedVector4
+{
+    public Vector4 V;
+}
+
+// SizedGeneric<double>: 12 bytes on the host, 16 on the device (double is 8-byte aligned)
+[StructLayout(LayoutKind.Sequential, Size = 12)]
+public struct SizedGeneric<T> where T : unmanaged
+{
+    public T V;
+}

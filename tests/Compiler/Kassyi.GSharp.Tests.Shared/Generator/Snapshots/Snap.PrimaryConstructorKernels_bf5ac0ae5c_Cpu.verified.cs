@@ -171,7 +171,7 @@ public static unsafe void Unmarshal_PcConvertedPair(ref global::Kassyi.GSharp.Te
 {
 host = System.Runtime.CompilerServices.Unsafe.As<AotContexts.PcConvertedPair, global::Kassyi.GSharp.Tests.Shared.Syntax.PcConvertedPair>(ref native);
 }
-[System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Explicit, Size = 12)]
+[System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Explicit, Size = 32)]
 public unsafe partial struct PcSized
 {
 public const string DebugName_a = "global::System.Byte";
@@ -2485,6 +2485,7 @@ struct __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__PcSized
 {
 unsigned char __gsharp_mb_a;
 float2 __gsharp_mb_V;
+unsigned char __gsharp_pad_0[20];
 __device__ inline float __gsharp_mb_Read() const {
 return __gsharp_mb_a+__gsharp_mb_V.x*10.0f+__gsharp_mb_V.y*100.0f;
 }
@@ -2496,7 +2497,7 @@ __gsharp_mb_a=__gsharp_id_value;
 }
 }
 ;
-static_assert(sizeof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__PcSized)==12,""Kassyi.GSharp.Tests.Shared.Syntax.PcSized: size"");
+static_assert(sizeof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__PcSized)==32,""Kassyi.GSharp.Tests.Shared.Syntax.PcSized: size"");
 static_assert(alignof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__PcSized)==4,""Kassyi.GSharp.Tests.Shared.Syntax.PcSized: alignment"");
 static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__PcSized,__gsharp_mb_a)==0,""Kassyi.GSharp.Tests.Shared.Syntax.PcSized.a: offset"");
 static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__PcSized,__gsharp_mb_V)==4,""Kassyi.GSharp.Tests.Shared.Syntax.PcSized.V: offset"");
