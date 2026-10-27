@@ -35,6 +35,7 @@ You **MUST** follow the dedicated rule files for code implementation:
 - [Generator Pipeline Invariants](.agents/rules/generator-invariants.md): `[Constant]` exclusion, diagnostics, struct guards, ref/out, `var` suffix, design-time I/O guard, MSBuild wildcard, C# order of evaluation (`EvaluationOrder`). The symbol file (`*.gsym.json`) and source hash header are described in the transpiler skill (Symbol File Mapping).
 - [Issue Priority (Milestones)](.agents/rules/issue-milestones.md): the current bugs-first policy, the milestones `M1`–`M5` and `Future`, how to assign an issue, the order to work in, and what agents may change without approval.
 - [Hard Problem Routing](.agents/rules/model-routing.md): when to use Fable for the hardest design/verification work, and handing math optimization / complexity reduction to the user as a self-contained plain-text problem (no file attachments).
+- [Semantics Charter](.agents/rules/semantics-charter.md): which definition wins (C#, GPU, CPU), no implicit meaning without a marker, undefined behavior is an error. Every design and compiler change must follow it.
 - [Agent Scripts](.agents/rules/agent-scripts.md): agent-run scripts are dependency-free Node `.js` (no `.sh` / `.ps1`); compiler-owned logic goes in a `Kassyi.GSharp.Compiler.Generators` mode; script catalog.
 
 ---
