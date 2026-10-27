@@ -1,20 +1,20 @@
-# 難問の振り分け（Fable / Deep Think）
+# Routing Hard Problems (Fable / Deep Think)
 
-通常の委譲（`pro` / `flash` の読み替え）は `agent-tool-mapping.md` に従います。ここでは、それより難しい問題の扱いを定めます。
+Ordinary delegation (the `pro` / `flash` mapping) follows `agent-tool-mapping.md`. This file covers problems harder than that.
 
-## 1. 最難度の設計・検証（Claude Code のみ）
+## 1. Hardest design and verification (Claude Code only)
 
-Opus で一度詰まった課題や、判断を誤ると影響が大きい場面に限って `model: "fable"`（Claude Fable 5.1）を使います。
-単価は Opus の 2.5 倍で、1 回の応答に数分かかることがあるため、常用しません。
+Use `model: "fable"` (Claude Fable 5.1) only for problems where Opus has already got stuck, or where a wrong judgment is costly.
+It costs 2.5 times as much as Opus and one response can take several minutes, so do not use it routinely.
 
-- 対象: lowering（suspend / resume、original-span 注釈の保持）の設計とレビュー、インクリメンタルジェネレーターのキャッシュ境界、GPU 数値コードの正当性検証、横断的な再設計の初期設計、再現の不安定な不具合の原因調査
-- 対象外: 定型的な移行・スナップショット更新・カタログ同期などの機械的な作業、実装レーンの作業
+- Use for: design and review of lowering (suspend / resume, keeping the original-span annotation), cache boundaries of the incremental generator, correctness verification of GPU numeric code, the initial design of cross-cutting redesigns, root-cause investigation of unstable (hard to reproduce) failures
+- Do not use for: mechanical work such as routine migrations, snapshot updates and catalog syncs, or implementation-lane work
 
-## 2. 数式の最適化・計算量の削減（ユーザーに外注）
+## 2. Math optimization and complexity reduction (outsourced to the user)
 
-数式の変形・最適化や計算量（オーダー）の削減は、エージェントが解かずにユーザーへ外注します（ユーザーが Google Deep Think で解きます）。
-すべての環境に適用します。
+Agents do not solve formula transformation / optimization or complexity (order) reduction themselves; they outsource it to the user (who solves it with Google Deep Think).
+This applies in every environment.
 
-- 外注する条件: 問題文も答えもプレーンテキスト（数式は LaTeX または ASCII）で書き切れ、かつ自力で解くには複雑な問題。コードベースの文脈がないと書けない問題は外注しない
-- 渡し方: 前提・記号の定義・制約・求める答えの形まで含めた、それだけで完結する問題文をチャットにコードブロックで示す。ファイルの添付やファイルパスの参照はしない
-- 外注したら、その結果に依存する作業は止めて、ユーザーの返答を待つ
+- Outsource when: the problem and its answer can be written entirely in plain text (formulas in LaTeX or ASCII) and the problem is too complex to solve on your own. Do not outsource a problem that cannot be written without the codebase's context
+- How to hand it over: show the user, in a code block in the chat, a self-contained problem statement that includes the premises, definitions of the symbols, the constraints and the form of the answer wanted. Do not attach files or refer to file paths
+- After outsourcing, stop the work that depends on the result and wait for the user's reply

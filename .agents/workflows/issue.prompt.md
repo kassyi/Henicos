@@ -1,6 +1,6 @@
 ---
 name: "/issue"
-description: "GitHub Issue Template (.github/ISSUE_TEMPLATE/) に準拠した Issue を起票・提案し、gh CLI で作成するワークフロー"
+description: "Workflow that drafts and proposes an Issue conforming to the GitHub Issue Template (.github/ISSUE_TEMPLATE/) and creates it with the gh CLI"
 ---
 
 # Autonomous Issue Creation Workflow (`/issue`)
@@ -107,22 +107,22 @@ Construct the markdown body adhering to the template fields:
 
 ### Step 4: Proposal & User Confirmation
 
-Present the proposed Issue to the user in the following structure. **Note**: Do NOT wrap the Issue body in a code block (` ```markdown ... ``` `). Render it directly as formatted Markdown between horizontal rules (`---`) so that headings, checklists, and code samples render naturally:
+Present the proposed Issue to the user in the following structure. The proposal text itself (the headings, the reasons and the confirmation question) is written in Japanese, as in Safety & Execution Guardrail 4; the English below only describes what each part contains. **Note**: Do NOT wrap the Issue body in a code block (` ```markdown ... ``` `). Render it directly as formatted Markdown between horizontal rules (`---`) so that headings, checklists, and code samples render naturally:
 
 ```markdown
-### 提案する Issue 内容
+### Proposed Issue content
 
 - **Title**: `[Bug]: ...`
-- **Labels**: `<label1>` (or `<label1>, <label2>` — 最大2件まで)
-- **Milestone**: `<milestone>`（1 件。振り分けの理由を 1 文で）
+- **Labels**: `<label1>` (or `<label1>, <label2>` - at most 2)
+- **Milestone**: `<milestone>` (exactly 1; give the reason for the assignment in one sentence)
 
-### Issue 本文:
+### Issue body:
 
 ---
 <Markdown Content formatted per .github/ISSUE_TEMPLATE/*.yml>
 ---
 
-この内容で GitHub Issue を作成（または更新）してよろしいですか？ (yes / no / 修正指示)
+May I create (or update) the GitHub Issue with this content? (yes / no / revision instructions)
 ```
 
 ### Step 5: Execution via `gh issue create`
