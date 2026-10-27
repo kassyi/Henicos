@@ -101,7 +101,12 @@ public sealed class MemberAccessExpressionTranspilerRule : SyntaxNodeTranspilerR
         return false;
     }
 
-    private static bool TryTranspileIntrinsic(ISymbol symbol, ref TranspileContext context)
+    /// <summary>
+    /// Writes the native name that the dialect maps <paramref name="symbol"/> to (<c>[CudaIntrinsic]</c>, an intrinsic
+    /// pattern or the dialect YAML), with the template arguments of a generic intrinsic.
+    /// </summary>
+    /// <returns><see langword="false"/>, writing nothing, when the dialect does not map the symbol.</returns>
+    internal static bool TryTranspileIntrinsic(ISymbol symbol, ref TranspileContext context)
     {
         if (context.Emitter.Dialect.TryMapIntrinsic(symbol, out var mappedName))
         {
