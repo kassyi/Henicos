@@ -254,7 +254,7 @@ The shifted value.
 
 ## ShiftRight(int, out bool)
 
-Shifts the bits of the value right by a specified amount, producing a sticky bit.
+Shifts the bits of the value right by a specified amount and reports whether the result is inexact.
 
 ```csharp
 public readonly GpuBigUInt<TSize> ShiftRight(int bits, out bool stickyBit);
@@ -263,15 +263,20 @@ public readonly GpuBigUInt<TSize> ShiftRight(int bits, out bool stickyBit);
 #### Parameters
 
 `bits` _int_<br>
-The number of bits to shift.
+The number of bits to shift. A shift by the full width or more returns zero.
 
 `stickyBit` _out bool_<br>
-Set to `true` if any non-zero bits were shifted out past the LSB.
+`true` if any of the `bits` discarded bits is 1 (`v mod 2^bits != 0`); otherwise, `false`. It is the guard, round and sticky bits of the four-argument overload combined with OR.
 
 #### Returns
 
 _GpuBigUInt&lt;TSize&gt;_<br>
-The shifted value.
+The shifted value, `floor(v / 2^bits)`.
+
+#### Exceptions
+
+`ArgumentOutOfRangeException`  
+Thrown when `bits` is negative.
 
 ## ShiftRight(int, out bool, out bool, out bool)
 
@@ -284,21 +289,32 @@ public readonly GpuBigUInt<TSize> ShiftRight(int bits, out bool guardBit, out bo
 #### Parameters
 
 `bits` _int_<br>
-The number of bits to shift.
+The number of bits to shift. A shift by the full width or more returns zero.
 
 `guardBit` _out bool_<br>
-The first bit shifted out (the half bit).
+Bit `bits - 1` of the value: the most significant discarded bit. `false` when `bits` is 0.
 
 `roundBit` _out bool_<br>
-The second bit shifted out (the quarter bit).
+Bit `bits - 2` of the value: the second discarded bit. `false` when `bits` is less than 2.
 
 `stickyBit` _out bool_<br>
-Set to `true` if any bits after the round bit were non-zero.
+`true` if any bit below the round bit is 1 (`v mod 2^(bits - 2) != 0`); otherwise, `false`. `false` when `bits` is less than 3.
+
+Bits above the most significant limb read as 0.
 
 #### Returns
 
 _GpuBigUInt&lt;TSize&gt;_<br>
-The shifted value.
+The shifted value, `floor(v / 2^bits)`.
+
+#### Exceptions
+
+`ArgumentOutOfRangeException`  
+Thrown when `bits` is negative.
+
+#### Remarks
+
+Round to nearest, ties to even, rounds the result up exactly when `guardBit && (roundBit || stickyBit || lsb)`, where `lsb` is the least significant bit of the result. Round toward zero keeps the result as it is.
 
 ## Subtract(GpuBigUInt&lt;TSize&gt;, out bool)
 
