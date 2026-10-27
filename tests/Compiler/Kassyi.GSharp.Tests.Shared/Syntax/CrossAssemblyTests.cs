@@ -66,6 +66,20 @@ public class CrossAssemblyTests : TranspilerTestBase
         Assert.Equal([5f, 7f, 9f, 11f], result);
     }
 
+    // Each thread writes tid * 10 and reads the next thread's value after the barrier
+    [Fact]
+    [Scenario(TestScenario.HappyPath)]
+    public void Test_Exchange_SuspendingLibraryFunction()
+    {
+        var buffer = new int[4];
+        var result = new int[4];
+
+        CrossAssemblyKernels.LaunchExchangeKernel(buffer, result, blockDimX: 4);
+
+        Assert.Equal([10, 20, 30, 0], result);
+        Assert.Equal([0, 10, 20, 30], buffer);
+    }
+
     // x^2 + 1 + 4, with the Float3 inside the library or in the kernel
     [Fact]
     [Scenario(TestScenario.HappyPath)]

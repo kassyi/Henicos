@@ -208,6 +208,10 @@ public class GpuKernelGenerator : IIncrementalGenerator
             .SelectMany(static (module, _) => module.Classes.AsImmutableArray())
             .WithTrackingName(KernelClassTrackingName);
         var warmups = kernelModule.Select(static (module, _) => module.Warmups);
+        // [WHY] A library that exports its device code emits its state machines without kernels (C3), and it need not
+        // reference StackLinq; equal across edits that keep the references
+        var referencesStackLinq = context.CompilationProvider
+            .Select(static (compilation, _) => ReferencesAssembly(compilation, WrapperEmitter.StackLinqAssemblyName));
         var stateMachines = allDevices
             .SelectMany(static (devices, _) => GroupDeviceStateMachines(devices));
 
@@ -224,8 +228,10 @@ public class GpuKernelGenerator : IIncrementalGenerator
         context.RegisterSourceOutput(kernelClasses.Combine(hostOptions).WithTrackingName(KernelWrapperTrackingName),
             static (spc, input) => EmitKernelClass(spc, input.Left, input.Right));
         context.RegisterSourceOutput(
-            stateMachines.Combine(configProvider).Combine(hasKernels).WithTrackingName(DeviceStateMachinesTrackingName),
-            static (spc, input) => EmitDeviceStateMachines(spc, input.Left.Left, input.Left.Right, input.Right));
+            stateMachines.Combine(configProvider).Combine(hasKernels.Combine(referencesStackLinq))
+                .WithTrackingName(DeviceStateMachinesTrackingName),
+            static (spc, input) => EmitDeviceStateMachines(spc, input.Left.Left, input.Left.Right, input.Right.Left,
+                input.Right.Right));
         context.RegisterSourceOutput(
             aotTarget.Combine(allKernels).Combine(allDevices).Combine(importedCode).Combine(configProvider)
                 .WithTrackingName(AotArtifactTrackingName),
@@ -358,11 +364,16 @@ public class GpuKernelGenerator : IIncrementalGenerator
                     frameDependencies.Add(GlobalCppNames.GetKernelDerivedName(GSharpInternalNames.SuspendingCall.FrameTypePrefix, callee));
                 }
 
-                managedCSharpSource = MethodTranspiler.GenerateManagedDeviceFunctionSource(in plan);
+                // Left out when it could not compile (ManagedStateMachineAvailability); the record says so
+                if (ManagedStateMachineAvailability.CanEmit(methodSymbol, context.SemanticModel.Compilation))
+                {
+                    managedCSharpSource = MethodTranspiler.GenerateManagedDeviceFunctionSource(in plan);
+                }
             }
 
             var frames = new EquatableArray<string>(frameDependencies.ToImmutable());
             var compilation = context.SemanticModel.Compilation;
+            var hasManagedStateMachine = managedCSharpSource.Length > 0;
             DeviceExportRecord export = default;
             var structExports = default(EquatableArray<DeviceExportRecord>);
             // [WHY] The records are built apart from the transpilation: an exception there fails the records (with the
@@ -377,7 +388,7 @@ public class GpuKernelGenerator : IIncrementalGenerator
                             ToIncludes(requiredIncludesCuda), compilation, isCuda: true),
                         ExportedText(cppSignature, cppSource, cppStructs, cppFailures.HasFailures,
                             ToIncludes(requiredIncludesCpp), compilation, isCuda: false),
-                        frameName, frames);
+                        frameName, frames, hasManagedStateMachine);
                 structExports = DeviceExportEmitter.CreateStructRecords(compilation, cudaStructs, cppStructs);
             }
             catch (Exception exception) when (exception is not OperationCanceledException)
@@ -477,7 +488,8 @@ public class GpuKernelGenerator : IIncrementalGenerator
     }
 
     private static DeviceExportRecord CreateFunctionRecord(IMethodSymbol method, Compilation compilation,
-        ExportedFunctionText cuda, ExportedFunctionText cpp, string frameName, EquatableArray<string> frameDependencies)
+        ExportedFunctionText cuda, ExportedFunctionText cpp, string frameName, EquatableArray<string> frameDependencies,
+        bool hasManagedStateMachine)
     {
         var cppName = GlobalCppNames.GetFunctionName(method);
         var sites = DynamicSharedMemoryAnalysis.GetReachableSites(method, compilation);
@@ -518,7 +530,8 @@ public class GpuKernelGenerator : IIncrementalGenerator
             cpp.Includes,
             cuda.Failed,
             cpp.Failed,
-            ManagedStateMachine: false,
+            // The records and the state machines are emitted together (GSharpExportDeviceCode)
+            ManagedStateMachine: hasManagedStateMachine,
             "");
     }
 
@@ -694,17 +707,33 @@ public class GpuKernelGenerator : IIncrementalGenerator
     }
 
     // The managed fallback runs the state machines of the device functions that may suspend; they are emitted into the
-    // partial class that declares each function.
+    // partial class that declares each function. [WHY] An assembly that exports its device code emits them whatever its
+    // dialect and whether it has kernels: the managed fallback of a consumer on the CPU dialect calls them
+    // (DeviceExportRecord.ManagedStateMachine, cross-assembly-device-code.md §3.7)
     private static void EmitDeviceStateMachines(SourceProductionContext context, DeviceStateMachineGroup group,
-        GeneratorConfig config, bool hasKernels)
+        GeneratorConfig config, bool hasKernels, bool referencesStackLinq)
     {
-        if (!hasKernels || config.IsCuda)
+        if (!config.ExportDeviceCode && (!hasKernels || config.IsCuda))
         {
             return;
         }
 
         context.AddSource(group.Class.HintName[..^".g.cs".Length] + ".DeviceStateMachines.g.cs",
-            SourceText.From(WrapperEmitter.GenerateDeviceStateMachines(group.Class, group.Sources), Encoding.UTF8));
+            SourceText.From(WrapperEmitter.GenerateDeviceStateMachines(group.Class, group.Sources, referencesStackLinq),
+                Encoding.UTF8));
+    }
+
+    private static bool ReferencesAssembly(Compilation compilation, string assemblyName)
+    {
+        foreach (var identity in compilation.ReferencedAssemblyNames)
+        {
+            if (string.Equals(identity.Name, assemblyName, StringComparison.Ordinal))
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     // Keyed by the hint name, which identifies the class (#472)

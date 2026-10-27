@@ -25,11 +25,10 @@ public class DeviceImportTests
     [Scenario(TestScenario.HappyPath)]
     public async Task Test_Consumer_BuildsWithoutDiagnostics(string dialect)
     {
-        // C3 emits the managed state machine of a suspending library function, which the CPU wrapper's managed body
-        // calls; until then the CPU consumer leaves ExchangeKernel out
-        var consumer = dialect == "Cpu" ? s_consumer.Replace("#if !WITHOUT_SUSPENDING_CALL", "#if false", StringComparison.Ordinal) : s_consumer;
+        // The CPU wrapper's managed body calls the managed state machine of the suspending library function, which the
+        // library emitted with its records
         var run = await KernelDiagnostics.RunCompilationAsync(
-            DeviceLibraryBuilder.CreateConsumer(consumer, s_library.Value), dialect);
+            DeviceLibraryBuilder.CreateConsumer(s_consumer, s_library.Value), dialect);
 
         Assert.Empty(run.Analyzer.Where(static d => d.Severity == DiagnosticSeverity.Error));
         Assert.Empty(run.Generator.Where(static d => d.Severity == DiagnosticSeverity.Error));
@@ -178,9 +177,8 @@ public class DeviceImportTests
     [Scenario(TestScenario.HappyPath)]
     public async Task Test_StructsConsumer_BuildsWithoutDiagnostics(string dialect)
     {
-        var consumer = dialect == "Cpu" ? s_structsConsumer.Replace("#if !WITHOUT_SUSPENDING_CALL", "#if false", StringComparison.Ordinal) : s_structsConsumer;
         var run = await KernelDiagnostics.RunCompilationAsync(
-            DeviceLibraryBuilder.CreateConsumer(consumer, s_structsLibrary.Value), dialect);
+            DeviceLibraryBuilder.CreateConsumer(s_structsConsumer, s_structsLibrary.Value), dialect);
 
         Assert.Empty(run.Analyzer.Where(static d => d.Severity == DiagnosticSeverity.Error));
         Assert.Empty(run.Generator.Where(static d => d.Severity == DiagnosticSeverity.Error));
@@ -303,8 +301,7 @@ public class DeviceImportTests
         var reference = output.ToMetadataReference();
         Assert.IsAssignableFrom<CompilationReference>(reference);
 
-        var consumer = s_consumer.Replace("#if !WITHOUT_SUSPENDING_CALL", "#if false", StringComparison.Ordinal);
-        var compilation = DeviceLibraryBuilder.CreateConsumer(consumer, reference);
+        var compilation = DeviceLibraryBuilder.CreateConsumer(s_consumer, reference);
         var result = CreateDriver(dialect).RunGenerators(compilation).GetRunResult().Results.Single();
         Assert.Null(result.Exception);
         var device = result.GeneratedSources

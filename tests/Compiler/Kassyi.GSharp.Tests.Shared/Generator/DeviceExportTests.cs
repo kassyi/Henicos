@@ -30,8 +30,9 @@ public class DeviceExportTests
         Assert.Null(result.Exception);
         Assert.DoesNotContain(result.Diagnostics, static d => d.Severity == DiagnosticSeverity.Error);
         Assert.Empty(output.GetDiagnostics().Where(static d => d.Severity == DiagnosticSeverity.Error));
-        // A library without kernels gets only the records
-        Assert.Equal([DeviceExportEmitter.HintName], result.GeneratedSources.Select(static s => s.HintName));
+        // A library without kernels gets the records and the managed state machines of its suspending functions
+        Assert.Equal(["DeviceExportCase__LibMath.DeviceStateMachines.g.cs", DeviceExportEmitter.HintName],
+            result.GeneratedSources.Select(static s => s.HintName).Order(StringComparer.Ordinal));
 
         Assert.Equal(
             [
@@ -84,6 +85,11 @@ public class DeviceExportTests
         Assert.True(exchange.GetBool("Suspends"));
         Assert.True(exchange.GetBool("ReachesBlockBarrier"));
         Assert.Equal("__gsharp_frame_DeviceExportCase__LibMath__Exchange", exchange.GetString("FrameName"));
+
+        // C3: the library holds the managed state machine that a consumer's managed fallback calls; a function that does
+        // not suspend has none
+        Assert.True(exchange.GetBool("ManagedStateMachine"));
+        Assert.False(mu.GetBool("ManagedStateMachine"));
 
         // A ref parameter alone is RefParameters; a ref parameter and an array write is Memory
         Assert.Equal("RefParameters", Find("M:DeviceExportCase.LibMath.Bump(System.Int32@)").GetString("Effect"));
@@ -359,6 +365,52 @@ public class DeviceExportTests
         Assert.DoesNotContain(result.Diagnostics, static d => d.Severity == DiagnosticSeverity.Error);
         Assert.Empty(output.GetDiagnostics().Where(static d => d.Severity == DiagnosticSeverity.Error));
         return records;
+    }
+
+    // M1 / Minor 5 / Minor 6 (3rd review): a CUDA library without kernels and without AllowUnsafeBlocks builds with its
+    // state machines: as visible as each function, without unsafe and without warnings; left out (and recorded so)
+    // where they could not compile
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void Test_StateMachines_CompileInALibraryWithoutKernels()
+    {
+        var compilation = CSharpCompilation.Create("StateMachineLibrary")
+            .WithOptions(new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary, allowUnsafe: false,
+                nullableContextOptions: NullableContextOptions.Enable))
+            .AddReferences(RoslynTestUtility.BaseReferences)
+            .AddSyntaxTrees(CSharpSyntaxTree.ParseText(RoslynTestUtility.ReadTestCase("Generators/StateMachineVisibility.cs"),
+                s_parseOptions, path: "library.cs"));
+        var driver = CreateDriver("Cuda", null).RunGeneratorsAndUpdateCompilation(compilation, out var output, out _);
+        var result = driver.GetRunResult().Results.Single();
+
+        Assert.Null(result.Exception);
+        Assert.Empty(output.GetDiagnostics().Where(static d =>
+            d.Severity == DiagnosticSeverity.Error ||
+            (d.Severity == DiagnosticSeverity.Warning &&
+             d.Location.SourceTree?.FilePath.EndsWith(".DeviceStateMachines.g.cs", StringComparison.Ordinal) == true)));
+
+        var records = output.Assembly.GetAttributes()
+            .Where(static a => a.AttributeClass?.Name == "GpuDeviceExportAttribute")
+            .Select(static a => new ExportedRecord(a))
+            .ToList();
+        bool HasStateMachine(string id) => records.Single(r => r.Id == id).GetBool("ManagedStateMachine");
+        Assert.True(HasStateMachine("M:StateMachineCase.LibSm.WaitPublic(System.Int32[],System.Int32)"));
+        Assert.True(HasStateMachine("M:StateMachineCase.LibSm.WaitHidden(StateMachineCase.Hidden,System.Int32[],System.Int32)"));
+        Assert.True(HasStateMachine("M:StateMachineCase.LibSm.Inner.WaitNested(System.Int32[],System.Int32)"));
+        Assert.False(HasStateMachine("M:StateMachineCase.LibSm.WaitPrivate(System.Int32[],System.Int32)"));
+        Assert.False(HasStateMachine("M:StateMachineCase.LibSm.WaitThrough(System.Int32[],System.Int32)"));
+        Assert.False(HasStateMachine("M:StateMachineCase.Closed.Open.WaitClosed(System.Int32[],System.Int32)"));
+
+        var machines = string.Join("\n", result.GeneratedSources
+            .Where(static s => s.HintName.EndsWith(".DeviceStateMachines.g.cs", StringComparison.Ordinal))
+            .Select(static s => s.SourceText.ToString()));
+        Assert.Contains("public static bool __gsharp_statemachine_StateMachineCase__LibSm__WaitPublic(", machines, StringComparison.Ordinal);
+        Assert.Contains("internal static bool __gsharp_statemachine_StateMachineCase__LibSm__WaitHidden(", machines, StringComparison.Ordinal);
+        Assert.Contains("internal class __gsharp_frame_StateMachineCase__LibSm__WaitHidden {", machines, StringComparison.Ordinal);
+        Assert.DoesNotContain("unsafe", machines, StringComparison.Ordinal);
+        Assert.DoesNotContain("WaitPrivate", machines, StringComparison.Ordinal);
+        Assert.DoesNotContain("WaitClosed", machines, StringComparison.Ordinal);
+        Assert.Contains("partial class LibSm\n{\npublic partial class Inner", machines.Replace("\r\n", "\n"), StringComparison.Ordinal);
     }
 
     private static List<ExportedRecord> Run(string dialect, out GeneratorRunResult result, out Compilation output,

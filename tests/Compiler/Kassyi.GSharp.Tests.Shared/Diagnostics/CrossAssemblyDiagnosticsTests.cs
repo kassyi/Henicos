@@ -175,6 +175,45 @@ public class CrossAssemblyDiagnosticsTests
         Assert.Empty(diagnostics.Ranges(GSharpDiagnostics.UnsupportedSyntax.Id));
     }
 
+    // Nit 4 (3rd review): a device function of a consumer that exports its device code has a state machine on CUDA as
+    // well, which calls the library's
+    [Theory]
+    [InlineData("Cpu", 1)]
+    [InlineData("Cuda", 1)]
+    [Scenario(TestScenario.SadPath)]
+    public async Task Test_SuspendingCallFromAnExportedDeviceFunction_ReportsGsh0089(string dialect, int expected)
+    {
+        var library = DeviceLibraryBuilder.Build("XasmLib", s_noExport, s_library,
+            RoslynTestUtility.ReadTestCase(Folder + "HandWrittenSuspendingRecord.cs")
+                .Replace("PRELUDE_HASH", DeviceExportRecord.CurrentPreludeHash, StringComparison.Ordinal));
+
+        var diagnostics = await RunAsync(dialect, RoslynTestUtility.ReadTestCase(Folder + "DeviceFunctionConsumer.cs"),
+            library);
+
+        var ranges = diagnostics.Ranges(GSharpDiagnostics.DeviceExportUnusable.Id, "managed state machine");
+        Assert.Equal(expected, ranges.Count);
+        Assert.All(ranges, static range => Assert.Equal((Analyzer, 11, 28, 11, 33), range));
+    }
+
+    // C3: a suspending function whose library holds no managed state machine cannot run on the managed fallback of the
+    // CPU dialect; CUDA does not need one
+    [Theory]
+    [InlineData("Cpu", 1)]
+    [InlineData("Cuda", 0)]
+    [Scenario(TestScenario.SadPath)]
+    public async Task Test_SuspendingFunctionWithoutManagedStateMachine_ReportsGsh0089(string dialect, int expected)
+    {
+        var library = DeviceLibraryBuilder.Build("XasmLib", s_noExport, s_library,
+            RoslynTestUtility.ReadTestCase(Folder + "HandWrittenSuspendingRecord.cs")
+                .Replace("PRELUDE_HASH", DeviceExportRecord.CurrentPreludeHash, StringComparison.Ordinal));
+
+        var diagnostics = await RunAsync(dialect, ConsumerOfTwiceOnly(), library);
+
+        var ranges = diagnostics.Ranges(GSharpDiagnostics.DeviceExportUnusable.Id, "managed state machine");
+        Assert.Equal(expected, ranges.Count);
+        Assert.All(ranges, static range => Assert.Equal((Analyzer, 11, 43, 11, 48), range));
+    }
+
     // M3: a target-typed new is a creation as well, reported at its new keyword
     [Theory]
     [InlineData("Cpu")]

@@ -206,7 +206,8 @@ internal sealed class ImportedDeviceCodeRule : ISyntaxValidationRule<InvocationE
         }
 
         var index = s_indices.GetValue(compilation, static c => new ReferenceIndex(c));
-        var problem = index.CheckRecord(imported, displayName, context.Dialect.IsCuda, others: null);
+        var problem = index.CheckRecord(imported, displayName, context.Dialect.IsCuda, others: null,
+            context.NeedsManagedStateMachines);
         if (problem.Descriptor == null)
         {
             // The records that the text reaches, each checked as the record of the use
@@ -282,7 +283,7 @@ internal sealed class ImportedDeviceCodeRule : ISyntaxValidationRule<InvocationE
         /// another assembly (<paramref name="others"/>, all the records of the name) or the compilation also gives.
         /// </summary>
         public Problem CheckRecord(ImportedDeviceRecord imported, string displayName, bool isCuda,
-            ImportedDeviceRecord[]? others)
+            ImportedDeviceRecord[]? others, bool needsManagedStateMachine = false)
         {
             var assemblyName = imported.AssemblyName;
             if (!imported.IsCompatible)
@@ -305,6 +306,18 @@ internal sealed class ImportedDeviceCodeRule : ISyntaxValidationRule<InvocationE
                     imported.Record.InternalError.Length > 0
                         ? $"the build of '{assemblyName}' could not transpile it for the {dialect} dialect; the generator failed with {imported.Record.InternalError}"
                         : $"the build of '{assemblyName}' could not transpile it for the {dialect} dialect; see the diagnostics of that build"
+                ]);
+            }
+
+            // The managed form of the caller calls the function's managed state machine in its assembly; the state
+            // machines of what that one reaches come with it (its assembly emits it only with them)
+            if (needsManagedStateMachine &&
+                imported.Record is { Kind: DeviceExportRecord.FunctionKind, Suspends: true, ManagedStateMachine: false })
+            {
+                return new Problem(GSharpDiagnostics.DeviceExportUnusable,
+                [
+                    displayName, assemblyName,
+                    $"it waits at a barrier, and the build of '{assemblyName}' did not emit its managed state machine, which the managed form of this call runs (the fallback of the C++ dialect, or the state machine of an exported device function)"
                 ]);
             }
 

@@ -127,7 +127,9 @@ public class GpuKernelGeneratorCachingTests(ITestOutputHelper output)
         var result = driver.GetRunResult().Results.Single();
         Assert.Null(result.Exception);
         Assert.Empty(result.Diagnostics);
-        Assert.Equal([DeviceExportEmitter.HintName], result.GeneratedSources.Select(static s => s.HintName));
+        // The records, and the managed state machines that a consumer's managed fallback calls (C3)
+        Assert.Equal([DeviceExportEmitter.HintName, "TestNamespace__DeviceOnly__DeviceOnlyFunctions.DeviceStateMachines.g.cs"],
+            result.GeneratedSources.Select(static s => s.HintName).Order(StringComparer.Ordinal));
         // The device functions were transpiled; only the outputs are gated
         Assert.Equal(2, result.TrackedSteps[GpuKernelGenerator.DeviceFunctionTrackingName]
             .SelectMany(static run => run.Outputs)

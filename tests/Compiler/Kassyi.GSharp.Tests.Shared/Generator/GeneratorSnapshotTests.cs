@@ -57,6 +57,9 @@ public partial class GeneratorSnapshotTests : Kassyi.GSharp.Tests.Shared.Helpers
 
     private const string StdlibAssemblyName = "Kassyi.GSharp.Stdlib.GpuMath";
 
+    // The options are those of a project that exports its device code (the default): a snapshot holds the managed state
+    // machines of the suspending device functions (*.DeviceStateMachines.g.cs) on both dialects, while the build of
+    // Tests.Cuda (GSharpExportDeviceCode=false) does not emit them.
     // [WHY] A standard library kernel is compiled against the standard library itself, which holds the device code
     // records of the kernel file's own functions; a real build compiles the file with the rest of its assembly and
     // imports nothing from itself. The test assemblies export nothing (GSharpExportDeviceCode=false in their projects)

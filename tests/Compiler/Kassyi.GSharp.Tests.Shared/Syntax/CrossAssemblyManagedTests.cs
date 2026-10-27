@@ -68,6 +68,20 @@ public class CrossAssemblyManagedTests : TranspilerTestBase
         Assert.Equal([5f, 7f, 9f, 11f], result);
     }
 
+    // The library's managed state machine suspends at both barriers (C3)
+    [Fact]
+    [Scenario(TestScenario.HappyPath)]
+    public void Test_Managed_Exchange_SuspendingLibraryFunction()
+    {
+        var buffer = new int[4];
+        var result = new int[4];
+
+        ManagedKernelRun.Run(() => CrossAssemblyKernels.LaunchExchangeKernel(buffer, result, blockDimX: 4));
+
+        Assert.Equal([10, 20, 30, 0], result);
+        Assert.Equal([0, 10, 20, 30], buffer);
+    }
+
     [Fact]
     [Scenario(TestScenario.HappyPath)]
     public void Test_Managed_Float3_ParameterOfALibraryFunction()

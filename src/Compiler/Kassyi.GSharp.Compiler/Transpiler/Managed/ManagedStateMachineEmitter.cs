@@ -24,29 +24,42 @@ internal static class ManagedStateMachineEmitter
         }
     }
 
+    /// <param name="writer">The writer.</param>
+    /// <param name="contextName">The class.</param>
+    /// <param name="regularFields">The hoisted locals.</param>
+    /// <param name="copiedParameters">The parameters that the class keeps.</param>
+    /// <param name="callSites">The calls that may suspend, whose frames the class holds.</param>
+    /// <param name="semanticModel">The model of the calls.</param>
+    /// <param name="accessibility">The class's accessibility.</param>
+    /// <param name="memberAccessibility">The accessibility of the fields other than the call frames.</param>
+    /// <remarks>
+    /// A call frame field is internal: the frame of a device function that is not public is an internal class.
+    /// </remarks>
     public static void EmitContextClass(
         SourceWriter writer,
         string contextName,
         ImmutableArray<ManagedContextField> regularFields,
         ImmutableArray<IParameterSymbol> copiedParameters,
         IReadOnlyList<InvocationExpressionSyntax> callSites,
-        SemanticModel semanticModel)
+        SemanticModel semanticModel,
+        string accessibility = "public",
+        string memberAccessibility = "public")
     {
-        writer.AppendLine($"public class {contextName} {{");
-        writer.AppendLine($"public int {GSharpInternalNames.StateMachine.State};");
-        writer.AppendLine($"public uint {GSharpInternalNames.StateMachine.WarpExchange};");
-        writer.AppendLine($"public bool {GSharpInternalNames.StateMachine.YieldedForGridSync};");
+        writer.AppendLine($"{accessibility} class {contextName} {{");
+        writer.AppendLine($"{memberAccessibility} int {GSharpInternalNames.StateMachine.State};");
+        writer.AppendLine($"{memberAccessibility} uint {GSharpInternalNames.StateMachine.WarpExchange};");
+        writer.AppendLine($"{memberAccessibility} bool {GSharpInternalNames.StateMachine.YieldedForGridSync};");
 
         foreach (var parameter in copiedParameters)
         {
-            writer.Append("public ");
+            writer.Append($"{memberAccessibility} ");
             writer.AppendCsharpTypeName(parameter.Type);
             writer.AppendLine($" {parameter.Name.ToCSharpIdentifier()};");
         }
 
         foreach (var field in regularFields)
         {
-            writer.Append("public ");
+            writer.Append($"{memberAccessibility} ");
             AppendFieldType(writer, field);
             writer.AppendLine($" {field.Name};");
         }
@@ -57,7 +70,7 @@ internal static class ManagedStateMachineEmitter
             var callee = semanticModel.GetSymbol(callSites[i]) as IMethodSymbol
                          ?? throw new InvalidOperationException(
                              "A call that may suspend does not resolve to a device function.");
-            writer.Append("public ");
+            writer.Append("internal ");
             AppendDeviceFunctionMember(writer, callee, GSharpInternalNames.SuspendingCall.FrameTypePrefix);
             writer.AppendLine($" {GSharpInternalNames.SuspendingCall.CallFramePrefix}{i} = new();");
         }
@@ -88,9 +101,13 @@ internal static class ManagedStateMachineEmitter
         IMethodSymbol methodSymbol,
         ImmutableArray<IParameterSymbol> copiedParameters,
         ImmutableArray<ManagedContextField> localInits,
-        string bodySource)
+        string bodySource,
+        string accessibility,
+        bool isUnsafe)
     {
-        writer.Append($"public static unsafe bool {stateMachineName}(");
+        writer.Append($"{accessibility} static ");
+        writer.AppendIf(isUnsafe, "unsafe ");
+        writer.Append($"bool {stateMachineName}(");
         foreach (var p in methodSymbol.Parameters)
         {
             writer.Append(p.RefKind switch

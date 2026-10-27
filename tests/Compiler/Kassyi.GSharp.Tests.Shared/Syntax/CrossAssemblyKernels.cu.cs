@@ -48,6 +48,15 @@ public static partial class CrossAssemblyKernels
         result[tid] = v.Sum;
     }
 
+    // A library function that waits for the block twice: the CPU dialects suspend the kernel at each barrier, the
+    // managed fallback runs the library's state machine
+    [GpuKernel]
+    public static void ExchangeKernel(int[] buffer, int[] result)
+    {
+        int tid = ThreadIndex.X;
+        result[tid] = LibMath.Exchange(buffer, tid, tid * 10);
+    }
+
     // A library function with a Float3 parameter, reached through another one: the kernel names no Float3
     [GpuKernel]
     public static void Length3Kernel(float[] xs, float[] result)
