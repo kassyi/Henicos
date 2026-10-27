@@ -97,6 +97,15 @@ public class GpuWorkspace : IGpuResourceScope
     public int PolyAlgorithmThreshold { get; set; } = 1024;
 
     /// <summary>
+    /// Gets the tuning parameters of the big-float transcendental functions (<c>Exp</c>, <c>Log</c>, <c>Pow</c>) run on
+    /// this workspace, on the GPU and in CPU fallback mode alike.
+    /// </summary>
+    public GpuBigFloatTranscendentalOptions Transcendental
+    {
+        get;
+    } = new();
+
+    /// <summary>
     /// Gets the device copies of the constants that the big-float transcendental functions share (ln 2), uploaded on
     /// first use and released with the workspace.
     /// </summary>

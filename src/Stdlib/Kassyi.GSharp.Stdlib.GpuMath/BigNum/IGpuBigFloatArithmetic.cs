@@ -112,8 +112,24 @@ public interface IGpuBigFloatArithmetic
     /// </summary>
     /// <param name="context">The execution context providing memory workspace and CUDA stream dispatch.</param>
     /// <param name="value">The exponent floating-point operand.</param>
-    /// <param name="resultSig">The memory handle where the computed result significand will be stored.</param>
-    /// <returns>A <see cref="GpuFloatResult"/> containing the resulting exponent and sign flag.</returns>
+    /// <param name="resultSig">The memory handle where the computed result significand will be stored. Its word count
+    /// <c>n</c> sets the precision of the result, <c>p = 32·n</c> bits.</param>
+    /// <returns>A <see cref="GpuFloatResult"/> containing the resulting exponent and sign flag (always positive).</returns>
+    /// <exception cref="OverflowException">The exponent of the result does not fit in <see cref="int"/>: an overflow
+    /// for a large positive argument, an underflow (named in the message) for a large negative one. Every argument with
+    /// <c>|x| ≥ 2^32</c> is out of range; the limits are about <c>±1.4885·10^9</c>.</exception>
+    /// <remarks>
+    /// <para>
+    /// The significand fills <paramref name="resultSig"/> with its top bit set; <c>e^0 = 1</c> is
+    /// <c>2^(p−1)·2^(1−p)</c>. The result is within one unit in the last place of the exact value (faithful rounding)
+    /// for every argument in range, whatever its size or sign.
+    /// </para>
+    /// <para>
+    /// The argument is reduced to <c>x = k·ln 2 + r</c>, <c>r ∈ (0.69, 1.39)</c>, for either sign (no reciprocal), and
+    /// <c>e^r</c> is evaluated as <c>(e^(r/2^s))^(2^s)</c> with a number of terms derived from the precision;
+    /// <see cref="GpuWorkspace.Transcendental"/> can fix <c>s</c>.
+    /// </para>
+    /// </remarks>
     GpuFloatResult Exp(
         ref GpuBigIntExecutionContext context,
         in GpuFloatOperand value,

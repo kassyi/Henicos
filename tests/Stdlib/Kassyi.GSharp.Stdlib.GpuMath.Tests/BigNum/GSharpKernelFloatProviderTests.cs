@@ -347,7 +347,7 @@ public class GSharpKernelFloatProviderTests : IDisposable
         });
 
         // (-2)^3 through exp(3 ln(-2)) is not supported.
-        // mutant: GSharpKernelFloatProvider.cs:473 `throw` removed (Log would then throw for the negative base instead,
+        // mutant: GSharpKernelFloatProvider.cs:415 `throw` removed (Log would then throw for the negative base instead,
         // so the check is that the message comes from Pow)
         var powError = Assert.Throws<InvalidOperationException>(() =>
         {
@@ -366,14 +366,15 @@ public class GSharpKernelFloatProviderTests : IDisposable
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Stdlib)]
     [Scenario(TestScenario.Boundary)]
-    // mutant: GSharpKernelFloatProvider.cs:408 `NumWords + 2` -> `NumWords - 2` (64-bit fraction, error ~2^-64)
+    // mutant: GpuBigFloatTranscendentals.cs ExpSeriesRecurrence `j <= terms` -> `j <= terms / 2` (half the terms)
     [InlineData(1)]
-    // e^60 ~ 2^86.6 needs more than the 2-word minimum of the integer part.
-    // mutant: L406 `Math.Max` -> `Math.Min`, `Exponent + actualBits` -> `Exponent - actualBits`;
-    // L407 `/ 20 + 2` -> `/ 20 - 2`, `1 << ...` -> `1 >> ...` / `1 >>> ...` (intWords falls to 2, the integer part overflows)
+    // e^60 = 2^85 · e^r: k·ln 2 with ln 2 to W - s + bits(k) + 2 fraction bits.
+    // mutant: GpuBigFloatTranscendentals.cs ReduceArgument `GetLn2(plan.Ln2FractionBits)` ->
+    // `GetLn2(plan.Ln2FractionBits - 64)` (|k|·|L - ln 2| about 2^-121)
     [InlineData(60)]
-    // e^-1 = 1 / e^1 goes through a temporary of NumWords + 2 words.
-    // mutant: GSharpKernelFloatProvider.cs:401 `NumWords + 2` -> `NumWords - 2` (2-word e^1, error ~2^-64)
+    // e^-1 = 2^-3 · e^r with r = 3 ln 2 - 1, no reciprocal.
+    // mutant: GpuBigFloatTranscendentals.cs ReduceArgument `GpuBigIntMath.Sub(kLn2, x, reduced)` ->
+    // `GpuBigIntMath.Add(kLn2, x, reduced)` (r for +1 instead of -1)
     [InlineData(-1)]
     public void Exp_HighPrecision(int x)
     {
@@ -496,7 +497,7 @@ public class GSharpKernelFloatProviderTests : IDisposable
         using var dirty = new GpuBigUInt(workspace, [0x12345678u, 0x9ABCDEF0u, 0x0F0F0F0Fu, 0x00000001u]);
         var zero = new GpuFloatOperand(zeroSig.Handle, 0);
 
-        // mutant: GSharpKernelFloatProvider.cs:393 ClearMemoryAsync removed (the low words keep the old value)
+        // mutant: GpuBigFloatTranscendentals.cs WriteOne `ClearMemoryAsync` removed (the low words keep the old value)
         var res = arith.Exp(ref context, in zero, dirty.Handle);
         AssertExactValue(1, 1, dirty, res);
     }

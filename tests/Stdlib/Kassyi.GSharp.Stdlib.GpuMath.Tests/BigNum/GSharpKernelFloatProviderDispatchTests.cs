@@ -38,7 +38,7 @@ public class GSharpKernelFloatProviderDispatchTests
 
         // With a GPU the provider runs its own kernels: the fallback is never consulted.
         // mutant: GSharpKernelFloatProvider.cs:37 `is not GSharpKernelProvider || IsCpuFallbackMode` -> `... || !IsCpuFallbackMode`
-        // (and the same negation at L65, L153, L187, L222, L261, L300, L379, L456, L598)
+        // (and the same negation at L65, L153, L187, L222, L261, L300, L379, L398, L444)
         Assert.Empty(spy.Calls);
 
         // The kernel path computes the same exact values as the reference.
@@ -62,8 +62,8 @@ public class GSharpKernelFloatProviderDispatchTests
             var results = RunEveryOperation(workspace, provider);
 
             // In CPU fallback mode each operation is forwarded to the fallback exactly once.
-            // mutant: GSharpKernelFloatProvider.cs:37 `||` -> `&&` (and L153, L187, L222, L261, L300, L379, L456)
-            // mutant: GSharpKernelFloatProvider.cs:65 `&&` -> `||`, L598 `&&` -> `||`
+            // mutant: GSharpKernelFloatProvider.cs:37 `||` -> `&&` (and L153, L187, L222, L261, L300, L379, L398)
+            // mutant: GSharpKernelFloatProvider.cs:65 `&&` -> `||`, L444 `&&` -> `||`
             foreach (var operation in s_dispatchedOperations)
             {
                 Assert.True(spy.Calls.TryGetValue(operation, out var count), $"{operation} was not forwarded to the fallback.");

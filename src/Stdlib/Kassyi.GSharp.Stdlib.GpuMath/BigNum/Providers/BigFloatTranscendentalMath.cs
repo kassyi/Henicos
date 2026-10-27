@@ -88,7 +88,108 @@ internal static class BigFloatTranscendentalMath
             negative = e < 0;
         }
 
-        return RoundToNearest(approximation, approximationExponent, workingBits - resultBits, resultBits, negative);
+        var (rounded, roundedExponent) =
+            RoundToNearest(approximation, approximationExponent, workingBits - resultBits, resultBits);
+        return (rounded, checked((int)roundedExponent), negative);
+    }
+
+    /// <summary>
+    /// Computes <c>e^x</c> for <c>x = ±significand · 2^exponent</c> to <paramref name="resultBits"/> bits.
+    /// </summary>
+    /// <param name="significand">The significand of the argument; zero or positive.</param>
+    /// <param name="exponent">The exponent of the argument.</param>
+    /// <param name="negative">Whether the argument is negative.</param>
+    /// <param name="resultBits">The result precision <c>p</c>; a multiple of 32.</param>
+    /// <param name="options">The tuning parameters of the workspace.</param>
+    /// <returns>
+    /// The significand (exactly <paramref name="resultBits"/> bits) and exponent of the result, within one unit of its
+    /// last bit of <c>e^x</c>.
+    /// </returns>
+    /// <exception cref="OverflowException">The exponent of the result does not fit in <see cref="int"/> (an underflow,
+    /// named in the message, for a negative argument).</exception>
+    /// <remarks>
+    /// <para>
+    /// <c>x = k·ln 2 + r</c> with <c>k = floor(x / ln 2) − 1</c> from a double approximation, so <c>r ∈ (0.69, 1.39)</c>
+    /// for either sign of <c>x</c>. <c>r</c> is formed in fixed point with ln 2 at <c>W − s + bits(|k|) + 2</c> fraction
+    /// bits, and read as <c>r / 2^s</c> with <c>W</c> fraction bits. The Taylor polynomial of degree <c>N</c> runs as the
+    /// term recurrence, the sum is squared <c>s</c> times, and <c>e^x = e^r · 2^k</c>.
+    /// </para>
+    /// <para>
+    /// <c>|x| ≥ 2^32</c> throws before any work. For <c>|x| &lt; 2^-(p+1)</c> the result is <c>RZ(e^x)</c> directly: 1, or
+    /// <c>1 − 2^-p</c> for a negative <c>x</c>.
+    /// </para>
+    /// </remarks>
+    internal static (BigInteger Significand, int Exponent) Exp(
+        BigInteger significand, int exponent, bool negative, int resultBits, GpuBigFloatTranscendentalOptions options)
+    {
+        if (significand.IsZero)
+        {
+            return (BigInteger.One << (resultBits - 1), 1 - resultBits);
+        }
+
+        var bitLength = (int)significand.GetBitLength();
+
+        // |x| < 2^top.
+        var top = (long)exponent + bitLength;
+        if (top > 32)
+        {
+            throw TranscendentalPlanner.ExpOutOfRange(negative);
+        }
+
+        if (top <= -(resultBits + 2))
+        {
+            return negative ? ((BigInteger.One << resultBits) - 1, -resultBits) : (BigInteger.One << (resultBits - 1), 1 - resultBits);
+        }
+
+        var leading = bitLength >= 64
+            ? (ulong)(significand >> (bitLength - 64))
+            : (ulong)(significand << (64 - bitLength));
+        var plan = TranscendentalPlanner.PlanExp(resultBits, ApproximateArgument(leading, top, negative), options);
+        var workingBits = plan.WorkingBits;
+
+        // r = x - k·ln 2 with Lw fraction bits (Lw: ln 2 bits rounded up to a word as on the GPU), then truncated once
+        // to W - s fraction bits, which is R = r / 2^s with W fraction bits.
+        var ln2Bits = (plan.Ln2FractionBits + 31) / 32 * 32;
+        var shift = checked(exponent + ln2Bits);
+        var x = shift >= 0 ? significand << shift : significand >> -shift;
+        var kLn2 = Math.Abs(plan.Reduction) * GpuBigFloatConstants.GetLn2Fixed(ln2Bits);
+        var reduced = negative ? kLn2 - x : plan.Reduction >= 0 ? x - kLn2 : x + kLn2;
+        var r = reduced >> (ln2Bits - (workingBits - plan.Halvings));
+
+        var q = ExpSeriesRecurrence(r, plan.Terms, workingBits);
+        for (var i = 0; i < plan.Halvings; i++)
+        {
+            q = q * q >> workingBits;
+        }
+
+        // e^x = Q · 2^(k - W); Q < 2^(W+3) fits W + 32 bits without truncation.
+        var (approximation, approximationExponent) = Normalize(q, plan.Reduction - workingBits, workingBits + 32);
+        var (rounded, roundedExponent) =
+            RoundToNearest(approximation, approximationExponent, workingBits + 32 - resultBits, resultBits);
+        return (rounded, TranscendentalPlanner.ToExpResultExponent(roundedExponent));
+    }
+
+    /// <summary>
+    /// Returns <c>±leading · 2^(top − 64)</c> as a double: the argument to a relative error below <c>2^-52</c>.
+    /// </summary>
+    internal static double ApproximateArgument(ulong leading, long top, bool negative)
+    {
+        var magnitude = Math.ScaleB(leading, (int)(top - 64));
+        return negative ? -magnitude : magnitude;
+    }
+
+    // T_0 = 2^W, T_j = floor(floor(T_(j-1) · R / 2^W) / j), P = Σ_{j<=N} T_j.
+    private static BigInteger ExpSeriesRecurrence(BigInteger r, int terms, int workingBits)
+    {
+        var term = BigInteger.One << workingBits;
+        var sum = term;
+        for (var j = 1; j <= terms; j++)
+        {
+            term = (term * r >> workingBits) / j;
+            sum += term;
+        }
+
+        return sum;
     }
 
     // 2|y|T as an integer with the exponent 1 - sh - W.
@@ -131,12 +232,11 @@ internal static class BigFloatTranscendentalMath
     }
 
     // floor((A + 2^(g-1)) / 2^g) = floor((floor(A / 2^(g-1)) + 1) / 2), normalized to p bits.
-    private static (BigInteger, int, bool) RoundToNearest(
-        BigInteger approximation, long approximationExponent, int guardBits, int resultBits, bool negative)
+    private static (BigInteger Value, long Exponent) RoundToNearest(
+        BigInteger approximation, long approximationExponent, int guardBits, int resultBits)
     {
         var kept = (approximation >> (guardBits - 1)) + 1;
-        var (rounded, roundedExponent) = Normalize(kept, approximationExponent + guardBits - 1, resultBits);
-        return (rounded, checked((int)roundedExponent), negative);
+        return Normalize(kept, approximationExponent + guardBits - 1, resultBits);
     }
 
     // Shifts a positive value to exactly `bits` bits (truncating), adjusting the exponent.
