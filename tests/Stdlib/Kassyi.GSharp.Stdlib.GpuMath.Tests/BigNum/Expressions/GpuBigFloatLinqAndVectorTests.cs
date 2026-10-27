@@ -837,4 +837,23 @@ public class GpuBigFloatLinqAndVectorTests : IDisposable
     [Category(TestCategory.Unit)]
     [Scenario(TestScenario.HappyPath)]
     public void GpuBigUFloat_SelectZip_AllOverloads() => AssertSelectZipOverloads<GpuBigUFloat>();
+
+    // An unsigned element-wise difference below zero throws OverflowException when the sequence is evaluated, on the
+    // parallel and the sequential enumerable (#629). a = [6, 2], scalar 3, b = [3, 5]: the second element of each
+    // difference is negative, the first is not.
+    // mutant: GpuBigFloatExpressionVisitor.cs:74 `if (!left.CanBeNegative && res.IsNegative)` -> `if (false)`
+    [Fact]
+    [Category(TestCategory.Unit)]
+    [Scenario(TestScenario.SadPath)]
+    public void GpuBigUFloat_SelectZipSubtract_NegativeElement_ThrowsOverflow()
+    {
+        var a = new[] { CreateNumber<GpuBigUFloat>(6), CreateNumber<GpuBigUFloat>(2) };
+        var b = new[] { CreateNumber<GpuBigUFloat>(3), CreateNumber<GpuBigUFloat>(5) };
+        var scalar = CreateNumber<GpuBigUFloat>(3);
+
+        Assert.Throws<OverflowException>(() => a.AsStackEnumerable().AsParallel().SelectSubtract(scalar).Sum());
+        Assert.Throws<OverflowException>(() => a.AsStackEnumerable().SelectSubtract(scalar).Sum());
+        Assert.Throws<OverflowException>(() => a.AsStackEnumerable().AsParallel().ZipSubtract(b.AsStackEnumerable().AsParallel()).Sum());
+        Assert.Throws<OverflowException>(() => a.AsStackEnumerable().ZipSubtract(b.AsStackEnumerable()).Sum());
+    }
 }

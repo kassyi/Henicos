@@ -117,6 +117,8 @@ public ref struct GpuBigFloatExpressionVisitor(
 }
 ```
 
+`VisitSub` on `GpuBigUFloat` throws `OverflowException` when `right` is greater than `left`: an unsigned value has no negative difference, as with a `checked` `uint` subtraction. A difference of zero is positive zero.
+
 ## Examples
 
 ### Evaluating a Deferred GpuBigFloat Binary Expression

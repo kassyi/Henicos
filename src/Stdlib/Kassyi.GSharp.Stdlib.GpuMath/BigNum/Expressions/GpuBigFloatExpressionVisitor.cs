@@ -48,6 +48,9 @@ public ref struct GpuBigFloatExpressionVisitor(GpuWorkspace workspace, IGpuBigFl
     /// <param name="left">The left minuend operand.</param>
     /// <param name="right">The right subtrahend operand.</param>
     /// <returns>A new <typeparamref name="T"/> containing the difference.</returns>
+    /// <exception cref="OverflowException"><typeparamref name="T"/> cannot be negative (<see cref="GpuBigUFloat"/>) and
+    /// <paramref name="right"/> is greater than <paramref name="left"/>, like a <see langword="checked"/>
+    /// <see cref="uint"/> subtraction.</exception>
     public T VisitSub<T>(T left, T right)
         where T : struct, IGpuBigNumber<T>
         => ExecuteAddSub(left, right, negateRight: true);
@@ -58,14 +61,28 @@ public ref struct GpuBigFloatExpressionVisitor(GpuWorkspace workspace, IGpuBigFl
         var maxWords = Math.Max(left.Magnitude.NumWords, right.Magnitude.NumWords) + 1;
         var resultSig = new GpuBigUInt(left.Workspace, maxWords);
 
-        var execContext = new GpuBigIntExecutionContext(Workspace, Workspace.MemoryManager,
-            new LegacyProviderArithmeticAdapter(), Workspace.Stream);
-        var leftOp = GpuFloatOperand.From(left);
-        var rightOp = GpuFloatOperand.From(right, negate: negateRight);
+        try
+        {
+            var execContext = new GpuBigIntExecutionContext(Workspace, Workspace.MemoryManager,
+                new LegacyProviderArithmeticAdapter(), Workspace.Stream);
+            var leftOp = GpuFloatOperand.From(left);
+            var rightOp = GpuFloatOperand.From(right, negate: negateRight);
 
-        var res = Arithmetic.Add(ref execContext, in leftOp, in rightOp, resultSig.Handle);
+            var res = Arithmetic.Add(ref execContext, in leftOp, in rightOp, resultSig.Handle);
 
-        return T.Create(resultSig, res.Exponent, left.CanBeNegative && res.IsNegative);
+            // An unsigned type has no width to wrap around in, so a negative difference follows checked uint (#629).
+            if (!left.CanBeNegative && res.IsNegative)
+            {
+                throw new OverflowException("The difference of two unsigned big-float values is negative.");
+            }
+
+            return T.Create(resultSig, res.Exponent, res.IsNegative);
+        }
+        catch
+        {
+            resultSig.Dispose();
+            throw;
+        }
     }
 
     /// <summary>
@@ -83,7 +100,7 @@ public ref struct GpuBigFloatExpressionVisitor(GpuWorkspace workspace, IGpuBigFl
         var resultSig = sigExpr.Node.Evaluate(Workspace);
 
         var resultExp = left.Exponent + right.Exponent;
-        var resultSign = left.CanBeNegative && !resultSig.IsZero() && (left.IsNegative != right.IsNegative);
+        var resultSign = !resultSig.IsZero() && (left.IsNegative != right.IsNegative);
 
         return T.Create(resultSig, resultExp, resultSign);
     }
@@ -110,7 +127,7 @@ public ref struct GpuBigFloatExpressionVisitor(GpuWorkspace workspace, IGpuBigFl
 
             var res = Arithmetic.Divide(ref execContext, in leftOp, in rightOp, resultSig.Handle);
 
-            return T.Create(resultSig, res.Exponent, left.CanBeNegative && res.IsNegative);
+            return T.Create(resultSig, res.Exponent, res.IsNegative);
         }
         catch
         {
