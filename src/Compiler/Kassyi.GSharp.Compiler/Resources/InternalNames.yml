@@ -176,6 +176,13 @@ Sort:
     KeysComparable: { Value: __gsharp_sort_comparable, Prelude: Sort.hpp }
     Pairs: { Value: __gsharp_sort_pairs, Prelude: Sort.hpp }
     PairsComparable: { Value: __gsharp_sort_pairs_comparable, Prelude: Sort.hpp }
+    # The members that a user struct declares for IComparer<T>.Compare and IComparable<T>.CompareTo (SortComparisonMembers)
+    CompareMember: __gsharp_compare
+    CompareToMember: __gsharp_compare_to
+    # The lambda that MemoryExtensionsTranspilerRule writes around them: the copy of the comparer struct and the two keys
+    ComparerCapture: __gsharp_comparer
+    LeftOperand: __gsharp_left
+    RightOperand: __gsharp_right
 
 Wmma:
   Summary: Tensor Core warp matrix fragment types and tags (nvcuda::wmma).

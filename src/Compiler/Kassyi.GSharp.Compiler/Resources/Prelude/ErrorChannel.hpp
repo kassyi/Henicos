@@ -56,13 +56,39 @@ inline void __gsharp_unsupported(const char* message)
     }
 }
 
+// The depth of the comparisons of MemoryExtensions.Sort that the thread is running (Sort.hpp).
+inline thread_local int __gsharp_sort_compare_depth = 0;
+
 // Records a portable trap failure (e.g. empty sequence or out-of-range index in StackLinq).
 // First writer wins across OpenMP threads; the managed launch wrapper inspects the slot and throws.
+// [WHY] .NET wraps an exception thrown by the comparison of a sort: IndexOutOfRangeException becomes ArgumentException
+// (the comparer is inconsistent) and any other InvalidOperationException (ArraySortHelper.Sort).
 inline void __gsharp_trap(GSharpErrorCode code, const char* message)
 {
+    if (__gsharp_sort_compare_depth > 0)
+    {
+        if (code == GSharpErrorCode::IndexOutOfRange)
+        {
+            code = GSharpErrorCode::Argument;
+            message = "Unable to sort because the IComparer.Compare() method returns inconsistent results.";
+        }
+        else
+        {
+            code = GSharpErrorCode::InvalidOperation;
+            message = "Failed to compare two elements in the array.";
+        }
+    }
+
     if (__gsharp_active_error_slot != nullptr) {
         __gsharp_active_error_slot->Report(code, message);
     } else {
         __gsharp_host_last_error.Report(code, message);
     }
 }
+
+// Marks the comparison of a sort that the thread is running, while it lives (Sort.hpp)
+struct __gsharp_sort_compare_scope
+{
+    inline __gsharp_sort_compare_scope() noexcept { __gsharp_sort_compare_depth++; }
+    inline ~__gsharp_sort_compare_scope() { __gsharp_sort_compare_depth--; }
+};

@@ -356,6 +356,8 @@ enum class GSharpErrorCode : int {
     Argument = 5
 };
 __device__ __forceinline__ void __gsharp_trap(GSharpErrorCode, const char*) { asm("trap;"); }
+// [WHY] A trap stops the kernel, so a trap in the comparison of a sort needs no translation (ErrorChannel.hpp does it on the CPU)
+struct __gsharp_sort_compare_scope { };
 
 // --- Dynamic shared memory ---
 // [WHY] Every dynamic SharedMemory<T> declaration is one region per block (static storage, like __shared__). Regions are

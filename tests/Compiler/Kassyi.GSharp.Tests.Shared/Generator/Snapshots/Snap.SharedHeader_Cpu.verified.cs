@@ -666,16 +666,42 @@ __gsharp_host_last_error.Report(GSharpErrorCode::NotSupported, message);
 }
 }
 
+// The depth of the comparisons of MemoryExtensions.Sort that the thread is running (Sort.hpp).
+inline thread_local int __gsharp_sort_compare_depth = 0;
+
 // Records a portable trap failure (e.g. empty sequence or out-of-range index in StackLinq).
 // First writer wins across OpenMP threads; the managed launch wrapper inspects the slot and throws.
+// [WHY] .NET wraps an exception thrown by the comparison of a sort: IndexOutOfRangeException becomes ArgumentException
+// (the comparer is inconsistent) and any other InvalidOperationException (ArraySortHelper.Sort).
 inline void __gsharp_trap(GSharpErrorCode code, const char* message)
 {
+if (__gsharp_sort_compare_depth > 0)
+{
+if (code == GSharpErrorCode::IndexOutOfRange)
+{
+code = GSharpErrorCode::Argument;
+message = ""Unable to sort because the IComparer.Compare() method returns inconsistent results."";
+}
+else
+{
+code = GSharpErrorCode::InvalidOperation;
+message = ""Failed to compare two elements in the array."";
+}
+}
+
 if (__gsharp_active_error_slot != nullptr) {
 __gsharp_active_error_slot->Report(code, message);
 } else {
 __gsharp_host_last_error.Report(code, message);
 }
 }
+
+// Marks the comparison of a sort that the thread is running, while it lives (Sort.hpp)
+struct __gsharp_sort_compare_scope
+{
+inline __gsharp_sort_compare_scope() noexcept { __gsharp_sort_compare_depth++; }
+inline ~__gsharp_sort_compare_scope() { __gsharp_sort_compare_depth--; }
+};
 
 // --- MemoryExtensions.Sort (CPU and CUDA dialects) ---
 // Licensed to the .NET Foundation under one or more agreements.
@@ -716,6 +742,20 @@ template <typename T>
 struct __gsharp_sort_default_compare
 {
 __device__ __forceinline__ int operator()(const T& a, const T& b) const { return a < b ? -1 : (b < a ? 1 : 0); }
+};
+
+// A comparison written by the user (a comparison, a comparer struct, CompareTo): a trap inside it is recorded as the
+// exception .NET wraps it in (__gsharp_sort_compare_scope, ErrorChannel.hpp on the CPU dialects)
+template <typename TCompare>
+struct __gsharp_sort_user_compare
+{
+TCompare compare;
+template <typename T>
+__device__ __forceinline__ int operator()(T& a, T& b)
+{
+__gsharp_sort_compare_scope scope;
+return compare(a, b);
+}
 };
 
 template <typename T> __device__ __forceinline__ bool __gsharp_sort_is_nan(const T&) { return false; }
@@ -1004,17 +1044,19 @@ __gsharp_sort_default<__gsharp_sort_scan::Guarded>(keys.data, __gsharp_sort_no_i
 
 // span.Sort(comparison) or span.Sort(comparer): a lambda, a device function, or a lambda that calls the comparer struct
 template <typename TKeys, typename TCompare>
-__device__ void __gsharp_sort(TKeys&& keySpan, TCompare compare)
+__device__ void __gsharp_sort(TKeys&& keySpan, TCompare comparison)
 {
 auto keys = __gsharp_sort_span(keySpan);
+__gsharp_sort_user_compare<TCompare> compare{comparison};
 __gsharp_sort_intro<__gsharp_sort_scan::Comparer>(keys.data, __gsharp_sort_no_items{}, keys.length, compare);
 }
 
 // span.Sort() of a user struct: a lambda that calls its IComparable<T>.CompareTo
 template <typename TKeys, typename TCompare>
-__device__ void __gsharp_sort_comparable(TKeys&& keySpan, TCompare compare)
+__device__ void __gsharp_sort_comparable(TKeys&& keySpan, TCompare comparison)
 {
 auto keys = __gsharp_sort_span(keySpan);
+__gsharp_sort_user_compare<TCompare> compare{comparison};
 __gsharp_sort_intro<__gsharp_sort_scan::Guarded>(keys.data, __gsharp_sort_no_items{}, keys.length, compare);
 }
 
@@ -1032,24 +1074,26 @@ __gsharp_sort_default<__gsharp_sort_scan::Default>(keys.data, __gsharp_sort_item
 
 // MemoryExtensions.Sort(keys, items, comparison) or Sort(keys, items, comparer)
 template <typename TKeys, typename TItems, typename TCompare>
-__device__ void __gsharp_sort_pairs(TKeys&& keySpan, TItems&& itemSpan, TCompare compare)
+__device__ void __gsharp_sort_pairs(TKeys&& keySpan, TItems&& itemSpan, TCompare comparison)
 {
 auto keys = __gsharp_sort_span(keySpan);
 auto items = __gsharp_sort_span(itemSpan);
 if (__gsharp_sort_same_length(keys, items))
 {
+__gsharp_sort_user_compare<TCompare> compare{comparison};
 __gsharp_sort_intro<__gsharp_sort_scan::Comparer>(keys.data, __gsharp_sort_items_of(items), keys.length, compare);
 }
 }
 
 // MemoryExtensions.Sort(keys, items) of user struct keys: a lambda that calls their IComparable<T>.CompareTo
 template <typename TKeys, typename TItems, typename TCompare>
-__device__ void __gsharp_sort_pairs_comparable(TKeys&& keySpan, TItems&& itemSpan, TCompare compare)
+__device__ void __gsharp_sort_pairs_comparable(TKeys&& keySpan, TItems&& itemSpan, TCompare comparison)
 {
 auto keys = __gsharp_sort_span(keySpan);
 auto items = __gsharp_sort_span(itemSpan);
 if (__gsharp_sort_same_length(keys, items))
 {
+__gsharp_sort_user_compare<TCompare> compare{comparison};
 __gsharp_sort_intro<__gsharp_sort_scan::Default>(keys.data, __gsharp_sort_items_of(items), keys.length, compare);
 }
 }
