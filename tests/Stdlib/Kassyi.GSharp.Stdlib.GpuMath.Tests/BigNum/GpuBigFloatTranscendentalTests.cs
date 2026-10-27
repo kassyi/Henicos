@@ -12,8 +12,14 @@ namespace Kassyi.GSharp.Stdlib.GpuMath.Tests.BigNum;
 /// <c>n</c> result words.
 /// </para>
 /// <para>
-/// Contract checked here (stages 2 and 3 of #628): the result is a faithful rounding, <c>RZ_p(v)</c> or the next
-/// <c>p</c>-bit value away from zero, with the significand normalized to the top bit of the result words.
+/// Contract checked here (stages 2 to 4 of #628): the result is a faithful rounding, <c>RZ_p(v)</c> or the next
+/// <c>p</c>-bit value away from zero, with the significand normalized to the top bit of the result words (P1).
+/// </para>
+/// <para>
+/// P5: the approximation before rounding (<c>W</c> bits for Log, <c>e^x</c> at <c>W + 32</c> bits for Exp) lies within
+/// its planned bound <c>B</c> of the exact value, in units of its last bit at <c>W</c> bits. The bounds are those of
+/// the design §10.1 (atanh Horner <c>B = 7</c>, atanh Paterson–Stockmeyer <c>B = m + 6</c>, exp Paterson–Stockmeyer
+/// <c>B = ceil(5.83·2^s) − 1</c>). With 32 guard bits P1 rarely sees an error of a few units; P5 does.
 /// </para>
 /// </remarks>
 [TestTarget(ExecutionTarget.GpuExecution)]
@@ -37,8 +43,11 @@ public class GpuBigFloatTranscendentalTests : IDisposable
         _scope.Dispose();
     }
 
-    /// <summary>Named Log inputs <c>x = Significand · 2^Exponent</c> with the number of result words.</summary>
-    private static readonly Dictionary<string, (BigInteger Significand, int Exponent, int Words)> s_logCases = CreateLogCases();
+    /// <summary>
+    /// Named Log inputs <c>x = Significand · 2^Exponent</c> with the number of result words and optional series
+    /// parameters.
+    /// </summary>
+    private static readonly Dictionary<string, LogCase> s_logCases = CreateLogCases();
 
     public static TheoryData<string, string> LogCasesOnBothEngines()
     {
@@ -77,14 +86,49 @@ public class GpuBigFloatTranscendentalTests : IDisposable
     // `workingBits + bitLength - reducedBits + 1` -> `workingBits + 1` (LogNearOne)
     public void Log_IsFaithful(string engine, string caseName)
     {
-        var (sig, exp, words) = s_logCases[caseName];
+        var logCase = s_logCases[caseName];
+        var words = logCase.Words;
 
-        var (rSig, result) = RunLog(Arithmetic(engine), sig, exp, words);
+        var (rSig, result) = RunLog(Arithmetic(engine), logCase);
 
         Assert.True(rSig.IsZero || rSig.GetBitLength() == 32 * words, $"{caseName}: significand not normalized");
         Assert.True(
-            BigFloatIntervalOracle.IsFaithfulLog(sig, exp, rSig, result.Exponent, result.IsNegative, 32 * words),
+            BigFloatIntervalOracle.IsFaithfulLog(
+                logCase.Significand, logCase.Exponent, rSig, result.Exponent, result.IsNegative, 32 * words),
             $"{caseName} [{engine}]: ln x is not within 1 ulp of {Describe(rSig, result)}");
+    }
+
+    // P5: the W-bit approximation lies within its bound B of ln x (oracle: e^(A - B) <= x <= e^(A + B)).
+    [SkippableTheory]
+    [Scenario(TestScenario.Boundary)]
+    [MemberData(nameof(LogCasesOnBothEngines))]
+    // mutant: TranscendentalPlanner.cs LogPatersonStockmeyerErrorBound `blockSize + 6` -> `blockSize + 1` (B below the
+    // error the series reaches: LogSeriesForms 1+2^-10)
+    // mutant: BigFloatTranscendentalMath.cs AtanhSeriesPatersonStockmeyer top block `i < terms - top` ->
+    // `i < terms - top - 1` / GpuBigFloatTranscendentals.cs `i = 1; i < terms - top` -> `i < terms - top - 1` (the last
+    // term dropped): LogSeriesForms
+    // mutant: GpuBigFloatTranscendentals.cs / BigFloatTranscendentalMath.cs AtanhSeriesPatersonStockmeyer lower blocks
+    // `2 * (first + i) + 1` -> `2 * (first + i) + 3`: LogSeriesForms, LogWorstY
+    public void Log_ApproximationIsWithinBound(string engine, string caseName)
+    {
+        var logCase = s_logCases[caseName];
+
+        var approximation = LogApproximation(engine, logCase);
+
+        if (approximation.Significand.IsZero)
+        {
+            // ln 1 = 0 exactly.
+            Assert.Equal(0, new Dyadic(logCase.Significand, logCase.Exponent).CompareTo(Dyadic.One));
+            return;
+        }
+
+        Assert.Equal(approximation.WorkingBits, (int)approximation.Significand.GetBitLength());
+        Assert.True(
+            BigFloatIntervalOracle.IsLogWithin(
+                logCase.Significand, logCase.Exponent, approximation.Significand, approximation.Exponent,
+                approximation.IsNegative, approximation.ErrorBound, approximation.UnitExponent,
+                approximation.WorkingBits + 64),
+            $"{caseName} [{engine}]: ln x is more than {approximation.ErrorBound} units from the approximation");
     }
 
     // The GPU and the CPU provider run the same planner and the same integer steps, so they agree bit for bit.
@@ -93,10 +137,10 @@ public class GpuBigFloatTranscendentalTests : IDisposable
     [MemberData(nameof(LogCaseNames))]
     public void Log_CpuAndGpuAgree(string caseName)
     {
-        var (sig, exp, words) = s_logCases[caseName];
+        var logCase = s_logCases[caseName];
 
-        var gpu = RunLog(GSharpKernelFloatProvider.Instance, sig, exp, words);
-        var cpu = RunLog(CSharpCpuBigFloatArithmetic.Instance, sig, exp, words);
+        var gpu = RunLog(GSharpKernelFloatProvider.Instance, logCase);
+        var cpu = RunLog(CSharpCpuBigFloatArithmetic.Instance, logCase);
 
         Assert.Equal(cpu, gpu);
     }
@@ -108,7 +152,7 @@ public class GpuBigFloatTranscendentalTests : IDisposable
     [InlineData("Cpu")]
     public void Log_OfOne_IsZero(string engine)
     {
-        var (rSig, result) = RunLog(Arithmetic(engine), BigInteger.One << 40, -40, 4);
+        var (rSig, result) = RunLog(Arithmetic(engine), new LogCase(BigInteger.One << 40, -40, 4));
 
         Assert.Equal(BigInteger.Zero, rSig);
         Assert.Equal(new GpuFloatResult(0, false), result);
@@ -159,6 +203,22 @@ public class GpuBigFloatTranscendentalTests : IDisposable
         return data;
     }
 
+    // Every Exp case that computes an approximation (not the tiny shortcut |x| < 2^-(p+1)).
+    public static TheoryData<string, string> ExpApproximationCasesOnBothEngines()
+    {
+        var data = new TheoryData<string, string>();
+        foreach (var (name, expCase) in s_expCases)
+        {
+            if ((long)expCase.Exponent + (long)expCase.Significand.GetBitLength() > -(32 * expCase.Words + 2))
+            {
+                data.Add("Gpu", name);
+                data.Add("Cpu", name);
+            }
+        }
+
+        return data;
+    }
+
     public static TheoryData<string> ExpCaseNames()
     {
         var data = new TheoryData<string>();
@@ -175,8 +235,8 @@ public class GpuBigFloatTranscendentalTests : IDisposable
     [Scenario(TestScenario.Boundary)]
     [MemberData(nameof(ExpCasesOnBothEngines))]
     // mutant: TranscendentalPlanner.cs PlanExp `Math.Floor(xApprox / Ln2) - 1` -> `+ 1` (r < 0): every case
-    // mutant: TranscendentalPlanner.cs PlanExp guard loop `if (needed <= guardWords)` -> `if (true)` (gw stays 1 while
-    // the bound has up to 2^200·N): ExpForcedHalving s = 40, 200 and ExpPrecisionLadder n = 129
+    // mutant: TranscendentalPlanner.cs PlanExp `var guardWords = GuardWordsFor(errorBound);` -> `var guardWords = 1;`
+    // (one guard word while the bound has up to 2^200): ExpForcedHalving s = 40, 200 (also P5 and the planner tests)
     // mutant: GpuBigFloatTranscendentals.cs / BigFloatTranscendentalMath.cs Exp tiny shortcut `-(resultBits + 2)` ->
     // `-(resultBits - 2)`: ExpTiny ±3·2^-128
     // mutant: GpuBigFloatTranscendentals.cs / BigFloatTranscendentalMath.cs Exp one squaring dropped
@@ -196,6 +256,34 @@ public class GpuBigFloatTranscendentalTests : IDisposable
         Assert.True(
             actual == (rzSig, rzExp) || actual == (succ.Significand, succ.Exponent),
             $"{caseName} [{engine}]: {Describe(rSig, result)} is not RZ(e^x) = 0x{rzSig:X} * 2^{rzExp} or the next value");
+    }
+
+    // P5: the approximation e^x at W + 32 bits lies within its bound B, in units of its last bit at W bits, of e^x
+    // (oracle: interval of e^x inside [A - B, A + B]). The tiny shortcut computes no approximation and is left out.
+    [SkippableTheory]
+    [Scenario(TestScenario.Boundary)]
+    [MemberData(nameof(ExpApproximationCasesOnBothEngines))]
+    // mutant: TranscendentalPlanner.cs ExpPatersonStockmeyerErrorBound `583 *` -> `100 *` (B below the error the
+    // squarings amplify): ExpSeriesForms, ExpForcedHalving, ExpPrecisionLadder, ExpLargeArgument
+    // mutant: TranscendentalPlanner.cs PlanExp `+ BitLength(reduction) + 2` -> `+ 2` (|k|·|L - ln 2| too large):
+    // ExpRangeEdge, ExpNearMultipleOfLn2 10^6, ExpNegative -1000 and -2^20
+    // mutant: GpuBigFloatTranscendentals.cs / BigFloatTranscendentalMath.cs ExpSeriesPatersonStockmeyer top block
+    // `i >= 1` -> `i >= 2` (the lowest step of the top block skipped): ExpSeriesForms, ExpLargeArgument
+    // mutant: GpuBigFloatTranscendentals.cs / BigFloatTranscendentalMath.cs ExpSeriesPatersonStockmeyer lower blocks
+    // `(first + i)` -> `(first + i + 1)` (wrong divisor in Smith's order): ExpSeriesForms, ExpLargeArgument
+    public void Exp_ApproximationIsWithinBound(string engine, string caseName)
+    {
+        var expCase = s_expCases[caseName];
+
+        var approximation = ExpApproximation(engine, expCase);
+
+        var (num, denShift) = BigFloatIntervalOracle.ToRatio(expCase.Significand, expCase.Exponent);
+        Assert.Equal(approximation.WorkingBits + 32, (int)approximation.Significand.GetBitLength());
+        Assert.True(
+            BigFloatIntervalOracle.IsExpWithin(
+                expCase.Negative ? -num : num, denShift, approximation.Significand, approximation.Exponent,
+                approximation.ErrorBound, approximation.UnitExponent, approximation.WorkingBits + 96),
+            $"{caseName} [{engine}]: e^x is more than {approximation.ErrorBound} units from the approximation");
     }
 
     // The GPU and the CPU provider run the same planner and the same integer steps, so they agree bit for bit.
@@ -255,11 +343,37 @@ public class GpuBigFloatTranscendentalTests : IDisposable
         Assert.Contains(word, error.Message, StringComparison.Ordinal);
     }
 
+    // Next to the range edge the planner cannot decide the exponent from k alone: it lets the series run, and the
+    // exponent of the assembled result decides. Overflow: x / ln 2 = 2^31 - 1 + p + 0.499 gives the exponent
+    // 2^31; underflow: x / ln 2 = -2^31 + p - 1.999 gives -2^31 - 1 (p = 128). The planner accepts both.
+    [SkippableTheory]
+    [Scenario(TestScenario.SadPath)]
+    // mutant: TranscendentalPlanner.cs ToExpResultExponent `exponent > int.MaxValue ? throw ExpOutOfRange(negative: false)`
+    // -> `exponent > int.MaxValue ? throw ExpOutOfRange(negative: true)` (the overflow named an underflow)
+    [InlineData("Gpu", false, "overflow")]
+    [InlineData("Cpu", false, "overflow")]
+    [InlineData("Gpu", true, "underflow")]
+    [InlineData("Cpu", true, "underflow")]
+    public void Exp_RangeEdge_ThrowsAfterTheSeries(string engine, bool negative, string word)
+    {
+        var significand = negative ? 1524246680138L : 1524246860068L;
+        var expCase = new ExpCase(significand, -10, negative, 4, null);
+
+        // The planner's early check passes (the argument is exact as a double): k + 1 - p = 2^31 - 1 for the
+        // overflow, k + 4 - p = -2^31 + 1 for the underflow.
+        var planned = TranscendentalPlanner.PlanExp(128, (negative ? -significand : significand) / 1024.0, new());
+        Assert.Equal(negative ? -2147483523L : 2147483774L, planned.Reduction);
+
+        var error = Assert.Throws<OverflowException>(() => RunExp(Arithmetic(engine), expCase));
+        Assert.Contains(word, error.Message, StringComparison.Ordinal);
+        Assert.DoesNotContain(negative ? "overflow" : "underflow", error.Message, StringComparison.Ordinal);
+    }
+
     private (BigInteger Significand, GpuFloatResult Result) RunExp(IGpuBigFloatArithmetic arithmetic, ExpCase expCase)
     {
         using var x = new GpuBigUInt(_workspace, ToWords(expCase.Significand));
         using var result = new GpuBigUInt(_workspace, expCase.Words);
-        _workspace.Transcendental.ExpHalvingCount = expCase.Halvings;
+        ApplyOptions(expCase.Halvings, expCase.BlockSize, 8);
         var context = CreateContext();
 
         var r = arithmetic.Exp(ref context, new GpuFloatOperand(x.Handle, expCase.Exponent, expCase.Negative),
@@ -267,15 +381,51 @@ public class GpuBigFloatTranscendentalTests : IDisposable
         return (result.ToBigInteger(), r);
     }
 
-    private (BigInteger Significand, GpuFloatResult Result) RunLog(
-        IGpuBigFloatArithmetic arithmetic, BigInteger sig, int exp, int words)
+    private TranscendentalApproximation ExpApproximation(string engine, ExpCase expCase)
     {
-        using var x = new GpuBigUInt(_workspace, ToWords(sig));
-        using var result = new GpuBigUInt(_workspace, words);
+        ApplyOptions(expCase.Halvings, expCase.BlockSize, 8);
+        if (engine == "Cpu")
+        {
+            return BigFloatTranscendentalMath.ExpApproximation(
+                expCase.Significand, expCase.Exponent, expCase.Negative, 32 * expCase.Words, _workspace.Transcendental);
+        }
+
+        using var x = new GpuBigUInt(_workspace, ToWords(expCase.Significand));
+        return GpuBigFloatTranscendentals.ExpApproximation(
+            _workspace, new GpuFloatOperand(x.Handle, expCase.Exponent, expCase.Negative), expCase.Words);
+    }
+
+    private (BigInteger Significand, GpuFloatResult Result) RunLog(IGpuBigFloatArithmetic arithmetic, LogCase logCase)
+    {
+        using var x = new GpuBigUInt(_workspace, ToWords(logCase.Significand));
+        using var result = new GpuBigUInt(_workspace, logCase.Words);
+        ApplyOptions(null, logCase.BlockSize, logCase.HornerMaxTerms);
         var context = CreateContext();
 
-        var r = arithmetic.Log(ref context, new GpuFloatOperand(x.Handle, exp), result.Handle);
+        var r = arithmetic.Log(ref context, new GpuFloatOperand(x.Handle, logCase.Exponent), result.Handle);
         return (result.ToBigInteger(), r);
+    }
+
+    private TranscendentalApproximation LogApproximation(string engine, LogCase logCase)
+    {
+        ApplyOptions(null, logCase.BlockSize, logCase.HornerMaxTerms);
+        if (engine == "Cpu")
+        {
+            return BigFloatTranscendentalMath.LogApproximation(
+                logCase.Significand, logCase.Exponent, 32 * logCase.Words, _workspace.Transcendental);
+        }
+
+        using var x = new GpuBigUInt(_workspace, ToWords(logCase.Significand));
+        return GpuBigFloatTranscendentals.LogApproximation(
+            _workspace, new GpuFloatOperand(x.Handle, logCase.Exponent), logCase.Words);
+    }
+
+    private void ApplyOptions(int? halvings, int? blockSize, int hornerMaxTerms)
+    {
+        var options = _workspace.Transcendental;
+        options.ExpHalvingCount = halvings;
+        options.SeriesBlockSize = blockSize;
+        options.AtanhHornerMaxTerms = hornerMaxTerms;
     }
 
     private GpuBigIntExecutionContext CreateContext() =>
@@ -299,7 +449,12 @@ public class GpuBigFloatTranscendentalTests : IDisposable
     }
 
     /// <summary>An Exp input <c>±Significand · 2^Exponent</c>.</summary>
-    private readonly record struct ExpCase(BigInteger Significand, int Exponent, bool Negative, int Words, int? Halvings);
+    private readonly record struct ExpCase(
+        BigInteger Significand, int Exponent, bool Negative, int Words, int? Halvings, int? BlockSize = null);
+
+    /// <summary>A Log input <c>Significand · 2^Exponent</c>.</summary>
+    private readonly record struct LogCase(
+        BigInteger Significand, int Exponent, int Words, int? BlockSize = null, int HornerMaxTerms = 8);
 
     private static Dictionary<string, ExpCase> CreateExpCases()
     {
@@ -360,10 +515,30 @@ public class GpuBigFloatTranscendentalTests : IDisposable
             cases[$"ExpForcedHalving/3/s={halvings}"] = new ExpCase(3, 0, false, 4, halvings);
         }
 
-        // Precision ladder: the planner picks s = 5, 27 and 57 with 1, 2 and 3 guard words.
+        // Precision ladder: the planner picks s = 2, 2 and 5 with one guard word (Paterson–Stockmeyer).
         foreach (var words in new[] { 1, 31, 129 })
         {
             cases[$"ExpPrecisionLadder/3/n={words}"] = new ExpCase(3, 0, false, words, null);
+        }
+
+        // Series forms: the Paterson–Stockmeyer block size 2, 3, the planner's choice and ceil(sqrt N) + 3, with the
+        // planner's s and with s = 7.
+        foreach (var (significand, exponent, negative, label) in new[] { (3, 0, false, "3"), (3, -1, true, "-1.5") })
+        {
+            foreach (var words in new[] { 4, 32 })
+            {
+                foreach (var halvings in new int?[] { null, 7 })
+                {
+                    var x = (negative ? -significand : significand) * Math.ScaleB(1, exponent);
+                    var terms = TranscendentalPlanner.PlanExp(
+                        32 * words, x, new GpuBigFloatTranscendentalOptions { ExpHalvingCount = halvings }).Terms;
+                    foreach (var blockSize in new int?[] { 2, 3, null, (int)Math.Ceiling(Math.Sqrt(terms)) + 3 })
+                    {
+                        cases[$"ExpSeriesForms/{label}/n={words}/s={halvings?.ToString() ?? "auto"}/m={blockSize?.ToString() ?? "auto"}"] =
+                            new ExpCase(significand, exponent, negative, words, halvings, blockSize);
+                    }
+                }
+            }
         }
 
         // The largest arguments whose result exponent still fits in int (about +-(2^31 + 127)·ln 2).
@@ -387,31 +562,31 @@ public class GpuBigFloatTranscendentalTests : IDisposable
         return sum >> 16;
     }
 
-    private static Dictionary<string, (BigInteger, int, int)> CreateLogCases()
+    private static Dictionary<string, LogCase> CreateLogCases()
     {
-        var cases = new Dictionary<string, (BigInteger, int, int)>();
+        var cases = new Dictionary<string, LogCase>();
         var one = BigInteger.One;
 
         // Control: e = 1..6, |y| <= 1/5.
-        cases["LogControl/2"] = (2, 0, 4);
-        cases["LogControl/3"] = (3, 0, 4);
-        cases["LogControl/100"] = (100, 0, 4);
+        cases["LogControl/2"] = new LogCase(2, 0, 4);
+        cases["LogControl/3"] = new LogCase(3, 0, 4);
+        cases["LogControl/100"] = new LogCase(100, 0, 4);
 
         // Large and small arguments: the e·ln 2 term (#628 B2: the unreduced series saturates at about 8.18).
-        cases["LogLargeArgument/1000"] = (1000, 0, 4);
-        cases["LogLargeArgument/2^40"] = (1, 40, 4);
-        cases["LogLargeArgument/2^100"] = (1, 100, 4);
-        cases["LogLargeArgument/2^-40"] = (1, -40, 4);
-        cases["LogLargeArgument/2^-100"] = (1, -100, 4);
-        cases["LogLargeArgument/3*2^-1000"] = (3, -1000, 4);
+        cases["LogLargeArgument/1000"] = new LogCase(1000, 0, 4);
+        cases["LogLargeArgument/2^40"] = new LogCase(1, 40, 4);
+        cases["LogLargeArgument/2^100"] = new LogCase(1, 100, 4);
+        cases["LogLargeArgument/2^-40"] = new LogCase(1, -40, 4);
+        cases["LogLargeArgument/2^-100"] = new LogCase(1, -100, 4);
+        cases["LogLargeArgument/3*2^-1000"] = new LogCase(3, -1000, 4);
 
         // Powers of two: m = 1, u = 0, ln x = e·ln 2 alone.
         foreach (var words in new[] { 1, 4 })
         {
-            cases[$"LogPowerOfTwo/2^1/n={words}"] = (1, 1, words);
-            cases[$"LogPowerOfTwo/2^-1/n={words}"] = (1, -1, words);
-            cases[$"LogPowerOfTwo/2^31/n={words}"] = (one << 7, 24, words);
-            cases[$"LogPowerOfTwo/2^-1000/n={words}"] = (1, -1000, words);
+            cases[$"LogPowerOfTwo/2^1/n={words}"] = new LogCase(1, 1, words);
+            cases[$"LogPowerOfTwo/2^-1/n={words}"] = new LogCase(1, -1, words);
+            cases[$"LogPowerOfTwo/2^31/n={words}"] = new LogCase(one << 7, 24, words);
+            cases[$"LogPowerOfTwo/2^-1000/n={words}"] = new LogCase(1, -1000, words);
         }
 
         // The ends of m in [3/4, 3/2): |y| = 1/5 - O(2^-p) just below 3/2, |y| = 1/7 at 3/4.
@@ -420,15 +595,15 @@ public class GpuBigFloatTranscendentalTests : IDisposable
             var p = 32 * words;
             foreach (var k in new[] { 0, 9 })
             {
-                cases[$"LogWorstY/(1.5-2^-{p})*2^{k}/n={words}"] = ((3 * (one << (p - 1))) - 1, k - p, words);
-                cases[$"LogWorstY/0.75*2^{k}/n={words}"] = (3, k - 2, words);
+                cases[$"LogWorstY/(1.5-2^-{p})*2^{k}/n={words}"] = new LogCase((3 * (one << (p - 1))) - 1, k - p, words);
+                cases[$"LogWorstY/0.75*2^{k}/n={words}"] = new LogCase(3, k - 2, words);
             }
         }
 
         // Near 1: e = 0, y far below the fixed-point resolution of the series.
-        cases["LogNearOne/1+2^-150"] = ((one << 150) + 1, -150, 4);
-        cases["LogNearOne/1-2^-150"] = ((one << 150) - 1, -150, 4);
-        cases["LogNearOne/1+2^-1000"] = ((one << 1000) + 1, -1000, 4);
+        cases["LogNearOne/1+2^-150"] = new LogCase((one << 150) + 1, -150, 4);
+        cases["LogNearOne/1-2^-150"] = new LogCase((one << 150) - 1, -150, 4);
+        cases["LogNearOne/1+2^-1000"] = new LogCase((one << 1000) + 1, -1000, 4);
 
         // A 64-word significand, much longer than the result.
         var random = new Random(628);
@@ -436,13 +611,42 @@ public class GpuBigFloatTranscendentalTests : IDisposable
         random.NextBytes(longSig);
         longSig[^1] |= 0x80;
         var longValue = new BigInteger(longSig, isUnsigned: true);
-        cases["LogLongSignificand/seed628/x~1.x"] = (longValue, -(64 * 32 - 1), 4);
-        cases["LogLongSignificand/seed628/x~2^20"] = (longValue, -(64 * 32 - 1) + 20, 4);
+        cases["LogLongSignificand/seed628/x~1.x"] = new LogCase(longValue, -(64 * 32 - 1), 4);
+        cases["LogLongSignificand/seed628/x~2^20"] = new LogCase(longValue, -(64 * 32 - 1) + 20, 4);
 
         // Precision ladder for ln 3: word boundaries and more terms than the old 500-term limit (n = 129).
         foreach (var words in new[] { 1, 2, 31, 32, 33, 72, 73, 129 })
         {
-            cases[$"LogPrecisionLadder/3/n={words}"] = (3, 0, words);
+            cases[$"LogPrecisionLadder/3/n={words}"] = new LogCase(3, 0, words);
+        }
+
+        // Series forms: Horner always (int.MaxValue), at most 8 terms (default) and never (0), with the
+        // Paterson–Stockmeyer block size 2, 3, the planner's choice and ceil(sqrt N) + 3. x = 3 (e = 2, c = 1, many
+        // terms), 1 + 2^-10 (e = 0, c = 9, about 8 terms) and 1 + 2^-150 (e = 0, c = 149, one term).
+        foreach (var (significand, exponent, e, closeness, label) in new[]
+                 {
+                     (new BigInteger(3), 0, 2L, 1, "3"),
+                     ((one << 10) + 1, -10, 0L, 9, "1+2^-10"),
+                     ((one << 150) + 1, -150, 0L, 149, "1+2^-150"),
+                 })
+        {
+            foreach (var words in new[] { 4, 32 })
+            {
+                var terms = TranscendentalPlanner.PlanLog(32 * words, e, closeness, new GpuBigFloatTranscendentalOptions()).Terms;
+                foreach (var hornerMaxTerms in new[] { int.MaxValue, 8, 0 })
+                {
+                    foreach (var blockSize in new int?[] { 2, 3, null, (int)Math.Ceiling(Math.Sqrt(terms)) + 3 })
+                    {
+                        if (hornerMaxTerms == int.MaxValue && blockSize is not null)
+                        {
+                            continue; // Horner ignores the block size.
+                        }
+
+                        cases[$"LogSeriesForms/{label}/n={words}/horner<={hornerMaxTerms}/m={blockSize?.ToString() ?? "auto"}"] =
+                            new LogCase(significand, exponent, words, blockSize, hornerMaxTerms);
+                    }
+                }
+            }
         }
 
         return cases;

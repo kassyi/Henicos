@@ -147,6 +147,62 @@ internal static class BigFloatIntervalOracle
     }
 
     /// <summary>
+    /// Returns whether <c>e^q</c>, <c>q = num / 2^denShift</c>, lies within <c>radius · 2^unitExponent</c> of
+    /// <c>center · 2^centerExponent</c> (positive, the radius below the center).
+    /// </summary>
+    public static bool IsExpWithin(
+        BigInteger num, int denShift, BigInteger center, long centerExponent, BigInteger radius, long unitExponent,
+        int startPrecisionBits)
+    {
+        // [low, high] = (center · 2^(ce - m) -+ radius · 2^(ue - m)) · 2^m with m = min(ce, ue).
+        var common = Math.Min(centerExponent, unitExponent);
+        var scaledCenter = center << (int)(centerExponent - common);
+        var scaledRadius = radius << (int)(unitExponent - common);
+        var low = new Dyadic(scaledCenter - scaledRadius, common);
+        var high = new Dyadic(scaledCenter + scaledRadius, common);
+        for (var precision = Math.Max(64, startPrecisionBits); precision <= MaxPrecisionBits; precision *= 2)
+        {
+            var (lo, hi) = ExpInterval(num, denShift, precision);
+            if (lo >= low && hi <= high)
+            {
+                return true;
+            }
+
+            if (hi < low || lo > high)
+            {
+                return false;
+            }
+        }
+
+        throw new InvalidOperationException($"IsExpWithin did not converge for {num} / 2^{denShift}.");
+    }
+
+    /// <summary>
+    /// Returns whether <c>ln x</c>, <c>x = xSig · 2^xExp &gt; 0</c>, lies within <c>radius · 2^unitExponent</c> of
+    /// <c>(negative ? -1 : 1) · center · 2^centerExponent</c>: <c>e^(c − r) ≤ x ≤ e^(c + r)</c>.
+    /// </summary>
+    public static bool IsLogWithin(
+        BigInteger xSig, long xExp, BigInteger center, long centerExponent, bool negative, BigInteger radius,
+        long unitExponent, int startPrecisionBits)
+    {
+        var x = new Dyadic(xSig, xExp);
+        var common = Math.Min(centerExponent, unitExponent);
+        var scaledCenter = center << (int)(centerExponent - common);
+        if (negative)
+        {
+            scaledCenter = -scaledCenter;
+        }
+
+        var scaledRadius = radius << (int)(unitExponent - common);
+        var (lowNum, denShift) = ToRatio(scaledCenter - scaledRadius, common);
+        var (highNum, _) = ToRatio(scaledCenter + scaledRadius, common);
+
+        // e^t is increasing; e^t = x has no rational solution t != 0 for these x.
+        return CompareExp(lowNum, denShift, x, startPrecisionBits) <= 0
+               && CompareExp(highNum, denShift, x, startPrecisionBits) >= 0;
+    }
+
+    /// <summary>
     /// Returns whether <c>(negative ? -1 : 1) · rSig · 2^rExp</c> is <c>RZ_p(ln x)</c> for <c>x = xSig · 2^xExp &gt; 0</c>,
     /// with <paramref name="rSig"/> normalized to exactly <paramref name="p"/> bits (or zero).
     /// </summary>

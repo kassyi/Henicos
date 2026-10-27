@@ -486,8 +486,8 @@ public sealed class CSharpCpuBigFloatArithmetic : IGpuBigFloatArithmetic
                 throw new InvalidOperationException("Log of zero.");
             }
 
-            var (significand, exponent, isNegative) =
-                BigFloatTranscendentalMath.Log(vValue, value.Exponent, resultSig.NumWords * 32);
+            var (significand, exponent, isNegative) = BigFloatTranscendentalMath.Log(
+                vValue, value.Exponent, resultSig.NumWords * 32, context.GpuWorkspace.Transcendental);
             WriteResult(ref context, significand, resultSig);
             return new GpuFloatResult(exponent, isNegative);
         }

@@ -9,13 +9,17 @@ namespace Kassyi.GSharp.Stdlib.GpuMath.BigNum.Providers;
 /// The number of terms <c>N</c> of <c>T = Σ_{k&lt;N} z^k / (2k+1)</c>, <c>z = y²</c>; 0 when the reduced argument
 /// <c>m</c> is exactly 1 and no series is needed.
 /// </param>
+/// <param name="BlockSize">
+/// The Paterson–Stockmeyer block size <c>m ≥ 2</c> of the series, or 0 for Horner form from the top.
+/// </param>
 /// <param name="ErrorBound">
 /// The bound <c>B</c> of the <c>W</c>-bit approximation <c>A</c>: <c>|A − ln x| ≤ B</c> units of its last bit.
 /// </param>
 /// <param name="Ln2FractionBits">
 /// The fraction bits of ln 2 for <c>e·ln 2</c>, <c>W + ceil(log2 |e|) + 4</c>, or 0 when <c>e = 0</c>.
 /// </param>
-internal readonly record struct LogPlan(int ResultBits, int GuardWords, int Terms, int ErrorBound, int Ln2FractionBits)
+internal readonly record struct LogPlan(
+    int ResultBits, int GuardWords, int Terms, int BlockSize, int ErrorBound, int Ln2FractionBits)
 {
     /// <summary>Gets the working precision <c>W = p + 32·gw</c> in bits, a multiple of 32.</summary>
     public int WorkingBits => ResultBits + 32 * GuardWords;
@@ -29,19 +33,22 @@ internal readonly record struct LogPlan(int ResultBits, int GuardWords, int Term
 /// <param name="Reduction">The multiple <c>k</c> of ln 2 subtracted: <c>x = k·ln 2 + r</c>, <c>r ∈ (0.69, 1.39)</c>.</param>
 /// <param name="Halvings">The halvings <c>s ≥ 2</c>: the series runs at <c>r / 2^s</c> and is squared <c>s</c> times.</param>
 /// <param name="Terms">The degree <c>N</c> of the Taylor polynomial <c>Σ_{j≤N} ρ^j / j!</c>.</param>
+/// <param name="BlockSize">The Paterson–Stockmeyer block size <c>m ≥ 2</c> of the polynomial.</param>
 /// <param name="ErrorBound">
-/// The bound <c>B</c> of the <c>W</c>-bit approximation <c>A</c> of <c>e^r</c>: <c>|A − e^r| ≤ B</c> units of its last bit.
+/// The bound <c>B</c> of the approximation <c>A</c> of <c>e^x</c>: <c>|A − e^x| ≤ B</c> units of the last bit of
+/// <c>A</c> normalized to <c>W</c> bits.
 /// </param>
 /// <param name="Ln2FractionBits">The fraction bits of ln 2 for <c>k·ln 2</c>, <c>W − s + bits(|k|) + 2</c>.</param>
 internal readonly record struct ExpPlan(
-    int ResultBits, int GuardWords, long Reduction, int Halvings, int Terms, BigInteger ErrorBound, int Ln2FractionBits)
+    int ResultBits, int GuardWords, long Reduction, int Halvings, int Terms, int BlockSize, BigInteger ErrorBound,
+    int Ln2FractionBits)
 {
     /// <summary>Gets the working precision <c>W = p + 32·gw</c> in bits, a multiple of 32.</summary>
     public int WorkingBits => ResultBits + 32 * GuardWords;
 }
 
 /// <summary>
-/// Chooses on the host, before any device work, the term counts and working precisions of the big-float
+/// Chooses on the host, before any device work, the term counts, block sizes and working precisions of the big-float
 /// transcendental functions, so that the series run a fixed number of steps without reading values back.
 /// </summary>
 /// <remarks>
@@ -50,8 +57,16 @@ internal readonly record struct ExpPlan(
 /// implementations take the same plan, which keeps them bit-identical.
 /// </para>
 /// <para>
-/// The error bounds follow the design of #628 (atanh series from the top in Horner form:
-/// <c>F &lt; 1.79 + ε'_R</c> units; Log approximation <c>B = ceil(F + 4.01)</c>).
+/// The error bounds are those of the design of #628, §10.1 (rounding error of the series in units of <c>2^-W</c>,
+/// with the input error <c>δ ≤ 2u</c>):
+/// <list type="bullet">
+///   <item><description>atanh, Horner from the top: <c>F &lt; 1.79 + ε'_R</c>; Paterson–Stockmeyer:
+///   <c>F &lt; m + 0.6 + ε'_R</c>. Log approximation: <c>B = ceil(F + 4.01)</c>, that is 7 and <c>m + 6</c>
+///   (<c>ε'_R ≤ 1</c>).</description></item>
+///   <item><description>exp, Paterson–Stockmeyer with Smith's division order and <c>s</c> squarings:
+///   <c>E &lt; 2^s·(ε_R + 4.83) − 1</c>, so <c>B = ceil(5.83·2^s) − 1</c> (<c>ε_R ≤ 1</c>, <c>ρ ≤ 1/2</c>).</description></item>
+/// </list>
+/// The guard words are <c>ceil((bits(B) + 16) / 32)</c>.
 /// </para>
 /// </remarks>
 internal static class TranscendentalPlanner
@@ -83,27 +98,59 @@ internal static class TranscendentalPlanner
     /// The closeness <c>c ≥ 1</c> of <c>m</c> to 1, <c>|m − 1| &lt; 2^-c</c>, or <see cref="int.MaxValue"/> when
     /// <c>m = 1</c>.
     /// </param>
+    /// <param name="options">The tuning parameters (<see cref="GpuBigFloatTranscendentalOptions.SeriesBlockSize"/>,
+    /// <see cref="GpuBigFloatTranscendentalOptions.AtanhHornerMaxTerms"/>).</param>
     /// <returns>The plan.</returns>
     /// <exception cref="ArgumentOutOfRangeException"><paramref name="resultBits"/> or <paramref name="closenessBits"/>
     /// is below 1.</exception>
-    internal static LogPlan PlanLog(int resultBits, long e, int closenessBits)
+    /// <remarks>
+    /// A series of at most <see cref="GpuBigFloatTranscendentalOptions.AtanhHornerMaxTerms"/> terms runs in Horner form
+    /// (<c>N − 1</c> multiplications); a longer one in Paterson–Stockmeyer form with the <c>m</c> that minimizes
+    /// <c>m − 1 + floor((N − 1) / m)</c>, the smaller <c>m</c> on a tie.
+    /// </remarks>
+    internal static LogPlan PlanLog(int resultBits, long e, int closenessBits, GpuBigFloatTranscendentalOptions options)
     {
         ArgumentOutOfRangeException.ThrowIfLessThan(resultBits, 1);
         ArgumentOutOfRangeException.ThrowIfLessThan(closenessBits, 1);
+        ArgumentNullException.ThrowIfNull(options);
 
-        var guardWords = GuardWordsFor(LogHornerErrorBound);
-        var workingBits = checked(resultBits + 32 * guardWords);
-        var terms = 0;
-        if (closenessBits != int.MaxValue)
+        // The bound depends on the form, the form on N, N on W and W on the bound: grow gw until it holds.
+        var guardWords = 1;
+        while (true)
         {
-            // A smaller c is a weaker but still valid bound; from c = W / 2 on, one term already suffices.
-            var (zNum, zDen) = AtanhSquareBound(Math.Min(closenessBits, workingBits));
-            terms = AtanhTermCount(workingBits, zNum, zDen);
-        }
+            var workingBits = checked(resultBits + 32 * guardWords);
+            var terms = 0;
+            if (closenessBits != int.MaxValue)
+            {
+                // A smaller c is a weaker but still valid bound; from c = W / 2 on, one term already suffices.
+                var (zNum, zDen) = AtanhSquareBound(Math.Min(closenessBits, workingBits));
+                terms = AtanhTermCount(workingBits, zNum, zDen);
+            }
 
-        var ln2FractionBits = e == 0 ? 0 : checked(workingBits + CeilingLog2((ulong)Math.Abs(e)) + 4);
-        return new LogPlan(resultBits, guardWords, terms, LogHornerErrorBound, ln2FractionBits);
+            var blockSize = 0;
+            var errorBound = LogHornerErrorBound;
+            if (terms > options.AtanhHornerMaxTerms)
+            {
+                blockSize = options.SeriesBlockSize ?? BestBlockSize(terms - 1, terms);
+                errorBound = LogPatersonStockmeyerErrorBound(blockSize);
+            }
+
+            var needed = GuardWordsFor(errorBound);
+            if (needed <= guardWords)
+            {
+                var ln2FractionBits = e == 0 ? 0 : checked(workingBits + CeilingLog2((ulong)Math.Abs(e)) + 4);
+                return new LogPlan(resultBits, guardWords, terms, blockSize, errorBound, ln2FractionBits);
+            }
+
+            guardWords = needed;
+        }
     }
+
+    /// <summary>
+    /// Returns the bound of the Log approximation with the atanh series in Paterson–Stockmeyer form,
+    /// <c>ceil(m + 0.6 + ε'_R + 4.01) = m + 6</c> (<c>ε'_R ≤ 1</c>).
+    /// </summary>
+    internal static int LogPatersonStockmeyerErrorBound(int blockSize) => checked(blockSize + 6);
 
     /// <summary>
     /// Returns the guard words <c>ceil((ceil(log2(B + 1)) + 16) / 32)</c> for an error bound <c>B</c>.
@@ -146,15 +193,40 @@ internal static class TranscendentalPlanner
     }
 
     /// <summary>
+    /// Returns the block size <c>m ∈ [2, max(2, floor(2·sqrt(N)))]</c> that minimizes the full-width multiplications
+    /// <c>m − 1 + floor(D / m)</c> of a Paterson–Stockmeyer evaluation of degree <c>D</c> (<c>N</c>: the term count of
+    /// the series, <c>D = N − 1</c> for atanh and <c>D = N</c> for exp), the smaller <c>m</c> on a tie.
+    /// </summary>
+    internal static int BestBlockSize(int degree, int terms)
+    {
+        var last = Math.Max(2, (int)Math.Floor(2 * Math.Sqrt(terms)));
+        var best = 2;
+        var bestCount = int.MaxValue;
+        for (var blockSize = 2; blockSize <= last; blockSize++)
+        {
+            var count = blockSize - 1 + degree / blockSize;
+            if (count < bestCount)
+            {
+                best = blockSize;
+                bestCount = count;
+            }
+        }
+
+        return best;
+    }
+
+    /// <summary>
     /// Plans an Exp of <c>x</c>, <c>|x| &lt; 2^32</c>, from a double approximation of <c>x</c>.
     /// </summary>
     /// <param name="resultBits">The result precision <c>p</c>; at least 1.</param>
     /// <param name="xApprox">
-    /// <c>x</c> to a relative error of about <c>2^-52</c> (its top 64 bits rounded to a double); <c>|xApprox| &lt; 2^32</c>.
+    /// <c>x</c> to a relative error of about <c>2^-52</c> (its top 64 bits rounded to a double).
     /// </param>
-    /// <param name="options">The tuning parameters (<see cref="GpuBigFloatTranscendentalOptions.ExpHalvingCount"/>).</param>
+    /// <param name="options">The tuning parameters (<see cref="GpuBigFloatTranscendentalOptions.ExpHalvingCount"/>,
+    /// <see cref="GpuBigFloatTranscendentalOptions.SeriesBlockSize"/>).</param>
     /// <returns>The plan.</returns>
-    /// <exception cref="OverflowException">The exponent of every possible result lies outside <see cref="int"/>.</exception>
+    /// <exception cref="OverflowException"><c>|x| ≥ 2^32</c>, or the exponent of every possible result lies outside
+    /// <see cref="int"/>.</exception>
     /// <remarks>
     /// <para>
     /// <c>k = floor(x / ln 2) − 1</c>: the double quotient is within <c>2^-19</c> of <c>x / ln 2</c> for
@@ -162,10 +234,10 @@ internal static class TranscendentalPlanner
     /// sign test on the device.
     /// </para>
     /// <para>
-    /// The series is the term recurrence <c>T_j = floor(floor(T_(j−1)·R / 2^W) / j)</c> (stage 3 of #628), whose bound is
-    /// <c>E &lt; 2^s·(N + 0.6·ln(N+1) + ε_R + 1.7) − 1</c> with <c>ε_R = 2ρ^(N+1) / ((N+1)!·2^-W) ≤ 1</c>,
-    /// <c>ρ ≤ 1.39·2^-s ≤ 1/2</c>. Without a fixed <c>s</c>, <c>s ∈ [2, 64]</c> minimizes <c>(N + s)·W</c>, the number of
-    /// full-width multiplications weighted by their width, the smaller <c>s</c> on a tie.
+    /// The polynomial runs in Paterson–Stockmeyer form; its bound <c>E &lt; 2^s·(ε_R + 4.83) − 1</c> does not depend on
+    /// <c>N</c> or <c>m</c> (<c>ε_R = 2ρ^(N+1) / ((N+1)!·2^-W) ≤ 1</c>, <c>ρ ≤ 1.39·2^-s ≤ 1/2</c>). Without fixed values,
+    /// <c>s ∈ [2, 64]</c> and <c>m</c> minimize <c>(m − 1 + floor(N / m) + s)·W</c>, the full-width multiplications
+    /// weighted by their width, the smaller <c>s</c> and then the smaller <c>m</c> on a tie.
     /// </para>
     /// </remarks>
     internal static ExpPlan PlanExp(int resultBits, double xApprox, GpuBigFloatTranscendentalOptions options)
@@ -200,30 +272,20 @@ internal static class TranscendentalPlanner
         var bestCost = long.MaxValue;
         for (var halvings = first; halvings <= last; halvings++)
         {
-            // The guard words depend on the bound, which depends on N, which depends on W: grow gw until it holds.
-            var guardWords = 1;
-            int terms;
-            BigInteger errorBound;
-            while (true)
-            {
-                terms = ExpTermCount(checked(resultBits + 32 * guardWords), halvings);
-                errorBound = ExpRecurrenceErrorBound(halvings, terms);
-                var needed = GuardWordsFor(errorBound);
-                if (needed <= guardWords)
-                {
-                    break;
-                }
-
-                guardWords = needed;
-            }
-
-            var workingBits = resultBits + 32 * guardWords;
-            var cost = (long)(terms + halvings) * workingBits;
+            // The bound depends on s alone; the guard words follow from it.
+            var errorBound = ExpPatersonStockmeyerErrorBound(halvings);
+            var guardWords = GuardWordsFor(errorBound);
+            var workingBits = checked(resultBits + 32 * guardWords);
+            var terms = ExpTermCount(workingBits, halvings);
+            var blockSize = options.SeriesBlockSize ?? BestBlockSize(terms, terms);
+            var multiplications = blockSize - 1 + terms / blockSize + halvings;
+            var cost = (long)multiplications * workingBits;
             if (cost < bestCost)
             {
                 bestCost = cost;
                 var ln2FractionBits = checked(workingBits - halvings + BitLength(reduction) + 2);
-                best = new ExpPlan(resultBits, guardWords, reduction, halvings, terms, errorBound, ln2FractionBits);
+                best = new ExpPlan(
+                    resultBits, guardWords, reduction, halvings, terms, blockSize, errorBound, ln2FractionBits);
             }
         }
 
@@ -231,17 +293,11 @@ internal static class TranscendentalPlanner
     }
 
     /// <summary>
-    /// Returns the bound of the Exp term recurrence, <c>ceil(2^s·(N + 0.6·ln(N+1) + 2.7)) − 1</c> (<c>ε_R ≤ 1</c>).
+    /// Returns the bound of the Exp approximation in Paterson–Stockmeyer form, <c>ceil(5.83·2^s) − 1</c>
+    /// (<c>E &lt; 2^s·(ε_R + 4.83) − 1</c> with <c>ε_R ≤ 1</c>).
     /// </summary>
-    internal static BigInteger ExpRecurrenceErrorBound(int halvings, int terms)
-    {
-        // ceil(X · 2^30) / 2^30 >= X, scaled exactly by 2^s.
-        var factor = terms + 0.6 * Math.Log(terms + 1) + 2.7;
-        var scaled = new BigInteger(Math.Ceiling(factor * (1 << 30)));
-        return halvings >= 30
-            ? (scaled << (halvings - 30)) - 1
-            : ((scaled + (BigInteger.One << (30 - halvings)) - 1) >> (30 - halvings)) - 1;
-    }
+    internal static BigInteger ExpPatersonStockmeyerErrorBound(int halvings) =>
+        (583 * (BigInteger.One << halvings) + 99) / 100 - 1;
 
     /// <summary>
     /// Returns the smallest <c>N ≥ 1</c> with <c>ε_R = 2ρ^(N+1) / ((N+1)!·2^-W) ≤ 1</c> for <c>ρ = 1.39·2^-s</c>:

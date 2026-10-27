@@ -6,9 +6,10 @@ namespace Kassyi.GSharp.Stdlib.GpuMath.BigNum.Providers;
 /// <remarks>
 /// <para>
 /// The algorithm and every truncation match the host implementation <see cref="BigFloatTranscendentalMath"/>, which
-/// documents the mathematics. The term counts and precisions come from <see cref="TranscendentalPlanner"/> before
-/// any device work, so the series run without reading values back; the host waits for the device only to read the
-/// leading bits of the argument, the bit length of the reduced argument, inside the division, and to normalize.
+/// documents the mathematics. The term counts, block sizes and precisions come from <see cref="TranscendentalPlanner"/>
+/// before any device work, so the series run without reading values back; the host waits for the device only to read
+/// the leading bits of the argument (and, for Log, the bit length of the reduced argument and inside the division) and
+/// to normalize.
 /// </para>
 /// <para>
 /// Fixed-point values with <c>W</c> fraction bits occupy <c>W / 32</c> words, plus one integer word where the value
@@ -20,7 +21,7 @@ internal static class GpuBigFloatTranscendentals
     /// <summary>
     /// Computes <c>ln x</c> for a positive operand on the GPU (see <see cref="BigFloatTranscendentalMath.Log"/>).
     /// </summary>
-    /// <param name="workspace">The workspace whose stream orders the work.</param>
+    /// <param name="workspace">The workspace whose stream orders the work and whose options tune it.</param>
     /// <param name="value">The operand; its sign is ignored (the caller rejects negative values).</param>
     /// <param name="resultSig">The result significand; its word count sets the precision.</param>
     /// <returns>The exponent and sign of the result.</returns>
@@ -28,54 +29,27 @@ internal static class GpuBigFloatTranscendentals
     /// <exception cref="OverflowException">The exponent of the result does not fit in <see cref="int"/>.</exception>
     internal static GpuFloatResult Log(GpuWorkspace workspace, in GpuFloatOperand value, GpuBigIntMemoryHandle resultSig)
     {
-        var provider = workspace.Provider;
-        var source = value.Significand.AsBorrowedBigUInt(workspace);
-        provider.ReadLeadingBits(workspace, source, out var bitLength, out var leadingBits);
-        if (bitLength == 0)
-        {
-            throw new InvalidOperationException("Log of zero.");
-        }
-
-        var top = (long)value.Exponent + bitLength;
-        var upper = bitLength >= 2 && leadingBits >> 62 == 3;
-        var e = upper ? top : top - 1;
-
-        // |m - 1| = U / 2^b (upper) or U / 2^(b-1) (lower), |y| = U / D; D < 2^(b+1) fits b / 32 + 1 words.
-        var spanWords = bitLength / 32 + 1;
-        using var reduced = workspace.RentTemp(spanWords);
-        using var denominator = workspace.RentTemp(spanWords);
-        BuildReducedRatio(workspace, source, upper ? bitLength : bitLength - 1, upper, reduced, denominator);
-        var reducedBits = reduced.GetBitLength();
         var result = resultSig.AsBorrowedBigUInt(workspace);
-        if (reducedBits == 0 && e == 0)
+        using var approximation = ComputeLog(workspace, value, 32 * result.NumWords);
+        if (approximation.IsZero)
         {
-            provider.ClearMemoryAsync(result.DevicePointer, result.NumWords, workspace.Stream);
+            workspace.Provider.ClearMemoryAsync(result.DevicePointer, result.NumWords, workspace.Stream);
             return new GpuFloatResult(0, false);
         }
 
-        var closeness = reducedBits == 0
-            ? int.MaxValue
-            : upper ? bitLength - reducedBits : bitLength - reducedBits - 1;
-        var plan = TranscendentalPlanner.PlanLog(32 * resultSig.NumWords, e, closeness);
-        var ratio = new ReducedRatio(reduced, denominator, bitLength, reducedBits);
+        var exponent = RoundToNearest(workspace, approximation, result);
+        return new GpuFloatResult(checked((int)exponent), approximation.IsNegative);
+    }
 
-        using var approximation = workspace.RentTemp(plan.WorkingBits / 32);
-        long approximationExponent;
-        bool negative;
-        if (e == 0)
-        {
-            approximationExponent = NormalizeSeries(workspace, ratio, plan, approximation);
-            negative = upper;
-        }
-        else
-        {
-            approximationExponent = SumWithLn2(workspace, ratio, plan, e, upper, approximation);
-            negative = e < 0;
-        }
-
-        var exponent = RoundToNearest(
-            workspace, approximation, approximationExponent, plan.WorkingBits - plan.ResultBits, result);
-        return new GpuFloatResult(checked((int)exponent), negative);
+    /// <summary>
+    /// Computes the <c>W</c>-bit approximation of <c>ln x</c> on the GPU and reads it back (see
+    /// <see cref="BigFloatTranscendentalMath.LogApproximation"/>).
+    /// </summary>
+    internal static TranscendentalApproximation LogApproximation(
+        GpuWorkspace workspace, in GpuFloatOperand value, int resultWords)
+    {
+        using var approximation = ComputeLog(workspace, value, 32 * resultWords);
+        return approximation.ToHost();
     }
 
     /// <summary>
@@ -89,11 +63,10 @@ internal static class GpuBigFloatTranscendentals
     /// named in the message, for a negative argument).</exception>
     internal static GpuFloatResult Exp(GpuWorkspace workspace, in GpuFloatOperand value, GpuBigIntMemoryHandle resultSig)
     {
-        var provider = workspace.Provider;
         var result = resultSig.AsBorrowedBigUInt(workspace);
         var resultBits = 32 * result.NumWords;
         var source = value.Significand.AsBorrowedBigUInt(workspace);
-        provider.ReadLeadingBits(workspace, source, out var bitLength, out var leadingBits);
+        workspace.Provider.ReadLeadingBits(workspace, source, out var bitLength, out var leadingBits);
         if (bitLength == 0)
         {
             return WriteOne(workspace, result);
@@ -111,6 +84,75 @@ internal static class GpuBigFloatTranscendentals
             return value.IsNegative ? WriteLargestBelowOne(workspace, result) : WriteOne(workspace, result);
         }
 
+        using var approximation = ComputeExp(workspace, value, resultBits, bitLength, leadingBits);
+        var exponent = RoundToNearest(workspace, approximation, result);
+        return new GpuFloatResult(TranscendentalPlanner.ToExpResultExponent(exponent), false);
+    }
+
+    /// <summary>
+    /// Computes the approximation of <c>e^x</c> on the GPU and reads it back, for an argument outside the shortcuts of
+    /// <see cref="Exp"/> (see <see cref="BigFloatTranscendentalMath.ExpApproximation"/>).
+    /// </summary>
+    internal static TranscendentalApproximation ExpApproximation(
+        GpuWorkspace workspace, in GpuFloatOperand value, int resultWords)
+    {
+        var source = value.Significand.AsBorrowedBigUInt(workspace);
+        workspace.Provider.ReadLeadingBits(workspace, source, out var bitLength, out var leadingBits);
+        using var approximation = ComputeExp(workspace, value, 32 * resultWords, bitLength, leadingBits);
+        return approximation.ToHost();
+    }
+
+    private static DeviceApproximation ComputeLog(GpuWorkspace workspace, in GpuFloatOperand value, int resultBits)
+    {
+        var source = value.Significand.AsBorrowedBigUInt(workspace);
+        workspace.Provider.ReadLeadingBits(workspace, source, out var bitLength, out var leadingBits);
+        if (bitLength == 0)
+        {
+            throw new InvalidOperationException("Log of zero.");
+        }
+
+        var top = (long)value.Exponent + bitLength;
+        var upper = bitLength >= 2 && leadingBits >> 62 == 3;
+        var e = upper ? top : top - 1;
+
+        // |m - 1| = U / 2^b (upper) or U / 2^(b-1) (lower), |y| = U / D; D < 2^(b+1) fits b / 32 + 1 words.
+        var spanWords = bitLength / 32 + 1;
+        using var reduced = workspace.RentTemp(spanWords);
+        using var denominator = workspace.RentTemp(spanWords);
+        BuildReducedRatio(workspace, source, upper ? bitLength : bitLength - 1, upper, reduced, denominator);
+        var reducedBits = reduced.GetBitLength();
+        if (reducedBits == 0 && e == 0)
+        {
+            return new DeviceApproximation(workspace.RentTemp(1), 0, false, BigInteger.Zero, 1, isZero: true);
+        }
+
+        var closeness = reducedBits == 0
+            ? int.MaxValue
+            : upper ? bitLength - reducedBits : bitLength - reducedBits - 1;
+        var plan = TranscendentalPlanner.PlanLog(resultBits, e, closeness, workspace.Transcendental);
+        var ratio = new ReducedRatio(reduced, denominator, bitLength, reducedBits);
+
+        var approximation = workspace.RentTemp(plan.WorkingBits / 32);
+        try
+        {
+            var exponent = e == 0
+                ? NormalizeSeries(workspace, ratio, plan, approximation)
+                : SumWithLn2(workspace, ratio, plan, e, upper, approximation);
+            var negative = e == 0 ? upper : e < 0;
+            return new DeviceApproximation(approximation, exponent, negative, plan.ErrorBound, plan.WorkingBits, isZero: false);
+        }
+        catch
+        {
+            approximation.Dispose();
+            throw;
+        }
+    }
+
+    private static DeviceApproximation ComputeExp(
+        GpuWorkspace workspace, in GpuFloatOperand value, int resultBits, int bitLength, ulong leadingBits)
+    {
+        var source = value.Significand.AsBorrowedBigUInt(workspace);
+        var top = (long)value.Exponent + bitLength;
         var xApprox = BigFloatTranscendentalMath.ApproximateArgument(leadingBits, top, value.IsNegative);
         var plan = TranscendentalPlanner.PlanExp(resultBits, xApprox, workspace.Transcendental);
         var workingWords = plan.WorkingBits / 32;
@@ -118,7 +160,7 @@ internal static class GpuBigFloatTranscendentals
         using var r = workspace.RentTemp(workingWords);
         ReduceArgument(workspace, source, value.Exponent, value.IsNegative, plan, r);
         using var series = workspace.RentTemp(workingWords + 1);
-        ExpSeriesRecurrence(workspace, r, plan.Terms, series);
+        ExpSeriesPatersonStockmeyer(workspace, r, plan.Terms, plan.BlockSize, series);
 
         // Squarings alternate between two products; each square is the top W/32 + 1 words of the previous product.
         using var even = workspace.RentTemp(2 * workingWords + 2);
@@ -132,12 +174,18 @@ internal static class GpuBigFloatTranscendentals
         }
 
         // e^x = Q · 2^(k - W); Q < 2^(W+3) fits W + 32 bits without truncation.
-        using var approximation = workspace.RentTemp(workingWords + 1);
-        var shift = GpuBigIntMath.NormalizeToMsb(q, approximation, out _);
-        var exponent = RoundToNearest(
-            workspace, approximation, plan.Reduction - plan.WorkingBits - shift, plan.WorkingBits + 32 - resultBits,
-            result);
-        return new GpuFloatResult(TranscendentalPlanner.ToExpResultExponent(exponent), false);
+        var approximation = workspace.RentTemp(workingWords + 1);
+        try
+        {
+            var shift = GpuBigIntMath.NormalizeToMsb(q, approximation, out _);
+            var exponent = plan.Reduction - plan.WorkingBits - shift;
+            return new DeviceApproximation(approximation, exponent, false, plan.ErrorBound, plan.WorkingBits, isZero: false);
+        }
+        catch
+        {
+            approximation.Dispose();
+            throw;
+        }
     }
 
     // R = floor((x - k·ln 2) · 2^(W - s)) through Lw fraction bits (ln 2 bits rounded up to a word): R is r / 2^s with
@@ -177,25 +225,38 @@ internal static class GpuBigFloatTranscendentals
         GpuBigIntMath.ShiftAndResize(reduced, plan.WorkingBits - plan.Halvings - ln2Bits, r);
     }
 
-    // T_0 = 2^W, T_j = floor(floor(T_(j-1) · R / 2^W) / j), P = Σ_{j<=N} T_j into `sum` (W / 32 + 1 words).
-    private static void ExpSeriesRecurrence(GpuWorkspace workspace, GpuBigUInt r, int terms, GpuBigUInt sum)
+    // Σ_{j<=N} R^j / j! in Paterson–Stockmeyer form with Smith's division order into `sum` (W / 32 + 1 words); see
+    // BigFloatTranscendentalMath.ExpSeriesPatersonStockmeyer.
+    private static void ExpSeriesPatersonStockmeyer(
+        GpuWorkspace workspace, GpuBigUInt r, int terms, int blockSize, GpuBigUInt sum)
     {
         var provider = workspace.Provider;
         var stream = workspace.Stream;
         var workingWords = r.NumWords;
         var words = workingWords + 1;
-        using var term = workspace.RentTemp(words);
-        provider.ClearMemoryAsync(term.DevicePointer, words, stream);
-        provider.WriteWord(term.DevicePointer, workingWords, 1u, stream);
-        provider.CopyDeviceToDevice(sum.DevicePointer, term.DevicePointer, words, stream);
-        using var product = workspace.RentTemp(2 * workingWords + 1);
+        using var powers = new PowerTable(workspace, r, blockSize);
+        using var quotient = workspace.RentTemp(words);
+        using var product = workspace.RentTemp(2 * words);
         using var discardedRemainder = workspace.RentTemp(1);
         var high = Slice(workspace, product, workingWords, words);
-        for (var j = 1; j <= terms; j++)
+
+        // acc lives in `sum`; each step divides into `quotient` and adds the next lower power back into `sum`.
+        var top = terms / blockSize * blockSize;
+        provider.CopyDeviceToDevice(sum.DevicePointer, powers[terms - top].DevicePointer, words, stream);
+        for (var i = terms - top; i >= 1; i--)
         {
-            GpuBigIntMath.Mul(term, r, product);
-            DivideByUInt32Async(workspace, high, (uint)j, term, discardedRemainder);
-            GpuBigIntMath.Add(sum, term, sum);
+            DivideByUInt32Async(workspace, sum, (uint)(top + i), quotient, discardedRemainder);
+            GpuBigIntMath.Add(quotient, powers[i - 1], sum);
+        }
+
+        for (var first = top - blockSize; first >= 0; first -= blockSize)
+        {
+            GpuBigIntMath.Mul(sum, powers[blockSize], product);
+            for (var i = blockSize; i >= 1; i--)
+            {
+                DivideByUInt32Async(workspace, i == blockSize ? high : sum, (uint)(first + i), quotient, discardedRemainder);
+                GpuBigIntMath.Add(quotient, powers[i - 1], sum);
+            }
         }
     }
 
@@ -255,7 +316,7 @@ internal static class GpuBigFloatTranscendentals
     {
         var workingWords = plan.WorkingBits / 32;
         using var series = workspace.RentTemp(2 * workingWords + 2);
-        var seriesExponent = EvaluateSeries(workspace, ratio, plan, series);
+        var seriesExponent = EvaluateLogSeries(workspace, ratio, plan, series);
         var shift = GpuBigIntMath.NormalizeToMsb(series, approximation, out _);
         return seriesExponent - shift;
     }
@@ -277,7 +338,7 @@ internal static class GpuBigFloatTranscendentals
         }
 
         using var series = workspace.RentTemp(2 * workingWords + 2);
-        var seriesExponent = EvaluateSeries(workspace, ratio, plan, series);
+        var seriesExponent = EvaluateLogSeries(workspace, ratio, plan, series);
 
         // 2|y|T · 2^F; the series exponent 1 - sh - W is below -F.
         using var aligned = workspace.RentTemp(sumWords);
@@ -296,7 +357,7 @@ internal static class GpuBigFloatTranscendentals
     }
 
     // 2|y|T as an integer in `series` (2W/32 + 2 words); returns its exponent 1 - sh - W.
-    private static long EvaluateSeries(GpuWorkspace workspace, in ReducedRatio ratio, in LogPlan plan, GpuBigUInt series)
+    private static long EvaluateLogSeries(GpuWorkspace workspace, in ReducedRatio ratio, in LogPlan plan, GpuBigUInt series)
     {
         var workingBits = plan.WorkingBits;
         var workingWords = workingBits / 32;
@@ -318,7 +379,15 @@ internal static class GpuBigFloatTranscendentals
         GpuBigIntMath.ShiftAndResize(ySquared, workingBits - 2 * shift, z);
 
         using var t = workspace.RentTemp(workingWords + 1);
-        AtanhSeriesHorner(workspace, z, plan.Terms, t);
+        if (plan.BlockSize == 0)
+        {
+            AtanhSeriesHorner(workspace, z, plan.Terms, t);
+        }
+        else
+        {
+            AtanhSeriesPatersonStockmeyer(workspace, z, plan.Terms, plan.BlockSize, t);
+        }
+
         GpuBigIntMath.Mul(y, t, series);
         return 1L - shift - workingBits;
     }
@@ -348,6 +417,39 @@ internal static class GpuBigFloatTranscendentals
         }
     }
 
+    // Σ_{k<N} Z^k / (2k+1) in Paterson–Stockmeyer form into `h` (W / 32 + 1 words); see
+    // BigFloatTranscendentalMath.AtanhSeriesPatersonStockmeyer.
+    private static void AtanhSeriesPatersonStockmeyer(
+        GpuWorkspace workspace, GpuBigUInt z, int terms, int blockSize, GpuBigUInt h)
+    {
+        var workingWords = z.NumWords;
+        var words = workingWords + 1;
+        using var powers = new PowerTable(workspace, z, blockSize);
+        using var coefficient = workspace.RentTemp(words);
+        using var product = workspace.RentTemp(2 * words);
+        using var discardedRemainder = workspace.RentTemp(1);
+        var high = Slice(workspace, product, workingWords, words);
+
+        // The top block starts from its first term; every lower block from the top part of H · Z_m.
+        var top = (terms - 1) / blockSize * blockSize;
+        DivideByUInt32Async(workspace, powers[0], (uint)(2 * top + 1), h, discardedRemainder);
+        for (var i = 1; i < terms - top; i++)
+        {
+            DivideByUInt32Async(workspace, powers[i], (uint)(2 * (top + i) + 1), coefficient, discardedRemainder);
+            GpuBigIntMath.Add(h, coefficient, h);
+        }
+
+        for (var first = top - blockSize; first >= 0; first -= blockSize)
+        {
+            GpuBigIntMath.Mul(h, powers[blockSize], product);
+            for (var i = 0; i < blockSize; i++)
+            {
+                DivideByUInt32Async(workspace, powers[i], (uint)(2 * (first + i) + 1), coefficient, discardedRemainder);
+                GpuBigIntMath.Add(i == 0 ? high : h, coefficient, h);
+            }
+        }
+    }
+
     // floor(|e| · L / 2^(Lbits - F)) into `target`, L = floor(ln 2 · 2^Lbits) from the workspace constants.
     private static void MultiplyLn2(GpuWorkspace workspace, long e, int ln2FractionBits, int fractionBits, GpuBigUInt target)
     {
@@ -366,18 +468,18 @@ internal static class GpuBigFloatTranscendentals
         GpuBigIntMath.ShiftAndResize(scaled, fractionBits - ln2Bits, target);
     }
 
-    // floor((A + 2^(g-1)) / 2^g) = floor((floor(A / 2^(g-1)) + 1) / 2), normalized to the result words. Returns the
-    // exponent of the result.
-    private static long RoundToNearest(
-        GpuWorkspace workspace, GpuBigUInt approximation, long approximationExponent, int guardBits, GpuBigUInt result)
+    // floor((A + 2^(g-1)) / 2^g) = floor((floor(A / 2^(g-1)) + 1) / 2), normalized to the result words, with
+    // g = bits(A) - p (A fills its buffer). Returns the exponent of the result.
+    private static long RoundToNearest(GpuWorkspace workspace, in DeviceApproximation approximation, GpuBigUInt result)
     {
+        var guardBits = 32 * approximation.Value.NumWords - 32 * result.NumWords;
         var words = result.NumWords + 1;
         using var kept = workspace.RentTemp(words);
-        GpuBigIntMath.ShiftAndResize(approximation, 1 - guardBits, kept);
+        GpuBigIntMath.ShiftAndResize(approximation.Value, 1 - guardBits, kept);
         using var rounded = workspace.RentTemp(words);
         GpuBigIntMath.Add(kept, 1u, rounded);
         var shift = GpuBigIntMath.NormalizeToMsb(rounded, result, out _);
-        return approximationExponent + guardBits - 1 - shift;
+        return approximation.Exponent + guardBits - 1 - shift;
     }
 
     // quotient = floor(dividend / divisor) without reading the remainder back.
@@ -399,5 +501,84 @@ internal static class GpuBigFloatTranscendentals
         public GpuBigUInt Denominator => denominator;
         public int BitLength => bitLength;
         public int ReducedBits => reducedBits;
+    }
+
+    // The approximation in a device buffer that it owns: ±Value · 2^Exponent within ErrorBound units of its last bit at
+    // W bits (the buffer is filled, its top bit set); a 1-word placeholder for an exact zero.
+    private readonly struct DeviceApproximation(
+        [TakesOwnership] GpuBigUInt value, long exponent, bool isNegative, BigInteger errorBound, int workingBits,
+        bool isZero) : IDisposable
+    {
+        public GpuBigUInt Value => value;
+        public long Exponent => exponent;
+        public bool IsNegative => isNegative;
+        public bool IsZero => isZero;
+
+        public TranscendentalApproximation ToHost() =>
+            isZero
+                ? new TranscendentalApproximation(BigInteger.Zero, 0, false, BigInteger.Zero, workingBits)
+                : new TranscendentalApproximation(value.ToBigInteger(), exponent, isNegative, errorBound, workingBits);
+
+        public void Dispose() => value.Dispose();
+    }
+
+    // X_0 = 2^W, X_1 = X, X_i = floor(X_(i-1) · X_1 / 2^W) (odd i) or floor(X_(i/2)² / 2^W) (even i), each W / 32 + 1
+    // words; X_i for i >= 2 is the top part of its own product buffer.
+    private sealed class PowerTable : IDisposable
+    {
+        private readonly GpuBigUInt[] _owned;
+        private readonly GpuBigUInt[] _powers;
+
+        public PowerTable(GpuWorkspace workspace, GpuBigUInt x, int count)
+        {
+            var provider = workspace.Provider;
+            var stream = workspace.Stream;
+            var workingWords = x.NumWords;
+            var words = workingWords + 1;
+            _owned = new GpuBigUInt[count + 1];
+            _powers = new GpuBigUInt[count + 1];
+            var created = 0;
+            try
+            {
+                // X_0 and X_1 in buffers of their own; X_i (i >= 2) in products of 2 (W / 32 + 1) words.
+                for (; created <= count; created++)
+                {
+                    _owned[created] = workspace.RentTemp(created <= 1 ? words : 2 * words);
+                }
+
+                provider.ClearMemoryAsync(_owned[0].DevicePointer, words, stream);
+                provider.WriteWord(_owned[0].DevicePointer, workingWords, 1u, stream);
+                provider.ClearMemoryAsync(_owned[1].DevicePointer, words, stream);
+                provider.CopyDeviceToDevice(_owned[1].DevicePointer, x.DevicePointer, workingWords, stream);
+                _powers[0] = _owned[0];
+                _powers[1] = _owned[1];
+                for (var i = 2; i <= count; i++)
+                {
+                    var left = i % 2 == 0 ? _powers[i / 2] : _powers[i - 1];
+                    var right = i % 2 == 0 ? _powers[i / 2] : _powers[1];
+                    GpuBigIntMath.Mul(left, right, _owned[i]);
+                    _powers[i] = Slice(workspace, _owned[i], workingWords, words);
+                }
+            }
+            catch
+            {
+                for (var i = 0; i < created; i++)
+                {
+                    _owned[i].Dispose();
+                }
+
+                throw;
+            }
+        }
+
+        public GpuBigUInt this[int index] => _powers[index];
+
+        public void Dispose()
+        {
+            foreach (var buffer in _owned)
+            {
+                buffer.Dispose();
+            }
+        }
     }
 }
