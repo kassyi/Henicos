@@ -31,6 +31,39 @@ public static class ArtifactHelper
         return true;
     }
 
+    /// <summary>
+    /// Returns the public key that <see cref="ProcessArtifact"/> signs with (the key in <c>GSHARP_SIGNING_KEY</c>, or the
+    /// development key) as lowercase hex, or <c>invalid</c> when the variable holds no valid key. A build records it, so
+    /// that changing the key signs the artifacts again.
+    /// </summary>
+    public static string GetSigningKeyFingerprint()
+    {
+        var envKey = Environment.GetEnvironmentVariable("GSHARP_SIGNING_KEY");
+        byte[] publicKey;
+        if (string.IsNullOrWhiteSpace(envKey))
+        {
+            publicKey = Ed25519.DefaultDevPublicKey.ToArray();
+        }
+        else if (ValidateAndParseSigningKey(envKey.AsSpan().Trim(), out var keySeed, out _))
+        {
+            publicKey = Ed25519.GetPublicKey(keySeed);
+        }
+        else
+        {
+            return "invalid";
+        }
+
+        const string HexDigits = "0123456789abcdef";
+        var hex = new char[publicKey.Length * 2];
+        for (var i = 0; i < publicKey.Length; i++)
+        {
+            hex[i * 2] = HexDigits[publicKey[i] >> 4];
+            hex[i * 2 + 1] = HexDigits[publicKey[i] & 0xF];
+        }
+
+        return new string(hex);
+    }
+
     private static bool TryResolveSigningKey(TaskLoggingHelper log, out byte[] keySeed)
     {
         var envKey = Environment.GetEnvironmentVariable("GSHARP_SIGNING_KEY");

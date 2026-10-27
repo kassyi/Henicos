@@ -14,7 +14,7 @@ Before writing code, ensure you have the correct environment configured dependin
 
 To leverage actual hardware acceleration:
 
-- **Hardware & Drivers**: A **CUDA-capable NVIDIA GPU** and the **NVIDIA Display Driver**.
+- **Hardware & Drivers**: A **CUDA-capable NVIDIA GPU** and the **NVIDIA Display Driver**. With the default build settings, kernels run on GPUs of compute capability 8.6 and newer; for 7.5 or 8.0 GPUs, set [`GSharpTargetArchitectures`](../02_architecture/01_aot_transpiler.md#151-target-gpu-architectures-gsharptargetarchitectures).
 - **Build Tools**:
     - **[NVIDIA CUDA Toolkit](https://developer.nvidia.com/cuda-downloads)**: Required for `nvcc` to compile the transpiled `.cu` files into native CUDA Fatbins (`.fatbin`). Ensure `nvcc` is available in your system `PATH`.
     - **[C++ Host Compiler](https://visualstudio.microsoft.com/downloads/)**: **Visual Studio C++ Build Tools (MSVC `cl.exe`)** on Windows or `gcc`/`clang` on Linux, required as the host backend compiler for `nvcc`.

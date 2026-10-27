@@ -345,15 +345,15 @@ public static class GpuKernelLoader
 
         var (processed, _) = AotSignatureValidator.ExtractAndVerify(aotFatbin);
 
-        if (FatbinParser.TryParse(processed, out var fatbin) && !fatbin.IsCompatibleWith(s_deviceMajor, s_deviceMinor))
+        var fatbin = FatbinParser.TryParse(processed, out var parsed) ? parsed : null;
+        if (fatbin is not null && !fatbin.IsCompatibleWith(s_deviceMajor, s_deviceMinor))
         {
-            throw new InvalidOperationException(
-                $"The FATBIN module does not contain any PTX or cuBIN compatible with the current GPU (sm_{s_deviceMajor}{s_deviceMinor}).");
+            throw new InvalidOperationException(DescribeIncompatibleFatbin(fatbin, s_deviceMajor, s_deviceMinor));
         }
 
         var lazyModule = s_moduleCache.GetOrAdd(
             embeddedHash,
-            _ => new Lazy<IntPtr>(() => LoadModuleCore(processed), LazyThreadSafetyMode.ExecutionAndPublication));
+            _ => new Lazy<IntPtr>(() => LoadModuleCore(processed, fatbin), LazyThreadSafetyMode.ExecutionAndPublication));
 
         try
         {
@@ -366,7 +366,7 @@ public static class GpuKernelLoader
         }
     }
 
-    private static unsafe IntPtr LoadModuleCore(byte[] binaryData)
+    private static unsafe IntPtr LoadModuleCore(byte[] binaryData, FatbinImage? fatbin)
     {
         using var scope = new CudaContextScope();
 
@@ -380,7 +380,7 @@ public static class GpuKernelLoader
             // as it causes CUDA_ERROR_INVALID_VALUE when the driver simply loads a matching CUBIN without JITing.
             var loadResult = CudaDriverApi.cuModuleLoadDataEx(out var module, (IntPtr)pAlignedBinary, 0, null, null);
             return loadResult != CUresult.CudaSuccess
-                ? throw new CudaException(loadResult, $"cuModuleLoadDataEx failed with {loadResult} for fatbin module.")
+                ? throw CreateModuleLoadException(loadResult, fatbin, s_deviceMajor, s_deviceMinor)
                 : module;
         }
         finally
@@ -388,6 +388,91 @@ public static class GpuKernelLoader
             NativeMemory.AlignedFree(pAlignedBinary);
         }
     }
+
+    /// <summary>Creates the exception for a failed <c>cuModuleLoadDataEx</c> call on a fatbin module.</summary>
+    /// <remarks>
+    /// <see cref="FatbinItemInfo.IsCompatibleWith"/> accepts everything the driver may accept, so the driver can still
+    /// refuse a module that passed it (an architecture-specific cuBIN such as <c>sm_90a</c>, or a desktop cuBIN on a
+    /// Tegra GPU). That refusal (<see cref="CUresult.CudaErrorNoBinaryForGpu"/>) gets the same message as the pre-check.
+    /// A driver older than the toolkit that wrote the PTX cannot JIT-compile it
+    /// (<see cref="CUresult.CudaErrorUnsupportedPtxVersion"/>); that message names the cause and the two fixes. Both keep
+    /// the driver's error as the inner exception.
+    /// </remarks>
+    internal static Exception CreateModuleLoadException(CUresult result, FatbinImage? fatbin, int deviceMajor,
+        int deviceMinor)
+    {
+        var driverError = new CudaException(result, $"cuModuleLoadDataEx failed with {result} for fatbin module.");
+        return result switch
+        {
+            CUresult.CudaErrorNoBinaryForGpu =>
+                new InvalidOperationException(DescribeIncompatibleFatbin(fatbin, deviceMajor, deviceMinor), driverError),
+            CUresult.CudaErrorUnsupportedPtxVersion =>
+                new InvalidOperationException(DescribeUnsupportedPtx(fatbin, deviceMajor, deviceMinor), driverError),
+            _ => driverError
+        };
+    }
+
+    /// <summary>Describes a fatbin module that holds no image the current GPU can run, listing the images it holds.</summary>
+    internal static string DescribeIncompatibleFatbin(FatbinImage? fatbin, int deviceMajor, int deviceMinor)
+    {
+        var message = new StringBuilder();
+        message.Append(
+            $"The FATBIN module does not contain any PTX or cuBIN compatible with the current GPU (sm_{deviceMajor}{deviceMinor}). ");
+        AppendContents(message, fatbin);
+        AppendArchitectureHint(message, deviceMajor, deviceMinor);
+        return message.ToString();
+    }
+
+    /// <summary>Describes a fatbin module whose PTX the driver is too old to JIT-compile.</summary>
+    internal static string DescribeUnsupportedPtx(FatbinImage? fatbin, int deviceMajor, int deviceMinor)
+    {
+        var message = new StringBuilder();
+        message.Append(
+            $"The GPU driver cannot JIT-compile the PTX of the FATBIN module for the current GPU (sm_{deviceMajor}{deviceMinor}) because the driver is older than the CUDA Toolkit that built the module. ");
+        AppendContents(message, fatbin);
+        message.Append(" Update the NVIDIA driver, or build native code for this GPU so that no JIT is needed:");
+        AppendArchitectureHint(message, deviceMajor, deviceMinor);
+        return message.ToString();
+    }
+
+    private static void AppendContents(StringBuilder message, FatbinImage? fatbin)
+    {
+        if (fatbin is null)
+        {
+            message.Append("Its contents are unknown because the FATBIN header could not be parsed.");
+            return;
+        }
+
+        if (fatbin.Items.Count == 0)
+        {
+            message.Append("It contains no images.");
+            return;
+        }
+
+        message.Append("It contains: ");
+        for (var i = 0; i < fatbin.Items.Count; i++)
+        {
+            var item = fatbin.Items[i];
+            if (i > 0)
+            {
+                message.Append(", ");
+            }
+
+            message.Append(item.Type switch
+            {
+                FatbinItemInfo.TypePtx => $"PTX compute_{item.Major}{item.Minor}",
+                FatbinItemInfo.TypeCubin => $"cuBIN sm_{item.Major}{item.Minor}",
+                _ => $"type {item.Type} ({item.ComputeVersion})"
+            });
+        }
+
+        message.Append('.');
+    }
+
+    // The default entries stay in the list: setting the property replaces the default instead of adding to it
+    private static void AppendArchitectureHint(StringBuilder message, int deviceMajor, int deviceMinor) =>
+        message.Append(
+            $" Add this architecture to the GSharpTargetArchitectures MSBuild property and keep the default entries (for example compute_86,sm_86;compute_86,compute_86;compute_{deviceMajor}{deviceMinor},sm_{deviceMajor}{deviceMinor}).");
 
     /// <summary>
     /// Retrieves a function pointer from a loaded CUDA module.
