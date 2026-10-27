@@ -255,12 +255,6 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker, IDisposable
 
     public override void VisitBlock(BlockSyntax node)
     {
-        if (AutoSyncGrid.IsActive(Context))
-        {
-            AutoSyncGrid.VisitBlock(node, ref Context);
-            return;
-        }
-
         foreach (var statement in node.Statements)
         {
             // [WHY] A nested block is emitted without braces, since lowering wraps statements of one scope in blocks; a

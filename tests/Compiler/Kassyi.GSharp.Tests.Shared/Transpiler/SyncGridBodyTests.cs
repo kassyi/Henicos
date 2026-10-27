@@ -54,6 +54,27 @@ public class SyncGridBodyTests : TranspilerTestBase
     }
 
     [SkippableTheory]
+    [Scenario(TestScenario.HappyPath)]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void Test_SyncGridBody_NestedBlocks_SyncOnlyBetweenTopLevelStatements(bool forceManaged)
+    {
+        var a = Filled(1);
+
+        RunReadingOtherBlocks(forceManaged, () => SyncGridBodyKernels.LaunchNestedKernel(a, Threads, gridDimX: Blocks, blockDimX: ThreadsPerBlock));
+
+        // The loop makes every element (1 + 1) * 2; thread 0 of block b then adds 1 to elements 2b and 2b + 1
+        var expected = Enumerable.Repeat(4, Threads).ToArray();
+        for (var block = 0; block < Blocks; block++)
+        {
+            expected[block * 2] += 1;
+            expected[block * 2 + 1] += 1;
+        }
+
+        Assert.Equal(expected, a);
+    }
+
+    [SkippableTheory]
     [Scenario(TestScenario.Boundary)]
     [InlineData(false)]
     [InlineData(true)]

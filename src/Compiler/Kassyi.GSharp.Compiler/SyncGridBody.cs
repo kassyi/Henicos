@@ -64,15 +64,6 @@ internal static class SyncGridBody
         return new SyncGridStatements(elements.ToImmutable(), bodyParents.ToImmutable());
     }
 
-    /// <summary>Flattens the statements of a block that is emitted with automatic grid syncs as if it were a body.</summary>
-    public static SyncGridStatements Flatten(BlockSyntax block, SemanticModel? model)
-    {
-        var elements = ImmutableArray.CreateBuilder<SyncGridElement>();
-        var bodyParents = ImmutableArray.CreateBuilder<int>();
-        FlattenBody(block, parent: -1, model, elements, bodyParents);
-        return new SyncGridStatements(elements.ToImmutable(), bodyParents.ToImmutable());
-    }
-
     /// <summary>
     /// Whether a grid sync follows <c>elements[index]</c>: not after the last executable statement, not next to an
     /// explicit <c>Gpu.SyncGrid()</c>, and not around an empty statement or a local function declaration.

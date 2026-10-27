@@ -33,6 +33,26 @@ public static partial class SyncGridBodyKernels
         });
     }
 
+    // K3: a nested block (a loop macro body, an if) is one statement; nothing inside it is synchronized. A grid sync
+    // there would wait for threads that never reach it
+    [GpuKernel(Cooperative = true)]
+    public static void NestedKernel(int[] a, int n)
+    {
+        Gpu.SyncGrid(() =>
+        {
+            Gpu.GridStrideLoop(n, i =>
+            {
+                a[i] += 1;
+                a[i] *= 2;
+            });
+            if (ThreadIndex.X == 0)
+            {
+                a[BlockIndex.X * 2] += 1;
+                a[BlockIndex.X * 2 + 1] += 1;
+            }
+        });
+    }
+
     // K4: empty statements, an explicit sync, an expression body and an empty nested body add no extra sync
     [GpuKernel(Cooperative = true)]
     public static void MixedKernel(int[] a, int[] b)

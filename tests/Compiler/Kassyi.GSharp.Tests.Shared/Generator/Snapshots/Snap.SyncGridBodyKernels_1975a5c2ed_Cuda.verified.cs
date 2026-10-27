@@ -45,6 +45,7 @@ public static void Warmup()
 GetOrLoadModule();
 global::Kassyi.GSharp.Tests.Shared.Transpiler.SyncGridBodyKernels.WarmupFunctionPointerBodyRunsKernel();
 global::Kassyi.GSharp.Tests.Shared.Transpiler.SyncGridBodyKernels.WarmupFunctionPointerNeighborKernel();
+global::Kassyi.GSharp.Tests.Shared.Transpiler.SyncGridBodyKernels.WarmupFunctionPointerNestedKernel();
 global::Kassyi.GSharp.Tests.Shared.Transpiler.SyncGridBodyKernels.WarmupFunctionPointerMixedKernel();
 global::Kassyi.GSharp.Tests.Shared.Transpiler.SyncGridBodyKernels.WarmupFunctionPointerHoistedLocalKernel();
 global::Kassyi.GSharp.Tests.Shared.Transpiler.SyncGridBodyKernels.WarmupFunctionPointerLoopNestedKernel();
@@ -346,6 +347,127 @@ finally
 }
 }
 #pragma warning restore CS8500
+public const string NestedKernel_Source = @"extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__NestedKernel(GSharpArray<int> __gsharp_id_0_a, int __gsharp_id_1_n){
+{
+for(int __gsharp_id_2_i = blockIdx.x * blockDim.x + threadIdx.x; __gsharp_id_2_i < __gsharp_id_1_n; __gsharp_id_2_i += gridDim.x * blockDim.x)
+{
+__gsharp_id_0_a[__gsharp_id_2_i]+=1;
+__gsharp_id_0_a[__gsharp_id_2_i]*=2;
+}
+cg::this_grid().sync();
+if(threadIdx.x==0)
+{
+__gsharp_id_0_a[blockIdx.x*2]+=1;
+__gsharp_id_0_a[blockIdx.x*2+1]+=1;
+}
+}
+}
+";
+public static readonly string NestedKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +NestedKernel_Source;
+private static IntPtr? s_hfunc_NestedKernel;
+/// <summary>Preloads the CUDA module and resolves the function pointer for this kernel.</summary>
+public static void WarmupFunctionPointerNestedKernel()
+{
+if (s_hfunc_NestedKernel.HasValue) return;
+IntPtr hModule = global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetOrLoadModule();
+s_hfunc_NestedKernel = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.GetFunction(hModule, "__gsharp_k_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__NestedKernel");
+}
+#pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
+[global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
+[global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
+public static unsafe void LaunchNestedKernel(global::System.Int32[] a, global::System.Int32 n, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, IntPtr hStream = default, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
+{
+if (a is null){
+throw new global::System.ArgumentNullException(nameof(a));
+}
+if (a.Length == 0){
+throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(a));
+}
+using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
+{
+WarmupFunctionPointerNestedKernel();
+IntPtr hfunc = s_hfunc_NestedKernel!.Value;
+IntPtr d_a = IntPtr.Zero;
+try
+{
+void** kernelParams = stackalloc void*[2];
+// Marshal array: a
+int a_size = a.Length * sizeof(global::System.Int32);
+IntPtr* proxy_a = stackalloc IntPtr[2];
+proxy_a[0] = IntPtr.Zero;
+((int*)(proxy_a + 1))[0] = a.Length;
+if (a_size > 0)
+{
+CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_a, (IntPtr)a_size, hStream));
+proxy_a[0] = d_a;
+fixed (global::System.Int32* p_a = a)
+{
+CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoDAsync_v2(d_a, (IntPtr)p_a, (IntPtr)a_size, hStream));
+CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
+}
+}
+kernelParams[0] = proxy_a;
+// Marshal scalar: n
+kernelParams[1] = &n;
+CudaException.ThrowIfError(CudaDriverApi.cuLaunchCooperativeKernel(
+hfunc,
+gridDimX, gridDimY, gridDimZ, // Grid dim
+blockDimX, blockDimY, blockDimZ, // Block dim
+sharedMemBytes, // Shared mem
+hStream, // Stream
+kernelParams
+));
+// Copy back array: a
+if (a_size > 0 && d_a != IntPtr.Zero)
+{
+fixed (global::System.Int32* p_a = a)
+{
+CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoHAsync_v2((IntPtr)p_a, d_a, (IntPtr)a_size, hStream));
+CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
+}
+}
+}
+finally
+{
+if (d_a != IntPtr.Zero) CudaDriverApi.cuMemFreeAsync(d_a, hStream);
+}
+}
+}
+#pragma warning restore CS8500
+#pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
+[global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
+[global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
+public static unsafe void LaunchNestedKernelPtr(IntPtr a, global::System.Int32 n, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, IntPtr hStream = default, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
+{
+using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
+{
+WarmupFunctionPointerNestedKernel();
+IntPtr hfunc = s_hfunc_NestedKernel!.Value;
+try
+{
+void** kernelParams = stackalloc void*[2];
+// Marshal device array: a
+IntPtr* proxy_a = stackalloc IntPtr[2];
+proxy_a[0] = a;
+((int*)(proxy_a + 1))[0] = 0; // Length is unknown for raw IntPtr
+kernelParams[0] = proxy_a;
+// Marshal scalar: n
+kernelParams[1] = &n;
+CudaException.ThrowIfError(CudaDriverApi.cuLaunchCooperativeKernel(
+hfunc,
+gridDimX, gridDimY, gridDimZ, // Grid dim
+blockDimX, blockDimY, blockDimZ, // Block dim
+sharedMemBytes, // Shared mem
+hStream, // Stream
+kernelParams
+));
+}
+finally
+{
+}
+}
+}
+#pragma warning restore CS8500
 public const string MixedKernel_Source = @"extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__MixedKernel(GSharpArray<int> __gsharp_id_0_a, GSharpArray<int> __gsharp_id_1_b){
 int __gsharp_id_2_tid = blockIdx.x*blockDim.x+threadIdx.x;
 int __gsharp_id_3_n = gridDim.x*blockDim.x;
@@ -355,7 +477,9 @@ __gsharp_id_0_a[__gsharp_id_2_tid]=__gsharp_id_2_tid+1;
 cg::this_grid().sync();
 __gsharp_id_1_b[__gsharp_id_2_tid]=__gsharp_id_0_a[(__gsharp_id_2_tid+1)%__gsharp_id_3_n];
 cg::this_grid().sync();
+{
 __gsharp_id_1_b[__gsharp_id_2_tid]+=100;
+}
 }
 }
 ";

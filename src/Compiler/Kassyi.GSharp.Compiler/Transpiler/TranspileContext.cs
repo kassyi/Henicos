@@ -39,7 +39,6 @@ public struct Emitter(
     public bool IsSuspendingDeviceFunction;
     public bool IsVoidReturn;
     public int CallableDepth;
-    public int AutoSyncGridDepth;
     public string? LabelSuffix;
 
     /// <summary>
