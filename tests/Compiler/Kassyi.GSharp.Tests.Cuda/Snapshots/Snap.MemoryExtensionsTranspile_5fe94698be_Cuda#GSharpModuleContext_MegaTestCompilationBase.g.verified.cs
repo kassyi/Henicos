@@ -6,6 +6,8 @@ using System.Threading;
 
 namespace Kassyi.GSharp.Generated
 {
+[global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
+[global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 public static class GSharpModuleContext_MegaTestCompilationBase
 {
 private static IntPtr? s_hModule;
@@ -22,7 +24,7 @@ lock (s_lock)
 if (s_hModule.HasValue) return s_hModule.Value;
 
 var baseDir = System.IO.Path.GetDirectoryName(typeof(GSharpModuleContext_MegaTestCompilationBase).Assembly.Location) ?? System.AppContext.BaseDirectory;
-var fatbinPath = System.IO.Path.Combine(baseDir, "Kassyi.GSharp.Kernels_MegaTestCompilationBase.fatbin");
+var fatbinPath = System.IO.Path.Combine(baseDir, "Kassyi.GSharp.Kernels_MegaTestCompilationBase.gfatbin");
 if (!System.IO.File.Exists(fatbinPath))
 {
 throw new System.InvalidOperationException($"AOT kernel binary was not found at '{fatbinPath}'.");
@@ -41,5 +43,5 @@ public static void Warmup()
 {
 // Force load the module first
 GetOrLoadModule();
-global::Kassyi.GSharp.Tests.TestCases.Transpiler.GEN_35_MacroTranspiler_InGpuKernel.WarmupFunctionPointerMyKernel();
+global::Kassyi.GSharp.Tests.Shared.TestCases.Transpiler.MemoryExtensionsTranspilerRule_HappyPath.WarmupFunctionPointerKernel();
 }}}

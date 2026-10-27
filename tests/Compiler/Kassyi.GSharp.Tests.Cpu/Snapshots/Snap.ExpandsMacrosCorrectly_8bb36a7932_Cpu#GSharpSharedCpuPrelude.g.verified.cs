@@ -9,11 +9,15 @@ internal static class GSharpSharedCpuPrelude
 public const string Source = @"#include <cmath>
 #include <algorithm>
 #include <cstdint>
+#if defined(_MSC_VER)
 #include <intrin.h>
+#endif
 #include <vector>
 #include <functional>
 #include <atomic>
 #include <cstring>
+#include <cstdio>
+#include <cstdlib>
 
 #define __device__
 #define __global__
@@ -37,6 +41,23 @@ public const string Source = @"#include <cmath>
 #define __restrict__ __restrict
 #endif
 
+#if !defined(_MSC_VER)
+#ifndef __declspec
+#define dllexport visibility(""default"")
+#define __declspec(x) __attribute__((x))
+#endif
+__forceinline__ uint32_t _rotr(uint32_t v, int s) { unsigned int u = (unsigned int)s & 31u; return u == 0 ? v : ((v >> u) | (v << (32u - u))); }
+__forceinline__ uint64_t _rotr64(uint64_t v, int s) { unsigned int u = (unsigned int)s & 63u; return u == 0 ? v : ((v >> u) | (v << (64u - u))); }
+__forceinline__ uint32_t _rotl(uint32_t v, int s) { unsigned int u = (unsigned int)s & 31u; return u == 0 ? v : ((v << u) | (v >> (32u - u))); }
+__forceinline__ uint64_t _rotl64(uint64_t v, int s) { unsigned int u = (unsigned int)s & 63u; return u == 0 ? v : ((v << u) | (v >> (64u - u))); }
+__forceinline__ uint32_t __popcnt(uint32_t v) { return (uint32_t)__builtin_popcount(v); }
+__forceinline__ uint64_t __popcnt64(uint64_t v) { return (uint64_t)__builtin_popcountll(v); }
+__forceinline__ unsigned char _BitScanReverse(unsigned long* idx, uint32_t m) { if (!m) return 0; *idx = (unsigned long)(31 - __builtin_clz(m)); return 1; }
+__forceinline__ unsigned char _BitScanReverse64(unsigned long* idx, uint64_t m) { if (!m) return 0; *idx = (unsigned long)(63 - __builtin_clzll(m)); return 1; }
+__forceinline__ unsigned char _BitScanForward(unsigned long* idx, uint32_t m) { if (!m) return 0; *idx = (unsigned long)__builtin_ctz(m); return 1; }
+__forceinline__ unsigned char _BitScanForward64(unsigned long* idx, uint64_t m) { if (!m) return 0; *idx = (unsigned long)__builtin_ctzll(m); return 1; }
+#endif
+
 // --- Standard Types & Structures ---
 struct float2 { float x, y; };
 struct float3 { float x, y, z; };
@@ -46,32 +67,42 @@ struct dim3 { uint32_t x, y, z; };
 
 template <typename T>
 struct System_Nullable {
-    bool HasValue;
-    T Value;
-    System_Nullable() : HasValue(false), Value() {}
-    System_Nullable(T val) : HasValue(true), Value(val) {}
+bool HasValue;
+T Value;
+System_Nullable() : HasValue(false), Value() {}
+System_Nullable(T val) : HasValue(true), Value(val) {}
 };
+
+// The scope of a C# using: disposes the resource when control leaves the enclosing block (end, return, break, continue,
+// goto). Guards of one block are destroyed in reverse order, as C# disposes nested usings.
+template <typename T>
+struct __gsharp_using_scope {
+T& resource;
+inline ~__gsharp_using_scope() { resource.__gsharp_dispose(); }
+};
+
+template <class T> inline const T* __gsharp_temp_address(const T& v) { return &v; }
 
 template <typename T>
 struct GSharpArray {
-    T* __restrict__ data;
-    int length;
+T* data;
+int length;
 
-    inline GSharpArray() : data(nullptr), length(0) {}
-    inline GSharpArray(T* d, int l) : data(d), length(l) {}
-    
-    // Allows implicit conversion from GSharpArray<U> to GSharpArray<T> if U* is convertible to T* (e.g. T to const T)
-    template <typename U>
-    inline GSharpArray(const GSharpArray<U>& other) : data(other.data), length(other.length) {}
-    inline T* begin() { return data; }
-    inline T* end() { return data + length; }
-    inline const T* begin() const { return data; }
-    inline const T* end() const { return data + length; }
-    inline int size() const { return length; }
-    inline T& operator[](int index) { return data[index]; }
-    inline const T& operator[](int index) const { return data[index]; }
-    inline operator T*() { return data; }
-    inline operator const T*() const { return data; }
+inline GSharpArray() : data(nullptr), length(0) {}
+inline GSharpArray(T* d, int l) : data(d), length(l) {}
+
+// Allows implicit conversion from GSharpArray<U> to GSharpArray<T> if U* is convertible to T* (e.g. T to const T)
+template <typename U>
+inline GSharpArray(const GSharpArray<U>& other) : data(other.data), length(other.length) {}
+inline T* begin() { return data; }
+inline T* end() { return data + length; }
+inline const T* begin() const { return data; }
+inline const T* end() const { return data + length; }
+inline int size() const { return length; }
+inline T& operator[](int index) { return data[index]; }
+inline const T& operator[](int index) const { return data[index]; }
+inline operator T*() { return data; }
+inline operator const T*() const { return data; }
 };
 
 template <typename R, typename... Args>
@@ -82,14 +113,25 @@ using System_Action = std::function<void(Args...)>;
 
 template <typename T>
 struct Kassyi_GSharp_Core_SharedMemory {
-    T* data;
-    inline T& operator[](int index) { return data[index]; }
-    inline const T& operator[](int index) const { return data[index]; }
-    inline operator T*() { return data; }
-    inline operator const T*() const { return data; }
+T* data;
+inline T& operator[](int index) { return data[index]; }
+inline const T& operator[](int index) const { return data[index]; }
+inline operator T*() { return data; }
+inline operator const T*() const { return data; }
 };
 
 
+
+// --- System.Numerics.Vector2/3/4 constructors (both dialects) ---
+// The constructors whose parameters are not the components in order (#499): a splat sets every component, and the
+// others append components to a smaller vector. The dialect YAML maps each constructor here; the positional ones stay
+// aggregate initialization (float3{x, y, z}). A function evaluates its argument once, as C# does.
+__forceinline__ __device__ float2 __gsharp_vector2_create(float value) { return float2{value, value}; }
+__forceinline__ __device__ float3 __gsharp_vector3_create(float value) { return float3{value, value, value}; }
+__forceinline__ __device__ float3 __gsharp_vector3_create(float2 xy, float z) { return float3{xy.x, xy.y, z}; }
+__forceinline__ __device__ float4 __gsharp_vector4_create(float value) { return float4{value, value, value, value}; }
+__forceinline__ __device__ float4 __gsharp_vector4_create(float3 xyz, float w) { return float4{xyz.x, xyz.y, xyz.z, w}; }
+__forceinline__ __device__ float4 __gsharp_vector4_create(float2 xy, float z, float w) { return float4{xy.x, xy.y, z, w}; }
 
 // --- Conversions & Casts ---
 __forceinline__ float __gsharp_float_cast(float x) { return x; }
@@ -105,7 +147,7 @@ __forceinline__ uint32_t __gsharp_uint_cast(double x) { return (uint32_t)x; }
 template <typename T> T max(T a, T b) { return std::max(a, b); }
 template <typename T> T min(T a, T b) { return std::min(a, b); }
 template <typename T> T __gsharp_clamp(T val, T min_val, T max_val) {
-    return std::max(min_val, std::min(val, max_val));
+return std::max(min_val, std::min(val, max_val));
 }
 
 // --- Bit Manipulation & Arithmetic ---
@@ -122,61 +164,89 @@ __forceinline__ uint64_t __gsharp_tzc_64(uint64_t value) { unsigned long index; 
 __forceinline__ uint32_t __gsharp_log2_32(uint32_t value) { unsigned long index; return _BitScanReverse(&index, value) ? index : 0; }
 __forceinline__ uint64_t __gsharp_log2_64(uint64_t value) { unsigned long index; return _BitScanReverse64(&index, value) ? index : 0; }
 __forceinline__ unsigned int __gsharp_bfe(unsigned int a, int pos, int len) {
-    if (len <= 0) return 0;
-    if (len >= 32) return a >> pos;
-    return (a >> pos) & ((1U << len) - 1);
+if (len <= 0) return 0;
+if (len >= 32) return a >> pos;
+return (a >> pos) & ((1U << len) - 1);
 }
 __forceinline__ unsigned long long __gsharp_bfe64(unsigned long long a, int pos, int len) {
-    if (len <= 0) return 0;
-    if (len >= 64) return a >> pos;
-    return (a >> pos) & ((1ULL << len) - 1);
+if (len <= 0) return 0;
+if (len >= 64) return a >> pos;
+return (a >> pos) & ((1ULL << len) - 1);
 }
 __forceinline__ unsigned int __gsharp_bfi(unsigned int a, unsigned int b, int pos, int len) {
-    if (len <= 0) return b;
-    unsigned int mask = len >= 32 ? 0xFFFFFFFFU : ((1U << len) - 1);
-    return (b & ~(mask << pos)) | ((a & mask) << pos);
+if (len <= 0) return b;
+unsigned int mask = len >= 32 ? 0xFFFFFFFFU : ((1U << len) - 1);
+return (b & ~(mask << pos)) | ((a & mask) << pos);
 }
 __forceinline__ unsigned long long __gsharp_bfi64(unsigned long long a, unsigned long long b, int pos, int len) {
-    if (len <= 0) return b;
-    unsigned long long mask = len >= 64 ? 0xFFFFFFFFFFFFFFFFULL : ((1ULL << len) - 1);
-    return (b & ~(mask << pos)) | ((a & mask) << pos);
+if (len <= 0) return b;
+unsigned long long mask = len >= 64 ? 0xFFFFFFFFFFFFFFFFULL : ((1ULL << len) - 1);
+return (b & ~(mask << pos)) | ((a & mask) << pos);
 }
 __forceinline__ unsigned int __gsharp_lop3(unsigned int a, unsigned int b, unsigned int c, unsigned char immLut) {
-    unsigned int res = 0;
-    for (int i = 0; i < 32; i++) {
-        int bitA = (a >> i) & 1;
-        int bitB = (b >> i) & 1;
-        int bitC = (c >> i) & 1;
-        int idx = (bitA << 2) | (bitB << 1) | bitC;
-        if ((immLut >> idx) & 1) res |= (1U << i);
-    }
-    return res;
+unsigned int res = 0;
+for (int i = 0; i < 32; i++) {
+int bitA = (a >> i) & 1;
+int bitB = (b >> i) & 1;
+int bitC = (c >> i) & 1;
+int idx = (bitA << 2) | (bitB << 1) | bitC;
+if ((immLut >> idx) & 1) res |= (1U << i);
+}
+return res;
+}
+__forceinline__ unsigned int __brev(unsigned int val) {
+unsigned int res = 0;
+for (int i = 0; i < 32; i++) {
+if ((val >> i) & 1) res |= (1U << (31 - i));
+}
+return res;
+}
+// CUDA wraps the shift amount to 0-31
+__forceinline__ unsigned int __funnelshift_l(unsigned int lo, unsigned int hi, unsigned int shift) {
+unsigned long long pair = ((unsigned long long)hi << 32) | lo;
+return (unsigned int)((pair << (shift & 31)) >> 32);
+}
+__forceinline__ unsigned int __funnelshift_r(unsigned int lo, unsigned int hi, unsigned int shift) {
+unsigned long long pair = ((unsigned long long)hi << 32) | lo;
+return (unsigned int)(pair >> (shift & 31));
+}
+// Like the PTX add.cc / addc sequence of the CUDA prelude: any non-zero carry-in adds one
+__forceinline__ unsigned int __gsharp_add_cc(unsigned int a, unsigned int b, unsigned long long* carry) {
+unsigned long long sum = (unsigned long long)a + b + ((unsigned int)*carry != 0 ? 1 : 0);
+*carry = sum >> 32;
+return (unsigned int)sum;
+}
+// Like the PTX sub.cc / subc sequence of the CUDA prelude: any non-zero borrow-in subtracts one
+__forceinline__ unsigned int __gsharp_sub_cc(unsigned int a, unsigned int b, long long* borrow) {
+unsigned long long subtrahend = (unsigned long long)b + ((unsigned int)*borrow != 0 ? 1 : 0);
+*borrow = (unsigned long long)a < subtrahend ? 1 : 0;
+return (unsigned int)((unsigned long long)a - subtrahend);
 }
 __forceinline__ unsigned long long __brevll(unsigned long long val) {
-    unsigned long long res = 0;
-    for (int i = 0; i < 64; i++) {
-        if ((val >> i) & 1) res |= (1ULL << (63 - i));
-    }
-    return res;
+unsigned long long res = 0;
+for (int i = 0; i < 64; i++) {
+if ((val >> i) & 1) res |= (1ULL << (63 - i));
+}
+return res;
 }
 __forceinline__ int __dp4a(int a, int b, int c) {
-    const signed char* va = reinterpret_cast<const signed char*>(&a);
-    const signed char* vb = reinterpret_cast<const signed char*>(&b);
-    return c + va[0]*vb[0] + va[1]*vb[1] + va[2]*vb[2] + va[3]*vb[3];
+const signed char* va = reinterpret_cast<const signed char*>(&a);
+const signed char* vb = reinterpret_cast<const signed char*>(&b);
+return c + va[0]*vb[0] + va[1]*vb[1] + va[2]*vb[2] + va[3]*vb[3];
 }
 __forceinline__ unsigned int __dp4a(unsigned int a, unsigned int b, unsigned int c) {
-    const unsigned char* va = reinterpret_cast<const unsigned char*>(&a);
-    const unsigned char* vb = reinterpret_cast<const unsigned char*>(&b);
-    return c + va[0]*vb[0] + va[1]*vb[1] + va[2]*vb[2] + va[3]*vb[3];
+const unsigned char* va = reinterpret_cast<const unsigned char*>(&a);
+const unsigned char* vb = reinterpret_cast<const unsigned char*>(&b);
+return c + va[0]*vb[0] + va[1]*vb[1] + va[2]*vb[2] + va[3]*vb[3];
 }
 __forceinline__ unsigned int __gsharp_vabsdiff4(unsigned int a, unsigned int b, unsigned int c) {
-    const unsigned char* va = reinterpret_cast<const unsigned char*>(&a);
-    const unsigned char* vb = reinterpret_cast<const unsigned char*>(&b);
-    unsigned int diff = (unsigned int)std::abs((int)va[0] - (int)vb[0])
-                      + (unsigned int)std::abs((int)va[1] - (int)vb[1])
-                      + (unsigned int)std::abs((int)va[2] - (int)vb[2])
-                      + (unsigned int)std::abs((int)va[3] - (int)vb[3]);
-    return c + diff;
+const unsigned char* va = reinterpret_cast<const unsigned char*>(&a);
+const unsigned char* vb = reinterpret_cast<const unsigned char*>(&b);
+unsigned int diff = (unsigned int)std::abs((int)va[0] - (int)vb[0])
++ (unsigned int)std::abs((int)va[1] - (int)vb[1])
++ (unsigned int)std::abs((int)va[2] - (int)vb[2])
++ (unsigned int)std::abs((int)va[3] - (int)vb[3]);
+return c + diff;
 }
 
 // --- Thread & Block State ---
@@ -186,75 +256,158 @@ thread_local dim3 blockDim;
 thread_local dim3 gridDim;
 
 extern ""C"" __declspec(dllexport) void __gsharp_set_thread_idx(uint32_t tx, uint32_t ty, uint32_t tz, uint32_t bx, uint32_t by, uint32_t bz, uint32_t dx, uint32_t dy, uint32_t dz, uint32_t gx, uint32_t gy, uint32_t gz) {
-    threadIdx.x = tx; threadIdx.y = ty; threadIdx.z = tz;
-    blockIdx.x = bx; blockIdx.y = by; blockIdx.z = bz;
-    blockDim.x = dx; blockDim.y = dy; blockDim.z = dz;
-    gridDim.x = gx; gridDim.y = gy; gridDim.z = gz;
+threadIdx.x = tx; threadIdx.y = ty; threadIdx.z = tz;
+blockIdx.x = bx; blockIdx.y = by; blockIdx.z = bz;
+blockDim.x = dx; blockDim.y = dy; blockDim.z = dz;
+gridDim.x = gx; gridDim.y = gy; gridDim.z = gz;
 }
 
 namespace cg {
-    struct grid_group {
-        void sync() {}
-    };
-    inline grid_group this_grid() { return grid_group(); }
+struct grid_group {
+void sync() {}
+};
+inline grid_group this_grid() { return grid_group(); }
 }
 
 inline void __syncthreads() {}
 
 // --- Shared Memory ---
 inline thread_local char __gsharp_dynamic_smem[65536];
-inline thread_local size_t __gsharp_smem_offsets[64];
-inline thread_local bool __gsharp_smem_initialized[64];
+// [WHY] A SharedMemory<T> declaration is one buffer per block, like a CUDA __shared__ variable: every call of a device
+// function, from any call site, gets the same buffer. The compiler identifies each declaration by a site key (a hash of
+// the declaring method and the ordinal of the declaration in it), so buffers do not depend on the order of allocations.
+#define __GSHARP_SMEM_MAX_SITES 64
+inline thread_local unsigned long long __gsharp_smem_keys[__GSHARP_SMEM_MAX_SITES];
+inline thread_local size_t __gsharp_smem_offsets[__GSHARP_SMEM_MAX_SITES];
+inline thread_local size_t __gsharp_smem_sizes[__GSHARP_SMEM_MAX_SITES];
+inline thread_local int __gsharp_smem_site_count;
 inline thread_local size_t __gsharp_smem_current_base;
 
 inline void __gsharp_reset_smem() {
-    __gsharp_smem_current_base = 0;
-    for (int i = 0; i < 64; i++) {
-        __gsharp_smem_initialized[i] = false;
-        __gsharp_smem_offsets[i] = 0;
-    }
+__gsharp_smem_current_base = 0;
+__gsharp_smem_site_count = 0;
 }
 
-inline void* __gsharp_allocate_smem(int allocId, size_t size, size_t alignment) {
-    if (!__gsharp_smem_initialized[allocId]) {
-        __gsharp_smem_current_base = (__gsharp_smem_current_base + alignment - 1) & ~(alignment - 1);
-        __gsharp_smem_offsets[allocId] = __gsharp_smem_current_base;
-        __gsharp_smem_current_base += size;
-        __gsharp_smem_initialized[allocId] = true;
-    }
-    return (void*)(__gsharp_dynamic_smem + __gsharp_smem_offsets[allocId]);
+inline void* __gsharp_allocate_smem(unsigned long long siteKey, size_t size, size_t alignment) {
+for (int i = 0; i < __gsharp_smem_site_count; i++) {
+if (__gsharp_smem_keys[i] == siteKey) {
+if (size > __gsharp_smem_sizes[i]) {
+size_t oldOffset = __gsharp_smem_offsets[i];
+size_t oldSize = __gsharp_smem_sizes[i];
+size_t newOffset = (oldOffset + oldSize == __gsharp_smem_current_base)
+? oldOffset
+: ((__gsharp_smem_current_base + alignment - 1) & ~(alignment - 1));
+if (newOffset + size > sizeof(__gsharp_dynamic_smem)) {
+std::fprintf(stderr, ""G#: shared memory of the block exceeds %d declarations or %zu bytes\n"",
+__GSHARP_SMEM_MAX_SITES, sizeof(__gsharp_dynamic_smem));
+std::abort();
 }
+if (newOffset != oldOffset) {
+std::memcpy(__gsharp_dynamic_smem + newOffset, __gsharp_dynamic_smem + oldOffset, oldSize);
+__gsharp_smem_offsets[i] = newOffset;
+}
+__gsharp_smem_sizes[i] = size;
+__gsharp_smem_current_base = newOffset + size;
+}
+return (void*)(__gsharp_dynamic_smem + __gsharp_smem_offsets[i]);
+}
+}
+size_t offset = (__gsharp_smem_current_base + alignment - 1) & ~(alignment - 1);
+if (__gsharp_smem_site_count == __GSHARP_SMEM_MAX_SITES || offset + size > sizeof(__gsharp_dynamic_smem)) {
+std::fprintf(stderr, ""G#: shared memory of the block exceeds %d declarations or %zu bytes\n"",
+__GSHARP_SMEM_MAX_SITES, sizeof(__gsharp_dynamic_smem));
+std::abort();
+}
+__gsharp_smem_keys[__gsharp_smem_site_count] = siteKey;
+__gsharp_smem_offsets[__gsharp_smem_site_count] = offset;
+__gsharp_smem_sizes[__gsharp_smem_site_count] = size;
+__gsharp_smem_site_count++;
+__gsharp_smem_current_base = offset + size;
+return (void*)(__gsharp_dynamic_smem + offset);
+}
+
+inline void __gsharp_unsupported(const char* message);
+
+inline void __gsharp_mbarrier_init(unsigned long long*, unsigned int) {
+__gsharp_unsupported(""mbarrier is not supported by the StandardCpp dialect."");
+}
+inline void __gsharp_mbarrier_arrive(unsigned long long*) {
+__gsharp_unsupported(""mbarrier is not supported by the StandardCpp dialect."");
+}
+inline void __gsharp_mbarrier_wait(unsigned long long*, unsigned int) {
+__gsharp_unsupported(""mbarrier is not supported by the StandardCpp dialect."");
+}
+
+template <typename T>
+inline void __gsharp_cp_async(T* dst, const T* src) {
+*dst = *src;
+}
+inline void __gsharp_cp_async_commit_group() {}
+inline void __gsharp_cp_async_wait_group(int) {}
+inline void __gsharp_cp_async_wait_all() {}
 
 // --- Atomics ---
 template<typename T>
 __forceinline__ T __gsharp_atomic_fetch_add(T* address, T val) {
-    return reinterpret_cast<volatile std::atomic<T>*>(address)->fetch_add(val, std::memory_order_relaxed);
+return reinterpret_cast<volatile std::atomic<T>*>(address)->fetch_add(val, std::memory_order_relaxed);
 }
 
 template<typename T>
 __forceinline__ T __gsharp_atomic_max(T* address, T val) {
-    volatile std::atomic<T>* atom = reinterpret_cast<volatile std::atomic<T>*>(address);
-    T old = atom->load(std::memory_order_relaxed);
-    while (old < val && !atom->compare_exchange_weak(old, val, std::memory_order_relaxed)) { }
-    return old;
+volatile std::atomic<T>* atom = reinterpret_cast<volatile std::atomic<T>*>(address);
+T old = atom->load(std::memory_order_relaxed);
+while (old < val && !atom->compare_exchange_weak(old, val, std::memory_order_relaxed)) { }
+return old;
+}
+
+template<typename T>
+__forceinline__ T __gsharp_atomic_min(T* address, T val) {
+volatile std::atomic<T>* atom = reinterpret_cast<volatile std::atomic<T>*>(address);
+T old = atom->load(std::memory_order_relaxed);
+while (val < old && !atom->compare_exchange_weak(old, val, std::memory_order_relaxed)) { }
+return old;
+}
+
+// Read-modify-write via CAS loop for operations without a native std::atomic member (float add, CUDA inc/dec wrap).
+template<typename T, typename TUpdate>
+__forceinline__ T __gsharp_atomic_update(T* address, TUpdate update) {
+volatile std::atomic<T>* atom = reinterpret_cast<volatile std::atomic<T>*>(address);
+T old = atom->load(std::memory_order_relaxed);
+while (!atom->compare_exchange_weak(old, update(old), std::memory_order_relaxed)) { }
+return old;
+}
+
+template<typename T>
+__forceinline__ T __gsharp_atomic_fetch_sub(T* address, T val) {
+return reinterpret_cast<volatile std::atomic<T>*>(address)->fetch_sub(val, std::memory_order_relaxed);
 }
 
 template<typename T>
 __forceinline__ T __gsharp_atomic_or(T* address, T val) {
-    return reinterpret_cast<volatile std::atomic<T>*>(address)->fetch_or(val, std::memory_order_relaxed);
+return reinterpret_cast<volatile std::atomic<T>*>(address)->fetch_or(val, std::memory_order_relaxed);
+}
+
+template<typename T>
+__forceinline__ T __gsharp_atomic_and(T* address, T val) {
+return reinterpret_cast<volatile std::atomic<T>*>(address)->fetch_and(val, std::memory_order_relaxed);
+}
+
+template<typename T>
+__forceinline__ T __gsharp_atomic_xor(T* address, T val) {
+return reinterpret_cast<volatile std::atomic<T>*>(address)->fetch_xor(val, std::memory_order_relaxed);
 }
 
 template<typename T>
 __forceinline__ T __gsharp_atomic_cas(T* address, T compare, T val) {
-    volatile std::atomic<T>* atom = reinterpret_cast<volatile std::atomic<T>*>(address);
-    T expected = compare;
-    atom->compare_exchange_strong(expected, val, std::memory_order_relaxed);
-    return expected;
+volatile std::atomic<T>* atom = reinterpret_cast<volatile std::atomic<T>*>(address);
+T expected = compare;
+atom->compare_exchange_strong(expected, val, std::memory_order_relaxed);
+return expected;
 }
 
 template<typename T>
 __forceinline__ T __gsharp_atomic_exch(T* address, T val) {
-    return reinterpret_cast<volatile std::atomic<T>*>(address)->exchange(val, std::memory_order_relaxed);
+return reinterpret_cast<volatile std::atomic<T>*>(address)->exchange(val, std::memory_order_relaxed);
 }
 
 __forceinline__ int atomicAdd(int* address, int val) { return __gsharp_atomic_fetch_add(address, val); }
@@ -272,6 +425,22 @@ __forceinline__ unsigned long long atomicCAS(unsigned long long* address, unsign
 __forceinline__ int atomicExch(int* address, int val) { return __gsharp_atomic_exch(address, val); }
 __forceinline__ unsigned int atomicExch(unsigned int* address, unsigned int val) { return __gsharp_atomic_exch(address, val); }
 __forceinline__ unsigned long long atomicExch(unsigned long long* address, unsigned long long val) { return __gsharp_atomic_exch(address, val); }
+__forceinline__ float atomicExch(float* address, float val) { return __gsharp_atomic_exch(address, val); }
+__forceinline__ float atomicAdd(float* address, float val) { return __gsharp_atomic_update(address, [val](float old) { return old + val; }); }
+__forceinline__ int atomicSub(int* address, int val) { return __gsharp_atomic_fetch_sub(address, val); }
+__forceinline__ unsigned int atomicSub(unsigned int* address, unsigned int val) { return __gsharp_atomic_fetch_sub(address, val); }
+__forceinline__ int atomicMin(int* address, int val) { return __gsharp_atomic_min(address, val); }
+__forceinline__ unsigned int atomicMin(unsigned int* address, unsigned int val) { return __gsharp_atomic_min(address, val); }
+__forceinline__ unsigned long long atomicMin(unsigned long long* address, unsigned long long val) { return __gsharp_atomic_min(address, val); }
+__forceinline__ int atomicAnd(int* address, int val) { return __gsharp_atomic_and(address, val); }
+__forceinline__ unsigned int atomicAnd(unsigned int* address, unsigned int val) { return __gsharp_atomic_and(address, val); }
+__forceinline__ unsigned long long atomicAnd(unsigned long long* address, unsigned long long val) { return __gsharp_atomic_and(address, val); }
+__forceinline__ int atomicXor(int* address, int val) { return __gsharp_atomic_xor(address, val); }
+__forceinline__ unsigned int atomicXor(unsigned int* address, unsigned int val) { return __gsharp_atomic_xor(address, val); }
+__forceinline__ unsigned long long atomicXor(unsigned long long* address, unsigned long long val) { return __gsharp_atomic_xor(address, val); }
+// CUDA semantics: inc wraps to 0 once old >= val; dec wraps to val when old == 0 or old > val.
+__forceinline__ unsigned int atomicInc(unsigned int* address, unsigned int val) { return __gsharp_atomic_update(address, [val](unsigned int old) { return old >= val ? 0u : old + 1u; }); }
+__forceinline__ unsigned int atomicDec(unsigned int* address, unsigned int val) { return __gsharp_atomic_update(address, [val](unsigned int old) { return (old == 0u || old > val) ? val : old - 1u; }); }
 
 __forceinline__ int __gsharp_atomicCAS(int* address, int val, int compare) { return atomicCAS(address, compare, val); }
 __forceinline__ unsigned int __gsharp_atomicCAS(unsigned int* address, unsigned int val, unsigned int compare) { return atomicCAS(address, compare, val); }
@@ -294,97 +463,104 @@ template <typename T> inline T __shfl_xor_sync(unsigned mask, T var, int laneMas
 
 template<typename T>
 inline void __gsharp_warp_exchange_assign_impl(T val, uint64_t* exchange) {
-    uint64_t raw = 0;
-    std::memcpy(&raw, &val, sizeof(T));
-    *exchange = raw;
+uint64_t raw = 0;
+std::memcpy(&raw, &val, sizeof(T));
+*exchange = raw;
 }
 
-#define __gsharp_warp_exchange_assign(val) __gsharp_warp_exchange_assign_impl(val, &_ctx->_warpExchange)
+// Shuffle k publishes into slot k % 2. Lanes of a converged warp run the same shuffle sequence and a source lane is at
+// most one shuffle ahead, so it never overwrites the slot a slower lane still has to read.
+// The root is the kernel context of the thread, also inside a device function's state machine.
+#define __gsharp_warp_exchange_assign(val) __gsharp_warp_exchange_assign_impl(val, &__gsharp_root->__gsharp_warp_exchange[__gsharp_root->__gsharp_warp_shuffle_count & 1u])
 
 template<typename TContext, typename T>
-inline T __gsharp_warp_shuffle_read_down_sync(TContext* _ctx, uint32_t mask, T val, uint32_t delta, int width = 32) {
-    uint32_t tid = threadIdx.z * blockDim.y * blockDim.x + threadIdx.y * blockDim.x + threadIdx.x;
-    uint32_t laneId = tid % 32;
-    uint32_t warpId = tid / 32;
-    uint32_t logicalLane = laneId % width;
-    uint32_t srcLane = logicalLane + delta;
-    
-    T result;
-    if (srcLane < (uint32_t)width) {
-        uint32_t srcTid = warpId * 32 + (laneId - logicalLane) + srcLane;
-        uint64_t raw = _ctx->_all_contexts[srcTid]._warpExchange;
-        std::memcpy(&result, &raw, sizeof(T));
-    } else {
-        result = val;
-    }
-    return result;
+inline T __gsharp_warp_shuffle_read_down_sync(TContext* __gsharp_ctx, uint32_t mask, T val, uint32_t delta, int width = 32) {
+uint32_t slot = __gsharp_ctx->__gsharp_warp_shuffle_count++ & 1u;
+uint32_t tid = threadIdx.z * blockDim.y * blockDim.x + threadIdx.y * blockDim.x + threadIdx.x;
+uint32_t laneId = tid % 32;
+uint32_t warpId = tid / 32;
+uint32_t logicalLane = laneId % width;
+uint32_t srcLane = logicalLane + delta;
+
+T result;
+if (srcLane < (uint32_t)width) {
+uint32_t srcTid = warpId * 32 + (laneId - logicalLane) + srcLane;
+uint64_t raw = __gsharp_ctx->__gsharp_all_contexts[srcTid].__gsharp_warp_exchange[slot];
+std::memcpy(&result, &raw, sizeof(T));
+} else {
+result = val;
 }
-
-template<typename TContext, typename T>
-inline T __gsharp_warp_shuffle_read_up_sync(TContext* _ctx, uint32_t mask, T val, uint32_t delta, int width = 32) {
-    uint32_t tid = threadIdx.z * blockDim.y * blockDim.x + threadIdx.y * blockDim.x + threadIdx.x;
-    uint32_t laneId = tid % 32;
-    uint32_t warpId = tid / 32;
-    uint32_t logicalLane = laneId % width;
-    
-    T result;
-    if (logicalLane >= delta) {
-        uint32_t srcLane = logicalLane - delta;
-        uint32_t srcTid = warpId * 32 + (laneId - logicalLane) + srcLane;
-        uint64_t raw = _ctx->_all_contexts[srcTid]._warpExchange;
-        std::memcpy(&result, &raw, sizeof(T));
-    } else {
-        result = val;
-    }
-    return result;
+return result;
 }
 
 template<typename TContext, typename T>
-inline T __gsharp_warp_shuffle_read_xor_sync(TContext* _ctx, uint32_t mask, T val, uint32_t laneMask, int width = 32) {
-    uint32_t tid = threadIdx.z * blockDim.y * blockDim.x + threadIdx.y * blockDim.x + threadIdx.x;
-    uint32_t laneId = tid % 32;
-    uint32_t warpId = tid / 32;
-    uint32_t logicalLane = laneId % width;
-    uint32_t srcLane = logicalLane ^ laneMask;
-    
-    T result;
-    if (srcLane < (uint32_t)width) {
-        uint32_t srcTid = warpId * 32 + (laneId - logicalLane) + srcLane;
-        uint64_t raw = _ctx->_all_contexts[srcTid]._warpExchange;
-        std::memcpy(&result, &raw, sizeof(T));
-    } else {
-        result = val;
-    }
-    return result;
+inline T __gsharp_warp_shuffle_read_up_sync(TContext* __gsharp_ctx, uint32_t mask, T val, uint32_t delta, int width = 32) {
+uint32_t slot = __gsharp_ctx->__gsharp_warp_shuffle_count++ & 1u;
+uint32_t tid = threadIdx.z * blockDim.y * blockDim.x + threadIdx.y * blockDim.x + threadIdx.x;
+uint32_t laneId = tid % 32;
+uint32_t warpId = tid / 32;
+uint32_t logicalLane = laneId % width;
+
+T result;
+if (logicalLane >= delta) {
+uint32_t srcLane = logicalLane - delta;
+uint32_t srcTid = warpId * 32 + (laneId - logicalLane) + srcLane;
+uint64_t raw = __gsharp_ctx->__gsharp_all_contexts[srcTid].__gsharp_warp_exchange[slot];
+std::memcpy(&result, &raw, sizeof(T));
+} else {
+result = val;
+}
+return result;
 }
 
 template<typename TContext, typename T>
-inline T __gsharp_warp_shuffle_read_sync(TContext* _ctx, uint32_t mask, T val, uint32_t srcLane, int width = 32) {
-    uint32_t tid = threadIdx.z * blockDim.y * blockDim.x + threadIdx.y * blockDim.x + threadIdx.x;
-    uint32_t laneId = tid % 32;
-    uint32_t warpId = tid / 32;
-    uint32_t logicalLane = laneId % width;
-    
-    T result;
-    if (srcLane < (uint32_t)width && (mask & (1u << srcLane))) {
-        uint32_t srcTid = warpId * 32 + (laneId - logicalLane) + srcLane;
-        uint64_t raw = _ctx->_all_contexts[srcTid]._warpExchange;
-        std::memcpy(&result, &raw, sizeof(T));
-    } else {
-        result = val;
-    }
-    return result;
+inline T __gsharp_warp_shuffle_read_xor_sync(TContext* __gsharp_ctx, uint32_t mask, T val, uint32_t laneMask, int width = 32) {
+uint32_t slot = __gsharp_ctx->__gsharp_warp_shuffle_count++ & 1u;
+uint32_t tid = threadIdx.z * blockDim.y * blockDim.x + threadIdx.y * blockDim.x + threadIdx.x;
+uint32_t laneId = tid % 32;
+uint32_t warpId = tid / 32;
+uint32_t logicalLane = laneId % width;
+uint32_t srcLane = logicalLane ^ laneMask;
+
+T result;
+if (srcLane < (uint32_t)width) {
+uint32_t srcTid = warpId * 32 + (laneId - logicalLane) + srcLane;
+uint64_t raw = __gsharp_ctx->__gsharp_all_contexts[srcTid].__gsharp_warp_exchange[slot];
+std::memcpy(&result, &raw, sizeof(T));
+} else {
+result = val;
+}
+return result;
+}
+
+template<typename TContext, typename T>
+inline T __gsharp_warp_shuffle_read_sync(TContext* __gsharp_ctx, uint32_t mask, T val, uint32_t srcLane, int width = 32) {
+uint32_t slot = __gsharp_ctx->__gsharp_warp_shuffle_count++ & 1u;
+uint32_t tid = threadIdx.z * blockDim.y * blockDim.x + threadIdx.y * blockDim.x + threadIdx.x;
+uint32_t laneId = tid % 32;
+uint32_t warpId = tid / 32;
+uint32_t logicalLane = laneId % width;
+
+T result;
+if (srcLane < (uint32_t)width && (mask & (1u << srcLane))) {
+uint32_t srcTid = warpId * 32 + (laneId - logicalLane) + srcLane;
+uint64_t raw = __gsharp_ctx->__gsharp_all_contexts[srcTid].__gsharp_warp_exchange[slot];
+std::memcpy(&result, &raw, sizeof(T));
+} else {
+result = val;
+}
+return result;
 }
 
 template<typename T>
 inline unsigned int __match_any_sync(unsigned int mask, T val) {
-    return mask & 1;
+return mask & 1;
 }
 
 template<typename T>
 inline unsigned int __match_all_sync(unsigned int mask, T val, int* pred) {
-    if (pred) *pred = 1;
-    return mask & 1;
+if (pred) *pred = 1;
+return mask & 1;
 }
 
 inline void __nanosleep(unsigned int duration) {}
@@ -392,8 +568,629 @@ inline void __syncwarp(unsigned int mask = 0xFFFFFFFFU) {}
 
 // --- Compiler Hints ---
 namespace Hint {
-    inline void Unroll() {}
+inline void Unroll() {}
 }
+
+// --- Tensor Core (WMMA) ---
+struct __gsharp_wmma_matrix_a {};
+struct __gsharp_wmma_matrix_b {};
+struct __gsharp_wmma_accumulator {};
+struct __gsharp_wmma_row_major {};
+struct __gsharp_wmma_col_major {};
+template <int M, int N, int K> struct __gsharp_wmma_shape {};
+template <class Use, int M, int N, int K, class T, class Layout = void>
+struct __gsharp_wmma_fragment {};
+
+template <class Shape, class T, class Layout = void, class Frag>
+inline void __gsharp_wmma_fill(Frag*, T) {
+__gsharp_unsupported(""WMMA is not supported by the StandardCpp dialect."");
+}
+template <class Shape, class T, class Layout, class Frag>
+inline void __gsharp_wmma_load(Frag*, const T*, unsigned int) {
+__gsharp_unsupported(""WMMA is not supported by the StandardCpp dialect."");
+}
+template <class Shape, class T, class Frag>
+inline void __gsharp_wmma_load(Frag*, const T*, unsigned int, int) {
+__gsharp_unsupported(""WMMA is not supported by the StandardCpp dialect."");
+}
+template <class Shape, class T, class Frag>
+inline void __gsharp_wmma_store(T*, const Frag*, unsigned int, int) {
+__gsharp_unsupported(""WMMA is not supported by the StandardCpp dialect."");
+}
+template <class Shape, class TIn, class LayoutA, class LayoutB, class TAcc, class FragD, class FragA, class FragB, class FragC>
+inline void __gsharp_wmma_mma(FragD*, const FragA*, const FragB*, const FragC*) {
+__gsharp_unsupported(""WMMA is not supported by the StandardCpp dialect."");
+}
+
+// --- Runtime Error Channel (CPU Dialect) ---
+enum class GSharpErrorCode : int32_t {
+None = 0,
+NotSupported = 1,
+InvalidOperation = 2,
+IndexOutOfRange = 3,
+ArgumentOutOfRange = 4
+};
+
+struct GSharpErrorSlot {
+std::atomic<int32_t> code{0};
+const char* message{nullptr};
+
+inline void Reset() noexcept {
+message = nullptr;
+code.store(0, std::memory_order_release);
+}
+
+inline bool HasError() const noexcept {
+return code.load(std::memory_order_acquire) != 0;
+}
+
+inline void Report(GSharpErrorCode errCode, const char* msg) noexcept {
+int32_t expected = 0;
+if (code.compare_exchange_strong(expected, static_cast<int32_t>(errCode),
+std::memory_order_acq_rel,
+std::memory_order_relaxed)) {
+message = msg;
+}
+}
+};
+
+inline thread_local GSharpErrorSlot __gsharp_host_last_error;
+inline thread_local GSharpErrorSlot* __gsharp_active_error_slot = nullptr;
+
+extern ""C"" __declspec(dllexport) int32_t __gsharp_consume_last_error(const char** outMessage) {
+int32_t c = __gsharp_host_last_error.code.load(std::memory_order_acquire);
+if (c != 0) {
+if (outMessage != nullptr) {
+*outMessage = __gsharp_host_last_error.message;
+}
+__gsharp_host_last_error.Reset();
+}
+return c;
+}
+
+// Records a runtime failure for constructs the CPU dialect cannot execute (e.g. Gpu.InlinePtx).
+// First writer wins across OpenMP threads; the managed launch wrapper inspects the slot and throws.
+inline void __gsharp_unsupported(const char* message)
+{
+if (__gsharp_active_error_slot != nullptr) {
+__gsharp_active_error_slot->Report(GSharpErrorCode::NotSupported, message);
+} else {
+__gsharp_host_last_error.Report(GSharpErrorCode::NotSupported, message);
+}
+}
+
+// Records a portable trap failure (e.g. empty sequence or out-of-range index in StackLinq).
+// First writer wins across OpenMP threads; the managed launch wrapper inspects the slot and throws.
+inline void __gsharp_trap(GSharpErrorCode code, const char* message)
+{
+if (__gsharp_active_error_slot != nullptr) {
+__gsharp_active_error_slot->Report(code, message);
+} else {
+__gsharp_host_last_error.Report(code, message);
+}
+}
+
+#pragma once
+
+namespace Kassyi { namespace ZeroAlloc { namespace Linq {
+
+template <typename T>
+struct ArrayEnumerator {
+GSharpArray<T> source;
+int index;
+
+__device__ inline ArrayEnumerator(GSharpArray<T> src) : source(src), index(-1) {}
+
+__device__ inline bool MoveNext() {
+if (index + 1 < source.length) {
+index++;
+return true;
+}
+return false;
+}
+__device__ inline T Current() const { return source[index]; }
+};
+
+template <typename TSource, typename TPredicate>
+struct WhereEnumerator {
+TSource source;
+TPredicate predicate;
+
+__device__ inline WhereEnumerator(TSource src, TPredicate pred) : source(src), predicate(pred) {}
+
+__device__ inline bool MoveNext() {
+while (source.MoveNext()) {
+if (predicate(source.Current())) {
+return true;
+}
+}
+return false;
+}
+__device__ inline auto Current() const { return source.Current(); }
+};
+
+template <typename TSource, typename TSelector>
+struct SelectEnumerator {
+TSource source;
+TSelector selector;
+
+__device__ inline SelectEnumerator(TSource src, TSelector sel) : source(src), selector(sel) {}
+
+__device__ inline bool MoveNext() { return source.MoveNext(); }
+__device__ inline auto Current() const { return selector(source.Current()); }
+};
+
+template <typename TSource, typename TPredicate>
+struct WhereAtEnumerator {
+TSource source;
+TPredicate predicate;
+int index;
+
+__device__ inline WhereAtEnumerator(TSource src, TPredicate pred) : source(src), predicate(pred), index(0) {}
+
+__device__ inline bool MoveNext() {
+while (source.MoveNext()) {
+if (predicate(source.Current(), index++)) {
+return true;
+}
+}
+return false;
+}
+__device__ inline auto Current() const { return source.Current(); }
+};
+
+template <typename TSource, typename TSelector>
+struct SelectAtEnumerator {
+TSource source;
+TSelector selector;
+int index;
+
+__device__ inline SelectAtEnumerator(TSource src, TSelector sel) : source(src), selector(sel), index(-1) {}
+
+__device__ inline bool MoveNext() {
+if (source.MoveNext()) {
+index++;
+return true;
+}
+return false;
+}
+__device__ inline auto Current() const { return selector(source.Current(), index); }
+};
+
+template <typename TSource>
+struct TakeEnumerator {
+TSource source;
+int remaining;
+
+__device__ inline TakeEnumerator(TSource src, int count) : source(src), remaining(count > 0 ? count : 0) {}
+
+__device__ inline bool MoveNext() {
+if (remaining > 0 && source.MoveNext()) {
+remaining--;
+return true;
+}
+return false;
+}
+__device__ inline auto Current() const { return source.Current(); }
+};
+
+template <typename TSource>
+struct SkipEnumerator {
+TSource source;
+int remaining;
+
+__device__ inline SkipEnumerator(TSource src, int count) : source(src), remaining(count > 0 ? count : 0) {}
+
+__device__ inline bool MoveNext() {
+while (remaining > 0) {
+if (source.MoveNext()) remaining--;
+else return false;
+}
+return source.MoveNext();
+}
+__device__ inline auto Current() const { return source.Current(); }
+};
+
+template <typename TSource, typename TPredicate>
+struct TakeWhileEnumerator {
+TSource source;
+TPredicate predicate;
+
+__device__ inline TakeWhileEnumerator(TSource src, TPredicate pred) : source(src), predicate(pred) {}
+
+__device__ inline bool MoveNext() {
+if (source.MoveNext()) {
+if (predicate(source.Current())) {
+return true;
+}
+}
+return false;
+}
+__device__ inline auto Current() const { return source.Current(); }
+};
+
+template <typename TSource, typename TPredicate>
+struct TakeWhileAtEnumerator {
+TSource source;
+TPredicate predicate;
+int index;
+
+__device__ inline TakeWhileAtEnumerator(TSource src, TPredicate pred) : source(src), predicate(pred), index(0) {}
+
+__device__ inline bool MoveNext() {
+if (source.MoveNext()) {
+if (predicate(source.Current(), index++)) {
+return true;
+}
+}
+return false;
+}
+__device__ inline auto Current() const { return source.Current(); }
+};
+
+template <typename TSource, typename TPredicate>
+struct SkipWhileEnumerator {
+TSource source;
+TPredicate predicate;
+bool yielding;
+
+__device__ inline SkipWhileEnumerator(TSource src, TPredicate pred) : source(src), predicate(pred), yielding(false) {}
+
+__device__ inline bool MoveNext() {
+while (source.MoveNext()) {
+if (!yielding && predicate(source.Current())) {
+continue;
+}
+yielding = true;
+return true;
+}
+return false;
+}
+__device__ inline auto Current() const { return source.Current(); }
+};
+
+template <typename TSource, typename TPredicate>
+struct SkipWhileAtEnumerator {
+TSource source;
+TPredicate predicate;
+bool yielding;
+int index;
+
+__device__ inline SkipWhileAtEnumerator(TSource src, TPredicate pred) : source(src), predicate(pred), yielding(false), index(0) {}
+
+__device__ inline bool MoveNext() {
+while (source.MoveNext()) {
+if (!yielding && predicate(source.Current(), index++)) {
+continue;
+}
+yielding = true;
+return true;
+}
+return false;
+}
+__device__ inline auto Current() const { return source.Current(); }
+};
+
+struct StackLinq {
+template <typename T>
+__device__ static inline auto AsStackEnumerable(GSharpArray<T> source) {
+return ArrayEnumerator<T>(source);
+}
+
+template <typename TSource, typename TPredicate>
+__device__ static inline auto Where(TSource source, TPredicate predicate) {
+return WhereEnumerator<TSource, TPredicate>(source, predicate);
+}
+
+template <typename TSource, typename TPredicate>
+__device__ static inline auto WhereAt(TSource source, TPredicate predicate) {
+return WhereAtEnumerator<TSource, TPredicate>(source, predicate);
+}
+
+template <typename TSource, typename TSelector>
+__device__ static inline auto Select(TSource source, TSelector selector) {
+return SelectEnumerator<TSource, TSelector>(source, selector);
+}
+
+template <typename TSource, typename TSelector>
+__device__ static inline auto SelectAt(TSource source, TSelector selector) {
+return SelectAtEnumerator<TSource, TSelector>(source, selector);
+}
+
+template <typename TSource>
+__device__ static inline auto Take(TSource source, int count) {
+return TakeEnumerator<TSource>(source, count);
+}
+
+template <typename TSource>
+__device__ static inline auto Skip(TSource source, int count) {
+return SkipEnumerator<TSource>(source, count);
+}
+
+template <typename TSource, typename TPredicate>
+__device__ static inline auto TakeWhile(TSource source, TPredicate predicate) {
+return TakeWhileEnumerator<TSource, TPredicate>(source, predicate);
+}
+
+template <typename TSource, typename TPredicate>
+__device__ static inline auto TakeWhileAt(TSource source, TPredicate predicate) {
+return TakeWhileAtEnumerator<TSource, TPredicate>(source, predicate);
+}
+
+template <typename TSource, typename TPredicate>
+__device__ static inline auto SkipWhile(TSource source, TPredicate predicate) {
+return SkipWhileEnumerator<TSource, TPredicate>(source, predicate);
+}
+
+template <typename TSource, typename TPredicate>
+__device__ static inline auto SkipWhileAt(TSource source, TPredicate predicate) {
+return SkipWhileAtEnumerator<TSource, TPredicate>(source, predicate);
+}
+
+template <typename TSource>
+__device__ static inline int Count(TSource source) {
+int count = 0;
+while (source.MoveNext()) count++;
+return count;
+}
+
+template <typename TSource, typename TPredicate>
+__device__ static inline int Count(TSource source, TPredicate predicate) {
+int count = 0;
+while (source.MoveNext()) {
+if (predicate(source.Current())) count++;
+}
+return count;
+}
+
+template <typename TSource, typename TPredicate>
+__device__ static inline int CountAt(TSource source, TPredicate predicate) {
+int count = 0;
+int index = 0;
+while (source.MoveNext()) {
+if (predicate(source.Current(), index++)) count++;
+}
+return count;
+}
+
+template <typename TSource>
+__device__ static inline bool Any(TSource source) {
+return source.MoveNext();
+}
+
+template <typename TSource, typename TPredicate>
+__device__ static inline bool Any(TSource source, TPredicate predicate) {
+while (source.MoveNext()) {
+if (predicate(source.Current())) return true;
+}
+return false;
+}
+
+template <typename TSource, typename TPredicate>
+__device__ static inline bool All(TSource source, TPredicate predicate) {
+while (source.MoveNext()) {
+if (!predicate(source.Current())) return false;
+}
+return true;
+}
+
+template <typename TSource, typename TValue>
+__device__ static inline bool Contains(TSource source, TValue value) {
+while (source.MoveNext()) {
+if (source.Current() == value) return true;
+}
+return false;
+}
+
+template <typename TSource>
+__device__ static inline auto ElementAt(TSource source, int index) {
+if (index >= 0) {
+int count = 0;
+while (source.MoveNext()) {
+if (count == index) return source.Current();
+count++;
+}
+}
+__gsharp_trap(GSharpErrorCode::ArgumentOutOfRange, ""Index was out of range."");
+return decltype(source.Current())();
+}
+
+template <typename TSource>
+__device__ static inline auto ElementAtOrDefault(TSource source, int index) {
+int count = 0;
+while (source.MoveNext()) {
+if (count == index) return source.Current();
+count++;
+}
+return decltype(source.Current())();
+}
+
+template <typename TSource>
+__device__ static inline auto First(TSource source) {
+if (source.MoveNext()) return source.Current();
+__gsharp_trap(GSharpErrorCode::InvalidOperation, ""Sequence contains no elements"");
+return decltype(source.Current())();
+}
+
+template <typename TSource, typename TPredicate>
+__device__ static inline auto First(TSource source, TPredicate predicate) {
+while (source.MoveNext()) {
+if (predicate(source.Current())) return source.Current();
+}
+__gsharp_trap(GSharpErrorCode::InvalidOperation, ""Sequence contains no matching element"");
+return decltype(source.Current())();
+}
+
+template <typename TSource>
+__device__ static inline auto FirstOrDefault(TSource source) {
+if (source.MoveNext()) return source.Current();
+return decltype(source.Current())();
+}
+
+template <typename TSource, typename TPredicate>
+__device__ static inline auto FirstOrDefault(TSource source, TPredicate predicate) {
+while (source.MoveNext()) {
+if (predicate(source.Current())) return source.Current();
+}
+return decltype(source.Current())();
+}
+
+template <typename TSource>
+__device__ static inline auto Single(TSource source) {
+if (!source.MoveNext()) {
+__gsharp_trap(GSharpErrorCode::InvalidOperation, ""Sequence contains no elements"");
+return decltype(source.Current())();
+}
+auto result = source.Current();
+if (source.MoveNext()) {
+__gsharp_trap(GSharpErrorCode::InvalidOperation, ""Sequence contains more than one element"");
+}
+return result;
+}
+
+template <typename TSource, typename TPredicate>
+__device__ static inline auto Single(TSource source, TPredicate predicate) {
+auto result = decltype(source.Current())();
+bool found = false;
+while (source.MoveNext()) {
+if (predicate(source.Current())) {
+if (found) {
+__gsharp_trap(GSharpErrorCode::InvalidOperation, ""Sequence contains more than one matching element"");
+return result;
+}
+result = source.Current();
+found = true;
+}
+}
+if (!found) {
+__gsharp_trap(GSharpErrorCode::InvalidOperation, ""Sequence contains no matching element"");
+}
+return result;
+}
+
+template <typename TSource>
+__device__ static inline auto SingleOrDefault(TSource source) {
+if (!source.MoveNext()) return decltype(source.Current())();
+auto result = source.Current();
+if (source.MoveNext()) {
+__gsharp_trap(GSharpErrorCode::InvalidOperation, ""Sequence contains more than one element"");
+}
+return result;
+}
+
+template <typename TSource, typename TPredicate>
+__device__ static inline auto SingleOrDefault(TSource source, TPredicate predicate) {
+auto result = decltype(source.Current())();
+bool found = false;
+while (source.MoveNext()) {
+if (predicate(source.Current())) {
+if (found) {
+__gsharp_trap(GSharpErrorCode::InvalidOperation, ""Sequence contains more than one matching element"");
+return result;
+}
+result = source.Current();
+found = true;
+}
+}
+return result;
+}
+
+template <typename TSource>
+__device__ static inline auto Last(TSource source) {
+auto result = decltype(source.Current())();
+bool found = false;
+while (source.MoveNext()) {
+result = source.Current();
+found = true;
+}
+if (!found) {
+__gsharp_trap(GSharpErrorCode::InvalidOperation, ""Sequence contains no elements"");
+}
+return result;
+}
+
+template <typename TSource>
+__device__ static inline auto LastOrDefault(TSource source) {
+auto result = decltype(source.Current())();
+while (source.MoveNext()) {
+result = source.Current();
+}
+return result;
+}
+
+template <typename TSource>
+__device__ static inline auto Sum(TSource source) {
+decltype(source.Current()) sum = 0;
+while (source.MoveNext()) {
+sum += source.Current();
+}
+return sum;
+}
+
+template <typename TSource, typename TFunc>
+__device__ static inline auto Aggregate(TSource source, TFunc func) {
+if (!source.MoveNext()) {
+__gsharp_trap(GSharpErrorCode::InvalidOperation, ""Sequence contains no elements"");
+return decltype(source.Current())();
+}
+auto result = source.Current();
+while (source.MoveNext()) {
+result = func(result, source.Current());
+}
+return result;
+}
+
+template <typename TSource, typename TAccumulate, typename TFunc>
+__device__ static inline TAccumulate Aggregate(TSource source, TAccumulate seed, TFunc func) {
+TAccumulate result = seed;
+while (source.MoveNext()) {
+result = func(result, source.Current());
+}
+return result;
+}
+
+template <typename TSource>
+__device__ static inline auto Max(TSource source) {
+if (!source.MoveNext()) {
+__gsharp_trap(GSharpErrorCode::InvalidOperation, ""Sequence contains no elements"");
+return decltype(source.Current())();
+}
+auto max_val = source.Current();
+while (source.MoveNext()) {
+if (source.Current() > max_val) max_val = source.Current();
+}
+return max_val;
+}
+
+template <typename TSource>
+__device__ static inline auto Min(TSource source) {
+if (!source.MoveNext()) {
+__gsharp_trap(GSharpErrorCode::InvalidOperation, ""Sequence contains no elements"");
+return decltype(source.Current())();
+}
+auto min_val = source.Current();
+while (source.MoveNext()) {
+if (source.Current() < min_val) min_val = source.Current();
+}
+return min_val;
+}
+
+template <typename TSource>
+__device__ static inline auto Average(TSource source) {
+double sum = 0;
+int count = 0;
+while (source.MoveNext()) {
+sum += (double)source.Current();
+count++;
+}
+if (count == 0) {
+__gsharp_trap(GSharpErrorCode::InvalidOperation, ""Sequence contains no elements"");
+return 0.0;
+}
+return sum / count;
+}
+};
+}}}
 
 ";
 }

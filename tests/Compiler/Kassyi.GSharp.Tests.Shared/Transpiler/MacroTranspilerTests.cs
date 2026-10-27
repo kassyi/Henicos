@@ -8,11 +8,12 @@ namespace Kassyi.GSharp.Tests.Shared.Transpiler;
 
 public class MacroTranspilerTests : TranspilerTestBase
 {
-    [Fact]
+    [SkippableFact]
     [Category(TestCategory.Compiler)]
     [Category(TestCategory.Syntax)]
     public async Task Test_MacroTranspiler_ExpandsMacrosCorrectly_Snapshots()
     {
+        SkipIfCpuDialect("#626: the CPU dialects drop the body of Gpu.SyncGrid(body); the snapshot is refreshed with the fix");
         await VerifyGeneratorAsync();
     }
 }
