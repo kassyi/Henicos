@@ -171,6 +171,25 @@ public sealed class GpuBufferOwnershipTests : IDisposable
     }
 
     [SkippableFact]
+    [Scenario(TestScenario.SadPath)]
+    public void Allocate_AfterWorkspaceDispose_Throws()
+    {
+        // A disposed workspace hands out no memory (the .NET rule for disposed objects), and a value that survived it
+        // stays a no-op to dispose: no driver call happens after the workspace released everything.
+        // mutant: DefaultGpuMemoryManager.Allocate without the ObjectDisposedException.ThrowIf
+        var workspace = new GpuWorkspace(64, GpuExecutionEngine.GSharpAot);
+        var survivor = new GpuBigUInt(workspace, PoolWords);
+        workspace.Dispose();
+        var afterDispose = workspace.GetMemoryStatistics();
+
+        Assert.Throws<ObjectDisposedException>(() => new GpuBigUInt(workspace, PoolWords));
+        Assert.Throws<ObjectDisposedException>(() => workspace.MemoryManager.Allocate(PoolWords));
+        survivor.Dispose();
+
+        Assert.Equal(afterDispose, workspace.GetMemoryStatistics());
+    }
+
+    [SkippableFact]
     [Scenario(TestScenario.Boundary)]
     public void ElementAndSlice_OfReusedBuffer_AreUsable()
     {

@@ -43,8 +43,10 @@ internal sealed class DefaultGpuMemoryManager(IGpuExecutionProvider provider, In
     /// </summary>
     /// <param name="numWords">The number of 32-bit limbs to allocate.</param>
     /// <returns>A <see cref="GpuBigIntMemoryHandle"/> referencing the device buffer.</returns>
+    /// <exception cref="ObjectDisposedException">The manager (its workspace) has been disposed.</exception>
     public GpuBigIntMemoryHandle Allocate(int numWords)
     {
+        ObjectDisposedException.ThrowIf(Volatile.Read(ref _disposed) == 1, this);
         if (numWords == 0)
         {
             return default;
@@ -111,15 +113,6 @@ internal sealed class DefaultGpuMemoryManager(IGpuExecutionProvider provider, In
         }
 
         CountRelease(buffer.TotalWords);
-        if (Volatile.Read(ref _disposed) == 1)
-        {
-            // Only a buffer allocated after Dispose gets here. The workspace stream may already be destroyed, so the
-            // release cannot be stream-ordered and falls back to the immediate, device-wide free.
-            provider.FreeMemory(buffer.Pointer);
-            Interlocked.Increment(ref _driverFrees);
-            return;
-        }
-
         provider.ClearMemoryAsync(buffer.Pointer, buffer.TotalWords, stream);
 
         // Return to pool based on total size
@@ -127,6 +120,12 @@ internal sealed class DefaultGpuMemoryManager(IGpuExecutionProvider provider, In
             static _ => new Lazy<ConcurrentBag<GpuBigIntDeviceBuffer>>(static () => [])).Value;
         bag.Add(buffer);
         Interlocked.Increment(ref _pooledBuffers);
+
+        // A Dispose that ran concurrently may already have drained the pool; release what it could not see
+        if (Volatile.Read(ref _disposed) == 1)
+        {
+            DrainPool(null);
+        }
     }
 
     /// <summary>
@@ -141,6 +140,34 @@ internal sealed class DefaultGpuMemoryManager(IGpuExecutionProvider provider, In
         Volatile.Read(ref _driverAllocations),
         Volatile.Read(ref _driverFrees)
     );
+
+    // Retires and frees every pooled buffer. Without a list (a Free that raced with Dispose) a failure is rethrown to
+    // that caller, since the workspace stream may already be destroyed and nothing else would report it.
+    private void DrainPool(List<Exception>? exceptions)
+    {
+        foreach (var lazyBag in _tempPool.Values)
+        {
+            if (!lazyBag.IsValueCreated)
+            {
+                continue;
+            }
+
+            while (lazyBag.Value.TryTake(out var pooled))
+            {
+                Interlocked.Decrement(ref _pooledBuffers);
+                pooled.TryRetire(pooled.Generation);
+                try
+                {
+                    provider.FreeMemory(pooled.Pointer, stream);
+                    Interlocked.Increment(ref _driverFrees);
+                }
+                catch (Exception ex) when (exceptions is not null)
+                {
+                    exceptions.Add(ex);
+                }
+            }
+        }
+    }
 
     private void CountLease(int numWords)
     {
@@ -183,31 +210,7 @@ internal sealed class DefaultGpuMemoryManager(IGpuExecutionProvider provider, In
         }
 
         var exceptions = new List<Exception>();
-
-        foreach (var lazyBag in _tempPool.Values)
-        {
-            if (!lazyBag.IsValueCreated)
-            {
-                continue;
-            }
-
-            while (lazyBag.Value.TryTake(out var pooled))
-            {
-                Interlocked.Decrement(ref _pooledBuffers);
-                pooled.TryRetire(pooled.Generation);
-                try
-                {
-                    provider.FreeMemory(pooled.Pointer, stream);
-                    Interlocked.Increment(ref _driverFrees);
-                }
-                catch (Exception ex)
-                {
-                    exceptions.Add(ex);
-                }
-            }
-        }
-
-        _tempPool.Clear();
+        DrainPool(exceptions);
 
         foreach (var ptr in _activeAllocations.Keys)
         {

@@ -213,6 +213,8 @@ public class GpuWorkspace : IGpuResourceScope
             return;
         }
 
+        List<Exception>? exceptions = disposing ? [] : null;
+
         IDisposable? contextScope = null;
         if (Engine == GpuExecutionEngine.GSharpAot)
         {
@@ -220,13 +222,13 @@ public class GpuWorkspace : IGpuResourceScope
             {
                 contextScope = new GpuKernelLoader.CudaContextScope(_isolatedContext);
             }
-            catch
+            catch (CudaException ex)
             {
-                // Fallback: If context fails to initialize during teardown, proceed with caution.
+                // The context could not be made current: still release what can be released, and report the failure
+                // with the other teardown errors (dropped on the finalizer thread, which must not throw).
+                exceptions?.Add(ex);
             }
         }
-
-        List<Exception>? exceptions = disposing ? [] : null;
 
         try
         {
