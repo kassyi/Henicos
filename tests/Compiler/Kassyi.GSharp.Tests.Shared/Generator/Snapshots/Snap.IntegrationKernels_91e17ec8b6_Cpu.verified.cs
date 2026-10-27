@@ -248,6 +248,7 @@ if(__gsharp_ctx->__gsharp_id_12_ok&&__gsharp_id_3_config.__gsharp_mb_BoolVal)
 {
 atomicAdd(&__gsharp_id_4_globalCounter[0],(unsigned long long)__gsharp_ctx->__gsharp_id_14_bitwise);
 }
+__gsharp_ctx->__gsharp_id_30_dynamicSharedMem={ (float*)__gsharp_allocate_smem_dynamic(0xf4a8b89f8fdf4f71ull, (__gsharp_id_6_dynamicSharedSize) * sizeof(float), alignof(float), ""Tier1_IntegrationKernels.cs(154,52)"") };
 __gsharp_ctx->__gsharp_id_30_dynamicSharedMem[threadIdx.x]=__gsharp_ctx->__gsharp_id_17_sum;
 __syncthreads();
 float __gsharp_id_31_finalVal = ((__gsharp_ctx->__gsharp_id_14_bitwise>0)?((__gsharp_ctx->__gsharp_id_30_dynamicSharedMem[threadIdx.x]>10.0f?10.0f:__gsharp_ctx->__gsharp_id_30_dynamicSharedMem[threadIdx.x])):0.0f);
@@ -291,7 +292,7 @@ return;
 #undef __gsharp_state
 #undef __gsharp_yielded_for_grid_sync
 }
-extern ""C"" __declspec(dllexport) void __gsharp_launch_Kassyi__GSharp__Tests__Shared__Syntax__Tier1IntegrationKernels__AllInOneKernel(uint32_t __gsharp_grid_dim_x, uint32_t __gsharp_grid_dim_y, uint32_t __gsharp_grid_dim_z, uint32_t __gsharp_block_dim_x, uint32_t __gsharp_block_dim_y, uint32_t __gsharp_block_dim_z, GSharpArray<int> __gsharp_id_0_intInput, GSharpArray<float> __gsharp_id_1_floatInput, GSharpArray<float> __gsharp_id_2_results, __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__Tier1CustomStruct __gsharp_id_3_config, GSharpArray<unsigned long long> __gsharp_id_4_globalCounter, int __gsharp_id_5_count, int __gsharp_id_6_dynamicSharedSize)
+extern ""C"" __declspec(dllexport) void __gsharp_launch_Kassyi__GSharp__Tests__Shared__Syntax__Tier1IntegrationKernels__AllInOneKernel(uint32_t __gsharp_grid_dim_x, uint32_t __gsharp_grid_dim_y, uint32_t __gsharp_grid_dim_z, uint32_t __gsharp_block_dim_x, uint32_t __gsharp_block_dim_y, uint32_t __gsharp_block_dim_z, uint32_t __gsharp_shared_mem_bytes, GSharpArray<int> __gsharp_id_0_intInput, GSharpArray<float> __gsharp_id_1_floatInput, GSharpArray<float> __gsharp_id_2_results, __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__Tier1CustomStruct __gsharp_id_3_config, GSharpArray<unsigned long long> __gsharp_id_4_globalCounter, int __gsharp_id_5_count, int __gsharp_id_6_dynamicSharedSize)
 {
 __gsharp_host_last_error.Reset();
 GSharpErrorSlot __gsharp_launch_error;
@@ -303,20 +304,17 @@ if (__gsharp_launch_error.HasError()) continue;
 int32_t __gsharp_bx = __gsharp_block_index % __gsharp_grid_dim_x;
 int32_t __gsharp_by = (__gsharp_block_index / __gsharp_grid_dim_x) % __gsharp_grid_dim_y;
 int32_t __gsharp_bz = __gsharp_block_index / (__gsharp_grid_dim_x * __gsharp_grid_dim_y);
-__gsharp_reset_smem();
+__gsharp_reset_smem(__gsharp_shared_mem_bytes);
 std::vector<__gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__Tier1IntegrationKernels__AllInOneKernel> __gsharp_contexts(__gsharp_block_dim_x * __gsharp_block_dim_y * __gsharp_block_dim_z);
-std::vector<float> __gsharp_smem_buffer___gsharp_id_30_dynamicSharedMem(__gsharp_id_6_dynamicSharedSize);
 for (auto& __gsharp_launch_ctx : __gsharp_contexts) {
 __gsharp_launch_ctx.__gsharp_state = 0;
 __gsharp_launch_ctx.__gsharp_all_contexts = __gsharp_contexts.data();
-__gsharp_launch_ctx.__gsharp_id_30_dynamicSharedMem.data = __gsharp_smem_buffer___gsharp_id_30_dynamicSharedMem.data();
 }
 std::atomic<bool> __gsharp_any_active{true};
 while (__gsharp_any_active && !__gsharp_launch_error.HasError())
 {
 __gsharp_any_active = false;
 int32_t __gsharp_threads_per_block = (int32_t)(__gsharp_block_dim_x * __gsharp_block_dim_y * __gsharp_block_dim_z);
-#pragma omp parallel for schedule(static)
 for (int32_t __gsharp_thread_index = 0; __gsharp_thread_index < __gsharp_threads_per_block; __gsharp_thread_index++)
 {
 if (__gsharp_launch_error.HasError()) continue;
@@ -329,7 +327,15 @@ if (__gsharp_contexts[__gsharp_ctx_tid].__gsharp_state != -1)
 {
 __gsharp_any_active = true;
 __gsharp_set_thread_idx(__gsharp_tx, __gsharp_ty, __gsharp_tz, __gsharp_bx, __gsharp_by, __gsharp_bz, __gsharp_block_dim_x, __gsharp_block_dim_y, __gsharp_block_dim_z, __gsharp_grid_dim_x, __gsharp_grid_dim_y, __gsharp_grid_dim_z);
+try
+{
 __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__Tier1IntegrationKernels__AllInOneKernel(__gsharp_id_0_intInput, __gsharp_id_1_floatInput, __gsharp_id_2_results, __gsharp_id_3_config, __gsharp_id_4_globalCounter, __gsharp_id_5_count, __gsharp_id_6_dynamicSharedSize, &__gsharp_contexts[__gsharp_ctx_tid]);
+}
+catch (const __gsharp_step_abort&) {}
+catch (const std::bad_alloc&)
+{
+__gsharp_trap(GSharpErrorCode::InvalidOperation, ""G#: the native CPU path could not allocate memory for a kernel step"");
+}
 }
 }
 }
@@ -488,7 +494,7 @@ return;
 }
 
 [System.Runtime.InteropServices.UnmanagedFunctionPointer(System.Runtime.InteropServices.CallingConvention.Cdecl)]
-private unsafe delegate void AllInOneKernel_Delegate(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy intInput, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy floatInput, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy results, global::Kassyi.GSharp.Tests.Shared.Syntax.Tier1CustomStruct config, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy globalCounter, global::System.Int32 count, global::System.Int32 dynamicSharedSize);
+private unsafe delegate void AllInOneKernel_Delegate(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ, uint sharedMemBytes, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy intInput, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy floatInput, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy results, global::Kassyi.GSharp.Tests.Shared.Syntax.Tier1CustomStruct config, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy globalCounter, global::System.Int32 count, global::System.Int32 dynamicSharedSize);
 #pragma warning disable CS8500
 [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
@@ -599,7 +605,7 @@ fixed (global::System.Single* p_floatInput = floatInput)
 fixed (global::System.Single* p_results = results)
 fixed (global::System.UInt64* p_globalCounter = globalCounter)
 {
-hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (IntPtr)p_intInput, Length = intInput.Length }, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (IntPtr)p_floatInput, Length = floatInput.Length }, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (IntPtr)p_results, Length = results.Length }, config, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (IntPtr)p_globalCounter, Length = globalCounter.Length }, count, dynamicSharedSize);
+hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, sharedMemBytes, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (IntPtr)p_intInput, Length = intInput.Length }, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (IntPtr)p_floatInput, Length = floatInput.Length }, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (IntPtr)p_results, Length = results.Length }, config, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (IntPtr)p_globalCounter, Length = globalCounter.Length }, count, dynamicSharedSize);
 global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ThrowIfNativeError(dllPath);
 }
 }

@@ -7,12 +7,15 @@ using static GSharpInternalNames.StateMachine;
 using static GSharpInternalNames.Prelude;
 
 /// <summary>
-/// Emits CPU / OpenMP multi-threaded execution launchers and shared memory emulation wrappers for host execution.
+/// Emits CPU / OpenMP multi-threaded execution launchers for host execution.
 /// </summary>
+/// <remarks>
+/// Each block starts by resetting the shared memory arena of the OpenMP thread that runs it with the launch's
+/// <c>sharedMemBytes</c> (<c>__gsharp_reset_smem</c>); the kernel and its device functions place their
+/// <c>SharedMemory&lt;T&gt;</c> declarations in it, also those that a state machine keeps in its context (#544).
+/// </remarks>
 internal static class HostLauncherTranspiler
 {
-    private const string SharedMemoryBufferPrefix = "__gsharp_smem_buffer_";
-
     public static void WriteCpuLauncher(in MethodEmissionPlan plan,
         IReadOnlyList<VariableDeclaratorSyntax>? contextFields, ref TranspileContext context)
     {
@@ -36,7 +39,7 @@ internal static class HostLauncherTranspiler
         context.Emitter.Writer.Append(
             $"uint32_t {GridDimX}, uint32_t {GridDimY}, uint32_t {GridDimZ}, ");
         context.Emitter.Writer.Append(
-            $"uint32_t {BlockDimX}, uint32_t {BlockDimY}, uint32_t {BlockDimZ}");
+            $"uint32_t {BlockDimX}, uint32_t {BlockDimY}, uint32_t {BlockDimZ}, uint32_t {SharedMemBytes}");
 
         if (method.ParameterList.Parameters.Count > 0)
         {
@@ -71,25 +74,15 @@ internal static class HostLauncherTranspiler
                     $"int32_t {BlockY} = ({BlockLoopIndex} / {GridDimX}) % {GridDimY};");
                 context.Emitter.Writer.AppendLine(
                     $"int32_t {BlockZ} = {BlockLoopIndex} / ({GridDimX} * {GridDimY});");
-                context.Emitter.Writer.AppendLine($"{ResetSharedMemory}();");
+                context.Emitter.Writer.AppendLine($"{ResetSharedMemory}({SharedMemBytes});");
                 if (hasContext)
                 {
                     context.Emitter.Writer.AppendLine(
                         $"std::vector<{contextName}> {Contexts}({BlockDimX} * {BlockDimY} * {BlockDimZ});");
 
-                    if (contextFields != null)
-                    {
-                        WriteSharedMemoryEmulationBuffers(contextFields, ref context);
-                    }
-
                     context.Emitter.Writer.AppendLine($"for (auto& {ContextItem} : {Contexts}) {{");
                     context.Emitter.Writer.AppendLine($"{ContextItem}.{State} = 0;");
                     context.Emitter.Writer.AppendLine($"{ContextItem}.{AllContexts} = {Contexts}.data();");
-
-                    if (contextFields != null)
-                    {
-                        WriteSharedMemoryEmulationAssignments(contextFields, ref context);
-                    }
 
                     context.Emitter.Writer.AppendLine("}");
                     context.Emitter.Writer.AppendLine($"std::atomic<bool> {AnyActive}{{true}};");
@@ -113,76 +106,13 @@ internal static class HostLauncherTranspiler
         }
     }
 
-    private static void WriteSharedMemoryEmulationBuffers(IReadOnlyList<VariableDeclaratorSyntax> contextFields,
-        ref TranspileContext context)
-    {
-        foreach (var field in contextFields)
-        {
-            var typeSyntax = (field.Parent as VariableDeclarationSyntax)?.Type;
-            if (typeSyntax is not GenericNameSyntax { Identifier.ValueText: TypeConstants.SharedMemoryType })
-            {
-                continue;
-            }
-
-            var typeSymbolField = context.Query.SemanticModel.GetTypeSymbol(typeSyntax) as INamedTypeSymbol;
-            var typeArg = typeSymbolField?.TypeArguments[0];
-
-            var initializer = field.Initializer?.Value;
-            var sizeExpression =
-                initializer != null &&
-                InitializationSyntaxExtractor.TryGetObjectCreationFirstArgument(initializer, out var sizeArg)
-                    ? sizeArg
-                    : null;
-
-            if (typeArg == null || sizeExpression == null)
-            {
-                continue;
-            }
-
-            context.Emitter.Writer.Append("std::vector<");
-            context.Emitter.Dialect.AppendType(ref context, typeArg);
-            context.Emitter.Writer.Append("> ");
-            AppendSharedMemoryBufferName(field, ref context);
-            using (context.Emitter.Writer.Parentheses())
-            {
-                context.Visitor.Visit(sizeExpression);
-            }
-
-            context.Emitter.Writer.AppendLine(";");
-        }
-    }
-
-    private static void WriteSharedMemoryEmulationAssignments(IReadOnlyList<VariableDeclaratorSyntax> contextFields,
-        ref TranspileContext context)
-    {
-        foreach (var field in contextFields)
-        {
-            var typeSyntax = (field.Parent as VariableDeclarationSyntax)?.Type;
-            if (typeSyntax is not GenericNameSyntax { Identifier.ValueText: TypeConstants.SharedMemoryType })
-            {
-                continue;
-            }
-
-            context.Emitter.Writer.Append($"{ContextItem}.");
-            CppNameResolver.AppendDeclaredName(field, field.Identifier, ref context);
-            context.Emitter.Writer.Append(".data = ");
-            AppendSharedMemoryBufferName(field, ref context);
-            context.Emitter.Writer.AppendLine(".data();");
-        }
-    }
-
-    private static void AppendSharedMemoryBufferName(VariableDeclaratorSyntax field, ref TranspileContext context)
-    {
-        context.Emitter.Writer.Append(SharedMemoryBufferPrefix);
-        CppNameResolver.AppendDeclaredName(field, field.Identifier, ref context);
-    }
-
     private static void WriteBlockLoop(MethodDeclarationSyntax method, string methodName, bool hasContext,
         bool hasAutoResult, ref TranspileContext context)
     {
         context.Emitter.Writer.AppendLine(
             $"int32_t {ThreadsPerBlock} = (int32_t)({BlockDimX} * {BlockDimY} * {BlockDimZ});");
-        context.Emitter.Writer.AppendLine("#pragma omp parallel for schedule(static)");
+        // [WHY] The threads of a block run one after another on the OpenMP thread that runs the block: the shared memory
+        // arena and the warp exchange of the block belong to that thread, so a nested parallel loop must not spread them
         context.Emitter.Writer.AppendLine(
             $"for (int32_t {ThreadLoopIndex} = 0; {ThreadLoopIndex} < {ThreadsPerBlock}; {ThreadLoopIndex}++)");
         using (context.Emitter.Writer.Scope())
@@ -211,32 +141,54 @@ internal static class HostLauncherTranspiler
 
                 context.Emitter.Writer.AppendLine(
                     $"{SetThreadIndex}({ThreadX}, {ThreadY}, {ThreadZ}, {BlockX}, {BlockY}, {BlockZ}, {BlockDimX}, {BlockDimY}, {BlockDimZ}, {GridDimX}, {GridDimY}, {GridDimZ});");
-                context.Emitter.Writer.Append(methodName);
-                using (context.Emitter.Writer.Parentheses())
+                WriteKernelCall(method, methodName, hasContext, hasAutoResult, ref context);
+            }
+        }
+    }
+
+    // A step that cannot go on (__gsharp_trap_abort, or memory that cannot be allocated) ends with an exception, which
+    // stops here, inside the iteration of the OpenMP loop; the error slot then stops the launch:
+    // try { <kernel>(<arguments>); } catch (const __gsharp_step_abort&) {} catch (const std::bad_alloc&) { __gsharp_trap(...); }
+    private static void WriteKernelCall(MethodDeclarationSyntax method, string methodName, bool hasContext,
+        bool hasAutoResult, ref TranspileContext context)
+    {
+        context.Emitter.Writer.AppendLine("try");
+        using (context.Emitter.Writer.Scope())
+        {
+            context.Emitter.Writer.Append(methodName);
+            using (context.Emitter.Writer.Parentheses())
+            {
+                var isFirst = true;
+
+                foreach (var parameter in method.ParameterList.Parameters)
                 {
-                    var isFirst = true;
-
-                    foreach (var parameter in method.ParameterList.Parameters)
-                    {
-                        AppendArgumentSeparator(ref isFirst, ref context);
-                        CppNameResolver.AppendDeclaredName(parameter, parameter.Identifier, ref context);
-                    }
-
-                    if (hasContext)
-                    {
-                        AppendArgumentSeparator(ref isFirst, ref context);
-                        context.Emitter.Writer.Append($"&{Contexts}[{ContextThreadIndex}]");
-                    }
-
-                    if (hasAutoResult)
-                    {
-                        AppendArgumentSeparator(ref isFirst, ref context);
-                        context.Emitter.Writer.Append(Buffer);
-                    }
+                    AppendArgumentSeparator(ref isFirst, ref context);
+                    CppNameResolver.AppendDeclaredName(parameter, parameter.Identifier, ref context);
                 }
 
-                context.Emitter.Writer.AppendLine(";");
+                if (hasContext)
+                {
+                    AppendArgumentSeparator(ref isFirst, ref context);
+                    context.Emitter.Writer.Append($"&{Contexts}[{ContextThreadIndex}]");
+                }
+
+                if (hasAutoResult)
+                {
+                    AppendArgumentSeparator(ref isFirst, ref context);
+                    context.Emitter.Writer.Append(Buffer);
+                }
             }
+
+            context.Emitter.Writer.AppendLine(";");
+        }
+
+        // The failure was reported before the throw
+        context.Emitter.Writer.AppendLine($"catch (const {StepAbort}&) {{}}");
+        context.Emitter.Writer.AppendLine("catch (const std::bad_alloc&)");
+        using (context.Emitter.Writer.Scope())
+        {
+            context.Emitter.Writer.AppendLine(
+                $"{Trap}(GSharpErrorCode::InvalidOperation, \"G#: the native CPU path could not allocate memory for a kernel step\");");
         }
     }
 

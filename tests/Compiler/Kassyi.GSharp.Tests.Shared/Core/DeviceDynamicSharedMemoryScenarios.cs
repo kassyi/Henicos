@@ -113,6 +113,19 @@ internal static class DeviceDynamicSharedMemoryScenarios
         }
     }
 
+    // D6 on the native CPU path: the helper's region is not the last one when it grows, which CUDA traps (#544, C10)
+    public static void GrowingHelperAfterCallerDeclarationThrows(Action<Action> run)
+    {
+        const int smallCount = 8;
+        var output = new int[Length];
+
+        var exception = Assert.Throws<InvalidOperationException>(() =>
+            run(() => DeviceDynamicSharedMemoryKernels.LaunchGrowAfterCallerKernel(output, smallCount, Length,
+                blockDimX: Length, sharedMemBytes: 3 * Length * sizeof(int))));
+
+        Assert.Contains("G#: a shared memory declaration grew after a later declaration", exception.Message);
+    }
+
     // D7
     public static void RecursiveHelperSharesOneBufferAndDoesNotOverlapCaller(Action<Action> run)
     {

@@ -163,7 +163,7 @@ On CUDA the compiler carves every dynamic declaration out of the one dynamic buf
 
 The other dialects place regions differently, so a layout computed for CUDA does not describe them:
 
-- The CPU (native) runtime keeps one table per block: the first thread of the block to reach a declaration places its region at the end of the buffer, aligned to `alignof(T)` only. Static declarations are placed the same way, in the same 64 KB buffer, and count toward its limit of 64 KB and 64 declarations per block.
+- The CPU (native) runtime keeps one table per block: the first thread of the block to reach a dynamic declaration places its region with the CUDA arithmetic (rules 2 and 3) in a buffer of exactly `sharedMemBytes`, so a launch that CUDA rejects for its size fails on the CPU too. Static declarations get a buffer each, are not counted in `sharedMemBytes`, and have no limit of size or number on the CPU.
 - Managed execution gives every declaration an array of its own; there is no shared buffer, no offset and no alignment beyond the element type.
 
 On CUDA every thread of a kernel keeps a table of the regions, with one entry (slot) for each dynamic declaration the kernel can reach, numbered in the order of the site keys; the offsets in it are filled in the run-time order above. A device function that reaches a dynamic declaration receives the table as a hidden last parameter. Such a device function therefore cannot be passed as a delegate (a method group, as in `Func<int, int> f = Scratch;`) and cannot be reached from a member of a struct (a method, a computed property, an operator): the compiler reports [GSH0003](../diagnostics/GSH0003.md), in every dialect, because the analyzer checks the CUDA translation. Call it directly, from a kernel, another device function, or a local function or lambda written inside one of them.
@@ -200,7 +200,7 @@ A declaration reached again with a larger count grows its region:
 
 - CUDA and the CPU: while the region is the last one placed, it grows in place and keeps its contents. A region first reached with a count of 0 starts at the current end of the buffer, so it can grow in place as long as no other region is placed after it.
 - CUDA: when another region has been placed after it, the region cannot move (moving would need every thread of the block at the same point), so the launch traps.
-- CPU: when another region has been placed after it, the runtime moves the region to the end of the buffer and copies its contents.
+- CPU: when another region has been placed after it, the launch throws `InvalidOperationException`, as CUDA traps.
 - Managed: the order does not matter. The region keeps its array when the array is large enough for the new count, and otherwise moves to a new array with its contents copied.
 
 Declare a region that grows last, or declare it with its largest count first.
@@ -209,12 +209,12 @@ Declare a region that grows last, or declare it with its largest count first.
 
 | Condition | CUDA | CPU (native) | Managed |
 | --- | --- | --- | --- |
-| The regions end past `sharedMemBytes` | Trap | Not checked (`sharedMemBytes` is not read); above 64 KB or 64 declarations of one block the process ends (`std::abort`) | Not checked |
-| A negative count | Trap | Not checked: the byte count wraps around, so the region may overlap the others or the process ends (`std::abort`) | No region; the first element access throws `IndexOutOfRangeException` |
+| The regions end past `sharedMemBytes` | Trap | `ArgumentOutOfRangeException` naming the declaration, the bytes it needs and `sharedMemBytes` | Not checked |
+| A negative count | Trap | `ArgumentOutOfRangeException` (the count arrives as at least 2^63 bytes, as on CUDA) | No region; the first element access throws `IndexOutOfRangeException` |
 | A count of 0 | Empty region | Empty region | No region; the first element access throws `IndexOutOfRangeException` |
-| A larger count for a region that is not the last | Trap | Moved and copied | Grows; copied to a new array when the old one is too small |
+| A larger count for a region that is not the last | Trap | `InvalidOperationException` | Grows; copied to a new array when the old one is too small |
 
-On CUDA the check is `bytes > sharedMemBytes || offset + bytes > sharedMemBytes`, so a negative count, which arrives as at least 2^63 bytes, traps instead of wrapping. A trap surfaces as a `CudaException` from the launch, and it leaves the CUDA context of the process unusable: later CUDA calls in the same process fail too. Size `sharedMemBytes` from the calculation above, and keep counts non-negative.
+On CUDA and the native CPU path the check is `bytes > sharedMemBytes || offset + bytes > sharedMemBytes`, so a negative count, which arrives as at least 2^63 bytes, fails instead of wrapping. The CPU path does not check the limits of the GPU model (48 KB per block without the opt-in): it checks the meaning of the kernel, not the size of a particular GPU. A trap surfaces as a `CudaException` from the launch, and it leaves the CUDA context of the process unusable: later CUDA calls in the same process fail too. Size `sharedMemBytes` from the calculation above, and keep counts non-negative.
 
 #### Threads must reach dynamic declarations alike
 

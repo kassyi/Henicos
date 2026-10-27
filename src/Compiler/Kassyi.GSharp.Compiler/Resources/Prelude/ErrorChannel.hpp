@@ -83,3 +83,15 @@ inline void __gsharp_trap(GSharpErrorCode code, const char* message)
         __gsharp_host_last_error.Report(code, message);
     }
 }
+
+// Thrown by __gsharp_trap_abort to end the kernel step of the current thread; the launcher catches it around the kernel
+// call, inside its OpenMP loop, and stops the launch through the error slot.
+struct __gsharp_step_abort {};
+
+// Records a failure after which the step cannot go on (a shared memory placement that fails: there is no memory to hand
+// out), then ends the step. The launcher stops the launch, and the host throws the exception of the code.
+[[noreturn]] inline void __gsharp_trap_abort(GSharpErrorCode code, const char* message)
+{
+    __gsharp_trap(code, message);
+    throw __gsharp_step_abort{};
+}

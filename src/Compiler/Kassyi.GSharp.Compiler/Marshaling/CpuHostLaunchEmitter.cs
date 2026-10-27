@@ -45,7 +45,7 @@ internal static class CpuHostLaunchEmitter
         using (writer.Parentheses())
         {
             writer.Append(
-                "uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ");
+                "uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ, uint sharedMemBytes");
             foreach (var p in kernel.Host.Parameters)
             {
                 writer.Append(", ");
@@ -278,7 +278,8 @@ internal static class CpuHostLaunchEmitter
         writer.Append("hfunc");
         using (writer.Parentheses())
         {
-            writer.Append("gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ");
+            // The native launcher places the dynamic shared memory declarations in sharedMemBytes (#544)
+            writer.Append("gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, sharedMemBytes");
 
             foreach (var shape in kernel.Parameters)
             {

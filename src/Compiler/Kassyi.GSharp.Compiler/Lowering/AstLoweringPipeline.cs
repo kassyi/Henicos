@@ -59,7 +59,7 @@ public static class AstLoweringPipeline
         hoistedBody = branchRewriter.Rewrite(hoistedBody);
 
         var (contextHoistedBody, contextFields) =
-            new ContextHoister(copiedParameters, isDeviceFunction: deviceFunction != null, bodyModel, deviceFunction)
+            new ContextHoister(copiedParameters, bodyModel, deviceFunction)
                 .Hoist(hoistedBody);
         var lowerer = new StateMachineLowerer(isDeviceFunction: deviceFunction != null, bodyModel);
         var stateMachineBody = lowerer.Lower(contextHoistedBody);
