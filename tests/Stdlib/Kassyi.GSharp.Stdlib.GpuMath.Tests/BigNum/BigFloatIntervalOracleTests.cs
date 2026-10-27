@@ -165,6 +165,188 @@ public class BigFloatIntervalOracleTests
         Assert.False(BigFloatIntervalOracle.IsRzOfLog(4, -2, BigInteger.One << 31, -31, false, 32));
     }
 
+    // The interval of k·ln 2 contains k times the 100-digit decimal interval of ln 2 (OEIS A002162), and its relative
+    // width is below 2^-precision. k = 1 is x = 2, k = 40 and k = -1000 are powers of two far from 1.
+    [Theory]
+    [Scenario(TestScenario.HappyPath)]
+    // mutant: BigFloatIntervalOracle.cs LogInterval `var radius = BigInteger.One << 16;` -> `BigInteger.One << 400`
+    // (an enclosure, but far wider than claimed)
+    // mutant: BigFloatIntervalOracle.cs LogInterval Halley step `(xScaled - eScaled) << (denShift + 1)` ->
+    // `<< denShift` (half steps: the center lags, the proof then throws)
+    [InlineData(1, 64)]
+    [InlineData(1, 200)]
+    [InlineData(40, 200)]
+    [InlineData(-1000, 200)]
+    public void LogInterval_OfPowerOfTwo_ContainsDigitsOfLn2(int k, int precision)
+    {
+        var (loNum, hiNum, denShift) = BigFloatIntervalOracle.LogInterval(1, k, precision);
+
+        var digits = BigInteger.Parse(Ln2Digits);
+        var scale = BigInteger.Pow(10, 100);
+
+        // lo <= k·D / 10^100 and k·(D + 1) / 10^100 <= hi for k > 0, the ends swapped for k < 0 (both scaled by 2^den).
+        var lowDigits = k > 0 ? k * digits : k * (digits + 1);
+        var highDigits = k > 0 ? k * (digits + 1) : k * digits;
+        Assert.True(loNum * scale <= lowDigits << denShift, "lo is above k·ln 2");
+        Assert.True(highDigits << denShift <= hiNum * scale, "hi is below k·ln 2");
+        Assert.True(
+            (hiNum - loNum) << precision < BigInteger.Abs(loNum),
+            $"the width 2^-{denShift}·{hiNum - loNum} is not below 2^-{precision} relative");
+    }
+
+    // Next to 1 the enclosure keeps its relative width: ln(1 + 2^-200) = 2^-200 - 2^-401 + 2^-601/3 - ...
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    // mutant: BigFloatIntervalOracle.cs LogInterval `(int)Math.Max(0, 2 - top)` -> `0` (absolute bits only: the width
+    // is no longer relative)
+    public void LogInterval_NextToOne_IsRelative()
+    {
+        var (loNum, hiNum, denShift) = BigFloatIntervalOracle.LogInterval((BigInteger.One << 200) + 1, -200, 128);
+
+        // 2^-200 - 2^-401 < ln x < 2^-200 - 2^-401 + 2^-601, compared as lo · 2^601 <= (2^401 - 2^200) · 2^den.
+        var lower = (BigInteger.One << 401) - (BigInteger.One << 200);
+        Assert.True(loNum << 601 <= lower << denShift, "lo is above ln(1 + 2^-200)");
+        Assert.True((lower + 1) << denShift <= hiNum << 601, "hi is below ln(1 + 2^-200)");
+        Assert.True((hiNum - loNum) << 128 < loNum, "the width is not below 2^-128 relative");
+    }
+
+    // ln 1 = 0 exactly.
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void LogInterval_OfOne_IsZero()
+    {
+        Assert.Equal((BigInteger.Zero, BigInteger.Zero, 0), BigFloatIntervalOracle.LogInterval(8, -3, 64));
+    }
+
+    // RZ_p of roots from integer roots (Newton on integers, no logarithm): sqrt 2, 10^(1/4), 2^(3/2) = sqrt 8,
+    // 5^(-1/2) and the non-dyadic rationals 3^-1 and (9/4)^(-1/2) = 2/3.
+    [Theory]
+    [Scenario(TestScenario.HappyPath)]
+    // mutant: BigFloatIntervalOracle.cs PowInterval `var tLo = yNegative ? -(yNum * hiNum) : yNum * loNum;` ->
+    // `yNum * loNum` (the sign of y dropped): the negative exponents
+    [InlineData(64, "2", 0, "1", -1, false)]
+    [InlineData(200, "2", 0, "1", -1, false)]
+    [InlineData(64, "10", 0, "1", -2, false)]
+    [InlineData(64, "2", 0, "3", -1, false)]
+    [InlineData(64, "5", 0, "1", -1, true)]
+    [InlineData(64, "3", 0, "1", 0, true)]
+    [InlineData(64, "9", -2, "1", -1, true)]
+    public void PowRz_MatchesIntegerRoots(int p, string xSig, int xExp, string ySig, int yExp, bool yNegative)
+    {
+        var x = BigInteger.Parse(xSig);
+        var y = BigInteger.Parse(ySig);
+
+        var (sig, exp) = BigFloatIntervalOracle.PowRz(x, xExp, y, yExp, yNegative, p);
+
+        Assert.Equal(RootRz(x, xExp, y, yExp, yNegative, p), new Dyadic(sig, exp));
+    }
+
+    // Exactly representable powers: the bounds never round alike, and the exact check returns the value itself.
+    [Theory]
+    [Scenario(TestScenario.Boundary)]
+    // mutant: BigFloatIntervalOracle.cs IsExactPower `return BigInteger.Pow(vOdd, (int)twoK) == BigInteger.Pow(xOdd, (int)n);`
+    // -> `return false;` (PowRz throws: 3^20, 81^(3/4), (9/4)^(1/2))
+    // mutant: BigFloatIntervalOracle.cs IsExactPower `if (vTwos * twoK != xTwos * n)` -> `if (vTwos != xTwos * n)`
+    // (4^(1/2), 64^(1/2), (9/4)^(1/2))
+    [InlineData(32, "2", 0, "3", 0, false, "8")]
+    [InlineData(128, "2", 0, "1000", 0, false, "2^1000")]
+    [InlineData(128, "4", 0, "1", -1, false, "2")]
+    [InlineData(128, "9", -2, "1", -1, false, "3/2")]
+    [InlineData(128, "2", 0, "3", 0, true, "1/8")]
+    [InlineData(128, "81", 0, "3", -2, false, "27")]
+    [InlineData(128, "64", 0, "1", -1, false, "8")]
+    [InlineData(32, "3", 0, "20", 0, false, "3^20")]
+    public void PowRz_OfExactPower_IsTheValue(
+        int p, string xSig, int xExp, string ySig, int yExp, bool yNegative, string expected)
+    {
+        var (sig, exp) = BigFloatIntervalOracle.PowRz(BigInteger.Parse(xSig), xExp, BigInteger.Parse(ySig), yExp, yNegative, p);
+
+        var value = expected switch
+        {
+            "8" => new Dyadic(8, 0),
+            "2^1000" => new Dyadic(1, 1000),
+            "2" => new Dyadic(2, 0),
+            "3/2" => new Dyadic(3, -1),
+            "1/8" => new Dyadic(1, -3),
+            "27" => new Dyadic(27, 0),
+            _ => new Dyadic(BigInteger.Pow(3, 20), 0),
+        };
+        Assert.Equal(BigFloatIntervalOracle.RoundToBits(value, p), new Dyadic(sig, exp));
+    }
+
+    // A power one bit longer than p is not exact: RZ_32(3^21) drops its two low bits (3^21 has 34 bits).
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void PowRz_OfPowerLongerThanP_Truncates()
+    {
+        var (sig, exp) = BigFloatIntervalOracle.PowRz(3, 0, 21, 0, false, 32);
+
+        Assert.Equal(new Dyadic(BigInteger.Pow(3, 21) >> 2, 2), new Dyadic(sig, exp));
+    }
+
+    // PowRz agrees with Math.Pow at 32 bits: Math.Pow is within an ulp of the double (2^-52), far inside the 32-bit
+    // cell for these inputs.
+    [Theory]
+    [Scenario(TestScenario.HappyPath)]
+    [InlineData(1.5, 2.75)]
+    [InlineData(10.0, 0.3)]
+    [InlineData(0.1, 3.7)]
+    [InlineData(123.456, -1.25)]
+    [InlineData(2.0, 100.5)]
+    [InlineData(0.75, -300.125)]
+    public void PowRz_AgreesWithMathPow(double x, double y)
+    {
+        var (xNum, xDenShift) = ToRatio(x);
+        var (yNum, yDenShift) = ToRatio(y);
+
+        var (sig, exp) = BigFloatIntervalOracle.PowRz(xNum, -xDenShift, BigInteger.Abs(yNum), -yDenShift, yNum.Sign < 0, 32);
+
+        var (powNum, powDenShift) = ToRatio(Math.Pow(x, y));
+        Assert.Equal(BigFloatIntervalOracle.RoundToBits(new Dyadic(powNum, -powDenShift), 32), new Dyadic(sig, exp));
+    }
+
+    // RZ_p(x^(n/2^k)) for x^n = xSig^n · 2^(xExp·n), k <= 2, from the integer 2^k-th root of a scaled x^n: the cell
+    // of RZ_p is found from the bit length of the root.
+    private static Dyadic RootRz(BigInteger xSig, int xExp, BigInteger ySig, int yExp, bool yNegative, int p)
+    {
+        var k = -yExp;
+        var n = (int)ySig;
+        var power = BigInteger.Pow(xSig, n);
+        var powerExp = (long)xExp * n;
+
+        // x^y = (power · 2^powerExp)^(±1/2^k). Scale so that the root has p + 64 bits, then truncate to p bits.
+        var rootBits = p + 64;
+        var degree = 1 << k;
+        if (!yNegative)
+        {
+            // root(power · 2^(powerExp + degree·s)) · 2^-s with power · 2^(powerExp + degree·s) an integer.
+            var s = rootBits - (int)((power.GetBitLength() + powerExp) / degree);
+            var radicand = power << checked((int)(powerExp + degree * s));
+            return BigFloatIntervalOracle.RoundToBits(new Dyadic(IntegerRoot(radicand, degree), -s), p);
+        }
+
+        // 1 / root(power · 2^powerExp) = root(2^(degree·s - powerExp) / power) · 2^-s.
+        var t = rootBits + (int)((power.GetBitLength() + powerExp) / degree) + 1;
+        var reciprocal = (BigInteger.One << checked((int)(degree * t - powerExp))) / power;
+        return BigFloatIntervalOracle.RoundToBits(new Dyadic(IntegerRoot(reciprocal, degree), -t), p);
+    }
+
+    // floor(value^(1/degree)) by Newton's iteration from above.
+    private static BigInteger IntegerRoot(BigInteger value, int degree)
+    {
+        var root = BigInteger.One << (int)((value.GetBitLength() + degree - 1) / degree);
+        while (true)
+        {
+            var next = ((degree - 1) * root + value / BigInteger.Pow(root, degree - 1)) / degree;
+            if (next >= root)
+            {
+                return root;
+            }
+
+            root = next;
+        }
+    }
+
     // RZ_p(ln 2) from the 100 digits of OEIS A002162 (enough for p <= 300).
     private static Dyadic Ln2Rz(int p)
     {

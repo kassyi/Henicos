@@ -172,13 +172,36 @@ public interface IGpuBigFloatArithmetic
         GpuBigIntMemoryHandle resultSig);
 
     /// <summary>
-    /// Raises an arbitrary-precision floating-point base to an arbitrary-precision floating-point exponent (<c>base^exp</c>).
+    /// Raises a positive arbitrary-precision floating-point base to an arbitrary-precision floating-point exponent
+    /// (<c>x^y</c>).
     /// </summary>
     /// <param name="context">The execution context providing memory workspace and CUDA stream dispatch.</param>
-    /// <param name="baseValue">The base floating-point operand.</param>
-    /// <param name="exponentValue">The power exponent floating-point operand.</param>
-    /// <param name="resultSig">The memory handle where the computed power significand will be stored.</param>
-    /// <returns>A <see cref="GpuFloatResult"/> containing the resulting exponent and sign flag.</returns>
+    /// <param name="baseValue">The base <c>x</c>; positive.</param>
+    /// <param name="exponentValue">The exponent <c>y</c>.</param>
+    /// <param name="resultSig">The memory handle where the computed power significand will be stored. Its word count
+    /// <c>n</c> sets the precision of the result, <c>p = 32·n</c> bits.</param>
+    /// <returns>A <see cref="GpuFloatResult"/> containing the resulting exponent and sign flag (always positive).</returns>
+    /// <exception cref="InvalidOperationException"><paramref name="baseValue"/> is zero or negative, whatever the
+    /// exponent (also for <c>y = 0</c>).</exception>
+    /// <exception cref="OverflowException">The exponent of the result does not fit in <see cref="int"/>: "Pow overflow"
+    /// for a result above 1, "Pow underflow" for one below 1.</exception>
+    /// <remarks>
+    /// <para>
+    /// The significand fills <paramref name="resultSig"/> with its top bit set. The result is the exact power rounded
+    /// toward zero to <c>p</c> bits, like <see cref="Exp"/> and <see cref="Log"/>, for every positive base; the GPU and
+    /// the CPU provider return the same bits.
+    /// </para>
+    /// <para>
+    /// A power that is exactly a <c>p</c>-bit value is found first and returned as it is: <c>x^0 = 1</c>,
+    /// <c>1^y = 1</c>, <c>2^3 = 8</c>, <c>4^0.5 = 2</c>, <c>(9/4)^0.5 = 3/2</c>, <c>2^-3 = 1/8</c>, and every other
+    /// dyadic power of at most <c>p</c> significant bits, for an integer <c>y</c> and for <c>y = n / 2^k</c> (the check
+    /// of MPFR's <c>mpfr_pow_is_exact</c>). Every other power is computed as <c>e^(y·L)</c> with <c>L ≈ ln x</c> to the
+    /// Exp precision plus 64 bits and <c>y·L</c> formed exactly; the rounding check covers the Exp bound and the error
+    /// that <c>L</c> carries into <c>y·L</c>, and retries as for <see cref="Exp"/>. It always ends, because such a power
+    /// is never a <c>p</c>-bit value; powers next to one, such as <c>(2 + 2^-200)^3</c> at <c>p = 128</c>, take two
+    /// attempts or more.
+    /// </para>
+    /// </remarks>
     GpuFloatResult Pow(
         ref GpuBigIntExecutionContext context,
         in GpuFloatOperand baseValue,

@@ -68,6 +68,11 @@ internal readonly record struct ExpPlan(
 /// </list>
 /// The guard words are <c>ceil((bits(B) + 16) / 32)</c>.
 /// </para>
+/// <para>
+/// Pow runs its Log at the Exp precision plus 64 bits (<see cref="PowLogResultBits"/>) and checks the Exp approximation
+/// of <c>e^(y·L)</c> with <c>B_E + D</c>, <c>D</c> the error that the bound of <c>L</c> carries into <c>y·L</c>
+/// (<see cref="PowArgumentErrorBound"/>).
+/// </para>
 /// </remarks>
 internal static class TranscendentalPlanner
 {
@@ -91,6 +96,10 @@ internal static class TranscendentalPlanner
 
     // 2^32: every Exp argument at or above it in magnitude overflows (or underflows) the exponent of the result.
     private const double ArgumentLimit = 4294967296.0;
+
+    // The bits that the Log of Pow carries beyond the Exp precision: 33 for |y·ln x| < 2^32 and 31 of margin, which keep
+    // the argument error at one unit (PowLogResultBits).
+    private const int PowLogExtraBits = 64;
 
     /// <summary>
     /// Plans a Log of <c>x = m·2^e</c>, <c>m ∈ [3/4, 3/2)</c>.
@@ -259,31 +268,136 @@ internal static class TranscendentalPlanner
     internal static ExpPlan PlanExp(
         int resultBits, double xApprox, GpuBigFloatTranscendentalOptions options, int extraGuardWords = 0)
     {
-        ArgumentOutOfRangeException.ThrowIfLessThan(resultBits, 1);
-        ArgumentOutOfRangeException.ThrowIfNegative(extraGuardWords);
-        ArgumentNullException.ThrowIfNull(options);
+        ValidatePlanArguments(resultBits, options, extraGuardWords);
+        var reduction = ExpReduction(resultBits, xApprox, "Exp");
+        var series = PlanExpSeries(resultBits, options, extraGuardWords);
+        var ln2FractionBits = checked(series.WorkingBits - series.Halvings + BitLength(reduction) + 2);
+        return series with { Reduction = reduction, Ln2FractionBits = ln2FractionBits };
+    }
 
+    /// <summary>
+    /// Returns the working precision <c>W</c> of every Exp of <paramref name="resultBits"/> bits: the series part of the
+    /// plan does not depend on the argument.
+    /// </summary>
+    /// <param name="resultBits">The result precision <c>p</c>; at least 1.</param>
+    /// <param name="options">The tuning parameters.</param>
+    /// <param name="extraGuardWords">Guard words beyond those the bound needs.</param>
+    /// <returns><see cref="ExpPlan.WorkingBits"/> of <see cref="PlanExp"/> for any argument in range.</returns>
+    /// <remarks>Pow plans its Log from it before the argument <c>y·ln x</c> of its Exp exists.</remarks>
+    internal static int ExpWorkingBits(int resultBits, GpuBigFloatTranscendentalOptions options, int extraGuardWords = 0)
+    {
+        ValidatePlanArguments(resultBits, options, extraGuardWords);
+        return PlanExpSeries(resultBits, options, extraGuardWords).WorkingBits;
+    }
+
+    /// <summary>
+    /// Checks that an Exp argument (Exp itself, or <c>y·ln x</c> of Pow) can have a result in range, and returns the
+    /// multiple <c>k = floor(x / ln 2) − 1</c> of ln 2 that reduces it.
+    /// </summary>
+    /// <param name="resultBits">The result precision <c>p</c>.</param>
+    /// <param name="xApprox"><c>x</c> to a relative error of about <c>2^-52</c>.</param>
+    /// <param name="operation">The name in the exception message (<c>Exp</c> or <c>Pow</c>).</param>
+    /// <returns>The reduction <c>k</c>.</returns>
+    /// <exception cref="OverflowException"><c>|x| ≥ 2^32</c>, or the exponent of every possible result lies outside
+    /// <see cref="int"/>.</exception>
+    internal static long ExpReduction(int resultBits, double xApprox, string operation)
+    {
         // |x| >= 2^32 is out of range whatever p is; this also keeps k in range of long below.
         if (!(Math.Abs(xApprox) < ArgumentLimit))
         {
-            throw ExpOutOfRange(negative: xApprox < 0);
+            throw OutOfRange(operation, negative: xApprox < 0);
         }
 
         var reduction = (long)Math.Floor(xApprox / Ln2) - 1;
 
-        // e^x lies in (2^(k+1), 2^(k+2)) up to 2^-18, so its p-bit exponent lies in [k + 1 - p, k + 3 - p], one more
-        // after a rounding carry. Throw only when every value of that range is outside int; the exact exponent is
-        // checked again when the result is assembled.
+        // e^x lies in (2^(k+1), 2^(k+2)) up to 2^-18, so the exponent of RZ_p(e^x) lies in [k + 1 - p, k + 3 - p]
+        // (rounding toward zero never carries). Throw only when every value of that range is outside int (the underflow
+        // side tests k + 4 - p, one beyond the range, which only throws less); the exact exponent is checked again when
+        // the result is assembled.
         if (reduction + 1L - resultBits > int.MaxValue)
         {
-            throw ExpOutOfRange(negative: false);
+            throw OutOfRange(operation, negative: false);
         }
 
         if (reduction + 4L - resultBits < int.MinValue)
         {
-            throw ExpOutOfRange(negative: true);
+            throw OutOfRange(operation, negative: true);
         }
 
+        return reduction;
+    }
+
+    /// <summary>
+    /// Returns the result precision of the Log of Pow, <c>W_E + 64</c> bits for an Exp of <c>W_E</c> working bits.
+    /// </summary>
+    /// <remarks>
+    /// The Log then has <c>W_L ≥ W_E + 64 + bits(B_L) + 16</c> working bits. With <c>|y·L| &lt; 2^32</c> (larger
+    /// arguments are out of range) its bound carries less than <c>2^33·B_L·2^-W_L ≤ 2^-(W_E + 47)</c> into the argument
+    /// of the Exp, so the argument error <see cref="PowArgumentErrorBound"/> is one unit.
+    /// </remarks>
+    internal static int PowLogResultBits(int expWorkingBits) => checked(expWorkingBits + PowLogExtraBits);
+
+    /// <summary>
+    /// Returns <c>D = ceil(|y|·B_L·2^(U_L + W_E + 2))</c>: the error that the bound of <c>L ≈ ln x</c> carries into
+    /// <c>e^(y·L) ≈ x^y</c>, in units <c>2^U_E</c> of the Exp approximation.
+    /// </summary>
+    /// <param name="ySignificand">The significand of <c>|y|</c>.</param>
+    /// <param name="yExponent">The exponent of <c>|y|</c>.</param>
+    /// <param name="logErrorBound">The bound <c>B_L</c> of the Log approximation: <c>|L − ln x| ≤ B_L·2^U_L</c>.</param>
+    /// <param name="logUnitExponent">The unit exponent <c>U_L</c> of the Log approximation.</param>
+    /// <param name="expWorkingBits">The working precision <c>W_E</c> of the Exp approximation.</param>
+    /// <returns>The bound <c>D</c>, at least 1.</returns>
+    /// <remarks>
+    /// <para>
+    /// With <c>t = y·ln x</c> and <c>t̃ = y·L</c>: <c>|t − t̃| ≤ δ = |y|·B_L·2^U_L ≤ 1</c>, and
+    /// <c>|e^t − e^t̃| = e^t̃·|e^(t − t̃) − 1| ≤ e^t̃·2δ</c> (<c>|e^u − 1| ≤ (e − 1)|u|</c> for <c>|u| ≤ 1</c>). The Exp
+    /// approximation <c>A</c> is normalized to <c>W_E + 32</c> bits with the unit <c>2^U_E</c> at <c>W_E</c> bits, so
+    /// <c>e^t̃ ≤ A + B_E·2^U_E &lt; 2^(U_E + W_E + 1)</c>, and <c>|e^t − e^t̃| ≤ 2^(U_E + W_E + 2)·δ ≤ D·2^U_E</c>.
+    /// The rounding check of Pow then uses <c>B_E + D</c>: <c>|A − x^y| ≤ (B_E + D)·2^U_E</c>.
+    /// </para>
+    /// <para>
+    /// The ceiling never rounds below one unit, also when the product lies far below it (a value below one unit is
+    /// rounded up to 1 without the shift that would allocate <c>2^(-shift)</c>).
+    /// </para>
+    /// </remarks>
+    internal static BigInteger PowArgumentErrorBound(
+        BigInteger ySignificand, long yExponent, BigInteger logErrorBound, long logUnitExponent, int expWorkingBits)
+    {
+        var scaled = ySignificand * logErrorBound;
+        var shift = checked(yExponent + logUnitExponent + expWorkingBits + 2);
+        if (shift >= 0)
+        {
+            return scaled << checked((int)shift);
+        }
+
+        if (-shift >= (long)scaled.GetBitLength())
+        {
+            return BigInteger.One;
+        }
+
+        var quotient = scaled >> (int)-shift;
+        return quotient << (int)-shift == scaled ? quotient : quotient + 1;
+    }
+
+    /// <summary>Returns the result exponent as <see cref="int"/>, or throws the overflow (or underflow) exception of
+    /// <paramref name="operation"/>.</summary>
+    internal static int ToResultExponent(long exponent, string operation) =>
+        exponent > int.MaxValue ? throw OutOfRange(operation, negative: false)
+        : exponent < int.MinValue ? throw OutOfRange(operation, negative: true)
+        : (int)exponent;
+
+    /// <summary>
+    /// Creates the exception for a result of <paramref name="operation"/> whose exponent does not fit in
+    /// <see cref="int"/>: an overflow above <c>2^int.MaxValue</c>, an underflow below <c>2^int.MinValue</c>.
+    /// </summary>
+    internal static OverflowException OutOfRange(string operation, bool negative) =>
+        negative
+            ? new OverflowException($"{operation} underflow: the result is below the smallest exponent of a big float (2^int.MinValue).")
+            : new OverflowException($"{operation} overflow: the result exceeds the largest exponent of a big float (2^int.MaxValue).");
+
+    // The series part of an Exp plan (the reduction and the ln 2 bits left at 0): s and m minimize the cost.
+    private static ExpPlan PlanExpSeries(int resultBits, GpuBigFloatTranscendentalOptions options, int extraGuardWords)
+    {
         var first = options.ExpHalvingCount ?? GpuBigFloatTranscendentalOptions.MinExpHalvingCount;
         var last = options.ExpHalvingCount ?? MaxPlannedHalvings;
         var best = default(ExpPlan);
@@ -301,9 +415,7 @@ internal static class TranscendentalPlanner
             if (cost < bestCost)
             {
                 bestCost = cost;
-                var ln2FractionBits = checked(workingBits - halvings + BitLength(reduction) + 2);
-                best = new ExpPlan(
-                    resultBits, guardWords, reduction, halvings, terms, blockSize, errorBound, ln2FractionBits);
+                best = new ExpPlan(resultBits, guardWords, 0, halvings, terms, blockSize, errorBound, 0);
             }
         }
 
@@ -364,19 +476,20 @@ internal static class TranscendentalPlanner
     /// <summary>
     /// Returns the result exponent as <see cref="int"/>, or throws the Exp overflow (or underflow) exception.
     /// </summary>
-    internal static int ToExpResultExponent(long exponent) =>
-        exponent > int.MaxValue ? throw ExpOutOfRange(negative: false)
-        : exponent < int.MinValue ? throw ExpOutOfRange(negative: true)
-        : (int)exponent;
+    internal static int ToExpResultExponent(long exponent) => ToResultExponent(exponent, "Exp");
 
     /// <summary>
     /// Creates the exception for an Exp result whose exponent does not fit in <see cref="int"/>: an overflow for a
     /// positive argument, an underflow (below <c>2^int.MinValue</c>) for a negative one.
     /// </summary>
-    internal static OverflowException ExpOutOfRange(bool negative) =>
-        negative
-            ? new OverflowException("Exp underflow: the result is below the smallest exponent of a big float (2^int.MinValue).")
-            : new OverflowException("Exp overflow: the result exceeds the largest exponent of a big float (2^int.MaxValue).");
+    internal static OverflowException ExpOutOfRange(bool negative) => OutOfRange("Exp", negative);
+
+    private static void ValidatePlanArguments(int resultBits, GpuBigFloatTranscendentalOptions options, int extraGuardWords)
+    {
+        ArgumentOutOfRangeException.ThrowIfLessThan(resultBits, 1);
+        ArgumentOutOfRangeException.ThrowIfNegative(extraGuardWords);
+        ArgumentNullException.ThrowIfNull(options);
+    }
 
     /// <summary>Returns <c>ceil(log2 value)</c>, 0 for <c>value ≤ 1</c>.</summary>
     internal static int CeilingLog2(ulong value) => value <= 1 ? 0 : 64 - BitOperations.LeadingZeroCount(value - 1);

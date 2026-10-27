@@ -12,6 +12,17 @@ namespace Kassyi.GSharp.Stdlib.GpuMath.BigNum.Providers;
 /// <para>
 /// <b>Zero-Allocation:</b> Scratch buffers are managed deterministically via workspace pools without managed heap allocations.
 /// </para>
+/// <para>
+/// <b>Transcendental functions:</b> <see cref="Exp"/>, <see cref="Log"/> and <see cref="Pow"/> run on the GPU with the
+/// host-side plan and the integer steps of <see cref="CSharpCpuBigFloatArithmetic"/>, so both return the same bits: the
+/// exact value rounded toward zero, accepted by the rounding check of Ziv and recomputed with more guard words when the
+/// error bound straddles a <c>p</c>-bit value. Exp reduces <c>x = k·ln 2 + r</c> and evaluates a Paterson–Stockmeyer
+/// Taylor polynomial at <c>r / 2^s</c> followed by <c>s</c> squarings; Log reduces <c>x = m·2^e</c> and evaluates an
+/// <c>atanh</c> series in Horner or Paterson–Stockmeyer form; Pow returns an exactly representable power directly and
+/// computes every other one as <c>e^(y·L)</c>. These algorithms serve every precision (faster ones for large precisions
+/// are not implemented); <see cref="GpuWorkspace.Transcendental"/> tunes them. In CPU fallback mode every operation,
+/// Pow included, goes to the fallback strategy.
+/// </para>
 /// </remarks>
 public sealed class GSharpKernelFloatProvider(IGpuBigFloatArithmetic fallbackStrategy)
     : IGpuBigFloatArithmetic
@@ -415,22 +426,12 @@ public sealed class GSharpKernelFloatProvider(IGpuBigFloatArithmetic fallbackStr
             throw new InvalidOperationException("Pow with negative base is not supported.");
         }
 
-        var tempWords = resultSig.NumWords;
+        if (context.GpuWorkspace.Provider is not GSharpKernelProvider || GpuKernelLoader.IsCpuFallbackMode)
+        {
+            return fallbackStrategy.Pow(ref context, in baseValue, in exponent, resultSig);
+        }
 
-        using var logResult = context.GpuWorkspace.RentTemp(tempWords);
-        var logRes = Log(ref context, in baseValue, logResult.Handle);
-
-        using var mulResult = context.GpuWorkspace.RentTemp(tempWords);
-        var mulRes = Multiply(
-            ref context,
-            in exponent,
-            new GpuFloatOperand(logResult.Handle, logRes.Exponent, logRes.IsNegative),
-            mulResult.Handle);
-
-        return Exp(
-            ref context,
-            new GpuFloatOperand(mulResult.Handle, mulRes.Exponent, mulRes.IsNegative),
-            resultSig);
+        return GpuBigFloatTranscendentals.Pow(context.GpuWorkspace, in baseValue, in exponent, resultSig);
     }
 
     /// <inheritdoc/>

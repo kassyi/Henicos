@@ -306,6 +306,103 @@ public class TranscendentalPlannerTests
         Assert.Contains(word, error.Message, StringComparison.Ordinal);
     }
 
+    // The working precision of an Exp does not depend on its argument; Pow plans its Log from it before the argument
+    // y·L exists.
+    [Theory]
+    [Scenario(TestScenario.HappyPath)]
+    // mutant: TranscendentalPlanner.cs ExpWorkingBits `resultBits + 32 * series.GuardWords` -> `resultBits + 32`
+    // (ExpForcedHalving s = 40, 200: more than one guard word)
+    [InlineData(1, null, 0)]
+    [InlineData(4, null, 0)]
+    [InlineData(4, null, 3)]
+    [InlineData(31, null, 0)]
+    [InlineData(129, null, 2)]
+    [InlineData(4, 40, 0)]
+    [InlineData(4, 200, 1)]
+    public void ExpWorkingBits_MatchesThePlan(int resultWords, int? halvings, int extraGuardWords)
+    {
+        var options = new GpuBigFloatTranscendentalOptions { ExpHalvingCount = halvings };
+
+        var workingBits = TranscendentalPlanner.ExpWorkingBits(32 * resultWords, options, extraGuardWords);
+
+        foreach (var x in new[] { -1000.5, 1e-30, 1.0, 3.0e8 })
+        {
+            Assert.Equal(TranscendentalPlanner.PlanExp(32 * resultWords, x, options, extraGuardWords).WorkingBits, workingBits);
+        }
+    }
+
+    // Pow's Log runs at the Exp precision plus 64 bits: |y·ln x| < 2^32 and 32 more bits keep the argument error D at
+    // one unit.
+    [Fact]
+    [Scenario(TestScenario.HappyPath)]
+    // mutant: TranscendentalPlanner.cs `PowLogExtraBits = 64` -> `0`
+    public void PowLogResultBits_AddsTwoWords()
+    {
+        Assert.Equal(224, TranscendentalPlanner.PowLogResultBits(160));
+        Assert.Equal(96, TranscendentalPlanner.PowLogResultBits(32));
+    }
+
+    // D = ceil(|y| · B_L · 2^(U_L + W + 2)), the argument error of Pow in units of the Exp approximation.
+    [Theory]
+    [Scenario(TestScenario.Boundary)]
+    // mutant: TranscendentalPlanner.cs PowArgumentErrorBound ceiling `quotient + 1` -> `quotient` (5.25 -> 5)
+    // mutant: TranscendentalPlanner.cs PowArgumentErrorBound `scaled << (int)shift` -> `scaled` (280 -> 35)
+    // mutant: TranscendentalPlanner.cs PowArgumentErrorBound below one unit `BigInteger.One` -> `BigInteger.Zero`
+    // mutant: TranscendentalPlanner.cs PowArgumentErrorBound `+ expWorkingBits + 2` -> `+ expWorkingBits` (D / 4):
+    // 21 / 4, 1, 7, 280
+    [InlineData("3", 0L, "7", -100L, 96, "6")] // 21 / 4 = 5.25
+    [InlineData("4", 0L, "1", -100L, 96, "1")] // 4 / 4 = 1, no rounding
+    [InlineData("1", 0L, "7", -98L, 96, "7")] // shift 0
+    [InlineData("5", 3L, "7", -98L, 96, "280")] // shift 3: 5 · 7 · 8
+    [InlineData("1", -1000000L, "7", -98L, 96, "1")] // far below one unit
+    [InlineData("1048577", 0L, "7", -150L, 96, "1")] // 7 · (2^20 + 1) / 2^52 < 1
+    public void PowArgumentErrorBound_IsTheCeiling(
+        string ySignificand, long yExponent, string logErrorBound, long logUnitExponent, int expWorkingBits, string expected)
+    {
+        var bound = TranscendentalPlanner.PowArgumentErrorBound(
+            BigInteger.Parse(ySignificand), yExponent, BigInteger.Parse(logErrorBound), logUnitExponent, expWorkingBits);
+
+        Assert.Equal(BigInteger.Parse(expected), bound);
+    }
+
+    // The Exp range checks carry the name of the operation; PlanExp reduces by the same k.
+    [Theory]
+    [Scenario(TestScenario.SadPath)]
+    // mutant: TranscendentalPlanner.cs OutOfRange `$"{operation} overflow: ..."` -> `"Exp overflow: ..."`
+    [InlineData(5e9, "Pow overflow")]
+    [InlineData(-5e9, "Pow underflow")]
+    [InlineData(1.5e9, "Pow overflow")]
+    [InlineData(-1.5e9, "Pow underflow")]
+    public void ExpReduction_OutOfRange_NamesTheOperation(double x, string words)
+    {
+        var error = Assert.Throws<OverflowException>(() => TranscendentalPlanner.ExpReduction(128, x, "Pow"));
+
+        Assert.StartsWith(words, error.Message, StringComparison.Ordinal);
+    }
+
+    [Theory]
+    [Scenario(TestScenario.HappyPath)]
+    [InlineData(1.0)]
+    [InlineData(-1000.25)]
+    [InlineData(1.48e9)]
+    public void ExpReduction_IsTheReductionOfThePlan(double x)
+    {
+        Assert.Equal(TranscendentalPlanner.PlanExp(128, x, Defaults).Reduction, TranscendentalPlanner.ExpReduction(128, x, "Exp"));
+    }
+
+    [Theory]
+    [Scenario(TestScenario.SadPath)]
+    [InlineData(2147483648L, "Pow overflow")]
+    [InlineData(-2147483649L, "Pow underflow")]
+    public void ToResultExponent_OutOfRange_NamesTheOperation(long exponent, string words)
+    {
+        var error = Assert.Throws<OverflowException>(() => TranscendentalPlanner.ToResultExponent(exponent, "Pow"));
+
+        Assert.StartsWith(words, error.Message, StringComparison.Ordinal);
+        Assert.Equal(int.MaxValue, TranscendentalPlanner.ToResultExponent(int.MaxValue, "Pow"));
+        Assert.Equal(int.MinValue, TranscendentalPlanner.ToResultExponent(int.MinValue, "Pow"));
+    }
+
     // ExpHalvingCount accepts null and [2, 4096] and rejects the rest.
     [Theory]
     [Scenario(TestScenario.SadPath)]

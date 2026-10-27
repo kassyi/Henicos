@@ -81,6 +81,12 @@ public static class GpuBigFloatVectorLinqExtensions
         /// Computes the natural exponential (<c>e^x</c>) of each element in a vectorized expression.
         /// </summary>
         /// <returns>A new vectorized expression representing the element-wise natural exponential.</returns>
+        /// <remarks>
+        /// Each element of the result is <see cref="IGpuBigFloatArithmetic.Exp"/> of its source element: the exact value
+        /// rounded toward zero to the precision of the element (32 bits per word). The elements are computed one after
+        /// another when the expression is evaluated; the first element, in index order, whose result exponent leaves
+        /// <see cref="int"/> throws its <see cref="OverflowException"/> from the evaluation.
+        /// </remarks>
         public IGpuBigFloatVectorExpression SelectExp() =>
             new FloatVectorUnaryExpression(source, FloatVectorUnaryOpKind.Exp);
 
@@ -88,6 +94,12 @@ public static class GpuBigFloatVectorLinqExtensions
         /// Computes the natural logarithm (<c>ln(x)</c>) of each element in a vectorized expression.
         /// </summary>
         /// <returns>A new vectorized expression representing the element-wise natural logarithm.</returns>
+        /// <remarks>
+        /// Each element of the result is <see cref="IGpuBigFloatArithmetic.Log"/> of its source element: the exact value
+        /// rounded toward zero to the precision of the element. The elements are computed one after another when the
+        /// expression is evaluated; the first element, in index order, that is zero or negative throws its
+        /// <see cref="InvalidOperationException"/> from the evaluation.
+        /// </remarks>
         public IGpuBigFloatVectorExpression SelectLog() =>
             new FloatVectorUnaryExpression(source, FloatVectorUnaryOpKind.Log);
 
@@ -97,6 +109,14 @@ public static class GpuBigFloatVectorLinqExtensions
         /// <typeparam name="TScalar">The scalar GPU big number type.</typeparam>
         /// <param name="exponent">The scalar exponent value.</param>
         /// <returns>A new vectorized expression representing the element-wise power operation.</returns>
+        /// <remarks>
+        /// Each element of the result is <see cref="IGpuBigFloatArithmetic.Pow"/> of its source element and the
+        /// exponent: the exact power rounded toward zero to the precision of the result elements (the larger word count
+        /// of the vector and the exponent). The elements are computed one after another when the expression is
+        /// evaluated; the first element, in index order, that is zero or negative throws its
+        /// <see cref="InvalidOperationException"/>, and one whose power leaves the exponent range its
+        /// <see cref="OverflowException"/>, from the evaluation.
+        /// </remarks>
         public IGpuBigFloatVectorExpression SelectPow<TScalar>(TScalar exponent)
             where TScalar : struct, IGpuBigNumber<TScalar> =>
             new FloatVectorPowScalarExpression(source, GpuFloatOperand.From(exponent));
@@ -138,6 +158,13 @@ public static class GpuBigFloatVectorLinqExtensions
         /// </summary>
         /// <param name="right">The exponent vectorized expression.</param>
         /// <returns>A new vectorized expression representing the element-wise power operation.</returns>
+        /// <remarks>
+        /// Each element of the result is <see cref="IGpuBigFloatArithmetic.Pow"/> of the corresponding elements: the
+        /// exact power rounded toward zero to the precision of the result elements (the larger word count of the two
+        /// vectors). The elements are computed one after another when the expression is evaluated; the first element,
+        /// in index order, whose base is zero or negative throws its <see cref="InvalidOperationException"/>, and one
+        /// whose power leaves the exponent range its <see cref="OverflowException"/>, from the evaluation.
+        /// </remarks>
         public IGpuBigFloatVectorExpression ZipPow(IGpuBigFloatVectorExpression right) =>
             new FloatVectorPowVectorExpression(source, right);
 

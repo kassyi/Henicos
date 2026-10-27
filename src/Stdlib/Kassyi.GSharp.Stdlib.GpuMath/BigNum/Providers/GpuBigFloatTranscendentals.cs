@@ -9,7 +9,8 @@ namespace Kassyi.GSharp.Stdlib.GpuMath.BigNum.Providers;
 /// documents the mathematics. The term counts, block sizes and precisions come from <see cref="TranscendentalPlanner"/>
 /// before any device work, so the series run without reading values back; the host waits for the device only to read
 /// the leading bits of the argument (and, for Log, the bit length of the reduced argument and inside the division), to
-/// normalize the approximation and to read its guard words for the rounding check.
+/// normalize the approximation and to read its guard words for the rounding check. Pow also reads its two operands
+/// once, for the exact check, and the leading bits of <c>y·L</c>.
 /// </para>
 /// <para>
 /// Fixed-point values with <c>W</c> fraction bits occupy <c>W / 32</c> words, plus one integer word where the value
@@ -58,7 +59,7 @@ internal static class GpuBigFloatTranscendentals
                 return new GpuFloatResult(0, false);
             }
 
-            if (TryTruncate(workspace, approximation, result, out var exponent))
+            if (TryTruncate(workspace, approximation, approximation.ErrorBound, result, out var exponent))
             {
                 return new GpuFloatResult(checked((int)exponent), approximation.IsNegative);
             }
@@ -134,7 +135,7 @@ internal static class GpuBigFloatTranscendentals
         {
             attempts++;
             using var approximation = ComputeExp(workspace, value, resultBits, bitLength, leadingBits, extraGuardWords);
-            if (TryTruncate(workspace, approximation, result, out var exponent))
+            if (TryTruncate(workspace, approximation, approximation.ErrorBound, result, out var exponent))
             {
                 return new GpuFloatResult(TranscendentalPlanner.ToExpResultExponent(exponent), false);
             }
@@ -154,6 +155,99 @@ internal static class GpuBigFloatTranscendentals
         workspace.Provider.ReadLeadingBits(workspace, source, out var bitLength, out var leadingBits);
         using var approximation = ComputeExp(workspace, value, 32 * resultWords, bitLength, leadingBits, extraGuardWords);
         return approximation.ToHost();
+    }
+
+    /// <summary>
+    /// Computes <c>RZ_p(x^y)</c> for a positive base on the GPU (see
+    /// <see cref="BigFloatTranscendentalMath.Pow(BigInteger, int, BigInteger, int, bool, int, GpuBigFloatTranscendentalOptions)"/>).
+    /// </summary>
+    /// <param name="workspace">The workspace whose stream orders the work and whose options tune it.</param>
+    /// <param name="x">The base; its sign is ignored (the caller rejects negative values).</param>
+    /// <param name="y">The exponent.</param>
+    /// <param name="resultSig">The result significand; its word count sets the precision.</param>
+    /// <returns>The exponent and sign (always positive) of the result.</returns>
+    /// <exception cref="InvalidOperationException">The base is zero.</exception>
+    /// <exception cref="OverflowException">The exponent of the result does not fit in <see cref="int"/> (an underflow,
+    /// named in the message, for a result below 1).</exception>
+    internal static GpuFloatResult Pow(
+        GpuWorkspace workspace, in GpuFloatOperand x, in GpuFloatOperand y, GpuBigIntMemoryHandle resultSig) =>
+        Pow(workspace, x, y, resultSig, out _);
+
+    /// <summary>
+    /// Computes <c>RZ_p(x^y)</c> as <see cref="Pow(GpuWorkspace, in GpuFloatOperand, in GpuFloatOperand, GpuBigIntMemoryHandle)"/>
+    /// does, and reports the number of attempts of the rounding check.
+    /// </summary>
+    /// <param name="workspace">The workspace whose stream orders the work and whose options tune it.</param>
+    /// <param name="x">The base; its sign is ignored (the caller rejects negative values).</param>
+    /// <param name="y">The exponent.</param>
+    /// <param name="resultSig">The result significand; its word count sets the precision.</param>
+    /// <param name="attempts">When this method returns, the number of approximations computed (0 for an exact power,
+    /// 1 unless the rounding check had to retry).</param>
+    /// <returns>The exponent and sign (always positive) of the result.</returns>
+    /// <remarks>
+    /// The exact check is the host's (<see cref="BigFloatTranscendentalMath.TryExactPow"/>), on the two operands read
+    /// back once; the approximations run on the device.
+    /// </remarks>
+    internal static GpuFloatResult Pow(
+        GpuWorkspace workspace, in GpuFloatOperand x, in GpuFloatOperand y, GpuBigIntMemoryHandle resultSig,
+        out int attempts)
+    {
+        attempts = 0;
+        var result = resultSig.AsBorrowedBigUInt(workspace);
+        var resultBits = 32 * result.NumWords;
+        var xSignificand = x.Significand.AsBorrowedBigUInt(workspace).ToBigInteger();
+        if (xSignificand.IsZero)
+        {
+            throw new InvalidOperationException(BigFloatTranscendentalMath.PowOfZeroMessage);
+        }
+
+        var ySignificand = y.Significand.AsBorrowedBigUInt(workspace).ToBigInteger();
+        if (BigFloatTranscendentalMath.TryExactPow(
+                xSignificand, x.Exponent, ySignificand, y.Exponent, y.IsNegative, resultBits, out var exact,
+                out var exactExponent))
+        {
+            WriteSignificand(workspace, result, exact);
+            return new GpuFloatResult(exactExponent, false);
+        }
+
+        var xBits = (int)xSignificand.GetBitLength();
+        var xLeading = BigFloatTranscendentalMath.LeadingBits(xSignificand);
+        var extraGuardWords = 0;
+        while (true)
+        {
+            attempts++;
+            using var approximation = ComputePow(
+                workspace, x, y, ySignificand, resultBits, xBits, xLeading, extraGuardWords, out var argumentBound);
+            if (approximation.IsZero)
+            {
+                return approximation.IsNegative ? WriteLargestBelowOne(workspace, result) : WriteOne(workspace, result);
+            }
+
+            if (TryTruncate(workspace, approximation, approximation.ErrorBound + argumentBound, result, out var exponent))
+            {
+                return new GpuFloatResult(TranscendentalPlanner.ToResultExponent(exponent, "Pow"), false);
+            }
+
+            extraGuardWords += TranscendentalPlanner.ZivRetryGuardWords(approximation.WorkingBits);
+        }
+    }
+
+    /// <summary>
+    /// Computes the approximation of <c>x^y</c> on the GPU and reads it back, with the bound of <c>x^y</c> itself (see
+    /// <see cref="BigFloatTranscendentalMath.PowApproximation"/>; the same preconditions, a base other than 1, and the
+    /// same zero significand for a tiny <c>y·L</c>).
+    /// </summary>
+    /// <exception cref="ArgumentException">The base is 1.</exception>
+    internal static TranscendentalApproximation PowApproximation(
+        GpuWorkspace workspace, in GpuFloatOperand x, in GpuFloatOperand y, int resultWords, int extraGuardWords = 0)
+    {
+        var xSignificand = x.Significand.AsBorrowedBigUInt(workspace).ToBigInteger();
+        var ySignificand = y.Significand.AsBorrowedBigUInt(workspace).ToBigInteger();
+        using var approximation = ComputePow(
+            workspace, x, y, ySignificand, 32 * resultWords, (int)xSignificand.GetBitLength(),
+            BigFloatTranscendentalMath.LeadingBits(xSignificand), extraGuardWords, out var argumentBound);
+        var host = approximation.ToHost();
+        return host with { ErrorBound = host.ErrorBound + argumentBound };
     }
 
     // The bit length and the leading 64 bits of the argument (one wait); Log reads them once for all attempts.
@@ -252,6 +346,57 @@ internal static class GpuBigFloatTranscendentals
         }
     }
 
+    // e^(y·L) for Pow (see BigFloatTranscendentalMath.PowApproximation) with its own bound B_E, and the argument error D
+    // in `argumentBound`; a placeholder (IsZero, IsNegative the sign of y·ln x) when |y·L| < 2^-(p+1).
+    private static DeviceApproximation ComputePow(
+        GpuWorkspace workspace, in GpuFloatOperand x, in GpuFloatOperand y, BigInteger ySignificand, int resultBits,
+        int xBits, ulong xLeading, int extraGuardWords, out BigInteger argumentBound)
+    {
+        var expBits = TranscendentalPlanner.ExpWorkingBits(resultBits, workspace.Transcendental, extraGuardWords);
+        using var log = ComputeLog(workspace, x, TranscendentalPlanner.PowLogResultBits(expBits), xBits, xLeading, 0);
+        if (log.IsZero)
+        {
+            // ln 1 = 0 is a 1-word placeholder, not a value to multiply; Pow returns 1^y = 1 before.
+            throw new ArgumentException(BigFloatTranscendentalMath.PowApproximationOfOneMessage, nameof(x));
+        }
+
+        // y·L exactly, in the product of the two buffers; it has the sign of y·ln x.
+        var ySource = y.Significand.AsBorrowedBigUInt(workspace);
+        using var argument = workspace.RentTemp(ySource.NumWords + log.Value.NumWords);
+        GpuBigIntMath.Mul(ySource, log.Value, argument);
+        workspace.Provider.ReadLeadingBits(workspace, argument, out var argumentBits, out var argumentLeading);
+        var argumentExponent = (long)y.Exponent + log.Exponent;
+        var negative = y.IsNegative != log.IsNegative;
+        var top = argumentExponent + argumentBits;
+        if (top > 32)
+        {
+            throw TranscendentalPlanner.OutOfRange("Pow", negative);
+        }
+
+        if (top <= -(resultBits + 1))
+        {
+            argumentBound = BigInteger.Zero;
+            return new DeviceApproximation(workspace.RentTemp(1), 0, negative, BigInteger.Zero, expBits, isZero: true);
+        }
+
+        // The planner's range check with the Pow message; ComputeExp repeats it with the same argument.
+        _ = TranscendentalPlanner.ExpReduction(
+            resultBits, BigFloatTranscendentalMath.ApproximateArgument(argumentLeading, top, negative), "Pow");
+        var operand = new GpuFloatOperand(argument.Handle, checked((int)argumentExponent), negative);
+        var approximation = ComputeExp(workspace, operand, resultBits, argumentBits, argumentLeading, extraGuardWords);
+        try
+        {
+            argumentBound = TranscendentalPlanner.PowArgumentErrorBound(
+                ySignificand, y.Exponent, log.ErrorBound, log.Exponent, approximation.WorkingBits);
+            return approximation;
+        }
+        catch
+        {
+            approximation.Dispose();
+            throw;
+        }
+    }
+
     // R = floor((x - k·ln 2) · 2^(W - s)) through Lw fraction bits (ln 2 bits rounded up to a word): R is r / 2^s with
     // W fraction bits.
     private static void ReduceArgument(
@@ -332,6 +477,21 @@ internal static class GpuBigFloatTranscendentals
         provider.ClearMemoryAsync(result.DevicePointer, result.NumWords, workspace.Stream);
         provider.WriteWord(result.DevicePointer, result.NumWords - 1, 0x80000000u, workspace.Stream);
         return new GpuFloatResult(1 - 32 * result.NumWords, false);
+    }
+
+    // A host significand of at most result.NumWords words, zero-extended, to the result.
+    private static void WriteSignificand(GpuWorkspace workspace, GpuBigUInt result, BigInteger significand)
+    {
+        var words = ArrayPool<uint>.Shared.Rent(result.NumWords);
+        try
+        {
+            significand.WriteLimbs(words.AsSpan(0, result.NumWords));
+            workspace.Provider.CopyHostToDevice(result.DevicePointer, words, result.NumWords, workspace.Stream);
+        }
+        finally
+        {
+            ArrayPool<uint>.Shared.Return(words);
+        }
     }
 
     // 1 - 2^-p = (2^p - 1) · 2^-p, RZ(e^x) for -2^-(p+1) < x < 0.
@@ -535,12 +695,14 @@ internal static class GpuBigFloatTranscendentals
     }
 
     // The rounding check of Ziv on the device approximation (see BigFloatTranscendentalMath.TryTruncate). The buffer
-    // holds A normalized to fill it: W / 32 words for Log, one more low word for Exp. The guard words are the
+    // holds A normalized to fill it: W / 32 words for Log, one more low word for Exp and Pow. The guard words are the
     // W / 32 - n words below the top n; only they are read back (one wait), and on success the top n words are copied
     // to the result on the stream. The bound B is the planner's (design §10.1, re-derived in the review of stages
-    // 1–4): a B below the true error would make this check accept a wrong truncation silently.
+    // 1–4), for Pow plus the argument error D: a B below the true error would make this check accept a wrong
+    // truncation silently.
     private static bool TryTruncate(
-        GpuWorkspace workspace, in DeviceApproximation approximation, GpuBigUInt result, out long exponent)
+        GpuWorkspace workspace, in DeviceApproximation approximation, BigInteger errorBound, GpuBigUInt result,
+        out long exponent)
     {
         var provider = workspace.Provider;
         var bufferWords = approximation.Value.NumWords;
@@ -560,7 +722,7 @@ internal static class GpuBigFloatTranscendentals
         }
 
         var limit = BigInteger.One << (32 * guardWords);
-        if (approximation.ErrorBound > guard || guard + approximation.ErrorBound >= limit)
+        if (errorBound > guard || guard + errorBound >= limit)
         {
             exponent = 0;
             return false;
@@ -595,7 +757,8 @@ internal static class GpuBigFloatTranscendentals
     }
 
     // The approximation in a device buffer that it owns: ±Value · 2^Exponent within ErrorBound units of its last bit at
-    // W bits (the buffer is filled, its top bit set); a 1-word placeholder for an exact zero.
+    // W bits (the buffer is filled, its top bit set); a 1-word placeholder (IsZero) when there is no approximation: ln 1
+    // = 0 exactly, or a Pow argument y·L below 2^-(p+1), IsNegative then being the sign of y·ln x.
     private readonly struct DeviceApproximation(
         [TakesOwnership] GpuBigUInt value, long exponent, bool isNegative, BigInteger errorBound, int workingBits,
         bool isZero) : IDisposable
@@ -609,7 +772,7 @@ internal static class GpuBigFloatTranscendentals
 
         public TranscendentalApproximation ToHost() =>
             isZero
-                ? new TranscendentalApproximation(BigInteger.Zero, 0, false, BigInteger.Zero, workingBits)
+                ? new TranscendentalApproximation(BigInteger.Zero, 0, isNegative, BigInteger.Zero, workingBits)
                 : new TranscendentalApproximation(value.ToBigInteger(), exponent, isNegative, errorBound, workingBits);
 
         public void Dispose() => value.Dispose();

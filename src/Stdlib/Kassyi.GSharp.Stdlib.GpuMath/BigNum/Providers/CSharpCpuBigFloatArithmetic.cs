@@ -1,12 +1,20 @@
 namespace Kassyi.GSharp.Stdlib.GpuMath.BigNum.Providers;
 
 /// <summary>
-/// Provides a reference host (CPU) execution implementation for arbitrary-precision floating-point arithmetic.
+/// Provides a host (CPU) execution implementation for arbitrary-precision floating-point arithmetic.
 /// </summary>
 /// <remarks>
 /// <para>
 /// <b>[WHY]:</b> Implements <see cref="IGpuBigFloatArithmetic"/> using host-side <see cref="System.Numerics.BigInteger"/> mantissa scaling
-/// and bit shifts to validate GPU kernel calculations and support execution on non-GPU host environments.
+/// and bit shifts, as the fallback of <see cref="GSharpKernelFloatProvider"/> on hosts without a GPU.
+/// </para>
+/// <para>
+/// <b>Transcendental functions:</b> <see cref="Exp"/>, <see cref="Log"/> and <see cref="Pow"/> are not a reference for the
+/// GPU: they run the GPU's algorithm with the same host-side plan and the same integer truncations, so the two providers
+/// return the same bits, the exact value rounded toward zero. Exp reduces <c>x = k·ln 2 + r</c> and evaluates a
+/// Paterson–Stockmeyer Taylor polynomial at <c>r / 2^s</c> followed by <c>s</c> squarings; Log reduces
+/// <c>x = m·2^e</c> and evaluates an <c>atanh</c> series; Pow returns an exactly representable power directly and
+/// computes every other one as <c>e^(y·L)</c>.
 /// </para>
 /// <para>
 /// <b>Thread Safety:</b> Stateless and thread-safe.
@@ -509,17 +517,29 @@ public sealed class CSharpCpuBigFloatArithmetic : IGpuBigFloatArithmetic
             throw new InvalidOperationException("Pow with negative base is not supported.");
         }
 
-        var tempWords = resultSig.NumWords;
+        var baseSig = baseValue.Significand;
+        var exponentSig = exponent.Significand;
+        var baseWords = ArrayPool<uint>.Shared.Rent(baseSig.NumWords);
+        var exponentWords = ArrayPool<uint>.Shared.Rent(exponentSig.NumWords);
+        try
+        {
+            var provider = context.GpuWorkspace.Provider;
+            provider.CopyDeviceToHost(baseWords, baseSig.DevicePointer, baseSig.NumWords, context.Stream);
+            provider.CopyDeviceToHost(exponentWords, exponentSig.DevicePointer, exponentSig.NumWords, context.Stream);
+            var vBase = ToBigInteger(baseWords.AsSpan(0, baseSig.NumWords));
+            var vExponent = ToBigInteger(exponentWords.AsSpan(0, exponentSig.NumWords));
 
-        using var logResult = context.GpuWorkspace.RentTemp(tempWords);
-        var logHandle = logResult.Handle;
-        var logRes = Log(ref context, in baseValue, logHandle);
-
-        using var mulResult = context.GpuWorkspace.RentTemp(tempWords);
-        var mulHandle = mulResult.Handle;
-        var mulRes = Multiply(ref context, in exponent, new GpuFloatOperand(logHandle, logRes.Exponent, logRes.IsNegative), mulHandle);
-
-        return Exp(ref context, new GpuFloatOperand(mulHandle, mulRes.Exponent, mulRes.IsNegative), resultSig);
+            var (significand, resultExponent) = BigFloatTranscendentalMath.Pow(
+                vBase, baseValue.Exponent, vExponent, exponent.Exponent, exponent.IsNegative, resultSig.NumWords * 32,
+                context.GpuWorkspace.Transcendental);
+            WriteResult(ref context, significand, resultSig);
+            return new GpuFloatResult(resultExponent, false);
+        }
+        finally
+        {
+            ArrayPool<uint>.Shared.Return(baseWords);
+            ArrayPool<uint>.Shared.Return(exponentWords);
+        }
     }
 
     /// <inheritdoc/>

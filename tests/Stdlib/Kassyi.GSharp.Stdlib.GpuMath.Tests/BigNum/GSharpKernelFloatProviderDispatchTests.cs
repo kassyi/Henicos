@@ -7,7 +7,7 @@ namespace Kassyi.GSharp.Stdlib.GpuMath.Tests.BigNum;
 [Collection(TestCollections.GlobalStateSequential)]
 public class GSharpKernelFloatProviderDispatchTests
 {
-    // Every dispatching operation of IGpuBigFloatArithmetic except Pow, which composes Log, Multiply and Exp.
+    // Every operation of IGpuBigFloatArithmetic; each dispatches as a whole (Pow included).
     private static readonly string[] s_dispatchedOperations =
     [
         nameof(IGpuBigFloatArithmetic.Normalize),
@@ -19,6 +19,7 @@ public class GSharpKernelFloatProviderDispatchTests
         nameof(IGpuBigFloatArithmetic.Rsqrt),
         nameof(IGpuBigFloatArithmetic.Exp),
         nameof(IGpuBigFloatArithmetic.Log),
+        nameof(IGpuBigFloatArithmetic.Pow),
         nameof(IGpuBigFloatArithmetic.DivideByUInt32),
     ];
 
@@ -37,8 +38,8 @@ public class GSharpKernelFloatProviderDispatchTests
         var results = RunEveryOperation(workspace, provider);
 
         // With a GPU the provider runs its own kernels: the fallback is never consulted.
-        // mutant: GSharpKernelFloatProvider.cs:37 `is not GSharpKernelProvider || IsCpuFallbackMode` -> `... || !IsCpuFallbackMode`
-        // (and the same negation at L65, L153, L187, L222, L261, L300, L379, L398, L444)
+        // mutant: GSharpKernelFloatProvider.cs:48 `is not GSharpKernelProvider || IsCpuFallbackMode` -> `... || !IsCpuFallbackMode`
+        // (and the same negation at L76, L164, L198, L233, L272, L311, L390, L409, L429, L445)
         Assert.Empty(spy.Calls);
 
         // The kernel path computes the same exact values as the reference.
@@ -62,8 +63,10 @@ public class GSharpKernelFloatProviderDispatchTests
             var results = RunEveryOperation(workspace, provider);
 
             // In CPU fallback mode each operation is forwarded to the fallback exactly once.
-            // mutant: GSharpKernelFloatProvider.cs:37 `||` -> `&&` (and L153, L187, L222, L261, L300, L379, L398)
-            // mutant: GSharpKernelFloatProvider.cs:65 `&&` -> `||`, L444 `&&` -> `||`
+            // mutant: GSharpKernelFloatProvider.cs:48 `||` -> `&&` (and L164, L198, L233, L272, L311, L390, L409, L429)
+            // mutant: GSharpKernelFloatProvider.cs:76 `&&` -> `||`, L445 `&&` -> `||`
+            // mutant: GSharpKernelFloatProvider.cs Pow `return fallbackStrategy.Pow(...)` -> `return
+            // GpuBigFloatTranscendentals.Pow(...)` (Pow not forwarded)
             foreach (var operation in s_dispatchedOperations)
             {
                 Assert.True(spy.Calls.TryGetValue(operation, out var count), $"{operation} was not forwarded to the fallback.");
@@ -118,6 +121,7 @@ public class GSharpKernelFloatProviderDispatchTests
         provider.Rsqrt(ref context, in a, scratchSig.Handle);
         provider.Exp(ref context, in b, scratchSig.Handle);
         provider.Log(ref context, in b, scratchSig.Handle);
+        provider.Pow(ref context, in b, in b, scratchSig.Handle);
         var divideByUInt32 = provider.DivideByUInt32(ref context, in a, 3u, divideByUInt32Sig.Handle);
 
         return new ExactResults(

@@ -59,15 +59,26 @@ internal readonly record struct Dyadic(BigInteger Mantissa, long Exponent) : ICo
 /// then <c>j</c> squarings. <c>e^-q = 1 / e^q</c> with the bounds swapped.
 /// </para>
 /// <para>
-/// <c>ln x</c> is never evaluated: <c>R = RZ(ln x)</c> is checked through the monotonicity of <c>e^t</c>, as
-/// <c>e^R ≤ x &lt; e^(R + ulp)</c> for <c>ln x &gt; 0</c>. The Log checks therefore share no assumption with the
-/// product's atanh series.
+/// The Log checks never evaluate <c>ln x</c>: <c>R = RZ(ln x)</c> is checked through the monotonicity of <c>e^t</c>,
+/// as <c>e^R ≤ x &lt; e^(R + ulp)</c> for <c>ln x &gt; 0</c>. They therefore share no assumption with the product's
+/// atanh series.
+/// </para>
+/// <para>
+/// <c>x^y = e^(y·ln x)</c> needs an enclosure of <c>ln x</c>: Halley's iteration on <see cref="ExpInterval"/> finds
+/// a center, and <see cref="CompareExp"/> proves <c>e^Lo &lt; x &lt; e^Hi</c> (<see cref="LogInterval"/>). A power that
+/// is exactly a <c>p</c>-bit value lies on the boundary of its rounding cell, so no interval separates it; the
+/// candidate is then checked exactly as <c>V^(2^k) = x^n</c> for <c>y = n / 2^k</c>, by raising to powers, not by
+/// extracting roots as the product does.
 /// </para>
 /// </remarks>
 internal static class BigFloatIntervalOracle
 {
     // Precision above which a comparison is considered not to converge (a bug in the oracle or a rational e^q).
     private const int MaxPrecisionBits = 1 << 22;
+
+    // The same for x^y, whose test inputs separate below 2^12 bits: a power that never separates (a bug, or an exact
+    // power that IsExactPower misses) then throws within seconds instead of running for hours.
+    private const int MaxPowPrecisionBits = 1 << 15;
 
     /// <summary>
     /// Returns bounds <c>Lo ≤ e^q ≤ Hi</c> for <c>q = num / 2^denShift</c>, with a relative width of about
@@ -293,6 +304,204 @@ internal static class BigFloatIntervalOracle
     /// </summary>
     public static (BigInteger Num, int DenShift) ToRatio(BigInteger sig, long exp) =>
         exp >= 0 ? (sig << (int)exp, 0) : (sig, (int)-exp);
+
+    /// <summary>
+    /// Returns bounds <c>LoNum / 2^DenShift &lt; ln x &lt; HiNum / 2^DenShift</c> for <c>x = xSig · 2^xExp &gt; 0</c>,
+    /// with a relative width below <c>2^-precisionBits</c> (both zero for <c>x = 1</c>).
+    /// </summary>
+    /// <exception cref="InvalidOperationException">The bounds could not be proven (a bug in the oracle).</exception>
+    public static (BigInteger LoNum, BigInteger HiNum, int DenShift) LogInterval(BigInteger xSig, long xExp, int precisionBits)
+    {
+        var x = new Dyadic(xSig, xExp);
+        var common = Math.Min(xExp, 0);
+        var distance = BigInteger.Abs((xSig << (int)(xExp - common)) - (BigInteger.One << (int)-common));
+        if (distance.IsZero)
+        {
+            return (BigInteger.Zero, BigInteger.Zero, 0);
+        }
+
+        // |ln x| >= |x - 1| / 2 on [1/2, 2] and > 1/2 outside it, so |ln x| >= 2^(top - 2) with |x - 1| < 2^top, and
+        // A absolute fraction bits give the relative width.
+        var top = (long)distance.GetBitLength() + common;
+        var denShift = checked(precisionBits + 32 + (int)Math.Max(0, 2 - top));
+
+        // A double start (about 50 bits), or 0 next to 1, where the first step gives 2(x - 1) / (x + 1).
+        var l = BigInteger.Zero;
+        if (top > -30)
+        {
+            var bits = (long)xSig.GetBitLength();
+            var shift = (int)Math.Max(0, bits - 53);
+            var estimate = Math.Log((double)(xSig >> shift)) + (xExp + shift) * Math.Log(2);
+            l = new BigInteger(Math.Round(Math.ScaleB(estimate, 50))) << (denShift - 50);
+        }
+
+        // Halley's iteration l <- l + 2(x - e^l) / (x + e^l) converges cubically; e^l comes from the interval of e^l.
+        for (var i = 0; i < 64; i++)
+        {
+            var e = ExpInterval(l, denShift, denShift + 32).Lo;
+            var scale = Math.Min(x.Exponent, e.Exponent);
+            var xScaled = x.Mantissa << (int)(x.Exponent - scale);
+            var eScaled = e.Mantissa << (int)(e.Exponent - scale);
+            var step = ((xScaled - eScaled) << (denShift + 1)) / (xScaled + eScaled);
+            l += step;
+            if (BigInteger.Abs(step) <= 256)
+            {
+                break;
+            }
+        }
+
+        // The center is within a few units of ln x; 2^16 units on each side are proven, not assumed.
+        var radius = BigInteger.One << 16;
+        var lo = l - radius;
+        var hi = l + radius;
+        if (CompareExp(lo, denShift, x, denShift + 64) >= 0 || CompareExp(hi, denShift, x, denShift + 64) <= 0)
+        {
+            throw new InvalidOperationException($"LogInterval could not enclose ln({x}).");
+        }
+
+        return (lo, hi, denShift);
+    }
+
+    /// <summary>
+    /// Returns bounds <c>Lo ≤ x^y ≤ Hi</c> for <c>x = xSig · 2^xExp &gt; 0</c> and <c>y = ±ySig · 2^yExp</c>, with a
+    /// relative width of about <c>2^-precisionBits</c>.
+    /// </summary>
+    public static (Dyadic Lo, Dyadic Hi) PowInterval(
+        BigInteger xSig, long xExp, BigInteger ySig, long yExp, bool yNegative, int precisionBits)
+    {
+        if (ySig.IsZero)
+        {
+            return (Dyadic.One, Dyadic.One);
+        }
+
+        // |t| = |y·ln x| < 2^(yTop + bits(|xTop| + 1)): the absolute error of t is the relative error of x^y.
+        var yTop = (long)ySig.GetBitLength() + yExp;
+        var xTop = (long)xSig.GetBitLength() + xExp;
+        var logBits = checked(precisionBits + 32 + (int)Math.Max(0, yTop) + BitLength(Math.Abs(xTop) + 1));
+        var (loNum, hiNum, denShift) = LogInterval(xSig, xExp, logBits);
+        var (yNum, yDenShift) = ToRatio(ySig, yExp);
+
+        // t = ±y·ln x; a negative y swaps the bounds.
+        var tLo = yNegative ? -(yNum * hiNum) : yNum * loNum;
+        var tHi = yNegative ? -(yNum * loNum) : yNum * hiNum;
+        var tDenShift = checked(denShift + yDenShift);
+        return (ExpInterval(tLo, tDenShift, precisionBits + 8).Lo, ExpInterval(tHi, tDenShift, precisionBits + 8).Hi);
+    }
+
+    /// <summary>
+    /// Returns <c>RZ_p(x^y)</c> for <c>x = xSig · 2^xExp &gt; 0</c> and <c>y = ±ySig · 2^yExp</c>: the significand
+    /// with exactly <paramref name="p"/> bits (top bit set) and its exponent.
+    /// </summary>
+    public static (BigInteger Significand, long Exponent) PowRz(
+        BigInteger xSig, long xExp, BigInteger ySig, long yExp, bool yNegative, int p)
+    {
+        for (var precision = 2 * p + 64; precision <= MaxPowPrecisionBits; precision *= 2)
+        {
+            var (lo, hi) = PowInterval(xSig, xExp, ySig, yExp, yNegative, precision);
+            var low = RoundToBits(lo, p);
+            var high = RoundToBits(hi, p);
+            if (low == high)
+            {
+                return (low.Mantissa, low.Exponent);
+            }
+
+            // A p-bit x^y is the lower end of its cell, so the bounds round to it and to its predecessor forever.
+            if (IsExactPower(high.Mantissa, high.Exponent, xSig, xExp, ySig, yExp, yNegative))
+            {
+                return (high.Mantissa, high.Exponent);
+            }
+        }
+
+        throw new InvalidOperationException($"PowRz did not converge for {xSig} * 2^{xExp} ^ {(yNegative ? "-" : "")}{ySig} * 2^{yExp}.");
+    }
+
+    /// <summary>
+    /// Returns whether <c>±center · 2^centerExponent</c> lies within <c>radius · 2^unitExponent</c> of <c>x^y</c>
+    /// (the radius below the center).
+    /// </summary>
+    public static bool IsPowWithin(
+        BigInteger xSig, long xExp, BigInteger ySig, long yExp, bool yNegative, BigInteger center, long centerExponent,
+        BigInteger radius, long unitExponent, int startPrecisionBits)
+    {
+        var common = Math.Min(centerExponent, unitExponent);
+        var scaledCenter = center << (int)(centerExponent - common);
+        var scaledRadius = radius << (int)(unitExponent - common);
+        var low = new Dyadic(scaledCenter - scaledRadius, common);
+        var high = new Dyadic(scaledCenter + scaledRadius, common);
+        for (var precision = Math.Max(64, startPrecisionBits); precision <= MaxPowPrecisionBits; precision *= 2)
+        {
+            var (lo, hi) = PowInterval(xSig, xExp, ySig, yExp, yNegative, precision);
+            if (lo >= low && hi <= high)
+            {
+                return true;
+            }
+
+            if (hi < low || lo > high)
+            {
+                return false;
+            }
+        }
+
+        throw new InvalidOperationException("IsPowWithin did not converge.");
+    }
+
+    // Whether V = vSig · 2^vExp equals x^y exactly. With y = n / 2^k (n an integer, k >= 0), V = x^y exactly when
+    // V^(2^k) = x^n (n > 0), or V^(2^k) · x^|n| = 1 (n < 0); both sides are compared as odd part and power of two.
+    private static bool IsExactPower(
+        BigInteger vSig, long vExp, BigInteger xSig, long xExp, BigInteger ySig, long yExp, bool yNegative)
+    {
+        var (vOdd, vTwos) = OddPart(vSig, vExp);
+        var (xOdd, xTwos) = OddPart(xSig, xExp);
+        var (yOdd, yTwos) = OddPart(ySig, yExp);
+
+        // A 2^k-th root with k > 62 is never a dyadic (x != 1 here: it needs 2^k | xTwos, or an odd part of 2^62 bits).
+        var k = Math.Max(0, -yTwos);
+        if (k > 62)
+        {
+            return false;
+        }
+
+        var twoK = BigInteger.One << (int)k;
+        var n = yOdd << (int)Math.Max(0, yTwos);
+        if (yNegative)
+        {
+            n = -n;
+        }
+
+        if (vTwos * twoK != xTwos * n)
+        {
+            return false;
+        }
+
+        if (n.Sign < 0 || vOdd.IsOne || xOdd.IsOne)
+        {
+            return vOdd.IsOne && xOdd.IsOne;
+        }
+
+        // An odd u > 1 has 2^(bits - 1) < u < 2^bits; disjoint ranges of u^e decide without the powers.
+        var vBits = (long)vOdd.GetBitLength();
+        var xBits = (long)xOdd.GetBitLength();
+        if ((vBits - 1) * twoK >= xBits * n || (xBits - 1) * n >= vBits * twoK)
+        {
+            return false;
+        }
+
+        if (xBits * n > 1 << 24)
+        {
+            throw new InvalidOperationException("IsExactPower: the powers are too large for the oracle.");
+        }
+
+        return BigInteger.Pow(vOdd, (int)twoK) == BigInteger.Pow(xOdd, (int)n);
+    }
+
+    // sig · 2^exp = odd · 2^twos.
+    private static (BigInteger Odd, long Twos) OddPart(BigInteger sig, long exp)
+    {
+        var zeros = (int)BigInteger.TrailingZeroCount(sig);
+        return (sig >> zeros, exp + zeros);
+    }
+
+    private static int BitLength(long value) => 64 - BitOperations.LeadingZeroCount((ulong)value);
 
     private static (Dyadic Lo, Dyadic Hi) ExpIntervalOfPositive(BigInteger num, int denShift, int precisionBits)
     {

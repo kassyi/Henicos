@@ -68,6 +68,7 @@ Thrown when CUDA context or workspace initialization fails.
 | [PolyAlgorithmThreshold](#polyalgorithmthreshold) | Gets or sets the bit length threshold for algorithm selection in poly-algorithms like ModPow. |
 | [Provider](#provider) | Gets the active GPU arithmetic execution provider implementation. |
 | [Stream](#stream) | Gets the dedicated CUDA Stream for this workspace, used for operations and CUDA Graph capture. |
+| [Transcendental](#transcendental) | Gets the tuning parameters of the big-float `Exp`, `Log` and `Pow` run on this workspace. |
 | [WorkspacePointer](#workspacepointer) | Gets the raw native device pointer to the allocated workspace scratchpad memory (used by legacy native backend). |
 
 ## DeviceSmCount
@@ -124,6 +125,14 @@ Gets the dedicated CUDA Stream for this workspace, used for operations and CUDA 
 
 ```csharp
 public IntPtr Stream { get; }
+```
+
+## Transcendental
+
+Gets the tuning parameters of the big-float transcendental functions (`Exp`, `Log`, `Pow`) run on this workspace, on the GPU and in CPU fallback mode alike. See [GpuBigFloatTranscendentalOptions](../gpu_big_float/GpuBigFloatTranscendentalOptions.md).
+
+```csharp
+public GpuBigFloatTranscendentalOptions Transcendental { get; }
 ```
 
 ## WorkspacePointer
