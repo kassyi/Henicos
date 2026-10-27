@@ -146,7 +146,7 @@ return;
 case 1:
 {
 // SingleThread to overwrite the first element
-Gpu.SingleThread(() =>
+global::Kassyi.GSharp.Core.Gpu.SingleThread(() =>
 {
 if (length > 0)
 {

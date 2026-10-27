@@ -164,9 +164,9 @@ switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-int tid = ThreadIndex.X;
+int tid = global::Kassyi.GSharp.Core.ThreadIndex.X;
 int sum = 0;
-foreach (var x in Range(tid, count))
+foreach (var x in global::Kassyi.GSharp.Tests.Shared.Syntax.IteratorKernels.Range(tid, count))
 {
 sum += x;
 }
@@ -377,7 +377,7 @@ switch (__gsharp_ctx.__gsharp_state)
 case 0:
 {
 int sum = 0;
-foreach (var x in Evens(data, length))
+foreach (var x in global::Kassyi.GSharp.Tests.Shared.Syntax.IteratorKernels.Evens(data, length))
 {
 sum += x;
 }
@@ -600,7 +600,7 @@ case 0:
 {
 int last = 0;
 int sum = 0;
-foreach (var x in Fibonacci(n))
+foreach (var x in global::Kassyi.GSharp.Tests.Shared.Syntax.IteratorKernels.Fibonacci(n))
 {
 last = x;
 sum += x;
@@ -833,7 +833,7 @@ switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-IEnumerable<int> e = Countdown(n);
+global::System.Collections.Generic.IEnumerable<int> e = global::Kassyi.GSharp.Tests.Shared.Syntax.IteratorKernels.Countdown(n);
 n = 0;
 int sum1 = 0;
 foreach (var x in e)
@@ -1062,7 +1062,7 @@ switch (__gsharp_ctx.__gsharp_state)
 case 0:
 {
 int sum = 0;
-foreach (var x in TakeUntil(data, limit))
+foreach (var x in global::Kassyi.GSharp.Tests.Shared.Syntax.IteratorKernels.TakeUntil(data, limit))
 {
 sum += x;
 }
@@ -1288,9 +1288,9 @@ switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-int tid = ThreadIndex.X;
+int tid = global::Kassyi.GSharp.Core.ThreadIndex.X;
 int sum = 0;
-foreach (var x in Doubled(tid, count))
+foreach (var x in global::Kassyi.GSharp.Tests.Shared.Syntax.IteratorKernels.Doubled(tid, count))
 {
 sum += x;
 }
@@ -1534,11 +1534,11 @@ switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-int tid = ThreadIndex.X;
+int tid = global::Kassyi.GSharp.Core.ThreadIndex.X;
 int sum = 0;
-foreach (var item in StructItems(tid, count))
+foreach (var item in global::Kassyi.GSharp.Tests.Shared.Syntax.IteratorKernels.StructItems(tid, count))
 {
-var wrapped = new IterInner<int>(item.Inner.A + item.B);
+var wrapped = new global::Kassyi.GSharp.Tests.Shared.Syntax.IterInner<int>(item.Inner.A + item.B);
 sum += wrapped.A;
 }
 
@@ -1787,7 +1787,7 @@ switch (__gsharp_ctx.__gsharp_state)
 case 0:
 {
 int sum = 0;
-foreach (var x in Range(0, 8))
+foreach (var x in global::Kassyi.GSharp.Tests.Shared.Syntax.IteratorKernels.Range(0, 8))
 {
 if (x == earlyReturnAt)
 {
@@ -2490,14 +2490,14 @@ case 0:
 int acc = 0;
 int scaled = 500;
 {
-foreach (var item in MultiYieldAndSwitch(mode, baseVal))
+foreach (var item in global::Kassyi.GSharp.Tests.Shared.Syntax.IteratorKernels.MultiYieldAndSwitch(mode, baseVal))
 {
 if (item < 0)
 {
 goto SkipAdd;
 }
 
-foreach (var sub in MultiYieldAndSwitch(0, 1))
+foreach (var sub in global::Kassyi.GSharp.Tests.Shared.Syntax.IteratorKernels.MultiYieldAndSwitch(0, 1))
 {
 if (sub < 0)
 {
@@ -2776,7 +2776,7 @@ case 0:
 {
 int count = 0;
 int sum = 0;
-foreach (var v in UsingAndSpanIter(data, disposeLog))
+foreach (var v in global::Kassyi.GSharp.Tests.Shared.Syntax.IteratorKernels.UsingAndSpanIter(data, disposeLog))
 {
 sum += v;
 count += 1;
@@ -3048,12 +3048,12 @@ case 0:
 {
 int counter = 0;
 int directSum = 0;
-foreach (var x in StepRange(step: RecordEval(3, 0, ref counter, evalLog), start: RecordEval(10, 1, ref counter, evalLog), count: 3))
+foreach (var x in global::Kassyi.GSharp.Tests.Shared.Syntax.IteratorKernels.StepRange(step: global::Kassyi.GSharp.Tests.Shared.Syntax.IteratorKernels.RecordEval(3, 0, ref counter, evalLog), start: global::Kassyi.GSharp.Tests.Shared.Syntax.IteratorKernels.RecordEval(10, 1, ref counter, evalLog), count: 3))
 {
 directSum += x;
 }
 
-var localSeq = StepRange(count: RecordEval(2, 2, ref counter, evalLog), start: RecordEval(20, 3, ref counter, evalLog));
+var localSeq = global::Kassyi.GSharp.Tests.Shared.Syntax.IteratorKernels.StepRange(count: global::Kassyi.GSharp.Tests.Shared.Syntax.IteratorKernels.RecordEval(2, 2, ref counter, evalLog), start: global::Kassyi.GSharp.Tests.Shared.Syntax.IteratorKernels.RecordEval(20, 3, ref counter, evalLog));
 int localSum = 0;
 foreach (var y in (localSeq))
 {
@@ -3061,7 +3061,7 @@ localSum += y;
 }
 
 int defaultSum = 0;
-foreach (var z in StepRange(5))
+foreach (var z in global::Kassyi.GSharp.Tests.Shared.Syntax.IteratorKernels.StepRange(5))
 {
 defaultSum += z;
 }
@@ -3273,7 +3273,7 @@ switch (__gsharp_ctx.__gsharp_state)
 case 0:
 {
 long sum = 0;
-foreach (var x in Big())
+foreach (var x in global::Kassyi.GSharp.Tests.Shared.Syntax.IteratorKernels.Big())
 {
 sum += x + 1;
 }
@@ -3508,14 +3508,14 @@ switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-int tid = ThreadIndex.X;
-IterIntBuffer4 buffer = default;
+int tid = global::Kassyi.GSharp.Core.ThreadIndex.X;
+global::Kassyi.GSharp.Tests.Shared.Syntax.IterIntBuffer4 buffer = default;
 buffer[0] = tid + 1;
 buffer[1] = tid + 2;
 buffer[2] = tid + 3;
 buffer[3] = tid + 4;
 int sum = 0;
-foreach (var v in InlineArrayItems(buffer, scale))
+foreach (var v in global::Kassyi.GSharp.Tests.Shared.Syntax.IteratorKernels.InlineArrayItems(buffer, scale))
 {
 sum += v;
 }

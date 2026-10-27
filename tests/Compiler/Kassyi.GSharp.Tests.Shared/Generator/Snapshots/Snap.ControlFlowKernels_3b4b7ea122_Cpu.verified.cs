@@ -116,7 +116,7 @@ switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-int tid = ThreadIndex.X;
+int tid = global::Kassyi.GSharp.Core.ThreadIndex.X;
 // Implicit type conversion (int vs double)
 result[tid] = a[tid] > b[tid] ? a[tid] : b[tid] * 1.5;
 __gsharp_ctx.__gsharp_state = -1;
@@ -322,7 +322,7 @@ switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-int tid = ThreadIndex.X;
+int tid = global::Kassyi.GSharp.Core.ThreadIndex.X;
 int x = a[tid];
 int y = b[tid];
 int z = c[tid];
@@ -543,7 +543,7 @@ switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-int tid = ThreadIndex.X;
+int tid = global::Kassyi.GSharp.Core.ThreadIndex.X;
 int val = input[tid];
 output[tid] = val switch
 {
@@ -752,7 +752,7 @@ switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-int tid = ThreadIndex.X;
+int tid = global::Kassyi.GSharp.Core.ThreadIndex.X;
 if (selectors[tid] == 1)
 {
 a[tid] = valuesToAssign[tid];
@@ -973,7 +973,7 @@ switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-int tid = ThreadIndex.X;
+int tid = global::Kassyi.GSharp.Core.ThreadIndex.X;
 int? input = nullableInputs[tid];
 results[tid] = input ?? fallbackValues[tid];
 __gsharp_ctx.__gsharp_state = -1;
@@ -1181,7 +1181,7 @@ switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-int tid = ThreadIndex.X;
+int tid = global::Kassyi.GSharp.Core.ThreadIndex.X;
 int idx = sideEffectTracker[tid];
 sideEffectTracker[tid] = idx + 1;
 targetArray[idx] ??= values[tid];

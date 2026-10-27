@@ -120,7 +120,7 @@ switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-int tid = ThreadIndex.X;
+int tid = global::Kassyi.GSharp.Core.ThreadIndex.X;
 void MultiplyByTwo()
 {
 data[tid] = data[tid] * 2;
@@ -317,7 +317,7 @@ switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-int tid = ThreadIndex.X;
+int tid = global::Kassyi.GSharp.Core.ThreadIndex.X;
 int ComputeTotal(int val)
 {
 return val * 3 + bonus;
@@ -514,7 +514,7 @@ switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-int tid = ThreadIndex.X;
+int tid = global::Kassyi.GSharp.Core.ThreadIndex.X;
 int Square(int x) => x * x;
 data[tid] = Square(data[tid]);
 __gsharp_ctx.__gsharp_state = -1;
@@ -712,7 +712,7 @@ switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-int tid = ThreadIndex.X;
+int tid = global::Kassyi.GSharp.Core.ThreadIndex.X;
 int InnerAdd(int a, int b) => a + b;
 int OuterMultiplyAndAdd(int x)
 {
@@ -920,7 +920,7 @@ switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-int tid = ThreadIndex.X;
+int tid = global::Kassyi.GSharp.Core.ThreadIndex.X;
 int ClampAdd(int val1, int val2, int minVal, int maxVal)
 {
 int sum = val1 + val2;

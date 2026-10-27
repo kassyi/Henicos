@@ -380,7 +380,7 @@ switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-int tid = ThreadIndex.X;
+int tid = global::Kassyi.GSharp.Core.ThreadIndex.X;
 // 1. switch
 switch (tid)
 {
@@ -620,10 +620,10 @@ switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-int tid = ThreadIndex.X;
+int tid = global::Kassyi.GSharp.Core.ThreadIndex.X;
 if (tid < length)
 {
-Vector2 v = vectors[tid];
+global::Kassyi.GSharp.Tests.Shared.Syntax.Vector2 v = vectors[tid];
 v.X = v.X * 2.0f;
 v.Y = v.Y + 1.0f;
 vectors[tid] = v;
@@ -840,10 +840,10 @@ switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-int tid = ThreadIndex.X;
+int tid = global::Kassyi.GSharp.Core.ThreadIndex.X;
 if (tid < length)
 {
-MixedPaddingStruct item = items[tid];
+global::Kassyi.GSharp.Tests.Shared.Syntax.MixedPaddingStruct item = items[tid];
 item.Flag1 = (byte)(item.Flag1 + 1);
 item.ValueD = item.ValueD * 1.5;
 item.ValueI = item.ValueI + 100;
@@ -1037,8 +1037,8 @@ switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-int tid = ThreadIndex.X;
-data[tid] = MyCustomAdd(data[tid], 100);
+int tid = global::Kassyi.GSharp.Core.ThreadIndex.X;
+data[tid] = global::Kassyi.GSharp.Tests.Shared.Syntax.CoreSyntaxKernels.MyCustomAdd(data[tid], 100);
 __gsharp_ctx.__gsharp_state = -1;
 return;
 }

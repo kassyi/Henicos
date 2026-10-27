@@ -126,7 +126,7 @@ switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-var idx = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
+var idx = global::Kassyi.GSharp.Core.BlockIndex.X * global::Kassyi.GSharp.Core.BlockDimension.X + global::Kassyi.GSharp.Core.ThreadIndex.X;
 if (idx < n)
 {
 var a = data[idx];

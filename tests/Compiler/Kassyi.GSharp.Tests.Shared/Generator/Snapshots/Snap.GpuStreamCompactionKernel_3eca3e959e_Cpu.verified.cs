@@ -259,22 +259,22 @@ public int __gsharp_id_17_d;
 public int __gsharp_id_22_d;
 }
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuStreamCompactionKernels__BlockExclusiveScan(uint[] output, uint[] input, int elementCount, uint[] blockSums, __gsharp_context_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuStreamCompactionKernels__BlockExclusiveScan __gsharp_ctx) {
-global::Kassyi.GSharp.Core.SharedMemory<uint> sharedMem = new SharedMemory<uint>(2048 + 128, 0x2d815af68769c2cdUL);
+global::Kassyi.GSharp.Core.SharedMemory<uint> sharedMem = new global::Kassyi.GSharp.Core.SharedMemory<uint>(2048 + 128, 0x2d815af68769c2cdUL);
 {
 switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-__gsharp_ctx.tid = ThreadIndex.X;
-__gsharp_ctx.bIdx = BlockIndex.X;
-__gsharp_ctx.elementsPerBlock = BlockDimension.X * 2;
+__gsharp_ctx.tid = global::Kassyi.GSharp.Core.ThreadIndex.X;
+__gsharp_ctx.bIdx = global::Kassyi.GSharp.Core.BlockIndex.X;
+__gsharp_ctx.elementsPerBlock = global::Kassyi.GSharp.Core.BlockDimension.X * 2;
 __gsharp_ctx.globalOffset = __gsharp_ctx.bIdx * __gsharp_ctx.elementsPerBlock;
 __gsharp_ctx.treeSize = __gsharp_ctx.elementsPerBlock;
 __gsharp_ctx.stride = 1;
 __gsharp_ctx.indexA = __gsharp_ctx.tid;
 __gsharp_ctx.indexB = __gsharp_ctx.tid + (__gsharp_ctx.treeSize / 2);
-__gsharp_ctx.offsetA = GetConflictFreeOffset(__gsharp_ctx.indexA);
-__gsharp_ctx.offsetB = GetConflictFreeOffset(__gsharp_ctx.indexB);
+__gsharp_ctx.offsetA = global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Kernels.GpuStreamCompactionKernels.GetConflictFreeOffset(__gsharp_ctx.indexA);
+__gsharp_ctx.offsetB = global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Kernels.GpuStreamCompactionKernels.GetConflictFreeOffset(__gsharp_ctx.indexB);
 __gsharp_ctx.globalA = __gsharp_ctx.globalOffset + __gsharp_ctx.indexA;
 __gsharp_ctx.globalB = __gsharp_ctx.globalOffset + __gsharp_ctx.indexB;
 sharedMem[__gsharp_ctx.indexA + __gsharp_ctx.offsetA] = (__gsharp_ctx.globalA < elementCount) ? input[__gsharp_ctx.globalA] : 0u;
@@ -297,8 +297,8 @@ if (__gsharp_ctx.tid < __gsharp_ctx.__gsharp_id_17_d)
 {
 int ai = __gsharp_ctx.stride * (2 * __gsharp_ctx.tid + 1) - 1;
 int bi = __gsharp_ctx.stride * (2 * __gsharp_ctx.tid + 2) - 1;
-ai += GetConflictFreeOffset(ai);
-bi += GetConflictFreeOffset(bi);
+ai += global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Kernels.GpuStreamCompactionKernels.GetConflictFreeOffset(ai);
+bi += global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Kernels.GpuStreamCompactionKernels.GetConflictFreeOffset(bi);
 sharedMem[bi] += sharedMem[ai];
 }
 
@@ -318,7 +318,7 @@ case 4:
 if (__gsharp_ctx.tid == 0)
 {
 int lastIndex = __gsharp_ctx.treeSize - 1;
-int lastOffset = GetConflictFreeOffset(lastIndex);
+int lastOffset = global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Kernels.GpuStreamCompactionKernels.GetConflictFreeOffset(lastIndex);
 if (blockSums != null)
 {
 blockSums[__gsharp_ctx.bIdx] = sharedMem[lastIndex + lastOffset];
@@ -346,8 +346,8 @@ if (__gsharp_ctx.tid < __gsharp_ctx.__gsharp_id_22_d)
 {
 int ai = __gsharp_ctx.stride * (2 * __gsharp_ctx.tid + 1) - 1;
 int bi = __gsharp_ctx.stride * (2 * __gsharp_ctx.tid + 2) - 1;
-ai += GetConflictFreeOffset(ai);
-bi += GetConflictFreeOffset(bi);
+ai += global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Kernels.GpuStreamCompactionKernels.GetConflictFreeOffset(ai);
+bi += global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Kernels.GpuStreamCompactionKernels.GetConflictFreeOffset(bi);
 uint temp = sharedMem[ai];
 sharedMem[ai] = sharedMem[bi];
 sharedMem[bi] += temp;
@@ -594,9 +594,9 @@ switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-int tid = ThreadIndex.X;
-int bIdx = BlockIndex.X;
-int elementsPerBlock = BlockDimension.X * 2;
+int tid = global::Kassyi.GSharp.Core.ThreadIndex.X;
+int bIdx = global::Kassyi.GSharp.Core.BlockIndex.X;
+int elementsPerBlock = global::Kassyi.GSharp.Core.BlockDimension.X * 2;
 int globalOffset = bIdx * elementsPerBlock;
 int globalA = globalOffset + tid;
 int globalB = globalOffset + tid + (elementsPerBlock / 2);
@@ -818,7 +818,7 @@ switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-int globalTid = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
+int globalTid = global::Kassyi.GSharp.Core.BlockIndex.X * global::Kassyi.GSharp.Core.BlockDimension.X + global::Kassyi.GSharp.Core.ThreadIndex.X;
 if (globalTid >= elementCount)
 {
 {
@@ -1053,7 +1053,7 @@ switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-int globalTid = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
+int globalTid = global::Kassyi.GSharp.Core.BlockIndex.X * global::Kassyi.GSharp.Core.BlockDimension.X + global::Kassyi.GSharp.Core.ThreadIndex.X;
 if (globalTid < totalWords)
 {
 output[globalTid] = 0;

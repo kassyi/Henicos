@@ -135,7 +135,7 @@ switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-int tid = ThreadIndex.X;
+int tid = global::Kassyi.GSharp.Core.ThreadIndex.X;
 data[tid].A += 10;
 data[tid].B *= 2.0;
 data[tid].C -= 1.0f;
@@ -368,7 +368,7 @@ switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-int tid = ThreadIndex.X;
+int tid = global::Kassyi.GSharp.Core.ThreadIndex.X;
 data[tid].A += 1;
 data[tid].Buffer[0] += 2;
 data[tid].B += 3;

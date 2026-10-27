@@ -255,7 +255,7 @@ switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-__gsharp_ctx.tid = ThreadIndex.X;
+__gsharp_ctx.tid = global::Kassyi.GSharp.Core.ThreadIndex.X;
 __gsharp_ctx.sum = 0;
 __gsharp_ctx.__gsharp_unroll_0 = 0;
 goto case 1;
@@ -532,7 +532,7 @@ switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-__gsharp_ctx.tid = ThreadIndex.X;
+__gsharp_ctx.tid = global::Kassyi.GSharp.Core.ThreadIndex.X;
 __gsharp_ctx.sum = 0;
 __gsharp_ctx.__gsharp_unroll_0 = 0;
 goto case 1;
@@ -806,7 +806,7 @@ public int __gsharp_state;
 public uint __gsharp_warp_exchange;
 public bool __gsharp_yielded_for_grid_sync;
 public int tid;
-public ForUnrollAccumulator acc;
+public global::Kassyi.GSharp.Tests.Shared.Syntax.ForUnrollAccumulator acc;
 public int __gsharp_unroll_0;
 }
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__ForUnrollBarrierKernels__RefContextKernel(int[] buffer, int[] output, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__ForUnrollBarrierKernels__RefContextKernel __gsharp_ctx) {
@@ -815,7 +815,7 @@ switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-__gsharp_ctx.tid = ThreadIndex.X;
+__gsharp_ctx.tid = global::Kassyi.GSharp.Core.ThreadIndex.X;
 __gsharp_ctx.acc = default;
 __gsharp_ctx.__gsharp_unroll_0 = 1;
 goto case 1;
@@ -1084,7 +1084,7 @@ switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-__gsharp_ctx.tid = ThreadIndex.X;
+__gsharp_ctx.tid = global::Kassyi.GSharp.Core.ThreadIndex.X;
 __gsharp_ctx.__gsharp_unroll_0 = 0;
 goto case 1;
 }
@@ -1365,7 +1365,7 @@ switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-__gsharp_ctx.tid = ThreadIndex.X;
+__gsharp_ctx.tid = global::Kassyi.GSharp.Core.ThreadIndex.X;
 __gsharp_ctx.sum = 0;
 __gsharp_ctx.__gsharp_unroll_0 = 0;
 goto case 1;

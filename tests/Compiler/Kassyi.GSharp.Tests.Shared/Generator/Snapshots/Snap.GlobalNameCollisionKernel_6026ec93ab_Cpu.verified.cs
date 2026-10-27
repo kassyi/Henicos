@@ -147,9 +147,9 @@ switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-int tid = ThreadIndex.X;
+int tid = global::Kassyi.GSharp.Core.ThreadIndex.X;
 int value = tid + 1;
-output[tid] = FirstScaler.Scale(value) + SecondScaler.Scale(value) + SecondScaler.Twice(value) * 10000;
+output[tid] = global::Kassyi.GSharp.Tests.Shared.Syntax.GlobalNames.FirstScaler.Scale(value) + global::Kassyi.GSharp.Tests.Shared.Syntax.GlobalNames.SecondScaler.Scale(value) + global::Kassyi.GSharp.Tests.Shared.Syntax.GlobalNames.SecondScaler.Twice(value) * 10000;
 __gsharp_ctx.__gsharp_state = -1;
 return;
 }
@@ -336,8 +336,8 @@ switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-int tid = ThreadIndex.X;
-output[tid] = SecondScaler.Pick(tid) * 10 + SecondScaler.Pick(1.5);
+int tid = global::Kassyi.GSharp.Core.ThreadIndex.X;
+output[tid] = global::Kassyi.GSharp.Tests.Shared.Syntax.GlobalNames.SecondScaler.Pick(tid) * 10 + global::Kassyi.GSharp.Tests.Shared.Syntax.GlobalNames.SecondScaler.Pick(1.5);
 __gsharp_ctx.__gsharp_state = -1;
 return;
 }
@@ -554,13 +554,13 @@ switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-int tid = ThreadIndex.X;
-Container.Nested.Leaf leaf = new Container.Nested.Leaf
+int tid = global::Kassyi.GSharp.Core.ThreadIndex.X;
+global::Kassyi.GSharp.Tests.Shared.Syntax.GlobalNames.Container.Nested.Leaf leaf = new global::Kassyi.GSharp.Tests.Shared.Syntax.GlobalNames.Container.Nested.Leaf
 {
 First = 1,
 Second = 2
 };
-Container.Nested_Leaf joined = new Container.Nested_Leaf
+global::Kassyi.GSharp.Tests.Shared.Syntax.GlobalNames.Container.Nested_Leaf joined = new global::Kassyi.GSharp.Tests.Shared.Syntax.GlobalNames.Container.Nested_Leaf
 {
 Total = 40
 };
@@ -779,12 +779,12 @@ switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-int tid = ThreadIndex.X;
-Alpha.Outer.Inner nested = new Alpha.Outer.Inner
+int tid = global::Kassyi.GSharp.Core.ThreadIndex.X;
+global::Kassyi.GSharp.Tests.Shared.Syntax.GlobalNames.Alpha.Outer.Inner nested = new global::Kassyi.GSharp.Tests.Shared.Syntax.GlobalNames.Alpha.Outer.Inner
 {
 Value = 7
 };
-Beta.Outer_Inner flat = new Beta.Outer_Inner
+global::Kassyi.GSharp.Tests.Shared.Syntax.GlobalNames.Beta.Outer_Inner flat = new global::Kassyi.GSharp.Tests.Shared.Syntax.GlobalNames.Beta.Outer_Inner
 {
 Value = 30
 };
@@ -1005,12 +1005,12 @@ switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-int tid = ThreadIndex.X;
-Pair<int> single = new Pair<int>
+int tid = global::Kassyi.GSharp.Core.ThreadIndex.X;
+global::Kassyi.GSharp.Tests.Shared.Syntax.GlobalNames.Pair<int> single = new global::Kassyi.GSharp.Tests.Shared.Syntax.GlobalNames.Pair<int>
 {
 Value = 5
 };
-Pair<int, int> pair = new Pair<int, int>
+global::Kassyi.GSharp.Tests.Shared.Syntax.GlobalNames.Pair<int, int> pair = new global::Kassyi.GSharp.Tests.Shared.Syntax.GlobalNames.Pair<int, int>
 {
 First = 6,
 Second = 7

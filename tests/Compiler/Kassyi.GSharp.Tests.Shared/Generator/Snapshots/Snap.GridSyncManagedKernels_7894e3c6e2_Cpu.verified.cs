@@ -142,8 +142,8 @@ switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-__gsharp_ctx.tid = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
-__gsharp_ctx.totalThreads = GridDimension.X * BlockDimension.X;
+__gsharp_ctx.tid = global::Kassyi.GSharp.Core.BlockIndex.X * global::Kassyi.GSharp.Core.BlockDimension.X + global::Kassyi.GSharp.Core.ThreadIndex.X;
+__gsharp_ctx.totalThreads = global::Kassyi.GSharp.Core.GridDimension.X * global::Kassyi.GSharp.Core.BlockDimension.X;
 // Every thread writes its ID + 1 to the buffer
 buffer[__gsharp_ctx.tid] = __gsharp_ctx.tid + 1;
 __gsharp_ctx.__gsharp_yielded_for_grid_sync = true;
@@ -416,15 +416,15 @@ public int localTid;
 public int stride;
 }
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Core__GridSyncManagedKernels__GlobalReductionKernel(int[] input, int[] blockSums, int[] totalSum, __gsharp_context_Kassyi__GSharp__Tests__Shared__Core__GridSyncManagedKernels__GlobalReductionKernel __gsharp_ctx) {
-global::Kassyi.GSharp.Core.SharedMemory<int> shared = new SharedMemory<int>(256, 0x7b4c93522e9874b8UL);
+global::Kassyi.GSharp.Core.SharedMemory<int> shared = new global::Kassyi.GSharp.Core.SharedMemory<int>(256, 0x7b4c93522e9874b8UL);
 {
 switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-__gsharp_ctx.tid = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
+__gsharp_ctx.tid = global::Kassyi.GSharp.Core.BlockIndex.X * global::Kassyi.GSharp.Core.BlockDimension.X + global::Kassyi.GSharp.Core.ThreadIndex.X;
 __gsharp_ctx.myVal = input[__gsharp_ctx.tid];
-__gsharp_ctx.localTid = ThreadIndex.X;
+__gsharp_ctx.localTid = global::Kassyi.GSharp.Core.ThreadIndex.X;
 shared[__gsharp_ctx.localTid] = __gsharp_ctx.myVal;
 __gsharp_ctx.__gsharp_state = 1;
 return;
@@ -432,7 +432,7 @@ return;
 
 case 1:
 {
-__gsharp_ctx.stride = BlockDimension.X / 2;
+__gsharp_ctx.stride = global::Kassyi.GSharp.Core.BlockDimension.X / 2;
 goto case 2;
 }
 
@@ -466,7 +466,7 @@ case 5:
 // 3. Block 0 of each grid writes to blockSums
 if (__gsharp_ctx.localTid == 0)
 {
-blockSums[BlockIndex.X] = shared[0];
+blockSums[global::Kassyi.GSharp.Core.BlockIndex.X] = shared[0];
 }
 
 __gsharp_ctx.__gsharp_yielded_for_grid_sync = true;
@@ -477,10 +477,10 @@ return;
 case 6:
 {
 // 4. Block 0 does the final reduction
-if (BlockIndex.X == 0 && __gsharp_ctx.localTid == 0)
+if (global::Kassyi.GSharp.Core.BlockIndex.X == 0 && __gsharp_ctx.localTid == 0)
 {
 int sum = 0;
-for (int i = 0; i < GridDimension.X; i++)
+for (int i = 0; i < global::Kassyi.GSharp.Core.GridDimension.X; i++)
 {
 sum += blockSums[i];
 }

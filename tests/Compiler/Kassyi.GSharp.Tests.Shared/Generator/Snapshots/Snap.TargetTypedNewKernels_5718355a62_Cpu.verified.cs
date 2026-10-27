@@ -149,10 +149,10 @@ switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-int tid = ThreadIndex.X;
-NestedChildStruct c1 = new();
+int tid = global::Kassyi.GSharp.Core.ThreadIndex.X;
+global::Kassyi.GSharp.Tests.Shared.Syntax.NestedChildStruct c1 = new();
 c1.Value = tid + 100;
-NestedChildStruct c2 = CreateChild(new());
+global::Kassyi.GSharp.Tests.Shared.Syntax.NestedChildStruct c2 = global::Kassyi.GSharp.Tests.Shared.Syntax.TargetTypedNewKernels.CreateChild(new());
 c2.Value = tid + 200;
 output[tid] = c1.Value + c2.Value;
 __gsharp_ctx.__gsharp_state = -1;
@@ -369,8 +369,8 @@ switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-int tid = ThreadIndex.X;
-NestedParentStruct p = new NestedParentStruct
+int tid = global::Kassyi.GSharp.Core.ThreadIndex.X;
+global::Kassyi.GSharp.Tests.Shared.Syntax.NestedParentStruct p = new global::Kassyi.GSharp.Tests.Shared.Syntax.NestedParentStruct
 {
 Id = tid,
 Child = new()

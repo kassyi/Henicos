@@ -131,7 +131,7 @@ switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-AggregateStruct s = new AggregateStruct
+global::Kassyi.GSharp.Tests.Shared.Syntax.AggregateStruct s = new global::Kassyi.GSharp.Tests.Shared.Syntax.AggregateStruct
 {
 A = 1,
 B = 2
@@ -351,9 +351,9 @@ switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-OuterStruct outer = new OuterStruct
+global::Kassyi.GSharp.Tests.Shared.Syntax.OuterStruct outer = new global::Kassyi.GSharp.Tests.Shared.Syntax.OuterStruct
 {
-B = new InnerStruct
+B = new global::Kassyi.GSharp.Tests.Shared.Syntax.InnerStruct
 {
 X = 1
 },

@@ -147,13 +147,13 @@ switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-int tid = ThreadIndex.X;
-PacketItem item = items[tid];
-PacketColor localColor = item.Color;
-PacketFlags localFlags = item.Flags;
-if ((localFlags & PacketFlags.Active) != PacketFlags.None)
+int tid = global::Kassyi.GSharp.Core.ThreadIndex.X;
+global::Kassyi.GSharp.Tests.Shared.Syntax.PacketItem item = items[tid];
+global::Kassyi.GSharp.Tests.Shared.Syntax.PacketColor localColor = item.Color;
+global::Kassyi.GSharp.Tests.Shared.Syntax.PacketFlags localFlags = item.Flags;
+if ((localFlags & global::Kassyi.GSharp.Tests.Shared.Syntax.PacketFlags.Active) != global::Kassyi.GSharp.Tests.Shared.Syntax.PacketFlags.None)
 {
-output[tid] = ScoreColor(localColor) + (localColor == bonusColor ? 100 : 0) + item.Payload;
+output[tid] = global::Kassyi.GSharp.Tests.Shared.Syntax.EnumTypeKernels.ScoreColor(localColor) + (localColor == bonusColor ? 100 : 0) + item.Payload;
 }
 else
 {

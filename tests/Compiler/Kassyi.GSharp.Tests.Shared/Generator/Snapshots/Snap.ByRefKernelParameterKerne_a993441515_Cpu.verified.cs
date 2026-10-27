@@ -171,7 +171,7 @@ switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-__gsharp_ctx.tid = ThreadIndex.X;
+__gsharp_ctx.tid = global::Kassyi.GSharp.Core.ThreadIndex.X;
 __gsharp_ctx.a = s.A;
 __gsharp_ctx.__gsharp_state = 1;
 return;
@@ -400,7 +400,7 @@ switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-__gsharp_ctx.tid = ThreadIndex.X;
+__gsharp_ctx.tid = global::Kassyi.GSharp.Core.ThreadIndex.X;
 __gsharp_ctx.a = x;
 __gsharp_ctx.__gsharp_state = 1;
 return;
@@ -641,7 +641,7 @@ switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-__gsharp_ctx.tid = ThreadIndex.X;
+__gsharp_ctx.tid = global::Kassyi.GSharp.Core.ThreadIndex.X;
 s = default;
 s.A = 7;
 s.B = 1.5f;
@@ -864,7 +864,7 @@ switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-int tid = ThreadIndex.X;
+int tid = global::Kassyi.GSharp.Core.ThreadIndex.X;
 o[tid] = s.A + (int)s.B + tid;
 __gsharp_ctx.__gsharp_state = -1;
 return;
@@ -1076,7 +1076,7 @@ switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-__gsharp_ctx.tid = ThreadIndex.X;
+__gsharp_ctx.tid = global::Kassyi.GSharp.Core.ThreadIndex.X;
 __gsharp_ctx.a = s.A;
 __gsharp_ctx.__gsharp_state = 1;
 return;
@@ -1295,7 +1295,7 @@ switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-__gsharp_ctx.tid = ThreadIndex.X;
+__gsharp_ctx.tid = global::Kassyi.GSharp.Core.ThreadIndex.X;
 __gsharp_ctx.a = s.A;
 __gsharp_ctx.__gsharp_state = 1;
 return;
@@ -1508,7 +1508,7 @@ switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-__gsharp_ctx.tid = ThreadIndex.X;
+__gsharp_ctx.tid = global::Kassyi.GSharp.Core.ThreadIndex.X;
 __gsharp_ctx.a = sp[__gsharp_ctx.tid];
 __gsharp_ctx.__gsharp_state = 1;
 return;
@@ -1725,7 +1725,7 @@ switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-__gsharp_ctx.tid = ThreadIndex.X;
+__gsharp_ctx.tid = global::Kassyi.GSharp.Core.ThreadIndex.X;
 __gsharp_ctx.a = rs[__gsharp_ctx.tid];
 __gsharp_ctx.__gsharp_state = 1;
 return;

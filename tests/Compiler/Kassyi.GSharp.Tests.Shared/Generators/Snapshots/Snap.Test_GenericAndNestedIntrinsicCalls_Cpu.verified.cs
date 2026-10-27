@@ -110,11 +110,11 @@ switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-int tid = ThreadIndex.X;
-TestIntrinsics.CopyAsync(ref dst[tid], in src[tid]);
-TestIntrinsics.CopyAsync<int>(ref dst[tid], ref src[tid]);
-TestIntrinsics.Unsafe.Release(tid);
-dst[tid] += TestIntrinsics.Unsafe.Deep.Count();
+int tid = global::Kassyi.GSharp.Core.ThreadIndex.X;
+global::Kassyi.GSharp.Tests.NativeApi.TestIntrinsics.CopyAsync(ref dst[tid], in src[tid]);
+global::Kassyi.GSharp.Tests.NativeApi.TestIntrinsics.CopyAsync<int>(ref dst[tid], ref src[tid]);
+global::Kassyi.GSharp.Tests.NativeApi.TestIntrinsics.Unsafe.Release(tid);
+dst[tid] += global::Kassyi.GSharp.Tests.NativeApi.TestIntrinsics.Unsafe.Deep.Count();
 __gsharp_ctx.__gsharp_state = -1;
 return;
 }

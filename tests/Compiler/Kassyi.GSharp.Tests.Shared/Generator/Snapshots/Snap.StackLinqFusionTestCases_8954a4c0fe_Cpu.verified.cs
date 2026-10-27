@@ -139,10 +139,10 @@ switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-int tid = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
+int tid = global::Kassyi.GSharp.Core.BlockIndex.X * global::Kassyi.GSharp.Core.BlockDimension.X + global::Kassyi.GSharp.Core.ThreadIndex.X;
 if (tid == 0)
 {
-int sum = data.AsStackEnumerable().Where(x => x > 5).Select(x => x * 2).Sum();
+int sum = global::Kassyi.ZeroAlloc.Linq.StackLinqExtensions.Sum(global::Kassyi.ZeroAlloc.Linq.StackLinqExtensions.Select(global::Kassyi.ZeroAlloc.Linq.StackLinqExtensions.Where(global::Kassyi.ZeroAlloc.Linq.StackLinqExtensions.AsStackEnumerable(data), x => x > 5), x => x * 2));
 data[0] = sum;
 }
 
@@ -357,10 +357,10 @@ switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-int tid = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
+int tid = global::Kassyi.GSharp.Core.BlockIndex.X * global::Kassyi.GSharp.Core.BlockDimension.X + global::Kassyi.GSharp.Core.ThreadIndex.X;
 if (tid == 0)
 {
-int sum = data.AsStackEnumerable().Where(x => x > 5).Where(x => x % 2 == 0).Sum();
+int sum = global::Kassyi.ZeroAlloc.Linq.StackLinqExtensions.Sum(global::Kassyi.ZeroAlloc.Linq.StackLinqExtensions.Where(global::Kassyi.ZeroAlloc.Linq.StackLinqExtensions.Where(global::Kassyi.ZeroAlloc.Linq.StackLinqExtensions.AsStackEnumerable(data), x => x > 5), x => x % 2 == 0));
 data[0] = sum;
 }
 
@@ -571,10 +571,10 @@ switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-int tid = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
+int tid = global::Kassyi.GSharp.Core.BlockIndex.X * global::Kassyi.GSharp.Core.BlockDimension.X + global::Kassyi.GSharp.Core.ThreadIndex.X;
 if (tid == 0)
 {
-int sum = data.AsStackEnumerable().Select(x => x * 2).Select(x => x + 1).Sum();
+int sum = global::Kassyi.ZeroAlloc.Linq.StackLinqExtensions.Sum(global::Kassyi.ZeroAlloc.Linq.StackLinqExtensions.Select(global::Kassyi.ZeroAlloc.Linq.StackLinqExtensions.Select(global::Kassyi.ZeroAlloc.Linq.StackLinqExtensions.AsStackEnumerable(data), x => x * 2), x => x + 1));
 data[0] = sum;
 }
 
@@ -821,11 +821,11 @@ switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-int tid = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
+int tid = global::Kassyi.GSharp.Core.BlockIndex.X * global::Kassyi.GSharp.Core.BlockDimension.X + global::Kassyi.GSharp.Core.ThreadIndex.X;
 if (tid == 0)
 {
 // HELL Pattern: Extreme chain of Where and Select
-int sum = data.AsStackEnumerable().SkipLast(2).TakeLast(95).Skip(3).Take(90).Where(x => x % 2 == 0).SkipWhile(x => x < 20).TakeWhile(x => x <= 80).Select(x => x * 2).Select(x => x + 1).Where(x => x < 100).Sum();
+int sum = global::Kassyi.ZeroAlloc.Linq.StackLinqExtensions.Sum(global::Kassyi.ZeroAlloc.Linq.StackLinqExtensions.Where(global::Kassyi.ZeroAlloc.Linq.StackLinqExtensions.Select(global::Kassyi.ZeroAlloc.Linq.StackLinqExtensions.Select(global::Kassyi.ZeroAlloc.Linq.StackLinqExtensions.TakeWhile(global::Kassyi.ZeroAlloc.Linq.StackLinqExtensions.SkipWhile(global::Kassyi.ZeroAlloc.Linq.StackLinqExtensions.Where(global::Kassyi.ZeroAlloc.Linq.StackLinqExtensions.Take(global::Kassyi.ZeroAlloc.Linq.StackLinqExtensions.Skip(global::Kassyi.ZeroAlloc.Linq.StackLinqExtensions.TakeLast(global::Kassyi.ZeroAlloc.Linq.StackLinqExtensions.SkipLast(global::Kassyi.ZeroAlloc.Linq.StackLinqExtensions.AsStackEnumerable(data), 2), 95), 3), 90), x => x % 2 == 0), x => x < 20), x => x <= 80), x => x * 2), x => x + 1), x => x < 100));
 data[0] = sum;
 }
 

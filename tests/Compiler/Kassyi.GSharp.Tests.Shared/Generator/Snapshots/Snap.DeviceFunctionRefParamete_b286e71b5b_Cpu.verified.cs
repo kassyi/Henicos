@@ -301,7 +301,7 @@ switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-__gsharp_ctx.value = buffer[ThreadIndex.X];
+__gsharp_ctx.value = buffer[global::Kassyi.GSharp.Core.ThreadIndex.X];
 goto case 1;
 }
 
@@ -334,7 +334,7 @@ goto case 3;
 case 3:
 {
 bool broadcast = __gsharp_ctx.__gsharp_cond_temp_0;
-buffer[ThreadIndex.X] = broadcast ? __gsharp_ctx.value : __gsharp_ctx.previous;
+buffer[global::Kassyi.GSharp.Core.ThreadIndex.X] = broadcast ? __gsharp_ctx.value : __gsharp_ctx.previous;
 __gsharp_ctx.__gsharp_state = -1;
 return;
 }

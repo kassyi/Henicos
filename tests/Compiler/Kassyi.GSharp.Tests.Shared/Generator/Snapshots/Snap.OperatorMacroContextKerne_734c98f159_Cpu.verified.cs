@@ -263,9 +263,9 @@ switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-OperatorMacroContextValue a = left;
-OperatorMacroContextValue b = right;
-OperatorMacroContextValue c = result;
+global::Kassyi.GSharp.Tests.Shared.Syntax.OperatorMacroContextValue a = left;
+global::Kassyi.GSharp.Tests.Shared.Syntax.OperatorMacroContextValue b = right;
+global::Kassyi.GSharp.Tests.Shared.Syntax.OperatorMacroContextValue c = result;
 c = a + b;
 calls[0] = bigCtx.Calls;
 __gsharp_ctx.__gsharp_state = -1;
@@ -512,8 +512,8 @@ switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-OperatorMacroContextValue a = operand;
-OperatorMacroContextValue c = result;
+global::Kassyi.GSharp.Tests.Shared.Syntax.OperatorMacroContextValue a = operand;
+global::Kassyi.GSharp.Tests.Shared.Syntax.OperatorMacroContextValue c = result;
 c = a << 3;
 __gsharp_ctx.__gsharp_state = -1;
 return;
@@ -721,7 +721,7 @@ switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-AddTwice(ref bigCtx, left, right, result);
+global::Kassyi.GSharp.Tests.Shared.Syntax.OperatorMacroContextKernels.AddTwice(ref bigCtx, left, right, result);
 calls[0] = bigCtx.Calls;
 __gsharp_ctx.__gsharp_state = -1;
 return;
@@ -980,12 +980,12 @@ public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMac
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
 public bool __gsharp_yielded_for_grid_sync;
-public OperatorMacroContextState local;
+public global::Kassyi.GSharp.Tests.Shared.Syntax.OperatorMacroContextState local;
 }
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroContextKernels__HoistedContextKernel(uint[] offset, uint[] left, uint[] right, uint[] result, uint[] calls, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroContextKernels__HoistedContextKernel __gsharp_ctx) {
-OperatorMacroContextValue a = left;
-OperatorMacroContextValue b = right;
-OperatorMacroContextValue c = result;
+global::Kassyi.GSharp.Tests.Shared.Syntax.OperatorMacroContextValue a = left;
+global::Kassyi.GSharp.Tests.Shared.Syntax.OperatorMacroContextValue b = right;
+global::Kassyi.GSharp.Tests.Shared.Syntax.OperatorMacroContextValue c = result;
 {
 switch (__gsharp_ctx.__gsharp_state)
 {

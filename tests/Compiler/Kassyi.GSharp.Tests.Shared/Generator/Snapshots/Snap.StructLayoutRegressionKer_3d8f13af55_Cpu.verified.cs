@@ -402,8 +402,8 @@ o[1] = h[0].W.Z;
 o[2] = h[1].A;
 unsafe
 {
-LayoutReproVecHolder s = default;
-LayoutReproVecHolder* p = &s;
+global::Kassyi.GSharp.Tests.Shared.Core.LayoutReproVecHolder s = default;
+global::Kassyi.GSharp.Tests.Shared.Core.LayoutReproVecHolder* p = &s;
 o[3] = (float)((byte*)(p + 1) - (byte*)p);
 o[4] = (float)((byte*)&s.W - (byte*)p);
 }
@@ -661,8 +661,8 @@ o[1] = h[0].W.Z;
 o[2] = h[1].A;
 unsafe
 {
-LayoutReproCoreHolder s = default;
-LayoutReproCoreHolder* p = &s;
+global::Kassyi.GSharp.Tests.Shared.Core.LayoutReproCoreHolder s = default;
+global::Kassyi.GSharp.Tests.Shared.Core.LayoutReproCoreHolder* p = &s;
 o[3] = (float)((byte*)(p + 1) - (byte*)p);
 o[4] = (float)((byte*)&s.W - (byte*)p);
 }
@@ -937,13 +937,13 @@ o[1] = x.Items[1].A;
 o[2] = x.C;
 unsafe
 {
-LayoutReproInlineOuter s = default;
-LayoutReproInlineOuter* p = &s;
+global::Kassyi.GSharp.Tests.Shared.Core.LayoutReproInlineOuter s = default;
+global::Kassyi.GSharp.Tests.Shared.Core.LayoutReproInlineOuter* p = &s;
 o[3] = (float)((byte*)(p + 1) - (byte*)p);
 o[4] = (float)((byte*)&s.C - (byte*)p);
 }
 
-x.Items[1].V = new Float2(9f, 10f);
+x.Items[1].V = new global::Kassyi.GSharp.Core.Float2(9f, 10f);
 x.C = x.C + 1;
 __gsharp_ctx.__gsharp_state = -1;
 return;
@@ -1979,8 +1979,8 @@ case 0:
 o[0] = u.I;
 unsafe
 {
-LayoutReproIntFloatUnion s = default;
-LayoutReproIntFloatUnion* p = &s;
+global::Kassyi.GSharp.Tests.Shared.Core.LayoutReproIntFloatUnion s = default;
+global::Kassyi.GSharp.Tests.Shared.Core.LayoutReproIntFloatUnion* p = &s;
 o[1] = (int)((byte*)(p + 1) - (byte*)p);
 }
 

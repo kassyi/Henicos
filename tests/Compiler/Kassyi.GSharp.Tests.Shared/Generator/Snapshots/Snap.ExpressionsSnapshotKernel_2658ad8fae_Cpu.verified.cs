@@ -136,9 +136,9 @@ int c = b ^ 0xFF;
 // InvocationExpression (ref / out parameters)
 int refArg = c;
 int outArg;
-HelperMethod(ref refArg, out outArg);
+global::Kassyi.GSharp.Tests.Shared.Syntax.ExpressionsSnapshotKernels.HelperMethod(ref refArg, out outArg);
 // MemberAccessExpression
-int tidX = ThreadIndex.X;
+int tidX = global::Kassyi.GSharp.Core.ThreadIndex.X;
 output[tidX] = refArg + outArg;
 __gsharp_ctx.__gsharp_state = -1;
 return;

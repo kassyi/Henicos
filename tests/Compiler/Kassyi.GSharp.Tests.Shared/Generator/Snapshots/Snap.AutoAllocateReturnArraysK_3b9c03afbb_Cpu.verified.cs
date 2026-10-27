@@ -515,9 +515,9 @@ switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-TestStruct s;
-s.A = ThreadIndex.X;
-s.B = ThreadIndex.X * 1.5f;
+global::Kassyi.GSharp.Tests.Shared.Runtime.AutoAllocateReturnArraysKernels.TestStruct s;
+s.A = global::Kassyi.GSharp.Core.ThreadIndex.X;
+s.B = global::Kassyi.GSharp.Core.ThreadIndex.X * 1.5f;
 {
 __gsharp_auto_result = s;
 __gsharp_ctx.__gsharp_state = -1;

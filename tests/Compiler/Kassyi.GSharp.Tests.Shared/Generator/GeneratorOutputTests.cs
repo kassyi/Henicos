@@ -94,6 +94,50 @@ public class GeneratorOutputTests
             StringComparison.Ordinal);
     }
 
+    // The managed fallback copies the kernel body into a generated file without the user's using directives: names bound
+    // to types, namespaces and the static members of using static come out fully qualified (#433), an alias (C# 12: of
+    // any type) as what it names, an extension method call as the static call, and nameof as its string, which an alias
+    // would otherwise change
+    [Fact]
+    [Scenario(TestScenario.HappyPath)]
+    public void Test_ManagedBody_QualifiesNamesFromUsingDirectives()
+    {
+        var compilation = CreateCompilation(
+            Parse(RoslynTestUtility.ReadTestCase("Generators/ManagedQualification.cs"), "qualification.cs"));
+        var driver = CreateDriver("Cpu").RunGeneratorsAndUpdateCompilation(compilation, out var output, out _);
+        var result = driver.GetRunResult().Results.Single();
+        Assert.Null(result.Exception);
+        // The generator reports only its own failures (GSH0048); typeof and the pointer are the analyzer's to report
+        Assert.DoesNotContain(result.Diagnostics, static d => d.Severity == DiagnosticSeverity.Error);
+
+        var wrapper = GetSource(result, "CaseKernels.g.cs");
+        Assert.Contains("public global::ManagedQualificationCase.Types.CasePair pair;", wrapper, StringComparison.Ordinal);
+        Assert.Contains("new global::ManagedQualificationCase.Types.CasePair", wrapper, StringComparison.Ordinal);
+        Assert.Contains("global::ManagedQualificationCase.CaseMath.Triple(values[", wrapper, StringComparison.Ordinal);
+        Assert.Contains("global::System.Math.Max(", wrapper, StringComparison.Ordinal);
+        // The alias CaseAlias is written as the class it stands for
+        Assert.Contains("global::ManagedQualificationCase.CaseMath.Triple(1)", wrapper, StringComparison.Ordinal);
+        Assert.DoesNotContain("CaseAlias.", wrapper, StringComparison.Ordinal);
+        Assert.Contains("global::Kassyi.GSharp.Core.ThreadIndex.X", wrapper, StringComparison.Ordinal);
+        // An extension method found through a using directive becomes a static call; a ref this receiver keeps ref
+        Assert.Contains("global::ManagedQualificationCase.Types.CaseExtensions.Doubled(values[", wrapper,
+            StringComparison.Ordinal);
+        Assert.Contains("global::ManagedQualificationCase.Types.CaseExtensions.Bump(ref __gsharp_ctx.bumped)", wrapper,
+            StringComparison.Ordinal);
+        // nameof keeps the value it has in the user's file ("CaseAlias"); an interpolation hole is qualified as any name
+        Assert.Contains("\"CaseAlias\".Length", wrapper, StringComparison.Ordinal);
+        Assert.DoesNotContain("nameof(CaseAlias)", wrapper, StringComparison.Ordinal);
+        // In parentheses: {global::N.C} would read global with a format
+        Assert.Contains("$\"{(global::ManagedQualificationCase.CaseMath.Triple(2))}\"", wrapper, StringComparison.Ordinal);
+        // C# 12 aliases of any type: an array, a pointer and a tuple whose element names stay usable
+        Assert.Contains("int[] copy = values;", wrapper, StringComparison.Ordinal);
+        Assert.Contains("int* pointer = null;", wrapper, StringComparison.Ordinal);
+        Assert.Contains("(int A, int B) tuple =", wrapper, StringComparison.Ordinal);
+        Assert.Contains("is global::ManagedQualificationCase.Types.CasePair matched", wrapper, StringComparison.Ordinal);
+        Assert.Contains("typeof(global::ManagedQualificationCase.Types.CasePair)", wrapper, StringComparison.Ordinal);
+        Assert.Empty(output.GetDiagnostics().Where(static d => d.Severity == DiagnosticSeverity.Error));
+    }
+
     private static string GetSource(GeneratorRunResult result, string hintNameSuffix) =>
         result.GeneratedSources
             .Single(s => s.HintName.EndsWith(hintNameSuffix, StringComparison.Ordinal))

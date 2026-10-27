@@ -218,7 +218,7 @@ case 0:
 // Verify and record the actual field offsets inside the kernel at runtime.
 unsafe
 {
-GEN56_AlignmentTestStruct s = default;
+global::Kassyi.GSharp.Tests.Runtime.GEN56_AlignmentTestStruct s = default;
 byte* basePtr = (byte*)&s;
 // CUDA ABI Expected:
 // Field1_Byte: 0

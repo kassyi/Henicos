@@ -140,8 +140,8 @@ switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-int tid = ThreadIndex.X;
-bool ok = TrySquare(input[tid], out var res);
+int tid = global::Kassyi.GSharp.Core.ThreadIndex.X;
+bool ok = global::Kassyi.GSharp.Tests.Shared.Syntax.InlineOutVarKernels.TrySquare(input[tid], out var res);
 output[tid] = res;
 if (ok)
 {
@@ -360,8 +360,8 @@ switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-int tid = ThreadIndex.X;
-if (TrySquare(input[tid], out var val))
+int tid = global::Kassyi.GSharp.Core.ThreadIndex.X;
+if (global::Kassyi.GSharp.Tests.Shared.Syntax.InlineOutVarKernels.TrySquare(input[tid], out var val))
 {
 output[tid] = val + 10;
 }
@@ -571,10 +571,10 @@ switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-int tid = ThreadIndex.X;
+int tid = global::Kassyi.GSharp.Core.ThreadIndex.X;
 int curr = input[tid];
 int sum = 0;
-while (TryStep(curr, out var nextVal))
+while (global::Kassyi.GSharp.Tests.Shared.Syntax.InlineOutVarKernels.TryStep(curr, out var nextVal))
 {
 sum += nextVal;
 curr = nextVal;

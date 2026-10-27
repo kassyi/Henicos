@@ -147,7 +147,7 @@ switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-FixedArray4 arr = new FixedArray4();
+global::Kassyi.GSharp.Tests.Shared.Syntax.FixedArray4 arr = new global::Kassyi.GSharp.Tests.Shared.Syntax.FixedArray4();
 arr[0] = 10;
 arr[1] = 20;
 arr[2] = 30;
@@ -350,7 +350,7 @@ switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-ReadOnlySpan<int> arr = [10, 20, 30, 40];
+global::System.ReadOnlySpan<int> arr = [10, 20, 30, 40];
 int total = 0;
 foreach (var val in arr)
 {
@@ -549,7 +549,7 @@ switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-Span<int> arr = stackalloc int[]
+global::System.Span<int> arr = stackalloc int[]
 {
 10,
 20,

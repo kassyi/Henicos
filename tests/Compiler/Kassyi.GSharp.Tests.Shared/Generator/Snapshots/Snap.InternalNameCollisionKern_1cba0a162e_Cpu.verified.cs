@@ -139,7 +139,7 @@ switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-__gsharp_ctx.tid = ThreadIndex.X;
+__gsharp_ctx.tid = global::Kassyi.GSharp.Core.ThreadIndex.X;
 __gsharp_ctx._state = data[__gsharp_ctx.tid];
 __gsharp_ctx._ctx = __gsharp_ctx._state + 1;
 __gsharp_ctx._yieldedForGridSync = __gsharp_ctx._ctx + 1;
@@ -355,9 +355,9 @@ switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-int tid = ThreadIndex.X;
+int tid = global::Kassyi.GSharp.Core.ThreadIndex.X;
 int _tmp = data[tid];
-InternalNameCollisionPair pair = new InternalNameCollisionPair
+global::Kassyi.GSharp.Tests.Shared.Syntax.InternalNameCollisionPair pair = new global::Kassyi.GSharp.Tests.Shared.Syntax.InternalNameCollisionPair
 {
 A = _tmp,
 B = _tmp + 1
@@ -558,7 +558,7 @@ switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-int tid = ThreadIndex.X;
+int tid = global::Kassyi.GSharp.Core.ThreadIndex.X;
 int _t0 = first[tid];
 int _t1 = second[tid];
 (_t0, _t1) = (_t1, _t0);
@@ -820,7 +820,7 @@ switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-__gsharp_ctx.tid = ThreadIndex.X;
+__gsharp_ctx.tid = global::Kassyi.GSharp.Core.ThreadIndex.X;
 __gsharp_ctx.acc = 0;
 __gsharp_ctx.i = 0;
 goto case 1;
@@ -1081,7 +1081,7 @@ switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-__gsharp_ctx.tid = ThreadIndex.X;
+__gsharp_ctx.tid = global::Kassyi.GSharp.Core.ThreadIndex.X;
 __gsharp_ctx._warpTemp_0 = data[__gsharp_ctx.tid];
 __gsharp_ctx.__gsharp_state = 1;
 return;
@@ -1296,7 +1296,7 @@ switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-__gsharp_ctx.tid = ThreadIndex.X;
+__gsharp_ctx.tid = global::Kassyi.GSharp.Core.ThreadIndex.X;
 __gsharp_ctx.sum = _gsharp_contexts + _gsharp_total_blocks + _gsharp_threads_per_block + _gsharp_total_threads + _gsharp_launch_error + _b_idx + _t_idx + _ctxtid + _cudaCtxScope;
 __gsharp_ctx.__gsharp_state = 1;
 return;

@@ -314,7 +314,7 @@ switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-var p = new WithPlainStruct
+var p = new global::Kassyi.GSharp.Tests.Shared.Syntax.WithPlainStruct
 {
 X = 1,
 Y = 2,
@@ -542,7 +542,7 @@ switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-var p = new WithPlainStruct
+var p = new global::Kassyi.GSharp.Tests.Shared.Syntax.WithPlainStruct
 {
 X = 4,
 Y = 5,
@@ -763,7 +763,7 @@ switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-var p = new WithReadonlyStruct
+var p = new global::Kassyi.GSharp.Tests.Shared.Syntax.WithReadonlyStruct
 {
 X = 1,
 Y = 2
@@ -987,7 +987,7 @@ switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-var p = new WithRecordStruct(1, 2);
+var p = new global::Kassyi.GSharp.Tests.Shared.Syntax.WithRecordStruct(1, 2);
 var q = p with
 {
 X = 10
@@ -1207,7 +1207,7 @@ switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-var p = new WithReadonlyRecordStruct(1, 2);
+var p = new global::Kassyi.GSharp.Tests.Shared.Syntax.WithReadonlyRecordStruct(1, 2);
 var q = p with
 {
 Y = 20
@@ -1447,9 +1447,9 @@ switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-var p = new WithOuterStruct
+var p = new global::Kassyi.GSharp.Tests.Shared.Syntax.WithOuterStruct
 {
-Inner = new WithPlainStruct
+Inner = new global::Kassyi.GSharp.Tests.Shared.Syntax.WithPlainStruct
 {
 X = 1,
 Y = 2,
@@ -1684,7 +1684,7 @@ switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-var p = new WithPlainStruct
+var p = new global::Kassyi.GSharp.Tests.Shared.Syntax.WithPlainStruct
 {
 X = 1,
 Y = 2,
@@ -1911,7 +1911,7 @@ switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-var a = new WithArrayStruct
+var a = new global::Kassyi.GSharp.Tests.Shared.Syntax.WithArrayStruct
 {
 Data = r,
 Count = 1
@@ -2135,7 +2135,7 @@ case 0:
 {
 // One instantiation only: the device definition of a generic struct is emitted per instantiation under one guard,
 // so a second instantiation (Pair<float>) would get the layout of the first, with or without 'with'
-var p = new WithPairStruct<int>
+var p = new global::Kassyi.GSharp.Tests.Shared.Syntax.WithPairStruct<int>
 {
 First = 1,
 Second = 2
@@ -2355,7 +2355,7 @@ switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-var p = new WithRefStruct
+var p = new global::Kassyi.GSharp.Tests.Shared.Syntax.WithRefStruct
 {
 X = 1,
 Y = 2
@@ -2585,7 +2585,7 @@ switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-var a = new WithFourInts();
+var a = new global::Kassyi.GSharp.Tests.Shared.Syntax.WithFourInts();
 a[0] = 5;
 a[3] = 8;
 var b = a with
@@ -2808,7 +2808,7 @@ switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-var a = new WithFixedBufferStruct();
+var a = new global::Kassyi.GSharp.Tests.Shared.Syntax.WithFixedBufferStruct();
 a.Buffer[0] = 5;
 a.Buffer[2] = 6;
 a.Tag = 1;
@@ -3033,7 +3033,7 @@ switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-var q = MakePlain(new WithPlainStruct { X = 10, Y = 20, Z = 30 }, counter)with
+var q = global::Kassyi.GSharp.Tests.Shared.Syntax.StructWithExpressionKernels.MakePlain(new global::Kassyi.GSharp.Tests.Shared.Syntax.WithPlainStruct { X = 10, Y = 20, Z = 30 }, counter)with
 {
 X = 1,
 Y = 2
@@ -3261,7 +3261,7 @@ switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-var p = new WithPlainStruct
+var p = new global::Kassyi.GSharp.Tests.Shared.Syntax.WithPlainStruct
 {
 X = 100,
 Y = 200,
@@ -3270,8 +3270,8 @@ Z = 300
 // the initializers run in the written order and read the original value
 var q = p with
 {
-X = Bump(counter),
-Y = Bump(counter),
+X = global::Kassyi.GSharp.Tests.Shared.Syntax.StructWithExpressionKernels.Bump(counter),
+Y = global::Kassyi.GSharp.Tests.Shared.Syntax.StructWithExpressionKernels.Bump(counter),
 Z = p.X + p.Y
 };
 r[0] = q.X;
@@ -3508,13 +3508,13 @@ switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-var p = new WithPlainStruct
+var p = new global::Kassyi.GSharp.Tests.Shared.Syntax.WithPlainStruct
 {
 X = 1,
 Y = 2,
 Z = 3
 };
-var viaCall = ShiftX(p, 5);
+var viaCall = global::Kassyi.GSharp.Tests.Shared.Syntax.StructWithExpressionKernels.ShiftX(p, 5);
 var viaTernary = flag != 0 ? p with
 {
 X = 100
@@ -3526,7 +3526,7 @@ X = 200
 };
 r[0] = viaCall.X;
 r[1] = viaTernary.X;
-r[2] = ShiftX(p with { Y = 9 }, 1).Y;
+r[2] = global::Kassyi.GSharp.Tests.Shared.Syntax.StructWithExpressionKernels.ShiftX(p with { Y = 9 }, 1).Y;
 r[3] = (p with
 {
 Z = 33
@@ -3765,8 +3765,8 @@ switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-__gsharp_ctx.tid = ThreadIndex.X;
-__gsharp_ctx.p = new WithPlainStruct
+__gsharp_ctx.tid = global::Kassyi.GSharp.Core.ThreadIndex.X;
+__gsharp_ctx.p = new global::Kassyi.GSharp.Tests.Shared.Syntax.WithPlainStruct
 {
 X = __gsharp_ctx.tid,
 Y = 2,
@@ -4015,8 +4015,8 @@ switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-__gsharp_ctx.tid = ThreadIndex.X;
-__gsharp_ctx.p = new WithPlainStruct
+__gsharp_ctx.tid = global::Kassyi.GSharp.Core.ThreadIndex.X;
+__gsharp_ctx.p = new global::Kassyi.GSharp.Tests.Shared.Syntax.WithPlainStruct
 {
 X = 10,
 Y = 0,

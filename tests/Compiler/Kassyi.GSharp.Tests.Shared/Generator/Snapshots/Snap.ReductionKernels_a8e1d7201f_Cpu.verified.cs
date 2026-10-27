@@ -266,14 +266,14 @@ public float __gsharp_warp_temp_5;
 public float __gsharp_warp_temp_6;
 }
 public static unsafe void __gsharp_statemachine_Henicos__Benchmarks__ComputeBenchmarks__ReductionKernels__ReductionKernel(global::Kassyi.GSharp.Core.Float4[] input, float[] output, int n, __gsharp_context_Henicos__Benchmarks__ComputeBenchmarks__ReductionKernels__ReductionKernel __gsharp_ctx) {
-SharedMemory<float> sdata = new(8, 0x80cb9df64cf94963UL);
+global::Kassyi.GSharp.Core.SharedMemory<float> sdata = new(8, 0x80cb9df64cf94963UL);
 {
 switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-__gsharp_ctx.tid = ThreadIndex.X;
-__gsharp_ctx.i = BlockIndex.X * (BlockDimension.X * 2) + __gsharp_ctx.tid;
+__gsharp_ctx.tid = global::Kassyi.GSharp.Core.ThreadIndex.X;
+__gsharp_ctx.i = global::Kassyi.GSharp.Core.BlockIndex.X * (global::Kassyi.GSharp.Core.BlockDimension.X * 2) + __gsharp_ctx.tid;
 __gsharp_ctx.sum = 0.0f;
 if (__gsharp_ctx.i < n)
 {
@@ -281,9 +281,9 @@ var v = input[__gsharp_ctx.i];
 __gsharp_ctx.sum = v.X + v.Y + v.Z + v.W;
 }
 
-if (__gsharp_ctx.i + BlockDimension.X < n)
+if (__gsharp_ctx.i + global::Kassyi.GSharp.Core.BlockDimension.X < n)
 {
-var v = input[__gsharp_ctx.i + BlockDimension.X];
+var v = input[__gsharp_ctx.i + global::Kassyi.GSharp.Core.BlockDimension.X];
 __gsharp_ctx.sum += v.X + v.Y + v.Z + v.W;
 }
 
@@ -377,7 +377,7 @@ var __gsharp_warp_temp_7 = __gsharp_warp_shuffle_read_down_sync(__gsharp_ctx, 0x
 __gsharp_ctx.val += __gsharp_warp_temp_7;
 if (__gsharp_ctx.tid == 0)
 {
-output[BlockIndex.X] = __gsharp_ctx.val;
+output[global::Kassyi.GSharp.Core.BlockIndex.X] = __gsharp_ctx.val;
 }
 
 goto case 10;

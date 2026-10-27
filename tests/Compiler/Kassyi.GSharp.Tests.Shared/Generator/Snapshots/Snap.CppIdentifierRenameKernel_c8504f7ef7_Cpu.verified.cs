@@ -144,7 +144,7 @@ switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-int tid = ThreadIndex.X;
+int tid = global::Kassyi.GSharp.Core.ThreadIndex.X;
 int union = register[tid];
 int and = union + 1;
 int or = and + 1;
@@ -359,7 +359,7 @@ switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-int threadIdx = @int[ThreadIndex.X];
+int threadIdx = @int[global::Kassyi.GSharp.Core.ThreadIndex.X];
 int blockIdx = threadIdx + 1;
 int blockDim = blockIdx + 1;
 int gridDim = blockDim + 1;
@@ -372,7 +372,7 @@ int RAND_MAX = NAN + 1;
 int EXIT_SUCCESS = RAND_MAX + 1;
 int _Value = EXIT_SUCCESS + 1;
 int @char = _Value + 1;
-@class[ThreadIndex.X] = threadIdx + blockIdx + blockDim + gridDim + warpSize + NULL + EOF + INFINITY + NAN + RAND_MAX + EXIT_SUCCESS + _Value + @char;
+@class[global::Kassyi.GSharp.Core.ThreadIndex.X] = threadIdx + blockIdx + blockDim + gridDim + warpSize + NULL + EOF + INFINITY + NAN + RAND_MAX + EXIT_SUCCESS + _Value + @char;
 __gsharp_ctx.__gsharp_state = -1;
 return;
 }
@@ -572,13 +572,13 @@ switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-int tid = ThreadIndex.X;
+int tid = global::Kassyi.GSharp.Core.ThreadIndex.X;
 int value = data[tid];
-int min = Math.Min(value, 10);
-int max = Math.Max(value, 10);
-int abs = Math.Abs(min - max);
-int fminf = Math.Min(abs, 5);
-int fmaxf = Math.Max(fminf, 1);
+int min = global::System.Math.Min(value, 10);
+int max = global::System.Math.Max(value, 10);
+int abs = global::System.Math.Abs(min - max);
+int fminf = global::System.Math.Min(abs, 5);
+int fmaxf = global::System.Math.Max(fminf, 1);
 data[tid] = min + max + abs + fminf + fmaxf;
 __gsharp_ctx.__gsharp_state = -1;
 return;
@@ -796,14 +796,14 @@ switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-int tid = ThreadIndex.X;
+int tid = global::Kassyi.GSharp.Core.ThreadIndex.X;
 int total = 0;
-if (TryCombine(data[tid], 1, out var mutable))
+if (global::Kassyi.GSharp.Tests.Shared.Syntax.CppIdentifierRenameKernels.TryCombine(data[tid], 1, out var mutable))
 {
 total += mutable;
 }
 
-ReadOnlySpan<int> friend = [1, 2, 3];
+global::System.ReadOnlySpan<int> friend = [1, 2, 3];
 foreach (var not in friend)
 {
 total += not;
@@ -811,7 +811,7 @@ total += not;
 
 int requires(int concept) => concept * 3;
 total += requires(2);
-Func<int, int> constexpr = xor => xor + 4;
+global::System.Func<int, int> constexpr = xor => xor + 4;
 total += constexpr(1);
 int and = 7;
 int or = 8;
@@ -1085,9 +1085,9 @@ switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-int tid = ThreadIndex.X;
-CppKeywordFields item = items[tid];
-CppKeywordBuffer4 buffer = new CppKeywordBuffer4();
+int tid = global::Kassyi.GSharp.Core.ThreadIndex.X;
+global::Kassyi.GSharp.Tests.Shared.Syntax.CppKeywordFields item = items[tid];
+global::Kassyi.GSharp.Tests.Shared.Syntax.CppKeywordBuffer4 buffer = new global::Kassyi.GSharp.Tests.Shared.Syntax.CppKeywordBuffer4();
 buffer[0] = item.register;
 buffer[1] = item.@int;
 buffer[2] = item.Length;
@@ -1098,7 +1098,7 @@ foreach (var value in buffer)
 sum += value;
 }
 
-CppKeywordProps props = new CppKeywordProps
+global::Kassyi.GSharp.Tests.Shared.Syntax.CppKeywordProps props = new global::Kassyi.GSharp.Tests.Shared.Syntax.CppKeywordProps
 {
 union = item._Value
 };
@@ -1309,13 +1309,13 @@ public int tid;
 public int register;
 }
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__CppIdentifierRenameKernels__BarrierHoistedNamesKernel(int[] data, int bx, int tx, int ctx, int anyActive, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__CppIdentifierRenameKernels__BarrierHoistedNamesKernel __gsharp_ctx) {
-SharedMemory<int> template = new SharedMemory<int>(32, 0x5baa53526ed1de37UL);
+global::Kassyi.GSharp.Core.SharedMemory<int> template = new global::Kassyi.GSharp.Core.SharedMemory<int>(32, 0x5baa53526ed1de37UL);
 {
 switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-__gsharp_ctx.tid = ThreadIndex.X;
+__gsharp_ctx.tid = global::Kassyi.GSharp.Core.ThreadIndex.X;
 __gsharp_ctx.register = data[__gsharp_ctx.tid] + bx + tx + ctx + anyActive;
 template[__gsharp_ctx.tid] = __gsharp_ctx.register;
 __gsharp_ctx.__gsharp_state = 1;
@@ -1720,7 +1720,7 @@ if (rounds > 0)
 goto case 1;
 }
 
-data[ThreadIndex.X] = 0;
+data[global::Kassyi.GSharp.Core.ThreadIndex.X] = 0;
 {
 __gsharp_ctx.__gsharp_state = -1;
 return;
@@ -1731,7 +1731,7 @@ goto case 1;
 
 case 1:
 {
-data[ThreadIndex.X] = data[ThreadIndex.X] * rounds;
+data[global::Kassyi.GSharp.Core.ThreadIndex.X] = data[global::Kassyi.GSharp.Core.ThreadIndex.X] * rounds;
 __gsharp_ctx.__gsharp_state = -1;
 return;
 }
@@ -1918,8 +1918,8 @@ switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-int tid = ThreadIndex.X;
-data[tid] = @class(friend(data[tid]));
+int tid = global::Kassyi.GSharp.Core.ThreadIndex.X;
+data[tid] = global::Kassyi.GSharp.Tests.Shared.Syntax.CppIdentifierRenameKernels.@class(global::Kassyi.GSharp.Tests.Shared.Syntax.CppIdentifierRenameKernels.friend(data[tid]));
 __gsharp_ctx.__gsharp_state = -1;
 return;
 }

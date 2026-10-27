@@ -188,7 +188,7 @@ switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-using (var resource = new UsingRecorder
+using (var resource = new global::Kassyi.GSharp.Tests.Shared.Syntax.UsingRecorder
 {
 Log = log,
 Id = 1
@@ -196,10 +196,10 @@ Id = 1
 
 )
 {
-Note(log, 10);
+global::Kassyi.GSharp.Tests.Shared.Syntax.UsingDisposalKernels.Note(log, 10);
 }
 
-Note(log, 20);
+global::Kassyi.GSharp.Tests.Shared.Syntax.UsingDisposalKernels.Note(log, 20);
 __gsharp_ctx.__gsharp_state = -1;
 return;
 }
@@ -418,7 +418,7 @@ switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-using (var resource = new UsingRecorder
+using (var resource = new global::Kassyi.GSharp.Tests.Shared.Syntax.UsingRecorder
 {
 Log = log,
 Id = 1
@@ -426,7 +426,7 @@ Id = 1
 
 )
 {
-Note(log, 10);
+global::Kassyi.GSharp.Tests.Shared.Syntax.UsingDisposalKernels.Note(log, 10);
 if (stop == 1)
 {
 {
@@ -435,10 +435,10 @@ return;
 }
 }
 
-Note(log, 11);
+global::Kassyi.GSharp.Tests.Shared.Syntax.UsingDisposalKernels.Note(log, 11);
 }
 
-Note(log, 20);
+global::Kassyi.GSharp.Tests.Shared.Syntax.UsingDisposalKernels.Note(log, 20);
 __gsharp_ctx.__gsharp_state = -1;
 return;
 }
@@ -665,7 +665,7 @@ case 0:
 {
 for (int i = 0; i < 4; i++)
 {
-using (var resource = new UsingRecorder
+using (var resource = new global::Kassyi.GSharp.Tests.Shared.Syntax.UsingRecorder
 {
 Log = log,
 Id = 100 + i
@@ -683,11 +683,11 @@ if (i == 2)
 break;
 }
 
-Note(log, i);
+global::Kassyi.GSharp.Tests.Shared.Syntax.UsingDisposalKernels.Note(log, i);
 }
 }
 
-Note(log, 20);
+global::Kassyi.GSharp.Tests.Shared.Syntax.UsingDisposalKernels.Note(log, 20);
 __gsharp_ctx.__gsharp_state = -1;
 return;
 }
@@ -916,14 +916,14 @@ switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-using (var outer = new UsingRecorder
+using (var outer = new global::Kassyi.GSharp.Tests.Shared.Syntax.UsingRecorder
 {
 Log = log,
 Id = 1
 }
 
 )
-using (var inner = new UsingRecorder
+using (var inner = new global::Kassyi.GSharp.Tests.Shared.Syntax.UsingRecorder
 {
 Log = log,
 Id = 2
@@ -931,14 +931,14 @@ Id = 2
 
 )
 {
-Note(log, 10);
+global::Kassyi.GSharp.Tests.Shared.Syntax.UsingDisposalKernels.Note(log, 10);
 }
 
-using (UsingRecorder first = new UsingRecorder
+using (global::Kassyi.GSharp.Tests.Shared.Syntax.UsingRecorder first = new global::Kassyi.GSharp.Tests.Shared.Syntax.UsingRecorder
 {
 Log = log,
 Id = 3
-}, second = new UsingRecorder
+}, second = new global::Kassyi.GSharp.Tests.Shared.Syntax.UsingRecorder
 {
 Log = log,
 Id = 4
@@ -946,7 +946,7 @@ Id = 4
 
 )
 {
-Note(log, 11);
+global::Kassyi.GSharp.Tests.Shared.Syntax.UsingDisposalKernels.Note(log, 11);
 }
 
 __gsharp_ctx.__gsharp_state = -1;
@@ -1172,17 +1172,17 @@ switch (__gsharp_ctx.__gsharp_state)
 case 0:
 {
 {
-using var first = new UsingRecorder
+using var first = new global::Kassyi.GSharp.Tests.Shared.Syntax.UsingRecorder
 {
 Log = log,
 Id = 1
 };
-using var second = new UsingRecorder
+using var second = new global::Kassyi.GSharp.Tests.Shared.Syntax.UsingRecorder
 {
 Log = log,
 Id = 2
 };
-Note(log, 10);
+global::Kassyi.GSharp.Tests.Shared.Syntax.UsingDisposalKernels.Note(log, 10);
 if (stop == 1)
 {
 {
@@ -1191,10 +1191,10 @@ return;
 }
 }
 
-Note(log, 11);
+global::Kassyi.GSharp.Tests.Shared.Syntax.UsingDisposalKernels.Note(log, 11);
 }
 
-Note(log, 20);
+global::Kassyi.GSharp.Tests.Shared.Syntax.UsingDisposalKernels.Note(log, 20);
 __gsharp_ctx.__gsharp_state = -1;
 return;
 }
@@ -1414,7 +1414,7 @@ case 0:
 {
 for (int i = 0; i < 3; i++)
 {
-using var resource = new UsingRecorder
+using var resource = new global::Kassyi.GSharp.Tests.Shared.Syntax.UsingRecorder
 {
 Log = log,
 Id = 100 + i
@@ -1424,7 +1424,7 @@ if (i == 1)
 continue;
 }
 
-Note(log, i);
+global::Kassyi.GSharp.Tests.Shared.Syntax.UsingDisposalKernels.Note(log, i);
 }
 
 __gsharp_ctx.__gsharp_state = -1;
@@ -1647,7 +1647,7 @@ switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-using (var resource = new UsingPatternRecorder
+using (var resource = new global::Kassyi.GSharp.Tests.Shared.Syntax.UsingPatternRecorder
 {
 Log = log,
 Id = 7
@@ -1655,15 +1655,15 @@ Id = 7
 
 )
 {
-Note(log, 10);
+global::Kassyi.GSharp.Tests.Shared.Syntax.UsingDisposalKernels.Note(log, 10);
 }
 
-using var declared = new UsingPatternRecorder
+using var declared = new global::Kassyi.GSharp.Tests.Shared.Syntax.UsingPatternRecorder
 {
 Log = log,
 Id = 8
 };
-Note(log, 11);
+global::Kassyi.GSharp.Tests.Shared.Syntax.UsingDisposalKernels.Note(log, 11);
 __gsharp_ctx.__gsharp_state = -1;
 return;
 }
@@ -1877,14 +1877,14 @@ switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-var resource = new UsingRecorder
+var resource = new global::Kassyi.GSharp.Tests.Shared.Syntax.UsingRecorder
 {
 Log = log,
 Id = 1
 };
 using (resource)
 {
-Note(log, 10);
+global::Kassyi.GSharp.Tests.Shared.Syntax.UsingDisposalKernels.Note(log, 10);
 }
 
 __gsharp_ctx.__gsharp_state = -1;
@@ -2073,8 +2073,8 @@ switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-int value = DisposeAfterReturnValue(log);
-Note(log, value);
+int value = global::Kassyi.GSharp.Tests.Shared.Syntax.UsingDisposalKernels.DisposeAfterReturnValue(log);
+global::Kassyi.GSharp.Tests.Shared.Syntax.UsingDisposalKernels.Note(log, value);
 __gsharp_ctx.__gsharp_state = -1;
 return;
 }
@@ -2294,7 +2294,7 @@ switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-using (var resource = new UsingRecorder
+using (var resource = new global::Kassyi.GSharp.Tests.Shared.Syntax.UsingRecorder
 {
 Log = log,
 Id = 1
@@ -2302,7 +2302,7 @@ Id = 1
 
 )
 {
-Note(log, 10);
+global::Kassyi.GSharp.Tests.Shared.Syntax.UsingDisposalKernels.Note(log, 10);
 }
 
 __gsharp_ctx.__gsharp_state = 1;
@@ -2311,7 +2311,7 @@ return;
 
 case 1:
 {
-Note(log, 20);
+global::Kassyi.GSharp.Tests.Shared.Syntax.UsingDisposalKernels.Note(log, 20);
 __gsharp_ctx.__gsharp_state = -1;
 return;
 }

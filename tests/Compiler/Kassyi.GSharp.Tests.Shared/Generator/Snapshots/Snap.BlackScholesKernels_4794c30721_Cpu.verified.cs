@@ -426,7 +426,7 @@ case 0:
 {
 for (int __gsharp_unroll_0 = global::Kassyi.GSharp.Core.ManagedGpuContext.BlockDimX * global::Kassyi.GSharp.Core.ManagedGpuContext.BlockIdxX + global::Kassyi.GSharp.Core.ManagedGpuContext.ThreadIdxX; __gsharp_unroll_0 < (ctx.N); __gsharp_unroll_0 += global::Kassyi.GSharp.Core.ManagedGpuContext.BlockDimX * global::Kassyi.GSharp.Core.ManagedGpuContext.GridDimX)
 {
-CalculateOptionPrice(ctx.S[__gsharp_unroll_0], ctx.X[__gsharp_unroll_0], ctx.T[__gsharp_unroll_0], ctx.R, ctx.V, out var c, out var p);
+global::Henicos.Benchmarks.ComputeBenchmarks.BlackScholesKernels.CalculateOptionPrice(ctx.S[__gsharp_unroll_0], ctx.X[__gsharp_unroll_0], ctx.T[__gsharp_unroll_0], ctx.R, ctx.V, out var c, out var p);
 ctx.CallResult[__gsharp_unroll_0] = c;
 ctx.PutResult[__gsharp_unroll_0] = p;
 }

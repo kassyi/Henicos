@@ -295,8 +295,8 @@ switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-int tid = ThreadIndex.X;
-var s = new PcScaled(tid + 5);
+int tid = global::Kassyi.GSharp.Core.ThreadIndex.X;
+var s = new global::Kassyi.GSharp.Tests.Shared.Syntax.PcScaled(tid + 5);
 output[2 * tid] = s.X;
 output[2 * tid + 1] = s.Y;
 __gsharp_ctx.__gsharp_state = -1;
@@ -508,8 +508,8 @@ switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-int tid = ThreadIndex.X;
-var s = new PcScaled(tid)
+int tid = global::Kassyi.GSharp.Core.ThreadIndex.X;
+var s = new global::Kassyi.GSharp.Tests.Shared.Syntax.PcScaled(tid)
 {
 Y = 9
 };
@@ -736,8 +736,8 @@ switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-int tid = ThreadIndex.X;
-var s = new PcCaptured(tid, 10);
+int tid = global::Kassyi.GSharp.Core.ThreadIndex.X;
+var s = new global::Kassyi.GSharp.Tests.Shared.Syntax.PcCaptured(tid, 10);
 output[3 * tid] = s.Sum;
 s.B = 7;
 output[3 * tid + 1] = s.B;
@@ -1182,8 +1182,8 @@ case 0:
 {
 unsafe
 {
-PcCapturedMixed s = default;
-PcCapturedMixed* p = &s;
+global::Kassyi.GSharp.Tests.Shared.Syntax.PcCapturedMixed s = default;
+global::Kassyi.GSharp.Tests.Shared.Syntax.PcCapturedMixed* p = &s;
 layout[0] = (long)((byte*)&s.X - (byte*)p);
 layout[1] = (long)((byte*)(p + 1) - (byte*)p);
 }
@@ -1419,8 +1419,8 @@ case 0:
 {
 unsafe
 {
-PcCapturedAutoProperty s = default;
-PcCapturedAutoProperty* p = &s;
+global::Kassyi.GSharp.Tests.Shared.Syntax.PcCapturedAutoProperty s = default;
+global::Kassyi.GSharp.Tests.Shared.Syntax.PcCapturedAutoProperty* p = &s;
 output[1] = (double)((byte*)(p + 1) - (byte*)p);
 }
 
@@ -1648,7 +1648,7 @@ case 0:
 {
 output[0] = data.Read;
 data.A = (byte)(data.A + 1);
-data.V = new System.Numerics.Vector2(data.V.Y, data.V.X);
+data.V = new global::System.Numerics.Vector2(data.V.Y, data.V.X);
 data.Flag = !data.Flag;
 __gsharp_ctx.__gsharp_state = -1;
 return;
@@ -2106,12 +2106,12 @@ switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-int i = ThreadIndex.X;
+int i = global::Kassyi.GSharp.Core.ThreadIndex.X;
 if (i < items.Length)
 {
 output[i] = items[i].Read;
 items[i].A = (byte)(items[i].A + 10);
-items[i].V = new System.Numerics.Vector2(items[i].V.X + 1f, items[i].V.Y);
+items[i].V = new global::System.Numerics.Vector2(items[i].V.X + 1f, items[i].V.Y);
 }
 
 __gsharp_ctx.__gsharp_state = -1;
@@ -2592,7 +2592,7 @@ case 0:
 {
 output[0] = data.Read;
 data.A = (byte)(data.A + 1);
-data.V = new System.Numerics.Vector2(data.V.Y, data.V.X);
+data.V = new global::System.Numerics.Vector2(data.V.Y, data.V.X);
 __gsharp_ctx.__gsharp_state = -1;
 return;
 }
@@ -2803,8 +2803,8 @@ switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-int tid = ThreadIndex.X;
-var r = new PcRecord(tid, 2);
+int tid = global::Kassyi.GSharp.Core.ThreadIndex.X;
+var r = new global::Kassyi.GSharp.Tests.Shared.Syntax.PcRecord(tid, 2);
 output[tid] = r.X * 100 + r.Y * 10 + r.Z;
 __gsharp_ctx.__gsharp_state = -1;
 return;
@@ -3014,8 +3014,8 @@ switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-int tid = ThreadIndex.X;
-var s = new PcChained(tid, 1);
+int tid = global::Kassyi.GSharp.Core.ThreadIndex.X;
+var s = new global::Kassyi.GSharp.Tests.Shared.Syntax.PcChained(tid, 1);
 output[tid] = s.X;
 __gsharp_ctx.__gsharp_state = -1;
 return;
@@ -3223,9 +3223,9 @@ switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-int tid = ThreadIndex.X;
-var created = new PcNoParameters();
-PcNoParameters defaulted = default;
+int tid = global::Kassyi.GSharp.Core.ThreadIndex.X;
+var created = new global::Kassyi.GSharp.Tests.Shared.Syntax.PcNoParameters();
+global::Kassyi.GSharp.Tests.Shared.Syntax.PcNoParameters defaulted = default;
 output[tid] = created.X * 100 + created.Y * 10 + defaulted.X;
 __gsharp_ctx.__gsharp_state = -1;
 return;

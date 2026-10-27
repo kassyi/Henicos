@@ -120,7 +120,7 @@ switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-int tid = ThreadIndex.X;
+int tid = global::Kassyi.GSharp.Core.ThreadIndex.X;
 // Simple expression lambda without capture
 var doubleValue = (int x) => x * 2;
 data[tid] = doubleValue(data[tid]);
@@ -314,7 +314,7 @@ switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-int tid = ThreadIndex.X;
+int tid = global::Kassyi.GSharp.Core.ThreadIndex.X;
 // Capturing variable 'factor' and array pointer 'data'
 var multiply = (int x) => x * factor;
 data[tid] = multiply(data[tid]);
@@ -508,7 +508,7 @@ switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-int tid = ThreadIndex.X;
+int tid = global::Kassyi.GSharp.Core.ThreadIndex.X;
 // Local function
 int LocalAdd(int a, int b)
 {
@@ -707,7 +707,7 @@ switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-int tid = ThreadIndex.X;
+int tid = global::Kassyi.GSharp.Core.ThreadIndex.X;
 int value = 50;
 // Anonymous method with shadowed local variable (parameter name 'value' shadows local 'value')
 var calc = delegate (int value)

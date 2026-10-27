@@ -10,7 +10,8 @@ internal sealed partial class ManagedExecutionRewriter
                 Identifier.ValueText: GSharpInternalNames.SuspendingCall.ResumeCall
             })
         {
-            return base.VisitInvocationExpression(node);
+            return ManagedNameQualifier.TryRewriteInvocation(node, this, semanticModel) ??
+                   base.VisitInvocationExpression(node);
         }
 
         var arguments = node.ArgumentList.Arguments;

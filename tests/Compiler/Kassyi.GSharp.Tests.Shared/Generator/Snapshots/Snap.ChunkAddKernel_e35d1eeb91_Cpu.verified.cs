@@ -133,7 +133,7 @@ switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-int chunkIdx = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
+int chunkIdx = global::Kassyi.GSharp.Core.BlockIndex.X * global::Kassyi.GSharp.Core.BlockDimension.X + global::Kassyi.GSharp.Core.ThreadIndex.X;
 int start = chunkIdx * chunkSize;
 if (start >= numWords)
 {

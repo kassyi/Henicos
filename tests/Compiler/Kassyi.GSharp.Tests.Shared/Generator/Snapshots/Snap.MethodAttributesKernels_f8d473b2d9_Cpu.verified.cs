@@ -129,9 +129,9 @@ switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-int tid = ThreadIndex.X;
-int sum = InlinedAdd(input[tid], 100);
-result[tid] = MultiAttributeMultiply(sum, 2);
+int tid = global::Kassyi.GSharp.Core.ThreadIndex.X;
+int sum = global::Kassyi.GSharp.Tests.Shared.Syntax.MethodAttributesKernels.InlinedAdd(input[tid], 100);
+result[tid] = global::Kassyi.GSharp.Tests.Shared.Syntax.MethodAttributesKernels.MultiAttributeMultiply(sum, 2);
 __gsharp_ctx.__gsharp_state = -1;
 return;
 }

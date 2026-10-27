@@ -149,7 +149,7 @@ switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-__gsharp_ctx.lane = ThreadIndex.X & 31;
+__gsharp_ctx.lane = global::Kassyi.GSharp.Core.ThreadIndex.X & 31;
 __gsharp_ctx.original = __gsharp_ctx.value;
 __gsharp_ctx.__gsharp_id_3_d = 1;
 goto case 1;
@@ -166,7 +166,7 @@ return false;
 
 case 2:
 {
-__gsharp_ctx.__gsharp_warp_temp_0 = __gsharp_warp_shuffle_read_up_sync(__gsharp_ctx, FullMask, __gsharp_ctx.value, (uint)__gsharp_ctx.__gsharp_id_3_d);
+__gsharp_ctx.__gsharp_warp_temp_0 = __gsharp_warp_shuffle_read_up_sync(__gsharp_ctx, global::Kassyi.GSharp.Tests.Shared.Syntax.SameNameHoistedLocalKernels.FullMask, __gsharp_ctx.value, (uint)__gsharp_ctx.__gsharp_id_3_d);
 __gsharp_ctx.neighbor = __gsharp_ctx.__gsharp_warp_temp_0;
 if (__gsharp_ctx.lane >= __gsharp_ctx.__gsharp_id_3_d)
 {
@@ -201,7 +201,7 @@ return false;
 
 case 6:
 {
-var __gsharp_warp_temp_1 = __gsharp_warp_shuffle_read_xor_sync(__gsharp_ctx, FullMask, __gsharp_ctx.total, (int)__gsharp_ctx.__gsharp_id_6_d);
+var __gsharp_warp_temp_1 = __gsharp_warp_shuffle_read_xor_sync(__gsharp_ctx, global::Kassyi.GSharp.Tests.Shared.Syntax.SameNameHoistedLocalKernels.FullMask, __gsharp_ctx.total, (int)__gsharp_ctx.__gsharp_id_6_d);
 int neighbor = __gsharp_warp_temp_1;
 __gsharp_ctx.total += neighbor;
 goto case 7;
@@ -410,7 +410,7 @@ switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-__gsharp_ctx.tid = ThreadIndex.X;
+__gsharp_ctx.tid = global::Kassyi.GSharp.Core.ThreadIndex.X;
 __gsharp_ctx.__gsharp_id_3_round = 0;
 goto case 1;
 }
@@ -673,7 +673,7 @@ switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-__gsharp_ctx.tid = ThreadIndex.X;
+__gsharp_ctx.tid = global::Kassyi.GSharp.Core.ThreadIndex.X;
 __gsharp_ctx.value = data[__gsharp_ctx.tid] * 3;
 __gsharp_ctx.__gsharp_state = 1;
 return;
@@ -924,7 +924,7 @@ switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-__gsharp_ctx.tid = ThreadIndex.X;
+__gsharp_ctx.tid = global::Kassyi.GSharp.Core.ThreadIndex.X;
 __gsharp_ctx.total = 0;
 for (__gsharp_ctx.__gsharp_id_4_offset = 3; __gsharp_ctx.__gsharp_id_4_offset < n; __gsharp_ctx.__gsharp_id_4_offset += 16)
 {
@@ -1164,7 +1164,7 @@ switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-__gsharp_ctx.tid = ThreadIndex.X;
+__gsharp_ctx.tid = global::Kassyi.GSharp.Core.ThreadIndex.X;
 __gsharp_ctx.__gsharp_arg_temp_0 = input[__gsharp_ctx.tid];
 goto case 1;
 }

@@ -115,7 +115,7 @@ switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-result[0] = data.AsStackEnumerable().ElementAt(1);
+result[0] = global::Kassyi.ZeroAlloc.Linq.StackLinqExtensions.ElementAt(global::Kassyi.ZeroAlloc.Linq.StackLinqExtensions.AsStackEnumerable(data), 1);
 __gsharp_ctx.__gsharp_state = -1;
 return;
 }
@@ -308,7 +308,7 @@ switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-result[0] = data.AsStackEnumerable().ElementAt(index);
+result[0] = global::Kassyi.ZeroAlloc.Linq.StackLinqExtensions.ElementAt(global::Kassyi.ZeroAlloc.Linq.StackLinqExtensions.AsStackEnumerable(data), index);
 __gsharp_ctx.__gsharp_state = -1;
 return;
 }
@@ -501,7 +501,7 @@ switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-data.Sort();
+global::System.MemoryExtensions.Sort(data);
 __gsharp_ctx.__gsharp_state = -1;
 return;
 }
@@ -690,7 +690,7 @@ switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-result[0] = data.AsStackEnumerable().Select((x, i) => x * 10 + i).Where(v => v >= 20).ElementAt(1);
+result[0] = global::Kassyi.ZeroAlloc.Linq.StackLinqExtensions.ElementAt(global::Kassyi.ZeroAlloc.Linq.StackLinqExtensions.Where(global::Kassyi.ZeroAlloc.Linq.StackLinqExtensions.Select(global::Kassyi.ZeroAlloc.Linq.StackLinqExtensions.AsStackEnumerable(data), (x, i) => x * 10 + i), v => v >= 20), 1);
 __gsharp_ctx.__gsharp_state = -1;
 return;
 }
@@ -883,7 +883,7 @@ switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-result[0] = (data.AsStackEnumerable().Take(takeCount)).First();
+result[0] = global::Kassyi.ZeroAlloc.Linq.StackLinqExtensions.First((global::Kassyi.ZeroAlloc.Linq.StackLinqExtensions.Take(global::Kassyi.ZeroAlloc.Linq.StackLinqExtensions.AsStackEnumerable(data), takeCount)));
 __gsharp_ctx.__gsharp_state = -1;
 return;
 }
@@ -1076,7 +1076,7 @@ switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-result[0] = (data.AsStackEnumerable().Take(takeCount)).Last();
+result[0] = global::Kassyi.ZeroAlloc.Linq.StackLinqExtensions.Last((global::Kassyi.ZeroAlloc.Linq.StackLinqExtensions.Take(global::Kassyi.ZeroAlloc.Linq.StackLinqExtensions.AsStackEnumerable(data), takeCount)));
 __gsharp_ctx.__gsharp_state = -1;
 return;
 }
@@ -1269,7 +1269,7 @@ switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-result[0] = data.AsStackEnumerable().Take(takeCount).Single();
+result[0] = global::Kassyi.ZeroAlloc.Linq.StackLinqExtensions.Single(global::Kassyi.ZeroAlloc.Linq.StackLinqExtensions.Take(global::Kassyi.ZeroAlloc.Linq.StackLinqExtensions.AsStackEnumerable(data), takeCount));
 __gsharp_ctx.__gsharp_state = -1;
 return;
 }
@@ -1462,7 +1462,7 @@ switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-result[0] = data.AsStackEnumerable().Take(takeCount).SingleOrDefault();
+result[0] = global::Kassyi.ZeroAlloc.Linq.StackLinqExtensions.SingleOrDefault(global::Kassyi.ZeroAlloc.Linq.StackLinqExtensions.Take(global::Kassyi.ZeroAlloc.Linq.StackLinqExtensions.AsStackEnumerable(data), takeCount));
 __gsharp_ctx.__gsharp_state = -1;
 return;
 }
@@ -1670,7 +1670,7 @@ switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-result[0] = data.AsStackEnumerable().Take(takeCount).First();
+result[0] = global::Kassyi.ZeroAlloc.Linq.StackLinqExtensions.First(global::Kassyi.ZeroAlloc.Linq.StackLinqExtensions.Take(global::Kassyi.ZeroAlloc.Linq.StackLinqExtensions.AsStackEnumerable(data), takeCount));
 __gsharp_ctx.__gsharp_state = -1;
 return;
 }
@@ -1879,7 +1879,7 @@ switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-result[0] = data.AsStackEnumerable().First(x => x > threshold);
+result[0] = global::Kassyi.ZeroAlloc.Linq.StackLinqExtensions.First(global::Kassyi.ZeroAlloc.Linq.StackLinqExtensions.AsStackEnumerable(data), x => x > threshold);
 __gsharp_ctx.__gsharp_state = -1;
 return;
 }
@@ -2087,7 +2087,7 @@ switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-result[0] = data.AsStackEnumerable().Take(takeCount).Last();
+result[0] = global::Kassyi.ZeroAlloc.Linq.StackLinqExtensions.Last(global::Kassyi.ZeroAlloc.Linq.StackLinqExtensions.Take(global::Kassyi.ZeroAlloc.Linq.StackLinqExtensions.AsStackEnumerable(data), takeCount));
 __gsharp_ctx.__gsharp_state = -1;
 return;
 }
@@ -2296,7 +2296,7 @@ switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-result[0] = data.AsStackEnumerable().Last((int x) => x > threshold);
+result[0] = global::Kassyi.ZeroAlloc.Linq.StackLinqExtensions.Last(global::Kassyi.ZeroAlloc.Linq.StackLinqExtensions.AsStackEnumerable(data), (int x) => x > threshold);
 __gsharp_ctx.__gsharp_state = -1;
 return;
 }
@@ -2509,7 +2509,7 @@ switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-result[0] = data.AsStackEnumerable().Take(takeCount).Max();
+result[0] = global::Kassyi.ZeroAlloc.Linq.StackLinqExtensions.Max(global::Kassyi.ZeroAlloc.Linq.StackLinqExtensions.Take(global::Kassyi.ZeroAlloc.Linq.StackLinqExtensions.AsStackEnumerable(data), takeCount));
 __gsharp_ctx.__gsharp_state = -1;
 return;
 }
@@ -2722,7 +2722,7 @@ switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-result[0] = data.AsStackEnumerable().Take(takeCount).Min();
+result[0] = global::Kassyi.ZeroAlloc.Linq.StackLinqExtensions.Min(global::Kassyi.ZeroAlloc.Linq.StackLinqExtensions.Take(global::Kassyi.ZeroAlloc.Linq.StackLinqExtensions.AsStackEnumerable(data), takeCount));
 __gsharp_ctx.__gsharp_state = -1;
 return;
 }
@@ -2933,7 +2933,7 @@ switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-result[0] = data.AsStackEnumerable().Take(takeCount).Average();
+result[0] = global::Kassyi.ZeroAlloc.Linq.StackLinqExtensions.Average(global::Kassyi.ZeroAlloc.Linq.StackLinqExtensions.Take(global::Kassyi.ZeroAlloc.Linq.StackLinqExtensions.AsStackEnumerable(data), takeCount));
 __gsharp_ctx.__gsharp_state = -1;
 return;
 }
@@ -3148,7 +3148,7 @@ switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-result[0] = data.AsStackEnumerable().Take(takeCount).Aggregate((int acc, int x) => acc + x);
+result[0] = global::Kassyi.ZeroAlloc.Linq.StackLinqExtensions.Aggregate(global::Kassyi.ZeroAlloc.Linq.StackLinqExtensions.Take(global::Kassyi.ZeroAlloc.Linq.StackLinqExtensions.AsStackEnumerable(data), takeCount), (int acc, int x) => acc + x);
 __gsharp_ctx.__gsharp_state = -1;
 return;
 }
@@ -3341,7 +3341,7 @@ switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-result[0] = (data.AsStackEnumerable().Take(takeCount)).Max();
+result[0] = global::Kassyi.ZeroAlloc.Linq.StackLinqExtensions.Max((global::Kassyi.ZeroAlloc.Linq.StackLinqExtensions.Take(global::Kassyi.ZeroAlloc.Linq.StackLinqExtensions.AsStackEnumerable(data), takeCount)));
 __gsharp_ctx.__gsharp_state = -1;
 return;
 }
@@ -3534,7 +3534,7 @@ switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-result[0] = (data.AsStackEnumerable().Take(takeCount)).Min();
+result[0] = global::Kassyi.ZeroAlloc.Linq.StackLinqExtensions.Min((global::Kassyi.ZeroAlloc.Linq.StackLinqExtensions.Take(global::Kassyi.ZeroAlloc.Linq.StackLinqExtensions.AsStackEnumerable(data), takeCount)));
 __gsharp_ctx.__gsharp_state = -1;
 return;
 }
@@ -3727,7 +3727,7 @@ switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-result[0] = (data.AsStackEnumerable().Take(takeCount)).Average();
+result[0] = global::Kassyi.ZeroAlloc.Linq.StackLinqExtensions.Average((global::Kassyi.ZeroAlloc.Linq.StackLinqExtensions.Take(global::Kassyi.ZeroAlloc.Linq.StackLinqExtensions.AsStackEnumerable(data), takeCount)));
 __gsharp_ctx.__gsharp_state = -1;
 return;
 }
@@ -3923,7 +3923,7 @@ switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-result[0] = (data.AsStackEnumerable().Take(takeCount)).Aggregate((int acc, int x) => acc + x);
+result[0] = global::Kassyi.ZeroAlloc.Linq.StackLinqExtensions.Aggregate((global::Kassyi.ZeroAlloc.Linq.StackLinqExtensions.Take(global::Kassyi.ZeroAlloc.Linq.StackLinqExtensions.AsStackEnumerable(data), takeCount)), (int acc, int x) => acc + x);
 __gsharp_ctx.__gsharp_state = -1;
 return;
 }
@@ -4234,18 +4234,18 @@ switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-results[0] = data.AsStackEnumerable().Take(0).Sum();
-results[1] = data.AsStackEnumerable().Take(0).Count();
-results[2] = data.AsStackEnumerable().Take(0).Any() ? 1 : 0;
-results[3] = data.AsStackEnumerable().Take(0).All(x => x > 0) ? 1 : 0;
-results[4] = data.AsStackEnumerable().Take(0).Contains(7) ? 1 : 0;
-results[5] = data.AsStackEnumerable().Take(0).FirstOrDefault();
-results[6] = data.AsStackEnumerable().Take(0).LastOrDefault();
-results[7] = data.AsStackEnumerable().Take(0).SingleOrDefault();
-results[8] = data.AsStackEnumerable().Take(0).ElementAtOrDefault(0);
-results[9] = data.AsStackEnumerable().Take(0).Aggregate(42, (int acc, int x) => acc + x);
-results[10] = (data.AsStackEnumerable().Take(0)).Sum();
-results[11] = (data.AsStackEnumerable().Take(0)).Aggregate(42, (int acc, int x) => acc + x);
+results[0] = global::Kassyi.ZeroAlloc.Linq.StackLinqExtensions.Sum(global::Kassyi.ZeroAlloc.Linq.StackLinqExtensions.Take(global::Kassyi.ZeroAlloc.Linq.StackLinqExtensions.AsStackEnumerable(data), 0));
+results[1] = global::Kassyi.ZeroAlloc.Linq.StackLinqExtensions.Count(global::Kassyi.ZeroAlloc.Linq.StackLinqExtensions.Take(global::Kassyi.ZeroAlloc.Linq.StackLinqExtensions.AsStackEnumerable(data), 0));
+results[2] = global::Kassyi.ZeroAlloc.Linq.StackLinqExtensions.Any(global::Kassyi.ZeroAlloc.Linq.StackLinqExtensions.Take(global::Kassyi.ZeroAlloc.Linq.StackLinqExtensions.AsStackEnumerable(data), 0)) ? 1 : 0;
+results[3] = global::Kassyi.ZeroAlloc.Linq.StackLinqExtensions.All(global::Kassyi.ZeroAlloc.Linq.StackLinqExtensions.Take(global::Kassyi.ZeroAlloc.Linq.StackLinqExtensions.AsStackEnumerable(data), 0), x => x > 0) ? 1 : 0;
+results[4] = global::Kassyi.ZeroAlloc.Linq.StackLinqExtensions.Contains(global::Kassyi.ZeroAlloc.Linq.StackLinqExtensions.Take(global::Kassyi.ZeroAlloc.Linq.StackLinqExtensions.AsStackEnumerable(data), 0), 7) ? 1 : 0;
+results[5] = global::Kassyi.ZeroAlloc.Linq.StackLinqExtensions.FirstOrDefault(global::Kassyi.ZeroAlloc.Linq.StackLinqExtensions.Take(global::Kassyi.ZeroAlloc.Linq.StackLinqExtensions.AsStackEnumerable(data), 0));
+results[6] = global::Kassyi.ZeroAlloc.Linq.StackLinqExtensions.LastOrDefault(global::Kassyi.ZeroAlloc.Linq.StackLinqExtensions.Take(global::Kassyi.ZeroAlloc.Linq.StackLinqExtensions.AsStackEnumerable(data), 0));
+results[7] = global::Kassyi.ZeroAlloc.Linq.StackLinqExtensions.SingleOrDefault(global::Kassyi.ZeroAlloc.Linq.StackLinqExtensions.Take(global::Kassyi.ZeroAlloc.Linq.StackLinqExtensions.AsStackEnumerable(data), 0));
+results[8] = global::Kassyi.ZeroAlloc.Linq.StackLinqExtensions.ElementAtOrDefault(global::Kassyi.ZeroAlloc.Linq.StackLinqExtensions.Take(global::Kassyi.ZeroAlloc.Linq.StackLinqExtensions.AsStackEnumerable(data), 0), 0);
+results[9] = global::Kassyi.ZeroAlloc.Linq.StackLinqExtensions.Aggregate(global::Kassyi.ZeroAlloc.Linq.StackLinqExtensions.Take(global::Kassyi.ZeroAlloc.Linq.StackLinqExtensions.AsStackEnumerable(data), 0), 42, (int acc, int x) => acc + x);
+results[10] = global::Kassyi.ZeroAlloc.Linq.StackLinqExtensions.Sum((global::Kassyi.ZeroAlloc.Linq.StackLinqExtensions.Take(global::Kassyi.ZeroAlloc.Linq.StackLinqExtensions.AsStackEnumerable(data), 0)));
+results[11] = global::Kassyi.ZeroAlloc.Linq.StackLinqExtensions.Aggregate((global::Kassyi.ZeroAlloc.Linq.StackLinqExtensions.Take(global::Kassyi.ZeroAlloc.Linq.StackLinqExtensions.AsStackEnumerable(data), 0)), 42, (int acc, int x) => acc + x);
 __gsharp_ctx.__gsharp_state = -1;
 return;
 }

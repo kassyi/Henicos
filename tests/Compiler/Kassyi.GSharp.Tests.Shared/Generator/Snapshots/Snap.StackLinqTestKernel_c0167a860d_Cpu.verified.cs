@@ -139,10 +139,10 @@ switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-int tid = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
+int tid = global::Kassyi.GSharp.Core.BlockIndex.X * global::Kassyi.GSharp.Core.BlockDimension.X + global::Kassyi.GSharp.Core.ThreadIndex.X;
 if (tid == 0)
 {
-int count = data.AsStackEnumerable().Where(x => x > 5).Select(x => x * 2).Count();
+int count = global::Kassyi.ZeroAlloc.Linq.StackLinqExtensions.Count(global::Kassyi.ZeroAlloc.Linq.StackLinqExtensions.Select(global::Kassyi.ZeroAlloc.Linq.StackLinqExtensions.Where(global::Kassyi.ZeroAlloc.Linq.StackLinqExtensions.AsStackEnumerable(data), x => x > 5), x => x * 2));
 data[0] = count;
 }
 
@@ -349,10 +349,10 @@ switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-int tid = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
+int tid = global::Kassyi.GSharp.Core.BlockIndex.X * global::Kassyi.GSharp.Core.BlockDimension.X + global::Kassyi.GSharp.Core.ThreadIndex.X;
 if (tid == 0)
 {
-bool hasEven = data.AsStackEnumerable().Any(x => x % 2 == 0);
+bool hasEven = global::Kassyi.ZeroAlloc.Linq.StackLinqExtensions.Any(global::Kassyi.ZeroAlloc.Linq.StackLinqExtensions.AsStackEnumerable(data), x => x % 2 == 0);
 data[0] = hasEven ? 1 : 0;
 }
 
@@ -559,10 +559,10 @@ switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-int tid = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
+int tid = global::Kassyi.GSharp.Core.BlockIndex.X * global::Kassyi.GSharp.Core.BlockDimension.X + global::Kassyi.GSharp.Core.ThreadIndex.X;
 if (tid == 0)
 {
-int sum = data.AsStackEnumerable().Select(x => x * 2).Sum();
+int sum = global::Kassyi.ZeroAlloc.Linq.StackLinqExtensions.Sum(global::Kassyi.ZeroAlloc.Linq.StackLinqExtensions.Select(global::Kassyi.ZeroAlloc.Linq.StackLinqExtensions.AsStackEnumerable(data), x => x * 2));
 data[0] = sum;
 }
 
@@ -769,10 +769,10 @@ switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-int tid = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
+int tid = global::Kassyi.GSharp.Core.BlockIndex.X * global::Kassyi.GSharp.Core.BlockDimension.X + global::Kassyi.GSharp.Core.ThreadIndex.X;
 if (tid == 0)
 {
-int first = data.AsStackEnumerable().FirstOrDefault(x => x > 10);
+int first = global::Kassyi.ZeroAlloc.Linq.StackLinqExtensions.FirstOrDefault(global::Kassyi.ZeroAlloc.Linq.StackLinqExtensions.AsStackEnumerable(data), x => x > 10);
 data[0] = first;
 }
 
@@ -988,10 +988,10 @@ switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-int tid = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
+int tid = global::Kassyi.GSharp.Core.BlockIndex.X * global::Kassyi.GSharp.Core.BlockDimension.X + global::Kassyi.GSharp.Core.ThreadIndex.X;
 if (tid == 0)
 {
-int sum = data.AsStackEnumerable().Where((x, i) => x > 5 && i % 2 == 0).Select((x, i) => x + i).Sum(x => x * 3);
+int sum = global::Kassyi.ZeroAlloc.Linq.StackLinqExtensions.Sum(global::Kassyi.ZeroAlloc.Linq.StackLinqExtensions.Select(global::Kassyi.ZeroAlloc.Linq.StackLinqExtensions.Where(global::Kassyi.ZeroAlloc.Linq.StackLinqExtensions.AsStackEnumerable(data), (x, i) => x > 5 && i % 2 == 0), (x, i) => x + i), x => x * 3);
 data[0] = sum;
 }
 

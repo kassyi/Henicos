@@ -122,7 +122,7 @@ switch (__gsharp_ctx.__gsharp_state)
 case 0:
 {
 int sum = 0;
-Gpu.Hint.Unroll();
+global::Kassyi.GSharp.Core.Gpu.Hint.Unroll();
 for (int i = 0; i < 4; i++)
 {
 sum += i + 1;
@@ -321,7 +321,7 @@ switch (__gsharp_ctx.__gsharp_state)
 case 0:
 {
 int sum = 0;
-Gpu.Hint.Unroll(4);
+global::Kassyi.GSharp.Core.Gpu.Hint.Unroll(4);
 for (int i = 0; i < 4; i++)
 {
 sum += (i + 1) * 10;
@@ -523,7 +523,7 @@ case 0:
 {
 int count = 0;
 int sum = 0;
-Gpu.Hint.Unroll();
+global::Kassyi.GSharp.Core.Gpu.Hint.Unroll();
 while (count < 3)
 {
 sum += 5;
@@ -728,7 +728,7 @@ case 0:
 int sum = 0;
 for (int i = 0; i < 2; i++)
 {
-Gpu.Hint.Unroll();
+global::Kassyi.GSharp.Core.Gpu.Hint.Unroll();
 for (int j = 0; j < 3; j++)
 {
 sum += (i + 1) * (j + 1);
@@ -928,7 +928,7 @@ switch (__gsharp_ctx.__gsharp_state)
 case 0:
 {
 int sum = 0;
-Gpu.Hint.Unroll();
+global::Kassyi.GSharp.Core.Gpu.Hint.Unroll();
 for (int i = 0; i < 4; i++)
 sum += 2;
 data[0] = sum;

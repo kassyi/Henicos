@@ -675,7 +675,7 @@ switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-AddOne(ref __gsharp_ctx.v.X);
+global::Kassyi.GSharp.Tests.Shared.Syntax.SuspendingValueParameterKernels.AddOne(ref __gsharp_ctx.v.X);
 __gsharp_ctx.__gsharp_state = 1;
 return false;
 }
@@ -955,7 +955,7 @@ public int __gsharp_state;
 public uint __gsharp_warp_exchange;
 public bool __gsharp_yielded_for_grid_sync;
 public int tid;
-public SuspendVector2 v;
+public global::Kassyi.GSharp.Tests.Shared.Syntax.SuspendVector2 v;
 public float __gsharp_call_temp_0;
 public int __gsharp_call_temp_1;
 public global::Kassyi.GSharp.Tests.Shared.Syntax.SuspendingValueParameterKernels.__gsharp_frame_Kassyi__GSharp__Tests__Shared__Syntax__SuspendingValueParameterKernels__MutateFieldThenSync __gsharp_call_frame_0 = new();
@@ -967,7 +967,7 @@ switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-__gsharp_ctx.tid = ThreadIndex.X;
+__gsharp_ctx.tid = global::Kassyi.GSharp.Core.ThreadIndex.X;
 __gsharp_ctx.v = default;
 __gsharp_ctx.v.X = __gsharp_ctx.tid;
 goto case 1;
@@ -1222,7 +1222,7 @@ public int __gsharp_state;
 public uint __gsharp_warp_exchange;
 public bool __gsharp_yielded_for_grid_sync;
 public int tid;
-public SuspendNested v;
+public global::Kassyi.GSharp.Tests.Shared.Syntax.SuspendNested v;
 public int __gsharp_call_temp_0;
 public global::Kassyi.GSharp.Tests.Shared.Syntax.SuspendingValueParameterKernels.__gsharp_frame_Kassyi__GSharp__Tests__Shared__Syntax__SuspendingValueParameterKernels__MutateNestedFieldThenSync __gsharp_call_frame_0 = new();
 }
@@ -1232,7 +1232,7 @@ switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-__gsharp_ctx.tid = ThreadIndex.X;
+__gsharp_ctx.tid = global::Kassyi.GSharp.Core.ThreadIndex.X;
 __gsharp_ctx.v = default;
 __gsharp_ctx.v.A.B = __gsharp_ctx.tid;
 __gsharp_ctx.v.C = 1000;
@@ -1482,7 +1482,7 @@ public int __gsharp_state;
 public uint __gsharp_warp_exchange;
 public bool __gsharp_yielded_for_grid_sync;
 public int tid;
-public SuspendWithBuffer v;
+public global::Kassyi.GSharp.Tests.Shared.Syntax.SuspendWithBuffer v;
 public int index;
 public int __gsharp_call_temp_0;
 public global::Kassyi.GSharp.Tests.Shared.Syntax.SuspendingValueParameterKernels.__gsharp_frame_Kassyi__GSharp__Tests__Shared__Syntax__SuspendingValueParameterKernels__MutateInlineArrayElementThenSync __gsharp_call_frame_0 = new();
@@ -1493,7 +1493,7 @@ switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-__gsharp_ctx.tid = ThreadIndex.X;
+__gsharp_ctx.tid = global::Kassyi.GSharp.Core.ThreadIndex.X;
 __gsharp_ctx.v = default;
 __gsharp_ctx.index = __gsharp_ctx.tid & 3;
 __gsharp_ctx.v.Buffer[__gsharp_ctx.index] = __gsharp_ctx.tid;
@@ -1719,7 +1719,7 @@ public int __gsharp_state;
 public uint __gsharp_warp_exchange;
 public bool __gsharp_yielded_for_grid_sync;
 public int tid;
-public SuspendVector2 v;
+public global::Kassyi.GSharp.Tests.Shared.Syntax.SuspendVector2 v;
 public float __gsharp_call_temp_0;
 public global::Kassyi.GSharp.Tests.Shared.Syntax.SuspendingValueParameterKernels.__gsharp_frame_Kassyi__GSharp__Tests__Shared__Syntax__SuspendingValueParameterKernels__IncrementFieldThenSync __gsharp_call_frame_0 = new();
 }
@@ -1729,7 +1729,7 @@ switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-__gsharp_ctx.tid = ThreadIndex.X;
+__gsharp_ctx.tid = global::Kassyi.GSharp.Core.ThreadIndex.X;
 __gsharp_ctx.v = default;
 __gsharp_ctx.v.Y = __gsharp_ctx.tid;
 goto case 1;
@@ -1953,7 +1953,7 @@ public int __gsharp_state;
 public uint __gsharp_warp_exchange;
 public bool __gsharp_yielded_for_grid_sync;
 public int tid;
-public SuspendVector2 v;
+public global::Kassyi.GSharp.Tests.Shared.Syntax.SuspendVector2 v;
 public float __gsharp_call_temp_0;
 public global::Kassyi.GSharp.Tests.Shared.Syntax.SuspendingValueParameterKernels.__gsharp_frame_Kassyi__GSharp__Tests__Shared__Syntax__SuspendingValueParameterKernels__PassFieldByRefThenSync __gsharp_call_frame_0 = new();
 }
@@ -1963,7 +1963,7 @@ switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-__gsharp_ctx.tid = ThreadIndex.X;
+__gsharp_ctx.tid = global::Kassyi.GSharp.Core.ThreadIndex.X;
 __gsharp_ctx.v = default;
 __gsharp_ctx.v.X = __gsharp_ctx.tid * 2;
 goto case 1;
@@ -2180,7 +2180,7 @@ switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-__gsharp_ctx.tid = ThreadIndex.X;
+__gsharp_ctx.tid = global::Kassyi.GSharp.Core.ThreadIndex.X;
 goto case 1;
 }
 
@@ -2410,7 +2410,7 @@ public int __gsharp_state;
 public uint __gsharp_warp_exchange;
 public bool __gsharp_yielded_for_grid_sync;
 public int tid;
-public SuspendVector2 v;
+public global::Kassyi.GSharp.Tests.Shared.Syntax.SuspendVector2 v;
 public float __gsharp_call_temp_0;
 public global::Kassyi.GSharp.Tests.Shared.Syntax.SuspendingValueParameterKernels.__gsharp_frame_Kassyi__GSharp__Tests__Shared__Syntax__SuspendingValueParameterKernels__TupleSwapFieldsThenSync __gsharp_call_frame_0 = new();
 }
@@ -2420,7 +2420,7 @@ switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-__gsharp_ctx.tid = ThreadIndex.X;
+__gsharp_ctx.tid = global::Kassyi.GSharp.Core.ThreadIndex.X;
 __gsharp_ctx.v = default;
 __gsharp_ctx.v.X = __gsharp_ctx.tid;
 __gsharp_ctx.v.Y = 1000.0f;
@@ -2638,7 +2638,7 @@ switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-__gsharp_ctx.tid = ThreadIndex.X;
+__gsharp_ctx.tid = global::Kassyi.GSharp.Core.ThreadIndex.X;
 goto case 1;
 }
 

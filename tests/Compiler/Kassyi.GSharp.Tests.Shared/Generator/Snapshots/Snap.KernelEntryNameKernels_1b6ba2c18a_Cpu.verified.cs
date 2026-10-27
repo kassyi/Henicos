@@ -116,7 +116,7 @@ switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-int tid = ThreadIndex.X;
+int tid = global::Kassyi.GSharp.Core.ThreadIndex.X;
 output[tid] = 100 + tid;
 __gsharp_ctx.__gsharp_state = -1;
 return;
@@ -330,7 +330,7 @@ switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-int tid = ThreadIndex.X;
+int tid = global::Kassyi.GSharp.Core.ThreadIndex.X;
 output[tid] = 200 + tid;
 __gsharp_ctx.__gsharp_state = -1;
 return;
@@ -544,7 +544,7 @@ switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-int tid = ThreadIndex.X;
+int tid = global::Kassyi.GSharp.Core.ThreadIndex.X;
 output[tid] = tid * 2;
 __gsharp_ctx.__gsharp_state = -1;
 return;
@@ -732,7 +732,7 @@ switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-int tid = ThreadIndex.X;
+int tid = global::Kassyi.GSharp.Core.ThreadIndex.X;
 output[tid] = tid * 0.5f;
 __gsharp_ctx.__gsharp_state = -1;
 return;

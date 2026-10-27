@@ -74,7 +74,7 @@ return false;
 
 case 1:
 {
-var __gsharp_warp_temp_0 = __gsharp_warp_shuffle_read_xor_sync(__gsharp_ctx, FullMask, value, 1);
+var __gsharp_warp_temp_0 = __gsharp_warp_shuffle_read_xor_sync(__gsharp_ctx, global::Kassyi.GSharp.Tests.Shared.Syntax.SuspendingCallArgumentKernels.FullMask, value, 1);
 int neighbor = __gsharp_warp_temp_0;
 int result = (value + neighbor) * (int)scale + (int)color;
 {
@@ -221,7 +221,7 @@ switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-__gsharp_ctx.tid = ThreadIndex.X;
+__gsharp_ctx.tid = global::Kassyi.GSharp.Core.ThreadIndex.X;
 __gsharp_ctx.__gsharp_arg_temp_0 = input[__gsharp_ctx.tid];
 goto case 1;
 }
@@ -447,7 +447,7 @@ switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-__gsharp_ctx.tid = ThreadIndex.X;
+__gsharp_ctx.tid = global::Kassyi.GSharp.Core.ThreadIndex.X;
 __gsharp_ctx.__gsharp_arg_temp_0 = input[__gsharp_ctx.tid];
 goto case 1;
 }
@@ -676,8 +676,8 @@ switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-__gsharp_ctx.tid = ThreadIndex.X;
-__gsharp_ctx.__gsharp_arg_temp_0 = PacketColor.Green;
+__gsharp_ctx.tid = global::Kassyi.GSharp.Core.ThreadIndex.X;
+__gsharp_ctx.__gsharp_arg_temp_0 = global::Kassyi.GSharp.Tests.Shared.Syntax.PacketColor.Green;
 __gsharp_ctx.__gsharp_arg_temp_1 = input[__gsharp_ctx.tid] + 1;
 goto case 1;
 }

@@ -131,26 +131,26 @@ switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-int tid = ThreadIndex.X;
+int tid = global::Kassyi.GSharp.Core.ThreadIndex.X;
 // Interlocked.Add
-Interlocked.Add(ref intBuf[0], 1);
-Interlocked.Add(ref longBuf[0], 2L);
+global::System.Threading.Interlocked.Add(ref intBuf[0], 1);
+global::System.Threading.Interlocked.Add(ref longBuf[0], 2L);
 // Interlocked.Exchange
 if (tid == 0)
 {
-Interlocked.Exchange(ref intBuf[1], 100);
-Interlocked.Exchange(ref uintBuf[1], 200u);
-Interlocked.Exchange(ref longBuf[1], 300L);
-Interlocked.Exchange(ref ulongBuf[1], 400ul);
+global::System.Threading.Interlocked.Exchange(ref intBuf[1], 100);
+global::System.Threading.Interlocked.Exchange(ref uintBuf[1], 200u);
+global::System.Threading.Interlocked.Exchange(ref longBuf[1], 300L);
+global::System.Threading.Interlocked.Exchange(ref ulongBuf[1], 400ul);
 }
 
 // Interlocked.CompareExchange
 if (tid == 0)
 {
-Interlocked.CompareExchange(ref intBuf[2], 500, 0);
-Interlocked.CompareExchange(ref uintBuf[2], 600u, 0u);
-Interlocked.CompareExchange(ref longBuf[2], 700L, 0L);
-Interlocked.CompareExchange(ref ulongBuf[2], 800ul, 0ul);
+global::System.Threading.Interlocked.CompareExchange(ref intBuf[2], 500, 0);
+global::System.Threading.Interlocked.CompareExchange(ref uintBuf[2], 600u, 0u);
+global::System.Threading.Interlocked.CompareExchange(ref longBuf[2], 700L, 0L);
+global::System.Threading.Interlocked.CompareExchange(ref ulongBuf[2], 800ul, 0ul);
 }
 
 __gsharp_ctx.__gsharp_state = -1;
@@ -378,13 +378,13 @@ switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-int tid = ThreadIndex.X;
+int tid = global::Kassyi.GSharp.Core.ThreadIndex.X;
 // 配列要素: ref array[tid]
-Interlocked.Add(ref array[tid], 10);
+global::System.Threading.Interlocked.Add(ref array[tid], 10);
 // 構造体フィールド: ref structArray[tid].ValueI, ValueU, ValueL
-Interlocked.Add(ref structArray[tid].ValueI, 1);
-Interlocked.Exchange(ref structArray[tid].ValueU, 42u);
-Interlocked.CompareExchange(ref structArray[tid].ValueL, 99L, 0L);
+global::System.Threading.Interlocked.Add(ref structArray[tid].ValueI, 1);
+global::System.Threading.Interlocked.Exchange(ref structArray[tid].ValueU, 42u);
+global::System.Threading.Interlocked.CompareExchange(ref structArray[tid].ValueL, 99L, 0L);
 __gsharp_ctx.__gsharp_state = -1;
 return;
 }
@@ -597,29 +597,29 @@ switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-int tid = ThreadIndex.X;
+int tid = global::Kassyi.GSharp.Core.ThreadIndex.X;
 // Double (System.Math) -> sin, cos, clamp, max, min, abs, exp, sqrt, log
 double dVal = doubleInputs[tid];
-doubleOutputs[0] = Math.Sin(dVal);
-doubleOutputs[1] = Math.Cos(dVal);
-doubleOutputs[2] = Math.Clamp(dVal, 0.0, 10.0);
-doubleOutputs[3] = Math.Max(dVal, 5.0);
-doubleOutputs[4] = Math.Min(dVal, 5.0);
-doubleOutputs[5] = Math.Abs(dVal);
-doubleOutputs[6] = Math.Exp(dVal);
-doubleOutputs[7] = Math.Sqrt(Math.Abs(dVal)); // Ensure no domain error for general test
-doubleOutputs[8] = Math.Log(Math.Abs(dVal) + 1.0); // Ensure no domain error
+doubleOutputs[0] = global::System.Math.Sin(dVal);
+doubleOutputs[1] = global::System.Math.Cos(dVal);
+doubleOutputs[2] = global::System.Math.Clamp(dVal, 0.0, 10.0);
+doubleOutputs[3] = global::System.Math.Max(dVal, 5.0);
+doubleOutputs[4] = global::System.Math.Min(dVal, 5.0);
+doubleOutputs[5] = global::System.Math.Abs(dVal);
+doubleOutputs[6] = global::System.Math.Exp(dVal);
+doubleOutputs[7] = global::System.Math.Sqrt(global::System.Math.Abs(dVal)); // Ensure no domain error for general test
+doubleOutputs[8] = global::System.Math.Log(global::System.Math.Abs(dVal) + 1.0); // Ensure no domain error
 // Float (System.MathF) -> sinf, cosf, maxf, minf, absf, expf, sqrtf, logf; Math.Clamp for float
 float fVal = floatInputs[tid];
-floatOutputs[0] = MathF.Sin(fVal);
-floatOutputs[1] = MathF.Cos(fVal);
-floatOutputs[2] = Math.Clamp(fVal, 0.0f, 10.0f);
-floatOutputs[3] = MathF.Max(fVal, 5.0f);
-floatOutputs[4] = MathF.Min(fVal, 5.0f);
-floatOutputs[5] = MathF.Abs(fVal);
-floatOutputs[6] = MathF.Exp(fVal);
-floatOutputs[7] = MathF.Sqrt(MathF.Abs(fVal));
-floatOutputs[8] = MathF.Log(MathF.Abs(fVal) + 1.0f);
+floatOutputs[0] = global::System.MathF.Sin(fVal);
+floatOutputs[1] = global::System.MathF.Cos(fVal);
+floatOutputs[2] = global::System.Math.Clamp(fVal, 0.0f, 10.0f);
+floatOutputs[3] = global::System.MathF.Max(fVal, 5.0f);
+floatOutputs[4] = global::System.MathF.Min(fVal, 5.0f);
+floatOutputs[5] = global::System.MathF.Abs(fVal);
+floatOutputs[6] = global::System.MathF.Exp(fVal);
+floatOutputs[7] = global::System.MathF.Sqrt(global::System.MathF.Abs(fVal));
+floatOutputs[8] = global::System.MathF.Log(global::System.MathF.Abs(fVal) + 1.0f);
 __gsharp_ctx.__gsharp_state = -1;
 return;
 }
@@ -840,23 +840,23 @@ switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-int tid = ThreadIndex.X;
+int tid = global::Kassyi.GSharp.Core.ThreadIndex.X;
 // Float NaN / Infinity / Extremes
 float f = floatSpecialInputs[tid];
-floatSpecialResults[0] = MathF.Abs(f);
-floatSpecialResults[1] = MathF.Max(f, 0.0f);
-floatSpecialResults[2] = MathF.Min(f, 0.0f);
-floatSpecialResults[3] = MathF.Exp(f);
-floatSpecialResults[4] = MathF.Sqrt(f);
-floatSpecialResults[5] = MathF.Log(f);
+floatSpecialResults[0] = global::System.MathF.Abs(f);
+floatSpecialResults[1] = global::System.MathF.Max(f, 0.0f);
+floatSpecialResults[2] = global::System.MathF.Min(f, 0.0f);
+floatSpecialResults[3] = global::System.MathF.Exp(f);
+floatSpecialResults[4] = global::System.MathF.Sqrt(f);
+floatSpecialResults[5] = global::System.MathF.Log(f);
 // Double NaN / Infinity / Extremes
 double d = doubleSpecialInputs[tid];
-doubleSpecialResults[0] = Math.Abs(d);
-doubleSpecialResults[1] = Math.Max(d, 0.0);
-doubleSpecialResults[2] = Math.Min(d, 0.0);
-doubleSpecialResults[3] = Math.Exp(d);
-doubleSpecialResults[4] = Math.Sqrt(d);
-doubleSpecialResults[5] = Math.Log(d);
+doubleSpecialResults[0] = global::System.Math.Abs(d);
+doubleSpecialResults[1] = global::System.Math.Max(d, 0.0);
+doubleSpecialResults[2] = global::System.Math.Min(d, 0.0);
+doubleSpecialResults[3] = global::System.Math.Exp(d);
+doubleSpecialResults[4] = global::System.Math.Sqrt(d);
+doubleSpecialResults[5] = global::System.Math.Log(d);
 __gsharp_ctx.__gsharp_state = -1;
 return;
 }

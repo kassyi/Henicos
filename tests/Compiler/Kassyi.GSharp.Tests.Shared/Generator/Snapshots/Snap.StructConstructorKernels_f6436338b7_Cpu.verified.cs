@@ -141,8 +141,8 @@ switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-int tid = ThreadIndex.X;
-var s = new CtorScaled(tid, 5);
+int tid = global::Kassyi.GSharp.Core.ThreadIndex.X;
+var s = new global::Kassyi.GSharp.Tests.Shared.Syntax.CtorScaled(tid, 5);
 output[tid] = s.Sum * 100 + s.Scale;
 __gsharp_ctx.__gsharp_state = -1;
 return;
@@ -355,8 +355,8 @@ switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-int tid = ThreadIndex.X;
-var s = new CtorScaled(tid);
+int tid = global::Kassyi.GSharp.Core.ThreadIndex.X;
+var s = new global::Kassyi.GSharp.Tests.Shared.Syntax.CtorScaled(tid);
 output[tid] = s.Sum;
 __gsharp_ctx.__gsharp_state = -1;
 return;
@@ -573,8 +573,8 @@ switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-int tid = ThreadIndex.X;
-var s = new CtorScaled(b: 1, a: tid);
+int tid = global::Kassyi.GSharp.Core.ThreadIndex.X;
+var s = new global::Kassyi.GSharp.Tests.Shared.Syntax.CtorScaled(b: 1, a: tid);
 output[tid] = s.Sum;
 __gsharp_ctx.__gsharp_state = -1;
 return;
@@ -787,8 +787,8 @@ switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-int tid = ThreadIndex.X;
-var s = new CtorScaled(tid, 5, 9);
+int tid = global::Kassyi.GSharp.Core.ThreadIndex.X;
+var s = new global::Kassyi.GSharp.Tests.Shared.Syntax.CtorScaled(tid, 5, 9);
 output[tid] = s.Sum * 100 + s.Scale;
 __gsharp_ctx.__gsharp_state = -1;
 return;
@@ -999,8 +999,8 @@ switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-int tid = ThreadIndex.X;
-var s = new CtorWithInitializers(tid);
+int tid = global::Kassyi.GSharp.Core.ThreadIndex.X;
+var s = new global::Kassyi.GSharp.Tests.Shared.Syntax.CtorWithInitializers(tid);
 output[tid] = s.Result;
 __gsharp_ctx.__gsharp_state = -1;
 return;
@@ -1214,9 +1214,9 @@ switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-int tid = ThreadIndex.X;
-var s1 = new CtorWithInitializers();
-var s2 = new CtorWithInitializers
+int tid = global::Kassyi.GSharp.Core.ThreadIndex.X;
+var s1 = new global::Kassyi.GSharp.Tests.Shared.Syntax.CtorWithInitializers();
+var s2 = new global::Kassyi.GSharp.Tests.Shared.Syntax.CtorWithInitializers
 {
 Result = tid + 10
 };
