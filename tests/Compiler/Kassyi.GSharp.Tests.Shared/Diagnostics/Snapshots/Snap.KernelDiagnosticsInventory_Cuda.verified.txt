@@ -118,6 +118,13 @@
 (89,9)-(89,31) GSH0003 analyzer: The syntax 'Operator macro '+' is applied to nullable operands (a lifted operator), which it does not expand; apply it to the values ('.Value')' is not supported in GSharp GPU kernels
 (101,9)-(101,18) GSH0003 analyzer: The syntax 'Operator macro target 'FormOps.Mul' has no overload that takes (FormRef result, FormRef left, FormRef right): Mul(T, T, T): generic methods are not candidates' is not supported in GSharp GPU kernels
 
+## Diagnostics/OperatorMacroPositions.cu.cs
+(47,9)-(47,24) GSH0003 analyzer: The syntax 'Operator macro '+' is an operand of another operator macro, but its target 'PositionOps.Add' takes the result as 'uint[] result', not as a ref or out parameter of an unmanaged type, so it has no temporary to compute into; assign it to a variable first, as in 't = a + b; c = c + t;'' is not supported in GSharp GPU kernels
+(57,9)-(57,12) GSH0003 analyzer: The syntax 'Operator macro '++' is expanded only as the right side of an assignment statement, or as an operand of an operator macro there; assign it to a variable first, as in 't = a + b;'' is not supported in GSharp GPU kernels
+(58,9)-(58,12) GSH0003 analyzer: The syntax 'Operator macro '++' is expanded only as the right side of an assignment statement, or as an operand of an operator macro there; assign it to a variable first, as in 't = a + b;'' is not supported in GSharp GPU kernels
+(59,23)-(59,28) GSH0003 analyzer: The syntax 'Operator macro '+' is expanded only as the right side of an assignment statement, or as an operand of an operator macro there; assign it to a variable first, as in 't = a + b;'' is not supported in GSharp GPU kernels
+(105,9)-(105,24) GSH0003 analyzer: The syntax 'Operator macro '-' returns 'NarrowValue', but the operand of '-' takes 'WideValue'; assign it to a variable first, as in 't = a + b; c = c + t;'' is not supported in GSharp GPU kernels
+
 ## Analyzers/MacroArgumentSadPath.cs
 (5,14)-(5,41) GSH0036 analyzer: The class 'GEN_36_MacroArgumentSadPath' containing [GpuKernel] methods must be declared as partial to support source generation of contexts and launch methods.
 (14,26)-(14,31) GSH0012 analyzer: The argument 'count' of macro 'ForUnroll' must be a compile-time constant

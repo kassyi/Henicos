@@ -271,6 +271,50 @@ public class UnsupportedConstructDiagnosticsTests
         Assert.Equal(6, diagnostics.Length);
     }
 
+    // An operator macro nested in another one is computed into a temporary only when its target takes the result as a ref or
+    // out value; BufferRef's target writes into the buffer of the assignment target
+    [Theory]
+    [InlineData("Cpu")]
+    [InlineData("Cuda")]
+    [Scenario(TestScenario.SadPath)]
+    public async Task Test_NestedOperatorMacroWithoutTemporary_ReportsGsh0003(string dialect)
+    {
+        var diagnostics = await KernelDiagnostics.RunTestCaseAsync("Diagnostics/OperatorMacroPositions.cu.cs", dialect);
+
+        Assert.Equal(
+            [(Analyzer, 47, 9, 47, 24)],
+            diagnostics.Ranges(
+                GSharpDiagnostics.UnsupportedSyntax.Id,
+                "Operator macro '+' is an operand of another operator macro, but its target 'PositionOps.Add' takes the result as 'uint[] result', not as a ref or out parameter of an unmanaged type, so it has no temporary to compute into; assign it to a variable first, as in 't = a + b; c = c + t;'"));
+
+        // The temporary is passed as it is, so its type must be the type of the outer operand
+        Assert.Equal(
+            [(Analyzer, 105, 9, 105, 24)],
+            diagnostics.Ranges(
+                GSharpDiagnostics.UnsupportedSyntax.Id,
+                "Operator macro '-' returns 'NarrowValue', but the operand of '-' takes 'WideValue'; assign it to a variable first, as in 't = a + b; c = c + t;'"));
+    }
+
+    // ++a; and a++; are statements of their own, and a + b initializes a declaration: no assignment expands them
+    [Theory]
+    [InlineData("Cpu")]
+    [InlineData("Cuda")]
+    [Scenario(TestScenario.SadPath)]
+    public async Task Test_OperatorMacroOutsideAssignment_ReportsGsh0003(string dialect)
+    {
+        var diagnostics = await KernelDiagnostics.RunTestCaseAsync("Diagnostics/OperatorMacroPositions.cu.cs", dialect);
+
+        Assert.Equal(
+            [(Analyzer, 57, 9, 57, 12), (Analyzer, 58, 9, 58, 12)],
+            diagnostics.Ranges(
+                GSharpDiagnostics.UnsupportedSyntax.Id,
+                "Operator macro '++' is expanded only as the right side of an assignment statement, or as an operand of an operator macro there; assign it to a variable first, as in 't = a + b;'"));
+        Assert.Equal(
+            [(Analyzer, 59, 23, 59, 28)],
+            diagnostics.Ranges(GSharpDiagnostics.UnsupportedSyntax.Id, "Operator macro '+' is expanded only as the right side of an assignment statement"));
+        Assert.Equal(5, diagnostics.Length);
+    }
+
     // StructSizeDiagnostics: SharedMemory<double>(5000) is 40000 bytes; 4096 doubles (exactly 32768 bytes) and 10000
     // bytes are not reported. ComprehensiveSpecKernel: SharedMemory<int>(10000); the dynamic size is not checked.
     [Theory]

@@ -32,6 +32,15 @@ internal static class GpuOperatorMacroTranspiler
             return false;
         }
 
+        if (!macro.Nested.IsDefaultOrEmpty)
+        {
+            // An operator macro among the operands is computed into a temporary first: a block of statements
+            using (context.Emitter.Writer.Scope())
+            {
+                return AppendExpansion(assignment.Left, -1, macro, assignment, ref context);
+            }
+        }
+
         ISymbol? contextVariable = null;
         if (macro.HasContext &&
             !TryFindContextVariable(assignment, targetMethod, context.Query.SemanticModel, out contextVariable,
@@ -76,6 +85,159 @@ internal static class GpuOperatorMacroTranspiler
 
         context.Emitter.Writer.AppendLine(";");
         return true;
+    }
+
+    // { auto __gsharp_seq_0 = <operand>; <T> __gsharp_seq_1{}; <inner target>(&__gsharp_seq_1, <inner operands>); <target>(<result>, __gsharp_seq_0, __gsharp_seq_1); }
+    // The call of <macro> with <result> (or the temporary <resultTemp>) as the result, after its operands: each operator
+    // macro among them is computed into a temporary of its own, and the operands before the last one that interferes
+    // with a later one (an inner call included) are evaluated into temporaries, in the C# order (EvaluationOrder)
+    private static bool AppendExpansion(ExpressionSyntax? result, int resultTemp, OperatorMacro macro,
+        AssignmentExpressionSyntax assignment, ref TranspileContext context)
+    {
+        var model = context.Query.SemanticModel;
+        var writer = context.Emitter.Writer;
+        if (macro.TargetMethod is not { } targetMethod)
+        {
+            return false;
+        }
+
+        ISymbol? contextVariable = null;
+        if (macro.HasContext &&
+            !TryFindContextVariable(assignment, targetMethod, model, out contextVariable, out var failure))
+        {
+            context.Reporter.Fail(GSharpDiagnostics.UnsupportedSyntax, assignment, failure);
+            return false;
+        }
+
+        var (leftOp, rightOp, extraArg) = ExtractOperands(macro.OperatorCall);
+        ExpressionSyntax?[] operands = [result, leftOp, rightOp, extraArg];
+        var firstOperandParameter = contextVariable != null ? 1 : 0;
+        var effects = new ExpressionEffects[operands.Length];
+        var parameterIndex = firstOperandParameter;
+        for (var i = 0; i < operands.Length; i++)
+        {
+            if (operands[i] is not { } operand)
+            {
+                parameterIndex += i == 0 ? 1 : 0;
+                continue;
+            }
+
+            var parameter = targetMethod.Parameters[parameterIndex++];
+            effects[i] = macro.TryGetNested(operand, out var inner) ? GetNestedEffects(inner, assignment, model)
+                : IsPassedByReference(parameter) ? ExpressionEffects.OfLocation(operand, model)
+                : ExpressionEffects.Of(operand, model);
+        }
+
+        var last = EvaluationOrder.LastSpilledOperand(effects);
+        var temps = new int[operands.Length];
+        parameterIndex = firstOperandParameter;
+        for (var i = 0; i < operands.Length; i++)
+        {
+            temps[i] = -1;
+            if (operands[i] is not { } operand)
+            {
+                parameterIndex += i == 0 ? 1 : 0;
+                continue;
+            }
+
+            var parameter = targetMethod.Parameters[parameterIndex++];
+            if (macro.TryGetNested(operand, out var inner) && inner.ResultType is { } innerType)
+            {
+                // <T> __gsharp_seq_<n>{};
+                temps[i] = context.Emitter.SequenceTempCounter++;
+                context.Emitter.Dialect.AppendType(ref context, innerType);
+                writer.Append(' ');
+                EvaluationOrder.AppendTempName(writer, temps[i]);
+                writer.AppendLine("{};");
+                if (!AppendExpansion(null, temps[i], inner, assignment, ref context))
+                {
+                    return false;
+                }
+            }
+            else if (i <= last && !effects[i].IsEmpty)
+            {
+                temps[i] = EvaluationOrder.DeclareTemp(ref context, operand, IsPassedByReference(parameter));
+            }
+        }
+
+        // [WHY] The same resolver as the declaration, so the call names the renamed (and overload-numbered) function.
+        CppNameResolver.AppendSymbolName(targetMethod, ref context);
+        using (writer.Parentheses())
+        {
+            parameterIndex = 0;
+            if (contextVariable != null)
+            {
+                AppendContextArgument(contextVariable, targetMethod.Parameters[parameterIndex++], assignment, ref context);
+            }
+
+            if (result == null)
+            {
+                // The temporary of an inner operator macro, passed to its ref or out result parameter
+                AppendSeparator(parameterIndex++, ref context);
+                writer.Append('&');
+                EvaluationOrder.AppendTempName(writer, resultTemp);
+            }
+
+            for (var i = result == null ? 1 : 0; i < operands.Length; i++)
+            {
+                AppendOperand(operands[i], temps[i], targetMethod, ref parameterIndex, ref context);
+            }
+        }
+
+        writer.AppendLine(";");
+        return true;
+    }
+
+    // What computing <inner> reads and writes: its operands, and the calls of its target and of the operator macros nested
+    // in it. A call reads memory (as ExpressionEffects counts every call), writes memory when DeviceFunctionEffects says
+    // it may, and reads and writes its context, which the call takes by reference
+    private static ExpressionEffects GetNestedEffects(OperatorMacro inner, AssignmentExpressionSyntax assignment,
+        SemanticModel model)
+    {
+        var effects = ExpressionEffects.Of(inner.OperatorCall, model);
+        var reads = effects.Reads;
+        var writes = effects.Writes;
+        AddCallEffects(inner, assignment, model, ref reads, ref writes);
+        return new ExpressionEffects(reads, writes);
+    }
+
+    private static void AddCallEffects(OperatorMacro macro, AssignmentExpressionSyntax assignment, SemanticModel model,
+        ref VariableSet reads, ref VariableSet writes)
+    {
+        reads.Memory = true;
+        if (macro.TargetMethod is { } target)
+        {
+            if (DeviceFunctionEffects.Classify(target, model.Compilation) == DeviceFunctionEffect.Memory)
+            {
+                writes.Memory = true;
+            }
+
+            // The context: a local or by-value parameter as itself (what an operand that reads it reads), anything
+            // else (a ref parameter, a variable with another name) as memory
+            if (macro.HasContext && TryFindContextVariable(assignment, target, model, out var context, out _))
+            {
+                if (context is ILocalSymbol { IsRef: false } or IParameterSymbol { RefKind: RefKind.None } &&
+                    !AliasedVariables.Contains(context, model.Compilation))
+                {
+                    reads.Add(context);
+                    writes.Add(context);
+                }
+                else
+                {
+                    writes.Memory = true;
+                }
+            }
+        }
+
+        if (macro.Nested.IsDefaultOrEmpty)
+        {
+            return;
+        }
+
+        foreach (var nested in macro.Nested)
+        {
+            AddCallEffects(nested.Inner, assignment, model, ref reads, ref writes);
+        }
     }
 
     // The temporary of each operand (-1: emitted in place), or null when no two operands interfere
@@ -181,41 +343,107 @@ internal static class GpuOperatorMacroTranspiler
             return false;
         }
 
+        macro = ResolveCall(operatorCall, operatorMethod, macroAttr, isLifted, isIncrementOrDecrement, semanticModel);
+        if (macro.TargetMethod is not { } method)
+        {
+            return true;
+        }
+
+        var resultParameter = method.Parameters[macro.HasContext ? 1 : 0];
+        if (!AcceptsTarget(assignment.Left, resultParameter, semanticModel))
+        {
+            var name = semanticModel.GetSymbol(assignment.Left) is { } symbol ? $"'{symbol.Name}' " : string.Empty;
+            macro = new OperatorMacro(operatorCall, null, false,
+                $"The target {name}of operator macro '{macro.TargetName}' does not convert to '{FormatType(resultParameter.Type)}' of parameter '{resultParameter.Name}'");
+        }
+
+        return true;
+    }
+
+    // The target that <operatorCall> (an operator macro <operatorMethod>) maps to, and the operator macros among its
+    // operands, each computed into a temporary; or why it cannot be expanded
+    private static OperatorMacro ResolveCall(ExpressionSyntax operatorCall, IMethodSymbol operatorMethod,
+        AttributeData macroAttr, bool isLifted, bool isIncrementOrDecrement, SemanticModel semanticModel)
+    {
         if (isIncrementOrDecrement || isLifted)
         {
             var op = GetOperatorText(operatorCall);
-            macro = new OperatorMacro(operatorCall, null, false, isIncrementOrDecrement
+            return new OperatorMacro(operatorCall, null, false, isIncrementOrDecrement
                 ? $"Operator macro '{op}' is an increment or decrement operator, which assigns its operand and is not expanded; write the assignment with a binary operator macro"
                 : $"Operator macro '{op}' is applied to nullable operands (a lifted operator), which it does not expand; apply it to the values ('.Value')");
-            return true;
         }
 
         if (macroAttr.ConstructorArguments[0].Value is not INamedTypeSymbol targetType ||
             macroAttr.ConstructorArguments[1].Value is not string targetMethodName)
         {
-            macro = new OperatorMacro(operatorCall, null, false, null);
-            return true;
+            return new OperatorMacro(operatorCall, null, false, null);
         }
 
         var target = $"{targetType.Name}.{targetMethodName}";
         if (ResolveOverload(targetType, targetMethodName, operatorMethod, semanticModel.Compilation, out var failure) is not
             var (method, hasContext))
         {
-            macro = new OperatorMacro(operatorCall, null, false, $"Operator macro target '{target}' {failure}");
-            return true;
+            return new OperatorMacro(operatorCall, null, false, $"Operator macro target '{target}' {failure}");
         }
 
-        var resultParameter = method.Parameters[hasContext ? 1 : 0];
-        if (!AcceptsTarget(assignment.Left, resultParameter, semanticModel))
+        ImmutableArray<NestedOperatorMacro>.Builder? nested = null;
+        var (left, right, extra) = ExtractOperands(operatorCall);
+        ExpressionSyntax?[] operands = [left, right ?? extra];
+        for (var operandIndex = 0; operandIndex < operands.Length; operandIndex++)
         {
-            var name = semanticModel.GetSymbol(assignment.Left) is { } symbol ? $"'{symbol.Name}' " : string.Empty;
-            macro = new OperatorMacro(operatorCall, null, false,
-                $"The target {name}of operator macro '{target}' does not convert to '{FormatType(resultParameter.Type)}' of parameter '{resultParameter.Name}'");
-            return true;
+            if (operands[operandIndex] is not { } operand)
+            {
+                continue;
+            }
+
+            var operandType = operatorMethod.Parameters[operandIndex].Type;
+            var unwrapped = UnwrapExpression(operand);
+            var (innerMethod, innerLifted, innerIncrementOrDecrement) = GetOperator(unwrapped, semanticModel);
+            if (GetMacroAttribute(innerMethod) is not { } innerAttr || innerMethod == null)
+            {
+                continue;
+            }
+
+            var inner = ResolveCall(unwrapped, innerMethod, innerAttr, innerLifted, innerIncrementOrDecrement,
+                semanticModel);
+            if (inner.TargetMethod is not { } innerTarget)
+            {
+                return new OperatorMacro(operatorCall, null, false,
+                    inner.Failure ?? $"Operator macro '{GetOperatorText(unwrapped)}' names no target method");
+            }
+
+            // [WHY] The target writes its result into the storage of the assignment target: a temporary has storage
+            // only when the result is a value passed by reference
+            var innerResult = innerTarget.Parameters[inner.HasContext ? 1 : 0];
+            if (innerResult.RefKind is not (RefKind.Ref or RefKind.Out) || !innerMethod.ReturnType.IsUnmanagedType)
+            {
+                return new OperatorMacro(operatorCall, null, false,
+                    $"Operator macro '{GetOperatorText(unwrapped)}' is an operand of another operator macro, but its target '{inner.TargetName}' takes the result as '{FormatRefKind(innerResult.RefKind)}{FormatType(innerResult.Type)} {innerResult.Name}', not as a ref or out parameter of an unmanaged type, so it has no temporary to compute into; assign it to a variable first, as in 't = a + b; c = c + t;'");
+            }
+
+            // The temporary is passed as it is: a conversion to the outer operand type would be a call of its own
+            if (!SymbolEqualityComparer.Default.Equals(innerMethod.ReturnType, operandType))
+            {
+                return new OperatorMacro(operatorCall, null, false,
+                    $"Operator macro '{GetOperatorText(unwrapped)}' returns '{FormatType(innerMethod.ReturnType)}', but the operand of '{GetOperatorText(operatorCall)}' takes '{FormatType(operandType)}'; assign it to a variable first, as in 't = a + b; c = c + t;'");
+            }
+
+            nested ??= ImmutableArray.CreateBuilder<NestedOperatorMacro>();
+            nested.Add(new NestedOperatorMacro(operand, inner));
         }
 
-        macro = new OperatorMacro(operatorCall, method, hasContext, null);
-        return true;
+        return new OperatorMacro(operatorCall, method, hasContext, null, target, operatorMethod.ReturnType,
+            nested?.ToImmutable() ?? default);
+    }
+
+    // An operand (as written) that is an operator macro itself. [WHY] A class: the runtime refuses to load a struct that
+    // holds a generic value type instantiated with the struct itself (ImmutableArray<(ExpressionSyntax, OperatorMacro)>
+    // through ValueTuple<..., OperatorMacro>: TypeLoadException); ImmutableArray of a class loads
+    internal sealed class NestedOperatorMacro(ExpressionSyntax operand, OperatorMacro inner)
+    {
+        public ExpressionSyntax Operand { get; } = operand;
+
+        public OperatorMacro Inner { get; } = inner;
     }
 
     /// <summary>A call of a <c>[GpuOperatorMacro]</c> operator and the method it maps to.</summary>
@@ -223,7 +451,10 @@ internal static class GpuOperatorMacroTranspiler
         ExpressionSyntax operatorCall,
         IMethodSymbol? targetMethod,
         bool hasContext,
-        string? failure)
+        string? failure,
+        string targetName = "",
+        ITypeSymbol? resultType = null,
+        ImmutableArray<NestedOperatorMacro> nested = default)
     {
         /// <summary>The operator expression, without the parentheses and casts around it.</summary>
         public ExpressionSyntax OperatorCall { get; } = operatorCall;
@@ -239,6 +470,76 @@ internal static class GpuOperatorMacroTranspiler
         /// it can, or when the attribute names no target.
         /// </summary>
         public string? Failure { get; } = failure;
+
+        /// <summary>The target as the attribute names it (<c>Ops.Add</c>), for messages.</summary>
+        public string TargetName { get; } = targetName;
+
+        /// <summary>The operator's return type: the type of the temporary that an inner operator macro is computed into.</summary>
+        public ITypeSymbol? ResultType { get; } = resultType;
+
+        /// <summary>The operands (as written) that are operator macros themselves, computed into temporaries first.</summary>
+        public ImmutableArray<NestedOperatorMacro> Nested { get; } = nested;
+
+        /// <summary>The inner operator macro that <paramref name="operand"/> is, if any.</summary>
+        public bool TryGetNested(ExpressionSyntax? operand, out OperatorMacro inner)
+        {
+            inner = default;
+            if (operand == null || Nested.IsDefaultOrEmpty ||
+                !Nested
+                    .AsStackEnumerable()
+                    .TryFirst(operand, static (candidate, o) => candidate.Operand == o, out var found))
+            {
+                return false;
+            }
+
+            inner = found.Inner;
+            return true;
+        }
+    }
+
+    /// <summary>
+    /// Why the operator macro expression <paramref name="operatorExpression"/> is not expanded where it is, or
+    /// <see langword="null"/> when it is: as the right side of an assignment statement (inside parentheses and casts), or
+    /// as an operand of an operator macro that is. <see cref="TryResolve"/> reports what goes wrong there; anywhere else
+    /// (a statement of its own such as <c>++x;</c>, an initializer, an argument) the operator would reach C++ as a
+    /// struct operator that does not exist.
+    /// </summary>
+    public static string? GetPositionFailure(ExpressionSyntax operatorExpression, SemanticModel semanticModel)
+    {
+        if (IsExpandedPosition(operatorExpression, semanticModel))
+        {
+            return null;
+        }
+
+        var op = operatorExpression is AssignmentExpressionSyntax assignment
+            ? assignment.OperatorToken.Text
+            : GetOperatorText(operatorExpression);
+        return $"Operator macro '{op}' is expanded only as the right side of an assignment statement, or as an operand of an operator macro there; assign it to a variable first, as in 't = a + b;'";
+    }
+
+    private static bool IsExpandedPosition(ExpressionSyntax operatorExpression, SemanticModel semanticModel)
+    {
+        // A compound assignment is the statement itself; TryResolve reports it
+        if (operatorExpression is AssignmentExpressionSyntax)
+        {
+            return operatorExpression.Parent is ExpressionStatementSyntax;
+        }
+
+        SyntaxNode node = operatorExpression;
+        while (node.Parent is ParenthesizedExpressionSyntax or CastExpressionSyntax)
+        {
+            node = node.Parent;
+        }
+
+        return node.Parent switch
+        {
+            AssignmentExpressionSyntax assignment when assignment.Right == node =>
+                assignment.Parent is ExpressionStatementSyntax,
+            BinaryExpressionSyntax or PrefixUnaryExpressionSyntax when node.Parent is ExpressionSyntax parent &&
+                GetMacroAttribute(GetOperator(parent, semanticModel).Method) != null =>
+                IsExpandedPosition(parent, semanticModel),
+            _ => false
+        };
     }
 
     // The operator call inside the parentheses and casts written around it: c = (T)(a + b) calls + (#641)
