@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using Kassyi.GSharp.Cryptography;
 using Kassyi.GSharp.Runtime.Aot;
 using Kassyi.GSharp.Runtime.Fatbin;
+using Kassyi.GSharp.Runtime.Interop;
 using Xunit;
 
 namespace Kassyi.GSharp.Tests.Shared.Runtime;
@@ -89,5 +90,92 @@ public class GpuKernelLoaderAotTests
 
         var hfunc = GpuKernelLoader.LoadAotKernel(s_validPtx, "empty_kernel");
         Assert.NotEqual(IntPtr.Zero, hfunc);
+    }
+
+    [Fact]
+    [Category(TestCategory.Runtime)]
+    [Scenario(TestScenario.SadPath)]
+    public void Test_CreateModuleLoadException_NoBinaryForGpu_ListsContentsAndDevice()
+    {
+        // An sm_90a-style cubin passes the pre-check on 9.0 but the driver can still refuse it; the message must then
+        // match the pre-check's message.
+        byte[] fatbinBytes = FatbinParserTests.CreateMockFatbin(
+            (FatbinItemInfo.TypeCubin, 86u, (ushort)8, (ushort)6),
+            (FatbinItemInfo.TypePtx, 86u, (ushort)8, (ushort)6)
+        );
+        Assert.True(FatbinParser.TryParse(fatbinBytes, out var image));
+
+        Exception ex = GpuKernelLoader.CreateModuleLoadException(CUresult.CudaErrorNoBinaryForGpu, image, 7, 5);
+
+        var invalid = Assert.IsType<InvalidOperationException>(ex);
+        Assert.Contains("does not contain any PTX or cuBIN compatible with the current GPU (sm_75)", invalid.Message);
+        Assert.Contains("cuBIN sm_86", invalid.Message);
+        Assert.Contains("PTX compute_86", invalid.Message);
+        Assert.Contains("GSharpTargetArchitectures", invalid.Message);
+        Assert.Contains("keep the default entries (for example compute_86,sm_86;compute_86,compute_86;compute_75,sm_75)",
+            invalid.Message);
+        var inner = Assert.IsType<CudaException>(invalid.InnerException);
+        Assert.Equal(CUresult.CudaErrorNoBinaryForGpu, inner.Result);
+        Assert.Equal(GpuKernelLoader.DescribeIncompatibleFatbin(image, 7, 5), invalid.Message);
+    }
+
+    [Fact]
+    [Category(TestCategory.Runtime)]
+    [Scenario(TestScenario.Boundary)]
+    public void Test_CreateModuleLoadException_NoBinaryForGpu_UnparsedFatbin_SaysContentsUnknown()
+    {
+        Exception ex = GpuKernelLoader.CreateModuleLoadException(CUresult.CudaErrorNoBinaryForGpu, null, 12, 0);
+
+        var invalid = Assert.IsType<InvalidOperationException>(ex);
+        Assert.Contains("(sm_120)", invalid.Message);
+        Assert.Contains("could not be parsed", invalid.Message);
+    }
+
+    [Fact]
+    [Category(TestCategory.Runtime)]
+    [Scenario(TestScenario.Boundary)]
+    public void Test_CreateModuleLoadException_NoBinaryForGpu_EmptyFatbin_SaysNoImages()
+    {
+        var empty = new FatbinImage(0xBA55ED50u, 1, 16, false, ReadOnlyMemory<byte>.Empty, ReadOnlyMemory<byte>.Empty, []);
+
+        Exception ex = GpuKernelLoader.CreateModuleLoadException(CUresult.CudaErrorNoBinaryForGpu, empty, 8, 6);
+
+        var invalid = Assert.IsType<InvalidOperationException>(ex);
+        Assert.Contains("(sm_86). It contains no images.", invalid.Message);
+    }
+
+    // The default fatbin carries compute_86 PTX; a driver older than the toolkit cannot JIT-compile it
+    [Fact]
+    [Category(TestCategory.Runtime)]
+    [Scenario(TestScenario.SadPath)]
+    public void Test_CreateModuleLoadException_UnsupportedPtxVersion_NamesOldDriverAndFixes()
+    {
+        byte[] fatbinBytes = FatbinParserTests.CreateMockFatbin(
+            (FatbinItemInfo.TypeCubin, 86u, (ushort)8, (ushort)6),
+            (FatbinItemInfo.TypePtx, 86u, (ushort)8, (ushort)6)
+        );
+        Assert.True(FatbinParser.TryParse(fatbinBytes, out var image));
+
+        Exception ex = GpuKernelLoader.CreateModuleLoadException(CUresult.CudaErrorUnsupportedPtxVersion, image, 12, 0);
+
+        var invalid = Assert.IsType<InvalidOperationException>(ex);
+        Assert.Contains("(sm_120)", invalid.Message);
+        Assert.Contains("driver is older than the CUDA Toolkit", invalid.Message);
+        Assert.Contains("PTX compute_86", invalid.Message);
+        Assert.Contains("Update the NVIDIA driver", invalid.Message);
+        Assert.Contains("compute_86,sm_86;compute_86,compute_86;compute_120,sm_120", invalid.Message);
+        var inner = Assert.IsType<CudaException>(invalid.InnerException);
+        Assert.Equal(CUresult.CudaErrorUnsupportedPtxVersion, inner.Result);
+    }
+
+    [Fact]
+    [Category(TestCategory.Runtime)]
+    [Scenario(TestScenario.SadPath)]
+    public void Test_CreateModuleLoadException_OtherError_StaysCudaException()
+    {
+        Exception ex = GpuKernelLoader.CreateModuleLoadException(CUresult.CudaErrorInvalidImage, null, 8, 6);
+
+        var cuda = Assert.IsType<CudaException>(ex);
+        Assert.Equal(CUresult.CudaErrorInvalidImage, cuda.Result);
     }
 }

@@ -333,7 +333,7 @@ public class FatbinParserTests
 
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_IsCompatibleWith_CubinExactMatch()
+    public void Test_IsCompatibleWith_CubinSameMajorNewerMinor()
     {
         // Synthesize a CUBIN item (Type = 2) for sm_80
         byte[] cubinItem = CreateMockFatbin(type: FatbinItemInfo.TypeCubin, computeVersion: 80, major: 8, minor: 0);
@@ -341,10 +341,10 @@ public class FatbinParserTests
         Assert.True(success);
         Assert.NotNull(image);
 
-        // Native CUBIN requires exact architecture match
+        // A cubin runs on devices of the same major version with an equal or newer minor version
         Assert.True(image.IsCompatibleWith(8, 0));
-        Assert.False(image.IsCompatibleWith(8, 6)); // Incompatible for native cubin
-        Assert.False(image.IsCompatibleWith(9, 0)); // Incompatible for native cubin
+        Assert.True(image.IsCompatibleWith(8, 6));
+        Assert.False(image.IsCompatibleWith(9, 0)); // Another major version needs PTX
         Assert.False(image.IsCompatibleWith(7, 5));
     }
 
@@ -479,6 +479,9 @@ public class FatbinParserTests
     [InlineData(8, 0, 9, 0, true)]  // Newer major
     [InlineData(8, 6, 8, 0, false)] // Target older minor
     [InlineData(8, 0, 7, 5, false)] // Target older major
+    [InlineData(8, 6, 8, 6, true)]  // Default compute_86 PTX on its own architecture
+    [InlineData(8, 6, 9, 0, true)]  // Default compute_86 PTX is JIT-compiled on Hopper
+    [InlineData(8, 6, 12, 0, true)] // Default compute_86 PTX is JIT-compiled on Blackwell
     public void Test_IsCompatibleWith_Ptx_ForwardCompatibility(ushort ptxMajor, ushort ptxMinor, int deviceMajor, int deviceMinor, bool expected)
     {
         byte[] fatbinBytes = CreateMockFatbin(FatbinItemInfo.TypePtx, (uint)(ptxMajor * 10 + ptxMinor), ptxMajor, ptxMinor);
@@ -491,12 +494,14 @@ public class FatbinParserTests
 
     [Theory]
     [Scenario(TestScenario.HappyPath)]
-    [InlineData(8, 0, 8, 0, true)]  // Exact match
-    [InlineData(8, 0, 8, 6, false)] // Different minor
-    [InlineData(8, 0, 9, 0, false)] // Newer major (CUBIN is native machine code, not forward compatible)
-    [InlineData(8, 6, 8, 0, false)] // Older minor
-    [InlineData(8, 0, 7, 5, false)] // Older major
-    public void Test_IsCompatibleWith_Cubin_ExactMatchOnly(ushort cubinMajor, ushort cubinMinor, int deviceMajor, int deviceMinor, bool expected)
+    [InlineData(8, 6, 8, 6, true)]   // Exact match
+    [InlineData(8, 6, 8, 9, true)]   // Newer minor of the same major (sm_86 cubin on an RTX 40xx)
+    [InlineData(8, 0, 8, 6, true)]   // Newer minor of the same major
+    [InlineData(8, 6, 8, 0, false)]  // Older minor
+    [InlineData(8, 6, 9, 0, false)]  // Newer major (a cubin is not forward compatible across major versions)
+    [InlineData(8, 6, 12, 0, false)] // Newer major
+    [InlineData(8, 0, 7, 5, false)]  // Older major
+    public void Test_IsCompatibleWith_Cubin_SameMajorNewerMinor(ushort cubinMajor, ushort cubinMinor, int deviceMajor, int deviceMinor, bool expected)
     {
         byte[] fatbinBytes = CreateMockFatbin(FatbinItemInfo.TypeCubin, (uint)(cubinMajor * 10 + cubinMinor), cubinMajor, cubinMinor);
         bool parsed = FatbinParser.TryParse(fatbinBytes, out FatbinImage? image);

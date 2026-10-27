@@ -181,7 +181,8 @@ _Boolean_<br>
 
 `IsCompatibleWith` evaluates architecture compatibility according to NVIDIA module semantics:
 - **PTX (`FatbinItemInfo.TypePtx`)**: Supports forward-compatible JIT compilation and returns `true` when the target GPU architecture is equal to or newer than the embedded PTX target (`deviceMajor > item.Major || (deviceMajor == item.Major && deviceMinor >= item.Minor)`).
-- **cuBIN (`FatbinItemInfo.TypeCubin`)**: Requires an exact architecture match (`item.Major == deviceMajor && item.Minor == deviceMinor`).
+- **cuBIN (`FatbinItemInfo.TypeCubin`)**: Binary compatible within one major version, from its own minor version up (`item.Major == deviceMajor && deviceMinor >= item.Minor`): an `sm_86` cuBIN runs on 8.6 and 8.9, but not on 8.0 or 9.0.
+- The check accepts everything the driver may accept. Architecture-specific (`sm_90a`) and family-specific (`sm_100f`) cuBINs, and Tegra GPUs (8.7, Jetson Orin), which are not binary compatible with the desktop GPUs of the same major version, follow stricter or wider rules that it does not model; the driver makes the final decision, and `GpuKernelLoader` reports the driver's `CUDA_ERROR_NO_BINARY_FOR_GPU` with the same message as the pre-check.
 
 ## Examples
 

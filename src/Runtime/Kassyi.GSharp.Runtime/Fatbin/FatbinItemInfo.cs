@@ -68,6 +68,14 @@ public readonly struct FatbinItemInfo(
     /// <param name="deviceMajor">The major compute capability version of the physical GPU (e.g. 8 for sm_80).</param>
     /// <param name="deviceMinor">The minor compute capability version of the physical GPU (e.g. 0 for sm_80, 6 for sm_86).</param>
     /// <returns><see langword="true"/> if this module can execute on the target architecture; otherwise, <see langword="false"/>.</returns>
+    /// <remarks>
+    /// A PTX module runs on any device whose compute capability is equal to or newer than its target (the driver
+    /// JIT-compiles it). A cuBIN module runs on devices of the same major version whose minor version is equal or newer
+    /// (an <c>sm_86</c> cuBIN runs on 8.6 and 8.9, but not on 8.0 or 9.0). Architecture-specific (<c>sm_90a</c>) and
+    /// family-specific (<c>sm_100f</c>) cuBINs, and Tegra GPUs (8.7, Jetson Orin), which are not binary compatible with
+    /// the desktop GPUs of the same major version, follow stricter or wider rules that this check does not model; it
+    /// errs on the side of accepting what the driver may accept and leaves the final decision to the driver.
+    /// </remarks>
     public bool IsCompatibleWith(int deviceMajor, int deviceMinor)
     {
         if (deviceMajor < 0 || deviceMinor < 0)
@@ -81,8 +89,8 @@ public readonly struct FatbinItemInfo(
             // Can run if device architecture is equal to or newer than the PTX target architecture.
             TypePtx => deviceMajor > Major || (deviceMajor == Major && deviceMinor >= Minor),
 
-            // cuBIN (native ELF binary): Requires exact architecture match.
-            TypeCubin => Major == deviceMajor && Minor == deviceMinor,
+            // cuBIN (native ELF binary): binary compatible within one major version, from its own minor version up.
+            TypeCubin => Major == deviceMajor && deviceMinor >= Minor,
 
             // Fallback for custom or future types: check compute capability version bounds
             _ => deviceMajor * 10 + deviceMinor == (int)ComputeVersion
