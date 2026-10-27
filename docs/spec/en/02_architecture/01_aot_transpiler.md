@@ -244,6 +244,7 @@ The `GpuKernelGenerator` reads several MSBuild properties via `AnalyzerConfigOpt
 - `GSharpTargetDialect`: Specifies the target transpilation dialect (e.g., `Cuda` or `Cpu`).
 - `GSharpEmitSource`: If `true`, the compiler embeds the generated C++ source in the assembly as string constants (`{Kernel}_Source`, `{Kernel}_FullSource` and the shared `Source`). Defaults to `false` when unset.
 - `IntermediateOutputPath`: Used to determine where to output generated artifacts and intermediate files.
+- `GSharpExportDeviceCode`: If `false`, the assembly writes no device code records for other assemblies and no managed state machines for them (§1.7). Defaults to `true` when unset. Set it to `false` in an application or a test assembly that no other assembly calls into; a library keeps the default.
 
 ## 1.6 Expression Lowering (IIFE)
 
@@ -318,6 +319,16 @@ namespace UserNamespace
 - **Internal Encapsulation**: For 95% of application developers, `AotContexts` is an internal implementation detail managed entirely by `LaunchMyKernel(...)`.
 - **Advanced Low-Level Interoperability**: For advanced scenarios (e.g., custom C++ Native P/Invoke, direct `cuLaunchKernel` invocations, or explicit zero-copy VRAM buffer allocation), developers can explicitly reference `MyKernels.AotContexts.CustomPoint` to interact directly with memory-aligned native struct representations.
 - **Readable Names**: Unlike the C++ names, `AotContexts` names stay readable: the C# name of the struct without a trailing `Context`, without its namespace and without type arguments. Two different structs used by one kernel class that map to the same name (`N1.Pair` and `N2.Pair`, `FooContext` and `Foo`, `Box<int>` and `Box<long>`) are reported as [GSH0058](../03_bcl_api/diagnostics/GSH0058.md).
+
+## 1.7 Device Code Across Assemblies (`[assembly: GpuDeviceExport]`)
+
+A kernel can call a `[GpuDeviceFunction]` of a referenced assembly, use its structs (with their constructors, computed properties and `Dispose`), and the native module still compiles as one translation unit, so nvcc and the C++ compiler inline across the assembly boundary.
+
+- **Library side**: the generator of the declaring assembly writes one `[assembly: GpuDeviceExport(...)]` per device function and per struct (`GSharpSharedDeviceExports.g.cs`). A record holds the transpiled text for CUDA and for C++, the global C++ names the text refers to (per dialect), the defined names (the constructors of a struct), and what the analyses of a consumer need: whether the function suspends at a barrier, reaches a block barrier, depends on parallel execution (GSH0035), reaches dynamic shared memory, and what a call writes (the effect for the C# order of evaluation). A struct is recorded by the assembly that declares it; the definition of a struct that no G# assembly records (a `Kassyi.GSharp.Core` vector type) stays in the text of the records that name it, under its include guard.
+- **Consumer side**: the generator reads the records of its references from metadata (no file I/O), finds the records that its own text names (`__gsharp_fn_` / `__gsharp_ty_` / `__gsharp_ctor_`), follows their references, and places the imported text before its own device code: the declarations of the functions, the structs, the `Dispose` definitions, then the bodies (on the CPU dialects, the body of a suspending callee before its caller's, whose frame embeds the callee's). Only what is reached is copied.
+- **Managed fallback**: the CPU wrapper calls the C# method of a library function; for a function that suspends, it calls the managed state machine that the library emits with its records (in the partial class that declares the function, as visible as the function: `public` when the function and its containing types are, otherwise `internal`). The library leaves the state machine out, and records so, when it could not compile: a containing type that is not `partial`, a type the function names that is less visible than `internal`, or a suspending callee without one. A consumer whose managed form needs it gets GSH0089.
+- **Versions**: each record carries a hash of the preludes, `InternalNames.yml` and the record format. A record written by another G# version, or one that the library's build could not transpile for the consumer's dialect, is not imported.
+- **Diagnostics**: a use that the native module cannot import is reported at the use, also when the problem is in a record that the used one reaches: no record ([GSH0088](../03_bcl_api/diagnostics/GSH0088.md)), a record of another G# version or one that failed in the dialect ([GSH0089](../03_bcl_api/diagnostics/GSH0089.md)), or a C++ name that two assemblies give to the same C# path ([GSH0090](../03_bcl_api/diagnostics/GSH0090.md)). An iterator of another assembly is GSH0003.
 
 ## See also
 

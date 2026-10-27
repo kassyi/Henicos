@@ -65,6 +65,30 @@ public class Example
 
 Methods marked with `[GpuDeviceFunction]` are mapped to `__device__` functions in CUDA C++. They can only be called by `[GpuKernel]` methods or other `[GpuDeviceFunction]` methods.
 
+### Calling a Device Function of Another Assembly
+
+A kernel can call a `[GpuDeviceFunction]` declared in a referenced assembly, for example one of `Kassyi.GSharp.Stdlib.GpuMath`:
+
+```csharp
+using Kassyi.GSharp.Core;
+using Kassyi.GSharp.Stdlib.GpuMath.BigNum.Kernels;
+
+public static partial class MyKernels
+{
+    [GpuKernel]
+    public static void MontgomeryMuKernel(uint[] moduli, uint[] result)
+    {
+        int tid = ThreadIndex.X;
+        result[tid] = CooperativeMath.ComputeMontgomeryMu(moduli[tid]);
+    }
+}
+```
+
+- The referenced assembly must be built with G# and export its device code: the default, unless it sets the MSBuild property `GSharpExportDeviceCode` to `false`. Its build records the transpiled text of each device function and struct (`[assembly: GpuDeviceExport]`), and the consumer copies the records that its kernels reach into its own native module, so the call is inlined as within one assembly ([1.7 Device Code Across Assemblies](../../02_architecture/01_aot_transpiler.md)).
+- Functions that wait at a barrier or shuffle within a warp work the same way, also on the managed fallback of the CPU dialect, which runs the state machine that the library emits. The library emits it only when the function's containing types are `partial` and the function names no type less visible than `internal`; otherwise the call is reported with GSH0089 on the CPU dialect.
+- The structs of the library can be used with their constructors, computed properties and `Dispose`. A constructor of a generic struct is available for the constructed types that the library's own device code uses.
+- A use that cannot be imported is reported at the use: [GSH0088](../diagnostics/GSH0088.md) (no record), [GSH0089](../diagnostics/GSH0089.md) (another G# version, or the library could not transpile it for the dialect), [GSH0090](../diagnostics/GSH0090.md) (two assemblies declare the same path). An iterator (`IEnumerable<T>` with `yield`) of another assembly is not supported yet (GSH0003).
+
 ### Inlining Control (`[GpuInline]` and `[GpuNoInline]`)
 
 - **`[GpuInline]` (`GpuInlineAttribute`)**: Requests force-inlining (`__forceinline__`) of the annotated device function in the transpiled CUDA C++ code.
