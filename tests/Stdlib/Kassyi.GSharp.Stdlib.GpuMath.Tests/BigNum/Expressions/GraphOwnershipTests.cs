@@ -70,6 +70,30 @@ public sealed class GraphOwnershipTests : IDisposable
     }
 
     [SkippableFact]
+    [Scenario(TestScenario.HappyPath)]
+    public void EvaluateWithCudaGraph_ResultBelongsToTheCaller()
+    {
+        // EvaluateWithCudaGraph detaches the result from its internal graph: the caller owns it and returns it with
+        // Dispose, so ten evaluations leave the live count where it was (G2), and the expression stays usable (O15).
+        // mutant: EvaluateWithCudaGraph without DetachResult (the graph frees the value it returns)
+        var expression = (GpuBigIntExpr)_a + _b;
+        using (expression.EvaluateWithCudaGraph(_workspace))
+        {
+        }
+
+        var start = _workspace.GetMemoryStatistics();
+        for (var i = 0; i < 10; i++)
+        {
+            using var result = expression.EvaluateWithCudaGraph(_workspace);
+            Assert.Equal(s_a + s_b, Read(result));
+        }
+
+        Assert.Equal(start.LiveBuffers, _workspace.GetMemoryStatistics().LiveBuffers);
+        using var direct = expression.Evaluate(_workspace);
+        Assert.Equal(s_a + s_b, Read(direct));
+    }
+
+    [SkippableFact]
     [Scenario(TestScenario.SadPath)]
     public void Capture_KeepsFreedIntermediatesOutOfThePool()
     {
@@ -120,9 +144,10 @@ public sealed class GraphOwnershipTests : IDisposable
             allocated.ForEach(static x => x.Dispose());
         }
 
+        var end = _workspace.GetMemoryStatistics();
         Assert.Equal(s_a + s_b + s_c + s_d, value);
         Assert.Equal(4, pointers.Count);
-        Assert.Equal(start.LiveBuffers, _workspace.GetMemoryStatistics().LiveBuffers);
+        Assert.Equal((start.LiveBuffers, start.DeferredBuffers), (end.LiveBuffers, end.DeferredBuffers));
     }
 
     [SkippableFact]
@@ -169,6 +194,33 @@ public sealed class GraphOwnershipTests : IDisposable
     }
 
     [SkippableFact]
+    [Scenario(TestScenario.Boundary)]
+    public void WorkspaceDispose_AfterAGraphWithReuse_FreesEachBufferOnce()
+    {
+        // In ((a + b) + c) + d the capture takes a deferred buffer again for the result. Disposing the graph, the
+        // operands and the workspace must give every driver allocation back exactly once: a buffer left in the deferred
+        // set by mistake would be freed by the workspace a second time (cuMemFree_v2 does not reject that).
+        // mutant: DefaultGpuMemoryManager.Allocate without `_deferred.TryRemove(reused, out _)` (DriverFrees 7, allocations 6)
+        var workspace = new GpuWorkspace(64, GpuExecutionEngine.GSharpAot);
+        var a = Create(workspace, s_a);
+        var b = Create(workspace, s_b);
+        var c = Create(workspace, s_c);
+        var d = Create(workspace, s_d);
+        var graph = ((((GpuBigIntExpr)a + b) + c) + d).CompileToGraph(workspace);
+        graph.Execute();
+
+        graph.Dispose();
+        a.Dispose();
+        b.Dispose();
+        c.Dispose();
+        d.Dispose();
+        workspace.Dispose();
+        var end = workspace.GetMemoryStatistics();
+
+        Assert.Equal((end.DriverAllocations, 0), (end.DriverFrees, end.DeferredBuffers));
+    }
+
+    [SkippableFact]
     [Scenario(TestScenario.SadPath)]
     public void CompileToGraph_TakesTheExpression()
     {
@@ -202,6 +254,45 @@ public sealed class GraphOwnershipTests : IDisposable
     }
 
     [SkippableFact]
+    [Scenario(TestScenario.Boundary)]
+    public void Deferral_IsUsedOnlyByTheCapturingThread()
+    {
+        // While a capture runs, another thread that frees a buffer of the workspace is not part of the capture: its
+        // buffer goes to the shared pool, not to the graph. The capturing thread's own free is deferred (m3).
+        // mutant: DefaultGpuMemoryManager.CurrentSession without the thread check (the other thread's free is deferred)
+        var manager = (DefaultGpuMemoryManager)_workspace.MemoryManager;
+        var deferral = manager.BeginDeferral();
+        var start = _workspace.GetMemoryStatistics();
+        GpuMemoryStatistics afterOtherThread;
+        GpuMemoryStatistics afterOwn;
+        try
+        {
+            var other = new Thread(() =>
+            {
+                using var scope = new GpuKernelLoader.CudaContextScope();
+                var buffer = new GpuBigUInt(_workspace, Words);
+                buffer.Dispose();
+            });
+            other.Start();
+            other.Join();
+            afterOtherThread = _workspace.GetMemoryStatistics();
+
+            var own = new GpuBigUInt(_workspace, Words);
+            own.Dispose();
+            afterOwn = _workspace.GetMemoryStatistics();
+        }
+        finally
+        {
+            manager.ReturnDeferred(manager.EndDeferral(deferral).Buffers);
+        }
+
+        Assert.Equal(
+            (start.DeferredBuffers, start.DeferredBuffers + 1, start.DeferredBuffers),
+            (afterOtherThread.DeferredBuffers, afterOwn.DeferredBuffers, _workspace.GetMemoryStatistics().DeferredBuffers)
+        );
+    }
+
+    [SkippableFact]
     [Scenario(TestScenario.SadPath)]
     public void CaptureFailure_ReturnsEverythingItLeased()
     {
@@ -217,9 +308,14 @@ public sealed class GraphOwnershipTests : IDisposable
             () => ((((GpuBigIntExpr)_a + _b) % _c) + _a).CompileToGraph(_workspace));
         var failed = _workspace.GetMemoryStatistics();
 
-        Assert.True(error is CudaException or AggregateException { InnerExceptions: [CudaException, ..] },
-            error.ToString());
-        Assert.Equal(start.DeferredBuffers, failed.DeferredBuffers);
+        // The host read-back invalidates the capture, so ending the capture fails as well: both errors, the original
+        // first. (When the cleanup succeeds, the implementation rethrows the original with `throw;`; that branch is
+        // checked by reading AbortCapture, since a capture cannot be made to fail without invalidating it.)
+        var aggregate = Assert.IsType<AggregateException>(error);
+        Assert.Equal(2, aggregate.InnerExceptions.Count);
+        Assert.IsType<CudaException>(aggregate.InnerExceptions[0]);
+        Assert.IsType<CudaException>(aggregate.InnerExceptions[1]);
+        Assert.Equal((start.DeferredBuffers, start.LiveBuffers), (failed.DeferredBuffers, failed.LiveBuffers));
 
         // The stream is usable again after the failed capture
         using var sum = ((GpuBigIntExpr)_a + _b).Evaluate(_workspace);

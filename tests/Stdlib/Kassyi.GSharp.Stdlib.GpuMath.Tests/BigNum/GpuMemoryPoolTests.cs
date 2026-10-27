@@ -36,7 +36,6 @@ public sealed class GpuMemoryPoolTests : IDisposable
     {
         // A disposed value goes back to the pool and is handed out again, every time (not only the first time).
         // mutant: DefaultGpuMemoryManager.Free `bag.Add(handle.Buffer)` removed
-        // mutant: GpuBigUInt(GpuWorkspace, int) `IsTemp = false` -> `IsTemp = true`
         // mutant: GpuBigUInt.Dispose `MemoryManager.Free(Handle)` removed
         var first = new GpuBigUInt(_workspace, PoolWords);
         var pointer = first.DevicePointer;
@@ -85,19 +84,19 @@ public sealed class GpuMemoryPoolTests : IDisposable
 
     [SkippableFact]
     [Scenario(TestScenario.HappyPath)]
-    public void ReturnTemp_ReturnsBufferToPool()
+    public void RentTemp_Dispose_ReturnsBufferToPool()
     {
-        // ReturnTemp of a rented buffer puts it back into the pool, and RentTemp hands it out again.
-        // mutant: GpuWorkspace.ReturnTemp `MemoryManager.Free(temp.Handle)` removed
+        // A rented buffer is owned: disposing it puts it back into the pool, and RentTemp hands it out again (#631).
+        // mutant: GpuWorkspace.RentTemp wraps a borrowed handle (Dispose frees nothing)
         var temp = _workspace.RentTemp(PoolWords);
-        Assert.True(temp.IsTemp);
+        Assert.True(temp.OwnsBuffer);
         var pointer = temp.DevicePointer;
-        _workspace.ReturnTemp(temp);
+        temp.Dispose();
         for (var round = 0; round < 3; round++)
         {
             var again = _workspace.RentTemp(PoolWords);
             Assert.Equal((round, pointer), (round, again.DevicePointer));
-            _workspace.ReturnTemp(again);
+            again.Dispose();
         }
     }
 
@@ -125,26 +124,12 @@ public sealed class GpuMemoryPoolTests : IDisposable
     [Scenario(TestScenario.Boundary)]
     public void BorrowedView_Dispose_DoesNotReleaseOwner()
     {
-        // A borrowed view (IsTemp) does not own its buffer: disposing it keeps the owner's buffer out of the pool.
-        // mutant: GpuBigUInt.Dispose `&& !IsTemp` -> `|| !IsTemp`
+        // A borrowed value does not own its buffer: disposing it keeps the owner's buffer out of the pool.
+        // mutant: GpuBigUInt.Dispose without the `Handle.OwnsBuffer` check
         using var owner = new GpuBigUInt(_workspace, PoolWords);
         var view = owner.Handle.AsBorrowedBigUInt(_workspace);
-        Assert.True(view.IsTemp);
+        Assert.False(view.OwnsBuffer);
         view.Dispose();
-
-        using var other = new GpuBigUInt(_workspace, PoolWords);
-        Assert.NotEqual(owner.DevicePointer, other.DevicePointer);
-    }
-
-    [SkippableFact]
-    [Scenario(TestScenario.Boundary)]
-    public void ReturnTemp_NonTemp_DoesNotRelease()
-    {
-        // ReturnTemp ignores a value that was not rented; the owner keeps its buffer.
-        // mutant: GpuWorkspace.ReturnTemp `!temp.IsTemp` -> `temp.IsTemp`
-        using var owner = new GpuBigUInt(_workspace, PoolWords);
-        Assert.False(owner.IsTemp);
-        _workspace.ReturnTemp(owner);
 
         using var other = new GpuBigUInt(_workspace, PoolWords);
         Assert.NotEqual(owner.DevicePointer, other.DevicePointer);

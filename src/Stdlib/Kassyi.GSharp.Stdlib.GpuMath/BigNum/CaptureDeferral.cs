@@ -5,11 +5,14 @@ namespace Kassyi.GSharp.Stdlib.GpuMath.BigNum;
 /// later allocations of the same capture may take again, and the handles the capture read (design 4.5.2, 4.5.3).
 /// </summary>
 /// <remarks>
-/// The capture runs on one thread (the capture mode is THREAD_LOCAL), but a lock keeps the lists consistent if another
-/// thread frees a buffer of the workspace meanwhile.
+/// Only the thread that began the capture (<see cref="ThreadId"/>) uses the session; the memory manager sends every other
+/// thread through the shared pool. The lock keeps the lists consistent regardless.
 /// </remarks>
-internal sealed class CaptureDeferral
+/// <param name="threadId">The managed thread that runs the capture.</param>
+internal sealed class CaptureDeferral(int threadId)
 {
+    public int ThreadId { get; } = threadId;
+
     private readonly object _lock = new();
     private readonly Dictionary<int, Stack<GpuBigIntDeviceBuffer>> _free = [];
     private readonly HashSet<GpuBigIntDeviceBuffer> _leased = [];

@@ -226,7 +226,7 @@ flowchart TD
 
 The context routes execution to the specified engine and performs the following roles:
 - **Buffer Pooling**: Pre-allocates working buffers within the workspace memory manager to avoid `cudaMalloc` overhead during computation.
-- **RentTemp Object Pool**: Handles intermediate values (`GpuBigIntExpr`) dynamically without creating garbage.
+- **RentTemp Object Pool**: Handles intermediate values (`GpuBigIntExpr`) dynamically without creating garbage. A rented buffer is owned and returns to the pool when it is disposed; buffers freed while a CUDA graph is captured stay with the graph until it is disposed.
 - **Kernel Fusion**: Dispatches fused MegaKernels to minimize global memory bandwidth.
 
 ### GPU Debugging Best Practices (CPU-First / TDD Workflow)

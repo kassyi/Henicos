@@ -27,7 +27,8 @@ namespace Kassyi.GSharp.Stdlib.GpuMath.BigNum;
 /// capture take it in stream order; the buffers left there belong to the graph and come back to the pool when it is
 /// disposed (<see cref="ReturnDeferred"/>). A buffer freed during a capture that the user started on the workspace
 /// stream is parked until the workspace is disposed. <see cref="Dispose"/> frees every deferred buffer that has not
-/// come back. Captures assume one thread per workspace and one stream (the capture is THREAD_LOCAL and is not forked).
+/// come back. The own capture is recognized by its session and its thread; the driver is asked
+/// (<c>cuStreamIsCapturing</c>) only to find a capture the user started. Captures do not fork the workspace stream.
 /// </para>
 /// </remarks>
 internal sealed class DefaultGpuMemoryManager(IGpuExecutionProvider provider, IntPtr stream)
@@ -66,7 +67,7 @@ internal sealed class DefaultGpuMemoryManager(IGpuExecutionProvider provider, In
             return default;
         }
 
-        var session = Volatile.Read(ref _activeDeferral);
+        var session = CurrentSession();
         if (session?.TryTakeFree(numWords) is { } reused)
         {
             // Taken again in the same capture: it now belongs to its new owner, not to the graph's deferred set
@@ -83,10 +84,19 @@ internal sealed class DefaultGpuMemoryManager(IGpuExecutionProvider provider, In
 
         var ptr = provider.AllocateMemory(numWords);
         Interlocked.Increment(ref _driverAllocations);
-        var buffer = new GpuBigIntDeviceBuffer(ptr, numWords, this);
-        var handle = Lease(buffer, session);
-        provider.ClearMemoryAsync(ptr, numWords, stream);
-        return handle;
+        try
+        {
+            provider.ClearMemoryAsync(ptr, numWords, stream);
+        }
+        catch
+        {
+            // The stream refused the clear (for example a capture that has been invalidated): nobody holds the memory
+            provider.FreeMemory(ptr);
+            Interlocked.Increment(ref _driverFrees);
+            throw;
+        }
+
+        return Lease(new GpuBigIntDeviceBuffer(ptr, numWords, this), session);
     }
 
     // Read the generation after taking the buffer: the free that released it advanced the generation before that
@@ -108,7 +118,7 @@ internal sealed class DefaultGpuMemoryManager(IGpuExecutionProvider provider, In
         ObjectDisposedException.ThrowIf(Volatile.Read(ref _disposed) == 1, this);
 
         var handle = Allocate(numWords);
-        return new ScopedBigIntMemory(this, handle);
+        return new ScopedBigIntMemory(handle);
     }
 
     /// <summary>
@@ -155,25 +165,36 @@ internal sealed class DefaultGpuMemoryManager(IGpuExecutionProvider provider, In
         CountRelease(buffer.TotalWords);
 
         // A graph being captured keeps using the buffer on every launch, so it must not reach the shared pool. The own
-        // capture is checked first: THREAD_LOCAL capture is visible to the driver only on the capturing thread.
-        var session = Volatile.Read(ref _activeDeferral);
+        // session is checked first; the driver is asked only to find a capture the user started.
+        var session = CurrentSession();
         if (session is not null)
         {
-            // The clear is recorded as a node of the graph, so the buffer is zero whenever a later node takes it
-            provider.ClearMemoryAsync(buffer.Pointer, buffer.TotalWords, stream);
+            // Recorded before the clear, so that the buffer comes back (ReturnDeferred clears it again) even when a
+            // failed capture refuses the clear. The clear is a node of the graph, so a later node takes a zero buffer.
             _deferred.TryAdd(buffer, 0);
             session.AddFree(buffer);
+            provider.ClearMemoryAsync(buffer.Pointer, buffer.TotalWords, stream);
             return;
         }
 
-        if (IsStreamCapturing())
+        try
         {
-            // A capture the user started: the graph is unknown here, so the buffer stays parked until Dispose
-            _deferred.TryAdd(buffer, 0);
-            return;
-        }
+            if (IsStreamCapturing())
+            {
+                // A capture the user started: the graph is unknown here, so the buffer stays parked until Dispose
+                _deferred.TryAdd(buffer, 0);
+                return;
+            }
 
-        provider.ClearMemoryAsync(buffer.Pointer, buffer.TotalWords, stream);
+            provider.ClearMemoryAsync(buffer.Pointer, buffer.TotalWords, stream);
+        }
+        catch
+        {
+            // The query or the clear failed (for example without a current context): the buffer is parked, not lost,
+            // and Dispose frees it
+            _deferred.TryAdd(buffer, 0);
+            throw;
+        }
 
         // Return to pool based on total size
         var bag = _tempPool.GetOrAdd(buffer.TotalWords,
@@ -196,7 +217,7 @@ internal sealed class DefaultGpuMemoryManager(IGpuExecutionProvider provider, In
     internal CaptureDeferral BeginDeferral()
     {
         ObjectDisposedException.ThrowIf(Volatile.Read(ref _disposed) == 1, this);
-        var deferral = new CaptureDeferral();
+        var deferral = new CaptureDeferral(Environment.CurrentManagedThreadId);
         if (Interlocked.CompareExchange(ref _activeDeferral, deferral, null) is not null)
         {
             throw new InvalidOperationException("A CUDA graph capture is already running on this workspace.");
@@ -254,9 +275,17 @@ internal sealed class DefaultGpuMemoryManager(IGpuExecutionProvider provider, In
     /// launch; called by <see cref="GpuBigIntMemoryHandle.DevicePointer"/>.
     /// </summary>
     /// <param name="handle">A live handle of this manager.</param>
-    internal void ObserveCaptured(GpuBigIntMemoryHandle handle) => Volatile.Read(ref _activeDeferral)?.Observe(handle);
+    internal void ObserveCaptured(GpuBigIntMemoryHandle handle) => CurrentSession()?.Observe(handle);
 
-    // cuStreamIsCapturing for a capture that CompileToGraph did not start; there is no stream in CPU fallback mode
+    // The session of the capture CompileToGraph runs, seen only from the thread that runs it: another thread allocating
+    // or freeing meanwhile is not part of the capture and goes through the shared pool (or the driver's capture query)
+    private CaptureDeferral? CurrentSession() =>
+        Volatile.Read(ref _activeDeferral) is { } session && session.ThreadId == Environment.CurrentManagedThreadId
+            ? session
+            : null;
+
+    // cuStreamIsCapturing for a capture that CompileToGraph did not start; there is no stream in CPU fallback mode.
+    // A failed query throws: guessing "not capturing" could clear a buffer that a user's graph still uses.
     private bool IsStreamCapturing()
     {
         if (stream == IntPtr.Zero || GpuKernelLoader.IsCpuFallbackMode)
@@ -264,9 +293,8 @@ internal sealed class DefaultGpuMemoryManager(IGpuExecutionProvider provider, In
             return false;
         }
 
-        // A query that fails (no current context) is treated as "not capturing", the state of every non-graph path
-        return CudaDriverApi.cuStreamIsCapturing(stream, out var status) == CUresult.CudaSuccess &&
-            status != CUstreamCaptureStatus.None;
+        CudaException.ThrowIfError(CudaDriverApi.cuStreamIsCapturing(stream, out var status));
+        return status != CUstreamCaptureStatus.None;
     }
 
     /// <summary>

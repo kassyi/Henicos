@@ -239,11 +239,12 @@ public readonly struct GpuBigIntExpr
         // before graph capture begins, otherwise cuMemAlloc invalidates the stream.
         try
         {
+            // A result allocated by the warm-up goes back to the pool, where the capture finds it again; a result in
+            // the caller's target stays
             var warmupResult = Node.Evaluate(workspace, targetResult);
             if (!targetResult.HasValue)
             {
-                // The warm-up result goes back to the pool, where the capture finds it again
-                workspace.ReturnTemp(warmupResult.Value);
+                warmupResult.Dispose();
             }
         }
         catch (Exception ex)
@@ -251,9 +252,21 @@ public readonly struct GpuBigIntExpr
             throw new InvalidOperationException("Failed during warmup execution for CUDA Graph capture.", ex);
         }
 
-        // 2. Capture the graph; the frees of the capture are deferred, so the graph keeps the buffers it uses
+        // 2. Capture the graph; the frees of the capture are deferred, so the graph keeps the buffers it uses. The
+        // expression belongs to the graph from here on; every failure below gives it back.
+        GraphOwnership.Take(Node);
         var manager = (DefaultGpuMemoryManager)workspace.MemoryManager;
-        var deferral = manager.BeginDeferral();
+        CaptureDeferral deferral;
+        try
+        {
+            deferral = manager.BeginDeferral();
+        }
+        catch
+        {
+            GraphOwnership.Release(Node);
+            throw;
+        }
+
         try
         {
             workspace.Provider.BeginCapture(workspace.Stream);
@@ -261,6 +274,7 @@ public readonly struct GpuBigIntExpr
         catch
         {
             manager.EndDeferral(deferral);
+            GraphOwnership.Release(Node);
             throw;
         }
 
@@ -271,12 +285,20 @@ public readonly struct GpuBigIntExpr
         }
         catch (Exception original)
         {
-            AbortCapture(workspace, manager, deferral, original);
+            try
+            {
+                AbortCapture(workspace, manager, deferral, original);
+            }
+            finally
+            {
+                GraphOwnership.Release(Node);
+            }
+
             throw;
         }
 
         // The graph owns a result it allocated; a target stays with the caller, so the graph only borrows it
-        var owned = !targetResult.HasValue && result.Value.IsTemp && result.Value.Handle.OwnsBuffer;
+        var owned = !targetResult.HasValue && result.Value.OwnsBuffer;
         if (!owned)
         {
             result = new GpuBigInt(result.Value.AsBorrowed(), result.IsNegative);
@@ -288,31 +310,73 @@ public readonly struct GpuBigIntExpr
         try
         {
             graph = workspace.Provider.EndCapture(workspace.Stream);
-        }
-        finally
-        {
             captured = manager.EndDeferral(deferral);
+        }
+        catch (Exception original)
+        {
+            // The capture ended (or failed to end) without a graph: give back what it took
+            ReleaseAfterFailure(workspace, manager, manager.EndDeferral(deferral), result, owned, IntPtr.Zero, original);
+            throw;
         }
 
         try
         {
             graphExec = workspace.Provider.InstantiateGraph(graph);
         }
-        catch
+        catch (Exception original)
         {
-            workspace.Provider.DestroyGraph(graph, IntPtr.Zero);
-            manager.ReturnDeferred(captured.Buffers);
-            if (owned)
-            {
-                manager.Free(result.Value.Handle);
-            }
-
+            ReleaseAfterFailure(workspace, manager, captured, result, owned, graph, original);
             throw;
         }
 
-        var executable = new GpuBigIntExecutableGraph(workspace, graph, graphExec, result, owned, captured,
-            Node, ownsExpression);
-        return executable;
+        return new GpuBigIntExecutableGraph(workspace, graph, graphExec, result, owned, captured, Node, ownsExpression);
+    }
+
+    // A capture ended but no executable graph came of it: destroy the partial graph, return the deferred buffers and an
+    // owned result, and give the expression back. As in AbortCapture, a failing step is thrown with the original (O14).
+    private void ReleaseAfterFailure(GpuWorkspace workspace, DefaultGpuMemoryManager manager,
+        CapturedResources captured, GpuBigInt result, bool ownsResult, IntPtr graph, Exception original)
+    {
+        List<Exception>? cleanupErrors = null;
+        try
+        {
+            if (graph != IntPtr.Zero)
+            {
+                workspace.Provider.DestroyGraph(graph, IntPtr.Zero);
+            }
+        }
+        catch (Exception ex)
+        {
+            (cleanupErrors ??= []).Add(ex);
+        }
+
+        try
+        {
+            manager.ReturnDeferred(captured.Buffers);
+        }
+        catch (Exception ex)
+        {
+            (cleanupErrors ??= []).Add(ex);
+        }
+
+        try
+        {
+            if (ownsResult)
+            {
+                manager.Free(result.Value.Handle);
+            }
+        }
+        catch (Exception ex)
+        {
+            (cleanupErrors ??= []).Add(ex);
+        }
+
+        GraphOwnership.Release(Node);
+        if (cleanupErrors is not null)
+        {
+            cleanupErrors.Insert(0, original);
+            throw new AggregateException("Creating the CUDA graph failed, and so did its cleanup.", cleanupErrors);
+        }
     }
 
     // The failure path of a capture (O14): end the capture, drop the partial graph and give back the deferred buffers.
@@ -372,10 +436,11 @@ public readonly struct GpuBigIntExpr
 internal static class GraphOwnership
 {
     private static readonly ConditionalWeakTable<IGpuBigIntExpression, object> s_owned = new();
+    private static readonly object s_owner = new();
 
-    public static void Take(IGpuBigIntExpression node, object graph)
+    public static void Take(IGpuBigIntExpression node)
     {
-        if (!s_owned.TryAdd(node, graph))
+        if (!s_owned.TryAdd(node, s_owner))
         {
             throw new InvalidOperationException(
                 "The expression was compiled into a CUDA graph; dispose the graph instead.");
@@ -510,7 +575,6 @@ public readonly struct GpuBigIntExecutableGraph : IDisposable
             _captured = captured;
             _node = node;
             _ownsExpression = ownsExpression;
-            GraphOwnership.Take(node, this);
         }
 
         public GpuWorkspace Workspace { get; }
