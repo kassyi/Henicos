@@ -59,7 +59,7 @@ The `Gpu.SyncGrid` method acts as a barrier at which all threads in a cooperativ
 
 - **Lambda Expression Requirement**: The `Gpu.SyncGrid(Action)` overload strictly requires an inline lambda expression. Passing a delegate variable or method group will result in a compiler error. See [GSH0003](../diagnostics/GSH0003.md) for details.
 - **Cooperative Kernel Requirement**: `SyncGrid` requires the kernel to be launched as a cooperative kernel. Using this method in a non-cooperative kernel will result in a compiler error. See [GSH0030](../diagnostics/GSH0030.md) for details.
-- **Top-Level Execution (Deadlock Prevention)**: `SyncGrid` statements must be executed by all threads in the grid. Divergent control flow will cause GPU deadlocks. Avoid placing `SyncGrid` inside conditional statements (`if`) unless the condition evaluates identically for all threads in the grid, and ensure no threads return early before reaching the barrier.
+- **Top-Level Execution (Deadlock Prevention)**: `SyncGrid` statements must be executed by all threads in the grid. Divergent control flow will cause GPU deadlocks. Avoid placing `SyncGrid` inside conditional statements (`if`) unless the condition evaluates identically for all threads in the grid, and ensure no threads return early before reaching the barrier. A `return` inside a `Gpu.SyncGrid(() => { ... })` body is different: the thread still takes part in the automatic barriers of the body (see [Return in a Body](#return-in-a-body)).
 
 ### Runtime Deadlock Traps
 
@@ -72,7 +72,7 @@ While the compiler ensures your kernel is capable of grid synchronization (via `
 public static void DivergentIfDeadlock()
 {
     // ❌ BAD: Divergent condition. Threads where X != 0 will not reach the barrier, causing a deadlock.
-    if (Gpu.ThreadIndex.X == 0)
+    if (ThreadIndex.X == 0)
     {
         Gpu.SyncGrid();
     }
@@ -91,7 +91,7 @@ public static void DivergentIfDeadlock()
 [GpuKernel(Cooperative = true)]
 public static void EarlyReturnDeadlock(int[] data)
 {
-    if (Gpu.GlobalThreadIndex.X >= data.Length)
+    if (BlockIndex.X * BlockDimension.X + ThreadIndex.X >= data.Length)
     {
         // ❌ BAD: Out-of-bounds threads return early and disappear.
         // They will never reach the SyncGrid below, deadlocking the surviving threads!
@@ -105,18 +105,40 @@ public static void EarlyReturnDeadlock(int[] data)
 
 _To fix the early return deadlock, either ensure `SyncGrid` happens before the early return, or use thread-masking techniques (like `SingleThread`) instead of early returns._
 
-### AutoSyncGrid Mechanics & Statement Boundaries
+**Barriers After a Return in a Body**:
 
-When using the delegate-based syntax (`Gpu.SyncGrid(() => { ... })`), the compiler activates the `AutoSyncGrid` mechanism to automatically interleave grid synchronization barriers (`cg::this_grid().sync();`) between statements within the block.
+A `return` in a `Gpu.SyncGrid(() => { ... })` body skips the remaining statements of the body on that thread, but the thread still passes the automatic grid barriers between them (and an explicit `Gpu.SyncGrid();` statement of the body). A barrier inside a skipped statement is different: `Gpu.SyncThreads()`, a warp shuffle, or a call of a device function that reaches one is not reached by the threads that returned. When the condition of the `return` differs between threads, that barrier diverges. Ensuring that does not happen is your responsibility; the compiler does not report it.
+
+```csharp
+[GpuKernel(Cooperative = true)]
+public static void BarrierAfterDivergentReturn(int[] data)
+{
+    int tid = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
+    Gpu.SyncGrid(() =>
+    {
+        if (tid % 2 == 0) return;   // Even threads skip the rest of the body
+        Gpu.SyncThreads();          // BAD: only the odd threads of the block reach this block barrier
+        data[tid] += 1;
+    });
+}
+```
+
+### Automatic Grid Syncs in a Body
+
+When using the delegate-based syntax (`Gpu.SyncGrid(() => { ... })`), the compiler inserts a grid synchronization barrier (`cg::this_grid().sync();`) between the top-level statements of the body.
 
 > [!IMPORTANT]
 > **Key Operational Behaviors & Precautions**:
-> 1. **Barriers Are Inserted Exclusively Between Statements (No Barrier After Final Statement)**:
->    Synchronization barriers are placed strictly **between** consecutive statements inside the lambda body. The compiler **does NOT** insert a barrier after the final statement in the block. If downstream operations outside the block require all threads in the grid to finish the final statement before proceeding, an explicit `Gpu.SyncGrid();` must be invoked immediately after the block.
-> 2. **Barriers Interleave Across All Executable Statements (Including Variable Declarations & Assignments)**:
->    Every statement within the lambda body—including local variable declarations (e.g., `var args = ...;`) and property/field assignments (e.g., `args.Buffer = temp;`)—is treated as an executable statement that triggers an interleaved grid synchronization barrier. To prevent unnecessary GPU pipeline stalls and excessive grid synchronizations, prepare and configure all parameter structs and local variables **outside** the `Gpu.SyncGrid(() => { ... })` block, keeping only the kernel/device function invocations inside.
-> 3. **Avoid Parallel-Dependent Constructs in Synchronized Blocks**:
+> 1. **Barriers Are Inserted Only Between Top-Level Statements (No Barrier After Final Statement)**:
+>    Synchronization barriers are placed strictly **between** consecutive statements of the lambda body. The compiler **does NOT** insert a barrier after the final statement. If downstream operations outside the block require all threads in the grid to finish the final statement before proceeding, an explicit `Gpu.SyncGrid();` must be invoked immediately after the block.
+> 2. **A Nested Block Is One Statement**:
+>    A `for` or `if` statement, the body of `Gpu.ForUnroll`, `Gpu.GridStrideLoop` or `Gpu.SingleThread`, and the body of a local function are each one statement of the body. Nothing inside them is synchronized: a grid sync that only some threads reach (a `GridStrideLoop` body runs a different number of times on each thread, an `if (ThreadIndex.X == 0)` block runs on some threads only) would deadlock. To synchronize between the statements of a uniform loop, write a `Gpu.SyncGrid(() => { ... })` inside the loop (Example 4).
+> 3. **Barriers Interleave Across All Executable Statements (Including Variable Declarations & Assignments)**:
+>    Every top-level statement of the lambda body—including local variable declarations (e.g., `var args = ...;`) and property/field assignments (e.g., `args.Buffer = temp;`)—is treated as an executable statement that triggers an interleaved grid synchronization barrier. To prevent unnecessary GPU pipeline stalls and excessive grid synchronizations, prepare and configure all parameter structs and local variables **outside** the `Gpu.SyncGrid(() => { ... })` block, keeping only the kernel/device function invocations inside. An empty statement (also with a label, `L: ;`) and a local function declaration do not run, so no barrier is placed before or after them, and no automatic barrier is placed next to an explicit `Gpu.SyncGrid();`.
+> 4. **Avoid Parallel-Dependent Constructs in Synchronized Blocks**:
 >    Calling constructs that require independent thread-level parallel scheduling (e.g., `Gpu.GridStrideLoop`) within a single-thread context inside synchronized blocks will trigger diagnostic [GSH0035](../diagnostics/GSH0035.md).
+> 5. **CPU Dialects**:
+>    On the CPU dialects the body runs as states of the kernel's state machine: each barrier ends a state, and the whole grid reaches it before any thread continues (managed execution). The barriers are at the same places as in the CUDA output.
 
 #### Example 1: Terminal Barrier Handling
 
@@ -189,9 +211,51 @@ Gpu.GridStrideLoop(dataLength, i =>
 });
 ```
 
+#### Example 4: Synchronizing Inside a Uniform Loop
+
+```csharp
+Gpu.SyncGrid(() =>
+{
+    Prepare();
+    for (int k = 0; k < 2; k++) // The same number of iterations on every thread
+    {
+        // The loop is one statement of the outer body; this body syncs between its own statements
+        Gpu.SyncGrid(() =>
+        {
+            Step1(k);
+            Step2(k);
+        });
+    }
+    Finish();
+});
+```
+
 ### Flattening and Nesting
 
-The compiler supports **nested `SyncGrid` blocks by flattening them**.
+The compiler supports **nested `SyncGrid` blocks by flattening them**. A `Gpu.SyncGrid(() => { ... })` that is a top-level statement of another body (or the expression body of one, `Gpu.SyncGrid(() => Gpu.SyncGrid(() => { ... }))`) adds its statements to the gaps of the enclosing body. Each nested body is still emitted in a scope of its own, so its locals stay its own, as in C#.
+
+### Return in a Body
+
+A `return` in the body ends the body for the thread, as it ends the lambda in C#: the thread runs none of the remaining statements of the body, and the kernel continues after the `Gpu.SyncGrid` call. The thread still takes part in the grid synchronizations of the remaining statements, so a `return` whose condition differs between threads does not deadlock at the automatic barriers.
+
+- A `return` in a nested body ends only that body. A `return` in a lambda or a local function inside the body leaves that function, as usual.
+- A local declared after a `return` (also an `out` variable, `Read(out var x);`) stays visible to the statements after it; its initializer does not run on the threads that returned.
+- Reported as [GSH0003](../diagnostics/GSH0003.md): after a `return`, a `ref`, `scoped` or `using` local, a deconstruction (`var (a, b) = ...`), a pattern variable (`if (x is int v)`) that stays in scope after its statement, and a local of a `SharedMemory<T>`, array-like or iterator type; anywhere in the body, a `goto` to a label outside its own statement.
+
+```csharp
+[GpuKernel(Cooperative = true)]
+public static void ReturnInBody(int[] a, int[] b, int n)
+{
+    int tid = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
+    Gpu.SyncGrid(() =>
+    {
+        if (tid >= n) return;          // Ends the body for this thread only
+        int v = a[tid];                // Not run by the threads that returned
+        b[tid] = v + a[(tid + 1) % n]; // The threads that returned still pass the grid sync before this statement
+    });
+    a[tid] += 1;                       // Runs on every thread
+}
+```
 
 ### Empty Block Elimination (No-op)
 
@@ -238,13 +302,15 @@ Gpu.SyncGrid(() =>
 });
 ```
 
-Will be transpiled as flattened sequential statements with barriers safely inserted at the boundaries:
+Will be transpiled as flattened sequential statements with barriers safely inserted at the boundaries; the nested body keeps a scope of its own:
 
 ```cpp
 {
     statement1();
     cg::this_grid().sync();
-    statement2();
+    {
+        statement2();
+    }
 }
 ```
 

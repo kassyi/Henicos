@@ -157,9 +157,21 @@ public static partial class Gpu
 
     /// <summary>
     /// Executes the provided action, automatically inserting a grid synchronization (<c>cg::this_grid().sync()</c>)
-    /// between each statement in the action body.
+    /// between the top-level statements of the action body.
     /// </summary>
     /// <param name="body">The action containing statements separated by automatic grid synchronization.</param>
+    /// <remarks>
+    /// <para>
+    /// A nested block (<c>for</c>, <c>if</c>, a loop macro, a local function) is one statement: nothing inside it is
+    /// synchronized unless it contains its own <c>Gpu.SyncGrid</c> call. No synchronization is inserted after the last
+    /// statement, next to an explicit <see cref="SyncGrid()"/>, or around an empty statement or a local function
+    /// declaration. On the CPU dialects the body runs as the states of the kernel's state machine, one state per gap.
+    /// </para>
+    /// <para>
+    /// A <c>return</c> in the body ends the body for the thread, as it ends the lambda in C#; the thread still takes part
+    /// in the grid synchronizations of the remaining statements.
+    /// </para>
+    /// </remarks>
     public static void SyncGrid(Action body) => GpuOnlyException.Throw();
 
     /// <summary>
