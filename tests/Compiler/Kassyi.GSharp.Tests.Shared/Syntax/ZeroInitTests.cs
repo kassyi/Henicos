@@ -106,4 +106,34 @@ public class ZeroInitTests : TranspilerTestBase
         Assert.Equal([0, 4], expected);
         Assert.Equal(expected, output);
     }
+
+    [SkippableFact]
+    [Scenario(TestScenario.HappyPath)]
+    public void Test_SkipLocalsInit_KeepsDefaultConstructorAndObjectInitializers()
+    {
+        int[] output = Enumerable.Repeat(-1, 11).ToArray();
+        int[] expected = Enumerable.Repeat(-1, 11).ToArray();
+        ZeroInitKernels.SkipLocalsInitInitializersKernel(expected);
+
+        ZeroInitKernels.LaunchSkipLocalsInitInitializersKernel(output, blockDimX: 1);
+
+        Assert.Equal([0, 0, 0, 0, 0, 0, 1, 2, 5, 0, 45], expected);
+        Assert.Equal(expected, output);
+    }
+
+    [SkippableTheory]
+    [Scenario(TestScenario.Boundary)]
+    [InlineData(0)]
+    [InlineData(5)]
+    public void Test_SkipLocalsInit_KeepsDefaultOfStructAndInlineArray(int index)
+    {
+        int[] output = [-1, -1];
+        int[] expected = [-1, -1];
+        ZeroInitKernels.SkipLocalsInitDefaultKernel(expected, index);
+
+        ZeroInitKernels.LaunchSkipLocalsInitDefaultKernel(output, index, blockDimX: 1);
+
+        Assert.Equal([0, 28], expected);
+        Assert.Equal(expected, output);
+    }
 }

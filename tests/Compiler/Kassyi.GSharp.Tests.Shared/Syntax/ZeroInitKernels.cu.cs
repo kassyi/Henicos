@@ -1,4 +1,5 @@
 // ReSharper disable All
+using System.Runtime.CompilerServices;
 using Kassyi.GSharp.Core;
 
 namespace Kassyi.GSharp.Tests.Shared.Syntax;
@@ -8,6 +9,26 @@ public struct ZeroInitPair
 {
     public int X;
     public int Y;
+}
+
+/// <summary>A struct with a constructor, for the explicit initializers that <c>[SkipLocalsInit]</c> keeps (#622).</summary>
+public struct ZeroInitCtorPair
+{
+    public int X;
+    public int Y;
+
+    public ZeroInitCtorPair(int x, int y)
+    {
+        X = x;
+        Y = y;
+    }
+}
+
+/// <summary>Eight <c>int</c> values in one struct, the form GSH0001 suggests in place of a <c>List&lt;int&gt;</c>.</summary>
+[InlineArray(8)]
+public struct ZeroInitItems8
+{
+    private int _element0;
 }
 
 /// <summary>A generic struct whose computed property reads a stackalloc of its type parameter before writing it.</summary>
@@ -213,5 +234,72 @@ public static partial class ZeroInitKernels
         ReadOnlySpan<int> r = stackalloc int[4];
         output[0] = r[0] + r[1] + r[2] + r[3];
         output[1] = r.Length;
+    }
+
+    // [SkipLocalsInit] leaves out only the zero fill of a stackalloc: every explicit initializer keeps its C# value (#622)
+    [GpuKernel]
+    [SkipLocalsInit]
+    public static void SkipLocalsInitInitializersKernel(int[] output)
+    {
+        {
+            ZeroInitCtorPair dirtyA = new(9, 9);
+            ZeroInitCtorPair dirtyB = new(9, 9);
+            ZeroInitCtorPair dirtyC = new(9, 9);
+            ZeroInitCtorPair dirtyD = new(9, 9);
+            ZeroInitCtorPair dirtyE = new(9, 9);
+            output[10] = dirtyA.X + dirtyB.Y + dirtyC.X + dirtyD.Y + dirtyE.X;
+        }
+
+        {
+            ZeroInitCtorPair a = default;
+            ZeroInitCtorPair b = default(ZeroInitCtorPair);
+            ZeroInitCtorPair c = new ZeroInitCtorPair();
+            ZeroInitCtorPair d = new(1, 2);
+            ZeroInitCtorPair e = new ZeroInitCtorPair() { X = 5 };
+            output[0] = a.X;
+            output[1] = a.Y;
+            output[2] = b.X;
+            output[3] = b.Y;
+            output[4] = c.X;
+            output[5] = c.Y;
+            output[6] = d.X;
+            output[7] = d.Y;
+            output[8] = e.X;
+            output[9] = e.Y;
+        }
+    }
+
+    // Fills the frame that ReadDefaults reuses when it is called next at the same depth, so a reader whose = default
+    // is left out reads these values (a sibling block in the kernel would not do: the emitted C++ flattens blocks)
+    [GpuDeviceFunction]
+    [GpuNoInline]
+    public static int DirtyDefaultsFrame(int value, int index)
+    {
+        ZeroInitPair pair = new ZeroInitPair { X = value, Y = value };
+        ZeroInitItems8 items = default;
+        for (int i = 0; i < 8; i++)
+        {
+            items[(i + index) & 7] = value;
+        }
+
+        return pair.X + pair.Y + items[index & 7] + items[(index + 4) & 7];
+    }
+
+    // = default under [SkipLocalsInit] still zeroes a struct and an [InlineArray] struct, as C# does
+    [GpuDeviceFunction]
+    [GpuNoInline]
+    [SkipLocalsInit]
+    public static int ReadDefaults(int index)
+    {
+        ZeroInitPair r = default;
+        ZeroInitItems8 items = default;
+        return r.X + r.Y + items[index & 7] + items[(index + 4) & 7];
+    }
+
+    [GpuKernel]
+    public static void SkipLocalsInitDefaultKernel(int[] output, int index)
+    {
+        output[1] = DirtyDefaultsFrame(7, index);
+        output[0] = ReadDefaults(index);
     }
 }

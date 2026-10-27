@@ -337,19 +337,19 @@ public partial class EmissionShapeTests
         Assert.Equal((22, 38, 22, 49), (span.Start.Line + 1, span.Start.Character + 1, span.End.Line + 1, span.End.Character + 1));
     }
 
-    // [SkipLocalsInit] on the method, its type or its module drops the zero initialization `= default`; without it the
-    // local is zeroed as written
+    // An explicit `= default` is an initialization C# performs whatever [SkipLocalsInit] says (Roslyn emits initobj), so
+    // the local keeps it with the attribute on the method, its type or its module (#622)
     [Theory]
     [Scenario(TestScenario.Boundary)]
-    [InlineData("SkipLocalsInitKernels", "ZeroInitializedKernel", " = ")]
-    [InlineData("SkipLocalsInitKernels", "MethodSkipsKernel", ";\n")]
-    [InlineData("SkipLocalsInitKernels", "TypeSkipsKernel", ";\n")]
-    [InlineData("SkipLocalsInitModuleKernels", "ModuleSkipsKernel", ";\n")]
-    public void SkipLocalsInit_OnMethodTypeOrModule_DropsTheZeroInitialization(string testCase, string kernel, string afterName)
+    [InlineData("SkipLocalsInitKernels", "ZeroInitializedKernel")]
+    [InlineData("SkipLocalsInitKernels", "MethodSkipsKernel")]
+    [InlineData("SkipLocalsInitKernels", "TypeSkipsKernel")]
+    [InlineData("SkipLocalsInitModuleKernels", "ModuleSkipsKernel")]
+    public void SkipLocalsInit_OnMethodTypeOrModule_KeepsTheExplicitInitializer(string testCase, string kernel)
     {
         var body = KernelSource(Generate(testCase, "Cuda"), kernel);
 
-        Assert.Contains($"\nint __gsharp_id_2_value{afterName}", body, StringComparison.Ordinal);
+        Assert.Contains("\nint __gsharp_id_2_value = {};\n", body, StringComparison.Ordinal);
     }
 
     // A stack array declaration is zeroed ({}) unless it is a stackalloc without an initializer under [SkipLocalsInit].

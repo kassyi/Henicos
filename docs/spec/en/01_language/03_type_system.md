@@ -207,7 +207,7 @@ int[] a = new int[4];                     // int a[4]{};
 
 Cost: nvcc keeps an array whose indices it resolves at compile time in registers, and removes the stores of zeros that a later write overwrites. An array indexed at run time stays in local memory and keeps the zero stores (about one 16-byte store per 16 bytes of the array, on every evaluation). For a work array whose elements are all written before they are read, add `[SkipLocalsInit]`, as you would in C#.
 
-When a kernel method or module is annotated with `[SkipLocalsInit]`, the transpiler also leaves out `default` or parameterless `new()` initializers (e.g., `= ...;`) of local variables. Those locals are emitted as uninitialized declarations in C++.
+An explicit initializer is never left out: `Pair p = default;`, `default(Pair)`, `new Pair()`, `new()`, `new(1, 2)` and object initializers keep their C# value under `[SkipLocalsInit]`, as in C#, where they are initializations of their own and not part of the zero fill of the locals. A local without an initializer (`Pair p;`) is emitted without one; C# does not let it be read before it is assigned. nvcc removes the zero stores of an explicit `= default` that later writes overwrite in registers; a large struct kept in local memory (a big `[InlineArray]`) pays for them, as it does in C#. To avoid that cost, leave out the initializer and assign every element before reading it.
 
 ## 2.6 Constants (`const`)
 
