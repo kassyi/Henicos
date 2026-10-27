@@ -260,6 +260,7 @@ public class CompileTasksTests
     [InlineData("combined_fatbin", true)] // Combined, UpToDate
     [InlineData("combined_fatbin", false)] // Combined, NotUpToDate
     [InlineData("", true)] // Individual, UpToDate
+    [InlineData("", false)] // Individual, NotUpToDate
     [Category(TestCategory.Compiler)]
     public void Test_CompileCudaToFatbinTask_TimestampCheck(string? combinedName, bool isUpToDate)
     {
@@ -267,7 +268,11 @@ public class CompileTasksTests
         var src = ctx.CreateDummySource("kernel1.cu", "dummy1");
         var outFileName = string.IsNullOrEmpty(combinedName) ? "kernel1.gfatbin" : $"{combinedName}.gfatbin";
         var outPath = Path.Combine(ctx.TempDir, outFileName);
-        File.WriteAllText(outPath, "old content");
+
+        // A first build writes the fatbin and the nvcc command record, so that only the timestamps differ below
+        Assert.True(ctx.CreateCudaTask(["kernel1.cu"], combinedName).Execute());
+        Assert.True(File.Exists(outPath + ".nvcc"));
+        ctx.Runner.Invocations.Clear();
 
         // If up to date: dest is newer than src. If not: src is newer than dest.
         var destOffset = isUpToDate ? 10 : -10;
@@ -580,8 +585,10 @@ public class CompileTasksTests
     public void Test_CompileCudaToFatbinTask_CombinedFatbinName_MissingSourceFile_NotUpToDate()
     {
         using var ctx = new CompileTaskTestContext();
-        // File is missing, but output exists
+        // File is missing, but output exists (with the nvcc command record of a first build)
         File.WriteAllText(Path.Combine(ctx.TempDir, "combined_fatbin.gfatbin"), "old content");
+        Assert.True(ctx.CreateCudaTask(["missing.cu"]).Execute());
+        ctx.Runner.Invocations.Clear();
 
         var task = ctx.CreateCudaTask(["missing.cu"]);
         Assert.True(task.Execute());
@@ -768,4 +775,200 @@ public class CompileTasksTests
                  i.Arguments.Contains("/Zc:preprocessor") &&
                  !i.Arguments.Contains("CCCL_IGNORE_MSVC_TRADITIONAL_PREPROCESSOR_WARNING"));
     }
+
+    [Theory]
+    [InlineData("")]
+    [InlineData("combined_fatbin")]
+    [Category(TestCategory.Compiler)]
+    [Scenario(TestScenario.HappyPath)]
+    public void Test_CompileCudaToFatbinTask_SameCommand_SecondBuildSkipsNvcc(string combinedName)
+    {
+        using var ctx = new CompileTaskTestContext();
+        CreateOldSource(ctx);
+
+        var first = ctx.CreateCudaTask(["kernel1.cu"], combinedName);
+        Assert.True(first.Execute());
+        var commandFile = Assert.Single(first.OutputFatbins).GetMetadata("NvccCommandFile");
+        Assert.Equal(Assert.Single(first.OutputFatbins).ItemSpec + ".nvcc", commandFile);
+        Assert.True(File.Exists(commandFile));
+        Assert.Equal(1, CountNvccCompilations(ctx));
+
+        var second = ctx.CreateCudaTask(["kernel1.cu"], combinedName);
+        Assert.True(second.Execute());
+        Assert.Equal(1, CountNvccCompilations(ctx));
+        Assert.Equal(commandFile, Assert.Single(second.OutputFatbins).GetMetadata("NvccCommandFile"));
+    }
+
+    [Theory]
+    [InlineData("")]
+    [InlineData("combined_fatbin")]
+    [Category(TestCategory.Compiler)]
+    [Scenario(TestScenario.HappyPath)]
+    public void Test_CompileCudaToFatbinTask_ArchitecturesChanged_RerunsNvcc(string combinedName)
+    {
+        using var ctx = new CompileTaskTestContext();
+        CreateOldSource(ctx);
+
+        Assert.True(ctx.CreateCudaTask(["kernel1.cu"], combinedName).Execute());
+
+        var second = ctx.CreateCudaTask(["kernel1.cu"], combinedName);
+        second.TargetArchitectures = "compute_89,sm_89";
+        Assert.True(second.Execute());
+
+        Assert.Equal(2, CountNvccCompilations(ctx));
+        Assert.Contains("code=sm_89", File.ReadAllText(Assert.Single(second.OutputFatbins).GetMetadata("NvccCommandFile")));
+    }
+
+    [Theory]
+    [InlineData("")]
+    [InlineData("combined_fatbin")]
+    [Category(TestCategory.Compiler)]
+    [Scenario(TestScenario.Boundary)]
+    public void Test_CompileCudaToFatbinTask_CommandRecordMissing_RerunsNvcc(string combinedName)
+    {
+        using var ctx = new CompileTaskTestContext();
+        CreateOldSource(ctx);
+
+        var first = ctx.CreateCudaTask(["kernel1.cu"], combinedName);
+        Assert.True(first.Execute());
+        var fatbin = Assert.Single(first.OutputFatbins).ItemSpec;
+        File.Delete(fatbin + ".nvcc");
+
+        Assert.True(ctx.CreateCudaTask(["kernel1.cu"], combinedName).Execute());
+
+        Assert.Equal(2, CountNvccCompilations(ctx));
+        Assert.True(File.Exists(fatbin + ".nvcc"));
+    }
+
+    [Fact]
+    [Category(TestCategory.Compiler)]
+    [Scenario(TestScenario.Boundary)]
+    public void Test_CompileCudaToFatbinTask_NvccVersionChanged_RerunsNvcc()
+    {
+        using var ctx = new CompileTaskTestContext();
+        CreateOldSource(ctx);
+        ctx.Runner.VersionCheckOutput = "nvcc: NVIDIA (R) Cuda compiler driver\nBuild cuda_13.4.r13.4/compiler.1";
+
+        Assert.True(ctx.CreateCudaTask(["kernel1.cu"], combinedName: "").Execute());
+
+        ctx.Runner.VersionCheckOutput = "nvcc: NVIDIA (R) Cuda compiler driver\nBuild cuda_13.5.r13.5/compiler.1";
+        var second = ctx.CreateCudaTask(["kernel1.cu"], combinedName: "");
+        Assert.True(second.Execute());
+
+        Assert.Equal(2, CountNvccCompilations(ctx));
+        Assert.EndsWith("Build cuda_13.5.r13.5/compiler.1",
+            File.ReadAllText(Assert.Single(second.OutputFatbins).GetMetadata("NvccCommandFile")));
+    }
+
+    [Fact]
+    [Category(TestCategory.Compiler)]
+    [Scenario(TestScenario.Boundary)]
+    public void Test_CompileCudaToFatbinTask_CombinedSourceAdded_RerunsNvcc()
+    {
+        using var ctx = new CompileTaskTestContext();
+        CreateOldSource(ctx);
+        CreateOldSource(ctx, "kernel2.cu");
+
+        Assert.True(ctx.CreateCudaTask(["kernel1.cu"], "combined_fatbin").Execute());
+        Assert.True(ctx.CreateCudaTask(["kernel1.cu", "kernel2.cu"], "combined_fatbin").Execute());
+
+        // kernel2.cu is older than the fatbin, so only the recorded source list shows that the bundle changed
+        Assert.Equal(2, CountNvccCompilations(ctx));
+    }
+
+    [Theory]
+    [InlineData("")]
+    [InlineData("combined_fatbin")]
+    [Category(TestCategory.Compiler)]
+    [Scenario(TestScenario.HappyPath)]
+    public void Test_CompileCudaToFatbinTask_SourceEdited_RerunsNvcc(string combinedName)
+    {
+        using var ctx = new CompileTaskTestContext();
+        var source = ctx.CreateDummySource("kernel1.cu", "// cuda source");
+        File.SetLastWriteTimeUtc(source, DateTime.UtcNow.AddMinutes(-10));
+        Assert.True(ctx.CreateCudaTask(["kernel1.cu"], combinedName).Execute());
+
+        File.SetLastWriteTimeUtc(source, DateTime.UtcNow.AddMinutes(10));
+        Assert.True(ctx.CreateCudaTask(["kernel1.cu"], combinedName).Execute());
+
+        Assert.Equal(2, CountNvccCompilations(ctx));
+    }
+
+    // nvcc succeeds but signing fails: the record of the earlier command must not match the new unsigned fatbin
+    [Theory]
+    [InlineData("")]
+    [InlineData("combined_fatbin")]
+    [Category(TestCategory.Compiler)]
+    [Scenario(TestScenario.SadPath)]
+    public void Test_CompileCudaToFatbinTask_SigningFailsAfterNvcc_NextBuildRerunsNvcc(string combinedName)
+    {
+        using var ctx = new CompileTaskTestContext();
+        CreateOldSource(ctx);
+        var first = ctx.CreateCudaTask(["kernel1.cu"], combinedName);
+        Assert.True(first.Execute());
+        var commandFile = Assert.Single(first.OutputFatbins).GetMetadata("NvccCommandFile");
+
+        // The command changes and nvcc runs, then the invalid key makes signing fail
+        ctx.SetEnv("GSHARP_SIGNING_KEY", "not-a-key");
+        var second = ctx.CreateCudaTask(["kernel1.cu"], combinedName);
+        second.TargetArchitectures = "compute_89,sm_89";
+        Assert.False(second.Execute());
+        Assert.False(File.Exists(commandFile));
+
+        ctx.SetEnv("GSHARP_SIGNING_KEY", null);
+        var third = ctx.CreateCudaTask(["kernel1.cu"], combinedName);
+        third.TargetArchitectures = "compute_89,sm_89";
+        Assert.True(third.Execute());
+
+        Assert.Equal(3, CountNvccCompilations(ctx));
+    }
+
+    [Theory]
+    [InlineData("")]
+    [InlineData("combined_fatbin")]
+    [Category(TestCategory.Compiler)]
+    [Scenario(TestScenario.SadPath)]
+    public void Test_CompileCudaToFatbinTask_NvccFails_RemovesTheOldRecord(string combinedName)
+    {
+        using var ctx = new CompileTaskTestContext();
+        CreateOldSource(ctx);
+        var first = ctx.CreateCudaTask(["kernel1.cu"], combinedName);
+        Assert.True(first.Execute());
+        var commandFile = Assert.Single(first.OutputFatbins).GetMetadata("NvccCommandFile");
+
+        ctx.Runner.NextExitCode = 1;
+        var second = ctx.CreateCudaTask(["kernel1.cu"], combinedName);
+        second.TargetArchitectures = "compute_89,sm_89";
+        Assert.False(second.Execute());
+
+        Assert.False(File.Exists(commandFile));
+    }
+
+    // Changing the signing key re-signs the fatbin: the record holds the public key of the key in use
+    [Fact]
+    [Category(TestCategory.Compiler)]
+    [Scenario(TestScenario.Boundary)]
+    public void Test_CompileCudaToFatbinTask_SigningKeyChanged_RerunsNvcc()
+    {
+        using var ctx = new CompileTaskTestContext();
+        CreateOldSource(ctx);
+        Assert.True(ctx.CreateCudaTask(["kernel1.cu"], combinedName: "").Execute());
+
+        ctx.SetEnv("GSHARP_SIGNING_KEY", new string('a', 64));
+        var second = ctx.CreateCudaTask(["kernel1.cu"], combinedName: "");
+        Assert.True(second.Execute());
+
+        Assert.Equal(2, CountNvccCompilations(ctx));
+        var record = File.ReadAllText(Assert.Single(second.OutputFatbins).GetMetadata("NvccCommandFile"));
+        Assert.Contains("signing-key " + ArtifactHelper.GetSigningKeyFingerprint(), record);
+    }
+
+    private static void CreateOldSource(CompileTaskTestContext ctx, string fileName = "kernel1.cu")
+    {
+        var source = ctx.CreateDummySource(fileName, "// cuda source");
+        File.SetLastWriteTimeUtc(source, DateTime.UtcNow.AddMinutes(-10));
+    }
+
+    private static int CountNvccCompilations(CompileTaskTestContext ctx) =>
+        ctx.Runner.Invocations.Count(i => i.FileName.Contains("nvcc") && i.Arguments.Contains("--fatbin"));
 }

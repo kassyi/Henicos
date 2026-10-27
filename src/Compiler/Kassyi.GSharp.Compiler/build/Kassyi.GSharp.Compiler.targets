@@ -86,6 +86,8 @@
     <!-- Register all native inputs and outputs to FileWrites for MSBuild clean -->
     <ItemGroup>
       <FileWrites Include="@(_GSharpCudaSources);@(_GSharpCompiledFatbins)" />
+      <!-- The nvcc command record next to each fatbin (CompileCudaToFatbinTask.CommandFileExtension) -->
+      <FileWrites Include="%(_GSharpCompiledFatbins.NvccCommandFile)" Condition="'%(_GSharpCompiledFatbins.NvccCommandFile)' != ''" />
     </ItemGroup>
   </Target>
 
