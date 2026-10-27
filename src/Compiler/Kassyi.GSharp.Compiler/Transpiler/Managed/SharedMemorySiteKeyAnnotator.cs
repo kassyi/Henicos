@@ -8,7 +8,12 @@ internal static class SharedMemorySiteKeyAnnotator
     /// <summary>
     /// Searches for <c>SharedMemory&lt;T&gt;</c> creations in <paramref name="node"/> and injects static site keys.
     /// </summary>
-    public static TNode AddSharedMemorySiteKeys<TNode>(TNode node, SemanticModel semanticModel)
+    /// <param name="node">The node whose creations get keys.</param>
+    /// <param name="semanticModel">The model of the creations.</param>
+    /// <param name="findOnly">
+    /// Whether a dynamic creation only finds its region (the redeclaration at the start of a resume) instead of placing it.
+    /// </param>
+    public static TNode AddSharedMemorySiteKeys<TNode>(TNode node, SemanticModel semanticModel, bool findOnly = false)
         where TNode : SyntaxNode
     {
         var creations = ImmutableArray.CreateBuilder<BaseObjectCreationExpressionSyntax>();
@@ -22,7 +27,7 @@ internal static class SharedMemorySiteKeyAnnotator
         return creations.Count == 0
             ? node
             : node.ReplaceNodes(creations,
-                (original, rewritten) => AddSharedMemorySiteKey(original, rewritten, semanticModel));
+                (original, rewritten) => AddSharedMemorySiteKey(original, rewritten, semanticModel, findOnly));
     }
 
     /// <summary>
@@ -32,12 +37,18 @@ internal static class SharedMemorySiteKeyAnnotator
     /// [WHY] <c>new SharedMemory&lt;T&gt;(n)</c> becomes <c>new SharedMemory&lt;T&gt;(n, key)</c>: the buffer belongs
     /// to the declaration, one per block, like a CUDA <c>__shared__</c> variable (see
     /// <see cref="SharedMemorySiteKey"/>). The key is computed from the original node, whose annotations map it to the
-    /// source.
+    /// source. A dynamic declaration (a count that is not a C# constant, as for the CUDA and native CPU placement)
+    /// becomes <c>new SharedMemory&lt;T&gt;(n, key, "&lt;place&gt;")</c>: a region of the launch's
+    /// <c>sharedMemBytes</c>, and the place names it in the error of a launch that does not give it enough (#544). With
+    /// <paramref name="findOnly"/>, a dynamic declaration becomes <c>new SharedMemory&lt;T&gt;(key, "&lt;place&gt;", true)</c>,
+    /// which finds the region without placing it and without evaluating the count (a local that a resume has not
+    /// declared yet).
     /// </remarks>
     public static BaseObjectCreationExpressionSyntax AddSharedMemorySiteKey(
         BaseObjectCreationExpressionSyntax original,
         BaseObjectCreationExpressionSyntax rewritten,
-        SemanticModel semanticModel)
+        SemanticModel semanticModel,
+        bool findOnly = false)
     {
         var key = SharedMemorySiteKey.Compute(semanticModel, original);
         var keyArgument = SyntaxFactory.Argument(SyntaxFactory.LiteralExpression(SyntaxKind.NumericLiteralExpression,
@@ -49,6 +60,27 @@ internal static class SharedMemorySiteKeyAnnotator
                 SyntaxKind.NumericLiteralExpression, SyntaxFactory.Literal(1))));
         }
 
-        return rewritten.WithArgumentList(SyntaxFactory.ArgumentList(arguments.Add(keyArgument)));
+        if (!DynamicSharedMemoryAnalysis.TryGetCount(original, semanticModel, out _, out var constantCount) ||
+            constantCount != null)
+        {
+            return rewritten.WithArgumentList(SyntaxFactory.ArgumentList(arguments.Add(keyArgument)));
+        }
+
+        var placeArgument = SyntaxFactory.Argument(SyntaxFactory.LiteralExpression(
+            SyntaxKind.StringLiteralExpression, SyntaxFactory.Literal(SourcePlace.Format(semanticModel, original))));
+        if (!findOnly)
+        {
+            // new SharedMemory<T>(<n>, <key>, "<place>")
+            return rewritten.WithArgumentList(
+                SyntaxFactory.ArgumentList(arguments.Add(keyArgument).Add(placeArgument)));
+        }
+
+        // new SharedMemory<T>(<key>, "<place>", true)
+        var findArguments = SyntaxFactory.SeparatedList([
+            keyArgument,
+            placeArgument,
+            SyntaxFactory.Argument(SyntaxFactory.LiteralExpression(SyntaxKind.TrueLiteralExpression))
+        ]);
+        return rewritten.WithArgumentList(SyntaxFactory.ArgumentList(findArguments));
     }
 }

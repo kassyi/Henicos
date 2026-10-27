@@ -99,7 +99,7 @@ internal static class CpuHostLaunchEmitter
             }
 
             writer.AppendLine(
-                $"global::Kassyi.GSharp.Core.ManagedGpuContext.InitializeGrid({GSharpInternalNames.Launcher.TotalBlocks});");
+                $"global::Kassyi.GSharp.Core.ManagedGpuContext.InitializeGrid({GSharpInternalNames.Launcher.TotalBlocks}, sharedMemBytes);");
 
             writer.AppendLine("bool anyGridActive = true;");
             writer.AppendLine("while (anyGridActive)");
@@ -218,6 +218,8 @@ internal static class CpuHostLaunchEmitter
                 }
             }
 
+            // The dynamic shared memory of the blocks lives for one grid (#544)
+            writer.AppendLine("global::Kassyi.GSharp.Core.ManagedGpuContext.EndGrid();");
             WrapperEmitter.WriteAutoResultReturn(writer, kernel);
             if (!kernel.ReturnsValue)
             {

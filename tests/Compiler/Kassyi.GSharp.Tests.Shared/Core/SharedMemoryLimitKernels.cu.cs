@@ -62,6 +62,53 @@ public static partial class SharedMemoryLimitKernels
         output[tid] = (tid < a ? first[tid] : 0) + (tid < b ? (int)(second[tid] * 2) : 0);
     }
 
+    // The count is a local that the state machine keeps in its context (it is read after the barrier): the redeclaration at
+    // the start of each managed resume must not evaluate it
+    [GpuKernel]
+    public static void HoistedCountKernel(int[] output)
+    {
+        int tid = ThreadIndex.X;
+        int n = 4 + 4 * (BlockIndex.X % 2);
+        var a = new SharedMemory<int>(n);
+        if (tid < n)
+        {
+            a[tid] = tid + 1;
+        }
+
+        Gpu.SyncThreads();
+        output[BlockIndex.X * BlockDimension.X + tid] = tid < n ? a[(tid + 1) % n] : 0;
+    }
+
+    // A device function that places its region first, then the kernel's region after it: 5 ints at 0, then 3 doubles at 32
+    // (56 bytes). Placed the other way round (the kernel's region first), they would need only 52 bytes
+    [GpuDeviceFunction]
+    public static int FirstRegion(int count, int tid)
+    {
+        var s = new SharedMemory<int>(count);
+        if (tid < count)
+        {
+            s[tid] = tid + 1;
+        }
+
+        Gpu.SyncThreads();
+        return tid < count ? s[tid] : 0;
+    }
+
+    [GpuKernel]
+    public static void RegionOrderKernel(int[] output, int a, int b)
+    {
+        int tid = ThreadIndex.X;
+        int first = FirstRegion(a, tid);
+        var second = new SharedMemory<double>(b);
+        if (tid < b)
+        {
+            second[tid] = tid + 0.5;
+        }
+
+        Gpu.SyncThreads();
+        output[tid] = first + (tid < b ? (int)(second[tid] * 2) : 0);
+    }
+
     // 70 static declarations (constant counts) and one dynamic one: only the dynamic one is counted in sharedMemBytes,
     // and there is no limit on the number of declarations. Every thread writes the same value into each static buffer
     // and reads it back, so no barrier is needed

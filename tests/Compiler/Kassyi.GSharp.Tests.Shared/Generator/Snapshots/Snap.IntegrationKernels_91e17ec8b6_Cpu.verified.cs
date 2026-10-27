@@ -358,7 +358,7 @@ public float foreachSum;
 public global::System.Func<float, float, float> multiplier;
 }
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__Tier1IntegrationKernels__AllInOneKernel(int[] intInput, float[] floatInput, float[] results, global::Kassyi.GSharp.Tests.Shared.Syntax.Tier1CustomStruct config, ulong[] globalCounter, int count, int dynamicSharedSize, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__Tier1IntegrationKernels__AllInOneKernel __gsharp_ctx) {
-global::Kassyi.GSharp.Core.SharedMemory<float> dynamicSharedMem = new global::Kassyi.GSharp.Core.SharedMemory<float>(dynamicSharedSize, 0xf4a8b89f8fdf4f71UL);
+global::Kassyi.GSharp.Core.SharedMemory<float> dynamicSharedMem = new global::Kassyi.GSharp.Core.SharedMemory<float>(0xf4a8b89f8fdf4f71UL, "Tier1_IntegrationKernels.cs(154,52)", true);
 {
 switch (__gsharp_ctx.__gsharp_state)
 {
@@ -444,6 +444,7 @@ if (__gsharp_ctx.ok && config.BoolVal)
 global::Kassyi.GSharp.Core.Gpu.AtomicAdd(ref globalCounter[0], (ulong)__gsharp_ctx.bitwise);
 }
 
+dynamicSharedMem = new global::Kassyi.GSharp.Core.SharedMemory<float>(dynamicSharedSize, 0xf4a8b89f8fdf4f71UL, "Tier1_IntegrationKernels.cs(154,52)");
 dynamicSharedMem[global::Kassyi.GSharp.Core.ThreadIndex.X] = __gsharp_ctx.sum;
 global::Kassyi.GSharp.Core.Gpu.SyncThreads(); // GBI-31
 // Complex ternary (GSH-01)
@@ -536,7 +537,7 @@ for (int i = 0; i < __gsharp_contexts.Length; i++)
 {
 __gsharp_contexts[i] = new __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__Tier1IntegrationKernels__AllInOneKernel();
 }
-global::Kassyi.GSharp.Core.ManagedGpuContext.InitializeGrid(__gsharp_total_blocks);
+global::Kassyi.GSharp.Core.ManagedGpuContext.InitializeGrid(__gsharp_total_blocks, sharedMemBytes);
 bool anyGridActive = true;
 while (anyGridActive)
 {
@@ -597,6 +598,7 @@ global::Kassyi.GSharp.Core.ManagedGpuContext.IsActive = false;
 }
 }
 }
+global::Kassyi.GSharp.Core.ManagedGpuContext.EndGrid();
 return;
 }
 var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<AllInOneKernel_Delegate>("__gsharp_launch_Kassyi__GSharp__Tests__Shared__Syntax__Tier1IntegrationKernels__AllInOneKernel", dllPath);

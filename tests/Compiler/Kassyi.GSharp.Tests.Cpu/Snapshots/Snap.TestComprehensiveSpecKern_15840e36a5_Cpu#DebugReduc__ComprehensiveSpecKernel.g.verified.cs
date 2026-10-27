@@ -437,7 +437,7 @@ public int counter;
 }
 public static unsafe void __gsharp_statemachine_DebugReduc__ComprehensiveSpecKernel__ProcessPhysics(global::DebugReduc.PhysicsVector[] particles, ref float totalMagnitude, ref bool successFlag, global::DebugReduc.SpecTypes largeStructVal, int particleCount, int unrollFactor, __gsharp_context_DebugReduc__ComprehensiveSpecKernel__ProcessPhysics __gsharp_ctx) {
 global::Kassyi.GSharp.Core.SharedMemory<int> staticCache = new global::Kassyi.GSharp.Core.SharedMemory<int>(10000, 0xe20e17017ad9529aUL);
-global::Kassyi.GSharp.Core.SharedMemory<float> dynamicCache = new global::Kassyi.GSharp.Core.SharedMemory<float>(particleCount, 0xe20e18017ad9544dUL);
+global::Kassyi.GSharp.Core.SharedMemory<float> dynamicCache = new global::Kassyi.GSharp.Core.SharedMemory<float>(0xe20e18017ad9544dUL, "an unknown place", true);
 global::Kassyi.GSharp.Core.SharedMemory<int> targetTypedCache = new(256, 0xe20e15017ad94f34UL);
 {
 switch (__gsharp_ctx.__gsharp_state)
@@ -459,6 +459,7 @@ __gsharp_ctx.gdimX = global::Kassyi.GSharp.Core.GridDimension.X;
 __gsharp_ctx.gdimY = global::Kassyi.GSharp.Core.GridDimension.Y;
 __gsharp_ctx.gdimZ = global::Kassyi.GSharp.Core.GridDimension.Z;
 __gsharp_ctx.tid = __gsharp_ctx.tx + __gsharp_ctx.bx * __gsharp_ctx.bdimX;
+dynamicCache = new global::Kassyi.GSharp.Core.SharedMemory<float>(particleCount, 0xe20e18017ad9544dUL, "an unknown place");
 if (!(__gsharp_ctx.tid < particleCount))
 goto case 2;
 __gsharp_ctx.p = particles[__gsharp_ctx.tid];
@@ -606,7 +607,7 @@ for (int i = 0; i < __gsharp_contexts.Length; i++)
 {
 __gsharp_contexts[i] = new __gsharp_context_DebugReduc__ComprehensiveSpecKernel__ProcessPhysics();
 }
-global::Kassyi.GSharp.Core.ManagedGpuContext.InitializeGrid(__gsharp_total_blocks);
+global::Kassyi.GSharp.Core.ManagedGpuContext.InitializeGrid(__gsharp_total_blocks, sharedMemBytes);
 bool anyGridActive = true;
 while (anyGridActive)
 {
@@ -667,6 +668,7 @@ global::Kassyi.GSharp.Core.ManagedGpuContext.IsActive = false;
 }
 }
 }
+global::Kassyi.GSharp.Core.ManagedGpuContext.EndGrid();
 return;
 }
 var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<ProcessPhysics_Delegate>("__gsharp_launch_DebugReduc__ComprehensiveSpecKernel__ProcessPhysics", dllPath);
@@ -818,7 +820,7 @@ for (int i = 0; i < __gsharp_contexts.Length; i++)
 {
 __gsharp_contexts[i] = new __gsharp_context_DebugReduc__ComprehensiveSpecKernel__CooperativePhysicsProcess();
 }
-global::Kassyi.GSharp.Core.ManagedGpuContext.InitializeGrid(__gsharp_total_blocks);
+global::Kassyi.GSharp.Core.ManagedGpuContext.InitializeGrid(__gsharp_total_blocks, sharedMemBytes);
 bool anyGridActive = true;
 while (anyGridActive)
 {
@@ -879,6 +881,7 @@ global::Kassyi.GSharp.Core.ManagedGpuContext.IsActive = false;
 }
 }
 }
+global::Kassyi.GSharp.Core.ManagedGpuContext.EndGrid();
 return;
 }
 var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<CooperativePhysicsProcess_Delegate>("__gsharp_launch_DebugReduc__ComprehensiveSpecKernel__CooperativePhysicsProcess", dllPath);

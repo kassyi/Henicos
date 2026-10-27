@@ -98,22 +98,7 @@ internal static class DeviceDynamicSharedMemoryScenarios
         }
     }
 
-    // D6 (R6)
-    public static void GrowingHelperAfterCallerDeclaration(Action<Action> run)
-    {
-        const int smallCount = 8;
-        var output = new int[Length];
-
-        run(() => DeviceDynamicSharedMemoryKernels.LaunchGrowAfterCallerKernel(output, smallCount, Length,
-            blockDimX: Length, sharedMemBytes: 3 * Length * sizeof(int)));
-
-        for (int i = 0; i < Length; i++)
-        {
-            Assert.Equal(i + 100 + 2 * i, output[i]);
-        }
-    }
-
-    // D6 on the native CPU path: the helper's region is not the last one when it grows, which CUDA traps (#544, C10)
+    // D6 (R6) on the CPU paths: the helper's region is not the last one when it grows, which CUDA traps (#544, C10)
     public static void GrowingHelperAfterCallerDeclarationThrows(Action<Action> run)
     {
         const int smallCount = 8;

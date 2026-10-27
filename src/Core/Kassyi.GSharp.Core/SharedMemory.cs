@@ -52,6 +52,42 @@ public readonly ref struct SharedMemory<T> where T : unmanaged
     }
 
     /// <summary>
+    /// Declares dynamic shared memory (a count that is not a C# constant) for the declaration identified by
+    /// <paramref name="siteKey"/>: a region of the launch's <c>sharedMemBytes</c>, placed with the CUDA rules. Used by
+    /// code that the G# compiler generates for managed execution.
+    /// </summary>
+    /// <param name="size">The number of elements allocated in shared memory.</param>
+    /// <param name="siteKey">The key the compiler computed for the declaration.</param>
+    /// <param name="dynamicPlace">The declaration in the C# source, for the error messages.</param>
+    /// <exception cref="ArgumentOutOfRangeException">The regions do not fit in the launch's <c>sharedMemBytes</c>.</exception>
+    /// <exception cref="InvalidOperationException">The region grows after a later region was placed.</exception>
+    [EditorBrowsable(EditorBrowsableState.Never)]
+    public SharedMemory(int size, ulong siteKey, string dynamicPlace)
+    {
+        _span = ManagedGpuContext.IsActive
+            ? ManagedGpuContext.AllocateDynamicSharedMemory<T>(siteKey, size, dynamicPlace)
+            : default;
+    }
+
+    /// <summary>
+    /// Finds the region of a dynamic declaration that the block has already placed, or none when the declaration was not
+    /// reached yet; places nothing. Used by the redeclaration at the start of each resume of a state machine, so that the
+    /// declaration itself places the region where the kernel reaches it. It takes no count: the count may be a local that
+    /// the resume has not declared yet, and the region keeps the size it was placed with.
+    /// </summary>
+    /// <param name="siteKey">The key the compiler computed for the declaration.</param>
+    /// <param name="dynamicPlace">The declaration in the C# source.</param>
+    /// <param name="findOnly">Always <see langword="true"/>; selects this constructor.</param>
+    [EditorBrowsable(EditorBrowsableState.Never)]
+    public SharedMemory(ulong siteKey, string dynamicPlace, bool findOnly)
+    {
+        _ = dynamicPlace;
+        _span = ManagedGpuContext.IsActive && findOnly
+            ? ManagedGpuContext.FindDynamicSharedMemory<T>(siteKey)
+            : default;
+    }
+
+    /// <summary>
     /// Gets a reference to the element at the specified zero-based index in shared memory.
     /// </summary>
     /// <param name="index">The zero-based element offset.</param>
