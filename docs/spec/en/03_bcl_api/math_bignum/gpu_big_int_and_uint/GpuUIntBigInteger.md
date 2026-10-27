@@ -95,6 +95,11 @@ Gets the raw 64-bit device memory pointer to the first limb word in GPU global a
 public IntPtr DevicePointer { get; }
 ```
 
+#### Exceptions
+
+`ObjectDisposedException`<br>
+The buffer has been freed: this value or a copy of it was disposed, or its workspace was disposed. A copy of a freed value never reads the memory of a later owner of the same buffer.
+
 ## Handle
 
 Gets the underlying GPU memory handle tracking device buffer allocation and lifetime.
@@ -146,12 +151,12 @@ public GpuWorkspace Workspace { get; }
 | [CopyFrom(GpuBigUInt, int, int, int?)](#copyfromgpubiguint-int-int-int) | Copies limb words from another `GpuBigUInt` instance to this instance in GPU device memory. |
 | [CreatePowerOfTwo(GpuWorkspace, int, int)](#createpoweroftwogpuworkspace-int-int) | Creates a new `GpuBigUInt` initialized to $2^{\text{bitIndex}}$. |
 | [Dispose()](#dispose) | Releases the underlying GPU global device memory handle back to the workspace memory pool. |
-| [Equals(GpuBigUInt)](#equalsgpubiguint) | Indicates whether the current instance is equal to another `GpuBigUInt` instance. |
+| [Equals(GpuBigUInt)](#equalsgpubiguint) | Indicates whether the current instance refers to the same device buffer as another `GpuBigUInt`. |
 | [Equals(object?)](#equalsobject) | Determines whether the specified object is equal to the current instance. |
 | [FromBigInteger(GpuWorkspace, BigInteger, int)](#frombigintegergpuworkspace-biginteger-int) | Creates a new `GpuBigUInt` instance from a .NET standard `BigInteger` value. |
 | [GetBitLength()](#getbitlength) | Calculates the minimum number of bits required to represent this big integer without leading zeros. |
 | [GetByteCount()](#getbytecount) | Calculates the minimum number of bytes required to represent this big integer. |
-| [GetHashCode()](#gethashcode) | Returns the hash code for this instance. |
+| [GetHashCode()](#gethashcode) | Returns the hash code of the buffer identity, consistent with `Equals(GpuBigUInt)`. |
 | [GetIsEven()](#getiseven) | Determines whether the value is an even integer. |
 | [GetIsNegative()](#getisnegative) | Determines whether the most significant bit in the highest word is set (used for two's complement sign tracking). |
 | [GetTopWords(int)](#gettopwordsint) | Copies the most significant limb words from GPU device memory to a host array. |
@@ -288,9 +293,13 @@ Releases the underlying GPU global device memory handle back to the workspace me
 public void Dispose();
 ```
 
+#### Remarks
+
+`GpuBigUInt` is a value type, so copies of one value share one buffer. Only the first `Dispose` of the copies returns the buffer; disposing another copy later does nothing, also after the buffer has been handed to a new owner and after the workspace has been disposed.
+
 ## Equals(GpuBigUInt)
 
-Indicates whether the current instance is equal to another `GpuBigUInt` instance.
+Indicates whether the current instance refers to the same device buffer as another `GpuBigUInt`.
 
 ```csharp
 public bool Equals(GpuBigUInt other);
@@ -304,7 +313,11 @@ A `GpuBigUInt` to compare with this instance.
 #### Returns
 
 _bool_<br>
-`true` if the current instance is equal to the `other` parameter; otherwise, `false`.
+`true` if both instances have the same `Handle` (the same words of the same allocation); otherwise, `false`.
+
+#### Remarks
+
+Unlike the value-equal float types, `Equals` and `GetHashCode` compare the identity of the buffer: two separately allocated buffers holding the same value are not equal. Use `==` or `CompareTo` to compare values on the GPU. Neither member reads device memory, so both also work on a disposed value.
 
 ## Equals(object?)
 
@@ -376,7 +389,7 @@ The byte length of the number, or 1 if the value is zero.
 
 ## GetHashCode()
 
-Returns the hash code for this instance.
+Returns the hash code of the buffer identity, consistent with `Equals(GpuBigUInt)`.
 
 ```csharp
 public override int GetHashCode();
@@ -662,7 +675,7 @@ public override string ToString();
 #### Returns
 
 _string_<br>
-A string containing word count and device pointer address.
+A string containing the word count and the handle (word offset, word count, generation). It does not read device memory, so it also works on a disposed value.
 
 ## Operators
 

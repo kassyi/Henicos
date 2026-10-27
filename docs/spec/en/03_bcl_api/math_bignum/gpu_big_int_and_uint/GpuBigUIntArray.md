@@ -70,6 +70,11 @@ Gets the raw 64-bit device memory pointer to the first element in GPU global add
 public IntPtr DevicePointer { get; }
 ```
 
+#### Exceptions
+
+`ObjectDisposedException`<br>
+The buffer has been freed: this array or a copy of it was disposed, or its workspace was disposed.
+
 ## Handle
 
 Gets the underlying GPU memory handle tracking device buffer allocation and lifetime.

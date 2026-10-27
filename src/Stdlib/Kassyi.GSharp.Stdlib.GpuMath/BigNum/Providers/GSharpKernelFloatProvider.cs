@@ -359,10 +359,7 @@ public sealed class GSharpKernelFloatProvider(IGpuBigFloatArithmetic fallbackStr
                 // Add guard-word rounding offset to absorb Newton-Raphson right-shift truncation before slicing off the lowest 2 guard words
                 GpuBigIntMath.Add(rsqrtRaw, 4u, rsqrtRaw);
 
-                var slicedHandle = new GpuBigIntMemoryHandle(
-                    rsqrtRaw.Handle.Buffer,
-                    rsqrtRaw.Handle.WordOffset + DiscardGuardWords,
-                    rsqrtWords - DiscardGuardWords);
+                var slicedHandle = rsqrtRaw.Handle.Slice(DiscardGuardWords, rsqrtWords - DiscardGuardWords);
                 var rsqrtSliced = new GpuBigUInt(workspace, slicedHandle, isTemp: true);
                 var effectiveScaleBits = (rsqrtWords - DiscardGuardWords) * 32;
 

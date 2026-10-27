@@ -20,8 +20,8 @@ public readonly struct GpuBigUIntArray : IDisposable
     /// <summary>
     /// Gets the raw 64-bit device memory pointer to the first element in GPU global address space.
     /// </summary>
-    public IntPtr DevicePointer =>
-        Handle.IsDefault ? IntPtr.Zero : IntPtr.Add(Handle.Buffer.Pointer, Handle.WordOffset * 4);
+    /// <exception cref="ObjectDisposedException">The buffer has been freed (this array or a copy of it was disposed).</exception>
+    public IntPtr DevicePointer => Handle.DevicePointer;
 
     /// <summary>
     /// Gets the number of elements in the array.
@@ -79,8 +79,7 @@ public readonly struct GpuBigUIntArray : IDisposable
             throw new ArgumentOutOfRangeException(nameof(index));
         }
 
-        var elementOffset = Handle.WordOffset + (index * WordsPerElement);
-        var elementHandle = new GpuBigIntMemoryHandle(Handle.Buffer, elementOffset, WordsPerElement);
+        var elementHandle = Handle.Slice(index * WordsPerElement, WordsPerElement);
         return new GpuBigUInt(Workspace, elementHandle, isTemp: false);
     }
 
@@ -97,8 +96,7 @@ public readonly struct GpuBigUIntArray : IDisposable
             throw new ArgumentOutOfRangeException();
         }
 
-        int wordOffset = Handle.WordOffset + (elementOffset * WordsPerElement);
-        var newHandle = new GpuBigIntMemoryHandle(Handle.Buffer, wordOffset, elementCount * WordsPerElement);
+        var newHandle = Handle.Slice(elementOffset * WordsPerElement, elementCount * WordsPerElement);
         return new GpuBigUIntArray(Workspace, newHandle, elementCount, WordsPerElement);
     }
 

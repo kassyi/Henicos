@@ -13,11 +13,20 @@ namespace Kassyi.GSharp.Stdlib.GpuMath.BigNum;
 /// <para>
 /// <b>Thread Safety:</b> Thread-safe across concurrent GPU stream staging and disposal operations.
 /// </para>
+/// <para>
+/// <b>Double free:</b> the wrappers are value types, so two copies of one handle can both be freed. The pool keeps the
+/// buffer objects, and each lease of a buffer has a generation (<see cref="GpuBigIntDeviceBuffer.TryRetire"/>): only the
+/// first free of a lease returns the buffer, and a later free of a stale copy does nothing, even after the buffer has
+/// been handed to a new owner. <see cref="Dispose"/> ends every lease the same way, so a value disposed after its
+/// workspace never frees device memory a second time.
+/// </para>
 /// </remarks>
 internal sealed class DefaultGpuMemoryManager(IGpuExecutionProvider provider, IntPtr stream)
     : IGpuMemoryManager, IDisposable
 {
-    private readonly ConcurrentDictionary<int, Lazy<ConcurrentBag<GpuBigIntMemoryHandle>>> _tempPool = new();
+    // Free buffers per word count; a handle is created for each lease, so a sub-range handle never enters the pool
+    private readonly ConcurrentDictionary<int, Lazy<ConcurrentBag<GpuBigIntDeviceBuffer>>> _tempPool = new();
+    // Leased buffers, released by Dispose; whoever removes a buffer from here releases it
     private readonly ConcurrentDictionary<IntPtr, GpuBigIntDeviceBuffer> _activeAllocations = new();
     private int _disposed;
 
@@ -42,21 +51,22 @@ internal sealed class DefaultGpuMemoryManager(IGpuExecutionProvider provider, In
         }
 
         if (_tempPool.TryGetValue(numWords, out var lazyBag) && lazyBag.IsValueCreated &&
-            lazyBag.Value.TryTake(out var temp))
+            lazyBag.Value.TryTake(out var pooled))
         {
             Interlocked.Decrement(ref _pooledBuffers);
-            _activeAllocations.TryAdd(temp.Buffer.Pointer, temp.Buffer);
-            CountLease(temp.Buffer.TotalWords);
-            return temp;
+            _activeAllocations.TryAdd(pooled.Pointer, pooled);
+            CountLease(pooled.TotalWords);
+            // Read after TryTake: the free that pooled the buffer advanced the generation before adding it
+            return GpuBigIntMemoryHandle.CreateOwned(pooled);
         }
 
         var ptr = provider.AllocateMemory(numWords);
         Interlocked.Increment(ref _driverAllocations);
-        var buffer = new GpuBigIntDeviceBuffer(ptr, numWords);
+        var buffer = new GpuBigIntDeviceBuffer(ptr, numWords, this);
         _activeAllocations.TryAdd(ptr, buffer);
         CountLease(numWords);
         provider.ClearMemoryAsync(ptr, numWords, stream);
-        return new GpuBigIntMemoryHandle(buffer, 0, numWords);
+        return GpuBigIntMemoryHandle.CreateOwned(buffer);
     }
 
     /// <summary>
@@ -73,48 +83,49 @@ internal sealed class DefaultGpuMemoryManager(IGpuExecutionProvider provider, In
     }
 
     /// <summary>
-    /// Recycles the specified memory handle back into the internal pool or releases it if disposed.
+    /// Ends the lease of the buffer of <paramref name="handle"/> and returns the buffer to the pool.
     /// </summary>
     /// <param name="handle">The memory handle to free or recycle.</param>
+    /// <remarks>
+    /// Freeing a default handle, a handle of external memory, or a handle whose lease has already ended (a second free of
+    /// a copy, or a free after <see cref="Dispose"/>) does nothing.
+    /// </remarks>
+    /// <exception cref="ArgumentException"><paramref name="handle"/> was allocated by another memory manager.</exception>
     public void Free(GpuBigIntMemoryHandle handle)
     {
-        if (handle.IsDefault)
+        if (handle.IsDefault || handle.Buffer.Manager is null)
         {
             return;
         }
 
-        // Prevent double frees which cause InvalidValue and Access Violation on CUDA
-        if (handle.Buffer.Pointer != IntPtr.Zero && !_activeAllocations.TryRemove(handle.Buffer.Pointer, out _))
+        if (!ReferenceEquals(handle.Buffer.Manager, this))
+        {
+            throw new ArgumentException("The handle was allocated by the memory manager of another workspace.",
+                nameof(handle));
+        }
+
+        var buffer = handle.Buffer;
+        if (!buffer.TryRetire(handle.Generation) || !_activeAllocations.TryRemove(buffer.Pointer, out _))
         {
             return;
         }
 
+        CountRelease(buffer.TotalWords);
         if (Volatile.Read(ref _disposed) == 1)
         {
-            // Already disposed, actually free it. The workspace stream may already be destroyed,
-            // so the release cannot be stream-ordered and falls back to the immediate, device-wide free.
-            if (handle.Buffer.Pointer == IntPtr.Zero)
-            {
-                return;
-            }
-
-            provider.FreeMemory(handle.Buffer.Pointer);
+            // Only a buffer allocated after Dispose gets here. The workspace stream may already be destroyed, so the
+            // release cannot be stream-ordered and falls back to the immediate, device-wide free.
+            provider.FreeMemory(buffer.Pointer);
             Interlocked.Increment(ref _driverFrees);
-            CountRelease(handle.Buffer.TotalWords);
-            handle.Buffer.Dispose();
             return;
         }
 
-        if (handle.Buffer.Pointer != IntPtr.Zero)
-        {
-            CountRelease(handle.Buffer.TotalWords);
-            provider.ClearMemoryAsync(handle.Buffer.Pointer, handle.Buffer.TotalWords, stream);
-        }
+        provider.ClearMemoryAsync(buffer.Pointer, buffer.TotalWords, stream);
 
         // Return to pool based on total size
-        var bag = _tempPool.GetOrAdd(handle.Buffer.TotalWords,
-            _ => new Lazy<ConcurrentBag<GpuBigIntMemoryHandle>>(() => [])).Value;
-        bag.Add(handle);
+        var bag = _tempPool.GetOrAdd(buffer.TotalWords,
+            static _ => new Lazy<ConcurrentBag<GpuBigIntDeviceBuffer>>(static () => [])).Value;
+        bag.Add(buffer);
         Interlocked.Increment(ref _pooledBuffers);
     }
 
@@ -161,6 +172,8 @@ internal sealed class DefaultGpuMemoryManager(IGpuExecutionProvider provider, In
     /// Buffers are released in stream order on the workspace stream, which every buffer of this manager is used on.
     /// The calling thread therefore neither waits for that stream nor for unrelated streams of the device.
     /// The stream must not be capturing a CUDA Graph at this point.
+    /// Every lease is ended before its buffer is released, so a handle that survives the manager reads as freed
+    /// (<see cref="ObjectDisposedException"/>) and freeing it does nothing.
     /// </remarks>
     [ExcludeFromCodeCoverage] public void Dispose()
     {
@@ -178,19 +191,14 @@ internal sealed class DefaultGpuMemoryManager(IGpuExecutionProvider provider, In
                 continue;
             }
 
-            while (lazyBag.Value.TryTake(out var handle))
+            while (lazyBag.Value.TryTake(out var pooled))
             {
                 Interlocked.Decrement(ref _pooledBuffers);
-                if (handle.Buffer.Pointer == IntPtr.Zero)
-                {
-                    continue;
-                }
-
+                pooled.TryRetire(pooled.Generation);
                 try
                 {
-                    provider.FreeMemory(handle.Buffer.Pointer, stream);
+                    provider.FreeMemory(pooled.Pointer, stream);
                     Interlocked.Increment(ref _driverFrees);
-                    handle.Buffer.Dispose();
                 }
                 catch (Exception ex)
                 {
@@ -201,16 +209,19 @@ internal sealed class DefaultGpuMemoryManager(IGpuExecutionProvider provider, In
 
         _tempPool.Clear();
 
-        foreach (var (ptr, buffer) in _activeAllocations)
+        foreach (var ptr in _activeAllocations.Keys)
         {
-            if (ptr == IntPtr.Zero)
+            // A concurrent Free that removed the buffer first releases it itself
+            if (!_activeAllocations.TryRemove(ptr, out var live))
             {
                 continue;
             }
 
+            // End the lease first: a surviving copy of the handle must never reach FreeMemory again
+            live.TryRetire(live.Generation);
+            CountRelease(live.TotalWords);
             try
             {
-                CountRelease(buffer.TotalWords);
                 provider.FreeMemory(ptr, stream);
                 Interlocked.Increment(ref _driverFrees);
             }
@@ -219,8 +230,6 @@ internal sealed class DefaultGpuMemoryManager(IGpuExecutionProvider provider, In
                 exceptions.Add(ex);
             }
         }
-
-        _activeAllocations.Clear();
 
         if (exceptions.Count > 0)
         {
