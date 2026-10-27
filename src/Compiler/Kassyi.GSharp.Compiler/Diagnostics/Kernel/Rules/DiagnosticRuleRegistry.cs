@@ -20,6 +20,7 @@ internal static class DiagnosticRuleRegistry
         RuntimeOnlyTypeRule.Instance,
         SharedMemoryDisposableRule.Instance,
         SharedMemorySizeRule.Instance,
+        StackArrayEscapeRule.Instance,
         StaticMemberAccessRule.Instance,
         StructLayoutRule.Instance,
         UnsupportedConstructRule.Instance,
