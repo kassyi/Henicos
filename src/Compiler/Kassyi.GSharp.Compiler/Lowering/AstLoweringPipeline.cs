@@ -38,6 +38,7 @@ public static class AstLoweringPipeline
         var treeOrdinal = SemanticModelExtensions.GetSyntaxTreeOrdinal(bodyModel?.Compilation, body.SyntaxTree);
         var annotatedBody = ToBlock(new SpanAnnotationRewriter(splitPoints, treeOrdinal).Visit(body) ?? body, returnsValue);
         annotatedBody = PreLoweringExpander.Expand(annotatedBody, bodyModel);
+        annotatedBody = LabeledStatementSplitter.Split(annotatedBody);
 
         var copiedParameters = deviceFunction != null
             ? FindAssignedValueParameters(body, deviceFunction, bodyModel)
