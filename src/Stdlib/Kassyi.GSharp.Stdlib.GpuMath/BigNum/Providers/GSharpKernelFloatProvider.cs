@@ -209,8 +209,10 @@ public sealed class GSharpKernelFloatProvider(IGpuBigFloatArithmetic fallbackStr
             return new GpuFloatResult(0, false);
         }
 
-        var shiftBits = resultSig.NumWords * 32 * 2;
-        var shiftedWords = leftSig.NumWords + resultSig.NumWords * 2;
+        // floor(L·2^s / R) has at least bits(L) + s - bits(R) >= 1 + 32·(n + Rw) - 32·Rw = p + 1 bits for
+        // s = 32·(n + Rw), whatever the widths of L and R, so the truncation to p bits is RZ (#661).
+        var shiftBits = (resultSig.NumWords + rightSig.NumWords) * 32;
+        var shiftedWords = leftSig.NumWords + resultSig.NumWords + rightSig.NumWords;
         using var shiftedLeft = context.GpuWorkspace.RentTemp(shiftedWords);
         GpuBigIntMath.ShiftAndResize(leftOperand, shiftBits, shiftedLeft);
 
@@ -244,8 +246,10 @@ public sealed class GSharpKernelFloatProvider(IGpuBigFloatArithmetic fallbackStr
             throw new DivideByZeroException("GBF Reciprocal of Zero.");
         }
 
+        // floor(2^T / V) with T = 32·(v + n + 1) has at least T - 32·v + 1 = p + 33 bits whatever the width v of V, so
+        // the truncation to p bits is RZ (#661).
         const int MarginWords = 2;
-        var reciprocalWords = 2 * valueSig.NumWords + MarginWords;
+        var reciprocalWords = valueSig.NumWords + resultSig.NumWords + 1;
         using var reciprocalResult = context.GpuWorkspace.RentTemp(reciprocalWords);
         context.GpuWorkspace.Provider.ClearMemoryAsync(reciprocalResult.DevicePointer, reciprocalWords, stream);
 

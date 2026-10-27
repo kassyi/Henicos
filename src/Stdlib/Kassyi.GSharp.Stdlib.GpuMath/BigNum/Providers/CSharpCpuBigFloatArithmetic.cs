@@ -250,7 +250,8 @@ public sealed class CSharpCpuBigFloatArithmetic : IGpuBigFloatArithmetic
                 throw new DivideByZeroException("GPU BigFloat CPU Fallback: Division by zero.");
             }
 
-            var shiftBits = resultSig.NumWords * 32 * 2;
+            // floor(L·2^s / R) has at least p + 1 bits for s = 32·(n + Rw), whatever the widths of L and R (#661).
+            var shiftBits = (resultSig.NumWords + rightSig.NumWords) * 32;
             var vQuotient = (vLeft << shiftBits) / vRight;
 
             var tempExp = left.Exponent - right.Exponent - shiftBits;
@@ -310,7 +311,10 @@ public sealed class CSharpCpuBigFloatArithmetic : IGpuBigFloatArithmetic
 
             var tempExp = -value.Exponent - shiftBits;
 
-            using var tempResult = context.GpuWorkspace.RentTemp(resultSig.NumWords * 2);
+            // The quotient has up to 32·(v + n) - bits(V) + 2 bits: more than 2n words when V has leading zero words, so
+            // the buffer is sized from the quotient (as in Divide); a shorter one would drop its top words (#661).
+            var quotientWords = (int)((vQuotient.GetBitLength() + 31) / 32);
+            using var tempResult = context.GpuWorkspace.RentTemp(quotientWords);
             var tempHandle = tempResult.Handle;
 
             var tempWords = ArrayPool<uint>.Shared.Rent(tempResult.NumWords);

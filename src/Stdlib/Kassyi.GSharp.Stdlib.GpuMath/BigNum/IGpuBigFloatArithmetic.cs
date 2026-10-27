@@ -26,6 +26,11 @@ public interface IGpuBigFloatArithmetic
     /// <returns>A <see cref="GpuFloatResult"/> containing the normalized exponent and sign flag.</returns>
     /// <exception cref="OverflowException">The exponent of the normalized value, the input exponent minus the shift that
     /// moves the top bit to the top of <paramref name="resultSig"/>, does not fit in <see cref="int"/>.</exception>
+    /// <remarks>
+    /// The result is the value rounded toward zero to <c>p = 32·n</c> bits for the <c>n</c> words of
+    /// <paramref name="resultSig"/>: a significand of at most <c>p</c> bits is kept exactly, a wider one loses its low
+    /// bits. Zero gives a zero significand, exponent 0 and a positive sign.
+    /// </remarks>
     GpuFloatResult Normalize(
         ref GpuBigIntExecutionContext context,
         in GpuFloatOperand value,
@@ -39,6 +44,11 @@ public interface IGpuBigFloatArithmetic
     /// <param name="right">The right floating-point operand.</param>
     /// <param name="resultSig">The memory handle where the resulting significand will be stored.</param>
     /// <returns>A <see cref="GpuFloatResult"/> containing the resulting exponent and sign flag.</returns>
+    /// <remarks>
+    /// The result is the exact sum rounded toward zero to <c>p = 32·n</c> bits for the <c>n</c> words of
+    /// <paramref name="resultSig"/>, with the significand normalized to its top bit; a sum of zero is positive zero. It
+    /// depends only on the values of the operands, and the GPU and the CPU provider return the same bits.
+    /// </remarks>
     GpuFloatResult Add(
         ref GpuBigIntExecutionContext context,
         in GpuFloatOperand left,
@@ -53,6 +63,11 @@ public interface IGpuBigFloatArithmetic
     /// <param name="right">The right floating-point operand.</param>
     /// <param name="resultSig">The memory handle where the product significand will be stored.</param>
     /// <returns>A <see cref="GpuFloatResult"/> containing the resulting exponent and sign flag.</returns>
+    /// <remarks>
+    /// The result is the exact product rounded toward zero to <c>p = 32·n</c> bits for the <c>n</c> words of
+    /// <paramref name="resultSig"/>, with the significand normalized to its top bit. It depends only on the values of the
+    /// operands, and the GPU and the CPU provider return the same bits.
+    /// </remarks>
     GpuFloatResult Multiply(
         ref GpuBigIntExecutionContext context,
         in GpuFloatOperand left,
@@ -67,6 +82,13 @@ public interface IGpuBigFloatArithmetic
     /// <param name="right">The divisor floating-point operand.</param>
     /// <param name="resultSig">The memory handle where the quotient significand will be stored.</param>
     /// <returns>A <see cref="GpuFloatResult"/> containing the resulting exponent and sign flag.</returns>
+    /// <exception cref="DivideByZeroException"><paramref name="right"/> is zero.</exception>
+    /// <remarks>
+    /// The result is the exact quotient rounded toward zero to <c>p = 32·n</c> bits for the <c>n</c> words of
+    /// <paramref name="resultSig"/>, with the significand normalized to its top bit, whatever the word counts of the
+    /// operands (a divisor much wider than the result included). It depends only on the values of the operands, and the
+    /// GPU and the CPU provider return the same bits.
+    /// </remarks>
     GpuFloatResult Divide(
         ref GpuBigIntExecutionContext context,
         in GpuFloatOperand left,
@@ -80,6 +102,13 @@ public interface IGpuBigFloatArithmetic
     /// <param name="value">The input floating-point operand.</param>
     /// <param name="resultSig">The memory handle where the reciprocal significand will be stored.</param>
     /// <returns>A <see cref="GpuFloatResult"/> containing the resulting exponent and sign flag.</returns>
+    /// <exception cref="DivideByZeroException"><paramref name="value"/> is zero.</exception>
+    /// <remarks>
+    /// The result is the exact reciprocal rounded toward zero to <c>p = 32·n</c> bits for the <c>n</c> words of
+    /// <paramref name="resultSig"/>, with the significand normalized to its top bit, whatever the word count of
+    /// <paramref name="value"/>. It depends only on the value, not on its leading zero words, and the GPU and the CPU
+    /// provider return the same bits.
+    /// </remarks>
     GpuFloatResult Reciprocal(
         ref GpuBigIntExecutionContext context,
         in GpuFloatOperand value,

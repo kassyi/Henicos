@@ -37,6 +37,8 @@ public interface IGpuBigFloatArithmetic
 
 Every method takes its operands as `GpuFloatOperand` (a significand handle, an exponent and a sign: $\pm\text{Significand} \times 2^{\text{Exponent}}$) and writes the significand of the result to `resultSig`. The word count $n$ of `resultSig` sets the precision of the result, $p = 32n$ bits. The method returns the exponent and the sign of the result as a `GpuFloatResult`.
 
+`Normalize`, `Add`, `Multiply`, `Divide`, `Reciprocal`, `Exp`, `Log` and `Pow` return $\mathrm{RZ}_p(v)$: the exact value $v$ rounded toward zero to $p$ bits, with the significand normalized to its top bit. A value that fits in $p$ bits is returned exactly. The result depends only on the values of the operands, not on their word counts or leading zero words, and the GPU and the CPU provider return the same bits.
+
 ## Add(ref GpuBigIntExecutionContext, in GpuFloatOperand, in GpuFloatOperand, GpuBigIntMemoryHandle)
 
 Adds two arbitrary-precision floating-point operands.
@@ -48,6 +50,10 @@ GpuFloatResult Add(
     in GpuFloatOperand right,
     GpuBigIntMemoryHandle resultSig);
 ```
+
+#### Remarks
+
+The result is $\mathrm{RZ}_p(a + b)$, the exact sum rounded toward zero to $p$ bits, with the significand normalized to its top bit; a sum of zero is positive zero.
 
 ## Divide(ref GpuBigIntExecutionContext, in GpuFloatOperand, in GpuFloatOperand, GpuBigIntMemoryHandle)
 
@@ -66,6 +72,10 @@ GpuFloatResult Divide(
 `DivideByZeroException`  
 The divisor is zero.
 
+#### Remarks
+
+The result is $\mathrm{RZ}_p(a / b)$, whatever the word counts of the operands (a divisor much wider than the result included).
+
 ## DivideByUInt32(ref GpuBigIntExecutionContext, in GpuFloatOperand, uint, GpuBigIntMemoryHandle)
 
 Divides an arbitrary-precision floating-point value by a 32-bit unsigned integer scalar.
@@ -82,6 +92,10 @@ GpuFloatScalarDivResult DivideByUInt32(
 
 _GpuFloatScalarDivResult_  
 The exponent and sign of the quotient and the 32-bit remainder of the significand division.
+
+#### Remarks
+
+This is an integer division of the significand, not a rounding to $p$ bits: the quotient significand is $\lfloor \text{Significand} / \text{divisor} \rfloor$ with the exponent of `value`.
 
 ## Exp(ref GpuBigIntExecutionContext, in GpuFloatOperand, GpuBigIntMemoryHandle)
 
@@ -148,6 +162,10 @@ GpuFloatResult Multiply(
     GpuBigIntMemoryHandle resultSig);
 ```
 
+#### Remarks
+
+The result is $\mathrm{RZ}_p(a \times b)$, the exact product rounded toward zero to $p$ bits.
+
 ## Normalize(ref GpuBigIntExecutionContext, in GpuFloatOperand, GpuBigIntMemoryHandle)
 
 Normalizes an arbitrary-precision floating-point value such that the most significant bit of the significand is aligned to the most significant bit of `resultSig`.
@@ -163,6 +181,10 @@ GpuFloatResult Normalize(
 
 `OverflowException`  
 The exponent of the normalized value (the input exponent minus the shift that moves the top bit to the top of `resultSig`) does not fit in `int`.
+
+#### Remarks
+
+The result is the value rounded toward zero to $p$ bits: a significand of at most $p$ bits is kept exactly, a wider one loses its low bits. Zero gives a zero significand, exponent 0 and a positive sign.
 
 ## Pow(ref GpuBigIntExecutionContext, in GpuFloatOperand, in GpuFloatOperand, GpuBigIntMemoryHandle)
 
@@ -208,6 +230,10 @@ GpuFloatResult Reciprocal(
 
 `DivideByZeroException`  
 `value` is zero.
+
+#### Remarks
+
+The result is $\mathrm{RZ}_p(1 / x)$, whatever the word count of `value` and its leading zero words.
 
 ## Rsqrt(ref GpuBigIntExecutionContext, in GpuFloatOperand, GpuBigIntMemoryHandle)
 

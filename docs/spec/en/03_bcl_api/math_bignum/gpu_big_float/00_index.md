@@ -26,6 +26,10 @@ The `GpuBigFloat` module provides high-performance, arbitrary-precision floating
 | [`FloatExpressions`](../gpu_big_int_and_uint/expressions/FloatExpressions.md) | Zero-allocation generic binary float expressions (`BinaryExpr<T, TOp>`) and `GpuBigFloatExpressionVisitor`. |
 | [`Operators (+, -, *)`](Operators.md) | Operator overloads for `GpuBigFloat` and `GpuBigUFloat`. |
 
+## Rounding
+
+The result of an operation has $p = 32n$ bits for the $n$ words of its result significand. `Add`, `Multiply`, `Divide`, `Reciprocal`, `Exp`, `Log` and `Pow` of [`IGpuBigFloatArithmetic`](IGpuBigFloatArithmetic.md), and [`GpuBigFloatArray.SetElement`](GpuBigFloatArray.md) of a wider value, return the exact value rounded toward zero to $p$ bits, so a value that fits in $p$ bits is returned exactly. The result depends only on the values of the operands, not on their word counts or leading zero words, and the GPU and the CPU provider return the same bits. `DivideByUInt32` is an integer division of the significand, not a rounding to $p$ bits. No operation takes a rounding mode: `Round`, which would take a [`GpuBigFloatRoundingMode`](GpuBigFloatRoundingMode.md), is not implemented.
+
 ## Advanced Algorithms
 
 > [!NOTE]

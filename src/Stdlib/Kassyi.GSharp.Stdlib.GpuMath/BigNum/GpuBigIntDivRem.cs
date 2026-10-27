@@ -66,8 +66,8 @@ public static partial class GpuBigIntDivRem
     /// Computes the reciprocal <c>floor(2^targetBits / b)</c> of the operand <c>b</c> using Newton-Raphson iterations on
     /// the GPU, followed by an exact correction on the device.
     /// </summary>
-    /// <param name="targetOperand">The divisor <c>b</c>, normalized (the top bit of its top word set), as every caller
-    /// passes it.</param>
+    /// <param name="targetOperand">The divisor <c>b</c>. It need not be normalized: the initial approximation is built
+    /// from its bit length, and the big-float <c>Reciprocal</c> passes significands with leading zero bits or words.</param>
     /// <param name="resultBuffer">Receives exactly <c>floor(2^targetBits / b)</c>; it must hold
     /// at least <c>(targetBits + 31) / 32</c> words.</param>
     /// <param name="targetBits">The exponent <c>T</c> of the numerator <c>2^T</c>; <c>2^T &gt;= 4b</c>.</param>

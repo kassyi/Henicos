@@ -93,26 +93,87 @@ internal static class BigFloatReference
     }
 
     /// <summary>
-    /// Returns <c>floor(sqrt(n))</c> (Newton iteration on integers).
+    /// Returns <c>floor(sqrt(n))</c> (Newton iteration on integers), checked against its definition
+    /// <c>r² ≤ n &lt; (r + 1)²</c>; it does not use the product's square roots.
     /// </summary>
     public static BigInteger IntegerSqrt(BigInteger n)
     {
+        if (n.Sign < 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(n), "IntegerSqrt takes n >= 0.");
+        }
+
         if (n.IsZero)
         {
             return 0;
         }
 
+        // Newton from above, x >= sqrt(n), decreases until it reaches floor(sqrt(n)).
         var x = BigInteger.One << (int)((n.GetBitLength() + 1) / 2);
         while (true)
         {
             var next = (x + n / x) >> 1;
             if (next >= x)
             {
-                return x;
+                break;
             }
 
             x = next;
         }
+
+        if (x * x > n || (x + 1) * (x + 1) <= n)
+        {
+            throw new InvalidOperationException($"IntegerSqrt: {x} is not floor(sqrt({n})).");
+        }
+
+        return x;
+    }
+
+    /// <summary>
+    /// Returns <c>RZ_p(sqrt(sig·2^exp))</c> for <c>sig &gt; 0</c>: the significand with exactly <paramref name="p"/>
+    /// bits and its exponent (<c>(0, 0)</c> for <c>sig = 0</c>).
+    /// </summary>
+    public static (BigInteger Significand, long Exponent) RzSqrt(BigInteger sig, long exp, int p)
+    {
+        if (sig.IsZero)
+        {
+            return (BigInteger.Zero, 0);
+        }
+
+        // sqrt(sig·2^exp) = sqrt(sig·2^t)·2^((exp - t) / 2) with exp - t even and sig·2^t in [2^(2p-2), 2^(2p)), so
+        // floor(sqrt(sig·2^t)) has exactly p bits; floor(sqrt(floor(y))) = floor(sqrt(y)) lets a negative t truncate.
+        var t = 2L * p - (long)sig.GetBitLength();
+        if (((exp - t) & 1) != 0)
+        {
+            t--;
+        }
+
+        var scaled = t >= 0 ? sig << (int)t : sig >> (int)-t;
+        return (IntegerSqrt(scaled), (exp - t) / 2);
+    }
+
+    /// <summary>
+    /// Returns <c>RZ_p(1 / sqrt(sig·2^exp))</c> for <c>sig &gt; 0</c>: the significand with exactly
+    /// <paramref name="p"/> bits and its exponent.
+    /// </summary>
+    public static (BigInteger Significand, long Exponent) RzRsqrt(BigInteger sig, long exp, int p)
+    {
+        if (sig.Sign <= 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(sig), "RzRsqrt takes sig > 0.");
+        }
+
+        // An even exponent: 1 / sqrt(s·2^e) = 2^(-e/2 - k)·(2^k / sqrt(s)).
+        var odd = (exp & 1) != 0;
+        var s = odd ? sig << 1 : sig;
+        var e = odd ? exp - 1 : exp;
+
+        // y = floor(2^k / sqrt(s)) = floor(sqrt(floor(2^(2k) / s))), and 2^k / sqrt(s) > 2^(p + 1) for this k, so
+        // dropping the low bits of y truncates the real value (floor(floor(x) / 2^d) = floor(x / 2^d)).
+        var k = p + (int)((s.GetBitLength() + 1) / 2) + 1;
+        var y = IntegerSqrt((BigInteger.One << (2 * k)) / s);
+        var drop = (int)y.GetBitLength() - p;
+        return (y >> drop, -e / 2 - k + drop);
     }
 
     /// <summary>
