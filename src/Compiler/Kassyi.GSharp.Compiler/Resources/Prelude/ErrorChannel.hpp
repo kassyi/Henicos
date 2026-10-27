@@ -4,7 +4,8 @@ enum class GSharpErrorCode : int32_t {
     NotSupported = 1,
     InvalidOperation = 2,
     IndexOutOfRange = 3,
-    ArgumentOutOfRange = 4
+    ArgumentOutOfRange = 4,
+    Argument = 5
 };
 
 struct GSharpErrorSlot {

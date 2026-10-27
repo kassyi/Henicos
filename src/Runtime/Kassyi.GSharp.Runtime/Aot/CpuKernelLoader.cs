@@ -163,6 +163,7 @@ public static class CpuKernelLoader
             2 => new InvalidOperationException(message),
             3 => new IndexOutOfRangeException(message),
             4 => new ArgumentOutOfRangeException(null, message),
+            5 => new ArgumentException(message),
             _ => new InvalidOperationException(message)
         };
     }

@@ -352,7 +352,8 @@ enum class GSharpErrorCode : int {
     NotSupported = 1,
     InvalidOperation = 2,
     IndexOutOfRange = 3,
-    ArgumentOutOfRange = 4
+    ArgumentOutOfRange = 4,
+    Argument = 5
 };
 __device__ __forceinline__ void __gsharp_trap(GSharpErrorCode, const char*) { asm("trap;"); }
 
@@ -404,5 +405,6 @@ __device__ __forceinline__ unsigned char* __gsharp_dsmem_place(TDsmem* s, unsign
 }
 
 #include "Prelude/VectorConstructors.hpp"
+#include "Prelude/Sort.hpp"
 // --- ZeroAlloc.Linq (StackLinq) ---
 #include "StackLinq.cuh"
