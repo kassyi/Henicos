@@ -157,9 +157,7 @@ public sealed class StackLinqFusionRule : IInvocationTranspilerRule
         {
             EmitInitializations(in chain, ref context, terminalStrategy, in terminalStage, ResultVar);
 
-            context.Emitter.Writer.Append($"int {StackLinqHelper.FusionLength} = ");
-            context.Visitor.Visit(chain.SourceArrayExpression);
-            context.Emitter.Writer.AppendLine(".length;");
+            AppendFusionLength(chain.SourceArrayExpression, ref context);
 
             context.Emitter.Writer.AppendLine($"for (int {StackLinqHelper.LoopIndex} = 0; {StackLinqHelper.LoopIndex} < {StackLinqHelper.FusionLength}; {StackLinqHelper.LoopIndex}++)");
             using (context.Emitter.Writer.Scope())
@@ -230,12 +228,24 @@ public sealed class StackLinqFusionRule : IInvocationTranspilerRule
         terminalStrategy.EmitInitialValue(ref context, resultVar, in terminalStage);
     }
 
+    // int <length> = <source>.length; or the element count of a stack array, which has no length member
+    private static void AppendFusionLength(ExpressionSyntax source, ref TranspileContext context)
+    {
+        context.Emitter.Writer.Append($"int {StackLinqHelper.FusionLength} = ");
+        if (StackArrayLocals.TryGetLength(source, context.Query.SemanticModel, out var length))
+        {
+            context.Emitter.Writer.AppendLine($"{length};");
+            return;
+        }
+
+        context.Visitor.Visit(source);
+        context.Emitter.Writer.AppendLine(".length;");
+    }
+
     private static void EmitThreadLocalReductionLoop(in StackLinqChain chain, ref TranspileContext context,
         IStackLinqTerminalStrategy terminalStrategy, in LinqStage terminalStage, string resultVar)
     {
-        context.Emitter.Writer.Append($"int {StackLinqHelper.FusionLength} = ");
-        context.Visitor.Visit(chain.SourceArrayExpression);
-        context.Emitter.Writer.AppendLine(".length;");
+        AppendFusionLength(chain.SourceArrayExpression, ref context);
 
         context.Emitter.Writer.AppendLine($"int {ThreadId} = threadIdx.x + blockIdx.x * blockDim.x;");
         context.Emitter.Writer.AppendLine($"int {Stride} = blockDim.x * gridDim.x;");

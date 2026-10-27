@@ -36,7 +36,8 @@ public sealed class StackLinqTranspilerRule : IInvocationTranspilerRule
                 // If this is an extension method call via instance.Method(), the instance is the first argument
                 case true when node.Expression is MemberAccessExpressionSyntax memberAccess:
                 {
-                    context.Visitor.Visit(memberAccess.Expression);
+                    // The source template deduces GSharpArray<T>, which a stack array does not convert to
+                    StackArrayLocals.AppendView(memberAccess.Expression, ref context);
 
                     if (arguments.Count > 0)
                     {
@@ -52,7 +53,14 @@ public sealed class StackLinqTranspilerRule : IInvocationTranspilerRule
 
             for (var i = 0; i < arguments.Count; i++)
             {
-                context.Visitor.Visit(arguments[i]);
+                if (StackArrayLocals.IsStackArrayReference(arguments[i].Expression, context.Query.SemanticModel))
+                {
+                    StackArrayLocals.AppendView(arguments[i].Expression, ref context);
+                }
+                else
+                {
+                    context.Visitor.Visit(arguments[i]);
+                }
 
                 if (i < arguments.Count - 1)
                 {

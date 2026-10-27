@@ -107,6 +107,93 @@ public class ZeroInitTests : TranspilerTestBase
         Assert.Equal(expected, output);
     }
 
+    // The contents of a stackalloc under [SkipLocalsInit] are unspecified in C#, so the host gives no reference; G#
+    // zeroes a const array because C++ requires its initializer
+    [SkippableFact]
+    [Scenario(TestScenario.Boundary)]
+    public void Test_ReadOnlySpanOverStackAllocUnderSkipLocalsInit_BuildsAndReadsZeros()
+    {
+        int[] output = [-1, -1];
+
+        ZeroInitKernels.LaunchReadOnlyStackAllocSkipLocalsInitKernel(output, blockDimX: 1);
+
+        Assert.Equal([0, 4], output);
+    }
+
+    [SkippableFact]
+    [Scenario(TestScenario.HappyPath)]
+    public void Test_StackArray_PassesAsSpanOrArrayArgumentWithItsLength()
+    {
+        int[] output = Enumerable.Repeat(-1, 6).ToArray();
+        int[] expected = Enumerable.Repeat(-1, 6).ToArray();
+        ZeroInitKernels.StackArrayArgumentKernel(expected);
+
+        ZeroInitKernels.LaunchStackArrayArgumentKernel(output, blockDimX: 1);
+
+        Assert.Equal([4, 4, 4, 4, 2, 10], expected);
+        Assert.Equal(expected, output);
+    }
+
+    [SkippableFact]
+    [Scenario(TestScenario.Boundary)]
+    public void Test_StackArray_IsNeverNull()
+    {
+        int[] output = Enumerable.Repeat(-1, 6).ToArray();
+        int[] expected = Enumerable.Repeat(-1, 6).ToArray();
+        ZeroInitKernels.StackArrayNullTestKernel(expected);
+
+        ZeroInitKernels.LaunchStackArrayNullTestKernel(output, blockDimX: 1);
+
+        Assert.Equal([0, 1, 0, 1, 0, 0], expected);
+        Assert.Equal(expected, output);
+    }
+
+    [SkippableFact]
+    [Scenario(TestScenario.Boundary)]
+    public void Test_NullTestThroughACast_TestsTheArray()
+    {
+        int[] input = [5];
+        int[] output = [-1, -1];
+        int[] expected = [-1, -1];
+        ZeroInitKernels.CastNullTestKernel(input, expected);
+
+        ZeroInitKernels.LaunchCastNullTestKernel(input, output, blockDimX: 1);
+
+        Assert.Equal([0, 1], expected);
+        Assert.Equal(expected, output);
+    }
+
+    [SkippableFact]
+    [Scenario(TestScenario.HappyPath)]
+    public void Test_StackArray_IsTheReceiverOfSpanMembersAndStackLinq()
+    {
+        int[] output = Enumerable.Repeat(-1, 5).ToArray();
+        int[] expected = Enumerable.Repeat(-1, 5).ToArray();
+        ZeroInitKernels.StackArrayMembersKernel(expected);
+
+        ZeroInitKernels.LaunchStackArrayMembersKernel(output, blockDimX: 1);
+
+        Assert.Equal([2, 3, 3, 10, 8], expected);
+        Assert.Equal(expected, output);
+    }
+
+    // The forms GSH0091 reports (an alias or a ref argument of an outer scope) are rejected before they run; within the
+    // scope, the alias and the ref argument see the array of the same iteration
+    [SkippableFact]
+    [Scenario(TestScenario.Boundary)]
+    public void Test_StackArrayHeldByALocalOrARefArgumentInItsScope_KeepsItsValues()
+    {
+        int[] seed = [100];
+        int[] output = [-1, -1];
+        int[] expected = [-1, -1];
+        ZeroInitKernels.StackArrayAliasKernel(expected, seed);
+
+        ZeroInitKernels.LaunchStackArrayAliasKernel(output, seed, blockDimX: 1);
+
+        Assert.Equal([22, 44], expected);
+        Assert.Equal(expected, output);
+    }
+
     [SkippableFact]
     [Scenario(TestScenario.HappyPath)]
     public void Test_SkipLocalsInit_KeepsDefaultConstructorAndObjectInitializers()

@@ -556,9 +556,8 @@ internal sealed class StackArrayEscapeRule : ISyntaxValidationRule<MethodDeclara
         private static bool IsWritableReference(ArgumentSyntax argument) =>
             argument.RefKindKeyword.IsKind(SyntaxKind.RefKeyword, SyntaxKind.OutKeyword);
 
-        // A T[] stack array local is a C++ array, which cannot be assigned or passed by reference
-        private static bool IsStackArrayLocal(ILocalSymbol local) =>
-            local.Type is IArrayTypeSymbol && StackArrayLocals.IsStackArray(local, out _);
+        // The stack array of an array or span local is a C++ array, which cannot be assigned or passed by reference
+        private static bool IsStackArrayLocal(ILocalSymbol local) => StackArrayLocals.IsStackArray(local, out _);
 
         private static SyntaxNode Unwrap(SyntaxNode node)
         {

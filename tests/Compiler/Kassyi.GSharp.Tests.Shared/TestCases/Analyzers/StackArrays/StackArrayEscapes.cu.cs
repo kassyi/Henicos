@@ -242,4 +242,16 @@ public static unsafe partial class StackArrayEscapeKernels
         output[0] = b[0] + t[0] + x + w[0] + *q + holder.Field[0] + Peek(output) + OwnLocal(output);
     }
 
+    [GpuDeviceFunction]
+    public static void Shift(ref Span<int> values) => values = values.Slice(1);
+
+    // X13: the stack array of a span is a C++ array as well, so it cannot be reassigned or passed by ref
+    [GpuKernel]
+    public static void SpanReassignKernel(int[] output)
+    {
+        Span<int> s = stackalloc int[4];
+        s = s.Slice(1);
+        Shift(ref s);
+        output[0] = s.Length;
+    }
 }

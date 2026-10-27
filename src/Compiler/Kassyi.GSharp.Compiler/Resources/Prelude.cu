@@ -35,6 +35,16 @@ struct GSharpArray {
 
     __device__ inline GSharpArray() : data(nullptr), length(0) {}
     __device__ inline GSharpArray(T* d, int l) : data(d), length(l) {}
+    // A stack array (T name[N]) viewed as a span or array argument; T may be const for a ReadOnlySpan. G# reports the
+    // uses that would keep the view beyond the array's scope (GSH0091)
+    template <int N>
+    __device__ inline GSharpArray(T (&storage)[N]) : data(storage), length(N) {}
+
+    // The span members that C# calls on a span or an array (Span<T>.Slice, Span<T>.Fill, MemoryExtensions.AsSpan)
+    __device__ inline GSharpArray<T> Slice(int start) const { return GSharpArray<T>(data + start, length - start); }
+    __device__ inline GSharpArray<T> Slice(int start, int count) const { return GSharpArray<T>(data + start, count); }
+    __device__ inline void Fill(const T& value) { for (int i = 0; i < length; i++) { data[i] = value; } }
+    __device__ inline GSharpArray<T> AsSpan() const { return *this; }
     
     // Allows implicit conversion from GSharpArray<U> to GSharpArray<T> if U* is convertible to T* (e.g. T to const T)
     template <typename U>
@@ -50,6 +60,10 @@ struct GSharpArray {
     __device__ inline operator T*() { return data; }
     __device__ inline operator const T*() const { return data; }
 };
+
+// A stack array (T name[N]) viewed as a span, for a receiver or a template argument that deduces GSharpArray<T>
+template <typename T, int N>
+__device__ inline GSharpArray<T> __gsharp_stackalloc_span(T (&storage)[N]) { return GSharpArray<T>(storage, N); }
 
 
 
