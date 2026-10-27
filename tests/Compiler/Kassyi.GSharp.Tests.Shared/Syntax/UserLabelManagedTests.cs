@@ -39,6 +39,13 @@ public class UserLabelManagedTests : TranspilerTestBase
     public void Test_Managed_ChainedLabel_LabelSplitByAnotherSplitLabel(int flag) =>
         UserLabelScenarios.ChainedLabel(s_runManaged, flag);
 
+    [Theory]
+    [Scenario(TestScenario.HappyPath)]
+    [InlineData(0)]
+    [InlineData(1)]
+    public void Test_Managed_CrossLabelWrite_LocalUsedAfterSplitLabel(int flag) =>
+        UserLabelScenarios.CrossLabelWrite(s_runManaged, flag);
+
     [Fact]
     [Scenario(TestScenario.HappyPath)]
     public void Test_Managed_LabeledBarrier_SeparatesWritesFromReads() => UserLabelScenarios.LabeledBarrier(s_runManaged);

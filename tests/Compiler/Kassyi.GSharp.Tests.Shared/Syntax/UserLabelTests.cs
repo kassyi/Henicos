@@ -36,6 +36,13 @@ public class UserLabelTests : TranspilerTestBase
     public void Test_ChainedLabel_LabelSplitByAnotherSplitLabel(int flag) =>
         UserLabelScenarios.ChainedLabel(s_runNative, flag);
 
+    [SkippableTheory]
+    [Scenario(TestScenario.HappyPath)]
+    [InlineData(0)]
+    [InlineData(1)]
+    public void Test_CrossLabelWrite_LocalUsedAfterSplitLabel(int flag) =>
+        UserLabelScenarios.CrossLabelWrite(s_runNative, flag);
+
     [SkippableFact]
     [Scenario(TestScenario.HappyPath)]
     public void Test_LabeledBarrier_SeparatesWritesFromReads()

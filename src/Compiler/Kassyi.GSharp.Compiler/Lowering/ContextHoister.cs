@@ -14,11 +14,17 @@ namespace Kassyi.GSharp.Compiler.Lowering;
 /// The device function that owns the body. With a semantic model, only references to its own parameters are rewritten
 /// to the frame copies of <paramref name="copiedParameters"/>.
 /// </param>
+/// <param name="stateLabels">
+/// The top-level labels that start a state (<see cref="StateLabelPlanner.FindStateLabels"/>), or <see langword="null"/>
+/// to find them in the block. A local used after such a label of the user, in another state than its declaration,
+/// lives in the context like a local that crosses a barrier.
+/// </param>
 public class ContextHoister(
     IReadOnlyCollection<string>? copiedParameters = null,
     bool isDeviceFunction = false,
     SemanticModel? semanticModel = null,
-    IMethodSymbol? deviceFunction = null)
+    IMethodSymbol? deviceFunction = null,
+    HashSet<DeclarationKey>? stateLabels = null)
     : CSharpSyntaxRewriter
 {
     private readonly HashSet<DeclarationKey> _hoistedVariables = [];
@@ -52,6 +58,11 @@ public class ContextHoister(
         {
             barrierStarts[i] = analyzer.BarrierSpans[i].Start;
         }
+
+        var splitLabelStarts = FindSplitUserLabelStarts(block);
+        var lastReferenceStarts = splitLabelStarts.Length > 0
+            ? FindLastReferenceStarts(block)
+            : null;
 
         var variableCount = analyzer.Variables.Count;
         var keys = new DeclarationKey[variableCount];
@@ -88,6 +99,13 @@ public class ContextHoister(
             if (index < barrierCount && barrierStarts[index] < scopeEnd)
             {
                 _hoistedVariables.Add(keys[v]);
+                continue;
+            }
+
+            if (lastReferenceStarts != null &&
+                IsUsedAfterSplitLabel(splitLabelStarts, lastReferenceStarts, keys[v], declEnd, scopeEnd))
+            {
+                _hoistedVariables.Add(keys[v]);
             }
         }
 
@@ -105,6 +123,65 @@ public class ContextHoister(
 
         var rewrittenBlock = (BlockSyntax)Visit(block);
         return (rewrittenBlock, hoistedDecls);
+    }
+
+    // [WHY] A label of the user that starts a state ends the case block of its declaration, as a barrier does. Only a
+    // local that is used after such a label moves into the context (as pocl saves only the values used outside their
+    // region); the others stay locals. Lowering's own labels need no check: they appear only around barriers, which the
+    // barrier rule covers.
+    private int[] FindSplitUserLabelStarts(BlockSyntax block)
+    {
+        var labels = stateLabels ?? StateLabelPlanner.FindStateLabels(block, semanticModel);
+        var starts = ImmutableArray.CreateBuilder<int>();
+        foreach (var statement in block.Statements)
+        {
+            if (statement is LabeledStatementSyntax labeled &&
+                !labeled.Identifier.ValueText.StartsWith(GSharpInternalNames.Lowering.LabelPrefix, StringComparison.Ordinal) &&
+                labels.Contains(LoweringIdentity.ForDeclaration(labeled, semanticModel)))
+            {
+                starts.Add(labeled.SpanStart);
+            }
+        }
+
+        return starts.ToArray();
+    }
+
+    // The start of the last reference to each declaration, in a value position
+    private Dictionary<DeclarationKey, int> FindLastReferenceStarts(BlockSyntax block)
+    {
+        var lastStarts = new Dictionary<DeclarationKey, int>();
+        foreach (var node in block.DescendantNodes())
+        {
+            if (node is not IdentifierNameSyntax identifier || IsNonValueIdentifierPosition(identifier))
+            {
+                continue;
+            }
+
+            var key = LoweringIdentity.ForReference(identifier, semanticModel);
+            if (!lastStarts.TryGetValue(key, out var last) || identifier.SpanStart > last)
+            {
+                lastStarts[key] = identifier.SpanStart;
+            }
+        }
+
+        return lastStarts;
+    }
+
+    // Whether a split label of the user lies between the declaration and the end of its scope, and the declaration is
+    // referenced after the first such label
+    private static bool IsUsedAfterSplitLabel(int[] splitLabelStarts, Dictionary<DeclarationKey, int> lastReferenceStarts,
+        DeclarationKey key, int declEnd, int scopeEnd)
+    {
+        var index = Array.BinarySearch(splitLabelStarts, declEnd);
+        if (index < 0)
+        {
+            index = ~index;
+        }
+
+        return index < splitLabelStarts.Length &&
+               splitLabelStarts[index] < scopeEnd &&
+               lastReferenceStarts.TryGetValue(key, out var lastReference) &&
+               lastReference > splitLabelStarts[index];
     }
 
     public override SyntaxNode? VisitLocalDeclarationStatement(LocalDeclarationStatementSyntax node)

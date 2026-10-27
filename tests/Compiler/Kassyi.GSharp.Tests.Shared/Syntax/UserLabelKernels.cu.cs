@@ -92,6 +92,32 @@ public static partial class UserLabelKernels
         data[tid] = x;
     }
 
+    // extra is declared before a label that starts a state and is used after it, with no barrier in between.
+    // [WHY] The locals after the goto are declared without an initializer: a goto past an initialized declaration is
+    // ill-formed C++ ([stmt.dcl]); nvcc warns (#546-D) and g++ rejects it.
+    [GpuKernel]
+    public static void CrossLabelWriteKernel(int[] data, int flag)
+    {
+        int tid = ThreadIndex.X;
+        int value = data[tid];
+        if (flag != 0)
+        {
+            Gpu.SyncThreads();
+            value += 1;
+            goto done;
+        }
+
+        int before;
+        before = 3;
+        value += before;
+        int extra;
+        extra = 7;
+        value += extra;
+    done:
+        extra = value * 2;
+        data[tid] = extra;
+    }
+
 #pragma warning disable CS0164 // The label under test has no goto
     // The barrier under the label still separates the write of every thread from the reads of its neighbour
     [GpuKernel]

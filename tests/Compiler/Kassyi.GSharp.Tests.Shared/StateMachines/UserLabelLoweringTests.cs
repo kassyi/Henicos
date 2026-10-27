@@ -103,6 +103,30 @@ public class UserLabelLoweringTests : StateMachineTestBase
 
     [Fact]
     [Scenario(TestScenario.HappyPath)]
+    public Task Lower_CrossLabelWrite_HoistsOnlyLocalsUsedAfterTheLabel() =>
+        VerifyPipelineLowerFromTestCase("CrossLabelWrite.cs", inspect: static (lowered, _) =>
+        {
+            var names = new System.Collections.Generic.List<string>();
+            foreach (var field in lowered.ContextFields)
+            {
+                names.Add(field.Identifier.ValueText);
+            }
+
+            Assert.Contains("extra", names);
+            Assert.DoesNotContain("before", names);
+        });
+
+    [Fact]
+    [Scenario(TestScenario.HappyPath)]
+    public Task Managed_CrossLabelWrite_HoistsOnlyLocalsUsedAfterTheLabel() =>
+        VerifyManagedPipelineLowerFromTestCase("CrossLabelWrite.cs", inspect: static (_, fields, _) =>
+        {
+            Assert.Contains("extra", fields);
+            Assert.DoesNotContain("before", fields);
+        });
+
+    [Fact]
+    [Scenario(TestScenario.HappyPath)]
     public Task Managed_LabeledShuffle_TemporaryAfterLabel() =>
         VerifyManagedPipelineLowerFromTestCase("LabeledShuffle.cs");
 }

@@ -62,7 +62,8 @@ public static class AstLoweringPipeline
         // [WHY] Found once, before ContextHoister rewrites declarations, and given to both passes so that they agree
         var stateLabels = StateLabelPlanner.FindStateLabels(hoistedBody, bodyModel);
         var (contextHoistedBody, contextFields) =
-            new ContextHoister(copiedParameters, isDeviceFunction: deviceFunction != null, bodyModel, deviceFunction)
+            new ContextHoister(copiedParameters, isDeviceFunction: deviceFunction != null, bodyModel, deviceFunction,
+                    stateLabels)
                 .Hoist(hoistedBody);
         var lowerer = new StateMachineLowerer(isDeviceFunction: deviceFunction != null, bodyModel, stateLabels);
         var stateMachineBody = lowerer.Lower(contextHoistedBody);

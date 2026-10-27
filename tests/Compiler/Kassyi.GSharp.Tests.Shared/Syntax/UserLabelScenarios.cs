@@ -104,6 +104,18 @@ internal static class UserLabelScenarios
         }
     }
 
+    public static void CrossLabelWrite(Action<Action> run, int flag)
+    {
+        var data = CreateSequence();
+
+        run(() => UserLabelKernels.LaunchCrossLabelWriteKernel(data, flag, blockDimX: WarpSize));
+
+        for (int i = 0; i < WarpSize; i++)
+        {
+            Assert.Equal((i + (flag != 0 ? 1 : 3 + 7)) * 2, data[i]);
+        }
+    }
+
     public static void LabeledBarrier(Action<Action> run)
     {
         var output = new int[4];
