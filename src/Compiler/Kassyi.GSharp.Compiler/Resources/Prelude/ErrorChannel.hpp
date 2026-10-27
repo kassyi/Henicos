@@ -10,6 +10,10 @@ enum class GSharpErrorCode : int32_t {
 struct GSharpErrorSlot {
     std::atomic<int32_t> code{0};
     const char* message{nullptr};
+    // The first report's message, copied: a message formatted at run time (with the place and the values) does not
+    // outlive the function that formats it. Reset keeps the text, so a message just consumed stays readable. The text is
+    // UTF-8 (the host reads it so); a longer message is cut before the character that does not fit, never inside one.
+    char text[256]{};
 
     inline void Reset() noexcept {
         message = nullptr;
@@ -25,7 +29,21 @@ struct GSharpErrorSlot {
         if (code.compare_exchange_strong(expected, static_cast<int32_t>(errCode),
                                          std::memory_order_acq_rel,
                                          std::memory_order_relaxed)) {
-            message = msg;
+            if (msg == nullptr) {
+                message = nullptr;
+                return;
+            }
+            size_t length = std::strlen(msg);
+            if (length >= sizeof(text)) {
+                length = sizeof(text) - 1;
+                // msg[length] is the first byte left out; while it continues a UTF-8 character, leave that character out
+                while (length > 0 && (static_cast<unsigned char>(msg[length]) & 0xC0u) == 0x80u) {
+                    --length;
+                }
+            }
+            std::memcpy(text, msg, length);
+            text[length] = '\0';
+            message = text;
         }
     }
 };
