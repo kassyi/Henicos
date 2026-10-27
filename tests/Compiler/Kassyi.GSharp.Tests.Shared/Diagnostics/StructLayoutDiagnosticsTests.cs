@@ -224,4 +224,24 @@ public class StructLayoutDiagnosticsTests
                  d.Location.SourceTree is { } tree &&
                  !inputTrees.Contains(tree));
     }
+
+    // An [InlineArray] struct with StructLayout.Size (line 19), which the runtime does not load (#621); the inline array
+    // without Size reports nothing
+    [Theory]
+    [InlineData("Cpu")]
+    [InlineData("Cuda")]
+    [Scenario(TestScenario.SadPath)]
+    public async Task Test_InlineArrayWithStructLayoutSize_ReportsGsh0078AtTheType(string dialect)
+    {
+        var diagnostics = await KernelDiagnostics.RunTestCaseAsync("Diagnostics/StructLayoutSizeDiagnostics.cs", dialect);
+
+        Assert.Equal(
+            [(Analyzer, 19, 46, 19, 57)],
+            diagnostics.Ranges(GSharpDiagnostics.StructLayoutNotRepresentable.Id));
+        var diagnostic = Assert.Single(
+            diagnostics,
+            static d => d.Id == GSharpDiagnostics.StructLayoutNotRepresentable.Id);
+        Assert.Contains("'StructLayoutSizeDiagnosticsTest.SizedInline'", diagnostic.Message);
+        Assert.Contains("an [InlineArray] struct cannot have StructLayout.Size", diagnostic.Message);
+    }
 }
