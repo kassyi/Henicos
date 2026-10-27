@@ -120,7 +120,6 @@ cg::this_grid().sync();
 __gsharp_id_0_sum+=22;
 }
 ;
-cg::this_grid().sync();
 __gsharp_id_6_LocalStep();
 cg::this_grid().sync();
 __gsharp_id_0_sum+=33;

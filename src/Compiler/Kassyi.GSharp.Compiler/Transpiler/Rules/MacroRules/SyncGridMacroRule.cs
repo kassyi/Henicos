@@ -24,31 +24,18 @@ internal sealed class SyncGridMacroRule : IMacroTranspilerRule
             return false;
         }
 
-        switch (lambdaExpr.Body)
+        var statements = SyncGridBody.Flatten(lambdaExpr, context.Query.SemanticModel);
+
+        // [WHY] Completely eliminate empty Gpu.SyncGrid(() => {}) as a No-op (zero CUDA C++ output).
+        if (statements.HasExecutableStatements)
         {
-            case BlockSyntax block:
-                var flatStatements = AutoSyncGrid.Flatten(block.Statements, context.Query.SemanticModel);
-                if (AutoSyncGrid.HasExecutableStatements(flatStatements))
-                {
-                    EmitSyncGridBody(ref context, flatStatements, expr: null);
-                }
-
-                // [WHY] Completely eliminate empty Gpu.SyncGrid(() => {}) as a No-op (zero CUDA C++ output).
-                return true;
-
-            case ExpressionSyntax expr:
-                EmitSyncGridBody(ref context, flatStatements: null, expr);
-                return true;
-
-            default:
-                return false;
+            EmitSyncGridBody(ref context, statements);
         }
+
+        return true;
     }
 
-    private static void EmitSyncGridBody(
-        ref TranspileContext context,
-        IReadOnlyList<CSharpSyntaxNode>? flatStatements,
-        ExpressionSyntax? expr)
+    private static void EmitSyncGridBody(ref TranspileContext context, SyncGridStatements statements)
     {
         var previousDepth = AutoSyncGrid.Enter(ref context);
         try
@@ -56,15 +43,7 @@ internal sealed class SyncGridMacroRule : IMacroTranspilerRule
             // A nested body joins the statement list of the enclosing one, so it opens no scope of its own
             using (previousDepth > 0 ? default : context.Emitter.Writer.Scope())
             {
-                if (flatStatements != null)
-                {
-                    AutoSyncGrid.VisitStatements(flatStatements, ref context);
-                }
-                else if (expr != null)
-                {
-                    context.Visitor.Visit(expr);
-                    context.Emitter.Writer.AppendLine(";");
-                }
+                AutoSyncGrid.VisitStatements(statements.Elements, ref context);
             }
         }
         finally

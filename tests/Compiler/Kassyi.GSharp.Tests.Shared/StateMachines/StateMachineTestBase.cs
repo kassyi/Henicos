@@ -188,6 +188,14 @@ public static class Gpu
     {
     }
 
+    public static void SyncGrid()
+    {
+    }
+
+    public static void SyncGrid(Action body)
+    {
+    }
+
     public static void ForUnroll(int start, int count, Action<int> body)
     {
     }
