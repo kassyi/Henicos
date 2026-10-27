@@ -83,7 +83,8 @@ public sealed class GpuBigFloatTranscendentalOptions
 
     /// <summary>
     /// Gets or sets the largest number of terms of the <c>Log</c> series (<c>atanh</c>) that is evaluated in Horner form
-    /// (one multiplication per term, error below 1.8 units); a longer series uses Paterson–Stockmeyer. The default is
+    /// (one multiplication per term, rounding error <c>F &lt; 1.79 + ε'_R ≤ 2.79</c> units); a longer series uses
+    /// Paterson–Stockmeyer (<c>F &lt; m + 0.6 + ε'_R</c> for block size <c>m</c>). The default is
     /// 8, so only arguments close to 1 take Horner form. 0 always uses Paterson–Stockmeyer, <see cref="int.MaxValue"/>
     /// always Horner form.
     /// </summary>

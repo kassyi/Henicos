@@ -121,13 +121,18 @@ public interface IGpuBigFloatArithmetic
     /// <remarks>
     /// <para>
     /// The significand fills <paramref name="resultSig"/> with its top bit set; <c>e^0 = 1</c> is
-    /// <c>2^(p−1)·2^(1−p)</c>. The result is within one unit in the last place of the exact value (faithful rounding)
-    /// for every argument in range, whatever its size or sign.
+    /// <c>2^(p−1)·2^(1−p)</c>. The result is the exact value rounded toward zero to <c>p</c> bits, like
+    /// <see cref="Add"/>, <see cref="Multiply"/> and <see cref="Divide"/>, for every argument in range, whatever its size
+    /// or sign. The GPU and the CPU provider return the same bits.
     /// </para>
     /// <para>
     /// The argument is reduced to <c>x = k·ln 2 + r</c>, <c>r ∈ (0.69, 1.39)</c>, for either sign (no reciprocal), and
     /// <c>e^r</c> is evaluated as <c>(e^(r/2^s))^(2^s)</c> with a number of terms derived from the precision;
     /// <see cref="GpuWorkspace.Transcendental"/> can fix <c>s</c>.
+    /// An approximation with guard bits is accepted only when every value within its error bound truncates to
+    /// the same <c>p</c> bits; otherwise it is recomputed with more guard bits. That is rare for random arguments;
+    /// arguments such as <c>±2^-c</c> (<c>c</c> above about <c>p/2</c>), whose exponential lies very close to a
+    /// <c>p</c>-bit value, take two attempts or more.
     /// </para>
     /// </remarks>
     GpuFloatResult Exp(
@@ -148,12 +153,17 @@ public interface IGpuBigFloatArithmetic
     /// <remarks>
     /// <para>
     /// The significand fills <paramref name="resultSig"/> with its top bit set, or is zero for <c>ln 1 = 0</c>.
-    /// The result is within one unit in the last place of the exact logarithm (faithful rounding) for every positive
-    /// argument, whatever its exponent and however close it is to 1.
+    /// The result is the exact logarithm rounded toward zero to <c>p</c> bits, like <see cref="Add"/>,
+    /// <see cref="Multiply"/> and <see cref="Divide"/>, for every positive argument, whatever its exponent and however
+    /// close it is to 1. The GPU and the CPU provider return the same bits.
     /// </para>
     /// <para>
     /// The argument is reduced to <c>x = m·2^e</c>, <c>m ∈ [3/4, 3/2)</c>, and <c>ln x = e·ln 2 + 2·atanh((m − 1) / (m + 1))</c>
     /// is evaluated with a number of terms derived from the precision.
+    /// An approximation with guard bits is accepted only when every value within its error bound truncates to
+    /// the same <c>p</c> bits; otherwise it is recomputed with more guard bits. That is rare for random arguments;
+    /// arguments such as <c>1 ± 2^-c</c> (<c>c</c> above about <c>p/2</c>), whose logarithm lies very close to a
+    /// <c>p</c>-bit value, take two attempts or more.
     /// </para>
     /// </remarks>
     GpuFloatResult Log(

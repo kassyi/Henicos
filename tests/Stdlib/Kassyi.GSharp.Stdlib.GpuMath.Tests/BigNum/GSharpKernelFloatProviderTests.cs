@@ -366,7 +366,8 @@ public class GSharpKernelFloatProviderTests : IDisposable
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Stdlib)]
     [Scenario(TestScenario.Boundary)]
-    // mutant: GpuBigFloatTranscendentals.cs ExpSeriesRecurrence `j <= terms` -> `j <= terms / 2` (half the terms)
+    // mutant: GpuBigFloatTranscendentals.cs ExpSeriesPatersonStockmeyer lower blocks `(uint)(first + i)` ->
+    // `(uint)(first + i + 1)` (wrong divisors in Smith's order)
     [InlineData(1)]
     // e^60 = 2^85 · e^r: k·ln 2 with ln 2 to W - s + bits(k) + 2 fraction bits.
     // mutant: GpuBigFloatTranscendentals.cs ReduceArgument `GetLn2(plan.Ln2FractionBits)` ->

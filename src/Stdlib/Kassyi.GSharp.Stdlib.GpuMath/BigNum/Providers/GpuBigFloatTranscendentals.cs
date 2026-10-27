@@ -8,8 +8,8 @@ namespace Kassyi.GSharp.Stdlib.GpuMath.BigNum.Providers;
 /// The algorithm and every truncation match the host implementation <see cref="BigFloatTranscendentalMath"/>, which
 /// documents the mathematics. The term counts, block sizes and precisions come from <see cref="TranscendentalPlanner"/>
 /// before any device work, so the series run without reading values back; the host waits for the device only to read
-/// the leading bits of the argument (and, for Log, the bit length of the reduced argument and inside the division) and
-/// to normalize.
+/// the leading bits of the argument (and, for Log, the bit length of the reduced argument and inside the division), to
+/// normalize the approximation and to read its guard words for the rounding check.
 /// </para>
 /// <para>
 /// Fixed-point values with <c>W</c> fraction bits occupy <c>W / 32</c> words, plus one integer word where the value
@@ -19,7 +19,8 @@ namespace Kassyi.GSharp.Stdlib.GpuMath.BigNum.Providers;
 internal static class GpuBigFloatTranscendentals
 {
     /// <summary>
-    /// Computes <c>ln x</c> for a positive operand on the GPU (see <see cref="BigFloatTranscendentalMath.Log"/>).
+    /// Computes <c>RZ_p(ln x)</c> for a positive operand on the GPU (see
+    /// <see cref="BigFloatTranscendentalMath.Log(BigInteger, int, int, GpuBigFloatTranscendentalOptions)"/>).
     /// </summary>
     /// <param name="workspace">The workspace whose stream orders the work and whose options tune it.</param>
     /// <param name="value">The operand; its sign is ignored (the caller rejects negative values).</param>
@@ -27,18 +28,43 @@ internal static class GpuBigFloatTranscendentals
     /// <returns>The exponent and sign of the result.</returns>
     /// <exception cref="InvalidOperationException">The operand is zero.</exception>
     /// <exception cref="OverflowException">The exponent of the result does not fit in <see cref="int"/>.</exception>
-    internal static GpuFloatResult Log(GpuWorkspace workspace, in GpuFloatOperand value, GpuBigIntMemoryHandle resultSig)
+    internal static GpuFloatResult Log(GpuWorkspace workspace, in GpuFloatOperand value, GpuBigIntMemoryHandle resultSig) =>
+        Log(workspace, value, resultSig, out _);
+
+    /// <summary>
+    /// Computes <c>RZ_p(ln x)</c> as <see cref="Log(GpuWorkspace, in GpuFloatOperand, GpuBigIntMemoryHandle)"/> does, and reports the number of attempts of the rounding check.
+    /// </summary>
+    /// <param name="workspace">The workspace whose stream orders the work and whose options tune it.</param>
+    /// <param name="value">The operand; its sign is ignored (the caller rejects negative values).</param>
+    /// <param name="resultSig">The result significand; its word count sets the precision.</param>
+    /// <param name="attempts">When this method returns, the number of approximations computed (1 unless the rounding
+    /// check had to retry).</param>
+    /// <returns>The exponent and sign of the result.</returns>
+    internal static GpuFloatResult Log(
+        GpuWorkspace workspace, in GpuFloatOperand value, GpuBigIntMemoryHandle resultSig, out int attempts)
     {
         var result = resultSig.AsBorrowedBigUInt(workspace);
-        using var approximation = ComputeLog(workspace, value, 32 * result.NumWords);
-        if (approximation.IsZero)
+        var (bitLength, leadingBits) = ReadLeadingBits(workspace, value);
+        attempts = 0;
+        var extraGuardWords = 0;
+        while (true)
         {
-            workspace.Provider.ClearMemoryAsync(result.DevicePointer, result.NumWords, workspace.Stream);
-            return new GpuFloatResult(0, false);
-        }
+            attempts++;
+            using var approximation = ComputeLog(
+                workspace, value, 32 * result.NumWords, bitLength, leadingBits, extraGuardWords);
+            if (approximation.IsZero)
+            {
+                workspace.Provider.ClearMemoryAsync(result.DevicePointer, result.NumWords, workspace.Stream);
+                return new GpuFloatResult(0, false);
+            }
 
-        var exponent = RoundToNearest(workspace, approximation, result);
-        return new GpuFloatResult(checked((int)exponent), approximation.IsNegative);
+            if (TryTruncate(workspace, approximation, result, out var exponent))
+            {
+                return new GpuFloatResult(checked((int)exponent), approximation.IsNegative);
+            }
+
+            extraGuardWords += TranscendentalPlanner.ZivRetryGuardWords(approximation.WorkingBits);
+        }
     }
 
     /// <summary>
@@ -46,14 +72,15 @@ internal static class GpuBigFloatTranscendentals
     /// <see cref="BigFloatTranscendentalMath.LogApproximation"/>).
     /// </summary>
     internal static TranscendentalApproximation LogApproximation(
-        GpuWorkspace workspace, in GpuFloatOperand value, int resultWords)
+        GpuWorkspace workspace, in GpuFloatOperand value, int resultWords, int extraGuardWords = 0)
     {
-        using var approximation = ComputeLog(workspace, value, 32 * resultWords);
+        var (bitLength, leadingBits) = ReadLeadingBits(workspace, value);
+        using var approximation = ComputeLog(workspace, value, 32 * resultWords, bitLength, leadingBits, extraGuardWords);
         return approximation.ToHost();
     }
 
     /// <summary>
-    /// Computes <c>e^x</c> on the GPU (see <see cref="BigFloatTranscendentalMath.Exp"/>).
+    /// Computes <c>RZ_p(e^x)</c> on the GPU (see <see cref="BigFloatTranscendentalMath.Exp(BigInteger, int, bool, int, GpuBigFloatTranscendentalOptions)"/>).
     /// </summary>
     /// <param name="workspace">The workspace whose stream orders the work and whose options tune it.</param>
     /// <param name="value">The operand.</param>
@@ -61,8 +88,23 @@ internal static class GpuBigFloatTranscendentals
     /// <returns>The exponent and sign (always positive) of the result.</returns>
     /// <exception cref="OverflowException">The exponent of the result does not fit in <see cref="int"/> (an underflow,
     /// named in the message, for a negative argument).</exception>
-    internal static GpuFloatResult Exp(GpuWorkspace workspace, in GpuFloatOperand value, GpuBigIntMemoryHandle resultSig)
+    internal static GpuFloatResult Exp(GpuWorkspace workspace, in GpuFloatOperand value, GpuBigIntMemoryHandle resultSig) =>
+        Exp(workspace, value, resultSig, out _);
+
+    /// <summary>
+    /// Computes <c>RZ_p(e^x)</c> as <see cref="Exp(GpuWorkspace, in GpuFloatOperand, GpuBigIntMemoryHandle)"/> does, and reports the number of attempts of the rounding check.
+    /// </summary>
+    /// <param name="workspace">The workspace whose stream orders the work and whose options tune it.</param>
+    /// <param name="value">The operand.</param>
+    /// <param name="resultSig">The result significand; its word count sets the precision.</param>
+    /// <param name="attempts">When this method returns, the number of approximations computed (0 for the shortcuts, 1
+    /// unless the rounding check had to retry).</param>
+    /// <returns>The exponent and sign (always positive) of the result.</returns>
+    /// <exception cref="OverflowException">The exponent of the result does not fit in <see cref="int"/>.</exception>
+    internal static GpuFloatResult Exp(
+        GpuWorkspace workspace, in GpuFloatOperand value, GpuBigIntMemoryHandle resultSig, out int attempts)
     {
+        attempts = 0;
         var result = resultSig.AsBorrowedBigUInt(workspace);
         var resultBits = 32 * result.NumWords;
         var source = value.Significand.AsBorrowedBigUInt(workspace);
@@ -72,40 +114,61 @@ internal static class GpuBigFloatTranscendentals
             return WriteOne(workspace, result);
         }
 
-        // |x| < 2^top.
+        // |x| < 2^top. |x| >= 2^32 is out of range for every p (PlanExp rejects it as well); checking it here keeps an
+        // argument with a huge exponent from being read as a double (Math.ScaleB to infinity) and planned at all.
         var top = (long)value.Exponent + bitLength;
         if (top > 32)
         {
             throw TranscendentalPlanner.ExpOutOfRange(value.IsNegative);
         }
 
-        if (top <= -(resultBits + 2))
+        // |x| < 2^-(p+1): e^x < 1 + 2^-p for x > 0 and e^x > 1 - 2^-(p+1) > 1 - 2^-p for x < 0, so RZ(e^x) is 1 or
+        // 1 - 2^-p without any series.
+        if (top <= -(resultBits + 1))
         {
             return value.IsNegative ? WriteLargestBelowOne(workspace, result) : WriteOne(workspace, result);
         }
 
-        using var approximation = ComputeExp(workspace, value, resultBits, bitLength, leadingBits);
-        var exponent = RoundToNearest(workspace, approximation, result);
-        return new GpuFloatResult(TranscendentalPlanner.ToExpResultExponent(exponent), false);
+        var extraGuardWords = 0;
+        while (true)
+        {
+            attempts++;
+            using var approximation = ComputeExp(workspace, value, resultBits, bitLength, leadingBits, extraGuardWords);
+            if (TryTruncate(workspace, approximation, result, out var exponent))
+            {
+                return new GpuFloatResult(TranscendentalPlanner.ToExpResultExponent(exponent), false);
+            }
+
+            extraGuardWords += TranscendentalPlanner.ZivRetryGuardWords(approximation.WorkingBits);
+        }
     }
 
     /// <summary>
     /// Computes the approximation of <c>e^x</c> on the GPU and reads it back, for an argument outside the shortcuts of
-    /// <see cref="Exp"/> (see <see cref="BigFloatTranscendentalMath.ExpApproximation"/>).
+    /// <see cref="Exp(GpuWorkspace, in GpuFloatOperand, GpuBigIntMemoryHandle)"/> (see <see cref="BigFloatTranscendentalMath.ExpApproximation"/>).
     /// </summary>
     internal static TranscendentalApproximation ExpApproximation(
-        GpuWorkspace workspace, in GpuFloatOperand value, int resultWords)
+        GpuWorkspace workspace, in GpuFloatOperand value, int resultWords, int extraGuardWords = 0)
     {
         var source = value.Significand.AsBorrowedBigUInt(workspace);
         workspace.Provider.ReadLeadingBits(workspace, source, out var bitLength, out var leadingBits);
-        using var approximation = ComputeExp(workspace, value, 32 * resultWords, bitLength, leadingBits);
+        using var approximation = ComputeExp(workspace, value, 32 * resultWords, bitLength, leadingBits, extraGuardWords);
         return approximation.ToHost();
     }
 
-    private static DeviceApproximation ComputeLog(GpuWorkspace workspace, in GpuFloatOperand value, int resultBits)
+    // The bit length and the leading 64 bits of the argument (one wait); Log reads them once for all attempts.
+    private static (int BitLength, ulong LeadingBits) ReadLeadingBits(GpuWorkspace workspace, in GpuFloatOperand value)
     {
         var source = value.Significand.AsBorrowedBigUInt(workspace);
         workspace.Provider.ReadLeadingBits(workspace, source, out var bitLength, out var leadingBits);
+        return (bitLength, leadingBits);
+    }
+
+    private static DeviceApproximation ComputeLog(
+        GpuWorkspace workspace, in GpuFloatOperand value, int resultBits, int bitLength, ulong leadingBits,
+        int extraGuardWords)
+    {
+        var source = value.Significand.AsBorrowedBigUInt(workspace);
         if (bitLength == 0)
         {
             throw new InvalidOperationException("Log of zero.");
@@ -129,7 +192,7 @@ internal static class GpuBigFloatTranscendentals
         var closeness = reducedBits == 0
             ? int.MaxValue
             : upper ? bitLength - reducedBits : bitLength - reducedBits - 1;
-        var plan = TranscendentalPlanner.PlanLog(resultBits, e, closeness, workspace.Transcendental);
+        var plan = TranscendentalPlanner.PlanLog(resultBits, e, closeness, workspace.Transcendental, extraGuardWords);
         var ratio = new ReducedRatio(reduced, denominator, bitLength, reducedBits);
 
         var approximation = workspace.RentTemp(plan.WorkingBits / 32);
@@ -149,12 +212,13 @@ internal static class GpuBigFloatTranscendentals
     }
 
     private static DeviceApproximation ComputeExp(
-        GpuWorkspace workspace, in GpuFloatOperand value, int resultBits, int bitLength, ulong leadingBits)
+        GpuWorkspace workspace, in GpuFloatOperand value, int resultBits, int bitLength, ulong leadingBits,
+        int extraGuardWords)
     {
         var source = value.Significand.AsBorrowedBigUInt(workspace);
         var top = (long)value.Exponent + bitLength;
         var xApprox = BigFloatTranscendentalMath.ApproximateArgument(leadingBits, top, value.IsNegative);
-        var plan = TranscendentalPlanner.PlanExp(resultBits, xApprox, workspace.Transcendental);
+        var plan = TranscendentalPlanner.PlanExp(resultBits, xApprox, workspace.Transcendental, extraGuardWords);
         var workingWords = plan.WorkingBits / 32;
 
         using var r = workspace.RentTemp(workingWords);
@@ -234,7 +298,8 @@ internal static class GpuBigFloatTranscendentals
         var stream = workspace.Stream;
         var workingWords = r.NumWords;
         var words = workingWords + 1;
-        using var powers = new PowerTable(workspace, r, blockSize);
+        // R_m is needed only by a lower block, which exists only for N >= m.
+        using var powers = new PowerTable(workspace, r, Math.Min(blockSize, terms));
         using var quotient = workspace.RentTemp(words);
         using var product = workspace.RentTemp(2 * words);
         using var discardedRemainder = workspace.RentTemp(1);
@@ -424,7 +489,8 @@ internal static class GpuBigFloatTranscendentals
     {
         var workingWords = z.NumWords;
         var words = workingWords + 1;
-        using var powers = new PowerTable(workspace, z, blockSize);
+        // Z_m is needed only by a lower block, which exists only for N - 1 >= m.
+        using var powers = new PowerTable(workspace, z, Math.Min(blockSize, terms - 1));
         using var coefficient = workspace.RentTemp(words);
         using var product = workspace.RentTemp(2 * words);
         using var discardedRemainder = workspace.RentTemp(1);
@@ -468,18 +534,43 @@ internal static class GpuBigFloatTranscendentals
         GpuBigIntMath.ShiftAndResize(scaled, fractionBits - ln2Bits, target);
     }
 
-    // floor((A + 2^(g-1)) / 2^g) = floor((floor(A / 2^(g-1)) + 1) / 2), normalized to the result words, with
-    // g = bits(A) - p (A fills its buffer). Returns the exponent of the result.
-    private static long RoundToNearest(GpuWorkspace workspace, in DeviceApproximation approximation, GpuBigUInt result)
+    // The rounding check of Ziv on the device approximation (see BigFloatTranscendentalMath.TryTruncate). The buffer
+    // holds A normalized to fill it: W / 32 words for Log, one more low word for Exp. The guard words are the
+    // W / 32 - n words below the top n; only they are read back (one wait), and on success the top n words are copied
+    // to the result on the stream. The bound B is the planner's (design §10.1, re-derived in the review of stages
+    // 1–4): a B below the true error would make this check accept a wrong truncation silently.
+    private static bool TryTruncate(
+        GpuWorkspace workspace, in DeviceApproximation approximation, GpuBigUInt result, out long exponent)
     {
-        var guardBits = 32 * approximation.Value.NumWords - 32 * result.NumWords;
-        var words = result.NumWords + 1;
-        using var kept = workspace.RentTemp(words);
-        GpuBigIntMath.ShiftAndResize(approximation.Value, 1 - guardBits, kept);
-        using var rounded = workspace.RentTemp(words);
-        GpuBigIntMath.Add(kept, 1u, rounded);
-        var shift = GpuBigIntMath.NormalizeToMsb(rounded, result, out _);
-        return approximation.Exponent + guardBits - 1 - shift;
+        var provider = workspace.Provider;
+        var bufferWords = approximation.Value.NumWords;
+        var lowWords = bufferWords - approximation.WorkingBits / 32;
+        var guardWords = approximation.WorkingBits / 32 - result.NumWords;
+        var guardHost = ArrayPool<uint>.Shared.Rent(guardWords);
+        BigInteger guard;
+        try
+        {
+            provider.CopyDeviceToHost(
+                guardHost, IntPtr.Add(approximation.Value.DevicePointer, 4 * lowWords), guardWords, workspace.Stream);
+            guard = BigIntExtensions.ToBigInteger(guardHost.AsSpan(0, guardWords));
+        }
+        finally
+        {
+            ArrayPool<uint>.Shared.Return(guardHost);
+        }
+
+        var limit = BigInteger.One << (32 * guardWords);
+        if (approximation.ErrorBound > guard || guard + approximation.ErrorBound >= limit)
+        {
+            exponent = 0;
+            return false;
+        }
+
+        provider.CopyDeviceToDevice(
+            result.DevicePointer, IntPtr.Add(approximation.Value.DevicePointer, 4 * (lowWords + guardWords)),
+            result.NumWords, workspace.Stream);
+        exponent = approximation.Exponent + 32L * (lowWords + guardWords);
+        return true;
     }
 
     // quotient = floor(dividend / divisor) without reading the remainder back.
@@ -512,6 +603,8 @@ internal static class GpuBigFloatTranscendentals
         public GpuBigUInt Value => value;
         public long Exponent => exponent;
         public bool IsNegative => isNegative;
+        public BigInteger ErrorBound => errorBound;
+        public int WorkingBits => workingBits;
         public bool IsZero => isZero;
 
         public TranscendentalApproximation ToHost() =>
@@ -522,8 +615,8 @@ internal static class GpuBigFloatTranscendentals
         public void Dispose() => value.Dispose();
     }
 
-    // X_0 = 2^W, X_1 = X, X_i = floor(X_(i-1) · X_1 / 2^W) (odd i) or floor(X_(i/2)² / 2^W) (even i), each W / 32 + 1
-    // words; X_i for i >= 2 is the top part of its own product buffer.
+    // X_0 = 2^W, X_1 = X, X_i = floor(X_(i-1) · X_1 / 2^W) (odd i) or floor(X_(i/2)² / 2^W) (even i), i <= count, each
+    // W / 32 + 1 words; X_i for i >= 2 is the top part of its own product buffer.
     private sealed class PowerTable : IDisposable
     {
         private readonly GpuBigUInt[] _owned;
@@ -548,10 +641,14 @@ internal static class GpuBigFloatTranscendentals
 
                 provider.ClearMemoryAsync(_owned[0].DevicePointer, words, stream);
                 provider.WriteWord(_owned[0].DevicePointer, workingWords, 1u, stream);
-                provider.ClearMemoryAsync(_owned[1].DevicePointer, words, stream);
-                provider.CopyDeviceToDevice(_owned[1].DevicePointer, x.DevicePointer, workingWords, stream);
                 _powers[0] = _owned[0];
-                _powers[1] = _owned[1];
+                if (count >= 1)
+                {
+                    provider.ClearMemoryAsync(_owned[1].DevicePointer, words, stream);
+                    provider.CopyDeviceToDevice(_owned[1].DevicePointer, x.DevicePointer, workingWords, stream);
+                    _powers[1] = _owned[1];
+                }
+
                 for (var i = 2; i <= count; i++)
                 {
                     var left = i % 2 == 0 ? _powers[i / 2] : _powers[i - 1];

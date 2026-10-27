@@ -56,7 +56,9 @@ public class BigFloatIntervalOracleTests
     // `hiTerm = hiTerm * num / divisor` (the upper bound loses the rounding of every term)
     // mutant: BigFloatIntervalOracle.cs ExpInterval `ReciprocalUp(lo, bits)` -> `ReciprocalUp(hi, bits)` (e^-q)
     // Not killed: `hi = RoundUp(hi * hi, workBits)` -> `RoundDown` and `hiSum += 1` -> `hiSum += 0`; the ceiled
-    // series terms leave more than the one unit that either change removes.
+    // series terms leave more than the one unit that either change removes. The remainder that `+ 1` covers is itself
+    // below t_K·q'/(1 - q') < 2^-8 units < 1 unit (t_K <= 1 unit at the last term, q' <= 2^-8), so the upper bound keeps
+    // room even without it.
     [InlineData(1, 0)] // e
     [InlineData(-1, 0)] // 1/e
     [InlineData(3, 3)] // e^(3/8)

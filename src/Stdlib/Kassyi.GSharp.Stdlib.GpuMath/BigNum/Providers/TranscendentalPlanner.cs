@@ -75,6 +75,9 @@ internal static class TranscendentalPlanner
     /// The bound <c>B</c> of the Log approximation with the atanh series in Horner form:
     /// <c>ceil(1.79 + ε'_R + 4.01)</c> with <c>ε'_R ≤ 1</c>.
     /// </summary>
+    // Source of the bound: design #628 §10.1, re-derived (with the implementation's
+    // truncations) in the review of stages 1–4. A bound below the true error would let the rounding check of
+    // stage 5 accept a wrong truncation silently; the P5 tests cannot detect a bound that is too small.
     internal const int LogHornerErrorBound = 7;
 
     // Margin of the guard bits above the error bound; the rounding check fails with probability about 2^-15.
@@ -100,25 +103,29 @@ internal static class TranscendentalPlanner
     /// </param>
     /// <param name="options">The tuning parameters (<see cref="GpuBigFloatTranscendentalOptions.SeriesBlockSize"/>,
     /// <see cref="GpuBigFloatTranscendentalOptions.AtanhHornerMaxTerms"/>).</param>
+    /// <param name="extraGuardWords">Guard words beyond those the bound needs, for a retry of the rounding check; the
+    /// bound does not depend on <c>W</c>, so it holds unchanged.</param>
     /// <returns>The plan.</returns>
     /// <exception cref="ArgumentOutOfRangeException"><paramref name="resultBits"/> or <paramref name="closenessBits"/>
-    /// is below 1.</exception>
+    /// is below 1, or <paramref name="extraGuardWords"/> is negative.</exception>
     /// <remarks>
     /// A series of at most <see cref="GpuBigFloatTranscendentalOptions.AtanhHornerMaxTerms"/> terms runs in Horner form
     /// (<c>N − 1</c> multiplications); a longer one in Paterson–Stockmeyer form with the <c>m</c> that minimizes
     /// <c>m − 1 + floor((N − 1) / m)</c>, the smaller <c>m</c> on a tie.
     /// </remarks>
-    internal static LogPlan PlanLog(int resultBits, long e, int closenessBits, GpuBigFloatTranscendentalOptions options)
+    internal static LogPlan PlanLog(
+        int resultBits, long e, int closenessBits, GpuBigFloatTranscendentalOptions options, int extraGuardWords = 0)
     {
         ArgumentOutOfRangeException.ThrowIfLessThan(resultBits, 1);
         ArgumentOutOfRangeException.ThrowIfLessThan(closenessBits, 1);
+        ArgumentOutOfRangeException.ThrowIfNegative(extraGuardWords);
         ArgumentNullException.ThrowIfNull(options);
 
         // The bound depends on the form, the form on N, N on W and W on the bound: grow gw until it holds.
         var guardWords = 1;
         while (true)
         {
-            var workingBits = checked(resultBits + 32 * guardWords);
+            var workingBits = checked(resultBits + 32 * (guardWords + extraGuardWords));
             var terms = 0;
             if (closenessBits != int.MaxValue)
             {
@@ -139,7 +146,8 @@ internal static class TranscendentalPlanner
             if (needed <= guardWords)
             {
                 var ln2FractionBits = e == 0 ? 0 : checked(workingBits + CeilingLog2((ulong)Math.Abs(e)) + 4);
-                return new LogPlan(resultBits, guardWords, terms, blockSize, errorBound, ln2FractionBits);
+                return new LogPlan(
+                    resultBits, guardWords + extraGuardWords, terms, blockSize, errorBound, ln2FractionBits);
             }
 
             guardWords = needed;
@@ -150,6 +158,9 @@ internal static class TranscendentalPlanner
     /// Returns the bound of the Log approximation with the atanh series in Paterson–Stockmeyer form,
     /// <c>ceil(m + 0.6 + ε'_R + 4.01) = m + 6</c> (<c>ε'_R ≤ 1</c>).
     /// </summary>
+    // Source of the bound: design #628 §10.1, re-derived (with the implementation's
+    // truncations) in the review of stages 1–4. A bound below the true error would let the rounding check of
+    // stage 5 accept a wrong truncation silently; the P5 tests cannot detect a bound that is too small.
     internal static int LogPatersonStockmeyerErrorBound(int blockSize) => checked(blockSize + 6);
 
     /// <summary>
@@ -224,14 +235,19 @@ internal static class TranscendentalPlanner
     /// </param>
     /// <param name="options">The tuning parameters (<see cref="GpuBigFloatTranscendentalOptions.ExpHalvingCount"/>,
     /// <see cref="GpuBigFloatTranscendentalOptions.SeriesBlockSize"/>).</param>
+    /// <param name="extraGuardWords">Guard words beyond those the bound needs, for a retry of the rounding check; the
+    /// bound does not depend on <c>W</c>, so it holds unchanged.</param>
     /// <returns>The plan.</returns>
     /// <exception cref="OverflowException"><c>|x| ≥ 2^32</c>, or the exponent of every possible result lies outside
     /// <see cref="int"/>.</exception>
     /// <remarks>
     /// <para>
-    /// <c>k = floor(x / ln 2) − 1</c>: the double quotient is within <c>2^-19</c> of <c>x / ln 2</c> for
-    /// <c>|x| &lt; 2^32</c>, so <c>r = x − k·ln 2 ∈ ((1 − 2^-19)·ln 2, (2 + 2^-19)·ln 2) ⊂ (0.69, 1.39)</c> and needs no
-    /// sign test on the device.
+    /// <c>k = floor(x / ln 2) − 1</c>. The double argument is within <c>2^-52</c> of <c>x</c> (relative: its top 64 bits
+    /// truncated, then rounded to 53 bits), and the double ln 2 and the division add <c>2^-53</c> each, so the quotient
+    /// is within <c>2^-51·|x / ln 2|</c> of <c>x / ln 2</c>. Every argument that passes the exponent check below has
+    /// <c>|x / ln 2| &lt; 2^31 + p + 4 ≤ 2^32</c> (for <c>p &lt; 2^31</c>), so the quotient is within <c>2^-19</c> and
+    /// <c>r = x − k·ln 2 ∈ ((1 − 2^-19)·ln 2, (2 + 2^-19)·ln 2) ⊂ (0.69, 1.39)</c> needs no sign test on the device.
+    /// Arguments up to <c>2^32</c> that fail the check are rejected whatever the quotient error.
     /// </para>
     /// <para>
     /// The polynomial runs in Paterson–Stockmeyer form; its bound <c>E &lt; 2^s·(ε_R + 4.83) − 1</c> does not depend on
@@ -240,9 +256,11 @@ internal static class TranscendentalPlanner
     /// weighted by their width, the smaller <c>s</c> and then the smaller <c>m</c> on a tie.
     /// </para>
     /// </remarks>
-    internal static ExpPlan PlanExp(int resultBits, double xApprox, GpuBigFloatTranscendentalOptions options)
+    internal static ExpPlan PlanExp(
+        int resultBits, double xApprox, GpuBigFloatTranscendentalOptions options, int extraGuardWords = 0)
     {
         ArgumentOutOfRangeException.ThrowIfLessThan(resultBits, 1);
+        ArgumentOutOfRangeException.ThrowIfNegative(extraGuardWords);
         ArgumentNullException.ThrowIfNull(options);
 
         // |x| >= 2^32 is out of range whatever p is; this also keeps k in range of long below.
@@ -274,7 +292,7 @@ internal static class TranscendentalPlanner
         {
             // The bound depends on s alone; the guard words follow from it.
             var errorBound = ExpPatersonStockmeyerErrorBound(halvings);
-            var guardWords = GuardWordsFor(errorBound);
+            var guardWords = GuardWordsFor(errorBound) + extraGuardWords;
             var workingBits = checked(resultBits + 32 * guardWords);
             var terms = ExpTermCount(workingBits, halvings);
             var blockSize = options.SeriesBlockSize ?? BestBlockSize(terms, terms);
@@ -296,6 +314,9 @@ internal static class TranscendentalPlanner
     /// Returns the bound of the Exp approximation in Paterson–Stockmeyer form, <c>ceil(5.83·2^s) − 1</c>
     /// (<c>E &lt; 2^s·(ε_R + 4.83) − 1</c> with <c>ε_R ≤ 1</c>).
     /// </summary>
+    // Source of the bound: design #628 §10.1, re-derived (with the implementation's
+    // truncations) in the review of stages 1–4. A bound below the true error would let the rounding check of
+    // stage 5 accept a wrong truncation silently; the P5 tests cannot detect a bound that is too small.
     internal static BigInteger ExpPatersonStockmeyerErrorBound(int halvings) =>
         (583 * (BigInteger.One << halvings) + 99) / 100 - 1;
 
@@ -328,6 +349,13 @@ internal static class TranscendentalPlanner
 
         return terms;
     }
+
+    /// <summary>
+    /// Returns the guard words added for a retry of the rounding check: half the working precision, at least one word,
+    /// so that <c>W</c> grows by half (design §4.1). The check passes eventually: <c>ln x</c> and <c>e^x</c> of a
+    /// dyadic argument other than 1 and 0 are irrational, so they are not a <c>p</c>-bit value.
+    /// </summary>
+    internal static int ZivRetryGuardWords(int workingBits) => Math.Max(1, workingBits / 64);
 
     /// <summary>Returns the guard words <c>ceil((bits(B) + 16) / 32)</c> for an error bound <c>B</c>.</summary>
     internal static int GuardWordsFor(BigInteger errorBound) =>

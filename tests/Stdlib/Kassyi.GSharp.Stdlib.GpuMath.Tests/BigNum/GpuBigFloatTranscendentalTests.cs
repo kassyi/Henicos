@@ -12,8 +12,10 @@ namespace Kassyi.GSharp.Stdlib.GpuMath.Tests.BigNum;
 /// <c>n</c> result words.
 /// </para>
 /// <para>
-/// Contract checked here (stages 2 to 4 of #628): the result is a faithful rounding, <c>RZ_p(v)</c> or the next
-/// <c>p</c>-bit value away from zero, with the significand normalized to the top bit of the result words (P1).
+/// Contract checked here (from stage 5 of #628): the result is <c>RZ_p(v)</c>, the exact value rounded toward zero to
+/// <c>p</c> bits, with the significand normalized to the top bit of the result words (P1). The rounding check (Ziv)
+/// accepts the approximation only when every value within its bound truncates to the same <c>p</c> bits, and retries
+/// with more guard words otherwise; the inputs of <see cref="ZivRetryInputs"/> need that retry.
 /// </para>
 /// <para>
 /// P5: the approximation before rounding (<c>W</c> bits for Log, <c>e^x</c> at <c>W + 32</c> bits for Exp) lies within
@@ -72,7 +74,7 @@ public class GpuBigFloatTranscendentalTests : IDisposable
         return data;
     }
 
-    // P1: the result is RZ_p(ln x) or the next p-bit value away from zero (oracle: e^R <= x < e^(R + ulp)).
+    // P1: the result is RZ_p(ln x) (oracle: e^R <= x < e^(R + ulp) for ln x > 0, mirrored for ln x < 0).
     [SkippableTheory]
     [Scenario(TestScenario.Boundary)]
     [MemberData(nameof(LogCasesOnBothEngines))]
@@ -84,7 +86,7 @@ public class GpuBigFloatTranscendentalTests : IDisposable
     // mutant: y in fixed point instead of with its own exponent: GpuBigFloatTranscendentals.cs EvaluateSeries
     // `workingBits + ratio.BitLength - ratio.ReducedBits + 1` -> `workingBits + 1` / BigFloatTranscendentalMath.cs
     // `workingBits + bitLength - reducedBits + 1` -> `workingBits + 1` (LogNearOne)
-    public void Log_IsFaithful(string engine, string caseName)
+    public void Log_IsRz(string engine, string caseName)
     {
         var logCase = s_logCases[caseName];
         var words = logCase.Words;
@@ -93,9 +95,9 @@ public class GpuBigFloatTranscendentalTests : IDisposable
 
         Assert.True(rSig.IsZero || rSig.GetBitLength() == 32 * words, $"{caseName}: significand not normalized");
         Assert.True(
-            BigFloatIntervalOracle.IsFaithfulLog(
+            BigFloatIntervalOracle.IsRzOfLog(
                 logCase.Significand, logCase.Exponent, rSig, result.Exponent, result.IsNegative, 32 * words),
-            $"{caseName} [{engine}]: ln x is not within 1 ulp of {Describe(rSig, result)}");
+            $"{caseName} [{engine}]: {Describe(rSig, result)} is not RZ(ln x)");
     }
 
     // P5: the W-bit approximation lies within its bound B of ln x (oracle: e^(A - B) <= x <= e^(A + B)).
@@ -143,6 +145,68 @@ public class GpuBigFloatTranscendentalTests : IDisposable
         var cpu = RunLog(CSharpCpuBigFloatArithmetic.Instance, logCase);
 
         Assert.Equal(cpu, gpu);
+    }
+
+    // The ZivRetry inputs (ZivRetryInputs) lie next to a p-bit boundary, closer than the error bound of the first
+    // approximation, so the rounding check rejects it, retries with more guard words and then returns RZ_p(v). The GPU
+    // needs the same number of attempts as the CPU (BigFloatTranscendentalMathTests checks the CPU half without a GPU)
+    // and returns the same bits.
+    [SkippableTheory]
+    [Scenario(TestScenario.Boundary)]
+    [MemberData(nameof(ZivRetryInputs.Names), MemberType = typeof(ZivRetryInputs))]
+    // mutant: GpuBigFloatTranscendentals.cs TryTruncate `ErrorBound > guard || guard + ErrorBound >= limit` ->
+    // `ErrorBound > guard` (upper half dropped): LogBelow, LogAbove, ExpBelow, ExpAbove; -> `guard + ErrorBound >= limit`
+    // (lower half dropped): LogNegativeBelow, LogNegativeAbove, LogDistanceAbove, ExpDistanceAbove
+    public void ZivRetry_RetriesAndIsRz_OnGpu(string caseName)
+    {
+        var (kind, sig, exp, negative) = ZivRetryInputs.Cases[caseName];
+        using var x = new GpuBigUInt(_workspace, ToWords(sig));
+        using var gpuResult = new GpuBigUInt(_workspace, 4);
+        var options = _workspace.Transcendental;
+        ApplyOptions(null, null, 8);
+        var operand = new GpuFloatOperand(x.Handle, exp, negative);
+
+        int gpuAttempts;
+        int cpuAttempts;
+        GpuFloatResult gpu;
+        (BigInteger Significand, long Exponent, bool IsNegative) cpu;
+        if (kind == "Log")
+        {
+            gpu = GpuBigFloatTranscendentals.Log(_workspace, operand, gpuResult.Handle, out gpuAttempts);
+            var (s, e, n) = BigFloatTranscendentalMath.Log(sig, exp, 128, options, out cpuAttempts);
+            cpu = (s, e, n);
+            var gpuSig = gpuResult.ToBigInteger();
+            Assert.True(BigFloatIntervalOracle.IsRzOfLog(sig, exp, gpuSig, gpu.Exponent, gpu.IsNegative, 128),
+                $"{caseName}: {Describe(gpuSig, gpu)} is not RZ(ln x)");
+        }
+        else
+        {
+            gpu = GpuBigFloatTranscendentals.Exp(_workspace, operand, gpuResult.Handle, out gpuAttempts);
+            var (s, e) = BigFloatTranscendentalMath.Exp(sig, exp, negative, 128, options, out cpuAttempts);
+            cpu = (s, e, false);
+            var (num, denShift) = BigFloatIntervalOracle.ToRatio(sig, exp);
+            Assert.Equal(BigFloatIntervalOracle.ExpRz(negative ? -num : num, denShift, 128), (gpuResult.ToBigInteger(), (long)gpu.Exponent));
+        }
+
+        Assert.True(gpuAttempts >= 2, $"{caseName}: the first approximation was accepted on the GPU");
+        Assert.Equal(cpuAttempts, gpuAttempts);
+        Assert.Equal((cpu.Significand, cpu.Exponent, cpu.IsNegative), (gpuResult.ToBigInteger(), (long)gpu.Exponent, gpu.IsNegative));
+    }
+
+    // ExpReductionEdge reaches r >= 2 ln 2: the double quotient of x / ln 2 rounds below 94867, so k = 94865 (coverage
+    // witness of the branch where Q = e^r · 2^W has W + 3 bits).
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void ExpReductionEdge_ReducesByTwoBelowTheMultiple()
+    {
+        var expCase = s_expCases["ExpReductionEdge/94867ln2+2^-200"];
+        var bits = (int)expCase.Significand.GetBitLength();
+        var leading = (ulong)(expCase.Significand >> (bits - 64));
+        var xApprox = BigFloatTranscendentalMath.ApproximateArgument(leading, expCase.Exponent + bits, false);
+
+        var plan = TranscendentalPlanner.PlanExp(128, xApprox, new GpuBigFloatTranscendentalOptions());
+
+        Assert.Equal(94865, plan.Reduction);
     }
 
     // ln 1 = 0 exactly: a cleared result with exponent 0.
@@ -209,7 +273,7 @@ public class GpuBigFloatTranscendentalTests : IDisposable
         var data = new TheoryData<string, string>();
         foreach (var (name, expCase) in s_expCases)
         {
-            if ((long)expCase.Exponent + (long)expCase.Significand.GetBitLength() > -(32 * expCase.Words + 2))
+            if ((long)expCase.Exponent + (long)expCase.Significand.GetBitLength() > -(32 * expCase.Words + 1))
             {
                 data.Add("Gpu", name);
                 data.Add("Cpu", name);
@@ -230,18 +294,21 @@ public class GpuBigFloatTranscendentalTests : IDisposable
         return data;
     }
 
-    // P1: the result is RZ_p(e^x) or the next p-bit value away from zero (oracle: interval of e^x).
+    // P1: the result is RZ_p(e^x) (oracle: the interval of e^x truncates to one p-bit value).
     [SkippableTheory]
     [Scenario(TestScenario.Boundary)]
     [MemberData(nameof(ExpCasesOnBothEngines))]
     // mutant: TranscendentalPlanner.cs PlanExp `Math.Floor(xApprox / Ln2) - 1` -> `+ 1` (r < 0): every case
     // mutant: TranscendentalPlanner.cs PlanExp `var guardWords = GuardWordsFor(errorBound);` -> `var guardWords = 1;`
     // (one guard word while the bound has up to 2^200): ExpForcedHalving s = 40, 200 (also P5 and the planner tests)
-    // mutant: GpuBigFloatTranscendentals.cs / BigFloatTranscendentalMath.cs Exp tiny shortcut `-(resultBits + 2)` ->
+    // mutant: GpuBigFloatTranscendentals.cs / BigFloatTranscendentalMath.cs Exp tiny shortcut `-(resultBits + 1)` ->
     // `-(resultBits - 2)`: ExpTiny ±3·2^-128
     // mutant: GpuBigFloatTranscendentals.cs / BigFloatTranscendentalMath.cs Exp one squaring dropped
     // (`i < plan.Halvings` -> `i < plan.Halvings - 1`): every case outside the tiny shortcut
-    public void Exp_IsFaithful(string engine, string caseName)
+    // mutant: BigFloatTranscendentalMath.cs TryTruncate `Exponent + excess + guardBits` -> `Exponent + guardBits` /
+    // GpuBigFloatTranscendentals.cs TryTruncate copy offset `4 * (lowWords + guardWords)` -> `4 * guardWords` (the 32
+    // low bits of the Exp approximation not skipped): every case outside the shortcut
+    public void Exp_IsRz(string engine, string caseName)
     {
         var expCase = s_expCases[caseName];
         var p = 32 * expCase.Words;
@@ -250,12 +317,10 @@ public class GpuBigFloatTranscendentalTests : IDisposable
 
         var (num, denShift) = BigFloatIntervalOracle.ToRatio(expCase.Significand, expCase.Exponent);
         var (rzSig, rzExp) = BigFloatIntervalOracle.ExpRz(expCase.Negative ? -num : num, denShift, p);
-        var succ = BigFloatIntervalOracle.SuccessorAwayFromZero(rzSig, rzExp, p);
-        var actual = (rSig, (long)result.Exponent);
         Assert.False(result.IsNegative);
         Assert.True(
-            actual == (rzSig, rzExp) || actual == (succ.Significand, succ.Exponent),
-            $"{caseName} [{engine}]: {Describe(rSig, result)} is not RZ(e^x) = 0x{rzSig:X} * 2^{rzExp} or the next value");
+            (rSig, (long)result.Exponent) == (rzSig, rzExp),
+            $"{caseName} [{engine}]: {Describe(rSig, result)} is not RZ(e^x) = 0x{rzSig:X} * 2^{rzExp}");
     }
 
     // P5: the approximation e^x at W + 32 bits lies within its bound B, in units of its last bit at W bits, of e^x
@@ -486,13 +551,14 @@ public class GpuBigFloatTranscendentalTests : IDisposable
 
         cases["ExpNegative/-2^20"] = new ExpCase(1, 20, true, 4, null);
 
-        // Tiny arguments: 2^-200 takes the shortcut (|x| < 2^-(p+1)); 2^-129, 2^-128, 3·2^-129 and 3·2^-128 do not.
-        // e^(3·2^-128) is more than one ulp away from both shortcut values (1 + 1.5 ulp, 1 - 3 ulp below 1), so a
-        // shortcut that also took it would not be faithful.
+        // Tiny arguments: 2^-200 and (1 - 2^-64)·2^-129 take the shortcut (|x| < 2^-(p+1)); 2^-129 = 2^-(p+1) exactly,
+        // 2^-128, 3·2^-129 and 3·2^-128 do not. RZ(e^(±3·2^-128)) is not a shortcut value (1 + 1 ulp above 1, 1 - 3 ulp
+        // below 1), so a shortcut that also took it would return a wrong value.
         foreach (var negative in new[] { false, true })
         {
             var sign = negative ? "-" : "+";
             cases[$"ExpTiny/{sign}2^-200"] = new ExpCase(1, -200, negative, 4, null);
+            cases[$"ExpTiny/{sign}(1-2^-64)*2^-129"] = new ExpCase(ulong.MaxValue, -129 - 64, negative, 4, null);
             cases[$"ExpTiny/{sign}2^-129"] = new ExpCase(1, -129, negative, 4, null);
             cases[$"ExpTiny/{sign}2^-128"] = new ExpCase(1, -128, negative, 4, null);
             cases[$"ExpTiny/{sign}3*2^-129"] = new ExpCase(3, -129, negative, 4, null);
@@ -515,8 +581,9 @@ public class GpuBigFloatTranscendentalTests : IDisposable
             cases[$"ExpForcedHalving/3/s={halvings}"] = new ExpCase(3, 0, false, 4, halvings);
         }
 
-        // Precision ladder: the planner picks s = 2, 2 and 5 with one guard word (Paterson–Stockmeyer).
-        foreach (var words in new[] { 1, 31, 129 })
+        // Precision ladder: the planner picks s = 2, 2 and 5 with one guard word (Paterson–Stockmeyer). n = 2 and 50
+        // have the series remainder eps_R closest to its limit 1 (review of stages 1-4).
+        foreach (var words in new[] { 1, 2, 31, 50, 129 })
         {
             cases[$"ExpPrecisionLadder/3/n={words}"] = new ExpCase(3, 0, false, words, null);
         }
@@ -541,11 +608,39 @@ public class GpuBigFloatTranscendentalTests : IDisposable
             }
         }
 
+        // x = 94867·ln 2 + 2^-200: the double quotient x / ln 2 rounds below 94867, k = 94865 and r = 2 ln 2 + 2^-200, so
+        // e^r >= 4 and Q has W + 3 bits (review of stages 1-4; other such k: 95901, 189407, 189734, 190061, 191802,
+        // 192129, 782427606).
+        cases["ExpReductionEdge/94867ln2+2^-200"] = new ExpCase((94867 * Ln2Floor(232) >> 32) + 1, -200, false, 4, null);
+
+        // The largest reduction error: x is k·L + R0·2^(Lw - Wr) + (2^(Lw - Wr) - 1) in Lw fraction bits plus 40 one
+        // bits below 2^-Lw, so truncating x, L and r all lose almost a full unit in the same direction (δ near 1.5u).
+        cases["ExpLargestReductionError/k=1000"] = LargestReductionErrorCase(1000, 4);
+
         // The largest arguments whose result exponent still fits in int (about +-(2^31 + 127)·ln 2).
         cases["ExpRangeEdge/+1488522000"] = new ExpCase(1488522000, 0, false, 4, null);
         cases["ExpRangeEdge/-1488522000"] = new ExpCase(1488522000, 0, true, 4, null);
 
         return cases;
+    }
+
+    // The input for k (r = 1, R0 = 2^Wr) built from the plan of x ≈ k ln 2 + 1 and the host ln 2 constant (verified
+    // against the oracle in GpuBigFloatConstantsTests); the expected value still comes from the oracle.
+    private static ExpCase LargestReductionErrorCase(int k, int words)
+    {
+        var plan = TranscendentalPlanner.PlanExp(32 * words, k * Math.Log(2) + 1.0, new GpuBigFloatTranscendentalOptions());
+        if (plan.Reduction != k)
+        {
+            throw new InvalidOperationException($"the plan reduces by {plan.Reduction}, not {k}");
+        }
+
+        var ln2Bits = (plan.Ln2FractionBits + 31) / 32 * 32;
+        var dropped = ln2Bits - (plan.WorkingBits - plan.Halvings);
+        var fixedPoint = k * Kassyi.GSharp.Stdlib.GpuMath.BigNum.Constants.GpuBigFloatConstants.GetLn2Fixed(ln2Bits)
+                         + (BigInteger.One << (plan.WorkingBits - plan.Halvings + dropped))
+                         + (BigInteger.One << dropped) - 1;
+        var significand = (fixedPoint << 40) + (BigInteger.One << 40) - 1;
+        return new ExpCase(significand, -(ln2Bits + 40), false, words, null);
     }
 
     // floor(ln 2 · 2^bits) from ln 2 = Σ 1 / (j 2^j) (independent of the product); the remainder after bits + 8
@@ -615,7 +710,8 @@ public class GpuBigFloatTranscendentalTests : IDisposable
         cases["LogLongSignificand/seed628/x~2^20"] = new LogCase(longValue, -(64 * 32 - 1) + 20, 4);
 
         // Precision ladder for ln 3: word boundaries and more terms than the old 500-term limit (n = 129).
-        foreach (var words in new[] { 1, 2, 31, 32, 33, 72, 73, 129 })
+        // n = 5 has the series remainder eps'_R closest to its limit 1 (review of stages 1-4).
+        foreach (var words in new[] { 1, 2, 5, 31, 32, 33, 72, 73, 129 })
         {
             cases[$"LogPrecisionLadder/3/n={words}"] = new LogCase(3, 0, words);
         }
