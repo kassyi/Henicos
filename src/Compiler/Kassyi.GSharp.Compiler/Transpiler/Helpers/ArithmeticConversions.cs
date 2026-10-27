@@ -3,8 +3,8 @@ using Microsoft.CodeAnalysis.Operations;
 namespace Kassyi.GSharp.Compiler.Transpiler.Helpers;
 
 /// <summary>
-/// The conversions of C# binary numeric promotion (C# spec §12.4.7.3) that the usual arithmetic conversions of C++ do not
-/// make on their own, so the emitter writes them (#671).
+/// The conversions of C# numeric promotion (C# spec §12.4.7) and of the branches of a conditional (§12.18) that the
+/// usual arithmetic conversions of C++ do not make on their own, so the emitter writes them (#671).
 /// </summary>
 /// <remarks>
 /// <para>
@@ -49,6 +49,57 @@ internal static class ArithmeticConversions
         }
 
         type = left;
+        return true;
+    }
+
+    /// <summary>
+    /// The type C# converts the operand of <paramref name="operation"/> to, when the integral promotions of C++ would
+    /// keep another one (<see langword="uint"/> under unary minus: <see langword="long"/> in C# (C# spec §12.4.7.2),
+    /// <c>unsigned int</c> in C++).
+    /// </summary>
+    public static bool TryGetPromotedType(IUnaryOperation operation, [NotNullWhen(true)] out ITypeSymbol? type)
+    {
+        type = null;
+        if (operation.OperatorMethod != null || operation.IsLifted ||
+            operation.OperatorKind is not (UnaryOperatorKind.Minus or UnaryOperatorKind.Plus or
+                UnaryOperatorKind.BitwiseNegation) ||
+            operation.Type is not { } result || !IsArithmetic(result.SpecialType) ||
+            GetSourceType(operation.Operand) is not { } source || !IsArithmetic(source.SpecialType) ||
+            PromoteIntegral(source.SpecialType) == result.SpecialType)
+        {
+            return false;
+        }
+
+        type = result;
+        return true;
+    }
+
+    /// <summary>
+    /// The type of <paramref name="operation"/>, which C# converts both branches to, when C++ would give the
+    /// conditional another one: a target-typed <c>c ? u : n</c> (C# spec §12.18) is <see langword="long"/> or
+    /// <see langword="double"/> in C#, and <c>unsigned int</c> in C++, which converts branches of different types with
+    /// the usual arithmetic conversions ([expr.cond]).
+    /// </summary>
+    public static bool TryGetPromotedType(IConditionalOperation operation, [NotNullWhen(true)] out ITypeSymbol? type)
+    {
+        type = null;
+        if (operation.IsRef || operation.WhenFalse is not { } whenFalse ||
+            operation.Type is not { } result || !IsArithmetic(result.SpecialType) ||
+            GetSourceType(operation.WhenTrue) is not { } trueSource || GetSourceType(whenFalse) is not { } falseSource)
+        {
+            return false;
+        }
+
+        // Branches of the same type keep it, without the integral promotions
+        var cpp = trueSource.SpecialType == falseSource.SpecialType
+            ? trueSource.SpecialType
+            : UsualArithmeticConversion(trueSource.SpecialType, falseSource.SpecialType);
+        if (cpp == SpecialType.None || cpp == result.SpecialType)
+        {
+            return false;
+        }
+
+        type = result;
         return true;
     }
 
