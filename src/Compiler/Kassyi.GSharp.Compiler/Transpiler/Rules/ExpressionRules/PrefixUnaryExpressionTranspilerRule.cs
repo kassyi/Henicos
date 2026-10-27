@@ -36,8 +36,16 @@ public sealed class PrefixUnaryExpressionTranspilerRule : SyntaxNodeTranspilerRu
             return;
         }
 
-        var op = node.OperatorToken.Text;
-        context.Emitter.Writer.Append(op);
+        // -2147483648 is int.MinValue in C#, but C++ negates the literal 2147483648, which does not fit int
+        if (OperatorSpacing.IsNegatedNumericLiteral(node) &&
+            context.Query.SemanticModel.GetSafeConstantValue(node) is { HasValue: true, Value: { } value } &&
+            context.Query.SemanticModel.GetTypeSymbol(node) is { } type)
+        {
+            context.Emitter.Writer.Append(ConstexprLiteral.FormatCppConstant(type, value));
+            return;
+        }
+
+        OperatorSpacing.AppendOperator(node.OperatorToken.Text, node.Operand, ref context);
         context.Visitor.Visit(node.Operand);
     }
 }

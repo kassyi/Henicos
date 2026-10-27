@@ -52,6 +52,44 @@ public class HoistedFieldTypeResolverTests
         Assert.Contains($"({lineSpan.StartLinePosition.Line + 1},", ex.Message);
     }
 
+    // A type parameter inside a type argument or inside the containing type of a nested type is rejected as well
+    [Theory]
+    [Scenario(TestScenario.Boundary)]
+    [InlineData("GenericTypeArgumentLocal.cs")]
+    [InlineData("NestedInGenericLocal.cs")]
+    public void Resolve_TypeParameterInsideTheType_ThrowsInvalidOperationException(string testCase)
+    {
+        var compilation = RoslynTestUtility.CreateCompilation(
+            RoslynTestUtility.ReadTestCase("Transpiler/HoistedFieldTypeResolver/" + testCase));
+        var tree = compilation.SyntaxTrees.Last();
+        var model = compilation.GetSemanticModel(tree);
+        var declarator = FindDeclarator(tree, "x");
+
+        var ex = Assert.Throws<InvalidOperationException>(() =>
+            HoistedFieldTypeResolver.Resolve(declarator, model, "K"));
+
+        Assert.Contains("the type contains the type parameter 'T'; generic kernels are not supported", ex.Message);
+    }
+
+    [Fact]
+    [Scenario(TestScenario.HappyPath)]
+    public void Resolve_ConstructedTypeWithoutTypeParameter_ResolvesToThatType()
+    {
+        var compilation = RoslynTestUtility.CreateCompilation(
+            RoslynTestUtility.ReadTestCase("Transpiler/HoistedFieldTypeResolver/GenericTypeArgumentLocal.cs"));
+        var tree = compilation.SyntaxTrees.Last();
+        var model = compilation.GetSemanticModel(tree);
+
+        var typeSymbol = HoistedFieldTypeResolver.Resolve(FindDeclarator(tree, "ok"), model, "K");
+
+        Assert.Equal("Wrapper<int>", typeSymbol.ToDisplayString());
+    }
+
+    private static VariableDeclaratorSyntax FindDeclarator(SyntaxTree tree, string name) =>
+        tree.GetRoot().DescendantNodes()
+            .OfType<VariableDeclaratorSyntax>()
+            .First(v => v.Identifier.ValueText == name);
+
     [Fact]
     [Scenario(TestScenario.HappyPath)]
     public void Resolve_DeclaratorMappedToParameter_ResolvesToParameterType()

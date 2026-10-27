@@ -38,11 +38,13 @@ internal static class GpuCodeConstraints
     /// <summary>
     /// The name of <paramref name="type"/> when only the .NET runtime can give it meaning, so device code cannot use it
     /// (GSH0003): <c>dynamic</c> (dynamic dispatch through the runtime binder), <see cref="TypedReference"/> (a
-    /// reference tracked by the GC) or <c>GCHandle</c> (a handle of the GC); otherwise <see langword="null"/>.
+    /// reference tracked by the GC), <c>GCHandle</c> (a handle of the GC) or <see langword="decimal"/> (arithmetic in
+    /// software of the BCL, with no C++ type or literal); otherwise <see langword="null"/>.
     /// </summary>
     public static string? GetRuntimeOnlyTypeName(ITypeSymbol? type) => type switch
     {
         { TypeKind: TypeKind.Dynamic } => "dynamic",
+        { SpecialType: SpecialType.System_Decimal } => "decimal",
         { SpecialType: SpecialType.System_TypedReference } => nameof(TypedReference),
         INamedTypeSymbol { Name: TypeConstants.GCHandleType } named when named.ContainingNamespace.IsSystemRuntimeInteropServices() =>
             TypeConstants.GCHandleType,
@@ -231,6 +233,19 @@ internal static class GpuCodeConstraints
 
     /// <summary>The GSH0003 text for a <c>Gpu.SyncGrid(body)</c> call whose argument is not a lambda.</summary>
     public const string SyncGridRequiresLambda = "Gpu.SyncGrid requires a lambda expression argument";
+
+    /// <summary>
+    /// The GSH0003 text for a local declared after a <c>return</c> of a <c>Gpu.SyncGrid</c> body that cannot be declared at
+    /// the top of the body and assigned later (<see cref="SyncGridBody.IsUnsplittable"/>).
+    /// </summary>
+    public const string SyncGridUnsplittableDeclaration =
+        "ref, scoped, using, pattern or deconstruction local, or shared memory, array or iterator local, declared after a return in a Gpu.SyncGrid body";
+
+    /// <summary>The GSH0003 text for a <c>goto</c> that leaves its statement of a <c>Gpu.SyncGrid</c> body.</summary>
+    public const string SyncGridGotoAcrossGaps = "goto out of a statement of a Gpu.SyncGrid body";
+
+    /// <summary>The GSH0003 text for a <c>return</c> with a value in a <c>Gpu.SyncGrid</c> body (C# rejects it as well).</summary>
+    public const string SyncGridReturnWithValue = "return with a value in a Gpu.SyncGrid body";
 
     /// <summary>
     /// The loop that the <c>Gpu.Hint.Unroll</c> statement <paramref name="hint"/> applies to: the next statement of the same

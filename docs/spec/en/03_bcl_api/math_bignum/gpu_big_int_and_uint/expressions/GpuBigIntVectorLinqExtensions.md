@@ -113,9 +113,21 @@ public static GpuBigIntExpr Min(this IGpuBigIntVectorExpression source);
 public static GpuBigIntExpr Count(this IGpuBigIntVectorExpression source);
 ```
 
+`Sum`, `Max`, and `Min` return a value with the same number of words as the elements (`WordsPerElement`):
+
+- The reduction accumulates in one word more than the elements, so values whose top bit is set and intermediate sums that leave the element width are exact.
+- `Sum` throws `OverflowException` on evaluation when the final sum does not fit in `WordsPerElement` words. Only the final sum counts: unlike the checked sum of `System.Linq`, a running sum that leaves the element width and comes back (`[2^(32N) - 1, 1, -1]`) does not throw. `Max` and `Min` always fit.
+- `Evaluate(destination)` writes the magnitude of the result into `destination` and returns a `GpuBigInt` that wraps `destination` with the sign of the result. `destination` must have `WordsPerElement` words (`ArgumentException`).
+- `Evaluate(workspace)` allocates a new buffer for the magnitude; the caller owns it and disposes it. If evaluation throws, that buffer is released.
+- When `Evaluate(destination)` throws, `destination` is left as follows: for a destination of the wrong width (`ArgumentException`) it is not touched; for `OverflowException` its contents are unspecified (currently the low `WordsPerElement` words of the magnitude).
+- Evaluation reads two words back from the device: a word with the sign bit and the overflow bit, and the number of reduced elements.
+- An empty vector behaves as in `System.Linq`: `Max` and `Min` throw `InvalidOperationException` ("Sequence contains no elements") on evaluation without evaluating the vector or launching anything, so a destination is not touched, `Sum` is +0 (a destination is cleared), and `Count` is 0.
+
 ## Element-Wise Comparisons (IsEqualTo, IsNotEqualTo, IsGreaterThan, IsGreaterThanOrEqualTo, IsLessThan, IsLessThanOrEqualTo)
 
 Compares each element of a vectorized expression against either a `GpuBigInt` scalar or another `IGpuBigIntVectorExpression`, returning an `IGpuBoolVectorExpression`.
+
+The comparison is signed and agrees with `BigInteger.CompareTo`: `-100 < 50`, `-3 != 3`, and `-100 < -3`. A negative zero (sign set, magnitude 0) equals zero. The two sides may have different word counts: each side is read with its own word count, and the missing upper words of the narrower side are 0, so a 4-word `3` equals an 8-word `3`. A scalar is read with its own word count, which may be smaller or larger than the elements'. Two vectors must have the same length (`ArgumentException`).
 
 ```csharp
 public static IGpuBoolVectorExpression IsEqualTo(this IGpuBigIntVectorExpression source, GpuBigInt scalar);
@@ -149,9 +161,12 @@ public static IGpuBoolExpr All(this IGpuBoolVectorExpression source);
 
 Unlike standard LINQ or scalar expression trees that evaluate element-by-element, `GpuBigIntVectorLinqExtensions` constructs execution plans that operate directly over contiguous arrays. Reduction operations (`Sum`, `Max`, `Min`, `Count`) automatically partition the workload into multi-pass chunk kernels, scaling efficiently up to millions of elements.
 
-Because `Sum`, `Max`, `Min`, and `Count` return a [GpuBigIntExpr](GpuBigIntExpr.md), the entire vector reduction pipeline can be compiled directly into a native CUDA Graph:
+Because `Sum`, `Max`, `Min`, and `Count` return a [GpuBigIntExpr](GpuBigIntExpr.md), the entire vector reduction pipeline is meant to be compiled directly into a native CUDA Graph:
 - **One-Liner Evaluation:** Chain `.EvaluateWithCudaGraph(workspace)` to capture, instantiate, execute, and destroy a CUDA Graph in a single statement.
 - **Precompiled Reusable Execution:** Chain `.CompileToGraph(workspace)` to produce a reusable [GpuBigIntExecutableGraph](GpuBigIntExecutableGraph.md) that can be dispatched repeatedly via `.Execute()` or `.ExecuteAsync()` with zero CPU launch latency.
+
+> [!NOTE]
+> TODO (#633): evaluating `Sum`, `Max` or `Min` reads the result header back from the device, which a stream that is capturing a CUDA Graph cannot do, so the graph statements above and the graph examples below describe the planned behavior. Capturing a reduction is not expected to work yet (not confirmed on a device); the implementation before #632 also read the result back during capture. The vector redesign of #633 makes a reduction at the root of the expression capturable.
 
 ## Examples
 
@@ -177,7 +192,8 @@ using var array = new GpuBigIntArray(workspace, length: 256, wordsPerElement: 4)
 using var scalarUint = GpuBigUInt.FromBigInteger(workspace, new BigInteger(7), minWords: 4);
 var scalar = new GpuBigInt(scalarUint, isNegative: false);
 
-// Evaluate the entire vector pipeline
+// Evaluate the entire vector pipeline. SelectMultiply widens each element to 4 + 4 = 8 words,
+// and the sum has the same width as the elements it adds.
 using var dest = new GpuBigUInt(workspace, 8);
 
 var result = array.AsVectorizedEnumerable()

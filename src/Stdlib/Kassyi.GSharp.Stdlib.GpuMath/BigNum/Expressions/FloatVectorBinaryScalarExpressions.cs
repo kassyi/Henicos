@@ -46,7 +46,11 @@ internal abstract class FloatVectorBinaryScalarExpressionBase(
         }
 
         var operands = new FloatVectorScalarOperands(vecResult, scalar, destination);
-        DispatchKernel(workspace, operands, (uint)evalCount);
+        // An empty vector launches nothing: a grid of 0 blocks is an invalid launch.
+        if (evalCount > 0)
+        {
+            DispatchKernel(workspace, operands, (uint)evalCount);
+        }
         return destination;
     }
 

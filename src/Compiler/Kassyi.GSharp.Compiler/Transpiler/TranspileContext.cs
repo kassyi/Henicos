@@ -43,7 +43,13 @@ public struct Emitter(
     public bool IsSuspendingDeviceFunction;
     public bool IsVoidReturn;
     public int CallableDepth;
-    public int AutoSyncGridDepth;
+
+    /// <summary>
+    /// Numbers each <c>Gpu.SyncGrid(body)</c> body as it is emitted, for its done flag and labels
+    /// (<c>__gsharp_sg_done_&lt;n&gt;</c>, <c>__gsharp_sg_next_&lt;n&gt;_&lt;statement&gt;</c>); a body emitted again (an
+    /// unrolled loop) gets a new number, so the names stay unique in the C++ function.
+    /// </summary>
+    public int SyncGridBodyCounter;
     public string? LabelSuffix;
 
     /// <summary>

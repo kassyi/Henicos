@@ -688,7 +688,7 @@ return false;
 case 4:
 __gsharp_switch_1_state_4:
 {
-DeviceAddSubParallel(__gsharp_ctx->__gsharp_id_11_iterScratch.__gsharp_mb_Diff,__gsharp_ctx->__gsharp_id_11_iterScratch.__gsharp_mb_NextIter,__gsharp_ctx->__gsharp_id_11_iterScratch.__gsharp_mb_Diff,__gsharp_ctx->__gsharp_id_20_evalWords,-1,true);
+DeviceAddSubParallel(__gsharp_ctx->__gsharp_id_11_iterScratch.__gsharp_mb_Diff,__gsharp_ctx->__gsharp_id_11_iterScratch.__gsharp_mb_NextIter,__gsharp_ctx->__gsharp_id_11_iterScratch.__gsharp_mb_Diff,__gsharp_ctx->__gsharp_id_20_evalWords,(-1),true);
 __gsharp_yielded_for_grid_sync=true;
 __gsharp_state=5;
 return false;
@@ -733,7 +733,7 @@ goto __gsharp_switch_1_state_9;
 case 9:
 __gsharp_switch_1_state_9:
 {
-DeviceAddSubParallel(__gsharp_ctx->__gsharp_id_11_iterScratch.__gsharp_mb_Diff,__gsharp_id_2_rightOperand,__gsharp_ctx->__gsharp_id_11_iterScratch.__gsharp_mb_Diff,__gsharp_ctx->__gsharp_id_20_evalWords,-1,true);
+DeviceAddSubParallel(__gsharp_ctx->__gsharp_id_11_iterScratch.__gsharp_mb_Diff,__gsharp_id_2_rightOperand,__gsharp_ctx->__gsharp_id_11_iterScratch.__gsharp_mb_Diff,__gsharp_ctx->__gsharp_id_20_evalWords,(-1),true);
 __gsharp_yielded_for_grid_sync=true;
 __gsharp_state=10;
 return false;

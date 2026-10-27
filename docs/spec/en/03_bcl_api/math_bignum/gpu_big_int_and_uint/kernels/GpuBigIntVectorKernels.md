@@ -32,9 +32,10 @@ public static partial class GpuBigIntVectorKernels
 
 | Name | Description |
 | --- | --- |
-| [DeviceVectorSignMagnitudeToTwosComplement(uint[], uint[], uint[], int, int)](#devicevectorsignmagnitudetotwoscomplementuint-uint-uint-int-int) | A GPU device function (`[GpuDeviceFunction]`) that converts a batch of sign-magnitude multi-word integers into two's complement representation. |
-| [VectorSignMagnitudeToTwosComplementKernel(uint[], uint[], uint[], int, int)](#vectorsignmagnitudetotwoscomplementkerneluint-uint-uint-int-int) | A GPU kernel (`[GpuKernel]`) that converts a batch of sign-magnitude integers into two's complement form. |
-| [VectorSignMagnitudeToOffsetBinaryKernel(uint[], uint[], uint[], int, int)](#vectorsignmagnitudetooffsetbinarykerneluint-uint-uint-int-int) | A GPU kernel (`[GpuKernel]`) that converts a batch of sign-magnitude integers into offset-binary form (flipping the MSB of two's complement). |
+| [DeviceVectorSignMagnitudeToTwosComplement(VectorSignConvertContext)](#devicevectorsignmagnitudetotwoscomplementvectorsignconvertcontext) | A GPU device function (`[GpuDeviceFunction]`) that converts a batch of sign-magnitude multi-word integers into a wider two's complement representation. |
+| [VectorSignMagnitudeToTwosComplementKernel(VectorSignConvertContext)](#vectorsignmagnitudetotwoscomplementkernelvectorsignconvertcontext) | A GPU kernel (`[GpuKernel]`) that converts a batch of sign-magnitude integers into two's complement form. |
+| [VectorSignMagnitudeToOffsetBinaryKernel(VectorSignConvertContext)](#vectorsignmagnitudetooffsetbinarykernelvectorsignconvertcontext) | A GPU kernel (`[GpuKernel]`) that converts a batch of sign-magnitude integers into offset-binary form (flipping the MSB of two's complement). |
+| [VectorReductionFinalizeKernel(VectorReductionFinalizeContext)](#vectorreductionfinalizekernelvectorreductionfinalizecontext) | A GPU kernel (`[GpuKernel]`) that turns the accumulator of an integer reduction into a sign, a magnitude and an overflow flag. |
 | [VectorAddScalarKernel(uint[], uint[], uint[], uint[], uint, uint[], int, int, int)](#vectoraddscalarkerneluint-uint-uint-uint-uint-uint-int-int-int) | A GPU kernel (`[GpuKernel]`) that adds a multi-word scalar to each element of a signed vector batch. |
 | [VectorSubScalarKernel(uint[], uint[], uint[], uint[], uint, uint[], int, int, int)](#vectorsubscalarkerneluint-uint-uint-uint-uint-uint-int-int-int) | A GPU kernel (`[GpuKernel]`) that subtracts a multi-word scalar from each element of a signed vector batch. |
 | [VectorZipAddKernel(uint[], uint[], uint[], uint[], uint[], uint[], int, int, int)](#vectorzipaddkerneluint-uint-uint-uint-uint-uint-int-int-int) | A GPU kernel (`[GpuKernel]`) that performs element-wise addition of two signed vector batches. |
@@ -55,46 +56,59 @@ public static partial class GpuBigIntVectorKernels
 | [DeviceVectorMaxAccumulateParallel(uint[], int, uint[], int, int)](#devicevectormaxaccumulateparalleluint-int-uint-int-int) | A GPU device function (`[GpuDeviceFunction]`) that updates the destination slice in place with the maximum of `src` and `dest`. |
 | [DeviceVectorMinAccumulateParallel(uint[], int, uint[], int, int)](#devicevectorminaccumulateparalleluint-int-uint-int-int) | A GPU device function (`[GpuDeviceFunction]`) that updates the destination slice in place with the minimum of `src` and `dest`. |
 
-## DeviceVectorSignMagnitudeToTwosComplement(uint[], uint[], uint[], int, int)
+## DeviceVectorSignMagnitudeToTwosComplement(VectorSignConvertContext)
 
-Converts a batch of sign-magnitude multi-word integers into two's complement representation.
+Converts element `BlockIndex.X` of a batch of sign-magnitude multi-word integers (`ctx.Source`, `NumWords` words) into two's complement with `ctx.DestWords` words per element in `ctx.Dest`. The words above `NumWords` become the sign extension, so a magnitude whose top bit is set stays positive when `DestWords` is larger than `NumWords`. Blocks at or above `ctx.BatchSize` do nothing.
 
 ```csharp
 [GpuDeviceFunction]
-public static void DeviceVectorSignMagnitudeToTwosComplement(
-    [GpuReadOnly] uint[] src,
-    [GpuReadOnly] uint[] signSrc,
-    uint[] dest,
-    int numWords,
-    int batchSize);
+public static void DeviceVectorSignMagnitudeToTwosComplement(VectorSignConvertContext ctx);
+
+public struct VectorSignConvertContext
+{
+    public SignedVectorOperandReadOnlyContext Source; // Limbs, Signs, NumWords
+    public uint[] Dest;
+    public int DestWords;                             // >= Source.NumWords
+    public int BatchSize;
+}
 ```
 
-## VectorSignMagnitudeToTwosComplementKernel(uint[], uint[], uint[], int, int)
+## VectorSignMagnitudeToTwosComplementKernel(VectorSignConvertContext)
 
-A GPU kernel (`[GpuKernel]`) that converts a batch of sign-magnitude integers into two's complement form.
+A GPU kernel (`[GpuKernel]`) that converts a batch of sign-magnitude integers into two's complement form. Launch one block per element.
 
 ```csharp
 [GpuKernel]
-public static void VectorSignMagnitudeToTwosComplementKernel(
-    [GpuReadOnly] uint[] src,
-    [GpuReadOnly] uint[] signSrc,
-    uint[] dest,
-    int numWords,
-    int batchSize);
+public static void VectorSignMagnitudeToTwosComplementKernel(VectorSignConvertContext ctx);
 ```
 
-## VectorSignMagnitudeToOffsetBinaryKernel(uint[], uint[], uint[], int, int)
+## VectorSignMagnitudeToOffsetBinaryKernel(VectorSignConvertContext)
 
-A GPU kernel (`[GpuKernel]`) that converts a batch of sign-magnitude integers into offset-binary form (flipping the MSB of two's complement).
+A GPU kernel (`[GpuKernel]`) that converts a batch of sign-magnitude integers into offset-binary form: two's complement with `ctx.DestWords` words and the most significant bit of the top word flipped, so that unsigned comparison orders signed values. Launch one block per element.
 
 ```csharp
 [GpuKernel]
-public static void VectorSignMagnitudeToOffsetBinaryKernel(
-    [GpuReadOnly] uint[] src,
-    [GpuReadOnly] uint[] signSrc,
-    uint[] dest,
-    int numWords,
-    int batchSize);
+public static void VectorSignMagnitudeToOffsetBinaryKernel(VectorSignConvertContext ctx);
+```
+
+## VectorReductionFinalizeKernel(VectorReductionFinalizeContext)
+
+A GPU kernel (`[GpuKernel]`) that turns the accumulator of an integer `Sum` / `Max` / `Min` (two's complement, or offset binary when `OffsetBinary` is set, `SourceWords` words) into the magnitude in `Destination` (`ResultWords` words) and a 2-word `Header`: `[0]` bit 0 = negative, bit 1 = the magnitude does not fit in `ResultWords` words; `[1]` = `Count`. With `Count` 0 it writes a zero result. Launch one block.
+
+```csharp
+[GpuKernel]
+public static void VectorReductionFinalizeKernel(VectorReductionFinalizeContext ctx);
+
+public struct VectorReductionFinalizeContext
+{
+    [GpuReadOnly] public uint[] Source; // the output of the last pass: one accumulator
+    public uint[] Destination;
+    public uint[] Header;
+    public int SourceWords;
+    public int ResultWords;
+    public int Count;
+    public bool OffsetBinary;
+}
 ```
 
 ## VectorAddScalarKernel(uint[], uint[], uint[], uint[], uint, uint[], int, int, int)

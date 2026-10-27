@@ -57,7 +57,7 @@ if(!(__gsharp_id_2_length<0))
 {
 goto __gsharp_switch_1_state_1;
 }
-__gsharp_id_1_output[__gsharp_ctx->__gsharp_id_3_tid]=-1;
+__gsharp_id_1_output[__gsharp_ctx->__gsharp_id_3_tid]=(-1);
 goto __gsharp_switch_1_state_3;
 goto __gsharp_switch_1_state_1;
 }

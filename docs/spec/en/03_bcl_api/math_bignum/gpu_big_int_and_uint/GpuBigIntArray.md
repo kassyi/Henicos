@@ -29,6 +29,8 @@ public readonly struct GpuBigIntArray : IDisposable
 
 Initializes a new instance of the `GpuBigIntArray` struct allocating uninitialized GPU device memory for both magnitudes and sign indicators.
 
+Neither buffer is cleared. Vector operations, including the comparisons of [GpuBigIntVectorLinqExtensions](expressions/GpuBigIntVectorLinqExtensions.md), read the sign word of each element, so write the `Signs` buffer together with `Values` when filling the array.
+
 ```csharp
 public GpuBigIntArray(GpuWorkspace workspace, int length, int wordsPerElement);
 ```

@@ -242,7 +242,7 @@ case 0:
 __gsharp_switch_1_state_0:
 {
 int __gsharp_id_2_i = threadIdx.x;
-__gsharp_id_0_x[__gsharp_id_2_i]=((__gsharp_id_1_bias.data == nullptr)?-1.0f:(((__gsharp_id_1_bias.data != nullptr)?__gsharp_id_1_bias[__gsharp_id_2_i]:-2.0f)));
+__gsharp_id_0_x[__gsharp_id_2_i]=((__gsharp_id_1_bias.data == nullptr)?(-1.0f):(((__gsharp_id_1_bias.data != nullptr)?__gsharp_id_1_bias[__gsharp_id_2_i]:(-2.0f))));
 __gsharp_state=-1;
 return;
 }

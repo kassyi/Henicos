@@ -28,6 +28,11 @@ public readonly struct GpuBigIntArray : IDisposable
     /// <summary>
     /// Initializes a new instance of the <see cref="GpuBigIntArray"/> struct allocating uninitialized GPU device memory.
     /// </summary>
+    /// <remarks>
+    /// Neither <see cref="Values"/> nor <see cref="Signs"/> is cleared. Vector operations, including the comparisons of
+    /// <see cref="Expressions.GpuBigIntVectorLinqExtensions"/>, read the sign word of each element, so write
+    /// <see cref="Signs"/> together with <see cref="Values"/> when filling the array.
+    /// </remarks>
     /// <param name="workspace">The GPU workspace managing memory allocations.</param>
     /// <param name="length">The number of elements in the array.</param>
     /// <param name="wordsPerElement">The number of 32-bit words per element.</param>

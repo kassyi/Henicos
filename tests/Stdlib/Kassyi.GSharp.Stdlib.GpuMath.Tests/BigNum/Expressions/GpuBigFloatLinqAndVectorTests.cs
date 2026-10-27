@@ -295,6 +295,139 @@ public class GpuBigFloatLinqAndVectorTests : IDisposable
     [Fact]
     [Category(TestCategory.Unit)]
     [Scenario(TestScenario.Boundary)]
+    public void GpuBigFloatArray_EmptyVector_AggregatesMatchSystemLinq()
+    {
+        // The reference: System.Linq over an empty double sequence. Max / Min / Average throw
+        // InvalidOperationException; Sum and Count are 0 (#633 decision 2, the same rule as the integer vectors).
+        // mutant: FloatVectorReductionOrchestrator.cs `if (kind == FloatReductionKind.Sum)` (empty) -> `if (kind == FloatReductionKind.Max)`
+        // input: this test (Max returns 0 instead of throwing, and Sum throws)
+        // mutant: GpuBigFloatVectorLinqExtensions.cs Average `if (source.Length == 0)` -> `if (source.Length < 0)`
+        // input: Average (divides 0 by 0 instead of throwing)
+        var reference = Array.Empty<double>();
+        var expectedMax = Record.Exception(() => reference.Max());
+        var expectedMin = Record.Exception(() => reference.Min());
+        var expectedAverage = Record.Exception(() => reference.Average());
+        Assert.IsType<InvalidOperationException>(expectedMax);
+        Assert.IsType<InvalidOperationException>(expectedMin);
+        Assert.IsType<InvalidOperationException>(expectedAverage);
+
+        using var empty = new GpuBigFloatArray(_context, 0, 4);
+
+        var max = Assert.Throws<InvalidOperationException>(() => empty.AsVectorizedEnumerable().Max(_context));
+        var min = Assert.Throws<InvalidOperationException>(() => empty.AsVectorizedEnumerable().Min(_context));
+        var average = Assert.Throws<InvalidOperationException>(() => empty.AsVectorizedEnumerable().Average(_context));
+        Assert.Equal(expectedMax.Message, max.Message);
+        Assert.Equal(expectedMin.Message, min.Message);
+        Assert.Equal(expectedAverage.Message, average.Message);
+
+        using var sum = empty.AsVectorizedEnumerable().Sum(_context);
+        Assert.Equal(reference.Sum(), ToDouble(sum));
+        Assert.False(sum.IsNegative);
+        Assert.Equal(reference.Length, empty.AsVectorizedEnumerable().Count());
+    }
+
+    [Fact]
+    [Category(TestCategory.Unit)]
+    [Scenario(TestScenario.Boundary)]
+    public void GpuBigFloatArray_EmptyAfterSkipAndSelect_AggregatesMatchSystemLinq()
+    {
+        // An empty vector that is not a leaf: Skip(length) leaves nothing, and SelectAdd would launch an empty grid.
+        // The reference is System.Linq over the same empty selection.
+        // mutant: FloatVectorBinaryScalarExpressions.cs `if (evalCount > 0)` -> `if (evalCount >= 0)`
+        // input: the direct Evaluate below (CudaException: invalid value)
+        // mutant: FloatVectorReductionOrchestrator.cs `if (source.Length == 0)` -> `if (source.Length < 0)`
+        // input: none alone, the empty SelectAdd now launches nothing; with the first mutant as well, Sum fails
+        double[] values = [3, -4, 5];
+        using var vec = new GpuBigFloatArray(_context, values.Length, 4);
+        for (var i = 0; i < values.Length; i++)
+        {
+            using var element = CreateFloat((long)values[i]);
+            vec.SetElement(i, element);
+        }
+
+        using var one = CreateFloat(1);
+        var reference = values.Skip(values.Length).Select(static v => v + 1).ToArray();
+
+        using (var direct = vec.AsVectorizedEnumerable().Skip(values.Length).SelectAdd(one))
+        {
+            Assert.Equal(0, direct.Evaluate(_context).Length);
+        }
+
+        using var expr = vec.AsVectorizedEnumerable().Skip(values.Length).SelectAdd(one);
+        using var sum = expr.Sum(_context);
+        Assert.Equal(reference.Sum(), ToDouble(sum));
+        Assert.False(sum.IsNegative);
+        Assert.IsType<InvalidOperationException>(Record.Exception(() => reference.Average()));
+        Assert.Throws<InvalidOperationException>(() => expr.Max(_context));
+        Assert.Throws<InvalidOperationException>(() => expr.Min(_context));
+        Assert.Throws<InvalidOperationException>(() => expr.Average(_context));
+    }
+
+    [Fact]
+    [Category(TestCategory.Unit)]
+    [Scenario(TestScenario.Boundary)]
+    public void GpuBigFloatArray_EmptyVector_CompareAndDivideByUInt32_ReturnEmptyResults()
+    {
+        // Comparisons of empty float vectors launch nothing (a grid of 0 blocks is an invalid launch) and give empty
+        // results, as System.Linq's Select / Zip over empty sequences do. The division by a 32-bit divisor is a host
+        // loop that runs no iteration.
+        // Both comparisons already returned early for Length == 0 before #633, and the division's host loop already
+        // skipped an empty vector, so this test was green before the change; it fixes the behavior.
+        // mutant: FloatVectorCompareExpressions.cs FloatVectorCompareScalarExpression `if (Length == 0)` -> `if (Length < 0)`
+        // input: the scalar comparison
+        // mutant: FloatVectorCompareExpressions.cs FloatVectorCompareVectorExpression `if (Length == 0)` -> `if (Length < 0)`
+        // input: the vector comparison
+        using var empty = new GpuBigFloatArray(_context, 0, 4);
+        using var other = new GpuBigFloatArray(_context, 0, 4);
+        using var scalar = CreateFloat(3);
+        var reference = Array.Empty<double>();
+
+        using var scalarCompare = empty.AsVectorizedEnumerable().IsLessThan(scalar);
+        using var vectorCompare = empty.AsVectorizedEnumerable().IsEqualTo(other.AsVectorizedEnumerable());
+        using var divide = empty.AsVectorizedEnumerable().SelectDivideByUInt32(3u);
+
+        Assert.Equal(reference.Select(static v => v < 3).Count(), scalarCompare.Evaluate(_context).Length);
+        Assert.Equal(reference.Zip(reference, static (a, b) => a == b).Count(), vectorCompare.Evaluate(_context).Length);
+        Assert.Equal(reference.Select(static v => v / 3).Count(), divide.Evaluate(_context).Length);
+    }
+
+    [Fact]
+    [Category(TestCategory.Unit)]
+    [Scenario(TestScenario.Boundary)]
+    public void GpuBigFloatArray_CompareNegativeZero_EqualsZero()
+    {
+        // The float comparison takes the signs from its own sign arrays; a negative zero (sign 1, significand 0) must
+        // compare equal to zero, as the integer comparison does. Expected values: -0.0 == 0.0 in IEEE / System.Double.
+        using var vec = new GpuBigFloatArray(_context, 2, 4);
+        using var other = new GpuBigFloatArray(_context, 2, 4);
+        using var negativeZero = new GpuBigFloat(new GpuBigUInt(_context, new uint[4]), 0, isNegative: true);
+        using var zero = CreateFloat(0);
+        vec.SetElement(0, negativeZero);
+        vec.SetElement(1, zero);
+        other.SetElement(0, zero);
+        other.SetElement(1, negativeZero);
+        var signsHost = new uint[2];
+        _context.Provider.CopyDeviceToHost(signsHost, vec.Signs.DevicePointer, 2);
+        Assert.Equal([1u, 0u], signsHost); // the negative zero is really stored with sign 1
+
+        using var eqVector = vec.AsVectorizedEnumerable().IsEqualTo(other.AsVectorizedEnumerable());
+        using var ltVector = vec.AsVectorizedEnumerable().IsLessThan(other.AsVectorizedEnumerable());
+        using var eqScalar = vec.AsVectorizedEnumerable().IsEqualTo(negativeZero);
+        var eqVectorHost = new uint[2];
+        var ltVectorHost = new uint[2];
+        var eqScalarHost = new uint[2];
+        _context.Provider.CopyDeviceToHost(eqVectorHost, eqVector.Evaluate(_context).DevicePointer, 2);
+        _context.Provider.CopyDeviceToHost(ltVectorHost, ltVector.Evaluate(_context).DevicePointer, 2);
+        _context.Provider.CopyDeviceToHost(eqScalarHost, eqScalar.Evaluate(_context).DevicePointer, 2);
+
+        Assert.Equal([-0.0 == 0.0 ? 1u : 0u, 0.0 == -0.0 ? 1u : 0u], eqVectorHost);
+        Assert.Equal([-0.0 < 0.0 ? 1u : 0u, 0.0 < -0.0 ? 1u : 0u], ltVectorHost);
+        Assert.Equal([-0.0 == -0.0 ? 1u : 0u, 0.0 == -0.0 ? 1u : 0u], eqScalarHost);
+    }
+
+    [Fact]
+    [Category(TestCategory.Unit)]
+    [Scenario(TestScenario.Boundary)]
     public void GpuBigFloatArray_MultiChunk_SumMaxMin_ReduceCorrectlyOnGpu()
     {
         const int length = 300; // Crosses 256-element chunk boundary (2 passes)

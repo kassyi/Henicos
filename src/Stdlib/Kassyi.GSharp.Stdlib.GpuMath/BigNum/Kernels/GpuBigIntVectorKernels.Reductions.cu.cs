@@ -9,12 +9,17 @@ public static partial class GpuBigIntVectorKernels
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static ulong ReduceWarpMaxUInt64(uint mask, ulong val)
     {
+        // A block that is not a multiple of 32 threads ends in a partial warp. Lanes past its end do not exist, and a
+        // shuffle from one of them returns an undefined value, so only the lanes below validLanes are combined.
+        int laneId = ThreadIndex.X % 32;
+        int warpStart = ThreadIndex.X - laneId;
+        int validLanes = BlockDimension.X - warpStart;
         for (uint offset = 16; offset > 0; offset /= 2)
         {
             uint high = Warp.ShuffleDownSync(mask, (uint)(val >> 32), offset);
             uint low = Warp.ShuffleDownSync(mask, (uint)val, offset);
             ulong otherVal = ((ulong)high << 32) | low;
-            if (otherVal > val)
+            if (laneId + (int)offset < validLanes && otherVal > val)
             {
                 val = otherVal;
             }
@@ -186,6 +191,93 @@ public static partial class GpuBigIntVectorKernels
             }
 
             Gpu.SyncThreads();
+        }
+    }
+
+    /// <summary>
+    /// Converts the accumulator of an integer reduction (two's complement, or offset binary for Max / Min) into the
+    /// magnitude in <c>Destination</c> and the sign, overflow and count in <c>Header</c>. Launch one block.
+    /// </summary>
+    [GpuKernel]
+    public static void VectorReductionFinalizeKernel(VectorReductionFinalizeContext ctx)
+    {
+        int tid = ThreadIndex.X;
+        int bDim = BlockDimension.X;
+        int laneId = tid % 32;
+        int warpId = tid / 32;
+
+        SharedMemory<uint> sharedCarry = new SharedMemory<uint>(32);
+        SharedMemory<uint> overflow = new SharedMemory<uint>(1);
+
+        if (ctx.Count == 0)
+        {
+            for (int offset = 0; offset < ctx.ResultWords; offset += bDim)
+            {
+                int idx = offset + tid;
+                if (idx < ctx.ResultWords)
+                {
+                    ctx.Destination[idx] = 0u;
+                }
+            }
+
+            if (tid == 0)
+            {
+                ctx.Header[0] = 0u;
+                ctx.Header[1] = 0u;
+            }
+
+            return;
+        }
+
+        if (tid == 0)
+        {
+            overflow[0] = 0u;
+        }
+
+        Gpu.SyncThreads();
+
+        uint flipTop = ctx.OffsetBinary ? 0x80000000u : 0u;
+        uint top = ctx.Source[ctx.SourceWords - 1] ^ flipTop;
+        bool negative = (top & 0x80000000u) != 0u;
+
+        // magnitude = negative ? ~raw + 1 : raw, with the +1 carried through the words of the block.
+        uint blockCarryIn = negative ? 1u : 0u;
+        for (int offset = 0; offset < ctx.SourceWords; offset += bDim)
+        {
+            int idx = offset + tid;
+            bool valid = idx < ctx.SourceWords;
+            uint raw = valid ? ctx.Source[idx] : 0u;
+            if (idx == ctx.SourceWords - 1)
+            {
+                raw ^= flipTop;
+            }
+
+            uint word = negative ? ~raw : raw;
+            uint g = 0u;
+            uint p = word == 0xFFFFFFFFu ? 1u : 0u;
+
+            uint carryIn = PropagateBlockCarry(g, p, blockCarryIn, sharedCarry, laneId, warpId, bDim, out blockCarryIn);
+            uint magnitude = word + carryIn;
+            if (valid)
+            {
+                if (idx < ctx.ResultWords)
+                {
+                    ctx.Destination[idx] = magnitude;
+                }
+                else if (magnitude != 0u)
+                {
+                    overflow[0] = 1u;
+                }
+            }
+
+            Gpu.SyncThreads();
+        }
+
+        if (tid == 0)
+        {
+            // A negative accumulator never has a zero magnitude, so "negative" needs no separate zero test.
+            ctx.Header[0] = (negative ? 1u : 0u) | (overflow[0] != 0u ? 2u : 0u);
+            ctx.Header[1] = (uint)ctx.Count;
         }
     }
 

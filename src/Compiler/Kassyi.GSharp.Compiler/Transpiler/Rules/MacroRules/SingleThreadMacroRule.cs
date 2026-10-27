@@ -30,15 +30,7 @@ internal sealed class SingleThreadMacroRule : IMacroTranspilerRule
 
         context.Emitter.Writer.AppendLine();
 
-        var previousDepth = AutoSyncGrid.Suppress(ref context);
-        try
-        {
-            MacroTranspilerHelper.EmitUnrolledBody(ref context, lambdaExpr.Body);
-        }
-        finally
-        {
-            AutoSyncGrid.Restore(ref context, previousDepth);
-        }
+        MacroTranspilerHelper.EmitUnrolledBody(ref context, lambdaExpr.Body);
 
         return true;
     }

@@ -34,6 +34,7 @@ internal static class KnownAttributes
     public const string FieldOffset = nameof(FieldOffset);
     public const string In = nameof(In);
     public const string Out = nameof(Out);
+    public const string DefaultParameterValue = nameof(DefaultParameterValue);
 
     /// <summary>
     /// Zero-allocation, reflection-free helper to match an attribute name against a short name or its Attribute-suffixed name.
@@ -70,7 +71,7 @@ internal static class KnownAttributes
             or GpuDeviceExport =>
             declaringNamespace.IsCoreNamespace(),
         MethodImpl or SkipLocalsInit or InlineArray => declaringNamespace.IsSystemRuntimeCompilerServices(),
-        StructLayout or FieldOffset or In or Out => declaringNamespace.IsSystemRuntimeInteropServices(),
+        StructLayout or FieldOffset or In or Out or DefaultParameterValue => declaringNamespace.IsSystemRuntimeInteropServices(),
         _ => true
     };
 }

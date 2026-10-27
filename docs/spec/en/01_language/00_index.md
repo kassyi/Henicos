@@ -24,6 +24,8 @@ This section defines the core language syntax, type system constraints, executio
   SIMT execution model, Grids, Blocks, Warps, memory hierarchies, and hardware synchronization.
 - **[1.5 Limitations and Diagnostics](05_limitations.md)**
   Compile-time static determinism, prohibited C# features (classes, LINQ, strings), and compiler diagnostics (`GSHxxxx`).
+- **[1.6 Semantics Charter](06_semantics.md)**
+  Which definition wins when C#, the GPU and the CPU paths disagree, and how undefined behavior is reported.
 
 ## See also
 

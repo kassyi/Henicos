@@ -305,21 +305,25 @@ internal static class ObjectCreationHelper
         }
     }
 
+    // The value itself: an expression built for it (ArgumentMatchingHelper.CreateDefaultArgument) is outside the
+    // compilation, so a member access such as float.NaN would bind to nothing. default is {}; an enum keeps its cast.
     private static void EmitDefaultArgument(IParameterSymbol parameter, ref TranspileContext context)
     {
-        var defaultExpr = ArgumentMatchingHelper.CreateDefaultArgument(parameter);
-        if (defaultExpr is CastExpressionSyntax cast)
+        if (parameter.ExplicitDefaultValue is not { } value)
+        {
+            context.Emitter.Writer.Append("{}");
+            return;
+        }
+
+        if (parameter.Type.TypeKind == TypeKind.Enum)
         {
             using (context.Emitter.Writer.Parentheses())
             {
                 context.Emitter.Dialect.AppendType(ref context, parameter.Type);
             }
-
-            context.Visitor.Visit(cast.Expression);
-            return;
         }
 
-        context.Visitor.Visit(defaultExpr);
+        context.Emitter.Writer.Append(ConstexprLiteral.FormatCppConstant(parameter.Type, value));
     }
 
     // T{args}; arguments in another order than the parameters (named arguments) or omitted ones are evaluated into

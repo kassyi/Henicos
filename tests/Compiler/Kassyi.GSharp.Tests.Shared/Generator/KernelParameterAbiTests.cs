@@ -55,8 +55,8 @@ public class KernelParameterAbiTests
 
         Assert.Contains(
             "LaunchScaleKernel(global::System.Single[] data, global::System.Boolean enabled = true, " +
-            "global::System.Boolean inverted = false, global::System.Single scale = 1.5f, " +
-            "global::System.Double offset = 0.25d, global::System.Int32 count = 3, " +
+            "global::System.Boolean inverted = false, global::System.Single scale = 1.5F, " +
+            "global::System.Double offset = 0.25D, global::System.Int32 count = 3, " +
             "global::System.String label = \"a\\\"b\", global::System.Single[]? extra = default, ",
             wrapper,
             StringComparison.Ordinal);

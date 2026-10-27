@@ -93,7 +93,7 @@ switch(__gsharp_id_3_val)
 case 1: return 100;
 case 2: return 200;
 case 3: return 300;
-default: return -1;
+default: return (-1);
 }
 }());
 }
@@ -248,7 +248,7 @@ switch(__gsharp_id_3_mode)
 case 0: return 0.0f;
 case 1: return 3.14159f;
 case 2: return 2.71828f;
-default: return -1.0f;
+default: return (-1.0f);
 }
 }());
 }
@@ -400,8 +400,8 @@ int __gsharp_id_3_val = __gsharp_id_0_input[__gsharp_id_2_tid];
 __gsharp_id_1_output[__gsharp_id_2_tid]=([&]() {
 switch(__gsharp_id_3_val)
 {
-case -2147483648: return 1;
-case -1: return 2;
+case (-2147483647-1): return 1;
+case (-1): return 2;
 case 0: return 3;
 case 1: return 4;
 case 2147483647: return 5;

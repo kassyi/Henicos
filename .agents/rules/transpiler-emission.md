@@ -7,7 +7,7 @@ Mandatory rules for any code that emits C# (Source Generators) or CUDA C++ (`.cu
 1. **NO Reflection**: Never use `System.Reflection` during Source Generation or Transpilation. Use only `SemanticModel`, `ISymbol`, and `CSharpSyntaxWalker`.
 2. **Zero Allocation**: Use `ref struct`, `Span<T>`, or the custom `SourceWriter`. Avoid temporary arrays and `List<T>`.
    - **Prefer interpolation straight into the writer**: `writer.Append($"{type} {name}")` (also `AppendLine`, `Line`, `AppendIf`, `AppendLineIf`, `LineIf`) goes through `SourceWriterInterpolatedStringHandler` and writes into the writer's buffer with zero allocation. Use it freely; splitting the same text into a chain of `Append` calls, or building it in a separate `StringBuilder`, is slower and harder to read.
-   - Holes that are `string`, `char` or an integer type write without allocating. An enum, a symbol or any other type goes through the generic `AppendFormatted<T>` and boxes and calls `ToString()`; pass a string for it instead (`symbol.Name`, a constant). A `float` / `double` hole formats with the current culture; never use one for emitted numeric literals.
+   - Holes that are `string` or `char` write without allocating; an integer hole writes its invariant-culture digits (the netstandard2.0 `StringBuilder` formats through a string either way). An enum, a symbol or any other type goes through the generic `AppendFormatted<T>` and boxes and calls `ToString()`; pass a string for it instead (`symbol.Name`, a constant). Numeric holes (and `Append(int)`) format with the invariant culture, but a `float` / `double` hole is not a C++ literal (`2` has no `.0f`, and NaN has none); write a constant through `ConstexprLiteral`.
    - The zero-allocation path applies only when the `$""` is the argument of a writer method. `var s = $"..."`, `+` and `string.Format` allocate a string; use them only when a string value is actually needed (a dictionary key, a name stored in a model).
 
 ## 2. Scoped Brackets
@@ -51,7 +51,7 @@ Conditional text, generated-file headers and the name helpers are listed in
 ## 3. Dense, Left-Aligned Output
 
 1. **Zero indentation**: All generated lines (including `spc.AddSource` outputs) are fully left-aligned.
-2. **No decorative spacing**: do not add spaces, alignment or blank lines only for looks. Expression operators are written
+2. **No decorative spacing**: do not add spaces, alignment or blank lines only for looks. The one space the output needs is between an operator that ends in `-` or `+` and an operand that begins with the same sign (`x- -y`, not `x--y`); `OperatorSpacing` writes it. Expression operators are written
    as they are (`Append(op)`, giving `a+b`); declarations keep `int x = 1;`. Do not respace existing output: the byte
    savings are negligible and every snapshot would change.
 

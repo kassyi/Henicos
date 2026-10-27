@@ -42,7 +42,11 @@ internal abstract class VectorBinaryScalarExpressionBase(
 
         var destination = new GpuBigIntArray(_finalValues, _finalSigns);
         var operands = new VectorScalarOperands(vecResult, scalarResult, destination);
-        DispatchKernel(workspace, operands, (uint)evalCount);
+        // An empty vector launches nothing: a grid of 0 blocks is an invalid launch.
+        if (evalCount > 0)
+        {
+            DispatchKernel(workspace, operands, (uint)evalCount);
+        }
         return destination;
     }
 

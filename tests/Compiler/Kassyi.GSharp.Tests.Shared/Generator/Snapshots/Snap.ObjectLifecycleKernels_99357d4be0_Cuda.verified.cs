@@ -265,7 +265,7 @@ if(__gsharp_id_3_tid<__gsharp_id_2_length)
 __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__LifecycleObjectState __gsharp_id_4_state = {};
 __gsharp_id_4_state.__gsharp_mb_Id=__gsharp_id_3_tid+1;
 __gsharp_id_4_state.__gsharp_mb_Value=__gsharp_id_0_inputValues[__gsharp_id_3_tid];
-__gsharp_id_4_state.__gsharp_mb_Status=(__gsharp_id_0_inputValues[__gsharp_id_3_tid]<0?-1:((__gsharp_id_0_inputValues[__gsharp_id_3_tid]==0?0:1)));
+__gsharp_id_4_state.__gsharp_mb_Status=(__gsharp_id_0_inputValues[__gsharp_id_3_tid]<0?(-1):((__gsharp_id_0_inputValues[__gsharp_id_3_tid]==0?0:1)));
 __gsharp_id_1_outputStates[__gsharp_id_3_tid]=__gsharp_id_4_state;
 }
 }
