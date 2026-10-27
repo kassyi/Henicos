@@ -84,6 +84,8 @@ GpuBigIntExpr vectorSumExpr = vecExpr.Sum();
 GpuBigInt total = vectorSumExpr.Evaluate();
 ```
 
+Empty vectors follow `System.Linq` for both `GpuBigIntArray` and `GpuBigFloatArray`: `Max`, `Min` and (floating-point) `Average` throw `InvalidOperationException` before anything is launched (an empty vector is not evaluated), while `Sum` returns +0 and `Count` returns 0.
+
 ### 3.4 Vectorized Boolean Evaluation and Logical Aggregation
 * **Capabilities**: Vectorized comparison methods (`IsGreaterThan`, `IsEqualTo`, etc.) generate `IGpuBoolVectorExpression` without branching. These boolean vectors can then be combined using logical operators (`.And()`, `.Or()`, `.Not()`) and reduced via `.Any()` or `.All()` into a single `GpuBoolExpr`.
 * **Constraints**: While `Where` on `IGpuBigIntVectorExpression` performs multi-pass stream compaction using `IGpuBoolVectorExpression` masks, arbitrary C# lambda predicates are reserved for `AsStackEnumerable()`.
@@ -103,11 +105,11 @@ bool result = hasValidElements.Evaluate();
 When performing GPU reductions (such as `.Min()` or `.Max()`) on arrays of signed Big Integers (Sign-Magnitude representation), the GPU's native atomic operations and unsigned comparisons cannot inherently process mixed-sign evaluations accurately.
 
 To achieve branchless, high-throughput comparisons, G# leverages **Offset Binary** memory transformations:
-1. **Pre-Processing (Offset Binary)**: Before launching the parallel reduction kernel, the input vector is transformed. Values are converted from Sign-Magnitude to Two's Complement, and the Most Significant Bit (MSB) is flipped (XOR with `0x80000000`). This perfectly aligns signed integers so that `-N < 0 < +N` evaluates correctly using standard unsigned binary comparators on the GPU.
+1. **Pre-Processing (Offset Binary)**: Before launching the parallel reduction kernel, the input vector is transformed. Values are converted from Sign-Magnitude to Two's Complement with **one word more than the elements** (N + 1 words for N-word elements), and the Most Significant Bit (MSB) of the top word is flipped (XOR with `0x80000000`). The extra word keeps a magnitude whose top bit is set positive, and the flip aligns signed integers so that `-x < 0 < +x` evaluates correctly using standard unsigned binary comparators on the GPU.
 2. **Reduction**: The grid-level Min/Max reduction is performed efficiently using unsigned comparison operations.
-3. **Post-Processing (Un-bias)**: Upon retrieving the single scalar result back to the CPU, the MSB is flipped back and the Two's Complement value is decoded to the standard C# `BigInteger` (and subsequently `GpuBigInt` Sign-Magnitude) format.
+3. **Post-Processing (Finalize kernel)**: A single-block finalize kernel flips the MSB back, decodes the Two's Complement value into the sign and the magnitude, and writes the magnitude directly into the destination buffer. The host reads back only two words: the sign and overflow bits, and the number of reduced elements.
 
-For `.Sum()` aggregations, the pre-processing step converts the elements strictly to **Two's Complement** (without the Offset Binary MSB flip), allowing unsigned addition kernels to safely compute the sum with overflow/underflow wrap-around, which is then decoded on the CPU.
+For `.Sum()` aggregations, the pre-processing step converts the elements to (N + 1)-word **Two's Complement** (without the Offset Binary MSB flip). The extra word holds every sum of fewer than 2^31 elements exactly, so intermediate sums may leave the element width. The finalize kernel reports a final sum that does not fit back into N words, and `Sum` throws `OverflowException`. Only the final sum counts: unlike the checked sum of `System.Linq`, a running sum that leaves N words and comes back does not throw.
 
 ---
 

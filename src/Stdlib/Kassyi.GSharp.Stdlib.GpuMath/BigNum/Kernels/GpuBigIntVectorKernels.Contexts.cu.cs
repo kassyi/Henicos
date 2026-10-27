@@ -73,7 +73,42 @@ public static partial class GpuBigIntVectorKernels
     {
         public SignedVectorOperandReadOnlyContext Source;
         public uint[] Dest;
+
+        /// <summary>
+        /// The words per element of <see cref="Dest"/>; at least <c>Source.NumWords</c>, the extra upper words are the
+        /// sign extension.
+        /// </summary>
+        public int DestWords;
+
         public int BatchSize;
+    }
+
+    /// <summary>
+    /// Turns the accumulator of an integer reduction into a sign and a magnitude.
+    /// </summary>
+    public struct VectorReductionFinalizeContext
+    {
+        /// <summary>The output of the last pass: one accumulator of <see cref="SourceWords"/> words.</summary>
+        [GpuReadOnly]
+        public uint[] Source;
+
+        /// <summary>Receives the magnitude, <see cref="ResultWords"/> words.</summary>
+        public uint[] Destination;
+
+        /// <summary>
+        /// Two words: <c>[0]</c> bit 0 = the result is negative, bit 1 = the magnitude does not fit in
+        /// <see cref="ResultWords"/> words; <c>[1]</c> = the number of reduced elements.
+        /// </summary>
+        public uint[] Header;
+
+        public int SourceWords;
+        public int ResultWords;
+
+        /// <summary>The number of reduced elements; 0 writes a zero result.</summary>
+        public int Count;
+
+        /// <summary>The accumulator is offset binary (Max / Min): its top bit is flipped.</summary>
+        public bool OffsetBinary;
     }
 
     public struct VectorReductionChunkContext
