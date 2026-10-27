@@ -67,6 +67,9 @@ internal sealed class GpuKernelValidationWalker : PooledWalker<GpuKernelValidati
     private static readonly ImmutableArray<ISyntaxValidationRule<PredefinedTypeSyntax>> s_predefinedTypeRules =
         DiagnosticRuleRegistry.Rules.OfType<ISyntaxValidationRule<PredefinedTypeSyntax>>().ToImmutableArray();
 
+    private static readonly ImmutableArray<ISyntaxValidationRule<LiteralExpressionSyntax>> s_literalRules =
+        DiagnosticRuleRegistry.Rules.OfType<ISyntaxValidationRule<LiteralExpressionSyntax>>().ToImmutableArray();
+
     private static readonly ImmutableArray<ISyntaxValidationRule<ObjectCreationExpressionSyntax>> s_objectCreationRules =
         DiagnosticRuleRegistry.Rules.OfType<ISyntaxValidationRule<ObjectCreationExpressionSyntax>>().ToImmutableArray();
 
@@ -259,6 +262,16 @@ internal sealed class GpuKernelValidationWalker : PooledWalker<GpuKernelValidati
         }
 
         base.VisitPredefinedType(node);
+    }
+
+    public override void VisitLiteralExpression(LiteralExpressionSyntax node)
+    {
+        foreach (var rule in s_literalRules)
+        {
+            rule.Analyze(node, ref _context);
+        }
+
+        base.VisitLiteralExpression(node);
     }
 
     public override void VisitObjectCreationExpression(ObjectCreationExpressionSyntax node)

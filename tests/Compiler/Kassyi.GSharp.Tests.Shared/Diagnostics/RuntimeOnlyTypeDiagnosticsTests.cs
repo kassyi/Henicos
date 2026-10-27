@@ -3,8 +3,9 @@ using static Kassyi.GSharp.Tests.Shared.Helpers.DiagnosticOrigin;
 namespace Kassyi.GSharp.Tests.Shared.Diagnostics;
 
 /// <summary>
-/// The analyzer reports each reference to <c>dynamic</c>, <see cref="TypedReference"/> and <c>GCHandle</c> in device code
-/// as GSH0003, decided by the symbol the name binds to; the generator reports none of them (S-46).
+/// The analyzer reports each reference to <c>dynamic</c>, <see cref="TypedReference"/>, <c>GCHandle</c> and
+/// <c>decimal</c> in device code as GSH0003, decided by the symbol the name binds to; the generator reports none of them
+/// (S-46).
 /// </summary>
 [Category(TestCategory.Compiler)]
 public class RuntimeOnlyTypeDiagnosticsTests
@@ -56,6 +57,36 @@ public class RuntimeOnlyTypeDiagnosticsTests
                 (Analyzer, 32, 13, 32, 16)
             ],
             diagnostics.Ranges(GSharpDiagnostics.UnsupportedSyntax.Id, "'GCHandle'"));
+    }
+
+    // decimal has no C++ type or literal: the keyword (lines 51, 57, 69), the literals (51, 53), the var (52), each reference
+    // to the const field (50), the local (52, 53), the parameter (57) and the property (63), and a call that returns one
+    // (63)
+    [Theory]
+    [InlineData("Cpu")]
+    [InlineData("Cuda")]
+    [Scenario(TestScenario.SadPath)]
+    public async Task Test_Decimal_ReportsEachUseInDeviceCode(string dialect)
+    {
+        var diagnostics = await KernelDiagnostics.RunTestCaseAsync(TestCase, dialect);
+
+        Assert.Equal(
+            [
+                (Analyzer, 50, 33, 50, 37),
+                (Analyzer, 51, 13, 51, 20),
+                (Analyzer, 51, 29, 51, 33),
+                (Analyzer, 52, 13, 52, 16),
+                (Analyzer, 52, 24, 52, 29),
+                (Analyzer, 53, 33, 53, 37),
+                (Analyzer, 53, 46, 53, 50),
+                (Analyzer, 57, 36, 57, 43),
+                (Analyzer, 57, 62, 57, 67),
+                (Analyzer, 63, 33, 63, 45),
+                (Analyzer, 63, 56, 63, 76),
+                (Analyzer, 69, 23, 69, 30),
+                (Analyzer, 69, 59, 69, 66)
+            ],
+            diagnostics.Ranges(GSharpDiagnostics.UnsupportedSyntax.Id, "'decimal'").Order());
     }
 
     [Theory]
