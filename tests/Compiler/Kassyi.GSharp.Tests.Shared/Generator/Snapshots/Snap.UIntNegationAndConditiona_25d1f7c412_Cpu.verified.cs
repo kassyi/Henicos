@@ -128,7 +128,6 @@ public static readonly string NegationKernel_FullSource=global::Kassyi.GSharp.Ge
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__UIntNegationAndConditionalKernels__NegationKernel {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
-public bool __gsharp_yielded_for_grid_sync;
 }
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__UIntNegationAndConditionalKernels__NegationKernel(uint[] us, long[] values, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__UIntNegationAndConditionalKernels__NegationKernel __gsharp_ctx) {
 {
@@ -217,9 +216,9 @@ if (__gsharp_contexts[__gsharp_linear_tid].__gsharp_state != -1)
 {
 anyGridActive = true;
 anyBlockActive = true;
-__gsharp_contexts[__gsharp_linear_tid].__gsharp_yielded_for_grid_sync = false;
+global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested = false;
 __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__UIntNegationAndConditionalKernels__NegationKernel(us, values, __gsharp_contexts[__gsharp_linear_tid]);
-if (__gsharp_contexts[__gsharp_linear_tid].__gsharp_yielded_for_grid_sync)
+if (global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested)
 {
 gridSyncRequested = true;
 }
@@ -324,7 +323,6 @@ public static readonly string ConditionalKernel_FullSource=global::Kassyi.GSharp
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__UIntNegationAndConditionalKernels__ConditionalKernel {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
-public bool __gsharp_yielded_for_grid_sync;
 }
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__UIntNegationAndConditionalKernels__ConditionalKernel(uint[] us, int[] ns, long[] longs, double[] doubles, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__UIntNegationAndConditionalKernels__ConditionalKernel __gsharp_ctx) {
 {
@@ -426,9 +424,9 @@ if (__gsharp_contexts[__gsharp_linear_tid].__gsharp_state != -1)
 {
 anyGridActive = true;
 anyBlockActive = true;
-__gsharp_contexts[__gsharp_linear_tid].__gsharp_yielded_for_grid_sync = false;
+global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested = false;
 __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__UIntNegationAndConditionalKernels__ConditionalKernel(us, ns, longs, doubles, __gsharp_contexts[__gsharp_linear_tid]);
-if (__gsharp_contexts[__gsharp_linear_tid].__gsharp_yielded_for_grid_sync)
+if (global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested)
 {
 gridSyncRequested = true;
 }

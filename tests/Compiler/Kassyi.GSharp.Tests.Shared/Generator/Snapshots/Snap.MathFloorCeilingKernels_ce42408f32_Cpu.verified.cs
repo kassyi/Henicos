@@ -111,7 +111,6 @@ public static readonly string FloorCeilingKernel_FullSource=global::Kassyi.GShar
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__MathFloorCeilingKernels__FloorCeilingKernel {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
-public bool __gsharp_yielded_for_grid_sync;
 }
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__MathFloorCeilingKernels__FloorCeilingKernel(double[] doubleInputs, double[] doubleFloor, double[] doubleCeiling, float[] floatInputs, float[] floatFloor, float[] floatCeiling, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__MathFloorCeilingKernels__FloorCeilingKernel __gsharp_ctx) {
 {
@@ -227,9 +226,9 @@ if (__gsharp_contexts[__gsharp_linear_tid].__gsharp_state != -1)
 {
 anyGridActive = true;
 anyBlockActive = true;
-__gsharp_contexts[__gsharp_linear_tid].__gsharp_yielded_for_grid_sync = false;
+global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested = false;
 __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__MathFloorCeilingKernels__FloorCeilingKernel(doubleInputs, doubleFloor, doubleCeiling, floatInputs, floatFloor, floatCeiling, __gsharp_contexts[__gsharp_linear_tid]);
-if (__gsharp_contexts[__gsharp_linear_tid].__gsharp_yielded_for_grid_sync)
+if (global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested)
 {
 gridSyncRequested = true;
 }
@@ -338,7 +337,6 @@ public static readonly string PowKernel_FullSource=global::Kassyi.GSharp.Generat
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__MathFloorCeilingKernels__PowKernel {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
-public bool __gsharp_yielded_for_grid_sync;
 }
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__MathFloorCeilingKernels__PowKernel(double[] doubleBases, double[] doubleExponents, double[] doubleResults, float[] floatBases, float[] floatExponents, float[] floatResults, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__MathFloorCeilingKernels__PowKernel __gsharp_ctx) {
 {
@@ -452,9 +450,9 @@ if (__gsharp_contexts[__gsharp_linear_tid].__gsharp_state != -1)
 {
 anyGridActive = true;
 anyBlockActive = true;
-__gsharp_contexts[__gsharp_linear_tid].__gsharp_yielded_for_grid_sync = false;
+global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested = false;
 __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__MathFloorCeilingKernels__PowKernel(doubleBases, doubleExponents, doubleResults, floatBases, floatExponents, floatResults, __gsharp_contexts[__gsharp_linear_tid]);
-if (__gsharp_contexts[__gsharp_linear_tid].__gsharp_yielded_for_grid_sync)
+if (global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested)
 {
 gridSyncRequested = true;
 }
@@ -563,7 +561,6 @@ public static readonly string RoundKernel_FullSource=global::Kassyi.GSharp.Gener
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__MathFloorCeilingKernels__RoundKernel {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
-public bool __gsharp_yielded_for_grid_sync;
 }
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__MathFloorCeilingKernels__RoundKernel(double[] doubleInputs, double[] doubleResults, float[] floatInputs, float[] floatResults, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__MathFloorCeilingKernels__RoundKernel __gsharp_ctx) {
 {
@@ -665,9 +662,9 @@ if (__gsharp_contexts[__gsharp_linear_tid].__gsharp_state != -1)
 {
 anyGridActive = true;
 anyBlockActive = true;
-__gsharp_contexts[__gsharp_linear_tid].__gsharp_yielded_for_grid_sync = false;
+global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested = false;
 __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__MathFloorCeilingKernels__RoundKernel(doubleInputs, doubleResults, floatInputs, floatResults, __gsharp_contexts[__gsharp_linear_tid]);
-if (__gsharp_contexts[__gsharp_linear_tid].__gsharp_yielded_for_grid_sync)
+if (global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested)
 {
 gridSyncRequested = true;
 }

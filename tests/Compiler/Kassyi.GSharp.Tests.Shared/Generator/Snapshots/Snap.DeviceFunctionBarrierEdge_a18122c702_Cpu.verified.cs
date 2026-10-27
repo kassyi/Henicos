@@ -362,7 +362,6 @@ public partial class DeviceFunctionBarrierEdgeCaseKernels
 public class __gsharp_frame_Kassyi__GSharp__Tests__Shared__Syntax__DeviceFunctionBarrierEdgeCaseKernels__DoubleThroughSharedMemory {
 internal int __gsharp_state;
 internal uint __gsharp_warp_exchange;
-internal bool __gsharp_yielded_for_grid_sync;
 internal int tid;
 }
 public static bool __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__DeviceFunctionBarrierEdgeCaseKernels__DoubleThroughSharedMemory(int value, __gsharp_frame_Kassyi__GSharp__Tests__Shared__Syntax__DeviceFunctionBarrierEdgeCaseKernels__DoubleThroughSharedMemory __gsharp_ctx, ref int __gsharp_result) {
@@ -394,7 +393,6 @@ throw new global::System.InvalidOperationException("The device function state ma
 public class __gsharp_frame_Kassyi__GSharp__Tests__Shared__Syntax__DeviceFunctionBarrierEdgeCaseKernels__SwapThroughDeclaration {
 internal int __gsharp_state;
 internal uint __gsharp_warp_exchange;
-internal bool __gsharp_yielded_for_grid_sync;
 internal int tid;
 internal int previous;
 }
@@ -434,7 +432,6 @@ throw new global::System.InvalidOperationException("The device function state ma
 public class __gsharp_frame_Kassyi__GSharp__Tests__Shared__Syntax__DeviceFunctionBarrierEdgeCaseKernels__CountedSwapWithNeighbor {
 internal int __gsharp_state;
 internal uint __gsharp_warp_exchange;
-internal bool __gsharp_yielded_for_grid_sync;
 }
 public static bool __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__DeviceFunctionBarrierEdgeCaseKernels__CountedSwapWithNeighbor(int[] calls, int value, __gsharp_frame_Kassyi__GSharp__Tests__Shared__Syntax__DeviceFunctionBarrierEdgeCaseKernels__CountedSwapWithNeighbor __gsharp_ctx, ref int __gsharp_result) {
 {
@@ -465,7 +462,6 @@ throw new global::System.InvalidOperationException("The device function state ma
 public class __gsharp_frame_Kassyi__GSharp__Tests__Shared__Syntax__DeviceFunctionBarrierEdgeCaseKernels__BroadcastFromLaneZero {
 internal int __gsharp_state;
 internal uint __gsharp_warp_exchange;
-internal bool __gsharp_yielded_for_grid_sync;
 }
 public static bool __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__DeviceFunctionBarrierEdgeCaseKernels__BroadcastFromLaneZero(int value, __gsharp_frame_Kassyi__GSharp__Tests__Shared__Syntax__DeviceFunctionBarrierEdgeCaseKernels__BroadcastFromLaneZero __gsharp_ctx, ref int __gsharp_result) {
 {
@@ -496,7 +492,6 @@ throw new global::System.InvalidOperationException("The device function state ma
 public class __gsharp_frame_Kassyi__GSharp__Tests__Shared__Syntax__DeviceFunctionBarrierEdgeCaseKernels__ShiftUpExpressionBody {
 internal int __gsharp_state;
 internal uint __gsharp_warp_exchange;
-internal bool __gsharp_yielded_for_grid_sync;
 }
 public static bool __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__DeviceFunctionBarrierEdgeCaseKernels__ShiftUpExpressionBody(int value, __gsharp_frame_Kassyi__GSharp__Tests__Shared__Syntax__DeviceFunctionBarrierEdgeCaseKernels__ShiftUpExpressionBody __gsharp_ctx, ref int __gsharp_result) {
 {
@@ -526,7 +521,6 @@ throw new global::System.InvalidOperationException("The device function state ma
 public class __gsharp_frame_Kassyi__GSharp__Tests__Shared__Syntax__DeviceFunctionBarrierEdgeCaseKernels__StoreBroadcastExpressionBody {
 internal int __gsharp_state;
 internal uint __gsharp_warp_exchange;
-internal bool __gsharp_yielded_for_grid_sync;
 }
 public static bool __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__DeviceFunctionBarrierEdgeCaseKernels__StoreBroadcastExpressionBody(int[] output, int value, __gsharp_frame_Kassyi__GSharp__Tests__Shared__Syntax__DeviceFunctionBarrierEdgeCaseKernels__StoreBroadcastExpressionBody __gsharp_ctx) {
 {
@@ -556,7 +550,6 @@ throw new global::System.InvalidOperationException("The device function state ma
 public class __gsharp_frame_Kassyi__GSharp__Tests__Shared__Syntax__DeviceFunctionBarrierEdgeCaseKernels__IncrementAcrossBarrier {
 internal int __gsharp_state;
 internal uint __gsharp_warp_exchange;
-internal bool __gsharp_yielded_for_grid_sync;
 internal int tid;
 }
 public static bool __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__DeviceFunctionBarrierEdgeCaseKernels__IncrementAcrossBarrier(ref int value, int[] published, __gsharp_frame_Kassyi__GSharp__Tests__Shared__Syntax__DeviceFunctionBarrierEdgeCaseKernels__IncrementAcrossBarrier __gsharp_ctx) {
@@ -590,7 +583,6 @@ throw new global::System.InvalidOperationException("The device function state ma
 public class __gsharp_frame_Kassyi__GSharp__Tests__Shared__Syntax__DeviceFunctionBarrierEdgeCaseKernels__IncrementTwiceAcrossBarriers {
 internal int __gsharp_state;
 internal uint __gsharp_warp_exchange;
-internal bool __gsharp_yielded_for_grid_sync;
 internal global::Kassyi.GSharp.Tests.Shared.Syntax.DeviceFunctionBarrierEdgeCaseKernels.__gsharp_frame_Kassyi__GSharp__Tests__Shared__Syntax__DeviceFunctionBarrierEdgeCaseKernels__IncrementAcrossBarrier __gsharp_call_frame_0 = new();
 internal global::Kassyi.GSharp.Tests.Shared.Syntax.DeviceFunctionBarrierEdgeCaseKernels.__gsharp_frame_Kassyi__GSharp__Tests__Shared__Syntax__DeviceFunctionBarrierEdgeCaseKernels__IncrementAcrossBarrier __gsharp_call_frame_1 = new();
 }
@@ -635,7 +627,6 @@ throw new global::System.InvalidOperationException("The device function state ma
 public class __gsharp_frame_Kassyi__GSharp__Tests__Shared__Syntax__DeviceFunctionBarrierEdgeCaseKernels__SumWithNeighbor {
 internal int __gsharp_state;
 internal uint __gsharp_warp_exchange;
-internal bool __gsharp_yielded_for_grid_sync;
 internal int tid;
 }
 public static bool __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__DeviceFunctionBarrierEdgeCaseKernels__SumWithNeighbor(int value, ref int sum, __gsharp_frame_Kassyi__GSharp__Tests__Shared__Syntax__DeviceFunctionBarrierEdgeCaseKernels__SumWithNeighbor __gsharp_ctx) {
@@ -801,7 +792,6 @@ public static readonly string CallerAndSuspendingCalleeSharedMemoryKernel_FullSo
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__DeviceFunctionBarrierEdgeCaseKernels__CallerAndSuspendingCalleeSharedMemoryKernel {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
-public bool __gsharp_yielded_for_grid_sync;
 public int tid;
 public int __gsharp_call_temp_0;
 public int helperResult;
@@ -914,9 +904,9 @@ if (__gsharp_contexts[__gsharp_linear_tid].__gsharp_state != -1)
 {
 anyGridActive = true;
 anyBlockActive = true;
-__gsharp_contexts[__gsharp_linear_tid].__gsharp_yielded_for_grid_sync = false;
+global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested = false;
 __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__DeviceFunctionBarrierEdgeCaseKernels__CallerAndSuspendingCalleeSharedMemoryKernel(output, __gsharp_contexts[__gsharp_linear_tid]);
-if (__gsharp_contexts[__gsharp_linear_tid].__gsharp_yielded_for_grid_sync)
+if (global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested)
 {
 gridSyncRequested = true;
 }
@@ -1037,7 +1027,6 @@ public static readonly string CallerAndPlainCalleeSharedMemoryKernel_FullSource=
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__DeviceFunctionBarrierEdgeCaseKernels__CallerAndPlainCalleeSharedMemoryKernel {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
-public bool __gsharp_yielded_for_grid_sync;
 public int tid;
 public int helperResult;
 }
@@ -1137,9 +1126,9 @@ if (__gsharp_contexts[__gsharp_linear_tid].__gsharp_state != -1)
 {
 anyGridActive = true;
 anyBlockActive = true;
-__gsharp_contexts[__gsharp_linear_tid].__gsharp_yielded_for_grid_sync = false;
+global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested = false;
 __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__DeviceFunctionBarrierEdgeCaseKernels__CallerAndPlainCalleeSharedMemoryKernel(output, __gsharp_contexts[__gsharp_linear_tid]);
-if (__gsharp_contexts[__gsharp_linear_tid].__gsharp_yielded_for_grid_sync)
+if (global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested)
 {
 gridSyncRequested = true;
 }
@@ -1269,7 +1258,6 @@ public static readonly string SharedMemoryPerDeclarationKernel_FullSource=global
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__DeviceFunctionBarrierEdgeCaseKernels__SharedMemoryPerDeclarationKernel {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
-public bool __gsharp_yielded_for_grid_sync;
 public int tid;
 public int __gsharp_arg_temp_1;
 public int __gsharp_call_temp_0;
@@ -1381,9 +1369,9 @@ if (__gsharp_contexts[__gsharp_linear_tid].__gsharp_state != -1)
 {
 anyGridActive = true;
 anyBlockActive = true;
-__gsharp_contexts[__gsharp_linear_tid].__gsharp_yielded_for_grid_sync = false;
+global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested = false;
 __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__DeviceFunctionBarrierEdgeCaseKernels__SharedMemoryPerDeclarationKernel(output, __gsharp_contexts[__gsharp_linear_tid]);
-if (__gsharp_contexts[__gsharp_linear_tid].__gsharp_yielded_for_grid_sync)
+if (global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested)
 {
 gridSyncRequested = true;
 }
@@ -1514,7 +1502,6 @@ public static readonly string ShortCircuitAndKernel_FullSource=global::Kassyi.GS
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__DeviceFunctionBarrierEdgeCaseKernels__ShortCircuitAndKernel {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
-public bool __gsharp_yielded_for_grid_sync;
 public int tid;
 public bool __gsharp_cond_temp_0;
 public int __gsharp_arg_temp_0;
@@ -1636,9 +1623,9 @@ if (__gsharp_contexts[__gsharp_linear_tid].__gsharp_state != -1)
 {
 anyGridActive = true;
 anyBlockActive = true;
-__gsharp_contexts[__gsharp_linear_tid].__gsharp_yielded_for_grid_sync = false;
+global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested = false;
 __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__DeviceFunctionBarrierEdgeCaseKernels__ShortCircuitAndKernel(input, output, calls, enabled, __gsharp_contexts[__gsharp_linear_tid]);
-if (__gsharp_contexts[__gsharp_linear_tid].__gsharp_yielded_for_grid_sync)
+if (global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested)
 {
 gridSyncRequested = true;
 }
@@ -1771,7 +1758,6 @@ public static readonly string ShortCircuitOrKernel_FullSource=global::Kassyi.GSh
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__DeviceFunctionBarrierEdgeCaseKernels__ShortCircuitOrKernel {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
-public bool __gsharp_yielded_for_grid_sync;
 public int tid;
 public bool __gsharp_cond_temp_0;
 public int __gsharp_arg_temp_0;
@@ -1893,9 +1879,9 @@ if (__gsharp_contexts[__gsharp_linear_tid].__gsharp_state != -1)
 {
 anyGridActive = true;
 anyBlockActive = true;
-__gsharp_contexts[__gsharp_linear_tid].__gsharp_yielded_for_grid_sync = false;
+global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested = false;
 __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__DeviceFunctionBarrierEdgeCaseKernels__ShortCircuitOrKernel(input, output, calls, skip, __gsharp_contexts[__gsharp_linear_tid]);
-if (__gsharp_contexts[__gsharp_linear_tid].__gsharp_yielded_for_grid_sync)
+if (global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested)
 {
 gridSyncRequested = true;
 }
@@ -2034,7 +2020,6 @@ public static readonly string ConditionalOperatorKernel_FullSource=global::Kassy
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__DeviceFunctionBarrierEdgeCaseKernels__ConditionalOperatorKernel {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
-public bool __gsharp_yielded_for_grid_sync;
 public int tid;
 public int __gsharp_cond_temp_0;
 public int __gsharp_arg_temp_0;
@@ -2162,9 +2147,9 @@ if (__gsharp_contexts[__gsharp_linear_tid].__gsharp_state != -1)
 {
 anyGridActive = true;
 anyBlockActive = true;
-__gsharp_contexts[__gsharp_linear_tid].__gsharp_yielded_for_grid_sync = false;
+global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested = false;
 __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__DeviceFunctionBarrierEdgeCaseKernels__ConditionalOperatorKernel(input, output, calls, useShuffle, __gsharp_contexts[__gsharp_linear_tid]);
-if (__gsharp_contexts[__gsharp_linear_tid].__gsharp_yielded_for_grid_sync)
+if (global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested)
 {
 gridSyncRequested = true;
 }
@@ -2305,7 +2290,6 @@ public static readonly string WhileConditionKernel_FullSource=global::Kassyi.GSh
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__DeviceFunctionBarrierEdgeCaseKernels__WhileConditionKernel {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
-public bool __gsharp_yielded_for_grid_sync;
 public int tid;
 public int count;
 public int __gsharp_call_temp_0;
@@ -2423,9 +2407,9 @@ if (__gsharp_contexts[__gsharp_linear_tid].__gsharp_state != -1)
 {
 anyGridActive = true;
 anyBlockActive = true;
-__gsharp_contexts[__gsharp_linear_tid].__gsharp_yielded_for_grid_sync = false;
+global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested = false;
 __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__DeviceFunctionBarrierEdgeCaseKernels__WhileConditionKernel(output, limit, __gsharp_contexts[__gsharp_linear_tid]);
-if (__gsharp_contexts[__gsharp_linear_tid].__gsharp_yielded_for_grid_sync)
+if (global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested)
 {
 gridSyncRequested = true;
 }
@@ -2569,7 +2553,6 @@ public static readonly string ForIncrementorKernel_FullSource=global::Kassyi.GSh
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__DeviceFunctionBarrierEdgeCaseKernels__ForIncrementorKernel {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
-public bool __gsharp_yielded_for_grid_sync;
 public int tid;
 public int steps;
 public int i;
@@ -2692,9 +2675,9 @@ if (__gsharp_contexts[__gsharp_linear_tid].__gsharp_state != -1)
 {
 anyGridActive = true;
 anyBlockActive = true;
-__gsharp_contexts[__gsharp_linear_tid].__gsharp_yielded_for_grid_sync = false;
+global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested = false;
 __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__DeviceFunctionBarrierEdgeCaseKernels__ForIncrementorKernel(output, limit, __gsharp_contexts[__gsharp_linear_tid]);
-if (__gsharp_contexts[__gsharp_linear_tid].__gsharp_yielded_for_grid_sync)
+if (global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested)
 {
 gridSyncRequested = true;
 }
@@ -2832,7 +2815,6 @@ public static readonly string DoWhileConditionKernel_FullSource=global::Kassyi.G
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__DeviceFunctionBarrierEdgeCaseKernels__DoWhileConditionKernel {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
-public bool __gsharp_yielded_for_grid_sync;
 public int tid;
 public int count;
 public int __gsharp_call_temp_0;
@@ -2949,9 +2931,9 @@ if (__gsharp_contexts[__gsharp_linear_tid].__gsharp_state != -1)
 {
 anyGridActive = true;
 anyBlockActive = true;
-__gsharp_contexts[__gsharp_linear_tid].__gsharp_yielded_for_grid_sync = false;
+global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested = false;
 __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__DeviceFunctionBarrierEdgeCaseKernels__DoWhileConditionKernel(output, limit, __gsharp_contexts[__gsharp_linear_tid]);
-if (__gsharp_contexts[__gsharp_linear_tid].__gsharp_yielded_for_grid_sync)
+if (global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested)
 {
 gridSyncRequested = true;
 }
@@ -3069,7 +3051,6 @@ public static readonly string ExpressionBodyShiftUpKernel_FullSource=global::Kas
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__DeviceFunctionBarrierEdgeCaseKernels__ExpressionBodyShiftUpKernel {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
-public bool __gsharp_yielded_for_grid_sync;
 public int tid;
 public int __gsharp_arg_temp_0;
 public int __gsharp_call_temp_1;
@@ -3174,9 +3155,9 @@ if (__gsharp_contexts[__gsharp_linear_tid].__gsharp_state != -1)
 {
 anyGridActive = true;
 anyBlockActive = true;
-__gsharp_contexts[__gsharp_linear_tid].__gsharp_yielded_for_grid_sync = false;
+global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested = false;
 __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__DeviceFunctionBarrierEdgeCaseKernels__ExpressionBodyShiftUpKernel(input, output, __gsharp_contexts[__gsharp_linear_tid]);
-if (__gsharp_contexts[__gsharp_linear_tid].__gsharp_yielded_for_grid_sync)
+if (global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested)
 {
 gridSyncRequested = true;
 }
@@ -3291,7 +3272,6 @@ public static readonly string ExpressionBodiedKernel_FullSource=global::Kassyi.G
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__DeviceFunctionBarrierEdgeCaseKernels__ExpressionBodiedKernel {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
-public bool __gsharp_yielded_for_grid_sync;
 public int __gsharp_arg_temp_0;
 internal global::Kassyi.GSharp.Tests.Shared.Syntax.DeviceFunctionBarrierEdgeCaseKernels.__gsharp_frame_Kassyi__GSharp__Tests__Shared__Syntax__DeviceFunctionBarrierEdgeCaseKernels__StoreBroadcastExpressionBody __gsharp_call_frame_0 = new();
 }
@@ -3392,9 +3372,9 @@ if (__gsharp_contexts[__gsharp_linear_tid].__gsharp_state != -1)
 {
 anyGridActive = true;
 anyBlockActive = true;
-__gsharp_contexts[__gsharp_linear_tid].__gsharp_yielded_for_grid_sync = false;
+global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested = false;
 __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__DeviceFunctionBarrierEdgeCaseKernels__ExpressionBodiedKernel(input, output, __gsharp_contexts[__gsharp_linear_tid]);
-if (__gsharp_contexts[__gsharp_linear_tid].__gsharp_yielded_for_grid_sync)
+if (global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested)
 {
 gridSyncRequested = true;
 }
@@ -3512,7 +3492,6 @@ public static readonly string RefParameterKernel_FullSource=global::Kassyi.GShar
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__DeviceFunctionBarrierEdgeCaseKernels__RefParameterKernel {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
-public bool __gsharp_yielded_for_grid_sync;
 public int tid;
 public int value;
 internal global::Kassyi.GSharp.Tests.Shared.Syntax.DeviceFunctionBarrierEdgeCaseKernels.__gsharp_frame_Kassyi__GSharp__Tests__Shared__Syntax__DeviceFunctionBarrierEdgeCaseKernels__IncrementAcrossBarrier __gsharp_call_frame_0 = new();
@@ -3622,9 +3601,9 @@ if (__gsharp_contexts[__gsharp_linear_tid].__gsharp_state != -1)
 {
 anyGridActive = true;
 anyBlockActive = true;
-__gsharp_contexts[__gsharp_linear_tid].__gsharp_yielded_for_grid_sync = false;
+global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested = false;
 __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__DeviceFunctionBarrierEdgeCaseKernels__RefParameterKernel(input, output, published, __gsharp_contexts[__gsharp_linear_tid]);
-if (__gsharp_contexts[__gsharp_linear_tid].__gsharp_yielded_for_grid_sync)
+if (global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested)
 {
 gridSyncRequested = true;
 }
@@ -3743,7 +3722,6 @@ public static readonly string RefParameterChainKernel_FullSource=global::Kassyi.
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__DeviceFunctionBarrierEdgeCaseKernels__RefParameterChainKernel {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
-public bool __gsharp_yielded_for_grid_sync;
 public int tid;
 public int value;
 internal global::Kassyi.GSharp.Tests.Shared.Syntax.DeviceFunctionBarrierEdgeCaseKernels.__gsharp_frame_Kassyi__GSharp__Tests__Shared__Syntax__DeviceFunctionBarrierEdgeCaseKernels__IncrementTwiceAcrossBarriers __gsharp_call_frame_0 = new();
@@ -3853,9 +3831,9 @@ if (__gsharp_contexts[__gsharp_linear_tid].__gsharp_state != -1)
 {
 anyGridActive = true;
 anyBlockActive = true;
-__gsharp_contexts[__gsharp_linear_tid].__gsharp_yielded_for_grid_sync = false;
+global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested = false;
 __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__DeviceFunctionBarrierEdgeCaseKernels__RefParameterChainKernel(input, output, published, __gsharp_contexts[__gsharp_linear_tid]);
-if (__gsharp_contexts[__gsharp_linear_tid].__gsharp_yielded_for_grid_sync)
+if (global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested)
 {
 gridSyncRequested = true;
 }
@@ -3976,7 +3954,6 @@ public static readonly string RefElementArgumentKernel_FullSource=global::Kassyi
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__DeviceFunctionBarrierEdgeCaseKernels__RefElementArgumentKernel {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
-public bool __gsharp_yielded_for_grid_sync;
 public int tid;
 public int cursor;
 public int __gsharp_arg_temp_0;
@@ -4088,9 +4065,9 @@ if (__gsharp_contexts[__gsharp_linear_tid].__gsharp_state != -1)
 {
 anyGridActive = true;
 anyBlockActive = true;
-__gsharp_contexts[__gsharp_linear_tid].__gsharp_yielded_for_grid_sync = false;
+global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested = false;
 __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__DeviceFunctionBarrierEdgeCaseKernels__RefElementArgumentKernel(data, cursors, published, __gsharp_contexts[__gsharp_linear_tid]);
-if (__gsharp_contexts[__gsharp_linear_tid].__gsharp_yielded_for_grid_sync)
+if (global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested)
 {
 gridSyncRequested = true;
 }
@@ -4234,7 +4211,6 @@ public static readonly string OutParameterInLoopKernel_FullSource=global::Kassyi
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__DeviceFunctionBarrierEdgeCaseKernels__OutParameterInLoopKernel {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
-public bool __gsharp_yielded_for_grid_sync;
 public int tid;
 public int value;
 public int round;
@@ -4361,9 +4337,9 @@ if (__gsharp_contexts[__gsharp_linear_tid].__gsharp_state != -1)
 {
 anyGridActive = true;
 anyBlockActive = true;
-__gsharp_contexts[__gsharp_linear_tid].__gsharp_yielded_for_grid_sync = false;
+global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested = false;
 __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__DeviceFunctionBarrierEdgeCaseKernels__OutParameterInLoopKernel(input, output, rounds, __gsharp_contexts[__gsharp_linear_tid]);
-if (__gsharp_contexts[__gsharp_linear_tid].__gsharp_yielded_for_grid_sync)
+if (global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested)
 {
 gridSyncRequested = true;
 }
