@@ -81,6 +81,18 @@ public class AotArtifactManifestTests
         Assert.Equal(OldManifest, File.ReadAllText(dir.ManifestPath));
     }
 
+    // The manifest name is fixed; Kassyi.GSharp.Compiler.targets reads it by this name
+    [Fact]
+    [Scenario(TestScenario.HappyPath)]
+    public void Test_ManifestFileName_MatchesTheTargets()
+    {
+        var targets = File.ReadAllText(RepositoryPaths.Combine(
+            "src", "Compiler", "Kassyi.GSharp.Compiler", "build", "Kassyi.GSharp.Compiler.targets"));
+
+        Assert.Equal("Kassyi.GSharp.Kernels.artifacts", AotArtifactWriter.ManifestFileName);
+        Assert.Contains("$(IntermediateOutputPath)" + AotArtifactWriter.ManifestFileName, targets, StringComparison.Ordinal);
+    }
+
     private sealed class TempDirectory : IDisposable
     {
         public TempDirectory()

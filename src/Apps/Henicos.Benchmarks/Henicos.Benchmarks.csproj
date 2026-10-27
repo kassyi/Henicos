@@ -32,7 +32,13 @@
   <Target Name="CompileNativeBenchmarks" BeforeTargets="GSharpAddGeneratedItemsToOutputDirectory">
     <CompileCudaToFatbinTask CudaSources="@(NativeBenchmarkCudaSources)" CombinedFatbinName="native_benchmarks.gfatbin" OutputDirectory="$(IntermediateOutputPath)GSharpFatbins" TargetArchitectures="$(GSharpTargetArchitectures)">
       <Output TaskParameter="OutputFatbins" ItemName="_GSharpCompiledFatbins" />
+      <Output TaskParameter="OutputFatbins" ItemName="_NativeBenchmarkFatbins" />
     </CompileCudaToFatbinTask>
+    <!-- The fatbin, its nvcc command record and the bundle source, so that dotnet clean removes them -->
+    <ItemGroup>
+      <FileWrites Include="@(_NativeBenchmarkFatbins);$(IntermediateOutputPath)GSharpFatbins\native_benchmarks_bundle.cu" />
+      <FileWrites Include="%(_NativeBenchmarkFatbins.NvccCommandFile)" Condition="'%(_NativeBenchmarkFatbins.NvccCommandFile)' != ''" />
+    </ItemGroup>
   </Target>
   <ItemGroup>
     <PackageReference Include="BenchmarkDotNet" Version="0.15.8" />
