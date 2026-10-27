@@ -84,6 +84,8 @@ GpuBigIntExpr vectorSumExpr = vecExpr.Sum();
 GpuBigInt total = vectorSumExpr.Evaluate();
 ```
 
+Empty vectors follow `System.Linq` for both `GpuBigIntArray` and `GpuBigFloatArray`: `Max`, `Min` and (floating-point) `Average` throw `InvalidOperationException` before anything is launched (an empty vector is not evaluated), while `Sum` returns +0 and `Count` returns 0.
+
 ### 3.4 Vectorized Boolean Evaluation and Logical Aggregation
 * **Capabilities**: Vectorized comparison methods (`IsGreaterThan`, `IsEqualTo`, etc.) generate `IGpuBoolVectorExpression` without branching. These boolean vectors can then be combined using logical operators (`.And()`, `.Or()`, `.Not()`) and reduced via `.Any()` or `.All()` into a single `GpuBoolExpr`.
 * **Constraints**: While `Where` on `IGpuBigIntVectorExpression` performs multi-pass stream compaction using `IGpuBoolVectorExpression` masks, arbitrary C# lambda predicates are reserved for `AsStackEnumerable()`.

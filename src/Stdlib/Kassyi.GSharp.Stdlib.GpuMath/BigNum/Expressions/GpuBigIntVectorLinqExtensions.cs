@@ -165,6 +165,7 @@ public static class GpuBigIntVectorLinqExtensions
     /// running sum may leave that width as long as the final sum fits. Evaluating into a destination writes the
     /// magnitude of the result into it and returns a value that wraps it with the sign. Without a destination, a new
     /// buffer is allocated that the caller owns. Evaluation reads two words back from the device.
+    /// The sum of an empty vector is +0, as in <c>System.Linq</c>.
     /// </remarks>
     /// <exception cref="ArgumentException">
     /// Thrown on evaluation into a destination that does not have
@@ -192,6 +193,10 @@ public static class GpuBigIntVectorLinqExtensions
     /// Thrown on evaluation into a destination that does not have
     /// <see cref="IGpuBigIntVectorExpression.WordsPerElement"/> words; the destination is not touched.
     /// </exception>
+    /// <exception cref="InvalidOperationException">
+    /// Thrown on evaluation when the vector is empty, as in <c>System.Linq</c>. The vector is not evaluated, nothing
+    /// is launched, and a destination is not touched.
+    /// </exception>
     public static GpuBigIntExpr Max(this IGpuBigIntVectorExpression source) => new(new VectorMaxReductionExpression(source));
 
     /// <summary>
@@ -209,13 +214,17 @@ public static class GpuBigIntVectorLinqExtensions
     /// Thrown on evaluation into a destination that does not have
     /// <see cref="IGpuBigIntVectorExpression.WordsPerElement"/> words; the destination is not touched.
     /// </exception>
+    /// <exception cref="InvalidOperationException">
+    /// Thrown on evaluation when the vector is empty, as in <c>System.Linq</c>. The vector is not evaluated, nothing
+    /// is launched, and a destination is not touched.
+    /// </exception>
     public static GpuBigIntExpr Min(this IGpuBigIntVectorExpression source) => new(new VectorMinReductionExpression(source));
 
     /// <summary>
     /// Computes the number of elements in the vectorized expression.
     /// </summary>
     /// <param name="source">The input vectorized expression.</param>
-    /// <returns>A deferred expression tree representing the element count.</returns>
+    /// <returns>A deferred expression tree representing the element count; 0 for an empty vector.</returns>
     public static GpuBigIntExpr Count(this IGpuBigIntVectorExpression source) => new(new VectorCountExpression(source));
 
     /// <summary>

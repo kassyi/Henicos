@@ -377,4 +377,106 @@ public partial class GpuBigIntVectorLinqExtensionsTests
         Assert.Equal(expected.Max(), EvaluateReduction(array.AsVectorizedEnumerable().Max()));
         Assert.Equal(expected.Min(), EvaluateReduction(array.AsVectorizedEnumerable().Min()));
     }
+
+    [Theory]
+    [Category(TestCategory.Unit)]
+    [Scenario(TestScenario.Boundary)]
+    [InlineData(1)]
+    [InlineData(8)]
+    public void Reduction_EmptyVector_MatchesSystemLinq(int numWords)
+    {
+        // The reference: System.Linq over an empty sequence. Max / Min throw InvalidOperationException, Sum and Count
+        // are 0 (#633 decision 2).
+        var reference = Array.Empty<BigInteger>();
+        var expectedMax = Record.Exception(() => reference.Max());
+        var expectedMin = Record.Exception(() => reference.Min());
+        Assert.IsType<InvalidOperationException>(expectedMax);
+        Assert.IsType<InvalidOperationException>(expectedMin);
+
+        using var empty = new GpuBigIntArray(_context, 0, numWords);
+
+        var max = Assert.Throws<InvalidOperationException>(() => empty.AsVectorizedEnumerable().Max().Evaluate(_context));
+        var min = Assert.Throws<InvalidOperationException>(() => empty.AsVectorizedEnumerable().Min().Evaluate(_context));
+        Assert.Equal(expectedMax.Message, max.Message);
+        Assert.Equal(expectedMin.Message, min.Message);
+
+        using var sum = empty.AsVectorizedEnumerable().Sum().Evaluate(_context);
+        Assert.Equal(reference.Aggregate(BigInteger.Zero, BigInteger.Add), ToBigInt(sum));
+        Assert.False(sum.IsNegative);
+
+        using var count = empty.AsVectorizedEnumerable().Count().Evaluate(_context);
+        Assert.Equal(new BigInteger(reference.Length), ToBigInt(count));
+    }
+
+    [Fact]
+    [Category(TestCategory.Unit)]
+    [Scenario(TestScenario.SadPath)]
+    public void Reduction_EmptyMaxMinIntoDestination_ThrowBeforeTouchingDestination()
+    {
+        // An empty Max / Min throws before anything is launched, so the destination keeps what the caller put there.
+        // mutant: VectorReductionExpressions.cs `if (_passes.Count == 0 && EmptyIsError)` -> `if (_passes.Count < 0 && EmptyIsError)`
+        // input: this test (the finalize kernel clears the destination before the header check throws)
+        using var empty = new GpuBigIntArray(_context, 0, 8);
+        var filled = Enumerable.Repeat(0xFFFFFFFFu, 8).ToArray();
+        using var destination = new GpuBigUInt(_context, filled);
+
+        Assert.Throws<InvalidOperationException>(() => empty.AsVectorizedEnumerable().Max().Evaluate(destination));
+        Assert.Equal(filled, destination.ToHostArray());
+        Assert.Throws<InvalidOperationException>(() => empty.AsVectorizedEnumerable().Min().Evaluate(destination));
+        Assert.Equal(filled, destination.ToHostArray());
+    }
+
+    [Theory]
+    [Category(TestCategory.Unit)]
+    [Scenario(TestScenario.Boundary)]
+    [InlineData(1)]
+    [InlineData(8)]
+    public void Reduction_EmptyAfterSkipAndSelect_MatchesSystemLinq(int numWords)
+    {
+        // An empty vector that is not a leaf: Skip(length) leaves nothing, and SelectAdd would launch an empty grid.
+        // The reference is System.Linq over the same empty selection.
+        // mutant: VectorBinaryScalarExpressions.cs `if (evalCount > 0)` -> `if (evalCount >= 0)`
+        // input: the direct Evaluate below (CudaException: invalid value)
+        // mutant: VectorReductionExpressions.cs `if (_passes.Count > 0)` (evaluate the vector) -> `if (_passes.Count >= 0)`
+        // input: none alone, the empty SelectAdd now launches nothing; with the first mutant as well, Sum fails
+        SignedElement[] values = [3, -4, 5];
+        using var array = CreateSignedArray(values, numWords);
+        using var oneMagnitude = new GpuBigUInt(_context, [1u]);
+        var one = new GpuBigInt(oneMagnitude, isNegative: false);
+        var reference = values.Skip(values.Length).Select(static v => v.Value + 1).ToArray();
+
+        using (var direct = array.AsVectorizedEnumerable().Skip(values.Length).SelectAdd(one))
+        {
+            Assert.Equal(0, direct.Evaluate(_context).Length);
+        }
+
+        AssertReduction(
+            reference.Aggregate(BigInteger.Zero, BigInteger.Add),
+            array.AsVectorizedEnumerable().Skip(values.Length).SelectAdd(one).Sum(),
+            "Sum");
+        Assert.IsType<InvalidOperationException>(Record.Exception(() => reference.Max()));
+        Assert.Throws<InvalidOperationException>(() =>
+            EvaluateReduction(array.AsVectorizedEnumerable().Skip(values.Length).SelectAdd(one).Max()));
+        Assert.Throws<InvalidOperationException>(() =>
+            EvaluateReduction(array.AsVectorizedEnumerable().Skip(values.Length).SelectAdd(one).Min()));
+    }
+
+    [Fact]
+    [Category(TestCategory.Unit)]
+    [Scenario(TestScenario.Boundary)]
+    public void Reduction_EmptyVectorSumIntoDestination_ClearsDestination()
+    {
+        // The sum of nothing is +0: the destination is cleared even when it held another value, and the returned
+        // value wraps it.
+        // mutant: GpuBigIntVectorKernels.Reductions.cu.cs finalize, count 0 `ctx.Destination[idx] = 0u;` -> `ctx.Destination[idx] = ctx.Destination[idx];`
+        // input: this test (the destination keeps 0xFFFFFFFF)
+        using var empty = new GpuBigIntArray(_context, 0, 8);
+        using var destination = new GpuBigUInt(_context, Enumerable.Repeat(0xFFFFFFFFu, 8).ToArray());
+
+        var result = empty.AsVectorizedEnumerable().Sum().Evaluate(destination);
+
+        Assert.Equal(BigInteger.Zero, destination.ToBigInteger());
+        Assert.Equal(destination.DevicePointer, result.Value.DevicePointer);
+        Assert.False(result.IsNegative);
+    }
 }

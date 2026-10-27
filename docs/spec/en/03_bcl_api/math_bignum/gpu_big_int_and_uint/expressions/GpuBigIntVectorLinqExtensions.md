@@ -121,6 +121,7 @@ public static GpuBigIntExpr Count(this IGpuBigIntVectorExpression source);
 - `Evaluate(workspace)` allocates a new buffer for the magnitude; the caller owns it and disposes it. If evaluation throws, that buffer is released.
 - When `Evaluate(destination)` throws, `destination` is left as follows: for a destination of the wrong width (`ArgumentException`) it is not touched; for `OverflowException` its contents are unspecified (currently the low `WordsPerElement` words of the magnitude).
 - Evaluation reads two words back from the device: a word with the sign bit and the overflow bit, and the number of reduced elements.
+- An empty vector behaves as in `System.Linq`: `Max` and `Min` throw `InvalidOperationException` ("Sequence contains no elements") on evaluation without evaluating the vector or launching anything, so a destination is not touched, `Sum` is +0 (a destination is cleared), and `Count` is 0.
 
 ## Element-Wise Comparisons (IsEqualTo, IsNotEqualTo, IsGreaterThan, IsGreaterThanOrEqualTo, IsLessThan, IsLessThanOrEqualTo)
 
