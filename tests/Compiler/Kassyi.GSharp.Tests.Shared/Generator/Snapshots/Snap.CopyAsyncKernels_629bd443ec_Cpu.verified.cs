@@ -124,16 +124,16 @@ public bool __gsharp_yielded_for_grid_sync;
 public int tid;
 }
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Core__CopyAsyncKernels__CopyAsyncIntKernel(int[] input, int[] output, __gsharp_context_Kassyi__GSharp__Tests__Shared__Core__CopyAsyncKernels__CopyAsyncIntKernel __gsharp_ctx) {
-global::Kassyi.GSharp.Core.SharedMemory<int> smem = new SharedMemory<int>(32, 0x39a63ba5ba61bc86UL);
+global::Kassyi.GSharp.Core.SharedMemory<int> smem = new global::Kassyi.GSharp.Core.SharedMemory<int>(32, 0x39a63ba5ba61bc86UL);
 {
 switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-__gsharp_ctx.tid = ThreadIndex.X;
-Gpu.CopyAsync(ref smem[__gsharp_ctx.tid], in input[__gsharp_ctx.tid]);
-Gpu.CopyAsyncCommitGroup();
-Gpu.CopyAsyncWaitGroup(0);
+__gsharp_ctx.tid = global::Kassyi.GSharp.Core.ThreadIndex.X;
+global::Kassyi.GSharp.Core.Gpu.CopyAsync(ref smem[__gsharp_ctx.tid], in input[__gsharp_ctx.tid]);
+global::Kassyi.GSharp.Core.Gpu.CopyAsyncCommitGroup();
+global::Kassyi.GSharp.Core.Gpu.CopyAsyncWaitGroup(0);
 __gsharp_ctx.__gsharp_state = 1;
 return;
 }
@@ -342,16 +342,16 @@ public bool __gsharp_yielded_for_grid_sync;
 public int tid;
 }
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Core__CopyAsyncKernels__CopyAsyncVector4Kernel(global::System.Numerics.Vector4[] input, global::System.Numerics.Vector4[] output, __gsharp_context_Kassyi__GSharp__Tests__Shared__Core__CopyAsyncKernels__CopyAsyncVector4Kernel __gsharp_ctx) {
-global::Kassyi.GSharp.Core.SharedMemory<global::System.Numerics.Vector4> smem = new SharedMemory<System.Numerics.Vector4>(32, 0xd6cc35b95389e938UL);
+global::Kassyi.GSharp.Core.SharedMemory<global::System.Numerics.Vector4> smem = new global::Kassyi.GSharp.Core.SharedMemory<global::System.Numerics.Vector4>(32, 0xd6cc35b95389e938UL);
 {
 switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-__gsharp_ctx.tid = ThreadIndex.X;
-Gpu.CopyAsync(ref smem[__gsharp_ctx.tid], in input[__gsharp_ctx.tid]);
-Gpu.CopyAsyncCommitGroup();
-Gpu.CopyAsyncWaitGroup(0);
+__gsharp_ctx.tid = global::Kassyi.GSharp.Core.ThreadIndex.X;
+global::Kassyi.GSharp.Core.Gpu.CopyAsync(ref smem[__gsharp_ctx.tid], in input[__gsharp_ctx.tid]);
+global::Kassyi.GSharp.Core.Gpu.CopyAsyncCommitGroup();
+global::Kassyi.GSharp.Core.Gpu.CopyAsyncWaitGroup(0);
 __gsharp_ctx.__gsharp_state = 1;
 return;
 }
@@ -582,26 +582,26 @@ public bool __gsharp_yielded_for_grid_sync;
 public int tid;
 }
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Core__CopyAsyncKernels__CopyAsyncTwoGroupsKernel(int[] input, int[] output, __gsharp_context_Kassyi__GSharp__Tests__Shared__Core__CopyAsyncKernels__CopyAsyncTwoGroupsKernel __gsharp_ctx) {
-global::Kassyi.GSharp.Core.SharedMemory<int> smem = new SharedMemory<int>(32, 0x8c84be897736d55fUL);
+global::Kassyi.GSharp.Core.SharedMemory<int> smem = new global::Kassyi.GSharp.Core.SharedMemory<int>(32, 0x8c84be897736d55fUL);
 {
 switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-__gsharp_ctx.tid = ThreadIndex.X;
+__gsharp_ctx.tid = global::Kassyi.GSharp.Core.ThreadIndex.X;
 if (__gsharp_ctx.tid < 16)
 {
-Gpu.CopyAsync(ref smem[__gsharp_ctx.tid], in input[__gsharp_ctx.tid]);
+global::Kassyi.GSharp.Core.Gpu.CopyAsync(ref smem[__gsharp_ctx.tid], in input[__gsharp_ctx.tid]);
 }
 
-Gpu.CopyAsyncCommitGroup();
+global::Kassyi.GSharp.Core.Gpu.CopyAsyncCommitGroup();
 if (__gsharp_ctx.tid < 16)
 {
-Gpu.CopyAsync(ref smem[__gsharp_ctx.tid + 16], in input[__gsharp_ctx.tid + 16]);
+global::Kassyi.GSharp.Core.Gpu.CopyAsync(ref smem[__gsharp_ctx.tid + 16], in input[__gsharp_ctx.tid + 16]);
 }
 
-Gpu.CopyAsyncCommitGroup();
-Gpu.CopyAsyncWaitGroup(1);
+global::Kassyi.GSharp.Core.Gpu.CopyAsyncCommitGroup();
+global::Kassyi.GSharp.Core.Gpu.CopyAsyncWaitGroup(1);
 __gsharp_ctx.__gsharp_state = 1;
 return;
 }
@@ -613,7 +613,7 @@ if (__gsharp_ctx.tid < 16)
 output[__gsharp_ctx.tid] = smem[15 - __gsharp_ctx.tid];
 }
 
-Gpu.CopyAsyncWaitAll();
+global::Kassyi.GSharp.Core.Gpu.CopyAsyncWaitAll();
 __gsharp_ctx.__gsharp_state = 2;
 return;
 }

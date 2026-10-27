@@ -352,16 +352,16 @@ switch (__gsharp_ctx.__gsharp_state)
 case 0:
 {
 bool flag = true;
-ModifyRef(ref flag);
-RefTestStruct s = new RefTestStruct
+global::Kassyi.GSharp.Tests.Shared.Syntax.RefOutDereferenceKernels.ModifyRef(ref flag);
+global::Kassyi.GSharp.Tests.Shared.Syntax.RefTestStruct s = new global::Kassyi.GSharp.Tests.Shared.Syntax.RefTestStruct
 {
 Field = 0,
 Value = 10
 };
-MemberAccessRef(ref s);
+global::Kassyi.GSharp.Tests.Shared.Syntax.RefOutDereferenceKernels.MemberAccessRef(ref s);
 int a, b;
 int val = 1;
-ChainedAssignmentRef(ref val, out a, out b);
+global::Kassyi.GSharp.Tests.Shared.Syntax.RefOutDereferenceKernels.ChainedAssignmentRef(ref val, out a, out b);
 data[0] = (flag ? 100 : 0) + s.Field + a + b + val;
 __gsharp_ctx.__gsharp_state = -1;
 return;
@@ -586,23 +586,23 @@ switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-int tid = ThreadIndex.X;
+int tid = global::Kassyi.GSharp.Core.ThreadIndex.X;
 int x = input[tid];
 int y = x + 3;
-RefTestStruct s1 = new RefTestStruct
+global::Kassyi.GSharp.Tests.Shared.Syntax.RefTestStruct s1 = new global::Kassyi.GSharp.Tests.Shared.Syntax.RefTestStruct
 {
 Field = x,
 Value = 7
 };
-RefTestStruct s2 = new RefTestStruct
+global::Kassyi.GSharp.Tests.Shared.Syntax.RefTestStruct s2 = new global::Kassyi.GSharp.Tests.Shared.Syntax.RefTestStruct
 {
 Field = y,
 Value = 9
 };
-output[tid * 4] = ReadRefReadOnlyInt(in x) * 1000 + ReadInInt(in y);
-output[tid * 4 + 1] = ForwardRefReadOnlyInt(in x) * 1000 + ForwardInInt(in y);
-output[tid * 4 + 2] = ReadRefReadOnlyStruct(in s1) * 1000 + ReadInStruct(in s2);
-output[tid * 4 + 3] = ForwardRefReadOnlyAndInStruct(in s1, in s2);
+output[tid * 4] = global::Kassyi.GSharp.Tests.Shared.Syntax.RefOutDereferenceKernels.ReadRefReadOnlyInt(in x) * 1000 + global::Kassyi.GSharp.Tests.Shared.Syntax.RefOutDereferenceKernels.ReadInInt(in y);
+output[tid * 4 + 1] = global::Kassyi.GSharp.Tests.Shared.Syntax.RefOutDereferenceKernels.ForwardRefReadOnlyInt(in x) * 1000 + global::Kassyi.GSharp.Tests.Shared.Syntax.RefOutDereferenceKernels.ForwardInInt(in y);
+output[tid * 4 + 2] = global::Kassyi.GSharp.Tests.Shared.Syntax.RefOutDereferenceKernels.ReadRefReadOnlyStruct(in s1) * 1000 + global::Kassyi.GSharp.Tests.Shared.Syntax.RefOutDereferenceKernels.ReadInStruct(in s2);
+output[tid * 4 + 3] = global::Kassyi.GSharp.Tests.Shared.Syntax.RefOutDereferenceKernels.ForwardRefReadOnlyAndInStruct(in s1, in s2);
 __gsharp_ctx.__gsharp_state = -1;
 return;
 }
@@ -835,21 +835,21 @@ switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-int tid = ThreadIndex.X;
+int tid = global::Kassyi.GSharp.Core.ThreadIndex.X;
 int x = input[tid];
 float f = x + 0.5f;
-RefTestStruct s = new RefTestStruct
+global::Kassyi.GSharp.Tests.Shared.Syntax.RefTestStruct s = new global::Kassyi.GSharp.Tests.Shared.Syntax.RefTestStruct
 {
 Field = x,
 Value = 4
 };
-RefTestStruct sCtor = new RefTestStruct(x, 4);
-output[tid * 6] = ReadInInt(5) * 1000 + ReadInInt(x + 1);
-output[tid * 6 + 1] = ReadInStruct(new RefTestStruct { Field = x, Value = 4 });
-output[tid * 6 + 2] = ForwardInInt(x + 2);
-output[tid * 6 + 3] = ReadInInt(ThreadIndex.X) * 10000 + ReadInInt(BlockDimension.X) * 100 + ReadInInt(input.Length);
-output[tid * 6 + 4] = s.PassComputedToIn * 10000 + ReadInInt(s.ComputedSum) * 100 + ReadInInt(ConstVal);
-output[tid * 6 + 5] = ReadInLong(x) * 1000000 + ReadInLong(x + 1) * 10000 + ReadInDouble(f) * 100 + sCtor.Field * 10 + sCtor.Value;
+global::Kassyi.GSharp.Tests.Shared.Syntax.RefTestStruct sCtor = new global::Kassyi.GSharp.Tests.Shared.Syntax.RefTestStruct(x, 4);
+output[tid * 6] = global::Kassyi.GSharp.Tests.Shared.Syntax.RefOutDereferenceKernels.ReadInInt(5) * 1000 + global::Kassyi.GSharp.Tests.Shared.Syntax.RefOutDereferenceKernels.ReadInInt(x + 1);
+output[tid * 6 + 1] = global::Kassyi.GSharp.Tests.Shared.Syntax.RefOutDereferenceKernels.ReadInStruct(new global::Kassyi.GSharp.Tests.Shared.Syntax.RefTestStruct { Field = x, Value = 4 });
+output[tid * 6 + 2] = global::Kassyi.GSharp.Tests.Shared.Syntax.RefOutDereferenceKernels.ForwardInInt(x + 2);
+output[tid * 6 + 3] = global::Kassyi.GSharp.Tests.Shared.Syntax.RefOutDereferenceKernels.ReadInInt(global::Kassyi.GSharp.Core.ThreadIndex.X) * 10000 + global::Kassyi.GSharp.Tests.Shared.Syntax.RefOutDereferenceKernels.ReadInInt(global::Kassyi.GSharp.Core.BlockDimension.X) * 100 + global::Kassyi.GSharp.Tests.Shared.Syntax.RefOutDereferenceKernels.ReadInInt(input.Length);
+output[tid * 6 + 4] = s.PassComputedToIn * 10000 + global::Kassyi.GSharp.Tests.Shared.Syntax.RefOutDereferenceKernels.ReadInInt(s.ComputedSum) * 100 + global::Kassyi.GSharp.Tests.Shared.Syntax.RefOutDereferenceKernels.ReadInInt(global::Kassyi.GSharp.Tests.Shared.Syntax.RefOutDereferenceKernels.ConstVal);
+output[tid * 6 + 5] = global::Kassyi.GSharp.Tests.Shared.Syntax.RefOutDereferenceKernels.ReadInLong(x) * 1000000 + global::Kassyi.GSharp.Tests.Shared.Syntax.RefOutDereferenceKernels.ReadInLong(x + 1) * 10000 + global::Kassyi.GSharp.Tests.Shared.Syntax.RefOutDereferenceKernels.ReadInDouble(f) * 100 + sCtor.Field * 10 + sCtor.Value;
 __gsharp_ctx.__gsharp_state = -1;
 return;
 }
@@ -1071,10 +1071,10 @@ switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-int tid = ThreadIndex.X;
+int tid = global::Kassyi.GSharp.Core.ThreadIndex.X;
 output[tid * 3] = scalar + s.Field * 100 + s.Value;
-output[tid * 3 + 1] = ReadInInt(in scalar) * 1000 + ReadRefReadOnlyInt(in scalar);
-output[tid * 3 + 2] = ReadInStruct(in s) * 1000 + ReadRefReadOnlyStruct(in s);
+output[tid * 3 + 1] = global::Kassyi.GSharp.Tests.Shared.Syntax.RefOutDereferenceKernels.ReadInInt(in scalar) * 1000 + global::Kassyi.GSharp.Tests.Shared.Syntax.RefOutDereferenceKernels.ReadRefReadOnlyInt(in scalar);
+output[tid * 3 + 2] = global::Kassyi.GSharp.Tests.Shared.Syntax.RefOutDereferenceKernels.ReadInStruct(in s) * 1000 + global::Kassyi.GSharp.Tests.Shared.Syntax.RefOutDereferenceKernels.ReadRefReadOnlyStruct(in s);
 __gsharp_ctx.__gsharp_state = -1;
 return;
 }

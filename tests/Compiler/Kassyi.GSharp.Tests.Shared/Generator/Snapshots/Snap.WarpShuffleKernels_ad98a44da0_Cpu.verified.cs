@@ -186,7 +186,7 @@ switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-__gsharp_ctx.tid = ThreadIndex.X;
+__gsharp_ctx.tid = global::Kassyi.GSharp.Core.ThreadIndex.X;
 __gsharp_ctx.lane = __gsharp_ctx.tid % 32;
 __gsharp_ctx.warpId = __gsharp_ctx.tid / 32;
 __gsharp_ctx.val = input[__gsharp_ctx.tid];
@@ -472,7 +472,7 @@ switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-__gsharp_ctx.tid = ThreadIndex.X;
+__gsharp_ctx.tid = global::Kassyi.GSharp.Core.ThreadIndex.X;
 __gsharp_ctx.mask = 0xffffffff;
 __gsharp_ctx.val = input[__gsharp_ctx.tid];
 __gsharp_warp_exchange_assign(__gsharp_ctx.val);
@@ -760,7 +760,7 @@ switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-__gsharp_ctx.tid = ThreadIndex.X;
+__gsharp_ctx.tid = global::Kassyi.GSharp.Core.ThreadIndex.X;
 __gsharp_ctx.lane = __gsharp_ctx.tid % 32;
 __gsharp_ctx.mask = 0xffffffff;
 __gsharp_ctx.val = input[__gsharp_ctx.tid];
@@ -1001,7 +1001,7 @@ switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-__gsharp_ctx.tid = ThreadIndex.X;
+__gsharp_ctx.tid = global::Kassyi.GSharp.Core.ThreadIndex.X;
 __gsharp_warp_exchange_assign(input[__gsharp_ctx.tid]);
 __gsharp_ctx.__gsharp_state = 1;
 return;

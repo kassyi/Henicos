@@ -157,15 +157,15 @@ public bool __gsharp_yielded_for_grid_sync;
 public int tid;
 }
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__MemoryAndFixedArraysKernels__SharedMemoryStaticKernel(int[] intOutput, float[] floatOutput, global::Kassyi.GSharp.Tests.Shared.Syntax.CustomPoint[] pointOutput, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__MemoryAndFixedArraysKernels__SharedMemoryStaticKernel __gsharp_ctx) {
-SharedMemory<int> intSmem = new(256, 0x671c4908e990809cUL);
-SharedMemory<float> floatSmem = new(256, 0x671c4a08e990824fUL);
-SharedMemory<CustomPoint> pointSmem = new(64, 0x671c4b08e9908402UL);
+global::Kassyi.GSharp.Core.SharedMemory<int> intSmem = new(256, 0x671c4908e990809cUL);
+global::Kassyi.GSharp.Core.SharedMemory<float> floatSmem = new(256, 0x671c4a08e990824fUL);
+global::Kassyi.GSharp.Core.SharedMemory<global::Kassyi.GSharp.Tests.Shared.Syntax.CustomPoint> pointSmem = new(64, 0x671c4b08e9908402UL);
 {
 switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-__gsharp_ctx.tid = ThreadIndex.X;
+__gsharp_ctx.tid = global::Kassyi.GSharp.Core.ThreadIndex.X;
 if (__gsharp_ctx.tid < 256)
 {
 intSmem[__gsharp_ctx.tid] = __gsharp_ctx.tid * 3;
@@ -174,7 +174,7 @@ floatSmem[__gsharp_ctx.tid] = __gsharp_ctx.tid * 1.5f;
 
 if (__gsharp_ctx.tid < 64)
 {
-pointSmem[__gsharp_ctx.tid] = new CustomPoint
+pointSmem[__gsharp_ctx.tid] = new global::Kassyi.GSharp.Tests.Shared.Syntax.CustomPoint
 {
 X = __gsharp_ctx.tid * 1.0f,
 Y = __gsharp_ctx.tid * 2.0f

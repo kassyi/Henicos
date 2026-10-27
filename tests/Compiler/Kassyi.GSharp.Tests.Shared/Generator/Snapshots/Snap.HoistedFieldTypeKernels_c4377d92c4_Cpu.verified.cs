@@ -126,14 +126,14 @@ switch (__gsharp_ctx.__gsharp_state)
 case 0:
 {
 __gsharp_ctx.sum = 0u;
-__gsharp_ctx.sum += (uint)data[ThreadIndex.X];
+__gsharp_ctx.sum += (uint)data[global::Kassyi.GSharp.Core.ThreadIndex.X];
 __gsharp_ctx.__gsharp_state = 1;
 return;
 }
 
 case 1:
 {
-data[ThreadIndex.X] = (int)__gsharp_ctx.sum;
+data[global::Kassyi.GSharp.Core.ThreadIndex.X] = (int)__gsharp_ctx.sum;
 __gsharp_ctx.__gsharp_state = -1;
 return;
 }
@@ -387,7 +387,7 @@ switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-__gsharp_ctx.tid = ThreadIndex.X;
+__gsharp_ctx.tid = global::Kassyi.GSharp.Core.ThreadIndex.X;
 __gsharp_ctx.lane = __gsharp_ctx.tid % 32;
 __gsharp_ctx.warpId = __gsharp_ctx.tid / 32;
 __gsharp_ctx.val = input[__gsharp_ctx.tid];
@@ -658,7 +658,7 @@ switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-__gsharp_ctx.tid = ThreadIndex.X;
+__gsharp_ctx.tid = global::Kassyi.GSharp.Core.ThreadIndex.X;
 __gsharp_ctx.p = items[__gsharp_ctx.tid];
 __gsharp_ctx.__gsharp_state = 1;
 return;

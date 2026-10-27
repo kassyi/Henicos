@@ -1,3 +1,6 @@
+using System.Globalization;
+using Kassyi.GSharp.Hashing;
+
 namespace Kassyi.GSharp.Compiler.Generators;
 
 /// <summary>
@@ -8,7 +11,10 @@ public static class PreludeGenerator
 {
     private const string IncludePrefix = "#include \"";
 
-    /// <summary>Reads prelude resource files from <paramref name="resourcesDir"/> and writes <c>GSharpPreludeResources.g.cs</c> to <paramref name="outputDir"/>.</summary>
+    /// <summary>
+    /// Reads prelude resource files from <paramref name="resourcesDir"/> and writes <c>GSharpPreludeResources.g.cs</c> to
+    /// <paramref name="outputDir"/>, with the hash of the preludes and of <c>InternalNames.yml</c> in the same directory.
+    /// </summary>
     public static void Run(string resourcesDir, string outputDir)
     {
         Directory.CreateDirectory(outputDir);
@@ -16,7 +22,8 @@ public static class PreludeGenerator
         var cudaPrelude = LoadAndResolvePrelude(resourcesDir, "Prelude.cu", isCuda: true);
         var cppPrelude = LoadAndResolvePrelude(resourcesDir, "Prelude.cpp", isCuda: false);
 
-        var source = GenerateSource(cudaPrelude, cppPrelude);
+        var internalNames = File.ReadAllText(Path.Combine(resourcesDir, "InternalNames.yml"), Encoding.UTF8);
+        var source = GenerateSource(cudaPrelude, cppPrelude, internalNames);
         File.WriteAllText(Path.Combine(outputDir, "GSharpPreludeResources.g.cs"), source, Encoding.UTF8);
     }
 
@@ -119,7 +126,7 @@ public static class PreludeGenerator
         return text;
     }
 
-    private static string GenerateSource(string cudaPrelude, string cppPrelude)
+    private static string GenerateSource(string cudaPrelude, string cppPrelude, string internalNames)
     {
         using var writer = new SourceWriter();
         writer.AppendGeneratedFileHeader();
@@ -137,9 +144,33 @@ public static class PreludeGenerator
             writer.Append("public const string Cpp = \"");
             AppendEscapedStringLiteral(writer, cppPrelude);
             writer.AppendLine("\";");
+            writer.Line();
+            writer.Line("/// <summary>");
+            writer.Line("/// The FNV-1a 64 hash of <see cref=\"Cuda\"/>, <see cref=\"Cpp\"/> and <c>InternalNames.yml</c> (the spelling of the");
+            writer.Line("/// generated names), without carriage returns.");
+            writer.Line("/// </summary>");
+            writer.AppendLine($"public const string Hash = \"{ComputeHash(cudaPrelude, cppPrelude, internalNames)}\";");
         }
 
         return writer.ToString();
+    }
+
+    // [WHY] A device code export records this hash with its record layout (GpuDeviceExportAttribute.PreludeHash), and a
+    // consumer compares it with its own: an imported text calls the prelude's helpers and spells the generated names as
+    // InternalNames.yml does. Carriage returns are skipped, so a Windows checkout (CRLF) and a WSL one (LF) give the same
+    // hash.
+    private static string ComputeHash(string cudaPrelude, string cppPrelude, string internalNames)
+    {
+        var hash = new Fnv1A64();
+        foreach (var c in cudaPrelude + cppPrelude + internalNames)
+        {
+            if (c != '\r')
+            {
+                hash.Append(c);
+            }
+        }
+
+        return hash.Value.ToString("x16", CultureInfo.InvariantCulture);
     }
 
     private static void AppendEscapedStringLiteral(SourceWriter writer, string value)

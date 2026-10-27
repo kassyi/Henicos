@@ -125,8 +125,8 @@ switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-int row = BlockIndex.Y * BlockDimension.Y + ThreadIndex.Y;
-int col = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
+int row = global::Kassyi.GSharp.Core.BlockIndex.Y * global::Kassyi.GSharp.Core.BlockDimension.Y + global::Kassyi.GSharp.Core.ThreadIndex.Y;
+int col = global::Kassyi.GSharp.Core.BlockIndex.X * global::Kassyi.GSharp.Core.BlockDimension.X + global::Kassyi.GSharp.Core.ThreadIndex.X;
 if (row < n && col < n)
 {
 float sum = 0;

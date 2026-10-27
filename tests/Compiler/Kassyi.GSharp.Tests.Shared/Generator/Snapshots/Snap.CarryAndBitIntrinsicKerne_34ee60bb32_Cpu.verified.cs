@@ -121,13 +121,13 @@ switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-int tid = ThreadIndex.X;
+int tid = global::Kassyi.GSharp.Core.ThreadIndex.X;
 uint value = input[tid];
 uint next = input[(tid + 1) % n];
 uint shift = (uint)tid;
-output[tid * 3] = Gpu.BitReverse(value);
-output[tid * 3 + 1] = Gpu.FunnelShiftLeft(value, next, shift);
-output[tid * 3 + 2] = Gpu.FunnelShiftRight(value, next, shift);
+output[tid * 3] = global::Kassyi.GSharp.Core.Gpu.BitReverse(value);
+output[tid * 3 + 1] = global::Kassyi.GSharp.Core.Gpu.FunnelShiftLeft(value, next, shift);
+output[tid * 3 + 2] = global::Kassyi.GSharp.Core.Gpu.FunnelShiftRight(value, next, shift);
 __gsharp_ctx.__gsharp_state = -1;
 return;
 }
@@ -326,12 +326,12 @@ switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-int tid = ThreadIndex.X;
+int tid = global::Kassyi.GSharp.Core.ThreadIndex.X;
 ulong carry = (ulong)(tid & 1);
-sum[tid] = Gpu.AddWithCarry(a[tid], b[tid], ref carry);
+sum[tid] = global::Kassyi.GSharp.Core.Gpu.AddWithCarry(a[tid], b[tid], ref carry);
 carryOut[tid] = carry;
 long borrow = tid & 1;
-difference[tid] = Gpu.SubWithBorrow(a[tid], b[tid], ref borrow);
+difference[tid] = global::Kassyi.GSharp.Core.Gpu.SubWithBorrow(a[tid], b[tid], ref borrow);
 borrowOut[tid] = borrow;
 __gsharp_ctx.__gsharp_state = -1;
 return;

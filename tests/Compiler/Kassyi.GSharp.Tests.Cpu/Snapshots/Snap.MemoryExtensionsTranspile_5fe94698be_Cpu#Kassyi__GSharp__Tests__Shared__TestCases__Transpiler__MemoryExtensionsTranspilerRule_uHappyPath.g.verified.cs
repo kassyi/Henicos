@@ -104,8 +104,8 @@ switch (__gsharp_ctx.__gsharp_state)
 case 0:
 {
 // This will trigger MemoryExtensions.Sort which targets MemoryExtensionsTranspilerRule
-MemoryExtensions.Sort(data);
-data.Sort();
+global::System.MemoryExtensions.Sort(data);
+global::System.MemoryExtensions.Sort(data);
 __gsharp_ctx.__gsharp_state = -1;
 return;
 }

@@ -135,20 +135,20 @@ switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-int tid = ThreadIndex.X;
-Gpu.AtomicSub(ref intState[0], 1);
-Gpu.AtomicMin(ref intState[1], tid - 5);
-Gpu.AtomicAnd(ref uintState[0], ~(1u << tid));
-Gpu.AtomicXor(ref uintState[1], 1u << tid);
-Gpu.AtomicMin(ref uintState[2], (uint)tid);
-Gpu.AtomicMax(ref uintState[3], tid == 31 ? uint.MaxValue : (uint)tid);
-Gpu.AtomicXor(ref ulongState[0], 1ul << (tid + 32));
-Gpu.AtomicMin(ref ulongState[1], (ulong)tid);
-Gpu.AtomicAnd(ref ulongState[2], ~(1ul << tid));
-Gpu.AtomicAdd(ref floatState[0], 0.5f);
+int tid = global::Kassyi.GSharp.Core.ThreadIndex.X;
+global::Kassyi.GSharp.Core.Gpu.AtomicSub(ref intState[0], 1);
+global::Kassyi.GSharp.Core.Gpu.AtomicMin(ref intState[1], tid - 5);
+global::Kassyi.GSharp.Core.Gpu.AtomicAnd(ref uintState[0], ~(1u << tid));
+global::Kassyi.GSharp.Core.Gpu.AtomicXor(ref uintState[1], 1u << tid);
+global::Kassyi.GSharp.Core.Gpu.AtomicMin(ref uintState[2], (uint)tid);
+global::Kassyi.GSharp.Core.Gpu.AtomicMax(ref uintState[3], tid == 31 ? uint.MaxValue : (uint)tid);
+global::Kassyi.GSharp.Core.Gpu.AtomicXor(ref ulongState[0], 1ul << (tid + 32));
+global::Kassyi.GSharp.Core.Gpu.AtomicMin(ref ulongState[1], (ulong)tid);
+global::Kassyi.GSharp.Core.Gpu.AtomicAnd(ref ulongState[2], ~(1ul << tid));
+global::Kassyi.GSharp.Core.Gpu.AtomicAdd(ref floatState[0], 0.5f);
 if (tid == 0)
 {
-Gpu.AtomicExch(ref floatState[1], 3.25f);
+global::Kassyi.GSharp.Core.Gpu.AtomicExch(ref floatState[1], 3.25f);
 }
 
 __gsharp_ctx.__gsharp_state = -1;
@@ -358,8 +358,8 @@ switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-Gpu.AtomicInc(ref state[0], limit);
-Gpu.AtomicDec(ref state[1], limit);
+global::Kassyi.GSharp.Core.Gpu.AtomicInc(ref state[0], limit);
+global::Kassyi.GSharp.Core.Gpu.AtomicDec(ref state[1], limit);
 __gsharp_ctx.__gsharp_state = -1;
 return;
 }
@@ -545,7 +545,7 @@ switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-Gpu.AtomicAdd(ref globalSum[0], 1.0f);
+global::Kassyi.GSharp.Core.Gpu.AtomicAdd(ref globalSum[0], 1.0f);
 __gsharp_ctx.__gsharp_state = -1;
 return;
 }
@@ -731,7 +731,7 @@ switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-AccumulateThroughRef(ref counter[0], ThreadIndex.X + 1);
+global::Kassyi.GSharp.Tests.Shared.Syntax.AtomicIntrinsicsKernels.AccumulateThroughRef(ref counter[0], global::Kassyi.GSharp.Core.ThreadIndex.X + 1);
 __gsharp_ctx.__gsharp_state = -1;
 return;
 }

@@ -315,8 +315,8 @@ case 0:
 {
 unsafe
 {
-AbiPackedStruct s = default;
-AbiPackedStruct* p = &s;
+global::Kassyi.GSharp.Tests.Shared.Core.AbiPackedStruct s = default;
+global::Kassyi.GSharp.Tests.Shared.Core.AbiPackedStruct* p = &s;
 layout[0] = (int)((byte*)&s.C - (byte*)p);
 layout[1] = (int)((byte*)(p + 1) - (byte*)p);
 }
@@ -749,8 +749,8 @@ case 0:
 {
 unsafe
 {
-AbiInlineArrayStruct s = default;
-AbiInlineArrayStruct* p = &s;
+global::Kassyi.GSharp.Tests.Shared.Core.AbiInlineArrayStruct s = default;
+global::Kassyi.GSharp.Tests.Shared.Core.AbiInlineArrayStruct* p = &s;
 layout[0] = (int)((byte*)&s.C - (byte*)p);
 layout[1] = (int)((byte*)(p + 1) - (byte*)p);
 }
@@ -1196,8 +1196,8 @@ case 0:
 {
 unsafe
 {
-AbiCoreFieldStruct s = default;
-AbiCoreFieldStruct* p = &s;
+global::Kassyi.GSharp.Tests.Shared.Core.AbiCoreFieldStruct s = default;
+global::Kassyi.GSharp.Tests.Shared.Core.AbiCoreFieldStruct* p = &s;
 layout[0] = (int)((byte*)&s.C - (byte*)p);
 layout[1] = (int)((byte*)(p + 1) - (byte*)p);
 }
@@ -1643,8 +1643,8 @@ case 0:
 {
 unsafe
 {
-AbiPrivateInlineArrayStruct s = default;
-AbiPrivateInlineArrayStruct* p = &s;
+global::Kassyi.GSharp.Tests.Shared.Core.AbiPrivateInlineArrayStruct s = default;
+global::Kassyi.GSharp.Tests.Shared.Core.AbiPrivateInlineArrayStruct* p = &s;
 layout[0] = (int)((byte*)&s.C - (byte*)p);
 layout[1] = (int)((byte*)(p + 1) - (byte*)p);
 }
@@ -2075,8 +2075,8 @@ case 0:
 {
 unsafe
 {
-AbiFixedBufferStruct s = default;
-AbiFixedBufferStruct* p = &s;
+global::Kassyi.GSharp.Tests.Shared.Core.AbiFixedBufferStruct s = default;
+global::Kassyi.GSharp.Tests.Shared.Core.AbiFixedBufferStruct* p = &s;
 layout[0] = (int)((byte*)&s.C - (byte*)p);
 layout[1] = (int)((byte*)(p + 1) - (byte*)p);
 }
@@ -2485,8 +2485,8 @@ case 0:
 {
 unsafe
 {
-AbiAutoPropertyStruct s = default;
-AbiAutoPropertyStruct* p = &s;
+global::Kassyi.GSharp.Tests.Shared.Core.AbiAutoPropertyStruct s = default;
+global::Kassyi.GSharp.Tests.Shared.Core.AbiAutoPropertyStruct* p = &s;
 layout[0] = (int)((byte*)&s.C - (byte*)p);
 layout[1] = (int)((byte*)(p + 1) - (byte*)p);
 }
@@ -2907,8 +2907,8 @@ case 0:
 {
 unsafe
 {
-AbiComputedPropertyStruct s = default;
-AbiComputedPropertyStruct* p = &s;
+global::Kassyi.GSharp.Tests.Shared.Core.AbiComputedPropertyStruct s = default;
+global::Kassyi.GSharp.Tests.Shared.Core.AbiComputedPropertyStruct* p = &s;
 layout[0] = (int)((byte*)&s.C - (byte*)p);
 layout[1] = (int)((byte*)(p + 1) - (byte*)p);
 }
@@ -3334,7 +3334,7 @@ switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-AbiComputedPropertyStruct s = default;
+global::Kassyi.GSharp.Tests.Shared.Core.AbiComputedPropertyStruct s = default;
 s.A = 4;
 s.C = 7;
 result[0] = s.Sum;

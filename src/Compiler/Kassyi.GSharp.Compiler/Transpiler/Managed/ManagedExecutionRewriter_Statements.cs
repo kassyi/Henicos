@@ -133,8 +133,8 @@ internal sealed partial class ManagedExecutionRewriter
                 SyntaxKind.UncheckedExpression,
                 SyntaxFactory.BinaryExpression(
                     SyntaxKind.AddExpression,
-                    Parenthesize(startExpr),
-                    Parenthesize(countExpr)
+                    Parenthesize(startArg, startExpr),
+                    Parenthesize(countArg, countExpr)
                 )
             )
         );
@@ -217,11 +217,12 @@ internal sealed partial class ManagedExecutionRewriter
         }
     }
 
-    // A compound operand keeps its grouping inside the sum
-    private static ExpressionSyntax Parenthesize(ExpressionSyntax expression) =>
-        expression is LiteralExpressionSyntax or IdentifierNameSyntax or ParenthesizedExpressionSyntax
-            ? expression
-            : SyntaxFactory.ParenthesizedExpression(expression);
+    // A compound operand keeps its grouping inside the sum. The operand as written decides: a name that the rewrite
+    // qualified (ManagedNameQualifier) is still a single operand
+    private static ExpressionSyntax Parenthesize(ExpressionSyntax written, ExpressionSyntax rewritten) =>
+        written is LiteralExpressionSyntax or IdentifierNameSyntax or ParenthesizedExpressionSyntax
+            ? rewritten
+            : SyntaxFactory.ParenthesizedExpression(rewritten);
 
     public override SyntaxNode? VisitReturnStatement(ReturnStatementSyntax node)
     {

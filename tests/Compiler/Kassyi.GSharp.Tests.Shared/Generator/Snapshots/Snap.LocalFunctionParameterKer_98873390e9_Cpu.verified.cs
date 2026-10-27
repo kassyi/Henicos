@@ -120,8 +120,8 @@ switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-int tid = ThreadIndex.X;
-int Lookup([GpuReadOnly] int[] values, [GpuReadOnly] int factor, int index)
+int tid = global::Kassyi.GSharp.Core.ThreadIndex.X;
+int Lookup([global::Kassyi.GSharp.Core.GpuReadOnly] int[] values, [global::Kassyi.GSharp.Core.GpuReadOnly] int factor, int index)
 {
 return values[index] * factor;
 }

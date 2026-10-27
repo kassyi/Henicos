@@ -18,6 +18,8 @@ namespace Kassyi.GSharp.Compiler.Models;
 /// <param name="FrameName">The C++ frame type of a device function that may suspend, or empty for any other device function.</param>
 /// <param name="FrameDependencies">The frame types that this function's frame contains; they are defined before it.</param>
 /// <param name="ManagedCSharpSource">The managed state machine of a device function that may suspend, or empty.</param>
+/// <param name="Export">The device code export record of the function, or default when it is not exported (an iterator).</param>
+/// <param name="StructExports">The device code export records of the structs that the function uses.</param>
 internal readonly record struct TranspiledDeviceMethodResult(
     HostClassHeader Class,
     string MethodName,
@@ -30,7 +32,9 @@ internal readonly record struct TranspiledDeviceMethodResult(
     string InternalError,
     string FrameName = "",
     EquatableArray<string> FrameDependencies = default,
-    string ManagedCSharpSource = "")
+    string ManagedCSharpSource = "",
+    DeviceExportRecord Export = default,
+    EquatableArray<DeviceExportRecord> StructExports = default)
 {
     public string GetSignature(bool isCuda) => isCuda ? CudaSignature : CppSignature;
 

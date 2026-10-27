@@ -127,9 +127,9 @@ switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-void* block = Gpu.Unsafe.Malloc(16);
-Gpu.Unsafe.Free(block);
-output[ThreadIndex.X] = 1;
+void* block = global::Kassyi.GSharp.Core.Gpu.Unsafe.Malloc(16);
+global::Kassyi.GSharp.Core.Gpu.Unsafe.Free(block);
+output[global::Kassyi.GSharp.Core.ThreadIndex.X] = 1;
 __gsharp_ctx.__gsharp_state = -1;
 return;
 }
@@ -317,9 +317,9 @@ switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-void* block = Gpu.Unsafe.Malloc(16);
-Gpu.Unsafe.Free(block);
-output[ThreadIndex.X] = 2;
+void* block = global::Kassyi.GSharp.Core.Gpu.Unsafe.Malloc(16);
+global::Kassyi.GSharp.Core.Gpu.Unsafe.Free(block);
+output[global::Kassyi.GSharp.Core.ThreadIndex.X] = 2;
 __gsharp_ctx.__gsharp_state = -1;
 return;
 }

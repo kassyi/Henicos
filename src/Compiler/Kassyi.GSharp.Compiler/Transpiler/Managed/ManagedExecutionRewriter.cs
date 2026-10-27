@@ -93,16 +93,16 @@ internal sealed partial class ManagedExecutionRewriter(SemanticModel semanticMod
                     SyntaxFactory.IdentifierName(GSharpInternalNames.StateMachine.Context),
                     node
                 ).WithTriviaFrom(node),
-            // System.Numerics.BitOperations
-            TypeConstants.BitOperationsType =>
-                SyntaxFactory.MemberAccessExpression(
-                    SyntaxKind.SimpleMemberAccessExpression,
-                    SyntaxFactory.IdentifierName("System.Numerics"),
-                    SyntaxFactory.IdentifierName(TypeConstants.BitOperationsType)
-                ).WithTriviaFrom(node),
-            _ => base.VisitIdentifierName(node)
+            // The generated file has none of the user's using directives
+            _ => ManagedNameQualifier.QualifyName(node, base.VisitIdentifierName(node), semanticModel)
         };
     }
+
+    public override SyntaxNode? VisitGenericName(GenericNameSyntax node) =>
+        ManagedNameQualifier.QualifyName(node, base.VisitGenericName(node), semanticModel);
+
+    public override SyntaxNode? VisitInterpolation(InterpolationSyntax node) =>
+        ManagedNameQualifier.ParenthesizeInterpolation(base.VisitInterpolation(node));
 
     public override SyntaxNode? VisitLocalFunctionStatement(LocalFunctionStatementSyntax node) =>
         VisitNestedCallable(node, base.VisitLocalFunctionStatement);

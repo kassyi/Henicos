@@ -192,12 +192,12 @@ switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-var a = new ReproPair<int>
+var a = new global::Kassyi.GSharp.Tests.Shared.Syntax.ReproPair<int>
 {
 First = 1,
 Second = 2
 };
-var b = new ReproPair<float>
+var b = new global::Kassyi.GSharp.Tests.Shared.Syntax.ReproPair<float>
 {
 First = 1.5f,
 Second = 2.5f
@@ -429,12 +429,12 @@ switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-var b = new ReproPair<float>
+var b = new global::Kassyi.GSharp.Tests.Shared.Syntax.ReproPair<float>
 {
 First = 1.5f,
 Second = 2.5f
 };
-var a = new ReproPair<int>
+var a = new global::Kassyi.GSharp.Tests.Shared.Syntax.ReproPair<int>
 {
 First = 1,
 Second = 2
@@ -700,27 +700,27 @@ switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-var a = new ReproPair<ReproPair<int>>
+var a = new global::Kassyi.GSharp.Tests.Shared.Syntax.ReproPair<global::Kassyi.GSharp.Tests.Shared.Syntax.ReproPair<int>>
 {
-First = new ReproPair<int>
+First = new global::Kassyi.GSharp.Tests.Shared.Syntax.ReproPair<int>
 {
 First = 1,
 Second = 2
 },
-Second = new ReproPair<int>
+Second = new global::Kassyi.GSharp.Tests.Shared.Syntax.ReproPair<int>
 {
 First = 3,
 Second = 4
 }
 };
-var b = new ReproPair<ReproPair<float>>
+var b = new global::Kassyi.GSharp.Tests.Shared.Syntax.ReproPair<global::Kassyi.GSharp.Tests.Shared.Syntax.ReproPair<float>>
 {
-First = new ReproPair<float>
+First = new global::Kassyi.GSharp.Tests.Shared.Syntax.ReproPair<float>
 {
 First = 1.5f,
 Second = 2.5f
 },
-Second = new ReproPair<float>
+Second = new global::Kassyi.GSharp.Tests.Shared.Syntax.ReproPair<float>
 {
 First = 3.5f,
 Second = 4.5f
@@ -949,11 +949,11 @@ switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-var a = new ReproArrayWrap<int>
+var a = new global::Kassyi.GSharp.Tests.Shared.Syntax.ReproArrayWrap<int>
 {
 Items = ints
 };
-var b = new ReproArrayWrap<float>
+var b = new global::Kassyi.GSharp.Tests.Shared.Syntax.ReproArrayWrap<float>
 {
 Items = floats
 };
@@ -1164,7 +1164,7 @@ switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-output[0] = MakeRange(2, 7).High - MakeRange(2, 7).Low;
+output[0] = global::Kassyi.GSharp.Tests.Shared.Syntax.StructReproKernels.MakeRange(2, 7).High - global::Kassyi.GSharp.Tests.Shared.Syntax.StructReproKernels.MakeRange(2, 7).Low;
 __gsharp_ctx.__gsharp_state = -1;
 return;
 }
@@ -1364,7 +1364,7 @@ switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-ReproSpan s = MakeSpan(2, 7);
+global::Kassyi.GSharp.Tests.Shared.Syntax.ReproSpan s = global::Kassyi.GSharp.Tests.Shared.Syntax.StructReproKernels.MakeSpan(2, 7);
 output[0] = s.High - s.Low;
 __gsharp_ctx.__gsharp_state = -1;
 return;
@@ -1584,7 +1584,7 @@ switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-__gsharp_ctx.tid = ThreadIndex.X;
+__gsharp_ctx.tid = global::Kassyi.GSharp.Core.ThreadIndex.X;
 __gsharp_ctx.W = __gsharp_ctx.tid;
 __gsharp_ctx.__gsharp_state = 1;
 return;
@@ -1592,7 +1592,7 @@ return;
 
 case 1:
 {
-var p = new ReproPt
+var p = new global::Kassyi.GSharp.Tests.Shared.Syntax.ReproPt
 {
 X = 1,
 Y = 2
@@ -1819,11 +1819,11 @@ switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-var c = new ReproClamped
+var c = new global::Kassyi.GSharp.Tests.Shared.Syntax.ReproClamped
 {
 Value = -5
 };
-var d = new ReproClamped
+var d = new global::Kassyi.GSharp.Tests.Shared.Syntax.ReproClamped
 {
 Value = 7
 };
@@ -2056,7 +2056,7 @@ switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-var c = new ReproClamped
+var c = new global::Kassyi.GSharp.Tests.Shared.Syntax.ReproClamped
 {
 Value = 10,
 Scaled = 3

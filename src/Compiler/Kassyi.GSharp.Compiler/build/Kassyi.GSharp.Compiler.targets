@@ -14,6 +14,7 @@
     <CompilerVisibleProperty Include="GSharpTargetDialect" />
     <CompilerVisibleProperty Include="GSharpAotEnabled" />
     <CompilerVisibleProperty Include="GSharpEmitSource" />
+    <CompilerVisibleProperty Include="GSharpExportDeviceCode" />
     <CompilerVisibleProperty Include="GSharpAotEncryptionKey" />
     <CompilerVisibleProperty Include="IntermediateOutputPath" />
     <CompilerVisibleProperty Include="ProjectDir" />

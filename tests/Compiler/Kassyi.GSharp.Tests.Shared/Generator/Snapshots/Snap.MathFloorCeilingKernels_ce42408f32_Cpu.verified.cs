@@ -119,11 +119,11 @@ switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-int tid = ThreadIndex.X;
-doubleFloor[tid] = Math.Floor(doubleInputs[tid]);
-doubleCeiling[tid] = Math.Ceiling(doubleInputs[tid]);
-floatFloor[tid] = MathF.Floor(floatInputs[tid]);
-floatCeiling[tid] = MathF.Ceiling(floatInputs[tid]);
+int tid = global::Kassyi.GSharp.Core.ThreadIndex.X;
+doubleFloor[tid] = global::System.Math.Floor(doubleInputs[tid]);
+doubleCeiling[tid] = global::System.Math.Ceiling(doubleInputs[tid]);
+floatFloor[tid] = global::System.MathF.Floor(floatInputs[tid]);
+floatCeiling[tid] = global::System.MathF.Ceiling(floatInputs[tid]);
 __gsharp_ctx.__gsharp_state = -1;
 return;
 }
@@ -346,9 +346,9 @@ switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-int tid = ThreadIndex.X;
-doubleResults[tid] = Math.Pow(doubleBases[tid], doubleExponents[tid]);
-floatResults[tid] = MathF.Pow(floatBases[tid], floatExponents[tid]);
+int tid = global::Kassyi.GSharp.Core.ThreadIndex.X;
+doubleResults[tid] = global::System.Math.Pow(doubleBases[tid], doubleExponents[tid]);
+floatResults[tid] = global::System.MathF.Pow(floatBases[tid], floatExponents[tid]);
 __gsharp_ctx.__gsharp_state = -1;
 return;
 }
@@ -571,9 +571,9 @@ switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-int tid = ThreadIndex.X;
-doubleResults[tid] = Math.Round(doubleInputs[tid]);
-floatResults[tid] = MathF.Round(floatInputs[tid]);
+int tid = global::Kassyi.GSharp.Core.ThreadIndex.X;
+doubleResults[tid] = global::System.Math.Round(doubleInputs[tid]);
+floatResults[tid] = global::System.MathF.Round(floatInputs[tid]);
 __gsharp_ctx.__gsharp_state = -1;
 return;
 }

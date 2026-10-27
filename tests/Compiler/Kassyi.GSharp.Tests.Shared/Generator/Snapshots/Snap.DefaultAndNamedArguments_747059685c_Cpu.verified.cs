@@ -125,13 +125,13 @@ switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-int tid = ThreadIndex.X;
+int tid = global::Kassyi.GSharp.Core.ThreadIndex.X;
 // 1. Standard call (offset = 0, scale = 1 omitted)
-int r1 = ComputeStep(data[tid]);
+int r1 = global::Kassyi.GSharp.Tests.Shared.TestCases.DefaultAndNamedArgumentsTestCase.ComputeStep(data[tid]);
 // 2. Named arguments with reordering
-int r2 = ComputeStep(data[tid], scale: 2, offset: 5);
+int r2 = global::Kassyi.GSharp.Tests.Shared.TestCases.DefaultAndNamedArgumentsTestCase.ComputeStep(data[tid], scale: 2, offset: 5);
 // 3. Partial default arguments (offset omitted)
-int r3 = ComputeStep(data[tid], scale: 4);
+int r3 = global::Kassyi.GSharp.Tests.Shared.TestCases.DefaultAndNamedArgumentsTestCase.ComputeStep(data[tid], scale: 4);
 data[tid] = r1 + r2 + r3;
 __gsharp_ctx.__gsharp_state = -1;
 return;

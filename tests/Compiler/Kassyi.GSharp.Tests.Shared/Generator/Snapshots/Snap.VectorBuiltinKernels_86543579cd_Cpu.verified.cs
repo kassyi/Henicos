@@ -121,12 +121,12 @@ switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-var tid = ThreadIndex.X + BlockIndex.X * BlockDimension.X;
+var tid = global::Kassyi.GSharp.Core.ThreadIndex.X + global::Kassyi.GSharp.Core.BlockIndex.X * global::Kassyi.GSharp.Core.BlockDimension.X;
 if (tid < length)
 {
 var va = a[tid];
 var vb = b[tid];
-result[tid] = new System.Numerics.Vector2((float)(va.X + vb.X), (float)(va.Y + vb.Y));
+result[tid] = new global::System.Numerics.Vector2((float)(va.X + vb.X), (float)(va.Y + vb.Y));
 }
 
 __gsharp_ctx.__gsharp_state = -1;
@@ -334,12 +334,12 @@ switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-var tid = ThreadIndex.X + BlockIndex.X * BlockDimension.X;
+var tid = global::Kassyi.GSharp.Core.ThreadIndex.X + global::Kassyi.GSharp.Core.BlockIndex.X * global::Kassyi.GSharp.Core.BlockDimension.X;
 if (tid < length)
 {
 var va = a[tid];
 var vb = b[tid];
-result[tid] = new System.Numerics.Vector3((float)(va.X + vb.X), (float)(va.Y + vb.Y), (float)(va.Z + vb.Z));
+result[tid] = new global::System.Numerics.Vector3((float)(va.X + vb.X), (float)(va.Y + vb.Y), (float)(va.Z + vb.Z));
 }
 
 __gsharp_ctx.__gsharp_state = -1;
@@ -547,12 +547,12 @@ switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-var tid = ThreadIndex.X + BlockIndex.X * BlockDimension.X;
+var tid = global::Kassyi.GSharp.Core.ThreadIndex.X + global::Kassyi.GSharp.Core.BlockIndex.X * global::Kassyi.GSharp.Core.BlockDimension.X;
 if (tid < length)
 {
 var va = a[tid];
 var vb = b[tid];
-result[tid] = new System.Numerics.Vector4((float)(va.X + vb.X), (float)(va.Y + vb.Y), (float)(va.Z + vb.Z), (float)(va.W + vb.W));
+result[tid] = new global::System.Numerics.Vector4((float)(va.X + vb.X), (float)(va.Y + vb.Y), (float)(va.Z + vb.Z), (float)(va.W + vb.W));
 }
 
 __gsharp_ctx.__gsharp_state = -1;

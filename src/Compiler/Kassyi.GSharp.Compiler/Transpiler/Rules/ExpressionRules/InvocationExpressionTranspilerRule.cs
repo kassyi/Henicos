@@ -10,6 +10,13 @@ namespace Kassyi.GSharp.Compiler.Transpiler.Rules.ExpressionRules;
 /// </remarks>
 public sealed class InvocationExpressionTranspilerRule : SyntaxNodeTranspilerRuleBase<InvocationExpressionSyntax>
 {
+    /// <summary>The GSH0003 text for an extension method call whose receiver and arguments interfere.</summary>
+    public const string ExtensionReceiverInterferes =
+        "extension method call whose arguments write what its receiver reads, or read what it writes";
+
+    /// <summary>The GSH0003 text for an extension method call of a device function that suspends at a barrier.</summary>
+    public const string SuspendingExtensionCall = "extension method call of a device function that reaches a barrier";
+
     /// <inheritdoc />
     public override void Transpile(InvocationExpressionSyntax node, ref TranspileContext context)
     {
@@ -54,6 +61,13 @@ public sealed class InvocationExpressionTranspilerRule : SyntaxNodeTranspilerRul
         IMethodSymbol symbol,
         ref TranspileContext context)
     {
+        if (symbol.ReducedFrom is { } extension && node.Expression is MemberAccessExpressionSyntax access &&
+            CppNameResolver.IsEmittedDeviceFunction(extension, context.Emitter.Dialect))
+        {
+            TranspileExtensionCall(node, access.Expression, symbol, extension, ref context);
+            return;
+        }
+
         StructTranspiler.RegisterUsedStructIfApplicable(symbol.ReturnType, ref context);
         using var sequence = EvaluationOrder.BeginCall(ref context, node.ArgumentList.Arguments, symbol,
             GetReceiver(node, symbol), spillAll: false);
@@ -65,9 +79,60 @@ public sealed class InvocationExpressionTranspilerRule : SyntaxNodeTranspilerRul
         }
     }
 
+    // <function>(<receiver>, <arguments>): the reduced call x.M(a) of a [GpuDeviceFunction] extension method is the
+    // static call M(x, a). [WHY] C++ leaves the order of the arguments unspecified and the temporaries of BeginCall are
+    // evaluated before the receiver, so a receiver that interferes with an argument is reported instead of reordered.
+    private static void TranspileExtensionCall(InvocationExpressionSyntax node, ExpressionSyntax receiver,
+        IMethodSymbol symbol, IMethodSymbol extension, ref TranspileContext context)
+    {
+        var model = context.Query.SemanticModel;
+
+        // [WHY] A suspending call passes its frame after the arguments of the static call (lowering, both dialects
+        // alike), which the reduced form does not have; it is reported in every dialect, so the analyzer sees it
+        if (SuspensionAnalysis.IsSuspendingFunction(extension, model.Compilation))
+        {
+            context.Reporter.Fail(GSharpDiagnostics.UnsupportedSyntax, node, SuspendingExtensionCall);
+            return;
+        }
+
+        var byReference = extension.Parameters[0].RefKind != RefKind.None;
+        var receiverEffects = byReference ? ExpressionEffects.OfLocation(receiver, model) : ExpressionEffects.Of(receiver, model);
+        var interferes = node.ArgumentList.Arguments
+            .AsStackEnumerable()
+            .Any((Receiver: receiverEffects, Model: model), static (argument, s) =>
+                ExpressionEffects.Of(argument.Expression, s.Model) is var effects &&
+                (s.Receiver.InterferesWith(effects) || effects.InterferesWith(s.Receiver)));
+        if (interferes)
+        {
+            context.Reporter.Fail(GSharpDiagnostics.UnsupportedSyntax, node, ExtensionReceiverInterferes);
+            return;
+        }
+
+        StructTranspiler.RegisterUsedStructIfApplicable(symbol.ReturnType, ref context);
+        using var sequence = EvaluationOrder.BeginCall(ref context, node.ArgumentList.Arguments, symbol, receiver: null,
+            spillAll: false);
+        CppNameResolver.AppendSymbolName(extension, ref context);
+        using (context.Emitter.Writer.Parentheses())
+        {
+            if (byReference)
+            {
+                RefSyntaxHelper.TranspileAsByRefArgument(ref context, receiver);
+            }
+            else
+            {
+                context.Visitor.Visit(receiver);
+            }
+
+            context.Emitter.Writer.AppendIf(symbol.Parameters.Length > 0, ",");
+            TranspileArguments(symbol.Parameters, node.ArgumentList.Arguments, in sequence, ref context);
+            DynamicSharedMemoryEmitter.AppendTableArgument(node, extension, ref context);
+        }
+    }
+
     // The receiver of an instance (or reduced extension) call, which C# and C++ evaluate before the arguments.
-    // [WHY] G# emits neither the instance methods of a struct nor reduced extension calls today, so the receiver path
-    // (and its ReducedFrom branch) is not reached by valid output; when the receiver interferes with an argument,
+    // [WHY] G# emits neither the instance methods of a struct nor reduced extension calls of other methods today (those of
+    // a [GpuDeviceFunction] go through TranspileExtensionCall), so the receiver path (and its ReducedFrom branch) is not
+    // reached by valid output; when the receiver interferes with an argument,
     // BeginCall leaves the whole call as written, which also leaves the arguments in C++ order (to be fixed with the
     // instance methods).
     private static ExpressionSyntax? GetReceiver(InvocationExpressionSyntax node, IMethodSymbol symbol) =>
@@ -85,6 +150,13 @@ public sealed class InvocationExpressionTranspilerRule : SyntaxNodeTranspilerRul
             context.Query.SemanticModel.GetSymbol(call) is not IMethodSymbol callee)
         {
             throw new InvalidOperationException("A lowered resume call does not wrap a call to a device function.");
+        }
+
+        // The frame and the resume protocol follow the static call; the reduced form has its receiver out of the arguments
+        if (callee.ReducedFrom != null)
+        {
+            context.Reporter.Fail(GSharpDiagnostics.UnsupportedSyntax, call, SuspendingExtensionCall);
+            return;
         }
 
         StructTranspiler.RegisterUsedStructIfApplicable(callee.ReturnType, ref context);

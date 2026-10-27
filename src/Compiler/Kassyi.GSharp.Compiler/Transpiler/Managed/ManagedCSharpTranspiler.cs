@@ -86,11 +86,16 @@ internal static class ManagedCSharpTranspiler
                 $"Unhoisting ref-struct fields removed the body of device function '{functionName}'.");
         var bodySource = RewriteAndNormalizeBody(unhoistedBody, semanticModel, isDeviceFunction: true);
 
+        // As visible as the function (a consumer of another assembly calls a public one); the frame's fields are the
+        // assembly's own (#538 3rd review M1)
+        var accessibility = ManagedStateMachineAvailability.IsEffectivelyPublic(methodSymbol) ? "public" : "internal";
         using var writer = new SourceWriter();
         ManagedStateMachineEmitter.EmitContextClass(
-            writer, frameName, regularFields, copiedParameters, lowered.CallSites, semanticModel);
+            writer, frameName, regularFields, copiedParameters, lowered.CallSites, semanticModel, accessibility,
+            "internal");
         ManagedStateMachineEmitter.EmitDeviceStateMachineMethod(
-            writer, frameName, stateMachineName, methodSymbol, copiedParameters, localInits, bodySource);
+            writer, frameName, stateMachineName, methodSymbol, copiedParameters, localInits, bodySource, accessibility,
+            ManagedStateMachineAvailability.NeedsUnsafe(methodSymbol, methodDecl));
         return writer.ToString();
     }
 
@@ -100,6 +105,13 @@ internal static class ManagedCSharpTranspiler
         var rewriter = new ManagedExecutionRewriter(semanticModel, isDeviceFunction);
         var rewritten = rewriter.Visit(loweredBody) as BlockSyntax
                         ?? throw new InvalidOperationException("Managed execution rewriting removed the kernel body.");
+        // A device function's state machine is emitted by every assembly that exports its device code, so it is written
+        // without the statements that no path reaches (CS0162 in a library that treats warnings as errors)
+        if (isDeviceFunction && UnreachableStatementRemover.Instance.Visit(rewritten) is BlockSyntax reachable)
+        {
+            rewritten = reachable;
+        }
+
         return ManagedStateMachineEmitter.ToSource(rewritten);
     }
 }

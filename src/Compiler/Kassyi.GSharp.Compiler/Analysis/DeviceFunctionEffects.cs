@@ -76,20 +76,22 @@ internal static class DeviceFunctionEffects
             return DeviceFunctionEffect.Memory;
         }
 
-        var effect = TryGetBodies(definition, out var bodies)
+        var effect = TryGetBodies(definition, compilation, out var bodies)
             ? ClassifyBodies(definition, bodies, compilation, visiting)
-            : ClassifyDeclaration(definition);
+            : ClassifyWithoutBody(definition, compilation);
         visiting.Remove(definition);
         return cache.GetOrAdd(definition, effect);
     }
 
     // The syntax that runs when the function is called: the body of a method or accessor, or the body and constructor
     // initializer of a constructor together with the instance member initializers of its struct
-    private static bool TryGetBodies(IMethodSymbol method, out ImmutableArray<SyntaxNode> bodies)
+    // Only syntax of the compilation counts: a function of another assembly has none here, also when an IDE gives its
+    // declaration through a referenced compilation
+    private static bool TryGetBodies(IMethodSymbol method, Compilation compilation, out ImmutableArray<SyntaxNode> bodies)
     {
         var builder = ImmutableArray.CreateBuilder<SyntaxNode>();
         if (method.MethodKind == MethodKind.Constructor && method.ContainingType is { TypeKind: TypeKind.Struct } type &&
-            type.DeclaringSyntaxReferences.Length > 0)
+            !DeviceExportTable.IsOutside(type, compilation))
         {
             foreach (var reference in type.DeclaringSyntaxReferences)
             {
@@ -109,7 +111,8 @@ internal static class DeviceFunctionEffects
             return true;
         }
 
-        if (method.TryGetDeclaringSyntax<SyntaxNode>(out var syntax) && IsFunctionWithBody(method, syntax))
+        if (method.TryGetDeclaringSyntax<SyntaxNode>(out var syntax) && compilation.ContainsSyntaxTree(syntax.SyntaxTree) &&
+            IsFunctionWithBody(method, syntax))
         {
             AddNonNull(builder, syntax switch
             {
@@ -490,6 +493,41 @@ internal static class DeviceFunctionEffects
         local.DeclaringSyntaxReferences
             .AsStackEnumerable()
             .Any(body, static (reference, b) => reference.SyntaxTree == b.SyntaxTree && b.FullSpan.Contains(reference.Span));
+
+    // [WHY] A [GpuDeviceFunction] of another assembly is classified by what its assembly recorded (#618 would otherwise
+    // take a ref parameter for the only write, and miss the memory it writes); without a record, as writing memory. A
+    // constructor or a computed property of a struct of another assembly whose record brings its body runs that body,
+    // which the record does not classify: it may write memory (#538 review m2)
+    private static DeviceFunctionEffect ClassifyWithoutBody(IMethodSymbol method, Compilation compilation)
+    {
+        if (DeviceExportTable.TryFindFunction(method, compilation, out var imported))
+        {
+            return imported.Record.Effect switch
+            {
+                "None" => DeviceFunctionEffect.None,
+                "RefParameters" => DeviceFunctionEffect.RefParameters,
+                _ => DeviceFunctionEffect.Memory
+            };
+        }
+
+        return method.HasAttribute(KnownAttributes.GpuDeviceFunction) || HasImportedBody(method, compilation)
+            ? DeviceFunctionEffect.Memory
+            : ClassifyDeclaration(method);
+    }
+
+    // A constructor with a body, or the getter of a computed property, of an emitted struct of another assembly
+    private static bool HasImportedBody(IMethodSymbol method, Compilation compilation) =>
+        method.ContainingType is { TypeKind: TypeKind.Struct } type &&
+        GlobalCppNames.IsEmittedUserType(type) &&
+        !type.ContainingNamespace.IsCoreNamespace() &&
+        DeviceExportTable.IsOutside(type, compilation) &&
+        method switch
+        {
+            { MethodKind: MethodKind.Constructor } => StructTranspiler.IsEmittedStructConstructor(method, compilation),
+            { MethodKind: MethodKind.PropertyGet, AssociatedSymbol: IPropertySymbol property } =>
+                StructAbiMembers.IsComputedProperty(property),
+            _ => false
+        };
 
     private static DeviceFunctionEffect ClassifyDeclaration(IMethodSymbol method)
     {

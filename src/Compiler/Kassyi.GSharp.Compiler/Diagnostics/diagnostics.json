@@ -741,6 +741,33 @@
     "isEnabledByDefault": true
   },
   {
+    "name": "DeviceFunctionNotExported",
+    "id": "GSH0088",
+    "title": "Device code of another assembly is not exported",
+    "messageFormat": "'{0}' is declared in '{1}', whose G# device code export holds no record of it. Build '{1}' with this version of G#, without GSharpExportDeviceCode=false; if it already exports device code, its build reported GSH0048 for '{0}', or '{0}' is a construction of a generic struct that '{1}' does not use itself.",
+    "category": "GSharpTranspiler",
+    "defaultSeverity": "Error",
+    "isEnabledByDefault": true
+  },
+  {
+    "name": "DeviceExportUnusable",
+    "id": "GSH0089",
+    "title": "Device code of another assembly cannot be used",
+    "messageFormat": "The device code of '{0}' in '{1}' cannot be used: {2}.",
+    "category": "GSharpTranspiler",
+    "defaultSeverity": "Error",
+    "isEnabledByDefault": true
+  },
+  {
+    "name": "DeviceExportNameCollision",
+    "id": "GSH0090",
+    "title": "Device code of two assemblies has the same C++ name",
+    "messageFormat": "'{0}' of '{1}' and the same path in '{2}' both become the C++ name '{3}'. Rename the namespace or the type in one of them.",
+    "category": "GSharpTranspiler",
+    "defaultSeverity": "Error",
+    "isEnabledByDefault": true
+  },
+  {
     "name": "StackLinqChainTooDeep",
     "id": "SLQ0001",
     "title": "StackLinq method chain is too deep",

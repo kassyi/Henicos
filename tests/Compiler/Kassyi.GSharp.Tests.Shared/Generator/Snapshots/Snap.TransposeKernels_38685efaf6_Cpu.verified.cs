@@ -120,8 +120,8 @@ switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-var col = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
-var row = BlockIndex.Y * BlockDimension.Y + ThreadIndex.Y;
+var col = global::Kassyi.GSharp.Core.BlockIndex.X * global::Kassyi.GSharp.Core.BlockDimension.X + global::Kassyi.GSharp.Core.ThreadIndex.X;
+var row = global::Kassyi.GSharp.Core.BlockIndex.Y * global::Kassyi.GSharp.Core.BlockDimension.Y + global::Kassyi.GSharp.Core.ThreadIndex.Y;
 if (col < width && row < height)
 {
 output[col * height + row] = input[row * width + col];

@@ -117,9 +117,9 @@ switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-int tid = ThreadIndex.X;
-rotLeftRes[tid] = System.Numerics.BitOperations.RotateLeft(val[tid], shift[tid]);
-rotRightRes[tid] = System.Numerics.BitOperations.RotateRight(val[tid], shift[tid]);
+int tid = global::Kassyi.GSharp.Core.ThreadIndex.X;
+rotLeftRes[tid] = global::System.Numerics.BitOperations.RotateLeft(val[tid], shift[tid]);
+rotRightRes[tid] = global::System.Numerics.BitOperations.RotateRight(val[tid], shift[tid]);
 __gsharp_ctx.__gsharp_state = -1;
 return;
 }
@@ -328,9 +328,9 @@ switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-int tid = ThreadIndex.X;
-rotLeftRes[tid] = System.Numerics.BitOperations.RotateLeft(val[tid], shift[tid]);
-rotRightRes[tid] = System.Numerics.BitOperations.RotateRight(val[tid], shift[tid]);
+int tid = global::Kassyi.GSharp.Core.ThreadIndex.X;
+rotLeftRes[tid] = global::System.Numerics.BitOperations.RotateLeft(val[tid], shift[tid]);
+rotRightRes[tid] = global::System.Numerics.BitOperations.RotateRight(val[tid], shift[tid]);
 __gsharp_ctx.__gsharp_state = -1;
 return;
 }

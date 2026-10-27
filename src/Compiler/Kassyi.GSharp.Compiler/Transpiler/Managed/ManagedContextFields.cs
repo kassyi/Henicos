@@ -63,7 +63,9 @@ internal static class ManagedContextFields
                 renamedLocals[key] = name;
             }
 
-            var contextField = new ManagedContextField(field, declaration.Type,
+            // The field is declared in the generated file, which has none of the user's using directives
+            var contextField = new ManagedContextField(field,
+                ManagedNameQualifier.Qualify(declaration.Type, semanticModel),
                 HoistedFieldTypeResolver.Resolve(field, semanticModel, kernelName), name);
 
             if (contextField.ResolvedType.IsRefLikeType)
@@ -76,7 +78,9 @@ internal static class ManagedContextFields
                 // A ref struct local is declared again on every resume, so its initializer is emitted as is
                 localInits.Add(contextField with
                 {
-                    Declarator = SharedMemorySiteKeyAnnotator.AddSharedMemorySiteKeys(field, semanticModel)
+                    Declarator = ManagedNameQualifier.Qualify(
+                        SharedMemorySiteKeyAnnotator.AddSharedMemorySiteKeys(field, semanticModel),
+                        semanticModel)
                 });
             }
             else

@@ -127,10 +127,10 @@ switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-int tid = ThreadIndex.X;
+int tid = global::Kassyi.GSharp.Core.ThreadIndex.X;
 #pragma warning disable GSH0029 // The block is freed below
 
-int* block = (int*)Gpu.Unsafe.Malloc(16);
+int* block = (int*)global::Kassyi.GSharp.Core.Gpu.Unsafe.Malloc(16);
 #pragma warning restore GSH0029
 for (int i = 0; i < 4; i++)
 {
@@ -144,7 +144,7 @@ sum += block[i];
 }
 
 output[tid] = sum;
-Gpu.Unsafe.Free(block);
+global::Kassyi.GSharp.Core.Gpu.Unsafe.Free(block);
 __gsharp_ctx.__gsharp_state = -1;
 return;
 }

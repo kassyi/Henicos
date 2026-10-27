@@ -423,8 +423,8 @@ public int gdimX;
 public int gdimY;
 public int gdimZ;
 public int tid;
-public PhysicsVector p;
-public SpecTypes types;
+public global::DebugReduc.PhysicsVector p;
+public global::DebugReduc.SpecTypes types;
 public global::DebugReduc.Point origin;
 public float distance;
 public global::DebugReduc.NestedPhysicsState nested;
@@ -433,9 +433,9 @@ public int i;
 public int counter;
 }
 public static unsafe void __gsharp_statemachine_DebugReduc__ComprehensiveSpecKernel__ProcessPhysics(global::DebugReduc.PhysicsVector[] particles, ref float totalMagnitude, ref bool successFlag, global::DebugReduc.SpecTypes largeStructVal, int particleCount, int unrollFactor, __gsharp_context_DebugReduc__ComprehensiveSpecKernel__ProcessPhysics __gsharp_ctx) {
-SharedMemory<int> staticCache = new SharedMemory<int>(10000, 0xe20e17017ad9529aUL);
-SharedMemory<float> dynamicCache = new SharedMemory<float>(particleCount, 0xe20e18017ad9544dUL);
-SharedMemory<int> targetTypedCache = new(256, 0xe20e15017ad94f34UL);
+global::Kassyi.GSharp.Core.SharedMemory<int> staticCache = new global::Kassyi.GSharp.Core.SharedMemory<int>(10000, 0xe20e17017ad9529aUL);
+global::Kassyi.GSharp.Core.SharedMemory<float> dynamicCache = new global::Kassyi.GSharp.Core.SharedMemory<float>(particleCount, 0xe20e18017ad9544dUL);
+global::Kassyi.GSharp.Core.SharedMemory<int> targetTypedCache = new(256, 0xe20e15017ad94f34UL);
 {
 switch (__gsharp_ctx.__gsharp_state)
 {
@@ -443,42 +443,42 @@ case 0:
 {
 successFlag = false;
 __gsharp_ctx.Gravity = 9.8f;
-__gsharp_ctx.tx = ThreadIndex.X;
-__gsharp_ctx.ty = ThreadIndex.Y;
-__gsharp_ctx.tz = ThreadIndex.Z;
-__gsharp_ctx.bx = BlockIndex.X;
-__gsharp_ctx.by = BlockIndex.Y;
-__gsharp_ctx.bz = BlockIndex.Z;
-__gsharp_ctx.bdimX = BlockDimension.X;
-__gsharp_ctx.bdimY = BlockDimension.Y;
-__gsharp_ctx.bdimZ = BlockDimension.Z;
-__gsharp_ctx.gdimX = GridDimension.X;
-__gsharp_ctx.gdimY = GridDimension.Y;
-__gsharp_ctx.gdimZ = GridDimension.Z;
+__gsharp_ctx.tx = global::Kassyi.GSharp.Core.ThreadIndex.X;
+__gsharp_ctx.ty = global::Kassyi.GSharp.Core.ThreadIndex.Y;
+__gsharp_ctx.tz = global::Kassyi.GSharp.Core.ThreadIndex.Z;
+__gsharp_ctx.bx = global::Kassyi.GSharp.Core.BlockIndex.X;
+__gsharp_ctx.by = global::Kassyi.GSharp.Core.BlockIndex.Y;
+__gsharp_ctx.bz = global::Kassyi.GSharp.Core.BlockIndex.Z;
+__gsharp_ctx.bdimX = global::Kassyi.GSharp.Core.BlockDimension.X;
+__gsharp_ctx.bdimY = global::Kassyi.GSharp.Core.BlockDimension.Y;
+__gsharp_ctx.bdimZ = global::Kassyi.GSharp.Core.BlockDimension.Z;
+__gsharp_ctx.gdimX = global::Kassyi.GSharp.Core.GridDimension.X;
+__gsharp_ctx.gdimY = global::Kassyi.GSharp.Core.GridDimension.Y;
+__gsharp_ctx.gdimZ = global::Kassyi.GSharp.Core.GridDimension.Z;
 __gsharp_ctx.tid = __gsharp_ctx.tx + __gsharp_ctx.bx * __gsharp_ctx.bdimX;
 if (!(__gsharp_ctx.tid < particleCount))
 goto case 2;
 __gsharp_ctx.p = particles[__gsharp_ctx.tid];
 __gsharp_ctx.types = largeStructVal;
-__gsharp_ctx.origin = new Point(0, 0);
+__gsharp_ctx.origin = new global::DebugReduc.Point(0, 0);
 __gsharp_ctx.distance = __gsharp_ctx.origin.X + __gsharp_ctx.p.X;
-__gsharp_ctx.nested = new NestedPhysicsState
+__gsharp_ctx.nested = new global::DebugReduc.NestedPhysicsState
 {
 Position = __gsharp_ctx.p,
 Velocity = __gsharp_ctx.p,
 StatusFlag = 1
 };
-__gsharp_ctx.mag = ComputeMagnitude(__gsharp_ctx.p);
-__gsharp_ctx.mag = (float)Math.Abs(__gsharp_ctx.mag);
+__gsharp_ctx.mag = global::DebugReduc.ComprehensiveSpecKernel.ComputeMagnitude(__gsharp_ctx.p);
+__gsharp_ctx.mag = (float)global::System.Math.Abs(__gsharp_ctx.mag);
 // 5. Automatic Loop Unrolling via Constant (for)
 for (__gsharp_ctx.i = 0; __gsharp_ctx.i < unrollFactor; __gsharp_ctx.i++)
 {
 if (__gsharp_ctx.i == 1)
 continue;
-__gsharp_ctx.mag = (float)Math.Max(__gsharp_ctx.mag, __gsharp_ctx.p.X * __gsharp_ctx.i + __gsharp_ctx.Gravity);
+__gsharp_ctx.mag = (float)global::System.Math.Max(__gsharp_ctx.mag, __gsharp_ctx.p.X * __gsharp_ctx.i + __gsharp_ctx.Gravity);
 }
 
-if (!IsPositive(__gsharp_ctx.mag))
+if (!global::DebugReduc.ComprehensiveSpecKernel.IsPositive(__gsharp_ctx.mag))
 {
 __gsharp_ctx.mag = 0;
 }
@@ -486,7 +486,7 @@ __gsharp_ctx.mag = 0;
 __gsharp_ctx.counter = 0;
 while (__gsharp_ctx.counter < 2)
 {
-__gsharp_ctx.mag = (float)Math.Min(__gsharp_ctx.mag, __gsharp_ctx.mag + 1);
+__gsharp_ctx.mag = (float)global::System.Math.Min(__gsharp_ctx.mag, __gsharp_ctx.mag + 1);
 __gsharp_ctx.counter++;
 }
 
@@ -518,23 +518,23 @@ case 1:
 // 10. Atomics and Out parameter
 if (__gsharp_ctx.tx == 0)
 {
-Gpu.AtomicAdd(ref totalMagnitude, dynamicCache[0]);
+global::Kassyi.GSharp.Core.Gpu.AtomicAdd(ref totalMagnitude, dynamicCache[0]);
 successFlag = true;
 }
 
 // 11. Phase 2 Features: InlineArray, unsafe fixed, AddWithCarry
-Vector8 inlineVec = new Vector8();
+global::DebugReduc.ComprehensiveSpecKernel.Vector8 inlineVec = new global::DebugReduc.ComprehensiveSpecKernel.Vector8();
 inlineVec[0] = 123;
 inlineVec[1] = 456;
 unsafe
 {
-PhysicsState state = new PhysicsState();
+global::DebugReduc.ComprehensiveSpecKernel.PhysicsState state = new global::DebugReduc.ComprehensiveSpecKernel.PhysicsState();
 state.Buffer[0] = inlineVec[0];
 state.Buffer[1] = inlineVec[1];
 ulong carry = 0;
-uint sum = Gpu.AddWithCarry(state.Buffer[0], state.Buffer[1], ref carry);
+uint sum = global::Kassyi.GSharp.Core.Gpu.AddWithCarry(state.Buffer[0], state.Buffer[1], ref carry);
 long borrow = 0;
-uint diff = Gpu.SubWithBorrow(sum, state.Buffer[1], ref borrow);
+uint diff = global::Kassyi.GSharp.Core.Gpu.SubWithBorrow(sum, state.Buffer[1], ref borrow);
 if (sum > diff)
 {
 state.Flags = 1;
@@ -768,7 +768,7 @@ switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-__gsharp_ctx.tid = ThreadIndex.X;
+__gsharp_ctx.tid = global::Kassyi.GSharp.Core.ThreadIndex.X;
 data[__gsharp_ctx.tid] = __gsharp_ctx.tid;
 __gsharp_ctx.__gsharp_yielded_for_grid_sync = true;
 __gsharp_ctx.__gsharp_state = 1;

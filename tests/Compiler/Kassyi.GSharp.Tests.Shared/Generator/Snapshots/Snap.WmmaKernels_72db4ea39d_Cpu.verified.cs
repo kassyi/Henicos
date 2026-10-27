@@ -128,14 +128,14 @@ switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-WmmaMatrixA<WmmaM16N16K16, sbyte, WmmaRowMajor> fragA = default;
-WmmaMatrixB<WmmaM16N16K16, sbyte, WmmaRowMajor> fragB = default;
-WmmaAccumulator<WmmaM16N16K16, int> acc = default;
-Wmma.Load(ref fragA, in a[0], 16);
-Wmma.Load(ref fragB, in b[0], 16);
-Wmma.Load(ref acc, in c[0], 16, WmmaMemoryLayout.RowMajor);
-MultiplyAccumulateHelper(ref acc, in fragA, in fragB);
-Wmma.Store(ref d[0], in acc, 16, WmmaMemoryLayout.RowMajor);
+global::Kassyi.GSharp.Core.WmmaMatrixA<global::Kassyi.GSharp.Core.WmmaM16N16K16, sbyte, global::Kassyi.GSharp.Core.WmmaRowMajor> fragA = default;
+global::Kassyi.GSharp.Core.WmmaMatrixB<global::Kassyi.GSharp.Core.WmmaM16N16K16, sbyte, global::Kassyi.GSharp.Core.WmmaRowMajor> fragB = default;
+global::Kassyi.GSharp.Core.WmmaAccumulator<global::Kassyi.GSharp.Core.WmmaM16N16K16, int> acc = default;
+global::Kassyi.GSharp.Core.Wmma.Load(ref fragA, in a[0], 16);
+global::Kassyi.GSharp.Core.Wmma.Load(ref fragB, in b[0], 16);
+global::Kassyi.GSharp.Core.Wmma.Load(ref acc, in c[0], 16, global::Kassyi.GSharp.Core.WmmaMemoryLayout.RowMajor);
+global::Kassyi.GSharp.Tests.Shared.Core.WmmaKernels.MultiplyAccumulateHelper(ref acc, in fragA, in fragB);
+global::Kassyi.GSharp.Core.Wmma.Store(ref d[0], in acc, 16, global::Kassyi.GSharp.Core.WmmaMemoryLayout.RowMajor);
 __gsharp_ctx.__gsharp_state = -1;
 return;
 }
@@ -349,14 +349,14 @@ switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-WmmaMatrixA<WmmaM16N16K16, sbyte, WmmaRowMajor> fragA = default;
-WmmaMatrixB<WmmaM16N16K16, sbyte, WmmaColumnMajor> fragB = default;
-WmmaAccumulator<WmmaM16N16K16, int> acc = default;
-Wmma.Load(ref fragA, in a[0], 16);
-Wmma.Load(ref fragB, in bColMajor[0], 16);
-Wmma.Load(ref acc, in c[0], 16, WmmaMemoryLayout.RowMajor);
-Wmma.MultiplyAccumulate(ref acc, in fragA, in fragB, in acc);
-Wmma.Store(ref d[0], in acc, 16, WmmaMemoryLayout.RowMajor);
+global::Kassyi.GSharp.Core.WmmaMatrixA<global::Kassyi.GSharp.Core.WmmaM16N16K16, sbyte, global::Kassyi.GSharp.Core.WmmaRowMajor> fragA = default;
+global::Kassyi.GSharp.Core.WmmaMatrixB<global::Kassyi.GSharp.Core.WmmaM16N16K16, sbyte, global::Kassyi.GSharp.Core.WmmaColumnMajor> fragB = default;
+global::Kassyi.GSharp.Core.WmmaAccumulator<global::Kassyi.GSharp.Core.WmmaM16N16K16, int> acc = default;
+global::Kassyi.GSharp.Core.Wmma.Load(ref fragA, in a[0], 16);
+global::Kassyi.GSharp.Core.Wmma.Load(ref fragB, in bColMajor[0], 16);
+global::Kassyi.GSharp.Core.Wmma.Load(ref acc, in c[0], 16, global::Kassyi.GSharp.Core.WmmaMemoryLayout.RowMajor);
+global::Kassyi.GSharp.Core.Wmma.MultiplyAccumulate(ref acc, in fragA, in fragB, in acc);
+global::Kassyi.GSharp.Core.Wmma.Store(ref d[0], in acc, 16, global::Kassyi.GSharp.Core.WmmaMemoryLayout.RowMajor);
 __gsharp_ctx.__gsharp_state = -1;
 return;
 }
@@ -570,14 +570,14 @@ switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-WmmaMatrixA<WmmaM16N16K16, sbyte, WmmaRowMajor> fragA = default;
-WmmaMatrixB<WmmaM16N16K16, sbyte, WmmaRowMajor> fragB = default;
-WmmaAccumulator<WmmaM16N16K16, int> acc = default;
-Wmma.Fill(ref acc, 0);
-Wmma.Load(ref fragA, in a[0], 16);
-Wmma.Load(ref fragB, in b[0], 16);
-Wmma.MultiplyAccumulate(ref acc, in fragA, in fragB, in acc);
-Wmma.Store(ref dColMajor[0], in acc, 16, WmmaMemoryLayout.ColumnMajor);
+global::Kassyi.GSharp.Core.WmmaMatrixA<global::Kassyi.GSharp.Core.WmmaM16N16K16, sbyte, global::Kassyi.GSharp.Core.WmmaRowMajor> fragA = default;
+global::Kassyi.GSharp.Core.WmmaMatrixB<global::Kassyi.GSharp.Core.WmmaM16N16K16, sbyte, global::Kassyi.GSharp.Core.WmmaRowMajor> fragB = default;
+global::Kassyi.GSharp.Core.WmmaAccumulator<global::Kassyi.GSharp.Core.WmmaM16N16K16, int> acc = default;
+global::Kassyi.GSharp.Core.Wmma.Fill(ref acc, 0);
+global::Kassyi.GSharp.Core.Wmma.Load(ref fragA, in a[0], 16);
+global::Kassyi.GSharp.Core.Wmma.Load(ref fragB, in b[0], 16);
+global::Kassyi.GSharp.Core.Wmma.MultiplyAccumulate(ref acc, in fragA, in fragB, in acc);
+global::Kassyi.GSharp.Core.Wmma.Store(ref dColMajor[0], in acc, 16, global::Kassyi.GSharp.Core.WmmaMemoryLayout.ColumnMajor);
 __gsharp_ctx.__gsharp_state = -1;
 return;
 }
@@ -784,14 +784,14 @@ switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-WmmaMatrixA<WmmaM8N8K4, double, WmmaRowMajor> fragA = default;
-WmmaMatrixB<WmmaM8N8K4, double, WmmaRowMajor> fragB = default;
-WmmaAccumulator<WmmaM8N8K4, double> acc = default;
-Wmma.Fill(ref acc, 0.0);
-Wmma.Load(ref fragA, in a[0], 4);
-Wmma.Load(ref fragB, in b[0], 8);
-Wmma.MultiplyAccumulate(ref acc, in fragA, in fragB, in acc);
-Wmma.Store(ref d[0], in acc, 8, WmmaMemoryLayout.RowMajor);
+global::Kassyi.GSharp.Core.WmmaMatrixA<global::Kassyi.GSharp.Core.WmmaM8N8K4, double, global::Kassyi.GSharp.Core.WmmaRowMajor> fragA = default;
+global::Kassyi.GSharp.Core.WmmaMatrixB<global::Kassyi.GSharp.Core.WmmaM8N8K4, double, global::Kassyi.GSharp.Core.WmmaRowMajor> fragB = default;
+global::Kassyi.GSharp.Core.WmmaAccumulator<global::Kassyi.GSharp.Core.WmmaM8N8K4, double> acc = default;
+global::Kassyi.GSharp.Core.Wmma.Fill(ref acc, 0.0);
+global::Kassyi.GSharp.Core.Wmma.Load(ref fragA, in a[0], 4);
+global::Kassyi.GSharp.Core.Wmma.Load(ref fragB, in b[0], 8);
+global::Kassyi.GSharp.Core.Wmma.MultiplyAccumulate(ref acc, in fragA, in fragB, in acc);
+global::Kassyi.GSharp.Core.Wmma.Store(ref d[0], in acc, 8, global::Kassyi.GSharp.Core.WmmaMemoryLayout.RowMajor);
 __gsharp_ctx.__gsharp_state = -1;
 return;
 }

@@ -143,7 +143,7 @@ switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-__gsharp_ctx.tid = ThreadIndex.X;
+__gsharp_ctx.tid = global::Kassyi.GSharp.Core.ThreadIndex.X;
 __gsharp_ctx.X = __gsharp_ctx.tid;
 __gsharp_ctx.__gsharp_state = 1;
 return;
@@ -151,7 +151,7 @@ return;
 
 case 1:
 {
-var p = new ReproPt
+var p = new global::Kassyi.GSharp.Tests.Shared.Syntax.ReproPt
 {
 X = 1,
 Y = 2
@@ -375,7 +375,7 @@ switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-__gsharp_ctx.tid = ThreadIndex.X;
+__gsharp_ctx.tid = global::Kassyi.GSharp.Core.ThreadIndex.X;
 __gsharp_ctx.X = __gsharp_ctx.tid;
 __gsharp_ctx.__gsharp_state = 1;
 return;
@@ -383,7 +383,7 @@ return;
 
 case 1:
 {
-var p = new ReproPt
+var p = new global::Kassyi.GSharp.Tests.Shared.Syntax.ReproPt
 {
 X = 1,
 Y = 2
@@ -605,7 +605,7 @@ switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-__gsharp_ctx.tid = ThreadIndex.X;
+__gsharp_ctx.tid = global::Kassyi.GSharp.Core.ThreadIndex.X;
 __gsharp_ctx.X = __gsharp_ctx.tid;
 __gsharp_ctx.__gsharp_state = 1;
 return;
@@ -613,7 +613,7 @@ return;
 
 case 1:
 {
-ReproPt p = default;
+global::Kassyi.GSharp.Tests.Shared.Syntax.ReproPt p = default;
 p.Y = 5;
 output[__gsharp_ctx.tid] = __gsharp_ctx.X * 100 + p.X + p.Y;
 __gsharp_ctx.__gsharp_state = -1;
@@ -824,7 +824,7 @@ switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-__gsharp_ctx.t = ThreadIndex.X;
+__gsharp_ctx.t = global::Kassyi.GSharp.Core.ThreadIndex.X;
 __gsharp_ctx.i = __gsharp_ctx.t;
 __gsharp_ctx.__gsharp_state = 1;
 return;
@@ -1070,7 +1070,7 @@ switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-__gsharp_ctx.t = ThreadIndex.X;
+__gsharp_ctx.t = global::Kassyi.GSharp.Core.ThreadIndex.X;
 __gsharp_ctx.acc = __gsharp_ctx.t;
 __gsharp_ctx.__gsharp_id_3_step = 10;
 __gsharp_ctx.__gsharp_state = 1;

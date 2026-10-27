@@ -1,3 +1,5 @@
+using Kassyi.GSharp.Compiler.Models;
+
 namespace Kassyi.GSharp.Compiler.Transpiler;
 
 /// <summary>
@@ -66,6 +68,12 @@ internal static class GlobalCppNames
         s_constructorNames.GetValue(constructor, static symbol =>
         {
             var ctor = (IMethodSymbol)symbol;
+            // A constructor of metadata has no declaration order; its assembly recorded the name
+            if (DeviceExportTable.TryGetRecordedName(ctor, out var recorded))
+            {
+                return recorded;
+            }
+
             var body = GSharpNameEncoding.Encode(GetTypePath(ctor.ContainingType));
             var ordinal = GetConstructorOverloadOrdinal(ctor);
             if (ordinal >= 0)
@@ -107,9 +115,22 @@ internal static class GlobalCppNames
     public static string GetKernelDerivedName(string prefix, IMethodSymbol kernel) =>
         Shorten(prefix, GetFunctionPathBody(kernel));
 
+    // [WHY] A function of metadata has no declaration order (_o{n}); the body of its name comes from the name its
+    // assembly recorded (the full one when it was shortened), so every name derived from it matches that assembly
     private static string GetFunctionPathBody(IMethodSymbol method) =>
         s_functionPathBodies.GetValue(GetDefinition(method), static definition =>
-            GSharpNameEncoding.Encode(GetFunctionPath((IMethodSymbol)definition)));
+            definition.DeclaringSyntaxReferences.IsEmpty && DeviceExportTable.TryFind(definition, out var imported) &&
+            imported.Record.Kind == DeviceExportRecord.FunctionKind
+                ? GetRecordedBody(imported.Record)
+                : GSharpNameEncoding.Encode(GetFunctionPath((IMethodSymbol)definition)));
+
+    private static string GetRecordedBody(DeviceExportRecord record)
+    {
+        var full = record.CppFullName.Length > 0 ? record.CppFullName : record.CppName;
+        return full.StartsWith(GSharpNameEncoding.FunctionPrefix, StringComparison.Ordinal)
+            ? full[GSharpNameEncoding.FunctionPrefix.Length..]
+            : full;
+    }
 
     /// <summary>The C# path of <paramref name="method"/>: the path of its containing type and the method.</summary>
     public static GlobalNamePath GetFunctionPath(IMethodSymbol method)

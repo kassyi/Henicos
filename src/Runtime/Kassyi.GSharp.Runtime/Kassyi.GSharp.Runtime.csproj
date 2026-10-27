@@ -7,6 +7,8 @@
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
     <CompilerGeneratedFilesOutputPath>$(BaseIntermediateOutputPath)generated</CompilerGeneratedFilesOutputPath>
+    <!-- No device code for other assemblies: the runtime declares no [GpuDeviceFunction], and its structs are host types -->
+    <GSharpExportDeviceCode>false</GSharpExportDeviceCode>
   </PropertyGroup>
 
   <ItemGroup>
@@ -25,6 +27,7 @@
     <AdditionalFiles Include="$(MSBuildThisFileDirectory)..\..\NativeApi\curand_api.yml" Link="NativeApi\curand_api.yml" GSharpApi="true" />
     <!-- Mirrors build\Kassyi.GSharp.Compiler.targets, which ProjectReference consumers do not import. -->
     <CompilerVisibleItemMetadata Include="AdditionalFiles" MetadataName="GSharpApi" />
+    <CompilerVisibleProperty Include="GSharpExportDeviceCode" />
   </ItemGroup>
 
   <ItemGroup>

@@ -116,7 +116,7 @@ switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-int i = ThreadIndex.X;
+int i = global::Kassyi.GSharp.Core.ThreadIndex.X;
 // No decimal point: C++ needs "2.0f"; an uppercase suffix and an exponent must survive as well
 values[i] = values[i] * 2f + 1F + 1e1f;
 __gsharp_ctx.__gsharp_state = -1;
@@ -305,7 +305,7 @@ switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-int i = ThreadIndex.X;
+int i = global::Kassyi.GSharp.Core.ThreadIndex.X;
 // C++ has no "d" suffix
 values[i] = values[i] * 2d + 1.5d + 1D;
 __gsharp_ctx.__gsharp_state = -1;

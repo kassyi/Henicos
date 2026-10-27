@@ -117,7 +117,7 @@ switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-int tid = ThreadIndex.X;
+int tid = global::Kassyi.GSharp.Core.ThreadIndex.X;
 output[tid] = input[tid] * 2;
 __gsharp_ctx.__gsharp_state = -1;
 return;

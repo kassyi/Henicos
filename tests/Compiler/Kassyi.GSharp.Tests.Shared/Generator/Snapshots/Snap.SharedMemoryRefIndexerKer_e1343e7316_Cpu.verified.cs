@@ -135,13 +135,13 @@ public bool __gsharp_yielded_for_grid_sync;
 public int tid;
 }
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Core__SharedMemoryRefIndexerKernels__AtomicAddSharedMemoryKernel(int[] output, __gsharp_context_Kassyi__GSharp__Tests__Shared__Core__SharedMemoryRefIndexerKernels__AtomicAddSharedMemoryKernel __gsharp_ctx) {
-global::Kassyi.GSharp.Core.SharedMemory<int> counter = new SharedMemory<int>(1, 0x62918454b9598ef2UL);
+global::Kassyi.GSharp.Core.SharedMemory<int> counter = new global::Kassyi.GSharp.Core.SharedMemory<int>(1, 0x62918454b9598ef2UL);
 {
 switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-__gsharp_ctx.tid = ThreadIndex.X;
+__gsharp_ctx.tid = global::Kassyi.GSharp.Core.ThreadIndex.X;
 if (__gsharp_ctx.tid == 0)
 {
 counter[0] = 0;
@@ -153,7 +153,7 @@ return;
 
 case 1:
 {
-Gpu.AtomicAdd(ref counter[0], 1);
+global::Kassyi.GSharp.Core.Gpu.AtomicAdd(ref counter[0], 1);
 __gsharp_ctx.__gsharp_state = 2;
 return;
 }
@@ -365,17 +365,17 @@ public bool __gsharp_yielded_for_grid_sync;
 public int tid;
 }
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Core__SharedMemoryRefIndexerKernels__MBarrierSharedMemoryKernel(int[] output, __gsharp_context_Kassyi__GSharp__Tests__Shared__Core__SharedMemoryRefIndexerKernels__MBarrierSharedMemoryKernel __gsharp_ctx) {
-global::Kassyi.GSharp.Core.SharedMemory<ulong> bar = new SharedMemory<ulong>(1, 0xdd78a4a1ffca49ecUL);
-global::Kassyi.GSharp.Core.SharedMemory<int> data = new SharedMemory<int>(32, 0xdd78a5a1ffca4b9fUL);
+global::Kassyi.GSharp.Core.SharedMemory<ulong> bar = new global::Kassyi.GSharp.Core.SharedMemory<ulong>(1, 0xdd78a4a1ffca49ecUL);
+global::Kassyi.GSharp.Core.SharedMemory<int> data = new global::Kassyi.GSharp.Core.SharedMemory<int>(32, 0xdd78a5a1ffca4b9fUL);
 {
 switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-__gsharp_ctx.tid = ThreadIndex.X;
+__gsharp_ctx.tid = global::Kassyi.GSharp.Core.ThreadIndex.X;
 if (__gsharp_ctx.tid == 0)
 {
-Gpu.MBarrierInit(ref bar[0], 32);
+global::Kassyi.GSharp.Core.Gpu.MBarrierInit(ref bar[0], 32);
 }
 
 __gsharp_ctx.__gsharp_state = 1;
@@ -385,8 +385,8 @@ return;
 case 1:
 {
 data[__gsharp_ctx.tid] = __gsharp_ctx.tid * 3;
-Gpu.MBarrierArrive(ref bar[0]);
-Gpu.MBarrierWait(ref bar[0], 0);
+global::Kassyi.GSharp.Core.Gpu.MBarrierArrive(ref bar[0]);
+global::Kassyi.GSharp.Core.Gpu.MBarrierWait(ref bar[0], 0);
 output[__gsharp_ctx.tid] = data[(__gsharp_ctx.tid + 1) % 32];
 __gsharp_ctx.__gsharp_state = -1;
 return;

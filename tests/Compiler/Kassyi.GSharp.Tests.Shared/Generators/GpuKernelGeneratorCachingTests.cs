@@ -1,3 +1,4 @@
+using Kassyi.GSharp.Compiler.Aot;
 using System.Text;
 using Kassyi.GSharp.Compiler.Marshaling;
 using Kassyi.GSharp.Compiler.Models;
@@ -113,19 +114,22 @@ public class GpuKernelGeneratorCachingTests(ITestOutputHelper output)
         Assert.Equal(IncrementalStepRunReason.Cached, reasons["SecondKernels"]);
     }
 
-    // The generator emits nothing for a project without kernels: no shared sources, no state machines, no artifact
+    // A project without kernels gets no shared sources, no state machines and no artifact, only the records that let
+    // another assembly's kernels call its device functions (cross-assembly-device-code.md §3.3)
     [Theory]
     [InlineData("Cpu")]
     [InlineData("Cuda")]
     [Scenario(TestScenario.Boundary)]
-    public void Test_DeviceFunctionsOnly_EmitNothing(string dialect)
+    public void Test_DeviceFunctionsOnly_EmitOnlyTheDeviceExports(string dialect)
     {
         var driver = CreateDriver(dialect).RunGenerators(CreateCompilation(s_deviceFunctionsOnly));
 
         var result = driver.GetRunResult().Results.Single();
         Assert.Null(result.Exception);
         Assert.Empty(result.Diagnostics);
-        Assert.Empty(result.GeneratedSources);
+        // The records, and the managed state machines that a consumer's managed fallback calls (C3)
+        Assert.Equal([DeviceExportEmitter.HintName, "TestNamespace__DeviceOnly__DeviceOnlyFunctions.DeviceStateMachines.g.cs"],
+            result.GeneratedSources.Select(static s => s.HintName).Order(StringComparer.Ordinal));
         // The device functions were transpiled; only the outputs are gated
         Assert.Equal(2, result.TrackedSteps[GpuKernelGenerator.DeviceFunctionTrackingName]
             .SelectMany(static run => run.Outputs)

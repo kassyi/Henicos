@@ -147,7 +147,7 @@ return;
 case 1:
 {
 // SingleThread test
-Gpu.SingleThread(() =>
+global::Kassyi.GSharp.Core.Gpu.SingleThread(() =>
 {
 data[0] = 999;
 });

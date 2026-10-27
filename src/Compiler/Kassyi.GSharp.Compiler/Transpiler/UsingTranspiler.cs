@@ -211,7 +211,10 @@ internal static class UsingTranspiler
             return false;
         }
 
-        if (!TryGetDisposeBody(dispose, compilation, out _, out _, out _))
+        // A struct of another assembly brings its Dispose definition with its record (DeviceExportTable)
+        if (!TryGetDisposeBody(dispose, compilation, out _, out _, out _) &&
+            !HasImportedDispose(named, compilation, context.Emitter.Dialect) &&
+            !HasUnusableRecord(named, compilation, context.Emitter.Dialect))
         {
             context.Reporter.Fail(GSharpDiagnostics.UnsupportedSyntax, node, DisposeWithoutBody);
             return false;
@@ -229,6 +232,17 @@ internal static class UsingTranspiler
         resourceType = named;
         return true;
     }
+
+    // A struct of another assembly whose record holds its Dispose definition for the dialect
+    private static bool HasImportedDispose(INamedTypeSymbol type, Compilation compilation, ITranspilerDialect dialect) =>
+        DeviceExportTable.IsOutside(type, compilation) && DeviceExportTable.TryFind(type, out var imported) &&
+        (dialect.IsCuda ? imported.Record.CudaDispose : imported.Record.CppDispose).Length > 0;
+
+    // A struct of another assembly whose record failed in the dialect or was written by another G#: the analyzer reports
+    // the using (GSH0089, ImportedDeviceCodeRule), not a Dispose without a body
+    private static bool HasUnusableRecord(INamedTypeSymbol type, Compilation compilation, ITranspilerDialect dialect) =>
+        DeviceExportTable.IsOutside(type, compilation) && DeviceExportTable.TryFind(type, out var imported) &&
+        (!imported.IsCompatible || imported.FailedFor(dialect.IsCuda));
 
     // The body of `void Dispose() { ... }` or `=> expr`, declared in a tree of the compilation
     private static bool TryGetDisposeBody(IMethodSymbol dispose, Compilation compilation,
@@ -254,17 +268,66 @@ internal static class UsingTranspiler
     /// Call it after the method body and before the struct definitions are written: a <c>Dispose</c> body can use more
     /// structs, and dispose others, which this adds to the lists it reads.
     /// </remarks>
-    public static void WriteDisposeDefinitions(ref TranspileContext context)
+    /// <param name="context">The transpilation of the method.</param>
+    /// <param name="perStruct">
+    /// When given, receives each definition apart as well, with the includes it needs and whether it failed (a device
+    /// code export records it with its struct).
+    /// </param>
+    /// <param name="isolate">
+    /// With <paramref name="perStruct"/>: whether a failure or an exception stays with the definition instead of also
+    /// reaching the transpilation (<c>StructTranspiler.WriteDefinitionPart</c>).
+    /// </param>
+    public static void WriteDisposeDefinitions(ref TranspileContext context,
+        ImmutableArray<StructSourcePart>.Builder? perStruct = null, bool isolate = false)
     {
         var compilation = context.Query.SemanticModel.Compilation;
         for (var i = 0; i < context.Emitter.DisposedStructs.Count; i++)
         {
             var type = context.Emitter.DisposedStructs[i];
-            if (FindDisposeMethod(type, compilation) is { } dispose &&
-                TryGetDisposeBody(dispose, compilation, out var declaration, out var block, out var expression))
+            if (FindDisposeMethod(type, compilation) is not { } dispose ||
+                !TryGetDisposeBody(dispose, compilation, out var declaration, out var block, out var expression))
+            {
+                continue;
+            }
+
+            if (perStruct == null)
+            {
+                WriteDisposeDefinition(type, declaration, block, expression, ref context);
+                continue;
+            }
+
+            var writer = context.Emitter.Writer;
+            var includes = context.Emitter.RequiredIncludes;
+            var reporter = context.Reporter;
+            var own = new HashSet<string>(StringComparer.Ordinal);
+            var failure = new PartFailure();
+            var internalError = "";
+            using var structWriter = new SourceWriter();
+            context.Emitter.Writer = structWriter;
+            context.Emitter.RequiredIncludes = own;
+            context.Reporter = reporter.Intercept(failure.Mark, forward: !isolate);
+            try
             {
                 WriteDisposeDefinition(type, declaration, block, expression, ref context);
             }
+            catch (Exception exception) when (isolate && exception is not OperationCanceledException)
+            {
+                // [WHY] Not swallowed: the struct's record is failed and keeps the message (InternalError)
+                failure.Mark();
+                internalError = PartFailure.Describe(exception);
+            }
+            finally
+            {
+                context.Emitter.Writer = writer;
+                context.Emitter.RequiredIncludes = includes;
+                context.Reporter = reporter;
+                includes.UnionWith(own);
+            }
+
+            var definition = structWriter.ToString();
+            writer.Append(definition);
+            perStruct.Add(new StructSourcePart(type, definition, StructTranspiler.ToIncludes(own), failure.Failed,
+                internalError));
         }
     }
 

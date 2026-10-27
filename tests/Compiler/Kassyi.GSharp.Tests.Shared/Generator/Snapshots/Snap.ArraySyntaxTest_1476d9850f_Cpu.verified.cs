@@ -119,7 +119,7 @@ switch (__gsharp_ctx.__gsharp_state)
 case 0:
 {
 // Valid implicit stackalloc
-Span<int> implicitStackAlloc = stackalloc[]
+global::System.Span<int> implicitStackAlloc = stackalloc[]
 {
 1,
 2,
@@ -133,9 +133,9 @@ int[] implicitArray = new[]
 6
 };
 // Collection expression (C# 12)
-Span<int> collectionExpr = [7, 8, 9];
+global::System.Span<int> collectionExpr = [7, 8, 9];
 // Single element
-Span<int> singleStackAlloc = stackalloc[]
+global::System.Span<int> singleStackAlloc = stackalloc[]
 {
 42
 };

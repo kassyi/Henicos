@@ -116,7 +116,8 @@ internal static class ObjectCreationHelper
         ref TranspileContext context, out string mappedFunction)
     {
         mappedFunction = string.Empty;
-        if (constructor != null && StructTranspiler.IsEmittedStructConstructor(constructor))
+        if (constructor != null &&
+            StructTranspiler.IsEmittedStructConstructor(constructor, context.Query.SemanticModel.Compilation))
         {
             return StructCreationKind.Factory;
         }

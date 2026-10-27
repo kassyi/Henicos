@@ -159,11 +159,11 @@ switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-int tid = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
+int tid = global::Kassyi.GSharp.Core.BlockIndex.X * global::Kassyi.GSharp.Core.BlockDimension.X + global::Kassyi.GSharp.Core.ThreadIndex.X;
 if (tid < length)
 {
-LifecycleObjectState s = states[tid];
-states[tid] = TransformState(s, multiplier);
+global::Kassyi.GSharp.Tests.Shared.Syntax.LifecycleObjectState s = states[tid];
+states[tid] = global::Kassyi.GSharp.Tests.Shared.Syntax.ObjectLifecycleKernels.TransformState(s, multiplier);
 }
 
 __gsharp_ctx.__gsharp_state = -1;
@@ -374,10 +374,10 @@ switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-int tid = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
+int tid = global::Kassyi.GSharp.Core.BlockIndex.X * global::Kassyi.GSharp.Core.BlockDimension.X + global::Kassyi.GSharp.Core.ThreadIndex.X;
 if (tid < length)
 {
-LifecycleObjectState state = default;
+global::Kassyi.GSharp.Tests.Shared.Syntax.LifecycleObjectState state = default;
 state.Id = tid + 1;
 state.Value = inputValues[tid];
 state.Status = inputValues[tid] < 0 ? -1 : (inputValues[tid] == 0 ? 0 : 1);

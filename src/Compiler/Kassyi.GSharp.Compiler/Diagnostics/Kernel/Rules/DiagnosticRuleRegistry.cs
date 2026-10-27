@@ -9,6 +9,7 @@ internal static class DiagnosticRuleRegistry
         GpuFinalizerRule.Instance,
         GpuMacroArgumentRule.Instance,
         ImplicitVarNeedsSuffixRule.Instance,
+        ImportedDeviceCodeRule.Instance,
         IteratorConsumptionRule.Instance,
         KernelSignatureRule.Instance,
         LinqNotSupportedRule.Instance,

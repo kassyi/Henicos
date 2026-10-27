@@ -347,13 +347,13 @@ public bool __gsharp_yielded_for_grid_sync;
 public bool ok;
 public int bitwise;
 public float mag;
-public Tier1FixedArray arr;
+public global::Kassyi.GSharp.Tests.Shared.Syntax.Tier1FixedArray arr;
 public float sum;
 public float foreachSum;
-public Func<float, float, float> multiplier;
+public global::System.Func<float, float, float> multiplier;
 }
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__Tier1IntegrationKernels__AllInOneKernel(int[] intInput, float[] floatInput, float[] results, global::Kassyi.GSharp.Tests.Shared.Syntax.Tier1CustomStruct config, ulong[] globalCounter, int count, int dynamicSharedSize, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__Tier1IntegrationKernels__AllInOneKernel __gsharp_ctx) {
-SharedMemory<float> dynamicSharedMem = new SharedMemory<float>(dynamicSharedSize, 0xf4a8b89f8fdf4f71UL);
+global::Kassyi.GSharp.Core.SharedMemory<float> dynamicSharedMem = new global::Kassyi.GSharp.Core.SharedMemory<float>(dynamicSharedSize, 0xf4a8b89f8fdf4f71UL);
 {
 switch (__gsharp_ctx.__gsharp_state)
 {
@@ -363,18 +363,18 @@ case 0:
 for (int __gsharp_unroll_0 = global::Kassyi.GSharp.Core.ManagedGpuContext.BlockDimX * global::Kassyi.GSharp.Core.ManagedGpuContext.BlockIdxX + global::Kassyi.GSharp.Core.ManagedGpuContext.ThreadIdxX; __gsharp_unroll_0 < (count); __gsharp_unroll_0 += global::Kassyi.GSharp.Core.ManagedGpuContext.BlockDimX * global::Kassyi.GSharp.Core.ManagedGpuContext.GridDimX)
 {
 // Local function with AggressiveInlining
-[MethodImpl(MethodImplOptions.AggressiveInlining)]
+[global::System.Runtime.CompilerServices.MethodImpl(global::System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
 int LocalInlineFunc(int x) => x + 5 - 5; // effectively x
 // Tuple, tuple swap, & Inline out var (SYN-03)
 (int a, int b) = (LocalInlineFunc(__gsharp_unroll_0), __gsharp_unroll_0 * 2);
 (a, b) = (b, a); // Swap
 (a, b) = (b, a); // Swap back
-__gsharp_ctx.ok = TryProcess(intInput[__gsharp_unroll_0], out var processed);
+__gsharp_ctx.ok = global::Kassyi.GSharp.Tests.Shared.Syntax.Tier1IntegrationKernels.TryProcess(intInput[__gsharp_unroll_0], out var processed);
 __gsharp_ctx.bitwise = (a << 1) | (b >> 1) ^ 0xFF;
 __gsharp_ctx.bitwise &= ~1;
-__gsharp_ctx.mag = HelperMath(floatInput[__gsharp_unroll_0], (float)processed);
-__gsharp_ctx.mag = HelperMathAggressive(__gsharp_ctx.mag); // SYN-28
-__gsharp_ctx.mag = (float)Math.Max(__gsharp_ctx.mag, config.FloatVal);
+__gsharp_ctx.mag = global::Kassyi.GSharp.Tests.Shared.Syntax.Tier1IntegrationKernels.HelperMath(floatInput[__gsharp_unroll_0], (float)processed);
+__gsharp_ctx.mag = global::Kassyi.GSharp.Tests.Shared.Syntax.Tier1IntegrationKernels.HelperMathAggressive(__gsharp_ctx.mag); // SYN-28
+__gsharp_ctx.mag = (float)global::System.Math.Max(__gsharp_ctx.mag, config.FloatVal);
 // SYN-01: Switch expression
 __gsharp_ctx.mag += (__gsharp_unroll_0 % 3) switch
 {
@@ -382,7 +382,7 @@ __gsharp_ctx.mag += (__gsharp_unroll_0 % 3) switch
 1 => 2.0f,
 _ => 3.0f
 };
-__gsharp_ctx.arr = new Tier1FixedArray();
+__gsharp_ctx.arr = new global::Kassyi.GSharp.Tests.Shared.Syntax.Tier1FixedArray();
 __gsharp_ctx.arr[0] = __gsharp_ctx.mag;
 __gsharp_ctx.arr[1] = __gsharp_ctx.mag * 2.0f;
 __gsharp_ctx.arr[2] = __gsharp_ctx.mag * 3.0f;
@@ -404,7 +404,7 @@ __gsharp_ctx.foreachSum += val;
 
 __gsharp_ctx.sum += __gsharp_ctx.foreachSum;
 {
-ReadOnlySpan<float> coll = [1.0f, 2.0f, 3.0f, 4.0f];
+global::System.ReadOnlySpan<float> coll = [1.0f, 2.0f, 3.0f, 4.0f];
 float collSum = 0;
 foreach (var val in coll)
 {
@@ -415,7 +415,7 @@ __gsharp_ctx.sum += collSum + coll.Length;
 }
 
 {
-Span<float> stackBuf = stackalloc float[]
+global::System.Span<float> stackBuf = stackalloc float[]
 {
 5.0f,
 10.0f,
@@ -436,17 +436,17 @@ __gsharp_ctx.sum = __gsharp_ctx.multiplier(__gsharp_ctx.sum, 2.0f);
 // Atomic Operations (SYN-49)
 if (__gsharp_ctx.ok && config.BoolVal)
 {
-Gpu.AtomicAdd(ref globalCounter[0], (ulong)__gsharp_ctx.bitwise);
+global::Kassyi.GSharp.Core.Gpu.AtomicAdd(ref globalCounter[0], (ulong)__gsharp_ctx.bitwise);
 }
 
-dynamicSharedMem[ThreadIndex.X] = __gsharp_ctx.sum;
-Gpu.SyncThreads(); // GBI-31
+dynamicSharedMem[global::Kassyi.GSharp.Core.ThreadIndex.X] = __gsharp_ctx.sum;
+global::Kassyi.GSharp.Core.Gpu.SyncThreads(); // GBI-31
 // Complex ternary (GSH-01)
-float finalVal = (__gsharp_ctx.bitwise > 0) ? (dynamicSharedMem[ThreadIndex.X] > 10.0f ? 10.0f : dynamicSharedMem[ThreadIndex.X]) : 0.0f;
+float finalVal = (__gsharp_ctx.bitwise > 0) ? (dynamicSharedMem[global::Kassyi.GSharp.Core.ThreadIndex.X] > 10.0f ? 10.0f : dynamicSharedMem[global::Kassyi.GSharp.Core.ThreadIndex.X]) : 0.0f;
 // SYN-14: fixed buffers inside structs
 unsafe
 {
-Tier1FixedBufferStruct fbs = new Tier1FixedBufferStruct();
+global::Kassyi.GSharp.Tests.Shared.Syntax.Tier1IntegrationKernels.Tier1FixedBufferStruct fbs = new global::Kassyi.GSharp.Tests.Shared.Syntax.Tier1IntegrationKernels.Tier1FixedBufferStruct();
 fbs.Data[0] = __gsharp_ctx.bitwise;
 finalVal += fbs.Data[0];
 }
@@ -456,8 +456,8 @@ int? maybeVal = default;
 int actualVal = maybeVal ?? 5; // Should be 5
 finalVal += actualVal;
 // BCL-01 & BCL-02: System.Numerics.BitOperations
-int popCount = System.Numerics.BitOperations.PopCount((uint)__gsharp_ctx.bitwise);
-int leadingZeroes = System.Numerics.BitOperations.LeadingZeroCount((uint)__gsharp_ctx.bitwise);
+int popCount = global::System.Numerics.BitOperations.PopCount((uint)__gsharp_ctx.bitwise);
+int leadingZeroes = global::System.Numerics.BitOperations.LeadingZeroCount((uint)__gsharp_ctx.bitwise);
 finalVal += popCount + leadingZeroes;
 // SYN-90: Complex Control Flow
 int loopCounter = 0;

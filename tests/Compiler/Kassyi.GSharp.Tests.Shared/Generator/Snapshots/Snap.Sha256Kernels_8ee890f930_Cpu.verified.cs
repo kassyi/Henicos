@@ -207,7 +207,7 @@ case 0:
 {
 for (int __gsharp_unroll_0 = global::Kassyi.GSharp.Core.ManagedGpuContext.BlockDimX * global::Kassyi.GSharp.Core.ManagedGpuContext.BlockIdxX + global::Kassyi.GSharp.Core.ManagedGpuContext.ThreadIdxX; __gsharp_unroll_0 < (numMessages); __gsharp_unroll_0 += global::Kassyi.GSharp.Core.ManagedGpuContext.BlockDimX * global::Kassyi.GSharp.Core.ManagedGpuContext.GridDimX)
 {
-ComputeBlock(__gsharp_unroll_0, input, output);
+global::Henicos.Benchmarks.ComputeBenchmarks.Sha256Kernels.ComputeBlock(__gsharp_unroll_0, input, output);
 }
 
 __gsharp_ctx.__gsharp_state = -1;

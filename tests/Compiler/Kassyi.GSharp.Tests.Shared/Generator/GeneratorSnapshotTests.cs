@@ -55,21 +55,36 @@ public partial class GeneratorSnapshotTests : Kassyi.GSharp.Tests.Shared.Helpers
 
     public static TheoryData<string> GetSnapshotTestCases() => SnapshotTestCaseSource.GetTestCases();
 
+    private const string StdlibAssemblyName = "Kassyi.GSharp.Stdlib.GpuMath";
+
+    // The options are those of a project that exports its device code (the default): a snapshot holds the managed state
+    // machines of the suspending device functions (*.DeviceStateMachines.g.cs) on both dialects, while the build of
+    // Tests.Cuda (GSharpExportDeviceCode=false) does not emit them.
+    // [WHY] A standard library kernel is compiled against the standard library itself, which holds the device code
+    // records of the kernel file's own functions; a real build compiles the file with the rest of its assembly and
+    // imports nothing from itself. The test assemblies export nothing (GSharpExportDeviceCode=false in their projects)
+    private static Dictionary<string, string>? CreateSnapshotOptions(bool isStdlibKernel) =>
+        isStdlibKernel
+            ? new Dictionary<string, string> { ["build_property.GSharpDeviceImportExclude"] = StdlibAssemblyName }
+            : null;
+
+    private static bool IsStdlibKernel(string sourceDir) =>
+        sourceDir.IndexOf("Kernels", StringComparison.OrdinalIgnoreCase) >= 0 && sourceDir.Contains("Stdlib");
+
     private async Task VerifyGeneratorSnapshotAsync(string source, string testName, string sourceDir, string dialect)
     {
 #pragma warning disable RS0030
         var parseOptions = new CSharpParseOptions(LanguageVersion.Preview);
 #pragma warning restore RS0030
         var compilation = await BuildCompilationAsync(source, testName, sourceDir, parseOptions);
-        var runResult = RunGenerator(compilation, parseOptions, dialect);
+        var runResult = RunGenerator(compilation, parseOptions, dialect, CreateSnapshotOptions(IsStdlibKernel(sourceDir)));
         await VerifySnapshotAsync(runResult, testName, dialect);
     }
 
     private async Task<CSharpCompilation> BuildCompilationAsync(
         string source, string testName, string sourceDir, CSharpParseOptions parseOptions)
     {
-        bool isStdlibKernel = sourceDir.IndexOf("Kernels", StringComparison.OrdinalIgnoreCase) >= 0 &&
-                              sourceDir.Contains("Stdlib");
+        bool isStdlibKernel = IsStdlibKernel(sourceDir);
 
         var syntaxTrees = await CollectSyntaxTreesAsync(source, testName, sourceDir, parseOptions, isStdlibKernel);
 
@@ -77,15 +92,10 @@ public partial class GeneratorSnapshotTests : Kassyi.GSharp.Tests.Shared.Helpers
             .WithOptions(new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary).WithAllowUnsafe(true))
             .AddReferences(Kassyi.GSharp.Tests.Shared.Helpers.RoslynTestUtility.BaseReferences);
 
-        if (isStdlibKernel)
-        {
-            var stdlibRef = compilation.References.FirstOrDefault(r =>
-                r.Display != null && r.Display.Contains("Kassyi.GSharp.Stdlib.GpuMath.dll"));
-            if (stdlibRef != null)
-            {
-                compilation = compilation.RemoveReferences(stdlibRef);
-            }
-        }
+        // [WHY] A standard library kernel keeps the standard library's reference: the kernel file uses its other types
+        // (BufferContext, ...), which the snapshot does not compile from source. The removal by path that stood here never
+        // matched (MegaCompilationCache references the library through an image, without a path), so the snapshots were
+        // made with the reference; its records are kept out by GSharpDeviceImportExclude instead (CreateSnapshotOptions)
 
         compilation = compilation.AddSyntaxTrees(syntaxTrees);
 
@@ -166,7 +176,7 @@ public partial class GeneratorSnapshotTests : Kassyi.GSharp.Tests.Shared.Helpers
     }
 
     private static GeneratorDriverRunResult RunGenerator(
-        CSharpCompilation compilation, CSharpParseOptions parseOptions, string dialect)
+        CSharpCompilation compilation, CSharpParseOptions parseOptions, string dialect, Dictionary<string, string>? options)
     {
         var generator = new GpuKernelGenerator();
         var cudaGenerator = new CudaImportGenerator();
@@ -174,7 +184,7 @@ public partial class GeneratorSnapshotTests : Kassyi.GSharp.Tests.Shared.Helpers
             generators: new ISourceGenerator[] { generator.AsSourceGenerator(), cudaGenerator.AsSourceGenerator() },
             additionalTexts: null,
             parseOptions: parseOptions,
-            optionsProvider: new Kassyi.GSharp.Tests.Shared.Helpers.TestAnalyzerConfigOptionsProvider(dialect));
+            optionsProvider: new Kassyi.GSharp.Tests.Shared.Helpers.TestAnalyzerConfigOptionsProvider(dialect, options));
 
         driver = driver.RunGeneratorsAndUpdateCompilation(compilation, out _, out var generatorDiagnostics);
 

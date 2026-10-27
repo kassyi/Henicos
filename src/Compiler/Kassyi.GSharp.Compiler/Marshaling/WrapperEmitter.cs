@@ -93,30 +93,64 @@ internal static class WrapperEmitter
         writer.AppendLine($"{header.Accessibility} partial class {header.Name}");
     }
 
+    /// <summary>The assembly of StackLinq, whose namespace the generated managed code imports when it is referenced.</summary>
+    public const string StackLinqAssemblyName = "Kassyi.ZeroAlloc.Linq";
+
     /// <summary>
     /// Emits the managed state machines and frames of the device functions in <paramref name="header"/>'s class that
     /// may suspend, as a part of that partial class.
     /// </summary>
-    public static string GenerateDeviceStateMachines(in HostClassHeader header, IEnumerable<string> sources)
+    /// <param name="header">The class.</param>
+    /// <param name="sources">The state machines.</param>
+    /// <param name="referencesStackLinq">
+    /// Whether the compilation references StackLinq; a library without kernels need not (its state machines are emitted
+    /// for other assemblies, cross-assembly-device-code.md §3.7).
+    /// </param>
+    public static string GenerateDeviceStateMachines(in HostClassHeader header, IEnumerable<string> sources,
+        bool referencesStackLinq)
     {
+        // [WHY] The frames assign every field before the lowering reads it, which the nullable analysis cannot see
+        // (CS8618, CS8601, CS8604 in every library that exports its device code); the annotations of the user's types
+        // stay valid
         var writer = new SourceWriter();
-        writer.AppendGeneratedFileHeader();
+        writer.AppendGeneratedFileHeader(enableNullable: false);
+        writer.AppendLine("#nullable enable annotations");
         writer.AppendLine("""
             using System;
             using global::Kassyi.GSharp.Core;
             using static global::Kassyi.GSharp.Core.ManagedGpuContext;
-            using global::Kassyi.ZeroAlloc.Linq;
             """);
-        WriteUnassignedFieldSuppression(writer, header);
+        writer.AppendLineIf(referencesStackLinq, "using global::Kassyi.ZeroAlloc.Linq;");
+        // The frames' fields are internal (as WriteUnassignedFieldSuppression does for the fields of a class that is not
+        // public): the fields of the warp exchange and the grid sync are read by the code but written only by the runtime
+        writer.AppendLine("#pragma warning disable CS0649");
         writer.AppendLine();
 
-        WriteClassDeclaration(writer, header);
+        if (!header.IsGlobalNamespace)
+        {
+            writer.AppendLine($"namespace {header.Namespace}");
+            writer.AppendLine("{");
+        }
+
+        // A nested class is written inside partial declarations of the types that contain it
+        foreach (var outer in header.OuterDeclarations)
+        {
+            writer.AppendLine(outer);
+            writer.AppendLine("{");
+        }
+
+        writer.AppendLine($"{header.Accessibility} partial class {header.Name}");
         using (writer.Scope())
         {
             foreach (var source in sources)
             {
                 writer.AppendLine(source);
             }
+        }
+
+        for (var i = 0; i < header.OuterDeclarations.Length; i++)
+        {
+            writer.AppendLine("}");
         }
 
         writer.AppendLineIf(!header.IsGlobalNamespace, "}");

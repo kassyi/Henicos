@@ -17,13 +17,18 @@ public class GpuKernelAnalyzer : DiagnosticAnalyzer
             // The checks that depend on the dialect see the one the generator emits for
             var dialect = TranspilerDialects.Create(
                 TranspilerDialects.GetName(start.Options.AnalyzerConfigOptionsProvider.GlobalOptions));
-            start.RegisterSyntaxNodeAction(context => AnalyzeMethod(context, dialect), SyntaxKind.MethodDeclaration);
-            start.RegisterSyntaxNodeAction(context => AnalyzeDestructor(context, dialect), SyntaxKind.DestructorDeclaration);
+            // Exported unless the project turns it off, as the generator reads it
+            var exports = !(start.Options.AnalyzerConfigOptionsProvider.GlobalOptions
+                                .TryGetValue("build_property.GSharpExportDeviceCode", out var export) &&
+                            string.Equals(export, "false", StringComparison.OrdinalIgnoreCase));
+            start.RegisterSyntaxNodeAction(context => AnalyzeMethod(context, dialect, exports), SyntaxKind.MethodDeclaration);
+            start.RegisterSyntaxNodeAction(context => AnalyzeDestructor(context, dialect, exports),
+                SyntaxKind.DestructorDeclaration);
         });
     }
 
     // A finalizer marked as GPU code is reported by its rule (GpuFinalizerRule); the generator does not emit it
-    private static void AnalyzeDestructor(SyntaxNodeAnalysisContext context, ITranspilerDialect dialect)
+    private static void AnalyzeDestructor(SyntaxNodeAnalysisContext context, ITranspilerDialect dialect, bool exports)
     {
         var destructor = (DestructorDeclarationSyntax)context.Node;
         if (context.SemanticModel.GetDeclaredSymbol<IMethodSymbol>(destructor) is not { } symbol ||
@@ -32,12 +37,13 @@ public class GpuKernelAnalyzer : DiagnosticAnalyzer
             return;
         }
 
-        var validationContext = new ValidationContext(context.SemanticModel, symbol, context.ReportDiagnostic, dialect);
+        var validationContext = new ValidationContext(context.SemanticModel, symbol, context.ReportDiagnostic, dialect,
+            exports);
         using var walker = GpuKernelValidationWalker.Rent(validationContext);
         walker.Visit(destructor);
     }
 
-    private static void AnalyzeMethod(SyntaxNodeAnalysisContext context, ITranspilerDialect dialect)
+    private static void AnalyzeMethod(SyntaxNodeAnalysisContext context, ITranspilerDialect dialect, bool exports)
     {
         var methodDeclaration = (MethodDeclarationSyntax)context.Node;
         var methodSymbol = context.SemanticModel.GetDeclaredSymbol<IMethodSymbol>(methodDeclaration);
@@ -66,7 +72,8 @@ public class GpuKernelAnalyzer : DiagnosticAnalyzer
         var diagnostics = ImmutableArray.CreateBuilder<Diagnostic>();
 
         // Single-pass traversal of the AST to minimize time complexity and zero allocations
-        var validationContext = new ValidationContext(context.SemanticModel, methodSymbol, diagnostics.Add, dialect);
+        var validationContext = new ValidationContext(context.SemanticModel, methodSymbol, diagnostics.Add, dialect,
+            exports);
         using (var walker = GpuKernelValidationWalker.Rent(validationContext))
         {
             walker.Visit(methodDeclaration);

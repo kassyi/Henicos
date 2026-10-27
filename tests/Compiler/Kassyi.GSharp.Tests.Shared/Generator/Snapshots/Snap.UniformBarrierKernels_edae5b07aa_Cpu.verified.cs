@@ -565,7 +565,7 @@ case 0:
 {
 void LocalSync()
 {
-Gpu.SyncThreads();
+global::Kassyi.GSharp.Core.Gpu.SyncThreads();
 }
 
 buffer[0] = 42;
@@ -766,7 +766,7 @@ switch (__gsharp_ctx.__gsharp_state)
 case 0:
 {
 {
-Span<int> localSpan = new Span<int>(buffer, 10);
+global::System.Span<int> localSpan = new global::System.Span<int>(buffer, 10);
 localSpan[0] = 100;
 }
 
@@ -777,7 +777,7 @@ return;
 case 1:
 {
 {
-Span<int> localSpan = new Span<int>(buffer, 10);
+global::System.Span<int> localSpan = new global::System.Span<int>(buffer, 10);
 localSpan[0] += 200;
 }
 

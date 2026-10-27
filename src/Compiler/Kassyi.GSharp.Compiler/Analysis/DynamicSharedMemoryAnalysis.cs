@@ -61,9 +61,11 @@ internal static class DynamicSharedMemoryAnalysis
     public static bool ReachesDynamicSharedMemory(IMethodSymbol method, Compilation compilation)
     {
         var definition = method.OriginalDefinition;
-        if (!SuspensionAnalysis.TryGetDeviceFunctionBody(definition, out _))
+        if (!SuspensionAnalysis.TryGetDeviceFunctionBody(definition, compilation, out _))
         {
-            return false;
+            // A device function of another assembly: what its assembly recorded
+            return DeviceExportTable.TryFindFunction(definition, compilation, out var imported) &&
+                   imported.Record.ReachesDynamicSharedMemory;
         }
 
         var cache = s_reaches.GetValue(compilation,
@@ -87,7 +89,8 @@ internal static class DynamicSharedMemoryAnalysis
 
     private static ImmutableArray<ulong> CollectReachableSites(IMethodSymbol kernel, Compilation compilation)
     {
-        if (!kernel.TryGetDeclaringSyntax(out MethodDeclarationSyntax? declaration) || !declaration.HasBody())
+        if (!kernel.TryGetDeclaringSyntax(out MethodDeclarationSyntax? declaration) || !declaration.HasBody() ||
+            !compilation.ContainsSyntaxTree(declaration.SyntaxTree))
         {
             return ImmutableArray<ulong>.Empty;
         }
@@ -115,18 +118,45 @@ internal static class DynamicSharedMemoryAnalysis
 
         foreach (var callee in SuspensionAnalysis.GetDeviceFunctionCallees(declaration, compilation))
         {
-            if (visited.Add(callee) && SuspensionAnalysis.TryGetDeviceFunctionBody(callee, out var calleeDeclaration))
+            if (!visited.Add(callee))
+            {
+                continue;
+            }
+
+            if (SuspensionAnalysis.TryGetDeviceFunctionBody(callee, compilation, out var calleeDeclaration))
             {
                 CollectSites(calleeDeclaration, compilation, sites, visited);
+            }
+            else if (DeviceExportTable.TryFindFunction(callee, compilation, out var imported))
+            {
+                // The sites that the function of another assembly reaches, as its assembly recorded them
+                AddRecordedSites(imported.Record.DynamicSharedMemorySites, sites);
+            }
+        }
+    }
+
+    private static void AddRecordedSites(EquatableArray<string> recorded, SortedSet<ulong> sites)
+    {
+        foreach (var site in recorded)
+        {
+            if (ulong.TryParse(site, NumberStyles.AllowHexSpecifier, CultureInfo.InvariantCulture, out var key))
+            {
+                sites.Add(key);
             }
         }
     }
 
     private static bool Reaches(IMethodSymbol method, Compilation compilation, HashSet<IMethodSymbol> visited)
     {
-        if (!visited.Add(method) || !SuspensionAnalysis.TryGetDeviceFunctionBody(method, out var declaration))
+        if (!visited.Add(method))
         {
             return false;
+        }
+
+        if (!SuspensionAnalysis.TryGetDeviceFunctionBody(method, compilation, out var declaration))
+        {
+            return DeviceExportTable.TryFindFunction(method, compilation, out var imported) &&
+                   imported.Record.ReachesDynamicSharedMemory;
         }
 
         var semanticModel = compilation.GetSemanticModel(declaration.SyntaxTree);

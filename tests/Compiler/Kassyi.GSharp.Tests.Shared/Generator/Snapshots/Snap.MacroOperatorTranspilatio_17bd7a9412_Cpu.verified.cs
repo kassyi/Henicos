@@ -210,9 +210,9 @@ switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-DummyRef a = dA;
-DummyRef b = dB;
-DummyRef c = dResult;
+global::TestNamespace.DummyRef a = dA;
+global::TestNamespace.DummyRef b = dB;
+global::TestNamespace.DummyRef c = dResult;
 c = a + b;
 c = ~a;
 c = a << 5;

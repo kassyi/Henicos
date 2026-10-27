@@ -116,7 +116,7 @@ switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-int i = ThreadIndex.X;
+int i = global::Kassyi.GSharp.Core.ThreadIndex.X;
 x[i] = bias is null ? x[i] : x[i] + bias[i];
 __gsharp_ctx.__gsharp_state = -1;
 return;
@@ -308,7 +308,7 @@ switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-int i = ThreadIndex.X;
+int i = global::Kassyi.GSharp.Core.ThreadIndex.X;
 x[i] = bias == null ? -1f : (null != bias ? bias[i] : -2f);
 __gsharp_ctx.__gsharp_state = -1;
 return;
@@ -500,7 +500,7 @@ switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-int i = ThreadIndex.X;
+int i = global::Kassyi.GSharp.Core.ThreadIndex.X;
 x.Span[i] = x.Span[i] + y.Span[i];
 __gsharp_ctx.__gsharp_state = -1;
 return;
@@ -689,7 +689,7 @@ switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-int i = ThreadIndex.X;
+int i = global::Kassyi.GSharp.Core.ThreadIndex.X;
 segment[i] = segment[i] * 2f + segment.Count;
 __gsharp_ctx.__gsharp_state = -1;
 return;
@@ -874,7 +874,7 @@ switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-int i = ThreadIndex.X;
+int i = global::Kassyi.GSharp.Core.ThreadIndex.X;
 x[i] = x[i] + y[i];
 __gsharp_ctx.__gsharp_state = -1;
 return;
@@ -1072,7 +1072,7 @@ switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-int i = ThreadIndex.X;
+int i = global::Kassyi.GSharp.Core.ThreadIndex.X;
 if (bias.HasValue)
 {
 x[i] = x[i] + bias.Value.Span[i];
@@ -1271,7 +1271,7 @@ switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-int i = ThreadIndex.X;
+int i = global::Kassyi.GSharp.Core.ThreadIndex.X;
 if (bias is not null)
 {
 x[i] = x[i] + bias.Value[i];
@@ -1469,7 +1469,7 @@ switch (__gsharp_ctx.__gsharp_state)
 case 0:
 {
 {
-__gsharp_auto_result = values[ThreadIndex.X] * 2f;
+__gsharp_auto_result = values[global::Kassyi.GSharp.Core.ThreadIndex.X] * 2f;
 __gsharp_ctx.__gsharp_state = -1;
 return;
 }

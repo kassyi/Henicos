@@ -158,7 +158,7 @@ switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-data[ThreadIndex.X] = pair.A;
+data[global::Kassyi.GSharp.Core.ThreadIndex.X] = pair.A;
 __gsharp_ctx.__gsharp_state = -1;
 return;
 }
@@ -355,7 +355,7 @@ switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-data[ThreadIndex.X] = pair.A + 1;
+data[global::Kassyi.GSharp.Core.ThreadIndex.X] = pair.A + 1;
 __gsharp_ctx.__gsharp_state = -1;
 return;
 }
@@ -552,7 +552,7 @@ switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-data[ThreadIndex.X] = box.Value;
+data[global::Kassyi.GSharp.Core.ThreadIndex.X] = box.Value;
 __gsharp_ctx.__gsharp_state = -1;
 return;
 }

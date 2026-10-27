@@ -131,15 +131,15 @@ public bool __gsharp_yielded_for_grid_sync;
 public int tid;
 }
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__ConcurrencyAndWarpKernels__SharedMemoryKernel(int[] data, int dynSize, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__ConcurrencyAndWarpKernels__SharedMemoryKernel __gsharp_ctx) {
-SharedMemory<int> sStatic = new SharedMemory<int>(256, 0x5df351f09946480fUL);
-SharedMemory<int> sDyn1 = new SharedMemory<int>(dynSize, 0x5df350f09946465cUL);
-SharedMemory<float> sDyn2 = new SharedMemory<float>(dynSize, 0x5df353f099464b75UL);
+global::Kassyi.GSharp.Core.SharedMemory<int> sStatic = new global::Kassyi.GSharp.Core.SharedMemory<int>(256, 0x5df351f09946480fUL);
+global::Kassyi.GSharp.Core.SharedMemory<int> sDyn1 = new global::Kassyi.GSharp.Core.SharedMemory<int>(dynSize, 0x5df350f09946465cUL);
+global::Kassyi.GSharp.Core.SharedMemory<float> sDyn2 = new global::Kassyi.GSharp.Core.SharedMemory<float>(dynSize, 0x5df353f099464b75UL);
 {
 switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-__gsharp_ctx.tid = ThreadIndex.X;
+__gsharp_ctx.tid = global::Kassyi.GSharp.Core.ThreadIndex.X;
 sStatic[__gsharp_ctx.tid] = data[__gsharp_ctx.tid];
 sDyn1[__gsharp_ctx.tid] = data[__gsharp_ctx.tid] * 2;
 sDyn2[__gsharp_ctx.tid] = 3.14f;
@@ -349,13 +349,13 @@ public bool __gsharp_yielded_for_grid_sync;
 public int tid;
 }
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__ConcurrencyAndWarpKernels__SharedMemoryReverseKernel(int[] data, int size, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__ConcurrencyAndWarpKernels__SharedMemoryReverseKernel __gsharp_ctx) {
-SharedMemory<int> sMem = new SharedMemory<int>(256, 0x3aa7476078bdb4e9UL);
+global::Kassyi.GSharp.Core.SharedMemory<int> sMem = new global::Kassyi.GSharp.Core.SharedMemory<int>(256, 0x3aa7476078bdb4e9UL);
 {
 switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-__gsharp_ctx.tid = ThreadIndex.X;
+__gsharp_ctx.tid = global::Kassyi.GSharp.Core.ThreadIndex.X;
 if (__gsharp_ctx.tid < size)
 {
 sMem[__gsharp_ctx.tid] = data[__gsharp_ctx.tid];
@@ -574,11 +574,11 @@ switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-__gsharp_ctx.tid = ThreadIndex.X;
+__gsharp_ctx.tid = global::Kassyi.GSharp.Core.ThreadIndex.X;
 if (__gsharp_ctx.tid < 10)
 {
 // Thread 0-9 adds its id to data[0] atomically
-Gpu.AtomicAdd(ref data[0], __gsharp_ctx.tid);
+global::Kassyi.GSharp.Core.Gpu.AtomicAdd(ref data[0], __gsharp_ctx.tid);
 }
 
 __gsharp_ctx.__gsharp_state = 1;
@@ -590,7 +590,7 @@ case 1:
 if (__gsharp_ctx.tid == 0)
 {
 // Just testing math function
-data[1] = Math.Max(data[0], 100);
+data[1] = global::System.Math.Max(data[0], 100);
 }
 
 __gsharp_ctx.__gsharp_state = -1;
@@ -779,7 +779,7 @@ switch (__gsharp_ctx.__gsharp_state)
 case 0:
 {
 // Every thread in the grid atomically adds 1 to globalSum[0]
-Gpu.AtomicAdd(ref globalSum[0], 1);
+global::Kassyi.GSharp.Core.Gpu.AtomicAdd(ref globalSum[0], 1);
 __gsharp_ctx.__gsharp_state = -1;
 return;
 }
@@ -970,15 +970,15 @@ switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-int tid = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
+int tid = global::Kassyi.GSharp.Core.BlockIndex.X * global::Kassyi.GSharp.Core.BlockDimension.X + global::Kassyi.GSharp.Core.ThreadIndex.X;
 // globalState[0]: AtomicOr with a unique bit for the first 31 threads
 if (tid < 31)
 {
-Gpu.AtomicOr(ref globalState[0], (uint)(1 << tid));
+global::Kassyi.GSharp.Core.Gpu.AtomicOr(ref globalState[0], (uint)(1 << tid));
 }
 
 // globalState[1]: AtomicMax with the thread ID
-Gpu.AtomicMax(ref globalState[1], (uint)tid);
+global::Kassyi.GSharp.Core.Gpu.AtomicMax(ref globalState[1], (uint)tid);
 __gsharp_ctx.__gsharp_state = -1;
 return;
 }

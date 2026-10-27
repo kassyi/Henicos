@@ -162,12 +162,17 @@ internal readonly record struct StructLayoutGuard(
 /// <param name="Name">The class name.</param>
 /// <param name="Accessibility">The declared accessibility keywords, which the generated part must repeat (CS0262).</param>
 /// <param name="IsPublic">Whether the class is public, which decides the CS0649 suppression.</param>
+/// <param name="OuterDeclarations">
+/// The partial declarations of the types that contain the class, outermost first (<c>partial class Outer</c>), so
+/// that a part of a nested class is written inside them.
+/// </param>
 internal readonly record struct HostClassHeader(
     string HintName,
     string Namespace,
     string Name,
     string Accessibility,
-    bool IsPublic)
+    bool IsPublic,
+    EquatableArray<string> OuterDeclarations)
 {
     public bool IsGlobalNamespace => Namespace.Length == 0;
 
@@ -176,7 +181,34 @@ internal readonly record struct HostClassHeader(
         type.ContainingNamespace.GetFullNamespaceName(),
         type.Name,
         SyntaxFacts.GetText(type.DeclaredAccessibility),
-        type.DeclaredAccessibility == Microsoft.CodeAnalysis.Accessibility.Public);
+        type.DeclaredAccessibility == Microsoft.CodeAnalysis.Accessibility.Public,
+        CreateOuterDeclarations(type));
+
+    private static EquatableArray<string> CreateOuterDeclarations(INamedTypeSymbol type)
+    {
+        if (type.ContainingType == null)
+        {
+            return default;
+        }
+
+        var declarations = ImmutableArray.CreateBuilder<string>();
+        for (var outer = type.ContainingType; outer != null; outer = outer.ContainingType)
+        {
+            var keyword = outer.IsRecord
+                ? outer.TypeKind == TypeKind.Struct ? "record struct" : "record"
+                : outer.TypeKind == TypeKind.Struct ? "struct" : outer.TypeKind == TypeKind.Interface ? "interface" : "class";
+            var name = outer.Name;
+            for (var i = 0; i < outer.TypeParameters.Length; i++)
+            {
+                name += (i == 0 ? "<" : ", ") + outer.TypeParameters[i].Name;
+            }
+
+            name += outer.TypeParameters.IsEmpty ? "" : ">";
+            declarations.Insert(0, $"partial {keyword} {name}");
+        }
+
+        return declarations.ToImmutable().AsEquatableArray();
+    }
 }
 
 /// <summary>The native shadow struct and the marshaling methods of one user struct, as the wrapper declares them.</summary>

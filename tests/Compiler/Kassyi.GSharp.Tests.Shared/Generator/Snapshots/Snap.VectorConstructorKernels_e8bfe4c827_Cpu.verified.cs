@@ -126,9 +126,9 @@ switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-var v2 = new System.Numerics.Vector2(value);
-var v3 = new System.Numerics.Vector3(value + 1f);
-var v4 = new System.Numerics.Vector4(value + 2f);
+var v2 = new global::System.Numerics.Vector2(value);
+var v3 = new global::System.Numerics.Vector3(value + 1f);
+var v4 = new global::System.Numerics.Vector4(value + 2f);
 output[0] = v2.X;
 output[1] = v2.Y;
 output[2] = v3.X;
@@ -337,10 +337,10 @@ switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-var xy = new System.Numerics.Vector2(1f, 2f);
-var v3 = new System.Numerics.Vector3(xy, 3f);
-var v4 = new System.Numerics.Vector4(v3, 4f);
-var w4 = new System.Numerics.Vector4(xy, 5f, 6f);
+var xy = new global::System.Numerics.Vector2(1f, 2f);
+var v3 = new global::System.Numerics.Vector3(xy, 3f);
+var v4 = new global::System.Numerics.Vector4(v3, 4f);
+var w4 = new global::System.Numerics.Vector4(xy, 5f, 6f);
 output[0] = v3.X;
 output[1] = v3.Y;
 output[2] = v3.Z;
@@ -540,7 +540,7 @@ switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-System.Numerics.Vector3 v = new(7f);
+global::System.Numerics.Vector3 v = new(7f);
 output[0] = v.X;
 output[1] = v.Y;
 output[2] = v.Z;
@@ -735,7 +735,7 @@ switch (__gsharp_ctx.__gsharp_state)
 case 0:
 {
 float counter = 0f;
-var v = new System.Numerics.Vector3(++counter);
+var v = new global::System.Numerics.Vector3(++counter);
 output[0] = v.X;
 output[1] = v.Y;
 output[2] = v.Z;
@@ -948,8 +948,8 @@ switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-var v4 = new System.Numerics.Vector4(1f, 2f, 3f, 4f);
-var f3 = new Float3(5f, 6f, 7f);
+var v4 = new global::System.Numerics.Vector4(1f, 2f, 3f, 4f);
+var f3 = new global::Kassyi.GSharp.Core.Float3(5f, 6f, 7f);
 output[0] = v4.X;
 output[1] = v4.Y;
 output[2] = v4.Z;
@@ -1163,8 +1163,8 @@ switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-int tid = ThreadIndex.X;
-VcScaled s = new(tid, 5);
+int tid = global::Kassyi.GSharp.Core.ThreadIndex.X;
+global::Kassyi.GSharp.Tests.Shared.Syntax.VcScaled s = new(tid, 5);
 output[tid] = s.Sum * 100 + s.Scale;
 __gsharp_ctx.__gsharp_state = -1;
 return;
@@ -1422,10 +1422,10 @@ switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-var v3 = new System.Numerics.Vector3(z: 3f, x: 1f, y: 2f);
-var f3 = new Float3(z: 6f, x: 4f, y: 5f);
-var v4 = new System.Numerics.Vector4(w: 10f, value: new System.Numerics.Vector3(y: 8f, z: 9f, x: 7f));
-var scaled = new VcScaled(b: 1, a: 20);
+var v3 = new global::System.Numerics.Vector3(z: 3f, x: 1f, y: 2f);
+var f3 = new global::Kassyi.GSharp.Core.Float3(z: 6f, x: 4f, y: 5f);
+var v4 = new global::System.Numerics.Vector4(w: 10f, value: new global::System.Numerics.Vector3(y: 8f, z: 9f, x: 7f));
+var scaled = new global::Kassyi.GSharp.Tests.Shared.Syntax.VcScaled(b: 1, a: 20);
 output[0] = v3.X;
 output[1] = v3.Y;
 output[2] = v3.Z;
@@ -1633,7 +1633,7 @@ switch (__gsharp_ctx.__gsharp_state)
 case 0:
 {
 int i = 0;
-var v = new System.Numerics.Vector3(z: buffer[i++], x: buffer[i++], y: buffer[i++]);
+var v = new global::System.Numerics.Vector3(z: buffer[i++], x: buffer[i++], y: buffer[i++]);
 output[0] = v.X;
 output[1] = v.Y;
 output[2] = v.Z;
@@ -1861,8 +1861,8 @@ case 0:
 {
 unsafe
 {
-VcTriple t = default;
-var span = new System.Span<int>(length: 3, pointer: &t.A);
+global::Kassyi.GSharp.Tests.Shared.Syntax.VcTriple t = default;
+var span = new global::System.Span<int>(length: 3, pointer: &t.A);
 span[0] = 7;
 span[1] = 8;
 span[2] = 9;
@@ -2093,8 +2093,8 @@ switch (__gsharp_ctx.__gsharp_state)
 case 0:
 {
 int i = 0;
-var scaled = new VcScaled(b: (int)buffer[i++], a: (int)buffer[i++]);
-var v4 = new System.Numerics.Vector4(w: buffer[i++], value: new System.Numerics.Vector3(buffer[i++]));
+var scaled = new global::Kassyi.GSharp.Tests.Shared.Syntax.VcScaled(b: (int)buffer[i++], a: (int)buffer[i++]);
+var v4 = new global::System.Numerics.Vector4(w: buffer[i++], value: new global::System.Numerics.Vector3(buffer[i++]));
 output[0] = scaled.Sum;
 output[1] = v4.X;
 output[2] = v4.Y;

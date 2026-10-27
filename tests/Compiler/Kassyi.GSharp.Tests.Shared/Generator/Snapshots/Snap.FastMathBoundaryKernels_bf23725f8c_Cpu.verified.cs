@@ -116,8 +116,8 @@ switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-int tid = ThreadIndex.X;
-output[tid] = FastMath.Exp(input[tid]);
+int tid = global::Kassyi.GSharp.Core.ThreadIndex.X;
+output[tid] = global::Kassyi.GSharp.Core.FastMath.Exp(input[tid]);
 __gsharp_ctx.__gsharp_state = -1;
 return;
 }
@@ -311,8 +311,8 @@ switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-int tid = ThreadIndex.X;
-output[tid] = FastMath.Log(input[tid]);
+int tid = global::Kassyi.GSharp.Core.ThreadIndex.X;
+output[tid] = global::Kassyi.GSharp.Core.FastMath.Log(input[tid]);
 __gsharp_ctx.__gsharp_state = -1;
 return;
 }
@@ -506,8 +506,8 @@ switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-int tid = ThreadIndex.X;
-output[tid] = FastMath.Sqrt(input[tid]);
+int tid = global::Kassyi.GSharp.Core.ThreadIndex.X;
+output[tid] = global::Kassyi.GSharp.Core.FastMath.Sqrt(input[tid]);
 __gsharp_ctx.__gsharp_state = -1;
 return;
 }
@@ -701,8 +701,8 @@ switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-int tid = ThreadIndex.X;
-output[tid] = FastMath.Abs(input[tid]);
+int tid = global::Kassyi.GSharp.Core.ThreadIndex.X;
+output[tid] = global::Kassyi.GSharp.Core.FastMath.Abs(input[tid]);
 __gsharp_ctx.__gsharp_state = -1;
 return;
 }

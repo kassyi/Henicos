@@ -219,7 +219,7 @@ switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-int tid = ThreadIndex.X;
+int tid = global::Kassyi.GSharp.Core.ThreadIndex.X;
 int sum = 0;
 for (int __gsharp_unroll_0 = 0; __gsharp_unroll_0 < unchecked(0 + 4); __gsharp_unroll_0++)
 {
@@ -424,7 +424,7 @@ switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-int tid = ThreadIndex.X;
+int tid = global::Kassyi.GSharp.Core.ThreadIndex.X;
 int sum = tid;
 for (int __gsharp_unroll_0 = 2; __gsharp_unroll_0 < unchecked(2 + 3); __gsharp_unroll_0++)
 {
@@ -641,8 +641,8 @@ switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-int tid = ThreadIndex.X;
-ForUnrollAccumulator acc = default;
+int tid = global::Kassyi.GSharp.Core.ThreadIndex.X;
+global::Kassyi.GSharp.Tests.Shared.Syntax.ForUnrollAccumulator acc = default;
 acc.Total = tid;
 for (int __gsharp_unroll_0 = 1; __gsharp_unroll_0 < unchecked(1 + 3); __gsharp_unroll_0++)
 {
@@ -851,7 +851,7 @@ switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-ForUnrollAccumulator acc = default;
+global::Kassyi.GSharp.Tests.Shared.Syntax.ForUnrollAccumulator acc = default;
 for (int __gsharp_unroll_0 = global::Kassyi.GSharp.Core.ManagedGpuContext.BlockDimX * global::Kassyi.GSharp.Core.ManagedGpuContext.BlockIdxX + global::Kassyi.GSharp.Core.ManagedGpuContext.ThreadIdxX; __gsharp_unroll_0 < (count); __gsharp_unroll_0 += global::Kassyi.GSharp.Core.ManagedGpuContext.BlockDimX * global::Kassyi.GSharp.Core.ManagedGpuContext.GridDimX)
 {
 acc.Total += __gsharp_unroll_0;
@@ -1073,7 +1073,7 @@ switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-int tid = ThreadIndex.X;
+int tid = global::Kassyi.GSharp.Core.ThreadIndex.X;
 int sum = 0;
 for (int __gsharp_unroll_0 = 0; __gsharp_unroll_0 < unchecked(0 + 3); __gsharp_unroll_0++)
 {
@@ -1703,7 +1703,7 @@ switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-int tid = ThreadIndex.X;
+int tid = global::Kassyi.GSharp.Core.ThreadIndex.X;
 int i = tid;
 int sum = 0;
 for (int __gsharp_unroll_0 = 0; __gsharp_unroll_0 < unchecked(0 + 3); __gsharp_unroll_0++)
@@ -1909,9 +1909,9 @@ switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-int tid = ThreadIndex.X;
+int tid = global::Kassyi.GSharp.Core.ThreadIndex.X;
 int sum = 0;
-for (int __gsharp_unroll_0 = 1 << 1; __gsharp_unroll_0 < unchecked((1 << 1) + Size); __gsharp_unroll_0++)
+for (int __gsharp_unroll_0 = 1 << 1; __gsharp_unroll_0 < unchecked((1 << 1) + global::Kassyi.GSharp.Tests.Shared.Syntax.ManagedMacroLoopKernels.Size); __gsharp_unroll_0++)
 {
 sum += __gsharp_unroll_0;
 }
@@ -2129,7 +2129,7 @@ public int __gsharp_state;
 public uint __gsharp_warp_exchange;
 public bool __gsharp_yielded_for_grid_sync;
 public int tid;
-public ForUnrollAccumulator acc;
+public global::Kassyi.GSharp.Tests.Shared.Syntax.ForUnrollAccumulator acc;
 }
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__ManagedMacroLoopKernels__BarrierRefContextForUnrollKernel(int[] buffer, int[] output, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__ManagedMacroLoopKernels__BarrierRefContextForUnrollKernel __gsharp_ctx) {
 {
@@ -2137,7 +2137,7 @@ switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-__gsharp_ctx.tid = ThreadIndex.X;
+__gsharp_ctx.tid = global::Kassyi.GSharp.Core.ThreadIndex.X;
 __gsharp_ctx.acc = default;
 __gsharp_ctx.acc.Total = __gsharp_ctx.tid;
 buffer[__gsharp_ctx.tid] = __gsharp_ctx.tid;
@@ -2358,11 +2358,11 @@ switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-int tid = ThreadIndex.X;
+int tid = global::Kassyi.GSharp.Core.ThreadIndex.X;
 int sum = 0;
 for (int __gsharp_unroll_0 = 0; __gsharp_unroll_0 < unchecked(0 + 2); __gsharp_unroll_0++)
 {
-var smem = new SharedMemory<int>(4, 0x07e2819a0444743cUL);
+var smem = new global::Kassyi.GSharp.Core.SharedMemory<int>(4, 0x07e2819a0444743cUL);
 smem[tid] = tid + __gsharp_unroll_0;
 sum += smem[tid];
 }
@@ -2554,8 +2554,8 @@ switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-int tid = ThreadIndex.X;
-output[tid] = UnrolledSum(tid);
+int tid = global::Kassyi.GSharp.Core.ThreadIndex.X;
+output[tid] = global::Kassyi.GSharp.Tests.Shared.Syntax.ManagedMacroLoopKernels.UnrolledSum(tid);
 __gsharp_ctx.__gsharp_state = -1;
 return;
 }
@@ -2742,8 +2742,8 @@ switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-int tid = ThreadIndex.X;
-output[tid] = UnrolledSumWithContext(tid * 10);
+int tid = global::Kassyi.GSharp.Core.ThreadIndex.X;
+output[tid] = global::Kassyi.GSharp.Tests.Shared.Syntax.ManagedMacroLoopKernels.UnrolledSumWithContext(tid * 10);
 __gsharp_ctx.__gsharp_state = -1;
 return;
 }
@@ -2929,7 +2929,7 @@ switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-FillByStride(output, count, 100);
+global::Kassyi.GSharp.Tests.Shared.Syntax.ManagedMacroLoopKernels.FillByStride(output, count, 100);
 __gsharp_ctx.__gsharp_state = -1;
 return;
 }
@@ -3115,7 +3115,7 @@ switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-RunningSumByStride(output, count);
+global::Kassyi.GSharp.Tests.Shared.Syntax.ManagedMacroLoopKernels.RunningSumByStride(output, count);
 __gsharp_ctx.__gsharp_state = -1;
 return;
 }
@@ -3307,7 +3307,7 @@ switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-int tid = ThreadIndex.X;
+int tid = global::Kassyi.GSharp.Core.ThreadIndex.X;
 int i = tid + 100;
 for (int __gsharp_unroll_0 = global::Kassyi.GSharp.Core.ManagedGpuContext.BlockDimX * global::Kassyi.GSharp.Core.ManagedGpuContext.BlockIdxX + global::Kassyi.GSharp.Core.ManagedGpuContext.ThreadIdxX; __gsharp_unroll_0 < (data.Length); __gsharp_unroll_0 += global::Kassyi.GSharp.Core.ManagedGpuContext.BlockDimX * global::Kassyi.GSharp.Core.ManagedGpuContext.GridDimX)
 {
@@ -3526,9 +3526,9 @@ switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-int tid = ThreadIndex.X;
+int tid = global::Kassyi.GSharp.Core.ThreadIndex.X;
 int i = tid + 100;
-ForUnrollAccumulator acc = default;
+global::Kassyi.GSharp.Tests.Shared.Syntax.ForUnrollAccumulator acc = default;
 for (int __gsharp_unroll_0 = global::Kassyi.GSharp.Core.ManagedGpuContext.BlockDimX * global::Kassyi.GSharp.Core.ManagedGpuContext.BlockIdxX + global::Kassyi.GSharp.Core.ManagedGpuContext.ThreadIdxX; __gsharp_unroll_0 < (data.Length); __gsharp_unroll_0 += global::Kassyi.GSharp.Core.ManagedGpuContext.BlockDimX * global::Kassyi.GSharp.Core.ManagedGpuContext.GridDimX)
 {
 acc.Total += 1;
@@ -3921,7 +3921,7 @@ switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-CountVisits(data, count);
+global::Kassyi.GSharp.Tests.Shared.Syntax.ManagedMacroLoopKernels.CountVisits(data, count);
 __gsharp_ctx.__gsharp_state = -1;
 return;
 }
@@ -4110,7 +4110,7 @@ switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-int tid = ThreadIndex.X;
+int tid = global::Kassyi.GSharp.Core.ThreadIndex.X;
 int iterations = 0;
 for (int __gsharp_unroll_0 = 2147483646; __gsharp_unroll_0 < unchecked(2147483646 + 4); __gsharp_unroll_0++)
 {

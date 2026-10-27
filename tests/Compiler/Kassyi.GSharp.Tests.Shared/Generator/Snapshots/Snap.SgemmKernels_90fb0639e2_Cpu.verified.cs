@@ -198,17 +198,17 @@ public int m;
 public int k;
 }
 public static unsafe void __gsharp_statemachine_Henicos__Benchmarks__ComputeBenchmarks__SgemmKernels__SgemmKernel(float[] a, float[] b, float[] c, int n, __gsharp_context_Henicos__Benchmarks__ComputeBenchmarks__SgemmKernels__SgemmKernel __gsharp_ctx) {
-SharedMemory<float> As = new(256, 0x73f1e09054a8d88dUL);
-SharedMemory<float> Bs = new(256, 0x73f1df9054a8d6daUL);
+global::Kassyi.GSharp.Core.SharedMemory<float> As = new(256, 0x73f1e09054a8d88dUL);
+global::Kassyi.GSharp.Core.SharedMemory<float> Bs = new(256, 0x73f1df9054a8d6daUL);
 {
 switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-__gsharp_ctx.bx = BlockIndex.X;
-__gsharp_ctx.by = BlockIndex.Y;
-__gsharp_ctx.tx = ThreadIndex.X;
-__gsharp_ctx.ty = ThreadIndex.Y;
+__gsharp_ctx.bx = global::Kassyi.GSharp.Core.BlockIndex.X;
+__gsharp_ctx.by = global::Kassyi.GSharp.Core.BlockIndex.Y;
+__gsharp_ctx.tx = global::Kassyi.GSharp.Core.ThreadIndex.X;
+__gsharp_ctx.ty = global::Kassyi.GSharp.Core.ThreadIndex.Y;
 __gsharp_ctx.row = __gsharp_ctx.by * 16 + __gsharp_ctx.ty;
 __gsharp_ctx.col = __gsharp_ctx.bx * 16 + __gsharp_ctx.tx;
 __gsharp_ctx.cValue = 0.0f;

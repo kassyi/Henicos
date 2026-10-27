@@ -121,7 +121,7 @@ switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-int i = ThreadIndex.X;
+int i = global::Kassyi.GSharp.Core.ThreadIndex.X;
 // C++ rejects '_' inside numbers, and "0x'FF" is invalid, so separators must be dropped
 ints[i] = 1_000_000;
 uints[i] = 0x_FFFF_0000u;

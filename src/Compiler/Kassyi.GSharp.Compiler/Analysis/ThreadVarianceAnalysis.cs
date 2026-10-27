@@ -209,7 +209,8 @@ internal sealed class ThreadVarianceAnalysis(
         callee = (semanticModel.GetSymbolInfo(call).Symbol as IMethodSymbol)?.OriginalDefinition;
         return callee is { ReducedFrom: null } &&
                callee.HasAttribute(KnownAttributes.GpuDeviceFunction) &&
-               callee.TryGetDeclaringSyntax(out declaration);
+               callee.TryGetDeclaringSyntax(out declaration) &&
+               semanticModel.Compilation.ContainsSyntaxTree(declaration.SyntaxTree);
     }
 
     private static bool IsThreadIndexMember(ISymbol symbol) =>

@@ -128,10 +128,10 @@ switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-int sum = data.AsStackEnumerable().AsParallel().Sum();
-if (ThreadIndex.X == 0)
+int sum = global::Kassyi.ZeroAlloc.Linq.StackLinqExtensions.Sum(global::Kassyi.ZeroAlloc.Linq.StackLinqExtensions.AsParallel(global::Kassyi.ZeroAlloc.Linq.StackLinqExtensions.AsStackEnumerable(data)));
+if (global::Kassyi.GSharp.Core.ThreadIndex.X == 0)
 {
-result[BlockIndex.X] = sum;
+result[global::Kassyi.GSharp.Core.BlockIndex.X] = sum;
 }
 
 __gsharp_ctx.__gsharp_state = -1;
