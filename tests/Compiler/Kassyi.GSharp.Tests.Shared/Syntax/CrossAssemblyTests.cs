@@ -133,4 +133,34 @@ public class CrossAssemblyTests : TranspilerTestBase
 
         Assert.Equal([301, 602, 903, 0], result);
     }
+
+    // The layout of a struct from metadata is predicted as sequential; the launch guard compares the field offsets with
+    // the runtime's and stops instead of passing A and B swapped (#511 review)
+    [Fact]
+    [Scenario(TestScenario.SadPath)]
+    public void Test_SwapPair_ExplicitLayoutOfTheLibrary_StopsAtTheOffsetGuard()
+    {
+        var result = new int[] { -1, -1 };
+
+        var exception = Assert.Throws<InvalidOperationException>(
+            () => CrossAssemblyKernels.LaunchSwapPairKernel(new SwapPair { A = 11, B = 22 }, result));
+
+        Assert.Contains("'Kassyi.GSharp.Tests.DeviceLibrary.SwapPair'", exception.Message);
+        Assert.Contains("field 'A'", exception.Message);
+        Assert.Equal([-1, -1], result);
+    }
+
+    [Fact]
+    [Scenario(TestScenario.SadPath)]
+    public void Test_PackedPair_PackedLayoutOfTheLibrary_StopsAtTheSizeGuard()
+    {
+        var result = new int[] { -1, -1 };
+
+        var exception = Assert.Throws<InvalidOperationException>(
+            () => CrossAssemblyKernels.LaunchPackedPairKernel(new PackedPair { Tag = 7, Value = 0x01020304 }, result));
+
+        Assert.Contains("'Kassyi.GSharp.Tests.DeviceLibrary.PackedPair'", exception.Message);
+        Assert.Contains("expected 8 bytes", exception.Message);
+        Assert.Equal([-1, -1], result);
+    }
 }

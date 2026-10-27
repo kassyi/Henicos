@@ -278,15 +278,40 @@ internal static class WrapperEmitter
         }
     }
 
-    // if (Unsafe.SizeOf<S>() != <predicted host size>) LayoutGuard.ThrowSizeMismatch(...); for each block-copied struct
+    // For each block-copied struct:
+    // if (Unsafe.SizeOf<S>() != <predicted host size>) LayoutGuard.ThrowSizeMismatch(...);
+    // { S __gsharp_layout_probe = default;
+    //   if (Unsafe.ByteOffset(ref Unsafe.As<S, byte>(ref probe), ref Unsafe.As<F, byte>(ref Unsafe.AsRef(in probe.f)))
+    //       != <predicted offset>) LayoutGuard.ThrowFieldOffsetMismatch(...); ... }
     internal static void WriteLayoutGuards(SourceWriter writer, EquatableArray<StructLayoutGuard> guards)
     {
+        const string Unsafe = "global::System.Runtime.CompilerServices.Unsafe";
+        const string Probe = GSharpInternalNames.Launcher.LayoutProbe;
         foreach (var guard in guards)
         {
             writer.AppendLine(
-                $"if (global::System.Runtime.CompilerServices.Unsafe.SizeOf<{guard.FullyQualifiedTypeName}>() != {guard.ExpectedSize}) " +
+                $"if ({Unsafe}.SizeOf<{guard.FullyQualifiedTypeName}>() != {guard.ExpectedSize}) " +
                 $"global::Kassyi.GSharp.Runtime.Interop.LayoutGuard.ThrowSizeMismatch(\"{guard.DisplayTypeName}\", {guard.ExpectedSize}, " +
-                $"global::System.Runtime.CompilerServices.Unsafe.SizeOf<{guard.FullyQualifiedTypeName}>());");
+                $"{Unsafe}.SizeOf<{guard.FullyQualifiedTypeName}>());");
+            if (guard.Fields.Length == 0)
+            {
+                continue;
+            }
+
+            using (writer.Scope())
+            {
+                writer.AppendLine($"{guard.FullyQualifiedTypeName} {Probe} = default;");
+                foreach (var field in guard.Fields)
+                {
+                    var offset =
+                        $"{Unsafe}.ByteOffset(ref {Unsafe}.As<{guard.FullyQualifiedTypeName}, byte>(ref {Probe}), " +
+                        $"ref {Unsafe}.As<{field.FullyQualifiedTypeName}, byte>(ref {Unsafe}.AsRef(in {Probe}.{field.Name})))";
+                    writer.AppendLine(
+                        $"if ({offset} != {field.ExpectedOffset}) " +
+                        $"global::Kassyi.GSharp.Runtime.Interop.LayoutGuard.ThrowFieldOffsetMismatch(\"{guard.DisplayTypeName}\", " +
+                        $"\"{field.Name}\", {field.ExpectedOffset}, (long){offset});");
+                }
+            }
         }
     }
 

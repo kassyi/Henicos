@@ -105,20 +105,25 @@ internal readonly record struct KernelHostModel
 
         foreach (var parameter in kernel.Parameters)
         {
-            CollectBlockCopiedStructs(parameter.Type, dialect, visited, guards);
+            CollectBlockCopiedStructs(parameter.Type, dialect, kernel.ContainingAssembly, visited, guards);
         }
 
         if (kernel.ReturnType.SpecialType != SpecialType.System_Void)
         {
-            CollectBlockCopiedStructs(kernel.ReturnType, dialect, visited, guards);
+            CollectBlockCopiedStructs(kernel.ReturnType, dialect, kernel.ContainingAssembly, visited, guards);
         }
 
         return guards.ToImmutable().AsEquatableArray();
     }
 
+    // [WHY] A block-copied struct is passed in the bytes the CLR gives it, so the predicted size and the offsets of the
+    // fields that the launcher can name are checked against the runtime. Roslyn does not show [StructLayout] and
+    // [FieldOffset] of a struct from metadata (they are pseudo-attributes), so such a struct is predicted as sequential
+    // and only this check stops one that is not (#511 review). A nested Identical struct is checked as well.
     private static void CollectBlockCopiedStructs(
         ITypeSymbol type,
         ITranspilerDialect dialect,
+        IAssemblySymbol launcherAssembly,
         HashSet<INamedTypeSymbol> visited,
         ImmutableArray<StructLayoutGuard>.Builder guards)
     {
@@ -142,28 +147,60 @@ internal readonly record struct KernelHostModel
         var layout = TypeLayoutCalculator.GetStructLayout(named, dialect);
         if (layout.Transfer == TransferClass.Identical)
         {
+            var fields = ImmutableArray.CreateBuilder<FieldOffsetGuard>();
+            foreach (var field in layout.Host.Fields)
+            {
+                if (IsNameableField(field.Member, launcherAssembly))
+                {
+                    fields.Add(new FieldOffsetGuard(
+                        field.Member.Name.ToCSharpIdentifier(),
+                        field.Member.Type.GetFullyQualifiedCsharpName(),
+                        field.Offset));
+                }
+            }
+
             guards.Add(new StructLayoutGuard(
                 named.GetFullyQualifiedCsharpName(),
                 GlobalCppNames.GetTypePath(named).ToDisplayString(),
-                layout.Host.Size));
-            return;
+                layout.Host.Size,
+                fields.ToImmutable().AsEquatableArray()));
         }
 
         foreach (var member in StructAbiMembers.Get(named))
         {
-            CollectBlockCopiedStructs(member.Type, dialect, visited, guards);
+            CollectBlockCopiedStructs(member.Type, dialect, launcherAssembly, visited, guards);
         }
     }
+
+    // An ordinary field that the generated launcher can name: public, or internal in the launcher's own assembly. A
+    // pointer cannot be a type argument of Unsafe.As, so a pointer field is left to the size check.
+    private static bool IsNameableField(StructAbiMember member, IAssemblySymbol launcherAssembly) =>
+        member is { Kind: StructAbiMemberKind.Field, Symbol: IFieldSymbol field } &&
+        field.Type is not (IPointerTypeSymbol or IFunctionPointerTypeSymbol) &&
+        (field.DeclaredAccessibility == Accessibility.Public ||
+         (field.DeclaredAccessibility is Accessibility.Internal or Accessibility.ProtectedOrInternal &&
+          field.ContainingAssembly.IsEqualTo(launcherAssembly)));
 }
 
-/// <summary>A runtime <c>Unsafe.SizeOf</c> check emitted at the start of <c>Launch</c> for a block-copied <see cref="TransferClass.Identical"/> struct.</summary>
+/// <summary>
+/// The runtime checks emitted at the start of <c>Launch</c> for a block-copied <see cref="TransferClass.Identical"/>
+/// struct: <c>Unsafe.SizeOf</c> and the offsets of the fields the launcher can name (<c>Unsafe.ByteOffset</c>).
+/// </summary>
 /// <param name="FullyQualifiedTypeName">The <c>global::</c>-qualified C# type name.</param>
 /// <param name="DisplayTypeName">The user-readable type name without <c>global::</c>.</param>
 /// <param name="ExpectedSize">The predicted host size in bytes.</param>
+/// <param name="Fields">The fields whose predicted host offsets are checked.</param>
 internal readonly record struct StructLayoutGuard(
     string FullyQualifiedTypeName,
     string DisplayTypeName,
-    int ExpectedSize);
+    int ExpectedSize,
+    EquatableArray<FieldOffsetGuard> Fields);
+
+/// <summary>One field of a <see cref="StructLayoutGuard"/>.</summary>
+/// <param name="Name">The field name as a C# identifier.</param>
+/// <param name="FullyQualifiedTypeName">The <c>global::</c>-qualified field type.</param>
+/// <param name="ExpectedOffset">The predicted host offset in bytes.</param>
+internal readonly record struct FieldOffsetGuard(string Name, string FullyQualifiedTypeName, int ExpectedOffset);
 
 /// <summary>The partial class that the generated host members of a kernel or device function go into.</summary>
 /// <param name="HintName">The source hint name of the class's wrapper (<see cref="GlobalCppNames.GetHintName"/>).</param>

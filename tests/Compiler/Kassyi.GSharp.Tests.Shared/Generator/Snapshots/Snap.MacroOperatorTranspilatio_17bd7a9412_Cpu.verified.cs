@@ -325,6 +325,10 @@ global::Kassyi.GSharp.Core.ManagedGpuContext.IsActive = false;
 return;
 }
 if (global::System.Runtime.CompilerServices.Unsafe.SizeOf<global::TestNamespace.DummyContext>() != 4) global::Kassyi.GSharp.Runtime.Interop.LayoutGuard.ThrowSizeMismatch("TestNamespace.DummyContext", 4, global::System.Runtime.CompilerServices.Unsafe.SizeOf<global::TestNamespace.DummyContext>());
+{
+global::TestNamespace.DummyContext __gsharp_layout_probe = default;
+if (global::System.Runtime.CompilerServices.Unsafe.ByteOffset(ref global::System.Runtime.CompilerServices.Unsafe.As<global::TestNamespace.DummyContext, byte>(ref __gsharp_layout_probe), ref global::System.Runtime.CompilerServices.Unsafe.As<global::System.Int32, byte>(ref global::System.Runtime.CompilerServices.Unsafe.AsRef(in __gsharp_layout_probe.State))) != 0) global::Kassyi.GSharp.Runtime.Interop.LayoutGuard.ThrowFieldOffsetMismatch("TestNamespace.DummyContext", "State", 0, (long)global::System.Runtime.CompilerServices.Unsafe.ByteOffset(ref global::System.Runtime.CompilerServices.Unsafe.As<global::TestNamespace.DummyContext, byte>(ref __gsharp_layout_probe), ref global::System.Runtime.CompilerServices.Unsafe.As<global::System.Int32, byte>(ref global::System.Runtime.CompilerServices.Unsafe.AsRef(in __gsharp_layout_probe.State))));
+}
 var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<MacroKernel_Delegate>("__gsharp_launch_TestNamespace__TestKernels__MacroKernel", dllPath);
 fixed (global::System.UInt32* p_dA = dA)
 fixed (global::System.UInt32* p_dB = dB)

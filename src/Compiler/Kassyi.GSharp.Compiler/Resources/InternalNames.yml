@@ -119,6 +119,7 @@ Launcher:
     ThreadY: __gsharp_ty
     ThreadZ: __gsharp_tz
     StructArgumentPrefix: __gsharp_arg_
+    LayoutProbe: __gsharp_layout_probe
 
 ReturnValue:
   Summary: The buffer that a kernel returning a value writes into, and the device-side locals that fill it.
