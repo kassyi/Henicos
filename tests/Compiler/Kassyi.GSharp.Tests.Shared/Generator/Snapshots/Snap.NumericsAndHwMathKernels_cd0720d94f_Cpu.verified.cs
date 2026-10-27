@@ -285,7 +285,7 @@ __gsharp_id_0_u32Out[6]=__match_any_sync(0xFFFFFFFFu,__gsharp_id_3_u32Val);
 int __gsharp_id_5_matchPred = 0;
 __gsharp_id_0_u32Out[7]=__match_all_sync(0xFFFFFFFFu,__gsharp_id_3_u32Val,&__gsharp_id_5_matchPred);
 __nanosleep(10);
-__syncwarp(4294967295u);
+__syncwarp(4294967295U);
 atomicAdd(&__gsharp_id_0_u32Out[8],42u);
 __gsharp_state=-1;
 return;

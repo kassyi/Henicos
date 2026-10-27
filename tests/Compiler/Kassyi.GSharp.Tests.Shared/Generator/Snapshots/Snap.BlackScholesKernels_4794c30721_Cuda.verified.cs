@@ -71,7 +71,7 @@ auto __gsharp_id_11_expRt = __expf(-__gsharp_id_3_r*__gsharp_id_2_t);
 
 inline __device__ float __gsharp_fn_Henicos__Benchmarks__ComputeBenchmarks__BlackScholesKernels__Cnd(float __gsharp_id_0_d){
 auto __gsharp_id_1_k = 1.0f/(1.0f+0.2316419f*fabsf(__gsharp_id_0_d));
-auto __gsharp_id_2_cnd = 0.3989422804f*__expf(-0.5f*__gsharp_id_0_d*__gsharp_id_0_d)*(__gsharp_id_1_k*(0.31938153f+__gsharp_id_1_k*(-0.356563782f+__gsharp_id_1_k*(1.781477937f+__gsharp_id_1_k*(-1.821255978f+__gsharp_id_1_k*1.330274429f)))));
+auto __gsharp_id_2_cnd = 0.3989422804f*__expf((-0.5f)*__gsharp_id_0_d*__gsharp_id_0_d)*(__gsharp_id_1_k*(0.31938153f+__gsharp_id_1_k*((-0.35656378f)+__gsharp_id_1_k*(1.781477937f+__gsharp_id_1_k*((-1.8212559f)+__gsharp_id_1_k*1.330274429f)))));
 if(__gsharp_id_0_d>0)
 {
 __gsharp_id_2_cnd=1.0f-__gsharp_id_2_cnd;

@@ -53,16 +53,21 @@ public sealed class BinaryExpressionTranspilerRule : SyntaxNodeTranspilerRuleBas
         }
 
         context.Visitor.Visit(node.Left);
-        AppendOperator(node, ref context);
+        AppendOperator(node, node.Right, ref context);
         context.Visitor.Visit(node.Right);
     }
 
-    private static void AppendOperator(BinaryExpressionSyntax node, ref TranspileContext context)
+    // <right> is what follows the operator: the operand itself, or null for the name of a temporary
+    private static void AppendOperator(BinaryExpressionSyntax node, ExpressionSyntax? right, ref TranspileContext context)
     {
         var opText = node.OperatorToken.Text;
         if (opText.Length > 0 && char.IsLetter(opText[0]))
         {
             context.Emitter.Writer.Append($" {opText} ");
+        }
+        else if (right != null)
+        {
+            OperatorSpacing.AppendOperator(opText, right, ref context);
         }
         else
         {
@@ -100,7 +105,7 @@ public sealed class BinaryExpressionTranspilerRule : SyntaxNodeTranspilerRuleBas
         var right = EvaluationOrder.DeclareTemp(ref context, node.Right, reference: false);
         sequence.Return();
         EvaluationOrder.AppendTempName(writer, left);
-        AppendOperator(node, ref context);
+        AppendOperator(node, right: null, ref context);
         EvaluationOrder.AppendTempName(writer, right);
     }
 }

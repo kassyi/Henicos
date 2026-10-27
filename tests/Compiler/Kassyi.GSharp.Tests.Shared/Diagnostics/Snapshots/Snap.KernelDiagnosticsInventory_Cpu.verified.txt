@@ -74,6 +74,20 @@
 (31,13)-(31,21) GSH0003 analyzer: The syntax 'GCHandle' is not supported in GSharp GPU kernels
 (31,31)-(31,39) GSH0003 analyzer: The syntax 'GCHandle' is not supported in GSharp GPU kernels
 (32,13)-(32,16) GSH0003 analyzer: The syntax 'GCHandle' is not supported in GSharp GPU kernels
+(50,33)-(50,37) GSH0003 analyzer: The syntax 'decimal' is not supported in GSharp GPU kernels
+(51,13)-(51,20) GSH0003 analyzer: The syntax 'decimal' is not supported in GSharp GPU kernels
+(51,29)-(51,33) GSH0003 analyzer: The syntax 'decimal' is not supported in GSharp GPU kernels
+(52,13)-(52,16) GSH0003 analyzer: The syntax 'decimal' is not supported in GSharp GPU kernels
+(52,24)-(52,29) GSH0003 analyzer: The syntax 'decimal' is not supported in GSharp GPU kernels
+(53,33)-(53,37) GSH0003 analyzer: The syntax 'decimal' is not supported in GSharp GPU kernels
+(53,46)-(53,50) GSH0003 analyzer: The syntax 'decimal' is not supported in GSharp GPU kernels
+(57,36)-(57,43) GSH0003 analyzer: The syntax 'decimal' is not supported in GSharp GPU kernels
+(57,62)-(57,67) GSH0003 analyzer: The syntax 'decimal' is not supported in GSharp GPU kernels
+(63,33)-(63,45) GSH0003 analyzer: The syntax 'decimal' is not supported in GSharp GPU kernels
+(63,33)-(63,45) GSH0065 analyzer: The static member 'RuntimeOnlyTypeKernels.RateProperty' cannot be accessed in GPU code because static fields and properties reside in host memory. Use a 'const' field or pass the value as a kernel parameter.
+(63,56)-(63,76) GSH0003 analyzer: The syntax 'decimal' is not supported in GSharp GPU kernels
+(69,23)-(69,30) GSH0003 analyzer: The syntax 'decimal' is not supported in GSharp GPU kernels
+(69,59)-(69,66) GSH0003 analyzer: The syntax 'decimal' is not supported in GSharp GPU kernels
 
 ## Diagnostics/GpuFinalizer.cu.cs
 (11,5)-(11,26) GSH0003 analyzer: The syntax 'DestructorDeclaration' is not supported in GSharp GPU kernels

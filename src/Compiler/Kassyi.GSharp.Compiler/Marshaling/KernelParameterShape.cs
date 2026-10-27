@@ -218,7 +218,7 @@ internal readonly record struct KernelParameterShape
             IsConstexpr = parameter.IsConstexprParameter(),
             HasExplicitDefault = parameter.HasExplicitDefaultValue,
             DefaultValueLiteral = parameter.HasExplicitDefaultValue
-                ? FormatDefaultValue(parameter.ExplicitDefaultValue)
+                ? FormatDefaultValue(parameter.Type, parameter.ExplicitDefaultValue)
                 : null,
             CopyIn = copyIn,
             CopyOut = copyOut
@@ -280,14 +280,16 @@ internal readonly record struct KernelParameterShape
         : TypeLayoutCalculator.IsUserStruct(element) ? AotHostNames.GetAotStructPath(element)
         : element.GetFullyQualifiedCsharpName();
 
-    private static string? FormatDefaultValue(object? value) => value switch
+    // The default as C# in the launcher's signature, whatever the build host's culture
+    private static string FormatDefaultValue(ITypeSymbol type, object? value) => value switch
     {
         null => "default",
-        bool b => b ? "true" : "false",
-        float f => f.ToString(CultureInfo.InvariantCulture) + "f",
-        double d => d.ToString(CultureInfo.InvariantCulture) + "d",
         string s => SymbolDisplay.FormatLiteral(s, true),
-        _ => value.ToString()
+        _ when ConstexprLiteral.TryFormatConstant(type, value, out var literal) => literal.CSharp,
+        // No device literal: the launcher still compiles, and GSH0003 reports the decimal in the kernel
+        decimal number => number.ToString(CultureInfo.InvariantCulture) + "M",
+        IFormattable formattable => formattable.ToString(null, CultureInfo.InvariantCulture),
+        _ => value.ToString() ?? "default"
     };
 
     // Only reached for an array-like type, which TryGetArrayLikeElementType has already checked by namespace

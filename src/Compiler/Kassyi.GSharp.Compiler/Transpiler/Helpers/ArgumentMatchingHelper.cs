@@ -41,10 +41,13 @@ internal static class ArgumentMatchingHelper
     /// </summary>
     public static ExpressionSyntax CreateDefaultArgument(IParameterSymbol parameter)
     {
+        // [Optional] without [DefaultParameterValue]: the caller passes default(T)
         if (!parameter.HasExplicitDefaultValue)
         {
-            throw new InvalidOperationException(
-                $"A call omits the parameter '{parameter.Name}', which has no default value.");
+            return parameter.IsOptional
+                ? SyntaxFactory.LiteralExpression(SyntaxKind.DefaultLiteralExpression)
+                : throw new InvalidOperationException(
+                    $"A call omits the parameter '{parameter.Name}', which has no default value.");
         }
 
         var value = parameter.ExplicitDefaultValue;
@@ -62,6 +65,11 @@ internal static class ArgumentMatchingHelper
                 SyntaxFactory.Literal(single)),
             double number => SyntaxFactory.LiteralExpression(SyntaxKind.NumericLiteralExpression,
                 SyntaxFactory.Literal(number)),
+            // A literal would be -2147483648, which C++ reads as the negation of a literal that does not fit int. The
+            // expression is outside the compilation, so int.MinValue would bind to nothing; the arithmetic form needs no
+            // binding and is the same constant in C# and C++
+            int.MinValue => CreateMinValue(SyntaxFactory.Literal(int.MaxValue), SyntaxFactory.Literal(1)),
+            long.MinValue => CreateMinValue(SyntaxFactory.Literal(long.MaxValue), SyntaxFactory.Literal(1L)),
             _ => CreateIntegralLiteral(value)
         };
 
@@ -74,6 +82,19 @@ internal static class ArgumentMatchingHelper
         writer.AppendCsharpTypeName(parameter.Type);
         return SyntaxFactory.CastExpression(SyntaxFactory.ParseTypeName(writer.ToString()), literal);
     }
+
+    // (-<max> - 1)
+    private static ExpressionSyntax CreateMinValue(SyntaxToken max, SyntaxToken one) =>
+        SyntaxFactory.ParenthesizedExpression(
+            SyntaxFactory.BinaryExpression(
+                SyntaxKind.SubtractExpression,
+                SyntaxFactory.PrefixUnaryExpression(
+                    SyntaxKind.UnaryMinusExpression,
+                    SyntaxFactory.LiteralExpression(SyntaxKind.NumericLiteralExpression, max)
+                ),
+                SyntaxFactory.LiteralExpression(SyntaxKind.NumericLiteralExpression, one)
+            )
+        );
 
     private static string GetNonFiniteName(string type, double value) =>
         type + (double.IsNaN(value) ? ".NaN" : value > 0 ? ".PositiveInfinity" : ".NegativeInfinity");
