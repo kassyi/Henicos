@@ -68,6 +68,10 @@ Lowering:
     ForEachSourcePrefix: __gsharp_foreach_src_
     ForEachIndexPrefix: __gsharp_foreach_i_
     UnrollIndexPrefix: __gsharp_unroll_
+    # The done flag of a Gpu.SyncGrid(body) with a return (__gsharp_sg_done_<body>) and the label after the statement that
+    # returns (__gsharp_sg_next_<body>_<statement>); the CUDA emitter and the CPU lowering both spell them
+    SyncGridDonePrefix: __gsharp_sg_done_
+    SyncGridNextLabelPrefix: __gsharp_sg_next_
 
 Iterator:
   Summary: Labels synthesized by inlining a device iterator body into a foreach site (IteratorInliner).

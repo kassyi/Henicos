@@ -33,7 +33,9 @@
         {
             __gsharp_ctx->x += 4;
             {
-                __gsharp_ctx->x += 500;
+                {
+                    __gsharp_ctx->x += 500;
+                }
             }
 
             __gsharp_state = -1;

@@ -46,43 +46,52 @@ internal sealed class SyncGridMacroRule : IMacroTranspilerRule
         if (statements.HasExecutableStatements)
         {
             var index = 0;
-            EmitBody(statements, bodyIndex: 0, ref index, ref context);
+            var bodyIds = new int[statements.BodyParents.Length];
+            EmitBody(statements, bodyIndex: 0, bodyIds, ref index, ref context);
         }
 
         return true;
     }
 
     // Emits, in a scope, the statements of body bodyIndex from elements[index] on: its own statements, and the bodies
-    // nested in it through EmitBody again. Returns with index at the first statement outside the body.
+    // nested in it through EmitBody again. Returns with index at the first statement outside the body. A body that
+    // returns declares its done flag first; a declaration that a guard would hide is declared there too.
     private static void EmitBody(
         SyncGridStatements statements,
         int bodyIndex,
+        int[] bodyIds,
         ref int index,
         ref TranspileContext context)
     {
         var elements = statements.Elements;
         var model = context.Query.SemanticModel;
+        bodyIds[bodyIndex] = context.Emitter.SyncGridBodyCounter++;
         using (context.Emitter.Writer.Scope())
         {
-            while (index < elements.Length && IsWithin(statements, elements[index].BodyIndex, bodyIndex))
+            if (statements.BodyHasReturn(bodyIndex))
+            {
+                context.Emitter.Writer.AppendLine($"bool {DoneFlagName(bodyIds[bodyIndex])} = false;");
+            }
+
+            DeclareSplitLocals(statements, bodyIndex, index, ref context);
+            while (index < elements.Length && statements.IsWithin(elements[index].BodyIndex, bodyIndex))
             {
                 var element = elements[index];
                 if (element.BodyIndex == bodyIndex)
                 {
-                    context.Visitor.Visit(element.Node);
-                    // The expression of an expression-bodied lambda is a statement of the body
-                    context.Emitter.Writer.AppendIf(element.Node is ExpressionSyntax, ";").AppendLine();
+                    EmitStatement(statements, index, bodyIds, ref context);
                     index++;
                 }
                 else
                 {
-                    EmitBody(statements, ChildOnPath(statements, element.BodyIndex, bodyIndex), ref index, ref context);
+                    var child = statements.ChildOnPath(element.BodyIndex, bodyIndex);
+                    EmitBody(statements, child, bodyIds, ref index, ref context);
                 }
 
                 // The sync after a statement goes where the next statement is: after the scopes that end here, before
                 // the ones that start with it
                 if (index < elements.Length &&
-                    IsWithin(statements, elements[index].BodyIndex, bodyIndex) &&
+                    statements.IsWithin(elements[index].BodyIndex, bodyIndex) &&
                     SyncGridBody.IsSyncPoint(elements, index - 1, model))
                 {
                     context.Emitter.Writer.AppendLine(GridSync);
@@ -91,29 +100,165 @@ internal sealed class SyncGridMacroRule : IMacroTranspilerRule
         }
     }
 
-    // Whether body is ancestor or the same body as descendant
-    private static bool IsWithin(SyncGridStatements statements, int descendant, int ancestor)
+    // <type> <name>; for each declarator of the guarded declarations of the body and each out variable that a guarded
+    // statement declares into the body, which the guards only assign
+    private static void DeclareSplitLocals(SyncGridStatements statements, int bodyIndex, int first, ref TranspileContext context)
     {
-        for (var body = descendant; body >= 0; body = statements.BodyParents[body])
+        var model = context.Query.SemanticModel;
+        for (var i = first;
+             i < statements.Elements.Length && statements.IsWithin(statements.Elements[i].BodyIndex, bodyIndex);
+             i++)
         {
-            if (body == ancestor)
+            var element = statements.Elements[i];
+            if (element.BodyIndex != bodyIndex || statements.GetGuardBodies(i, model).IsEmpty)
             {
-                return true;
+                continue;
+            }
+
+            if (IsSplitDeclaration(statements, i, model, out var declaration))
+            {
+                foreach (var declarator in declaration.Declaration.Variables)
+                {
+                    DeclareLocal(declarator, declarator.Identifier, ref context);
+                }
+            }
+
+            var outVariables = ImmutableArray.CreateBuilder<DeclarationExpressionSyntax>();
+            SyncGridBody.AddMovedOutVariables(element.Node, outVariables);
+            foreach (var variable in outVariables)
+            {
+                // Only single variable designations are collected (SyncGridBody.AddMovedOutVariables)
+                var designation = (SingleVariableDesignationSyntax)variable.Designation;
+                DeclareLocal(designation, designation.Identifier, ref context);
+            }
+        }
+    }
+
+    // <type> <name>;
+    private static void DeclareLocal(SyntaxNode declaration, SyntaxToken identifier, ref TranspileContext context)
+    {
+        if (context.Query.SemanticModel.GetDeclaredSymbol<ILocalSymbol>(declaration) is not { } local)
+        {
+            context.Reporter.Fail(GSharpDiagnostics.UnsupportedSyntax, declaration,
+                GpuCodeConstraints.SyncGridUnsplittableDeclaration);
+            return;
+        }
+
+        StructTranspiler.RegisterUsedStructIfApplicable(local.Type, ref context);
+        context.Emitter.Dialect.AppendType(ref context, local.Type);
+        context.Emitter.Writer.Append(' ');
+        CppNameResolver.AppendDeclaredName(declaration, identifier, ref context);
+        context.Emitter.Writer.AppendLine(";");
+    }
+
+    // One statement: in the guard of the bodies that returned before it, its returns rewritten, the label after it when it
+    // returns; a split declaration only assigns its initializers
+    private static void EmitStatement(SyncGridStatements statements, int index, int[] bodyIds, ref TranspileContext context)
+    {
+        var element = statements.Elements[index];
+        var model = context.Query.SemanticModel;
+        var guards = statements.GetGuardBodies(index, model);
+        var bodyId = bodyIds[element.BodyIndex];
+        var label = $"{GSharpInternalNames.Lowering.SyncGridNextLabelPrefix}{bodyId}_{index}";
+        if (guards.IsEmpty)
+        {
+            EmitContent(statements, index, label, bodyId, guarded: false, ref context);
+        }
+        else
+        {
+            context.Emitter.Writer.Append("if");
+            using (context.Emitter.Writer.Parentheses())
+            {
+                for (var g = 0; g < guards.Length; g++)
+                {
+                    context.Emitter.Writer.AppendIf(g > 0, "&&").Append($"!{DoneFlagName(bodyIds[guards[g]])}");
+                }
+            }
+
+            context.Emitter.Writer.AppendLine();
+            using (context.Emitter.Writer.Scope())
+            {
+                EmitContent(statements, index, label, bodyId, guarded: true, ref context);
             }
         }
 
-        return false;
+        if (element.HasBodyReturn)
+        {
+            context.Emitter.Writer.AppendLine($"{label}:;");
+        }
     }
 
-    // The body directly nested in ancestor on the way to descendant
-    private static int ChildOnPath(SyncGridStatements statements, int descendant, int ancestor)
+    private static void EmitContent(
+        SyncGridStatements statements,
+        int index,
+        string label,
+        int bodyId,
+        bool guarded,
+        ref TranspileContext context)
     {
-        var body = descendant;
-        while (statements.BodyParents[body] != ancestor)
+        var element = statements.Elements[index];
+        var model = context.Query.SemanticModel;
+        if (IsSplitDeclaration(statements, index, model, out var declaration))
         {
-            body = statements.BodyParents[body];
+            // <name> = <initializer>; for each declarator with one
+            foreach (var declarator in declaration.Declaration.Variables)
+            {
+                if (declarator.Initializer == null)
+                {
+                    continue;
+                }
+
+                CppNameResolver.AppendDeclaredName(declarator, declarator.Identifier, ref context);
+                DeclarationTranspilerHelper.WriteDeclaratorInitializer(declarator, ref context);
+                context.Emitter.Writer.AppendLine(";");
+            }
+
+            return;
         }
 
-        return body;
+        var node = element.Node;
+        var outVariables = ImmutableArray.CreateBuilder<DeclarationExpressionSyntax>();
+        if (guarded)
+        {
+            SyncGridBody.AddMovedOutVariables(node, outVariables);
+        }
+
+        if (node is StatementSyntax statement && (element.HasBodyReturn || outVariables.Count > 0))
+        {
+            // The rewritten statement is outside the compilation; its annotations map it back to the user's source
+            var rewritten = LoweringAnnotations.AnnotateOriginalSpans(statement, model.Compilation);
+            if (element.HasBodyReturn)
+            {
+                rewritten = SyncGridBody.RewriteReturns(rewritten, DoneFlagName(bodyId), label);
+            }
+
+            // out var <name> -> out <name>, declared at the top of the body (DeclareSplitLocals)
+            var moved = ImmutableArray.CreateBuilder<DeclarationExpressionSyntax>();
+            if (guarded)
+            {
+                SyncGridBody.AddMovedOutVariables(rewritten, moved);
+            }
+
+            node = SyncGridBody.RewriteOutVariables(rewritten, moved);
+        }
+
+        context.Visitor.Visit(node);
+        // The expression of an expression-bodied lambda is a statement of the body
+        context.Emitter.Writer.AppendIf(node is ExpressionSyntax, ";").AppendLine();
     }
+
+    // A guarded local declaration that is declared at the top of its body and assigned in the guard
+    private static bool IsSplitDeclaration(
+        SyncGridStatements statements,
+        int index,
+        SemanticModel model,
+        [NotNullWhen(true)] out LocalDeclarationStatementSyntax? declaration)
+    {
+        declaration = statements.Elements[index].Node as LocalDeclarationStatementSyntax;
+        return declaration != null &&
+               SyncGridBody.CanSplit(declaration, model) &&
+               !statements.GetGuardBodies(index, model).IsEmpty;
+    }
+
+    private static string DoneFlagName(int bodyId) => $"{GSharpInternalNames.Lowering.SyncGridDonePrefix}{bodyId}";
 }

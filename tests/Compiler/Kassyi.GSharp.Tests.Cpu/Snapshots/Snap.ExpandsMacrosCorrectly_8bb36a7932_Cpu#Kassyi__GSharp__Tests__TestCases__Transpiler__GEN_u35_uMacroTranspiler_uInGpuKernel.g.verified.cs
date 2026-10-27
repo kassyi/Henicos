@@ -405,7 +405,9 @@ case 9:
 {
 __gsharp_ctx.sum += 4;
 {
+{
 __gsharp_ctx.sum += 500;
+}
 }
 
 void LocalStep()

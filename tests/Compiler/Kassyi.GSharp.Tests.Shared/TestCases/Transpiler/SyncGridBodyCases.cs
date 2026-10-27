@@ -67,6 +67,16 @@ public static class Cases
         });
     }
 
+    public static void LabeledEmpty(int x)
+    {
+        Gpu.SyncGrid(() =>
+        {
+            x += 1;
+            Skip: ;
+            x += 2;
+        });
+    }
+
     public static void NestedBody(int x)
     {
         Gpu.SyncGrid(() =>
@@ -140,6 +150,51 @@ public static class Cases
             {
                 x += 2;
             }
+        });
+    }
+
+    public static void ExpressionBodyIsBody(int x)
+    {
+        Gpu.SyncGrid(() => Gpu.SyncGrid(() =>
+        {
+            x += 1;
+            x += 2;
+        }));
+    }
+
+    public static void ReturnGuards(int x)
+    {
+        Gpu.SyncGrid(() =>
+        {
+            x += 1;
+            if (x > 0) return;
+            x += 2;
+            Gpu.SyncGrid(() =>
+            {
+                if (x > 1) return;
+                x += 3;
+            });
+            ;
+            Gpu.SyncGrid();
+            x += 4;
+        });
+    }
+
+    public static void ReturnsOfNestedFunctions(int x)
+    {
+        Gpu.SyncGrid(() =>
+        {
+            Gpu.ForUnroll(0, 2, i =>
+            {
+                if (i == 1) return;
+                x += i;
+            });
+            void Step()
+            {
+                return;
+            }
+
+            Step();
         });
     }
 

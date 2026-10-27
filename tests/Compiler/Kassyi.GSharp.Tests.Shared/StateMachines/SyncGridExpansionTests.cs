@@ -1,4 +1,4 @@
-#pragma warning disable CS0219
+#pragma warning disable CS0219, CS0168, CS0164
 using System.Threading.Tasks;
 using Xunit;
 
@@ -208,4 +208,173 @@ public class SyncGridExpansionTests : StateMachineTestBase
                 x *= mine;
             });
         });
+    // done flag at the top; the return sets it and jumps past its statement; the later statements are guarded and the
+    // syncs stay outside the guards
+    [Fact]
+    [Scenario(TestScenario.HappyPath)]
+    public Task Lower_SyncGrid_Return_SkipsTheRestButKeepsTheSyncs() =>
+        VerifyPipelineLower(() =>
+        {
+            int x = 0;
+            int c = 0;
+            Gpu.SyncGrid(() =>
+            {
+                x += 1;
+                if (c > 0) return;
+                x += 2;
+                x += 3;
+            });
+        });
+
+    // The nested body has its own flag; x += 3 of the outer body is not guarded
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public Task Lower_SyncGrid_ReturnInNestedBody_GuardsTheNestedRestOnly() =>
+        VerifyPipelineLower(() =>
+        {
+            int x = 0;
+            int c = 0;
+            Gpu.SyncGrid(() =>
+            {
+                x += 1;
+                Gpu.SyncGrid(() =>
+                {
+                    if (c > 0) return;
+                    x += 2;
+                });
+                x += 3;
+            });
+        });
+
+    // A return of a lambda or a local function in the body is not rewritten, and adds no flag
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public Task Lower_SyncGrid_ReturnOfLambdaOrLocalFunction_IsNotRewritten() =>
+        VerifyPipelineLower(() =>
+        {
+            int x = 0;
+            Gpu.SyncGrid(() =>
+            {
+                x += 1;
+                Gpu.ForUnroll(0, 2, i =>
+                {
+                    if (i == 1) return;
+                    x += i;
+                });
+                void Step()
+                {
+                    return;
+                }
+
+                Step();
+            });
+        });
+
+    // Declarations after the return move to the top of the body; the guards keep only the assignments; const stays.
+    // Without a semantic model (as here) a var declaration would move as var <name>; with one, the type is written out
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public Task Lower_SyncGrid_DeclarationsAfterReturn_MoveToTheTop() =>
+        VerifyPipelineLower(() =>
+        {
+            int x = 0;
+            int c = 0;
+            Gpu.SyncGrid(() =>
+            {
+                if (c > 0) return;
+                int v = x;
+                int p = 1, q = p;
+                int u;
+                const int k = 2;
+                x += v + q + k;
+            });
+        });
+
+    // The out variables of guarded statements move to the top of the body and are passed as out <name>
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public Task Lower_SyncGrid_OutVariablesAfterReturn_MoveToTheTop() =>
+        VerifyPipelineLower(() =>
+        {
+            int x = 0;
+            int c = 0;
+            Gpu.SyncGrid(() =>
+            {
+                if (c > 0) return;
+                Read(out int v);
+                if (Read(out int w) > 0) x += w;
+                x += v;
+            });
+        });
+
+    // The return inside the user's switch jumps to the label of the next state, not to a goto case that the user's switch
+    // would bind (here to its case 2)
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public Task Lower_SyncGrid_ReturnInSwitch_JumpsToTheLabelOfTheState() =>
+        VerifyPipelineLower(() =>
+        {
+            int x = 0;
+            int c = 0;
+            Gpu.SyncGrid(() =>
+            {
+                x += 1;
+                switch (c)
+                {
+                    case 0:
+                        return;
+                    case 2:
+                        x += 100;
+                        break;
+                    default:
+                        break;
+                }
+                x += 2;
+            });
+        });
+
+    // A return in a foreach statement and in a statement with a user label
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public Task Lower_SyncGrid_ReturnInForEachAndLabeledStatement_JumpsToTheirLabels() =>
+        VerifyPipelineLower(() =>
+        {
+            int x = 0;
+            int[] values = [1, 2];
+            Gpu.SyncGrid(() =>
+            {
+                foreach (int value in values)
+                {
+                    if (value == x) return;
+                }
+                Check: if (x > 3) return;
+                x += 2;
+            });
+        });
+
+    // The outer return guards the nested body; the last nested statement needs both flags clear
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public Task Lower_SyncGrid_NestedReturnAfterReturn_GuardsWithBothFlags() =>
+        VerifyPipelineLower(() =>
+        {
+            int x = 0;
+            int c = 0;
+            Gpu.SyncGrid(() =>
+            {
+                if (c > 0) return;
+                Gpu.SyncGrid(() =>
+                {
+                    if (c > 1) return;
+                    x += 1;
+                });
+                x += 2;
+            });
+        });
+
+    private static int Read(out int value)
+    {
+        value = 1;
+        return 1;
+    }
 }

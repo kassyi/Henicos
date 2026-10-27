@@ -132,6 +132,266 @@ public class SyncGridBodyTests : TranspilerTestBase
         Assert.Equal(Enumerable.Range(0, Threads).Select(static t => 4 * t), b);
     }
 
+    [SkippableTheory]
+    [Scenario(TestScenario.HappyPath)]
+    [InlineData(false, 0)]
+    [InlineData(true, 0)]
+    [InlineData(false, 1)]
+    [InlineData(true, 1)]
+    public void Test_SyncGridBody_UniformReturn_SkipsTheRestOfTheBodyOnly(bool forceManaged, int n)
+    {
+        var a = new int[Threads];
+        var b = new int[Threads];
+
+        RunReadingOtherBlocks(forceManaged, () => SyncGridBodyKernels.LaunchUniformReturnKernel(a, b, n, gridDimX: Blocks, blockDimX: ThreadsPerBlock));
+
+        // The statement after the body runs on every thread, whether the body returned or not
+        Assert.Equal(Enumerable.Range(0, Threads).Select(static t => t + 1001), a);
+        Assert.Equal(
+            Enumerable.Range(0, Threads).Select(t => n == 0 ? 0 : (t + 1) % Threads + 101),
+            b);
+    }
+
+    [SkippableTheory]
+    [Scenario(TestScenario.Boundary)]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void Test_SyncGridBody_DivergentReturn_ReturnedThreadsStillSync(bool forceManaged)
+    {
+        var a = new int[Threads];
+        var b = new int[Threads];
+
+        RunReadingOtherBlocks(forceManaged, () => SyncGridBodyKernels.LaunchDivergentReturnKernel(a, b, gridDimX: Blocks, blockDimX: ThreadsPerBlock));
+
+        Assert.Equal(Enumerable.Range(0, Threads).Select(static t => t % 2 == 0 ? 0 : (t + 1) % Threads + 1), b);
+    }
+
+    [SkippableTheory]
+    [Scenario(TestScenario.Boundary)]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void Test_SyncGridBody_ReturnInNestedBody_SkipsTheNestedRestOnly(bool forceManaged)
+    {
+        var a = new int[Threads];
+        var b = new int[Threads];
+
+        RunReadingOtherBlocks(forceManaged, () => SyncGridBodyKernels.LaunchNestedReturnKernel(a, b, gridDimX: Blocks, blockDimX: ThreadsPerBlock));
+
+        var expectedA = Enumerable.Range(0, Threads).Select(static t => t < 32 ? 1 : 2).ToArray();
+        Assert.Equal(expectedA, a);
+        Assert.Equal(Enumerable.Range(0, Threads).Select(t => expectedA[(t + 1) % Threads]), b);
+    }
+
+    [SkippableTheory]
+    [Scenario(TestScenario.Boundary)]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void Test_SyncGridBody_ReturnInLoopAndLocalFunction_LeaveTheirOwnScopes(bool forceManaged)
+    {
+        var a = new int[Threads];
+        var b = new int[Threads];
+
+        Run(forceManaged, () => SyncGridBodyKernels.LaunchReturnFromLoopKernel(a, b, gridDimX: Blocks, blockDimX: ThreadsPerBlock));
+
+        // Two iterations add 2, the local function adds 10; b = 7 is skipped, b += 1 runs
+        Assert.Equal(Enumerable.Repeat(12, Threads), a);
+        Assert.Equal(Enumerable.Repeat(1, Threads), b);
+    }
+
+    [SkippableTheory]
+    [Scenario(TestScenario.Boundary)]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void Test_SyncGridBody_DeclarationsAfterReturn_StayVisibleAndSkipInitializers(bool forceManaged)
+    {
+        const int n = 40;
+        var a = Enumerable.Range(0, Threads).Select(static t => t * 3).ToArray();
+        var b = new int[Threads];
+        var c = new int[Threads];
+        var counter = new int[Threads];
+
+        Run(forceManaged, () => SyncGridBodyKernels.LaunchDeclarationAfterReturnKernel(a, b, c, counter, n, gridDimX: Blocks, blockDimX: ThreadsPerBlock));
+
+        // v = a[t], w = 2v, x = 1, y = x + w, k = 5: b = v + y + k = 3v + 6; the returned threads run no initializer
+        Assert.Equal(Enumerable.Range(0, Threads).Select(static t => t < n ? 3 * (t * 3) + 6 : 0), b);
+        Assert.Equal(Enumerable.Range(0, Threads).Select(static t => t < n ? 1 : 0), c);
+        Assert.Equal(Enumerable.Range(0, Threads).Select(static t => t < n ? 1 : 0), counter);
+    }
+
+    [SkippableTheory]
+    [Scenario(TestScenario.HappyPath)]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void Test_SyncGridBody_InDeviceFunctionWithSuspendingCall_SyncsBetweenStatements(bool forceManaged)
+    {
+        var a = new int[Threads];
+        var b = new int[Threads];
+        var c = new int[Threads];
+        Skip.If(forceManaged, "managed device function state machine does not request a grid sync at Gpu.SyncGrid (#665)");
+
+        RunReadingOtherBlocks(forceManaged, () => SyncGridBodyKernels.LaunchDeviceFunctionKernel(a, b, c, gridDimX: Blocks, blockDimX: ThreadsPerBlock));
+
+        Assert.Equal(Enumerable.Range(0, Threads).Select(static t => (t + 1) % Threads + 1), b);
+        Assert.Equal(
+            Enumerable.Range(0, Threads).Select(static t => t - t % ThreadsPerBlock + (t % ThreadsPerBlock + 1) % ThreadsPerBlock),
+            c);
+    }
+
+    [SkippableTheory]
+    [Scenario(TestScenario.Boundary)]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void Test_SyncGridBody_BodyInLoopOfBody_SyncsEveryIteration(bool forceManaged)
+    {
+        var a = new int[Threads];
+        var b = new int[Threads];
+
+        RunReadingOtherBlocks(forceManaged, () => SyncGridBodyKernels.LaunchBodyInLoopOfBodyKernel(a, b, gridDimX: Blocks, blockDimX: ThreadsPerBlock));
+
+        Assert.Equal(Enumerable.Range(0, Threads).Select(static t => 2 * ((t + 1) % Threads + 1) + 1 + 1000), b);
+    }
+
+    [SkippableTheory]
+    [Scenario(TestScenario.Boundary)]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void Test_SyncGridBody_ExpressionBodyIsABody_SyncsBetweenItsStatements(bool forceManaged)
+    {
+        var a = new int[Threads];
+        var b = new int[Threads];
+
+        RunReadingOtherBlocks(forceManaged, () => SyncGridBodyKernels.LaunchExpressionBodyIsBodyKernel(a, b, gridDimX: Blocks, blockDimX: ThreadsPerBlock));
+
+        Assert.Equal(Enumerable.Range(0, Threads).Select(static t => (t + 1) % Threads + 1), b);
+    }
+
+    [SkippableTheory]
+    [Scenario(TestScenario.Boundary)]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void Test_SyncGridBody_OutVariablesAfterReturn_StayVisible(bool forceManaged)
+    {
+        const int n = 40;
+        var a = Enumerable.Range(0, Threads).Select(static t => t * 3).ToArray();
+        var b = new int[Threads];
+
+        Run(forceManaged, () => SyncGridBodyKernels.LaunchOutVariableAfterReturnKernel(a, b, n, gridDimX: Blocks, blockDimX: ThreadsPerBlock));
+
+        // x = z = 3t + 1, y = 6t, s = z + 1: b = 15t + 4; the threads that returned write nothing
+        Assert.Equal(Enumerable.Range(0, Threads).Select(static t => t < n ? 15 * t + 4 : 0), b);
+    }
+
+    // A goto case written for a return inside the user's switch would bind to that switch: to its case 2 here
+    [SkippableTheory]
+    [Scenario(TestScenario.Boundary)]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void Test_SyncGridBody_ReturnInSwitch_LeavesTheBodyNotTheSwitch(bool forceManaged)
+    {
+        var a = new int[Threads];
+        var b = new int[Threads];
+        var mode = Enumerable.Range(0, Threads).Select(static t => t % 3).ToArray();
+
+        RunReadingOtherBlocks(forceManaged, () => SyncGridBodyKernels.LaunchReturnInSwitchKernel(a, b, mode, gridDimX: Blocks, blockDimX: ThreadsPerBlock));
+
+        var expectedA = Enumerable.Range(0, Threads).Select(static t => t % 3 == 2 ? 101 : 1).ToArray();
+        Assert.Equal(expectedA, a);
+        Assert.Equal(Enumerable.Range(0, Threads).Select(t => t % 3 == 0 ? 0 : expectedA[(t + 1) % Threads]), b);
+    }
+
+    [SkippableTheory]
+    [Scenario(TestScenario.Boundary)]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void Test_SyncGridBody_ReturnInSwitchWithoutMatchingCase_LeavesTheBody(bool forceManaged)
+    {
+        var a = new int[Threads];
+        var b = new int[Threads];
+        var mode = Enumerable.Range(0, Threads).Select(static t => t % 3).ToArray();
+
+        RunReadingOtherBlocks(forceManaged, () => SyncGridBodyKernels.LaunchReturnInSwitchWithoutCaseKernel(a, b, mode, gridDimX: Blocks, blockDimX: ThreadsPerBlock));
+
+        Assert.Equal(Enumerable.Range(0, Threads).Select(static t => t % 3 == 0 ? 0 : 1), b);
+    }
+
+    [SkippableTheory]
+    [Scenario(TestScenario.Boundary)]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void Test_SyncGridBody_ReturnInForEach_LeavesTheBody(bool forceManaged)
+    {
+        var a = new int[Threads];
+        var b = new int[Threads];
+        int[] values = [5, 10, 70];
+
+        RunReadingOtherBlocks(forceManaged, () => SyncGridBodyKernels.LaunchReturnInForEachKernel(a, b, values, gridDimX: Blocks, blockDimX: ThreadsPerBlock));
+
+        // Thread 5 returns before the first increment, thread 10 after one; the others count the three values
+        var expectedA = Enumerable.Range(0, Threads).Select(static t => t == 5 ? 0 : t == 10 ? 1 : 3).ToArray();
+        Assert.Equal(expectedA, a);
+        Assert.Equal(Enumerable.Range(0, Threads).Select(t => t is 5 or 10 ? 0 : expectedA[(t + 1) % Threads]), b);
+    }
+
+    [SkippableTheory]
+    [Scenario(TestScenario.Boundary)]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void Test_SyncGridBody_ReturnInLabeledStatement_LeavesTheBody(bool forceManaged)
+    {
+        var a = new int[Threads];
+        var b = new int[Threads];
+
+        RunReadingOtherBlocks(forceManaged, () => SyncGridBodyKernels.LaunchReturnInLabeledStatementKernel(a, b, gridDimX: Blocks, blockDimX: ThreadsPerBlock));
+
+        Assert.Equal(Enumerable.Range(0, Threads).Select(static t => t % 2 == 0 ? 0 : 1), b);
+    }
+
+    // The last statement of the nested body runs only while neither flag is set
+    [SkippableTheory]
+    [Scenario(TestScenario.Boundary)]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void Test_SyncGridBody_NestedReturnAfterReturn_GuardsWithBothFlags(bool forceManaged)
+    {
+        var a = new int[Threads];
+        var b = new int[Threads];
+        var c = new int[Threads];
+
+        RunReadingOtherBlocks(forceManaged, () => SyncGridBodyKernels.LaunchNestedReturnAfterReturnKernel(a, b, c, gridDimX: Blocks, blockDimX: ThreadsPerBlock));
+
+        Assert.Equal(Enumerable.Range(0, Threads).Select(static t => t % 2 == 1 && t % 3 != 0 ? 1 : 0), b);
+        Assert.Equal(Enumerable.Range(0, Threads).Select(static t => t % 2 == 1 ? 5 : 0), c);
+    }
+
+    [SkippableTheory]
+    [Scenario(TestScenario.Boundary)]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void Test_SyncGridBody_TwoReturnsAndGotoInGuardedStatement_SkipFromEachReturn(bool forceManaged)
+    {
+        var a = new int[Threads];
+        var b = new int[Threads];
+
+        Run(forceManaged, () => SyncGridBodyKernels.LaunchTwoReturnsKernel(a, b, gridDimX: Blocks, blockDimX: ThreadsPerBlock));
+
+        // The loop adds 10 in iterations 0 and 2; the goto skips iteration 1
+        Assert.Equal(Enumerable.Range(0, Threads).Select(static t => t % 2 == 0 ? 0 : 21), a);
+        Assert.Equal(Enumerable.Range(0, Threads).Select(static t => t % 2 == 1 && t % 3 != 0 ? 2 : 0), b);
+    }
+
+    [SkippableTheory]
+    [Scenario(TestScenario.Boundary)]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void Test_SyncGridBody_ReturnInForUnrollBody_EachCopyEndsItsOwnBody(bool forceManaged)
+    {
+        var a = new int[Threads];
+
+        Run(forceManaged, () => SyncGridBodyKernels.LaunchForUnrollReturnKernel(a, gridDimX: Blocks, blockDimX: ThreadsPerBlock));
+
+        Assert.Equal(Enumerable.Range(0, Threads).Select(static t => t == 0 ? 1 : 2), a);
+    }
+
     private static int[] Filled(int value) => Enumerable.Repeat(value, Threads).ToArray();
 
     private void RunReadingOtherBlocks(bool forceManaged, Action launch)
