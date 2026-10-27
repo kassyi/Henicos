@@ -72,6 +72,9 @@ Lowering:
     # returns (__gsharp_sg_next_<body>_<statement>); the CUDA emitter and the CPU lowering both spell them
     SyncGridDonePrefix: __gsharp_sg_done_
     SyncGridNextLabelPrefix: __gsharp_sg_next_
+    # The label after a Gpu.SingleThread body with a return (__gsharp_st_end_<body>), which a return of the body jumps to;
+    # the C++ emitter and the managed rewrite both spell it
+    SingleThreadEndLabelPrefix: __gsharp_st_end_
 
 Iterator:
   Summary: Labels synthesized by inlining a device iterator body into a foreach site (IteratorInliner).

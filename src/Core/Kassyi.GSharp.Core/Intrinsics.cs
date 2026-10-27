@@ -309,6 +309,8 @@ public static partial class Gpu
     /// The body runs on CUDA, on the native CPU path and on the managed CPU path. The compiler replaces the call with
     /// this condition; a device function that the managed path calls without rewriting it calls this method, which
     /// checks the same condition.
+    /// A <c>return</c> in the body leaves the body only, as in C#: the statements after <c>Gpu.SingleThread</c> still
+    /// run on that thread.
     /// </remarks>
     /// <exception cref="GpuOnlyException">Thrown when evaluated on the host CPU outside a kernel launch.</exception>
     public static void SingleThread(Action body)

@@ -132,6 +132,127 @@ public class SingleThreadTests : TranspilerTestBase
         Assert.Equal(OnlyFirst(threads), runs);
     }
 
+    [SkippableTheory]
+    [Scenario(TestScenario.Boundary)]
+    [InlineData(false, 0)]
+    [InlineData(true, 0)]
+    [InlineData(false, 2)]
+    [InlineData(true, 2)]
+    [InlineData(false, 9)]
+    [InlineData(true, 9)]
+    [InlineData(false, -1)]
+    [InlineData(true, -1)]
+    public void Test_SingleThread_ReturnInBody_LeavesBodyOnly(bool forceManaged, int stop)
+    {
+        var a = new int[9];
+
+        Run(forceManaged, () => SingleThreadKernels.LaunchReturnInBodyKernel(a, stop, gridDimX: 2, blockDimX: 4));
+
+        Assert.Equal(ExpectedAfterReturn(stop, secondBody: true), a);
+    }
+
+    [SkippableTheory]
+    [Scenario(TestScenario.Boundary)]
+    [InlineData(false, 0)]
+    [InlineData(true, 0)]
+    [InlineData(false, 2)]
+    [InlineData(true, 2)]
+    public void Test_SingleThread_ReturnInBodyAfterBlockBarrier_LeavesBodyOnly(bool forceManaged, int stop)
+    {
+        var a = new int[9];
+
+        Run(forceManaged, () => SingleThreadKernels.LaunchReturnInBodyAfterBarrierKernel(a, stop, gridDimX: 2, blockDimX: 4));
+
+        Assert.Equal(ExpectedAfterReturn(stop, secondBody: true), a);
+    }
+
+    [SkippableTheory]
+    [Scenario(TestScenario.Boundary)]
+    [InlineData(false, 0)]
+    [InlineData(true, 0)]
+    [InlineData(false, 2)]
+    [InlineData(true, 2)]
+    public void Test_SingleThread_ReturnInDeviceFunctionBody_LeavesBodyOnly(bool forceManaged, int stop)
+    {
+        var a = new int[9];
+
+        Run(forceManaged, () => SingleThreadKernels.LaunchReturnInDeviceFunctionBodyKernel(a, stop, gridDimX: 2, blockDimX: 4));
+
+        Assert.Equal(ExpectedAfterReturn(stop, secondBody: false), a);
+    }
+
+    [SkippableTheory]
+    [Scenario(TestScenario.Boundary)]
+    [InlineData(false, 0, 0)]
+    [InlineData(true, 0, 0)]
+    [InlineData(false, 3, 6)]
+    [InlineData(true, 3, 6)]
+    public void Test_SingleThread_ReturnInLocalFunctionOfBody_LeavesLocalFunctionOnly(bool forceManaged, int stop, int first)
+    {
+        var a = new int[9];
+
+        Run(forceManaged, () => SingleThreadKernels.LaunchReturnInBodyWithLocalFunctionKernel(a, stop, gridDimX: 2, blockDimX: 4));
+
+        Assert.Equal(WithFirst(first), a);
+    }
+
+    [SkippableTheory]
+    [Scenario(TestScenario.Boundary)]
+    [InlineData(false, 0, 11)]
+    [InlineData(true, 0, 11)]
+    [InlineData(false, 1, 10)]
+    [InlineData(true, 1, 10)]
+    [InlineData(false, 2, 1)]
+    [InlineData(true, 2, 1)]
+    public void Test_SingleThread_ReturnInNestedBodies_LeavesItsOwnBody(bool forceManaged, int stop, int first)
+    {
+        var a = new int[9];
+
+        Run(forceManaged, () => SingleThreadKernels.LaunchNestedReturnKernel(a, stop, gridDimX: 2, blockDimX: 4));
+
+        Assert.Equal(WithFirst(first), a);
+    }
+
+    [SkippableTheory]
+    [Scenario(TestScenario.Boundary)]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void Test_SingleThread_ReturnInBodyInLoopMacros_LeavesBodyOnly(bool forceManaged)
+    {
+        var a = new int[2];
+
+        Run(forceManaged, () => SingleThreadKernels.LaunchReturnInLoopMacroKernel(a, gridDimX: 1, blockDimX: 1));
+
+        Assert.Equal([2, 3], a);
+    }
+
+    // a[0] as given, a[1..8]: every thread adds 2 after the bodies
+    private static int[] WithFirst(int first)
+    {
+        var expected = new int[9];
+        expected[0] = first;
+        for (var t = 1; t < expected.Length; t++)
+        {
+            expected[t] = 2;
+        }
+
+        return expected;
+    }
+
+    // a[0]: the loop of the first body adds 1 per iteration before stop (all 4 when stop is negative or past the loop),
+    // the second body adds 10 unless stop is negative; a[1..8]: every thread adds 2 after the bodies
+    private static int[] ExpectedAfterReturn(int stop, bool secondBody)
+    {
+        var expected = new int[9];
+        expected[0] = (stop < 0 ? 4 : Math.Min(stop, 4)) + (secondBody && stop >= 0 ? 10 : 0);
+        for (var t = 1; t < expected.Length; t++)
+        {
+            expected[t] = 2;
+        }
+
+        return expected;
+    }
+
     // One run, by the thread with linear index 0
     private static int[] OnlyFirst(int threads)
     {

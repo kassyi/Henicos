@@ -78,6 +78,23 @@ if((threadIdx.x|threadIdx.y|threadIdx.z|blockIdx.x|blockIdx.y|blockIdx.z)==0)
 
 CUDA, the native CPU path and the managed CPU path use the same condition.
 
+A `return` in the body leaves the body only, as in C#: the statements after `Gpu.SingleThread` still run on that thread.
+The generated code jumps to a label after the guard instead of returning from the kernel:
+
+```csharp
+// Execution Context: G# Kernel (GPU)
+Gpu.SingleThread(() =>
+{
+    if (flag == 0)
+    {
+        return;      // leaves the body
+    }
+
+    a[0] = 1;
+});
+a[ThreadIndex.X + 1] = 2;  // thread (0,0,0) of block (0,0,0) still runs this
+```
+
 ## See also
 
 
