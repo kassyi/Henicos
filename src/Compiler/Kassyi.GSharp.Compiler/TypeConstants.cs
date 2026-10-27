@@ -26,6 +26,8 @@ internal static class TypeConstants
     public const string ReadOnlySpanType = nameof(ReadOnlySpan<byte>);
     public const string WarpType = "Warp";
     public const string WmmaType = "Wmma";
+    public const string ThreadIndexType = "ThreadIndex";
+    public const string SyncThreadsMethod = "SyncThreads";
 
     /// <summary>WMMA fragment, shape marker, layout marker, and method names in <c>Kassyi.GSharp.Core</c>.</summary>
     public static class WmmaTypes
