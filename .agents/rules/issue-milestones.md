@@ -1,52 +1,52 @@
-# Issue の優先順位（GitHub マイルストーン）
+# Issue Priority (GitHub Milestones)
 
-Issue の優先順位は GitHub のマイルストーンで管理します。ラベル（`bug`、`feature` など）は Issue の種類を表し、マイルストーンはどの順で片付けるかを表します。
-マイルストーンは 1 件の Issue に 1 つしか付けられないので、優先順位が矛盾しません。
+Issue priority is managed with GitHub milestones. Labels (`bug`, `feature`, ...) describe the kind of issue; the milestone describes the order in which issues are handled.
+An issue can have only one milestone, so priorities cannot contradict each other.
 
-## 1. 今の方針（2026-10-25）
+## 1. Current policy (2026-10-25)
 
-新機能よりもバグの修正とコードの整理を優先します。バグを直すのに必要な新規開発（診断の追加など）は、そのバグと同じマイルストーンに入れます。
-コードをきれいにし、バグを出し切ってから、意味論ライブラリ（`GpuGraph` など）に育てます。
+Fixing bugs and cleaning up code take priority over new features. New development that is needed to fix a bug (for example, adding a diagnostic) goes into the same milestone as that bug.
+Clean the code and flush out the bugs first, then grow the semantic libraries (such as `GpuGraph`).
 
-## 2. マイルストーン
+## 2. Milestones
 
-番号は重大度の順です。`Future` は終わりのない置き場なので番号を付けず、close しません。
+The numbers follow severity. `Future` is an open-ended place for new work, so it has no number and is never closed.
 
-| マイルストーン | 入れるもの |
+| Milestone | What goes in |
 | :- | :- |
-| `M1 Wrong Results` | 診断なしで値が壊れる、クラッシュする、無限ループする、起動できない |
-| `M2 Build Failures & Missing Diagnostics` | 生成した C++ がコンパイルできない、内部エラー、診断すべきものを診断しない |
-| `M3 Unconfirmed Suspicions` | まだ再現していない疑い。再現したら M1 か M2 に移し、再現しなければ close する |
-| `M4 Bug-Finding Infrastructure` | 走っていないテストや解析器、比較していない snapshot など、バグを見逃す穴。バグを見つけるための道具 |
-| `M5 Cleanup` | 削除、統合、非推奨 API の置き換え |
-| `Future` | 意味論ライブラリ、新機能、性能 |
+| `M1 Wrong Results` | Values become wrong without a diagnostic, a crash, an infinite loop, or a failure to launch |
+| `M2 Build Failures & Missing Diagnostics` | The generated C++ does not compile, an internal error, or something that should be diagnosed is not |
+| `M3 Unconfirmed Suspicions` | Suspicions not yet reproduced. Move to M1 or M2 once reproduced; close if it does not reproduce |
+| `M4 Bug-Finding Infrastructure` | Holes that let bugs through, such as tests or analyzers that do not run and snapshots that are not compared; the tools for finding bugs |
+| `M5 Cleanup` | Removal, consolidation, replacing deprecated APIs |
+| `Future` | Semantic libraries, new features, performance |
 
-## 3. 振り分け方
+## 3. How to assign
 
-上から順に当てはめ、最初に当てはまったマイルストーンに入れます。
+Apply the following from the top; the first match decides the milestone.
 
-1. まだ再現していない → `M3`
-2. 間違った結果や実行時の失敗になり、診断が出ない → `M1`
-3. ビルドが通らない、または診断が出るべきなのに出ない → `M2`
-4. テストや検査が働いていない、またはバグを見つける道具 → `M4`
-5. 整理だけで、動きは変わらない → `M5`
-6. それ以外（新機能、性能） → `Future`
+1. Not yet reproduced -> `M3`
+2. Gives a wrong result or a run-time failure with no diagnostic -> `M1`
+3. The build fails, or a diagnostic should appear but does not -> `M2`
+4. A test or check that does not work, or a tool for finding bugs -> `M4`
+5. Cleanup only, with no change in behavior -> `M5`
+6. Anything else (new features, performance) -> `Future`
 
-open の Issue には必ずマイルストーンを 1 つ付けます。付いていない Issue は次のコマンドで確認できます。
+Every open issue must have exactly one milestone. Issues without one can be listed with the following command.
 
 ```sh
 gh issue list --state open --limit 500 --json number,title,milestone --jq '.[] | select(.milestone == null) | "\(.number)\t\(.title)"'
 ```
 
-## 4. 着手の順
+## 4. Order of work
 
-優先順位は `M1` → `M2` → `M5` の順です。`M1` が最も高く、`M5` が最も低くなります。`Future` は終わりのない新規開発の置き場で、`M1`〜`M5` に Issue が残っている間は着手しません。
-`M3` と `M4` は 1 件が小さく、片付けると `M1` と `M2` の中身が確定します。`M1` と並行して進めてよいですが、`M1` より先には回しません。
-同じマイルストーンの中の順番は、GitHub のマイルストーンの画面で並べ替えて決めます。
+The priority order is `M1` -> `M2` -> `M5`. `M1` is the highest and `M5` the lowest. `Future` is an open-ended place for new development; do not start it while issues remain in `M1` to `M5`.
+`M3` and `M4` are small per issue, and settling them fixes what `M1` and `M2` contain. They may run in parallel with `M1`, but are never put ahead of it.
+The order within a milestone is decided by sorting on the GitHub milestone page.
 
-## 5. エージェントの扱い
+## 5. What agents do
 
-- Issue を起票するとき（`/issue`）は、ラベルと一緒にマイルストーンを提案し、`gh issue create --milestone "<名前>"` で付けます。
-- マイルストーンの付け替え、マイルストーンの作成と close は外部への公開にあたるので、ユーザーの承認を得てから行います。
-- `M3` の Issue を調べて再現したら、移す先（`M1` か `M2`）を提案します。
-- 全部片付いたマイルストーンは、ユーザーに確認してから close します。新しく作るときは、空いている次の番号を使います（`M6 ...`）。
+- When filing an issue (`/issue`), propose a milestone together with the labels and attach it with `gh issue create --milestone "<name>"`.
+- Changing a milestone, and creating or closing a milestone, are public actions, so get the user's approval first.
+- When an `M3` issue is investigated and reproduced, propose where to move it (`M1` or `M2`).
+- Ask the user before closing a milestone whose issues are all done. When creating a new one, use the next free number (`M6 ...`).

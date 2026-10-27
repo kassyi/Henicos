@@ -200,7 +200,7 @@ HNT0001 (a required test base class) was removed (#597). HNT0003 is the compiler
 
 ## 4. DEVELOPMENT METHODOLOGY (Test-Driven AI Vibe Coding)
 
-This project strictly adheres to **Test-Driven AI Vibe Coding (テスト先行AIバイブコーディング)**.
+This project strictly adheres to **Test-Driven AI Vibe Coding**.
 When picking up tasks from the roadmap, you MUST follow this fundamental workflow:
 
 1. **Phase 1: Golden Master / Snapshot Test Generation First**
