@@ -90,222 +90,52 @@ public static unsafe void Marshal_BlackScholesKernels_BlackScholesContext(ref gl
 native = default;
 if (host.S != null)
 {
-if (isDevicePtr)
-{
-throw new System.NotSupportedException("Passing a struct with arrays is not supported when isDevicePtr is true.");
-}
-else
-{
-int size = host.S.Length * sizeof(global::System.Single);
-if (size > 0)
-{
-CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out native.S.Data, (IntPtr)size, hStream));
-allocatedPtrs?.Add(native.S.Data);
+var pinnedHandles = allocatedPtrs ?? throw new System.ArgumentNullException(nameof(allocatedPtrs));
 var handle = System.Runtime.InteropServices.GCHandle.Alloc(host.S, System.Runtime.InteropServices.GCHandleType.Pinned);
-try
-{
-CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoDAsync_v2(native.S.Data, handle.AddrOfPinnedObject(), (IntPtr)size, hStream));
-}
-finally
-{
-handle.Free();
-}
-}
+pinnedHandles.Add(System.Runtime.InteropServices.GCHandle.ToIntPtr(handle));
+native.S.Data = handle.AddrOfPinnedObject();
 native.S.Length = host.S.Length;
-}
 }
 if (host.X != null)
 {
-if (isDevicePtr)
-{
-throw new System.NotSupportedException("Passing a struct with arrays is not supported when isDevicePtr is true.");
-}
-else
-{
-int size = host.X.Length * sizeof(global::System.Single);
-if (size > 0)
-{
-CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out native.X.Data, (IntPtr)size, hStream));
-allocatedPtrs?.Add(native.X.Data);
+var pinnedHandles = allocatedPtrs ?? throw new System.ArgumentNullException(nameof(allocatedPtrs));
 var handle = System.Runtime.InteropServices.GCHandle.Alloc(host.X, System.Runtime.InteropServices.GCHandleType.Pinned);
-try
-{
-CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoDAsync_v2(native.X.Data, handle.AddrOfPinnedObject(), (IntPtr)size, hStream));
-}
-finally
-{
-handle.Free();
-}
-}
+pinnedHandles.Add(System.Runtime.InteropServices.GCHandle.ToIntPtr(handle));
+native.X.Data = handle.AddrOfPinnedObject();
 native.X.Length = host.X.Length;
-}
 }
 if (host.T != null)
 {
-if (isDevicePtr)
-{
-throw new System.NotSupportedException("Passing a struct with arrays is not supported when isDevicePtr is true.");
-}
-else
-{
-int size = host.T.Length * sizeof(global::System.Single);
-if (size > 0)
-{
-CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out native.T.Data, (IntPtr)size, hStream));
-allocatedPtrs?.Add(native.T.Data);
+var pinnedHandles = allocatedPtrs ?? throw new System.ArgumentNullException(nameof(allocatedPtrs));
 var handle = System.Runtime.InteropServices.GCHandle.Alloc(host.T, System.Runtime.InteropServices.GCHandleType.Pinned);
-try
-{
-CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoDAsync_v2(native.T.Data, handle.AddrOfPinnedObject(), (IntPtr)size, hStream));
-}
-finally
-{
-handle.Free();
-}
-}
+pinnedHandles.Add(System.Runtime.InteropServices.GCHandle.ToIntPtr(handle));
+native.T.Data = handle.AddrOfPinnedObject();
 native.T.Length = host.T.Length;
-}
 }
 native.R = host.R;
 native.V = host.V;
 if (host.CallResult != null)
 {
-if (isDevicePtr)
-{
-throw new System.NotSupportedException("Passing a struct with arrays is not supported when isDevicePtr is true.");
-}
-else
-{
-int size = host.CallResult.Length * sizeof(global::System.Single);
-if (size > 0)
-{
-CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out native.CallResult.Data, (IntPtr)size, hStream));
-allocatedPtrs?.Add(native.CallResult.Data);
+var pinnedHandles = allocatedPtrs ?? throw new System.ArgumentNullException(nameof(allocatedPtrs));
 var handle = System.Runtime.InteropServices.GCHandle.Alloc(host.CallResult, System.Runtime.InteropServices.GCHandleType.Pinned);
-try
-{
-CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoDAsync_v2(native.CallResult.Data, handle.AddrOfPinnedObject(), (IntPtr)size, hStream));
-}
-finally
-{
-handle.Free();
-}
-}
+pinnedHandles.Add(System.Runtime.InteropServices.GCHandle.ToIntPtr(handle));
+native.CallResult.Data = handle.AddrOfPinnedObject();
 native.CallResult.Length = host.CallResult.Length;
-}
 }
 if (host.PutResult != null)
 {
-if (isDevicePtr)
-{
-throw new System.NotSupportedException("Passing a struct with arrays is not supported when isDevicePtr is true.");
-}
-else
-{
-int size = host.PutResult.Length * sizeof(global::System.Single);
-if (size > 0)
-{
-CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out native.PutResult.Data, (IntPtr)size, hStream));
-allocatedPtrs?.Add(native.PutResult.Data);
+var pinnedHandles = allocatedPtrs ?? throw new System.ArgumentNullException(nameof(allocatedPtrs));
 var handle = System.Runtime.InteropServices.GCHandle.Alloc(host.PutResult, System.Runtime.InteropServices.GCHandleType.Pinned);
-try
-{
-CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoDAsync_v2(native.PutResult.Data, handle.AddrOfPinnedObject(), (IntPtr)size, hStream));
-}
-finally
-{
-handle.Free();
-}
-}
+pinnedHandles.Add(System.Runtime.InteropServices.GCHandle.ToIntPtr(handle));
+native.PutResult.Data = handle.AddrOfPinnedObject();
 native.PutResult.Length = host.PutResult.Length;
-}
 }
 native.N = host.N;
 }
 public static unsafe void Unmarshal_BlackScholesKernels_BlackScholesContext(ref global::Henicos.Benchmarks.ComputeBenchmarks.BlackScholesKernels.BlackScholesContext host, ref AotContexts.BlackScholes native, bool isDevicePtr, IntPtr hStream = default)
 {
-if (host.S != null && !isDevicePtr && native.S.Data != IntPtr.Zero)
-{
-int size = host.S.Length * sizeof(global::System.Single);
-if (size > 0)
-{
-var handle = System.Runtime.InteropServices.GCHandle.Alloc(host.S, System.Runtime.InteropServices.GCHandleType.Pinned);
-try
-{
-CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoHAsync_v2(handle.AddrOfPinnedObject(), native.S.Data, (IntPtr)size, hStream));
-}
-finally
-{
-handle.Free();
-}
-}
-}
-if (host.X != null && !isDevicePtr && native.X.Data != IntPtr.Zero)
-{
-int size = host.X.Length * sizeof(global::System.Single);
-if (size > 0)
-{
-var handle = System.Runtime.InteropServices.GCHandle.Alloc(host.X, System.Runtime.InteropServices.GCHandleType.Pinned);
-try
-{
-CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoHAsync_v2(handle.AddrOfPinnedObject(), native.X.Data, (IntPtr)size, hStream));
-}
-finally
-{
-handle.Free();
-}
-}
-}
-if (host.T != null && !isDevicePtr && native.T.Data != IntPtr.Zero)
-{
-int size = host.T.Length * sizeof(global::System.Single);
-if (size > 0)
-{
-var handle = System.Runtime.InteropServices.GCHandle.Alloc(host.T, System.Runtime.InteropServices.GCHandleType.Pinned);
-try
-{
-CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoHAsync_v2(handle.AddrOfPinnedObject(), native.T.Data, (IntPtr)size, hStream));
-}
-finally
-{
-handle.Free();
-}
-}
-}
 host.R = native.R;
 host.V = native.V;
-if (host.CallResult != null && !isDevicePtr && native.CallResult.Data != IntPtr.Zero)
-{
-int size = host.CallResult.Length * sizeof(global::System.Single);
-if (size > 0)
-{
-var handle = System.Runtime.InteropServices.GCHandle.Alloc(host.CallResult, System.Runtime.InteropServices.GCHandleType.Pinned);
-try
-{
-CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoHAsync_v2(handle.AddrOfPinnedObject(), native.CallResult.Data, (IntPtr)size, hStream));
-}
-finally
-{
-handle.Free();
-}
-}
-}
-if (host.PutResult != null && !isDevicePtr && native.PutResult.Data != IntPtr.Zero)
-{
-int size = host.PutResult.Length * sizeof(global::System.Single);
-if (size > 0)
-{
-var handle = System.Runtime.InteropServices.GCHandle.Alloc(host.PutResult, System.Runtime.InteropServices.GCHandleType.Pinned);
-try
-{
-CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoHAsync_v2(handle.AddrOfPinnedObject(), native.PutResult.Data, (IntPtr)size, hStream));
-}
-finally
-{
-handle.Free();
-}
-}
-}
 host.N = native.N;
 }
 #pragma warning restore CS8500
@@ -366,8 +196,9 @@ return;
 #undef __gsharp_state
 #undef __gsharp_yielded_for_grid_sync
 }
-extern ""C"" __declspec(dllexport) void __gsharp_launch_Henicos__Benchmarks__ComputeBenchmarks__BlackScholesKernels__BlackScholesKernel(uint32_t __gsharp_grid_dim_x, uint32_t __gsharp_grid_dim_y, uint32_t __gsharp_grid_dim_z, uint32_t __gsharp_block_dim_x, uint32_t __gsharp_block_dim_y, uint32_t __gsharp_block_dim_z, __gsharp_ty_Henicos__Benchmarks__ComputeBenchmarks__BlackScholesKernels__BlackScholesContext __gsharp_id_0_ctx)
+extern ""C"" __declspec(dllexport) void __gsharp_launch_Henicos__Benchmarks__ComputeBenchmarks__BlackScholesKernels__BlackScholesKernel(uint32_t __gsharp_grid_dim_x, uint32_t __gsharp_grid_dim_y, uint32_t __gsharp_grid_dim_z, uint32_t __gsharp_block_dim_x, uint32_t __gsharp_block_dim_y, uint32_t __gsharp_block_dim_z, const __gsharp_ty_Henicos__Benchmarks__ComputeBenchmarks__BlackScholesKernels__BlackScholesContext* __gsharp_arg_0)
 {
+__gsharp_ty_Henicos__Benchmarks__ComputeBenchmarks__BlackScholesKernels__BlackScholesContext __gsharp_id_0_ctx = *__gsharp_arg_0;
 __gsharp_host_last_error.Reset();
 GSharpErrorSlot __gsharp_launch_error;
 int32_t __gsharp_total_blocks = (int32_t)(__gsharp_grid_dim_x * __gsharp_grid_dim_y * __gsharp_grid_dim_z);
@@ -439,7 +270,7 @@ return;
 }
 
 [System.Runtime.InteropServices.UnmanagedFunctionPointer(System.Runtime.InteropServices.CallingConvention.Cdecl)]
-private unsafe delegate void BlackScholesKernel_Delegate(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ, global::Henicos.Benchmarks.ComputeBenchmarks.BlackScholesKernels.BlackScholesContext ctx);
+private unsafe delegate void BlackScholesKernel_Delegate(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ, AotContexts.BlackScholes* ctx);
 #pragma warning disable CS8500
 [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
@@ -520,7 +351,20 @@ global::Kassyi.GSharp.Core.ManagedGpuContext.IsActive = false;
 }
 return;
 }
-throw new System.NotSupportedException("The struct 'Henicos.Benchmarks.ComputeBenchmarks.BlackScholesKernels.BlackScholesContext' cannot be passed to a kernel on the CPU dialect yet because its host and device layouts differ (field 'S' is an array, so the runtime may reorder the fields on the host). The CPU launcher copies it in the host layout, so the kernel would read garbled values.");
+var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<BlackScholesKernel_Delegate>("__gsharp_launch_Henicos__Benchmarks__ComputeBenchmarks__BlackScholesKernels__BlackScholesKernel", dllPath);
+AotContexts.BlackScholes ctx_native = default;
+var ctx_allocatedPtrs = new System.Collections.Generic.List<IntPtr>();
+try
+{
+AotContexts.Marshal_BlackScholesKernels_BlackScholesContext(ref ctx, ref ctx_native, false, ctx_allocatedPtrs);
+hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, &ctx_native);
+global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ThrowIfNativeError(dllPath);
+AotContexts.Unmarshal_BlackScholesKernels_BlackScholesContext(ref ctx, ref ctx_native, false);
+}
+finally
+{
+foreach (var handle in ctx_allocatedPtrs) System.Runtime.InteropServices.GCHandle.FromIntPtr(handle).Free();
+}
 }
 #pragma warning restore CS8500
 }

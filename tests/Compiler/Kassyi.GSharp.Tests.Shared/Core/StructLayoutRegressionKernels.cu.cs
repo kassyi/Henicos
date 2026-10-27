@@ -68,6 +68,24 @@ public struct LayoutReproNested
     public int Y;
 }
 
+public struct LayoutReproInnerBag
+{
+    public long Tag;
+    public int[] Items;
+}
+
+public struct LayoutReproElemHolder
+{
+    public int N;
+    public LayoutReproInnerBag[] Elems;
+}
+
+public struct LayoutReproPair
+{
+    public int[] A;
+    public int[] B;
+}
+
 public struct LayoutReproCharInt
 {
     public char C;
@@ -192,6 +210,41 @@ public static partial class StructLayoutRegressionKernels
         o[1] = b.Data.Length;
         o[2] = b.Data[1];
         b.Data[1] = 99;
+        b.N = 7;
+    }
+
+    // R4d: a null or empty array field
+    [GpuKernel]
+    public static void BagLengthKernel(LayoutReproBag b, int[] o)
+    {
+        o[0] = b.N;
+        o[1] = b.Data.Length;
+    }
+
+    // R4f: an array field whose elements are converted (they hold arrays) inside a struct passed by value: the
+    // kernel writes a value field of an element, which the caller sees in its array as C# would
+    [GpuKernel]
+    public static void ElemWriteKernel(LayoutReproElemHolder h)
+    {
+        h.Elems[0].Tag = 9;
+        h.Elems[0].Items[0] = 5;
+    }
+
+    // R4g: a construct the CPU dialect cannot run (inline PTX, GSH0054 where analyzers run), which the native code
+    // reports as an error after the marshaling; the PTX is a comment, so CUDA runs it as nothing
+    [GpuKernel]
+    public static void BagNativeErrorKernel(LayoutReproBag b, int[] o)
+    {
+        o[0] = b.Data[0];
+        Gpu.InlinePtx("/* reported as an error on the CPU dialect */");
+    }
+
+    // R4e: two array fields that hold one array
+    [GpuKernel]
+    public static void AliasKernel(LayoutReproPair p)
+    {
+        p.A[0] = 1;
+        p.B[1] = p.A[0] + 1;
     }
 
     // R4c: array of structs with an array field (#514)

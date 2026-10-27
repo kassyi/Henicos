@@ -144,8 +144,8 @@ public class StructLayoutDiagnosticsTests
             diagnostics.Ranges(GSharpDiagnostics.StructArrayFieldAllocatedPerElement.Id, "array field 'Data'"));
     }
 
-    // CPU only, until the CPU launcher converts structs (L4): Bag[] (line 66), AutoPair[] (line 101), Bag by value
-    // (line 104) and by ref (line 107), and ArraysHolder by ref (line 110)
+    // CPU only, until the CPU launcher converts struct arrays: Bag[] (line 66) and AutoPair[] (line 101). Bag by value
+    // (line 104) and by ref (line 107) and ArraysHolder by ref (line 110) go through the shadow struct (#511)
     [Theory]
     [InlineData("Cpu", true)]
     [InlineData("Cuda", false)]
@@ -158,10 +158,7 @@ public class StructLayoutDiagnosticsTests
             ?
             [
                 (Analyzer, 66, 43, 66, 48),
-                (Analyzer, 101, 44, 101, 54),
-                (Analyzer, 104, 45, 104, 48),
-                (Analyzer, 107, 47, 107, 50),
-                (Analyzer, 110, 51, 110, 63)
+                (Analyzer, 101, 44, 101, 54)
             ]
             : [];
         Assert.Equal(expected, diagnostics.Ranges(GSharpDiagnostics.StructTransferNotSupportedOnCpu.Id));

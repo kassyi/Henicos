@@ -40,8 +40,8 @@ internal static class CpuHostLaunchEmitter
         writer.AppendLine("#pragma warning restore CS8500");
     }
 
-    // throw new NotSupportedException("<GSH0082 text>"); in place of the native call, for the first struct parameter that
-    // the CPU launcher cannot convert yet
+    // throw new NotSupportedException("<GSH0082 text>"); in place of the native call, for the first struct array parameter
+    // that the CPU launcher cannot convert yet
     private static bool WriteNotSupportedThrow(SourceWriter writer, in KernelHostModel kernel)
     {
         foreach (var shape in kernel.Parameters)
@@ -79,8 +79,10 @@ internal static class CpuHostLaunchEmitter
                 else
                 {
                     // [WHY] A user struct by value goes as a pointer to the host value, so that the runtime marshaller
-                    // never converts it (bool, char, the x64 size rules); the native launcher copies it (#511)
-                    writer.Append($"{p.TypeName}{(p.IsByRef || p.IsCpuValueStruct ? "*" : "")} {p.Identifier}");
+                    // never converts it (bool, char, the x64 size rules); the native launcher copies it (#511). A struct
+                    // whose layouts differ goes as a pointer to its native shadow struct.
+                    var typeName = p.IsCpuConvertedStruct && p.AotStructPath is { } shadow ? shadow : p.TypeName;
+                    writer.Append($"{typeName}{(p.IsByRef || p.IsCpuValueStruct ? "*" : "")} {p.Identifier}");
                 }
             }
 
@@ -256,7 +258,75 @@ internal static class CpuHostLaunchEmitter
             $"var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<{kernel.MemberKey}_Delegate>(\"{exportName}\", dllPath);");
     }
 
+    // <shadow> <name>_native = default; var <name>_allocatedPtrs = new List<IntPtr>(); ... (each converted struct)
+    // try { Marshal_<S>(ref <name>, ref <name>_native, false, <name>_allocatedPtrs); ...; <fixed blocks and call>;
+    // Unmarshal_<S>(ref <name>, ref <name>_native, false); }
+    // finally { foreach (var handle in <name>_allocatedPtrs) GCHandle.FromIntPtr(handle).Free(); ... }
+    // [WHY] Marshal_ pins the array fields of a converted struct and records each handle; this one finally block frees
+    // them after the call and the copy back, also when the marshaling, the native call or its error check throws.
     private static void WriteCpuFixedBlocksAndInvoke(SourceWriter writer, in KernelHostModel kernel)
+    {
+        var hasConverted = false;
+        foreach (var shape in kernel.Parameters)
+        {
+            if (shape is { IsCpuConvertedStruct: true, AotStructPath: { } shadow })
+            {
+                writer.AppendLine($"{shadow} {shape.Name}_native = default;");
+                writer.AppendLine(
+                    $"var {shape.Name}_allocatedPtrs = new System.Collections.Generic.List<IntPtr>();");
+                hasConverted = true;
+            }
+        }
+
+        if (!hasConverted)
+        {
+            WriteFixedBlocksAndInvoke(writer, kernel);
+            WrapperEmitter.WriteAutoResultReturn(writer, kernel);
+            return;
+        }
+
+        writer.AppendLine("try");
+        using (writer.Scope())
+        {
+            foreach (var shape in kernel.Parameters)
+            {
+                if (shape is { IsCpuConvertedStruct: true, MarshalMethodName: { } marshal })
+                {
+                    writer.AppendLine(
+                        $"{marshal}(ref {shape.Identifier}, ref {shape.Name}_native, false, {shape.Name}_allocatedPtrs);");
+                }
+            }
+
+            WriteFixedBlocksAndInvoke(writer, kernel);
+
+            // [WHY] A struct by value is unmarshaled as well: its own fields go back only to Launch's copy, but an array
+            // field whose elements are converted shares the caller's array, whose elements must get the kernel's writes
+            foreach (var shape in kernel.Parameters)
+            {
+                if (shape is { IsCpuConvertedStruct: true, UnmarshalMethodName: { } unmarshal })
+                {
+                    writer.AppendLine($"{unmarshal}(ref {shape.Identifier}, ref {shape.Name}_native, false);");
+                }
+            }
+        }
+
+        writer.AppendLine("finally");
+        using (writer.Scope())
+        {
+            foreach (var shape in kernel.Parameters)
+            {
+                if (shape.IsCpuConvertedStruct)
+                {
+                    writer.AppendLine(
+                        $"foreach (var handle in {shape.Name}_allocatedPtrs) System.Runtime.InteropServices.GCHandle.FromIntPtr(handle).Free();");
+                }
+            }
+        }
+
+        WrapperEmitter.WriteAutoResultReturn(writer, kernel);
+    }
+
+    private static void WriteFixedBlocksAndInvoke(SourceWriter writer, in KernelHostModel kernel)
     {
         var hasFixed = false;
 
@@ -267,7 +337,7 @@ internal static class CpuHostLaunchEmitter
                 writer.AppendLine($"fixed ({elementType}* p_{shape.Name} = {shape.SpanExpression})");
                 hasFixed = true;
             }
-            else if (shape.IsByRef)
+            else if (shape is { IsByRef: true, IsCpuConvertedStruct: false })
             {
                 writer.AppendLine($"fixed ({shape.TypeName}* p_{shape.Name} = &{shape.Identifier})");
                 hasFixed = true;
@@ -291,8 +361,6 @@ internal static class CpuHostLaunchEmitter
         {
             WriteDelegateInvocation(writer, kernel);
         }
-
-        WrapperEmitter.WriteAutoResultReturn(writer, kernel);
     }
 
     private static void WriteDelegateInvocation(SourceWriter writer, in KernelHostModel kernel)
@@ -310,6 +378,10 @@ internal static class CpuHostLaunchEmitter
                 {
                     writer.Append(
                         $"new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy {{ Data = (IntPtr)p_{shape.Name}, Length = {shape.LengthExpression} }}");
+                }
+                else if (shape.IsCpuConvertedStruct)
+                {
+                    writer.Append($"&{shape.Name}_native");
                 }
                 else if (shape.IsByRef)
                 {

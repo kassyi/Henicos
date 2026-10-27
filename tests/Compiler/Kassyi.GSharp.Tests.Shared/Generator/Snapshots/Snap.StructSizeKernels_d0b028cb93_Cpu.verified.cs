@@ -484,13 +484,7 @@ global::Kassyi.GSharp.Core.ManagedGpuContext.IsActive = false;
 }
 return;
 }
-var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<ReadSecondOddKernel_Delegate>("__gsharp_launch_Kassyi__GSharp__Tests__Shared__Core__StructSizeKernels__ReadSecondOddKernel", dllPath);
-fixed (global::Kassyi.GSharp.Tests.Shared.Core.StructSizeOddInt* p_data = data)
-fixed (global::System.Int32* p_o = o)
-{
-hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (IntPtr)p_data, Length = data.Length }, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (IntPtr)p_o, Length = o.Length });
-global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ThrowIfNativeError(dllPath);
-}
+throw new System.NotSupportedException("An array of the struct 'Kassyi.GSharp.Tests.Shared.Core.StructSizeOddInt' cannot be passed to a kernel on the CPU dialect yet because the struct's host and device layouts differ (the struct is 6 bytes on the host and 8 bytes on the device). The CPU launcher passes the array in the host layout, so the kernel would read garbled values.");
 }
 #pragma warning restore CS8500
 public const string ReadSecondPackedKernel_Source = @"#pragma pack(push, 1)

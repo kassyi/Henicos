@@ -214,7 +214,7 @@ internal static class StructMarshalingEmitter
                 {
                     if (NeedsElementCopy(member.Type, dialect))
                     {
-                        WriteInlineArrayElementCopy(writer, member, toNative);
+                        WriteInlineArrayElementCopy(writer, member, toNative, dialect);
                     }
                     else
                     {
@@ -254,7 +254,8 @@ internal static class StructMarshalingEmitter
         TypeLayoutCalculator.GetStructLayout(named, dialect).Transfer != TransferClass.Identical;
 
     // for (int k = 0; k < <N>; k++) { <copy host[k] and ((<element shadow>*)pField)[k]> }
-    private static void WriteInlineArrayElementCopy(SourceWriter writer, StructAbiMember member, bool toNative)
+    private static void WriteInlineArrayElementCopy(SourceWriter writer, StructAbiMember member, bool toNative,
+        ITranspilerDialect dialect)
     {
         writer.AppendLine($"for (int k = 0; k < {member.ElementCount}; k++)");
         using (writer.Scope())
@@ -264,11 +265,11 @@ internal static class StructMarshalingEmitter
                 const string NativeElement = "((global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy*)pField)[k]";
                 if (toNative)
                 {
-                    WriteMarshalArrayMember(writer, "host[k]", NativeElement, arrayElementType);
+                    WriteMarshalArrayMember(writer, "host[k]", NativeElement, arrayElementType, dialect);
                 }
                 else
                 {
-                    WriteUnmarshalArrayMember(writer, "host[k]", NativeElement, arrayElementType);
+                    WriteUnmarshalArrayMember(writer, "host[k]", NativeElement, arrayElementType, dialect);
                 }
 
                 return;
@@ -300,7 +301,7 @@ internal static class StructMarshalingEmitter
         if (member.Type.TryGetArrayLikeElementType(out var elementType))
         {
             var name = member.Name.ToCSharpIdentifier();
-            WriteMarshalArrayMember(writer, $"host.{name}", $"native.{name}", elementType);
+            WriteMarshalArrayMember(writer, $"host.{name}", $"native.{name}", elementType, dialect);
         }
         else if (TypeLayoutCalculator.IsUserStruct(member.Type))
         {
@@ -332,8 +333,14 @@ internal static class StructMarshalingEmitter
     }
 
     private static void WriteMarshalArrayMember(SourceWriter writer, string host, string native,
-        ITypeSymbol elementType)
+        ITypeSymbol elementType, ITranspilerDialect dialect)
     {
+        if (!dialect.IsCuda)
+        {
+            WriteCpuMarshalArrayMember(writer, host, native, elementType, dialect);
+            return;
+        }
+
         writer.AppendLine($"if ({host} != null)");
         using (writer.Scope())
         {
@@ -463,7 +470,7 @@ internal static class StructMarshalingEmitter
         if (member.Type.TryGetArrayLikeElementType(out var elementType))
         {
             var name = member.Name.ToCSharpIdentifier();
-            WriteUnmarshalArrayMember(writer, $"host.{name}", $"native.{name}", elementType);
+            WriteUnmarshalArrayMember(writer, $"host.{name}", $"native.{name}", elementType, dialect);
         }
         else if (TypeLayoutCalculator.IsUserStruct(member.Type))
         {
@@ -495,8 +502,14 @@ internal static class StructMarshalingEmitter
     }
 
     private static void WriteUnmarshalArrayMember(SourceWriter writer, string host, string native,
-        ITypeSymbol elementType)
+        ITypeSymbol elementType, ITranspilerDialect dialect)
     {
+        if (!dialect.IsCuda)
+        {
+            WriteCpuUnmarshalArrayMember(writer, host, native, elementType, dialect);
+            return;
+        }
+
         writer.AppendLine(
             $"if ({host} != null && !isDevicePtr && {native}.Data != IntPtr.Zero)");
         using (writer.Scope())
@@ -554,6 +567,75 @@ internal static class StructMarshalingEmitter
                         writer.AppendLine("handle.Free();");
                     }
                 }
+            }
+        }
+    }
+
+    // if (<host> != null) {
+    //   var pinnedHandles = allocatedPtrs ?? throw new ArgumentNullException(nameof(allocatedPtrs));
+    //   [var shadow = new <element shadow>[<host>.Length]; for (...) Marshal_<element>(ref <host>[i], ref shadow[i], ...);]
+    //   var handle = GCHandle.Alloc(<host or shadow>, GCHandleType.Pinned); pinnedHandles.Add(GCHandle.ToIntPtr(handle));
+    //   <native>.Data = handle.AddrOfPinnedObject(); <native>.Length = <host>.Length; }
+    // [WHY] The CPU kernel runs in this process, so an array field is pinned and passed as it is, with no copy: the
+    // kernel writes the host array itself, and two fields that hold one array see one array, as in C# (design L5). An
+    // element that lays out differently goes through a pinned shadow array. The launcher frees every handle in its
+    // finally block; a missing list would leak the pins, so it throws before pinning anything.
+    private static void WriteCpuMarshalArrayMember(SourceWriter writer, string host, string native,
+        ITypeSymbol elementType, ITranspilerDialect dialect)
+    {
+        const string GcHandle = "System.Runtime.InteropServices.GCHandle";
+        writer.AppendLine($"if ({host} != null)");
+        using (writer.Scope())
+        {
+            writer.AppendLine(
+                "var pinnedHandles = allocatedPtrs ?? throw new System.ArgumentNullException(nameof(allocatedPtrs));");
+            var pinned = host;
+            if (KernelParameterShape.IsConverted(elementType, dialect))
+            {
+                writer.Append("var shadow = new ");
+                writer.AppendAotStructPath(elementType);
+                writer.AppendLine($"[{host}.Length];");
+                writer.AppendLine($"for (int i = 0; i < {host}.Length; i++)");
+                using (writer.Scope())
+                {
+                    writer.AppendMarshalMethodName(elementType);
+                    writer.AppendLine($"(ref {host}[i], ref shadow[i], false, allocatedPtrs, hStream);");
+                }
+
+                pinned = "shadow";
+            }
+
+            writer.AppendLine(
+                $"var handle = {GcHandle}.Alloc({pinned}, System.Runtime.InteropServices.GCHandleType.Pinned);");
+            writer.AppendLine($"pinnedHandles.Add({GcHandle}.ToIntPtr(handle));");
+            writer.AppendLine($"{native}.Data = handle.AddrOfPinnedObject();");
+            writer.AppendLine($"{native}.Length = {host}.Length;");
+        }
+    }
+
+    // The kernel wrote the pinned host array itself, so only a shadow array of converted elements is copied back:
+    // if (<host> != null && <native>.Data != IntPtr.Zero) { var shadow = (<element shadow>*)<native>.Data;
+    // for (...) Unmarshal_<element>(ref <host>[i], ref shadow[i], false, hStream); }
+    // The shadow stays pinned until the launcher's finally block, after the unmarshaling.
+    private static void WriteCpuUnmarshalArrayMember(SourceWriter writer, string host, string native,
+        ITypeSymbol elementType, ITranspilerDialect dialect)
+    {
+        if (!KernelParameterShape.IsConverted(elementType, dialect))
+        {
+            return;
+        }
+
+        writer.AppendLine($"if ({host} != null && {native}.Data != IntPtr.Zero)");
+        using (writer.Scope())
+        {
+            writer.Append("var shadow = (");
+            writer.AppendAotStructPath(elementType);
+            writer.AppendLine($"*){native}.Data;");
+            writer.AppendLine($"for (int i = 0; i < {host}.Length; i++)");
+            using (writer.Scope())
+            {
+                writer.AppendUnmarshalMethodName(elementType);
+                writer.AppendLine($"(ref {host}[i], ref shadow[i], false, hStream);");
             }
         }
     }

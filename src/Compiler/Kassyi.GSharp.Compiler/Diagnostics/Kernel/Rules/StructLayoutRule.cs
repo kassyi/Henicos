@@ -4,13 +4,14 @@ namespace Kassyi.GSharp.Compiler.Diagnostics.Kernel.Rules;
 /// Checks the user structs of kernel parameters and device locals against the layout model of the project's dialect:
 /// a struct the device cannot lay out (GSH0078) or a member type the device has no type for (GSH0079); on CUDA, an
 /// array whose elements the launcher converts one by one (GSH0080) and an array whose elements each allocate their
-/// array fields (GSH0081); on the CPU dialect, a struct whose layouts differ, which the CPU launcher cannot convert yet
-/// (GSH0082). Each is reported at the type of the parameter or local.
+/// array fields (GSH0081); on the CPU dialect, an array of a struct whose layouts differ, which the CPU launcher cannot
+/// convert yet (GSH0082). Each is reported at the type of the parameter or local.
 /// </summary>
 /// <remarks>
 /// The layouts are those of <see cref="TypeLayoutCalculator"/>, which the generated device definition, shadow struct
-/// and launcher are built from, so the diagnostics describe what the generated code does. GSH0082 goes away when the
-/// CPU launcher passes structs through their shadow structs (L4).
+/// and launcher are built from, so the diagnostics describe what the generated code does. The CPU launcher passes a
+/// struct by value or by reference through its shadow struct (#511); GSH0082 goes away when it converts struct arrays
+/// as well.
 /// </remarks>
 internal sealed class StructLayoutRule :
     ISyntaxValidationRule<MethodDeclarationSyntax>,
@@ -51,11 +52,12 @@ internal sealed class StructLayoutRule :
                 continue;
             }
 
-            // [WHY] The CPU launcher passes the host layout as it is (by value, by ref or as an array) until L4
+            // [WHY] The CPU launcher converts a struct by value or by ref through its shadow struct, but still passes an
+            // array of structs in the host layout
             var transfer = TypeLayoutCalculator.GetStructLayout(structType, context.Dialect).Transfer;
             if (!context.Dialect.IsCuda)
             {
-                if (transfer != TransferClass.Identical)
+                if (isArray && transfer != TransferClass.Identical)
                 {
                     context.ReportDiagnostic(
                         GSharpDiagnostics.StructTransferNotSupportedOnCpu,

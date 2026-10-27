@@ -179,16 +179,24 @@ internal readonly record struct KernelParameterShape
     public bool IsDirectCudaValueStruct => IsCustomStruct && !IsByRef && Cuda.IsIdenticalStruct;
 
     /// <summary>
-    /// Whether the parameter is a user struct passed by value (<c>in</c> and <c>ref readonly</c> included) that is
-    /// <see cref="TransferClass.Identical"/> on the CPU dialect, which the CPU launcher passes as a pointer to the host
-    /// value and the native launcher copies into a local, so that the runtime marshaller never converts it.
+    /// Whether the parameter is a user struct passed by value (<c>in</c> and <c>ref readonly</c> included), which the CPU
+    /// launcher passes as a pointer, to the host value when it is <see cref="TransferClass.Identical"/> on the CPU dialect
+    /// and to its native shadow struct otherwise (<see cref="IsCpuConvertedStruct"/>); the native launcher copies it into
+    /// a local, so that the runtime marshaller never converts it.
     /// </summary>
-    public bool IsCpuValueStruct => IsCustomStruct && !IsByRef && Cpu.IsIdenticalStruct;
+    public bool IsCpuValueStruct => IsCustomStruct && !IsByRef;
+
+    /// <summary>
+    /// Whether the parameter is a user struct (by value or by reference) that is not <see cref="TransferClass.Identical"/>
+    /// on the CPU dialect, which the CPU launcher converts into its native shadow struct (<c>Marshal_</c>) and, for
+    /// <c>ref</c> / <c>out</c>, back (<c>Unmarshal_</c>).
+    /// </summary>
+    public bool IsCpuConvertedStruct => IsCustomStruct && !Cpu.IsIdenticalStruct;
 
     /// <summary>
     /// The message of the <c>NotSupportedException</c> that the CPU launcher throws before it calls the native code, for
-    /// a user struct (by value or by reference) that is not <see cref="TransferClass.Identical"/> on the CPU dialect and
-    /// that the CPU launcher cannot convert yet (the text of GSH0082); otherwise <see langword="null"/>.
+    /// an array-like parameter whose element is a user struct that is not <see cref="TransferClass.Identical"/> on the CPU
+    /// dialect, which the CPU launcher cannot convert yet (the text of GSH0082); otherwise <see langword="null"/>.
     /// </summary>
     public string? CpuNotSupportedMessage { get; init; }
 
@@ -283,8 +291,7 @@ internal readonly record struct KernelParameterShape
                 UnmarshalMethodName = AotHostNames.GetQualifiedUnmarshalMethodName(marshaledType),
                 BufferElementTypeName = shape.IsByRef ? GetBufferElementTypeName(parameter.Type) : null,
                 Cuda = ParameterTransfer.Create(marshaledType, s_cudaDialect),
-                Cpu = ParameterTransfer.Create(marshaledType, s_cpuDialect),
-                CpuNotSupportedMessage = GetCpuNotSupportedMessage(marshaledType)
+                Cpu = ParameterTransfer.Create(marshaledType, s_cpuDialect)
             };
         }
 
@@ -297,7 +304,8 @@ internal readonly record struct KernelParameterShape
                 ElementTypeName = elementType.GetFullyQualifiedCsharpName(),
                 BufferElementTypeName = GetBufferElementTypeName(elementType),
                 Cuda = ParameterTransfer.Create(marshaledType, s_cudaDialect),
-                Cpu = ParameterTransfer.Create(marshaledType, s_cpuDialect)
+                Cpu = ParameterTransfer.Create(marshaledType, s_cpuDialect),
+                CpuNotSupportedMessage = GetCpuNotSupportedMessage(elementType)
             };
         }
 
@@ -319,12 +327,11 @@ internal readonly record struct KernelParameterShape
         TypeLayoutCalculator.IsUserStruct(named) &&
         TypeLayoutCalculator.GetStructLayout(named, dialect).Transfer != TransferClass.Identical;
 
-    // [WHY] GSH0082 reports such a struct at compile time, but an analyzer diagnostic does not reach every build (generated
-    // code, a suppression): the launcher must not hand the native code a host layout that it reads as another one
-    private static string? GetCpuNotSupportedMessage(ITypeSymbol structType)
+    // [WHY] GSH0082 reports such an array at compile time, but an analyzer diagnostic does not reach every build
+    // (generated code, a suppression): the launcher must not hand the native code a host layout that it reads as another
+    private static string? GetCpuNotSupportedMessage(ITypeSymbol element)
     {
-        if (structType is not INamedTypeSymbol named ||
-            TypeLayoutCalculator.GetStructLayout(named, s_cpuDialect).Transfer == TransferClass.Identical)
+        if (element is not INamedTypeSymbol named || !IsConverted(named, s_cpuDialect))
         {
             return null;
         }

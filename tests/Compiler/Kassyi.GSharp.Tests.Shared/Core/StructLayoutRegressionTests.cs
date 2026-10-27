@@ -74,25 +74,6 @@ public class StructLayoutRegressionTests
         Assert.Equal(new Float2(9f, 10f), x.Items[1].V);
     }
 
-#if GSHARP_CPU
-    // The CPU launcher does not convert a struct whose layouts differ yet (#511): it stops before the native call
-    // instead of passing the host layout (GSH0082 reports it at compile time where analyzers run)
-    [Fact]
-    [TestTarget(ExecutionTarget.GpuExecution)]
-    [Scenario(TestScenario.SadPath)]
-    public void R4a_StructWithArrayField_ByValue_ThrowsNotSupportedOnCpu()
-    {
-        var o = new int[] { -1, -1, -1 };
-        var b = new LayoutReproBag { N = 3, Data = [10, 20, 30] };
-
-        var exception = Assert.Throws<System.NotSupportedException>(
-            () => StructLayoutRegressionKernels.LaunchBagByValKernel(b, o));
-
-        Assert.Contains("'Kassyi.GSharp.Tests.Shared.Core.LayoutReproBag'", exception.Message);
-        Assert.Contains("field 'Data' is an array", exception.Message);
-        Assert.Equal([-1, -1, -1], o);
-    }
-#else
     [Fact]
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Scenario(TestScenario.HappyPath)]
@@ -105,7 +86,56 @@ public class StructLayoutRegressionTests
 
         Assert.Equal([3, 3, 20], o);
     }
+
+    // A null array field reads as an empty array on both dialects (the device has no null array); an empty one is empty
+    [Theory]
+    [TestTarget(ExecutionTarget.GpuExecution)]
+    [Scenario(TestScenario.Boundary)]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void R4d_StructWithNullOrEmptyArrayField_ByValue_ReadsLengthZero(bool isNull)
+    {
+        var o = new int[] { -1, -1 };
+        var b = new LayoutReproBag { N = 3, Data = isNull ? null : [] };
+
+        StructLayoutRegressionKernels.LaunchBagLengthKernel(b, o);
+
+        Assert.Equal([3, 0], o);
+    }
+
+    [Fact]
+    [TestTarget(ExecutionTarget.GpuExecution)]
+    [Scenario(TestScenario.Boundary)]
+    public void R4f_ConvertedElementsOfAnArrayField_ByValue_WriteBackTheirValueFields()
+    {
+        var items = new int[] { 1, 2 };
+        var elems = new[] { new LayoutReproInnerBag { Tag = 1, Items = items } };
+
+        StructLayoutRegressionKernels.LaunchElemWriteKernel(new LayoutReproElemHolder { N = 1, Elems = elems });
+
+        Assert.Equal(9, elems[0].Tag);
+        Assert.Equal([5, 2], items);
+    }
+
+    // Two array fields that hold one array: the CPU launcher pins the host array itself, so the kernel sees one array,
+    // as C# does (design L5 a). The CUDA launcher copies each array field into its own device allocation and writes
+    // them back one after the other, so the second copy overwrites the first ([0, 2]); that is the aliasing item M10 of
+    // the implicit-semantics inventory, which a separate issue fixes on CUDA
+#if GSHARP_CPU
+    [Fact]
+#else
+    [Fact(Skip = "CUDA copies each array field separately (implicit-semantics inventory M10)")]
 #endif
+    [TestTarget(ExecutionTarget.GpuExecution)]
+    [Scenario(TestScenario.Boundary)]
+    public void R4e_TwoArrayFieldsHoldingOneArray_ByValue_SeeOneArray()
+    {
+        var x = new int[2];
+
+        StructLayoutRegressionKernels.LaunchAliasKernel(new LayoutReproPair { A = x, B = x });
+
+        Assert.Equal([1, 2], x);
+    }
 
 #if GSHARP_CPU
     [Fact(Skip = "L4")]
@@ -306,10 +336,42 @@ public class StructLayoutRegressionTests
 public class StructLayoutRegressionSequentialTests
 {
 #if GSHARP_CPU
-    [Fact(Skip = "L4")]
-#else
+    // The CPU launcher pins the array fields of a converted struct; every launch must free the pins, also when the
+    // native code reports an error after the marshaling (R4g). A launch that leaked would leave 2 pinned arrays
     [Fact]
+    [TestTarget(ExecutionTarget.CpuExecution)]
+    [Scenario(TestScenario.Boundary)]
+    public void ConvertedStructWithArrayField_RepeatedLaunches_LeaveNoPinnedArrays()
+    {
+        var o = new int[3];
+        StructLayoutRegressionKernels.LaunchBagByValKernel(new LayoutReproBag { N = 3, Data = [10, 20, 30] }, o);
+        var before = CountPinnedObjects();
+
+        for (var i = 0; i < 20; i++)
+        {
+            StructLayoutRegressionKernels.LaunchBagByValKernel(new LayoutReproBag { N = 3, Data = [10, 20, 30] }, o);
+        }
+
+        for (var i = 0; i < 20; i++)
+        {
+            Assert.ThrowsAny<Exception>(
+                () => StructLayoutRegressionKernels.LaunchBagNativeErrorKernel(new LayoutReproBag { N = 1, Data = [1] }, o));
+        }
+
+        var after = CountPinnedObjects();
+        Assert.True(after <= before + 5, $"{before} pinned objects before the launches, {after} after");
+    }
+
+    private static long CountPinnedObjects()
+    {
+        GC.Collect();
+        GC.WaitForPendingFinalizers();
+        GC.Collect();
+        return GC.GetGCMemoryInfo().PinnedObjectsCount;
+    }
 #endif
+
+    [Fact]
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Scenario(TestScenario.HappyPath)]
     public void R4b_StructWithArrayField_ByRef_PreservesFieldsAndWritesBackArrayElement()
@@ -321,13 +383,10 @@ public class StructLayoutRegressionSequentialTests
 
         Assert.Equal([3, 3, 20], o);
         Assert.Equal(99, b.Data[1]);
+        Assert.Equal(7, b.N);
     }
 
-#if GSHARP_CPU
-    [Fact(Skip = "L4")]
-#else
     [Fact]
-#endif
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Scenario(TestScenario.HappyPath)]
     public void R9_InlineArrayWithArrayFieldInElement_ByRef_ReadsElementArray()

@@ -1194,51 +1194,17 @@ native = default;
 Marshal_NewtonRaphsonContext(ref host.Core, ref native.Core, isDevicePtr, allocatedPtrs, hStream);
 if (host.ReciprocalMod != null)
 {
-if (isDevicePtr)
-{
-throw new System.NotSupportedException("Passing a struct with arrays is not supported when isDevicePtr is true.");
-}
-else
-{
-int size = host.ReciprocalMod.Length * sizeof(global::System.UInt32);
-if (size > 0)
-{
-CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out native.ReciprocalMod.Data, (IntPtr)size, hStream));
-allocatedPtrs?.Add(native.ReciprocalMod.Data);
+var pinnedHandles = allocatedPtrs ?? throw new System.ArgumentNullException(nameof(allocatedPtrs));
 var handle = System.Runtime.InteropServices.GCHandle.Alloc(host.ReciprocalMod, System.Runtime.InteropServices.GCHandleType.Pinned);
-try
-{
-CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoDAsync_v2(native.ReciprocalMod.Data, handle.AddrOfPinnedObject(), (IntPtr)size, hStream));
-}
-finally
-{
-handle.Free();
-}
-}
+pinnedHandles.Add(System.Runtime.InteropServices.GCHandle.ToIntPtr(handle));
+native.ReciprocalMod.Data = handle.AddrOfPinnedObject();
 native.ReciprocalMod.Length = host.ReciprocalMod.Length;
-}
 }
 Marshal_ExponentSliceContext(ref host.Exponent, ref native.Exponent, isDevicePtr, allocatedPtrs, hStream);
 }
 public static unsafe void Unmarshal_ModPowNttContext(ref global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.ModPowNttContext host, ref AotContexts.ModPowNtt native, bool isDevicePtr, IntPtr hStream = default)
 {
 Unmarshal_NewtonRaphsonContext(ref host.Core, ref native.Core, isDevicePtr, hStream);
-if (host.ReciprocalMod != null && !isDevicePtr && native.ReciprocalMod.Data != IntPtr.Zero)
-{
-int size = host.ReciprocalMod.Length * sizeof(global::System.UInt32);
-if (size > 0)
-{
-var handle = System.Runtime.InteropServices.GCHandle.Alloc(host.ReciprocalMod, System.Runtime.InteropServices.GCHandleType.Pinned);
-try
-{
-CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoHAsync_v2(handle.AddrOfPinnedObject(), native.ReciprocalMod.Data, (IntPtr)size, hStream));
-}
-finally
-{
-handle.Free();
-}
-}
-}
 Unmarshal_ExponentSliceContext(ref host.Exponent, ref native.Exponent, isDevicePtr, hStream);
 }
 [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Explicit, Size = 688)]
@@ -1272,55 +1238,19 @@ Marshal_Ntt(ref host.Ntt, ref native.Ntt, isDevicePtr, allocatedPtrs, hStream);
 Marshal_WorkspaceStateContext(ref host.Workspace, ref native.Workspace, isDevicePtr, allocatedPtrs, hStream);
 if (host.CarryBuffer != null)
 {
-if (isDevicePtr)
-{
-throw new System.NotSupportedException("Passing a struct with arrays is not supported when isDevicePtr is true.");
-}
-else
-{
-int size = host.CarryBuffer.Length * sizeof(global::System.Int64);
-if (size > 0)
-{
-CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out native.CarryBuffer.Data, (IntPtr)size, hStream));
-allocatedPtrs?.Add(native.CarryBuffer.Data);
+var pinnedHandles = allocatedPtrs ?? throw new System.ArgumentNullException(nameof(allocatedPtrs));
 var handle = System.Runtime.InteropServices.GCHandle.Alloc(host.CarryBuffer, System.Runtime.InteropServices.GCHandleType.Pinned);
-try
-{
-CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoDAsync_v2(native.CarryBuffer.Data, handle.AddrOfPinnedObject(), (IntPtr)size, hStream));
-}
-finally
-{
-handle.Free();
-}
-}
+pinnedHandles.Add(System.Runtime.InteropServices.GCHandle.ToIntPtr(handle));
+native.CarryBuffer.Data = handle.AddrOfPinnedObject();
 native.CarryBuffer.Length = host.CarryBuffer.Length;
-}
 }
 if (host.CorrectionStatus != null)
 {
-if (isDevicePtr)
-{
-throw new System.NotSupportedException("Passing a struct with arrays is not supported when isDevicePtr is true.");
-}
-else
-{
-int size = host.CorrectionStatus.Length * sizeof(global::System.UInt32);
-if (size > 0)
-{
-CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out native.CorrectionStatus.Data, (IntPtr)size, hStream));
-allocatedPtrs?.Add(native.CorrectionStatus.Data);
+var pinnedHandles = allocatedPtrs ?? throw new System.ArgumentNullException(nameof(allocatedPtrs));
 var handle = System.Runtime.InteropServices.GCHandle.Alloc(host.CorrectionStatus, System.Runtime.InteropServices.GCHandleType.Pinned);
-try
-{
-CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoDAsync_v2(native.CorrectionStatus.Data, handle.AddrOfPinnedObject(), (IntPtr)size, hStream));
-}
-finally
-{
-handle.Free();
-}
-}
+pinnedHandles.Add(System.Runtime.InteropServices.GCHandle.ToIntPtr(handle));
+native.CorrectionStatus.Data = handle.AddrOfPinnedObject();
 native.CorrectionStatus.Length = host.CorrectionStatus.Length;
-}
 }
 }
 public static unsafe void Unmarshal_NewtonRaphsonContext(ref global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.NewtonRaphsonContext host, ref AotContexts.NewtonRaphson native, bool isDevicePtr, IntPtr hStream = default)
@@ -1329,38 +1259,6 @@ Unmarshal_OperandContext(ref host.Operands, ref native.Operands, isDevicePtr, hS
 Unmarshal_DimensionContext(ref host.Dimensions, ref native.Dimensions, isDevicePtr, hStream);
 Unmarshal_Ntt(ref host.Ntt, ref native.Ntt, isDevicePtr, hStream);
 Unmarshal_WorkspaceStateContext(ref host.Workspace, ref native.Workspace, isDevicePtr, hStream);
-if (host.CarryBuffer != null && !isDevicePtr && native.CarryBuffer.Data != IntPtr.Zero)
-{
-int size = host.CarryBuffer.Length * sizeof(global::System.Int64);
-if (size > 0)
-{
-var handle = System.Runtime.InteropServices.GCHandle.Alloc(host.CarryBuffer, System.Runtime.InteropServices.GCHandleType.Pinned);
-try
-{
-CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoHAsync_v2(handle.AddrOfPinnedObject(), native.CarryBuffer.Data, (IntPtr)size, hStream));
-}
-finally
-{
-handle.Free();
-}
-}
-}
-if (host.CorrectionStatus != null && !isDevicePtr && native.CorrectionStatus.Data != IntPtr.Zero)
-{
-int size = host.CorrectionStatus.Length * sizeof(global::System.UInt32);
-if (size > 0)
-{
-var handle = System.Runtime.InteropServices.GCHandle.Alloc(host.CorrectionStatus, System.Runtime.InteropServices.GCHandleType.Pinned);
-try
-{
-CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoHAsync_v2(handle.AddrOfPinnedObject(), native.CorrectionStatus.Data, (IntPtr)size, hStream));
-}
-finally
-{
-handle.Free();
-}
-}
-}
 }
 [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Explicit, Size = 112)]
 public unsafe partial struct Operand
@@ -1392,301 +1290,63 @@ public static unsafe void Marshal_OperandContext(ref global::Kassyi.GSharp.Stdli
 native = default;
 if (host.LeftOperand != null)
 {
-if (isDevicePtr)
-{
-throw new System.NotSupportedException("Passing a struct with arrays is not supported when isDevicePtr is true.");
-}
-else
-{
-int size = host.LeftOperand.Length * sizeof(global::System.UInt32);
-if (size > 0)
-{
-CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out native.LeftOperand.Data, (IntPtr)size, hStream));
-allocatedPtrs?.Add(native.LeftOperand.Data);
+var pinnedHandles = allocatedPtrs ?? throw new System.ArgumentNullException(nameof(allocatedPtrs));
 var handle = System.Runtime.InteropServices.GCHandle.Alloc(host.LeftOperand, System.Runtime.InteropServices.GCHandleType.Pinned);
-try
-{
-CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoDAsync_v2(native.LeftOperand.Data, handle.AddrOfPinnedObject(), (IntPtr)size, hStream));
-}
-finally
-{
-handle.Free();
-}
-}
+pinnedHandles.Add(System.Runtime.InteropServices.GCHandle.ToIntPtr(handle));
+native.LeftOperand.Data = handle.AddrOfPinnedObject();
 native.LeftOperand.Length = host.LeftOperand.Length;
-}
 }
 if (host.RightOperand != null)
 {
-if (isDevicePtr)
-{
-throw new System.NotSupportedException("Passing a struct with arrays is not supported when isDevicePtr is true.");
-}
-else
-{
-int size = host.RightOperand.Length * sizeof(global::System.UInt32);
-if (size > 0)
-{
-CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out native.RightOperand.Data, (IntPtr)size, hStream));
-allocatedPtrs?.Add(native.RightOperand.Data);
+var pinnedHandles = allocatedPtrs ?? throw new System.ArgumentNullException(nameof(allocatedPtrs));
 var handle = System.Runtime.InteropServices.GCHandle.Alloc(host.RightOperand, System.Runtime.InteropServices.GCHandleType.Pinned);
-try
-{
-CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoDAsync_v2(native.RightOperand.Data, handle.AddrOfPinnedObject(), (IntPtr)size, hStream));
-}
-finally
-{
-handle.Free();
-}
-}
+pinnedHandles.Add(System.Runtime.InteropServices.GCHandle.ToIntPtr(handle));
+native.RightOperand.Data = handle.AddrOfPinnedObject();
 native.RightOperand.Length = host.RightOperand.Length;
-}
 }
 if (host.TargetOperand != null)
 {
-if (isDevicePtr)
-{
-throw new System.NotSupportedException("Passing a struct with arrays is not supported when isDevicePtr is true.");
-}
-else
-{
-int size = host.TargetOperand.Length * sizeof(global::System.UInt32);
-if (size > 0)
-{
-CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out native.TargetOperand.Data, (IntPtr)size, hStream));
-allocatedPtrs?.Add(native.TargetOperand.Data);
+var pinnedHandles = allocatedPtrs ?? throw new System.ArgumentNullException(nameof(allocatedPtrs));
 var handle = System.Runtime.InteropServices.GCHandle.Alloc(host.TargetOperand, System.Runtime.InteropServices.GCHandleType.Pinned);
-try
-{
-CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoDAsync_v2(native.TargetOperand.Data, handle.AddrOfPinnedObject(), (IntPtr)size, hStream));
-}
-finally
-{
-handle.Free();
-}
-}
+pinnedHandles.Add(System.Runtime.InteropServices.GCHandle.ToIntPtr(handle));
+native.TargetOperand.Data = handle.AddrOfPinnedObject();
 native.TargetOperand.Length = host.TargetOperand.Length;
-}
 }
 if (host.ResultBuffer != null)
 {
-if (isDevicePtr)
-{
-throw new System.NotSupportedException("Passing a struct with arrays is not supported when isDevicePtr is true.");
-}
-else
-{
-int size = host.ResultBuffer.Length * sizeof(global::System.UInt32);
-if (size > 0)
-{
-CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out native.ResultBuffer.Data, (IntPtr)size, hStream));
-allocatedPtrs?.Add(native.ResultBuffer.Data);
+var pinnedHandles = allocatedPtrs ?? throw new System.ArgumentNullException(nameof(allocatedPtrs));
 var handle = System.Runtime.InteropServices.GCHandle.Alloc(host.ResultBuffer, System.Runtime.InteropServices.GCHandleType.Pinned);
-try
-{
-CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoDAsync_v2(native.ResultBuffer.Data, handle.AddrOfPinnedObject(), (IntPtr)size, hStream));
-}
-finally
-{
-handle.Free();
-}
-}
+pinnedHandles.Add(System.Runtime.InteropServices.GCHandle.ToIntPtr(handle));
+native.ResultBuffer.Data = handle.AddrOfPinnedObject();
 native.ResultBuffer.Length = host.ResultBuffer.Length;
-}
 }
 if (host.Constant != null)
 {
-if (isDevicePtr)
-{
-throw new System.NotSupportedException("Passing a struct with arrays is not supported when isDevicePtr is true.");
-}
-else
-{
-int size = host.Constant.Length * sizeof(global::System.UInt32);
-if (size > 0)
-{
-CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out native.Constant.Data, (IntPtr)size, hStream));
-allocatedPtrs?.Add(native.Constant.Data);
+var pinnedHandles = allocatedPtrs ?? throw new System.ArgumentNullException(nameof(allocatedPtrs));
 var handle = System.Runtime.InteropServices.GCHandle.Alloc(host.Constant, System.Runtime.InteropServices.GCHandleType.Pinned);
-try
-{
-CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoDAsync_v2(native.Constant.Data, handle.AddrOfPinnedObject(), (IntPtr)size, hStream));
-}
-finally
-{
-handle.Free();
-}
-}
+pinnedHandles.Add(System.Runtime.InteropServices.GCHandle.ToIntPtr(handle));
+native.Constant.Data = handle.AddrOfPinnedObject();
 native.Constant.Length = host.Constant.Length;
-}
 }
 if (host.Constant3 != null)
 {
-if (isDevicePtr)
-{
-throw new System.NotSupportedException("Passing a struct with arrays is not supported when isDevicePtr is true.");
-}
-else
-{
-int size = host.Constant3.Length * sizeof(global::System.UInt32);
-if (size > 0)
-{
-CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out native.Constant3.Data, (IntPtr)size, hStream));
-allocatedPtrs?.Add(native.Constant3.Data);
+var pinnedHandles = allocatedPtrs ?? throw new System.ArgumentNullException(nameof(allocatedPtrs));
 var handle = System.Runtime.InteropServices.GCHandle.Alloc(host.Constant3, System.Runtime.InteropServices.GCHandleType.Pinned);
-try
-{
-CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoDAsync_v2(native.Constant3.Data, handle.AddrOfPinnedObject(), (IntPtr)size, hStream));
-}
-finally
-{
-handle.Free();
-}
-}
+pinnedHandles.Add(System.Runtime.InteropServices.GCHandle.ToIntPtr(handle));
+native.Constant3.Data = handle.AddrOfPinnedObject();
 native.Constant3.Length = host.Constant3.Length;
-}
 }
 if (host.CarryBuffer != null)
 {
-if (isDevicePtr)
-{
-throw new System.NotSupportedException("Passing a struct with arrays is not supported when isDevicePtr is true.");
-}
-else
-{
-int size = host.CarryBuffer.Length * sizeof(global::System.Int64);
-if (size > 0)
-{
-CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out native.CarryBuffer.Data, (IntPtr)size, hStream));
-allocatedPtrs?.Add(native.CarryBuffer.Data);
+var pinnedHandles = allocatedPtrs ?? throw new System.ArgumentNullException(nameof(allocatedPtrs));
 var handle = System.Runtime.InteropServices.GCHandle.Alloc(host.CarryBuffer, System.Runtime.InteropServices.GCHandleType.Pinned);
-try
-{
-CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoDAsync_v2(native.CarryBuffer.Data, handle.AddrOfPinnedObject(), (IntPtr)size, hStream));
-}
-finally
-{
-handle.Free();
-}
-}
+pinnedHandles.Add(System.Runtime.InteropServices.GCHandle.ToIntPtr(handle));
+native.CarryBuffer.Data = handle.AddrOfPinnedObject();
 native.CarryBuffer.Length = host.CarryBuffer.Length;
-}
 }
 }
 public static unsafe void Unmarshal_OperandContext(ref global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.OperandContext host, ref AotContexts.Operand native, bool isDevicePtr, IntPtr hStream = default)
 {
-if (host.LeftOperand != null && !isDevicePtr && native.LeftOperand.Data != IntPtr.Zero)
-{
-int size = host.LeftOperand.Length * sizeof(global::System.UInt32);
-if (size > 0)
-{
-var handle = System.Runtime.InteropServices.GCHandle.Alloc(host.LeftOperand, System.Runtime.InteropServices.GCHandleType.Pinned);
-try
-{
-CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoHAsync_v2(handle.AddrOfPinnedObject(), native.LeftOperand.Data, (IntPtr)size, hStream));
-}
-finally
-{
-handle.Free();
-}
-}
-}
-if (host.RightOperand != null && !isDevicePtr && native.RightOperand.Data != IntPtr.Zero)
-{
-int size = host.RightOperand.Length * sizeof(global::System.UInt32);
-if (size > 0)
-{
-var handle = System.Runtime.InteropServices.GCHandle.Alloc(host.RightOperand, System.Runtime.InteropServices.GCHandleType.Pinned);
-try
-{
-CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoHAsync_v2(handle.AddrOfPinnedObject(), native.RightOperand.Data, (IntPtr)size, hStream));
-}
-finally
-{
-handle.Free();
-}
-}
-}
-if (host.TargetOperand != null && !isDevicePtr && native.TargetOperand.Data != IntPtr.Zero)
-{
-int size = host.TargetOperand.Length * sizeof(global::System.UInt32);
-if (size > 0)
-{
-var handle = System.Runtime.InteropServices.GCHandle.Alloc(host.TargetOperand, System.Runtime.InteropServices.GCHandleType.Pinned);
-try
-{
-CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoHAsync_v2(handle.AddrOfPinnedObject(), native.TargetOperand.Data, (IntPtr)size, hStream));
-}
-finally
-{
-handle.Free();
-}
-}
-}
-if (host.ResultBuffer != null && !isDevicePtr && native.ResultBuffer.Data != IntPtr.Zero)
-{
-int size = host.ResultBuffer.Length * sizeof(global::System.UInt32);
-if (size > 0)
-{
-var handle = System.Runtime.InteropServices.GCHandle.Alloc(host.ResultBuffer, System.Runtime.InteropServices.GCHandleType.Pinned);
-try
-{
-CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoHAsync_v2(handle.AddrOfPinnedObject(), native.ResultBuffer.Data, (IntPtr)size, hStream));
-}
-finally
-{
-handle.Free();
-}
-}
-}
-if (host.Constant != null && !isDevicePtr && native.Constant.Data != IntPtr.Zero)
-{
-int size = host.Constant.Length * sizeof(global::System.UInt32);
-if (size > 0)
-{
-var handle = System.Runtime.InteropServices.GCHandle.Alloc(host.Constant, System.Runtime.InteropServices.GCHandleType.Pinned);
-try
-{
-CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoHAsync_v2(handle.AddrOfPinnedObject(), native.Constant.Data, (IntPtr)size, hStream));
-}
-finally
-{
-handle.Free();
-}
-}
-}
-if (host.Constant3 != null && !isDevicePtr && native.Constant3.Data != IntPtr.Zero)
-{
-int size = host.Constant3.Length * sizeof(global::System.UInt32);
-if (size > 0)
-{
-var handle = System.Runtime.InteropServices.GCHandle.Alloc(host.Constant3, System.Runtime.InteropServices.GCHandleType.Pinned);
-try
-{
-CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoHAsync_v2(handle.AddrOfPinnedObject(), native.Constant3.Data, (IntPtr)size, hStream));
-}
-finally
-{
-handle.Free();
-}
-}
-}
-if (host.CarryBuffer != null && !isDevicePtr && native.CarryBuffer.Data != IntPtr.Zero)
-{
-int size = host.CarryBuffer.Length * sizeof(global::System.Int64);
-if (size > 0)
-{
-var handle = System.Runtime.InteropServices.GCHandle.Alloc(host.CarryBuffer, System.Runtime.InteropServices.GCHandleType.Pinned);
-try
-{
-CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoHAsync_v2(handle.AddrOfPinnedObject(), native.CarryBuffer.Data, (IntPtr)size, hStream));
-}
-finally
-{
-handle.Free();
-}
-}
-}
 }
 [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Explicit, Size = 40)]
 public unsafe partial struct Dimension
@@ -1792,385 +1452,79 @@ public static unsafe void Marshal_BufferContext(ref global::Kassyi.GSharp.Stdlib
 native = default;
 if (host.Buffer1 != null)
 {
-if (isDevicePtr)
-{
-throw new System.NotSupportedException("Passing a struct with arrays is not supported when isDevicePtr is true.");
-}
-else
-{
-int size = host.Buffer1.Length * sizeof(global::System.UInt32);
-if (size > 0)
-{
-CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out native.Buffer1.Data, (IntPtr)size, hStream));
-allocatedPtrs?.Add(native.Buffer1.Data);
+var pinnedHandles = allocatedPtrs ?? throw new System.ArgumentNullException(nameof(allocatedPtrs));
 var handle = System.Runtime.InteropServices.GCHandle.Alloc(host.Buffer1, System.Runtime.InteropServices.GCHandleType.Pinned);
-try
-{
-CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoDAsync_v2(native.Buffer1.Data, handle.AddrOfPinnedObject(), (IntPtr)size, hStream));
-}
-finally
-{
-handle.Free();
-}
-}
+pinnedHandles.Add(System.Runtime.InteropServices.GCHandle.ToIntPtr(handle));
+native.Buffer1.Data = handle.AddrOfPinnedObject();
 native.Buffer1.Length = host.Buffer1.Length;
-}
 }
 if (host.Buffer2 != null)
 {
-if (isDevicePtr)
-{
-throw new System.NotSupportedException("Passing a struct with arrays is not supported when isDevicePtr is true.");
-}
-else
-{
-int size = host.Buffer2.Length * sizeof(global::System.UInt32);
-if (size > 0)
-{
-CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out native.Buffer2.Data, (IntPtr)size, hStream));
-allocatedPtrs?.Add(native.Buffer2.Data);
+var pinnedHandles = allocatedPtrs ?? throw new System.ArgumentNullException(nameof(allocatedPtrs));
 var handle = System.Runtime.InteropServices.GCHandle.Alloc(host.Buffer2, System.Runtime.InteropServices.GCHandleType.Pinned);
-try
-{
-CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoDAsync_v2(native.Buffer2.Data, handle.AddrOfPinnedObject(), (IntPtr)size, hStream));
-}
-finally
-{
-handle.Free();
-}
-}
+pinnedHandles.Add(System.Runtime.InteropServices.GCHandle.ToIntPtr(handle));
+native.Buffer2.Data = handle.AddrOfPinnedObject();
 native.Buffer2.Length = host.Buffer2.Length;
-}
 }
 if (host.Buffer3 != null)
 {
-if (isDevicePtr)
-{
-throw new System.NotSupportedException("Passing a struct with arrays is not supported when isDevicePtr is true.");
-}
-else
-{
-int size = host.Buffer3.Length * sizeof(global::System.UInt32);
-if (size > 0)
-{
-CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out native.Buffer3.Data, (IntPtr)size, hStream));
-allocatedPtrs?.Add(native.Buffer3.Data);
+var pinnedHandles = allocatedPtrs ?? throw new System.ArgumentNullException(nameof(allocatedPtrs));
 var handle = System.Runtime.InteropServices.GCHandle.Alloc(host.Buffer3, System.Runtime.InteropServices.GCHandleType.Pinned);
-try
-{
-CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoDAsync_v2(native.Buffer3.Data, handle.AddrOfPinnedObject(), (IntPtr)size, hStream));
-}
-finally
-{
-handle.Free();
-}
-}
+pinnedHandles.Add(System.Runtime.InteropServices.GCHandle.ToIntPtr(handle));
+native.Buffer3.Data = handle.AddrOfPinnedObject();
 native.Buffer3.Length = host.Buffer3.Length;
-}
 }
 if (host.ValueT != null)
 {
-if (isDevicePtr)
-{
-throw new System.NotSupportedException("Passing a struct with arrays is not supported when isDevicePtr is true.");
-}
-else
-{
-int size = host.ValueT.Length * sizeof(global::System.UInt32);
-if (size > 0)
-{
-CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out native.ValueT.Data, (IntPtr)size, hStream));
-allocatedPtrs?.Add(native.ValueT.Data);
+var pinnedHandles = allocatedPtrs ?? throw new System.ArgumentNullException(nameof(allocatedPtrs));
 var handle = System.Runtime.InteropServices.GCHandle.Alloc(host.ValueT, System.Runtime.InteropServices.GCHandleType.Pinned);
-try
-{
-CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoDAsync_v2(native.ValueT.Data, handle.AddrOfPinnedObject(), (IntPtr)size, hStream));
-}
-finally
-{
-handle.Free();
-}
-}
+pinnedHandles.Add(System.Runtime.InteropServices.GCHandle.ToIntPtr(handle));
+native.ValueT.Data = handle.AddrOfPinnedObject();
 native.ValueT.Length = host.ValueT.Length;
-}
 }
 if (host.Quotient != null)
 {
-if (isDevicePtr)
-{
-throw new System.NotSupportedException("Passing a struct with arrays is not supported when isDevicePtr is true.");
-}
-else
-{
-int size = host.Quotient.Length * sizeof(global::System.UInt32);
-if (size > 0)
-{
-CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out native.Quotient.Data, (IntPtr)size, hStream));
-allocatedPtrs?.Add(native.Quotient.Data);
+var pinnedHandles = allocatedPtrs ?? throw new System.ArgumentNullException(nameof(allocatedPtrs));
 var handle = System.Runtime.InteropServices.GCHandle.Alloc(host.Quotient, System.Runtime.InteropServices.GCHandleType.Pinned);
-try
-{
-CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoDAsync_v2(native.Quotient.Data, handle.AddrOfPinnedObject(), (IntPtr)size, hStream));
-}
-finally
-{
-handle.Free();
-}
-}
+pinnedHandles.Add(System.Runtime.InteropServices.GCHandle.ToIntPtr(handle));
+native.Quotient.Data = handle.AddrOfPinnedObject();
 native.Quotient.Length = host.Quotient.Length;
-}
 }
 if (host.Remainder != null)
 {
-if (isDevicePtr)
-{
-throw new System.NotSupportedException("Passing a struct with arrays is not supported when isDevicePtr is true.");
-}
-else
-{
-int size = host.Remainder.Length * sizeof(global::System.UInt32);
-if (size > 0)
-{
-CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out native.Remainder.Data, (IntPtr)size, hStream));
-allocatedPtrs?.Add(native.Remainder.Data);
+var pinnedHandles = allocatedPtrs ?? throw new System.ArgumentNullException(nameof(allocatedPtrs));
 var handle = System.Runtime.InteropServices.GCHandle.Alloc(host.Remainder, System.Runtime.InteropServices.GCHandleType.Pinned);
-try
-{
-CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoDAsync_v2(native.Remainder.Data, handle.AddrOfPinnedObject(), (IntPtr)size, hStream));
-}
-finally
-{
-handle.Free();
-}
-}
+pinnedHandles.Add(System.Runtime.InteropServices.GCHandle.ToIntPtr(handle));
+native.Remainder.Data = handle.AddrOfPinnedObject();
 native.Remainder.Length = host.Remainder.Length;
-}
 }
 if (host.RemainderMask != null)
 {
-if (isDevicePtr)
-{
-throw new System.NotSupportedException("Passing a struct with arrays is not supported when isDevicePtr is true.");
-}
-else
-{
-int size = host.RemainderMask.Length * sizeof(global::System.UInt32);
-if (size > 0)
-{
-CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out native.RemainderMask.Data, (IntPtr)size, hStream));
-allocatedPtrs?.Add(native.RemainderMask.Data);
+var pinnedHandles = allocatedPtrs ?? throw new System.ArgumentNullException(nameof(allocatedPtrs));
 var handle = System.Runtime.InteropServices.GCHandle.Alloc(host.RemainderMask, System.Runtime.InteropServices.GCHandleType.Pinned);
-try
-{
-CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoDAsync_v2(native.RemainderMask.Data, handle.AddrOfPinnedObject(), (IntPtr)size, hStream));
-}
-finally
-{
-handle.Free();
-}
-}
+pinnedHandles.Add(System.Runtime.InteropServices.GCHandle.ToIntPtr(handle));
+native.RemainderMask.Data = handle.AddrOfPinnedObject();
 native.RemainderMask.Length = host.RemainderMask.Length;
-}
 }
 if (host.TemporaryBuffer != null)
 {
-if (isDevicePtr)
-{
-throw new System.NotSupportedException("Passing a struct with arrays is not supported when isDevicePtr is true.");
-}
-else
-{
-int size = host.TemporaryBuffer.Length * sizeof(global::System.UInt32);
-if (size > 0)
-{
-CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out native.TemporaryBuffer.Data, (IntPtr)size, hStream));
-allocatedPtrs?.Add(native.TemporaryBuffer.Data);
+var pinnedHandles = allocatedPtrs ?? throw new System.ArgumentNullException(nameof(allocatedPtrs));
 var handle = System.Runtime.InteropServices.GCHandle.Alloc(host.TemporaryBuffer, System.Runtime.InteropServices.GCHandleType.Pinned);
-try
-{
-CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoDAsync_v2(native.TemporaryBuffer.Data, handle.AddrOfPinnedObject(), (IntPtr)size, hStream));
-}
-finally
-{
-handle.Free();
-}
-}
+pinnedHandles.Add(System.Runtime.InteropServices.GCHandle.ToIntPtr(handle));
+native.TemporaryBuffer.Data = handle.AddrOfPinnedObject();
 native.TemporaryBuffer.Length = host.TemporaryBuffer.Length;
-}
 }
 if (host.CarryBuffer != null)
 {
-if (isDevicePtr)
-{
-throw new System.NotSupportedException("Passing a struct with arrays is not supported when isDevicePtr is true.");
-}
-else
-{
-int size = host.CarryBuffer.Length * sizeof(global::System.Int64);
-if (size > 0)
-{
-CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out native.CarryBuffer.Data, (IntPtr)size, hStream));
-allocatedPtrs?.Add(native.CarryBuffer.Data);
+var pinnedHandles = allocatedPtrs ?? throw new System.ArgumentNullException(nameof(allocatedPtrs));
 var handle = System.Runtime.InteropServices.GCHandle.Alloc(host.CarryBuffer, System.Runtime.InteropServices.GCHandleType.Pinned);
-try
-{
-CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoDAsync_v2(native.CarryBuffer.Data, handle.AddrOfPinnedObject(), (IntPtr)size, hStream));
-}
-finally
-{
-handle.Free();
-}
-}
+pinnedHandles.Add(System.Runtime.InteropServices.GCHandle.ToIntPtr(handle));
+native.CarryBuffer.Data = handle.AddrOfPinnedObject();
 native.CarryBuffer.Length = host.CarryBuffer.Length;
-}
 }
 }
 public static unsafe void Unmarshal_BufferContext(ref global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.BufferContext host, ref AotContexts.Buffer native, bool isDevicePtr, IntPtr hStream = default)
 {
-if (host.Buffer1 != null && !isDevicePtr && native.Buffer1.Data != IntPtr.Zero)
-{
-int size = host.Buffer1.Length * sizeof(global::System.UInt32);
-if (size > 0)
-{
-var handle = System.Runtime.InteropServices.GCHandle.Alloc(host.Buffer1, System.Runtime.InteropServices.GCHandleType.Pinned);
-try
-{
-CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoHAsync_v2(handle.AddrOfPinnedObject(), native.Buffer1.Data, (IntPtr)size, hStream));
-}
-finally
-{
-handle.Free();
-}
-}
-}
-if (host.Buffer2 != null && !isDevicePtr && native.Buffer2.Data != IntPtr.Zero)
-{
-int size = host.Buffer2.Length * sizeof(global::System.UInt32);
-if (size > 0)
-{
-var handle = System.Runtime.InteropServices.GCHandle.Alloc(host.Buffer2, System.Runtime.InteropServices.GCHandleType.Pinned);
-try
-{
-CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoHAsync_v2(handle.AddrOfPinnedObject(), native.Buffer2.Data, (IntPtr)size, hStream));
-}
-finally
-{
-handle.Free();
-}
-}
-}
-if (host.Buffer3 != null && !isDevicePtr && native.Buffer3.Data != IntPtr.Zero)
-{
-int size = host.Buffer3.Length * sizeof(global::System.UInt32);
-if (size > 0)
-{
-var handle = System.Runtime.InteropServices.GCHandle.Alloc(host.Buffer3, System.Runtime.InteropServices.GCHandleType.Pinned);
-try
-{
-CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoHAsync_v2(handle.AddrOfPinnedObject(), native.Buffer3.Data, (IntPtr)size, hStream));
-}
-finally
-{
-handle.Free();
-}
-}
-}
-if (host.ValueT != null && !isDevicePtr && native.ValueT.Data != IntPtr.Zero)
-{
-int size = host.ValueT.Length * sizeof(global::System.UInt32);
-if (size > 0)
-{
-var handle = System.Runtime.InteropServices.GCHandle.Alloc(host.ValueT, System.Runtime.InteropServices.GCHandleType.Pinned);
-try
-{
-CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoHAsync_v2(handle.AddrOfPinnedObject(), native.ValueT.Data, (IntPtr)size, hStream));
-}
-finally
-{
-handle.Free();
-}
-}
-}
-if (host.Quotient != null && !isDevicePtr && native.Quotient.Data != IntPtr.Zero)
-{
-int size = host.Quotient.Length * sizeof(global::System.UInt32);
-if (size > 0)
-{
-var handle = System.Runtime.InteropServices.GCHandle.Alloc(host.Quotient, System.Runtime.InteropServices.GCHandleType.Pinned);
-try
-{
-CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoHAsync_v2(handle.AddrOfPinnedObject(), native.Quotient.Data, (IntPtr)size, hStream));
-}
-finally
-{
-handle.Free();
-}
-}
-}
-if (host.Remainder != null && !isDevicePtr && native.Remainder.Data != IntPtr.Zero)
-{
-int size = host.Remainder.Length * sizeof(global::System.UInt32);
-if (size > 0)
-{
-var handle = System.Runtime.InteropServices.GCHandle.Alloc(host.Remainder, System.Runtime.InteropServices.GCHandleType.Pinned);
-try
-{
-CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoHAsync_v2(handle.AddrOfPinnedObject(), native.Remainder.Data, (IntPtr)size, hStream));
-}
-finally
-{
-handle.Free();
-}
-}
-}
-if (host.RemainderMask != null && !isDevicePtr && native.RemainderMask.Data != IntPtr.Zero)
-{
-int size = host.RemainderMask.Length * sizeof(global::System.UInt32);
-if (size > 0)
-{
-var handle = System.Runtime.InteropServices.GCHandle.Alloc(host.RemainderMask, System.Runtime.InteropServices.GCHandleType.Pinned);
-try
-{
-CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoHAsync_v2(handle.AddrOfPinnedObject(), native.RemainderMask.Data, (IntPtr)size, hStream));
-}
-finally
-{
-handle.Free();
-}
-}
-}
-if (host.TemporaryBuffer != null && !isDevicePtr && native.TemporaryBuffer.Data != IntPtr.Zero)
-{
-int size = host.TemporaryBuffer.Length * sizeof(global::System.UInt32);
-if (size > 0)
-{
-var handle = System.Runtime.InteropServices.GCHandle.Alloc(host.TemporaryBuffer, System.Runtime.InteropServices.GCHandleType.Pinned);
-try
-{
-CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoHAsync_v2(handle.AddrOfPinnedObject(), native.TemporaryBuffer.Data, (IntPtr)size, hStream));
-}
-finally
-{
-handle.Free();
-}
-}
-}
-if (host.CarryBuffer != null && !isDevicePtr && native.CarryBuffer.Data != IntPtr.Zero)
-{
-int size = host.CarryBuffer.Length * sizeof(global::System.Int64);
-if (size > 0)
-{
-var handle = System.Runtime.InteropServices.GCHandle.Alloc(host.CarryBuffer, System.Runtime.InteropServices.GCHandleType.Pinned);
-try
-{
-CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoHAsync_v2(handle.AddrOfPinnedObject(), native.CarryBuffer.Data, (IntPtr)size, hStream));
-}
-finally
-{
-handle.Free();
-}
-}
-}
 }
 [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Explicit, Size = 96)]
 public unsafe partial struct TwiddleFactor
@@ -2199,259 +1553,55 @@ public static unsafe void Marshal_TwiddleFactorContext(ref global::Kassyi.GSharp
 native = default;
 if (host.Forward1 != null)
 {
-if (isDevicePtr)
-{
-throw new System.NotSupportedException("Passing a struct with arrays is not supported when isDevicePtr is true.");
-}
-else
-{
-int size = host.Forward1.Length * sizeof(global::System.UInt32);
-if (size > 0)
-{
-CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out native.Forward1.Data, (IntPtr)size, hStream));
-allocatedPtrs?.Add(native.Forward1.Data);
+var pinnedHandles = allocatedPtrs ?? throw new System.ArgumentNullException(nameof(allocatedPtrs));
 var handle = System.Runtime.InteropServices.GCHandle.Alloc(host.Forward1, System.Runtime.InteropServices.GCHandleType.Pinned);
-try
-{
-CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoDAsync_v2(native.Forward1.Data, handle.AddrOfPinnedObject(), (IntPtr)size, hStream));
-}
-finally
-{
-handle.Free();
-}
-}
+pinnedHandles.Add(System.Runtime.InteropServices.GCHandle.ToIntPtr(handle));
+native.Forward1.Data = handle.AddrOfPinnedObject();
 native.Forward1.Length = host.Forward1.Length;
-}
 }
 if (host.Forward2 != null)
 {
-if (isDevicePtr)
-{
-throw new System.NotSupportedException("Passing a struct with arrays is not supported when isDevicePtr is true.");
-}
-else
-{
-int size = host.Forward2.Length * sizeof(global::System.UInt32);
-if (size > 0)
-{
-CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out native.Forward2.Data, (IntPtr)size, hStream));
-allocatedPtrs?.Add(native.Forward2.Data);
+var pinnedHandles = allocatedPtrs ?? throw new System.ArgumentNullException(nameof(allocatedPtrs));
 var handle = System.Runtime.InteropServices.GCHandle.Alloc(host.Forward2, System.Runtime.InteropServices.GCHandleType.Pinned);
-try
-{
-CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoDAsync_v2(native.Forward2.Data, handle.AddrOfPinnedObject(), (IntPtr)size, hStream));
-}
-finally
-{
-handle.Free();
-}
-}
+pinnedHandles.Add(System.Runtime.InteropServices.GCHandle.ToIntPtr(handle));
+native.Forward2.Data = handle.AddrOfPinnedObject();
 native.Forward2.Length = host.Forward2.Length;
-}
 }
 if (host.Forward3 != null)
 {
-if (isDevicePtr)
-{
-throw new System.NotSupportedException("Passing a struct with arrays is not supported when isDevicePtr is true.");
-}
-else
-{
-int size = host.Forward3.Length * sizeof(global::System.UInt32);
-if (size > 0)
-{
-CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out native.Forward3.Data, (IntPtr)size, hStream));
-allocatedPtrs?.Add(native.Forward3.Data);
+var pinnedHandles = allocatedPtrs ?? throw new System.ArgumentNullException(nameof(allocatedPtrs));
 var handle = System.Runtime.InteropServices.GCHandle.Alloc(host.Forward3, System.Runtime.InteropServices.GCHandleType.Pinned);
-try
-{
-CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoDAsync_v2(native.Forward3.Data, handle.AddrOfPinnedObject(), (IntPtr)size, hStream));
-}
-finally
-{
-handle.Free();
-}
-}
+pinnedHandles.Add(System.Runtime.InteropServices.GCHandle.ToIntPtr(handle));
+native.Forward3.Data = handle.AddrOfPinnedObject();
 native.Forward3.Length = host.Forward3.Length;
-}
 }
 if (host.Inverse1 != null)
 {
-if (isDevicePtr)
-{
-throw new System.NotSupportedException("Passing a struct with arrays is not supported when isDevicePtr is true.");
-}
-else
-{
-int size = host.Inverse1.Length * sizeof(global::System.UInt32);
-if (size > 0)
-{
-CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out native.Inverse1.Data, (IntPtr)size, hStream));
-allocatedPtrs?.Add(native.Inverse1.Data);
+var pinnedHandles = allocatedPtrs ?? throw new System.ArgumentNullException(nameof(allocatedPtrs));
 var handle = System.Runtime.InteropServices.GCHandle.Alloc(host.Inverse1, System.Runtime.InteropServices.GCHandleType.Pinned);
-try
-{
-CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoDAsync_v2(native.Inverse1.Data, handle.AddrOfPinnedObject(), (IntPtr)size, hStream));
-}
-finally
-{
-handle.Free();
-}
-}
+pinnedHandles.Add(System.Runtime.InteropServices.GCHandle.ToIntPtr(handle));
+native.Inverse1.Data = handle.AddrOfPinnedObject();
 native.Inverse1.Length = host.Inverse1.Length;
-}
 }
 if (host.Inverse2 != null)
 {
-if (isDevicePtr)
-{
-throw new System.NotSupportedException("Passing a struct with arrays is not supported when isDevicePtr is true.");
-}
-else
-{
-int size = host.Inverse2.Length * sizeof(global::System.UInt32);
-if (size > 0)
-{
-CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out native.Inverse2.Data, (IntPtr)size, hStream));
-allocatedPtrs?.Add(native.Inverse2.Data);
+var pinnedHandles = allocatedPtrs ?? throw new System.ArgumentNullException(nameof(allocatedPtrs));
 var handle = System.Runtime.InteropServices.GCHandle.Alloc(host.Inverse2, System.Runtime.InteropServices.GCHandleType.Pinned);
-try
-{
-CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoDAsync_v2(native.Inverse2.Data, handle.AddrOfPinnedObject(), (IntPtr)size, hStream));
-}
-finally
-{
-handle.Free();
-}
-}
+pinnedHandles.Add(System.Runtime.InteropServices.GCHandle.ToIntPtr(handle));
+native.Inverse2.Data = handle.AddrOfPinnedObject();
 native.Inverse2.Length = host.Inverse2.Length;
-}
 }
 if (host.Inverse3 != null)
 {
-if (isDevicePtr)
-{
-throw new System.NotSupportedException("Passing a struct with arrays is not supported when isDevicePtr is true.");
-}
-else
-{
-int size = host.Inverse3.Length * sizeof(global::System.UInt32);
-if (size > 0)
-{
-CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out native.Inverse3.Data, (IntPtr)size, hStream));
-allocatedPtrs?.Add(native.Inverse3.Data);
+var pinnedHandles = allocatedPtrs ?? throw new System.ArgumentNullException(nameof(allocatedPtrs));
 var handle = System.Runtime.InteropServices.GCHandle.Alloc(host.Inverse3, System.Runtime.InteropServices.GCHandleType.Pinned);
-try
-{
-CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoDAsync_v2(native.Inverse3.Data, handle.AddrOfPinnedObject(), (IntPtr)size, hStream));
-}
-finally
-{
-handle.Free();
-}
-}
+pinnedHandles.Add(System.Runtime.InteropServices.GCHandle.ToIntPtr(handle));
+native.Inverse3.Data = handle.AddrOfPinnedObject();
 native.Inverse3.Length = host.Inverse3.Length;
-}
 }
 }
 public static unsafe void Unmarshal_TwiddleFactorContext(ref global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.TwiddleFactorContext host, ref AotContexts.TwiddleFactor native, bool isDevicePtr, IntPtr hStream = default)
 {
-if (host.Forward1 != null && !isDevicePtr && native.Forward1.Data != IntPtr.Zero)
-{
-int size = host.Forward1.Length * sizeof(global::System.UInt32);
-if (size > 0)
-{
-var handle = System.Runtime.InteropServices.GCHandle.Alloc(host.Forward1, System.Runtime.InteropServices.GCHandleType.Pinned);
-try
-{
-CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoHAsync_v2(handle.AddrOfPinnedObject(), native.Forward1.Data, (IntPtr)size, hStream));
-}
-finally
-{
-handle.Free();
-}
-}
-}
-if (host.Forward2 != null && !isDevicePtr && native.Forward2.Data != IntPtr.Zero)
-{
-int size = host.Forward2.Length * sizeof(global::System.UInt32);
-if (size > 0)
-{
-var handle = System.Runtime.InteropServices.GCHandle.Alloc(host.Forward2, System.Runtime.InteropServices.GCHandleType.Pinned);
-try
-{
-CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoHAsync_v2(handle.AddrOfPinnedObject(), native.Forward2.Data, (IntPtr)size, hStream));
-}
-finally
-{
-handle.Free();
-}
-}
-}
-if (host.Forward3 != null && !isDevicePtr && native.Forward3.Data != IntPtr.Zero)
-{
-int size = host.Forward3.Length * sizeof(global::System.UInt32);
-if (size > 0)
-{
-var handle = System.Runtime.InteropServices.GCHandle.Alloc(host.Forward3, System.Runtime.InteropServices.GCHandleType.Pinned);
-try
-{
-CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoHAsync_v2(handle.AddrOfPinnedObject(), native.Forward3.Data, (IntPtr)size, hStream));
-}
-finally
-{
-handle.Free();
-}
-}
-}
-if (host.Inverse1 != null && !isDevicePtr && native.Inverse1.Data != IntPtr.Zero)
-{
-int size = host.Inverse1.Length * sizeof(global::System.UInt32);
-if (size > 0)
-{
-var handle = System.Runtime.InteropServices.GCHandle.Alloc(host.Inverse1, System.Runtime.InteropServices.GCHandleType.Pinned);
-try
-{
-CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoHAsync_v2(handle.AddrOfPinnedObject(), native.Inverse1.Data, (IntPtr)size, hStream));
-}
-finally
-{
-handle.Free();
-}
-}
-}
-if (host.Inverse2 != null && !isDevicePtr && native.Inverse2.Data != IntPtr.Zero)
-{
-int size = host.Inverse2.Length * sizeof(global::System.UInt32);
-if (size > 0)
-{
-var handle = System.Runtime.InteropServices.GCHandle.Alloc(host.Inverse2, System.Runtime.InteropServices.GCHandleType.Pinned);
-try
-{
-CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoHAsync_v2(handle.AddrOfPinnedObject(), native.Inverse2.Data, (IntPtr)size, hStream));
-}
-finally
-{
-handle.Free();
-}
-}
-}
-if (host.Inverse3 != null && !isDevicePtr && native.Inverse3.Data != IntPtr.Zero)
-{
-int size = host.Inverse3.Length * sizeof(global::System.UInt32);
-if (size > 0)
-{
-var handle = System.Runtime.InteropServices.GCHandle.Alloc(host.Inverse3, System.Runtime.InteropServices.GCHandleType.Pinned);
-try
-{
-CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoHAsync_v2(handle.AddrOfPinnedObject(), native.Inverse3.Data, (IntPtr)size, hStream));
-}
-finally
-{
-handle.Free();
-}
-}
-}
 }
 [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Explicit, Size = 256)]
 public unsafe partial struct WorkspaceState
@@ -2507,343 +1657,71 @@ public static unsafe void Marshal_IterationScratchContext(ref global::Kassyi.GSh
 native = default;
 if (host.XSquared != null)
 {
-if (isDevicePtr)
-{
-throw new System.NotSupportedException("Passing a struct with arrays is not supported when isDevicePtr is true.");
-}
-else
-{
-int size = host.XSquared.Length * sizeof(global::System.UInt32);
-if (size > 0)
-{
-CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out native.XSquared.Data, (IntPtr)size, hStream));
-allocatedPtrs?.Add(native.XSquared.Data);
+var pinnedHandles = allocatedPtrs ?? throw new System.ArgumentNullException(nameof(allocatedPtrs));
 var handle = System.Runtime.InteropServices.GCHandle.Alloc(host.XSquared, System.Runtime.InteropServices.GCHandleType.Pinned);
-try
-{
-CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoDAsync_v2(native.XSquared.Data, handle.AddrOfPinnedObject(), (IntPtr)size, hStream));
-}
-finally
-{
-handle.Free();
-}
-}
+pinnedHandles.Add(System.Runtime.InteropServices.GCHandle.ToIntPtr(handle));
+native.XSquared.Data = handle.AddrOfPinnedObject();
 native.XSquared.Length = host.XSquared.Length;
-}
 }
 if (host.AxSquared != null)
 {
-if (isDevicePtr)
-{
-throw new System.NotSupportedException("Passing a struct with arrays is not supported when isDevicePtr is true.");
-}
-else
-{
-int size = host.AxSquared.Length * sizeof(global::System.UInt32);
-if (size > 0)
-{
-CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out native.AxSquared.Data, (IntPtr)size, hStream));
-allocatedPtrs?.Add(native.AxSquared.Data);
+var pinnedHandles = allocatedPtrs ?? throw new System.ArgumentNullException(nameof(allocatedPtrs));
 var handle = System.Runtime.InteropServices.GCHandle.Alloc(host.AxSquared, System.Runtime.InteropServices.GCHandleType.Pinned);
-try
-{
-CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoDAsync_v2(native.AxSquared.Data, handle.AddrOfPinnedObject(), (IntPtr)size, hStream));
-}
-finally
-{
-handle.Free();
-}
-}
+pinnedHandles.Add(System.Runtime.InteropServices.GCHandle.ToIntPtr(handle));
+native.AxSquared.Data = handle.AddrOfPinnedObject();
 native.AxSquared.Length = host.AxSquared.Length;
-}
 }
 if (host.CurrentProduct != null)
 {
-if (isDevicePtr)
-{
-throw new System.NotSupportedException("Passing a struct with arrays is not supported when isDevicePtr is true.");
-}
-else
-{
-int size = host.CurrentProduct.Length * sizeof(global::System.UInt32);
-if (size > 0)
-{
-CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out native.CurrentProduct.Data, (IntPtr)size, hStream));
-allocatedPtrs?.Add(native.CurrentProduct.Data);
+var pinnedHandles = allocatedPtrs ?? throw new System.ArgumentNullException(nameof(allocatedPtrs));
 var handle = System.Runtime.InteropServices.GCHandle.Alloc(host.CurrentProduct, System.Runtime.InteropServices.GCHandleType.Pinned);
-try
-{
-CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoDAsync_v2(native.CurrentProduct.Data, handle.AddrOfPinnedObject(), (IntPtr)size, hStream));
-}
-finally
-{
-handle.Free();
-}
-}
+pinnedHandles.Add(System.Runtime.InteropServices.GCHandle.ToIntPtr(handle));
+native.CurrentProduct.Data = handle.AddrOfPinnedObject();
 native.CurrentProduct.Length = host.CurrentProduct.Length;
-}
 }
 if (host.Diff != null)
 {
-if (isDevicePtr)
-{
-throw new System.NotSupportedException("Passing a struct with arrays is not supported when isDevicePtr is true.");
-}
-else
-{
-int size = host.Diff.Length * sizeof(global::System.UInt32);
-if (size > 0)
-{
-CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out native.Diff.Data, (IntPtr)size, hStream));
-allocatedPtrs?.Add(native.Diff.Data);
+var pinnedHandles = allocatedPtrs ?? throw new System.ArgumentNullException(nameof(allocatedPtrs));
 var handle = System.Runtime.InteropServices.GCHandle.Alloc(host.Diff, System.Runtime.InteropServices.GCHandleType.Pinned);
-try
-{
-CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoDAsync_v2(native.Diff.Data, handle.AddrOfPinnedObject(), (IntPtr)size, hStream));
-}
-finally
-{
-handle.Free();
-}
-}
+pinnedHandles.Add(System.Runtime.InteropServices.GCHandle.ToIntPtr(handle));
+native.Diff.Data = handle.AddrOfPinnedObject();
 native.Diff.Length = host.Diff.Length;
-}
 }
 if (host.NextXUnshifted != null)
 {
-if (isDevicePtr)
-{
-throw new System.NotSupportedException("Passing a struct with arrays is not supported when isDevicePtr is true.");
-}
-else
-{
-int size = host.NextXUnshifted.Length * sizeof(global::System.UInt32);
-if (size > 0)
-{
-CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out native.NextXUnshifted.Data, (IntPtr)size, hStream));
-allocatedPtrs?.Add(native.NextXUnshifted.Data);
+var pinnedHandles = allocatedPtrs ?? throw new System.ArgumentNullException(nameof(allocatedPtrs));
 var handle = System.Runtime.InteropServices.GCHandle.Alloc(host.NextXUnshifted, System.Runtime.InteropServices.GCHandleType.Pinned);
-try
-{
-CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoDAsync_v2(native.NextXUnshifted.Data, handle.AddrOfPinnedObject(), (IntPtr)size, hStream));
-}
-finally
-{
-handle.Free();
-}
-}
+pinnedHandles.Add(System.Runtime.InteropServices.GCHandle.ToIntPtr(handle));
+native.NextXUnshifted.Data = handle.AddrOfPinnedObject();
 native.NextXUnshifted.Length = host.NextXUnshifted.Length;
-}
 }
 if (host.NextXShifted != null)
 {
-if (isDevicePtr)
-{
-throw new System.NotSupportedException("Passing a struct with arrays is not supported when isDevicePtr is true.");
-}
-else
-{
-int size = host.NextXShifted.Length * sizeof(global::System.UInt32);
-if (size > 0)
-{
-CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out native.NextXShifted.Data, (IntPtr)size, hStream));
-allocatedPtrs?.Add(native.NextXShifted.Data);
+var pinnedHandles = allocatedPtrs ?? throw new System.ArgumentNullException(nameof(allocatedPtrs));
 var handle = System.Runtime.InteropServices.GCHandle.Alloc(host.NextXShifted, System.Runtime.InteropServices.GCHandleType.Pinned);
-try
-{
-CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoDAsync_v2(native.NextXShifted.Data, handle.AddrOfPinnedObject(), (IntPtr)size, hStream));
-}
-finally
-{
-handle.Free();
-}
-}
+pinnedHandles.Add(System.Runtime.InteropServices.GCHandle.ToIntPtr(handle));
+native.NextXShifted.Data = handle.AddrOfPinnedObject();
 native.NextXShifted.Length = host.NextXShifted.Length;
-}
 }
 if (host.NextIter != null)
 {
-if (isDevicePtr)
-{
-throw new System.NotSupportedException("Passing a struct with arrays is not supported when isDevicePtr is true.");
-}
-else
-{
-int size = host.NextIter.Length * sizeof(global::System.UInt32);
-if (size > 0)
-{
-CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out native.NextIter.Data, (IntPtr)size, hStream));
-allocatedPtrs?.Add(native.NextIter.Data);
+var pinnedHandles = allocatedPtrs ?? throw new System.ArgumentNullException(nameof(allocatedPtrs));
 var handle = System.Runtime.InteropServices.GCHandle.Alloc(host.NextIter, System.Runtime.InteropServices.GCHandleType.Pinned);
-try
-{
-CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoDAsync_v2(native.NextIter.Data, handle.AddrOfPinnedObject(), (IntPtr)size, hStream));
-}
-finally
-{
-handle.Free();
-}
-}
+pinnedHandles.Add(System.Runtime.InteropServices.GCHandle.ToIntPtr(handle));
+native.NextIter.Data = handle.AddrOfPinnedObject();
 native.NextIter.Length = host.NextIter.Length;
-}
 }
 if (host.ModulusExpanded != null)
 {
-if (isDevicePtr)
-{
-throw new System.NotSupportedException("Passing a struct with arrays is not supported when isDevicePtr is true.");
-}
-else
-{
-int size = host.ModulusExpanded.Length * sizeof(global::System.UInt32);
-if (size > 0)
-{
-CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out native.ModulusExpanded.Data, (IntPtr)size, hStream));
-allocatedPtrs?.Add(native.ModulusExpanded.Data);
+var pinnedHandles = allocatedPtrs ?? throw new System.ArgumentNullException(nameof(allocatedPtrs));
 var handle = System.Runtime.InteropServices.GCHandle.Alloc(host.ModulusExpanded, System.Runtime.InteropServices.GCHandleType.Pinned);
-try
-{
-CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoDAsync_v2(native.ModulusExpanded.Data, handle.AddrOfPinnedObject(), (IntPtr)size, hStream));
-}
-finally
-{
-handle.Free();
-}
-}
+pinnedHandles.Add(System.Runtime.InteropServices.GCHandle.ToIntPtr(handle));
+native.ModulusExpanded.Data = handle.AddrOfPinnedObject();
 native.ModulusExpanded.Length = host.ModulusExpanded.Length;
-}
 }
 }
 public static unsafe void Unmarshal_IterationScratchContext(ref global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.IterationScratchContext host, ref AotContexts.IterationScratch native, bool isDevicePtr, IntPtr hStream = default)
 {
-if (host.XSquared != null && !isDevicePtr && native.XSquared.Data != IntPtr.Zero)
-{
-int size = host.XSquared.Length * sizeof(global::System.UInt32);
-if (size > 0)
-{
-var handle = System.Runtime.InteropServices.GCHandle.Alloc(host.XSquared, System.Runtime.InteropServices.GCHandleType.Pinned);
-try
-{
-CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoHAsync_v2(handle.AddrOfPinnedObject(), native.XSquared.Data, (IntPtr)size, hStream));
-}
-finally
-{
-handle.Free();
-}
-}
-}
-if (host.AxSquared != null && !isDevicePtr && native.AxSquared.Data != IntPtr.Zero)
-{
-int size = host.AxSquared.Length * sizeof(global::System.UInt32);
-if (size > 0)
-{
-var handle = System.Runtime.InteropServices.GCHandle.Alloc(host.AxSquared, System.Runtime.InteropServices.GCHandleType.Pinned);
-try
-{
-CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoHAsync_v2(handle.AddrOfPinnedObject(), native.AxSquared.Data, (IntPtr)size, hStream));
-}
-finally
-{
-handle.Free();
-}
-}
-}
-if (host.CurrentProduct != null && !isDevicePtr && native.CurrentProduct.Data != IntPtr.Zero)
-{
-int size = host.CurrentProduct.Length * sizeof(global::System.UInt32);
-if (size > 0)
-{
-var handle = System.Runtime.InteropServices.GCHandle.Alloc(host.CurrentProduct, System.Runtime.InteropServices.GCHandleType.Pinned);
-try
-{
-CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoHAsync_v2(handle.AddrOfPinnedObject(), native.CurrentProduct.Data, (IntPtr)size, hStream));
-}
-finally
-{
-handle.Free();
-}
-}
-}
-if (host.Diff != null && !isDevicePtr && native.Diff.Data != IntPtr.Zero)
-{
-int size = host.Diff.Length * sizeof(global::System.UInt32);
-if (size > 0)
-{
-var handle = System.Runtime.InteropServices.GCHandle.Alloc(host.Diff, System.Runtime.InteropServices.GCHandleType.Pinned);
-try
-{
-CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoHAsync_v2(handle.AddrOfPinnedObject(), native.Diff.Data, (IntPtr)size, hStream));
-}
-finally
-{
-handle.Free();
-}
-}
-}
-if (host.NextXUnshifted != null && !isDevicePtr && native.NextXUnshifted.Data != IntPtr.Zero)
-{
-int size = host.NextXUnshifted.Length * sizeof(global::System.UInt32);
-if (size > 0)
-{
-var handle = System.Runtime.InteropServices.GCHandle.Alloc(host.NextXUnshifted, System.Runtime.InteropServices.GCHandleType.Pinned);
-try
-{
-CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoHAsync_v2(handle.AddrOfPinnedObject(), native.NextXUnshifted.Data, (IntPtr)size, hStream));
-}
-finally
-{
-handle.Free();
-}
-}
-}
-if (host.NextXShifted != null && !isDevicePtr && native.NextXShifted.Data != IntPtr.Zero)
-{
-int size = host.NextXShifted.Length * sizeof(global::System.UInt32);
-if (size > 0)
-{
-var handle = System.Runtime.InteropServices.GCHandle.Alloc(host.NextXShifted, System.Runtime.InteropServices.GCHandleType.Pinned);
-try
-{
-CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoHAsync_v2(handle.AddrOfPinnedObject(), native.NextXShifted.Data, (IntPtr)size, hStream));
-}
-finally
-{
-handle.Free();
-}
-}
-}
-if (host.NextIter != null && !isDevicePtr && native.NextIter.Data != IntPtr.Zero)
-{
-int size = host.NextIter.Length * sizeof(global::System.UInt32);
-if (size > 0)
-{
-var handle = System.Runtime.InteropServices.GCHandle.Alloc(host.NextIter, System.Runtime.InteropServices.GCHandleType.Pinned);
-try
-{
-CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoHAsync_v2(handle.AddrOfPinnedObject(), native.NextIter.Data, (IntPtr)size, hStream));
-}
-finally
-{
-handle.Free();
-}
-}
-}
-if (host.ModulusExpanded != null && !isDevicePtr && native.ModulusExpanded.Data != IntPtr.Zero)
-{
-int size = host.ModulusExpanded.Length * sizeof(global::System.UInt32);
-if (size > 0)
-{
-var handle = System.Runtime.InteropServices.GCHandle.Alloc(host.ModulusExpanded, System.Runtime.InteropServices.GCHandleType.Pinned);
-try
-{
-CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoHAsync_v2(handle.AddrOfPinnedObject(), native.ModulusExpanded.Data, (IntPtr)size, hStream));
-}
-finally
-{
-handle.Free();
-}
-}
-}
 }
 [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Explicit, Size = 128)]
 public unsafe partial struct NttConvolutionScratch
@@ -2878,343 +1756,71 @@ public static unsafe void Marshal_NttConvolutionScratchContext(ref global::Kassy
 native = default;
 if (host.NttBuf1A != null)
 {
-if (isDevicePtr)
-{
-throw new System.NotSupportedException("Passing a struct with arrays is not supported when isDevicePtr is true.");
-}
-else
-{
-int size = host.NttBuf1A.Length * sizeof(global::System.UInt32);
-if (size > 0)
-{
-CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out native.NttBuf1A.Data, (IntPtr)size, hStream));
-allocatedPtrs?.Add(native.NttBuf1A.Data);
+var pinnedHandles = allocatedPtrs ?? throw new System.ArgumentNullException(nameof(allocatedPtrs));
 var handle = System.Runtime.InteropServices.GCHandle.Alloc(host.NttBuf1A, System.Runtime.InteropServices.GCHandleType.Pinned);
-try
-{
-CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoDAsync_v2(native.NttBuf1A.Data, handle.AddrOfPinnedObject(), (IntPtr)size, hStream));
-}
-finally
-{
-handle.Free();
-}
-}
+pinnedHandles.Add(System.Runtime.InteropServices.GCHandle.ToIntPtr(handle));
+native.NttBuf1A.Data = handle.AddrOfPinnedObject();
 native.NttBuf1A.Length = host.NttBuf1A.Length;
-}
 }
 if (host.NttBuf2A != null)
 {
-if (isDevicePtr)
-{
-throw new System.NotSupportedException("Passing a struct with arrays is not supported when isDevicePtr is true.");
-}
-else
-{
-int size = host.NttBuf2A.Length * sizeof(global::System.UInt32);
-if (size > 0)
-{
-CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out native.NttBuf2A.Data, (IntPtr)size, hStream));
-allocatedPtrs?.Add(native.NttBuf2A.Data);
+var pinnedHandles = allocatedPtrs ?? throw new System.ArgumentNullException(nameof(allocatedPtrs));
 var handle = System.Runtime.InteropServices.GCHandle.Alloc(host.NttBuf2A, System.Runtime.InteropServices.GCHandleType.Pinned);
-try
-{
-CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoDAsync_v2(native.NttBuf2A.Data, handle.AddrOfPinnedObject(), (IntPtr)size, hStream));
-}
-finally
-{
-handle.Free();
-}
-}
+pinnedHandles.Add(System.Runtime.InteropServices.GCHandle.ToIntPtr(handle));
+native.NttBuf2A.Data = handle.AddrOfPinnedObject();
 native.NttBuf2A.Length = host.NttBuf2A.Length;
-}
 }
 if (host.NttBuf1B != null)
 {
-if (isDevicePtr)
-{
-throw new System.NotSupportedException("Passing a struct with arrays is not supported when isDevicePtr is true.");
-}
-else
-{
-int size = host.NttBuf1B.Length * sizeof(global::System.UInt32);
-if (size > 0)
-{
-CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out native.NttBuf1B.Data, (IntPtr)size, hStream));
-allocatedPtrs?.Add(native.NttBuf1B.Data);
+var pinnedHandles = allocatedPtrs ?? throw new System.ArgumentNullException(nameof(allocatedPtrs));
 var handle = System.Runtime.InteropServices.GCHandle.Alloc(host.NttBuf1B, System.Runtime.InteropServices.GCHandleType.Pinned);
-try
-{
-CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoDAsync_v2(native.NttBuf1B.Data, handle.AddrOfPinnedObject(), (IntPtr)size, hStream));
-}
-finally
-{
-handle.Free();
-}
-}
+pinnedHandles.Add(System.Runtime.InteropServices.GCHandle.ToIntPtr(handle));
+native.NttBuf1B.Data = handle.AddrOfPinnedObject();
 native.NttBuf1B.Length = host.NttBuf1B.Length;
-}
 }
 if (host.NttBuf2B != null)
 {
-if (isDevicePtr)
-{
-throw new System.NotSupportedException("Passing a struct with arrays is not supported when isDevicePtr is true.");
-}
-else
-{
-int size = host.NttBuf2B.Length * sizeof(global::System.UInt32);
-if (size > 0)
-{
-CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out native.NttBuf2B.Data, (IntPtr)size, hStream));
-allocatedPtrs?.Add(native.NttBuf2B.Data);
+var pinnedHandles = allocatedPtrs ?? throw new System.ArgumentNullException(nameof(allocatedPtrs));
 var handle = System.Runtime.InteropServices.GCHandle.Alloc(host.NttBuf2B, System.Runtime.InteropServices.GCHandleType.Pinned);
-try
-{
-CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoDAsync_v2(native.NttBuf2B.Data, handle.AddrOfPinnedObject(), (IntPtr)size, hStream));
-}
-finally
-{
-handle.Free();
-}
-}
+pinnedHandles.Add(System.Runtime.InteropServices.GCHandle.ToIntPtr(handle));
+native.NttBuf2B.Data = handle.AddrOfPinnedObject();
 native.NttBuf2B.Length = host.NttBuf2B.Length;
-}
 }
 if (host.TmpBuf != null)
 {
-if (isDevicePtr)
-{
-throw new System.NotSupportedException("Passing a struct with arrays is not supported when isDevicePtr is true.");
-}
-else
-{
-int size = host.TmpBuf.Length * sizeof(global::System.UInt32);
-if (size > 0)
-{
-CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out native.TmpBuf.Data, (IntPtr)size, hStream));
-allocatedPtrs?.Add(native.TmpBuf.Data);
+var pinnedHandles = allocatedPtrs ?? throw new System.ArgumentNullException(nameof(allocatedPtrs));
 var handle = System.Runtime.InteropServices.GCHandle.Alloc(host.TmpBuf, System.Runtime.InteropServices.GCHandleType.Pinned);
-try
-{
-CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoDAsync_v2(native.TmpBuf.Data, handle.AddrOfPinnedObject(), (IntPtr)size, hStream));
-}
-finally
-{
-handle.Free();
-}
-}
+pinnedHandles.Add(System.Runtime.InteropServices.GCHandle.ToIntPtr(handle));
+native.TmpBuf.Data = handle.AddrOfPinnedObject();
 native.TmpBuf.Length = host.TmpBuf.Length;
-}
 }
 if (host.UncarriedLow != null)
 {
-if (isDevicePtr)
-{
-throw new System.NotSupportedException("Passing a struct with arrays is not supported when isDevicePtr is true.");
-}
-else
-{
-int size = host.UncarriedLow.Length * sizeof(global::System.UInt32);
-if (size > 0)
-{
-CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out native.UncarriedLow.Data, (IntPtr)size, hStream));
-allocatedPtrs?.Add(native.UncarriedLow.Data);
+var pinnedHandles = allocatedPtrs ?? throw new System.ArgumentNullException(nameof(allocatedPtrs));
 var handle = System.Runtime.InteropServices.GCHandle.Alloc(host.UncarriedLow, System.Runtime.InteropServices.GCHandleType.Pinned);
-try
-{
-CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoDAsync_v2(native.UncarriedLow.Data, handle.AddrOfPinnedObject(), (IntPtr)size, hStream));
-}
-finally
-{
-handle.Free();
-}
-}
+pinnedHandles.Add(System.Runtime.InteropServices.GCHandle.ToIntPtr(handle));
+native.UncarriedLow.Data = handle.AddrOfPinnedObject();
 native.UncarriedLow.Length = host.UncarriedLow.Length;
-}
 }
 if (host.UncarriedHigh != null)
 {
-if (isDevicePtr)
-{
-throw new System.NotSupportedException("Passing a struct with arrays is not supported when isDevicePtr is true.");
-}
-else
-{
-int size = host.UncarriedHigh.Length * sizeof(global::System.UInt32);
-if (size > 0)
-{
-CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out native.UncarriedHigh.Data, (IntPtr)size, hStream));
-allocatedPtrs?.Add(native.UncarriedHigh.Data);
+var pinnedHandles = allocatedPtrs ?? throw new System.ArgumentNullException(nameof(allocatedPtrs));
 var handle = System.Runtime.InteropServices.GCHandle.Alloc(host.UncarriedHigh, System.Runtime.InteropServices.GCHandleType.Pinned);
-try
-{
-CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoDAsync_v2(native.UncarriedHigh.Data, handle.AddrOfPinnedObject(), (IntPtr)size, hStream));
-}
-finally
-{
-handle.Free();
-}
-}
+pinnedHandles.Add(System.Runtime.InteropServices.GCHandle.ToIntPtr(handle));
+native.UncarriedHigh.Data = handle.AddrOfPinnedObject();
 native.UncarriedHigh.Length = host.UncarriedHigh.Length;
-}
 }
 if (host.BlockCarries != null)
 {
-if (isDevicePtr)
-{
-throw new System.NotSupportedException("Passing a struct with arrays is not supported when isDevicePtr is true.");
-}
-else
-{
-int size = host.BlockCarries.Length * sizeof(global::System.UInt32);
-if (size > 0)
-{
-CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out native.BlockCarries.Data, (IntPtr)size, hStream));
-allocatedPtrs?.Add(native.BlockCarries.Data);
+var pinnedHandles = allocatedPtrs ?? throw new System.ArgumentNullException(nameof(allocatedPtrs));
 var handle = System.Runtime.InteropServices.GCHandle.Alloc(host.BlockCarries, System.Runtime.InteropServices.GCHandleType.Pinned);
-try
-{
-CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoDAsync_v2(native.BlockCarries.Data, handle.AddrOfPinnedObject(), (IntPtr)size, hStream));
-}
-finally
-{
-handle.Free();
-}
-}
+pinnedHandles.Add(System.Runtime.InteropServices.GCHandle.ToIntPtr(handle));
+native.BlockCarries.Data = handle.AddrOfPinnedObject();
 native.BlockCarries.Length = host.BlockCarries.Length;
-}
 }
 }
 public static unsafe void Unmarshal_NttConvolutionScratchContext(ref global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.NttConvolutionScratchContext host, ref AotContexts.NttConvolutionScratch native, bool isDevicePtr, IntPtr hStream = default)
 {
-if (host.NttBuf1A != null && !isDevicePtr && native.NttBuf1A.Data != IntPtr.Zero)
-{
-int size = host.NttBuf1A.Length * sizeof(global::System.UInt32);
-if (size > 0)
-{
-var handle = System.Runtime.InteropServices.GCHandle.Alloc(host.NttBuf1A, System.Runtime.InteropServices.GCHandleType.Pinned);
-try
-{
-CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoHAsync_v2(handle.AddrOfPinnedObject(), native.NttBuf1A.Data, (IntPtr)size, hStream));
-}
-finally
-{
-handle.Free();
-}
-}
-}
-if (host.NttBuf2A != null && !isDevicePtr && native.NttBuf2A.Data != IntPtr.Zero)
-{
-int size = host.NttBuf2A.Length * sizeof(global::System.UInt32);
-if (size > 0)
-{
-var handle = System.Runtime.InteropServices.GCHandle.Alloc(host.NttBuf2A, System.Runtime.InteropServices.GCHandleType.Pinned);
-try
-{
-CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoHAsync_v2(handle.AddrOfPinnedObject(), native.NttBuf2A.Data, (IntPtr)size, hStream));
-}
-finally
-{
-handle.Free();
-}
-}
-}
-if (host.NttBuf1B != null && !isDevicePtr && native.NttBuf1B.Data != IntPtr.Zero)
-{
-int size = host.NttBuf1B.Length * sizeof(global::System.UInt32);
-if (size > 0)
-{
-var handle = System.Runtime.InteropServices.GCHandle.Alloc(host.NttBuf1B, System.Runtime.InteropServices.GCHandleType.Pinned);
-try
-{
-CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoHAsync_v2(handle.AddrOfPinnedObject(), native.NttBuf1B.Data, (IntPtr)size, hStream));
-}
-finally
-{
-handle.Free();
-}
-}
-}
-if (host.NttBuf2B != null && !isDevicePtr && native.NttBuf2B.Data != IntPtr.Zero)
-{
-int size = host.NttBuf2B.Length * sizeof(global::System.UInt32);
-if (size > 0)
-{
-var handle = System.Runtime.InteropServices.GCHandle.Alloc(host.NttBuf2B, System.Runtime.InteropServices.GCHandleType.Pinned);
-try
-{
-CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoHAsync_v2(handle.AddrOfPinnedObject(), native.NttBuf2B.Data, (IntPtr)size, hStream));
-}
-finally
-{
-handle.Free();
-}
-}
-}
-if (host.TmpBuf != null && !isDevicePtr && native.TmpBuf.Data != IntPtr.Zero)
-{
-int size = host.TmpBuf.Length * sizeof(global::System.UInt32);
-if (size > 0)
-{
-var handle = System.Runtime.InteropServices.GCHandle.Alloc(host.TmpBuf, System.Runtime.InteropServices.GCHandleType.Pinned);
-try
-{
-CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoHAsync_v2(handle.AddrOfPinnedObject(), native.TmpBuf.Data, (IntPtr)size, hStream));
-}
-finally
-{
-handle.Free();
-}
-}
-}
-if (host.UncarriedLow != null && !isDevicePtr && native.UncarriedLow.Data != IntPtr.Zero)
-{
-int size = host.UncarriedLow.Length * sizeof(global::System.UInt32);
-if (size > 0)
-{
-var handle = System.Runtime.InteropServices.GCHandle.Alloc(host.UncarriedLow, System.Runtime.InteropServices.GCHandleType.Pinned);
-try
-{
-CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoHAsync_v2(handle.AddrOfPinnedObject(), native.UncarriedLow.Data, (IntPtr)size, hStream));
-}
-finally
-{
-handle.Free();
-}
-}
-}
-if (host.UncarriedHigh != null && !isDevicePtr && native.UncarriedHigh.Data != IntPtr.Zero)
-{
-int size = host.UncarriedHigh.Length * sizeof(global::System.UInt32);
-if (size > 0)
-{
-var handle = System.Runtime.InteropServices.GCHandle.Alloc(host.UncarriedHigh, System.Runtime.InteropServices.GCHandleType.Pinned);
-try
-{
-CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoHAsync_v2(handle.AddrOfPinnedObject(), native.UncarriedHigh.Data, (IntPtr)size, hStream));
-}
-finally
-{
-handle.Free();
-}
-}
-}
-if (host.BlockCarries != null && !isDevicePtr && native.BlockCarries.Data != IntPtr.Zero)
-{
-int size = host.BlockCarries.Length * sizeof(global::System.UInt32);
-if (size > 0)
-{
-var handle = System.Runtime.InteropServices.GCHandle.Alloc(host.BlockCarries, System.Runtime.InteropServices.GCHandleType.Pinned);
-try
-{
-CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoHAsync_v2(handle.AddrOfPinnedObject(), native.BlockCarries.Data, (IntPtr)size, hStream));
-}
-finally
-{
-handle.Free();
-}
-}
-}
 }
 [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Explicit, Size = 32)]
 public unsafe partial struct ExponentSlice
@@ -3237,29 +1843,11 @@ public static unsafe void Marshal_ExponentSliceContext(ref global::Kassyi.GSharp
 native = default;
 if (host.Words != null)
 {
-if (isDevicePtr)
-{
-throw new System.NotSupportedException("Passing a struct with arrays is not supported when isDevicePtr is true.");
-}
-else
-{
-int size = host.Words.Length * sizeof(global::System.UInt32);
-if (size > 0)
-{
-CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out native.Words.Data, (IntPtr)size, hStream));
-allocatedPtrs?.Add(native.Words.Data);
+var pinnedHandles = allocatedPtrs ?? throw new System.ArgumentNullException(nameof(allocatedPtrs));
 var handle = System.Runtime.InteropServices.GCHandle.Alloc(host.Words, System.Runtime.InteropServices.GCHandleType.Pinned);
-try
-{
-CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoDAsync_v2(native.Words.Data, handle.AddrOfPinnedObject(), (IntPtr)size, hStream));
-}
-finally
-{
-handle.Free();
-}
-}
+pinnedHandles.Add(System.Runtime.InteropServices.GCHandle.ToIntPtr(handle));
+native.Words.Data = handle.AddrOfPinnedObject();
 native.Words.Length = host.Words.Length;
-}
 }
 native.TotalWords = host.TotalWords;
 native.StartWord = host.StartWord;
@@ -3267,22 +1855,6 @@ native.EndWord = host.EndWord;
 }
 public static unsafe void Unmarshal_ExponentSliceContext(ref global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.ExponentSliceContext host, ref AotContexts.ExponentSlice native, bool isDevicePtr, IntPtr hStream = default)
 {
-if (host.Words != null && !isDevicePtr && native.Words.Data != IntPtr.Zero)
-{
-int size = host.Words.Length * sizeof(global::System.UInt32);
-if (size > 0)
-{
-var handle = System.Runtime.InteropServices.GCHandle.Alloc(host.Words, System.Runtime.InteropServices.GCHandleType.Pinned);
-try
-{
-CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoHAsync_v2(handle.AddrOfPinnedObject(), native.Words.Data, (IntPtr)size, hStream));
-}
-finally
-{
-handle.Free();
-}
-}
-}
 host.TotalWords = native.TotalWords;
 host.StartWord = native.StartWord;
 host.EndWord = native.EndWord;
@@ -3959,8 +2531,9 @@ return;
 #undef __gsharp_state
 #undef __gsharp_yielded_for_grid_sync
 }
-extern ""C"" __declspec(dllexport) void __gsharp_launch_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuBigIntDivRemKernels__ModPowNttMegaKernel(uint32_t __gsharp_grid_dim_x, uint32_t __gsharp_grid_dim_y, uint32_t __gsharp_grid_dim_z, uint32_t __gsharp_block_dim_x, uint32_t __gsharp_block_dim_y, uint32_t __gsharp_block_dim_z, __gsharp_ty_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Algorithms__ModPowNttContext __gsharp_id_0_ctx)
+extern ""C"" __declspec(dllexport) void __gsharp_launch_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuBigIntDivRemKernels__ModPowNttMegaKernel(uint32_t __gsharp_grid_dim_x, uint32_t __gsharp_grid_dim_y, uint32_t __gsharp_grid_dim_z, uint32_t __gsharp_block_dim_x, uint32_t __gsharp_block_dim_y, uint32_t __gsharp_block_dim_z, const __gsharp_ty_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Algorithms__ModPowNttContext* __gsharp_arg_0)
 {
+__gsharp_ty_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Algorithms__ModPowNttContext __gsharp_id_0_ctx = *__gsharp_arg_0;
 __gsharp_host_last_error.Reset();
 GSharpErrorSlot __gsharp_launch_error;
 int32_t __gsharp_total_blocks = (int32_t)(__gsharp_grid_dim_x * __gsharp_grid_dim_y * __gsharp_grid_dim_z);
@@ -4239,7 +2812,7 @@ return;
 }
 
 [System.Runtime.InteropServices.UnmanagedFunctionPointer(System.Runtime.InteropServices.CallingConvention.Cdecl)]
-private unsafe delegate void ModPowNttMegaKernel_Delegate(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ, global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.ModPowNttContext ctx);
+private unsafe delegate void ModPowNttMegaKernel_Delegate(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ, AotContexts.ModPowNtt* ctx);
 #pragma warning disable CS8500
 [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
@@ -4320,7 +2893,34 @@ global::Kassyi.GSharp.Core.ManagedGpuContext.IsActive = false;
 }
 return;
 }
-throw new System.NotSupportedException("The struct 'Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.ModPowNttContext' cannot be passed to a kernel on the CPU dialect yet because its host and device layouts differ (field 'Core' of type 'Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.NewtonRaphsonContext': field 'Operands' of type 'Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.OperandContext': field 'LeftOperand' is an array, so the runtime may reorder the fields on the host). The CPU launcher copies it in the host layout, so the kernel would read garbled values.");
+if (global::System.Runtime.CompilerServices.Unsafe.SizeOf<global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.DimensionContext>() != 40) global::Kassyi.GSharp.Runtime.Interop.LayoutGuard.ThrowSizeMismatch("Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.DimensionContext", 40, global::System.Runtime.CompilerServices.Unsafe.SizeOf<global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.DimensionContext>());
+{
+global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.DimensionContext __gsharp_layout_probe = default;
+if (global::System.Runtime.CompilerServices.Unsafe.ByteOffset(ref global::System.Runtime.CompilerServices.Unsafe.As<global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.DimensionContext, byte>(ref __gsharp_layout_probe), ref global::System.Runtime.CompilerServices.Unsafe.As<global::System.Int32, byte>(ref global::System.Runtime.CompilerServices.Unsafe.AsRef(in __gsharp_layout_probe.NumberOfWords))) != 0) global::Kassyi.GSharp.Runtime.Interop.LayoutGuard.ThrowFieldOffsetMismatch("Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.DimensionContext", "NumberOfWords", 0, (long)global::System.Runtime.CompilerServices.Unsafe.ByteOffset(ref global::System.Runtime.CompilerServices.Unsafe.As<global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.DimensionContext, byte>(ref __gsharp_layout_probe), ref global::System.Runtime.CompilerServices.Unsafe.As<global::System.Int32, byte>(ref global::System.Runtime.CompilerServices.Unsafe.AsRef(in __gsharp_layout_probe.NumberOfWords))));
+if (global::System.Runtime.CompilerServices.Unsafe.ByteOffset(ref global::System.Runtime.CompilerServices.Unsafe.As<global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.DimensionContext, byte>(ref __gsharp_layout_probe), ref global::System.Runtime.CompilerServices.Unsafe.As<global::System.Int32, byte>(ref global::System.Runtime.CompilerServices.Unsafe.AsRef(in __gsharp_layout_probe.NumberOfWordsExtended))) != 4) global::Kassyi.GSharp.Runtime.Interop.LayoutGuard.ThrowFieldOffsetMismatch("Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.DimensionContext", "NumberOfWordsExtended", 4, (long)global::System.Runtime.CompilerServices.Unsafe.ByteOffset(ref global::System.Runtime.CompilerServices.Unsafe.As<global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.DimensionContext, byte>(ref __gsharp_layout_probe), ref global::System.Runtime.CompilerServices.Unsafe.As<global::System.Int32, byte>(ref global::System.Runtime.CompilerServices.Unsafe.AsRef(in __gsharp_layout_probe.NumberOfWordsExtended))));
+if (global::System.Runtime.CompilerServices.Unsafe.ByteOffset(ref global::System.Runtime.CompilerServices.Unsafe.As<global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.DimensionContext, byte>(ref __gsharp_layout_probe), ref global::System.Runtime.CompilerServices.Unsafe.As<global::System.Int32, byte>(ref global::System.Runtime.CompilerServices.Unsafe.AsRef(in __gsharp_layout_probe.Exponent))) != 8) global::Kassyi.GSharp.Runtime.Interop.LayoutGuard.ThrowFieldOffsetMismatch("Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.DimensionContext", "Exponent", 8, (long)global::System.Runtime.CompilerServices.Unsafe.ByteOffset(ref global::System.Runtime.CompilerServices.Unsafe.As<global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.DimensionContext, byte>(ref __gsharp_layout_probe), ref global::System.Runtime.CompilerServices.Unsafe.As<global::System.Int32, byte>(ref global::System.Runtime.CompilerServices.Unsafe.AsRef(in __gsharp_layout_probe.Exponent))));
+if (global::System.Runtime.CompilerServices.Unsafe.ByteOffset(ref global::System.Runtime.CompilerServices.Unsafe.As<global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.DimensionContext, byte>(ref __gsharp_layout_probe), ref global::System.Runtime.CompilerServices.Unsafe.As<global::System.Int32, byte>(ref global::System.Runtime.CompilerServices.Unsafe.AsRef(in __gsharp_layout_probe.BitOffset2E1))) != 12) global::Kassyi.GSharp.Runtime.Interop.LayoutGuard.ThrowFieldOffsetMismatch("Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.DimensionContext", "BitOffset2E1", 12, (long)global::System.Runtime.CompilerServices.Unsafe.ByteOffset(ref global::System.Runtime.CompilerServices.Unsafe.As<global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.DimensionContext, byte>(ref __gsharp_layout_probe), ref global::System.Runtime.CompilerServices.Unsafe.As<global::System.Int32, byte>(ref global::System.Runtime.CompilerServices.Unsafe.AsRef(in __gsharp_layout_probe.BitOffset2E1))));
+if (global::System.Runtime.CompilerServices.Unsafe.ByteOffset(ref global::System.Runtime.CompilerServices.Unsafe.As<global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.DimensionContext, byte>(ref __gsharp_layout_probe), ref global::System.Runtime.CompilerServices.Unsafe.As<global::System.Int32, byte>(ref global::System.Runtime.CompilerServices.Unsafe.AsRef(in __gsharp_layout_probe.MarginWords))) != 16) global::Kassyi.GSharp.Runtime.Interop.LayoutGuard.ThrowFieldOffsetMismatch("Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.DimensionContext", "MarginWords", 16, (long)global::System.Runtime.CompilerServices.Unsafe.ByteOffset(ref global::System.Runtime.CompilerServices.Unsafe.As<global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.DimensionContext, byte>(ref __gsharp_layout_probe), ref global::System.Runtime.CompilerServices.Unsafe.As<global::System.Int32, byte>(ref global::System.Runtime.CompilerServices.Unsafe.AsRef(in __gsharp_layout_probe.MarginWords))));
+if (global::System.Runtime.CompilerServices.Unsafe.ByteOffset(ref global::System.Runtime.CompilerServices.Unsafe.As<global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.DimensionContext, byte>(ref __gsharp_layout_probe), ref global::System.Runtime.CompilerServices.Unsafe.As<global::System.Int32, byte>(ref global::System.Runtime.CompilerServices.Unsafe.AsRef(in __gsharp_layout_probe.ActualBits))) != 20) global::Kassyi.GSharp.Runtime.Interop.LayoutGuard.ThrowFieldOffsetMismatch("Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.DimensionContext", "ActualBits", 20, (long)global::System.Runtime.CompilerServices.Unsafe.ByteOffset(ref global::System.Runtime.CompilerServices.Unsafe.As<global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.DimensionContext, byte>(ref __gsharp_layout_probe), ref global::System.Runtime.CompilerServices.Unsafe.As<global::System.Int32, byte>(ref global::System.Runtime.CompilerServices.Unsafe.AsRef(in __gsharp_layout_probe.ActualBits))));
+if (global::System.Runtime.CompilerServices.Unsafe.ByteOffset(ref global::System.Runtime.CompilerServices.Unsafe.As<global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.DimensionContext, byte>(ref __gsharp_layout_probe), ref global::System.Runtime.CompilerServices.Unsafe.As<global::System.Int32, byte>(ref global::System.Runtime.CompilerServices.Unsafe.AsRef(in __gsharp_layout_probe.MarginBits))) != 24) global::Kassyi.GSharp.Runtime.Interop.LayoutGuard.ThrowFieldOffsetMismatch("Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.DimensionContext", "MarginBits", 24, (long)global::System.Runtime.CompilerServices.Unsafe.ByteOffset(ref global::System.Runtime.CompilerServices.Unsafe.As<global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.DimensionContext, byte>(ref __gsharp_layout_probe), ref global::System.Runtime.CompilerServices.Unsafe.As<global::System.Int32, byte>(ref global::System.Runtime.CompilerServices.Unsafe.AsRef(in __gsharp_layout_probe.MarginBits))));
+if (global::System.Runtime.CompilerServices.Unsafe.ByteOffset(ref global::System.Runtime.CompilerServices.Unsafe.As<global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.DimensionContext, byte>(ref __gsharp_layout_probe), ref global::System.Runtime.CompilerServices.Unsafe.As<global::System.Int32, byte>(ref global::System.Runtime.CompilerServices.Unsafe.AsRef(in __gsharp_layout_probe.Iterations))) != 28) global::Kassyi.GSharp.Runtime.Interop.LayoutGuard.ThrowFieldOffsetMismatch("Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.DimensionContext", "Iterations", 28, (long)global::System.Runtime.CompilerServices.Unsafe.ByteOffset(ref global::System.Runtime.CompilerServices.Unsafe.As<global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.DimensionContext, byte>(ref __gsharp_layout_probe), ref global::System.Runtime.CompilerServices.Unsafe.As<global::System.Int32, byte>(ref global::System.Runtime.CompilerServices.Unsafe.AsRef(in __gsharp_layout_probe.Iterations))));
+if (global::System.Runtime.CompilerServices.Unsafe.ByteOffset(ref global::System.Runtime.CompilerServices.Unsafe.As<global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.DimensionContext, byte>(ref __gsharp_layout_probe), ref global::System.Runtime.CompilerServices.Unsafe.As<global::System.Int32, byte>(ref global::System.Runtime.CompilerServices.Unsafe.AsRef(in __gsharp_layout_probe.TargetBits))) != 32) global::Kassyi.GSharp.Runtime.Interop.LayoutGuard.ThrowFieldOffsetMismatch("Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.DimensionContext", "TargetBits", 32, (long)global::System.Runtime.CompilerServices.Unsafe.ByteOffset(ref global::System.Runtime.CompilerServices.Unsafe.As<global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.DimensionContext, byte>(ref __gsharp_layout_probe), ref global::System.Runtime.CompilerServices.Unsafe.As<global::System.Int32, byte>(ref global::System.Runtime.CompilerServices.Unsafe.AsRef(in __gsharp_layout_probe.TargetBits))));
+if (global::System.Runtime.CompilerServices.Unsafe.ByteOffset(ref global::System.Runtime.CompilerServices.Unsafe.As<global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.DimensionContext, byte>(ref __gsharp_layout_probe), ref global::System.Runtime.CompilerServices.Unsafe.As<global::System.Int32, byte>(ref global::System.Runtime.CompilerServices.Unsafe.AsRef(in __gsharp_layout_probe.NumBits))) != 36) global::Kassyi.GSharp.Runtime.Interop.LayoutGuard.ThrowFieldOffsetMismatch("Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.DimensionContext", "NumBits", 36, (long)global::System.Runtime.CompilerServices.Unsafe.ByteOffset(ref global::System.Runtime.CompilerServices.Unsafe.As<global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.DimensionContext, byte>(ref __gsharp_layout_probe), ref global::System.Runtime.CompilerServices.Unsafe.As<global::System.Int32, byte>(ref global::System.Runtime.CompilerServices.Unsafe.AsRef(in __gsharp_layout_probe.NumBits))));
+}
+var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<ModPowNttMegaKernel_Delegate>("__gsharp_launch_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuBigIntDivRemKernels__ModPowNttMegaKernel", dllPath);
+AotContexts.ModPowNtt ctx_native = default;
+var ctx_allocatedPtrs = new System.Collections.Generic.List<IntPtr>();
+try
+{
+AotContexts.Marshal_ModPowNttContext(ref ctx, ref ctx_native, false, ctx_allocatedPtrs);
+hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, &ctx_native);
+global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ThrowIfNativeError(dllPath);
+AotContexts.Unmarshal_ModPowNttContext(ref ctx, ref ctx_native, false);
+}
+finally
+{
+foreach (var handle in ctx_allocatedPtrs) System.Runtime.InteropServices.GCHandle.FromIntPtr(handle).Free();
+}
 }
 #pragma warning restore CS8500
 }
