@@ -1,15 +1,34 @@
 
 namespace Kassyi.GSharp.Stdlib.GpuMath.BigNum.Expressions;
 
+/// <summary>
+/// Integer Sum / Max / Min over a vector: converts the elements to (N + 1)-word two's complement (offset binary for
+/// Max / Min), reduces them in passes of <see cref="ChunkSize"/> elements, and lets a finalize kernel write the
+/// magnitude into the destination and a 2-word header (<c>[0]</c>: bit 0 = negative, bit 1 = the magnitude does not
+/// fit in N words; <c>[1]</c>: the number of reduced elements), which is the only readback.
+/// </summary>
 internal abstract class VectorReductionExpressionBase : IGpuBigIntExpression, IDisposable
 {
+    private const int ChunkSize = 256;
+
     private readonly IGpuBigIntVectorExpression _vector;
+
+    // One entry per pass: the pass reduces BatchSize elements into GridDimX partial results. Built from the length,
+    // with one pass even for a single element, so that every non-empty input goes through the finalize kernel.
+    private readonly List<(int GridDimX, int BatchSize)> _passes = [];
+
+    // [0]: the converted elements; [1 + i]: the output of pass i. All (N + 1) words per element.
+    private readonly List<GpuBigUIntArray> _buffers = [];
+    private readonly uint[] _headerHost = new uint[2];
+    private GpuBigUInt? _header;
+
     public int NumWords => _vector.WordsPerElement;
 
-    private GpuBigUInt? _finalValue;
-    private readonly List<GpuBigUIntArray> _tempBuffers = [];
-    private readonly List<(int GridDimX, int BatchSize, int ChunkSize)> _passes = [];
-    private bool _allocated;
+    /// <summary>
+    /// The width of the accumulator: one word more than the elements, so that the magnitude of every element, and of
+    /// any sum of fewer than 2^31 elements, fits in two's complement.
+    /// </summary>
+    private int AccumulatorWords => NumWords + 1;
 
     protected abstract bool UseOffsetBinary { get; }
 
@@ -18,63 +37,106 @@ internal abstract class VectorReductionExpressionBase : IGpuBigIntExpression, ID
         _vector = vector;
 
         var batchSize = vector.Length;
-        const int chunkSize = 256;
-
-        while (batchSize > 1)
+        if (batchSize > 0)
         {
-            var nextBatchSize = (batchSize + chunkSize - 1) / chunkSize;
-            _passes.Add((GridDimX: nextBatchSize, BatchSize: batchSize, ChunkSize: chunkSize));
-            batchSize = nextBatchSize;
+            do
+            {
+                var nextBatchSize = (batchSize + ChunkSize - 1) / ChunkSize;
+                _passes.Add((GridDimX: nextBatchSize, BatchSize: batchSize));
+                batchSize = nextBatchSize;
+            }
+            while (batchSize > 1);
         }
     }
 
+    /// <summary>
+    /// Evaluates the reduction. The magnitude is written into <paramref name="targetResult"/>, or into a new buffer
+    /// that the caller owns when it is <see langword="null"/>; the returned value wraps that buffer.
+    /// </summary>
+    /// <exception cref="ArgumentException">
+    /// <paramref name="targetResult"/> does not have <see cref="NumWords"/> words.
+    /// </exception>
+    /// <exception cref="OverflowException">The final sum does not fit in <see cref="NumWords"/> words.</exception>
     public GpuBigInt Evaluate(GpuWorkspace workspace, GpuBigUInt? targetResult = null)
     {
+        if (targetResult is { } target && target.NumWords != NumWords)
+        {
+            throw new ArgumentException($"Destination buffer must have {NumWords} words.", nameof(targetResult));
+        }
+
         var vecResult = _vector.Evaluate(workspace);
-
-        if (targetResult.HasValue)
+        if (vecResult.WordsPerElement != NumWords)
         {
-            _finalValue = targetResult.Value;
-        }
-        else if (!_finalValue.HasValue)
-        {
-            _finalValue = new GpuBigUInt(workspace, NumWords);
+            // The kernels read the elements, and size the accumulator and the result, with NumWords.
+            throw new InvalidOperationException(
+                $"The vector evaluated to {vecResult.WordsPerElement} words per element, not {NumWords}.");
         }
 
-        if (!_allocated)
+        var destination = targetResult ?? new GpuBigUInt(workspace, NumWords);
+        try
         {
-            _tempBuffers.Add(new GpuBigUIntArray(workspace, _vector.Length, NumWords));
+            if (_passes.Count == 0)
+            {
+                workspace.Provider.ClearMemoryAsync(destination.DevicePointer, NumWords, workspace.Stream);
+                return new GpuBigInt(destination, false);
+            }
+
+            EnsureBuffers(workspace);
+            var header = _header ?? throw new InvalidOperationException("The reduction header was not allocated.");
+            Reduce(workspace, vecResult, destination, header);
+
+            workspace.Provider.CopyDeviceToHost(_headerHost, header.DevicePointer, 2, workspace.Stream);
+            if ((_headerHost[0] & 2u) != 0u)
+            {
+                throw new OverflowException($"The sum does not fit in {NumWords} words.");
+            }
+
+            return new GpuBigInt(destination, (_headerHost[0] & 1u) != 0u);
+        }
+        catch when (!targetResult.HasValue)
+        {
+            destination.Dispose();
+            throw;
+        }
+    }
+
+    private void EnsureBuffers(GpuWorkspace workspace)
+    {
+        if (_header.HasValue)
+        {
+            return;
+        }
+
+        // Allocate everything first and keep it only when every allocation succeeded, so that a failed allocation
+        // leaves nothing half-built behind for the next evaluation.
+        var buffers = new List<GpuBigUIntArray>(_passes.Count + 1);
+        try
+        {
+            buffers.Add(new GpuBigUIntArray(workspace, _vector.Length, AccumulatorWords));
             foreach (var pass in _passes)
             {
-                if (pass.GridDimX > 1)
-                {
-                    _tempBuffers.Add(new GpuBigUIntArray(workspace, pass.GridDimX, NumWords));
-                }
+                buffers.Add(new GpuBigUIntArray(workspace, pass.GridDimX, AccumulatorWords));
             }
 
-            _allocated = true;
+            var header = new GpuBigUInt(workspace, 2);
+            _buffers.AddRange(buffers);
+            _header = header;
         }
-
-        if (_passes.Count == 0)
+        catch
         {
-            if (_vector.Length == 1)
+            foreach (var buffer in buffers)
             {
-                workspace.Provider.CopyDeviceToDevice(
-                    vecResult.Values.DevicePointer,
-                    _finalValue.Value.DevicePointer,
-                    NumWords * 4,
-                    workspace.Stream);
-            }
-            else
-            {
-                workspace.Provider.ClearMemoryAsync(_finalValue.Value.DevicePointer, NumWords, workspace.Stream);
+                buffer.Dispose();
             }
 
-            return new GpuBigInt(_finalValue.Value, false);
+            throw;
         }
+    }
 
-        var initialPtr = _tempBuffers[0].DevicePointer;
-        var blockDimX = (uint)Math.Min(1024, NumWords);
+    private void Reduce(GpuWorkspace workspace, GpuBigIntArray vecResult, GpuBigUInt destination, GpuBigUInt header)
+    {
+        // Whole warps: the block-wide max reductions of the chunk kernels combine lanes of full warps only.
+        var blockDimX = (uint)Math.Min(1024, (AccumulatorWords + 31) & ~31);
         var convertCtx = new GpuBigIntVectorKernels.AotContexts.VectorSignConvert
         {
             Source = new GpuBigIntVectorKernels.AotContexts.SignedVectorOperandReadOnly
@@ -83,7 +145,8 @@ internal abstract class VectorReductionExpressionBase : IGpuBigIntExpression, ID
                 Signs = vecResult.Signs.DevicePointer,
                 NumWords = NumWords
             },
-            Dest = initialPtr,
+            Dest = _buffers[0].DevicePointer,
+            DestWords = AccumulatorWords,
             BatchSize = _vector.Length
         };
 
@@ -98,53 +161,37 @@ internal abstract class VectorReductionExpressionBase : IGpuBigIntExpression, ID
                 convertCtx, (uint)_vector.Length, 1, 1, blockDimX, 1, 1, 0, workspace.Stream);
         }
 
-        var currentInputPtr = initialPtr;
-        var tempBufferIndex = 1;
-
+        var currentInputPtr = _buffers[0].DevicePointer;
         for (var i = 0; i < _passes.Count; i++)
         {
             var pass = _passes[i];
-            var isLastPass = (i == _passes.Count - 1);
-
-            var currentOutputPtr = isLastPass
-                ? _finalValue.Value.DevicePointer
-                : _tempBuffers[tempBufferIndex++].DevicePointer;
-
+            var currentOutputPtr = _buffers[i + 1].DevicePointer;
             var chunkCtx = new GpuBigIntVectorKernels.AotContexts.VectorReductionChunk
             {
                 A = currentInputPtr,
                 Result = currentOutputPtr,
-                NumWords = NumWords,
+                NumWords = AccumulatorWords,
                 BatchSize = pass.BatchSize,
-                ChunkSize = pass.ChunkSize
+                ChunkSize = ChunkSize
             };
 
             DispatchChunkKernel(workspace, chunkCtx, (uint)pass.GridDimX, blockDimX);
             currentInputPtr = currentOutputPtr;
         }
 
-        var isNegative = false;
-        var cpuValue = _finalValue.Value.ToBigInteger();
-
-        if (UseOffsetBinary)
+        var finalizeCtx = new GpuBigIntVectorKernels.AotContexts.VectorReductionFinalize
         {
-            var msbMask = (BigInteger)1 << (NumWords * 32 - 1);
-            cpuValue ^= msbMask;
-        }
+            Source = currentInputPtr,
+            Destination = destination.DevicePointer,
+            Header = header.DevicePointer,
+            SourceWords = AccumulatorWords,
+            ResultWords = NumWords,
+            Count = _vector.Length,
+            OffsetBinary = UseOffsetBinary
+        };
 
-        if (cpuValue.Sign < 0 || (cpuValue > 0 && (cpuValue >> (NumWords * 32 - 1)) > 0))
-        {
-            isNegative = true;
-            var shift = (BigInteger)1 << (NumWords * 32);
-            cpuValue = shift - cpuValue;
-        }
-
-        var bytes = cpuValue.ToByteArray();
-        var uints = new uint[NumWords];
-        Buffer.BlockCopy(bytes, 0, uints, 0, Math.Min(bytes.Length, uints.Length * 4));
-        var finalMagnitude = new GpuBigUInt(workspace, uints);
-
-        return new GpuBigInt(finalMagnitude, isNegative);
+        GpuBigIntVectorKernels.LaunchVectorReductionFinalizeKernelPtr(
+            finalizeCtx, 1, 1, 1, blockDimX, 1, 1, 0, workspace.Stream);
     }
 
     protected abstract void DispatchChunkKernel(
@@ -155,19 +202,18 @@ internal abstract class VectorReductionExpressionBase : IGpuBigIntExpression, ID
 
     public void Dispose()
     {
-        if (_finalValue.HasValue)
-        {
-            _finalValue.Value.Dispose();
-            _finalValue = null;
-        }
-
-        foreach (var buffer in _tempBuffers)
+        foreach (var buffer in _buffers)
         {
             buffer.Dispose();
         }
 
-        _tempBuffers.Clear();
-        _allocated = false;
+        _buffers.Clear();
+        if (_header.HasValue)
+        {
+            _header.Value.Dispose();
+            _header = null;
+        }
+
         _vector.Dispose();
     }
 }

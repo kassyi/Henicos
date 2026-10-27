@@ -159,6 +159,22 @@ public static class GpuBigIntVectorLinqExtensions
     /// </summary>
     /// <param name="source">The input vectorized expression.</param>
     /// <returns>A deferred expression tree representing the parallel sum reduction.</returns>
+    /// <remarks>
+    /// The result has the same number of words as the elements
+    /// (<see cref="IGpuBigIntVectorExpression.WordsPerElement"/>). The elements are accumulated in one word more, so a
+    /// running sum may leave that width as long as the final sum fits. Evaluating into a destination writes the
+    /// magnitude of the result into it and returns a value that wraps it with the sign. Without a destination, a new
+    /// buffer is allocated that the caller owns. Evaluation reads two words back from the device.
+    /// </remarks>
+    /// <exception cref="ArgumentException">
+    /// Thrown on evaluation into a destination that does not have
+    /// <see cref="IGpuBigIntVectorExpression.WordsPerElement"/> words; the destination is not touched.
+    /// </exception>
+    /// <exception cref="OverflowException">
+    /// Thrown on evaluation when the final sum does not fit in <see cref="IGpuBigIntVectorExpression.WordsPerElement"/>
+    /// words. Unlike the checked sum of <c>System.Linq</c>, a running sum that leaves the width and comes back does
+    /// not throw. The contents of a destination are then unspecified (currently the low words of the magnitude).
+    /// </exception>
     public static GpuBigIntExpr Sum(this IGpuBigIntVectorExpression source) => new(new VectorSumReductionExpression(source));
 
     /// <summary>
@@ -166,6 +182,16 @@ public static class GpuBigIntVectorLinqExtensions
     /// </summary>
     /// <param name="source">The input vectorized expression.</param>
     /// <returns>A deferred expression tree representing the parallel max reduction.</returns>
+    /// <remarks>
+    /// The result has the same number of words as the elements; the maximum always fits. Evaluating into a
+    /// destination writes the magnitude of the result into it and returns a value that wraps it with the sign.
+    /// Without a destination, a new buffer is allocated that the caller owns. Evaluation reads two words back from
+    /// the device.
+    /// </remarks>
+    /// <exception cref="ArgumentException">
+    /// Thrown on evaluation into a destination that does not have
+    /// <see cref="IGpuBigIntVectorExpression.WordsPerElement"/> words; the destination is not touched.
+    /// </exception>
     public static GpuBigIntExpr Max(this IGpuBigIntVectorExpression source) => new(new VectorMaxReductionExpression(source));
 
     /// <summary>
@@ -173,6 +199,16 @@ public static class GpuBigIntVectorLinqExtensions
     /// </summary>
     /// <param name="source">The input vectorized expression.</param>
     /// <returns>A deferred expression tree representing the parallel min reduction.</returns>
+    /// <remarks>
+    /// The result has the same number of words as the elements; the minimum always fits. Evaluating into a
+    /// destination writes the magnitude of the result into it and returns a value that wraps it with the sign.
+    /// Without a destination, a new buffer is allocated that the caller owns. Evaluation reads two words back from
+    /// the device.
+    /// </remarks>
+    /// <exception cref="ArgumentException">
+    /// Thrown on evaluation into a destination that does not have
+    /// <see cref="IGpuBigIntVectorExpression.WordsPerElement"/> words; the destination is not touched.
+    /// </exception>
     public static GpuBigIntExpr Min(this IGpuBigIntVectorExpression source) => new(new VectorMinReductionExpression(source));
 
     /// <summary>
