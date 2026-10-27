@@ -183,7 +183,8 @@ internal sealed class ThreadVarianceAnalysis(
             switch (node)
             {
                 case IdentifierNameSyntax identifier when semanticModel.GetSymbolInfo(identifier).Symbol is { } symbol &&
-                                                          (_variantSymbols.Contains(symbol) || IsThreadIndexMember(symbol)):
+                                                          (_variantSymbols.Contains(symbol) ||
+                                                           SyncIntrinsicClassifier.IsThreadVariantSource(symbol)):
                     return true;
                 case InvocationExpressionSyntax invocation when TryGetDeviceFunction(invocation, out _, out _):
                     if (GetCallVariance(invocation).ReturnsVariant)
@@ -213,27 +214,9 @@ internal sealed class ThreadVarianceAnalysis(
                semanticModel.Compilation.ContainsSyntaxTree(declaration.SyntaxTree);
     }
 
-    private static bool IsThreadIndexMember(ISymbol symbol) =>
-        symbol is IPropertySymbol { ContainingType: { Name: "ThreadIndex" } type } && type.ContainingNamespace.IsCoreNamespace();
-
     // Values that differ between threads, or between the warps of a block
-    private static bool IsVariantIntrinsic(IMethodSymbol method)
-    {
-        if (method.ReturnsVoid ||
-            method.ContainingType is not { Name: TypeConstants.GpuType or TypeConstants.WarpType } type ||
-            !type.ContainingNamespace.IsCoreNamespace())
-        {
-            return false;
-        }
-
-        var name = method.Name;
-        return name is "LaneId" or "WarpId" or "SmId" or "Clock" or "Clock64" or "ActiveMask" or "AllSync" or "AnySync"
-                   or "BallotSync" ||
-               name.StartsWith("Atomic", StringComparison.Ordinal) ||
-               name.StartsWith("Shuffle", StringComparison.Ordinal) ||
-               name.StartsWith("Match", StringComparison.Ordinal) ||
-               (name.StartsWith("Reduce", StringComparison.Ordinal) && name.EndsWith("Sync", StringComparison.Ordinal));
-    }
+    private static bool IsVariantIntrinsic(IMethodSymbol method) =>
+        !method.ReturnsVoid && SyncIntrinsicClassifier.Classify(method).ResultIsThreadVariant;
 
     // A device function call writes thread-variant values through its by-reference arguments when the callee assigns its
     // by-reference parameters such values; any other call, when one of its arguments is variant

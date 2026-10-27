@@ -357,8 +357,9 @@ public sealed class PreLoweringExpander(SemanticModel? semanticModel = null) : C
     private static string DoneFlagName(int bodyId) => $"{GSharpInternalNames.Lowering.SyncGridDonePrefix}{bodyId}";
 
     // Gpu.SyncGrid();
-    // The statement carries the span of the Gpu.SyncGrid(body) it came from, for diagnostics; BarrierHelper and the state
-    // machine recognize the call by its syntax.
+    // The statement carries the span of the Gpu.SyncGrid(body) it came from, for diagnostics. That span does not lead back
+    // to a symbol, so the call gets its grid barrier annotation here, as SpanAnnotationRewriter gives one to a written
+    // Gpu.SyncGrid() (BarrierHelper and the state machine read only the annotation).
     private static ExpressionStatementSyntax CreateGridSync(ImmutableArray<SyntaxAnnotation> annotations) =>
         SyntaxFactory.ExpressionStatement(
             SyntaxFactory.InvocationExpression(
@@ -367,6 +368,8 @@ public sealed class PreLoweringExpander(SemanticModel? semanticModel = null) : C
                     SyntaxFactory.IdentifierName(TypeConstants.GpuType),
                     SyntaxFactory.IdentifierName(TypeConstants.GpuMacros.SyncGrid)
                 )
+            ).WithAdditionalAnnotations(
+                new SyntaxAnnotation(LoweringAnnotations.SyncIntrinsicAnnotationKind, LoweringAnnotations.GridBarrierAnnotationData)
             )
         ).WithAdditionalAnnotations(annotations);
 

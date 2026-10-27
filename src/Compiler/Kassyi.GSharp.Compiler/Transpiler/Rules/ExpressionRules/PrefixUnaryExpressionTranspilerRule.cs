@@ -1,3 +1,5 @@
+using Microsoft.CodeAnalysis.Operations;
+
 namespace Kassyi.GSharp.Compiler.Transpiler.Rules.ExpressionRules;
 
 /// <summary>
@@ -42,6 +44,19 @@ public sealed class PrefixUnaryExpressionTranspilerRule : SyntaxNodeTranspilerRu
             context.Query.SemanticModel.GetTypeSymbol(node) is { } type)
         {
             context.Emitter.Writer.Append(ConstexprLiteral.FormatCppConstant(type, value));
+            return;
+        }
+
+        // -u negates a long in C#, an unsigned int in C++ (#671). The converted operand begins with '(' or is a literal,
+        // so it cannot merge with the operator
+        if (node.IsKind(
+                SyntaxKind.UnaryMinusExpression, SyntaxKind.UnaryPlusExpression, SyntaxKind.BitwiseNotExpression) &&
+            context.Query.SemanticModel.GetSafeOperation(node) is IUnaryOperation operation &&
+            operation.Syntax.RawKind == node.RawKind &&
+            ArithmeticConversions.TryGetPromotedType(operation, out var promoted))
+        {
+            context.Emitter.Writer.Append(node.OperatorToken.Text);
+            ArithmeticConversions.AppendOperand(operation.Operand, node.Operand, promoted, ref context);
             return;
         }
 

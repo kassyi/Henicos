@@ -25,7 +25,8 @@ public abstract class StateMachineTestBase
         [CallerMemberName] string methodName = "")
     {
         var lambda = (ParenthesizedLambdaExpressionSyntax)SyntaxFactory.ParseExpression(source);
-        var block = (BlockSyntax)lambda.Body;
+        // No semantic model binds the block: its barriers and shuffles are annotated by spelling (TestSyncAnnotator)
+        var block = TestSyncAnnotator.Annotate((BlockSyntax)lambda.Body);
         var transformed = transform(block);
         var formatted = transformed.NormalizeWhitespace().ToFullString();
 
@@ -159,7 +160,8 @@ public abstract class StateMachineTestBase
         [CallerMemberName] string methodName = "") =>
         VerifyTransformation(action, b => new WarpInstructionRewriter().Rewrite(b), source, methodName);
 
-    // Without a semantic model only barriers and warp primitives written in the block split the state machine
+    // Without a semantic model only the barriers and warp shuffles written in the block split the state machine
+    // (annotated by TestSyncAnnotator)
     protected static Task VerifyPipelineLower(Action action,
         [CallerArgumentExpression(nameof(action))]
         string source = "", [CallerMemberName] string methodName = "") =>

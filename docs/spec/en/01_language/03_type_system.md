@@ -31,6 +31,36 @@ The G# AST transpiler maps .NET `SpecialType` definitions directly to their CUDA
 | `double` | `System_Double` | `double` | 8 |
 | `bool` | `System_Boolean` | `bool` | 1 |
 
+### 2.1.1 Arithmetic Conversions
+
+G# follows the C# numeric promotions, not the C++ usual arithmetic conversions. The two differ where `uint` meets a signed type: in mixed binary operators, in unary minus and in the branches of a conditional. C# computes `uint` mixed with `int`, `short` or `sbyte` as `long` (64 bits), negates a `uint` as a `long` and converts both branches of a target-typed conditional to its type; C++ computes all three as `unsigned int`. The transpiler writes the C# conversions where C++ would pick another type, so a kernel gives the C# result on the GPU and on the CPU paths:
+
+| C# | Type in C# | Generated C++ |
+| :--- | :--- | :--- |
+| `u + n`, `u < n` (`uint u`, `int n`) | `long` | `(long long)u+(long long)n`, `(long long)u<(long long)n` |
+| `u + s` (`short s` or `sbyte s`) | `long` | `(long long)u+(long long)s` |
+| `u - 8` (a non-negative `int` constant) | `uint` | `u-8` |
+| `u + -8` | `long` | `(long long)u+(-8LL)` |
+| `-u` | `long` | `-(long long)u` |
+| `long y = c ? u : n;` | `long` | `(c?(long long)u:(long long)n)` |
+
+```csharp
+// Execution Context: Device (GPU)
+uint index = indices[tid];
+int limit = limits[tid];        // may be negative
+if (index < limit)              // compared as long: false when limit is negative
+{
+    output[tid] = data[index];
+}
+```
+
+A mixed comparison or division is a 64-bit operation on the GPU. To compute in 32 bits, convert one operand so that both have the same type, as you would in C#:
+
+```csharp
+// Execution Context: Device (GPU)
+uint sum = u + (uint)n;         // uint + uint: 32-bit arithmetic
+```
+
 ## 2.2 Custom Structs (User-Defined Types)
 
 G# supports custom user-defined C# `struct` types. When a kernel or device method references a custom `struct` (either as a parameter, local variable, or array element), the transpiler automatically extracts its definition and emits an equivalent C++ `struct` above the kernel. 

@@ -88,7 +88,7 @@ for(int __gsharp_id_2_i = blockIdx.x * blockDim.x + threadIdx.x; __gsharp_id_2_i
 __gsharp_id_0_data[__gsharp_id_2_i]=__gsharp_id_2_i;
 }
 cg::this_grid().sync();
-if(threadIdx.x == 0 && blockIdx.x == 0)
+if((threadIdx.x|threadIdx.y|threadIdx.z|blockIdx.x|blockIdx.y|blockIdx.z)==0)
 {
 __gsharp_id_0_data[0]=999;
 }

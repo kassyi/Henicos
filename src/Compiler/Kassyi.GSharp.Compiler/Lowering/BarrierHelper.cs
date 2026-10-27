@@ -1,50 +1,25 @@
 namespace Kassyi.GSharp.Compiler.Lowering;
 
-/// <summary>Provides helper methods to detect phase barrier and warp shuffle invocations in Roslyn syntax trees.</summary>
+/// <summary>Provides helper methods to detect phase barrier and warp shuffle invocations in lowered syntax trees.</summary>
+/// <remarks>
+/// [WHY] The helpers read only the annotations that <c>AstLoweringPipeline</c> puts on the original tree from the symbol
+/// of each call (<see cref="LoweringAnnotations.SyncIntrinsicAnnotationKind"/>,
+/// <see cref="LoweringAnnotations.SuspendingCallAnnotationKind"/>), never the spelling of the call: a <c>using</c> alias,
+/// <c>using static</c> or a full name splits the state machine like <c>Gpu.SyncThreads()</c>, and a user's own method of
+/// the same name does not (#503). A lowering without a semantic model (the Tier 2 tests) annotates the calls itself.
+/// </remarks>
 internal static class BarrierHelper
 {
     /// <summary>
     /// Determines whether the specified invocation represents a thread barrier, warp-level synchronization, or a call to a
     /// device function that reaches one (marked by <see cref="LoweringAnnotations.SuspendingCallAnnotationKind"/>).
     /// </summary>
-    public static bool IsPhaseBarrier(InvocationExpressionSyntax inv)
-    {
-        if (IsSuspendingCall(inv))
-        {
-            return true;
-        }
+    public static bool IsPhaseBarrier(InvocationExpressionSyntax inv) =>
+        IsSuspendingCall(inv) || inv.HasAnnotations(LoweringAnnotations.SyncIntrinsicAnnotationKind);
 
-        var name = "";
-        var className = "";
-        switch (inv.Expression)
-        {
-            case MemberAccessExpressionSyntax ma:
-                name = ma.Name.Identifier.ValueText;
-                className = (ma.Expression as IdentifierNameSyntax)?.Identifier.ValueText ?? "";
-                break;
-            case IdentifierNameSyntax id:
-                name = id.Identifier.ValueText;
-                break;
-        }
-
-        if ((name == "SyncThreads" || name == TypeConstants.GpuMacros.SyncGrid) && className is TypeConstants.GpuType or "")
-        {
-            return true;
-        }
-
-        return IsWarpShuffle(inv);
-    }
-
-    /// <summary>Determines whether the specified invocation is a block barrier (<c>Gpu.SyncThreads()</c> or <c>Gpu.SyncGrid()</c>).</summary>
-    public static bool IsBlockBarrier(InvocationExpressionSyntax inv) => inv.Expression switch
-    {
-        MemberAccessExpressionSyntax { Expression: IdentifierNameSyntax { Identifier.ValueText: TypeConstants.GpuType } } ma =>
-            IsBlockBarrierName(ma.Name.Identifier.ValueText),
-        IdentifierNameSyntax id => IsBlockBarrierName(id.Identifier.ValueText),
-        _ => false
-    };
-
-    private static bool IsBlockBarrierName(string name) => name is "SyncThreads" or TypeConstants.GpuMacros.SyncGrid;
+    /// <summary>Determines whether the specified invocation is a grid barrier (<c>Gpu.SyncGrid()</c>).</summary>
+    public static bool IsGridBarrier(InvocationExpressionSyntax inv) =>
+        TryGetSyncIntrinsic(inv, out var data) && data == LoweringAnnotations.GridBarrierAnnotationData;
 
     /// <summary>Determines whether the specified invocation calls a device function that may suspend the calling thread.</summary>
     public static bool IsSuspendingCall(InvocationExpressionSyntax inv) =>
@@ -80,20 +55,33 @@ internal static class BarrierHelper
     /// </summary>
     public static bool TryGetWarpShuffleRead(InvocationExpressionSyntax inv, [NotNullWhen(true)] out string? readFunction)
     {
-        readFunction = inv.Expression is MemberAccessExpressionSyntax
-        {
-            Expression: IdentifierNameSyntax { Identifier.ValueText: TypeConstants.WarpType }
-        } ma
-            ? ma.Name.Identifier.ValueText switch
+        readFunction = TryGetSyncIntrinsic(inv, out var data)
+            ? data switch
             {
-                "ShuffleSync" => GSharpInternalNames.Prelude.WarpShuffleReadSync,
-                "ShuffleDownSync" => GSharpInternalNames.Prelude.WarpShuffleReadDownSync,
-                "ShuffleUpSync" => GSharpInternalNames.Prelude.WarpShuffleReadUpSync,
-                "ShuffleXorSync" => GSharpInternalNames.Prelude.WarpShuffleReadXorSync,
+                LoweringAnnotations.ShuffleSyncAnnotationData => GSharpInternalNames.Prelude.WarpShuffleReadSync,
+                LoweringAnnotations.ShuffleDownAnnotationData => GSharpInternalNames.Prelude.WarpShuffleReadDownSync,
+                LoweringAnnotations.ShuffleUpAnnotationData => GSharpInternalNames.Prelude.WarpShuffleReadUpSync,
+                LoweringAnnotations.ShuffleXorAnnotationData => GSharpInternalNames.Prelude.WarpShuffleReadXorSync,
                 _ => null
             }
             : null;
         return readFunction is not null;
+    }
+
+    // The data of the synchronization intrinsic annotation of a call
+    private static bool TryGetSyncIntrinsic(InvocationExpressionSyntax inv, [NotNullWhen(true)] out string? data)
+    {
+        foreach (var annotation in inv.GetAnnotations(LoweringAnnotations.SyncIntrinsicAnnotationKind))
+        {
+            if (annotation.Data is { } annotationData)
+            {
+                data = annotationData;
+                return true;
+            }
+        }
+
+        data = null;
+        return false;
     }
 
     /// <summary>Extracts the phase barrier invocation expression from a statement if present.</summary>

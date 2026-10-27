@@ -178,11 +178,14 @@ internal readonly ref struct KernelBarrierValidator(
 
                 case SyntaxKind.InvocationExpression:
                     var inv = (InvocationExpressionSyntax)node;
-                    var isSyncThreads = BarrierUsageAnalyzer.IsSyncThreadsInvocation(inv, semanticModel);
-                    var isPhaseBarrier = isSyncThreads || BarrierHelper.IsPhaseBarrier(inv);
+                    var callee = semanticModel.GetSymbol(inv) as IMethodSymbol;
+                    // Barriers and warp shuffles split the state machine, however they are spelled (#503)
+                    var intrinsic = callee != null ? SyncIntrinsicClassifier.Classify(callee) : default;
+                    var isSyncThreads = intrinsic.Kind == SyncIntrinsicKind.BlockBarrier;
+                    var isPhaseBarrier = intrinsic.SplitsStateMachine;
                     IMethodSymbol? suspendingCallee = null;
                     if (!isSyncThreads &&
-                        semanticModel.GetSymbol(inv) is IMethodSymbol callee &&
+                        callee != null &&
                         SuspensionAnalysis.IsSuspendingFunction(callee, semanticModel.Compilation))
                     {
                         suspendingCallee = callee;

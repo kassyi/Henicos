@@ -50,6 +50,22 @@ public struct Emitter(
     /// unrolled loop) gets a new number, so the names stay unique in the C++ function.
     /// </summary>
     public int SyncGridBodyCounter;
+
+    /// <summary>
+    /// Numbers each <c>Gpu.SingleThread</c> body with a <c>return</c> as it is emitted, for the label after it
+    /// (<c>__gsharp_st_end_&lt;n&gt;</c>); a body emitted again (an unrolled loop) gets a new number.
+    /// </summary>
+    public int SingleThreadBodyCounter;
+
+    /// <summary>
+    /// The label after the <c>Gpu.SingleThread</c> body being emitted, when the body has a <c>return</c>; a
+    /// <c>return</c> at <see cref="SingleThreadCallableDepth"/> (not in a lambda or local function of the body) jumps to
+    /// it. <see langword="null"/> outside such a body.
+    /// </summary>
+    public string? SingleThreadEndLabel;
+
+    /// <summary>The <see cref="CallableDepth"/> of the body that <see cref="SingleThreadEndLabel"/> ends.</summary>
+    public int SingleThreadCallableDepth;
     public string? LabelSuffix;
 
     /// <summary>

@@ -1,3 +1,5 @@
+using Microsoft.CodeAnalysis.Operations;
+
 namespace Kassyi.GSharp.Compiler.Transpiler.Rules.ExpressionRules;/// <summary>
 /// Transpiles C# ternary conditional expressions (<c>condition ? trueExpr : falseExpr</c>) into parenthesized C++ conditional expressions.
 /// </summary>
@@ -25,6 +27,24 @@ public sealed class ConditionalExpressionTranspilerRule : SyntaxNodeTranspilerRu
             {
                 context.Emitter.Writer.Append('*');
                 TranspileBranches(node, ref context);
+            }
+
+            return;
+        }
+
+        // A target-typed c ? u : n converts both branches to its type in C#; C++ gives it unsigned int (#671)
+        if (context.Query.SemanticModel.GetSafeOperation(node) is
+                IConditionalOperation { WhenFalse: { } whenFalse } operation &&
+            operation.Syntax.RawKind == node.RawKind &&
+            ArithmeticConversions.TryGetPromotedType(operation, out var type))
+        {
+            using (context.Emitter.Writer.Parentheses())
+            {
+                context.Visitor.Visit(node.Condition);
+                context.Emitter.Writer.Append('?');
+                ArithmeticConversions.AppendOperand(operation.WhenTrue, node.WhenTrue, type, ref context);
+                context.Emitter.Writer.Append(':');
+                ArithmeticConversions.AppendOperand(whenFalse, node.WhenFalse, type, ref context);
             }
 
             return;

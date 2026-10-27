@@ -1,3 +1,5 @@
+using Kassyi.GSharp.Compiler.Transpiler.Rules.MacroRules;
+
 namespace Kassyi.GSharp.Compiler.Transpiler;
 
 internal sealed partial class ManagedExecutionRewriter
@@ -15,25 +17,73 @@ internal sealed partial class ManagedExecutionRewriter
         }
 
         if (node.Expression is not InvocationExpressionSyntax invocation ||
-            !TryClassifyLoopMacro(invocation, out var call))
+            !TryClassifyRewrittenMacro(invocation, out var call))
         {
             return base.VisitExpressionStatement(node);
         }
 
-        var loop = call.Kind == GpuMacroKind.ForUnroll
-            ? RewriteForUnroll(invocation, call)
-            : RewriteGridStrideLoop(invocation, call);
-        return loop?.WithTriviaFrom(node) ?? base.VisitExpressionStatement(node);
+        StatementSyntax? rewritten = call.Kind switch
+        {
+            GpuMacroKind.ForUnroll => RewriteForUnroll(invocation, call),
+            GpuMacroKind.GridStrideLoop => RewriteGridStrideLoop(invocation, call),
+            _ => RewriteSingleThread(invocation)
+        };
+        return rewritten?.WithTriviaFrom(node) ?? base.VisitExpressionStatement(node);
     }
 
     // The macro as the semantic model resolves it. A call that does not resolve is left alone, as in
     // PreLoweringExpander: the call is then not guessed from its name, and the unrewritten macro fails where it runs
-    private bool TryClassifyLoopMacro(InvocationExpressionSyntax invocation, out GpuMacroCall call)
+    private bool TryClassifyRewrittenMacro(InvocationExpressionSyntax invocation, out GpuMacroCall call)
     {
         call = semanticModel.GetSymbol(invocation) is IMethodSymbol method
             ? GpuMacroClassifier.Classify(method)
             : default;
-        return call.Kind is GpuMacroKind.ForUnroll or GpuMacroKind.GridStrideLoop;
+        return call.Kind is GpuMacroKind.ForUnroll or GpuMacroKind.GridStrideLoop or GpuMacroKind.SingleThread;
+    }
+
+    // Gpu.SingleThread(body) becomes:
+    // if (<six indices are 0>) <body>
+    // and, when the body has a return (not one of a lambda or local function of the body), which leaves the body as in
+    // C# (#693):
+    // { if (<six indices are 0>) <body with each return as goto __gsharp_st_end_<n>;> __gsharp_st_end_<n>: ; }
+    // A body that is not a lambda (a method group) stays a call of the implementation in Kassyi.GSharp.Core, which
+    // checks the same condition
+    private StatementSyntax? RewriteSingleThread(InvocationExpressionSyntax invocation)
+    {
+        var arguments = invocation.ArgumentList.Arguments;
+        if (arguments.Count != 1 || arguments[0].Expression is not LambdaExpressionSyntax lambda)
+        {
+            return null;
+        }
+
+        string? endLabel = SyncGridBody.ContainsBodyReturn(lambda.Body)
+            ? $"{GSharpInternalNames.Lowering.SingleThreadEndLabelPrefix}{_nextSingleThreadId++}"
+            : null;
+        var outerLabel = _singleThreadEndLabel;
+        var outerDepth = _singleThreadDepth;
+        _singleThreadEndLabel = endLabel;
+        // VisitLoopBody visits the body one lambda level deeper
+        _singleThreadDepth = _inLambdaOrLocalFuncCount + 1;
+        BlockSyntax body;
+        try
+        {
+            body = VisitLoopBody(lambda, substituter: null);
+        }
+        finally
+        {
+            _singleThreadEndLabel = outerLabel;
+            _singleThreadDepth = outerDepth;
+        }
+
+        var guarded = SyntaxFactory.IfStatement(SingleThreadGuard.CreateManagedCondition(), body);
+        if (endLabel is null)
+        {
+            return guarded;
+        }
+
+        // <label>: ;
+        var end = SyntaxFactory.LabeledStatement(SyntaxFactory.Identifier(endLabel), SyntaxFactory.EmptyStatement());
+        return SyntaxFactory.Block(guarded, end);
     }
 
     // Gpu.GridStrideLoop([ref ctx,] count, body) becomes:
@@ -226,6 +276,13 @@ internal sealed partial class ManagedExecutionRewriter
 
     public override SyntaxNode? VisitReturnStatement(ReturnStatementSyntax node)
     {
+        // A return of a Gpu.SingleThread body leaves the body: goto <label>;
+        if (_singleThreadEndLabel is { } singleThreadEnd && _inLambdaOrLocalFuncCount == _singleThreadDepth)
+        {
+            return SyntaxFactory.GotoStatement(SyntaxKind.GotoStatement, SyntaxFactory.IdentifierName(singleThreadEnd))
+                .WithTriviaFrom(node);
+        }
+
         if (isDeviceFunction && _inLambdaOrLocalFuncCount == 0)
         {
             return RewriteDeviceFunctionReturn(node);

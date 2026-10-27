@@ -29,7 +29,7 @@ This page fixes which source wins in every combination. Every compiler rule and 
 | :--- | :--- | :--- | :--- |
 | Defines the result | Same result | No conflict | Ordinary arithmetic |
 | Defines the result | Undefined | **Follow C#** on the GPU and the CPU | Shift counts are masked; signed integer overflow wraps; integer division by zero and an out-of-range index throw; operands are evaluated left to right |
-| Defines the result | Defines a different result | **Follow the GPU**, except value contracts that C# fixes exactly, which follow C# | Math function accuracy, fused multiply-add, denormal handling follow the GPU; `Math.Round` rounding to even, comparisons and conversions follow C# |
+| Defines the result | Defines a different result | **Follow the GPU**, except value contracts that C# fixes exactly, which follow C# | Math function accuracy, fused multiply-add, denormal handling follow the GPU; `Math.Round` rounding to even, comparisons and conversions follow C# (`uint` mixed with `int` is computed as `long`) |
 | Does not define it (G#-specific APIs) | Defines the result | **Follow the GPU**; the CPU paths match it, even where the CPU would define something else | Warp shuffles, barriers |
 | Does not define it | Undefined | **Error** (§6.3) | A data race on the same memory, reading uninitialized shared memory, a barrier in divergent control flow |
 

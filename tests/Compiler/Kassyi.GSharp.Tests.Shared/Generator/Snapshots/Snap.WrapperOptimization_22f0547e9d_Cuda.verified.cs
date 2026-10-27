@@ -117,7 +117,7 @@ static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__TestCases__MyC
 #endif
 extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__TestCases__WrapperOptimizationKernels__ComplexSignatureKernel(int* __gsharp_id_0_scalarRef, float* __gsharp_id_1_scalarOut, GSharpArray<int> __gsharp_id_2_arrayVal, __gsharp_ty_Kassyi__GSharp__Tests__Shared__TestCases__MyCustomStruct* __gsharp_id_3_structRef, unsigned int __gsharp_id_4_constantVal){
 (*__gsharp_id_1_scalarOut)=0;
-if((*__gsharp_id_0_scalarRef)>__gsharp_id_4_constantVal)
+if((long long)(*__gsharp_id_0_scalarRef)>(long long)__gsharp_id_4_constantVal)
 {
 (*__gsharp_id_1_scalarOut)=__gsharp_id_2_arrayVal[0]+(*__gsharp_id_3_structRef).__gsharp_mb_A;
 (*__gsharp_id_3_structRef).__gsharp_mb_B=(*__gsharp_id_1_scalarOut);

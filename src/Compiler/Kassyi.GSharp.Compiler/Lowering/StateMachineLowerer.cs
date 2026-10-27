@@ -100,10 +100,7 @@ public class StateMachineLowerer(bool isDeviceFunction = false, SemanticModel? s
                 }
                 else
                 {
-                    var name = (barrierInv.Expression as MemberAccessExpressionSyntax)?.Name.Identifier.ValueText
-                               ?? (barrierInv.Expression as IdentifierNameSyntax)?.Identifier.ValueText;
-
-                    if (name == TypeConstants.GpuMacros.SyncGrid)
+                    if (BarrierHelper.IsGridBarrier(barrierInv))
                     {
                         // __gsharp_yielded_for_grid_sync = true;
                         currentCaseStatements.Add(

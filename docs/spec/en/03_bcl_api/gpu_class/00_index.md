@@ -20,7 +20,7 @@ Core static methods for GPU hardware interaction, synchronization, and intrinsic
 - [WarpShuffleXor](WarpShuffleXor.md): Exchanges variables by applying an XOR operation to lane IDs.
 - [GridStrideLoop](GridStrideLoop.md): Executes a standard CUDA grid-stride loop.
 - [ForUnroll](ForUnroll.md): Unrolls a loop body at compile-time by duplicating the source code across the specified range.
-- [SingleThread](SingleThread.md): Wraps code in a thread execution guard (Thread 0, Block 0).
+- [SingleThread](SingleThread.md): Runs the body once per launch, on thread (0,0,0) of block (0,0,0).
 - [Constant](Constant.md): Injects string literals as raw C++ constant expressions.
 - [HintUnroll](HintUnroll.md): Hints the compiler to unroll the immediately following loop.
 - [InlinePtx](InlinePtx.md): Injects raw PTX assembly directly into the generated kernel.
