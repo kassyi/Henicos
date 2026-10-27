@@ -352,6 +352,46 @@ public partial class EmissionShapeTests
         Assert.Contains($"\nint __gsharp_id_2_value{afterName}", body, StringComparison.Ordinal);
     }
 
+    // A stack array declaration is zeroed ({}) unless it is a stackalloc without an initializer under [SkipLocalsInit].
+    // The attribute is found where Roslyn looks for it: the method, the property of an accessor, a lambda or the method
+    // around a local function, the containing types outward, the module. new T[N] (also as a Span) and a ReadOnlySpan
+    // are always zeroed; each instantiation of a generic struct follows the same rule
+    [Theory]
+    [Scenario(TestScenario.Boundary)]
+    [InlineData("SkipLocalsInitKernels", "int", "zeroedBuf", "{}")]
+    [InlineData("SkipLocalsInitKernels", "int", "methodBuf", "")]
+    [InlineData("SkipLocalsInitKernels", "int", "methodArray", "{}")]
+    [InlineData("SkipLocalsInitKernels", "const int", "methodReadOnly", "{}")]
+    [InlineData("SkipLocalsInitKernels", "int", "methodSpanArray", "{}")]
+    [InlineData("SkipLocalsInitKernels", "int", "lambdaSkipsBuf", "")]
+    [InlineData("SkipLocalsInitKernels", "int", "lambdaZeroedBuf", "{}")]
+    [InlineData("SkipLocalsInitKernels", "int", "genericZeroedBuf", "{}")]
+    [InlineData("SkipLocalsInitKernels", "float", "genericZeroedBuf", "{}")]
+    [InlineData("SkipLocalsInitKernels", "int", "genericSkipsBuf", "")]
+    [InlineData("SkipLocalsInitKernels", "float", "genericSkipsBuf", "")]
+    [InlineData("SkipLocalsInitKernels", "int", "outerSkipsBuf", "")]
+    [InlineData("SkipLocalsInitKernels", "int", "outerZeroedBuf", "{}")]
+    [InlineData("SkipLocalsInitKernels", "int", "ownSkipsBuf", "")]
+    [InlineData("SkipLocalsInitKernels", "int", "propertyZeroedBuf", "{}")]
+    [InlineData("SkipLocalsInitKernels", "int", "propertySkipsBuf", "")]
+    [InlineData("SkipLocalsInitKernels", "int", "typeBuf", "")]
+    [InlineData("SkipLocalsInitKernels", "int", "nestedBuf", "")]
+    [InlineData("SkipLocalsInitModuleKernels", "int", "moduleBuf", "")]
+    [InlineData("SkipLocalsInitModuleKernels", "int", "moduleArray", "{}")]
+    public void SkipLocalsInit_LeavesOutOnlyTheZeroFillOfAStackAlloc(
+        string testCase, string elementType, string local, string initializer)
+    {
+        foreach (var dialect in (string[])["Cpu", "Cuda"])
+        {
+            var source = Generate(testCase, dialect);
+            var declaration = new Regex($@"\n{elementType} \S*_{local}\[4\](.*);\n");
+
+            var match = declaration.Match(source);
+            Assert.True(match.Success, $"{local} is not declared as a stack array ({dialect}).");
+            Assert.Equal(initializer, match.Groups[1].Value);
+        }
+    }
+
     [GeneratedRegex(@"(?m)^(\w+):;?$")]
     private static partial Regex LabelRegex();
 
