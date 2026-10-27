@@ -19,7 +19,8 @@ The `GpuBigFloat` module provides high-performance, arbitrary-precision floating
 | [`GpuBigFloatRoundingMode`](GpuBigFloatRoundingMode.md) | Specifies the IEEE 754 compliant rounding mode. |
 | [`IGpuBigFloatArithmetic`](IGpuBigFloatArithmetic.md) | Defines the contract for arbitrary-precision floating-point arithmetic operations executed across GPU and CPU backends. |
 | [`GSharpKernelFloatProvider`](GSharpKernelFloatProvider.md) | Execution provider dispatching `IGpuBigFloatArithmetic` operations to native CUDA kernels, GSharp AOT kernels, or a fallback strategy. |
-| [`CSharpCpuBigFloatArithmetic`](CSharpCpuBigFloatArithmetic.md) | Stateless host (CPU) reference implementation of `IGpuBigFloatArithmetic`. |
+| [`CSharpCpuBigFloatArithmetic`](CSharpCpuBigFloatArithmetic.md) | Stateless host (CPU) implementation of `IGpuBigFloatArithmetic`; its `Exp`, `Log` and `Pow` return the same bits as the GPU. |
+| [`GpuBigFloatTranscendentalOptions`](GpuBigFloatTranscendentalOptions.md) | Tuning parameters of `Exp`, `Log` and `Pow` per workspace (`GpuWorkspace.Transcendental`). |
 | [`GpuBigFloatKernels`](../gpu_big_int_and_uint/kernels/GpuBigFloatKernels.md) | Native G# (CUDA) kernels for radix-aligned floating-point addition and significand normalization. |
 | [`FloatExpressions`](../gpu_big_int_and_uint/expressions/FloatExpressions.md) | Zero-allocation generic binary float expressions (`BinaryExpr<T, TOp>`) and `GpuBigFloatExpressionVisitor`. |
 | [`Operators (+, -, *)`](Operators.md) | Operator overloads for `GpuBigFloat` and `GpuBigUFloat`. |

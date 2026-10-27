@@ -277,6 +277,17 @@ public interface IGpuBasicMathProvider
     int GetBitLength(GpuWorkspace workspace, GpuBigUInt leftOperand);
 
     /// <summary>
+    /// Reads the bit length and the leading 64 bits of an arbitrary-precision integer with one wait for the device.
+    /// </summary>
+    /// <param name="workspace">The GPU workspace.</param>
+    /// <param name="value">The integer operand.</param>
+    /// <param name="bitLength">When this method returns, the number of significant bits of <paramref name="value"/>
+    /// (0 for zero).</param>
+    /// <param name="leadingBits">When this method returns, the top 64 bits of <paramref name="value"/>, its top set
+    /// bit at bit 63 (missing low bits are 0; 0 for zero).</param>
+    void ReadLeadingBits(GpuWorkspace workspace, GpuBigUInt value, out int bitLength, out ulong leadingBits);
+
+    /// <summary>
     /// Compares two arbitrary-precision unsigned integers on the GPU.
     /// </summary>
     /// <param name="workspace">The GPU workspace.</param>

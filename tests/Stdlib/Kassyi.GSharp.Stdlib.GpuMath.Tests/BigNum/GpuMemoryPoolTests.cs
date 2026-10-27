@@ -90,7 +90,7 @@ public sealed class GpuMemoryPoolTests : IDisposable
     public void ReturnTemp_ReturnsBufferToPool()
     {
         // ReturnTemp of a rented buffer puts it back into the pool, and RentTemp hands it out again.
-        // mutant: GpuWorkspace.cs:367 `MemoryManager.Free(temp.Handle)` removed
+        // mutant: GpuWorkspace.cs:398 `MemoryManager.Free(temp.Handle)` removed
         var temp = _workspace.RentTemp(PoolWords);
         Assert.True(temp.IsTemp);
         var pointer = temp.DevicePointer;
@@ -143,7 +143,7 @@ public sealed class GpuMemoryPoolTests : IDisposable
     public void ReturnTemp_NonTemp_DoesNotRelease()
     {
         // ReturnTemp ignores a value that was not rented; the owner keeps its buffer.
-        // mutant: GpuWorkspace.cs:357 `!temp.IsTemp` -> `temp.IsTemp`
+        // mutant: GpuWorkspace.cs:388 `!temp.IsTemp` -> `temp.IsTemp`
         using var owner = new GpuBigUInt(_workspace, PoolWords);
         Assert.False(owner.IsTemp);
         _workspace.ReturnTemp(owner);

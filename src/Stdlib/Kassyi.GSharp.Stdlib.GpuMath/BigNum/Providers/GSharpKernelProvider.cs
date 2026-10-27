@@ -247,6 +247,10 @@ public sealed class GSharpKernelProvider : IGpuExecutionProvider
         BasicMathProvider.GetBitLength(workspace, leftOperand);
 
     /// <inheritdoc />
+    public void ReadLeadingBits(GpuWorkspace workspace, GpuBigUInt value, out int bitLength, out ulong leadingBits) =>
+        BasicMathProvider.ReadLeadingBits(workspace, value, out bitLength, out leadingBits);
+
+    /// <inheritdoc />
     public int CompareTo(GpuWorkspace workspace, GpuBigUInt leftOperand, GpuBigUInt rightOperand) =>
         BasicMathProvider.CompareTo(workspace, leftOperand, rightOperand);
 

@@ -56,6 +56,7 @@ public static readonly CSharpCpuBigIntProvider Instance;
 | [FreeMemory(IntPtr, IntPtr)](#freememoryintptr-intptr) | Frees an unmanaged host memory block allocated by `AllocateMemory`. |
 | [Gcd(GpuWorkspace, GpuBigUInt, GpuBigUInt, GpuBigUInt)](#gcdgpuworkspace-gpubiguint-gpubiguint-gpubiguint) | Computes the greatest common divisor on the CPU. |
 | [GetBitLength(GpuWorkspace, GpuBigUInt)](#getbitlengthgpuworkspace-gpubiguint) | Gets the significant bit length of the operand. |
+| [ReadLeadingBits(GpuWorkspace, GpuBigUInt, out int, out ulong)](#readleadingbitsgpuworkspace-gpubiguint-out-int-out-ulong) | Gets the significant bit length and the leading 64 bits of the operand. |
 | [InstantiateGraph(IntPtr)](#instantiategraphintptr) | Returns `IntPtr.Zero` in CPU fallback mode. |
 | [InverseSqrtMega(GpuWorkspace, GpuBigUInt, GpuBigUInt, Int32, Int32, Int32)](#inversesqrtmegagpuworkspace-gpubiguint-gpubiguint-int32-int32-int32) | Computes fixed-point inverse square root on the CPU. |
 | [IsOne(GpuWorkspace, GpuBigUInt)](#isonegpuworkspace-gpubiguint) | Determines whether the operand equals `1`. |
@@ -617,6 +618,28 @@ The operand.
 
 _Int32_<br>
 The number of significant bits required to represent the operand.
+
+## ReadLeadingBits(GpuWorkspace, GpuBigUInt, out int, out ulong)
+
+Gets the significant bit length and the leading 64 bits of the operand.
+
+```csharp
+public void ReadLeadingBits(GpuWorkspace workspace, GpuBigUInt value, out int bitLength, out ulong leadingBits);
+```
+
+#### Parameters
+
+`workspace` _GpuWorkspace_<br>
+The execution workspace.
+
+`value` _GpuBigUInt_<br>
+The operand.
+
+`bitLength` _Int32_<br>
+When this method returns, the number of significant bits of `value` (`0` for zero).
+
+`leadingBits` _UInt64_<br>
+When this method returns, the top 64 bits of `value`, its top set bit at bit 63 (missing low bits are `0`).
 
 ## CompareTo(GpuWorkspace, GpuBigUInt, GpuBigUInt)
 

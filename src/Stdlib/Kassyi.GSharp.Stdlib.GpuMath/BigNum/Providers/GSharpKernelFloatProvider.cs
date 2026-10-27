@@ -12,6 +12,17 @@ namespace Kassyi.GSharp.Stdlib.GpuMath.BigNum.Providers;
 /// <para>
 /// <b>Zero-Allocation:</b> Scratch buffers are managed deterministically via workspace pools without managed heap allocations.
 /// </para>
+/// <para>
+/// <b>Transcendental functions:</b> <see cref="Exp"/>, <see cref="Log"/> and <see cref="Pow"/> run on the GPU with the
+/// host-side plan and the integer steps of <see cref="CSharpCpuBigFloatArithmetic"/>, so both return the same bits: the
+/// exact value rounded toward zero, accepted by the rounding check of Ziv and recomputed with more guard words when the
+/// error bound straddles a <c>p</c>-bit value. Exp reduces <c>x = k·ln 2 + r</c> and evaluates a Paterson–Stockmeyer
+/// Taylor polynomial at <c>r / 2^s</c> followed by <c>s</c> squarings; Log reduces <c>x = m·2^e</c> and evaluates an
+/// <c>atanh</c> series in Horner or Paterson–Stockmeyer form; Pow returns an exactly representable power directly and
+/// computes every other one as <c>e^(y·L)</c>. These algorithms serve every precision (faster ones for large precisions
+/// are not implemented); <see cref="GpuWorkspace.Transcendental"/> tunes them. In CPU fallback mode every operation,
+/// Pow included, goes to the fallback strategy.
+/// </para>
 /// </remarks>
 public sealed class GSharpKernelFloatProvider(IGpuBigFloatArithmetic fallbackStrategy)
     : IGpuBigFloatArithmetic
@@ -381,65 +392,7 @@ public sealed class GSharpKernelFloatProvider(IGpuBigFloatArithmetic fallbackStr
             return fallbackStrategy.Exp(ref context, in value, resultSig);
         }
 
-        var workspace = context.GpuWorkspace;
-        var provider = workspace.Provider;
-        var stream = context.Stream;
-        var valueOperand = value.Significand.AsBorrowedBigUInt(workspace);
-
-        var actualBits = valueOperand.GetBitLength();
-        if (actualBits == 0)
-        {
-            // exp(0) = 1.0 = 0x80000000 * 2^(1 - 32 * NumWords)
-            provider.ClearMemoryAsync(resultSig.DevicePointer, resultSig.NumWords, stream);
-            provider.WriteWord(resultSig.DevicePointer, resultSig.NumWords - 1, 0x80000000u, stream);
-            return new GpuFloatResult(1 - resultSig.NumWords * 32, false);
-        }
-
-        if (value.IsNegative)
-        {
-            // exp(-|x|) = 1 / exp(|x|), avoiding alternating-sign Taylor cancellation
-            using var posExpTemp = workspace.RentTemp(resultSig.NumWords + 2);
-            var posRes = Exp(ref context, value with { IsNegative = false }, posExpTemp.Handle);
-            return Reciprocal(ref context, new GpuFloatOperand(posExpTemp.Handle, posRes.Exponent), resultSig);
-        }
-
-        var intBits = Math.Max(0, value.Exponent + actualBits);
-        var intWords = Math.Clamp((1 << Math.Min(intBits, 8)) / 20 + 2, 2, 32);
-        var fracWords = resultSig.NumWords + 2;
-        var shiftBits = fracWords * 32;
-        var workWords = fracWords + intWords;
-
-        using var xFixed = workspace.RentTemp(workWords);
-        GpuBigIntMath.ShiftAndResize(valueOperand, value.Exponent + shiftBits, xFixed);
-
-        using var sum = workspace.RentTemp(workWords);
-        provider.ClearMemoryAsync(sum.DevicePointer, workWords, stream);
-        provider.WriteWord(sum.DevicePointer, fracWords, 1u, stream);
-        GpuBigIntMath.Add(sum, xFixed, sum);
-
-        using var term = workspace.RentTemp(workWords);
-        provider.CopyDeviceToDevice(term.DevicePointer, xFixed.DevicePointer, workWords, stream);
-
-        using var prod = workspace.RentTemp(workWords * 2);
-
-        for (uint k = 2; k <= 1000; k++)
-        {
-            GpuBigIntMath.Mul(term, xFixed, prod);
-            provider.CopyDeviceToDevice(
-                term.DevicePointer,
-                IntPtr.Add(prod.DevicePointer, fracWords * 4),
-                workWords,
-                stream);
-            GpuBigIntMath.DivideByUInt32(term, k, term);
-            if (term.IsZero())
-            {
-                break;
-            }
-
-            GpuBigIntMath.Add(sum, term, sum);
-        }
-
-        return Normalize(ref context, new GpuFloatOperand(sum.Handle, -shiftBits), resultSig);
+        return GpuBigFloatTranscendentals.Exp(context.GpuWorkspace, in value, resultSig);
     }
 
     /// <inheritdoc/>
@@ -458,103 +411,7 @@ public sealed class GSharpKernelFloatProvider(IGpuBigFloatArithmetic fallbackStr
             return fallbackStrategy.Log(ref context, in value, resultSig);
         }
 
-        var workspace = context.GpuWorkspace;
-        var provider = workspace.Provider;
-        var stream = context.Stream;
-        var valueOperand = value.Significand.AsBorrowedBigUInt(workspace);
-
-        var actualBits = valueOperand.GetBitLength();
-        if (actualBits == 0)
-        {
-            throw new InvalidOperationException("Log of zero.");
-        }
-
-        var fracWords = resultSig.NumWords + 2;
-        var shiftBits = fracWords * 32;
-        var intWords = Math.Max(2, (Math.Max(0, value.Exponent + actualBits) + 31) / 32 + 1);
-        var workWords = fracWords + intWords;
-
-        using var xFixed = workspace.RentTemp(workWords);
-        GpuBigIntMath.ShiftAndResize(valueOperand, value.Exponent + shiftBits, xFixed);
-
-        using var oneFixed = workspace.RentTemp(workWords);
-        provider.ClearMemoryAsync(oneFixed.DevicePointer, workWords, stream);
-        provider.WriteWord(oneFixed.DevicePointer, fracWords, 1u, stream);
-
-        var cmp = xFixed.CompareTo(oneFixed);
-        if (cmp == 0)
-        {
-            provider.ClearMemoryAsync(resultSig.DevicePointer, resultSig.NumWords, stream);
-            return new GpuFloatResult(0, false);
-        }
-
-        using var num = workspace.RentTemp(workWords);
-        bool resultSign;
-        if (cmp > 0)
-        {
-            GpuBigIntMath.Sub(xFixed, oneFixed, num);
-            resultSign = false;
-        }
-        else
-        {
-            GpuBigIntMath.Sub(oneFixed, xFixed, num);
-            resultSign = true;
-        }
-
-        using var den = workspace.RentTemp(workWords);
-        GpuBigIntMath.Add(xFixed, oneFixed, den);
-
-        var divWords = workWords + fracWords;
-        using var shiftedNum = workspace.RentTemp(divWords);
-        provider.ClearMemoryAsync(shiftedNum.DevicePointer, divWords, stream);
-        provider.CopyDeviceToDevice(
-            IntPtr.Add(shiftedNum.DevicePointer, fracWords * 4),
-            num.DevicePointer,
-            workWords,
-            stream);
-
-        using var quotBuffer = workspace.RentTemp(divWords);
-        using var remBuffer = workspace.RentTemp(workWords);
-        GpuBigIntDivRem.DivRem(shiftedNum, den, quotBuffer, remBuffer);
-
-        using var y = workspace.RentTemp(workWords);
-        provider.CopyDeviceToDevice(y.DevicePointer, quotBuffer.DevicePointer, workWords, stream);
-
-        using var sum = workspace.RentTemp(workWords);
-        provider.CopyDeviceToDevice(sum.DevicePointer, y.DevicePointer, workWords, stream);
-
-        using var term = workspace.RentTemp(workWords);
-        provider.CopyDeviceToDevice(term.DevicePointer, y.DevicePointer, workWords, stream);
-
-        using var prod = workspace.RentTemp(workWords * 2);
-        using var y2 = workspace.RentTemp(workWords);
-        GpuBigIntMath.Mul(y, y, prod);
-        provider.CopyDeviceToDevice(
-            y2.DevicePointer,
-            IntPtr.Add(prod.DevicePointer, fracWords * 4),
-            workWords,
-            stream);
-
-        using var addTerm = workspace.RentTemp(workWords);
-        for (uint k = 3; k <= 1000; k += 2)
-        {
-            GpuBigIntMath.Mul(term, y2, prod);
-            provider.CopyDeviceToDevice(
-                term.DevicePointer,
-                IntPtr.Add(prod.DevicePointer, fracWords * 4),
-                workWords,
-                stream);
-            GpuBigIntMath.DivideByUInt32(term, k, addTerm);
-            if (addTerm.IsZero())
-            {
-                break;
-            }
-
-            GpuBigIntMath.Add(sum, addTerm, sum);
-        }
-
-        // ln(x) = 2 * sum => exponent is (1 - shiftBits)
-        return Normalize(ref context, new GpuFloatOperand(sum.Handle, 1 - shiftBits, resultSign), resultSig);
+        return GpuBigFloatTranscendentals.Log(context.GpuWorkspace, in value, resultSig);
     }
 
     /// <inheritdoc/>
@@ -569,22 +426,12 @@ public sealed class GSharpKernelFloatProvider(IGpuBigFloatArithmetic fallbackStr
             throw new InvalidOperationException("Pow with negative base is not supported.");
         }
 
-        var tempWords = resultSig.NumWords;
+        if (context.GpuWorkspace.Provider is not GSharpKernelProvider || GpuKernelLoader.IsCpuFallbackMode)
+        {
+            return fallbackStrategy.Pow(ref context, in baseValue, in exponent, resultSig);
+        }
 
-        using var logResult = context.GpuWorkspace.RentTemp(tempWords);
-        var logRes = Log(ref context, in baseValue, logResult.Handle);
-
-        using var mulResult = context.GpuWorkspace.RentTemp(tempWords);
-        var mulRes = Multiply(
-            ref context,
-            in exponent,
-            new GpuFloatOperand(logResult.Handle, logRes.Exponent, logRes.IsNegative),
-            mulResult.Handle);
-
-        return Exp(
-            ref context,
-            new GpuFloatOperand(mulResult.Handle, mulRes.Exponent, mulRes.IsNegative),
-            resultSig);
+        return GpuBigFloatTranscendentals.Pow(context.GpuWorkspace, in baseValue, in exponent, resultSig);
     }
 
     /// <inheritdoc/>

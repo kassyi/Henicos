@@ -280,6 +280,14 @@ public sealed class CSharpCpuBigIntProvider : IGpuExecutionProvider
         (int)Read(leftOperand.DevicePointer, leftOperand.NumWords).GetBitLength();
 
     /// <inheritdoc/>
+    public void ReadLeadingBits(GpuWorkspace workspace, GpuBigUInt value, out int bitLength, out ulong leadingBits)
+    {
+        var val = Read(value.DevicePointer, value.NumWords);
+        bitLength = (int)val.GetBitLength();
+        leadingBits = bitLength >= 64 ? (ulong)(val >> (bitLength - 64)) : (ulong)(val << (64 - bitLength));
+    }
+
+    /// <inheritdoc/>
     public int CompareTo(GpuWorkspace workspace, GpuBigUInt leftOperand, GpuBigUInt rightOperand)
     {
         return Read(leftOperand.DevicePointer, leftOperand.NumWords)

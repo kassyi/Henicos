@@ -365,7 +365,7 @@ public class CSharpCpuBigIntProviderTests : IDisposable
         var x = ToBigInteger(xWords);
         using var operand = new GpuBigUInt(_workspace, xWords);
 
-        // mutant: CSharpCpuBigIntProvider.cs:333 `+ marginWords` -> `- marginWords`, L334 `/ x` -> `* x`
+        // mutant: CSharpCpuBigIntProvider.cs:341 `+ marginWords` -> `- marginWords`, L342 `/ x` -> `* x`
         using (var res = CreateSentinelBuffer(8))
         {
             _provider.InverseSqrtMega(_workspace, operand, res, MarginWords, 0, 0);
@@ -374,7 +374,7 @@ public class CSharpCpuBigIntProviderTests : IDisposable
             Assert.Equal(expected, ToBigInteger(res.ToHostArray()));
         }
 
-        // mutant: CSharpCpuBigIntProvider.cs:350 `/ x` -> `* x`, L351 `Write(...)` removed
+        // mutant: CSharpCpuBigIntProvider.cs:358 `/ x` -> `* x`, L359 `Write(...)` removed
         using (var res = CreateSentinelBuffer(8))
         {
             _provider.ReciprocalMega(_workspace, operand, res, MarginWords, 0, 0, 0, TargetBits);
@@ -387,8 +387,8 @@ public class CSharpCpuBigIntProviderTests : IDisposable
     [Theory]
     [Category(TestCategory.Stdlib)]
     [Scenario(TestScenario.HappyPath)]
-    // mutant: CSharpCpuBigIntProvider.cs:378 `v - t * x` -> `v + t * x`, L386 `v < 0` -> `v > 0` / `!(v < 0)`,
-    // L388 `(v + n) % n` -> `(v + n) * n` / `(v - n) % n`
+    // mutant: CSharpCpuBigIntProvider.cs:386 `v - t * x` -> `v + t * x`, L394 `v < 0` -> `v > 0` / `!(v < 0)`,
+    // L396 `(v + n) % n` -> `(v + n) * n` / `(v - n) % n`
     [InlineData(17u, 3120u, 2753u)]
     [InlineData(42u, 2017u, 1969u)]
     [InlineData(7u, 40u, 23u)]

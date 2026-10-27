@@ -217,6 +217,25 @@ public sealed class KernelBasicMathHandler : IGpuBasicMathProvider
         return (int)res;
     }
 
+    /// <inheritdoc/>
+    public void ReadLeadingBits(GpuWorkspace workspace, GpuBigUInt value, out int bitLength, out ulong leadingBits)
+    {
+        var dims = KernelGraphHandler.CalculateGridDim(value.NumWords);
+
+        // Result words: [0] bit length (GetBitLengthKernel), [1] and [2] the leading 64 bits, [3] unused.
+        var res = EvaluateKernelResult<UInt128>(workspace, 4, resultPtr =>
+        {
+            GpuBigIntCmpKernels.LaunchGetBitLengthKernelPtr(
+                value.DevicePointer, resultPtr, value.NumWords,
+                gridDimX: dims.GridSize, blockDimX: dims.BlockSize, hStream: workspace.Stream);
+            GpuBigIntCmpKernels.LaunchLeadingBitsKernelPtr(
+                value.DevicePointer, resultPtr, value.NumWords,
+                gridDimX: 1, blockDimX: 32, hStream: workspace.Stream);
+        });
+        bitLength = (int)(uint)res;
+        leadingBits = (ulong)(res >> 32);
+    }
+
 
     /// <inheritdoc />
     public void Add(GpuWorkspace workspace, GpuBigUInt leftOperand, GpuBigUInt rightOperand,

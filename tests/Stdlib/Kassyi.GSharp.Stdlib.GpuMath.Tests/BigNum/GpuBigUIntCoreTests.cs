@@ -188,7 +188,7 @@ public class GpuUIntBigIntegerCoreTests : IDisposable
         using var workspace = new GpuWorkspace(64, GpuExecutionEngine.GSharpAot);
 
         // A rented value is a temporary.
-        // mutant: GpuWorkspace.cs:352 `isTemp: true` -> `isTemp: false`
+        // mutant: GpuWorkspace.cs:383 `isTemp: true` -> `isTemp: false`
         var temp = workspace.RentTemp(4);
         Assert.True(temp.IsTemp);
         workspace.ReturnTemp(temp);
@@ -196,7 +196,7 @@ public class GpuUIntBigIntegerCoreTests : IDisposable
         workspace.Dispose();
 
         // After Dispose, RentTemp throws for the workspace itself (not only through the memory manager).
-        // mutant: GpuWorkspace.cs:350 `ObjectDisposedException.ThrowIf(...)` removed (the manager throws for itself)
+        // mutant: GpuWorkspace.cs:381 `ObjectDisposedException.ThrowIf(...)` removed (the manager throws for itself)
         var rentError = Assert.Throws<ObjectDisposedException>(() => workspace.RentTemp(4));
         Assert.Equal(typeof(GpuWorkspace).FullName, rentError.ObjectName);
 

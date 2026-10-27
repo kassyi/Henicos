@@ -30,6 +30,7 @@ public static partial class GpuBigIntCmpKernels
 | [GetBitLengthKernel(uint[], uint[], int)](#getbitlengthkerneluint-uint-int) | A GPU kernel (`[GpuKernel]`) that calculates the bit length of a large integer. |
 | [IsOneKernel(uint[], uint[], int)](#isonekerneluint-uint-int) | A GPU kernel (`[GpuKernel]`) that checks if a large integer is equal to one. |
 | [IsZeroKernel(uint[], uint[], int)](#iszerokerneluint-uint-int) | A GPU kernel (`[GpuKernel]`) that checks if a large integer is zero. |
+| [LeadingBitsKernel(uint[], uint[], int)](#leadingbitskerneluint-uint-int) | A GPU kernel (`[GpuKernel]`) that writes the leading 64 bits of a large integer, given its bit length. |
 | [ReadCompareSign(SignedCompareOperand, int)](#readcomparesignsignedcompareoperand-int) | A GPU device function (`[GpuDeviceFunction]`) that reads the sign of an element, or the sign of a scalar. |
 | [ReadCompareWord(SignedCompareOperand, int, int)](#readcomparewordsignedcompareoperand-int-int) | A GPU device function (`[GpuDeviceFunction]`) that reads one word of an element, or 0 at or above the operand's word count. |
 | [VectorAllTrueKernel(uint[], uint[], int)](#vectoralltruekerneluint-uint-int) | A GPU kernel (`[GpuKernel]`) that checks whether all elements in a boolean mask array are non-zero. |
@@ -93,6 +94,15 @@ A GPU kernel (`[GpuKernel]`) that checks if a large integer is zero.
 ```csharp
 [GpuKernel]
 public static void IsZeroKernel(uint[] dA, uint[] dResult, int numWords);
+```
+
+## LeadingBitsKernel(uint[], uint[], int)
+
+A GPU kernel (`[GpuKernel]`) that writes the leading 64 bits of a large integer to `dResult[1]` (low word) and `dResult[2]` (high word), given its bit length in `dResult[0]` from `GetBitLengthKernel` on the same stream. The top set bit lands at bit 63; missing low bits are `0`.
+
+```csharp
+[GpuKernel]
+public static void LeadingBitsKernel(uint[] dA, uint[] dResult, int numWords);
 ```
 
 ## ReadCompareSign(SignedCompareOperand, int)

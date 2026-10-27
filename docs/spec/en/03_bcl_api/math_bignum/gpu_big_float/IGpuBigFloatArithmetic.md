@@ -1,7 +1,7 @@
 ---
 title: "IGpuBigFloatArithmetic Interface (G#)"
 site: "G# Documentation"
-published: "2026-10-16T00:00:00.000Z"
+published: "2026-10-27T00:00:00.000Z"
 language: "en"
 description: "Defines the contract for arbitrary-precision floating-point arithmetic operations executed across GPU and CPU backends."
 ---
@@ -23,147 +23,222 @@ public interface IGpuBigFloatArithmetic
 
 | Name | Description |
 | --- | --- |
-| [Add(...)](#addref-gpubigintexecutioncontext-gpubigintmemoryhandle-int-bool-gpubigintmemoryhandle-int-bool-gpubigintmemoryhandle-out-int-out-bool) | Adds two arbitrary-precision floating-point operands. |
-| [Divide(...)](#divideref-gpubigintexecutioncontext-gpubigintmemoryhandle-int-bool-gpubigintmemoryhandle-int-bool-gpubigintmemoryhandle-out-int-out-bool) | Divides one arbitrary-precision floating-point operand by another. |
-| [DivideByUInt32(...)](#dividebyuint32ref-gpubigintexecutioncontext-gpubigintmemoryhandle-int-bool-uint-gpubigintmemoryhandle-out-int-out-bool-out-uint) | Divides an arbitrary-precision floating-point value by a 32-bit unsigned integer scalar. |
-| [Exp(...)](#expref-gpubigintexecutioncontext-gpubigintmemoryhandle-int-bool-gpubigintmemoryhandle-out-int-out-bool) | Computes the natural exponential ($e^x$) of an arbitrary-precision floating-point value. |
-| [Log(...)](#logref-gpubigintexecutioncontext-gpubigintmemoryhandle-int-bool-gpubigintmemoryhandle-out-int-out-bool) | Computes the natural logarithm ($\ln(x)$) of an arbitrary-precision floating-point value. |
-| [Multiply(...)](#multiplyref-gpubigintexecutioncontext-gpubigintmemoryhandle-int-bool-gpubigintmemoryhandle-int-bool-gpubigintmemoryhandle-out-int-out-bool) | Multiplies two arbitrary-precision floating-point operands. |
-| [Normalize(...)](#normalizeref-gpubigintexecutioncontext-gpubigintmemoryhandle-int-bool-gpubigintmemoryhandle-out-int-out-bool) | Normalizes an arbitrary-precision floating-point value such that the most significant limb of the significand is non-zero. |
-| [Pow(...)](#powref-gpubigintexecutioncontext-gpubigintmemoryhandle-int-bool-gpubigintmemoryhandle-int-bool-gpubigintmemoryhandle-out-int-out-bool) | Raises an arbitrary-precision floating-point base to an arbitrary-precision floating-point exponent ($\text{base}^{\text{exp}}$). |
-| [Reciprocal(...)](#reciprocalref-gpubigintexecutioncontext-gpubigintmemoryhandle-int-bool-gpubigintmemoryhandle-out-int-out-bool) | Computes the reciprocal ($1 / x$) of an arbitrary-precision floating-point value. |
-| [Rsqrt(...)](#rsqrtref-gpubigintexecutioncontext-gpubigintmemoryhandle-int-bool-gpubigintmemoryhandle-out-int-out-bool) | Computes the reciprocal square root ($1 / \sqrt{x}$) of an arbitrary-precision floating-point value. |
-| [Sqrt(...)](#sqrtref-gpubigintexecutioncontext-gpubigintmemoryhandle-int-bool-gpubigintmemoryhandle-out-int-out-bool) | Computes the square root ($\sqrt{x}$) of an arbitrary-precision floating-point value. |
+| [Add(...)](#addref-gpubigintexecutioncontext-in-gpufloatoperand-in-gpufloatoperand-gpubigintmemoryhandle) | Adds two arbitrary-precision floating-point operands. |
+| [Divide(...)](#divideref-gpubigintexecutioncontext-in-gpufloatoperand-in-gpufloatoperand-gpubigintmemoryhandle) | Divides one arbitrary-precision floating-point operand by another. |
+| [DivideByUInt32(...)](#dividebyuint32ref-gpubigintexecutioncontext-in-gpufloatoperand-uint-gpubigintmemoryhandle) | Divides an arbitrary-precision floating-point value by a 32-bit unsigned integer scalar. |
+| [Exp(...)](#expref-gpubigintexecutioncontext-in-gpufloatoperand-gpubigintmemoryhandle) | Computes the natural exponential ($e^x$), rounded toward zero to the result precision. |
+| [Log(...)](#logref-gpubigintexecutioncontext-in-gpufloatoperand-gpubigintmemoryhandle) | Computes the natural logarithm ($\ln x$), rounded toward zero to the result precision. |
+| [Multiply(...)](#multiplyref-gpubigintexecutioncontext-in-gpufloatoperand-in-gpufloatoperand-gpubigintmemoryhandle) | Multiplies two arbitrary-precision floating-point operands. |
+| [Normalize(...)](#normalizeref-gpubigintexecutioncontext-in-gpufloatoperand-gpubigintmemoryhandle) | Normalizes a value so that the most significant bit of the significand is the top bit of the result. |
+| [Pow(...)](#powref-gpubigintexecutioncontext-in-gpufloatoperand-in-gpufloatoperand-gpubigintmemoryhandle) | Raises a positive base to an arbitrary exponent ($x^y$), rounded toward zero to the result precision. |
+| [Reciprocal(...)](#reciprocalref-gpubigintexecutioncontext-in-gpufloatoperand-gpubigintmemoryhandle) | Computes the reciprocal ($1 / x$) of an arbitrary-precision floating-point value. |
+| [Rsqrt(...)](#rsqrtref-gpubigintexecutioncontext-in-gpufloatoperand-gpubigintmemoryhandle) | Computes the reciprocal square root ($1 / \sqrt{x}$) of an arbitrary-precision floating-point value. |
+| [Sqrt(...)](#sqrtref-gpubigintexecutioncontext-in-gpufloatoperand-gpubigintmemoryhandle) | Computes the square root ($\sqrt{x}$) of an arbitrary-precision floating-point value. |
 
-## Add(ref GpuBigIntExecutionContext, GpuBigIntMemoryHandle, int, bool, GpuBigIntMemoryHandle, int, bool, GpuBigIntMemoryHandle, out int, out bool)
+Every method takes its operands as `GpuFloatOperand` (a significand handle, an exponent and a sign: $\pm\text{Significand} \times 2^{\text{Exponent}}$) and writes the significand of the result to `resultSig`. The word count $n$ of `resultSig` sets the precision of the result, $p = 32n$ bits. The method returns the exponent and the sign of the result as a `GpuFloatResult`.
+
+## Add(ref GpuBigIntExecutionContext, in GpuFloatOperand, in GpuFloatOperand, GpuBigIntMemoryHandle)
 
 Adds two arbitrary-precision floating-point operands.
 
 ```csharp
-void Add(
+GpuFloatResult Add(
     ref GpuBigIntExecutionContext context,
-    GpuBigIntMemoryHandle leftSig, int leftExp, bool leftSign,
-    GpuBigIntMemoryHandle rightSig, int rightExp, bool rightSign,
-    GpuBigIntMemoryHandle resultSig, out int resultExp, out bool resultSign);
+    in GpuFloatOperand left,
+    in GpuFloatOperand right,
+    GpuBigIntMemoryHandle resultSig);
 ```
 
-## Divide(ref GpuBigIntExecutionContext, GpuBigIntMemoryHandle, int, bool, GpuBigIntMemoryHandle, int, bool, GpuBigIntMemoryHandle, out int, out bool)
+## Divide(ref GpuBigIntExecutionContext, in GpuFloatOperand, in GpuFloatOperand, GpuBigIntMemoryHandle)
 
 Divides one arbitrary-precision floating-point operand by another.
 
 ```csharp
-void Divide(
+GpuFloatResult Divide(
     ref GpuBigIntExecutionContext context,
-    GpuBigIntMemoryHandle leftSig, int leftExp, bool leftSign,
-    GpuBigIntMemoryHandle rightSig, int rightExp, bool rightSign,
-    GpuBigIntMemoryHandle resultSig, out int resultExp, out bool resultSign);
+    in GpuFloatOperand left,
+    in GpuFloatOperand right,
+    GpuBigIntMemoryHandle resultSig);
 ```
 
-## DivideByUInt32(ref GpuBigIntExecutionContext, GpuBigIntMemoryHandle, int, bool, uint, GpuBigIntMemoryHandle, out int, out bool, out uint)
+#### Exceptions
+
+`DivideByZeroException`  
+The divisor is zero.
+
+## DivideByUInt32(ref GpuBigIntExecutionContext, in GpuFloatOperand, uint, GpuBigIntMemoryHandle)
 
 Divides an arbitrary-precision floating-point value by a 32-bit unsigned integer scalar.
 
 ```csharp
-void DivideByUInt32(
+GpuFloatScalarDivResult DivideByUInt32(
     ref GpuBigIntExecutionContext context,
-    GpuBigIntMemoryHandle valueSig, int valueExp, bool valueSign,
+    in GpuFloatOperand value,
     uint divisor,
-    GpuBigIntMemoryHandle resultSig, out int resultExp, out bool resultSign, out uint remainder);
+    GpuBigIntMemoryHandle resultSig);
 ```
 
-## Exp(ref GpuBigIntExecutionContext, GpuBigIntMemoryHandle, int, bool, GpuBigIntMemoryHandle, out int, out bool)
+#### Returns
+
+_GpuFloatScalarDivResult_  
+The exponent and sign of the quotient and the 32-bit remainder of the significand division.
+
+## Exp(ref GpuBigIntExecutionContext, in GpuFloatOperand, GpuBigIntMemoryHandle)
 
 Computes the natural exponential ($e^x$) of an arbitrary-precision floating-point value.
 
 ```csharp
-void Exp(
+GpuFloatResult Exp(
     ref GpuBigIntExecutionContext context,
-    GpuBigIntMemoryHandle valueSig, int valueExp, bool valueSign,
-    GpuBigIntMemoryHandle resultSig, out int resultExp, out bool resultSign);
+    in GpuFloatOperand value,
+    GpuBigIntMemoryHandle resultSig);
 ```
 
-## Log(ref GpuBigIntExecutionContext, GpuBigIntMemoryHandle, int, bool, GpuBigIntMemoryHandle, out int, out bool)
+#### Returns
 
-Computes the natural logarithm ($\ln(x)$) of an arbitrary-precision floating-point value.
+_GpuFloatResult_  
+The exponent and sign (always positive) of $\mathrm{RZ}_p(e^x)$, the exact value rounded toward zero to $p$ bits. The significand fills `resultSig` with its top bit set; $e^0 = 1$ is $2^{p-1} \times 2^{1-p}$.
+
+#### Exceptions
+
+`OverflowException`  
+The exponent of the result does not fit in `int`: an overflow for a large positive argument, an underflow (named in the message) for a large negative one. Every argument with $|x| \ge 2^{32}$ is out of range; the limits are about $\pm 1.4885 \times 10^9$.
+
+#### Remarks
+
+The result is rounded toward zero, like `Add`, `Multiply` and `Divide`, for every argument in range, whatever its size or sign. The GPU and the CPU provider return the same bits. The argument is reduced to $x = k \ln 2 + r$, $r \in (0.69, 1.39)$, for either sign (no reciprocal), and $e^r$ is evaluated as $(e^{r/2^s})^{2^s}$ with a Taylor polynomial in Paterson–Stockmeyer form; [`GpuBigFloatTranscendentalOptions`](GpuBigFloatTranscendentalOptions.md) can fix $s$ and the block size. An approximation with guard bits is accepted only when every value within its error bound truncates to the same $p$ bits; otherwise it is recomputed with more guard bits. That is rare for random arguments; arguments such as $\pm 2^{-c}$ ($c$ above about $p/2$), whose exponential lies very close to a $p$-bit value, take two attempts or more.
+
+## Log(ref GpuBigIntExecutionContext, in GpuFloatOperand, GpuBigIntMemoryHandle)
+
+Computes the natural logarithm ($\ln x$) of an arbitrary-precision floating-point value.
 
 ```csharp
-void Log(
+GpuFloatResult Log(
     ref GpuBigIntExecutionContext context,
-    GpuBigIntMemoryHandle valueSig, int valueExp, bool valueSign,
-    GpuBigIntMemoryHandle resultSig, out int resultExp, out bool resultSign);
+    in GpuFloatOperand value,
+    GpuBigIntMemoryHandle resultSig);
 ```
 
-## Multiply(ref GpuBigIntExecutionContext, GpuBigIntMemoryHandle, int, bool, GpuBigIntMemoryHandle, int, bool, GpuBigIntMemoryHandle, out int, out bool)
+#### Returns
+
+_GpuFloatResult_  
+The exponent and sign of $\mathrm{RZ}_p(\ln x)$. The significand fills `resultSig` with its top bit set, or is zero for $\ln 1 = 0$.
+
+#### Exceptions
+
+`InvalidOperationException`  
+`value` is zero or negative.
+
+`OverflowException`  
+The exponent of the result does not fit in `int`.
+
+#### Remarks
+
+The result is rounded toward zero for every positive argument, whatever its exponent and however close it is to 1. The GPU and the CPU provider return the same bits. The argument is reduced to $x = m \cdot 2^e$, $m \in [3/4, 3/2)$, and $\ln x = e \ln 2 + 2\,\mathrm{atanh}((m - 1)/(m + 1))$ is evaluated with a number of terms derived from the precision (Horner form for a short series, Paterson–Stockmeyer otherwise). The rounding check retries as for `Exp`; arguments such as $1 \pm 2^{-c}$ take two attempts or more.
+
+## Multiply(ref GpuBigIntExecutionContext, in GpuFloatOperand, in GpuFloatOperand, GpuBigIntMemoryHandle)
 
 Multiplies two arbitrary-precision floating-point operands.
 
 ```csharp
-void Multiply(
+GpuFloatResult Multiply(
     ref GpuBigIntExecutionContext context,
-    GpuBigIntMemoryHandle leftSig, int leftExp, bool leftSign,
-    GpuBigIntMemoryHandle rightSig, int rightExp, bool rightSign,
-    GpuBigIntMemoryHandle resultSig, out int resultExp, out bool resultSign);
+    in GpuFloatOperand left,
+    in GpuFloatOperand right,
+    GpuBigIntMemoryHandle resultSig);
 ```
 
-## Normalize(ref GpuBigIntExecutionContext, GpuBigIntMemoryHandle, int, bool, GpuBigIntMemoryHandle, out int, out bool)
+## Normalize(ref GpuBigIntExecutionContext, in GpuFloatOperand, GpuBigIntMemoryHandle)
 
-Normalizes an arbitrary-precision floating-point value such that the most significant limb of the significand is non-zero.
+Normalizes an arbitrary-precision floating-point value such that the most significant bit of the significand is aligned to the most significant bit of `resultSig`.
 
 ```csharp
-void Normalize(
+GpuFloatResult Normalize(
     ref GpuBigIntExecutionContext context,
-    GpuBigIntMemoryHandle valueSig, int valueExp, bool valueSign,
-    GpuBigIntMemoryHandle resultSig, out int resultExp, out bool resultSign);
+    in GpuFloatOperand value,
+    GpuBigIntMemoryHandle resultSig);
 ```
 
-## Pow(ref GpuBigIntExecutionContext, GpuBigIntMemoryHandle, int, bool, GpuBigIntMemoryHandle, int, bool, GpuBigIntMemoryHandle, out int, out bool)
+## Pow(ref GpuBigIntExecutionContext, in GpuFloatOperand, in GpuFloatOperand, GpuBigIntMemoryHandle)
 
-Raises an arbitrary-precision floating-point base to an arbitrary-precision floating-point exponent ($\text{base}^{\text{exp}}$).
+Raises an arbitrary-precision floating-point base to an arbitrary-precision floating-point exponent ($x^y$).
 
 ```csharp
-void Pow(
+GpuFloatResult Pow(
     ref GpuBigIntExecutionContext context,
-    GpuBigIntMemoryHandle baseSig, int baseExp, bool baseSign,
-    GpuBigIntMemoryHandle expSig, int exponentExp, bool exponentSign,
-    GpuBigIntMemoryHandle resultSig, out int resultExp, out bool resultSign);
+    in GpuFloatOperand baseValue,
+    in GpuFloatOperand exponentValue,
+    GpuBigIntMemoryHandle resultSig);
 ```
 
-## Reciprocal(ref GpuBigIntExecutionContext, GpuBigIntMemoryHandle, int, bool, GpuBigIntMemoryHandle, out int, out bool)
+#### Returns
+
+_GpuFloatResult_  
+The exponent and sign (always positive) of $\mathrm{RZ}_p(x^y)$. The significand fills `resultSig` with its top bit set.
+
+#### Exceptions
+
+`InvalidOperationException`  
+`baseValue` is zero or negative, whatever the exponent (also $y = 0$).
+
+`OverflowException`  
+The exponent of the result does not fit in `int`: "Pow overflow" for a result above 1, "Pow underflow" for one below 1.
+
+#### Remarks
+
+The result is rounded toward zero for every positive base, and the GPU and the CPU provider return the same bits. A power that is exactly a $p$-bit value is found first and returned as it is: $x^0 = 1$, $1^y = 1$, $2^3 = 8$, $2^{1000}$, $4^{0.5} = 2$, $(9/4)^{0.5} = 3/2$, $2^{-3} = 1/8$, and every other $x^y$ that is a dyadic value of at most $p$ significant bits (the check of MPFR's `mpfr_pow_is_exact`, for an integer $y$ and for $y = n / 2^k$). Every other power is computed as $e^{y \cdot L}$ with $L \approx \ln x$ to the Exp precision plus 64 bits, and the rounding check covers the error that $L$ carries into $y \cdot L$; it retries as for `Exp` and always ends, because such a power is never a $p$-bit value. Powers next to a $p$-bit value (for example $(2 + 2^{-200})^3$ at $p = 128$) take two attempts or more.
+
+## Reciprocal(ref GpuBigIntExecutionContext, in GpuFloatOperand, GpuBigIntMemoryHandle)
 
 Computes the reciprocal ($1 / x$) of an arbitrary-precision floating-point value.
 
 ```csharp
-void Reciprocal(
+GpuFloatResult Reciprocal(
     ref GpuBigIntExecutionContext context,
-    GpuBigIntMemoryHandle valueSig, int valueExp, bool valueSign,
-    GpuBigIntMemoryHandle resultSig, out int resultExp, out bool resultSign);
+    in GpuFloatOperand value,
+    GpuBigIntMemoryHandle resultSig);
 ```
 
-## Rsqrt(ref GpuBigIntExecutionContext, GpuBigIntMemoryHandle, int, bool, GpuBigIntMemoryHandle, out int, out bool)
+#### Exceptions
+
+`DivideByZeroException`  
+`value` is zero.
+
+## Rsqrt(ref GpuBigIntExecutionContext, in GpuFloatOperand, GpuBigIntMemoryHandle)
 
 Computes the reciprocal square root ($1 / \sqrt{x}$) of an arbitrary-precision floating-point value.
 
 ```csharp
-void Rsqrt(
+GpuFloatResult Rsqrt(
     ref GpuBigIntExecutionContext context,
-    GpuBigIntMemoryHandle valueSig, int valueExp, bool valueSign,
-    GpuBigIntMemoryHandle resultSig, out int resultExp, out bool resultSign);
+    in GpuFloatOperand value,
+    GpuBigIntMemoryHandle resultSig);
 ```
 
-## Sqrt(ref GpuBigIntExecutionContext, GpuBigIntMemoryHandle, int, bool, GpuBigIntMemoryHandle, out int, out bool)
+#### Exceptions
+
+`InvalidOperationException`  
+`value` is negative.
+
+## Sqrt(ref GpuBigIntExecutionContext, in GpuFloatOperand, GpuBigIntMemoryHandle)
 
 Computes the square root ($\sqrt{x}$) of an arbitrary-precision floating-point value.
 
 ```csharp
-void Sqrt(
+GpuFloatResult Sqrt(
     ref GpuBigIntExecutionContext context,
-    GpuBigIntMemoryHandle valueSig, int valueExp, bool valueSign,
-    GpuBigIntMemoryHandle resultSig, out int resultExp, out bool resultSign);
+    in GpuFloatOperand value,
+    GpuBigIntMemoryHandle resultSig);
 ```
+
+#### Exceptions
+
+`InvalidOperationException`  
+`value` is negative.
 
 ## Remarks
 
-This interface abstracts low-level mantissa and exponent transformations for [GpuBigFloat](GpuBigFloat.md) and [GpuBigUFloat](GpuBigUFloat.md) representations, operating directly on raw memory handles (`GpuBigIntMemoryHandle`) via a [GpuBigIntExecutionContext](../gpu_big_int_and_uint/GpuBigIntExecutionContext.md).
+This interface abstracts low-level mantissa and exponent transformations for [GpuBigFloat](GpuBigFloat.md) and [GpuBigUFloat](GpuBigUFloat.md) representations, operating on structured operands (`GpuFloatOperand`) and raw memory handles (`GpuBigIntMemoryHandle`) via a [GpuBigIntExecutionContext](../gpu_big_int_and_uint/GpuBigIntExecutionContext.md).
 
 ## Examples
 
@@ -197,5 +272,6 @@ Console.WriteLine($"Provider: {arithmetic.GetType().Name}, Sum Significand: {sum
 ### BCL API > Math Bignum
 - [GpuBigFloat Struct](GpuBigFloat.md)
 - [GpuBigUFloat Struct](GpuBigUFloat.md)
+- [GpuBigFloatTranscendentalOptions Class](GpuBigFloatTranscendentalOptions.md)
 - [FloatExpressions](../gpu_big_int_and_uint/expressions/FloatExpressions.md)
 - [GpuBigIntExecutionContext Struct](../gpu_big_int_and_uint/GpuBigIntExecutionContext.md)
