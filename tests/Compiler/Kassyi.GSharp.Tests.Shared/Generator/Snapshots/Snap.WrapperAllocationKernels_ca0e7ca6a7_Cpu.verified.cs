@@ -49,7 +49,7 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-if((*__gsharp_id_0_ioVal)>__gsharp_id_3_constantVal)
+if((long long)(*__gsharp_id_0_ioVal)>(long long)__gsharp_id_3_constantVal)
 {
 (*__gsharp_id_1_outVal)=__gsharp_id_2_arrayVal[0];
 (*__gsharp_id_0_ioVal)=(int)(*__gsharp_id_1_outVal)+1;
