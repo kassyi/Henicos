@@ -68,6 +68,73 @@ public class KernelAdvancedMathSquareTests
         Assert.Equal(expected * expected, FromWords(result.ToHostWords(workspace)));
     }
 
+    [SkippableTheory]
+    [Scenario(TestScenario.HappyPath)]
+    [MemberData(nameof(OperandWords))]
+    public void Multiply_OwnedScratch_MatchesBigIntegerAcrossReuses(int words)
+    {
+        CudaCapability.EnsureGpuAvailable();
+        using var scope = new GpuKernelLoader.CudaContextScope();
+        using var workspace = new GpuWorkspace(2 * words);
+        var handler = GSharpKernelProvider.Instance.KernelAdvancedMath;
+        using var scratch = KernelAdvancedMathHandler.NttMultiplyScratch.Allocate(workspace, handler, 2 * words);
+        using var result = new GpuBigUInt(workspace, 2 * words);
+        var random = new Random(649 * 10_000 + words);
+
+        // Three products through the same scratch, the second of two all-ones values (a carry through every word).
+        // mutant: KernelAdvancedMathHandler.cs Multiply `LaunchMultiplyNttPointwiseMultiplyKernelPtr(...)` removed
+        for (var round = 0; round < 3; round++)
+        {
+            var leftWords = round == 1 ? AllOnes(words) : RandomWords(random, words);
+            var rightWords = round == 1 ? AllOnes(words) : RandomWords(random, words);
+            using var left = new GpuBigUInt(workspace, leftWords);
+            using var right = new GpuBigUInt(workspace, rightWords);
+
+            handler.Multiply(workspace, left, right, result, scratch);
+
+            Assert.True(FromWords(leftWords) * FromWords(rightWords) == FromWords(result.ToHostWords(workspace)),
+                $"words={words} round={round} seed={649 * 10_000 + words}");
+        }
+    }
+
+    [SkippableFact]
+    [Scenario(TestScenario.HappyPath)]
+    public void Mul_DifferentOperands_StillMultipliesThroughRentedScratch()
+    {
+        CudaCapability.EnsureGpuAvailable();
+        using var scope = new GpuKernelLoader.CudaContextScope();
+        using var workspace = new GpuWorkspace(1100);
+        var random = new Random(650);
+        var leftWords = RandomWords(random, 1000);
+        var rightWords = RandomWords(random, 100);
+        using var left = new GpuBigUInt(workspace, leftWords);
+        using var right = new GpuBigUInt(workspace, rightWords);
+        using var result = new GpuBigUInt(workspace, 1100);
+
+        // Operands of different lengths: the scratch is sized by the product (behavior unchanged).
+        // mutant: KernelAdvancedMathHandler.cs Mul `Multiply(workspace, leftOperand, rightOperand, resultBuffer, productScratch);` removed
+        GpuBigIntMath.Mul(left, right, result);
+
+        Assert.Equal(FromWords(leftWords) * FromWords(rightWords), FromWords(result.ToHostWords(workspace)));
+    }
+
+    [SkippableFact]
+    [Scenario(TestScenario.SadPath)]
+    public void Multiply_FactorsOfAnotherProductLength_Throw()
+    {
+        CudaCapability.EnsureGpuAvailable();
+        using var scope = new GpuKernelLoader.CudaContextScope();
+        using var workspace = new GpuWorkspace(64);
+        var handler = GSharpKernelProvider.Instance.KernelAdvancedMath;
+        using var scratch = KernelAdvancedMathHandler.NttMultiplyScratch.Allocate(workspace, handler, 32);
+        using var left = new GpuBigUInt(workspace, 16);
+        using var right = new GpuBigUInt(workspace, 17);
+        using var result = new GpuBigUInt(workspace, 33);
+
+        var exception = Assert.Throws<ArgumentException>(() => handler.Multiply(workspace, left, right, result, scratch));
+        Assert.Equal("scratch", exception.ParamName);
+    }
+
     [SkippableFact]
     [Scenario(TestScenario.SadPath)]
     public void Square_OperandOfAnotherLength_Throws()
