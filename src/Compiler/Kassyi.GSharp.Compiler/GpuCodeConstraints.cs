@@ -38,11 +38,13 @@ internal static class GpuCodeConstraints
     /// <summary>
     /// The name of <paramref name="type"/> when only the .NET runtime can give it meaning, so device code cannot use it
     /// (GSH0003): <c>dynamic</c> (dynamic dispatch through the runtime binder), <see cref="TypedReference"/> (a
-    /// reference tracked by the GC) or <c>GCHandle</c> (a handle of the GC); otherwise <see langword="null"/>.
+    /// reference tracked by the GC), <c>GCHandle</c> (a handle of the GC) or <see langword="decimal"/> (arithmetic in
+    /// software of the BCL, with no C++ type or literal); otherwise <see langword="null"/>.
     /// </summary>
     public static string? GetRuntimeOnlyTypeName(ITypeSymbol? type) => type switch
     {
         { TypeKind: TypeKind.Dynamic } => "dynamic",
+        { SpecialType: SpecialType.System_Decimal } => "decimal",
         { SpecialType: SpecialType.System_TypedReference } => nameof(TypedReference),
         INamedTypeSymbol { Name: TypeConstants.GCHandleType } named when named.ContainingNamespace.IsSystemRuntimeInteropServices() =>
             TypeConstants.GCHandleType,
