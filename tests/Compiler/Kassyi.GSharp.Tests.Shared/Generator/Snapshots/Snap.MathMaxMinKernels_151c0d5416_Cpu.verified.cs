@@ -66,7 +66,7 @@ return;
 #undef __gsharp_state
 #undef __gsharp_yielded_for_grid_sync
 }
-extern ""C"" __declspec(dllexport) void __gsharp_launch_Kassyi__GSharp__Tests__Shared__Syntax__MathMaxMinKernels__SingleMaxMinKernel(uint32_t __gsharp_grid_dim_x, uint32_t __gsharp_grid_dim_y, uint32_t __gsharp_grid_dim_z, uint32_t __gsharp_block_dim_x, uint32_t __gsharp_block_dim_y, uint32_t __gsharp_block_dim_z, GSharpArray<float> __gsharp_id_0_left, GSharpArray<float> __gsharp_id_1_right, GSharpArray<float> __gsharp_id_2_result)
+extern ""C"" __declspec(dllexport) void __gsharp_launch_Kassyi__GSharp__Tests__Shared__Syntax__MathMaxMinKernels__SingleMaxMinKernel(uint32_t __gsharp_grid_dim_x, uint32_t __gsharp_grid_dim_y, uint32_t __gsharp_grid_dim_z, uint32_t __gsharp_block_dim_x, uint32_t __gsharp_block_dim_y, uint32_t __gsharp_block_dim_z, uint32_t __gsharp_shared_mem_bytes, GSharpArray<float> __gsharp_id_0_left, GSharpArray<float> __gsharp_id_1_right, GSharpArray<float> __gsharp_id_2_result)
 {
 __gsharp_host_last_error.Reset();
 GSharpErrorSlot __gsharp_launch_error;
@@ -78,7 +78,7 @@ if (__gsharp_launch_error.HasError()) continue;
 int32_t __gsharp_bx = __gsharp_block_index % __gsharp_grid_dim_x;
 int32_t __gsharp_by = (__gsharp_block_index / __gsharp_grid_dim_x) % __gsharp_grid_dim_y;
 int32_t __gsharp_bz = __gsharp_block_index / (__gsharp_grid_dim_x * __gsharp_grid_dim_y);
-__gsharp_reset_smem();
+__gsharp_reset_smem(__gsharp_shared_mem_bytes);
 std::vector<__gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__MathMaxMinKernels__SingleMaxMinKernel> __gsharp_contexts(__gsharp_block_dim_x * __gsharp_block_dim_y * __gsharp_block_dim_z);
 for (auto& __gsharp_launch_ctx : __gsharp_contexts) {
 __gsharp_launch_ctx.__gsharp_state = 0;
@@ -89,7 +89,6 @@ while (__gsharp_any_active && !__gsharp_launch_error.HasError())
 {
 __gsharp_any_active = false;
 int32_t __gsharp_threads_per_block = (int32_t)(__gsharp_block_dim_x * __gsharp_block_dim_y * __gsharp_block_dim_z);
-#pragma omp parallel for schedule(static)
 for (int32_t __gsharp_thread_index = 0; __gsharp_thread_index < __gsharp_threads_per_block; __gsharp_thread_index++)
 {
 if (__gsharp_launch_error.HasError()) continue;
@@ -102,7 +101,15 @@ if (__gsharp_contexts[__gsharp_ctx_tid].__gsharp_state != -1)
 {
 __gsharp_any_active = true;
 __gsharp_set_thread_idx(__gsharp_tx, __gsharp_ty, __gsharp_tz, __gsharp_bx, __gsharp_by, __gsharp_bz, __gsharp_block_dim_x, __gsharp_block_dim_y, __gsharp_block_dim_z, __gsharp_grid_dim_x, __gsharp_grid_dim_y, __gsharp_grid_dim_z);
+try
+{
 __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__MathMaxMinKernels__SingleMaxMinKernel(__gsharp_id_0_left, __gsharp_id_1_right, __gsharp_id_2_result, &__gsharp_contexts[__gsharp_ctx_tid]);
+}
+catch (const __gsharp_step_abort&) {}
+catch (const std::bad_alloc&)
+{
+__gsharp_trap(GSharpErrorCode::InvalidOperation, ""G#: the native CPU path could not allocate memory for a kernel step"");
+}
 }
 }
 }
@@ -141,7 +148,7 @@ return;
 }
 
 [System.Runtime.InteropServices.UnmanagedFunctionPointer(System.Runtime.InteropServices.CallingConvention.Cdecl)]
-private unsafe delegate void SingleMaxMinKernel_Delegate(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy left, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy right, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy result);
+private unsafe delegate void SingleMaxMinKernel_Delegate(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ, uint sharedMemBytes, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy left, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy right, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy result);
 #pragma warning disable CS8500
 [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
@@ -177,7 +184,7 @@ for (int i = 0; i < __gsharp_contexts.Length; i++)
 {
 __gsharp_contexts[i] = new __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__MathMaxMinKernels__SingleMaxMinKernel();
 }
-global::Kassyi.GSharp.Core.ManagedGpuContext.InitializeGrid(__gsharp_total_blocks);
+global::Kassyi.GSharp.Core.ManagedGpuContext.InitializeGrid(__gsharp_total_blocks, sharedMemBytes, false);
 bool anyGridActive = true;
 while (anyGridActive)
 {
@@ -238,6 +245,7 @@ global::Kassyi.GSharp.Core.ManagedGpuContext.IsActive = false;
 }
 }
 }
+global::Kassyi.GSharp.Core.ManagedGpuContext.EndGrid();
 return;
 }
 var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<SingleMaxMinKernel_Delegate>("__gsharp_launch_Kassyi__GSharp__Tests__Shared__Syntax__MathMaxMinKernels__SingleMaxMinKernel", dllPath);
@@ -245,7 +253,7 @@ fixed (global::System.Single* p_left = left)
 fixed (global::System.Single* p_right = right)
 fixed (global::System.Single* p_result = result)
 {
-hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (IntPtr)p_left, Length = left.Length }, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (IntPtr)p_right, Length = right.Length }, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (IntPtr)p_result, Length = result.Length });
+hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, sharedMemBytes, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (IntPtr)p_left, Length = left.Length }, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (IntPtr)p_right, Length = right.Length }, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (IntPtr)p_result, Length = result.Length });
 global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ThrowIfNativeError(dllPath);
 }
 }
@@ -281,7 +289,7 @@ return;
 #undef __gsharp_state
 #undef __gsharp_yielded_for_grid_sync
 }
-extern ""C"" __declspec(dllexport) void __gsharp_launch_Kassyi__GSharp__Tests__Shared__Syntax__MathMaxMinKernels__DoubleMaxMinKernel(uint32_t __gsharp_grid_dim_x, uint32_t __gsharp_grid_dim_y, uint32_t __gsharp_grid_dim_z, uint32_t __gsharp_block_dim_x, uint32_t __gsharp_block_dim_y, uint32_t __gsharp_block_dim_z, GSharpArray<double> __gsharp_id_0_left, GSharpArray<double> __gsharp_id_1_right, GSharpArray<double> __gsharp_id_2_result)
+extern ""C"" __declspec(dllexport) void __gsharp_launch_Kassyi__GSharp__Tests__Shared__Syntax__MathMaxMinKernels__DoubleMaxMinKernel(uint32_t __gsharp_grid_dim_x, uint32_t __gsharp_grid_dim_y, uint32_t __gsharp_grid_dim_z, uint32_t __gsharp_block_dim_x, uint32_t __gsharp_block_dim_y, uint32_t __gsharp_block_dim_z, uint32_t __gsharp_shared_mem_bytes, GSharpArray<double> __gsharp_id_0_left, GSharpArray<double> __gsharp_id_1_right, GSharpArray<double> __gsharp_id_2_result)
 {
 __gsharp_host_last_error.Reset();
 GSharpErrorSlot __gsharp_launch_error;
@@ -293,7 +301,7 @@ if (__gsharp_launch_error.HasError()) continue;
 int32_t __gsharp_bx = __gsharp_block_index % __gsharp_grid_dim_x;
 int32_t __gsharp_by = (__gsharp_block_index / __gsharp_grid_dim_x) % __gsharp_grid_dim_y;
 int32_t __gsharp_bz = __gsharp_block_index / (__gsharp_grid_dim_x * __gsharp_grid_dim_y);
-__gsharp_reset_smem();
+__gsharp_reset_smem(__gsharp_shared_mem_bytes);
 std::vector<__gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__MathMaxMinKernels__DoubleMaxMinKernel> __gsharp_contexts(__gsharp_block_dim_x * __gsharp_block_dim_y * __gsharp_block_dim_z);
 for (auto& __gsharp_launch_ctx : __gsharp_contexts) {
 __gsharp_launch_ctx.__gsharp_state = 0;
@@ -304,7 +312,6 @@ while (__gsharp_any_active && !__gsharp_launch_error.HasError())
 {
 __gsharp_any_active = false;
 int32_t __gsharp_threads_per_block = (int32_t)(__gsharp_block_dim_x * __gsharp_block_dim_y * __gsharp_block_dim_z);
-#pragma omp parallel for schedule(static)
 for (int32_t __gsharp_thread_index = 0; __gsharp_thread_index < __gsharp_threads_per_block; __gsharp_thread_index++)
 {
 if (__gsharp_launch_error.HasError()) continue;
@@ -317,7 +324,15 @@ if (__gsharp_contexts[__gsharp_ctx_tid].__gsharp_state != -1)
 {
 __gsharp_any_active = true;
 __gsharp_set_thread_idx(__gsharp_tx, __gsharp_ty, __gsharp_tz, __gsharp_bx, __gsharp_by, __gsharp_bz, __gsharp_block_dim_x, __gsharp_block_dim_y, __gsharp_block_dim_z, __gsharp_grid_dim_x, __gsharp_grid_dim_y, __gsharp_grid_dim_z);
+try
+{
 __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__MathMaxMinKernels__DoubleMaxMinKernel(__gsharp_id_0_left, __gsharp_id_1_right, __gsharp_id_2_result, &__gsharp_contexts[__gsharp_ctx_tid]);
+}
+catch (const __gsharp_step_abort&) {}
+catch (const std::bad_alloc&)
+{
+__gsharp_trap(GSharpErrorCode::InvalidOperation, ""G#: the native CPU path could not allocate memory for a kernel step"");
+}
 }
 }
 }
@@ -354,7 +369,7 @@ return;
 }
 
 [System.Runtime.InteropServices.UnmanagedFunctionPointer(System.Runtime.InteropServices.CallingConvention.Cdecl)]
-private unsafe delegate void DoubleMaxMinKernel_Delegate(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy left, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy right, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy result);
+private unsafe delegate void DoubleMaxMinKernel_Delegate(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ, uint sharedMemBytes, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy left, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy right, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy result);
 #pragma warning disable CS8500
 [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
@@ -390,7 +405,7 @@ for (int i = 0; i < __gsharp_contexts.Length; i++)
 {
 __gsharp_contexts[i] = new __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__MathMaxMinKernels__DoubleMaxMinKernel();
 }
-global::Kassyi.GSharp.Core.ManagedGpuContext.InitializeGrid(__gsharp_total_blocks);
+global::Kassyi.GSharp.Core.ManagedGpuContext.InitializeGrid(__gsharp_total_blocks, sharedMemBytes, false);
 bool anyGridActive = true;
 while (anyGridActive)
 {
@@ -451,6 +466,7 @@ global::Kassyi.GSharp.Core.ManagedGpuContext.IsActive = false;
 }
 }
 }
+global::Kassyi.GSharp.Core.ManagedGpuContext.EndGrid();
 return;
 }
 var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<DoubleMaxMinKernel_Delegate>("__gsharp_launch_Kassyi__GSharp__Tests__Shared__Syntax__MathMaxMinKernels__DoubleMaxMinKernel", dllPath);
@@ -458,7 +474,7 @@ fixed (global::System.Double* p_left = left)
 fixed (global::System.Double* p_right = right)
 fixed (global::System.Double* p_result = result)
 {
-hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (IntPtr)p_left, Length = left.Length }, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (IntPtr)p_right, Length = right.Length }, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (IntPtr)p_result, Length = result.Length });
+hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, sharedMemBytes, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (IntPtr)p_left, Length = left.Length }, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (IntPtr)p_right, Length = right.Length }, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (IntPtr)p_result, Length = result.Length });
 global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ThrowIfNativeError(dllPath);
 }
 }
@@ -488,7 +504,7 @@ return;
 #undef __gsharp_state
 #undef __gsharp_yielded_for_grid_sync
 }
-extern ""C"" __declspec(dllexport) void __gsharp_launch_Kassyi__GSharp__Tests__Shared__Syntax__MathMaxMinKernels__SingleClampKernel(uint32_t __gsharp_grid_dim_x, uint32_t __gsharp_grid_dim_y, uint32_t __gsharp_grid_dim_z, uint32_t __gsharp_block_dim_x, uint32_t __gsharp_block_dim_y, uint32_t __gsharp_block_dim_z, GSharpArray<float> __gsharp_id_0_value, GSharpArray<float> __gsharp_id_1_min, GSharpArray<float> __gsharp_id_2_max, GSharpArray<float> __gsharp_id_3_result)
+extern ""C"" __declspec(dllexport) void __gsharp_launch_Kassyi__GSharp__Tests__Shared__Syntax__MathMaxMinKernels__SingleClampKernel(uint32_t __gsharp_grid_dim_x, uint32_t __gsharp_grid_dim_y, uint32_t __gsharp_grid_dim_z, uint32_t __gsharp_block_dim_x, uint32_t __gsharp_block_dim_y, uint32_t __gsharp_block_dim_z, uint32_t __gsharp_shared_mem_bytes, GSharpArray<float> __gsharp_id_0_value, GSharpArray<float> __gsharp_id_1_min, GSharpArray<float> __gsharp_id_2_max, GSharpArray<float> __gsharp_id_3_result)
 {
 __gsharp_host_last_error.Reset();
 GSharpErrorSlot __gsharp_launch_error;
@@ -500,7 +516,7 @@ if (__gsharp_launch_error.HasError()) continue;
 int32_t __gsharp_bx = __gsharp_block_index % __gsharp_grid_dim_x;
 int32_t __gsharp_by = (__gsharp_block_index / __gsharp_grid_dim_x) % __gsharp_grid_dim_y;
 int32_t __gsharp_bz = __gsharp_block_index / (__gsharp_grid_dim_x * __gsharp_grid_dim_y);
-__gsharp_reset_smem();
+__gsharp_reset_smem(__gsharp_shared_mem_bytes);
 std::vector<__gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__MathMaxMinKernels__SingleClampKernel> __gsharp_contexts(__gsharp_block_dim_x * __gsharp_block_dim_y * __gsharp_block_dim_z);
 for (auto& __gsharp_launch_ctx : __gsharp_contexts) {
 __gsharp_launch_ctx.__gsharp_state = 0;
@@ -511,7 +527,6 @@ while (__gsharp_any_active && !__gsharp_launch_error.HasError())
 {
 __gsharp_any_active = false;
 int32_t __gsharp_threads_per_block = (int32_t)(__gsharp_block_dim_x * __gsharp_block_dim_y * __gsharp_block_dim_z);
-#pragma omp parallel for schedule(static)
 for (int32_t __gsharp_thread_index = 0; __gsharp_thread_index < __gsharp_threads_per_block; __gsharp_thread_index++)
 {
 if (__gsharp_launch_error.HasError()) continue;
@@ -524,7 +539,15 @@ if (__gsharp_contexts[__gsharp_ctx_tid].__gsharp_state != -1)
 {
 __gsharp_any_active = true;
 __gsharp_set_thread_idx(__gsharp_tx, __gsharp_ty, __gsharp_tz, __gsharp_bx, __gsharp_by, __gsharp_bz, __gsharp_block_dim_x, __gsharp_block_dim_y, __gsharp_block_dim_z, __gsharp_grid_dim_x, __gsharp_grid_dim_y, __gsharp_grid_dim_z);
+try
+{
 __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__MathMaxMinKernels__SingleClampKernel(__gsharp_id_0_value, __gsharp_id_1_min, __gsharp_id_2_max, __gsharp_id_3_result, &__gsharp_contexts[__gsharp_ctx_tid]);
+}
+catch (const __gsharp_step_abort&) {}
+catch (const std::bad_alloc&)
+{
+__gsharp_trap(GSharpErrorCode::InvalidOperation, ""G#: the native CPU path could not allocate memory for a kernel step"");
+}
 }
 }
 }
@@ -555,7 +578,7 @@ return;
 }
 
 [System.Runtime.InteropServices.UnmanagedFunctionPointer(System.Runtime.InteropServices.CallingConvention.Cdecl)]
-private unsafe delegate void SingleClampKernel_Delegate(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy value, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy min, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy max, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy result);
+private unsafe delegate void SingleClampKernel_Delegate(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ, uint sharedMemBytes, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy value, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy min, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy max, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy result);
 #pragma warning disable CS8500
 [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
@@ -597,7 +620,7 @@ for (int i = 0; i < __gsharp_contexts.Length; i++)
 {
 __gsharp_contexts[i] = new __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__MathMaxMinKernels__SingleClampKernel();
 }
-global::Kassyi.GSharp.Core.ManagedGpuContext.InitializeGrid(__gsharp_total_blocks);
+global::Kassyi.GSharp.Core.ManagedGpuContext.InitializeGrid(__gsharp_total_blocks, sharedMemBytes, false);
 bool anyGridActive = true;
 while (anyGridActive)
 {
@@ -658,6 +681,7 @@ global::Kassyi.GSharp.Core.ManagedGpuContext.IsActive = false;
 }
 }
 }
+global::Kassyi.GSharp.Core.ManagedGpuContext.EndGrid();
 return;
 }
 var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<SingleClampKernel_Delegate>("__gsharp_launch_Kassyi__GSharp__Tests__Shared__Syntax__MathMaxMinKernels__SingleClampKernel", dllPath);
@@ -666,7 +690,7 @@ fixed (global::System.Single* p_min = min)
 fixed (global::System.Single* p_max = max)
 fixed (global::System.Single* p_result = result)
 {
-hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (IntPtr)p_value, Length = value.Length }, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (IntPtr)p_min, Length = min.Length }, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (IntPtr)p_max, Length = max.Length }, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (IntPtr)p_result, Length = result.Length });
+hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, sharedMemBytes, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (IntPtr)p_value, Length = value.Length }, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (IntPtr)p_min, Length = min.Length }, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (IntPtr)p_max, Length = max.Length }, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (IntPtr)p_result, Length = result.Length });
 global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ThrowIfNativeError(dllPath);
 }
 }
@@ -696,7 +720,7 @@ return;
 #undef __gsharp_state
 #undef __gsharp_yielded_for_grid_sync
 }
-extern ""C"" __declspec(dllexport) void __gsharp_launch_Kassyi__GSharp__Tests__Shared__Syntax__MathMaxMinKernels__DoubleClampKernel(uint32_t __gsharp_grid_dim_x, uint32_t __gsharp_grid_dim_y, uint32_t __gsharp_grid_dim_z, uint32_t __gsharp_block_dim_x, uint32_t __gsharp_block_dim_y, uint32_t __gsharp_block_dim_z, GSharpArray<double> __gsharp_id_0_value, GSharpArray<double> __gsharp_id_1_min, GSharpArray<double> __gsharp_id_2_max, GSharpArray<double> __gsharp_id_3_result)
+extern ""C"" __declspec(dllexport) void __gsharp_launch_Kassyi__GSharp__Tests__Shared__Syntax__MathMaxMinKernels__DoubleClampKernel(uint32_t __gsharp_grid_dim_x, uint32_t __gsharp_grid_dim_y, uint32_t __gsharp_grid_dim_z, uint32_t __gsharp_block_dim_x, uint32_t __gsharp_block_dim_y, uint32_t __gsharp_block_dim_z, uint32_t __gsharp_shared_mem_bytes, GSharpArray<double> __gsharp_id_0_value, GSharpArray<double> __gsharp_id_1_min, GSharpArray<double> __gsharp_id_2_max, GSharpArray<double> __gsharp_id_3_result)
 {
 __gsharp_host_last_error.Reset();
 GSharpErrorSlot __gsharp_launch_error;
@@ -708,7 +732,7 @@ if (__gsharp_launch_error.HasError()) continue;
 int32_t __gsharp_bx = __gsharp_block_index % __gsharp_grid_dim_x;
 int32_t __gsharp_by = (__gsharp_block_index / __gsharp_grid_dim_x) % __gsharp_grid_dim_y;
 int32_t __gsharp_bz = __gsharp_block_index / (__gsharp_grid_dim_x * __gsharp_grid_dim_y);
-__gsharp_reset_smem();
+__gsharp_reset_smem(__gsharp_shared_mem_bytes);
 std::vector<__gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__MathMaxMinKernels__DoubleClampKernel> __gsharp_contexts(__gsharp_block_dim_x * __gsharp_block_dim_y * __gsharp_block_dim_z);
 for (auto& __gsharp_launch_ctx : __gsharp_contexts) {
 __gsharp_launch_ctx.__gsharp_state = 0;
@@ -719,7 +743,6 @@ while (__gsharp_any_active && !__gsharp_launch_error.HasError())
 {
 __gsharp_any_active = false;
 int32_t __gsharp_threads_per_block = (int32_t)(__gsharp_block_dim_x * __gsharp_block_dim_y * __gsharp_block_dim_z);
-#pragma omp parallel for schedule(static)
 for (int32_t __gsharp_thread_index = 0; __gsharp_thread_index < __gsharp_threads_per_block; __gsharp_thread_index++)
 {
 if (__gsharp_launch_error.HasError()) continue;
@@ -732,7 +755,15 @@ if (__gsharp_contexts[__gsharp_ctx_tid].__gsharp_state != -1)
 {
 __gsharp_any_active = true;
 __gsharp_set_thread_idx(__gsharp_tx, __gsharp_ty, __gsharp_tz, __gsharp_bx, __gsharp_by, __gsharp_bz, __gsharp_block_dim_x, __gsharp_block_dim_y, __gsharp_block_dim_z, __gsharp_grid_dim_x, __gsharp_grid_dim_y, __gsharp_grid_dim_z);
+try
+{
 __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__MathMaxMinKernels__DoubleClampKernel(__gsharp_id_0_value, __gsharp_id_1_min, __gsharp_id_2_max, __gsharp_id_3_result, &__gsharp_contexts[__gsharp_ctx_tid]);
+}
+catch (const __gsharp_step_abort&) {}
+catch (const std::bad_alloc&)
+{
+__gsharp_trap(GSharpErrorCode::InvalidOperation, ""G#: the native CPU path could not allocate memory for a kernel step"");
+}
 }
 }
 }
@@ -763,7 +794,7 @@ return;
 }
 
 [System.Runtime.InteropServices.UnmanagedFunctionPointer(System.Runtime.InteropServices.CallingConvention.Cdecl)]
-private unsafe delegate void DoubleClampKernel_Delegate(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy value, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy min, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy max, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy result);
+private unsafe delegate void DoubleClampKernel_Delegate(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ, uint sharedMemBytes, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy value, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy min, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy max, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy result);
 #pragma warning disable CS8500
 [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
@@ -805,7 +836,7 @@ for (int i = 0; i < __gsharp_contexts.Length; i++)
 {
 __gsharp_contexts[i] = new __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__MathMaxMinKernels__DoubleClampKernel();
 }
-global::Kassyi.GSharp.Core.ManagedGpuContext.InitializeGrid(__gsharp_total_blocks);
+global::Kassyi.GSharp.Core.ManagedGpuContext.InitializeGrid(__gsharp_total_blocks, sharedMemBytes, false);
 bool anyGridActive = true;
 while (anyGridActive)
 {
@@ -866,6 +897,7 @@ global::Kassyi.GSharp.Core.ManagedGpuContext.IsActive = false;
 }
 }
 }
+global::Kassyi.GSharp.Core.ManagedGpuContext.EndGrid();
 return;
 }
 var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<DoubleClampKernel_Delegate>("__gsharp_launch_Kassyi__GSharp__Tests__Shared__Syntax__MathMaxMinKernels__DoubleClampKernel", dllPath);
@@ -874,7 +906,7 @@ fixed (global::System.Double* p_min = min)
 fixed (global::System.Double* p_max = max)
 fixed (global::System.Double* p_result = result)
 {
-hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (IntPtr)p_value, Length = value.Length }, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (IntPtr)p_min, Length = min.Length }, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (IntPtr)p_max, Length = max.Length }, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (IntPtr)p_result, Length = result.Length });
+hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, sharedMemBytes, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (IntPtr)p_value, Length = value.Length }, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (IntPtr)p_min, Length = min.Length }, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (IntPtr)p_max, Length = max.Length }, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (IntPtr)p_result, Length = result.Length });
 global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ThrowIfNativeError(dllPath);
 }
 }
@@ -906,7 +938,7 @@ return;
 #undef __gsharp_state
 #undef __gsharp_yielded_for_grid_sync
 }
-extern ""C"" __declspec(dllexport) void __gsharp_launch_Kassyi__GSharp__Tests__Shared__Syntax__MathMaxMinKernels__MixedOperandMaxKernel(uint32_t __gsharp_grid_dim_x, uint32_t __gsharp_grid_dim_y, uint32_t __gsharp_grid_dim_z, uint32_t __gsharp_block_dim_x, uint32_t __gsharp_block_dim_y, uint32_t __gsharp_block_dim_z, GSharpArray<float> __gsharp_id_0_single, GSharpArray<double> __gsharp_id_1_wide, GSharpArray<int> __gsharp_id_2_whole, GSharpArray<float> __gsharp_id_3_singleResult, GSharpArray<double> __gsharp_id_4_wideResult)
+extern ""C"" __declspec(dllexport) void __gsharp_launch_Kassyi__GSharp__Tests__Shared__Syntax__MathMaxMinKernels__MixedOperandMaxKernel(uint32_t __gsharp_grid_dim_x, uint32_t __gsharp_grid_dim_y, uint32_t __gsharp_grid_dim_z, uint32_t __gsharp_block_dim_x, uint32_t __gsharp_block_dim_y, uint32_t __gsharp_block_dim_z, uint32_t __gsharp_shared_mem_bytes, GSharpArray<float> __gsharp_id_0_single, GSharpArray<double> __gsharp_id_1_wide, GSharpArray<int> __gsharp_id_2_whole, GSharpArray<float> __gsharp_id_3_singleResult, GSharpArray<double> __gsharp_id_4_wideResult)
 {
 __gsharp_host_last_error.Reset();
 GSharpErrorSlot __gsharp_launch_error;
@@ -918,7 +950,7 @@ if (__gsharp_launch_error.HasError()) continue;
 int32_t __gsharp_bx = __gsharp_block_index % __gsharp_grid_dim_x;
 int32_t __gsharp_by = (__gsharp_block_index / __gsharp_grid_dim_x) % __gsharp_grid_dim_y;
 int32_t __gsharp_bz = __gsharp_block_index / (__gsharp_grid_dim_x * __gsharp_grid_dim_y);
-__gsharp_reset_smem();
+__gsharp_reset_smem(__gsharp_shared_mem_bytes);
 std::vector<__gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__MathMaxMinKernels__MixedOperandMaxKernel> __gsharp_contexts(__gsharp_block_dim_x * __gsharp_block_dim_y * __gsharp_block_dim_z);
 for (auto& __gsharp_launch_ctx : __gsharp_contexts) {
 __gsharp_launch_ctx.__gsharp_state = 0;
@@ -929,7 +961,6 @@ while (__gsharp_any_active && !__gsharp_launch_error.HasError())
 {
 __gsharp_any_active = false;
 int32_t __gsharp_threads_per_block = (int32_t)(__gsharp_block_dim_x * __gsharp_block_dim_y * __gsharp_block_dim_z);
-#pragma omp parallel for schedule(static)
 for (int32_t __gsharp_thread_index = 0; __gsharp_thread_index < __gsharp_threads_per_block; __gsharp_thread_index++)
 {
 if (__gsharp_launch_error.HasError()) continue;
@@ -942,7 +973,15 @@ if (__gsharp_contexts[__gsharp_ctx_tid].__gsharp_state != -1)
 {
 __gsharp_any_active = true;
 __gsharp_set_thread_idx(__gsharp_tx, __gsharp_ty, __gsharp_tz, __gsharp_bx, __gsharp_by, __gsharp_bz, __gsharp_block_dim_x, __gsharp_block_dim_y, __gsharp_block_dim_z, __gsharp_grid_dim_x, __gsharp_grid_dim_y, __gsharp_grid_dim_z);
+try
+{
 __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__MathMaxMinKernels__MixedOperandMaxKernel(__gsharp_id_0_single, __gsharp_id_1_wide, __gsharp_id_2_whole, __gsharp_id_3_singleResult, __gsharp_id_4_wideResult, &__gsharp_contexts[__gsharp_ctx_tid]);
+}
+catch (const __gsharp_step_abort&) {}
+catch (const std::bad_alloc&)
+{
+__gsharp_trap(GSharpErrorCode::InvalidOperation, ""G#: the native CPU path could not allocate memory for a kernel step"");
+}
 }
 }
 }
@@ -976,7 +1015,7 @@ return;
 }
 
 [System.Runtime.InteropServices.UnmanagedFunctionPointer(System.Runtime.InteropServices.CallingConvention.Cdecl)]
-private unsafe delegate void MixedOperandMaxKernel_Delegate(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy single, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy wide, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy whole, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy singleResult, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy wideResult);
+private unsafe delegate void MixedOperandMaxKernel_Delegate(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ, uint sharedMemBytes, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy single, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy wide, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy whole, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy singleResult, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy wideResult);
 #pragma warning disable CS8500
 [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
@@ -1024,7 +1063,7 @@ for (int i = 0; i < __gsharp_contexts.Length; i++)
 {
 __gsharp_contexts[i] = new __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__MathMaxMinKernels__MixedOperandMaxKernel();
 }
-global::Kassyi.GSharp.Core.ManagedGpuContext.InitializeGrid(__gsharp_total_blocks);
+global::Kassyi.GSharp.Core.ManagedGpuContext.InitializeGrid(__gsharp_total_blocks, sharedMemBytes, false);
 bool anyGridActive = true;
 while (anyGridActive)
 {
@@ -1085,6 +1124,7 @@ global::Kassyi.GSharp.Core.ManagedGpuContext.IsActive = false;
 }
 }
 }
+global::Kassyi.GSharp.Core.ManagedGpuContext.EndGrid();
 return;
 }
 var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<MixedOperandMaxKernel_Delegate>("__gsharp_launch_Kassyi__GSharp__Tests__Shared__Syntax__MathMaxMinKernels__MixedOperandMaxKernel", dllPath);
@@ -1094,7 +1134,7 @@ fixed (global::System.Int32* p_whole = whole)
 fixed (global::System.Single* p_singleResult = singleResult)
 fixed (global::System.Double* p_wideResult = wideResult)
 {
-hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (IntPtr)p_single, Length = single.Length }, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (IntPtr)p_wide, Length = wide.Length }, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (IntPtr)p_whole, Length = whole.Length }, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (IntPtr)p_singleResult, Length = singleResult.Length }, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (IntPtr)p_wideResult, Length = wideResult.Length });
+hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, sharedMemBytes, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (IntPtr)p_single, Length = single.Length }, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (IntPtr)p_wide, Length = wide.Length }, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (IntPtr)p_whole, Length = whole.Length }, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (IntPtr)p_singleResult, Length = singleResult.Length }, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (IntPtr)p_wideResult, Length = wideResult.Length });
 global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ThrowIfNativeError(dllPath);
 }
 }
