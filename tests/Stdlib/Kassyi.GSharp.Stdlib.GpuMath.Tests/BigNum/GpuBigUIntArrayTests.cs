@@ -36,11 +36,11 @@ public sealed class GpuBigUIntArrayTests : IDisposable
     {
         // The array owns one buffer of Length * WordsPerElement words.
         // mutant: GpuBigUIntArray.cs:39 `Length * WordsPerElement` -> `Length / WordsPerElement`
-        // mutant: GpuBigUIntArray.cs:67 `IsTemp = false` -> `IsTemp = true`
+        // mutant: GpuBigUIntArray(GpuWorkspace, int, int) allocates a borrowed handle (OwnsBuffer false)
         using var array = new GpuBigUIntArray(_workspace, Length, WordsPerElement);
         Assert.Equal(
-            (Length, WordsPerElement, Length * WordsPerElement, Length * WordsPerElement, false),
-            (array.Length, array.WordsPerElement, array.TotalWords, array.Handle.NumWords, array.IsTemp)
+            (Length, WordsPerElement, Length * WordsPerElement, Length * WordsPerElement, true),
+            (array.Length, array.WordsPerElement, array.TotalWords, array.Handle.NumWords, array.OwnsBuffer)
         );
     }
 

@@ -427,6 +427,90 @@ public sealed class GpuBufferOwnershipTests : IDisposable
             (first.ToBigInteger(), second.ToBigInteger(), Math.Sign(second.CompareTo(array.GetElement(1)))));
     }
 
+    [SkippableFact]
+    [Scenario(TestScenario.HappyPath)]
+    public void RentTemp_Dispose_ReturnsTheBuffer()
+    {
+        // A rented buffer is owned: disposing it returns it to the pool, and the next rental of that size takes it
+        // without a driver allocation (S7, #631).
+        // mutant: GpuWorkspace.RentTemp returns a borrowed handle (Dispose frees nothing)
+        IntPtr first;
+        using (var temp = _workspace.RentTemp(PoolWords))
+        {
+            first = temp.DevicePointer;
+        }
+
+        var start = _workspace.GetMemoryStatistics();
+        using var again = _workspace.RentTemp(PoolWords);
+
+        Assert.Equal(first, again.DevicePointer);
+        Assert.Equal(start.DriverAllocations, _workspace.GetMemoryStatistics().DriverAllocations);
+        Assert.True(again.OwnsBuffer);
+    }
+
+    [SkippableFact]
+    [Scenario(TestScenario.HappyPath)]
+    public void FloatAdd_Repeated_ReturnsItsTemporaries()
+    {
+        // The float addition rents two temporaries per call; they come back, so a hundred additions leave the live
+        // count where it was (S8).
+        // mutant: GpuBigUInt.Dispose frees nothing for an owned rental (the old IsTemp check)
+        using var a = new GpuBigFloat(GpuBigUInt.FromBigInteger(_workspace, 12345, 4), -3, false);
+        using var b = new GpuBigFloat(GpuBigUInt.FromBigInteger(_workspace, 678, 4), 5, true);
+        using (a.Add(b))
+        {
+        }
+
+        var start = _workspace.GetMemoryStatistics();
+        for (var i = 0; i < 100; i++)
+        {
+            using var sum = a.Add(b);
+        }
+
+        Assert.Equal(start.LiveBuffers, _workspace.GetMemoryStatistics().LiveBuffers);
+    }
+
+    [SkippableFact]
+    [Scenario(TestScenario.Boundary)]
+    public void MultiplyNtt_Repeated_ReturnsItsWorkBuffers()
+    {
+        // 300 x 300 words takes the NTT path, which rents six to eight work buffers per product. They come back, so
+        // twenty products neither grow the live count nor allocate from the driver after the first (S9).
+        // mutant: NttWorkspaceBuffers.Dispose without one of its Dispose calls
+        const int OperandWords = 300;
+        using var left = GpuBigUInt.FromBigInteger(_workspace, (BigInteger.One << (32 * OperandWords - 1)) - 7,
+            OperandWords);
+        using var right = GpuBigUInt.FromBigInteger(_workspace, (BigInteger.One << (32 * OperandWords - 2)) + 11,
+            OperandWords);
+        using var product = new GpuBigUInt(_workspace, 2 * OperandWords);
+        GpuBigIntMath.MultiplyNtt(left, right, product);
+
+        var start = _workspace.GetMemoryStatistics();
+        for (var i = 0; i < 20; i++)
+        {
+            GpuBigIntMath.MultiplyNtt(left, right, product);
+        }
+
+        var end = _workspace.GetMemoryStatistics();
+        Assert.Equal((start.LiveBuffers, start.DriverAllocations), (end.LiveBuffers, end.DriverAllocations));
+        Assert.Equal(left.ToBigInteger() * right.ToBigInteger(), product.ToBigInteger());
+    }
+
+    [SkippableFact]
+    [Scenario(TestScenario.Boundary)]
+    public void RentedOperand_SurvivesAnExpression()
+    {
+        // An expression leaf borrows its operand: evaluating (x + y) must not free x, even when x was rented (S10).
+        // mutant: GpuBigIntLeafExpression.Evaluate returns the operand itself instead of a borrowed value
+        using var x = new GpuBigInt(_workspace.RentTemp(4), false);
+        _workspace.Provider.CopyHostToDevice(x.Value.DevicePointer, [5u, 0u, 0u, 0u], 4, _workspace.Stream);
+        using var y = new GpuBigInt(GpuBigUInt.FromBigInteger(_workspace, 7, 4), false);
+
+        using var sum = ((GpuBigIntExpr)x + y).Evaluate(_workspace);
+
+        Assert.Equal((new BigInteger(12), new BigInteger(5)), (sum.Value.ToBigInteger(), x.Value.ToBigInteger()));
+    }
+
     // (live, live words, pooled, driver allocations, driver frees) relative to `start`
     private static (int, long, int, long, long) Delta(GpuMemoryStatistics start, GpuMemoryStatistics now) => (
         now.LiveBuffers - start.LiveBuffers,

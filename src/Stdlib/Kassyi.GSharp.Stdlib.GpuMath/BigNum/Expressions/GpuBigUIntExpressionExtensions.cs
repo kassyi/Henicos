@@ -24,13 +24,13 @@ public static class GpuBigUIntExpressionExtensions
         if (targetResult != null)
         {
             var res = targetResult.Value;
-            targetMem = new ScopedBigIntMemory(null, res.Handle.Borrow());
+            targetMem = new ScopedBigIntMemory(res.Handle.Borrow());
             finalResult = res;
         }
         else
         {
             finalResult = workspace.RentTemp(expr.NumWords);
-            targetMem = new ScopedBigIntMemory(null, finalResult.Handle.Borrow());
+            targetMem = new ScopedBigIntMemory(finalResult.Handle.Borrow());
         }
 
         var visitor = new BigIntExpressionVisitor(execContext, targetMem);
