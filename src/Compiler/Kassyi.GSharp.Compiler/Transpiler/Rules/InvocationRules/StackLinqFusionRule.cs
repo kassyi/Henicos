@@ -4,33 +4,34 @@ public sealed class StackLinqFusionRule : IInvocationTranspilerRule
 {
     private const string ResultVar = "__gsharp_fusion_res";
 
-    private static readonly Dictionary<string, IStackLinqIntermediateStrategy> s_intermediateStrategies = new()
-    {
-        { "Where", new WhereStrategy() },
-        { "Select", new SelectStrategy() },
-        { "Take", new TakeStrategy() },
-        { "Skip", new SkipStrategy() },
-        { "TakeWhile", new TakeWhileStrategy() },
-        { "SkipWhile", new SkipWhileStrategy() },
-        { "TakeLast", new TakeLastStrategy() },
-        { "SkipLast", new SkipLastStrategy() }
-    };
+    private static readonly Dictionary<StackLinqOperator, IStackLinqIntermediateStrategy> s_intermediateStrategies =
+        new()
+        {
+            { StackLinqOperator.Where, new WhereStrategy() },
+            { StackLinqOperator.Select, new SelectStrategy() },
+            { StackLinqOperator.Take, new TakeStrategy() },
+            { StackLinqOperator.Skip, new SkipStrategy() },
+            { StackLinqOperator.TakeWhile, new TakeWhileStrategy() },
+            { StackLinqOperator.SkipWhile, new SkipWhileStrategy() },
+            { StackLinqOperator.TakeLast, new TakeLastStrategy() },
+            { StackLinqOperator.SkipLast, new SkipLastStrategy() }
+        };
 
-    private static readonly Dictionary<string, IStackLinqTerminalStrategy> s_terminalStrategies = new()
+    private static readonly Dictionary<StackLinqOperator, IStackLinqTerminalStrategy> s_terminalStrategies = new()
     {
-        { "Sum", new SumStrategy() },
-        { "Count", new CountStrategy() },
-        { "Any", new AnyStrategy() },
-        { "All", new AllStrategy() },
-        { "First", new ElementSelectionStrategy(stopOnFirstMatch: true, trapOnEmpty: true) },
-        { "FirstOrDefault", new ElementSelectionStrategy(stopOnFirstMatch: true, trapOnEmpty: false) },
-        { "Last", new ElementSelectionStrategy(stopOnFirstMatch: false, trapOnEmpty: true) },
-        { "LastOrDefault", new ElementSelectionStrategy(stopOnFirstMatch: false, trapOnEmpty: false) },
-        { "Max", new ExtremaStrategy(">") },
-        { "Min", new ExtremaStrategy("<") },
-        { "Average", new AverageStrategy() },
-        { "Aggregate", new AggregateStrategy() },
-        { "Contains", new ContainsStrategy() }
+        { StackLinqOperator.Sum, new SumStrategy() },
+        { StackLinqOperator.Count, new CountStrategy() },
+        { StackLinqOperator.Any, new AnyStrategy() },
+        { StackLinqOperator.All, new AllStrategy() },
+        { StackLinqOperator.First, new ElementSelectionStrategy(stopOnFirstMatch: true, trapOnEmpty: true) },
+        { StackLinqOperator.FirstOrDefault, new ElementSelectionStrategy(stopOnFirstMatch: true, trapOnEmpty: false) },
+        { StackLinqOperator.Last, new ElementSelectionStrategy(stopOnFirstMatch: false, trapOnEmpty: true) },
+        { StackLinqOperator.LastOrDefault, new ElementSelectionStrategy(stopOnFirstMatch: false, trapOnEmpty: false) },
+        { StackLinqOperator.Max, new ExtremaStrategy(">") },
+        { StackLinqOperator.Min, new ExtremaStrategy("<") },
+        { StackLinqOperator.Average, new AverageStrategy() },
+        { StackLinqOperator.Aggregate, new AggregateStrategy() },
+        { StackLinqOperator.Contains, new ContainsStrategy() }
     };
 
     public bool TryTranspile(InvocationExpressionSyntax node, ref TranspileContext context, IMethodSymbol symbol)
@@ -65,8 +66,7 @@ public sealed class StackLinqFusionRule : IInvocationTranspilerRule
     // can be in such a chain (ParallelAggregatePlanner).
     private static void EmitFusedLoop(in StackLinqChain chain, ParallelAggregateStrategy strategy, ref TranspileContext context)
     {
-        var terminalName = chain.TerminalMethodName;
-        if (!s_terminalStrategies.TryGetValue(terminalName, out var terminalStrategy))
+        if (!s_terminalStrategies.TryGetValue(chain.Terminal, out var terminalStrategy))
         {
             return;
         }
@@ -89,7 +89,7 @@ public sealed class StackLinqFusionRule : IInvocationTranspilerRule
             writer.AppendLine($"int {StackLinqHelper.FusionHigh} = {StackLinqHelper.FusionSource}.length;");
             for (var i = 0; i < folded; i++)
             {
-                if (StackLinqChainExtractor.IsPositionStage(chain.Stages[i].Name))
+                if (chain.Stages[i].Operator.IsPositionStage())
                 {
                     EmitRangeStage(chain.Stages[i], i, writer);
                 }
@@ -122,7 +122,7 @@ public sealed class StackLinqFusionRule : IInvocationTranspilerRule
                 // as many times as in C#.
                 for (var i = folded; i < chain.Stages.Length - 1; i++)
                 {
-                    if (chain.Stages[i].Name == "Take")
+                    if (chain.Stages[i].Operator == StackLinqOperator.Take)
                     {
                         writer.AppendLine(
                             $"if ({StackLinqHelper.StagePrefix}{i}_count >= {StackLinqHelper.StagePrefix}{i}{StackLinqHelper.StageCountSuffix}) {{ break; }}");
@@ -139,8 +139,8 @@ public sealed class StackLinqFusionRule : IInvocationTranspilerRule
                 for (var i = 0; i < chain.Stages.Length - 1; i++)
                 {
                     var stage = chain.Stages[i];
-                    if ((i >= folded || !StackLinqChainExtractor.IsPositionStage(stage.Name)) &&
-                        s_intermediateStrategies.TryGetValue(stage.Name, out var stageStrategy))
+                    if ((i >= folded || !stage.Operator.IsPositionStage()) &&
+                        s_intermediateStrategies.TryGetValue(stage.Operator, out var stageStrategy))
                     {
                         stageStrategy.Emit(ref context, in stage, i, ref valIndex, ref openBraces);
                     }
@@ -182,7 +182,7 @@ public sealed class StackLinqFusionRule : IInvocationTranspilerRule
         for (var i = 0; i < chain.Stages.Length - 1; i++)
         {
             var stage = chain.Stages[i];
-            if (StackLinqChainExtractor.IsPositionStage(stage.Name))
+            if (stage.Operator.IsPositionStage())
             {
                 // int __gsharp_stage_<i>_n = <count>;
                 context.Emitter.Writer.Append($"int {StackLinqHelper.StagePrefix}{i}{StackLinqHelper.StageCountSuffix} = ");
@@ -190,8 +190,8 @@ public sealed class StackLinqFusionRule : IInvocationTranspilerRule
                 context.Emitter.Writer.AppendLine(";");
             }
 
-            if ((i >= folded || !StackLinqChainExtractor.IsPositionStage(stage.Name)) &&
-                s_intermediateStrategies.TryGetValue(stage.Name, out var strategy))
+            if ((i >= folded || !stage.Operator.IsPositionStage()) &&
+                s_intermediateStrategies.TryGetValue(stage.Operator, out var strategy))
             {
                 strategy.EmitInitialValue(ref context, in stage, i);
             }
@@ -205,15 +205,15 @@ public sealed class StackLinqFusionRule : IInvocationTranspilerRule
     {
         var lo = StackLinqHelper.FusionLow;
         var hi = StackLinqHelper.FusionHigh;
-        switch (stage.Name)
+        switch (stage.Operator)
         {
-            case "Skip":
+            case StackLinqOperator.Skip:
                 writer.Append($"{lo} += ");
                 break;
-            case "Take":
+            case StackLinqOperator.Take:
                 writer.Append($"{hi} = {lo} + ");
                 break;
-            case "SkipLast":
+            case StackLinqOperator.SkipLast:
                 writer.Append($"{hi} -= ");
                 break;
             default:

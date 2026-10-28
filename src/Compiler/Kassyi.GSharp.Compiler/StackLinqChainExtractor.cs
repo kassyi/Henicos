@@ -7,18 +7,6 @@ namespace Kassyi.GSharp.Compiler;
 /// </summary>
 internal static class StackLinqChainExtractor
 {
-    /// <summary>Whether <paramref name="name"/> is a stage that StackLinqFusionRule emits inside its loop.</summary>
-    public static bool IsIntermediate(string name) =>
-        name is "Where" or "Select" or "Take" or "Skip" or "TakeWhile" or "SkipWhile" or "TakeLast" or "SkipLast";
-
-    /// <summary>Whether <paramref name="name"/> is a terminal operator of a fused chain.</summary>
-    public static bool IsTerminal(string name) =>
-        name is "Sum" or "Count" or "Any" or "All" or "First" or "FirstOrDefault" or "Last" or "LastOrDefault" or
-            "Max" or "Min" or "Average" or "Aggregate" or "Contains";
-
-    /// <summary>Whether <paramref name="name"/> is a position stage (it keeps or drops elements by their position).</summary>
-    public static bool IsPositionStage(string name) => name is "Skip" or "Take" or "SkipLast" or "TakeLast";
-
     /// <summary>
     /// The number of leading stages that only narrow the range of source indices: position stages, and Select between
     /// them. A position stage after them (after Where, TakeWhile or SkipWhile) counts the elements that pass instead.
@@ -34,13 +22,13 @@ internal static class StackLinqChainExtractor
         for (var i = 0; i < chain.Stages.Length - 1; i++)
         {
             var stage = chain.Stages[i];
-            if (!IsPositionStage(stage.Name) && stage.Name != "Select")
+            if (!stage.Operator.IsPositionStage() && stage.Operator != StackLinqOperator.Select)
             {
                 break;
             }
 
             folded = i + 1;
-            if (stage.Name == "Select" && MayWrite(stage, model))
+            if (stage.Operator == StackLinqOperator.Select && MayWrite(stage, model))
             {
                 break;
             }
@@ -70,8 +58,7 @@ internal static class StackLinqChainExtractor
             return false;
         }
 
-        var methodName = symbol.Name;
-        if (!IsTerminal(methodName))
+        if (!StackLinqOperators.TryParse(symbol.Name, out var terminal) || !terminal.IsTerminal())
         {
             return false;
         }
@@ -92,14 +79,13 @@ internal static class StackLinqChainExtractor
             {
                 isParallel = true;
             }
-            else if (!IsIntermediate(currentSymbol.Name) &&
-                     !IsTerminal(currentSymbol.Name))
+            else if (StackLinqOperators.TryParse(currentSymbol.Name, out var op))
             {
-                return false;
+                chainBuilder.Add(new LinqStage(op, current, currentSymbol));
             }
             else
             {
-                chainBuilder.Add(new LinqStage(currentSymbol.Name, current, currentSymbol));
+                return false;
             }
 
             if (current.Expression is MemberAccessExpressionSyntax
@@ -137,7 +123,7 @@ internal static class StackLinqChainExtractor
             : current.ArgumentList.Arguments[0].Expression;
 
         chainBuilder.Reverse();
-        chain = new StackLinqChain(sourceArrayExpr, chainBuilder.ToImmutable(), methodName, isParallel);
+        chain = new StackLinqChain(sourceArrayExpr, chainBuilder.ToImmutable(), terminal, isParallel);
         return true;
     }
 }

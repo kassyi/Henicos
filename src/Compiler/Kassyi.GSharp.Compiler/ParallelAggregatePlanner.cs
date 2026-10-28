@@ -287,8 +287,9 @@ internal static class ParallelAggregatePlanner
         var range = StackLinqChainExtractor.CountRangeStages(in chain, model);
         for (var i = 0; i < chain.Stages.Length - 1; i++)
         {
-            var name = chain.Stages[i].Name;
-            if (name is "TakeWhile" or "SkipWhile" || (i >= range && StackLinqChainExtractor.IsPositionStage(name)))
+            var op = chain.Stages[i].Operator;
+            if (op is StackLinqOperator.TakeWhile or StackLinqOperator.SkipWhile ||
+                (i >= range && op.IsPositionStage()))
             {
                 return true;
             }
@@ -305,7 +306,7 @@ internal static class ParallelAggregatePlanner
         foreach (var stage in chain.Stages)
         {
             if (!StackLinqHelper.HasPredicateOrSelector(stage.Invocation, stage.Symbol) ||
-                StackLinqChainExtractor.IsPositionStage(stage.Name))
+                stage.Operator.IsPositionStage())
             {
                 continue;
             }
