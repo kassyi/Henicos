@@ -31,12 +31,13 @@ public class StateMachineLowerer(bool isDeviceFunction = false, SemanticModel? s
         // The labels that start a state and their states, numbered by StateLabelPlanner (the only definition of the
         // numbering). Any other label stays a label inside its state.
         var plan = _plan ?? StateLabelPlanner.Plan(block, semanticModel);
+        var labelsReachedFromSwitch = FindLabelsReachedFromSwitch(block, plan.LabelStates);
         var sections = new SectionBuilder();
         foreach (var stmt in block.Statements)
         {
             if (stmt is LabeledStatementSyntax labeled && plan.StartsState(labeled))
             {
-                LowerStateLabel(labeled, plan.LabelStates, sections);
+                LowerStateLabel(labeled, plan.LabelStates, labelsReachedFromSwitch, sections);
             }
             else if (BarrierHelper.GetPhaseBarrierInvocation(stmt) is { } splitPoint)
             {
@@ -65,18 +66,22 @@ public class StateMachineLowerer(bool isDeviceFunction = false, SemanticModel? s
     }
 
     private void LowerStateLabel(LabeledStatementSyntax labeled, IReadOnlyDictionary<DeclarationKey, int> labelStates,
-        SectionBuilder sections)
+        HashSet<DeclarationKey> labelsReachedFromSwitch, SectionBuilder sections)
     {
         // A label boundary requires falling through to the next state case without yielding.
         sections.CommitState(sections.State + 1, isBarrier: false);
         CheckLabelState(labeled, sections.State, labelStates);
 
-        // [WHY] The label after a statement of a Gpu.SyncGrid body that returns stays in its section: the return jumps
-        // to it with goto from wherever it is, also from a switch of the user, where a goto case would bind to that
-        // switch (#626)
-        if (IsSyncGridNextLabel(labeled.Identifier.ValueText))
+        // [WHY] A label that a goto inside a switch of the user reaches stays in its section, and that goto stays a goto:
+        // a goto case binds to the innermost switch, which is the user's, not the state machine's. C# finds a label of
+        // any section of the enclosing switch, and C++ labels have function scope. The label after a statement of a
+        // Gpu.SyncGrid body that returns always stays: the return jumps to it from wherever it is (#626). A continue of
+        // a flattened loop is a goto to its continue label (#670).
+        if (IsSyncGridNextLabel(labeled.Identifier.ValueText) ||
+            labelsReachedFromSwitch.Contains(LoweringIdentity.ForDeclaration(labeled, semanticModel)))
         {
-            sections.KeepLabel(labeled);
+            // <label>: ; (its statement goes into the block of the state below)
+            sections.KeepLabel(labeled.WithStatement(SyntaxFactory.EmptyStatement()));
         }
 
         if (labeled.Statement is not EmptyStatementSyntax)
@@ -282,18 +287,57 @@ public class StateMachineLowerer(bool isDeviceFunction = false, SemanticModel? s
         }
     }
 
+    // The labels that start a state and that a goto inside a switch of the user reaches (see LowerStateLabel). The
+    // state machine's own switch does not exist yet, so every switch in the body is the user's.
+    private HashSet<DeclarationKey> FindLabelsReachedFromSwitch(BlockSyntax block,
+        IReadOnlyDictionary<DeclarationKey, int> labelStates)
+    {
+        var labels = new HashSet<DeclarationKey>();
+        block.DescendantNodes()
+            .AsStackEnumerable()
+            .OfType<SwitchStatementSyntax>()
+            .SelectMany(static userSwitch => userSwitch.DescendantNodes()
+                .AsStackEnumerable()
+            ).OfType<GotoStatementSyntax>()
+            .Where(static jump => jump.IsKind(SyntaxKind.GotoStatement))
+            .Select(static jump => jump.Expression as IdentifierNameSyntax)
+            .OfType<IdentifierNameSyntax>()
+            .Select(semanticModel, static (target, model) => LoweringIdentity.ForReference(target, model))
+            .Where(labelStates, static (key, states) => states.ContainsKey(key))
+            .AddTo(labels);
+        return labels;
+    }
+
     private StatementSyntax RewriteGoto(StatementSyntax stmt, IReadOnlyDictionary<DeclarationKey, int> labelStates) =>
         (StatementSyntax)new GotoRewriter(labelStates, semanticModel).Visit(stmt);
 
     private class GotoRewriter(IReadOnlyDictionary<DeclarationKey, int> labelStates, SemanticModel? semanticModel)
         : CSharpSyntaxRewriter
     {
+        // How many switches of the user enclose the node being visited
+        private int _switchDepth;
+
+        public override SyntaxNode? VisitSwitchStatement(SwitchStatementSyntax node)
+        {
+            _switchDepth++;
+            try
+            {
+                return base.VisitSwitchStatement(node);
+            }
+            finally
+            {
+                _switchDepth--;
+            }
+        }
+
         public override SyntaxNode? VisitGotoStatement(GotoStatementSyntax node)
         {
-            // A goto to the label after a returning statement of a Gpu.SyncGrid body stays a goto (see Lower)
+            // A goto to the label after a returning statement of a Gpu.SyncGrid body, and a goto inside a switch of the
+            // user, stay gotos to the label that their section keeps (see LowerStateLabel)
             if (!node.IsKind(SyntaxKind.GotoStatement) ||
                 node.Expression is not IdentifierNameSyntax id ||
-                IsSyncGridNextLabel(id.Identifier.ValueText))
+                IsSyncGridNextLabel(id.Identifier.ValueText) ||
+                _switchDepth > 0)
             {
                 return base.VisitGotoStatement(node);
             }
