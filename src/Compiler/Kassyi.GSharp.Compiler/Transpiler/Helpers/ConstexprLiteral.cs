@@ -22,7 +22,7 @@ internal static class ConstexprLiteral
     {
         // char has a literal, but it is not a [GpuConstexpr] parameter type
         var specialType = GetPrimitiveType(type);
-        if (!IsSupported(specialType) || specialType == SpecialType.System_Char)
+        if (!specialType.IsPrimitiveValue() || specialType == SpecialType.System_Char)
         {
             throw new ArgumentOutOfRangeException(
                 nameof(type),
@@ -46,7 +46,7 @@ internal static class ConstexprLiteral
     {
         type = UnwrapNullable(type);
         var specialType = GetPrimitiveType(type);
-        if (!IsSupported(specialType))
+        if (!specialType.IsPrimitiveValue())
         {
             literal = default;
             return false;
@@ -101,12 +101,6 @@ internal static class ConstexprLiteral
         type is INamedTypeSymbol { TypeKind: TypeKind.Enum, EnumUnderlyingType: { } underlyingType }
             ? underlyingType.SpecialType
             : type.SpecialType;
-
-    private static bool IsSupported(SpecialType specialType) => specialType is
-        SpecialType.System_Boolean or SpecialType.System_Char or
-        SpecialType.System_SByte or SpecialType.System_Int16 or SpecialType.System_Int32 or SpecialType.System_Int64 or
-        SpecialType.System_Byte or SpecialType.System_UInt16 or SpecialType.System_UInt32 or SpecialType.System_UInt64 or
-        SpecialType.System_Single or SpecialType.System_Double;
 
     // NaN, (-)infinity: <prelude name> / (-<prelude name>) in C++, <keyword>.NaN / .PositiveInfinity / .NegativeInfinity in C#
     private static (string Cpp, string CSharp) FormatNonFinite(double value, string keyword, string nan, string infinity) =>

@@ -38,8 +38,8 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-std::sort(__gsharp_id_0_data.begin(), __gsharp_id_0_data.end());
-std::sort(__gsharp_id_0_data.begin(), __gsharp_id_0_data.end());
+__gsharp_sort(__gsharp_id_0_data);
+__gsharp_sort(__gsharp_id_0_data);
 __gsharp_state=-1;
 return;
 }

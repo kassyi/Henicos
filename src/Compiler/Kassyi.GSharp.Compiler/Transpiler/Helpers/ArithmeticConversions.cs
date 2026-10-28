@@ -63,8 +63,8 @@ internal static class ArithmeticConversions
         if (operation.OperatorMethod != null || operation.IsLifted ||
             operation.OperatorKind is not (UnaryOperatorKind.Minus or UnaryOperatorKind.Plus or
                 UnaryOperatorKind.BitwiseNegation) ||
-            operation.Type is not { } result || !IsArithmetic(result.SpecialType) ||
-            GetSourceType(operation.Operand) is not { } source || !IsArithmetic(source.SpecialType) ||
+            operation.Type is not { } result || !result.SpecialType.IsArithmetic() ||
+            GetSourceType(operation.Operand) is not { } source || !source.SpecialType.IsArithmetic() ||
             PromoteIntegral(source.SpecialType) == result.SpecialType)
         {
             return false;
@@ -84,7 +84,7 @@ internal static class ArithmeticConversions
     {
         type = null;
         if (operation.IsRef || operation.WhenFalse is not { } whenFalse ||
-            operation.Type is not { } result || !IsArithmetic(result.SpecialType) ||
+            operation.Type is not { } result || !result.SpecialType.IsArithmetic() ||
             GetSourceType(operation.WhenTrue) is not { } trueSource || GetSourceType(whenFalse) is not { } falseSource)
         {
             return false;
@@ -175,7 +175,7 @@ internal static class ArithmeticConversions
     // give operands of these C# types; None when one is not an arithmetic type of the dialect type map
     private static SpecialType UsualArithmeticConversion(SpecialType left, SpecialType right)
     {
-        if (!IsArithmetic(left) || !IsArithmetic(right))
+        if (!left.IsArithmetic() || !right.IsArithmetic())
         {
             return SpecialType.None;
         }
@@ -216,11 +216,6 @@ internal static class ArithmeticConversions
         SpecialType.System_Char
             ? SpecialType.System_Int32
             : type;
-
-    private static bool IsArithmetic(SpecialType type) => type is
-        SpecialType.System_SByte or SpecialType.System_Byte or SpecialType.System_Int16 or SpecialType.System_UInt16 or
-        SpecialType.System_Char or SpecialType.System_Int32 or SpecialType.System_UInt32 or
-        SpecialType.System_Int64 or SpecialType.System_UInt64 or SpecialType.System_Single or SpecialType.System_Double;
 
     private static bool IsSigned(SpecialType promoted) =>
         promoted is SpecialType.System_Int32 or SpecialType.System_Int64;

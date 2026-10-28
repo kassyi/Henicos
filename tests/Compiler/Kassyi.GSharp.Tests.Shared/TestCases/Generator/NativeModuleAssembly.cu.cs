@@ -13,7 +13,7 @@ namespace NativeModuleTest
             return x;
         }
 
-        // A device function that needs an include of its own
+        // A device function that sorts (the Prelude sort, no include)
         [GpuDeviceFunction]
         public static void SortValues(Span<int> values)
         {
