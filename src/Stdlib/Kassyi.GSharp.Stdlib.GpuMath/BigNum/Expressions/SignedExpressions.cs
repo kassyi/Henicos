@@ -14,9 +14,22 @@ internal class GpuBigIntLeafExpression(GpuBigInt value) : IGpuBigIntExpression
 
         // The target may be the operand itself (d.Value = d): then there is nothing to copy, and cuMemcpyDtoD does not
         // promise a copy onto itself
-        if (targetResult.Value.DevicePointer != value.Value.DevicePointer)
+        var target = targetResult.Value;
+        if (target.DevicePointer != value.Value.DevicePointer)
         {
-            targetResult.Value.CopyFrom(value.Value);
+            var words = Math.Min(target.NumWords, value.Value.NumWords);
+            if (DeviceRanges.Overlaps(target.DevicePointer, words, value.Value.DevicePointer, words))
+            {
+                // A target that partly overlaps the leaf (two views of one buffer): cuMemcpyDtoD does not promise
+                // overlapping copies, so the words go through a temporary
+                using var staging = new GpuBigUInt(workspace, words);
+                staging.CopyFrom(value.Value, numWords: words);
+                target.CopyFrom(staging, numWords: words);
+            }
+            else
+            {
+                target.CopyFrom(value.Value);
+            }
         }
 
         return new GpuBigInt(targetResult.Value, value.IsNegative);

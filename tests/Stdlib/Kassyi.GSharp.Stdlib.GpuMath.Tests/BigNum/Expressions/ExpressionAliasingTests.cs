@@ -185,6 +185,38 @@ public sealed class ExpressionAliasingTests : IDisposable
         Assert.Equal(before.DriverAllocations, _workspace.GetMemoryStatistics().DriverAllocations);
     }
 
+    [SkippableTheory]
+    [Scenario(TestScenario.Boundary)]
+    [InlineData(1)]
+    [InlineData(-1)]
+    [InlineData(WideWords / 2)]
+    [InlineData(-WideWords / 2)]
+    public void SignedLeafRoot_TargetPartlyOverlapsTheLeaf_CopiesThroughATemporary(int targetShift)
+    {
+        // Two views over one buffer, the target 'targetShift' words after (or before) the leaf: the target holds the
+        // leaf's value and the sign is kept (P1); cuMemcpyDtoD does not promise overlapping copies, so the leaf copies
+        // through one temporary, which goes back to the pool (P3; the value alone can be right by chance).
+        // mutant: GpuBigIntLeafExpression.Evaluate without the partial-overlap staging (one CopyFrom for any pointer)
+        var value = RandomValue(new Random(Seed), WideWords * 32 - 5);
+        var leafAt = targetShift < 0 ? -targetShift : 0;
+        using var buffer = GpuBigUInt.FromBigInteger(_workspace, value << (32 * leafAt), WideWords + Math.Abs(targetShift));
+        GpuBigUIntView whole = buffer;
+        var leaf = whole.Slice(leafAt, WideWords).AsBorrowedBigUInt();
+        var target = whole.Slice(leafAt + targetShift, WideWords).AsBorrowedBigUInt();
+        GpuBigIntExpr expression = new GpuBigInt(leaf, true);
+        var before = _workspace.GetMemoryStatistics();
+
+        var result = expression.Evaluate(target);
+        var after = _workspace.GetMemoryStatistics();
+
+        Assert.True(value == target.ToBigInteger(), $"shift {targetShift}, seed {Seed}");
+        Assert.True(result.IsNegative);
+        Assert.Equal(target.DevicePointer, result.Value.DevicePointer);
+        Assert.Equal(before.LiveBuffers, before.PeakLiveBuffers);
+        Assert.Equal(before.PeakLiveBuffers + 1, after.PeakLiveBuffers);
+        Assert.Equal(before.LiveBuffers, after.LiveBuffers);
+    }
+
     public enum SignedOp
     {
         Add,
