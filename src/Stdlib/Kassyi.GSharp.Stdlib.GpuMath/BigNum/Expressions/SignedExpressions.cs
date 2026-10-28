@@ -8,7 +8,8 @@ internal class GpuBigIntLeafExpression(GpuBigInt value) : IGpuBigIntExpression
     {
         if (!targetResult.HasValue)
         {
-            return value; // Retain original if no explicit target provided
+            // The leaf borrows its operand: the caller may dispose the result without freeing the operand
+            return new GpuBigInt(value.Value.AsBorrowed(), value.IsNegative);
         }
 
         targetResult.Value.CopyFrom(value.Value);
@@ -58,19 +59,25 @@ internal abstract class SignedBinaryExpression(IGpuBigIntExpression left, IGpuBi
         }
         finally
         {
-            if (leftResult.Value.IsTemp)
+            // A child result is owned (a rented intermediate) or borrowed (a leaf); Dispose returns only the former.
+            // Nested, so that a release that throws (a failed capture refuses the clear) does not skip the others.
+            try
             {
-                workspace.ReturnTemp(leftResult.Value);
+                leftResult.Dispose();
             }
-
-            if (rightResult.Value.IsTemp)
+            finally
             {
-                workspace.ReturnTemp(rightResult.Value);
-            }
-
-            if (!targetResult.HasValue && finalBuffer.HasValue)
-            {
-                workspace.ReturnTemp(finalBuffer.Value);
+                try
+                {
+                    rightResult.Dispose();
+                }
+                finally
+                {
+                    if (!targetResult.HasValue && finalBuffer.HasValue)
+                    {
+                        finalBuffer.Value.Dispose();
+                    }
+                }
             }
         }
     }
@@ -194,14 +201,18 @@ internal abstract class SignedUnaryExpression(IGpuBigIntExpression target) : IGp
         }
         finally
         {
-            if (targetEval.Value.IsTemp)
+            // An owned intermediate goes back to the pool; a borrowed leaf result is left alone. Nested, so that a
+            // release that throws does not skip the other.
+            try
             {
-                workspace.ReturnTemp(targetEval.Value);
+                targetEval.Dispose();
             }
-
-            if (!targetResult.HasValue && finalBuffer.HasValue)
+            finally
             {
-                workspace.ReturnTemp(finalBuffer.Value);
+                if (!targetResult.HasValue && finalBuffer.HasValue)
+                {
+                    finalBuffer.Value.Dispose();
+                }
             }
         }
     }

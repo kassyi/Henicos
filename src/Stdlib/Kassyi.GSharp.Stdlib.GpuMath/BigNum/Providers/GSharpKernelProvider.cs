@@ -277,6 +277,11 @@ public sealed class GSharpKernelProvider : IGpuExecutionProvider
         targetOperand, resultBuffer, marginWords, actualBits, iterations);
 
     /// <inheritdoc />
+    public void SqrtFloorCorrection(GpuWorkspace workspace, GpuBigUInt operand, GpuBigUInt rootSquared,
+        GpuBigUInt root, GpuBigUInt slack, GpuBigUInt trial) =>
+        AdvancedMathProvider.SqrtFloorCorrection(workspace, operand, rootSquared, root, slack, trial);
+
+    /// <inheritdoc />
     public void ReciprocalMega(GpuWorkspace workspace, GpuBigUInt targetOperand, GpuBigUInt resultBuffer,
         int marginWords, int numBits, int marginBits, int iterations, int targetBits) =>
         AdvancedMathProvider.ReciprocalMega(workspace, targetOperand, resultBuffer, marginWords, numBits, marginBits,
