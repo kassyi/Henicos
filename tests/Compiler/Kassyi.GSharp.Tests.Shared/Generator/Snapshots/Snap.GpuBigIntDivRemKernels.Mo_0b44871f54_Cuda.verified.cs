@@ -597,7 +597,8 @@ int __gsharp_id_13_bitShift = __gsharp_id_4_targetBits%32;
 int __gsharp_id_14_destWords = __gsharp_id_8_nA;
 {
 unsigned int __gsharp_gsl_n_0 = __gsharp_grid_stride_count(__gsharp_id_14_destWords);
-for(unsigned int __gsharp_gsl_0 = __gsharp_grid_stride_start(); __gsharp_gsl_0 < __gsharp_gsl_n_0; __gsharp_gsl_0 += __gsharp_grid_stride_step())
+unsigned int __gsharp_gsl_s_0 = __gsharp_grid_stride_step();
+for(unsigned int __gsharp_gsl_0 = __gsharp_grid_stride_start(); __gsharp_gsl_0 < __gsharp_gsl_n_0; __gsharp_gsl_0 += __gsharp_gsl_s_0)
 {
 int __gsharp_id_15_idx = (int)__gsharp_gsl_0;
 {
@@ -619,7 +620,8 @@ __gsharp_ty_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Algorithms__OperandContext 
 ());
 {
 unsigned int __gsharp_gsl_n_1 = __gsharp_grid_stride_count(__gsharp_id_20_evalWords);
-for(unsigned int __gsharp_gsl_1 = __gsharp_grid_stride_start(); __gsharp_gsl_1 < __gsharp_gsl_n_1; __gsharp_gsl_1 += __gsharp_grid_stride_step())
+unsigned int __gsharp_gsl_s_1 = __gsharp_grid_stride_step();
+for(unsigned int __gsharp_gsl_1 = __gsharp_grid_stride_start(); __gsharp_gsl_1 < __gsharp_gsl_n_1; __gsharp_gsl_1 += __gsharp_gsl_s_1)
 {
 int __gsharp_id_22_idx = (int)__gsharp_gsl_1;
 {
@@ -657,7 +659,8 @@ break;
 }
 {
 unsigned int __gsharp_gsl_n_2 = __gsharp_grid_stride_count(__gsharp_id_5_aActualWords);
-for(unsigned int __gsharp_gsl_2 = __gsharp_grid_stride_start(); __gsharp_gsl_2 < __gsharp_gsl_n_2; __gsharp_gsl_2 += __gsharp_grid_stride_step())
+unsigned int __gsharp_gsl_s_2 = __gsharp_grid_stride_step();
+for(unsigned int __gsharp_gsl_2 = __gsharp_grid_stride_start(); __gsharp_gsl_2 < __gsharp_gsl_n_2; __gsharp_gsl_2 += __gsharp_gsl_s_2)
 {
 int __gsharp_id_28_idx = (int)__gsharp_gsl_2;
 {
@@ -851,7 +854,8 @@ __gsharp_ctx.bitShift = targetBits % 32;
 __gsharp_ctx.destWords = __gsharp_ctx.nA;
 {
 uint __gsharp_gsl_n_0 = global::Kassyi.GSharp.Core.ManagedGpuContext.GridStrideCount(__gsharp_ctx.destWords);
-for (uint __gsharp_gsl_0 = global::Kassyi.GSharp.Core.ManagedGpuContext.GridStrideStart(); __gsharp_gsl_0 < __gsharp_gsl_n_0; __gsharp_gsl_0 += global::Kassyi.GSharp.Core.ManagedGpuContext.GridStrideStep())
+uint __gsharp_gsl_s_0 = global::Kassyi.GSharp.Core.ManagedGpuContext.GridStrideStep();
+for (uint __gsharp_gsl_0 = global::Kassyi.GSharp.Core.ManagedGpuContext.GridStrideStart(); __gsharp_gsl_0 < __gsharp_gsl_n_0; __gsharp_gsl_0 += __gsharp_gsl_s_0)
 {
 int __gsharp_unroll_0 = (int)__gsharp_gsl_0;
 int srcIdx = __gsharp_unroll_0 + __gsharp_ctx.wordShift;
@@ -893,7 +897,8 @@ NumberOfWords = __gsharp_ctx.evalWords
 };
 {
 uint __gsharp_gsl_n_1 = global::Kassyi.GSharp.Core.ManagedGpuContext.GridStrideCount(__gsharp_ctx.evalWords);
-for (uint __gsharp_gsl_1 = global::Kassyi.GSharp.Core.ManagedGpuContext.GridStrideStart(); __gsharp_gsl_1 < __gsharp_gsl_n_1; __gsharp_gsl_1 += global::Kassyi.GSharp.Core.ManagedGpuContext.GridStrideStep())
+uint __gsharp_gsl_s_1 = global::Kassyi.GSharp.Core.ManagedGpuContext.GridStrideStep();
+for (uint __gsharp_gsl_1 = global::Kassyi.GSharp.Core.ManagedGpuContext.GridStrideStart(); __gsharp_gsl_1 < __gsharp_gsl_n_1; __gsharp_gsl_1 += __gsharp_gsl_s_1)
 {
 int __gsharp_unroll_1 = (int)__gsharp_gsl_1;
 __gsharp_ctx.iterScratch.Diff[__gsharp_unroll_1] = __gsharp_unroll_1 < __gsharp_ctx.nA ? leftOperand[__gsharp_unroll_1] : 0u;
@@ -999,7 +1004,8 @@ case 16:
 {
 {
 uint __gsharp_gsl_n_2 = global::Kassyi.GSharp.Core.ManagedGpuContext.GridStrideCount(aActualWords);
-for (uint __gsharp_gsl_2 = global::Kassyi.GSharp.Core.ManagedGpuContext.GridStrideStart(); __gsharp_gsl_2 < __gsharp_gsl_n_2; __gsharp_gsl_2 += global::Kassyi.GSharp.Core.ManagedGpuContext.GridStrideStep())
+uint __gsharp_gsl_s_2 = global::Kassyi.GSharp.Core.ManagedGpuContext.GridStrideStep();
+for (uint __gsharp_gsl_2 = global::Kassyi.GSharp.Core.ManagedGpuContext.GridStrideStart(); __gsharp_gsl_2 < __gsharp_gsl_n_2; __gsharp_gsl_2 += __gsharp_gsl_s_2)
 {
 int __gsharp_unroll_2 = (int)__gsharp_gsl_2;
 remainderBuffer[__gsharp_unroll_2] = __gsharp_unroll_2 < __gsharp_ctx.n ? __gsharp_ctx.iterScratch.Diff[__gsharp_unroll_2] : 0u;
@@ -3562,7 +3568,8 @@ if(__gsharp_id_3_expSlice.__gsharp_mb_StartWord==0)
 unsigned int __gsharp_id_11_oneModulo = __gsharp_fn_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuBigIntDivRemKernels__OneModulo(__gsharp_id_1_core.__gsharp_mb_Operands.__gsharp_mb_Constant,__gsharp_id_4_n);
 {
 unsigned int __gsharp_gsl_n_0 = __gsharp_grid_stride_count(__gsharp_id_10_outWords);
-for(unsigned int __gsharp_gsl_0 = __gsharp_grid_stride_start(); __gsharp_gsl_0 < __gsharp_gsl_n_0; __gsharp_gsl_0 += __gsharp_grid_stride_step())
+unsigned int __gsharp_gsl_s_0 = __gsharp_grid_stride_step();
+for(unsigned int __gsharp_gsl_0 = __gsharp_grid_stride_start(); __gsharp_gsl_0 < __gsharp_gsl_n_0; __gsharp_gsl_0 += __gsharp_gsl_s_0)
 {
 int __gsharp_id_12_idx = (int)__gsharp_gsl_0;
 {
@@ -3599,7 +3606,8 @@ if(__gsharp_id_3_expSlice.__gsharp_mb_EndWord==__gsharp_id_5_expWords)
 {
 {
 unsigned int __gsharp_gsl_n_1 = __gsharp_grid_stride_count(__gsharp_id_4_n);
-for(unsigned int __gsharp_gsl_1 = __gsharp_grid_stride_start(); __gsharp_gsl_1 < __gsharp_gsl_n_1; __gsharp_gsl_1 += __gsharp_grid_stride_step())
+unsigned int __gsharp_gsl_s_1 = __gsharp_grid_stride_step();
+for(unsigned int __gsharp_gsl_1 = __gsharp_grid_stride_start(); __gsharp_gsl_1 < __gsharp_gsl_n_1; __gsharp_gsl_1 += __gsharp_gsl_s_1)
 {
 int __gsharp_id_16_idx = (int)__gsharp_gsl_1;
 {

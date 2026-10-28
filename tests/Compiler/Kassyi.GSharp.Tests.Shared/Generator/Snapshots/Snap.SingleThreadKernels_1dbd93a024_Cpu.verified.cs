@@ -2484,7 +2484,8 @@ __gsharp_st_end_1:;
 }
 {
 unsigned int __gsharp_gsl_n_0 = __gsharp_grid_stride_count(2);
-for(unsigned int __gsharp_gsl_0 = __gsharp_grid_stride_start(); __gsharp_gsl_0 < __gsharp_gsl_n_0; __gsharp_gsl_0 += __gsharp_grid_stride_step())
+unsigned int __gsharp_gsl_s_0 = __gsharp_grid_stride_step();
+for(unsigned int __gsharp_gsl_0 = __gsharp_grid_stride_start(); __gsharp_gsl_0 < __gsharp_gsl_n_0; __gsharp_gsl_0 += __gsharp_gsl_s_0)
 {
 int __gsharp_id_2_i = (int)__gsharp_gsl_0;
 {
@@ -2610,7 +2611,8 @@ __gsharp_st_end_0:
 
 {
 uint __gsharp_gsl_n_1 = global::Kassyi.GSharp.Core.ManagedGpuContext.GridStrideCount(2);
-for (uint __gsharp_gsl_1 = global::Kassyi.GSharp.Core.ManagedGpuContext.GridStrideStart(); __gsharp_gsl_1 < __gsharp_gsl_n_1; __gsharp_gsl_1 += global::Kassyi.GSharp.Core.ManagedGpuContext.GridStrideStep())
+uint __gsharp_gsl_s_1 = global::Kassyi.GSharp.Core.ManagedGpuContext.GridStrideStep();
+for (uint __gsharp_gsl_1 = global::Kassyi.GSharp.Core.ManagedGpuContext.GridStrideStart(); __gsharp_gsl_1 < __gsharp_gsl_n_1; __gsharp_gsl_1 += __gsharp_gsl_s_1)
 {
 int __gsharp_unroll_1 = (int)__gsharp_gsl_1;
 {

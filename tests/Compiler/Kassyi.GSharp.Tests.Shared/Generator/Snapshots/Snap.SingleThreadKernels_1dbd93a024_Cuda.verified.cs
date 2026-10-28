@@ -1227,7 +1227,8 @@ __gsharp_st_end_1:;
 }
 {
 unsigned int __gsharp_gsl_n_0 = __gsharp_grid_stride_count(2);
-for(unsigned int __gsharp_gsl_0 = __gsharp_grid_stride_start(); __gsharp_gsl_0 < __gsharp_gsl_n_0; __gsharp_gsl_0 += __gsharp_grid_stride_step())
+unsigned int __gsharp_gsl_s_0 = __gsharp_grid_stride_step();
+for(unsigned int __gsharp_gsl_0 = __gsharp_grid_stride_start(); __gsharp_gsl_0 < __gsharp_gsl_n_0; __gsharp_gsl_0 += __gsharp_gsl_s_0)
 {
 int __gsharp_id_2_i = (int)__gsharp_gsl_0;
 {

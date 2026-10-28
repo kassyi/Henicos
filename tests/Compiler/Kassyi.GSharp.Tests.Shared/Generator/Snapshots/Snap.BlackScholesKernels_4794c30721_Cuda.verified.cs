@@ -387,7 +387,8 @@ static_assert(offsetof(__gsharp_ty_Henicos__Benchmarks__ComputeBenchmarks__Black
 extern ""C"" __global__ void __gsharp_k_Henicos__Benchmarks__ComputeBenchmarks__BlackScholesKernels__BlackScholesKernel(__gsharp_ty_Henicos__Benchmarks__ComputeBenchmarks__BlackScholesKernels__BlackScholesContext __gsharp_id_0_ctx){
 {
 unsigned int __gsharp_gsl_n_0 = __gsharp_grid_stride_count(__gsharp_id_0_ctx.__gsharp_mb_N);
-for(unsigned int __gsharp_gsl_0 = __gsharp_grid_stride_start(); __gsharp_gsl_0 < __gsharp_gsl_n_0; __gsharp_gsl_0 += __gsharp_grid_stride_step())
+unsigned int __gsharp_gsl_s_0 = __gsharp_grid_stride_step();
+for(unsigned int __gsharp_gsl_0 = __gsharp_grid_stride_start(); __gsharp_gsl_0 < __gsharp_gsl_n_0; __gsharp_gsl_0 += __gsharp_gsl_s_0)
 {
 int __gsharp_id_1_tid = (int)__gsharp_gsl_0;
 {

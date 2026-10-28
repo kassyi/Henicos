@@ -208,7 +208,8 @@ __gsharp_switch_1_state_0:
 {
 {
 unsigned int __gsharp_gsl_n_0 = __gsharp_grid_stride_count(__gsharp_id_0_ctx.__gsharp_mb_N);
-for(unsigned int __gsharp_gsl_0 = __gsharp_grid_stride_start(); __gsharp_gsl_0 < __gsharp_gsl_n_0; __gsharp_gsl_0 += __gsharp_grid_stride_step())
+unsigned int __gsharp_gsl_s_0 = __gsharp_grid_stride_step();
+for(unsigned int __gsharp_gsl_0 = __gsharp_grid_stride_start(); __gsharp_gsl_0 < __gsharp_gsl_n_0; __gsharp_gsl_0 += __gsharp_gsl_s_0)
 {
 int __gsharp_id_1_tid = (int)__gsharp_gsl_0;
 {
@@ -313,7 +314,8 @@ case 0:
 {
 {
 uint __gsharp_gsl_n_0 = global::Kassyi.GSharp.Core.ManagedGpuContext.GridStrideCount(ctx.N);
-for (uint __gsharp_gsl_0 = global::Kassyi.GSharp.Core.ManagedGpuContext.GridStrideStart(); __gsharp_gsl_0 < __gsharp_gsl_n_0; __gsharp_gsl_0 += global::Kassyi.GSharp.Core.ManagedGpuContext.GridStrideStep())
+uint __gsharp_gsl_s_0 = global::Kassyi.GSharp.Core.ManagedGpuContext.GridStrideStep();
+for (uint __gsharp_gsl_0 = global::Kassyi.GSharp.Core.ManagedGpuContext.GridStrideStart(); __gsharp_gsl_0 < __gsharp_gsl_n_0; __gsharp_gsl_0 += __gsharp_gsl_s_0)
 {
 int __gsharp_unroll_0 = (int)__gsharp_gsl_0;
 global::Henicos.Benchmarks.ComputeBenchmarks.BlackScholesKernels.CalculateOptionPrice(ctx.S[__gsharp_unroll_0], ctx.X[__gsharp_unroll_0], ctx.T[__gsharp_unroll_0], ctx.R, ctx.V, out var c, out var p);

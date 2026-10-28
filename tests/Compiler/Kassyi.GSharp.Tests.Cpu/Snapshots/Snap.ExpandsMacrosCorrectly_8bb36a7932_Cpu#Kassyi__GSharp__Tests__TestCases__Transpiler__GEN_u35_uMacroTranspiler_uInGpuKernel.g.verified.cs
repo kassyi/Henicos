@@ -53,7 +53,8 @@ __gsharp_ctx->__gsharp_id_0_sum+=2;
 }
 {
 unsigned int __gsharp_gsl_n_0 = __gsharp_grid_stride_count(10);
-for(unsigned int __gsharp_gsl_0 = __gsharp_grid_stride_start(); __gsharp_gsl_0 < __gsharp_gsl_n_0; __gsharp_gsl_0 += __gsharp_grid_stride_step())
+unsigned int __gsharp_gsl_s_0 = __gsharp_grid_stride_step();
+for(unsigned int __gsharp_gsl_0 = __gsharp_grid_stride_start(); __gsharp_gsl_0 < __gsharp_gsl_n_0; __gsharp_gsl_0 += __gsharp_gsl_s_0)
 {
 int __gsharp_id_2_j = (int)__gsharp_gsl_0;
 {
@@ -346,7 +347,8 @@ __gsharp_ctx.sum += __gsharp_unroll_0;
 // GridStrideLoop macro
 {
 uint __gsharp_gsl_n_1 = global::Kassyi.GSharp.Core.ManagedGpuContext.GridStrideCount(10);
-for (uint __gsharp_gsl_1 = global::Kassyi.GSharp.Core.ManagedGpuContext.GridStrideStart(); __gsharp_gsl_1 < __gsharp_gsl_n_1; __gsharp_gsl_1 += global::Kassyi.GSharp.Core.ManagedGpuContext.GridStrideStep())
+uint __gsharp_gsl_s_1 = global::Kassyi.GSharp.Core.ManagedGpuContext.GridStrideStep();
+for (uint __gsharp_gsl_1 = global::Kassyi.GSharp.Core.ManagedGpuContext.GridStrideStart(); __gsharp_gsl_1 < __gsharp_gsl_n_1; __gsharp_gsl_1 += __gsharp_gsl_s_1)
 {
 int __gsharp_unroll_1 = (int)__gsharp_gsl_1;
 __gsharp_ctx.sum += __gsharp_unroll_1;

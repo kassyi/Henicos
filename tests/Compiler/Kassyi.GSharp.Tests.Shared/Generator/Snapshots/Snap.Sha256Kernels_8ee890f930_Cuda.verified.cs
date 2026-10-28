@@ -172,7 +172,8 @@ public static partial class AotContexts
 public const string Sha256Kernel_Source = @"extern ""C"" __global__ void __gsharp_k_Henicos__Benchmarks__ComputeBenchmarks__Sha256Kernels__Sha256Kernel(GSharpArray<unsigned char> __gsharp_id_0_input, GSharpArray<unsigned int> __gsharp_id_1_output, int __gsharp_id_2_numMessages){
 {
 unsigned int __gsharp_gsl_n_0 = __gsharp_grid_stride_count(__gsharp_id_2_numMessages);
-for(unsigned int __gsharp_gsl_0 = __gsharp_grid_stride_start(); __gsharp_gsl_0 < __gsharp_gsl_n_0; __gsharp_gsl_0 += __gsharp_grid_stride_step())
+unsigned int __gsharp_gsl_s_0 = __gsharp_grid_stride_step();
+for(unsigned int __gsharp_gsl_0 = __gsharp_grid_stride_start(); __gsharp_gsl_0 < __gsharp_gsl_n_0; __gsharp_gsl_0 += __gsharp_gsl_s_0)
 {
 int __gsharp_id_3_tid = (int)__gsharp_gsl_0;
 {
