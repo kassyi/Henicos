@@ -5516,28 +5516,24 @@ return;
 case 1:
 __gsharp_switch_1_state_1:
 {
-goto __gsharp_switch_1_state_2;
-}
-case 2:
-__gsharp_switch_1_state_2:
-{
+__gsharp_id_4_Check:
 if(__gsharp_ctx->__gsharp_id_2_tid%2==0)
 {
 __gsharp_ctx->__gsharp_sg_done_0=true;
 goto __gsharp_sg_next_0_1;
 }
-goto __gsharp_switch_1_state_3;
+goto __gsharp_switch_1_state_2;
 }
-case 3:
-__gsharp_switch_1_state_3:
+case 2:
+__gsharp_switch_1_state_2:
 {
 __gsharp_sg_next_0_1:;
 __gsharp_yielded_for_grid_sync=true;
-__gsharp_state=4;
+__gsharp_state=3;
 return;
 }
-case 4:
-__gsharp_switch_1_state_4:
+case 3:
+__gsharp_switch_1_state_3:
 {
 if(!__gsharp_ctx->__gsharp_sg_done_0)
 {
@@ -5621,30 +5617,26 @@ return;
 
 case 1:
 {
-goto case 2;
-}
-
-case 2:
-{
+Check:
 if (__gsharp_ctx.tid % 2 == 0)
 {
 __gsharp_ctx.__gsharp_sg_done_0 = true;
 goto __gsharp_sg_next_0_1;
 }
 
-goto case 3;
+goto case 2;
 }
 
-case 3:
+case 2:
 __gsharp_sg_next_0_1:
 ;
 {
 global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested = true;
-__gsharp_ctx.__gsharp_state = 4;
+__gsharp_ctx.__gsharp_state = 3;
 return;
 }
 
-case 4:
+case 3:
 {
 if (!__gsharp_ctx.__gsharp_sg_done_0)
 {

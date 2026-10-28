@@ -97,6 +97,16 @@ int length;
 
 inline GSharpArray() : data(nullptr), length(0) {}
 inline GSharpArray(T* d, int l) : data(d), length(l) {}
+// A stack array (T name[N]) viewed as a span or array argument; T may be const for a ReadOnlySpan. G# reports the
+// uses that would keep the view beyond the array's scope (GSH0091)
+template <int N>
+inline GSharpArray(T (&storage)[N]) : data(storage), length(N) {}
+
+// The span members that C# calls on a span or an array (Span<T>.Slice, Span<T>.Fill, MemoryExtensions.AsSpan)
+inline GSharpArray<T> Slice(int start) const { return GSharpArray<T>(data + start, length - start); }
+inline GSharpArray<T> Slice(int start, int count) const { return GSharpArray<T>(data + start, count); }
+inline void Fill(const T& value) { for (int i = 0; i < length; i++) { data[i] = value; } }
+inline GSharpArray<T> AsSpan() const { return *this; }
 
 // Allows implicit conversion from GSharpArray<U> to GSharpArray<T> if U* is convertible to T* (e.g. T to const T)
 template <typename U>
@@ -111,6 +121,10 @@ inline const T& operator[](int index) const { return data[index]; }
 inline operator T*() { return data; }
 inline operator const T*() const { return data; }
 };
+
+// A stack array (T name[N]) viewed as a span, for a receiver or a template argument that deduces GSharpArray<T>
+template <typename T, int N>
+inline GSharpArray<T> __gsharp_stackalloc_span(T (&storage)[N]) { return GSharpArray<T>(storage, N); }
 
 template <typename R, typename... Args>
 using System_Func = std::function<R(Args...)>;
@@ -1201,6 +1215,9 @@ __gsharp_sort_intro<__gsharp_sort_scan::Default>(keys.data, __gsharp_sort_items_
 }
 
 #pragma once
+
+// The count of a Skip / Take / SkipLast / TakeLast stage clamped to [0, remaining], as C# clamps it (the sum cannot overflow)
+__device__ __forceinline__ int __gsharp_clamp_count(int count, int remaining) { return count < 0 ? 0 : (count > remaining ? remaining : count); }
 
 namespace Kassyi { namespace ZeroAlloc { namespace Linq {
 

@@ -5,8 +5,9 @@ using Xunit;
 namespace Kassyi.GSharp.Tests.Shared.Core;
 
 /// <summary>
-/// The containers of an array of structs whose host and device layouts differ (on CUDA): the launcher converts the
-/// elements through a shadow array and copies them back as the container allows.
+/// The containers of an array of structs whose host and device layouts differ: the launcher converts the elements
+/// through a shadow array and copies them back as the container allows (ConvertPair differs on CUDA only, ConvertBag on
+/// both dialects).
 /// </summary>
 [TestTarget(ExecutionTarget.GpuExecution)]
 [Category(TestCategory.Runtime)]
@@ -53,11 +54,8 @@ public class StructConvertTransferTests
         StructConvertTransferKernels.LaunchInArrayKernel(items, o, blockDimX: 2);
 
         Assert.Equal([3f, 6f], o);
-#if !GSHARP_CPU
-        // The CPU kernel works on the pinned host array itself, so [In] cannot keep its writes
         Assert.Equal(1f, items[0].A);
         Assert.Equal(4f, items[1].A);
-#endif
     }
 
     [Fact]
@@ -83,12 +81,7 @@ public class StructConvertTransferTests
         Assert.Equal(0, o[0]);
     }
 
-    // CPU passes the array in its managed layout until L4
-#if GSHARP_CPU
-    [Fact(Skip = "L4")]
-#else
     [Fact]
-#endif
     [Scenario(TestScenario.HappyPath)]
     public void InOutArrayWithArrayFields_CopiesBackFieldsAndArrays()
     {
@@ -107,11 +100,7 @@ public class StructConvertTransferTests
     }
 
     // [Out] skips copying the elements in, but the array fields of the elements must still reach the device
-#if GSHARP_CPU
-    [Fact(Skip = "L4")]
-#else
     [Fact]
-#endif
     [Scenario(TestScenario.Boundary)]
     public void OutArrayWithArrayFields_CopiesBackFieldsAndArrays()
     {
@@ -131,11 +120,7 @@ public class StructConvertTransferTests
 
     // The shadow array comes from ArrayPool, so the second launch gets the bytes of the first one back; a null array
     // field must not leave the freed device pointer of the first launch in it
-#if GSHARP_CPU
-    [Fact(Skip = "L4")]
-#else
     [Fact]
-#endif
     [Scenario(TestScenario.Boundary)]
     public void ArrayWithArrayFields_SecondLaunchWithNullFields_SeesNoStaleArray()
     {
@@ -151,11 +136,7 @@ public class StructConvertTransferTests
     }
 
     // The same through an inline array of elements with array fields inside the converted element
-#if GSHARP_CPU
-    [Fact(Skip = "L4")]
-#else
     [Fact]
-#endif
     [Scenario(TestScenario.Boundary)]
     public void InlineArrayOfArrayFields_SecondLaunchWithNullFields_SeesNoStaleArray()
     {
@@ -172,11 +153,7 @@ public class StructConvertTransferTests
     }
 
     // The same for an [Out] array, whose elements are still marshaled because they have array fields
-#if GSHARP_CPU
-    [Fact(Skip = "L4")]
-#else
     [Fact]
-#endif
     [Scenario(TestScenario.Boundary)]
     public void OutArrayWithArrayFields_SecondLaunchWithNullFields_SeesNoStaleArray()
     {

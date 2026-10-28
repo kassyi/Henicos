@@ -108,12 +108,14 @@ public sealed class VariableDeclarationTranspilerRule : SyntaxNodeTranspilerRule
                 continue;
             }
 
-            if (isVar)
+            // A split declaration has no initializer to deduce auto from, so it names the type
+            var originalNode = context.Query.SemanticModel.GetOriginalNode(v);
+            var splitInitialization = originalNode is not ParameterSyntax && IsJumpedOverInitialization(v, typeSymbol);
+            if (isVar && !splitInitialization)
             {
                 context.Emitter.Writer.Append("auto");
             }
-            else if (typeSymbol != null &&
-                     context.Query.SemanticModel.GetOriginalNode(v) is ParameterSyntax paramSyntax)
+            else if (typeSymbol != null && originalNode is ParameterSyntax paramSyntax)
             {
                 var paramSymbol = context.Query.SemanticModel.GetDeclaredSymbol<IParameterSymbol>(v);
                 MethodSignatureTranspiler.WriteParameterDeclaration(paramSyntax, typeSymbol, paramSymbol, ref context);
@@ -125,11 +127,51 @@ public sealed class VariableDeclarationTranspilerRule : SyntaxNodeTranspilerRule
 
             context.Emitter.Writer.Append(' ');
             CppNameResolver.AppendDeclaredName(v, v.Identifier, ref context);
+            if (splitInitialization)
+            {
+                // <type> <name>;
+                // <name> = <initializer>
+                context.Emitter.Writer.AppendLine(";");
+                CppNameResolver.AppendDeclaredName(v, v.Identifier, ref context);
+            }
 
             DeclarationTranspilerHelper.WriteDeclaratorInitializer(v, ref context);
             hasEmittedAny = true;
         }
     }
+
+    // [WHY] A goto may jump past this initialized declaration (GotoJumpAnalysis); C++ forbids that jump, so the
+    // declaration and the initialization become two statements. Only a type that C++ can declare without an initializer
+    // and assign later is split: a primitive, an enum, a pointer or a struct that is not a ref struct. A const local is
+    // emitted as a plain variable, so it is split too. A ref local, a using declaration and a ref struct local (a Span
+    // that is not a stackalloc, which TryWriteFixedSizeArray handles) keep their form: a goto past them stays ill-formed
+    // C++.
+    private static bool IsJumpedOverInitialization(VariableDeclaratorSyntax declarator, ITypeSymbol? typeSymbol) =>
+        declarator.Initializer != null &&
+        IsAssignableAfterDeclaration(typeSymbol) &&
+        IsJumpedOver(declarator);
+
+    // Whether the declarator is in a plain local declaration (not ref, not using) that a goto may jump past
+    private static bool IsJumpedOver(VariableDeclaratorSyntax declarator) =>
+        declarator.Parent is VariableDeclarationSyntax
+        {
+            Type: not RefTypeSyntax,
+            Parent: LocalDeclarationStatementSyntax { UsingKeyword.RawKind: (int)SyntaxKind.None } statement
+        } &&
+        GotoJumpAnalysis.MayBeJumpedOver(statement);
+
+    private static bool IsAssignableAfterDeclaration(ITypeSymbol? typeSymbol) => typeSymbol switch
+    {
+        null or { TypeKind: TypeKind.Error } => false,
+        IPointerTypeSymbol => true,
+        { TypeKind: TypeKind.Enum } => true,
+        { IsRefLikeType: true } => false,
+        { TypeKind: TypeKind.Struct } structType when structType.IsSharedMemoryType() ||
+                                                        structType.IsWmmaFragmentType() ||
+                                                        structType.IsWmmaMarkerType() => false,
+        { TypeKind: TypeKind.Struct } => true,
+        _ => false
+    };
 
     private static void TranspileIteratorArgumentBackingLocals(
         VariableDeclaratorSyntax declarator,
@@ -259,6 +301,13 @@ public sealed class VariableDeclarationTranspilerRule : SyntaxNodeTranspilerRule
             return false;
         }
 
+        if (GpuCodeConstraints.GetStackArrayShapeProblem(variable.Initializer.Value, typeSymbol,
+                context.Query.SemanticModel) is { } problem)
+        {
+            context.Reporter.Fail(GSharpDiagnostics.UnsupportedSyntax, variable.Initializer.Value, problem);
+            return true;
+        }
+
         if (!InitializationSyntaxExtractor.TryGetArrayInitialization(variable.Initializer.Value, out var count,
                 out var sizeExpr, out var initializerNode))
         {
@@ -324,12 +373,32 @@ public sealed class VariableDeclarationTranspilerRule : SyntaxNodeTranspilerRule
             context.Visitor.Visit(sizeExpr);
         }
 
-        context.Emitter.Writer.AppendIf(
-            creation is not StackAllocArrayCreationExpressionSyntax ||
-            isConst ||
-            context.Query.SemanticModel.AreLocalsZeroedAt(creation),
-            "{}"
-        );
+        var zeroed = creation is not StackAllocArrayCreationExpressionSyntax ||
+                     isConst ||
+                     context.Query.SemanticModel.AreLocalsZeroedAt(creation);
+        if (zeroed && !isConst && IsJumpedOver(variable))
+        {
+            // [WHY] A goto may jump past the declaration, and C++ forbids jumping past its {} initialization. The zero
+            // fill becomes a statement at the same place, so the array is zeroed again whenever control passes there,
+            // as in C#. A const array (ReadOnlySpan<T> = stackalloc) needs its initializer and keeps its form.
+            // <type> <name>[<size>];
+            // memset(<name>, 0, sizeof(<name>))
+            context.Emitter.Writer.AppendLine(";");
+            context.Emitter.Writer.Append("memset");
+            using (context.Emitter.Writer.Parentheses())
+            {
+                CppNameResolver.AppendDeclaredName(variable, variable.Identifier, ref context);
+                context.Emitter.Writer.Append(",0,sizeof");
+                using (context.Emitter.Writer.Parentheses())
+                {
+                    CppNameResolver.AppendDeclaredName(variable, variable.Identifier, ref context);
+                }
+            }
+
+            return true;
+        }
+
+        context.Emitter.Writer.AppendIf(zeroed, "{}");
         return true;
     }
 

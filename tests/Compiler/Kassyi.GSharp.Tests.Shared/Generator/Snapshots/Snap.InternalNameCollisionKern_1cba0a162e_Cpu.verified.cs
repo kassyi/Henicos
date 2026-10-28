@@ -736,18 +736,10 @@ goto __gsharp_switch_1_state_6;
 case 6:
 __gsharp_switch_1_state_6:
 {
-goto __gsharp_switch_1_state_7;
-goto __gsharp_switch_1_state_7;
-}
-case 7:
-__gsharp_switch_1_state_7:
-{
-goto __gsharp_switch_1_state_8;
-goto __gsharp_switch_1_state_8;
-}
-case 8:
-__gsharp_switch_1_state_8:
-{
+goto __gsharp_id_5__ForEnd_0;
+__gsharp_id_5__ForEnd_0:
+goto __gsharp_id_6__BranchEnd_0;
+__gsharp_id_6__BranchEnd_0:
 __gsharp_id_0_data[__gsharp_ctx->__gsharp_id_2_tid]=__gsharp_ctx->__gsharp_id_3_acc;
 __gsharp_state=-1;
 return;
@@ -858,18 +850,10 @@ goto case 6;
 
 case 6:
 {
-goto case 7;
-goto case 7;
-}
-
-case 7:
-{
-goto case 8;
-goto case 8;
-}
-
-case 8:
-{
+goto _ForEnd_0;
+_ForEnd_0:
+goto _BranchEnd_0;
+_BranchEnd_0:
 data[__gsharp_ctx.tid] = __gsharp_ctx.acc;
 __gsharp_ctx.__gsharp_state = -1;
 return;

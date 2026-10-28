@@ -2,15 +2,13 @@ namespace Kassyi.GSharp.Compiler.Diagnostics.Kernel.Rules;
 
 /// <summary>
 /// Checks the user structs of kernel parameters and device locals against the layout model of the project's dialect:
-/// a struct the device cannot lay out (GSH0078) or a member type the device has no type for (GSH0079); on CUDA, an
-/// array whose elements the launcher converts one by one (GSH0080) and an array whose elements each allocate their
-/// array fields (GSH0081); on the CPU dialect, a struct whose layouts differ, which the CPU launcher cannot convert yet
-/// (GSH0082). Each is reported at the type of the parameter or local.
+/// a struct the device cannot lay out (GSH0078) or a member type the device has no type for (GSH0079); an array whose
+/// elements the launcher converts one by one (GSH0080), and on CUDA an array whose elements each allocate their array
+/// fields (GSH0081; the CPU launcher pins them instead). Each is reported at the type of the parameter or local.
 /// </summary>
 /// <remarks>
 /// The layouts are those of <see cref="TypeLayoutCalculator"/>, which the generated device definition, shadow struct
-/// and launcher are built from, so the diagnostics describe what the generated code does. GSH0082 goes away when the
-/// CPU launcher passes structs through their shadow structs (L4).
+/// and launcher are built from, so the diagnostics describe what the generated code does.
 /// </remarks>
 internal sealed class StructLayoutRule :
     ISyntaxValidationRule<MethodDeclarationSyntax>,
@@ -22,8 +20,7 @@ internal sealed class StructLayoutRule :
         GSharpDiagnostics.StructLayoutNotRepresentable,
         GSharpDiagnostics.FieldTypeHasNoDeviceRepresentation,
         GSharpDiagnostics.StructArrayConvertedPerElement,
-        GSharpDiagnostics.StructArrayFieldAllocatedPerElement,
-        GSharpDiagnostics.StructTransferNotSupportedOnCpu);
+        GSharpDiagnostics.StructArrayFieldAllocatedPerElement);
 
     private StructLayoutRule()
     {
@@ -51,22 +48,7 @@ internal sealed class StructLayoutRule :
                 continue;
             }
 
-            // [WHY] The CPU launcher passes the host layout as it is (by value, by ref or as an array) until L4
             var transfer = TypeLayoutCalculator.GetStructLayout(structType, context.Dialect).Transfer;
-            if (!context.Dialect.IsCuda)
-            {
-                if (transfer != TransferClass.Identical)
-                {
-                    context.ReportDiagnostic(
-                        GSharpDiagnostics.StructTransferNotSupportedOnCpu,
-                        typeSyntax,
-                        TypeLayoutCalculator.FormatTypeName(structType),
-                        TypeLayoutCalculator.DescribeLayoutDifference(structType, context.Dialect));
-                }
-
-                continue;
-            }
-
             if (isArray)
             {
                 if (transfer == TransferClass.Convert)
@@ -74,7 +56,8 @@ internal sealed class StructLayoutRule :
                     ReportConverted(structType, typeSyntax, ref context);
                 }
 
-                if (TypeLayoutCalculator.TryFindArrayField(structType, out var arrayField))
+                // [WHY] The CUDA launcher allocates and copies the array fields of each element; the CPU one pins them
+                if (context.Dialect.IsCuda && TypeLayoutCalculator.TryFindArrayField(structType, out var arrayField))
                 {
                     context.ReportDiagnostic(
                         GSharpDiagnostics.StructArrayFieldAllocatedPerElement,
