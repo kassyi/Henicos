@@ -98,8 +98,10 @@ internal static class CpuHostLaunchEmitter
                 writer.AppendLine($"{GSharpInternalNames.Launcher.Contexts}[i] = new {contextName}();");
             }
 
+            // A cooperative kernel's blocks run in grid phases and keep their dynamic shared memory for the grid; the
+            // blocks of any other kernel run to their end one after another and use one array in turn
             writer.AppendLine(
-                $"global::Kassyi.GSharp.Core.ManagedGpuContext.InitializeGrid({GSharpInternalNames.Launcher.TotalBlocks}, sharedMemBytes);");
+                $"global::Kassyi.GSharp.Core.ManagedGpuContext.InitializeGrid({GSharpInternalNames.Launcher.TotalBlocks}, sharedMemBytes, {(kernel.IsCooperative ? "true" : "false")});");
 
             writer.AppendLine("bool anyGridActive = true;");
             writer.AppendLine("while (anyGridActive)");

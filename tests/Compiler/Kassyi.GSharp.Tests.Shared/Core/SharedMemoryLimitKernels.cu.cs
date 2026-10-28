@@ -260,4 +260,19 @@ public static partial class SharedMemoryLimitKernels
         d[tid] = tid;
         output[tid] = d[tid] + s00[tid % 4]+s01[tid % 4]+s02[tid % 4]+s03[tid % 4]+s04[tid % 4]+s05[tid % 4]+s06[tid % 4]+s07[tid % 4]+s08[tid % 4]+s09[tid % 4]+s10[tid % 4]+s11[tid % 4]+s12[tid % 4]+s13[tid % 4]+s14[tid % 4]+s15[tid % 4]+s16[tid % 4]+s17[tid % 4]+s18[tid % 4]+s19[tid % 4]+s20[tid % 4]+s21[tid % 4]+s22[tid % 4]+s23[tid % 4]+s24[tid % 4]+s25[tid % 4]+s26[tid % 4]+s27[tid % 4]+s28[tid % 4]+s29[tid % 4]+s30[tid % 4]+s31[tid % 4]+s32[tid % 4]+s33[tid % 4]+s34[tid % 4]+s35[tid % 4]+s36[tid % 4]+s37[tid % 4]+s38[tid % 4]+s39[tid % 4]+s40[tid % 4]+s41[tid % 4]+s42[tid % 4]+s43[tid % 4]+s44[tid % 4]+s45[tid % 4]+s46[tid % 4]+s47[tid % 4]+s48[tid % 4]+s49[tid % 4]+s50[tid % 4]+s51[tid % 4]+s52[tid % 4]+s53[tid % 4]+s54[tid % 4]+s55[tid % 4]+s56[tid % 4]+s57[tid % 4]+s58[tid % 4]+s59[tid % 4]+s60[tid % 4]+s61[tid % 4]+s62[tid % 4]+s63[tid % 4]+s64[tid % 4]+s65[tid % 4]+s66[tid % 4]+s67[tid % 4]+s68[tid % 4]+s69[tid % 4];
     }
+
+    // Each block places a first region with a count of its own and a second region after it. On the managed path the
+    // blocks of a kernel that is not cooperative use one array in turn, so each block must start with no regions: kept
+    // regions of the block before would make the larger first region grow after the second
+    [GpuKernel]
+    public static void PerBlockCountKernel(int[] output, int n)
+    {
+        var first = new SharedMemory<int>(n + BlockIndex.X);
+        var second = new SharedMemory<int>(n);
+        int tid = ThreadIndex.X;
+        first[tid] = tid + BlockIndex.X;
+        second[tid] = 2 * tid;
+        Gpu.SyncThreads();
+        output[BlockIndex.X * BlockDimension.X + tid] = first[tid] + second[(tid + 1) % BlockDimension.X];
+    }
 }

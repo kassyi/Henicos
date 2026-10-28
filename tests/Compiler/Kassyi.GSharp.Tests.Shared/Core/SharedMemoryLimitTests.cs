@@ -83,6 +83,43 @@ public class SharedMemoryLimitTests : TranspilerTestBase
         Assert.Equal(Enumerable.Range(0, Count).Select(i => withBarrier ? (i + 1) % Count + 1 : 2 * i), output);
     }
 
+    // A kernel that is not cooperative runs each block to its end, so the managed path reuses one dynamic shared memory
+    // array for the blocks instead of keeping one per block for the grid (PR #762 review, item 3): 1024 blocks of 64 KB
+    // would allocate 64 MB, one array 64 KB
+    [SkippableFact]
+    [Scenario(TestScenario.Boundary)]
+    public void Test_DynamicDeclaration_ManyBlocks_ManagedReusesOneArray()
+    {
+        Skip.If(IsCudaDialect, "The managed execution path exists only on the CPU dialects.");
+        const int Count = 16384;
+        const int Blocks = 1024;
+        var output = new int[Count];
+        Run(true, () => SharedMemoryLimitKernels.LaunchFillKernel(output, Count, gridDimX: 1, blockDimX: 1, sharedMemBytes: Count * sizeof(int)));
+
+        var before = GC.GetAllocatedBytesForCurrentThread();
+        Run(true, () => SharedMemoryLimitKernels.LaunchFillKernel(output, Count, gridDimX: Blocks, blockDimX: 1, sharedMemBytes: Count * sizeof(int)));
+        var allocated = GC.GetAllocatedBytesForCurrentThread() - before;
+
+        Assert.Equal(Enumerable.Range(0, Count).Select(static i => (i + 1) % Count + 1), output);
+        Assert.True(allocated < 16L << 20, $"the launch allocated {allocated} bytes");
+    }
+
+    // The blocks place regions of different sizes; on the managed path they share one array in turn
+    [SkippableTheory]
+    [Scenario(TestScenario.Boundary)]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void Test_DynamicDeclaration_CountPerBlock_EachBlockStartsWithoutRegions(bool forceManaged)
+    {
+        const int Threads = 8;
+        const int Blocks = 4;
+        var output = new int[Blocks * Threads];
+
+        Run(forceManaged, () => SharedMemoryLimitKernels.LaunchPerBlockCountKernel(output, Threads, gridDimX: Blocks, blockDimX: Threads, sharedMemBytes: 128));
+
+        Assert.Equal(Enumerable.Range(0, Blocks * Threads).Select(static g => g % Threads + g / Threads + 2 * ((g % Threads + 1) % Threads)), output);
+    }
+
     // 5 ints end at 20; the doubles start at 32 (16-byte alignment) and end at 56
     [SkippableTheory]
     [Scenario(TestScenario.Boundary)]

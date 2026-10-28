@@ -28,9 +28,18 @@ public static partial class ManagedGpuContext
 
     // The dynamic shared memory of each block (#544): one array of the launch's sharedMemBytes, in which the dynamic
     // declarations get their regions with the arithmetic of the CUDA placement (__gsharp_dsmem_place in Prelude.cu) and
-    // of the native CPU arena. The array of a block is allocated once per grid, so a span stays valid for the grid.
+    // of the native CPU arena. When the blocks run in grid phases (a cooperative kernel), every block keeps its array for
+    // the grid, so a span stays valid across the grid syncs. Otherwise each block runs to its end before the next one
+    // starts, and the blocks use one array in turn, as the native arena of an OpenMP thread does.
     [ThreadStatic]
     private static DynamicSharedMemory?[]? s_perBlockDynamic;
+
+    [ThreadStatic]
+    private static bool s_blocksRunInPhases;
+
+    // The block that owns the one array of blocks that do not run in phases, or -1
+    [ThreadStatic]
+    private static int s_dynamicOwner;
 
     [ThreadStatic]
     private static uint s_sharedMemBytes;
@@ -70,6 +79,25 @@ public static partial class ManagedGpuContext
 
     private static int LinearBlockId => BlockIdxZ * GridDimY * GridDimX + BlockIdxY * GridDimX + BlockIdxX;
 
+    // The index of the current block's dynamic shared memory. Blocks that do not run in phases share index 0: the first
+    // use by a block empties the array of the block before it, which has finished
+    private static int CurrentDynamicIndex()
+    {
+        if (s_blocksRunInPhases)
+        {
+            return LinearBlockId;
+        }
+
+        if (s_dynamicOwner != LinearBlockId && s_perBlockDynamic is { Length: > 0 } && s_perBlockDynamic[0] is { } shared)
+        {
+            shared.Cursor = 0;
+            shared.RegionCount = 0;
+        }
+
+        s_dynamicOwner = LinearBlockId;
+        return 0;
+    }
+
     /// <summary>
     /// Releases the dynamic shared memory of the blocks at the end of a grid; the next grid allocates its own.
     /// </summary>
@@ -84,6 +112,18 @@ public static partial class ManagedGpuContext
     public static void InitializeGrid(int totalBlocks) => InitializeGrid(totalBlocks, 0);
 
     /// <summary>
+    /// Initializes or resets the shared memory arrays for the entire grid execution, keeping the dynamic shared memory of
+    /// every block for the grid.
+    /// </summary>
+    /// <param name="totalBlocks">The total number of blocks in the grid.</param>
+    /// <param name="sharedMemBytes">
+    /// The dynamic shared memory of each block, the <c>sharedMemBytes</c> of the launch, in which the dynamic declarations
+    /// are placed.
+    /// </param>
+    public static void InitializeGrid(int totalBlocks, uint sharedMemBytes) =>
+        InitializeGrid(totalBlocks, sharedMemBytes, blocksRunInPhases: true);
+
+    /// <summary>
     /// Initializes or resets the shared memory arrays for the entire grid execution.
     /// </summary>
     /// <param name="totalBlocks">The total number of blocks in the grid.</param>
@@ -91,15 +131,22 @@ public static partial class ManagedGpuContext
     /// The dynamic shared memory of each block, the <c>sharedMemBytes</c> of the launch, in which the dynamic declarations
     /// are placed.
     /// </param>
-    public static void InitializeGrid(int totalBlocks, uint sharedMemBytes)
+    /// <param name="blocksRunInPhases">
+    /// Whether the blocks run in grid phases (a cooperative kernel), so that every block keeps its dynamic shared memory
+    /// for the grid; otherwise each block runs to its end, and the blocks use one array in turn.
+    /// </param>
+    public static void InitializeGrid(int totalBlocks, uint sharedMemBytes, bool blocksRunInPhases)
     {
         s_sharedMemBytes = sharedMemBytes;
-        if (s_perBlockDynamic == null || s_perBlockDynamic.Length < totalBlocks)
+        s_blocksRunInPhases = blocksRunInPhases;
+        s_dynamicOwner = -1;
+        var dynamicArrays = blocksRunInPhases ? totalBlocks : Math.Min(totalBlocks, 1);
+        if (s_perBlockDynamic == null || s_perBlockDynamic.Length < dynamicArrays)
         {
-            Array.Resize(ref s_perBlockDynamic, totalBlocks);
+            Array.Resize(ref s_perBlockDynamic, dynamicArrays);
         }
 
-        for (var block = 0; block < totalBlocks; block++)
+        for (var block = 0; block < dynamicArrays; block++)
         {
             if (s_perBlockDynamic[block] is { } dynamic)
             {
@@ -227,7 +274,7 @@ public static partial class ManagedGpuContext
             throw new InvalidOperationException("Grid not initialized. Call InitializeGrid first.");
         }
 
-        var block = s_perBlockDynamic[LinearBlockId] ??= new DynamicSharedMemory();
+        var block = s_perBlockDynamic[CurrentDynamicIndex()] ??= new DynamicSharedMemory();
         // A negative count arrives as at least 2^63 bytes, as on CUDA, so it fails the size check instead of wrapping
         var bytes = unchecked((ulong)(long)count * (ulong)Unsafe.SizeOf<T>());
         var index = FindDynamicRegion(block, siteKey);
@@ -289,7 +336,7 @@ public static partial class ManagedGpuContext
     // ReSharper disable once UnusedMember.Global -- Public API for code generators
     public static Span<T> FindDynamicSharedMemory<T>(ulong siteKey) where T : unmanaged
     {
-        if (s_perBlockDynamic?[LinearBlockId] is not { } block)
+        if (s_perBlockDynamic?[CurrentDynamicIndex()] is not { } block)
         {
             return [];
         }
