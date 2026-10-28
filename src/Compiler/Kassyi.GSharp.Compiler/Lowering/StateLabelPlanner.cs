@@ -55,7 +55,7 @@ internal static class StateLabelPlanner
             return stateLabels;
         }
 
-        var labelCounts = model == null ? CountLabelNames(body) : null;
+        var labelCounts = model == null ? LoweringIdentity.CountLabelNames(body, includeLoweringLabels: true) : null;
         foreach (var statement in statements)
         {
             if (statement is LabeledStatementSyntax labeled &&
@@ -141,21 +141,5 @@ internal static class StateLabelPlanner
                 state++;
             }
         }
-    }
-
-    // How many labels of each name the body declares, nested ones included
-    private static Dictionary<string, int> CountLabelNames(BlockSyntax body)
-    {
-        var counts = new Dictionary<string, int>(StringComparer.Ordinal);
-        foreach (var node in body.DescendantNodes())
-        {
-            if (node is LabeledStatementSyntax labeled)
-            {
-                var name = labeled.Identifier.ValueText;
-                counts[name] = counts.TryGetValue(name, out var count) ? count + 1 : 1;
-            }
-        }
-
-        return counts;
     }
 }
