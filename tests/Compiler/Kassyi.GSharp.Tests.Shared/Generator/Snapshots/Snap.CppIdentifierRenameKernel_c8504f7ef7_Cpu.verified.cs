@@ -1688,15 +1688,11 @@ __gsharp_switch_1_state_0:
 {
 if(__gsharp_id_1_rounds>0)
 {
-goto __gsharp_switch_1_state_1;
+goto __gsharp_id_2_register;
 }
 __gsharp_id_0_data[threadIdx.x]=0;
 __gsharp_state = -1;return;
-goto __gsharp_switch_1_state_1;
-}
-case 1:
-__gsharp_switch_1_state_1:
-{
+__gsharp_id_2_register:
 __gsharp_id_0_data[threadIdx.x]=__gsharp_id_0_data[threadIdx.x]*__gsharp_id_1_rounds;
 __gsharp_state=-1;
 return;
@@ -1771,7 +1767,7 @@ case 0:
 {
 if (rounds > 0)
 {
-goto case 1;
+goto register;
 }
 
 data[global::Kassyi.GSharp.Core.ThreadIndex.X] = 0;
@@ -1780,11 +1776,7 @@ __gsharp_ctx.__gsharp_state = -1;
 return;
 }
 
-goto case 1;
-}
-
-case 1:
-{
+register:
 data[global::Kassyi.GSharp.Core.ThreadIndex.X] = data[global::Kassyi.GSharp.Core.ThreadIndex.X] * rounds;
 __gsharp_ctx.__gsharp_state = -1;
 return;

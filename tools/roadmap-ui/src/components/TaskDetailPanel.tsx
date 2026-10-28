@@ -5,7 +5,6 @@ import {
   Typography,
   Chip,
   IconButton,
-  TextField,
   Collapse,
   ToggleButton,
   ToggleButtonGroup,
@@ -17,7 +16,6 @@ import {
   Code as CodeIcon,
   ReportProblemOutlined as WarningIcon,
   CheckCircleOutlined as CheckIcon,
-  EditNote as NoteIcon,
   TouchAppOutlined as TouchAppIcon,
   VerticalAlignBottom as DockBottomIcon,
   BorderLeft as DockLeftIcon,
@@ -40,14 +38,6 @@ interface TaskDetailPanelProps {
   onClose?: () => void;
   onHeightChange?: (height: number) => void;
 }
-
-const STATUS_CHIP_OPTIONS: { val: TaskStatus; label: string; color: string; bg: string; border: string }[] = [
-  { val: 'incomplete', label: '未完', color: '#9e9e9e', bg: 'rgba(255, 255, 255, 0.04)', border: 'rgba(255, 255, 255, 0.12)' },
-  { val: 'planned', label: '📅 計画', color: '#64b5f6', bg: 'rgba(100, 181, 246, 0.12)', border: 'rgba(100, 181, 246, 0.3)' },
-  { val: 'implemented', label: '🛠️ 実装', color: '#81c784', bg: 'rgba(129, 199, 132, 0.12)', border: 'rgba(129, 199, 132, 0.3)' },
-  { val: 'tuned', label: '⚡ パフォ', color: '#ce93d8', bg: 'rgba(206, 147, 216, 0.12)', border: 'rgba(206, 147, 216, 0.3)' },
-  { val: 'rejected', label: '❌ 却下', color: '#ef9a9a', bg: 'rgba(239, 83, 80, 0.12)', border: 'rgba(239, 83, 80, 0.3)' },
-];
 
 const getTierInfo = (score: number) => {
   if (score >= 36) return { label: 'Tier 1 (最優先)', color: '#ffd54f', bg: 'rgba(255, 213, 79, 0.12)', border: 'rgba(255, 213, 79, 0.4)' };

@@ -169,6 +169,8 @@ Prelude:
     TrailingZeroCountFor32: { Value: __gsharp_tzc_32, Prelude: MathAndBitOps.hpp }
     TrailingZeroCountFor64: { Value: __gsharp_tzc_64, Prelude: MathAndBitOps.hpp }
     TempAddress: { Value: __gsharp_temp_address, Prelude: Types.hpp }
+    # A stack array viewed as a span (StackArrayLocals.AppendView). Declared by Types.hpp and by the CUDA prelude.
+    StackAllocSpan: { Value: __gsharp_stackalloc_span, Prelude: Types.hpp }
     # NaN and infinity of float and double, which have no C++ literal (ConstexprLiteral). Declared by Platform.hpp for
     # the CPU dialects and by the CUDA prelude (../Prelude.cu).
     NaNSingle: { Value: __gsharp_nan_f, Prelude: Platform.hpp }
