@@ -33,7 +33,7 @@ Every method reads its operands from device memory, computes on the host and wri
 | Name | Description |
 | --- | --- |
 | [Normalize(...)](#normalizeref-gpubigintexecutioncontext-in-gpufloatoperand-gpubigintmemoryhandle) | Normalizes a floating-point significand so that its most significant bit is aligned to the target word width. |
-| [Add(...)](#addref-gpubigintexecutioncontext-in-gpufloatoperand-in-gpufloatoperand-gpubigintmemoryhandle) | Computes radix-aligned signed addition of two arbitrary-precision floating-point numbers on the CPU. |
+| [Add(...)](#addref-gpubigintexecutioncontext-in-gpufloatoperand-in-gpufloatoperand-gpubigintmemoryhandle) | Computes $\mathrm{RZ}_p(x + y)$ on the CPU from the exact sum of the significands aligned at the smaller exponent. |
 | [Multiply(...)](#multiplyref-gpubigintexecutioncontext-in-gpufloatoperand-in-gpufloatoperand-gpubigintmemoryhandle) | Computes normalized multiplication of two arbitrary-precision floating-point numbers on the CPU. |
 | [Divide(...)](#divideref-gpubigintexecutioncontext-in-gpufloatoperand-in-gpufloatoperand-gpubigintmemoryhandle) | Computes normalized division of two arbitrary-precision floating-point numbers on the CPU. |
 | [Reciprocal(...)](#reciprocalref-gpubigintexecutioncontext-in-gpufloatoperand-gpubigintmemoryhandle) | Computes the normalized reciprocal ($1 / x$) of an arbitrary-precision floating-point number on the CPU. |
@@ -62,6 +62,10 @@ public GpuFloatResult Add(
     in GpuFloatOperand right,
     GpuBigIntMemoryHandle resultSig);
 ```
+
+#### Remarks
+
+An operand far below the other one is reduced to a sticky bit by the same rule as on the GPU, so the work does not grow with the exponent difference and the two providers return the same bits (see [Far-Apart Exponents](GSharpKernelFloatProvider.md#far-apart-exponents)).
 
 ## Multiply(ref GpuBigIntExecutionContext, in GpuFloatOperand, in GpuFloatOperand, GpuBigIntMemoryHandle)
 

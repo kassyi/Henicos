@@ -46,7 +46,7 @@ public class GpuBigFloatRoundingTests : IDisposable
     // shift; an exponent outside int throws OverflowException instead of wrapping around (#661 §4.10). The last value
     // on each side that fits is returned exactly.
     // mutant: GSharpKernelFloatProvider.cs:70 `checked((int)(exponent - shift))` -> `unchecked(...)` (Gpu)
-    // mutant: CSharpCpuBigFloatArithmetic.cs:101 `checked((int)(exponent - shift))` -> `unchecked(...)` (Cpu)
+    // mutant: CSharpCpuBigFloatArithmetic.cs:112 `checked((int)(exponent - shift))` -> `unchecked(...)` (Cpu)
     [SkippableTheory]
     [Scenario(TestScenario.SadPath)]
     [InlineData(Engine.Gpu)]
@@ -178,11 +178,11 @@ public class GpuBigFloatRoundingTests : IDisposable
     // P1: the significand, exponent and sign equal RZ_p of the exact rational value (BigFloatReference.RoundTowardZero).
     // P2: the result satisfies the definition of RZ by itself, R·2^e <= |v| < (R + 1)·2^e with R of exactly p bits, so a
     // mistake that the reference shares with the provider still fails.
-    // mutant: GSharpKernelFloatProvider.cs:227 / CSharpCpuBigFloatArithmetic.cs:265 `(resultSig.NumWords + rightSig.NumWords) * 32`
+    // mutant: GSharpKernelFloatProvider.cs:248 / CSharpCpuBigFloatArithmetic.cs:234 `(resultSig.NumWords + rightSig.NumWords) * 32`
     // -> `resultSig.NumWords * 32 * 2` (DivideNarrowByWide1, DivideNarrowByWide4 on both engines)
-    // mutant: GSharpKernelFloatProvider.cs:265 `valueSig.NumWords + resultSig.NumWords + 1` -> `2 * valueSig.NumWords + MarginWords`
+    // mutant: GSharpKernelFloatProvider.cs:286 `valueSig.NumWords + resultSig.NumWords + 1` -> `2 * valueSig.NumWords + MarginWords`
     // (ReciprocalOfThree8, Gpu)
-    // mutant: CSharpCpuBigFloatArithmetic.cs:328 `RentTemp(quotientWords)` -> `RentTemp(resultSig.NumWords * 2)`
+    // mutant: CSharpCpuBigFloatArithmetic.cs:297 `RentTemp(quotientWords)` -> `RentTemp(resultSig.NumWords * 2)`
     // (ReciprocalOfThreeInNineWords, Cpu)
     [SkippableTheory]
     [Scenario(TestScenario.Boundary)]
@@ -328,15 +328,15 @@ public class GpuBigFloatRoundingTests : IDisposable
     // The exponent of the result is computed without wrapping around: a result whose exponent fits in int is RZ_p of the
     // exact value even when an intermediate exponent does not, and a result whose exponent does not fit throws
     // OverflowException (#661 §4.1). The reference keeps the power of two apart, so the exponents never become shifts.
-    // mutant: GSharpKernelFloatProvider.cs:70 / CSharpCpuBigFloatArithmetic.cs:101 `checked((int)(exponent - shift))` ->
-    // `unchecked(...)` (the *AboveMax and *BelowMin cases that reach NormalizeScaled)
-    // mutant: GSharpKernelFloatProvider.cs:185 / CSharpCpuBigFloatArithmetic.cs:210 `(long)left.Exponent + right.Exponent` ->
+    // mutant: GSharpKernelFloatProvider.cs:70 / CSharpCpuBigFloatArithmetic.cs:112 `checked((int)(exponent - shift))` ->
+    // `unchecked(...)` (the *AboveMax and *BelowMin cases that reach NormalizeScaled; on the CPU also AddAboveMax and
+    // AddBelowMin, whose result exponent goes through the same line since #775)
+    // mutant: GSharpKernelFloatProvider.cs:206 / CSharpCpuBigFloatArithmetic.cs:179 `(long)left.Exponent + right.Exponent` ->
     // int (Multiply*)
-    // mutant: GSharpKernelFloatProvider.cs:238 / CSharpCpuBigFloatArithmetic.cs:268 `(long)left.Exponent - right.Exponent` ->
+    // mutant: GSharpKernelFloatProvider.cs:259 / CSharpCpuBigFloatArithmetic.cs:237 `(long)left.Exponent - right.Exponent` ->
     // int (DivideIntermediateBelowMin, DivideBelowMin)
-    // mutant: GSharpKernelFloatProvider.cs:272 / CSharpCpuBigFloatArithmetic.cs:323 `-(long)value.Exponent` -> `-value.Exponent`
+    // mutant: GSharpKernelFloatProvider.cs:293 / CSharpCpuBigFloatArithmetic.cs:292 `-(long)value.Exponent` -> `-value.Exponent`
     // (ReciprocalBelowMin; ReciprocalIntermediateBelowMin on the GPU)
-    // mutant: CSharpCpuBigFloatArithmetic.cs:179 `checked(smaller.Exponent - shift)` -> `unchecked(...)` (AddAboveMax, AddBelowMin)
     [SkippableTheory]
     [Scenario(TestScenario.Boundary)]
     [MemberData(nameof(LimitCasesOnBothEngines))]
@@ -361,6 +361,194 @@ public class GpuBigFloatRoundingTests : IDisposable
             $"{caseName} [{engine}]: expected 0x{expectedSig:X} * 2^{expectedExp}, "
             + $"actual {BigFloatReference.Describe(sig, result.Exponent, result.IsNegative)}");
     }
+
+    /// <summary>
+    /// An <see cref="FloatOperation.Add"/> case whose exponents are far apart (#775), with its expected result written
+    /// out by hand: <c>RZ_p</c> of the exact sum, which no <see cref="BigInteger"/> of the full width could hold.
+    /// </summary>
+    private sealed record FarAddCase(ArithmeticCase Case, BigInteger Significand, long Exponent, bool IsNegative);
+
+    private const int MaxExp = int.MaxValue;
+    private const int MinExp = int.MinValue;
+
+    private static readonly BigInteger s_top32 = BigInteger.One << 31;
+    private static readonly BigInteger s_ones32 = uint.MaxValue;
+
+    /// <summary>
+    /// Sums with one result word (<c>p = 32</c>) unless stated: H is the operand with the larger exponent, L the other.
+    /// With <c>H = 1·2^0</c> and a one-word L, L only matters as a sticky bit from <c>e_L = -64</c> on
+    /// (<c>e_L + 32 &lt;= e_H - p</c>), and the sum is computed exactly up to <c>e_L = -63</c>.
+    /// </summary>
+    private static readonly Dictionary<string, FarAddCase> s_farAddCases = new()
+    {
+        // 2^int.MaxValue + 2^-2: the difference int.MaxValue + 2 wrapped around, and the larger operand was lost.
+        ["FarSum"] = Far(Add(Pow2(MaxExp), Pow2(-2)), s_top32, MaxExp - 31L),
+        // 2^int.MaxValue + 2^-1: the difference 2^31 wrapped to int.MinValue (Math.Abs threw on the GPU).
+        ["FarSumDifferenceIsTwoTo31"] = Far(Add(Pow2(MaxExp), Pow2(-1)), s_top32, MaxExp - 31L),
+        // 2^int.MaxValue - 2^-2: just below 2^int.MaxValue (it used to come out with the wrong sign on the CPU).
+        ["FarDifference"] = Far(Add(Pow2(MaxExp), Of(1u, -2, isNegative: true)), s_ones32, MaxExp - 32L),
+        // The same sum with the operands swapped.
+        ["FarSumLowOnTheLeft"] = Far(Add(Pow2(-2), Pow2(MaxExp)), s_top32, MaxExp - 31L),
+        // 2^-2 - 2^int.MaxValue: negative.
+        ["FarDifferenceNegative"] = Far(Add(Pow2(-2), Of(1u, MaxExp, isNegative: true)), s_ones32, MaxExp - 32L, true),
+        // -2^int.MaxValue - 2^-2.
+        ["FarSumBothNegative"] = Far(
+            Add(Of(1u, MaxExp, isNegative: true), Of(1u, -2, isNegative: true)), s_top32, MaxExp - 31L, true),
+        // 2^int.MaxValue + 2^int.MinValue: the largest difference of two int exponents, 2^32 - 1.
+        ["LongEndsSum"] = Far(Add(Pow2(MaxExp), Pow2(MinExp)), s_top32, MaxExp - 31L),
+        // 2^int.MaxValue - 2^int.MinValue.
+        ["LongEndsDifference"] = Far(Add(Pow2(MaxExp), Of(1u, MinExp, isNegative: true)), s_ones32, MaxExp - 32L),
+        // 2^0 + 2^int.MinValue: the difference 2^31 on the low side.
+        ["MinSideSum"] = Far(Add(Pow2(0), Pow2(MinExp)), s_top32, -31),
+        // 2^0 - 2^int.MinValue.
+        ["MinSideDifference"] = Far(Add(Pow2(0), Of(1u, MinExp, isNegative: true)), s_ones32, -32),
+        // 2^int.MaxValue + 2^-2 in two words (p = 64).
+        ["FarSumTwoWords"] = Far(Add(Pow2(MaxExp), Pow2(-2), 2), BigInteger.One << 63, MaxExp - 63L),
+        // 2^int.MaxValue - 2^-2 in two words.
+        ["FarDifferenceTwoWords"] = Far(
+            Add(Pow2(MaxExp), Of(1u, -2, isNegative: true), 2), (BigInteger.One << 64) - 1, MaxExp - 64L),
+
+        // The difference d = p: 1 - 2^-32 is exact.
+        ["GapP"] = Far(Add(Pow2(0), Of(1u, -32, isNegative: true)), s_ones32, -32),
+        // d = p + 1: 1 + 2^-33 and 1 - 2^-33.
+        ["GapPPlus1Sum"] = Far(Add(Pow2(0), Pow2(-33)), s_top32, -31),
+        ["GapPPlus1Difference"] = Far(Add(Pow2(0), Of(1u, -33, isNegative: true)), s_ones32, -32),
+        // d = p + 2: 1 - 2^-34.
+        ["GapPPlus2Difference"] = Far(Add(Pow2(0), Of(1u, -34, isNegative: true)), s_ones32, -32),
+        // The last L computed exactly (e_L + 32 = e_H - p + 1) and the first that is only a sticky bit.
+        ["LastExactDifference"] = Far(Add(Pow2(0), Of(1u, -63, isNegative: true)), s_ones32, -32),
+        ["FirstStickyDifference"] = Far(Add(Pow2(0), Of(1u, -64, isNegative: true)), s_ones32, -32),
+        ["FirstStickySum"] = Far(Add(Pow2(0), Pow2(-64)), s_top32, -31),
+
+        // L far below its exponent gap would suggest: 2^100 + 0xFFFFFFFF·2^60 has L's top bits in the window [69, 101).
+        ["LowInsideWindowSum"] = Far(Add(Pow2(100), Of(uint.MaxValue, 60)), new BigInteger(0x807F_FFFFu), 69),
+        // 2^100 - 0xFFFFFFFF·2^60 = 2^100 - 2^92 + 2^60: the window drops to [68, 100).
+        ["LowInsideWindowDifference"] = Far(
+            Add(Pow2(100), Of(uint.MaxValue, 60, isNegative: true)), new BigInteger(0xFF00_0000u), 68),
+        // A two-word L at 2^30 whose top word reaches into the window: 2^100 + 0xFFFFFFFF·2^62.
+        ["LowTopWordInsideWindow"] = Far(Add(Pow2(100), Of([0u, uint.MaxValue], 30)), new BigInteger(0x81FF_FFFFu), 69),
+        // H = 2^63 in two words (wider than p) minus a far L: 2^63 - tiny truncates to 0xFFFFFFFF·2^31.
+        ["WideHighFarDifference"] = Far(
+            Add(Of([0u, 0x8000_0000u], 0), Of(1u, -100, isNegative: true)), s_ones32, 31),
+        // H = 2^63 + 1, whose low bit is below the window: subtracting a far L does not reach the window.
+        ["WideHighWithLowBitsFarDifference"] = Far(
+            Add(Of([1u, 0x8000_0000u], 0), Of(1u, -100, isNegative: true)), s_top32, 32),
+        // The same H plus a far L: the sticky bit lands below the low bit of H and does not carry into the window.
+        ["WideHighWithLowBitsFarSum"] = Far(Add(Of([1u, 0x8000_0000u], 0), Pow2(-100)), s_top32, 32),
+
+        // A zero H with a far exponent: the sum is L.
+        ["ZeroHighFarSum"] = Far(Add(Of(0u, MaxExp), Pow2(-2)), s_top32, -33),
+        ["ZeroHighFarDifference"] = Far(Add(Of(0u, MaxExp), Of(1u, -2, isNegative: true)), s_top32, -33, true),
+        // A zero L with a far exponent: the sum is H, also with opposite signs.
+        ["ZeroLowFarDifference"] = Far(Add(Pow2(MaxExp), Of(0u, -2, isNegative: true)), s_top32, MaxExp - 31L),
+        // Both zero.
+        ["BothZeroFar"] = Far(Add(Of(0u, MaxExp), Of(0u, MinExp)), BigInteger.Zero, 0),
+    };
+
+    public static TheoryData<Engine, string> FarAddCasesOnBothEngines()
+    {
+        var data = new TheoryData<Engine, string>();
+        foreach (var name in s_farAddCases.Keys)
+        {
+            data.Add(Engine.Gpu, name);
+            data.Add(Engine.Cpu, name);
+        }
+
+        return data;
+    }
+
+    // P1: Add returns the hand-written RZ_p of the exact sum. P2: the result is RZ_p of the sum by the definition,
+    // checked through BigFloatReference.SignOfSum, which compares terms by their top bits and never shifts by the gap.
+    // Both engines return the same bits (#775).
+    // mutant: BigFloatAddAlignment.cs:43 always false (no early decision: the far cases throw OverflowException from
+    // the shift or wrap; also AddOperators_*)
+    // mutant: BigFloatAddAlignment.cs:43 `- 32L * resultWords` removed (LowInside*, LowTopWordInsideWindow: L's bits in
+    // the window become a sticky bit)
+    // mutant: BigFloatAddAlignment.cs:43 `32L * low.Significand.NumWords` -> `32L * (... - 1)` (LowTopWordInsideWindow)
+    // mutant: BigFloatAddAlignment.cs:53 `- 1` -> `+ 1` (FirstSticky*, Far*, LongEnds*, MinSide*: the sticky bit lands
+    // in the window)
+    // equivalent: BigFloatAddAlignment.cs:43 `<=` -> `<` (the boundary case is computed exactly, with the same bits)
+    // equivalent: BigFloatAddAlignment.cs:53 `- 1` removed (2^(e_H - p) is still below the window and H is a multiple
+    // of it, so H ± 2^(e_H - p) rounds like H ± L)
+    // mutant: GSharpKernelFloatProvider.cs:96 / CSharpCpuBigFloatArithmetic.cs:132 zero-L check removed
+    // (ZeroLowFarDifference: H - sticky is one ulp low)
+    // mutant: GSharpKernelFloatProvider.cs:101 / CSharpCpuBigFloatArithmetic.cs:137 zero-H check removed
+    // (ZeroHighFar*: the sticky bit instead of L)
+    // mutant: GSharpKernelFloatProvider.cs:179 `> 0 => (-2, ...)` -> `(-1, ...)` (every difference with |H| > |L|, Gpu)
+    [SkippableTheory]
+    [Scenario(TestScenario.Boundary)]
+    [MemberData(nameof(FarAddCasesOnBothEngines))]
+    public void Add_FarApartExponents_IsRoundedTowardZero(Engine engine, string caseName)
+    {
+        var farCase = s_farAddCases[caseName];
+        var (sig, result) = Run(Arithmetic(engine), farCase.Case);
+        var actual = (sig, (long)result.Exponent, result.IsNegative);
+        var described = BigFloatReference.Describe(sig, result.Exponent, result.IsNegative);
+        var label = $"{caseName} [{engine}]: actual {described}";
+
+        Assert.True((farCase.Significand, farCase.Exponent, farCase.IsNegative) == actual,
+            $"{label}, expected {(farCase.IsNegative ? "-" : "+")}0x{farCase.Significand:X} * 2^{farCase.Exponent}");
+        Assert.True(
+            BigFloatReference.IsRoundedTowardZeroOfSum(
+                sig, result.Exponent, result.IsNegative, 32 * farCase.Case.Words, SumTerms(farCase.Case)),
+            $"{label} is not RZ_{32 * farCase.Case.Words} of the sum");
+    }
+
+    // A far L does not keep a sum in range: H = 2^63·2^int.MaxValue in two words, normalized to one word, needs the
+    // exponent int.MaxValue + 32, so Add throws OverflowException on the sticky path too (#661 §4.1), with either sign.
+    // mutant: GSharpKernelFloatProvider.cs:70 / CSharpCpuBigFloatArithmetic.cs:112 `checked((int)(exponent - shift))`
+    // -> `unchecked(...)` (the exponent wraps around instead)
+    [SkippableTheory]
+    [Scenario(TestScenario.SadPath)]
+    [InlineData(Engine.Gpu)]
+    [InlineData(Engine.Cpu)]
+    public void Add_FarApartExponents_ResultAboveMax_ThrowsOverflow(Engine engine)
+    {
+        var arithmetic = Arithmetic(engine);
+        var wideHigh = Of([0u, 0x8000_0000u], MaxExp);
+        Assert.Throws<OverflowException>(() => Run(arithmetic, Add(wideHigh, Pow2(-2))));
+        Assert.Throws<OverflowException>(() => Run(arithmetic, Add(wideHigh, Of(1u, -2, isNegative: true))));
+    }
+
+    // a + b, a - b and b - a through the operators, with exponents 2^31 + 2 apart: one-word operands give a two-word
+    // result (p = 64), on the G# kernels (Engine.Gpu) and on the CPU arithmetic (Engine.Cpu).
+    [SkippableTheory]
+    [Scenario(TestScenario.Boundary)]
+    [InlineData(Engine.Gpu)]
+    [InlineData(Engine.Cpu)]
+    public void AddOperators_FarApartExponents_AreRoundedTowardZero(Engine engine)
+    {
+        using var huge = new GpuBigFloat(new GpuBigUInt(_workspace, [1u]), MaxExp, false);
+        using var quarter = new GpuBigFloat(new GpuBigUInt(_workspace, [1u]), -2, false);
+        var cpu = new GpuBigFloatExpressionVisitor(_workspace, CSharpCpuBigFloatArithmetic.Instance);
+        using var sum = engine == Engine.Gpu ? huge + quarter : cpu.Visit(huge + quarter);
+        using var difference = engine == Engine.Gpu ? huge - quarter : cpu.Visit(huge - quarter);
+        using var reversed = engine == Engine.Gpu ? quarter - huge : cpu.Visit(quarter - huge);
+
+        var ones64 = (BigInteger.One << 64) - 1;
+        Assert.Equal((BigInteger.One << 63, MaxExp - 63, false), Parts(sum));
+        Assert.Equal((ones64, MaxExp - 64, false), Parts(difference));
+        Assert.Equal((ones64, MaxExp - 64, true), Parts(reversed));
+    }
+
+    private static (BigInteger Significand, int Exponent, bool IsNegative) Parts(GpuBigFloat value) =>
+        (value.UFloat.Significand.ToBigInteger(), value.Exponent, value.IsNegative);
+
+    // ±significand·2^exponent of both operands, for BigFloatReference.SignOfSum.
+    private static (BigInteger Coefficient, long Exponent)[] SumTerms(ArithmeticCase arithmeticCase)
+    {
+        var right = arithmeticCase.Right ?? throw new InvalidOperationException("An addition needs a right operand.");
+        return
+        [
+            (arithmeticCase.Left.IsNegative ? -arithmeticCase.Left.Significand : arithmeticCase.Left.Significand,
+                arithmeticCase.Left.Exponent),
+            (right.IsNegative ? -right.Significand : right.Significand, right.Exponent),
+        ];
+    }
+
+    private static FarAddCase Far(ArithmeticCase arithmeticCase, BigInteger significand, long exponent,
+        bool isNegative = false) =>
+        new(arithmeticCase, significand, exponent, isNegative);
 
     // The exact value as num / den · 2^scale (den > 0, the sign in num), from the operands the test holds. The powers of
     // two of the exponents stay in scale, so an exponent at the end of the int range never becomes a shift.
@@ -406,8 +594,8 @@ public class GpuBigFloatRoundingTests : IDisposable
     // The CPU provider's Sqrt and Rsqrt already return RZ_p (they take the integer square root of an exact scaled
     // value). These cases pin that, and check the references RzSqrt and RzRsqrt by their definitions:
     // R²·2^(2e) <= a < (R + 1)²·2^(2e) and R²·2^(2e)·a <= 1 < (R + 1)²·2^(2e)·a, with R of exactly p bits.
-    // mutant: CSharpCpuBigFloatArithmetic.cs:381 Sqrt `e--` -> `e++` (every odd exponent: 3, 1, 1, -7)
-    // mutant: CSharpCpuBigFloatArithmetic.cs:441 `(valueSig.NumWords + resultSig.NumWords * 2) * 32` -> `resultSig.NumWords * 32`
+    // mutant: CSharpCpuBigFloatArithmetic.cs:350 Sqrt `e--` -> `e++` (every odd exponent: 3, 1, 1, -7)
+    // mutant: CSharpCpuBigFloatArithmetic.cs:410 `(valueSig.NumWords + resultSig.NumWords * 2) * 32` -> `resultSig.NumWords * 32`
     // (the 3-word value and 0xFFFF_FFFF: fewer than p bits)
     [SkippableTheory]
     [Scenario(TestScenario.Boundary)]
@@ -458,9 +646,9 @@ public class GpuBigFloatRoundingTests : IDisposable
     // P1: Sqrt returns RZ_p(sqrt(a)), the reference RzSqrt (an integer square root of the test's own, checked against
     // r² <= A < (r + 1)²; not the product's). P2: the result satisfies the definition by itself,
     // R²·2^(2e) <= a < (R + 1)²·2^(2e) with R of exactly p bits, so an exact root (PerfectSquares) is returned exactly.
-    // mutant: GSharpKernelFloatProvider.cs:308 `% 2 != 0` -> `% 2 == 0` (every case: the root of 2·a, or an odd shift)
-    // mutant: GSharpKernelFloatProvider.cs:314 `checked((int)shift)` -> `checked((int)Math.Max(shift, 0))` (Width9, Width16, Width16ZeroLow)
-    // mutant: GSharpKernelFloatProvider.cs:307 `2L * 32 * n` -> `2 * 32 * n` (ParityMin, ParityMinPlus1: E - t wraps)
+    // mutant: GSharpKernelFloatProvider.cs:329 `% 2 != 0` -> `% 2 == 0` (every case: the root of 2·a, or an odd shift)
+    // mutant: GSharpKernelFloatProvider.cs:335 `checked((int)shift)` -> `checked((int)Math.Max(shift, 0))` (Width9, Width16, Width16ZeroLow)
+    // mutant: GSharpKernelFloatProvider.cs:328 `2L * 32 * n` -> `2 * 32 * n` (ParityMin, ParityMinPlus1: E - t wraps)
     // mutant: GpuBigIntDivRem.Sqrt.cs:124 `+ 48` -> `+ 47` (the estimate is twice the root)
     // mutant: GpuBigIntSqrtKernels.cu.cs:176 `AddSmallSigned(trial, slackWords, -1)` removed (NearSquarePlus2R steps to r + 1,
     // NearSquareMinus1)
@@ -644,13 +832,13 @@ public class GpuBigFloatRoundingTests : IDisposable
     // P1: Rsqrt returns RZ_p(1 / sqrt(a)), the reference RzRsqrt (the test's own integer square root of
     // floor(2^(2k) / s)). P2: the result satisfies the definition by itself, R²·2^(2e)·a <= 1 < (R + 1)²·2^(2e)·a with R of
     // exactly p bits, so an exact inverse root (a power of four) is returned exactly.
-    // mutant: GSharpKernelFloatProvider.cs:375 `n - words / 2` -> `n - words` (Ladder3n4, Width1, Width4, Parity*: fewer than
+    // mutant: GSharpKernelFloatProvider.cs:396 `n - words / 2` -> `n - words` (Ladder3n4, Width1, Width4, Parity*: fewer than
     // p bits)
-    // mutant: GSharpKernelFloatProvider.cs:353 `if (shift > 0)` -> `if (true)` (OddExponentFullWidth, OddExponentFullWidthWide:
+    // mutant: GSharpKernelFloatProvider.cs:374 `if (shift > 0)` -> `if (true)` (OddExponentFullWidth, OddExponentFullWidthWide:
     // the radicand loses its lowest bit and the result is 1 ulp too large)
-    // mutant: GSharpKernelFloatProvider.cs:351 `% 2 != 0` -> `% 2 == 0` (every case with an odd shift)
-    // mutant: GSharpKernelFloatProvider.cs:380 `- 32L * (words + marginWords)` -> `... + 1` (every case: twice the value)
-    // mutant: GSharpKernelFloatProvider.cs:350 `long shift = 32L * ...` -> `int shift = 32 * ...` (ParityMin, ParityMinPlus1)
+    // mutant: GSharpKernelFloatProvider.cs:372 `% 2 != 0` -> `% 2 == 0` (every case with an odd shift)
+    // mutant: GSharpKernelFloatProvider.cs:401 `- 32L * (words + marginWords)` -> `... + 1` (every case: twice the value)
+    // mutant: GSharpKernelFloatProvider.cs:371 `long shift = 32L * ...` -> `int shift = 32 * ...` (ParityMin, ParityMinPlus1)
     [SkippableTheory]
     [Scenario(TestScenario.Boundary)]
     [MemberData(nameof(RsqrtCasesOnBothEngines))]
@@ -894,6 +1082,9 @@ public class GpuBigFloatRoundingTests : IDisposable
             ["AddAllOnesPlusHalf"] = Add(Of(allOnes, 0), Pow2(-1), 4),
             // wide + narrow·2^17: operands of different widths.
             ["AddWideAndNarrow"] = Add(Of(wide, 0), Of(narrow, 17), 4),
+            // 2^-100 - wide·2^-400: the exponents are 300 apart, but the 9-word L reaches up to 2^-112, inside the
+            // window of the result, so it is not reduced to a sticky bit (#775).
+            ["AddWideLowInsideWindow"] = Add(Pow2(-100), Of(wide, -400, isNegative: true)),
 
             // 3 · 5: an exact small product.
             ["MultiplySmallIntegers"] = Mul(Of(3u, 0), Of(5u, 0)),
@@ -938,7 +1129,7 @@ public class GpuBigFloatRoundingTests : IDisposable
 
             // The significand 1: floor(2^T / 1) = 2^T needs T + 1 bits, so a working width of exactly T bits failed on
             // the GPU (the device correction did not converge).
-            // mutant: GSharpKernelFloatProvider.cs:266 `reciprocalWords * 32 - 1` -> `reciprocalWords * 32 - 0` (the
+            // mutant: GSharpKernelFloatProvider.cs:287 `reciprocalWords * 32 - 1` -> `reciprocalWords * 32 - 0` (the
             // four ReciprocalOfOne* cases on the GPU, and ReciprocalOfOneNearMin in the limit cases)
             // 1 / 2^3 in one word.
             ["ReciprocalOfOne1"] = Rcp(Pow2(3)),
