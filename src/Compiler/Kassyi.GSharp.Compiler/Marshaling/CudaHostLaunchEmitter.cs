@@ -143,6 +143,11 @@ internal static class CudaHostLaunchEmitter
         var key = kernel.MemberKey;
         writer.AppendLine($"WarmupFunctionPointer{key}();");
         writer.AppendLine($"IntPtr hfunc = s_hfunc_{key}!.Value;");
+
+        // [WHY] sharedMemBytes above 48 KB needs the function's opt-in; a request the device cannot hold is rejected
+        // with the kernel's name instead of the driver's bare CUDA_ERROR_INVALID_VALUE (#545)
+        writer.AppendLine(
+            $"global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, {SymbolDisplay.FormatLiteral(kernel.Host.MessageName, quote: true)});");
         writer.AppendLine();
     }
 

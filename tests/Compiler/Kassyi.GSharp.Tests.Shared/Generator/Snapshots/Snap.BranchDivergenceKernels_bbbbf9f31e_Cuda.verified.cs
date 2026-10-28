@@ -129,6 +129,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerBranchDivergenceKernel();
 IntPtr hfunc = s_hfunc_BranchDivergenceKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "BranchDivergenceKernels.BranchDivergenceKernel");
 IntPtr d_data = IntPtr.Zero;
 try
 {
@@ -186,6 +187,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerBranchDivergenceKernel();
 IntPtr hfunc = s_hfunc_BranchDivergenceKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "BranchDivergenceKernels.BranchDivergenceKernel");
 try
 {
 void** kernelParams = stackalloc void*[2];

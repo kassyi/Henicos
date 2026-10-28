@@ -132,6 +132,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerWarpReductionKernel();
 IntPtr hfunc = s_hfunc_WarpReductionKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "WarpShuffleKernels.WarpReductionKernel");
 IntPtr d_input = IntPtr.Zero;
 IntPtr d_output = IntPtr.Zero;
 try
@@ -214,6 +215,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerWarpReductionKernel();
 IntPtr hfunc = s_hfunc_WarpReductionKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "WarpShuffleKernels.WarpReductionKernel");
 try
 {
 void** kernelParams = stackalloc void*[2];
@@ -294,6 +296,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerWarpShuffleBoundaryKernel();
 IntPtr hfunc = s_hfunc_WarpShuffleBoundaryKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "WarpShuffleKernels.WarpShuffleBoundaryKernel");
 IntPtr d_input = IntPtr.Zero;
 IntPtr d_outputBoundary0 = IntPtr.Zero;
 IntPtr d_outputBoundary31 = IntPtr.Zero;
@@ -430,6 +433,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerWarpShuffleBoundaryKernel();
 IntPtr hfunc = s_hfunc_WarpShuffleBoundaryKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "WarpShuffleKernels.WarpShuffleBoundaryKernel");
 try
 {
 void** kernelParams = stackalloc void*[4];
@@ -517,6 +521,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerWarpDivergenceKernel();
 IntPtr hfunc = s_hfunc_WarpDivergenceKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "WarpShuffleKernels.WarpDivergenceKernel");
 IntPtr d_input = IntPtr.Zero;
 IntPtr d_output = IntPtr.Zero;
 try
@@ -599,6 +604,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerWarpDivergenceKernel();
 IntPtr hfunc = s_hfunc_WarpDivergenceKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "WarpShuffleKernels.WarpDivergenceKernel");
 try
 {
 void** kernelParams = stackalloc void*[2];
@@ -663,6 +669,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerWarpShuffleExtremaKernel();
 IntPtr hfunc = s_hfunc_WarpShuffleExtremaKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "WarpShuffleKernels.WarpShuffleExtremaKernel");
 IntPtr d_input = IntPtr.Zero;
 IntPtr d_output = IntPtr.Zero;
 try
@@ -751,6 +758,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerWarpShuffleExtremaKernel();
 IntPtr hfunc = s_hfunc_WarpShuffleExtremaKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "WarpShuffleKernels.WarpShuffleExtremaKernel");
 try
 {
 void** kernelParams = stackalloc void*[5];

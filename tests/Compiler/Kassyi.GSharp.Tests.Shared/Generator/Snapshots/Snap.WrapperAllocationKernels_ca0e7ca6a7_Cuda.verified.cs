@@ -119,6 +119,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerAllocationTestKernel();
 IntPtr hfunc = s_hfunc_AllocationTestKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "WrapperAllocationKernels.AllocationTestKernel");
 IntPtr d_ioVal = IntPtr.Zero;
 IntPtr d_outVal = IntPtr.Zero;
 IntPtr d_arrayVal = IntPtr.Zero;
@@ -207,6 +208,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerAllocationTestKernel();
 IntPtr hfunc = s_hfunc_AllocationTestKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "WrapperAllocationKernels.AllocationTestKernel");
 try
 {
 void** kernelParams = stackalloc void*[4];
