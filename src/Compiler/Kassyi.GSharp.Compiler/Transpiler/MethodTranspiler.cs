@@ -105,6 +105,11 @@ public static class MethodTranspiler
 
         var lowered = plan.GetLoweredFor(dialect);
         context.Emitter.IteratorExpansionCounter = lowered?.RegionCount ?? 0;
+        var resumeLocals = ImmutableArray<ResumeLocal>.Empty;
+        if (lowered != null)
+        {
+            (lowered, resumeLocals) = SeparateResumeLocals(lowered, in plan, context.Emitter.Dialect);
+        }
 
         using var mainWriter = new SourceWriter();
         using var bodyWriter = new SourceWriter();
@@ -134,7 +139,7 @@ public static class MethodTranspiler
             MethodSignatureTranspiler.WriteMethodSignature(in plan, lowered != null, ref context);
         }
 
-        WriteMethodBody(in plan, lowered, ref context);
+        WriteMethodBody(in plan, lowered, resumeLocals, ref context);
 
         // The struct members and Dispose bodies written below have no table of dynamic shared memory regions
         context.Emitter.DynamicSharedMemorySlotScope = null;
@@ -304,7 +309,7 @@ public static class MethodTranspiler
         ?? throw new InvalidOperationException("A call that may suspend does not resolve to a device function.");
 
     private static void WriteMethodBody(in MethodEmissionPlan plan, LoweredStateMachine? lowered,
-        ref TranspileContext context)
+        ImmutableArray<ResumeLocal> resumeLocals, ref TranspileContext context)
     {
         using (context.Emitter.Writer.Scope())
         {
@@ -339,6 +344,7 @@ public static class MethodTranspiler
                 }
 
                 WriteCopiedParameterInitialization(lowered, in plan, ref context);
+                WriteResumeLocals(resumeLocals, ref context);
                 context.Visitor.Visit(lowered.LoweredBody);
 
                 if (isFrame)
@@ -376,6 +382,124 @@ public static class MethodTranspiler
         }
     }
 
+    // Takes the hoisted locals that are declared again on every resume (ResumeLocals) out of the frame, turns their
+    // context accesses in the body back into locals, and leaves their initialization where they are declared;
+    // SharedMemory<T> stays in the frame, where the launcher sets it up. The C++ array of a stackalloc span is the local
+    // itself; a stackalloc pointer points into an array of its own (ResumeLocals.StackStorageName).
+    private static (LoweredStateMachine Lowered, ImmutableArray<ResumeLocal> ResumeLocals) SeparateResumeLocals(
+        LoweredStateMachine lowered, in MethodEmissionPlan plan, ITranspilerDialect dialect)
+    {
+        var semanticModel = plan.SemanticModel;
+        var kernelName = plan.Declaration.Identifier.ValueText;
+        var zeroFill = plan.Symbol.AreLocalsZeroed();
+        var frameFields = ImmutableArray.CreateBuilder<VariableDeclaratorSyntax>();
+        var resumeLocals = ImmutableArray.CreateBuilder<ResumeLocal>();
+        var byKey = new Dictionary<DeclarationKey, (ResumeLocal Local, IdentifierNameSyntax? Storage)>();
+        foreach (var field in lowered.ContextFields)
+        {
+            var type = HoistedFieldTypeResolver.Resolve(field, semanticModel, kernelName);
+            var key = LoweringIdentity.ForDeclaration(field, semanticModel);
+            if (key.Symbol == null || !ResumeLocals.IsRedeclared(field, type, sharedMemoryInFrame: true))
+            {
+                frameFields.Add(field);
+                continue;
+            }
+
+            var local = ResumeLocals.Describe(field, type, semanticModel);
+            var storage = local is { Kind: ResumeLocalKind.StackAlloc, Type: IPointerTypeSymbol }
+                ? SyntaxFactory.IdentifierName(ResumeLocals.StackStorageName(GetDeclaredCppName(local.Declarator, semanticModel, dialect)))
+                : null;
+            resumeLocals.Add(local);
+            byKey[key] = (local, storage);
+        }
+
+        if (resumeLocals.Count == 0)
+        {
+            return (lowered, ImmutableArray<ResumeLocal>.Empty);
+        }
+
+        var body = new ContextLocalRewriter(new HashSet<DeclarationKey>(byKey.Keys), new Dictionary<DeclarationKey, string>(),
+                           semanticModel, kernelName,
+                           (key, name, value) => byKey[key] switch
+                           {
+                               { Local: { Kind: ResumeLocalKind.StackAlloc, Length: 0, Type: IPointerTypeSymbol } } =>
+                                   ResumeLocals.AssignNull(name),
+                               // The empty span declared before the switch is all there is
+                               { Local: { Kind: ResumeLocalKind.StackAlloc, Length: 0 } } => null,
+                               var (local, storage) =>
+                                   ResumeLocals.CreateInitialization(local, name, value, storage, zeroFill)
+                           })
+                       .Visit(lowered.LoweredBody) as BlockSyntax
+                   ?? throw new InvalidOperationException(
+                       $"Turning the resume locals of '{kernelName}' back into locals removed the state machine body.");
+        return (lowered with { LoweredBody = body, ContextFields = frameFields.ToImmutable() }, resumeLocals.ToImmutable());
+    }
+
+    private static string GetDeclaredCppName(VariableDeclaratorSyntax declarator, SemanticModel semanticModel,
+        ITranspilerDialect dialect) =>
+        CppNameResolver.Resolve(semanticModel.GetDeclaredSymbol<ISymbol>(declarator), declarator.Identifier.ValueText, dialect,
+            LoweringIdentity.GetRegion(declarator)).ToString();
+
+    // The storage of each resume local, before the state switch; the values are written where it is declared:
+    // <type> <name>;                                               (assigned there, through the declaration rules)
+    // <element> <name>[<length>];                                  (a stackalloc span: zeroed or filled there)
+    // <element> __gsharp_stack_<name>[<length>]; <element>* <name>; (a stackalloc pointer: bound, zeroed or filled there)
+    // <element>* <name>;                                           (a stackalloc pointer of length 0: set to nullptr there)
+    // A stackalloc with a size that is not a constant is reported, as the declaration rule reports it without a barrier.
+    private static void WriteResumeLocals(ImmutableArray<ResumeLocal> resumeLocals, ref TranspileContext context)
+    {
+        foreach (var local in resumeLocals)
+        {
+            switch (local)
+            {
+                case { Kind: ResumeLocalKind.Unsupported, Unsupported: { } node }:
+                    context.Reporter.Fail(GSharpDiagnostics.UnsupportedSyntax, node, GpuCodeConstraints.DynamicArraySize);
+                    break;
+                case { Kind: ResumeLocalKind.StackAlloc, ElementType: { } elementType }:
+                    WriteStackAllocStorage(local, elementType, ref context);
+                    break;
+                default:
+                    if (local.Declarator.Parent is VariableDeclarationSyntax declaration)
+                    {
+                        context.Visitor.Visit(SyntaxFactory.LocalDeclarationStatement(
+                            declaration.WithVariables(SyntaxFactory.SingletonSeparatedList(local.Declarator.WithInitializer(null)))
+                        ));
+                        context.Emitter.Writer.AppendLine();
+                    }
+
+                    break;
+            }
+        }
+    }
+
+    // <element> <array>[<length>]; and, for a pointer, <element>* <name>;
+    // [WHY] The array is not const even for a ReadOnlySpan<T>: its elements are written where the local is declared.
+    private static void WriteStackAllocStorage(ResumeLocal local, ITypeSymbol elementType, ref TranspileContext context)
+    {
+        var name = GetDeclaredCppName(local.Declarator, context.Query.SemanticModel, context.Emitter.Dialect);
+        var isPointer = local.Type is IPointerTypeSymbol;
+        if (local.Length == 0)
+        {
+            // A zero-length array is ill-formed in C++: a pointer is set to nullptr where it is declared, a span is empty
+            context.Emitter.Dialect.AppendType(ref context, local.Type);
+            context.Emitter.Writer.AppendLine(isPointer ? $" {name};" : $" {name}{{}};");
+            return;
+        }
+
+        context.Emitter.Dialect.AppendType(ref context, elementType);
+        context.Emitter.Writer.Append(' ').Append(isPointer ? ResumeLocals.StackStorageName(name) : name);
+        using (context.Emitter.Writer.Brackets())
+        {
+            context.Emitter.Writer.Append(local.Length);
+        }
+
+        context.Emitter.Writer.AppendLine(";");
+        if (isPointer)
+        {
+            context.Emitter.Dialect.AppendType(ref context, local.Type);
+            context.Emitter.Writer.AppendLine($" {name};");
+        }
+    }
     // On the first entry, the parameters the body assigns are copied into the frame; later resumes keep the frame's copy
     private static void WriteCopiedParameterInitialization(LoweredStateMachine lowered, in MethodEmissionPlan plan,
         ref TranspileContext context)

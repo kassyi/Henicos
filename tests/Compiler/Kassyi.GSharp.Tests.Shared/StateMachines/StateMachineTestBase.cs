@@ -88,9 +88,10 @@ public abstract class StateMachineTestBase
     {
         var (lowered, model) = LowerTestCase(testCaseFile, preLowerTransform);
 
-        var (localInits, regularFields, unhoistedKeys, renamedLocals) =
+        var (localInits, regularFields, unhoistedLocals, renamedLocals) =
             ManagedContextFields.ProcessContextFields(lowered.ContextFields, model, methodName);
-        var rewritten = new ContextLocalRewriter(unhoistedKeys, renamedLocals, model, methodName)
+        var rewritten = new ContextLocalRewriter(new HashSet<DeclarationKey>(unhoistedLocals.Keys), renamedLocals, model, methodName,
+                                ManagedCSharpTranspiler.CreateResumeInitialization(unhoistedLocals, zeroFill: true))
                             .Visit(lowered.LoweredBody)
                         ?? throw new InvalidOperationException("Context local rewriting removed the lowered body.");
 

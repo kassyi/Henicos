@@ -11,6 +11,52 @@ internal static class ManagedStateMachineEmitter
 #pragma warning restore RS0030
 
     /// <summary>Writes the field type: a written type as written, <c>var</c> as the resolved type.</summary>
+    // The storage of a local declared again on every resume (ResumeLocals), before the state switch:
+    // <type> <name> <initializer>;                                   (a SharedMemory<T>)
+    // scoped <type> <name> = default;                                (assigned where it is declared)
+    // Span<E> __gsharp_resume_storage_<name> = stackalloc E[<length>];
+    // scoped <type> <name> = default;                                (a stackalloc span, bound where it is declared)
+    // E* __gsharp_resume_storage_<name> = stackalloc E[<length>];
+    // E* <name> = default;                                           (a stackalloc pointer)
+    private static void AppendResumeLocal(SourceWriter writer, ManagedContextField local)
+    {
+        if (local.Resume is not { Kind: not ResumeLocalKind.Initialized } resume)
+        {
+            AppendFieldType(writer, local);
+            writer.Append($" {local.Name}");
+            if (local.Declarator.Initializer is { } initializer)
+            {
+                writer.Append($" {ToSource(initializer.WithoutTrivia())}");
+            }
+
+            writer.AppendLine(";");
+            return;
+        }
+
+        if (resume is { Kind: ResumeLocalKind.StackAlloc, ElementType: { } elementType })
+        {
+            if (resume.Type is IPointerTypeSymbol)
+            {
+                writer.AppendCsharpTypeName(elementType);
+                writer.Append("*");
+            }
+            else
+            {
+                writer.Append("global::System.Span<");
+                writer.AppendCsharpTypeName(elementType);
+                writer.Append(">");
+            }
+
+            writer.Append($" {local.StorageName} = stackalloc ");
+            writer.AppendCsharpTypeName(elementType);
+            writer.AppendLine($"[{resume.Length}];");
+        }
+
+        writer.AppendIf(resume.Type.IsRefLikeType, "scoped ");
+        AppendFieldType(writer, local);
+        writer.AppendLine($" {local.Name} = default;");
+    }
+
     public static void AppendFieldType(SourceWriter writer, ManagedContextField field)
     {
         if (field.DeclaredType.IsVar)
@@ -131,19 +177,9 @@ internal static class ManagedStateMachineEmitter
         }
 
         writer.AppendLine(") {");
-        if (localInits.Length > 0)
+        foreach (var localInit in localInits)
         {
-            foreach (var localInit in localInits)
-            {
-                AppendFieldType(writer, localInit);
-                writer.Append($" {localInit.Name}");
-                if (localInit.Declarator.Initializer is { } initializer)
-                {
-                    writer.Append($" {ToSource(initializer.WithoutTrivia())}");
-                }
-
-                writer.AppendLine(";");
-            }
+            AppendResumeLocal(writer, localInit);
         }
 
         if (copiedParameters.Length > 0)
@@ -185,14 +221,7 @@ internal static class ManagedStateMachineEmitter
 
         foreach (var localInit in localInits)
         {
-            AppendFieldType(writer, localInit);
-            writer.Append($" {localInit.Name}");
-            if (localInit.Declarator.Initializer is { } initializer)
-            {
-                writer.Append($" {ToSource(initializer.WithoutTrivia())}");
-            }
-
-            writer.AppendLine(";");
+            AppendResumeLocal(writer, localInit);
         }
 
         writer.AppendLine(bodySource);

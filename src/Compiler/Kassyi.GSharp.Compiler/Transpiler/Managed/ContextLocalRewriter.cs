@@ -1,15 +1,26 @@
 namespace Kassyi.GSharp.Compiler.Transpiler;
 
 /// <summary>
-/// Turns context accesses to ref struct locals back into locals, and renames the accesses to locals that share their
-/// name with another hoisted local (see <see cref="ManagedContextFields"/>). Accesses are matched to declarations by
-/// <see cref="DeclarationKey"/> (symbol and region).
+/// Turns context accesses to the locals that are declared again on every resume (<see cref="ResumeLocals"/>) back into
+/// locals, and renames the accesses to locals that share their name with another hoisted local (see
+/// <see cref="ManagedContextFields"/>). Accesses are matched to declarations by <see cref="DeclarationKey"/> (symbol and
+/// region).
 /// </summary>
+/// <param name="unhoistedKeys">The declarations of the locals that are declared again on every resume.</param>
+/// <param name="renamedLocals">The new names of the locals that share their name with another hoisted local.</param>
+/// <param name="semanticModel">The semantic model of the method.</param>
+/// <param name="kernelName">The C# name of the method, for internal-error reports.</param>
+/// <param name="initialize">
+/// The statement that replaces the initialization of an unhoisted local where it is declared, given its key, the
+/// reference to the local and the rewritten initializer (<see cref="ResumeLocals.CreateInitialization"/>);
+/// <see langword="null"/> from it, or no function, removes the initialization.
+/// </param>
 internal sealed class ContextLocalRewriter(
     HashSet<DeclarationKey> unhoistedKeys,
     Dictionary<DeclarationKey, string> renamedLocals,
     SemanticModel semanticModel,
-    string kernelName) : CSharpSyntaxRewriter
+    string kernelName,
+    Func<DeclarationKey, SimpleNameSyntax, ExpressionSyntax, StatementSyntax?>? initialize = null) : CSharpSyntaxRewriter
 {
     /// <summary>
     /// Matches <c>__gsharp_ctx-&gt;X</c>, the context access that <see cref="ContextHoister"/> emits.
@@ -60,7 +71,16 @@ internal sealed class ContextLocalRewriter(
             {
                 if (node.Parent is BlockSyntax or SwitchSectionSyntax)
                 {
-                    return null;
+                    if (initialize == null)
+                    {
+                        return null;
+                    }
+
+                    var value = Visit(assignment.Right) as ExpressionSyntax ?? assignment.Right;
+                    SimpleNameSyntax name = renamedLocals.TryGetValue(declaredKey, out var renamed)
+                        ? SyntaxFactory.IdentifierName(renamed).WithAdditionalAnnotations(memberAccess.Name.GetAnnotations(LoweringAnnotations.OriginalSpanAnnotationKind))
+                        : memberAccess.Name.WithoutTrivia();
+                    return initialize(declaredKey, name, value)?.WithTriviaFrom(node);
                 }
 
 #pragma warning disable RS0030 // Statement text for a human-readable internal-error report only

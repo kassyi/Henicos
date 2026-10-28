@@ -75,6 +75,14 @@ Lowering:
     # The label after a Gpu.SingleThread body with a return (__gsharp_st_end_<body>), which a return of the body jumps to;
     # the C++ emitter and the managed rewrite both spell it
     SingleThreadEndLabelPrefix: __gsharp_st_end_
+    # A ref struct or stackalloc pointer local that a state machine declares again on every resume (ResumeLocals): the
+    # index of the loop that zeroes its stackalloc memory where it is declared, and the managed stackalloc storage that the
+    # local is bound to there (__gsharp_resume_storage_<local>)
+    ResumeFillIndex: __gsharp_resume_fill
+    ResumeStoragePrefix: __gsharp_resume_storage_
+    # The C++ array behind a stackalloc pointer (int __gsharp_stack_<local>[n]; int* <local> = __gsharp_stack_<local>;), so
+    # that the pointer can be incremented and assigned like the C# pointer
+    StackStoragePrefix: __gsharp_stack_
 
 Iterator:
   Summary: Labels synthesized by inlining a device iterator body into a foreach site (IteratorInliner).

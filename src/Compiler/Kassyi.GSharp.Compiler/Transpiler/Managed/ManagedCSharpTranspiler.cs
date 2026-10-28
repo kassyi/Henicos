@@ -31,11 +31,12 @@ internal static class ManagedCSharpTranspiler
         // Internal-error reports name the kernel as the user wrote it.
         var kernelName = methodDecl.Identifier.ValueText;
 
-        var (localInits, regularFields, unhoistedKeys, renamedLocals) =
+        var (localInits, regularFields, unhoistedLocals, renamedLocals) =
             ManagedContextFields.ProcessContextFields(contextFields, semanticModel, kernelName);
 
         var unhoistedBody =
-            new ContextLocalRewriter(unhoistedKeys, renamedLocals, semanticModel, kernelName).Visit(loweredBody) as
+            new ContextLocalRewriter(new HashSet<DeclarationKey>(unhoistedLocals.Keys), renamedLocals, semanticModel,
+                    kernelName, CreateResumeInitialization(unhoistedLocals, methodSymbol.AreLocalsZeroed())).Visit(loweredBody) as
                 BlockSyntax
             ?? throw new InvalidOperationException(
                 $"Unhoisting ref-struct fields removed the body of kernel '{kernelName}'.");
@@ -50,6 +51,23 @@ internal static class ManagedCSharpTranspiler
         return writer.ToString();
     }
 
+    // The initialization that stays where a resume local is declared: an assignment, or the binding to its stackalloc
+    // storage, zeroed again unless [SkipLocalsInit] applies (ResumeLocals)
+    internal static Func<DeclarationKey, SimpleNameSyntax, ExpressionSyntax, StatementSyntax?> CreateResumeInitialization(
+        Dictionary<DeclarationKey, ManagedContextField> unhoistedLocals, bool zeroFill)
+    {
+        return (key, name, value) =>
+        {
+            var local = unhoistedLocals[key];
+            if (local.Resume is not { } resume)
+            {
+                return null;
+            }
+
+            var storage = resume.Kind == ResumeLocalKind.StackAlloc ? SyntaxFactory.IdentifierName(local.StorageName) : null;
+            return ResumeLocals.CreateInitialization(resume, name, value, storage, zeroFill);
+        };
+    }
     /// <summary>
     /// Emits the frame class and the state machine of a device function that may suspend. The state machine returns
     /// whether the call completed; the caller calls it again on every resume until it does.
@@ -75,12 +93,13 @@ internal static class ManagedCSharpTranspiler
             GlobalCppNames.GetKernelDerivedName(GSharpInternalNames.Kernel.StateMachinePrefix, methodSymbol);
         var functionName = methodDecl.Identifier.ValueText;
 
-        var (localInits, regularFields, unhoistedKeys, renamedLocals) =
+        var (localInits, regularFields, unhoistedLocals, renamedLocals) =
             ManagedContextFields.ProcessContextFields(lowered.ContextFields, semanticModel, functionName);
         var copiedParameters = plan.GetCopiedParameters(lowered);
 
         var unhoistedBody =
-            new ContextLocalRewriter(unhoistedKeys, renamedLocals, semanticModel, functionName)
+            new ContextLocalRewriter(new HashSet<DeclarationKey>(unhoistedLocals.Keys), renamedLocals, semanticModel,
+                    functionName, CreateResumeInitialization(unhoistedLocals, methodSymbol.AreLocalsZeroed()))
                 .Visit(lowered.LoweredBody) as BlockSyntax
             ?? throw new InvalidOperationException(
                 $"Unhoisting ref-struct fields removed the body of device function '{functionName}'.");

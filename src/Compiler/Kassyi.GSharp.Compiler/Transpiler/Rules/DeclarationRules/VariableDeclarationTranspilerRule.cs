@@ -252,6 +252,14 @@ public sealed class VariableDeclarationTranspilerRule : SyntaxNodeTranspilerRule
     private static bool TryTranspileStackArrayDeclaration(VariableDeclaratorSyntax variable, ITypeSymbol? typeSymbol,
         ref TranspileContext context)
     {
+        if (typeSymbol is IPointerTypeSymbol pointerType &&
+            variable.Initializer?.Value is { } pointerValue &&
+            ResumeLocals.ContainsStackAlloc(pointerValue))
+        {
+            WriteStackAllocPointer(variable, pointerType, pointerValue, ref context);
+            return true;
+        }
+
         if (variable.Initializer == null ||
             !InitializationSyntaxExtractor.TryGetArrayElementType(typeSymbol, out var elemType, out var isConst) ||
             elemType == null)
@@ -272,6 +280,56 @@ public sealed class VariableDeclarationTranspilerRule : SyntaxNodeTranspilerRule
         }
 
         return TryWriteFixedSizeArray(variable, variable.Initializer.Value, elemType, isConst, sizeExpr, ref context);
+    }
+
+    // int* p = stackalloc int[4];            ->  int __gsharp_stack_p[4]; int* p = __gsharp_stack_p;
+    // int* p = stackalloc int[] { 1, 2 };    ->  int __gsharp_stack_p[2]={1,2}; int* p = __gsharp_stack_p;
+    // int* p = stackalloc int[0];            ->  int* p = nullptr;  (a zero-length array is ill-formed in C++)
+    // [WHY] The array has a name of its own, so that the pointer can be incremented and assigned as in C#. A size that
+    // is not a constant, or a stackalloc inside another expression (a cast), is a dynamic array size.
+    private static void WriteStackAllocPointer(VariableDeclaratorSyntax variable, IPointerTypeSymbol pointerType,
+        ExpressionSyntax value, ref TranspileContext context)
+    {
+        if (!ResumeLocals.TryGetStackAllocLength(value, context.Query.SemanticModel, out var length, out var unsupported))
+        {
+            context.Reporter.Fail(GSharpDiagnostics.UnsupportedSyntax, unsupported ?? value, GpuCodeConstraints.DynamicArraySize);
+            return;
+        }
+
+        var symbol = context.Query.SemanticModel.GetDeclaredSymbol<ISymbol>(variable);
+        var name = CppNameResolver.Resolve(symbol, variable.Identifier.ValueText, context.Emitter.Dialect,
+            LoweringIdentity.GetRegion(variable)).ToString();
+        if (length == 0)
+        {
+            context.Emitter.Dialect.AppendType(ref context, pointerType);
+            context.Emitter.Writer.Append($" {name} = nullptr");
+            return;
+        }
+
+        var storage = ResumeLocals.StackStorageName(name);
+        context.Emitter.Dialect.AppendType(ref context, pointerType.PointedAtType);
+        context.Emitter.Writer.Append($" {storage}");
+        using (context.Emitter.Writer.Brackets())
+        {
+            context.Emitter.Writer.Append(length);
+        }
+
+        InitializationSyntaxExtractor.TryGetArrayInitialization(value, out _, out _, out var initializerNode);
+        if (initializerNode != null)
+        {
+            context.Emitter.Writer.Append("=");
+            context.Visitor.Visit(initializerNode);
+        }
+
+        // As any other stack array (#748): zeroed unless [SkipLocalsInit] applies
+        context.Emitter.Writer.AppendIf(
+            initializerNode == null && context.Query.SemanticModel.AreLocalsZeroedAt(value),
+            "{}"
+        );
+
+        context.Emitter.Writer.AppendLine(";");
+        context.Emitter.Dialect.AppendType(ref context, pointerType);
+        context.Emitter.Writer.Append($" {name} = {storage}");
     }
 
     private static void WriteArrayDeclarationHeader(ITypeSymbol elemType, VariableDeclaratorSyntax variable,
@@ -318,10 +376,29 @@ public sealed class VariableDeclarationTranspilerRule : SyntaxNodeTranspilerRule
             return true;
         }
 
+        // [WHY] A zero-length array is ill-formed in C++ (MSVC C2466, nvcc): the local is an empty span instead
+        if (context.Query.SemanticModel.GetSafeConstantValue(sizeExpr) is { HasValue: true, Value: 0 } &&
+            context.Query.SemanticModel.GetDeclaredSymbol<ILocalSymbol>(variable) is { } local)
+        {
+            context.Emitter.Dialect.AppendType(ref context, local.Type);
+            context.Emitter.Writer.Append(' ');
+            CppNameResolver.AppendDeclaredName(variable, variable.Identifier, ref context);
+            context.Emitter.Writer.Append("{}");
+            return true;
+        }
+
         WriteArrayDeclarationHeader(elemType, variable, isConst, ref context);
         using (context.Emitter.Writer.Brackets())
         {
-            context.Visitor.Visit(sizeExpr);
+            // [WHY] The value, not the expression: a const local is an ordinary C++ variable, which is no array size
+            if (context.Query.SemanticModel.GetSafeConstantValue(sizeExpr) is { HasValue: true, Value: int size })
+            {
+                context.Emitter.Writer.Append(size);
+            }
+            else
+            {
+                context.Visitor.Visit(sizeExpr);
+            }
         }
 
         context.Emitter.Writer.AppendIf(

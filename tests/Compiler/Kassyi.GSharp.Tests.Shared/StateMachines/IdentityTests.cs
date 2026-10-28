@@ -56,8 +56,9 @@ public class IdentityTests : StateMachineTestBase
             });
 
     // A ref struct local is declared again on every resume instead of living in the context class
-    // (ManagedContextFields.LocalInits). Its copies need their own local names, the declarator-derived initialization
-    // of each copy is removed, and the reassignment after the barrier stays.
+    // (ManagedContextFields.LocalInits). Its copies need their own local names; the declarator-derived initialization
+    // of each copy stays where the copy declares it, as an assignment (ResumeLocals), and so does the reassignment after
+    // the barrier.
     [Fact]
     [Scenario(TestScenario.HappyPath)]
     public Task Managed_DupSpanDemo_DistinguishesRefStructLocalsPerRegion() =>
@@ -82,7 +83,7 @@ public class IdentityTests : StateMachineTestBase
                     static m => ContextLocalRewriter.IsContextPointerAccess(m) &&
                                 m.Name.Identifier.ValueText.EndsWith("view", StringComparison.Ordinal));
 
-                // The initialization `view = output` of each copy is removed; the reassignment after the barrier stays
+                // The initialization `view = output` of each copy stays as an assignment, and so does the reassignment after the barrier
                 var viewAssignments = body.DescendantNodes()
                     .OfType<AssignmentExpressionSyntax>()
                     .Select(static a => a.Left)
@@ -90,7 +91,9 @@ public class IdentityTests : StateMachineTestBase
                     .Select(static name => name.Identifier.ValueText)
                     .Where(static name => name.EndsWith("view", StringComparison.Ordinal))
                     .ToArray();
-                Assert.Equal(["__gsharp_il_1_3_view", "__gsharp_il_2_3_view"], viewAssignments);
+                Assert.Equal(
+                    ["__gsharp_il_1_3_view", "__gsharp_il_1_3_view", "__gsharp_il_2_3_view", "__gsharp_il_2_3_view"],
+                    viewAssignments);
 
                 var viewReads = body.DescendantNodes()
                     .OfType<ElementAccessExpressionSyntax>()

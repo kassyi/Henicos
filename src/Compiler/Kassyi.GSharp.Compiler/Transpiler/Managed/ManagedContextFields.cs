@@ -2,13 +2,18 @@ namespace Kassyi.GSharp.Compiler.Transpiler;
 
 /// <summary>
 /// A hoisted context field with the type that <see cref="HoistedFieldTypeResolver"/> resolved for it and its name in
-/// the managed state machine.
+/// the managed state machine; for a local declared again on every resume, how it is declared (<see cref="ResumeLocals"/>).
 /// </summary>
 internal readonly record struct ManagedContextField(
     VariableDeclaratorSyntax Declarator,
     TypeSyntax DeclaredType,
     ITypeSymbol ResolvedType,
-    string Name);
+    string Name,
+    ResumeLocal? Resume = null)
+{
+    /// <summary>The managed stackalloc storage that a resume local is bound to where it is declared.</summary>
+    public string StorageName => GSharpInternalNames.Lowering.ResumeStoragePrefix + Name.TrimStart('@');
+}
 
 /// <summary>
 /// Discovers, validates, and names the hoisted fields for a managed execution context class.
@@ -18,14 +23,15 @@ internal static class ManagedContextFields
     private static readonly StandardCppDialect s_cppDialect = new();
 
     /// <summary>
-    /// Categorizes hoisted fields into regular context fields and unhoisted ref-struct fields initialized on the stack.
+    /// Categorizes hoisted fields into regular context fields and the ref struct and stackalloc pointer locals that are
+    /// declared again at the top of the state function on every resume (<see cref="ResumeLocals"/>).
     /// </summary>
     /// <remarks>
     /// Declarations are keyed by <see cref="DeclarationKey"/> (symbol and region), so the copies of one declaration
     /// that an expansion stamped with different regions get fields of their own.
     /// </remarks>
     public static (ImmutableArray<ManagedContextField> LocalInits, ImmutableArray<ManagedContextField> RegularFields,
-        HashSet<DeclarationKey> UnhoistedKeys, Dictionary<DeclarationKey, string> RenamedLocals)
+        Dictionary<DeclarationKey, ManagedContextField> UnhoistedLocals, Dictionary<DeclarationKey, string> RenamedLocals)
         ProcessContextFields(
             IReadOnlyList<VariableDeclaratorSyntax>? contextFields,
             SemanticModel semanticModel,
@@ -33,12 +39,12 @@ internal static class ManagedContextFields
     {
         var regularFields = ImmutableArray.CreateBuilder<ManagedContextField>();
         var localInits = ImmutableArray.CreateBuilder<ManagedContextField>();
-        var unhoistedKeys = new HashSet<DeclarationKey>();
+        var unhoistedLocals = new Dictionary<DeclarationKey, ManagedContextField>();
         var renamedLocals = new Dictionary<DeclarationKey, string>();
 
         if (contextFields == null)
         {
-            return (localInits.ToImmutable(), regularFields.ToImmutable(), unhoistedKeys, renamedLocals);
+            return (localInits.ToImmutable(), regularFields.ToImmutable(), unhoistedLocals, renamedLocals);
         }
 
         var sharedNames = FindSharedNames(contextFields);
@@ -68,20 +74,23 @@ internal static class ManagedContextFields
                 ManagedNameQualifier.Qualify(declaration.Type, semanticModel),
                 HoistedFieldTypeResolver.Resolve(field, semanticModel, kernelName), name);
 
-            if (contextField.ResolvedType.IsRefLikeType)
+            if (ResumeLocals.IsRedeclared(field, contextField.ResolvedType, sharedMemoryInFrame: false))
             {
-                if (key.Symbol != null)
-                {
-                    unhoistedKeys.Add(key);
-                }
-
-                // A ref struct local is declared again on every resume, so its initializer is emitted as is
-                localInits.Add(contextField with
+                // A ref struct or stackalloc pointer local is declared again on every resume (a SharedMemory<T> with its
+                // initializer, which reads only constants and its site key)
+                var resumeLocal = contextField with
                 {
                     Declarator = ManagedNameQualifier.Qualify(
                         SharedMemorySiteKeyAnnotator.AddSharedMemorySiteKeys(field, semanticModel),
-                        semanticModel)
-                });
+                        semanticModel),
+                    Resume = ResumeLocals.Describe(field, contextField.ResolvedType, semanticModel)
+                };
+                if (key.Symbol != null)
+                {
+                    unhoistedLocals[key] = resumeLocal;
+                }
+
+                localInits.Add(resumeLocal);
             }
             else
             {
@@ -89,7 +98,7 @@ internal static class ManagedContextFields
             }
         }
 
-        return (localInits.ToImmutable(), regularFields.ToImmutable(), unhoistedKeys, renamedLocals);
+        return (localInits.ToImmutable(), regularFields.ToImmutable(), unhoistedLocals, renamedLocals);
     }
 
     // Names that more than one hoisted local declares; such locals live in sibling scopes of the user's method, or are
