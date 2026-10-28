@@ -44,26 +44,84 @@ internal static class BarrierDivergenceChecks
     }
 
     /// <summary>
-    /// Reports GSH0037 for a barrier, or a call that reaches one, that a thread-variant branch lets only some threads
-    /// reach while the others reach another split point (<see cref="BarrierDivergence.Condition"/>). A barrier that the
-    /// others skip only on their way out of the method (<see cref="BarrierDivergence.ExitOnly"/>) is not reported here.
+    /// Reports a barrier, or a call that reaches one, that a thread-variant branch lets only some threads reach while
+    /// the others reach another split point (<see cref="BarrierDivergence.Condition"/>): the branch may be in this
+    /// method, or in the callee, depending on the arguments or leaving it early (§3.2.4). It is GSH0037 (error) when
+    /// the branch certainly diverges (<see cref="BarrierReport.Certain"/>), GSH0083 (warning) otherwise. A barrier that
+    /// the others skip only on their way out of the method (<see cref="BarrierDivergence.ExitOnly"/>) is not reported
+    /// here.
+    /// A barrier written in a body that the CPU dialects do not split (a lambda other than the bodies of
+    /// <c>Gpu.ForUnroll</c> and <c>Gpu.SyncGrid(body)</c>, or a local function) is always GSH0037.
     /// </summary>
     internal static void ValidateDivergentBarriers(KernelBarrierScan scan)
     {
-        if (scan.SyncPoints.Count == 0 || !scan.Flow.TryGetUniformity(out var uniformity))
+        if (scan.SyncPoints.Count == 0)
         {
             return;
         }
 
-        foreach (var (barrier, scope) in scan.SyncPoints)
+        UniformityAnalysis? uniformity = null;
+        foreach (var (barrier, scope, isCall) in scan.SyncPoints)
         {
-            if (uniformity.GetBarrierDivergence(barrier, scope) == BarrierDivergence.Condition)
+            if (!isCall && IsInUnsplitBody(scan, barrier))
             {
-                scan.Context.ReportDiagnostic(
-                    GSharpDiagnostics.DivergentBarrierProhibited,
-                    barrier.GetLocation());
+                scan.Context.ReportDiagnostic(GSharpDiagnostics.DivergentBarrierProhibited, barrier.GetLocation(),
+                    $"'{scan.SemanticModel.GetSymbol(barrier)?.Name}' cannot be called in a lambda or local function other " +
+                    "than the body of Gpu.ForUnroll or Gpu.SyncGrid(body): the CPU dialects resume a kernel only in " +
+                    "the statements of its body and of those macro bodies, so the barrier would not wait for the " +
+                    "other threads there.");
+                continue;
+            }
+
+            if (uniformity == null && !scan.Flow.TryGetUniformity(out uniformity))
+            {
+                return;
+            }
+
+            var report = uniformity.GetBarrierReport(barrier, scope);
+            if (isCall && report.Divergence != BarrierDivergence.Condition)
+            {
+                report = uniformity.GetCallSiteReport(barrier);
+            }
+
+            if (report.Divergence != BarrierDivergence.Condition)
+            {
+                continue;
+            }
+
+            if (report.Certain)
+            {
+                scan.Context.ReportDiagnostic(GSharpDiagnostics.DivergentBarrierProhibited, barrier.GetLocation(),
+                    DivergentBarrierMessage);
+            }
+            else
+            {
+                scan.Context.ReportDiagnostic(GSharpDiagnostics.LaunchDependentDivergentBarrier, barrier.GetLocation(),
+                    scan.SemanticModel.GetSymbol(barrier)?.Name ?? "", scope == SyncScope.Grid ? "grid" : "block");
             }
         }
+    }
+
+    private const string DivergentBarrierMessage =
+        "Gpu.SyncThreads(), or a call to a device function that reaches it, cannot be placed inside a conditional " +
+        "branch or an operand that only some threads evaluate ('&&', '||', '??', '?:'). This causes undefined " +
+        "behavior on the GPU and deadlocks the CPU emulator.";
+
+    // [WHY] The state machine of the CPU dialects splits only the statements of the method and the inlined macro
+    // bodies; a barrier in any other lambda or in a local function cannot be resumed (decision 1.5)
+    private static bool IsInUnsplitBody(KernelBarrierScan scan, InvocationExpressionSyntax barrier)
+    {
+        for (var ancestor = barrier.Parent; ancestor != null && ancestor != scan.Method; ancestor = ancestor.Parent)
+        {
+            if (ancestor is LocalFunctionStatementSyntax ||
+                (ancestor is AnonymousFunctionExpressionSyntax &&
+                 !BarrierUsageAnalyzer.IsInlinedMacroBody(ancestor, scan.SemanticModel)))
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /// <summary>

@@ -2,7 +2,7 @@ namespace Kassyi.GSharp.Compiler.Diagnostics.Kernel;
 
 /// <summary>
 /// Roslyn analyzer that enforces GPU kernel barrier synchronization and state machine constraints (GSH0037 - GSH0047,
-/// GSH0061, GSH0062), and the thread divergence of dynamic shared memory placement (GSH0077).
+/// GSH0061, GSH0062, GSH0083), and the thread divergence of dynamic shared memory placement (GSH0077).
 /// Optimized for minimal AST passes, zero-allocation traversal, and fast-path exits.
 /// </summary>
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
@@ -25,7 +25,8 @@ public class BarrierUsageAnalyzer : DiagnosticAnalyzer
             GSharpDiagnostics.SuspendingCallInUnsupportedContext, // GSH0062
             GSharpDiagnostics.IteratorShapeNotSupported, // GSH0070
             GSharpDiagnostics.IteratorBodyConstructNotSupported, // GSH0072
-            GSharpDiagnostics.DivergentDynamicSharedMemory // GSH0077
+            GSharpDiagnostics.DivergentDynamicSharedMemory, // GSH0077
+            GSharpDiagnostics.LaunchDependentDivergentBarrier // GSH0083
         );
 
     public override void Initialize(AnalysisContext context)
@@ -186,7 +187,7 @@ public class BarrierUsageAnalyzer : DiagnosticAnalyzer
     }
 
     // The body lambda of a Gpu.ForUnroll or Gpu.SyncGrid(body), however the call is spelled (#503)
-    private static bool IsInlinedMacroBody(SyntaxNode lambda, SemanticModel semanticModel) =>
+    internal static bool IsInlinedMacroBody(SyntaxNode lambda, SemanticModel semanticModel) =>
         GpuMacroClassifier.ClassifyBody(lambda, semanticModel).Kind is GpuMacroKind.ForUnroll or GpuMacroKind.SyncGrid;
 
     private static ArgumentSyntax? FindNonVariableByReferenceArgument(InvocationExpressionSyntax invocation) =>

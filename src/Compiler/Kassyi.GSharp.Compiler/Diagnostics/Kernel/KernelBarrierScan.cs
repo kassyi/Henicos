@@ -43,9 +43,12 @@ internal sealed class KernelBarrierScan(
     public ImmutableArray<LocalFunctionStatementSyntax>.Builder LocalFunctionsWithBarrier { get; } =
         ImmutableArray.CreateBuilder<LocalFunctionStatementSyntax>();
 
-    /// <summary>The barriers and barrier-reaching calls that every thread of the block or the grid must reach (GSH0037).</summary>
-    public ImmutableArray<(InvocationExpressionSyntax Barrier, SyncScope Scope)>.Builder SyncPoints { get; } =
-        ImmutableArray.CreateBuilder<(InvocationExpressionSyntax Barrier, SyncScope Scope)>();
+    /// <summary>
+    /// The barriers and barrier-reaching calls that every thread of the block or the grid must reach (GSH0037,
+    /// GSH0083), and whether each is a call.
+    /// </summary>
+    public ImmutableArray<(InvocationExpressionSyntax Barrier, SyncScope Scope, bool IsCall)>.Builder SyncPoints { get; } =
+        ImmutableArray.CreateBuilder<(InvocationExpressionSyntax Barrier, SyncScope Scope, bool IsCall)>();
 
     /// <summary>
     /// Whether the body has a call that splits the state machine (a barrier, a warp shuffle, a grid sync, a call that

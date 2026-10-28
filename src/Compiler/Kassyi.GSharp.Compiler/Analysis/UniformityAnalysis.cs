@@ -84,10 +84,10 @@ internal enum BarrierDivergence
 /// uniform index is uniform (memory is not followed). Fields and array elements are not values of the analysis.
 /// </para>
 /// </remarks>
-internal sealed class UniformityAnalysis
+internal sealed partial class UniformityAnalysis
 {
     private static readonly ConditionalWeakTable<Compilation,
-            ConcurrentDictionary<IMethodSymbol, ConcurrentDictionary<(ulong Block, ulong Grid), CalleeVariance>>>
+            ConcurrentDictionary<IMethodSymbol, ConcurrentDictionary<ArgumentMasks, CalleeVariance>>>
         s_callees = new();
 
     private readonly SemanticModel _model;
@@ -108,6 +108,10 @@ internal sealed class UniformityAnalysis
 
     private FlowNode _current;
     private int _exit;
+
+    // The parameters of the analyzed method by value index, and those that receive the thread index itself
+    private readonly Dictionary<int, IParameterSymbol> _parameters = new();
+    private ulong _identityMask;
 
     // The solution: the variance of each value at the start of each node, the variance of the branches that decide
     // whether each node runs, the variance of each node's own branch, the immediate post-dominator of each node
@@ -135,42 +139,8 @@ internal sealed class UniformityAnalysis
     public static UniformityAnalysis Analyze(ControlFlowGraph graph, SemanticModel model, IMethodSymbol method)
     {
         var analysis = new UniformityAnalysis(model, method, calleesInProgress: null);
-        analysis.Run(graph, blockMask: 0, gridMask: 0);
+        analysis.Run(graph, default);
         return analysis;
-    }
-
-    /// <summary>
-    /// Whether only some of the threads that must reach the barrier or barrier-reaching call <paramref name="barrier"/>
-    /// reach it: the threads of a block for <see cref="SyncScope.Block"/>, of the grid for
-    /// <see cref="SyncScope.Grid"/>. A call that does not split the state machine (a <c>Gpu.SyncGrid(body)</c> with no
-    /// gap) is <see cref="BarrierDivergence.None"/>.
-    /// </summary>
-    public BarrierDivergence GetBarrierDivergence(SyntaxNode barrier, SyncScope scope)
-    {
-        if (!_splitsAt.TryGetValue(barrier, out var nodes))
-        {
-            return BarrierDivergence.None;
-        }
-
-        var result = BarrierDivergence.None;
-        foreach (var node in nodes)
-        {
-            for (var branch = 0; branch < _branch.Length; branch++)
-            {
-                if (!Diverges(_branch[branch], scope) || !GetRegion(branch).Contains(node))
-                {
-                    continue;
-                }
-
-                var divergence = Classify(branch, node);
-                if (divergence > result)
-                {
-                    result = divergence;
-                }
-            }
-        }
-
-        return result;
     }
 
     /// <summary>
@@ -200,13 +170,15 @@ internal sealed class UniformityAnalysis
     private static bool Diverges(ThreadVariance branch, SyncScope scope) =>
         scope == SyncScope.Grid ? branch != ThreadVariance.Uniform : branch == ThreadVariance.Block;
 
-    private void Run(ControlFlowGraph graph, ulong blockMask, ulong gridMask)
+    private void Run(ControlFlowGraph graph, ArgumentMasks masks)
     {
+        _identityMask = masks.Identity;
         foreach (var parameter in _method.Parameters)
         {
             var bit = ParameterBit(parameter.Ordinal);
-            var variance = (blockMask & bit) != 0 ? ThreadVariance.Block :
-                (gridMask & bit) != 0 ? ThreadVariance.Grid : ThreadVariance.Uniform;
+            var variance = (masks.Block & bit) != 0 ? ThreadVariance.Block :
+                (masks.Grid & bit) != 0 ? ThreadVariance.Grid : ThreadVariance.Uniform;
+            _parameters[ValueOf(parameter)] = parameter;
             Define(parameter, variance);
         }
 
@@ -269,7 +241,12 @@ internal sealed class UniformityAnalysis
 
             if (blocks[i].ConditionalSuccessor is { } conditional)
             {
-                Connect(ends[i], starts[conditional.Destination?.Ordinal ?? exitBlock]);
+                var jump = starts[conditional.Destination?.Ordinal ?? exitBlock].Index;
+                var fall = starts[blocks[i].FallThroughSuccessor?.Destination?.Ordinal ?? exitBlock].Index;
+                var jumpsWhenTrue = blocks[i].ConditionKind == ControlFlowConditionKind.WhenTrue;
+                Connect(ends[i], _nodes[jump]);
+                ends[i].WhenTrue = jumpsWhenTrue ? jump : fall;
+                ends[i].WhenFalse = jumpsWhenTrue ? fall : jump;
             }
         }
 
@@ -351,10 +328,21 @@ internal sealed class UniformityAnalysis
         }
 
         RecordNode(_nodesOf, invocation.Syntax);
-        if (SyncIntrinsicClassifier.Classify(method).SplitsStateMachine ||
-            SuspensionAnalysis.IsSuspendingFunction(method, _model.Compilation))
+        var intrinsic = SyncIntrinsicClassifier.Classify(method);
+        if (intrinsic.Kind is SyncIntrinsicKind.BlockBarrier or SyncIntrinsicKind.GridBarrier)
         {
-            AddSplit(invocation.Syntax);
+            AddSplit(invocation.Syntax, new BarrierSite(intrinsic.Scope, Call: null, graph));
+        }
+        else if (intrinsic.SplitsStateMachine)
+        {
+            AddSplit(invocation.Syntax, site: null);
+        }
+        else if (SuspensionAnalysis.IsSuspendingFunction(method, _model.Compilation))
+        {
+            AddSplit(invocation.Syntax,
+                SuspensionAnalysis.ReachesBlockBarrier(method, _model.Compilation)
+                    ? new BarrierSite(SyncScope.Block, invocation, graph)
+                    : null);
         }
 
         if (writesArgument)
@@ -382,7 +370,7 @@ internal sealed class UniformityAnalysis
         RecordNode(_nodesOf, invocation.Syntax);
         if (macro.Kind == GpuMacroKind.SyncGrid && body?.Syntax is LambdaExpressionSyntax syntax && HasGap(syntax))
         {
-            AddSplit(invocation.Syntax);
+            AddSplit(invocation.Syntax, new BarrierSite(SyncScope.Grid, Call: null, graph));
         }
 
         if (body != null)
@@ -481,10 +469,22 @@ internal sealed class UniformityAnalysis
         _current.Events.Add(new FlowEvent(FlowEventKind.Write, operation, graph, Opaque));
     }
 
-    private void AddSplit(SyntaxNode call)
+    // A call that splits the state machine; a barrier, or a call that reaches one, is also a site of GSH0037
+    private void AddSplit(SyntaxNode call, BarrierSite? site)
     {
         _current.HasSplit = true;
+        _current.Splits.Add(call);
         RecordNode(_splitsAt, call);
+        if (site is not { } barrier)
+        {
+            return;
+        }
+
+        _sites[call] = barrier;
+        if (barrier.Call is { } invocation)
+        {
+            _current.Events.Add(new FlowEvent(FlowEventKind.Site, invocation, barrier.Graph, Opaque));
+        }
     }
 
     private void Define(IParameterSymbol parameter, ThreadVariance variance) =>
@@ -1090,6 +1090,14 @@ internal sealed class UniformityAnalysis
                                                 flowEvent is { Operation: { } observed, Graph: { } observedGraph }:
                     Evaluate(observed, observedGraph, state);
                     break;
+                case FlowEventKind.Site when _siteMasks != null &&
+                                             flowEvent is
+                                             {
+                                                 Operation: IInvocationOperation call,
+                                                 Graph: { } callGraph
+                                             }:
+                    RecordSiteMasks(call, callGraph, state);
+                    break;
             }
         }
     }
@@ -1363,6 +1371,15 @@ internal sealed class UniformityAnalysis
     private CalleeVariance GetCallVariance(IMethodSymbol callee, MethodDeclarationSyntax declaration,
         IInvocationOperation invocation, ControlFlowGraph graph, ThreadVariance[] state)
     {
+        var masks = GetArgumentMasks(invocation, graph, state);
+        return GetCalleeSummary(callee, declaration, masks with { Identity = 0 });
+    }
+
+    // Which parameters receive a value that varies within a block, or between blocks only (the identity mask comes from
+    // the probe runs: GetIdentityMask)
+    private ArgumentMasks GetArgumentMasks(IInvocationOperation invocation, ControlFlowGraph graph,
+        ThreadVariance[] state)
+    {
         ulong blockMask = 0;
         ulong gridMask = 0;
         foreach (var argument in invocation.Arguments)
@@ -1382,13 +1399,20 @@ internal sealed class UniformityAnalysis
             {
                 gridMask |= bit;
             }
+
         }
 
+        return new ArgumentMasks(blockMask, gridMask, 0);
+    }
+
+    private CalleeVariance GetCalleeSummary(IMethodSymbol callee, MethodDeclarationSyntax declaration,
+        ArgumentMasks masks)
+    {
         var cache = s_callees.GetValue(_model.Compilation,
                 static _ => new ConcurrentDictionary<IMethodSymbol,
-                    ConcurrentDictionary<(ulong Block, ulong Grid), CalleeVariance>>(SymbolEqualityComparer.Default))
-            .GetOrAdd(callee, static _ => new ConcurrentDictionary<(ulong Block, ulong Grid), CalleeVariance>());
-        if (cache.TryGetValue((blockMask, gridMask), out var summary))
+                    ConcurrentDictionary<ArgumentMasks, CalleeVariance>>(SymbolEqualityComparer.Default))
+            .GetOrAdd(callee, static _ => new ConcurrentDictionary<ArgumentMasks, CalleeVariance>());
+        if (cache.TryGetValue(masks, out var summary))
         {
             return summary;
         }
@@ -1399,13 +1423,13 @@ internal sealed class UniformityAnalysis
             return default;
         }
 
-        summary = AnalyzeCallee(callee, declaration, blockMask, gridMask);
+        summary = AnalyzeCallee(callee, declaration, masks);
         _calleesInProgress.Remove(callee);
-        return cache.GetOrAdd((blockMask, gridMask), summary);
+        return cache.GetOrAdd(masks, summary);
     }
 
-    private CalleeVariance AnalyzeCallee(IMethodSymbol callee, MethodDeclarationSyntax declaration, ulong blockMask,
-        ulong gridMask)
+    private CalleeVariance AnalyzeCallee(IMethodSymbol callee, MethodDeclarationSyntax declaration,
+        ArgumentMasks masks)
     {
         var model = _model.Compilation.GetCachedSemanticModel(declaration.SyntaxTree);
         if (!MethodFlowGraph.TryCreate(model, declaration, out var graph))
@@ -1414,7 +1438,7 @@ internal sealed class UniformityAnalysis
         }
 
         var analysis = new UniformityAnalysis(model, callee, _calleesInProgress);
-        analysis.Run(graph, blockMask, gridMask);
+        analysis.Run(graph, masks);
         return analysis.Summarize();
     }
 
@@ -1442,10 +1466,28 @@ internal sealed class UniformityAnalysis
             }
         }
 
-        return new CalleeVariance(returned, byReference);
+        var barrier = SummarizeBarriers();
+        return new CalleeVariance(returned, byReference, barrier.Divergence, barrier.Certain);
     }
 
-    private readonly record struct CalleeVariance(ThreadVariance Return, ThreadVariance ByReference);
+    /// <summary>What a call of a device function gives its caller.</summary>
+    /// <param name="Return">
+    /// The variance of the value it returns, a value returned under a divergent branch included.
+    /// </param>
+    /// <param name="ByReference">The variance of what it leaves in its <c>ref</c> and <c>out</c> parameters.</param>
+    /// <param name="Barrier">Whether only some threads reach a barrier in it (§3.2.4, the composed summary).</param>
+    /// <param name="Certain">Whether a branch behind <paramref name="Barrier"/> certainly diverges.</param>
+    private readonly record struct CalleeVariance(
+        ThreadVariance Return,
+        ThreadVariance ByReference,
+        BarrierDivergence Barrier,
+        bool Certain);
+
+    /// <summary>
+    /// The parameters that receive a value that varies within a block, one that varies only between blocks, and the
+    /// thread index itself.
+    /// </summary>
+    private readonly record struct ArgumentMasks(ulong Block, ulong Grid, ulong Identity);
 
     private enum FlowEventKind
     {
@@ -1456,7 +1498,10 @@ internal sealed class UniformityAnalysis
         Write,
 
         // An operation is evaluated; only read while recording the variance of each expression
-        Observe
+        Observe,
+
+        // A call that reaches a barrier; only read while recording the variance of its arguments
+        Site
     }
 
     private readonly struct FlowEvent(
@@ -1497,8 +1542,15 @@ internal sealed class UniformityAnalysis
         public ControlFlowGraph? Graph { get; set; }
 
         // Whether the node calls something that splits the state machine (a barrier, a warp shuffle, a call that
-        // suspends)
+        // suspends), and those calls in order
         public bool HasSplit { get; set; }
+
+        public ImmutableArray<SyntaxNode>.Builder Splits { get; } = ImmutableArray.CreateBuilder<SyntaxNode>();
+
+        // The successors taken when the condition is true and when it is false (-1 when the node does not branch)
+        public int WhenTrue { get; set; } = -1;
+
+        public int WhenFalse { get; set; } = -1;
 
         // The values that the events of the node write
         public ImmutableArray<int>.Builder Written { get; } = ImmutableArray.CreateBuilder<int>();

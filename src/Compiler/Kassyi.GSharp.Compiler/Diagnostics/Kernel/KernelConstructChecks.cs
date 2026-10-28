@@ -111,7 +111,7 @@ internal static class KernelConstructChecks
         if (isSyncThreads)
         {
             scan.Barriers.Add(invocation);
-            scan.SyncPoints.Add((invocation, SyncScope.Block));
+            scan.SyncPoints.Add((invocation, SyncScope.Block, IsCall: false));
             BarrierDivergenceChecks.InspectBarrierAncestors(scan, invocation);
         }
         else if (suspendingCallee != null)
@@ -119,7 +119,7 @@ internal static class KernelConstructChecks
             scan.Barriers.Add(invocation);
             if (SuspensionAnalysis.ReachesBlockBarrier(suspendingCallee, scan.SemanticModel.Compilation))
             {
-                scan.SyncPoints.Add((invocation, SyncScope.Block));
+                scan.SyncPoints.Add((invocation, SyncScope.Block, IsCall: true));
             }
 
             BarrierDivergenceChecks.InspectBarrierAncestors(scan, invocation);
@@ -127,7 +127,7 @@ internal static class KernelConstructChecks
         else if (intrinsic.Kind == SyncIntrinsicKind.GridBarrier)
         {
             // B2: a grid barrier written directly in a branch
-            scan.SyncPoints.Add((invocation, SyncScope.Grid));
+            scan.SyncPoints.Add((invocation, SyncScope.Grid, IsCall: false));
         }
     }
 
