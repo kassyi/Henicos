@@ -34,21 +34,60 @@ public class FlowSensitiveUniformityAnalyzerTests : TranspilerTestBase
                 (GSharpDiagnostics.LaunchDependentDivergentBarrier.Id, 177, 13, 177, 30),
                 (GSharpDiagnostics.DivergentBarrierProhibited.Id, 197, 13, 197, 27),
                 (GSharpDiagnostics.DivergentBarrierProhibited.Id, 202, 13, 202, 27),
+                (GSharpDiagnostics.BarrierAfterDivergentExit.Id, 214, 13, 214, 30),
+                (GSharpDiagnostics.BarrierAfterDivergentExit.Id, 226, 13, 226, 31),
                 (GSharpDiagnostics.DivergentBarrierProhibited.Id, 245, 13, 245, 30)
             ],
             actual);
     }
 
-    // The shapes the GSH0037 tests used before: the threads that skip the barrier only leave the kernel or the device
-    // function. They are exit only, not GSH0037; the stage that adds the exit-only warning replaces this empty list
-    // with its coordinates.
+    // The shapes the GSH0037 tests used before, and early exits: the threads that skip the barrier only leave the
+    // kernel. GSH0084 (warning) at the condition that sends them out, or at the call whose callee they leave early;
+    // a uniform condition (UniformReturnKernel) and a device function body are not reported
     [Fact]
     [Scenario(TestScenario.Boundary)]
-    public async Task Test_ExitOnlyBarriers_AreNotGSH0037()
+    public async Task Test_ExitOnlyBarriers_ReportGSH0084()
     {
         var actual = await RunAsync("Analyzers/BarrierUsage/ExitOnlyBarrierKernels.cu.cs");
 
-        Assert.Empty(actual);
+        Assert.Equal(
+            [
+                (GSharpDiagnostics.BarrierAfterDivergentExit.Id, 16, 13, 16, 31),
+                (GSharpDiagnostics.BarrierAfterDivergentExit.Id, 26, 13, 26, 38),
+                (GSharpDiagnostics.BarrierAfterDivergentExit.Id, 40, 17, 40, 34),
+                (GSharpDiagnostics.BarrierAfterDivergentExit.Id, 61, 13, 61, 22),
+                (GSharpDiagnostics.BarrierAfterDivergentExit.Id, 72, 37, 72, 46),
+                (GSharpDiagnostics.BarrierAfterDivergentExit.Id, 92, 9, 92, 26),
+                (GSharpDiagnostics.BarrierAfterDivergentExit.Id, 105, 13, 105, 31),
+                (GSharpDiagnostics.BarrierAfterDivergentExit.Id, 122, 21, 122, 39),
+                (GSharpDiagnostics.BarrierAfterDivergentExit.Id, 130, 13, 130, 31),
+                (GSharpDiagnostics.BarrierAfterDivergentExit.Id, 140, 13, 140, 30),
+                (GSharpDiagnostics.BarrierAfterDivergentExit.Id, 150, 13, 150, 43),
+                (GSharpDiagnostics.BarrierAfterDivergentExit.Id, 166, 17, 166, 43),
+                (GSharpDiagnostics.BarrierAfterDivergentExit.Id, 205, 9, 205, 26)
+            ],
+            actual);
+    }
+
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public async Task Test_BarrierAfterDivergentExit_IsAWarningWithTheBarrier()
+    {
+        var diagnostics = await RoslynTestUtility
+            .TestAnalyzer("Analyzers/BarrierUsage/ExitOnlyBarrierKernels.cu.cs", s_analyzer)
+            .GetDiagnosticsAsync();
+
+        Assert.All(diagnostics, static d => Assert.Equal(DiagnosticSeverity.Warning, d.Severity));
+
+        // The early return of EarlyReturnKernel points at the barrier it skips
+        var earlyReturn = diagnostics.Single(static d => d.Location.GetLineSpan().StartLinePosition.Line == 149);
+        Assert.Equal(154, Assert.Single(earlyReturn.AdditionalLocations).GetLineSpan().StartLinePosition.Line);
+        Assert.Contains("without reaching 'SyncThreads'", earlyReturn.GetMessage(), StringComparison.Ordinal);
+
+        // The call to a callee that lets threads leave early names the callee once for each part
+        var call = diagnostics.Single(static d => d.Location.GetLineSpan().StartLinePosition.Line == 204);
+        Assert.StartsWith("Some threads leave 'SyncWithin' early without reaching a barrier inside 'SyncWithin',", call.GetMessage(),
+            StringComparison.Ordinal);
     }
 
     private static async Task<IReadOnlyList<(string Id, int StartLine, int StartCol, int EndLine, int EndCol)>> RunAsync(

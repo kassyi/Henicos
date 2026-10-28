@@ -750,6 +750,15 @@
     "isEnabledByDefault": true
   },
   {
+    "name": "BarrierAfterDivergentExit",
+    "id": "GSH0084",
+    "title": "Barrier after an exit that only some threads take",
+    "messageFormat": "{0} without reaching {1}, which the other threads of the {2} still reach. A barrier that some threads skip because they left is not guaranteed to synchronize the others on the GPU; move the exit after the barrier, or make every thread reach the barrier.",
+    "category": "GSharpTranspiler",
+    "defaultSeverity": "Warning",
+    "isEnabledByDefault": true
+  },
+  {
     "name": "DeviceFunctionNotExported",
     "id": "GSH0088",
     "title": "Device code of another assembly is not exported",
