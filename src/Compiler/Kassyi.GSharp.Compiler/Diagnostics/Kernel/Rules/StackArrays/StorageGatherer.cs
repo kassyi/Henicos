@@ -149,6 +149,10 @@ internal sealed class StorageGatherer(SemanticModel model, Dictionary<ISymbol, L
 
                 AddInitializer(creation.Initializer, children);
                 break;
+            case WithExpressionSyntax with:
+                children.Add((with.Expression, Carry.Value));
+                AddInitializer(with.Initializer, children);
+                break;
             case TupleExpressionSyntax tuple:
                 foreach (var argument in tuple.Arguments)
                 {

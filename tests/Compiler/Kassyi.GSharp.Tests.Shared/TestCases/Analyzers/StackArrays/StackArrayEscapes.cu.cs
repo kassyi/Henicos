@@ -254,4 +254,29 @@ public static unsafe partial class StackArrayEscapeKernels
         Shift(ref s);
         output[0] = s.Length;
     }
+
+    // X19: a stack array kept through a with expression, on a struct that holds an array and on a ref struct that holds
+    // a span
+    [GpuKernel]
+    public static void WithExpressionKernel(int[] output)
+    {
+        EscapeHolder outer = default;
+        EscapeHolder holder = default;
+        scoped EscapeSpanHolder outerSpan = default;
+        EscapeSpanHolder spanHolder = default;
+        {
+            int[] a = new int[4];
+            outer = holder with { Field = a };
+            Span<int> s = stackalloc int[4];
+            outerSpan = spanHolder with { Data = s };
+        }
+
+        output[0] = outer.Field[0] + outerSpan.Data[0];
+    }
+
+}
+
+public ref struct EscapeSpanHolder
+{
+    public Span<int> Data;
 }
