@@ -57,6 +57,13 @@ public struct Emitter(
     public int SingleThreadBodyCounter;
 
     /// <summary>
+    /// Numbers each <c>Gpu.GridStrideLoop</c> as it is emitted, for its index and count locals
+    /// (<c>__gsharp_gsl_&lt;n&gt;</c>, <c>__gsharp_gsl_n_&lt;n&gt;</c>); a loop emitted again (an unrolled loop) gets a new
+    /// number.
+    /// </summary>
+    public int GridStrideLoopCounter;
+
+    /// <summary>
     /// The label after the <c>Gpu.SingleThread</c> body being emitted, when the body has a <c>return</c>; a
     /// <c>return</c> at <see cref="SingleThreadCallableDepth"/> (not in a lambda or local function of the body) jumps to
     /// it. <see langword="null"/> outside such a body.

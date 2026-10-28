@@ -87,11 +87,20 @@ internal sealed partial class ManagedExecutionRewriter
     }
 
     // Gpu.GridStrideLoop([ref ctx,] count, body) becomes:
-    // for (int __gsharp_unroll_<n> = <block dim> * <block idx> + <thread idx>; __gsharp_unroll_<n> < (<count>);
-    //      __gsharp_unroll_<n> += <block dim> * <grid dim>) <body>
-    // The loop variable has a name of its own, like the one of ForUnroll: the lambda parameter may be named like a local
-    // of the kernel, which the loop would otherwise hide (CS0136)
-    private ForStatementSyntax? RewriteGridStrideLoop(InvocationExpressionSyntax invocation, GpuMacroCall call)
+    // {
+    //     uint __gsharp_gsl_n_<n> = ManagedGpuContext.GridStrideCount(<count>);
+    //     for (uint __gsharp_gsl_<n> = ManagedGpuContext.GridStrideStart(); __gsharp_gsl_<n> < __gsharp_gsl_n_<n>;
+    //          __gsharp_gsl_<n> += ManagedGpuContext.GridStrideStep())
+    //     {
+    //         int __gsharp_unroll_<n> = (int)__gsharp_gsl_<n>;
+    //         <body>
+    //     }
+    // }
+    // The same loop as the C++ one (GridStrideLoopMacroRule) and the Core implementation, through the same helpers: the
+    // count is read once, and the index is unsigned with a start and step that saturate at 2^31 (#712). The loop
+    // variable has a name of its own, like the one of ForUnroll: the lambda parameter may be named like a local of the
+    // kernel, which the loop would otherwise hide (CS0136)
+    private BlockSyntax? RewriteGridStrideLoop(InvocationExpressionSyntax invocation, GpuMacroCall call)
     {
         var arguments = invocation.ArgumentList.Arguments;
         if (!TryGetLoopMacroBody(arguments, call, out var lambda, out var loopParameter))
@@ -99,50 +108,77 @@ internal sealed partial class ManagedExecutionRewriter
             return null;
         }
 
+        var number = _nextUnrollId;
         var indexName = NextLoopVariableName();
-        var startExpr = SyntaxFactory.ParseExpression(
-            "global::Kassyi.GSharp.Core.ManagedGpuContext.BlockDimX * global::Kassyi.GSharp.Core.ManagedGpuContext.BlockIdxX +" +
-            " global::Kassyi.GSharp.Core.ManagedGpuContext.ThreadIdxX");
-        var stepExpr = SyntaxFactory.ParseExpression(
-            "global::Kassyi.GSharp.Core.ManagedGpuContext.BlockDimX * global::Kassyi.GSharp.Core.ManagedGpuContext.GridDimX");
+        var unsignedIndexName = $"{GSharpInternalNames.Lowering.GridStrideIndexPrefix}{number}";
+        var countName = $"{GSharpInternalNames.Lowering.GridStrideCountPrefix}{number}";
         // Visit the count so that context accesses in it are rewritten like the rest of the body
         var countArg = arguments[call.ArgumentOffset].Expression;
         var countExpr = Visit(countArg) as ExpressionSyntax ?? countArg;
 
-        // <index> < (<count>)
-        var condition = SyntaxFactory.BinaryExpression(
-            SyntaxKind.LessThanExpression,
-            SyntaxFactory.IdentifierName(indexName),
-            SyntaxFactory.ParenthesizedExpression(countExpr)
-        );
-
-        var declaration = SyntaxFactory.VariableDeclaration(
-            SyntaxFactory.PredefinedType(SyntaxFactory.Token(SyntaxKind.IntKeyword)),
-            SyntaxFactory.SingletonSeparatedList(
-                SyntaxFactory.VariableDeclarator(SyntaxFactory.Identifier(indexName))
-                    .WithInitializer(SyntaxFactory.EqualsValueClause(startExpr))
-            )
-        );
-
-        var incrementors = SyntaxFactory.SingletonSeparatedList<ExpressionSyntax>(
-            SyntaxFactory.AssignmentExpression(
-                SyntaxKind.AddAssignmentExpression,
-                SyntaxFactory.IdentifierName(indexName),
-                stepExpr
+        var countDeclaration = DeclareLocal(
+            SyntaxKind.UIntKeyword,
+            countName,
+            SyntaxFactory.InvocationExpression(
+                ManagedGpuContextMember("GridStrideCount"),
+                SyntaxFactory.ArgumentList(SyntaxFactory.SingletonSeparatedList(SyntaxFactory.Argument(countExpr)))
             )
         );
 
         var substituter = CreateSubstituter(arguments, lambda, loopParameter, indexName);
         var body = VisitLoopBody(lambda, substituter);
-
-        return SyntaxFactory.ForStatement(
-            declaration,
-            SyntaxFactory.SeparatedList<ExpressionSyntax>(),
-            condition,
-            incrementors,
-            body
+        // int <index> = (int)<unsigned index>;
+        var indexDeclaration = DeclareLocal(
+            SyntaxKind.IntKeyword,
+            indexName,
+            SyntaxFactory.CastExpression(
+                SyntaxFactory.PredefinedType(SyntaxFactory.Token(SyntaxKind.IntKeyword)),
+                SyntaxFactory.IdentifierName(unsignedIndexName)
+            )
         );
+
+        var loop = SyntaxFactory.ForStatement(
+            DeclareVariable(
+                SyntaxKind.UIntKeyword,
+                unsignedIndexName,
+                SyntaxFactory.InvocationExpression(ManagedGpuContextMember("GridStrideStart"))
+            ),
+            SyntaxFactory.SeparatedList<ExpressionSyntax>(),
+            SyntaxFactory.BinaryExpression(
+                SyntaxKind.LessThanExpression,
+                SyntaxFactory.IdentifierName(unsignedIndexName),
+                SyntaxFactory.IdentifierName(countName)
+            ),
+            SyntaxFactory.SingletonSeparatedList<ExpressionSyntax>(
+                SyntaxFactory.AssignmentExpression(
+                    SyntaxKind.AddAssignmentExpression,
+                    SyntaxFactory.IdentifierName(unsignedIndexName),
+                    SyntaxFactory.InvocationExpression(ManagedGpuContextMember("GridStrideStep"))
+                )
+            ),
+            SyntaxFactory.Block(body.Statements.Insert(0, indexDeclaration))
+        );
+
+        return SyntaxFactory.Block(countDeclaration, loop);
     }
+
+    // global::Kassyi.GSharp.Core.ManagedGpuContext.<name>
+    private static ExpressionSyntax ManagedGpuContextMember(string name) =>
+        SyntaxFactory.ParseExpression($"global::Kassyi.GSharp.Core.ManagedGpuContext.{name}");
+
+    // <type> <name> = <value>
+    private static VariableDeclarationSyntax DeclareVariable(SyntaxKind type, string name, ExpressionSyntax value) =>
+        SyntaxFactory.VariableDeclaration(
+            SyntaxFactory.PredefinedType(SyntaxFactory.Token(type)),
+            SyntaxFactory.SingletonSeparatedList(
+                SyntaxFactory.VariableDeclarator(SyntaxFactory.Identifier(name))
+                    .WithInitializer(SyntaxFactory.EqualsValueClause(value))
+            )
+        );
+
+    // <type> <name> = <value>;
+    private static LocalDeclarationStatementSyntax DeclareLocal(SyntaxKind type, string name, ExpressionSyntax value) =>
+        SyntaxFactory.LocalDeclarationStatement(DeclareVariable(type, name, value));
 
     // Gpu.ForUnroll([ref ctx,] start, count, body) becomes:
     // for (int __gsharp_unroll_<n> = <start>; __gsharp_unroll_<n> < unchecked(<start> + <count>);

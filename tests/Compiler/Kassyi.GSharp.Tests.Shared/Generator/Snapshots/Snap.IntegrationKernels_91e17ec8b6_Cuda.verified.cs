@@ -184,7 +184,11 @@ extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__T
 __gsharp_dsmem_Kassyi__GSharp__Tests__Shared__Syntax__Tier1IntegrationKernels__AllInOneKernel __gsharp_dsmem_storage;
 __gsharp_dsmem_Kassyi__GSharp__Tests__Shared__Syntax__Tier1IntegrationKernels__AllInOneKernel* __gsharp_dsmem = &__gsharp_dsmem_storage;
 __gsharp_dsmem_init(__gsharp_dsmem);
-for(int __gsharp_id_7_tid = blockIdx.x * blockDim.x + threadIdx.x; __gsharp_id_7_tid < __gsharp_id_5_count; __gsharp_id_7_tid += gridDim.x * blockDim.x)
+{
+unsigned int __gsharp_gsl_n_0 = __gsharp_grid_stride_count(__gsharp_id_5_count);
+for(unsigned int __gsharp_gsl_0 = __gsharp_grid_stride_start(); __gsharp_gsl_0 < __gsharp_gsl_n_0; __gsharp_gsl_0 += __gsharp_grid_stride_step())
+{
+int __gsharp_id_7_tid = (int)__gsharp_gsl_0;
 {
 auto __gsharp_id_8_LocalInlineFunc = [&](int __gsharp_id_9_x) {
 return __gsharp_id_9_x+5-5;
@@ -321,6 +325,8 @@ __gsharp_id_37_loopCounter++;
 }
 while(__gsharp_id_37_loopCounter<3);
 __gsharp_id_2_results[__gsharp_id_7_tid]=__gsharp_id_31_finalVal;
+}
+}
 }
 }
 ";

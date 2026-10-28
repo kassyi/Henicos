@@ -584,10 +584,16 @@ finally
 #pragma warning restore CS8500
 public const string NestedKernel_Source = @"extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__NestedKernel(GSharpArray<int> __gsharp_id_0_a, int __gsharp_id_1_n){
 {
-for(int __gsharp_id_2_i = blockIdx.x * blockDim.x + threadIdx.x; __gsharp_id_2_i < __gsharp_id_1_n; __gsharp_id_2_i += gridDim.x * blockDim.x)
+{
+unsigned int __gsharp_gsl_n_0 = __gsharp_grid_stride_count(__gsharp_id_1_n);
+for(unsigned int __gsharp_gsl_0 = __gsharp_grid_stride_start(); __gsharp_gsl_0 < __gsharp_gsl_n_0; __gsharp_gsl_0 += __gsharp_grid_stride_step())
+{
+int __gsharp_id_2_i = (int)__gsharp_gsl_0;
 {
 __gsharp_id_0_a[__gsharp_id_2_i]+=1;
 __gsharp_id_0_a[__gsharp_id_2_i]*=2;
+}
+}
 }
 cg::this_grid().sync();
 if(threadIdx.x==0)

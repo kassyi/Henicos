@@ -3,7 +3,7 @@ title: "Gpu.GridStrideLoop Method (G#)"
 site: "G# Documentation"
 published: "2026-09-22T00:00:00.000Z"
 language: "en"
-description: "Executes a standard CUDA grid-stride loop."
+description: "Runs a body once for each index, spread over every thread of the launch."
 ---
 
 ## Gpu.GridStrideLoop Method
@@ -13,7 +13,7 @@ description: "Executes a standard CUDA grid-stride loop."
 **Namespace:** `Kassyi.GSharp.Core`  
 **Assembly:** `Kassyi.GSharp.Core.dll`
 
-Executes a standard CUDA grid-stride loop.
+Runs a body once for each index of a range, spread over every thread of the launch (a grid-stride loop).
 
 ## Overloads
 
@@ -24,7 +24,7 @@ Executes a standard CUDA grid-stride loop.
 
 ## GridStrideLoop(int, Action\<int\>)
 
-Generates a standard CUDA Grid-Stride Loop over the specified bound across all threads and blocks.
+Runs `body` once for each index of `[0, maxBounds)`, spread over every thread of the launch.
 
 ```csharp
 public static void GridStrideLoop(int maxBounds, Action<int> body);
@@ -33,7 +33,7 @@ public static void GridStrideLoop(int maxBounds, Action<int> body);
 #### Parameters
 
 `maxBounds` _int_<br>
-The total element count to process.
+The total element count to process. It is evaluated once; a negative count runs no iteration.
 
 `body` _Action\<int\>_<br>
 The loop body delegate receiving the current thread stride index.
@@ -103,17 +103,36 @@ try {
 
 ## Remarks
 
-Expands into a flat loop without any delegate allocation:
+`Gpu.GridStrideLoop` runs the body once for each index of `[0, maxBounds)`, spread over every thread of the launch. Each thread starts at its linear rank in the whole launch and steps by the number of threads in the launch. The rank counts x fastest, then y, then z, and the blocks in the same order, as cooperative groups `grid.thread_rank()` and `grid.num_threads()` do. Every index is therefore visited exactly once for every launch shape: 1D, 2D or 3D blocks and grids, and launches of 2^31 threads or more.
+
+`maxBounds` is evaluated once, before the first iteration, as any C# argument is; a body that changes what it was read from does not change the number of iterations. A negative `maxBounds` runs no iteration.
+
+The call expands into a flat loop without any delegate allocation. The CUDA build, the native CPU build and the managed path all use the same three helpers:
 
 ```cpp
 // Execution Context: Generated C++ (GPU)
-for (int i = blockIdx.x * blockDim.x + threadIdx.x; i < count; i += blockDim.x * gridDim.x)
 {
-    // body...
+unsigned int __gsharp_gsl_n_0 = __gsharp_grid_stride_count(count);
+for(unsigned int __gsharp_gsl_0 = __gsharp_grid_stride_start(); __gsharp_gsl_0 < __gsharp_gsl_n_0; __gsharp_gsl_0 += __gsharp_grid_stride_step())
+{
+int i = (int)__gsharp_gsl_0;
+// body...
+}
 }
 ```
 
-Under managed execution, each thread starts at `blockDim.x * blockIdx.x + threadIdx.x` and steps by `blockDim.x * gridDim.x`, as in the loop above.
+The start and the step stop at 2^31, which no `int` index reaches, so the unsigned index never wraps around. In a 1D launch, the start is `blockIdx.x * blockDim.x + threadIdx.x` and the step is `gridDim.x * blockDim.x`, the classic grid-stride loop.
+
+A loop that gives each row of a 2D launch its own `Gpu.GridStrideLoop` (reading the row from `BlockIndex.Y` or `ThreadIndex.Y`) spreads the indices of every row over all the threads of the launch, so each row only sees part of them. Write such a per-row loop over `ThreadIndex.X` yourself:
+
+```csharp
+// Execution Context: G# Kernel (GPU), launched with gridDimY: rows
+int row = BlockIndex.Y;
+for (int c = BlockIndex.X * BlockDimension.X + ThreadIndex.X; c < cols; c += GridDimension.X * BlockDimension.X)
+{
+    output[row * cols + c] = row;
+}
+```
 
 The body is written into the surrounding code, so two things that are legal in an ordinary C# lambda are rejected with [GSH0003](../diagnostics/GSH0003.md):
 

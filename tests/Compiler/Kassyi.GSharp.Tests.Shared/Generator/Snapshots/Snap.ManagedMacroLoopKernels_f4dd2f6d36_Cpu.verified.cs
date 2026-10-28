@@ -62,9 +62,15 @@ return __gsharp_id_1_acc.__gsharp_mb_Total;
 }
 
 inline void __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__ManagedMacroLoopKernels__FillByStride(GSharpArray<int> __gsharp_id_0_data, int __gsharp_id_1_count, int __gsharp_id_2_value){
-for(int __gsharp_id_3_i = blockIdx.x * blockDim.x + threadIdx.x; __gsharp_id_3_i < __gsharp_id_1_count; __gsharp_id_3_i += gridDim.x * blockDim.x)
+{
+unsigned int __gsharp_gsl_n_0 = __gsharp_grid_stride_count(__gsharp_id_1_count);
+for(unsigned int __gsharp_gsl_0 = __gsharp_grid_stride_start(); __gsharp_gsl_0 < __gsharp_gsl_n_0; __gsharp_gsl_0 += __gsharp_grid_stride_step())
+{
+int __gsharp_id_3_i = (int)__gsharp_gsl_0;
 {
 __gsharp_id_0_data[__gsharp_id_3_i]=__gsharp_id_2_value+__gsharp_id_3_i;
+}
+}
 }
 }
 
@@ -81,17 +87,29 @@ static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ForUnr
 #endif
 inline void __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__ManagedMacroLoopKernels__RunningSumByStride(GSharpArray<int> __gsharp_id_0_data, int __gsharp_id_1_count){
 __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ForUnrollAccumulator __gsharp_id_2_acc = {};
-for(int __gsharp_id_4_i = blockIdx.x * blockDim.x + threadIdx.x; __gsharp_id_4_i < __gsharp_id_1_count; __gsharp_id_4_i += gridDim.x * blockDim.x)
+{
+unsigned int __gsharp_gsl_n_0 = __gsharp_grid_stride_count(__gsharp_id_1_count);
+for(unsigned int __gsharp_gsl_0 = __gsharp_grid_stride_start(); __gsharp_gsl_0 < __gsharp_gsl_n_0; __gsharp_gsl_0 += __gsharp_grid_stride_step())
+{
+int __gsharp_id_4_i = (int)__gsharp_gsl_0;
 {
 __gsharp_id_2_acc.__gsharp_mb_Total+=__gsharp_id_4_i;
 __gsharp_id_0_data[__gsharp_id_4_i]=__gsharp_id_2_acc.__gsharp_mb_Total;
 }
 }
+}
+}
 
 inline void __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__ManagedMacroLoopKernels__CountVisits(GSharpArray<int> __gsharp_id_0_data, int __gsharp_id_1_count){
-for(int __gsharp_id_2_i = blockIdx.x * blockDim.x + threadIdx.x; __gsharp_id_2_i < __gsharp_id_1_count; __gsharp_id_2_i += gridDim.x * blockDim.x)
+{
+unsigned int __gsharp_gsl_n_0 = __gsharp_grid_stride_count(__gsharp_id_1_count);
+for(unsigned int __gsharp_gsl_0 = __gsharp_grid_stride_start(); __gsharp_gsl_0 < __gsharp_gsl_n_0; __gsharp_gsl_0 += __gsharp_grid_stride_step())
+{
+int __gsharp_id_2_i = (int)__gsharp_gsl_0;
 {
 __gsharp_id_0_data[__gsharp_id_2_i]+=1;
+}
+}
 }
 }
 
@@ -778,10 +796,16 @@ case 0:
 __gsharp_switch_1_state_0:
 {
 __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ForUnrollAccumulator __gsharp_id_2_acc = {};
-for(int __gsharp_id_4_i = blockIdx.x * blockDim.x + threadIdx.x; __gsharp_id_4_i < __gsharp_id_1_count; __gsharp_id_4_i += gridDim.x * blockDim.x)
+{
+unsigned int __gsharp_gsl_n_0 = __gsharp_grid_stride_count(__gsharp_id_1_count);
+for(unsigned int __gsharp_gsl_0 = __gsharp_grid_stride_start(); __gsharp_gsl_0 < __gsharp_gsl_n_0; __gsharp_gsl_0 += __gsharp_grid_stride_step())
+{
+int __gsharp_id_4_i = (int)__gsharp_gsl_0;
 {
 __gsharp_id_2_acc.__gsharp_mb_Total+=__gsharp_id_4_i;
 __gsharp_id_0_output[__gsharp_id_4_i]=__gsharp_id_2_acc.__gsharp_mb_Total;
+}
+}
 }
 __gsharp_state=-1;
 return;
@@ -848,10 +872,14 @@ switch (__gsharp_ctx.__gsharp_state)
 case 0:
 {
 global::Kassyi.GSharp.Tests.Shared.Syntax.ForUnrollAccumulator acc = default;
-for (int __gsharp_unroll_0 = global::Kassyi.GSharp.Core.ManagedGpuContext.BlockDimX * global::Kassyi.GSharp.Core.ManagedGpuContext.BlockIdxX + global::Kassyi.GSharp.Core.ManagedGpuContext.ThreadIdxX; __gsharp_unroll_0 < (count); __gsharp_unroll_0 += global::Kassyi.GSharp.Core.ManagedGpuContext.BlockDimX * global::Kassyi.GSharp.Core.ManagedGpuContext.GridDimX)
 {
+uint __gsharp_gsl_n_0 = global::Kassyi.GSharp.Core.ManagedGpuContext.GridStrideCount(count);
+for (uint __gsharp_gsl_0 = global::Kassyi.GSharp.Core.ManagedGpuContext.GridStrideStart(); __gsharp_gsl_0 < __gsharp_gsl_n_0; __gsharp_gsl_0 += global::Kassyi.GSharp.Core.ManagedGpuContext.GridStrideStep())
+{
+int __gsharp_unroll_0 = (int)__gsharp_gsl_0;
 acc.Total += __gsharp_unroll_0;
 output[__gsharp_unroll_0] = acc.Total;
+}
 }
 
 __gsharp_ctx.__gsharp_state = -1;
@@ -1200,21 +1228,39 @@ __gsharp_switch_1_state_0:
 {
 // [GpuUnroll] start=0, count=3
 {
-for(int __gsharp_id_3_i = blockIdx.x * blockDim.x + threadIdx.x; __gsharp_id_3_i < __gsharp_id_1_count; __gsharp_id_3_i += gridDim.x * blockDim.x)
+{
+unsigned int __gsharp_gsl_n_0 = __gsharp_grid_stride_count(__gsharp_id_1_count);
+for(unsigned int __gsharp_gsl_0 = __gsharp_grid_stride_start(); __gsharp_gsl_0 < __gsharp_gsl_n_0; __gsharp_gsl_0 += __gsharp_grid_stride_step())
+{
+int __gsharp_id_3_i = (int)__gsharp_gsl_0;
 {
 __gsharp_id_0_output[__gsharp_id_3_i]+=0+1;
 }
 }
+}
+}
 {
-for(int __gsharp_id_3_i = blockIdx.x * blockDim.x + threadIdx.x; __gsharp_id_3_i < __gsharp_id_1_count; __gsharp_id_3_i += gridDim.x * blockDim.x)
+{
+unsigned int __gsharp_gsl_n_1 = __gsharp_grid_stride_count(__gsharp_id_1_count);
+for(unsigned int __gsharp_gsl_1 = __gsharp_grid_stride_start(); __gsharp_gsl_1 < __gsharp_gsl_n_1; __gsharp_gsl_1 += __gsharp_grid_stride_step())
+{
+int __gsharp_id_3_i = (int)__gsharp_gsl_1;
 {
 __gsharp_id_0_output[__gsharp_id_3_i]+=1+1;
 }
 }
+}
+}
 {
-for(int __gsharp_id_3_i = blockIdx.x * blockDim.x + threadIdx.x; __gsharp_id_3_i < __gsharp_id_1_count; __gsharp_id_3_i += gridDim.x * blockDim.x)
+{
+unsigned int __gsharp_gsl_n_2 = __gsharp_grid_stride_count(__gsharp_id_1_count);
+for(unsigned int __gsharp_gsl_2 = __gsharp_grid_stride_start(); __gsharp_gsl_2 < __gsharp_gsl_n_2; __gsharp_gsl_2 += __gsharp_grid_stride_step())
+{
+int __gsharp_id_3_i = (int)__gsharp_gsl_2;
 {
 __gsharp_id_0_output[__gsharp_id_3_i]+=2+1;
+}
+}
 }
 }
 __gsharp_state=-1;
@@ -1283,9 +1329,13 @@ case 0:
 {
 for (int __gsharp_unroll_0 = 0; __gsharp_unroll_0 < unchecked(0 + 3); __gsharp_unroll_0++)
 {
-for (int __gsharp_unroll_1 = global::Kassyi.GSharp.Core.ManagedGpuContext.BlockDimX * global::Kassyi.GSharp.Core.ManagedGpuContext.BlockIdxX + global::Kassyi.GSharp.Core.ManagedGpuContext.ThreadIdxX; __gsharp_unroll_1 < (count); __gsharp_unroll_1 += global::Kassyi.GSharp.Core.ManagedGpuContext.BlockDimX * global::Kassyi.GSharp.Core.ManagedGpuContext.GridDimX)
 {
+uint __gsharp_gsl_n_1 = global::Kassyi.GSharp.Core.ManagedGpuContext.GridStrideCount(count);
+for (uint __gsharp_gsl_1 = global::Kassyi.GSharp.Core.ManagedGpuContext.GridStrideStart(); __gsharp_gsl_1 < __gsharp_gsl_n_1; __gsharp_gsl_1 += global::Kassyi.GSharp.Core.ManagedGpuContext.GridStrideStep())
+{
+int __gsharp_unroll_1 = (int)__gsharp_gsl_1;
 output[__gsharp_unroll_1] += __gsharp_unroll_0 + 1;
+}
 }
 }
 
@@ -1408,7 +1458,11 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-for(int __gsharp_id_2_i = blockIdx.x * blockDim.x + threadIdx.x; __gsharp_id_2_i < __gsharp_id_1_count; __gsharp_id_2_i += gridDim.x * blockDim.x)
+{
+unsigned int __gsharp_gsl_n_0 = __gsharp_grid_stride_count(__gsharp_id_1_count);
+for(unsigned int __gsharp_gsl_0 = __gsharp_grid_stride_start(); __gsharp_gsl_0 < __gsharp_gsl_n_0; __gsharp_gsl_0 += __gsharp_grid_stride_step())
+{
+int __gsharp_id_2_i = (int)__gsharp_gsl_0;
 {
 int __gsharp_id_3_sum = 0;
 // [GpuUnroll] start=0, count=3
@@ -1422,6 +1476,8 @@ __gsharp_id_3_sum+=__gsharp_id_2_i*1;
 __gsharp_id_3_sum+=__gsharp_id_2_i*2;
 }
 __gsharp_id_0_output[__gsharp_id_2_i]=__gsharp_id_3_sum;
+}
+}
 }
 __gsharp_state=-1;
 return;
@@ -1487,8 +1543,11 @@ switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-for (int __gsharp_unroll_0 = global::Kassyi.GSharp.Core.ManagedGpuContext.BlockDimX * global::Kassyi.GSharp.Core.ManagedGpuContext.BlockIdxX + global::Kassyi.GSharp.Core.ManagedGpuContext.ThreadIdxX; __gsharp_unroll_0 < (count); __gsharp_unroll_0 += global::Kassyi.GSharp.Core.ManagedGpuContext.BlockDimX * global::Kassyi.GSharp.Core.ManagedGpuContext.GridDimX)
 {
+uint __gsharp_gsl_n_0 = global::Kassyi.GSharp.Core.ManagedGpuContext.GridStrideCount(count);
+for (uint __gsharp_gsl_0 = global::Kassyi.GSharp.Core.ManagedGpuContext.GridStrideStart(); __gsharp_gsl_0 < __gsharp_gsl_n_0; __gsharp_gsl_0 += global::Kassyi.GSharp.Core.ManagedGpuContext.GridStrideStep())
+{
+int __gsharp_unroll_0 = (int)__gsharp_gsl_0;
 int sum = 0;
 for (int __gsharp_unroll_1 = 0; __gsharp_unroll_1 < unchecked(0 + 3); __gsharp_unroll_1++)
 {
@@ -1496,6 +1555,7 @@ sum += __gsharp_unroll_0 * __gsharp_unroll_1;
 }
 
 output[__gsharp_unroll_0] = sum;
+}
 }
 
 __gsharp_ctx.__gsharp_state = -1;
@@ -3222,9 +3282,15 @@ __gsharp_switch_1_state_0:
 {
 int __gsharp_id_2_tid = threadIdx.x;
 int __gsharp_id_3_i = __gsharp_id_2_tid+100;
-for(int __gsharp_id_4_i = blockIdx.x * blockDim.x + threadIdx.x; __gsharp_id_4_i < __gsharp_id_0_data.length; __gsharp_id_4_i += gridDim.x * blockDim.x)
+{
+unsigned int __gsharp_gsl_n_0 = __gsharp_grid_stride_count(__gsharp_id_0_data.length);
+for(unsigned int __gsharp_gsl_0 = __gsharp_grid_stride_start(); __gsharp_gsl_0 < __gsharp_gsl_n_0; __gsharp_gsl_0 += __gsharp_grid_stride_step())
+{
+int __gsharp_id_4_i = (int)__gsharp_gsl_0;
 {
 __gsharp_id_0_data[__gsharp_id_4_i]+=1;
+}
+}
 }
 __gsharp_id_1_seen[__gsharp_id_2_tid]=__gsharp_id_3_i;
 __gsharp_state=-1;
@@ -3293,9 +3359,13 @@ case 0:
 {
 int tid = global::Kassyi.GSharp.Core.ThreadIndex.X;
 int i = tid + 100;
-for (int __gsharp_unroll_0 = global::Kassyi.GSharp.Core.ManagedGpuContext.BlockDimX * global::Kassyi.GSharp.Core.ManagedGpuContext.BlockIdxX + global::Kassyi.GSharp.Core.ManagedGpuContext.ThreadIdxX; __gsharp_unroll_0 < (data.Length); __gsharp_unroll_0 += global::Kassyi.GSharp.Core.ManagedGpuContext.BlockDimX * global::Kassyi.GSharp.Core.ManagedGpuContext.GridDimX)
 {
+uint __gsharp_gsl_n_0 = global::Kassyi.GSharp.Core.ManagedGpuContext.GridStrideCount(data.Length);
+for (uint __gsharp_gsl_0 = global::Kassyi.GSharp.Core.ManagedGpuContext.GridStrideStart(); __gsharp_gsl_0 < __gsharp_gsl_n_0; __gsharp_gsl_0 += global::Kassyi.GSharp.Core.ManagedGpuContext.GridStrideStep())
+{
+int __gsharp_unroll_0 = (int)__gsharp_gsl_0;
 data[__gsharp_unroll_0] += 1;
+}
 }
 
 seen[tid] = i;
@@ -3439,10 +3509,16 @@ __gsharp_switch_1_state_0:
 int __gsharp_id_2_tid = threadIdx.x;
 int __gsharp_id_3_i = __gsharp_id_2_tid+100;
 __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ForUnrollAccumulator __gsharp_id_4_acc = {};
-for(int __gsharp_id_6_i = blockIdx.x * blockDim.x + threadIdx.x; __gsharp_id_6_i < __gsharp_id_0_data.length; __gsharp_id_6_i += gridDim.x * blockDim.x)
+{
+unsigned int __gsharp_gsl_n_0 = __gsharp_grid_stride_count(__gsharp_id_0_data.length);
+for(unsigned int __gsharp_gsl_0 = __gsharp_grid_stride_start(); __gsharp_gsl_0 < __gsharp_gsl_n_0; __gsharp_gsl_0 += __gsharp_grid_stride_step())
+{
+int __gsharp_id_6_i = (int)__gsharp_gsl_0;
 {
 __gsharp_id_4_acc.__gsharp_mb_Total+=1;
 __gsharp_id_0_data[__gsharp_id_6_i]+=1;
+}
+}
 }
 __gsharp_id_1_seen[__gsharp_id_2_tid]=__gsharp_id_3_i+__gsharp_id_4_acc.__gsharp_mb_Total*1000;
 __gsharp_state=-1;
@@ -3512,10 +3588,14 @@ case 0:
 int tid = global::Kassyi.GSharp.Core.ThreadIndex.X;
 int i = tid + 100;
 global::Kassyi.GSharp.Tests.Shared.Syntax.ForUnrollAccumulator acc = default;
-for (int __gsharp_unroll_0 = global::Kassyi.GSharp.Core.ManagedGpuContext.BlockDimX * global::Kassyi.GSharp.Core.ManagedGpuContext.BlockIdxX + global::Kassyi.GSharp.Core.ManagedGpuContext.ThreadIdxX; __gsharp_unroll_0 < (data.Length); __gsharp_unroll_0 += global::Kassyi.GSharp.Core.ManagedGpuContext.BlockDimX * global::Kassyi.GSharp.Core.ManagedGpuContext.GridDimX)
 {
+uint __gsharp_gsl_n_0 = global::Kassyi.GSharp.Core.ManagedGpuContext.GridStrideCount(data.Length);
+for (uint __gsharp_gsl_0 = global::Kassyi.GSharp.Core.ManagedGpuContext.GridStrideStart(); __gsharp_gsl_0 < __gsharp_gsl_n_0; __gsharp_gsl_0 += global::Kassyi.GSharp.Core.ManagedGpuContext.GridStrideStep())
+{
+int __gsharp_unroll_0 = (int)__gsharp_gsl_0;
 acc.Total += 1;
 data[__gsharp_unroll_0] += 1;
+}
 }
 
 seen[tid] = i + acc.Total * 1000;
@@ -3645,9 +3725,15 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-for(int __gsharp_id_2_i = blockIdx.x * blockDim.x + threadIdx.x; __gsharp_id_2_i < __gsharp_id_1_count; __gsharp_id_2_i += gridDim.x * blockDim.x)
+{
+unsigned int __gsharp_gsl_n_0 = __gsharp_grid_stride_count(__gsharp_id_1_count);
+for(unsigned int __gsharp_gsl_0 = __gsharp_grid_stride_start(); __gsharp_gsl_0 < __gsharp_gsl_n_0; __gsharp_gsl_0 += __gsharp_grid_stride_step())
+{
+int __gsharp_id_2_i = (int)__gsharp_gsl_0;
 {
 __gsharp_id_0_data[__gsharp_id_2_i]+=1;
+}
+}
 }
 __gsharp_state=-1;
 return;
@@ -3713,9 +3799,13 @@ switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-for (int __gsharp_unroll_0 = global::Kassyi.GSharp.Core.ManagedGpuContext.BlockDimX * global::Kassyi.GSharp.Core.ManagedGpuContext.BlockIdxX + global::Kassyi.GSharp.Core.ManagedGpuContext.ThreadIdxX; __gsharp_unroll_0 < (count); __gsharp_unroll_0 += global::Kassyi.GSharp.Core.ManagedGpuContext.BlockDimX * global::Kassyi.GSharp.Core.ManagedGpuContext.GridDimX)
 {
+uint __gsharp_gsl_n_0 = global::Kassyi.GSharp.Core.ManagedGpuContext.GridStrideCount(count);
+for (uint __gsharp_gsl_0 = global::Kassyi.GSharp.Core.ManagedGpuContext.GridStrideStart(); __gsharp_gsl_0 < __gsharp_gsl_n_0; __gsharp_gsl_0 += global::Kassyi.GSharp.Core.ManagedGpuContext.GridStrideStep())
+{
+int __gsharp_unroll_0 = (int)__gsharp_gsl_0;
 data[__gsharp_unroll_0] += 1;
+}
 }
 
 __gsharp_ctx.__gsharp_state = -1;

@@ -68,6 +68,10 @@ Lowering:
     ForEachSourcePrefix: __gsharp_foreach_src_
     ForEachIndexPrefix: __gsharp_foreach_i_
     UnrollIndexPrefix: __gsharp_unroll_
+    # The unsigned index and the count, read once, of a Gpu.GridStrideLoop (__gsharp_gsl_<n>, __gsharp_gsl_n_<n>); the
+    # C++ emitter and the managed rewrite both spell them
+    GridStrideIndexPrefix: __gsharp_gsl_
+    GridStrideCountPrefix: __gsharp_gsl_n_
     # The done flag of a Gpu.SyncGrid(body) with a return (__gsharp_sg_done_<body>) and the label after the statement that
     # returns (__gsharp_sg_next_<body>_<statement>); the CUDA emitter and the CPU lowering both spell them
     SyncGridDonePrefix: __gsharp_sg_done_
@@ -135,6 +139,10 @@ Prelude:
     Trap: { Value: __gsharp_trap, Prelude: ErrorChannel.hpp }
     ConsumeLastError: { Value: __gsharp_consume_last_error, Prelude: ErrorChannel.hpp }
     SetThreadIndex: { Value: __gsharp_set_thread_idx, Prelude: ThreadAndMemory.hpp }
+    # Gpu.GridStrideLoop: declared by ThreadAndMemory.hpp for the CPU dialects and by the CUDA prelude
+    GridStrideStart: { Value: __gsharp_grid_stride_start, Prelude: ThreadAndMemory.hpp }
+    GridStrideStep: { Value: __gsharp_grid_stride_step, Prelude: ThreadAndMemory.hpp }
+    GridStrideCount: { Value: __gsharp_grid_stride_count, Prelude: ThreadAndMemory.hpp }
     # Declared by ThreadAndMemory.hpp for the CPU dialects and by the CUDA prelude (../Prelude.cu) as the extern dynamic
     # shared memory buffer.
     DynamicSharedMemory: { Value: __gsharp_dynamic_smem, Prelude: ThreadAndMemory.hpp }

@@ -136,9 +136,15 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-for(int __gsharp_id_3_tid = blockIdx.x * blockDim.x + threadIdx.x; __gsharp_id_3_tid < __gsharp_id_2_numMessages; __gsharp_id_3_tid += gridDim.x * blockDim.x)
+{
+unsigned int __gsharp_gsl_n_0 = __gsharp_grid_stride_count(__gsharp_id_2_numMessages);
+for(unsigned int __gsharp_gsl_0 = __gsharp_grid_stride_start(); __gsharp_gsl_0 < __gsharp_gsl_n_0; __gsharp_gsl_0 += __gsharp_grid_stride_step())
+{
+int __gsharp_id_3_tid = (int)__gsharp_gsl_0;
 {
 __gsharp_fn_Henicos__Benchmarks__ComputeBenchmarks__Sha256Kernels__ComputeBlock(__gsharp_id_3_tid,__gsharp_id_0_input,__gsharp_id_1_output);
+}
+}
 }
 __gsharp_state=-1;
 return;
@@ -204,9 +210,13 @@ switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-for (int __gsharp_unroll_0 = global::Kassyi.GSharp.Core.ManagedGpuContext.BlockDimX * global::Kassyi.GSharp.Core.ManagedGpuContext.BlockIdxX + global::Kassyi.GSharp.Core.ManagedGpuContext.ThreadIdxX; __gsharp_unroll_0 < (numMessages); __gsharp_unroll_0 += global::Kassyi.GSharp.Core.ManagedGpuContext.BlockDimX * global::Kassyi.GSharp.Core.ManagedGpuContext.GridDimX)
 {
+uint __gsharp_gsl_n_0 = global::Kassyi.GSharp.Core.ManagedGpuContext.GridStrideCount(numMessages);
+for (uint __gsharp_gsl_0 = global::Kassyi.GSharp.Core.ManagedGpuContext.GridStrideStart(); __gsharp_gsl_0 < __gsharp_gsl_n_0; __gsharp_gsl_0 += global::Kassyi.GSharp.Core.ManagedGpuContext.GridStrideStep())
+{
+int __gsharp_unroll_0 = (int)__gsharp_gsl_0;
 global::Henicos.Benchmarks.ComputeBenchmarks.Sha256Kernels.ComputeBlock(__gsharp_unroll_0, input, output);
+}
 }
 
 __gsharp_ctx.__gsharp_state = -1;

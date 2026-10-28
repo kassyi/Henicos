@@ -1,7 +1,8 @@
 namespace Kassyi.GSharp.Compiler.Transpiler.Rules.MacroRules;
 
 /// <summary>
-/// Transpiles <c>Gpu.GridStrideLoop</c> macros into idiomatic grid-stride for-loops in CUDA C++.
+/// Transpiles <c>Gpu.GridStrideLoop</c> macros into grid-stride for-loops over the linear rank of the whole launch
+/// (the Prelude helpers <c>__gsharp_grid_stride_start</c> / <c>_step</c> / <c>_count</c>), for CUDA and the native CPU.
 /// </summary>
 internal sealed class GridStrideLoopMacroRule : IMacroTranspilerRule
 {
@@ -44,23 +45,40 @@ internal sealed class GridStrideLoopMacroRule : IMacroTranspilerRule
             return false;
         }
 
-        // Emit: for (int {paramName} = blockIdx.x * blockDim.x + threadIdx.x; {paramName} < [EXPR]; {paramName} += gridDim.x * blockDim.x)
-        context.Emitter.Writer.Append("for");
-        using (context.Emitter.Writer.Parentheses())
+        // {
+        // unsigned int __gsharp_gsl_n_<n> = __gsharp_grid_stride_count(<count>);
+        // for(unsigned int __gsharp_gsl_<n> = __gsharp_grid_stride_start(); __gsharp_gsl_<n> < __gsharp_gsl_n_<n>; __gsharp_gsl_<n> += __gsharp_grid_stride_step())
+        // {
+        // int <i> = (int)__gsharp_gsl_<n>;
+        // <body>
+        // }
+        // }
+        // The count is read once, before the loop, as a C# argument is. The index is unsigned and the start and step
+        // saturate at 2^31, so index + step never wraps around (#712)
+        var number = context.Emitter.GridStrideLoopCounter++;
+        var index = $"{GSharpInternalNames.Lowering.GridStrideIndexPrefix}{number}";
+        var count = $"{GSharpInternalNames.Lowering.GridStrideCountPrefix}{number}";
+        var writer = context.Emitter.Writer;
+        using (writer.Scope())
         {
-            context.Emitter.Writer.Append("int ");
-            CppNameResolver.AppendDeclaredName(loopVariable, loopVariable.Identifier, ref context);
-            context.Emitter.Writer.Append(" = blockIdx.x * blockDim.x + threadIdx.x; ");
-            CppNameResolver.AppendDeclaredName(loopVariable, loopVariable.Identifier, ref context);
-            context.Emitter.Writer.Append(" < ");
-            context.Visitor.Visit(args[call.ArgumentOffset].Expression);
-            context.Emitter.Writer.Append("; ");
-            CppNameResolver.AppendDeclaredName(loopVariable, loopVariable.Identifier, ref context);
-            context.Emitter.Writer.Append(" += gridDim.x * blockDim.x");
-        }
+            writer.Append($"unsigned int {count} = {GSharpInternalNames.Prelude.GridStrideCount}");
+            using (writer.Parentheses())
+            {
+                context.Visitor.Visit(args[call.ArgumentOffset].Expression);
+            }
 
-        context.Emitter.Writer.AppendLine();
-        MacroTranspilerHelper.EmitUnrolledBody(ref context, lambdaExpr.Body);
+            writer.AppendLine(";");
+            writer.AppendLine(
+                $"for(unsigned int {index} = {GSharpInternalNames.Prelude.GridStrideStart}(); {index} < {count}; {index} += {GSharpInternalNames.Prelude.GridStrideStep}())"
+            );
+            using (writer.Scope())
+            {
+                writer.Append("int ");
+                CppNameResolver.AppendDeclaredName(loopVariable, loopVariable.Identifier, ref context);
+                writer.AppendLine($" = (int){index};");
+                MacroTranspilerHelper.EmitUnrolledBody(ref context, lambdaExpr.Body);
+            }
+        }
 
         return true;
     }

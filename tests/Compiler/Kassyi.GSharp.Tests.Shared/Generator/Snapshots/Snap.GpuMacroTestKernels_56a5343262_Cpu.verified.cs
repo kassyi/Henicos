@@ -49,9 +49,15 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-for(int __gsharp_id_4_i = blockIdx.x * blockDim.x + threadIdx.x; __gsharp_id_4_i < __gsharp_id_1_length; __gsharp_id_4_i += gridDim.x * blockDim.x)
+{
+unsigned int __gsharp_gsl_n_0 = __gsharp_grid_stride_count(__gsharp_id_1_length);
+for(unsigned int __gsharp_gsl_0 = __gsharp_grid_stride_start(); __gsharp_gsl_0 < __gsharp_gsl_n_0; __gsharp_gsl_0 += __gsharp_grid_stride_step())
+{
+int __gsharp_id_4_i = (int)__gsharp_gsl_0;
 {
 __gsharp_id_0_outputBuffer[__gsharp_id_4_i]=__gsharp_id_2_fillValue;
+}
+}
 }
 __gsharp_yielded_for_grid_sync=true;
 __gsharp_state=1;
@@ -132,9 +138,13 @@ switch (__gsharp_ctx.__gsharp_state)
 case 0:
 {
 // GridStrideLoop to fill the array with fillValue
-for (int __gsharp_unroll_0 = global::Kassyi.GSharp.Core.ManagedGpuContext.BlockDimX * global::Kassyi.GSharp.Core.ManagedGpuContext.BlockIdxX + global::Kassyi.GSharp.Core.ManagedGpuContext.ThreadIdxX; __gsharp_unroll_0 < (length); __gsharp_unroll_0 += global::Kassyi.GSharp.Core.ManagedGpuContext.BlockDimX * global::Kassyi.GSharp.Core.ManagedGpuContext.GridDimX)
 {
+uint __gsharp_gsl_n_0 = global::Kassyi.GSharp.Core.ManagedGpuContext.GridStrideCount(length);
+for (uint __gsharp_gsl_0 = global::Kassyi.GSharp.Core.ManagedGpuContext.GridStrideStart(); __gsharp_gsl_0 < __gsharp_gsl_n_0; __gsharp_gsl_0 += global::Kassyi.GSharp.Core.ManagedGpuContext.GridStrideStep())
+{
+int __gsharp_unroll_0 = (int)__gsharp_gsl_0;
 outputBuffer[__gsharp_unroll_0] = fillValue;
+}
 }
 
 global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested = true;

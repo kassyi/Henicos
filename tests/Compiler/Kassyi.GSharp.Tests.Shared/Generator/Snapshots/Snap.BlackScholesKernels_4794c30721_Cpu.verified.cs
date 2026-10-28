@@ -351,13 +351,19 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-for(int __gsharp_id_1_tid = blockIdx.x * blockDim.x + threadIdx.x; __gsharp_id_1_tid < __gsharp_id_0_ctx.__gsharp_mb_N; __gsharp_id_1_tid += gridDim.x * blockDim.x)
+{
+unsigned int __gsharp_gsl_n_0 = __gsharp_grid_stride_count(__gsharp_id_0_ctx.__gsharp_mb_N);
+for(unsigned int __gsharp_gsl_0 = __gsharp_grid_stride_start(); __gsharp_gsl_0 < __gsharp_gsl_n_0; __gsharp_gsl_0 += __gsharp_grid_stride_step())
+{
+int __gsharp_id_1_tid = (int)__gsharp_gsl_0;
 {
 float __gsharp_id_2_c;
 float __gsharp_id_3_p;
 __gsharp_fn_Henicos__Benchmarks__ComputeBenchmarks__BlackScholesKernels__CalculateOptionPrice(__gsharp_id_0_ctx.__gsharp_mb_S[__gsharp_id_1_tid],__gsharp_id_0_ctx.__gsharp_mb_X[__gsharp_id_1_tid],__gsharp_id_0_ctx.__gsharp_mb_T[__gsharp_id_1_tid],__gsharp_id_0_ctx.__gsharp_mb_R,__gsharp_id_0_ctx.__gsharp_mb_V,&__gsharp_id_2_c,&__gsharp_id_3_p);
 __gsharp_id_0_ctx.__gsharp_mb_CallResult[__gsharp_id_1_tid]=__gsharp_id_2_c;
 __gsharp_id_0_ctx.__gsharp_mb_PutResult[__gsharp_id_1_tid]=__gsharp_id_3_p;
+}
+}
 }
 __gsharp_state=-1;
 return;
@@ -423,11 +429,15 @@ switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-for (int __gsharp_unroll_0 = global::Kassyi.GSharp.Core.ManagedGpuContext.BlockDimX * global::Kassyi.GSharp.Core.ManagedGpuContext.BlockIdxX + global::Kassyi.GSharp.Core.ManagedGpuContext.ThreadIdxX; __gsharp_unroll_0 < (ctx.N); __gsharp_unroll_0 += global::Kassyi.GSharp.Core.ManagedGpuContext.BlockDimX * global::Kassyi.GSharp.Core.ManagedGpuContext.GridDimX)
 {
+uint __gsharp_gsl_n_0 = global::Kassyi.GSharp.Core.ManagedGpuContext.GridStrideCount(ctx.N);
+for (uint __gsharp_gsl_0 = global::Kassyi.GSharp.Core.ManagedGpuContext.GridStrideStart(); __gsharp_gsl_0 < __gsharp_gsl_n_0; __gsharp_gsl_0 += global::Kassyi.GSharp.Core.ManagedGpuContext.GridStrideStep())
+{
+int __gsharp_unroll_0 = (int)__gsharp_gsl_0;
 global::Henicos.Benchmarks.ComputeBenchmarks.BlackScholesKernels.CalculateOptionPrice(ctx.S[__gsharp_unroll_0], ctx.X[__gsharp_unroll_0], ctx.T[__gsharp_unroll_0], ctx.R, ctx.V, out var c, out var p);
 ctx.CallResult[__gsharp_unroll_0] = c;
 ctx.PutResult[__gsharp_unroll_0] = p;
+}
 }
 
 __gsharp_ctx.__gsharp_state = -1;

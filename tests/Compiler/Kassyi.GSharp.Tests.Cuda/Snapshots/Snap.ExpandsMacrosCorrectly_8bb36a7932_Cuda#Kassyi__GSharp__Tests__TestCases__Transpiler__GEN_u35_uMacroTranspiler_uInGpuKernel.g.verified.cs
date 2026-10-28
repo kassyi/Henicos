@@ -32,9 +32,15 @@ __gsharp_id_0_sum+=1;
 {
 __gsharp_id_0_sum+=2;
 }
-for(int __gsharp_id_2_j = blockIdx.x * blockDim.x + threadIdx.x; __gsharp_id_2_j < 10; __gsharp_id_2_j += gridDim.x * blockDim.x)
+{
+unsigned int __gsharp_gsl_n_0 = __gsharp_grid_stride_count(10);
+for(unsigned int __gsharp_gsl_0 = __gsharp_grid_stride_start(); __gsharp_gsl_0 < __gsharp_gsl_n_0; __gsharp_gsl_0 += __gsharp_grid_stride_step())
+{
+int __gsharp_id_2_j = (int)__gsharp_gsl_0;
 {
 __gsharp_id_0_sum+=__gsharp_id_2_j;
+}
+}
 }
 if((threadIdx.x|threadIdx.y|threadIdx.z|blockIdx.x|blockIdx.y|blockIdx.z)==0)
 {
