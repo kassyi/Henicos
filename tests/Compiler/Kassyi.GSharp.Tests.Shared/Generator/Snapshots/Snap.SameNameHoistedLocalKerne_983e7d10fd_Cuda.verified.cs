@@ -100,7 +100,6 @@ public partial class SameNameHoistedLocalKernels
 public class __gsharp_frame_Kassyi__GSharp__Tests__Shared__Syntax__SameNameHoistedLocalKernels__WarpPrefixAndTotal {
 internal int __gsharp_state;
 internal uint __gsharp_warp_exchange;
-internal bool __gsharp_yielded_for_grid_sync;
 internal int value;
 internal int lane;
 internal int original;

@@ -110,7 +110,6 @@ public static readonly string InlinePtxKernel_FullSource=global::Kassyi.GSharp.G
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__ContractsAndPtxKernels__InlinePtxKernel {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
-public bool __gsharp_yielded_for_grid_sync;
 }
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__ContractsAndPtxKernels__InlinePtxKernel(uint[] data, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__ContractsAndPtxKernels__InlinePtxKernel __gsharp_ctx) {
 {
@@ -192,9 +191,9 @@ if (__gsharp_contexts[__gsharp_linear_tid].__gsharp_state != -1)
 {
 anyGridActive = true;
 anyBlockActive = true;
-__gsharp_contexts[__gsharp_linear_tid].__gsharp_yielded_for_grid_sync = false;
+global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested = false;
 __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__ContractsAndPtxKernels__InlinePtxKernel(data, __gsharp_contexts[__gsharp_linear_tid]);
-if (__gsharp_contexts[__gsharp_linear_tid].__gsharp_yielded_for_grid_sync)
+if (global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested)
 {
 gridSyncRequested = true;
 }
@@ -300,7 +299,6 @@ public static readonly string InlinePtxFollowedByWriteKernel_FullSource=global::
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__ContractsAndPtxKernels__InlinePtxFollowedByWriteKernel {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
-public bool __gsharp_yielded_for_grid_sync;
 }
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__ContractsAndPtxKernels__InlinePtxFollowedByWriteKernel(uint[] data, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__ContractsAndPtxKernels__InlinePtxFollowedByWriteKernel __gsharp_ctx) {
 {
@@ -383,9 +381,9 @@ if (__gsharp_contexts[__gsharp_linear_tid].__gsharp_state != -1)
 {
 anyGridActive = true;
 anyBlockActive = true;
-__gsharp_contexts[__gsharp_linear_tid].__gsharp_yielded_for_grid_sync = false;
+global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested = false;
 __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__ContractsAndPtxKernels__InlinePtxFollowedByWriteKernel(data, __gsharp_contexts[__gsharp_linear_tid]);
-if (__gsharp_contexts[__gsharp_linear_tid].__gsharp_yielded_for_grid_sync)
+if (global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested)
 {
 gridSyncRequested = true;
 }

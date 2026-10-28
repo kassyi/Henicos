@@ -80,30 +80,25 @@ public readonly struct GpuBigFloatArray : IDisposable
     }
 
     /// <summary>
-    /// Gets a scalar representation of the specified element.
+    /// Gets a view of the specified element; reads its exponent and sign back from the device.
     /// </summary>
     /// <param name="index">The index of the element.</param>
-    /// <returns>A <see cref="GpuBigFloat"/> pointing to the element's device memory.</returns>
-    public GpuBigFloat GetElement(int index)
-    {
-        var sig = Significands.GetElement(index);
-        var expWord = Exponents.GetElement(index);
-        var signWord = Signs.GetElement(index);
-
-        var provider = sig.Workspace.Provider;
-        var stream = sig.Workspace.Stream;
-        var exp = unchecked((int)provider.ReadWord(expWord.DevicePointer, stream: stream));
-        var isNegative = provider.ReadWord(signWord.DevicePointer, stream: stream) != 0;
-
-        return new GpuBigFloat(sig, exp, isNegative);
-    }
+    /// <returns>
+    /// A borrowed view of the element's significand with its exponent and sign. It lives only inside the calling method
+    /// (a <see langword="ref struct"/>) and must not be used after this array is disposed.
+    /// </returns>
+    /// <exception cref="ArgumentOutOfRangeException"><paramref name="index"/> is outside the array.</exception>
+    public GpuBigFloatView GetElement(int index) => ((GpuBigFloatArrayView)this).GetElement(index);
 
     /// <summary>
     /// Copies the specified scalar <see cref="GpuBigFloat"/> value into the element at <paramref name="index"/>.
     /// </summary>
     /// <param name="index">The target element index.</param>
-    /// <param name="value">The floating-point value to store.</param>
-    public void SetElement(int index, GpuBigFloat value)
+    /// <param name="value">
+    /// The floating-point value to store; a <see cref="GpuBigFloat"/> converts implicitly. A wider significand is
+    /// truncated to <see cref="WordsPerElement"/> words, a narrower one is zero-extended.
+    /// </param>
+    public void SetElement(int index, scoped GpuBigFloatView value)
     {
         var destSig = Significands.GetElement(index);
         var destExp = Exponents.GetElement(index);
@@ -113,18 +108,18 @@ public readonly struct GpuBigFloatArray : IDisposable
         var provider = workspace.Provider;
         var stream = workspace.Stream;
 
-        if (value.UFloat.Significand.NumWords < WordsPerElement)
+        if (value.Significand.NumWords < WordsPerElement)
         {
             provider.ClearMemoryAsync(destSig.DevicePointer, WordsPerElement, stream);
         }
 
-        var wordsToCopy = Math.Min(value.UFloat.Significand.NumWords, WordsPerElement);
-        provider.CopyDeviceToDevice(destSig.DevicePointer, value.UFloat.Significand.DevicePointer, wordsToCopy, stream);
+        var wordsToCopy = Math.Min(value.Significand.NumWords, WordsPerElement);
+        provider.CopyDeviceToDevice(destSig.DevicePointer, value.Significand.DevicePointer, wordsToCopy, stream);
 
         var meta = ArrayPool<uint>.Shared.Rent(1);
         try
         {
-            meta[0] = unchecked((uint)value.UFloat.Exponent);
+            meta[0] = unchecked((uint)value.Exponent);
             provider.CopyHostToDevice(destExp.DevicePointer, meta, 1, stream);
 
             meta[0] = value.IsNegative ? 1u : 0u;
@@ -141,19 +136,23 @@ public readonly struct GpuBigFloatArray : IDisposable
     /// </summary>
     /// <param name="elementOffset">The starting element index of the slice.</param>
     /// <param name="elementCount">The number of elements in the slice.</param>
-    /// <returns>A sliced view of the <see cref="GpuBigFloatArray"/>.</returns>
-    public GpuBigFloatArray Slice(int elementOffset, int elementCount)
-    {
-        if (elementOffset < 0 || elementCount < 0 || elementOffset + elementCount > Length)
-        {
-            throw new ArgumentOutOfRangeException(nameof(elementOffset));
-        }
+    /// <returns>
+    /// A borrowed view of the elements. It lives only inside the calling method (a <see langword="ref struct"/>) and must
+    /// not be used after this array is disposed.
+    /// </returns>
+    /// <exception cref="ArgumentOutOfRangeException">The range is not inside the array.</exception>
+    public GpuBigFloatArrayView Slice(int elementOffset, int elementCount) =>
+        ((GpuBigFloatArrayView)this).Slice(elementOffset, elementCount);
 
-        return new GpuBigFloatArray(
-            Significands.Slice(elementOffset, elementCount),
-            Exponents.Slice(elementOffset, elementCount),
-            Signs.Slice(elementOffset, elementCount));
-    }
+    /// <summary>
+    /// Returns a range of elements as a <see cref="GpuBigFloatArray"/> that does not own the buffers, for the internal
+    /// plumbing that needs the owned type; disposing it frees nothing.
+    /// </summary>
+    /// <param name="elementOffset">The starting element index.</param>
+    /// <param name="elementCount">The number of elements.</param>
+    /// <returns>A borrowed <see cref="GpuBigFloatArray"/>.</returns>
+    internal GpuBigFloatArray BorrowSlice(int elementOffset, int elementCount) =>
+        Slice(elementOffset, elementCount).AsBorrowed();
 
     /// <summary>
     /// Releases the GPU global device memory resources allocated for the underlying buffers.

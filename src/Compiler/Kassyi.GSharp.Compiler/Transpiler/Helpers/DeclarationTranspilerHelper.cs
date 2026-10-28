@@ -47,18 +47,10 @@ internal static class DeclarationTranspilerHelper
 
     public static void WriteDeclaratorInitializer(VariableDeclaratorSyntax variable, ref TranspileContext context)
     {
+        // An explicit initializer (= default and new() included) is a C# initialization that [SkipLocalsInit] does not
+        // remove (Roslyn emits initobj for it); the attribute only affects the zero fill of a stackalloc
         if (variable.Initializer != null)
         {
-            if (context.Emitter.SkipLocalsInit)
-            {
-                var val = variable.Initializer.Value;
-                if (val is ImplicitObjectCreationExpressionSyntax or ObjectCreationExpressionSyntax { ArgumentList.Arguments.Count: 0 } or DefaultExpressionSyntax ||
-                    val is LiteralExpressionSyntax literal && literal.IsKind(SyntaxKind.DefaultLiteralExpression))
-                {
-                    return; // Skip zero-initialization
-                }
-            }
-
             context.Emitter.Writer.Append(" = ");
             context.Visitor.Visit(variable.Initializer.Value);
         }

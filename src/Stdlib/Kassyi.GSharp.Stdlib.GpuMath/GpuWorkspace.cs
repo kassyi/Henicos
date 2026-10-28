@@ -213,6 +213,8 @@ public class GpuWorkspace : IGpuResourceScope
             return;
         }
 
+        List<Exception>? exceptions = disposing ? [] : null;
+
         IDisposable? contextScope = null;
         if (Engine == GpuExecutionEngine.GSharpAot)
         {
@@ -220,13 +222,13 @@ public class GpuWorkspace : IGpuResourceScope
             {
                 contextScope = new GpuKernelLoader.CudaContextScope(_isolatedContext);
             }
-            catch
+            catch (CudaException ex)
             {
-                // Fallback: If context fails to initialize during teardown, proceed with caution.
+                // The context could not be made current: still release what can be released, and report the failure
+                // with the other teardown errors (dropped on the finalizer thread, which must not throw).
+                exceptions?.Add(ex);
             }
         }
-
-        List<Exception>? exceptions = disposing ? [] : null;
 
         try
         {
@@ -376,6 +378,12 @@ public class GpuWorkspace : IGpuResourceScope
         Dispose(false);
     }
 
+    /// <summary>
+    /// Reads the allocation counters of <see cref="MemoryManager"/>, also after the workspace has been disposed.
+    /// </summary>
+    /// <returns>A snapshot of the counters; see <see cref="GpuMemoryStatistics"/>.</returns>
+    internal GpuMemoryStatistics GetMemoryStatistics() => ((DefaultGpuMemoryManager)MemoryManager).GetStatistics();
+
     internal GpuBigUInt RentTemp(int numWords)
     {
         ObjectDisposedException.ThrowIf(Volatile.Read(ref _disposed) == 1, this);
@@ -385,7 +393,8 @@ public class GpuWorkspace : IGpuResourceScope
 
     internal void ReturnTemp(GpuBigUInt temp)
     {
-        if (!temp.IsTemp)
+        // A borrowed temporary (a view of another buffer) is not returned; its owner frees the buffer
+        if (!temp.IsTemp || !temp.Handle.OwnsBuffer)
         {
             return;
         }

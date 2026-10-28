@@ -35,11 +35,9 @@ public sealed class GpuMemoryPoolTests : IDisposable
     public void Dispose_ReturnsBufferToPool_RepeatedReuse()
     {
         // A disposed value goes back to the pool and is handed out again, every time (not only the first time).
-        // mutant: DefaultGpuMemoryManager.cs:39 `_activeAllocations.TryAdd(temp...)` removed (the second Free is ignored)
-        // mutant: DefaultGpuMemoryManager.cs:44 `_activeAllocations.TryAdd(ptr, 0)` removed (the first Free is ignored)
-        // mutant: DefaultGpuMemoryManager.cs:102 `bag.Add(handle)` removed
-        // mutant: GpuBigUInt.cs:120 `IsTemp = false` -> `IsTemp = true`
-        // mutant: GpuBigUInt.cs:386 `MemoryManager.Free(Handle)` removed
+        // mutant: DefaultGpuMemoryManager.Free `bag.Add(handle.Buffer)` removed
+        // mutant: GpuBigUInt(GpuWorkspace, int) `IsTemp = false` -> `IsTemp = true`
+        // mutant: GpuBigUInt.Dispose `MemoryManager.Free(Handle)` removed
         var first = new GpuBigUInt(_workspace, PoolWords);
         var pointer = first.DevicePointer;
         first.Dispose();
@@ -56,7 +54,7 @@ public sealed class GpuMemoryPoolTests : IDisposable
     public void UIntArrayDispose_ReturnsBufferToPool()
     {
         // GpuBigUIntArray.Dispose frees its buffer (Length * WordsPerElement words) into the pool.
-        // mutant: GpuBigUIntArray.cs:117 `Workspace.MemoryManager.Free(Handle)` removed
+        // mutant: GpuBigUIntArray.Dispose `Workspace.MemoryManager.Free(Handle)` removed
         var array = new GpuBigUIntArray(_workspace, PoolWords, 1);
         var pointer = array.DevicePointer;
         array.Dispose();
@@ -74,8 +72,8 @@ public sealed class GpuMemoryPoolTests : IDisposable
     {
         // GpuBigIntArray.Dispose frees both its values and its signs. With one word per element both are 37 words,
         // so the next two 37-word allocations get exactly those two buffers.
-        // mutant: GpuBigIntArray.cs:98 `Values.Dispose()` removed
-        // mutant: GpuBigIntArray.cs:99 `Signs.Dispose()` removed
+        // mutant: GpuBigIntArray.Dispose `Values.Dispose()` removed
+        // mutant: GpuBigIntArray.Dispose `Signs.Dispose()` removed
         var array = new GpuBigIntArray(_workspace, PoolWords, 1);
         IntPtr[] freed = [array.Values.DevicePointer, array.Signs.DevicePointer];
         array.Dispose();
@@ -90,7 +88,7 @@ public sealed class GpuMemoryPoolTests : IDisposable
     public void ReturnTemp_ReturnsBufferToPool()
     {
         // ReturnTemp of a rented buffer puts it back into the pool, and RentTemp hands it out again.
-        // mutant: GpuWorkspace.cs:398 `MemoryManager.Free(temp.Handle)` removed
+        // mutant: GpuWorkspace.ReturnTemp `MemoryManager.Free(temp.Handle)` removed
         var temp = _workspace.RentTemp(PoolWords);
         Assert.True(temp.IsTemp);
         var pointer = temp.DevicePointer;
@@ -109,8 +107,8 @@ public sealed class GpuMemoryPoolTests : IDisposable
     {
         // GpuBigUInt is a value type: disposing two copies of one value must put its buffer into the pool once,
         // or the next two allocations would share one buffer.
-        // mutant: DefaultGpuMemoryManager.cs:75 `!_activeAllocations.TryRemove(...)` -> `_activeAllocations.TryRemove(...)`
-        // mutant: DefaultGpuMemoryManager.cs:77 `return` removed
+        // mutant: DefaultGpuMemoryManager.Free `!handle.Buffer.TryRetire(...)` -> `handle.Buffer.TryRetire(...)`
+        // mutant: DefaultGpuMemoryManager.Free the `return` after a lost TryRetire removed
         var a = new GpuBigUInt(_workspace, PoolWords);
         var b = a;
         var pointer = a.DevicePointer;
@@ -128,7 +126,7 @@ public sealed class GpuMemoryPoolTests : IDisposable
     public void BorrowedView_Dispose_DoesNotReleaseOwner()
     {
         // A borrowed view (IsTemp) does not own its buffer: disposing it keeps the owner's buffer out of the pool.
-        // mutant: GpuBigUInt.cs:384 `&& !IsTemp` -> `|| !IsTemp`
+        // mutant: GpuBigUInt.Dispose `&& !IsTemp` -> `|| !IsTemp`
         using var owner = new GpuBigUInt(_workspace, PoolWords);
         var view = owner.Handle.AsBorrowedBigUInt(_workspace);
         Assert.True(view.IsTemp);
@@ -143,7 +141,7 @@ public sealed class GpuMemoryPoolTests : IDisposable
     public void ReturnTemp_NonTemp_DoesNotRelease()
     {
         // ReturnTemp ignores a value that was not rented; the owner keeps its buffer.
-        // mutant: GpuWorkspace.cs:388 `!temp.IsTemp` -> `temp.IsTemp`
+        // mutant: GpuWorkspace.ReturnTemp `!temp.IsTemp` -> `temp.IsTemp`
         using var owner = new GpuBigUInt(_workspace, PoolWords);
         Assert.False(owner.IsTemp);
         _workspace.ReturnTemp(owner);
@@ -158,7 +156,7 @@ public sealed class GpuMemoryPoolTests : IDisposable
     {
         // The quotient is allocated before the divisor is checked; when the division throws, it goes back to the pool.
         // The dividend is allocated first so that the quotient takes the pooled buffer `pooled`.
-        // mutant: GpuBigUInt.cs:592 `quotient.Dispose()` removed
+        // mutant: GpuBigUInt.DivideByUInt32 `quotient.Dispose()` removed
         using var dividend = new GpuBigUInt(_workspace, new uint[PoolWords]);
         var spare = new GpuBigUInt(_workspace, PoolWords);
         var pooled = spare.DevicePointer;
@@ -176,7 +174,7 @@ public sealed class GpuMemoryPoolTests : IDisposable
     {
         // A newly allocated value reads as zero even when the driver hands back memory that held other data.
         // FromBigInteger(workspace, 0) relies on this (GpuBigUInt.cs:497-500).
-        // mutant: DefaultGpuMemoryManager.cs:45 `provider.ClearMemoryAsync(ptr, numWords, stream)` removed
+        // mutant: DefaultGpuMemoryManager.Allocate `provider.ClearMemoryAsync(ptr, numWords, stream)` removed
         var provider = _workspace.Provider;
         var reused = 0;
         foreach (var numWords in new[] { 41, 1024, 1 << 20 })

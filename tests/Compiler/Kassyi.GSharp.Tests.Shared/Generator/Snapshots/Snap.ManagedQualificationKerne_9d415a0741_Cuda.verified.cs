@@ -843,7 +843,7 @@ break;
 }
 }
 __gsharp_ty_Kassyi__GSharp__Tests__Shared__Core__Qualification__QualifyPair __gsharp_id_7_empty = {};
-__gsharp_ty_Kassyi__GSharp__Tests__Shared__Core__Qualification__QualifyPair __gsharp_id_8_pairs[4];
+__gsharp_ty_Kassyi__GSharp__Tests__Shared__Core__Qualification__QualifyPair __gsharp_id_8_pairs[4]{};
 __gsharp_id_8_pairs[__gsharp_id_2_tid].__gsharp_mb_A=__gsharp_id_3_box.__gsharp_mb_Value;
 __gsharp_id_1_result[__gsharp_id_2_tid]=__gsharp_id_8_pairs[__gsharp_id_2_tid].__gsharp_mb_A*__gsharp_id_6_weight+__gsharp_id_4_inner.__gsharp_mb_X+__gsharp_id_7_empty.__gsharp_mb_A+__gsharp_fn_Kassyi__GSharp__Tests__Shared__Core__Qualification__QualifyMath__Twice(1);
 }
@@ -1322,7 +1322,6 @@ public partial class QualifyMath
 public class __gsharp_frame_Kassyi__GSharp__Tests__Shared__Core__Qualification__QualifyMath__ExchangeWithNext {
 internal int __gsharp_state;
 internal uint __gsharp_warp_exchange;
-internal bool __gsharp_yielded_for_grid_sync;
 internal global::Kassyi.GSharp.Tests.Shared.Core.Qualification.QualifyPair pair;
 internal int next;
 }

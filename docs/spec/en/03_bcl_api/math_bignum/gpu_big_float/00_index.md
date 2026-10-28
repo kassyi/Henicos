@@ -16,6 +16,7 @@ The `GpuBigFloat` module provides high-performance, arbitrary-precision floating
 | --- | --- |
 | [`GpuBigFloat`](GpuBigFloat.md) | Represents an arbitrary-precision signed floating-point number wrapping a [`GpuBigUFloat`](GpuBigUFloat.md) magnitude and a sign bit. |
 | [`GpuBigUFloat`](GpuBigUFloat.md) | Represents the unsigned magnitude ($\text{Significand} \times 2^{\text{Exponent}}$) of an arbitrary-precision floating-point number. |
+| [`GpuBigFloatView`](GpuBigFloatView.md) / [`GpuBigFloatArrayView`](GpuBigFloatArrayView.md) | Borrowed, stack-only views (`ref struct`) of a value and of a range of a `GpuBigFloatArray`. |
 | [`GpuBigFloatRoundingMode`](GpuBigFloatRoundingMode.md) | Specifies the IEEE 754 compliant rounding mode. |
 | [`IGpuBigFloatArithmetic`](IGpuBigFloatArithmetic.md) | Defines the contract for arbitrary-precision floating-point arithmetic operations executed across GPU and CPU backends. |
 | [`GSharpKernelFloatProvider`](GSharpKernelFloatProvider.md) | Execution provider dispatching `IGpuBigFloatArithmetic` operations to native CUDA kernels, GSharp AOT kernels, or a fallback strategy. |

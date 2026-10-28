@@ -223,7 +223,6 @@ public static readonly string MontgomeryMuKernel_FullSource=global::Kassyi.GShar
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Stdlib__CrossAssemblyStdlibKernels__MontgomeryMuKernel {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
-public bool __gsharp_yielded_for_grid_sync;
 }
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Stdlib__CrossAssemblyStdlibKernels__MontgomeryMuKernel(uint[] moduli, uint[] result, __gsharp_context_Kassyi__GSharp__Tests__Shared__Stdlib__CrossAssemblyStdlibKernels__MontgomeryMuKernel __gsharp_ctx) {
 {
@@ -312,9 +311,9 @@ if (__gsharp_contexts[__gsharp_linear_tid].__gsharp_state != -1)
 {
 anyGridActive = true;
 anyBlockActive = true;
-__gsharp_contexts[__gsharp_linear_tid].__gsharp_yielded_for_grid_sync = false;
+global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested = false;
 __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Stdlib__CrossAssemblyStdlibKernels__MontgomeryMuKernel(moduli, result, __gsharp_contexts[__gsharp_linear_tid]);
-if (__gsharp_contexts[__gsharp_linear_tid].__gsharp_yielded_for_grid_sync)
+if (global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested)
 {
 gridSyncRequested = true;
 }
@@ -447,7 +446,6 @@ public static readonly string WarpScanKernel_FullSource=global::Kassyi.GSharp.Ge
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Stdlib__CrossAssemblyStdlibKernels__WarpScanKernel {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
-public bool __gsharp_yielded_for_grid_sync;
 public int lane;
 public global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Kernels.GpuBigIntKernels.CarryState __gsharp_arg_temp_0;
 public global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Kernels.GpuBigIntKernels.CarryState __gsharp_call_temp_1;
@@ -559,9 +557,9 @@ if (__gsharp_contexts[__gsharp_linear_tid].__gsharp_state != -1)
 {
 anyGridActive = true;
 anyBlockActive = true;
-__gsharp_contexts[__gsharp_linear_tid].__gsharp_yielded_for_grid_sync = false;
+global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested = false;
 __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Stdlib__CrossAssemblyStdlibKernels__WarpScanKernel(generate, propagate, result, __gsharp_contexts[__gsharp_linear_tid]);
-if (__gsharp_contexts[__gsharp_linear_tid].__gsharp_yielded_for_grid_sync)
+if (global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested)
 {
 gridSyncRequested = true;
 }
