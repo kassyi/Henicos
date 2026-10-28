@@ -1,125 +1,271 @@
+using Kassyi.GSharp.Generated;
+using Kassyi.GSharp.Runtime.Aot;
 using Kassyi.GSharp.Runtime.Interop;
-using System.Text;
 
 namespace Kassyi.GSharp.Tests.Cuda;
 
 /// <summary>
-/// Reproduction and measurement of the CUDA launch limits (#545): dynamic shared memory above 48 KB needs
-/// <c>cuFuncSetAttribute(MAX_DYNAMIC_SHARED_SIZE_BYTES)</c>, which G# never calls.
-/// The reproduction asserts the CURRENT (wrong) behavior; when #545 is fixed it must be inverted.
+/// Dynamic shared memory above the default 48 KB per block on the CUDA path (#545): the launch's <c>sharedMemBytes</c>
+/// opts the function in (<c>cuFuncSetAttribute(MAX_DYNAMIC_SHARED_SIZE_BYTES)</c>) once, and a request above the
+/// device's opt-in limit (static plus dynamic) is an <see cref="ArgumentOutOfRangeException"/> before the launch.
 /// </summary>
+/// <remarks>
+/// Properties: (1) every request with static + dynamic &lt;= the opt-in limit launches and the kernel sees the whole
+/// region (the sums match the host); (2) every request above it throws, naming the kernel, the bytes and the limit,
+/// and launches nothing; (3) the opt-in happens at most once per function and only for a request above the default.
+/// The limits are read from the device, so the boundaries hold on any GPU.
+/// </remarks>
 [Collection(TestCollections.DeviceExclusive)]
 public class DynamicSharedMemoryLimitTests : TranspilerTestBase
 {
     private const int BlockSize = 256;
+    private const uint DefaultLimitBytes = 48 * 1024;
+    private const int StaticElements = 1024;
+    private const string KernelPrefix = "__gsharp_k_Kassyi__GSharp__Tests__Cuda__DynamicSharedMemoryLimitKernels__";
 
-    private static uint Launch(uint smemBytes, uint gridDimX = 1, uint blockDimX = BlockSize, uint blockDimZ = 1)
+    private delegate void Launcher(uint[] output, int n, uint sharedMemBytes);
+
+    private static readonly Launcher s_fillAndSum = static (output, n, bytes) =>
+        DynamicSharedMemoryLimitKernels.LaunchFillAndSumKernel(output, n, blockDimX: BlockSize, sharedMemBytes: bytes);
+
+    private static readonly Launcher s_staticPlusDynamic = static (output, n, bytes) =>
+        DynamicSharedMemoryLimitKernels.LaunchStaticPlusDynamicKernel(output, n, blockDimX: BlockSize,
+            sharedMemBytes: bytes);
+
+    private static uint ElementValue(int i) => (uint)i * 2654435761u + 12345u;
+
+    // The sums of FillAndSumKernel (staticElements = 0) or StaticPlusDynamicKernel for n dynamic elements
+    private static uint[] ExpectedSums(int n, int staticElements)
     {
-        var output = new int[BlockSize];
-        DynamicSharedMemoryLimitKernels.LaunchBigSmemKernel(output, (int)(smemBytes / 4), gridDimX: gridDimX,
-            blockDimX: blockDimX, blockDimZ: blockDimZ, sharedMemBytes: smemBytes);
-        return smemBytes;
+        var expected = new uint[BlockSize];
+        for (var t = 0; t < BlockSize; t++)
+        {
+            uint sum = 0;
+            for (var j = t; j < staticElements; j += BlockSize)
+            {
+                sum += ElementValue(staticElements - 1 - j);
+            }
+
+            for (var j = t; j < n; j += BlockSize)
+            {
+                sum += ElementValue(n - 1 - j);
+            }
+
+            expected[t] = sum;
+        }
+
+        return expected;
     }
 
-    private static string Try(Action action)
+    private static IntPtr GetFunction(string kernel)
     {
-        try
-        {
-            action();
-            return "OK";
-        }
-        catch (CudaException ex)
-        {
-            return $"CudaException {ex.Result} | {ex.Message}";
-        }
-        catch (Exception ex)
-        {
-            return $"{ex.GetType().Name} | {ex.Message}";
-        }
+        var module = GSharpModuleContext_Kassyi_GSharp_Tests_Cuda.GetOrLoadModule();
+        return GpuKernelLoader.GetFunction(module, KernelPrefix + kernel);
     }
 
-    private static int Attribute(int device, int attribute)
+    private static int FunctionAttribute(IntPtr hfunc, CuFunctionAttribute attribute)
     {
-        CudaException.ThrowIfError(CudaDriverApi.cuDeviceGetAttribute(out int value,
-            (CudaDriverApi.CuDeviceAttribute)attribute, device));
+        using var scope = new GpuKernelLoader.CudaContextScope();
+        CudaException.ThrowIfError(CudaDriverApi.cuFuncGetAttribute(out var value, attribute, hfunc));
         return value;
+    }
+
+    private static int DeviceAttribute(CudaDriverApi.CuDeviceAttribute attribute)
+    {
+        using var scope = new GpuKernelLoader.CudaContextScope();
+        CudaException.ThrowIfError(CudaDriverApi.cuCtxGetDevice(out var device));
+        CudaException.ThrowIfError(CudaDriverApi.cuDeviceGetAttribute(out var value, attribute, device));
+        return value;
+    }
+
+    private static int OptInLimit => DeviceAttribute(CudaDriverApi.CuDeviceAttribute.MaxSharedMemoryPerBlockOptin);
+
+    private static int StaticBytes(string kernel) =>
+        FunctionAttribute(GetFunction(kernel), CuFunctionAttribute.SharedSizeBytes);
+
+    private static void AssertLaunchSums(Launcher launch, uint bytes, int staticElements)
+    {
+        var n = (int)(bytes / 4);
+        var output = new uint[BlockSize];
+        launch(output, n, bytes);
+        Assert.Equal(ExpectedSums(n, staticElements), output);
+    }
+
+    private static void SkipIfOptInNotAboveDefault() =>
+        Skip.If(OptInLimit <= DefaultLimitBytes, "The GPU allows no shared memory above 48 KB per block.");
+
+    [SkippableFact]
+    [TestTarget(ExecutionTarget.GpuExecution)]
+    [Category(TestCategory.Runtime)]
+    [Scenario(TestScenario.Boundary)]
+    public void Test_DynamicSharedMemory48KB_LaunchesWithoutOptIn()
+    {
+        var bytes = DefaultLimitBytes - (uint)StaticBytes(nameof(DynamicSharedMemoryLimitKernels.DefaultLimitKernel));
+        var n = (int)(bytes / 4);
+        var output = new uint[BlockSize];
+        DynamicSharedMemoryLimitKernels.LaunchDefaultLimitKernel(output, n, blockDimX: BlockSize, sharedMemBytes: bytes);
+
+        Assert.Equal(ExpectedSums(n, 0), output);
+        var hfunc = GetFunction(nameof(DynamicSharedMemoryLimitKernels.DefaultLimitKernel));
+        Assert.Equal(0, DynamicSharedMemoryOptIn.GetOptInCount(hfunc));
+    }
+
+    [SkippableFact]
+    [TestTarget(ExecutionTarget.GpuExecution)]
+    [Category(TestCategory.Runtime)]
+    [Scenario(TestScenario.Boundary)]
+    public void Test_DynamicSharedMemory48KBPlus1_Launches()
+    {
+        SkipIfOptInNotAboveDefault();
+
+        // n * 4 = 48 KB, one byte of the request is unused
+        const uint bytes = DefaultLimitBytes + 1;
+        var output = new uint[BlockSize];
+        s_fillAndSum(output, (int)(DefaultLimitBytes / 4), bytes);
+        Assert.Equal(ExpectedSums((int)(DefaultLimitBytes / 4), 0), output);
+    }
+
+    [SkippableFact]
+    [TestTarget(ExecutionTarget.GpuExecution)]
+    [Category(TestCategory.Runtime)]
+    [Scenario(TestScenario.HappyPath)]
+    public void Test_DynamicSharedMemory64KB_LaunchesAndUsesTheWholeRegion()
+    {
+        SkipIfOptInNotAboveDefault();
+        AssertLaunchSums(s_fillAndSum, 64 * 1024, 0);
+    }
+
+    [SkippableFact]
+    [TestTarget(ExecutionTarget.GpuExecution)]
+    [Category(TestCategory.Runtime)]
+    [Scenario(TestScenario.Boundary)]
+    public void Test_DynamicSharedMemoryAtOptInLimit_Launches()
+    {
+        SkipIfOptInNotAboveDefault();
+        var bytes = (uint)(OptInLimit - StaticBytes(nameof(DynamicSharedMemoryLimitKernels.FillAndSumKernel)));
+        AssertLaunchSums(s_fillAndSum, bytes, 0);
+    }
+
+    [SkippableFact]
+    [TestTarget(ExecutionTarget.GpuExecution)]
+    [Category(TestCategory.Runtime)]
+    [Scenario(TestScenario.Boundary)]
+    public void Test_StaticPlusDynamicAtOptInLimit_Launches()
+    {
+        SkipIfOptInNotAboveDefault();
+        var staticBytes = StaticBytes(nameof(DynamicSharedMemoryLimitKernels.StaticPlusDynamicKernel));
+        Assert.True(staticBytes >= StaticElements * sizeof(uint), $"static shared memory is {staticBytes} bytes");
+
+        AssertLaunchSums(s_staticPlusDynamic, (uint)(OptInLimit - staticBytes), StaticElements);
     }
 
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Runtime)]
     [Scenario(TestScenario.SadPath)]
-    public void Test_DynamicSharedMemory64KB_FailsToLaunchBecauseOptInIsMissing()
+    public void Test_DynamicSharedMemoryAboveOptInLimit_ThrowsBeforeLaunch()
     {
-        // Current wrong behavior (#545): 64 KB is within the 99 KB opt-in limit of sm_86 but the launch is rejected.
-        // When the opt-in is implemented this test must expect success and check the reversed data instead.
-        var ex = Assert.Throws<CudaException>(() => Launch(64 * 1024));
-        Assert.Equal(CUresult.CudaErrorInvalidValue, ex.Result);
+        var limit = OptInLimit;
+        var staticBytes = StaticBytes(nameof(DynamicSharedMemoryLimitKernels.FillAndSumKernel));
+        var bytes = (uint)(limit - staticBytes + 1);
+        var output = new uint[BlockSize];
+
+        var ex = Assert.Throws<ArgumentOutOfRangeException>(() => s_fillAndSum(output, (int)(bytes / 4), bytes));
+
+        Assert.Equal("sharedMemBytes", ex.ParamName);
+        Assert.StartsWith(
+            $"G#: sharedMemBytes {bytes} plus {staticBytes} bytes of static shared memory exceeds the {limit} bytes of " +
+            $"shared memory per block of this GPU (sm_{DeviceComputeCapability()}) " +
+            "(DynamicSharedMemoryLimitKernels.FillAndSumKernel).", ex.Message);
+        Assert.All(output, static value => Assert.Equal(0u, value));
+    }
+
+    [SkippableFact]
+    [TestTarget(ExecutionTarget.GpuExecution)]
+    [Category(TestCategory.Runtime)]
+    [Scenario(TestScenario.SadPath)]
+    public void Test_StaticPlusDynamicAboveOptInLimit_ThrowsBecauseStaticCounts()
+    {
+        SkipIfOptInNotAboveDefault();
+        var limit = OptInLimit;
+        var staticBytes = StaticBytes(nameof(DynamicSharedMemoryLimitKernels.StaticPlusDynamicKernel));
+        var bytes = (uint)(limit - staticBytes + 1);
+        var output = new uint[BlockSize];
+
+        // The dynamic part alone is below the limit
+        Assert.True(bytes < limit);
+        var ex = Assert.Throws<ArgumentOutOfRangeException>(() => s_staticPlusDynamic(output, (int)(bytes / 4), bytes));
+
+        Assert.Equal("sharedMemBytes", ex.ParamName);
+        Assert.Contains($"plus {staticBytes} bytes of static shared memory exceeds the {limit} bytes", ex.Message);
+        Assert.Contains("(DynamicSharedMemoryLimitKernels.StaticPlusDynamicKernel)", ex.Message);
+    }
+
+    [SkippableFact]
+    [TestTarget(ExecutionTarget.GpuExecution)]
+    [Category(TestCategory.Runtime)]
+    [Scenario(TestScenario.SadPath)]
+    public void Test_DynamicSharedMemoryMaxValue_ThrowsWithoutOverflow()
+    {
+        var output = new uint[BlockSize];
+        var ex = Assert.Throws<ArgumentOutOfRangeException>(() =>
+            DynamicSharedMemoryLimitKernels.LaunchFillAndSumKernel(output, 1, blockDimX: BlockSize,
+                sharedMemBytes: uint.MaxValue));
+        Assert.Contains($"sharedMemBytes {uint.MaxValue} plus", ex.Message);
+    }
+
+    [SkippableFact]
+    [TestTarget(ExecutionTarget.GpuExecution)]
+    [Category(TestCategory.Runtime)]
+    [Scenario(TestScenario.HappyPath)]
+    public void Test_RepeatedLaunches_OptInOnce()
+    {
+        SkipIfOptInNotAboveDefault();
+        var hfunc = GetFunction(nameof(DynamicSharedMemoryLimitKernels.FillAndSumKernel));
+        var staticBytes = FunctionAttribute(hfunc, CuFunctionAttribute.SharedSizeBytes);
+
+        for (var i = 0; i < 3; i++)
+        {
+            AssertLaunchSums(s_fillAndSum, 64 * 1024, 0);
+            AssertLaunchSums(s_fillAndSum, 1024, 0);
+            AssertLaunchSums(s_fillAndSum, 80 * 1024, 0);
+        }
+
+        // Any other test of this kernel opts in at most once as well
+        Assert.Equal(1, DynamicSharedMemoryOptIn.GetOptInCount(hfunc));
+        Assert.Equal(OptInLimit - staticBytes,
+            FunctionAttribute(hfunc, CuFunctionAttribute.MaxDynamicSharedSizeBytes));
     }
 
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Runtime)]
     [Scenario(TestScenario.Boundary)]
-    public void Test_DynamicSharedMemory48KB_Launches()
+    public void Test_OptIn_KeepsOccupancyOfSmallLaunches()
     {
-        var output = new int[BlockSize];
-        uint bytes = 48 * 1024;
-        DynamicSharedMemoryLimitKernels.LaunchBigSmemKernel(output, (int)(bytes / 4), blockDimX: BlockSize,
-            sharedMemBytes: bytes);
-        Assert.Equal((int)(bytes / 4) - 1, output[0]);
+        SkipIfOptInNotAboveDefault();
+        var hfunc = GetFunction(nameof(DynamicSharedMemoryLimitKernels.OccupancyKernel));
+        Assert.Equal(0, DynamicSharedMemoryOptIn.GetOptInCount(hfunc));
+        var before = Occupancy(hfunc, 1024);
+
+        var output = new uint[BlockSize];
+        DynamicSharedMemoryLimitKernels.LaunchOccupancyKernel(output, 64 * 1024 / 4, blockDimX: BlockSize,
+            sharedMemBytes: 64 * 1024);
+        Assert.Equal(ExpectedSums(64 * 1024 / 4, 0), output);
+        Assert.Equal(1, DynamicSharedMemoryOptIn.GetOptInCount(hfunc));
+
+        Assert.Equal(before, Occupancy(hfunc, 1024));
     }
 
-    [SkippableFact]
-    [TestTarget(ExecutionTarget.GpuExecution)]
-    [Category(TestCategory.Runtime)]
-    [Scenario(TestScenario.Boundary)]
-    public void Test_LaunchLimits_AreMeasuredAndWritten()
+    private static int Occupancy(IntPtr hfunc, nuint dynamicBytes)
     {
-        CudaException.ThrowIfError(CudaDriverApi.cuInit(0));
-        CudaException.ThrowIfError(CudaDriverApi.cuDeviceGet(out int device, 0));
-        var sb = new StringBuilder();
-
-        foreach (var (name, id) in new[]
-        {
-            ("MAX_SHARED_MEMORY_PER_BLOCK", 8),
-            ("MAX_SHARED_MEMORY_PER_BLOCK_OPTIN", 97),
-            ("MULTIPROCESSOR_COUNT", 16),
-            ("MAX_SHARED_MEMORY_PER_MULTIPROCESSOR", 81),
-            ("RESERVED_SHARED_MEMORY_PER_BLOCK", 111),
-            ("MAX_THREADS_PER_BLOCK", 1),
-            ("MAX_BLOCK_DIM_Z", 4),
-            ("MAX_GRID_DIM_X", 5)
-        })
-        {
-            string text;
-            try
-            {
-                text = Attribute(device, id).ToString();
-            }
-            catch (CudaException ex)
-            {
-                text = $"CudaException {ex.Result}";
-            }
-
-            sb.AppendLine($"attr {name} = {text}");
-        }
-
-        foreach (uint bytes in new uint[] { 48 * 1024, 48 * 1024 + 4, 64 * 1024, 96 * 1024, 99 * 1024, 100 * 1024 })
-        {
-            sb.AppendLine($"smem {bytes} B: {Try(() => Launch(bytes))}");
-        }
-
-        // sharedMemBytes is not a multiple of 4 (n * 4 < bytes); 48 KB + 1 byte
-        sb.AppendLine($"smem 49153 B (48KB+1): {Try(() => DynamicSharedMemoryLimitKernels.LaunchBigSmemKernel(new int[BlockSize], 12288, blockDimX: BlockSize, sharedMemBytes: 49153))}");
-        sb.AppendLine($"gridDimX=0: {Try(() => Launch(1024, gridDimX: 0))}");
-        sb.AppendLine($"blockDimX=0: {Try(() => Launch(1024, blockDimX: 0))}");
-        sb.AppendLine($"blockDimX=1025: {Try(() => Launch(1024, blockDimX: 1025))}");
-        sb.AppendLine($"blockDimZ=65 (blockDimX=1): {Try(() => Launch(1024, blockDimX: 1, blockDimZ: 65))}");
-
-        string path = RepositoryPaths.Combine("tmp", "device-limits-545.txt");
-        Directory.CreateDirectory(Path.GetDirectoryName(path)!); // path always has a parent under the repository root
-        File.WriteAllText(path, sb.ToString());
-        Assert.NotEmpty(sb.ToString());
+        using var scope = new GpuKernelLoader.CudaContextScope();
+        CudaException.ThrowIfError(
+            CudaDriverApi.cuOccupancyMaxActiveBlocksPerMultiprocessor(out var blocks, hfunc, BlockSize, dynamicBytes));
+        return blocks;
     }
+
+    private static string DeviceComputeCapability() =>
+        $"{DeviceAttribute(CudaDriverApi.CuDeviceAttribute.ComputeCapabilityMajor)}" +
+        $"{DeviceAttribute(CudaDriverApi.CuDeviceAttribute.ComputeCapabilityMinor)}";
 }
