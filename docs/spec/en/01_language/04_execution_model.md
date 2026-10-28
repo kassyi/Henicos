@@ -56,7 +56,7 @@ Because threads execute concurrently and asynchronously, G# provides explicit me
 Calling a thread block barrier (`Gpu.SyncThreads()`) creates a synchronization point for all threads within a **Thread Block**.
 _(For detailed usage, refer to the BCL reference [Gpu.SyncThreads](../03_bcl_api/gpu_class/SyncThreads.md))._
 
-- **Rule:** No thread in the block can proceed past the barrier until all threads in the block have reached it.
+- **Rule:** No thread in the block can proceed past the barrier until all threads in the block have reached it. The CPU paths keep this rule also when the threads reach the barrier after different numbers of steps, such as a warp shuffle that only some warps run.
 - **Use Case:** Primarily used to ensure that all threads have finished writing to shared memory before any thread attempts to read from it, preventing Read-After-Write (RAW) hazards.
 
 ### 4.3.2 Atomic Operations

@@ -100,9 +100,11 @@ internal static class CpuHostLaunchEmitter
             writer.AppendLine(
                 $"global::Kassyi.GSharp.Core.ManagedGpuContext.InitializeGrid({GSharpInternalNames.Launcher.TotalBlocks}, sharedMemBytes);");
 
+            // A thread that stopped at a block barrier waits there until every thread of its block that has not finished
+            // waits too; in a cooperative kernel, a thread that reached the grid sync waits until the next grid phase (#664)
+            writer.AppendLine($"var threadAtBlockBarrier = new bool[{GSharpInternalNames.Launcher.Contexts}.Length];");
             if (kernel.IsCooperative)
             {
-                // A thread that reached the grid sync waits there until the next grid phase (#664)
                 writer.AppendLine($"var threadAtGridSync = new bool[{GSharpInternalNames.Launcher.Contexts}.Length];");
             }
 
@@ -186,9 +188,9 @@ internal static class CpuHostLaunchEmitter
                 writer.AppendLine("bool blockAtGridSync = false;");
             }
 
-            // [WHY] A thread that reached the grid sync waits there while the other threads of the block go on to it: they
-            // may need more steps (a shuffle or a block barrier before it). The block's part of the phase ends when no
-            // thread can run
+            // [WHY] A thread that reached a barrier waits there while the other threads of the block go on to it: they
+            // may need more steps (a shuffle before it). When no thread can run, the threads at a block barrier pass it
+            // together; the block's part of the phase ends when no thread can run and none waits at a block barrier
             writer.AppendLine("bool anyBlockActive = true;");
             writer.AppendLine("while (anyBlockActive)");
             using (writer.Scope())
@@ -199,6 +201,22 @@ internal static class CpuHostLaunchEmitter
                 using (writer.Scope())
                 {
                     WriteManagedThreadStep(writer, kernel);
+                }
+
+                writer.AppendLine("if (!anyBlockActive)");
+                using (writer.Scope())
+                {
+                    writer.AppendLine(
+                        $"for (int {GSharpInternalNames.Launcher.LinearThreadIndex} = {GSharpInternalNames.Launcher.BlockLoopIndex} * {GSharpInternalNames.Launcher.ThreadsPerBlock}; {GSharpInternalNames.Launcher.LinearThreadIndex} < ({GSharpInternalNames.Launcher.BlockLoopIndex} + 1) * {GSharpInternalNames.Launcher.ThreadsPerBlock}; {GSharpInternalNames.Launcher.LinearThreadIndex}++)");
+                    using (writer.Scope())
+                    {
+                        writer.AppendLine($"if (threadAtBlockBarrier[{GSharpInternalNames.Launcher.LinearThreadIndex}])");
+                        using (writer.Scope())
+                        {
+                            writer.AppendLine($"threadAtBlockBarrier[{GSharpInternalNames.Launcher.LinearThreadIndex}] = false;");
+                            writer.AppendLine("anyBlockActive = true;");
+                        }
+                    }
                 }
             }
 
@@ -248,16 +266,18 @@ internal static class CpuHostLaunchEmitter
 
         writer.AppendLine(
             $"int {GSharpInternalNames.Launcher.LinearThreadIndex} = {GSharpInternalNames.Launcher.BlockLoopIndex} * {GSharpInternalNames.Launcher.ThreadsPerBlock} + {GSharpInternalNames.Launcher.ThreadLoopIndex};");
-        writer.AppendLine(kernel.IsCooperative
-            ? $"if ({LinearContext}.{GSharpInternalNames.StateMachine.State} != -1 && !threadAtGridSync[{GSharpInternalNames.Launcher.LinearThreadIndex}])"
-            : $"if ({LinearContext}.{GSharpInternalNames.StateMachine.State} != -1)");
+        // A thread that waits at a block barrier or at the grid sync does not run
+        var runnable = kernel.IsCooperative
+            ? $"{LinearContext}.{GSharpInternalNames.StateMachine.State} != -1 && !threadAtBlockBarrier[{GSharpInternalNames.Launcher.LinearThreadIndex}] && !threadAtGridSync[{GSharpInternalNames.Launcher.LinearThreadIndex}]"
+            : $"{LinearContext}.{GSharpInternalNames.StateMachine.State} != -1 && !threadAtBlockBarrier[{GSharpInternalNames.Launcher.LinearThreadIndex}]";
+        writer.AppendLine($"if ({runnable})");
         using (writer.Scope())
         {
             writer.AppendLine("anyGridActive = true;");
-            writer.AppendLine("anyBlockActive = true;");
-            // The state machines of the kernel and of the device functions it calls request a grid sync through one
-            // thread-static flag (#665)
+            // The state machines of the kernel and of the device functions it calls request a grid sync (#665) and report
+            // a block barrier through thread-static flags; the launcher steps one GPU thread at a time on this host thread
             writer.AppendLine($"{ManagedExecutionRewriter.ManagedGridSyncRequested} = false;");
+            writer.AppendLine($"{ManagedExecutionRewriter.ManagedBlockBarrierRequested} = false;");
 
             writer.Append($"{kernel.StateMachineName}(");
             bool isFirst = true;
@@ -308,6 +328,20 @@ internal static class CpuHostLaunchEmitter
                     writer.AppendLine(
                         $"throw global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncInKernelThatIsNotCooperative({SymbolDisplay.FormatLiteral(kernel.MessageName, quote: true)});");
                 }
+            }
+
+            writer.AppendLine($"if ({ManagedExecutionRewriter.ManagedBlockBarrierRequested})");
+            using (writer.Scope())
+            {
+                writer.AppendLine($"threadAtBlockBarrier[{GSharpInternalNames.Launcher.LinearThreadIndex}] = true;");
+            }
+
+            // The next round runs while a thread can go on: one that stopped at a shuffle runs again, one at a barrier
+            // waits
+            writer.AppendLine($"if ({runnable})");
+            using (writer.Scope())
+            {
+                writer.AppendLine("anyBlockActive = true;");
             }
         }
     }

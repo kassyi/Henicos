@@ -265,6 +265,7 @@ public static class MethodTranspiler
             context.Emitter.Writer.AppendLine($"uint64_t {GSharpInternalNames.StateMachine.WarpExchange}[2] = {{}};");
             context.Emitter.Writer.AppendLine($"uint32_t {GSharpInternalNames.StateMachine.WarpShuffleCount} = 0;");
             context.Emitter.Writer.AppendLine($"bool {GSharpInternalNames.StateMachine.YieldedForGridSync} = false;");
+            context.Emitter.Writer.AppendLine($"bool {GSharpInternalNames.StateMachine.YieldedForBlockBarrier} = false;");
         }
 
         foreach (var parameter in plan.GetCopiedParameters(lowered))
@@ -331,6 +332,8 @@ public static class MethodTranspiler
                     $"#define {GSharpInternalNames.StateMachine.State} {GSharpInternalNames.StateMachine.Context}->{GSharpInternalNames.StateMachine.State}");
                 context.Emitter.Writer.AppendLine(
                     $"#define {GSharpInternalNames.StateMachine.YieldedForGridSync} {gridSyncOwner}->{GSharpInternalNames.StateMachine.YieldedForGridSync}");
+                context.Emitter.Writer.AppendLine(
+                    $"#define {GSharpInternalNames.StateMachine.YieldedForBlockBarrier} {gridSyncOwner}->{GSharpInternalNames.StateMachine.YieldedForBlockBarrier}");
 
                 if (!isFrame)
                 {
@@ -349,6 +352,7 @@ public static class MethodTranspiler
 
                 context.Emitter.Writer.AppendLine($"#undef {GSharpInternalNames.StateMachine.State}");
                 context.Emitter.Writer.AppendLine($"#undef {GSharpInternalNames.StateMachine.YieldedForGridSync}");
+                context.Emitter.Writer.AppendLine($"#undef {GSharpInternalNames.StateMachine.YieldedForBlockBarrier}");
                 return;
             }
 

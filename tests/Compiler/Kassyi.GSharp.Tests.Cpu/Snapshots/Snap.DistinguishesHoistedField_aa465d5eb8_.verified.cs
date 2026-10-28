@@ -11,6 +11,7 @@
         {
             __gsharp_ctx->tid = ThreadIndex.X;
             __gsharp_ctx->s = __gsharp_ctx->tid * 2;
+            __gsharp_yielded_for_block_barrier = true;
             __gsharp_state = 1;
             return;
         }
@@ -29,6 +30,7 @@
         case 2:
         {
             __gsharp_ctx->s = __gsharp_ctx->tid * 2;
+            __gsharp_yielded_for_block_barrier = true;
             __gsharp_state = 3;
             return;
         }

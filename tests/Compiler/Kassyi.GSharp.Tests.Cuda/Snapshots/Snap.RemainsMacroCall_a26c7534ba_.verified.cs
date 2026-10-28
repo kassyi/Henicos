@@ -11,6 +11,7 @@
             {
                 __gsharp_ctx->sum += iter;
             });
+            __gsharp_yielded_for_block_barrier = true;
             __gsharp_state = 1;
             return;
         }

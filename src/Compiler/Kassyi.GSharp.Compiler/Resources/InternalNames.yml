@@ -19,6 +19,9 @@ StateMachine:
     Context: { Value: __gsharp_ctx, Prelude: WarpAndHints.hpp }
     State: __gsharp_state
     YieldedForGridSync: __gsharp_yielded_for_grid_sync
+    # Set when the thread stops at a block barrier (Gpu.SyncThreads); the launcher keeps it waiting there until every
+    # thread of the block that has not finished waits too
+    YieldedForBlockBarrier: __gsharp_yielded_for_block_barrier
     WarpExchange: { Value: __gsharp_warp_exchange, Prelude: WarpAndHints.hpp }
     WarpShuffleCount: { Value: __gsharp_warp_shuffle_count, Prelude: WarpAndHints.hpp }
     AllContexts: { Value: __gsharp_all_contexts, Prelude: WarpAndHints.hpp }

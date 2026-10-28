@@ -292,25 +292,58 @@ internal static class HostLauncherTranspiler
             {
                 context.Emitter.Writer.AppendLine(
                     $"uint32_t {ContextThreadIndex} = {ThreadZ} * {BlockDimY} * {BlockDimX} + {ThreadY} * {BlockDimX} + {ThreadX};");
-                // A thread of a cooperative kernel that waits at the grid sync does not run until the next phase
-                context.Emitter.Writer.AppendLine(step.IsCooperative
-                    ? $"if ({Contexts}[{ContextThreadIndex}].{State} != -1 && !{Contexts}[{ContextThreadIndex}].{YieldedForGridSync})"
-                    : $"if ({Contexts}[{ContextThreadIndex}].{State} != -1)");
+                // A thread that waits at a block barrier or at the grid sync does not run
+                context.Emitter.Writer.AppendLine($"if ({RunnableCondition})");
             }
 
             using (step.HasContext ? context.Emitter.Writer.Scope() : default)
             {
-                if (step.HasContext)
-                {
-                    context.Emitter.Writer.AppendLine($"{AnyActive} = true;");
-                }
-
                 context.Emitter.Writer.AppendLine(
                     $"{SetThreadIndex}({ThreadX}, {ThreadY}, {ThreadZ}, {BlockX}, {BlockY}, {BlockZ}, {BlockDimX}, {BlockDimY}, {BlockDimZ}, {GridDimX}, {GridDimY}, {GridDimZ});");
                 WriteKernelCall(step, ref context);
                 if (step.HasContext)
                 {
                     WriteGridSyncCheck(step, ref context);
+                    // The next round runs while a thread can go on: one that stopped at a shuffle runs again, one at a
+                    // barrier waits
+                    context.Emitter.Writer.AppendLine($"if ({RunnableCondition})");
+                    using (context.Emitter.Writer.Scope())
+                    {
+                        context.Emitter.Writer.AppendLine($"{AnyActive} = true;");
+                    }
+                }
+            }
+        }
+
+        if (step.HasContext)
+        {
+            WriteBlockBarrierRelease(ref context);
+        }
+    }
+
+    // <thread>.__gsharp_state != -1 && !<thread>.__gsharp_yielded_for_block_barrier && !<thread>.__gsharp_yielded_for_grid_sync
+    private const string RunnableCondition =
+        $"{Contexts}[{ContextThreadIndex}].{State} != -1 && !{Contexts}[{ContextThreadIndex}].{YieldedForBlockBarrier} && !{Contexts}[{ContextThreadIndex}].{YieldedForGridSync}";
+
+    // [WHY] A thread that stopped at Gpu.SyncThreads waits there until no thread of the block can run any more, that is,
+    // until every thread that has not finished waits at a barrier: only then does the block barrier let them all pass,
+    // as on the GPU. A thread that stopped at a shuffle can run, so a warp that is still in a shuffle reaches the barrier
+    // first (#664 review).
+    // if (!__gsharp_any_active) { for (<thread>) { if (<thread waits at the block barrier>) { <release it>; __gsharp_any_active = true; } } }
+    private static void WriteBlockBarrierRelease(ref TranspileContext context)
+    {
+        context.Emitter.Writer.AppendLine($"if (!{AnyActive})");
+        using (context.Emitter.Writer.Scope())
+        {
+            context.Emitter.Writer.AppendLine(
+                $"for (int32_t {ThreadLoopIndex} = 0; {ThreadLoopIndex} < {ThreadsPerBlock}; {ThreadLoopIndex}++)");
+            using (context.Emitter.Writer.Scope())
+            {
+                context.Emitter.Writer.AppendLine($"if ({Contexts}[{ThreadLoopIndex}].{YieldedForBlockBarrier})");
+                using (context.Emitter.Writer.Scope())
+                {
+                    context.Emitter.Writer.AppendLine($"{Contexts}[{ThreadLoopIndex}].{YieldedForBlockBarrier} = false;");
+                    context.Emitter.Writer.AppendLine($"{AnyActive} = true;");
                 }
             }
         }

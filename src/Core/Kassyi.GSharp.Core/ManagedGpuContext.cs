@@ -109,6 +109,19 @@ public static class ManagedGpuContext
     [EditorBrowsable(EditorBrowsableState.Never)]
     public static bool GridSyncRequested;
 
+    /// <summary>
+    /// Set by generated code when the GPU thread being stepped stops at <c>Gpu.SyncThreads</c>, in the kernel or in any
+    /// device function it calls; the managed launcher clears it before each step and reads it after, like
+    /// <see cref="GridSyncRequested"/>. For generated code only.
+    /// </summary>
+    /// <remarks>
+    /// The launcher keeps the thread waiting at the barrier until every thread of its block that has not finished waits
+    /// too, as on the GPU, where no thread passes a block barrier before the others have reached it.
+    /// </remarks>
+    [ThreadStatic]
+    [EditorBrowsable(EditorBrowsableState.Never)]
+    public static bool BlockBarrierRequested;
+
     // The managed launcher of a cooperative kernel runs the grid in phases, each ending when every block has reached
     // Gpu.SyncGrid (#664). The GPU never completes a grid sync that a block, or thread 0 of a block, does not reach, and a
     // grid sync in a launch that is not cooperative is undefined there; the CPU paths report each with the same text.
