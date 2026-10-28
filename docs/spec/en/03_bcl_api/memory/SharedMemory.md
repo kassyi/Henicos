@@ -55,7 +55,7 @@ The line of the declaration, filled in by the compiler. Do not pass it.
 The method of the declaration, filled in by the compiler. Do not pass it.
 
 > [!NOTE]
-> A second constructor, `SharedMemory(int size, ulong siteKey)`, is hidden from IntelliSense. The G# compiler uses it in the code it generates for managed execution; do not call it directly.
+> More constructors, `SharedMemory(int size, ulong siteKey)` and the ones that also take the place of a dynamic declaration, are hidden from IntelliSense. The G# compiler uses them in the code it generates for managed execution; do not call them directly.
 
 ## Item[int]
 
@@ -138,9 +138,9 @@ public static void ExchangeKernel(int[] data)
 
 **Why it matters.** The CPU and managed dialects allocate shared memory at run time instead of reserving it statically. If they allocated by call site or by the order of allocations, a caller and its callee could receive the same buffer, or a device function called from two places could receive two buffers, and the same kernel would compute different results on the CPU and on the GPU. To keep the CUDA semantics, the compiler gives every declaration a **site key**: the 64-bit FNV-1a hash of the documentation comment ID of the declaring method and the ordinal of the declaration in that method. The CPU runtime looks the block's buffer up by that key alone; the managed runtime looks it up by that key and by the element type. The key is computed from the generic definition, so the instantiations of a generic device function share the buffer of a declaration on the CPU, and on CUDA when the declaration is dynamic (see [Generic device functions](#generic-device-functions)).
 
-Under managed execution every declaration has a buffer of its own, which other declarations never move, so the `SharedMemory<T>` a thread already holds stays valid while other threads declare more shared memory. A declaration that is reached again with a larger size, for example a device function whose dynamic size differs between calls, grows its buffer and keeps its contents. On CUDA the same request succeeds only while the buffer is the last dynamic one placed (see [Growing a declaration](#growing-a-declaration)).
+Under managed execution a static declaration has a buffer of its own, and the dynamic declarations of a block share one array of `sharedMemBytes`, placed with the CUDA rules; a region never moves, so the `SharedMemory<T>` a thread already holds stays valid while other threads declare more shared memory. A dynamic declaration that is reached again with a larger size, for example a device function whose dynamic size differs between calls, grows only while its region is the last one placed, as on CUDA (see [Growing a declaration](#growing-a-declaration)).
 
-Managed execution runs a device function that never reaches a barrier as ordinary C#, without the compiler's rewrite. There the constructor identifies the declaration by its file, line and method name (`[CallerFilePath]`, `[CallerLineNumber]`, `[CallerMemberName]`), the only facts about the caller that C# passes to a constructor; it cannot see parameter types or the position within a line. Two `SharedMemory<T>` declarations of one method, or of overloads of one name, written on the same line therefore share a buffer in managed execution; the analyzer reports them as [GSH0063](../diagnostics/GSH0063.md). Write each declaration on its own line.
+Managed execution runs a device function that never reaches a barrier as ordinary C#, without the compiler's rewrite. There the constructor identifies the declaration by its file, line and method name (`[CallerFilePath]`, `[CallerLineNumber]`, `[CallerMemberName]`), the only facts about the caller that C# passes to a constructor; it cannot see parameter types or the position within a line. Two `SharedMemory<T>` declarations of one method, or of overloads of one name, written on the same line therefore share a buffer in managed execution; the analyzer reports them as [GSH0063](../diagnostics/GSH0063.md). Write each declaration on its own line. Such a declaration is also treated as static, even when its count is not a constant: managed execution cannot tell, so it does not place it in `sharedMemBytes` and does not check it; the native CPU path and CUDA do.
 
 ### Dynamic Shared Memory
 
@@ -163,8 +163,8 @@ On CUDA the compiler carves every dynamic declaration out of the one dynamic buf
 
 The other dialects place regions differently, so a layout computed for CUDA does not describe them:
 
-- The CPU (native) runtime keeps one table per block: the first thread of the block to reach a declaration places its region at the end of the buffer, aligned to `alignof(T)` only. Static declarations are placed the same way, in the same 64 KB buffer, and count toward its limit of 64 KB and 64 declarations per block.
-- Managed execution gives every declaration an array of its own; there is no shared buffer, no offset and no alignment beyond the element type.
+- The CPU (native) runtime keeps one table per block: the first thread of the block to reach a dynamic declaration places its region with the CUDA arithmetic (rules 2 and 3) in a buffer of exactly `sharedMemBytes`, so a launch that CUDA rejects for its size fails on the CPU too. Static declarations get a buffer each, are not counted in `sharedMemBytes`, and have no limit of size or number on the CPU.
+- Managed execution places the dynamic declarations like the native CPU path: one array of `sharedMemBytes` per block, with the CUDA arithmetic. A static declaration gets an array of its own.
 
 On CUDA every thread of a kernel keeps a table of the regions, with one entry (slot) for each dynamic declaration the kernel can reach, numbered in the order of the site keys; the offsets in it are filled in the run-time order above. A device function that reaches a dynamic declaration receives the table as a hidden last parameter. Such a device function therefore cannot be passed as a delegate (a method group, as in `Func<int, int> f = Scratch;`) and cannot be reached from a member of a struct (a method, a computed property, an operator): the compiler reports [GSH0003](../diagnostics/GSH0003.md), in every dialect, because the analyzer checks the CUDA translation. Call it directly, from a kernel, another device function, or a local function or lambda written inside one of them.
 
@@ -212,8 +212,8 @@ A declaration reached again with a larger count grows its region:
 
 - CUDA and the CPU: while the region is the last one placed, it grows in place and keeps its contents. A region first reached with a count of 0 starts at the current end of the buffer, so it can grow in place as long as no other region is placed after it.
 - CUDA: when another region has been placed after it, the region cannot move (moving would need every thread of the block at the same point), so the launch traps.
-- CPU: when another region has been placed after it, the runtime moves the region to the end of the buffer and copies its contents.
-- Managed: the order does not matter. The region keeps its array when the array is large enough for the new count, and otherwise moves to a new array with its contents copied.
+- CPU: when another region has been placed after it, the launch throws `InvalidOperationException`, as CUDA traps.
+- Managed: as the native CPU path, the launch throws `InvalidOperationException`.
 
 Declare a region that grows last, or declare it with its largest count first.
 
@@ -221,12 +221,12 @@ Declare a region that grows last, or declare it with its largest count first.
 
 | Condition | CUDA | CPU (native) | Managed |
 | --- | --- | --- | --- |
-| The regions end past `sharedMemBytes` | Trap | Not checked (`sharedMemBytes` is not read); above 64 KB or 64 declarations of one block the process ends (`std::abort`) | Not checked |
-| A negative count | Trap | Not checked: the byte count wraps around, so the region may overlap the others or the process ends (`std::abort`) | No region; the first element access throws `IndexOutOfRangeException` |
-| A count of 0 | Empty region | Empty region | No region; the first element access throws `IndexOutOfRangeException` |
-| A larger count for a region that is not the last | Trap | Moved and copied | Grows; copied to a new array when the old one is too small |
+| The regions end past `sharedMemBytes` | Trap | `ArgumentOutOfRangeException` naming the declaration, the bytes it needs and `sharedMemBytes` | The same exception (not for a declaration in a device function that managed execution does not rewrite, see above) |
+| A negative count | Trap | `ArgumentOutOfRangeException` (the count arrives as at least 2^63 bytes, as on CUDA) | The same exception |
+| A count of 0 | Empty region | Empty region | Empty region; an element access throws `IndexOutOfRangeException` |
+| A larger count for a region that is not the last | Trap | `InvalidOperationException` | The same exception |
 
-On CUDA the check is `bytes > sharedMemBytes || offset + bytes > sharedMemBytes`, so a negative count, which arrives as at least 2^63 bytes, traps instead of wrapping. A trap surfaces as a `CudaException` from the launch, and it leaves the CUDA context of the process unusable: later CUDA calls in the same process fail too. Size `sharedMemBytes` from the calculation above, and keep counts non-negative.
+On CUDA and the native CPU path the check is `bytes > sharedMemBytes || offset + bytes > sharedMemBytes`, so a negative count, which arrives as at least 2^63 bytes, fails instead of wrapping. The CPU path does not check the limits of the GPU model (48 KB per block without the opt-in): it checks the meaning of the kernel, not the size of a particular GPU. A trap surfaces as a `CudaException` from the launch, and it leaves the CUDA context of the process unusable: later CUDA calls in the same process fail too. Size `sharedMemBytes` from the calculation above, and keep counts non-negative.
 
 #### Threads must reach dynamic declarations alike
 

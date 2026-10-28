@@ -130,7 +130,8 @@ internal sealed class ContextLocalRewriter : CSharpSyntaxRewriter
             // Only the declarator-derived initialization resolves through GetDeclaredSymbol; later assignments stay.
             // The member name carries the declarator's span and region, so it keys like the declarator itself.
             var declaredKey = LoweringIdentity.ForDeclaration(memberAccess.Name, _semanticModel);
-            if (declaredKey.Symbol is { } declaredSymbol && _unhoistedKeys.Contains(declaredKey))
+            if (declaredKey.Symbol is { } declaredSymbol && _unhoistedKeys.Contains(declaredKey) &&
+                !PlacesDynamicSharedMemory(assignment.Right))
             {
                 if (node.Parent is BlockSyntax or SwitchSectionSyntax)
                 {
@@ -146,4 +147,12 @@ internal sealed class ContextLocalRewriter : CSharpSyntaxRewriter
 
         return base.VisitExpressionStatement(node);
     }
+
+    // The initialization of a dynamic SharedMemory<T> stays where it is, as an assignment to the local that each resume
+    // declares: it places the region in the order the kernel reaches the declarations, as on CUDA (#544)
+    private bool PlacesDynamicSharedMemory(ExpressionSyntax value) =>
+        value is BaseObjectCreationExpressionSyntax creation &&
+        _semanticModel.GetTypeSymbol(creation).IsSharedMemoryType() &&
+        DynamicSharedMemoryAnalysis.TryGetCount(creation, _semanticModel, out _, out var constantCount) &&
+        constantCount == null;
 }

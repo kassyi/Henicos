@@ -47,7 +47,7 @@ The root expression AST node to evaluate.
 The GPU workspace managing kernel parameters and memory pools.
 
 `targetResult` _[GpuBigUInt](../GpuBigUInt.md)?_<br>
-An optional destination buffer. If `null`, a temporary buffer is rented from `workspace`.
+An optional destination buffer. If `null`, a temporary buffer is rented from `workspace`. It may be one of the expression's operands (`x.Value = x / y`): the root then computes into a temporary and copies the result into it.
 
 #### Returns
 
