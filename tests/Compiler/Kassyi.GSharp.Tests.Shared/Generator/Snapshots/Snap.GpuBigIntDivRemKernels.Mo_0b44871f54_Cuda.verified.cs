@@ -595,13 +595,20 @@ __gsharp_fn_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuBigIntDivRemKer
 int __gsharp_id_12_wordShift = __gsharp_id_4_targetBits/32;
 int __gsharp_id_13_bitShift = __gsharp_id_4_targetBits%32;
 int __gsharp_id_14_destWords = __gsharp_id_8_nA;
-for(int __gsharp_id_15_idx = blockIdx.x * blockDim.x + threadIdx.x; __gsharp_id_15_idx < __gsharp_id_14_destWords; __gsharp_id_15_idx += gridDim.x * blockDim.x)
+{
+unsigned int __gsharp_gsl_n_0 = __gsharp_grid_stride_count(__gsharp_id_14_destWords);
+unsigned int __gsharp_gsl_s_0 = __gsharp_grid_stride_step();
+for(unsigned int __gsharp_gsl_0 = __gsharp_grid_stride_start(); __gsharp_gsl_0 < __gsharp_gsl_n_0; __gsharp_gsl_0 += __gsharp_gsl_s_0)
+{
+int __gsharp_id_15_idx = (int)__gsharp_gsl_0;
 {
 int __gsharp_id_16_srcIdx = __gsharp_id_15_idx+__gsharp_id_12_wordShift;
 unsigned int __gsharp_id_17_w0 = ((__gsharp_id_16_srcIdx<__gsharp_id_8_nA+__gsharp_id_10_targetWords)?__gsharp_id_11_iterScratch.__gsharp_mb_CurrentProduct[__gsharp_id_16_srcIdx]:0u);
 unsigned int __gsharp_id_18_w1 = ((__gsharp_id_16_srcIdx+1<__gsharp_id_8_nA+__gsharp_id_10_targetWords)?__gsharp_id_11_iterScratch.__gsharp_mb_CurrentProduct[__gsharp_id_16_srcIdx+1]:0u);
 unsigned int __gsharp_id_19_shiftedValue = (__gsharp_id_17_w0>>__gsharp_id_13_bitShift)|((__gsharp_id_13_bitShift==0?0u:(__gsharp_id_18_w1<<(32-__gsharp_id_13_bitShift))));
 __gsharp_id_6_quotientBuffer[__gsharp_id_15_idx]=__gsharp_id_19_shiftedValue;
+}
+}
 }
 cg::this_grid().sync();
 __gsharp_fn_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuBigIntDivRemKernels__ExecuteNttMultiplyMacroModPow(__gsharp_id_0_core,__gsharp_id_6_quotientBuffer,__gsharp_id_2_rightOperand,__gsharp_id_11_iterScratch.__gsharp_mb_NextIter,__gsharp_id_14_destWords,__gsharp_id_9_n,__gsharp_id_14_destWords+__gsharp_id_9_n);
@@ -611,9 +618,16 @@ __gsharp_ty_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Algorithms__GpuBigIntContex
 __gsharp_ty_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Algorithms__OperandContext __gsharp_tmp{}; __gsharp_tmp.__gsharp_mb_CarryBuffer = __gsharp_id_0_core.__gsharp_mb_CarryBuffer; return __gsharp_tmp; }
 ()); __gsharp_tmp.__gsharp_mb_NumberOfWords = __gsharp_id_20_evalWords; return __gsharp_tmp; }
 ());
-for(int __gsharp_id_22_idx = blockIdx.x * blockDim.x + threadIdx.x; __gsharp_id_22_idx < __gsharp_id_20_evalWords; __gsharp_id_22_idx += gridDim.x * blockDim.x)
+{
+unsigned int __gsharp_gsl_n_1 = __gsharp_grid_stride_count(__gsharp_id_20_evalWords);
+unsigned int __gsharp_gsl_s_1 = __gsharp_grid_stride_step();
+for(unsigned int __gsharp_gsl_1 = __gsharp_grid_stride_start(); __gsharp_gsl_1 < __gsharp_gsl_n_1; __gsharp_gsl_1 += __gsharp_gsl_s_1)
+{
+int __gsharp_id_22_idx = (int)__gsharp_gsl_1;
 {
 __gsharp_id_11_iterScratch.__gsharp_mb_Diff[__gsharp_id_22_idx]=(__gsharp_id_22_idx<__gsharp_id_8_nA?__gsharp_id_1_leftOperand[__gsharp_id_22_idx]:0u);
+}
+}
 }
 cg::this_grid().sync();
 DeviceAddSubParallel(__gsharp_id_11_iterScratch.__gsharp_mb_Diff,__gsharp_id_11_iterScratch.__gsharp_mb_NextIter,__gsharp_id_11_iterScratch.__gsharp_mb_Diff,__gsharp_id_20_evalWords,(-1),true);
@@ -643,9 +657,16 @@ break;
 }
 }
 }
-for(int __gsharp_id_28_idx = blockIdx.x * blockDim.x + threadIdx.x; __gsharp_id_28_idx < __gsharp_id_5_aActualWords; __gsharp_id_28_idx += gridDim.x * blockDim.x)
+{
+unsigned int __gsharp_gsl_n_2 = __gsharp_grid_stride_count(__gsharp_id_5_aActualWords);
+unsigned int __gsharp_gsl_s_2 = __gsharp_grid_stride_step();
+for(unsigned int __gsharp_gsl_2 = __gsharp_grid_stride_start(); __gsharp_gsl_2 < __gsharp_gsl_n_2; __gsharp_gsl_2 += __gsharp_gsl_s_2)
+{
+int __gsharp_id_28_idx = (int)__gsharp_gsl_2;
 {
 __gsharp_id_7_remainderBuffer[__gsharp_id_28_idx]=(__gsharp_id_28_idx<__gsharp_id_9_n?__gsharp_id_11_iterScratch.__gsharp_mb_Diff[__gsharp_id_28_idx]:0u);
+}
+}
 }
 cg::this_grid().sync();
 }
@@ -831,13 +852,18 @@ return false;
 __gsharp_ctx.wordShift = targetBits / 32;
 __gsharp_ctx.bitShift = targetBits % 32;
 __gsharp_ctx.destWords = __gsharp_ctx.nA;
-for (int __gsharp_unroll_0 = global::Kassyi.GSharp.Core.ManagedGpuContext.BlockDimX * global::Kassyi.GSharp.Core.ManagedGpuContext.BlockIdxX + global::Kassyi.GSharp.Core.ManagedGpuContext.ThreadIdxX; __gsharp_unroll_0 < (__gsharp_ctx.destWords); __gsharp_unroll_0 += global::Kassyi.GSharp.Core.ManagedGpuContext.BlockDimX * global::Kassyi.GSharp.Core.ManagedGpuContext.GridDimX)
 {
+uint __gsharp_gsl_n_0 = global::Kassyi.GSharp.Core.ManagedGpuContext.GridStrideCount(__gsharp_ctx.destWords);
+uint __gsharp_gsl_s_0 = global::Kassyi.GSharp.Core.ManagedGpuContext.GridStrideStep();
+for (uint __gsharp_gsl_0 = global::Kassyi.GSharp.Core.ManagedGpuContext.GridStrideStart(); __gsharp_gsl_0 < __gsharp_gsl_n_0; __gsharp_gsl_0 += __gsharp_gsl_s_0)
+{
+int __gsharp_unroll_0 = (int)__gsharp_gsl_0;
 int srcIdx = __gsharp_unroll_0 + __gsharp_ctx.wordShift;
 uint w0 = (srcIdx < __gsharp_ctx.nA + __gsharp_ctx.targetWords) ? __gsharp_ctx.iterScratch.CurrentProduct[srcIdx] : 0u;
 uint w1 = (srcIdx + 1 < __gsharp_ctx.nA + __gsharp_ctx.targetWords) ? __gsharp_ctx.iterScratch.CurrentProduct[srcIdx + 1] : 0u;
 uint shiftedValue = (w0 >> __gsharp_ctx.bitShift) | (__gsharp_ctx.bitShift == 0 ? 0u : (w1 << (32 - __gsharp_ctx.bitShift)));
 quotientBuffer[__gsharp_unroll_0] = shiftedValue;
+}
 }
 
 global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested = true;
@@ -869,9 +895,14 @@ CarryBuffer = core.CarryBuffer
 },
 NumberOfWords = __gsharp_ctx.evalWords
 };
-for (int __gsharp_unroll_1 = global::Kassyi.GSharp.Core.ManagedGpuContext.BlockDimX * global::Kassyi.GSharp.Core.ManagedGpuContext.BlockIdxX + global::Kassyi.GSharp.Core.ManagedGpuContext.ThreadIdxX; __gsharp_unroll_1 < (__gsharp_ctx.evalWords); __gsharp_unroll_1 += global::Kassyi.GSharp.Core.ManagedGpuContext.BlockDimX * global::Kassyi.GSharp.Core.ManagedGpuContext.GridDimX)
 {
+uint __gsharp_gsl_n_1 = global::Kassyi.GSharp.Core.ManagedGpuContext.GridStrideCount(__gsharp_ctx.evalWords);
+uint __gsharp_gsl_s_1 = global::Kassyi.GSharp.Core.ManagedGpuContext.GridStrideStep();
+for (uint __gsharp_gsl_1 = global::Kassyi.GSharp.Core.ManagedGpuContext.GridStrideStart(); __gsharp_gsl_1 < __gsharp_gsl_n_1; __gsharp_gsl_1 += __gsharp_gsl_s_1)
+{
+int __gsharp_unroll_1 = (int)__gsharp_gsl_1;
 __gsharp_ctx.iterScratch.Diff[__gsharp_unroll_1] = __gsharp_unroll_1 < __gsharp_ctx.nA ? leftOperand[__gsharp_unroll_1] : 0u;
+}
 }
 
 global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested = true;
@@ -971,9 +1002,14 @@ goto case 6;
 
 case 16:
 {
-for (int __gsharp_unroll_2 = global::Kassyi.GSharp.Core.ManagedGpuContext.BlockDimX * global::Kassyi.GSharp.Core.ManagedGpuContext.BlockIdxX + global::Kassyi.GSharp.Core.ManagedGpuContext.ThreadIdxX; __gsharp_unroll_2 < (aActualWords); __gsharp_unroll_2 += global::Kassyi.GSharp.Core.ManagedGpuContext.BlockDimX * global::Kassyi.GSharp.Core.ManagedGpuContext.GridDimX)
 {
+uint __gsharp_gsl_n_2 = global::Kassyi.GSharp.Core.ManagedGpuContext.GridStrideCount(aActualWords);
+uint __gsharp_gsl_s_2 = global::Kassyi.GSharp.Core.ManagedGpuContext.GridStrideStep();
+for (uint __gsharp_gsl_2 = global::Kassyi.GSharp.Core.ManagedGpuContext.GridStrideStart(); __gsharp_gsl_2 < __gsharp_gsl_n_2; __gsharp_gsl_2 += __gsharp_gsl_s_2)
+{
+int __gsharp_unroll_2 = (int)__gsharp_gsl_2;
 remainderBuffer[__gsharp_unroll_2] = __gsharp_unroll_2 < __gsharp_ctx.n ? __gsharp_ctx.iterScratch.Diff[__gsharp_unroll_2] : 0u;
+}
 }
 
 global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested = true;
@@ -3532,7 +3568,12 @@ int __gsharp_id_10_outWords = __gsharp_id_8_aActualWords+__gsharp_id_9_targetWor
 if(__gsharp_id_3_expSlice.__gsharp_mb_StartWord==0)
 {
 unsigned int __gsharp_id_11_oneModulo = __gsharp_fn_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuBigIntDivRemKernels__OneModulo(__gsharp_id_1_core.__gsharp_mb_Operands.__gsharp_mb_Constant,__gsharp_id_4_n);
-for(int __gsharp_id_12_idx = blockIdx.x * blockDim.x + threadIdx.x; __gsharp_id_12_idx < __gsharp_id_10_outWords; __gsharp_id_12_idx += gridDim.x * blockDim.x)
+{
+unsigned int __gsharp_gsl_n_0 = __gsharp_grid_stride_count(__gsharp_id_10_outWords);
+unsigned int __gsharp_gsl_s_0 = __gsharp_grid_stride_step();
+for(unsigned int __gsharp_gsl_0 = __gsharp_grid_stride_start(); __gsharp_gsl_0 < __gsharp_gsl_n_0; __gsharp_gsl_0 += __gsharp_gsl_s_0)
+{
+int __gsharp_id_12_idx = (int)__gsharp_gsl_0;
 {
 if(__gsharp_id_12_idx<2*__gsharp_id_4_n)
 {
@@ -3540,6 +3581,8 @@ __gsharp_id_2_iterScratch.__gsharp_mb_AxSquared[__gsharp_id_12_idx]=(__gsharp_id
 __gsharp_id_2_iterScratch.__gsharp_mb_XSquared[__gsharp_id_12_idx]=(__gsharp_id_12_idx<__gsharp_id_4_n?__gsharp_id_1_core.__gsharp_mb_Operands.__gsharp_mb_TargetOperand[__gsharp_id_12_idx]:0u);
 }
 __gsharp_id_2_iterScratch.__gsharp_mb_ModulusExpanded[__gsharp_id_12_idx]=(__gsharp_id_12_idx<__gsharp_id_4_n?__gsharp_id_1_core.__gsharp_mb_Operands.__gsharp_mb_Constant[__gsharp_id_12_idx]:0u);
+}
+}
 }
 cg::this_grid().sync();
 }
@@ -3563,9 +3606,16 @@ __gsharp_id_14_e>>=1;
 }
 if(__gsharp_id_3_expSlice.__gsharp_mb_EndWord==__gsharp_id_5_expWords)
 {
-for(int __gsharp_id_16_idx = blockIdx.x * blockDim.x + threadIdx.x; __gsharp_id_16_idx < __gsharp_id_4_n; __gsharp_id_16_idx += gridDim.x * blockDim.x)
+{
+unsigned int __gsharp_gsl_n_1 = __gsharp_grid_stride_count(__gsharp_id_4_n);
+unsigned int __gsharp_gsl_s_1 = __gsharp_grid_stride_step();
+for(unsigned int __gsharp_gsl_1 = __gsharp_grid_stride_start(); __gsharp_gsl_1 < __gsharp_gsl_n_1; __gsharp_gsl_1 += __gsharp_gsl_s_1)
+{
+int __gsharp_id_16_idx = (int)__gsharp_gsl_1;
 {
 __gsharp_id_1_core.__gsharp_mb_Operands.__gsharp_mb_ResultBuffer[__gsharp_id_16_idx]=__gsharp_id_2_iterScratch.__gsharp_mb_AxSquared[__gsharp_id_16_idx];
+}
+}
 }
 cg::this_grid().sync();
 }
