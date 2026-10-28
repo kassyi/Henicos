@@ -58,6 +58,11 @@ internal static class StructMarshalingEmitter
         NativeStructEmitter.WriteNativeStructDeclaration(writer, s, structLayout);
         WriteMarshalMethod(writer, s, structLayout, dialect);
         WriteUnmarshalMethod(writer, s, structLayout, dialect);
+        if (!dialect.IsCuda)
+        {
+            WriteCopyArraysMethod(writer, s, structLayout);
+        }
+
         return writer.ToString();
     }
 
@@ -165,6 +170,105 @@ internal static class StructMarshalingEmitter
 
         writer.AppendLine();
     }
+
+    // public static void CopyArrays_<key>(ref <S> host)
+    // { <host mirror binding>; if (host.<array> != null) { host.<array> = (<array type>)host.<array>.Clone();
+    //   for (...) CopyArrays_<E>(ref host.<array>[i]); } CopyArrays_<nested>(ref host.<struct>);
+    //   for (int k = 0; k < <N>; k++) { <the same for host[k]> } }
+    // [WHY] The CPU launcher gives a kernel a copy of an [In] array and of a read-only container, whose writes the device
+    // never sends back (#798). Copying the elements is not enough when they hold arrays, which the CPU kernel would
+    // otherwise write in place, so every array they hold, at any depth, is copied as well. Only a struct that holds
+    // arrays gets the method.
+    private static void WriteCopyArraysMethod(SourceWriter writer, INamedTypeSymbol s, StructLayoutInfo structLayout)
+    {
+        if (!TypeLayoutCalculator.TryFindArrayField(s, out _))
+        {
+            return;
+        }
+
+        var hasMirror = NativeStructEmitter.NeedsHostMirror(s, structLayout);
+        writer.Append("public static void ");
+        writer.AppendCopyArraysMethodName(s);
+        using (writer.Parentheses())
+        {
+            writer.Append("ref ");
+            writer.AppendFullyQualifiedCsharpName(s);
+            writer.Append(hasMirror ? $" {MirroredHostParameter}" : " host");
+        }
+
+        writer.AppendLine();
+        using (writer.Scope())
+        {
+            WriteHostMirrorBinding(writer, s, hasMirror);
+            foreach (var member in StructAbiMembers.Get(s))
+            {
+                WriteCopyArraysMember(writer, member);
+            }
+        }
+
+        writer.AppendLine();
+    }
+
+    private static void WriteCopyArraysMember(SourceWriter writer, StructAbiMember member)
+    {
+        // GSH0078 reports the member; a fixed buffer holds only primitives
+        if (NativeStructEmitter.IsUnrepresentableReference(member) ||
+            member.Kind == StructAbiMemberKind.FixedBuffer ||
+            !HoldsArrays(member.Type))
+        {
+            return;
+        }
+
+        if (member.Kind == StructAbiMemberKind.InlineArrayElement)
+        {
+            // host[k] is the element of the inline array, whatever the field's accessibility
+            writer.AppendLine($"for (int k = 0; k < {member.ElementCount}; k++)");
+            using (writer.Scope())
+            {
+                WriteCopyArraysValue(writer, "host[k]", member.Type);
+            }
+
+            return;
+        }
+
+        WriteCopyArraysValue(writer, $"host.{member.Name.ToCSharpIdentifier()}", member.Type);
+    }
+
+    // if (<value> != null) { <value> = (<array type>)<value>.Clone(); [for (...) CopyArrays_<E>(ref <value>[i]);] }
+    // or CopyArrays_<S>(ref <value>); for a struct that holds arrays
+    private static void WriteCopyArraysValue(SourceWriter writer, string value, ITypeSymbol type)
+    {
+        if (!type.TryGetArrayLikeElementType(out var element))
+        {
+            writer.AppendCopyArraysMethodName(type);
+            writer.AppendLine($"(ref {value});");
+            return;
+        }
+
+        writer.AppendLine($"if ({value} != null)");
+        using (writer.Scope())
+        {
+            writer.Append($"{value} = (");
+            writer.AppendFullyQualifiedCsharpName(type);
+            writer.AppendLine($"){value}.Clone();");
+            if (HoldsArrays(element))
+            {
+                writer.AppendLine($"for (int i = 0; i < {value}.Length; i++)");
+                using (writer.Scope())
+                {
+                    writer.AppendCopyArraysMethodName(element);
+                    writer.AppendLine($"(ref {value}[i]);");
+                }
+            }
+        }
+    }
+
+    // An array, or a user struct with an array field at any depth (TypeLayoutCalculator.TryFindArrayField)
+    private static bool HoldsArrays(ITypeSymbol type) =>
+        type.IsArrayLikeType() ||
+        type is INamedTypeSymbol named &&
+        TypeLayoutCalculator.IsUserStruct(named) &&
+        TypeLayoutCalculator.TryFindArrayField(named, out _);
 
     // The host value of a struct with a host mirror arrives under this name, and `host` is then the mirror
     private const string MirroredHostParameter = "hostValue";

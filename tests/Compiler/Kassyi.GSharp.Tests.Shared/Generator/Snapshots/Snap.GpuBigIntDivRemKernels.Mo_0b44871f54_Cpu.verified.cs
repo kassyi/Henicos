@@ -1205,6 +1205,15 @@ public static unsafe void Unmarshal_ModPowNttContext(ref global::Kassyi.GSharp.S
 Unmarshal_NewtonRaphsonContext(ref host.Core, ref native.Core, isDevicePtr, hStream);
 Unmarshal_ExponentSliceContext(ref host.Exponent, ref native.Exponent, isDevicePtr, hStream);
 }
+public static void CopyArrays_ModPowNttContext(ref global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.ModPowNttContext host)
+{
+CopyArrays_NewtonRaphsonContext(ref host.Core);
+if (host.ReciprocalMod != null)
+{
+host.ReciprocalMod = (global::System.UInt32[])host.ReciprocalMod.Clone();
+}
+CopyArrays_ExponentSliceContext(ref host.Exponent);
+}
 [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Explicit, Size = 688)]
 public unsafe partial struct NewtonRaphson
 {
@@ -1257,6 +1266,20 @@ Unmarshal_OperandContext(ref host.Operands, ref native.Operands, isDevicePtr, hS
 Unmarshal_DimensionContext(ref host.Dimensions, ref native.Dimensions, isDevicePtr, hStream);
 Unmarshal_Ntt(ref host.Ntt, ref native.Ntt, isDevicePtr, hStream);
 Unmarshal_WorkspaceStateContext(ref host.Workspace, ref native.Workspace, isDevicePtr, hStream);
+}
+public static void CopyArrays_NewtonRaphsonContext(ref global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.NewtonRaphsonContext host)
+{
+CopyArrays_OperandContext(ref host.Operands);
+CopyArrays_Ntt(ref host.Ntt);
+CopyArrays_WorkspaceStateContext(ref host.Workspace);
+if (host.CarryBuffer != null)
+{
+host.CarryBuffer = (global::System.Int64[])host.CarryBuffer.Clone();
+}
+if (host.CorrectionStatus != null)
+{
+host.CorrectionStatus = (global::System.UInt32[])host.CorrectionStatus.Clone();
+}
 }
 [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Explicit, Size = 112)]
 public unsafe partial struct Operand
@@ -1346,6 +1369,37 @@ native.CarryBuffer.Length = host.CarryBuffer.Length;
 public static unsafe void Unmarshal_OperandContext(ref global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.OperandContext host, ref AotContexts.Operand native, bool isDevicePtr, IntPtr hStream = default)
 {
 }
+public static void CopyArrays_OperandContext(ref global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.OperandContext host)
+{
+if (host.LeftOperand != null)
+{
+host.LeftOperand = (global::System.UInt32[])host.LeftOperand.Clone();
+}
+if (host.RightOperand != null)
+{
+host.RightOperand = (global::System.UInt32[])host.RightOperand.Clone();
+}
+if (host.TargetOperand != null)
+{
+host.TargetOperand = (global::System.UInt32[])host.TargetOperand.Clone();
+}
+if (host.ResultBuffer != null)
+{
+host.ResultBuffer = (global::System.UInt32[])host.ResultBuffer.Clone();
+}
+if (host.Constant != null)
+{
+host.Constant = (global::System.UInt32[])host.Constant.Clone();
+}
+if (host.Constant3 != null)
+{
+host.Constant3 = (global::System.UInt32[])host.Constant3.Clone();
+}
+if (host.CarryBuffer != null)
+{
+host.CarryBuffer = (global::System.Int64[])host.CarryBuffer.Clone();
+}
+}
 [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Explicit, Size = 40)]
 public unsafe partial struct Dimension
 {
@@ -1413,6 +1467,11 @@ public static unsafe void Unmarshal_Ntt(ref global::Kassyi.GSharp.Stdlib.GpuMath
 host.TransformLength = native.TransformLength;
 Unmarshal_BufferContext(ref host.Buffers, ref native.Buffers, isDevicePtr, hStream);
 Unmarshal_TwiddleFactorContext(ref host.TwiddleFactors, ref native.TwiddleFactors, isDevicePtr, hStream);
+}
+public static void CopyArrays_Ntt(ref global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.Ntt host)
+{
+CopyArrays_BufferContext(ref host.Buffers);
+CopyArrays_TwiddleFactorContext(ref host.TwiddleFactors);
 }
 [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Explicit, Size = 144)]
 public unsafe partial struct Buffer
@@ -1524,6 +1583,45 @@ native.CarryBuffer.Length = host.CarryBuffer.Length;
 public static unsafe void Unmarshal_BufferContext(ref global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.BufferContext host, ref AotContexts.Buffer native, bool isDevicePtr, IntPtr hStream = default)
 {
 }
+public static void CopyArrays_BufferContext(ref global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.BufferContext host)
+{
+if (host.Buffer1 != null)
+{
+host.Buffer1 = (global::System.UInt32[])host.Buffer1.Clone();
+}
+if (host.Buffer2 != null)
+{
+host.Buffer2 = (global::System.UInt32[])host.Buffer2.Clone();
+}
+if (host.Buffer3 != null)
+{
+host.Buffer3 = (global::System.UInt32[])host.Buffer3.Clone();
+}
+if (host.ValueT != null)
+{
+host.ValueT = (global::System.UInt32[])host.ValueT.Clone();
+}
+if (host.Quotient != null)
+{
+host.Quotient = (global::System.UInt32[])host.Quotient.Clone();
+}
+if (host.Remainder != null)
+{
+host.Remainder = (global::System.UInt32[])host.Remainder.Clone();
+}
+if (host.RemainderMask != null)
+{
+host.RemainderMask = (global::System.UInt32[])host.RemainderMask.Clone();
+}
+if (host.TemporaryBuffer != null)
+{
+host.TemporaryBuffer = (global::System.UInt32[])host.TemporaryBuffer.Clone();
+}
+if (host.CarryBuffer != null)
+{
+host.CarryBuffer = (global::System.Int64[])host.CarryBuffer.Clone();
+}
+}
 [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Explicit, Size = 96)]
 public unsafe partial struct TwiddleFactor
 {
@@ -1601,6 +1699,33 @@ native.Inverse3.Length = host.Inverse3.Length;
 public static unsafe void Unmarshal_TwiddleFactorContext(ref global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.TwiddleFactorContext host, ref AotContexts.TwiddleFactor native, bool isDevicePtr, IntPtr hStream = default)
 {
 }
+public static void CopyArrays_TwiddleFactorContext(ref global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.TwiddleFactorContext host)
+{
+if (host.Forward1 != null)
+{
+host.Forward1 = (global::System.UInt32[])host.Forward1.Clone();
+}
+if (host.Forward2 != null)
+{
+host.Forward2 = (global::System.UInt32[])host.Forward2.Clone();
+}
+if (host.Forward3 != null)
+{
+host.Forward3 = (global::System.UInt32[])host.Forward3.Clone();
+}
+if (host.Inverse1 != null)
+{
+host.Inverse1 = (global::System.UInt32[])host.Inverse1.Clone();
+}
+if (host.Inverse2 != null)
+{
+host.Inverse2 = (global::System.UInt32[])host.Inverse2.Clone();
+}
+if (host.Inverse3 != null)
+{
+host.Inverse3 = (global::System.UInt32[])host.Inverse3.Clone();
+}
+}
 [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Explicit, Size = 256)]
 public unsafe partial struct WorkspaceState
 {
@@ -1621,6 +1746,11 @@ public static unsafe void Unmarshal_WorkspaceStateContext(ref global::Kassyi.GSh
 {
 Unmarshal_IterationScratchContext(ref host.Iteration, ref native.Iteration, isDevicePtr, hStream);
 Unmarshal_NttConvolutionScratchContext(ref host.NttScratch, ref native.NttScratch, isDevicePtr, hStream);
+}
+public static void CopyArrays_WorkspaceStateContext(ref global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.WorkspaceStateContext host)
+{
+CopyArrays_IterationScratchContext(ref host.Iteration);
+CopyArrays_NttConvolutionScratchContext(ref host.NttScratch);
 }
 [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Explicit, Size = 128)]
 public unsafe partial struct IterationScratch
@@ -1721,6 +1851,41 @@ native.ModulusExpanded.Length = host.ModulusExpanded.Length;
 public static unsafe void Unmarshal_IterationScratchContext(ref global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.IterationScratchContext host, ref AotContexts.IterationScratch native, bool isDevicePtr, IntPtr hStream = default)
 {
 }
+public static void CopyArrays_IterationScratchContext(ref global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.IterationScratchContext host)
+{
+if (host.XSquared != null)
+{
+host.XSquared = (global::System.UInt32[])host.XSquared.Clone();
+}
+if (host.AxSquared != null)
+{
+host.AxSquared = (global::System.UInt32[])host.AxSquared.Clone();
+}
+if (host.CurrentProduct != null)
+{
+host.CurrentProduct = (global::System.UInt32[])host.CurrentProduct.Clone();
+}
+if (host.Diff != null)
+{
+host.Diff = (global::System.UInt32[])host.Diff.Clone();
+}
+if (host.NextXUnshifted != null)
+{
+host.NextXUnshifted = (global::System.UInt32[])host.NextXUnshifted.Clone();
+}
+if (host.NextXShifted != null)
+{
+host.NextXShifted = (global::System.UInt32[])host.NextXShifted.Clone();
+}
+if (host.NextIter != null)
+{
+host.NextIter = (global::System.UInt32[])host.NextIter.Clone();
+}
+if (host.ModulusExpanded != null)
+{
+host.ModulusExpanded = (global::System.UInt32[])host.ModulusExpanded.Clone();
+}
+}
 [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Explicit, Size = 128)]
 public unsafe partial struct NttConvolutionScratch
 {
@@ -1820,6 +1985,41 @@ native.BlockCarries.Length = host.BlockCarries.Length;
 public static unsafe void Unmarshal_NttConvolutionScratchContext(ref global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.NttConvolutionScratchContext host, ref AotContexts.NttConvolutionScratch native, bool isDevicePtr, IntPtr hStream = default)
 {
 }
+public static void CopyArrays_NttConvolutionScratchContext(ref global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.NttConvolutionScratchContext host)
+{
+if (host.NttBuf1A != null)
+{
+host.NttBuf1A = (global::System.UInt32[])host.NttBuf1A.Clone();
+}
+if (host.NttBuf2A != null)
+{
+host.NttBuf2A = (global::System.UInt32[])host.NttBuf2A.Clone();
+}
+if (host.NttBuf1B != null)
+{
+host.NttBuf1B = (global::System.UInt32[])host.NttBuf1B.Clone();
+}
+if (host.NttBuf2B != null)
+{
+host.NttBuf2B = (global::System.UInt32[])host.NttBuf2B.Clone();
+}
+if (host.TmpBuf != null)
+{
+host.TmpBuf = (global::System.UInt32[])host.TmpBuf.Clone();
+}
+if (host.UncarriedLow != null)
+{
+host.UncarriedLow = (global::System.UInt32[])host.UncarriedLow.Clone();
+}
+if (host.UncarriedHigh != null)
+{
+host.UncarriedHigh = (global::System.UInt32[])host.UncarriedHigh.Clone();
+}
+if (host.BlockCarries != null)
+{
+host.BlockCarries = (global::System.UInt32[])host.BlockCarries.Clone();
+}
+}
 [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Explicit, Size = 32)]
 public unsafe partial struct ExponentSlice
 {
@@ -1856,6 +2056,13 @@ public static unsafe void Unmarshal_ExponentSliceContext(ref global::Kassyi.GSha
 host.TotalWords = native.TotalWords;
 host.StartWord = native.StartWord;
 host.EndWord = native.EndWord;
+}
+public static void CopyArrays_ExponentSliceContext(ref global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.ExponentSliceContext host)
+{
+if (host.Words != null)
+{
+host.Words = (global::System.UInt32[])host.Words.Clone();
+}
 }
 #pragma warning restore CS8500
 }

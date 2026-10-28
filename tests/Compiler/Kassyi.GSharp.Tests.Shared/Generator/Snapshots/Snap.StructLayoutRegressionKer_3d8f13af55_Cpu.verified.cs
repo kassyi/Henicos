@@ -114,6 +114,13 @@ public static unsafe void Unmarshal_LayoutReproBag(ref global::Kassyi.GSharp.Tes
 {
 host.N = native.N;
 }
+public static void CopyArrays_LayoutReproBag(ref global::Kassyi.GSharp.Tests.Shared.Core.LayoutReproBag host)
+{
+if (host.Data != null)
+{
+host.Data = (global::System.Int32[])host.Data.Clone();
+}
+}
 [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Explicit, Size = 24)]
 public unsafe partial struct LayoutReproElemHolder
 {
@@ -154,6 +161,17 @@ Unmarshal_LayoutReproInnerBag(ref host.Elems[i], ref shadow[i], false, hStream);
 }
 }
 }
+public static void CopyArrays_LayoutReproElemHolder(ref global::Kassyi.GSharp.Tests.Shared.Core.LayoutReproElemHolder host)
+{
+if (host.Elems != null)
+{
+host.Elems = (global::Kassyi.GSharp.Tests.Shared.Core.LayoutReproInnerBag[])host.Elems.Clone();
+for (int i = 0; i < host.Elems.Length; i++)
+{
+CopyArrays_LayoutReproInnerBag(ref host.Elems[i]);
+}
+}
+}
 [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Explicit, Size = 24)]
 public unsafe partial struct LayoutReproInnerBag
 {
@@ -180,6 +198,13 @@ native.Items.Length = host.Items.Length;
 public static unsafe void Unmarshal_LayoutReproInnerBag(ref global::Kassyi.GSharp.Tests.Shared.Core.LayoutReproInnerBag host, ref AotContexts.LayoutReproInnerBag native, bool isDevicePtr, IntPtr hStream = default)
 {
 host.Tag = native.Tag;
+}
+public static void CopyArrays_LayoutReproInnerBag(ref global::Kassyi.GSharp.Tests.Shared.Core.LayoutReproInnerBag host)
+{
+if (host.Items != null)
+{
+host.Items = (global::System.Int32[])host.Items.Clone();
+}
 }
 [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Explicit, Size = 32)]
 public unsafe partial struct LayoutReproPair
@@ -213,6 +238,17 @@ native.B.Length = host.B.Length;
 }
 public static unsafe void Unmarshal_LayoutReproPair(ref global::Kassyi.GSharp.Tests.Shared.Core.LayoutReproPair host, ref AotContexts.LayoutReproPair native, bool isDevicePtr, IntPtr hStream = default)
 {
+}
+public static void CopyArrays_LayoutReproPair(ref global::Kassyi.GSharp.Tests.Shared.Core.LayoutReproPair host)
+{
+if (host.A != null)
+{
+host.A = (global::System.Int32[])host.A.Clone();
+}
+if (host.B != null)
+{
+host.B = (global::System.Int32[])host.B.Clone();
+}
 }
 [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Explicit, Size = 8)]
 public unsafe partial struct LayoutReproTwoBools
@@ -391,6 +427,10 @@ public static unsafe void Unmarshal_LayoutReproArrOuter(ref global::Kassyi.GShar
 {
 Unmarshal_LayoutReproArrPair(ref host.P, ref native.P, isDevicePtr, hStream);
 }
+public static void CopyArrays_LayoutReproArrOuter(ref global::Kassyi.GSharp.Tests.Shared.Core.LayoutReproArrOuter host)
+{
+CopyArrays_LayoutReproArrPair(ref host.P);
+}
 [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Explicit, Size = 32)]
 public unsafe partial struct LayoutReproArrPair
 {
@@ -419,6 +459,13 @@ Unmarshal_LayoutReproWithArr(ref host[k], ref ((AotContexts.LayoutReproWithArr*)
 }
 }
 }
+public static void CopyArrays_LayoutReproArrPair(ref global::Kassyi.GSharp.Tests.Shared.Core.LayoutReproArrPair host)
+{
+for (int k = 0; k < 2; k++)
+{
+CopyArrays_LayoutReproWithArr(ref host[k]);
+}
+}
 [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Explicit, Size = 16)]
 public unsafe partial struct LayoutReproWithArr
 {
@@ -440,6 +487,13 @@ native.Data.Length = host.Data.Length;
 }
 public static unsafe void Unmarshal_LayoutReproWithArr(ref global::Kassyi.GSharp.Tests.Shared.Core.LayoutReproWithArr host, ref AotContexts.LayoutReproWithArr native, bool isDevicePtr, IntPtr hStream = default)
 {
+}
+public static void CopyArrays_LayoutReproWithArr(ref global::Kassyi.GSharp.Tests.Shared.Core.LayoutReproWithArr host)
+{
+if (host.Data != null)
+{
+host.Data = (global::System.Int32[])host.Data.Clone();
+}
 }
 #pragma warning restore CS8500
 }

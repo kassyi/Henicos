@@ -138,6 +138,29 @@ host.R = native.R;
 host.V = native.V;
 host.N = native.N;
 }
+public static void CopyArrays_BlackScholesKernels_BlackScholesContext(ref global::Henicos.Benchmarks.ComputeBenchmarks.BlackScholesKernels.BlackScholesContext host)
+{
+if (host.S != null)
+{
+host.S = (global::System.Single[])host.S.Clone();
+}
+if (host.X != null)
+{
+host.X = (global::System.Single[])host.X.Clone();
+}
+if (host.T != null)
+{
+host.T = (global::System.Single[])host.T.Clone();
+}
+if (host.CallResult != null)
+{
+host.CallResult = (global::System.Single[])host.CallResult.Clone();
+}
+if (host.PutResult != null)
+{
+host.PutResult = (global::System.Single[])host.PutResult.Clone();
+}
+}
 #pragma warning restore CS8500
 }
 public const string BlackScholesKernel_Source = @"#ifndef __GSHARP_STRUCT___gsharp_ty_Henicos__Benchmarks__ComputeBenchmarks__BlackScholesKernels__BlackScholesContext__

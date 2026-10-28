@@ -49,12 +49,17 @@ internal enum ArrayContainerKind
 /// Whether the converted element has array fields (<see cref="TypeLayoutCalculator.TryFindArrayField"/>), which
 /// <c>Marshal_</c> handles even for an <c>[Out]</c> array.
 /// </param>
+/// <param name="ConvertedElementCopyArraysMethodName">
+/// <c>AotContexts.CopyArrays_{key}</c> of that element when it has array fields, on the CPU only (the CUDA text has no
+/// such method), otherwise <see langword="null"/>.
+/// </param>
 internal readonly record struct ParameterTransfer(
     bool IsIdenticalStruct,
     string? ConvertedElementAotStructPath,
     string? ConvertedElementMarshalMethodName,
     string? ConvertedElementUnmarshalMethodName,
-    bool ConvertedElementHasArrayFields)
+    bool ConvertedElementHasArrayFields,
+    string? ConvertedElementCopyArraysMethodName)
 {
     /// <summary>
     /// The transfer of <paramref name="marshaledType"/> (a user struct or an array-like type) under
@@ -70,7 +75,8 @@ internal readonly record struct ParameterTransfer(
                 null,
                 null,
                 null,
-                false);
+                false,
+                null);
         }
 
         if (!marshaledType.TryGetArrayLikeElementType(out var element) ||
@@ -79,12 +85,15 @@ internal readonly record struct ParameterTransfer(
             return default;
         }
 
+        var hasArrayFields = element is INamedTypeSymbol namedElement &&
+            TypeLayoutCalculator.TryFindArrayField(namedElement, out _);
         return new ParameterTransfer(
             false,
             AotHostNames.GetAotStructPath(element),
             AotHostNames.GetQualifiedMarshalMethodName(element),
             AotHostNames.GetQualifiedUnmarshalMethodName(element),
-            element is INamedTypeSymbol namedElement && TypeLayoutCalculator.TryFindArrayField(namedElement, out _));
+            hasArrayFields,
+            hasArrayFields && !dialect.IsCuda ? AotHostNames.GetQualifiedCopyArraysMethodName(element) : null);
     }
 }
 

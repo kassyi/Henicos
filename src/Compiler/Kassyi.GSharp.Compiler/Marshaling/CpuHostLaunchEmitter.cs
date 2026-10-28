@@ -27,6 +27,7 @@ internal static class CpuHostLaunchEmitter
             WrapperEmitter.WriteOutParameterDefaults(writer, kernel.Host);
             WrapperEmitter.WriteArrayArgumentChecks(writer, kernel.Host);
             WrapperEmitter.WriteAutoResultAllocation(writer, kernel.Host);
+            WriteKernelCopies(writer, kernel.Host);
             WriteManagedExecutionFallback(writer, kernel.Host, assemblyName);
 
             // [WHY] Only the native launcher reads the host bytes as the C++ layout; the managed fallback uses the values
@@ -37,6 +38,74 @@ internal static class CpuHostLaunchEmitter
 
         writer.AppendLine("#pragma warning restore CS8500");
     }
+
+    // if (<name> != null) {                                                       (an optional argument only)
+    //   <name> = (<array type>)<name>.Clone();                         (<span>.ToArray() for the other containers)
+    // or, for elements that hold arrays:
+    //   var <name>_copy = <the same copy>; for (...) CopyArrays_<E>(ref <name>_copy[<name>_copyIndex]);
+    //   <name> = <name>_copy;                                          (ImmutableArray.Create(<name>_copy))
+    // }
+    // [WHY] The device gets a copy of an [In] array and never sends it back, and never sends back a read-only container
+    // either, so on the CPU the kernel works on a copy as well (#798; the GPU result is the one to match). A read-only
+    // container is copied only when its elements hold arrays, the one thing a kernel can write through it. The managed
+    // fallback and the native call both take the copy.
+    private static void WriteKernelCopies(SourceWriter writer, in KernelHostModel kernel)
+    {
+        foreach (var shape in kernel.Parameters)
+        {
+            var copyArrays = shape.Cpu.ConvertedElementCopyArraysMethodName;
+            var needsCopy = shape.IsArray && (shape.IsReadOnlyContainer ? copyArrays is not null : !shape.CopyOut);
+            if (!needsCopy)
+            {
+                continue;
+            }
+
+            if (shape.IsOptional)
+            {
+                writer.AppendLine(shape.IsNullableValue ? $"if ({shape.Identifier}.HasValue)" : $"if ({shape.Identifier} != null)");
+                using (writer.Scope())
+                {
+                    WriteKernelCopy(writer, shape, copyArrays);
+                }
+            }
+            else
+            {
+                WriteKernelCopy(writer, shape, copyArrays);
+            }
+        }
+    }
+
+    private static void WriteKernelCopy(SourceWriter writer, in KernelParameterShape shape, string? copyArrays)
+    {
+        // A read-only container (ImmutableArray among them) is copied only for elements that hold arrays
+        if (copyArrays is null)
+        {
+            writer.Append($"{shape.Identifier} = ");
+            WriteElementsCopy(writer, shape);
+            writer.AppendLine(";");
+            return;
+        }
+
+        var name = shape.Name;
+        writer.Append($"var {name}_copy = ");
+        WriteElementsCopy(writer, shape);
+        writer.AppendLine(";");
+        writer.AppendLine($"for (int {name}_copyIndex = 0; {name}_copyIndex < {name}_copy.Length; {name}_copyIndex++)");
+        using (writer.Scope())
+        {
+            writer.AppendLine($"{copyArrays}(ref {name}_copy[{name}_copyIndex]);");
+        }
+
+        writer.AppendLine(shape.Container == ArrayContainerKind.ImmutableArray
+            ? $"{shape.Identifier} = global::System.Collections.Immutable.ImmutableArray.Create({name}_copy);"
+            : $"{shape.Identifier} = {name}_copy;");
+    }
+
+    // (<array type>)<name>.Clone(), or <span>.ToArray() for the other containers: a new array of the elements
+    private static void WriteElementsCopy(SourceWriter writer, in KernelParameterShape shape) =>
+        writer.Append(shape.Container == ArrayContainerKind.Array
+            ? $"({shape.TypeName}){shape.Identifier}.Clone()"
+            : $"{shape.SpanExpression}.ToArray()");
 
     private static void WriteCpuDelegateDeclaration(SourceWriter writer, in KernelEmission kernel)
     {

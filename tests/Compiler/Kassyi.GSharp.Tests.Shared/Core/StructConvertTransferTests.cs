@@ -54,11 +54,8 @@ public class StructConvertTransferTests
         StructConvertTransferKernels.LaunchInArrayKernel(items, o, blockDimX: 2);
 
         Assert.Equal([3f, 6f], o);
-#if !GSHARP_CPU
-        // The CPU kernel works on the pinned host array itself, so [In] cannot keep its writes
         Assert.Equal(1f, items[0].A);
         Assert.Equal(4f, items[1].A);
-#endif
     }
 
     [Fact]
