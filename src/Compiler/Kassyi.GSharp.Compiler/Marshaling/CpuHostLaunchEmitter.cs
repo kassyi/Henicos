@@ -432,29 +432,7 @@ internal static class CpuHostLaunchEmitter
             foreach (var shape in kernel.Parameters)
             {
                 writer.Append(", ");
-
-                if (shape.IsArray)
-                {
-                    writer.Append(
-                        $"new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy {{ Data = (IntPtr)p_{shape.Name}, Length = {shape.LengthExpression} }}");
-                }
-                else if (shape.IsCpuConvertedStruct)
-                {
-                    writer.Append($"&{shape.Name}_native");
-                }
-                else if (shape.IsByRef)
-                {
-                    writer.Append($"p_{shape.Name}");
-                }
-                else if (shape.IsCpuValueStruct)
-                {
-                    // The parameter of Launch is a value parameter, a fixed variable whose address needs no pinning
-                    writer.Append($"&{shape.Identifier}");
-                }
-                else
-                {
-                    writer.Append(shape.Identifier);
-                }
+                WriteDelegateArgument(writer, shape);
             }
 
             if (kernel.ReturnsValue)
@@ -466,5 +444,31 @@ internal static class CpuHostLaunchEmitter
 
         writer.AppendLine(";");
         writer.AppendLine("global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ThrowIfNativeError(dllPath);");
+    }
+
+    // [WHY] A switch statement, not a switch expression: each form is written straight into the writer, so no argument
+    // string is built (transpiler-emission.md section 1)
+    private static void WriteDelegateArgument(SourceWriter writer, in KernelParameterShape shape)
+    {
+        switch (shape)
+        {
+            case { IsArray: true }:
+                writer.Append(
+                    $"new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy {{ Data = (IntPtr)p_{shape.Name}, Length = {shape.LengthExpression} }}");
+                break;
+            case { IsCpuConvertedStruct: true }:
+                writer.Append($"&{shape.Name}_native");
+                break;
+            case { IsByRef: true }:
+                writer.Append($"p_{shape.Name}");
+                break;
+            case { IsCpuValueStruct: true }:
+                // The parameter of Launch is a value parameter, a fixed variable whose address needs no pinning
+                writer.Append($"&{shape.Identifier}");
+                break;
+            default:
+                writer.Append(shape.Identifier);
+                break;
+        }
     }
 }
