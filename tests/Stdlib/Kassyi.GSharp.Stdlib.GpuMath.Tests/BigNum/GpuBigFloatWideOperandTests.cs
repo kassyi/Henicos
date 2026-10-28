@@ -2,9 +2,10 @@
 namespace Kassyi.GSharp.Stdlib.GpuMath.Tests.BigNum;
 
 /// <summary>
-/// Wide operands of the GPU <c>Divide</c> and <c>Rsqrt</c> (#661 §4.12): a divisor or radicand of at least
-/// <c>n + 2 + g</c> words (<see cref="GpuWorkspace.WideOperandThresholdWords"/>) is cut to its top <c>n + 2</c> words,
-/// and one full-width multiplication corrects the estimate when its discarded bits leave the result open.
+/// Wide operands of the GPU <c>Divide</c> and <c>Rsqrt</c> (#661 §4.12): within the measured widths
+/// (<see cref="WideOperandOptions"/>), a divisor or radicand of at least <c>n + 2 + g</c> words is cut to its top
+/// <c>n + 2</c> words, and one full-width multiplication corrects the estimate when its discarded bits leave the result
+/// open.
 /// </summary>
 /// <remarks>
 /// <para>
@@ -24,6 +25,10 @@ namespace Kassyi.GSharp.Stdlib.GpuMath.Tests.BigNum;
 [Category(TestCategory.Stdlib)]
 public class GpuBigFloatWideOperandTests : IDisposable
 {
+    // The case tables check the cut on small operands, below the divisor width from which Divide cuts by default
+    // (WideOperandOptions.DivideMinDivisorWords); the default widths have their own tests.
+    private const int CaseMinDivisorWords = 0;
+
     private readonly GpuKernelLoader.CudaContextScope _scope;
     private readonly GpuWorkspace _workspace;
 
@@ -32,6 +37,7 @@ public class GpuBigFloatWideOperandTests : IDisposable
         CudaCapability.EnsureGpuAvailable();
         _scope = new GpuKernelLoader.CudaContextScope();
         _workspace = new GpuWorkspace(4096, GpuExecutionEngine.GSharpAot);
+        _workspace.WideOperands.DivideMinDivisorWords = CaseMinDivisorWords;
     }
 
     public void Dispose()
@@ -56,21 +62,21 @@ public class GpuBigFloatWideOperandTests : IDisposable
     // P1: Rsqrt is RZ_p(1 / sqrt(a)) (BigFloatReference.RzRsqrt) and the same bits as the CPU provider. P2: the operand
     // is truncated exactly when its normalized width w is at least n + 2 + g, and the full-width check runs exactly
     // when the low word of the estimate from the top n + 2 words is 0.
-    // mutant: GSharpKernelFloatProvider.cs:370 `>= WideOperandThresholdWords` -> `>` (At*,
+    // mutant: WideOperandOptions.cs:96 `>= ThresholdWords` -> `>` (At*,
     // OddExponentFullWidthOntoThreshold* and the w = n + 6 cases: the path count; WideOperandThreshold_SwitchesThePath)
-    // mutant: GSharpKernelFloatProvider.cs:451 `ReadWord(...) == 0` -> never true (the skip condition always true:
+    // mutant: GSharpKernelFloatProvider.cs:449 `ReadWord(...) == 0` -> never true (the skip condition always true:
     // PowerOfFourPlus1*, HardDecrement* stay one too large)
-    // mutant: GSharpKernelFloatProvider.cs:451 `ReadWord(...) == 0` -> always true (Random*, HardSkip*, At*: the check
+    // mutant: GSharpKernelFloatProvider.cs:449 `ReadWord(...) == 0` -> always true (Random*, HardSkip*, At*: the check
     // count)
-    // mutant: GSharpKernelFloatProvider.cs:446 `Slice(words - truncatedWords` -> `... - 1` (j one word short in
+    // mutant: GSharpKernelFloatProvider.cs:444 `Slice(words - truncatedWords` -> `... - 1` (j one word short in
     // the slice: every truncated case)
-    // mutant: GSharpKernelFloatProvider.cs:450 `16L * (words - truncatedWords)` -> `16L * (words - truncatedWords - 1)`
+    // mutant: GSharpKernelFloatProvider.cs:448 `16L * (words - truncatedWords)` -> `16L * (words - truncatedWords - 1)`
     // (j one word short in B: every truncated case)
-    // mutant: GSharpKernelFloatProvider.cs:459 `CorrectTruncatedEstimate(...)` removed (PowerOfFourPlus1*,
+    // mutant: GSharpKernelFloatProvider.cs:457 `CorrectTruncatedEstimate(...)` removed (PowerOfFourPlus1*,
     // HardDecrement*)
-    // mutant: GSharpKernelFloatProvider.cs:444 `NumWords + 2` -> `NumWords + 0` (K = n: Random*, HardSkip*,
+    // mutant: GSharpKernelFloatProvider.cs:442 `NumWords + 2` -> `NumWords + 0` (K = n: Random*, HardSkip*,
     // HardDecrement*)
-    // mutant: GSharpKernelFloatProvider.cs:445 `(NumWords + 1) / 2` -> `NumWords / 2` (HardDecrement1, HardDecrement3:
+    // mutant: GSharpKernelFloatProvider.cs:443 `(NumWords + 1) / 2` -> `NumWords / 2` (HardDecrement1, HardDecrement3:
     // for odd n the estimate has p + 17 bits, so a set low word no longer means a set discarded bit)
     // mutant: GpuBigIntDivRemKernels.cu.cs:227 `left > right ? 2ul : 1ul` -> `1ul : 2ul` (the check inverted:
     // PowerOfFourPlus1*, HardDecrement* keep the estimate)
@@ -87,7 +93,7 @@ public class GpuBigFloatWideOperandTests : IDisposable
         var rsqrtCase = s_rsqrtCases[caseName];
         var p = 32 * rsqrtCase.ResultWords;
         var expected = BigFloatReference.RzRsqrt(FromWords(rsqrtCase.Words), rsqrtCase.Exponent, p);
-        var path = ExpectedRsqrtPath(rsqrtCase, _workspace.WideOperandThresholdWords);
+        var path = ExpectedRsqrtPath(rsqrtCase, _workspace.WideOperands);
 
         var before = Counts();
         var gpu = RunRsqrt(GSharpKernelFloatProvider.Instance, rsqrtCase);
@@ -102,22 +108,22 @@ public class GpuBigFloatWideOperandTests : IDisposable
     // P1: Divide is RZ_p(L / R) (BigFloatReference.RoundTowardZero) and the same bits as the CPU provider. P2: the
     // operand is truncated exactly when R has at least n + 2 + g words, and the full-width check runs exactly when R
     // was cut (j > 0) and the low 2 bits of the estimate are both 0.
-    // mutant: GSharpKernelFloatProvider.cs:213 `>= WideOperandThresholdWords` -> `>` (At*, LeadingZeroDivisor* and the
+    // mutant: WideOperandOptions.cs:88 `>= ThresholdWords` -> `>` (At*, LeadingZeroDivisor* and the
     // w = n + 6 cases: the path count; WideOperandThreshold_SwitchesThePath)
-    // mutant: GSharpKernelFloatProvider.cs:425 `truncation > 0` -> `truncation >= 0` (LeadingZeroDivisor*: the check
+    // mutant: GSharpKernelFloatProvider.cs:423 `truncation > 0` -> `truncation >= 0` (LeadingZeroDivisor*: the check
     // count)
-    // mutant: GSharpKernelFloatProvider.cs:425 `& 3) == 0` -> never true (the skip condition always true: PowerPlus1*,
+    // mutant: GSharpKernelFloatProvider.cs:423 `& 3) == 0` -> never true (the skip condition always true: PowerPlus1*,
     // HardDecrement* stay one too large)
-    // mutant: GSharpKernelFloatProvider.cs:425 `& 3) == 0` -> always true (the check count)
-    // mutant: GSharpKernelFloatProvider.cs:408 `rightBits - 32 * truncatedWords` -> `... - 32` (j one word short: the
+    // mutant: GSharpKernelFloatProvider.cs:423 `& 3) == 0` -> always true (the check count)
+    // mutant: GSharpKernelFloatProvider.cs:406 `rightBits - 32 * truncatedWords` -> `... - 32` (j one word short: the
     // cut divisor has k + 32 bits and DivRem rejects the quotient buffer in WideOperands_LargeWidths and others)
-    // equivalent: GSharpKernelFloatProvider.cs:408 `... + 32` (j one word longer) survives: the cut divisor keeps k -
+    // equivalent: GSharpKernelFloatProvider.cs:406 `... + 32` (j one word longer) survives: the cut divisor keeps k -
     // 32 bits, the excess stays below 2^(p + 37 - k) = 2^-27, and the estimate is still the floor or one above; only
     // the cost changes
-    // mutant: GSharpKernelFloatProvider.cs:409 `rightBits + 32 * n + 2` -> `rightBits + 32 * n` (HardDecrement1, 4, 8:
+    // mutant: GSharpKernelFloatProvider.cs:407 `rightBits + 32 * n + 2` -> `rightBits + 32 * n` (HardDecrement1, 4, 8:
     // the estimate keeps fewer than 2 discarded bits, so its low bits no longer decide; and the check count)
-    // mutant: GSharpKernelFloatProvider.cs:429 `CorrectTruncatedEstimate(...)` removed (PowerPlus1*, HardDecrement*)
-    // mutant: GSharpKernelFloatProvider.cs:406 `n + 2` -> `n` (K = n: the excess reaches 2^5; NarrowDividend*,
+    // mutant: GSharpKernelFloatProvider.cs:427 `CorrectTruncatedEstimate(...)` removed (PowerPlus1*, HardDecrement*)
+    // mutant: GSharpKernelFloatProvider.cs:404 `n + 2` -> `n` (K = n: the excess reaches 2^5; NarrowDividend*,
     // WiderDividend*, Hard*)
     // mutant: GpuBigIntDivRemKernels.cu.cs:227 `left > right ? 2ul : 1ul` -> `1ul : 2ul` (PowerPlus1*, HardDecrement*)
     // mutant: GpuBigIntDivRemKernels.cu.cs:232 `== 2ul` -> `!= 1ul` (SameValue*, HardExact*: an exact quotient drops)
@@ -129,7 +135,7 @@ public class GpuBigFloatWideOperandTests : IDisposable
         var divideCase = s_divideCases[caseName];
         var p = 32 * divideCase.ResultWords;
         var expected = ExpectedQuotient(divideCase);
-        var path = ExpectedDividePath(divideCase, _workspace.WideOperandThresholdWords);
+        var path = ExpectedDividePath(divideCase, _workspace.WideOperands);
 
         var before = Counts();
         var gpu = RunDivide(GSharpKernelFloatProvider.Instance, divideCase);
@@ -149,9 +155,9 @@ public class GpuBigFloatWideOperandTests : IDisposable
     [Scenario(TestScenario.Boundary)]
     public void CaseTables_ReachEveryBranch()
     {
-        var threshold = GpuWorkspace.DefaultWideOperandThresholdWords;
-        var rsqrt = s_rsqrtCases.Values.Select(c => RsqrtBranch(c, threshold)).ToList();
-        var divide = s_divideCases.Values.Select(c => DivideBranch(c, threshold)).ToList();
+        var defaults = new WideOperandOptions { DivideMinDivisorWords = CaseMinDivisorWords };
+        var rsqrt = s_rsqrtCases.Values.Select(c => RsqrtBranch(c, defaults)).ToList();
+        var divide = s_divideCases.Values.Select(c => DivideBranch(c, defaults)).ToList();
         foreach (var branches in new[] { rsqrt, divide })
         {
             Assert.Contains(new Branch(false, false, false), branches);
@@ -164,8 +170,8 @@ public class GpuBigFloatWideOperandTests : IDisposable
 
     // A zero dividend over a wide divisor is 0 (the result words cleared, the sign not negative) without cutting the
     // divisor; the bit length read of the dividend decides it before any other work.
-    // mutant: GSharpKernelFloatProvider.cs:400 ClearMemoryAsync removed (the result keeps its old words)
-    // mutant: GSharpKernelFloatProvider.cs:401 `new GpuFloatResult(0, false)` -> `new GpuFloatResult(0, true)`
+    // mutant: GSharpKernelFloatProvider.cs:398 ClearMemoryAsync removed (the result keeps its old words)
+    // mutant: GSharpKernelFloatProvider.cs:399 `new GpuFloatResult(0, false)` -> `new GpuFloatResult(0, true)`
     [SkippableTheory]
     [Scenario(TestScenario.Boundary)]
     [InlineData(1)]
@@ -173,7 +179,8 @@ public class GpuBigFloatWideOperandTests : IDisposable
     public void Divide_ZeroByWideDivisor_IsZero(int n)
     {
         using var left = new GpuBigUInt(_workspace, new uint[3]);
-        using var right = new GpuBigUInt(_workspace, RandomWords(new Random(4190 + n), n + 2 + GpuWorkspace.DefaultWideOperandThresholdWords));
+        var divisorWords = n + 2 + WideOperandOptions.DefaultThresholdWords;
+        using var right = new GpuBigUInt(_workspace, RandomWords(new Random(4190 + n), divisorWords));
         using var result = new GpuBigUInt(_workspace, Enumerable.Repeat(uint.MaxValue, n).ToArray());
         var context = CreateContext();
         var leftOperand = new GpuFloatOperand(left.Handle, 7, true);
@@ -197,7 +204,7 @@ public class GpuBigFloatWideOperandTests : IDisposable
     [InlineData(7)]
     public void WideOperandThreshold_SwitchesThePath(int threshold)
     {
-        _workspace.WideOperandThresholdWords = threshold;
+        _workspace.WideOperands.ThresholdWords = threshold;
         var random = new Random(4140 + threshold);
         foreach (var n in new[] { 1, 3 })
         {
@@ -221,17 +228,80 @@ public class GpuBigFloatWideOperandTests : IDisposable
         }
     }
 
-    // The default threshold, and a negative one is rejected (the setting keeps its value).
-    // mutant: GpuWorkspace.cs:140 `ThrowIfNegative(value)` removed
+    // A workspace starts with the measured defaults, and a negative threshold is rejected (the setting keeps its
+    // value).
+    // mutant: WideOperandOptions.cs:66 `ThrowIfNegative(value)` removed
     [SkippableFact]
     [Scenario(TestScenario.SadPath)]
-    public void WideOperandThreshold_DefaultAndNegative()
+    public void WideOperandOptions_DefaultsAndNegativeThreshold()
     {
-        Assert.Equal(GpuWorkspace.DefaultWideOperandThresholdWords, _workspace.WideOperandThresholdWords);
-        Assert.Throws<ArgumentOutOfRangeException>(() => _workspace.WideOperandThresholdWords = -1);
-        Assert.Equal(GpuWorkspace.DefaultWideOperandThresholdWords, _workspace.WideOperandThresholdWords);
-        _workspace.WideOperandThresholdWords = int.MaxValue;
-        Assert.Equal(int.MaxValue, _workspace.WideOperandThresholdWords);
+        using var workspace = new GpuWorkspace(64, GpuExecutionEngine.GSharpAot);
+        var options = workspace.WideOperands;
+        Assert.Equal(
+            (WideOperandOptions.DefaultThresholdWords, WideOperandOptions.DefaultDivideMaxResultWords,
+                WideOperandOptions.DefaultDivideMinDivisorWords, WideOperandOptions.DefaultRsqrtMaxResultWords),
+            (options.ThresholdWords, options.DivideMaxResultWords, options.DivideMinDivisorWords,
+                options.RsqrtMaxResultWords));
+        Assert.Throws<ArgumentOutOfRangeException>(() => options.ThresholdWords = -1);
+        Assert.Equal(WideOperandOptions.DefaultThresholdWords, options.ThresholdWords);
+        options.ThresholdWords = int.MaxValue;
+        Assert.Equal(int.MaxValue, options.ThresholdWords);
+    }
+
+    // The cut stays within the measured widths: with the default options, Divide cuts the divisor for
+    // n = DivideMaxResultWords and not for one word more, and a divisor of DivideMinDivisorWords words and not one word
+    // narrower; Rsqrt cuts the radicand for n = RsqrtMaxResultWords and not for one more. The operands have n + 2 + g
+    // words (the narrowest that is cut) or, for the divisor width, n = 4; every result is RZ_p either way.
+    // mutant: WideOperandOptions.cs:86 `resultWords <= DivideMaxResultWords` -> `<` (the Divide at the limit is not
+    // cut)
+    // mutant: WideOperandOptions.cs:86 `resultWords <= DivideMaxResultWords` removed (the Divide above the limit is
+    // cut)
+    // mutant: WideOperandOptions.cs:87 `divisorWords >= DivideMinDivisorWords` -> `>` (the divisor at the limit is not
+    // cut)
+    // mutant: WideOperandOptions.cs:87 `divisorWords >= DivideMinDivisorWords` removed (the narrower divisor is cut)
+    // mutant: WideOperandOptions.cs:96 `resultWords <= RsqrtMaxResultWords` -> `<` (the Rsqrt at the limit is not cut)
+    // mutant: WideOperandOptions.cs:96 `resultWords <= RsqrtMaxResultWords` removed (the Rsqrt above the limit is cut)
+    [SkippableFact]
+    [Scenario(TestScenario.Boundary)]
+    public void WideOperandLimits_SwitchThePath()
+    {
+        var options = _workspace.WideOperands;
+        options.DivideMinDivisorWords = WideOperandOptions.DefaultDivideMinDivisorWords;
+        var random = new Random(4146);
+        foreach (var n in new[] { options.DivideMaxResultWords, options.DivideMaxResultWords + 1 })
+        {
+            var divideCase = new DivideCase(RandomWords(random, n), 3, false,
+                RandomWords(random, n + 2 + options.ThresholdWords), -5, n);
+            var before = Counts();
+            var quotient = RunDivide(GSharpKernelFloatProvider.Instance, divideCase);
+            var ran = Counts() - before;
+            Assert.True(ExpectedQuotient(divideCase) == quotient, $"Divide n={n}");
+            Assert.Equal((n, n <= WideOperandOptions.DefaultDivideMaxResultWords ? 1 : 0), (n, ran.Truncations));
+        }
+
+        foreach (var words in new[] { options.DivideMinDivisorWords - 1, options.DivideMinDivisorWords })
+        {
+            var divideCase = new DivideCase(RandomWords(random, 4), 3, false, RandomWords(random, words), -5, 4);
+            var before = Counts();
+            var quotient = RunDivide(GSharpKernelFloatProvider.Instance, divideCase);
+            var ran = Counts() - before;
+            Assert.True(ExpectedQuotient(divideCase) == quotient, $"Divide w={words}");
+            Assert.Equal(
+                (words, words >= WideOperandOptions.DefaultDivideMinDivisorWords ? 1 : 0),
+                (words, ran.Truncations));
+        }
+
+        foreach (var n in new[] { options.RsqrtMaxResultWords, options.RsqrtMaxResultWords + 1 })
+        {
+            var radicand = RandomWords(random, n + 2 + options.ThresholdWords);
+            var rsqrtCase = new RsqrtCase(radicand, 2 * random.Next(-25, 25), n);
+            var expected = BigFloatReference.RzRsqrt(FromWords(rsqrtCase.Words), rsqrtCase.Exponent, 32 * n);
+            var before = Counts();
+            var rsqrt = RunRsqrt(GSharpKernelFloatProvider.Instance, rsqrtCase);
+            var ran = Counts() - before;
+            Assert.True(expected == rsqrt, $"Rsqrt n={n}");
+            Assert.Equal((n, n <= WideOperandOptions.DefaultRsqrtMaxResultWords ? 1 : 0), (n, ran.Truncations));
+        }
     }
 
     // The truncated path returns the same bits as the full-width path (g = int.MaxValue), and both are RZ_p, over
@@ -250,10 +320,10 @@ public class GpuBigFloatWideOperandTests : IDisposable
             var divideCase = new DivideCase(RandomWords(random, random.Next(1, 16 * n + 3)), random.Next(-1000, 1000),
                 random.Next(2) == 0, RandomWords(random, words), random.Next(-1000, 1000), n);
 
-            _workspace.WideOperandThresholdWords = 0;
+            _workspace.WideOperands.ThresholdWords = 0;
             var truncatedRsqrt = RunRsqrt(GSharpKernelFloatProvider.Instance, rsqrtCase);
             var truncatedQuotient = RunDivide(GSharpKernelFloatProvider.Instance, divideCase);
-            _workspace.WideOperandThresholdWords = int.MaxValue;
+            _workspace.WideOperands.ThresholdWords = int.MaxValue;
             var fullRsqrt = RunRsqrt(GSharpKernelFloatProvider.Instance, rsqrtCase);
             var fullQuotient = RunDivide(GSharpKernelFloatProvider.Instance, divideCase);
 
@@ -267,7 +337,7 @@ public class GpuBigFloatWideOperandTests : IDisposable
     }
 
     // Large results and operands (n = 16 and 64, operands of 4n and 16n words), including the cases that need the
-    // correction.
+    // correction. The result-width limits are lifted, so the cut path is checked at n = 64 too.
     [SkippableTheory]
     [Category(TestCategory.Stress)]
     [Scenario(TestScenario.Boundary)]
@@ -275,6 +345,8 @@ public class GpuBigFloatWideOperandTests : IDisposable
     [InlineData(64)]
     public void WideOperands_LargeWidths_AreRoundedTowardZero(int n)
     {
+        _workspace.WideOperands.DivideMaxResultWords = int.MaxValue;
+        _workspace.WideOperands.RsqrtMaxResultWords = int.MaxValue;
         var random = new Random(4160 + n);
         foreach (var words in new[] { 4 * n, 16 * n })
         {
@@ -288,7 +360,7 @@ public class GpuBigFloatWideOperandTests : IDisposable
                 var expected = BigFloatReference.RzRsqrt(FromWords(rsqrtCase.Words), rsqrtCase.Exponent, 32 * n);
                 var before = Counts();
                 Assert.True(expected == RunRsqrt(GSharpKernelFloatProvider.Instance, rsqrtCase), $"Rsqrt n={n}, w={words}");
-                Assert.Equal(ExpectedRsqrtPath(rsqrtCase, _workspace.WideOperandThresholdWords), Counts() - before);
+                Assert.Equal(ExpectedRsqrtPath(rsqrtCase, _workspace.WideOperands), Counts() - before);
             }
 
             var divisors = new[]
@@ -300,7 +372,7 @@ public class GpuBigFloatWideOperandTests : IDisposable
             {
                 var before = Counts();
                 Assert.True(ExpectedQuotient(divideCase) == RunDivide(GSharpKernelFloatProvider.Instance, divideCase), $"Divide n={n}, w={words}");
-                Assert.Equal(ExpectedDividePath(divideCase, _workspace.WideOperandThresholdWords), Counts() - before);
+                Assert.Equal(ExpectedDividePath(divideCase, _workspace.WideOperands), Counts() - before);
             }
         }
     }
@@ -309,7 +381,7 @@ public class GpuBigFloatWideOperandTests : IDisposable
     {
         var cases = new Dictionary<string, RsqrtCase>();
         var random = new Random(4170);
-        var threshold = GpuWorkspace.DefaultWideOperandThresholdWords;
+        var threshold = WideOperandOptions.DefaultThresholdWords;
         foreach (var n in new[] { 1, 2, 3, 4, 8 })
         {
             var at = n + 2 + threshold;
@@ -349,7 +421,7 @@ public class GpuBigFloatWideOperandTests : IDisposable
     {
         var cases = new Dictionary<string, DivideCase>();
         var random = new Random(4180);
-        var threshold = GpuWorkspace.DefaultWideOperandThresholdWords;
+        var threshold = WideOperandOptions.DefaultThresholdWords;
         foreach (var n in new[] { 1, 2, 3, 4, 8 })
         {
             var at = n + 2 + threshold;
@@ -383,20 +455,20 @@ public class GpuBigFloatWideOperandTests : IDisposable
         return cases;
     }
 
-    private static PathCounts ExpectedRsqrtPath(RsqrtCase rsqrtCase, int threshold) =>
-        RsqrtBranch(rsqrtCase, threshold).Counts;
+    private static PathCounts ExpectedRsqrtPath(RsqrtCase rsqrtCase, WideOperandOptions options) =>
+        RsqrtBranch(rsqrtCase, options).Counts;
 
-    private static PathCounts ExpectedDividePath(DivideCase divideCase, int threshold) =>
-        DivideBranch(divideCase, threshold).Counts;
+    private static PathCounts ExpectedDividePath(DivideCase divideCase, WideOperandOptions options) =>
+        DivideBranch(divideCase, options).Counts;
 
-    // The branch of an Rsqrt case: §4.4 step 2 gives A and its width w; truncated when w >= n + 2 + g; the check runs
-    // when the low word of x_hi = floor(2^B_t / sqrt(floor(A / 2^j))) is 0; one above when x_hi is
-    // floor(2^B / sqrt(A)) + 1.
-    private static Branch RsqrtBranch(RsqrtCase rsqrtCase, int threshold)
+    // The branch of an Rsqrt case: §4.4 step 2 gives A and its width w; truncated when w >= n + 2 + g and
+    // n <= RsqrtMaxResultWords; the check runs when the low word of x_hi = floor(2^B_t / sqrt(floor(A / 2^j))) is 0;
+    // one above when x_hi is floor(2^B / sqrt(A)) + 1.
+    private static Branch RsqrtBranch(RsqrtCase rsqrtCase, WideOperandOptions options)
     {
         var (radicand, words) = NormalizedRadicand(rsqrtCase.Words, rsqrtCase.Exponent);
         var truncatedWords = rsqrtCase.ResultWords + 2;
-        if (words - truncatedWords < threshold)
+        if (words - truncatedWords < options.ThresholdWords || rsqrtCase.ResultWords > options.RsqrtMaxResultWords)
         {
             return default;
         }
@@ -408,13 +480,14 @@ public class GpuBigFloatWideOperandTests : IDisposable
         return new Branch(true, (estimate & uint.MaxValue) == 0, estimate != exact);
     }
 
-    // The branch of a Divide case: truncated when R has at least n + 2 + g words; the check runs when
-    // j = bits(R) - k > 0 and the low 2 bits of Q_hi = floor(floor(N / 2^j) / floor(R / 2^j)) are 0; one above when
-    // Q_hi = floor(N / R) + 1.
-    private static Branch DivideBranch(DivideCase divideCase, int threshold)
+    // The branch of a Divide case: truncated when R has at least n + 2 + g and at least DivideMinDivisorWords words and
+    // n <= DivideMaxResultWords; the check runs when j = bits(R) - k > 0 and the low 2 bits of
+    // Q_hi = floor(floor(N / 2^j) / floor(R / 2^j)) are 0; one above when Q_hi = floor(N / R) + 1.
+    private static Branch DivideBranch(DivideCase divideCase, WideOperandOptions options)
     {
         var n = divideCase.ResultWords;
-        if (divideCase.Right.Length - (n + 2) < threshold)
+        if (divideCase.Right.Length - (n + 2) < options.ThresholdWords || n > options.DivideMaxResultWords
+            || divideCase.Right.Length < options.DivideMinDivisorWords)
         {
             return default;
         }

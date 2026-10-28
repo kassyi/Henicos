@@ -208,9 +208,8 @@ public sealed class GSharpKernelFloatProvider(IGpuBigFloatArithmetic fallbackStr
             return fallbackStrategy.Divide(ref context, in left, in right, resultSig);
         }
 
-        // A divisor much wider than the result is cut to its top n + 2 words (#661 §4.12).
-        var truncatedWords = resultSig.NumWords + 2;
-        if (rightSig.NumWords - truncatedWords >= context.GpuWorkspace.WideOperandThresholdWords)
+        // A divisor much wider than the result is cut to its top n + 2 words (#661 §4.12), up to the measured width.
+        if (context.GpuWorkspace.WideOperands.CutsDivisor(resultSig.NumWords, rightSig.NumWords))
         {
             return DivideByTruncatedDivisor(context.GpuWorkspace, in left, in right, resultSig);
         }
@@ -365,9 +364,8 @@ public sealed class GSharpKernelFloatProvider(IGpuBigFloatArithmetic fallbackStr
         using var scaled = workspace.RentTemp(words);
         GpuBigIntMath.ShiftAndResize(valueOperand, checked((int)shift), scaled);
 
-        // A radicand much wider than the result is cut to its top n + 2 words (#661 §4.12).
-        var truncatedWords = resultSig.NumWords + 2;
-        if (words - truncatedWords >= workspace.WideOperandThresholdWords)
+        // A radicand much wider than the result is cut to its top n + 2 words (#661 §4.12), up to the measured width.
+        if (workspace.WideOperands.CutsRadicand(resultSig.NumWords, words))
         {
             return RsqrtOfTruncatedRadicand(workspace, scaled, words, (value.Exponent - shift) / 2, resultSig);
         }

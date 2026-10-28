@@ -80,7 +80,7 @@ In CPU fallback mode (no `GSharpKernelProvider`, or `GpuKernelLoader.IsCpuFallba
 
 ### Wide Divisors and Radicands
 
-For a result of $n$ words ($p = 32n$ bits), `Divide` and `Rsqrt` cut a divisor or radicand of at least $n + 2 + g$ words to its top $K = n + 2$ words, where $g$ is [`GpuWorkspace.WideOperandThresholdWords`](../gpu_workspace/GpuWorkspace.md#wideoperandthresholdwords) (default 4). The result is the same bits as without the cut; only the work changes.
+For a result of $n$ words ($p = 32n$ bits), `Divide` and `Rsqrt` cut a divisor or radicand of at least $n + 2 + g$ words ($g = 4$) to its top $K = n + 2$ words, within the widths where the cut is faster (below). The result is the same bits as without the cut; only the work changes.
 
 - The integer computed from the top words, the quotient $Q_{hi}$ or the inverse root $x_{hi}$, is the exact floor or one above it. A smaller divisor or radicand makes the result larger, never smaller, and the 64 extra bits of the top words keep the excess below 1.
 - When a bit that the rounding to $p$ bits discards is set (one of the low 2 bits of $Q_{hi}$, which has $p + 2$ or $p + 3$ bits; the low word of $x_{hi}$, which has at least $p + 33$ bits), the floor and the value one above it round to the same $p$ bits, and the result is used as it is. Only the low word is read back.
@@ -88,7 +88,30 @@ For a result of $n$ words ($p = 32n$ bits), `Divide` and `Rsqrt` cut a divisor o
 
 This is the form of MPFR's `mpfr_div` for a divisor longer than the quotient (`src/div.c`), with the check made by one multiplication when the discarded bits leave the result open. The CPU fallback does not truncate.
 
-The cut pays off when the full-width computation is in a slower size range of the GPU division and inverse square root than the cut one. Measured on one GPU: for $n \le 16$ a divisor of about 30 words or more and a radicand of about 64 words or more run 5 to 15 times faster; below those sizes both forms take about the same time (ratios of 0.9 to 1.1 are within the variation of the fixed costs). For $n \ge 32$ the top $K$ words are already in the slow range, and the cut form was up to 2 times slower for operands of $4n$ to $16n$ words. That ratio comes mostly from the full-width computation getting faster with the width in that range, not from the cut form getting slower: at $n = 64$ the cut `Rsqrt` takes about 24 ms at every width, while the full-width one drops from 24 ms (66 words) to 14 to 17 ms (264 to 1024 words); the full-width `Divide` drops from 15 ms (68 words) to 11 ms (1024 words), while the cut one takes 16 to 18 ms up to 264 words and 24 ms at 1024 words. Set $g$ to `int.MaxValue` to turn the cut off.
+The cut pays off only when it moves the work out of the slow size range of the GPU division or inverse square root. The division takes about 2 ms for a divisor of up to 32 words and 11 to 17 ms for a wider one; the inverse square root of the cut radicand takes at most 1.7 ms up to $n = 44$ and 24 ms from $n = 45$. So the cut is used only within these widths:
+
+| Operation | Cut when | Reason |
+| --- | --- | --- |
+| `Divide` | $n \le 30$ and a divisor of at least 33 words | The cut divisor of $n + 2$ words stays in the fast range; a divisor of up to 32 words is in it already |
+| `Rsqrt` | $n \le 44$ | The inverse square root of the top words stays in its fast range |
+
+Measured with `Henicos.Benchmarks arithmetic wide` on an RTX 3070 Ti (time with the cut / time without, operands of $w$ words):
+
+| $n$ | $w$ | `Divide` | `Rsqrt` |
+| --: | --: | --: | --: |
+| 8 | 14 | 1.05 | 1.06 |
+| 8 | 32 | 0.88 | 0.66 |
+| 8 | 128 | 0.12 | 0.05 |
+| 16 | 34 | 0.16 | 0.86 |
+| 30 | 120 | 0.15 | 0.06 |
+| 30 | 480 | 0.16 | 0.09 |
+| 31 | 124 | 0.96 | 0.06 |
+| 32 | 512 | 1.23 | 0.09 |
+| 44 | 176 | 1.44 | 0.08 |
+| 45 | 180 | 1.42 | 1.06 |
+| 64 | 1024 | 1.51 | 1.68 |
+
+For a divisor of 32 words or fewer, the `Divide` ratios varied between 0.87 and 1.19 over four runs, with no consistent gain, so the full width is kept there. Above those widths the cut form is slower mostly because the full-width computation gets faster with the width there (the full-width `Divide` takes 15 ms at 124 words and 11 ms at 1024 words), while the cut one stays at about 16 ms for `Divide` and 24 ms for `Rsqrt`. The limits and $g$ are internal.
 
 ### Transcendental Functions
 

@@ -63,8 +63,8 @@ public class GSharpKernelFloatProviderDispatchTests
             var results = RunEveryOperation(workspace, provider);
 
             // In CPU fallback mode each operation is forwarded to the fallback exactly once.
-            // mutant: GSharpKernelFloatProvider.cs:47 `||` -> `&&` (and L173, L206, L250, L289, L333, L485, L504, L524)
-            // mutant: GSharpKernelFloatProvider.cs:85 `&&` -> `||`, L540 `&&` -> `||`
+            // mutant: GSharpKernelFloatProvider.cs:47 `||` -> `&&` (and L173, L206, L249, L288, L332, L483, L502, L522)
+            // mutant: GSharpKernelFloatProvider.cs:85 `&&` -> `||`, L538 `&&` -> `||`
             // mutant: GSharpKernelFloatProvider.cs Pow `return fallbackStrategy.Pow(...)` -> `return
             // GpuBigFloatTranscendentals.Pow(...)` (Pow not forwarded)
             foreach (var operation in s_dispatchedOperations)

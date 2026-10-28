@@ -113,34 +113,14 @@ public class GpuWorkspace : IGpuResourceScope
         get;
     } = new();
 
-    /// <summary>The default <see cref="WideOperandThresholdWords"/>.</summary>
-    public const int DefaultWideOperandThresholdWords = 4;
-
     /// <summary>
-    /// Gets or sets the threshold <c>g</c>, in words, from which the big-float <c>Divide</c> and <c>Rsqrt</c> on the
-    /// GPU truncate a divisor or radicand much wider than the result. Default
-    /// <see cref="DefaultWideOperandThresholdWords"/>.
+    /// Gets when the big-float <c>Divide</c> and <c>Rsqrt</c> on the GPU cut a divisor or radicand much wider than the
+    /// result to its top words; the tests and the benchmarks change it to force the cut on or off.
     /// </summary>
-    /// <remarks>
-    /// For a result of <c>n</c> words, a divisor or radicand of at least <c>n + 2 + g</c> words is cut to its top
-    /// <c>n + 2</c> words. The result computed from that is the exact one or one unit above it, and one multiplication
-    /// at the full width decides which when the discarded bits of the result leave it open. The results are the same
-    /// bits for every <c>g</c> (the exact value rounded toward zero); <c>g</c> changes only the speed, and
-    /// <see cref="int.MaxValue"/> turns the cut off. The cut pays off when the full-width division or inverse square
-    /// root falls into a slower size range than the top words (measured on one GPU: a divisor of about 30 words, a
-    /// radicand of about 64 words); for results of 32 words or more the top words are already in that range, and the
-    /// cut can be slower. The CPU paths do not truncate.
-    /// </remarks>
-    /// <exception cref="ArgumentOutOfRangeException">The value is negative.</exception>
-    public int WideOperandThresholdWords
+    internal WideOperandOptions WideOperands
     {
         get;
-        set
-        {
-            ArgumentOutOfRangeException.ThrowIfNegative(value);
-            field = value;
-        }
-    } = DefaultWideOperandThresholdWords;
+    } = new();
 
     /// <summary>
     /// Gets the counts of the truncated wide-operand paths of the big-float <c>Divide</c> and <c>Rsqrt</c> on this
