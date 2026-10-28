@@ -43,7 +43,7 @@ namespace Kassyi.GSharp.Compiler.Analysis;
 /// on the back edge of a loop, and no longer reports one whose later use is on a branch that the barrier does not reach.
 /// </para>
 /// </remarks>
-internal sealed class CrossBarrierLiveness
+internal sealed partial class CrossBarrierLiveness
 {
     private readonly SemanticModel _model;
 
@@ -693,87 +693,4 @@ internal sealed class CrossBarrierLiveness
     }
 
     private static bool IsSet(ulong[] bits, int index) => (bits[index / 64] & (1UL << (index % 64))) != 0;
-
-    private enum FlowEventKind
-    {
-        Read,
-        Write,
-        Split,
-
-        // A delegate that may run after any later split captures the local (forward, AddPinnedAcrossSplit)
-        Pin
-    }
-
-    private readonly struct FlowEvent(FlowEventKind kind, int local)
-    {
-        public static readonly FlowEvent Split = new(FlowEventKind.Split, -1);
-
-        public FlowEventKind Kind { get; } = kind;
-
-        public int Local { get; } = local;
-
-        public static FlowEvent Read(int local) => new(FlowEventKind.Read, local);
-
-        public static FlowEvent Write(int local) => new(FlowEventKind.Write, local);
-
-        public static FlowEvent Pin(int local) => new(FlowEventKind.Pin, local);
-    }
-
-    // The statements of a Gpu.SyncGrid body that an operation belongs to, by index in SyncGridBody.Flatten
-    private readonly record struct ElementRange(int First, int Last);
-
-    private sealed class FlowNode(int index)
-    {
-        public int Index { get; } = index;
-
-        public ImmutableArray<FlowEvent>.Builder Events { get; } = ImmutableArray.CreateBuilder<FlowEvent>();
-
-        public ImmutableArray<int>.Builder Successors { get; } = ImmutableArray.CreateBuilder<int>();
-
-        // The element ranges of the first and the last top-level operation of the node in a Gpu.SyncGrid body
-        public ElementRange? First { get; set; }
-
-        public ElementRange? Last { get; set; }
-    }
-
-    // The gaps of a Gpu.SyncGrid body, between its flattened statements (SyncGridBody)
-    private sealed class SyncGridGaps(ImmutableArray<SyncGridElement> elements, SemanticModel model)
-    {
-        // The statement that contains syntax, or the statements that syntax contains (a nested Gpu.SyncGrid(body))
-        public ElementRange? RangeOf(SyntaxNode syntax)
-        {
-            var first = -1;
-            var last = -1;
-            for (var i = 0; i < elements.Length; i++)
-            {
-                var span = elements[i].Node.Span;
-                if (span.Contains(syntax.Span))
-                {
-                    return new ElementRange(i, i);
-                }
-
-                if (syntax.Span.Contains(span))
-                {
-                    first = first < 0 ? i : first;
-                    last = i;
-                }
-            }
-
-            return first < 0 ? null : new ElementRange(first, last);
-        }
-
-        // Whether a grid sync follows one of the statements from 'from' up to the one before 'to'
-        public bool HasGap(int from, int to)
-        {
-            for (var i = from; i < to; i++)
-            {
-                if (SyncGridBody.IsSyncPoint(elements, i, model))
-                {
-                    return true;
-                }
-            }
-
-            return false;
-        }
-    }
 }
