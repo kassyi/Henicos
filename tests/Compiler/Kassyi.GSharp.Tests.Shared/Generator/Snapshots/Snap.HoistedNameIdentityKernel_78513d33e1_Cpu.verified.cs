@@ -970,32 +970,24 @@ __gsharp_switch_1_state_1:
 if((__gsharp_ctx->__gsharp_id_1_t&1)==0)
 {
 __gsharp_ctx->__gsharp_id_2_acc+=__gsharp_ctx->__gsharp_id_3_step;
-goto __gsharp_switch_1_state_2;
+goto __gsharp_id_4_done;
 }
 __gsharp_ctx->__gsharp_id_2_acc+=100;
-goto __gsharp_switch_1_state_2;
+__gsharp_id_4_done:;
+__gsharp_ctx->__gsharp_id_5_step=1000;
+__gsharp_state=2;
+return;
 }
 case 2:
 __gsharp_switch_1_state_2:
 {
-__gsharp_ctx->__gsharp_id_5_step=1000;
-__gsharp_state=3;
-return;
-}
-case 3:
-__gsharp_switch_1_state_3:
-{
 if((__gsharp_ctx->__gsharp_id_1_t&1)!=0)
 {
 __gsharp_ctx->__gsharp_id_2_acc+=__gsharp_ctx->__gsharp_id_5_step;
-goto __gsharp_switch_1_state_4;
+goto __gsharp_id_6_done;
 }
 __gsharp_ctx->__gsharp_id_2_acc+=2000;
-goto __gsharp_switch_1_state_4;
-}
-case 4:
-__gsharp_switch_1_state_4:
-{
+__gsharp_id_6_done:;
 __gsharp_id_0_output[__gsharp_ctx->__gsharp_id_1_t]=__gsharp_ctx->__gsharp_id_2_acc;
 __gsharp_state=-1;
 return;
@@ -1077,34 +1069,28 @@ case 1:
 if ((__gsharp_ctx.t & 1) == 0)
 {
 __gsharp_ctx.acc += __gsharp_ctx.__gsharp_id_3_step;
-goto case 2;
+goto __gsharp_label_1_done;
 }
 
 __gsharp_ctx.acc += 100;
-goto case 2;
+__gsharp_label_1_done:
+;
+__gsharp_ctx.__gsharp_id_5_step = 1000;
+__gsharp_ctx.__gsharp_state = 2;
+return;
 }
 
 case 2:
 {
-__gsharp_ctx.__gsharp_id_5_step = 1000;
-__gsharp_ctx.__gsharp_state = 3;
-return;
-}
-
-case 3:
-{
 if ((__gsharp_ctx.t & 1) != 0)
 {
 __gsharp_ctx.acc += __gsharp_ctx.__gsharp_id_5_step;
-goto case 4;
+goto __gsharp_label_2_done;
 }
 
 __gsharp_ctx.acc += 2000;
-goto case 4;
-}
-
-case 4:
-{
+__gsharp_label_2_done:
+;
 output[__gsharp_ctx.t] = __gsharp_ctx.acc;
 __gsharp_ctx.__gsharp_state = -1;
 return;
