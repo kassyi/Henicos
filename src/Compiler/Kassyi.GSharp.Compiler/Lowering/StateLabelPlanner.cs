@@ -16,8 +16,13 @@ namespace Kassyi.GSharp.Compiler.Lowering;
 /// The states are the stretches between the statements that start a state: the labels found so far and the split
 /// points. A new state label can move another <c>goto</c> into another state than its label, so the search repeats until
 /// nothing changes; it ends because the set only grows (at most one round per label, plus one).
+/// <para>
+/// The type is internal: the lowering passes that take its result (<see cref="ContextHoister"/>,
+/// <see cref="StateMachineLowerer"/>) are public, but they take the set as <see cref="HashSet{T}"/> of
+/// <see cref="DeclarationKey"/> and find it themselves when it is not given, so no caller outside the compiler needs it.
+/// </para>
 /// </remarks>
-public static class StateLabelPlanner
+internal static class StateLabelPlanner
 {
     /// <summary>Returns the keys (<see cref="LoweringIdentity.ForDeclaration"/>) of the top-level labels of <paramref name="body"/> that start a state.</summary>
     /// <param name="body">The flattened body that <see cref="StateMachineLowerer"/> lowers.</param>
