@@ -1,0 +1,13 @@
+# Version updates for the actions used in .github/workflows, once a month in one pull request.
+# NuGet is left to Dependabot security updates (enabled in the repository settings): the package versions are written
+# in each csproj, so version updates would open one pull request per project for the same package.
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly
+    groups:
+      actions:
+        patterns:
+          - "*"

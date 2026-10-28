@@ -49,10 +49,11 @@ public class DeviceDynamicSharedMemoryManagedTests : TranspilerTestBase
     public void Test_Managed_StaticHelper_PersistsAcrossCalls() =>
         DeviceDynamicSharedMemoryScenarios.StaticHelperPersistsAcrossCalls(s_runManaged);
 
+    // CUDA traps when a region that is not the last one grows; the managed path throws, as the native one (#544, C10)
     [Fact]
-    [Scenario(TestScenario.Boundary)]
-    public void Test_Managed_GrowingHelper_AfterCallerDeclaration_PreservesBothBuffers() =>
-        DeviceDynamicSharedMemoryScenarios.GrowingHelperAfterCallerDeclaration(s_runManaged);
+    [Scenario(TestScenario.SadPath)]
+    public void Test_Managed_GrowingHelper_AfterCallerDeclaration_Throws() =>
+        DeviceDynamicSharedMemoryScenarios.GrowingHelperAfterCallerDeclarationThrows(s_runManaged);
 
     [Fact]
     [Scenario(TestScenario.Boundary)]

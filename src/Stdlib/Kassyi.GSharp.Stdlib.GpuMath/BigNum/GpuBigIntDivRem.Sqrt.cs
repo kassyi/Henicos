@@ -57,13 +57,78 @@ public static partial class GpuBigIntDivRem
         }
     }
 
+    /// <summary>
+    /// Computes <c>floor(sqrt(a))</c> exactly for an operand <c>a</c> of <c>2n</c> words with
+    /// <c>2^(64n - 2) &lt;= a &lt; 2^(64n)</c>, so that the root has exactly <c>32n</c> bits.
+    /// </summary>
+    /// <param name="operand">The operand <c>a</c>, of <c>2 * root.NumWords</c> words and bit length <c>64n</c> or
+    /// <c>64n - 1</c>.</param>
+    /// <param name="root">Receives <c>floor(sqrt(a))</c> (<c>n</c> words).</param>
+    /// <exception cref="ArgumentException">Thrown when <paramref name="operand"/> does not have <c>2n</c> words. Only the
+    /// word count is checked: the bit length <c>64n</c> or <c>64n - 1</c> is the caller's precondition, and another bit
+    /// length gives a wrong root or a correction failure.</exception>
+    /// <remarks>
+    /// <para>
+    /// The top <c>n + 1</c> words <c>A_top = floor(a / 2^j)</c>, <c>j = 32(n - 1)</c>, have the bit length that
+    /// <see cref="InverseSqrt"/> needs. With <c>m = ceil(n / 2)</c> margin words it gives
+    /// <c>x = floor(2^B / sqrt(A_top))</c>, <c>B = 32(n + 1 + m)</c>, and
+    /// <c>r' = floor(A_top·x / 2^(16n + 32m + 48))</c> lies within <c>2^-16 + 2^-32</c> below <c>sqrt(a)</c>, so it is
+    /// <c>floor(sqrt(a))</c> or one less (the floor of <c>x</c> loses less than <c>2^(16(n - 1) - 32m)</c>, the low words
+    /// of <c>a</c> less than <c>2^-32</c>).
+    /// </para>
+    /// <para>
+    /// <see cref="IGpuAdvancedMathProvider.SqrtFloorCorrection"/> then moves <c>r'</c> to the floor on the device, from
+    /// <c>a - r'^2</c>: no host synchronization beyond those of <see cref="InverseSqrt"/>.
+    /// </para>
+    /// </remarks>
+    internal static void SqrtFloor(GpuBigUInt operand, GpuBigUInt root)
+    {
+        var n = root.NumWords;
+        if (operand.NumWords != 2 * n)
+        {
+            throw new ArgumentException(
+                $"SqrtFloor needs an operand of twice the root words. operand: {operand.NumWords}, root: {n} words.");
+        }
 
+        var workspace = operand.Workspace;
+        var marginWords = SqrtFloorMarginWords(n);
+
+        // A_top: the top n + 1 words of a, borrowed without a copy.
+        var top = operand.Handle.Slice(n - 1, n + 1).AsView(workspace);
+        using var inverse = workspace.RentTemp(n + 1 + marginWords);
+        InverseSqrt(top, inverse, marginWords);
+
+        using var product = workspace.RentTemp(2 * (n + 1) + marginWords);
+        GpuBigIntMath.Mul(top, inverse, product);
+        GpuBigIntMath.ShiftAndResize(product, -SqrtFloorEstimateShift(n, marginWords), root);
+
+        using var rootSquared = workspace.RentTemp(2 * n);
+        GpuBigIntMath.Mul(root, root, rootSquared);
+        using var slack = workspace.RentTemp(2 * n + 1);
+        using var trial = workspace.RentTemp(2 * n + 1);
+        workspace.Provider.SqrtFloorCorrection(workspace, operand, rootSquared, root, slack, trial);
+    }
+
+    /// <summary>
+    /// The margin words <c>m = ceil(n / 2)</c> of the inverse square root behind the <see cref="SqrtFloor"/> estimate
+    /// for a root of <paramref name="rootWords"/> words: enough to keep the error of the estimate below
+    /// <c>2^-16 + 2^-32</c>.
+    /// </summary>
+    internal static int SqrtFloorMarginWords(int rootWords) => (rootWords + 1) / 2;
+
+    /// <summary>
+    /// The right shift that turns <c>A_top·x</c> into the <see cref="SqrtFloor"/> estimate:
+    /// <c>B - j/2 = 32(n + 1 + m) - 16(n - 1) = 16n + 32m + 48</c>.
+    /// </summary>
+    internal static int SqrtFloorEstimateShift(int rootWords, int marginWords) =>
+        16 * rootWords + 32 * marginWords + 48;
 
     /// <summary>
     /// Computes the integer square root ($\lfloor\sqrt{\text{leftOperand}}\rfloor$) on the GPU using inverse square root approximation and Heron's refinement.
     /// </summary>
     /// <param name="leftOperand">The non-negative big integer operand.</param>
-    /// <param name="resultBuffer">The destination buffer receiving the integer square root.</param>
+    /// <param name="resultBuffer">The destination buffer receiving the integer square root. It may be the operand, or
+    /// overlap it: every path reads the operand completely before it writes the result.</param>
     /// <exception cref="ArgumentException">Thrown when <paramref name="leftOperand"/> and <paramref name="resultBuffer"/> have mismatched word lengths.</exception>
     /// <remarks>
     /// <para><b>Algorithm:</b> First calculates an initial guess via Newton-Raphson inverse square root on the GPU, then refines it using Heron's method to guarantee the exact mathematical floor integer square root.</para>

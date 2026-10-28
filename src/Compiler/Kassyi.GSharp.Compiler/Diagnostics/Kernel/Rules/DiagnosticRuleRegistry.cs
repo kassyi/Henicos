@@ -15,15 +15,18 @@ internal static class DiagnosticRuleRegistry
         LinqNotSupportedRule.Instance,
         ManualEnumeratorRule.Instance,
         ManualUnmanagedAllocationRule.Instance,
+        ParallelAggregateRule.Instance,
         ParamsModifierNotSupportedRule.Instance,
         ProhibitedApiRule.Instance,
         RuntimeOnlyTypeRule.Instance,
         SharedMemoryDisposableRule.Instance,
         SharedMemorySizeRule.Instance,
+        StackArrayEscapeRule.Instance,
         StaticMemberAccessRule.Instance,
         StructLayoutRule.Instance,
         UnsupportedConstructRule.Instance,
         UserDefinedOperatorRule.Instance,
+        WarpShuffleWidthRule.Instance,
         WmmaRule.Instance
     );
 

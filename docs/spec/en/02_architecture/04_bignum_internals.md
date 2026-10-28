@@ -195,7 +195,7 @@ Because floating-point operations ultimately delegate to integer significand ari
 | **Bitwise Operations** | $\mathcal{O}(N)$ | Approaching $\mathcal{O}(1)$ step time due to massive parallelism. |
 | **GCD** | $\mathcal{O}(N^2)$ to $\mathcal{O}(N \log^2 N)$ | Lehmer's GCD algorithm optimized for GPU execution. |
 | **ModPow** | $\mathcal{O}(K \cdot N \log N)$ | Binary Exponentiation with Montgomery/Barrett Reduction ($K$ = bit-length of $b$). |
-| **Fermat PRP Loop** | $\mathcal{O}(\text{iters} \cdot N \log N)$ | Lucas-Lehmer Test (NTT Squaring + Fast Mersenne Modulo). |
+| **Fermat PRP Loop** | $\mathcal{O}(E \cdot N \log N)$ | Fermat PRP test of $2^{2E+1} - 2^E + 11$: a chain of $2E + 1$ NTT squarings, each reduced by a three-pass fold, under the Gerbicz-Li check. |
 | **BBP Verification** | $\mathcal{O}(N \log N \cdot \log D)$ | BBP Formula with Modular Exponentiation ($D$ = hex digits). |
 
 ### Multi-Engine Architecture
@@ -226,7 +226,7 @@ flowchart TD
 
 The context routes execution to the specified engine and performs the following roles:
 - **Buffer Pooling**: Pre-allocates working buffers within the workspace memory manager to avoid `cudaMalloc` overhead during computation.
-- **RentTemp Object Pool**: Handles intermediate values (`GpuBigIntExpr`) dynamically without creating garbage.
+- **RentTemp Object Pool**: Handles intermediate values (`GpuBigIntExpr`) dynamically without creating garbage. A rented buffer is owned and returns to the pool when it is disposed; buffers freed while a CUDA graph is captured stay with the graph until it is disposed.
 - **Kernel Fusion**: Dispatches fused MegaKernels to minimize global memory bandwidth.
 
 ### GPU Debugging Best Practices (CPU-First / TDD Workflow)

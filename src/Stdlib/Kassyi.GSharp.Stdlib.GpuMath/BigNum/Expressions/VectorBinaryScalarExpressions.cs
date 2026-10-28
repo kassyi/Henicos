@@ -1,9 +1,20 @@
 namespace Kassyi.GSharp.Stdlib.GpuMath.BigNum.Expressions;
 
-internal readonly record struct VectorScalarOperands(
-    GpuBigIntArray Vector,
-    GpuBigInt Scalar,
-    GpuBigIntArray Destination);
+internal readonly ref struct VectorScalarOperands
+{
+    public VectorScalarOperands(GpuBigIntArrayView vector, GpuBigInt scalar, GpuBigIntArrayView destination)
+    {
+        Vector = vector;
+        Scalar = scalar;
+        Destination = destination;
+    }
+
+    public GpuBigIntArrayView Vector { get; }
+
+    public GpuBigInt Scalar { get; }
+
+    public GpuBigIntArrayView Destination { get; }
+}
 
 internal abstract class VectorBinaryScalarExpressionBase(
     [TakesOwnership] IGpuBigIntVectorExpression vector,
@@ -13,41 +24,42 @@ internal abstract class VectorBinaryScalarExpressionBase(
     public int Length => vector.Length;
     public int WordsPerElement { get; } = wordsPerElement;
 
-    private GpuBigUIntArray _finalValues;
-    private GpuBigUIntArray _finalSigns;
-    private bool _allocated;
+    // The result buffers, lent until the next evaluation or Dispose; a caller's target is never kept (design 4.6)
+    private readonly VectorResultCache _cache = new();
 
     protected uint BlockDimX => (uint)Math.Min(1024, WordsPerElement);
 
-    public GpuBigIntArray Evaluate(
+    public GpuBigIntArrayView Evaluate(
         GpuWorkspace workspace,
         int elementOffset = 0,
         int? elementCount = null,
-        GpuBigUIntArray? targetResult = null)
+        GpuBigUIntArrayView targetResult = default)
     {
         var evalCount = elementCount ?? (Length - elementOffset);
+        // The target is checked before the children run, so that a rejected target evaluates nothing
+        var targetValues = VectorResultCache.HasTarget(targetResult)
+            ? VectorResultCache.TargetValues(targetResult, evalCount, WordsPerElement)
+            : default;
+
         var vecResult = vector.Evaluate(workspace, elementOffset, evalCount);
         var scalarResult = scalar.Evaluate(workspace);
+        try
+        {
+            var destination = _cache.Signed(workspace, evalCount, WordsPerElement, targetValues);
+            var operands = new VectorScalarOperands(vecResult, scalarResult, destination);
+            // An empty vector launches nothing: a grid of 0 blocks is an invalid launch.
+            if (evalCount > 0)
+            {
+                DispatchKernel(workspace, operands, (uint)evalCount);
+            }
 
-        if (targetResult != null)
-        {
-            _finalValues = targetResult.Value;
+            return destination;
         }
-        else if (!_allocated)
+        finally
         {
-            _finalValues = new GpuBigUIntArray(workspace, evalCount, WordsPerElement);
-            _finalSigns = new GpuBigUIntArray(workspace, evalCount, 1);
-            _allocated = true;
+            // An owned scalar result (a compound scalar expression) goes back to the pool; a leaf's is borrowed
+            scalarResult.Dispose();
         }
-
-        var destination = new GpuBigIntArray(_finalValues, _finalSigns);
-        var operands = new VectorScalarOperands(vecResult, scalarResult, destination);
-        // An empty vector launches nothing: a grid of 0 blocks is an invalid launch.
-        if (evalCount > 0)
-        {
-            DispatchKernel(workspace, operands, (uint)evalCount);
-        }
-        return destination;
     }
 
     protected GpuBigIntVectorKernels.AotContexts.VectorBinaryOperation CreateScalarOp(VectorScalarOperands operands) =>
@@ -82,14 +94,15 @@ internal abstract class VectorBinaryScalarExpressionBase(
 
     public void Dispose()
     {
-        if (_allocated)
+        // A cache release that throws (a failed capture refuses the clear) does not skip the children
+        try
         {
-            _finalValues.Dispose();
-            _finalSigns.Dispose();
-            _allocated = false;
+            _cache.Dispose();
         }
-
-        vector.Dispose();
+        finally
+        {
+            vector.Dispose();
+        }
     }
 }
 

@@ -173,6 +173,9 @@ public static class MethodTranspiler
         context.Emitter.Writer = disposeWriter;
         UsingTranspiler.WriteDisposeDefinitions(ref context, structSources?.Disposes);
 
+        // After the Dispose parts, which an export cuts off the front of the text: these stay with the method's text
+        SortComparisonMembers.WriteDefinitions(ref context);
+
         context.Emitter.Writer = mainWriter;
         var sortedStructs = StructTranspiler.GetTopologicallySortedStructs(ref context);
         foreach (var structSym in sortedStructs)

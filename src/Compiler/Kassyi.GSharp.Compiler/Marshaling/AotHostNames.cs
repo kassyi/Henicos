@@ -16,6 +16,12 @@ internal static class AotHostNames
     /// <summary>The prefix of the method that copies a native shadow struct back to its host struct.</summary>
     public const string UnmarshalMethodPrefix = "Unmarshal_";
 
+    /// <summary>
+    /// The prefix of the CPU method that replaces each array a host struct holds with a copy, for a kernel argument whose
+    /// writes the device never sends back.
+    /// </summary>
+    public const string CopyArraysMethodPrefix = "CopyArrays_";
+
     /// <summary>The prefix of the class that loads the fatbin module of one assembly.</summary>
     public const string ModuleContextPrefix = "GSharpModuleContext_";
 
@@ -96,6 +102,13 @@ internal static class AotHostNames
         return ref writer;
     }
 
+    /// <summary>Appends <c>CopyArrays_{key}</c>.</summary>
+    public static ref readonly SourceWriter AppendCopyArraysMethodName(this in SourceWriter writer, ISymbol symbol)
+    {
+        writer.Append(CopyArraysMethodPrefix).AppendMarshalTypeKey(symbol);
+        return ref writer;
+    }
+
     /// <summary>Appends <c>AotContexts.Marshal_{key}</c>, the way a kernel wrapper calls it.</summary>
     public static ref readonly SourceWriter AppendQualifiedMarshalMethodName(this in SourceWriter writer, ISymbol symbol)
     {
@@ -108,6 +121,14 @@ internal static class AotHostNames
     {
         writer.Append(AotContextsClassName).Append('.').AppendUnmarshalMethodName(symbol);
         return ref writer;
+    }
+
+    /// <summary>Gets <c>AotContexts.CopyArrays_{key}</c>, the way a kernel wrapper calls it.</summary>
+    public static string GetQualifiedCopyArraysMethodName(ISymbol symbol)
+    {
+        using var writer = new SourceWriter();
+        writer.Append(AotContextsClassName).Append('.').AppendCopyArraysMethodName(symbol);
+        return writer.ToString();
     }
 
     /// <summary>Gets the name that <see cref="AppendQualifiedMarshalMethodName"/> writes.</summary>

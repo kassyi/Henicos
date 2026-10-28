@@ -2315,11 +2315,13 @@ int __gsharp_stack___gsharp_id_3_p[1]{};
 int* __gsharp_id_3_p = __gsharp_stack___gsharp_id_3_p;
 __gsharp_id_3_p[0]=__gsharp_id_2_tid;
 __gsharp_id_1_result[__gsharp_id_2_tid]=([&]() -> auto {
+auto&& __gsharp_fusion_src = __gsharp_id_0_data;
 int __gsharp_fusion_res = 0;
-int __gsharp_fusion_length = __gsharp_id_0_data.length;
-for (int __gsharp_i = 0; __gsharp_i < __gsharp_fusion_length; __gsharp_i++)
+int __gsharp_fusion_lo = 0;
+int __gsharp_fusion_hi = __gsharp_fusion_src.length;
+for (int __gsharp_i = __gsharp_fusion_lo; __gsharp_i < __gsharp_fusion_hi; __gsharp_i++)
 {
-auto __gsharp_val_0 = __gsharp_id_0_data[__gsharp_i];
+auto __gsharp_val_0 = __gsharp_fusion_src[__gsharp_i];
 if (([&](auto __gsharp_id_4_x) {
 return __gsharp_id_4_x>__gsharp_id_3_p[0];
 }

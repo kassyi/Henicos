@@ -4,12 +4,18 @@ enum class GSharpErrorCode : int32_t {
     NotSupported = 1,
     InvalidOperation = 2,
     IndexOutOfRange = 3,
-    ArgumentOutOfRange = 4
+    ArgumentOutOfRange = 4,
+    Argument = 5
 };
 
 struct GSharpErrorSlot {
     std::atomic<int32_t> code{0};
     const char* message{nullptr};
+    // The first report's message, copied: a message formatted at run time (with the place and the values) does not
+    // outlive the function that formats it. Reset keeps the text, so a message just consumed stays readable. The text is
+    // UTF-8 (the host reads it so); a longer message is cut before the character that does not fit, never inside one.
+    // 512 bytes hold the longest message of the prelude (a missing shuffle lane, with its place and hint)
+    char text[512]{};
 
     inline void Reset() noexcept {
         message = nullptr;
@@ -25,7 +31,21 @@ struct GSharpErrorSlot {
         if (code.compare_exchange_strong(expected, static_cast<int32_t>(errCode),
                                          std::memory_order_acq_rel,
                                          std::memory_order_relaxed)) {
-            message = msg;
+            if (msg == nullptr) {
+                message = nullptr;
+                return;
+            }
+            size_t length = std::strlen(msg);
+            if (length >= sizeof(text)) {
+                length = sizeof(text) - 1;
+                // msg[length] is the first byte left out; while it continues a UTF-8 character, leave that character out
+                while (length > 0 && (static_cast<unsigned char>(msg[length]) & 0xC0u) == 0x80u) {
+                    --length;
+                }
+            }
+            std::memcpy(text, msg, length);
+            text[length] = '\0';
+            message = text;
         }
     }
 };
@@ -55,13 +75,51 @@ inline void __gsharp_unsupported(const char* message)
     }
 }
 
+// The depth of the comparisons of MemoryExtensions.Sort that the thread is running (Sort.hpp).
+inline thread_local int __gsharp_sort_compare_depth = 0;
+
 // Records a portable trap failure (e.g. empty sequence or out-of-range index in StackLinq).
 // First writer wins across OpenMP threads; the managed launch wrapper inspects the slot and throws.
+// [WHY] .NET wraps an exception thrown by the comparison of a sort: IndexOutOfRangeException becomes ArgumentException
+// (the comparer is inconsistent) and any other InvalidOperationException (ArraySortHelper.Sort).
 inline void __gsharp_trap(GSharpErrorCode code, const char* message)
 {
+    if (__gsharp_sort_compare_depth > 0)
+    {
+        if (code == GSharpErrorCode::IndexOutOfRange)
+        {
+            code = GSharpErrorCode::Argument;
+            message = "Unable to sort because the IComparer.Compare() method returns inconsistent results.";
+        }
+        else
+        {
+            code = GSharpErrorCode::InvalidOperation;
+            message = "Failed to compare two elements in the array.";
+        }
+    }
+
     if (__gsharp_active_error_slot != nullptr) {
         __gsharp_active_error_slot->Report(code, message);
     } else {
         __gsharp_host_last_error.Report(code, message);
     }
 }
+
+// Thrown by __gsharp_trap_abort to end the kernel step of the current thread; the launcher catches it around the kernel
+// call, inside its OpenMP loop, and stops the launch through the error slot.
+struct __gsharp_step_abort {};
+
+// Records a failure after which the step cannot go on (a shared memory placement that fails: there is no memory to hand
+// out), then ends the step. The launcher stops the launch, and the host throws the exception of the code.
+[[noreturn]] inline void __gsharp_trap_abort(GSharpErrorCode code, const char* message)
+{
+    __gsharp_trap(code, message);
+    throw __gsharp_step_abort{};
+}
+
+// Marks the comparison of a sort that the thread is running, while it lives (Sort.hpp)
+struct __gsharp_sort_compare_scope
+{
+    inline __gsharp_sort_compare_scope() noexcept { __gsharp_sort_compare_depth++; }
+    inline ~__gsharp_sort_compare_scope() { __gsharp_sort_compare_depth--; }
+};

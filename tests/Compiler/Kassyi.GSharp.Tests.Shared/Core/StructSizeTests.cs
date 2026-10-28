@@ -53,13 +53,8 @@ public class StructSizeTests
         Assert.Equal(42, o[0]);
     }
 
-    // The device rounds the 6-byte struct up to 8 bytes; CUDA converts the array element by element (GSH0080). The CPU
-    // launcher does not convert struct arrays yet (GSH0082, #511)
-#if GSHARP_CPU
-    [Fact(Skip = "The CPU launcher does not convert struct arrays yet (#511)")]
-#else
+    // The device rounds the 6-byte struct up to 8 bytes; the launcher converts the array element by element (GSH0080)
     [Fact]
-#endif
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Scenario(TestScenario.Boundary)]
     public void SizeNotMultipleOfAlignment_Array_ConvertsElementsToTheDeviceStride()

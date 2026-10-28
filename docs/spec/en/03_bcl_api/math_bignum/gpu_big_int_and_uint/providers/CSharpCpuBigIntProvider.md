@@ -67,6 +67,7 @@ public static readonly CSharpCpuBigIntProvider Instance;
 | [Mul(GpuWorkspace, GpuBigUInt, UInt32, GpuBigUInt)](#mulgpuworkspace-gpubiguint-uint32-gpubiguint) | Computes unsigned scalar multiplication on the CPU. |
 | [ReadWord(IntPtr, Int32, IntPtr)](#readwordintptr-int32-intptr) | Reads a single 32-bit word at `wordOffset` from unmanaged host memory. |
 | [ReciprocalMega(GpuWorkspace, GpuBigUInt, GpuBigUInt, Int32, Int32, Int32, Int32, Int32)](#reciprocalmegagpuworkspace-gpubiguint-gpubiguint-int32-int32-int32-int32-int32) | Computes fixed-point reciprocal ($2^{\text{targetBits}} / x$) on the CPU. |
+| [SqrtFloorCorrection(GpuWorkspace, GpuBigUInt, GpuBigUInt, GpuBigUInt, GpuBigUInt, GpuBigUInt)](#sqrtfloorcorrectiongpuworkspace-gpubiguint-gpubiguint-gpubiguint-gpubiguint-gpubiguint) | Writes $\lfloor\sqrt{a}\rfloor$ computed on the CPU (the estimate is not needed). |
 | [ShiftLeft(GpuWorkspace, GpuBigUInt, Int32, GpuBigUInt)](#shiftleftgpuworkspace-gpubiguint-int32-gpubiguint) | Computes left bit-shift on the CPU. |
 | [ShiftRight(GpuWorkspace, GpuBigUInt, Int32, GpuBigUInt)](#shiftrightgpuworkspace-gpubiguint-int32-gpubiguint) | Computes right bit-shift on the CPU. |
 | [Square(GpuWorkspace, IntPtr, Int32)](#squaregpuworkspace-intptr-int32) | Computes in-place squaring on the CPU. |
@@ -794,6 +795,40 @@ The final desired precision in bits.
 
 `DivideByZeroException`<br>
 Thrown when `targetOperand` is zero.
+
+## SqrtFloorCorrection(GpuWorkspace, GpuBigUInt, GpuBigUInt, GpuBigUInt, GpuBigUInt, GpuBigUInt)
+
+Writes $\lfloor\sqrt{a}\rfloor$, computed with `BigInteger` on the CPU, to `root`; the estimate it held is not used.
+
+```csharp
+public void SqrtFloorCorrection(
+    GpuWorkspace workspace,
+    GpuBigUInt operand,
+    GpuBigUInt rootSquared,
+    GpuBigUInt root,
+    GpuBigUInt slack,
+    GpuBigUInt trial);
+```
+
+#### Parameters
+
+`workspace` _GpuWorkspace_<br>
+The GPU workspace.
+
+`operand` _GpuBigUInt_<br>
+The operand `a`.
+
+`rootSquared` _GpuBigUInt_<br>
+The square $r^2$ of the estimate, with as many words as `operand`.
+
+`root` _GpuBigUInt_<br>
+Receives $\lfloor\sqrt{a}\rfloor$.
+
+`slack` _GpuBigUInt_<br>
+Scratch of at least `operand.NumWords + 1` words.
+
+`trial` _GpuBigUInt_<br>
+Scratch of at least `operand.NumWords + 1` words.
 
 ## Gcd(GpuWorkspace, GpuBigUInt, GpuBigUInt, GpuBigUInt)
 

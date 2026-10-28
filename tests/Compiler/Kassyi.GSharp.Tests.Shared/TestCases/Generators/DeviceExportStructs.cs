@@ -44,7 +44,7 @@ namespace DeviceExportStructsCase
         }
     }
 
-    // A constructor that sorts: the CUDA text needs <thrust/sort.h>
+    // A constructor that sorts (the Prelude sort, no include)
     public struct SortedPair
     {
         public int Lo;

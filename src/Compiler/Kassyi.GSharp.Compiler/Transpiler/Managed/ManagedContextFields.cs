@@ -100,13 +100,14 @@ internal static class ManagedContextFields
             HoistedFieldTypeResolver.Resolve(field, semanticModel, kernelName), name);
     }
 
-    // A ref struct or stackalloc pointer local is declared again on every resume (a SharedMemory<T> with its initializer,
-    // which reads only constants and its site key)
+    // A ref struct or stackalloc pointer local is declared again on every resume. A SharedMemory<T> keeps its
+    // initializer there, which reads only constants and its site key; a dynamic one only finds its region there, and its
+    // declaration places it (ContextLocalRewriter keeps that assignment)
     private static ManagedContextField CreateResumeLocal(ManagedContextField field, SemanticModel semanticModel) =>
         field with
         {
             Declarator = ManagedNameQualifier.Qualify(
-                SharedMemorySiteKeyAnnotator.AddSharedMemorySiteKeys(field.Declarator, semanticModel),
+                SharedMemorySiteKeyAnnotator.AddSharedMemorySiteKeys(field.Declarator, semanticModel, findOnly: true),
                 semanticModel),
             Resume = ResumeLocals.Describe(field.Declarator, field.ResolvedType, semanticModel)
         };

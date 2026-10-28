@@ -83,18 +83,28 @@ internal static class MethodSignatureTranspiler
             }
 
             // A plan with an auto result always has a symbol
-            if (isDevice || !plan.HasAutoResult || methodSymbol is null)
+            if (isDevice || methodSymbol is null)
             {
                 return;
             }
 
-            if (method.ParameterList.Parameters.Count > 0 || contextName != null)
+            var written = method.ParameterList.Parameters.Count > 0 || contextName != null;
+            if (plan.HasAutoResult)
             {
-                context.Emitter.Writer.Append(", ");
+                context.Emitter.Writer.AppendIf(written, ", ");
+                context.Emitter.Dialect.AppendType(ref context, methodSymbol.ReturnType);
+                context.Emitter.Writer.Append($"* __restrict__ {GSharpInternalNames.ReturnValue.Buffer}");
+                written = true;
             }
 
-            context.Emitter.Dialect.AppendType(ref context, methodSymbol.ReturnType);
-            context.Emitter.Writer.Append($"* __restrict__ {GSharpInternalNames.ReturnValue.Buffer}");
+            // The scratch of the grid strategy of AsParallel() aggregates, which the CUDA launcher allocates
+            // (KernelHostModel.GridScratchSlotBytes, ParallelAggregatePlanner)
+            if (context.Emitter.Dialect.IsCuda &&
+                ParallelAggregatePlanner.GetGridScratchSlotBytes(method, context.Query.SemanticModel) > 0)
+            {
+                context.Emitter.Writer.AppendIf(written, ", ");
+                context.Emitter.Writer.Append($"unsigned char* __restrict__ {GSharpInternalNames.StackLinq.GridScratch}");
+            }
         }
     }
 
@@ -190,43 +200,53 @@ internal static class MethodSignatureTranspiler
             return;
         }
 
-        var paramSemanticModel = context.Query.SemanticModel.Compilation.GetSemanticModel(parameters[0].SyntaxTree);
-
         for (var i = 0; i < parameters.Count; i++)
         {
-            var p = parameters[i];
-            if (p.Type == null)
+            if (parameters[i].Type == null)
             {
                 continue;
             }
 
-            var typeSymbol = paramSemanticModel.GetTypeSymbol(p.Type).UnwrapNullableArrayLike();
-
-            StructTranspiler.RegisterUsedStructIfApplicable(typeSymbol, ref context);
-
-            var paramSymbol = paramSemanticModel.GetDeclaredSymbol<IParameterSymbol>(p);
-
-            var (_, isPointerType, hasRestrict) =
-                WriteParameterDeclaration(p, typeSymbol, paramSymbol, ref context);
-
-            if (!isDevice && isPointerType && !hasRestrict)
-            {
-                context.Emitter.Writer.Append(" __restrict__");
-            }
-
-            context.Emitter.Writer.Append(' ');
-            if (copiedParameters != null && Contains(copiedParameters, p.Identifier.ValueText))
-            {
-                context.Emitter.Writer.Append(GSharpInternalNames.SuspendingCall.CopiedParameterPrefix);
-            }
-
-            context.Emitter.Writer.AppendCppName(
-                CppNameResolver.Resolve(paramSymbol, p.Identifier.ValueText, context.Emitter.Dialect));
+            WriteParameter(parameters[i], isDevice, ref context, copiedParameters);
             if (i < parameters.Count - 1)
             {
                 context.Emitter.Writer.Append(", ");
             }
         }
+    }
+
+    /// <summary>Writes one parameter of <see cref="WriteParameters"/>: <c>&lt;type&gt; &lt;name&gt;</c>.</summary>
+    internal static void WriteParameter(ParameterSyntax p, bool isDevice, ref TranspileContext context,
+        IReadOnlyCollection<string>? copiedParameters = null)
+    {
+        if (p.Type == null)
+        {
+            return;
+        }
+
+        var paramSemanticModel = context.Query.SemanticModel.Compilation.GetSemanticModel(p.SyntaxTree);
+        var typeSymbol = paramSemanticModel.GetTypeSymbol(p.Type).UnwrapNullableArrayLike();
+
+        StructTranspiler.RegisterUsedStructIfApplicable(typeSymbol, ref context);
+
+        var paramSymbol = paramSemanticModel.GetDeclaredSymbol<IParameterSymbol>(p);
+
+        var (_, isPointerType, hasRestrict) =
+            WriteParameterDeclaration(p, typeSymbol, paramSymbol, ref context);
+
+        if (!isDevice && isPointerType && !hasRestrict)
+        {
+            context.Emitter.Writer.Append(" __restrict__");
+        }
+
+        context.Emitter.Writer.Append(' ');
+        if (copiedParameters != null && Contains(copiedParameters, p.Identifier.ValueText))
+        {
+            context.Emitter.Writer.Append(GSharpInternalNames.SuspendingCall.CopiedParameterPrefix);
+        }
+
+        context.Emitter.Writer.AppendCppName(
+            CppNameResolver.Resolve(paramSymbol, p.Identifier.ValueText, context.Emitter.Dialect));
     }
 
     private static bool Contains(IReadOnlyCollection<string> names, string name)

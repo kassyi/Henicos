@@ -49,14 +49,14 @@ internal static class ManagedCSharpTranspiler
 
     /// <summary>
     /// The lowered body of <paramref name="methodName"/> with the context accesses of its resume locals turned back into
-    /// locals and the hoisted locals that share a name renamed (<see cref="ContextLocalRewriter"/>).
+    /// locals, the hoisted locals that share a name renamed and the labels that share a name renamed
+    /// (<see cref="ContextLocalRewriter"/>).
     /// </summary>
     internal static BlockSyntax RewriteResumeLocals(BlockSyntax loweredBody,
         Dictionary<DeclarationKey, ManagedContextField> unhoistedLocals, Dictionary<DeclarationKey, string> renamedLocals,
         SemanticModel semanticModel, string methodName, bool zeroFill) =>
-        new ContextLocalRewriter(new ManagedResumeLocalSet(unhoistedLocals, zeroFill), renamedLocals, semanticModel,
-                methodName)
-            .Visit(loweredBody) as BlockSyntax
+        ContextLocalRewriter.Rewrite(loweredBody, new ManagedResumeLocalSet(unhoistedLocals, zeroFill), renamedLocals,
+            semanticModel, methodName) as BlockSyntax
         ?? throw new InvalidOperationException($"Unhoisting ref-struct fields removed the body of '{methodName}'.");
 
     /// <summary>
