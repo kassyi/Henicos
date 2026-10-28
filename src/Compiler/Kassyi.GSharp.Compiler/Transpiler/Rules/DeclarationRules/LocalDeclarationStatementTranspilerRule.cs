@@ -20,7 +20,7 @@ public sealed class LocalDeclarationStatementTranspilerRule : SyntaxNodeTranspil
             return;
         }
 
-        DeclarationHoistingHelper.HoistDeclarationExpressions(node, ref context);
+        StatementPrelude.Emit(node, ref context);
 
         var lengthBefore = context.Emitter.Writer.Length;
         // Dispatch inner variable declaration transpilation to the visitor (which will use VariableDeclarationTranspilerRule)

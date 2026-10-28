@@ -34,4 +34,14 @@ public static partial class StackArrayShapeKernels
     {
         output[0] = Sum(new int[4]);
     }
+
+    [GpuDeviceFunction]
+    public static int Length(Span<int> values) => values.Length;
+
+    // X8: a stackalloc of a size known only at run time, in an argument
+    [GpuKernel]
+    public static void DynamicArgumentKernel(int[] output, int n)
+    {
+        output[0] = Length(stackalloc int[n]);
+    }
 }

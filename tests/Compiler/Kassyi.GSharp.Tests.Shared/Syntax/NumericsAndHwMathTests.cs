@@ -93,11 +93,6 @@ public class NumericsAndHwMathTests : TranspilerTestBase
     [InlineData(-0.0f, -0.0)]
     public void Test_MathEdgeCases_SpecialValues(float fInput, double dInput)
     {
-        if (float.IsNaN(fInput) || double.IsNaN(dInput))
-        {
-            SkipIfCpuDialect("CUDA and C# differ in NaN handling for Math.Max and Math.Min");
-        }
-
         float[] floatInputs = [fInput];
         float[] floatResults = new float[6];
         double[] doubleInputs = [dInput];
@@ -109,8 +104,8 @@ public class NumericsAndHwMathTests : TranspilerTestBase
         if (float.IsNaN(fInput))
         {
             Assert.True(float.IsNaN(floatResults[0])); // Abs(NaN) is NaN
-            Assert.Equal(0.0f, floatResults[1]); // fmaxf(NaN, 0) is 0
-            Assert.Equal(0.0f, floatResults[2]); // fminf(NaN, 0) is 0
+            Assert.True(float.IsNaN(floatResults[1])); // Max(NaN, 0) is NaN, as in .NET (#726)
+            Assert.True(float.IsNaN(floatResults[2])); // Min(NaN, 0) is NaN
             Assert.True(float.IsNaN(floatResults[3]));
             Assert.True(float.IsNaN(floatResults[4]));
             Assert.True(float.IsNaN(floatResults[5]));
@@ -128,8 +123,8 @@ public class NumericsAndHwMathTests : TranspilerTestBase
         if (double.IsNaN(dInput))
         {
             Assert.True(double.IsNaN(doubleResults[0])); // Abs(NaN) is NaN
-            Assert.Equal(0.0, doubleResults[1]); // fmax(NaN, 0) is 0
-            Assert.Equal(0.0, doubleResults[2]); // fmin(NaN, 0) is 0
+            Assert.True(double.IsNaN(doubleResults[1])); // Max(NaN, 0) is NaN, as in .NET (#726)
+            Assert.True(double.IsNaN(doubleResults[2])); // Min(NaN, 0) is NaN
             Assert.True(double.IsNaN(doubleResults[3]));
             Assert.True(double.IsNaN(doubleResults[4]));
             Assert.True(double.IsNaN(doubleResults[5]));

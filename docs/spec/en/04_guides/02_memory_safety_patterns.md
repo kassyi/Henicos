@@ -302,7 +302,7 @@ Honoring C#'s foundational philosophy: **"Safe by default, explicitly bounded in
 | Pattern | Code Example | Analyzer Evaluation & Transpilation Behavior |
 | :--- | :--- | :--- |
 | **Unbounded Pointer Operation** | `int* ptr = ...;` (Without `unsafe` block) | ❌ **C# Compile Error**: Prohibited by standard C# language semantics. |
-| **Stack Allocation (`stackalloc`)** | `unsafe { int* p = stackalloc int[10]; }` | ⭕ **OK (No Warning)**: Transpiles directly to a C++ local stack array (`int p[10];`). Automatically reclaimed on scope exit. |
+| **Stack Allocation (`stackalloc`)** | `unsafe { int* p = stackalloc int[10]; }` | ⭕ **OK (No Warning)**: The storage is a C++ local array declared before the statement (`int __gsharp_stackalloc_1[10];`), and `p` points to it after it is zero-filled, as C# does. Reclaimed on scope exit; keeping `p` beyond the scope is GSH0091. |
 | **Memory Pinning (`fixed`)** | `unsafe { fixed (byte* p = arr) { ... } }` | ⭕ **OK (No Warning)**: GC pinning and unpinning are scoped to the block. Fully safe. |
 | **Dynamic Device-side Allocation** | `unsafe { void* p = Gpu.Unsafe.Malloc(sz); }` | ⚠️ **Warning (GSH0029)**: Emits a compiler warning: _"Manual unmanaged memory allocation detected. Ensure corresponding Free is called."_ Preserves developer freedom for advanced kernel development. |
 
@@ -314,8 +314,8 @@ Honoring C#'s foundational philosophy: **"Safe by default, explicitly bounded in
 // ❌ C# Compile Error: Prohibited by standard C# language semantics.
 int* ptr = ...;
 
-// ⭕ OK (No Warning): Transpiles directly to a C++ local stack array (`int p[10];`).
-// Automatically reclaimed on scope exit.
+// ⭕ OK (No Warning): The storage is a C++ local array declared before the statement, zero-filled as in C#.
+// Reclaimed on scope exit.
 unsafe {
     int* p = stackalloc int[10];
 }
