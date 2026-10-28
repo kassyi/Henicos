@@ -43,7 +43,7 @@ public BigIntExpressionVisitor(
 The execution context providing the memory manager and arithmetic providers.
 
 `targetResult` _ScopedBigIntMemory_<br>
-An optional pre-allocated destination buffer to receive the root evaluation result.
+An optional pre-allocated destination buffer to receive the root evaluation result. When it overlaps an operand of the root, the root computes into a temporary instead and returns that; the caller copies it into the target. No arithmetic call receives a result that overlaps one of its operands.
 
 ## Fields
 

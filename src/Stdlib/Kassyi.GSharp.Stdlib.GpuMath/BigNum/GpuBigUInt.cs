@@ -147,6 +147,7 @@ public readonly partial struct GpuBigUInt : IGpuBigUIntExpression, IGpuBigNumber
 
     /// <summary>
     /// Gets a deferred expression representing this instance, or evaluates and assigns a deferred expression into this instance in-place.
+    /// The expression may read this instance (<c>d.Value = d / b</c>); the result is the one of a separate buffer.
     /// </summary>
     public GpuBigUIntExpr Value
     {
