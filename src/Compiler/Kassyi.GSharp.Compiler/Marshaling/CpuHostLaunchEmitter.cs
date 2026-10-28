@@ -118,7 +118,7 @@ internal static class CpuHostLaunchEmitter
         using (writer.Parentheses())
         {
             writer.Append(
-                "uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ");
+                "uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ, uint sharedMemBytes");
             foreach (var p in kernel.Host.Parameters)
             {
                 writer.Append(", ");
@@ -175,8 +175,10 @@ internal static class CpuHostLaunchEmitter
                 writer.AppendLine($"{GSharpInternalNames.Launcher.Contexts}[i] = new {contextName}();");
             }
 
+            // A cooperative kernel's blocks run in grid phases and keep their dynamic shared memory for the grid; the
+            // blocks of any other kernel run to their end one after another and use one array in turn
             writer.AppendLine(
-                $"global::Kassyi.GSharp.Core.ManagedGpuContext.InitializeGrid({GSharpInternalNames.Launcher.TotalBlocks});");
+                $"global::Kassyi.GSharp.Core.ManagedGpuContext.InitializeGrid({GSharpInternalNames.Launcher.TotalBlocks}, sharedMemBytes, {(kernel.IsCooperative ? "true" : "false")});");
 
             writer.AppendLine("bool anyGridActive = true;");
             writer.AppendLine("while (anyGridActive)");
@@ -295,6 +297,8 @@ internal static class CpuHostLaunchEmitter
                 }
             }
 
+            // The dynamic shared memory of the blocks lives for one grid (#544)
+            writer.AppendLine("global::Kassyi.GSharp.Core.ManagedGpuContext.EndGrid();");
             WrapperEmitter.WriteAutoResultReturn(writer, kernel);
             if (!kernel.ReturnsValue)
             {
@@ -496,7 +500,8 @@ internal static class CpuHostLaunchEmitter
         writer.Append("hfunc");
         using (writer.Parentheses())
         {
-            writer.Append("gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ");
+            // The native launcher places the dynamic shared memory declarations in sharedMemBytes (#544)
+            writer.Append("gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, sharedMemBytes");
 
             foreach (var shape in kernel.Parameters)
             {
