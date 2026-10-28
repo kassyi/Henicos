@@ -295,37 +295,6 @@ internal static class SymbolExtensions
                attr.AttributeClass?.ContainingNamespace.IsSystemRuntimeInteropServices() == true;
     }
 
-    /// <summary>Gets a positive [StructLayout(Pack = n)] value; returns false when absent or 0.</summary>
-    public static bool TryGetStructLayoutPack(this INamedTypeSymbol type, out int pack)
-    {
-        // Only the first [StructLayout] counts
-        pack = type.GetAttributes()
-                   .AsStackEnumerable()
-                   .TryFirst(static attr => attr.IsStructLayoutAttribute(), out var layout) &&
-               layout.NamedArguments
-                   .AsStackEnumerable()
-                   .TryFirst(static kvp => kvp is { Key: "Pack", Value.IsNull: false }, out var packArgument) &&
-               packArgument.Value.Value is int p and > 0
-            ? p
-            : 0;
-        return pack > 0;
-    }
-
-    /// <summary>Reads <c>Size</c> from the first <c>[StructLayout]</c> of <paramref name="type"/>, when it is greater than zero.</summary>
-    public static bool TryGetStructLayoutSize(this INamedTypeSymbol type, out int size)
-    {
-        size = type.GetAttributes()
-                   .AsStackEnumerable()
-                   .TryFirst(static attr => attr.IsStructLayoutAttribute(), out var layout) &&
-               layout.NamedArguments
-                   .AsStackEnumerable()
-                   .TryFirst(static kvp => kvp is { Key: "Size", Value.IsNull: false }, out var sizeArgument) &&
-               sizeArgument.Value.Value is int n and > 0
-            ? n
-            : 0;
-        return size > 0;
-    }
-
     /// <summary>
     /// Determines whether the symbol has an attribute matching the specified short name.
     /// </summary>

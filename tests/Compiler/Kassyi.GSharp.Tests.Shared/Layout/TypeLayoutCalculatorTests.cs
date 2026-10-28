@@ -498,4 +498,64 @@ public class TypeLayoutCalculatorTests
         Assert.Equal(new TypeLayout(32, 4), cpu.Device);
         Assert.Equal(TransferClass.Identical, cpu.Transfer);
     }
+    // A struct read from metadata has the layout of the same struct read from source, on both dialects. StructLayout
+    // and FieldOffset are pseudo-attributes: from metadata, Roslyn returns neither, and only the ClassLayout and
+    // FieldLayout tables carry them (#736)
+    [Fact]
+    [Category(TestCategory.Compiler)]
+    [Scenario(TestScenario.HappyPath)]
+    public void StructLayout_FromMetadata_MatchesTheSameStructFromSource()
+    {
+        var (source, _, _) = GetContext();
+        var library = DeviceLibraryBuilder.Build("HostLayoutLibrary", null, RoslynTestUtility.ReadTestCase("Layout/HostLayoutCases.cs"));
+        var consumer = DeviceLibraryBuilder.CreateConsumer("class Consumer { }", library);
+        var sourceNamespace = GetNamespace(source.Assembly.GlobalNamespace);
+        var metadataNamespace = GetNamespace(consumer.GetAssemblyOrModuleSymbol(library) is IAssemblySymbol assembly
+            ? assembly.GlobalNamespace
+            : throw new InvalidOperationException("The library is not referenced"));
+
+        var structs = sourceNamespace.GetTypeMembers()
+            .Where(static t => t is { TypeKind: TypeKind.Struct, IsGenericType: false })
+            .ToList();
+        var mismatches = new List<string>();
+        foreach (var sourceStruct in structs)
+        {
+            var metadataStruct = metadataNamespace.GetTypeMembers(sourceStruct.Name).Single();
+            Assert.True(metadataStruct.DeclaringSyntaxReferences.IsEmpty);
+            foreach (var dialect in new[] { s_cudaDialect, s_cpuDialect })
+            {
+                var expected = Describe(TypeLayoutCalculator.GetStructLayout(sourceStruct, dialect));
+                var actual = Describe(TypeLayoutCalculator.GetStructLayout(metadataStruct, dialect));
+                if (expected != actual)
+                {
+                    mismatches.Add($"{sourceStruct.Name} ({dialect.GetType().Name}):\n  source   {expected}\n  metadata {actual}");
+                }
+            }
+        }
+
+        Assert.Contains(structs, static s => s.Name == nameof(ExplicitUnionStruct));
+        Assert.Contains(structs, static s => s.Name == nameof(SizedPacked));
+        Assert.True(mismatches.Count == 0, string.Join("\n", mismatches));
+
+        static INamespaceSymbol GetNamespace(INamespaceSymbol global) =>
+            global.GetNamespaceMembers().Single(static n => n.Name == "Kassyi")
+                .GetNamespaceMembers().Single(static n => n.Name == "GSharp")
+                .GetNamespaceMembers().Single(static n => n.Name == "Tests")
+                .GetNamespaceMembers().Single(static n => n.Name == "Shared")
+                .GetNamespaceMembers().Single(static n => n.Name == "TestCases")
+                .GetNamespaceMembers().Single(static n => n.Name == "Layout");
+
+        static string Describe(StructLayoutInfo layout) =>
+            $"{layout.Kind} pack={layout.Pack} device={layout.Device} " +
+            $"[{string.Join(", ", layout.DeviceFields.Select(static f => $"{Name(f)}@{f.Offset}"))}] " +
+            $"host={layout.Host.IsKnown}/{layout.Host.Size}/{layout.Host.Alignment} " +
+            $"[{string.Join(", ", layout.Host.Fields.Select(static f => $"{Name(f)}@{f.Offset}"))}] " +
+            $"{layout.Transfer} {layout.Unsupported?.Reason}";
+
+        // From metadata, an auto-property is its backing field (<A>k__BackingField); the offsets are what is compared
+        static string Name(FieldLayout field) =>
+            field.Member.Name is ['<', .. var rest] && rest.EndsWith(">k__BackingField", StringComparison.Ordinal)
+                ? rest[..^">k__BackingField".Length]
+                : field.Member.Name;
+    }
 }

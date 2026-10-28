@@ -105,7 +105,7 @@ internal static class TypeLayoutCalculator
 
         if (type is INamedTypeSymbol { TypeKind: TypeKind.Struct } namedStruct)
         {
-            ReadStructLayoutAttribute(namedStruct, out var kind, out var pack, out var explicitSize);
+            StructLayoutReader.Read(namedStruct, out var kind, out var pack, out var explicitSize);
             return ComputeDeviceStructLayout(namedStruct, dialect, kind, pack, explicitSize, fields: null);
         }
 
@@ -115,7 +115,7 @@ internal static class TypeLayoutCalculator
     /// <summary>Calculates the complete device (D), host (H), and transfer classification model for <paramref name="structType"/>.</summary>
     public static StructLayoutInfo GetStructLayout(INamedTypeSymbol structType, ITranspilerDialect dialect)
     {
-        ReadStructLayoutAttribute(structType, out var kind, out var pack, out var explicitSize);
+        StructLayoutReader.Read(structType, out var kind, out var pack, out var explicitSize);
 
         // 1. Device (D)
         var deviceFieldsBuilder = ImmutableArray.CreateBuilder<FieldLayout>();
@@ -274,7 +274,7 @@ internal static class TypeLayoutCalculator
             int offset;
             if (kind == TypeLayoutKind.Explicit)
             {
-                offset = GetFieldOffset(member.Symbol);
+                offset = StructLayoutReader.GetFieldOffset(member.Symbol);
                 end = Math.Max(end, offset + fieldSize);
             }
             else
@@ -416,7 +416,7 @@ internal static class TypeLayoutCalculator
             int offset;
             if (kind == TypeLayoutKind.Explicit)
             {
-                offset = GetFieldOffset(member.Symbol);
+                offset = StructLayoutReader.GetFieldOffset(member.Symbol);
                 hostEnd = Math.Max(hostEnd, offset + fieldSize);
             }
             else
@@ -482,7 +482,7 @@ internal static class TypeLayoutCalculator
 
         if (type is INamedTypeSymbol { TypeKind: TypeKind.Struct } namedStruct)
         {
-            ReadStructLayoutAttribute(namedStruct, out var kind, out var pack, out var explicitSize);
+            StructLayoutReader.Read(namedStruct, out var kind, out var pack, out var explicitSize);
             var structHost = ComputeStructHostLayout(namedStruct, kind, pack, explicitSize);
             if (!structHost.IsKnown)
             {
@@ -561,68 +561,5 @@ internal static class TypeLayoutCalculator
         }
 
         return true;
-    }
-
-    private static void ReadStructLayoutAttribute(INamedTypeSymbol structType, out TypeLayoutKind kind, out int pack,
-        out int size)
-    {
-        kind = TypeLayoutKind.Sequential;
-        pack = 0;
-        size = 0;
-
-        if (!structType.GetAttributes()
-                .AsStackEnumerable()
-                .TryFirst(static attr => attr.IsStructLayoutAttribute(), out var layoutAttr))
-        {
-            return;
-        }
-
-        if (layoutAttr.ConstructorArguments is { Length: > 0 } ctorArgs &&
-            ctorArgs[0].Value is { } rawKind)
-        {
-            var kindValue = rawKind switch
-            {
-                int i => i,
-                short s => s,
-                _ => 0
-            };
-
-            // System.Runtime.InteropServices.LayoutKind: Sequential = 0, Explicit = 2, Auto = 3
-            kind = kindValue switch
-            {
-                2 => TypeLayoutKind.Explicit,
-                3 => TypeLayoutKind.Auto,
-                _ => TypeLayoutKind.Sequential
-            };
-        }
-
-        foreach (var namedArg in layoutAttr.NamedArguments)
-        {
-            if (namedArg is { Key: "Pack", Value.Value: int p and > 0 })
-            {
-                pack = p;
-            }
-            else if (namedArg is { Key: "Size", Value.Value: int s and > 0 })
-            {
-                size = s;
-            }
-        }
-    }
-
-    // [field: FieldOffset] on an auto-property sits on its backing field, not on the property
-    private static int GetFieldOffset(ISymbol memberSymbol)
-    {
-        var fieldSymbol = memberSymbol is IPropertySymbol property
-            ? property.ContainingType.GetMembers()
-                .AsStackEnumerable()
-                .FirstOrDefault(property, static (m, p) => m is IFieldSymbol f && f.AssociatedSymbol.IsEqualTo(p))
-            : memberSymbol;
-        if (fieldSymbol?.GetAttribute(KnownAttributes.FieldOffset) is { ConstructorArguments.Length: > 0 } attr &&
-            attr.ConstructorArguments[0].Value is int offset and >= 0)
-        {
-            return offset;
-        }
-
-        return 0;
     }
 }

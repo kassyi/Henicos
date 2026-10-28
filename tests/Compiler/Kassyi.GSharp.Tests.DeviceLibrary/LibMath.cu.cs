@@ -11,8 +11,8 @@ public struct Pair
 }
 
 /// <summary>
-/// Two integers in the reverse of the declaration order. A consumer cannot read [StructLayout] and [FieldOffset] of a
-/// type from metadata (Roslyn keeps them as pseudo-attributes), so it predicts A at 0 and B at 4.
+/// Two integers in the reverse of the declaration order. [StructLayout] and [FieldOffset] are pseudo-attributes, which
+/// a consumer reads from the metadata tables, not from the custom attributes (#736).
 /// </summary>
 [StructLayout(LayoutKind.Explicit)]
 public struct SwapPair
@@ -24,12 +24,33 @@ public struct SwapPair
     public int B;
 }
 
-/// <summary>A byte and an integer without padding (5 bytes); a consumer predicts the sequential 8 bytes.</summary>
+/// <summary>A byte and an integer without padding (5 bytes, from Pack = 1 in the metadata).</summary>
 [StructLayout(LayoutKind.Sequential, Pack = 1)]
 public struct PackedPair
 {
     public byte Tag;
     public int Value;
+}
+
+/// <summary>One integer in 16 bytes (StructLayout.Size in the metadata): array elements sit 16 bytes apart (#736).</summary>
+[StructLayout(LayoutKind.Sequential, Size = 16)]
+public struct Sized
+{
+    public int A;
+}
+
+/// <summary>An integer and a float that share their bytes, and a tag after them (8 bytes, #736).</summary>
+[StructLayout(LayoutKind.Explicit)]
+public struct IntFloatUnion
+{
+    [FieldOffset(0)]
+    public int Bits;
+
+    [FieldOffset(0)]
+    public float Value;
+
+    [FieldOffset(4)]
+    public int Tag;
 }
 
 /// <summary>A vector with a constructor and a computed property, which the library's records bring to a consumer.</summary>

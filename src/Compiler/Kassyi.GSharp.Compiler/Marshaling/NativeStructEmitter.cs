@@ -100,7 +100,7 @@ internal static class NativeStructEmitter
         var kind = structLayout.Kind == TypeLayoutKind.Auto ? "Auto" : "Sequential";
         writer.Append($"[System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.{kind}");
         writer.AppendIf(structLayout.Pack > 0, $", Pack = {structLayout.Pack}");
-        if (s.TryGetStructLayoutSize(out var size))
+        if (StructLayoutReader.TryGetSize(s, out var size))
         {
             writer.Append($", Size = {size}");
         }
