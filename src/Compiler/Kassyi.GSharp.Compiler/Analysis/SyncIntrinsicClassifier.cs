@@ -97,7 +97,7 @@ internal readonly struct SyncIntrinsicInfo(
 
 /// <summary>
 /// Classifies the synchronization intrinsics of <c>Kassyi.GSharp.Core</c> (<c>Gpu</c>, <c>Warp</c>, <c>Wmma</c>) by
-/// symbol, so that the analyzers, the thread variance analysis and the lowering share one definition of which calls are
+/// symbol, so that the analyzers, the uniformity analysis and the lowering share one definition of which calls are
 /// barriers, which split the state machine and which return thread-variant values.
 /// </summary>
 /// <remarks>

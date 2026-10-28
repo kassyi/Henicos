@@ -181,26 +181,6 @@ internal static class BarrierDivergenceChecks
     }
 
     /// <summary>
-    /// The condition that decides whether <paramref name="child"/> of <paramref name="ancestor"/> runs: a branch, the
-    /// body of a loop, or an operand that is evaluated only for some values of another operand. GSH0077 decides with
-    /// it which dynamic <c>SharedMemory&lt;T&gt;</c> declarations only some threads reach.
-    /// </summary>
-    internal static ExpressionSyntax? GetDivergingCondition(SyntaxNode ancestor, SyntaxNode child) => ancestor switch
-    {
-        IfStatementSyntax ifStatement when child != ifStatement.Condition => ifStatement.Condition,
-        SwitchStatementSyntax switchStatement when child != switchStatement.Expression => switchStatement.Expression,
-        WhileStatementSyntax whileStatement when child != whileStatement.Condition => whileStatement.Condition,
-        DoStatementSyntax doStatement when child != doStatement.Condition => doStatement.Condition,
-        ForStatementSyntax { Condition: { } condition } forStatement when child == forStatement.Statement => condition,
-        ForEachStatementSyntax forEach when child == forEach.Statement => forEach.Expression,
-        ConditionalExpressionSyntax conditional when child != conditional.Condition => conditional.Condition,
-        BinaryExpressionSyntax binary when child == binary.Right &&
-                                           binary.IsKind(SyntaxKind.LogicalAndExpression, SyntaxKind.LogicalOrExpression,
-                                               SyntaxKind.CoalesceExpression) => binary.Left,
-        _ => null
-    };
-
-    /// <summary>
     /// Whether <paramref name="barrier"/> in <paramref name="block"/> is in the scope of a <c>using</c> declaration of the
     /// block: one declared before it, or any one when the block is a nested block, whose statements the lowering moves
     /// into the enclosing block (BranchRewriter, LoopRewriter) so that its scope would end there.
