@@ -179,7 +179,9 @@ internal static class CpuHostLaunchEmitter
                             {
                                 writer.AppendLine("anyGridActive = true;");
                                 writer.AppendLine("anyBlockActive = true;");
-                                writer.AppendLine($"{LinearContext}.{GSharpInternalNames.StateMachine.YieldedForGridSync} = false;");
+                                // The state machines of the kernel and of the device functions it calls request a
+                                // grid sync through one thread-static flag (#665)
+                                writer.AppendLine($"{ManagedExecutionRewriter.ManagedGridSyncRequested} = false;");
 
                                 writer.Append($"{stateMachineName}(");
                                 bool isFirst = true;
@@ -216,7 +218,7 @@ internal static class CpuHostLaunchEmitter
 
                                 writer.AppendLine(");");
 
-                                writer.AppendLine($"if ({LinearContext}.{GSharpInternalNames.StateMachine.YieldedForGridSync})");
+                                writer.AppendLine($"if ({ManagedExecutionRewriter.ManagedGridSyncRequested})");
                                 using (writer.Scope())
                                 {
                                     writer.AppendLine("gridSyncRequested = true;");

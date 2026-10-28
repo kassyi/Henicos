@@ -14,7 +14,7 @@ internal sealed class GpuBigFloatVectorLeafExpression(GpuBigFloatArray array) : 
         var count = elementCount ?? (Length - elementOffset);
         var slice = (elementOffset == 0 && count == Length)
             ? array
-            : array.Slice(elementOffset, count);
+            : array.BorrowSlice(elementOffset, count);
 
         if (targetResult != null)
         {

@@ -670,7 +670,6 @@ public partial class GpuBigIntDivRemKernels
 internal class __gsharp_frame_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuBigIntDivRemKernels__ExecuteNttMultiplyMacroModPow {
 internal int __gsharp_state;
 internal uint __gsharp_warp_exchange;
-internal bool __gsharp_yielded_for_grid_sync;
 internal int m;
 internal int n2;
 internal int n1;
@@ -705,7 +704,7 @@ __gsharp_ctx.n2 = 1;
 __gsharp_ctx.nttScratch = core.Workspace.NttScratch;
 global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Kernels.GpuBigIntFermatKernels.DeviceUnpack16(opA, __gsharp_ctx.nttScratch.NttBuf1A, __gsharp_ctx.nttScratch.NttBuf2A, __gsharp_ctx.m, numWordsA, true);
 global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Kernels.GpuBigIntFermatKernels.DeviceUnpack16(opB, __gsharp_ctx.nttScratch.NttBuf1B, __gsharp_ctx.nttScratch.NttBuf2B, __gsharp_ctx.m, numWordsB, true);
-__gsharp_ctx.__gsharp_yielded_for_grid_sync = true;
+global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested = true;
 __gsharp_ctx.__gsharp_state = 1;
 return false;
 }
@@ -733,7 +732,7 @@ __gsharp_ctx.forwardB.Buffer1 = __gsharp_ctx.nttScratch.NttBuf1B;
 __gsharp_ctx.forwardB.Buffer2 = __gsharp_ctx.nttScratch.NttBuf2B;
 global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Kernels.GpuBigIntNttKernels.ExecuteDualForwardNtt(__gsharp_ctx.forwardB);
 global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Kernels.GpuBigIntNttKernels.ExecuteNttPointwiseMultiply(__gsharp_ctx.nttScratch.NttBuf1A, __gsharp_ctx.nttScratch.NttBuf2A, __gsharp_ctx.nttScratch.NttBuf1B, __gsharp_ctx.nttScratch.NttBuf2B, __gsharp_ctx.m);
-__gsharp_ctx.__gsharp_yielded_for_grid_sync = true;
+global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested = true;
 __gsharp_ctx.__gsharp_state = 2;
 return false;
 }
@@ -747,7 +746,7 @@ __gsharp_ctx.inverseA.Twiddle1 = core.Ntt.TwiddleFactors.Inverse1;
 __gsharp_ctx.inverseA.Twiddle2 = core.Ntt.TwiddleFactors.Inverse2;
 global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Kernels.GpuBigIntNttKernels.ExecuteDualInverseNtt(__gsharp_ctx.inverseA);
 global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Kernels.GpuBigIntNttKernels.ExecuteCrtComputeCoefficients(__gsharp_ctx.nttScratch.NttBuf1A, __gsharp_ctx.nttScratch.NttBuf2A, __gsharp_ctx.nttScratch.UncarriedLow, __gsharp_ctx.nttScratch.UncarriedHigh, __gsharp_ctx.m);
-__gsharp_ctx.__gsharp_yielded_for_grid_sync = true;
+global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested = true;
 __gsharp_ctx.__gsharp_state = 3;
 return false;
 }
@@ -757,7 +756,7 @@ case 3:
 __gsharp_ctx.chunkSize = global::Kassyi.GSharp.Core.BlockDimension.X;
 __gsharp_ctx.numBlocks = (numWordsResult + __gsharp_ctx.chunkSize - 1) / __gsharp_ctx.chunkSize;
 global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Kernels.GpuBigIntNttKernels.ExecuteResolveNttCarriesBlocked(__gsharp_ctx.nttScratch.UncarriedLow, __gsharp_ctx.nttScratch.UncarriedHigh, resultDest, __gsharp_ctx.nttScratch.BlockCarries, __gsharp_ctx.m, numWordsResult, __gsharp_ctx.chunkSize);
-__gsharp_ctx.__gsharp_yielded_for_grid_sync = true;
+global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested = true;
 __gsharp_ctx.__gsharp_state = 4;
 return false;
 }
@@ -765,7 +764,7 @@ return false;
 case 4:
 {
 global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Kernels.GpuBigIntNttKernels.ExecuteResolveNttCarriesApply(resultDest, __gsharp_ctx.nttScratch.BlockCarries, numWordsResult, __gsharp_ctx.chunkSize, __gsharp_ctx.numBlocks);
-__gsharp_ctx.__gsharp_yielded_for_grid_sync = true;
+global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested = true;
 __gsharp_ctx.__gsharp_state = 5;
 return false;
 }
@@ -785,7 +784,6 @@ throw new global::System.InvalidOperationException("The device function state ma
 internal class __gsharp_frame_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuBigIntDivRemKernels__ExecuteBarrettReductionMacro {
 internal int __gsharp_state;
 internal uint __gsharp_warp_exchange;
-internal bool __gsharp_yielded_for_grid_sync;
 internal int nA;
 internal int n;
 internal int targetWords;
@@ -842,7 +840,7 @@ uint shiftedValue = (w0 >> __gsharp_ctx.bitShift) | (__gsharp_ctx.bitShift == 0 
 quotientBuffer[__gsharp_unroll_0] = shiftedValue;
 }
 
-__gsharp_ctx.__gsharp_yielded_for_grid_sync = true;
+global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested = true;
 __gsharp_ctx.__gsharp_state = 2;
 return false;
 }
@@ -876,7 +874,7 @@ for (int __gsharp_unroll_1 = global::Kassyi.GSharp.Core.ManagedGpuContext.BlockD
 __gsharp_ctx.iterScratch.Diff[__gsharp_unroll_1] = __gsharp_unroll_1 < __gsharp_ctx.nA ? leftOperand[__gsharp_unroll_1] : 0u;
 }
 
-__gsharp_ctx.__gsharp_yielded_for_grid_sync = true;
+global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested = true;
 __gsharp_ctx.__gsharp_state = 4;
 return false;
 }
@@ -884,7 +882,7 @@ return false;
 case 4:
 {
 global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Kernels.GpuBigIntKernels.DeviceAddSubParallel(__gsharp_ctx.iterScratch.Diff, __gsharp_ctx.iterScratch.NextIter, __gsharp_ctx.iterScratch.Diff, __gsharp_ctx.evalWords, -1, true);
-__gsharp_ctx.__gsharp_yielded_for_grid_sync = true;
+global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested = true;
 __gsharp_ctx.__gsharp_state = 5;
 return false;
 }
@@ -901,7 +899,7 @@ if (!(__gsharp_ctx.iter < 1000))
 goto case 16;
 __gsharp_ctx.topWord = __gsharp_ctx.iterScratch.Diff[__gsharp_ctx.evalWords - 1];
 __gsharp_ctx.underflow = (__gsharp_ctx.topWord & 0x80000000u) != 0;
-__gsharp_ctx.__gsharp_yielded_for_grid_sync = true;
+global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested = true;
 __gsharp_ctx.__gsharp_state = 7;
 return false;
 }
@@ -911,7 +909,7 @@ case 7:
 if (!(__gsharp_ctx.underflow))
 goto case 9;
 global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Kernels.GpuBigIntKernels.DeviceAddSubParallel(__gsharp_ctx.iterScratch.Diff, rightOperand, __gsharp_ctx.iterScratch.Diff, __gsharp_ctx.evalWords, 1, true);
-__gsharp_ctx.__gsharp_yielded_for_grid_sync = true;
+global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested = true;
 __gsharp_ctx.__gsharp_state = 8;
 return false;
 }
@@ -925,7 +923,7 @@ case 9:
 {
 // Try subtracting M to see if R >= M
 global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Kernels.GpuBigIntKernels.DeviceAddSubParallel(__gsharp_ctx.iterScratch.Diff, rightOperand, __gsharp_ctx.iterScratch.Diff, __gsharp_ctx.evalWords, -1, true);
-__gsharp_ctx.__gsharp_yielded_for_grid_sync = true;
+global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested = true;
 __gsharp_ctx.__gsharp_state = 10;
 return false;
 }
@@ -934,7 +932,7 @@ case 10:
 {
 __gsharp_ctx.top2 = __gsharp_ctx.iterScratch.Diff[__gsharp_ctx.evalWords - 1];
 __gsharp_ctx.underflow2 = (__gsharp_ctx.top2 & 0x80000000u) != 0;
-__gsharp_ctx.__gsharp_yielded_for_grid_sync = true;
+global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested = true;
 __gsharp_ctx.__gsharp_state = 11;
 return false;
 }
@@ -945,7 +943,7 @@ if (!(__gsharp_ctx.underflow2))
 goto case 13;
 // Was smaller than M, add back and we are done.
 global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Kernels.GpuBigIntKernels.DeviceAddSubParallel(__gsharp_ctx.iterScratch.Diff, rightOperand, __gsharp_ctx.iterScratch.Diff, __gsharp_ctx.evalWords, 1, true);
-__gsharp_ctx.__gsharp_yielded_for_grid_sync = true;
+global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested = true;
 __gsharp_ctx.__gsharp_state = 12;
 return false;
 }
@@ -978,7 +976,7 @@ for (int __gsharp_unroll_2 = global::Kassyi.GSharp.Core.ManagedGpuContext.BlockD
 remainderBuffer[__gsharp_unroll_2] = __gsharp_unroll_2 < __gsharp_ctx.n ? __gsharp_ctx.iterScratch.Diff[__gsharp_unroll_2] : 0u;
 }
 
-__gsharp_ctx.__gsharp_yielded_for_grid_sync = true;
+global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested = true;
 __gsharp_ctx.__gsharp_state = 17;
 return false;
 }

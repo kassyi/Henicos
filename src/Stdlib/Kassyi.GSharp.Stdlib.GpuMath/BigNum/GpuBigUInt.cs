@@ -10,6 +10,10 @@ namespace Kassyi.GSharp.Stdlib.GpuMath.BigNum;
 /// <para><b>Memory Management:</b> Implements <see cref="IDisposable"/> to return allocated GPU device memory to the pool.</para>
 /// <para><b>Expression Trees:</b> Supports deferred expression compilation and operator fusion via overloaded arithmetic operators.</para>
 /// <para><b>Thread Safety:</b> Value-type wrapper semantics; safe for concurrent reads across threads when distinct instances are used.</para>
+/// <para><b>Equality:</b> <see cref="Equals(GpuBigUInt)"/> and <see cref="GetHashCode"/> tell whether two instances refer to
+/// the same device buffer and never read device memory; <c>==</c>, <c>!=</c> and <see cref="CompareTo(GpuBigUInt)"/>
+/// compare values on the GPU. The two differ on purpose, as <c>==</c> and <see cref="double.Equals(double)"/> differ for
+/// <see cref="double.NaN"/>.</para>
 /// </remarks>
 [StructLayout(LayoutKind.Sequential)]
 [GenerateGpuNumberOperators]
@@ -59,8 +63,8 @@ public readonly partial struct GpuBigUInt : IGpuBigUIntExpression, IGpuBigNumber
     /// <summary>
     /// Gets the raw 64-bit device memory pointer to the first limb word in GPU global address space.
     /// </summary>
-    public IntPtr DevicePointer =>
-        Handle.IsDefault ? IntPtr.Zero : IntPtr.Add(Handle.Buffer.Pointer, Handle.WordOffset * 4);
+    /// <exception cref="ObjectDisposedException">The buffer has been freed (this value or a copy of it was disposed).</exception>
+    public IntPtr DevicePointer => Handle.DevicePointer;
 
     /// <summary>
     /// Gets the number of 32-bit unsigned integer limbs (words) allocated for this big integer.
@@ -97,8 +101,7 @@ public readonly partial struct GpuBigUInt : IGpuBigUIntExpression, IGpuBigNumber
     internal GpuBigUInt(GpuWorkspace workspace, int numWords, IntPtr preAllocatedPointer, bool isTemp = false)
     {
         Workspace = workspace ?? throw new ArgumentNullException(nameof(workspace));
-        var buffer = new GpuBigIntDeviceBuffer(preAllocatedPointer, numWords);
-        Handle = new GpuBigIntMemoryHandle(buffer, 0, numWords);
+        Handle = GpuBigIntMemoryHandle.CreateExternal(new GpuBigIntDeviceBuffer(preAllocatedPointer, numWords, null));
         IsTemp = isTemp;
     }
 
@@ -234,13 +237,13 @@ public readonly partial struct GpuBigUInt : IGpuBigUIntExpression, IGpuBigNumber
     }
 
     /// <summary>
-    /// Copies limb words from another <see cref="GpuBigUInt"/> instance to this instance in GPU device memory.
+    /// Copies limb words from another value or view to this instance in GPU device memory.
     /// </summary>
-    /// <param name="source">The source <see cref="GpuBigUInt"/> buffer.</param>
+    /// <param name="source">The source words; a <see cref="GpuBigUInt"/> converts implicitly.</param>
     /// <param name="destOffsetWords">The word offset within this destination buffer.</param>
     /// <param name="srcOffsetWords">The word offset within the source buffer.</param>
     /// <param name="numWords">The number of words to copy, or <see langword="null"/> to copy as many words as fit.</param>
-    public void CopyFrom(GpuBigUInt source, int destOffsetWords = 0, int srcOffsetWords = 0,
+    public void CopyFrom(scoped GpuBigUIntView source, int destOffsetWords = 0, int srcOffsetWords = 0,
         int? numWords = null)
     {
         var wordsToCopy = numWords ?? Math.Min(NumWords - destOffsetWords, source.NumWords - srcOffsetWords);
@@ -308,6 +311,14 @@ public readonly partial struct GpuBigUInt : IGpuBigUIntExpression, IGpuBigNumber
     public int CompareTo(GpuBigUInt other) => Workspace.Provider.CompareTo(Workspace, this, other);
 
     /// <summary>
+    /// Compares this instance to a view and returns an integer indicating their relative magnitude.
+    /// </summary>
+    /// <param name="other">The view to compare with this instance, for example an element of a <see cref="GpuBigUIntArray"/>.</param>
+    /// <returns>Less than zero, zero or greater than zero as this value is less than, equal to or greater than <paramref name="other"/>.</returns>
+    public int CompareTo(scoped GpuBigUIntView other) =>
+        Workspace.Provider.CompareTo(Workspace, this, other.AsBorrowedBigUInt());
+
+    /// <summary>
     /// Determines whether the specified object is equal to the current instance.
     /// </summary>
     /// <param name="obj">The object to compare with the current instance.</param>
@@ -315,15 +326,23 @@ public readonly partial struct GpuBigUInt : IGpuBigUIntExpression, IGpuBigNumber
     public override bool Equals(object? obj) => obj is GpuBigUInt other && Equals(other);
 
     /// <summary>
-    /// Indicates whether the current instance is equal to another <see cref="GpuBigUInt"/> instance.
+    /// Indicates whether the current instance refers to the same device buffer as another <see cref="GpuBigUInt"/>.
     /// </summary>
     /// <param name="other">A <see cref="GpuBigUInt"/> to compare with this instance.</param>
-    /// <returns><see langword="true"/> if the current instance is equal to the <paramref name="other"/> parameter; otherwise, <see langword="false"/>.</returns>
-    public bool Equals(GpuBigUInt other) =>
-        Handle.Equals(other.Handle) || (Workspace != null && CompareTo(other) == 0);
+    /// <returns>
+    /// <see langword="true"/> if both instances have the same <see cref="Handle"/> (the same words of the same allocation);
+    /// otherwise, <see langword="false"/>.
+    /// </returns>
+    /// <remarks>
+    /// Unlike the value-equal float types, <see cref="Equals(GpuBigUInt)"/> and <see cref="GetHashCode"/> compare the
+    /// identity of the buffer: two separately allocated buffers holding the same value are not equal. Use
+    /// <c>==</c> or <see cref="CompareTo(GpuBigUInt)"/> to compare values on the GPU. Neither member reads device memory,
+    /// so both also work on a disposed value.
+    /// </remarks>
+    public bool Equals(GpuBigUInt other) => Handle.Equals(other.Handle);
 
     /// <summary>
-    /// Returns the hash code for this instance.
+    /// Returns the hash code of the buffer identity, consistent with <see cref="Equals(GpuBigUInt)"/>.
     /// </summary>
     /// <returns>A 32-bit signed integer hash code.</returns>
     public override int GetHashCode() => Handle.GetHashCode();
@@ -331,8 +350,8 @@ public readonly partial struct GpuBigUInt : IGpuBigUIntExpression, IGpuBigNumber
     /// <summary>
     /// Returns a string representation of the <see cref="GpuBigUInt"/> instance for debugging.
     /// </summary>
-    /// <returns>A string containing word count and device pointer address.</returns>
-    public override string ToString() => $"GpuBigUInt(Words={NumWords}, DevicePointer=0x{DevicePointer:X})";
+    /// <returns>A string containing the word count and the handle; it does not read device memory.</returns>
+    public override string ToString() => $"GpuBigUInt(Words={NumWords}, {Handle})";
 
     /// <summary>
     /// Clears a single 32-bit limb word at the specified word index in GPU device memory.
@@ -379,13 +398,23 @@ public readonly partial struct GpuBigUInt : IGpuBigUIntExpression, IGpuBigNumber
     /// <summary>
     /// Releases the underlying GPU global device memory handle back to the workspace memory pool.
     /// </summary>
+    /// <remarks>
+    /// A borrowed value (an element or slice of an array, or another view that does not own its buffer) frees nothing.
+    /// Disposing a second copy of an owning value does nothing either.
+    /// </remarks>
     public void Dispose()
     {
-        if (Workspace != null && !Handle.IsDefault && !IsTemp)
+        if (Workspace != null && !Handle.IsDefault && !IsTemp && Handle.OwnsBuffer)
         {
             Workspace.MemoryManager.Free(Handle);
         }
     }
+
+    /// <summary>
+    /// Returns a view of the same words that does not own the buffer; disposing the view does nothing.
+    /// </summary>
+    /// <returns>A borrowed <see cref="GpuBigUInt"/>, valid while this value is not disposed.</returns>
+    internal GpuBigUInt AsBorrowed() => new(Workspace, Handle.Borrow());
 
     /// <summary>
     /// Determines whether the value of this instance is 0 (zero).
@@ -564,9 +593,9 @@ public readonly partial struct GpuBigUInt : IGpuBigUIntExpression, IGpuBigNumber
     /// <summary>
     /// Computes the modular multiplicative inverse of this instance modulo <paramref name="modulus"/>.
     /// </summary>
-    /// <param name="modulus">The modulus operand.</param>
+    /// <param name="modulus">The modulus operand; a <see cref="GpuBigUInt"/> converts implicitly.</param>
     /// <returns>A new <see cref="GpuBigUInt"/> containing the modular inverse ($x \equiv \text{this}^{-1} \pmod{\text{modulus}}$).</returns>
-    public GpuBigUInt ModInverse(GpuBigUInt modulus)
+    public GpuBigUInt ModInverse(scoped GpuBigUIntView modulus)
     {
         var result = new GpuBigUInt(Workspace, NumWords);
         GpuBigIntMath.ModInverse(this, modulus, result);
