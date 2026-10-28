@@ -102,124 +102,133 @@ internal static class CpuHostLaunchEmitter
                 $"global::Kassyi.GSharp.Core.ManagedGpuContext.InitializeGrid({GSharpInternalNames.Launcher.TotalBlocks}, sharedMemBytes);");
 
             writer.AppendLine("bool anyGridActive = true;");
-            writer.AppendLine("while (anyGridActive)");
+            // The dynamic shared memory of the blocks lives for one grid (#544), also when a step throws
+            writer.AppendLine("try");
             using (writer.Scope())
             {
-                writer.AppendLine("anyGridActive = false;");
-                writer.AppendLine(
-                    $"for (int {GSharpInternalNames.Launcher.BlockLoopIndex} = 0; {GSharpInternalNames.Launcher.BlockLoopIndex} < {GSharpInternalNames.Launcher.TotalBlocks}; {GSharpInternalNames.Launcher.BlockLoopIndex}++)");
+                writer.AppendLine("while (anyGridActive)");
                 using (writer.Scope())
                 {
-                    writer.AppendLine($"int {GSharpInternalNames.Launcher.BlockX} = {GSharpInternalNames.Launcher.BlockLoopIndex} % (int)gridDimX;");
-                    writer.AppendLine($"int {GSharpInternalNames.Launcher.BlockY} = ({GSharpInternalNames.Launcher.BlockLoopIndex} / (int)gridDimX) % (int)gridDimY;");
-                    writer.AppendLine($"int {GSharpInternalNames.Launcher.BlockZ} = {GSharpInternalNames.Launcher.BlockLoopIndex} / (int)(gridDimX * gridDimY);");
-
-                    writer.AppendLine("global::Kassyi.GSharp.Core.ManagedGpuContext.IsActive = true;");
-                    writer.AppendLine("try");
+                    writer.AppendLine("anyGridActive = false;");
+                    writer.AppendLine(
+                        $"for (int {GSharpInternalNames.Launcher.BlockLoopIndex} = 0; {GSharpInternalNames.Launcher.BlockLoopIndex} < {GSharpInternalNames.Launcher.TotalBlocks}; {GSharpInternalNames.Launcher.BlockLoopIndex}++)");
                     using (writer.Scope())
                     {
-                        writer.AppendLine($"global::Kassyi.GSharp.Core.ManagedGpuContext.BlockIdxX = {GSharpInternalNames.Launcher.BlockX};");
-                        writer.AppendLine($"global::Kassyi.GSharp.Core.ManagedGpuContext.BlockIdxY = {GSharpInternalNames.Launcher.BlockY};");
-                        writer.AppendLine($"global::Kassyi.GSharp.Core.ManagedGpuContext.BlockIdxZ = {GSharpInternalNames.Launcher.BlockZ};");
-                        writer.AppendLine("global::Kassyi.GSharp.Core.ManagedGpuContext.BlockDimX = (int)blockDimX;");
-                        writer.AppendLine("global::Kassyi.GSharp.Core.ManagedGpuContext.BlockDimY = (int)blockDimY;");
-                        writer.AppendLine("global::Kassyi.GSharp.Core.ManagedGpuContext.BlockDimZ = (int)blockDimZ;");
-                    writer.AppendLine("global::Kassyi.GSharp.Core.ManagedGpuContext.GridDimX = (int)gridDimX;");
-                    writer.AppendLine("global::Kassyi.GSharp.Core.ManagedGpuContext.GridDimY = (int)gridDimY;");
-                    writer.AppendLine("global::Kassyi.GSharp.Core.ManagedGpuContext.GridDimZ = (int)gridDimZ;");
-                    writer.AppendLine("global::Kassyi.GSharp.Core.ManagedGpuContext.ResetWarpExchange();");
+                        writer.AppendLine($"int {GSharpInternalNames.Launcher.BlockX} = {GSharpInternalNames.Launcher.BlockLoopIndex} % (int)gridDimX;");
+                        writer.AppendLine($"int {GSharpInternalNames.Launcher.BlockY} = ({GSharpInternalNames.Launcher.BlockLoopIndex} / (int)gridDimX) % (int)gridDimY;");
+                        writer.AppendLine($"int {GSharpInternalNames.Launcher.BlockZ} = {GSharpInternalNames.Launcher.BlockLoopIndex} / (int)(gridDimX * gridDimY);");
 
-                    writer.AppendLine("bool anyBlockActive = true;");
-                    writer.AppendLine("while (anyBlockActive)");
-                    using (writer.Scope())
-                    {
-                        writer.AppendLine("anyBlockActive = false;");
-                        writer.AppendLine("bool gridSyncRequested = false;");
-                        writer.AppendLine(
-                            $"for (int {GSharpInternalNames.Launcher.ThreadLoopIndex} = 0; {GSharpInternalNames.Launcher.ThreadLoopIndex} < {GSharpInternalNames.Launcher.ThreadsPerBlock}; {GSharpInternalNames.Launcher.ThreadLoopIndex}++)");
+                        writer.AppendLine("global::Kassyi.GSharp.Core.ManagedGpuContext.IsActive = true;");
+                        writer.AppendLine("try");
                         using (writer.Scope())
                         {
-                            writer.AppendLine($"int {GSharpInternalNames.Launcher.ThreadX} = {GSharpInternalNames.Launcher.ThreadLoopIndex} % (int)blockDimX;");
-                            writer.AppendLine(
-                                $"int {GSharpInternalNames.Launcher.ThreadY} = ({GSharpInternalNames.Launcher.ThreadLoopIndex} / (int)blockDimX) % (int)blockDimY;");
-                            writer.AppendLine(
-                                $"int {GSharpInternalNames.Launcher.ThreadZ} = {GSharpInternalNames.Launcher.ThreadLoopIndex} / (int)(blockDimX * blockDimY);");
-                            writer.AppendLine($"global::Kassyi.GSharp.Core.ManagedGpuContext.ThreadIdxX = {GSharpInternalNames.Launcher.ThreadX};");
-                            writer.AppendLine($"global::Kassyi.GSharp.Core.ManagedGpuContext.ThreadIdxY = {GSharpInternalNames.Launcher.ThreadY};");
-                            writer.AppendLine($"global::Kassyi.GSharp.Core.ManagedGpuContext.ThreadIdxZ = {GSharpInternalNames.Launcher.ThreadZ};");
+                            writer.AppendLine($"global::Kassyi.GSharp.Core.ManagedGpuContext.BlockIdxX = {GSharpInternalNames.Launcher.BlockX};");
+                            writer.AppendLine($"global::Kassyi.GSharp.Core.ManagedGpuContext.BlockIdxY = {GSharpInternalNames.Launcher.BlockY};");
+                            writer.AppendLine($"global::Kassyi.GSharp.Core.ManagedGpuContext.BlockIdxZ = {GSharpInternalNames.Launcher.BlockZ};");
+                            writer.AppendLine("global::Kassyi.GSharp.Core.ManagedGpuContext.BlockDimX = (int)blockDimX;");
+                            writer.AppendLine("global::Kassyi.GSharp.Core.ManagedGpuContext.BlockDimY = (int)blockDimY;");
+                            writer.AppendLine("global::Kassyi.GSharp.Core.ManagedGpuContext.BlockDimZ = (int)blockDimZ;");
+                        writer.AppendLine("global::Kassyi.GSharp.Core.ManagedGpuContext.GridDimX = (int)gridDimX;");
+                        writer.AppendLine("global::Kassyi.GSharp.Core.ManagedGpuContext.GridDimY = (int)gridDimY;");
+                        writer.AppendLine("global::Kassyi.GSharp.Core.ManagedGpuContext.GridDimZ = (int)gridDimZ;");
+                        writer.AppendLine("global::Kassyi.GSharp.Core.ManagedGpuContext.ResetWarpExchange();");
 
+                        writer.AppendLine("bool anyBlockActive = true;");
+                        writer.AppendLine("while (anyBlockActive)");
+                        using (writer.Scope())
+                        {
+                            writer.AppendLine("anyBlockActive = false;");
+                            writer.AppendLine("bool gridSyncRequested = false;");
                             writer.AppendLine(
-                                $"int {GSharpInternalNames.Launcher.LinearThreadIndex} = {GSharpInternalNames.Launcher.BlockLoopIndex} * {GSharpInternalNames.Launcher.ThreadsPerBlock} + {GSharpInternalNames.Launcher.ThreadLoopIndex};");
-                            writer.AppendLine($"if ({LinearContext}.{GSharpInternalNames.StateMachine.State} != -1)");
+                                $"for (int {GSharpInternalNames.Launcher.ThreadLoopIndex} = 0; {GSharpInternalNames.Launcher.ThreadLoopIndex} < {GSharpInternalNames.Launcher.ThreadsPerBlock}; {GSharpInternalNames.Launcher.ThreadLoopIndex}++)");
                             using (writer.Scope())
                             {
-                                writer.AppendLine("anyGridActive = true;");
-                                writer.AppendLine("anyBlockActive = true;");
-                                // The state machines of the kernel and of the device functions it calls request a
-                                // grid sync through one thread-static flag (#665)
-                                writer.AppendLine($"{ManagedExecutionRewriter.ManagedGridSyncRequested} = false;");
+                                writer.AppendLine($"int {GSharpInternalNames.Launcher.ThreadX} = {GSharpInternalNames.Launcher.ThreadLoopIndex} % (int)blockDimX;");
+                                writer.AppendLine(
+                                    $"int {GSharpInternalNames.Launcher.ThreadY} = ({GSharpInternalNames.Launcher.ThreadLoopIndex} / (int)blockDimX) % (int)blockDimY;");
+                                writer.AppendLine(
+                                    $"int {GSharpInternalNames.Launcher.ThreadZ} = {GSharpInternalNames.Launcher.ThreadLoopIndex} / (int)(blockDimX * blockDimY);");
+                                writer.AppendLine($"global::Kassyi.GSharp.Core.ManagedGpuContext.ThreadIdxX = {GSharpInternalNames.Launcher.ThreadX};");
+                                writer.AppendLine($"global::Kassyi.GSharp.Core.ManagedGpuContext.ThreadIdxY = {GSharpInternalNames.Launcher.ThreadY};");
+                                writer.AppendLine($"global::Kassyi.GSharp.Core.ManagedGpuContext.ThreadIdxZ = {GSharpInternalNames.Launcher.ThreadZ};");
 
-                                writer.Append($"{stateMachineName}(");
-                                bool isFirst = true;
-                                foreach (var p in kernel.Parameters)
+                                writer.AppendLine(
+                                    $"int {GSharpInternalNames.Launcher.LinearThreadIndex} = {GSharpInternalNames.Launcher.BlockLoopIndex} * {GSharpInternalNames.Launcher.ThreadsPerBlock} + {GSharpInternalNames.Launcher.ThreadLoopIndex};");
+                                writer.AppendLine($"if ({LinearContext}.{GSharpInternalNames.StateMachine.State} != -1)");
+                                using (writer.Scope())
                                 {
+                                    writer.AppendLine("anyGridActive = true;");
+                                    writer.AppendLine("anyBlockActive = true;");
+                                    // The state machines of the kernel and of the device functions it calls request a
+                                    // grid sync through one thread-static flag (#665)
+                                    writer.AppendLine($"{ManagedExecutionRewriter.ManagedGridSyncRequested} = false;");
+
+                                    writer.Append($"{stateMachineName}(");
+                                    bool isFirst = true;
+                                    foreach (var p in kernel.Parameters)
+                                    {
+                                        if (!isFirst)
+                                        {
+                                            writer.Append(", ");
+                                        }
+
+                                        isFirst = false;
+                                        if (p.RefKind is RefKind.Ref or RefKind.Out)
+                                        {
+                                            writer.Append("ref ");
+                                        }
+                                        else if (p.RefKind is RefKind.RefReadOnlyParameter)
+                                        {
+                                            writer.Append("in ");
+                                        }
+
+                                        writer.Append(p.Identifier);
+                                    }
+
                                     if (!isFirst)
                                     {
                                         writer.Append(", ");
                                     }
 
-                                    isFirst = false;
-                                    if (p.RefKind is RefKind.Ref or RefKind.Out)
+                                    writer.Append(LinearContext);
+                                    if (kernel.ReturnsValue)
                                     {
-                                        writer.Append("ref ");
-                                    }
-                                    else if (p.RefKind is RefKind.RefReadOnlyParameter)
-                                    {
-                                        writer.Append("in ");
+                                        writer.Append($", ref {GSharpInternalNames.ReturnValue.Buffer}[{GSharpInternalNames.Launcher.LinearThreadIndex}]");
                                     }
 
-                                    writer.Append(p.Identifier);
-                                }
+                                    writer.AppendLine(");");
 
-                                if (!isFirst)
-                                {
-                                    writer.Append(", ");
+                                    writer.AppendLine($"if ({ManagedExecutionRewriter.ManagedGridSyncRequested})");
+                                    using (writer.Scope())
+                                    {
+                                        writer.AppendLine("gridSyncRequested = true;");
+                                    }
                                 }
+                            }
 
-                                writer.Append(LinearContext);
-                                if (kernel.ReturnsValue)
-                                {
-                                    writer.Append($", ref {GSharpInternalNames.ReturnValue.Buffer}[{GSharpInternalNames.Launcher.LinearThreadIndex}]");
-                                }
-
-                                writer.AppendLine(");");
-
-                                writer.AppendLine($"if ({ManagedExecutionRewriter.ManagedGridSyncRequested})");
-                                using (writer.Scope())
-                                {
-                                    writer.AppendLine("gridSyncRequested = true;");
-                                }
+                            writer.AppendLine("if (gridSyncRequested)");
+                            using (writer.Scope())
+                            {
+                                writer.AppendLine("break;");
                             }
                         }
 
-                        writer.AppendLine("if (gridSyncRequested)");
+                        }
+                        writer.AppendLine("finally");
                         using (writer.Scope())
                         {
-                            writer.AppendLine("break;");
+                            writer.AppendLine("global::Kassyi.GSharp.Core.ManagedGpuContext.IsActive = false;");
                         }
-                    }
-
-                    }
-                    writer.AppendLine("finally");
-                    using (writer.Scope())
-                    {
-                        writer.AppendLine("global::Kassyi.GSharp.Core.ManagedGpuContext.IsActive = false;");
                     }
                 }
             }
 
-            // The dynamic shared memory of the blocks lives for one grid (#544)
-            writer.AppendLine("global::Kassyi.GSharp.Core.ManagedGpuContext.EndGrid();");
+            writer.AppendLine("finally");
+            using (writer.Scope())
+            {
+                writer.AppendLine("global::Kassyi.GSharp.Core.ManagedGpuContext.EndGrid();");
+            }
+
             WrapperEmitter.WriteAutoResultReturn(writer, kernel);
             if (!kernel.ReturnsValue)
             {

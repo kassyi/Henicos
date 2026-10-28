@@ -136,7 +136,7 @@ Prelude:
     Unsupported: { Value: __gsharp_unsupported, Prelude: ErrorChannel.hpp }
     Trap: { Value: __gsharp_trap, Prelude: ErrorChannel.hpp }
     # A failure after which the kernel step cannot go on: reports, then throws __gsharp_step_abort, which the native
-    # launcher catches around the kernel call
+    # launcher catches around each block
     TrapAbort: { Value: __gsharp_trap_abort, Prelude: ErrorChannel.hpp }
     StepAbort: { Value: __gsharp_step_abort, Prelude: ErrorChannel.hpp }
     ConsumeLastError: { Value: __gsharp_consume_last_error, Prelude: ErrorChannel.hpp }

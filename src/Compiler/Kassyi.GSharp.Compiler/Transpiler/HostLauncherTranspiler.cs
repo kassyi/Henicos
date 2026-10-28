@@ -69,34 +69,42 @@ internal static class HostLauncherTranspiler
             using (context.Emitter.Writer.Scope())
             {
                 context.Emitter.Writer.AppendLine($"if ({Error}.HasError()) continue;");
-                context.Emitter.Writer.AppendLine($"int32_t {BlockX} = {BlockLoopIndex} % {GridDimX};");
-                context.Emitter.Writer.AppendLine(
-                    $"int32_t {BlockY} = ({BlockLoopIndex} / {GridDimX}) % {GridDimY};");
-                context.Emitter.Writer.AppendLine(
-                    $"int32_t {BlockZ} = {BlockLoopIndex} / ({GridDimX} * {GridDimY});");
-                context.Emitter.Writer.AppendLine($"{ResetSharedMemory}({SharedMemBytes});");
-                if (hasContext)
+                // The whole block runs in a try inside the iteration: a step that cannot go on, or memory that cannot be
+                // allocated (also the contexts of a large block), ends the block there and never leaves the OpenMP loop
+                context.Emitter.Writer.AppendLine("try");
+                using (context.Emitter.Writer.Scope())
                 {
+                    context.Emitter.Writer.AppendLine($"int32_t {BlockX} = {BlockLoopIndex} % {GridDimX};");
                     context.Emitter.Writer.AppendLine(
-                        $"std::vector<{contextName}> {Contexts}({BlockDimX} * {BlockDimY} * {BlockDimZ});");
-
-                    context.Emitter.Writer.AppendLine($"for (auto& {ContextItem} : {Contexts}) {{");
-                    context.Emitter.Writer.AppendLine($"{ContextItem}.{State} = 0;");
-                    context.Emitter.Writer.AppendLine($"{ContextItem}.{AllContexts} = {Contexts}.data();");
-
-                    context.Emitter.Writer.AppendLine("}");
-                    context.Emitter.Writer.AppendLine($"std::atomic<bool> {AnyActive}{{true}};");
-                    context.Emitter.Writer.AppendLine($"while ({AnyActive} && !{Error}.HasError())");
-                    using (context.Emitter.Writer.Scope())
+                        $"int32_t {BlockY} = ({BlockLoopIndex} / {GridDimX}) % {GridDimY};");
+                    context.Emitter.Writer.AppendLine(
+                        $"int32_t {BlockZ} = {BlockLoopIndex} / ({GridDimX} * {GridDimY});");
+                    context.Emitter.Writer.AppendLine($"{ResetSharedMemory}({SharedMemBytes});");
+                    if (hasContext)
                     {
-                        context.Emitter.Writer.AppendLine($"{AnyActive} = false;");
+                        context.Emitter.Writer.AppendLine(
+                            $"std::vector<{contextName}> {Contexts}({BlockDimX} * {BlockDimY} * {BlockDimZ});");
+
+                        context.Emitter.Writer.AppendLine($"for (auto& {ContextItem} : {Contexts}) {{");
+                        context.Emitter.Writer.AppendLine($"{ContextItem}.{State} = 0;");
+                        context.Emitter.Writer.AppendLine($"{ContextItem}.{AllContexts} = {Contexts}.data();");
+
+                        context.Emitter.Writer.AppendLine("}");
+                        context.Emitter.Writer.AppendLine($"std::atomic<bool> {AnyActive}{{true}};");
+                        context.Emitter.Writer.AppendLine($"while ({AnyActive} && !{Error}.HasError())");
+                        using (context.Emitter.Writer.Scope())
+                        {
+                            context.Emitter.Writer.AppendLine($"{AnyActive} = false;");
+                            WriteBlockLoop(method, methodName, hasContext, plan.HasAutoResult, ref context);
+                        }
+                    }
+                    else
+                    {
                         WriteBlockLoop(method, methodName, hasContext, plan.HasAutoResult, ref context);
                     }
                 }
-                else
-                {
-                    WriteBlockLoop(method, methodName, hasContext, plan.HasAutoResult, ref context);
-                }
+
+                WriteStepAbortCatches(ref context);
             }
 
             context.Emitter.Writer.AppendLine($"if ({Error}.HasError()) {{");
@@ -146,49 +154,51 @@ internal static class HostLauncherTranspiler
         }
     }
 
-    // A step that cannot go on (__gsharp_trap_abort, or memory that cannot be allocated) ends with an exception, which
-    // stops here, inside the iteration of the OpenMP loop; the error slot then stops the launch:
-    // try { <kernel>(<arguments>); } catch (const __gsharp_step_abort&) {} catch (const std::bad_alloc&) { __gsharp_trap(...); }
+    // <kernel>(<arguments>[, &__gsharp_contexts[<thread>]][, __gsharp_auto_result]);
     private static void WriteKernelCall(MethodDeclarationSyntax method, string methodName, bool hasContext,
         bool hasAutoResult, ref TranspileContext context)
     {
-        context.Emitter.Writer.AppendLine("try");
-        using (context.Emitter.Writer.Scope())
+        context.Emitter.Writer.Append(methodName);
+        using (context.Emitter.Writer.Parentheses())
         {
-            context.Emitter.Writer.Append(methodName);
-            using (context.Emitter.Writer.Parentheses())
+            var isFirst = true;
+
+            foreach (var parameter in method.ParameterList.Parameters)
             {
-                var isFirst = true;
-
-                foreach (var parameter in method.ParameterList.Parameters)
-                {
-                    AppendArgumentSeparator(ref isFirst, ref context);
-                    CppNameResolver.AppendDeclaredName(parameter, parameter.Identifier, ref context);
-                }
-
-                if (hasContext)
-                {
-                    AppendArgumentSeparator(ref isFirst, ref context);
-                    context.Emitter.Writer.Append($"&{Contexts}[{ContextThreadIndex}]");
-                }
-
-                if (hasAutoResult)
-                {
-                    AppendArgumentSeparator(ref isFirst, ref context);
-                    context.Emitter.Writer.Append(Buffer);
-                }
+                AppendArgumentSeparator(ref isFirst, ref context);
+                CppNameResolver.AppendDeclaredName(parameter, parameter.Identifier, ref context);
             }
 
-            context.Emitter.Writer.AppendLine(";");
+            if (hasContext)
+            {
+                AppendArgumentSeparator(ref isFirst, ref context);
+                context.Emitter.Writer.Append($"&{Contexts}[{ContextThreadIndex}]");
+            }
+
+            if (hasAutoResult)
+            {
+                AppendArgumentSeparator(ref isFirst, ref context);
+                context.Emitter.Writer.Append(Buffer);
+            }
         }
 
+        context.Emitter.Writer.AppendLine(";");
+    }
+
+    // A step that cannot go on (__gsharp_trap_abort, or memory that cannot be allocated) ends with an exception, which stops
+    // at the try of the block, inside the iteration of the OpenMP loop; the error slot then stops the launch:
+    // catch (const __gsharp_step_abort&) {} catch (const std::bad_alloc&) { <report> }
+    private static void WriteStepAbortCatches(ref TranspileContext context)
+    {
         // The failure was reported before the throw
         context.Emitter.Writer.AppendLine($"catch (const {StepAbort}&) {{}}");
         context.Emitter.Writer.AppendLine("catch (const std::bad_alloc&)");
         using (context.Emitter.Writer.Scope())
         {
+            // [WHY] Reported into the slot of the launch itself: memory can run out before a thread of this launch has
+            // set the active slot of the OpenMP thread, which may still point at the slot of an earlier launch
             context.Emitter.Writer.AppendLine(
-                $"{Trap}(GSharpErrorCode::InvalidOperation, \"G#: the native CPU path could not allocate memory for a kernel step\");");
+                $"{Error}.Report(GSharpErrorCode::InvalidOperation, \"G#: the native CPU path could not allocate memory for a kernel step\");");
         }
     }
 

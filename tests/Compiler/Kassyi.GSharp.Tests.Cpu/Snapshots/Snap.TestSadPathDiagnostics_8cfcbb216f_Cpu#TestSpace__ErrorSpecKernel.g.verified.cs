@@ -73,6 +73,8 @@ __gsharp_contexts[i] = new __gsharp_context_TestSpace__ErrorSpecKernel__BadKerne
 }
 global::Kassyi.GSharp.Core.ManagedGpuContext.InitializeGrid(__gsharp_total_blocks, sharedMemBytes);
 bool anyGridActive = true;
+try
+{
 while (anyGridActive)
 {
 anyGridActive = false;
@@ -132,7 +134,11 @@ global::Kassyi.GSharp.Core.ManagedGpuContext.IsActive = false;
 }
 }
 }
+}
+finally
+{
 global::Kassyi.GSharp.Core.ManagedGpuContext.EndGrid();
+}
 return __gsharp_auto_result;
 }
 var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<BadKernel_Delegate>("__gsharp_launch_TestSpace__ErrorSpecKernel__BadKernel", dllPath);
