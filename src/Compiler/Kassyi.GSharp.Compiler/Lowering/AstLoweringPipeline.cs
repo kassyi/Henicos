@@ -60,12 +60,12 @@ public static class AstLoweringPipeline
         hoistedBody = branchRewriter.Rewrite(hoistedBody);
 
         // [WHY] Found once, before ContextHoister rewrites declarations, and given to both passes so that they agree
-        var stateLabels = StateLabelPlanner.FindStateLabels(hoistedBody, bodyModel);
+        var statePlan = StateLabelPlanner.Plan(hoistedBody, bodyModel);
         var (contextHoistedBody, contextFields) =
             new ContextHoister(copiedParameters, isDeviceFunction: deviceFunction != null, bodyModel, deviceFunction,
-                    stateLabels)
+                    statePlan)
                 .Hoist(hoistedBody);
-        var lowerer = new StateMachineLowerer(isDeviceFunction: deviceFunction != null, bodyModel, stateLabels);
+        var lowerer = new StateMachineLowerer(isDeviceFunction: deviceFunction != null, bodyModel, statePlan);
         var stateMachineBody = lowerer.Lower(contextHoistedBody);
 
         return new LoweredStateMachine(stateMachineBody, contextFields, lowerer.CallSites, copiedParameters);

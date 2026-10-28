@@ -16,13 +16,25 @@ namespace Kassyi.GSharp.Compiler.Lowering;
 /// The states are the stretches between the statements that start a state: the labels found so far and the split
 /// points. A new state label can move another <c>goto</c> into another state than its label, so the search repeats until
 /// nothing changes; it ends because the set only grows (at most one round per label, plus one).
+/// <para>
+/// The type is internal: <see cref="AstLoweringPipeline"/> gives its <see cref="StatePlan"/> to the internal
+/// constructors of <see cref="ContextHoister"/> and <see cref="StateMachineLowerer"/>; their public constructors (the
+/// Tier 2 tests) make the plan themselves.
+/// </para>
 /// </remarks>
-public static class StateLabelPlanner
+internal static class StateLabelPlanner
 {
-    /// <summary>Returns the keys (<see cref="LoweringIdentity.ForDeclaration"/>) of the top-level labels of <paramref name="body"/> that start a state.</summary>
+    /// <summary>Finds the labels of <paramref name="body"/> that start a state and numbers the states they start.</summary>
     /// <param name="body">The flattened body that <see cref="StateMachineLowerer"/> lowers.</param>
     /// <param name="model">The semantic model that keys the labels by symbol, or <see langword="null"/> to key them by name.</param>
-    public static HashSet<DeclarationKey> FindStateLabels(BlockSyntax body, SemanticModel? model)
+    public static StatePlan Plan(BlockSyntax body, SemanticModel? model)
+    {
+        var stateLabels = FindStateLabels(body, model);
+        return new StatePlan(stateLabels, NumberLabelStates(body.Statements, stateLabels, model), model);
+    }
+
+    // The keys (LoweringIdentity.ForDeclaration) of the top-level labels of body that start a state
+    private static HashSet<DeclarationKey> FindStateLabels(BlockSyntax body, SemanticModel? model)
     {
         var stateLabels = new HashSet<DeclarationKey>();
         var statements = body.Statements;
@@ -85,12 +97,9 @@ public static class StateLabelPlanner
         return stateLabels;
     }
 
-    /// <summary>
-    /// Returns the state that each label of <paramref name="stateLabels"/> starts in <paramref name="statements"/>, numbered
-    /// by the same rule that <see cref="FindStateLabels"/> uses to place the gotos. <see cref="StateMachineLowerer"/>
-    /// takes its numbers from here, so a goto and its label always agree on the state.
-    /// </summary>
-    internal static Dictionary<DeclarationKey, int> NumberLabelStates(SyntaxList<StatementSyntax> statements,
+    // The state that each label of stateLabels starts, numbered by the same rule that FindStateLabels uses to place the
+    // gotos, so a goto and its label always agree on the state
+    private static Dictionary<DeclarationKey, int> NumberLabelStates(SyntaxList<StatementSyntax> statements,
         HashSet<DeclarationKey> stateLabels, SemanticModel? model)
     {
         var stateOfStatement = new int[statements.Count];

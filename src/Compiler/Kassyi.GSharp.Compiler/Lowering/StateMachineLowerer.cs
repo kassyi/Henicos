@@ -9,15 +9,16 @@ namespace Kassyi.GSharp.Compiler.Lowering;
 /// The semantic model of the method's syntax tree, used to key user labels and <c>goto</c> targets by symbol and region
 /// (<see cref="DeclarationKey"/>).
 /// </param>
-/// <param name="stateLabels">
-/// The top-level labels that start a state (<see cref="StateLabelPlanner.FindStateLabels"/>), or <see langword="null"/>
-/// to find them in the lowered block. The pipeline passes the set it gave <see cref="ContextHoister"/>.
-/// </param>
-public class StateMachineLowerer(
-    bool isDeviceFunction = false,
-    SemanticModel? semanticModel = null,
-    HashSet<DeclarationKey>? stateLabels = null)
+public class StateMachineLowerer(bool isDeviceFunction = false, SemanticModel? semanticModel = null)
 {
+    // The plan that AstLoweringPipeline gives this pass and ContextHoister, or null to make one from the block
+    private readonly StatePlan? _plan;
+
+    /// <summary>Creates a lowerer that takes the labels that start a state and their states from <paramref name="plan"/>.</summary>
+    internal StateMachineLowerer(bool isDeviceFunction, SemanticModel? semanticModel, StatePlan plan)
+        : this(isDeviceFunction, semanticModel) =>
+        _plan = plan;
+
     private readonly ImmutableArray<InvocationExpressionSyntax>.Builder _callSites =
         ImmutableArray.CreateBuilder<InvocationExpressionSyntax>();
 
@@ -33,18 +34,19 @@ public class StateMachineLowerer(
         var state = 0;
         LabeledStatementSyntax? sectionLabel = null;
 
-        // 1. The state of each label that starts one, numbered by StateLabelPlanner (the only definition of the
+        // 1. The labels that start a state and their states, numbered by StateLabelPlanner (the only definition of the
         // numbering). Any other label stays a label inside its state.
-        var stateLabelKeys = stateLabels ?? StateLabelPlanner.FindStateLabels(block, semanticModel);
-        var labelStates = StateLabelPlanner.NumberLabelStates(statements, stateLabelKeys, semanticModel);
+        var plan = _plan ?? StateLabelPlanner.Plan(block, semanticModel);
+        var labelStates = plan.LabelStates;
 
         // 2. Pass 2: Generate switch cases.
         foreach (var stmt in statements)
         {
-            if (stmt is LabeledStatementSyntax labeled && isStateLabel(labeled))
+            if (stmt is LabeledStatementSyntax labeled && plan.StartsState(labeled))
             {
                 // A label boundary requires falling through to the next state case without yielding.
                 commitState(state + 1, isBarrier: false);
+                CheckLabelState(labeled, state, labelStates);
 
                 // [WHY] The label after a statement of a Gpu.SyncGrid body that returns stays in its section: the return
                 // jumps to it with goto from wherever it is, also from a switch of the user, where a goto case would bind
@@ -138,9 +140,6 @@ public class StateMachineLowerer(
 
         return SyntaxFactory.Block(switchStmt);
 
-        bool isStateLabel(LabeledStatementSyntax labeled) =>
-            stateLabelKeys.Contains(LoweringIdentity.ForDeclaration(labeled, semanticModel));
-
         void commitState(int nextState, bool isBarrier)
         {
             if (isBarrier)
@@ -232,10 +231,25 @@ public class StateMachineLowerer(
             new SyntaxAnnotation(LoweringAnnotations.StateMachineReturnAnnotationKind)
         );
 
-    private StatementSyntax RewriteGoto(StatementSyntax stmt, Dictionary<DeclarationKey, int> labelStates) =>
+    // [WHY] The plan numbers the states on the body before ContextHoister; this pass splits them on the body after it.
+    // ContextHoister moves no label or split point, so the numbers agree. A pass that broke that would make a goto case
+    // jump to another state than its label's, which neither the C# nor the C++ compiler would catch.
+    private void CheckLabelState(LabeledStatementSyntax labeled, int state,
+        IReadOnlyDictionary<DeclarationKey, int> labelStates)
+    {
+        if (!labelStates.TryGetValue(LoweringIdentity.ForDeclaration(labeled, semanticModel), out var planned) ||
+            planned != state)
+        {
+            throw new InvalidOperationException(
+                $"The label '{labeled.Identifier.ValueText}' starts state {state}, but the state plan numbered it differently.");
+        }
+    }
+
+    private StatementSyntax RewriteGoto(StatementSyntax stmt, IReadOnlyDictionary<DeclarationKey, int> labelStates) =>
         (StatementSyntax)new GotoRewriter(labelStates, semanticModel).Visit(stmt);
 
-    private class GotoRewriter(Dictionary<DeclarationKey, int> labelStates, SemanticModel? semanticModel) : CSharpSyntaxRewriter
+    private class GotoRewriter(IReadOnlyDictionary<DeclarationKey, int> labelStates, SemanticModel? semanticModel)
+        : CSharpSyntaxRewriter
     {
         public override SyntaxNode? VisitGotoStatement(GotoStatementSyntax node)
         {
