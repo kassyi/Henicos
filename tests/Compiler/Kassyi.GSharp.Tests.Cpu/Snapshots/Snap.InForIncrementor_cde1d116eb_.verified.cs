@@ -27,7 +27,7 @@
 
         case 3:
         {
-            var __gsharp_warp_temp_0 = __gsharp_warp_shuffle_read_sync(__gsharp_root, FullMask, __gsharp_ctx->i + 1, 0);
+            var __gsharp_warp_temp_0 = __gsharp_warp_shuffle_read_sync(__gsharp_root, FullMask, __gsharp_ctx->i + 1, 0, 32, "an unknown place");
             __gsharp_ctx->i = __gsharp_warp_temp_0;
             goto case 1;
             goto case 4;

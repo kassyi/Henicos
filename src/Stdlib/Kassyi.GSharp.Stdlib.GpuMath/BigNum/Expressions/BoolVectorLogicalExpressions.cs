@@ -9,7 +9,7 @@ internal class VectorLogicalExpression(
     private GpuBigUIntArray _finalValues;
     private bool _allocated;
 
-    public GpuBigUIntArray Evaluate(GpuWorkspace workspace)
+    public GpuBigUIntArrayView Evaluate(GpuWorkspace workspace)
     {
         if (left.Length != right.Length)
         {
@@ -79,7 +79,7 @@ internal class VectorNotExpression([TakesOwnership] IGpuBoolVectorExpression sou
     private GpuBigUIntArray _finalValues;
     private bool _allocated;
 
-    public GpuBigUIntArray Evaluate(GpuWorkspace workspace)
+    public GpuBigUIntArrayView Evaluate(GpuWorkspace workspace)
     {
         var result = source.Evaluate(workspace);
 

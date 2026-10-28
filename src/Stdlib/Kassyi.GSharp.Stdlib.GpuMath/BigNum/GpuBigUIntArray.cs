@@ -39,17 +39,16 @@ public readonly struct GpuBigUIntArray : IDisposable
     public int TotalWords => Length * WordsPerElement;
 
     /// <summary>
-    /// Gets a value indicating whether this buffer represents an intermediate temporary buffer.
+    /// Gets a value indicating whether this array owns its device buffer: disposing it returns the buffer to the pool.
     /// </summary>
-    public bool IsTemp { get; }
+    public bool OwnsBuffer => Handle.OwnsBuffer;
 
-    internal GpuBigUIntArray(GpuWorkspace workspace, GpuBigIntMemoryHandle handle, int length, int wordsPerElement, bool isTemp = false)
+    internal GpuBigUIntArray(GpuWorkspace workspace, GpuBigIntMemoryHandle handle, int length, int wordsPerElement)
     {
         Workspace = workspace ?? throw new ArgumentNullException(nameof(workspace));
         Handle = handle;
         Length = length;
         WordsPerElement = wordsPerElement;
-        IsTemp = isTemp;
     }
 
     /// <summary>
@@ -64,7 +63,6 @@ public readonly struct GpuBigUIntArray : IDisposable
         Length = length;
         WordsPerElement = wordsPerElement;
         Handle = Workspace.MemoryManager.Allocate(length * wordsPerElement);
-        IsTemp = false;
     }
 
     /// <summary>
@@ -115,7 +113,7 @@ public readonly struct GpuBigUIntArray : IDisposable
     /// Returns a view of the same elements that does not own the buffer; disposing the view does nothing.
     /// </summary>
     /// <returns>A borrowed <see cref="GpuBigUIntArray"/>, valid while this array is not disposed.</returns>
-    internal GpuBigUIntArray AsBorrowed() => new(Workspace, Handle.Borrow(), Length, WordsPerElement, IsTemp);
+    internal GpuBigUIntArray AsBorrowed() => new(Workspace, Handle.Borrow(), Length, WordsPerElement);
 
     /// <summary>
     /// Releases the GPU global device memory resources allocated for the underlying buffer.
@@ -125,17 +123,7 @@ public readonly struct GpuBigUIntArray : IDisposable
     /// </remarks>
     public void Dispose()
     {
-        if (!Handle.OwnsBuffer)
-        {
-            return;
-        }
-
-        if (IsTemp)
-        {
-            // Allocate a dummy GpuBigUInt to use the ReturnTemp method, since ReturnTemp takes GpuBigUInt.
-            Workspace.ReturnTemp(new GpuBigUInt(Workspace, Handle, true));
-        }
-        else
+        if (Handle.OwnsBuffer)
         {
             Workspace.MemoryManager.Free(Handle);
         }

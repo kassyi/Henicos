@@ -31,7 +31,8 @@ public class FermatBenchmark
         _baseA = 2;
         _exponentValue = _modulusN - 1;
 
-        _runner = new FermatAlgorithm(E);
+        // Base 2 (as the BigInteger baseline): for even E, base 3 divides N and the test ends without squaring.
+        _runner = new FermatAlgorithm(E, 2);
     }
 
     [IterationSetup]
@@ -52,11 +53,7 @@ public class FermatBenchmark
     public BigInteger StandardBigInteger() => BigInteger.ModPow(_baseA, _exponentValue, _modulusN);
 
     [Benchmark]
-    public uint[] GSharpKernelPrp()
-    {
-        var (result, _) = Runner.RunFermatPrp();
-        return result;
-    }
+    public FermatPrpResult GSharpKernelPrp() => Runner.Run();
 
     [Benchmark]
     public void GSharpKernelChunk100() => Runner.RunBenchmarkChunk();

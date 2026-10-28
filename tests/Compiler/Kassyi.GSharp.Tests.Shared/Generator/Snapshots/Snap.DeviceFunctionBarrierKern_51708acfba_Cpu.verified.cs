@@ -144,7 +144,7 @@ return false;
 case 2:
 __gsharp_switch_1_state_2:
 {
-auto __gsharp_warp_temp_0 = __gsharp_warp_shuffle_read_up_sync(__gsharp_root,4294967295U,__gsharp_ctx->__gsharp_id_0_value,__gsharp_ctx->__gsharp_id_2_offset);
+auto __gsharp_warp_temp_0 = __gsharp_warp_shuffle_read_up_sync(__gsharp_root,4294967295U,__gsharp_ctx->__gsharp_id_0_value,__gsharp_ctx->__gsharp_id_2_offset,32,""DeviceFunctionBarrierKernels.cs(44,28)"");
 int __gsharp_id_3_neighbor = __gsharp_warp_temp_0;
 if(__gsharp_ctx->__gsharp_id_1_lane>=__gsharp_ctx->__gsharp_id_2_offset)
 {
@@ -293,7 +293,7 @@ return false;
 case 1:
 __gsharp_switch_1_state_1:
 {
-auto __gsharp_warp_temp_0 = __gsharp_warp_shuffle_read_sync(__gsharp_root,4294967295U,__gsharp_ctx->__gsharp_id_2_value,31-__gsharp_ctx->__gsharp_id_1_lane);
+auto __gsharp_warp_temp_0 = __gsharp_warp_shuffle_read_sync(__gsharp_root,4294967295U,__gsharp_ctx->__gsharp_id_2_value,31-__gsharp_ctx->__gsharp_id_1_lane,32,""DeviceFunctionBarrierKernels.cs(85,24)"");
 int __gsharp_id_3_mirrored = __gsharp_warp_temp_0;
 __gsharp_id_0_data[__gsharp_ctx->__gsharp_id_1_lane]=__gsharp_id_3_mirrored;
 __gsharp_state = 0;return true;
@@ -436,7 +436,7 @@ return false;
 
 case 2:
 {
-var __gsharp_warp_temp_0 = __gsharp_warp_shuffle_read_up_sync(__gsharp_ctx, global::Kassyi.GSharp.Tests.Shared.Syntax.DeviceFunctionBarrierKernels.FullMask, __gsharp_ctx.value, __gsharp_ctx.offset);
+var __gsharp_warp_temp_0 = __gsharp_warp_shuffle_read_up_sync(__gsharp_ctx, global::Kassyi.GSharp.Tests.Shared.Syntax.DeviceFunctionBarrierKernels.FullMask, __gsharp_ctx.value, __gsharp_ctx.offset, 32, "DeviceFunctionBarrierKernels.cs(44,28)");
 int neighbor = __gsharp_warp_temp_0;
 if (__gsharp_ctx.lane >= __gsharp_ctx.offset)
 {
@@ -588,7 +588,7 @@ return false;
 
 case 1:
 {
-var __gsharp_warp_temp_0 = __gsharp_warp_shuffle_read_sync(__gsharp_ctx, global::Kassyi.GSharp.Tests.Shared.Syntax.DeviceFunctionBarrierKernels.FullMask, __gsharp_ctx.value, 31 - __gsharp_ctx.lane);
+var __gsharp_warp_temp_0 = __gsharp_warp_shuffle_read_sync(__gsharp_ctx, global::Kassyi.GSharp.Tests.Shared.Syntax.DeviceFunctionBarrierKernels.FullMask, __gsharp_ctx.value, 31 - __gsharp_ctx.lane, 32, "DeviceFunctionBarrierKernels.cs(85,24)");
 int mirrored = __gsharp_warp_temp_0;
 data[__gsharp_ctx.lane] = mirrored;
 {
@@ -1117,7 +1117,7 @@ return;
 case 2:
 __gsharp_switch_1_state_2:
 {
-auto __gsharp_warp_temp_0 = __gsharp_warp_shuffle_read_up_sync(__gsharp_root,4294967295U,__gsharp_ctx->__gsharp_id_4_value,__gsharp_ctx->__gsharp_id_5_offset);
+auto __gsharp_warp_temp_0 = __gsharp_warp_shuffle_read_up_sync(__gsharp_root,4294967295U,__gsharp_ctx->__gsharp_id_4_value,__gsharp_ctx->__gsharp_id_5_offset,32,""DeviceFunctionBarrierKernels.cs(123,28)"");
 int __gsharp_id_6_neighbor = __gsharp_warp_temp_0;
 if(__gsharp_ctx->__gsharp_id_3_lane>=__gsharp_ctx->__gsharp_id_5_offset)
 {
@@ -1222,7 +1222,7 @@ return;
 
 case 2:
 {
-var __gsharp_warp_temp_0 = __gsharp_warp_shuffle_read_up_sync(__gsharp_ctx, global::Kassyi.GSharp.Tests.Shared.Syntax.DeviceFunctionBarrierKernels.FullMask, __gsharp_ctx.value, __gsharp_ctx.offset);
+var __gsharp_warp_temp_0 = __gsharp_warp_shuffle_read_up_sync(__gsharp_ctx, global::Kassyi.GSharp.Tests.Shared.Syntax.DeviceFunctionBarrierKernels.FullMask, __gsharp_ctx.value, __gsharp_ctx.offset, 32, "DeviceFunctionBarrierKernels.cs(123,28)");
 int neighbor = __gsharp_warp_temp_0;
 if (__gsharp_ctx.lane >= __gsharp_ctx.offset)
 {
