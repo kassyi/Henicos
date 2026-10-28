@@ -15,6 +15,7 @@ internal static class DiagnosticRuleRegistry
         LinqNotSupportedRule.Instance,
         ManualEnumeratorRule.Instance,
         ManualUnmanagedAllocationRule.Instance,
+        ParallelAggregateRule.Instance,
         ParamsModifierNotSupportedRule.Instance,
         ProhibitedApiRule.Instance,
         RuntimeOnlyTypeRule.Instance,

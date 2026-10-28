@@ -140,6 +140,11 @@ internal static class SyncIntrinsicClassifier
         symbol is IPropertySymbol { ContainingType: { Name: TypeConstants.ThreadIndexType, ContainingType: null } type } &&
         type.ContainingNamespace.IsCoreNamespace();
 
+    /// <summary>Whether reading <paramref name="symbol"/> gives a value that may differ between the blocks of a grid (<c>BlockIndex.X</c>, <c>.Y</c>, <c>.Z</c>).</summary>
+    public static bool IsBlockVariantSource(ISymbol symbol) =>
+        symbol is IPropertySymbol { ContainingType: { Name: TypeConstants.BlockIndexType, ContainingType: null } type } &&
+        type.ContainingNamespace.IsCoreNamespace();
+
     private static SyncIntrinsicInfo ClassifyGpuMember(string name) => name switch
     {
         TypeConstants.SyncThreadsMethod =>
