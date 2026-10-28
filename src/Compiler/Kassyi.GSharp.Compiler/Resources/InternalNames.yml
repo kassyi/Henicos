@@ -188,6 +188,11 @@ StackLinq:
   Summary: Fused StackLinq chains in device code (StackLinqFusionRule).
   Names:
     ClampCount: { Value: __gsharp_clamp_count, Prelude: ../StackLinq.cuh }
+    # The Block strategy of AsParallel() aggregates (CUDA only)
+    BlockRank: { Value: __gsharp_block_rank, Prelude: ../Prelude.cu }
+    BlockSize: { Value: __gsharp_block_size, Prelude: ../Prelude.cu }
+    BlockReduce: { Value: __gsharp_block_reduce, Prelude: ../Prelude.cu }
+    Plus: { Value: __gsharp_plus, Prelude: ../Prelude.cu }
 
 Wmma:
   Summary: Tensor Core warp matrix fragment types and tags (nvcuda::wmma).

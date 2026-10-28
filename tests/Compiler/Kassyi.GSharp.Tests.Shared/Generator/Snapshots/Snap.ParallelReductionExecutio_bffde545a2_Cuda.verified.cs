@@ -88,12 +88,12 @@ auto&& __gsharp_fusion_src = __gsharp_id_0_data;
 int __gsharp_fusion_res = 0;
 int __gsharp_fusion_lo = 0;
 int __gsharp_fusion_hi = __gsharp_fusion_src.length;
-for (int __gsharp_i = __gsharp_fusion_lo; __gsharp_i < __gsharp_fusion_hi; __gsharp_i++)
+for (long long __gsharp_i = __gsharp_fusion_lo + (long long)__gsharp_block_rank(); __gsharp_i < __gsharp_fusion_hi; __gsharp_i += __gsharp_block_size())
 {
-auto __gsharp_val_0 = __gsharp_fusion_src[__gsharp_i];
+auto __gsharp_val_0 = __gsharp_fusion_src[(int)__gsharp_i];
 __gsharp_fusion_res += __gsharp_val_0;
 }
-return __gsharp_fusion_res;
+return __gsharp_block_reduce(__gsharp_fusion_res, __gsharp_plus{});
 }());
 if(threadIdx.x==0)
 {

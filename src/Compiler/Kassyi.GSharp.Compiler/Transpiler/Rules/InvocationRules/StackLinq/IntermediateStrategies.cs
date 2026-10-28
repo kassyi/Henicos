@@ -113,7 +113,7 @@ internal sealed class SkipWhileStrategy : IStackLinqIntermediateStrategy
     }
 }
 // TakeLast and SkipLast exist only right after an array or span source, so StackLinqFusionRule always folds them into the
-// range of the loop (CountFoldedStages); nothing is written inside the loop.
+// range of the loop (StackLinqChainExtractor.CountRangeStages); nothing is written inside the loop.
 internal sealed class TakeLastStrategy : IStackLinqIntermediateStrategy
 {
     public void EmitInitialValue(ref TranspileContext context, in LinqStage stage, int stageIndex)

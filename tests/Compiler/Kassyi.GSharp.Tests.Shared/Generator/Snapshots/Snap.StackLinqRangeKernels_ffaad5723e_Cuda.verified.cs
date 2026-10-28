@@ -125,12 +125,12 @@ int __gsharp_fusion_lo = 0;
 int __gsharp_fusion_hi = __gsharp_fusion_src.length;
 __gsharp_fusion_lo += __gsharp_clamp_count(__gsharp_stage_0_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
 __gsharp_fusion_lo += __gsharp_clamp_count(__gsharp_stage_1_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
-for (int __gsharp_i = __gsharp_fusion_lo; __gsharp_i < __gsharp_fusion_hi; __gsharp_i++)
+for (long long __gsharp_i = __gsharp_fusion_lo + (long long)__gsharp_block_rank(); __gsharp_i < __gsharp_fusion_hi; __gsharp_i += __gsharp_block_size())
 {
-auto __gsharp_val_0 = __gsharp_fusion_src[__gsharp_i];
+auto __gsharp_val_0 = __gsharp_fusion_src[(int)__gsharp_i];
 __gsharp_fusion_res += __gsharp_val_0;
 }
-return __gsharp_fusion_res;
+return __gsharp_block_reduce(__gsharp_fusion_res, __gsharp_plus{});
 }());
 }
 else
@@ -162,12 +162,12 @@ int __gsharp_fusion_lo = 0;
 int __gsharp_fusion_hi = __gsharp_fusion_src.length;
 __gsharp_fusion_lo += __gsharp_clamp_count(__gsharp_stage_0_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
 __gsharp_fusion_hi = __gsharp_fusion_lo + __gsharp_clamp_count(__gsharp_stage_1_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
-for (int __gsharp_i = __gsharp_fusion_lo; __gsharp_i < __gsharp_fusion_hi; __gsharp_i++)
+for (long long __gsharp_i = __gsharp_fusion_lo + (long long)__gsharp_block_rank(); __gsharp_i < __gsharp_fusion_hi; __gsharp_i += __gsharp_block_size())
 {
-auto __gsharp_val_0 = __gsharp_fusion_src[__gsharp_i];
+auto __gsharp_val_0 = __gsharp_fusion_src[(int)__gsharp_i];
 __gsharp_fusion_res += __gsharp_val_0;
 }
-return __gsharp_fusion_res;
+return __gsharp_block_reduce(__gsharp_fusion_res, __gsharp_plus{});
 }());
 }
 else
@@ -199,12 +199,12 @@ int __gsharp_fusion_lo = 0;
 int __gsharp_fusion_hi = __gsharp_fusion_src.length;
 __gsharp_fusion_hi = __gsharp_fusion_lo + __gsharp_clamp_count(__gsharp_stage_0_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
 __gsharp_fusion_lo += __gsharp_clamp_count(__gsharp_stage_1_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
-for (int __gsharp_i = __gsharp_fusion_lo; __gsharp_i < __gsharp_fusion_hi; __gsharp_i++)
+for (long long __gsharp_i = __gsharp_fusion_lo + (long long)__gsharp_block_rank(); __gsharp_i < __gsharp_fusion_hi; __gsharp_i += __gsharp_block_size())
 {
-auto __gsharp_val_0 = __gsharp_fusion_src[__gsharp_i];
+auto __gsharp_val_0 = __gsharp_fusion_src[(int)__gsharp_i];
 __gsharp_fusion_res += __gsharp_val_0;
 }
-return __gsharp_fusion_res;
+return __gsharp_block_reduce(__gsharp_fusion_res, __gsharp_plus{});
 }());
 }
 else
@@ -236,12 +236,12 @@ int __gsharp_fusion_lo = 0;
 int __gsharp_fusion_hi = __gsharp_fusion_src.length;
 __gsharp_fusion_hi = __gsharp_fusion_lo + __gsharp_clamp_count(__gsharp_stage_0_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
 __gsharp_fusion_hi = __gsharp_fusion_lo + __gsharp_clamp_count(__gsharp_stage_1_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
-for (int __gsharp_i = __gsharp_fusion_lo; __gsharp_i < __gsharp_fusion_hi; __gsharp_i++)
+for (long long __gsharp_i = __gsharp_fusion_lo + (long long)__gsharp_block_rank(); __gsharp_i < __gsharp_fusion_hi; __gsharp_i += __gsharp_block_size())
 {
-auto __gsharp_val_0 = __gsharp_fusion_src[__gsharp_i];
+auto __gsharp_val_0 = __gsharp_fusion_src[(int)__gsharp_i];
 __gsharp_fusion_res += __gsharp_val_0;
 }
-return __gsharp_fusion_res;
+return __gsharp_block_reduce(__gsharp_fusion_res, __gsharp_plus{});
 }());
 }
 else
@@ -273,12 +273,12 @@ int __gsharp_fusion_lo = 0;
 int __gsharp_fusion_hi = __gsharp_fusion_src.length;
 __gsharp_fusion_hi -= __gsharp_clamp_count(__gsharp_stage_0_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
 __gsharp_fusion_lo += __gsharp_clamp_count(__gsharp_stage_1_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
-for (int __gsharp_i = __gsharp_fusion_lo; __gsharp_i < __gsharp_fusion_hi; __gsharp_i++)
+for (long long __gsharp_i = __gsharp_fusion_lo + (long long)__gsharp_block_rank(); __gsharp_i < __gsharp_fusion_hi; __gsharp_i += __gsharp_block_size())
 {
-auto __gsharp_val_0 = __gsharp_fusion_src[__gsharp_i];
+auto __gsharp_val_0 = __gsharp_fusion_src[(int)__gsharp_i];
 __gsharp_fusion_res += __gsharp_val_0;
 }
-return __gsharp_fusion_res;
+return __gsharp_block_reduce(__gsharp_fusion_res, __gsharp_plus{});
 }());
 }
 else
@@ -310,12 +310,12 @@ int __gsharp_fusion_lo = 0;
 int __gsharp_fusion_hi = __gsharp_fusion_src.length;
 __gsharp_fusion_hi -= __gsharp_clamp_count(__gsharp_stage_0_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
 __gsharp_fusion_hi = __gsharp_fusion_lo + __gsharp_clamp_count(__gsharp_stage_1_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
-for (int __gsharp_i = __gsharp_fusion_lo; __gsharp_i < __gsharp_fusion_hi; __gsharp_i++)
+for (long long __gsharp_i = __gsharp_fusion_lo + (long long)__gsharp_block_rank(); __gsharp_i < __gsharp_fusion_hi; __gsharp_i += __gsharp_block_size())
 {
-auto __gsharp_val_0 = __gsharp_fusion_src[__gsharp_i];
+auto __gsharp_val_0 = __gsharp_fusion_src[(int)__gsharp_i];
 __gsharp_fusion_res += __gsharp_val_0;
 }
-return __gsharp_fusion_res;
+return __gsharp_block_reduce(__gsharp_fusion_res, __gsharp_plus{});
 }());
 }
 else
@@ -347,12 +347,12 @@ int __gsharp_fusion_lo = 0;
 int __gsharp_fusion_hi = __gsharp_fusion_src.length;
 __gsharp_fusion_lo = __gsharp_fusion_hi - __gsharp_clamp_count(__gsharp_stage_0_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
 __gsharp_fusion_lo += __gsharp_clamp_count(__gsharp_stage_1_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
-for (int __gsharp_i = __gsharp_fusion_lo; __gsharp_i < __gsharp_fusion_hi; __gsharp_i++)
+for (long long __gsharp_i = __gsharp_fusion_lo + (long long)__gsharp_block_rank(); __gsharp_i < __gsharp_fusion_hi; __gsharp_i += __gsharp_block_size())
 {
-auto __gsharp_val_0 = __gsharp_fusion_src[__gsharp_i];
+auto __gsharp_val_0 = __gsharp_fusion_src[(int)__gsharp_i];
 __gsharp_fusion_res += __gsharp_val_0;
 }
-return __gsharp_fusion_res;
+return __gsharp_block_reduce(__gsharp_fusion_res, __gsharp_plus{});
 }());
 }
 else
@@ -384,12 +384,12 @@ int __gsharp_fusion_lo = 0;
 int __gsharp_fusion_hi = __gsharp_fusion_src.length;
 __gsharp_fusion_lo = __gsharp_fusion_hi - __gsharp_clamp_count(__gsharp_stage_0_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
 __gsharp_fusion_hi = __gsharp_fusion_lo + __gsharp_clamp_count(__gsharp_stage_1_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
-for (int __gsharp_i = __gsharp_fusion_lo; __gsharp_i < __gsharp_fusion_hi; __gsharp_i++)
+for (long long __gsharp_i = __gsharp_fusion_lo + (long long)__gsharp_block_rank(); __gsharp_i < __gsharp_fusion_hi; __gsharp_i += __gsharp_block_size())
 {
-auto __gsharp_val_0 = __gsharp_fusion_src[__gsharp_i];
+auto __gsharp_val_0 = __gsharp_fusion_src[(int)__gsharp_i];
 __gsharp_fusion_res += __gsharp_val_0;
 }
-return __gsharp_fusion_res;
+return __gsharp_block_reduce(__gsharp_fusion_res, __gsharp_plus{});
 }());
 }
 else
@@ -421,12 +421,12 @@ int __gsharp_fusion_lo = 0;
 int __gsharp_fusion_hi = __gsharp_fusion_src.length;
 __gsharp_fusion_hi -= __gsharp_clamp_count(__gsharp_stage_0_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
 __gsharp_fusion_hi -= __gsharp_clamp_count(__gsharp_stage_1_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
-for (int __gsharp_i = __gsharp_fusion_lo; __gsharp_i < __gsharp_fusion_hi; __gsharp_i++)
+for (long long __gsharp_i = __gsharp_fusion_lo + (long long)__gsharp_block_rank(); __gsharp_i < __gsharp_fusion_hi; __gsharp_i += __gsharp_block_size())
 {
-auto __gsharp_val_0 = __gsharp_fusion_src[__gsharp_i];
+auto __gsharp_val_0 = __gsharp_fusion_src[(int)__gsharp_i];
 __gsharp_fusion_res += __gsharp_val_0;
 }
-return __gsharp_fusion_res;
+return __gsharp_block_reduce(__gsharp_fusion_res, __gsharp_plus{});
 }());
 }
 else
@@ -458,12 +458,12 @@ int __gsharp_fusion_lo = 0;
 int __gsharp_fusion_hi = __gsharp_fusion_src.length;
 __gsharp_fusion_hi -= __gsharp_clamp_count(__gsharp_stage_0_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
 __gsharp_fusion_lo = __gsharp_fusion_hi - __gsharp_clamp_count(__gsharp_stage_1_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
-for (int __gsharp_i = __gsharp_fusion_lo; __gsharp_i < __gsharp_fusion_hi; __gsharp_i++)
+for (long long __gsharp_i = __gsharp_fusion_lo + (long long)__gsharp_block_rank(); __gsharp_i < __gsharp_fusion_hi; __gsharp_i += __gsharp_block_size())
 {
-auto __gsharp_val_0 = __gsharp_fusion_src[__gsharp_i];
+auto __gsharp_val_0 = __gsharp_fusion_src[(int)__gsharp_i];
 __gsharp_fusion_res += __gsharp_val_0;
 }
-return __gsharp_fusion_res;
+return __gsharp_block_reduce(__gsharp_fusion_res, __gsharp_plus{});
 }());
 }
 else
@@ -495,12 +495,12 @@ int __gsharp_fusion_lo = 0;
 int __gsharp_fusion_hi = __gsharp_fusion_src.length;
 __gsharp_fusion_lo = __gsharp_fusion_hi - __gsharp_clamp_count(__gsharp_stage_0_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
 __gsharp_fusion_hi -= __gsharp_clamp_count(__gsharp_stage_1_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
-for (int __gsharp_i = __gsharp_fusion_lo; __gsharp_i < __gsharp_fusion_hi; __gsharp_i++)
+for (long long __gsharp_i = __gsharp_fusion_lo + (long long)__gsharp_block_rank(); __gsharp_i < __gsharp_fusion_hi; __gsharp_i += __gsharp_block_size())
 {
-auto __gsharp_val_0 = __gsharp_fusion_src[__gsharp_i];
+auto __gsharp_val_0 = __gsharp_fusion_src[(int)__gsharp_i];
 __gsharp_fusion_res += __gsharp_val_0;
 }
-return __gsharp_fusion_res;
+return __gsharp_block_reduce(__gsharp_fusion_res, __gsharp_plus{});
 }());
 }
 else
@@ -532,12 +532,12 @@ int __gsharp_fusion_lo = 0;
 int __gsharp_fusion_hi = __gsharp_fusion_src.length;
 __gsharp_fusion_lo = __gsharp_fusion_hi - __gsharp_clamp_count(__gsharp_stage_0_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
 __gsharp_fusion_lo = __gsharp_fusion_hi - __gsharp_clamp_count(__gsharp_stage_1_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
-for (int __gsharp_i = __gsharp_fusion_lo; __gsharp_i < __gsharp_fusion_hi; __gsharp_i++)
+for (long long __gsharp_i = __gsharp_fusion_lo + (long long)__gsharp_block_rank(); __gsharp_i < __gsharp_fusion_hi; __gsharp_i += __gsharp_block_size())
 {
-auto __gsharp_val_0 = __gsharp_fusion_src[__gsharp_i];
+auto __gsharp_val_0 = __gsharp_fusion_src[(int)__gsharp_i];
 __gsharp_fusion_res += __gsharp_val_0;
 }
-return __gsharp_fusion_res;
+return __gsharp_block_reduce(__gsharp_fusion_res, __gsharp_plus{});
 }());
 }
 }
@@ -1674,12 +1674,12 @@ int __gsharp_fusion_hi = __gsharp_fusion_src.length;
 __gsharp_fusion_lo += __gsharp_clamp_count(__gsharp_stage_0_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
 __gsharp_fusion_lo += __gsharp_clamp_count(__gsharp_stage_1_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
 __gsharp_fusion_lo += __gsharp_clamp_count(__gsharp_stage_2_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
-for (int __gsharp_i = __gsharp_fusion_lo; __gsharp_i < __gsharp_fusion_hi; __gsharp_i++)
+for (long long __gsharp_i = __gsharp_fusion_lo + (long long)__gsharp_block_rank(); __gsharp_i < __gsharp_fusion_hi; __gsharp_i += __gsharp_block_size())
 {
-auto __gsharp_val_0 = __gsharp_fusion_src[__gsharp_i];
+auto __gsharp_val_0 = __gsharp_fusion_src[(int)__gsharp_i];
 __gsharp_fusion_res += __gsharp_val_0;
 }
-return __gsharp_fusion_res;
+return __gsharp_block_reduce(__gsharp_fusion_res, __gsharp_plus{});
 }());
 __gsharp_id_4_result[__gsharp_id_5_g*64+2]=([&]() -> auto {
 auto&& __gsharp_fusion_src = __gsharp_id_0_data;
@@ -1710,12 +1710,12 @@ int __gsharp_fusion_hi = __gsharp_fusion_src.length;
 __gsharp_fusion_lo += __gsharp_clamp_count(__gsharp_stage_0_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
 __gsharp_fusion_lo += __gsharp_clamp_count(__gsharp_stage_1_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
 __gsharp_fusion_hi = __gsharp_fusion_lo + __gsharp_clamp_count(__gsharp_stage_2_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
-for (int __gsharp_i = __gsharp_fusion_lo; __gsharp_i < __gsharp_fusion_hi; __gsharp_i++)
+for (long long __gsharp_i = __gsharp_fusion_lo + (long long)__gsharp_block_rank(); __gsharp_i < __gsharp_fusion_hi; __gsharp_i += __gsharp_block_size())
 {
-auto __gsharp_val_0 = __gsharp_fusion_src[__gsharp_i];
+auto __gsharp_val_0 = __gsharp_fusion_src[(int)__gsharp_i];
 __gsharp_fusion_res += __gsharp_val_0;
 }
-return __gsharp_fusion_res;
+return __gsharp_block_reduce(__gsharp_fusion_res, __gsharp_plus{});
 }());
 __gsharp_id_4_result[__gsharp_id_5_g*64+4]=([&]() -> auto {
 auto&& __gsharp_fusion_src = __gsharp_id_0_data;
@@ -1746,12 +1746,12 @@ int __gsharp_fusion_hi = __gsharp_fusion_src.length;
 __gsharp_fusion_lo += __gsharp_clamp_count(__gsharp_stage_0_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
 __gsharp_fusion_hi = __gsharp_fusion_lo + __gsharp_clamp_count(__gsharp_stage_1_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
 __gsharp_fusion_lo += __gsharp_clamp_count(__gsharp_stage_2_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
-for (int __gsharp_i = __gsharp_fusion_lo; __gsharp_i < __gsharp_fusion_hi; __gsharp_i++)
+for (long long __gsharp_i = __gsharp_fusion_lo + (long long)__gsharp_block_rank(); __gsharp_i < __gsharp_fusion_hi; __gsharp_i += __gsharp_block_size())
 {
-auto __gsharp_val_0 = __gsharp_fusion_src[__gsharp_i];
+auto __gsharp_val_0 = __gsharp_fusion_src[(int)__gsharp_i];
 __gsharp_fusion_res += __gsharp_val_0;
 }
-return __gsharp_fusion_res;
+return __gsharp_block_reduce(__gsharp_fusion_res, __gsharp_plus{});
 }());
 __gsharp_id_4_result[__gsharp_id_5_g*64+6]=([&]() -> auto {
 auto&& __gsharp_fusion_src = __gsharp_id_0_data;
@@ -1782,12 +1782,12 @@ int __gsharp_fusion_hi = __gsharp_fusion_src.length;
 __gsharp_fusion_lo += __gsharp_clamp_count(__gsharp_stage_0_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
 __gsharp_fusion_hi = __gsharp_fusion_lo + __gsharp_clamp_count(__gsharp_stage_1_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
 __gsharp_fusion_hi = __gsharp_fusion_lo + __gsharp_clamp_count(__gsharp_stage_2_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
-for (int __gsharp_i = __gsharp_fusion_lo; __gsharp_i < __gsharp_fusion_hi; __gsharp_i++)
+for (long long __gsharp_i = __gsharp_fusion_lo + (long long)__gsharp_block_rank(); __gsharp_i < __gsharp_fusion_hi; __gsharp_i += __gsharp_block_size())
 {
-auto __gsharp_val_0 = __gsharp_fusion_src[__gsharp_i];
+auto __gsharp_val_0 = __gsharp_fusion_src[(int)__gsharp_i];
 __gsharp_fusion_res += __gsharp_val_0;
 }
-return __gsharp_fusion_res;
+return __gsharp_block_reduce(__gsharp_fusion_res, __gsharp_plus{});
 }());
 __gsharp_id_4_result[__gsharp_id_5_g*64+8]=([&]() -> auto {
 auto&& __gsharp_fusion_src = __gsharp_id_0_data;
@@ -1818,12 +1818,12 @@ int __gsharp_fusion_hi = __gsharp_fusion_src.length;
 __gsharp_fusion_hi = __gsharp_fusion_lo + __gsharp_clamp_count(__gsharp_stage_0_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
 __gsharp_fusion_lo += __gsharp_clamp_count(__gsharp_stage_1_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
 __gsharp_fusion_lo += __gsharp_clamp_count(__gsharp_stage_2_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
-for (int __gsharp_i = __gsharp_fusion_lo; __gsharp_i < __gsharp_fusion_hi; __gsharp_i++)
+for (long long __gsharp_i = __gsharp_fusion_lo + (long long)__gsharp_block_rank(); __gsharp_i < __gsharp_fusion_hi; __gsharp_i += __gsharp_block_size())
 {
-auto __gsharp_val_0 = __gsharp_fusion_src[__gsharp_i];
+auto __gsharp_val_0 = __gsharp_fusion_src[(int)__gsharp_i];
 __gsharp_fusion_res += __gsharp_val_0;
 }
-return __gsharp_fusion_res;
+return __gsharp_block_reduce(__gsharp_fusion_res, __gsharp_plus{});
 }());
 __gsharp_id_4_result[__gsharp_id_5_g*64+10]=([&]() -> auto {
 auto&& __gsharp_fusion_src = __gsharp_id_0_data;
@@ -1854,12 +1854,12 @@ int __gsharp_fusion_hi = __gsharp_fusion_src.length;
 __gsharp_fusion_hi = __gsharp_fusion_lo + __gsharp_clamp_count(__gsharp_stage_0_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
 __gsharp_fusion_lo += __gsharp_clamp_count(__gsharp_stage_1_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
 __gsharp_fusion_hi = __gsharp_fusion_lo + __gsharp_clamp_count(__gsharp_stage_2_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
-for (int __gsharp_i = __gsharp_fusion_lo; __gsharp_i < __gsharp_fusion_hi; __gsharp_i++)
+for (long long __gsharp_i = __gsharp_fusion_lo + (long long)__gsharp_block_rank(); __gsharp_i < __gsharp_fusion_hi; __gsharp_i += __gsharp_block_size())
 {
-auto __gsharp_val_0 = __gsharp_fusion_src[__gsharp_i];
+auto __gsharp_val_0 = __gsharp_fusion_src[(int)__gsharp_i];
 __gsharp_fusion_res += __gsharp_val_0;
 }
-return __gsharp_fusion_res;
+return __gsharp_block_reduce(__gsharp_fusion_res, __gsharp_plus{});
 }());
 __gsharp_id_4_result[__gsharp_id_5_g*64+12]=([&]() -> auto {
 auto&& __gsharp_fusion_src = __gsharp_id_0_data;
@@ -1890,12 +1890,12 @@ int __gsharp_fusion_hi = __gsharp_fusion_src.length;
 __gsharp_fusion_hi = __gsharp_fusion_lo + __gsharp_clamp_count(__gsharp_stage_0_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
 __gsharp_fusion_hi = __gsharp_fusion_lo + __gsharp_clamp_count(__gsharp_stage_1_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
 __gsharp_fusion_lo += __gsharp_clamp_count(__gsharp_stage_2_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
-for (int __gsharp_i = __gsharp_fusion_lo; __gsharp_i < __gsharp_fusion_hi; __gsharp_i++)
+for (long long __gsharp_i = __gsharp_fusion_lo + (long long)__gsharp_block_rank(); __gsharp_i < __gsharp_fusion_hi; __gsharp_i += __gsharp_block_size())
 {
-auto __gsharp_val_0 = __gsharp_fusion_src[__gsharp_i];
+auto __gsharp_val_0 = __gsharp_fusion_src[(int)__gsharp_i];
 __gsharp_fusion_res += __gsharp_val_0;
 }
-return __gsharp_fusion_res;
+return __gsharp_block_reduce(__gsharp_fusion_res, __gsharp_plus{});
 }());
 __gsharp_id_4_result[__gsharp_id_5_g*64+14]=([&]() -> auto {
 auto&& __gsharp_fusion_src = __gsharp_id_0_data;
@@ -1926,12 +1926,12 @@ int __gsharp_fusion_hi = __gsharp_fusion_src.length;
 __gsharp_fusion_hi = __gsharp_fusion_lo + __gsharp_clamp_count(__gsharp_stage_0_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
 __gsharp_fusion_hi = __gsharp_fusion_lo + __gsharp_clamp_count(__gsharp_stage_1_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
 __gsharp_fusion_hi = __gsharp_fusion_lo + __gsharp_clamp_count(__gsharp_stage_2_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
-for (int __gsharp_i = __gsharp_fusion_lo; __gsharp_i < __gsharp_fusion_hi; __gsharp_i++)
+for (long long __gsharp_i = __gsharp_fusion_lo + (long long)__gsharp_block_rank(); __gsharp_i < __gsharp_fusion_hi; __gsharp_i += __gsharp_block_size())
 {
-auto __gsharp_val_0 = __gsharp_fusion_src[__gsharp_i];
+auto __gsharp_val_0 = __gsharp_fusion_src[(int)__gsharp_i];
 __gsharp_fusion_res += __gsharp_val_0;
 }
-return __gsharp_fusion_res;
+return __gsharp_block_reduce(__gsharp_fusion_res, __gsharp_plus{});
 }());
 __gsharp_id_4_result[__gsharp_id_5_g*64+16]=([&]() -> auto {
 auto&& __gsharp_fusion_src = __gsharp_id_0_data;
@@ -1962,12 +1962,12 @@ int __gsharp_fusion_hi = __gsharp_fusion_src.length;
 __gsharp_fusion_hi -= __gsharp_clamp_count(__gsharp_stage_0_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
 __gsharp_fusion_lo += __gsharp_clamp_count(__gsharp_stage_1_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
 __gsharp_fusion_lo += __gsharp_clamp_count(__gsharp_stage_2_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
-for (int __gsharp_i = __gsharp_fusion_lo; __gsharp_i < __gsharp_fusion_hi; __gsharp_i++)
+for (long long __gsharp_i = __gsharp_fusion_lo + (long long)__gsharp_block_rank(); __gsharp_i < __gsharp_fusion_hi; __gsharp_i += __gsharp_block_size())
 {
-auto __gsharp_val_0 = __gsharp_fusion_src[__gsharp_i];
+auto __gsharp_val_0 = __gsharp_fusion_src[(int)__gsharp_i];
 __gsharp_fusion_res += __gsharp_val_0;
 }
-return __gsharp_fusion_res;
+return __gsharp_block_reduce(__gsharp_fusion_res, __gsharp_plus{});
 }());
 __gsharp_id_4_result[__gsharp_id_5_g*64+18]=([&]() -> auto {
 auto&& __gsharp_fusion_src = __gsharp_id_0_data;
@@ -1998,12 +1998,12 @@ int __gsharp_fusion_hi = __gsharp_fusion_src.length;
 __gsharp_fusion_hi -= __gsharp_clamp_count(__gsharp_stage_0_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
 __gsharp_fusion_lo += __gsharp_clamp_count(__gsharp_stage_1_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
 __gsharp_fusion_hi = __gsharp_fusion_lo + __gsharp_clamp_count(__gsharp_stage_2_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
-for (int __gsharp_i = __gsharp_fusion_lo; __gsharp_i < __gsharp_fusion_hi; __gsharp_i++)
+for (long long __gsharp_i = __gsharp_fusion_lo + (long long)__gsharp_block_rank(); __gsharp_i < __gsharp_fusion_hi; __gsharp_i += __gsharp_block_size())
 {
-auto __gsharp_val_0 = __gsharp_fusion_src[__gsharp_i];
+auto __gsharp_val_0 = __gsharp_fusion_src[(int)__gsharp_i];
 __gsharp_fusion_res += __gsharp_val_0;
 }
-return __gsharp_fusion_res;
+return __gsharp_block_reduce(__gsharp_fusion_res, __gsharp_plus{});
 }());
 __gsharp_id_4_result[__gsharp_id_5_g*64+20]=([&]() -> auto {
 auto&& __gsharp_fusion_src = __gsharp_id_0_data;
@@ -2034,12 +2034,12 @@ int __gsharp_fusion_hi = __gsharp_fusion_src.length;
 __gsharp_fusion_hi -= __gsharp_clamp_count(__gsharp_stage_0_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
 __gsharp_fusion_hi = __gsharp_fusion_lo + __gsharp_clamp_count(__gsharp_stage_1_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
 __gsharp_fusion_lo += __gsharp_clamp_count(__gsharp_stage_2_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
-for (int __gsharp_i = __gsharp_fusion_lo; __gsharp_i < __gsharp_fusion_hi; __gsharp_i++)
+for (long long __gsharp_i = __gsharp_fusion_lo + (long long)__gsharp_block_rank(); __gsharp_i < __gsharp_fusion_hi; __gsharp_i += __gsharp_block_size())
 {
-auto __gsharp_val_0 = __gsharp_fusion_src[__gsharp_i];
+auto __gsharp_val_0 = __gsharp_fusion_src[(int)__gsharp_i];
 __gsharp_fusion_res += __gsharp_val_0;
 }
-return __gsharp_fusion_res;
+return __gsharp_block_reduce(__gsharp_fusion_res, __gsharp_plus{});
 }());
 __gsharp_id_4_result[__gsharp_id_5_g*64+22]=([&]() -> auto {
 auto&& __gsharp_fusion_src = __gsharp_id_0_data;
@@ -2070,12 +2070,12 @@ int __gsharp_fusion_hi = __gsharp_fusion_src.length;
 __gsharp_fusion_hi -= __gsharp_clamp_count(__gsharp_stage_0_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
 __gsharp_fusion_hi = __gsharp_fusion_lo + __gsharp_clamp_count(__gsharp_stage_1_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
 __gsharp_fusion_hi = __gsharp_fusion_lo + __gsharp_clamp_count(__gsharp_stage_2_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
-for (int __gsharp_i = __gsharp_fusion_lo; __gsharp_i < __gsharp_fusion_hi; __gsharp_i++)
+for (long long __gsharp_i = __gsharp_fusion_lo + (long long)__gsharp_block_rank(); __gsharp_i < __gsharp_fusion_hi; __gsharp_i += __gsharp_block_size())
 {
-auto __gsharp_val_0 = __gsharp_fusion_src[__gsharp_i];
+auto __gsharp_val_0 = __gsharp_fusion_src[(int)__gsharp_i];
 __gsharp_fusion_res += __gsharp_val_0;
 }
-return __gsharp_fusion_res;
+return __gsharp_block_reduce(__gsharp_fusion_res, __gsharp_plus{});
 }());
 __gsharp_id_4_result[__gsharp_id_5_g*64+24]=([&]() -> auto {
 auto&& __gsharp_fusion_src = __gsharp_id_0_data;
@@ -2106,12 +2106,12 @@ int __gsharp_fusion_hi = __gsharp_fusion_src.length;
 __gsharp_fusion_hi -= __gsharp_clamp_count(__gsharp_stage_0_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
 __gsharp_fusion_hi -= __gsharp_clamp_count(__gsharp_stage_1_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
 __gsharp_fusion_lo += __gsharp_clamp_count(__gsharp_stage_2_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
-for (int __gsharp_i = __gsharp_fusion_lo; __gsharp_i < __gsharp_fusion_hi; __gsharp_i++)
+for (long long __gsharp_i = __gsharp_fusion_lo + (long long)__gsharp_block_rank(); __gsharp_i < __gsharp_fusion_hi; __gsharp_i += __gsharp_block_size())
 {
-auto __gsharp_val_0 = __gsharp_fusion_src[__gsharp_i];
+auto __gsharp_val_0 = __gsharp_fusion_src[(int)__gsharp_i];
 __gsharp_fusion_res += __gsharp_val_0;
 }
-return __gsharp_fusion_res;
+return __gsharp_block_reduce(__gsharp_fusion_res, __gsharp_plus{});
 }());
 __gsharp_id_4_result[__gsharp_id_5_g*64+26]=([&]() -> auto {
 auto&& __gsharp_fusion_src = __gsharp_id_0_data;
@@ -2142,12 +2142,12 @@ int __gsharp_fusion_hi = __gsharp_fusion_src.length;
 __gsharp_fusion_hi -= __gsharp_clamp_count(__gsharp_stage_0_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
 __gsharp_fusion_hi -= __gsharp_clamp_count(__gsharp_stage_1_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
 __gsharp_fusion_hi = __gsharp_fusion_lo + __gsharp_clamp_count(__gsharp_stage_2_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
-for (int __gsharp_i = __gsharp_fusion_lo; __gsharp_i < __gsharp_fusion_hi; __gsharp_i++)
+for (long long __gsharp_i = __gsharp_fusion_lo + (long long)__gsharp_block_rank(); __gsharp_i < __gsharp_fusion_hi; __gsharp_i += __gsharp_block_size())
 {
-auto __gsharp_val_0 = __gsharp_fusion_src[__gsharp_i];
+auto __gsharp_val_0 = __gsharp_fusion_src[(int)__gsharp_i];
 __gsharp_fusion_res += __gsharp_val_0;
 }
-return __gsharp_fusion_res;
+return __gsharp_block_reduce(__gsharp_fusion_res, __gsharp_plus{});
 }());
 __gsharp_id_4_result[__gsharp_id_5_g*64+28]=([&]() -> auto {
 auto&& __gsharp_fusion_src = __gsharp_id_0_data;
@@ -2178,12 +2178,12 @@ int __gsharp_fusion_hi = __gsharp_fusion_src.length;
 __gsharp_fusion_hi -= __gsharp_clamp_count(__gsharp_stage_0_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
 __gsharp_fusion_hi -= __gsharp_clamp_count(__gsharp_stage_1_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
 __gsharp_fusion_hi -= __gsharp_clamp_count(__gsharp_stage_2_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
-for (int __gsharp_i = __gsharp_fusion_lo; __gsharp_i < __gsharp_fusion_hi; __gsharp_i++)
+for (long long __gsharp_i = __gsharp_fusion_lo + (long long)__gsharp_block_rank(); __gsharp_i < __gsharp_fusion_hi; __gsharp_i += __gsharp_block_size())
 {
-auto __gsharp_val_0 = __gsharp_fusion_src[__gsharp_i];
+auto __gsharp_val_0 = __gsharp_fusion_src[(int)__gsharp_i];
 __gsharp_fusion_res += __gsharp_val_0;
 }
-return __gsharp_fusion_res;
+return __gsharp_block_reduce(__gsharp_fusion_res, __gsharp_plus{});
 }());
 __gsharp_id_4_result[__gsharp_id_5_g*64+30]=([&]() -> auto {
 auto&& __gsharp_fusion_src = __gsharp_id_0_data;
@@ -2214,12 +2214,12 @@ int __gsharp_fusion_hi = __gsharp_fusion_src.length;
 __gsharp_fusion_hi -= __gsharp_clamp_count(__gsharp_stage_0_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
 __gsharp_fusion_hi -= __gsharp_clamp_count(__gsharp_stage_1_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
 __gsharp_fusion_lo = __gsharp_fusion_hi - __gsharp_clamp_count(__gsharp_stage_2_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
-for (int __gsharp_i = __gsharp_fusion_lo; __gsharp_i < __gsharp_fusion_hi; __gsharp_i++)
+for (long long __gsharp_i = __gsharp_fusion_lo + (long long)__gsharp_block_rank(); __gsharp_i < __gsharp_fusion_hi; __gsharp_i += __gsharp_block_size())
 {
-auto __gsharp_val_0 = __gsharp_fusion_src[__gsharp_i];
+auto __gsharp_val_0 = __gsharp_fusion_src[(int)__gsharp_i];
 __gsharp_fusion_res += __gsharp_val_0;
 }
-return __gsharp_fusion_res;
+return __gsharp_block_reduce(__gsharp_fusion_res, __gsharp_plus{});
 }());
 __gsharp_id_4_result[__gsharp_id_5_g*64+32]=([&]() -> auto {
 auto&& __gsharp_fusion_src = __gsharp_id_0_data;
@@ -2250,12 +2250,12 @@ int __gsharp_fusion_hi = __gsharp_fusion_src.length;
 __gsharp_fusion_hi -= __gsharp_clamp_count(__gsharp_stage_0_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
 __gsharp_fusion_lo = __gsharp_fusion_hi - __gsharp_clamp_count(__gsharp_stage_1_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
 __gsharp_fusion_lo += __gsharp_clamp_count(__gsharp_stage_2_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
-for (int __gsharp_i = __gsharp_fusion_lo; __gsharp_i < __gsharp_fusion_hi; __gsharp_i++)
+for (long long __gsharp_i = __gsharp_fusion_lo + (long long)__gsharp_block_rank(); __gsharp_i < __gsharp_fusion_hi; __gsharp_i += __gsharp_block_size())
 {
-auto __gsharp_val_0 = __gsharp_fusion_src[__gsharp_i];
+auto __gsharp_val_0 = __gsharp_fusion_src[(int)__gsharp_i];
 __gsharp_fusion_res += __gsharp_val_0;
 }
-return __gsharp_fusion_res;
+return __gsharp_block_reduce(__gsharp_fusion_res, __gsharp_plus{});
 }());
 __gsharp_id_4_result[__gsharp_id_5_g*64+34]=([&]() -> auto {
 auto&& __gsharp_fusion_src = __gsharp_id_0_data;
@@ -2286,12 +2286,12 @@ int __gsharp_fusion_hi = __gsharp_fusion_src.length;
 __gsharp_fusion_hi -= __gsharp_clamp_count(__gsharp_stage_0_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
 __gsharp_fusion_lo = __gsharp_fusion_hi - __gsharp_clamp_count(__gsharp_stage_1_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
 __gsharp_fusion_hi = __gsharp_fusion_lo + __gsharp_clamp_count(__gsharp_stage_2_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
-for (int __gsharp_i = __gsharp_fusion_lo; __gsharp_i < __gsharp_fusion_hi; __gsharp_i++)
+for (long long __gsharp_i = __gsharp_fusion_lo + (long long)__gsharp_block_rank(); __gsharp_i < __gsharp_fusion_hi; __gsharp_i += __gsharp_block_size())
 {
-auto __gsharp_val_0 = __gsharp_fusion_src[__gsharp_i];
+auto __gsharp_val_0 = __gsharp_fusion_src[(int)__gsharp_i];
 __gsharp_fusion_res += __gsharp_val_0;
 }
-return __gsharp_fusion_res;
+return __gsharp_block_reduce(__gsharp_fusion_res, __gsharp_plus{});
 }());
 __gsharp_id_4_result[__gsharp_id_5_g*64+36]=([&]() -> auto {
 auto&& __gsharp_fusion_src = __gsharp_id_0_data;
@@ -2322,12 +2322,12 @@ int __gsharp_fusion_hi = __gsharp_fusion_src.length;
 __gsharp_fusion_hi -= __gsharp_clamp_count(__gsharp_stage_0_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
 __gsharp_fusion_lo = __gsharp_fusion_hi - __gsharp_clamp_count(__gsharp_stage_1_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
 __gsharp_fusion_hi -= __gsharp_clamp_count(__gsharp_stage_2_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
-for (int __gsharp_i = __gsharp_fusion_lo; __gsharp_i < __gsharp_fusion_hi; __gsharp_i++)
+for (long long __gsharp_i = __gsharp_fusion_lo + (long long)__gsharp_block_rank(); __gsharp_i < __gsharp_fusion_hi; __gsharp_i += __gsharp_block_size())
 {
-auto __gsharp_val_0 = __gsharp_fusion_src[__gsharp_i];
+auto __gsharp_val_0 = __gsharp_fusion_src[(int)__gsharp_i];
 __gsharp_fusion_res += __gsharp_val_0;
 }
-return __gsharp_fusion_res;
+return __gsharp_block_reduce(__gsharp_fusion_res, __gsharp_plus{});
 }());
 __gsharp_id_4_result[__gsharp_id_5_g*64+38]=([&]() -> auto {
 auto&& __gsharp_fusion_src = __gsharp_id_0_data;
@@ -2358,12 +2358,12 @@ int __gsharp_fusion_hi = __gsharp_fusion_src.length;
 __gsharp_fusion_hi -= __gsharp_clamp_count(__gsharp_stage_0_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
 __gsharp_fusion_lo = __gsharp_fusion_hi - __gsharp_clamp_count(__gsharp_stage_1_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
 __gsharp_fusion_lo = __gsharp_fusion_hi - __gsharp_clamp_count(__gsharp_stage_2_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
-for (int __gsharp_i = __gsharp_fusion_lo; __gsharp_i < __gsharp_fusion_hi; __gsharp_i++)
+for (long long __gsharp_i = __gsharp_fusion_lo + (long long)__gsharp_block_rank(); __gsharp_i < __gsharp_fusion_hi; __gsharp_i += __gsharp_block_size())
 {
-auto __gsharp_val_0 = __gsharp_fusion_src[__gsharp_i];
+auto __gsharp_val_0 = __gsharp_fusion_src[(int)__gsharp_i];
 __gsharp_fusion_res += __gsharp_val_0;
 }
-return __gsharp_fusion_res;
+return __gsharp_block_reduce(__gsharp_fusion_res, __gsharp_plus{});
 }());
 __gsharp_id_4_result[__gsharp_id_5_g*64+40]=([&]() -> auto {
 auto&& __gsharp_fusion_src = __gsharp_id_0_data;
@@ -2394,12 +2394,12 @@ int __gsharp_fusion_hi = __gsharp_fusion_src.length;
 __gsharp_fusion_lo = __gsharp_fusion_hi - __gsharp_clamp_count(__gsharp_stage_0_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
 __gsharp_fusion_lo += __gsharp_clamp_count(__gsharp_stage_1_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
 __gsharp_fusion_lo += __gsharp_clamp_count(__gsharp_stage_2_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
-for (int __gsharp_i = __gsharp_fusion_lo; __gsharp_i < __gsharp_fusion_hi; __gsharp_i++)
+for (long long __gsharp_i = __gsharp_fusion_lo + (long long)__gsharp_block_rank(); __gsharp_i < __gsharp_fusion_hi; __gsharp_i += __gsharp_block_size())
 {
-auto __gsharp_val_0 = __gsharp_fusion_src[__gsharp_i];
+auto __gsharp_val_0 = __gsharp_fusion_src[(int)__gsharp_i];
 __gsharp_fusion_res += __gsharp_val_0;
 }
-return __gsharp_fusion_res;
+return __gsharp_block_reduce(__gsharp_fusion_res, __gsharp_plus{});
 }());
 __gsharp_id_4_result[__gsharp_id_5_g*64+42]=([&]() -> auto {
 auto&& __gsharp_fusion_src = __gsharp_id_0_data;
@@ -2430,12 +2430,12 @@ int __gsharp_fusion_hi = __gsharp_fusion_src.length;
 __gsharp_fusion_lo = __gsharp_fusion_hi - __gsharp_clamp_count(__gsharp_stage_0_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
 __gsharp_fusion_lo += __gsharp_clamp_count(__gsharp_stage_1_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
 __gsharp_fusion_hi = __gsharp_fusion_lo + __gsharp_clamp_count(__gsharp_stage_2_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
-for (int __gsharp_i = __gsharp_fusion_lo; __gsharp_i < __gsharp_fusion_hi; __gsharp_i++)
+for (long long __gsharp_i = __gsharp_fusion_lo + (long long)__gsharp_block_rank(); __gsharp_i < __gsharp_fusion_hi; __gsharp_i += __gsharp_block_size())
 {
-auto __gsharp_val_0 = __gsharp_fusion_src[__gsharp_i];
+auto __gsharp_val_0 = __gsharp_fusion_src[(int)__gsharp_i];
 __gsharp_fusion_res += __gsharp_val_0;
 }
-return __gsharp_fusion_res;
+return __gsharp_block_reduce(__gsharp_fusion_res, __gsharp_plus{});
 }());
 __gsharp_id_4_result[__gsharp_id_5_g*64+44]=([&]() -> auto {
 auto&& __gsharp_fusion_src = __gsharp_id_0_data;
@@ -2466,12 +2466,12 @@ int __gsharp_fusion_hi = __gsharp_fusion_src.length;
 __gsharp_fusion_lo = __gsharp_fusion_hi - __gsharp_clamp_count(__gsharp_stage_0_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
 __gsharp_fusion_hi = __gsharp_fusion_lo + __gsharp_clamp_count(__gsharp_stage_1_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
 __gsharp_fusion_lo += __gsharp_clamp_count(__gsharp_stage_2_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
-for (int __gsharp_i = __gsharp_fusion_lo; __gsharp_i < __gsharp_fusion_hi; __gsharp_i++)
+for (long long __gsharp_i = __gsharp_fusion_lo + (long long)__gsharp_block_rank(); __gsharp_i < __gsharp_fusion_hi; __gsharp_i += __gsharp_block_size())
 {
-auto __gsharp_val_0 = __gsharp_fusion_src[__gsharp_i];
+auto __gsharp_val_0 = __gsharp_fusion_src[(int)__gsharp_i];
 __gsharp_fusion_res += __gsharp_val_0;
 }
-return __gsharp_fusion_res;
+return __gsharp_block_reduce(__gsharp_fusion_res, __gsharp_plus{});
 }());
 __gsharp_id_4_result[__gsharp_id_5_g*64+46]=([&]() -> auto {
 auto&& __gsharp_fusion_src = __gsharp_id_0_data;
@@ -2502,12 +2502,12 @@ int __gsharp_fusion_hi = __gsharp_fusion_src.length;
 __gsharp_fusion_lo = __gsharp_fusion_hi - __gsharp_clamp_count(__gsharp_stage_0_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
 __gsharp_fusion_hi = __gsharp_fusion_lo + __gsharp_clamp_count(__gsharp_stage_1_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
 __gsharp_fusion_hi = __gsharp_fusion_lo + __gsharp_clamp_count(__gsharp_stage_2_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
-for (int __gsharp_i = __gsharp_fusion_lo; __gsharp_i < __gsharp_fusion_hi; __gsharp_i++)
+for (long long __gsharp_i = __gsharp_fusion_lo + (long long)__gsharp_block_rank(); __gsharp_i < __gsharp_fusion_hi; __gsharp_i += __gsharp_block_size())
 {
-auto __gsharp_val_0 = __gsharp_fusion_src[__gsharp_i];
+auto __gsharp_val_0 = __gsharp_fusion_src[(int)__gsharp_i];
 __gsharp_fusion_res += __gsharp_val_0;
 }
-return __gsharp_fusion_res;
+return __gsharp_block_reduce(__gsharp_fusion_res, __gsharp_plus{});
 }());
 __gsharp_id_4_result[__gsharp_id_5_g*64+48]=([&]() -> auto {
 auto&& __gsharp_fusion_src = __gsharp_id_0_data;
@@ -2538,12 +2538,12 @@ int __gsharp_fusion_hi = __gsharp_fusion_src.length;
 __gsharp_fusion_lo = __gsharp_fusion_hi - __gsharp_clamp_count(__gsharp_stage_0_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
 __gsharp_fusion_hi -= __gsharp_clamp_count(__gsharp_stage_1_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
 __gsharp_fusion_lo += __gsharp_clamp_count(__gsharp_stage_2_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
-for (int __gsharp_i = __gsharp_fusion_lo; __gsharp_i < __gsharp_fusion_hi; __gsharp_i++)
+for (long long __gsharp_i = __gsharp_fusion_lo + (long long)__gsharp_block_rank(); __gsharp_i < __gsharp_fusion_hi; __gsharp_i += __gsharp_block_size())
 {
-auto __gsharp_val_0 = __gsharp_fusion_src[__gsharp_i];
+auto __gsharp_val_0 = __gsharp_fusion_src[(int)__gsharp_i];
 __gsharp_fusion_res += __gsharp_val_0;
 }
-return __gsharp_fusion_res;
+return __gsharp_block_reduce(__gsharp_fusion_res, __gsharp_plus{});
 }());
 __gsharp_id_4_result[__gsharp_id_5_g*64+50]=([&]() -> auto {
 auto&& __gsharp_fusion_src = __gsharp_id_0_data;
@@ -2574,12 +2574,12 @@ int __gsharp_fusion_hi = __gsharp_fusion_src.length;
 __gsharp_fusion_lo = __gsharp_fusion_hi - __gsharp_clamp_count(__gsharp_stage_0_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
 __gsharp_fusion_hi -= __gsharp_clamp_count(__gsharp_stage_1_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
 __gsharp_fusion_hi = __gsharp_fusion_lo + __gsharp_clamp_count(__gsharp_stage_2_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
-for (int __gsharp_i = __gsharp_fusion_lo; __gsharp_i < __gsharp_fusion_hi; __gsharp_i++)
+for (long long __gsharp_i = __gsharp_fusion_lo + (long long)__gsharp_block_rank(); __gsharp_i < __gsharp_fusion_hi; __gsharp_i += __gsharp_block_size())
 {
-auto __gsharp_val_0 = __gsharp_fusion_src[__gsharp_i];
+auto __gsharp_val_0 = __gsharp_fusion_src[(int)__gsharp_i];
 __gsharp_fusion_res += __gsharp_val_0;
 }
-return __gsharp_fusion_res;
+return __gsharp_block_reduce(__gsharp_fusion_res, __gsharp_plus{});
 }());
 __gsharp_id_4_result[__gsharp_id_5_g*64+52]=([&]() -> auto {
 auto&& __gsharp_fusion_src = __gsharp_id_0_data;
@@ -2610,12 +2610,12 @@ int __gsharp_fusion_hi = __gsharp_fusion_src.length;
 __gsharp_fusion_lo = __gsharp_fusion_hi - __gsharp_clamp_count(__gsharp_stage_0_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
 __gsharp_fusion_hi -= __gsharp_clamp_count(__gsharp_stage_1_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
 __gsharp_fusion_hi -= __gsharp_clamp_count(__gsharp_stage_2_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
-for (int __gsharp_i = __gsharp_fusion_lo; __gsharp_i < __gsharp_fusion_hi; __gsharp_i++)
+for (long long __gsharp_i = __gsharp_fusion_lo + (long long)__gsharp_block_rank(); __gsharp_i < __gsharp_fusion_hi; __gsharp_i += __gsharp_block_size())
 {
-auto __gsharp_val_0 = __gsharp_fusion_src[__gsharp_i];
+auto __gsharp_val_0 = __gsharp_fusion_src[(int)__gsharp_i];
 __gsharp_fusion_res += __gsharp_val_0;
 }
-return __gsharp_fusion_res;
+return __gsharp_block_reduce(__gsharp_fusion_res, __gsharp_plus{});
 }());
 __gsharp_id_4_result[__gsharp_id_5_g*64+54]=([&]() -> auto {
 auto&& __gsharp_fusion_src = __gsharp_id_0_data;
@@ -2646,12 +2646,12 @@ int __gsharp_fusion_hi = __gsharp_fusion_src.length;
 __gsharp_fusion_lo = __gsharp_fusion_hi - __gsharp_clamp_count(__gsharp_stage_0_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
 __gsharp_fusion_hi -= __gsharp_clamp_count(__gsharp_stage_1_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
 __gsharp_fusion_lo = __gsharp_fusion_hi - __gsharp_clamp_count(__gsharp_stage_2_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
-for (int __gsharp_i = __gsharp_fusion_lo; __gsharp_i < __gsharp_fusion_hi; __gsharp_i++)
+for (long long __gsharp_i = __gsharp_fusion_lo + (long long)__gsharp_block_rank(); __gsharp_i < __gsharp_fusion_hi; __gsharp_i += __gsharp_block_size())
 {
-auto __gsharp_val_0 = __gsharp_fusion_src[__gsharp_i];
+auto __gsharp_val_0 = __gsharp_fusion_src[(int)__gsharp_i];
 __gsharp_fusion_res += __gsharp_val_0;
 }
-return __gsharp_fusion_res;
+return __gsharp_block_reduce(__gsharp_fusion_res, __gsharp_plus{});
 }());
 __gsharp_id_4_result[__gsharp_id_5_g*64+56]=([&]() -> auto {
 auto&& __gsharp_fusion_src = __gsharp_id_0_data;
@@ -2682,12 +2682,12 @@ int __gsharp_fusion_hi = __gsharp_fusion_src.length;
 __gsharp_fusion_lo = __gsharp_fusion_hi - __gsharp_clamp_count(__gsharp_stage_0_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
 __gsharp_fusion_lo = __gsharp_fusion_hi - __gsharp_clamp_count(__gsharp_stage_1_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
 __gsharp_fusion_lo += __gsharp_clamp_count(__gsharp_stage_2_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
-for (int __gsharp_i = __gsharp_fusion_lo; __gsharp_i < __gsharp_fusion_hi; __gsharp_i++)
+for (long long __gsharp_i = __gsharp_fusion_lo + (long long)__gsharp_block_rank(); __gsharp_i < __gsharp_fusion_hi; __gsharp_i += __gsharp_block_size())
 {
-auto __gsharp_val_0 = __gsharp_fusion_src[__gsharp_i];
+auto __gsharp_val_0 = __gsharp_fusion_src[(int)__gsharp_i];
 __gsharp_fusion_res += __gsharp_val_0;
 }
-return __gsharp_fusion_res;
+return __gsharp_block_reduce(__gsharp_fusion_res, __gsharp_plus{});
 }());
 __gsharp_id_4_result[__gsharp_id_5_g*64+58]=([&]() -> auto {
 auto&& __gsharp_fusion_src = __gsharp_id_0_data;
@@ -2718,12 +2718,12 @@ int __gsharp_fusion_hi = __gsharp_fusion_src.length;
 __gsharp_fusion_lo = __gsharp_fusion_hi - __gsharp_clamp_count(__gsharp_stage_0_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
 __gsharp_fusion_lo = __gsharp_fusion_hi - __gsharp_clamp_count(__gsharp_stage_1_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
 __gsharp_fusion_hi = __gsharp_fusion_lo + __gsharp_clamp_count(__gsharp_stage_2_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
-for (int __gsharp_i = __gsharp_fusion_lo; __gsharp_i < __gsharp_fusion_hi; __gsharp_i++)
+for (long long __gsharp_i = __gsharp_fusion_lo + (long long)__gsharp_block_rank(); __gsharp_i < __gsharp_fusion_hi; __gsharp_i += __gsharp_block_size())
 {
-auto __gsharp_val_0 = __gsharp_fusion_src[__gsharp_i];
+auto __gsharp_val_0 = __gsharp_fusion_src[(int)__gsharp_i];
 __gsharp_fusion_res += __gsharp_val_0;
 }
-return __gsharp_fusion_res;
+return __gsharp_block_reduce(__gsharp_fusion_res, __gsharp_plus{});
 }());
 __gsharp_id_4_result[__gsharp_id_5_g*64+60]=([&]() -> auto {
 auto&& __gsharp_fusion_src = __gsharp_id_0_data;
@@ -2754,12 +2754,12 @@ int __gsharp_fusion_hi = __gsharp_fusion_src.length;
 __gsharp_fusion_lo = __gsharp_fusion_hi - __gsharp_clamp_count(__gsharp_stage_0_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
 __gsharp_fusion_lo = __gsharp_fusion_hi - __gsharp_clamp_count(__gsharp_stage_1_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
 __gsharp_fusion_hi -= __gsharp_clamp_count(__gsharp_stage_2_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
-for (int __gsharp_i = __gsharp_fusion_lo; __gsharp_i < __gsharp_fusion_hi; __gsharp_i++)
+for (long long __gsharp_i = __gsharp_fusion_lo + (long long)__gsharp_block_rank(); __gsharp_i < __gsharp_fusion_hi; __gsharp_i += __gsharp_block_size())
 {
-auto __gsharp_val_0 = __gsharp_fusion_src[__gsharp_i];
+auto __gsharp_val_0 = __gsharp_fusion_src[(int)__gsharp_i];
 __gsharp_fusion_res += __gsharp_val_0;
 }
-return __gsharp_fusion_res;
+return __gsharp_block_reduce(__gsharp_fusion_res, __gsharp_plus{});
 }());
 __gsharp_id_4_result[__gsharp_id_5_g*64+62]=([&]() -> auto {
 auto&& __gsharp_fusion_src = __gsharp_id_0_data;
@@ -2790,12 +2790,12 @@ int __gsharp_fusion_hi = __gsharp_fusion_src.length;
 __gsharp_fusion_lo = __gsharp_fusion_hi - __gsharp_clamp_count(__gsharp_stage_0_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
 __gsharp_fusion_lo = __gsharp_fusion_hi - __gsharp_clamp_count(__gsharp_stage_1_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
 __gsharp_fusion_lo = __gsharp_fusion_hi - __gsharp_clamp_count(__gsharp_stage_2_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
-for (int __gsharp_i = __gsharp_fusion_lo; __gsharp_i < __gsharp_fusion_hi; __gsharp_i++)
+for (long long __gsharp_i = __gsharp_fusion_lo + (long long)__gsharp_block_rank(); __gsharp_i < __gsharp_fusion_hi; __gsharp_i += __gsharp_block_size())
 {
-auto __gsharp_val_0 = __gsharp_fusion_src[__gsharp_i];
+auto __gsharp_val_0 = __gsharp_fusion_src[(int)__gsharp_i];
 __gsharp_fusion_res += __gsharp_val_0;
 }
-return __gsharp_fusion_res;
+return __gsharp_block_reduce(__gsharp_fusion_res, __gsharp_plus{});
 }());
 }
 ";

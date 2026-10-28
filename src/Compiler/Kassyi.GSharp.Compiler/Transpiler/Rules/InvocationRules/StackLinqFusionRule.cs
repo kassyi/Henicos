@@ -35,98 +35,18 @@ public sealed class StackLinqFusionRule : IInvocationTranspilerRule
 
     public bool TryTranspile(InvocationExpressionSyntax node, ref TranspileContext context, IMethodSymbol symbol)
     {
-        if (!TryExtractChain(node, context.Query.SemanticModel, symbol, out var chain))
+        if (!StackLinqChainExtractor.TryExtract(node, context.Query.SemanticModel, symbol, out var chain))
         {
             return false;
         }
 
         // [WHY] AsParallel() keeps the meaning of C#: every calling thread receives the aggregate of the whole sequence
-        // (#624). Each thread evaluates it on its own, which is that result in every dialect and in any branch.
-        EmitFusedLoop(in chain, ref context);
-        return true;
-    }
-
-    private static bool TryExtractChain(
-        InvocationExpressionSyntax node,
-        SemanticModel semanticModel,
-        IMethodSymbol symbol,
-        out StackLinqChain chain)
-    {
-        chain = default;
-
-        if (!StackLinqHelper.IsStackLinqMethod(symbol))
-        {
-            return false;
-        }
-
-        var methodName = symbol.Name;
-        if (!s_terminalStrategies.ContainsKey(methodName))
-        {
-            return false;
-        }
-
-        var chainBuilder = ImmutableArray.CreateBuilder<LinqStage>();
-        var current = node;
-        var currentSymbol = symbol;
-        var isParallel = false;
-
-        while (true)
-        {
-            if (currentSymbol.Name == "AsStackEnumerable")
-            {
-                break;
-            }
-
-            if (currentSymbol.Name == "AsParallel")
-            {
-                isParallel = true;
-            }
-            else if (!s_intermediateStrategies.ContainsKey(currentSymbol.Name) &&
-                     !s_terminalStrategies.ContainsKey(currentSymbol.Name))
-            {
-                return false;
-            }
-            else
-            {
-                chainBuilder.Add(new LinqStage(currentSymbol.Name, current, currentSymbol));
-            }
-
-            if (current.Expression is MemberAccessExpressionSyntax
-                {
-                    Expression: InvocationExpressionSyntax nextInvocation
-                })
-            {
-                if (semanticModel.GetSymbol(nextInvocation) is IMethodSymbol nextSymbol &&
-                    StackLinqHelper.IsStackLinqMethod(nextSymbol))
-                {
-                    current = nextInvocation;
-                    currentSymbol = nextSymbol;
-                    continue;
-                }
-            }
-
-            if (current.ArgumentList.Arguments.Count <= 0 ||
-                current.ArgumentList.Arguments[0].Expression is not InvocationExpressionSyntax argInvocation)
-            {
-                return false;
-            }
-
-            if (semanticModel.GetSymbol(argInvocation) is not IMethodSymbol next ||
-                !StackLinqHelper.IsStackLinqMethod(next))
-            {
-                return false;
-            }
-
-            current = argInvocation;
-            currentSymbol = next;
-        }
-
-        var sourceArrayExpr = current.Expression is MemberAccessExpressionSyntax rootMemberAccess
-            ? rootMemberAccess.Expression
-            : current.ArgumentList.Arguments[0].Expression;
-
-        chainBuilder.Reverse();
-        chain = new StackLinqChain(sourceArrayExpr, chainBuilder.ToImmutable(), methodName, isParallel);
+        // (#624). On CUDA the threads of a block share the elements when ParallelAggregatePlanner shows that this gives the
+        // same value (integer sums, uniform inputs, every thread of the block reaching the call); otherwise each thread
+        // sums on its own, which is that result in every dialect and in any branch.
+        var shared = chain.IsParallel && context.Emitter.Dialect.IsCuda &&
+                     ParallelAggregatePlanner.Plan(node, context.Query.SemanticModel).Strategy != ParallelAggregateStrategy.PerThread;
+        EmitFusedLoop(in chain, shared, ref context);
         return true;
     }
 
@@ -137,7 +57,10 @@ public sealed class StackLinqFusionRule : IInvocationTranspilerRule
     //   return <result>; }())
     // [WHY] C# evaluates the source and the stage arguments once, from left to right, when the chain is built; the
     // position stages right after the source (Select may come between) only narrow the range of indices.
-    private static void EmitFusedLoop(in StackLinqChain chain, ref TranspileContext context)
+    // With blockShared (the Block strategy, CUDA): the thread of rank r of the block takes the indices lo + r, lo + r + B, ...
+    // (64-bit, so that i += B cannot wrap) and the partial sums are combined by __gsharp_block_reduce, which gives every
+    // thread of the block the same total; only the range stages and Select / Where can be in such a chain.
+    private static void EmitFusedLoop(in StackLinqChain chain, bool blockShared, ref TranspileContext context)
     {
         var terminalName = chain.TerminalMethodName;
         if (!s_terminalStrategies.TryGetValue(terminalName, out var terminalStrategy))
@@ -146,7 +69,7 @@ public sealed class StackLinqFusionRule : IInvocationTranspilerRule
         }
 
         var terminalStage = chain.Stages[^1];
-        var folded = CountFoldedStages(in chain, context.Query.SemanticModel);
+        var folded = StackLinqChainExtractor.CountRangeStages(in chain, context.Query.SemanticModel);
         var writer = context.Emitter.Writer;
 
         using (writer.ImmediatelyInvokedLambda("auto"))
@@ -161,14 +84,23 @@ public sealed class StackLinqFusionRule : IInvocationTranspilerRule
             writer.AppendLine($"int {StackLinqHelper.FusionHigh} = {StackLinqHelper.FusionSource}.length;");
             for (var i = 0; i < folded; i++)
             {
-                if (IsPositionStage(chain.Stages[i].Name))
+                if (StackLinqChainExtractor.IsPositionStage(chain.Stages[i].Name))
                 {
                     EmitRangeStage(chain.Stages[i], i, writer);
                 }
             }
 
-            writer.AppendLine(
-                $"for (int {StackLinqHelper.LoopIndex} = {StackLinqHelper.FusionLow}; {StackLinqHelper.LoopIndex} < {StackLinqHelper.FusionHigh}; {StackLinqHelper.LoopIndex}++)");
+            if (blockShared)
+            {
+                writer.AppendLine(
+                    $"for (long long {StackLinqHelper.LoopIndex} = {StackLinqHelper.FusionLow} + (long long){GSharpInternalNames.StackLinq.BlockRank}(); {StackLinqHelper.LoopIndex} < {StackLinqHelper.FusionHigh}; {StackLinqHelper.LoopIndex} += {GSharpInternalNames.StackLinq.BlockSize}())");
+            }
+            else
+            {
+                writer.AppendLine(
+                    $"for (int {StackLinqHelper.LoopIndex} = {StackLinqHelper.FusionLow}; {StackLinqHelper.LoopIndex} < {StackLinqHelper.FusionHigh}; {StackLinqHelper.LoopIndex}++)");
+            }
+
             using (writer.Scope())
             {
                 // [WHY] TakeEnumerator checks its count before it pulls from the stages before it: once it has given n
@@ -185,8 +117,9 @@ public sealed class StackLinqFusionRule : IInvocationTranspilerRule
                     }
                 }
 
+                // The 64-bit index of the shared loop is narrowed for GSharpArray::operator[](int)
                 writer.AppendLine(
-                    $"auto {StackLinqHelper.ValuePrefix}0 = {StackLinqHelper.FusionSource}[{StackLinqHelper.LoopIndex}];");
+                    $"auto {StackLinqHelper.ValuePrefix}0 = {StackLinqHelper.FusionSource}[{(blockShared ? "(int)" : "")}{StackLinqHelper.LoopIndex}];");
 
                 var valIndex = 0;
                 var openBraces = 0;
@@ -194,7 +127,7 @@ public sealed class StackLinqFusionRule : IInvocationTranspilerRule
                 for (var i = 0; i < chain.Stages.Length - 1; i++)
                 {
                     var stage = chain.Stages[i];
-                    if ((i >= folded || !IsPositionStage(stage.Name)) &&
+                    if ((i >= folded || !StackLinqChainExtractor.IsPositionStage(stage.Name)) &&
                         s_intermediateStrategies.TryGetValue(stage.Name, out var strategy))
                     {
                         strategy.Emit(ref context, in stage, i, ref valIndex, ref openBraces);
@@ -211,7 +144,16 @@ public sealed class StackLinqFusionRule : IInvocationTranspilerRule
 
             terminalStrategy.EmitPostLoop(ref context, in terminalStage, ResultVar);
 
-            writer.Append($"return {ResultVar};");
+            if (blockShared)
+            {
+                writer.Append(
+                    $"return {GSharpInternalNames.StackLinq.BlockReduce}({ResultVar}, {GSharpInternalNames.StackLinq.Plus}{{}});");
+            }
+            else
+            {
+                writer.Append($"return {ResultVar};");
+            }
+
             writer.AppendLine();
         }
     }
@@ -223,7 +165,7 @@ public sealed class StackLinqFusionRule : IInvocationTranspilerRule
         for (var i = 0; i < chain.Stages.Length - 1; i++)
         {
             var stage = chain.Stages[i];
-            if (IsPositionStage(stage.Name))
+            if (StackLinqChainExtractor.IsPositionStage(stage.Name))
             {
                 // int __gsharp_stage_<i>_n = <count>;
                 context.Emitter.Writer.Append($"int {StackLinqHelper.StagePrefix}{i}{StackLinqHelper.StageCountSuffix} = ");
@@ -231,7 +173,7 @@ public sealed class StackLinqFusionRule : IInvocationTranspilerRule
                 context.Emitter.Writer.AppendLine(";");
             }
 
-            if ((i >= folded || !IsPositionStage(stage.Name)) &&
+            if ((i >= folded || !StackLinqChainExtractor.IsPositionStage(stage.Name)) &&
                 s_intermediateStrategies.TryGetValue(stage.Name, out var strategy))
             {
                 strategy.EmitInitialValue(ref context, in stage, i);
@@ -240,40 +182,6 @@ public sealed class StackLinqFusionRule : IInvocationTranspilerRule
 
         terminalStrategy.EmitInitialValue(ref context, resultVar, in terminalStage);
     }
-
-    // The leading stages that only narrow the range of indices: position stages, and Select between them.
-    // [WHY] Folding a Skip that follows a Select skips the selector for the skipped elements, which C# calls. That changes
-    // nothing for a selector without side effects; after one that may write (a statement body, a method group, or an
-    // expression with writes), the following stages stay in the loop so that it is called as many times as in C#.
-    private static int CountFoldedStages(in StackLinqChain chain, SemanticModel model)
-    {
-        var folded = 0;
-        for (var i = 0; i < chain.Stages.Length - 1; i++)
-        {
-            var stage = chain.Stages[i];
-            if (!IsPositionStage(stage.Name) && stage.Name != "Select")
-            {
-                break;
-            }
-
-            folded = i + 1;
-            if (stage.Name == "Select" && MayWrite(stage, model))
-            {
-                break;
-            }
-        }
-
-        return folded;
-    }
-
-    // A selector that is not an expression lambda, or one whose expression writes a variable or memory
-    private static bool MayWrite(in LinqStage stage, SemanticModel model) =>
-        StackLinqHelper.GetLambdaArgument(stage.Invocation, stage.Symbol).Expression is not LambdaExpressionSyntax
-        {
-            ExpressionBody: { } body
-        } || !ExpressionEffects.Of(body, model).Writes.IsEmpty;
-
-    private static bool IsPositionStage(string name) => name is "Skip" or "Take" or "SkipLast" or "TakeLast";
 
     // Narrows [lo, hi) as C# does, with the count clamped to [0, hi - lo] (__gsharp_clamp_count)
     private static void EmitRangeStage(in LinqStage stage, int index, SourceWriter writer)

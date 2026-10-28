@@ -53,6 +53,10 @@ GpuBigInt result = sumExpr.Evaluate();
 ```
 
 ### 3.2 Parallel Reduction Aggregation (`AsParallel`)
+
+> [!NOTE]
+> This section and the table of §2 describe the GpuMath expressions on the host. Inside a kernel, `AsParallel().Sum()` gives every calling thread the sum of the whole sequence; the threads of a block share the work when they can, and [GSH0099](../03_bcl_api/diagnostics/GSH0099.md) reports a call that each thread computes on its own. See [ParallelStackEnumerable](../03_bcl_api/linq/ParallelStackEnumerable.md).
+
 * **Capabilities**: Drastically accelerates reductions (`Sum`, `Max`, `Min`, `Aggregate`) over massive collections using shared memory.
 * **Constraints**: Intermediate transformations (`Where`, `Select`) must precede `.AsParallel()`. The pipeline following `.AsParallel()` must be terminated with a reduction.
 
