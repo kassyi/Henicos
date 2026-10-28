@@ -43,7 +43,7 @@ namespace Kassyi.GSharp.Compiler.Analysis;
 /// on the back edge of a loop, and no longer reports one whose later use is on a branch that the barrier does not reach.
 /// </para>
 /// </remarks>
-internal sealed partial class CrossBarrierLiveness
+internal sealed class CrossBarrierLiveness
 {
     private readonly SemanticModel _model;
 
@@ -53,15 +53,15 @@ internal sealed partial class CrossBarrierLiveness
 
     // For each carrier, the tracked locals that the delegates assigned to it capture
     private readonly ulong[][] _carrierCaptures;
-    private readonly ImmutableArray<FlowNode>.Builder _nodes = ImmutableArray.CreateBuilder<FlowNode>();
+    private readonly ImmutableArray<LivenessNode>.Builder _nodes = ImmutableArray.CreateBuilder<LivenessNode>();
     private bool _hasPins;
 
     // The state of the graph being built: the node that receives the next events, the gaps of the Gpu.SyncGrid body
     // being built (null outside one), the element range of the last top-level operation and of the current one
-    private FlowNode _current;
+    private LivenessNode _current;
     private SyncGridGaps? _gaps;
-    private ElementRange? _lastRange;
-    private ElementRange? _topRange;
+    private SyncGridElementRange? _lastRange;
+    private SyncGridElementRange? _topRange;
 
     private CrossBarrierLiveness(SemanticModel model, IReadOnlyList<ILocalSymbol> tracked, SyntaxNode body)
     {
@@ -77,7 +77,7 @@ internal sealed partial class CrossBarrierLiveness
             _carrierCaptures[i] = new ulong[WordCount];
         }
 
-        _current = new FlowNode(-1);
+        _current = new LivenessNode(-1);
     }
 
     private int WordCount => (_locals.Length + 63) / 64;
@@ -171,14 +171,14 @@ internal sealed partial class CrossBarrierLiveness
     }
 
     // Builds the nodes of graph; returns the node of its entry block and the last node of its exit block
-    private (FlowNode Entry, FlowNode Exit) Build(ControlFlowGraph graph, SyncGridGaps? gaps)
+    private (LivenessNode Entry, LivenessNode Exit) Build(ControlFlowGraph graph, SyncGridGaps? gaps)
     {
         var (savedCurrent, savedGaps, savedLast, savedTop) = (_current, _gaps, _lastRange, _topRange);
         _gaps = gaps;
 
         var blocks = graph.Blocks;
-        var starts = new FlowNode[blocks.Length];
-        var ends = new FlowNode[blocks.Length];
+        var starts = new LivenessNode[blocks.Length];
+        var ends = new LivenessNode[blocks.Length];
         for (var i = 0; i < blocks.Length; i++)
         {
             _current = NewNode();
@@ -209,7 +209,7 @@ internal sealed partial class CrossBarrierLiveness
     }
 
     // An edge between two blocks; in a Gpu.SyncGrid body, through a split node when the edge crosses a gap
-    private void ConnectBlock(ImmutableArray<BasicBlock> blocks, FlowNode[] starts, FlowNode[] ends, int source,
+    private void ConnectBlock(ImmutableArray<BasicBlock> blocks, LivenessNode[] starts, LivenessNode[] ends, int source,
         BasicBlock? destination)
     {
         if (destination == null)
@@ -224,7 +224,7 @@ internal sealed partial class CrossBarrierLiveness
             gaps.HasGap(before.Last, after.First))
         {
             var split = NewNode();
-            split.Events.Add(FlowEvent.Split);
+            split.Events.Add(LivenessEvent.Split);
             Connect(ends[source], split);
             Connect(split, starts[target]);
             return;
@@ -234,7 +234,7 @@ internal sealed partial class CrossBarrierLiveness
     }
 
     // The element range of the last operation run before leaving block, looking back through empty blocks
-    private static ElementRange? RangeBefore(ImmutableArray<BasicBlock> blocks, FlowNode[] ends, int block, int depth)
+    private static SyncGridElementRange? RangeBefore(ImmutableArray<BasicBlock> blocks, LivenessNode[] ends, int block, int depth)
     {
         if (ends[block].Last is { } last)
         {
@@ -248,7 +248,7 @@ internal sealed partial class CrossBarrierLiveness
     }
 
     // The element range of the first operation run after entering block, looking ahead through empty blocks
-    private static ElementRange? RangeAfter(ImmutableArray<BasicBlock> blocks, FlowNode[] starts, int block, int depth)
+    private static SyncGridElementRange? RangeAfter(ImmutableArray<BasicBlock> blocks, LivenessNode[] starts, int block, int depth)
     {
         if (starts[block].First is { } first)
         {
@@ -271,7 +271,7 @@ internal sealed partial class CrossBarrierLiveness
         {
             if (_lastRange is { } last && gaps.HasGap(last.Last, range.First))
             {
-                _current.Events.Add(FlowEvent.Split);
+                _current.Events.Add(LivenessEvent.Split);
             }
 
             _current.First ??= range;
@@ -305,11 +305,11 @@ internal sealed partial class CrossBarrierLiveness
 
                 // Assigning through a ref local uses the reference; declaring or rebinding it replaces it
                 _current.Events.Add(target.IsDeclaration || assignment.IsRef || !target.Local.IsRef
-                    ? FlowEvent.Write(index)
-                    : FlowEvent.Read(index));
+                    ? LivenessEvent.Write(index)
+                    : LivenessEvent.Read(index));
                 return;
             case ILocalReferenceOperation reference when IndexOf(reference.Local) is var index and >= 0:
-                _current.Events.Add(FlowEvent.Read(index));
+                _current.Events.Add(LivenessEvent.Read(index));
                 return;
             case IDeconstructionAssignmentOperation deconstruction:
                 Walk(deconstruction.Value, graph);
@@ -353,7 +353,7 @@ internal sealed partial class CrossBarrierLiveness
 
         if (target is ILocalReferenceOperation local && IndexOf(local.Local) is var index and >= 0 && !local.Local.IsRef)
         {
-            _current.Events.Add(FlowEvent.Write(index));
+            _current.Events.Add(LivenessEvent.Write(index));
             return;
         }
 
@@ -397,7 +397,7 @@ internal sealed partial class CrossBarrierLiveness
         if (SyncIntrinsicClassifier.Classify(method).SplitsStateMachine ||
             SuspensionAnalysis.IsSuspendingFunction(method, _model.Compilation))
         {
-            _current.Events.Add(FlowEvent.Split);
+            _current.Events.Add(LivenessEvent.Split);
         }
 
         // The callee writes an out argument when it returns, after any split
@@ -405,7 +405,7 @@ internal sealed partial class CrossBarrierLiveness
         {
             if (IsOutLocal(argument, out var index))
             {
-                _current.Events.Add(FlowEvent.Write(index));
+                _current.Events.Add(LivenessEvent.Write(index));
             }
         }
     }
@@ -504,7 +504,7 @@ internal sealed partial class CrossBarrierLiveness
                 continue;
             }
 
-            _current.Events.Add(FlowEvent.Read(index));
+            _current.Events.Add(LivenessEvent.Read(index));
             if (index >= _trackedCount)
             {
                 continue;
@@ -517,7 +517,7 @@ internal sealed partial class CrossBarrierLiveness
 
             if (pin)
             {
-                _current.Events.Add(FlowEvent.Pin(index));
+                _current.Events.Add(LivenessEvent.Pin(index));
                 _hasPins = true;
             }
         }
@@ -535,14 +535,14 @@ internal sealed partial class CrossBarrierLiveness
             .AsStackEnumerable()
             .IndexOf(local, static (tracked, target) => tracked.IsEqualTo(target));
 
-    private FlowNode NewNode()
+    private LivenessNode NewNode()
     {
-        var node = new FlowNode(_nodes.Count);
+        var node = new LivenessNode(_nodes.Count);
         _nodes.Add(node);
         return node;
     }
 
-    private static void Connect(FlowNode from, FlowNode to) => from.Successors.Add(to.Index);
+    private static void Connect(LivenessNode from, LivenessNode to) => from.Successors.Add(to.Index);
 
     // The backward fixed point of the live locals, then the locals live after each split: also those that a carrier live
     // after it captures, and those pinned before it
@@ -622,10 +622,10 @@ internal sealed partial class CrossBarrierLiveness
                 {
                     switch (flowEvent.Kind)
                     {
-                        case FlowEventKind.Pin:
+                        case LivenessEventKind.Pin:
                             pinned[flowEvent.Local / 64] |= 1UL << (flowEvent.Local % 64);
                             break;
-                        case FlowEventKind.Split:
+                        case LivenessEventKind.Split:
                             Or(crossing, pinned);
                             break;
                     }
@@ -654,7 +654,7 @@ internal sealed partial class CrossBarrierLiveness
     }
 
     // The union of the live-in sets of the successors of node, into live
-    private static void LiveOut(FlowNode node, ulong[][] liveIn, ulong[] live)
+    private static void LiveOut(LivenessNode node, ulong[][] liveIn, ulong[] live)
     {
         Array.Clear(live, 0, live.Length);
         foreach (var successor in node.Successors)
@@ -668,20 +668,20 @@ internal sealed partial class CrossBarrierLiveness
     }
 
     // Runs the events of node backward from the locals live at its end; adds to crossing the locals live after a split
-    private static void ApplyBackward(FlowNode node, ulong[] live, ulong[]? crossing)
+    private static void ApplyBackward(LivenessNode node, ulong[] live, ulong[]? crossing)
     {
         for (var i = node.Events.Count - 1; i >= 0; i--)
         {
             var flowEvent = node.Events[i];
             switch (flowEvent.Kind)
             {
-                case FlowEventKind.Read:
+                case LivenessEventKind.Read:
                     live[flowEvent.Local / 64] |= 1UL << (flowEvent.Local % 64);
                     break;
-                case FlowEventKind.Write:
+                case LivenessEventKind.Write:
                     live[flowEvent.Local / 64] &= ~(1UL << (flowEvent.Local % 64));
                     break;
-                case FlowEventKind.Split when crossing != null:
+                case LivenessEventKind.Split when crossing != null:
                     for (var word = 0; word < live.Length; word++)
                     {
                         crossing[word] |= live[word];
