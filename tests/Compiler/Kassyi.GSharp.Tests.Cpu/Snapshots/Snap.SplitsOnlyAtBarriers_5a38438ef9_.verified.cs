@@ -1,4 +1,4 @@
-﻿public class Lower_SameNameLabel_BothLabelsStartStates_Snapshot
+﻿public class Lower_SameNameLabel_SplitsOnlyAtBarriers_Snapshot
 {
     // t -> __gsharp_id_1_t
     // acc -> __gsharp_id_2_acc
@@ -23,34 +23,28 @@
             if ((__gsharp_ctx->t & 1) == 0)
             {
                 __gsharp_ctx->acc += __gsharp_ctx->step;
-                goto case 2;
+                goto done;
             }
 
             __gsharp_ctx->acc += 100;
-            goto case 2;
-        }
-
-        case 2:
-        {
+            done:
+                ;
             __gsharp_ctx->step = 1000;
             if ((__gsharp_ctx->t & 1) != 0)
             {
                 __gsharp_ctx->acc += __gsharp_ctx->step;
-                goto case 3;
+                goto done;
             }
 
             __gsharp_ctx->acc += 2000;
-            goto case 3;
-        }
-
-        case 3:
-        {
+            done:
+                ;
             __gsharp_yielded_for_block_barrier = true;
-            __gsharp_state = 4;
+            __gsharp_state = 2;
             return;
         }
 
-        case 4:
+        case 2:
         {
             output[__gsharp_ctx->t] = __gsharp_ctx->acc;
             __gsharp_state = -1;
