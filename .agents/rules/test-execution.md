@@ -26,18 +26,15 @@ Pick the command matching the domain you modified. Methodology (TDD, snapshot hi
 
 ## CI (GitHub Actions)
 
-`.github/workflows/gpu-tests.yml` runs the tests without CUDA on GitHub-hosted runners. CI minutes cost money: Windows minutes count twice and a Windows run takes about twice as long as Ubuntu.
+`.github/workflows/gpu-tests.yml` ("Hybrid CI") runs the tests without CUDA on GitHub-hosted runners. The repository is public, so these runners have no minute limit.
 
-- **Ubuntu** runs for every pull request (every base branch, so a stacked PR is tested too) and every push to `main`.
-- **Windows** runs only after Ubuntu passed, and only for a push to `main` or a pull request labeled `full-ci`.
-- Adding the `full-ci` label starts `.github/workflows/full-ci.yml` ("Full CI"), which runs Windows only (Ubuntu already passed before the label). Later pushes to that pull request run Ubuntu, then Windows, in "Hybrid CI".
-- Any other label (`bug`, `test`, ...) runs no test: "Full CI" starts and skips its job. Its check has its own name, so it does not replace the Hybrid CI results in the pull request view.
+- **Ubuntu** and **Windows** run side by side for every pull request (every base branch, so a stacked PR is tested too) and every push to `main`. A failure on one OS does not cancel the other.
 - A new run for the same pull request cancels the one still running. A change to `docs/**`, `.agents/**` or Markdown files alone runs nothing.
 
 What an agent does:
 
 - The user adds the `human-reviewed` label when their review of a pull request is finished. Then read every review comment (`gh pr view <n> --comments` and `gh api repos/<owner>/<repo>/pulls/<n>/comments`), reply on the pull request with a decision per item (fixed here, or filed as an issue with its milestone), make the fixes, and push them.
-- Add the `full-ci` label to a pull request when it is ready to merge (it is labeled `human-reviewed`, every review item is fixed or filed, and its Ubuntu run is green), not earlier: once labeled, every later push also runs Windows. `gh pr edit <n> --add-label full-ci`
-- When you hand the user a merge order, list only pull requests whose Windows run is green, or say which ones still wait for it.
-- Do not close and reopen a pull request to start CI again; it does not always pick up a newer `main` and every run costs. To test against a newer `main`, push one merge of `main` into the branch. Re-running from the Actions page reuses the old merge.
-- A merge without the label is still tested on Windows by the push to `main`; if that run fails, fix `main` first.
+- A pull request is ready to merge when it is labeled `human-reviewed`, every review item is fixed or filed, and both its Ubuntu and Windows runs are green.
+- When you hand the user a merge order, list only pull requests whose runs are green on both OS, or say which ones still wait for them.
+- Do not close and reopen a pull request to start CI again; it does not always pick up a newer `main`. To test against a newer `main`, push one merge of `main` into the branch. Re-running from the Actions page reuses the old merge.
+- If the run on a push to `main` fails, fix `main` first.

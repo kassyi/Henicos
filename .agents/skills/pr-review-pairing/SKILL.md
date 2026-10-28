@@ -1,6 +1,6 @@
 ---
 name: pr-review-pairing
-description: Reviewing open pull requests together with a person. The agent explains each PR plainly and verifies its logic and API; the person skims the code and judges its structure. Covers the review worktree, the per-PR walk-through, bug verification before posting, filing what is out of scope, the PR comment with the `human-reviewed` label, and confirming the author's fixes before adding `full-ci`.
+description: Reviewing open pull requests together with a person. The agent explains each PR plainly and verifies its logic and API; the person skims the code and judges its structure. Covers the review worktree, the per-PR walk-through, bug verification before posting, filing what is out of scope, the PR comment with the `human-reviewed` label, and confirming the author's fixes before calling the PR ready to merge.
 ---
 
 # PR Review Pairing
@@ -26,7 +26,7 @@ Take the person's structural remarks seriously and turn each into a concrete pro
   git -C tmp/worktree/review-<n> diff origin/<base-branch>...HEAD --stat
   ```
   Existing worktrees with a similar name may hold an older branch; compare with `git rev-list --left-right --count <branch>...origin/<head-branch>` before trusting one.
-- Do not push merges of `main` into PR branches: every push runs CI, which costs money, and keeping a branch up to date is the author's step. The reviewer's only CI action is the `full-ci` label after the fixes are confirmed (section 7).
+- Do not push merges of `main` into PR branches: keeping a branch up to date is the author's step. The reviewer takes no CI action.
 
 ## 3. Walking through one PR
 
@@ -86,25 +86,23 @@ Never post a suspected bug as fact. When reading suggests a wrong result:
 - No emoji, no "Generated with" or co-author footer.
 - Commands that post or change GitHub state end with `# intent: <purpose in Japanese>` ([command-intent.md](../../rules/command-intent.md)).
 - After posting the review comment, add the label: `gh pr edit <n> --add-label human-reviewed`. It tells the author that the review is in.
-- Do not add `full-ci` with the review comment. It belongs to the next step, below.
+## 7. Confirming the fixes
 
-## 7. Confirming the fixes and `full-ci`
-
-`full-ci` means "the review is answered and nothing is wrong any more". The reviewer adds it after checking the author's fixes:
+After the author answers the review, check the fixes before calling the PR ready to merge:
 
 1. Read the author's reply and the commits pushed after the review comment (`gh pr view <n> --comments`, `git log <reviewed head>..origin/<head-branch>`).
 2. For each item, check the decision: the fix is in the diff and does what the item asked (a fixed bug has a test that failed before), or the item is filed as an issue with its milestone.
-3. Report to the person per item (fixed / filed / missing). When every item is fixed or filed and the PR is labeled `human-reviewed`, add `full-ci` with the person's go-ahead: `gh pr edit <n> --add-label full-ci`.
-4. Otherwise reply on the PR with what is missing; no label.
+3. Report to the person per item (fixed / filed / missing). When every item is fixed or filed, the PR is labeled `human-reviewed` and its Ubuntu and Windows runs are green, tell the person it is ready to merge.
+4. Otherwise reply on the PR with what is missing.
 
-Adding `full-ci` is the only CI action of this skill. Do not push to start a run, re-run jobs or change other labels unless asked ([test-execution.md](../../rules/test-execution.md), CI section).
+Do not push to start a run, re-run jobs or change labels unless asked ([test-execution.md](../../rules/test-execution.md), CI section).
 - Decisions for the person (milestone, fix here or later, performance trade-offs) state the problem, each option's cost and your recommendation ([AGENTS.md](../../../AGENTS.md) tone rules).
 
 ## 8. What not to do
 
 - No commits or pushes to PR branches; the review worktree stays read-only (the bug-check test file is temporary and removed).
 - No issue while the approach is still being discussed; settle it in chat first.
-- No `full-ci` before the fixes are confirmed (section 7); no CI re-runs; no close-and-reopen to restart CI.
+- No "ready to merge" before the fixes are confirmed (section 7); no CI re-runs; no close-and-reopen to restart CI.
 - Do not spawn subagents for reading; read inline. Use a subagent for running checks (bug verification) or when the person asks.
 
 ## 9. Wrap-up per stack
