@@ -110,6 +110,13 @@ public struct Emitter(
     /// </summary>
     public ImmutableArray<INamedTypeSymbol>.Builder DisposedStructs { get; } = ImmutableArray.CreateBuilder<INamedTypeSymbol>();
 
+    /// <summary>
+    /// The comparison members of user structs (IComparer&lt;T&gt;.Compare, IComparable&lt;T&gt;.CompareTo) that a
+    /// <c>MemoryExtensions.Sort</c> of the method calls, in the order of first use; each definition is emitted after the
+    /// <c>Dispose</c> definitions (SortComparisonMembers.WriteDefinitions).
+    /// </summary>
+    public ImmutableArray<IMethodSymbol>.Builder SortComparisons { get; } = ImmutableArray.CreateBuilder<IMethodSymbol>();
+
     public int CurrentSwitchId => ActiveSwitchIds.Count > 0 ? ActiveSwitchIds.Peek() : 0;
 
     public int PushOverrideScope(string name, OverrideValue value) =>

@@ -14,6 +14,9 @@ on:
       - ".agents/**"
       - "**/*.md"
 
+permissions:
+  contents: read
+
 jobs:
   test-windows:
     name: Run Static & Syntax Tests (windows-latest, full-ci)

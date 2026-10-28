@@ -41,10 +41,15 @@ Start with a map, then go file by file.
 1. **Summary**: two or three lines.
 2. **Links**: the ranges to skim, as workspace-relative links into the review worktree, in the form `[Method :<start>-<end>](tmp/worktree/review-<n>/<path>#L<start>-L<end>)`. Always link; never name a file without a link.
 3. **Verdict**: logic and API, with what you checked yourself (bounds recomputed, edge cases walked through, aliasing, races, failure paths). Say "no finding" plainly when there is none.
-4. **Structural hot spots**: the long methods (with line counts), duplicated blocks (both locations), readability problems. These are for the person to judge, so point at them before they ask. Line counts per method:
+4. **Structural hot spots**: the long methods (with line counts), big `switch` statements, duplicated blocks (both locations), nested types that belong in their own file, readability problems. These are for the person to judge, so point at them before they ask. Line counts per method:
    ```sh
    awk '/^    (public|internal|private|protected)[^=;]*\(/{n=$0;s=NR} /^    }$/{if(s){printf "%4d %d-%d %s\n",NR-s+1,s,NR,substr(n,1,100);s=0}}' <file> | sort -nr | head
    ```
+   Switches with six or more cases (statements and expressions), with their line ranges:
+   ```sh
+   awk 'match($0,/^ *(switch|.*\) switch| switch)/){ if($0 ~ /switch *\(|\) switch|[a-z] switch$/){ ind=match($0,/[^ ]/); s=FNR; c=0; open=1; next} } open && match($0,/[^ ]/)==ind && /^ *}/ { if(c>=6) printf "%s:%d-%d cases=%d lines=%d\n",FILENAME,s,FNR,c,FNR-s+1; open=0 } open && /^ *(case |default|[A-Za-z_.<>]+ .*=>|_ =>)/{c++}' <files>
+   ```
+   In the compiler, a big switch whose cases do the work inline is a Facade / Strategy candidate: propose a dispatcher with one line per case (or a switch expression that maps a kind to a descriptor), each case body in its own method or strategy, and the file split by responsibility. Raise it also when the switch predates the PR but sits in a method the PR changes.
 5. End with the next step ("next: X, shall I continue?").
 
 **Explaining**: conclusion first, every domain term and algorithm explained the first time it appears. When the person says they do not follow, back up and explain the math or background from the start with a small worked example before going on. Keep chat in Japanese; everything posted to GitHub is English.
