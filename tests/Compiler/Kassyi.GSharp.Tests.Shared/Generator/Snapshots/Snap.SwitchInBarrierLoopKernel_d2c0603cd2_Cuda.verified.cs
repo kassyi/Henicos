@@ -161,6 +161,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerContinueInSwitchKernel();
 IntPtr hfunc = s_hfunc_ContinueInSwitchKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "SwitchInBarrierLoopKernels.ContinueInSwitchKernel");
 IntPtr d_a = IntPtr.Zero;
 IntPtr d_mode = IntPtr.Zero;
 try
@@ -243,6 +244,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerContinueInSwitchKernel();
 IntPtr hfunc = s_hfunc_ContinueInSwitchKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "SwitchInBarrierLoopKernels.ContinueInSwitchKernel");
 try
 {
 void** kernelParams = stackalloc void*[2];
@@ -324,6 +326,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerContinueInSwitchWithoutCaseKernel();
 IntPtr hfunc = s_hfunc_ContinueInSwitchWithoutCaseKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "SwitchInBarrierLoopKernels.ContinueInSwitchWithoutCaseKernel");
 IntPtr d_a = IntPtr.Zero;
 IntPtr d_mode = IntPtr.Zero;
 try
@@ -406,6 +409,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerContinueInSwitchWithoutCaseKernel();
 IntPtr hfunc = s_hfunc_ContinueInSwitchWithoutCaseKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "SwitchInBarrierLoopKernels.ContinueInSwitchWithoutCaseKernel");
 try
 {
 void** kernelParams = stackalloc void*[2];
@@ -518,6 +522,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerGotoOutOfSwitchKernel();
 IntPtr hfunc = s_hfunc_GotoOutOfSwitchKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "SwitchInBarrierLoopKernels.GotoOutOfSwitchKernel");
 IntPtr d_a = IntPtr.Zero;
 IntPtr d_mode = IntPtr.Zero;
 try
@@ -600,6 +605,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerGotoOutOfSwitchKernel();
 IntPtr hfunc = s_hfunc_GotoOutOfSwitchKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "SwitchInBarrierLoopKernels.GotoOutOfSwitchKernel");
 try
 {
 void** kernelParams = stackalloc void*[2];
@@ -709,6 +715,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerContinueInNestedSwitchKernel();
 IntPtr hfunc = s_hfunc_ContinueInNestedSwitchKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "SwitchInBarrierLoopKernels.ContinueInNestedSwitchKernel");
 IntPtr d_a = IntPtr.Zero;
 IntPtr d_mode = IntPtr.Zero;
 try
@@ -791,6 +798,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerContinueInNestedSwitchKernel();
 IntPtr hfunc = s_hfunc_ContinueInNestedSwitchKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "SwitchInBarrierLoopKernels.ContinueInNestedSwitchKernel");
 try
 {
 void** kernelParams = stackalloc void*[2];
