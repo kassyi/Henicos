@@ -54,13 +54,6 @@ internal readonly ref struct TranspilationSession
 
         if (methodSymbol != null)
         {
-            if (methodSymbol.HasAttribute(KnownAttributes.SkipLocalsInit) ||
-                methodSymbol.ContainingType?.HasAttribute(KnownAttributes.SkipLocalsInit) == true ||
-                methodSymbol.ContainingModule?.HasAttribute(KnownAttributes.SkipLocalsInit) == true)
-            {
-                context.Emitter.SkipLocalsInit = true;
-            }
-
             context.Emitter.IsGpuKernelEntry = plan.IsGpuKernelEntry;
             context.Emitter.IsVoidReturn = plan.ReturnsVoid;
         }

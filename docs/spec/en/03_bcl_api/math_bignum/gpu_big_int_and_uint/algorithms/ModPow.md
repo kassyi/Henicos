@@ -25,14 +25,14 @@ Computes the modular exponentiation $a^b \pmod m$ of extremely large integers on
 
 | Name | Description |
 | --- | --- |
-| [ModPow(GpuBigUInt, GpuBigUInt, GpuBigUInt, GpuBigUInt)](#modpowgpubiguint-gpubiguint-gpubiguint-gpubiguint) | Computes the modular exponentiation of a number. |
+| [ModPow(GpuBigUIntView, GpuBigUIntView, GpuBigUIntView, GpuBigUIntView)](#modpowgpubiguintview-gpubiguintview-gpubiguintview-gpubiguintview) | Computes the modular exponentiation of a number. |
 
-## ModPow(GpuBigUInt, GpuBigUInt, GpuBigUInt, GpuBigUInt)
+## ModPow(GpuBigUIntView, GpuBigUIntView, GpuBigUIntView, GpuBigUIntView)
 
 Computes modular exponentiation ($(\text{baseVal}^{\text{exp}} \bmod \text{mod})$) on the GPU using binary exponentiation (square-and-multiply).
 
 ```csharp
-public static void ModPow(GpuBigUInt baseVal, GpuBigUInt exp, GpuBigUInt mod, GpuBigUInt resultBuffer);
+public static void ModPow(scoped GpuBigUIntView baseVal, scoped GpuBigUIntView exp, scoped GpuBigUIntView mod, scoped GpuBigUIntView resultBuffer);
 ```
 
 #### Parameters

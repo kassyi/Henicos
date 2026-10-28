@@ -194,7 +194,6 @@ public static readonly string CharConstKernel_FullSource=global::Kassyi.GSharp.G
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__ConstFieldLiteralKernels__CharConstKernel {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
-public bool __gsharp_yielded_for_grid_sync;
 }
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__ConstFieldLiteralKernels__CharConstKernel(int[] output, char[] text, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__ConstFieldLiteralKernels__CharConstKernel __gsharp_ctx) {
 {
@@ -292,9 +291,9 @@ if (__gsharp_contexts[__gsharp_linear_tid].__gsharp_state != -1)
 {
 anyGridActive = true;
 anyBlockActive = true;
-__gsharp_contexts[__gsharp_linear_tid].__gsharp_yielded_for_grid_sync = false;
+global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested = false;
 __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__ConstFieldLiteralKernels__CharConstKernel(output, text, __gsharp_contexts[__gsharp_linear_tid]);
-if (__gsharp_contexts[__gsharp_linear_tid].__gsharp_yielded_for_grid_sync)
+if (global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested)
 {
 gridSyncRequested = true;
 }
@@ -404,7 +403,6 @@ public static readonly string IntegerLimitConstKernel_FullSource=global::Kassyi.
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__ConstFieldLiteralKernels__IntegerLimitConstKernel {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
-public bool __gsharp_yielded_for_grid_sync;
 }
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__ConstFieldLiteralKernels__IntegerLimitConstKernel(long[] signed, ulong[] unsigned, int[] narrow, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__ConstFieldLiteralKernels__IntegerLimitConstKernel __gsharp_ctx) {
 {
@@ -506,9 +504,9 @@ if (__gsharp_contexts[__gsharp_linear_tid].__gsharp_state != -1)
 {
 anyGridActive = true;
 anyBlockActive = true;
-__gsharp_contexts[__gsharp_linear_tid].__gsharp_yielded_for_grid_sync = false;
+global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested = false;
 __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__ConstFieldLiteralKernels__IntegerLimitConstKernel(signed, unsigned, narrow, __gsharp_contexts[__gsharp_linear_tid]);
-if (__gsharp_contexts[__gsharp_linear_tid].__gsharp_yielded_for_grid_sync)
+if (global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested)
 {
 gridSyncRequested = true;
 }
@@ -616,7 +614,6 @@ public static readonly string EnumConstKernel_FullSource=global::Kassyi.GSharp.G
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__ConstFieldLiteralKernels__EnumConstKernel {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
-public bool __gsharp_yielded_for_grid_sync;
 }
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__ConstFieldLiteralKernels__EnumConstKernel(ulong[] wide, int[] signed, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__ConstFieldLiteralKernels__EnumConstKernel __gsharp_ctx) {
 {
@@ -708,9 +705,9 @@ if (__gsharp_contexts[__gsharp_linear_tid].__gsharp_state != -1)
 {
 anyGridActive = true;
 anyBlockActive = true;
-__gsharp_contexts[__gsharp_linear_tid].__gsharp_yielded_for_grid_sync = false;
+global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested = false;
 __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__ConstFieldLiteralKernels__EnumConstKernel(wide, signed, __gsharp_contexts[__gsharp_linear_tid]);
-if (__gsharp_contexts[__gsharp_linear_tid].__gsharp_yielded_for_grid_sync)
+if (global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested)
 {
 gridSyncRequested = true;
 }
@@ -821,7 +818,6 @@ public static readonly string SingleConstKernel_FullSource=global::Kassyi.GSharp
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__ConstFieldLiteralKernels__SingleConstKernel {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
-public bool __gsharp_yielded_for_grid_sync;
 }
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__ConstFieldLiteralKernels__SingleConstKernel(float[] output, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__ConstFieldLiteralKernels__SingleConstKernel __gsharp_ctx) {
 {
@@ -912,9 +908,9 @@ if (__gsharp_contexts[__gsharp_linear_tid].__gsharp_state != -1)
 {
 anyGridActive = true;
 anyBlockActive = true;
-__gsharp_contexts[__gsharp_linear_tid].__gsharp_yielded_for_grid_sync = false;
+global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested = false;
 __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__ConstFieldLiteralKernels__SingleConstKernel(output, __gsharp_contexts[__gsharp_linear_tid]);
-if (__gsharp_contexts[__gsharp_linear_tid].__gsharp_yielded_for_grid_sync)
+if (global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested)
 {
 gridSyncRequested = true;
 }
@@ -1025,7 +1021,6 @@ public static readonly string DoubleConstKernel_FullSource=global::Kassyi.GSharp
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__ConstFieldLiteralKernels__DoubleConstKernel {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
-public bool __gsharp_yielded_for_grid_sync;
 }
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__ConstFieldLiteralKernels__DoubleConstKernel(double[] output, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__ConstFieldLiteralKernels__DoubleConstKernel __gsharp_ctx) {
 {
@@ -1117,9 +1112,9 @@ if (__gsharp_contexts[__gsharp_linear_tid].__gsharp_state != -1)
 {
 anyGridActive = true;
 anyBlockActive = true;
-__gsharp_contexts[__gsharp_linear_tid].__gsharp_yielded_for_grid_sync = false;
+global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested = false;
 __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__ConstFieldLiteralKernels__DoubleConstKernel(output, __gsharp_contexts[__gsharp_linear_tid]);
-if (__gsharp_contexts[__gsharp_linear_tid].__gsharp_yielded_for_grid_sync)
+if (global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested)
 {
 gridSyncRequested = true;
 }
@@ -1229,7 +1224,6 @@ public static readonly string OmittedArgumentKernel_FullSource=global::Kassyi.GS
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__ConstFieldLiteralKernels__OmittedArgumentKernel {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
-public bool __gsharp_yielded_for_grid_sync;
 }
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__ConstFieldLiteralKernels__OmittedArgumentKernel(float[] singles, double[] doubles, long[] longs, int[] codes, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__ConstFieldLiteralKernels__OmittedArgumentKernel __gsharp_ctx) {
 {
@@ -1337,9 +1331,9 @@ if (__gsharp_contexts[__gsharp_linear_tid].__gsharp_state != -1)
 {
 anyGridActive = true;
 anyBlockActive = true;
-__gsharp_contexts[__gsharp_linear_tid].__gsharp_yielded_for_grid_sync = false;
+global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested = false;
 __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__ConstFieldLiteralKernels__OmittedArgumentKernel(singles, doubles, longs, codes, __gsharp_contexts[__gsharp_linear_tid]);
-if (__gsharp_contexts[__gsharp_linear_tid].__gsharp_yielded_for_grid_sync)
+if (global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested)
 {
 gridSyncRequested = true;
 }
@@ -1449,7 +1443,6 @@ public static readonly string KernelDefaultKernel_FullSource=global::Kassyi.GSha
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__ConstFieldLiteralKernels__KernelDefaultKernel {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
-public bool __gsharp_yielded_for_grid_sync;
 }
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__ConstFieldLiteralKernels__KernelDefaultKernel(float[] singles, double[] doubles, long[] longs, int[] codes, float k, double h, long n, int m, char c, float nan, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__ConstFieldLiteralKernels__KernelDefaultKernel __gsharp_ctx) {
 {
@@ -1554,9 +1547,9 @@ if (__gsharp_contexts[__gsharp_linear_tid].__gsharp_state != -1)
 {
 anyGridActive = true;
 anyBlockActive = true;
-__gsharp_contexts[__gsharp_linear_tid].__gsharp_yielded_for_grid_sync = false;
+global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested = false;
 __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__ConstFieldLiteralKernels__KernelDefaultKernel(singles, doubles, longs, codes, k, h, n, m, c, nan, __gsharp_contexts[__gsharp_linear_tid]);
-if (__gsharp_contexts[__gsharp_linear_tid].__gsharp_yielded_for_grid_sync)
+if (global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested)
 {
 gridSyncRequested = true;
 }
@@ -1662,7 +1655,6 @@ public static readonly string EnumDefaultKernel_FullSource=global::Kassyi.GSharp
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__ConstFieldLiteralKernels__EnumDefaultKernel {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
-public bool __gsharp_yielded_for_grid_sync;
 }
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__ConstFieldLiteralKernels__EnumDefaultKernel(ulong[] wide, int[] signed, global::Kassyi.GSharp.Tests.Shared.Syntax.ConstFieldLiteralWideEnum w, global::Kassyi.GSharp.Tests.Shared.Syntax.ConstFieldLiteralSignedEnum s, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__ConstFieldLiteralKernels__EnumDefaultKernel __gsharp_ctx) {
 {
@@ -1751,9 +1743,9 @@ if (__gsharp_contexts[__gsharp_linear_tid].__gsharp_state != -1)
 {
 anyGridActive = true;
 anyBlockActive = true;
-__gsharp_contexts[__gsharp_linear_tid].__gsharp_yielded_for_grid_sync = false;
+global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested = false;
 __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__ConstFieldLiteralKernels__EnumDefaultKernel(wide, signed, w, s, __gsharp_contexts[__gsharp_linear_tid]);
-if (__gsharp_contexts[__gsharp_linear_tid].__gsharp_yielded_for_grid_sync)
+if (global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested)
 {
 gridSyncRequested = true;
 }
@@ -1865,7 +1857,6 @@ public static readonly string NegativeOperandKernel_FullSource=global::Kassyi.GS
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__ConstFieldLiteralKernels__NegativeOperandKernel {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
-public bool __gsharp_yielded_for_grid_sync;
 }
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__ConstFieldLiteralKernels__NegativeOperandKernel(int[] ints, long[] longs, float[] singles, int[] values, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__ConstFieldLiteralKernels__NegativeOperandKernel __gsharp_ctx) {
 {
@@ -1974,9 +1965,9 @@ if (__gsharp_contexts[__gsharp_linear_tid].__gsharp_state != -1)
 {
 anyGridActive = true;
 anyBlockActive = true;
-__gsharp_contexts[__gsharp_linear_tid].__gsharp_yielded_for_grid_sync = false;
+global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested = false;
 __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__ConstFieldLiteralKernels__NegativeOperandKernel(ints, longs, singles, values, __gsharp_contexts[__gsharp_linear_tid]);
-if (__gsharp_contexts[__gsharp_linear_tid].__gsharp_yielded_for_grid_sync)
+if (global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested)
 {
 gridSyncRequested = true;
 }
@@ -2086,7 +2077,6 @@ public static readonly string NegativeLiteralKernel_FullSource=global::Kassyi.GS
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__ConstFieldLiteralKernels__NegativeLiteralKernel {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
-public bool __gsharp_yielded_for_grid_sync;
 }
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__ConstFieldLiteralKernels__NegativeLiteralKernel(long[] longs, double[] doubles, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__ConstFieldLiteralKernels__NegativeLiteralKernel __gsharp_ctx) {
 {
@@ -2179,9 +2169,9 @@ if (__gsharp_contexts[__gsharp_linear_tid].__gsharp_state != -1)
 {
 anyGridActive = true;
 anyBlockActive = true;
-__gsharp_contexts[__gsharp_linear_tid].__gsharp_yielded_for_grid_sync = false;
+global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested = false;
 __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__ConstFieldLiteralKernels__NegativeLiteralKernel(longs, doubles, __gsharp_contexts[__gsharp_linear_tid]);
-if (__gsharp_contexts[__gsharp_linear_tid].__gsharp_yielded_for_grid_sync)
+if (global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested)
 {
 gridSyncRequested = true;
 }
@@ -2288,7 +2278,6 @@ public static readonly string SuffixKernel_FullSource=global::Kassyi.GSharp.Gene
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__ConstFieldLiteralKernels__SuffixKernel {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
-public bool __gsharp_yielded_for_grid_sync;
 }
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__ConstFieldLiteralKernels__SuffixKernel(ulong[] output, uint factor, int shift, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__ConstFieldLiteralKernels__SuffixKernel __gsharp_ctx) {
 {
@@ -2375,9 +2364,9 @@ if (__gsharp_contexts[__gsharp_linear_tid].__gsharp_state != -1)
 {
 anyGridActive = true;
 anyBlockActive = true;
-__gsharp_contexts[__gsharp_linear_tid].__gsharp_yielded_for_grid_sync = false;
+global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested = false;
 __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__ConstFieldLiteralKernels__SuffixKernel(output, factor, shift, __gsharp_contexts[__gsharp_linear_tid]);
-if (__gsharp_contexts[__gsharp_linear_tid].__gsharp_yielded_for_grid_sync)
+if (global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested)
 {
 gridSyncRequested = true;
 }
@@ -2481,7 +2470,6 @@ public static readonly string NullableDefaultKernel_FullSource=global::Kassyi.GS
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__ConstFieldLiteralKernels__NullableDefaultKernel {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
-public bool __gsharp_yielded_for_grid_sync;
 }
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__ConstFieldLiteralKernels__NullableDefaultKernel(float[] singles, int[] codes, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__ConstFieldLiteralKernels__NullableDefaultKernel __gsharp_ctx) {
 {
@@ -2571,9 +2559,9 @@ if (__gsharp_contexts[__gsharp_linear_tid].__gsharp_state != -1)
 {
 anyGridActive = true;
 anyBlockActive = true;
-__gsharp_contexts[__gsharp_linear_tid].__gsharp_yielded_for_grid_sync = false;
+global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested = false;
 __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__ConstFieldLiteralKernels__NullableDefaultKernel(singles, codes, __gsharp_contexts[__gsharp_linear_tid]);
-if (__gsharp_contexts[__gsharp_linear_tid].__gsharp_yielded_for_grid_sync)
+if (global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested)
 {
 gridSyncRequested = true;
 }
@@ -2797,7 +2785,6 @@ public static readonly string SynthesizedDefaultKernel_FullSource=global::Kassyi
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__ConstFieldLiteralKernels__SynthesizedDefaultKernel {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
-public bool __gsharp_yielded_for_grid_sync;
 }
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__ConstFieldLiteralKernels__SynthesizedDefaultKernel(long[] longs, float[] singles, double[] doubles, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__ConstFieldLiteralKernels__SynthesizedDefaultKernel __gsharp_ctx) {
 {
@@ -2915,9 +2902,9 @@ if (__gsharp_contexts[__gsharp_linear_tid].__gsharp_state != -1)
 {
 anyGridActive = true;
 anyBlockActive = true;
-__gsharp_contexts[__gsharp_linear_tid].__gsharp_yielded_for_grid_sync = false;
+global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested = false;
 __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__ConstFieldLiteralKernels__SynthesizedDefaultKernel(longs, singles, doubles, __gsharp_contexts[__gsharp_linear_tid]);
-if (__gsharp_contexts[__gsharp_linear_tid].__gsharp_yielded_for_grid_sync)
+if (global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested)
 {
 gridSyncRequested = true;
 }
@@ -3054,7 +3041,6 @@ public static readonly string NegativeUnrollKernel_FullSource=global::Kassyi.GSh
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__ConstFieldLiteralKernels__NegativeUnrollKernel {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
-public bool __gsharp_yielded_for_grid_sync;
 }
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__ConstFieldLiteralKernels__NegativeUnrollKernel(int[] output, int[] values, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__ConstFieldLiteralKernels__NegativeUnrollKernel __gsharp_ctx) {
 {
@@ -3154,9 +3140,9 @@ if (__gsharp_contexts[__gsharp_linear_tid].__gsharp_state != -1)
 {
 anyGridActive = true;
 anyBlockActive = true;
-__gsharp_contexts[__gsharp_linear_tid].__gsharp_yielded_for_grid_sync = false;
+global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested = false;
 __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__ConstFieldLiteralKernels__NegativeUnrollKernel(output, values, __gsharp_contexts[__gsharp_linear_tid]);
-if (__gsharp_contexts[__gsharp_linear_tid].__gsharp_yielded_for_grid_sync)
+if (global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested)
 {
 gridSyncRequested = true;
 }

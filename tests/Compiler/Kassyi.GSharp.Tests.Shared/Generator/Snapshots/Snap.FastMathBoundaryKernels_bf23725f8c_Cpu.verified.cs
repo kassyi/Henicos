@@ -108,7 +108,6 @@ public static readonly string Kernel_COR01_FastMath_Exp_FullSource=global::Kassy
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Core__FastMathBoundaryKernels__Kernel_uCOR01_uFastMath_uExp {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
-public bool __gsharp_yielded_for_grid_sync;
 }
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Core__FastMathBoundaryKernels__Kernel_uCOR01_uFastMath_uExp(float[] input, float[] output, __gsharp_context_Kassyi__GSharp__Tests__Shared__Core__FastMathBoundaryKernels__Kernel_uCOR01_uFastMath_uExp __gsharp_ctx) {
 {
@@ -197,9 +196,9 @@ if (__gsharp_contexts[__gsharp_linear_tid].__gsharp_state != -1)
 {
 anyGridActive = true;
 anyBlockActive = true;
-__gsharp_contexts[__gsharp_linear_tid].__gsharp_yielded_for_grid_sync = false;
+global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested = false;
 __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Core__FastMathBoundaryKernels__Kernel_uCOR01_uFastMath_uExp(input, output, __gsharp_contexts[__gsharp_linear_tid]);
-if (__gsharp_contexts[__gsharp_linear_tid].__gsharp_yielded_for_grid_sync)
+if (global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested)
 {
 gridSyncRequested = true;
 }
@@ -303,7 +302,6 @@ public static readonly string Kernel_COR01_FastMath_Log_FullSource=global::Kassy
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Core__FastMathBoundaryKernels__Kernel_uCOR01_uFastMath_uLog {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
-public bool __gsharp_yielded_for_grid_sync;
 }
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Core__FastMathBoundaryKernels__Kernel_uCOR01_uFastMath_uLog(float[] input, float[] output, __gsharp_context_Kassyi__GSharp__Tests__Shared__Core__FastMathBoundaryKernels__Kernel_uCOR01_uFastMath_uLog __gsharp_ctx) {
 {
@@ -392,9 +390,9 @@ if (__gsharp_contexts[__gsharp_linear_tid].__gsharp_state != -1)
 {
 anyGridActive = true;
 anyBlockActive = true;
-__gsharp_contexts[__gsharp_linear_tid].__gsharp_yielded_for_grid_sync = false;
+global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested = false;
 __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Core__FastMathBoundaryKernels__Kernel_uCOR01_uFastMath_uLog(input, output, __gsharp_contexts[__gsharp_linear_tid]);
-if (__gsharp_contexts[__gsharp_linear_tid].__gsharp_yielded_for_grid_sync)
+if (global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested)
 {
 gridSyncRequested = true;
 }
@@ -498,7 +496,6 @@ public static readonly string Kernel_COR01_FastMath_Sqrt_FullSource=global::Kass
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Core__FastMathBoundaryKernels__Kernel_uCOR01_uFastMath_uSqrt {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
-public bool __gsharp_yielded_for_grid_sync;
 }
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Core__FastMathBoundaryKernels__Kernel_uCOR01_uFastMath_uSqrt(float[] input, float[] output, __gsharp_context_Kassyi__GSharp__Tests__Shared__Core__FastMathBoundaryKernels__Kernel_uCOR01_uFastMath_uSqrt __gsharp_ctx) {
 {
@@ -587,9 +584,9 @@ if (__gsharp_contexts[__gsharp_linear_tid].__gsharp_state != -1)
 {
 anyGridActive = true;
 anyBlockActive = true;
-__gsharp_contexts[__gsharp_linear_tid].__gsharp_yielded_for_grid_sync = false;
+global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested = false;
 __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Core__FastMathBoundaryKernels__Kernel_uCOR01_uFastMath_uSqrt(input, output, __gsharp_contexts[__gsharp_linear_tid]);
-if (__gsharp_contexts[__gsharp_linear_tid].__gsharp_yielded_for_grid_sync)
+if (global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested)
 {
 gridSyncRequested = true;
 }
@@ -693,7 +690,6 @@ public static readonly string Kernel_COR01_FastMath_Abs_FullSource=global::Kassy
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Core__FastMathBoundaryKernels__Kernel_uCOR01_uFastMath_uAbs {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
-public bool __gsharp_yielded_for_grid_sync;
 }
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Core__FastMathBoundaryKernels__Kernel_uCOR01_uFastMath_uAbs(float[] input, float[] output, __gsharp_context_Kassyi__GSharp__Tests__Shared__Core__FastMathBoundaryKernels__Kernel_uCOR01_uFastMath_uAbs __gsharp_ctx) {
 {
@@ -782,9 +778,9 @@ if (__gsharp_contexts[__gsharp_linear_tid].__gsharp_state != -1)
 {
 anyGridActive = true;
 anyBlockActive = true;
-__gsharp_contexts[__gsharp_linear_tid].__gsharp_yielded_for_grid_sync = false;
+global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested = false;
 __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Core__FastMathBoundaryKernels__Kernel_uCOR01_uFastMath_uAbs(input, output, __gsharp_contexts[__gsharp_linear_tid]);
-if (__gsharp_contexts[__gsharp_linear_tid].__gsharp_yielded_for_grid_sync)
+if (global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested)
 {
 gridSyncRequested = true;
 }

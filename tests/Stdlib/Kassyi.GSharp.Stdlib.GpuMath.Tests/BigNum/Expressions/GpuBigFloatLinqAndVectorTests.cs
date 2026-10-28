@@ -35,9 +35,9 @@ public class GpuBigFloatLinqAndVectorTests : IDisposable
         return new GpuBigFloat(sig, exponent, isNeg);
     }
 
-    private static double ToDouble(GpuBigFloat value)
+    private static double ToDouble(GpuBigFloatView value)
     {
-        var mag = (double)value.UFloat.Significand.ToBigInteger() * Math.Pow(2.0, value.UFloat.Exponent);
+        var mag = (double)value.Significand.ToBigInteger() * Math.Pow(2.0, value.Exponent);
         return value.IsNegative ? -mag : mag;
     }
 
@@ -761,7 +761,7 @@ public class GpuBigFloatLinqAndVectorTests : IDisposable
 
         // GetElement returns views of the array's memory; they are not disposed.
         var element0 = array.GetElement(0);
-        Assert.Equal(new BigInteger(5), element0.UFloat.Significand.ToBigInteger());
+        Assert.Equal(new BigInteger(5), element0.Significand.ToBigInteger());
         Assert.Equal(3, element0.Exponent);
         Assert.True(element0.IsNegative);
 
@@ -774,7 +774,7 @@ public class GpuBigFloatLinqAndVectorTests : IDisposable
         array.SetElement(0, wide);
 
         var element1 = array.GetElement(1);
-        Assert.Equal(new BigInteger(7), element1.UFloat.Significand.ToBigInteger());
+        Assert.Equal(new BigInteger(7), element1.Significand.ToBigInteger());
         Assert.Equal(-2, element1.Exponent);
         Assert.False(element1.IsNegative);
     }
