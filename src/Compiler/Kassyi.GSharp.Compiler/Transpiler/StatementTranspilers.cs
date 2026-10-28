@@ -24,7 +24,7 @@ internal static class StatementTranspilers
     /// </summary>
     public static void TranspileIfStatement(IfStatementSyntax node, ref TranspileContext context)
     {
-        DeclarationHoistingHelper.HoistDeclarationExpressions(node.Condition, ref context);
+        StatementPrelude.Emit(node.Condition, ref context);
         context.Emitter.Writer.Append("if");
         using (context.Emitter.Writer.Parentheses())
         {
@@ -48,6 +48,27 @@ internal static class StatementTranspilers
     /// </summary>
     public static void TranspileForStatement(ForStatementSyntax node, ref TranspileContext context)
     {
+        // The declaration, the initializers, the condition and the incrementors (not the body, which has its own)
+        if (node.Declaration != null)
+        {
+            StatementPrelude.Emit(node.Declaration, ref context);
+        }
+
+        foreach (var initializer in node.Initializers)
+        {
+            StatementPrelude.Emit(initializer, ref context);
+        }
+
+        if (node.Condition != null)
+        {
+            StatementPrelude.Emit(node.Condition, ref context);
+        }
+
+        foreach (var incrementor in node.Incrementors)
+        {
+            StatementPrelude.Emit(incrementor, ref context);
+        }
+
         context.Emitter.Writer.Append("for");
         using (context.Emitter.Writer.Parentheses())
         {
@@ -122,7 +143,7 @@ internal static class StatementTranspilers
             return;
         }
 
-        DeclarationHoistingHelper.HoistDeclarationExpressions(node.Expression, ref context);
+        StatementPrelude.Emit(node.Expression, ref context);
 
         context.Emitter.Writer.Append("for");
         using (context.Emitter.Writer.Parentheses())
@@ -191,7 +212,7 @@ internal static class StatementTranspilers
     /// </summary>
     public static void TranspileWhileStatement(WhileStatementSyntax node, ref TranspileContext context)
     {
-        DeclarationHoistingHelper.HoistDeclarationExpressions(node.Condition, ref context);
+        StatementPrelude.Emit(node.Condition, ref context);
         context.Emitter.Writer.Append("while");
         using (context.Emitter.Writer.Parentheses())
         {
@@ -207,6 +228,7 @@ internal static class StatementTranspilers
     /// </summary>
     public static void TranspileDoStatement(DoStatementSyntax node, ref TranspileContext context)
     {
+        StatementPrelude.Emit(node.Condition, ref context);
         context.Emitter.Writer
             .Append("do")
             .AppendLine();
@@ -225,6 +247,7 @@ internal static class StatementTranspilers
     /// </summary>
     public static void TranspileSwitchStatement(SwitchStatementSyntax node, ref TranspileContext context)
     {
+        StatementPrelude.Emit(node.Expression, ref context);
         var switchId = ++context.Emitter.SwitchIdCounter;
         context.Emitter.ActiveSwitchIds.Push(switchId);
 
@@ -370,7 +393,7 @@ internal static class StatementTranspilers
 
         if (node.Expression != null)
         {
-            DeclarationHoistingHelper.HoistDeclarationExpressions(node.Expression, ref context);
+            StatementPrelude.Emit(node.Expression, ref context);
 
             if (context.Emitter is { IsGpuKernelEntry: true, IsVoidReturn: false, CallableDepth: 0 })
             {
@@ -425,7 +448,7 @@ internal static class StatementTranspilers
 
         if (node.Expression != null)
         {
-            DeclarationHoistingHelper.HoistDeclarationExpressions(node.Expression, ref context);
+            StatementPrelude.Emit(node.Expression, ref context);
             context.Emitter.Writer.Append($"*{GSharpInternalNames.SuspendingCall.Result} = ");
             context.Visitor.Visit(node.Expression);
             context.Emitter.Writer.AppendLine(";");

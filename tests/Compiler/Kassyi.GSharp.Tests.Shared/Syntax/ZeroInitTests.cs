@@ -223,4 +223,106 @@ public class ZeroInitTests : TranspilerTestBase
         Assert.Equal([0, 28], expected);
         Assert.Equal(expected, output);
     }
+
+    [SkippableFact]
+    [Scenario(TestScenario.HappyPath)]
+    public void Test_StackAllocAndCollectionExpressionInArguments_HaveTheirLengthAndElements()
+    {
+        int[] output = Enumerable.Repeat(-1, 8).ToArray();
+        int[] expected = Enumerable.Repeat(-1, 8).ToArray();
+        ZeroInitKernels.StackAllocArgumentKernel(expected);
+
+        ZeroInitKernels.LaunchStackAllocArgumentKernel(output, blockDimX: 1);
+
+        Assert.Equal([4, 3, 7, 11, 0, 0, 1, 15], expected);
+        Assert.Equal(expected, output);
+    }
+
+    [SkippableFact]
+    [Scenario(TestScenario.Boundary)]
+    public void Test_StackAllocInitializerInAnArgument_KeepsTheCSharpOrderOfEvaluation()
+    {
+        int[] output = [-1, -1];
+        int[] expected = [-1, -1];
+        ZeroInitKernels.StackAllocInitializerOrderKernel(expected);
+
+        ZeroInitKernels.LaunchStackAllocInitializerOrderKernel(output, blockDimX: 1);
+
+        Assert.Equal([1 * 10 + (2 + 3), 3], expected);
+        Assert.Equal(expected, output);
+    }
+
+    [SkippableFact]
+    [Scenario(TestScenario.HappyPath)]
+    public void Test_PointerToStackAlloc_PointsToZeroedOrInitializedStorage()
+    {
+        int[] output = [-1, -1];
+        int[] expected = [-1, -1];
+        ZeroInitKernels.StackAllocPointerKernel(expected);
+
+        ZeroInitKernels.LaunchStackAllocPointerKernel(output, blockDimX: 1);
+
+        Assert.Equal([5, 13], expected);
+        Assert.Equal(expected, output);
+    }
+
+    [SkippableTheory]
+    [Scenario(TestScenario.Boundary)]
+    [InlineData(0)]
+    [InlineData(255)]
+    public void Test_LargeStackAllocInAnArgument_IsZeroedToTheLastElement(int index)
+    {
+        int[] output = [-1];
+        int[] expected = [-1];
+        ZeroInitKernels.LargeStackAllocKernel(expected, index);
+
+        ZeroInitKernels.LaunchLargeStackAllocKernel(output, index, blockDimX: 1);
+
+        Assert.Equal([0], expected);
+        Assert.Equal(expected, output);
+    }
+
+    [SkippableFact]
+    [Scenario(TestScenario.Boundary)]
+    public void Test_StackAllocInAnArgumentInALoop_IsZeroedOnEveryEvaluation()
+    {
+        int[] output = [-1];
+        int[] expected = [-1];
+        ZeroInitKernels.StackAllocArgumentInLoopKernel(expected);
+
+        ZeroInitKernels.LaunchStackAllocArgumentInLoopKernel(output, blockDimX: 1);
+
+        Assert.Equal([0], expected);
+        Assert.Equal(expected, output);
+    }
+
+    [SkippableFact]
+    [Scenario(TestScenario.Boundary)]
+    public void Test_StackAllocInForDoAndSwitchHeaders_IsDeclaredAndZeroed()
+    {
+        int[] output = [-1, -1, -1];
+        int[] expected = [-1, -1, -1];
+        ZeroInitKernels.StackAllocInLoopHeadersKernel(expected);
+
+        ZeroInitKernels.LaunchStackAllocInLoopHeadersKernel(output, blockDimX: 1);
+
+        Assert.Equal([3, 3, 1], expected);
+        Assert.Equal(expected, output);
+    }
+
+    [SkippableTheory]
+    [Scenario(TestScenario.Boundary)]
+    [InlineData(1, 4)]
+    [InlineData(0, 8)]
+    public void Test_StackAllocInEachBranchOfAConditional_HasItsOwnLength(int c, int length)
+    {
+        int[] output = [-1];
+        int[] expected = [-1];
+        ZeroInitKernels.StackAllocConditionalKernel(expected, c);
+
+        ZeroInitKernels.LaunchStackAllocConditionalKernel(output, c, blockDimX: 1);
+
+        Assert.Equal([length], expected);
+        Assert.Equal(expected, output);
+    }
 }
