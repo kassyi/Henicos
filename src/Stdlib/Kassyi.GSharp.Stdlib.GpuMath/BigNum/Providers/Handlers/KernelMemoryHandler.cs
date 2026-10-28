@@ -55,8 +55,9 @@ public sealed class KernelMemoryHandler : IGpuMemoryProvider
             return;
         }
 
-        // cuMemFree_v2 waits for every stream of the device; cuMemFreeAsync only orders the release on 'stream'.
-        // Allocations from cuMemAlloc_v2 may be released either way.
+        // cuMemFree_v2 waits for every stream of the device; cuMemFreeAsync only orders the release on 'stream'
+        // (NVIDIA, "Using the NVIDIA CUDA Stream-Ordered Memory Allocator, Part 1"). Allocations from cuMemAlloc_v2 may
+        // be released either way.
         InvokeCuda(stream == IntPtr.Zero
             ? () => CudaDriverApi.cuMemFree_v2(devicePointer)
             : () => CudaDriverApi.cuMemFreeAsync(devicePointer, stream));

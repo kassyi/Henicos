@@ -220,6 +220,7 @@ public struct GpuBigUInt<TSize> : IGpuNumber<GpuBigUInt<TSize>> where TSize : un
             return result;
         }
 
+        // C# masks a uint shift count to 5 bits, so val << (32 - bitShift) would be val << 0 here, not 0.
         if (bitShift == 0)
         {
             for (var i = limbShift; i < src.Length; i++)
@@ -266,43 +267,39 @@ public struct GpuBigUInt<TSize> : IGpuNumber<GpuBigUInt<TSize>> where TSize : un
     /// <summary>
     /// Shifts the big integer to the left by the specified number of bits.
     /// </summary>
-    /// <param name="bits">The number of bits to shift left.</param>
-    /// <returns>The left-shifted value.</returns>
+    /// <param name="bits">The number of bits to shift left. A shift by the full width or more returns zero.</param>
+    /// <returns>The left-shifted value, <c>v·2^bits</c> modulo <c>2^(32·limbs)</c>.</returns>
+    /// <exception cref="ArgumentOutOfRangeException"><paramref name="bits"/> is negative.</exception>
     public readonly GpuBigUInt<TSize> ShiftLeft(int bits)
     {
-        if (bits == 0)
-        {
-            return this;
-        }
-
-        var result = default(GpuBigUInt<TSize>);
+        ArgumentOutOfRangeException.ThrowIfNegative(bits);
         var src = GetSpan();
+        var result = default(GpuBigUInt<TSize>);
         var dst = result.GetSpan();
-
         var limbShift = bits / 32;
         var bitShift = bits % 32;
-
         if (limbShift >= src.Length)
         {
             return result;
         }
 
+        // C# masks a uint shift count to 5 bits, so val >> (32 - bitShift) would be val >> 0 here, not 0.
         if (bitShift == 0)
         {
             for (var i = 0; i < src.Length - limbShift; i++)
             {
                 dst[i + limbShift] = src[i];
             }
+
+            return result;
         }
-        else
+
+        uint carry = 0;
+        for (var i = 0; i < src.Length - limbShift; i++)
         {
-            uint carry = 0;
-            for (var i = 0; i < src.Length - limbShift; i++)
-            {
-                var val = src[i];
-                dst[i + limbShift] = (val << bitShift) | carry;
-                carry = val >> (32 - bitShift);
-            }
+            var val = src[i];
+            dst[i + limbShift] = (val << bitShift) | carry;
+            carry = val >> (32 - bitShift);
         }
 
         return result;

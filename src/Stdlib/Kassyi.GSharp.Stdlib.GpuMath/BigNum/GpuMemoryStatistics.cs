@@ -9,6 +9,11 @@ namespace Kassyi.GSharp.Stdlib.GpuMath.BigNum;
 /// <param name="PooledBuffers">The number of freed buffers waiting in the pool for reuse.</param>
 /// <param name="DriverAllocations">The number of device allocations requested from the driver since construction.</param>
 /// <param name="DriverFrees">The number of buffers returned to the driver since construction.</param>
+/// <param name="DeferredBuffers">
+/// The number of buffers freed while a CUDA graph was captured, which the graph (or, for a capture outside
+/// <c>CompileToGraph</c>, the workspace) holds until it is disposed; a buffer freed and taken again in the same capture
+/// is not counted.
+/// </param>
 /// <remarks>
 /// Each counter is read on its own, so a snapshot taken while other threads allocate or free is not atomic as a whole.
 /// The counters follow the <c>{value, peak, total}</c> statistics of RMM's <c>statistics_resource_adaptor</c>: tests use
@@ -21,4 +26,5 @@ internal readonly record struct GpuMemoryStatistics(
     int PeakLiveBuffers,
     int PooledBuffers,
     long DriverAllocations,
-    long DriverFrees);
+    long DriverFrees,
+    int DeferredBuffers);

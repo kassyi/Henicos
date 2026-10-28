@@ -245,12 +245,17 @@ public readonly GpuBigUInt<TSize> ShiftLeft(int bits);
 #### Parameters
 
 `bits` _int_<br>
-The number of bits to shift.
+The number of bits to shift. A shift by the full width or more returns zero.
 
 #### Returns
 
 _GpuBigUInt&lt;TSize&gt;_<br>
-The shifted value.
+The shifted value, `v·2^bits` modulo `2^(32·limbs)`.
+
+#### Exceptions
+
+`ArgumentOutOfRangeException`  
+Thrown when `bits` is negative.
 
 ## ShiftRight(int, out bool)
 

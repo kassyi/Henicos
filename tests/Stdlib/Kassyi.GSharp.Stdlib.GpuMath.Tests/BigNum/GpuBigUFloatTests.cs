@@ -112,7 +112,7 @@ public class GpuBigUFloatTests : IDisposable
 
     // a - b with a < b has no unsigned value; like checked uint subtraction it throws OverflowException, through the
     // method and through the implicit evaluation of the deferred expression (#629).
-    // mutant: GpuBigFloatExpressionVisitor.cs:74 `if (!left.CanBeNegative && res.IsNegative)` -> `if (false)` (all three;
+    // mutant: GpuBigFloatExpressionVisitor.cs:111 `if (!left.CanBeNegative && res.IsNegative)` -> `if (false)` (all three;
     // GpuBigUFloat.Create then throws ArgumentOutOfRangeException instead)
     [SkippableTheory]
     [Category(TestCategory.Stdlib)]
