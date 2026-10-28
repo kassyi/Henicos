@@ -181,4 +181,14 @@ internal static class ResumeLocalScenarios
 
         Assert.Equal(new[] { 11, 12, 13, 14 }, result);
     }
+
+    public static void StackLinqBeforeBarrier(Action<Action> run)
+    {
+        int[] data = [0, 1, 2, 3];
+        var result = new int[4];
+
+        run(() => ResumeLocalKernels.LaunchStackLinqBeforeBarrierKernel(data, result, blockDimX: 4));
+
+        Assert.Equal(new[] { 106, 105, 103, 100 }, result);
+    }
 }

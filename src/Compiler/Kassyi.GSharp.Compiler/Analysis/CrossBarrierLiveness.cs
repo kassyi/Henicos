@@ -1,3 +1,4 @@
+using Kassyi.GSharp.Compiler.Transpiler.Rules.InvocationRules.StackLinq;
 using Microsoft.CodeAnalysis.FlowAnalysis;
 using Microsoft.CodeAnalysis.Operations;
 
@@ -23,8 +24,9 @@ namespace Kassyi.GSharp.Compiler.Analysis;
 /// every split that the delegate is live across. A delegate stored in a local (a carrier) that is only run or assigned
 /// is live as that local is (one more bit of the same fixed point). Any other delegate (passed, copied, stored
 /// elsewhere, made inside another lambda or local function) may run after any later split, so its captured locals are
-/// pinned where it is made: live across every split reachable from there. The bodies of <c>Gpu</c> macros run within the
-/// call and are not delegates.
+/// pinned where it is made: live across every split reachable from there. The bodies of <c>Gpu</c> macros and the lambdas
+/// passed to StackLinq operators run within the call (the transpiler expands them in place) and are not delegates.
+/// A body uses, and may make delegates of, what the local functions it calls use, directly or through each other.
 /// </para>
 /// <para>
 /// A local is live after a split when some path from the split reads it before writing it. Declaring it, assigning it
@@ -135,13 +137,13 @@ internal sealed class CrossBarrierLiveness
         _ => false
     };
 
-    // Whether node lies in a lambda or local function of body that is not the body of a Gpu macro
+    // Whether node lies in a lambda of body that does not run in place, or in a local function of body
     private bool IsInsideFunction(SyntaxNode node, SyntaxNode body)
     {
         for (var ancestor = node.Parent; ancestor != null && ancestor != body; ancestor = ancestor.Parent)
         {
             if (ancestor is LocalFunctionStatementSyntax ||
-                (ancestor is AnonymousFunctionExpressionSyntax && !GpuMacroClassifier.ClassifyBody(ancestor, _model).HasBody))
+                (ancestor is AnonymousFunctionExpressionSyntax && !RunsInPlace(ancestor)))
             {
                 return true;
             }
@@ -150,24 +152,57 @@ internal sealed class CrossBarrierLiveness
         return false;
     }
 
-    // Whether running body can make a delegate that outlives the run: a lambda that is not a macro body, or a local
+    // Whether running bodies can make a delegate that outlives the run: a lambda that does not run in place, or a local
     // function used as a value
-    private bool MakesDelegate(SyntaxNode body)
+    private bool MakesDelegate(ImmutableArray<SyntaxNode>.Builder bodies)
     {
-        foreach (var node in body.DescendantNodes())
+        foreach (var body in bodies)
         {
-            switch (node)
+            foreach (var node in body.DescendantNodes())
             {
-                case AnonymousFunctionExpressionSyntax lambda when !GpuMacroClassifier.ClassifyBody(lambda, _model).HasBody:
-                    return true;
-                case IdentifierNameSyntax name
-                    when _model.GetSymbol(name) is IMethodSymbol { MethodKind: MethodKind.LocalFunction } &&
-                         !(name.Parent is InvocationExpressionSyntax invocation && invocation.Expression == name):
-                    return true;
+                switch (node)
+                {
+                    case AnonymousFunctionExpressionSyntax lambda when !RunsInPlace(lambda):
+                        return true;
+                    case IdentifierNameSyntax name
+                        when _model.GetSymbol(name) is IMethodSymbol { MethodKind: MethodKind.LocalFunction } &&
+                             !(name.Parent is InvocationExpressionSyntax invocation && invocation.Expression == name):
+                        return true;
+                }
             }
         }
 
         return false;
+    }
+
+    // A lambda that runs within the call it is passed to and is never stored: the body of a Gpu macro, or a lambda passed
+    // to a StackLinq operator, which the transpiler expands into code that runs it in place
+    private bool RunsInPlace(SyntaxNode lambda) =>
+        GpuMacroClassifier.ClassifyBody(lambda, _model).HasBody ||
+        (lambda.Parent is ArgumentSyntax { Parent: ArgumentListSyntax { Parent: InvocationExpressionSyntax call } } &&
+         _model.GetSymbol(call) is IMethodSymbol method &&
+         StackLinqHelper.IsStackLinqMethod(method));
+
+    // body, and the local functions that it calls, directly or through each other: running body runs them too
+    private ImmutableArray<SyntaxNode>.Builder GetRunBodies(SyntaxNode body)
+    {
+        var bodies = ImmutableArray.CreateBuilder<SyntaxNode>();
+        bodies.Add(body);
+        for (var i = 0; i < bodies.Count; i++)
+        {
+            foreach (var node in bodies[i].DescendantNodes())
+            {
+                if (node is InvocationExpressionSyntax invocation &&
+                    _model.GetSymbol(invocation) is IMethodSymbol { MethodKind: MethodKind.LocalFunction } callee &&
+                    callee.TryGetDeclaringSyntax(out LocalFunctionStatementSyntax? localFunction) &&
+                    !bodies.Contains(localFunction))
+                {
+                    bodies.Add(localFunction);
+                }
+            }
+        }
+
+        return bodies;
     }
 
     // Builds the nodes of graph; returns the node of its entry block and the last node of its exit block
@@ -375,13 +410,15 @@ internal sealed class CrossBarrierLiveness
             Walk(instance, graph);
         }
 
+        var runsLambdasInPlace = StackLinqHelper.IsStackLinqMethod(method);
         foreach (var argument in invocation.Arguments)
         {
-            // The body of Gpu.SingleThread or Gpu.GridStrideLoop runs within the call
-            if (macro.HasBody && argument.Parameter?.Ordinal == macro.LambdaArgumentIndex &&
-                UnwrapLambda(argument.Value) is { } macroBody)
+            // The body of Gpu.SingleThread or Gpu.GridStrideLoop, and a lambda passed to a StackLinq operator, run within
+            // the call
+            if ((runsLambdasInPlace || (macro.HasBody && argument.Parameter?.Ordinal == macro.LambdaArgumentIndex)) &&
+                UnwrapLambda(argument.Value) is { } inPlace)
             {
-                AddRun(macroBody.Syntax);
+                AddRun(inPlace.Syntax);
             }
             else if (!IsOutLocal(argument, out _))
             {
@@ -480,25 +517,38 @@ internal sealed class CrossBarrierLiveness
 
     // A lambda or local function that runs here (a macro body, a local function call): it uses its captured locals here,
     // and a delegate it makes keeps them from here on
-    private void AddRun(SyntaxNode body) => AddCaptures(body, carrier: null, pin: MakesDelegate(body));
+    private void AddRun(SyntaxNode body)
+    {
+        var bodies = GetRunBodies(body);
+        AddCaptures(bodies, carrier: null, pin: MakesDelegate(bodies));
+    }
 
     // A delegate made here from body: kept by carrier (an index of _locals), or by anything when carrier is -1
     private void AddDelegate(SyntaxNode body, int carrier)
     {
-        var isCarried = carrier >= 0 && !MakesDelegate(body);
-        AddCaptures(body, isCarried ? _carrierCaptures[carrier - _trackedCount] : null, pin: !isCarried);
+        var bodies = GetRunBodies(body);
+        var isCarried = carrier >= 0 && !MakesDelegate(bodies);
+        AddCaptures(bodies, isCarried ? _carrierCaptures[carrier - _trackedCount] : null, pin: !isCarried);
     }
 
-    // A use of a tracked local of this graph inside a lambda or local function that is not split counts as a use here;
-    // a local declared inside it belongs to it and is not a use here. Each captured local is also added to carrier, or
-    // pinned here.
-    private void AddCaptures(SyntaxNode body, ulong[]? carrier, bool pin)
+    // A use of a tracked local of this graph inside the lambdas and local functions that are not split counts as a use
+    // here; a local declared inside one of them belongs to it and is not a use here. Each captured local is also added
+    // to carrier, or pinned here.
+    private void AddCaptures(ImmutableArray<SyntaxNode>.Builder bodies, ulong[]? carrier, bool pin)
+    {
+        foreach (var body in bodies)
+        {
+            AddCaptures(body, bodies, carrier, pin);
+        }
+    }
+
+    private void AddCaptures(SyntaxNode body, ImmutableArray<SyntaxNode>.Builder bodies, ulong[]? carrier, bool pin)
     {
         foreach (var node in body.DescendantNodes())
         {
             if (node is not IdentifierNameSyntax identifier ||
                 _model.GetSymbol(identifier) is not ILocalSymbol local ||
-                IsDeclaredIn(local, body) ||
+                IsDeclaredInAny(local, bodies) ||
                 IndexOf(local) is not (var index and >= 0))
             {
                 continue;
@@ -521,6 +571,19 @@ internal sealed class CrossBarrierLiveness
                 _hasPins = true;
             }
         }
+    }
+
+    private static bool IsDeclaredInAny(ILocalSymbol local, ImmutableArray<SyntaxNode>.Builder bodies)
+    {
+        foreach (var body in bodies)
+        {
+            if (IsDeclaredIn(local, body))
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private static bool IsDeclaredIn(ILocalSymbol local, SyntaxNode syntax) =>

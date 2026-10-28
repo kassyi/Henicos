@@ -1,5 +1,6 @@
 using System;
 using Kassyi.GSharp.Core;
+using Kassyi.ZeroAlloc.Linq;
 
 namespace Kassyi.GSharp.Tests.Shared.TestCases.Analyzers.BarrierUsage;
 
@@ -338,6 +339,76 @@ public static partial class CrossBarrierFlowKernels
         int* p = stackalloc int[4];
         p[0] = 1;
         Gpu.SingleThread(() => { result[0] = p[0]; });
+        Gpu.SyncThreads();
+        result[1] = 2;
+    }
+
+    // GSH0041: the delegate runs a local function that reads the pointer through another one
+    [GpuKernel]
+    public static unsafe void SiblingLocalFunctionDelegateKernel(int[] result)
+    {
+        int* p = stackalloc int[4];
+        Func<int> f = Read;
+        Gpu.SyncThreads();
+        result[0] = f();
+
+        int Read() => Inner();
+        int Inner() => p[0];
+    }
+
+    // GSH0041: the lambda calls a local function that makes the delegate that reads the pointer
+    [GpuKernel]
+    public static unsafe void DelegateFromLocalFunctionKernel(int[] result)
+    {
+        int* p = stackalloc int[4];
+        Func<int> f = () => Make()();
+        Gpu.SyncThreads();
+        result[0] = f();
+
+        Func<int> Make() => () => p[0];
+    }
+
+    // GSH0041: the local function called after the barrier reads the pointer through another one
+    [GpuKernel]
+    public static unsafe void NestedLocalFunctionCallKernel(int[] a)
+    {
+        int* p = stackalloc int[4];
+        p[0] = 1;
+        Gpu.SyncThreads();
+        Read();
+
+        void Read() => Inner();
+        void Inner() => a[0] = p[0];
+    }
+
+    // No diagnostic: the StackLinq lambda runs within the query, before the barrier
+    [GpuKernel]
+    public static unsafe void StackLinqLambdaBeforeBarrierKernel(int[] data, int[] result)
+    {
+        int* p = stackalloc int[1];
+        p[0] = ThreadIndex.X;
+        result[ThreadIndex.X] = data.AsStackEnumerable().Where(x => x > p[0]).Sum();
+        Gpu.SyncThreads();
+        result[ThreadIndex.X] += 100;
+    }
+
+    // GSH0041: the StackLinq lambda runs after the barrier and reads the pointer
+    [GpuKernel]
+    public static unsafe void StackLinqLambdaAfterBarrierKernel(int[] data, int[] result)
+    {
+        int* p = stackalloc int[1];
+        p[0] = ThreadIndex.X;
+        Gpu.SyncThreads();
+        result[ThreadIndex.X] = data.AsStackEnumerable().Where(x => x > p[0]).Sum();
+    }
+
+    // No diagnostic: a StackLinq lambda inside the body of Gpu.SingleThread runs within the query, before the barrier
+    [GpuKernel]
+    public static unsafe void StackLinqInMacroBodyKernel(int[] data, int[] result)
+    {
+        int* p = stackalloc int[1];
+        p[0] = 1;
+        Gpu.SingleThread(() => { result[0] = data.AsStackEnumerable().Where(x => x > p[0]).Sum(); });
         Gpu.SyncThreads();
         result[1] = 2;
     }

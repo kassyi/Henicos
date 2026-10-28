@@ -109,6 +109,11 @@ public class ResumeLocalManagedTests : TranspilerTestBase
     public void Test_Managed_StackAllocPointerCapturedByDelegateRunBeforeBarrier_KeepsItsMemory() =>
         ResumeLocalScenarios.LambdaBeforeBarrier(s_runManaged);
 
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void Test_Managed_StackAllocPointerCapturedByStackLinqLambdaBeforeBarrier_KeepsItsMemory() =>
+        ResumeLocalScenarios.StackLinqBeforeBarrier(s_runManaged);
+
     private static void RunManaged(Action launch)
     {
         bool previousState = CpuKernelLoader.ForceManagedExecution;

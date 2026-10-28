@@ -1,6 +1,7 @@
 // ReSharper disable All
 using System;
 using Kassyi.GSharp.Core;
+using Kassyi.ZeroAlloc.Linq;
 
 namespace Kassyi.GSharp.Tests.Shared.Syntax;
 
@@ -243,5 +244,18 @@ public static partial class ResumeLocalKernels
         result[tid] = f();
         Gpu.SyncThreads();
         result[tid] += 10;
+    }
+
+    // A StackLinq lambda that reads the stackalloc pointer runs within the query, before the barrier: the transpiler
+    // expands it in place, so no delegate outlives the query. With data = {0, 1, 2, 3}: result = {106, 105, 103, 100}
+    [GpuKernel]
+    public static unsafe void StackLinqBeforeBarrierKernel(int[] data, int[] result)
+    {
+        int tid = ThreadIndex.X;
+        int* p = stackalloc int[1];
+        p[0] = tid;
+        result[tid] = data.AsStackEnumerable().Where(x => x > p[0]).Sum();
+        Gpu.SyncThreads();
+        result[tid] += 100;
     }
 }
