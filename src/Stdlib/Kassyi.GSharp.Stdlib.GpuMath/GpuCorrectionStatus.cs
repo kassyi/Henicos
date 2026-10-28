@@ -11,9 +11,10 @@ namespace Kassyi.GSharp.Stdlib.GpuMath;
 /// </summary>
 /// <remarks>
 /// <para>
-/// <b>Writers:</b> the final corrections of <c>ReduceZeroSync</c> (<c>BarrettCorrectionKernel</c>), <c>ReciprocalMega</c> and
-/// <c>InverseSqrtMega</c> add 1 to the count with an atomic add and store their code
-/// (<see cref="GpuBigIntDivRemKernels.ReduceZeroSyncCorrectionFailed"/> and the two after it) in the second word when they
+/// <b>Writers:</b> the final corrections of <c>ReduceZeroSync</c> (<c>BarrettCorrectionKernel</c>), <c>ReciprocalMega</c>,
+/// <c>InverseSqrtMega</c> and <c>SqrtFloor</c> (<c>SqrtFloorCorrectionKernel</c>) add 1 to the count with an atomic add and
+/// store their code (<see cref="GpuBigIntDivRemKernels.ReduceZeroSyncCorrectionFailed"/> and the three after it) in the
+/// second word when they
 /// cannot confirm their result within their step limit; that result is then wrong. The count only grows: nothing resets
 /// it. The host marks the status pending (<see cref="MarkPending"/>) right after launching such a kernel or a graph.
 /// </para>
@@ -243,6 +244,7 @@ internal sealed class GpuCorrectionStatus : IDisposable
         GpuBigIntDivRemKernels.ReduceZeroSyncCorrectionFailed => "GpuBigIntDivRem.ReduceZeroSync (BarrettCorrectionKernel)",
         GpuBigIntDivRemKernels.ReciprocalCorrectionFailed => "GpuBigIntDivRem.Reciprocal (ReciprocalMega)",
         GpuBigIntDivRemKernels.InverseSqrtCorrectionFailed => "GpuBigIntDivRem.InverseSqrt (InverseSqrtMega)",
+        GpuBigIntDivRemKernels.SqrtCorrectionFailed => "GpuBigIntDivRem.SqrtFloor (SqrtFloorCorrectionKernel)",
         _ => $"an unknown operation (status {code})"
     };
 

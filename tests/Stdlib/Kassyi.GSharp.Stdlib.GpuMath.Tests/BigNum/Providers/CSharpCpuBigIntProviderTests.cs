@@ -224,6 +224,31 @@ public class CSharpCpuBigIntProviderTests : IDisposable
         Assert.Throws<DivideByZeroException>(() => _provider.ReciprocalMega(_workspace, zero, res, 0, 32, 0, 0, 32));
     }
 
+    // The CPU provider has the exact integer square root on the host: it writes floor(sqrt(a)) whatever the estimate,
+    // r² <= a < (r + 1)², over an estimate of all ones.
+    // mutant: CSharpCpuBigIntProvider.cs:353 `a.Sqrt()` -> `a.Sqrt() + 1` (all three)
+    [Theory]
+    [Category(TestCategory.Stdlib)]
+    [Scenario(TestScenario.HappyPath)]
+    [InlineData(new uint[] { 9u, 0u })]
+    [InlineData(new uint[] { 0x1234_5678u, 0x9ABC_DEF0u, 0x0FED_CBA9u, 0x8765_4321u })]
+    [InlineData(new uint[] { 0xFFFF_FFFFu, 0xFFFF_FFFFu })]
+    public void SqrtFloorCorrection_WritesFloorOfSquareRoot(uint[] aWords)
+    {
+        var a = ToBigInteger(aWords);
+        var rootWords = aWords.Length / 2;
+        using var operand = new GpuBigUInt(_workspace, aWords);
+        using var square = new GpuBigUInt(_workspace, aWords.Length);
+        using var root = new GpuBigUInt(_workspace, Enumerable.Repeat(Sentinel, rootWords).ToArray());
+        using var slack = new GpuBigUInt(_workspace, aWords.Length + 1);
+        using var trial = new GpuBigUInt(_workspace, aWords.Length + 1);
+
+        _provider.SqrtFloorCorrection(_workspace, operand, square, root, slack, trial);
+
+        var r = ToBigInteger(root.ToHostArray());
+        Assert.True(r * r <= a && a < (r + 1) * (r + 1), $"{r} is not floor(sqrt({a}))");
+    }
+
     private const uint Sentinel = 0xFFFFFFFFu;
 
     private static BigInteger ToBigInteger(uint[] words)

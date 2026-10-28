@@ -106,6 +106,102 @@ public static partial class GpuBigIntSqrtKernels
     }
 
     /// <summary>
+    /// Moves an integer square root estimate <c>r</c> of <c>a</c> to <c>floor(sqrt(a))</c>, one step at a time, by
+    /// updating the slack <c>s = a - r^2</c>: <c>r</c> is the floor exactly when <c>0 &lt;= s &lt; 2r + 1</c>.
+    /// </summary>
+    /// <param name="operand">The operand <c>a</c> (<paramref name="operandWords"/> words).</param>
+    /// <param name="rootSquared">The square <c>r^2</c> of the estimate (<paramref name="operandWords"/> words).</param>
+    /// <param name="root">The estimate <c>r</c> (<paramref name="rootWords"/> words), corrected in place.</param>
+    /// <param name="slack">Scratch for the signed slack <c>s</c> (two's complement over <c>operandWords + 1</c> words).</param>
+    /// <param name="trial">Scratch for the slack of <c>r + 1</c> (<c>operandWords + 1</c> words).</param>
+    /// <param name="operandWords">The word count of <paramref name="operand"/> and <paramref name="rootSquared"/>.</param>
+    /// <param name="rootWords">The word count of <paramref name="root"/>; <c>2r + 1</c> must fit in
+    /// <c>operandWords + 1</c> words.</param>
+    /// <param name="maxSteps">The upper bound on the number of steps.</param>
+    /// <param name="status">The correction status words; thread 0 adds 1 to <c>status[0]</c> and writes
+    /// <see cref="GpuBigIntDivRemKernels.SqrtCorrectionFailed"/> to <c>status[1]</c> when <c>r</c> is not confirmed within
+    /// <paramref name="maxSteps"/> steps.</param>
+    /// <remarks>
+    /// Launched with one block; runs on the stream without a host synchronization. Stepping down (<c>s &lt; 0</c>):
+    /// <c>s += 2r - 1</c>, <c>r -= 1</c>. Stepping up: <c>s -= 2r + 1</c>, <c>r += 1</c>, kept only while the new slack
+    /// is non-negative. Every thread reads the same sign words after a barrier and takes the same branches.
+    /// </remarks>
+    [GpuKernel]
+    public static void SqrtFloorCorrectionKernel([GpuReadOnly] uint[] operand, [GpuReadOnly] uint[] rootSquared,
+        uint[] root, uint[] slack, uint[] trial, int operandWords, int rootWords, int maxSteps, uint[] status)
+    {
+        // Launched with one block; any other block would race on the same words.
+        if (BlockIndex.X != 0)
+        {
+            return;
+        }
+
+        var slackWords = operandWords + 1;
+
+        // s = a - r^2.
+        GpuBigIntKernels.DeviceAddSubAlignedParallel(operand, operandWords, rootSquared, operandWords, slack,
+            slackWords, 0, 0, -1, true);
+
+        var converged = false;
+
+        // At most maxSteps moves; the pass after the last move only checks, so an r exactly maxSteps steps away is still
+        // confirmed.
+        for (int step = 0; step <= maxSteps; step++)
+        {
+            var negative = (slack[slackWords - 1] & 0x80000000u) != 0;
+            Gpu.SyncThreads();
+
+            if (negative)
+            {
+                if (step == maxSteps)
+                {
+                    break;
+                }
+
+                // r^2 > a: r -> r - 1, s += 2r - 1. Reading root with word shift -1 and bit shift 31 gives 2r.
+                GpuBigIntKernels.DeviceAddSubAlignedParallel(slack, slackWords, root, rootWords, slack, slackWords, -1,
+                    31, 1, true);
+                Gpu.SingleThread(() =>
+                {
+                    GpuBigIntDivRemKernels.AddSmallSigned(slack, slackWords, -1);
+                    GpuBigIntDivRemKernels.AddSmallSigned(root, rootWords, -1);
+                });
+                Gpu.SyncThreads();
+                continue;
+            }
+
+            // Slack of r + 1: s - 2r - 1.
+            GpuBigIntKernels.DeviceAddSubAlignedParallel(slack, slackWords, root, rootWords, trial, slackWords, -1, 31,
+                -1, true);
+            Gpu.SingleThread(() => GpuBigIntDivRemKernels.AddSmallSigned(trial, slackWords, -1));
+            Gpu.SyncThreads();
+            var trialNegative = (trial[slackWords - 1] & 0x80000000u) != 0;
+            Gpu.SyncThreads();
+
+            if (trialNegative || step == maxSteps)
+            {
+                converged = trialNegative;
+                break;
+            }
+
+            for (var idx = ThreadIndex.X; idx < slackWords; idx += BlockDimension.X)
+            {
+                slack[idx] = trial[idx];
+            }
+
+            Gpu.SingleThread(() => GpuBigIntDivRemKernels.AddSmallSigned(root, rootWords, 1));
+            Gpu.SyncThreads();
+        }
+
+        if (!converged && ThreadIndex.X == 0)
+        {
+            // status[0] counts the failures (it only grows) and status[1] keeps the code of the last one.
+            Gpu.AtomicAdd(ref status[0], 1u);
+            status[1] = GpuBigIntDivRemKernels.SqrtCorrectionFailed;
+        }
+    }
+
+    /// <summary>
     /// Moves an inverse square root <c>x</c> to the largest value with <c>a * x^2 &lt;= 2^(2B)</c>, one step at a time,
     /// by updating the slack <c>s = 2^(2B) - a * x^2</c> and the product <c>a * x</c>.
     /// </summary>

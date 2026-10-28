@@ -13,6 +13,9 @@ public static partial class GpuBigIntDivRemKernels
     /// <summary>The correction status written when the inverse square root correction does not converge.</summary>
     public const uint InverseSqrtCorrectionFailed = 3u;
 
+    /// <summary>The correction status written when the integer square root correction does not converge.</summary>
+    public const uint SqrtCorrectionFailed = 4u;
+
     // Dummy kernel to force the generator to emit the DualNtt struct definition before we use it
     [GpuDeviceFunction]
     private static void ForceEmitDualNtt_DivRem(DualNtt args)
