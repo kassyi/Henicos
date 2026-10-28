@@ -218,6 +218,42 @@ public static partial class UserLabelKernels
         data[tid] = acc;
     }
 
+    // Two labels of one name end up in one state: the first scope starts with a barrier, the second ends with one. The
+    // managed output declares both in one block, so it must rename them (CS0140 otherwise)
+    [GpuKernel]
+    public static void SameStateSameLabelKernel(int[] data)
+    {
+        int tid = ThreadIndex.X;
+        int acc = data[tid];
+        {
+            int step = 10;
+            Gpu.SyncThreads();
+            if ((tid & 1) == 0)
+            {
+                acc += step;
+                goto done;
+            }
+
+            acc += 100;
+        done:;
+        }
+
+        {
+            int step = 1000;
+            if ((tid & 1) != 0)
+            {
+                acc += step;
+                goto done;
+            }
+
+            acc += 2000;
+        done:;
+            Gpu.SyncThreads();
+        }
+
+        data[tid] = acc;
+    }
+
     // The shape of CrossLabelWriteKernel with an initialized declaration: the CPU paths hoist extra into the context,
     // CUDA splits the declaration
     [GpuKernel]

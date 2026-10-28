@@ -59,6 +59,11 @@ public class UserLabelTests : TranspilerTestBase
     [InlineData(1)]
     public void Test_SiblingSameLabel_SpanStaysLocal(int flag) => UserLabelScenarios.SiblingSameLabel(s_runNative, flag);
 
+    [SkippableFact]
+    [Scenario(TestScenario.Boundary)]
+    public void Test_SameStateSameLabel_EachGotoReachesItsLabel() =>
+        UserLabelScenarios.SameStateSameLabel(s_runNative);
+
     [SkippableTheory]
     [Scenario(TestScenario.Boundary)]
     [InlineData(0)]

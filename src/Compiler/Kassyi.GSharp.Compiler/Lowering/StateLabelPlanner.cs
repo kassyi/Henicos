@@ -14,7 +14,8 @@ namespace Kassyi.GSharp.Compiler.Lowering;
 /// must split only where a <c>goto</c> needs it, since every other state boundary is a split point (barrier, shuffle,
 /// suspending call) that the analyses of the lowered body rely on. The C++ output names labels by symbol, and the
 /// managed output renames them (<c>ContextLocalRewriter</c>), so they do not collide. Without a semantic model the
-/// labels are keyed by name, two labels of one name share a key, and both start a state as before.
+/// labels are keyed by name, two labels of one name share a key, and both start a state as before, so a Tier 2 test of
+/// labels of one name uses a semantic model (the <c>*FromTestCase</c> helpers).
 /// The states are the stretches between the statements that start a state: the labels found so far and the split
 /// points. A new state label can move another <c>goto</c> into another state than its label, so the search repeats until
 /// nothing changes; it ends because the set only grows (at most one round per label, plus one).

@@ -63,6 +63,11 @@ public class UserLabelManagedTests : TranspilerTestBase
     public void Test_Managed_SiblingSameLabel_SpanStaysLocal(int flag) =>
         UserLabelScenarios.SiblingSameLabel(s_runManaged, flag);
 
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void Test_Managed_SameStateSameLabel_EachGotoReachesItsLabel() =>
+        UserLabelScenarios.SameStateSameLabel(s_runManaged);
+
     [Theory]
     [Scenario(TestScenario.Boundary)]
     [InlineData(0)]

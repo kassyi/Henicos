@@ -160,6 +160,22 @@ internal static class UserLabelScenarios
         }
     }
 
+    public static void SameStateSameLabel(Action<Action> run)
+    {
+        var data = CreateSequence();
+
+        run(() => UserLabelKernels.LaunchSameStateSameLabelKernel(data, blockDimX: WarpSize));
+
+        for (int i = 0; i < WarpSize; i++)
+        {
+            // The kernel's control flow in plain C#
+            int acc = i;
+            acc += (i & 1) == 0 ? 10 : 100;
+            acc += (i & 1) != 0 ? 1000 : 2000;
+            Assert.Equal(acc, data[i]);
+        }
+    }
+
     public static void CrossLabelInitialized(Action<Action> run, int flag)
     {
         var data = CreateSequence();
