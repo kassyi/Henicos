@@ -6,14 +6,28 @@
 // The lock is the directory <main checkout>/tmp/gpu-test-lock, the same for every worktree: the main checkout is the
 // parent of `git rev-parse --git-common-dir`. Without git, the repository root found from this script is used.
 // The script creates the directory (mkdir is atomic), writes owner.txt (pid, time, command) and owner.json (pid, host,
-// platform, start time, command) into it, runs the command and removes the directory afterwards. It removes only a lock
-// that it created, also on Ctrl+C (SIGINT / SIGTERM).
+// platform, start time, command, and once started the command's process ids) into it, runs the command and removes the
+// directory afterwards. It removes only a lock that it created, also on Ctrl+C (SIGINT / SIGTERM / SIGHUP), after
+// stopping the command.
 //
-// Stale locks: on every wait poll the owner.json is checked. When the owner is on this host and platform and its pid is
-// gone (process.kill(pid, 0) fails with ESRCH; EPERM means alive), the lock is taken over: it is renamed away only if
-// it still holds that dead owner's record, one line says whose lock it was, and the lock is acquired as usual. An owner
-// on another host or platform (a WSL pid cannot be checked from Windows), or a record that cannot be read, is waited
-// for as before. A live pid is never taken over, so a reused pid only delays the takeover (it never steals a lock).
+// Stale locks: on every wait poll the owner.json is checked. A lock is taken over only when both the owner (this
+// script) and the command it started are gone, because a hard kill of the owner (agent tool timeout, Task Manager,
+// SIGKILL) leaves the command running:
+//   - The owner is on this host and platform and its pid is gone (process.kill(pid, 0) fails with ESRCH; EPERM means
+//     alive).
+//   - Linux / macOS: the command runs detached, as the leader of its own session and process group, whose id is
+//     recorded. The group is gone when process.kill(-pgid, 0) fails with ESRCH. A process that leaves the group
+//     (setsid) is not seen.
+//   - Windows: the pid of the shell (cmd.exe) and the time it was spawned are recorded. The command is gone when no
+//     live process is that shell or a child of it (Win32_Process keeps a dead parent's pid in ParentProcessId), read
+//     through PowerShell. Creation times guard against a reused pid: a process that started more than a few seconds
+//     before the spawn is never ours, and a process created later with the shell's pid is not the shell. A grandchild
+//     whose parent has also exited cannot be traced back and is not seen.
+// Then the lock is renamed away only if it still holds that owner's record, one line says whose lock it was, and the
+// lock is acquired as usual. Anything uncertain counts as alive and is waited for: an owner on another host or platform
+// (a WSL pid cannot be checked from Windows), a record that cannot be read, a record without the command's ids (written
+// by an older version of this script, or an owner killed between starting the command and recording it), a failed
+// process query. A reused pid therefore only delays a takeover; it never steals a lock.
 //
 // Usage:
 //   node scripts/agent/gpu-lock.js [--poll-seconds <n>] [--timeout-minutes <n>] [--lock-path <dir>] -- <command> [args...]
@@ -44,7 +58,8 @@ const usage = [
   '  --lock-path <dir>      Lock directory to use instead of <main checkout>/tmp/gpu-test-lock (for tests of this script only).',
   '  --help                 Show this help.',
   '',
-  'A lock whose owner is on this host and platform and no longer running is taken over while waiting.',
+  'A lock whose owner is on this host and platform and no longer running, together with the command it started, is',
+  'taken over while waiting.',
   '',
   'Quote the command as one string when it needs pipes or redirection.',
 ].join('\n');
@@ -142,17 +157,97 @@ function readOwnerRecord(dir) {
   return null;
 }
 
-/** True when the owner is on this host and platform and its pid no longer exists. Anything uncertain is "alive". */
-function isDeadLocalOwner(record) {
-  if (record === null || record.host !== os.hostname() || record.platform !== process.platform) {
-    return false;
-  }
+/** True only when kill(target, 0) reports that no such process (or process group) exists; EPERM means alive. */
+function isGone(target) {
   try {
-    process.kill(record.pid, 0);
+    process.kill(target, 0);
     return false;
   } catch (error) {
     return error.code === 'ESRCH';
   }
+}
+
+/** Slack for comparing a process creation time with the recorded spawn time (clock granularity, slow process start). */
+const SpawnToleranceMs = 5000;
+
+/**
+ * Reads every process as "pid ppid creationMs" through PowerShell. Returns null when the query fails or looks
+ * incomplete (it must list this process), so that the caller treats the command as alive.
+ */
+function queryWindowsProcesses() {
+  const script =
+    'Get-CimInstance Win32_Process | ForEach-Object { $c = -1; ' +
+    'if ($_.CreationDate) { $c = ([DateTimeOffset]$_.CreationDate).ToUnixTimeMilliseconds() }; ' +
+    '"$($_.ProcessId) $($_.ParentProcessId) $c" }';
+  const result = spawnSync('powershell.exe', ['-NoProfile', '-NonInteractive', '-Command', script], {
+    encoding: 'utf8',
+    windowsHide: true,
+    timeout: 60000,
+  });
+  if (result.error || result.status !== 0) {
+    return null;
+  }
+  const processes = new Map();
+  for (const line of result.stdout.split(/\r?\n/)) {
+    const fields = line.trim().split(' ');
+    if (fields.length === 3) {
+      const [pid, ppid, created] = fields.map(Number);
+      if (Number.isInteger(pid) && Number.isInteger(ppid) && Number.isFinite(created)) {
+        processes.set(pid, { ppid, created });
+      }
+    }
+  }
+  return processes.has(process.pid) ? processes : null;
+}
+
+/** True when the shell recorded in `command` or a live child of it may still run. Anything uncertain is "alive". */
+function isWindowsCommandAlive(command) {
+  const processes = queryWindowsProcesses();
+  if (processes === null) {
+    return true;
+  }
+  const earliest = command.spawnedAt - SpawnToleranceMs;
+  const latest = command.spawnedAt + SpawnToleranceMs;
+  // A process created after the shell died may have been given the shell's pid; its children are not ours.
+  let reusedFrom = Infinity;
+  const shell = processes.get(command.pid);
+  if (shell !== undefined) {
+    if (shell.created < 0 || shell.created <= latest) {
+      return true; // the shell itself, or a process whose creation time is unknown
+    }
+    reusedFrom = shell.created;
+  }
+  for (const [pid, info] of processes) {
+    if (pid !== command.pid && info.ppid === command.pid) {
+      if (info.created < 0 || (info.created >= earliest && info.created < reusedFrom)) {
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
+/** True when the command that the owner started (recorded in owner.json) is known to have ended. */
+function isCommandGone(record) {
+  const command = record.commandProcess;
+  if (command === null || typeof command !== 'object' || !Number.isInteger(command.pid) || command.pid <= 0) {
+    return false; // older record, or the owner died before recording the command
+  }
+  if (process.platform === 'win32') {
+    return Number.isFinite(command.spawnedAt) && !isWindowsCommandAlive(command);
+  }
+  return Number.isInteger(command.pgid) && command.pgid > 1 && isGone(-command.pgid);
+}
+
+/**
+ * True when the owner is on this host and platform, its pid no longer exists and neither does the command it started.
+ * Anything uncertain is "alive".
+ */
+function isDeadLocalOwner(record) {
+  if (record === null || record.host !== os.hostname() || record.platform !== process.platform) {
+    return false;
+  }
+  return isGone(record.pid) && isCommandGone(record);
 }
 
 /** Moves a stale lock away if it still holds the dead owner's record. Returns true when this call removed it. */
@@ -180,13 +275,14 @@ function takeOverStale() {
   }
   fs.rmSync(graveyard, { recursive: true, force: true });
   process.stderr.write(
-    `[gpu-lock] took over a stale lock: owner pid ${record.pid} on ${record.host} (started ${record.startedAt}) is gone; its command was: ${record.command}
+    `[gpu-lock] took over a stale lock: owner pid ${record.pid} on ${record.host} (started ${record.startedAt}) and its command are gone; the command was: ${record.command}
 `,
   );
   return true;
 }
 
 let ownsLock = false;
+let ownerRecord = null;
 let child = null;
 
 function releaseLock() {
@@ -213,17 +309,16 @@ function tryAcquire() {
     throw error;
   }
   ownsLock = true;
-  fs.writeFileSync(
-    path.join(lockPath, 'owner.json'),
-    JSON.stringify({
-      pid: process.pid,
-      host: os.hostname(),
-      platform: process.platform,
-      startedAt: new Date().toISOString(),
-      cwd: process.cwd(),
-      command: commandText,
-    }),
-  );
+  ownerRecord = {
+    pid: process.pid,
+    host: os.hostname(),
+    platform: process.platform,
+    startedAt: new Date().toISOString(),
+    cwd: process.cwd(),
+    command: commandText,
+    commandProcess: null,
+  };
+  fs.writeFileSync(path.join(lockPath, 'owner.json'), JSON.stringify(ownerRecord));
   fs.writeFileSync(
     path.join(lockPath, 'owner.txt'),
     `pid ${process.pid} ${new Date().toISOString()} cwd ${process.cwd()} ${commandText}\n`,
@@ -238,8 +333,16 @@ function killChild() {
   if (process.platform === 'win32') {
     // Only the process tree that this script started.
     spawnSync('taskkill', ['/PID', String(child.pid), '/T', '/F'], { stdio: 'ignore', windowsHide: true });
-  } else {
-    child.kill('SIGTERM');
+    return;
+  }
+  // The command leads its own process group (detached), so a terminal's Ctrl+C reaches only this script: stop the
+  // whole group, not only the shell.
+  try {
+    process.kill(-child.pid, 'SIGTERM');
+  } catch (error) {
+    if (error.code !== 'ESRCH') {
+      process.stderr.write(`[gpu-lock] could not stop the command's process group ${child.pid}: ${error.message}\n`);
+    }
   }
 }
 
@@ -252,10 +355,31 @@ function onSignal(signal, code) {
 
 process.on('SIGINT', () => onSignal('SIGINT', 130));
 process.on('SIGTERM', () => onSignal('SIGTERM', 143));
+// A detached command no longer gets the terminal's hangup itself.
+process.on('SIGHUP', () => onSignal('SIGHUP', 129));
 process.on('exit', releaseLock);
 
+/** Adds the started command's ids to owner.json, so that a waiter can tell whether it still runs. */
+function recordCommandProcess(spawnedAt) {
+  if (child.pid === undefined) {
+    return; // spawn failed; the 'error' handler releases the lock
+  }
+  ownerRecord.commandProcess =
+    process.platform === 'win32' ? { pid: child.pid, spawnedAt } : { pid: child.pid, pgid: child.pid };
+  try {
+    // A reader that sees a half-written file treats the owner as alive, so a plain write is enough.
+    fs.writeFileSync(path.join(lockPath, 'owner.json'), JSON.stringify(ownerRecord));
+  } catch (error) {
+    process.stderr.write(`[gpu-lock] could not record the command in owner.json: ${error.message}\n`);
+  }
+}
+
 function runCommand() {
-  child = spawn(commandText, { stdio: 'inherit', shell: true });
+  const spawnedAt = Date.now();
+  // Unix: detached makes the command the leader of a new session and process group (pgid = its pid), so the group
+  // outlives a hard kill of this script and a waiter can see that the command still runs. Windows keeps the console.
+  child = spawn(commandText, { stdio: 'inherit', shell: true, detached: process.platform !== 'win32' });
+  recordCommandProcess(spawnedAt);
   child.on('error', (error) => {
     process.stderr.write(`[gpu-lock] could not start the command: ${error.message}\n`);
     releaseLock();
