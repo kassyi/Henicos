@@ -88,7 +88,7 @@ namespace StructLayoutDiagnosticsTest
 
     public struct VectorFirst { public Vector2 V; public float A; public float B; }
 
-    // GSH0082 on CPU and GSH0080 / GSH0081 on CUDA; the first and the last kernel report nothing
+    // GSH0080 on both dialects and GSH0081 on CUDA; the first and the last kernel report nothing
     public static partial class StructLayoutDialectKernels
     {
         [GpuKernel]

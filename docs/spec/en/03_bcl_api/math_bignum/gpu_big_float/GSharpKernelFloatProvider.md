@@ -32,7 +32,7 @@ public sealed class GSharpKernelFloatProvider(IGpuBigFloatArithmetic fallbackStr
 | --- | --- |
 | [CreateGSharpKernel()](#creategsharpkernel) | Gets the singleton instance of `GSharpKernelFloatProvider`. |
 | `Normalize(...)` | Normalizes a floating-point significand so that its most significant bit is aligned to the target word width. |
-| `Add(...)` | Computes radix-aligned signed addition of two arbitrary-precision floating-point numbers. |
+| `Add(...)` | Computes $\mathrm{RZ}_p(x + y)$ from the exact sum of the significands aligned at the smaller exponent; an operand far below the other is reduced to a sticky bit (see [Far-Apart Exponents](#far-apart-exponents)). |
 | `Multiply(...)` | Computes normalized multiplication of two arbitrary-precision floating-point numbers. |
 | `Divide(...)` | Computes $\mathrm{RZ}_p(x / y)$: the exact quotient of the dividend scaled to at least $p + 1$ quotient bits, truncated to $p$ bits; a divisor much wider than the result is truncated and the quotient corrected (see [Wide Divisors and Radicands](#wide-divisors-and-radicands)). |
 | `Reciprocal(...)` | Computes the normalized reciprocal ($1 / x$) via G# device kernels. |
@@ -77,6 +77,10 @@ Console.WriteLine($"Created float provider: {provider.GetType().Name}");
 `GSharpKernelFloatProvider` manages temporary device scratch buffers deterministically using `context.GpuWorkspace.RentTemp(...)` without managed heap allocations on the GPU hot path. A rented buffer is owned by the caller and goes back to the workspace pool when it is disposed (`using`).
 
 In CPU fallback mode (no `GSharpKernelProvider`, or `GpuKernelLoader.IsCpuFallbackMode`) every operation, `Pow` included, is forwarded once to the fallback strategy.
+
+### Far-Apart Exponents
+
+For a result of $n$ words ($p = 32n$ bits), let $H$ be the operand of `Add` with the larger exponent (on a tie, the wider significand) and $L$ the other one, with $w_L$ words. `Add` shifts $H$ left onto $L$ and adds exactly, so the work would grow with $e_H - e_L$. When $e_L + 32 w_L \le e_H - p$, $L$ lies below $2^{e_H - p}$, and every sum $H \pm x$ with $0 < x < 2^{e_H - p}$ rounds to the same $p$ bits: a nonzero $L$ is replaced by the sticky bit $2^{e_H - p - 1}$, and a zero $L$ or $H$ leaves the other operand. The work then depends on the widths only. The exponents are subtracted in `long`, so a difference beyond `int` (up to $2^{32} - 1$) does not wrap around. This is the form of MPFR's `mpfr_add1sp` / `mpfr_sub1sp` for an exponent difference of at least $p$. [`CSharpCpuBigFloatArithmetic`](CSharpCpuBigFloatArithmetic.md) uses the same rule.
 
 ### Wide Divisors and Radicands
 

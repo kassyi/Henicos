@@ -91,6 +91,22 @@ public static partial class CrossAssemblyKernels
         result[tid] = new Scaled(values[tid]).V;
     }
 
+    // A library struct with LayoutKind.Explicit by value: the launcher cannot see its layout
+    [GpuKernel]
+    public static void SwapPairKernel(SwapPair pair, int[] result)
+    {
+        result[0] = pair.A;
+        result[1] = pair.B;
+    }
+
+    // A library struct with Pack = 1 by value
+    [GpuKernel]
+    public static void PackedPairKernel(PackedPair pair, int[] result)
+    {
+        result[0] = pair.Tag;
+        result[1] = pair.Value;
+    }
+
     // Library structs that come after the structs of their fields and constructors
     [GpuKernel]
     public static void AlphaKernel(int[] values, int[] result)

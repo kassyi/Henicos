@@ -75,6 +75,10 @@ Lowering:
     # The label after a Gpu.SingleThread body with a return (__gsharp_st_end_<body>), which a return of the body jumps to;
     # the C++ emitter and the managed rewrite both spell it
     SingleThreadEndLabelPrefix: __gsharp_st_end_
+    # A label of the user whose name another label of the body also has, in the managed output
+    # (__gsharp_label_<ordinal>_<name>); lowering can flatten sibling scopes into one block, and C# forbids two labels of
+    # one name there (CS0140, CS0158). The C++ output names labels by symbol instead
+    ManagedLabelPrefix: __gsharp_label_
 
 Iterator:
   Summary: Labels synthesized by inlining a device iterator body into a foreach site (IteratorInliner).
@@ -120,6 +124,8 @@ Launcher:
     ThreadZ: __gsharp_tz
     # The sharedMemBytes of the launch, a parameter of the native launcher
     SharedMemBytes: __gsharp_shared_mem_bytes
+    StructArgumentPrefix: __gsharp_arg_
+    LayoutProbe: __gsharp_layout_probe
 
 ReturnValue:
   Summary: The buffer that a kernel returning a value writes into, and the device-side locals that fill it.
