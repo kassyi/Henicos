@@ -7,8 +7,8 @@ public partial class GpuBigIntVectorLinqExtensionsTests
     {
         var array = expr.Evaluate(_context);
         var hostResult = new uint[array.Length];
+        // The result is a view of the node's buffer; disposing the expression returns it
         _context.Provider.CopyDeviceToHost(hostResult, array.DevicePointer, array.Length);
-        array.Dispose();
         return hostResult;
     }
 
@@ -498,7 +498,7 @@ public partial class GpuBigIntVectorLinqExtensionsTests
         using var array = CreateSignedArray(elements, 64);
         using var backing = new GpuBigUIntArray(_context, 2, 1);
         _context.Provider.CopyHostToDevice(backing.DevicePointer, [5u, 0xFFFFFFFFu], 2);
-        var scalar = new GpuBigInt(backing.GetElement(0), isNegative: false);
+        var scalar = new GpuBigInt(backing.BorrowElement(0), isNegative: false);
 
         var actual = EvaluateBools(Compare(array.AsVectorizedEnumerable(), scalar, op));
 

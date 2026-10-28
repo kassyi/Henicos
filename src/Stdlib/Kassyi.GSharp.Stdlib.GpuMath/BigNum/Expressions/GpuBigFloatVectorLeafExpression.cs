@@ -5,33 +5,39 @@ internal sealed class GpuBigFloatVectorLeafExpression(GpuBigFloatArray array) : 
     public int Length => array.Length;
     public int WordsPerElement => array.WordsPerElement;
 
-    public GpuBigFloatArray Evaluate(
+    public GpuBigFloatArrayView Evaluate(
         GpuWorkspace workspace,
         int elementOffset = 0,
         int? elementCount = null,
-        GpuBigFloatArray? targetResult = null)
+        GpuBigFloatArrayView targetResult = default)
     {
         var count = elementCount ?? (Length - elementOffset);
-        var slice = (elementOffset == 0 && count == Length)
-            ? array
-            : array.Slice(elementOffset, count);
 
-        if (targetResult != null)
+        // The user's array is lent as a view, never handed out as an owner (design 4.6)
+        var slice = array.Slice(elementOffset, count);
+        if (!VectorResultCache.HasTarget(targetResult))
         {
-            var dest = targetResult.Value;
-            for (var i = 0; i < count; i++)
-            {
-                dest.SetElement(i, slice.GetElement(i));
-            }
-
-            return dest;
+            return slice;
         }
 
-        return slice;
+        // As every node: a target is checked, and its first elements receive the values
+        var destination = VectorResultCache.TargetFloat(targetResult, count, WordsPerElement);
+        if (count > 0)
+        {
+            var provider = workspace.Provider;
+            provider.CopyDeviceToDevice(destination.Significands.DevicePointer, slice.Significands.DevicePointer,
+                destination.Significands.TotalWords, workspace.Stream);
+            provider.CopyDeviceToDevice(destination.Exponents.DevicePointer, slice.Exponents.DevicePointer, count,
+                workspace.Stream);
+            provider.CopyDeviceToDevice(destination.Signs.DevicePointer, slice.Signs.DevicePointer, count,
+                workspace.Stream);
+        }
+
+        return destination;
     }
 
     public void Dispose()
     {
-        // Leaf expression does not own the source array.
+        // Does not own the source array
     }
 }

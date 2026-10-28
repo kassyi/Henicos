@@ -5,16 +5,28 @@ internal class GpuBigIntVectorLeafExpression(GpuBigIntArray array) : IGpuBigIntV
     public int Length => array.Length;
     public int WordsPerElement => array.WordsPerElement;
 
-    public GpuBigIntArray Evaluate(GpuWorkspace workspace, int elementOffset = 0, int? elementCount = null,
-        GpuBigUIntArray? targetResult = null)
+    public GpuBigIntArrayView Evaluate(GpuWorkspace workspace, int elementOffset = 0, int? elementCount = null,
+        GpuBigUIntArrayView targetResult = default)
     {
         var count = elementCount ?? (Length - elementOffset);
-        if (elementOffset == 0 && count == Length)
+
+        // The user's array is lent as a view, never handed out as an owner (design 4.6)
+        var slice = array.Slice(elementOffset, count);
+        if (!VectorResultCache.HasTarget(targetResult))
         {
-            return array;
+            return slice;
         }
 
-        return array.Slice(elementOffset, count);
+        // As every node: a target is checked, its first elements receive the values, and the result is a view of them
+        // with the signs of the input
+        var values = VectorResultCache.TargetValues(targetResult, count, WordsPerElement);
+        if (count > 0)
+        {
+            workspace.Provider.CopyDeviceToDevice(
+                values.DevicePointer, slice.Values.DevicePointer, values.TotalWords, workspace.Stream);
+        }
+
+        return new GpuBigIntArrayView(values, slice.Signs);
     }
 
     public void Dispose()

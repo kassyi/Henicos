@@ -92,8 +92,8 @@ public int WordsPerElement { get; }
 | Name | Description |
 | --- | --- |
 | [Dispose()](#dispose) | Releases the GPU global device memory resources allocated for the underlying buffers. |
-| [GetElement(int)](#getelementint) | Gets a scalar representation of the specified element (incurs device-to-host read). |
-| [Slice(int, int)](#sliceint-int) | Creates a zero-allocation sub-slice of this GPU array. |
+| [GetElement(int)](#getelementint) | Gets a [`GpuBigIntView`](GpuBigIntView.md) of the specified element (incurs a device-to-host read of the sign). |
+| [Slice(int, int)](#sliceint-int) | Creates a [`GpuBigIntArrayView`](GpuBigIntArrayView.md) of a range of the elements. |
 
 ## Dispose()
 
@@ -111,8 +111,10 @@ Gets a scalar representation of the specified element.
 > Reading from GPU device memory back to host is synchronous and carries high latency. This method is intended primarily for debugging and validation.
 
 ```csharp
-public GpuBigInt GetElement(int index);
+public GpuBigIntView GetElement(int index);
 ```
+
+The result is a borrowed view (a `ref struct`, like `Span<T>`): it lives only inside the calling method, has no `Dispose`, and must not be used after the array is disposed (its `DevicePointer` then throws `ObjectDisposedException`). Copy it with `ToOwned()` to keep the value.
 
 #### Parameters
 
@@ -121,16 +123,18 @@ The zero-based index of the element.
 
 #### Returns
 
-_[GpuBigInt](GpuBigInt.md)_<br>
-A `GpuBigInt` pointing to the element's device memory.
+_[GpuBigIntView](GpuBigIntView.md)_<br>
+A view of the element's magnitude with its sign.
 
 ## Slice(int, int)
 
 Creates a zero-allocation sub-slice of this GPU array.
 
 ```csharp
-public GpuBigIntArray Slice(int elementOffset, int elementCount);
+public GpuBigIntArrayView Slice(int elementOffset, int elementCount);
 ```
+
+The result is a borrowed view (a `ref struct`, like `Span<T>`): it lives only inside the calling method, has no `Dispose`, and must not be used after the array is disposed (its `DevicePointer` then throws `ObjectDisposedException`).
 
 #### Parameters
 
@@ -142,8 +146,8 @@ The number of elements in the slice.
 
 #### Returns
 
-_[GpuBigIntArray](GpuBigIntArray.md)_<br>
-A sliced view of the `GpuBigIntArray`.
+_[GpuBigIntArrayView](GpuBigIntArrayView.md)_<br>
+A view of the elements.
 
 #### Exceptions
 
@@ -173,7 +177,7 @@ using var workspace = new GpuWorkspace(4096, GpuExecutionEngine.GSharpAot);
 using var signedArray = new GpuBigIntArray(workspace, length: 32, wordsPerElement: 8);
 
 // Create a zero-allocation 16-element sub-slice starting at index 8
-GpuBigIntArray subSlice = signedArray.Slice(elementOffset: 8, elementCount: 16);
+GpuBigIntArrayView subSlice = signedArray.Slice(elementOffset: 8, elementCount: 16);
 
 Console.WriteLine($"Signed array allocated: Length={signedArray.Length}, Slice Length={subSlice.Length}, Words={subSlice.WordsPerElement}");
 ```
@@ -182,4 +186,5 @@ Console.WriteLine($"Signed array allocated: Length={signedArray.Length}, Slice L
 
 ### BCL API > Math Bignum
 - [GpuBigUIntArray Struct](GpuBigUIntArray.md)
+- [GpuBigFloatArray Struct](../gpu_big_float/GpuBigFloatArray.md)
 - [Arbitrary-Precision Integers (GpuBigInt)](00_index.md)

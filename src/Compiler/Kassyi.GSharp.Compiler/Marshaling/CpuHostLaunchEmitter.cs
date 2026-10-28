@@ -97,8 +97,10 @@ internal static class CpuHostLaunchEmitter
                 writer.AppendLine($"{GSharpInternalNames.Launcher.Contexts}[i] = new {contextName}();");
             }
 
+            // A cooperative kernel's blocks run in grid phases and keep their dynamic shared memory for the grid; the
+            // blocks of any other kernel run to their end one after another and use one array in turn
             writer.AppendLine(
-                $"global::Kassyi.GSharp.Core.ManagedGpuContext.InitializeGrid({GSharpInternalNames.Launcher.TotalBlocks}, sharedMemBytes);");
+                $"global::Kassyi.GSharp.Core.ManagedGpuContext.InitializeGrid({GSharpInternalNames.Launcher.TotalBlocks}, sharedMemBytes, {(kernel.IsCooperative ? "true" : "false")});");
 
             // A thread that stopped at a block barrier waits there until every thread of its block that has not finished
             // waits too; in a cooperative kernel, a thread that reached the grid sync waits until the next grid phase (#664)

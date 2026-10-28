@@ -279,7 +279,7 @@ public int next;
 }
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Core__GridSyncPhaseKernels__SharedMemoryAcrossGridSyncKernel(int[] buffer, int[] output, int n, __gsharp_context_Kassyi__GSharp__Tests__Shared__Core__GridSyncPhaseKernels__SharedMemoryAcrossGridSyncKernel __gsharp_ctx) {
 global::Kassyi.GSharp.Core.SharedMemory<int> staticCopy = new global::Kassyi.GSharp.Core.SharedMemory<int>(32, 0xa87fc7c9cb75d112UL);
-global::Kassyi.GSharp.Core.SharedMemory<int> dynamicCopy = new global::Kassyi.GSharp.Core.SharedMemory<int>(0xa87fc8c9cb75d2c5UL, "GridSyncPhaseKernels.cs(20,27)", true);
+global::Kassyi.GSharp.Core.SharedMemory<int> dynamicCopy = global::Kassyi.GSharp.Core.SharedMemory<int>.FindDynamic(0xa87fc8c9cb75d2c5UL);
 {
 switch (__gsharp_ctx.__gsharp_state)
 {
@@ -345,7 +345,7 @@ for (int i = 0; i < __gsharp_contexts.Length; i++)
 {
 __gsharp_contexts[i] = new __gsharp_context_Kassyi__GSharp__Tests__Shared__Core__GridSyncPhaseKernels__SharedMemoryAcrossGridSyncKernel();
 }
-global::Kassyi.GSharp.Core.ManagedGpuContext.InitializeGrid(__gsharp_total_blocks, sharedMemBytes);
+global::Kassyi.GSharp.Core.ManagedGpuContext.InitializeGrid(__gsharp_total_blocks, sharedMemBytes, true);
 var threadAtBlockBarrier = new bool[__gsharp_contexts.Length];
 var threadAtGridSync = new bool[__gsharp_contexts.Length];
 bool anyGridActive = true;
@@ -714,7 +714,7 @@ for (int i = 0; i < __gsharp_contexts.Length; i++)
 {
 __gsharp_contexts[i] = new __gsharp_context_Kassyi__GSharp__Tests__Shared__Core__GridSyncPhaseKernels__ShuffleBeforeGridSyncKernel();
 }
-global::Kassyi.GSharp.Core.ManagedGpuContext.InitializeGrid(__gsharp_total_blocks, sharedMemBytes);
+global::Kassyi.GSharp.Core.ManagedGpuContext.InitializeGrid(__gsharp_total_blocks, sharedMemBytes, true);
 var threadAtBlockBarrier = new bool[__gsharp_contexts.Length];
 var threadAtGridSync = new bool[__gsharp_contexts.Length];
 bool anyGridActive = true;
@@ -1037,7 +1037,7 @@ for (int i = 0; i < __gsharp_contexts.Length; i++)
 {
 __gsharp_contexts[i] = new __gsharp_context_Kassyi__GSharp__Tests__Shared__Core__GridSyncPhaseKernels__BlockFinishesBeforeGridSyncKernel();
 }
-global::Kassyi.GSharp.Core.ManagedGpuContext.InitializeGrid(__gsharp_total_blocks, sharedMemBytes);
+global::Kassyi.GSharp.Core.ManagedGpuContext.InitializeGrid(__gsharp_total_blocks, sharedMemBytes, true);
 var threadAtBlockBarrier = new bool[__gsharp_contexts.Length];
 var threadAtGridSync = new bool[__gsharp_contexts.Length];
 bool anyGridActive = true;
@@ -1363,7 +1363,7 @@ for (int i = 0; i < __gsharp_contexts.Length; i++)
 {
 __gsharp_contexts[i] = new __gsharp_context_Kassyi__GSharp__Tests__Shared__Core__GridSyncPhaseKernels__RepresentativeFinishesBeforeGridSyncKernel();
 }
-global::Kassyi.GSharp.Core.ManagedGpuContext.InitializeGrid(__gsharp_total_blocks, sharedMemBytes);
+global::Kassyi.GSharp.Core.ManagedGpuContext.InitializeGrid(__gsharp_total_blocks, sharedMemBytes, true);
 var threadAtBlockBarrier = new bool[__gsharp_contexts.Length];
 var threadAtGridSync = new bool[__gsharp_contexts.Length];
 bool anyGridActive = true;
@@ -1649,7 +1649,7 @@ for (int i = 0; i < __gsharp_contexts.Length; i++)
 {
 __gsharp_contexts[i] = new __gsharp_context_Kassyi__GSharp__Tests__Shared__Core__GridSyncPhaseKernels__NotCooperativeKernel();
 }
-global::Kassyi.GSharp.Core.ManagedGpuContext.InitializeGrid(__gsharp_total_blocks, sharedMemBytes);
+global::Kassyi.GSharp.Core.ManagedGpuContext.InitializeGrid(__gsharp_total_blocks, sharedMemBytes, false);
 var threadAtBlockBarrier = new bool[__gsharp_contexts.Length];
 bool anyGridActive = true;
 try

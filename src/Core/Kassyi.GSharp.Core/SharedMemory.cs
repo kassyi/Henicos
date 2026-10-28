@@ -69,6 +69,11 @@ public readonly ref struct SharedMemory<T> where T : unmanaged
             : default;
     }
 
+    private SharedMemory(Span<T> span)
+    {
+        _span = span;
+    }
+
     /// <summary>
     /// Finds the region of a dynamic declaration that the block has already placed, or none when the declaration was not
     /// reached yet; places nothing. Used by the redeclaration at the start of each resume of a state machine, so that the
@@ -76,16 +81,10 @@ public readonly ref struct SharedMemory<T> where T : unmanaged
     /// the resume has not declared yet, and the region keeps the size it was placed with.
     /// </summary>
     /// <param name="siteKey">The key the compiler computed for the declaration.</param>
-    /// <param name="dynamicPlace">The declaration in the C# source.</param>
-    /// <param name="findOnly">Always <see langword="true"/>; selects this constructor.</param>
+    /// <returns>The declaration's region, or an empty one.</returns>
     [EditorBrowsable(EditorBrowsableState.Never)]
-    public SharedMemory(ulong siteKey, string dynamicPlace, bool findOnly)
-    {
-        _ = dynamicPlace;
-        _span = ManagedGpuContext.IsActive && findOnly
-            ? ManagedGpuContext.FindDynamicSharedMemory<T>(siteKey)
-            : default;
-    }
+    public static SharedMemory<T> FindDynamic(ulong siteKey) =>
+        new(ManagedGpuContext.IsActive ? ManagedGpuContext.FindDynamicSharedMemory<T>(siteKey) : default);
 
     /// <summary>
     /// Gets a reference to the element at the specified zero-based index in shared memory.

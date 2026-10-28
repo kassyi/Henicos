@@ -68,6 +68,7 @@ public static readonly GSharpKernelProvider Instance;
 | [Mul(GpuWorkspace, GpuBigUInt, UInt32, GpuBigUInt)](#mulgpuworkspace-gpubiguint-uint32-gpubiguint) | Computes scalar multiplication on the GPU. |
 | [InverseSqrtMega(GpuWorkspace, GpuBigUInt, GpuBigUInt, Int32, Int32, Int32)](#inversesqrtmegagpuworkspace-gpubiguint-gpubiguint-int32-int32-int32) | Executes the cooperative Newton-Raphson inverse square root mega-kernel on the GPU. |
 | [ReciprocalMega(GpuWorkspace, GpuBigUInt, GpuBigUInt, Int32, Int32, Int32, Int32, Int32)](#reciprocalmegagpuworkspace-gpubiguint-gpubiguint-int32-int32-int32-int32-int32) | Executes the cooperative Newton-Raphson reciprocal mega-kernel on the GPU. |
+| [SqrtFloorCorrection(GpuWorkspace, GpuBigUInt, GpuBigUInt, GpuBigUInt, GpuBigUInt, GpuBigUInt)](#sqrtfloorcorrectiongpuworkspace-gpubiguint-gpubiguint-gpubiguint-gpubiguint-gpubiguint) | Corrects an integer square root estimate to $\lfloor\sqrt{a}\rfloor$ on the device (`SqrtFloorCorrectionKernel`). |
 | [Gcd(GpuWorkspace, GpuBigUInt, GpuBigUInt, GpuBigUInt)](#gcdgpuworkspace-gpubiguint-gpubiguint-gpubiguint) | Computes the Greatest Common Divisor on the GPU using Lehmer's GCD algorithm. |
 | [ModInverse(GpuWorkspace, GpuBigUInt, GpuBigUInt, GpuBigUInt)](#modinversegpuworkspace-gpubiguint-gpubiguint-gpubiguint) | Computes the modular multiplicative inverse on the GPU using Extended Binary GCD or host-orchestrated Euclidean fallback. |
 | [BeginCapture(IntPtr)](#begincaptureintptr) | Begins CUDA Graph capture on the specified stream. |
@@ -843,6 +844,40 @@ The number of Newton-Raphson iterations.
 
 `targetBits` _Int32_<br>
 The final desired precision in bits.
+
+## SqrtFloorCorrection(GpuWorkspace, GpuBigUInt, GpuBigUInt, GpuBigUInt, GpuBigUInt, GpuBigUInt)
+
+Corrects an integer square root estimate `r` of `a` to $\lfloor\sqrt{a}\rfloor$ on the device; delegates to [KernelAdvancedMathHandler](KernelAdvancedMathHandler.md).
+
+```csharp
+public void SqrtFloorCorrection(
+    GpuWorkspace workspace,
+    GpuBigUInt operand,
+    GpuBigUInt rootSquared,
+    GpuBigUInt root,
+    GpuBigUInt slack,
+    GpuBigUInt trial);
+```
+
+#### Parameters
+
+`workspace` _GpuWorkspace_<br>
+The GPU workspace.
+
+`operand` _GpuBigUInt_<br>
+The operand `a`.
+
+`rootSquared` _GpuBigUInt_<br>
+The square $r^2$ of the estimate, with as many words as `operand`.
+
+`root` _GpuBigUInt_<br>
+The estimate `r`; receives $\lfloor\sqrt{a}\rfloor$.
+
+`slack` _GpuBigUInt_<br>
+Scratch of at least `operand.NumWords + 1` words.
+
+`trial` _GpuBigUInt_<br>
+Scratch of at least `operand.NumWords + 1` words.
 
 ## Gcd(GpuWorkspace, GpuBigUInt, GpuBigUInt, GpuBigUInt)
 

@@ -538,7 +538,7 @@ for (int i = 0; i < __gsharp_contexts.Length; i++)
 {
 __gsharp_contexts[i] = new __gsharp_context_Kassyi__GSharp__Tests__TestCases__Transpiler__GEN_u35_uMacroTranspiler_uInGpuKernel__MyKernel();
 }
-global::Kassyi.GSharp.Core.ManagedGpuContext.InitializeGrid(__gsharp_total_blocks, sharedMemBytes);
+global::Kassyi.GSharp.Core.ManagedGpuContext.InitializeGrid(__gsharp_total_blocks, sharedMemBytes, true);
 var threadAtBlockBarrier = new bool[__gsharp_contexts.Length];
 var threadAtGridSync = new bool[__gsharp_contexts.Length];
 bool anyGridActive = true;

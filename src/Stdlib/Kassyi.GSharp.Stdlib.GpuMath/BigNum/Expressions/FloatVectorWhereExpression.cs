@@ -14,13 +14,13 @@ internal sealed class FloatVectorWhereExpression(
     private GpuBigUIntArray _scanResult;
     private bool _allocated;
 
-    public GpuBigFloatArray Evaluate(
+    public GpuBigFloatArrayView Evaluate(
         GpuWorkspace workspace,
         int elementOffset = 0,
         int? elementCount = null,
-        GpuBigFloatArray? targetResult = null)
+        GpuBigFloatArrayView targetResult = default)
     {
-        if (targetResult != null)
+        if (VectorResultCache.HasTarget(targetResult))
         {
             throw new NotSupportedException("Where expression does not support targetResult because its size is dynamic.");
         }
@@ -31,7 +31,7 @@ internal sealed class FloatVectorWhereExpression(
         var originalCount = evaluatedSource.Length;
         if (originalCount == 0)
         {
-            return new GpuBigFloatArray(workspace, 0, WordsPerElement);
+            return VectorResultCache.EmptyFloat(workspace, WordsPerElement);
         }
 
         if (!_allocated)
@@ -78,9 +78,9 @@ internal sealed class FloatVectorWhereExpression(
 
         var finalCount = elementCount ?? (originalCount - elementOffset);
         return new GpuBigFloatArray(
-            _compactedSignificands.Slice(elementOffset, finalCount),
-            _compactedExponents.Slice(elementOffset, finalCount),
-            _compactedSigns.Slice(elementOffset, finalCount));
+            _compactedSignificands.BorrowSlice(elementOffset, finalCount),
+            _compactedExponents.BorrowSlice(elementOffset, finalCount),
+            _compactedSigns.BorrowSlice(elementOffset, finalCount));
     }
 
     public void Dispose()

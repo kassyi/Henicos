@@ -16,6 +16,8 @@ The `GpuBigFloat` module provides high-performance, arbitrary-precision floating
 | --- | --- |
 | [`GpuBigFloat`](GpuBigFloat.md) | Represents an arbitrary-precision signed floating-point number wrapping a [`GpuBigUFloat`](GpuBigUFloat.md) magnitude and a sign bit. |
 | [`GpuBigUFloat`](GpuBigUFloat.md) | Represents the unsigned magnitude ($\text{Significand} \times 2^{\text{Exponent}}$) of an arbitrary-precision floating-point number. |
+| [`GpuBigFloatArray`](GpuBigFloatArray.md) | A contiguous array of `GpuBigFloat` values in device memory; storing a wider value rounds it toward zero to the element width. |
+| [`GpuBigFloatView`](GpuBigFloatView.md) / [`GpuBigFloatArrayView`](GpuBigFloatArrayView.md) | Borrowed, stack-only views (`ref struct`) of a value and of a range of a `GpuBigFloatArray`. |
 | [`GpuBigFloatRoundingMode`](GpuBigFloatRoundingMode.md) | Specifies the IEEE 754 compliant rounding mode. |
 | [`IGpuBigFloatArithmetic`](IGpuBigFloatArithmetic.md) | Defines the contract for arbitrary-precision floating-point arithmetic operations executed across GPU and CPU backends. |
 | [`GSharpKernelFloatProvider`](GSharpKernelFloatProvider.md) | Execution provider dispatching `IGpuBigFloatArithmetic` operations to native CUDA kernels, GSharp AOT kernels, or a fallback strategy. |
@@ -24,6 +26,10 @@ The `GpuBigFloat` module provides high-performance, arbitrary-precision floating
 | [`GpuBigFloatKernels`](../gpu_big_int_and_uint/kernels/GpuBigFloatKernels.md) | Native G# (CUDA) kernels for radix-aligned floating-point addition and significand normalization. |
 | [`FloatExpressions`](../gpu_big_int_and_uint/expressions/FloatExpressions.md) | Zero-allocation generic binary float expressions (`BinaryExpr<T, TOp>`) and `GpuBigFloatExpressionVisitor`. |
 | [`Operators (+, -, *)`](Operators.md) | Operator overloads for `GpuBigFloat` and `GpuBigUFloat`. |
+
+## Rounding
+
+The result of an operation has $p = 32n$ bits for the $n$ words of its result significand. `Add`, `Multiply`, `Divide`, `Reciprocal`, `Sqrt`, `Rsqrt`, `Exp`, `Log` and `Pow` of [`IGpuBigFloatArithmetic`](IGpuBigFloatArithmetic.md), and [`GpuBigFloatArray.SetElement`](GpuBigFloatArray.md) of a wider value, return the exact value rounded toward zero to $p$ bits, so a value that fits in $p$ bits is returned exactly. The result depends only on the values of the operands, not on their word counts or leading zero words, and the GPU and the CPU provider return the same bits. When the exponent of the result does not fit in `int`, the operation throws `OverflowException` instead of wrapping around; an intermediate exponent outside `int` is not an error when the result fits. `DivideByUInt32` is an integer division of the significand, not a rounding to $p$ bits. No operation takes a rounding mode: `Round`, which would take a [`GpuBigFloatRoundingMode`](GpuBigFloatRoundingMode.md), is not implemented.
 
 ## Advanced Algorithms
 

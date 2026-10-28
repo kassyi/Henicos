@@ -69,12 +69,13 @@ public class GpuBigIntegerTests : IDisposable
         using var right = CreateSigned(rightValue, rightNegativeZero);
 
         // Every operator agrees with the BigInteger order; +0 and -0 are equal. The pairs include equal values, where
-        // < and > must be false and <= and >= true.
-        // mutant: GpuBigInt.cs:82 `== 0` -> `!= 0`; :111 `!left.Equals` -> `left.Equals`
-        // mutant: GpuBigInt.cs:119 / :127 / :135 / :143 `< 0` -> `<= 0`, `> 0` -> `>= 0`, `<= 0` -> `< 0`, `>= 0` -> `> 0`
+        // < and > must be false and <= and >= true. Equals is the identity of the buffers (#638), and the two operands
+        // are always separate buffers.
+        // mutant: GpuBigInt operator == `== 0` -> `!= 0`; operator != `!= 0` -> `== 0`
+        // mutant: GpuBigInt operator < / > / <= / >= `< 0` -> `<= 0`, `> 0` -> `>= 0`, `<= 0` -> `< 0`, `>= 0` -> `> 0`
         var order = leftValue.CompareTo(rightValue);
         Assert.Equal(
-            (order == 0, order != 0, order < 0, order > 0, order <= 0, order >= 0, order == 0, order == 0),
+            (order == 0, order != 0, order < 0, order > 0, order <= 0, order >= 0, false, false),
             (left == right, left != right, (left < right), (left > right), left <= right, left >= right, left.Equals(right), left.Equals((object)right))
         );
     }
@@ -102,15 +103,24 @@ public class GpuBigIntegerTests : IDisposable
     [SkippableFact]
     [Category(TestCategory.Stdlib)]
     [Scenario(TestScenario.Boundary)]
-    public void GetHashCode_ZeroIgnoresSign()
+    public void Equals_IsIdentity_EqualityOperatorComparesValues()
     {
-        // Equal values have equal hash codes: +0 and -0 in two separate buffers are equal.
-        // (Equal non-zero values in separate buffers hash differently today: #638.)
-        // mutant: GpuBigInt.cs:95 `Value.IsZero() ? 0 : ...` -> `false ? 0 : ...`
+        // Equals and GetHashCode agree on the identity of the magnitude buffer and the sign (#638); == compares the
+        // values, so +0 and -0 in two separate buffers are == but not Equals.
+        // mutant: GpuBigInt.Equals compares the values again (positiveZero.Equals(negativeZero) becomes true)
+        // mutant: GpuBigInt.Equals ignores IsNegative (sameBuffer.Equals(negated) becomes true)
+        // mutant: GpuBigInt operator == calls Equals (positiveZero == negativeZero becomes false)
         using var positiveZero = CreateSigned(0);
         using var negativeZero = CreateSigned(0, negativeZero: true);
-        Assert.True(positiveZero.Equals(negativeZero));
-        Assert.Equal(positiveZero.GetHashCode(), negativeZero.GetHashCode());
+        var sameBuffer = new GpuBigInt(positiveZero.Value, positiveZero.IsNegative);
+        var negated = new GpuBigInt(positiveZero.Value, !positiveZero.IsNegative);
+
+        Assert.Equal(
+            (false, true, true, true, false, 2),
+            (positiveZero.Equals(negativeZero), positiveZero == negativeZero, positiveZero.Equals(sameBuffer),
+                positiveZero.GetHashCode() == sameBuffer.GetHashCode(), sameBuffer.Equals(negated),
+                new HashSet<GpuBigInt> { positiveZero, negativeZero, sameBuffer }.Count)
+        );
     }
 
     public static TheoryData<string, string> GenericOperatorOperands() => new()

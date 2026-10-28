@@ -21,18 +21,18 @@ When performing division (`/`) or modulo (`%`) on massive multi-precision intege
 
 | Name | Description |
 | --- | --- |
-| [DivRem(GpuBigUInt, GpuBigUInt, GpuBigUInt, GpuBigUInt)](#divremgpubiguint-gpubiguint-gpubiguint-gpubiguint) | Computes both the quotient and the remainder of two arbitrary-precision unsigned integers on the GPU. |
+| [DivRem(GpuBigUIntView, GpuBigUIntView, GpuBigUIntView, GpuBigUIntView)](#divremgpubiguintview-gpubiguintview-gpubiguintview-gpubiguintview) | Computes both the quotient and the remainder of two arbitrary-precision unsigned integers on the GPU. |
 
-## DivRem(GpuBigUInt, GpuBigUInt, GpuBigUInt, GpuBigUInt)
+## DivRem(GpuBigUIntView, GpuBigUIntView, GpuBigUIntView, GpuBigUIntView)
 
 Computes both the quotient and the remainder of two arbitrary-precision unsigned integers on the GPU.
 
 ```csharp
 public static void DivRem(
-    GpuBigUInt leftOperand,
-    GpuBigUInt rightOperand,
-    GpuBigUInt quotientBuffer,
-    GpuBigUInt remainderBuffer);
+    scoped GpuBigUIntView leftOperand,
+    scoped GpuBigUIntView rightOperand,
+    scoped GpuBigUIntView quotientBuffer,
+    scoped GpuBigUIntView remainderBuffer);
 ```
 
 #### Parameters

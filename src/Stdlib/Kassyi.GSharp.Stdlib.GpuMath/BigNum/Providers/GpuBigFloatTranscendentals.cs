@@ -744,8 +744,7 @@ internal static class GpuBigFloatTranscendentals
 
     // A borrowed view of `words` words of `buffer` from word `offset`.
     private static GpuBigUInt Slice(GpuWorkspace workspace, GpuBigUInt buffer, int offset, int words) =>
-        new GpuBigIntMemoryHandle(buffer.Handle.Buffer, buffer.Handle.WordOffset + offset, words)
-            .AsBorrowedBigUInt(workspace);
+        buffer.Handle.Slice(offset, words).AsBorrowedBigUInt(workspace);
 
     // |y| = Reduced / Denominator with the bit lengths b of the argument and bu of Reduced.
     private readonly struct ReducedRatio(GpuBigUInt reduced, GpuBigUInt denominator, int bitLength, int reducedBits)
