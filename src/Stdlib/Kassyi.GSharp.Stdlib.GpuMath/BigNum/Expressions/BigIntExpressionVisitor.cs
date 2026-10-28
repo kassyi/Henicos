@@ -54,13 +54,21 @@ public ref struct BigIntExpressionVisitor(GpuBigIntExecutionContext context, Sco
         return new ScopedBigIntMemory(node.Handle.Borrow());
     }
 
-    private ScopedBigIntMemory GetResultBuffer(int numWords, bool isRoot)
+    // The root writes into the target, unless the target overlaps one of the root's operands: the kernels take their
+    // pointers as __restrict__ and some read words that other threads write, so the root then computes into a
+    // temporary, which the caller copies into the target. Only the root can meet the target: every other node writes
+    // a temporary, and the root reads only its own operands.
+    private ScopedBigIntMemory GetResultBuffer(int numWords, bool isRoot, GpuBigIntMemoryHandle operand0,
+        GpuBigIntMemoryHandle operand1 = default)
     {
         if (isRoot && !_targetResult.Handle.IsDefault)
         {
-            var res = _targetResult;
+            var target = _targetResult;
             _targetResult = default;
-            return res;
+            if (!DeviceRanges.Overlaps(target.Handle, operand0) && !DeviceRanges.Overlaps(target.Handle, operand1))
+            {
+                return target;
+            }
         }
 
         return Context.MemoryManager.AllocateTemp(numWords);
@@ -83,7 +91,7 @@ public ref struct BigIntExpressionVisitor(GpuBigIntExecutionContext context, Sco
     {
         using var left = Visit(leftNode);
         using var right = Visit(rightNode);
-        var result = GetResultBuffer(numWords, _isRoot);
+        var result = GetResultBuffer(numWords, _isRoot, left.Handle, right.Handle);
 
         switch (op)
         {
@@ -133,7 +141,7 @@ public ref struct BigIntExpressionVisitor(GpuBigIntExecutionContext context, Sco
     private ScopedBigIntMemory VisitUnaryOperation(IGpuBigUIntExpression targetNode, int numWords, UnaryOp op)
     {
         using var target = Visit(targetNode);
-        var result = GetResultBuffer(numWords, _isRoot);
+        var result = GetResultBuffer(numWords, _isRoot, target.Handle);
 
         switch (op)
         {
@@ -160,7 +168,7 @@ public ref struct BigIntExpressionVisitor(GpuBigIntExecutionContext context, Sco
         ShiftOp op)
     {
         using var target = Visit(targetNode);
-        var result = GetResultBuffer(numWords, _isRoot);
+        var result = GetResultBuffer(numWords, _isRoot, target.Handle);
 
         switch (op)
         {
