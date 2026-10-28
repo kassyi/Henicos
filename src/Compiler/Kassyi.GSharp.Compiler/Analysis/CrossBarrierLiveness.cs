@@ -18,6 +18,15 @@ namespace Kassyi.GSharp.Compiler.Analysis;
 /// function is called.
 /// </para>
 /// <para>
+/// A delegate keeps the locals it captures: the CPU dialects store it in the frame and run it in a later state, where a
+/// captured stackalloc pointer would refer to the memory of an earlier call (PR #771). So a captured local is live across
+/// every split that the delegate is live across. A delegate stored in a local (a carrier) that is only run or assigned
+/// is live as that local is (one more bit of the same fixed point). Any other delegate (passed, copied, stored
+/// elsewhere, made inside another lambda or local function) may run after any later split, so its captured locals are
+/// pinned where it is made: live across every split reachable from there. The bodies of <c>Gpu</c> macros run within the
+/// call and are not delegates.
+/// </para>
+/// <para>
 /// A local is live after a split when some path from the split reads it before writing it. Declaring it, assigning it
 /// (rebinding a <c>ref</c> local), passing it as an <c>out</c> argument or naming it as an element of a deconstruction
 /// writes it; any other use reads it, also a write through a <c>ref</c> local, a span or a pointer. An assignment whose
@@ -37,8 +46,15 @@ namespace Kassyi.GSharp.Compiler.Analysis;
 internal sealed class CrossBarrierLiveness
 {
     private readonly SemanticModel _model;
-    private readonly IReadOnlyList<ILocalSymbol> _tracked;
+
+    // The locals that the liveness follows: the tracked locals first, then the carriers (delegate locals)
+    private readonly ImmutableArray<ILocalSymbol> _locals;
+    private readonly int _trackedCount;
+
+    // For each carrier, the tracked locals that the delegates assigned to it capture
+    private readonly ulong[][] _carrierCaptures;
     private readonly ImmutableArray<FlowNode>.Builder _nodes = ImmutableArray.CreateBuilder<FlowNode>();
+    private bool _hasPins;
 
     // The state of the graph being built: the node that receives the next events, the gaps of the Gpu.SyncGrid body
     // being built (null outside one), the element range of the last top-level operation and of the current one
@@ -47,12 +63,24 @@ internal sealed class CrossBarrierLiveness
     private ElementRange? _lastRange;
     private ElementRange? _topRange;
 
-    private CrossBarrierLiveness(SemanticModel model, IReadOnlyList<ILocalSymbol> tracked)
+    private CrossBarrierLiveness(SemanticModel model, IReadOnlyList<ILocalSymbol> tracked, SyntaxNode body)
     {
         _model = model;
-        _tracked = tracked;
+        _trackedCount = tracked.Count;
+        var locals = ImmutableArray.CreateBuilder<ILocalSymbol>(tracked.Count);
+        locals.AddRange(tracked);
+        AddCarriers(body, locals);
+        _locals = locals.ToImmutable();
+        _carrierCaptures = new ulong[_locals.Length - _trackedCount][];
+        for (var i = 0; i < _carrierCaptures.Length; i++)
+        {
+            _carrierCaptures[i] = new ulong[WordCount];
+        }
+
         _current = new FlowNode(-1);
     }
+
+    private int WordCount => (_locals.Length + 63) / 64;
 
     /// <summary>
     /// For each local of <paramref name="tracked"/>, whether it is live right after a split point of
@@ -61,9 +89,85 @@ internal sealed class CrossBarrierLiveness
     public static bool[] FindLiveAcrossSplit(ControlFlowGraph graph, IReadOnlyList<ILocalSymbol> tracked,
         SemanticModel model)
     {
-        var liveness = new CrossBarrierLiveness(model, tracked);
+        var liveness = new CrossBarrierLiveness(model, tracked, graph.OriginalOperation.Syntax);
         liveness.Build(graph, gaps: null);
         return liveness.Solve();
+    }
+
+    // The carriers of body: the delegate locals that are only run (f(), f.Invoke()) or assigned (f = <value>), and not
+    // named inside a lambda or local function other than a macro body
+    private void AddCarriers(SyntaxNode body, ImmutableArray<ILocalSymbol>.Builder locals)
+    {
+        var candidates = ImmutableArray.CreateBuilder<ILocalSymbol>();
+        var rejected = new HashSet<ILocalSymbol>(SymbolEqualityComparer.Default);
+        foreach (var node in body.DescendantNodes())
+        {
+            switch (node)
+            {
+                case VariableDeclaratorSyntax declarator
+                    when _model.GetDeclaredSymbol<ILocalSymbol>(declarator) is { IsRef: false, Type.TypeKind: TypeKind.Delegate } local:
+                    candidates.Add(local);
+                    break;
+                case IdentifierNameSyntax name
+                    when _model.GetSymbol(name) is ILocalSymbol { Type.TypeKind: TypeKind.Delegate } local &&
+                         (!IsRunOrAssigned(name) || IsInsideFunction(name, body)):
+                    rejected.Add(local);
+                    break;
+            }
+        }
+
+        foreach (var candidate in candidates)
+        {
+            if (!rejected.Contains(candidate))
+            {
+                locals.Add(candidate);
+            }
+        }
+    }
+
+    // f(...), f.Invoke(...), f = <value>
+    private static bool IsRunOrAssigned(IdentifierNameSyntax name) => name.Parent switch
+    {
+        InvocationExpressionSyntax invocation => invocation.Expression == name,
+        MemberAccessExpressionSyntax { Name.Identifier.ValueText: "Invoke", Parent: InvocationExpressionSyntax } access =>
+            access.Expression == name,
+        AssignmentExpressionSyntax assignment => assignment.IsKind(SyntaxKind.SimpleAssignmentExpression) && assignment.Left == name,
+        _ => false
+    };
+
+    // Whether node lies in a lambda or local function of body that is not the body of a Gpu macro
+    private bool IsInsideFunction(SyntaxNode node, SyntaxNode body)
+    {
+        for (var ancestor = node.Parent; ancestor != null && ancestor != body; ancestor = ancestor.Parent)
+        {
+            if (ancestor is LocalFunctionStatementSyntax ||
+                (ancestor is AnonymousFunctionExpressionSyntax && !GpuMacroClassifier.ClassifyBody(ancestor, _model).HasBody))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    // Whether running body can make a delegate that outlives the run: a lambda that is not a macro body, or a local
+    // function used as a value
+    private bool MakesDelegate(SyntaxNode body)
+    {
+        foreach (var node in body.DescendantNodes())
+        {
+            switch (node)
+            {
+                case AnonymousFunctionExpressionSyntax lambda when !GpuMacroClassifier.ClassifyBody(lambda, _model).HasBody:
+                    return true;
+                case IdentifierNameSyntax name
+                    when _model.GetSymbol(name) is IMethodSymbol { MethodKind: MethodKind.LocalFunction } &&
+                         !(name.Parent is InvocationExpressionSyntax invocation && invocation.Expression == name):
+                    return true;
+            }
+        }
+
+        return false;
     }
 
     // Builds the nodes of graph; returns the node of its entry block and the last node of its exit block
@@ -190,7 +294,15 @@ internal sealed class CrossBarrierLiveness
         {
             case ISimpleAssignmentOperation { Target: ILocalReferenceOperation target } assignment
                 when IndexOf(target.Local) is var index and >= 0:
-                Walk(assignment.Value, graph);
+                if (index >= _trackedCount && GetDelegateBody(assignment.Value) is { } body)
+                {
+                    AddDelegate(body, index);
+                }
+                else
+                {
+                    Walk(assignment.Value, graph);
+                }
+
                 // Assigning through a ref local uses the reference; declaring or rebinding it replaces it
                 _current.Events.Add(target.IsDeclaration || assignment.IsRef || !target.Local.IsRef
                     ? FlowEvent.Write(index)
@@ -212,7 +324,11 @@ internal sealed class CrossBarrierLiveness
                 WalkInvocation(invocation, graph);
                 return;
             case IFlowAnonymousFunctionOperation function:
-                AddReadsIn(function.Syntax);
+                AddDelegate(function.Syntax, carrier: -1);
+                return;
+            case IDelegateCreationOperation { Target: IMethodReferenceOperation reference }
+                when GetDelegateBody(reference) is { } localFunction:
+                AddDelegate(localFunction, carrier: -1);
                 return;
         }
 
@@ -261,7 +377,13 @@ internal sealed class CrossBarrierLiveness
 
         foreach (var argument in invocation.Arguments)
         {
-            if (!IsOutLocal(argument, out _))
+            // The body of Gpu.SingleThread or Gpu.GridStrideLoop runs within the call
+            if (macro.HasBody && argument.Parameter?.Ordinal == macro.LambdaArgumentIndex &&
+                UnwrapLambda(argument.Value) is { } macroBody)
+            {
+                AddRun(macroBody.Syntax);
+            }
+            else if (!IsOutLocal(argument, out _))
             {
                 Walk(argument.Value, graph);
             }
@@ -269,7 +391,7 @@ internal sealed class CrossBarrierLiveness
 
         if (method.MethodKind == MethodKind.LocalFunction && method.TryGetDeclaringSyntax(out LocalFunctionStatementSyntax? localFunction))
         {
-            AddReadsIn(localFunction);
+            AddRun(localFunction);
         }
 
         if (SyncIntrinsicClassifier.Classify(method).SplitsStateMachine ||
@@ -345,18 +467,58 @@ internal sealed class CrossBarrierLiveness
         _ => null
     };
 
-    // A use of a tracked local of this graph inside a lambda or local function that is not split counts as a use here;
-    // a local declared inside it belongs to it and is not a use here
-    private void AddReadsIn(SyntaxNode syntax)
+    // The lambda or local function that makes the delegate value is: its syntax, or null for any other value
+    private static SyntaxNode? GetDelegateBody(IOperation value) => value switch
     {
-        foreach (var node in syntax.DescendantNodes())
+        IFlowAnonymousFunctionOperation lambda => lambda.Syntax,
+        IDelegateCreationOperation creation => GetDelegateBody(creation.Target),
+        IConversionOperation conversion => GetDelegateBody(conversion.Operand),
+        IMethodReferenceOperation { Method: { MethodKind: MethodKind.LocalFunction } method }
+            when method.TryGetDeclaringSyntax(out LocalFunctionStatementSyntax? localFunction) => localFunction,
+        _ => null
+    };
+
+    // A lambda or local function that runs here (a macro body, a local function call): it uses its captured locals here,
+    // and a delegate it makes keeps them from here on
+    private void AddRun(SyntaxNode body) => AddCaptures(body, carrier: null, pin: MakesDelegate(body));
+
+    // A delegate made here from body: kept by carrier (an index of _locals), or by anything when carrier is -1
+    private void AddDelegate(SyntaxNode body, int carrier)
+    {
+        var isCarried = carrier >= 0 && !MakesDelegate(body);
+        AddCaptures(body, isCarried ? _carrierCaptures[carrier - _trackedCount] : null, pin: !isCarried);
+    }
+
+    // A use of a tracked local of this graph inside a lambda or local function that is not split counts as a use here;
+    // a local declared inside it belongs to it and is not a use here. Each captured local is also added to carrier, or
+    // pinned here.
+    private void AddCaptures(SyntaxNode body, ulong[]? carrier, bool pin)
+    {
+        foreach (var node in body.DescendantNodes())
         {
-            if (node is IdentifierNameSyntax identifier &&
-                _model.GetSymbol(identifier) is ILocalSymbol local &&
-                !IsDeclaredIn(local, syntax) &&
-                IndexOf(local) is var index and >= 0)
+            if (node is not IdentifierNameSyntax identifier ||
+                _model.GetSymbol(identifier) is not ILocalSymbol local ||
+                IsDeclaredIn(local, body) ||
+                IndexOf(local) is not (var index and >= 0))
             {
-                _current.Events.Add(FlowEvent.Read(index));
+                continue;
+            }
+
+            _current.Events.Add(FlowEvent.Read(index));
+            if (index >= _trackedCount)
+            {
+                continue;
+            }
+
+            if (carrier != null)
+            {
+                carrier[index / 64] |= 1UL << (index % 64);
+            }
+
+            if (pin)
+            {
+                _current.Events.Add(FlowEvent.Pin(index));
+                _hasPins = true;
             }
         }
     }
@@ -369,7 +531,7 @@ internal sealed class CrossBarrierLiveness
             );
 
     private int IndexOf(ILocalSymbol local) =>
-        _tracked
+        _locals
             .AsStackEnumerable()
             .IndexOf(local, static (tracked, target) => tracked.IsEqualTo(target));
 
@@ -382,10 +544,11 @@ internal sealed class CrossBarrierLiveness
 
     private static void Connect(FlowNode from, FlowNode to) => from.Successors.Add(to.Index);
 
-    // The backward fixed point of the live locals, then the locals live after each split
+    // The backward fixed point of the live locals, then the locals live after each split: also those that a carrier live
+    // after it captures, and those pinned before it
     private bool[] Solve()
     {
-        var words = (_tracked.Count + 63) / 64;
+        var words = WordCount;
         var liveIn = new ulong[_nodes.Count][];
         for (var i = 0; i < liveIn.Length; i++)
         {
@@ -416,13 +579,78 @@ internal sealed class CrossBarrierLiveness
             ApplyBackward(node, live, crossing);
         }
 
-        var result = new bool[_tracked.Count];
+        for (var carrier = 0; carrier < _carrierCaptures.Length; carrier++)
+        {
+            if (IsSet(crossing, _trackedCount + carrier))
+            {
+                Or(crossing, _carrierCaptures[carrier]);
+            }
+        }
+
+        if (_hasPins)
+        {
+            AddPinnedAcrossSplit(crossing);
+        }
+
+        var result = new bool[_trackedCount];
         for (var local = 0; local < result.Length; local++)
         {
             result[local] = IsSet(crossing, local);
         }
 
         return result;
+    }
+
+    // The forward fixed point of the pinned locals: a local pinned on some path to a split is added to crossing
+    private void AddPinnedAcrossSplit(ulong[] crossing)
+    {
+        var pinnedIn = new ulong[_nodes.Count][];
+        for (var i = 0; i < pinnedIn.Length; i++)
+        {
+            pinnedIn[i] = new ulong[crossing.Length];
+        }
+
+        var pinned = new ulong[crossing.Length];
+        bool changed;
+        do
+        {
+            changed = false;
+            foreach (var node in _nodes)
+            {
+                pinnedIn[node.Index].AsSpan().CopyTo(pinned);
+                foreach (var flowEvent in node.Events)
+                {
+                    switch (flowEvent.Kind)
+                    {
+                        case FlowEventKind.Pin:
+                            pinned[flowEvent.Local / 64] |= 1UL << (flowEvent.Local % 64);
+                            break;
+                        case FlowEventKind.Split:
+                            Or(crossing, pinned);
+                            break;
+                    }
+                }
+
+                foreach (var successor in node.Successors)
+                {
+                    changed |= Or(pinnedIn[successor], pinned);
+                }
+            }
+        } while (changed);
+    }
+
+    // target |= bits; whether target changed
+    private static bool Or(ulong[] target, ulong[] bits)
+    {
+        var changed = false;
+        for (var word = 0; word < target.Length; word++)
+        {
+            var merged = target[word] | bits[word];
+            changed |= merged != target[word];
+            target[word] = merged;
+        }
+
+        return changed;
     }
 
     // The union of the live-in sets of the successors of node, into live
@@ -470,7 +698,10 @@ internal sealed class CrossBarrierLiveness
     {
         Read,
         Write,
-        Split
+        Split,
+
+        // A delegate that may run after any later split captures the local (forward, AddPinnedAcrossSplit)
+        Pin
     }
 
     private readonly struct FlowEvent(FlowEventKind kind, int local)
@@ -484,6 +715,8 @@ internal sealed class CrossBarrierLiveness
         public static FlowEvent Read(int local) => new(FlowEventKind.Read, local);
 
         public static FlowEvent Write(int local) => new(FlowEventKind.Write, local);
+
+        public static FlowEvent Pin(int local) => new(FlowEventKind.Pin, local);
     }
 
     // The statements of a Gpu.SyncGrid body that an operation belongs to, by index in SyncGridBody.Flatten

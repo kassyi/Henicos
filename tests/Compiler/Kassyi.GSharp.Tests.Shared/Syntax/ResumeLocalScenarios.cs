@@ -172,4 +172,13 @@ internal static class ResumeLocalScenarios
 
         Assert.Equal(new[] { 15 }, a);
     }
+
+    public static void LambdaBeforeBarrier(Action<Action> run)
+    {
+        var result = new int[4];
+
+        run(() => ResumeLocalKernels.LaunchLambdaBeforeBarrierKernel(result, blockDimX: 4));
+
+        Assert.Equal(new[] { 11, 12, 13, 14 }, result);
+    }
 }
