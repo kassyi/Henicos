@@ -392,6 +392,21 @@ public partial class EmissionShapeTests
         }
     }
 
+    // A stackalloc in an argument lives in a storage declared before the statement; it is zeroed where it is evaluated
+    // unless [SkipLocalsInit] applies, as a declaration is
+    [Theory]
+    [Scenario(TestScenario.Boundary)]
+    [InlineData("ZeroInitializedKernel", "__gsharp_stackalloc_zero")]
+    [InlineData("MethodSkipsKernel", "__gsharp_stackalloc_span")]
+    public void StackAllocInAnArgument_IsZeroedUnlessSkipLocalsInitApplies(string kernel, string view)
+    {
+        var body = KernelSource(Generate("SkipLocalsInitKernels", "Cuda"), kernel);
+
+        var storage = Regex.Match(body, @"\nint (__gsharp_stackalloc_\d+)\[4\];\n");
+        Assert.True(storage.Success, "The storage of the stackalloc is not declared.");
+        Assert.Contains($"ReadFirst({view}({storage.Groups[1].Value}))", body, StringComparison.Ordinal);
+    }
+
     [GeneratedRegex(@"(?m)^(\w+):;?$")]
     private static partial Regex LabelRegex();
 

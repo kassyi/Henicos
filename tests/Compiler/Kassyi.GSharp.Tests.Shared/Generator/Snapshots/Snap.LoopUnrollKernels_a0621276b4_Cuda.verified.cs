@@ -120,6 +120,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerLoopUnrollForKernel();
 IntPtr hfunc = s_hfunc_LoopUnrollForKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "LoopUnrollKernels.LoopUnrollForKernel");
 IntPtr d_data = IntPtr.Zero;
 try
 {
@@ -175,6 +176,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerLoopUnrollForKernel();
 IntPtr hfunc = s_hfunc_LoopUnrollForKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "LoopUnrollKernels.LoopUnrollForKernel");
 try
 {
 void** kernelParams = stackalloc void*[1];
@@ -233,6 +235,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerLoopUnrollFactorKernel();
 IntPtr hfunc = s_hfunc_LoopUnrollFactorKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "LoopUnrollKernels.LoopUnrollFactorKernel");
 IntPtr d_data = IntPtr.Zero;
 try
 {
@@ -288,6 +291,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerLoopUnrollFactorKernel();
 IntPtr hfunc = s_hfunc_LoopUnrollFactorKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "LoopUnrollKernels.LoopUnrollFactorKernel");
 try
 {
 void** kernelParams = stackalloc void*[1];
@@ -348,6 +352,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerLoopUnrollWhileKernel();
 IntPtr hfunc = s_hfunc_LoopUnrollWhileKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "LoopUnrollKernels.LoopUnrollWhileKernel");
 IntPtr d_data = IntPtr.Zero;
 try
 {
@@ -403,6 +408,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerLoopUnrollWhileKernel();
 IntPtr hfunc = s_hfunc_LoopUnrollWhileKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "LoopUnrollKernels.LoopUnrollWhileKernel");
 try
 {
 void** kernelParams = stackalloc void*[1];
@@ -464,6 +470,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerLoopUnrollNestedKernel();
 IntPtr hfunc = s_hfunc_LoopUnrollNestedKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "LoopUnrollKernels.LoopUnrollNestedKernel");
 IntPtr d_data = IntPtr.Zero;
 try
 {
@@ -519,6 +526,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerLoopUnrollNestedKernel();
 IntPtr hfunc = s_hfunc_LoopUnrollNestedKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "LoopUnrollKernels.LoopUnrollNestedKernel");
 try
 {
 void** kernelParams = stackalloc void*[1];
@@ -577,6 +585,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerLoopUnrollSingleStatementKernel();
 IntPtr hfunc = s_hfunc_LoopUnrollSingleStatementKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "LoopUnrollKernels.LoopUnrollSingleStatementKernel");
 IntPtr d_data = IntPtr.Zero;
 try
 {
@@ -632,6 +641,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerLoopUnrollSingleStatementKernel();
 IntPtr hfunc = s_hfunc_LoopUnrollSingleStatementKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "LoopUnrollKernels.LoopUnrollSingleStatementKernel");
 try
 {
 void** kernelParams = stackalloc void*[1];

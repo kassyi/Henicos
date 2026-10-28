@@ -119,6 +119,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerNonCapturingLambdaKernel();
 IntPtr hfunc = s_hfunc_NonCapturingLambdaKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "LambdaAndLocalFunctionsKernels.NonCapturingLambdaKernel");
 IntPtr d_data = IntPtr.Zero;
 try
 {
@@ -174,6 +175,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerNonCapturingLambdaKernel();
 IntPtr hfunc = s_hfunc_NonCapturingLambdaKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "LambdaAndLocalFunctionsKernels.NonCapturingLambdaKernel");
 try
 {
 void** kernelParams = stackalloc void*[1];
@@ -231,6 +233,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerValueCapturingLambdaKernel();
 IntPtr hfunc = s_hfunc_ValueCapturingLambdaKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "LambdaAndLocalFunctionsKernels.ValueCapturingLambdaKernel");
 IntPtr d_data = IntPtr.Zero;
 try
 {
@@ -288,6 +291,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerValueCapturingLambdaKernel();
 IntPtr hfunc = s_hfunc_ValueCapturingLambdaKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "LambdaAndLocalFunctionsKernels.ValueCapturingLambdaKernel");
 try
 {
 void** kernelParams = stackalloc void*[2];
@@ -347,6 +351,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerImmediatelyEvaluatedLambdaKernel();
 IntPtr hfunc = s_hfunc_ImmediatelyEvaluatedLambdaKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "LambdaAndLocalFunctionsKernels.ImmediatelyEvaluatedLambdaKernel");
 IntPtr d_data = IntPtr.Zero;
 try
 {
@@ -402,6 +407,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerImmediatelyEvaluatedLambdaKernel();
 IntPtr hfunc = s_hfunc_ImmediatelyEvaluatedLambdaKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "LambdaAndLocalFunctionsKernels.ImmediatelyEvaluatedLambdaKernel");
 try
 {
 void** kernelParams = stackalloc void*[1];
@@ -460,6 +466,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerShadowedVariableCaptureKernel();
 IntPtr hfunc = s_hfunc_ShadowedVariableCaptureKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "LambdaAndLocalFunctionsKernels.ShadowedVariableCaptureKernel");
 IntPtr d_data = IntPtr.Zero;
 try
 {
@@ -515,6 +522,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerShadowedVariableCaptureKernel();
 IntPtr hfunc = s_hfunc_ShadowedVariableCaptureKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "LambdaAndLocalFunctionsKernels.ShadowedVariableCaptureKernel");
 try
 {
 void** kernelParams = stackalloc void*[1];
@@ -574,6 +582,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerNestedReturnsKernel();
 IntPtr hfunc = s_hfunc_NestedReturnsKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "LambdaAndLocalFunctionsKernels.NestedReturnsKernel");
 IntPtr d___gsharp_auto_result = IntPtr.Zero;
 try
 {
@@ -637,6 +646,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerNestedReturnsKernel();
 IntPtr hfunc = s_hfunc_NestedReturnsKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "LambdaAndLocalFunctionsKernels.NestedReturnsKernel");
 IntPtr d___gsharp_auto_result = IntPtr.Zero;
 try
 {

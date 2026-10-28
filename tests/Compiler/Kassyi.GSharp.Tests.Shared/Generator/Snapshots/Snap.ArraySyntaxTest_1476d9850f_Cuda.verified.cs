@@ -107,6 +107,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerImplicitArrayFormsKernel();
 IntPtr hfunc = s_hfunc_ImplicitArrayFormsKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "ArraySyntaxTestKernels.ImplicitArrayFormsKernel");
 try
 {
 void** kernelParams = stackalloc void*[0];
@@ -135,6 +136,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerImplicitArrayFormsKernel();
 IntPtr hfunc = s_hfunc_ImplicitArrayFormsKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "ArraySyntaxTestKernels.ImplicitArrayFormsKernel");
 try
 {
 void** kernelParams = stackalloc void*[0];

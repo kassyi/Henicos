@@ -106,6 +106,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerExecute();
 IntPtr hfunc = s_hfunc_Execute!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "SpanKernel.Execute");
 IntPtr d_data = IntPtr.Zero;
 try
 {
@@ -161,6 +162,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerExecute();
 IntPtr hfunc = s_hfunc_Execute!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "SpanKernel.Execute");
 try
 {
 void** kernelParams = stackalloc void*[1];
