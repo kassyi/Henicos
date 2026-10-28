@@ -269,6 +269,28 @@ public class FermatAlgorithmTests
     }
 
     [SkippableFact]
+    [Scenario(TestScenario.Boundary)]
+    public void SecondRun_CanceledBeforeItsFirstCheck_ReportsTheStartEverywhere()
+    {
+        CudaCapability.EnsureGpuAvailable();
+        const int E = 61;
+        using var scope = new GpuKernelLoader.CudaContextScope();
+        using var runner = new FermatAlgorithm(E, 3, new FermatPrpOptions { BlockSize = 7 });
+        runner.Run();
+        using var cts = new CancellationTokenSource();
+        var progress = new SynchronousProgress<FermatPrpProgress>(_ => cts.Cancel());
+
+        // Canceled at k = 7, before the first check at 49 (PR #761 review 2).
+        Assert.ThrowsAny<OperationCanceledException>(() =>
+            runner.RunAsync(progress, cts.Token).AsTask().GetAwaiter().GetResult());
+
+        var checkpoint = runner.CreateCheckpoint();
+        Assert.Equal(0, runner.Iteration);
+        Assert.Equal(0, checkpoint.Iteration);
+        Assert.Equal(checkpoint.State.ToArray(), runner.GetState());
+    }
+
+    [SkippableFact]
     [Scenario(TestScenario.HappyPath)]
     public async Task RunAsync_MatchesRun()
     {

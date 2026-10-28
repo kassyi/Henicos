@@ -370,6 +370,13 @@ public sealed class FermatAlgorithm : IDisposable
 
         EnsureChain();
         var start = _pendingRestore ?? SquaringChainDriver.StartPoint(_startWords);
+        if (_pendingRestore is null)
+        {
+            // A run that does not resume starts again from u_0: until its first check passes, u_0 is its last verified
+            // point, so a cancellation reports the same position in Iteration, CreateCheckpoint and GetState.
+            _lastVerified = start;
+        }
+
         _pendingRestore = null;
 
         ChainOutcome outcome;

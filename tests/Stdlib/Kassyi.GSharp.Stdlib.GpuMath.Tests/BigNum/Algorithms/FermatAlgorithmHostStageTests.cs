@@ -97,6 +97,30 @@ public class FermatAlgorithmHostStageTests
     }
 
     [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void SecondRun_CanceledBeforeItsFirstCheck_ReportsTheStartEverywhere()
+    {
+        // E = 13: K = 27, B = 5, a check every 25 squarings. The second run starts again from u_0 and is canceled at its
+        // first block boundary (k = 5), before any check: the state goes back to u_0, and so must Iteration and the
+        // checkpoint (PR #761 review 2), not to the end of the first run.
+        // mutant: FermatAlgorithm.cs RunCoreAsync `_lastVerified = start;` for a run that does not resume removed
+        const int E = 13;
+        using var runner = new FermatAlgorithm(E);
+        runner.Run();
+        using var cts = new CancellationTokenSource();
+        var progress = new SynchronousProgress<FermatPrpProgress>(_ => cts.Cancel());
+
+        Assert.ThrowsAny<OperationCanceledException>(() =>
+            runner.RunAsync(progress, cts.Token).AsTask().GetAwaiter().GetResult());
+
+        var checkpoint = runner.CreateCheckpoint();
+        Assert.Equal(0, runner.Iteration);
+        Assert.Equal(0, checkpoint.Iteration);
+        Assert.Equal(checkpoint.State.ToArray(), runner.GetState());
+        Assert.Equal(new BigInteger(3), FromWords(runner.GetState()));
+    }
+
+    [Fact]
     [Scenario(TestScenario.HappyPath)]
     public void NoSmallDivisor_CreatesTheChainInTheConstructor()
     {
