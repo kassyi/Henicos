@@ -314,8 +314,9 @@ public readonly struct GpuBigIntExpr
         }
         catch (Exception original)
         {
-            // The capture ended (or failed to end) without a graph: give back what it took
-            ReleaseAfterFailure(workspace, manager, manager.EndDeferral(deferral), result, owned, IntPtr.Zero, original);
+            // The capture failed to end, or it ended and the deferral did not: give back what it took, including the
+            // graph when EndCapture returned one
+            ReleaseAfterFailure(workspace, manager, manager.EndDeferral(deferral), result, owned, graph, original);
             throw;
         }
 
