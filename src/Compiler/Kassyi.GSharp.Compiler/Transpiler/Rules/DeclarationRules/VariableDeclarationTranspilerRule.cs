@@ -314,6 +314,18 @@ public sealed class VariableDeclarationTranspilerRule : SyntaxNodeTranspilerRule
             return false;
         }
 
+        // An empty span (stackalloc T[0], []) has no storage, as in Roslyn (LocalRewriter_StackAlloc), and C++ has no
+        // array of length zero: GSharpArray<T> name{}. An empty array is GSH0003 (GetStackArrayShapeProblem)
+        if (count == 0 ||
+            sizeExpr != null && context.Query.SemanticModel.GetSafeConstantValue(sizeExpr) is { HasValue: true, Value: 0 })
+        {
+            context.Emitter.Dialect.AppendType(ref context, typeSymbol);
+            context.Emitter.Writer.Append(' ');
+            CppNameResolver.AppendDeclaredName(variable, variable.Identifier, ref context);
+            context.Emitter.Writer.Append("{}");
+            return true;
+        }
+
         if (initializerNode != null && count.HasValue)
         {
             WriteArrayWithInitializer(variable, elemType, isConst, count.Value, initializerNode, ref context);
