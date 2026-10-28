@@ -38,7 +38,8 @@ internal static class HostLauncherTranspiler
         context.Emitter.Writer.Append(
             $"uint32_t {BlockDimX}, uint32_t {BlockDimY}, uint32_t {BlockDimZ}");
 
-        WriteLauncherParameters(methodSymbol, method.ParameterList.Parameters, ref context);
+        var structArguments = GetStructArguments(methodSymbol);
+        WriteLauncherParameters(structArguments, method.ParameterList.Parameters, ref context);
 
         if (plan.HasAutoResult)
         {
@@ -51,7 +52,7 @@ internal static class HostLauncherTranspiler
 
         using (context.Emitter.Writer.Scope())
         {
-            WriteStructArgumentCopies(methodSymbol, method.ParameterList.Parameters, ref context);
+            WriteStructArgumentCopies(structArguments, method.ParameterList.Parameters, ref context);
             context.Emitter.Writer.AppendLine($"{HostLastError}.Reset();");
             context.Emitter.Writer.AppendLine($"GSharpErrorSlot {Error};");
             context.Emitter.Writer.AppendLine(
@@ -110,28 +111,29 @@ internal static class HostLauncherTranspiler
     }
 
     /// <summary>
-    /// Whether the CPU launcher takes the parameter at <paramref name="index"/> as a pointer to the host value
+    /// The struct type of each parameter that the CPU launcher takes as a pointer to the host value
     /// (<see cref="KernelParameterShape.IsCpuValueStruct"/>, the classification of the delegate that calls the
-    /// launcher), and the struct type.
+    /// launcher), by parameter index; <see langword="null"/> for the other parameters.
     /// </summary>
-    internal static bool TryGetStructArgument(IMethodSymbol kernel, int index,
-        [NotNullWhen(true)] out ITypeSymbol? structType)
+    internal static ITypeSymbol?[] GetStructArguments(IMethodSymbol kernel)
     {
-        structType = null;
-        if (index >= kernel.Parameters.Length || !KernelParameterShape.Classify(kernel.Parameters[index]).IsCpuValueStruct)
+        var structArguments = new ITypeSymbol?[kernel.Parameters.Length];
+        for (var i = 0; i < structArguments.Length; i++)
         {
-            return false;
+            var parameter = kernel.Parameters[i];
+            if (KernelParameterShape.Classify(parameter).IsCpuValueStruct)
+            {
+                structArguments[i] = parameter.Type.UnwrapNullableArrayLike() ?? parameter.Type;
+            }
         }
 
-        var type = kernel.Parameters[index].Type;
-        structType = type.UnwrapNullableArrayLike() ?? type;
-        return true;
+        return structArguments;
     }
 
     // , <parameter>, ... with a user struct by value as const <S>* __gsharp_arg_<n>: the delegate passes the address of
     // the host value instead of the value, so that the runtime marshaller does not convert it (#511)
-    private static void WriteLauncherParameters(IMethodSymbol kernel, SeparatedSyntaxList<ParameterSyntax> parameters,
-        ref TranspileContext context)
+    private static void WriteLauncherParameters(ITypeSymbol?[] structArguments,
+        SeparatedSyntaxList<ParameterSyntax> parameters, ref TranspileContext context)
     {
         for (var i = 0; i < parameters.Count; i++)
         {
@@ -142,7 +144,7 @@ internal static class HostLauncherTranspiler
             }
 
             context.Emitter.Writer.Append(", ");
-            if (TryGetStructArgument(kernel, i, out var structType))
+            if (i < structArguments.Length && structArguments[i] is { } structType)
             {
                 StructTranspiler.RegisterUsedStructIfApplicable(structType, ref context);
                 context.Emitter.Writer.Append("const ");
@@ -158,12 +160,12 @@ internal static class HostLauncherTranspiler
 
     // <S> <parameter> = *__gsharp_arg_<n>; for each user struct by value, so that the kernel calls pass it by value as
     // before
-    private static void WriteStructArgumentCopies(IMethodSymbol kernel, SeparatedSyntaxList<ParameterSyntax> parameters,
-        ref TranspileContext context)
+    private static void WriteStructArgumentCopies(ITypeSymbol?[] structArguments,
+        SeparatedSyntaxList<ParameterSyntax> parameters, ref TranspileContext context)
     {
-        for (var i = 0; i < parameters.Count; i++)
+        for (var i = 0; i < parameters.Count && i < structArguments.Length; i++)
         {
-            if (!TryGetStructArgument(kernel, i, out var structType))
+            if (structArguments[i] is not { } structType)
             {
                 continue;
             }
