@@ -68,11 +68,7 @@ internal static class BarrierDivergenceChecks
         {
             if (!isCall && IsInUnsplitBody(scan, barrier))
             {
-                scan.Context.ReportDiagnostic(GSharpDiagnostics.DivergentBarrierProhibited, barrier.GetLocation(),
-                    $"'{scan.SemanticModel.GetSymbol(barrier)?.Name}' cannot be called in a lambda or local function other " +
-                    "than the body of Gpu.ForUnroll or Gpu.SyncGrid(body): the CPU dialects resume a kernel only in " +
-                    "the statements of its body and of those macro bodies, so the barrier would not wait for the " +
-                    "other threads there.");
+                ReportUnsplitBarrier(scan, barrier);
                 continue;
             }
 
@@ -81,40 +77,59 @@ internal static class BarrierDivergenceChecks
                 return;
             }
 
-            var report = uniformity.GetBarrierReport(barrier, scope);
-            if (isCall && report.Divergence != BarrierDivergence.Condition)
+            var report = GetReport(uniformity, barrier, scope, isCall);
+            if (report.Divergence == BarrierDivergence.Condition)
             {
-                var callSite = uniformity.GetCallSiteReport(barrier);
-                if (callSite.Divergence == BarrierDivergence.Condition || report.Divergence == BarrierDivergence.None)
-                {
-                    report = callSite;
-                }
+                ReportDivergentBarrier(scan, barrier, scope, report.Certain);
             }
-
-            if (report.Divergence != BarrierDivergence.Condition)
+            else if (scan.IsKernel)
             {
-                if (scan.IsKernel)
-                {
-                    CollectExits(scan, uniformity, barrier, scope, isCall, exits);
-                }
-
-                continue;
-            }
-
-            if (report.Certain)
-            {
-                scan.Context.ReportDiagnostic(GSharpDiagnostics.DivergentBarrierProhibited, barrier.GetLocation(),
-                    DivergentBarrierMessage);
-            }
-            else
-            {
-                scan.Context.ReportDiagnostic(GSharpDiagnostics.LaunchDependentDivergentBarrier, barrier.GetLocation(),
-                    scan.SemanticModel.GetSymbol(barrier)?.Name ?? "", scope == SyncScope.Grid ? "grid" : "block");
+                CollectExits(scan, uniformity, barrier, scope, isCall, exits);
             }
         }
 
         ReportExits(scan, exits);
     }
+
+    // The divergence of a barrier in this method; for a call, the call site's when it diverges there, or when the
+    // method itself says nothing
+    private static BarrierReport GetReport(UniformityAnalysis uniformity, InvocationExpressionSyntax barrier,
+        SyncScope scope, bool isCall)
+    {
+        var report = uniformity.GetBarrierReport(barrier, scope);
+        if (!isCall || report.Divergence == BarrierDivergence.Condition)
+        {
+            return report;
+        }
+
+        var callSite = uniformity.GetCallSiteReport(barrier);
+        return callSite.Divergence == BarrierDivergence.Condition || report.Divergence == BarrierDivergence.None
+            ? callSite
+            : report;
+    }
+
+    // GSH0037 when the branch certainly diverges, GSH0083 when it depends on the launch or on run-time values
+    private static void ReportDivergentBarrier(KernelBarrierScan scan, InvocationExpressionSyntax barrier,
+        SyncScope scope, bool certain)
+    {
+        if (certain)
+        {
+            scan.Context.ReportDiagnostic(GSharpDiagnostics.DivergentBarrierProhibited, barrier.GetLocation(),
+                DivergentBarrierMessage);
+            return;
+        }
+
+        scan.Context.ReportDiagnostic(GSharpDiagnostics.LaunchDependentDivergentBarrier, barrier.GetLocation(),
+            scan.SemanticModel.GetSymbol(barrier)?.Name ?? "", scope == SyncScope.Grid ? "grid" : "block");
+    }
+
+    // GSH0037 for a barrier in a lambda or local function that the state machine does not split
+    private static void ReportUnsplitBarrier(KernelBarrierScan scan, InvocationExpressionSyntax barrier) =>
+        scan.Context.ReportDiagnostic(GSharpDiagnostics.DivergentBarrierProhibited, barrier.GetLocation(),
+            $"'{scan.SemanticModel.GetSymbol(barrier)?.Name}' cannot be called in a lambda or local function other " +
+            "than the body of Gpu.ForUnroll or Gpu.SyncGrid(body): the CPU dialects resume a kernel only in " +
+            "the statements of its body and of those macro bodies, so the barrier would not wait for the " +
+            "other threads there.");
 
     // An exit-only barrier of a kernel: its exit conditions, or the call whose callee the threads leave early
     private static void CollectExits(KernelBarrierScan scan, UniformityAnalysis uniformity,
