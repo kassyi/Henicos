@@ -77,87 +77,85 @@ public sealed class GSharpKernelFloatProvider(IGpuBigFloatArithmetic fallbackStr
         in GpuFloatOperand right,
         GpuBigIntMemoryHandle resultSig)
     {
-        var stream = context.Stream;
-        var leftSig = left.Significand;
-        var rightSig = right.Significand;
-        var expDiff = Math.Abs(left.Exponent - right.Exponent);
-
-        if (context.GpuWorkspace.Provider is GSharpKernelProvider && !GpuKernelLoader.IsCpuFallbackMode)
+        if (context.GpuWorkspace.Provider is not GSharpKernelProvider || GpuKernelLoader.IsCpuFallbackMode)
         {
-            var leftHasLargerExp = left.Exponent > right.Exponent
-                                   || (left.Exponent == right.Exponent && leftSig.NumWords >= rightSig.NumWords);
-            var larger = leftHasLargerExp ? left : right;
-            var smaller = leftHasLargerExp ? right : left;
-            var largerSig = larger.Significand;
-            var smallerSig = smaller.Significand;
-
-            int signScale;
-            bool resultSign;
-            if (larger.IsNegative == smaller.IsNegative)
-            {
-                signScale = 1;
-                resultSign = larger.IsNegative;
-            }
-            else
-            {
-                using var largerUFloat =
-                    new GpuBigUFloat(largerSig.AsBorrowedBigUInt(context.GpuWorkspace), larger.Exponent);
-                using var smallerUFloat =
-                    new GpuBigUFloat(smallerSig.AsBorrowedBigUInt(context.GpuWorkspace), smaller.Exponent);
-                var magCmp = GpuBigNumberAlgorithms.Compare(largerUFloat, smallerUFloat);
-                switch (magCmp)
-                {
-                    case 0:
-                        context.GpuWorkspace.Provider.ClearMemoryAsync(resultSig.DevicePointer, resultSig.NumWords,
-                            stream);
-                        return new GpuFloatResult(0, false);
-                    case > 0:
-                        // (largerSig << expDiff) - smallerSig => valB - valA (sign == -2)
-                        signScale = -2;
-                        resultSign = larger.IsNegative;
-                        break;
-                    default:
-                        // smallerSig - (largerSig << expDiff) => valA - valB (sign == -1)
-                        signScale = -1;
-                        resultSign = smaller.IsNegative;
-                        break;
-                }
-            }
-
-            var rightShift = -expDiff;
-            var wordShift = rightShift / 32;
-            var bitShift = rightShift % 32;
-            if (bitShift < 0)
-            {
-                wordShift--;
-                bitShift += 32;
-            }
-
-            var alignedWords = Math.Max(smallerSig.NumWords, largerSig.NumWords + ((expDiff + 31) / 32)) + 1;
-            using var tempResult = context.GpuWorkspace.RentTemp(alignedWords);
-
-            var blockThreads = (uint)Math.Clamp(((alignedWords + 31) / 32) * 32, 32, 1024);
-            var kernelCtx = new GpuBigFloatKernels.AotContexts.GpuBigFloatAdd
-            {
-                LargerSig = smallerSig.DevicePointer,
-                LargerWords = smallerSig.NumWords,
-                SmallerSig = largerSig.DevicePointer,
-                SmallerWords = largerSig.NumWords,
-                ResultSig = tempResult.DevicePointer,
-                NumWords = alignedWords,
-                WordShift = wordShift,
-                BitShift = bitShift,
-                SignScale = signScale
-            };
-
-            GpuBigFloatKernels.LaunchFloatAddAlignedKernelPtr(
-                kernelCtx, gridDimX: 1, blockDimX: blockThreads, hStream: stream);
-
-            return Normalize(ref context, new GpuFloatOperand(tempResult.Handle, smaller.Exponent, resultSign),
-                resultSig);
+            return fallbackStrategy.Add(ref context, in left, in right, resultSig);
         }
 
-        return fallbackStrategy.Add(ref context, in left, in right, resultSig);
+        // high: the larger exponent, or on a tie the wider significand; it is shifted onto low.
+        var leftIsHigh = left.Exponent > right.Exponent
+            || (left.Exponent == right.Exponent && left.Significand.NumWords >= right.Significand.NumWords);
+        var high = leftIsHigh ? left : right;
+        var low = leftIsHigh ? right : left;
+        return AddAligned(context.GpuWorkspace, in high, in low, resultSig);
+    }
+
+    // RZ_p(high + low) through the exact sum: low is the base of the kernel and high is shifted left onto it by
+    // e_H - e_L bits (a negative right shift); the sum, at exponent e_L, is then normalized.
+    private static GpuFloatResult AddAligned(
+        GpuWorkspace workspace, in GpuFloatOperand high, in GpuFloatOperand low, GpuBigIntMemoryHandle resultSig)
+    {
+        if (ChooseSign(workspace, in high, in low) is not { } sign)
+        {
+            workspace.Provider.ClearMemoryAsync(resultSig.DevicePointer, resultSig.NumWords, workspace.Stream);
+            return new GpuFloatResult(0, false);
+        }
+
+        var highSig = high.Significand;
+        var lowSig = low.Significand;
+        var shiftBits = Math.Abs(high.Exponent - low.Exponent);
+
+        // A right shift by -shiftBits bits as words and bits, with the bits in [0, 32).
+        var wordShift = -shiftBits / 32;
+        var bitShift = -shiftBits % 32;
+        if (bitShift < 0)
+        {
+            wordShift--;
+            bitShift += 32;
+        }
+
+        var alignedWords = Math.Max(lowSig.NumWords, highSig.NumWords + ((shiftBits + 31) / 32)) + 1;
+        using var tempResult = workspace.RentTemp(alignedWords);
+
+        var blockThreads = (uint)Math.Clamp(((alignedWords + 31) / 32) * 32, 32, 1024);
+        var kernelCtx = new GpuBigFloatKernels.AotContexts.GpuBigFloatAdd
+        {
+            BaseSig = lowSig.DevicePointer,
+            BaseWords = lowSig.NumWords,
+            ShiftedSig = highSig.DevicePointer,
+            ShiftedWords = highSig.NumWords,
+            ResultSig = tempResult.DevicePointer,
+            NumWords = alignedWords,
+            WordShift = wordShift,
+            BitShift = bitShift,
+            SignScale = sign.SignScale
+        };
+
+        GpuBigFloatKernels.LaunchFloatAddAlignedKernelPtr(
+            kernelCtx, gridDimX: 1, blockDimX: blockThreads, hStream: workspace.Stream);
+
+        return NormalizeScaled(workspace, tempResult.Handle, low.Exponent, sign.IsNegative, resultSig);
+    }
+
+    // How the kernel combines the significands, and the sign of the sum: SignScale 1 adds them; -2 subtracts the base
+    // (low) from the shifted operand (high), for |high| > |low|; -1 subtracts the shifted operand from the base. Null
+    // when the signs differ and the magnitudes are equal, so the sum is exactly 0.
+    private static (int SignScale, bool IsNegative)? ChooseSign(
+        GpuWorkspace workspace, in GpuFloatOperand high, in GpuFloatOperand low)
+    {
+        if (high.IsNegative == low.IsNegative)
+        {
+            return (1, high.IsNegative);
+        }
+
+        using var highUFloat = new GpuBigUFloat(high.Significand.AsBorrowedBigUInt(workspace), high.Exponent);
+        using var lowUFloat = new GpuBigUFloat(low.Significand.AsBorrowedBigUInt(workspace), low.Exponent);
+        return GpuBigNumberAlgorithms.Compare(highUFloat, lowUFloat) switch
+        {
+            0 => null,
+            > 0 => (-2, high.IsNegative),
+            _ => (-1, low.IsNegative),
+        };
     }
 
     /// <inheritdoc/>
