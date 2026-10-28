@@ -759,6 +759,15 @@
     "isEnabledByDefault": true
   },
   {
+    "name": "WarpShuffleWidthNotPowerOfTwo",
+    "id": "GSH0095",
+    "title": "Warp shuffle width must be 1, 2, 4, 8, 16 or 32",
+    "messageFormat": "The width of Warp.{0} is {1}; it must be 1, 2, 4, 8, 16 or 32. CUDA leaves the result of a shuffle with any other width undefined.",
+    "category": "GSharpTranspiler",
+    "defaultSeverity": "Error",
+    "isEnabledByDefault": true
+  },
+  {
     "name": "StackLinqChainTooDeep",
     "id": "SLQ0001",
     "title": "StackLinq method chain is too deep",

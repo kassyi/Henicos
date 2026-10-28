@@ -69,7 +69,7 @@ internal class Program
                                            --hex               Output in hexadecimal without decimal conversion
               cpu-pi [digits]            CPU Chudnovsky Pi baseline computation (default: 10,000)
               tf [exponent] [maxP]       Mersenne trial factoring benchmark (default: 71428571, 4000000000)
-              prp [exponent] [iters]     Fermat probable prime test benchmark (default: 71428571, 10)
+              prp [exponent] [base]      Fermat PRP test with verified checkpoints (default: 71428571, 3)
               bbp [offset] [count]       Extract hexadecimal Pi digits via BBP (default: offset 0, count 16)
               compute-bench [suite]      Run compute performance benchmark (sgemm, sha256, bs, reduce, mandelbrot,
                                          empty, fma, branch, memcopy, transpose, micro, all) (default: all)
@@ -78,6 +78,7 @@ internal class Program
               gpu-metrics [name]         Run a kernel benchmark under BenchmarkDotNet with GPU event timing
                                          (mandelbrot, empty, fma, branch, memcopy, transpose)
               arithmetic [words] [iters] Run GpuBigFloat arithmetic benchmark (default: 2048 words, 1000 iters)
+              arithmetic wide            Divide / Rsqrt with operands much wider than the result, cut on and off
               gbi-linq [elements] [words] Run GpuBigInt + StackLinq + CUDA Graph benchmark
                                          Options:
                                            --benchmark         Run via BenchmarkDotNet instead of instant runner
@@ -190,6 +191,12 @@ internal class Program
         {
             Logger<Program>.Info("Running GpuBigIntBenchmark...");
             BenchmarkRunner.Run<GpuBigIntBenchmark>();
+        }
+
+        if (target is "all" or "wide")
+        {
+            Logger<Program>.Info("Running GpuBigFloatWideOperandBenchmark...");
+            BenchmarkRunner.Run<GpuBigFloatWideOperandBenchmark>();
         }
 
         return 0;
@@ -353,19 +360,19 @@ internal class Program
     private static int RunFermatPrp(string[] args)
     {
         var exponent = 71428571;
-        var iterations = 10;
+        var @base = 3u;
 
         if (args.Length > 0 && int.TryParse(args[0], out var e))
         {
             exponent = e;
         }
 
-        if (args.Length > 1 && int.TryParse(args[1], out var i))
+        if (args.Length > 1 && uint.TryParse(args[1], out var a))
         {
-            iterations = i;
+            @base = a;
         }
 
-        FermatPrpBenchmark.RunFermatTest(exponent, iterations);
+        FermatPrpBenchmark.RunFermatTest(exponent, @base);
         return 0;
     }
 

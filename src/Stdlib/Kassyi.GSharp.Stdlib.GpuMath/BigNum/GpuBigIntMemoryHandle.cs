@@ -9,10 +9,19 @@ namespace Kassyi.GSharp.Stdlib.GpuMath.BigNum;
 /// and limb count, enabling zero-copy sub-allocation and slicing across GPU execution kernels.
 /// </para>
 /// <para>
-/// <b>Zero-Allocation:</b> As a readonly record struct, instances are passed by value with no managed heap allocations.
+/// A handle belongs to one lease of its buffer. After the buffer has been freed (and possibly handed out again), the
+/// handle is stale: reading its device pointer throws <see cref="ObjectDisposedException"/>, and freeing it again does
+/// nothing. Equality, the hash code and <see cref="ToString"/> look at the handle only and never throw.
+/// </para>
+/// <para>
+/// Only the handle that the memory manager hands out for a whole buffer owns it (<see cref="OwnsBuffer"/>); every
+/// sub-range or other view of it is borrowed and is never freed.
+/// </para>
+/// <para>
+/// <b>Zero-Allocation:</b> As a readonly struct, instances are passed by value with no managed heap allocations.
 /// </para>
 /// </remarks>
-public readonly record struct GpuBigIntMemoryHandle
+public readonly struct GpuBigIntMemoryHandle : IEquatable<GpuBigIntMemoryHandle>
 {
     /// <summary>
     /// Gets the backing device memory buffer.
@@ -39,16 +48,54 @@ public readonly record struct GpuBigIntMemoryHandle
     }
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="GpuBigIntMemoryHandle"/> struct.
+    /// Gets the generation of the lease of <see cref="Buffer"/> this handle belongs to.
     /// </summary>
-    /// <param name="buffer">The underlying device buffer containing the limbs.</param>
-    /// <param name="wordOffset">The starting word offset in the buffer.</param>
-    /// <param name="numWords">The number of words in this slice.</param>
-    internal GpuBigIntMemoryHandle(GpuBigIntDeviceBuffer buffer, int wordOffset, int numWords)
+    internal int Generation
+    {
+        get;
+    }
+
+    /// <summary>
+    /// Gets a value indicating whether this handle owns its buffer: only the whole-buffer handle returned by the memory
+    /// manager does. A borrowed handle (an element, a slice or another view) is never freed.
+    /// </summary>
+    public bool OwnsBuffer
+    {
+        get;
+    }
+
+    private GpuBigIntMemoryHandle(
+        GpuBigIntDeviceBuffer buffer, int wordOffset, int numWords, int generation, bool ownsBuffer)
     {
         Buffer = buffer;
         WordOffset = wordOffset;
         NumWords = numWords;
+        Generation = generation;
+        OwnsBuffer = ownsBuffer;
+    }
+
+    /// <summary>
+    /// Creates the handle of a new lease of the whole <paramref name="buffer"/>; only the memory manager calls this.
+    /// </summary>
+    /// <param name="buffer">A buffer of the calling manager.</param>
+    /// <returns>A handle of all words of <paramref name="buffer"/> at its current generation.</returns>
+    internal static GpuBigIntMemoryHandle CreateOwned(GpuBigIntDeviceBuffer buffer) =>
+        new(buffer, 0, buffer.TotalWords, buffer.Generation, ownsBuffer: true);
+
+    /// <summary>
+    /// Creates a handle of memory that belongs to someone outside GpuMath and is never freed here.
+    /// </summary>
+    /// <param name="buffer">A buffer without a manager.</param>
+    /// <returns>A handle of all words of <paramref name="buffer"/>; it does not own the memory.</returns>
+    /// <exception cref="ArgumentException"><paramref name="buffer"/> belongs to a memory manager.</exception>
+    internal static GpuBigIntMemoryHandle CreateExternal(GpuBigIntDeviceBuffer buffer)
+    {
+        if (buffer.Manager is not null)
+        {
+            throw new ArgumentException("An external handle must not wrap a buffer of a memory manager.", nameof(buffer));
+        }
+
+        return new GpuBigIntMemoryHandle(buffer, 0, buffer.TotalWords, buffer.Generation, ownsBuffer: false);
     }
 
     /// <summary>
@@ -57,15 +104,129 @@ public readonly record struct GpuBigIntMemoryHandle
     public bool IsDefault => Buffer == null;
 
     /// <summary>
+    /// Gets a value indicating whether the lease of this handle is still current; a default handle and a handle of
+    /// external memory are always alive.
+    /// </summary>
+    internal bool IsAlive => IsDefault || Buffer.Manager is null || Generation == Buffer.Generation;
+
+    /// <summary>
     /// Gets the raw 64-bit device memory pointer to the first limb word of this slice.
     /// </summary>
-    internal IntPtr DevicePointer => IsDefault ? IntPtr.Zero : IntPtr.Add(Buffer.Pointer, WordOffset * 4);
+    /// <exception cref="ObjectDisposedException">The buffer of this handle has been freed.</exception>
+    internal IntPtr DevicePointer
+    {
+        get
+        {
+            if (IsDefault)
+            {
+                return IntPtr.Zero;
+            }
+
+            if (!IsAlive)
+            {
+                ThrowFreed();
+            }
+
+            // A CUDA graph being captured records the pointer; it checks before each launch that the handle is alive
+            if (Buffer.Manager is DefaultGpuMemoryManager manager)
+            {
+                manager.ObserveCaptured(this);
+            }
+
+            return IntPtr.Add(Buffer.Pointer, WordOffset * 4);
+        }
+    }
+
+    /// <summary>
+    /// Returns a borrowed handle of the same words in the same lease, for code that uses the memory without freeing it.
+    /// </summary>
+    /// <returns>This handle with <see cref="OwnsBuffer"/> cleared.</returns>
+    internal GpuBigIntMemoryHandle Borrow() =>
+        IsDefault ? this : new GpuBigIntMemoryHandle(Buffer, WordOffset, NumWords, Generation, ownsBuffer: false);
+
+    /// <summary>
+    /// Returns a borrowed handle of <paramref name="numWords"/> words of this handle from word
+    /// <paramref name="wordOffset"/>, in the same lease.
+    /// </summary>
+    /// <param name="wordOffset">The first word, relative to <see cref="WordOffset"/>.</param>
+    /// <param name="numWords">The number of words.</param>
+    /// <returns>The sub-handle.</returns>
+    /// <exception cref="ArgumentOutOfRangeException">The range is not inside this handle.</exception>
+    internal GpuBigIntMemoryHandle Slice(int wordOffset, int numWords)
+    {
+        if (wordOffset < 0 || wordOffset > NumWords)
+        {
+            throw new ArgumentOutOfRangeException(nameof(wordOffset),
+                $"The slice [{wordOffset}, {wordOffset} + {numWords}) is outside the {NumWords} words of the handle.");
+        }
+
+        if (numWords < 0 || numWords > NumWords - wordOffset)
+        {
+            throw new ArgumentOutOfRangeException(nameof(numWords),
+                $"The slice [{wordOffset}, {wordOffset} + {numWords}) is outside the {NumWords} words of the handle.");
+        }
+
+        return IsDefault
+            ? this
+            : new GpuBigIntMemoryHandle(Buffer, WordOffset + wordOffset, numWords, Generation, ownsBuffer: false);
+    }
 
     /// <summary>
     /// Wraps this memory handle as a non-owning temporary <see cref="GpuBigUInt"/> view without copying or allocating device memory.
     /// </summary>
     /// <param name="workspace">The execution workspace.</param>
     /// <returns>A non-owning <see cref="GpuBigUInt"/> view over this memory handle.</returns>
-    internal GpuBigUInt AsBorrowedBigUInt(GpuWorkspace workspace) => new(workspace, this, isTemp: true);
-}
+    internal GpuBigUInt AsBorrowedBigUInt(GpuWorkspace workspace) => new(workspace, Borrow());
 
+    /// <summary>
+    /// Wraps this memory handle as a borrowed <see cref="GpuBigUIntView"/> for code that uses it within one call.
+    /// </summary>
+    /// <param name="workspace">The execution workspace.</param>
+    /// <returns>A view over this memory handle.</returns>
+    internal GpuBigUIntView AsView(GpuWorkspace workspace) => new(workspace, this);
+
+    /// <summary>
+    /// Indicates whether two handles refer to the same words of the same lease of the same buffer;
+    /// <see cref="OwnsBuffer"/> is not compared (the owner and a borrowed view of it are the same memory).
+    /// </summary>
+    /// <param name="other">The handle to compare with.</param>
+    /// <returns><see langword="true"/> if both handles are identical; otherwise, <see langword="false"/>.</returns>
+    public bool Equals(GpuBigIntMemoryHandle other) =>
+        ReferenceEquals(Buffer, other.Buffer) && WordOffset == other.WordOffset && NumWords == other.NumWords &&
+        Generation == other.Generation;
+
+    /// <inheritdoc/>
+    public override bool Equals(object? obj) => obj is GpuBigIntMemoryHandle other && Equals(other);
+
+    /// <inheritdoc/>
+    public override int GetHashCode() =>
+        HashCode.Combine(RuntimeHelpers.GetHashCode(Buffer), WordOffset, NumWords, Generation);
+
+    /// <summary>
+    /// Returns the offset, the word count and the generation of the handle; never reads the device pointer.
+    /// </summary>
+    /// <returns>A string for debugging.</returns>
+    public override string ToString() =>
+        $"GpuBigIntMemoryHandle(WordOffset={WordOffset}, NumWords={NumWords}, Generation={Generation}, OwnsBuffer={OwnsBuffer}, IsDefault={IsDefault})";
+
+    /// <summary>
+    /// Determines whether two handles are identical.
+    /// </summary>
+    /// <param name="left">The first handle.</param>
+    /// <param name="right">The second handle.</param>
+    /// <returns><see langword="true"/> if the handles are identical; otherwise, <see langword="false"/>.</returns>
+    public static bool operator ==(GpuBigIntMemoryHandle left, GpuBigIntMemoryHandle right) => left.Equals(right);
+
+    /// <summary>
+    /// Determines whether two handles differ.
+    /// </summary>
+    /// <param name="left">The first handle.</param>
+    /// <param name="right">The second handle.</param>
+    /// <returns><see langword="true"/> if the handles differ; otherwise, <see langword="false"/>.</returns>
+    public static bool operator !=(GpuBigIntMemoryHandle left, GpuBigIntMemoryHandle right) => !left.Equals(right);
+
+    [DoesNotReturn]
+    private static void ThrowFreed() =>
+        throw new ObjectDisposedException(nameof(GpuBigIntMemoryHandle),
+            "The device buffer of this handle has been freed (the value was disposed, or its workspace was disposed).");
+}

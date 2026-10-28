@@ -26,6 +26,8 @@ public readonly ref struct ContextValue
     public static ContextValue operator +(ContextValue a, ContextValue b) => throw new InvalidOperationException();
 
     public static implicit operator ContextValue(uint[] data) => new(data);
+
+    public static implicit operator uint[](ContextValue value) => value.Data;
 }
 
 public static partial class OperatorMacroContextKernels

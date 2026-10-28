@@ -6,6 +6,12 @@ namespace Kassyi.GSharp.Compiler.Transpiler;
 internal sealed partial class ManagedExecutionRewriter(SemanticModel semanticModel, bool isDeviceFunction)
     : CSharpSyntaxRewriter
 {
+    /// <summary>
+    /// The thread-static flag through which a managed state machine requests a grid sync from the managed launcher
+    /// (<see cref="CpuHostLaunchEmitter"/>).
+    /// </summary>
+    internal const string ManagedGridSyncRequested = "global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested";
+
     private int _inLambdaOrLocalFuncCount;
 
     // The label after the Gpu.SingleThread body being rewritten, when the body has a return, and the lambda depth of
@@ -90,10 +96,13 @@ internal sealed partial class ManagedExecutionRewriter(SemanticModel semanticMod
             // The managed shuffle helpers keep the warp exchange themselves; any context will do
             GSharpInternalNames.SuspendingCall.Root =>
                 SyntaxFactory.IdentifierName(GSharpInternalNames.StateMachine.Context).WithTriviaFrom(node),
+            // A grid sync request goes to the launcher whether a kernel or a device function makes it (#665):
+            // global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested
+            GSharpInternalNames.StateMachine.YieldedForGridSync =>
+                SyntaxFactory.ParseExpression(ManagedGridSyncRequested).WithTriviaFrom(node),
             // __gsharp_ctx.<name>
             GSharpInternalNames.StateMachine.State
-                or GSharpInternalNames.StateMachine.WarpExchange
-                or GSharpInternalNames.StateMachine.YieldedForGridSync =>
+                or GSharpInternalNames.StateMachine.WarpExchange =>
                 SyntaxFactory.MemberAccessExpression(
                     SyntaxKind.SimpleMemberAccessExpression,
                     SyntaxFactory.IdentifierName(GSharpInternalNames.StateMachine.Context),

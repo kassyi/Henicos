@@ -72,9 +72,9 @@ public GpuBigUInt Value { get; }
 | --- | --- |
 | [CompareTo(GpuBigInt)](#comparetogpubigint) | Compares this instance with another `GpuBigInt` and returns an integer that indicates whether this instance precedes, follows, or appears in the same position in the sort order as the parameter. |
 | [Dispose()](#dispose) | Releases the GPU global device memory resources allocated for the underlying `Value`. |
-| [Equals(GpuBigInt)](#equalsgpubigint) | Indicates whether the current instance is equal to another `GpuBigInt` instance. |
+| [Equals(GpuBigInt)](#equalsgpubigint) | Indicates whether the current instance has the same magnitude buffer and the same sign as another `GpuBigInt`. |
 | [Equals(Object?)](#equalsobject) | Determines whether the specified object is equal to the current instance. |
-| [GetHashCode()](#gethashcode) | Returns the hash code for this instance. |
+| [GetHashCode()](#gethashcode) | Returns the hash code of the buffer identity and the sign, consistent with `Equals(GpuBigInt)`. |
 
 ## CompareTo(GpuBigInt)
 
@@ -104,7 +104,7 @@ public void Dispose();
 
 ## Equals(GpuBigInt)
 
-Indicates whether the current instance is equal to another `GpuBigInt` instance.
+Indicates whether the current instance has the same magnitude buffer and the same sign as another `GpuBigInt`.
 
 ```csharp
 public bool Equals(GpuBigInt other);
@@ -118,7 +118,11 @@ A `GpuBigInt` to compare with this instance.
 #### Returns
 
 _Boolean_<br>
-`true` if the current instance is equal to the `other` parameter; otherwise, `false`.
+`true` if `Value` refers to the same buffer (`GpuBigUInt.Equals(GpuBigUInt)`) and `IsNegative` is the same; otherwise, `false`.
+
+#### Remarks
+
+Unlike the value-equal float types, `Equals` and `GetHashCode` compare identity: two separate buffers holding the same value (including `+0` and `-0`) are not equal. Use `==` or `CompareTo` to compare values on the GPU. Neither member reads device memory, so both also work on a disposed value.
 
 ## Equals(Object?)
 
@@ -140,7 +144,7 @@ _Boolean_<br>
 
 ## GetHashCode()
 
-Returns the hash code for this instance.
+Returns the hash code of the buffer identity and the sign, consistent with `Equals(GpuBigInt)`.
 
 ```csharp
 public override int GetHashCode();
@@ -149,7 +153,7 @@ public override int GetHashCode();
 #### Returns
 
 _Int32_<br>
-A 32-bit signed integer hash code (`0` if `Value.IsZero()` is `true`).
+A 32-bit signed integer hash code.
 
 ## Operators
 
@@ -159,8 +163,8 @@ A 32-bit signed integer hash code (`0` if `Value.IsZero()` is `true`).
 | `operator -(GpuBigInt, GpuBigInt)` | Creates a deferred [`GpuBigIntExpr`](expressions/GpuBigIntExpr.md) representing the subtraction of two signed big integers. |
 | `operator *(GpuBigInt, GpuBigInt)` | Creates a deferred [`GpuBigIntExpr`](expressions/GpuBigIntExpr.md) representing the multiplication of two signed big integers. |
 | `operator /(GpuBigInt, GpuBigInt)` | Creates a deferred [`GpuBigIntExpr`](expressions/GpuBigIntExpr.md) representing the division of two signed big integers. |
-| `operator ==(GpuBigInt, GpuBigInt)` | Determines whether two specified `GpuBigInt` instances are equal. |
-| `operator !=(GpuBigInt, GpuBigInt)` | Determines whether two specified `GpuBigInt` instances are not equal. |
+| `operator ==(GpuBigInt, GpuBigInt)` | Determines whether two specified `GpuBigInt` instances have the same value on the GPU (`+0` equals `-0`). |
+| `operator !=(GpuBigInt, GpuBigInt)` | Determines whether two specified `GpuBigInt` instances have different values on the GPU. |
 | `operator <(GpuBigInt, GpuBigInt)` | Determines whether one specified `GpuBigInt` is less than another specified `GpuBigInt`. |
 | `operator >(GpuBigInt, GpuBigInt)` | Determines whether one specified `GpuBigInt` is greater than another specified `GpuBigInt`. |
 | `operator <=(GpuBigInt, GpuBigInt)` | Determines whether one specified `GpuBigInt` is less than or equal to another specified `GpuBigInt`. |

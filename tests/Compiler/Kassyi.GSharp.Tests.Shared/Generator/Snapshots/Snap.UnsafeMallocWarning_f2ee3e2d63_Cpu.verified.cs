@@ -119,7 +119,6 @@ public static readonly string MallocInKernel_FullSource=global::Kassyi.GSharp.Ge
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__TestCases__Diagnostics__UnsafeMallocWarningKernels__MallocInKernel {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
-public bool __gsharp_yielded_for_grid_sync;
 }
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__TestCases__Diagnostics__UnsafeMallocWarningKernels__MallocInKernel(int[] output, __gsharp_context_Kassyi__GSharp__Tests__Shared__TestCases__Diagnostics__UnsafeMallocWarningKernels__MallocInKernel __gsharp_ctx) {
 {
@@ -203,9 +202,9 @@ if (__gsharp_contexts[__gsharp_linear_tid].__gsharp_state != -1)
 {
 anyGridActive = true;
 anyBlockActive = true;
-__gsharp_contexts[__gsharp_linear_tid].__gsharp_yielded_for_grid_sync = false;
+global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested = false;
 __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__TestCases__Diagnostics__UnsafeMallocWarningKernels__MallocInKernel(output, __gsharp_contexts[__gsharp_linear_tid]);
-if (__gsharp_contexts[__gsharp_linear_tid].__gsharp_yielded_for_grid_sync)
+if (global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested)
 {
 gridSyncRequested = true;
 }
@@ -309,7 +308,6 @@ public static readonly string SuppressedMalloc_FullSource=global::Kassyi.GSharp.
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__TestCases__Diagnostics__UnsafeMallocWarningKernels__SuppressedMalloc {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
-public bool __gsharp_yielded_for_grid_sync;
 }
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__TestCases__Diagnostics__UnsafeMallocWarningKernels__SuppressedMalloc(int[] output, __gsharp_context_Kassyi__GSharp__Tests__Shared__TestCases__Diagnostics__UnsafeMallocWarningKernels__SuppressedMalloc __gsharp_ctx) {
 {
@@ -393,9 +391,9 @@ if (__gsharp_contexts[__gsharp_linear_tid].__gsharp_state != -1)
 {
 anyGridActive = true;
 anyBlockActive = true;
-__gsharp_contexts[__gsharp_linear_tid].__gsharp_yielded_for_grid_sync = false;
+global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested = false;
 __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__TestCases__Diagnostics__UnsafeMallocWarningKernels__SuppressedMalloc(output, __gsharp_contexts[__gsharp_linear_tid]);
-if (__gsharp_contexts[__gsharp_linear_tid].__gsharp_yielded_for_grid_sync)
+if (global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested)
 {
 gridSyncRequested = true;
 }

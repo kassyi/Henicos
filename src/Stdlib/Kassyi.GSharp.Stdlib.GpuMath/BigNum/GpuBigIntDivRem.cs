@@ -66,19 +66,32 @@ public static partial class GpuBigIntDivRem
     /// Computes the reciprocal <c>floor(2^targetBits / b)</c> of the operand <c>b</c> using Newton-Raphson iterations on
     /// the GPU, followed by an exact correction on the device.
     /// </summary>
-    /// <param name="targetOperand">The divisor <c>b</c>, normalized (the top bit of its top word set), as every caller
-    /// passes it.</param>
+    /// <param name="targetOperand">The divisor <c>b</c>. It need not be normalized: the initial approximation is built
+    /// from its bit length, and the big-float <c>Reciprocal</c> passes significands with leading zero bits or words.</param>
     /// <param name="resultBuffer">Receives exactly <c>floor(2^targetBits / b)</c>; it must hold
     /// at least <c>(targetBits + 31) / 32</c> words.</param>
-    /// <param name="targetBits">The exponent <c>T</c> of the numerator <c>2^T</c>; <c>2^T &gt;= 4b</c>.</param>
-    /// <param name="marginWords">The margin words passed to the provider.</param>
+    /// <param name="targetBits">The exponent <c>T</c> of the numerator <c>2^T</c>; <c>2^T &gt;= 4b</c>. The result
+    /// must fit in <c>(T + 31) / 32</c> words: <c>floor(2^T / b) &lt;= 2^(T - 1)</c> does for every <c>b &gt;= 2</c>, but
+    /// <c>2^T / 1</c> needs <c>T + 1</c> bits, so a caller that may pass <c>b = 1</c> uses a <c>T</c> that is not a
+    /// multiple of 32 (the big-float <c>Reciprocal</c> uses <c>32·w - 1</c>).</param>
+    /// <param name="marginWords">Passed on to the provider's context; the reciprocal kernel does not read it, since
+    /// <paramref name="targetBits"/> sets the precision.</param>
     /// <exception cref="DivideByZeroException">Thrown when <paramref name="targetOperand"/> is zero.</exception>
     /// <remarks>
     /// The Newton-Raphson result is <c>floor(2^T / b)</c> or one less; the kernel then computes <c>r = 2^T - b * x</c>
     /// and moves <c>x</c> by the steps that bring <c>r</c> into <c>[0, b)</c>, without a host synchronization. If 1000 steps
     /// do not suffice, the next read of the workspace stream throws <see cref="InvalidOperationException"/>.
     /// </remarks>
-    internal static void Reciprocal(GpuBigUInt targetOperand, GpuBigUInt resultBuffer, int targetBits,
+    internal static void Reciprocal(
+        scoped GpuBigUIntView targetOperand,
+        scoped GpuBigUIntView resultBuffer,
+        int targetBits,
+        int marginWords = 0
+    ) =>
+        ReciprocalCore(targetOperand.AsBorrowedBigUInt(), resultBuffer.AsBorrowedBigUInt(), targetBits, marginWords);
+
+    // Reciprocal on the owned type; the internal method above takes views and borrows them
+    private static void ReciprocalCore(GpuBigUInt targetOperand, GpuBigUInt resultBuffer, int targetBits,
         int marginWords = 0)
     {
         var n = targetOperand.NumWords;
@@ -129,7 +142,21 @@ public static partial class GpuBigIntDivRem
     /// <remarks>
     /// <para><b>Algorithm:</b> Evaluates division via normalized reciprocal multiplication on GPU followed by quotient-remainder correction.</para>
     /// </remarks>
-    public static void DivRem(GpuBigUInt leftOperand, GpuBigUInt rightOperand,
+    public static void DivRem(
+        scoped GpuBigUIntView leftOperand,
+        scoped GpuBigUIntView rightOperand,
+        scoped GpuBigUIntView quotientBuffer,
+        scoped GpuBigUIntView remainderBuffer
+    ) =>
+        DivRemCore(
+            leftOperand.AsBorrowedBigUInt(),
+            rightOperand.AsBorrowedBigUInt(),
+            quotientBuffer.AsBorrowedBigUInt(),
+            remainderBuffer.AsBorrowedBigUInt()
+        );
+
+    // DivRem on the owned type; the public method above takes views and borrows them
+    private static void DivRemCore(GpuBigUInt leftOperand, GpuBigUInt rightOperand,
         GpuBigUInt quotientBuffer, GpuBigUInt remainderBuffer)
     {
         var nA = leftOperand.NumWords;
@@ -308,7 +335,27 @@ public static partial class GpuBigIntDivRem
     /// <param name="aActualWords">The actual number of words in the dividend.</param>
     /// <param name="quotientBuffer">The buffer to store the computed quotient.</param>
     /// <param name="remainderBuffer">The buffer to store the computed remainder.</param>
-    public static void Reduce(GpuBigUInt leftOperand, GpuBigUInt rightOperand, GpuBigUInt reciprocalOfB,
+    public static void Reduce(
+        scoped GpuBigUIntView leftOperand,
+        scoped GpuBigUIntView rightOperand,
+        scoped GpuBigUIntView reciprocalOfB,
+        int targetBits,
+        int aActualWords,
+        scoped GpuBigUIntView quotientBuffer,
+        scoped GpuBigUIntView remainderBuffer
+    ) =>
+        ReduceCore(
+            leftOperand.AsBorrowedBigUInt(),
+            rightOperand.AsBorrowedBigUInt(),
+            reciprocalOfB.AsBorrowedBigUInt(),
+            targetBits,
+            aActualWords,
+            quotientBuffer.AsBorrowedBigUInt(),
+            remainderBuffer.AsBorrowedBigUInt()
+        );
+
+    // Reduce on the owned type; the public method above takes views and borrows them
+    private static void ReduceCore(GpuBigUInt leftOperand, GpuBigUInt rightOperand, GpuBigUInt reciprocalOfB,
         int targetBits, int aActualWords, GpuBigUInt quotientBuffer, GpuBigUInt remainderBuffer)
     {
         var nA = leftOperand.NumWords;
@@ -388,7 +435,27 @@ public static partial class GpuBigIntDivRem
     /// <param name="aActualWords">The actual word count of the left operand.</param>
     /// <param name="quotientBuffer">The buffer to store the quotient result.</param>
     /// <param name="remainderBuffer">The buffer to store the remainder result.</param>
-    public static void ReduceZeroSync(GpuBigUInt leftOperand, GpuBigUInt rightOperand, GpuBigUInt reciprocalOfB,
+    public static void ReduceZeroSync(
+        scoped GpuBigUIntView leftOperand,
+        scoped GpuBigUIntView rightOperand,
+        scoped GpuBigUIntView reciprocalOfB,
+        int targetBits,
+        int aActualWords,
+        scoped GpuBigUIntView quotientBuffer,
+        scoped GpuBigUIntView remainderBuffer
+    ) =>
+        ReduceZeroSyncCore(
+            leftOperand.AsBorrowedBigUInt(),
+            rightOperand.AsBorrowedBigUInt(),
+            reciprocalOfB.AsBorrowedBigUInt(),
+            targetBits,
+            aActualWords,
+            quotientBuffer.AsBorrowedBigUInt(),
+            remainderBuffer.AsBorrowedBigUInt()
+        );
+
+    // ReduceZeroSync on the owned type; the public method above takes views and borrows them
+    private static void ReduceZeroSyncCore(GpuBigUInt leftOperand, GpuBigUInt rightOperand, GpuBigUInt reciprocalOfB,
         int targetBits, int aActualWords, GpuBigUInt quotientBuffer, GpuBigUInt remainderBuffer)
     {
         var nA = leftOperand.NumWords;
@@ -525,7 +592,11 @@ public static partial class GpuBigIntDivRem
     /// <param name="gpuBigInt">The big integer to inspect.</param>
     /// <returns>The bit length of the big integer, or 0 if the value is zero.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static int GetActualBits(GpuBigUInt gpuBigInt) => gpuBigInt.GetBitLength();
+    public static int GetActualBits(scoped GpuBigUIntView gpuBigInt) =>
+        GetActualBitsCore(gpuBigInt.AsBorrowedBigUInt());
+
+    // GetActualBits on the owned type; the public method above takes views and borrows them
+    private static int GetActualBitsCore(GpuBigUInt gpuBigInt) => gpuBigInt.GetBitLength();
 
     /// <summary>
     /// Computes the arbitrary-precision integer quotient of two numbers on the GPU (<c>resultBuffer = leftOperand / rightOperand</c>).
@@ -535,7 +606,15 @@ public static partial class GpuBigIntDivRem
     /// <param name="resultBuffer">The destination buffer receiving the quotient.</param>
     /// <exception cref="ArgumentException">Thrown when buffer sizes do not match.</exception>
     /// <exception cref="DivideByZeroException">Thrown when <paramref name="rightOperand"/> is zero.</exception>
-    public static void Div(GpuBigUInt leftOperand, GpuBigUInt rightOperand,
+    public static void Div(
+        scoped GpuBigUIntView leftOperand,
+        scoped GpuBigUIntView rightOperand,
+        scoped GpuBigUIntView resultBuffer
+    ) =>
+        DivCore(leftOperand.AsBorrowedBigUInt(), rightOperand.AsBorrowedBigUInt(), resultBuffer.AsBorrowedBigUInt());
+
+    // Div on the owned type; the public method above takes views and borrows them
+    private static void DivCore(GpuBigUInt leftOperand, GpuBigUInt rightOperand,
         GpuBigUInt resultBuffer)
     {
         ThrowIfSizeMismatch(leftOperand, rightOperand, resultBuffer);
@@ -551,7 +630,15 @@ public static partial class GpuBigIntDivRem
     /// <param name="resultBuffer">The destination buffer receiving the remainder.</param>
     /// <exception cref="ArgumentException">Thrown when buffer sizes do not match.</exception>
     /// <exception cref="DivideByZeroException">Thrown when <paramref name="rightOperand"/> is zero.</exception>
-    public static void Mod(GpuBigUInt leftOperand, GpuBigUInt rightOperand,
+    public static void Mod(
+        scoped GpuBigUIntView leftOperand,
+        scoped GpuBigUIntView rightOperand,
+        scoped GpuBigUIntView resultBuffer
+    ) =>
+        ModCore(leftOperand.AsBorrowedBigUInt(), rightOperand.AsBorrowedBigUInt(), resultBuffer.AsBorrowedBigUInt());
+
+    // Mod on the owned type; the public method above takes views and borrows them
+    private static void ModCore(GpuBigUInt leftOperand, GpuBigUInt rightOperand,
         GpuBigUInt resultBuffer)
     {
         ThrowIfSizeMismatch(leftOperand, rightOperand, resultBuffer);

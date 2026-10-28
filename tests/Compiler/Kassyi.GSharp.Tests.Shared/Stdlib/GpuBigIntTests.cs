@@ -66,8 +66,8 @@ public class GpuBigIntegerTests
             Assert.False(a > b);
             Assert.True(a <= b);
             Assert.True(a >= b);
-            Assert.True(a.Equals(b));
-            Assert.Equal(a.GetHashCode(), b.GetHashCode());
+            // Equals is the identity of the buffers (#638): equal values in two buffers are == but not Equals
+            Assert.False(a.Equals(b));
         }
         else if (expectedCmp > 0)
         {

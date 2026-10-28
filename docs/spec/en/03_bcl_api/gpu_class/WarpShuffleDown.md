@@ -44,7 +44,7 @@ The variable to exchange.
 The offset to shift the lane ID down by.
 
 `width` <i>int</i><br>
-The logical warp width (default is 32).
+The logical warp width: 1, 2, 4, 8, 16 or 32 (default is 32). Any other width is undefined on CUDA: a constant one is reported as [GSH0095](../diagnostics/GSH0095.md), and the CPU paths throw `InvalidOperationException` for one known only at run time.
 
 #### Returns
 
@@ -76,7 +76,7 @@ The variable to exchange.
 The offset to shift the lane ID down by.
 
 `width` <i>int</i><br>
-The logical warp width (default is 32).
+The logical warp width: 1, 2, 4, 8, 16 or 32 (default is 32). Any other width is undefined on CUDA: a constant one is reported as [GSH0095](../diagnostics/GSH0095.md), and the CPU paths throw `InvalidOperationException` for one known only at run time.
 
 #### Returns
 
@@ -109,7 +109,7 @@ The variable to exchange.
 The offset to shift the lane ID down by.
 
 `width` <i>int</i><br>
-The logical warp width (default is 32).
+The logical warp width: 1, 2, 4, 8, 16 or 32 (default is 32). Any other width is undefined on CUDA: a constant one is reported as [GSH0095](../diagnostics/GSH0095.md), and the CPU paths throw `InvalidOperationException` for one known only at run time.
 
 #### Returns
 
@@ -180,6 +180,24 @@ Warp Shuffle operations allow threads within the same warp (32 threads) to direc
 `ShuffleDownSync` shifts data from a higher lane ID to a lower lane ID. Specifically, the thread at `LaneId` receives the value of `var` from the thread at `LaneId + delta`. This is the standard primitive for implementing **tree reductions** (e.g., finding the sum or max of all values in a warp).
 
 Maps to PTX `shfl.down.sync` instructions. Thread synchronization across the active mask is implicit, avoiding the need for `Gpu.SyncThreads()`.
+
+### Undefined Results and the CPU Paths
+
+A shuffle that reads a lane outside the caller's segment of `width` lanes is defined: the caller keeps its own value.
+Two forms are undefined on CUDA, which returns an unspecified value without an error:
+
+- A width other than 1, 2, 4, 8, 16 or 32.
+- A source lane that does not exist in the block: in the last warp of a block whose size is not a multiple of 32 (for
+  example lanes 9 to 31 of a block of 9 threads).
+
+The CPU paths (the native CPU build and the managed fallback) check both and throw `InvalidOperationException` with the
+place of the shuffle, for example `G#: Warp.ShuffleDownSync at Kernels.cu.cs(6,13) reads lane 16 of warp 0, which does
+not exist in a block of 9 threads (CUDA leaves the value undefined. ...)`; the rest of the message says how to avoid the
+read. Run a kernel on the CPU dialect to find these shuffles; the release CUDA build does not check them.
+
+To avoid the read, keep the source lane within the block (limit `delta`, `srcLane` or `laneMask` in the last warp), or
+launch a multiple of 32 threads. A `mask` that leaves the lane out, such as `Warp.ActiveMask()`, does not help: the mask
+does not limit which lane is read, and CUDA still leaves the value undefined.
 
 ## See also
 

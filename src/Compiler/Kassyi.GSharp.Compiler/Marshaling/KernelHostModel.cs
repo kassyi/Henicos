@@ -12,9 +12,6 @@ namespace Kassyi.GSharp.Compiler.Marshaling;
 /// </remarks>
 internal readonly record struct KernelHostModel
 {
-    private static readonly ITranspilerDialect s_cudaDialect = new GSharpCudaDialect();
-    private static readonly ITranspilerDialect s_cpuDialect = new StandardCppDialect();
-
     public string Name { get; init; }
 
     /// <summary>The position among the ordinary methods with the same name, or -1 (<see cref="GlobalCppNames.GetOverloadOrdinal"/>).</summary>
@@ -92,8 +89,8 @@ internal readonly record struct KernelHostModel
             DisplaySignature = KernelHostNames.FormatSignature(kernel.Name, parameters),
             Parameters = parameters,
             Structs = structs,
-            CudaLayoutGuards = CollectLayoutGuards(kernel, s_cudaDialect),
-            CpuLayoutGuards = CollectLayoutGuards(kernel, s_cpuDialect)
+            CudaLayoutGuards = CollectLayoutGuards(kernel, HostDialects.Cuda),
+            CpuLayoutGuards = CollectLayoutGuards(kernel, HostDialects.Cpu)
         };
     }
 

@@ -96,6 +96,19 @@ public static class ManagedGpuContext
     [ThreadStatic]
     public static int GridDimZ;
 
+    /// <summary>
+    /// Set by generated code when the GPU thread being stepped reaches <c>Gpu.SyncGrid</c>, in the kernel or in any
+    /// device function it calls; the managed launcher clears it before each step and reads it after. For generated code
+    /// only.
+    /// </summary>
+    /// <remarks>
+    /// The managed launcher steps one GPU thread at a time on one host thread, so a request set during a step belongs to
+    /// that GPU thread, however deep the call that set it.
+    /// </remarks>
+    [ThreadStatic]
+    [EditorBrowsable(EditorBrowsableState.Never)]
+    public static bool GridSyncRequested;
+
     // One region per shared memory declaration per block. A later declaration never moves an earlier region: threads
     // keep the span they were handed, so moving a region would leave them writing to a copy nobody else reads. Only the
     // same declaration reached with a larger count moves its own region (see GrowRegion).
@@ -320,6 +333,46 @@ public static class ManagedGpuContext
         Unsafe.WriteUnaligned(ref GetWarpExchangeBuffer()[GetWarpExchangeOffset(plane, linearTid)], value);
     }
 
+    // The shuffles that CUDA leaves undefined throw InvalidOperationException with the place of the shuffle (#666): a width
+    // that is not 1, 2, 4, 8, 16 or 32, and a source lane that does not exist in the block (the last warp of a block whose
+    // size is not a multiple of 32). A source outside the caller's segment is defined: up and down return the caller's own
+    // value, xor reads an earlier segment and returns the caller's own value for a later one, idx reads lane
+    // srcLane % width of the segment (#692). The native CPU prelude (WarpAndHints.hpp) applies
+    // the same rules.
+    private static void CheckShuffleWidth(int width, string name, string location)
+    {
+        if (width is not (1 or 2 or 4 or 8 or 16 or 32))
+        {
+            throw new InvalidOperationException(
+                $"G#: {name} at {location} has width {width}; the width must be 1, 2, 4, 8, 16 or 32 (CUDA leaves the result undefined)");
+        }
+    }
+
+    // How to avoid reading a lane that does not exist; a mask that leaves the lane out does not stop the read (the native
+    // prelude, WarpAndHints.hpp, writes the same text)
+    private const string MissingLaneHint =
+        "(CUDA leaves the value undefined. Keep the source lane within the block by limiting delta, srcLane or laneMask, or launch a multiple of 32 threads; the mask does not limit which lane is read)";
+
+    private static int LinearThreadId => ThreadIdxZ * BlockDimY * BlockDimX + ThreadIdxY * BlockDimX + ThreadIdxX;
+
+    // Reads the value that lane srcLane of the caller's warp published in the given plane, after checking that the lane
+    // exists in the block
+    private static T ReadShuffleLane<T>(int plane, int linearTid, int srcLane, string name, string location)
+        where T : unmanaged
+    {
+        var threads = BlockDimX * BlockDimY * BlockDimZ;
+        var warpBase = linearTid & ~31;
+        var srcTid = warpBase + srcLane;
+        if (srcTid >= threads)
+        {
+            throw new InvalidOperationException(
+                $"G#: {name} at {location} reads lane {srcLane} of warp {warpBase / 32}, which does not exist in a block of {threads} threads " +
+                MissingLaneHint);
+        }
+
+        return Unsafe.ReadUnaligned<T>(ref GetWarpExchangeBuffer()[GetWarpExchangeOffset(plane, srcTid)]);
+    }
+
     /// <summary>
     /// Internal mock for warp shuffle down. Do not use directly.
     /// </summary>
@@ -330,33 +383,23 @@ public static class ManagedGpuContext
     /// <param name="val">The value to shuffle.</param>
     /// <param name="delta">The lane offset.</param>
     /// <param name="width">The logical warp width.</param>
+    /// <param name="location">The place of the shuffle in the C# source, for the error message.</param>
     /// <returns>The shuffled value.</returns>
+    /// <exception cref="InvalidOperationException">The width or the source lane is undefined on CUDA.</exception>
     [EditorBrowsable(EditorBrowsableState.Never)]
     public static T __gsharp_warp_shuffle_read_down_sync<TContext, T>(TContext ctx, uint mask, T val, uint delta,
-        int width = 32) where T : unmanaged
+        int width, string location) where T : unmanaged
     {
-        var linearTid = ThreadIdxZ * BlockDimY * BlockDimX + ThreadIdxY * BlockDimX + ThreadIdxX;
+        const string Name = "Warp.ShuffleDownSync";
+        var linearTid = LinearThreadId;
         var plane = TakeWarpExchangePlane(linearTid);
+        CheckShuffleWidth(width, Name, location);
         var laneId = linearTid % 32;
-        var warpStartTid = linearTid - laneId;
-
         var logicalLane = laneId % width;
-        var targetLogicalLane = logicalLane + (int)delta;
-
-        if (targetLogicalLane >= width)
-        {
-            return val;
-        }
-
-        var globalSrcLane = laneId - logicalLane + targetLogicalLane;
-        if (globalSrcLane >= 32)
-        {
-            return val;
-        }
-
-        var targetTid = warpStartTid + globalSrcLane;
-        return Unsafe.ReadUnaligned<T>(ref GetWarpExchangeBuffer()[GetWarpExchangeOffset(plane, targetTid)]);
-
+        var srcLogicalLane = (long)logicalLane + delta;
+        return srcLogicalLane >= width
+            ? val
+            : ReadShuffleLane<T>(plane, linearTid, laneId - logicalLane + (int)srcLogicalLane, Name, location);
     }
 
     /// <summary>
@@ -369,32 +412,22 @@ public static class ManagedGpuContext
     /// <param name="val">The value to shuffle.</param>
     /// <param name="delta">The lane offset.</param>
     /// <param name="width">The logical warp width.</param>
+    /// <param name="location">The place of the shuffle in the C# source, for the error message.</param>
     /// <returns>The shuffled value.</returns>
+    /// <exception cref="InvalidOperationException">The width or the source lane is undefined on CUDA.</exception>
     [EditorBrowsable(EditorBrowsableState.Never)]
     public static T __gsharp_warp_shuffle_read_up_sync<TContext, T>(TContext ctx, uint mask, T val, uint delta,
-        int width = 32) where T : unmanaged
+        int width, string location) where T : unmanaged
     {
-        var linearTid = ThreadIdxZ * BlockDimY * BlockDimX + ThreadIdxY * BlockDimX + ThreadIdxX;
+        const string Name = "Warp.ShuffleUpSync";
+        var linearTid = LinearThreadId;
         var plane = TakeWarpExchangePlane(linearTid);
+        CheckShuffleWidth(width, Name, location);
         var laneId = linearTid % 32;
-        var warpStartTid = linearTid - laneId;
-
         var logicalLane = laneId % width;
-        var targetLogicalLane = logicalLane - (int)delta;
-
-        if (targetLogicalLane < 0)
-        {
-            return val;
-        }
-
-        var globalSrcLane = laneId - logicalLane + targetLogicalLane;
-        if (globalSrcLane >= 32)
-        {
-            return val;
-        }
-
-        var targetTid = warpStartTid + globalSrcLane;
-        return Unsafe.ReadUnaligned<T>(ref GetWarpExchangeBuffer()[GetWarpExchangeOffset(plane, targetTid)]);
+        return logicalLane < delta
+            ? val
+            : ReadShuffleLane<T>(plane, linearTid, laneId - (int)delta, Name, location);
     }
 
     /// <summary>
@@ -407,32 +440,24 @@ public static class ManagedGpuContext
     /// <param name="val">The value to shuffle.</param>
     /// <param name="delta">The lane XOR mask.</param>
     /// <param name="width">The logical warp width.</param>
+    /// <param name="location">The place of the shuffle in the C# source, for the error message.</param>
     /// <returns>The shuffled value.</returns>
+    /// <exception cref="InvalidOperationException">The width or the source lane is undefined on CUDA.</exception>
     [EditorBrowsable(EditorBrowsableState.Never)]
     public static T __gsharp_warp_shuffle_read_xor_sync<TContext, T>(TContext ctx, uint mask, T val, int delta,
-        int width = 32) where T : unmanaged
+        int width, string location) where T : unmanaged
     {
-        var linearTid = ThreadIdxZ * BlockDimY * BlockDimX + ThreadIdxY * BlockDimX + ThreadIdxX;
+        const string Name = "Warp.ShuffleXorSync";
+        var linearTid = LinearThreadId;
         var plane = TakeWarpExchangePlane(linearTid);
-        var laneId = linearTid % 32;
-        var warpStartTid = linearTid - laneId;
-
-        var logicalLane = laneId % width;
-        var targetLogicalLane = logicalLane ^ delta;
-
-        if (targetLogicalLane >= width)
-        {
-            return val;
-        }
-
-        var globalSrcLane = laneId - logicalLane + targetLogicalLane;
-        if (globalSrcLane >= 32)
-        {
-            return val;
-        }
-
-        var targetTid = warpStartTid + globalSrcLane;
-        return Unsafe.ReadUnaligned<T>(ref GetWarpExchangeBuffer()[GetWarpExchangeOffset(plane, targetTid)]);
+        CheckShuffleWidth(width, Name, location);
+        var laneId = (uint)(linearTid % 32);
+        // CUDA lets a group of width lanes read its own group and the earlier ones; a later group gives the caller's own
+        // value (PTX shfl.bfly reads lane j when j <= maxLane, the last lane of the caller's group)
+        var srcLane = laneId ^ (uint)delta;
+        return srcLane > (laneId | ((uint)width - 1u))
+            ? val
+            : ReadShuffleLane<T>(plane, linearTid, (int)srcLane, Name, location);
     }
 
     /// <summary>
@@ -443,33 +468,21 @@ public static class ManagedGpuContext
     /// <param name="ctx">The execution context.</param>
     /// <param name="mask">The thread mask.</param>
     /// <param name="val">The value to shuffle.</param>
-    /// <param name="srcLane">The source lane ID.</param>
+    /// <param name="srcLane">The source lane ID; CUDA reads lane srcLane % width of the caller's segment.</param>
     /// <param name="width">The logical warp width.</param>
+    /// <param name="location">The place of the shuffle in the C# source, for the error message.</param>
     /// <returns>The shuffled value.</returns>
+    /// <exception cref="InvalidOperationException">The width or the source lane is undefined on CUDA.</exception>
     [EditorBrowsable(EditorBrowsableState.Never)]
     public static T __gsharp_warp_shuffle_read_sync<TContext, T>(TContext ctx, uint mask, T val, int srcLane,
-        int width = 32) where T : unmanaged
+        int width, string location) where T : unmanaged
     {
-        var linearTid = ThreadIdxZ * BlockDimY * BlockDimX + ThreadIdxY * BlockDimX + ThreadIdxX;
+        const string Name = "Warp.ShuffleSync";
+        var linearTid = LinearThreadId;
         var plane = TakeWarpExchangePlane(linearTid);
+        CheckShuffleWidth(width, Name, location);
         var laneId = linearTid % 32;
-        var warpStartTid = linearTid - laneId;
-
         var logicalLane = laneId % width;
-        var targetLogicalLane = srcLane;
-
-        if (targetLogicalLane >= width)
-        {
-            return val;
-        }
-
-        var globalSrcLane = laneId - logicalLane + targetLogicalLane;
-        if (globalSrcLane >= 32)
-        {
-            return val;
-        }
-
-        var targetTid = warpStartTid + globalSrcLane;
-        return Unsafe.ReadUnaligned<T>(ref GetWarpExchangeBuffer()[GetWarpExchangeOffset(plane, targetTid)]);
+        return ReadShuffleLane<T>(plane, linearTid, laneId - logicalLane + (srcLane & (width - 1)), Name, location);
     }
 }

@@ -14,27 +14,24 @@ internal class Program
 {
     private static void Main(string[] args) => CoconaApp.Run<Program>(args);
 
-    [Command("run", Description = "Run Fermat PRP test for a given Exponent (E)")]
-    public void Run([Option('e', Description = "Fermat Exponent (E)")] int e = 1000)
+    [Command("run", Description = "Run the Fermat PRP test of N = 2^(2E+1) - 2^E + 11 and compare it with BigInteger")]
+    public void Run([Option('e', Description = "Exponent E of N = 2^(2E+1) - 2^E + 11")] int e = 1001,
+        [Option('a', Description = "Base of the Fermat test")] uint a = 3)
     {
-        Logger<Program>.Info($"Starting Fermat PRP test for E={e}...");
-        var x = BigInteger.One << e;
-        var n = (BigInteger.One << (2 * e + 1)) - x + 11;
-        BigInteger a = 2;
-        var exponent = n - 1;
+        Logger<Program>.Info($"Starting the Fermat PRP test of N(E={e}) to base {a}...");
+        using var runner = new FermatAlgorithm(e, a);
+        var n = runner.GetModulus();
 
-        Logger<Program>.Info("Calculating expected result via CPU BigInteger...");
-        var expected = BigInteger.ModPow(a, exponent, n);
+        Logger<Program>.Info("Calculating the expected verdict via CPU BigInteger (a^(N-1) mod N)...");
+        var expected = BigInteger.ModPow(a, n - 1, n).IsOne;
 
         Logger<Program>.Info("Executing GPU GSharp Runner...");
-        var runner = new FermatAlgorithm(e);
-        var (resultArray, _) = runner.RunFermatPrp();
+        var result = runner.Run();
 
-        var actual = GetBigIntegerFromResult(resultArray, n);
-
-        Logger<Program>.Info($"Expected: {expected}");
-        Logger<Program>.Info($"Actual  : {actual}");
-        Logger<Program>.Info($"Match?  : {expected == actual}");
+        Logger<Program>.Info($"Probable prime: {result.IsProbablePrime} (small divisor: {result.SmallDivisor?.ToString() ?? "none"})");
+        Logger<Program>.Info($"Residue64     : {result.Residue64:X16}, check {result.CheckResidue64:X16}");
+        Logger<Program>.Info($"Checks passed : {result.ChecksPassed}, rollbacks {result.Rollbacks}, {result.Iterations} squarings in {result.Elapsed}");
+        Logger<Program>.Info($"Match?        : {expected == result.IsProbablePrime}");
     }
 
     [Command("profile", Description = "Profile the GSharp GPU execution and output M-Digit/s throughput")]
@@ -48,7 +45,8 @@ internal class Program
         var estimatedSeconds = 15 + (iterations * e / 500);
         Logger<Program>.Info($"Estimated max execution time: {estimatedSeconds} seconds.");
 
-        var runner = new FermatAlgorithm(e);
+        // Base 2: for even E, the default base 3 divides N and the test ends without squaring.
+        using var runner = new FermatAlgorithm(e, 2);
 
         var numBits = (2 * e + 1);
         var numDigits = numBits * Math.Log10(2);
@@ -64,10 +62,10 @@ internal class Program
             }
 
             var sw = Stopwatch.StartNew();
-            runner.RunFermatPrp();
+            var result = runner.Run();
             sw.Stop();
 
-            var throughput = mDigitsPerLoop * e / (sw.Elapsed.TotalSeconds);
+            var throughput = mDigitsPerLoop * result.Iterations / (sw.Elapsed.TotalSeconds);
             Logger<Program>.Info(
                 $"Iter {i}: Elapsed {sw.ElapsedMilliseconds} ms, Throughput: {throughput:F2} M-Digit/s");
         }
@@ -88,7 +86,7 @@ internal class Program
         var estimatedSeconds = 15 + (iterations * 2); // Module loading + fast chunks (2s per iter)
         Logger<Program>.Info($"Estimated max execution time: {estimatedSeconds} seconds.");
 
-        var runner = new FermatAlgorithm(e);
+        using var runner = new FermatAlgorithm(e, 2);
 
         var numBits = (2 * e + 1);
         var numDigits = numBits * Math.Log10(2);
@@ -121,24 +119,6 @@ internal class Program
         Logger<Program>.Info("Starting BenchmarkDotNet...");
         BenchmarkRunner.Run<FermatBenchmarks>();
     }
-
-    private static BigInteger GetBigIntegerFromResult(uint[] resultArray, BigInteger n)
-    {
-        var highestWord = resultArray[^1];
-        var resBytes = new byte[resultArray.Length * 4 + 1];
-        Buffer.BlockCopy(resultArray, 0, resBytes, 0, resultArray.Length * 4);
-        var isNegative = (highestWord & 0x80000000) != 0;
-        resBytes[resultArray.Length * 4] = isNegative ? (byte)0xFF : (byte)0x00;
-
-        var actual = new BigInteger(resBytes);
-        actual %= n;
-        if (actual < 0)
-        {
-            actual += n;
-        }
-
-        return actual;
-    }
 }
 
 [MemoryDiagnoser]
@@ -165,7 +145,8 @@ public class FermatBenchmarks
         _n = (BigInteger.One << (2 * E + 1)) - x + 11;
         _a = 2;
         _exponent = _n - 1;
-        _gsharpRunner = new FermatAlgorithm(E);
+        // Base 2 (as the BigInteger baseline): for even E, base 3 divides N and the test ends without squaring.
+        _gsharpRunner = new FermatAlgorithm(E, 2);
     }
 
     [IterationSetup]
@@ -194,30 +175,14 @@ public class FermatBenchmarks
     }
 
     [Benchmark]
-    public BigInteger GSharpKernelPhase12()
+    public bool GSharpKernelPhase12()
     {
         if (E >= 5000)
         {
-            return 0; // Skip to avoid GPU Timeout/TDR
+            return false; // Skip to avoid GPU Timeout/TDR
         }
 
-        var (resultArray, _) = GsharpRunner.RunFermatPrp();
-
-        var highestWord = resultArray[^1];
-        var resBytes = new byte[resultArray.Length * 4 + 1];
-        Buffer.BlockCopy(resultArray, 0, resBytes, 0, resultArray.Length * 4);
-
-        var isNegative = (highestWord & 0x80000000) != 0;
-        resBytes[resultArray.Length * 4] = isNegative ? (byte)0xFF : (byte)0x00;
-
-        var actual = new BigInteger(resBytes);
-        actual %= _n;
-        if (actual < 0)
-        {
-            actual += _n;
-        }
-
-        return actual;
+        return GsharpRunner.Run().IsProbablePrime;
     }
 
     [Benchmark]

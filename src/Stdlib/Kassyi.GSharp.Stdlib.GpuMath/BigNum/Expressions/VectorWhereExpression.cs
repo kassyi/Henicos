@@ -13,10 +13,10 @@ internal class VectorWhereExpression(
     private GpuBigUIntArray _scanResult;
     private bool _allocated;
 
-    public GpuBigIntArray Evaluate(GpuWorkspace workspace, int elementOffset = 0, int? elementCount = null,
-        GpuBigUIntArray? targetResult = null)
+    public GpuBigIntArrayView Evaluate(GpuWorkspace workspace, int elementOffset = 0, int? elementCount = null,
+        GpuBigUIntArrayView targetResult = default)
     {
-        if (targetResult != null)
+        if (VectorResultCache.HasTarget(targetResult))
         {
             throw new NotSupportedException(
                 "Where expression does not support targetResult because its size is dynamic.");
@@ -28,9 +28,7 @@ internal class VectorWhereExpression(
         var originalCount = evaluatedSource.Length;
         if (originalCount == 0)
         {
-            return new GpuBigIntArray(
-                new GpuBigUIntArray(workspace, 0, WordsPerElement),
-                new GpuBigUIntArray(workspace, 0, 1));
+            return VectorResultCache.EmptySigned(workspace, WordsPerElement);
         }
 
         if (!_allocated)
@@ -68,8 +66,8 @@ internal class VectorWhereExpression(
 
         var finalCount = elementCount ?? (originalCount - elementOffset);
         return new GpuBigIntArray(
-            _compactedValues.Slice(elementOffset, finalCount),
-            _compactedSigns.Slice(elementOffset, finalCount));
+            _compactedValues.BorrowSlice(elementOffset, finalCount),
+            _compactedSigns.BorrowSlice(elementOffset, finalCount));
     }
 
     public void Dispose()

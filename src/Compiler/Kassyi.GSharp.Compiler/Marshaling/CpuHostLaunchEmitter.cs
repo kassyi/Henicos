@@ -13,6 +13,7 @@ internal static class CpuHostLaunchEmitter
     public static void WriteKernelMembers(SourceWriter writer, in KernelEmission kernel, string assemblyName)
     {
         writer.AppendLine(kernel.ManagedCSharpSource);
+        WrapperEmitter.WriteLayoutCheckedField(writer, kernel.Host.CpuLayoutGuards, kernel.MemberKey);
         WriteCpuDelegateDeclaration(writer, kernel);
         WriteLaunchMethodCpu(writer, kernel, assemblyName);
     }
@@ -29,7 +30,7 @@ internal static class CpuHostLaunchEmitter
             WriteManagedExecutionFallback(writer, kernel.Host, assemblyName);
 
             // [WHY] Only the native launcher reads the host bytes as the C++ layout; the managed fallback uses the values
-            WrapperEmitter.WriteLayoutGuards(writer, kernel.Host.CpuLayoutGuards);
+            WrapperEmitter.WriteLayoutGuards(writer, kernel.Host.CpuLayoutGuards, kernel.MemberKey);
             WriteCpuDelegateGetOrCompile(writer, kernel);
             WriteCpuFixedBlocksAndInvoke(writer, kernel.Host);
         }
@@ -162,7 +163,9 @@ internal static class CpuHostLaunchEmitter
                             {
                                 writer.AppendLine("anyGridActive = true;");
                                 writer.AppendLine("anyBlockActive = true;");
-                                writer.AppendLine($"{LinearContext}.{GSharpInternalNames.StateMachine.YieldedForGridSync} = false;");
+                                // The state machines of the kernel and of the device functions it calls request a
+                                // grid sync through one thread-static flag (#665)
+                                writer.AppendLine($"{ManagedExecutionRewriter.ManagedGridSyncRequested} = false;");
 
                                 writer.Append($"{stateMachineName}(");
                                 bool isFirst = true;
@@ -199,7 +202,7 @@ internal static class CpuHostLaunchEmitter
 
                                 writer.AppendLine(");");
 
-                                writer.AppendLine($"if ({LinearContext}.{GSharpInternalNames.StateMachine.YieldedForGridSync})");
+                                writer.AppendLine($"if ({ManagedExecutionRewriter.ManagedGridSyncRequested})");
                                 using (writer.Scope())
                                 {
                                     writer.AppendLine("gridSyncRequested = true;");

@@ -124,7 +124,6 @@ public static readonly string MandelbrotKernel_FullSource=global::Kassyi.GSharp.
 public class __gsharp_context_Henicos__Benchmarks__ComputeBenchmarks__MandelbrotKernels__MandelbrotKernel {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
-public bool __gsharp_yielded_for_grid_sync;
 }
 public static unsafe void __gsharp_statemachine_Henicos__Benchmarks__ComputeBenchmarks__MandelbrotKernels__MandelbrotKernel(int[] output, int width, int height, int maxIter, float xMin, float xMax, float yMin, float yMax, __gsharp_context_Henicos__Benchmarks__ComputeBenchmarks__MandelbrotKernels__MandelbrotKernel __gsharp_ctx) {
 {
@@ -225,9 +224,9 @@ if (__gsharp_contexts[__gsharp_linear_tid].__gsharp_state != -1)
 {
 anyGridActive = true;
 anyBlockActive = true;
-__gsharp_contexts[__gsharp_linear_tid].__gsharp_yielded_for_grid_sync = false;
+global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested = false;
 __gsharp_statemachine_Henicos__Benchmarks__ComputeBenchmarks__MandelbrotKernels__MandelbrotKernel(output, width, height, maxIter, xMin, xMax, yMin, yMax, __gsharp_contexts[__gsharp_linear_tid]);
-if (__gsharp_contexts[__gsharp_linear_tid].__gsharp_yielded_for_grid_sync)
+if (global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested)
 {
 gridSyncRequested = true;
 }
