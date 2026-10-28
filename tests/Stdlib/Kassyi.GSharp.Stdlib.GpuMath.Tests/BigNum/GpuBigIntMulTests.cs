@@ -250,8 +250,8 @@ public class GpuBigIntMulTests
         using var dummyBuffer = new GpuBigUInt(ctx, 1);
 
         const int ExceededWords = (1 << 23) + 1;
-        var fakeOperand = new GpuBigUInt(ctx, ExceededWords, dummyBuffer.DevicePointer, isTemp: true);
-        var fakeResult = new GpuBigUInt(ctx, ExceededWords * 2, dummyBuffer.DevicePointer, isTemp: true);
+        var fakeOperand = new GpuBigUInt(ctx, ExceededWords, dummyBuffer.DevicePointer);
+        var fakeResult = new GpuBigUInt(ctx, ExceededWords * 2, dummyBuffer.DevicePointer);
 
         var exception = Assert.Throws<ArgumentException>(() => GpuBigIntMath.Mul(fakeOperand, fakeOperand, fakeResult));
         Assert.Contains("2^23", exception.Message);

@@ -74,7 +74,7 @@ Console.WriteLine($"Created float provider: {provider.GetType().Name}");
 
 ## Remarks
 
-`GSharpKernelFloatProvider` manages temporary device scratch buffers deterministically using `context.GpuWorkspace.RentTemp(...)` without managed heap allocations on the GPU hot path.
+`GSharpKernelFloatProvider` manages temporary device scratch buffers deterministically using `context.GpuWorkspace.RentTemp(...)` without managed heap allocations on the GPU hot path. A rented buffer is owned by the caller and goes back to the workspace pool when it is disposed (`using`).
 
 In CPU fallback mode (no `GSharpKernelProvider`, or `GpuKernelLoader.IsCpuFallbackMode`) every operation, `Pow` included, is forwarded once to the fallback strategy.
 

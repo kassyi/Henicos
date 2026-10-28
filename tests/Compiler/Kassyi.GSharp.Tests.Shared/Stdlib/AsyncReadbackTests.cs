@@ -16,7 +16,9 @@ namespace Kassyi.GSharp.Tests.Shared.Stdlib;
 public class AsyncReadbackTests
 {
     private const int Words = 40;
-    private const int FermatExponent = 10;
+    // E <= 31 runs on the host; 41 is the device stage, whose squarings are queued on the workspace stream, and odd, so
+    // that the default base 3 runs the whole chain (3 divides N for even E).
+    private const int FermatExponent = 41;
 
     private static readonly TimeSpan CompletionTimeout = TimeSpan.FromSeconds(10);
     private static readonly TimeSpan GateHoldTime = TimeSpan.FromMilliseconds(500);
@@ -229,17 +231,18 @@ public class AsyncReadbackTests
     [SkippableFact]
     [Category(TestCategory.Stdlib)]
     [Scenario(TestScenario.HappyPath)]
-    public async Task Fermat_RunFermatPrpAsync_MatchesRunFermatPrp()
+    public async Task Fermat_RunAsync_MatchesRun()
     {
         CudaCapability.EnsureGpuAvailable();
 
         using var syncRunner = new FermatAlgorithm(FermatExponent);
         using var asyncRunner = new FermatAlgorithm(FermatExponent);
-        var (expected, _) = CudaTestEnvironment.InContext(syncRunner.RunFermatPrp);
+        var expected = CudaTestEnvironment.InContext(syncRunner.Run);
 
-        var (actual, _) = await asyncRunner.RunFermatPrpAsync().AsTask().WaitAsync(CompletionTimeout);
+        var actual = await asyncRunner.RunAsync().AsTask().WaitAsync(CompletionTimeout);
 
-        Assert.Equal(expected, actual);
+        Assert.Equal(expected, actual with { Elapsed = expected.Elapsed });
+        Assert.Equal(CudaTestEnvironment.InContext(syncRunner.GetState), await asyncRunner.GetStateAsync());
     }
 
     [SkippableFact]
@@ -275,10 +278,11 @@ public class AsyncReadbackTests
         using var cts = new CancellationTokenSource();
         await cts.CancelAsync();
 
-        await Assert.ThrowsAnyAsync<OperationCanceledException>(async () => await runner.RunFermatPrpAsync(cts.Token));
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(async () => await runner.RunAsync(cancellationToken: cts.Token));
         await Assert.ThrowsAnyAsync<OperationCanceledException>(async () => await runner.RunBenchmarkChunkAsync(4, cts.Token));
 
         Assert.Equal(initial, await runner.GetStateAsync());
+        Assert.Equal(0, runner.Iteration);
     }
 
     private static BigInteger CreateValue()

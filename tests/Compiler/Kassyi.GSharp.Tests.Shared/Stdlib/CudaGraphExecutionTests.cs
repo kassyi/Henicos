@@ -111,9 +111,11 @@ public class CudaGraphExecutionTests
     {
         CudaCapability.EnsureGpuAvailable();
 
+        // The result goes to a target the test owns: the graph's own result buffer is released by Dispose.
         using var workspace = new GpuWorkspace(64);
         using var operands = Operands.Create(workspace);
-        var graph = operands.Sum.CompileToGraph(workspace);
+        using var target = new GpuBigUInt(workspace, Words);
+        var graph = operands.Sum.CompileToGraph(workspace, target);
         using var gate = CudaTestEnvironment.InContext(() => StreamGate.Enqueue(workspace.Stream, GateHoldTime));
 
         var pending = graph.ExecuteAsync().AsTask();
@@ -121,7 +123,7 @@ public class CudaGraphExecutionTests
         Assert.False(gate.IsReleased, "Dispose must not wait for the graph.");
 
         await pending.WaitAsync(CompletionTimeout);
-        Assert.Equal(Left + Right, Read(graph.Result));
+        Assert.Equal(Left + Right, target.ToBigInteger());
     }
 
     [SkippableFact]
@@ -239,7 +241,7 @@ public class CudaGraphExecutionTests
         }
     }
 
-    private static BigInteger Read(GpuBigInt value) => value.Value.ToBigInteger(value.IsNegative);
+    private static BigInteger Read(GpuBigIntView value) => value.Value.ToBigInteger(value.IsNegative);
 
     private static void SpinUntilConsumed(ValueTask pending)
     {

@@ -127,6 +127,12 @@ public readonly struct GpuBigIntMemoryHandle : IEquatable<GpuBigIntMemoryHandle>
                 ThrowFreed();
             }
 
+            // A CUDA graph being captured records the pointer; it checks before each launch that the handle is alive
+            if (Buffer.Manager is DefaultGpuMemoryManager manager)
+            {
+                manager.ObserveCaptured(this);
+            }
+
             return IntPtr.Add(Buffer.Pointer, WordOffset * 4);
         }
     }
@@ -170,7 +176,7 @@ public readonly struct GpuBigIntMemoryHandle : IEquatable<GpuBigIntMemoryHandle>
     /// </summary>
     /// <param name="workspace">The execution workspace.</param>
     /// <returns>A non-owning <see cref="GpuBigUInt"/> view over this memory handle.</returns>
-    internal GpuBigUInt AsBorrowedBigUInt(GpuWorkspace workspace) => new(workspace, Borrow(), isTemp: true);
+    internal GpuBigUInt AsBorrowedBigUInt(GpuWorkspace workspace) => new(workspace, Borrow());
 
     /// <summary>
     /// Wraps this memory handle as a borrowed <see cref="GpuBigUIntView"/> for code that uses it within one call.

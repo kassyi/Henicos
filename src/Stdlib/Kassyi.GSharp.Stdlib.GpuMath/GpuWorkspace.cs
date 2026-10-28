@@ -50,6 +50,14 @@ public class GpuWorkspace : IGpuResourceScope
     /// <summary>
     /// Gets the dedicated CUDA Stream for this context, used for operations and CUDA Graph capture.
     /// </summary>
+    /// <remarks>
+    /// A buffer freed while this stream is captured stays out of the workspace pool, because the graph keeps using it.
+    /// A capture started by <c>GpuBigIntExpr.CompileToGraph</c> hands such buffers to its graph, which returns them when it
+    /// is disposed. A capture started directly on this stream cannot be tracked: buffers freed during it stay parked until
+    /// the workspace is disposed, and allocations during it come only from the pool. A capture of
+    /// <c>CompileToGraph</c> belongs to the thread that compiles; other threads using the workspace meanwhile go through
+    /// the shared pool. A capture does not fork this stream into others.
+    /// </remarks>
     public IntPtr Stream
     {
         get;
@@ -384,27 +392,16 @@ public class GpuWorkspace : IGpuResourceScope
     /// <returns>A snapshot of the counters; see <see cref="GpuMemoryStatistics"/>.</returns>
     internal GpuMemoryStatistics GetMemoryStatistics() => ((DefaultGpuMemoryManager)MemoryManager).GetStatistics();
 
+    /// <summary>
+    /// Rents a temporary buffer from the pool; the caller owns it and returns it with <c>Dispose</c>.
+    /// </summary>
+    /// <param name="numWords">The number of 32-bit words.</param>
+    /// <returns>An owned <see cref="GpuBigUInt"/> whose contents are zero.</returns>
+    /// <exception cref="ObjectDisposedException">The workspace has been disposed.</exception>
     internal GpuBigUInt RentTemp(int numWords)
     {
         ObjectDisposedException.ThrowIf(Volatile.Read(ref _disposed) == 1, this);
-        var tempMem = MemoryManager.AllocateTemp(numWords);
-        return new GpuBigUInt(this, tempMem.Handle, isTemp: true);
-    }
-
-    internal void ReturnTemp(GpuBigUInt temp)
-    {
-        // A borrowed temporary (a view of another buffer) is not returned; its owner frees the buffer
-        if (!temp.IsTemp || !temp.Handle.OwnsBuffer)
-        {
-            return;
-        }
-
-        if (Volatile.Read(ref _disposed) == 1)
-        {
-            return;
-        }
-
-        MemoryManager.Free(temp.Handle);
+        return new GpuBigUInt(this, MemoryManager.Allocate(numWords));
     }
 }
 

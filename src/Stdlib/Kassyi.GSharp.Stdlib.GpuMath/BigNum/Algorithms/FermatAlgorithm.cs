@@ -2,535 +2,582 @@
 namespace Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms;
 
 /// <summary>
-/// Executes accelerated Fermat number Probable Prime (PRP) tests and NTT-based big integer squaring kernels on NVIDIA GPUs.
+/// Fermat probable-prime (PRP) test of <c>N(E) = 2^(2E+1) - 2^E + 11 = 2X^2 - X + 11</c> (<c>X = 2^E</c>), the number
+/// G# was started for (<c>E = 71428571</c>, about 43 million digits).
 /// </summary>
 /// <remarks>
-/// <para>Performs iterative squaring and modular reduction modulo $F_E = 2^{2^E} + 1$ using GPU mega-kernels and host orchestration.</para>
-/// <para><b>Memory Management:</b> Implements <see cref="IDisposable"/> to release all underlying GPU buffers and workspace allocations.</para>
+/// <para>
+/// <b>Verdict.</b> <see cref="Run"/> decides whether <c>a^(N-1) = 1 (mod N)</c> for the base <c>a</c> (default 3). If not,
+/// <c>N</c> is certainly composite; if so, <c>N</c> is a probable prime to base <c>a</c>. This is not a proof: most of
+/// <c>N - 1</c> cannot be factored, so Pocklington or Proth certificates do not apply. When <c>gcd(a, N) != 1</c> the
+/// result reports that divisor without any squaring (for <c>a = 3</c>, every even <c>E</c>, since then <c>3 | N</c>).
+/// </para>
+/// <para>
+/// <b>Chain.</b> From <c>N - 1 = 2^(2E+1) - 2^E + 10</c>: <c>a^(N-1) = 1</c> if and only if
+/// <c>u_K * a^10 = u_E (mod N)</c>, with <c>u_0 = a</c>, <c>u_(k+1) = u_k^2</c> and <c>K = 2E + 1</c>. The test is a chain
+/// of <c>2E + 1</c> squarings and nothing else, as in gpuowl and PRST.
+/// </para>
+/// <para>
+/// <b>Error check.</b> The whole chain runs under the Gerbicz-Li check (block size <c>B</c>, see
+/// <see cref="FermatPrpOptions"/>); the chain is extended to the next block boundary so that a check follows every value
+/// read out of it. A failed check rolls back to the last verified point; failing
+/// <see cref="FermatPrpOptions.MaxConsecutiveRollbacks"/> times in a row throws. Copies kept outside the chain (the saved
+/// <c>u_E</c>, a <see cref="FermatPrpCheckpoint"/> in a file) are not covered by the check, as in gpuowl.
+/// </para>
+/// <para>
+/// <b>Stages.</b> <c>E &lt;= 31</c> (<c>N &lt; 2^64</c>) runs on the host with <see cref="UInt128"/>. Larger exponents keep
+/// the residues on the GPU: NTT squaring and a dedicated fold (<c>GpuBigIntFermatKernels.QuadraticFoldReduceKernel</c>,
+/// three passes of <c>r + q * (2^E - 11)</c>), replayed as CUDA Graphs. An instance created in CPU fallback mode
+/// multiplies with <see cref="BigInteger"/> and folds on the host, with the same results. The largest exponent is
+/// <see cref="MaxExponent"/>, set by the NTT length limit.
+/// </para>
+/// <para>
+/// For <c>E &gt;= 32</c>, the CPU fallback mode in effect at construction is kept for the instance's lifetime; calling a
+/// member after <see cref="GpuKernelLoader.ForceCpuFallback"/> changed it throws <see cref="InvalidOperationException"/>.
+/// The host stage uses neither mode's buffers and ignores the switch.
+/// </para>
 /// </remarks>
-public class FermatAlgorithm : IDisposable
+public sealed class FermatAlgorithm : IDisposable
 {
     /// <summary>
-    /// Gets the Fermat number exponent parameter $E$, where the target test number is $F_E = 2^{2^E} + 1$.
+    /// The largest exponent, <c>2^27 - 1</c>: the square of a residue then fills the longest product the NTT
+    /// multiplication supports (<c>2^24</c> words, transform length <c>2^25</c>).
     /// </summary>
-    public int E
+    public const int MaxExponent = QuadraticFoldModulus.MaxExponent;
+
+    private readonly int _blockSize;
+    private readonly int _checkIntervalBlocks;
+    private readonly long _endIteration;
+    private ISquaringModulus? _modulus;
+    private SquaringChainDriver? _driver;
+    private readonly FermatPrpOptions _options;
+    private readonly uint? _smallDivisor;
+    private readonly uint[] _startWords = [];
+    private readonly bool _pinsFallbackMode;
+    private readonly bool _cpuFallbackAtCreation;
+    private ChainPoint _lastVerified;
+    private ChainPoint? _pendingRestore;
+    private long _iteration;
+    private bool _disposed;
+
+    /// <summary>Initializes a test of <c>N(E)</c> to base <paramref name="base"/>.</summary>
+    /// <param name="e">The exponent <c>E</c>, from 1 to <see cref="MaxExponent"/>.</param>
+    /// <param name="base">The base <c>a</c> (default 3, as in gpuowl and PRST).</param>
+    /// <param name="options">The Gerbicz-Li options, or <see langword="null"/> for the defaults.</param>
+    /// <exception cref="ArgumentOutOfRangeException"><paramref name="e"/> is out of range; <paramref name="base"/> is less
+    /// than 2 or is 0, 1 or <c>N - 1</c> modulo <c>N</c> (possible only for small <c>E</c>); an option is negative,
+    /// <see cref="FermatPrpOptions.BlockSize"/> exceeds <c>2E + 1</c>, or
+    /// <see cref="FermatPrpOptions.MaxConsecutiveRollbacks"/> is less than 1. Checked before any allocation.</exception>
+    /// <exception cref="InvalidOperationException">GPU context initialization fails. When <c>gcd(a, N) != 1</c> nothing is
+    /// allocated here, and the failure surfaces on the first <see cref="GetState"/>, <see cref="RunBenchmarkChunk"/> or
+    /// <see cref="Restore"/> instead.</exception>
+    public FermatAlgorithm(int e, uint @base = 3, FermatPrpOptions? options = null)
     {
-        get;
-    }
+        QuadraticFoldModulus.ThrowIfExponentOutOfRange(e);
+        if (@base < 2)
+        {
+            throw new ArgumentOutOfRangeException(nameof(@base), @base, "The base must be at least 2.");
+        }
 
-    /// <summary>
-    /// Gets the number of 32-bit words allocated in the output state buffer.
-    /// </summary>
-    public int OutNumWords
-    {
-        get;
-    }
-
-    private int _numWords;
-
-    private GpuWorkspace _gpuWorkspace;
-
-    // GpuBigUInt buffers for Host-side orchestration
-    private GpuBigUInt _valueT;
-    private GpuBigUInt _valueTReduced;
-    private GpuBigUInt _mulResult;
-
-    private GpuBigUInt _quotient;
-    private GpuBigUInt _remainder;
-    private GpuBigUInt _remainderMask;
-    private GpuBigUInt _temp;
-
-    private int _exponent;
-
-    /// <summary>
-    /// Initializes a new instance of the <see cref="FermatAlgorithm"/> class configured for Fermat exponent <paramref name="e"/>.
-    /// </summary>
-    /// <param name="e">The Fermat exponent $E$. Must be greater than zero.</param>
-    /// <exception cref="ArgumentOutOfRangeException">Thrown when <paramref name="e"/> is less than or equal to zero.</exception>
-    /// <exception cref="InvalidOperationException">Thrown when GPU context initialization fails.</exception>
-    public FermatAlgorithm(int e)
-    {
-        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(e);
+        _options = options ?? new FermatPrpOptions();
+        ThrowIfInvalid(_options, 2L * e + 1);
 
         E = e;
-
-        _numWords = (2 * E + 1 + 31) / 32;
-        OutNumWords = _numWords * 2 + 16;
-        _exponent = E;
-
-        try
+        Base = @base;
+        ModulusBits = 2 * e + 1;
+        ChainLength = 2L * e + 1;
+        if (e <= QuadraticHostModulus.MaxExponent)
         {
-            _gpuWorkspace = new GpuWorkspace(OutNumWords);
-            _valueT = new GpuBigUInt(_gpuWorkspace, OutNumWords);
-            _valueTReduced = new GpuBigUInt(_gpuWorkspace, _numWords);
-            _mulResult = new GpuBigUInt(_gpuWorkspace, _numWords * 2);
-
-            _quotient = new GpuBigUInt(_gpuWorkspace, OutNumWords);
-            _remainder = new GpuBigUInt(_gpuWorkspace, OutNumWords);
-            _remainderMask = new GpuBigUInt(_gpuWorkspace, OutNumWords);
-            _temp = new GpuBigUInt(_gpuWorkspace, OutNumWords);
-        }
-        catch
-        {
-            _gpuWorkspace?.Dispose();
-            throw;
+            ThrowIfTrivialBase(e, @base);
         }
 
-        // Init ValueT = 2
-        var initArray = new uint[OutNumWords];
-        initArray[0] = 2;
-        _gpuWorkspace.Provider.CopyHostToDevice(_valueT.DevicePointer, initArray, OutNumWords, _gpuWorkspace.Stream);
+        _smallDivisor = SmallDivisor(e, @base);
+        _pinsFallbackMode = e > QuadraticHostModulus.MaxExponent;
+        _cpuFallbackAtCreation = _pinsFallbackMode && GpuKernelLoader.IsCpuFallbackMode;
+        ResidueWords = QuadraticFoldModulus.WordsOf(e);
+        _blockSize = _options.BlockSize != 0
+            ? _options.BlockSize
+            : (int)Math.Clamp((long)Math.Sqrt(ChainLength), 2, 1000);
+        _checkIntervalBlocks = _options.CheckIntervalBlocks != 0 ? _options.CheckIntervalBlocks : _blockSize;
+        _endIteration = SquaringChainDriver.EndIterationOf(ChainLength, _blockSize);
+        _startWords = StartWords(e, @base, ResidueWords);
+        _lastVerified = SquaringChainDriver.StartPoint(_startWords);
 
-        // Init MaskR
-        var bit2E1 = 2 * E + 1;
-        var word2E1 = bit2E1 / 32;
-        var rem2E1 = bit2E1 % 32;
-        var maskArray = new uint[OutNumWords];
-        for (var i = 0; i < word2E1; i++)
+        // A small divisor decides the test without any squaring: the registers, the NTT scratch and the fold buffers
+        // (millions of words each for large E) are created only if a member that needs the state is called.
+        if (_smallDivisor is null)
         {
-            maskArray[i] = 0xFFFFFFFF;
+            EnsureChain();
         }
-
-        if (rem2E1 > 0)
-        {
-            maskArray[word2E1] = (1U << rem2E1) - 1;
-        }
-
-        _gpuWorkspace.Provider.CopyHostToDevice(_remainderMask.DevicePointer, maskArray, OutNumWords,
-            _gpuWorkspace.Stream);
     }
+
+    /// <summary>Gets the exponent <c>E</c> of <c>N = 2^(2E+1) - 2^E + 11</c>.</summary>
+    public int E { get; }
+
+    /// <summary>Gets the base <c>a</c>.</summary>
+    public uint Base { get; }
+
+    /// <summary>Gets <c>2E + 1</c>, the bit position of the leading term of <c>N</c>.</summary>
+    public int ModulusBits { get; }
+
+    /// <summary>Gets the word count of a residue: <c>ceil((2E + 1) / 32)</c>.</summary>
+    public int ResidueWords { get; }
+
+    /// <summary>Gets the number of squarings of the test, <c>2E + 1</c>.</summary>
+    public long ChainLength { get; }
+
+    /// <summary>Gets the Gerbicz-Li block size in use (the option, or the automatic choice).</summary>
+    public int BlockSize => _blockSize;
 
     /// <summary>
-    /// Copies and returns the current state buffer (<c>ValueT</c>) from GPU device memory to host memory.
+    /// Gets the squarings done on the state: the position of the last <see cref="Run"/> (or of a
+    /// <see cref="Restore"/>) plus the squarings of <see cref="RunBenchmarkChunk"/> since.
     /// </summary>
-    /// <returns>An array of 32-bit words containing the current state.</returns>
-    [ExcludeFromCodeCoverage]
-    public uint[] GetState()
-    {
-        ObjectDisposedException.ThrowIf(_disposed, this);
-
-        var copy = new uint[OutNumWords];
-        _gpuWorkspace.Provider.CopyDeviceToHost(copy, _valueT.DevicePointer, OutNumWords, _gpuWorkspace.Stream);
-        return copy;
-    }
+    public long Iteration => _iteration;
 
     /// <summary>
-    /// Asynchronously copies the current state buffer (<c>ValueT</c>) to host memory, without blocking the calling
-    /// thread while queued iterations complete.
+    /// Gets or sets a test hook (internal): it receives the position after every squaring of the chain and, when it
+    /// returns <see langword="true"/>, corrupts the state there. It shows that the Gerbicz-Li check detects errors;
+    /// <see langword="null"/> (the default) costs two null checks at each stop of the chain (a block boundary, the
+    /// snapshot point, the end of the chain), not one per squaring.
     /// </summary>
-    /// <param name="cancellationToken">A token that stops waiting; queued device work is not canceled.</param>
-    /// <returns>An array of 32-bit words containing the current state.</returns>
-    /// <exception cref="OperationCanceledException"><paramref name="cancellationToken"/> was canceled.</exception>
-    public async ValueTask<uint[]> GetStateAsync(CancellationToken cancellationToken = default)
+    internal Func<long, bool>? CorruptStateAt
     {
-        ObjectDisposedException.ThrowIf(_disposed, this);
-
-        var copy = new uint[OutNumWords];
-        await _gpuWorkspace.Provider
-            .CopyDeviceToHostAsync(copy, _valueT.DevicePointer, OutNumWords, _gpuWorkspace.Stream, cancellationToken)
-            .ConfigureAwait(false);
-        return copy;
-    }
-
-    /// <summary>
-    /// Loads a previously saved state buffer (<c>ValueT</c>) into the GPU device execution context.
-    /// </summary>
-    /// <param name="valueT">An array containing the state buffer words to load.</param>
-    /// <exception cref="ArgumentNullException">Thrown when <paramref name="valueT"/> is <see langword="null"/>.</exception>
-    /// <exception cref="ArgumentException">Thrown when <paramref name="valueT"/> length does not equal <see cref="OutNumWords"/>.</exception>
-    [ExcludeFromCodeCoverage]
-    public void LoadState(uint[] valueT)
-    {
-        ObjectDisposedException.ThrowIf(_disposed, this);
-        ArgumentNullException.ThrowIfNull(valueT);
-
-        if (valueT.Length != OutNumWords)
+        get => _driver?.FaultInjection;
+        set
         {
-            throw new ArgumentException($"Invalid state buffer size. Expected {OutNumWords}, got {valueT.Length}.");
+            EnsureChain();
+            _driver.FaultInjection = value;
         }
-
-        _gpuWorkspace.Provider.CopyHostToDevice(_valueT.DevicePointer, valueT, OutNumWords, _gpuWorkspace.Stream);
     }
 
-    private void LaunchFermatReduceKernel(IntPtr valueTPointer)
+    /// <summary>Gets whether the residues and their buffers exist (for tests: a small divisor creates none).</summary>
+    internal bool HasChain => _modulus != null;
+
+    /// <summary>Returns <c>N = 2^(2E+1) - 2^E + 11</c>.</summary>
+    /// <returns>The modulus; this allocates <c>O(E)</c> bits.</returns>
+    public BigInteger GetModulus()
     {
-        // Mega-Kernel reduction: replaces 11 separate kernel launches and H2D copies with a single pass
-        // Executed in a single block (gridDimX = 1) with 256 threads to allow block-wide synchronization (__syncthreads).
-        GpuBigIntFermatKernels.LaunchKernelFermatReduceMegaPtr(
-            new GpuBigIntFermatKernels.AotContexts.FermatReduce
-            {
-                ValueT = valueTPointer,
-                MulResult = _mulResult.DevicePointer,
-                Quotient = _quotient.DevicePointer,
-                Remainder = _remainder.DevicePointer,
-                Temp = _temp.DevicePointer,
-                RemainderMask = _remainderMask.DevicePointer,
-                NumWords = _numWords,
-                OutNumWords = OutNumWords,
-                TotalShiftBits = 2 * E + 1,
-                Exponent = _exponent
-            },
-            gridDimX: 1, blockDimX: 256, hStream: _gpuWorkspace.Stream
-        );
+        ThrowIfUnusable();
+        return (BigInteger.One << ModulusBits) - (BigInteger.One << E) + QuadraticFoldModulus.ConstantTerm;
     }
 
-    private void MultiplySquareAndReduceHost()
-    {
-        // Copy the lower _numWords of _valueT into _valueTReduced
-        _gpuWorkspace.Provider.CopyDeviceToDevice(_valueTReduced.DevicePointer, _valueT.DevicePointer, _numWords,
-            _gpuWorkspace.Stream);
-
-        // Square it using host-side NTT multiplication orchestration
-        GpuBigIntMath.Mul(_valueTReduced, _valueTReduced, _mulResult);
-
-        LaunchFermatReduceKernel(_valueT.DevicePointer);
-
-        (_valueT, _remainder) = (_remainder, _valueT);
-    }
-
-    /// <summary>
-    /// Enqueues <paramref name="iterations"/> squaring iterations on the workspace stream without waiting for them.
-    /// </summary>
+    /// <summary>Runs the probable-prime test.</summary>
+    /// <returns>The verdict, the two 64-bit residues and the work done.</returns>
     /// <remarks>
-    /// The first iteration runs eagerly as a warm-up and the rest are captured into a CUDA Graph, which includes host
-    /// synchronization. The graph is destroyed right after its launch; the driver defers the release until it completes.
+    /// The chain starts again from <c>u_0 = a</c>, unless <see cref="Restore"/> was called since the last run; then it
+    /// resumes from that checkpoint. The state left behind is <c>u_K'</c> (<c>K'</c> is <see cref="ChainLength"/> rounded
+    /// up to a block).
     /// </remarks>
-    private void EnqueueIterations(int iterations)
+    /// <exception cref="InvalidOperationException">The Gerbicz-Li check failed
+    /// <see cref="FermatPrpOptions.MaxConsecutiveRollbacks"/> times in a row.</exception>
+    public FermatPrpResult Run()
     {
-        if (iterations <= 0)
-        {
-            return;
-        }
+        ThrowIfUnusable();
 
-        var stream = _gpuWorkspace.Stream;
-        if (_gpuWorkspace.Provider is IGpuGraphProvider graphProvider)
-        {
-            // Warm-up to ensure allocations and static cache transfers complete outside capture
-            MultiplySquareAndReduceHost();
-            iterations--;
-
-            if (iterations == 0)
-            {
-                return;
-            }
-
-            // Use an even chunk size so (_valueT, _remainder) buffer swap parity is preserved across graph launches
-            const int MaxGraphCaptureChunk = 256;
-            while (iterations > 0)
-            {
-                var chunkIterations = Math.Min(iterations, MaxGraphCaptureChunk);
-                var repeats = chunkIterations == MaxGraphCaptureChunk ? iterations / MaxGraphCaptureChunk : 1;
-
-                graphProvider.BeginCapture(stream);
-                IntPtr graph;
-                try
-                {
-                    for (var i = 0; i < chunkIterations; i++)
-                    {
-                        MultiplySquareAndReduceHost();
-                    }
-                }
-                finally
-                {
-                    graph = graphProvider.EndCapture(stream);
-                }
-
-                if (graph == IntPtr.Zero)
-                {
-                    return;
-                }
-
-                var graphExec = IntPtr.Zero;
-                try
-                {
-                    graphExec = graphProvider.InstantiateGraph(graph);
-                    for (var r = 0; r < repeats; r++)
-                    {
-                        graphProvider.LaunchGraph(graphExec, stream);
-                    }
-                }
-                finally
-                {
-                    graphProvider.DestroyGraph(graph, graphExec);
-                }
-
-                iterations -= chunkIterations * repeats;
-            }
-        }
-        else
-        {
-            for (var i = 0; i < iterations; i++)
-            {
-                MultiplySquareAndReduceHost();
-            }
-        }
+        // Synchronous: every await inside completes before it returns.
+        return RunCoreAsync(synchronous: true, progress: null, CancellationToken.None).AsTask().GetAwaiter()
+            .GetResult();
     }
 
-    private void MultiplyOperandsAndReduceHost(GpuBigUInt leftSource, GpuBigUInt rightSource, GpuBigUInt targetDest)
-    {
-        _gpuWorkspace.Provider.CopyDeviceToDevice(_valueTReduced.DevicePointer, leftSource.DevicePointer, _numWords,
-            _gpuWorkspace.Stream);
-
-        if (leftSource.DevicePointer == rightSource.DevicePointer)
-        {
-            GpuBigIntMath.Mul(_valueTReduced, _valueTReduced, _mulResult);
-        }
-        else
-        {
-            using var rightReduced = _gpuWorkspace.RentTemp(_numWords);
-            _gpuWorkspace.Provider.CopyDeviceToDevice(rightReduced.DevicePointer, rightSource.DevicePointer, _numWords,
-                _gpuWorkspace.Stream);
-            GpuBigIntMath.Mul(_valueTReduced, rightReduced, _mulResult);
-        }
-
-        LaunchFermatReduceKernel(targetDest.DevicePointer);
-
-        _gpuWorkspace.Provider.CopyDeviceToDevice(targetDest.DevicePointer, _remainder.DevicePointer, OutNumWords,
-            _gpuWorkspace.Stream);
-    }
-
-    private static BigInteger ExtractCanonicalModN(uint[] rawWords, int e)
-    {
-        var x = BigInteger.One << e;
-        var n = (BigInteger.One << (2 * e + 1)) - x + 11;
-        var highestWord = rawWords[^1];
-        var resBytes = new byte[rawWords.Length * 4 + 1];
-        Buffer.BlockCopy(rawWords, 0, resBytes, 0, rawWords.Length * 4);
-        var isNegative = (highestWord & 0x80000000) != 0;
-        resBytes[rawWords.Length * 4] = isNegative ? (byte)0xFF : (byte)0x00;
-
-        var actual = new BigInteger(resBytes) % n;
-        if (actual < 0)
-        {
-            actual += n;
-        }
-
-        return actual;
-    }
-
-    /// <summary>
-    /// Executes the full Fermat Probable Prime (PRP) loop on the GPU and returns the final result words and elapsed time.
-    /// </summary>
-    /// <returns>A tuple containing the final state array and the elapsed execution time in milliseconds.</returns>
-    public (uint[] Result, long ElapsedMs) RunFermatPrp()
-    {
-        ObjectDisposedException.ThrowIf(_disposed, this);
-
-        var sw = Stopwatch.StartNew();
-
-        EnqueueIterations(E);
-
-        GpuKernelLoader.SynchronizeDevice();
-        sw.Stop();
-
-        return (GetState(), sw.ElapsedMilliseconds);
-    }
-
-    /// <summary>
-    /// Executes the Fermat Probable Prime (PRP) loop with periodic Gerbicz-Li self-verification and automatic checkpoint rollback.
-    /// </summary>
-    /// <param name="blockSize">The number of squarings $B$ per Gerbicz accumulation step ($d \leftarrow d \cdot u \bmod N$).</param>
-    /// <param name="checkStepBlocks">The number of $B$-sized blocks between full $u_0 \cdot d^{2^B} \equiv d_{\text{new}} \pmod N$ checks.</param>
-    /// <returns>A tuple containing the final state words, elapsed milliseconds, number of passed checks, and number of rollbacks.</returns>
-    public (uint[] Result, long ElapsedMs, int ChecksPassed, int Rollbacks) RunFermatPrpWithGerbiczCheck(
-        int blockSize = 100, int checkStepBlocks = 10)
-    {
-        ObjectDisposedException.ThrowIf(_disposed, this);
-        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(blockSize);
-        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(checkStepBlocks);
-
-        var sw = Stopwatch.StartNew();
-        using var checkD = new GpuBigUInt(_gpuWorkspace, OutNumWords);
-        using var checkAux = new GpuBigUInt(_gpuWorkspace, OutNumWords);
-        using var baseTwo = new GpuBigUInt(_gpuWorkspace, OutNumWords);
-
-        var initOne = new uint[OutNumWords];
-        initOne[0] = 1u;
-        _gpuWorkspace.Provider.CopyHostToDevice(checkD.DevicePointer, initOne, OutNumWords, _gpuWorkspace.Stream);
-
-        var initTwo = new uint[OutNumWords];
-        initTwo[0] = 2u;
-        _gpuWorkspace.Provider.CopyHostToDevice(baseTwo.DevicePointer, initTwo, OutNumWords, _gpuWorkspace.Stream);
-
-        var verifiedK = 0;
-        var verifiedU = GetState();
-        var verifiedD = (uint[])initOne.Clone();
-
-        var checkInterval = blockSize * checkStepBlocks;
-        var skipNextCheckUpdate = false;
-        var checksPassed = 0;
-        var rollbacks = 0;
-        var dRef = checkD;
-        var auxRef = checkAux;
-
-        var k = 0;
-        while (k < E)
-        {
-            if (skipNextCheckUpdate)
-            {
-                skipNextCheckUpdate = false;
-            }
-            else if (k % blockSize == 0)
-            {
-                MultiplyOperandsAndReduceHost(dRef, _valueT, dRef);
-            }
-
-            var stepIters = Math.Min(blockSize - (k % blockSize), E - k);
-            EnqueueIterations(stepIters);
-            k += stepIters;
-
-            var shouldCheck = (k % checkInterval == 0 && k % blockSize == 0) || (k == E && k % blockSize == 0);
-            if (!shouldCheck)
-            {
-                continue;
-            }
-
-            // Gerbicz-Li check (gpuowl doCheck): verify d_old * u == u_0 * (d_old^(2^blockSize)) mod N
-            _gpuWorkspace.Provider.CopyDeviceToDevice(auxRef.DevicePointer, dRef.DevicePointer, OutNumWords,
-                _gpuWorkspace.Stream);
-            for (var s = 0; s < blockSize; s++)
-            {
-                MultiplyOperandsAndReduceHost(auxRef, auxRef, auxRef);
-            }
-
-            MultiplyOperandsAndReduceHost(auxRef, baseTwo, auxRef);
-            MultiplyOperandsAndReduceHost(dRef, _valueT, dRef);
-
-            GpuKernelLoader.SynchronizeDevice();
-
-            var dHost = new uint[OutNumWords];
-            var auxHost = new uint[OutNumWords];
-            _gpuWorkspace.Provider.CopyDeviceToHost(dHost, dRef.DevicePointer, OutNumWords, _gpuWorkspace.Stream);
-            _gpuWorkspace.Provider.CopyDeviceToHost(auxHost, auxRef.DevicePointer, OutNumWords, _gpuWorkspace.Stream);
-
-            if (ExtractCanonicalModN(dHost, E) == ExtractCanonicalModN(auxHost, E))
-            {
-                checksPassed++;
-                skipNextCheckUpdate = true;
-                verifiedK = k;
-                verifiedU = GetState();
-                verifiedD = dHost;
-            }
-            else
-            {
-                rollbacks++;
-                if (rollbacks > 3)
-                {
-                    throw new InvalidOperationException("Gerbicz-Li PRP verification failed repeatedly.");
-                }
-
-                k = verifiedK;
-                LoadState(verifiedU);
-                _gpuWorkspace.Provider.CopyHostToDevice(dRef.DevicePointer, verifiedD, OutNumWords,
-                    _gpuWorkspace.Stream);
-                skipNextCheckUpdate = false;
-            }
-        }
-
-        GpuKernelLoader.SynchronizeDevice();
-        sw.Stop();
-
-        return (GetState(), sw.ElapsedMilliseconds, checksPassed, rollbacks);
-    }
-
-    /// <summary>
-    /// Executes the full Fermat Probable Prime (PRP) loop like <see cref="RunFermatPrp"/>, but waits for the GPU without
-    /// blocking the calling thread.
-    /// </summary>
+    /// <summary>Runs the probable-prime test like <see cref="Run"/>, waiting for the GPU without blocking the thread.</summary>
+    /// <param name="progress">Receives the position at every block boundary.</param>
     /// <param name="cancellationToken">
-    /// A token that stops waiting. An already canceled token prevents any work; a later cancellation leaves the queued
-    /// iterations running, after which the state is only defined once the workspace stream has drained.
+    /// Checked at every block boundary. An already canceled token does nothing. On cancellation the state goes back to
+    /// the last point that passed a check; <see cref="CreateCheckpoint"/> returns it, and <see cref="Restore"/> with it
+    /// lets a later run continue from there.
     /// </param>
-    /// <returns>A tuple containing the final state array and the elapsed execution time in milliseconds.</returns>
+    /// <returns>The verdict, the two 64-bit residues and the work done.</returns>
     /// <exception cref="OperationCanceledException"><paramref name="cancellationToken"/> was canceled.</exception>
-    /// <remarks>
-    /// Graph preparation (one warm-up iteration, capture and instantiation) still runs on the calling thread; only the
-    /// wait for the iterations is asynchronous.
-    /// </remarks>
-    public async ValueTask<(uint[] Result, long ElapsedMs)> RunFermatPrpAsync(
+    /// <exception cref="InvalidOperationException">The Gerbicz-Li check failed
+    /// <see cref="FermatPrpOptions.MaxConsecutiveRollbacks"/> times in a row.</exception>
+    public ValueTask<FermatPrpResult> RunAsync(IProgress<FermatPrpProgress>? progress = null,
         CancellationToken cancellationToken = default)
     {
-        ObjectDisposedException.ThrowIf(_disposed, this);
-        cancellationToken.ThrowIfCancellationRequested();
-        var sw = Stopwatch.StartNew();
-
-        EnqueueIterations(E);
-        await _gpuWorkspace.Provider.SynchronizeStreamAsync(_gpuWorkspace.Stream, cancellationToken)
-            .ConfigureAwait(false);
-        sw.Stop();
-
-        return (await GetStateAsync(cancellationToken).ConfigureAwait(false), sw.ElapsedMilliseconds);
+        ThrowIfUnusable();
+        return RunCoreAsync(synchronous: false, progress, cancellationToken);
     }
 
-    /// <summary>
-    /// Executes a specified number of squaring iterations on the GPU for benchmarking purposes.
-    /// </summary>
-    /// <param name="chunkSize">The number of squaring iterations to execute.</param>
-    public void RunBenchmarkChunk(int chunkSize = 100)
+    /// <summary>Returns the last point of the chain that passed a Gerbicz-Li check.</summary>
+    /// <returns>
+    /// The checkpoint (the start of the chain before any check passed). It reflects <see cref="Run"/>,
+    /// <see cref="RunAsync"/> and <see cref="Restore"/>, not <see cref="RunBenchmarkChunk"/>.
+    /// </returns>
+    public FermatPrpCheckpoint CreateCheckpoint()
     {
-        ObjectDisposedException.ThrowIf(_disposed, this);
+        ThrowIfUnusable();
+        return ToCheckpoint(_lastVerified);
+    }
 
-        EnqueueIterations(chunkSize);
+    /// <summary>Sets the state to a checkpoint, from which the next <see cref="Run"/> continues.</summary>
+    /// <param name="checkpoint">A checkpoint of a test with the same <c>E</c>, base and block size.</param>
+    /// <remarks>
+    /// The state and <see cref="Iteration"/> change at once: <see cref="GetState"/> returns the checkpoint's state and
+    /// <see cref="CreateCheckpoint"/> returns this checkpoint until the next run.
+    /// </remarks>
+    /// <exception cref="ArgumentNullException"><paramref name="checkpoint"/> is <see langword="null"/>.</exception>
+    /// <exception cref="ArgumentException">The checkpoint is of another test (<c>E</c>, base, block size), its position is not
+    /// a block boundary of this chain, a residue has the wrong length or is not below <c>N</c>, or a count is
+    /// negative.</exception>
+    public void Restore(FermatPrpCheckpoint checkpoint)
+    {
+        ThrowIfUnusable();
+        ArgumentNullException.ThrowIfNull(checkpoint);
+        if (checkpoint.E != E || checkpoint.Base != Base || checkpoint.BlockSize != BlockSize)
+        {
+            throw new ArgumentException(
+                $"The checkpoint is of E = {checkpoint.E}, base {checkpoint.Base}, block size {checkpoint.BlockSize}; this test is E = {E}, base {Base}, block size {BlockSize}.",
+                nameof(checkpoint));
+        }
 
-        GpuKernelLoader.SynchronizeDevice();
+        if (checkpoint.Iteration < 0 || checkpoint.Iteration > _endIteration ||
+            checkpoint.Iteration % BlockSize != 0)
+        {
+            throw new ArgumentException(
+                $"The checkpoint position {checkpoint.Iteration} is not a block boundary of this chain (0 to {_endIteration}, step {BlockSize}).",
+                nameof(checkpoint));
+        }
+
+        if (checkpoint.ChecksPassed < 0 || checkpoint.Rollbacks < 0)
+        {
+            throw new ArgumentException(
+                $"The checkpoint counts {checkpoint.ChecksPassed} checks and {checkpoint.Rollbacks} rollbacks; neither can be negative.",
+                nameof(checkpoint));
+        }
+
+        EnsureChain();
+        var snapshotWords = checkpoint.Iteration > E ? ResidueWords : 0;
+        var finalWords = checkpoint.Iteration > ChainLength ? ResidueWords : 0;
+        ThrowIfNotResidue(checkpoint.State.Span, ResidueWords, "State");
+        ThrowIfNotResidue(checkpoint.Check.Span, ResidueWords, "Check");
+        ThrowIfNotResidue(checkpoint.SnapshotE.Span, snapshotWords, "SnapshotE");
+        ThrowIfNotResidue(checkpoint.FinalK.Span, finalWords, "FinalK");
+
+        var point = new ChainPoint(checkpoint.Iteration, checkpoint.State.ToArray(), checkpoint.Check.ToArray(),
+            checkpoint.SnapshotE.ToArray(), checkpoint.FinalK.ToArray(), checkpoint.ChecksPassed,
+            checkpoint.Rollbacks);
+        _driver.Load(point);
+        _lastVerified = point;
+        _pendingRestore = point;
+        _iteration = point.Iteration;
     }
 
     /// <summary>
-    /// Executes a specified number of squaring iterations like <see cref="RunBenchmarkChunk"/>, but waits for the GPU
-    /// without blocking the calling thread.
+    /// Squares the state <paramref name="iterations"/> times without any check, for throughput measurement.
     /// </summary>
-    /// <param name="chunkSize">The number of squaring iterations to execute.</param>
+    /// <param name="iterations">The number of squarings.</param>
+    /// <remarks>
+    /// This advances <see cref="Iteration"/> and changes the state, but it is not part of a test: the next
+    /// <see cref="Run"/> starts its chain again (or from a <see cref="Restore"/>).
+    /// </remarks>
+    /// <exception cref="ArgumentOutOfRangeException"><paramref name="iterations"/> is negative.</exception>
+    public void RunBenchmarkChunk(int iterations = 100)
+    {
+        ThrowIfUnusable();
+        ArgumentOutOfRangeException.ThrowIfNegative(iterations);
+
+        EnsureChain();
+        _modulus.SquareState(iterations);
+        _modulus.Synchronize();
+        _iteration += iterations;
+    }
+
+    /// <summary>
+    /// Squares the state like <see cref="RunBenchmarkChunk"/>, but waits for the GPU without blocking the calling thread.
+    /// </summary>
+    /// <param name="iterations">The number of squarings.</param>
     /// <param name="cancellationToken">
     /// A token that stops waiting. An already canceled token prevents any work; a later cancellation leaves the queued
-    /// iterations running.
+    /// squarings running.
     /// </param>
-    /// <returns>A <see cref="ValueTask"/> that completes when the iterations have finished.</returns>
+    /// <returns>A <see cref="ValueTask"/> that completes when the squarings have finished.</returns>
+    /// <exception cref="ArgumentOutOfRangeException"><paramref name="iterations"/> is negative.</exception>
     /// <exception cref="OperationCanceledException"><paramref name="cancellationToken"/> was canceled.</exception>
-    public ValueTask RunBenchmarkChunkAsync(int chunkSize = 100, CancellationToken cancellationToken = default)
+    public ValueTask RunBenchmarkChunkAsync(int iterations = 100, CancellationToken cancellationToken = default)
     {
-        ObjectDisposedException.ThrowIf(_disposed, this);
+        ThrowIfUnusable();
+        ArgumentOutOfRangeException.ThrowIfNegative(iterations);
 
         if (cancellationToken.IsCancellationRequested)
         {
             return ValueTask.FromCanceled(cancellationToken);
         }
 
-        EnqueueIterations(chunkSize);
-        return _gpuWorkspace.Provider.SynchronizeStreamAsync(_gpuWorkspace.Stream, cancellationToken);
+        EnsureChain();
+        _modulus.SquareState(iterations);
+        _iteration += iterations;
+        return _modulus.SynchronizeAsync(cancellationToken);
     }
 
-    private bool _disposed;
+    /// <summary>Copies the current state to host memory as its residue modulo <c>N</c>.</summary>
+    /// <returns>The canonical <c>u mod N</c>, <see cref="ResidueWords"/> words.</returns>
+    public uint[] GetState()
+    {
+        ThrowIfUnusable();
+        EnsureChain();
+        return _modulus.ReadCanonical(SquaringRegister.State);
+    }
 
     /// <summary>
-    /// Releases unmanaged and optionally managed resources.
+    /// Copies the current state to host memory like <see cref="GetState"/>, without blocking the calling thread while
+    /// queued squarings complete.
     /// </summary>
-    /// <param name="disposing"><see langword="true"/> to release both managed and unmanaged resources; <see langword="false"/> to release only unmanaged resources.</param>
-    protected virtual void Dispose(bool disposing)
+    /// <param name="cancellationToken">A token that stops waiting; queued device work is not canceled.</param>
+    /// <returns>The canonical <c>u mod N</c>, <see cref="ResidueWords"/> words.</returns>
+    /// <exception cref="OperationCanceledException"><paramref name="cancellationToken"/> was canceled.</exception>
+    public ValueTask<uint[]> GetStateAsync(CancellationToken cancellationToken = default)
+    {
+        ThrowIfUnusable();
+        EnsureChain();
+        return _modulus.ReadCanonicalAsync(SquaringRegister.State, cancellationToken);
+    }
+
+    /// <summary>Releases the residues, the scratch buffers, the CUDA Graphs and the workspace.</summary>
+    /// <exception cref="InvalidOperationException">For <c>E &gt;= 32</c>, the CPU fallback mode differs from the one at
+    /// construction; nothing is released, so that host code never touches device memory (or the reverse). Restore the
+    /// mode and dispose again.</exception>
+    public void Dispose()
     {
         if (_disposed)
         {
             return;
         }
 
-        if (disposing)
+        ThrowIfFallbackModeChanged();
+        try
         {
-            _valueT.Dispose();
-            _valueTReduced.Dispose();
-            _mulResult.Dispose();
-            _quotient.Dispose();
-            _remainder.Dispose();
-            _remainderMask.Dispose();
-            _temp.Dispose();
-            _gpuWorkspace.Dispose();
+            // Written out (not '?.') so that the ownership analyzer (GSH0022) sees the call.
+            if (_modulus != null)
+            {
+                _modulus.Dispose();
+            }
         }
-
-        _disposed = true;
+        finally
+        {
+            // A failed release (an AggregateException from the CUDA Graphs) still leaves the instance disposed, so a
+            // second Dispose does not release the buffers again.
+            _disposed = true;
+        }
     }
 
-    /// <inheritdoc />
-    public void Dispose()
+    private async ValueTask<FermatPrpResult> RunCoreAsync(bool synchronous, IProgress<FermatPrpProgress>? progress,
+        CancellationToken cancellationToken)
     {
-        Dispose(true);
-        GC.SuppressFinalize(this);
+        cancellationToken.ThrowIfCancellationRequested();
+        var stopwatch = Stopwatch.StartNew();
+        if (_smallDivisor is { } divisor)
+        {
+            return new FermatPrpResult(false, divisor, 0, 0, 0, 0, 0, stopwatch.Elapsed);
+        }
+
+        EnsureChain();
+        var start = _pendingRestore ?? SquaringChainDriver.StartPoint(_startWords);
+        if (_pendingRestore is null)
+        {
+            // A run that does not resume starts again from u_0: until its first check passes, u_0 is its last verified
+            // point, so a cancellation reports the same position in Iteration, CreateCheckpoint and GetState.
+            _lastVerified = start;
+        }
+
+        _pendingRestore = null;
+
+        ChainOutcome outcome;
+        try
+        {
+            outcome = await _driver.RunAsync(start, synchronous, OnVerified, (k, checks, rollbacks) =>
+            {
+                _iteration = k;
+                progress?.Report(new FermatPrpProgress(k, _endIteration, checks, rollbacks));
+            }, cancellationToken).ConfigureAwait(false);
+        }
+        catch (OperationCanceledException)
+        {
+            // The driver set the registers back to the last verified point.
+            _iteration = _lastVerified.Iteration;
+            throw;
+        }
+
+        // u_K * a^10 against u_E.
+        // Into its own register: Final keeps u_K, so a run resumed from the last point (or run again) reads it again.
+        _modulus.Multiply(SquaringRegister.Verdict, SquaringRegister.Final, SquaringRegister.Constant);
+        var residue = _modulus.ReadCanonical(SquaringRegister.Verdict);
+        var check = _modulus.ReadCanonical(SquaringRegister.Snapshot);
+        _iteration = _endIteration;
+
+        return new FermatPrpResult(
+            residue.AsSpan().SequenceEqual(check),
+            null,
+            Low64(residue),
+            Low64(check),
+            outcome.Iterations,
+            outcome.EndPoint.ChecksPassed,
+            outcome.EndPoint.Rollbacks,
+            stopwatch.Elapsed);
+    }
+
+    private void OnVerified(ChainPoint point)
+    {
+        _lastVerified = point;
+        _options.OnVerifiedCheckpoint?.Invoke(ToCheckpoint(point));
+    }
+
+    private FermatPrpCheckpoint ToCheckpoint(ChainPoint point) =>
+        new(E, Base, BlockSize, point.Iteration, point.State, point.Check, point.Snapshot, point.Final,
+            point.ChecksPassed, point.Rollbacks);
+
+    private void ThrowIfNotResidue(ReadOnlySpan<uint> words, int expectedWords, string name)
+    {
+        if (words.Length != expectedWords)
+        {
+            throw new ArgumentException($"The checkpoint's {name} has {words.Length} words; expected {expectedWords}.",
+                "checkpoint");
+        }
+
+        EnsureChain();
+        if (expectedWords > 0 && !_modulus.IsBelowModulus(words))
+        {
+            throw new ArgumentException($"The checkpoint's {name} is not below N.", "checkpoint");
+        }
+    }
+
+    /// <summary>
+    /// Creates the residues and their buffers when they do not exist yet: the modulus (host or device stage, in the
+    /// CPU fallback mode fixed at construction), the start <c>u_0 = a</c>, the constant <c>a^10</c> and the chain driver.
+    /// </summary>
+    [MemberNotNull(nameof(_modulus), nameof(_driver))]
+    private void EnsureChain()
+    {
+        if (_modulus != null && _driver != null)
+        {
+            return;
+        }
+
+        var modulus = CreateModulus(E, _cpuFallbackAtCreation);
+        try
+        {
+            modulus.Write(SquaringRegister.Start, _startWords);
+            modulus.Write(SquaringRegister.State, _startWords);
+            modulus.Write(SquaringRegister.Constant,
+                ToWords(BigInteger.ModPow(Base, 10, modulus.GetModulus()), ResidueWords));
+            _driver = new SquaringChainDriver(modulus, ChainLength, E, _blockSize, _checkIntervalBlocks,
+                _options.MaxConsecutiveRollbacks);
+            _modulus = modulus;
+        }
+        catch
+        {
+            modulus.Dispose();
+            throw;
+        }
+    }
+
+    /// <summary>
+    /// Returns <c>u_0 = a mod N</c> in <paramref name="words"/> words without building <c>N</c>: for <c>E &gt;= 32</c>,
+    /// <c>N &gt; 2^64 &gt; a</c>.
+    /// </summary>
+    private static uint[] StartWords(int e, uint @base, int words)
+    {
+        var start = new uint[words];
+        ulong value = @base;
+        if (e <= QuadraticHostModulus.MaxExponent)
+        {
+            value %= (1UL << (2 * e + 1)) - (1UL << e) + QuadraticFoldModulus.ConstantTerm;
+        }
+
+        start[0] = (uint)value;
+        if (words > 1)
+        {
+            start[1] = (uint)(value >> 32);
+        }
+
+        return start;
+    }
+
+    private static ISquaringModulus CreateModulus(int e, bool isCpuFallback) =>
+        e <= QuadraticHostModulus.MaxExponent
+            ? new QuadraticHostModulus(e)
+            : new QuadraticDeviceModulus(new QuadraticFoldModulus(e), isCpuFallback);
+
+    private static void ThrowIfInvalid(FermatPrpOptions options, long chainLength)
+    {
+        if (options.BlockSize < 0 || options.BlockSize > chainLength)
+        {
+            throw new ArgumentOutOfRangeException(nameof(options), options.BlockSize,
+                $"BlockSize must be from 0 (automatic) to the chain length 2E + 1 = {chainLength}.");
+        }
+
+        if (options.CheckIntervalBlocks < 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(options), options.CheckIntervalBlocks,
+                "CheckIntervalBlocks must not be negative.");
+        }
+
+        if (options.MaxConsecutiveRollbacks < 1)
+        {
+            throw new ArgumentOutOfRangeException(nameof(options), options.MaxConsecutiveRollbacks,
+                "MaxConsecutiveRollbacks must be at least 1.");
+        }
+    }
+
+    /// <summary>Rejects a base that is 0, 1 or <c>N - 1</c> modulo <c>N</c>, which only a small <c>N</c> allows.</summary>
+    private static void ThrowIfTrivialBase(int e, uint @base)
+    {
+        var n = (1UL << (2 * e + 1)) - (1UL << e) + QuadraticFoldModulus.ConstantTerm;
+        var reduced = @base % n;
+        if (reduced == 0 || reduced == 1 || reduced == n - 1)
+        {
+            throw new ArgumentOutOfRangeException(nameof(@base), @base,
+                $"The base is {reduced} modulo N = {n}; a base of 0, 1 or N - 1 says nothing about N.");
+        }
+    }
+
+    /// <summary>Returns <c>gcd(a, N)</c> when it is not 1, from <c>N mod a = 2x^2 - x + 11 mod a</c> with <c>x = 2^E mod a</c>.</summary>
+    private static uint? SmallDivisor(int e, uint @base)
+    {
+        ulong x = 1;
+        ulong power = 2 % @base;
+        for (var bits = e; bits > 0; bits >>= 1)
+        {
+            if ((bits & 1) != 0)
+            {
+                x = x * power % @base;
+            }
+
+            power = power * power % @base;
+        }
+
+        // 2x^2 + 11 + (a - x) is non-negative because x < a.
+        var nModBase = (ulong)(((UInt128)2 * x * x + QuadraticFoldModulus.ConstantTerm + (@base - x)) % @base);
+        var gcd = (ulong)BigInteger.GreatestCommonDivisor(@base, nModBase);
+        return gcd == 1 ? null : (uint)gcd;
+    }
+
+    private static uint[] ToWords(BigInteger value, int words)
+    {
+        var result = new uint[words];
+        value.TryWriteBytes(System.Runtime.InteropServices.MemoryMarshal.AsBytes(result.AsSpan()), out _,
+            isUnsigned: true);
+        return result;
+    }
+
+    private static ulong Low64(ReadOnlySpan<uint> words) =>
+        words.Length > 1 ? words[0] | ((ulong)words[1] << 32) : words[0];
+
+    private void ThrowIfUnusable()
+    {
+        ObjectDisposedException.ThrowIf(_disposed, this);
+        ThrowIfFallbackModeChanged();
+    }
+
+    /// <summary>
+    /// Throws when the CPU fallback mode differs from the one the instance was created in: device buffers would then go
+    /// to host code, or host buffers to CUDA kernels, which corrupts the CUDA context (#647).
+    /// </summary>
+    private void ThrowIfFallbackModeChanged()
+    {
+        if (_pinsFallbackMode && GpuKernelLoader.IsCpuFallbackMode != _cpuFallbackAtCreation)
+        {
+            throw new InvalidOperationException(
+                $"This FermatAlgorithm was created with the CPU fallback {(_cpuFallbackAtCreation ? "on" : "off")}, and it is now {(_cpuFallbackAtCreation ? "off" : "on")}. Switching the CPU fallback requires a new instance.");
+        }
     }
 }

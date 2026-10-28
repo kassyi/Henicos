@@ -224,10 +224,12 @@ public class GpuBigUIntGenericTests
             // mutant: GpuBigUIntGeneric.cs:206 `TestBit(src, bits - 2)` -> `TestBit(src, bits - 1)` (random values, s = 2)
             // mutant: GpuBigUIntGeneric.cs:207 `AnyBitBelow(src, bits - 2)` -> `AnyBitBelow(src, bits - 1)` (value [0, 0x8000_0000, 0, 0], s = 65)
             // mutant: GpuBigUIntGeneric.cs:205 `bits >= 1` -> `bits >= 0` (value [0x8000_0000, 0, 0, 0], s = 0)
-            // mutant: GpuBigUIntGeneric.cs:238 `val << (32 - bitShift)` -> `val >> (32 - bitShift)` (random values, s = 1)
-            // mutant: GpuBigUIntGeneric.cs:248 `limb < src.Length` -> `limb <= src.Length` (s = 129: index out of range)
-            // mutant: GpuBigUIntGeneric.cs:257 `src[i] != 0` -> `src[i] == 0` (random values, s = 34)
-            // mutant: GpuBigUIntGeneric.cs:263 `(1u << (count % 32)) - 1u` -> `1u << (count % 32)` (random values, s = 3)
+            // mutant: GpuBigUIntGeneric.cs:239 `val << (32 - bitShift)` -> `val >> (32 - bitShift)` (random values, s = 1)
+            // mutant: GpuBigUIntGeneric.cs:249 `limb < src.Length` -> `limb <= src.Length` (s = 129: index out of range)
+            // mutant: GpuBigUIntGeneric.cs:258 `src[i] != 0` -> `src[i] == 0` (random values, s = 34)
+            // mutant: GpuBigUIntGeneric.cs:264 `(1u << (count % 32)) - 1u` -> `1u << (count % 32)` (random values, s = 3)
+            // mutant: GpuBigUIntGeneric.cs:231 `return result;` of the bitShift == 0 copy removed (s = 0, 32, 64, 96: the carry
+            // loop then shifts by 32, which C# masks to 0)
             var expected = (shift, value >> shift, Bit(value, shift - 1), Bit(value, shift - 2), shift > 2 && !(value % (BigInteger.One << (shift - 2))).IsZero);
             Assert.Equal(expected, (shift, ToBigInteger(result), guard, round, sticky));
 
@@ -282,6 +284,20 @@ public class GpuBigUIntGenericTests
         Assert.Throws<ArgumentOutOfRangeException>(() => source.ShiftRight(-33, out bool _));
     }
 
+    [Fact]
+    [TestTarget(ExecutionTarget.CpuExecution)]
+    [Scenario(TestScenario.SadPath)]
+    public void ShiftLeft_NegativeBits_Throws()
+    {
+        var source = FromLimbs([1u, 2u, 3u, 4u]);
+
+        // ShiftLeft rejects a negative count like ShiftRight: -1 would give bitShift = -1, which C# masks to a 31-bit
+        // shift, and -33 a negative limb index.
+        // mutant: GpuBigUIntGeneric.cs:275 `ThrowIfNegative(bits)` removed (-1 returns a meaningless value)
+        Assert.Throws<ArgumentOutOfRangeException>(() => source.ShiftLeft(-1));
+        Assert.Throws<ArgumentOutOfRangeException>(() => source.ShiftLeft(-33));
+    }
+
     [Theory]
     [MemberData(nameof(ShiftValues))]
     [TestTarget(ExecutionTarget.CpuExecution)]
@@ -295,8 +311,10 @@ public class GpuBigUIntGenericTests
         foreach (var shift in s_shiftLeftAmounts)
         {
             // The result is (v << s) mod 2^128.
-            // mutant: GpuBigUIntGeneric.cs:293 `val >> (32 - bitShift)` -> `val << (32 - bitShift)` (value [0x8000_0000, 0, 0, 0], s = 1)
-            // mutant: GpuBigUIntGeneric.cs:289 `src.Length - limbShift` -> `src.Length + limbShift` (s = 40, index out of range)
+            // mutant: GpuBigUIntGeneric.cs:302 `val >> (32 - bitShift)` -> `val << (32 - bitShift)` (value [0x8000_0000, 0, 0, 0], s = 1)
+            // mutant: GpuBigUIntGeneric.cs:298 `src.Length - limbShift` -> `src.Length + limbShift` (s = 40, index out of range)
+            // mutant: GpuBigUIntGeneric.cs:294 `return result;` of the bitShift == 0 copy removed (s = 0, 32, 64: the carry
+            // loop then shifts by 32, which C# masks to 0)
             var expected = (value << shift) % s_modulus;
             Assert.Equal((shift, expected), (shift, ToBigInteger(source.ShiftLeft(shift))));
         }
@@ -359,7 +377,7 @@ public class GpuBigUIntGenericTests
         var source = FromLimbs(limbs);
 
         // SetMsb ORs bit 127 in and keeps every other bit; applying it twice changes nothing.
-        // mutant: GpuBigUIntGeneric.cs:310 `|=` -> `^=` (values whose bit 127 is already set)
+        // mutant: GpuBigUIntGeneric.cs:318 `|=` -> `^=` (values whose bit 127 is already set)
         var once = source.SetMsb();
         Assert.Equal(value | (BigInteger.One << 127), ToBigInteger(once));
         Assert.Equal(ToBigInteger(once), ToBigInteger(once.SetMsb()));

@@ -69,7 +69,7 @@ internal class Program
                                            --hex               Output in hexadecimal without decimal conversion
               cpu-pi [digits]            CPU Chudnovsky Pi baseline computation (default: 10,000)
               tf [exponent] [maxP]       Mersenne trial factoring benchmark (default: 71428571, 4000000000)
-              prp [exponent] [iters]     Fermat probable prime test benchmark (default: 71428571, 10)
+              prp [exponent] [base]      Fermat PRP test with verified checkpoints (default: 71428571, 3)
               bbp [offset] [count]       Extract hexadecimal Pi digits via BBP (default: offset 0, count 16)
               compute-bench [suite]      Run compute performance benchmark (sgemm, sha256, bs, reduce, mandelbrot,
                                          empty, fma, branch, memcopy, transpose, micro, all) (default: all)
@@ -353,19 +353,19 @@ internal class Program
     private static int RunFermatPrp(string[] args)
     {
         var exponent = 71428571;
-        var iterations = 10;
+        var @base = 3u;
 
         if (args.Length > 0 && int.TryParse(args[0], out var e))
         {
             exponent = e;
         }
 
-        if (args.Length > 1 && int.TryParse(args[1], out var i))
+        if (args.Length > 1 && uint.TryParse(args[1], out var a))
         {
-            iterations = i;
+            @base = a;
         }
 
-        FermatPrpBenchmark.RunFermatTest(exponent, iterations);
+        FermatPrpBenchmark.RunFermatTest(exponent, @base);
         return 0;
     }
 
