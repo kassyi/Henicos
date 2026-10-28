@@ -437,19 +437,19 @@ public class GpuBigFloatRoundingTests : IDisposable
     }
 
     /// <summary>
-    /// A square root input <c>S·2^E</c> stored in exactly <c>Words.Length</c> words, with the number of result words.
+    /// A square root input <c>S·2^E</c> (<see cref="Operand"/>; its sign is not used), with the number of result words.
     /// </summary>
-    private sealed record RootCase(uint[] Words, int Exponent, int ResultWords);
+    private sealed record RootCase(Operand Value, int ResultWords);
 
     private static readonly Dictionary<string, RootCase> s_sqrtCases = CreateSqrtCases();
 
-    public static TheoryData<string, string> SqrtCasesOnBothEngines()
+    public static TheoryData<Engine, string> SqrtCasesOnBothEngines()
     {
-        var data = new TheoryData<string, string>();
+        var data = new TheoryData<Engine, string>();
         foreach (var name in s_sqrtCases.Keys)
         {
-            data.Add("Gpu", name);
-            data.Add("Cpu", name);
+            data.Add(Engine.Gpu, name);
+            data.Add(Engine.Cpu, name);
         }
 
         return data;
@@ -469,17 +469,17 @@ public class GpuBigFloatRoundingTests : IDisposable
     [SkippableTheory]
     [Scenario(TestScenario.Boundary)]
     [MemberData(nameof(SqrtCasesOnBothEngines))]
-    public void Sqrt_IsRoundedTowardZero(string engine, string caseName)
+    public void Sqrt_IsRoundedTowardZero(Engine engine, string caseName)
     {
         var rootCase = s_sqrtCases[caseName];
         var p = 32 * rootCase.ResultWords;
-        var a = new Dyadic(FromWords(rootCase.Words), rootCase.Exponent);
+        var a = new Dyadic(rootCase.Value.Significand, rootCase.Value.Exponent);
         var (expectedSig, expectedExp) = BigFloatReference.RzSqrt(a.Mantissa, a.Exponent, p);
 
-        using var value = new GpuBigUInt(_workspace, rootCase.Words);
+        using var value = new GpuBigUInt(_workspace, rootCase.Value.Words);
         using var result = new GpuBigUInt(_workspace, rootCase.ResultWords);
         var context = CreateContext();
-        var operand = new GpuFloatOperand(value.Handle, rootCase.Exponent);
+        var operand = new GpuFloatOperand(value.Handle, rootCase.Value.Exponent);
         var sqrt = Arithmetic(engine).Sqrt(ref context, in operand, result.Handle);
         var root = result.ToBigInteger();
 
@@ -496,9 +496,9 @@ public class GpuBigFloatRoundingTests : IDisposable
     // The square root of a negative value is not defined; the square root of zero is positive zero.
     [SkippableTheory]
     [Scenario(TestScenario.SadPath)]
-    [InlineData("Gpu")]
-    [InlineData("Cpu")]
-    public void Sqrt_NegativeThrows_ZeroIsZero(string engine)
+    [InlineData(Engine.Gpu)]
+    [InlineData(Engine.Cpu)]
+    public void Sqrt_NegativeThrows_ZeroIsZero(Engine engine)
     {
         var arithmetic = Arithmetic(engine);
         using var value = new GpuBigUInt(_workspace, [9u]);
@@ -520,71 +520,122 @@ public class GpuBigFloatRoundingTests : IDisposable
 
     private static Dictionary<string, RootCase> CreateSqrtCases()
     {
+        // 0x123456789ABCDEF0: the significand of the ExponentParity cases.
+        uint[] parity = [0x9ABC_DEF0u, 0x1234_5678u];
+        // 2^64 + 2^33 + 1: the root of the SquareWide case.
+        var wideRoot = (BigInteger.One << 64) + (BigInteger.One << 33) + 1;
+        // r = 2^127 + 0x0123456789ABCDEF0123456789ABCDE: the 128-bit root of the NearSquare cases.
+        var r = (BigInteger.One << 127)
+            + BigInteger.Parse("0123456789ABCDEF0123456789ABCDE", System.Globalization.NumberStyles.HexNumber);
+
         var cases = new Dictionary<string, RootCase>
         {
-            // PerfectSquares: an exact root is returned exactly. Powers of two have an exact inverse square root
-            // (theta = 0 in the design); 9, 25 and the wide square do not, so the approximation lands below the root
-            // and the correction has to step up.
-            ["Square4n1"] = new([4u], 0, 1),
-            ["Square9n1"] = new([9u], 0, 1),
-            ["Square9n4"] = new([9u], 0, 4),
-            ["Square9n8"] = new([9u], 0, 8),
-            ["Square25n4"] = new([25u], 0, 4),
-            ["Square9Scaled"] = new([9u], 74, 4),
-            ["SquareWide"] = new(ToWords(BigInteger.Pow((BigInteger.One << 64) + (BigInteger.One << 33) + 1, 2)), 0, 4),
+            // 4 in one word: an exact root of a power of two, whose inverse square root is exact (theta = 0).
+            ["Square4n1"] = Root(Of(4u, 0), 1),
+            // 9 in one word: an exact root; the approximation lands below it and the correction steps up.
+            ["Square9n1"] = Root(Of(9u, 0), 1),
+            // 9 in 4 words.
+            ["Square9n4"] = Root(Of(9u, 0), 4),
+            // 9 in 8 words.
+            ["Square9n8"] = Root(Of(9u, 0), 8),
+            // 25 in 4 words.
+            ["Square25n4"] = Root(Of(25u, 0), 4),
+            // 9·2^74: an exact root with an even exponent.
+            ["Square9Scaled"] = Root(Of(9u, 74), 4),
+            // (2^64 + 2^33 + 1)²: a wide exact square.
+            ["SquareWide"] = Root(Of(ToWords(BigInteger.Pow(wideRoot, 2)), 0), 4),
 
-            // ExponentParity: the same significand at even, odd, large and extreme exponents (E - t computed in long).
-            ["Parity0"] = new([0x9ABC_DEF0u, 0x1234_5678u], 0, 4),
-            ["Parity1"] = new([0x9ABC_DEF0u, 0x1234_5678u], 1, 4),
-            ["ParityMinus1"] = new([0x9ABC_DEF0u, 0x1234_5678u], -1, 4),
-            ["ParityLarge"] = new([0x9ABC_DEF0u, 0x1234_5678u], 1 << 30, 4),
-            ["ParityLargeNegative"] = new([0x9ABC_DEF0u, 0x1234_5678u], -(1 << 30), 4),
-            ["ParityMax"] = new([0x9ABC_DEF0u, 0x1234_5678u], int.MaxValue, 4),
-            ["ParityMin"] = new([0x9ABC_DEF0u, 0x1234_5678u], int.MinValue, 4),
-            ["ParityMinPlus1"] = new([0x9ABC_DEF0u, 0x1234_5678u], int.MinValue + 1, 4),
+            // ExponentParity (E - t is computed in long): an even exponent.
+            ["Parity0"] = Root(Of(parity, 0), 4),
+            // An odd exponent.
+            ["Parity1"] = Root(Of(parity, 1), 4),
+            // A negative odd exponent.
+            ["ParityMinus1"] = Root(Of(parity, -1), 4),
+            // A large exponent, 2^30.
+            ["ParityLarge"] = Root(Of(parity, 1 << 30), 4),
+            // A large negative exponent, -2^30.
+            ["ParityLargeNegative"] = Root(Of(parity, -(1 << 30)), 4),
+            // int.MaxValue.
+            ["ParityMax"] = Root(Of(parity, int.MaxValue), 4),
+            // int.MinValue.
+            ["ParityMin"] = Root(Of(parity, int.MinValue), 4),
+            // int.MinValue + 1.
+            ["ParityMinPlus1"] = Root(Of(parity, int.MinValue + 1), 4),
+
+            // NearSquares (n = 4): A = r² + d of 8 words is used as it is (t = 0), so the root is r - 1, r or r + 1
+            // and the remainder spans its whole range [0, 2r]. r² - 1: the root is r - 1.
+            ["NearSquareMinus1"] = Root(Of(ToWords(r * r - 1, 8), 0), 4),
+            // r²: the root is r.
+            ["NearSquareExact"] = Root(Of(ToWords(r * r, 8), 0), 4),
+            // r² + 1.
+            ["NearSquarePlus1"] = Root(Of(ToWords(r * r + 1, 8), 0), 4),
+            // r² + 2r: the largest remainder.
+            ["NearSquarePlus2R"] = Root(Of(ToWords(r * r + 2 * r, 8), 0), 4),
+            // (r + 1)²: the root is r + 1.
+            ["NearSquareNext"] = Root(Of(ToWords((r + 1) * (r + 1), 8), 0), 4),
         };
 
-        // NearSquares (n = 4): A = r² + d for a 128-bit r is used as it is (t = 0), so the root is r - 1, r or r + 1
-        // and the remainder spans its whole range [0, 2r]: r² - 1, r², r² + 1, r² + 2r (the largest remainder) and
-        // (r + 1)².
-        var r = (BigInteger.One << 127) + BigInteger.Parse("0123456789ABCDEF0123456789ABCDE", System.Globalization.NumberStyles.HexNumber);
-        cases["NearSquareMinus1"] = new(ToWords(r * r - 1, 8), 0, 4);
-        cases["NearSquareExact"] = new(ToWords(r * r, 8), 0, 4);
-        cases["NearSquarePlus1"] = new(ToWords(r * r + 1, 8), 0, 4);
-        cases["NearSquarePlus2R"] = new(ToWords(r * r + 2 * r, 8), 0, 4);
-        cases["NearSquareNext"] = new(ToWords((r + 1) * (r + 1), 8), 0, 4);
-
         // PrecisionLadder: every result width that changes the margin of the approximation (m = ceil(n/2)) and the
-        // widths of the old fixed 4-word margin, for 3, 7 and a random n-word value (seed 42 + 37n).
+        // widths of the old fixed 4-word margin.
         foreach (var n in new[] { 1, 2, 3, 4, 5, 6, 8, 9, 16, 17, 32, 33 })
         {
-            cases[$"Ladder3n{n}"] = new([3u], 0, n);
-            cases[$"Ladder7n{n}"] = new([7u], 1, n);
-            cases[$"LadderRandomn{n}"] = new(RandomWords(new Random(42 + 37 * n), n), -5, n);
+            // 3 in one word.
+            cases[$"Ladder3n{n}"] = Root(Of(3u, 0), n);
+            // 7·2^1: an odd exponent.
+            cases[$"Ladder7n{n}"] = Root(Of(7u, 1), n);
+            // An n-word value with its top bit set.
+            cases[$"LadderRandomn{n}"] = Root(Of(LadderWords(n), -5), n);
         }
 
-        // InputWidth (n = 4): operands of 1, n, 2n, 2n + 1 and 4n words, so A is shifted left (t > 0), taken as it
-        // is (t = 0) or truncated (t < 0, with set and with zero dropped bits).
-        var widthRandom = new Random(661);
-        cases["Width1"] = new(RandomWords(widthRandom, 1), 0, 4);
-        cases["Width4"] = new(RandomWords(widthRandom, 4), 0, 4);
-        cases["Width8"] = new(RandomWords(widthRandom, 8), 0, 4);
-        cases["Width9"] = new(RandomWords(widthRandom, 9), 1, 4);
-        cases["Width16"] = new(RandomWords(widthRandom, 16), 0, 4);
-        var high = RandomWords(widthRandom, 8);
-        cases["Width16ZeroLow"] = new([0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, .. high], 0, 4);
+        // InputWidth (n = 4): operands of 1, n, 2n, 2n + 1 and 4n words with their top bit set, so A is shifted left
+        // (t > 0), taken as it is (t = 0) or truncated (t < 0, with set and with zero dropped bits).
+        uint[] width1 = [0xCC90_CC45u];
+        uint[] width4 = [0x3490_DA35u, 0xC119_10E3u, 0x8502_1455u, 0xA9DE_B5BBu];
+        uint[] width8 =
+        [
+            0xD09D_6B83u, 0xA4F3_041Cu, 0xF343_AB44u, 0x3D18_CAB9u, 0x6C7E_11FAu, 0x19E2_990Bu, 0x68CD_F732u,
+            0x8A68_4DA0u,
+        ];
+        uint[] width9 =
+        [
+            0x5B87_0F3Cu, 0x68FA_F132u, 0xCFF7_2393u, 0x3462_E95Du, 0x26C5_E01Au, 0x1014_C08Au, 0xF7C5_3298u,
+            0xEE95_1D2Bu, 0xB49E_DCDFu,
+        ];
+        uint[] width16 =
+        [
+            0xE891_F7A4u, 0xDE34_B44Fu, 0x4E0B_F4BAu, 0xA11D_9B52u, 0x7260_F957u, 0x89D0_786Au, 0x8F05_A94Fu,
+            0x6A7F_0037u, 0xB083_4B86u, 0x210E_74F0u, 0x4531_9FA3u, 0xBEF1_F7ABu, 0x50DD_377Du, 0xB60D_45B8u,
+            0x537A_3428u, 0x9409_24F0u,
+        ];
+        uint[] high =
+        [
+            0x4C02_28A5u, 0x3901_C1C7u, 0x76CD_C780u, 0x8C87_6E85u, 0xFC9F_0B39u, 0xBAF1_7DC7u, 0x1AC9_BD5Eu,
+            0x8ED3_285Bu,
+        ];
+        // One word.
+        cases["Width1"] = Root(Of(width1, 0), 4);
+        // 4 words.
+        cases["Width4"] = Root(Of(width4, 0), 4);
+        // 8 words.
+        cases["Width8"] = Root(Of(width8, 0), 4);
+        // 9 words, with an odd exponent.
+        cases["Width9"] = Root(Of(width9, 1), 4);
+        // 16 words: truncated, with set bits dropped.
+        cases["Width16"] = Root(Of(width16, 0), 4);
+        // 16 words whose low 8 words are 0: truncated, with zero bits dropped.
+        cases["Width16ZeroLow"] = Root(Of([0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, .. high], 0), 4);
         return cases;
     }
 
     private static readonly Dictionary<string, RootCase> s_rsqrtCases = CreateRsqrtCases();
 
-    public static TheoryData<string, string> RsqrtCasesOnBothEngines()
+    public static TheoryData<Engine, string> RsqrtCasesOnBothEngines()
     {
-        var data = new TheoryData<string, string>();
+        var data = new TheoryData<Engine, string>();
         foreach (var name in s_rsqrtCases.Keys)
         {
-            data.Add("Gpu", name);
-            data.Add("Cpu", name);
+            data.Add(Engine.Gpu, name);
+            data.Add(Engine.Cpu, name);
         }
 
         return data;
@@ -603,17 +654,17 @@ public class GpuBigFloatRoundingTests : IDisposable
     [SkippableTheory]
     [Scenario(TestScenario.Boundary)]
     [MemberData(nameof(RsqrtCasesOnBothEngines))]
-    public void Rsqrt_IsRoundedTowardZero(string engine, string caseName)
+    public void Rsqrt_IsRoundedTowardZero(Engine engine, string caseName)
     {
         var rootCase = s_rsqrtCases[caseName];
         var p = 32 * rootCase.ResultWords;
-        var a = new Dyadic(FromWords(rootCase.Words), rootCase.Exponent);
+        var a = new Dyadic(rootCase.Value.Significand, rootCase.Value.Exponent);
         var (expectedSig, expectedExp) = BigFloatReference.RzRsqrt(a.Mantissa, a.Exponent, p);
 
-        using var value = new GpuBigUInt(_workspace, rootCase.Words);
+        using var value = new GpuBigUInt(_workspace, rootCase.Value.Words);
         using var result = new GpuBigUInt(_workspace, rootCase.ResultWords);
         var context = CreateContext();
-        var operand = new GpuFloatOperand(value.Handle, rootCase.Exponent);
+        var operand = new GpuFloatOperand(value.Handle, rootCase.Value.Exponent);
         var rsqrt = Arithmetic(engine).Rsqrt(ref context, in operand, result.Handle);
         var inverse = result.ToBigInteger();
 
@@ -630,9 +681,9 @@ public class GpuBigFloatRoundingTests : IDisposable
     // The inverse square root of a negative value is not defined, and that of zero is a division by zero.
     [SkippableTheory]
     [Scenario(TestScenario.SadPath)]
-    [InlineData("Gpu")]
-    [InlineData("Cpu")]
-    public void Rsqrt_NegativeAndZeroThrow(string engine)
+    [InlineData(Engine.Gpu)]
+    [InlineData(Engine.Cpu)]
+    public void Rsqrt_NegativeAndZeroThrow(Engine engine)
     {
         var arithmetic = Arithmetic(engine);
         using var value = new GpuBigUInt(_workspace, [9u]);
@@ -655,52 +706,151 @@ public class GpuBigFloatRoundingTests : IDisposable
 
     private static Dictionary<string, RootCase> CreateRsqrtCases()
     {
+        // 0x123456789ABCDEF0: the significand of the ExponentParity cases.
+        uint[] parity = [0x9ABC_DEF0u, 0x1234_5678u];
+
         var cases = new Dictionary<string, RootCase>
         {
-            // Exact inverse roots (powers of four, either exponent parity) and an irrational one.
-            ["PowerOfFourEven"] = new([4u], 0, 4),
-            ["PowerOfFourOdd"] = new([2u], 1, 4),
-            ["PowerOfFourWide"] = new([0u, 0u, 1u], -64, 4),
-            // One above a power of four: the inverse root lies just below an exact value (2^-32 for 2^64 + 1), where a
-            // result rounded up would land on the exact value.
-            ["PowerOfFourPlus1"] = new([5u], 0, 4),
-            ["PowerOfFourPlus1Wide"] = new([1u, 0u, 1u], 0, 4),
-            ["Two"] = new([2u], 0, 4),
-            ["Nine"] = new([9u], 0, 8),
+            // 4: an exact inverse root (a power of four), even exponent.
+            ["PowerOfFourEven"] = Root(Of(4u, 0), 4),
+            // 2·2^1 = 4: the same with an odd exponent.
+            ["PowerOfFourOdd"] = Root(Of(2u, 1), 4),
+            // 2^64·2^-64 = 1 in 3 words: an exact inverse root of a wide value.
+            ["PowerOfFourWide"] = Root(Of([0u, 0u, 1u], -64), 4),
+            // 5 = 4 + 1: the inverse root lies just below an exact value, where a result rounded up would land on it.
+            ["PowerOfFourPlus1"] = Root(Of(5u, 0), 4),
+            // 2^64 + 1: the same 2^-32 below 2^-32.
+            ["PowerOfFourPlus1Wide"] = Root(Of([1u, 0u, 1u], 0), 4),
+            // 2: an irrational inverse root.
+            ["Two"] = Root(Of(2u, 0), 4),
+            // 9 in 8 words.
+            ["Nine"] = Root(Of(9u, 0), 8),
 
-            // The significand already fills its words (no leading zero bit) and the exponent is odd: the value has to
-            // move one word up instead of losing its lowest bit (losing it would round the inverse root up).
-            ["OddExponentFullWidth"] = new([0xFFFF_FFFFu], 1, 4),
-            ["OddExponentFullWidthWide"] = new([0x1234_5679u, 0x9ABC_DEF0u, 0x0FED_CBA9u, 0x8765_4321u], -3, 4),
+            // 0xFFFFFFFF·2^1: the significand fills its word and the exponent is odd, so the value moves one word up
+            // instead of losing its lowest bit (losing it would round the inverse root up).
+            ["OddExponentFullWidth"] = Root(Of(0xFFFF_FFFFu, 1), 4),
+            // The same with 4 words.
+            ["OddExponentFullWidthWide"] = Root(Of([0x1234_5679u, 0x9ABC_DEF0u, 0x0FED_CBA9u, 0x8765_4321u], -3), 4),
 
-            // ExponentParity: the same significand at even, odd, large and extreme exponents (computed in long).
-            ["Parity0"] = new([0x9ABC_DEF0u, 0x1234_5678u], 0, 4),
-            ["Parity1"] = new([0x9ABC_DEF0u, 0x1234_5678u], 1, 4),
-            ["ParityMinus1"] = new([0x9ABC_DEF0u, 0x1234_5678u], -1, 4),
-            ["ParityMax"] = new([0x9ABC_DEF0u, 0x1234_5678u], int.MaxValue, 4),
-            ["ParityMin"] = new([0x9ABC_DEF0u, 0x1234_5678u], int.MinValue, 4),
-            ["ParityMinPlus1"] = new([0x9ABC_DEF0u, 0x1234_5678u], int.MinValue + 1, 4),
+            // ExponentParity (computed in long): an even exponent.
+            ["Parity0"] = Root(Of(parity, 0), 4),
+            // An odd exponent.
+            ["Parity1"] = Root(Of(parity, 1), 4),
+            // A negative odd exponent.
+            ["ParityMinus1"] = Root(Of(parity, -1), 4),
+            // int.MaxValue.
+            ["ParityMax"] = Root(Of(parity, int.MaxValue), 4),
+            // int.MinValue.
+            ["ParityMin"] = Root(Of(parity, int.MinValue), 4),
+            // int.MinValue + 1.
+            ["ParityMinPlus1"] = Root(Of(parity, int.MinValue + 1), 4),
         };
 
         // PrecisionLadder: every result width that changes the margin m = max(1, n - floor(w/2)), and the widths of the
         // old fixed 4-word margin (at 5 words and more only about 16n + 65 bits were right).
         foreach (var n in new[] { 1, 2, 3, 4, 5, 6, 8, 9, 16, 17, 32, 33 })
         {
-            cases[$"Ladder3n{n}"] = new([3u], 0, n);
-            cases[$"Ladder7n{n}"] = new([7u], 1, n);
-            cases[$"LadderRandomn{n}"] = new(RandomWords(new Random(42 + 37 * n), n), -5, n);
+            // 3 in one word.
+            cases[$"Ladder3n{n}"] = Root(Of(3u, 0), n);
+            // 7·2^1: an odd exponent.
+            cases[$"Ladder7n{n}"] = Root(Of(7u, 1), n);
+            // An n-word value with its top bit set.
+            cases[$"LadderRandomn{n}"] = Root(Of(LadderWords(n), -5), n);
         }
 
-        // InputWidth (n = 4): operands of 1, n, 2n, 2n + 1 and 4n words; the radicand is never truncated.
-        var widthRandom = new Random(662);
-        cases["Width1"] = new(RandomWords(widthRandom, 1), 0, 4);
-        cases["Width4"] = new(RandomWords(widthRandom, 4), 0, 4);
-        cases["Width8"] = new(RandomWords(widthRandom, 8), 1, 4);
-        cases["Width9"] = new(RandomWords(widthRandom, 9), 0, 4);
-        cases["Width16"] = new(RandomWords(widthRandom, 16), 1, 4);
-        cases["Width17"] = new(RandomWords(widthRandom, 17), 0, 4);
+        // InputWidth (n = 4): operands of 1, n, 2n, 2n + 1, 4n and 4n + 1 words with their top bit set; the radicand is
+        // never truncated.
+        uint[] width1 = [0xFF81_A0F7u];
+        uint[] width4 = [0x1448_916Eu, 0xE0C4_F8EAu, 0x4CDE_F01Eu, 0xDD10_1E0Eu];
+        uint[] width8 =
+        [
+            0x6F55_B23Du, 0xC6F6_DA4Eu, 0x4CB2_6DF8u, 0x1932_5503u, 0x3AAA_2665u, 0x80D4_2D42u, 0x73E6_2CC8u,
+            0xB63F_7888u,
+        ];
+        uint[] width9 =
+        [
+            0xA2A6_7B84u, 0xEFF3_E302u, 0xD3F9_D904u, 0x5220_DB7Au, 0x5AED_5BBBu, 0x2FEE_64F9u, 0xC6B2_2471u,
+            0x284D_9A6Cu, 0xADCA_9CDDu,
+        ];
+        uint[] width16 =
+        [
+            0x145D_A23Du, 0x9B5A_B10Cu, 0xECA4_1C13u, 0xAF69_3618u, 0xBFEF_DCD2u, 0xAEB0_70C4u, 0x1867_7801u,
+            0x7CF3_8D69u, 0x416C_B32Fu, 0x1180_FDCBu, 0x6245_D3B3u, 0x6C78_EFB3u, 0xA6E1_2E8Cu, 0xFA87_85C0u,
+            0xEE13_59AEu, 0xF9F1_2D61u,
+        ];
+        uint[] width17 =
+        [
+            0x9A7B_3B5Du, 0x4DC4_7BD9u, 0x4D36_CA62u, 0xDDCC_BA53u, 0xE474_3C98u, 0x264F_4A9Fu, 0xD1E8_B9A9u,
+            0x2386_0859u, 0x2414_031Cu, 0x3BB6_1B79u, 0x5CEB_6C37u, 0x26E0_FE8Cu, 0x7DA0_100Bu, 0x5516_BACCu,
+            0x4393_6283u, 0x927A_B5CDu, 0xF0F0_5932u,
+        ];
+        // One word.
+        cases["Width1"] = Root(Of(width1, 0), 4);
+        // 4 words.
+        cases["Width4"] = Root(Of(width4, 0), 4);
+        // 8 words, with an odd exponent.
+        cases["Width8"] = Root(Of(width8, 1), 4);
+        // 9 words.
+        cases["Width9"] = Root(Of(width9, 0), 4);
+        // 16 words, with an odd exponent.
+        cases["Width16"] = Root(Of(width16, 1), 4);
+        // 17 words.
+        cases["Width17"] = Root(Of(width17, 0), 4);
         return cases;
     }
+
+    // The sqrt or 1/sqrt of value, rounded to the given number of result words.
+    private static RootCase Root(Operand value, int words) => new(value, words);
+
+    // The n-word operand of the PrecisionLadder cases, with its top bit set (only its width matters).
+    private static uint[] LadderWords(int n) => n switch
+    {
+        1 => [0xFCF2_6FF5u],
+        2 => [0xD9C2_DDA9u, 0xEE58_0941u],
+        3 => [0xB693_4B5Du, 0x43E7_5488u, 0xE7FD_0332u],
+        4 => [0x9363_C911u, 0x9976_BFD0u, 0x7BD5_4C32u, 0xCD95_4454u],
+        5 => [0x7034_36C6u, 0xEF06_1B17u, 0x0FAD_7531u, 0xB082_A879u, 0xE032_1914u],
+        6 => [0x4D04_A47Au, 0x4495_765Fu, 0xA385_BE30u, 0x9370_0C9Eu, 0xC654_4D12u, 0xACD7_ED65u],
+        8 =>
+        [
+            0x06A5_8FE2u, 0xEFB4_3CEEu, 0xCB36_102Fu, 0x594A_C4E8u, 0x9298_A50Du, 0x8E1C_5F19u, 0xBA26_7309u,
+            0x9C8D_61D9u,
+        ],
+        9 =>
+        [
+            0xE375_FD96u, 0x4543_9836u, 0x5F0E_592Eu, 0x3C38_290Du, 0x78BA_D90Bu, 0x7EBE_87F3u, 0xA4B3_3843u,
+            0x098E_75E6u, 0xD88B_9B84u,
+        ],
+        16 =>
+        [
+            0xED29_1D84u, 0x9C2F_272Au, 0x69F7_D829u, 0x70B5_B610u, 0xC3AA_14FBu, 0x132D_F5EBu, 0x0E8C_5CD6u,
+            0x8495_E241u, 0x0666_C4DEu, 0xADD8_DAA7u, 0x3E67_7740u, 0x3D40_8059u, 0xEAB6_D738u, 0xDB35_8396u,
+            0x2CB9_A04Fu, 0xE3AE_C099u,
+        ],
+        17 =>
+        [
+            0xC9F9_9B38u, 0xF1BE_8272u, 0xFDD0_0128u, 0x53A3_1A35u, 0xA9CC_48F9u, 0x03D0_3EC5u, 0xF919_1210u,
+            0x7196_F64Eu, 0xD618_51A2u, 0x7A36_9E2Bu, 0x1F52_8330u, 0xD7BF_FF10u, 0x40CF_EAAAu, 0x22C1_AA10u,
+            0xAEB4_534Du, 0xF811_FA02u, 0xDDCE_3E82u,
+        ],
+        32 =>
+        [
+            0xBA30_48C6u, 0xF524_FBA4u, 0xA77B_481Du, 0x9F8B_A860u, 0x25CC_F4D6u, 0x1D51_538Fu, 0xB758_1071u,
+            0x54A7_0312u, 0x0180_5119u, 0x73B4_22F1u, 0x4D18_763Du, 0xE537_1BC5u, 0x4C48_9E60u, 0x53F7_AB34u,
+            0x4C64_5033u, 0xA9E1_672Du, 0xD891_E42Cu, 0x41D5_69FEu, 0x5B43_F96Bu, 0xA8AD_5625u, 0x52C4_4E58u,
+            0x2229_4904u, 0x9118_AB8Fu, 0x52F3_F1B3u, 0x53D1_BC80u, 0x2DF5_90F5u, 0x9EC1_6654u, 0xEC48_B685u,
+            0xC3F9_D858u, 0x2598_40C7u, 0x83A9_A30Au, 0xCDC5_C21Du,
+        ],
+        33 =>
+        [
+            0x9700_B67Bu, 0x4AB4_56EBu, 0x3B53_711Cu, 0x8279_0C85u, 0x0BEF_28D4u, 0x0DF3_8C69u, 0xA1E4_D5ABu,
+            0x41A8_171Fu, 0xD131_EDDCu, 0x4011_E676u, 0x2E03_822Du, 0x7FB6_8A7Cu, 0xA261_A1D2u, 0x9B83_C1AEu,
+            0xCE5F_0331u, 0x3E44_9096u, 0x2505_626Bu, 0xCB88_E83Bu, 0xF5B6_0D75u, 0x90EB_AA7Cu, 0xAA6E_88C9u,
+            0xA57B_C8C3u, 0xE588_C3B0u, 0xA96F_E908u, 0x3FCE_DC63u, 0x3EE2_AF7Du, 0xD468_9702u, 0x40AA_5B7Eu,
+            0x9F1E_3815u, 0xD06E_6915u, 0x7565_FE6Fu, 0x8E52_79E3u, 0xA6E0_0C23u,
+        ],
+        _ => throw new ArgumentOutOfRangeException(nameof(n), n, "No ladder operand of this width."),
+    };
 
     private static uint[] ToWords(BigInteger value) =>
         ToWords(value, Math.Max(1, (int)((value.GetBitLength() + 31) / 32)));
