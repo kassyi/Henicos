@@ -96,7 +96,7 @@ public class TranspilerIssuesTests : TranspilerTestBase
             nameof(TranspilerIssuesTarget.StackAllocFixedArray), isDevice: false, dialect: CurrentDialect);
 
         Assert.Empty(diagnostics);
-        Assert.Contains("int fixedBuf[8];", cudaSource.WithCSharpNames());
+        Assert.Contains("int fixedBuf[8]{};", cudaSource.WithCSharpNames());
         Assert.Contains("fixedBuf[0]+8", cudaSource.WithCSharpNames());
     }
 

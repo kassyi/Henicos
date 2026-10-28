@@ -70,6 +70,8 @@ public class MSBuildTransitiveCopyTests : IDisposable
         Directory.CreateDirectory(producerObjDir);
         File.WriteAllText(Path.Combine(producerObjDir, "Dummy.cu"), "// Dummy CUDA");
         File.WriteAllText(Path.Combine(producerObjDir, "Dummy.cpp"), "// Dummy CPP");
+        // The targets compile only the sources that the generator lists in this manifest
+        File.WriteAllLines(Path.Combine(producerObjDir, "Kassyi.GSharp.Kernels.artifacts"), ["Dummy.cu", "Dummy.cpp"]);
 
         // 2. Create Consumer
         var consumerProject = $"""
@@ -161,6 +163,7 @@ public class MSBuildTransitiveCopyTests : IDisposable
         var producerObjDir = Path.Combine(producerDir, "obj", "Debug", "net10.0");
         Directory.CreateDirectory(producerObjDir);
         File.WriteAllText(Path.Combine(producerObjDir, "Dummy.cu"), "// Dummy CUDA");
+        File.WriteAllLines(Path.Combine(producerObjDir, "Kassyi.GSharp.Kernels.artifacts"), ["Dummy.cu"]);
 
         var startInfo = new ProcessStartInfo
         {

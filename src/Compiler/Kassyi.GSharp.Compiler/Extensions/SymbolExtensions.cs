@@ -317,6 +317,32 @@ internal static class SymbolExtensions
             .Any(shortName, static (a, name) => a.IsAttribute(name));
 
     /// <summary>
+    /// Whether the locals of <paramref name="symbol"/> start zeroed, that is, no <c>[SkipLocalsInit]</c> applies to it.
+    /// </summary>
+    /// <remarks>
+    /// The attribute is looked for in the order of Roslyn's <c>AreLocalsZeroed</c>: the method (and the property of an
+    /// accessor), the methods around a local function or lambda, the containing types outward, then the module. A field
+    /// or property (the enclosing symbol of an initializer) starts the search at its containing type. A null symbol
+    /// counts as zeroed: ignoring the attribute is what the C# feature specification allows.
+    /// </remarks>
+    public static bool AreLocalsZeroed(this ISymbol? symbol)
+    {
+        for (var current = symbol;
+             current is IMethodSymbol or IPropertySymbol or IFieldSymbol or INamedTypeSymbol;
+             current = current.ContainingSymbol)
+        {
+            if (current.HasAttribute(KnownAttributes.SkipLocalsInit) ||
+                current is IMethodSymbol { AssociatedSymbol: { } associated } &&
+                associated.HasAttribute(KnownAttributes.SkipLocalsInit))
+            {
+                return false;
+            }
+        }
+
+        return symbol?.ContainingModule?.HasAttribute(KnownAttributes.SkipLocalsInit) != true;
+    }
+
+    /// <summary>
     /// Whether <paramref name="parameter"/> is a <c>[GpuConstexpr]</c> parameter.
     /// </summary>
     public static bool IsConstexprParameter(this IParameterSymbol parameter) =>

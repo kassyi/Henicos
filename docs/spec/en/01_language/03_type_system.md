@@ -183,7 +183,7 @@ This enables developers to write highly readable, modern C# code, while offloadi
 
 The following C# memory operations are strictly prohibited within a G# kernel:
 
-1. **Heap Allocation**: The `new` keyword cannot be used to instantiate classes or reference types. (e.g., `new int[10]` or `new List<int>()` are invalid; for a small per-thread sequence use `stackalloc` with a `Span<T>`, or an `[InlineArray]` struct plus an `int` count, instead of a `List<T>`). The only exceptions are stack-allocated object creations for value type structs (e.g., `new Vector8()`, target-typed `new()`, or `record struct` instantiation) and both static and dynamic `SharedMemory<T>` declarations.
+1. **Heap Allocation**: The `new` keyword cannot be used to instantiate classes or reference types. (e.g., `new List<int>()` is invalid; for a small per-thread sequence use `stackalloc` with a `Span<T>`, or an `[InlineArray]` struct plus an `int` count, instead of a `List<T>`). The only exceptions are stack-allocated object creations for value type structs (e.g., `new Vector8()`, target-typed `new()`, or `record struct` instantiation), both static and dynamic `SharedMemory<T>` declarations, and a local variable initialized with an array of a constant size (`int[] a = new int[10];`), which becomes a zero-filled stack array of the thread (§2.5).
 2. **String Manipulation**: `string` is a managed reference type. Strings cannot be passed to, instantiated, or concatenated within a kernel.
 3. **Box/Unbox**: Casting value types to `object` or interfaces is prohibited.
 
@@ -191,9 +191,23 @@ All dynamic heap memory allocations (`new`) must occur strictly on the host (CPU
 
 ## 2.5 Local Initialization and `[SkipLocalsInit]`
 
-By default, standard C# variables are expected to be initialized. 
-However, for high-performance GPU kernels, unnecessary zero-initialization of large structs or buffers can waste registers and instructions.
-When a kernel method or module is annotated with `[SkipLocalsInit]`, the transpiler explicitly optimizes away the output of `default` or parameterless `new()` assignment code (e.g., `= ...;`). The local variables are emitted as uninitialized declarations in C++, matching the performance characteristics of raw C++ while relying on the compiler for optimal register allocation.
+C# fills the storage of a `stackalloc T[N]` without an initializer and of a `new T[N]` with zeros. G# keeps that meaning on every dialect: such a local declaration becomes a value-initialized C++ array.
+
+```csharp
+Span<int> s = stackalloc int[4];          // int s[4]{};
+ReadOnlySpan<int> r = stackalloc int[4];  // const int r[4]{};
+int[] a = new int[4];                     // int a[4]{};
+```
+
+`[SkipLocalsInit]` leaves out the zero fill of a `stackalloc` without an initializer, as in C#: `Span<int> s = stackalloc int[4];` becomes `int s[4];`. C# leaves the contents unspecified, and in the emitted C++ reading an element before it is written is undefined behavior (nvcc may drop the read and every store that depends on it), so write every element before you read it. The attribute is looked for where Roslyn looks for it: the method, the property of an accessor, the method around a local function or lambda, every containing type, and the module.
+
+- `new T[N]` is zeroed whatever the attribute says, because a C# array always starts zeroed.
+- A `ReadOnlySpan<T>` over a `stackalloc` is a `const` C++ array, which needs an initializer, so it is always zeroed (C# allows a compiler to ignore the attribute).
+- A `stackalloc` in a loop body is zeroed on every iteration, because C# allocates it again on each one (the CA2014 warning). Declare it before the loop when one zero fill is enough.
+
+Cost: nvcc keeps an array whose indices it resolves at compile time in registers, and removes the stores of zeros that a later write overwrites. An array indexed at run time stays in local memory and keeps the zero stores (about one 16-byte store per 16 bytes of the array, on every evaluation). For a work array whose elements are all written before they are read, add `[SkipLocalsInit]`, as you would in C#.
+
+An explicit initializer is never left out: `Pair p = default;`, `default(Pair)`, `new Pair()`, `new()`, `new(1, 2)` and object initializers keep their C# value under `[SkipLocalsInit]`, as in C#, where they are initializations of their own and not part of the zero fill of the locals. A local without an initializer (`Pair p;`) is emitted without one; C# does not let it be read before it is assigned. nvcc removes the zero stores of an explicit `= default` that later writes overwrite in registers; a large struct kept in local memory (a big `[InlineArray]`) pays for them, as it does in C#. To avoid that cost, leave out the initializer and assign every element before reading it.
 
 ## 2.6 Constants (`const`)
 
