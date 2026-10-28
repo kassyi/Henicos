@@ -125,18 +125,16 @@ public class StateMachineLowerer(bool isDeviceFunction = false, SemanticModel? s
 
     private static void LowerBarrier(InvocationExpressionSyntax barrier, SectionBuilder sections)
     {
+        // The launcher keeps a thread that stopped at a barrier waiting there (#664): at a grid sync until the next grid
+        // phase, at a block barrier until every thread of the block that has not finished waits too. A shuffle is not a
+        // wait: the thread goes on in the next round
         if (BarrierHelper.IsGridBarrier(barrier))
         {
-            // __gsharp_yielded_for_grid_sync = true;
-            sections.Add(
-                SyntaxFactory.ExpressionStatement(
-                    SyntaxFactory.AssignmentExpression(
-                        SyntaxKind.SimpleAssignmentExpression,
-                        SyntaxFactory.IdentifierName(GSharpInternalNames.StateMachine.YieldedForGridSync),
-                        SyntaxFactory.LiteralExpression(SyntaxKind.TrueLiteralExpression)
-                    )
-                )
-            );
+            sections.Add(SetFlag(GSharpInternalNames.StateMachine.YieldedForGridSync));
+        }
+        else if (BarrierHelper.IsBlockBarrier(barrier))
+        {
+            sections.Add(SetFlag(GSharpInternalNames.StateMachine.YieldedForBlockBarrier));
         }
 
         sections.CommitState(sections.State + 1, isBarrier: true);
@@ -324,6 +322,16 @@ public class StateMachineLowerer(bool isDeviceFunction = false, SemanticModel? s
             )
         );
     }
+
+    // <flag> = true;
+    private static ExpressionStatementSyntax SetFlag(string flag) =>
+        SyntaxFactory.ExpressionStatement(
+            SyntaxFactory.AssignmentExpression(
+                SyntaxKind.SimpleAssignmentExpression,
+                SyntaxFactory.IdentifierName(flag),
+                SyntaxFactory.LiteralExpression(SyntaxKind.TrueLiteralExpression)
+            )
+        );
 
     private StatementSyntax RewriteWarpShuffleRead(StatementSyntax stmt, InvocationExpressionSyntax barrierInv,
         string readFunction)

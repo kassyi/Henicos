@@ -8,6 +8,8 @@ namespace Kassyi.GSharp.Compiler.Transpiler.Helpers;
 /// </summary>
 internal static class CppStringLiteral
 {
+    private const int ReplacementCharacter = 0xFFFD;
+
     /// <summary>Writes <c>"&lt;value&gt;"</c> with the escapes described on the type.</summary>
     public static void Append(SourceWriter writer, string value)
     {
@@ -21,9 +23,17 @@ internal static class CppStringLiteral
                 continue;
             }
 
-            var codePoint = char.IsHighSurrogate(c) && i + 1 < value.Length && char.IsLowSurrogate(value[i + 1])
-                ? char.ConvertToUtf32(c, value[++i])
-                : c;
+            int codePoint;
+            if (char.IsHighSurrogate(c) && i + 1 < value.Length && char.IsLowSurrogate(value[i + 1]))
+            {
+                codePoint = char.ConvertToUtf32(c, value[++i]);
+            }
+            else
+            {
+                // A surrogate without its pair has no UTF-8 form; it becomes U+FFFD, as UTF8Encoding writes it
+                codePoint = char.IsSurrogate(c) ? ReplacementCharacter : c;
+            }
+
             AppendUtf8Escapes(writer, codePoint);
         }
 
