@@ -890,6 +890,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerVecArrayKernel();
 IntPtr hfunc = s_hfunc_VecArrayKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "StructLayoutRegressionKernels.VecArrayKernel");
 System.Collections.Generic.List<IntPtr> h_allocatedPtrs = new System.Collections.Generic.List<IntPtr>();
 byte[]? h_shadow = null;
 IntPtr d_h = IntPtr.Zero;
@@ -989,6 +990,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerVecArrayKernel();
 IntPtr hfunc = s_hfunc_VecArrayKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "StructLayoutRegressionKernels.VecArrayKernel");
 try
 {
 void** kernelParams = stackalloc void*[2];
@@ -1107,6 +1109,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerCoreArrayKernel();
 IntPtr hfunc = s_hfunc_CoreArrayKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "StructLayoutRegressionKernels.CoreArrayKernel");
 System.Collections.Generic.List<IntPtr> h_allocatedPtrs = new System.Collections.Generic.List<IntPtr>();
 byte[]? h_shadow = null;
 IntPtr d_h = IntPtr.Zero;
@@ -1206,6 +1209,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerCoreArrayKernel();
 IntPtr hfunc = s_hfunc_CoreArrayKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "StructLayoutRegressionKernels.CoreArrayKernel");
 try
 {
 void** kernelParams = stackalloc void*[2];
@@ -1336,6 +1340,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerInlineElemKernel();
 IntPtr hfunc = s_hfunc_InlineElemKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "StructLayoutRegressionKernels.InlineElemKernel");
 System.Collections.Generic.List<IntPtr> x_allocatedPtrs = new System.Collections.Generic.List<IntPtr>();
 IntPtr d_x = IntPtr.Zero;
 IntPtr d_o = IntPtr.Zero;
@@ -1408,6 +1413,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerInlineElemKernel();
 IntPtr hfunc = s_hfunc_InlineElemKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "StructLayoutRegressionKernels.InlineElemKernel");
 try
 {
 void** kernelParams = stackalloc void*[2];
@@ -1477,6 +1483,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerBagByValKernel();
 IntPtr hfunc = s_hfunc_BagByValKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "StructLayoutRegressionKernels.BagByValKernel");
 System.Collections.Generic.List<IntPtr> b_allocatedPtrs = new System.Collections.Generic.List<IntPtr>();
 IntPtr d_o = IntPtr.Zero;
 try
@@ -1539,6 +1546,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerBagByValKernel();
 IntPtr hfunc = s_hfunc_BagByValKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "StructLayoutRegressionKernels.BagByValKernel");
 try
 {
 void** kernelParams = stackalloc void*[2];
@@ -1610,6 +1618,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerBagByRefKernel();
 IntPtr hfunc = s_hfunc_BagByRefKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "StructLayoutRegressionKernels.BagByRefKernel");
 System.Collections.Generic.List<IntPtr> b_allocatedPtrs = new System.Collections.Generic.List<IntPtr>();
 IntPtr d_b = IntPtr.Zero;
 IntPtr d_o = IntPtr.Zero;
@@ -1682,6 +1691,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerBagByRefKernel();
 IntPtr hfunc = s_hfunc_BagByRefKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "StructLayoutRegressionKernels.BagByRefKernel");
 try
 {
 void** kernelParams = stackalloc void*[2];
@@ -1750,6 +1760,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerBagLengthKernel();
 IntPtr hfunc = s_hfunc_BagLengthKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "StructLayoutRegressionKernels.BagLengthKernel");
 System.Collections.Generic.List<IntPtr> b_allocatedPtrs = new System.Collections.Generic.List<IntPtr>();
 IntPtr d_o = IntPtr.Zero;
 try
@@ -1812,6 +1823,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerBagLengthKernel();
 IntPtr hfunc = s_hfunc_BagLengthKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "StructLayoutRegressionKernels.BagLengthKernel");
 try
 {
 void** kernelParams = stackalloc void*[2];
@@ -1887,6 +1899,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerElemWriteKernel();
 IntPtr hfunc = s_hfunc_ElemWriteKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "StructLayoutRegressionKernels.ElemWriteKernel");
 System.Collections.Generic.List<IntPtr> h_allocatedPtrs = new System.Collections.Generic.List<IntPtr>();
 try
 {
@@ -1922,6 +1935,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerElemWriteKernel();
 IntPtr hfunc = s_hfunc_ElemWriteKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "StructLayoutRegressionKernels.ElemWriteKernel");
 try
 {
 void** kernelParams = stackalloc void*[1];
@@ -1999,6 +2013,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerElemHolderArrayKernel();
 IntPtr hfunc = s_hfunc_ElemHolderArrayKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "StructLayoutRegressionKernels.ElemHolderArrayKernel");
 System.Collections.Generic.List<IntPtr> hs_allocatedPtrs = new System.Collections.Generic.List<IntPtr>();
 byte[]? hs_shadow = null;
 IntPtr d_hs = IntPtr.Zero;
@@ -2071,6 +2086,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerElemHolderArrayKernel();
 IntPtr hfunc = s_hfunc_ElemHolderArrayKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "StructLayoutRegressionKernels.ElemHolderArrayKernel");
 try
 {
 void** kernelParams = stackalloc void*[1];
@@ -2138,6 +2154,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerBagNativeErrorKernel();
 IntPtr hfunc = s_hfunc_BagNativeErrorKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "StructLayoutRegressionKernels.BagNativeErrorKernel");
 System.Collections.Generic.List<IntPtr> b_allocatedPtrs = new System.Collections.Generic.List<IntPtr>();
 IntPtr d_o = IntPtr.Zero;
 try
@@ -2200,6 +2217,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerBagNativeErrorKernel();
 IntPtr hfunc = s_hfunc_BagNativeErrorKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "StructLayoutRegressionKernels.BagNativeErrorKernel");
 try
 {
 void** kernelParams = stackalloc void*[2];
@@ -2262,6 +2280,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerAliasKernel();
 IntPtr hfunc = s_hfunc_AliasKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "StructLayoutRegressionKernels.AliasKernel");
 System.Collections.Generic.List<IntPtr> p_allocatedPtrs = new System.Collections.Generic.List<IntPtr>();
 try
 {
@@ -2297,6 +2316,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerAliasKernel();
 IntPtr hfunc = s_hfunc_AliasKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "StructLayoutRegressionKernels.AliasKernel");
 try
 {
 void** kernelParams = stackalloc void*[1];
@@ -2367,6 +2387,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerBagArrayKernel();
 IntPtr hfunc = s_hfunc_BagArrayKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "StructLayoutRegressionKernels.BagArrayKernel");
 System.Collections.Generic.List<IntPtr> b_allocatedPtrs = new System.Collections.Generic.List<IntPtr>();
 byte[]? b_shadow = null;
 IntPtr d_b = IntPtr.Zero;
@@ -2466,6 +2487,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerBagArrayKernel();
 IntPtr hfunc = s_hfunc_BagArrayKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "StructLayoutRegressionKernels.BagArrayKernel");
 try
 {
 void** kernelParams = stackalloc void*[2];
@@ -2552,6 +2574,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerTwoBoolsByValKernel();
 IntPtr hfunc = s_hfunc_TwoBoolsByValKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "StructLayoutRegressionKernels.TwoBoolsByValKernel");
 IntPtr d_o = IntPtr.Zero;
 try
 {
@@ -2609,6 +2632,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerTwoBoolsByValKernel();
 IntPtr hfunc = s_hfunc_TwoBoolsByValKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "StructLayoutRegressionKernels.TwoBoolsByValKernel");
 try
 {
 void** kernelParams = stackalloc void*[2];
@@ -2688,6 +2712,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerCharIntByValKernel();
 IntPtr hfunc = s_hfunc_CharIntByValKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "StructLayoutRegressionKernels.CharIntByValKernel");
 IntPtr d_o = IntPtr.Zero;
 try
 {
@@ -2745,6 +2770,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerCharIntByValKernel();
 IntPtr hfunc = s_hfunc_CharIntByValKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "StructLayoutRegressionKernels.CharIntByValKernel");
 try
 {
 void** kernelParams = stackalloc void*[2];
@@ -2824,6 +2850,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerGenericBoxByValKernel();
 IntPtr hfunc = s_hfunc_GenericBoxByValKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "StructLayoutRegressionKernels.GenericBoxByValKernel");
 IntPtr d_o = IntPtr.Zero;
 try
 {
@@ -2881,6 +2908,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerGenericBoxByValKernel();
 IntPtr hfunc = s_hfunc_GenericBoxByValKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "StructLayoutRegressionKernels.GenericBoxByValKernel");
 try
 {
 void** kernelParams = stackalloc void*[2];
@@ -2963,6 +2991,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerNullableFieldByValKernel();
 IntPtr hfunc = s_hfunc_NullableFieldByValKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "StructLayoutRegressionKernels.NullableFieldByValKernel");
 IntPtr d_o = IntPtr.Zero;
 try
 {
@@ -3020,6 +3049,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerNullableFieldByValKernel();
 IntPtr hfunc = s_hfunc_NullableFieldByValKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "StructLayoutRegressionKernels.NullableFieldByValKernel");
 try
 {
 void** kernelParams = stackalloc void*[2];
@@ -3103,6 +3133,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerTwoBoolsByInKernel();
 IntPtr hfunc = s_hfunc_TwoBoolsByInKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "StructLayoutRegressionKernels.TwoBoolsByInKernel");
 IntPtr d_o = IntPtr.Zero;
 try
 {
@@ -3160,6 +3191,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerTwoBoolsByInKernel();
 IntPtr hfunc = s_hfunc_TwoBoolsByInKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "StructLayoutRegressionKernels.TwoBoolsByInKernel");
 try
 {
 void** kernelParams = stackalloc void*[2];
@@ -3243,6 +3275,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerTwoBoolsByRefReadOnlyKernel();
 IntPtr hfunc = s_hfunc_TwoBoolsByRefReadOnlyKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "StructLayoutRegressionKernels.TwoBoolsByRefReadOnlyKernel");
 IntPtr d_o = IntPtr.Zero;
 try
 {
@@ -3300,6 +3333,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerTwoBoolsByRefReadOnlyKernel();
 IntPtr hfunc = s_hfunc_TwoBoolsByRefReadOnlyKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "StructLayoutRegressionKernels.TwoBoolsByRefReadOnlyKernel");
 try
 {
 void** kernelParams = stackalloc void*[2];
@@ -3383,6 +3417,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerMutateByValKernel();
 IntPtr hfunc = s_hfunc_MutateByValKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "StructLayoutRegressionKernels.MutateByValKernel");
 IntPtr d_o = IntPtr.Zero;
 try
 {
@@ -3440,6 +3475,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerMutateByValKernel();
 IntPtr hfunc = s_hfunc_MutateByValKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "StructLayoutRegressionKernels.MutateByValKernel");
 try
 {
 void** kernelParams = stackalloc void*[2];
@@ -3525,6 +3561,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerPackedByValKernel();
 IntPtr hfunc = s_hfunc_PackedByValKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "StructLayoutRegressionKernels.PackedByValKernel");
 IntPtr d_o = IntPtr.Zero;
 try
 {
@@ -3582,6 +3619,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerPackedByValKernel();
 IntPtr hfunc = s_hfunc_PackedByValKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "StructLayoutRegressionKernels.PackedByValKernel");
 try
 {
 void** kernelParams = stackalloc void*[2];
@@ -3688,6 +3726,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerNestedByValKernel();
 IntPtr hfunc = s_hfunc_NestedByValKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "StructLayoutRegressionKernels.NestedByValKernel");
 IntPtr d_o = IntPtr.Zero;
 try
 {
@@ -3745,6 +3784,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerNestedByValKernel();
 IntPtr hfunc = s_hfunc_NestedByValKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "StructLayoutRegressionKernels.NestedByValKernel");
 try
 {
 void** kernelParams = stackalloc void*[2];
@@ -3831,6 +3871,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerUnionKernel();
 IntPtr hfunc = s_hfunc_UnionKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "StructLayoutRegressionKernels.UnionKernel");
 IntPtr d_o = IntPtr.Zero;
 try
 {
@@ -3888,6 +3929,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerUnionKernel();
 IntPtr hfunc = s_hfunc_UnionKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "StructLayoutRegressionKernels.UnionKernel");
 try
 {
 void** kernelParams = stackalloc void*[2];
@@ -3975,6 +4017,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerUnionArrayKernel();
 IntPtr hfunc = s_hfunc_UnionArrayKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "StructLayoutRegressionKernels.UnionArrayKernel");
 IntPtr d_u = IntPtr.Zero;
 IntPtr d_o = IntPtr.Zero;
 try
@@ -4057,6 +4100,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerUnionArrayKernel();
 IntPtr hfunc = s_hfunc_UnionArrayKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "StructLayoutRegressionKernels.UnionArrayKernel");
 try
 {
 void** kernelParams = stackalloc void*[2];
@@ -4138,6 +4182,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerAutoArrayKernel();
 IntPtr hfunc = s_hfunc_AutoArrayKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "StructLayoutRegressionKernels.AutoArrayKernel");
 System.Collections.Generic.List<IntPtr> a_allocatedPtrs = new System.Collections.Generic.List<IntPtr>();
 byte[]? a_shadow = null;
 IntPtr d_a = IntPtr.Zero;
@@ -4237,6 +4282,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerAutoArrayKernel();
 IntPtr hfunc = s_hfunc_AutoArrayKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "StructLayoutRegressionKernels.AutoArrayKernel");
 try
 {
 void** kernelParams = stackalloc void*[2];
@@ -4309,6 +4355,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerOutAutoArrayKernel();
 IntPtr hfunc = s_hfunc_OutAutoArrayKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "StructLayoutRegressionKernels.OutAutoArrayKernel");
 System.Collections.Generic.List<IntPtr> a_allocatedPtrs = new System.Collections.Generic.List<IntPtr>();
 byte[]? a_shadow = null;
 IntPtr d_a = IntPtr.Zero;
@@ -4371,6 +4418,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerOutAutoArrayKernel();
 IntPtr hfunc = s_hfunc_OutAutoArrayKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "StructLayoutRegressionKernels.OutAutoArrayKernel");
 try
 {
 void** kernelParams = stackalloc void*[1];
@@ -4467,6 +4515,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerInlineArrFieldKernel();
 IntPtr hfunc = s_hfunc_InlineArrFieldKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "StructLayoutRegressionKernels.InlineArrFieldKernel");
 System.Collections.Generic.List<IntPtr> x_allocatedPtrs = new System.Collections.Generic.List<IntPtr>();
 IntPtr d_x = IntPtr.Zero;
 IntPtr d_o = IntPtr.Zero;
@@ -4539,6 +4588,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerInlineArrFieldKernel();
 IntPtr hfunc = s_hfunc_InlineArrFieldKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "StructLayoutRegressionKernels.InlineArrFieldKernel");
 try
 {
 void** kernelParams = stackalloc void*[2];

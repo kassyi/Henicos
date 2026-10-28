@@ -111,6 +111,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerComputeMag();
 IntPtr hfunc = s_hfunc_ComputeMag!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "AutoAllocateReturnTest.ComputeMag");
 IntPtr d___gsharp_auto_result = IntPtr.Zero;
 try
 {
@@ -174,6 +175,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerComputeMag();
 IntPtr hfunc = s_hfunc_ComputeMag!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "AutoAllocateReturnTest.ComputeMag");
 IntPtr d___gsharp_auto_result = IntPtr.Zero;
 try
 {
@@ -252,6 +254,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerComputeInt();
 IntPtr hfunc = s_hfunc_ComputeInt!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "AutoAllocateReturnTest.ComputeInt");
 IntPtr d___gsharp_auto_result = IntPtr.Zero;
 try
 {
@@ -317,6 +320,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerComputeInt();
 IntPtr hfunc = s_hfunc_ComputeInt!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "AutoAllocateReturnTest.ComputeInt");
 IntPtr d___gsharp_auto_result = IntPtr.Zero;
 try
 {

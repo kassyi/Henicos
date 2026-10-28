@@ -120,6 +120,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerSampleKernel();
 IntPtr hfunc = s_hfunc_SampleKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "DefaultAndNamedArgumentsTestCase.SampleKernel");
 IntPtr d_data = IntPtr.Zero;
 try
 {
@@ -175,6 +176,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerSampleKernel();
 IntPtr hfunc = s_hfunc_SampleKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "DefaultAndNamedArgumentsTestCase.SampleKernel");
 try
 {
 void** kernelParams = stackalloc void*[1];

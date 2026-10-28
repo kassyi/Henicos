@@ -175,6 +175,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerMontgomeryMuKernel();
 IntPtr hfunc = s_hfunc_MontgomeryMuKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "CrossAssemblyStdlibKernels.MontgomeryMuKernel");
 IntPtr d_moduli = IntPtr.Zero;
 IntPtr d_result = IntPtr.Zero;
 try
@@ -257,6 +258,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerMontgomeryMuKernel();
 IntPtr hfunc = s_hfunc_MontgomeryMuKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "CrossAssemblyStdlibKernels.MontgomeryMuKernel");
 try
 {
 void** kernelParams = stackalloc void*[2];
@@ -341,6 +343,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerWarpScanKernel();
 IntPtr hfunc = s_hfunc_WarpScanKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "CrossAssemblyStdlibKernels.WarpScanKernel");
 IntPtr d_generate = IntPtr.Zero;
 IntPtr d_propagate = IntPtr.Zero;
 IntPtr d_result = IntPtr.Zero;
@@ -450,6 +453,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerWarpScanKernel();
 IntPtr hfunc = s_hfunc_WarpScanKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "CrossAssemblyStdlibKernels.WarpScanKernel");
 try
 {
 void** kernelParams = stackalloc void*[3];

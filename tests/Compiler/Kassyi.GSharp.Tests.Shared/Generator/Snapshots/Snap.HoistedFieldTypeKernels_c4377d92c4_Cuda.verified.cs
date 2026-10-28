@@ -115,6 +115,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerHoistedVarKernel();
 IntPtr hfunc = s_hfunc_HoistedVarKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "HoistedFieldTypeKernels.HoistedVarKernel");
 IntPtr d_data = IntPtr.Zero;
 try
 {
@@ -170,6 +171,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerHoistedVarKernel();
 IntPtr hfunc = s_hfunc_HoistedVarKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "HoistedFieldTypeKernels.HoistedVarKernel");
 try
 {
 void** kernelParams = stackalloc void*[1];
@@ -240,6 +242,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerFloatWarpReductionKernel();
 IntPtr hfunc = s_hfunc_FloatWarpReductionKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "HoistedFieldTypeKernels.FloatWarpReductionKernel");
 IntPtr d_input = IntPtr.Zero;
 IntPtr d_output = IntPtr.Zero;
 try
@@ -322,6 +325,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerFloatWarpReductionKernel();
 IntPtr hfunc = s_hfunc_FloatWarpReductionKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "HoistedFieldTypeKernels.FloatWarpReductionKernel");
 try
 {
 void** kernelParams = stackalloc void*[2];
@@ -412,6 +416,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerStructVarKernel();
 IntPtr hfunc = s_hfunc_StructVarKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "HoistedFieldTypeKernels.StructVarKernel");
 IntPtr d_items = IntPtr.Zero;
 IntPtr d_output = IntPtr.Zero;
 try
@@ -494,6 +499,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerStructVarKernel();
 IntPtr hfunc = s_hfunc_StructVarKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "HoistedFieldTypeKernels.StructVarKernel");
 try
 {
 void** kernelParams = stackalloc void*[2];

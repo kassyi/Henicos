@@ -121,6 +121,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerReadOnlyLocalFunctionParameterKernel();
 IntPtr hfunc = s_hfunc_ReadOnlyLocalFunctionParameterKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "LocalFunctionParameterKernels.ReadOnlyLocalFunctionParameterKernel");
 IntPtr d_output = IntPtr.Zero;
 IntPtr d_table = IntPtr.Zero;
 try
@@ -205,6 +206,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerReadOnlyLocalFunctionParameterKernel();
 IntPtr hfunc = s_hfunc_ReadOnlyLocalFunctionParameterKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "LocalFunctionParameterKernels.ReadOnlyLocalFunctionParameterKernel");
 try
 {
 void** kernelParams = stackalloc void*[3];

@@ -263,6 +263,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerIntPairsKernel();
 IntPtr hfunc = s_hfunc_IntPairsKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "MixedSignPromotionKernels.IntPairsKernel");
 IntPtr d_us = IntPtr.Zero;
 IntPtr d_ns = IntPtr.Zero;
 IntPtr d_values = IntPtr.Zero;
@@ -399,6 +400,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerIntPairsKernel();
 IntPtr hfunc = s_hfunc_IntPairsKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "MixedSignPromotionKernels.IntPairsKernel");
 try
 {
 void** kernelParams = stackalloc void*[4];
@@ -485,6 +487,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerShortPairsKernel();
 IntPtr hfunc = s_hfunc_ShortPairsKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "MixedSignPromotionKernels.ShortPairsKernel");
 IntPtr d_us = IntPtr.Zero;
 IntPtr d_ss = IntPtr.Zero;
 IntPtr d_values = IntPtr.Zero;
@@ -621,6 +624,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerShortPairsKernel();
 IntPtr hfunc = s_hfunc_ShortPairsKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "MixedSignPromotionKernels.ShortPairsKernel");
 try
 {
 void** kernelParams = stackalloc void*[4];
@@ -707,6 +711,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerSBytePairsKernel();
 IntPtr hfunc = s_hfunc_SBytePairsKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "MixedSignPromotionKernels.SBytePairsKernel");
 IntPtr d_us = IntPtr.Zero;
 IntPtr d_bs = IntPtr.Zero;
 IntPtr d_values = IntPtr.Zero;
@@ -843,6 +848,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerSBytePairsKernel();
 IntPtr hfunc = s_hfunc_SBytePairsKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "MixedSignPromotionKernels.SBytePairsKernel");
 try
 {
 void** kernelParams = stackalloc void*[4];
@@ -923,6 +929,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerConstantOperandsKernel();
 IntPtr hfunc = s_hfunc_ConstantOperandsKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "MixedSignPromotionKernels.ConstantOperandsKernel");
 IntPtr d_us = IntPtr.Zero;
 IntPtr d_values = IntPtr.Zero;
 IntPtr d_flags = IntPtr.Zero;
@@ -1032,6 +1039,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerConstantOperandsKernel();
 IntPtr hfunc = s_hfunc_ConstantOperandsKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "MixedSignPromotionKernels.ConstantOperandsKernel");
 try
 {
 void** kernelParams = stackalloc void*[3];
@@ -1125,6 +1133,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerAcrossBarrierKernel();
 IntPtr hfunc = s_hfunc_AcrossBarrierKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "MixedSignPromotionKernels.AcrossBarrierKernel");
 IntPtr d_us = IntPtr.Zero;
 IntPtr d_ns = IntPtr.Zero;
 IntPtr d_values = IntPtr.Zero;
@@ -1261,6 +1270,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerAcrossBarrierKernel();
 IntPtr hfunc = s_hfunc_AcrossBarrierKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "MixedSignPromotionKernels.AcrossBarrierKernel");
 try
 {
 void** kernelParams = stackalloc void*[4];

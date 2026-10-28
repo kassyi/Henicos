@@ -139,6 +139,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerSimpleWhereSelectSum();
 IntPtr hfunc = s_hfunc_SimpleWhereSelectSum!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "StackLinqFusionTestCases.SimpleWhereSelectSum");
 IntPtr d_data = IntPtr.Zero;
 try
 {
@@ -194,6 +195,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerSimpleWhereSelectSum();
 IntPtr hfunc = s_hfunc_SimpleWhereSelectSum!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "StackLinqFusionTestCases.SimpleWhereSelectSum");
 try
 {
 void** kernelParams = stackalloc void*[1];
@@ -274,6 +276,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerMultipleWhere();
 IntPtr hfunc = s_hfunc_MultipleWhere!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "StackLinqFusionTestCases.MultipleWhere");
 IntPtr d_data = IntPtr.Zero;
 try
 {
@@ -329,6 +332,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerMultipleWhere();
 IntPtr hfunc = s_hfunc_MultipleWhere!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "StackLinqFusionTestCases.MultipleWhere");
 try
 {
 void** kernelParams = stackalloc void*[1];
@@ -405,6 +409,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerMultipleSelect();
 IntPtr hfunc = s_hfunc_MultipleSelect!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "StackLinqFusionTestCases.MultipleSelect");
 IntPtr d_data = IntPtr.Zero;
 try
 {
@@ -460,6 +465,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerMultipleSelect();
 IntPtr hfunc = s_hfunc_MultipleSelect!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "StackLinqFusionTestCases.MultipleSelect");
 try
 {
 void** kernelParams = stackalloc void*[1];
@@ -569,6 +575,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerHellPattern();
 IntPtr hfunc = s_hfunc_HellPattern!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "StackLinqFusionTestCases.HellPattern");
 IntPtr d_data = IntPtr.Zero;
 try
 {
@@ -624,6 +631,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerHellPattern();
 IntPtr hfunc = s_hfunc_HellPattern!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "StackLinqFusionTestCases.HellPattern");
 try
 {
 void** kernelParams = stackalloc void*[1];

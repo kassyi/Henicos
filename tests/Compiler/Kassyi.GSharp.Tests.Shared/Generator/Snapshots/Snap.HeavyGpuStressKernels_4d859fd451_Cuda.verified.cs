@@ -132,6 +132,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerMatrixMultiplyStressKernel();
 IntPtr hfunc = s_hfunc_MatrixMultiplyStressKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "HeavyGpuStressKernels.MatrixMultiplyStressKernel");
 IntPtr d_a = IntPtr.Zero;
 IntPtr d_b = IntPtr.Zero;
 IntPtr d_c = IntPtr.Zero;
@@ -243,6 +244,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerMatrixMultiplyStressKernel();
 IntPtr hfunc = s_hfunc_MatrixMultiplyStressKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "HeavyGpuStressKernels.MatrixMultiplyStressKernel");
 try
 {
 void** kernelParams = stackalloc void*[4];
