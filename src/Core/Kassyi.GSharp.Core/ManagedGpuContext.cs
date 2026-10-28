@@ -109,6 +109,49 @@ public static class ManagedGpuContext
     [EditorBrowsable(EditorBrowsableState.Never)]
     public static bool GridSyncRequested;
 
+    // The managed launcher of a cooperative kernel runs the grid in phases, each ending when every block has reached
+    // Gpu.SyncGrid (#664). The GPU never completes a grid sync that a block, or thread 0 of a block, does not reach, and a
+    // grid sync in a launch that is not cooperative is undefined there; the CPU paths report each with the same text.
+
+    /// <summary>
+    /// Creates the exception for a block that finished while the other blocks of a cooperative kernel wait at
+    /// <c>Gpu.SyncGrid</c>. For generated code only.
+    /// </summary>
+    /// <param name="kernel">The kernel, as <c>Type.Method</c>.</param>
+    /// <param name="blockIndex">The linear index of the block.</param>
+    /// <param name="gridDimX">The number of blocks in X.</param>
+    /// <param name="gridDimY">The number of blocks in Y.</param>
+    [EditorBrowsable(EditorBrowsableState.Never)]
+    public static InvalidOperationException BlockFinishedAtGridSync(string kernel, int blockIndex, uint gridDimX, uint gridDimY)
+    {
+        var block = (uint)blockIndex;
+        return new InvalidOperationException(
+            $"G#: block ({block % gridDimX},{block / gridDimX % gridDimY},{block / (gridDimX * gridDimY)}) of {kernel} " +
+            "finished while other blocks wait at Gpu.SyncGrid; on the GPU the grid sync never completes");
+    }
+
+    /// <summary>
+    /// Creates the exception for thread 0 of a block that finished while the other threads of its block wait at
+    /// <c>Gpu.SyncGrid</c>. For generated code only.
+    /// </summary>
+    /// <param name="kernel">The kernel, as <c>Type.Method</c>.</param>
+    /// <param name="blockX">The block's index in X.</param>
+    /// <param name="blockY">The block's index in Y.</param>
+    /// <param name="blockZ">The block's index in Z.</param>
+    [EditorBrowsable(EditorBrowsableState.Never)]
+    public static InvalidOperationException RepresentativeFinishedAtGridSync(string kernel, int blockX, int blockY, int blockZ) =>
+        new($"G#: thread (0,0,0) of block ({blockX},{blockY},{blockZ}) of {kernel} finished while other threads of its " +
+            "block wait at Gpu.SyncGrid; on the GPU the grid sync never completes");
+
+    /// <summary>
+    /// Creates the exception for <c>Gpu.SyncGrid</c> reached in a kernel that is not
+    /// <c>[GpuKernel(Cooperative = true)]</c>. For generated code only.
+    /// </summary>
+    /// <param name="kernel">The kernel, as <c>Type.Method</c>.</param>
+    [EditorBrowsable(EditorBrowsableState.Never)]
+    public static InvalidOperationException GridSyncInKernelThatIsNotCooperative(string kernel) =>
+        new($"G#: Gpu.SyncGrid reached in {kernel}, which is not [GpuKernel(Cooperative = true)]");
+
     // One region per static shared memory declaration per block (a constant count, or a declaration in code that the
     // compiler does not rewrite). A later declaration never moves an earlier region: threads keep the span they were
     // handed, so moving a region would leave them writing to a copy nobody else reads. Only the same declaration reached

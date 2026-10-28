@@ -99,6 +99,10 @@ if (__gsharp_contexts[__gsharp_ctx_tid].__gsharp_state != -1)
 __gsharp_any_active = true;
 __gsharp_set_thread_idx(__gsharp_tx, __gsharp_ty, __gsharp_tz, __gsharp_bx, __gsharp_by, __gsharp_bz, __gsharp_block_dim_x, __gsharp_block_dim_y, __gsharp_block_dim_z, __gsharp_grid_dim_x, __gsharp_grid_dim_y, __gsharp_grid_dim_z);
 __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__MathFloorCeilingKernels__FloorCeilingKernel(__gsharp_id_0_doubleInputs, __gsharp_id_1_doubleFloor, __gsharp_id_2_doubleCeiling, __gsharp_id_3_floatInputs, __gsharp_id_4_floatFloor, __gsharp_id_5_floatCeiling, &__gsharp_contexts[__gsharp_ctx_tid]);
+if (__gsharp_contexts[__gsharp_ctx_tid].__gsharp_yielded_for_grid_sync)
+{
+__gsharp_trap(GSharpErrorCode::InvalidOperation, ""G#: Gpu.SyncGrid reached in MathFloorCeilingKernels.FloorCeilingKernel, which is not [GpuKernel(Cooperative = true)]"");
+}
 }
 }
 }
@@ -221,7 +225,6 @@ bool anyBlockActive = true;
 while (anyBlockActive)
 {
 anyBlockActive = false;
-bool gridSyncRequested = false;
 for (int __gsharp_thread_index = 0; __gsharp_thread_index < __gsharp_threads_per_block; __gsharp_thread_index++)
 {
 int __gsharp_tx = __gsharp_thread_index % (int)blockDimX;
@@ -239,13 +242,9 @@ global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested = false;
 __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__MathFloorCeilingKernels__FloorCeilingKernel(doubleInputs, doubleFloor, doubleCeiling, floatInputs, floatFloor, floatCeiling, __gsharp_contexts[__gsharp_linear_tid]);
 if (global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested)
 {
-gridSyncRequested = true;
+throw global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncInKernelThatIsNotCooperative("MathFloorCeilingKernels.FloorCeilingKernel");
 }
 }
-}
-if (gridSyncRequested)
-{
-break;
 }
 }
 }
@@ -339,6 +338,10 @@ if (__gsharp_contexts[__gsharp_ctx_tid].__gsharp_state != -1)
 __gsharp_any_active = true;
 __gsharp_set_thread_idx(__gsharp_tx, __gsharp_ty, __gsharp_tz, __gsharp_bx, __gsharp_by, __gsharp_bz, __gsharp_block_dim_x, __gsharp_block_dim_y, __gsharp_block_dim_z, __gsharp_grid_dim_x, __gsharp_grid_dim_y, __gsharp_grid_dim_z);
 __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__MathFloorCeilingKernels__PowKernel(__gsharp_id_0_doubleBases, __gsharp_id_1_doubleExponents, __gsharp_id_2_doubleResults, __gsharp_id_3_floatBases, __gsharp_id_4_floatExponents, __gsharp_id_5_floatResults, &__gsharp_contexts[__gsharp_ctx_tid]);
+if (__gsharp_contexts[__gsharp_ctx_tid].__gsharp_yielded_for_grid_sync)
+{
+__gsharp_trap(GSharpErrorCode::InvalidOperation, ""G#: Gpu.SyncGrid reached in MathFloorCeilingKernels.PowKernel, which is not [GpuKernel(Cooperative = true)]"");
+}
 }
 }
 }
@@ -459,7 +462,6 @@ bool anyBlockActive = true;
 while (anyBlockActive)
 {
 anyBlockActive = false;
-bool gridSyncRequested = false;
 for (int __gsharp_thread_index = 0; __gsharp_thread_index < __gsharp_threads_per_block; __gsharp_thread_index++)
 {
 int __gsharp_tx = __gsharp_thread_index % (int)blockDimX;
@@ -477,13 +479,9 @@ global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested = false;
 __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__MathFloorCeilingKernels__PowKernel(doubleBases, doubleExponents, doubleResults, floatBases, floatExponents, floatResults, __gsharp_contexts[__gsharp_linear_tid]);
 if (global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested)
 {
-gridSyncRequested = true;
+throw global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncInKernelThatIsNotCooperative("MathFloorCeilingKernels.PowKernel");
 }
 }
-}
-if (gridSyncRequested)
-{
-break;
 }
 }
 }
@@ -577,6 +575,10 @@ if (__gsharp_contexts[__gsharp_ctx_tid].__gsharp_state != -1)
 __gsharp_any_active = true;
 __gsharp_set_thread_idx(__gsharp_tx, __gsharp_ty, __gsharp_tz, __gsharp_bx, __gsharp_by, __gsharp_bz, __gsharp_block_dim_x, __gsharp_block_dim_y, __gsharp_block_dim_z, __gsharp_grid_dim_x, __gsharp_grid_dim_y, __gsharp_grid_dim_z);
 __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__MathFloorCeilingKernels__RoundKernel(__gsharp_id_0_doubleInputs, __gsharp_id_1_doubleResults, __gsharp_id_2_floatInputs, __gsharp_id_3_floatResults, &__gsharp_contexts[__gsharp_ctx_tid]);
+if (__gsharp_contexts[__gsharp_ctx_tid].__gsharp_yielded_for_grid_sync)
+{
+__gsharp_trap(GSharpErrorCode::InvalidOperation, ""G#: Gpu.SyncGrid reached in MathFloorCeilingKernels.RoundKernel, which is not [GpuKernel(Cooperative = true)]"");
+}
 }
 }
 }
@@ -685,7 +687,6 @@ bool anyBlockActive = true;
 while (anyBlockActive)
 {
 anyBlockActive = false;
-bool gridSyncRequested = false;
 for (int __gsharp_thread_index = 0; __gsharp_thread_index < __gsharp_threads_per_block; __gsharp_thread_index++)
 {
 int __gsharp_tx = __gsharp_thread_index % (int)blockDimX;
@@ -703,13 +704,9 @@ global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested = false;
 __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__MathFloorCeilingKernels__RoundKernel(doubleInputs, doubleResults, floatInputs, floatResults, __gsharp_contexts[__gsharp_linear_tid]);
 if (global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested)
 {
-gridSyncRequested = true;
+throw global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncInKernelThatIsNotCooperative("MathFloorCeilingKernels.RoundKernel");
 }
 }
-}
-if (gridSyncRequested)
-{
-break;
 }
 }
 }

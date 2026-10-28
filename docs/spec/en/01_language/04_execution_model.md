@@ -72,6 +72,7 @@ Standard CUDA lacks a built-in mechanism to synchronize all threads across an en
 
 - This acts as a global barrier, ensuring all blocks have reached the point before continuing. This is heavily utilized in multi-stage reduction algorithms (e.g., Large Number Multiplication or Number Theoretic Transform).
   _(Refer to the BCL reference [Gpu Class Reference](../03_bcl_api/gpu_class/00_index.md) for grid synchronization and [GpuKernelAttribute](../03_bcl_api/attributes/GpuKernelAttribute.md) for `[GpuKernel(Cooperative = true)]`)._
+- The CPU paths (native and managed) run a cooperative kernel in grid phases: every block reaches a grid sync before any thread goes past it, so the result is the GPU's, whatever the number of host threads. A block, or thread 0 of a block, that finishes while the others wait at a grid sync, and a grid sync reached in a kernel that is not cooperative, throw `InvalidOperationException` there; the GPU never completes such a grid sync, or does not define it ([SyncGrid](../03_bcl_api/gpu_class/SyncGrid.md#on-the-cpu-paths)).
 
 ## See also
 

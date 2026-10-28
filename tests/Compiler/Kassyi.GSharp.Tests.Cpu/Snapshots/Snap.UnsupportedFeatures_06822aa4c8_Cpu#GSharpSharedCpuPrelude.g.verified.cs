@@ -381,7 +381,8 @@ inline void __syncthreads() {}
 // [WHY] A SharedMemory<T> declaration is one buffer per block, like a CUDA __shared__ variable: every call of a device
 // function, from any call site, gets the same buffer. The compiler identifies each declaration by a site key (a hash of
 // the declaring method and the ordinal of the declaration in it), so buffers do not depend on the order of allocations.
-// Each OpenMP thread owns one arena and resets it at the start of each block it runs (#544):
+// Each OpenMP thread owns one arena and resets it at the start of each block it runs (#544); the launcher of a cooperative
+// kernel instead gives every block an arena of its own, which keeps the block's shared memory across its grid syncs (#664):
 // - A dynamic declaration (a count that is not a C# constant) is a region of the launch's sharedMemBytes, placed with the
 //   arithmetic of __gsharp_dsmem_place in Prelude.cu: aligned to max(alignof(T), 16), a launch that does not give it
 //   enough bytes is an ArgumentOutOfRangeException, and a region that grows after a later region is placed is an
@@ -415,6 +416,11 @@ unsigned char* data;
 };
 
 struct __gsharp_block_smem {
+__gsharp_block_smem() = default;
+// The arena owns its buffers
+__gsharp_block_smem(const __gsharp_block_smem&) = delete;
+__gsharp_block_smem& operator=(const __gsharp_block_smem&) = delete;
+
 unsigned char* dynamic_data = nullptr;
 size_t dynamic_capacity = 0;
 size_t dynamic_limit = 0;
@@ -460,15 +466,27 @@ return dynamic_data;
 };
 
 inline thread_local __gsharp_block_smem __gsharp_thread_smem;
+// The arena of the block that the calling OpenMP thread runs, when it is not the thread's own (a cooperative kernel)
+inline thread_local __gsharp_block_smem* __gsharp_bound_smem = nullptr;
 
-// Starts the block that the calling OpenMP thread runs next
+inline __gsharp_block_smem& __gsharp_current_smem() {
+return __gsharp_bound_smem != nullptr ? *__gsharp_bound_smem : __gsharp_thread_smem;
+}
+
+// Starts the block that the calling OpenMP thread runs next, in the thread's own arena
 inline void __gsharp_reset_smem(uint32_t sharedMemBytes) {
+__gsharp_bound_smem = nullptr;
 __gsharp_thread_smem.reset(sharedMemBytes);
+}
+
+// Runs the next step of a block of a cooperative kernel in the block's own arena; nullptr returns to the thread's own
+inline void __gsharp_bind_smem(__gsharp_block_smem* arena) {
+__gsharp_bound_smem = arena;
 }
 
 // A declaration whose count is a C# constant: a buffer of its own, not counted in sharedMemBytes
 inline void* __gsharp_allocate_smem_static(unsigned long long siteKey, size_t bytes, size_t alignment) {
-__gsharp_block_smem& arena = __gsharp_thread_smem;
+__gsharp_block_smem& arena = __gsharp_current_smem();
 (void)alignment; // every buffer is aligned to __gsharp_smem_alignment
 for (auto& buffer : arena.static_buffers) {
 if (buffer.key == siteKey) {
@@ -497,7 +515,7 @@ return data;
 // __gsharp_dsmem_place (Prelude.cu). place is the declaration in the C# source, for the message
 inline void* __gsharp_allocate_smem_dynamic(unsigned long long siteKey, unsigned long long bytes, size_t alignment,
 const char* place) {
-__gsharp_block_smem& arena = __gsharp_thread_smem;
+__gsharp_block_smem& arena = __gsharp_current_smem();
 size_t align = alignment > 16 ? alignment : 16;
 __gsharp_smem_region* region = nullptr;
 for (auto& candidate : arena.regions) {
@@ -532,6 +550,56 @@ region->size = (size_t)bytes;
 arena.dynamic_cursor = region->offset + (size_t)bytes;
 }
 return arena.dynamic_buffer() + region->offset;
+}
+
+// --- Grid syncs of cooperative kernels (#664) ---
+// [WHY] The native launcher of a cooperative kernel runs the grid in phases: in each phase every block runs until all of
+// its threads have reached Gpu.SyncGrid or finished, and the next phase starts when every block has reached the grid
+// sync. The implicit barrier at the end of the OpenMP loop over the blocks is the grid barrier, so the result does not
+// depend on the number of OpenMP threads or their schedule. On the GPU a block that finishes while the other blocks wait,
+// or a block whose thread 0 finishes while its other threads wait, never arrives at the grid sync, which then never
+// completes; the CPU paths report both.
+constexpr uint8_t __gsharp_block_at_grid_sync = 1;
+constexpr uint8_t __gsharp_block_finished = 2;
+
+// Reports thread 0 of a block that finished while the block's other threads wait at a grid sync
+inline void __gsharp_report_representative_finished(GSharpErrorSlot* error, int32_t bx, int32_t by, int32_t bz,
+const char* kernel) {
+char text[512];
+std::snprintf(text, sizeof(text),
+""G#: thread (0,0,0) of block (%d,%d,%d) of %s finished while other threads of its block wait at Gpu.SyncGrid; on the GPU the grid sync never completes"",
+bx, by, bz, kernel);
+error->Report(GSharpErrorCode::InvalidOperation, text);
+}
+
+// Ends a phase of the grid: true when every block waits at a grid sync, so that the next phase starts; false when every
+// block has finished or the launch failed. A phase in which some blocks finished while others wait is reported
+inline bool __gsharp_end_grid_phase(GSharpErrorSlot* error, const uint8_t* status, int32_t totalBlocks,
+uint32_t gridDimX, uint32_t gridDimY, const char* kernel) {
+if (error->HasError()) {
+return false;
+}
+int32_t firstFinished = -1;
+bool anyWaiting = false;
+for (int32_t block = 0; block < totalBlocks; block++) {
+if (status[block] == __gsharp_block_at_grid_sync) {
+anyWaiting = true;
+} else if (firstFinished < 0) {
+firstFinished = block;
+}
+}
+if (anyWaiting && firstFinished >= 0) {
+int32_t x = (int32_t)(firstFinished % gridDimX);
+int32_t y = (int32_t)((firstFinished / gridDimX) % gridDimY);
+int32_t z = (int32_t)(firstFinished / (gridDimX * gridDimY));
+char text[512];
+std::snprintf(text, sizeof(text),
+""G#: block (%d,%d,%d) of %s finished while other blocks wait at Gpu.SyncGrid; on the GPU the grid sync never completes"",
+x, y, z, kernel);
+error->Report(GSharpErrorCode::InvalidOperation, text);
+return false;
+}
+return anyWaiting;
 }
 
 inline void __gsharp_unsupported(const char* message);

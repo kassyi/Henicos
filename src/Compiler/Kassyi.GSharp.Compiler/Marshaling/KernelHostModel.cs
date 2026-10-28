@@ -37,6 +37,9 @@ internal readonly record struct KernelHostModel
     /// <summary>A <c>[GpuKernel(Cooperative = true)]</c> kernel.</summary>
     public bool IsCooperative { get; init; }
 
+    /// <summary>The kernel in a run-time error of the managed path (<see cref="KernelHostNames.GetMessageName"/>).</summary>
+    public string MessageName { get; init; }
+
     /// <summary>The parameter list of <c>Launch{Name}</c> as C# compares overloads.</summary>
     public string ManagedSignatureKey { get; init; }
 
@@ -80,6 +83,7 @@ internal readonly record struct KernelHostModel
                 ? null
                 : kernel.ReturnType.GetFullyQualifiedCsharpName(),
             IsCooperative = kernel.IsCooperativeKernel(),
+            MessageName = KernelHostNames.GetMessageName(kernel),
             ManagedSignatureKey = KernelHostNames.GetSignatureKey(parameters, typedPointers: false),
             TypedPointerSignatureKey = KernelHostNames.GetSignatureKey(parameters, typedPointers: true),
             DisplaySignature = KernelHostNames.FormatSignature(kernel.Name, parameters),
