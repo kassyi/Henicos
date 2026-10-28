@@ -342,7 +342,7 @@ internal static class KernelLaunchEmitter
     }
 
     // for (int <name>_index = 0; <name>_index < <name>_native.Length; <name>_index++)
-    private static void WriteElementLoopHeader(SourceWriter writer, string name) =>
+    internal static void WriteElementLoopHeader(SourceWriter writer, string name) =>
         writer.AppendLine($"for (int {name}_index = 0; {name}_index < {name}_native.Length; {name}_index++)");
 
     // <name>_native spans the rented bytes in the device layout; <name>_host spans the argument

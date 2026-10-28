@@ -353,7 +353,7 @@ internal static class CpuHostLaunchEmitter
             return;
         }
 
-        writer.AppendLine($"for (int {name}_index = 0; {name}_index < {name}_native.Length; {name}_index++)");
+        KernelLaunchEmitter.WriteElementLoopHeader(writer, name);
         using (writer.Scope())
         {
             var hostElement = $"{name}_host[{name}_index]";
@@ -375,7 +375,7 @@ internal static class CpuHostLaunchEmitter
     private static void WriteConvertedArrayUnmarshal(SourceWriter writer, in KernelParameterShape shape)
     {
         var name = shape.Name;
-        writer.AppendLine($"for (int {name}_index = 0; {name}_index < {name}_native.Length; {name}_index++)");
+        KernelLaunchEmitter.WriteElementLoopHeader(writer, name);
         using (writer.Scope())
         {
             writer.AppendLine(
