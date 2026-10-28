@@ -74,6 +74,13 @@ public class DynamicSharedMemoryModuleTests : TranspilerTestBase
         var hfunc = GetFunction();
         Assert.Equal(1, DynamicSharedMemoryOptIn.GetOptInCount(hfunc));
         Assert.True(FunctionAttribute(hfunc, CuFunctionAttribute.MaxDynamicSharedSizeBytes) > DefaultLimitBytes);
+
+        // A second launch finds the function opted in and makes no further cuFuncSetAttribute call
+        Array.Clear(output);
+        DynamicSharedMemoryModuleInvoker.LaunchFillAndSum(output, n, BlockSize, bytes);
+
+        Assert.Equal(ExpectedSums(n), output);
+        Assert.Equal(1, DynamicSharedMemoryOptIn.GetOptInCount(hfunc));
     }
 
     [SkippableFact]
@@ -95,6 +102,9 @@ public class DynamicSharedMemoryModuleTests : TranspilerTestBase
             $"G#: sharedMemBytes {bytes} plus {staticBytes} bytes of static shared memory exceeds the {limit} bytes of " +
             "shared memory per block of this GPU (sm_", ex.Message);
         Assert.Contains("(DynamicSharedMemoryModuleInvoker.LaunchFillAndSum).", ex.Message);
+
+        // Nothing was launched or copied back. This cannot tell whether the check ran before the device allocations
+        // (they are disposed either way); NativeApiGeneratorTests asserts that placement in the generated source.
         Assert.All(output, static value => Assert.Equal(0u, value));
     }
 }
