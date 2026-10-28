@@ -255,6 +255,55 @@ public sealed class GraphOwnershipTests : IDisposable
 
     [SkippableFact]
     [Scenario(TestScenario.Boundary)]
+    public void UserCapture_FreedBuffer_IsParkedUntilWorkspaceDispose()
+    {
+        // A capture the user starts on the workspace stream (not CompileToGraph) has no deferral session; a buffer freed
+        // while it runs may be replayed by the user's graph, so the manager parks it instead of pooling it, and only the
+        // workspace disposal frees it.
+        // mutant: DefaultGpuMemoryManager.TryDefer returns false for a capture it did not start (the buffer is pooled and
+        // the next allocation of its size receives it)
+        var workspace = new GpuWorkspace(64, GpuExecutionEngine.GSharpAot);
+        var buffer = new GpuBigUInt(workspace, Words);
+        var pointer = buffer.DevicePointer;
+        var start = workspace.GetMemoryStatistics();
+        var provider = workspace.Provider;
+        GpuMemoryStatistics duringCapture;
+
+        provider.BeginCapture(workspace.Stream);
+        try
+        {
+            buffer.Dispose();
+            duringCapture = workspace.GetMemoryStatistics();
+        }
+        finally
+        {
+            provider.DestroyGraph(provider.EndCapture(workspace.Stream), IntPtr.Zero);
+        }
+
+        IntPtr nextPointer;
+        using (var next = new GpuBigUInt(workspace, Words))
+        {
+            nextPointer = next.DevicePointer;
+        }
+
+        var beforeDispose = workspace.GetMemoryStatistics();
+        workspace.Dispose();
+        var afterDispose = workspace.GetMemoryStatistics();
+
+        Assert.Equal(
+            (start.DeferredBuffers + 1, start.PooledBuffers),
+            (duringCapture.DeferredBuffers, duringCapture.PooledBuffers)
+        );
+        Assert.NotEqual(pointer, nextPointer);
+        Assert.Equal(start.DeferredBuffers + 1, beforeDispose.DeferredBuffers);
+        Assert.Equal(
+            (0, 0, afterDispose.DriverAllocations),
+            (afterDispose.DeferredBuffers, afterDispose.LiveBuffers, afterDispose.DriverFrees)
+        );
+    }
+
+    [SkippableFact]
+    [Scenario(TestScenario.Boundary)]
     public void Deferral_IsUsedOnlyByTheCapturingThread()
     {
         // While a capture runs, another thread that frees a buffer of the workspace is not part of the capture: its
