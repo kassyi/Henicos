@@ -1,6 +1,7 @@
 // ReSharper disable All
 using System.Runtime.CompilerServices;
 using Kassyi.GSharp.Core;
+using Kassyi.ZeroAlloc.Linq;
 
 namespace Kassyi.GSharp.Tests.Shared.Syntax;
 
@@ -236,6 +237,114 @@ public static partial class ZeroInitKernels
         output[1] = r.Length;
     }
 
+    // [SkipLocalsInit] does not leave out the initializer of a const array, which C++ requires
+    [GpuKernel]
+    [SkipLocalsInit]
+    public static void ReadOnlyStackAllocSkipLocalsInitKernel(int[] output)
+    {
+        ReadOnlySpan<int> r = stackalloc int[4];
+        output[0] = r[0] + r[1] + r[2] + r[3];
+        output[1] = r.Length;
+    }
+
+    [GpuDeviceFunction]
+    public static int SumSpan(Span<int> values)
+    {
+        int total = 0;
+        for (int i = 0; i < values.Length; i++)
+        {
+            total += values[i];
+        }
+
+        return total;
+    }
+
+    [GpuDeviceFunction]
+    public static int SumArray(int[] values)
+    {
+        int total = 0;
+        for (int i = 0; i < values.Length; i++)
+        {
+            total += values[i];
+        }
+
+        return total;
+    }
+
+    [GpuDeviceFunction]
+    public static int Length(ReadOnlySpan<int> values) => values.Length;
+
+    // A stack array passes as a span or an array argument with its length
+    [GpuKernel]
+    public static void StackArrayArgumentKernel(int[] output)
+    {
+        int[] a = new int[10];
+        a[3] = 4;
+        Span<int> s = stackalloc int[4];
+        s[1] = 2;
+        output[0] = SumSpan(a);
+        output[1] = SumArray(a);
+        output[2] = Length(s);
+        ReadOnlySpan<int> r = s;
+        output[3] = Length(r);
+        output[4] = SumSpan(s);
+        output[5] = Length(a);
+    }
+
+    // A local array is never null in C#
+    [GpuKernel]
+    public static void StackArrayNullTestKernel(int[] output)
+    {
+        int[] a = new int[4];
+        output[0] = a == null ? 1 : 0;
+        output[1] = a != null ? 1 : 0;
+        output[2] = a is null ? 1 : 0;
+        output[3] = a is not null ? 1 : 0;
+        output[4] = null == a ? 1 : 0;
+        output[5] = (int[])a == null ? 1 : 0;
+    }
+
+    // A null test through a cast keeps the cast as its operand, also on an array the kernel receives
+    [GpuKernel]
+    public static void CastNullTestKernel(int[] input, int[] output)
+    {
+        output[0] = (int[])input == null ? 1 : 0;
+        output[1] = (int[])input != null ? 1 : 0;
+    }
+
+    // A stack array as the receiver of span members and of StackLinq
+    [GpuKernel]
+    public static void StackArrayMembersKernel(int[] output)
+    {
+        Span<int> s = stackalloc int[4];
+        s.Fill(2);
+        output[0] = s[3];
+        Span<int> tail = s.Slice(1);
+        output[1] = tail.Length;
+        int[] a = { 1, 2, 3, 4 };
+        Span<int> view = a.AsSpan();
+        output[2] = view[2];
+        output[3] = a.AsStackEnumerable().Sum();
+        output[4] = s.AsStackEnumerable().Sum();
+    }
+
+    [GpuDeviceFunction]
+    public static void KeepIn(int[] x, ref int[] slot) => slot = x;
+
+    // A local and a ref argument that hold a stack array within its scope see the array of the same iteration
+    [GpuKernel]
+    public static void StackArrayAliasKernel(int[] output, int[] seed)
+    {
+        for (int it = 0; it < 2; it++)
+        {
+            int[] a = { 11 * (it + 1), 0, 0, 0 };
+            int[] b = a;
+            int[] inner = seed;
+            KeepIn(a, ref inner);
+            output[it] = b[0] + inner[0];
+        }
+    }
+
     // [SkipLocalsInit] leaves out only the zero fill of a stackalloc: every explicit initializer keeps its C# value (#622)
     [GpuKernel]
     [SkipLocalsInit]
@@ -301,5 +410,125 @@ public static partial class ZeroInitKernels
     {
         output[1] = DirtyDefaultsFrame(7, index);
         output[0] = ReadDefaults(index);
+    }
+
+    // ---- stackalloc and collection expressions outside a declaration (#623 B, #642) ----
+
+    [GpuDeviceFunction]
+    public static int Pair2(int a, int b) => a * 10 + b;
+
+    [GpuDeviceFunction]
+    public static int Next(ref int x) => ++x;
+
+    // Reads every element, then writes value to every element; returns what it read
+    [GpuDeviceFunction]
+    public static int ReadThenWrite(Span<int> values, int value)
+    {
+        int read = 0;
+        for (int i = 0; i < values.Length; i++)
+        {
+            read += values[i];
+            values[i] = value;
+        }
+
+        return read;
+    }
+
+    // H3, H4, B1, B2: the length and the elements of a span created in an argument
+    [GpuKernel]
+    public static void StackAllocArgumentKernel(int[] output)
+    {
+        output[0] = Length(stackalloc int[4]);
+        output[1] = SumSpan(stackalloc int[] { 1, 2 });
+        output[2] = SumSpan([3, 4]);
+        output[3] = SumArray([5, 6]);
+        output[4] = Length(stackalloc int[0]);
+        Span<int> empty = stackalloc int[0];
+        output[5] = empty.Length;
+        output[6] = Length(stackalloc int[1]);
+        output[7] = SumSpan(stackalloc[] { 7, 8 });
+    }
+
+    // H5: the elements of an initializer are evaluated in the C# order, between the other arguments
+    [GpuKernel]
+    public static void StackAllocInitializerOrderKernel(int[] output)
+    {
+        int x = 0;
+        output[0] = Pair2(Next(ref x), SumSpan(stackalloc int[] { Next(ref x), Next(ref x) }));
+        output[1] = x;
+    }
+
+    // H6: a pointer to a stackalloc
+    [GpuKernel]
+    public static unsafe void StackAllocPointerKernel(int[] output)
+    {
+        int* p = stackalloc int[4];
+        p[1] = 5;
+        output[0] = p[0] + p[1];
+        int* q = stackalloc int[] { 6, 7 };
+        output[1] = q[0] + q[1];
+    }
+
+    // B3: a large stackalloc indexed at run time, whose last element must be zero as well
+    [GpuKernel]
+    public static void LargeStackAllocKernel(int[] output, int index)
+    {
+        output[0] = ReadAt(stackalloc int[256], index);
+    }
+
+    [GpuDeviceFunction]
+    public static int ReadAt(Span<int> values, int index) => values[index];
+
+    // B4: a stackalloc in an argument inside a loop is zeroed on every evaluation
+    [GpuKernel]
+    public static void StackAllocArgumentInLoopKernel(int[] output)
+    {
+        int acc = 0;
+        for (int i = 0; i < 3; i++)
+        {
+            acc += ReadThenWrite(stackalloc int[4], i + 1);
+        }
+
+        output[0] = acc;
+    }
+
+    // B7: a stackalloc in the declaration of a for statement; a do condition and a switch expression
+    [GpuKernel]
+    public static void StackAllocInLoopHeadersKernel(int[] output)
+    {
+        int n = 0;
+        for (Span<int> s = stackalloc int[4]; s[0] < 3; s[0]++)
+        {
+            n++;
+        }
+
+        output[0] = n;
+
+        int k = 0;
+        do
+        {
+            k++;
+        }
+        while (ReadThenWrite(stackalloc int[4], k) == 0 && k < 3);
+
+        output[1] = k;
+
+        switch (Length(stackalloc int[3]))
+        {
+            case 3:
+                output[2] = 1;
+                break;
+            default:
+                output[2] = 0;
+                break;
+        }
+    }
+
+    // B8: a stackalloc in each branch of a conditional
+    [GpuKernel]
+    public static void StackAllocConditionalKernel(int[] output, int c)
+    {
+        Span<int> s = c > 0 ? stackalloc int[4] : stackalloc int[8];
+        output[0] = s.Length + s[3];
     }
 }

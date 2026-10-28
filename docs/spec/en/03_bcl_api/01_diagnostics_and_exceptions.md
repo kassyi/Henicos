@@ -26,7 +26,7 @@ During the MSBuild AOT code generation phase, the `Kassyi.Generators.GSharp` Ros
 
 | ID | Severity | Description & Resolution |
 | :--- | :--- | :--- |
-| [**GSH0001**](diagnostics/GSH0001.md) | Error | **Object creation not supported.** You attempted to use `new Class()`. Remove the allocation or use a `struct`. |
+| [**GSH0001**](diagnostics/GSH0001.md) | Error | **Object creation not supported.** You attempted to use `new Class()`, or created an array outside the initializer of a local variable. Remove the allocation, use a `struct`, or use a local array or `stackalloc`. |
 | [**GSH0002**](diagnostics/GSH0002.md) | Error | **String usage not supported.** You attempted to use the `string` type. |
 | [**GSH0003**](diagnostics/GSH0003.md) | Error | **Unsupported syntax.** Triggered when unknown/unsupported C# syntax nodes are encountered. |
 | [**GSH0004**](diagnostics/GSH0004.md) | Error | **Unsupported Return Type.** A `[GpuKernel]` method must return `void` or a supported value type. |
@@ -48,7 +48,7 @@ During the MSBuild AOT code generation phase, the `Kassyi.Generators.GSharp` Ros
 | [**GSH0019**](diagnostics/GSH0019.md) | Error | **Manual GetEnumerator calls are not supported.** Explicit calls to `GetEnumerator()` are prohibited to ensure zero-allocation. Use a `foreach` loop over supported types like `Span<T>` instead. |
 | [**GSH0020**](diagnostics/GSH0020.md) | Error | **Missing IDisposable implementation.** A class holds a disposable GPU resource (e.g., `GpuWorkspace`) but does not implement `IDisposable`. |
 | [**GSH0021**](diagnostics/GSH0021.md) | Error | **Undisposed GPU Resource.** The `Dispose()` method does not explicitly invoke `.Dispose()` on all owned GPU resources. |
-| [**GSH0022**](diagnostics/GSH0022.md) | Error | **Unsafe field overwrite.** A disposable field is overwritten without prior disposal. |
+| [**GSH0022**](diagnostics/GSH0022.md) | Error | **Undisposed GPU scope.** The Dispose() method of a type does not release an owned disposable field, directly or through a helper of the type. |
 | [**GSH0023**](diagnostics/GSH0023.md) | Error | **Property getter side-effect.** Property getters must not allocate disposable resources. |
 | [**GSH0024**](diagnostics/GSH0024.md) | Error | **Cast operator side-effect.** Implicit or explicit cast operators must not allocate disposable resources. |
 | [**GSH0025**](diagnostics/GSH0025.md) | Error | **Unguarded multi-allocation.** Multiple allocations in a constructor must be guarded with try-catch to avoid partial leaks. |
@@ -79,12 +79,14 @@ During the MSBuild AOT code generation phase, the `Kassyi.Generators.GSharp` Ros
 | [**GSH0079**](diagnostics/GSH0079.md) | Error | **Struct field type has no device representation.** A struct used by a kernel parameter or a device local has a field whose type (`decimal`, `DateTime` ...) the dialect does not map. |
 | [**GSH0080**](diagnostics/GSH0080.md) | Warning | **Struct array is converted element by element.** The host and device layouts of an array element struct differ, so the CUDA launcher converts each element through a shadow array. |
 | [**GSH0081**](diagnostics/GSH0081.md) | Warning | **Struct array allocates the array field of each element.** Each element of a struct array parameter allocates and copies its array field separately (CUDA). |
-| [**GSH0082**](diagnostics/GSH0082.md) | Error | **Struct cannot be passed to a CPU kernel yet.** A kernel parameter on the CPU dialect uses a struct whose host and device layouts differ (`LayoutKind.Auto`, array fields), which the CPU launcher cannot convert yet. |
 | [**GSH0083**](diagnostics/GSH0083.md) | Warning | **Barrier that only some threads may reach, depending on the launch or on run-time values.** A barrier, or a call that reaches one, is behind a thread-variant branch that does not certainly diverge, such as `ThreadIndex.X < 16`; the certain forms are GSH0037. |
 | [**GSH0084**](diagnostics/GSH0084.md) | Warning | **Barrier after an exit that only some threads take.** A thread-variant condition sends some threads out of the kernel (an early `return`, a `break`, the end of a branch) before a barrier that the others still reach. |
 | [**GSH0088**](diagnostics/GSH0088.md) | Error | **Device code of another assembly is not exported.** GPU code calls a `[GpuDeviceFunction]`, or uses the constructor or computed property of a struct, of a referenced assembly that holds no `[assembly: GpuDeviceExport]` record for it. |
 | [**GSH0089**](diagnostics/GSH0089.md) | Error | **Device code of another assembly cannot be used.** The record of a referenced assembly was written by another G# version, or its build could not transpile it for the consumer's dialect. |
 | [**GSH0090**](diagnostics/GSH0090.md) | Error | **Device code of two assemblies has the same C++ name.** Two referenced assemblies, or a reference and the compilation, declare the same path, which becomes one C++ name. |
+| [**GSH0091**](diagnostics/GSH0091.md) | Error | **Stack array outlives its scope.** A local array, the stack array of a span or the storage of a `stackalloc` is reassigned, returned, or stored where it would outlive the C++ array that holds it (a variable of an outer scope, a parameter, memory the method did not create), directly, through another local or through a call with a `ref` / `out` argument. |
+| [**GSH0099**](diagnostics/GSH0099.md) | Warning | **An AsParallel() aggregate runs sequentially in each thread.** The threads of a block cannot share it (a thread-dependent branch or input, a private source, an order-dependent stage, a lambda with side effects, or a float / double sum); every thread still receives the whole sum. |
+| [**GSH0100**](diagnostics/GSH0100.md) | Warning | **Every block reduces the whole sequence of an AsParallel() aggregate.** The inputs are the same in the whole grid, but the kernel is not cooperative, so the blocks cannot share the work; mark it `[GpuKernel(Cooperative = true)]`. |
 | [**SLQ0001**](diagnostics/SLQ0001.md) | Warning | **Excessive StackLinq chain depth.** Triggered when a StackLinq query chain exceeds recommended nesting depth, threatening GPU register spilling or stack frame bloat. |
 | [**RS0030**](diagnostics/RS0030.md) | Error | **Banned API in GPU kernel.** Triggered when a banned .NET API is used in GPU kernels or GPU intrinsics are invoked from host CPU code. |
 

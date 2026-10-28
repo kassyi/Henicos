@@ -46,8 +46,8 @@ internal static class ResumeLocalEmitter
         }
 
         var redeclared = new NativeResumeLocalSet(byKey, plan.Symbol.AreLocalsZeroed());
-        var body = new ContextLocalRewriter(redeclared, new Dictionary<DeclarationKey, string>(), semanticModel, kernelName)
-                       .Visit(lowered.LoweredBody) as BlockSyntax
+        var body = ContextLocalRewriter.RewriteResumeLocals(lowered.LoweredBody, redeclared, semanticModel, kernelName)
+                       as BlockSyntax
                    ?? throw new InvalidOperationException(
                        $"Turning the resume locals of '{kernelName}' back into locals removed the state machine body.");
         return (lowered with { LoweredBody = body, ContextFields = frameFields.ToImmutable() }, resumeLocals.ToImmutable());

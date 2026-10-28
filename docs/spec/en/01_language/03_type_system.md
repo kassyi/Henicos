@@ -204,6 +204,7 @@ int[] a = new int[4];                     // int a[4]{};
 - `new T[N]` is zeroed whatever the attribute says, because a C# array always starts zeroed.
 - A `ReadOnlySpan<T>` over a `stackalloc` is a `const` C++ array, which needs an initializer, so it is always zeroed (C# allows a compiler to ignore the attribute).
 - A `stackalloc` in a loop body is zeroed on every iteration, because C# allocates it again on each one (the CA2014 warning). Declare it before the loop when one zero fill is enough.
+- A `stackalloc` outside a declaration (an argument, a pointer declaration, a loop condition) follows the same rules: its storage is declared before the statement and zeroed where the `stackalloc` is evaluated, every time, unless `[SkipLocalsInit]` applies.
 
 Cost: nvcc keeps an array whose indices it resolves at compile time in registers, and removes the stores of zeros that a later write overwrites. An array indexed at run time stays in local memory and keeps the zero stores (about one 16-byte store per 16 bytes of the array, on every evaluation). For a work array whose elements are all written before they are read, add `[SkipLocalsInit]`, as you would in C#.
 

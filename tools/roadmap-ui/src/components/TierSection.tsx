@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { Box, Typography, Button, Chip, Skeleton, CircularProgress } from '@mui/material';
+import React from 'react';
+import { Box, Typography, Button, Chip } from '@mui/material';
 import { AddShoppingCart as AddCartIcon, RemoveShoppingCart as RemoveCartIcon } from '@mui/icons-material';
 import type { RoadmapTask, TaskStatus } from '../types';
 import { TaskCard } from './TaskCard';
@@ -10,7 +10,6 @@ interface TierSectionProps {
   tasks: RoadmapTask[];
   cartIds: string[];
   selectedTaskId?: string | null;
-  filterKey: string;
   onCartClick: (id: string, shiftKey: boolean) => void;
   onStatusChange: (id: string, newStatus: TaskStatus) => void;
   onSelectTask?: (id: string) => void;
@@ -23,7 +22,6 @@ export const TierSection: React.FC<TierSectionProps> = React.memo(({
   tasks,
   cartIds,
   selectedTaskId,
-  filterKey,
   onCartClick,
   onStatusChange,
   onSelectTask,

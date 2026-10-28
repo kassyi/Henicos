@@ -76,7 +76,7 @@ GSharp includes a vast suite of advanced algorithms designed to leverage the GPU
 - **[Gcd.md](algorithms/Gcd.md)**: Greatest Common Divisor (Lehmer's GCD).
 - **[ModPow.md](algorithms/ModPow.md)**: Modular Exponentiation (RSA cryptography).
 - **[Ntt.md](algorithms/Ntt.md)**: Number Theoretic Transform for $O(N \log N)$ convolution of massive numbers.
-- **[FermatAlgorithm.md](algorithms/FermatAlgorithm.md)**: Fermat number PRP test and NTT squaring on the GPU (formerly `FermatRunner`, see [Fermat.md](algorithms/Fermat.md)), with non-blocking `RunFermatPrpAsync` / `GetStateAsync`.
+- **[FermatAlgorithm.md](algorithms/FermatAlgorithm.md)**: Fermat probable-prime test of `N = 2^(2E+1) - 2^E + 11` on the GPU (2E + 1 NTT squarings with a dedicated fold), with the Gerbicz-Li check, checkpoints and a non-blocking `RunAsync` (formerly `FermatRunner`, see [Fermat.md](algorithms/Fermat.md)).
 - **[PrimeSearchAlgorithm.md](algorithms/PrimeSearchAlgorithm.md)**: High-performance probable prime generation using trial division and Fermat PRP testing.
 - **[ChudnovskyAlgorithm.md](algorithms/ChudnovskyAlgorithm.md)**: Hybrid CPU/GPU Chudnovsky binary splitting pipeline for multi-million-digit $\pi$ computation.
 - **[BbpAlgorithm.md](algorithms/BbpAlgorithm.md)**: Bailey-Borwein-Plouffe (BBP) spigot algorithm for direct hexadecimal $\pi$ digit extraction.

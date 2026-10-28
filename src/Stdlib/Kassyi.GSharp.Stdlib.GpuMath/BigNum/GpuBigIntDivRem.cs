@@ -66,12 +66,16 @@ public static partial class GpuBigIntDivRem
     /// Computes the reciprocal <c>floor(2^targetBits / b)</c> of the operand <c>b</c> using Newton-Raphson iterations on
     /// the GPU, followed by an exact correction on the device.
     /// </summary>
-    /// <param name="targetOperand">The divisor <c>b</c>, normalized (the top bit of its top word set), as every caller
-    /// passes it.</param>
+    /// <param name="targetOperand">The divisor <c>b</c>. It need not be normalized: the initial approximation is built
+    /// from its bit length, and the big-float <c>Reciprocal</c> passes significands with leading zero bits or words.</param>
     /// <param name="resultBuffer">Receives exactly <c>floor(2^targetBits / b)</c>; it must hold
     /// at least <c>(targetBits + 31) / 32</c> words.</param>
-    /// <param name="targetBits">The exponent <c>T</c> of the numerator <c>2^T</c>; <c>2^T &gt;= 4b</c>.</param>
-    /// <param name="marginWords">The margin words passed to the provider.</param>
+    /// <param name="targetBits">The exponent <c>T</c> of the numerator <c>2^T</c>; <c>2^T &gt;= 4b</c>. The result
+    /// must fit in <c>(T + 31) / 32</c> words: <c>floor(2^T / b) &lt;= 2^(T - 1)</c> does for every <c>b &gt;= 2</c>, but
+    /// <c>2^T / 1</c> needs <c>T + 1</c> bits, so a caller that may pass <c>b = 1</c> uses a <c>T</c> that is not a
+    /// multiple of 32 (the big-float <c>Reciprocal</c> uses <c>32·w - 1</c>).</param>
+    /// <param name="marginWords">Passed on to the provider's context; the reciprocal kernel does not read it, since
+    /// <paramref name="targetBits"/> sets the precision.</param>
     /// <exception cref="DivideByZeroException">Thrown when <paramref name="targetOperand"/> is zero.</exception>
     /// <remarks>
     /// The Newton-Raphson result is <c>floor(2^T / b)</c> or one less; the kernel then computes <c>r = 2^T - b * x</c>
@@ -133,23 +137,79 @@ public static partial class GpuBigIntDivRem
     /// <paramref name="leftOperand"/> is always enough. Words above the quotient are set to zero.</param>
     /// <param name="remainderBuffer">The destination buffer receiving the remainder ($A \bmod B$). It must hold at least
     /// <c>n</c> words; words above the remainder are set to zero.</param>
-    /// <exception cref="ArgumentException">Thrown when <paramref name="quotientBuffer"/> or <paramref name="remainderBuffer"/> is shorter than stated above.</exception>
+    /// <exception cref="ArgumentException">Thrown when <paramref name="quotientBuffer"/> or <paramref name="remainderBuffer"/> is shorter than stated above, or when the two overlap.</exception>
     /// <exception cref="DivideByZeroException">Thrown when <paramref name="rightOperand"/> is zero.</exception>
     /// <remarks>
     /// <para><b>Algorithm:</b> Evaluates division via normalized reciprocal multiplication on GPU followed by quotient-remainder correction.</para>
+    /// <para>Either output may be the dividend or the divisor, or overlap them: as GMP's <c>mpz_tdiv_qr</c>, an
+    /// operand that shares memory with an output is copied first, and the result is the one of separate buffers. The
+    /// quotient and the remainder must not overlap each other.</para>
     /// </remarks>
     public static void DivRem(
         scoped GpuBigUIntView leftOperand,
         scoped GpuBigUIntView rightOperand,
         scoped GpuBigUIntView quotientBuffer,
         scoped GpuBigUIntView remainderBuffer
-    ) =>
+    )
+    {
+        if (DeviceRanges.Overlaps(quotientBuffer, remainderBuffer))
+        {
+            throw new ArgumentException("The quotient and remainder buffers must not overlap.", nameof(remainderBuffer));
+        }
+
+        // The quotient is written before the dividend and the divisor are read again (Reduce, the power-of-two paths),
+        // so an operand that shares memory with an output is read from a copy
+        using var leftCopy = CopyIfOverlapsOutput(leftOperand, quotientBuffer, remainderBuffer);
+        using var rightCopy = CopyIfOverlapsOutput(rightOperand, quotientBuffer, remainderBuffer);
         DivRemCore(
-            leftOperand.AsBorrowedBigUInt(),
-            rightOperand.AsBorrowedBigUInt(),
+            leftCopy.Handle.IsDefault ? leftOperand.AsBorrowedBigUInt() : leftCopy,
+            rightCopy.Handle.IsDefault ? rightOperand.AsBorrowedBigUInt() : rightCopy,
             quotientBuffer.AsBorrowedBigUInt(),
             remainderBuffer.AsBorrowedBigUInt()
         );
+    }
+
+    // An owned copy of operand when it shares memory with an output; otherwise the default value, which owns nothing
+    private static GpuBigUInt CopyIfOverlapsOutput(scoped GpuBigUIntView operand, scoped GpuBigUIntView output0,
+        scoped GpuBigUIntView output1)
+    {
+        if (!DeviceRanges.Overlaps(operand, output0) && !DeviceRanges.Overlaps(operand, output1))
+        {
+            return default;
+        }
+
+        var copy = new GpuBigUInt(operand.Workspace, operand.NumWords);
+        try
+        {
+            copy.CopyFrom(operand);
+            return copy;
+        }
+        catch
+        {
+            copy.Dispose();
+            throw;
+        }
+    }
+
+    // Reduce and ReduceZeroSync do not copy their inputs: an output that overlaps an input, or the other output, would
+    // be read after it was written
+    private static void ThrowIfReduceOutputsOverlap(scoped GpuBigUIntView leftOperand,
+        scoped GpuBigUIntView rightOperand, scoped GpuBigUIntView reciprocalOfB, scoped GpuBigUIntView quotientBuffer,
+        scoped GpuBigUIntView remainderBuffer)
+    {
+        if (DeviceRanges.Overlaps(quotientBuffer, remainderBuffer) ||
+            OverlapsInput(quotientBuffer, leftOperand, rightOperand, reciprocalOfB) ||
+            OverlapsInput(remainderBuffer, leftOperand, rightOperand, reciprocalOfB))
+        {
+            throw new ArgumentException(
+                "The quotient and remainder buffers must not overlap each other or an input.", nameof(quotientBuffer));
+        }
+    }
+
+    private static bool OverlapsInput(scoped GpuBigUIntView output, scoped GpuBigUIntView input0,
+        scoped GpuBigUIntView input1, scoped GpuBigUIntView input2) =>
+        DeviceRanges.Overlaps(output, input0) || DeviceRanges.Overlaps(output, input1) ||
+        DeviceRanges.Overlaps(output, input2);
 
     // DivRem on the owned type; the public method above takes views and borrows them
     private static void DivRemCore(GpuBigUInt leftOperand, GpuBigUInt rightOperand,
@@ -168,13 +228,14 @@ public static partial class GpuBigIntDivRem
 
         if (aActualBits < bActualBits)
         {
-            quotientBuffer.Clear();
             if (remainderBuffer.NumWords > nA)
             {
                 remainderBuffer.Clear();
             }
 
+            // The remainder (the dividend) is taken before the quotient is cleared, as GMP's tdiv_qr does
             remainderBuffer.CopyFrom(leftOperand, numWords: Math.Min(remainderBuffer.NumWords, nA));
+            quotientBuffer.Clear();
             return;
         }
 
@@ -331,6 +392,8 @@ public static partial class GpuBigIntDivRem
     /// <param name="aActualWords">The actual number of words in the dividend.</param>
     /// <param name="quotientBuffer">The buffer to store the computed quotient.</param>
     /// <param name="remainderBuffer">The buffer to store the computed remainder.</param>
+    /// <exception cref="ArgumentException">The quotient and remainder buffers overlap each other or an input; unlike
+    /// <see cref="DivRem"/>, this building block does not copy its inputs.</exception>
     public static void Reduce(
         scoped GpuBigUIntView leftOperand,
         scoped GpuBigUIntView rightOperand,
@@ -339,7 +402,9 @@ public static partial class GpuBigIntDivRem
         int aActualWords,
         scoped GpuBigUIntView quotientBuffer,
         scoped GpuBigUIntView remainderBuffer
-    ) =>
+    )
+    {
+        ThrowIfReduceOutputsOverlap(leftOperand, rightOperand, reciprocalOfB, quotientBuffer, remainderBuffer);
         ReduceCore(
             leftOperand.AsBorrowedBigUInt(),
             rightOperand.AsBorrowedBigUInt(),
@@ -349,6 +414,7 @@ public static partial class GpuBigIntDivRem
             quotientBuffer.AsBorrowedBigUInt(),
             remainderBuffer.AsBorrowedBigUInt()
         );
+    }
 
     // Reduce on the owned type; the public method above takes views and borrows them
     private static void ReduceCore(GpuBigUInt leftOperand, GpuBigUInt rightOperand, GpuBigUInt reciprocalOfB,
@@ -431,6 +497,8 @@ public static partial class GpuBigIntDivRem
     /// <param name="aActualWords">The actual word count of the left operand.</param>
     /// <param name="quotientBuffer">The buffer to store the quotient result.</param>
     /// <param name="remainderBuffer">The buffer to store the remainder result.</param>
+    /// <exception cref="ArgumentException">The quotient and remainder buffers overlap each other or an input; unlike
+    /// <see cref="DivRem"/>, this building block does not copy its inputs.</exception>
     public static void ReduceZeroSync(
         scoped GpuBigUIntView leftOperand,
         scoped GpuBigUIntView rightOperand,
@@ -439,7 +507,9 @@ public static partial class GpuBigIntDivRem
         int aActualWords,
         scoped GpuBigUIntView quotientBuffer,
         scoped GpuBigUIntView remainderBuffer
-    ) =>
+    )
+    {
+        ThrowIfReduceOutputsOverlap(leftOperand, rightOperand, reciprocalOfB, quotientBuffer, remainderBuffer);
         ReduceZeroSyncCore(
             leftOperand.AsBorrowedBigUInt(),
             rightOperand.AsBorrowedBigUInt(),
@@ -449,6 +519,7 @@ public static partial class GpuBigIntDivRem
             quotientBuffer.AsBorrowedBigUInt(),
             remainderBuffer.AsBorrowedBigUInt()
         );
+    }
 
     // ReduceZeroSync on the owned type; the public method above takes views and borrows them
     private static void ReduceZeroSyncCore(GpuBigUInt leftOperand, GpuBigUInt rightOperand, GpuBigUInt reciprocalOfB,
@@ -599,7 +670,8 @@ public static partial class GpuBigIntDivRem
     /// </summary>
     /// <param name="leftOperand">The dividend operand.</param>
     /// <param name="rightOperand">The divisor operand.</param>
-    /// <param name="resultBuffer">The destination buffer receiving the quotient.</param>
+    /// <param name="resultBuffer">The destination buffer receiving the quotient. It may be either operand, or overlap
+    /// them; the result is the one of separate buffers (see <see cref="DivRem"/>).</param>
     /// <exception cref="ArgumentException">Thrown when buffer sizes do not match.</exception>
     /// <exception cref="DivideByZeroException">Thrown when <paramref name="rightOperand"/> is zero.</exception>
     public static void Div(
@@ -623,7 +695,8 @@ public static partial class GpuBigIntDivRem
     /// </summary>
     /// <param name="leftOperand">The dividend operand.</param>
     /// <param name="rightOperand">The divisor operand.</param>
-    /// <param name="resultBuffer">The destination buffer receiving the remainder.</param>
+    /// <param name="resultBuffer">The destination buffer receiving the remainder. It may be either operand, or overlap
+    /// them; the result is the one of separate buffers (see <see cref="DivRem"/>).</param>
     /// <exception cref="ArgumentException">Thrown when buffer sizes do not match.</exception>
     /// <exception cref="DivideByZeroException">Thrown when <paramref name="rightOperand"/> is zero.</exception>
     public static void Mod(

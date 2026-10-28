@@ -23,15 +23,17 @@ public readonly struct GpuBigIntExecutableGraph : IDisposable
 
 | Name | Description |
 | --- | --- |
-| [Result](#result) | Gets the buffer holding the result of the CUDA Graph execution. |
+| [Result](#result) | Gets a view of the result of the CUDA Graph execution, valid while the graph is alive. |
 
 ## Result
 
-Gets the buffer holding the result of the CUDA Graph execution. This buffer is populated and updated each time [Execute()](#execute) is invoked.
+Gets a view of the result of the CUDA Graph execution. The buffer is written each time [Execute()](#execute) is invoked.
 
 ```csharp
-public GpuBigInt Result { get; }
+public GpuBigIntView Result { get; }
 ```
+
+Without a `targetResult`, the graph owns the result buffer and returns it to the pool when it is disposed; reading the view afterwards throws `ObjectDisposedException`. To keep the value, pass a `targetResult` to `CompileToGraph`, copy it with `GpuBigIntView.ToOwned()`, or use `GpuBigIntExpr.EvaluateWithCudaGraph`, whose result the caller owns. See [GpuBigIntView](../GpuBigIntView.md).
 
 ## Methods
 
@@ -49,7 +51,9 @@ Destroys the underlying native CUDA Graph (`CUgraph`) and executable graph (`CUg
 public void Dispose();
 ```
 
-Copies of the struct share one set of graph handles, so `Dispose` may be called on any copy and more than once. Afterwards every copy rejects execution with `ObjectDisposedException`. Disposing while a launch is still running is safe and does not wait: the driver releases the executable graph once the launch completes. The [Result](#result) buffer is not released by `Dispose`.
+Copies of the struct share one set of graph handles, so `Dispose` may be called on any copy and more than once. Afterwards every copy rejects execution with `ObjectDisposedException`. Disposing while a launch is still running is safe and does not wait: the driver releases the executable graph once the launch completes, and the buffers the graph owns go back to the pool in stream order behind it.
+
+The graph owns the expression it was compiled from, its [Result](#result) buffer (unless a `targetResult` was given) and the buffers its capture freed; `Dispose` returns all of them. The operands and the `targetResult` stay with the caller.
 
 ## Execute()
 
@@ -62,7 +66,7 @@ public void Execute();
 #### Exceptions
 
 `ObjectDisposedException`<br>
-The graph has been disposed.
+The graph has been disposed, or an operand or the `targetResult` the graph reads has been disposed. The graph records raw device pointers, so it refuses to launch instead of using memory that may belong to another owner.
 
 ## ExecuteAsync(CancellationToken)
 
@@ -85,7 +89,7 @@ A task that completes when the graph has finished. Repeated launches do not allo
 #### Exceptions
 
 `ObjectDisposedException`<br>
-The graph has been disposed.
+The graph has been disposed, or an operand or the `targetResult` the graph reads has been disposed.
 
 `OperationCanceledException`<br>
 `cancellationToken` was canceled.

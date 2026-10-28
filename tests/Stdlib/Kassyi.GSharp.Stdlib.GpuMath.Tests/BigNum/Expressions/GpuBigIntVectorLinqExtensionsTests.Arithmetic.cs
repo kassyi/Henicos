@@ -37,7 +37,7 @@ public partial class GpuBigIntVectorLinqExtensionsTests
         using var array = CreateArray(input);
         var scalar = CreateScalar(scalarVal);
         var expr = array.AsVectorizedEnumerable().SelectAdd(scalar);
-        using var result = expr.Evaluate(_context);
+        var result = expr.Evaluate(_context);
         var hostResult = ToHostArray(result);
         for (int i = 0; i < input.Length; i++) Assert.Equal(expectedAdd[i], hostResult[i]);
     }
@@ -51,7 +51,7 @@ public partial class GpuBigIntVectorLinqExtensionsTests
         using var array = CreateArray(input);
         var scalar = CreateScalar(scalarVal);
         var expr = array.AsVectorizedEnumerable().SelectSubtract(scalar);
-        using var result = expr.Evaluate(_context);
+        var result = expr.Evaluate(_context);
         var hostResult = ToHostArray(result);
         for (int i = 0; i < input.Length; i++) Assert.Equal(expectedSub[i], hostResult[i]);
     }
@@ -65,7 +65,7 @@ public partial class GpuBigIntVectorLinqExtensionsTests
         using var array = CreateArray(input);
         var scalar = CreateScalar(scalarVal);
         var expr = array.AsVectorizedEnumerable().SelectMultiply(scalar);
-        using var result = expr.Evaluate(_context);
+        var result = expr.Evaluate(_context);
         var hostResult = ToHostArray(result);
         for (int i = 0; i < input.Length; i++) Assert.Equal(expectedMul[i], hostResult[i]);
     }
@@ -95,7 +95,7 @@ public partial class GpuBigIntVectorLinqExtensionsTests
         using var array1 = CreateArray(input1);
         using var array2 = CreateArray(input2);
         var expr = array1.AsVectorizedEnumerable().ZipAdd(array2.AsVectorizedEnumerable());
-        using var result = expr.Evaluate(_context);
+        var result = expr.Evaluate(_context);
         var hostResult = ToHostArray(result);
         for (int i = 0; i < input1.Length; i++) Assert.Equal(expectedAdd[i], hostResult[i]);
     }
@@ -109,7 +109,7 @@ public partial class GpuBigIntVectorLinqExtensionsTests
         using var array1 = CreateArray(input1);
         using var array2 = CreateArray(input2);
         var expr = array1.AsVectorizedEnumerable().ZipSubtract(array2.AsVectorizedEnumerable());
-        using var result = expr.Evaluate(_context);
+        var result = expr.Evaluate(_context);
         var hostResult = ToHostArray(result);
         for (int i = 0; i < input1.Length; i++) Assert.Equal(expectedSub[i], hostResult[i]);
     }
@@ -123,7 +123,7 @@ public partial class GpuBigIntVectorLinqExtensionsTests
         using var array1 = CreateArray(input1);
         using var array2 = CreateArray(input2);
         var expr = array1.AsVectorizedEnumerable().ZipMultiply(array2.AsVectorizedEnumerable());
-        using var result = expr.Evaluate(_context);
+        var result = expr.Evaluate(_context);
         var hostResult = ToHostArray(result);
         for (int i = 0; i < input1.Length; i++) Assert.Equal(expectedMul[i], hostResult[i]);
     }
@@ -170,7 +170,7 @@ public partial class GpuBigIntVectorLinqExtensionsTests
         using var array = CreateArray(input);
         using var scalar = CreateScalar(scalarVal);
         using var expr = array.AsVectorizedEnumerable().SelectDivide(scalar);
-        using var result = expr.Evaluate(_context);
+        var result = expr.Evaluate(_context);
         var hostResult = ToHostArray(result);
         for (int i = 0; i < input.Length; i++) Assert.Equal(expectedDiv[i], hostResult[i]);
     }
@@ -184,7 +184,7 @@ public partial class GpuBigIntVectorLinqExtensionsTests
         using var array = CreateArray(input);
         using var scalar = CreateScalar(scalarVal);
         using var expr = array.AsVectorizedEnumerable().SelectModulo(scalar);
-        using var result = expr.Evaluate(_context);
+        var result = expr.Evaluate(_context);
         var hostResult = ToHostArray(result);
         for (int i = 0; i < input.Length; i++) Assert.Equal(expectedMod[i], hostResult[i]);
     }
@@ -220,7 +220,7 @@ public partial class GpuBigIntVectorLinqExtensionsTests
         using var array1 = CreateArray(input1);
         using var array2 = CreateArray(input2);
         using var expr = array1.AsVectorizedEnumerable().ZipDivide(array2.AsVectorizedEnumerable());
-        using var result = expr.Evaluate(_context);
+        var result = expr.Evaluate(_context);
         var hostResult = ToHostArray(result);
         for (int i = 0; i < input1.Length; i++) Assert.Equal(expectedDiv[i], hostResult[i]);
     }
@@ -234,7 +234,7 @@ public partial class GpuBigIntVectorLinqExtensionsTests
         using var array1 = CreateArray(input1);
         using var array2 = CreateArray(input2);
         using var expr = array1.AsVectorizedEnumerable().ZipModulo(array2.AsVectorizedEnumerable());
-        using var result = expr.Evaluate(_context);
+        var result = expr.Evaluate(_context);
         var hostResult = ToHostArray(result);
         for (int i = 0; i < input1.Length; i++) Assert.Equal(expectedMod[i], hostResult[i]);
     }
@@ -266,7 +266,7 @@ public partial class GpuBigIntVectorLinqExtensionsTests
 
         using var sqrtArray = CreateArray(sqrtInputs);
         using var sqrtExpr = sqrtArray.AsVectorizedEnumerable().SelectSqrt();
-        using var sqrtResult = sqrtExpr.Evaluate(_context);
+        var sqrtResult = sqrtExpr.Evaluate(_context);
         var hostSqrts = ToHostArray(sqrtResult);
 
         for (var i = 0; i < sqrtInputs.Length; i++)
@@ -278,7 +278,7 @@ public partial class GpuBigIntVectorLinqExtensionsTests
         const uint divisor = 7u;
         using var divArray = CreateArray(divInputs);
         using var divExpr = divArray.AsVectorizedEnumerable().SelectDivideByUInt32(divisor);
-        using var divResult = divExpr.Evaluate(_context);
+        var divResult = divExpr.Evaluate(_context);
         var hostDivs = ToHostArray(divResult);
 
         for (var i = 0; i < divInputs.Length; i++)
@@ -327,7 +327,7 @@ public partial class GpuBigIntVectorLinqExtensionsTests
         using var zeroScalar = CreateScalar(0);
 
         using var selectMulExpr = array.AsVectorizedEnumerable().SelectMultiply(zeroScalar);
-        using var selectMulResult = selectMulExpr.Evaluate(_context);
+        var selectMulResult = selectMulExpr.Evaluate(_context);
         for (var i = 0; i < array.Length; i++)
         {
             var elem = selectMulResult.GetElement(i);
@@ -337,7 +337,7 @@ public partial class GpuBigIntVectorLinqExtensionsTests
 
         using var rhsArray = CreateArray([0, -77, 0]);
         using var zipMulExpr = array.AsVectorizedEnumerable().ZipMultiply(rhsArray.AsVectorizedEnumerable());
-        using var zipMulResult = zipMulExpr.Evaluate(_context);
+        var zipMulResult = zipMulExpr.Evaluate(_context);
         for (var i = 0; i < array.Length; i++)
         {
             var elem = zipMulResult.GetElement(i);
@@ -360,11 +360,11 @@ public partial class GpuBigIntVectorLinqExtensionsTests
         using var scalarDivisor = CreateScalar(q, numWords);
 
         using var divExpr = array.AsVectorizedEnumerable().SelectDivide(scalarDivisor);
-        using var divResult = divExpr.Evaluate(_context);
+        var divResult = divExpr.Evaluate(_context);
         var hostDiv = ToHostArray(divResult);
 
         using var modExpr = array.AsVectorizedEnumerable().SelectModulo(scalarDivisor);
-        using var modResult = modExpr.Evaluate(_context);
+        var modResult = modExpr.Evaluate(_context);
         var hostMod = ToHostArray(modResult);
 
         for (var i = 0; i < dividends.Length; i++)

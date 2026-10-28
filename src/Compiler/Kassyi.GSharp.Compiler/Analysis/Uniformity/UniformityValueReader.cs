@@ -28,7 +28,7 @@ internal sealed class UniformityValueReader(UniformityState state)
             IPropertyReferenceOperation { Property: var property }
                 when SyncIntrinsicClassifier.IsThreadVariantSource(property) => ThreadVariance.Block,
             IPropertyReferenceOperation { Property: var property }
-                when SyncIntrinsicClassifier.IsGridVariantSource(property) => ThreadVariance.Grid,
+                when SyncIntrinsicClassifier.IsBlockVariantSource(property) => ThreadVariance.Grid,
             IInvocationOperation invocation => EvaluateCall(invocation, graph, current),
             IFlowAnonymousFunctionOperation => ThreadVariance.Uniform,
             ISimpleAssignmentOperation assignment => Evaluate(assignment.Value, graph, current),

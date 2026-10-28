@@ -405,7 +405,7 @@ internal sealed class CertaintyProber(UniformityState state)
             return Constant.Of(run.Probe == Probe.Block && property.Name == "X" ? run.Coordinate : 0);
         }
 
-        if (SyncIntrinsicClassifier.IsGridVariantSource(property))
+        if (SyncIntrinsicClassifier.IsBlockVariantSource(property))
         {
             return run.Probe == Probe.Grid
                 ? Constant.Of(property.Name == "X" ? run.Coordinate : 0)

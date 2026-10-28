@@ -172,126 +172,134 @@ public struct GpuBigUInt<TSize> : IGpuNumber<GpuBigUInt<TSize>> where TSize : un
     }
 
     /// <summary>
-    /// Shifts the big integer to the right by the specified number of bits, reporting whether any discarded lower bits were set (sticky bit).
+    /// Shifts the big integer to the right by the specified number of bits, reporting whether any discarded bit was set.
     /// </summary>
-    /// <param name="bits">The number of bits to shift right.</param>
-    /// <param name="stickyBit">When this method returns, contains <see langword="true"/> if any bit shifted out of the least significant limb was non-zero; otherwise, <see langword="false"/>.</param>
-    /// <returns>The right-shifted value.</returns>
-    public readonly GpuBigUInt<TSize> ShiftRight(int bits, out bool stickyBit) => ShiftRight(bits, out _, out _, out stickyBit);
+    /// <param name="bits">The number of bits to shift right. A shift by the full width or more returns zero.</param>
+    /// <param name="stickyBit">When this method returns, contains <see langword="true"/> if any of the <paramref name="bits"/> discarded bits is 1 (<c>v mod 2^bits != 0</c>, the result is inexact); otherwise, <see langword="false"/>.</param>
+    /// <returns>The right-shifted value, <c>floor(v / 2^bits)</c>.</returns>
+    /// <exception cref="ArgumentOutOfRangeException"><paramref name="bits"/> is negative.</exception>
+    public readonly GpuBigUInt<TSize> ShiftRight(int bits, out bool stickyBit)
+    {
+        var result = ShiftRight(bits, out var guardBit, out var roundBit, out var lowerBits);
+        stickyBit = guardBit || roundBit || lowerBits;
+        return result;
+    }
 
     /// <summary>
-    /// Shifts the big integer to the right by the specified number of bits, extracting IEEE 754 rounding components: Guard bit, Round bit, and Sticky bit.
+    /// Shifts the big integer to the right by the specified number of bits, extracting the IEEE 754 rounding components: the guard bit, the round bit and the sticky bit.
     /// </summary>
-    /// <param name="bits">The number of bits to shift right.</param>
-    /// <param name="guardBit">When this method returns, contains <see langword="true"/> if the first bit shifted out (most significant discarded bit) was 1; otherwise, <see langword="false"/>.</param>
-    /// <param name="roundBit">When this method returns, contains <see langword="true"/> if the second bit shifted out was 1; otherwise, <see langword="false"/>.</param>
-    /// <param name="stickyBit">When this method returns, contains <see langword="true"/> if any remaining shifted-out bits beyond the round bit were 1; otherwise, <see langword="false"/>.</param>
-    /// <returns>The right-shifted value.</returns>
+    /// <param name="bits">The number of bits to shift right. A shift by the full width or more returns zero.</param>
+    /// <param name="guardBit">When this method returns, contains bit <c>bits - 1</c> of the value, the most significant discarded bit (<see langword="false"/> when <paramref name="bits"/> is 0).</param>
+    /// <param name="roundBit">When this method returns, contains bit <c>bits - 2</c> of the value, the second discarded bit (<see langword="false"/> when <paramref name="bits"/> is less than 2).</param>
+    /// <param name="stickyBit">When this method returns, contains <see langword="true"/> if any bit below the round bit is 1 (<c>v mod 2^(bits - 2) != 0</c>, <see langword="false"/> when <paramref name="bits"/> is less than 3); otherwise, <see langword="false"/>.</param>
+    /// <returns>The right-shifted value, <c>floor(v / 2^bits)</c>.</returns>
+    /// <remarks>
+    /// Bits above the most significant limb read as 0. Round to nearest, ties to even, rounds the result up exactly when
+    /// <c>guardBit &amp;&amp; (roundBit || stickyBit || lsb)</c>, where <c>lsb</c> is the least significant bit of the result.
+    /// </remarks>
+    /// <exception cref="ArgumentOutOfRangeException"><paramref name="bits"/> is negative.</exception>
     public readonly GpuBigUInt<TSize> ShiftRight(int bits, out bool guardBit, out bool roundBit, out bool stickyBit)
     {
-        guardBit = false;
-        roundBit = false;
-
-        if (bits == 0)
-        {
-            stickyBit = false;
-            return this;
-        }
-
-        var result = default(GpuBigUInt<TSize>);
+        ArgumentOutOfRangeException.ThrowIfNegative(bits);
         var src = GetSpan();
-        var dst = result.GetSpan();
+        guardBit = bits >= 1 && TestBit(src, bits - 1);
+        roundBit = bits >= 2 && TestBit(src, bits - 2);
+        stickyBit = bits >= 3 && AnyBitBelow(src, bits - 2);
+        return ShiftRightCore(src, bits);
+    }
 
+    // floor(v / 2^bits) for bits >= 0; the discarded bits are read by the callers.
+    private static GpuBigUInt<TSize> ShiftRightCore(ReadOnlySpan<uint> src, int bits)
+    {
+        var result = default(GpuBigUInt<TSize>);
+        var dst = result.GetSpan();
         var limbShift = bits / 32;
         var bitShift = bits % 32;
-
-        uint sticky = 0;
-        for (var i = 0; i < limbShift && i < src.Length; i++)
-        {
-            if (i == limbShift - 1 && bitShift == 0)
-            {
-                guardBit = (src[i] & 0x8000_0000u) != 0;
-                roundBit = (src[i] & 0x4000_0000u) != 0;
-                sticky |= (src[i] & 0x3FFF_FFFFu);
-            }
-            else
-            {
-                sticky |= src[i];
-            }
-        }
-
         if (limbShift >= src.Length)
         {
-            stickyBit = sticky != 0;
             return result;
         }
 
+        // C# masks a uint shift count to 5 bits, so val << (32 - bitShift) would be val << 0 here, not 0.
         if (bitShift == 0)
         {
             for (var i = limbShift; i < src.Length; i++)
             {
                 dst[i - limbShift] = src[i];
             }
+
+            return result;
         }
-        else
+
+        uint carry = 0;
+        for (var i = src.Length - 1; i >= limbShift; i--)
         {
-            uint carry = 0;
-            for (var i = src.Length - 1; i >= limbShift; i--)
-            {
-                var val = src[i];
-                dst[i - limbShift] = (val >> bitShift) | carry;
-                carry = val << (32 - bitShift);
-            }
-
-            guardBit = (carry & 0x8000_0000u) != 0;
-            roundBit = (carry & 0x4000_0000u) != 0;
-            sticky |= (carry & 0x3FFF_FFFFu);
+            var val = src[i];
+            dst[i - limbShift] = (val >> bitShift) | carry;
+            carry = val << (32 - bitShift);
         }
 
-        stickyBit = sticky != 0;
         return result;
+    }
+
+    // Bit `position` (>= 0) of the value; bits above the most significant limb are 0.
+    private static bool TestBit(ReadOnlySpan<uint> src, int position)
+    {
+        var limb = position / 32;
+        return limb < src.Length && ((src[limb] >> (position % 32)) & 1u) != 0;
+    }
+
+    // Whether any of bits 0 .. count - 1 (count >= 0) is 1, that is, v mod 2^count != 0.
+    private static bool AnyBitBelow(ReadOnlySpan<uint> src, int count)
+    {
+        var fullLimbs = Math.Min(count / 32, src.Length);
+        for (var i = 0; i < fullLimbs; i++)
+        {
+            if (src[i] != 0)
+            {
+                return true;
+            }
+        }
+
+        return fullLimbs < src.Length && (src[fullLimbs] & ((1u << (count % 32)) - 1u)) != 0;
     }
 
     /// <summary>
     /// Shifts the big integer to the left by the specified number of bits.
     /// </summary>
-    /// <param name="bits">The number of bits to shift left.</param>
-    /// <returns>The left-shifted value.</returns>
+    /// <param name="bits">The number of bits to shift left. A shift by the full width or more returns zero.</param>
+    /// <returns>The left-shifted value, <c>v·2^bits</c> modulo <c>2^(32·limbs)</c>.</returns>
+    /// <exception cref="ArgumentOutOfRangeException"><paramref name="bits"/> is negative.</exception>
     public readonly GpuBigUInt<TSize> ShiftLeft(int bits)
     {
-        if (bits == 0)
-        {
-            return this;
-        }
-
-        var result = default(GpuBigUInt<TSize>);
+        ArgumentOutOfRangeException.ThrowIfNegative(bits);
         var src = GetSpan();
+        var result = default(GpuBigUInt<TSize>);
         var dst = result.GetSpan();
-
         var limbShift = bits / 32;
         var bitShift = bits % 32;
-
         if (limbShift >= src.Length)
         {
             return result;
         }
 
+        // C# masks a uint shift count to 5 bits, so val >> (32 - bitShift) would be val >> 0 here, not 0.
         if (bitShift == 0)
         {
             for (var i = 0; i < src.Length - limbShift; i++)
             {
                 dst[i + limbShift] = src[i];
             }
+
+            return result;
         }
-        else
+
+        uint carry = 0;
+        for (var i = 0; i < src.Length - limbShift; i++)
         {
-            uint carry = 0;
-            for (var i = 0; i < src.Length - limbShift; i++)
-            {
-                var val = src[i];
-                dst[i + limbShift] = (val << bitShift) | carry;
-                carry = val >> (32 - bitShift);
-            }
+            var val = src[i];
+            dst[i + limbShift] = (val << bitShift) | carry;
+            carry = val >> (32 - bitShift);
         }
 
         return result;

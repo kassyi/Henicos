@@ -144,6 +144,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerWmmaInt8RowMajorKernel();
 IntPtr hfunc = s_hfunc_WmmaInt8RowMajorKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "WmmaKernels.WmmaInt8RowMajorKernel");
 IntPtr d_a = IntPtr.Zero;
 IntPtr d_b = IntPtr.Zero;
 IntPtr d_c = IntPtr.Zero;
@@ -280,6 +281,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerWmmaInt8RowMajorKernel();
 IntPtr hfunc = s_hfunc_WmmaInt8RowMajorKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "WmmaKernels.WmmaInt8RowMajorKernel");
 try
 {
 void** kernelParams = stackalloc void*[4];
@@ -372,6 +374,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerWmmaInt8ColMajorBKernel();
 IntPtr hfunc = s_hfunc_WmmaInt8ColMajorBKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "WmmaKernels.WmmaInt8ColMajorBKernel");
 IntPtr d_a = IntPtr.Zero;
 IntPtr d_bColMajor = IntPtr.Zero;
 IntPtr d_c = IntPtr.Zero;
@@ -508,6 +511,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerWmmaInt8ColMajorBKernel();
 IntPtr hfunc = s_hfunc_WmmaInt8ColMajorBKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "WmmaKernels.WmmaInt8ColMajorBKernel");
 try
 {
 void** kernelParams = stackalloc void*[4];
@@ -594,6 +598,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerWmmaInt8ColMajorStoreKernel();
 IntPtr hfunc = s_hfunc_WmmaInt8ColMajorStoreKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "WmmaKernels.WmmaInt8ColMajorStoreKernel");
 IntPtr d_a = IntPtr.Zero;
 IntPtr d_b = IntPtr.Zero;
 IntPtr d_dColMajor = IntPtr.Zero;
@@ -703,6 +708,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerWmmaInt8ColMajorStoreKernel();
 IntPtr hfunc = s_hfunc_WmmaInt8ColMajorStoreKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "WmmaKernels.WmmaInt8ColMajorStoreKernel");
 try
 {
 void** kernelParams = stackalloc void*[3];
@@ -784,6 +790,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerWmmaDoubleM8N8K4Kernel();
 IntPtr hfunc = s_hfunc_WmmaDoubleM8N8K4Kernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "WmmaKernels.WmmaDoubleM8N8K4Kernel");
 IntPtr d_a = IntPtr.Zero;
 IntPtr d_b = IntPtr.Zero;
 IntPtr d_d = IntPtr.Zero;
@@ -893,6 +900,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerWmmaDoubleM8N8K4Kernel();
 IntPtr hfunc = s_hfunc_WmmaDoubleM8N8K4Kernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "WmmaKernels.WmmaDoubleM8N8K4Kernel");
 try
 {
 void** kernelParams = stackalloc void*[3];

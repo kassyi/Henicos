@@ -16,7 +16,11 @@ public static partial class SkipLocalsInitKernels
         Span<int> zeroedBuf = stackalloc int[4];
         zeroedBuf[0] = n;
         output[1] = zeroedBuf[0];
+        output[2] = ReadFirst(stackalloc int[4]);
     }
+
+    [GpuDeviceFunction]
+    public static int ReadFirst(Span<int> values) => values[0];
 
     [GpuKernel]
     [SkipLocalsInit]
@@ -31,6 +35,7 @@ public static partial class SkipLocalsInitKernels
         Span<int> methodSpanArray = new int[4];
         methodBuf[0] = n;
         output[1] = methodBuf[0] + methodArray[n & 3] + methodReadOnly[n & 3] + methodSpanArray[n & 3];
+        output[2] = ReadFirst(stackalloc int[4]);
     }
 
     // [SkipLocalsInit] on a lambda applies to its own body, as Roslyn clears localsinit of the lambda's method

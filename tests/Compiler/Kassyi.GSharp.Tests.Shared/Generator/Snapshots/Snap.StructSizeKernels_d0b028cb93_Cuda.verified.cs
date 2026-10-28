@@ -142,6 +142,7 @@ __gsharp_id_1_o[1]=(int)((unsigned char*)(__gsharp_id_3_p+1)-(unsigned char*)__g
 ";
 public static readonly string ReadSecondPaddedKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +ReadSecondPaddedKernel_Source;
 private static IntPtr? s_hfunc_ReadSecondPaddedKernel;
+private static bool s_layoutChecked_ReadSecondPaddedKernel;
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel.</summary>
 public static void WarmupFunctionPointerReadSecondPaddedKernel()
 {
@@ -154,7 +155,15 @@ s_hfunc_ReadSecondPaddedKernel = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoad
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 public static unsafe void LaunchReadSecondPaddedKernel(global::Kassyi.GSharp.Tests.Shared.Core.StructSizePaddedInt[] data, global::System.Int32[] o, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, IntPtr hStream = default, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
+if (!s_layoutChecked_ReadSecondPaddedKernel)
+{
 if (global::System.Runtime.CompilerServices.Unsafe.SizeOf<global::Kassyi.GSharp.Tests.Shared.Core.StructSizePaddedInt>() != 16) global::Kassyi.GSharp.Runtime.Interop.LayoutGuard.ThrowSizeMismatch("Kassyi.GSharp.Tests.Shared.Core.StructSizePaddedInt", 16, global::System.Runtime.CompilerServices.Unsafe.SizeOf<global::Kassyi.GSharp.Tests.Shared.Core.StructSizePaddedInt>());
+{
+global::Kassyi.GSharp.Tests.Shared.Core.StructSizePaddedInt __gsharp_layout_probe = default;
+if (global::System.Runtime.CompilerServices.Unsafe.ByteOffset(ref global::System.Runtime.CompilerServices.Unsafe.As<global::Kassyi.GSharp.Tests.Shared.Core.StructSizePaddedInt, byte>(ref __gsharp_layout_probe), ref global::System.Runtime.CompilerServices.Unsafe.As<global::System.Int32, byte>(ref global::System.Runtime.CompilerServices.Unsafe.AsRef(in __gsharp_layout_probe.A))) != 0) global::Kassyi.GSharp.Runtime.Interop.LayoutGuard.ThrowFieldOffsetMismatch("Kassyi.GSharp.Tests.Shared.Core.StructSizePaddedInt", "A", 0, (long)global::System.Runtime.CompilerServices.Unsafe.ByteOffset(ref global::System.Runtime.CompilerServices.Unsafe.As<global::Kassyi.GSharp.Tests.Shared.Core.StructSizePaddedInt, byte>(ref __gsharp_layout_probe), ref global::System.Runtime.CompilerServices.Unsafe.As<global::System.Int32, byte>(ref global::System.Runtime.CompilerServices.Unsafe.AsRef(in __gsharp_layout_probe.A))));
+}
+s_layoutChecked_ReadSecondPaddedKernel = true;
+}
 if (data is null){
 throw new global::System.ArgumentNullException(nameof(data));
 }
@@ -171,6 +180,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerReadSecondPaddedKernel();
 IntPtr hfunc = s_hfunc_ReadSecondPaddedKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "StructSizeKernels.ReadSecondPaddedKernel");
 IntPtr d_data = IntPtr.Zero;
 IntPtr d_o = IntPtr.Zero;
 try
@@ -253,6 +263,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerReadSecondPaddedKernel();
 IntPtr hfunc = s_hfunc_ReadSecondPaddedKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "StructSizeKernels.ReadSecondPaddedKernel");
 try
 {
 void** kernelParams = stackalloc void*[2];
@@ -334,6 +345,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerReadSecondOddKernel();
 IntPtr hfunc = s_hfunc_ReadSecondOddKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "StructSizeKernels.ReadSecondOddKernel");
 System.Collections.Generic.List<IntPtr> data_allocatedPtrs = new System.Collections.Generic.List<IntPtr>();
 byte[]? data_shadow = null;
 IntPtr d_data = IntPtr.Zero;
@@ -433,6 +445,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerReadSecondOddKernel();
 IntPtr hfunc = s_hfunc_ReadSecondOddKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "StructSizeKernels.ReadSecondOddKernel");
 try
 {
 void** kernelParams = stackalloc void*[2];
@@ -490,6 +503,7 @@ __gsharp_id_1_o[1]=(int)((unsigned char*)(__gsharp_id_3_p+1)-(unsigned char*)__g
 ";
 public static readonly string ReadSecondPackedKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +ReadSecondPackedKernel_Source;
 private static IntPtr? s_hfunc_ReadSecondPackedKernel;
+private static bool s_layoutChecked_ReadSecondPackedKernel;
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel.</summary>
 public static void WarmupFunctionPointerReadSecondPackedKernel()
 {
@@ -502,7 +516,16 @@ s_hfunc_ReadSecondPackedKernel = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoad
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 public static unsafe void LaunchReadSecondPackedKernel(global::Kassyi.GSharp.Tests.Shared.Core.StructSizePacked[] data, global::System.Int32[] o, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, IntPtr hStream = default, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
+if (!s_layoutChecked_ReadSecondPackedKernel)
+{
 if (global::System.Runtime.CompilerServices.Unsafe.SizeOf<global::Kassyi.GSharp.Tests.Shared.Core.StructSizePacked>() != 7) global::Kassyi.GSharp.Runtime.Interop.LayoutGuard.ThrowSizeMismatch("Kassyi.GSharp.Tests.Shared.Core.StructSizePacked", 7, global::System.Runtime.CompilerServices.Unsafe.SizeOf<global::Kassyi.GSharp.Tests.Shared.Core.StructSizePacked>());
+{
+global::Kassyi.GSharp.Tests.Shared.Core.StructSizePacked __gsharp_layout_probe = default;
+if (global::System.Runtime.CompilerServices.Unsafe.ByteOffset(ref global::System.Runtime.CompilerServices.Unsafe.As<global::Kassyi.GSharp.Tests.Shared.Core.StructSizePacked, byte>(ref __gsharp_layout_probe), ref global::System.Runtime.CompilerServices.Unsafe.As<global::System.Byte, byte>(ref global::System.Runtime.CompilerServices.Unsafe.AsRef(in __gsharp_layout_probe.B))) != 0) global::Kassyi.GSharp.Runtime.Interop.LayoutGuard.ThrowFieldOffsetMismatch("Kassyi.GSharp.Tests.Shared.Core.StructSizePacked", "B", 0, (long)global::System.Runtime.CompilerServices.Unsafe.ByteOffset(ref global::System.Runtime.CompilerServices.Unsafe.As<global::Kassyi.GSharp.Tests.Shared.Core.StructSizePacked, byte>(ref __gsharp_layout_probe), ref global::System.Runtime.CompilerServices.Unsafe.As<global::System.Byte, byte>(ref global::System.Runtime.CompilerServices.Unsafe.AsRef(in __gsharp_layout_probe.B))));
+if (global::System.Runtime.CompilerServices.Unsafe.ByteOffset(ref global::System.Runtime.CompilerServices.Unsafe.As<global::Kassyi.GSharp.Tests.Shared.Core.StructSizePacked, byte>(ref __gsharp_layout_probe), ref global::System.Runtime.CompilerServices.Unsafe.As<global::System.Int32, byte>(ref global::System.Runtime.CompilerServices.Unsafe.AsRef(in __gsharp_layout_probe.I))) != 1) global::Kassyi.GSharp.Runtime.Interop.LayoutGuard.ThrowFieldOffsetMismatch("Kassyi.GSharp.Tests.Shared.Core.StructSizePacked", "I", 1, (long)global::System.Runtime.CompilerServices.Unsafe.ByteOffset(ref global::System.Runtime.CompilerServices.Unsafe.As<global::Kassyi.GSharp.Tests.Shared.Core.StructSizePacked, byte>(ref __gsharp_layout_probe), ref global::System.Runtime.CompilerServices.Unsafe.As<global::System.Int32, byte>(ref global::System.Runtime.CompilerServices.Unsafe.AsRef(in __gsharp_layout_probe.I))));
+}
+s_layoutChecked_ReadSecondPackedKernel = true;
+}
 if (data is null){
 throw new global::System.ArgumentNullException(nameof(data));
 }
@@ -519,6 +542,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerReadSecondPackedKernel();
 IntPtr hfunc = s_hfunc_ReadSecondPackedKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "StructSizeKernels.ReadSecondPackedKernel");
 IntPtr d_data = IntPtr.Zero;
 IntPtr d_o = IntPtr.Zero;
 try
@@ -601,6 +625,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerReadSecondPackedKernel();
 IntPtr hfunc = s_hfunc_ReadSecondPackedKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "StructSizeKernels.ReadSecondPackedKernel");
 try
 {
 void** kernelParams = stackalloc void*[2];
@@ -648,6 +673,7 @@ __gsharp_id_1_o[0]=__gsharp_id_0_value.__gsharp_mb_A;
 ";
 public static readonly string ReadPaddedByValueKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +ReadPaddedByValueKernel_Source;
 private static IntPtr? s_hfunc_ReadPaddedByValueKernel;
+private static bool s_layoutChecked_ReadPaddedByValueKernel;
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel.</summary>
 public static void WarmupFunctionPointerReadPaddedByValueKernel()
 {
@@ -660,7 +686,15 @@ s_hfunc_ReadPaddedByValueKernel = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoa
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 public static unsafe void LaunchReadPaddedByValueKernel(global::Kassyi.GSharp.Tests.Shared.Core.StructSizePaddedInt value, global::System.Int32[] o, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, IntPtr hStream = default, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
+if (!s_layoutChecked_ReadPaddedByValueKernel)
+{
 if (global::System.Runtime.CompilerServices.Unsafe.SizeOf<global::Kassyi.GSharp.Tests.Shared.Core.StructSizePaddedInt>() != 16) global::Kassyi.GSharp.Runtime.Interop.LayoutGuard.ThrowSizeMismatch("Kassyi.GSharp.Tests.Shared.Core.StructSizePaddedInt", 16, global::System.Runtime.CompilerServices.Unsafe.SizeOf<global::Kassyi.GSharp.Tests.Shared.Core.StructSizePaddedInt>());
+{
+global::Kassyi.GSharp.Tests.Shared.Core.StructSizePaddedInt __gsharp_layout_probe = default;
+if (global::System.Runtime.CompilerServices.Unsafe.ByteOffset(ref global::System.Runtime.CompilerServices.Unsafe.As<global::Kassyi.GSharp.Tests.Shared.Core.StructSizePaddedInt, byte>(ref __gsharp_layout_probe), ref global::System.Runtime.CompilerServices.Unsafe.As<global::System.Int32, byte>(ref global::System.Runtime.CompilerServices.Unsafe.AsRef(in __gsharp_layout_probe.A))) != 0) global::Kassyi.GSharp.Runtime.Interop.LayoutGuard.ThrowFieldOffsetMismatch("Kassyi.GSharp.Tests.Shared.Core.StructSizePaddedInt", "A", 0, (long)global::System.Runtime.CompilerServices.Unsafe.ByteOffset(ref global::System.Runtime.CompilerServices.Unsafe.As<global::Kassyi.GSharp.Tests.Shared.Core.StructSizePaddedInt, byte>(ref __gsharp_layout_probe), ref global::System.Runtime.CompilerServices.Unsafe.As<global::System.Int32, byte>(ref global::System.Runtime.CompilerServices.Unsafe.AsRef(in __gsharp_layout_probe.A))));
+}
+s_layoutChecked_ReadPaddedByValueKernel = true;
+}
 if (o is null){
 throw new global::System.ArgumentNullException(nameof(o));
 }
@@ -671,6 +705,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerReadPaddedByValueKernel();
 IntPtr hfunc = s_hfunc_ReadPaddedByValueKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "StructSizeKernels.ReadPaddedByValueKernel");
 IntPtr d_o = IntPtr.Zero;
 try
 {
@@ -728,6 +763,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerReadPaddedByValueKernel();
 IntPtr hfunc = s_hfunc_ReadPaddedByValueKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "StructSizeKernels.ReadPaddedByValueKernel");
 try
 {
 void** kernelParams = stackalloc void*[2];

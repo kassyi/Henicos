@@ -130,6 +130,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerWarpReduceSumKernel();
 IntPtr hfunc = s_hfunc_WarpReduceSumKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "WarpLevelConcurrencyKernels.WarpReduceSumKernel");
 IntPtr d_input = IntPtr.Zero;
 IntPtr d_output = IntPtr.Zero;
 try
@@ -212,6 +213,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerWarpReduceSumKernel();
 IntPtr hfunc = s_hfunc_WarpReduceSumKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "WarpLevelConcurrencyKernels.WarpReduceSumKernel");
 try
 {
 void** kernelParams = stackalloc void*[2];
@@ -284,6 +286,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerWarpPrimitivesKernel();
 IntPtr hfunc = s_hfunc_WarpPrimitivesKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "WarpLevelConcurrencyKernels.WarpPrimitivesKernel");
 IntPtr d_input = IntPtr.Zero;
 IntPtr d_output = IntPtr.Zero;
 try
@@ -366,6 +369,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerWarpPrimitivesKernel();
 IntPtr hfunc = s_hfunc_WarpPrimitivesKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "WarpLevelConcurrencyKernels.WarpPrimitivesKernel");
 try
 {
 void** kernelParams = stackalloc void*[2];

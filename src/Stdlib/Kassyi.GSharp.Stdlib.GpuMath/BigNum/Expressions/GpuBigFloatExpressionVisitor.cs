@@ -25,9 +25,7 @@ public ref struct GpuBigFloatExpressionVisitor(GpuWorkspace workspace, IGpuBigFl
     public IGpuBigFloatArithmetic Arithmetic
     {
         get;
-    } = arithmetic ?? (workspace.Engine == GpuExecutionEngine.GSharpAot
-        ? GSharpKernelFloatProvider.Instance
-        : CSharpCpuBigFloatArithmetic.Instance);
+    } = arithmetic ?? GpuWorkspaceArithmetic.FloatArithmetic(workspace);
 
 
     /// <summary>
@@ -39,7 +37,9 @@ public ref struct GpuBigFloatExpressionVisitor(GpuWorkspace workspace, IGpuBigFl
     /// <returns>A new <typeparamref name="T"/> containing the sum.</returns>
     public T VisitAdd<T>(T left, T right)
         where T : struct, IGpuBigNumber<T>
-        => ExecuteAddSub(left, right, negateRight: false);
+        => Execute(left, right, extraWords: 1, negateRight: false,
+            static (arithmetic, ref context, in l, in r, result) =>
+                arithmetic.Add(ref context, in l, in r, result));
 
     /// <summary>
     /// Evaluates the subtraction of two arbitrary-precision floating-point numbers on the GPU.
@@ -48,25 +48,14 @@ public ref struct GpuBigFloatExpressionVisitor(GpuWorkspace workspace, IGpuBigFl
     /// <param name="left">The left minuend operand.</param>
     /// <param name="right">The right subtrahend operand.</param>
     /// <returns>A new <typeparamref name="T"/> containing the difference.</returns>
+    /// <exception cref="OverflowException"><typeparamref name="T"/> cannot be negative (<see cref="GpuBigUFloat"/>) and
+    /// <paramref name="right"/> is greater than <paramref name="left"/>, like a <see langword="checked"/>
+    /// <see cref="uint"/> subtraction.</exception>
     public T VisitSub<T>(T left, T right)
         where T : struct, IGpuBigNumber<T>
-        => ExecuteAddSub(left, right, negateRight: true);
-
-    private T ExecuteAddSub<T>(T left, T right, bool negateRight)
-        where T : struct, IGpuBigNumber<T>
-    {
-        var maxWords = Math.Max(left.Magnitude.NumWords, right.Magnitude.NumWords) + 1;
-        var resultSig = new GpuBigUInt(left.Workspace, maxWords);
-
-        var execContext = new GpuBigIntExecutionContext(Workspace, Workspace.MemoryManager,
-            new LegacyProviderArithmeticAdapter(), Workspace.Stream);
-        var leftOp = GpuFloatOperand.From(left);
-        var rightOp = GpuFloatOperand.From(right, negate: negateRight);
-
-        var res = Arithmetic.Add(ref execContext, in leftOp, in rightOp, resultSig.Handle);
-
-        return T.Create(resultSig, res.Exponent, left.CanBeNegative && res.IsNegative);
-    }
+        => Execute(left, right, extraWords: 1, negateRight: true,
+            static (arithmetic, ref context, in l, in r, result) =>
+                arithmetic.Add(ref context, in l, in r, result));
 
     /// <summary>
     /// Evaluates the multiplication of two arbitrary-precision floating-point numbers on the GPU.
@@ -74,19 +63,14 @@ public ref struct GpuBigFloatExpressionVisitor(GpuWorkspace workspace, IGpuBigFl
     /// <typeparam name="T">The concrete GPU big number type (<see cref="GpuBigFloat"/> or <see cref="GpuBigUFloat"/>).</typeparam>
     /// <param name="left">The left multiplicand operand.</param>
     /// <param name="right">The right multiplier operand.</param>
-    /// <returns>A new <typeparamref name="T"/> containing the product.</returns>
+    /// <returns>A new <typeparamref name="T"/> containing the product rounded toward zero to the width of the wider
+    /// operand (<see cref="IGpuBigFloatArithmetic.Multiply"/>).</returns>
+    /// <exception cref="OverflowException">The exponent of the product does not fit in <see cref="int"/>.</exception>
     public T VisitMul<T>(T left, T right)
         where T : struct, IGpuBigNumber<T>
-    {
-        // Directly reuse GpuBigUInt AST for significands
-        var sigExpr = left.Magnitude * right.Magnitude;
-        var resultSig = sigExpr.Node.Evaluate(Workspace);
-
-        var resultExp = left.Exponent + right.Exponent;
-        var resultSign = left.CanBeNegative && !resultSig.IsZero() && (left.IsNegative != right.IsNegative);
-
-        return T.Create(resultSig, resultExp, resultSign);
-    }
+        => Execute(left, right, extraWords: 0, negateRight: false,
+            static (arithmetic, ref context, in l, in r, result) =>
+                arithmetic.Multiply(ref context, in l, in r, result));
 
     /// <summary>
     /// Evaluates the division of two arbitrary-precision floating-point numbers on the GPU.
@@ -97,20 +81,39 @@ public ref struct GpuBigFloatExpressionVisitor(GpuWorkspace workspace, IGpuBigFl
     /// <returns>A new <typeparamref name="T"/> containing the quotient.</returns>
     public T VisitDiv<T>(T left, T right)
         where T : struct, IGpuBigNumber<T>
+        => Execute(left, right, extraWords: 0, negateRight: false,
+            static (arithmetic, ref context, in l, in r, result) =>
+                arithmetic.Divide(ref context, in l, in r, result));
+
+    // One provider call of an operator: left (op) right into resultSig.
+    private delegate GpuFloatResult FloatOperation(IGpuBigFloatArithmetic arithmetic,
+        ref GpuBigIntExecutionContext context, in GpuFloatOperand left, in GpuFloatOperand right,
+        GpuBigIntMemoryHandle resultSig);
+
+    // The shape of every operator: a new significand of the wider operand's width plus extraWords (the carry word of a
+    // sum), the provider call, and T over the result; the significand is disposed when the call throws. An unsigned
+    // type has no negative result, like checked uint (#629): only a difference can be negative, but the rule holds for
+    // every operation.
+    private T Execute<T>(T left, T right, int extraWords, bool negateRight, FloatOperation operation)
+        where T : struct, IGpuBigNumber<T>
     {
-        var maxWords = Math.Max(left.Magnitude.NumWords, right.Magnitude.NumWords);
-        var resultSig = new GpuBigUInt(left.Workspace, maxWords);
+        var resultWords = Math.Max(left.Magnitude.NumWords, right.Magnitude.NumWords) + extraWords;
+        var resultSig = new GpuBigUInt(left.Workspace, resultWords);
 
         try
         {
-            var execContext = new GpuBigIntExecutionContext(Workspace, Workspace.MemoryManager,
-                new LegacyProviderArithmeticAdapter(), Workspace.Stream);
+            var execContext = GpuWorkspaceArithmetic.CreateContext(Workspace);
             var leftOp = GpuFloatOperand.From(left);
-            var rightOp = GpuFloatOperand.From(right);
+            var rightOp = GpuFloatOperand.From(right, negate: negateRight);
 
-            var res = Arithmetic.Divide(ref execContext, in leftOp, in rightOp, resultSig.Handle);
+            var res = operation(Arithmetic, ref execContext, in leftOp, in rightOp, resultSig.Handle);
 
-            return T.Create(resultSig, res.Exponent, left.CanBeNegative && res.IsNegative);
+            if (!left.CanBeNegative && res.IsNegative)
+            {
+                throw new OverflowException("The result of an operation on unsigned big-float values is negative.");
+            }
+
+            return T.Create(resultSig, res.Exponent, res.IsNegative);
         }
         catch
         {

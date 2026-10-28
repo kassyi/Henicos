@@ -18,6 +18,7 @@
                 goto case 4;
             __gsharp_ctx->x = __gsharp_ctx->__gsharp_foreach_src_0[__gsharp_ctx->__gsharp_foreach_i_0];
             __gsharp_ctx->sum += __gsharp_ctx->x;
+            __gsharp_yielded_for_block_barrier = true;
             __gsharp_state = 2;
             return;
         }

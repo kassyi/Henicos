@@ -119,6 +119,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerLocalFunctionVoidKernel();
 IntPtr hfunc = s_hfunc_LocalFunctionVoidKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "LocalFunctionLoweringKernels.LocalFunctionVoidKernel");
 IntPtr d_data = IntPtr.Zero;
 try
 {
@@ -174,6 +175,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerLocalFunctionVoidKernel();
 IntPtr hfunc = s_hfunc_LocalFunctionVoidKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "LocalFunctionLoweringKernels.LocalFunctionVoidKernel");
 try
 {
 void** kernelParams = stackalloc void*[1];
@@ -231,6 +233,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerLocalFunctionValueReturnKernel();
 IntPtr hfunc = s_hfunc_LocalFunctionValueReturnKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "LocalFunctionLoweringKernels.LocalFunctionValueReturnKernel");
 IntPtr d_data = IntPtr.Zero;
 try
 {
@@ -288,6 +291,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerLocalFunctionValueReturnKernel();
 IntPtr hfunc = s_hfunc_LocalFunctionValueReturnKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "LocalFunctionLoweringKernels.LocalFunctionValueReturnKernel");
 try
 {
 void** kernelParams = stackalloc void*[2];
@@ -347,6 +351,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerLocalFunctionExpressionBodyKernel();
 IntPtr hfunc = s_hfunc_LocalFunctionExpressionBodyKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "LocalFunctionLoweringKernels.LocalFunctionExpressionBodyKernel");
 IntPtr d_data = IntPtr.Zero;
 try
 {
@@ -402,6 +407,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerLocalFunctionExpressionBodyKernel();
 IntPtr hfunc = s_hfunc_LocalFunctionExpressionBodyKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "LocalFunctionLoweringKernels.LocalFunctionExpressionBodyKernel");
 try
 {
 void** kernelParams = stackalloc void*[1];
@@ -464,6 +470,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerNestedLocalFunctionKernel();
 IntPtr hfunc = s_hfunc_NestedLocalFunctionKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "LocalFunctionLoweringKernels.NestedLocalFunctionKernel");
 IntPtr d_data = IntPtr.Zero;
 try
 {
@@ -519,6 +526,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerNestedLocalFunctionKernel();
 IntPtr hfunc = s_hfunc_NestedLocalFunctionKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "LocalFunctionLoweringKernels.NestedLocalFunctionKernel");
 try
 {
 void** kernelParams = stackalloc void*[1];
@@ -597,6 +605,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerMultiParamLocalFunctionKernel();
 IntPtr hfunc = s_hfunc_MultiParamLocalFunctionKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "LocalFunctionLoweringKernels.MultiParamLocalFunctionKernel");
 IntPtr d_a = IntPtr.Zero;
 IntPtr d_b = IntPtr.Zero;
 IntPtr d_result = IntPtr.Zero;
@@ -706,6 +715,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerMultiParamLocalFunctionKernel();
 IntPtr hfunc = s_hfunc_MultiParamLocalFunctionKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "LocalFunctionLoweringKernels.MultiParamLocalFunctionKernel");
 try
 {
 void** kernelParams = stackalloc void*[3];

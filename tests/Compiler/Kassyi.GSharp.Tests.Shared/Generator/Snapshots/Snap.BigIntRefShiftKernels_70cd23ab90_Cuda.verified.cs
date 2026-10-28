@@ -265,6 +265,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerShiftKernel();
 IntPtr hfunc = s_hfunc_ShiftKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "BigIntRefShiftKernels.ShiftKernel");
 IntPtr d_input = IntPtr.Zero;
 IntPtr d_shiftedLeft = IntPtr.Zero;
 IntPtr d_shiftedRight = IntPtr.Zero;
@@ -374,6 +375,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerShiftKernel();
 IntPtr hfunc = s_hfunc_ShiftKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "BigIntRefShiftKernels.ShiftKernel");
 try
 {
 void** kernelParams = stackalloc void*[3];

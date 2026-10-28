@@ -57,6 +57,22 @@ public class BarrierUsageAnalyzerTests : TranspilerTestBase
                                .ReportsErrorsAsync("GSH0040");
     }
 
+    // The example of the GSH0040 page: the jump crosses a call to a device function that reaches a barrier
+    [Fact]
+    [Scenario(TestScenario.SadPath)]
+    public async Task Test_GotoAcrossSuspendingCall_ReportsGSH0040OnGoto()
+    {
+        var diagnostics = await RoslynTestUtility
+            .TestAnalyzer("Analyzers/BarrierUsage/CrossSuspendingCallGotoKernels.cu.cs", s_analyzer)
+            .GetDiagnosticsAsync();
+
+        var diagnostic = Assert.Single(diagnostics, static d => d.Id == GSharpDiagnostics.CrossBarrierGotoProhibited.Id);
+        Assert.Equal(DiagnosticSeverity.Error, diagnostic.Severity);
+        var span = diagnostic.Location.GetLineSpan();
+        Assert.Equal((20, 12), (span.StartLinePosition.Line, span.StartLinePosition.Character));
+        Assert.Equal((20, 22), (span.EndLinePosition.Line, span.EndLinePosition.Character));
+    }
+
     [Fact]
     [Scenario(TestScenario.SadPath)]
     public async Task Test_CrossBarrierLocalPointer_ReportsGSH0041()

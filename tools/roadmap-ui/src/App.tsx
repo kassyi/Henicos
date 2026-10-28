@@ -60,9 +60,7 @@ export const App: React.FC = () => {
     copyCartIdsOnly,
     filteredTasks,
     tasksByTier,
-    exitingIds,
     statusCounts,
-    deferredFilterKey,
   } = useRoadmap();
 
   // Dock position preference (bottom, left, right)
@@ -183,7 +181,6 @@ export const App: React.FC = () => {
             tasks={tasksByTier[tier]}
             cartIds={cartIds}
             selectedTaskId={selectedTaskId}
-            filterKey={deferredFilterKey}
             onCartClick={handleCartClick}
             onStatusChange={updateTaskStatus}
             onSelectTask={setSelectedTaskId}

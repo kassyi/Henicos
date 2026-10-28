@@ -173,6 +173,9 @@ public static class MethodTranspiler
         context.Emitter.Writer = disposeWriter;
         UsingTranspiler.WriteDisposeDefinitions(ref context, structSources?.Disposes);
 
+        // After the Dispose parts, which an export cuts off the front of the text: these stay with the method's text
+        SortComparisonMembers.WriteDefinitions(ref context);
+
         context.Emitter.Writer = mainWriter;
         var sortedStructs = StructTranspiler.GetTopologicallySortedStructs(ref context);
         foreach (var structSym in sortedStructs)
@@ -312,7 +315,7 @@ public static class MethodTranspiler
     }
 
     // The state of the thread that only a kernel context holds: the contexts of the block, the warp exchange and the
-    // grid sync flag
+    // flags of a grid sync and a block barrier
     private static void WriteThreadStateFields(string contextName, ref TranspileContext context)
     {
         context.Emitter.Writer.AppendLine($"{contextName}* {GSharpInternalNames.StateMachine.AllContexts} = nullptr;");
@@ -321,6 +324,7 @@ public static class MethodTranspiler
         context.Emitter.Writer.AppendLine($"uint64_t {GSharpInternalNames.StateMachine.WarpExchange}[2] = {{}};");
         context.Emitter.Writer.AppendLine($"uint32_t {GSharpInternalNames.StateMachine.WarpShuffleCount} = 0;");
         context.Emitter.Writer.AppendLine($"bool {GSharpInternalNames.StateMachine.YieldedForGridSync} = false;");
+        context.Emitter.Writer.AppendLine($"bool {GSharpInternalNames.StateMachine.YieldedForBlockBarrier} = false;");
     }
 
     // <type> <name>;
@@ -377,6 +381,8 @@ public static class MethodTranspiler
             $"#define {GSharpInternalNames.StateMachine.State} {GSharpInternalNames.StateMachine.Context}->{GSharpInternalNames.StateMachine.State}");
         context.Emitter.Writer.AppendLine(
             $"#define {GSharpInternalNames.StateMachine.YieldedForGridSync} {gridSyncOwner}->{GSharpInternalNames.StateMachine.YieldedForGridSync}");
+        context.Emitter.Writer.AppendLine(
+            $"#define {GSharpInternalNames.StateMachine.YieldedForBlockBarrier} {gridSyncOwner}->{GSharpInternalNames.StateMachine.YieldedForBlockBarrier}");
 
         if (!isFrame)
         {
@@ -396,6 +402,7 @@ public static class MethodTranspiler
 
         context.Emitter.Writer.AppendLine($"#undef {GSharpInternalNames.StateMachine.State}");
         context.Emitter.Writer.AppendLine($"#undef {GSharpInternalNames.StateMachine.YieldedForGridSync}");
+        context.Emitter.Writer.AppendLine($"#undef {GSharpInternalNames.StateMachine.YieldedForBlockBarrier}");
     }
 
     // => <expression>: returned, or stored into the result buffer of a kernel with a return value
