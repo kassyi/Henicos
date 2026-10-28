@@ -109,14 +109,13 @@ public sealed class VariableDeclarationTranspilerRule : SyntaxNodeTranspilerRule
             }
 
             // A split declaration has no initializer to deduce auto from, so it names the type
-            var splitInitialization = context.Query.SemanticModel.GetOriginalNode(v) is not ParameterSyntax &&
-                                      IsJumpedOverInitialization(v, typeSymbol);
+            var originalNode = context.Query.SemanticModel.GetOriginalNode(v);
+            var splitInitialization = originalNode is not ParameterSyntax && IsJumpedOverInitialization(v, typeSymbol);
             if (isVar && !splitInitialization)
             {
                 context.Emitter.Writer.Append("auto");
             }
-            else if (typeSymbol != null &&
-                     context.Query.SemanticModel.GetOriginalNode(v) is ParameterSyntax paramSyntax)
+            else if (typeSymbol != null && originalNode is ParameterSyntax paramSyntax)
             {
                 var paramSymbol = context.Query.SemanticModel.GetDeclaredSymbol<IParameterSymbol>(v);
                 MethodSignatureTranspiler.WriteParameterDeclaration(paramSyntax, typeSymbol, paramSymbol, ref context);
