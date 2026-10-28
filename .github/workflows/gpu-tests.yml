@@ -7,7 +7,20 @@ name: Hybrid CI Tests
 on:
   push:
     branches: ["main"]
+    paths-ignore: # a change to these alone runs no test
+      - "docs/**"
+      - ".agents/**"
+      - "**/*.md"
   pull_request: # every base branch, so a PR stacked on another PR is tested too
+    paths-ignore: # a change to these alone runs no test
+      - "docs/**"
+      - ".agents/**"
+      - "**/*.md"
+
+# A new push to the same pull request or branch cancels the run still in progress.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 
 jobs:
   test-static-cloud:
