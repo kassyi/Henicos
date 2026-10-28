@@ -1951,6 +1951,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerSwapPairKernel();
 IntPtr hfunc = s_hfunc_SwapPairKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "CrossAssemblyKernels.SwapPairKernel");
 IntPtr d_result = IntPtr.Zero;
 try
 {
@@ -2008,6 +2009,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerSwapPairKernel();
 IntPtr hfunc = s_hfunc_SwapPairKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "CrossAssemblyKernels.SwapPairKernel");
 try
 {
 void** kernelParams = stackalloc void*[2];
@@ -2087,6 +2089,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerPackedPairKernel();
 IntPtr hfunc = s_hfunc_PackedPairKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "CrossAssemblyKernels.PackedPairKernel");
 IntPtr d_result = IntPtr.Zero;
 try
 {
@@ -2144,6 +2147,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerPackedPairKernel();
 IntPtr hfunc = s_hfunc_PackedPairKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "CrossAssemblyKernels.PackedPairKernel");
 try
 {
 void** kernelParams = stackalloc void*[2];
