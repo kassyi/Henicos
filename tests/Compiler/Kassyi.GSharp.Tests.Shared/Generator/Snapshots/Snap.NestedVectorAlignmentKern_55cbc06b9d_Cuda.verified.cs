@@ -238,6 +238,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerWriteExpectedOffsetsKernel();
 IntPtr hfunc = s_hfunc_WriteExpectedOffsetsKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "NestedVectorAlignmentKernels.WriteExpectedOffsetsKernel");
 IntPtr d_offsets = IntPtr.Zero;
 try
 {
@@ -293,6 +294,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerWriteExpectedOffsetsKernel();
 IntPtr hfunc = s_hfunc_WriteExpectedOffsetsKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "NestedVectorAlignmentKernels.WriteExpectedOffsetsKernel");
 try
 {
 void** kernelParams = stackalloc void*[1];
@@ -402,6 +404,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerRoundtripKernel();
 IntPtr hfunc = s_hfunc_RoundtripKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "NestedVectorAlignmentKernels.RoundtripKernel");
 System.Collections.Generic.List<IntPtr> data_allocatedPtrs = new System.Collections.Generic.List<IntPtr>();
 IntPtr d_data = IntPtr.Zero;
 try
@@ -447,6 +450,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerRoundtripKernel();
 IntPtr hfunc = s_hfunc_RoundtripKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "NestedVectorAlignmentKernels.RoundtripKernel");
 try
 {
 void** kernelParams = stackalloc void*[1];

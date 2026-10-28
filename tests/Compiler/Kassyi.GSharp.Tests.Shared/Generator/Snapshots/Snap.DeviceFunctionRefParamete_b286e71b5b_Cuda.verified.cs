@@ -202,6 +202,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerRefParameterKernel();
 IntPtr hfunc = s_hfunc_RefParameterKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "DeviceFunctionRefParameterBarrierKernels.RefParameterKernel");
 IntPtr d_buffer = IntPtr.Zero;
 try
 {
@@ -259,6 +260,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerRefParameterKernel();
 IntPtr hfunc = s_hfunc_RefParameterKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "DeviceFunctionRefParameterBarrierKernels.RefParameterKernel");
 try
 {
 void** kernelParams = stackalloc void*[2];

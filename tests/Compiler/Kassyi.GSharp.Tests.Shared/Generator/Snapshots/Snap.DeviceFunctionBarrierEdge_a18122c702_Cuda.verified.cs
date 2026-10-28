@@ -541,6 +541,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerCallerAndSuspendingCalleeSharedMemoryKernel();
 IntPtr hfunc = s_hfunc_CallerAndSuspendingCalleeSharedMemoryKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "DeviceFunctionBarrierEdgeCaseKernels.CallerAndSuspendingCalleeSharedMemoryKernel");
 IntPtr d_output = IntPtr.Zero;
 try
 {
@@ -596,6 +597,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerCallerAndSuspendingCalleeSharedMemoryKernel();
 IntPtr hfunc = s_hfunc_CallerAndSuspendingCalleeSharedMemoryKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "DeviceFunctionBarrierEdgeCaseKernels.CallerAndSuspendingCalleeSharedMemoryKernel");
 try
 {
 void** kernelParams = stackalloc void*[1];
@@ -654,6 +656,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerCallerAndPlainCalleeSharedMemoryKernel();
 IntPtr hfunc = s_hfunc_CallerAndPlainCalleeSharedMemoryKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "DeviceFunctionBarrierEdgeCaseKernels.CallerAndPlainCalleeSharedMemoryKernel");
 IntPtr d_output = IntPtr.Zero;
 try
 {
@@ -709,6 +712,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerCallerAndPlainCalleeSharedMemoryKernel();
 IntPtr hfunc = s_hfunc_CallerAndPlainCalleeSharedMemoryKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "DeviceFunctionBarrierEdgeCaseKernels.CallerAndPlainCalleeSharedMemoryKernel");
 try
 {
 void** kernelParams = stackalloc void*[1];
@@ -763,6 +767,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerSharedMemoryPerDeclarationKernel();
 IntPtr hfunc = s_hfunc_SharedMemoryPerDeclarationKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "DeviceFunctionBarrierEdgeCaseKernels.SharedMemoryPerDeclarationKernel");
 IntPtr d_output = IntPtr.Zero;
 try
 {
@@ -818,6 +823,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerSharedMemoryPerDeclarationKernel();
 IntPtr hfunc = s_hfunc_SharedMemoryPerDeclarationKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "DeviceFunctionBarrierEdgeCaseKernels.SharedMemoryPerDeclarationKernel");
 try
 {
 void** kernelParams = stackalloc void*[1];
@@ -884,6 +890,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerShortCircuitAndKernel();
 IntPtr hfunc = s_hfunc_ShortCircuitAndKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "DeviceFunctionBarrierEdgeCaseKernels.ShortCircuitAndKernel");
 IntPtr d_input = IntPtr.Zero;
 IntPtr d_output = IntPtr.Zero;
 IntPtr d_calls = IntPtr.Zero;
@@ -995,6 +1002,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerShortCircuitAndKernel();
 IntPtr hfunc = s_hfunc_ShortCircuitAndKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "DeviceFunctionBarrierEdgeCaseKernels.ShortCircuitAndKernel");
 try
 {
 void** kernelParams = stackalloc void*[4];
@@ -1073,6 +1081,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerShortCircuitOrKernel();
 IntPtr hfunc = s_hfunc_ShortCircuitOrKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "DeviceFunctionBarrierEdgeCaseKernels.ShortCircuitOrKernel");
 IntPtr d_input = IntPtr.Zero;
 IntPtr d_output = IntPtr.Zero;
 IntPtr d_calls = IntPtr.Zero;
@@ -1184,6 +1193,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerShortCircuitOrKernel();
 IntPtr hfunc = s_hfunc_ShortCircuitOrKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "DeviceFunctionBarrierEdgeCaseKernels.ShortCircuitOrKernel");
 try
 {
 void** kernelParams = stackalloc void*[4];
@@ -1261,6 +1271,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerConditionalOperatorKernel();
 IntPtr hfunc = s_hfunc_ConditionalOperatorKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "DeviceFunctionBarrierEdgeCaseKernels.ConditionalOperatorKernel");
 IntPtr d_input = IntPtr.Zero;
 IntPtr d_output = IntPtr.Zero;
 IntPtr d_calls = IntPtr.Zero;
@@ -1372,6 +1383,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerConditionalOperatorKernel();
 IntPtr hfunc = s_hfunc_ConditionalOperatorKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "DeviceFunctionBarrierEdgeCaseKernels.ConditionalOperatorKernel");
 try
 {
 void** kernelParams = stackalloc void*[4];
@@ -1442,6 +1454,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerWhileConditionKernel();
 IntPtr hfunc = s_hfunc_WhileConditionKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "DeviceFunctionBarrierEdgeCaseKernels.WhileConditionKernel");
 IntPtr d_output = IntPtr.Zero;
 try
 {
@@ -1499,6 +1512,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerWhileConditionKernel();
 IntPtr hfunc = s_hfunc_WhileConditionKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "DeviceFunctionBarrierEdgeCaseKernels.WhileConditionKernel");
 try
 {
 void** kernelParams = stackalloc void*[2];
@@ -1559,6 +1573,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerForIncrementorKernel();
 IntPtr hfunc = s_hfunc_ForIncrementorKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "DeviceFunctionBarrierEdgeCaseKernels.ForIncrementorKernel");
 IntPtr d_output = IntPtr.Zero;
 try
 {
@@ -1616,6 +1631,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerForIncrementorKernel();
 IntPtr hfunc = s_hfunc_ForIncrementorKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "DeviceFunctionBarrierEdgeCaseKernels.ForIncrementorKernel");
 try
 {
 void** kernelParams = stackalloc void*[2];
@@ -1677,6 +1693,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerDoWhileConditionKernel();
 IntPtr hfunc = s_hfunc_DoWhileConditionKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "DeviceFunctionBarrierEdgeCaseKernels.DoWhileConditionKernel");
 IntPtr d_output = IntPtr.Zero;
 try
 {
@@ -1734,6 +1751,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerDoWhileConditionKernel();
 IntPtr hfunc = s_hfunc_DoWhileConditionKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "DeviceFunctionBarrierEdgeCaseKernels.DoWhileConditionKernel");
 try
 {
 void** kernelParams = stackalloc void*[2];
@@ -1795,6 +1813,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerExpressionBodyShiftUpKernel();
 IntPtr hfunc = s_hfunc_ExpressionBodyShiftUpKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "DeviceFunctionBarrierEdgeCaseKernels.ExpressionBodyShiftUpKernel");
 IntPtr d_input = IntPtr.Zero;
 IntPtr d_output = IntPtr.Zero;
 try
@@ -1877,6 +1896,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerExpressionBodyShiftUpKernel();
 IntPtr hfunc = s_hfunc_ExpressionBodyShiftUpKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "DeviceFunctionBarrierEdgeCaseKernels.ExpressionBodyShiftUpKernel");
 try
 {
 void** kernelParams = stackalloc void*[2];
@@ -1940,6 +1960,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerExpressionBodiedKernel();
 IntPtr hfunc = s_hfunc_ExpressionBodiedKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "DeviceFunctionBarrierEdgeCaseKernels.ExpressionBodiedKernel");
 IntPtr d_input = IntPtr.Zero;
 IntPtr d_output = IntPtr.Zero;
 try
@@ -2022,6 +2043,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerExpressionBodiedKernel();
 IntPtr hfunc = s_hfunc_ExpressionBodiedKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "DeviceFunctionBarrierEdgeCaseKernels.ExpressionBodiedKernel");
 try
 {
 void** kernelParams = stackalloc void*[2];
@@ -2094,6 +2116,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerRefParameterKernel();
 IntPtr hfunc = s_hfunc_RefParameterKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "DeviceFunctionBarrierEdgeCaseKernels.RefParameterKernel");
 IntPtr d_input = IntPtr.Zero;
 IntPtr d_output = IntPtr.Zero;
 IntPtr d_published = IntPtr.Zero;
@@ -2203,6 +2226,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerRefParameterKernel();
 IntPtr hfunc = s_hfunc_RefParameterKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "DeviceFunctionBarrierEdgeCaseKernels.RefParameterKernel");
 try
 {
 void** kernelParams = stackalloc void*[3];
@@ -2280,6 +2304,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerRefParameterChainKernel();
 IntPtr hfunc = s_hfunc_RefParameterChainKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "DeviceFunctionBarrierEdgeCaseKernels.RefParameterChainKernel");
 IntPtr d_input = IntPtr.Zero;
 IntPtr d_output = IntPtr.Zero;
 IntPtr d_published = IntPtr.Zero;
@@ -2389,6 +2414,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerRefParameterChainKernel();
 IntPtr hfunc = s_hfunc_RefParameterChainKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "DeviceFunctionBarrierEdgeCaseKernels.RefParameterChainKernel");
 try
 {
 void** kernelParams = stackalloc void*[3];
@@ -2466,6 +2492,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerRefElementArgumentKernel();
 IntPtr hfunc = s_hfunc_RefElementArgumentKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "DeviceFunctionBarrierEdgeCaseKernels.RefElementArgumentKernel");
 IntPtr d_data = IntPtr.Zero;
 IntPtr d_cursors = IntPtr.Zero;
 IntPtr d_published = IntPtr.Zero;
@@ -2575,6 +2602,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerRefElementArgumentKernel();
 IntPtr hfunc = s_hfunc_RefElementArgumentKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "DeviceFunctionBarrierEdgeCaseKernels.RefElementArgumentKernel");
 try
 {
 void** kernelParams = stackalloc void*[3];
@@ -2651,6 +2679,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerOutParameterInLoopKernel();
 IntPtr hfunc = s_hfunc_OutParameterInLoopKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "DeviceFunctionBarrierEdgeCaseKernels.OutParameterInLoopKernel");
 IntPtr d_input = IntPtr.Zero;
 IntPtr d_output = IntPtr.Zero;
 try
@@ -2735,6 +2764,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerOutParameterInLoopKernel();
 IntPtr hfunc = s_hfunc_OutParameterInLoopKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "DeviceFunctionBarrierEdgeCaseKernels.OutParameterInLoopKernel");
 try
 {
 void** kernelParams = stackalloc void*[3];

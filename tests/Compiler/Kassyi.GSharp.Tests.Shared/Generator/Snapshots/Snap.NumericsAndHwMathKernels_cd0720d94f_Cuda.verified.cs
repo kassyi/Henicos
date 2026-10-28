@@ -130,6 +130,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerBitOperationsTestKernel();
 IntPtr hfunc = s_hfunc_BitOperationsTestKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "NumericsAndHwMathKernels.BitOperationsTestKernel");
 IntPtr d_u32Data = IntPtr.Zero;
 IntPtr d_u64Data = IntPtr.Zero;
 try
@@ -212,6 +213,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerBitOperationsTestKernel();
 IntPtr hfunc = s_hfunc_BitOperationsTestKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "NumericsAndHwMathKernels.BitOperationsTestKernel");
 try
 {
 void** kernelParams = stackalloc void*[2];
@@ -299,6 +301,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerPtxIntrinsicsExpansionKernel();
 IntPtr hfunc = s_hfunc_PtxIntrinsicsExpansionKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "NumericsAndHwMathKernels.PtxIntrinsicsExpansionKernel");
 IntPtr d_u32Out = IntPtr.Zero;
 IntPtr d_u64Out = IntPtr.Zero;
 IntPtr d_i32Out = IntPtr.Zero;
@@ -408,6 +411,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerPtxIntrinsicsExpansionKernel();
 IntPtr hfunc = s_hfunc_PtxIntrinsicsExpansionKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "NumericsAndHwMathKernels.PtxIntrinsicsExpansionKernel");
 try
 {
 void** kernelParams = stackalloc void*[3];

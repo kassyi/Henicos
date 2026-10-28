@@ -585,6 +585,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerTwoStageRangeKernel();
 IntPtr hfunc = s_hfunc_TwoStageRangeKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "StackLinqRangeKernels.TwoStageRangeKernel");
 IntPtr d_data = IntPtr.Zero;
 IntPtr d_result = IntPtr.Zero;
 try
@@ -673,6 +674,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerTwoStageRangeKernel();
 IntPtr hfunc = s_hfunc_TwoStageRangeKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "StackLinqRangeKernels.TwoStageRangeKernel");
 try
 {
 void** kernelParams = stackalloc void*[5];
@@ -790,6 +792,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerFilteredTakeKernel();
 IntPtr hfunc = s_hfunc_FilteredTakeKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "StackLinqRangeKernels.FilteredTakeKernel");
 IntPtr d_data = IntPtr.Zero;
 IntPtr d_counter = IntPtr.Zero;
 IntPtr d_result = IntPtr.Zero;
@@ -899,6 +902,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerFilteredTakeKernel();
 IntPtr hfunc = s_hfunc_FilteredTakeKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "StackLinqRangeKernels.FilteredTakeKernel");
 try
 {
 void** kernelParams = stackalloc void*[3];
@@ -996,6 +1000,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerSelectSkipCountKernel();
 IntPtr hfunc = s_hfunc_SelectSkipCountKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "StackLinqRangeKernels.SelectSkipCountKernel");
 IntPtr d_data = IntPtr.Zero;
 IntPtr d_counter = IntPtr.Zero;
 IntPtr d_result = IntPtr.Zero;
@@ -1105,6 +1110,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerSelectSkipCountKernel();
 IntPtr hfunc = s_hfunc_SelectSkipCountKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "StackLinqRangeKernels.SelectSkipCountKernel");
 try
 {
 void** kernelParams = stackalloc void*[3];
@@ -1223,6 +1229,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerTakeCountKernel();
 IntPtr hfunc = s_hfunc_TakeCountKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "StackLinqRangeKernels.TakeCountKernel");
 IntPtr d_data = IntPtr.Zero;
 IntPtr d_counter = IntPtr.Zero;
 IntPtr d_result = IntPtr.Zero;
@@ -1334,6 +1341,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerTakeCountKernel();
 IntPtr hfunc = s_hfunc_TakeCountKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "StackLinqRangeKernels.TakeCountKernel");
 try
 {
 void** kernelParams = stackalloc void*[4];
@@ -1492,6 +1500,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerTakeSkipCountKernel();
 IntPtr hfunc = s_hfunc_TakeSkipCountKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "StackLinqRangeKernels.TakeSkipCountKernel");
 IntPtr d_data = IntPtr.Zero;
 IntPtr d_counter = IntPtr.Zero;
 IntPtr d_result = IntPtr.Zero;
@@ -1605,6 +1614,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerTakeSkipCountKernel();
 IntPtr hfunc = s_hfunc_TakeSkipCountKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "StackLinqRangeKernels.TakeSkipCountKernel");
 try
 {
 void** kernelParams = stackalloc void*[5];
@@ -2829,6 +2839,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerThreeStageSweepKernel();
 IntPtr hfunc = s_hfunc_ThreeStageSweepKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "StackLinqRangeKernels.ThreeStageSweepKernel");
 IntPtr d_data = IntPtr.Zero;
 IntPtr d_result = IntPtr.Zero;
 try
@@ -2917,6 +2928,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerThreeStageSweepKernel();
 IntPtr hfunc = s_hfunc_ThreeStageSweepKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "StackLinqRangeKernels.ThreeStageSweepKernel");
 try
 {
 void** kernelParams = stackalloc void*[5];

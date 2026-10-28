@@ -121,6 +121,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerShuffleInLaterWarpKernel();
 IntPtr hfunc = s_hfunc_ShuffleInLaterWarpKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "BlockBarrierStepKernels.ShuffleInLaterWarpKernel");
 IntPtr d_output = IntPtr.Zero;
 try
 {
@@ -176,6 +177,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerShuffleInLaterWarpKernel();
 IntPtr hfunc = s_hfunc_ShuffleInLaterWarpKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "BlockBarrierStepKernels.ShuffleInLaterWarpKernel");
 try
 {
 void** kernelParams = stackalloc void*[1];
@@ -246,6 +248,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerShuffleCountsAcrossBarriersKernel();
 IntPtr hfunc = s_hfunc_ShuffleCountsAcrossBarriersKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "BlockBarrierStepKernels.ShuffleCountsAcrossBarriersKernel");
 IntPtr d_output = IntPtr.Zero;
 try
 {
@@ -301,6 +304,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerShuffleCountsAcrossBarriersKernel();
 IntPtr hfunc = s_hfunc_ShuffleCountsAcrossBarriersKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "BlockBarrierStepKernels.ShuffleCountsAcrossBarriersKernel");
 try
 {
 void** kernelParams = stackalloc void*[1];
@@ -377,6 +381,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerShuffleBarrierAndGridSyncKernel();
 IntPtr hfunc = s_hfunc_ShuffleBarrierAndGridSyncKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "BlockBarrierStepKernels.ShuffleBarrierAndGridSyncKernel");
 IntPtr d_data = IntPtr.Zero;
 IntPtr d_output = IntPtr.Zero;
 try
@@ -458,6 +463,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerShuffleBarrierAndGridSyncKernel();
 IntPtr hfunc = s_hfunc_ShuffleBarrierAndGridSyncKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "BlockBarrierStepKernels.ShuffleBarrierAndGridSyncKernel");
 try
 {
 void** kernelParams = stackalloc void*[2];

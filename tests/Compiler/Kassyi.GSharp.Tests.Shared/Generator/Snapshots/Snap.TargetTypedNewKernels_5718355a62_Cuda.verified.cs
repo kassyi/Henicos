@@ -145,6 +145,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerHappyPathKernel();
 IntPtr hfunc = s_hfunc_HappyPathKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "TargetTypedNewKernels.HappyPathKernel");
 IntPtr d_output = IntPtr.Zero;
 try
 {
@@ -200,6 +201,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerHappyPathKernel();
 IntPtr hfunc = s_hfunc_HappyPathKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "TargetTypedNewKernels.HappyPathKernel");
 try
 {
 void** kernelParams = stackalloc void*[1];
@@ -281,6 +283,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerNestedInitializerKernel();
 IntPtr hfunc = s_hfunc_NestedInitializerKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "TargetTypedNewKernels.NestedInitializerKernel");
 IntPtr d_output = IntPtr.Zero;
 try
 {
@@ -336,6 +339,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerNestedInitializerKernel();
 IntPtr hfunc = s_hfunc_NestedInitializerKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "TargetTypedNewKernels.NestedInitializerKernel");
 try
 {
 void** kernelParams = stackalloc void*[1];

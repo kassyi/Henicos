@@ -72,6 +72,13 @@ __device__ inline operator const T*() const { return data; }
 // A stack array (T name[N]) viewed as a span, for a receiver or a template argument that deduces GSharpArray<T>
 template <typename T, int N>
 __device__ inline GSharpArray<T> __gsharp_stackalloc_span(T (&storage)[N]) { return GSharpArray<T>(storage, N); }
+// The storage of a stackalloc outside a declaration, declared before the statement: zeroed where the stackalloc is
+// evaluated (every evaluation, as C# allocates a new block each time), then viewed as a span
+template <typename T, int N>
+__device__ inline GSharpArray<T> __gsharp_stackalloc_zero(T (&storage)[N]) {
+for (int i = 0; i < N; i++) { storage[i] = T{}; }
+return GSharpArray<T>(storage, N);
+}
 
 
 

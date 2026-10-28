@@ -94,7 +94,7 @@ internal static class UsingTranspiler
         {
             if (node.Declaration != null)
             {
-                DeclarationHoistingHelper.HoistDeclarationExpressions(node.Declaration, ref context);
+                StatementPrelude.Emit(node.Declaration, ref context);
                 context.Visitor.Visit(node.Declaration);
                 context.Emitter.Writer.Append(';');
                 WriteGuards(node.Declaration, ref context);
