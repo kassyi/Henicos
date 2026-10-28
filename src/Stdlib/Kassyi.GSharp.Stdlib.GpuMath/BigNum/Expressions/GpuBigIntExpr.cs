@@ -113,7 +113,8 @@ public readonly struct GpuBigIntExpr
     /// <summary>
     /// Evaluates this signed expression into the provided destination buffer.
     /// </summary>
-    /// <param name="destination">The pre-allocated GPU buffer to store the evaluated magnitude.</param>
+    /// <param name="destination">The pre-allocated GPU buffer to store the evaluated magnitude. It may be the magnitude of
+    /// an operand (<c>(a / b).Evaluate(a.Value)</c>): the root then computes into a temporary and copies the result.</param>
     /// <returns>A new <see cref="GpuBigInt"/> instance wrapping the destination buffer with the evaluated sign.</returns>
     /// <exception cref="InvalidOperationException">The expression has been compiled into a CUDA graph that is alive.</exception>
     public GpuBigInt Evaluate(GpuBigUInt destination)

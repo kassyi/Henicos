@@ -12,7 +12,26 @@ internal class GpuBigIntLeafExpression(GpuBigInt value) : IGpuBigIntExpression
             return new GpuBigInt(value.Value.AsBorrowed(), value.IsNegative);
         }
 
-        targetResult.Value.CopyFrom(value.Value);
+        // The target may be the operand itself (d.Value = d): then there is nothing to copy, and cuMemcpyDtoD does not
+        // promise a copy onto itself
+        var target = targetResult.Value;
+        if (target.DevicePointer != value.Value.DevicePointer)
+        {
+            var words = Math.Min(target.NumWords, value.Value.NumWords);
+            if (DeviceRanges.Overlaps(target.DevicePointer, words, value.Value.DevicePointer, words))
+            {
+                // A target that partly overlaps the leaf (two views of one buffer): cuMemcpyDtoD does not promise
+                // overlapping copies, so the words go through a temporary
+                using var staging = new GpuBigUInt(workspace, words);
+                staging.CopyFrom(value.Value, numWords: words);
+                target.CopyFrom(staging, numWords: words);
+            }
+            else
+            {
+                target.CopyFrom(value.Value);
+            }
+        }
+
         return new GpuBigInt(targetResult.Value, value.IsNegative);
     }
 }
@@ -45,6 +64,7 @@ internal abstract class SignedBinaryExpression(IGpuBigIntExpression left, IGpuBi
 
         GpuBigInt leftResult = default;
         GpuBigInt rightResult = default;
+        GpuBigUInt staging = default;
         var finalBuffer = targetResult;
 
         try
@@ -53,7 +73,11 @@ internal abstract class SignedBinaryExpression(IGpuBigIntExpression left, IGpuBi
             rightResult = Right.Evaluate(workspace);
             finalBuffer ??= workspace.RentTemp(NumWords);
 
-            var result = Execute(leftResult, rightResult, finalBuffer.Value);
+            // The kernels take __restrict__ pointers: a target that overlaps an operand gets the result through a
+            // temporary (design gpumath-m1-misc 4.2.5)
+            staging = SignedRoot.StagingFor(workspace, targetResult, leftResult, rightResult);
+            var result = Execute(leftResult, rightResult, staging.Handle.IsDefault ? finalBuffer.Value : staging);
+            result = SignedRoot.Deliver(result, staging, finalBuffer.Value);
             finalBuffer = null; // Evaluated successfully, do not return the result buffer
             return result;
         }
@@ -73,9 +97,16 @@ internal abstract class SignedBinaryExpression(IGpuBigIntExpression left, IGpuBi
                 }
                 finally
                 {
-                    if (!targetResult.HasValue && finalBuffer.HasValue)
+                    try
                     {
-                        finalBuffer.Value.Dispose();
+                        staging.Dispose();
+                    }
+                    finally
+                    {
+                        if (!targetResult.HasValue && finalBuffer.HasValue)
+                        {
+                            finalBuffer.Value.Dispose();
+                        }
                     }
                 }
             }
@@ -83,6 +114,37 @@ internal abstract class SignedBinaryExpression(IGpuBigIntExpression left, IGpuBi
     }
 
     protected abstract GpuBigInt Execute(GpuBigInt a, GpuBigInt b, GpuBigUInt resultBuffer);
+}
+
+// The overlap guard of the signed roots: a caller's target that overlaps an operand is not written by the kernel; the
+// result goes to a temporary and is then copied into the target
+internal static class SignedRoot
+{
+    // An owned temporary when the target overlaps an operand; otherwise the default value, which owns nothing
+    public static GpuBigUInt StagingFor(GpuWorkspace workspace, GpuBigUInt? target, GpuBigInt operand0,
+        GpuBigInt operand1)
+    {
+        if (target is not { } t ||
+            (!DeviceRanges.Overlaps(t.Handle, operand0.Value.Handle) &&
+             !DeviceRanges.Overlaps(t.Handle, operand1.Value.Handle)))
+        {
+            return default;
+        }
+
+        return workspace.RentTemp(t.NumWords);
+    }
+
+    // The result in the buffer the caller sees: copied from the temporary into the target when one was used
+    public static GpuBigInt Deliver(GpuBigInt result, GpuBigUInt staging, GpuBigUInt target)
+    {
+        if (staging.Handle.IsDefault)
+        {
+            return result;
+        }
+
+        target.CopyFrom(staging);
+        return new GpuBigInt(target, result.IsNegative);
+    }
 }
 
 internal class SignedAddExpression(IGpuBigIntExpression left, IGpuBigIntExpression right)
@@ -188,6 +250,7 @@ internal abstract class SignedUnaryExpression(IGpuBigIntExpression target) : IGp
         }
 
         GpuBigInt targetEval = default;
+        GpuBigUInt staging = default;
         var finalBuffer = targetResult;
 
         try
@@ -195,23 +258,33 @@ internal abstract class SignedUnaryExpression(IGpuBigIntExpression target) : IGp
             targetEval = Target.Evaluate(workspace);
             finalBuffer ??= workspace.RentTemp(NumWords);
 
-            var result = Execute(targetEval, finalBuffer.Value);
+            // As in SignedBinaryExpression: a target that overlaps the operand gets the result through a temporary
+            staging = SignedRoot.StagingFor(workspace, targetResult, targetEval, default);
+            var result = Execute(targetEval, staging.Handle.IsDefault ? finalBuffer.Value : staging);
+            result = SignedRoot.Deliver(result, staging, finalBuffer.Value);
             finalBuffer = null;
             return result;
         }
         finally
         {
             // An owned intermediate goes back to the pool; a borrowed leaf result is left alone. Nested, so that a
-            // release that throws does not skip the other.
+            // release that throws does not skip the others.
             try
             {
                 targetEval.Dispose();
             }
             finally
             {
-                if (!targetResult.HasValue && finalBuffer.HasValue)
+                try
                 {
-                    finalBuffer.Value.Dispose();
+                    staging.Dispose();
+                }
+                finally
+                {
+                    if (!targetResult.HasValue && finalBuffer.HasValue)
+                    {
+                        finalBuffer.Value.Dispose();
+                    }
                 }
             }
         }
