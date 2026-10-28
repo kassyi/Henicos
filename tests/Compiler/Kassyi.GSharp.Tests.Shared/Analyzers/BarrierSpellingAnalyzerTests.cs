@@ -20,11 +20,11 @@ public class BarrierSpellingAnalyzerTests : TranspilerTestBase
         Assert.Equal(
             [
                 (GSharpDiagnostics.ExternalBarrierCallProhibited.Id, 15, 9, 15, 22),
-                (GSharpDiagnostics.DivergentBarrierProhibited.Id, 24, 13, 24, 26),
-                (GSharpDiagnostics.DivergentBarrierProhibited.Id, 37, 13, 37, 28),
-                (GSharpDiagnostics.DivergentBarrierProhibited.Id, 53, 13, 53, 28),
+                (GSharpDiagnostics.LaunchDependentDivergentBarrier.Id, 24, 13, 24, 26),
+                (GSharpDiagnostics.LaunchDependentDivergentBarrier.Id, 37, 13, 37, 28),
+                (GSharpDiagnostics.LaunchDependentDivergentBarrier.Id, 53, 13, 53, 28),
                 (GSharpDiagnostics.IteratorBodyConstructNotSupported.Id, 65, 26, 65, 63),
-                (GSharpDiagnostics.DivergentBarrierProhibited.Id, 78, 13, 78, 23)
+                (GSharpDiagnostics.LaunchDependentDivergentBarrier.Id, 78, 13, 78, 23)
             ],
             actual);
     }

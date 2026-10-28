@@ -89,6 +89,7 @@ The G# compiler and Roslyn analyzers enforce GPU safety and memory management ru
 | [GSH0080](GSH0080.md) | Warning | Struct array is converted element by element |
 | [GSH0081](GSH0081.md) | Warning | Struct array allocates the array field of each element |
 | [GSH0082](GSH0082.md) | Error | Struct cannot be passed to a CPU kernel yet |
+| [GSH0083](GSH0083.md) | Warning | Barrier that only some threads may reach, depending on the launch or on run-time values |
 | [GSH0088](GSH0088.md) | Error | Device code of another assembly is not exported |
 | [GSH0089](GSH0089.md) | Error | Device code of another assembly cannot be used |
 | [GSH0090](GSH0090.md) | Error | Device code of two assemblies has the same C++ name |

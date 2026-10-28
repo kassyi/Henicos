@@ -19,10 +19,18 @@ public class BarrierUsageAnalyzerTests : TranspilerTestBase
 
     [Fact]
     [Scenario(TestScenario.SadPath)]
-    public async Task Test_DivergentBarrier_ReportsGSH0037()
+    public async Task Test_DivergentBarrier_ReportsByCertainty()
     {
-        await RoslynTestUtility.TestAnalyzer("Analyzers/BarrierUsage/DivergentBarrierKernels.cu.cs", s_analyzer)
-                               .ReportsErrorsAsync("GSH0037");
+        var actual = await RunAsync("Analyzers/BarrierUsage/DivergentBarrierKernels.cu.cs");
+
+        // tid < 16 and a buffer element depend on the launch or on run-time values (warning); tid % 2 certainly diverges
+        Assert.Equal(
+            [
+                (GSharpDiagnostics.LaunchDependentDivergentBarrier.Id, 14, 13, 14, 30),
+                (GSharpDiagnostics.LaunchDependentDivergentBarrier.Id, 32, 13, 32, 30),
+                (GSharpDiagnostics.DivergentBarrierProhibited.Id, 47, 17, 47, 34)
+            ],
+            actual);
     }
 
     [Fact]
@@ -117,32 +125,56 @@ public class BarrierUsageAnalyzerTests : TranspilerTestBase
     [Scenario(TestScenario.SadPath)]
     public async Task Test_DivergentCallToBarrierDeviceFunction_ReportsGSH0037()
     {
-        await RoslynTestUtility.TestAnalyzer("Analyzers/BarrierUsage/DivergentSuspendingCallKernels.cu.cs", s_analyzer)
-                               .ReportsErrorsAsync("GSH0037");
+        var actual = await RunAsync("Analyzers/BarrierUsage/DivergentSuspendingCallKernels.cu.cs");
+
+        // tid == 0 certainly diverges
+        Assert.Equal(
+            [
+                (GSharpDiagnostics.DivergentBarrierProhibited.Id, 20, 13, 20, 27)
+            ],
+            actual);
     }
 
     [Fact]
     [Scenario(TestScenario.SadPath)]
-    public async Task Test_DivergentBarrierInDeviceFunction_ReportsGSH0037()
+    public async Task Test_DivergentBarrierInDeviceFunction_ReportsGSH0083()
     {
-        await RoslynTestUtility.TestAnalyzer("Analyzers/BarrierUsage/DivergentBarrierInDeviceFunctionKernels.cu.cs", s_analyzer)
-                               .ReportsErrorsAsync("GSH0037");
+        var actual = await RunAsync("Analyzers/BarrierUsage/DivergentBarrierInDeviceFunctionKernels.cu.cs");
+
+        // tid < 16 depends on the block width
+        Assert.Equal(
+            [
+                (GSharpDiagnostics.LaunchDependentDivergentBarrier.Id, 13, 13, 13, 30)
+            ],
+            actual);
     }
 
     [Fact]
     [Scenario(TestScenario.SadPath)]
-    public async Task Test_DivergentCallReachingBarrierTwoLevelsDeep_ReportsGSH0037()
+    public async Task Test_DivergentCallReachingBarrierTwoLevelsDeep_ReportsGSH0083()
     {
-        await RoslynTestUtility.TestAnalyzer("Analyzers/BarrierUsage/DivergentNestedSuspendingCallKernels.cu.cs", s_analyzer)
-                               .ReportsErrorsAsync("GSH0037");
+        var actual = await RunAsync("Analyzers/BarrierUsage/DivergentNestedSuspendingCallKernels.cu.cs");
+
+        // tid < 16 depends on the block width
+        Assert.Equal(
+            [
+                (GSharpDiagnostics.LaunchDependentDivergentBarrier.Id, 26, 13, 26, 32)
+            ],
+            actual);
     }
 
     [Fact]
     [Scenario(TestScenario.SadPath)]
-    public async Task Test_BarrierDeviceFunctionOnRightOfShortCircuit_ReportsGSH0037()
+    public async Task Test_BarrierDeviceFunctionOnRightOfShortCircuit_ReportsGSH0083()
     {
-        await RoslynTestUtility.TestAnalyzer("Analyzers/BarrierUsage/ShortCircuitSuspendingCallKernels.cu.cs", s_analyzer)
-                               .ReportsErrorsAsync("GSH0037");
+        var actual = await RunAsync("Analyzers/BarrierUsage/ShortCircuitSuspendingCallKernels.cu.cs");
+
+        // tid < 16 depends on the block width
+        Assert.Equal(
+            [
+                (GSharpDiagnostics.LaunchDependentDivergentBarrier.Id, 19, 43, 19, 59)
+            ],
+            actual);
     }
 
     [Fact]
@@ -155,22 +187,20 @@ public class BarrierUsageAnalyzerTests : TranspilerTestBase
 
     [Fact]
     [Scenario(TestScenario.SadPath)]
-    public async Task Test_ThreadVariantConditions_ReportGSH0037()
+    public async Task Test_ThreadVariantConditions_ReportByCertainty()
     {
-        var diagnostics = await RoslynTestUtility.TestAnalyzer("Analyzers/BarrierUsage/ThreadVariantConditionKernels.cu.cs", s_analyzer)
-                                                 .GetDiagnosticsAsync();
+        var actual = await RunAsync("Analyzers/BarrierUsage/ThreadVariantConditionKernels.cu.cs");
 
-        // One report per kernel: a derived local, a conditionally assigned local, a thread-stride loop, the lane id
-        var divergent = 0;
-        foreach (var diagnostic in diagnostics)
-        {
-            if (diagnostic.Id == "GSH0037")
-            {
-                divergent++;
-            }
-        }
-
-        Assert.Equal(4, divergent);
+        // One report per kernel: a derived local (lane == 0) and a conditionally assigned local certainly diverge; a thread-stride
+        // loop and Gpu.LaneId() < 16 depend on the launch
+        Assert.Equal(
+            [
+                (GSharpDiagnostics.DivergentBarrierProhibited.Id, 16, 13, 16, 30),
+                (GSharpDiagnostics.DivergentBarrierProhibited.Id, 36, 13, 36, 30),
+                (GSharpDiagnostics.LaunchDependentDivergentBarrier.Id, 51, 13, 51, 30),
+                (GSharpDiagnostics.LaunchDependentDivergentBarrier.Id, 65, 13, 65, 30)
+            ],
+            actual);
     }
 
     [Fact]
@@ -235,5 +265,19 @@ public class BarrierUsageAnalyzerTests : TranspilerTestBase
         // The barrier is reported as called from host code, not as divergent inside a kernel
         Assert.Contains(diagnostics, d => d.Id == "GSH0042");
         Assert.DoesNotContain(diagnostics, d => d.Id == "GSH0037");
+    }
+
+    private static async Task<IReadOnlyList<(string Id, int StartLine, int StartCol, int EndLine, int EndCol)>> RunAsync(
+        string relativeTestCasePath)
+    {
+        var diagnostics = await RoslynTestUtility.TestAnalyzer(relativeTestCasePath, s_analyzer).GetDiagnosticsAsync();
+
+        return diagnostics
+            .Select(static d => ReportedDiagnostic.From(DiagnosticOrigin.Analyzer, d))
+            .Select(static d => (d.Id, d.StartLine, d.StartColumn, d.EndLine, d.EndColumn))
+            .OrderBy(static d => d.StartLine)
+            .ThenBy(static d => d.StartColumn)
+            .ThenBy(static d => d.Id, StringComparer.Ordinal)
+            .ToList();
     }
 }
