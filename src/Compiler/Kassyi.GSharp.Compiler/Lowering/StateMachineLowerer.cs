@@ -79,7 +79,7 @@ public class StateMachineLowerer(bool isDeviceFunction = false, SemanticModel? s
                 else if (BarrierHelper.TryGetWarpShuffleRead(barrierInv, out var readFunction))
                 {
                     // 1. Publish val to the context's warp exchange slot (__gsharp_warp_exchange_assign(val))
-                    var valArg = barrierInv.ArgumentList.Arguments[1].Expression;
+                    var valArg = GetShuffleArgument(barrierInv, ShuffleValuePosition).Expression;
                     currentCaseStatements.Add(
                         SyntaxFactory.ExpressionStatement(
                             SyntaxFactory.InvocationExpression(
@@ -274,28 +274,99 @@ public class StateMachineLowerer(bool isDeviceFunction = false, SemanticModel? s
         );
     }
 
-    private static StatementSyntax RewriteWarpShuffleRead(StatementSyntax stmt, InvocationExpressionSyntax barrierInv,
+    private StatementSyntax RewriteWarpShuffleRead(StatementSyntax stmt, InvocationExpressionSyntax barrierInv,
         string readFunction)
     {
         var newArgs = SyntaxFactory.SeparatedList<ArgumentSyntax>();
-        // Arguments are: context, mask, val, delta, width [optional]
         // The root context owns the warp exchange, also when the shuffle is in a device function
         newArgs = newArgs.Add(
             SyntaxFactory.Argument(SyntaxFactory.IdentifierName(GSharpInternalNames.SuspendingCall.Root)));
-        newArgs = newArgs.Add(barrierInv.ArgumentList.Arguments[0]);
-        newArgs = newArgs.Add(barrierInv.ArgumentList.Arguments[1]); // pass val for type inference
-        newArgs = newArgs.Add(barrierInv.ArgumentList.Arguments[2]);
-        if (barrierInv.ArgumentList.Arguments.Count > 3)
-        {
-            newArgs = newArgs.Add(barrierInv.ArgumentList.Arguments[3]);
-        }
+        newArgs = newArgs.Add(GetShuffleArgument(barrierInv, ShuffleMaskPosition));
+        newArgs = newArgs.Add(GetShuffleArgument(barrierInv, ShuffleValuePosition)); // pass val for type inference
+        newArgs = newArgs.Add(GetShuffleArgument(barrierInv, ShuffleLanePosition));
+        // The width is always passed, so that the place of the shuffle can follow it; 32 is the default of every shuffle
+        newArgs = newArgs.Add(
+            TryGetShuffleArgument(barrierInv, ShuffleWidthPosition, out var width)
+                ? width
+                : SyntaxFactory.Argument(
+                    SyntaxFactory.LiteralExpression(SyntaxKind.NumericLiteralExpression, SyntaxFactory.Literal(32))
+                )
+        );
+        newArgs = newArgs.Add(
+            SyntaxFactory.Argument(
+                SyntaxFactory.LiteralExpression(
+                    SyntaxKind.StringLiteralExpression,
+                    SyntaxFactory.Literal(FormatShufflePlace(barrierInv))
+                )
+            )
+        );
 
-        // __gsharp_warp_shuffle_read_<kind>(__gsharp_root, mask, val, delta[, width])
+        // __gsharp_warp_shuffle_read_<kind>(__gsharp_root, mask, val, delta, width, "<file>(<line>,<column>)")
         var rewrittenInv = SyntaxFactory.InvocationExpression(
             SyntaxFactory.IdentifierName(readFunction),
             SyntaxFactory.ArgumentList(newArgs)
         );
 
         return stmt.ReplaceNode(barrierInv, rewrittenInv);
+    }
+
+    // The place of a shuffle in the user's source, for the run-time errors of the CPU paths: the file name without its
+    // directory (no absolute path is embedded in the generated code) and the 1-based line and column
+    private string FormatShufflePlace(InvocationExpressionSyntax shuffle)
+    {
+        if (semanticModel?.GetReportLocation(shuffle) is not { } location || location == Location.None)
+        {
+            return UnknownShufflePlace;
+        }
+
+        var span = location.GetLineSpan();
+        var start = span.StartLinePosition;
+        return $"{Path.GetFileName(span.Path)}({start.Line + 1},{start.Character + 1})";
+    }
+
+    private const string UnknownShufflePlace = "an unknown place";
+
+    // The parameters of every Warp shuffle, in order: mask, var, the lane operand (srcLane, delta or laneMask), width
+    private const int ShuffleMaskPosition = 0;
+    private const int ShuffleValuePosition = 1;
+    private const int ShuffleLanePosition = 2;
+    private const int ShuffleWidthPosition = 3;
+    private const string ShuffleMaskParameter = "mask";
+    private const string ShuffleValueParameter = "var";
+    private const string ShuffleWidthParameter = "width";
+
+    // The argument of a shuffle for the parameter at position, which the call compiled with (so it is there)
+    private static ArgumentSyntax GetShuffleArgument(InvocationExpressionSyntax shuffle, int position) =>
+        TryGetShuffleArgument(shuffle, position, out var argument)
+            ? argument
+            : throw new InvalidOperationException($"A warp shuffle without the argument at position {position}");
+
+    // The argument of a shuffle for the parameter at position, without its name: a named argument may stand anywhere
+    // (Warp.ShuffleSync(m, v, width: 8, srcLane: 3)), and the read functions take the arguments by position
+    private static bool TryGetShuffleArgument(
+        InvocationExpressionSyntax shuffle,
+        int position,
+        [NotNullWhen(true)] out ArgumentSyntax? argument)
+    {
+        var arguments = shuffle.ArgumentList.Arguments;
+        for (var i = 0; i < arguments.Count; i++)
+        {
+            var target = arguments[i].NameColon?.Name.Identifier.ValueText switch
+            {
+                null => i,
+                ShuffleMaskParameter => ShuffleMaskPosition,
+                ShuffleValueParameter => ShuffleValuePosition,
+                ShuffleWidthParameter => ShuffleWidthPosition,
+                _ => ShuffleLanePosition
+            };
+            if (target == position)
+            {
+                argument = arguments[i].WithNameColon(null);
+                return true;
+            }
+        }
+
+        argument = null;
+        return false;
     }
 }
