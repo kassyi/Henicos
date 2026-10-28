@@ -347,17 +347,33 @@ internal sealed class DefaultGpuMemoryManager(IGpuExecutionProvider provider, In
             while (lazyBag.Value.TryTake(out var pooled))
             {
                 Interlocked.Decrement(ref _pooledBuffers);
-                pooled.TryRetire(pooled.Generation);
-                try
-                {
-                    provider.FreeMemory(pooled.Pointer, stream);
-                    Interlocked.Increment(ref _driverFrees);
-                }
-                catch (Exception ex) when (exceptions is not null)
-                {
-                    exceptions.Add(ex);
-                }
+                ReleaseToDriver(pooled, immediate: false, exceptions);
             }
+        }
+    }
+
+    // Ends the lease of buffer, so that a surviving copy of a handle never reaches FreeMemory again, and frees it
+    // through the driver: in stream order on the workspace stream, or with the immediate device-wide free. A failure is
+    // added to exceptions, or rethrown without a list.
+    private void ReleaseToDriver(GpuBigIntDeviceBuffer buffer, bool immediate, List<Exception>? exceptions)
+    {
+        buffer.TryRetire(buffer.Generation);
+        try
+        {
+            if (immediate)
+            {
+                provider.FreeMemory(buffer.Pointer);
+            }
+            else
+            {
+                provider.FreeMemory(buffer.Pointer, stream);
+            }
+
+            Interlocked.Increment(ref _driverFrees);
+        }
+        catch (Exception ex) when (exceptions is not null)
+        {
+            exceptions.Add(ex);
         }
     }
 
@@ -415,16 +431,7 @@ internal sealed class DefaultGpuMemoryManager(IGpuExecutionProvider provider, In
                 continue;
             }
 
-            deferred.TryRetire(deferred.Generation);
-            try
-            {
-                provider.FreeMemory(deferred.Pointer);
-                Interlocked.Increment(ref _driverFrees);
-            }
-            catch (Exception ex)
-            {
-                exceptions.Add(ex);
-            }
+            ReleaseToDriver(deferred, immediate: true, exceptions);
         }
 
         foreach (var ptr in _activeAllocations.Keys)
@@ -435,18 +442,8 @@ internal sealed class DefaultGpuMemoryManager(IGpuExecutionProvider provider, In
                 continue;
             }
 
-            // End the lease first: a surviving copy of the handle must never reach FreeMemory again
-            live.TryRetire(live.Generation);
             CountRelease(live.TotalWords);
-            try
-            {
-                provider.FreeMemory(ptr, stream);
-                Interlocked.Increment(ref _driverFrees);
-            }
-            catch (Exception ex)
-            {
-                exceptions.Add(ex);
-            }
+            ReleaseToDriver(live, immediate: false, exceptions);
         }
 
         if (exceptions.Count > 0)
