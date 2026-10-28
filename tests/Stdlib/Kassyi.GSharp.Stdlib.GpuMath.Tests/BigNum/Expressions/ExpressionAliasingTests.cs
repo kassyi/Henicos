@@ -185,6 +185,122 @@ public sealed class ExpressionAliasingTests : IDisposable
         Assert.Equal(before.DriverAllocations, _workspace.GetMemoryStatistics().DriverAllocations);
     }
 
+    public enum SignedOp
+    {
+        Add,
+        Sub,
+        Mul,
+        Div,
+        Mod,
+        Negate,
+        Not
+    }
+
+    public static TheoryData<SignedOp, bool, bool> SignedCases()
+    {
+        var data = new TheoryData<SignedOp, bool, bool>();
+        foreach (var op in Enum.GetValues<SignedOp>())
+        {
+            // A signed product has twice the words of its operands, so its target can never be one of them
+            if (op == SignedOp.Mul)
+            {
+                continue;
+            }
+
+            data.Add(op, true, false);
+            data.Add(op, false, true);
+            if (op is not (SignedOp.Negate or SignedOp.Not))
+            {
+                data.Add(op, true, true);
+            }
+        }
+
+        return data;
+    }
+
+    [SkippableTheory]
+    [Scenario(TestScenario.Boundary)]
+    [MemberData(nameof(SignedCases))]
+    public void Signed_TargetIsAnOperand_GivesTheSeparateBufferResult(SignedOp op, bool negativeA, bool intoRight)
+    {
+        // The signed root (SignedBinaryExpression / SignedUnaryExpression) with its target in an operand: the value and
+        // the sign equal BigInteger's (truncated division, the remainder takes the dividend's sign), and the other
+        // operand keeps its value.
+        var a0 = negativeA ? -_a : _a;
+        var b0 = negativeA ? _b : -_b;
+        using var aMagnitude = GpuBigUInt.FromBigInteger(_workspace, _a, Words);
+        using var bMagnitude = GpuBigUInt.FromBigInteger(_workspace, _b, Words);
+        var a = new GpuBigInt(aMagnitude, negativeA);
+        var b = new GpuBigInt(bMagnitude, !negativeA);
+        var target = intoRight && op is not (SignedOp.Negate or SignedOp.Not) ? bMagnitude : aMagnitude;
+
+        var result = SignedExpression(op, a, b).Evaluate(target);
+
+        var expected = op switch
+        {
+            SignedOp.Add => a0 + b0,
+            SignedOp.Sub => a0 - b0,
+            SignedOp.Mul => a0 * b0,
+            SignedOp.Div => a0 / b0,
+            SignedOp.Mod => a0 % b0,
+            SignedOp.Negate => -a0,
+            // Not inverts the magnitude words and keeps the sign
+            _ => negativeA ? -((BigInteger.One << (Words * 32)) - 1 - _a) : (BigInteger.One << (Words * 32)) - 1 - _a
+        };
+        var message = $"{op} a<0 {negativeA} into {(target.DevicePointer == bMagnitude.DevicePointer ? "b" : "a")}, seed {Seed}";
+        Assert.True(expected == result.Value.ToBigInteger(result.IsNegative), message);
+        Assert.Equal(target.DevicePointer, result.Value.DevicePointer);
+        if (target.DevicePointer == aMagnitude.DevicePointer && op is not (SignedOp.Negate or SignedOp.Not))
+        {
+            Assert.Equal(_b, bMagnitude.ToBigInteger());
+        }
+        else if (target.DevicePointer == bMagnitude.DevicePointer)
+        {
+            Assert.Equal(_a, aMagnitude.ToBigInteger());
+        }
+    }
+
+    [SkippableTheory]
+    [Scenario(TestScenario.Boundary)]
+    [InlineData(SignedOp.Add)]
+    [InlineData(SignedOp.Not)]
+    public void Signed_OverlappingTarget_ComputesIntoATemporary(SignedOp op)
+    {
+        // The guard itself (values can be right by chance in place): the same expression first into a separate target
+        // sets the peak of live buffers it needs; into an operand the root takes one temporary more.
+        // mutant: SignedBinaryExpression / SignedUnaryExpression without the overlap check
+        using var aMagnitude = GpuBigUInt.FromBigInteger(_workspace, _a, Words);
+        using var bMagnitude = GpuBigUInt.FromBigInteger(_workspace, _b, Words);
+        using var separate = new GpuBigUInt(_workspace, Words);
+        var a = new GpuBigInt(aMagnitude, false);
+        var b = new GpuBigInt(bMagnitude, false);
+
+        SignedExpression(op, a, b).Evaluate(separate);
+        var before = _workspace.GetMemoryStatistics();
+        SignedExpression(op, a, b).Evaluate(aMagnitude);
+        var after = _workspace.GetMemoryStatistics();
+
+        Assert.Equal(before.LiveBuffers, before.PeakLiveBuffers);
+        Assert.Equal(before.PeakLiveBuffers + 1, after.PeakLiveBuffers);
+        Assert.Equal(before.LiveBuffers, after.LiveBuffers);
+    }
+
+    private static GpuBigIntExpr SignedExpression(SignedOp op, GpuBigInt a, GpuBigInt b)
+    {
+        GpuBigIntExpr ea = a;
+        GpuBigIntExpr eb = b;
+        return op switch
+        {
+            SignedOp.Add => ea + eb,
+            SignedOp.Sub => ea - eb,
+            SignedOp.Mul => ea * eb,
+            SignedOp.Div => ea / eb,
+            SignedOp.Mod => ea % eb,
+            SignedOp.Negate => -ea,
+            _ => ~ea
+        };
+    }
+
     private void EvaluateRecorded(GpuBigUIntExpr expression, GpuBigUInt target, RecordingArithmetic recorder,
         GpuBigUInt a, GpuBigUInt a0, GpuBigUInt b, GpuBigUInt b0)
     {
