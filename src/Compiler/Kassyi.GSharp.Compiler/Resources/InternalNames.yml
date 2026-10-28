@@ -184,6 +184,11 @@ Sort:
     LeftOperand: __gsharp_left
     RightOperand: __gsharp_right
 
+StackLinq:
+  Summary: Fused StackLinq chains in device code (StackLinqFusionRule).
+  Names:
+    ClampCount: { Value: __gsharp_clamp_count, Prelude: ../StackLinq.cuh }
+
 Wmma:
   Summary: Tensor Core warp matrix fragment types and tags (nvcuda::wmma).
   Names:

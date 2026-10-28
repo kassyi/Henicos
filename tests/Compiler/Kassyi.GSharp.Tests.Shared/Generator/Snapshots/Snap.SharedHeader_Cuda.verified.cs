@@ -822,6 +822,9 @@ __gsharp_sort_intro<__gsharp_sort_scan::Default>(keys.data, __gsharp_sort_items_
 // --- ZeroAlloc.Linq (StackLinq) ---
 #pragma once
 
+// The count of a Skip / Take / SkipLast / TakeLast stage clamped to [0, remaining], as C# clamps it (the sum cannot overflow)
+__device__ __forceinline__ int __gsharp_clamp_count(int count, int remaining) { return count < 0 ? 0 : (count > remaining ? remaining : count); }
+
 namespace Kassyi { namespace ZeroAlloc { namespace Linq {
 
 template <typename T>
