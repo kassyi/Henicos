@@ -122,6 +122,31 @@ internal static class ParallelAggregatePlanner
         return new ParallelAggregatePlan(strategy, ParallelAggregateFallback.None, isGridUniform);
     }
 
+    /// <summary>The bytes of one slot of the grid scratch, aligned to 16.</summary>
+    public const int GridScratchSlotBytes = 16;
+
+    /// <summary>
+    /// The bytes of one slot of the scratch that the grid strategy of the aggregates of <paramref name="method"/> needs
+    /// (<see cref="GridScratchSlotBytes"/>), or 0 when no aggregate of the kernel uses the grid strategy. The CUDA
+    /// launcher allocates one slot per block and one for the total, and passes it as the last kernel parameter.
+    /// </summary>
+    public static int GetGridScratchSlotBytes(MethodDeclarationSyntax method, SemanticModel model)
+    {
+        foreach (var node in method.DescendantNodes())
+        {
+            if (node is InvocationExpressionSyntax invocation &&
+                model.GetSymbol(invocation) is IMethodSymbol symbol &&
+                StackLinqChainExtractor.TryExtract(invocation, model, symbol, out var chain) &&
+                chain.IsParallel &&
+                Plan(invocation, model).Strategy == ParallelAggregateStrategy.Grid)
+            {
+                return GridScratchSlotBytes;
+            }
+        }
+
+        return 0;
+    }
+
     /// <summary>The words that complete Warning A for <paramref name="fallback"/>: "runs sequentially ... because ...".</summary>
     public static string Describe(ParallelAggregateFallback fallback) => fallback switch
     {

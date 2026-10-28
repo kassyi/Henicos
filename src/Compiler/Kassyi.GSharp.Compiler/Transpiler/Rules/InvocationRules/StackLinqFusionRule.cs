@@ -44,9 +44,10 @@ public sealed class StackLinqFusionRule : IInvocationTranspilerRule
         // (#624). On CUDA the threads of a block share the elements when ParallelAggregatePlanner shows that this gives the
         // same value (integer sums, uniform inputs, every thread of the block reaching the call); otherwise each thread
         // sums on its own, which is that result in every dialect and in any branch.
-        var shared = chain.IsParallel && context.Emitter.Dialect.IsCuda &&
-                     ParallelAggregatePlanner.Plan(node, context.Query.SemanticModel).Strategy != ParallelAggregateStrategy.PerThread;
-        EmitFusedLoop(in chain, shared, ref context);
+        var strategy = chain.IsParallel && context.Emitter.Dialect.IsCuda
+            ? ParallelAggregatePlanner.Plan(node, context.Query.SemanticModel).Strategy
+            : ParallelAggregateStrategy.PerThread;
+        EmitFusedLoop(in chain, strategy, ref context);
         return true;
     }
 
@@ -57,10 +58,12 @@ public sealed class StackLinqFusionRule : IInvocationTranspilerRule
     //   return <result>; }())
     // [WHY] C# evaluates the source and the stage arguments once, from left to right, when the chain is built; the
     // position stages right after the source (Select may come between) only narrow the range of indices.
-    // With blockShared (the Block strategy, CUDA): the thread of rank r of the block takes the indices lo + r, lo + r + B, ...
-    // (64-bit, so that i += B cannot wrap) and the partial sums are combined by __gsharp_block_reduce, which gives every
-    // thread of the block the same total; only the range stages and Select / Where can be in such a chain.
-    private static void EmitFusedLoop(in StackLinqChain chain, bool blockShared, ref TranspileContext context)
+    // The Block strategy (CUDA): the thread of rank r of the block takes the indices lo + r, lo + r + B, ... (64-bit, so
+    // that i += B cannot wrap) and __gsharp_block_reduce combines the partial sums, which gives every thread of the block
+    // the same total. The Grid strategy (cooperative kernels) does the same over the threads of the grid and combines the
+    // block totals in __gsharp_grid_reduce, through the hidden scratch parameter. Only the range stages and Select / Where
+    // can be in such a chain (ParallelAggregatePlanner).
+    private static void EmitFusedLoop(in StackLinqChain chain, ParallelAggregateStrategy strategy, ref TranspileContext context)
     {
         var terminalName = chain.TerminalMethodName;
         if (!s_terminalStrategies.TryGetValue(terminalName, out var terminalStrategy))
@@ -71,6 +74,8 @@ public sealed class StackLinqFusionRule : IInvocationTranspilerRule
         var terminalStage = chain.Stages[^1];
         var folded = StackLinqChainExtractor.CountRangeStages(in chain, context.Query.SemanticModel);
         var writer = context.Emitter.Writer;
+        var blockShared = strategy != ParallelAggregateStrategy.PerThread;
+        var isGrid = strategy == ParallelAggregateStrategy.Grid;
 
         using (writer.ImmediatelyInvokedLambda("auto"))
         {
@@ -90,7 +95,14 @@ public sealed class StackLinqFusionRule : IInvocationTranspilerRule
                 }
             }
 
-            if (blockShared)
+            if (isGrid)
+            {
+                var rank = GSharpInternalNames.StackLinq.GridBlockRank;
+                var size = GSharpInternalNames.StackLinq.BlockSize;
+                writer.AppendLine(
+                    $"for (long long {StackLinqHelper.LoopIndex} = {StackLinqHelper.FusionLow} + (long long){rank}() * {size}() + {GSharpInternalNames.StackLinq.BlockRank}(); {StackLinqHelper.LoopIndex} < {StackLinqHelper.FusionHigh}; {StackLinqHelper.LoopIndex} += (long long){size}() * {GSharpInternalNames.StackLinq.GridBlockCount}())");
+            }
+            else if (blockShared)
             {
                 writer.AppendLine(
                     $"for (long long {StackLinqHelper.LoopIndex} = {StackLinqHelper.FusionLow} + (long long){GSharpInternalNames.StackLinq.BlockRank}(); {StackLinqHelper.LoopIndex} < {StackLinqHelper.FusionHigh}; {StackLinqHelper.LoopIndex} += {GSharpInternalNames.StackLinq.BlockSize}())");
@@ -128,9 +140,9 @@ public sealed class StackLinqFusionRule : IInvocationTranspilerRule
                 {
                     var stage = chain.Stages[i];
                     if ((i >= folded || !StackLinqChainExtractor.IsPositionStage(stage.Name)) &&
-                        s_intermediateStrategies.TryGetValue(stage.Name, out var strategy))
+                        s_intermediateStrategies.TryGetValue(stage.Name, out var stageStrategy))
                     {
-                        strategy.Emit(ref context, in stage, i, ref valIndex, ref openBraces);
+                        stageStrategy.Emit(ref context, in stage, i, ref valIndex, ref openBraces);
                     }
                 }
 
@@ -144,7 +156,12 @@ public sealed class StackLinqFusionRule : IInvocationTranspilerRule
 
             terminalStrategy.EmitPostLoop(ref context, in terminalStage, ResultVar);
 
-            if (blockShared)
+            if (isGrid)
+            {
+                writer.Append(
+                    $"return {GSharpInternalNames.StackLinq.GridReduce}({ResultVar}, {GSharpInternalNames.StackLinq.Plus}{{}}, {GSharpInternalNames.StackLinq.GridScratch});");
+            }
+            else if (blockShared)
             {
                 writer.Append(
                     $"return {GSharpInternalNames.StackLinq.BlockReduce}({ResultVar}, {GSharpInternalNames.StackLinq.Plus}{{}});");

@@ -421,6 +421,39 @@ __syncthreads();
 return total;
 }
 
+// --- AsParallel() aggregates (Grid strategy, cooperative kernels) ---
+// The linear rank and the number of the blocks of the grid (all three dimensions)
+__device__ __forceinline__ unsigned int __gsharp_grid_block_rank() { return blockIdx.x + gridDim.x * (blockIdx.y + gridDim.y * blockIdx.z); }
+__device__ __forceinline__ unsigned int __gsharp_grid_block_count() { return gridDim.x * gridDim.y * gridDim.z; }
+
+// Every thread of the grid receives the reduction of the values of all the threads of the grid. The scratch holds one
+// 16-byte slot per block (its partial result) and one for the total. [WHY] A grid sync orders global memory (release
+// before, acquire after: cooperative_groups sync_grids), so block 0 reads every partial after the first sync, and every
+// thread reads the total after the second. The next call writes the slots only after both syncs of this one, so one
+// scratch serves every call of the kernel.
+template <typename T, typename Op>
+__device__ T __gsharp_grid_reduce(T value, Op op, unsigned char* scratch)
+{
+const T blockTotal = __gsharp_block_reduce(value, op);
+const unsigned int blocks = __gsharp_grid_block_count();
+if (__gsharp_block_rank() == 0u)
+{
+*reinterpret_cast<T*>(scratch + 16u * __gsharp_grid_block_rank()) = blockTotal;
+}
+cg::this_grid().sync();
+if (__gsharp_grid_block_rank() == 0u && __gsharp_block_rank() == 0u)
+{
+T total = *reinterpret_cast<T*>(scratch);
+for (unsigned int b = 1u; b < blocks; b++)
+{
+total = op(total, *reinterpret_cast<T*>(scratch + 16u * b));
+}
+*reinterpret_cast<T*>(scratch + 16u * blocks) = total;
+}
+cg::this_grid().sync();
+return *reinterpret_cast<T*>(scratch + 16u * blocks);
+}
+
 // --- Dynamic shared memory ---
 // [WHY] Every dynamic SharedMemory<T> declaration is one region per block (static storage, like __shared__). Regions are
 // carved out of the one dynamic buffer in the order a thread first reaches them; each thread keeps its own table.

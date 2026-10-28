@@ -193,6 +193,11 @@ StackLinq:
     BlockSize: { Value: __gsharp_block_size, Prelude: ../Prelude.cu }
     BlockReduce: { Value: __gsharp_block_reduce, Prelude: ../Prelude.cu }
     Plus: { Value: __gsharp_plus, Prelude: ../Prelude.cu }
+    # The Grid strategy (cooperative CUDA kernels): the hidden last kernel parameter and the reduction over the grid
+    GridScratch: __gsharp_grid_scratch
+    GridBlockRank: { Value: __gsharp_grid_block_rank, Prelude: ../Prelude.cu }
+    GridBlockCount: { Value: __gsharp_grid_block_count, Prelude: ../Prelude.cu }
+    GridReduce: { Value: __gsharp_grid_reduce, Prelude: ../Prelude.cu }
 
 Wmma:
   Summary: Tensor Core warp matrix fragment types and tags (nvcuda::wmma).
