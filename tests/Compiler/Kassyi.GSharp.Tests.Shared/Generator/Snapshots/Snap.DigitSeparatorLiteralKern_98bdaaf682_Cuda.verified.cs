@@ -146,6 +146,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerDigitSeparatorKernel();
 IntPtr hfunc = s_hfunc_DigitSeparatorKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "DigitSeparatorLiteralKernels.DigitSeparatorKernel");
 IntPtr d_ints = IntPtr.Zero;
 IntPtr d_uints = IntPtr.Zero;
 IntPtr d_longs = IntPtr.Zero;
@@ -336,6 +337,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerDigitSeparatorKernel();
 IntPtr hfunc = s_hfunc_DigitSeparatorKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "DigitSeparatorLiteralKernels.DigitSeparatorKernel");
 try
 {
 void** kernelParams = stackalloc void*[6];

@@ -120,6 +120,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerKernel_COR01_FastMath_Exp();
 IntPtr hfunc = s_hfunc_Kernel_COR01_FastMath_Exp!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "FastMathBoundaryKernels.Kernel_COR01_FastMath_Exp");
 IntPtr d_input = IntPtr.Zero;
 IntPtr d_output = IntPtr.Zero;
 try
@@ -202,6 +203,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerKernel_COR01_FastMath_Exp();
 IntPtr hfunc = s_hfunc_Kernel_COR01_FastMath_Exp!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "FastMathBoundaryKernels.Kernel_COR01_FastMath_Exp");
 try
 {
 void** kernelParams = stackalloc void*[2];
@@ -266,6 +268,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerKernel_COR01_FastMath_Log();
 IntPtr hfunc = s_hfunc_Kernel_COR01_FastMath_Log!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "FastMathBoundaryKernels.Kernel_COR01_FastMath_Log");
 IntPtr d_input = IntPtr.Zero;
 IntPtr d_output = IntPtr.Zero;
 try
@@ -348,6 +351,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerKernel_COR01_FastMath_Log();
 IntPtr hfunc = s_hfunc_Kernel_COR01_FastMath_Log!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "FastMathBoundaryKernels.Kernel_COR01_FastMath_Log");
 try
 {
 void** kernelParams = stackalloc void*[2];
@@ -412,6 +416,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerKernel_COR01_FastMath_Sqrt();
 IntPtr hfunc = s_hfunc_Kernel_COR01_FastMath_Sqrt!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "FastMathBoundaryKernels.Kernel_COR01_FastMath_Sqrt");
 IntPtr d_input = IntPtr.Zero;
 IntPtr d_output = IntPtr.Zero;
 try
@@ -494,6 +499,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerKernel_COR01_FastMath_Sqrt();
 IntPtr hfunc = s_hfunc_Kernel_COR01_FastMath_Sqrt!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "FastMathBoundaryKernels.Kernel_COR01_FastMath_Sqrt");
 try
 {
 void** kernelParams = stackalloc void*[2];
@@ -558,6 +564,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerKernel_COR01_FastMath_Abs();
 IntPtr hfunc = s_hfunc_Kernel_COR01_FastMath_Abs!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "FastMathBoundaryKernels.Kernel_COR01_FastMath_Abs");
 IntPtr d_input = IntPtr.Zero;
 IntPtr d_output = IntPtr.Zero;
 try
@@ -640,6 +647,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerKernel_COR01_FastMath_Abs();
 IntPtr hfunc = s_hfunc_Kernel_COR01_FastMath_Abs!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "FastMathBoundaryKernels.Kernel_COR01_FastMath_Abs");
 try
 {
 void** kernelParams = stackalloc void*[2];

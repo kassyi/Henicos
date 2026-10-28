@@ -44,6 +44,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerBadKernel();
 IntPtr hfunc = s_hfunc_BadKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "ErrorSpecKernel.BadKernel");
 IntPtr d___gsharp_auto_result = IntPtr.Zero;
 try
 {
@@ -105,6 +106,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerBadKernel();
 IntPtr hfunc = s_hfunc_BadKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "ErrorSpecKernel.BadKernel");
 IntPtr d___gsharp_auto_result = IntPtr.Zero;
 try
 {

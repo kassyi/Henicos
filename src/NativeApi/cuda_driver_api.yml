@@ -788,6 +788,21 @@ methods:
         type: IntPtr
         description: Function to query.
 
+  - name: cuFuncSetAttribute
+    returnType: CUresult
+    summary: Sets information about a function.
+    returnDescription: CudaSuccess on success; otherwise, an error code.
+    parameters:
+      - name: hfunc
+        type: IntPtr
+        description: Function to set the attribute for.
+      - name: attrib
+        type: CuFunctionAttribute
+        description: Function attribute to set.
+      - name: value
+        type: int
+        description: Value to set.
+
   - name: cuDeviceTotalMem
     returnType: CUresult
     summary: Returns the total amount of memory on the device.

@@ -155,6 +155,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerEveryThreadSumKernel();
 IntPtr hfunc = s_hfunc_EveryThreadSumKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "ParallelAggregateKernels.EveryThreadSumKernel");
 IntPtr d_data = IntPtr.Zero;
 IntPtr d_result = IntPtr.Zero;
 try
@@ -237,6 +238,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerEveryThreadSumKernel();
 IntPtr hfunc = s_hfunc_EveryThreadSumKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "ParallelAggregateKernels.EveryThreadSumKernel");
 try
 {
 void** kernelParams = stackalloc void*[2];
@@ -314,6 +316,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerGuardedSumKernel();
 IntPtr hfunc = s_hfunc_GuardedSumKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "ParallelAggregateKernels.GuardedSumKernel");
 IntPtr d_data = IntPtr.Zero;
 IntPtr d_result = IntPtr.Zero;
 try
@@ -396,6 +399,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerGuardedSumKernel();
 IntPtr hfunc = s_hfunc_GuardedSumKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "ParallelAggregateKernels.GuardedSumKernel");
 try
 {
 void** kernelParams = stackalloc void*[2];
@@ -475,6 +479,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerEarlyExitSumKernel();
 IntPtr hfunc = s_hfunc_EarlyExitSumKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "ParallelAggregateKernels.EarlyExitSumKernel");
 IntPtr d_data = IntPtr.Zero;
 IntPtr d_result = IntPtr.Zero;
 try
@@ -559,6 +564,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerEarlyExitSumKernel();
 IntPtr hfunc = s_hfunc_EarlyExitSumKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "ParallelAggregateKernels.EarlyExitSumKernel");
 try
 {
 void** kernelParams = stackalloc void*[3];
@@ -638,6 +644,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerEveryThreadSum3DKernel();
 IntPtr hfunc = s_hfunc_EveryThreadSum3DKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "ParallelAggregateKernels.EveryThreadSum3DKernel");
 IntPtr d_data = IntPtr.Zero;
 IntPtr d_result = IntPtr.Zero;
 try
@@ -720,6 +727,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerEveryThreadSum3DKernel();
 IntPtr hfunc = s_hfunc_EveryThreadSum3DKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "ParallelAggregateKernels.EveryThreadSum3DKernel");
 try
 {
 void** kernelParams = stackalloc void*[2];
@@ -798,6 +806,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerSegmentSumKernel();
 IntPtr hfunc = s_hfunc_SegmentSumKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "ParallelAggregateKernels.SegmentSumKernel");
 IntPtr d_data = IntPtr.Zero;
 IntPtr d_result = IntPtr.Zero;
 try
@@ -882,6 +891,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerSegmentSumKernel();
 IntPtr hfunc = s_hfunc_SegmentSumKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "ParallelAggregateKernels.SegmentSumKernel");
 try
 {
 void** kernelParams = stackalloc void*[3];
@@ -968,6 +978,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerFilteredProjectedKernel();
 IntPtr hfunc = s_hfunc_FilteredProjectedKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "ParallelAggregateKernels.FilteredProjectedKernel");
 IntPtr d_data = IntPtr.Zero;
 IntPtr d_result = IntPtr.Zero;
 try
@@ -1050,6 +1061,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerFilteredProjectedKernel();
 IntPtr hfunc = s_hfunc_FilteredProjectedKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "ParallelAggregateKernels.FilteredProjectedKernel");
 try
 {
 void** kernelParams = stackalloc void*[2];
@@ -1124,6 +1136,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerLongSumKernel();
 IntPtr hfunc = s_hfunc_LongSumKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "ParallelAggregateKernels.LongSumKernel");
 IntPtr d_data = IntPtr.Zero;
 IntPtr d_result = IntPtr.Zero;
 try
@@ -1206,6 +1219,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerLongSumKernel();
 IntPtr hfunc = s_hfunc_LongSumKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "ParallelAggregateKernels.LongSumKernel");
 try
 {
 void** kernelParams = stackalloc void*[2];
@@ -1280,6 +1294,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerUIntSumKernel();
 IntPtr hfunc = s_hfunc_UIntSumKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "ParallelAggregateKernels.UIntSumKernel");
 IntPtr d_data = IntPtr.Zero;
 IntPtr d_result = IntPtr.Zero;
 try
@@ -1362,6 +1377,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerUIntSumKernel();
 IntPtr hfunc = s_hfunc_UIntSumKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "ParallelAggregateKernels.UIntSumKernel");
 try
 {
 void** kernelParams = stackalloc void*[2];
@@ -1436,6 +1452,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerULongSumKernel();
 IntPtr hfunc = s_hfunc_ULongSumKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "ParallelAggregateKernels.ULongSumKernel");
 IntPtr d_data = IntPtr.Zero;
 IntPtr d_result = IntPtr.Zero;
 try
@@ -1518,6 +1535,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerULongSumKernel();
 IntPtr hfunc = s_hfunc_ULongSumKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "ParallelAggregateKernels.ULongSumKernel");
 try
 {
 void** kernelParams = stackalloc void*[2];
@@ -1592,6 +1610,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerFloatSumKernel();
 IntPtr hfunc = s_hfunc_FloatSumKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "ParallelAggregateKernels.FloatSumKernel");
 IntPtr d_data = IntPtr.Zero;
 IntPtr d_result = IntPtr.Zero;
 try
@@ -1674,6 +1693,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerFloatSumKernel();
 IntPtr hfunc = s_hfunc_FloatSumKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "ParallelAggregateKernels.FloatSumKernel");
 try
 {
 void** kernelParams = stackalloc void*[2];
@@ -1776,6 +1796,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerOrderDependentSumKernel();
 IntPtr hfunc = s_hfunc_OrderDependentSumKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "ParallelAggregateKernels.OrderDependentSumKernel");
 IntPtr d_data = IntPtr.Zero;
 IntPtr d_result = IntPtr.Zero;
 try
@@ -1858,6 +1879,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerOrderDependentSumKernel();
 IntPtr hfunc = s_hfunc_OrderDependentSumKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "ParallelAggregateKernels.OrderDependentSumKernel");
 try
 {
 void** kernelParams = stackalloc void*[2];
@@ -1959,6 +1981,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerRepeatedSumKernel();
 IntPtr hfunc = s_hfunc_RepeatedSumKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "ParallelAggregateKernels.RepeatedSumKernel");
 IntPtr d_a = IntPtr.Zero;
 IntPtr d_b = IntPtr.Zero;
 IntPtr d_result = IntPtr.Zero;
@@ -2068,6 +2091,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerRepeatedSumKernel();
 IntPtr hfunc = s_hfunc_RepeatedSumKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "ParallelAggregateKernels.RepeatedSumKernel");
 try
 {
 void** kernelParams = stackalloc void*[3];
@@ -2158,6 +2182,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerPrivateSourceKernel();
 IntPtr hfunc = s_hfunc_PrivateSourceKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "ParallelAggregateKernels.PrivateSourceKernel");
 IntPtr d_a = IntPtr.Zero;
 IntPtr d_b = IntPtr.Zero;
 IntPtr d_result = IntPtr.Zero;
@@ -2267,6 +2292,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerPrivateSourceKernel();
 IntPtr hfunc = s_hfunc_PrivateSourceKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "ParallelAggregateKernels.PrivateSourceKernel");
 try
 {
 void** kernelParams = stackalloc void*[3];
@@ -2376,6 +2402,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerImpureLambdaKernel();
 IntPtr hfunc = s_hfunc_ImpureLambdaKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "ParallelAggregateKernels.ImpureLambdaKernel");
 IntPtr d_data = IntPtr.Zero;
 IntPtr d_counter = IntPtr.Zero;
 IntPtr d_result = IntPtr.Zero;
@@ -2485,6 +2512,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerImpureLambdaKernel();
 IntPtr hfunc = s_hfunc_ImpureLambdaKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "ParallelAggregateKernels.ImpureLambdaKernel");
 try
 {
 void** kernelParams = stackalloc void*[3];
@@ -2603,6 +2631,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerLambdaThreadIndexKernel();
 IntPtr hfunc = s_hfunc_LambdaThreadIndexKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "ParallelAggregateKernels.LambdaThreadIndexKernel");
 IntPtr d_data = IntPtr.Zero;
 IntPtr d_result = IntPtr.Zero;
 try
@@ -2685,6 +2714,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerLambdaThreadIndexKernel();
 IntPtr hfunc = s_hfunc_LambdaThreadIndexKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "ParallelAggregateKernels.LambdaThreadIndexKernel");
 try
 {
 void** kernelParams = stackalloc void*[2];
@@ -2763,6 +2793,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerDeviceFunctionSelectorKernel();
 IntPtr hfunc = s_hfunc_DeviceFunctionSelectorKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "ParallelAggregateKernels.DeviceFunctionSelectorKernel");
 IntPtr d_data = IntPtr.Zero;
 IntPtr d_result = IntPtr.Zero;
 try
@@ -2845,6 +2876,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerDeviceFunctionSelectorKernel();
 IntPtr hfunc = s_hfunc_DeviceFunctionSelectorKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "ParallelAggregateKernels.DeviceFunctionSelectorKernel");
 try
 {
 void** kernelParams = stackalloc void*[2];

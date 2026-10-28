@@ -131,6 +131,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerIntParallelSum();
 IntPtr hfunc = s_hfunc_IntParallelSum!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "ParallelReductionExecutionKernels.IntParallelSum");
 IntPtr d_data = IntPtr.Zero;
 IntPtr d_result = IntPtr.Zero;
 try
@@ -213,6 +214,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerIntParallelSum();
 IntPtr hfunc = s_hfunc_IntParallelSum!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "ParallelReductionExecutionKernels.IntParallelSum");
 try
 {
 void** kernelParams = stackalloc void*[2];

@@ -174,6 +174,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerOmittedOptionalArgumentsKernel();
 IntPtr hfunc = s_hfunc_OmittedOptionalArgumentsKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "SuspendingCallArgumentKernels.OmittedOptionalArgumentsKernel");
 IntPtr d_input = IntPtr.Zero;
 IntPtr d_output = IntPtr.Zero;
 try
@@ -256,6 +257,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerOmittedOptionalArgumentsKernel();
 IntPtr hfunc = s_hfunc_OmittedOptionalArgumentsKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "SuspendingCallArgumentKernels.OmittedOptionalArgumentsKernel");
 try
 {
 void** kernelParams = stackalloc void*[2];
@@ -320,6 +322,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerNamedArgumentKernel();
 IntPtr hfunc = s_hfunc_NamedArgumentKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "SuspendingCallArgumentKernels.NamedArgumentKernel");
 IntPtr d_input = IntPtr.Zero;
 IntPtr d_output = IntPtr.Zero;
 try
@@ -402,6 +405,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerNamedArgumentKernel();
 IntPtr hfunc = s_hfunc_NamedArgumentKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "SuspendingCallArgumentKernels.NamedArgumentKernel");
 try
 {
 void** kernelParams = stackalloc void*[2];
@@ -466,6 +470,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerReorderedNamedArgumentsKernel();
 IntPtr hfunc = s_hfunc_ReorderedNamedArgumentsKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "SuspendingCallArgumentKernels.ReorderedNamedArgumentsKernel");
 IntPtr d_input = IntPtr.Zero;
 IntPtr d_output = IntPtr.Zero;
 try
@@ -548,6 +553,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerReorderedNamedArgumentsKernel();
 IntPtr hfunc = s_hfunc_ReorderedNamedArgumentsKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "SuspendingCallArgumentKernels.ReorderedNamedArgumentsKernel");
 try
 {
 void** kernelParams = stackalloc void*[2];
