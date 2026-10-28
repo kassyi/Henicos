@@ -153,13 +153,7 @@ public sealed class VariableDeclarationTranspilerRule : SyntaxNodeTranspilerRule
             return;
         }
 
-        var localSymbol = context.Query.SemanticModel.GetDeclaredSymbol<ISymbol>(declarator);
-        var localRegion = LoweringIdentity.GetRegion(declarator);
-        var localCppName = CppNameResolver.Resolve(
-            localSymbol,
-            declarator.Identifier.ValueText,
-            context.Emitter.Dialect,
-            localRegion).ToString();
+        var localCppName = CppNameResolver.Resolve(declarator, context.Query.SemanticModel, context.Emitter.Dialect).ToString();
 
         var annotatedParamList = LoweringAnnotations.AnnotateOriginalSpans(
             iteratorDecl.ParameterList,
@@ -296,40 +290,11 @@ public sealed class VariableDeclarationTranspilerRule : SyntaxNodeTranspilerRule
             return;
         }
 
-        var symbol = context.Query.SemanticModel.GetDeclaredSymbol<ISymbol>(variable);
-        var name = CppNameResolver.Resolve(symbol, variable.Identifier.ValueText, context.Emitter.Dialect,
-            LoweringIdentity.GetRegion(variable)).ToString();
-        if (length == 0)
-        {
-            context.Emitter.Dialect.AppendType(ref context, pointerType);
-            context.Emitter.Writer.Append($" {name} = nullptr");
-            return;
-        }
-
-        var storage = ResumeLocals.StackStorageName(name);
-        context.Emitter.Dialect.AppendType(ref context, pointerType.PointedAtType);
-        context.Emitter.Writer.Append($" {storage}");
-        using (context.Emitter.Writer.Brackets())
-        {
-            context.Emitter.Writer.Append(length);
-        }
-
-        InitializationSyntaxExtractor.TryGetArrayInitialization(value, out _, out _, out var initializerNode);
-        if (initializerNode != null)
-        {
-            context.Emitter.Writer.Append("=");
-            context.Visitor.Visit(initializerNode);
-        }
-
+        var name = CppNameResolver.Resolve(variable, context.Query.SemanticModel, context.Emitter.Dialect).ToString();
+        InitializationSyntaxExtractor.TryGetArrayInitialization(value, out _, out _, out var elements);
         // As any other stack array (#748): zeroed unless [SkipLocalsInit] applies
-        context.Emitter.Writer.AppendIf(
-            initializerNode == null && context.Query.SemanticModel.AreLocalsZeroedAt(value),
-            "{}"
-        );
-
-        context.Emitter.Writer.AppendLine(";");
-        context.Emitter.Dialect.AppendType(ref context, pointerType);
-        context.Emitter.Writer.Append($" {name} = {storage}");
+        ResumeLocalEmitter.WriteStackAllocPointer(name, pointerType, length, elements,
+            zeroed: context.Query.SemanticModel.AreLocalsZeroedAt(value), bind: true, ref context);
     }
 
     private static void WriteArrayDeclarationHeader(ITypeSymbol elemType, VariableDeclaratorSyntax variable,

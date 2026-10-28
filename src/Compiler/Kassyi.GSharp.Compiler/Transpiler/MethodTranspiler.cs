@@ -62,28 +62,7 @@ public static class MethodTranspiler
     {
         if (plan.Kind == MethodEmissionKind.Iterator)
         {
-            if (reportFailure != null && plan.Declaration.Body != null && plan.Symbol != null)
-            {
-                using var iteratorSession = TranspilationSession.Begin(in plan, reportFailure, dialect);
-                if (iteratorSession.ErrorMessage == null)
-                {
-                    using var dummyWriter = new SourceWriter();
-                    ref var iteratorContext = ref iteratorSession.Context;
-                    iteratorContext.Emitter.Writer = dummyWriter;
-                    // Inlined into its consumer, which passes the table of dynamic shared memory regions on
-                    DynamicSharedMemoryEmitter.BeginMethod(in plan, ref iteratorContext);
-                    var expanded = IteratorInliner.ExpandStandalone(
-                        plan.Declaration,
-                        plan.Symbol,
-                        plan.SemanticModel,
-                        ref iteratorContext.Emitter.IteratorExpansionCounter,
-                        ref iteratorContext.Emitter.ArgumentTempCounter,
-                        dialect,
-                        iteratorContext.Reporter);
-                    iteratorContext.Visitor.Visit(expanded);
-                }
-            }
-
+            ReportStandaloneIterator(in plan, reportFailure, dialect);
             requiredIncludes = [];
             return "";
         }
@@ -97,18 +76,14 @@ public static class MethodTranspiler
 
         ref var context = ref session.Context;
         requiredIncludes = context.Emitter.RequiredIncludes;
-
-        var methodDecl = plan.Declaration;
-        var isDevice = plan.Kind != MethodEmissionKind.Kernel;
-        var isSuspendingDevice = plan.IsSuspendingOn(dialect);
-        context.Emitter.IsSuspendingDeviceFunction = isSuspendingDevice;
+        context.Emitter.IsSuspendingDeviceFunction = plan.IsSuspendingOn(dialect);
 
         var lowered = plan.GetLoweredFor(dialect);
         context.Emitter.IteratorExpansionCounter = lowered?.RegionCount ?? 0;
         var resumeLocals = ImmutableArray<ResumeLocal>.Empty;
         if (lowered != null)
         {
-            (lowered, resumeLocals) = SeparateResumeLocals(lowered, in plan, context.Emitter.Dialect);
+            (lowered, resumeLocals) = ResumeLocalEmitter.Separate(lowered, in plan, context.Emitter.Dialect);
         }
 
         using var mainWriter = new SourceWriter();
@@ -117,38 +92,83 @@ public static class MethodTranspiler
 
         context.Emitter.Writer = bodyWriter;
         DynamicSharedMemoryEmitter.BeginMethod(in plan, ref context);
+        WriteStateMachineHeader(in plan, lowered, ref context);
+        WriteMethodBody(in plan, lowered, resumeLocals, ref context);
 
-        // A plan with a state machine always has a symbol
+        // The struct members and Dispose bodies written below have no table of dynamic shared memory regions
+        context.Emitter.DynamicSharedMemorySlotScope = null;
+
+        if (plan.Kind == MethodEmissionKind.Kernel && !context.Emitter.Dialect.IsCuda)
+        {
+            HostLauncherTranspiler.WriteCpuLauncher(in plan, lowered?.ContextFields, ref context);
+        }
+
+        WriteStructsAndDisposes(mainWriter, disposeWriter, structSources, ref context);
+        return mainWriter + disposeWriter.ToString() + bodyWriter.ToString();
+    }
+
+    // An iterator is inlined into its consumer and emits nothing itself. It is still transpiled once into a discarded
+    // writer, so that what it cannot emit is reported; its consumer passes the table of dynamic shared memory regions on.
+    private static void ReportStandaloneIterator(in MethodEmissionPlan plan, Action<TranspileFailure>? reportFailure,
+        ITranspilerDialect dialect)
+    {
+        if (reportFailure == null || plan.Declaration.Body == null || plan.Symbol == null)
+        {
+            return;
+        }
+
+        using var iteratorSession = TranspilationSession.Begin(in plan, reportFailure, dialect);
+        if (iteratorSession.ErrorMessage != null)
+        {
+            return;
+        }
+
+        using var dummyWriter = new SourceWriter();
+        ref var iteratorContext = ref iteratorSession.Context;
+        iteratorContext.Emitter.Writer = dummyWriter;
+        DynamicSharedMemoryEmitter.BeginMethod(in plan, ref iteratorContext);
+        var expanded = IteratorInliner.ExpandStandalone(
+            plan.Declaration,
+            plan.Symbol,
+            plan.SemanticModel,
+            ref iteratorContext.Emitter.IteratorExpansionCounter,
+            ref iteratorContext.Emitter.ArgumentTempCounter,
+            dialect,
+            iteratorContext.Reporter);
+        iteratorContext.Visitor.Visit(expanded);
+    }
+
+    // The frame struct of a state machine (a plan with one always has a symbol), then the signature of the function
+    private static void WriteStateMachineHeader(in MethodEmissionPlan plan, LoweredStateMachine? lowered,
+        ref TranspileContext context)
+    {
+        var isSuspendingDevice = context.Emitter.IsSuspendingDeviceFunction;
         if (lowered != null && plan.Symbol is { } loweredSymbol)
         {
             var prefix = isSuspendingDevice
                 ? GSharpInternalNames.SuspendingCall.FrameTypePrefix
                 : GSharpInternalNames.Kernel.ContextPrefix;
             var frameName = GlobalCppNames.GetKernelDerivedName(prefix, loweredSymbol);
-            WriteContextStruct(frameName, methodDecl.Identifier.ValueText, lowered, in plan, isSuspendingDevice,
+            WriteContextStruct(frameName, plan.Declaration.Identifier.ValueText, lowered, in plan, isSuspendingDevice,
                 ref context);
         }
 
         if (isSuspendingDevice && lowered != null && plan.Symbol is { } suspendingSymbol)
         {
             MethodSignatureTranspiler.WriteSuspendingDeviceSignature(
-                methodDecl, suspendingSymbol, lowered.CopiedParameters, ref context);
+                plan.Declaration, suspendingSymbol, lowered.CopiedParameters, ref context);
         }
         else
         {
             MethodSignatureTranspiler.WriteMethodSignature(in plan, lowered != null, ref context);
         }
+    }
 
-        WriteMethodBody(in plan, lowered, resumeLocals, ref context);
-
-        // The struct members and Dispose bodies written below have no table of dynamic shared memory regions
-        context.Emitter.DynamicSharedMemorySlotScope = null;
-
-        if (!isDevice && !context.Emitter.Dialect.IsCuda)
-        {
-            HostLauncherTranspiler.WriteCpuLauncher(in plan, lowered?.ContextFields, ref context);
-        }
-
+    // The Dispose definitions into disposeWriter, then the struct definitions into mainWriter, each also recorded into
+    // structSources when it is given
+    private static void WriteStructsAndDisposes(SourceWriter mainWriter, SourceWriter disposeWriter,
+        StructSourceCollector? structSources, ref TranspileContext context)
+    {
         // Before the structs: a Dispose body can use more of them
         context.Emitter.Writer = disposeWriter;
         UsingTranspiler.WriteDisposeDefinitions(ref context, structSources?.Disposes);
@@ -174,8 +194,6 @@ public static class MethodTranspiler
         {
             StructTranspiler.WriteDiscoveredDefinitions(ref context, structSources);
         }
-
-        return mainWriter + disposeWriter.ToString() + bodyWriter.ToString();
     }
 
     /// <summary>
@@ -260,48 +278,57 @@ public static class MethodTranspiler
     private static void WriteContextStruct(string contextName, string kernelName, LoweredStateMachine lowered,
         in MethodEmissionPlan plan, bool isFrame, ref TranspileContext context)
     {
-        context.Emitter.Writer.AppendLine($"struct {contextName} {{");
-        context.Emitter.Writer.AppendLine($"int {GSharpInternalNames.StateMachine.State} = 0;");
-        if (!isFrame)
+        using (context.Emitter.Writer.Scope($"struct {contextName} {{", "};"))
         {
-            context.Emitter.Writer.AppendLine($"{contextName}* {GSharpInternalNames.StateMachine.AllContexts} = nullptr;");
-            // Two exchange slots alternate per shuffle, so a lane that has already published its next shuffle does not
-            // overwrite the value a slower lane is still reading
-            context.Emitter.Writer.AppendLine($"uint64_t {GSharpInternalNames.StateMachine.WarpExchange}[2] = {{}};");
-            context.Emitter.Writer.AppendLine($"uint32_t {GSharpInternalNames.StateMachine.WarpShuffleCount} = 0;");
-            context.Emitter.Writer.AppendLine($"bool {GSharpInternalNames.StateMachine.YieldedForGridSync} = false;");
+            context.Emitter.Writer.AppendLine($"int {GSharpInternalNames.StateMachine.State} = 0;");
+            if (!isFrame)
+            {
+                WriteThreadStateFields(contextName, ref context);
+            }
+
+            foreach (var parameter in plan.GetCopiedParameters(lowered))
+            {
+                WriteMember(parameter.Type, CppNameResolver.Resolve(parameter, parameter.Name, context.Emitter.Dialect),
+                    ref context);
+            }
+
+            foreach (var field in lowered.ContextFields)
+            {
+                // Field types come from HoistedFieldTypeResolver
+                var typeSymbol = HoistedFieldTypeResolver.Resolve(field, context.Query.SemanticModel, kernelName);
+                WriteMember(typeSymbol, CppNameResolver.Resolve(field, context.Query.SemanticModel, context.Emitter.Dialect),
+                    ref context);
+            }
+
+            for (var i = 0; i < lowered.CallSites.Count; i++)
+            {
+                var callee = GetSuspendingCallee(lowered.CallSites[i], ref context);
+                context.Emitter.Writer.AppendLine(
+                    $"{GlobalCppNames.GetKernelDerivedName(GSharpInternalNames.SuspendingCall.FrameTypePrefix, callee)} {GSharpInternalNames.SuspendingCall.CallFramePrefix}{i};");
+            }
         }
 
-        foreach (var parameter in plan.GetCopiedParameters(lowered))
-        {
-            StructTranspiler.RegisterUsedStructIfApplicable(parameter.Type, ref context);
-            context.Emitter.Dialect.AppendType(ref context, parameter.Type);
-            context.Emitter.Writer.Append(' ')
-                .AppendCppName(CppNameResolver.Resolve(parameter, parameter.Name, context.Emitter.Dialect))
-                .AppendLine(";");
-        }
-
-        foreach (var field in lowered.ContextFields)
-        {
-            // Field types come from HoistedFieldTypeResolver
-            var typeSymbol = HoistedFieldTypeResolver.Resolve(field, context.Query.SemanticModel, kernelName);
-
-            StructTranspiler.RegisterUsedStructIfApplicable(typeSymbol, ref context);
-            context.Emitter.Dialect.AppendType(ref context, typeSymbol);
-            context.Emitter.Writer.Append(' ');
-            CppNameResolver.AppendDeclaredName(field, field.Identifier, ref context);
-            context.Emitter.Writer.AppendLine(";");
-        }
-
-        for (var i = 0; i < lowered.CallSites.Count; i++)
-        {
-            var callee = GetSuspendingCallee(lowered.CallSites[i], ref context);
-            context.Emitter.Writer.AppendLine(
-                $"{GlobalCppNames.GetKernelDerivedName(GSharpInternalNames.SuspendingCall.FrameTypePrefix, callee)} {GSharpInternalNames.SuspendingCall.CallFramePrefix}{i};");
-        }
-
-        context.Emitter.Writer.AppendLine("};");
         context.Emitter.Writer.AppendLine();
+    }
+
+    // The state of the thread that only a kernel context holds: the contexts of the block, the warp exchange and the
+    // grid sync flag
+    private static void WriteThreadStateFields(string contextName, ref TranspileContext context)
+    {
+        context.Emitter.Writer.AppendLine($"{contextName}* {GSharpInternalNames.StateMachine.AllContexts} = nullptr;");
+        // Two exchange slots alternate per shuffle, so a lane that has already published its next shuffle does not
+        // overwrite the value a slower lane is still reading
+        context.Emitter.Writer.AppendLine($"uint64_t {GSharpInternalNames.StateMachine.WarpExchange}[2] = {{}};");
+        context.Emitter.Writer.AppendLine($"uint32_t {GSharpInternalNames.StateMachine.WarpShuffleCount} = 0;");
+        context.Emitter.Writer.AppendLine($"bool {GSharpInternalNames.StateMachine.YieldedForGridSync} = false;");
+    }
+
+    // <type> <name>;
+    private static void WriteMember(ITypeSymbol type, in CppName name, ref TranspileContext context)
+    {
+        StructTranspiler.RegisterUsedStructIfApplicable(type, ref context);
+        context.Emitter.Dialect.AppendType(ref context, type);
+        context.Emitter.Writer.Append(' ').AppendCppName(name).AppendLine(";");
     }
 
     internal static IMethodSymbol GetSuspendingCallee(InvocationExpressionSyntax callSite, ref TranspileContext context) =>
@@ -313,14 +340,9 @@ public static class MethodTranspiler
     {
         using (context.Emitter.Writer.Scope())
         {
-            var method = plan.Declaration;
-            var methodSymbol = plan.Symbol;
-            var isKernelWithReturn = plan.HasAutoResult;
-            var isFrame = context.Emitter.IsSuspendingDeviceFunction;
-
             DynamicSharedMemoryEmitter.WriteKernelPrologue(in plan, ref context);
 
-            if (isKernelWithReturn)
+            if (plan.HasAutoResult)
             {
                 context.Emitter.Writer.AppendLine(
                     $"unsigned int {GSharpInternalNames.ReturnValue.GlobalThreadIndex} = (blockIdx.z * gridDim.y * gridDim.x + blockIdx.y * gridDim.x + blockIdx.x)" +
@@ -330,187 +352,72 @@ public static class MethodTranspiler
 
             if (lowered != null)
             {
-                // The grid sync flag belongs to the thread, so a device function sets it on the root
-                var gridSyncOwner = isFrame ? GSharpInternalNames.SuspendingCall.Root : GSharpInternalNames.StateMachine.Context;
-                context.Emitter.Writer.AppendLine(
-                    $"#define {GSharpInternalNames.StateMachine.State} {GSharpInternalNames.StateMachine.Context}->{GSharpInternalNames.StateMachine.State}");
-                context.Emitter.Writer.AppendLine(
-                    $"#define {GSharpInternalNames.StateMachine.YieldedForGridSync} {gridSyncOwner}->{GSharpInternalNames.StateMachine.YieldedForGridSync}");
-
-                if (!isFrame)
-                {
-                    // A kernel is the root of its own thread
-                    context.Emitter.Writer.AppendLine($"auto* {GSharpInternalNames.SuspendingCall.Root} = {GSharpInternalNames.StateMachine.Context};");
-                }
-
-                WriteCopiedParameterInitialization(lowered, in plan, ref context);
-                WriteResumeLocals(resumeLocals, ref context);
-                context.Visitor.Visit(lowered.LoweredBody);
-
-                if (isFrame)
-                {
-                    // Every state returns; this only satisfies the compiler
-                    context.Emitter.Writer.AppendLine("return false;");
-                }
-
-                context.Emitter.Writer.AppendLine($"#undef {GSharpInternalNames.StateMachine.State}");
-                context.Emitter.Writer.AppendLine($"#undef {GSharpInternalNames.StateMachine.YieldedForGridSync}");
-                return;
+                WriteStateMachineBody(in plan, lowered, resumeLocals, ref context);
             }
-
-            if (method.Body != null)
+            else if (plan.Declaration.Body != null)
             {
-                context.Visitor.Visit(method.Body);
+                context.Visitor.Visit(plan.Declaration.Body);
             }
-            else if (method.ExpressionBody != null)
+            else if (plan.Declaration.ExpressionBody != null)
             {
-                if (methodSymbol is { ReturnsVoid: false })
-                {
-                    context.Emitter.Writer.Append(isKernelWithReturn
-                        ? $"{GSharpInternalNames.ReturnValue.Buffer}[{GSharpInternalNames.ReturnValue.GlobalThreadIndex}] = "
-                        : "return ");
-                }
-
-                context.Visitor.Visit(method.ExpressionBody.Expression);
-                context.Emitter.Writer.AppendLine(";");
-
-                if (isKernelWithReturn)
-                {
-                    context.Emitter.Writer.AppendLine("return;");
-                }
+                WriteExpressionBody(in plan, plan.Declaration.ExpressionBody, ref context);
             }
         }
     }
 
-    // Takes the hoisted locals that are declared again on every resume (ResumeLocals) out of the frame, turns their
-    // context accesses in the body back into locals, and leaves their initialization where they are declared;
-    // SharedMemory<T> stays in the frame, where the launcher sets it up. The C++ array of a stackalloc span is the local
-    // itself; a stackalloc pointer points into an array of its own (ResumeLocals.StackStorageName).
-    private static (LoweredStateMachine Lowered, ImmutableArray<ResumeLocal> ResumeLocals) SeparateResumeLocals(
-        LoweredStateMachine lowered, in MethodEmissionPlan plan, ITranspilerDialect dialect)
+    // The lowered body with the macros that name the state and the grid sync flag, after the copied parameters and the
+    // storage of the resume locals
+    private static void WriteStateMachineBody(in MethodEmissionPlan plan, LoweredStateMachine lowered,
+        ImmutableArray<ResumeLocal> resumeLocals, ref TranspileContext context)
     {
-        var semanticModel = plan.SemanticModel;
-        var kernelName = plan.Declaration.Identifier.ValueText;
-        var zeroFill = plan.Symbol.AreLocalsZeroed();
-        var frameFields = ImmutableArray.CreateBuilder<VariableDeclaratorSyntax>();
-        var resumeLocals = ImmutableArray.CreateBuilder<ResumeLocal>();
-        var byKey = new Dictionary<DeclarationKey, NativeResumeLocal>();
-        foreach (var field in lowered.ContextFields)
-        {
-            var type = HoistedFieldTypeResolver.Resolve(field, semanticModel, kernelName);
-            var key = LoweringIdentity.ForDeclaration(field, semanticModel);
-            if (key.Symbol == null || !ResumeLocals.IsRedeclared(field, type, sharedMemoryInFrame: true))
-            {
-                frameFields.Add(field);
-                continue;
-            }
+        var isFrame = context.Emitter.IsSuspendingDeviceFunction;
+        // The grid sync flag belongs to the thread, so a device function sets it on the root
+        var gridSyncOwner = isFrame ? GSharpInternalNames.SuspendingCall.Root : GSharpInternalNames.StateMachine.Context;
+        context.Emitter.Writer.AppendLine(
+            $"#define {GSharpInternalNames.StateMachine.State} {GSharpInternalNames.StateMachine.Context}->{GSharpInternalNames.StateMachine.State}");
+        context.Emitter.Writer.AppendLine(
+            $"#define {GSharpInternalNames.StateMachine.YieldedForGridSync} {gridSyncOwner}->{GSharpInternalNames.StateMachine.YieldedForGridSync}");
 
-            var local = ResumeLocals.Describe(field, type, semanticModel);
-            var storage = local is { Kind: ResumeLocalKind.StackAlloc, Type: IPointerTypeSymbol }
-                ? SyntaxFactory.IdentifierName(ResumeLocals.StackStorageName(GetDeclaredCppName(local.Declarator, semanticModel, dialect)))
-                : null;
-            resumeLocals.Add(local);
-            byKey[key] = new NativeResumeLocal(local, storage);
+        if (!isFrame)
+        {
+            // A kernel is the root of its own thread
+            context.Emitter.Writer.AppendLine($"auto* {GSharpInternalNames.SuspendingCall.Root} = {GSharpInternalNames.StateMachine.Context};");
         }
 
-        if (resumeLocals.Count == 0)
+        WriteCopiedParameterInitialization(lowered, in plan, ref context);
+        ResumeLocalEmitter.WriteDeclarations(resumeLocals, ref context);
+        context.Visitor.Visit(lowered.LoweredBody);
+
+        if (isFrame)
         {
-            return (lowered, ImmutableArray<ResumeLocal>.Empty);
+            // Every state returns; this only satisfies the compiler
+            context.Emitter.Writer.AppendLine("return false;");
         }
 
-        var redeclared = new NativeResumeLocalSet(byKey, zeroFill);
-        var body = new ContextLocalRewriter(redeclared, new Dictionary<DeclarationKey, string>(), semanticModel, kernelName)
-                       .Visit(lowered.LoweredBody) as BlockSyntax
-                   ?? throw new InvalidOperationException(
-                       $"Turning the resume locals of '{kernelName}' back into locals removed the state machine body.");
-        return (lowered with { LoweredBody = body, ContextFields = frameFields.ToImmutable() }, resumeLocals.ToImmutable());
+        context.Emitter.Writer.AppendLine($"#undef {GSharpInternalNames.StateMachine.State}");
+        context.Emitter.Writer.AppendLine($"#undef {GSharpInternalNames.StateMachine.YieldedForGridSync}");
     }
 
-    // A resume local of the native state machine and the array that a stackalloc pointer is bound to
-    private readonly record struct NativeResumeLocal(ResumeLocal Local, IdentifierNameSyntax? Storage);
-
-    // The resume locals of a native state machine, as ContextLocalRewriter looks them up
-    private sealed class NativeResumeLocalSet(Dictionary<DeclarationKey, NativeResumeLocal> locals, bool zeroFill)
-        : IResumeLocalSet
+    // => <expression>: returned, or stored into the result buffer of a kernel with a return value
+    private static void WriteExpressionBody(in MethodEmissionPlan plan, ArrowExpressionClauseSyntax expressionBody,
+        ref TranspileContext context)
     {
-        public bool Contains(DeclarationKey key) => locals.ContainsKey(key);
-
-        public StatementSyntax? CreateInitialization(DeclarationKey key, SimpleNameSyntax name, ExpressionSyntax value) =>
-            locals[key] switch
-            {
-                { Local: { Kind: ResumeLocalKind.StackAlloc, Length: 0, Type: IPointerTypeSymbol } } =>
-                    ResumeLocals.AssignNull(name),
-                // The empty span declared before the switch is all there is
-                { Local: { Kind: ResumeLocalKind.StackAlloc, Length: 0 } } => null,
-                var (local, storage) => ResumeLocals.CreateInitialization(local, name, value, storage, zeroFill)
-            };
-    }
-
-    private static string GetDeclaredCppName(VariableDeclaratorSyntax declarator, SemanticModel semanticModel,
-        ITranspilerDialect dialect) =>
-        CppNameResolver.Resolve(semanticModel.GetDeclaredSymbol<ISymbol>(declarator), declarator.Identifier.ValueText, dialect,
-            LoweringIdentity.GetRegion(declarator)).ToString();
-
-    // The storage of each resume local, before the state switch; the values are written where it is declared:
-    // <type> <name>;                                               (assigned there, through the declaration rules)
-    // <element> <name>[<length>];                                  (a stackalloc span: zeroed or filled there)
-    // <element> __gsharp_stack_<name>[<length>]; <element>* <name>; (a stackalloc pointer: bound, zeroed or filled there)
-    // <element>* <name>;                                           (a stackalloc pointer of length 0: set to nullptr there)
-    // A stackalloc with a size that is not a constant is reported, as the declaration rule reports it without a barrier.
-    private static void WriteResumeLocals(ImmutableArray<ResumeLocal> resumeLocals, ref TranspileContext context)
-    {
-        foreach (var local in resumeLocals)
+        if (plan.Symbol is { ReturnsVoid: false })
         {
-            switch (local)
-            {
-                case { Kind: ResumeLocalKind.Unsupported, Unsupported: { } node }:
-                    context.Reporter.Fail(GSharpDiagnostics.UnsupportedSyntax, node, GpuCodeConstraints.DynamicArraySize);
-                    break;
-                case { Kind: ResumeLocalKind.StackAlloc, ElementType: { } elementType }:
-                    WriteStackAllocStorage(local, elementType, ref context);
-                    break;
-                default:
-                    if (local.Declarator.Parent is VariableDeclarationSyntax declaration)
-                    {
-                        context.Visitor.Visit(SyntaxFactory.LocalDeclarationStatement(
-                            declaration.WithVariables(SyntaxFactory.SingletonSeparatedList(local.Declarator.WithInitializer(null)))
-                        ));
-                        context.Emitter.Writer.AppendLine();
-                    }
-
-                    break;
-            }
-        }
-    }
-
-    // <element> <array>[<length>]; and, for a pointer, <element>* <name>;
-    // [WHY] The array is not const even for a ReadOnlySpan<T>: its elements are written where the local is declared.
-    private static void WriteStackAllocStorage(ResumeLocal local, ITypeSymbol elementType, ref TranspileContext context)
-    {
-        var name = GetDeclaredCppName(local.Declarator, context.Query.SemanticModel, context.Emitter.Dialect);
-        var isPointer = local.Type is IPointerTypeSymbol;
-        if (local.Length == 0)
-        {
-            // A zero-length array is ill-formed in C++: a pointer is set to nullptr where it is declared, a span is empty
-            context.Emitter.Dialect.AppendType(ref context, local.Type);
-            context.Emitter.Writer.AppendLine(isPointer ? $" {name};" : $" {name}{{}};");
-            return;
+            context.Emitter.Writer.Append(plan.HasAutoResult
+                ? $"{GSharpInternalNames.ReturnValue.Buffer}[{GSharpInternalNames.ReturnValue.GlobalThreadIndex}] = "
+                : "return ");
         }
 
-        context.Emitter.Dialect.AppendType(ref context, elementType);
-        context.Emitter.Writer.Append(' ').Append(isPointer ? ResumeLocals.StackStorageName(name) : name);
-        using (context.Emitter.Writer.Brackets())
-        {
-            context.Emitter.Writer.Append(local.Length);
-        }
-
+        context.Visitor.Visit(expressionBody.Expression);
         context.Emitter.Writer.AppendLine(";");
-        if (isPointer)
+
+        if (plan.HasAutoResult)
         {
-            context.Emitter.Dialect.AppendType(ref context, local.Type);
-            context.Emitter.Writer.AppendLine($" {name};");
+            context.Emitter.Writer.AppendLine("return;");
         }
     }
+
     // On the first entry, the parameters the body assigns are copied into the frame; later resumes keep the frame's copy
     private static void WriteCopiedParameterInitialization(LoweredStateMachine lowered, in MethodEmissionPlan plan,
         ref TranspileContext context)
