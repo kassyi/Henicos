@@ -117,7 +117,9 @@ public sealed class MsvcToolchain : INativeToolchain
         // /EHs = C++ exceptions, also through extern "C" functions: a kernel step that cannot go on (a shared memory
         //        placement that fails) throws to the launcher, which catches it inside the OpenMP loop. /EHsc would let the
         //        compiler assume that the extern "C" kernels never throw
-        var clArgs = $"/O2 /LD /nologo /std:c++17 /openmp /EHs /Zc:preprocessor \"{sourcePath}\" /Fo:\"{objPath}\" /Fe:\"{outputPath}\"";
+        // /bigobj = Allow more than 65,279 sections: one translation unit holds every kernel of the assembly, and a
+        //           large one (the test assemblies) fails with C1128 without it
+        var clArgs = $"/O2 /LD /nologo /std:c++17 /openmp /EHs /Zc:preprocessor /bigobj \"{sourcePath}\" /Fo:\"{objPath}\" /Fe:\"{outputPath}\"";
 
         log.LogMessage(MessageImportance.Normal, $"Compiling C++ source for {vcvarsArch}: {sourcePath}");
 

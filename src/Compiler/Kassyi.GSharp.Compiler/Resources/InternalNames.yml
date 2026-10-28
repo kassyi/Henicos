@@ -176,6 +176,38 @@ Prelude:
     NaNDouble: { Value: __gsharp_nan_d, Prelude: Platform.hpp }
     InfinityDouble: { Value: __gsharp_inf_d, Prelude: Platform.hpp }
 
+Sort:
+  Summary: >-
+    MemoryExtensions.Sort in device code (Sort.hpp, both dialects): the introsort of .NET, run in place by the calling
+    thread, with the default order, a comparison (a lambda also wraps a comparer struct) or the CompareTo of a user struct.
+  Names:
+    Keys: { Value: __gsharp_sort, Prelude: Sort.hpp }
+    KeysComparable: { Value: __gsharp_sort_comparable, Prelude: Sort.hpp }
+    Pairs: { Value: __gsharp_sort_pairs, Prelude: Sort.hpp }
+    PairsComparable: { Value: __gsharp_sort_pairs_comparable, Prelude: Sort.hpp }
+    # The members that a user struct declares for IComparer<T>.Compare and IComparable<T>.CompareTo (SortComparisonMembers)
+    CompareMember: __gsharp_compare
+    CompareToMember: __gsharp_compare_to
+    # The lambda that MemoryExtensionsTranspilerRule writes around them: the copy of the comparer struct and the two keys
+    ComparerCapture: __gsharp_comparer
+    LeftOperand: __gsharp_left
+    RightOperand: __gsharp_right
+
+StackLinq:
+  Summary: Fused StackLinq chains in device code (StackLinqFusionRule).
+  Names:
+    ClampCount: { Value: __gsharp_clamp_count, Prelude: ../StackLinq.cuh }
+    # The Block strategy of AsParallel() aggregates (CUDA only)
+    BlockRank: { Value: __gsharp_block_rank, Prelude: ../Prelude.cu }
+    BlockSize: { Value: __gsharp_block_size, Prelude: ../Prelude.cu }
+    BlockReduce: { Value: __gsharp_block_reduce, Prelude: ../Prelude.cu }
+    Plus: { Value: __gsharp_plus, Prelude: ../Prelude.cu }
+    # The Grid strategy (cooperative CUDA kernels): the hidden last kernel parameter and the reduction over the grid
+    GridScratch: __gsharp_grid_scratch
+    GridBlockRank: { Value: __gsharp_grid_block_rank, Prelude: ../Prelude.cu }
+    GridBlockCount: { Value: __gsharp_grid_block_count, Prelude: ../Prelude.cu }
+    GridReduce: { Value: __gsharp_grid_reduce, Prelude: ../Prelude.cu }
+
 Wmma:
   Summary: Tensor Core warp matrix fragment types and tags (nvcuda::wmma).
   Names:
