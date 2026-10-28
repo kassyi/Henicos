@@ -3,9 +3,12 @@ name: Hybrid CI Tests
 # Static, syntax and CPU tests on GitHub-hosted runners (no CUDA).
 # - Ubuntu runs for every pull request and every push to main.
 # - Windows runs only after Ubuntu passed, and only for a push to main or a pull request labeled "full-ci".
-#   Windows minutes cost twice as much and a Windows run takes twice as long, so a pull request gets one
-#   Windows run, right before its merge (see .agents/rules/test-execution.md). A push to main always runs
+#   Windows minutes cost twice as much and a Windows run takes twice as long, so a pull request gets Windows
+#   runs only once it is ready to merge (see .agents/rules/test-execution.md). A push to main always runs
 #   Windows, so a merge without the label is still tested there.
+# - Adding a label does not start this workflow (no "labeled" trigger): a run that skips every job would replace
+#   the check results of the earlier run in the pull request view. Adding "full-ci" starts full-ci.yml (Windows
+#   only); later pushes to the pull request run Ubuntu, then Windows, here.
 on:
   push:
     branches: ["main"]
@@ -14,7 +17,7 @@ on:
       - ".agents/**"
       - "**/*.md"
   pull_request: # every base branch, so a PR stacked on another PR is tested too
-    types: [opened, synchronize, reopened, labeled]
+    types: [opened, synchronize, reopened]
     paths-ignore: # a change to these alone runs no test
       - "docs/**"
       - ".agents/**"
@@ -23,7 +26,6 @@ on:
 jobs:
   test-ubuntu:
     name: Run Static & Syntax Tests (ubuntu-latest)
-    if: github.event.action != 'labeled' || github.event.label.name == 'full-ci'
     runs-on: ubuntu-latest
     # A new run for the same pull request or branch cancels this job while it is still running.
     concurrency:
@@ -69,7 +71,8 @@ jobs:
     runs-on: windows-latest
     # A new run for the same pull request or branch cancels this job while it is still running.
     concurrency:
-      group: ${{ github.workflow }}-test-windows-${{ github.event.pull_request.number || github.ref }}
+      # The same group as full-ci.yml, so a run of either workflow cancels the Windows run of the other.
+      group: windows-tests-${{ github.event.pull_request.number || github.ref }}
       cancel-in-progress: true
     env:
       GSHARP_TEST_NO_CUDA: "1"

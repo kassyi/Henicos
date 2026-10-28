@@ -30,6 +30,8 @@ Pick the command matching the domain you modified. Methodology (TDD, snapshot hi
 
 - **Ubuntu** runs for every pull request (every base branch, so a stacked PR is tested too) and every push to `main`.
 - **Windows** runs only after Ubuntu passed, and only for a push to `main` or a pull request labeled `full-ci`.
+- Adding the `full-ci` label starts `.github/workflows/full-ci.yml` ("Full CI"), which runs Windows only (Ubuntu already passed before the label). Later pushes to that pull request run Ubuntu, then Windows, in "Hybrid CI".
+- Any other label (`bug`, `test`, ...) runs no test: "Full CI" starts and skips its job. Its check has its own name, so it does not replace the Hybrid CI results in the pull request view.
 - A new run for the same pull request cancels the one still running. A change to `docs/**`, `.agents/**` or Markdown files alone runs nothing.
 
 What an agent does:
