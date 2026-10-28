@@ -86,35 +86,10 @@ public const string IntParallelSum_Source = @"extern ""C"" __global__ void __gsh
 int __gsharp_id_2_sum = ([&]() -> auto {
 int __gsharp_fusion_res = 0;
 int __gsharp_fusion_length = __gsharp_id_0_data.length;
-int __gsharp_tid = threadIdx.x + blockIdx.x * blockDim.x;
-int __gsharp_stride = blockDim.x * gridDim.x;
-for (int __gsharp_i = __gsharp_tid; __gsharp_i < __gsharp_fusion_length; __gsharp_i += __gsharp_stride)
+for (int __gsharp_i = 0; __gsharp_i < __gsharp_fusion_length; __gsharp_i++)
 {
 auto __gsharp_val_0 = __gsharp_id_0_data[__gsharp_i];
 __gsharp_fusion_res += __gsharp_val_0;
-}
-unsigned int __gsharp_mask = 0xffffffff;
-#pragma unroll
-for (int __gsharp_offset = 16; __gsharp_offset > 0; __gsharp_offset /= 2)
-{
-__gsharp_fusion_res += __shfl_down_sync(__gsharp_mask, __gsharp_fusion_res, __gsharp_offset);
-}
-__shared__ int __gsharp_warp_sums[32];
-int __gsharp_warp_id = threadIdx.x / 32;
-int __gsharp_lane_id = threadIdx.x % 32;
-if (__gsharp_lane_id == 0)
-{
-__gsharp_warp_sums[__gsharp_warp_id] = __gsharp_fusion_res;
-}
-__syncthreads();
-if (__gsharp_warp_id == 0)
-{
-__gsharp_fusion_res = (__gsharp_lane_id < (blockDim.x + 31) / 32) ? __gsharp_warp_sums[__gsharp_lane_id] : 0;
-#pragma unroll
-for (int __gsharp_offset = 16; __gsharp_offset > 0; __gsharp_offset /= 2)
-{
-__gsharp_fusion_res += __shfl_down_sync(__gsharp_mask, __gsharp_fusion_res, __gsharp_offset);
-}
 }
 return __gsharp_fusion_res;
 }());
