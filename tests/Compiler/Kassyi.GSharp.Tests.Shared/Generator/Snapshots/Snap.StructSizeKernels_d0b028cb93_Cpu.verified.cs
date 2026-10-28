@@ -514,7 +514,7 @@ var data_native = System.Runtime.InteropServices.MemoryMarshal.Cast<byte, AotCon
 System.Span<global::Kassyi.GSharp.Tests.Shared.Core.StructSizeOddInt> data_host = data;
 for (int data_index = 0; data_index < data_native.Length; data_index++)
 {
-AotContexts.Marshal_StructSizeOddInt(ref data_host[data_index], ref data_native[data_index], false, data_allocatedPtrs);
+AotContexts.Marshal_StructSizeOddInt(ref data_host[data_index], ref data_native[data_index], false, data_allocatedPtrs, hStream);
 }
 fixed (byte* p_data = data_shadow)
 fixed (global::System.Int32* p_o = o)
@@ -524,7 +524,7 @@ global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ThrowIfNativeError(dllPath);
 }
 for (int data_index = 0; data_index < data_native.Length; data_index++)
 {
-AotContexts.Unmarshal_StructSizeOddInt(ref data_host[data_index], ref data_native[data_index], false);
+AotContexts.Unmarshal_StructSizeOddInt(ref data_host[data_index], ref data_native[data_index], false, hStream);
 }
 }
 finally

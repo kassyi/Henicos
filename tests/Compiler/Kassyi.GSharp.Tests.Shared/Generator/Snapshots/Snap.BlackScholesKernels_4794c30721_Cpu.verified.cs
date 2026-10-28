@@ -355,10 +355,10 @@ AotContexts.BlackScholes ctx_native = default;
 var ctx_allocatedPtrs = new System.Collections.Generic.List<IntPtr>();
 try
 {
-AotContexts.Marshal_BlackScholesKernels_BlackScholesContext(ref ctx, ref ctx_native, false, ctx_allocatedPtrs);
+AotContexts.Marshal_BlackScholesKernels_BlackScholesContext(ref ctx, ref ctx_native, false, ctx_allocatedPtrs, hStream);
 hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, &ctx_native);
 global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ThrowIfNativeError(dllPath);
-AotContexts.Unmarshal_BlackScholesKernels_BlackScholesContext(ref ctx, ref ctx_native, false);
+AotContexts.Unmarshal_BlackScholesKernels_BlackScholesContext(ref ctx, ref ctx_native, false, hStream);
 }
 finally
 {

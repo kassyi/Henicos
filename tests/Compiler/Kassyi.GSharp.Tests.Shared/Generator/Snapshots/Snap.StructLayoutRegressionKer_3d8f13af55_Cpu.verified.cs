@@ -1445,13 +1445,13 @@ AotContexts.LayoutReproBag b_native = default;
 var b_allocatedPtrs = new System.Collections.Generic.List<IntPtr>();
 try
 {
-AotContexts.Marshal_LayoutReproBag(ref b, ref b_native, false, b_allocatedPtrs);
+AotContexts.Marshal_LayoutReproBag(ref b, ref b_native, false, b_allocatedPtrs, hStream);
 fixed (global::System.Int32* p_o = o)
 {
 hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, &b_native, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (IntPtr)p_o, Length = o.Length });
 global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ThrowIfNativeError(dllPath);
 }
-AotContexts.Unmarshal_LayoutReproBag(ref b, ref b_native, false);
+AotContexts.Unmarshal_LayoutReproBag(ref b, ref b_native, false, hStream);
 }
 finally
 {
@@ -1662,13 +1662,13 @@ AotContexts.LayoutReproBag b_native = default;
 var b_allocatedPtrs = new System.Collections.Generic.List<IntPtr>();
 try
 {
-AotContexts.Marshal_LayoutReproBag(ref b, ref b_native, false, b_allocatedPtrs);
+AotContexts.Marshal_LayoutReproBag(ref b, ref b_native, false, b_allocatedPtrs, hStream);
 fixed (global::System.Int32* p_o = o)
 {
 hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, &b_native, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (IntPtr)p_o, Length = o.Length });
 global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ThrowIfNativeError(dllPath);
 }
-AotContexts.Unmarshal_LayoutReproBag(ref b, ref b_native, false);
+AotContexts.Unmarshal_LayoutReproBag(ref b, ref b_native, false, hStream);
 }
 finally
 {
@@ -1874,13 +1874,13 @@ AotContexts.LayoutReproBag b_native = default;
 var b_allocatedPtrs = new System.Collections.Generic.List<IntPtr>();
 try
 {
-AotContexts.Marshal_LayoutReproBag(ref b, ref b_native, false, b_allocatedPtrs);
+AotContexts.Marshal_LayoutReproBag(ref b, ref b_native, false, b_allocatedPtrs, hStream);
 fixed (global::System.Int32* p_o = o)
 {
 hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, &b_native, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (IntPtr)p_o, Length = o.Length });
 global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ThrowIfNativeError(dllPath);
 }
-AotContexts.Unmarshal_LayoutReproBag(ref b, ref b_native, false);
+AotContexts.Unmarshal_LayoutReproBag(ref b, ref b_native, false, hStream);
 }
 finally
 {
@@ -2093,10 +2093,10 @@ AotContexts.LayoutReproElemHolder h_native = default;
 var h_allocatedPtrs = new System.Collections.Generic.List<IntPtr>();
 try
 {
-AotContexts.Marshal_LayoutReproElemHolder(ref h, ref h_native, false, h_allocatedPtrs);
+AotContexts.Marshal_LayoutReproElemHolder(ref h, ref h_native, false, h_allocatedPtrs, hStream);
 hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, &h_native);
 global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ThrowIfNativeError(dllPath);
-AotContexts.Unmarshal_LayoutReproElemHolder(ref h, ref h_native, false);
+AotContexts.Unmarshal_LayoutReproElemHolder(ref h, ref h_native, false, hStream);
 }
 finally
 {
@@ -2322,7 +2322,7 @@ var hs_native = System.Runtime.InteropServices.MemoryMarshal.Cast<byte, AotConte
 System.Span<global::Kassyi.GSharp.Tests.Shared.Core.LayoutReproElemHolder> hs_host = hs;
 for (int hs_index = 0; hs_index < hs_native.Length; hs_index++)
 {
-AotContexts.Marshal_LayoutReproElemHolder(ref hs_host[hs_index], ref hs_native[hs_index], false, hs_allocatedPtrs);
+AotContexts.Marshal_LayoutReproElemHolder(ref hs_host[hs_index], ref hs_native[hs_index], false, hs_allocatedPtrs, hStream);
 }
 fixed (byte* p_hs = hs_shadow)
 {
@@ -2331,7 +2331,7 @@ global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ThrowIfNativeError(dllPath);
 }
 for (int hs_index = 0; hs_index < hs_native.Length; hs_index++)
 {
-AotContexts.Unmarshal_LayoutReproElemHolder(ref hs_host[hs_index], ref hs_native[hs_index], false);
+AotContexts.Unmarshal_LayoutReproElemHolder(ref hs_host[hs_index], ref hs_native[hs_index], false, hStream);
 }
 }
 finally
@@ -2542,13 +2542,13 @@ AotContexts.LayoutReproBag b_native = default;
 var b_allocatedPtrs = new System.Collections.Generic.List<IntPtr>();
 try
 {
-AotContexts.Marshal_LayoutReproBag(ref b, ref b_native, false, b_allocatedPtrs);
+AotContexts.Marshal_LayoutReproBag(ref b, ref b_native, false, b_allocatedPtrs, hStream);
 fixed (global::System.Int32* p_o = o)
 {
 hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, &b_native, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (IntPtr)p_o, Length = o.Length });
 global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ThrowIfNativeError(dllPath);
 }
-AotContexts.Unmarshal_LayoutReproBag(ref b, ref b_native, false);
+AotContexts.Unmarshal_LayoutReproBag(ref b, ref b_native, false, hStream);
 }
 finally
 {
@@ -2748,10 +2748,10 @@ AotContexts.LayoutReproPair p_native = default;
 var p_allocatedPtrs = new System.Collections.Generic.List<IntPtr>();
 try
 {
-AotContexts.Marshal_LayoutReproPair(ref p, ref p_native, false, p_allocatedPtrs);
+AotContexts.Marshal_LayoutReproPair(ref p, ref p_native, false, p_allocatedPtrs, hStream);
 hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, &p_native);
 global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ThrowIfNativeError(dllPath);
-AotContexts.Unmarshal_LayoutReproPair(ref p, ref p_native, false);
+AotContexts.Unmarshal_LayoutReproPair(ref p, ref p_native, false, hStream);
 }
 finally
 {
@@ -2970,7 +2970,7 @@ var b_native = System.Runtime.InteropServices.MemoryMarshal.Cast<byte, AotContex
 System.Span<global::Kassyi.GSharp.Tests.Shared.Core.LayoutReproBag> b_host = b;
 for (int b_index = 0; b_index < b_native.Length; b_index++)
 {
-AotContexts.Marshal_LayoutReproBag(ref b_host[b_index], ref b_native[b_index], false, b_allocatedPtrs);
+AotContexts.Marshal_LayoutReproBag(ref b_host[b_index], ref b_native[b_index], false, b_allocatedPtrs, hStream);
 }
 fixed (byte* p_b = b_shadow)
 fixed (global::System.Int32* p_o = o)
@@ -2980,7 +2980,7 @@ global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ThrowIfNativeError(dllPath);
 }
 for (int b_index = 0; b_index < b_native.Length; b_index++)
 {
-AotContexts.Unmarshal_LayoutReproBag(ref b_host[b_index], ref b_native[b_index], false);
+AotContexts.Unmarshal_LayoutReproBag(ref b_host[b_index], ref b_native[b_index], false, hStream);
 }
 }
 finally
@@ -5616,7 +5616,7 @@ var a_native = System.Runtime.InteropServices.MemoryMarshal.Cast<byte, AotContex
 System.Span<global::Kassyi.GSharp.Tests.Shared.Core.LayoutReproAutoLayout> a_host = a;
 for (int a_index = 0; a_index < a_native.Length; a_index++)
 {
-AotContexts.Marshal_LayoutReproAutoLayout(ref a_host[a_index], ref a_native[a_index], false, a_allocatedPtrs);
+AotContexts.Marshal_LayoutReproAutoLayout(ref a_host[a_index], ref a_native[a_index], false, a_allocatedPtrs, hStream);
 }
 fixed (byte* p_a = a_shadow)
 fixed (global::System.Int32* p_o = o)
@@ -5626,7 +5626,7 @@ global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ThrowIfNativeError(dllPath);
 }
 for (int a_index = 0; a_index < a_native.Length; a_index++)
 {
-AotContexts.Unmarshal_LayoutReproAutoLayout(ref a_host[a_index], ref a_native[a_index], false);
+AotContexts.Unmarshal_LayoutReproAutoLayout(ref a_host[a_index], ref a_native[a_index], false, hStream);
 }
 }
 finally
@@ -5845,7 +5845,7 @@ global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ThrowIfNativeError(dllPath);
 }
 for (int a_index = 0; a_index < a_native.Length; a_index++)
 {
-AotContexts.Unmarshal_LayoutReproAutoLayout(ref a_host[a_index], ref a_native[a_index], false);
+AotContexts.Unmarshal_LayoutReproAutoLayout(ref a_host[a_index], ref a_native[a_index], false, hStream);
 }
 }
 finally
@@ -6081,13 +6081,13 @@ AotContexts.LayoutReproArrOuter x_native = default;
 var x_allocatedPtrs = new System.Collections.Generic.List<IntPtr>();
 try
 {
-AotContexts.Marshal_LayoutReproArrOuter(ref x, ref x_native, false, x_allocatedPtrs);
+AotContexts.Marshal_LayoutReproArrOuter(ref x, ref x_native, false, x_allocatedPtrs, hStream);
 fixed (global::System.Int32* p_o = o)
 {
 hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, &x_native, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (IntPtr)p_o, Length = o.Length });
 global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ThrowIfNativeError(dllPath);
 }
-AotContexts.Unmarshal_LayoutReproArrOuter(ref x, ref x_native, false);
+AotContexts.Unmarshal_LayoutReproArrOuter(ref x, ref x_native, false, hStream);
 }
 finally
 {

@@ -244,8 +244,8 @@ internal static class CpuHostLaunchEmitter
 
     // <shadow> <name>_native = default; var <name>_allocatedPtrs = new List<IntPtr>(); (each converted struct)
     // byte[]? <name>_shadow = null; var <name>_allocatedPtrs = ...; int <name>_size = ...; (each converted array)
-    // try { Marshal_<S>(ref <name>, ref <name>_native, false, <name>_allocatedPtrs); <the elements of each array>;
-    // <fixed blocks and call>; Unmarshal_<S>(ref <name>, ref <name>_native, false); <the elements back> }
+    // try { Marshal_<S>(ref <name>, ref <name>_native, false, <name>_allocatedPtrs, hStream); <the elements of each array>;
+    // <fixed blocks and call>; Unmarshal_<S>(ref <name>, ref <name>_native, false, hStream); <the elements back> }
     // finally { foreach (var handle in <name>_allocatedPtrs) GCHandle.FromIntPtr(handle).Free(); ...;
     // ArrayPool<byte>.Shared.Return(<name>_shadow); }
     // [WHY] Marshal_ pins the array fields of a converted struct or element and records each handle; this one finally
@@ -288,7 +288,7 @@ internal static class CpuHostLaunchEmitter
                 if (shape is { IsCpuConvertedStruct: true, MarshalMethodName: { } marshal })
                 {
                     writer.AppendLine(
-                        $"{marshal}(ref {shape.Identifier}, ref {shape.Name}_native, false, {shape.Name}_allocatedPtrs);");
+                        $"{marshal}(ref {shape.Identifier}, ref {shape.Name}_native, false, {shape.Name}_allocatedPtrs, hStream);");
                 }
                 else if (shape.IsCpuConvertedArray)
                 {
@@ -304,7 +304,7 @@ internal static class CpuHostLaunchEmitter
             {
                 if (shape is { IsCpuConvertedStruct: true, UnmarshalMethodName: { } unmarshal })
                 {
-                    writer.AppendLine($"{unmarshal}(ref {shape.Identifier}, ref {shape.Name}_native, false);");
+                    writer.AppendLine($"{unmarshal}(ref {shape.Identifier}, ref {shape.Name}_native, false, hStream);");
                 }
                 else if (shape is { IsCpuConvertedArray: true, CopyOut: true, IsReadOnlyContainer: false })
                 {
@@ -336,7 +336,7 @@ internal static class CpuHostLaunchEmitter
     }
 
     // <name>_shadow = ArrayPool<byte>.Shared.Rent(<name>_size); <spans>;
-    // for (...) Marshal_<E>(ref <name>_host[i], ref <name>_native[i], false, <name>_allocatedPtrs);   ([In] / in-out)
+    // for (...) Marshal_<E>(ref <name>_host[i], ref <name>_native[i], false, <name>_allocatedPtrs, hStream); ([In] / in-out)
     // <name>_native.Clear();                                       ([Out] of an element without array fields)
     // [WHY] The elements differ in layout, so they are converted into a rented shadow array of the device layout, which
     // the kernel reads in place (the CUDA launcher copies the same shadow to the device). An [Out] element with array
@@ -366,11 +366,11 @@ internal static class CpuHostLaunchEmitter
 
             writer.AppendLine(
                 $"{shape.Cpu.ConvertedElementMarshalMethodName}(ref {hostElement}, " +
-                $"ref {name}_native[{name}_index], false, {name}_allocatedPtrs);");
+                $"ref {name}_native[{name}_index], false, {name}_allocatedPtrs, hStream);");
         }
     }
 
-    // for (...) Unmarshal_<E>(ref <name>_host[i], ref <name>_native[i], false); after the call, through the spans that
+    // for (...) Unmarshal_<E>(ref <name>_host[i], ref <name>_native[i], false, hStream); after the call, through the spans that
     // the marshaling declared in the same try block
     private static void WriteConvertedArrayUnmarshal(SourceWriter writer, in KernelParameterShape shape)
     {
@@ -380,7 +380,7 @@ internal static class CpuHostLaunchEmitter
         {
             writer.AppendLine(
                 $"{shape.Cpu.ConvertedElementUnmarshalMethodName}(ref {name}_host[{name}_index], " +
-                $"ref {name}_native[{name}_index], false);");
+                $"ref {name}_native[{name}_index], false, hStream);");
         }
     }
 

@@ -2913,10 +2913,10 @@ AotContexts.ModPowNtt ctx_native = default;
 var ctx_allocatedPtrs = new System.Collections.Generic.List<IntPtr>();
 try
 {
-AotContexts.Marshal_ModPowNttContext(ref ctx, ref ctx_native, false, ctx_allocatedPtrs);
+AotContexts.Marshal_ModPowNttContext(ref ctx, ref ctx_native, false, ctx_allocatedPtrs, hStream);
 hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, &ctx_native);
 global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ThrowIfNativeError(dllPath);
-AotContexts.Unmarshal_ModPowNttContext(ref ctx, ref ctx_native, false);
+AotContexts.Unmarshal_ModPowNttContext(ref ctx, ref ctx_native, false, hStream);
 }
 finally
 {
