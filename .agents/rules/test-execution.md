@@ -34,7 +34,8 @@ Pick the command matching the domain you modified. Methodology (TDD, snapshot hi
 
 What an agent does:
 
-- Add the `full-ci` label to a pull request when it is ready to merge (its review is done and its Ubuntu run is green), not earlier: once labeled, every later push also runs Windows. `gh pr edit <n> --add-label full-ci`
+- The user adds the `human-reviewed` label when their review of a pull request is finished. Then read every review comment (`gh pr view <n> --comments` and `gh api repos/<owner>/<repo>/pulls/<n>/comments`), reply on the pull request with a decision per item (fixed here, or filed as an issue with its milestone), make the fixes, and push them.
+- Add the `full-ci` label to a pull request when it is ready to merge (it is labeled `human-reviewed`, every review item is fixed or filed, and its Ubuntu run is green), not earlier: once labeled, every later push also runs Windows. `gh pr edit <n> --add-label full-ci`
 - When you hand the user a merge order, list only pull requests whose Windows run is green, or say which ones still wait for it.
 - Do not close and reopen a pull request to start CI again; it does not always pick up a newer `main` and every run costs. To test against a newer `main`, push one merge of `main` into the branch. Re-running from the Actions page reuses the old merge.
 - A merge without the label is still tested on Windows by the push to `main`; if that run fails, fix `main` first.
