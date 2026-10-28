@@ -18,14 +18,29 @@ internal static class FloatVectorReductionOrchestrator
     public static GpuBigFloat Reduce(
         GpuWorkspace workspace,
         IGpuBigFloatVectorExpression source,
-        FloatReductionKind kind)
+        FloatReductionKind kind) =>
+        ReduceWithCount(workspace, source, kind, out _);
+
+    /// <summary>
+    /// Reduces the elements of <paramref name="source"/> and gives their number, from one evaluation (Average divides
+    /// the sum by it). After a <c>Where</c> the number is read from the device: one synchronization, as the reduction
+    /// reads its result back anyway.
+    /// </summary>
+    public static GpuBigFloat ReduceWithCount(
+        GpuWorkspace workspace,
+        IGpuBigFloatVectorExpression source,
+        FloatReductionKind kind,
+        out int count)
     {
-        if (source.Length == 0)
+        if (source.Capacity == 0)
         {
+            count = 0;
             return ReduceEmpty(workspace, source.WordsPerElement, kind);
         }
 
-        return Reduce(workspace, source.Evaluate(workspace), kind);
+        var evaluated = DeviceCounted.Evaluate(source, workspace);
+        count = evaluated.Elements(workspace);
+        return Reduce(workspace, evaluated.Storage.Slice(0, count), kind);
     }
 
     // As System.Linq: the sum of nothing is +0; Max / Min of nothing has no value.

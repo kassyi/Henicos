@@ -67,6 +67,23 @@ internal readonly ref struct VectorEvaluation
     public DeviceElementCount Count { get; }
 }
 
+/// <summary>The same for a floating-point vector.</summary>
+internal readonly ref struct FloatVectorEvaluation
+{
+    public FloatVectorEvaluation(GpuBigFloatArrayView storage, DeviceElementCount count)
+    {
+        Storage = storage;
+        Count = count;
+    }
+
+    public GpuBigFloatArrayView Storage { get; }
+
+    public DeviceElementCount Count { get; }
+
+    /// <summary>The number of elements to run a host loop over: the count, read when it is on the device.</summary>
+    public int Elements(GpuWorkspace workspace) => Count.IsStatic ? Storage.Length : Count.Read(workspace);
+}
+
 /// <summary>The same for a vector of flags (1 = true, 0 = false).</summary>
 internal readonly ref struct BoolVectorEvaluation
 {
@@ -90,6 +107,13 @@ internal interface IDeviceCountedVector
     /// </summary>
     VectorEvaluation EvaluateCore(GpuWorkspace workspace, int elementOffset, int? elementCount,
         GpuBigUIntArrayView targetResult);
+}
+
+/// <summary>Implemented by the GpuMath floating-point vector nodes.</summary>
+internal interface IDeviceCountedFloatVector
+{
+    FloatVectorEvaluation EvaluateCore(GpuWorkspace workspace, int elementOffset, int? elementCount,
+        GpuBigFloatArrayView targetResult);
 }
 
 /// <summary>Implemented by the GpuMath flag vector nodes.</summary>
@@ -121,6 +145,19 @@ internal static class DeviceCounted
     }
 
     /// <inheritdoc cref="Evaluate(IGpuBigIntVectorExpression, GpuWorkspace, int, int?, GpuBigUIntArrayView)"/>
+    public static FloatVectorEvaluation Evaluate(IGpuBigFloatVectorExpression node, GpuWorkspace workspace,
+        int elementOffset = 0, int? elementCount = null, GpuBigFloatArrayView targetResult = default)
+    {
+        if (node is IDeviceCountedFloatVector counted)
+        {
+            return counted.EvaluateCore(workspace, elementOffset, elementCount, targetResult);
+        }
+
+        var storage = node.Evaluate(workspace, elementOffset, elementCount, targetResult);
+        return new FloatVectorEvaluation(storage, DeviceElementCount.Static(storage.Length));
+    }
+
+    /// <inheritdoc cref="Evaluate(IGpuBigIntVectorExpression, GpuWorkspace, int, int?, GpuBigUIntArrayView)"/>
     public static BoolVectorEvaluation Evaluate(IGpuBoolVectorExpression node, GpuWorkspace workspace)
     {
         if (node is IDeviceCountedBoolVector counted)
@@ -138,6 +175,18 @@ internal static class DeviceCounted
     /// </summary>
     /// <exception cref="InvalidOperationException">The count is on the device and the stream is capturing a graph.</exception>
     public static GpuBigIntArrayView Materialize(GpuWorkspace workspace, VectorEvaluation evaluation)
+    {
+        if (evaluation.Count.IsStatic)
+        {
+            return evaluation.Storage;
+        }
+
+        ThrowIfCapturing(workspace);
+        return evaluation.Storage.Slice(0, evaluation.Count.Read(workspace));
+    }
+
+    /// <inheritdoc cref="Materialize(GpuWorkspace, VectorEvaluation)"/>
+    public static GpuBigFloatArrayView Materialize(GpuWorkspace workspace, FloatVectorEvaluation evaluation)
     {
         if (evaluation.Count.IsStatic)
         {

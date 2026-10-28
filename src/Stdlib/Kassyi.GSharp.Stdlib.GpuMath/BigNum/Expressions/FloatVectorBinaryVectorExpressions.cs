@@ -19,7 +19,7 @@ internal readonly ref struct FloatVectorZipOperands
 internal abstract class FloatVectorBinaryVectorExpressionBase(
     [TakesOwnership] IGpuBigFloatVectorExpression left,
     [TakesOwnership] IGpuBigFloatVectorExpression right,
-    int wordsPerElement) : IGpuBigFloatVectorExpression
+    int wordsPerElement) : IGpuBigFloatVectorExpression, IDeviceCountedFloatVector
 {
     protected const int DefaultDivShiftBits = 32;
 
@@ -31,38 +31,60 @@ internal abstract class FloatVectorBinaryVectorExpressionBase(
 
     protected uint BlockDimX => (uint)Math.Min(1024, WordsPerElement);
 
+    public int Capacity => left.Capacity;
+
+    public bool TryGetLength(out int length) => left.TryGetLength(out length);
+
     public GpuBigFloatArrayView Evaluate(
         GpuWorkspace workspace,
         int elementOffset = 0,
         int? elementCount = null,
-        GpuBigFloatArrayView targetResult = default)
+        GpuBigFloatArrayView targetResult = default) =>
+        DeviceCounted.Materialize(workspace, EvaluateCore(workspace, elementOffset, elementCount, targetResult));
+
+    // Evaluates the window of the capacity; the elements are the first Count of them (design D3 4.3)
+    public FloatVectorEvaluation EvaluateCore(
+        GpuWorkspace workspace,
+        int elementOffset,
+        int? elementCount,
+        GpuBigFloatArrayView targetResult)
     {
-        if (left.Length != right.Length)
+        if (left.Capacity != right.Capacity)
         {
             throw new ArgumentException("Vector lengths must match for Zip operations.");
         }
 
-        var evalCount = elementCount ?? (Length - elementOffset);
+        var evalCount = elementCount ?? (Capacity - elementOffset);
         // The target is checked before the children run, so that a rejected target evaluates nothing
         var destination = VectorResultCache.HasTarget(targetResult)
             ? VectorResultCache.TargetFloat(targetResult, evalCount, WordsPerElement)
             : _cache.Float(workspace, evalCount, WordsPerElement);
-        var leftResult = left.Evaluate(workspace, elementOffset, evalCount);
-        var rightResult = right.Evaluate(workspace, elementOffset, evalCount);
+        var leftResult = DeviceCounted.Evaluate(left, workspace, elementOffset, evalCount);
+        var rightResult = DeviceCounted.Evaluate(right, workspace, elementOffset, evalCount);
 
-        if (leftResult.Length != rightResult.Length)
+        if (leftResult.Storage.Length != rightResult.Storage.Length)
         {
             throw new ArgumentException("Vector lengths must match for Zip operations.");
         }
 
-        var operands = new FloatVectorZipOperands(leftResult, rightResult, destination);
+        var count = DeviceCounted.Combine(leftResult.Count, rightResult.Count);
+        var operands = new FloatVectorZipOperands(leftResult.Storage, rightResult.Storage, destination);
+        var elements = RunsOnHost && !count.IsStatic ? count.Read(workspace) : evalCount;
         // An empty vector launches nothing: a grid of 0 blocks is an invalid launch.
-        if (evalCount > 0)
+        if (elements > 0)
         {
-            DispatchKernel(workspace, operands, (uint)evalCount);
+            DispatchKernel(workspace, operands, (uint)elements);
         }
-        return destination;
+
+        return new FloatVectorEvaluation(destination, count);
     }
+
+    /// <summary>
+    /// Whether the operation runs on the host element by element (Pow): it then runs over the elements only, not the
+    /// rest of the capacity, which costs one synchronization when the count is on the device.
+    /// </summary>
+    protected virtual bool RunsOnHost => false;
+
 
     protected static GpuBigIntVectorKernels.AotContexts.VectorFloatBinaryOperation CreateZipFloatOp(FloatVectorZipOperands operands) =>
         new()
@@ -224,6 +246,8 @@ internal sealed class FloatVectorPowVectorExpression(
         right,
         Math.Max(left.WordsPerElement, right.WordsPerElement))
 {
+    protected override bool RunsOnHost => true;
+
     protected override void DispatchKernel(
         GpuWorkspace workspace,
         FloatVectorZipOperands operands,

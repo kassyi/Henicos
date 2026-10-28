@@ -3,25 +3,34 @@ namespace Kassyi.GSharp.Stdlib.GpuMath.BigNum.Expressions;
 internal sealed class FloatVectorCompareScalarExpression(
     [TakesOwnership] IGpuBigFloatVectorExpression vector,
     GpuFloatOperand scalar,
-    VectorCompareOperator opType) : IGpuBoolVectorExpression
+    VectorCompareOperator opType) : IGpuBoolVectorExpression, IDeviceCountedBoolVector
 {
     public int Length => vector.Length;
+    public int Capacity => vector.Capacity;
     private GpuBigUIntArray _finalValues;
     private bool _allocated;
 
-    public GpuBigUIntArrayView Evaluate(GpuWorkspace workspace)
+    public bool TryGetLength(out int length) => vector.TryGetLength(out length);
+
+    public GpuBigUIntArrayView Evaluate(GpuWorkspace workspace) =>
+        DeviceCounted.Materialize(workspace, EvaluateCore(workspace));
+
+    public BoolVectorEvaluation EvaluateCore(GpuWorkspace workspace)
     {
-        var vecResult = vector.Evaluate(workspace);
+        var evaluated = DeviceCounted.Evaluate(vector, workspace);
+        var vecResult = evaluated.Storage;
+        var count = evaluated.Count;
+        var capacity = Capacity;
 
         if (!_allocated)
         {
-            _finalValues = new GpuBigUIntArray(workspace, Length, 1);
+            _finalValues = new GpuBigUIntArray(workspace, capacity, 1);
             _allocated = true;
         }
 
-        if (Length == 0)
+        if (capacity == 0)
         {
-            return _finalValues;
+            return new BoolVectorEvaluation(_finalValues, count);
         }
 
         var scalarSig = scalar.Significand;
@@ -52,9 +61,9 @@ internal sealed class FloatVectorCompareScalarExpression(
         };
 
         GpuBigIntVectorKernels.LaunchVectorFloatCompareKernelPtr(
-            ctx, (uint)Length, 1, 1, blockDimX, 1, 1, 0, workspace.Stream);
+            ctx, (uint)capacity, 1, 1, blockDimX, 1, 1, 0, workspace.Stream);
 
-        return _finalValues;
+        return new BoolVectorEvaluation(_finalValues, count);
     }
 
     public void Dispose()
@@ -73,31 +82,41 @@ internal sealed class FloatVectorCompareScalarExpression(
 internal sealed class FloatVectorCompareVectorExpression(
     [TakesOwnership] IGpuBigFloatVectorExpression left,
     [TakesOwnership] IGpuBigFloatVectorExpression right,
-    VectorCompareOperator opType) : IGpuBoolVectorExpression
+    VectorCompareOperator opType) : IGpuBoolVectorExpression, IDeviceCountedBoolVector
 {
     public int Length => left.Length;
+    public int Capacity => left.Capacity;
     private GpuBigUIntArray _finalValues;
     private bool _allocated;
 
-    public GpuBigUIntArrayView Evaluate(GpuWorkspace workspace)
+    public bool TryGetLength(out int length) => left.TryGetLength(out length);
+
+    public GpuBigUIntArrayView Evaluate(GpuWorkspace workspace) =>
+        DeviceCounted.Materialize(workspace, EvaluateCore(workspace));
+
+    public BoolVectorEvaluation EvaluateCore(GpuWorkspace workspace)
     {
-        if (left.Length != right.Length)
+        if (left.Capacity != right.Capacity)
         {
             throw new ArgumentException("Lengths must match");
         }
 
-        var leftResult = left.Evaluate(workspace);
-        var rightResult = right.Evaluate(workspace);
+        var leftEvaluated = DeviceCounted.Evaluate(left, workspace);
+        var rightEvaluated = DeviceCounted.Evaluate(right, workspace);
+        var count = DeviceCounted.Combine(leftEvaluated.Count, rightEvaluated.Count);
+        var leftResult = leftEvaluated.Storage;
+        var rightResult = rightEvaluated.Storage;
+        var capacity = Capacity;
 
         if (!_allocated)
         {
-            _finalValues = new GpuBigUIntArray(workspace, Length, 1);
+            _finalValues = new GpuBigUIntArray(workspace, capacity, 1);
             _allocated = true;
         }
 
-        if (Length == 0)
+        if (capacity == 0)
         {
-            return _finalValues;
+            return new BoolVectorEvaluation(_finalValues, count);
         }
 
         var maxWords = Math.Max(leftResult.WordsPerElement, rightResult.WordsPerElement);
@@ -127,9 +146,9 @@ internal sealed class FloatVectorCompareVectorExpression(
         };
 
         GpuBigIntVectorKernels.LaunchVectorFloatCompareKernelPtr(
-            ctx, (uint)Length, 1, 1, blockDimX, 1, 1, 0, workspace.Stream);
+            ctx, (uint)capacity, 1, 1, blockDimX, 1, 1, 0, workspace.Stream);
 
-        return _finalValues;
+        return new BoolVectorEvaluation(_finalValues, count);
     }
 
     public void Dispose()

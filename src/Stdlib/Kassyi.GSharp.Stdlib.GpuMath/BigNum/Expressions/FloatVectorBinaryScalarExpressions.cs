@@ -19,7 +19,7 @@ internal readonly ref struct FloatVectorScalarOperands
 internal abstract class FloatVectorBinaryScalarExpressionBase(
     [TakesOwnership] IGpuBigFloatVectorExpression vector,
     GpuFloatOperand scalar,
-    int wordsPerElement) : IGpuBigFloatVectorExpression
+    int wordsPerElement) : IGpuBigFloatVectorExpression, IDeviceCountedFloatVector
 {
     protected const int DefaultDivShiftBits = 32;
 
@@ -31,27 +31,48 @@ internal abstract class FloatVectorBinaryScalarExpressionBase(
 
     protected uint BlockDimX => (uint)Math.Min(1024, WordsPerElement);
 
+    public int Capacity => vector.Capacity;
+
+    public bool TryGetLength(out int length) => vector.TryGetLength(out length);
+
     public GpuBigFloatArrayView Evaluate(
         GpuWorkspace workspace,
         int elementOffset = 0,
         int? elementCount = null,
-        GpuBigFloatArrayView targetResult = default)
+        GpuBigFloatArrayView targetResult = default) =>
+        DeviceCounted.Materialize(workspace, EvaluateCore(workspace, elementOffset, elementCount, targetResult));
+
+    // Evaluates the window of the capacity; the elements are the first Count of them (design D3 4.3)
+    public FloatVectorEvaluation EvaluateCore(
+        GpuWorkspace workspace,
+        int elementOffset,
+        int? elementCount,
+        GpuBigFloatArrayView targetResult)
     {
-        var evalCount = elementCount ?? (Length - elementOffset);
+        var evalCount = elementCount ?? (Capacity - elementOffset);
         // The target is checked before the child runs, so that a rejected target evaluates nothing
         var destination = VectorResultCache.HasTarget(targetResult)
             ? VectorResultCache.TargetFloat(targetResult, evalCount, WordsPerElement)
             : _cache.Float(workspace, evalCount, WordsPerElement);
-        var vecResult = vector.Evaluate(workspace, elementOffset, evalCount);
+        var vecResult = DeviceCounted.Evaluate(vector, workspace, elementOffset, evalCount);
 
-        var operands = new FloatVectorScalarOperands(vecResult, scalar, destination);
+        var operands = new FloatVectorScalarOperands(vecResult.Storage, scalar, destination);
+        var elements = RunsOnHost ? vecResult.Elements(workspace) : evalCount;
         // An empty vector launches nothing: a grid of 0 blocks is an invalid launch.
-        if (evalCount > 0)
+        if (elements > 0)
         {
-            DispatchKernel(workspace, operands, (uint)evalCount);
+            DispatchKernel(workspace, operands, (uint)elements);
         }
-        return destination;
+
+        return new FloatVectorEvaluation(destination, vecResult.Count);
     }
+
+    /// <summary>
+    /// Whether the operation runs on the host element by element (Pow): it then runs over the elements only, not the
+    /// rest of the capacity, which costs one synchronization when the count is on the device.
+    /// </summary>
+    protected virtual bool RunsOnHost => false;
+
 
     protected static GpuBigIntVectorKernels.AotContexts.VectorFloatBinaryOperation CreateScalarFloatOp(FloatVectorScalarOperands operands)
     {
@@ -209,6 +230,8 @@ internal sealed class FloatVectorPowScalarExpression(
         exponentScalar,
         Math.Max(vector.WordsPerElement, exponentScalar.Significand.NumWords))
 {
+    protected override bool RunsOnHost => true;
+
     protected override void DispatchKernel(
         GpuWorkspace workspace,
         FloatVectorScalarOperands operands,

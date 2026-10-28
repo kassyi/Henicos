@@ -131,7 +131,7 @@ internal static class FloatVectorElementwiseHelper
 }
 
 internal abstract class FloatVectorUnaryExpressionBase(
-    [TakesOwnership] IGpuBigFloatVectorExpression vector) : IGpuBigFloatVectorExpression
+    [TakesOwnership] IGpuBigFloatVectorExpression vector) : IGpuBigFloatVectorExpression, IDeviceCountedFloatVector
 {
     public int Length => vector.Length;
     public int WordsPerElement => vector.WordsPerElement;
@@ -139,23 +139,38 @@ internal abstract class FloatVectorUnaryExpressionBase(
     // The result buffers, lent until the next evaluation or Dispose; a caller's target is never kept (design 4.6)
     private readonly VectorResultCache _cache = new();
 
+    public int Capacity => vector.Capacity;
+
+    public bool TryGetLength(out int length) => vector.TryGetLength(out length);
+
     public GpuBigFloatArrayView Evaluate(
         GpuWorkspace workspace,
         int elementOffset = 0,
         int? elementCount = null,
-        GpuBigFloatArrayView targetResult = default)
+        GpuBigFloatArrayView targetResult = default) =>
+        DeviceCounted.Materialize(workspace, EvaluateCore(workspace, elementOffset, elementCount, targetResult));
+
+    // Evaluates the window of the capacity; the elements are the first Count of them (design D3 4.3)
+    public FloatVectorEvaluation EvaluateCore(
+        GpuWorkspace workspace,
+        int elementOffset,
+        int? elementCount,
+        GpuBigFloatArrayView targetResult)
     {
         ValidateBeforeEvaluate();
 
-        var evalCount = elementCount ?? (Length - elementOffset);
+        var evalCount = elementCount ?? (Capacity - elementOffset);
         // The target is checked before the child runs, so that a rejected target evaluates nothing
         var destination = VectorResultCache.HasTarget(targetResult)
             ? VectorResultCache.TargetFloat(targetResult, evalCount, WordsPerElement)
             : _cache.Float(workspace, evalCount, WordsPerElement);
-        var vecResult = vector.Evaluate(workspace, elementOffset, evalCount);
+        var vecResult = DeviceCounted.Evaluate(vector, workspace, elementOffset, evalCount);
 
-        FloatVectorElementwiseHelper.ExecuteUnary(workspace, vecResult, destination, evalCount, EvaluateElement);
-        return destination;
+        // The host loop runs over the elements only: a value after the count (the zero padding of a Where) could make
+        // an element operation throw (Log(0))
+        FloatVectorElementwiseHelper.ExecuteUnary(workspace, vecResult.Storage, destination,
+            vecResult.Elements(workspace), EvaluateElement);
+        return new FloatVectorEvaluation(destination, vecResult.Count);
     }
 
     protected virtual void ValidateBeforeEvaluate()

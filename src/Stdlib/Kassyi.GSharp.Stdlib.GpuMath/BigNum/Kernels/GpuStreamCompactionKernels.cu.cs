@@ -230,6 +230,34 @@ public static partial class GpuStreamCompactionKernels
         outputSigns[destinationIndex] = inputSigns[globalTid];
     }
 
+    /// <summary>
+    /// Scatters the selected elements of a floating-point vector (significands, exponents and signs in one launch);
+    /// only the elements before the input count are read.
+    /// </summary>
+    [GpuKernel]
+    public static void CompactFloatVector(uint[] outputSignificands, uint[] outputExponents, uint[] outputSigns,
+        uint[] inputSignificands, uint[] inputExponents, uint[] inputSigns, uint[] predicates, uint[] scanResult,
+        int elementCount, int wordsPerElement, uint[] countBase, int countSkip, int countLimit)
+    {
+        int globalTid = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
+        int n = ResolveCount(countBase, countSkip, countLimit);
+        if (globalTid >= elementCount || globalTid >= n || predicates[globalTid] == 0)
+        {
+            return;
+        }
+
+        int destinationIndex = (int)scanResult[globalTid];
+        int srcOffset = globalTid * wordsPerElement;
+        int dstOffset = destinationIndex * wordsPerElement;
+        for (int i = 0; i < wordsPerElement; i++)
+        {
+            outputSignificands[dstOffset + i] = inputSignificands[srcOffset + i];
+        }
+
+        outputExponents[destinationIndex] = inputExponents[globalTid];
+        outputSigns[destinationIndex] = inputSigns[globalTid];
+    }
+
     [GpuKernel]
     public static void MemsetZero(uint[] output, int totalWords)
     {

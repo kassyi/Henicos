@@ -171,6 +171,38 @@ public static class StreamCompactionOrchestrator
     }
 
     /// <summary>
+    /// The floating-point form of <see cref="CompactSignedVector"/>: significands, exponents and signs in one launch.
+    /// </summary>
+    internal static void CompactFloatVector(GpuWorkspace workspace, GpuBigFloatArrayView output,
+        GpuBigFloatArrayView input, IntPtr predicatesPtr, IntPtr scanPtr, ScanCount count)
+    {
+        var elementCount = input.Length;
+        if (elementCount == 0)
+        {
+            return;
+        }
+
+        const int threadsPerBlock = 256;
+        var totalWords = elementCount * input.WordsPerElement;
+        var elementGrid = (uint)((elementCount + threadsPerBlock - 1) / threadsPerBlock);
+        GpuStreamCompactionKernels.LaunchMemsetZeroPtr(
+            output.Significands.DevicePointer, totalWords,
+            gridDimX: (uint)((totalWords + threadsPerBlock - 1) / threadsPerBlock), blockDimX: threadsPerBlock,
+            hStream: workspace.Stream);
+        GpuStreamCompactionKernels.LaunchMemsetZeroPtr(
+            output.Exponents.DevicePointer, elementCount, gridDimX: elementGrid, blockDimX: threadsPerBlock,
+            hStream: workspace.Stream);
+        GpuStreamCompactionKernels.LaunchMemsetZeroPtr(
+            output.Signs.DevicePointer, elementCount, gridDimX: elementGrid, blockDimX: threadsPerBlock,
+            hStream: workspace.Stream);
+        GpuStreamCompactionKernels.LaunchCompactFloatVectorPtr(
+            output.Significands.DevicePointer, output.Exponents.DevicePointer, output.Signs.DevicePointer,
+            input.Significands.DevicePointer, input.Exponents.DevicePointer, input.Signs.DevicePointer, predicatesPtr,
+            scanPtr, elementCount, input.WordsPerElement, count.Base, count.Skip, count.Limit, gridDimX: elementGrid,
+            blockDimX: threadsPerBlock, hStream: workspace.Stream);
+    }
+
+    /// <summary>
     /// Encapsulates device pointers and dimensions for a stream compaction scatter operation.
     /// </summary>
     /// <param name="OutputPtr">The destination device pointer.</param>
