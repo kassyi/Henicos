@@ -366,6 +366,94 @@ __device__ __forceinline__ void __gsharp_trap(GSharpErrorCode, const char*) { as
 // [WHY] A trap stops the kernel, so a trap in the comparison of a sort needs no translation (ErrorChannel.hpp does it on the CPU)
 struct __gsharp_sort_compare_scope { };
 
+// --- AsParallel() aggregates (ParallelAggregatePlanner, Block strategy) ---
+// The linear rank and the number of the threads of the block (all three dimensions)
+__device__ __forceinline__ unsigned int __gsharp_block_rank() { return threadIdx.x + blockDim.x * (threadIdx.y + blockDim.y * threadIdx.z); }
+__device__ __forceinline__ unsigned int __gsharp_block_size() { return blockDim.x * blockDim.y * blockDim.z; }
+
+// [WHY] The signed sums are added as unsigned (the bits of a wrapping sum, as StackLinq's Sum wraps), so that combining
+// partial sums is not a signed overflow, which C++ leaves undefined
+struct __gsharp_plus
+{
+template <typename T>
+__device__ __forceinline__ T operator()(T a, T b) const { return a + b; }
+__device__ __forceinline__ int operator()(int a, int b) const { return (int)((unsigned int)a + (unsigned int)b); }
+__device__ __forceinline__ long long operator()(long long a, long long b) const { return (long long)((unsigned long long)a + (unsigned long long)b); }
+};
+
+// [WHY] The last warp of a block whose size is not a multiple of 32 is partial: the shuffle mask names only the lanes that
+// exist, and a value shuffled from past the last valid lane is not combined (CUB WarpReduceShfl::ReduceStep).
+template <typename T, typename Op>
+__device__ __forceinline__ T __gsharp_warp_reduce(T value, unsigned int lane, unsigned int lanes, unsigned int valid, Op op)
+{
+const unsigned int mask = lanes == 32u ? 0xffffffffu : ((1u << lanes) - 1u);
+#pragma unroll
+for (unsigned int offset = 16u; offset > 0u; offset >>= 1)
+{
+const T other = __shfl_down_sync(mask, value, offset);
+if (lane + offset < valid) { value = op(value, other); }
+}
+return value;
+}
+
+// Every thread of the block receives the reduction of the values of all the threads of the block, combined in a fixed
+// order. The slots are reused by the next call: it writes them after the second barrier of this one.
+template <typename T, typename Op>
+__device__ T __gsharp_block_reduce(T value, Op op)
+{
+__shared__ T slots[32];
+__shared__ T total;
+const unsigned int size = __gsharp_block_size();
+const unsigned int rank = __gsharp_block_rank();
+const unsigned int lane = rank & 31u;
+const unsigned int warp = rank >> 5;
+const unsigned int warps = (size + 31u) >> 5;
+const unsigned int lanes = min(32u, size - (warp << 5));
+value = __gsharp_warp_reduce(value, lane, lanes, lanes, op);
+if (lane == 0u) { slots[warp] = value; }
+__syncthreads();
+if (warp == 0u)
+{
+T v = __gsharp_warp_reduce(lane < warps ? slots[lane] : value, lane, lanes, warps, op);
+if (lane == 0u) { total = v; }
+}
+__syncthreads();
+return total;
+}
+
+// --- AsParallel() aggregates (Grid strategy, cooperative kernels) ---
+// The linear rank and the number of the blocks of the grid (all three dimensions)
+__device__ __forceinline__ unsigned int __gsharp_grid_block_rank() { return blockIdx.x + gridDim.x * (blockIdx.y + gridDim.y * blockIdx.z); }
+__device__ __forceinline__ unsigned int __gsharp_grid_block_count() { return gridDim.x * gridDim.y * gridDim.z; }
+
+// Every thread of the grid receives the reduction of the values of all the threads of the grid. The scratch holds one
+// 16-byte slot per block (its partial result) and one for the total. [WHY] A grid sync orders global memory (release
+// before, acquire after: cooperative_groups sync_grids), so block 0 reads every partial after the first sync, and every
+// thread reads the total after the second. The next call writes the slots only after both syncs of this one, so one
+// scratch serves every call of the kernel.
+template <typename T, typename Op>
+__device__ T __gsharp_grid_reduce(T value, Op op, unsigned char* scratch)
+{
+const T blockTotal = __gsharp_block_reduce(value, op);
+const unsigned int blocks = __gsharp_grid_block_count();
+if (__gsharp_block_rank() == 0u)
+{
+*reinterpret_cast<T*>(scratch + 16u * __gsharp_grid_block_rank()) = blockTotal;
+}
+cg::this_grid().sync();
+if (__gsharp_grid_block_rank() == 0u && __gsharp_block_rank() == 0u)
+{
+T total = *reinterpret_cast<T*>(scratch);
+for (unsigned int b = 1u; b < blocks; b++)
+{
+total = op(total, *reinterpret_cast<T*>(scratch + 16u * b));
+}
+*reinterpret_cast<T*>(scratch + 16u * blocks) = total;
+}
+cg::this_grid().sync();
+return *reinterpret_cast<T*>(scratch + 16u * blocks);
+}
+
 // --- Dynamic shared memory ---
 // [WHY] Every dynamic SharedMemory<T> declaration is one region per block (static storage, like __shared__). Regions are
 // carved out of the one dynamic buffer in the order a thread first reaches them; each thread keeps its own table.
@@ -821,6 +909,9 @@ __gsharp_sort_intro<__gsharp_sort_scan::Default>(keys.data, __gsharp_sort_items_
 
 // --- ZeroAlloc.Linq (StackLinq) ---
 #pragma once
+
+// The count of a Skip / Take / SkipLast / TakeLast stage clamped to [0, remaining], as C# clamps it (the sum cannot overflow)
+__device__ __forceinline__ int __gsharp_clamp_count(int count, int remaining) { return count < 0 ? 0 : (count > remaining ? remaining : count); }
 
 namespace Kassyi { namespace ZeroAlloc { namespace Linq {
 

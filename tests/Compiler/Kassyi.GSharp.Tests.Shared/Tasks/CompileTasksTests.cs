@@ -33,7 +33,7 @@ public class CompileTasksTests
 
     [Theory]
     [InlineData(false, "kernel.cu", "nvcc", "-fatbin")]
-    [InlineData(true, "kernel.cpp", "cl.exe", null)]
+    [InlineData(true, "kernel.cpp", "cl.exe", "/bigobj")]
     [Category(TestCategory.Compiler)]
     public void Test_CompileTask_RealCompilation_CallsCompiler(bool isCpp, string sourceName, string expectedExe,
         string? expectedArg)
