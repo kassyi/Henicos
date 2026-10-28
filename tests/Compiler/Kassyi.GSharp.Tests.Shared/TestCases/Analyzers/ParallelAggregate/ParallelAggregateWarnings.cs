@@ -76,6 +76,19 @@ public static partial class ParallelAggregateWarnings
         result[ThreadIndex.X] = data.AsStackEnumerable().AsParallel().Sum();
     }
 
+    // No warning: the grid shares it (cooperative), or the input differs between blocks (each block has its own sum)
+    [GpuKernel(Cooperative = true)]
+    public static void CooperativeKernel(int[] data, int[] result)
+    {
+        result[ThreadIndex.X] = data.AsStackEnumerable().AsParallel().Sum();
+    }
+
+    [GpuKernel]
+    public static void BlockDependentKernel(int[] data, int m, int[] result)
+    {
+        result[ThreadIndex.X] = data.AsStackEnumerable().Skip(BlockIndex.X * m).AsParallel().Sum();
+    }
+
     // Lambdas that read thread-dependent values directly (second review, B1)
     [GpuKernel]
     public static void LambdaThreadIndexKernel(int[] data, int[] result)
@@ -96,6 +109,13 @@ public static partial class ParallelAggregateWarnings
     public static void LambdaDeviceCallKernel(int[] data, int[] result)
     {
         result[ThreadIndex.X] = data.AsStackEnumerable().Select(x => x + Tid()).AsParallel().Sum();
+    }
+
+    // A block-dependent lambda in a kernel that is not cooperative: shared by the block, no GSH0100
+    [GpuKernel]
+    public static void LambdaBlockIndexKernel(int[] data, int[] result)
+    {
+        result[ThreadIndex.X] = data.AsStackEnumerable().Select(x => x + BlockIndex.X).AsParallel().Sum();
     }
 
     // Positions that only some threads reach (second review, B2)
@@ -163,11 +183,11 @@ public static partial class ParallelAggregateWarnings
         }
     }
 
-    // Re-review (R1): a selector that passes its element to a device function is shared by the block, no warning
+    // Re-review (R1): a selector that passes its element to a device function is shared (by the grid here), no warning
     [GpuDeviceFunction]
     public static int Square(int v) => v * v;
 
-    [GpuKernel]
+    [GpuKernel(Cooperative = true)]
     public static void DeviceFunctionSelectorKernel(int[] data, int[] result)
     {
         result[ThreadIndex.X] = data.AsStackEnumerable().Select(x => Square(x)).AsParallel().Sum();

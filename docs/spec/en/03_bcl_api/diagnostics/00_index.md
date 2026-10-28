@@ -93,6 +93,7 @@ The G# compiler and Roslyn analyzers enforce GPU safety and memory management ru
 | [GSH0089](GSH0089.md) | Error | Device code of another assembly cannot be used |
 | [GSH0090](GSH0090.md) | Error | Device code of two assemblies has the same C++ name |
 | [GSH0099](GSH0099.md) | Warning | An AsParallel() aggregate runs sequentially in each thread |
+| [GSH0100](GSH0100.md) | Warning | Every block reduces the whole sequence of an AsParallel() aggregate |
 | [SLQ0001](SLQ0001.md) | Warning | Excessive StackLinq chain depth |
 | [RS0030](RS0030.md) | Error | GPU intrinsic invoked from host code or banned API used in kernel |
 
