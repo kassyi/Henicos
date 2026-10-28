@@ -44,7 +44,9 @@ public class StackArrayDiagnosticsTests
                 (Analyzer, 253, 9, 253, 23),
                 (Analyzer, 254, 15, 254, 20),
                 (Analyzer, 269, 13, 269, 46),
-                (Analyzer, 271, 13, 271, 53)
+                (Analyzer, 271, 13, 271, 53),
+                (Analyzer, 297, 13, 297, 38),
+                (Analyzer, 298, 13, 298, 39)
             ],
             diagnostics.Ranges(GSharpDiagnostics.StackArrayEscapes.Id));
     }
@@ -72,6 +74,8 @@ public class StackArrayDiagnosticsTests
     [InlineData("'s' cannot be passed by ref or out", 254)]
     [InlineData("'a' cannot be assigned to a variable declared outside its scope", 269)]
     [InlineData("'s' cannot be assigned to a variable declared outside its scope", 271)]
+    [InlineData("'a' cannot be assigned to a variable declared outside its scope", 297)]
+    [InlineData("'a' cannot be assigned to a variable declared outside its scope", 298)]
     [Scenario(TestScenario.SadPath)]
     public async Task Test_StackArrayEscape_MessageNamesTheStorageAndTheUse(string messagePart, int line)
     {

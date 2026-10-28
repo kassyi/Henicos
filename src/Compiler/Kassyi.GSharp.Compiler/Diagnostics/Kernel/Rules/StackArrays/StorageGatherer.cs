@@ -170,12 +170,14 @@ internal sealed class StorageGatherer(SemanticModel model, Dictionary<ISymbol, L
         }
     }
 
-    // The arguments of a call or a constructor: what the callee may return
+    // The arguments of a call or a constructor: what the callee may return. A ref or in argument passes the variable
+    // itself, whose address the callee may return (fixed (int* p = &x) return p;)
     private static void AddArguments(ArgumentListSyntax arguments, List<(ExpressionSyntax Child, Carry Carry)> children)
     {
         foreach (var argument in arguments.Arguments)
         {
-            children.Add((argument.Expression, Carry.Value));
+            var carry = argument.RefKindKeyword.IsKind(SyntaxKind.RefKeyword, SyntaxKind.InKeyword) ? Carry.Address : Carry.Value;
+            children.Add((argument.Expression, carry));
         }
     }
 
