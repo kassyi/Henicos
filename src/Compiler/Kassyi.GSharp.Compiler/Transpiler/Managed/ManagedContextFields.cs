@@ -75,11 +75,12 @@ internal static class ManagedContextFields
                     unhoistedKeys.Add(key);
                 }
 
-                // A ref struct local is declared again on every resume, so its initializer is emitted as is
+                // A ref struct local is declared again on every resume, so its initializer is emitted as is. A dynamic
+                // SharedMemory<T> only finds its region there; its declaration places it (ContextLocalRewriter keeps it)
                 localInits.Add(contextField with
                 {
                     Declarator = ManagedNameQualifier.Qualify(
-                        SharedMemorySiteKeyAnnotator.AddSharedMemorySiteKeys(field, semanticModel),
+                        SharedMemorySiteKeyAnnotator.AddSharedMemorySiteKeys(field, semanticModel, findOnly: true),
                         semanticModel)
                 });
             }

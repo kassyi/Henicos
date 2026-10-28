@@ -480,6 +480,15 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker, IDisposable
             return;
         }
 
+        // A string with a non-ASCII character (a source file name in a CPU error message, a printf format) is written with
+        // octal escapes, so its UTF-8 bytes do not depend on the character sets of the C++ compiler; any other string is
+        // written as it is, its C# escapes being C++ escapes as well
+        if (node.IsKind(SyntaxKind.StringLiteralExpression) && HasNonAscii(node.Token.ValueText))
+        {
+            CppStringLiteral.Append(Context.Emitter.Writer, node.Token.ValueText);
+            return;
+        }
+
         // C++ rejects '_' inside numbers (and "0x'FF"), so digit separators are dropped.
         if (node.IsKind(SyntaxKind.NumericLiteralExpression))
         {
@@ -488,6 +497,19 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker, IDisposable
         }
 
         Context.Emitter.Writer.Append(node.Token.Text);
+    }
+
+    private static bool HasNonAscii(string value)
+    {
+        foreach (var c in value)
+        {
+            if (c > 0x7F)
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private void AppendWithoutSeparators(string text, int end)

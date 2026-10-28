@@ -63,12 +63,13 @@ public class DeviceDynamicSharedMemoryTests : TranspilerTestBase
     }
 
 #if GSHARP_CPU
+    // CUDA traps when a region that is not the last one grows; the native CPU path throws (#544, C10)
     [SkippableFact]
-    [Scenario(TestScenario.Boundary)]
-    public void Test_GrowingHelper_AfterCallerDeclaration_PreservesBothBuffers()
+    [Scenario(TestScenario.SadPath)]
+    public void Test_GrowingHelper_AfterCallerDeclaration_Throws()
     {
         EnsureCapability(DialectCapabilities.SharedMemory);
-        DeviceDynamicSharedMemoryScenarios.GrowingHelperAfterCallerDeclaration(s_runNative);
+        DeviceDynamicSharedMemoryScenarios.GrowingHelperAfterCallerDeclarationThrows(s_runNative);
     }
 #endif
 
