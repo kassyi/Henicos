@@ -125,6 +125,13 @@ inline operator const T*() const { return data; }
 // A stack array (T name[N]) viewed as a span, for a receiver or a template argument that deduces GSharpArray<T>
 template <typename T, int N>
 inline GSharpArray<T> __gsharp_stackalloc_span(T (&storage)[N]) { return GSharpArray<T>(storage, N); }
+// The storage of a stackalloc outside a declaration, declared before the statement: zeroed where the stackalloc is
+// evaluated (every evaluation, as C# allocates a new block each time), then viewed as a span
+template <typename T, int N>
+inline GSharpArray<T> __gsharp_stackalloc_zero(T (&storage)[N]) {
+for (int i = 0; i < N; i++) { storage[i] = T{}; }
+return GSharpArray<T>(storage, N);
+}
 
 template <typename R, typename... Args>
 using System_Func = std::function<R(Args...)>;
@@ -167,9 +174,42 @@ __forceinline__ uint32_t __gsharp_uint_cast(double x) { return (uint32_t)x; }
 // --- Math & Range ---
 template <typename T> T max(T a, T b) { return std::max(a, b); }
 template <typename T> T min(T a, T b) { return std::min(a, b); }
-template <typename T> T __gsharp_clamp(T val, T min_val, T max_val) {
-return std::max(min_val, std::min(val, max_val));
+// Math.Clamp in the .NET order: value < min first, so a NaN value stays NaN, a NaN bound is ignored and the sign of a
+// zero value is kept
+template <typename T> T __gsharp_clamp(T value, T min_val, T max_val) {
+return value < min_val ? min_val : (value > max_val ? max_val : value);
 }
+// Math.Max / Math.Min (IEEE 754:2019 maximum / minimum), written as the .NET implementation: NaN if either input is NaN,
+// +0 > -0. fmax / fmin are not used: C leaves the order of signed zeros to the library.
+// One name per type, as fmaxf / fmax: a call passes its C# arguments unconverted (Math.Max(double, float)), which
+// an overload set would find ambiguous.
+// The __gsharp_ieee_* templates hold the bodies; the per-type wrappers below are the only callers.
+template <typename T> T __gsharp_ieee_max(T a, T b) {
+if (a != b) { return std::isnan(a) ? a : (b < a ? a : b); }
+return std::signbit(b) ? a : b;
+}
+template <typename T> T __gsharp_ieee_min(T a, T b) {
+if (a != b) { return std::isnan(a) ? a : (a < b ? a : b); }
+return std::signbit(a) ? a : b;
+}
+__forceinline__ float __gsharp_max_f32(float a, float b) { return __gsharp_ieee_max(a, b); }
+__forceinline__ double __gsharp_max_f64(double a, double b) { return __gsharp_ieee_max(a, b); }
+__forceinline__ float __gsharp_min_f32(float a, float b) { return __gsharp_ieee_min(a, b); }
+__forceinline__ double __gsharp_min_f64(double a, double b) { return __gsharp_ieee_min(a, b); }
+// float / double MaxNumber / MinNumber (IEEE 754:2019 maximumNumber / minimumNumber), as .NET: NaN only if both are
+// NaN, +0 > -0. The same values as PTX max / min, which the CUDA prelude uses.
+template <typename T> T __gsharp_ieee_max_number(T a, T b) {
+if (a != b) { return std::isnan(b) ? a : (b < a ? a : b); }
+return std::signbit(b) ? a : b;
+}
+template <typename T> T __gsharp_ieee_min_number(T a, T b) {
+if (a != b) { return std::isnan(b) ? a : (a < b ? a : b); }
+return std::signbit(a) ? a : b;
+}
+__forceinline__ float __gsharp_max_number_f32(float a, float b) { return __gsharp_ieee_max_number(a, b); }
+__forceinline__ double __gsharp_max_number_f64(double a, double b) { return __gsharp_ieee_max_number(a, b); }
+__forceinline__ float __gsharp_min_number_f32(float a, float b) { return __gsharp_ieee_min_number(a, b); }
+__forceinline__ double __gsharp_min_number_f64(double a, double b) { return __gsharp_ieee_min_number(a, b); }
 
 // --- Bit Manipulation & Arithmetic ---
 __forceinline__ uint32_t __gsharp_rotr32(uint32_t value, int offset) { return _rotr(value, offset); }
@@ -408,6 +448,27 @@ blockIdx.x = bx; blockIdx.y = by; blockIdx.z = bz;
 blockDim.x = dx; blockDim.y = dy; blockDim.z = dz;
 gridDim.x = gx; gridDim.y = gy; gridDim.z = gz;
 }
+
+// --- Gpu.GridStrideLoop ---
+// The first index and the step over the linear rank of the whole launch, in the order of cooperative_groups
+// grid::thread_rank() / num_threads() (x fastest, blocks in the same order). Both saturate at 2^31: no int index
+// reaches it, so index + step never wraps around in 32 bits. The block rank is 64-bit before any product: it stays
+// below 2^63 (65535 * 65535 * (2^31 - 1)), as in num_blocks().
+__forceinline__ unsigned int __gsharp_grid_stride_start() {
+unsigned long long block = ((unsigned long long)blockIdx.z * gridDim.y + blockIdx.y) * gridDim.x + blockIdx.x;
+if (block >= 0x80000000ull) { return 0x80000000u; }
+unsigned long long rank = block * (blockDim.x * blockDim.y * blockDim.z)
++ (threadIdx.z * blockDim.y + threadIdx.y) * blockDim.x + threadIdx.x;
+return rank >= 0x80000000ull ? 0x80000000u : (unsigned int)rank;
+}
+__forceinline__ unsigned int __gsharp_grid_stride_step() {
+unsigned long long blocks = (unsigned long long)gridDim.x * (gridDim.y * gridDim.z);
+if (blocks >= 0x80000000ull) { return 0x80000000u; }
+unsigned long long threads = blocks * (blockDim.x * blockDim.y * blockDim.z);
+return threads >= 0x80000000ull ? 0x80000000u : (unsigned int)threads;
+}
+// The count of Gpu.GridStrideLoop, evaluated once; a negative count runs no iteration, as i < n does in C#
+__forceinline__ unsigned int __gsharp_grid_stride_count(int n) { return n < 0 ? 0u : (unsigned int)n; }
 
 namespace cg {
 struct grid_group {

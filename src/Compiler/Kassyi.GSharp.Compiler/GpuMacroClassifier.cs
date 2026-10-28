@@ -77,4 +77,20 @@ internal static class GpuMacroClassifier
             _ => default
         };
     }
+
+    /// <summary>
+    /// The macro whose body <paramref name="lambda"/> is (the lambda written as its body argument), or the default call
+    /// (<see cref="GpuMacroKind.None"/>) for any other lambda. A body runs within the call; it is never stored.
+    /// </summary>
+    public static GpuMacroCall ClassifyBody(SyntaxNode lambda, SemanticModel semanticModel)
+    {
+        if (lambda.Parent is not ArgumentSyntax { Parent: ArgumentListSyntax { Parent: InvocationExpressionSyntax macro } list } argument ||
+            semanticModel.GetSymbol(macro) is not IMethodSymbol symbol)
+        {
+            return default;
+        }
+
+        var call = Classify(symbol);
+        return call.HasBody && list.Arguments.IndexOf(argument) == call.LambdaArgumentIndex ? call : default;
+    }
 }

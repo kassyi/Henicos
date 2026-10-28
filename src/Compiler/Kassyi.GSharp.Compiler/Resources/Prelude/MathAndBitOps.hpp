@@ -11,9 +11,42 @@ __forceinline__ uint32_t __gsharp_uint_cast(double x) { return (uint32_t)x; }
 // --- Math & Range ---
 template <typename T> T max(T a, T b) { return std::max(a, b); }
 template <typename T> T min(T a, T b) { return std::min(a, b); }
-template <typename T> T __gsharp_clamp(T val, T min_val, T max_val) {
-    return std::max(min_val, std::min(val, max_val));
+// Math.Clamp in the .NET order: value < min first, so a NaN value stays NaN, a NaN bound is ignored and the sign of a
+// zero value is kept
+template <typename T> T __gsharp_clamp(T value, T min_val, T max_val) {
+    return value < min_val ? min_val : (value > max_val ? max_val : value);
 }
+// Math.Max / Math.Min (IEEE 754:2019 maximum / minimum), written as the .NET implementation: NaN if either input is NaN,
+// +0 > -0. fmax / fmin are not used: C leaves the order of signed zeros to the library.
+// One name per type, as fmaxf / fmax: a call passes its C# arguments unconverted (Math.Max(double, float)), which
+// an overload set would find ambiguous.
+// The __gsharp_ieee_* templates hold the bodies; the per-type wrappers below are the only callers.
+template <typename T> T __gsharp_ieee_max(T a, T b) {
+    if (a != b) { return std::isnan(a) ? a : (b < a ? a : b); }
+    return std::signbit(b) ? a : b;
+}
+template <typename T> T __gsharp_ieee_min(T a, T b) {
+    if (a != b) { return std::isnan(a) ? a : (a < b ? a : b); }
+    return std::signbit(a) ? a : b;
+}
+__forceinline__ float __gsharp_max_f32(float a, float b) { return __gsharp_ieee_max(a, b); }
+__forceinline__ double __gsharp_max_f64(double a, double b) { return __gsharp_ieee_max(a, b); }
+__forceinline__ float __gsharp_min_f32(float a, float b) { return __gsharp_ieee_min(a, b); }
+__forceinline__ double __gsharp_min_f64(double a, double b) { return __gsharp_ieee_min(a, b); }
+// float / double MaxNumber / MinNumber (IEEE 754:2019 maximumNumber / minimumNumber), as .NET: NaN only if both are
+// NaN, +0 > -0. The same values as PTX max / min, which the CUDA prelude uses.
+template <typename T> T __gsharp_ieee_max_number(T a, T b) {
+    if (a != b) { return std::isnan(b) ? a : (b < a ? a : b); }
+    return std::signbit(b) ? a : b;
+}
+template <typename T> T __gsharp_ieee_min_number(T a, T b) {
+    if (a != b) { return std::isnan(b) ? a : (a < b ? a : b); }
+    return std::signbit(a) ? a : b;
+}
+__forceinline__ float __gsharp_max_number_f32(float a, float b) { return __gsharp_ieee_max_number(a, b); }
+__forceinline__ double __gsharp_max_number_f64(double a, double b) { return __gsharp_ieee_max_number(a, b); }
+__forceinline__ float __gsharp_min_number_f32(float a, float b) { return __gsharp_ieee_min_number(a, b); }
+__forceinline__ double __gsharp_min_number_f64(double a, double b) { return __gsharp_ieee_min_number(a, b); }
 
 // --- Bit Manipulation & Arithmetic ---
 __forceinline__ uint32_t __gsharp_rotr32(uint32_t value, int offset) { return _rotr(value, offset); }

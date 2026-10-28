@@ -55,7 +55,9 @@ internal static class StackArrayLocals
     /// </summary>
     public static void AppendView(ExpressionSyntax expression, ref TranspileContext context)
     {
-        if (!IsStackArrayReference(expression, context.Query.SemanticModel))
+        // An empty span local is already a GSharpArray<T> (VariableDeclarationTranspilerRule)
+        if (!IsStackArrayReference(expression, context.Query.SemanticModel) ||
+            TryGetLength(expression, context.Query.SemanticModel, out var length) && length == 0)
         {
             context.Visitor.Visit(expression);
             return;

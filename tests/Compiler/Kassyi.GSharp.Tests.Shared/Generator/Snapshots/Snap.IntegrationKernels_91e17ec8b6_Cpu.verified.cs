@@ -13,7 +13,7 @@ inline bool __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__Tier1IntegrationK
 __forceinline__ float __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__Tier1IntegrationKernels__HelperMathAggressive(float __gsharp_id_0_x);
 
 inline float __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__Tier1IntegrationKernels__HelperMath(float __gsharp_id_0_x, float __gsharp_id_1_y){
-return (float)fmaxf(__gsharp_id_0_x*__gsharp_id_0_x,__gsharp_id_1_y*__gsharp_id_1_y);
+return (float)__gsharp_max_f32(__gsharp_id_0_x*__gsharp_id_0_x,__gsharp_id_1_y*__gsharp_id_1_y);
 }
 
 inline bool __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__Tier1IntegrationKernels__TryProcess(int __gsharp_id_0_input, int* __gsharp_id_1_output){
@@ -149,7 +149,12 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-for(int __gsharp_id_7_tid = blockIdx.x * blockDim.x + threadIdx.x; __gsharp_id_7_tid < __gsharp_id_5_count; __gsharp_id_7_tid += gridDim.x * blockDim.x)
+{
+unsigned int __gsharp_gsl_n_0 = __gsharp_grid_stride_count(__gsharp_id_5_count);
+unsigned int __gsharp_gsl_s_0 = __gsharp_grid_stride_step();
+for(unsigned int __gsharp_gsl_0 = __gsharp_grid_stride_start(); __gsharp_gsl_0 < __gsharp_gsl_n_0; __gsharp_gsl_0 += __gsharp_gsl_s_0)
+{
+int __gsharp_id_7_tid = (int)__gsharp_gsl_0;
 {
 auto __gsharp_id_8_LocalInlineFunc = [&](int __gsharp_id_9_x) {
 return __gsharp_id_9_x+5-5;
@@ -181,7 +186,7 @@ __gsharp_ctx->__gsharp_id_14_bitwise=(__gsharp_id_10_a<<1)|(__gsharp_id_11_b>>1)
 __gsharp_ctx->__gsharp_id_14_bitwise&=~1;
 __gsharp_ctx->__gsharp_id_15_mag=__gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__Tier1IntegrationKernels__HelperMath(__gsharp_id_1_floatInput[__gsharp_id_7_tid],(float)__gsharp_id_13_processed);
 __gsharp_ctx->__gsharp_id_15_mag=__gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__Tier1IntegrationKernels__HelperMathAggressive(__gsharp_ctx->__gsharp_id_15_mag);
-__gsharp_ctx->__gsharp_id_15_mag=(float)fmaxf(__gsharp_ctx->__gsharp_id_15_mag,__gsharp_id_3_config.__gsharp_mb_FloatVal);
+__gsharp_ctx->__gsharp_id_15_mag=(float)__gsharp_max_f32(__gsharp_ctx->__gsharp_id_15_mag,__gsharp_id_3_config.__gsharp_mb_FloatVal);
 __gsharp_ctx->__gsharp_id_15_mag+=([&]() {
 switch((__gsharp_id_7_tid%3))
 {
@@ -287,6 +292,8 @@ __gsharp_id_37_loopCounter++;
 while(__gsharp_id_37_loopCounter<3);
 __gsharp_id_2_results[__gsharp_id_7_tid]=__gsharp_id_31_finalVal;
 }
+}
+}
 __gsharp_state=-1;
 return;
 }
@@ -387,8 +394,12 @@ switch (__gsharp_ctx.__gsharp_state)
 case 0:
 {
 // SYN-94: Macro DSL
-for (int __gsharp_unroll_0 = global::Kassyi.GSharp.Core.ManagedGpuContext.BlockDimX * global::Kassyi.GSharp.Core.ManagedGpuContext.BlockIdxX + global::Kassyi.GSharp.Core.ManagedGpuContext.ThreadIdxX; __gsharp_unroll_0 < (count); __gsharp_unroll_0 += global::Kassyi.GSharp.Core.ManagedGpuContext.BlockDimX * global::Kassyi.GSharp.Core.ManagedGpuContext.GridDimX)
 {
+uint __gsharp_gsl_n_0 = global::Kassyi.GSharp.Core.ManagedGpuContext.GridStrideCount(count);
+uint __gsharp_gsl_s_0 = global::Kassyi.GSharp.Core.ManagedGpuContext.GridStrideStep();
+for (uint __gsharp_gsl_0 = global::Kassyi.GSharp.Core.ManagedGpuContext.GridStrideStart(); __gsharp_gsl_0 < __gsharp_gsl_n_0; __gsharp_gsl_0 += __gsharp_gsl_s_0)
+{
+int __gsharp_unroll_0 = (int)__gsharp_gsl_0;
 // Local function with AggressiveInlining
 [global::System.Runtime.CompilerServices.MethodImpl(global::System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
 int LocalInlineFunc(int x) => x + 5 - 5; // effectively x
@@ -507,6 +518,7 @@ loopCounter++;
 }
 while (loopCounter < 3);
 results[__gsharp_unroll_0] = finalVal;
+}
 }
 
 __gsharp_ctx.__gsharp_state = -1;

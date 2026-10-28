@@ -62,7 +62,7 @@ inline __device__ bool __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__Tier1I
 __forceinline__ __device__ float __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__Tier1IntegrationKernels__HelperMathAggressive(float __gsharp_id_0_x);
 
 inline __device__ float __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__Tier1IntegrationKernels__HelperMath(float __gsharp_id_0_x, float __gsharp_id_1_y){
-return (float)fmaxf(__gsharp_id_0_x*__gsharp_id_0_x,__gsharp_id_1_y*__gsharp_id_1_y);
+return (float)__gsharp_max_f32(__gsharp_id_0_x*__gsharp_id_0_x,__gsharp_id_1_y*__gsharp_id_1_y);
 }
 
 inline __device__ bool __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__Tier1IntegrationKernels__TryProcess(int __gsharp_id_0_input, int* __gsharp_id_1_output){
@@ -184,7 +184,12 @@ extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__T
 __gsharp_dsmem_Kassyi__GSharp__Tests__Shared__Syntax__Tier1IntegrationKernels__AllInOneKernel __gsharp_dsmem_storage;
 __gsharp_dsmem_Kassyi__GSharp__Tests__Shared__Syntax__Tier1IntegrationKernels__AllInOneKernel* __gsharp_dsmem = &__gsharp_dsmem_storage;
 __gsharp_dsmem_init(__gsharp_dsmem);
-for(int __gsharp_id_7_tid = blockIdx.x * blockDim.x + threadIdx.x; __gsharp_id_7_tid < __gsharp_id_5_count; __gsharp_id_7_tid += gridDim.x * blockDim.x)
+{
+unsigned int __gsharp_gsl_n_0 = __gsharp_grid_stride_count(__gsharp_id_5_count);
+unsigned int __gsharp_gsl_s_0 = __gsharp_grid_stride_step();
+for(unsigned int __gsharp_gsl_0 = __gsharp_grid_stride_start(); __gsharp_gsl_0 < __gsharp_gsl_n_0; __gsharp_gsl_0 += __gsharp_gsl_s_0)
+{
+int __gsharp_id_7_tid = (int)__gsharp_gsl_0;
 {
 auto __gsharp_id_8_LocalInlineFunc = [&](int __gsharp_id_9_x) {
 return __gsharp_id_9_x+5-5;
@@ -216,7 +221,7 @@ int __gsharp_id_14_bitwise = (__gsharp_id_10_a<<1)|(__gsharp_id_11_b>>1)^0xFF;
 __gsharp_id_14_bitwise&=~1;
 float __gsharp_id_15_mag = __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__Tier1IntegrationKernels__HelperMath(__gsharp_id_1_floatInput[__gsharp_id_7_tid],(float)__gsharp_id_13_processed);
 __gsharp_id_15_mag=__gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__Tier1IntegrationKernels__HelperMathAggressive(__gsharp_id_15_mag);
-__gsharp_id_15_mag=(float)fmaxf(__gsharp_id_15_mag,__gsharp_id_3_config.__gsharp_mb_FloatVal);
+__gsharp_id_15_mag=(float)__gsharp_max_f32(__gsharp_id_15_mag,__gsharp_id_3_config.__gsharp_mb_FloatVal);
 __gsharp_id_15_mag+=([&]() {
 switch((__gsharp_id_7_tid%3))
 {
@@ -321,6 +326,8 @@ __gsharp_id_37_loopCounter++;
 }
 while(__gsharp_id_37_loopCounter<3);
 __gsharp_id_2_results[__gsharp_id_7_tid]=__gsharp_id_31_finalVal;
+}
+}
 }
 }
 ";
