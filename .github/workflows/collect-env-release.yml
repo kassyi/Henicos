@@ -23,14 +23,14 @@ jobs:
           - { os: ubuntu-latest, rid: linux-x64, asset: collect-env-linux-x64, built: collect-env }
     steps:
       - name: Checkout code
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           # Cone mode takes the whole directory, including its Directory.Build.props / Directory.Build.targets, which keep
           # the repository-root props out of the build.
           sparse-checkout: tools/collect-env
 
       - name: Setup .NET
-        uses: actions/setup-dotnet@v4
+        uses: actions/setup-dotnet@v6
         with:
           dotnet-version: "10.0.x"
 
@@ -51,7 +51,7 @@ jobs:
 
       - name: Store as workflow artifact (manual run)
         if: github.event_name == 'workflow_dispatch'
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: ${{ matrix.asset }}
           path: ${{ matrix.asset }}
