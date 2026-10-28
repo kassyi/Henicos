@@ -78,6 +78,79 @@ internal static class BigFloatReference
     }
 
     /// <summary>
+    /// Returns the sign (-1, 0 or 1) of the exact sum of <c>c·2^e</c> over <paramref name="terms"/> without building
+    /// it: a term entirely below the lowest bit of the partial sum of the higher terms cannot change its sign, so
+    /// exponents <c>2^32</c> apart need no shift of <c>2^32</c> bits.
+    /// </summary>
+    public static int SignOfSum(params (BigInteger Coefficient, long Exponent)[] terms)
+    {
+        // The nonzero terms by the position just above their top bit, highest first.
+        var sorted = terms
+            .Where(static t => !t.Coefficient.IsZero)
+            .OrderByDescending(static t => t.Exponent + (long)BigInteger.Abs(t.Coefficient).GetBitLength())
+            .ToArray();
+        var sum = BigInteger.Zero;
+        var sumExponent = 0L;
+        for (var i = 0; i < sorted.Length; i++)
+        {
+            var (coefficient, exponent) = sorted[i];
+            if (sum.IsZero)
+            {
+                (sum, sumExponent) = (coefficient, exponent);
+                continue;
+            }
+
+            // The remaining k terms are each below 2^top, so together below k·2^top <= 2^sumExponent <= |sum|.
+            var top = exponent + (long)BigInteger.Abs(coefficient).GetBitLength();
+            var remaining = sorted.Length - i;
+            if (top + (long)new BigInteger(remaining - 1).GetBitLength() <= sumExponent)
+            {
+                return sum.Sign;
+            }
+
+            // The spans overlap or nearly so, so the alignment shift is bounded by the widths of the terms.
+            var low = Math.Min(sumExponent, exponent);
+            sum = (sum << checked((int)(sumExponent - low))) + (coefficient << checked((int)(exponent - low)));
+            sumExponent = low;
+        }
+
+        return sum.Sign;
+    }
+
+    /// <summary>
+    /// Returns whether <c>±sig·2^exp</c> is <c>RZ_p</c> of the exact sum of <c>c·2^e</c> over <paramref name="terms"/>
+    /// by the definition (<paramref name="sig"/> of exactly <paramref name="p"/> bits, the sign of the sum, and
+    /// <c>sig·2^exp ≤ |v| &lt; (sig + 1)·2^exp</c>), or both are zero, through <see cref="SignOfSum"/> only.
+    /// </summary>
+    public static bool IsRoundedTowardZeroOfSum(
+        BigInteger sig, long exp, bool isNegative, int p, params (BigInteger Coefficient, long Exponent)[] terms)
+    {
+        var sign = SignOfSum(terms);
+        if (sign == 0 || sig.IsZero)
+        {
+            return sign == 0 && sig.IsZero && !isNegative;
+        }
+
+        if (sig.GetBitLength() != p || isNegative != sign < 0)
+        {
+            return false;
+        }
+
+        // |v| - sig·2^exp >= 0 and (sig + 1)·2^exp - |v| > 0, with |v| = sign·v.
+        var lower = new (BigInteger Coefficient, long Exponent)[terms.Length + 1];
+        var upper = new (BigInteger Coefficient, long Exponent)[terms.Length + 1];
+        for (var i = 0; i < terms.Length; i++)
+        {
+            lower[i] = (sign * terms[i].Coefficient, terms[i].Exponent);
+            upper[i] = (-sign * terms[i].Coefficient, terms[i].Exponent);
+        }
+
+        lower[^1] = (-sig, exp);
+        upper[^1] = (sig + 1, exp);
+        return SignOfSum(lower) >= 0 && SignOfSum(upper) > 0;
+    }
+
+    /// <summary>
     /// Formats <c>sign * sig * 2^exp</c> for an assertion message.
     /// </summary>
     public static string Describe(BigInteger sig, int exp, bool isNegative) =>

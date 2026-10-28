@@ -19,4 +19,14 @@ public static class LayoutGuard
         throw new InvalidOperationException(
             $"Struct layout field offset mismatch for '{structName}': the generated host mirror does not have the CLR layout of the struct.");
     }
+
+    /// <summary>
+    /// Throws when a field of a struct that the launcher copies as one block is not at the offset that G# predicted for
+    /// it, for example a struct of another assembly whose <c>[StructLayout]</c> or <c>[FieldOffset]</c> G# cannot read.
+    /// </summary>
+    public static void ThrowFieldOffsetMismatch(string structName, string fieldName, int expectedOffset, long actualOffset)
+    {
+        throw new InvalidOperationException(
+            $"Struct layout field offset mismatch for '{structName}': field '{fieldName}' is expected at offset {expectedOffset}, but the CLR puts it at offset {actualOffset}.");
+    }
 }

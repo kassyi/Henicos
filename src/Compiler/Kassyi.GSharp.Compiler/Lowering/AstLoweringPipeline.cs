@@ -38,6 +38,7 @@ public static class AstLoweringPipeline
         var treeOrdinal = SemanticModelExtensions.GetSyntaxTreeOrdinal(bodyModel?.Compilation, body.SyntaxTree);
         var annotatedBody = ToBlock(new SpanAnnotationRewriter(splitPoints, treeOrdinal).Visit(body) ?? body, returnsValue);
         annotatedBody = PreLoweringExpander.Expand(annotatedBody, bodyModel);
+        annotatedBody = LabeledStatementSplitter.Split(annotatedBody);
 
         var copiedParameters = deviceFunction != null
             ? FindAssignedValueParameters(body, deviceFunction, bodyModel)
@@ -58,10 +59,12 @@ public static class AstLoweringPipeline
         hoistedBody = warpRewriter.Rewrite(hoistedBody);
         hoistedBody = branchRewriter.Rewrite(hoistedBody);
 
+        // [WHY] Found once, before ContextHoister rewrites declarations, and given to both passes so that they agree
+        var statePlan = StateLabelPlanner.Plan(hoistedBody, bodyModel);
         var (contextHoistedBody, contextFields) =
-            new ContextHoister(copiedParameters, isDeviceFunction: deviceFunction != null, bodyModel, deviceFunction)
+            new ContextHoister(copiedParameters, bodyModel, deviceFunction, statePlan)
                 .Hoist(hoistedBody);
-        var lowerer = new StateMachineLowerer(isDeviceFunction: deviceFunction != null, bodyModel);
+        var lowerer = new StateMachineLowerer(isDeviceFunction: deviceFunction != null, bodyModel, statePlan);
         var stateMachineBody = lowerer.Lower(contextHoistedBody);
 
         return new LoweredStateMachine(stateMachineBody, contextFields, lowerer.CallSites, copiedParameters);

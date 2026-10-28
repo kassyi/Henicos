@@ -1,4 +1,3 @@
-import React from 'react';
 import { Box, Typography, ToggleButton, ToggleButtonGroup } from '@mui/material';
 
 export interface FilterOption<T> {

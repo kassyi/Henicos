@@ -1,3 +1,4 @@
+using System.Runtime.InteropServices;
 using Kassyi.GSharp.Core;
 
 namespace Kassyi.GSharp.Tests.DeviceLibrary;
@@ -7,6 +8,28 @@ public struct Pair
 {
     public int A;
     public int B;
+}
+
+/// <summary>
+/// Two integers in the reverse of the declaration order. A consumer cannot read [StructLayout] and [FieldOffset] of a
+/// type from metadata (Roslyn keeps them as pseudo-attributes), so it predicts A at 0 and B at 4.
+/// </summary>
+[StructLayout(LayoutKind.Explicit)]
+public struct SwapPair
+{
+    [FieldOffset(4)]
+    public int A;
+
+    [FieldOffset(0)]
+    public int B;
+}
+
+/// <summary>A byte and an integer without padding (5 bytes); a consumer predicts the sequential 8 bytes.</summary>
+[StructLayout(LayoutKind.Sequential, Pack = 1)]
+public struct PackedPair
+{
+    public byte Tag;
+    public int Value;
 }
 
 /// <summary>A vector with a constructor and a computed property, which the library's records bring to a consumer.</summary>

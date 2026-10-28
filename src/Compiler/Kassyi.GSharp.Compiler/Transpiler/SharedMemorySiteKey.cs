@@ -52,16 +52,23 @@ internal static class SharedMemorySiteKey
     public static string ToCSharpLiteral(ulong key) => $"0x{key:x16}UL";
 
     /// <summary>
-    /// Appends <c>(&lt;T&gt;*)__gsharp_allocate_smem(&lt;siteKey&gt;, (&lt;n&gt;) * sizeof(&lt;T&gt;), alignof(&lt;T&gt;))</c>
-    /// for a CPU <c>SharedMemory&lt;T&gt;</c> creation expression.
+    /// Appends the CPU allocation of a <c>SharedMemory&lt;T&gt;</c> creation (#544). A constant count (or none) is a
+    /// static declaration, as on CUDA (<c>__shared__</c>, not counted in <c>sharedMemBytes</c>):
+    /// <c>(&lt;T&gt;*)__gsharp_allocate_smem_static(&lt;siteKey&gt;, (&lt;n&gt;) * sizeof(&lt;T&gt;), alignof(&lt;T&gt;))</c>.
+    /// Any other count is a dynamic declaration, placed in the launch's <c>sharedMemBytes</c>:
+    /// <c>(&lt;T&gt;*)__gsharp_allocate_smem_dynamic(&lt;siteKey&gt;, (&lt;n&gt;) * sizeof(&lt;T&gt;), alignof(&lt;T&gt;), "&lt;place&gt;")</c>.
+    /// The decision is <see cref="DynamicSharedMemoryAnalysis.TryGetCount(BaseObjectCreationExpressionSyntax, SemanticModel, out ExpressionSyntax?, out int?)"/>,
+    /// the one that chooses between <c>__shared__</c> and the dynamic placement on CUDA.
     /// </summary>
     public static void AppendCpuAllocation(
         BaseObjectCreationExpressionSyntax creation,
         ITypeSymbol elementType,
         ref TranspileContext context)
     {
-        var siteKey = ToCppLiteral(Compute(context.Query.SemanticModel, creation));
-        var argumentList = creation.ArgumentList;
+        var model = context.Query.SemanticModel;
+        var siteKey = ToCppLiteral(Compute(model, creation));
+        var isDynamic = DynamicSharedMemoryAnalysis.TryGetCount(creation, model, out var count, out var constantCount) &&
+                        constantCount == null;
 
         using (context.Emitter.Writer.Parentheses())
         {
@@ -69,32 +76,42 @@ internal static class SharedMemorySiteKey
             context.Emitter.Writer.Append('*');
         }
 
-        context.Emitter.Writer.Append($"{GSharpInternalNames.Prelude.AllocateSharedMemory}({siteKey}, ");
-
+        context.Emitter.Writer.Append(isDynamic
+            ? GSharpInternalNames.Prelude.AllocateDynamicSharedMemory
+            : GSharpInternalNames.Prelude.AllocateStaticSharedMemory);
         using (context.Emitter.Writer.Parentheses())
         {
-            if (argumentList?.Arguments.Count > 0)
+            context.Emitter.Writer.Append($"{siteKey}, ");
+            using (context.Emitter.Writer.Parentheses())
             {
-                context.Visitor.Visit(argumentList.Arguments[0].Expression);
+                if (count != null)
+                {
+                    context.Visitor.Visit(count);
+                }
+                else
+                {
+                    context.Emitter.Writer.Append("1");
+                }
             }
-            else
+
+            context.Emitter.Writer.Append(" * sizeof");
+            using (context.Emitter.Writer.Parentheses())
             {
-                context.Emitter.Writer.Append("1");
+                context.Emitter.Dialect.AppendType(ref context, elementType);
+            }
+
+            context.Emitter.Writer.Append(", alignof");
+            using (context.Emitter.Writer.Parentheses())
+            {
+                context.Emitter.Dialect.AppendType(ref context, elementType);
+            }
+
+            // The place of the declaration names it in the error of a launch whose sharedMemBytes is too small
+            if (isDynamic)
+            {
+                context.Emitter.Writer.Append(", ");
+                CppStringLiteral.Append(context.Emitter.Writer, SourcePlace.Format(model, creation));
             }
         }
-
-        context.Emitter.Writer.Append(" * sizeof");
-        using (context.Emitter.Writer.Parentheses())
-        {
-            context.Emitter.Dialect.AppendType(ref context, elementType);
-        }
-
-        context.Emitter.Writer.Append(", alignof");
-        using (context.Emitter.Writer.Parentheses())
-        {
-            context.Emitter.Dialect.AppendType(ref context, elementType);
-        }
-
-        context.Emitter.Writer.Append(')');
     }
 }

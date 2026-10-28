@@ -26,7 +26,7 @@ G# supports standard procedural programming paradigms essential for GPU compute 
 | `return` | Yes | `return` | Kernels (`[GpuKernel]`) can now directly return primitive types and value structs. When invoked from the host CPU, the runtime automatically handles device output buffer allocation and host-bound memory copying. |
 | Expression-bodied (`=>`) | Yes | Function body | Supported for both `void` and value-returning methods (automatically injects `return`). |
 | Local functions / Lambdas | Yes | C++ Lambdas | Supported for non-capturing lambdas and local functions. Transpiled to C++ lambda expressions. |
-| `goto` | No | - | Strictly prohibited to ensure static analyzability and structured control flow. |
+| `goto` | Yes | `goto` | Supported, also on the CPU paths, where a label that a `goto` reaches from after a barrier starts a state of the state machine. A `goto` whose jump crosses a barrier in the source text (a `Gpu.SyncThreads()` or a call to a device function that may suspend lies between the `goto` and its label) is reported as [GSH0040](../03_bcl_api/diagnostics/GSH0040.md). |
 | `try` / `catch` / `finally` | No | - | GPU execution does not support C++ exception handling for performance reasons. |
 | `yield return` | Yes (`[GpuDeviceFunction]`) | Inlined `foreach` body | Supported in a `[GpuDeviceFunction]` that returns `IEnumerable<T>`; lowered by inlining the iterator body directly into each consumer `foreach`. Not in `[GpuKernel]`, and not across a barrier (GSH0046, GSH0070-GSH0073). |
 | `await` / `async` | No | - | Asynchronous execution within a kernel is unsupported. |

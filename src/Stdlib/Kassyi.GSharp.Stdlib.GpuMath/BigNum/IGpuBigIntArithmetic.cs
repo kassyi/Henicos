@@ -5,6 +5,7 @@ namespace Kassyi.GSharp.Stdlib.GpuMath.BigNum;
 /// </summary>
 /// <remarks>
 /// <para>Implementations operate directly on <see cref="GpuBigIntMemoryHandle"/> descriptors without allocating host-side objects.</para>
+/// <para><b>Overlap:</b> <see cref="Expressions.BigIntExpressionVisitor"/> never passes a result handle that overlaps an operand handle of the same call (it computes into a temporary instead), so an implementation may hand the handles to kernels whose pointers are <c>__restrict__</c>.</para>
 /// <para><b>Thread Safety:</b> Implementations must be thread-safe for operations dispatched with non-overlapping memory handles and separate streams.</para>
 /// </remarks>
 public interface IGpuBigIntArithmetic

@@ -1,4 +1,3 @@
-using System.Diagnostics;
 using System.Reflection;
 using FluentAssertions;
 using Xunit.Abstractions;
@@ -89,31 +88,9 @@ public class MSBuildTransitiveCopyTests : IDisposable
         File.WriteAllText(Path.Combine(consumerDir, "Consumer.csproj"), consumerProject);
 
         // 3. Build Consumer
-        var startInfo = new ProcessStartInfo
-        {
-            FileName = "dotnet",
-            Arguments = "build Consumer.csproj -c Debug -nr:false",
-            WorkingDirectory = consumerDir,
-            RedirectStandardOutput = true,
-            RedirectStandardError = true,
-            UseShellExecute = false,
-            CreateNoWindow = true
-        };
+        var (exitCode, stdout, stderr) = await BuildProcessRunner.RunBuildAsync(consumerDir, "Consumer.csproj");
 
-        using var process = Process.Start(startInfo) ?? throw new InvalidOperationException("Failed to start build process.");
-        var stdoutTask = process.StandardOutput.ReadToEndAsync();
-        var stderrTask = process.StandardError.ReadToEndAsync();
-
-        if (!process.WaitForExit(60000))
-        {
-            process.Kill();
-            throw new TimeoutException("Build process timed out.");
-        }
-
-        var stdout = await stdoutTask;
-        var stderr = await stderrTask;
-
-        process.ExitCode.Should().Be(0, $"Consumer project build should succeed. STDOUT:\n{stdout}\nSTDERR:\n{stderr}");
+        exitCode.Should().Be(0, $"Consumer project build should succeed. STDOUT:\n{stdout}\nSTDERR:\n{stderr}");
 
         // 4. Assert assets are copied to Consumer output
         var consumerOutputDir = Path.Combine(consumerDir, "bin", "Debug", "net10.0");
@@ -165,31 +142,9 @@ public class MSBuildTransitiveCopyTests : IDisposable
         File.WriteAllText(Path.Combine(producerObjDir, "Dummy.cu"), "// Dummy CUDA");
         File.WriteAllLines(Path.Combine(producerObjDir, "Kassyi.GSharp.Kernels.artifacts"), ["Dummy.cu"]);
 
-        var startInfo = new ProcessStartInfo
-        {
-            FileName = "dotnet",
-            Arguments = "build ProducerFail.csproj -c Debug -nr:false",
-            WorkingDirectory = producerDir,
-            RedirectStandardOutput = true,
-            RedirectStandardError = true,
-            UseShellExecute = false,
-            CreateNoWindow = true
-        };
+        var (exitCode, stdout, stderr) = await BuildProcessRunner.RunBuildAsync(producerDir, "ProducerFail.csproj");
 
-        using var process = Process.Start(startInfo) ?? throw new InvalidOperationException("Failed to start build process.");
-        var stdoutTask = process.StandardOutput.ReadToEndAsync();
-        var stderrTask = process.StandardError.ReadToEndAsync();
-
-        if (!process.WaitForExit(60000))
-        {
-            process.Kill();
-            throw new TimeoutException("Build process timed out.");
-        }
-
-        var stdout = await stdoutTask;
-        var stderr = await stderrTask;
-
-        process.ExitCode.Should().NotBe(0, $"Build should fail when task assembly is invalid or missing. STDOUT:\n{stdout}\nSTDERR:\n{stderr}");
+        exitCode.Should().NotBe(0, $"Build should fail when task assembly is invalid or missing. STDOUT:\n{stdout}\nSTDERR:\n{stderr}");
         stdout.Should().Contain("MSB4062", $"MSBuild should report missing task assembly error. STDOUT:\n{stdout}\nSTDERR:\n{stderr}");
     }
 }

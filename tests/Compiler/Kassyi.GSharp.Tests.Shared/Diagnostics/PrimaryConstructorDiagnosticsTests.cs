@@ -30,6 +30,6 @@ public class PrimaryConstructorDiagnosticsTests
         var diagnostics = await KernelDiagnostics.RunTestCaseAsync(TestCase, "Cpu");
 
         Assert.Empty(diagnostics.Ranges(GSharpDiagnostics.StructLayoutNotRepresentable.Id));
-        Assert.Empty(diagnostics.Ranges(GSharpDiagnostics.StructTransferNotSupportedOnCpu.Id));
+        Assert.Empty(diagnostics.Ranges(GSharpDiagnostics.StructArrayConvertedPerElement.Id));
     }
 }
