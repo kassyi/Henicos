@@ -7,6 +7,7 @@
         case 0:
         {
             int a = 1;
+            __gsharp_yielded_for_block_barrier = true;
             __gsharp_state = 1;
             return;
         }
@@ -14,6 +15,7 @@
         case 1:
         {
             int b = a + 2;
+            __gsharp_yielded_for_block_barrier = true;
             __gsharp_state = 2;
             return;
         }
