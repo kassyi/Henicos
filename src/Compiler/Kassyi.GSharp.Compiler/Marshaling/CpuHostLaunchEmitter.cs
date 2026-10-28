@@ -242,12 +242,7 @@ internal static class CpuHostLaunchEmitter
             $"var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<{kernel.MemberKey}_Delegate>(\"{exportName}\", dllPath);");
     }
 
-    // <shadow> <name>_native = default; var <name>_allocatedPtrs = new List<IntPtr>(); (each converted struct)
-    // byte[]? <name>_shadow = null; var <name>_allocatedPtrs = ...; int <name>_size = ...; (each converted array)
-    // try { Marshal_<S>(ref <name>, ref <name>_native, false, <name>_allocatedPtrs, hStream); <the elements of each array>;
-    // <fixed blocks and call>; Unmarshal_<S>(ref <name>, ref <name>_native, false, hStream); <the elements back> }
-    // finally { foreach (var handle in <name>_allocatedPtrs) GCHandle.FromIntPtr(handle).Free(); ...;
-    // ArrayPool<byte>.Shared.Return(<name>_shadow); }
+    // <declarations>; try { <marshaling>; <fixed blocks and call>; <unmarshaling> } finally { <release> }
     // [WHY] Marshal_ pins the array fields of a converted struct or element and records each handle; this one finally
     // block frees them and returns the rented shadows after the call and the copy back, also when the marshaling, the
     // native call or its error check throws.
@@ -256,21 +251,7 @@ internal static class CpuHostLaunchEmitter
         var hasConverted = false;
         foreach (var shape in kernel.Parameters)
         {
-            if (shape is { IsCpuConvertedStruct: true, AotStructPath: { } shadow })
-            {
-                writer.AppendLine($"{shadow} {shape.Name}_native = default;");
-                writer.AppendLine(
-                    $"var {shape.Name}_allocatedPtrs = new System.Collections.Generic.List<IntPtr>();");
-                hasConverted = true;
-            }
-            else if (shape is { IsCpuConvertedArray: true, Cpu.ConvertedElementAotStructPath: { } element })
-            {
-                writer.AppendLine($"byte[]? {shape.Name}_shadow = null;");
-                writer.AppendLine(
-                    $"var {shape.Name}_allocatedPtrs = new System.Collections.Generic.List<IntPtr>();");
-                writer.AppendLine($"int {shape.Name}_size = checked({shape.LengthExpression} * sizeof({element}));");
-                hasConverted = true;
-            }
+            hasConverted |= WriteConvertedDeclaration(writer, shape);
         }
 
         if (!hasConverted)
@@ -285,31 +266,13 @@ internal static class CpuHostLaunchEmitter
         {
             foreach (var shape in kernel.Parameters)
             {
-                if (shape is { IsCpuConvertedStruct: true, MarshalMethodName: { } marshal })
-                {
-                    writer.AppendLine(
-                        $"{marshal}(ref {shape.Identifier}, ref {shape.Name}_native, false, {shape.Name}_allocatedPtrs, hStream);");
-                }
-                else if (shape.IsCpuConvertedArray)
-                {
-                    WriteConvertedArrayMarshal(writer, shape);
-                }
+                WriteConvertedMarshal(writer, shape);
             }
 
             WriteFixedBlocksAndInvoke(writer, kernel);
-
-            // [WHY] A struct by value is unmarshaled as well: its own fields go back only to Launch's copy, but an array
-            // field whose elements are converted shares the caller's array, whose elements must get the kernel's writes
             foreach (var shape in kernel.Parameters)
             {
-                if (shape is { IsCpuConvertedStruct: true, UnmarshalMethodName: { } unmarshal })
-                {
-                    writer.AppendLine($"{unmarshal}(ref {shape.Identifier}, ref {shape.Name}_native, false, hStream);");
-                }
-                else if (shape is { IsCpuConvertedArray: true, CopyOut: true, IsReadOnlyContainer: false })
-                {
-                    WriteConvertedArrayUnmarshal(writer, shape);
-                }
+                WriteConvertedUnmarshal(writer, shape);
             }
         }
 
@@ -318,50 +281,104 @@ internal static class CpuHostLaunchEmitter
         {
             foreach (var shape in kernel.Parameters)
             {
-                if (shape.IsCpuConvertedStruct || shape.IsCpuConvertedArray)
-                {
-                    writer.AppendLine(
-                        $"foreach (var handle in {shape.Name}_allocatedPtrs) System.Runtime.InteropServices.GCHandle.FromIntPtr(handle).Free();");
-                }
-
-                if (shape.IsCpuConvertedArray)
-                {
-                    writer.AppendLine(
-                        $"if ({shape.Name}_shadow != null) System.Buffers.ArrayPool<byte>.Shared.Return({shape.Name}_shadow);");
-                }
+                WriteConvertedRelease(writer, shape);
             }
         }
 
         WrapperEmitter.WriteAutoResultReturn(writer, kernel);
     }
 
-    // <name>_shadow = ArrayPool<byte>.Shared.Rent(<name>_size); <spans>;
+    // <shadow> <name>_native = default; var <name>_allocatedPtrs = new List<IntPtr>();                  (converted struct)
+    // byte[]? <name>_shadow = null; var <name>_allocatedPtrs = ...; int <name>_size = checked(...);      (converted array)
+    // Returns whether the parameter is converted. The size is computed before the try block, when nothing is allocated.
+    private static bool WriteConvertedDeclaration(SourceWriter writer, in KernelParameterShape shape)
+    {
+        switch (shape)
+        {
+            case { IsCpuConvertedStruct: true, AotStructPath: { } shadow }:
+                writer.AppendLine($"{shadow} {shape.Name}_native = default;");
+                writer.AppendLine($"var {shape.Name}_allocatedPtrs = new System.Collections.Generic.List<IntPtr>();");
+                return true;
+            case { IsCpuConvertedArray: true, Cpu.ConvertedElementAotStructPath: { } element }:
+                writer.AppendLine($"byte[]? {shape.Name}_shadow = null;");
+                writer.AppendLine($"var {shape.Name}_allocatedPtrs = new System.Collections.Generic.List<IntPtr>();");
+                writer.AppendLine($"int {shape.Name}_size = checked({shape.LengthExpression} * sizeof({element}));");
+                return true;
+            default:
+                return false;
+        }
+    }
+
+    // Marshal_<S>(ref <name>, ref <name>_native, false, <name>_allocatedPtrs, hStream);                (converted struct)
+    // <name>_shadow = ArrayPool<byte>.Shared.Rent(<name>_size); <spans>;                                (converted array)
     // for (...) Marshal_<E>(ref <name>_host[i], ref <name>_native[i], false, <name>_allocatedPtrs, hStream); ([In] / in-out)
     // <name>_native.Clear();                                       ([Out] of an element without array fields)
-    // [WHY] The elements differ in layout, so they are converted into a rented shadow array of the device layout, which
-    // the kernel reads in place (the CUDA launcher copies the same shadow to the device). An [Out] element with array
-    // fields is still marshaled: the kernel writes into its pinned arrays. A rented array holds the bytes of an earlier
-    // use, so an [Out] shadow is cleared rather than left to the kernel.
-    private static void WriteConvertedArrayMarshal(SourceWriter writer, in KernelParameterShape shape)
+    // [WHY] The elements of an array differ in layout, so they are converted into a rented shadow array of the device
+    // layout, which the kernel reads in place (the CUDA launcher copies the same shadow to the device). An [Out] element
+    // with array fields is still marshaled: the kernel writes into its pinned arrays. A rented array holds the bytes of
+    // an earlier use, so an [Out] shadow is cleared rather than left to the kernel.
+    private static void WriteConvertedMarshal(SourceWriter writer, in KernelParameterShape shape)
     {
-        var name = shape.Name;
-        writer.AppendLine($"{name}_shadow = System.Buffers.ArrayPool<byte>.Shared.Rent({name}_size);");
-        ConvertedArrayEmitter.WriteShadowAndHostSpans(writer, shape, shape.Cpu);
-        if (!shape.CopyIn && !shape.Cpu.ConvertedElementHasArrayFields)
+        switch (shape)
         {
-            writer.AppendLine($"{name}_native.Clear();");
-            return;
+            case { IsCpuConvertedStruct: true, MarshalMethodName: { } marshal }:
+                writer.AppendLine(
+                    $"{marshal}(ref {shape.Identifier}, ref {shape.Name}_native, false, {shape.Name}_allocatedPtrs, hStream);");
+                break;
+            case { IsCpuConvertedArray: true }:
+                writer.AppendLine($"{shape.Name}_shadow = System.Buffers.ArrayPool<byte>.Shared.Rent({shape.Name}_size);");
+                ConvertedArrayEmitter.WriteShadowAndHostSpans(writer, shape, shape.Cpu);
+                if (!shape.CopyIn && !shape.Cpu.ConvertedElementHasArrayFields)
+                {
+                    writer.AppendLine($"{shape.Name}_native.Clear();");
+                }
+                else
+                {
+                    ConvertedArrayEmitter.WriteElementMarshalLoop(writer, shape, shape.Cpu);
+                }
+
+                break;
         }
-
-        ConvertedArrayEmitter.WriteElementMarshalLoop(writer, shape, shape.Cpu);
     }
 
-    // for (...) Unmarshal_<E>(ref <name>_host[i], ref <name>_native[i], false, hStream); after the call, through the spans that
-    // the marshaling declared in the same try block
-    private static void WriteConvertedArrayUnmarshal(SourceWriter writer, in KernelParameterShape shape)
+    // Unmarshal_<S>(ref <name>, ref <name>_native, false, hStream);                                     (converted struct)
+    // for (...) Unmarshal_<E>(ref <name>_host[i], ref <name>_native[i], false, hStream);  (converted array, copied back)
+    // The array goes through the spans that the marshaling declared in the same try block.
+    // [WHY] A struct by value is unmarshaled as well: its own fields go back only to Launch's copy, but an array field
+    // whose elements are converted shares the caller's array, whose elements must get the kernel's writes
+    private static void WriteConvertedUnmarshal(SourceWriter writer, in KernelParameterShape shape)
     {
-        ConvertedArrayEmitter.WriteElementUnmarshalLoop(writer, shape, shape.Cpu);
+        switch (shape)
+        {
+            case { IsCpuConvertedStruct: true, UnmarshalMethodName: { } unmarshal }:
+                writer.AppendLine($"{unmarshal}(ref {shape.Identifier}, ref {shape.Name}_native, false, hStream);");
+                break;
+            case { IsCpuConvertedArray: true, CopyOut: true, IsReadOnlyContainer: false }:
+                ConvertedArrayEmitter.WriteElementUnmarshalLoop(writer, shape, shape.Cpu);
+                break;
+        }
     }
+
+    // foreach (var handle in <name>_allocatedPtrs) GCHandle.FromIntPtr(handle).Free();
+    // if (<name>_shadow != null) ArrayPool<byte>.Shared.Return(<name>_shadow);                        (converted array)
+    private static void WriteConvertedRelease(SourceWriter writer, in KernelParameterShape shape)
+    {
+        switch (shape)
+        {
+            case { IsCpuConvertedStruct: true }:
+                WriteHandleRelease(writer, shape);
+                break;
+            case { IsCpuConvertedArray: true }:
+                WriteHandleRelease(writer, shape);
+                writer.AppendLine(
+                    $"if ({shape.Name}_shadow != null) System.Buffers.ArrayPool<byte>.Shared.Return({shape.Name}_shadow);");
+                break;
+        }
+    }
+
+    private static void WriteHandleRelease(SourceWriter writer, in KernelParameterShape shape) =>
+        writer.AppendLine(
+            $"foreach (var handle in {shape.Name}_allocatedPtrs) System.Runtime.InteropServices.GCHandle.FromIntPtr(handle).Free();");
 
     private static void WriteFixedBlocksAndInvoke(SourceWriter writer, in KernelHostModel kernel)
     {
