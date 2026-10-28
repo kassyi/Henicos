@@ -108,9 +108,9 @@ public GpuWorkspace Workspace { get; }
 | Name | Description |
 | --- | --- |
 | [Dispose()](#dispose) | Releases the GPU global device memory resources allocated for the underlying buffers. |
-| [GetElement(int)](#getelementint) | Gets a `GpuBigFloat` view of the specified element (reads its exponent and sign back to the host). |
-| [SetElement(int, GpuBigFloat)](#setelementint-gpubigfloat) | Stores a value into the specified element, rounding a wider significand toward zero. |
-| [Slice(int, int)](#sliceint-int) | Creates a zero-allocation sub-slice of this array. |
+| [GetElement(int)](#getelementint) | Gets a `GpuBigFloatView` of the specified element (reads its exponent and sign back to the host). |
+| [SetElement(int, GpuBigFloatView)](#setelementint-gpubigfloatview) | Stores a value into the specified element, rounding a wider significand toward zero. |
+| [Slice(int, int)](#sliceint-int) | Creates a borrowed view of a range of the elements. |
 
 ## Dispose()
 
@@ -122,13 +122,13 @@ public void Dispose();
 
 ## GetElement(int)
 
-Gets a `GpuBigFloat` whose significand is a view of the element's device memory; its exponent and sign are read back to the host.
+Gets a view of the specified element: a view of its significand in the array's device memory, with its exponent and sign read back to the host.
 
 > [!CAUTION]
-> Reading the exponent and the sign back to the host is synchronous. The returned value borrows the array's memory: do not dispose it, and do not use it after the array is disposed.
+> Reading the exponent and the sign back to the host is synchronous. The view lives only inside the calling method (a `ref struct`) and must not be used after the array is disposed.
 
 ```csharp
-public GpuBigFloat GetElement(int index);
+public GpuBigFloatView GetElement(int index);
 ```
 
 #### Parameters
@@ -138,15 +138,20 @@ The zero-based index of the element.
 
 #### Returns
 
-_[GpuBigFloat](GpuBigFloat.md)_<br>
-A `GpuBigFloat` pointing to the element's device memory.
+_[GpuBigFloatView](GpuBigFloatView.md)_<br>
+A borrowed view of the element's significand with its exponent and sign.
 
-## SetElement(int, GpuBigFloat)
+#### Exceptions
+
+`ArgumentOutOfRangeException`<br>
+`index` is outside the array.
+
+## SetElement(int, GpuBigFloatView)
 
 Stores a value into the element at `index`.
 
 ```csharp
-public void SetElement(int index, GpuBigFloat value);
+public void SetElement(int index, scoped GpuBigFloatView value);
 ```
 
 #### Parameters
@@ -154,8 +159,8 @@ public void SetElement(int index, GpuBigFloat value);
 `index` _int_<br>
 The target element index.
 
-`value` _GpuBigFloat_<br>
-The value to store.
+`value` _[GpuBigFloatView](GpuBigFloatView.md)_<br>
+The value to store; a `GpuBigFloat` converts implicitly.
 
 #### Exceptions
 
@@ -168,10 +173,10 @@ A significand of `WordsPerElement` words or fewer is copied as it is (zero-exten
 
 ## Slice(int, int)
 
-Creates a zero-allocation sub-slice of this array. The slice shares the array's memory.
+Creates a borrowed view of a range of the elements. The view shares the array's memory, lives only inside the calling method (a `ref struct`) and must not be used after the array is disposed.
 
 ```csharp
-public GpuBigFloatArray Slice(int elementOffset, int elementCount);
+public GpuBigFloatArrayView Slice(int elementOffset, int elementCount);
 ```
 
 #### Parameters
@@ -184,8 +189,8 @@ The number of elements in the slice.
 
 #### Returns
 
-_GpuBigFloatArray_<br>
-A sliced view of the `GpuBigFloatArray`.
+_[GpuBigFloatArrayView](GpuBigFloatArrayView.md)_<br>
+A borrowed view of the elements.
 
 #### Exceptions
 
@@ -216,13 +221,15 @@ array.SetElement(0, wide);
 
 // The element holds 2^127 * 2^-96 = 2^31: the top bit moved to the top of the 4 words
 var element = array.GetElement(0);
-Console.WriteLine($"Significand bits: {element.UFloat.Significand.GetBitLength()}, Exponent: {element.Exponent}");
+Console.WriteLine($"Significand bits: {element.Significand.GetBitLength()}, Exponent: {element.Exponent}");
 ```
 
 ## See also
 
 ### BCL API > Math Bignum
 - [GpuBigFloat Struct](GpuBigFloat.md)
+- [GpuBigFloatView Struct](GpuBigFloatView.md)
+- [GpuBigFloatArrayView Struct](GpuBigFloatArrayView.md)
 - [IGpuBigFloatArithmetic Interface](IGpuBigFloatArithmetic.md)
 - [GpuBigIntArray Struct](../gpu_big_int_and_uint/GpuBigIntArray.md)
 - [Arbitrary-Precision Floats (GpuBigFloat)](00_index.md)

@@ -347,7 +347,7 @@ public class GSharpKernelFloatProviderTests : IDisposable
         });
 
         // (-2)^3: a negative base is not supported.
-        // mutant: GSharpKernelFloatProvider.cs:436 `throw` removed (GpuBigFloatTranscendentals.Pow ignores the sign of the
+        // mutant: GSharpKernelFloatProvider.cs:433 `throw` removed (GpuBigFloatTranscendentals.Pow ignores the sign of the
         // base and would return 8)
         var powError = Assert.Throws<InvalidOperationException>(() =>
         {

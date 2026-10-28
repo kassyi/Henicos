@@ -11,7 +11,21 @@ public static partial class GpuBigIntDivRem
     /// <param name="resultBuffer">The destination buffer in GPU device memory receiving the modular power.</param>
     /// <exception cref="ArgumentException">Thrown when <paramref name="baseVal"/>, <paramref name="mod"/>, and <paramref name="resultBuffer"/> have mismatched word lengths.</exception>
     /// <exception cref="DivideByZeroException">Thrown when <paramref name="mod"/> is zero.</exception>
-    public static void ModPow(GpuBigUInt baseVal, GpuBigUInt exp, GpuBigUInt mod, GpuBigUInt resultBuffer)
+    public static void ModPow(
+        scoped GpuBigUIntView baseVal,
+        scoped GpuBigUIntView exp,
+        scoped GpuBigUIntView mod,
+        scoped GpuBigUIntView resultBuffer
+    ) =>
+        ModPowCore(
+            baseVal.AsBorrowedBigUInt(),
+            exp.AsBorrowedBigUInt(),
+            mod.AsBorrowedBigUInt(),
+            resultBuffer.AsBorrowedBigUInt()
+        );
+
+    // ModPow on the owned type; the public method above takes views and borrows them
+    private static void ModPowCore(GpuBigUInt baseVal, GpuBigUInt exp, GpuBigUInt mod, GpuBigUInt resultBuffer)
     {
         ThrowIfSizeMismatch(baseVal, mod, resultBuffer);
 

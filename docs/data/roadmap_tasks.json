@@ -7706,10 +7706,10 @@
       "score": 30
     },
     "details": {
-      "current_behavior": "Normally, C# local variables generate zero-initialization code via = on the C++ side, but this is skipped if the [SkipLocalsInit] attribute is applied.",
-      "strategy": "Detect [SkipLocalsInit] attributes via TranspileContext to suppress the default zero-initialization output for local variables, reducing PTX instructions and register pressure.",
-      "csharp_example": "using System.Runtime.CompilerServices;\n\n[GpuKernel]\n[SkipLocalsInit]\npublic static void UninitializedKernel()\n{\n    // [SkipLocalsInit]下では意図的に初期化されないローカル変数\n    int uninit;\n    \n    uninit = 42;\n}",
-      "cpp_example": "extern \"C\" __global__ void UninitializedKernel()\n{\n    // トランスパイラは '= 0' によるゼロ初期化コードの出力をスキップする\n    int32_t uninit; \n    \n    uninit = 42;\n}"
+      "current_behavior": "A stackalloc without an initializer and a constant-size new T[N] are emitted as zero-filled C++ arrays (T name[N]{}). [SkipLocalsInit] (found as Roslyn finds it: method, property of an accessor, enclosing methods, containing types, module) leaves out only the zero fill of such a stackalloc; explicit initializers (= default, new(), new(args), object initializers) are always kept, and new T[N] is always zeroed.",
+      "strategy": "Decide the zero fill per stackalloc with SemanticModelExtensions.AreLocalsZeroedAt, which maps the node back to the user's source and applies SymbolExtensions.AreLocalsZeroed.",
+      "csharp_example": "using System.Runtime.CompilerServices;\n\n[GpuKernel]\n[SkipLocalsInit]\npublic static void UninitializedKernel()\n{\n    Span<int> buf = stackalloc int[4];\n    Pair p = default;\n}",
+      "cpp_example": "extern \"C\" __global__ void UninitializedKernel()\n{\n    // [SkipLocalsInit] leaves out only the zero fill of a stackalloc without an initializer\n    int buf[4];\n    // an explicit initializer is always kept\n    Pair p = {};\n}"
     },
     "score": 30,
     "files": [],

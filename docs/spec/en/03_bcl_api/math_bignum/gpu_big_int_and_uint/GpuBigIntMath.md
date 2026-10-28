@@ -19,36 +19,38 @@ Provides static mathematical and bitwise operations for [`GpuBigUInt`](GpuBigUIn
 public static class GpuBigIntMath
 ```
 
+Operands and result buffers are [`GpuBigUIntView`](GpuBigUIntView.md)s. A `GpuBigUInt` converts to a view implicitly, so owned values and element views (`array.GetElement(i)`) can be passed alike; the operation borrows them for the duration of the call.
+
 Inheritance: `Object` $\rightarrow$ `GpuBigIntMath`
 
 ## Methods
 
 | Name | Description |
 | --- | --- |
-| [Add(GpuBigUInt, GpuBigUInt, GpuBigUInt)](#addgpubiguint-gpubiguint-gpubiguint) | Computes arbitrary-precision addition (`leftOperand + rightOperand`) on the GPU. |
-| [Add(GpuBigUInt, uint, GpuBigUInt)](#addgpubiguint-uint-gpubiguint) | Adds a scalar 32-bit unsigned integer to `leftOperand` on the GPU. |
-| [AddSignedMagnitude(GpuBigUInt, bool, GpuBigUInt, bool, GpuBigUInt)](#addsignedmagnitudegpubiguint-bool-gpubiguint-bool-gpubiguint) | Performs signed-magnitude addition of two signed big integers and returns the resulting sign. |
-| [Sub(GpuBigUInt, GpuBigUInt, GpuBigUInt)](#subgpubiguint-gpubiguint-gpubiguint) | Computes arbitrary-precision subtraction (`leftOperand - rightOperand`) on the GPU. |
-| [Sub(GpuBigUInt, uint, GpuBigUInt)](#subgpubiguint-uint-gpubiguint) | Subtracts a scalar 32-bit unsigned integer from `leftOperand` on the GPU. |
-| [Mul(GpuBigUInt, GpuBigUInt, GpuBigUInt)](#mulgpubiguint-gpubiguint-gpubiguint) | Computes full arbitrary-precision multiplication (`leftOperand * rightOperand`) on the GPU. |
-| [Mul(GpuBigUInt, uint, GpuBigUInt)](#mulgpubiguint-uint-gpubiguint) | Multiplies `leftOperand` by a scalar 32-bit unsigned integer on the GPU. |
-| [Gcd(GpuBigUInt, GpuBigUInt, GpuBigUInt)](#gcdgpubiguint-gpubiguint-gpubiguint) | Computes the Greatest Common Divisor (GCD) of two big integers on the GPU. |
-| [ModInverse(GpuBigUInt, GpuBigUInt, GpuBigUInt)](#modinversegpubiguint-gpubiguint-gpubiguint) | Computes the modular multiplicative inverse such that $((\text{value} \times \text{resultBuffer}) \bmod \text{modulus}) = 1$. |
-| [ShiftLeft(GpuBigUInt, int, GpuBigUInt)](#shiftleftgpubiguint-int-gpubiguint) | Shifts the big integer left by the specified bit count on the GPU. |
-| [ShiftRight(GpuBigUInt, int, GpuBigUInt)](#shiftrightgpubiguint-int-gpubiguint) | Shifts the big integer right by the specified bit count on the GPU. |
-| [BitwiseAnd(GpuBigUInt, GpuBigUInt, GpuBigUInt)](#bitwiseandgpubiguint-gpubiguint-gpubiguint) | Performs bitwise AND on the GPU. |
-| [BitwiseOr(GpuBigUInt, GpuBigUInt, GpuBigUInt)](#bitwiseorgpubiguint-gpubiguint-gpubiguint) | Performs bitwise OR on the GPU. |
-| [BitwiseXor(GpuBigUInt, GpuBigUInt, GpuBigUInt)](#bitwisexorgpubiguint-gpubiguint-gpubiguint) | Performs bitwise XOR on the GPU. |
-| [BitwiseNot(GpuBigUInt, GpuBigUInt)](#bitwisenotgpubiguint-gpubiguint) | Performs bitwise NOT on the GPU. |
-| [IsLessThan(GpuBigUInt, GpuBigUInt)](#islessthangpubiguint-gpubiguint) | Determines whether `leftOperand` is strictly less than `rightOperand` on the GPU. |
+| [Add(GpuBigUIntView, GpuBigUIntView, GpuBigUIntView)](#addgpubiguintview-gpubiguintview-gpubiguintview) | Computes arbitrary-precision addition (`leftOperand + rightOperand`) on the GPU. |
+| [Add(GpuBigUIntView, uint, GpuBigUIntView)](#addgpubiguintview-uint-gpubiguintview) | Adds a scalar 32-bit unsigned integer to `leftOperand` on the GPU. |
+| [AddSignedMagnitude(GpuBigUIntView, bool, GpuBigUIntView, bool, GpuBigUIntView)](#addsignedmagnitudegpubiguintview-bool-gpubiguintview-bool-gpubiguintview) | Performs signed-magnitude addition of two signed big integers and returns the resulting sign. |
+| [Sub(GpuBigUIntView, GpuBigUIntView, GpuBigUIntView)](#subgpubiguintview-gpubiguintview-gpubiguintview) | Computes arbitrary-precision subtraction (`leftOperand - rightOperand`) on the GPU. |
+| [Sub(GpuBigUIntView, uint, GpuBigUIntView)](#subgpubiguintview-uint-gpubiguintview) | Subtracts a scalar 32-bit unsigned integer from `leftOperand` on the GPU. |
+| [Mul(GpuBigUIntView, GpuBigUIntView, GpuBigUIntView)](#mulgpubiguintview-gpubiguintview-gpubiguintview) | Computes full arbitrary-precision multiplication (`leftOperand * rightOperand`) on the GPU. |
+| [Mul(GpuBigUIntView, uint, GpuBigUIntView)](#mulgpubiguintview-uint-gpubiguintview) | Multiplies `leftOperand` by a scalar 32-bit unsigned integer on the GPU. |
+| [Gcd(GpuBigUIntView, GpuBigUIntView, GpuBigUIntView)](#gcdgpubiguintview-gpubiguintview-gpubiguintview) | Computes the Greatest Common Divisor (GCD) of two big integers on the GPU. |
+| [ModInverse(GpuBigUIntView, GpuBigUIntView, GpuBigUIntView)](#modinversegpubiguintview-gpubiguintview-gpubiguintview) | Computes the modular multiplicative inverse such that $((\text{value} \times \text{resultBuffer}) \bmod \text{modulus}) = 1$. |
+| [ShiftLeft(GpuBigUIntView, int, GpuBigUIntView)](#shiftleftgpubiguintview-int-gpubiguintview) | Shifts the big integer left by the specified bit count on the GPU. |
+| [ShiftRight(GpuBigUIntView, int, GpuBigUIntView)](#shiftrightgpubiguintview-int-gpubiguintview) | Shifts the big integer right by the specified bit count on the GPU. |
+| [BitwiseAnd(GpuBigUIntView, GpuBigUIntView, GpuBigUIntView)](#bitwiseandgpubiguintview-gpubiguintview-gpubiguintview) | Performs bitwise AND on the GPU. |
+| [BitwiseOr(GpuBigUIntView, GpuBigUIntView, GpuBigUIntView)](#bitwiseorgpubiguintview-gpubiguintview-gpubiguintview) | Performs bitwise OR on the GPU. |
+| [BitwiseXor(GpuBigUIntView, GpuBigUIntView, GpuBigUIntView)](#bitwisexorgpubiguintview-gpubiguintview-gpubiguintview) | Performs bitwise XOR on the GPU. |
+| [BitwiseNot(GpuBigUIntView, GpuBigUIntView)](#bitwisenotgpubiguintview-gpubiguintview) | Performs bitwise NOT on the GPU. |
+| [IsLessThan(GpuBigUIntView, GpuBigUIntView)](#islessthangpubiguintview-gpubiguintview) | Determines whether `leftOperand` is strictly less than `rightOperand` on the GPU. |
 | [Pow10(GpuWorkspace, int)](#pow10gpuworkspace-int) | Computes $10^{\text{exponent}}$ on the GPU using binary exponentiation by squaring. |
 
-## Add(GpuBigUInt, GpuBigUInt, GpuBigUInt)
+## Add(GpuBigUIntView, GpuBigUIntView, GpuBigUIntView)
 
 Computes arbitrary-precision addition (`leftOperand + rightOperand`) on the GPU.
 
 ```csharp
-public static void Add(GpuBigUInt leftOperand, GpuBigUInt rightOperand, GpuBigUInt resultBuffer);
+public static void Add(scoped GpuBigUIntView leftOperand, scoped GpuBigUIntView rightOperand, scoped GpuBigUIntView resultBuffer);
 ```
 
 #### Parameters
@@ -67,12 +69,12 @@ The destination buffer in GPU device memory receiving the sum.
 `ArgumentException`<br>
 Thrown when `leftOperand`, `rightOperand`, and `resultBuffer` do not have the same word length (`NumWords`).
 
-## Add(GpuBigUInt, uint, GpuBigUInt)
+## Add(GpuBigUIntView, uint, GpuBigUIntView)
 
 Adds a scalar 32-bit unsigned integer to `leftOperand` on the GPU.
 
 ```csharp
-public static void Add(GpuBigUInt leftOperand, uint rightOperand, GpuBigUInt resultBuffer);
+public static void Add(scoped GpuBigUIntView leftOperand, uint rightOperand, scoped GpuBigUIntView resultBuffer);
 ```
 
 #### Parameters
@@ -86,17 +88,17 @@ The 32-bit unsigned scalar addend.
 `resultBuffer` _[GpuBigUInt](GpuBigUInt.md)_<br>
 The destination buffer in GPU device memory receiving the sum.
 
-## AddSignedMagnitude(GpuBigUInt, bool, GpuBigUInt, bool, GpuBigUInt)
+## AddSignedMagnitude(GpuBigUIntView, bool, GpuBigUIntView, bool, GpuBigUIntView)
 
 Performs signed-magnitude addition of two signed big integers and returns the resulting sign.
 
 ```csharp
 public static bool AddSignedMagnitude(
-    GpuBigUInt leftOperand,
+    scoped GpuBigUIntView leftOperand,
     bool leftNegative,
-    GpuBigUInt rightOperand,
+    scoped GpuBigUIntView rightOperand,
     bool rightNegative,
-    GpuBigUInt resultBuffer);
+    scoped GpuBigUIntView resultBuffer);
 ```
 
 #### Parameters
@@ -121,12 +123,12 @@ The destination buffer receiving the resulting magnitude.
 _bool_<br>
 `true` if the resulting sum is negative; otherwise, `false`.
 
-## Sub(GpuBigUInt, GpuBigUInt, GpuBigUInt)
+## Sub(GpuBigUIntView, GpuBigUIntView, GpuBigUIntView)
 
 Computes arbitrary-precision subtraction (`leftOperand - rightOperand`) on the GPU.
 
 ```csharp
-public static void Sub(GpuBigUInt leftOperand, GpuBigUInt rightOperand, GpuBigUInt resultBuffer);
+public static void Sub(scoped GpuBigUIntView leftOperand, scoped GpuBigUIntView rightOperand, scoped GpuBigUIntView resultBuffer);
 ```
 
 #### Parameters
@@ -145,12 +147,12 @@ The destination buffer in GPU device memory receiving the difference.
 `ArgumentException`<br>
 Thrown when `leftOperand`, `rightOperand`, and `resultBuffer` do not have the same word length (`NumWords`).
 
-## Sub(GpuBigUInt, uint, GpuBigUInt)
+## Sub(GpuBigUIntView, uint, GpuBigUIntView)
 
 Subtracts a scalar 32-bit unsigned integer from `leftOperand` on the GPU.
 
 ```csharp
-public static void Sub(GpuBigUInt leftOperand, uint rightOperand, GpuBigUInt resultBuffer);
+public static void Sub(scoped GpuBigUIntView leftOperand, uint rightOperand, scoped GpuBigUIntView resultBuffer);
 ```
 
 #### Parameters
@@ -164,12 +166,12 @@ The 32-bit unsigned scalar subtrahend.
 `resultBuffer` _[GpuBigUInt](GpuBigUInt.md)_<br>
 The destination buffer in GPU device memory receiving the difference.
 
-## Mul(GpuBigUInt, GpuBigUInt, GpuBigUInt)
+## Mul(GpuBigUIntView, GpuBigUIntView, GpuBigUIntView)
 
 Computes full arbitrary-precision multiplication (`leftOperand * rightOperand`) on the GPU.
 
 ```csharp
-public static void Mul(GpuBigUInt leftOperand, GpuBigUInt rightOperand, GpuBigUInt resultBuffer);
+public static void Mul(scoped GpuBigUIntView leftOperand, scoped GpuBigUIntView rightOperand, scoped GpuBigUIntView resultBuffer);
 ```
 
 #### Parameters
@@ -188,12 +190,12 @@ The destination buffer in GPU device memory receiving the product. Must have a w
 `ArgumentException`<br>
 Thrown when `resultBuffer.NumWords` is not equal to `leftOperand.NumWords + rightOperand.NumWords`.
 
-## Mul(GpuBigUInt, uint, GpuBigUInt)
+## Mul(GpuBigUIntView, uint, GpuBigUIntView)
 
 Multiplies `leftOperand` by a scalar 32-bit unsigned integer on the GPU.
 
 ```csharp
-public static void Mul(GpuBigUInt leftOperand, uint rightOperand, GpuBigUInt resultBuffer);
+public static void Mul(scoped GpuBigUIntView leftOperand, uint rightOperand, scoped GpuBigUIntView resultBuffer);
 ```
 
 #### Parameters
@@ -207,12 +209,12 @@ The 32-bit unsigned scalar multiplier.
 `resultBuffer` _[GpuBigUInt](GpuBigUInt.md)_<br>
 The destination buffer in GPU device memory receiving the product.
 
-## Gcd(GpuBigUInt, GpuBigUInt, GpuBigUInt)
+## Gcd(GpuBigUIntView, GpuBigUIntView, GpuBigUIntView)
 
 Computes the Greatest Common Divisor (GCD) of two big integers on the GPU using Lehmer's / Euclidean algorithm.
 
 ```csharp
-public static void Gcd(GpuBigUInt leftOperand, GpuBigUInt rightOperand, GpuBigUInt resultBuffer);
+public static void Gcd(scoped GpuBigUIntView leftOperand, scoped GpuBigUIntView rightOperand, scoped GpuBigUIntView resultBuffer);
 ```
 
 #### Parameters
@@ -231,12 +233,12 @@ The destination buffer in GPU device memory receiving the GCD.
 `ArgumentException`<br>
 Thrown when buffer word lengths do not match.
 
-## ModInverse(GpuBigUInt, GpuBigUInt, GpuBigUInt)
+## ModInverse(GpuBigUIntView, GpuBigUIntView, GpuBigUIntView)
 
 Computes the modular multiplicative inverse such that $((\text{value} \times \text{resultBuffer}) \bmod \text{modulus}) = 1$.
 
 ```csharp
-public static void ModInverse(GpuBigUInt value, GpuBigUInt modulus, GpuBigUInt resultBuffer);
+public static void ModInverse(scoped GpuBigUIntView value, scoped GpuBigUIntView modulus, scoped GpuBigUIntView resultBuffer);
 ```
 
 #### Parameters
@@ -258,12 +260,12 @@ Thrown when buffer word lengths do not match.
 `ArithmeticException`<br>
 Thrown when the modular inverse does not exist ($\gcd(\text{value}, \text{modulus}) \neq 1$).
 
-## ShiftLeft(GpuBigUInt, int, GpuBigUInt)
+## ShiftLeft(GpuBigUIntView, int, GpuBigUIntView)
 
 Shifts the big integer left by the specified bit count on the GPU.
 
 ```csharp
-public static void ShiftLeft(GpuBigUInt leftOperand, int shiftBits, GpuBigUInt resultBuffer);
+public static void ShiftLeft(scoped GpuBigUIntView leftOperand, int shiftBits, scoped GpuBigUIntView resultBuffer);
 ```
 
 #### Parameters
@@ -282,12 +284,12 @@ The destination buffer receiving the shifted value.
 `ArgumentException`<br>
 Thrown when `leftOperand` and `resultBuffer` do not have the same word length (`NumWords`).
 
-## ShiftRight(GpuBigUInt, int, GpuBigUInt)
+## ShiftRight(GpuBigUIntView, int, GpuBigUIntView)
 
 Shifts the big integer right by the specified bit count on the GPU.
 
 ```csharp
-public static void ShiftRight(GpuBigUInt leftOperand, int shiftBits, GpuBigUInt resultBuffer);
+public static void ShiftRight(scoped GpuBigUIntView leftOperand, int shiftBits, scoped GpuBigUIntView resultBuffer);
 ```
 
 #### Parameters
@@ -306,12 +308,12 @@ The destination buffer receiving the shifted value.
 `ArgumentException`<br>
 Thrown when `leftOperand` and `resultBuffer` do not have the same word length (`NumWords`).
 
-## BitwiseAnd(GpuBigUInt, GpuBigUInt, GpuBigUInt)
+## BitwiseAnd(GpuBigUIntView, GpuBigUIntView, GpuBigUIntView)
 
 Performs bitwise AND on the GPU.
 
 ```csharp
-public static void BitwiseAnd(GpuBigUInt leftOperand, GpuBigUInt rightOperand, GpuBigUInt resultBuffer);
+public static void BitwiseAnd(scoped GpuBigUIntView leftOperand, scoped GpuBigUIntView rightOperand, scoped GpuBigUIntView resultBuffer);
 ```
 
 #### Parameters
@@ -330,12 +332,12 @@ The destination buffer receiving the bitwise AND result.
 `ArgumentException`<br>
 Thrown when `leftOperand`, `rightOperand`, and `resultBuffer` do not have the same word length (`NumWords`).
 
-## BitwiseOr(GpuBigUInt, GpuBigUInt, GpuBigUInt)
+## BitwiseOr(GpuBigUIntView, GpuBigUIntView, GpuBigUIntView)
 
 Performs bitwise OR on the GPU.
 
 ```csharp
-public static void BitwiseOr(GpuBigUInt leftOperand, GpuBigUInt rightOperand, GpuBigUInt resultBuffer);
+public static void BitwiseOr(scoped GpuBigUIntView leftOperand, scoped GpuBigUIntView rightOperand, scoped GpuBigUIntView resultBuffer);
 ```
 
 #### Parameters
@@ -354,12 +356,12 @@ The destination buffer receiving the bitwise OR result.
 `ArgumentException`<br>
 Thrown when `leftOperand`, `rightOperand`, and `resultBuffer` do not have the same word length (`NumWords`).
 
-## BitwiseXor(GpuBigUInt, GpuBigUInt, GpuBigUInt)
+## BitwiseXor(GpuBigUIntView, GpuBigUIntView, GpuBigUIntView)
 
 Performs bitwise XOR on the GPU.
 
 ```csharp
-public static void BitwiseXor(GpuBigUInt leftOperand, GpuBigUInt rightOperand, GpuBigUInt resultBuffer);
+public static void BitwiseXor(scoped GpuBigUIntView leftOperand, scoped GpuBigUIntView rightOperand, scoped GpuBigUIntView resultBuffer);
 ```
 
 #### Parameters
@@ -378,12 +380,12 @@ The destination buffer receiving the bitwise XOR result.
 `ArgumentException`<br>
 Thrown when `leftOperand`, `rightOperand`, and `resultBuffer` do not have the same word length (`NumWords`).
 
-## BitwiseNot(GpuBigUInt, GpuBigUInt)
+## BitwiseNot(GpuBigUIntView, GpuBigUIntView)
 
 Performs bitwise NOT (one's complement) on the GPU.
 
 ```csharp
-public static void BitwiseNot(GpuBigUInt leftOperand, GpuBigUInt resultBuffer);
+public static void BitwiseNot(scoped GpuBigUIntView leftOperand, scoped GpuBigUIntView resultBuffer);
 ```
 
 #### Parameters
@@ -399,12 +401,12 @@ The destination buffer receiving the bitwise NOT result.
 `ArgumentException`<br>
 Thrown when `leftOperand` and `resultBuffer` do not have the same word length (`NumWords`).
 
-## IsLessThan(GpuBigUInt, GpuBigUInt)
+## IsLessThan(GpuBigUIntView, GpuBigUIntView)
 
 Determines whether `leftOperand` is strictly less than `rightOperand` on the GPU.
 
 ```csharp
-public static bool IsLessThan(GpuBigUInt leftOperand, GpuBigUInt rightOperand);
+public static bool IsLessThan(scoped GpuBigUIntView leftOperand, scoped GpuBigUIntView rightOperand);
 ```
 
 #### Parameters

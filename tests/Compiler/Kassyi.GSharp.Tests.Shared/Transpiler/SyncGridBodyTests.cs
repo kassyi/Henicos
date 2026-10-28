@@ -227,7 +227,6 @@ public class SyncGridBodyTests : TranspilerTestBase
         var a = new int[Threads];
         var b = new int[Threads];
         var c = new int[Threads];
-        Skip.If(forceManaged, "managed device function state machine does not request a grid sync at Gpu.SyncGrid (#665)");
 
         RunReadingOtherBlocks(forceManaged, () => SyncGridBodyKernels.LaunchDeviceFunctionKernel(a, b, c, gridDimX: Blocks, blockDimX: ThreadsPerBlock));
 
@@ -390,6 +389,34 @@ public class SyncGridBodyTests : TranspilerTestBase
         Run(forceManaged, () => SyncGridBodyKernels.LaunchForUnrollReturnKernel(a, gridDimX: Blocks, blockDimX: ThreadsPerBlock));
 
         Assert.Equal(Enumerable.Range(0, Threads).Select(static t => t == 0 ? 1 : 2), a);
+    }
+
+    [SkippableTheory]
+    [Scenario(TestScenario.HappyPath)]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void Test_SyncGrid_InDeviceFunction_SeesOtherBlocksWrites(bool forceManaged)
+    {
+        var a = new int[Threads];
+        var b = new int[Threads];
+
+        RunReadingOtherBlocks(forceManaged, () => SyncGridBodyKernels.LaunchDeviceFunctionSyncKernel(a, b, gridDimX: Blocks, blockDimX: ThreadsPerBlock));
+
+        Assert.Equal(Enumerable.Range(0, Threads).Select(static t => (t + 1) % Threads + 1), b);
+    }
+
+    [SkippableTheory]
+    [Scenario(TestScenario.Boundary)]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void Test_SyncGrid_TwoDeviceFunctionsDeep_SeesOtherBlocksWrites(bool forceManaged)
+    {
+        var a = new int[Threads];
+        var b = new int[Threads];
+
+        RunReadingOtherBlocks(forceManaged, () => SyncGridBodyKernels.LaunchNestedDeviceFunctionSyncKernel(a, b, gridDimX: Blocks, blockDimX: ThreadsPerBlock));
+
+        Assert.Equal(Enumerable.Range(0, Threads).Select(static t => (t + 1) % Threads + 1), b);
     }
 
     private static int[] Filled(int value) => Enumerable.Repeat(value, Threads).ToArray();

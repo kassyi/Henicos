@@ -337,19 +337,59 @@ public partial class EmissionShapeTests
         Assert.Equal((22, 38, 22, 49), (span.Start.Line + 1, span.Start.Character + 1, span.End.Line + 1, span.End.Character + 1));
     }
 
-    // [SkipLocalsInit] on the method, its type or its module drops the zero initialization `= default`; without it the
-    // local is zeroed as written
+    // An explicit `= default` is an initialization C# performs whatever [SkipLocalsInit] says (Roslyn emits initobj), so
+    // the local keeps it with the attribute on the method, its type or its module (#622)
     [Theory]
     [Scenario(TestScenario.Boundary)]
-    [InlineData("SkipLocalsInitKernels", "ZeroInitializedKernel", " = ")]
-    [InlineData("SkipLocalsInitKernels", "MethodSkipsKernel", ";\n")]
-    [InlineData("SkipLocalsInitKernels", "TypeSkipsKernel", ";\n")]
-    [InlineData("SkipLocalsInitModuleKernels", "ModuleSkipsKernel", ";\n")]
-    public void SkipLocalsInit_OnMethodTypeOrModule_DropsTheZeroInitialization(string testCase, string kernel, string afterName)
+    [InlineData("SkipLocalsInitKernels", "ZeroInitializedKernel")]
+    [InlineData("SkipLocalsInitKernels", "MethodSkipsKernel")]
+    [InlineData("SkipLocalsInitKernels", "TypeSkipsKernel")]
+    [InlineData("SkipLocalsInitModuleKernels", "ModuleSkipsKernel")]
+    public void SkipLocalsInit_OnMethodTypeOrModule_KeepsTheExplicitInitializer(string testCase, string kernel)
     {
         var body = KernelSource(Generate(testCase, "Cuda"), kernel);
 
-        Assert.Contains($"\nint __gsharp_id_2_value{afterName}", body, StringComparison.Ordinal);
+        Assert.Contains("\nint __gsharp_id_2_value = {};\n", body, StringComparison.Ordinal);
+    }
+
+    // A stack array declaration is zeroed ({}) unless it is a stackalloc without an initializer under [SkipLocalsInit].
+    // The attribute is found where Roslyn looks for it: the method, the property of an accessor, a lambda or the method
+    // around a local function, the containing types outward, the module. new T[N] (also as a Span) and a ReadOnlySpan
+    // are always zeroed; each instantiation of a generic struct follows the same rule
+    [Theory]
+    [Scenario(TestScenario.Boundary)]
+    [InlineData("SkipLocalsInitKernels", "int", "zeroedBuf", "{}")]
+    [InlineData("SkipLocalsInitKernels", "int", "methodBuf", "")]
+    [InlineData("SkipLocalsInitKernels", "int", "methodArray", "{}")]
+    [InlineData("SkipLocalsInitKernels", "const int", "methodReadOnly", "{}")]
+    [InlineData("SkipLocalsInitKernels", "int", "methodSpanArray", "{}")]
+    [InlineData("SkipLocalsInitKernels", "int", "lambdaSkipsBuf", "")]
+    [InlineData("SkipLocalsInitKernels", "int", "lambdaZeroedBuf", "{}")]
+    [InlineData("SkipLocalsInitKernels", "int", "genericZeroedBuf", "{}")]
+    [InlineData("SkipLocalsInitKernels", "float", "genericZeroedBuf", "{}")]
+    [InlineData("SkipLocalsInitKernels", "int", "genericSkipsBuf", "")]
+    [InlineData("SkipLocalsInitKernels", "float", "genericSkipsBuf", "")]
+    [InlineData("SkipLocalsInitKernels", "int", "outerSkipsBuf", "")]
+    [InlineData("SkipLocalsInitKernels", "int", "outerZeroedBuf", "{}")]
+    [InlineData("SkipLocalsInitKernels", "int", "ownSkipsBuf", "")]
+    [InlineData("SkipLocalsInitKernels", "int", "propertyZeroedBuf", "{}")]
+    [InlineData("SkipLocalsInitKernels", "int", "propertySkipsBuf", "")]
+    [InlineData("SkipLocalsInitKernels", "int", "typeBuf", "")]
+    [InlineData("SkipLocalsInitKernels", "int", "nestedBuf", "")]
+    [InlineData("SkipLocalsInitModuleKernels", "int", "moduleBuf", "")]
+    [InlineData("SkipLocalsInitModuleKernels", "int", "moduleArray", "{}")]
+    public void SkipLocalsInit_LeavesOutOnlyTheZeroFillOfAStackAlloc(
+        string testCase, string elementType, string local, string initializer)
+    {
+        foreach (var dialect in (string[])["Cpu", "Cuda"])
+        {
+            var source = Generate(testCase, dialect);
+            var declaration = new Regex($@"\n{elementType} \S*_{local}\[4\](.*);\n");
+
+            var match = declaration.Match(source);
+            Assert.True(match.Success, $"{local} is not declared as a stack array ({dialect}).");
+            Assert.Equal(initializer, match.Groups[1].Value);
+        }
     }
 
     [GeneratedRegex(@"(?m)^(\w+):;?$")]

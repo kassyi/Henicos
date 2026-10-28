@@ -37,7 +37,15 @@ public static class GpuBigIntMath
     /// <param name="rightOperand">The second big integer addend.</param>
     /// <param name="resultBuffer">The destination buffer in GPU device memory receiving the sum.</param>
     /// <exception cref="ArgumentException">Thrown when buffer word lengths do not match.</exception>
-    public static void Add(GpuBigUInt leftOperand, GpuBigUInt rightOperand,
+    public static void Add(
+        scoped GpuBigUIntView leftOperand,
+        scoped GpuBigUIntView rightOperand,
+        scoped GpuBigUIntView resultBuffer
+    ) =>
+        AddCore(leftOperand.AsBorrowedBigUInt(), rightOperand.AsBorrowedBigUInt(), resultBuffer.AsBorrowedBigUInt());
+
+    // Add on the owned type; the public method above takes views and borrows them
+    private static void AddCore(GpuBigUInt leftOperand, GpuBigUInt rightOperand,
         GpuBigUInt resultBuffer)
     {
         ThrowIfSizeMismatch(leftOperand, rightOperand, resultBuffer);
@@ -50,7 +58,11 @@ public static class GpuBigIntMath
     /// <param name="leftOperand">The big integer addend.</param>
     /// <param name="rightOperand">The 32-bit unsigned scalar addend.</param>
     /// <param name="resultBuffer">The destination buffer in GPU device memory receiving the sum.</param>
-    public static void Add(GpuBigUInt leftOperand, uint rightOperand, GpuBigUInt resultBuffer) =>
+    public static void Add(scoped GpuBigUIntView leftOperand, uint rightOperand, scoped GpuBigUIntView resultBuffer) =>
+        AddCore(leftOperand.AsBorrowedBigUInt(), rightOperand, resultBuffer.AsBorrowedBigUInt());
+
+    // Add on the owned type; the public method above takes views and borrows them
+    private static void AddCore(GpuBigUInt leftOperand, uint rightOperand, GpuBigUInt resultBuffer) =>
         leftOperand.Workspace.Provider.Add(leftOperand.Workspace, leftOperand, rightOperand, resultBuffer);
 
     /// <summary>
@@ -62,7 +74,23 @@ public static class GpuBigIntMath
     /// <param name="rightNegative"><see langword="true"/> if the right operand is negative; otherwise, <see langword="false"/>.</param>
     /// <param name="resultBuffer">The destination buffer receiving the resulting magnitude.</param>
     /// <returns><see langword="true"/> if the resulting sum is negative; otherwise, <see langword="false"/>.</returns>
-    public static bool AddSignedMagnitude(GpuBigUInt leftOperand, bool leftNegative,
+    public static bool AddSignedMagnitude(
+        scoped GpuBigUIntView leftOperand,
+        bool leftNegative,
+        scoped GpuBigUIntView rightOperand,
+        bool rightNegative,
+        scoped GpuBigUIntView resultBuffer
+    ) =>
+        AddSignedMagnitudeCore(
+            leftOperand.AsBorrowedBigUInt(),
+            leftNegative,
+            rightOperand.AsBorrowedBigUInt(),
+            rightNegative,
+            resultBuffer.AsBorrowedBigUInt()
+        );
+
+    // AddSignedMagnitude on the owned type; the public method above takes views and borrows them
+    private static bool AddSignedMagnitudeCore(GpuBigUInt leftOperand, bool leftNegative,
         GpuBigUInt rightOperand, bool rightNegative, GpuBigUInt resultBuffer)
     {
         if (leftNegative == rightNegative)
@@ -89,7 +117,15 @@ public static class GpuBigIntMath
     /// <param name="rightOperand">The subtrahend operand.</param>
     /// <param name="resultBuffer">The destination buffer in GPU device memory receiving the difference.</param>
     /// <exception cref="ArgumentException">Thrown when buffer word lengths do not match.</exception>
-    public static void Sub(GpuBigUInt leftOperand, GpuBigUInt rightOperand,
+    public static void Sub(
+        scoped GpuBigUIntView leftOperand,
+        scoped GpuBigUIntView rightOperand,
+        scoped GpuBigUIntView resultBuffer
+    ) =>
+        SubCore(leftOperand.AsBorrowedBigUInt(), rightOperand.AsBorrowedBigUInt(), resultBuffer.AsBorrowedBigUInt());
+
+    // Sub on the owned type; the public method above takes views and borrows them
+    private static void SubCore(GpuBigUInt leftOperand, GpuBigUInt rightOperand,
         GpuBigUInt resultBuffer)
     {
         ThrowIfSizeMismatch(leftOperand, rightOperand, resultBuffer);
@@ -102,7 +138,11 @@ public static class GpuBigIntMath
     /// <param name="leftOperand">The minuend operand.</param>
     /// <param name="rightOperand">The 32-bit unsigned scalar subtrahend.</param>
     /// <param name="resultBuffer">The destination buffer in GPU device memory receiving the difference.</param>
-    public static void Sub(GpuBigUInt leftOperand, uint rightOperand, GpuBigUInt resultBuffer) =>
+    public static void Sub(scoped GpuBigUIntView leftOperand, uint rightOperand, scoped GpuBigUIntView resultBuffer) =>
+        SubCore(leftOperand.AsBorrowedBigUInt(), rightOperand, resultBuffer.AsBorrowedBigUInt());
+
+    // Sub on the owned type; the public method above takes views and borrows them
+    private static void SubCore(GpuBigUInt leftOperand, uint rightOperand, GpuBigUInt resultBuffer) =>
         leftOperand.Workspace.Provider.Sub(leftOperand.Workspace, leftOperand, rightOperand, resultBuffer);
 
     /// <summary>
@@ -115,7 +155,15 @@ public static class GpuBigIntMath
     /// <remarks>
     /// <para><b>Buffer Requirements:</b> The destination buffer must have a word capacity exactly equal to <c>leftOperand.NumWords + rightOperand.NumWords</c>.</para>
     /// </remarks>
-    public static void Mul(GpuBigUInt leftOperand, GpuBigUInt rightOperand,
+    public static void Mul(
+        scoped GpuBigUIntView leftOperand,
+        scoped GpuBigUIntView rightOperand,
+        scoped GpuBigUIntView resultBuffer
+    ) =>
+        MulCore(leftOperand.AsBorrowedBigUInt(), rightOperand.AsBorrowedBigUInt(), resultBuffer.AsBorrowedBigUInt());
+
+    // Mul on the owned type; the public method above takes views and borrows them
+    private static void MulCore(GpuBigUInt leftOperand, GpuBigUInt rightOperand,
         GpuBigUInt resultBuffer)
     {
         if (resultBuffer.NumWords != leftOperand.NumWords + rightOperand.NumWords)
@@ -133,7 +181,11 @@ public static class GpuBigIntMath
     /// <param name="leftOperand">The multiplicand operand.</param>
     /// <param name="rightOperand">The 32-bit unsigned scalar multiplier.</param>
     /// <param name="resultBuffer">The destination buffer in GPU device memory receiving the product.</param>
-    public static void Mul(GpuBigUInt leftOperand, uint rightOperand, GpuBigUInt resultBuffer) =>
+    public static void Mul(scoped GpuBigUIntView leftOperand, uint rightOperand, scoped GpuBigUIntView resultBuffer) =>
+        MulCore(leftOperand.AsBorrowedBigUInt(), rightOperand, resultBuffer.AsBorrowedBigUInt());
+
+    // Mul on the owned type; the public method above takes views and borrows them
+    private static void MulCore(GpuBigUInt leftOperand, uint rightOperand, GpuBigUInt resultBuffer) =>
         leftOperand.Workspace.Provider.Mul(leftOperand.Workspace, leftOperand, rightOperand, resultBuffer);
 
     /// <summary>
@@ -144,7 +196,19 @@ public static class GpuBigIntMath
     /// <param name="rightOperand">The multiplier operand.</param>
     /// <param name="resultBuffer">The destination buffer in GPU device memory receiving the product.</param>
     /// <exception cref="ArgumentException">Thrown when <c>resultBuffer.NumWords</c> is less than <c>leftOperand.NumWords + rightOperand.NumWords</c>.</exception>
-    public static void MultiplyNtt(GpuBigUInt leftOperand, GpuBigUInt rightOperand, GpuBigUInt resultBuffer)
+    public static void MultiplyNtt(
+        scoped GpuBigUIntView leftOperand,
+        scoped GpuBigUIntView rightOperand,
+        scoped GpuBigUIntView resultBuffer
+    ) =>
+        MultiplyNttCore(
+            leftOperand.AsBorrowedBigUInt(),
+            rightOperand.AsBorrowedBigUInt(),
+            resultBuffer.AsBorrowedBigUInt()
+        );
+
+    // MultiplyNtt on the owned type; the public method above takes views and borrows them
+    private static void MultiplyNttCore(GpuBigUInt leftOperand, GpuBigUInt rightOperand, GpuBigUInt resultBuffer)
     {
         var requiredWords = leftOperand.NumWords + rightOperand.NumWords;
         if (resultBuffer.NumWords < requiredWords)
@@ -177,7 +241,15 @@ public static class GpuBigIntMath
     /// <returns>The 32-bit unsigned remainder (<c>dividend % divisor</c>).</returns>
     /// <exception cref="ArgumentException">Thrown when buffer word lengths do not match.</exception>
     /// <exception cref="DivideByZeroException">Thrown when <paramref name="divisor"/> is zero.</exception>
-    public static uint DivideByUInt32(GpuBigUInt dividend, uint divisor, GpuBigUInt quotientBuffer)
+    public static uint DivideByUInt32(
+        scoped GpuBigUIntView dividend,
+        uint divisor,
+        scoped GpuBigUIntView quotientBuffer
+    ) =>
+        DivideByUInt32Core(dividend.AsBorrowedBigUInt(), divisor, quotientBuffer.AsBorrowedBigUInt());
+
+    // DivideByUInt32 on the owned type; the public method above takes views and borrows them
+    private static uint DivideByUInt32Core(GpuBigUInt dividend, uint divisor, GpuBigUInt quotientBuffer)
     {
         ThrowIfSizeMismatch(dividend, quotientBuffer);
         return dividend.Workspace.Provider.DivideByUInt32(dividend.Workspace, dividend, divisor, quotientBuffer);
@@ -190,7 +262,15 @@ public static class GpuBigIntMath
     /// <param name="rightOperand">The second big integer.</param>
     /// <param name="resultBuffer">The destination buffer in GPU device memory receiving the GCD.</param>
     /// <exception cref="ArgumentException">Thrown when buffer word lengths do not match.</exception>
-    public static void Gcd(GpuBigUInt leftOperand, GpuBigUInt rightOperand,
+    public static void Gcd(
+        scoped GpuBigUIntView leftOperand,
+        scoped GpuBigUIntView rightOperand,
+        scoped GpuBigUIntView resultBuffer
+    ) =>
+        GcdCore(leftOperand.AsBorrowedBigUInt(), rightOperand.AsBorrowedBigUInt(), resultBuffer.AsBorrowedBigUInt());
+
+    // Gcd on the owned type; the public method above takes views and borrows them
+    private static void GcdCore(GpuBigUInt leftOperand, GpuBigUInt rightOperand,
         GpuBigUInt resultBuffer)
     {
         ThrowIfSizeMismatch(leftOperand, rightOperand, resultBuffer);
@@ -205,7 +285,15 @@ public static class GpuBigIntMath
     /// <param name="resultBuffer">The destination buffer in GPU device memory receiving the modular inverse.</param>
     /// <exception cref="ArgumentException">Thrown when buffer word lengths do not match.</exception>
     /// <exception cref="ArithmeticException">Thrown when the modular inverse does not exist ($\gcd(\text{value}, \text{modulus}) \neq 1$).</exception>
-    public static void ModInverse(GpuBigUInt value, GpuBigUInt modulus, GpuBigUInt resultBuffer)
+    public static void ModInverse(
+        scoped GpuBigUIntView value,
+        scoped GpuBigUIntView modulus,
+        scoped GpuBigUIntView resultBuffer
+    ) =>
+        ModInverseCore(value.AsBorrowedBigUInt(), modulus.AsBorrowedBigUInt(), resultBuffer.AsBorrowedBigUInt());
+
+    // ModInverse on the owned type; the public method above takes views and borrows them
+    private static void ModInverseCore(GpuBigUInt value, GpuBigUInt modulus, GpuBigUInt resultBuffer)
     {
         ThrowIfSizeMismatch(value, modulus, resultBuffer);
         value.Workspace.Provider.ModInverse(value.Workspace, value, modulus, resultBuffer);
@@ -218,7 +306,15 @@ public static class GpuBigIntMath
     /// <param name="shiftBits">The number of bit positions to shift left.</param>
     /// <param name="resultBuffer">The destination buffer receiving the shifted value.</param>
     /// <exception cref="ArgumentException">Thrown when buffer word lengths do not match.</exception>
-    public static void ShiftLeft(GpuBigUInt leftOperand, int shiftBits, GpuBigUInt resultBuffer)
+    public static void ShiftLeft(
+        scoped GpuBigUIntView leftOperand,
+        int shiftBits,
+        scoped GpuBigUIntView resultBuffer
+    ) =>
+        ShiftLeftCore(leftOperand.AsBorrowedBigUInt(), shiftBits, resultBuffer.AsBorrowedBigUInt());
+
+    // ShiftLeft on the owned type; the public method above takes views and borrows them
+    private static void ShiftLeftCore(GpuBigUInt leftOperand, int shiftBits, GpuBigUInt resultBuffer)
     {
         ThrowIfSizeMismatch(leftOperand, resultBuffer);
         leftOperand.Workspace.Provider.ShiftLeft(leftOperand.Workspace, leftOperand, shiftBits, resultBuffer);
@@ -231,7 +327,15 @@ public static class GpuBigIntMath
     /// <param name="shiftBits">The number of bit positions to shift right.</param>
     /// <param name="resultBuffer">The destination buffer receiving the shifted value.</param>
     /// <exception cref="ArgumentException">Thrown when buffer word lengths do not match.</exception>
-    public static void ShiftRight(GpuBigUInt leftOperand, int shiftBits, GpuBigUInt resultBuffer)
+    public static void ShiftRight(
+        scoped GpuBigUIntView leftOperand,
+        int shiftBits,
+        scoped GpuBigUIntView resultBuffer
+    ) =>
+        ShiftRightCore(leftOperand.AsBorrowedBigUInt(), shiftBits, resultBuffer.AsBorrowedBigUInt());
+
+    // ShiftRight on the owned type; the public method above takes views and borrows them
+    private static void ShiftRightCore(GpuBigUInt leftOperand, int shiftBits, GpuBigUInt resultBuffer)
     {
         ThrowIfSizeMismatch(leftOperand, resultBuffer);
         leftOperand.Workspace.Provider.ShiftRight(leftOperand.Workspace, leftOperand, shiftBits, resultBuffer);
@@ -243,7 +347,15 @@ public static class GpuBigIntMath
     /// <param name="source">The source unsigned integer buffer of arbitrary word length.</param>
     /// <param name="signedBitShift">The signed bit shift (positive for left shift, negative for right shift).</param>
     /// <param name="resultBuffer">The destination buffer of arbitrary word length.</param>
-    public static void ShiftAndResize(GpuBigUInt source, int signedBitShift, GpuBigUInt resultBuffer)
+    public static void ShiftAndResize(
+        scoped GpuBigUIntView source,
+        int signedBitShift,
+        scoped GpuBigUIntView resultBuffer
+    ) =>
+        ShiftAndResizeCore(source.AsBorrowedBigUInt(), signedBitShift, resultBuffer.AsBorrowedBigUInt());
+
+    // ShiftAndResize on the owned type; the public method above takes views and borrows them
+    private static void ShiftAndResizeCore(GpuBigUInt source, int signedBitShift, GpuBigUInt resultBuffer)
     {
         var workspace = source.Workspace;
         if (workspace.Provider is GSharpKernelProvider && !GpuKernelLoader.IsCpuFallbackMode)
@@ -304,7 +416,15 @@ public static class GpuBigIntMath
     /// <param name="resultBuffer">The destination buffer receiving the MSB-aligned limbs.</param>
     /// <param name="actualBits">When this method returns, contains the bit length of <paramref name="source"/> prior to normalization.</param>
     /// <returns>The signed bit shift applied (or <c>0</c> if <paramref name="source"/> is zero).</returns>
-    public static int NormalizeToMsb(GpuBigUInt source, GpuBigUInt resultBuffer, out int actualBits)
+    public static int NormalizeToMsb(
+        scoped GpuBigUIntView source,
+        scoped GpuBigUIntView resultBuffer,
+        out int actualBits
+    ) =>
+        NormalizeToMsbCore(source.AsBorrowedBigUInt(), resultBuffer.AsBorrowedBigUInt(), out actualBits);
+
+    // NormalizeToMsb on the owned type; the public method above takes views and borrows them
+    private static int NormalizeToMsbCore(GpuBigUInt source, GpuBigUInt resultBuffer, out int actualBits)
     {
         var workspace = source.Workspace;
         actualBits = source.GetBitLength();
@@ -327,7 +447,19 @@ public static class GpuBigIntMath
     /// <param name="rightOperand">The second operand.</param>
     /// <param name="resultBuffer">The destination buffer receiving the bitwise AND result.</param>
     /// <exception cref="ArgumentException">Thrown when buffer word lengths do not match.</exception>
-    public static void BitwiseAnd(GpuBigUInt leftOperand, GpuBigUInt rightOperand,
+    public static void BitwiseAnd(
+        scoped GpuBigUIntView leftOperand,
+        scoped GpuBigUIntView rightOperand,
+        scoped GpuBigUIntView resultBuffer
+    ) =>
+        BitwiseAndCore(
+            leftOperand.AsBorrowedBigUInt(),
+            rightOperand.AsBorrowedBigUInt(),
+            resultBuffer.AsBorrowedBigUInt()
+        );
+
+    // BitwiseAnd on the owned type; the public method above takes views and borrows them
+    private static void BitwiseAndCore(GpuBigUInt leftOperand, GpuBigUInt rightOperand,
         GpuBigUInt resultBuffer)
     {
         ThrowIfSizeMismatch(leftOperand, rightOperand, resultBuffer);
@@ -341,7 +473,19 @@ public static class GpuBigIntMath
     /// <param name="rightOperand">The second operand.</param>
     /// <param name="resultBuffer">The destination buffer receiving the bitwise OR result.</param>
     /// <exception cref="ArgumentException">Thrown when buffer word lengths do not match.</exception>
-    public static void BitwiseOr(GpuBigUInt leftOperand, GpuBigUInt rightOperand,
+    public static void BitwiseOr(
+        scoped GpuBigUIntView leftOperand,
+        scoped GpuBigUIntView rightOperand,
+        scoped GpuBigUIntView resultBuffer
+    ) =>
+        BitwiseOrCore(
+            leftOperand.AsBorrowedBigUInt(),
+            rightOperand.AsBorrowedBigUInt(),
+            resultBuffer.AsBorrowedBigUInt()
+        );
+
+    // BitwiseOr on the owned type; the public method above takes views and borrows them
+    private static void BitwiseOrCore(GpuBigUInt leftOperand, GpuBigUInt rightOperand,
         GpuBigUInt resultBuffer)
     {
         ThrowIfSizeMismatch(leftOperand, rightOperand, resultBuffer);
@@ -355,7 +499,19 @@ public static class GpuBigIntMath
     /// <param name="rightOperand">The second operand.</param>
     /// <param name="resultBuffer">The destination buffer receiving the bitwise XOR result.</param>
     /// <exception cref="ArgumentException">Thrown when buffer word lengths do not match.</exception>
-    public static void BitwiseXor(GpuBigUInt leftOperand, GpuBigUInt rightOperand,
+    public static void BitwiseXor(
+        scoped GpuBigUIntView leftOperand,
+        scoped GpuBigUIntView rightOperand,
+        scoped GpuBigUIntView resultBuffer
+    ) =>
+        BitwiseXorCore(
+            leftOperand.AsBorrowedBigUInt(),
+            rightOperand.AsBorrowedBigUInt(),
+            resultBuffer.AsBorrowedBigUInt()
+        );
+
+    // BitwiseXor on the owned type; the public method above takes views and borrows them
+    private static void BitwiseXorCore(GpuBigUInt leftOperand, GpuBigUInt rightOperand,
         GpuBigUInt resultBuffer)
     {
         ThrowIfSizeMismatch(leftOperand, rightOperand, resultBuffer);
@@ -368,7 +524,11 @@ public static class GpuBigIntMath
     /// <param name="leftOperand">The operand to invert.</param>
     /// <param name="resultBuffer">The destination buffer receiving the bitwise NOT result.</param>
     /// <exception cref="ArgumentException">Thrown when buffer word lengths do not match.</exception>
-    public static void BitwiseNot(GpuBigUInt leftOperand, GpuBigUInt resultBuffer)
+    public static void BitwiseNot(scoped GpuBigUIntView leftOperand, scoped GpuBigUIntView resultBuffer) =>
+        BitwiseNotCore(leftOperand.AsBorrowedBigUInt(), resultBuffer.AsBorrowedBigUInt());
+
+    // BitwiseNot on the owned type; the public method above takes views and borrows them
+    private static void BitwiseNotCore(GpuBigUInt leftOperand, GpuBigUInt resultBuffer)
     {
         ThrowIfSizeMismatch(leftOperand, resultBuffer);
         leftOperand.Workspace.Provider.BitwiseNot(leftOperand.Workspace, leftOperand, resultBuffer);
@@ -381,7 +541,11 @@ public static class GpuBigIntMath
     /// <param name="rightOperand">The second value to compare.</param>
     /// <returns><see langword="true"/> if <paramref name="leftOperand"/> is strictly less than <paramref name="rightOperand"/>; otherwise, <see langword="false"/>.</returns>
     /// <exception cref="ArgumentException">Thrown when buffer word lengths do not match.</exception>
-    public static bool IsLessThan(GpuBigUInt leftOperand, GpuBigUInt rightOperand)
+    public static bool IsLessThan(scoped GpuBigUIntView leftOperand, scoped GpuBigUIntView rightOperand) =>
+        IsLessThanCore(leftOperand.AsBorrowedBigUInt(), rightOperand.AsBorrowedBigUInt());
+
+    // IsLessThan on the owned type; the public method above takes views and borrows them
+    private static bool IsLessThanCore(GpuBigUInt leftOperand, GpuBigUInt rightOperand)
     {
         ThrowIfSizeMismatch(leftOperand, rightOperand);
         using var temp = new GpuBigUInt(leftOperand.Workspace, leftOperand.NumWords);

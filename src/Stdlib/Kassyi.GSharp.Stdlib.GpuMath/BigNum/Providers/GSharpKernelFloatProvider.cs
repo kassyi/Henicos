@@ -59,8 +59,8 @@ public sealed class GSharpKernelFloatProvider(IGpuBigFloatArithmetic fallbackStr
         GpuWorkspace workspace, GpuBigIntMemoryHandle significand, long exponent, bool isNegative,
         GpuBigIntMemoryHandle resultSig)
     {
-        var valueView = significand.AsBorrowedBigUInt(workspace);
-        var resultView = resultSig.AsBorrowedBigUInt(workspace);
+        var valueView = significand.AsView(workspace);
+        var resultView = resultSig.AsView(workspace);
         var shift = GpuBigIntMath.NormalizeToMsb(valueView, resultView, out var actualBits);
         if (actualBits == 0)
         {
@@ -175,8 +175,8 @@ public sealed class GSharpKernelFloatProvider(IGpuBigFloatArithmetic fallbackStr
             return fallbackStrategy.Multiply(ref context, in left, in right, resultSig);
         }
 
-        var leftView = leftSig.AsBorrowedBigUInt(context.GpuWorkspace);
-        var rightView = rightSig.AsBorrowedBigUInt(context.GpuWorkspace);
+        var leftView = leftSig.AsView(context.GpuWorkspace);
+        var rightView = rightSig.AsView(context.GpuWorkspace);
         var prodWords = leftSig.NumWords + rightSig.NumWords;
         using var prodBuffer = context.GpuWorkspace.RentTemp(prodWords);
 
@@ -195,7 +195,7 @@ public sealed class GSharpKernelFloatProvider(IGpuBigFloatArithmetic fallbackStr
     {
         var leftSig = left.Significand;
         var rightSig = right.Significand;
-        var rightOperand = rightSig.AsBorrowedBigUInt(context.GpuWorkspace);
+        var rightOperand = rightSig.AsView(context.GpuWorkspace);
 
         // 1. Zero Division Check
         if (rightOperand.IsZero())
@@ -209,7 +209,7 @@ public sealed class GSharpKernelFloatProvider(IGpuBigFloatArithmetic fallbackStr
         }
 
         // 2. G# Kernel / Mega Division Path via GpuBigIntDivRem
-        var leftOperand = leftSig.AsBorrowedBigUInt(context.GpuWorkspace);
+        var leftOperand = leftSig.AsView(context.GpuWorkspace);
         if (leftOperand.IsZero())
         {
             context.GpuWorkspace.Provider.ClearMemoryAsync(resultSig.DevicePointer, resultSig.NumWords, context.Stream);
@@ -247,7 +247,7 @@ public sealed class GSharpKernelFloatProvider(IGpuBigFloatArithmetic fallbackStr
 
         var stream = context.Stream;
         var valueSig = value.Significand;
-        var valueOperand = valueSig.AsBorrowedBigUInt(context.GpuWorkspace);
+        var valueOperand = valueSig.AsView(context.GpuWorkspace);
         if (valueOperand.IsZero())
         {
             throw new DivideByZeroException("GBF Reciprocal of Zero.");
@@ -285,7 +285,7 @@ public sealed class GSharpKernelFloatProvider(IGpuBigFloatArithmetic fallbackStr
         }
 
         var stream = context.Stream;
-        var valueOperand = value.Significand.AsBorrowedBigUInt(context.GpuWorkspace);
+        var valueOperand = value.Significand.AsView(context.GpuWorkspace);
 
         var actualBits = valueOperand.GetBitLength();
         if (actualBits == 0)
@@ -295,7 +295,7 @@ public sealed class GSharpKernelFloatProvider(IGpuBigFloatArithmetic fallbackStr
         }
 
         using var invSqrt = ComputeNormalizedInverseSqrt(new InverseSqrtRequest(
-            context.GpuWorkspace, valueOperand, value.Exponent, actualBits, resultSig.NumWords));
+            valueOperand, value.Exponent, actualBits, resultSig.NumWords));
 
         var prodWords = invSqrt.NormalizedOperand.NumWords + invSqrt.SlicedInverseSqrt.NumWords;
         using var prodResult = context.GpuWorkspace.RentTemp(prodWords);
@@ -323,7 +323,7 @@ public sealed class GSharpKernelFloatProvider(IGpuBigFloatArithmetic fallbackStr
             return fallbackStrategy.Rsqrt(ref context, in value, resultSig);
         }
 
-        var valueOperand = value.Significand.AsBorrowedBigUInt(context.GpuWorkspace);
+        var valueOperand = value.Significand.AsView(context.GpuWorkspace);
 
         var actualBits = valueOperand.GetBitLength();
         if (actualBits == 0)
@@ -332,7 +332,7 @@ public sealed class GSharpKernelFloatProvider(IGpuBigFloatArithmetic fallbackStr
         }
 
         using var invSqrt = ComputeNormalizedInverseSqrt(new InverseSqrtRequest(
-            context.GpuWorkspace, valueOperand, value.Exponent, actualBits, resultSig.NumWords));
+            valueOperand, value.Exponent, actualBits, resultSig.NumWords));
 
         var tempExp = -(invSqrt.AdjustedExponent / 2) - invSqrt.EffectiveScaleBits;
         return Normalize(ref context, new GpuFloatOperand(invSqrt.SlicedInverseSqrt.Handle, tempExp), resultSig);
@@ -369,11 +369,8 @@ public sealed class GSharpKernelFloatProvider(IGpuBigFloatArithmetic fallbackStr
                 // Add guard-word rounding offset to absorb Newton-Raphson right-shift truncation before slicing off the lowest 2 guard words
                 GpuBigIntMath.Add(rsqrtRaw, 4u, rsqrtRaw);
 
-                var slicedHandle = new GpuBigIntMemoryHandle(
-                    rsqrtRaw.Handle.Buffer,
-                    rsqrtRaw.Handle.WordOffset + DiscardGuardWords,
-                    rsqrtWords - DiscardGuardWords);
-                var rsqrtSliced = new GpuBigUInt(workspace, slicedHandle, isTemp: true);
+                var slicedHandle = rsqrtRaw.Handle.Slice(DiscardGuardWords, rsqrtWords - DiscardGuardWords);
+                var rsqrtSliced = slicedHandle.AsView(workspace);
                 var effectiveScaleBits = (rsqrtWords - DiscardGuardWords) * 32;
 
                 return new NormalizedInverseSqrtScope(aNorm, rsqrtRaw, rsqrtSliced, adjustedExp, effectiveScaleBits);
@@ -463,37 +460,55 @@ public sealed class GSharpKernelFloatProvider(IGpuBigFloatArithmetic fallbackStr
         return fallbackStrategy.DivideByUInt32(ref context, in value, divisor, resultSig);
     }
 
-    private readonly struct InverseSqrtRequest(
-        GpuWorkspace workspace,
-        GpuBigUInt valueOperand,
-        int valueExp,
-        int actualBits,
-        int targetResultWords)
+    // A ref struct because it carries a borrowed view; a primary constructor cannot capture a ref struct parameter
+    private readonly ref struct InverseSqrtRequest
     {
-        public GpuWorkspace Workspace => workspace;
-        public GpuBigUInt ValueOperand => valueOperand;
-        public int ValueExp => valueExp;
-        public int ActualBits => actualBits;
-        public int TargetResultWords => targetResultWords;
+        public InverseSqrtRequest(
+            GpuBigUIntView valueOperand,
+            int valueExp,
+            int actualBits,
+            int targetResultWords)
+        {
+            ValueOperand = valueOperand;
+            ValueExp = valueExp;
+            ActualBits = actualBits;
+            TargetResultWords = targetResultWords;
+        }
+
+        public GpuWorkspace Workspace => ValueOperand.Workspace;
+        public GpuBigUIntView ValueOperand { get; }
+        public int ValueExp { get; }
+        public int ActualBits { get; }
+        public int TargetResultWords { get; }
     }
 
-    private readonly struct NormalizedInverseSqrtScope(
-        [TakesOwnership] GpuBigUInt normalizedOperand,
-        [TakesOwnership] GpuBigUInt rawInverseSqrt,
-        GpuBigUInt slicedInverseSqrt,
-        int adjustedExponent,
-        int effectiveScaleBits) : IDisposable
+    // A ref struct because it carries a borrowed view of rawInverseSqrt, which must not outlive this scope
+    private readonly ref struct NormalizedInverseSqrtScope : IDisposable
     {
-        public GpuBigUInt NormalizedOperand => normalizedOperand;
-        public GpuBigUInt RawInverseSqrt => rawInverseSqrt;
-        public GpuBigUInt SlicedInverseSqrt => slicedInverseSqrt;
-        public int AdjustedExponent => adjustedExponent;
-        public int EffectiveScaleBits => effectiveScaleBits;
+        public NormalizedInverseSqrtScope(
+            [TakesOwnership] GpuBigUInt normalizedOperand,
+            [TakesOwnership] GpuBigUInt rawInverseSqrt,
+            GpuBigUIntView slicedInverseSqrt,
+            int adjustedExponent,
+            int effectiveScaleBits)
+        {
+            NormalizedOperand = normalizedOperand;
+            RawInverseSqrt = rawInverseSqrt;
+            SlicedInverseSqrt = slicedInverseSqrt;
+            AdjustedExponent = adjustedExponent;
+            EffectiveScaleBits = effectiveScaleBits;
+        }
+
+        public GpuBigUInt NormalizedOperand { get; }
+        public GpuBigUInt RawInverseSqrt { get; }
+        public GpuBigUIntView SlicedInverseSqrt { get; }
+        public int AdjustedExponent { get; }
+        public int EffectiveScaleBits { get; }
 
         public void Dispose()
         {
-            normalizedOperand.Dispose();
-            rawInverseSqrt.Dispose();
+            NormalizedOperand.Dispose();
+            RawInverseSqrt.Dispose();
         }
     }
 }
