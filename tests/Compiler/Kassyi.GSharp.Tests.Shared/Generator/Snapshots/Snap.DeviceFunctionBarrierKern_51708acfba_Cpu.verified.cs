@@ -292,6 +292,7 @@ struct __gsharp_frame_Kassyi__GSharp__Tests__Shared__Syntax__DeviceFunctionBarri
 int __gsharp_state = 0;
 int __gsharp_id_1_lane;
 int __gsharp_id_2_value;
+int __gsharp_arg_temp_0;
 };
 template <typename TRoot> inline bool __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__DeviceFunctionBarrierKernels__ReverseSpanWarp(GSharpArray<int> __gsharp_id_0_data, __gsharp_frame_Kassyi__GSharp__Tests__Shared__Syntax__DeviceFunctionBarrierKernels__ReverseSpanWarp* __gsharp_ctx, TRoot* __gsharp_root){
 #define __gsharp_state __gsharp_ctx->__gsharp_state
@@ -304,6 +305,7 @@ __gsharp_switch_1_state_0:
 {
 __gsharp_ctx->__gsharp_id_1_lane=threadIdx.x&31;
 __gsharp_ctx->__gsharp_id_2_value=__gsharp_id_0_data[__gsharp_ctx->__gsharp_id_1_lane];
+__gsharp_ctx->__gsharp_arg_temp_0=31-__gsharp_ctx->__gsharp_id_1_lane;
 __gsharp_warp_exchange_assign(__gsharp_ctx->__gsharp_id_2_value);
 __gsharp_state=1;
 return false;
@@ -311,8 +313,8 @@ return false;
 case 1:
 __gsharp_switch_1_state_1:
 {
-auto __gsharp_warp_temp_0 = __gsharp_warp_shuffle_read_sync(__gsharp_root,4294967295U,__gsharp_ctx->__gsharp_id_2_value,31-__gsharp_ctx->__gsharp_id_1_lane,32,""DeviceFunctionBarrierKernels.cs(85,24)"");
-int __gsharp_id_3_mirrored = __gsharp_warp_temp_0;
+auto __gsharp_warp_temp_1 = __gsharp_warp_shuffle_read_sync(__gsharp_root,4294967295U,__gsharp_ctx->__gsharp_id_2_value,__gsharp_ctx->__gsharp_arg_temp_0,32,""DeviceFunctionBarrierKernels.cs(85,24)"");
+int __gsharp_id_3_mirrored = __gsharp_warp_temp_1;
 __gsharp_id_0_data[__gsharp_ctx->__gsharp_id_1_lane]=__gsharp_id_3_mirrored;
 __gsharp_state = 0;return true;
 }
@@ -596,6 +598,7 @@ internal int __gsharp_state;
 internal uint __gsharp_warp_exchange;
 internal int lane;
 internal int value;
+internal int __gsharp_arg_temp_0;
 }
 public static bool __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__DeviceFunctionBarrierKernels__ReverseSpanWarp(global::System.Span<int> data, __gsharp_frame_Kassyi__GSharp__Tests__Shared__Syntax__DeviceFunctionBarrierKernels__ReverseSpanWarp __gsharp_ctx) {
 {
@@ -605,6 +608,7 @@ case 0:
 {
 __gsharp_ctx.lane = global::Kassyi.GSharp.Core.ThreadIndex.X & 31;
 __gsharp_ctx.value = data[__gsharp_ctx.lane];
+__gsharp_ctx.__gsharp_arg_temp_0 = 31 - __gsharp_ctx.lane;
 __gsharp_warp_exchange_assign(__gsharp_ctx.value);
 __gsharp_ctx.__gsharp_state = 1;
 return false;
@@ -612,8 +616,8 @@ return false;
 
 case 1:
 {
-var __gsharp_warp_temp_0 = __gsharp_warp_shuffle_read_sync(__gsharp_ctx, global::Kassyi.GSharp.Tests.Shared.Syntax.DeviceFunctionBarrierKernels.FullMask, __gsharp_ctx.value, 31 - __gsharp_ctx.lane, 32, "DeviceFunctionBarrierKernels.cs(85,24)");
-int mirrored = __gsharp_warp_temp_0;
+var __gsharp_warp_temp_1 = __gsharp_warp_shuffle_read_sync(__gsharp_ctx, global::Kassyi.GSharp.Tests.Shared.Syntax.DeviceFunctionBarrierKernels.FullMask, __gsharp_ctx.value, __gsharp_ctx.__gsharp_arg_temp_0, 32, "DeviceFunctionBarrierKernels.cs(85,24)");
+int mirrored = __gsharp_warp_temp_1;
 data[__gsharp_ctx.lane] = mirrored;
 {
 __gsharp_ctx.__gsharp_state = 0;

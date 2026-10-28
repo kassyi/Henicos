@@ -128,11 +128,10 @@ public class WarpInstructionRewriter(SemanticModel? semanticModel = null) : CSha
                 return visitedNode;
             }
 
+            // [WHY] A shuffle is split as well: its value is published before the state boundary and read again after
+            // it, together with the other arguments in parameter order (#788)
             var isSuspendingCall = BarrierHelper.IsSuspendingCall(visitedNode);
-            if (isSuspendingCall)
-            {
-                visitedNode = SpillArguments(visitedNode);
-            }
+            visitedNode = SpillArguments(visitedNode);
 
             switch (node.Parent)
             {
@@ -156,8 +155,10 @@ public class WarpInstructionRewriter(SemanticModel? semanticModel = null) : CSha
             return SyntaxFactory.IdentifierName(tempName).WithTriviaFrom(visitedNode);
         }
 
-        // [WHY] A suspended call is executed again on every resume, so each argument must evaluate to the same value: an
-        // argument with side effects or one that reads memory other threads change is evaluated once, before the call.
+        // [WHY] A suspended call is executed again on every resume, and a warp shuffle reads its arguments on both sides of
+        // its state boundary, so each argument must evaluate to the same value: an argument with side effects or one that
+        // reads memory other threads change is evaluated once, before the call, in the order written (named arguments
+        // too, whatever their parameter order).
         private InvocationExpressionSyntax SpillArguments(InvocationExpressionSyntax call)
         {
             var arguments = call.ArgumentList.Arguments;
