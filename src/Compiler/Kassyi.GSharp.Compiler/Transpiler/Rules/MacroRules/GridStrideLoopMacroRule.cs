@@ -47,17 +47,20 @@ internal sealed class GridStrideLoopMacroRule : IMacroTranspilerRule
 
         // {
         // unsigned int __gsharp_gsl_n_<n> = __gsharp_grid_stride_count(<count>);
-        // for(unsigned int __gsharp_gsl_<n> = __gsharp_grid_stride_start(); __gsharp_gsl_<n> < __gsharp_gsl_n_<n>; __gsharp_gsl_<n> += __gsharp_grid_stride_step())
+        // unsigned int __gsharp_gsl_s_<n> = __gsharp_grid_stride_step();
+        // for(unsigned int __gsharp_gsl_<n> = __gsharp_grid_stride_start(); __gsharp_gsl_<n> < __gsharp_gsl_n_<n>; __gsharp_gsl_<n> += __gsharp_gsl_s_<n>)
         // {
         // int <i> = (int)__gsharp_gsl_<n>;
         // <body>
         // }
         // }
-        // The count is read once, before the loop, as a C# argument is. The index is unsigned and the start and step
-        // saturate at 2^31, so index + step never wraps around (#712)
+        // The count is read once, before the loop, as a C# argument is, and so is the step, which no iteration changes:
+        // the loop does not depend on the compiler hoisting the 64-bit products of the step helper. The index is unsigned
+        // and the start and step saturate at 2^31, so index + step never wraps around (#712)
         var number = context.Emitter.GridStrideLoopCounter++;
         var index = $"{GSharpInternalNames.Lowering.GridStrideIndexPrefix}{number}";
         var count = $"{GSharpInternalNames.Lowering.GridStrideCountPrefix}{number}";
+        var step = $"{GSharpInternalNames.Lowering.GridStrideStepPrefix}{number}";
         var writer = context.Emitter.Writer;
         using (writer.Scope())
         {
@@ -68,8 +71,9 @@ internal sealed class GridStrideLoopMacroRule : IMacroTranspilerRule
             }
 
             writer.AppendLine(";");
+            writer.AppendLine($"unsigned int {step} = {GSharpInternalNames.Prelude.GridStrideStep}();");
             writer.AppendLine(
-                $"for(unsigned int {index} = {GSharpInternalNames.Prelude.GridStrideStart}(); {index} < {count}; {index} += {GSharpInternalNames.Prelude.GridStrideStep}())"
+                $"for(unsigned int {index} = {GSharpInternalNames.Prelude.GridStrideStart}(); {index} < {count}; {index} += {step})"
             );
             using (writer.Scope())
             {

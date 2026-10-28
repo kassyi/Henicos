@@ -113,7 +113,8 @@ The call expands into a flat loop without any delegate allocation. The CUDA buil
 // Execution Context: Generated C++ (GPU)
 {
 unsigned int __gsharp_gsl_n_0 = __gsharp_grid_stride_count(count);
-for(unsigned int __gsharp_gsl_0 = __gsharp_grid_stride_start(); __gsharp_gsl_0 < __gsharp_gsl_n_0; __gsharp_gsl_0 += __gsharp_grid_stride_step())
+unsigned int __gsharp_gsl_s_0 = __gsharp_grid_stride_step();
+for(unsigned int __gsharp_gsl_0 = __gsharp_grid_stride_start(); __gsharp_gsl_0 < __gsharp_gsl_n_0; __gsharp_gsl_0 += __gsharp_gsl_s_0)
 {
 int i = (int)__gsharp_gsl_0;
 // body...
@@ -121,7 +122,7 @@ int i = (int)__gsharp_gsl_0;
 }
 ```
 
-The start and the step stop at 2^31, which no `int` index reaches, so the unsigned index never wraps around. In a 1D launch, the start is `blockIdx.x * blockDim.x + threadIdx.x` and the step is `gridDim.x * blockDim.x`, the classic grid-stride loop.
+The step is read once, next to the count. The start and the step stop at 2^31, which no `int` index reaches, so the unsigned index never wraps around. In a 1D launch, the start is `blockIdx.x * blockDim.x + threadIdx.x` and the step is `gridDim.x * blockDim.x`, the classic grid-stride loop.
 
 A loop that gives each row of a 2D launch its own `Gpu.GridStrideLoop` (reading the row from `BlockIndex.Y` or `ThreadIndex.Y`) spreads the indices of every row over all the threads of the launch, so each row only sees part of them. Write such a per-row loop over `ThreadIndex.X` yourself:
 

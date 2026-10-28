@@ -89,17 +89,18 @@ internal sealed partial class ManagedExecutionRewriter
     // Gpu.GridStrideLoop([ref ctx,] count, body) becomes:
     // {
     //     uint __gsharp_gsl_n_<n> = ManagedGpuContext.GridStrideCount(<count>);
+    //     uint __gsharp_gsl_s_<n> = ManagedGpuContext.GridStrideStep();
     //     for (uint __gsharp_gsl_<n> = ManagedGpuContext.GridStrideStart(); __gsharp_gsl_<n> < __gsharp_gsl_n_<n>;
-    //          __gsharp_gsl_<n> += ManagedGpuContext.GridStrideStep())
+    //          __gsharp_gsl_<n> += __gsharp_gsl_s_<n>)
     //     {
     //         int __gsharp_unroll_<n> = (int)__gsharp_gsl_<n>;
     //         <body>
     //     }
     // }
     // The same loop as the C++ one (GridStrideLoopMacroRule) and the Core implementation, through the same helpers: the
-    // count is read once, and the index is unsigned with a start and step that saturate at 2^31 (#712). The loop
-    // variable has a name of its own, like the one of ForUnroll: the lambda parameter may be named like a local of the
-    // kernel, which the loop would otherwise hide (CS0136)
+    // count and the step are read once, and the index is unsigned with a start and step that saturate at 2^31 (#712).
+    // The loop variable has a name of its own, like the one of ForUnroll: the lambda parameter may be named like a local
+    // of the kernel, which the loop would otherwise hide (CS0136)
     private BlockSyntax? RewriteGridStrideLoop(InvocationExpressionSyntax invocation, GpuMacroCall call)
     {
         var arguments = invocation.ArgumentList.Arguments;
@@ -112,6 +113,7 @@ internal sealed partial class ManagedExecutionRewriter
         var indexName = NextLoopVariableName();
         var unsignedIndexName = $"{GSharpInternalNames.Lowering.GridStrideIndexPrefix}{number}";
         var countName = $"{GSharpInternalNames.Lowering.GridStrideCountPrefix}{number}";
+        var stepName = $"{GSharpInternalNames.Lowering.GridStrideStepPrefix}{number}";
         // Visit the count so that context accesses in it are rewritten like the rest of the body
         var countArg = arguments[call.ArgumentOffset].Expression;
         var countExpr = Visit(countArg) as ExpressionSyntax ?? countArg;
@@ -123,6 +125,11 @@ internal sealed partial class ManagedExecutionRewriter
                 ManagedGpuContextMember("GridStrideCount"),
                 SyntaxFactory.ArgumentList(SyntaxFactory.SingletonSeparatedList(SyntaxFactory.Argument(countExpr)))
             )
+        );
+        var stepDeclaration = DeclareLocal(
+            SyntaxKind.UIntKeyword,
+            stepName,
+            SyntaxFactory.InvocationExpression(ManagedGpuContextMember("GridStrideStep"))
         );
 
         var substituter = CreateSubstituter(arguments, lambda, loopParameter, indexName);
@@ -153,13 +160,13 @@ internal sealed partial class ManagedExecutionRewriter
                 SyntaxFactory.AssignmentExpression(
                     SyntaxKind.AddAssignmentExpression,
                     SyntaxFactory.IdentifierName(unsignedIndexName),
-                    SyntaxFactory.InvocationExpression(ManagedGpuContextMember("GridStrideStep"))
+                    SyntaxFactory.IdentifierName(stepName)
                 )
             ),
             SyntaxFactory.Block(body.Statements.Insert(0, indexDeclaration))
         );
 
-        return SyntaxFactory.Block(countDeclaration, loop);
+        return SyntaxFactory.Block(countDeclaration, stepDeclaration, loop);
     }
 
     // global::Kassyi.GSharp.Core.ManagedGpuContext.<name>
