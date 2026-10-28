@@ -49,7 +49,7 @@ The old value observed at `address` before the addition occurred.
 #### Exceptions
 
 [GpuOnlyException](../01_diagnostics_and_exceptions.md#gpuonlyexception)<br>
-Thrown when evaluated on the host CPU.
+Thrown when evaluated on the host CPU outside of a managed execution context.
 
 ## AtomicAdd(ref uint, uint)
 
@@ -75,7 +75,7 @@ The old value observed at `address` before the addition occurred.
 #### Exceptions
 
 [GpuOnlyException](../01_diagnostics_and_exceptions.md#gpuonlyexception)<br>
-Thrown when evaluated on the host CPU.
+Thrown when evaluated on the host CPU outside of a managed execution context.
 
 ## AtomicAdd(ref ulong, ulong)
 
@@ -101,7 +101,7 @@ The old value observed at `address` before the addition occurred.
 #### Exceptions
 
 [GpuOnlyException](../01_diagnostics_and_exceptions.md#gpuonlyexception)<br>
-Thrown when evaluated on the host CPU.
+Thrown when evaluated on the host CPU outside of a managed execution context.
 
 ## AtomicAdd(ref float, float)
 
@@ -128,7 +128,7 @@ The old value observed at `address` before the addition occurred.
 #### Exceptions
 
 [GpuOnlyException](../01_diagnostics_and_exceptions.md#gpuonlyexception)<br>
-Thrown when evaluated on the host CPU.
+Thrown when evaluated on the host CPU outside of a managed execution context.
 
 ## Examples
 
@@ -152,6 +152,8 @@ try {
 ## Remarks
 
 Maps to `atomicAdd(&address, val)` in CUDA PTX. This intrinsic prevents race conditions when multiple threads concurrently write to the same global or shared memory location.
+
+On the CPU paths the `Gpu.Atomic*` family runs as well: the native CPU library through relaxed `std::atomic` operations, and managed execution through `System.Threading.Interlocked`. Both return the old value and wrap integer results as CUDA does. They run the threads of a block one after another, so the operations on one address happen in that order, which is one of the orders the GPU may choose.
 
 > [!NOTE]
 > **Interlocked vs Gpu.AtomicAdd**

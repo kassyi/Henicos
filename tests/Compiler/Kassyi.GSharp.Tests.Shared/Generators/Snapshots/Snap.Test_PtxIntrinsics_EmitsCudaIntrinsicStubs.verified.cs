@@ -17,37 +17,37 @@ public static uint BitReverse(uint val) => Kassyi.GSharp.Core.GpuOnlyException.T
 /// <param name="val">The value to add.</param>
 /// <returns>The original value stored at the address before the addition.</returns>
 [Kassyi.GSharp.Core.CudaIntrinsic("atomicAdd")]
-public static int AtomicAdd(ref int address, int val) => Kassyi.GSharp.Core.GpuOnlyException.Throw<int>();
+public static int AtomicAdd(ref int address, int val) => Kassyi.GSharp.Core.ManagedAtomics.Add(ref address, val);
 /// <summary>Atomically adds a value to the target address and returns the old value.</summary>
 /// <param name="address">The reference to the memory location to modify.</param>
 /// <param name="val">The value to add.</param>
 /// <returns>The original value stored at the address before the addition.</returns>
 [Kassyi.GSharp.Core.CudaIntrinsic("atomicAdd")]
-public static uint AtomicAdd(ref uint address, uint val) => Kassyi.GSharp.Core.GpuOnlyException.Throw<uint>();
+public static uint AtomicAdd(ref uint address, uint val) => Kassyi.GSharp.Core.ManagedAtomics.Add(ref address, val);
 /// <summary>Atomically adds a value to the target address and returns the old value.</summary>
 /// <param name="address">The reference to the memory location to modify.</param>
 /// <param name="val">The value to add.</param>
 /// <returns>The original value stored at the address before the addition.</returns>
 [Kassyi.GSharp.Core.CudaIntrinsic("atomicAdd")]
-public static ulong AtomicAdd(ref ulong address, ulong val) => Kassyi.GSharp.Core.GpuOnlyException.Throw<ulong>();
+public static ulong AtomicAdd(ref ulong address, ulong val) => Kassyi.GSharp.Core.ManagedAtomics.Add(ref address, val);
 /// <summary>Atomically adds a value to the target address and returns the old value.</summary>
 /// <param name="address">The reference to the memory location to modify.</param>
 /// <param name="val">The value to add.</param>
 /// <returns>The original value stored at the address before the addition.</returns>
 [Kassyi.GSharp.Core.CudaIntrinsic("atomicAdd")]
-public static float AtomicAdd(ref float address, float val) => Kassyi.GSharp.Core.GpuOnlyException.Throw<float>();
+public static float AtomicAdd(ref float address, float val) => Kassyi.GSharp.Core.ManagedAtomics.Add(ref address, val);
 /// <summary>Atomically subtracts an integer value from the target address and returns the old value.</summary>
 /// <param name="address">The reference to the memory location to modify.</param>
 /// <param name="val">The value to subtract.</param>
 /// <returns>The original value stored at the address before the subtraction.</returns>
 [Kassyi.GSharp.Core.CudaIntrinsic("atomicSub")]
-public static int AtomicSub(ref int address, int val) => Kassyi.GSharp.Core.GpuOnlyException.Throw<int>();
+public static int AtomicSub(ref int address, int val) => Kassyi.GSharp.Core.ManagedAtomics.Sub(ref address, val);
 /// <summary>Atomically subtracts an integer value from the target address and returns the old value.</summary>
 /// <param name="address">The reference to the memory location to modify.</param>
 /// <param name="val">The value to subtract.</param>
 /// <returns>The original value stored at the address before the subtraction.</returns>
 [Kassyi.GSharp.Core.CudaIntrinsic("atomicSub")]
-public static uint AtomicSub(ref uint address, uint val) => Kassyi.GSharp.Core.GpuOnlyException.Throw<uint>();
+public static uint AtomicSub(ref uint address, uint val) => Kassyi.GSharp.Core.ManagedAtomics.Sub(ref address, val);
 /// <summary>Adds two unsigned 32-bit integers with carry-in and carry-out propagation.</summary>
 /// <param name="a">The first operand.</param>
 /// <param name="b">The second operand.</param>
@@ -67,25 +67,25 @@ public static uint SubWithBorrow(uint a, uint b, ref long borrow) => Kassyi.GSha
 /// <param name="val">The value to OR.</param>
 /// <returns>The original value stored at the address before the operation.</returns>
 [Kassyi.GSharp.Core.CudaIntrinsic("atomicOr")]
-public static uint AtomicOr(ref uint address, uint val) => Kassyi.GSharp.Core.GpuOnlyException.Throw<uint>();
+public static uint AtomicOr(ref uint address, uint val) => Kassyi.GSharp.Core.ManagedAtomics.Or(ref address, val);
 /// <summary>Atomically computes bitwise OR on the target unsigned integer address.</summary>
 /// <param name="address">The reference to the memory location to modify.</param>
 /// <param name="val">The value to OR.</param>
 /// <returns>The original value stored at the address before the operation.</returns>
 [Kassyi.GSharp.Core.CudaIntrinsic("atomicOr")]
-public static ulong AtomicOr(ref ulong address, ulong val) => Kassyi.GSharp.Core.GpuOnlyException.Throw<ulong>();
+public static ulong AtomicOr(ref ulong address, ulong val) => Kassyi.GSharp.Core.ManagedAtomics.Or(ref address, val);
 /// <summary>Atomically computes the maximum value between the address content and the supplied value.</summary>
 /// <param name="address">The reference to the memory location to modify.</param>
 /// <param name="val">The value to compare.</param>
 /// <returns>The original value stored at the address before the operation.</returns>
 [Kassyi.GSharp.Core.CudaIntrinsic("atomicMax")]
-public static uint AtomicMax(ref uint address, uint val) => Kassyi.GSharp.Core.GpuOnlyException.Throw<uint>();
+public static uint AtomicMax(ref uint address, uint val) => Kassyi.GSharp.Core.ManagedAtomics.Max(ref address, val);
 /// <summary>Atomically computes the maximum value between the address content and the supplied value.</summary>
 /// <param name="address">The reference to the memory location to modify.</param>
 /// <param name="val">The value to compare.</param>
 /// <returns>The original value stored at the address before the operation.</returns>
 [Kassyi.GSharp.Core.CudaIntrinsic("atomicMax")]
-public static ulong AtomicMax(ref ulong address, ulong val) => Kassyi.GSharp.Core.GpuOnlyException.Throw<ulong>();
+public static ulong AtomicMax(ref ulong address, ulong val) => Kassyi.GSharp.Core.ManagedAtomics.Max(ref address, val);
 /// <summary>Computes the full 64-bit product of two 32-bit unsigned integers without overflow.</summary>
 /// <param name="a">The first 32-bit unsigned multiplicand.</param>
 /// <param name="b">The second 32-bit unsigned multiplicand.</param>
@@ -193,112 +193,112 @@ public static ulong Clock64() => Kassyi.GSharp.Core.GpuOnlyException.Throw<ulong
 /// <param name="val">The value to write.</param>
 /// <returns>The original value stored at address.</returns>
 [Kassyi.GSharp.Core.CudaIntrinsic("atomicExch")]
-public static int AtomicExch(ref int address, int val) => Kassyi.GSharp.Core.GpuOnlyException.Throw<int>();
+public static int AtomicExch(ref int address, int val) => Kassyi.GSharp.Core.ManagedAtomics.Exch(ref address, val);
 /// <summary>Atomically exchanges the value at address with val.</summary>
 /// <param name="address">The memory location to modify.</param>
 /// <param name="val">The value to write.</param>
 /// <returns>The original value stored at address.</returns>
 [Kassyi.GSharp.Core.CudaIntrinsic("atomicExch")]
-public static uint AtomicExch(ref uint address, uint val) => Kassyi.GSharp.Core.GpuOnlyException.Throw<uint>();
+public static uint AtomicExch(ref uint address, uint val) => Kassyi.GSharp.Core.ManagedAtomics.Exch(ref address, val);
 /// <summary>Atomically exchanges the value at address with val.</summary>
 /// <param name="address">The memory location to modify.</param>
 /// <param name="val">The value to write.</param>
 /// <returns>The original value stored at address.</returns>
 [Kassyi.GSharp.Core.CudaIntrinsic("atomicExch")]
-public static ulong AtomicExch(ref ulong address, ulong val) => Kassyi.GSharp.Core.GpuOnlyException.Throw<ulong>();
+public static ulong AtomicExch(ref ulong address, ulong val) => Kassyi.GSharp.Core.ManagedAtomics.Exch(ref address, val);
 /// <summary>Atomically exchanges the value at address with val.</summary>
 /// <param name="address">The memory location to modify.</param>
 /// <param name="val">The value to write.</param>
 /// <returns>The original value stored at address.</returns>
 [Kassyi.GSharp.Core.CudaIntrinsic("atomicExch")]
-public static float AtomicExch(ref float address, float val) => Kassyi.GSharp.Core.GpuOnlyException.Throw<float>();
+public static float AtomicExch(ref float address, float val) => Kassyi.GSharp.Core.ManagedAtomics.Exch(ref address, val);
 /// <summary>Atomically computes the minimum value between the address content and val.</summary>
 /// <param name="address">The memory location to modify.</param>
 /// <param name="val">The value to compare.</param>
 /// <returns>The original value stored at address.</returns>
 [Kassyi.GSharp.Core.CudaIntrinsic("atomicMin")]
-public static int AtomicMin(ref int address, int val) => Kassyi.GSharp.Core.GpuOnlyException.Throw<int>();
+public static int AtomicMin(ref int address, int val) => Kassyi.GSharp.Core.ManagedAtomics.Min(ref address, val);
 /// <summary>Atomically computes the minimum value between the address content and val.</summary>
 /// <param name="address">The memory location to modify.</param>
 /// <param name="val">The value to compare.</param>
 /// <returns>The original value stored at address.</returns>
 [Kassyi.GSharp.Core.CudaIntrinsic("atomicMin")]
-public static uint AtomicMin(ref uint address, uint val) => Kassyi.GSharp.Core.GpuOnlyException.Throw<uint>();
+public static uint AtomicMin(ref uint address, uint val) => Kassyi.GSharp.Core.ManagedAtomics.Min(ref address, val);
 /// <summary>Atomically computes the minimum value between the address content and val.</summary>
 /// <param name="address">The memory location to modify.</param>
 /// <param name="val">The value to compare.</param>
 /// <returns>The original value stored at address.</returns>
 [Kassyi.GSharp.Core.CudaIntrinsic("atomicMin")]
-public static ulong AtomicMin(ref ulong address, ulong val) => Kassyi.GSharp.Core.GpuOnlyException.Throw<ulong>();
+public static ulong AtomicMin(ref ulong address, ulong val) => Kassyi.GSharp.Core.ManagedAtomics.Min(ref address, val);
 /// <summary>Atomically increments the value at address up to val (wrapping to 0).</summary>
 /// <param name="address">The memory location to modify.</param>
 /// <param name="val">The maximum limit before wrapping.</param>
 /// <returns>The original value stored at address.</returns>
 [Kassyi.GSharp.Core.CudaIntrinsic("atomicInc")]
-public static uint AtomicInc(ref uint address, uint val) => Kassyi.GSharp.Core.GpuOnlyException.Throw<uint>();
+public static uint AtomicInc(ref uint address, uint val) => Kassyi.GSharp.Core.ManagedAtomics.Inc(ref address, val);
 /// <summary>Atomically decrements the value at address (wrapping to val if &lt;= 0).</summary>
 /// <param name="address">The memory location to modify.</param>
 /// <param name="val">The wrap value.</param>
 /// <returns>The original value stored at address.</returns>
 [Kassyi.GSharp.Core.CudaIntrinsic("atomicDec")]
-public static uint AtomicDec(ref uint address, uint val) => Kassyi.GSharp.Core.GpuOnlyException.Throw<uint>();
+public static uint AtomicDec(ref uint address, uint val) => Kassyi.GSharp.Core.ManagedAtomics.Dec(ref address, val);
 /// <summary>Atomically compares the value in memory with compare and, if equal, stores val in memory.</summary>
 /// <param name="address">The reference to the memory location to modify.</param>
 /// <param name="compare">The value to compare against.</param>
 /// <param name="val">The value to store if comparison succeeds.</param>
 /// <returns>The original value stored at the address.</returns>
 [Kassyi.GSharp.Core.CudaIntrinsic("atomicCAS")]
-public static int AtomicCAS(ref int address, int compare, int val) => Kassyi.GSharp.Core.GpuOnlyException.Throw<int>();
+public static int AtomicCAS(ref int address, int compare, int val) => Kassyi.GSharp.Core.ManagedAtomics.Cas(ref address, compare, val);
 /// <summary>Atomically compares the value in memory with compare and, if equal, stores val in memory.</summary>
 /// <param name="address">The reference to the memory location to modify.</param>
 /// <param name="compare">The value to compare against.</param>
 /// <param name="val">The value to store if comparison succeeds.</param>
 /// <returns>The original value stored at the address.</returns>
 [Kassyi.GSharp.Core.CudaIntrinsic("atomicCAS")]
-public static uint AtomicCAS(ref uint address, uint compare, uint val) => Kassyi.GSharp.Core.GpuOnlyException.Throw<uint>();
+public static uint AtomicCAS(ref uint address, uint compare, uint val) => Kassyi.GSharp.Core.ManagedAtomics.Cas(ref address, compare, val);
 /// <summary>Atomically compares the value in memory with compare and, if equal, stores val in memory.</summary>
 /// <param name="address">The reference to the memory location to modify.</param>
 /// <param name="compare">The value to compare against.</param>
 /// <param name="val">The value to store if comparison succeeds.</param>
 /// <returns>The original value stored at the address.</returns>
 [Kassyi.GSharp.Core.CudaIntrinsic("atomicCAS")]
-public static ulong AtomicCAS(ref ulong address, ulong compare, ulong val) => Kassyi.GSharp.Core.GpuOnlyException.Throw<ulong>();
+public static ulong AtomicCAS(ref ulong address, ulong compare, ulong val) => Kassyi.GSharp.Core.ManagedAtomics.Cas(ref address, compare, val);
 /// <summary>Atomically computes bitwise AND on the target integer address.</summary>
 /// <param name="address">The reference to the memory location to modify.</param>
 /// <param name="val">The value to AND.</param>
 /// <returns>The original value stored at the address before the operation.</returns>
 [Kassyi.GSharp.Core.CudaIntrinsic("atomicAnd")]
-public static int AtomicAnd(ref int address, int val) => Kassyi.GSharp.Core.GpuOnlyException.Throw<int>();
+public static int AtomicAnd(ref int address, int val) => Kassyi.GSharp.Core.ManagedAtomics.And(ref address, val);
 /// <summary>Atomically computes bitwise AND on the target integer address.</summary>
 /// <param name="address">The reference to the memory location to modify.</param>
 /// <param name="val">The value to AND.</param>
 /// <returns>The original value stored at the address before the operation.</returns>
 [Kassyi.GSharp.Core.CudaIntrinsic("atomicAnd")]
-public static uint AtomicAnd(ref uint address, uint val) => Kassyi.GSharp.Core.GpuOnlyException.Throw<uint>();
+public static uint AtomicAnd(ref uint address, uint val) => Kassyi.GSharp.Core.ManagedAtomics.And(ref address, val);
 /// <summary>Atomically computes bitwise AND on the target integer address.</summary>
 /// <param name="address">The reference to the memory location to modify.</param>
 /// <param name="val">The value to AND.</param>
 /// <returns>The original value stored at the address before the operation.</returns>
 [Kassyi.GSharp.Core.CudaIntrinsic("atomicAnd")]
-public static ulong AtomicAnd(ref ulong address, ulong val) => Kassyi.GSharp.Core.GpuOnlyException.Throw<ulong>();
+public static ulong AtomicAnd(ref ulong address, ulong val) => Kassyi.GSharp.Core.ManagedAtomics.And(ref address, val);
 /// <summary>Atomically computes bitwise XOR on the target integer address.</summary>
 /// <param name="address">The reference to the memory location to modify.</param>
 /// <param name="val">The value to XOR.</param>
 /// <returns>The original value stored at the address before the operation.</returns>
 [Kassyi.GSharp.Core.CudaIntrinsic("atomicXor")]
-public static int AtomicXor(ref int address, int val) => Kassyi.GSharp.Core.GpuOnlyException.Throw<int>();
+public static int AtomicXor(ref int address, int val) => Kassyi.GSharp.Core.ManagedAtomics.Xor(ref address, val);
 /// <summary>Atomically computes bitwise XOR on the target integer address.</summary>
 /// <param name="address">The reference to the memory location to modify.</param>
 /// <param name="val">The value to XOR.</param>
 /// <returns>The original value stored at the address before the operation.</returns>
 [Kassyi.GSharp.Core.CudaIntrinsic("atomicXor")]
-public static uint AtomicXor(ref uint address, uint val) => Kassyi.GSharp.Core.GpuOnlyException.Throw<uint>();
+public static uint AtomicXor(ref uint address, uint val) => Kassyi.GSharp.Core.ManagedAtomics.Xor(ref address, val);
 /// <summary>Atomically computes bitwise XOR on the target integer address.</summary>
 /// <param name="address">The reference to the memory location to modify.</param>
 /// <param name="val">The value to XOR.</param>
 /// <returns>The original value stored at the address before the operation.</returns>
 [Kassyi.GSharp.Core.CudaIntrinsic("atomicXor")]
-public static ulong AtomicXor(ref ulong address, ulong val) => Kassyi.GSharp.Core.GpuOnlyException.Throw<ulong>();
+public static ulong AtomicXor(ref ulong address, ulong val) => Kassyi.GSharp.Core.ManagedAtomics.Xor(ref address, val);
 /// <summary>Extracts a bit field from a 32-bit unsigned integer using the PTX bfe instruction.</summary>
 /// <param name="a">The source 32-bit unsigned integer.</param>
 /// <param name="pos">The starting bit position (0 to 31).</param>
@@ -463,22 +463,22 @@ public static void SyncWarp(uint mask = 0xFFFFFFFFU) => Kassyi.GSharp.Core.GpuOn
 /// <param name="address">The memory address to update.</param>
 /// <param name="val">The value to add.</param>
 [Kassyi.GSharp.Core.CudaIntrinsic("atomicAdd")]
-public static void ReductionAdd(ref int address, int val) => Kassyi.GSharp.Core.GpuOnlyException.Throw();
+public static void ReductionAdd(ref int address, int val) => Kassyi.GSharp.Core.ManagedAtomics.Add(ref address, val);
 /// <summary>Performs a fire-and-forget reduction addition directly in memory.</summary>
 /// <param name="address">The memory address to update.</param>
 /// <param name="val">The value to add.</param>
 [Kassyi.GSharp.Core.CudaIntrinsic("atomicAdd")]
-public static void ReductionAdd(ref uint address, uint val) => Kassyi.GSharp.Core.GpuOnlyException.Throw();
+public static void ReductionAdd(ref uint address, uint val) => Kassyi.GSharp.Core.ManagedAtomics.Add(ref address, val);
 /// <summary>Performs a fire-and-forget reduction addition directly in memory.</summary>
 /// <param name="address">The memory address to update.</param>
 /// <param name="val">The value to add.</param>
 [Kassyi.GSharp.Core.CudaIntrinsic("atomicAdd")]
-public static void ReductionAdd(ref ulong address, ulong val) => Kassyi.GSharp.Core.GpuOnlyException.Throw();
+public static void ReductionAdd(ref ulong address, ulong val) => Kassyi.GSharp.Core.ManagedAtomics.Add(ref address, val);
 /// <summary>Performs a fire-and-forget reduction addition directly in memory.</summary>
 /// <param name="address">The memory address to update.</param>
 /// <param name="val">The value to add.</param>
 [Kassyi.GSharp.Core.CudaIntrinsic("atomicAdd")]
-public static void ReductionAdd(ref float address, float val) => Kassyi.GSharp.Core.GpuOnlyException.Throw();
+public static void ReductionAdd(ref float address, float val) => Kassyi.GSharp.Core.ManagedAtomics.Add(ref address, val);
 /// <summary>Computes (a * b) + c with full 64-bit precision without intermediate overflow.</summary>
 /// <param name="a">The first 32-bit unsigned multiplicand.</param>
 /// <param name="b">The second 32-bit unsigned multiplicand.</param>
