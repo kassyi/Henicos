@@ -173,6 +173,7 @@ internal sealed partial class UniformityAnalysis
     private void Run(ControlFlowGraph graph, ArgumentMasks masks)
     {
         _identityMask = masks.Identity;
+        DefineBarrierOnEveryPath();
         foreach (var parameter in _method.Parameters)
         {
             var bit = ParameterBit(parameter.Ordinal);
@@ -277,15 +278,18 @@ internal sealed partial class UniformityAnalysis
                 Walk(deconstruction.Value, graph);
                 Walk(deconstruction.Target, graph);
                 AddWrite(deconstruction, graph);
+                AddMemoryWrite(deconstruction.Target);
                 return;
             case IAssignmentOperation assignment:
                 Walk(assignment.Value, graph);
                 Walk(assignment.Target, graph);
                 AddWrite(assignment, graph);
+                AddMemoryWrite(assignment.Target);
                 return;
             case IIncrementOrDecrementOperation increment:
                 Walk(increment.Target, graph);
                 AddWrite(increment, graph);
+                AddMemoryWrite(increment.Target);
                 return;
             case IFlowCaptureOperation capture:
                 Walk(capture.Value, graph);
@@ -328,10 +332,12 @@ internal sealed partial class UniformityAnalysis
         }
 
         RecordNode(_nodesOf, invocation.Syntax);
+        AddCallMemoryWrites(invocation);
         var intrinsic = SyncIntrinsicClassifier.Classify(method);
         if (intrinsic.Kind is SyncIntrinsicKind.BlockBarrier or SyncIntrinsicKind.GridBarrier)
         {
             AddSplit(invocation.Syntax, new BarrierSite(intrinsic.Scope, Call: null, graph));
+            AddMemorySync(intrinsic.Scope);
         }
         else if (intrinsic.SplitsStateMachine)
         {
@@ -371,6 +377,7 @@ internal sealed partial class UniformityAnalysis
         if (macro.Kind == GpuMacroKind.SyncGrid && body?.Syntax is LambdaExpressionSyntax syntax && HasGap(syntax))
         {
             AddSplit(invocation.Syntax, new BarrierSite(SyncScope.Grid, Call: null, graph));
+            AddMemorySync(SyncScope.Grid);
         }
 
         if (body != null)
@@ -562,7 +569,7 @@ internal sealed partial class UniformityAnalysis
     {
         if (!_symbols.TryGetValue(symbol, out var index))
         {
-            index = _symbols.Count + _captures.Count;
+            index = ValueCount;
             _symbols.Add(symbol, index);
         }
 
@@ -573,7 +580,7 @@ internal sealed partial class UniformityAnalysis
     {
         if (!_captures.TryGetValue((graph, id), out var index))
         {
-            index = _symbols.Count + _captures.Count;
+            index = ValueCount;
             _captures.Add((graph, id), index);
         }
 
@@ -975,7 +982,7 @@ internal sealed partial class UniformityAnalysis
     private void Solve()
     {
         var count = _nodes.Count;
-        var values = _symbols.Count + _captures.Count;
+        var values = ValueCount;
         _in = new ThreadVariance[count][];
         for (var i = 0; i < count; i++)
         {
@@ -1090,6 +1097,9 @@ internal sealed partial class UniformityAnalysis
                                                 flowEvent is { Operation: { } observed, Graph: { } observedGraph }:
                     Evaluate(observed, observedGraph, state);
                     break;
+                case FlowEventKind.MemoryWrite or FlowEventKind.MemorySync:
+                    ApplyMemoryEvent(flowEvent, state);
+                    break;
                 case FlowEventKind.Site when _siteMasks != null &&
                                              flowEvent is
                                              {
@@ -1106,7 +1116,7 @@ internal sealed partial class UniformityAnalysis
     private void Observe()
     {
         _observed = new Dictionary<SyntaxNode, ThreadVariance>();
-        var state = new ThreadVariance[_symbols.Count + _captures.Count];
+        var state = new ThreadVariance[ValueCount];
         for (var node = 0; node < _nodes.Count; node++)
         {
             RunNode(node, state);
@@ -1307,6 +1317,8 @@ internal sealed partial class UniformityAnalysis
                 when SyncIntrinsicClassifier.IsGridVariantSource(property) => ThreadVariance.Grid,
             IInvocationOperation invocation => EvaluateCall(invocation, graph, state),
             IFlowAnonymousFunctionOperation => ThreadVariance.Uniform,
+            IArrayElementReferenceOperation or IPropertyReferenceOperation { Property.IsIndexer: true } =>
+                EvaluateOperands(operation, graph, state) | ReadMemory(operation, state),
             ISimpleAssignmentOperation assignment => Evaluate(assignment.Value, graph, state),
             ICompoundAssignmentOperation compound =>
                 Evaluate(compound.Target, graph, state) | Evaluate(compound.Value, graph, state),
@@ -1447,7 +1459,7 @@ internal sealed partial class UniformityAnalysis
     private CalleeVariance Summarize()
     {
         var returned = ThreadVariance.Uniform;
-        var state = new ThreadVariance[_symbols.Count + _captures.Count];
+        var state = new ThreadVariance[ValueCount];
         for (var node = 0; node < _nodes.Count; node++)
         {
             if (_nodes[node] is { ReturnValue: { } value, Graph: { } graph })
@@ -1467,7 +1479,9 @@ internal sealed partial class UniformityAnalysis
         }
 
         var barrier = SummarizeBarriers();
-        return new CalleeVariance(returned, byReference, barrier.Divergence, barrier.Certain);
+        var (memory, fieldMemory) = SummarizeMemory();
+        return new CalleeVariance(returned, byReference, barrier.Divergence, barrier.Certain, memory, fieldMemory,
+            _in[_exit][_barrierOnEveryPath]);
     }
 
     /// <summary>What a call of a device function gives its caller.</summary>
@@ -1477,11 +1491,23 @@ internal sealed partial class UniformityAnalysis
     /// <param name="ByReference">The variance of what it leaves in its <c>ref</c> and <c>out</c> parameters.</param>
     /// <param name="Barrier">Whether only some threads reach a barrier in it (§3.2.4, the composed summary).</param>
     /// <param name="Certain">Whether a branch behind <paramref name="Barrier"/> certainly diverges.</param>
+    /// <param name="MemoryAtExit">
+    /// For each parameter by ordinal, how far the memory it reaches may differ where the function returns, after its own
+    /// barriers (C9); default when the function was not analyzed (a recursive call).
+    /// </param>
+    /// <param name="FieldMemoryAtExit">The same for the memory that the fields of its struct parameters reach.</param>
+    /// <param name="BarrierOnEveryPath">
+    /// The barrier that every path to its return passes: <see cref="ThreadVariance.Uniform"/> a grid barrier,
+    /// <see cref="ThreadVariance.Grid"/> a block barrier, <see cref="ThreadVariance.Block"/> none.
+    /// </param>
     private readonly record struct CalleeVariance(
         ThreadVariance Return,
         ThreadVariance ByReference,
         BarrierDivergence Barrier,
-        bool Certain);
+        bool Certain,
+        ImmutableArray<ThreadVariance> MemoryAtExit,
+        ThreadVariance FieldMemoryAtExit,
+        ThreadVariance BarrierOnEveryPath);
 
     /// <summary>
     /// The parameters that receive a value that varies within a block, one that varies only between blocks, and the
@@ -1501,7 +1527,13 @@ internal sealed partial class UniformityAnalysis
         Observe,
 
         // A call that reaches a barrier; only read while recording the variance of its arguments
-        Site
+        Site,
+
+        // An element of memory the threads share is written (Value: its index, -1 for every field-named memory)
+        MemoryWrite,
+
+        // A barrier: the memory written before it is no more variant than Variance
+        MemorySync
     }
 
     private readonly struct FlowEvent(

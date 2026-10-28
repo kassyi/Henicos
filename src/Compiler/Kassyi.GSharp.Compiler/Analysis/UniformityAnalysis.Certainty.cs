@@ -49,7 +49,7 @@ internal sealed partial class UniformityAnalysis
     private Constant[] RunProbe(ProbeRun run)
     {
         var count = _nodes.Count;
-        var values = _symbols.Count + _captures.Count;
+        var values = ValueCount;
         var entry = new Constant[count][];
         var reached = new bool[count];
         entry[0] = new Constant[values];

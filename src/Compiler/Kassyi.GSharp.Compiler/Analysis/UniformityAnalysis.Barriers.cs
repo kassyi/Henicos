@@ -296,7 +296,7 @@ internal sealed partial class UniformityAnalysis
         }
 
         _siteMasks = new Dictionary<SyntaxNode, ArgumentMasks>();
-        var state = new ThreadVariance[_symbols.Count + _captures.Count];
+        var state = new ThreadVariance[ValueCount];
         for (var node = 0; node < _nodes.Count; node++)
         {
             RunNode(node, state);
