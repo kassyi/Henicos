@@ -23,3 +23,18 @@ The GPU is shared by every agent and worktree. Run any command that uses it (`ju
 Test assemblies discard console output (`TestConsole.Silence()`); set `GSHARP_TEST_VERBOSE=1` to see `Logger` / benchmark output.
 
 Pick the command matching the domain you modified. Methodology (TDD, snapshot hierarchy) lives in [test-architecture.md](test-architecture.md).
+
+## CI (GitHub Actions)
+
+`.github/workflows/gpu-tests.yml` runs the tests without CUDA on GitHub-hosted runners. CI minutes cost money: Windows minutes count twice and a Windows run takes about twice as long as Ubuntu.
+
+- **Ubuntu** runs for every pull request (every base branch, so a stacked PR is tested too) and every push to `main`.
+- **Windows** runs only after Ubuntu passed, and only for a push to `main` or a pull request labeled `full-ci`.
+- A new run for the same pull request cancels the one still running. A change to `docs/**`, `.agents/**` or Markdown files alone runs nothing.
+
+What an agent does:
+
+- Add the `full-ci` label to a pull request when it is ready to merge (its review is done and its Ubuntu run is green), not earlier: once labeled, every later push also runs Windows. `gh pr edit <n> --add-label full-ci`
+- When you hand the user a merge order, list only pull requests whose Windows run is green, or say which ones still wait for it.
+- Do not close and reopen a pull request to start CI again; it does not always pick up a newer `main` and every run costs. To test against a newer `main`, push one merge of `main` into the branch. Re-running from the Actions page reuses the old merge.
+- A merge without the label is still tested on Windows by the push to `main`; if that run fails, fix `main` first.
