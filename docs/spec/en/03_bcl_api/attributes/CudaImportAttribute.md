@@ -113,6 +113,8 @@ public static partial class Example
 
 Applied to C# `partial` or `extern` method declarations that are implemented in external CUDA source, PTX, or Fatbin files. When `EntryPoint` is omitted or empty, the source generator resolves the target symbol using the C# method name.
 
+Parameters named `gridDimX/Y/Z`, `blockDimX/Y/Z`, `sharedMemBytes` and `stream` configure the launch and are not passed to the kernel. A `sharedMemBytes` above 48 KB opts the kernel in to more shared memory per block, and a request above the device limit throws `ArgumentOutOfRangeException` before the launch, as for a `[GpuKernel]` launch (see [SharedMemory: Size limit per block](../memory/SharedMemory.md#size-limit-per-block)).
+
 ## See also
 
 ### BCL API > Attributes
