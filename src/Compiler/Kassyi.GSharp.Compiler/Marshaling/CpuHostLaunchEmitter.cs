@@ -346,52 +346,21 @@ internal static class CpuHostLaunchEmitter
     {
         var name = shape.Name;
         writer.AppendLine($"{name}_shadow = System.Buffers.ArrayPool<byte>.Shared.Rent({name}_size);");
-        WriteShadowAndHostSpans(writer, shape);
+        ConvertedArrayEmitter.WriteShadowAndHostSpans(writer, shape, shape.Cpu);
         if (!shape.CopyIn && !shape.Cpu.ConvertedElementHasArrayFields)
         {
             writer.AppendLine($"{name}_native.Clear();");
             return;
         }
 
-        KernelLaunchEmitter.WriteElementLoopHeader(writer, name);
-        using (writer.Scope())
-        {
-            var hostElement = $"{name}_host[{name}_index]";
-            if (shape.IsReadOnlyContainer)
-            {
-                // A read-only container gives no ref to its element; Marshal_ only reads its copy
-                writer.AppendLine($"var {name}_element = {name}_host[{name}_index];");
-                hostElement = $"{name}_element";
-            }
-
-            writer.AppendLine(
-                $"{shape.Cpu.ConvertedElementMarshalMethodName}(ref {hostElement}, " +
-                $"ref {name}_native[{name}_index], false, {name}_allocatedPtrs, hStream);");
-        }
+        ConvertedArrayEmitter.WriteElementMarshalLoop(writer, shape, shape.Cpu);
     }
 
     // for (...) Unmarshal_<E>(ref <name>_host[i], ref <name>_native[i], false, hStream); after the call, through the spans that
     // the marshaling declared in the same try block
     private static void WriteConvertedArrayUnmarshal(SourceWriter writer, in KernelParameterShape shape)
     {
-        var name = shape.Name;
-        KernelLaunchEmitter.WriteElementLoopHeader(writer, name);
-        using (writer.Scope())
-        {
-            writer.AppendLine(
-                $"{shape.Cpu.ConvertedElementUnmarshalMethodName}(ref {name}_host[{name}_index], " +
-                $"ref {name}_native[{name}_index], false, hStream);");
-        }
-    }
-
-    // <name>_native spans the rented bytes in the device layout; <name>_host spans the argument
-    private static void WriteShadowAndHostSpans(SourceWriter writer, in KernelParameterShape shape)
-    {
-        writer.AppendLine(
-            $"var {shape.Name}_native = System.Runtime.InteropServices.MemoryMarshal" +
-            $".Cast<byte, {shape.Cpu.ConvertedElementAotStructPath}>({shape.Name}_shadow.AsSpan(0, {shape.Name}_size));");
-        var span = shape.IsReadOnlyContainer ? "System.ReadOnlySpan" : "System.Span";
-        writer.AppendLine($"{span}<{shape.ElementTypeName}> {shape.Name}_host = {shape.SpanExpression};");
+        ConvertedArrayEmitter.WriteElementUnmarshalLoop(writer, shape, shape.Cpu);
     }
 
     private static void WriteFixedBlocksAndInvoke(SourceWriter writer, in KernelHostModel kernel)
