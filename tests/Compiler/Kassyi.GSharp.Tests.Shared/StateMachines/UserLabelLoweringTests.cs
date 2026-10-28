@@ -92,14 +92,46 @@ public class UserLabelLoweringTests : StateMachineTestBase
     public Task Managed_ChainedLabel_BothLabelsStartStates() =>
         VerifyManagedPipelineLowerFromTestCase("ChainedLabel.cs");
 
+    // Two labels of one name split no state: the only states are the two barriers and the end
     [Fact]
     [Scenario(TestScenario.Boundary)]
-    public Task Lower_SameNameLabel_BothLabelsStartStates() =>
+    public Task Lower_SameNameLabel_SplitsOnlyAtBarriers() =>
         VerifyPipelineLowerFromTestCase("SameNameLabel.cs", inspect: static (lowered, _) =>
         {
             var text = lowered.LoweredBody.NormalizeWhitespace().ToFullString();
-            Assert.DoesNotContain("done:", text);
+            Assert.Equal(2, CountOccurrences(text, "done:"));
+            Assert.Contains("case 2:", text);
+            Assert.DoesNotContain("case 3:", text);
         });
+
+    // The managed output renames the two labels and the gotos to them, each goto to the label it binds to in C#
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public Task Managed_SameNameLabel_RenamesLabelsAndGotos() =>
+        VerifyManagedPipelineLowerFromTestCase("SameNameLabel.cs", inspect: static (_, _, body) =>
+        {
+            var text = body.NormalizeWhitespace().ToFullString();
+            Assert.DoesNotContain(" done:", text);
+            Assert.True(text.IndexOf("goto __gsharp_label_1_done;", StringComparison.Ordinal) <
+                        text.IndexOf("__gsharp_label_1_done:", StringComparison.Ordinal), text);
+            Assert.True(text.IndexOf("__gsharp_label_1_done:", StringComparison.Ordinal) <
+                        text.IndexOf("goto __gsharp_label_2_done;", StringComparison.Ordinal), text);
+            Assert.True(text.IndexOf("goto __gsharp_label_2_done;", StringComparison.Ordinal) <
+                        text.IndexOf("__gsharp_label_2_done:", StringComparison.Ordinal), text);
+        });
+
+    private static int CountOccurrences(string text, string value)
+    {
+        var count = 0;
+        for (var index = text.IndexOf(value, StringComparison.Ordinal);
+             index >= 0;
+             index = text.IndexOf(value, index + value.Length, StringComparison.Ordinal))
+        {
+            count++;
+        }
+
+        return count;
+    }
 
     [Fact]
     [Scenario(TestScenario.HappyPath)]

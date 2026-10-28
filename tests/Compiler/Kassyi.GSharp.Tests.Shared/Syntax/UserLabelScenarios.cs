@@ -116,6 +116,78 @@ internal static class UserLabelScenarios
         }
     }
 
+    public static void GotoPastInitialization(Action<Action> run)
+    {
+        var data = CreateSequence();
+
+        run(() => UserLabelKernels.LaunchGotoPastInitializationKernel(data, blockDimX: WarpSize));
+
+        for (int i = 0; i < WarpSize; i++)
+        {
+            Assert.Equal(i % 3 == 0 ? i + 1 : i * 2 + 1 + 1, data[i]);
+        }
+    }
+
+    public static void GotoPastConstAndArrays(Action<Action> run)
+    {
+        var data = CreateSequence();
+
+        run(() => UserLabelKernels.LaunchGotoPastConstAndArraysKernel(data, blockDimX: WarpSize));
+
+        for (int i = 0; i < WarpSize; i++)
+        {
+            Assert.Equal(i % 4 == 0 ? 100 + 1 : i * 3 + (i * 3 + 1) + 1, data[i]);
+        }
+    }
+
+    public static void SiblingSameLabel(Action<Action> run, int flag)
+    {
+        var data = CreateSequence();
+
+        run(() => UserLabelKernels.LaunchSiblingSameLabelKernel(data, flag, blockDimX: WarpSize));
+
+        for (int i = 0; i < WarpSize; i++)
+        {
+            // The kernel's control flow in plain C#
+            int acc = i;
+            int first = acc;
+            acc += (i & 1) == flag ? first + 10 : 0 + 100;
+            acc += first + 1;
+            int second = acc;
+            acc += (i & 1) != flag ? second * 2 : 1000;
+            acc += second + 2;
+            Assert.Equal(acc, data[i]);
+        }
+    }
+
+    public static void SameStateSameLabel(Action<Action> run)
+    {
+        var data = CreateSequence();
+
+        run(() => UserLabelKernels.LaunchSameStateSameLabelKernel(data, blockDimX: WarpSize));
+
+        for (int i = 0; i < WarpSize; i++)
+        {
+            // The kernel's control flow in plain C#
+            int acc = i;
+            acc += (i & 1) == 0 ? 10 : 100;
+            acc += (i & 1) != 0 ? 1000 : 2000;
+            Assert.Equal(acc, data[i]);
+        }
+    }
+
+    public static void CrossLabelInitialized(Action<Action> run, int flag)
+    {
+        var data = CreateSequence();
+
+        run(() => UserLabelKernels.LaunchCrossLabelInitializedKernel(data, flag, blockDimX: WarpSize));
+
+        for (int i = 0; i < WarpSize; i++)
+        {
+            Assert.Equal((i + (flag != 0 ? 1 : 10)) * 2, data[i]);
+        }
+    }
+
     public static void LabeledBarrier(Action<Action> run)
     {
         var output = new int[4];

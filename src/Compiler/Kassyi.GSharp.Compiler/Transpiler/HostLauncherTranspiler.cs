@@ -38,7 +38,9 @@ internal static class HostLauncherTranspiler
             return;
         }
 
-        WriteLauncherSignature(in plan, methodSymbol, ref context);
+        // The user structs that the launcher takes by pointer and copies into locals of the kernel's parameter names (#511)
+        var structArguments = GetStructArguments(methodSymbol);
+        WriteLauncherSignature(in plan, methodSymbol, structArguments, ref context);
         var step = new KernelStep(
             method,
             GlobalCppNames.GetKernelName(methodSymbol),
@@ -47,12 +49,13 @@ internal static class HostLauncherTranspiler
             hasContext && methodSymbol.IsCooperativeKernel(),
             KernelHostNames.GetMessageName(methodSymbol)
         );
-        WriteLauncherBody(GlobalCppNames.GetKernelDerivedName(ContextPrefix, methodSymbol), step, ref context);
+        WriteLauncherBody(GlobalCppNames.GetKernelDerivedName(ContextPrefix, methodSymbol), step, structArguments,
+            ref context);
     }
 
     // extern "C" __declspec(dllexport) void <launch export>(<launch dimensions>, <sharedMemBytes>, <kernel parameters>[, <result>* __restrict__ __gsharp_auto_result])
     private static void WriteLauncherSignature(in MethodEmissionPlan plan, IMethodSymbol methodSymbol,
-        ref TranspileContext context)
+        ITypeSymbol?[] structArguments, ref TranspileContext context)
     {
         var method = plan.Declaration;
         context.Emitter.Writer.AppendLine();
@@ -67,12 +70,7 @@ internal static class HostLauncherTranspiler
         context.Emitter.Writer.Append(
             $"uint32_t {BlockDimX}, uint32_t {BlockDimY}, uint32_t {BlockDimZ}, uint32_t {SharedMemBytes}");
 
-        if (method.ParameterList.Parameters.Count > 0)
-        {
-            context.Emitter.Writer.Append(", ");
-        }
-
-        MethodSignatureTranspiler.WriteParameters(method.ParameterList.Parameters, false, ref context);
+        WriteLauncherParameters(structArguments, method.ParameterList.Parameters, ref context);
 
         if (plan.HasAutoResult)
         {
@@ -84,11 +82,13 @@ internal static class HostLauncherTranspiler
         context.Emitter.Writer.AppendLine(")");
     }
 
-    // { <error slot> <the grid: cooperative phases or independent blocks> <report the error to the host> }
-    private static void WriteLauncherBody(string contextName, in KernelStep step, ref TranspileContext context)
+    // { <struct argument copies> <error slot> <the grid: cooperative phases or independent blocks> <report the error to the host> }
+    private static void WriteLauncherBody(string contextName, in KernelStep step, ITypeSymbol?[] structArguments,
+        ref TranspileContext context)
     {
         using (context.Emitter.Writer.Scope())
         {
+            WriteStructArgumentCopies(structArguments, step.Method.ParameterList.Parameters, ref context);
             context.Emitter.Writer.AppendLine($"{HostLastError}.Reset();");
             context.Emitter.Writer.AppendLine($"GSharpErrorSlot {Error};");
             context.Emitter.Writer.AppendLine(
@@ -150,6 +150,74 @@ internal static class HostLauncherTranspiler
             }
 
             WriteStepAbortCatches(ref context);
+        }
+    }
+
+    /// <summary>
+    /// The struct type of each parameter that the CPU launcher takes as a pointer to the host value
+    /// (<see cref="KernelParameterShape.IsCpuValueStruct"/>, the classification of the delegate that calls the
+    /// launcher), by parameter index; <see langword="null"/> for the other parameters.
+    /// </summary>
+    internal static ITypeSymbol?[] GetStructArguments(IMethodSymbol kernel)
+    {
+        var structArguments = new ITypeSymbol?[kernel.Parameters.Length];
+        for (var i = 0; i < structArguments.Length; i++)
+        {
+            var parameter = kernel.Parameters[i];
+            if (KernelParameterShape.Classify(parameter).IsCpuValueStruct)
+            {
+                structArguments[i] = parameter.Type.UnwrapNullableArrayLike() ?? parameter.Type;
+            }
+        }
+
+        return structArguments;
+    }
+
+    // , <parameter>, ... with a user struct by value as const <S>* __gsharp_arg_<n>: the delegate passes the address of
+    // the host value instead of the value, so that the runtime marshaller does not convert it (#511)
+    private static void WriteLauncherParameters(ITypeSymbol?[] structArguments,
+        SeparatedSyntaxList<ParameterSyntax> parameters, ref TranspileContext context)
+    {
+        for (var i = 0; i < parameters.Count; i++)
+        {
+            var parameter = parameters[i];
+            if (parameter.Type is null)
+            {
+                continue;
+            }
+
+            context.Emitter.Writer.Append(", ");
+            if (i < structArguments.Length && structArguments[i] is { } structType)
+            {
+                StructTranspiler.RegisterUsedStructIfApplicable(structType, ref context);
+                context.Emitter.Writer.Append("const ");
+                context.Emitter.Dialect.AppendType(ref context, structType);
+                context.Emitter.Writer.Append($"* {StructArgumentPrefix}{i}");
+            }
+            else
+            {
+                MethodSignatureTranspiler.WriteParameter(parameter, false, ref context);
+            }
+        }
+    }
+
+    // <S> <parameter> = *__gsharp_arg_<n>; for each user struct by value, so that the kernel calls pass it by value as
+    // before
+    private static void WriteStructArgumentCopies(ITypeSymbol?[] structArguments,
+        SeparatedSyntaxList<ParameterSyntax> parameters, ref TranspileContext context)
+    {
+        for (var i = 0; i < parameters.Count && i < structArguments.Length; i++)
+        {
+            if (structArguments[i] is not { } structType)
+            {
+                continue;
+            }
+
+            var parameter = parameters[i];
+            context.Emitter.Dialect.AppendType(ref context, structType);
+            context.Emitter.Writer.Append(' ');
+            CppNameResolver.AppendDeclaredName(parameter, parameter.Identifier, ref context);
+            context.Emitter.Writer.AppendLine($" = *{StructArgumentPrefix}{i};");
         }
     }
 

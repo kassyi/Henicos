@@ -64,19 +64,19 @@ public class GpuBigFloatWideOperandTests : IDisposable
     // when the low word of the estimate from the top n + 2 words is 0.
     // mutant: WideOperandOptions.cs:96 `>= ThresholdWords` -> `>` (At*,
     // OddExponentFullWidthOntoThreshold* and the w = n + 6 cases: the path count; WideOperandThreshold_SwitchesThePath)
-    // mutant: GSharpKernelFloatProvider.cs:449 `ReadWord(...) == 0` -> never true (the skip condition always true:
+    // mutant: GSharpKernelFloatProvider.cs:470 `ReadWord(...) == 0` -> never true (the skip condition always true:
     // PowerOfFourPlus1*, HardDecrement* stay one too large)
-    // mutant: GSharpKernelFloatProvider.cs:449 `ReadWord(...) == 0` -> always true (Random*, HardSkip*, At*: the check
+    // mutant: GSharpKernelFloatProvider.cs:470 `ReadWord(...) == 0` -> always true (Random*, HardSkip*, At*: the check
     // count)
-    // mutant: GSharpKernelFloatProvider.cs:444 `Slice(words - truncatedWords` -> `... - 1` (j one word short in
+    // mutant: GSharpKernelFloatProvider.cs:465 `Slice(words - truncatedWords` -> `... - 1` (j one word short in
     // the slice: every truncated case)
-    // mutant: GSharpKernelFloatProvider.cs:448 `16L * (words - truncatedWords)` -> `16L * (words - truncatedWords - 1)`
+    // mutant: GSharpKernelFloatProvider.cs:469 `16L * (words - truncatedWords)` -> `16L * (words - truncatedWords - 1)`
     // (j one word short in B: every truncated case)
-    // mutant: GSharpKernelFloatProvider.cs:457 `CorrectTruncatedEstimate(...)` removed (PowerOfFourPlus1*,
+    // mutant: GSharpKernelFloatProvider.cs:478 `CorrectTruncatedEstimate(...)` removed (PowerOfFourPlus1*,
     // HardDecrement*)
-    // mutant: GSharpKernelFloatProvider.cs:442 `NumWords + 2` -> `NumWords + 0` (K = n: Random*, HardSkip*,
+    // mutant: GSharpKernelFloatProvider.cs:463 `NumWords + 2` -> `NumWords + 0` (K = n: Random*, HardSkip*,
     // HardDecrement*)
-    // mutant: GSharpKernelFloatProvider.cs:443 `(NumWords + 1) / 2` -> `NumWords / 2` (HardDecrement1, HardDecrement3:
+    // mutant: GSharpKernelFloatProvider.cs:464 `(NumWords + 1) / 2` -> `NumWords / 2` (HardDecrement1, HardDecrement3:
     // for odd n the estimate has p + 17 bits, so a set low word no longer means a set discarded bit)
     // mutant: GpuBigIntDivRemKernels.cu.cs:227 `left > right ? 2ul : 1ul` -> `1ul : 2ul` (the check inverted:
     // PowerOfFourPlus1*, HardDecrement* keep the estimate)
@@ -110,20 +110,20 @@ public class GpuBigFloatWideOperandTests : IDisposable
     // was cut (j > 0) and the low 2 bits of the estimate are both 0.
     // mutant: WideOperandOptions.cs:88 `>= ThresholdWords` -> `>` (At*, LeadingZeroDivisor* and the
     // w = n + 6 cases: the path count; WideOperandThreshold_SwitchesThePath)
-    // mutant: GSharpKernelFloatProvider.cs:423 `truncation > 0` -> `truncation >= 0` (LeadingZeroDivisor*: the check
+    // mutant: GSharpKernelFloatProvider.cs:444 `truncation > 0` -> `truncation >= 0` (LeadingZeroDivisor*: the check
     // count)
-    // mutant: GSharpKernelFloatProvider.cs:423 `& 3) == 0` -> never true (the skip condition always true: PowerPlus1*,
+    // mutant: GSharpKernelFloatProvider.cs:444 `& 3) == 0` -> never true (the skip condition always true: PowerPlus1*,
     // HardDecrement* stay one too large)
-    // mutant: GSharpKernelFloatProvider.cs:423 `& 3) == 0` -> always true (the check count)
-    // mutant: GSharpKernelFloatProvider.cs:406 `rightBits - 32 * truncatedWords` -> `... - 32` (j one word short: the
+    // mutant: GSharpKernelFloatProvider.cs:444 `& 3) == 0` -> always true (the check count)
+    // mutant: GSharpKernelFloatProvider.cs:427 `rightBits - 32 * truncatedWords` -> `... - 32` (j one word short: the
     // cut divisor has k + 32 bits and DivRem rejects the quotient buffer in WideOperands_LargeWidths and others)
-    // equivalent: GSharpKernelFloatProvider.cs:406 `... + 32` (j one word longer) survives: the cut divisor keeps k -
+    // equivalent: GSharpKernelFloatProvider.cs:427 `... + 32` (j one word longer) survives: the cut divisor keeps k -
     // 32 bits, the excess stays below 2^(p + 37 - k) = 2^-27, and the estimate is still the floor or one above; only
     // the cost changes
-    // mutant: GSharpKernelFloatProvider.cs:407 `rightBits + 32 * n + 2` -> `rightBits + 32 * n` (HardDecrement1, 4, 8:
+    // mutant: GSharpKernelFloatProvider.cs:428 `rightBits + 32 * n + 2` -> `rightBits + 32 * n` (HardDecrement1, 4, 8:
     // the estimate keeps fewer than 2 discarded bits, so its low bits no longer decide; and the check count)
-    // mutant: GSharpKernelFloatProvider.cs:427 `CorrectTruncatedEstimate(...)` removed (PowerPlus1*, HardDecrement*)
-    // mutant: GSharpKernelFloatProvider.cs:404 `n + 2` -> `n` (K = n: the excess reaches 2^5; NarrowDividend*,
+    // mutant: GSharpKernelFloatProvider.cs:448 `CorrectTruncatedEstimate(...)` removed (PowerPlus1*, HardDecrement*)
+    // mutant: GSharpKernelFloatProvider.cs:425 `n + 2` -> `n` (K = n: the excess reaches 2^5; NarrowDividend*,
     // WiderDividend*, Hard*)
     // mutant: GpuBigIntDivRemKernels.cu.cs:227 `left > right ? 2ul : 1ul` -> `1ul : 2ul` (PowerPlus1*, HardDecrement*)
     // mutant: GpuBigIntDivRemKernels.cu.cs:232 `== 2ul` -> `!= 1ul` (SameValue*, HardExact*: an exact quotient drops)
@@ -170,8 +170,8 @@ public class GpuBigFloatWideOperandTests : IDisposable
 
     // A zero dividend over a wide divisor is 0 (the result words cleared, the sign not negative) without cutting the
     // divisor; the bit length read of the dividend decides it before any other work.
-    // mutant: GSharpKernelFloatProvider.cs:398 ClearMemoryAsync removed (the result keeps its old words)
-    // mutant: GSharpKernelFloatProvider.cs:399 `new GpuFloatResult(0, false)` -> `new GpuFloatResult(0, true)`
+    // mutant: GSharpKernelFloatProvider.cs:419 ClearMemoryAsync removed (the result keeps its old words)
+    // mutant: GSharpKernelFloatProvider.cs:420 `new GpuFloatResult(0, false)` -> `new GpuFloatResult(0, true)`
     [SkippableTheory]
     [Scenario(TestScenario.Boundary)]
     [InlineData(1)]
