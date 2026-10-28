@@ -72,11 +72,11 @@ public class StateMachineLowerer(bool isDeviceFunction = false, SemanticModel? s
         sections.CommitState(sections.State + 1, isBarrier: false);
         CheckLabelState(labeled, sections.State, labelStates);
 
-        // [WHY] A label that a goto inside a switch of the user reaches stays in its section, and that goto stays a goto:
-        // a goto case binds to the innermost switch, which is the user's, not the state machine's. C# finds a label of
-        // any section of the enclosing switch, and C++ labels have function scope. The label after a statement of a
-        // Gpu.SyncGrid body that returns always stays: the return jumps to it from wherever it is (#626). A continue of
-        // a flattened loop is a goto to its continue label (#670).
+        // [WHY] A label that a goto inside a switch of the user reaches stays in its section, and that goto stays a
+        // goto: a goto case binds to the innermost switch, which is the user's, not the state machine's. C# finds a
+        // label of any section of the enclosing switch, and C++ labels have function scope. The label after a
+        // statement of a Gpu.SyncGrid body that returns always stays: the return jumps to it from wherever it is
+        // (#626). A continue of a flattened loop is a goto to its continue label (#670).
         if (IsSyncGridNextLabel(labeled.Identifier.ValueText) ||
             labelsReachedFromSwitch.Contains(LoweringIdentity.ForDeclaration(labeled, semanticModel)))
         {
