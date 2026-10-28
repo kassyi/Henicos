@@ -5,7 +5,7 @@ description: Reviewing open pull requests together with a person. The agent expl
 
 # PR Review Pairing
 
-Use this skill when a person asks to review the open pull requests with you ("一緒にレビューしたい"). GitHub shows only diffs, which give a person no picture of a change. Your job is to give them that picture, check what needs careful reading, and turn the findings into PR comments and issues.
+Use this skill when a person asks to review the open pull requests with you. GitHub shows only diffs, which give a person no picture of a change. Your job is to give them that picture, check what needs careful reading, and turn the findings into PR comments and issues.
 
 ## 1. Roles
 
@@ -18,7 +18,7 @@ Take the person's structural remarks seriously and turn each into a concrete pro
 
 ## 2. Order and setup
 
-- Review in merge order, one stack at a time (`#752 -> #756 -> #767`). Read each PR's own diff against its base, not the cumulative diff; the PR below counts as reviewed.
+- Review in merge order, one stack at a time (a stack is a chain of PRs, each based on the branch of the one before). Read each PR's own diff against its base, not the cumulative diff; the PR below counts as reviewed.
 - Check out the PR head as a detached, read-only worktree and read from there:
   ```sh
   git fetch origin <head-branch>
@@ -39,7 +39,7 @@ Start with a map, then go file by file.
 
 **Each file or fix** (one message each), in this shape:
 1. **Summary**: two or three lines.
-2. **Links**: the ranges to skim, as workspace-relative links into the review worktree, for example `[Free :140-210](tmp/worktree/review-754/src/.../DefaultGpuMemoryManager.cs#L140-L210)`. Always link; never name a file without a link.
+2. **Links**: the ranges to skim, as workspace-relative links into the review worktree, in the form `[Method :<start>-<end>](tmp/worktree/review-<n>/<path>#L<start>-L<end>)`. Always link; never name a file without a link.
 3. **Verdict**: logic and API, with what you checked yourself (bounds recomputed, edge cases walked through, aliasing, races, failure paths). Say "no finding" plainly when there is none.
 4. **Structural hot spots**: the long methods (with line counts), duplicated blocks (both locations), readability problems. These are for the person to judge, so point at them before they ask. Line counts per method:
    ```sh
@@ -47,7 +47,7 @@ Start with a map, then go file by file.
    ```
 5. End with the next step ("next: X, shall I continue?").
 
-**Explaining**: conclusion first, every term explained the first time (guard / round / sticky bits, Gerbicz-Li check, fold, redundant form). When the person says they do not follow, back up and explain the math or background from the start with a small worked example before going on. Keep chat in Japanese; everything posted to GitHub is English.
+**Explaining**: conclusion first, every domain term and algorithm explained the first time it appears. When the person says they do not follow, back up and explain the math or background from the start with a small worked example before going on. Keep chat in Japanese; everything posted to GitHub is English.
 
 ## 4. In scope or not
 
