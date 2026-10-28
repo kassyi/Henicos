@@ -1074,15 +1074,15 @@ uint32_t __gsharp_warp_shuffle_count = 0;
 bool __gsharp_yielded_for_grid_sync = false;
 bool __gsharp_yielded_for_block_barrier = false;
 __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroContextState __gsharp_id_5_local;
-__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroContextValue __gsharp_id_6_a;
-__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroContextValue __gsharp_id_7_b;
-__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroContextValue __gsharp_id_8_c;
 };
 extern ""C"" __declspec(dllexport) void __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroContextKernels__HoistedContextKernel(GSharpArray<unsigned int> __gsharp_id_0_offset, GSharpArray<unsigned int> __gsharp_id_1_left, GSharpArray<unsigned int> __gsharp_id_2_right, GSharpArray<unsigned int> __gsharp_id_3_result, GSharpArray<unsigned int> __gsharp_id_4_calls, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroContextKernels__HoistedContextKernel* __gsharp_ctx){
 #define __gsharp_state __gsharp_ctx->__gsharp_state
 #define __gsharp_yielded_for_grid_sync __gsharp_ctx->__gsharp_yielded_for_grid_sync
 #define __gsharp_yielded_for_block_barrier __gsharp_ctx->__gsharp_yielded_for_block_barrier
 auto* __gsharp_root = __gsharp_ctx;
+__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroContextValue __gsharp_id_6_a;
+__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroContextValue __gsharp_id_7_b;
+__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroContextValue __gsharp_id_8_c;
 switch(__gsharp_state)
 {
 case 0:
@@ -1097,10 +1097,10 @@ return;
 case 1:
 __gsharp_switch_1_state_1:
 {
-__gsharp_ctx->__gsharp_id_6_a=__gsharp_id_1_left;
-__gsharp_ctx->__gsharp_id_7_b=__gsharp_id_2_right;
-__gsharp_ctx->__gsharp_id_8_c=__gsharp_id_3_result;
-__gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroContextOps__AddWithOffset(&__gsharp_ctx->__gsharp_id_5_local,__gsharp_ctx->__gsharp_id_8_c,__gsharp_ctx->__gsharp_id_6_a,__gsharp_ctx->__gsharp_id_7_b);
+__gsharp_id_6_a=__gsharp_id_1_left;
+__gsharp_id_7_b=__gsharp_id_2_right;
+__gsharp_id_8_c=__gsharp_id_3_result;
+__gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroContextOps__AddWithOffset(&__gsharp_ctx->__gsharp_id_5_local,__gsharp_id_8_c,__gsharp_id_6_a,__gsharp_id_7_b);
 __gsharp_yielded_for_block_barrier=true;
 __gsharp_state=2;
 return;
@@ -1195,9 +1195,9 @@ public uint __gsharp_warp_exchange;
 public global::Kassyi.GSharp.Tests.Shared.Syntax.OperatorMacroContextState local;
 }
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroContextKernels__HoistedContextKernel(uint[] offset, uint[] left, uint[] right, uint[] result, uint[] calls, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroContextKernels__HoistedContextKernel __gsharp_ctx) {
-global::Kassyi.GSharp.Tests.Shared.Syntax.OperatorMacroContextValue a = left;
-global::Kassyi.GSharp.Tests.Shared.Syntax.OperatorMacroContextValue b = right;
-global::Kassyi.GSharp.Tests.Shared.Syntax.OperatorMacroContextValue c = result;
+scoped global::Kassyi.GSharp.Tests.Shared.Syntax.OperatorMacroContextValue a = default;
+scoped global::Kassyi.GSharp.Tests.Shared.Syntax.OperatorMacroContextValue b = default;
+scoped global::Kassyi.GSharp.Tests.Shared.Syntax.OperatorMacroContextValue c = default;
 {
 switch (__gsharp_ctx.__gsharp_state)
 {
@@ -1212,6 +1212,9 @@ return;
 
 case 1:
 {
+a = left;
+b = right;
+c = result;
 c = a + b;
 global::Kassyi.GSharp.Core.ManagedGpuContext.BlockBarrierRequested = true;
 __gsharp_ctx.__gsharp_state = 2;
