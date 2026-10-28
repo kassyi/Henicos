@@ -3,7 +3,7 @@ using System.Security.Cryptography;
 namespace Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms;
 
 /// <summary>
-/// Provides high-performance prime generation utilizing CPU trial factoring and GPU Fermat PRP testing.
+/// Generates probable primes on the CPU with trial division and the Miller-Rabin test.
 /// </summary>
 public static class PrimeSearchAlgorithm
 {
@@ -16,8 +16,8 @@ public static class PrimeSearchAlgorithm
 
     /// <summary>
     /// Generates a strictly positive probable prime (PRP) of the specified bit length.
-    /// Uses CPU trial division for small primes, followed by robust Miller-Rabin / Fermat PRP testing.
-    /// (Automatically offloads to GPU FermatAlgorithm for extremely large bit lengths > 4096).
+    /// Uses CPU trial division by small primes, followed by 10 rounds of the Miller-Rabin test with
+    /// <see cref="BigInteger"/>, for every bit length; nothing runs on the GPU.
     /// </summary>
     /// <param name="bitLength">The required bit length of the prime.</param>
     /// <returns>A generated probable prime of the specified bit length.</returns>

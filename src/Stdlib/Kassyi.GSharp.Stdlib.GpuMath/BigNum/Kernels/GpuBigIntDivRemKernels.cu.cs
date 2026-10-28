@@ -13,6 +13,9 @@ public static partial class GpuBigIntDivRemKernels
     /// <summary>The correction status written when the inverse square root correction does not converge.</summary>
     public const uint InverseSqrtCorrectionFailed = 3u;
 
+    /// <summary>The correction status written when the integer square root correction does not converge.</summary>
+    public const uint SqrtCorrectionFailed = 4u;
+
     // Dummy kernel to force the generator to emit the DualNtt struct definition before we use it
     [GpuDeviceFunction]
     private static void ForceEmitDualNtt_DivRem(DualNtt args)
@@ -182,6 +185,54 @@ public static partial class GpuBigIntDivRemKernels
         var delta = CorrectIntoDivisorRange(diff, rightOperand, evalWords, evalWords, 1000, status,
             ReduceZeroSyncCorrectionFailed);
         Gpu.SingleThread(() => AddSmallSigned(quotient, quotientWords, delta));
+    }
+
+    /// <summary>
+    /// Subtracts 1 from <paramref name="estimate"/> when <paramref name="product"/> is greater than
+    /// <paramref name="bound"/>: the correction of a quotient or an inverse square root computed from a truncated
+    /// operand, which is the exact floor or one above it (#661 §4.12).
+    /// </summary>
+    /// <param name="product">The estimate times the full operand (<c>Q·R</c>, or <c>x²·A</c>).</param>
+    /// <param name="productWords">The word count of <paramref name="product"/>.</param>
+    /// <param name="bound">The value the product must not exceed (<c>N</c>, or <c>2^(2B)</c>).</param>
+    /// <param name="boundWords">The word count of <paramref name="bound"/>; words above the shorter of the two buffers
+    /// count as 0.</param>
+    /// <param name="estimate">The estimate, at least 1, decremented in place.</param>
+    /// <param name="estimateWords">The word count of <paramref name="estimate"/>.</param>
+    /// <remarks>
+    /// Launched with one block; runs on the stream without a host synchronization. The threads find the most
+    /// significant differing word together; thread 0 then decrements the estimate.
+    /// </remarks>
+    [GpuKernel]
+    public static void TruncatedBoundCorrectionKernel([GpuReadOnly] uint[] product, int productWords,
+        [GpuReadOnly] uint[] bound, int boundWords, uint[] estimate, int estimateWords)
+    {
+        var warpMax = new SharedMemory<ulong>(32);
+
+        // Launched with one block; any other block would decrement the estimate again.
+        if (BlockIndex.X != 0)
+        {
+            return;
+        }
+
+        // The most significant differing word, packed as (index << 32) | (1 = less, 2 = greater); 0 when equal.
+        var words = productWords > boundWords ? productWords : boundWords;
+        ulong packed = 0ul;
+        for (int idx = ThreadIndex.X; idx < words; idx += BlockDimension.X)
+        {
+            uint left = idx < productWords ? product[idx] : 0u;
+            uint right = idx < boundWords ? bound[idx] : 0u;
+            if (left != right)
+            {
+                packed = ((ulong)idx << 32) | (left > right ? 2ul : 1ul);
+            }
+        }
+
+        ulong maxPacked = GpuBigIntVectorKernels.ReduceBlockMaxUInt64(packed, warpMax);
+        if (ThreadIndex.X == 0 && (maxPacked & 0xFFFFFFFFul) == 2ul)
+        {
+            AddSmallSigned(estimate, estimateWords, -1);
+        }
     }
 
     /// <summary>

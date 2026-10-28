@@ -27,8 +27,8 @@ internal static class FloatVectorElementwiseHelper
 
     public static void ExecuteUnary(
         GpuWorkspace workspace,
-        GpuBigFloatArray source,
-        GpuBigFloatArray destination,
+        GpuBigFloatArrayView source,
+        GpuBigFloatArrayView destination,
         int count,
         UnaryElementOp operation)
     {
@@ -37,8 +37,8 @@ internal static class FloatVectorElementwiseHelper
             return;
         }
 
-        var arithmetic = GetArithmetic(workspace);
-        var execContext = CreateExecutionContext(workspace);
+        var arithmetic = GpuWorkspaceArithmetic.FloatArithmetic(workspace);
+        var execContext = GpuWorkspaceArithmetic.CreateContext(workspace);
 
         var srcExps = ArrayPool<uint>.Shared.Rent(count);
         var srcSigns = ArrayPool<uint>.Shared.Rent(count);
@@ -74,9 +74,9 @@ internal static class FloatVectorElementwiseHelper
 
     public static void ExecuteBinary(
         GpuWorkspace workspace,
-        GpuBigFloatArray left,
-        GpuBigFloatArray right,
-        GpuBigFloatArray destination,
+        GpuBigFloatArrayView left,
+        GpuBigFloatArrayView right,
+        GpuBigFloatArrayView destination,
         int count,
         BinaryElementOp operation)
     {
@@ -85,8 +85,8 @@ internal static class FloatVectorElementwiseHelper
             return;
         }
 
-        var arithmetic = GetArithmetic(workspace);
-        var execContext = CreateExecutionContext(workspace);
+        var arithmetic = GpuWorkspaceArithmetic.FloatArithmetic(workspace);
+        var execContext = GpuWorkspaceArithmetic.CreateContext(workspace);
 
         var leftExps = ArrayPool<uint>.Shared.Rent(count);
         var leftSigns = ArrayPool<uint>.Shared.Rent(count);
@@ -128,14 +128,6 @@ internal static class FloatVectorElementwiseHelper
             ArrayPool<uint>.Shared.Return(dstSigns);
         }
     }
-
-    private static IGpuBigFloatArithmetic GetArithmetic(GpuWorkspace workspace) =>
-        workspace.Engine == GpuExecutionEngine.GSharpAot
-            ? GSharpKernelFloatProvider.Instance
-            : CSharpCpuBigFloatArithmetic.Instance;
-
-    private static GpuBigIntExecutionContext CreateExecutionContext(GpuWorkspace workspace) =>
-        new(workspace, workspace.MemoryManager, new LegacyProviderArithmeticAdapter(), workspace.Stream);
 }
 
 internal abstract class FloatVectorUnaryExpressionBase(
@@ -144,35 +136,23 @@ internal abstract class FloatVectorUnaryExpressionBase(
     public int Length => vector.Length;
     public int WordsPerElement => vector.WordsPerElement;
 
-    private GpuBigFloatArray _result;
-    private bool _allocated;
+    // The result buffers, lent until the next evaluation or Dispose; a caller's target is never kept (design 4.6)
+    private readonly VectorResultCache _cache = new();
 
-    public GpuBigFloatArray Evaluate(
+    public GpuBigFloatArrayView Evaluate(
         GpuWorkspace workspace,
         int elementOffset = 0,
         int? elementCount = null,
-        GpuBigFloatArray? targetResult = null)
+        GpuBigFloatArrayView targetResult = default)
     {
         ValidateBeforeEvaluate();
 
         var evalCount = elementCount ?? (Length - elementOffset);
+        // The target is checked before the child runs, so that a rejected target evaluates nothing
+        var destination = VectorResultCache.HasTarget(targetResult)
+            ? VectorResultCache.TargetFloat(targetResult, evalCount, WordsPerElement)
+            : _cache.Float(workspace, evalCount, WordsPerElement);
         var vecResult = vector.Evaluate(workspace, elementOffset, evalCount);
-
-        GpuBigFloatArray destination;
-        if (targetResult != null)
-        {
-            destination = targetResult.Value;
-        }
-        else
-        {
-            if (!_allocated)
-            {
-                _result = new GpuBigFloatArray(workspace, evalCount, WordsPerElement);
-                _allocated = true;
-            }
-
-            destination = _result;
-        }
 
         FloatVectorElementwiseHelper.ExecuteUnary(workspace, vecResult, destination, evalCount, EvaluateElement);
         return destination;
@@ -190,13 +170,15 @@ internal abstract class FloatVectorUnaryExpressionBase(
 
     public void Dispose()
     {
-        if (_allocated)
+        // A cache release that throws (a failed capture refuses the clear) does not skip the children
+        try
         {
-            _result.Dispose();
-            _allocated = false;
+            _cache.Dispose();
         }
-
-        vector.Dispose();
+        finally
+        {
+            vector.Dispose();
+        }
     }
 }
 

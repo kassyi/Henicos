@@ -1,9 +1,20 @@
 namespace Kassyi.GSharp.Stdlib.GpuMath.BigNum.Expressions;
 
-internal readonly record struct FloatVectorZipOperands(
-    GpuBigFloatArray Left,
-    GpuBigFloatArray Right,
-    GpuBigFloatArray Destination);
+internal readonly ref struct FloatVectorZipOperands
+{
+    public FloatVectorZipOperands(GpuBigFloatArrayView left, GpuBigFloatArrayView right, GpuBigFloatArrayView destination)
+    {
+        Left = left;
+        Right = right;
+        Destination = destination;
+    }
+
+    public GpuBigFloatArrayView Left { get; }
+
+    public GpuBigFloatArrayView Right { get; }
+
+    public GpuBigFloatArrayView Destination { get; }
+}
 
 internal abstract class FloatVectorBinaryVectorExpressionBase(
     [TakesOwnership] IGpuBigFloatVectorExpression left,
@@ -15,16 +26,16 @@ internal abstract class FloatVectorBinaryVectorExpressionBase(
     public int Length => left.Length;
     public int WordsPerElement { get; } = wordsPerElement;
 
-    private GpuBigFloatArray _result;
-    private bool _allocated;
+    // The result buffers, lent until the next evaluation or Dispose; a caller's target is never kept (design 4.6)
+    private readonly VectorResultCache _cache = new();
 
     protected uint BlockDimX => (uint)Math.Min(1024, WordsPerElement);
 
-    public GpuBigFloatArray Evaluate(
+    public GpuBigFloatArrayView Evaluate(
         GpuWorkspace workspace,
         int elementOffset = 0,
         int? elementCount = null,
-        GpuBigFloatArray? targetResult = null)
+        GpuBigFloatArrayView targetResult = default)
     {
         if (left.Length != right.Length)
         {
@@ -32,28 +43,16 @@ internal abstract class FloatVectorBinaryVectorExpressionBase(
         }
 
         var evalCount = elementCount ?? (Length - elementOffset);
+        // The target is checked before the children run, so that a rejected target evaluates nothing
+        var destination = VectorResultCache.HasTarget(targetResult)
+            ? VectorResultCache.TargetFloat(targetResult, evalCount, WordsPerElement)
+            : _cache.Float(workspace, evalCount, WordsPerElement);
         var leftResult = left.Evaluate(workspace, elementOffset, evalCount);
         var rightResult = right.Evaluate(workspace, elementOffset, evalCount);
 
         if (leftResult.Length != rightResult.Length)
         {
             throw new ArgumentException("Vector lengths must match for Zip operations.");
-        }
-
-        GpuBigFloatArray destination;
-        if (targetResult != null)
-        {
-            destination = targetResult.Value;
-        }
-        else
-        {
-            if (!_allocated)
-            {
-                _result = new GpuBigFloatArray(workspace, evalCount, WordsPerElement);
-                _allocated = true;
-            }
-
-            destination = _result;
         }
 
         var operands = new FloatVectorZipOperands(leftResult, rightResult, destination);
@@ -107,14 +106,22 @@ internal abstract class FloatVectorBinaryVectorExpressionBase(
 
     public void Dispose()
     {
-        if (_allocated)
+        // A cache release that throws (a failed capture refuses the clear) does not skip the children
+        try
         {
-            _result.Dispose();
-            _allocated = false;
+            _cache.Dispose();
         }
-
-        left.Dispose();
-        right.Dispose();
+        finally
+        {
+            try
+            {
+                left.Dispose();
+            }
+            finally
+            {
+                right.Dispose();
+            }
+        }
     }
 }
 

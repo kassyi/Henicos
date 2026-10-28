@@ -50,7 +50,7 @@ int Length { get; }
 Evaluates the deferred boolean vector expression on the GPU.
 
 ```csharp
-GpuBigUIntArray Evaluate(GpuWorkspace workspace);
+GpuBigUIntArrayView Evaluate(GpuWorkspace workspace);
 ```
 
 #### Parameters
@@ -60,8 +60,8 @@ The GPU workspace memory context.
 
 #### Returns
 
-_[GpuBigUIntArray](../GpuBigUIntArray.md)_<br>
-A `GpuBigUIntArray` containing `1` for `true` and `0` for `false` at each element index.
+_[GpuBigUIntArrayView](../GpuBigUIntArrayView.md)_<br>
+A borrowed view containing `1` for `true` and `0` for `false` at each element index. It is valid until the next evaluation or until the expression is disposed. The next evaluation overwrites the values of a result still held, without an error.
 
 ## Examples
 
@@ -88,7 +88,7 @@ using IGpuBoolVectorExpression predicate = array.AsVectorizedEnumerable()
 
 Console.WriteLine($"Predicate vector length: {predicate.Length}");
 
-using GpuBigUIntArray mask = predicate.Evaluate(workspace);
+GpuBigUIntArrayView mask = predicate.Evaluate(workspace);
 var maskWords = new uint[4];
 workspace.Provider.CopyDeviceToHost(maskWords, mask.DevicePointer, 4);
 Console.WriteLine($"Mask values (1=true, 0=false): [{string.Join(", ", maskWords)}]");

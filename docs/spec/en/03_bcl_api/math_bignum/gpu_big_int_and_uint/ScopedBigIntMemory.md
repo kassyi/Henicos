@@ -16,30 +16,27 @@ description: "Provides a deterministic, stack-scoped RAII wrapper for temporary 
 Provides a deterministic, stack-scoped RAII wrapper for temporary device memory allocations.
 
 ```csharp
-public ref struct ScopedBigIntMemory(IGpuMemoryManager? manager, GpuBigIntMemoryHandle handle)
+public ref struct ScopedBigIntMemory(GpuBigIntMemoryHandle handle)
 ```
 
 ## Constructors
 
 | Name | Description |
 | --- | --- |
-| [ScopedBigIntMemory(IGpuMemoryManager?, GpuBigIntMemoryHandle)](#scopedbigintmemoryigpumemorymanager-gpubigintmemoryhandle) | Initializes a new stack-scoped temporary memory wrapper bound to the specified memory manager and handle. |
+| [ScopedBigIntMemory(GpuBigIntMemoryHandle)](#scopedbigintmemorygpubigintmemoryhandle) | Initializes a new stack-scoped memory wrapper for the specified handle. |
 
-## ScopedBigIntMemory(IGpuMemoryManager?, GpuBigIntMemoryHandle)
+## ScopedBigIntMemory(GpuBigIntMemoryHandle)
 
-Initializes a new stack-scoped temporary memory wrapper bound to the specified memory manager and handle.
+Initializes a new stack-scoped memory wrapper for the specified handle.
 
 ```csharp
-public ScopedBigIntMemory(IGpuMemoryManager? manager, GpuBigIntMemoryHandle handle);
+public ScopedBigIntMemory(GpuBigIntMemoryHandle handle);
 ```
 
 #### Parameters
 
-`manager` _IGpuMemoryManager?_<br>
-The memory manager responsible for recycling or releasing this memory segment.
-
 `handle` _GpuBigIntMemoryHandle_<br>
-The device memory handle bound to this scoped allocation.
+The device memory handle bound to this scope. An owning handle (`OwnsBuffer`) is freed by `Dispose` through the memory manager that allocated it; a borrowed handle is only used.
 
 ## Properties
 
@@ -59,11 +56,11 @@ public GpuBigIntMemoryHandle Handle { get; }
 
 | Name | Description |
 | --- | --- |
-| [Dispose()](#dispose) | Releases the temporary allocation back to the associated `IGpuMemoryManager`. |
+| [Dispose()](#dispose) | Releases an owned allocation back to the `IGpuMemoryManager` that allocated it. |
 
 ## Dispose()
 
-Releases the temporary allocation back to the associated `IGpuMemoryManager` if not already disposed.
+Releases an owned allocation back to the `IGpuMemoryManager` that allocated it; a borrowed handle is left alone. A second `Dispose` does nothing.
 
 ```csharp
 public void Dispose();

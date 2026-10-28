@@ -153,8 +153,9 @@ public static class CpuKernelLoader
             return;
         }
 
+        // The native error slot holds UTF-8 text (a message may name a source file with non-ASCII characters)
         var message = msgPtr != IntPtr.Zero
-            ? Marshal.PtrToStringAnsi(msgPtr) ?? "Unknown G# CPU runtime error."
+            ? Marshal.PtrToStringUTF8(msgPtr) ?? "Unknown G# CPU runtime error."
             : "Unknown G# CPU runtime error.";
 
         throw errorCode switch

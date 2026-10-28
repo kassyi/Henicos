@@ -27,7 +27,7 @@ return false;
 case 1:
 __gsharp_switch_1_state_1:
 {
-auto __gsharp_warp_temp_0 = __gsharp_warp_shuffle_read_xor_sync(__gsharp_root,4294967295U,__gsharp_id_0_value,1);
+auto __gsharp_warp_temp_0 = __gsharp_warp_shuffle_read_xor_sync(__gsharp_root,4294967295U,__gsharp_id_0_value,1,32,""SuspendingCallArgumentKernels.cs(17,24)"");
 int __gsharp_id_4_neighbor = __gsharp_warp_temp_0;
 int __gsharp_id_5_result = (__gsharp_id_0_value+__gsharp_id_4_neighbor)*(int)__gsharp_id_1_scale+(int)__gsharp_id_3_color;
 *__gsharp_result = (__gsharp_id_2_negate?-__gsharp_id_5_result:__gsharp_id_5_result);
@@ -74,7 +74,7 @@ return false;
 
 case 1:
 {
-var __gsharp_warp_temp_0 = __gsharp_warp_shuffle_read_xor_sync(__gsharp_ctx, global::Kassyi.GSharp.Tests.Shared.Syntax.SuspendingCallArgumentKernels.FullMask, value, 1);
+var __gsharp_warp_temp_0 = __gsharp_warp_shuffle_read_xor_sync(__gsharp_ctx, global::Kassyi.GSharp.Tests.Shared.Syntax.SuspendingCallArgumentKernels.FullMask, value, 1, 32, "SuspendingCallArgumentKernels.cs(17,24)");
 int neighbor = __gsharp_warp_temp_0;
 int result = (value + neighbor) * (int)scale + (int)color;
 {

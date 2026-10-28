@@ -92,6 +92,7 @@ The G# compiler and Roslyn analyzers enforce GPU safety and memory management ru
 | [GSH0088](GSH0088.md) | Error | Device code of another assembly is not exported |
 | [GSH0089](GSH0089.md) | Error | Device code of another assembly cannot be used |
 | [GSH0090](GSH0090.md) | Error | Device code of two assemblies has the same C++ name |
+| [GSH0095](GSH0095.md) | Error | Warp shuffle width must be 1, 2, 4, 8, 16 or 32 |
 | [SLQ0001](SLQ0001.md) | Warning | Excessive StackLinq chain depth |
 | [RS0030](RS0030.md) | Error | GPU intrinsic invoked from host code or banned API used in kernel |
 
