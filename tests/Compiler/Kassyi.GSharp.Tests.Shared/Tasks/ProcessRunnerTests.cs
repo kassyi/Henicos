@@ -90,7 +90,8 @@ public class ProcessRunnerTests
 
         Assert.ThrowsAny<OperationCanceledException>(() => ProcessRunner.Default.Run(startInfo, cts.Token));
 
-        Assert.True(stopwatch.Elapsed < TimeSpan.FromSeconds(20), "The process was not killed on cancellation.");
+        // The child sleeps 60 s, so a missing kill still exceeds 45 s; the margin absorbs a loaded CI runner.
+        Assert.True(stopwatch.Elapsed < TimeSpan.FromSeconds(45), "The process was not killed on cancellation.");
     }
 
     [Fact]
@@ -134,7 +135,7 @@ public class ProcessRunnerTests
     private static ProcessResult RunWithTimeout(ProcessStartInfo startInfo)
     {
         // A deadlock would hang the test host, so the run happens on its own task with a deadline.
-        var timeout = TimeSpan.FromSeconds(60);
+        var timeout = TimeSpan.FromSeconds(180);
         var begin = DateTime.Now;
         var run = Task.Factory.StartNew(() => ProcessRunner.Default.Run(startInfo), TaskCreationOptions.LongRunning);
         if (!run.Wait(timeout))

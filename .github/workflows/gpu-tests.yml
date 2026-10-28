@@ -36,6 +36,8 @@ jobs:
     env:
       GSHARP_TEST_NO_CUDA: "1"
       DiffEngine_Disabled: "true"
+      # Seconds the vstest console waits for a test host to connect (default 90); the Windows runner is sometimes too slow when assemblies start in parallel
+      VSTEST_CONNECTION_TIMEOUT: "300"
 
     steps:
       - name: Enable long paths in Git (Windows)
