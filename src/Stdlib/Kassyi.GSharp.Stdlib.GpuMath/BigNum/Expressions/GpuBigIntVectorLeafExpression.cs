@@ -14,7 +14,7 @@ internal class GpuBigIntVectorLeafExpression(GpuBigIntArray array) : IGpuBigIntV
             return array;
         }
 
-        return array.Slice(elementOffset, count);
+        return array.BorrowSlice(elementOffset, count);
     }
 
     public void Dispose()

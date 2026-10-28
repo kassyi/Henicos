@@ -131,7 +131,6 @@ public static readonly string SimpleWhereSelectSum_FullSource=global::Kassyi.GSh
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__TestCases__StackLinqFusionTestCases__SimpleWhereSelectSum {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
-public bool __gsharp_yielded_for_grid_sync;
 }
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__TestCases__StackLinqFusionTestCases__SimpleWhereSelectSum(int[] data, __gsharp_context_Kassyi__GSharp__Tests__Shared__TestCases__StackLinqFusionTestCases__SimpleWhereSelectSum __gsharp_ctx) {
 {
@@ -219,9 +218,9 @@ if (__gsharp_contexts[__gsharp_linear_tid].__gsharp_state != -1)
 {
 anyGridActive = true;
 anyBlockActive = true;
-__gsharp_contexts[__gsharp_linear_tid].__gsharp_yielded_for_grid_sync = false;
+global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested = false;
 __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__TestCases__StackLinqFusionTestCases__SimpleWhereSelectSum(data, __gsharp_contexts[__gsharp_linear_tid]);
-if (__gsharp_contexts[__gsharp_linear_tid].__gsharp_yielded_for_grid_sync)
+if (global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested)
 {
 gridSyncRequested = true;
 }
@@ -349,7 +348,6 @@ public static readonly string MultipleWhere_FullSource=global::Kassyi.GSharp.Gen
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__TestCases__StackLinqFusionTestCases__MultipleWhere {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
-public bool __gsharp_yielded_for_grid_sync;
 }
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__TestCases__StackLinqFusionTestCases__MultipleWhere(int[] data, __gsharp_context_Kassyi__GSharp__Tests__Shared__TestCases__StackLinqFusionTestCases__MultipleWhere __gsharp_ctx) {
 {
@@ -437,9 +435,9 @@ if (__gsharp_contexts[__gsharp_linear_tid].__gsharp_state != -1)
 {
 anyGridActive = true;
 anyBlockActive = true;
-__gsharp_contexts[__gsharp_linear_tid].__gsharp_yielded_for_grid_sync = false;
+global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested = false;
 __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__TestCases__StackLinqFusionTestCases__MultipleWhere(data, __gsharp_contexts[__gsharp_linear_tid]);
-if (__gsharp_contexts[__gsharp_linear_tid].__gsharp_yielded_for_grid_sync)
+if (global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested)
 {
 gridSyncRequested = true;
 }
@@ -563,7 +561,6 @@ public static readonly string MultipleSelect_FullSource=global::Kassyi.GSharp.Ge
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__TestCases__StackLinqFusionTestCases__MultipleSelect {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
-public bool __gsharp_yielded_for_grid_sync;
 }
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__TestCases__StackLinqFusionTestCases__MultipleSelect(int[] data, __gsharp_context_Kassyi__GSharp__Tests__Shared__TestCases__StackLinqFusionTestCases__MultipleSelect __gsharp_ctx) {
 {
@@ -651,9 +648,9 @@ if (__gsharp_contexts[__gsharp_linear_tid].__gsharp_state != -1)
 {
 anyGridActive = true;
 anyBlockActive = true;
-__gsharp_contexts[__gsharp_linear_tid].__gsharp_yielded_for_grid_sync = false;
+global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested = false;
 __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__TestCases__StackLinqFusionTestCases__MultipleSelect(data, __gsharp_contexts[__gsharp_linear_tid]);
-if (__gsharp_contexts[__gsharp_linear_tid].__gsharp_yielded_for_grid_sync)
+if (global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested)
 {
 gridSyncRequested = true;
 }
@@ -813,7 +810,6 @@ public static readonly string HellPattern_FullSource=global::Kassyi.GSharp.Gener
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__TestCases__StackLinqFusionTestCases__HellPattern {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
-public bool __gsharp_yielded_for_grid_sync;
 }
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__TestCases__StackLinqFusionTestCases__HellPattern(int[] data, __gsharp_context_Kassyi__GSharp__Tests__Shared__TestCases__StackLinqFusionTestCases__HellPattern __gsharp_ctx) {
 {
@@ -902,9 +898,9 @@ if (__gsharp_contexts[__gsharp_linear_tid].__gsharp_state != -1)
 {
 anyGridActive = true;
 anyBlockActive = true;
-__gsharp_contexts[__gsharp_linear_tid].__gsharp_yielded_for_grid_sync = false;
+global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested = false;
 __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__TestCases__StackLinqFusionTestCases__HellPattern(data, __gsharp_contexts[__gsharp_linear_tid]);
-if (__gsharp_contexts[__gsharp_linear_tid].__gsharp_yielded_for_grid_sync)
+if (global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested)
 {
 gridSyncRequested = true;
 }

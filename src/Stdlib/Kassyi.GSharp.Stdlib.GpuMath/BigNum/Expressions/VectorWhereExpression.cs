@@ -68,8 +68,8 @@ internal class VectorWhereExpression(
 
         var finalCount = elementCount ?? (originalCount - elementOffset);
         return new GpuBigIntArray(
-            _compactedValues.Slice(elementOffset, finalCount),
-            _compactedSigns.Slice(elementOffset, finalCount));
+            _compactedValues.BorrowSlice(elementOffset, finalCount),
+            _compactedSigns.BorrowSlice(elementOffset, finalCount));
     }
 
     public void Dispose()
