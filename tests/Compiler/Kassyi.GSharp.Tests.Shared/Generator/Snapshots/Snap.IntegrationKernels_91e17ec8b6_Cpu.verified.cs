@@ -13,7 +13,7 @@ inline bool __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__Tier1IntegrationK
 __forceinline__ float __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__Tier1IntegrationKernels__HelperMathAggressive(float __gsharp_id_0_x);
 
 inline float __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__Tier1IntegrationKernels__HelperMath(float __gsharp_id_0_x, float __gsharp_id_1_y){
-return (float)fmaxf(__gsharp_id_0_x*__gsharp_id_0_x,__gsharp_id_1_y*__gsharp_id_1_y);
+return (float)__gsharp_max_f32(__gsharp_id_0_x*__gsharp_id_0_x,__gsharp_id_1_y*__gsharp_id_1_y);
 }
 
 inline bool __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__Tier1IntegrationKernels__TryProcess(int __gsharp_id_0_input, int* __gsharp_id_1_output){
@@ -186,7 +186,7 @@ __gsharp_ctx->__gsharp_id_14_bitwise=(__gsharp_id_10_a<<1)|(__gsharp_id_11_b>>1)
 __gsharp_ctx->__gsharp_id_14_bitwise&=~1;
 __gsharp_ctx->__gsharp_id_15_mag=__gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__Tier1IntegrationKernels__HelperMath(__gsharp_id_1_floatInput[__gsharp_id_7_tid],(float)__gsharp_id_13_processed);
 __gsharp_ctx->__gsharp_id_15_mag=__gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__Tier1IntegrationKernels__HelperMathAggressive(__gsharp_ctx->__gsharp_id_15_mag);
-__gsharp_ctx->__gsharp_id_15_mag=(float)fmaxf(__gsharp_ctx->__gsharp_id_15_mag,__gsharp_id_3_config.__gsharp_mb_FloatVal);
+__gsharp_ctx->__gsharp_id_15_mag=(float)__gsharp_max_f32(__gsharp_ctx->__gsharp_id_15_mag,__gsharp_id_3_config.__gsharp_mb_FloatVal);
 __gsharp_ctx->__gsharp_id_15_mag+=([&]() {
 switch((__gsharp_id_7_tid%3))
 {

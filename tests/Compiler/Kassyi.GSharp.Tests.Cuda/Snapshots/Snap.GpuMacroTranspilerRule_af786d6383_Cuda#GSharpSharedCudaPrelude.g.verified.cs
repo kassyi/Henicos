@@ -290,6 +290,37 @@ __forceinline__ __device__ int __gsharp_clamp(int value, int min_val, int max_va
 __forceinline__ __device__ unsigned int __gsharp_clamp(unsigned int value, unsigned int min_val, unsigned int max_val) { return value < min_val ? min_val : (value > max_val ? max_val : value); }
 __forceinline__ __device__ float __gsharp_clamp(float value, float min_val, float max_val) { return value < min_val ? min_val : (value > max_val ? max_val : value); }
 __forceinline__ __device__ double __gsharp_clamp(double value, double min_val, double max_val) { return value < min_val ? min_val : (value > max_val ? max_val : value); }
+// Math.Max / Math.Min (IEEE 754:2019 maximum / minimum, as .NET): NaN if either input is NaN, +0 > -0.
+// PTX max.NaN.f32 / min.NaN.f32 are exactly that (sm_80+); max / min .f32 and .f64 already order +0 > -0 (PTX ISA, max).
+// a + b is NaN when either is NaN. The asm is not volatile, so common subexpressions still fold.
+// One name per type, as fmaxf / fmax: a call passes its C# arguments unconverted (Math.Max(double, float)), which
+// an overload set would find ambiguous.
+__device__ __forceinline__ float __gsharp_max_f32(float a, float b) {
+#if __CUDA_ARCH__ >= 800
+float r;
+asm(""max.NaN.f32 %0, %1, %2;"" : ""=f""(r) : ""f""(a), ""f""(b));
+return r;
+#else
+return (isnan(a) || isnan(b)) ? a + b : fmaxf(a, b);
+#endif
+}
+__device__ __forceinline__ float __gsharp_min_f32(float a, float b) {
+#if __CUDA_ARCH__ >= 800
+float r;
+asm(""min.NaN.f32 %0, %1, %2;"" : ""=f""(r) : ""f""(a), ""f""(b));
+return r;
+#else
+return (isnan(a) || isnan(b)) ? a + b : fminf(a, b);
+#endif
+}
+__device__ __forceinline__ double __gsharp_max_f64(double a, double b) { return (isnan(a) || isnan(b)) ? a + b : fmax(a, b); }
+__device__ __forceinline__ double __gsharp_min_f64(double a, double b) { return (isnan(a) || isnan(b)) ? a + b : fmin(a, b); }
+// float / double MaxNumber / MinNumber (IEEE 754:2019 maximumNumber / minimumNumber): NaN only if both are NaN, +0 > -0,
+// which is PTX max / min .f32 / .f64, the instructions fmaxf / fmax compile to.
+__device__ __forceinline__ float __gsharp_max_number_f32(float a, float b) { return fmaxf(a, b); }
+__device__ __forceinline__ float __gsharp_min_number_f32(float a, float b) { return fminf(a, b); }
+__device__ __forceinline__ double __gsharp_max_number_f64(double a, double b) { return fmax(a, b); }
+__device__ __forceinline__ double __gsharp_min_number_f64(double a, double b) { return fmin(a, b); }
 
 // --- Gpu.GridStrideLoop ---
 // The first index and the step over the linear rank of the whole launch, in the order of cooperative_groups
