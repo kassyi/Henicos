@@ -3,21 +3,29 @@ namespace Kassyi.GSharp.Stdlib.GpuMath.BigNum.Expressions;
 internal class VectorCompareScalarExpression(
     [TakesOwnership] IGpuBigIntVectorExpression vector,
     [TakesOwnership] IGpuBigIntExpression scalar,
-    VectorCompareOperator opType) : IGpuBoolVectorExpression
+    VectorCompareOperator opType) : IGpuBoolVectorExpression, IDeviceCountedBoolVector
 {
     public int Length => vector.Length;
+    public int Capacity => vector.Capacity;
     private GpuBigUIntArray _finalValues;
     private bool _allocated;
 
-    public GpuBigUIntArrayView Evaluate(GpuWorkspace workspace)
+    public bool TryGetLength(out int length) => vector.TryGetLength(out length);
+
+    public GpuBigUIntArrayView Evaluate(GpuWorkspace workspace) =>
+        DeviceCounted.Materialize(workspace, EvaluateCore(workspace));
+
+    // The flags of the capacity; the elements are the first Count of them, as for the input (design D3 4.3)
+    public BoolVectorEvaluation EvaluateCore(GpuWorkspace workspace)
     {
-        var vecResult = vector.Evaluate(workspace);
+        var vecResult = DeviceCounted.Evaluate(vector, workspace);
         var scalarResult = scalar.Evaluate(workspace);
         try
         {
+            var capacity = Capacity;
             if (!_allocated)
             {
-                _finalValues = new GpuBigUIntArray(workspace, Length, 1);
+                _finalValues = new GpuBigUIntArray(workspace, capacity, 1);
                 _allocated = true;
             }
 
@@ -25,7 +33,7 @@ internal class VectorCompareScalarExpression(
             // it may be a view into a larger buffer whose following words are not 0.
             var ctx = new GpuBigIntCmpKernels.AotContexts.VectorCompare
             {
-                Left = VectorCompareLaunch.Operand(vecResult),
+                Left = VectorCompareLaunch.Operand(vecResult.Storage),
                 Right = new GpuBigIntCmpKernels.AotContexts.SignedCompareOperand
                 {
                     Limbs = scalarResult.Value.DevicePointer,
@@ -38,9 +46,10 @@ internal class VectorCompareScalarExpression(
                 OpType = (int)opType
             };
 
-            VectorCompareLaunch.Launch(workspace, ctx, Length, vecResult.WordsPerElement, scalarResult.Value.NumWords);
+            VectorCompareLaunch.Launch(workspace, ctx, capacity, vecResult.Storage.WordsPerElement,
+                scalarResult.Value.NumWords);
 
-            return _finalValues;
+            return new BoolVectorEvaluation(_finalValues, vecResult.Count);
         }
         finally
         {
@@ -64,40 +73,49 @@ internal class VectorCompareScalarExpression(
 internal class VectorCompareVectorExpression(
     [TakesOwnership] IGpuBigIntVectorExpression left,
     [TakesOwnership] IGpuBigIntVectorExpression right,
-    VectorCompareOperator opType) : IGpuBoolVectorExpression
+    VectorCompareOperator opType) : IGpuBoolVectorExpression, IDeviceCountedBoolVector
 {
     public int Length => left.Length;
+    public int Capacity => left.Capacity;
     private GpuBigUIntArray _finalValues;
     private bool _allocated;
 
-    public GpuBigUIntArrayView Evaluate(GpuWorkspace workspace)
+    public bool TryGetLength(out int length) => left.TryGetLength(out length);
+
+    public GpuBigUIntArrayView Evaluate(GpuWorkspace workspace) =>
+        DeviceCounted.Materialize(workspace, EvaluateCore(workspace));
+
+    public BoolVectorEvaluation EvaluateCore(GpuWorkspace workspace)
     {
-        if (left.Length != right.Length)
+        if (left.Capacity != right.Capacity)
         {
             throw new ArgumentException("Lengths must match");
         }
 
-        var leftResult = left.Evaluate(workspace);
-        var rightResult = right.Evaluate(workspace);
+        var leftResult = DeviceCounted.Evaluate(left, workspace);
+        var rightResult = DeviceCounted.Evaluate(right, workspace);
+        var count = DeviceCounted.Combine(leftResult.Count, rightResult.Count);
 
+        var capacity = Capacity;
         if (!_allocated)
         {
-            _finalValues = new GpuBigUIntArray(workspace, Length, 1);
+            _finalValues = new GpuBigUIntArray(workspace, capacity, 1);
             _allocated = true;
         }
 
         // Each side is read with its own stride and word count (the two may differ).
         var ctx = new GpuBigIntCmpKernels.AotContexts.VectorCompare
         {
-            Left = VectorCompareLaunch.Operand(leftResult),
-            Right = VectorCompareLaunch.Operand(rightResult),
+            Left = VectorCompareLaunch.Operand(leftResult.Storage),
+            Right = VectorCompareLaunch.Operand(rightResult.Storage),
             Result = _finalValues.DevicePointer,
             OpType = (int)opType
         };
 
-        VectorCompareLaunch.Launch(workspace, ctx, Length, leftResult.WordsPerElement, rightResult.WordsPerElement);
+        VectorCompareLaunch.Launch(workspace, ctx, capacity, leftResult.Storage.WordsPerElement,
+            rightResult.Storage.WordsPerElement);
 
-        return _finalValues;
+        return new BoolVectorEvaluation(_finalValues, count);
     }
 
     public void Dispose()

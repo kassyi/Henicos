@@ -8,7 +8,29 @@ public interface IGpuBigIntVectorExpression : IDisposable
     /// <summary>
     /// Gets the number of elements in the vector.
     /// </summary>
+    /// <exception cref="InvalidOperationException">
+    /// The number is known only on the device (the expression contains a <c>Where</c>); use <see cref="Capacity"/>,
+    /// <see cref="TryGetLength"/> or <c>Count()</c>.
+    /// </exception>
     int Length { get; }
+
+    /// <summary>
+    /// Gets the upper bound of the number of elements, known before evaluation: the <see cref="Length"/> when it is
+    /// known on the host, otherwise the length of the input of the <c>Where</c>.
+    /// </summary>
+    int Capacity => Length;
+
+    /// <summary>
+    /// Gets the number of elements when it is known on the host without evaluating, as
+    /// <c>Enumerable.TryGetNonEnumeratedCount</c> does.
+    /// </summary>
+    /// <param name="length">The number of elements, or 0 when it is known only on the device.</param>
+    /// <returns><see langword="true"/> when the number is known on the host.</returns>
+    bool TryGetLength(out int length)
+    {
+        length = Length;
+        return true;
+    }
 
     /// <summary>
     /// Gets the number of 32-bit words per element.

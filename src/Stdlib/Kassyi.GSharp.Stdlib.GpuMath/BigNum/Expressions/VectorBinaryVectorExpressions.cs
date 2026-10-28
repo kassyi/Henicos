@@ -20,7 +20,7 @@ internal abstract class VectorBinaryVectorExpressionBase(
     [TakesOwnership] IGpuBigIntVectorExpression left,
     [TakesOwnership] IGpuBigIntVectorExpression right,
     int wordsPerElement,
-    bool checkConstructorLength = false) : IGpuBigIntVectorExpression
+    bool checkConstructorLength = false) : IGpuBigIntVectorExpression, IDeviceCountedVector
 {
     public int Length => left.Length;
     public int WordsPerElement { get; } = wordsPerElement;
@@ -30,39 +30,53 @@ internal abstract class VectorBinaryVectorExpressionBase(
 
     protected uint BlockDimX => (uint)Math.Min(1024, WordsPerElement);
 
+    public int Capacity => left.Capacity;
+
+    public bool TryGetLength(out int length) => left.TryGetLength(out length);
+
     public GpuBigIntArrayView Evaluate(
         GpuWorkspace workspace,
         int elementOffset = 0,
         int? elementCount = null,
-        GpuBigUIntArrayView targetResult = default)
+        GpuBigUIntArrayView targetResult = default) =>
+        DeviceCounted.Materialize(workspace, EvaluateCore(workspace, elementOffset, elementCount, targetResult));
+
+    // Evaluates the window of the capacity; the elements are the first Count of them (design D3 4.3)
+    public VectorEvaluation EvaluateCore(
+        GpuWorkspace workspace,
+        int elementOffset,
+        int? elementCount,
+        GpuBigUIntArrayView targetResult)
     {
-        if (checkConstructorLength && left.Length != right.Length)
+        if (checkConstructorLength && left.Capacity != right.Capacity)
         {
             throw new ArgumentException("Vector lengths must match for Zip operations.");
         }
 
-        var evalCount = elementCount ?? (Length - elementOffset);
+        var evalCount = elementCount ?? (Capacity - elementOffset);
         // The target is checked before the children run, so that a rejected target evaluates nothing
         var targetValues = VectorResultCache.HasTarget(targetResult)
             ? VectorResultCache.TargetValues(targetResult, evalCount, WordsPerElement)
             : default;
 
-        var leftResult = left.Evaluate(workspace, elementOffset, evalCount);
-        var rightResult = right.Evaluate(workspace, elementOffset, evalCount);
+        var leftResult = DeviceCounted.Evaluate(left, workspace, elementOffset, evalCount);
+        var rightResult = DeviceCounted.Evaluate(right, workspace, elementOffset, evalCount);
 
-        if (leftResult.Length != rightResult.Length)
+        if (leftResult.Storage.Length != rightResult.Storage.Length)
         {
             throw new ArgumentException("Vector lengths must match for Zip operations.");
         }
 
+        var count = DeviceCounted.Combine(leftResult.Count, rightResult.Count);
         var destination = _cache.Signed(workspace, evalCount, WordsPerElement, targetValues);
-        var operands = new VectorZipOperands(leftResult, rightResult, destination);
+        var operands = new VectorZipOperands(leftResult.Storage, rightResult.Storage, destination);
         // An empty vector launches nothing: a grid of 0 blocks is an invalid launch.
         if (evalCount > 0)
         {
             DispatchKernel(workspace, operands, (uint)evalCount);
         }
-        return destination;
+
+        return new VectorEvaluation(destination, count);
     }
 
     protected GpuBigIntVectorKernels.AotContexts.VectorBinaryOperation CreateZipOp(VectorZipOperands operands) =>

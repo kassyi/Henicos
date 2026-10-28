@@ -13,8 +13,9 @@ internal abstract class VectorReductionExpressionBase : IGpuBigIntExpression, ID
 
     private readonly IGpuBigIntVectorExpression _vector;
 
-    // One entry per pass: the pass reduces BatchSize elements into GridDimX partial results. Built from the length,
-    // with one pass even for a single element, so that every non-empty input goes through the finalize kernel.
+    // One entry per pass: the pass reduces up to BatchSize elements into GridDimX partial results. Built from the
+    // capacity, with one pass even for a single element, so that every non-empty input goes through the finalize
+    // kernel. With a device count each pass derives its own batch on the device, and the blocks past it write nothing.
     private readonly List<(int GridDimX, int BatchSize)> _passes = [];
 
     // [0]: the converted elements; [1 + i]: the output of pass i. All (N + 1) words per element.
@@ -42,7 +43,7 @@ internal abstract class VectorReductionExpressionBase : IGpuBigIntExpression, ID
     {
         _vector = vector;
 
-        var batchSize = vector.Length;
+        var batchSize = vector.Capacity;
         if (batchSize > 0)
         {
             do
@@ -79,17 +80,19 @@ internal abstract class VectorReductionExpressionBase : IGpuBigIntExpression, ID
 
         // A static empty vector is not evaluated: no element is read, and its nodes would launch empty grids.
         GpuBigIntArrayView vecResult = default;
+        var count = DeviceElementCount.Static(0);
         if (_passes.Count > 0)
         {
-            var evaluated = _vector.Evaluate(workspace);
-            if (evaluated.WordsPerElement != NumWords)
+            var evaluated = DeviceCounted.Evaluate(_vector, workspace);
+            if (evaluated.Storage.WordsPerElement != NumWords)
             {
                 // The kernels read the elements, and size the accumulator and the result, with NumWords.
                 throw new InvalidOperationException(
-                    $"The vector evaluated to {evaluated.WordsPerElement} words per element, not {NumWords}.");
+                    $"The vector evaluated to {evaluated.Storage.WordsPerElement} words per element, not {NumWords}.");
             }
 
-            vecResult = evaluated;
+            vecResult = evaluated.Storage;
+            count = evaluated.Count;
         }
 
         var destination = targetResult ?? new GpuBigUInt(workspace, NumWords);
@@ -98,12 +101,13 @@ internal abstract class VectorReductionExpressionBase : IGpuBigIntExpression, ID
             // An empty Sum also goes through the finalize kernel, which writes +0 and a count of 0.
             EnsureBuffers(workspace);
             var header = _header ?? throw new InvalidOperationException("The reduction header was not allocated.");
-            Reduce(workspace, vecResult, destination, header);
+            Reduce(workspace, vecResult, count, destination, header);
 
             workspace.Provider.CopyDeviceToHost(_headerHost, header.DevicePointer, 2, workspace.Stream);
             if (_headerHost[1] == 0u && EmptyIsError)
             {
-                // Reached when the count is known only on the device; a static empty vector stopped above.
+                // Reached when the count is known only on the device (after Where); a static empty vector stopped
+                // above.
                 throw new InvalidOperationException("Sequence contains no elements");
             }
 
@@ -133,7 +137,7 @@ internal abstract class VectorReductionExpressionBase : IGpuBigIntExpression, ID
         var buffers = new List<GpuBigUIntArray>(_passes.Count + 1);
         try
         {
-            buffers.Add(new GpuBigUIntArray(workspace, _vector.Length, AccumulatorWords));
+            buffers.Add(new GpuBigUIntArray(workspace, _vector.Capacity, AccumulatorWords));
             foreach (var pass in _passes)
             {
                 buffers.Add(new GpuBigUIntArray(workspace, pass.GridDimX, AccumulatorWords));
@@ -154,7 +158,8 @@ internal abstract class VectorReductionExpressionBase : IGpuBigIntExpression, ID
         }
     }
 
-    private void Reduce(GpuWorkspace workspace, GpuBigIntArrayView vecResult, GpuBigUInt destination, GpuBigUInt header)
+    private void Reduce(GpuWorkspace workspace, GpuBigIntArrayView vecResult, DeviceElementCount count,
+        GpuBigUInt destination, GpuBigUInt header)
     {
         // Whole warps: the block-wide max reductions of the chunk kernels combine lanes of full warps only.
         var blockDimX = (uint)Math.Min(1024, (AccumulatorWords + 31) & ~31);
@@ -174,21 +179,23 @@ internal abstract class VectorReductionExpressionBase : IGpuBigIntExpression, ID
                 },
                 Dest = _buffers[0].DevicePointer,
                 DestWords = AccumulatorWords,
-                BatchSize = _vector.Length
+                BatchSize = source.Length
             };
 
+            // The whole capacity is converted; the passes read only the elements
             if (UseOffsetBinary)
             {
                 GpuBigIntVectorKernels.LaunchVectorSignMagnitudeToOffsetBinaryKernelPtr(
-                    convertCtx, (uint)_vector.Length, 1, 1, blockDimX, 1, 1, 0, workspace.Stream);
+                    convertCtx, (uint)source.Length, 1, 1, blockDimX, 1, 1, 0, workspace.Stream);
             }
             else
             {
                 GpuBigIntVectorKernels.LaunchVectorSignMagnitudeToTwosComplementKernelPtr(
-                    convertCtx, (uint)_vector.Length, 1, 1, blockDimX, 1, 1, 0, workspace.Stream);
+                    convertCtx, (uint)source.Length, 1, 1, blockDimX, 1, 1, 0, workspace.Stream);
             }
         }
 
+        var countContext = count.ToContext();
         var currentInputPtr = _buffers[0].DevicePointer;
         for (var i = 0; i < _passes.Count; i++)
         {
@@ -199,7 +206,8 @@ internal abstract class VectorReductionExpressionBase : IGpuBigIntExpression, ID
                 A = currentInputPtr,
                 Result = currentOutputPtr,
                 NumWords = AccumulatorWords,
-                BatchSize = pass.BatchSize,
+                Count = countContext,
+                PassIndex = i,
                 ChunkSize = ChunkSize
             };
 
@@ -214,7 +222,7 @@ internal abstract class VectorReductionExpressionBase : IGpuBigIntExpression, ID
             Header = header.DevicePointer,
             SourceWords = AccumulatorWords,
             ResultWords = NumWords,
-            Count = _vector.Length,
+            Count = countContext,
             OffsetBinary = UseOffsetBinary
         };
 
@@ -305,23 +313,30 @@ internal class VectorCountExpression([TakesOwnership] IGpuBigIntVectorExpression
 {
     public int NumWords => 1;
 
+    // A length known on the host needs no evaluation; a device count (after Where) evaluates the vector and lets a
+    // kernel write the count, so that no host synchronization is needed and a CUDA graph counts again on every launch
     public GpuBigInt Evaluate(GpuWorkspace workspace, GpuBigUInt? targetResult = null)
     {
-        var count = vector.Length;
-        vector.Dispose(); // Skip GPU evaluation (O(1) optimization), but free resources
+        var count = vector.TryGetLength(out var length)
+            ? DeviceElementCount.Static(length)
+            : DeviceCounted.Evaluate(vector, workspace).Count;
 
-        if (targetResult.HasValue)
+        var destination = targetResult ?? new GpuBigUInt(workspace, NumWords);
+        try
         {
-            var countVal = new uint[targetResult.Value.NumWords];
-            countVal[0] = (uint)count;
-            workspace.Provider.CopyHostToDevice(targetResult.Value.DevicePointer, countVal, countVal.Length,
-                workspace.Stream);
-            return new GpuBigInt(targetResult.Value, false);
+            var ctx = new GpuBigIntVectorKernels.AotContexts.ElementCountWrite
+            {
+                Destination = destination.DevicePointer,
+                DestinationWords = destination.NumWords,
+                Count = count.ToContext()
+            };
+            GpuBigIntVectorKernels.LaunchWriteElementCountKernelPtr(ctx, 1, 1, 1, 32, 1, 1, 0, workspace.Stream);
+            return new GpuBigInt(destination, false);
         }
-        else
+        catch when (!targetResult.HasValue)
         {
-            var countVal = new[] { (uint)count };
-            return new GpuBigInt(new GpuBigUInt(workspace, countVal), false);
+            destination.Dispose();
+            throw;
         }
     }
 

@@ -19,7 +19,7 @@ internal readonly ref struct VectorScalarOperands
 internal abstract class VectorBinaryScalarExpressionBase(
     [TakesOwnership] IGpuBigIntVectorExpression vector,
     [TakesOwnership] IGpuBigIntExpression scalar,
-    int wordsPerElement) : IGpuBigIntVectorExpression
+    int wordsPerElement) : IGpuBigIntVectorExpression, IDeviceCountedVector
 {
     public int Length => vector.Length;
     public int WordsPerElement { get; } = wordsPerElement;
@@ -29,31 +29,43 @@ internal abstract class VectorBinaryScalarExpressionBase(
 
     protected uint BlockDimX => (uint)Math.Min(1024, WordsPerElement);
 
+    public int Capacity => vector.Capacity;
+
+    public bool TryGetLength(out int length) => vector.TryGetLength(out length);
+
     public GpuBigIntArrayView Evaluate(
         GpuWorkspace workspace,
         int elementOffset = 0,
         int? elementCount = null,
-        GpuBigUIntArrayView targetResult = default)
+        GpuBigUIntArrayView targetResult = default) =>
+        DeviceCounted.Materialize(workspace, EvaluateCore(workspace, elementOffset, elementCount, targetResult));
+
+    // Evaluates the window of the capacity; the elements are the first Count of them (design D3 4.3)
+    public VectorEvaluation EvaluateCore(
+        GpuWorkspace workspace,
+        int elementOffset,
+        int? elementCount,
+        GpuBigUIntArrayView targetResult)
     {
-        var evalCount = elementCount ?? (Length - elementOffset);
+        var evalCount = elementCount ?? (Capacity - elementOffset);
         // The target is checked before the children run, so that a rejected target evaluates nothing
         var targetValues = VectorResultCache.HasTarget(targetResult)
             ? VectorResultCache.TargetValues(targetResult, evalCount, WordsPerElement)
             : default;
 
-        var vecResult = vector.Evaluate(workspace, elementOffset, evalCount);
+        var vecResult = DeviceCounted.Evaluate(vector, workspace, elementOffset, evalCount);
         var scalarResult = scalar.Evaluate(workspace);
         try
         {
             var destination = _cache.Signed(workspace, evalCount, WordsPerElement, targetValues);
-            var operands = new VectorScalarOperands(vecResult, scalarResult, destination);
+            var operands = new VectorScalarOperands(vecResult.Storage, scalarResult, destination);
             // An empty vector launches nothing: a grid of 0 blocks is an invalid launch.
             if (evalCount > 0)
             {
                 DispatchKernel(workspace, operands, (uint)evalCount);
             }
 
-            return destination;
+            return new VectorEvaluation(destination, vecResult.Count);
         }
         finally
         {

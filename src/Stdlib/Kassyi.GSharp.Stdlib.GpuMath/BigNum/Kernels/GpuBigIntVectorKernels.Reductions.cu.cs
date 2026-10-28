@@ -109,6 +109,37 @@ public static partial class GpuBigIntVectorKernels
         }
     }
 
+    /// <summary>
+    /// The number of elements described by <paramref name="count"/> (design D3 4.1).
+    /// </summary>
+    [GpuDeviceFunction, GpuInline]
+    public static int ResolveElementCount(ElementCountContext count)
+    {
+        if (count.Base == null)
+        {
+            return count.Limit;
+        }
+
+        int n = (int)count.Base[0] - count.Skip;
+        return n < 0 ? 0 : (n > count.Limit ? count.Limit : n);
+    }
+
+    /// <summary>
+    /// The number of inputs of reduction pass <paramref name="passIndex"/>: the element count for pass 0, then
+    /// <c>ceil(previous / chunkSize)</c>.
+    /// </summary>
+    [GpuDeviceFunction, GpuInline]
+    public static int PassBatchSize(ElementCountContext count, int passIndex, int chunkSize)
+    {
+        int batch = ResolveElementCount(count);
+        for (int p = 0; p < passIndex; p++)
+        {
+            batch = (batch + chunkSize - 1) / chunkSize;
+        }
+
+        return batch;
+    }
+
     [GpuKernel]
     public static void VectorSumReductionChunkKernel(VectorReductionChunkContext ctx)
     {
@@ -124,11 +155,19 @@ public static partial class GpuBigIntVectorKernels
         int bIdx = BlockIndex.X;
         int resultOffset = bIdx * ctx.NumWords;
 
+        // The grid is sized by the capacity; a block past the elements writes nothing, because the next pass reads only
+        // ceil(batch / ChunkSize) partial results
+        int batch = PassBatchSize(ctx.Count, ctx.PassIndex, ctx.ChunkSize);
         int startIndex = bIdx * ctx.ChunkSize;
-        int endIndex = startIndex + ctx.ChunkSize;
-        if (endIndex > ctx.BatchSize)
+        if (startIndex >= batch)
         {
-            endIndex = ctx.BatchSize;
+            return;
+        }
+
+        int endIndex = startIndex + ctx.ChunkSize;
+        if (endIndex > batch)
+        {
+            endIndex = batch;
         }
 
         for (int offset = 0; offset < ctx.NumWords; offset += bDim)
@@ -209,7 +248,8 @@ public static partial class GpuBigIntVectorKernels
         SharedMemory<uint> sharedCarry = new SharedMemory<uint>(32);
         SharedMemory<uint> overflow = new SharedMemory<uint>(1);
 
-        if (ctx.Count == 0)
+        int count = ResolveElementCount(ctx.Count);
+        if (count == 0)
         {
             for (int offset = 0; offset < ctx.ResultWords; offset += bDim)
             {
@@ -277,7 +317,7 @@ public static partial class GpuBigIntVectorKernels
         {
             // A negative accumulator never has a zero magnitude, so "negative" needs no separate zero test.
             ctx.Header[0] = (negative ? 1u : 0u) | (overflow[0] != 0u ? 2u : 0u);
-            ctx.Header[1] = (uint)ctx.Count;
+            ctx.Header[1] = (uint)count;
         }
     }
 
@@ -315,21 +355,28 @@ public static partial class GpuBigIntVectorKernels
         int bDim = BlockDimension.X;
         int bIdx = BlockIndex.X;
         int resultOffset = bIdx * ctx.NumWords;
+
+        // As in the Sum chunk: a block past the elements writes nothing
+        int batch = PassBatchSize(ctx.Count, ctx.PassIndex, ctx.ChunkSize);
         int startIndex = bIdx * ctx.ChunkSize;
-        int endIndex = startIndex + ctx.ChunkSize;
-        if (endIndex > ctx.BatchSize)
+        if (startIndex >= batch)
         {
-            endIndex = ctx.BatchSize;
+            return;
         }
 
-        bool hasElements = startIndex < ctx.BatchSize;
+        int endIndex = startIndex + ctx.ChunkSize;
+        if (endIndex > batch)
+        {
+            endIndex = batch;
+        }
+
         int firstElemOffset = startIndex * ctx.NumWords;
         for (int offset = 0; offset < ctx.NumWords; offset += bDim)
         {
             int idx = offset + tid;
             if (idx < ctx.NumWords)
             {
-                ctx.Result[resultOffset + idx] = hasElements ? ctx.A[firstElemOffset + idx] : 0u;
+                ctx.Result[resultOffset + idx] = ctx.A[firstElemOffset + idx];
             }
         }
 

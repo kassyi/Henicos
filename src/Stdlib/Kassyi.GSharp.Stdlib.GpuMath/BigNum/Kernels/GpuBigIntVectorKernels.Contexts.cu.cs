@@ -84,6 +84,20 @@ public static partial class GpuBigIntVectorKernels
     }
 
     /// <summary>
+    /// The number of elements of a vector, on the device: without <see cref="Base"/> it is <see cref="Limit"/>; with it,
+    /// <c>clamp(Base[0] - Skip, 0, Limit)</c> (design D3 4.1; <c>Base</c> is the count word a <c>Where</c> writes, and
+    /// <c>Skip</c> / <c>Limit</c> fold the <c>Skip</c> and <c>Take</c> after it).
+    /// </summary>
+    public struct ElementCountContext
+    {
+        [GpuReadOnly]
+        public uint[] Base;
+
+        public int Skip;
+        public int Limit;
+    }
+
+    /// <summary>
     /// Turns the accumulator of an integer reduction into a sign and a magnitude.
     /// </summary>
     public struct VectorReductionFinalizeContext
@@ -105,7 +119,7 @@ public static partial class GpuBigIntVectorKernels
         public int ResultWords;
 
         /// <summary>The number of reduced elements; 0 writes a zero result.</summary>
-        public int Count;
+        public ElementCountContext Count;
 
         /// <summary>The accumulator is offset binary (Max / Min): its top bit is flipped.</summary>
         public bool OffsetBinary;
@@ -118,8 +132,30 @@ public static partial class GpuBigIntVectorKernels
 
         public uint[] Result;
         public int NumWords;
-        public int BatchSize;
+
+        /// <summary>The number of elements of the reduced vector (pass 0 reduces that many).</summary>
+        public ElementCountContext Count;
+
+        /// <summary>Pass i reduces <c>ceil(n / ChunkSize^i)</c> partial results of the pass before.</summary>
+        public int PassIndex;
+
         public int ChunkSize;
+    }
+
+    public struct VectorBoolReductionContext
+    {
+        [GpuReadOnly]
+        public uint[] Flags;
+
+        public uint[] Result;
+        public ElementCountContext Count;
+    }
+
+    public struct ElementCountWriteContext
+    {
+        public uint[] Destination;
+        public int DestinationWords;
+        public ElementCountContext Count;
     }
 
     public struct VectorAddSubContext
