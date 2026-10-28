@@ -15,8 +15,8 @@ internal abstract class FloatVectorBinaryScalarExpressionBase(
     public int Length => vector.Length;
     public int WordsPerElement { get; } = wordsPerElement;
 
-    private GpuBigFloatArray _result;
-    private bool _allocated;
+    // The result buffers, lent until the next evaluation or Dispose; a caller's target is never kept (design 4.6)
+    private readonly VectorResultCache _cache = new();
 
     protected uint BlockDimX => (uint)Math.Min(1024, WordsPerElement);
 
@@ -27,23 +27,11 @@ internal abstract class FloatVectorBinaryScalarExpressionBase(
         GpuBigFloatArray? targetResult = null)
     {
         var evalCount = elementCount ?? (Length - elementOffset);
+        // The target is checked before the child runs, so that a rejected target evaluates nothing
+        var destination = targetResult is { } target
+            ? VectorResultCache.TargetFloat(target, evalCount, WordsPerElement)
+            : _cache.Float(workspace, evalCount, WordsPerElement);
         var vecResult = vector.Evaluate(workspace, elementOffset, evalCount);
-
-        GpuBigFloatArray destination;
-        if (targetResult != null)
-        {
-            destination = targetResult.Value;
-        }
-        else
-        {
-            if (!_allocated)
-            {
-                _result = new GpuBigFloatArray(workspace, evalCount, WordsPerElement);
-                _allocated = true;
-            }
-
-            destination = _result;
-        }
 
         var operands = new FloatVectorScalarOperands(vecResult, scalar, destination);
         // An empty vector launches nothing: a grid of 0 blocks is an invalid launch.
@@ -99,11 +87,7 @@ internal abstract class FloatVectorBinaryScalarExpressionBase(
 
     public void Dispose()
     {
-        if (_allocated)
-        {
-            _result.Dispose();
-            _allocated = false;
-        }
+        _cache.Dispose();
 
         vector.Dispose();
     }

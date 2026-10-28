@@ -14,9 +14,8 @@ internal abstract class VectorBinaryVectorExpressionBase(
     public int Length => left.Length;
     public int WordsPerElement { get; } = wordsPerElement;
 
-    private GpuBigUIntArray _finalValues;
-    private GpuBigUIntArray _finalSigns;
-    private bool _allocated;
+    // The result buffers, lent until the next evaluation or Dispose; a caller's target is never kept (design 4.6)
+    private readonly VectorResultCache _cache = new();
 
     protected uint BlockDimX => (uint)Math.Min(1024, WordsPerElement);
 
@@ -32,6 +31,11 @@ internal abstract class VectorBinaryVectorExpressionBase(
         }
 
         var evalCount = elementCount ?? (Length - elementOffset);
+        // The target is checked before the children run, so that a rejected target evaluates nothing
+        GpuBigUIntArray? targetValues = targetResult is { } target
+            ? VectorResultCache.TargetValues(target, evalCount, WordsPerElement)
+            : null;
+
         var leftResult = left.Evaluate(workspace, elementOffset, evalCount);
         var rightResult = right.Evaluate(workspace, elementOffset, evalCount);
 
@@ -40,18 +44,7 @@ internal abstract class VectorBinaryVectorExpressionBase(
             throw new ArgumentException("Vector lengths must match for Zip operations.");
         }
 
-        if (targetResult != null)
-        {
-            _finalValues = targetResult.Value;
-        }
-        else if (!_allocated)
-        {
-            _finalValues = new GpuBigUIntArray(workspace, evalCount, WordsPerElement);
-            _finalSigns = new GpuBigUIntArray(workspace, evalCount, 1);
-            _allocated = true;
-        }
-
-        var destination = new GpuBigIntArray(_finalValues, _finalSigns);
+        var destination = _cache.Signed(workspace, evalCount, WordsPerElement, targetValues);
         var operands = new VectorZipOperands(leftResult, rightResult, destination);
         // An empty vector launches nothing: a grid of 0 blocks is an invalid launch.
         if (evalCount > 0)
@@ -93,13 +86,7 @@ internal abstract class VectorBinaryVectorExpressionBase(
 
     public void Dispose()
     {
-        if (_allocated)
-        {
-            _finalValues.Dispose();
-            _finalSigns.Dispose();
-            _allocated = false;
-        }
-
+        _cache.Dispose();
         left.Dispose();
         right.Dispose();
     }

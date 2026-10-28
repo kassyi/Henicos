@@ -21,8 +21,19 @@ public interface IGpuBigFloatVectorExpression : IDisposable
     /// <param name="workspace">The GPU workspace used for memory allocation and CUDA stream execution.</param>
     /// <param name="elementOffset">The starting element index to evaluate.</param>
     /// <param name="elementCount">The number of elements to evaluate. If null, evaluates to the end of the vector length.</param>
-    /// <param name="targetResult">An optional destination array for the evaluated values. If provided, it must have a length of elementCount.</param>
-    /// <returns>A <see cref="GpuBigFloatArray"/> containing the evaluated vector slice results.</returns>
+    /// <param name="targetResult">
+    /// An optional destination array with the expression's <see cref="WordsPerElement"/> and at least
+    /// <paramref name="elementCount"/> elements; only the first <paramref name="elementCount"/> are written. The expression
+    /// borrows it and never frees it.
+    /// </param>
+    /// <returns>
+    /// A borrowed array of exactly the evaluated length, valid until the next evaluation or until the expression is
+    /// disposed; do not dispose it, and pass a target to keep the values. The next evaluation overwrites the values of a
+    /// result still held, without an error.
+    /// </returns>
+    /// <exception cref="ArgumentException">
+    /// <paramref name="targetResult"/> has another number of words per element, or fewer elements than evaluated.
+    /// </exception>
     GpuBigFloatArray Evaluate(
         GpuWorkspace workspace,
         int elementOffset = 0,

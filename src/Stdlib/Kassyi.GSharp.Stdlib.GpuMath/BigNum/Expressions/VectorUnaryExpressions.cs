@@ -6,9 +6,8 @@ internal abstract class VectorUnaryExpressionBase(
     public int Length => vector.Length;
     public int WordsPerElement => vector.WordsPerElement;
 
-    private GpuBigUIntArray _finalValues;
-    private GpuBigUIntArray _finalSigns;
-    private bool _allocated;
+    // The result buffers, lent until the next evaluation or Dispose; a caller's target is never kept (design 4.6)
+    private readonly VectorResultCache _cache = new();
 
     public GpuBigIntArray Evaluate(
         GpuWorkspace workspace,
@@ -19,25 +18,13 @@ internal abstract class VectorUnaryExpressionBase(
         ValidateBeforeEvaluate();
 
         var evalCount = elementCount ?? (Length - elementOffset);
+        // The target is checked before the children run, so that a rejected target evaluates nothing
+        GpuBigUIntArray? targetValues = targetResult is { } target
+            ? VectorResultCache.TargetValues(target, evalCount, WordsPerElement)
+            : null;
+
         var vecResult = vector.Evaluate(workspace, elementOffset, evalCount);
-
-        if (targetResult != null)
-        {
-            _finalValues = targetResult.Value;
-            if (!_allocated)
-            {
-                _finalSigns = new GpuBigUIntArray(workspace, evalCount, 1);
-                _allocated = true;
-            }
-        }
-        else if (!_allocated)
-        {
-            _finalValues = new GpuBigUIntArray(workspace, evalCount, WordsPerElement);
-            _finalSigns = new GpuBigUIntArray(workspace, evalCount, 1);
-            _allocated = true;
-        }
-
-        var destination = new GpuBigIntArray(_finalValues, _finalSigns);
+        var destination = _cache.Signed(workspace, evalCount, WordsPerElement, targetValues);
         if (evalCount > 0)
         {
             EvaluateElements(workspace, vecResult, destination, evalCount);
@@ -58,17 +45,7 @@ internal abstract class VectorUnaryExpressionBase(
 
     public void Dispose()
     {
-        if (_allocated)
-        {
-            if (_finalValues.Handle.Buffer != null)
-            {
-                _finalValues.Dispose();
-            }
-
-            _finalSigns.Dispose();
-            _allocated = false;
-        }
-
+        _cache.Dispose();
         vector.Dispose();
     }
 }

@@ -144,8 +144,8 @@ internal abstract class FloatVectorUnaryExpressionBase(
     public int Length => vector.Length;
     public int WordsPerElement => vector.WordsPerElement;
 
-    private GpuBigFloatArray _result;
-    private bool _allocated;
+    // The result buffers, lent until the next evaluation or Dispose; a caller's target is never kept (design 4.6)
+    private readonly VectorResultCache _cache = new();
 
     public GpuBigFloatArray Evaluate(
         GpuWorkspace workspace,
@@ -156,23 +156,11 @@ internal abstract class FloatVectorUnaryExpressionBase(
         ValidateBeforeEvaluate();
 
         var evalCount = elementCount ?? (Length - elementOffset);
+        // The target is checked before the child runs, so that a rejected target evaluates nothing
+        var destination = targetResult is { } target
+            ? VectorResultCache.TargetFloat(target, evalCount, WordsPerElement)
+            : _cache.Float(workspace, evalCount, WordsPerElement);
         var vecResult = vector.Evaluate(workspace, elementOffset, evalCount);
-
-        GpuBigFloatArray destination;
-        if (targetResult != null)
-        {
-            destination = targetResult.Value;
-        }
-        else
-        {
-            if (!_allocated)
-            {
-                _result = new GpuBigFloatArray(workspace, evalCount, WordsPerElement);
-                _allocated = true;
-            }
-
-            destination = _result;
-        }
 
         FloatVectorElementwiseHelper.ExecuteUnary(workspace, vecResult, destination, evalCount, EvaluateElement);
         return destination;
@@ -190,11 +178,7 @@ internal abstract class FloatVectorUnaryExpressionBase(
 
     public void Dispose()
     {
-        if (_allocated)
-        {
-            _result.Dispose();
-            _allocated = false;
-        }
+        _cache.Dispose();
 
         vector.Dispose();
     }

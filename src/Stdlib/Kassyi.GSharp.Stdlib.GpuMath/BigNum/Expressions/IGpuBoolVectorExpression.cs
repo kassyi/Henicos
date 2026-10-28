@@ -14,6 +14,9 @@ public interface IGpuBoolVectorExpression : IDisposable
     /// Evaluates the deferred boolean vector expression on the GPU.
     /// </summary>
     /// <param name="workspace">The GPU workspace memory context.</param>
-    /// <returns>A <see cref="GpuBigUIntArray"/> containing 1 for true and 0 for false.</returns>
+    /// <returns>
+    /// A borrowed array containing 1 for true and 0 for false, valid until the next evaluation or until the expression is
+    /// disposed; do not dispose it. The next evaluation overwrites the values of a result still held, without an error.
+    /// </returns>
     GpuBigUIntArray Evaluate(GpuWorkspace workspace);
 }

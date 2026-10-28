@@ -72,12 +72,17 @@ The starting element index to evaluate. Defaults to `0`.
 The number of elements to evaluate. If `null`, evaluates to the end of the vector length.
 
 `targetResult` _[GpuBigUIntArray](../GpuBigUIntArray.md)?_<br>
-An optional destination array for the evaluated values. If provided, it must have a length of `elementCount`.
+An optional destination array for the evaluated values, with the expression's `WordsPerElement` and at least `elementCount` elements; only the first `elementCount` are written. The expression borrows it and never frees it.
 
 #### Returns
 
 _[GpuBigIntArray](../GpuBigIntArray.md)_<br>
-A `GpuBigIntArray` containing the evaluated vector slice results.
+A borrowed array of exactly the evaluated length: the node's own result buffers (with the target's values if one was given) or the input. It is valid until the next evaluation or until the expression is disposed; do not dispose it, and pass a target to keep the values. The next evaluation overwrites the values of a result still held, without an error. A node grows its result buffers when an evaluation needs more elements than an earlier one.
+
+#### Exceptions
+
+`ArgumentException`<br>
+`targetResult` has another number of words per element, or fewer elements than evaluated.
 
 ## Examples
 
@@ -102,7 +107,7 @@ using var scalar = new GpuBigUInt(workspace, new uint[] { 5, 0 });
 using IGpuBigIntVectorExpression expr = array.AsVectorizedEnumerable()
     .SelectAdd(new GpuBigInt(scalar, isNegative: false));
 
-using GpuBigIntArray sliceResult = expr.Evaluate(workspace, elementOffset: 1, elementCount: 2);
+GpuBigIntArray sliceResult = expr.Evaluate(workspace, elementOffset: 1, elementCount: 2);
 Console.WriteLine($"Evaluated slice length: {sliceResult.Length}, WordsPerElement: {sliceResult.WordsPerElement}");
 ```
 
