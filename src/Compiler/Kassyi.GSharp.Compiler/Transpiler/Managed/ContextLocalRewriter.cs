@@ -4,26 +4,41 @@ namespace Kassyi.GSharp.Compiler.Transpiler;
 /// Turns context accesses to ref struct locals back into locals, and renames the accesses to locals that share their
 /// name with another hoisted local (see <see cref="ManagedContextFields"/>). Accesses are matched to declarations by
 /// <see cref="DeclarationKey"/> (symbol and region). Labels that share their name with another label of the body are
-/// renamed with their gotos (<c>__gsharp_label_&lt;ordinal&gt;_&lt;name&gt;</c>).
+/// renamed with their gotos (<c>__gsharp_label_&lt;ordinal&gt;_&lt;name&gt;</c>). The only entry is <see cref="Rewrite"/>,
+/// which builds the label table from the whole body before it visits any part of it.
 /// </summary>
-internal sealed class ContextLocalRewriter(
-    HashSet<DeclarationKey> unhoistedKeys,
-    Dictionary<DeclarationKey, string> renamedLocals,
-    SemanticModel semanticModel,
-    string kernelName) : CSharpSyntaxRewriter
+internal sealed class ContextLocalRewriter : CSharpSyntaxRewriter
 {
-    private Dictionary<DeclarationKey, string>? _labelRenames;
+    private readonly HashSet<DeclarationKey> _unhoistedKeys;
+    private readonly Dictionary<DeclarationKey, string> _renamedLocals;
+    private readonly Dictionary<DeclarationKey, string> _labelRenames;
+    private readonly SemanticModel _semanticModel;
+    private readonly string _kernelName;
 
-    public override SyntaxNode? Visit(SyntaxNode? node)
+    private ContextLocalRewriter(
+        HashSet<DeclarationKey> unhoistedKeys,
+        Dictionary<DeclarationKey, string> renamedLocals,
+        Dictionary<DeclarationKey, string> labelRenames,
+        SemanticModel semanticModel,
+        string kernelName)
     {
-        // The first call visits the whole body
-        if (_labelRenames == null && node != null)
-        {
-            _labelRenames = CreateLabelRenames(node, semanticModel);
-        }
-
-        return base.Visit(node);
+        _unhoistedKeys = unhoistedKeys;
+        _renamedLocals = renamedLocals;
+        _labelRenames = labelRenames;
+        _semanticModel = semanticModel;
+        _kernelName = kernelName;
     }
+
+    /// <summary>Rewrites the lowered <paramref name="body"/> of a kernel or device function for the managed output.</summary>
+    /// <param name="body">The whole lowered body; the label renames are decided over all of it.</param>
+    /// <param name="unhoistedKeys">The ref struct locals that go back from the context to locals (<see cref="ManagedContextFields"/>).</param>
+    /// <param name="renamedLocals">The new names of locals that share their name with another hoisted local.</param>
+    /// <param name="semanticModel">The semantic model that keys declarations, references and labels.</param>
+    /// <param name="kernelName">The name of the kernel or device function, for internal-error reports.</param>
+    public static SyntaxNode? Rewrite(SyntaxNode body, HashSet<DeclarationKey> unhoistedKeys,
+        Dictionary<DeclarationKey, string> renamedLocals, SemanticModel semanticModel, string kernelName) =>
+        new ContextLocalRewriter(unhoistedKeys, renamedLocals, CreateLabelRenames(body, semanticModel), semanticModel,
+            kernelName).Visit(body);
 
     // [WHY] StateMachineLowerer keeps a label that no goto in another state reaches in its state, and lowering flattens
     // sibling scopes, so two labels of one name can end up in one block (CS0140) or one inside the other's block
@@ -57,8 +72,7 @@ internal sealed class ContextLocalRewriter(
     public override SyntaxNode? VisitLabeledStatement(LabeledStatementSyntax node)
     {
         var visited = (LabeledStatementSyntax?)base.VisitLabeledStatement(node) ?? node;
-        return _labelRenames != null &&
-               _labelRenames.TryGetValue(LoweringIdentity.ForDeclaration(node, semanticModel), out var renamed)
+        return _labelRenames.TryGetValue(LoweringIdentity.ForDeclaration(node, _semanticModel), out var renamed)
             ? visited.WithIdentifier(SyntaxFactory.Identifier(renamed).WithTriviaFrom(visited.Identifier))
             : visited;
     }
@@ -67,8 +81,7 @@ internal sealed class ContextLocalRewriter(
     {
         var visited = (GotoStatementSyntax?)base.VisitGotoStatement(node) ?? node;
         return node is { RawKind: (int)SyntaxKind.GotoStatement, Expression: IdentifierNameSyntax target } &&
-               _labelRenames != null &&
-               _labelRenames.TryGetValue(LoweringIdentity.ForReference(target, semanticModel), out var renamed)
+               _labelRenames.TryGetValue(LoweringIdentity.ForReference(target, _semanticModel), out var renamed)
             ? visited.WithExpression(SyntaxFactory.IdentifierName(renamed).WithTriviaFrom(target))
             : visited;
     }
@@ -91,16 +104,16 @@ internal sealed class ContextLocalRewriter(
             return visited;
         }
 
-        var key = LoweringIdentity.ForReference(memberAccess.Name, semanticModel);
+        var key = LoweringIdentity.ForReference(memberAccess.Name, _semanticModel);
         if (key.Symbol == null)
         {
             return memberAccess;
         }
 
-        SimpleNameSyntax name = renamedLocals.TryGetValue(key, out var renamed)
+        SimpleNameSyntax name = _renamedLocals.TryGetValue(key, out var renamed)
             ? SyntaxFactory.IdentifierName(renamed)
             : memberAccess.Name;
-        return unhoistedKeys.Contains(key)
+        return _unhoistedKeys.Contains(key)
             ? name.WithTriviaFrom(memberAccess)
             : memberAccess.WithName(name);
     }
@@ -116,8 +129,8 @@ internal sealed class ContextLocalRewriter(
         {
             // Only the declarator-derived initialization resolves through GetDeclaredSymbol; later assignments stay.
             // The member name carries the declarator's span and region, so it keys like the declarator itself.
-            var declaredKey = LoweringIdentity.ForDeclaration(memberAccess.Name, semanticModel);
-            if (declaredKey.Symbol is { } declaredSymbol && unhoistedKeys.Contains(declaredKey))
+            var declaredKey = LoweringIdentity.ForDeclaration(memberAccess.Name, _semanticModel);
+            if (declaredKey.Symbol is { } declaredSymbol && _unhoistedKeys.Contains(declaredKey))
             {
                 if (node.Parent is BlockSyntax or SwitchSectionSyntax)
                 {
@@ -126,7 +139,7 @@ internal sealed class ContextLocalRewriter(
 
 #pragma warning disable RS0030 // Statement text for a human-readable internal-error report only
                 throw new InvalidOperationException(
-                    $"Cannot remove ref-struct initialization statement in kernel '{kernelName}' for local '{declaredSymbol.Name}': statement '{node.ToFullString().Trim()}' is not inside a block or switch section.");
+                    $"Cannot remove ref-struct initialization statement in kernel '{_kernelName}' for local '{declaredSymbol.Name}': statement '{node.ToFullString().Trim()}' is not inside a block or switch section.");
 #pragma warning restore RS0030
             }
         }
