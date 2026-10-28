@@ -71,46 +71,27 @@ internal static class ParallelAggregatePlanner
             return PerThread(ParallelAggregateFallback.OutsideKernelBody);
         }
 
-        if (IsInsideLambda(original, method, originalModel))
-        {
-            return PerThread(ParallelAggregateFallback.InsideLambda);
-        }
-
+        // The first reason that applies, in the order of the arms; the variance analysis runs only when an arm asks
         var block = new ThreadVarianceAnalysis(originalModel, method);
-        if (IsDivergent(original, method, block))
+        var fallback = true switch
         {
-            return PerThread(ParallelAggregateFallback.DivergentCall);
-        }
-
-        if (HasEarlyExit(original, method, block))
+            _ when IsInsideLambda(original, method, originalModel) => ParallelAggregateFallback.InsideLambda,
+            _ when IsDivergent(original, method, block) => ParallelAggregateFallback.DivergentCall,
+            _ when HasEarlyExit(original, method, block) => ParallelAggregateFallback.EarlyExit,
+            _ when !IsSharedSource(chain.SourceArrayExpression, originalModel, kernel)
+                => ParallelAggregateFallback.ThreadPrivateSource,
+            _ when HasOrderDependentStage(in chain, originalModel) => ParallelAggregateFallback.OrderDependentStage,
+            _ when HasSideEffect(in chain, originalModel) => ParallelAggregateFallback.SideEffect,
+            _ when ReadsVariantInput(in chain, originalModel, kernel, block)
+                => ParallelAggregateFallback.ThreadVariantInput,
+            _ when symbol.ReturnType.SpecialType is not (SpecialType.System_Int32 or SpecialType.System_UInt32 or
+                SpecialType.System_Int64 or SpecialType.System_UInt64)
+                => ParallelAggregateFallback.UnsupportedElementType,
+            _ => ParallelAggregateFallback.None
+        };
+        if (fallback != ParallelAggregateFallback.None)
         {
-            return PerThread(ParallelAggregateFallback.EarlyExit);
-        }
-
-        if (!IsSharedSource(chain.SourceArrayExpression, originalModel, kernel))
-        {
-            return PerThread(ParallelAggregateFallback.ThreadPrivateSource);
-        }
-
-        if (HasOrderDependentStage(in chain, originalModel))
-        {
-            return PerThread(ParallelAggregateFallback.OrderDependentStage);
-        }
-
-        if (HasSideEffect(in chain, originalModel))
-        {
-            return PerThread(ParallelAggregateFallback.SideEffect);
-        }
-
-        if (ReadsVariantInput(in chain, originalModel, kernel, block))
-        {
-            return PerThread(ParallelAggregateFallback.ThreadVariantInput);
-        }
-
-        if (symbol.ReturnType.SpecialType is not (SpecialType.System_Int32 or SpecialType.System_UInt32 or
-            SpecialType.System_Int64 or SpecialType.System_UInt64))
-        {
-            return PerThread(ParallelAggregateFallback.UnsupportedElementType);
+            return PerThread(fallback);
         }
 
         var grid = new ThreadVarianceAnalysis(originalModel, method, gridScope: true);
