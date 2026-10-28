@@ -35,7 +35,7 @@ The G# compiler and Roslyn analyzers enforce GPU safety and memory management ru
 | [GSH0019](GSH0019.md) | Error | Manual GetEnumerator calls are not supported |
 | [GSH0020](GSH0020.md) | Error | Missing IDisposable implementation |
 | [GSH0021](GSH0021.md) | Error | Undisposed GPU resource |
-| [GSH0022](GSH0022.md) | Error | Unsafe field overwrite |
+| [GSH0022](GSH0022.md) | Error | Undisposed GPU scope |
 | [GSH0023](GSH0023.md) | Error | Property getter side-effect |
 | [GSH0024](GSH0024.md) | Error | Cast operator side-effect |
 | [GSH0025](GSH0025.md) | Error | Unguarded multi-allocation |
@@ -88,7 +88,6 @@ The G# compiler and Roslyn analyzers enforce GPU safety and memory management ru
 | [GSH0079](GSH0079.md) | Error | Struct field type has no device representation |
 | [GSH0080](GSH0080.md) | Warning | Struct array is converted element by element |
 | [GSH0081](GSH0081.md) | Warning | Struct array allocates the array field of each element |
-| [GSH0082](GSH0082.md) | Error | Struct cannot be passed to a CPU kernel yet |
 | [GSH0088](GSH0088.md) | Error | Device code of another assembly is not exported |
 | [GSH0089](GSH0089.md) | Error | Device code of another assembly cannot be used |
 | [GSH0090](GSH0090.md) | Error | Device code of two assemblies has the same C++ name |

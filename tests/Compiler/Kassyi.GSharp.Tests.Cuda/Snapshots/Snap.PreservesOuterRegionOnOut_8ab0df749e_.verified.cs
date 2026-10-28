@@ -16,6 +16,7 @@
             __gsharp_ctx->tid = ThreadIndex.X;
             __gsharp_ctx->outerLocal = __gsharp_ctx->tid + 1;
             __gsharp_ctx->innerLocal = __gsharp_ctx->outerLocal * 2;
+            __gsharp_yielded_for_block_barrier = true;
             __gsharp_state = 1;
             return;
         }
@@ -24,6 +25,7 @@
         {
             output[__gsharp_ctx->tid] = __gsharp_ctx->outerLocal + __gsharp_ctx->innerLocal;
             __gsharp_ctx->innerLocal = __gsharp_ctx->outerLocal * 2;
+            __gsharp_yielded_for_block_barrier = true;
             __gsharp_state = 2;
             return;
         }
@@ -33,6 +35,7 @@
             output[__gsharp_ctx->tid] = __gsharp_ctx->outerLocal + __gsharp_ctx->innerLocal;
             __gsharp_ctx->outerLocal = __gsharp_ctx->tid + 1;
             __gsharp_ctx->innerLocal = __gsharp_ctx->outerLocal * 2;
+            __gsharp_yielded_for_block_barrier = true;
             __gsharp_state = 3;
             return;
         }
@@ -41,6 +44,7 @@
         {
             output[__gsharp_ctx->tid] = __gsharp_ctx->outerLocal + __gsharp_ctx->innerLocal;
             __gsharp_ctx->innerLocal = __gsharp_ctx->outerLocal * 2;
+            __gsharp_yielded_for_block_barrier = true;
             __gsharp_state = 4;
             return;
         }

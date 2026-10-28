@@ -8,6 +8,7 @@
         {
             __gsharp_ctx->a = 1;
             __gsharp_ctx->b = 2;
+            __gsharp_yielded_for_block_barrier = true;
             __gsharp_state = 1;
             return;
         }

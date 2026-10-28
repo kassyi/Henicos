@@ -13,9 +13,8 @@ namespace Kassyi.GSharp.Tests.Shared.Transpiler;
 /// The expected values are computed from the inputs, not from the kernel.
 /// </summary>
 /// <remarks>
-/// A kernel that reads what another block wrote before a gap does not run on the native CPU path: the native launcher runs
-/// each block to its end on its own, so <c>Gpu.SyncGrid</c> does not wait for the other blocks there (found with these
-/// tests; #664). The managed path synchronizes the whole grid.
+/// Both CPU paths run a cooperative kernel in grid phases, so a kernel that reads what another block wrote before a gap
+/// runs on the native path as well (#664, found with these tests).
 /// </remarks>
 [Category(TestCategory.Compiler)]
 [TestTarget(ExecutionTarget.GpuExecution)]
@@ -48,7 +47,7 @@ public class SyncGridBodyTests : TranspilerTestBase
         var a = new int[Threads];
         var b = new int[Threads];
 
-        RunReadingOtherBlocks(forceManaged, () => SyncGridBodyKernels.LaunchNeighborKernel(a, b, gridDimX: Blocks, blockDimX: ThreadsPerBlock));
+        Run(forceManaged, () => SyncGridBodyKernels.LaunchNeighborKernel(a, b, gridDimX: Blocks, blockDimX: ThreadsPerBlock));
 
         Assert.Equal(Enumerable.Range(0, Threads).Select(static t => (t + 1) % Threads + 1), b);
     }
@@ -61,7 +60,7 @@ public class SyncGridBodyTests : TranspilerTestBase
     {
         var a = Filled(1);
 
-        RunReadingOtherBlocks(forceManaged, () => SyncGridBodyKernels.LaunchNestedKernel(a, Threads, gridDimX: Blocks, blockDimX: ThreadsPerBlock));
+        Run(forceManaged, () => SyncGridBodyKernels.LaunchNestedKernel(a, Threads, gridDimX: Blocks, blockDimX: ThreadsPerBlock));
 
         // The loop makes every element (1 + 1) * 2; thread 0 of block b then adds 1 to elements 2b and 2b + 1
         var expected = Enumerable.Repeat(4, Threads).ToArray();
@@ -83,7 +82,7 @@ public class SyncGridBodyTests : TranspilerTestBase
         var a = new int[Threads];
         var b = new int[Threads];
 
-        RunReadingOtherBlocks(forceManaged, () => SyncGridBodyKernels.LaunchMixedKernel(a, b, gridDimX: Blocks, blockDimX: ThreadsPerBlock));
+        Run(forceManaged, () => SyncGridBodyKernels.LaunchMixedKernel(a, b, gridDimX: Blocks, blockDimX: ThreadsPerBlock));
 
         Assert.Equal(Enumerable.Range(0, Threads).Select(static t => (t + 1) % Threads + 101), b);
     }
@@ -97,7 +96,7 @@ public class SyncGridBodyTests : TranspilerTestBase
         var a = new int[Threads];
         var b = new int[Threads];
 
-        RunReadingOtherBlocks(forceManaged, () => SyncGridBodyKernels.LaunchHoistedLocalKernel(a, b, gridDimX: Blocks, blockDimX: ThreadsPerBlock));
+        Run(forceManaged, () => SyncGridBodyKernels.LaunchHoistedLocalKernel(a, b, gridDimX: Blocks, blockDimX: ThreadsPerBlock));
 
         Assert.Equal(Enumerable.Range(0, Threads).Select(static t => (t + 1) % Threads + 1 + t + 1), b);
     }
@@ -111,7 +110,7 @@ public class SyncGridBodyTests : TranspilerTestBase
         var a = new int[Threads];
         var b = new int[Threads];
 
-        RunReadingOtherBlocks(forceManaged, () => SyncGridBodyKernels.LaunchLoopNestedKernel(a, b, gridDimX: Blocks, blockDimX: ThreadsPerBlock));
+        Run(forceManaged, () => SyncGridBodyKernels.LaunchLoopNestedKernel(a, b, gridDimX: Blocks, blockDimX: ThreadsPerBlock));
 
         // k = 0 and k = 1: the neighbour's value is (t + 1) % n + 1 + k
         Assert.Equal(Enumerable.Range(0, Threads).Select(static t => 2 * ((t + 1) % Threads + 1) + 1), b);
@@ -143,7 +142,7 @@ public class SyncGridBodyTests : TranspilerTestBase
         var a = new int[Threads];
         var b = new int[Threads];
 
-        RunReadingOtherBlocks(forceManaged, () => SyncGridBodyKernels.LaunchUniformReturnKernel(a, b, n, gridDimX: Blocks, blockDimX: ThreadsPerBlock));
+        Run(forceManaged, () => SyncGridBodyKernels.LaunchUniformReturnKernel(a, b, n, gridDimX: Blocks, blockDimX: ThreadsPerBlock));
 
         // The statement after the body runs on every thread, whether the body returned or not
         Assert.Equal(Enumerable.Range(0, Threads).Select(static t => t + 1001), a);
@@ -161,7 +160,7 @@ public class SyncGridBodyTests : TranspilerTestBase
         var a = new int[Threads];
         var b = new int[Threads];
 
-        RunReadingOtherBlocks(forceManaged, () => SyncGridBodyKernels.LaunchDivergentReturnKernel(a, b, gridDimX: Blocks, blockDimX: ThreadsPerBlock));
+        Run(forceManaged, () => SyncGridBodyKernels.LaunchDivergentReturnKernel(a, b, gridDimX: Blocks, blockDimX: ThreadsPerBlock));
 
         Assert.Equal(Enumerable.Range(0, Threads).Select(static t => t % 2 == 0 ? 0 : (t + 1) % Threads + 1), b);
     }
@@ -175,7 +174,7 @@ public class SyncGridBodyTests : TranspilerTestBase
         var a = new int[Threads];
         var b = new int[Threads];
 
-        RunReadingOtherBlocks(forceManaged, () => SyncGridBodyKernels.LaunchNestedReturnKernel(a, b, gridDimX: Blocks, blockDimX: ThreadsPerBlock));
+        Run(forceManaged, () => SyncGridBodyKernels.LaunchNestedReturnKernel(a, b, gridDimX: Blocks, blockDimX: ThreadsPerBlock));
 
         var expectedA = Enumerable.Range(0, Threads).Select(static t => t < 32 ? 1 : 2).ToArray();
         Assert.Equal(expectedA, a);
@@ -228,7 +227,7 @@ public class SyncGridBodyTests : TranspilerTestBase
         var b = new int[Threads];
         var c = new int[Threads];
 
-        RunReadingOtherBlocks(forceManaged, () => SyncGridBodyKernels.LaunchDeviceFunctionKernel(a, b, c, gridDimX: Blocks, blockDimX: ThreadsPerBlock));
+        Run(forceManaged, () => SyncGridBodyKernels.LaunchDeviceFunctionKernel(a, b, c, gridDimX: Blocks, blockDimX: ThreadsPerBlock));
 
         Assert.Equal(Enumerable.Range(0, Threads).Select(static t => (t + 1) % Threads + 1), b);
         Assert.Equal(
@@ -245,7 +244,7 @@ public class SyncGridBodyTests : TranspilerTestBase
         var a = new int[Threads];
         var b = new int[Threads];
 
-        RunReadingOtherBlocks(forceManaged, () => SyncGridBodyKernels.LaunchBodyInLoopOfBodyKernel(a, b, gridDimX: Blocks, blockDimX: ThreadsPerBlock));
+        Run(forceManaged, () => SyncGridBodyKernels.LaunchBodyInLoopOfBodyKernel(a, b, gridDimX: Blocks, blockDimX: ThreadsPerBlock));
 
         Assert.Equal(Enumerable.Range(0, Threads).Select(static t => 2 * ((t + 1) % Threads + 1) + 1 + 1000), b);
     }
@@ -259,7 +258,7 @@ public class SyncGridBodyTests : TranspilerTestBase
         var a = new int[Threads];
         var b = new int[Threads];
 
-        RunReadingOtherBlocks(forceManaged, () => SyncGridBodyKernels.LaunchExpressionBodyIsBodyKernel(a, b, gridDimX: Blocks, blockDimX: ThreadsPerBlock));
+        Run(forceManaged, () => SyncGridBodyKernels.LaunchExpressionBodyIsBodyKernel(a, b, gridDimX: Blocks, blockDimX: ThreadsPerBlock));
 
         Assert.Equal(Enumerable.Range(0, Threads).Select(static t => (t + 1) % Threads + 1), b);
     }
@@ -291,7 +290,7 @@ public class SyncGridBodyTests : TranspilerTestBase
         var b = new int[Threads];
         var mode = Enumerable.Range(0, Threads).Select(static t => t % 3).ToArray();
 
-        RunReadingOtherBlocks(forceManaged, () => SyncGridBodyKernels.LaunchReturnInSwitchKernel(a, b, mode, gridDimX: Blocks, blockDimX: ThreadsPerBlock));
+        Run(forceManaged, () => SyncGridBodyKernels.LaunchReturnInSwitchKernel(a, b, mode, gridDimX: Blocks, blockDimX: ThreadsPerBlock));
 
         var expectedA = Enumerable.Range(0, Threads).Select(static t => t % 3 == 2 ? 101 : 1).ToArray();
         Assert.Equal(expectedA, a);
@@ -308,7 +307,7 @@ public class SyncGridBodyTests : TranspilerTestBase
         var b = new int[Threads];
         var mode = Enumerable.Range(0, Threads).Select(static t => t % 3).ToArray();
 
-        RunReadingOtherBlocks(forceManaged, () => SyncGridBodyKernels.LaunchReturnInSwitchWithoutCaseKernel(a, b, mode, gridDimX: Blocks, blockDimX: ThreadsPerBlock));
+        Run(forceManaged, () => SyncGridBodyKernels.LaunchReturnInSwitchWithoutCaseKernel(a, b, mode, gridDimX: Blocks, blockDimX: ThreadsPerBlock));
 
         Assert.Equal(Enumerable.Range(0, Threads).Select(static t => t % 3 == 0 ? 0 : 1), b);
     }
@@ -323,7 +322,7 @@ public class SyncGridBodyTests : TranspilerTestBase
         var b = new int[Threads];
         int[] values = [5, 10, 70];
 
-        RunReadingOtherBlocks(forceManaged, () => SyncGridBodyKernels.LaunchReturnInForEachKernel(a, b, values, gridDimX: Blocks, blockDimX: ThreadsPerBlock));
+        Run(forceManaged, () => SyncGridBodyKernels.LaunchReturnInForEachKernel(a, b, values, gridDimX: Blocks, blockDimX: ThreadsPerBlock));
 
         // Thread 5 returns before the first increment, thread 10 after one; the others count the three values
         var expectedA = Enumerable.Range(0, Threads).Select(static t => t == 5 ? 0 : t == 10 ? 1 : 3).ToArray();
@@ -340,7 +339,7 @@ public class SyncGridBodyTests : TranspilerTestBase
         var a = new int[Threads];
         var b = new int[Threads];
 
-        RunReadingOtherBlocks(forceManaged, () => SyncGridBodyKernels.LaunchReturnInLabeledStatementKernel(a, b, gridDimX: Blocks, blockDimX: ThreadsPerBlock));
+        Run(forceManaged, () => SyncGridBodyKernels.LaunchReturnInLabeledStatementKernel(a, b, gridDimX: Blocks, blockDimX: ThreadsPerBlock));
 
         Assert.Equal(Enumerable.Range(0, Threads).Select(static t => t % 2 == 0 ? 0 : 1), b);
     }
@@ -356,7 +355,7 @@ public class SyncGridBodyTests : TranspilerTestBase
         var b = new int[Threads];
         var c = new int[Threads];
 
-        RunReadingOtherBlocks(forceManaged, () => SyncGridBodyKernels.LaunchNestedReturnAfterReturnKernel(a, b, c, gridDimX: Blocks, blockDimX: ThreadsPerBlock));
+        Run(forceManaged, () => SyncGridBodyKernels.LaunchNestedReturnAfterReturnKernel(a, b, c, gridDimX: Blocks, blockDimX: ThreadsPerBlock));
 
         Assert.Equal(Enumerable.Range(0, Threads).Select(static t => t % 2 == 1 && t % 3 != 0 ? 1 : 0), b);
         Assert.Equal(Enumerable.Range(0, Threads).Select(static t => t % 2 == 1 ? 5 : 0), c);
@@ -400,7 +399,7 @@ public class SyncGridBodyTests : TranspilerTestBase
         var a = new int[Threads];
         var b = new int[Threads];
 
-        RunReadingOtherBlocks(forceManaged, () => SyncGridBodyKernels.LaunchDeviceFunctionSyncKernel(a, b, gridDimX: Blocks, blockDimX: ThreadsPerBlock));
+        Run(forceManaged, () => SyncGridBodyKernels.LaunchDeviceFunctionSyncKernel(a, b, gridDimX: Blocks, blockDimX: ThreadsPerBlock));
 
         Assert.Equal(Enumerable.Range(0, Threads).Select(static t => (t + 1) % Threads + 1), b);
     }
@@ -414,18 +413,12 @@ public class SyncGridBodyTests : TranspilerTestBase
         var a = new int[Threads];
         var b = new int[Threads];
 
-        RunReadingOtherBlocks(forceManaged, () => SyncGridBodyKernels.LaunchNestedDeviceFunctionSyncKernel(a, b, gridDimX: Blocks, blockDimX: ThreadsPerBlock));
+        Run(forceManaged, () => SyncGridBodyKernels.LaunchNestedDeviceFunctionSyncKernel(a, b, gridDimX: Blocks, blockDimX: ThreadsPerBlock));
 
         Assert.Equal(Enumerable.Range(0, Threads).Select(static t => (t + 1) % Threads + 1), b);
     }
 
     private static int[] Filled(int value) => Enumerable.Repeat(value, Threads).ToArray();
-
-    private void RunReadingOtherBlocks(bool forceManaged, Action launch)
-    {
-        Skip.If(!forceManaged && IsCpuDialect, "native CPU launcher does not wait at grid barriers (#664); the managed run covers the CPU dialect");
-        Run(forceManaged, launch);
-    }
 
     // The managed path exists only on the CPU dialects
     private void Run(bool forceManaged, Action launch)

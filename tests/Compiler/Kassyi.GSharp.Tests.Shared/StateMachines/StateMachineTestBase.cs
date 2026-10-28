@@ -90,8 +90,7 @@ public abstract class StateMachineTestBase
 
         var (localInits, regularFields, unhoistedKeys, renamedLocals) =
             ManagedContextFields.ProcessContextFields(lowered.ContextFields, model, methodName);
-        var rewritten = new ContextLocalRewriter(unhoistedKeys, renamedLocals, model, methodName)
-                            .Visit(lowered.LoweredBody)
+        var rewritten = ContextLocalRewriter.Rewrite(lowered.LoweredBody, unhoistedKeys, renamedLocals, model, methodName)
                         ?? throw new InvalidOperationException("Context local rewriting removed the lowered body.");
 
         inspect?.Invoke(

@@ -53,7 +53,7 @@ The dividend operand.
 The divisor operand.
 
 `resultBuffer` _[GpuBigUInt](GpuBigUInt.md)_<br>
-The destination buffer receiving the quotient.
+The destination buffer receiving the quotient. It may be either operand, or overlap them; the result is the one of separate buffers (see `DivRem`).
 
 #### Exceptions
 
@@ -89,7 +89,14 @@ The destination buffer receiving the quotient ($\lfloor A / B \rfloor$).
 `remainderBuffer` _[GpuBigUInt](GpuBigUInt.md)_<br>
 The destination buffer receiving the remainder ($A \bmod B$).
 
+#### Remarks
+
+Either output may be the dividend or the divisor, or overlap them: as GMP's `mpz_tdiv_qr`, an operand that shares memory with an output is copied first, and the result is the one of separate buffers. The quotient and the remainder must not overlap each other.
+
 #### Exceptions
+
+`ArgumentException`<br>
+Thrown when `quotientBuffer` and `remainderBuffer` overlap (`ParamName` is `remainderBuffer`), or when either is too short.
 
 `DivideByZeroException`<br>
 Thrown when the divisor (`rightOperand`) is zero.
@@ -129,7 +136,7 @@ The dividend operand.
 The divisor operand.
 
 `resultBuffer` _[GpuBigUInt](GpuBigUInt.md)_<br>
-The destination buffer receiving the remainder.
+The destination buffer receiving the remainder. It may be either operand, or overlap them; the result is the one of separate buffers (see `DivRem`).
 
 #### Exceptions
 
@@ -207,6 +214,11 @@ The buffer to store the computed quotient.
 `remainderBuffer` _[GpuBigUInt](GpuBigUInt.md)_<br>
 The buffer to store the computed remainder.
 
+#### Exceptions
+
+`ArgumentException`<br>
+Thrown when the quotient and remainder buffers overlap each other or an input. Unlike `DivRem`, this building block does not copy its inputs.
+
 ## ReduceZeroSync(GpuBigUIntView, GpuBigUIntView, GpuBigUIntView, Int32, Int32, GpuBigUIntView, GpuBigUIntView)
 
 Performs a zero-sync Barrett reduction using a precomputed reciprocal. This method does not synchronize with the CPU for remainder correction, enabling CUDA Graph capture.
@@ -245,6 +257,11 @@ The buffer to store the quotient result.
 `remainderBuffer` _[GpuBigUInt](GpuBigUInt.md)_<br>
 The buffer to store the remainder result.
 
+#### Exceptions
+
+`ArgumentException`<br>
+Thrown when the quotient and remainder buffers overlap each other or an input. Unlike `DivRem`, this building block does not copy its inputs.
+
 ## Sqrt(GpuBigUIntView, GpuBigUIntView)
 
 Computes the integer square root ($\lfloor\sqrt{\text{leftOperand}}\rfloor$) on the GPU using inverse square root approximation and Heron's refinement.
@@ -259,7 +276,7 @@ public static void Sqrt(scoped GpuBigUIntView leftOperand, scoped GpuBigUIntView
 The non-negative big integer operand.
 
 `resultBuffer` _[GpuBigUInt](GpuBigUInt.md)_<br>
-The destination buffer receiving the integer square root.
+The destination buffer receiving the integer square root. It may be the operand, or overlap it: every path reads the operand completely before it writes the result.
 
 #### Exceptions
 

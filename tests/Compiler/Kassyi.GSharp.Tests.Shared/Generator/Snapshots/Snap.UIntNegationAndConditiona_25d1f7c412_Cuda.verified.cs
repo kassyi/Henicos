@@ -138,6 +138,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerNegationKernel();
 IntPtr hfunc = s_hfunc_NegationKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "UIntNegationAndConditionalKernels.NegationKernel");
 IntPtr d_us = IntPtr.Zero;
 IntPtr d_values = IntPtr.Zero;
 try
@@ -220,6 +221,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerNegationKernel();
 IntPtr hfunc = s_hfunc_NegationKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "UIntNegationAndConditionalKernels.NegationKernel");
 try
 {
 void** kernelParams = stackalloc void*[2];
@@ -297,6 +299,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerConditionalKernel();
 IntPtr hfunc = s_hfunc_ConditionalKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "UIntNegationAndConditionalKernels.ConditionalKernel");
 IntPtr d_us = IntPtr.Zero;
 IntPtr d_ns = IntPtr.Zero;
 IntPtr d_longs = IntPtr.Zero;
@@ -433,6 +436,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerConditionalKernel();
 IntPtr hfunc = s_hfunc_ConditionalKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "UIntNegationAndConditionalKernels.ConditionalKernel");
 try
 {
 void** kernelParams = stackalloc void*[4];

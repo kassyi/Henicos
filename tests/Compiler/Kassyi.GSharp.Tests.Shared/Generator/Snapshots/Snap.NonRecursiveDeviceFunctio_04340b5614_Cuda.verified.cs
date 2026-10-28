@@ -110,6 +110,7 @@ case 0:
 {
 __gsharp_ctx.tid = global::Kassyi.GSharp.Core.ThreadIndex.X;
 shared[__gsharp_ctx.tid] = value;
+global::Kassyi.GSharp.Core.ManagedGpuContext.BlockBarrierRequested = true;
 __gsharp_ctx.__gsharp_state = 1;
 return false;
 }
@@ -272,6 +273,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerDeviceFunctionBarrierKernel();
 IntPtr hfunc = s_hfunc_DeviceFunctionBarrierKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "NonRecursiveDeviceFunctionBarrierKernels.DeviceFunctionBarrierKernel");
 IntPtr d_input = IntPtr.Zero;
 IntPtr d_output = IntPtr.Zero;
 try
@@ -358,6 +360,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerDeviceFunctionBarrierKernel();
 IntPtr hfunc = s_hfunc_DeviceFunctionBarrierKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "NonRecursiveDeviceFunctionBarrierKernels.DeviceFunctionBarrierKernel");
 try
 {
 void** kernelParams = stackalloc void*[4];

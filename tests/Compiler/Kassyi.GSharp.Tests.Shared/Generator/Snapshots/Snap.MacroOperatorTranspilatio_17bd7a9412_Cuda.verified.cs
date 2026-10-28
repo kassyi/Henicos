@@ -183,6 +183,7 @@ __gsharp_fn_TestNamespace__DummyKernels__DummyShiftOp(__gsharp_id_0_ctx,__gsharp
 ";
 public static readonly string MacroKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +MacroKernel_Source;
 private static IntPtr? s_hfunc_MacroKernel;
+private static bool s_layoutChecked_MacroKernel;
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel.</summary>
 public static void WarmupFunctionPointerMacroKernel()
 {
@@ -195,7 +196,15 @@ s_hfunc_MacroKernel = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.GetFunct
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 public static unsafe void LaunchMacroKernel(global::TestNamespace.DummyContext ctx, global::System.UInt32[] dA, global::System.UInt32[] dB, global::System.UInt32[] dResult, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, IntPtr hStream = default, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
+if (!s_layoutChecked_MacroKernel)
+{
 if (global::System.Runtime.CompilerServices.Unsafe.SizeOf<global::TestNamespace.DummyContext>() != 4) global::Kassyi.GSharp.Runtime.Interop.LayoutGuard.ThrowSizeMismatch("TestNamespace.DummyContext", 4, global::System.Runtime.CompilerServices.Unsafe.SizeOf<global::TestNamespace.DummyContext>());
+{
+global::TestNamespace.DummyContext __gsharp_layout_probe = default;
+if (global::System.Runtime.CompilerServices.Unsafe.ByteOffset(ref global::System.Runtime.CompilerServices.Unsafe.As<global::TestNamespace.DummyContext, byte>(ref __gsharp_layout_probe), ref global::System.Runtime.CompilerServices.Unsafe.As<global::System.Int32, byte>(ref global::System.Runtime.CompilerServices.Unsafe.AsRef(in __gsharp_layout_probe.State))) != 0) global::Kassyi.GSharp.Runtime.Interop.LayoutGuard.ThrowFieldOffsetMismatch("TestNamespace.DummyContext", "State", 0, (long)global::System.Runtime.CompilerServices.Unsafe.ByteOffset(ref global::System.Runtime.CompilerServices.Unsafe.As<global::TestNamespace.DummyContext, byte>(ref __gsharp_layout_probe), ref global::System.Runtime.CompilerServices.Unsafe.As<global::System.Int32, byte>(ref global::System.Runtime.CompilerServices.Unsafe.AsRef(in __gsharp_layout_probe.State))));
+}
+s_layoutChecked_MacroKernel = true;
+}
 if (dA is null){
 throw new global::System.ArgumentNullException(nameof(dA));
 }
@@ -218,6 +227,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerMacroKernel();
 IntPtr hfunc = s_hfunc_MacroKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "TestKernels.MacroKernel");
 IntPtr d_dA = IntPtr.Zero;
 IntPtr d_dB = IntPtr.Zero;
 IntPtr d_dResult = IntPtr.Zero;
@@ -329,6 +339,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerMacroKernel();
 IntPtr hfunc = s_hfunc_MacroKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "TestKernels.MacroKernel");
 try
 {
 void** kernelParams = stackalloc void*[4];

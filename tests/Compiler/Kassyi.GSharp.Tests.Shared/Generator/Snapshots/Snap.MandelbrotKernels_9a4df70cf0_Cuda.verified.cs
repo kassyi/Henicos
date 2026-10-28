@@ -127,6 +127,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerMandelbrotKernel();
 IntPtr hfunc = s_hfunc_MandelbrotKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "MandelbrotKernels.MandelbrotKernel");
 IntPtr d_output = IntPtr.Zero;
 try
 {
@@ -192,6 +193,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerMandelbrotKernel();
 IntPtr hfunc = s_hfunc_MandelbrotKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "MandelbrotKernels.MandelbrotKernel");
 try
 {
 void** kernelParams = stackalloc void*[8];

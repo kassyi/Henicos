@@ -732,15 +732,6 @@
     "isEnabledByDefault": true
   },
   {
-    "name": "StructTransferNotSupportedOnCpu",
-    "id": "GSH0082",
-    "title": "Struct cannot be passed to a CPU kernel yet",
-    "messageFormat": "The struct '{0}' cannot be passed to a kernel on the CPU dialect yet because its host and device layouts differ ({1}). The CPU launcher copies it in the host layout, so the kernel would read garbled values.",
-    "category": "GSharpTranspiler",
-    "defaultSeverity": "Error",
-    "isEnabledByDefault": true
-  },
-  {
     "name": "DeviceFunctionNotExported",
     "id": "GSH0088",
     "title": "Device code of another assembly is not exported",

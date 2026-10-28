@@ -224,6 +224,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerBlockExclusiveScan();
 IntPtr hfunc = s_hfunc_BlockExclusiveScan!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "GpuStreamCompactionKernels.BlockExclusiveScan");
 IntPtr d_output = IntPtr.Zero;
 IntPtr d_input = IntPtr.Zero;
 IntPtr d_blockSums = IntPtr.Zero;
@@ -395,6 +396,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerBlockExclusiveScan();
 IntPtr hfunc = s_hfunc_BlockExclusiveScan!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "GpuStreamCompactionKernels.BlockExclusiveScan");
 try
 {
 void** kernelParams = stackalloc void*[9];
@@ -495,6 +497,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerAddBlockSums();
 IntPtr hfunc = s_hfunc_AddBlockSums!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "GpuStreamCompactionKernels.AddBlockSums");
 IntPtr d_output = IntPtr.Zero;
 IntPtr d_blockSums = IntPtr.Zero;
 try
@@ -579,6 +582,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerAddBlockSums();
 IntPtr hfunc = s_hfunc_AddBlockSums!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "GpuStreamCompactionKernels.AddBlockSums");
 try
 {
 void** kernelParams = stackalloc void*[3];
@@ -671,6 +675,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerCompactBigUIntArray();
 IntPtr hfunc = s_hfunc_CompactBigUIntArray!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "GpuStreamCompactionKernels.CompactBigUIntArray");
 IntPtr d_output = IntPtr.Zero;
 IntPtr d_input = IntPtr.Zero;
 IntPtr d_predicates = IntPtr.Zero;
@@ -811,6 +816,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerCompactBigUIntArray();
 IntPtr hfunc = s_hfunc_CompactBigUIntArray!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "GpuStreamCompactionKernels.CompactBigUIntArray");
 try
 {
 void** kernelParams = stackalloc void*[6];
@@ -931,6 +937,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerCompactSignedVector();
 IntPtr hfunc = s_hfunc_CompactSignedVector!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "GpuStreamCompactionKernels.CompactSignedVector");
 IntPtr d_outputValues = IntPtr.Zero;
 IntPtr d_outputSigns = IntPtr.Zero;
 IntPtr d_inputValues = IntPtr.Zero;
@@ -1156,6 +1163,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerCompactSignedVector();
 IntPtr hfunc = s_hfunc_CompactSignedVector!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "GpuStreamCompactionKernels.CompactSignedVector");
 try
 {
 void** kernelParams = stackalloc void*[11];
@@ -1308,6 +1316,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerCompactFloatVector();
 IntPtr hfunc = s_hfunc_CompactFloatVector!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "GpuStreamCompactionKernels.CompactFloatVector");
 IntPtr d_outputSignificands = IntPtr.Zero;
 IntPtr d_outputExponents = IntPtr.Zero;
 IntPtr d_outputSigns = IntPtr.Zero;
@@ -1587,6 +1596,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerCompactFloatVector();
 IntPtr hfunc = s_hfunc_CompactFloatVector!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "GpuStreamCompactionKernels.CompactFloatVector");
 try
 {
 void** kernelParams = stackalloc void*[13];
@@ -1691,6 +1701,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerMemsetZero();
 IntPtr hfunc = s_hfunc_MemsetZero!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "GpuStreamCompactionKernels.MemsetZero");
 IntPtr d_output = IntPtr.Zero;
 try
 {
@@ -1748,6 +1759,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerMemsetZero();
 IntPtr hfunc = s_hfunc_MemsetZero!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "GpuStreamCompactionKernels.MemsetZero");
 try
 {
 void** kernelParams = stackalloc void*[2];

@@ -128,7 +128,7 @@ public int NumWords { get; }
 
 ## Value
 
-Gets a deferred expression representing this instance, or evaluates and assigns a deferred expression into this instance in-place.
+Gets a deferred expression representing this instance, or evaluates and assigns a deferred expression into this instance in-place. The expression may read this instance (`d.Value = d / b`); the result is the one of a separate buffer.
 
 ```csharp
 public GpuBigUIntExpr Value { get; set; }
