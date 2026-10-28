@@ -1,4 +1,3 @@
-using System.Diagnostics;
 using System.Reflection;
 using FluentAssertions;
 using Xunit.Abstractions;
@@ -142,28 +141,7 @@ public class MSBuildArtifactManifestTests : IDisposable
 
     private async Task BuildAsync()
     {
-        var startInfo = new ProcessStartInfo
-        {
-            FileName = "dotnet",
-            Arguments = "build Producer.csproj -c Debug -nr:false",
-            WorkingDirectory = _projectDir,
-            RedirectStandardOutput = true,
-            RedirectStandardError = true,
-            UseShellExecute = false,
-            CreateNoWindow = true
-        };
-
-        using var process = Process.Start(startInfo) ?? throw new InvalidOperationException("Failed to start build process.");
-        var stdoutTask = process.StandardOutput.ReadToEndAsync();
-        var stderrTask = process.StandardError.ReadToEndAsync();
-        if (!process.WaitForExit(60000))
-        {
-            process.Kill();
-            throw new TimeoutException("Build process timed out.");
-        }
-
-        var stdout = await stdoutTask;
-        var stderr = await stderrTask;
-        process.ExitCode.Should().Be(0, $"the build should succeed. STDOUT:\n{stdout}\nSTDERR:\n{stderr}");
+        var (exitCode, stdout, stderr) = await BuildProcessRunner.RunAsync(_projectDir, "build Producer.csproj -c Debug -nr:false");
+        exitCode.Should().Be(0, $"the build should succeed. STDOUT:\n{stdout}\nSTDERR:\n{stderr}");
     }
 }

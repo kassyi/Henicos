@@ -1,12 +1,12 @@
 ﻿## Generator/SadPathDiagnostics.cu.cs
 (5,25)-(5,40) GSH0036 analyzer: The class 'ErrorSpecKernel' containing [GpuKernel] methods must be declared as partial to support source generation of contexts and launch methods.
 (11,13)-(11,19) GSH0002 analyzer: The string type is not supported in GPU kernels
-(12,26)-(12,38) GSH0001 analyzer: Object creation ('new') is not supported in GPU kernels. Only struct instantiation and SharedMemory<T> are allowed.
+(12,26)-(12,38) GSH0001 analyzer: Object creation ('new') is not supported in GPU kernels. Only struct instantiation, SharedMemory<T> and an array of a constant size that initializes a local variable are allowed; use stackalloc for a temporary array.
 
 ## Analyzers/InvalidMappingSadPath.cs
 (12,21)-(12,52) GSH0036 analyzer: The class 'GEN_39_52_InvalidMappingSadPath' containing [GpuKernel] methods must be declared as partial to support source generation of contexts and launch methods.
 (12,21)-(12,52) GSH0036 analyzer: The class 'GEN_39_52_InvalidMappingSadPath' containing [GpuKernel] methods must be declared as partial to support source generation of contexts and launch methods.
-(28,19)-(28,31) GSH0001 analyzer: Object creation ('new') is not supported in GPU kernels. Only struct instantiation and SharedMemory<T> are allowed.
+(28,19)-(28,31) GSH0001 analyzer: Object creation ('new') is not supported in GPU kernels. Only struct instantiation, SharedMemory<T> and an array of a constant size that initializes a local variable are allowed; use stackalloc for a temporary array.
 
 ## Analyzers/GpuKernel/StringTernary_InGpuKernel.cu.cs
 (5,21)-(5,53) GSH0036 analyzer: The class 'GSH_01_StringTernary_InGpuKernel' containing [GpuKernel] methods must be declared as partial to support source generation of contexts and launch methods.
@@ -16,7 +16,7 @@
 (11,21)-(11,52) GSH0036 analyzer: The class 'SYN08_DelegateEscapeSadPathCase' containing [GpuKernel] methods must be declared as partial to support source generation of contexts and launch methods.
 (11,21)-(11,52) GSH0036 analyzer: The class 'SYN08_DelegateEscapeSadPathCase' containing [GpuKernel] methods must be declared as partial to support source generation of contexts and launch methods.
 (21,9)-(21,24) GSH0065 analyzer: The static member 'SYN08_DelegateEscapeSadPathCase.EscapedDelegate' cannot be accessed in GPU code because static fields and properties reside in host memory. Use a 'const' field or pass the value as a kernel parameter.
-(29,30)-(29,63) GSH0001 analyzer: Object creation ('new') is not supported in GPU kernels. Only struct instantiation and SharedMemory<T> are allowed.
+(29,30)-(29,63) GSH0001 analyzer: Object creation ('new') is not supported in GPU kernels. Only struct instantiation, SharedMemory<T> and an array of a constant size that initializes a local variable are allowed; use stackalloc for a temporary array.
 
 ## Diagnostics/UnsupportedSyntaxNodes.cu.cs
 (12,19)-(12,39) GSH0003 analyzer: The syntax 'CheckedExpression' is not supported in GSharp GPU kernels
@@ -65,7 +65,7 @@
 (34,9)-(34,26) GSH0003 analyzer: The syntax 'barrier in the scope of a using' is not supported in GSharp GPU kernels
 (41,13)-(41,30) GSH0003 analyzer: The syntax 'barrier in the scope of a using' is not supported in GSharp GPU kernels
 (64,16)-(64,19) GSH0003 analyzer: The syntax 'using of a resource that is not a user struct' is not supported in GSharp GPU kernels
-(64,31)-(64,55) GSH0001 analyzer: Object creation ('new') is not supported in GPU kernels. Only struct instantiation and SharedMemory<T> are allowed.
+(64,31)-(64,55) GSH0001 analyzer: Object creation ('new') is not supported in GPU kernels. Only struct instantiation, SharedMemory<T> and an array of a constant size that initializes a local variable are allowed; use stackalloc for a temporary array.
 
 ## Diagnostics/RuntimeOnlyTypes.cu.cs
 (14,13)-(14,20) GSH0003 analyzer: The syntax 'dynamic' is not supported in GSharp GPU kernels
@@ -226,5 +226,5 @@
 (106,18)-(106,28) GSH0077 analyzer: Only some threads of the block reach the call to 'Scratch', which reaches a dynamic SharedMemory<T> declaration. On CUDA each thread places the dynamic SharedMemory<T> regions of its block in the order it first reaches them, with the count it computes, so threads that reach them differently may disagree on where a region is.
 
 ## Analyzers/NewList_SadPath.cs
-(11,20)-(11,35) GSH0001 analyzer: Object creation ('new') is not supported in GPU kernels. Only struct instantiation and SharedMemory<T> are allowed.
+(11,20)-(11,35) GSH0001 analyzer: Object creation ('new') is not supported in GPU kernels. Only struct instantiation, SharedMemory<T> and an array of a constant size that initializes a local variable are allowed; use stackalloc for a temporary array.
 

@@ -19,33 +19,27 @@
         {
             if (__gsharp_ctx->s > 4)
             {
-                goto case 2;
+                goto done;
             }
 
             output[__gsharp_ctx->tid] = __gsharp_ctx->s;
-            goto case 2;
+            done:
+                ;
+            __gsharp_ctx->s = __gsharp_ctx->tid * 2;
+            __gsharp_state = 2;
+            return;
         }
 
         case 2:
         {
-            __gsharp_ctx->s = __gsharp_ctx->tid * 2;
-            __gsharp_state = 3;
-            return;
-        }
-
-        case 3:
-        {
             if (__gsharp_ctx->s > 4)
             {
-                goto case 4;
+                goto done;
             }
 
             output[__gsharp_ctx->tid] = __gsharp_ctx->s;
-            goto case 4;
-        }
-
-        case 4:
-        {
+            done:
+                ;
             __gsharp_state = -1;
             return;
         }

@@ -35,7 +35,7 @@ internal static class ManagedCSharpTranspiler
             ManagedContextFields.ProcessContextFields(contextFields, semanticModel, kernelName);
 
         var unhoistedBody =
-            new ContextLocalRewriter(unhoistedKeys, renamedLocals, semanticModel, kernelName).Visit(loweredBody) as
+            ContextLocalRewriter.Rewrite(loweredBody, unhoistedKeys, renamedLocals, semanticModel, kernelName) as
                 BlockSyntax
             ?? throw new InvalidOperationException(
                 $"Unhoisting ref-struct fields removed the body of kernel '{kernelName}'.");
@@ -80,8 +80,8 @@ internal static class ManagedCSharpTranspiler
         var copiedParameters = plan.GetCopiedParameters(lowered);
 
         var unhoistedBody =
-            new ContextLocalRewriter(unhoistedKeys, renamedLocals, semanticModel, functionName)
-                .Visit(lowered.LoweredBody) as BlockSyntax
+            ContextLocalRewriter.Rewrite(lowered.LoweredBody, unhoistedKeys, renamedLocals, semanticModel, functionName)
+                as BlockSyntax
             ?? throw new InvalidOperationException(
                 $"Unhoisting ref-struct fields removed the body of device function '{functionName}'.");
         var bodySource = RewriteAndNormalizeBody(unhoistedBody, semanticModel, isDeviceFunction: true);

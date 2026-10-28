@@ -12,7 +12,7 @@
     "name": "ObjectCreationNotSupported",
     "id": "GSH0001",
     "title": "Object creation not supported in GPU kernels",
-    "messageFormat": "Object creation ('new') is not supported in GPU kernels. Only struct instantiation and SharedMemory<T> are allowed.",
+    "messageFormat": "Object creation ('new') is not supported in GPU kernels. Only struct instantiation, SharedMemory<T> and an array of a constant size that initializes a local variable are allowed; use stackalloc for a temporary array.",
     "category": "GSharpTranspiler",
     "defaultSeverity": "Error",
     "isEnabledByDefault": true
@@ -732,15 +732,6 @@
     "isEnabledByDefault": true
   },
   {
-    "name": "StructTransferNotSupportedOnCpu",
-    "id": "GSH0082",
-    "title": "Struct cannot be passed to a CPU kernel yet",
-    "messageFormat": "The struct '{0}' cannot be passed to a kernel on the CPU dialect yet because its host and device layouts differ ({1}). The CPU launcher copies it in the host layout, so the kernel would read garbled values.",
-    "category": "GSharpTranspiler",
-    "defaultSeverity": "Error",
-    "isEnabledByDefault": true
-  },
-  {
     "name": "DeviceFunctionNotExported",
     "id": "GSH0088",
     "title": "Device code of another assembly is not exported",
@@ -763,6 +754,15 @@
     "id": "GSH0090",
     "title": "Device code of two assemblies has the same C++ name",
     "messageFormat": "'{0}' of '{1}' and the same path in '{2}' both become the C++ name '{3}'. Rename the namespace or the type in one of them.",
+    "category": "GSharpTranspiler",
+    "defaultSeverity": "Error",
+    "isEnabledByDefault": true
+  },
+  {
+    "name": "StackArrayEscapes",
+    "id": "GSH0091",
+    "title": "Stack array outlives its scope",
+    "messageFormat": "The stack array '{0}' cannot be {1}: G# keeps it in a C++ array that ends with the innermost block, switch section or statement body around it. Copy the elements instead, or keep the use inside that scope.",
     "category": "GSharpTranspiler",
     "defaultSeverity": "Error",
     "isEnabledByDefault": true
