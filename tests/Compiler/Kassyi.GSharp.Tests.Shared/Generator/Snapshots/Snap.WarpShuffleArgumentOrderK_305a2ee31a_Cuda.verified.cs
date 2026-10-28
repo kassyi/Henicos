@@ -120,6 +120,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerShuffleDownPostIncrementKernel();
 IntPtr hfunc = s_hfunc_ShuffleDownPostIncrementKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "WarpShuffleArgumentOrderKernels.ShuffleDownPostIncrementKernel");
 IntPtr d_result = IntPtr.Zero;
 IntPtr d_afterV = IntPtr.Zero;
 try
@@ -202,6 +203,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerShuffleDownPostIncrementKernel();
 IntPtr hfunc = s_hfunc_ShuffleDownPostIncrementKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "WarpShuffleArgumentOrderKernels.ShuffleDownPostIncrementKernel");
 try
 {
 void** kernelParams = stackalloc void*[2];
@@ -285,6 +287,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerShuffleNamedArgSideEffectOrderKernel();
 IntPtr hfunc = s_hfunc_ShuffleNamedArgSideEffectOrderKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "WarpShuffleArgumentOrderKernels.ShuffleNamedArgSideEffectOrderKernel");
 IntPtr d_result = IntPtr.Zero;
 IntPtr d_orderOut = IntPtr.Zero;
 try
@@ -367,6 +370,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerShuffleNamedArgSideEffectOrderKernel();
 IntPtr hfunc = s_hfunc_ShuffleNamedArgSideEffectOrderKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "WarpShuffleArgumentOrderKernels.ShuffleNamedArgSideEffectOrderKernel");
 try
 {
 void** kernelParams = stackalloc void*[2];
