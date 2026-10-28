@@ -118,7 +118,6 @@ public static readonly string SortIntKernel_FullSource=global::Kassyi.GSharp.Gen
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__SpanSortKernels__SortIntKernel {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
-public bool __gsharp_yielded_for_grid_sync;
 }
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__SpanSortKernels__SortIntKernel(global::System.Span<int> data, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__SpanSortKernels__SortIntKernel __gsharp_ctx) {
 {
@@ -201,9 +200,9 @@ if (__gsharp_contexts[__gsharp_linear_tid].__gsharp_state != -1)
 {
 anyGridActive = true;
 anyBlockActive = true;
-__gsharp_contexts[__gsharp_linear_tid].__gsharp_yielded_for_grid_sync = false;
+global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested = false;
 __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__SpanSortKernels__SortIntKernel(data, __gsharp_contexts[__gsharp_linear_tid]);
-if (__gsharp_contexts[__gsharp_linear_tid].__gsharp_yielded_for_grid_sync)
+if (global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested)
 {
 gridSyncRequested = true;
 }
@@ -308,7 +307,6 @@ public static readonly string SortLongKernel_FullSource=global::Kassyi.GSharp.Ge
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__SpanSortKernels__SortLongKernel {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
-public bool __gsharp_yielded_for_grid_sync;
 }
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__SpanSortKernels__SortLongKernel(global::System.Span<long> data, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__SpanSortKernels__SortLongKernel __gsharp_ctx) {
 {
@@ -391,9 +389,9 @@ if (__gsharp_contexts[__gsharp_linear_tid].__gsharp_state != -1)
 {
 anyGridActive = true;
 anyBlockActive = true;
-__gsharp_contexts[__gsharp_linear_tid].__gsharp_yielded_for_grid_sync = false;
+global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested = false;
 __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__SpanSortKernels__SortLongKernel(data, __gsharp_contexts[__gsharp_linear_tid]);
-if (__gsharp_contexts[__gsharp_linear_tid].__gsharp_yielded_for_grid_sync)
+if (global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested)
 {
 gridSyncRequested = true;
 }
@@ -498,7 +496,6 @@ public static readonly string SortUIntKernel_FullSource=global::Kassyi.GSharp.Ge
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__SpanSortKernels__SortUIntKernel {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
-public bool __gsharp_yielded_for_grid_sync;
 }
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__SpanSortKernels__SortUIntKernel(global::System.Span<uint> data, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__SpanSortKernels__SortUIntKernel __gsharp_ctx) {
 {
@@ -581,9 +578,9 @@ if (__gsharp_contexts[__gsharp_linear_tid].__gsharp_state != -1)
 {
 anyGridActive = true;
 anyBlockActive = true;
-__gsharp_contexts[__gsharp_linear_tid].__gsharp_yielded_for_grid_sync = false;
+global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested = false;
 __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__SpanSortKernels__SortUIntKernel(data, __gsharp_contexts[__gsharp_linear_tid]);
-if (__gsharp_contexts[__gsharp_linear_tid].__gsharp_yielded_for_grid_sync)
+if (global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested)
 {
 gridSyncRequested = true;
 }
@@ -688,7 +685,6 @@ public static readonly string SortCharKernel_FullSource=global::Kassyi.GSharp.Ge
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__SpanSortKernels__SortCharKernel {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
-public bool __gsharp_yielded_for_grid_sync;
 }
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__SpanSortKernels__SortCharKernel(global::System.Span<char> data, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__SpanSortKernels__SortCharKernel __gsharp_ctx) {
 {
@@ -771,9 +767,9 @@ if (__gsharp_contexts[__gsharp_linear_tid].__gsharp_state != -1)
 {
 anyGridActive = true;
 anyBlockActive = true;
-__gsharp_contexts[__gsharp_linear_tid].__gsharp_yielded_for_grid_sync = false;
+global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested = false;
 __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__SpanSortKernels__SortCharKernel(data, __gsharp_contexts[__gsharp_linear_tid]);
-if (__gsharp_contexts[__gsharp_linear_tid].__gsharp_yielded_for_grid_sync)
+if (global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested)
 {
 gridSyncRequested = true;
 }
@@ -878,7 +874,6 @@ public static readonly string SortEnumKernel_FullSource=global::Kassyi.GSharp.Ge
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__SpanSortKernels__SortEnumKernel {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
-public bool __gsharp_yielded_for_grid_sync;
 }
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__SpanSortKernels__SortEnumKernel(global::System.Span<global::Kassyi.GSharp.Tests.Shared.Syntax.SortRank> data, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__SpanSortKernels__SortEnumKernel __gsharp_ctx) {
 {
@@ -961,9 +956,9 @@ if (__gsharp_contexts[__gsharp_linear_tid].__gsharp_state != -1)
 {
 anyGridActive = true;
 anyBlockActive = true;
-__gsharp_contexts[__gsharp_linear_tid].__gsharp_yielded_for_grid_sync = false;
+global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested = false;
 __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__SpanSortKernels__SortEnumKernel(data, __gsharp_contexts[__gsharp_linear_tid]);
-if (__gsharp_contexts[__gsharp_linear_tid].__gsharp_yielded_for_grid_sync)
+if (global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested)
 {
 gridSyncRequested = true;
 }
@@ -1068,7 +1063,6 @@ public static readonly string SortFloatKernel_FullSource=global::Kassyi.GSharp.G
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__SpanSortKernels__SortFloatKernel {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
-public bool __gsharp_yielded_for_grid_sync;
 }
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__SpanSortKernels__SortFloatKernel(global::System.Span<float> data, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__SpanSortKernels__SortFloatKernel __gsharp_ctx) {
 {
@@ -1151,9 +1145,9 @@ if (__gsharp_contexts[__gsharp_linear_tid].__gsharp_state != -1)
 {
 anyGridActive = true;
 anyBlockActive = true;
-__gsharp_contexts[__gsharp_linear_tid].__gsharp_yielded_for_grid_sync = false;
+global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested = false;
 __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__SpanSortKernels__SortFloatKernel(data, __gsharp_contexts[__gsharp_linear_tid]);
-if (__gsharp_contexts[__gsharp_linear_tid].__gsharp_yielded_for_grid_sync)
+if (global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested)
 {
 gridSyncRequested = true;
 }
@@ -1258,7 +1252,6 @@ public static readonly string SortDoubleKernel_FullSource=global::Kassyi.GSharp.
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__SpanSortKernels__SortDoubleKernel {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
-public bool __gsharp_yielded_for_grid_sync;
 }
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__SpanSortKernels__SortDoubleKernel(global::System.Span<double> data, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__SpanSortKernels__SortDoubleKernel __gsharp_ctx) {
 {
@@ -1341,9 +1334,9 @@ if (__gsharp_contexts[__gsharp_linear_tid].__gsharp_state != -1)
 {
 anyGridActive = true;
 anyBlockActive = true;
-__gsharp_contexts[__gsharp_linear_tid].__gsharp_yielded_for_grid_sync = false;
+global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested = false;
 __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__SpanSortKernels__SortDoubleKernel(data, __gsharp_contexts[__gsharp_linear_tid]);
-if (__gsharp_contexts[__gsharp_linear_tid].__gsharp_yielded_for_grid_sync)
+if (global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested)
 {
 gridSyncRequested = true;
 }
@@ -1388,7 +1381,7 @@ case 0:
 __gsharp_switch_1_state_0:
 {
 int __gsharp_id_1_segment = blockIdx.x*blockDim.x+threadIdx.x;
-int __gsharp_id_2_buffer[33];
+int __gsharp_id_2_buffer[33]{};
 for(int __gsharp_id_3_i = 0;__gsharp_id_3_i<33;__gsharp_id_3_i++)
 {
 __gsharp_id_2_buffer[__gsharp_id_3_i]=__gsharp_id_0_data[__gsharp_id_1_segment*33+__gsharp_id_3_i];
@@ -1455,7 +1448,6 @@ public static readonly string SortSegmentsKernel_FullSource=global::Kassyi.GShar
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__SpanSortKernels__SortSegmentsKernel {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
-public bool __gsharp_yielded_for_grid_sync;
 }
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__SpanSortKernels__SortSegmentsKernel(int[] data, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__SpanSortKernels__SortSegmentsKernel __gsharp_ctx) {
 {
@@ -1549,9 +1541,9 @@ if (__gsharp_contexts[__gsharp_linear_tid].__gsharp_state != -1)
 {
 anyGridActive = true;
 anyBlockActive = true;
-__gsharp_contexts[__gsharp_linear_tid].__gsharp_yielded_for_grid_sync = false;
+global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested = false;
 __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__SpanSortKernels__SortSegmentsKernel(data, __gsharp_contexts[__gsharp_linear_tid]);
-if (__gsharp_contexts[__gsharp_linear_tid].__gsharp_yielded_for_grid_sync)
+if (global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested)
 {
 gridSyncRequested = true;
 }
@@ -1678,7 +1670,6 @@ public static readonly string SortComparerKernel_FullSource=global::Kassyi.GShar
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__SpanSortKernels__SortComparerKernel {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
-public bool __gsharp_yielded_for_grid_sync;
 }
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__SpanSortKernels__SortComparerKernel(global::System.Span<int> data, int mask, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__SpanSortKernels__SortComparerKernel __gsharp_ctx) {
 {
@@ -1761,9 +1752,9 @@ if (__gsharp_contexts[__gsharp_linear_tid].__gsharp_state != -1)
 {
 anyGridActive = true;
 anyBlockActive = true;
-__gsharp_contexts[__gsharp_linear_tid].__gsharp_yielded_for_grid_sync = false;
+global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested = false;
 __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__SpanSortKernels__SortComparerKernel(data, mask, __gsharp_contexts[__gsharp_linear_tid]);
-if (__gsharp_contexts[__gsharp_linear_tid].__gsharp_yielded_for_grid_sync)
+if (global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested)
 {
 gridSyncRequested = true;
 }
@@ -1885,7 +1876,6 @@ public static readonly string SortDescendingKernel_FullSource=global::Kassyi.GSh
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__SpanSortKernels__SortDescendingKernel {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
-public bool __gsharp_yielded_for_grid_sync;
 }
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__SpanSortKernels__SortDescendingKernel(global::System.Span<int> data, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__SpanSortKernels__SortDescendingKernel __gsharp_ctx) {
 {
@@ -1968,9 +1958,9 @@ if (__gsharp_contexts[__gsharp_linear_tid].__gsharp_state != -1)
 {
 anyGridActive = true;
 anyBlockActive = true;
-__gsharp_contexts[__gsharp_linear_tid].__gsharp_yielded_for_grid_sync = false;
+global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested = false;
 __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__SpanSortKernels__SortDescendingKernel(data, __gsharp_contexts[__gsharp_linear_tid]);
-if (__gsharp_contexts[__gsharp_linear_tid].__gsharp_yielded_for_grid_sync)
+if (global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested)
 {
 gridSyncRequested = true;
 }
@@ -2078,7 +2068,6 @@ public static readonly string SortComparisonKernel_FullSource=global::Kassyi.GSh
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__SpanSortKernels__SortComparisonKernel {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
-public bool __gsharp_yielded_for_grid_sync;
 }
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__SpanSortKernels__SortComparisonKernel(global::System.Span<int> data, int mask, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__SpanSortKernels__SortComparisonKernel __gsharp_ctx) {
 {
@@ -2161,9 +2150,9 @@ if (__gsharp_contexts[__gsharp_linear_tid].__gsharp_state != -1)
 {
 anyGridActive = true;
 anyBlockActive = true;
-__gsharp_contexts[__gsharp_linear_tid].__gsharp_yielded_for_grid_sync = false;
+global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested = false;
 __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__SpanSortKernels__SortComparisonKernel(data, mask, __gsharp_contexts[__gsharp_linear_tid]);
-if (__gsharp_contexts[__gsharp_linear_tid].__gsharp_yielded_for_grid_sync)
+if (global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested)
 {
 gridSyncRequested = true;
 }
@@ -2268,7 +2257,6 @@ public static readonly string SortMethodGroupKernel_FullSource=global::Kassyi.GS
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__SpanSortKernels__SortMethodGroupKernel {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
-public bool __gsharp_yielded_for_grid_sync;
 }
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__SpanSortKernels__SortMethodGroupKernel(global::System.Span<int> data, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__SpanSortKernels__SortMethodGroupKernel __gsharp_ctx) {
 {
@@ -2351,9 +2339,9 @@ if (__gsharp_contexts[__gsharp_linear_tid].__gsharp_state != -1)
 {
 anyGridActive = true;
 anyBlockActive = true;
-__gsharp_contexts[__gsharp_linear_tid].__gsharp_yielded_for_grid_sync = false;
+global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested = false;
 __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__SpanSortKernels__SortMethodGroupKernel(data, __gsharp_contexts[__gsharp_linear_tid]);
-if (__gsharp_contexts[__gsharp_linear_tid].__gsharp_yielded_for_grid_sync)
+if (global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested)
 {
 gridSyncRequested = true;
 }
@@ -2458,7 +2446,6 @@ public static readonly string SortNullComparerKernel_FullSource=global::Kassyi.G
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__SpanSortKernels__SortNullComparerKernel {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
-public bool __gsharp_yielded_for_grid_sync;
 }
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__SpanSortKernels__SortNullComparerKernel(global::System.Span<int> data, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__SpanSortKernels__SortNullComparerKernel __gsharp_ctx) {
 {
@@ -2541,9 +2528,9 @@ if (__gsharp_contexts[__gsharp_linear_tid].__gsharp_state != -1)
 {
 anyGridActive = true;
 anyBlockActive = true;
-__gsharp_contexts[__gsharp_linear_tid].__gsharp_yielded_for_grid_sync = false;
+global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested = false;
 __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__SpanSortKernels__SortNullComparerKernel(data, __gsharp_contexts[__gsharp_linear_tid]);
-if (__gsharp_contexts[__gsharp_linear_tid].__gsharp_yielded_for_grid_sync)
+if (global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested)
 {
 gridSyncRequested = true;
 }
@@ -2668,7 +2655,6 @@ public static readonly string SortComparableKernel_FullSource=global::Kassyi.GSh
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__SpanSortKernels__SortComparableKernel {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
-public bool __gsharp_yielded_for_grid_sync;
 }
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__SpanSortKernels__SortComparableKernel(global::System.Span<global::Kassyi.GSharp.Tests.Shared.Syntax.SortRecord> data, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__SpanSortKernels__SortComparableKernel __gsharp_ctx) {
 {
@@ -2751,9 +2737,9 @@ if (__gsharp_contexts[__gsharp_linear_tid].__gsharp_state != -1)
 {
 anyGridActive = true;
 anyBlockActive = true;
-__gsharp_contexts[__gsharp_linear_tid].__gsharp_yielded_for_grid_sync = false;
+global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested = false;
 __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__SpanSortKernels__SortComparableKernel(data, __gsharp_contexts[__gsharp_linear_tid]);
-if (__gsharp_contexts[__gsharp_linear_tid].__gsharp_yielded_for_grid_sync)
+if (global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested)
 {
 gridSyncRequested = true;
 }
@@ -2858,7 +2844,6 @@ public static readonly string SortPairsKernel_FullSource=global::Kassyi.GSharp.G
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__SpanSortKernels__SortPairsKernel {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
-public bool __gsharp_yielded_for_grid_sync;
 }
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__SpanSortKernels__SortPairsKernel(global::System.Span<int> keys, global::System.Span<int> items, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__SpanSortKernels__SortPairsKernel __gsharp_ctx) {
 {
@@ -2944,9 +2929,9 @@ if (__gsharp_contexts[__gsharp_linear_tid].__gsharp_state != -1)
 {
 anyGridActive = true;
 anyBlockActive = true;
-__gsharp_contexts[__gsharp_linear_tid].__gsharp_yielded_for_grid_sync = false;
+global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested = false;
 __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__SpanSortKernels__SortPairsKernel(keys, items, __gsharp_contexts[__gsharp_linear_tid]);
-if (__gsharp_contexts[__gsharp_linear_tid].__gsharp_yielded_for_grid_sync)
+if (global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested)
 {
 gridSyncRequested = true;
 }
@@ -3052,7 +3037,6 @@ public static readonly string SortPairsFloatKernel_FullSource=global::Kassyi.GSh
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__SpanSortKernels__SortPairsFloatKernel {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
-public bool __gsharp_yielded_for_grid_sync;
 }
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__SpanSortKernels__SortPairsFloatKernel(global::System.Span<float> keys, global::System.Span<int> items, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__SpanSortKernels__SortPairsFloatKernel __gsharp_ctx) {
 {
@@ -3138,9 +3122,9 @@ if (__gsharp_contexts[__gsharp_linear_tid].__gsharp_state != -1)
 {
 anyGridActive = true;
 anyBlockActive = true;
-__gsharp_contexts[__gsharp_linear_tid].__gsharp_yielded_for_grid_sync = false;
+global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested = false;
 __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__SpanSortKernels__SortPairsFloatKernel(keys, items, __gsharp_contexts[__gsharp_linear_tid]);
-if (__gsharp_contexts[__gsharp_linear_tid].__gsharp_yielded_for_grid_sync)
+if (global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested)
 {
 gridSyncRequested = true;
 }
@@ -3268,7 +3252,6 @@ public static readonly string SortPairsComparerKernel_FullSource=global::Kassyi.
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__SpanSortKernels__SortPairsComparerKernel {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
-public bool __gsharp_yielded_for_grid_sync;
 }
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__SpanSortKernels__SortPairsComparerKernel(global::System.Span<int> keys, global::System.Span<int> items, int mask, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__SpanSortKernels__SortPairsComparerKernel __gsharp_ctx) {
 {
@@ -3354,9 +3337,9 @@ if (__gsharp_contexts[__gsharp_linear_tid].__gsharp_state != -1)
 {
 anyGridActive = true;
 anyBlockActive = true;
-__gsharp_contexts[__gsharp_linear_tid].__gsharp_yielded_for_grid_sync = false;
+global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested = false;
 __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__SpanSortKernels__SortPairsComparerKernel(keys, items, mask, __gsharp_contexts[__gsharp_linear_tid]);
-if (__gsharp_contexts[__gsharp_linear_tid].__gsharp_yielded_for_grid_sync)
+if (global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested)
 {
 gridSyncRequested = true;
 }
@@ -3465,7 +3448,6 @@ public static readonly string SortPairsComparisonKernel_FullSource=global::Kassy
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__SpanSortKernels__SortPairsComparisonKernel {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
-public bool __gsharp_yielded_for_grid_sync;
 }
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__SpanSortKernels__SortPairsComparisonKernel(global::System.Span<int> keys, global::System.Span<int> items, int mask, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__SpanSortKernels__SortPairsComparisonKernel __gsharp_ctx) {
 {
@@ -3551,9 +3533,9 @@ if (__gsharp_contexts[__gsharp_linear_tid].__gsharp_state != -1)
 {
 anyGridActive = true;
 anyBlockActive = true;
-__gsharp_contexts[__gsharp_linear_tid].__gsharp_yielded_for_grid_sync = false;
+global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested = false;
 __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__SpanSortKernels__SortPairsComparisonKernel(keys, items, mask, __gsharp_contexts[__gsharp_linear_tid]);
-if (__gsharp_contexts[__gsharp_linear_tid].__gsharp_yielded_for_grid_sync)
+if (global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested)
 {
 gridSyncRequested = true;
 }
@@ -3679,7 +3661,6 @@ public static readonly string SortPairsComparableKernel_FullSource=global::Kassy
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__SpanSortKernels__SortPairsComparableKernel {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
-public bool __gsharp_yielded_for_grid_sync;
 }
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__SpanSortKernels__SortPairsComparableKernel(global::System.Span<global::Kassyi.GSharp.Tests.Shared.Syntax.SortRecord> keys, global::System.Span<int> items, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__SpanSortKernels__SortPairsComparableKernel __gsharp_ctx) {
 {
@@ -3765,9 +3746,9 @@ if (__gsharp_contexts[__gsharp_linear_tid].__gsharp_state != -1)
 {
 anyGridActive = true;
 anyBlockActive = true;
-__gsharp_contexts[__gsharp_linear_tid].__gsharp_yielded_for_grid_sync = false;
+global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested = false;
 __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__SpanSortKernels__SortPairsComparableKernel(keys, items, __gsharp_contexts[__gsharp_linear_tid]);
-if (__gsharp_contexts[__gsharp_linear_tid].__gsharp_yielded_for_grid_sync)
+if (global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested)
 {
 gridSyncRequested = true;
 }
@@ -3890,7 +3871,6 @@ public static readonly string SortBogusComparerKernel_FullSource=global::Kassyi.
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__SpanSortKernels__SortBogusComparerKernel {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
-public bool __gsharp_yielded_for_grid_sync;
 }
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__SpanSortKernels__SortBogusComparerKernel(global::System.Span<int> data, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__SpanSortKernels__SortBogusComparerKernel __gsharp_ctx) {
 {
@@ -3973,9 +3953,9 @@ if (__gsharp_contexts[__gsharp_linear_tid].__gsharp_state != -1)
 {
 anyGridActive = true;
 anyBlockActive = true;
-__gsharp_contexts[__gsharp_linear_tid].__gsharp_yielded_for_grid_sync = false;
+global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested = false;
 __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__SpanSortKernels__SortBogusComparerKernel(data, __gsharp_contexts[__gsharp_linear_tid]);
-if (__gsharp_contexts[__gsharp_linear_tid].__gsharp_yielded_for_grid_sync)
+if (global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested)
 {
 gridSyncRequested = true;
 }
@@ -4098,7 +4078,6 @@ public static readonly string SortPairsInconsistentKernel_FullSource=global::Kas
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__SpanSortKernels__SortPairsInconsistentKernel {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
-public bool __gsharp_yielded_for_grid_sync;
 }
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__SpanSortKernels__SortPairsInconsistentKernel(global::System.Span<global::Kassyi.GSharp.Tests.Shared.Syntax.InconsistentRecord> keys, global::System.Span<int> items, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__SpanSortKernels__SortPairsInconsistentKernel __gsharp_ctx) {
 {
@@ -4184,9 +4163,9 @@ if (__gsharp_contexts[__gsharp_linear_tid].__gsharp_state != -1)
 {
 anyGridActive = true;
 anyBlockActive = true;
-__gsharp_contexts[__gsharp_linear_tid].__gsharp_yielded_for_grid_sync = false;
+global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested = false;
 __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__SpanSortKernels__SortPairsInconsistentKernel(keys, items, __gsharp_contexts[__gsharp_linear_tid]);
-if (__gsharp_contexts[__gsharp_linear_tid].__gsharp_yielded_for_grid_sync)
+if (global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested)
 {
 gridSyncRequested = true;
 }
@@ -4299,7 +4278,6 @@ public static readonly string SortTrappingComparisonKernel_FullSource=global::Ka
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__SpanSortKernels__SortTrappingComparisonKernel {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
-public bool __gsharp_yielded_for_grid_sync;
 }
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__SpanSortKernels__SortTrappingComparisonKernel(global::System.Span<int> data, int[] table, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__SpanSortKernels__SortTrappingComparisonKernel __gsharp_ctx) {
 {
@@ -4388,9 +4366,9 @@ if (__gsharp_contexts[__gsharp_linear_tid].__gsharp_state != -1)
 {
 anyGridActive = true;
 anyBlockActive = true;
-__gsharp_contexts[__gsharp_linear_tid].__gsharp_yielded_for_grid_sync = false;
+global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested = false;
 __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__SpanSortKernels__SortTrappingComparisonKernel(data, table, __gsharp_contexts[__gsharp_linear_tid]);
-if (__gsharp_contexts[__gsharp_linear_tid].__gsharp_yielded_for_grid_sync)
+if (global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested)
 {
 gridSyncRequested = true;
 }

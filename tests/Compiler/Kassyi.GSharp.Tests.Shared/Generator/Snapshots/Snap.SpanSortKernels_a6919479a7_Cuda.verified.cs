@@ -862,7 +862,7 @@ finally
 #pragma warning restore CS8500
 public const string SortSegmentsKernel_Source = @"extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__SpanSortKernels__SortSegmentsKernel(GSharpArray<int> __gsharp_id_0_data){
 int __gsharp_id_1_segment = blockIdx.x*blockDim.x+threadIdx.x;
-int __gsharp_id_2_buffer[33];
+int __gsharp_id_2_buffer[33]{};
 for(int __gsharp_id_3_i = 0;__gsharp_id_3_i<33;__gsharp_id_3_i++)
 {
 __gsharp_id_2_buffer[__gsharp_id_3_i]=__gsharp_id_0_data[__gsharp_id_1_segment*33+__gsharp_id_3_i];
