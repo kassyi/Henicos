@@ -141,7 +141,7 @@ public class MSBuildArtifactManifestTests : IDisposable
 
     private async Task BuildAsync()
     {
-        var (exitCode, stdout, stderr) = await BuildProcessRunner.RunAsync(_projectDir, "build Producer.csproj -c Debug -nr:false");
+        var (exitCode, stdout, stderr) = await BuildProcessRunner.RunBuildAsync(_projectDir, "Producer.csproj");
         exitCode.Should().Be(0, $"the build should succeed. STDOUT:\n{stdout}\nSTDERR:\n{stderr}");
     }
 }
