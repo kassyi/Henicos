@@ -9,37 +9,44 @@ internal class VectorCompareScalarExpression(
     private GpuBigUIntArray _finalValues;
     private bool _allocated;
 
-    public GpuBigUIntArray Evaluate(GpuWorkspace workspace)
+    public GpuBigUIntArrayView Evaluate(GpuWorkspace workspace)
     {
         var vecResult = vector.Evaluate(workspace);
         var scalarResult = scalar.Evaluate(workspace);
-
-        if (!_allocated)
+        try
         {
-            _finalValues = new GpuBigUIntArray(workspace, Length, 1);
-            _allocated = true;
-        }
-
-        // The scalar is read with its own word count and sign: it may be narrower or wider than the elements, and it
-        // may be a view into a larger buffer whose following words are not 0.
-        var ctx = new GpuBigIntCmpKernels.AotContexts.VectorCompare
-        {
-            Left = VectorCompareLaunch.Operand(vecResult),
-            Right = new GpuBigIntCmpKernels.AotContexts.SignedCompareOperand
+            if (!_allocated)
             {
-                Limbs = scalarResult.Value.DevicePointer,
-                Signs = IntPtr.Zero,
-                NumWords = scalarResult.Value.NumWords,
-                Stride = 0,
-                ScalarSign = scalarResult.IsNegative ? 1u : 0u
-            },
-            Result = _finalValues.DevicePointer,
-            OpType = (int)opType
-        };
+                _finalValues = new GpuBigUIntArray(workspace, Length, 1);
+                _allocated = true;
+            }
 
-        VectorCompareLaunch.Launch(workspace, ctx, Length, vecResult.WordsPerElement, scalarResult.Value.NumWords);
+            // The scalar is read with its own word count and sign: it may be narrower or wider than the elements, and
+            // it may be a view into a larger buffer whose following words are not 0.
+            var ctx = new GpuBigIntCmpKernels.AotContexts.VectorCompare
+            {
+                Left = VectorCompareLaunch.Operand(vecResult),
+                Right = new GpuBigIntCmpKernels.AotContexts.SignedCompareOperand
+                {
+                    Limbs = scalarResult.Value.DevicePointer,
+                    Signs = IntPtr.Zero,
+                    NumWords = scalarResult.Value.NumWords,
+                    Stride = 0,
+                    ScalarSign = scalarResult.IsNegative ? 1u : 0u
+                },
+                Result = _finalValues.DevicePointer,
+                OpType = (int)opType
+            };
 
-        return _finalValues;
+            VectorCompareLaunch.Launch(workspace, ctx, Length, vecResult.WordsPerElement, scalarResult.Value.NumWords);
+
+            return _finalValues;
+        }
+        finally
+        {
+            // An owned scalar result (a compound scalar expression) goes back to the pool; a leaf's is borrowed
+            scalarResult.Dispose();
+        }
     }
 
     public void Dispose()
@@ -63,7 +70,7 @@ internal class VectorCompareVectorExpression(
     private GpuBigUIntArray _finalValues;
     private bool _allocated;
 
-    public GpuBigUIntArray Evaluate(GpuWorkspace workspace)
+    public GpuBigUIntArrayView Evaluate(GpuWorkspace workspace)
     {
         if (left.Length != right.Length)
         {
@@ -108,7 +115,7 @@ internal class VectorCompareVectorExpression(
 
 internal static class VectorCompareLaunch
 {
-    public static GpuBigIntCmpKernels.AotContexts.SignedCompareOperand Operand(GpuBigIntArray vector) => new()
+    public static GpuBigIntCmpKernels.AotContexts.SignedCompareOperand Operand(GpuBigIntArrayView vector) => new()
     {
         Limbs = vector.Values.DevicePointer,
         Signs = vector.Signs.DevicePointer,

@@ -78,7 +78,7 @@ internal abstract class VectorReductionExpressionBase : IGpuBigIntExpression, ID
         }
 
         // A static empty vector is not evaluated: no element is read, and its nodes would launch empty grids.
-        GpuBigIntArray? vecResult = null;
+        GpuBigIntArrayView vecResult = default;
         if (_passes.Count > 0)
         {
             var evaluated = _vector.Evaluate(workspace);
@@ -154,15 +154,16 @@ internal abstract class VectorReductionExpressionBase : IGpuBigIntExpression, ID
         }
     }
 
-    private void Reduce(GpuWorkspace workspace, GpuBigIntArray? vecResult, GpuBigUInt destination, GpuBigUInt header)
+    private void Reduce(GpuWorkspace workspace, GpuBigIntArrayView vecResult, GpuBigUInt destination, GpuBigUInt header)
     {
         // Whole warps: the block-wide max reductions of the chunk kernels combine lanes of full warps only.
         var blockDimX = (uint)Math.Min(1024, (AccumulatorWords + 31) & ~31);
 
-        // An empty vector (no vecResult) has nothing to convert and no passes (a grid of 0 blocks is an invalid
+        // An empty vector (the empty vecResult) has nothing to convert and no passes (a grid of 0 blocks is an invalid
         // launch); the finalize kernel does not read its source when the count is 0.
-        if (vecResult is { } source)
+        if (!vecResult.IsEmpty)
         {
+            var source = vecResult;
             var convertCtx = new GpuBigIntVectorKernels.AotContexts.VectorSignConvert
             {
                 Source = new GpuBigIntVectorKernels.AotContexts.SignedVectorOperandReadOnly

@@ -30,6 +30,28 @@ internal struct VariableSet
         }
     }
 
+    /// <summary>The variables of this set and of <paramref name="other"/>, in a set of its own.</summary>
+    public readonly VariableSet Union(in VariableSet other)
+    {
+        var union = new VariableSet { Memory = Memory || other.Memory, AllLocals = AllLocals || other.AllLocals };
+        union.AddAll(_variables);
+        union.AddAll(other._variables);
+        return union;
+    }
+
+    private void AddAll(ImmutableArray<object>.Builder? variables)
+    {
+        if (variables == null)
+        {
+            return;
+        }
+
+        foreach (var variable in variables)
+        {
+            Add(variable);
+        }
+    }
+
     /// <summary>Whether a variable of this set may be the same as a variable of <paramref name="other"/>.</summary>
     public readonly bool Overlaps(in VariableSet other)
     {
@@ -132,6 +154,23 @@ internal readonly struct ExpressionEffects(VariableSet reads, VariableSet writes
 
         return reads;
     }
+
+    /// <summary>
+    /// The effects of a call of <paramref name="target"/> whose arguments are already evaluated, with
+    /// <paramref name="referenceArgument"/> (a local or parameter, or <see langword="null"/>) passed by <c>ref</c>: what
+    /// evaluating an invocation adds for the call itself. An operator macro expansion uses it for the call of an inner
+    /// operator's target with its context.
+    /// </summary>
+    public static ExpressionEffects OfCall(IMethodSymbol target, ISymbol? referenceArgument, SemanticModel model)
+    {
+        var walker = new Walker(model);
+        walker.AddCallOf(target, referenceArgument);
+        return new ExpressionEffects(walker.Reads, walker.Writes);
+    }
+
+    /// <summary>What evaluating this and <paramref name="other"/> reads and writes.</summary>
+    public ExpressionEffects Union(in ExpressionEffects other) =>
+        new(Reads.Union(other.Reads), Writes.Union(other.Writes));
 
     /// <summary>Whether this operand, evaluated before <paramref name="later"/>, could see or change what it does.</summary>
     public bool InterferesWith(in ExpressionEffects later) =>
@@ -462,13 +501,9 @@ internal readonly struct ExpressionEffects(VariableSet reads, VariableSet writes
                         ? RootOfVariable(declared)
                         : new Root(designation.Identifier.ValueText);
                 case IdentifierNameSyntax identifier:
-                    return model.GetSymbol(identifier) switch
-                    {
-                        ILocalSymbol { IsRef: false } local => RootOfVariable(local),
-                        IParameterSymbol { RefKind: RefKind.None } parameter => RootOfVariable(parameter),
-                        null => new Root(identifier.Identifier.ValueText),
-                        _ => new Root(null)
-                    };
+                    return model.GetSymbol(identifier) is { } symbol
+                        ? RootOfSymbol(symbol)
+                        : new Root(identifier.Identifier.ValueText);
                 case MemberAccessExpressionSyntax access when access.IsKind(SyntaxKind.SimpleMemberAccessExpression):
                 {
                     var member = model.GetSymbol(access) ?? model.GetSymbol(access.Name);
@@ -499,6 +534,14 @@ internal readonly struct ExpressionEffects(VariableSet reads, VariableSet writes
                     return new Root(null);
             }
         }
+
+        // A non-ref local or by-value parameter as itself (RootOfVariable), anything else as memory
+        private Root RootOfSymbol(ISymbol symbol) => symbol switch
+        {
+            ILocalSymbol { IsRef: false } local => RootOfVariable(local),
+            IParameterSymbol { RefKind: RefKind.None } parameter => RootOfVariable(parameter),
+            _ => new Root(null)
+        };
 
         // A local or by-value parameter, or memory when it has another name (AliasedVariables)
         private Root RootOfVariable(ISymbol variable) =>
@@ -667,6 +710,29 @@ internal readonly struct ExpressionEffects(VariableSet reads, VariableSet writes
                 }
             }
 
+            AddCallItself(method, references, receiver, effect);
+        }
+
+        // A call of <method> with <reference> (a variable, or null) passed by ref, after its arguments
+        public void AddCallOf(IMethodSymbol method, ISymbol? reference)
+        {
+            var references = ImmutableArray.CreateBuilder<Root>();
+            if (reference != null)
+            {
+                // The callee reads and writes through the ref parameter
+                var root = RootOfSymbol(reference);
+                AddRead(root);
+                references.Add(root);
+            }
+
+            AddCallItself(method, references, receiver: null, DeviceFunctionEffects.Classify(method, model.Compilation));
+        }
+
+        // What the call itself reads and writes: memory unless it is pure math over scalars, and what
+        // DeviceFunctionEffects says it writes (its ref / out arguments and receiver, or memory)
+        private void AddCallItself(IMethodSymbol method, ImmutableArray<Root>.Builder references, Root? receiver,
+            DeviceFunctionEffect effect)
+        {
             if (!IsScalarMath(method))
             {
                 Reads.Memory = true;

@@ -51,6 +51,8 @@ public interface IGpuBigNumber<TSelf> : IGpuNumber<TSelf>, IDisposable
     /// <param name="left">The minuend.</param>
     /// <param name="right">The subtrahend.</param>
     /// <returns>A newly allocated <typeparamref name="TSelf"/> representing the difference.</returns>
+    /// <exception cref="OverflowException"><typeparamref name="TSelf"/> is <see cref="GpuBigUFloat"/> and
+    /// <paramref name="right"/> is greater than <paramref name="left"/>.</exception>
     static abstract TSelf operator -(TSelf left, TSelf right);
 
     /// <summary>

@@ -480,7 +480,7 @@ return;
 case 1:
 __gsharp_switch_1_state_1:
 {
-auto __gsharp_warp_temp_0 = __gsharp_warp_shuffle_read_down_sync(__gsharp_root,0xFFFFFFFFu,__gsharp_ctx->__gsharp_id_2_value,1u);
+auto __gsharp_warp_temp_0 = __gsharp_warp_shuffle_read_down_sync(__gsharp_root,0xFFFFFFFFu,__gsharp_ctx->__gsharp_id_2_value,1u,32,""SyncSpellingKernels.cs(50,23)"");
 __gsharp_id_0_output[__gsharp_ctx->__gsharp_id_1_tid]=__gsharp_warp_temp_0;
 __gsharp_state=-1;
 return;
@@ -557,7 +557,7 @@ return;
 
 case 1:
 {
-var __gsharp_warp_temp_0 = __gsharp_warp_shuffle_read_down_sync(__gsharp_ctx, 0xFFFFFFFFu, __gsharp_ctx.value, 1u);
+var __gsharp_warp_temp_0 = __gsharp_warp_shuffle_read_down_sync(__gsharp_ctx, 0xFFFFFFFFu, __gsharp_ctx.value, 1u, 32, "SyncSpellingKernels.cs(50,23)");
 output[__gsharp_ctx.tid] = __gsharp_warp_temp_0;
 __gsharp_ctx.__gsharp_state = -1;
 return;
@@ -689,7 +689,7 @@ return;
 case 1:
 __gsharp_switch_1_state_1:
 {
-auto __gsharp_warp_temp_0 = __gsharp_warp_shuffle_read_down_sync(__gsharp_root,0xFFFFFFFFu,__gsharp_ctx->__gsharp_id_2_value,1u);
+auto __gsharp_warp_temp_0 = __gsharp_warp_shuffle_read_down_sync(__gsharp_root,0xFFFFFFFFu,__gsharp_ctx->__gsharp_id_2_value,1u,32,""SyncSpellingKernels.cs(58,23)"");
 __gsharp_id_0_output[__gsharp_ctx->__gsharp_id_1_tid]=__gsharp_warp_temp_0;
 __gsharp_state=-1;
 return;
@@ -766,7 +766,7 @@ return;
 
 case 1:
 {
-var __gsharp_warp_temp_0 = __gsharp_warp_shuffle_read_down_sync(__gsharp_ctx, 0xFFFFFFFFu, __gsharp_ctx.value, 1u);
+var __gsharp_warp_temp_0 = __gsharp_warp_shuffle_read_down_sync(__gsharp_ctx, 0xFFFFFFFFu, __gsharp_ctx.value, 1u, 32, "SyncSpellingKernels.cs(58,23)");
 output[__gsharp_ctx.tid] = __gsharp_warp_temp_0;
 __gsharp_ctx.__gsharp_state = -1;
 return;

@@ -87,22 +87,26 @@ public readonly partial struct GpuBigUInt : IGpuBigUIntExpression, IGpuBigNumber
     public static implicit operator GSharpArrayProxy(GpuBigUInt value) => value.ToProxy();
 
     /// <summary>
-    /// Gets a value indicating whether this buffer represents an intermediate temporary buffer managed by expression evaluation.
+    /// Gets a value indicating whether this value owns its device buffer: disposing it returns the buffer to the pool.
     /// </summary>
-    public bool IsTemp { get; }
+    /// <remarks>
+    /// A value created by a constructor or returned by an operation that allocates owns its buffer. A borrowed value (a
+    /// view of another value or of an array, wrapped in a <see cref="GpuBigUInt"/> by the internal plumbing) does not,
+    /// and disposing it does nothing.
+    /// </remarks>
+    public bool OwnsBuffer => Handle.OwnsBuffer;
 
-    internal GpuBigUInt(GpuWorkspace workspace, GpuBigIntMemoryHandle handle, bool isTemp = false)
+    internal GpuBigUInt(GpuWorkspace workspace, GpuBigIntMemoryHandle handle)
     {
         Workspace = workspace ?? throw new ArgumentNullException(nameof(workspace));
         Handle = handle;
-        IsTemp = isTemp;
     }
 
-    internal GpuBigUInt(GpuWorkspace workspace, int numWords, IntPtr preAllocatedPointer, bool isTemp = false)
+    // Memory that belongs to someone outside GpuMath: never freed or reused here
+    internal GpuBigUInt(GpuWorkspace workspace, int numWords, IntPtr preAllocatedPointer)
     {
         Workspace = workspace ?? throw new ArgumentNullException(nameof(workspace));
         Handle = GpuBigIntMemoryHandle.CreateExternal(new GpuBigIntDeviceBuffer(preAllocatedPointer, numWords, null));
-        IsTemp = isTemp;
     }
 
     /// <summary>
@@ -120,7 +124,6 @@ public readonly partial struct GpuBigUInt : IGpuBigUIntExpression, IGpuBigNumber
         }
 
         Handle = Workspace.MemoryManager.Allocate(numWords);
-        IsTemp = false;
     }
 
     /// <summary>
@@ -139,7 +142,6 @@ public readonly partial struct GpuBigUInt : IGpuBigUIntExpression, IGpuBigNumber
         }
 
         Handle = Workspace.MemoryManager.Allocate(hostData.Length);
-        IsTemp = false;
         Workspace.Provider.CopyHostToDevice(DevicePointer, hostData, NumWords, Workspace.Stream);
     }
 
@@ -404,7 +406,7 @@ public readonly partial struct GpuBigUInt : IGpuBigUIntExpression, IGpuBigNumber
     /// </remarks>
     public void Dispose()
     {
-        if (Workspace != null && !Handle.IsDefault && !IsTemp && Handle.OwnsBuffer)
+        if (Workspace != null && !Handle.IsDefault && Handle.OwnsBuffer)
         {
             Workspace.MemoryManager.Free(Handle);
         }

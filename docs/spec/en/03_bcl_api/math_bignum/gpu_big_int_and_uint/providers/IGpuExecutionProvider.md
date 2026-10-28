@@ -77,6 +77,7 @@ public interface IGpuGraphProvider
 | [Mul(GpuWorkspace, GpuBigUInt, GpuBigUInt, GpuBigUInt)](#mulgpuworkspace-gpubiguint-gpubiguint-gpubiguint) | Multiplies two arbitrary-precision unsigned integers using GPU NTT or Comba/Karatsuba algorithms. |
 | [Mul(GpuWorkspace, GpuBigUInt, UInt32, GpuBigUInt)](#mulgpuworkspace-gpubiguint-uint32-gpubiguint) | Multiplies an arbitrary-precision integer by a 32-bit unsigned scalar on the GPU. |
 | [ReciprocalMega(GpuWorkspace, GpuBigUInt, GpuBigUInt, Int32, Int32, Int32, Int32, Int32)](#reciprocalmegagpuworkspace-gpubiguint-gpubiguint-int32-int32-int32-int32-int32) | Executes a high-precision reciprocal division algorithm using Newton-Raphson kernels on the GPU. |
+| [SqrtFloorCorrection(GpuWorkspace, GpuBigUInt, GpuBigUInt, GpuBigUInt, GpuBigUInt, GpuBigUInt)](#sqrtfloorcorrectiongpuworkspace-gpubiguint-gpubiguint-gpubiguint-gpubiguint-gpubiguint) | Corrects an integer square root estimate to $\lfloor\sqrt{a}\rfloor$. |
 
 ### IGpuGraphProvider Methods
 
@@ -810,6 +811,49 @@ The number of Newton-Raphson iterations.
 
 `targetBits` _Int32_<br>
 The final desired precision in bits.
+
+## SqrtFloorCorrection(GpuWorkspace, GpuBigUInt, GpuBigUInt, GpuBigUInt, GpuBigUInt, GpuBigUInt)
+
+Corrects an integer square root estimate `r` of `a` to $\lfloor\sqrt{a}\rfloor$.
+
+```csharp
+void SqrtFloorCorrection(
+    GpuWorkspace workspace,
+    GpuBigUInt operand,
+    GpuBigUInt rootSquared,
+    GpuBigUInt root,
+    GpuBigUInt slack,
+    GpuBigUInt trial);
+```
+
+#### Parameters
+
+`workspace` _GpuWorkspace_<br>
+The GPU workspace.
+
+`operand` _GpuBigUInt_<br>
+The operand `a`.
+
+`rootSquared` _GpuBigUInt_<br>
+The square $r^2$ of the estimate, with as many words as `operand`.
+
+`root` _GpuBigUInt_<br>
+The estimate `r`; receives $\lfloor\sqrt{a}\rfloor$. $2r + 1$ must fit in `operand.NumWords + 1` words.
+
+`slack` _GpuBigUInt_<br>
+Scratch of at least `operand.NumWords + 1` words.
+
+`trial` _GpuBigUInt_<br>
+Scratch of at least `operand.NumWords + 1` words.
+
+#### Exceptions
+
+`ArgumentException`  
+`rootSquared`, `slack` or `trial` is shorter than stated above.
+
+#### Remarks
+
+The GPU provider computes the slack $a - r^2$ on the device and moves `r` by at most 4 steps, without a host synchronization; an estimate that is $\lfloor\sqrt{a}\rfloor$ or one less needs at most one. When 4 steps do not suffice, the next read of the stream throws `InvalidOperationException`. The CPU provider computes $\lfloor\sqrt{a}\rfloor$ directly.
 
 ## Gcd(GpuWorkspace, GpuBigUInt, GpuBigUInt, GpuBigUInt)
 

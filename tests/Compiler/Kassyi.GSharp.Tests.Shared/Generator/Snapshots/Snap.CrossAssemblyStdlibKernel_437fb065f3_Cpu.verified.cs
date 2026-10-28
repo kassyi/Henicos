@@ -82,7 +82,7 @@ return false;
 case 2:
 __gsharp_switch_1_state_2:
 {
-__gsharp_ctx->__gsharp_warp_temp_0=__gsharp_warp_shuffle_read_up_sync(__gsharp_root,0xFFFFFFFFu,__gsharp_ctx->__gsharp_id_2_g,(unsigned int)__gsharp_ctx->__gsharp_id_4_i);
+__gsharp_ctx->__gsharp_warp_temp_0=__gsharp_warp_shuffle_read_up_sync(__gsharp_root,0xFFFFFFFFu,__gsharp_ctx->__gsharp_id_2_g,(unsigned int)__gsharp_ctx->__gsharp_id_4_i,32,""GpuBigIntKernels.cu.cs(42,25)"");
 __gsharp_ctx->__gsharp_id_5_prevG=__gsharp_ctx->__gsharp_warp_temp_0;
 __gsharp_warp_exchange_assign(__gsharp_ctx->__gsharp_id_3_p);
 __gsharp_state=3;
@@ -91,7 +91,7 @@ return false;
 case 3:
 __gsharp_switch_1_state_3:
 {
-auto __gsharp_warp_temp_1 = __gsharp_warp_shuffle_read_up_sync(__gsharp_root,0xFFFFFFFFu,__gsharp_ctx->__gsharp_id_3_p,(unsigned int)__gsharp_ctx->__gsharp_id_4_i);
+auto __gsharp_warp_temp_1 = __gsharp_warp_shuffle_read_up_sync(__gsharp_root,0xFFFFFFFFu,__gsharp_ctx->__gsharp_id_3_p,(unsigned int)__gsharp_ctx->__gsharp_id_4_i,32,""GpuBigIntKernels.cu.cs(43,25)"");
 auto __gsharp_id_6_prevP = __gsharp_warp_temp_1;
 if(__gsharp_id_1_laneId<__gsharp_ctx->__gsharp_id_4_i)
 {

@@ -134,8 +134,48 @@ public class ProcessRunnerTests
     private static ProcessResult RunWithTimeout(ProcessStartInfo startInfo)
     {
         // A deadlock would hang the test host, so the run happens on its own task with a deadline.
+        var timeout = TimeSpan.FromSeconds(60);
+        var begin = DateTime.Now;
         var run = Task.Factory.StartNew(() => ProcessRunner.Default.Run(startInfo), TaskCreationOptions.LongRunning);
-        Assert.True(run.Wait(TimeSpan.FromSeconds(60)), "The run did not complete: the pipes deadlocked.");
+        if (!run.Wait(timeout))
+        {
+            // Only a timed-out run looks at the processes; the message argument of Assert.True would be built every time.
+            Assert.Fail($"The run did not complete: the pipes deadlocked. {DescribeStalledRun(startInfo, begin, timeout)}");
+        }
+
         return run.Result;
+    }
+
+    // Tells a child that never finished (slow or stuck) from a child that finished while the pipes stayed open
+    // (another process holds a copy of the pipe ends), which a bare timeout message cannot.
+    private static string DescribeStalledRun(ProcessStartInfo startInfo, DateTime begin, TimeSpan timeout)
+    {
+        var name = Path.GetFileNameWithoutExtension(startInfo.FileName);
+        var builder = new System.Text.StringBuilder($"Waited {timeout.TotalSeconds:F0} s for {name}. Processes named {name} started since then: ");
+        var found = 0;
+        foreach (var process in Process.GetProcessesByName(name))
+        {
+            try
+            {
+                if (process.StartTime < begin.AddSeconds(-1))
+                {
+                    continue;
+                }
+
+                found++;
+                builder.Append($"[pid {process.Id}, exited {process.HasExited}, cpu {process.TotalProcessorTime.TotalMilliseconds:F0} ms, handles {process.HandleCount}] ");
+            }
+            catch (Exception ex) when (ex is InvalidOperationException or System.ComponentModel.Win32Exception)
+            {
+                builder.Append($"[pid {process.Id}: {ex.GetType().Name}] ");
+            }
+            finally
+            {
+                process.Dispose();
+            }
+        }
+
+        // No such process left means the child exited while a reader was still waiting for end-of-stream.
+        return builder.Append(found == 0 ? "none (the child exited, so the readers wait for another holder of the pipes)." : string.Empty).ToString();
     }
 }

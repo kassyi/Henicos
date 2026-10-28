@@ -7,8 +7,8 @@ public partial class GpuBigIntVectorLinqExtensionsTests
     {
         var array = expr.Evaluate(_context);
         var hostResult = new uint[array.Length];
+        // The result is a view of the node's buffer; disposing the expression returns it
         _context.Provider.CopyDeviceToHost(hostResult, array.DevicePointer, array.Length);
-        array.Dispose();
         return hostResult;
     }
 
