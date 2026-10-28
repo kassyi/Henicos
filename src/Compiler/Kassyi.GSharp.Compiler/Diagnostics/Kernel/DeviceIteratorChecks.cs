@@ -1,21 +1,21 @@
 namespace Kassyi.GSharp.Compiler.Diagnostics.Kernel;
 
-// Device iterators: the shape of the method and the bodies of foreach loops over one
-internal readonly ref partial struct KernelBarrierValidator
+/// <summary>Device iterators: the shape of the method and the bodies of <c>foreach</c> loops over one (<see cref="KernelBarrierValidator"/>).</summary>
+internal static class DeviceIteratorChecks
 {
-    private void ValidateDeviceIteratorHeader()
+    internal static void ValidateDeviceIteratorHeader(KernelBarrierScan scan)
     {
-        if (!_isDeviceIterator ||
-            semanticModel.GetDeclaredSymbol<IMethodSymbol>(methodDecl) is not { } methodSymbol)
+        if (!scan.IsDeviceIterator ||
+            scan.SemanticModel.GetDeclaredSymbol<IMethodSymbol>(scan.Method) is not { } methodSymbol)
         {
             return;
         }
 
         if (!methodSymbol.IsStatic)
         {
-            context.ReportDiagnostic(
+            scan.Context.ReportDiagnostic(
                 GSharpDiagnostics.IteratorShapeNotSupported,
-                methodDecl.Identifier.GetLocation(),
+                scan.Method.Identifier.GetLocation(),
                 methodSymbol.Name,
                 "iterator methods must be static");
             return;
@@ -23,9 +23,9 @@ internal readonly ref partial struct KernelBarrierValidator
 
         if (methodSymbol.IsGenericMethod)
         {
-            context.ReportDiagnostic(
+            scan.Context.ReportDiagnostic(
                 GSharpDiagnostics.IteratorShapeNotSupported,
-                methodDecl.Identifier.GetLocation(),
+                scan.Method.Identifier.GetLocation(),
                 methodSymbol.Name,
                 "generic iterator methods are not supported");
             return;
@@ -34,9 +34,9 @@ internal readonly ref partial struct KernelBarrierValidator
         if (!IteratorTypeResolver.IsGenericIEnumerable(methodSymbol.ReturnType, out var elementType))
         {
             var formattedReturnType = IteratorTypeResolver.FormatType(methodSymbol.ReturnType);
-            context.ReportDiagnostic(
+            scan.Context.ReportDiagnostic(
                 GSharpDiagnostics.IteratorShapeNotSupported,
-                methodDecl.Identifier.GetLocation(),
+                scan.Method.Identifier.GetLocation(),
                 methodSymbol.Name,
                 $"return type must be System.Collections.Generic.IEnumerable<T>, not '{formattedReturnType}'");
             return;
@@ -44,27 +44,27 @@ internal readonly ref partial struct KernelBarrierValidator
 
         if (IteratorTypeResolver.TryGetUnsupportedElementTypeReason(elementType, out var reason))
         {
-            context.ReportDiagnostic(
+            scan.Context.ReportDiagnostic(
                 GSharpDiagnostics.IteratorShapeNotSupported,
-                methodDecl.Identifier.GetLocation(),
+                scan.Method.Identifier.GetLocation(),
                 methodSymbol.Name,
                 reason);
             return;
         }
 
-        if (IteratorTypeResolver.IsRecursiveIterator(methodSymbol, semanticModel.Compilation))
+        if (IteratorTypeResolver.IsRecursiveIterator(methodSymbol, scan.SemanticModel.Compilation))
         {
-            context.ReportDiagnostic(
+            scan.Context.ReportDiagnostic(
                 GSharpDiagnostics.IteratorShapeNotSupported,
-                methodDecl.Identifier.GetLocation(),
+                scan.Method.Identifier.GetLocation(),
                 methodSymbol.Name,
                 "recursive iterators are not supported");
         }
     }
 
-    private bool IsInsideLocalOrAnonymousFunction(SyntaxNode node)
+    internal static bool IsInsideLocalOrAnonymousFunction(KernelBarrierScan scan, SyntaxNode node)
     {
-        for (var ancestor = node.Parent; ancestor != null && ancestor != methodDecl; ancestor = ancestor.Parent)
+        for (var ancestor = node.Parent; ancestor != null && ancestor != scan.Method; ancestor = ancestor.Parent)
         {
             if (ancestor is LocalFunctionStatementSyntax or AnonymousFunctionExpressionSyntax)
             {
@@ -75,16 +75,16 @@ internal readonly ref partial struct KernelBarrierValidator
         return false;
     }
 
-    private bool IsInsideIteratorForEachBody(SyntaxNode node)
+    internal static bool IsInsideIteratorForEachBody(KernelBarrierScan scan, SyntaxNode node)
     {
         SyntaxNode child = node;
         for (var ancestor = node.Parent;
-             ancestor != null && ancestor != methodDecl;
+             ancestor != null && ancestor != scan.Method;
              child = ancestor, ancestor = ancestor.Parent)
         {
             if (ancestor is ForEachStatementSyntax forEach &&
                 child == forEach.Statement &&
-                IteratorTypeResolver.IsIteratorForEachSource(forEach.Expression, semanticModel))
+                IteratorTypeResolver.IsIteratorForEachSource(forEach.Expression, scan.SemanticModel))
             {
                 return true;
             }

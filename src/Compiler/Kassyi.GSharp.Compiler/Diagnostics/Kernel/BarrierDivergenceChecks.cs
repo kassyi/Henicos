@@ -1,26 +1,27 @@
 namespace Kassyi.GSharp.Compiler.Diagnostics.Kernel;
 
-// Where a barrier stands: divergence (GSH0037), fixed (GSH0043), using scopes (GSH0003) and local functions (GSH0045)
-internal readonly ref partial struct KernelBarrierValidator
+/// <summary>Where a barrier stands: divergence (GSH0037), <c>fixed</c> (GSH0043), <c>using</c> scopes (GSH0003) and local functions (GSH0045) (<see cref="KernelBarrierValidator"/>).</summary>
+internal static class BarrierDivergenceChecks
 {
     /// <summary>
     /// Validates immediate syntactic ancestors of a barrier invocation (GSH0037, GSH0043, GSH0045, and GSH0003 for a
     /// barrier in the scope of a <c>using</c>).
     /// </summary>
+    /// <param name="scan">The state of the run.</param>
     /// <param name="barrier">A block barrier, or a call to a device function that reaches a barrier.</param>
     /// <param name="isBlockBarrier">Whether every thread of the block has to reach <paramref name="barrier"/> (GSH0037).</param>
-    private void InspectBarrierAncestors(InvocationExpressionSyntax barrier, bool isBlockBarrier)
+    internal static void InspectBarrierAncestors(KernelBarrierScan scan, InvocationExpressionSyntax barrier, bool isBlockBarrier)
     {
         SyntaxNode previous = barrier;
-        for (var ancestor = barrier.Parent; ancestor != null && ancestor != methodDecl; ancestor = ancestor.Parent)
+        for (var ancestor = barrier.Parent; ancestor != null && ancestor != scan.Method; ancestor = ancestor.Parent)
         {
             var child = previous;
             previous = ancestor;
 
             // GSH0037: only the threads for which a thread-variant condition holds reach the barrier
-            if (isBlockBarrier && GetDivergingCondition(ancestor, child) is { } condition && _variance.IsThreadVariant(condition))
+            if (isBlockBarrier && GetDivergingCondition(ancestor, child) is { } condition && scan.Variance.IsThreadVariant(condition))
             {
-                context.ReportDiagnostic(
+                scan.Context.ReportDiagnostic(
                     GSharpDiagnostics.DivergentBarrierProhibited,
                     barrier.GetLocation());
             }
@@ -29,14 +30,14 @@ internal readonly ref partial struct KernelBarrierValidator
             {
                 // GSH0043: fixed block barrier prohibited
                 case FixedStatementSyntax:
-                    context.ReportDiagnostic(
+                    scan.Context.ReportDiagnostic(
                         GSharpDiagnostics.FixedBlockBarrierProhibited,
                         barrier.GetLocation());
                     break;
                 // GSH0003: the state machine would leave the scope of the resource at the barrier and dispose it
                 case UsingStatementSyntax:
                 case BlockSyntax block when IsInUsingDeclarationScope(block, barrier):
-                    context.ReportDiagnostic(
+                    scan.Context.ReportDiagnostic(
                         GSharpDiagnostics.UnsupportedSyntax,
                         barrier.GetLocation(),
                         GpuCodeConstraints.BarrierInUsingScope);
@@ -44,9 +45,9 @@ internal readonly ref partial struct KernelBarrierValidator
                 // GSH0045: Queue local function containing barrier for recursion check
                 case LocalFunctionStatementSyntax localFunc:
                     {
-                        if (!_localFunctionsWithBarrier.Contains(localFunc))
+                        if (!scan.LocalFunctionsWithBarrier.Contains(localFunc))
                         {
-                            _localFunctionsWithBarrier.Add(localFunc);
+                            scan.LocalFunctionsWithBarrier.Add(localFunc);
                         }
 
                         break;

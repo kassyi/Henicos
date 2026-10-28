@@ -15,7 +15,7 @@ namespace Kassyi.GSharp.Compiler.Diagnostics.Kernel;
 /// declaration is placed after the divergent one, every thread still agrees.
 /// </para>
 /// <para>
-/// The branch and loop conditions are those of GSH0037 (<see cref="KernelBarrierValidator.GetDivergingCondition"/>),
+/// The branch and loop conditions are those of GSH0037 (<see cref="BarrierDivergenceChecks.GetDivergingCondition"/>),
 /// plus the arms of a switch expression, decided by <see cref="ThreadVarianceAnalysis"/> within one method: the
 /// parameters of the method are uniform, so a device function whose count comes from a thread-variant argument of its
 /// caller is not reported.
@@ -111,7 +111,7 @@ internal static class DynamicSharedMemoryDivergenceValidator
     // [WHY] GetDivergingCondition leaves out switch expression arms because a barrier there is GSH0062, not GSH0037;
     // a dynamic declaration reached from an arm has no other diagnostic, so the arms are added here
     private static ExpressionSyntax? GetDivergingCondition(SyntaxNode ancestor, SyntaxNode child) =>
-        KernelBarrierValidator.GetDivergingCondition(ancestor, child) ??
+        BarrierDivergenceChecks.GetDivergingCondition(ancestor, child) ??
         (ancestor is SwitchExpressionSyntax switchExpression && child != switchExpression.GoverningExpression
             ? switchExpression.GoverningExpression
             : null);

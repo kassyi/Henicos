@@ -3,15 +3,15 @@ using Microsoft.CodeAnalysis.Operations;
 
 namespace Kassyi.GSharp.Compiler.Diagnostics.Kernel;
 
-// What must not cross a barrier: recursion into it (GSH0045), jumps (GSH0040) and locals (GSH0039, GSH0041, GSH0072)
-internal readonly ref partial struct KernelBarrierValidator
+/// <summary>What must not cross a barrier: recursion into it (GSH0045), jumps (GSH0040) and locals (GSH0039, GSH0041, GSH0072) (<see cref="KernelBarrierValidator"/>).</summary>
+internal static class CrossBarrierChecks
 {
     /// <summary>Validates that local functions containing barriers are not recursive (GSH0045).</summary>
-    private void ValidateRecursiveLocalFunctions()
+    internal static void ValidateRecursiveLocalFunctions(KernelBarrierScan scan)
     {
-        foreach (var localFunc in _localFunctionsWithBarrier)
+        foreach (var localFunc in scan.LocalFunctionsWithBarrier)
         {
-            var localFuncSymbol = semanticModel.GetDeclaredSymbol<IMethodSymbol>(localFunc);
+            var localFuncSymbol = scan.SemanticModel.GetDeclaredSymbol<IMethodSymbol>(localFunc);
             if (localFuncSymbol == null)
             {
                 continue;
@@ -20,7 +20,7 @@ internal readonly ref partial struct KernelBarrierValidator
             var isRecursive = localFunc.DescendantNodes()
                 .AsStackEnumerable()
                 .Any(
-                    (Model: semanticModel, Target: localFuncSymbol),
+                    (Model: scan.SemanticModel, Target: localFuncSymbol),
                     static (innerNode, s) =>
                         innerNode is InvocationExpressionSyntax innerInv &&
                         s.Model.GetSymbol(innerInv).IsEqualTo(s.Target)
@@ -28,7 +28,7 @@ internal readonly ref partial struct KernelBarrierValidator
 
             if (isRecursive)
             {
-                context.ReportDiagnostic(
+                scan.Context.ReportDiagnostic(
                     GSharpDiagnostics.RecursiveBarrierProhibited,
                     localFunc.Identifier.GetLocation(),
                     localFunc.Identifier.ValueText);
@@ -37,17 +37,17 @@ internal readonly ref partial struct KernelBarrierValidator
     }
 
     /// <summary>Validates that goto statements do not jump across barriers (GSH0040).</summary>
-    private void ValidateCrossBarrierGotos()
+    internal static void ValidateCrossBarrierGotos(KernelBarrierScan scan)
     {
-        if (_gotos.Count == 0 || _labels.Count == 0)
+        if (scan.Gotos.Count == 0 || scan.Labels.Count == 0)
         {
             return;
         }
 
-        var firstBarrierStart = _barriers[0].SpanStart;
-        var lastBarrierEnd = _barriers[_barriers.Count - 1].Span.End;
+        var firstBarrierStart = scan.Barriers[0].SpanStart;
+        var lastBarrierEnd = scan.Barriers[scan.Barriers.Count - 1].Span.End;
 
-        foreach (var gotoStmt in _gotos)
+        foreach (var gotoStmt in scan.Gotos)
         {
             if (gotoStmt.Expression is not IdentifierNameSyntax gotoId)
             {
@@ -56,7 +56,7 @@ internal readonly ref partial struct KernelBarrierValidator
 
             var labelName = gotoId.Identifier.ValueText;
 
-            var targetLabel = _labels
+            var targetLabel = scan.Labels
                 .AsStackEnumerable()
                 .FirstOrDefault(labelName, static (l, name) => l.Identifier.ValueText == name);
 
@@ -73,10 +73,10 @@ internal readonly ref partial struct KernelBarrierValidator
                 continue;
             }
 
-            var firstBarrier = FindFirstBarrierAfter(start);
+            var firstBarrier = FindFirstBarrierAfter(scan, start);
             if (firstBarrier != null && firstBarrier.Span.End < end)
             {
-                context.ReportDiagnostic(
+                scan.Context.ReportDiagnostic(
                     GSharpDiagnostics.CrossBarrierGotoProhibited,
                     gotoStmt.GetLocation());
             }
@@ -88,20 +88,20 @@ internal readonly ref partial struct KernelBarrierValidator
     /// splits (GSH0039, GSH0041, GSH0072): some path from the split uses them before assigning them again
     /// (<see cref="CrossBarrierLiveness"/>). The state machine cannot keep such a local in the thread's frame.
     /// </summary>
-    private void ValidateCrossBarrierLocals()
+    internal static void ValidateCrossBarrierLocals(KernelBarrierScan scan)
     {
-        if (_trackedLocals.Count == 0 || !_hasSplitPoint.Value || !TryCreateControlFlowGraph(out var graph))
+        if (scan.TrackedLocals.Count == 0 || !scan.HasSplitPoint || !TryCreateControlFlowGraph(scan, out var graph))
         {
             return;
         }
 
-        var locals = new ILocalSymbol[_trackedLocals.Count];
+        var locals = new ILocalSymbol[scan.TrackedLocals.Count];
         for (var i = 0; i < locals.Length; i++)
         {
-            locals[i] = _trackedLocals[i].Symbol;
+            locals[i] = scan.TrackedLocals[i].Symbol;
         }
 
-        var liveAcrossSplit = CrossBarrierLiveness.FindLiveAcrossSplit(graph, locals, semanticModel);
+        var liveAcrossSplit = CrossBarrierLiveness.FindLiveAcrossSplit(graph, locals, scan.SemanticModel);
         for (var i = 0; i < locals.Length; i++)
         {
             if (!liveAcrossSplit[i])
@@ -109,23 +109,23 @@ internal readonly ref partial struct KernelBarrierValidator
                 continue;
             }
 
-            var tracked = _trackedLocals[i];
+            var tracked = scan.TrackedLocals[i];
             if (tracked.IsRefLikeOrRef)
             {
-                context.ReportDiagnostic(
+                scan.Context.ReportDiagnostic(
                     GSharpDiagnostics.CrossBarrierRefStructProhibited,
                     tracked.Declarator.Identifier.GetLocation(),
                     tracked.IdentifierText);
             }
             else if (tracked.IsLocalPointer)
             {
-                context.ReportDiagnostic(
+                scan.Context.ReportDiagnostic(
                     GSharpDiagnostics.CrossBarrierLocalPointerProhibited,
                     tracked.Declarator.Identifier.GetLocation());
             }
             else if (tracked.IsIteratorLocal)
             {
-                context.ReportDiagnostic(
+                scan.Context.ReportDiagnostic(
                     GSharpDiagnostics.IteratorBodyConstructNotSupported,
                     tracked.Declarator.Identifier.GetLocation(),
                     tracked.IdentifierText);
@@ -134,10 +134,10 @@ internal readonly ref partial struct KernelBarrierValidator
     }
 
     // The control flow graph of the body; none while the body does not bind (being edited), so nothing is reported then
-    private bool TryCreateControlFlowGraph([NotNullWhen(true)] out ControlFlowGraph? graph)
+    private static bool TryCreateControlFlowGraph(KernelBarrierScan scan, [NotNullWhen(true)] out ControlFlowGraph? graph)
     {
         graph = null;
-        if (semanticModel.GetOperation(methodDecl) is not IMethodBodyOperation body)
+        if (scan.SemanticModel.GetOperation(scan.Method) is not IMethodBodyOperation body)
         {
             return false;
         }
@@ -154,16 +154,16 @@ internal readonly ref partial struct KernelBarrierValidator
         return true;
     }
 
-    private InvocationExpressionSyntax? FindFirstBarrierAfter(int position)
+    private static InvocationExpressionSyntax? FindFirstBarrierAfter(KernelBarrierScan scan, int position)
     {
         var low = 0;
-        var high = _barriers.Count - 1;
+        var high = scan.Barriers.Count - 1;
         var resultIndex = -1;
 
         while (low <= high)
         {
             var mid = low + (high - low) / 2;
-            if (_barriers[mid].SpanStart > position)
+            if (scan.Barriers[mid].SpanStart > position)
             {
                 resultIndex = mid;
                 high = mid - 1;
@@ -174,6 +174,6 @@ internal readonly ref partial struct KernelBarrierValidator
             }
         }
 
-        return resultIndex >= 0 ? _barriers[resultIndex] : null;
+        return resultIndex >= 0 ? scan.Barriers[resultIndex] : null;
     }
 }
