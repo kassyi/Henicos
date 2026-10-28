@@ -475,7 +475,8 @@ const char* message{nullptr};
 // The first report's message, copied: a message formatted at run time (with the place and the values) does not
 // outlive the function that formats it. Reset keeps the text, so a message just consumed stays readable. The text is
 // UTF-8 (the host reads it so); a longer message is cut before the character that does not fit, never inside one.
-char text[256]{};
+// 512 bytes hold the longest message of the prelude (a missing shuffle lane, with its place and hint)
+char text[512]{};
 
 inline void Reset() noexcept {
 message = nullptr;
@@ -604,7 +605,8 @@ uint32_t srcTid = warpBase + srcLane;
 if (srcTid >= threads) {
 char text[512];
 std::snprintf(text, sizeof(text),
-""G#: %s at %s reads lane %u of warp %u, which does not exist in a block of %u threads (CUDA leaves the value undefined)"",
+""G#: %s at %s reads lane %u of warp %u, which does not exist in a block of %u threads ""
+""(CUDA leaves the value undefined. Keep the source lane within the block by limiting delta, srcLane or laneMask, or launch a multiple of 32 threads; the mask does not limit which lane is read)"",
 name, location, srcLane, warpBase / 32u, threads);
 __gsharp_trap(GSharpErrorCode::InvalidOperation, text);
 return val;

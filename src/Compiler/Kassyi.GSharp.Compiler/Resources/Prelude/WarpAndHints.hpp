@@ -56,7 +56,8 @@ inline T __gsharp_warp_shuffle_read_lane(TContext* __gsharp_ctx, uint32_t slot, 
     if (srcTid >= threads) {
         char text[512];
         std::snprintf(text, sizeof(text),
-                      "G#: %s at %s reads lane %u of warp %u, which does not exist in a block of %u threads (CUDA leaves the value undefined)",
+                      "G#: %s at %s reads lane %u of warp %u, which does not exist in a block of %u threads "
+                      "(CUDA leaves the value undefined. Keep the source lane within the block by limiting delta, srcLane or laneMask, or launch a multiple of 32 threads; the mask does not limit which lane is read)",
                       name, location, srcLane, warpBase / 32u, threads);
         __gsharp_trap(GSharpErrorCode::InvalidOperation, text);
         return val;

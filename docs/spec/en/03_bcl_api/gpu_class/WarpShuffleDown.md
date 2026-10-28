@@ -192,8 +192,12 @@ Two forms are undefined on CUDA, which returns an unspecified value without an e
 
 The CPU paths (the native CPU build and the managed fallback) check both and throw `InvalidOperationException` with the
 place of the shuffle, for example `G#: Warp.ShuffleDownSync at Kernels.cu.cs(6,13) reads lane 16 of warp 0, which does
-not exist in a block of 9 threads (CUDA leaves the value undefined)`. Run a kernel on the CPU dialect to find these
-shuffles; the release CUDA build does not check them.
+not exist in a block of 9 threads (CUDA leaves the value undefined. ...)`; the rest of the message says how to avoid the
+read. Run a kernel on the CPU dialect to find these shuffles; the release CUDA build does not check them.
+
+To avoid the read, keep the source lane within the block (limit `delta`, `srcLane` or `laneMask` in the last warp), or
+launch a multiple of 32 threads. A `mask` that leaves the lane out, such as `Warp.ActiveMask()`, does not help: the mask
+does not limit which lane is read, and CUDA still leaves the value undefined.
 
 ## See also
 

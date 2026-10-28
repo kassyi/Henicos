@@ -348,6 +348,11 @@ public static class ManagedGpuContext
         }
     }
 
+    // How to avoid reading a lane that does not exist; a mask that leaves the lane out does not stop the read (the native
+    // prelude, WarpAndHints.hpp, writes the same text)
+    private const string MissingLaneHint =
+        "(CUDA leaves the value undefined. Keep the source lane within the block by limiting delta, srcLane or laneMask, or launch a multiple of 32 threads; the mask does not limit which lane is read)";
+
     private static int LinearThreadId => ThreadIdxZ * BlockDimY * BlockDimX + ThreadIdxY * BlockDimX + ThreadIdxX;
 
     // Reads the value that lane srcLane of the caller's warp published in the given plane, after checking that the lane
@@ -361,7 +366,8 @@ public static class ManagedGpuContext
         if (srcTid >= threads)
         {
             throw new InvalidOperationException(
-                $"G#: {name} at {location} reads lane {srcLane} of warp {warpBase / 32}, which does not exist in a block of {threads} threads (CUDA leaves the value undefined)");
+                $"G#: {name} at {location} reads lane {srcLane} of warp {warpBase / 32}, which does not exist in a block of {threads} threads " +
+                MissingLaneHint);
         }
 
         return Unsafe.ReadUnaligned<T>(ref GetWarpExchangeBuffer()[GetWarpExchangeOffset(plane, srcTid)]);
