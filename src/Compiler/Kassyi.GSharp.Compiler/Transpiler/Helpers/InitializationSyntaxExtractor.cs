@@ -20,6 +20,11 @@ internal static class InitializationSyntaxExtractor
             case IArrayTypeSymbol arrayType:
                 elemType = arrayType.ElementType;
                 return true;
+            // int* p = stackalloc int[n]: the only initializer of a pointer that TryGetArrayInitialization accepts (the
+            // declaration rule gives the pointer an array of its own; FindDynamicArraySize checks its size)
+            case IPointerTypeSymbol pointerType:
+                elemType = pointerType.PointedAtType;
+                return true;
             default:
                 return false;
         }

@@ -130,9 +130,16 @@ return __gsharp_id_1_acc.__gsharp_mb_Total;
 }
 
 inline __device__ void __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__ManagedMacroLoopKernels__FillByStride(GSharpArray<int> __gsharp_id_0_data, int __gsharp_id_1_count, int __gsharp_id_2_value){
-for(int __gsharp_id_3_i = blockIdx.x * blockDim.x + threadIdx.x; __gsharp_id_3_i < __gsharp_id_1_count; __gsharp_id_3_i += gridDim.x * blockDim.x)
+{
+unsigned int __gsharp_gsl_n_0 = __gsharp_grid_stride_count(__gsharp_id_1_count);
+unsigned int __gsharp_gsl_s_0 = __gsharp_grid_stride_step();
+for(unsigned int __gsharp_gsl_0 = __gsharp_grid_stride_start(); __gsharp_gsl_0 < __gsharp_gsl_n_0; __gsharp_gsl_0 += __gsharp_gsl_s_0)
+{
+int __gsharp_id_3_i = (int)__gsharp_gsl_0;
 {
 __gsharp_id_0_data[__gsharp_id_3_i]=__gsharp_id_2_value+__gsharp_id_3_i;
+}
+}
 }
 }
 
@@ -149,17 +156,31 @@ static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ForUnr
 #endif
 inline __device__ void __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__ManagedMacroLoopKernels__RunningSumByStride(GSharpArray<int> __gsharp_id_0_data, int __gsharp_id_1_count){
 __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ForUnrollAccumulator __gsharp_id_2_acc = {};
-for(int __gsharp_id_4_i = blockIdx.x * blockDim.x + threadIdx.x; __gsharp_id_4_i < __gsharp_id_1_count; __gsharp_id_4_i += gridDim.x * blockDim.x)
+{
+unsigned int __gsharp_gsl_n_0 = __gsharp_grid_stride_count(__gsharp_id_1_count);
+unsigned int __gsharp_gsl_s_0 = __gsharp_grid_stride_step();
+for(unsigned int __gsharp_gsl_0 = __gsharp_grid_stride_start(); __gsharp_gsl_0 < __gsharp_gsl_n_0; __gsharp_gsl_0 += __gsharp_gsl_s_0)
+{
+int __gsharp_id_4_i = (int)__gsharp_gsl_0;
 {
 __gsharp_id_2_acc.__gsharp_mb_Total+=__gsharp_id_4_i;
 __gsharp_id_0_data[__gsharp_id_4_i]=__gsharp_id_2_acc.__gsharp_mb_Total;
 }
 }
+}
+}
 
 inline __device__ void __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__ManagedMacroLoopKernels__CountVisits(GSharpArray<int> __gsharp_id_0_data, int __gsharp_id_1_count){
-for(int __gsharp_id_2_i = blockIdx.x * blockDim.x + threadIdx.x; __gsharp_id_2_i < __gsharp_id_1_count; __gsharp_id_2_i += gridDim.x * blockDim.x)
+{
+unsigned int __gsharp_gsl_n_0 = __gsharp_grid_stride_count(__gsharp_id_1_count);
+unsigned int __gsharp_gsl_s_0 = __gsharp_grid_stride_step();
+for(unsigned int __gsharp_gsl_0 = __gsharp_grid_stride_start(); __gsharp_gsl_0 < __gsharp_gsl_n_0; __gsharp_gsl_0 += __gsharp_gsl_s_0)
+{
+int __gsharp_id_2_i = (int)__gsharp_gsl_0;
 {
 __gsharp_id_0_data[__gsharp_id_2_i]+=1;
+}
+}
 }
 }
 
@@ -581,10 +602,17 @@ static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ForUnr
 #endif
 extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__ManagedMacroLoopKernels__GridStrideRefContextKernel(GSharpArray<int> __gsharp_id_0_output, int __gsharp_id_1_count){
 __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ForUnrollAccumulator __gsharp_id_2_acc = {};
-for(int __gsharp_id_4_i = blockIdx.x * blockDim.x + threadIdx.x; __gsharp_id_4_i < __gsharp_id_1_count; __gsharp_id_4_i += gridDim.x * blockDim.x)
+{
+unsigned int __gsharp_gsl_n_0 = __gsharp_grid_stride_count(__gsharp_id_1_count);
+unsigned int __gsharp_gsl_s_0 = __gsharp_grid_stride_step();
+for(unsigned int __gsharp_gsl_0 = __gsharp_grid_stride_start(); __gsharp_gsl_0 < __gsharp_gsl_n_0; __gsharp_gsl_0 += __gsharp_gsl_s_0)
+{
+int __gsharp_id_4_i = (int)__gsharp_gsl_0;
 {
 __gsharp_id_2_acc.__gsharp_mb_Total+=__gsharp_id_4_i;
 __gsharp_id_0_output[__gsharp_id_4_i]=__gsharp_id_2_acc.__gsharp_mb_Total;
+}
+}
 }
 }
 ";
@@ -839,21 +867,42 @@ finally
 public const string ForUnrollAroundGridStrideKernel_Source = @"extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__ManagedMacroLoopKernels__ForUnrollAroundGridStrideKernel(GSharpArray<int> __gsharp_id_0_output, int __gsharp_id_1_count){
 // [GpuUnroll] start=0, count=3
 {
-for(int __gsharp_id_3_i = blockIdx.x * blockDim.x + threadIdx.x; __gsharp_id_3_i < __gsharp_id_1_count; __gsharp_id_3_i += gridDim.x * blockDim.x)
+{
+unsigned int __gsharp_gsl_n_0 = __gsharp_grid_stride_count(__gsharp_id_1_count);
+unsigned int __gsharp_gsl_s_0 = __gsharp_grid_stride_step();
+for(unsigned int __gsharp_gsl_0 = __gsharp_grid_stride_start(); __gsharp_gsl_0 < __gsharp_gsl_n_0; __gsharp_gsl_0 += __gsharp_gsl_s_0)
+{
+int __gsharp_id_3_i = (int)__gsharp_gsl_0;
 {
 __gsharp_id_0_output[__gsharp_id_3_i]+=0+1;
 }
 }
+}
+}
 {
-for(int __gsharp_id_3_i = blockIdx.x * blockDim.x + threadIdx.x; __gsharp_id_3_i < __gsharp_id_1_count; __gsharp_id_3_i += gridDim.x * blockDim.x)
+{
+unsigned int __gsharp_gsl_n_1 = __gsharp_grid_stride_count(__gsharp_id_1_count);
+unsigned int __gsharp_gsl_s_1 = __gsharp_grid_stride_step();
+for(unsigned int __gsharp_gsl_1 = __gsharp_grid_stride_start(); __gsharp_gsl_1 < __gsharp_gsl_n_1; __gsharp_gsl_1 += __gsharp_gsl_s_1)
+{
+int __gsharp_id_3_i = (int)__gsharp_gsl_1;
 {
 __gsharp_id_0_output[__gsharp_id_3_i]+=1+1;
 }
 }
+}
+}
 {
-for(int __gsharp_id_3_i = blockIdx.x * blockDim.x + threadIdx.x; __gsharp_id_3_i < __gsharp_id_1_count; __gsharp_id_3_i += gridDim.x * blockDim.x)
+{
+unsigned int __gsharp_gsl_n_2 = __gsharp_grid_stride_count(__gsharp_id_1_count);
+unsigned int __gsharp_gsl_s_2 = __gsharp_grid_stride_step();
+for(unsigned int __gsharp_gsl_2 = __gsharp_grid_stride_start(); __gsharp_gsl_2 < __gsharp_gsl_n_2; __gsharp_gsl_2 += __gsharp_gsl_s_2)
+{
+int __gsharp_id_3_i = (int)__gsharp_gsl_2;
 {
 __gsharp_id_0_output[__gsharp_id_3_i]+=2+1;
+}
+}
 }
 }
 }
@@ -968,7 +1017,12 @@ finally
 }
 #pragma warning restore CS8500
 public const string GridStrideAroundForUnrollKernel_Source = @"extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__ManagedMacroLoopKernels__GridStrideAroundForUnrollKernel(GSharpArray<int> __gsharp_id_0_output, int __gsharp_id_1_count){
-for(int __gsharp_id_2_i = blockIdx.x * blockDim.x + threadIdx.x; __gsharp_id_2_i < __gsharp_id_1_count; __gsharp_id_2_i += gridDim.x * blockDim.x)
+{
+unsigned int __gsharp_gsl_n_0 = __gsharp_grid_stride_count(__gsharp_id_1_count);
+unsigned int __gsharp_gsl_s_0 = __gsharp_grid_stride_step();
+for(unsigned int __gsharp_gsl_0 = __gsharp_grid_stride_start(); __gsharp_gsl_0 < __gsharp_gsl_n_0; __gsharp_gsl_0 += __gsharp_gsl_s_0)
+{
+int __gsharp_id_2_i = (int)__gsharp_gsl_0;
 {
 int __gsharp_id_3_sum = 0;
 // [GpuUnroll] start=0, count=3
@@ -982,6 +1036,8 @@ __gsharp_id_3_sum+=__gsharp_id_2_i*1;
 __gsharp_id_3_sum+=__gsharp_id_2_i*2;
 }
 __gsharp_id_0_output[__gsharp_id_2_i]=__gsharp_id_3_sum;
+}
+}
 }
 }
 ";
@@ -2081,9 +2137,16 @@ finally
 public const string GridStrideSameNameAsLocalKernel_Source = @"extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__ManagedMacroLoopKernels__GridStrideSameNameAsLocalKernel(GSharpArray<int> __gsharp_id_0_data, GSharpArray<int> __gsharp_id_1_seen){
 int __gsharp_id_2_tid = threadIdx.x;
 int __gsharp_id_3_i = __gsharp_id_2_tid+100;
-for(int __gsharp_id_4_i = blockIdx.x * blockDim.x + threadIdx.x; __gsharp_id_4_i < __gsharp_id_0_data.length; __gsharp_id_4_i += gridDim.x * blockDim.x)
+{
+unsigned int __gsharp_gsl_n_0 = __gsharp_grid_stride_count(__gsharp_id_0_data.length);
+unsigned int __gsharp_gsl_s_0 = __gsharp_grid_stride_step();
+for(unsigned int __gsharp_gsl_0 = __gsharp_grid_stride_start(); __gsharp_gsl_0 < __gsharp_gsl_n_0; __gsharp_gsl_0 += __gsharp_gsl_s_0)
+{
+int __gsharp_id_4_i = (int)__gsharp_gsl_0;
 {
 __gsharp_id_0_data[__gsharp_id_4_i]+=1;
+}
+}
 }
 __gsharp_id_1_seen[__gsharp_id_2_tid]=__gsharp_id_3_i;
 }
@@ -2246,10 +2309,17 @@ extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__M
 int __gsharp_id_2_tid = threadIdx.x;
 int __gsharp_id_3_i = __gsharp_id_2_tid+100;
 __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ForUnrollAccumulator __gsharp_id_4_acc = {};
-for(int __gsharp_id_6_i = blockIdx.x * blockDim.x + threadIdx.x; __gsharp_id_6_i < __gsharp_id_0_data.length; __gsharp_id_6_i += gridDim.x * blockDim.x)
+{
+unsigned int __gsharp_gsl_n_0 = __gsharp_grid_stride_count(__gsharp_id_0_data.length);
+unsigned int __gsharp_gsl_s_0 = __gsharp_grid_stride_step();
+for(unsigned int __gsharp_gsl_0 = __gsharp_grid_stride_start(); __gsharp_gsl_0 < __gsharp_gsl_n_0; __gsharp_gsl_0 += __gsharp_gsl_s_0)
+{
+int __gsharp_id_6_i = (int)__gsharp_gsl_0;
 {
 __gsharp_id_4_acc.__gsharp_mb_Total+=1;
 __gsharp_id_0_data[__gsharp_id_6_i]+=1;
+}
+}
 }
 __gsharp_id_1_seen[__gsharp_id_2_tid]=__gsharp_id_3_i+__gsharp_id_4_acc.__gsharp_mb_Total*1000;
 }
@@ -2398,9 +2468,16 @@ finally
 }
 #pragma warning restore CS8500
 public const string GridStrideVisitCountKernel_Source = @"extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__ManagedMacroLoopKernels__GridStrideVisitCountKernel(GSharpArray<int> __gsharp_id_0_data, int __gsharp_id_1_count){
-for(int __gsharp_id_2_i = blockIdx.x * blockDim.x + threadIdx.x; __gsharp_id_2_i < __gsharp_id_1_count; __gsharp_id_2_i += gridDim.x * blockDim.x)
+{
+unsigned int __gsharp_gsl_n_0 = __gsharp_grid_stride_count(__gsharp_id_1_count);
+unsigned int __gsharp_gsl_s_0 = __gsharp_grid_stride_step();
+for(unsigned int __gsharp_gsl_0 = __gsharp_grid_stride_start(); __gsharp_gsl_0 < __gsharp_gsl_n_0; __gsharp_gsl_0 += __gsharp_gsl_s_0)
+{
+int __gsharp_id_2_i = (int)__gsharp_gsl_0;
 {
 __gsharp_id_0_data[__gsharp_id_2_i]+=1;
+}
+}
 }
 }
 ";
