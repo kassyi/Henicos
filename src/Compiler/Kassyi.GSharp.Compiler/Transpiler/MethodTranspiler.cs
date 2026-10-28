@@ -394,7 +394,7 @@ public static class MethodTranspiler
         var zeroFill = plan.Symbol.AreLocalsZeroed();
         var frameFields = ImmutableArray.CreateBuilder<VariableDeclaratorSyntax>();
         var resumeLocals = ImmutableArray.CreateBuilder<ResumeLocal>();
-        var byKey = new Dictionary<DeclarationKey, (ResumeLocal Local, IdentifierNameSyntax? Storage)>();
+        var byKey = new Dictionary<DeclarationKey, NativeResumeLocal>();
         foreach (var field in lowered.ContextFields)
         {
             var type = HoistedFieldTypeResolver.Resolve(field, semanticModel, kernelName);
@@ -410,7 +410,7 @@ public static class MethodTranspiler
                 ? SyntaxFactory.IdentifierName(ResumeLocals.StackStorageName(GetDeclaredCppName(local.Declarator, semanticModel, dialect)))
                 : null;
             resumeLocals.Add(local);
-            byKey[key] = (local, storage);
+            byKey[key] = new NativeResumeLocal(local, storage);
         }
 
         if (resumeLocals.Count == 0)
@@ -418,21 +418,32 @@ public static class MethodTranspiler
             return (lowered, ImmutableArray<ResumeLocal>.Empty);
         }
 
-        var body = new ContextLocalRewriter(new HashSet<DeclarationKey>(byKey.Keys), new Dictionary<DeclarationKey, string>(),
-                           semanticModel, kernelName,
-                           (key, name, value) => byKey[key] switch
-                           {
-                               { Local: { Kind: ResumeLocalKind.StackAlloc, Length: 0, Type: IPointerTypeSymbol } } =>
-                                   ResumeLocals.AssignNull(name),
-                               // The empty span declared before the switch is all there is
-                               { Local: { Kind: ResumeLocalKind.StackAlloc, Length: 0 } } => null,
-                               var (local, storage) =>
-                                   ResumeLocals.CreateInitialization(local, name, value, storage, zeroFill)
-                           })
+        var redeclared = new NativeResumeLocalSet(byKey, zeroFill);
+        var body = new ContextLocalRewriter(redeclared, new Dictionary<DeclarationKey, string>(), semanticModel, kernelName)
                        .Visit(lowered.LoweredBody) as BlockSyntax
                    ?? throw new InvalidOperationException(
                        $"Turning the resume locals of '{kernelName}' back into locals removed the state machine body.");
         return (lowered with { LoweredBody = body, ContextFields = frameFields.ToImmutable() }, resumeLocals.ToImmutable());
+    }
+
+    // A resume local of the native state machine and the array that a stackalloc pointer is bound to
+    private readonly record struct NativeResumeLocal(ResumeLocal Local, IdentifierNameSyntax? Storage);
+
+    // The resume locals of a native state machine, as ContextLocalRewriter looks them up
+    private sealed class NativeResumeLocalSet(Dictionary<DeclarationKey, NativeResumeLocal> locals, bool zeroFill)
+        : IResumeLocalSet
+    {
+        public bool Contains(DeclarationKey key) => locals.ContainsKey(key);
+
+        public StatementSyntax? CreateInitialization(DeclarationKey key, SimpleNameSyntax name, ExpressionSyntax value) =>
+            locals[key] switch
+            {
+                { Local: { Kind: ResumeLocalKind.StackAlloc, Length: 0, Type: IPointerTypeSymbol } } =>
+                    ResumeLocals.AssignNull(name),
+                // The empty span declared before the switch is all there is
+                { Local: { Kind: ResumeLocalKind.StackAlloc, Length: 0 } } => null,
+                var (local, storage) => ResumeLocals.CreateInitialization(local, name, value, storage, zeroFill)
+            };
     }
 
     private static string GetDeclaredCppName(VariableDeclaratorSyntax declarator, SemanticModel semanticModel,
