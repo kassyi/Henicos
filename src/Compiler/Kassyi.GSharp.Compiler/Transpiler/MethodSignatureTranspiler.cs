@@ -83,18 +83,28 @@ internal static class MethodSignatureTranspiler
             }
 
             // A plan with an auto result always has a symbol
-            if (isDevice || !plan.HasAutoResult || methodSymbol is null)
+            if (isDevice || methodSymbol is null)
             {
                 return;
             }
 
-            if (method.ParameterList.Parameters.Count > 0 || contextName != null)
+            var written = method.ParameterList.Parameters.Count > 0 || contextName != null;
+            if (plan.HasAutoResult)
             {
-                context.Emitter.Writer.Append(", ");
+                context.Emitter.Writer.AppendIf(written, ", ");
+                context.Emitter.Dialect.AppendType(ref context, methodSymbol.ReturnType);
+                context.Emitter.Writer.Append($"* __restrict__ {GSharpInternalNames.ReturnValue.Buffer}");
+                written = true;
             }
 
-            context.Emitter.Dialect.AppendType(ref context, methodSymbol.ReturnType);
-            context.Emitter.Writer.Append($"* __restrict__ {GSharpInternalNames.ReturnValue.Buffer}");
+            // The scratch of the grid strategy of AsParallel() aggregates, which the CUDA launcher allocates
+            // (KernelHostModel.GridScratchSlotBytes, ParallelAggregatePlanner)
+            if (context.Emitter.Dialect.IsCuda &&
+                ParallelAggregatePlanner.GetGridScratchSlotBytes(method, context.Query.SemanticModel) > 0)
+            {
+                context.Emitter.Writer.AppendIf(written, ", ");
+                context.Emitter.Writer.Append($"unsigned char* __restrict__ {GSharpInternalNames.StackLinq.GridScratch}");
+            }
         }
     }
 

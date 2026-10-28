@@ -29,14 +29,22 @@ namespace Kassyi.GSharp.Compiler.Analysis;
 /// <param name="method">The kernel or device function to analyze.</param>
 /// <param name="variantParameters">A bit for each parameter, by ordinal, that receives a thread-variant argument.</param>
 /// <param name="calleesInProgress">The device functions whose analysis is running further up the call chain.</param>
+/// <param name="gridScope">
+/// Whether a value that may differ between the blocks of the grid (<c>BlockIndex</c>) counts as variant too: the expression
+/// then has one value in the whole grid when it is not variant (ParallelAggregatePlanner).
+/// </param>
 internal sealed class ThreadVarianceAnalysis(
     SemanticModel semanticModel,
     MethodDeclarationSyntax method,
     ulong variantParameters = 0,
-    HashSet<IMethodSymbol>? calleesInProgress = null)
+    HashSet<IMethodSymbol>? calleesInProgress = null,
+    bool gridScope = false)
 {
     private static readonly ConditionalWeakTable<Compilation, ConcurrentDictionary<IMethodSymbol, ConcurrentDictionary<ulong, CalleeVariance>>>
         s_callees = new();
+
+    private static readonly ConditionalWeakTable<Compilation, ConcurrentDictionary<IMethodSymbol, ConcurrentDictionary<ulong, CalleeVariance>>>
+        s_gridCallees = new();
 
     private readonly HashSet<IMethodSymbol> _calleesInProgress = calleesInProgress ?? new(SymbolEqualityComparer.Default);
 
@@ -53,6 +61,37 @@ internal sealed class ThreadVarianceAnalysis(
         }
 
         return ReadsVariant(expression);
+    }
+
+    /// <summary>
+    /// Whether <paramref name="expression"/> may differ between threads when <paramref name="uniformSymbols"/> are taken
+    /// as the same in every thread: the body of a lambda read with its own parameters fixed, which the analysis otherwise
+    /// counts as variant.
+    /// </summary>
+    public bool IsThreadVariant(SyntaxNode expression, ImmutableArray<ISymbol> uniformSymbols)
+    {
+        EnsurePropagated();
+        return ReadsVariant(expression, uniformSymbols);
+    }
+
+    /// <summary>
+    /// Whether only the threads for which a condition that may differ between them holds reach <paramref name="node"/>:
+    /// a branch, a loop body or condition, a switch section or arm, a for incrementor, or an operand of ?:, &amp;&amp;,
+    /// || or ??.
+    /// </summary>
+    public bool IsReachedUnderVariantCondition(SyntaxNode node)
+    {
+        EnsurePropagated();
+        return IsInVariantRegion(node);
+    }
+
+    private void EnsurePropagated()
+    {
+        if (!_propagated)
+        {
+            _propagated = true;
+            Propagate();
+        }
     }
 
     // Marks locals until no assignment adds one: a local can become variant only after one it reads from has
@@ -103,6 +142,11 @@ internal sealed class ThreadVarianceAnalysis(
             }
         } while (changed);
     }
+
+    private static bool IsUniform(ISymbol symbol, ImmutableArray<ISymbol> uniformSymbols) =>
+        !uniformSymbols.IsDefault && uniformSymbols
+            .AsStackEnumerable()
+            .Any(symbol, static (uniform, s) => uniform.IsEqualTo(s));
 
     private bool Mark(ISymbol? symbol) => symbol != null && _variantSymbols.Add(symbol);
 
@@ -174,7 +218,7 @@ internal sealed class ThreadVarianceAnalysis(
     }
 
     // The arguments of a device function call are not read here: the analysis of the callee decides what they make variant
-    private bool ReadsVariant(SyntaxNode expression)
+    private bool ReadsVariant(SyntaxNode expression, ImmutableArray<ISymbol> uniformSymbols = default)
     {
         foreach (var node in expression.DescendantNodesAndSelf(n =>
                      n is not AnonymousFunctionExpressionSyntax &&
@@ -183,11 +227,13 @@ internal sealed class ThreadVarianceAnalysis(
             switch (node)
             {
                 case IdentifierNameSyntax identifier when semanticModel.GetSymbolInfo(identifier).Symbol is { } symbol &&
+                                                          !IsUniform(symbol, uniformSymbols) &&
                                                           (_variantSymbols.Contains(symbol) ||
-                                                           SyncIntrinsicClassifier.IsThreadVariantSource(symbol)):
+                                                           SyncIntrinsicClassifier.IsThreadVariantSource(symbol) ||
+                                                           (gridScope && SyncIntrinsicClassifier.IsBlockVariantSource(symbol))):
                     return true;
                 case InvocationExpressionSyntax invocation when TryGetDeviceFunction(invocation, out _, out _):
-                    if (GetCallVariance(invocation).ReturnsVariant)
+                    if (GetCallVariance(invocation, uniformSymbols).ReturnsVariant)
                     {
                         return true;
                     }
@@ -223,7 +269,8 @@ internal sealed class ThreadVarianceAnalysis(
     private bool WritesVariantArgument(InvocationExpressionSyntax call) =>
         TryGetDeviceFunction(call, out _, out _) ? GetCallVariance(call).WritesVariantByReference : ReadsVariant(call);
 
-    private CalleeVariance GetCallVariance(InvocationExpressionSyntax call)
+    // The arguments are read with the same uniform symbols as the expression around the call (a lambda parameter passed on)
+    private CalleeVariance GetCallVariance(InvocationExpressionSyntax call, ImmutableArray<ISymbol> uniformSymbols = default)
     {
         if (!TryGetDeviceFunction(call, out var callee, out var declaration))
         {
@@ -236,13 +283,13 @@ internal sealed class ThreadVarianceAnalysis(
         {
             var argument = arguments[i];
             var ordinal = argument.NameColon is { } nameColon ? FindParameter(callee, nameColon.Name.Identifier.ValueText) : i;
-            if (ordinal >= 0 && ReadsVariant(argument.Expression))
+            if (ordinal >= 0 && ReadsVariant(argument.Expression, uniformSymbols))
             {
                 mask |= ParameterBit(Math.Min(ordinal, callee.Parameters.Length - 1));
             }
         }
 
-        var cache = s_callees.GetValue(semanticModel.Compilation,
+        var cache = (gridScope ? s_gridCallees : s_callees).GetValue(semanticModel.Compilation,
                 static _ => new ConcurrentDictionary<IMethodSymbol, ConcurrentDictionary<ulong, CalleeVariance>>(
                     SymbolEqualityComparer.Default))
             .GetOrAdd(callee, static _ => new ConcurrentDictionary<ulong, CalleeVariance>());
@@ -258,7 +305,7 @@ internal sealed class ThreadVarianceAnalysis(
         }
 
         variance = new ThreadVarianceAnalysis(semanticModel.Compilation.GetSemanticModel(declaration.SyntaxTree), declaration, mask,
-            _calleesInProgress).AnalyzeAsCallee();
+            _calleesInProgress, gridScope).AnalyzeAsCallee();
         _calleesInProgress.Remove(callee);
         return cache.GetOrAdd(mask, variance);
     }

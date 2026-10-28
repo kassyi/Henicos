@@ -23,6 +23,9 @@ on:
       - ".agents/**"
       - "**/*.md"
 
+permissions:
+  contents: read
+
 jobs:
   test-ubuntu:
     name: Run Static & Syntax Tests (ubuntu-latest)
