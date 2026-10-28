@@ -20,7 +20,7 @@ G# supports standard procedural programming paradigms essential for GPU compute 
 | `for` loop | Yes | `for` loop | Automatically prefixed with `#pragma unroll` during transpilation. |
 | `while` loop | Yes | `while` loop | Supported. |
 | `do...while` loop | Yes | `do...while` loop | Supported. |
-| `switch` statement | Yes | `switch` statement | Pattern matching is **supported** (including constant and relational patterns). |
+| `switch` statement | Yes | `switch` statement | Pattern matching is **supported** (including constant and relational patterns). As in C#, the switch block is one scope: a local declared in one section can be assigned and read in another (the C++ declares it before the first case label); a span or a ref local used that way is reported as [GSH0003](../03_bcl_api/diagnostics/GSH0003.md). |
 | `switch` expression | Yes | Zero-allocation branch | Supported for pattern matching and value switching. Note: C# does not support `ref switch` expressions (`ref var r = x switch { ... }`), so use `if/else` or `ref ? :` for conditional `ref` assignment. |
 | `break` / `continue` | Yes | `break` / `continue` | Supported within loops and switches. |
 | `return` | Yes | `return` | Kernels (`[GpuKernel]`) can now directly return primitive types and value structs. When invoked from the host CPU, the runtime automatically handles device output buffer allocation and host-bound memory copying. |

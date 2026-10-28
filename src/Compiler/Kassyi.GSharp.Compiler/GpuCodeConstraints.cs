@@ -107,6 +107,13 @@ internal static class GpuCodeConstraints
     /// </summary>
     public const string BarrierInUsingScope = "barrier in the scope of a using";
 
+    /// <summary>
+    /// The GSH0003 text for a local that a switch section declares and another section uses, of a type that the C++
+    /// cannot declare before the first case label and assign later (a stack array, a span, a ref local).
+    /// </summary>
+    public const string SwitchSectionLocalNotSplittable =
+        "a stack array, span or ref local used by another switch section than the one that declares it";
+
     /// <summary>The GSH0003 text for a stack array whose size is not a constant.</summary>
     public const string DynamicArraySize = "dynamic array size";
 

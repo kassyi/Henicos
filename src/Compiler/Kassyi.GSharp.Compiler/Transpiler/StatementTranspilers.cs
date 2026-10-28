@@ -237,6 +237,7 @@ internal static class StatementTranspilers
         context.Emitter.Writer.AppendLine();
         using (context.Emitter.Writer.Scope())
         {
+            SwitchSectionLocals.WriteSharedDeclarations(node, ref context);
             foreach (var section in node.Sections)
             {
                 context.Visitor.Visit(section);

@@ -97,9 +97,31 @@ public sealed class VariableDeclarationTranspilerRule : SyntaxNodeTranspilerRule
                 }
             }
 
+            // A const local of a switch section is written as its value wherever it is named, and a local shared with
+            // another section is declared before the first case label (SwitchSectionLocals)
+            if (IsInlinedSwitchConstant(v, ref context))
+            {
+                continue;
+            }
+
+            var declaredBySwitch = IsSharedBySwitchSections(v, typeSymbol, ref context);
+            if (declaredBySwitch && v.Initializer == null)
+            {
+                continue;
+            }
+
             if (hasEmittedAny)
             {
                 context.Emitter.Writer.AppendLine(";");
+            }
+
+            if (declaredBySwitch)
+            {
+                // <name> = <initializer>
+                CppNameResolver.AppendDeclaredName(v, v.Identifier, ref context);
+                DeclarationTranspilerHelper.WriteDeclaratorInitializer(v, ref context);
+                hasEmittedAny = true;
+                continue;
             }
 
             if (TryTranspileStackArrayDeclaration(v, typeSymbol, ref context))
@@ -140,6 +162,17 @@ public sealed class VariableDeclarationTranspilerRule : SyntaxNodeTranspilerRule
         }
     }
 
+    private static bool IsInlinedSwitchConstant(VariableDeclaratorSyntax declarator, ref TranspileContext context) =>
+        context.Query.SemanticModel.GetDeclaredSymbol<ISymbol>(declarator) is ILocalSymbol local &&
+        SwitchSectionLocals.IsInlinedConstant(local);
+
+    // Whether the switch statement declares this local before its first case label
+    private static bool IsSharedBySwitchSections(VariableDeclaratorSyntax declarator, ITypeSymbol? typeSymbol,
+        ref TranspileContext context) =>
+        declarator.Parent is VariableDeclarationSyntax { Type: not RefTypeSyntax } &&
+        IsAssignableAfterDeclaration(typeSymbol) &&
+        SwitchSectionLocals.IsSharedAcrossSections(declarator, context.Query.SemanticModel);
+
     // [WHY] A goto may jump past this initialized declaration (GotoJumpAnalysis); C++ forbids that jump, so the
     // declaration and the initialization become two statements. Only a type that C++ can declare without an initializer
     // and assign later is split: a primitive, an enum, a pointer or a struct that is not a ref struct. A const local is
@@ -160,7 +193,11 @@ public sealed class VariableDeclarationTranspilerRule : SyntaxNodeTranspilerRule
         } &&
         GotoJumpAnalysis.MayBeJumpedOver(statement);
 
-    private static bool IsAssignableAfterDeclaration(ITypeSymbol? typeSymbol) => typeSymbol switch
+    /// <summary>
+    /// Whether C++ can declare a local of <paramref name="typeSymbol"/> without an initializer and assign it later: a
+    /// primitive, an enum, a pointer or a struct that is not a ref struct.
+    /// </summary>
+    internal static bool IsAssignableAfterDeclaration(ITypeSymbol? typeSymbol) => typeSymbol switch
     {
         null or { TypeKind: TypeKind.Error } => false,
         IPointerTypeSymbol => true,
