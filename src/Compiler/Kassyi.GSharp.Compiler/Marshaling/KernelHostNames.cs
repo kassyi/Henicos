@@ -17,6 +17,9 @@ internal static class KernelHostNames
     private const string LaunchPrefix = "Launch";
     private const string PointerSuffix = "Ptr";
 
+    /// <summary>The kernel in a run-time error of the CPU paths: <c>Type.Method</c>.</summary>
+    public static string GetMessageName(IMethodSymbol kernel) => kernel.ContainingType.Name + "." + kernel.Name;
+
     /// <summary>The name of the managed-array launch wrapper, <c>Launch{Name}</c>.</summary>
     public static string GetLaunchName(in KernelHostModel kernel) => LaunchPrefix + kernel.Name;
 

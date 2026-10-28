@@ -58,7 +58,7 @@ Thrown when evaluated on the host CPU.
 The `Gpu.SyncGrid` method acts as a barrier at which all threads in a cooperative grid must wait before any thread is allowed to proceed. This is transpiled to `cg::this_grid().sync();` using the Cooperative Groups API in CUDA C++.
 
 - **Lambda Expression Requirement**: The `Gpu.SyncGrid(Action)` overload strictly requires an inline lambda expression. Passing a delegate variable or method group will result in a compiler error. See [GSH0003](../diagnostics/GSH0003.md) for details.
-- **Cooperative Kernel Requirement**: `SyncGrid` requires the kernel to be launched as a cooperative kernel. Using this method in a non-cooperative kernel will result in a compiler error. See [GSH0030](../diagnostics/GSH0030.md) for details.
+- **Cooperative Kernel Requirement**: `SyncGrid` requires the kernel to be launched as a cooperative kernel. Using this method in a non-cooperative kernel will result in a compiler error. See [GSH0030](../diagnostics/GSH0030.md) for details. GSH0030 checks the body of the kernel only; a grid sync that a non-cooperative kernel reaches through a device function is an error at run time on the CPU paths (see [On the CPU Paths](#on-the-cpu-paths)).
 - **Top-Level Execution (Deadlock Prevention)**: `SyncGrid` statements must be executed by all threads in the grid. Divergent control flow will cause GPU deadlocks. Avoid placing `SyncGrid` inside conditional statements (`if`) unless the condition evaluates identically for all threads in the grid, and ensure no threads return early before reaching the barrier. A `return` inside a `Gpu.SyncGrid(() => { ... })` body is different: the thread still takes part in the automatic barriers of the body (see [Return in a Body](#return-in-a-body)).
 
 ### Runtime Deadlock Traps
@@ -123,6 +123,35 @@ public static void BarrierAfterDivergentReturn(int[] data)
 }
 ```
 
+### On the CPU Paths
+
+The CPU paths (the native CPU library and managed execution) run a cooperative kernel in grid phases. In each phase every block runs until all of its threads have reached `Gpu.SyncGrid` or finished, and the next phase starts only when every block has reached the grid sync. A thread therefore reads what the other blocks wrote before the grid sync, as on the GPU, and the result does not depend on the number of host threads. Each block keeps its shared memory across its grid syncs.
+
+Where the GPU would never complete the grid sync, or does not define it, the CPU paths throw `InvalidOperationException`:
+
+| Case | Message |
+| :--- | :--- |
+| A block finishes while other blocks wait at `Gpu.SyncGrid` (every thread of the block returned before it) | `G#: block (0,0,0) of Kernels.EarlyExitKernel finished while other blocks wait at Gpu.SyncGrid; on the GPU the grid sync never completes` |
+| Thread 0 of a block finishes while the other threads of its block wait at `Gpu.SyncGrid` (the GPU's grid sync waits for thread 0 of every block) | `G#: thread (0,0,0) of block (1,0,0) of Kernels.Kernel finished while other threads of its block wait at Gpu.SyncGrid; on the GPU the grid sync never completes` |
+| A kernel that is not `[GpuKernel(Cooperative = true)]` reaches `Gpu.SyncGrid` through a device function | `G#: Gpu.SyncGrid reached in Kernels.Kernel, which is not [GpuKernel(Cooperative = true)]` |
+
+The first two are what the GPU leaves waiting forever; the CPU paths report the block that finished first. Other threads of a block that finish before a grid sync are not checked.
+
+```csharp
+[GpuKernel(Cooperative = true)]
+public static void EarlyExitKernel(int[] a)
+{
+    if (BlockIndex.X == 0)
+    {
+        return;   // BAD: block 0 never reaches the grid sync; the CPU paths throw, the GPU waits forever
+    }
+
+    a[BlockIndex.X] = 1;
+    Gpu.SyncGrid();
+    a[0] += 1;
+}
+```
+
 ### Automatic Grid Syncs in a Body
 
 When using the delegate-based syntax (`Gpu.SyncGrid(() => { ... })`), the compiler inserts a grid synchronization barrier (`cg::this_grid().sync();`) between the top-level statements of the body.
@@ -138,7 +167,7 @@ When using the delegate-based syntax (`Gpu.SyncGrid(() => { ... })`), the compil
 > 4. **Avoid Parallel-Dependent Constructs in Synchronized Blocks**:
 >    Calling constructs that require independent thread-level parallel scheduling (e.g., `Gpu.GridStrideLoop`) within a single-thread context inside synchronized blocks will trigger diagnostic [GSH0035](../diagnostics/GSH0035.md).
 > 5. **CPU Dialects**:
->    On the CPU dialects the body runs as states of the kernel's state machine: each barrier ends a state, and the whole grid reaches it before any thread continues (managed execution). The barriers are at the same places as in the CUDA output.
+>    On the CPU dialects the body runs as states of the kernel's state machine: each barrier ends a state, and the whole grid reaches it before any thread continues, on the native and the managed path (see [On the CPU Paths](#on-the-cpu-paths)). The barriers are at the same places as in the CUDA output.
 
 #### Example 1: Terminal Barrier Handling
 

@@ -13,6 +13,7 @@
             __gsharp_ctx->buffer[__gsharp_ctx->tid] = __gsharp_ctx->tid + 1;
             sync:
                 ;
+            __gsharp_yielded_for_block_barrier = true;
             __gsharp_state = 1;
             return;
         }

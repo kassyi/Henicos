@@ -17,6 +17,10 @@ internal static class BarrierHelper
     public static bool IsPhaseBarrier(InvocationExpressionSyntax inv) =>
         IsSuspendingCall(inv) || inv.HasAnnotations(LoweringAnnotations.SyncIntrinsicAnnotationKind);
 
+    /// <summary>Determines whether the specified invocation is a block barrier (<c>Gpu.SyncThreads()</c>).</summary>
+    public static bool IsBlockBarrier(InvocationExpressionSyntax inv) =>
+        TryGetSyncIntrinsic(inv, out var data) && data == LoweringAnnotations.BlockBarrierAnnotationData;
+
     /// <summary>Determines whether the specified invocation is a grid barrier (<c>Gpu.SyncGrid()</c>).</summary>
     public static bool IsGridBarrier(InvocationExpressionSyntax inv) =>
         TryGetSyncIntrinsic(inv, out var data) && data == LoweringAnnotations.GridBarrierAnnotationData;
