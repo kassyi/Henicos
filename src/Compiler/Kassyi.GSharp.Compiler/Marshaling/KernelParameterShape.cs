@@ -99,8 +99,6 @@ internal readonly record struct ParameterTransfer(
 internal readonly record struct KernelParameterShape
 {
     private const string GpuBufferType = "global::Kassyi.GSharp.Runtime.GpuBuffer";
-    private static readonly ITranspilerDialect s_cudaDialect = new GSharpCudaDialect();
-    private static readonly ITranspilerDialect s_cpuDialect = new StandardCppDialect();
 
     /// <summary>The parameter name as declared, which the launcher's locals (<c>d_</c>, <c>p_</c>, <c>proxy_</c>, ...) build on.</summary>
     public string Name { get; init; }
@@ -282,8 +280,8 @@ internal readonly record struct KernelParameterShape
                 MarshalMethodName = AotHostNames.GetQualifiedMarshalMethodName(marshaledType),
                 UnmarshalMethodName = AotHostNames.GetQualifiedUnmarshalMethodName(marshaledType),
                 BufferElementTypeName = shape.IsByRef ? GetBufferElementTypeName(parameter.Type) : null,
-                Cuda = ParameterTransfer.Create(marshaledType, s_cudaDialect),
-                Cpu = ParameterTransfer.Create(marshaledType, s_cpuDialect),
+                Cuda = ParameterTransfer.Create(marshaledType, HostDialects.Cuda),
+                Cpu = ParameterTransfer.Create(marshaledType, HostDialects.Cpu),
                 CpuNotSupportedMessage = GetCpuNotSupportedMessage(marshaledType)
             };
         }
@@ -296,8 +294,8 @@ internal readonly record struct KernelParameterShape
                 Container = GetContainer(marshaledType),
                 ElementTypeName = elementType.GetFullyQualifiedCsharpName(),
                 BufferElementTypeName = GetBufferElementTypeName(elementType),
-                Cuda = ParameterTransfer.Create(marshaledType, s_cudaDialect),
-                Cpu = ParameterTransfer.Create(marshaledType, s_cpuDialect)
+                Cuda = ParameterTransfer.Create(marshaledType, HostDialects.Cuda),
+                Cpu = ParameterTransfer.Create(marshaledType, HostDialects.Cpu)
             };
         }
 
@@ -308,7 +306,7 @@ internal readonly record struct KernelParameterShape
     /// Whether an array of <paramref name="element"/> cannot be copied as one block on CUDA: a user struct whose host
     /// and device layouts differ (any class but <see cref="TransferClass.Identical"/>).
     /// </summary>
-    public static bool IsConvertedOnCuda(ITypeSymbol element) => IsConverted(element, s_cudaDialect);
+    public static bool IsConvertedOnCuda(ITypeSymbol element) => IsConverted(element, HostDialects.Cuda);
 
     /// <summary>
     /// Whether an array of <paramref name="element"/> cannot be copied as one block under <paramref name="dialect"/>: a
@@ -324,7 +322,7 @@ internal readonly record struct KernelParameterShape
     private static string? GetCpuNotSupportedMessage(ITypeSymbol structType)
     {
         if (structType is not INamedTypeSymbol named ||
-            TypeLayoutCalculator.GetStructLayout(named, s_cpuDialect).Transfer == TransferClass.Identical)
+            TypeLayoutCalculator.GetStructLayout(named, HostDialects.Cpu).Transfer == TransferClass.Identical)
         {
             return null;
         }
@@ -333,7 +331,7 @@ internal readonly record struct KernelParameterShape
             CultureInfo.InvariantCulture,
             GSharpDiagnostics.StructTransferNotSupportedOnCpu.MessageFormat.ToString(CultureInfo.InvariantCulture),
             TypeLayoutCalculator.FormatTypeName(named),
-            TypeLayoutCalculator.DescribeLayoutDifference(named, s_cpuDialect));
+            TypeLayoutCalculator.DescribeLayoutDifference(named, HostDialects.Cpu));
     }
 
     // A user struct lives on the device in its native shadow layout, which the wrapper class declares as AotContexts.*

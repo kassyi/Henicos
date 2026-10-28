@@ -3,9 +3,6 @@ namespace Kassyi.GSharp.Compiler.Marshaling;
 /// <summary>Emits custom struct marshal and unmarshal helper methods between managed and native shadow representations.</summary>
 internal static class StructMarshalingEmitter
 {
-    private static readonly ITranspilerDialect s_cudaDialect = new GSharpCudaDialect();
-    private static readonly ITranspilerDialect s_cpuDialect = new StandardCppDialect();
-
     /// <summary>Emits the rendered structs of a kernel class (<see cref="RenderStructs"/>).</summary>
     /// <remarks>A struct whose <c>AotContexts</c> name is already taken gets no helpers; GSH0058 reports it.</remarks>
     internal static void WriteStructMarshaling(SourceWriter writer, EquatableArray<StructHostSource> structs, bool isCuda)
@@ -47,8 +44,8 @@ internal static class StructMarshalingEmitter
         {
             sources.Add(new StructHostSource(
                 AotHostNames.GetAotStructPath(s),
-                RenderStructForDialect(s, s_cudaDialect),
-                cpuStructs.Contains(s) ? RenderStructForDialect(s, s_cpuDialect) : string.Empty));
+                RenderStructForDialect(s, HostDialects.Cuda),
+                cpuStructs.Contains(s) ? RenderStructForDialect(s, HostDialects.Cpu) : string.Empty));
         }
 
         return sources.MoveToImmutable().AsEquatableArray();
