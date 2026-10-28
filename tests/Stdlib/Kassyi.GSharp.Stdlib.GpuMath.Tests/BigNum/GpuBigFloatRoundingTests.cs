@@ -433,6 +433,8 @@ public class GpuBigFloatRoundingTests : IDisposable
         // H = 2^63 + 1, whose low bit is below the window: subtracting a far L does not reach the window.
         ["WideHighWithLowBitsFarDifference"] = Far(
             Add(Of([1u, 0x8000_0000u], 0), Of(1u, -100, isNegative: true)), s_top32, 32),
+        // The same H plus a far L: the sticky bit lands below the low bit of H and does not carry into the window.
+        ["WideHighWithLowBitsFarSum"] = Far(Add(Of([1u, 0x8000_0000u], 0), Pow2(-100)), s_top32, 32),
 
         // A zero H with a far exponent: the sum is L.
         ["ZeroHighFarSum"] = Far(Add(Of(0u, MaxExp), Pow2(-2)), s_top32, -33),
@@ -490,6 +492,22 @@ public class GpuBigFloatRoundingTests : IDisposable
             BigFloatReference.IsRoundedTowardZeroOfSum(
                 sig, result.Exponent, result.IsNegative, 32 * farCase.Case.Words, SumTerms(farCase.Case)),
             $"{label} is not RZ_{32 * farCase.Case.Words} of the sum");
+    }
+
+    // A far L does not keep a sum in range: H = 2^63·2^int.MaxValue in two words, normalized to one word, needs the
+    // exponent int.MaxValue + 32, so Add throws OverflowException on the sticky path too (#661 §4.1), with either sign.
+    // mutant: GSharpKernelFloatProvider.cs:70 / CSharpCpuBigFloatArithmetic.cs:112 `checked((int)(exponent - shift))`
+    // -> `unchecked(...)` (the exponent wraps around instead)
+    [SkippableTheory]
+    [Scenario(TestScenario.SadPath)]
+    [InlineData(Engine.Gpu)]
+    [InlineData(Engine.Cpu)]
+    public void Add_FarApartExponents_ResultAboveMax_ThrowsOverflow(Engine engine)
+    {
+        var arithmetic = Arithmetic(engine);
+        var wideHigh = Of([0u, 0x8000_0000u], MaxExp);
+        Assert.Throws<OverflowException>(() => Run(arithmetic, Add(wideHigh, Pow2(-2))));
+        Assert.Throws<OverflowException>(() => Run(arithmetic, Add(wideHigh, Of(1u, -2, isNegative: true))));
     }
 
     // a + b, a - b and b - a through the operators, with exponents 2^31 + 2 apart: one-word operands give a two-word
