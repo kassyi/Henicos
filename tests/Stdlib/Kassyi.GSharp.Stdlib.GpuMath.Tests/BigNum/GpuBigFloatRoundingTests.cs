@@ -93,9 +93,9 @@ public class GpuBigFloatRoundingTests : IDisposable
     // P1: the significand, exponent and sign equal RZ_p of the exact rational value (BigFloatReference.RoundTowardZero).
     // P2: the result satisfies the definition of RZ by itself, R·2^e <= |v| < (R + 1)·2^e with R of exactly p bits, so a
     // mistake that the reference shares with the provider still fails.
-    // mutant: GSharpKernelFloatProvider.cs:221 / CSharpCpuBigFloatArithmetic.cs:265 `(resultSig.NumWords + rightSig.NumWords) * 32`
+    // mutant: GSharpKernelFloatProvider.cs:228 / CSharpCpuBigFloatArithmetic.cs:265 `(resultSig.NumWords + rightSig.NumWords) * 32`
     // -> `resultSig.NumWords * 32 * 2` (DivideNarrowByWide1, DivideNarrowByWide4 on both engines)
-    // mutant: GSharpKernelFloatProvider.cs:259 `valueSig.NumWords + resultSig.NumWords + 1` -> `2 * valueSig.NumWords + MarginWords`
+    // mutant: GSharpKernelFloatProvider.cs:266 `valueSig.NumWords + resultSig.NumWords + 1` -> `2 * valueSig.NumWords + MarginWords`
     // (ReciprocalOfThree8, Gpu)
     // mutant: CSharpCpuBigFloatArithmetic.cs:328 `RentTemp(quotientWords)` -> `RentTemp(resultSig.NumWords * 2)`
     // (ReciprocalOfThreeInNineWords, Cpu)
@@ -236,9 +236,9 @@ public class GpuBigFloatRoundingTests : IDisposable
     // `unchecked(...)` (the *AboveMax and *BelowMin cases that reach NormalizeScaled)
     // mutant: GSharpKernelFloatProvider.cs:185 / CSharpCpuBigFloatArithmetic.cs:210 `(long)left.Exponent + right.Exponent` ->
     // int (Multiply*)
-    // mutant: GSharpKernelFloatProvider.cs:232 / CSharpCpuBigFloatArithmetic.cs:268 `(long)left.Exponent - right.Exponent` ->
+    // mutant: GSharpKernelFloatProvider.cs:239 / CSharpCpuBigFloatArithmetic.cs:268 `(long)left.Exponent - right.Exponent` ->
     // int (DivideIntermediateBelowMin, DivideBelowMin)
-    // mutant: GSharpKernelFloatProvider.cs:266 / CSharpCpuBigFloatArithmetic.cs:323 `-(long)value.Exponent` -> `-value.Exponent`
+    // mutant: GSharpKernelFloatProvider.cs:273 / CSharpCpuBigFloatArithmetic.cs:323 `-(long)value.Exponent` -> `-value.Exponent`
     // (ReciprocalBelowMin; ReciprocalIntermediateBelowMin on the GPU)
     // mutant: CSharpCpuBigFloatArithmetic.cs:179 `checked(smaller.Exponent - shift)` -> `unchecked(...)` (AddAboveMax, AddBelowMin)
     [SkippableTheory]
@@ -362,9 +362,9 @@ public class GpuBigFloatRoundingTests : IDisposable
     // P1: Sqrt returns RZ_p(sqrt(a)), the reference RzSqrt (an integer square root of the test's own, checked against
     // r² <= A < (r + 1)²; not the product's). P2: the result satisfies the definition by itself,
     // R²·2^(2e) <= a < (R + 1)²·2^(2e) with R of exactly p bits, so an exact root (PerfectSquares) is returned exactly.
-    // mutant: GSharpKernelFloatProvider.cs:302 `% 2 != 0` -> `% 2 == 0` (every case: the root of 2·a, or an odd shift)
-    // mutant: GSharpKernelFloatProvider.cs:308 `checked((int)shift)` -> `checked((int)Math.Max(shift, 0))` (Width9, Width16, Width16ZeroLow)
-    // mutant: GSharpKernelFloatProvider.cs:301 `2L * 32 * n` -> `2 * 32 * n` (ParityMin, ParityMinPlus1: E - t wraps)
+    // mutant: GSharpKernelFloatProvider.cs:309 `% 2 != 0` -> `% 2 == 0` (every case: the root of 2·a, or an odd shift)
+    // mutant: GSharpKernelFloatProvider.cs:315 `checked((int)shift)` -> `checked((int)Math.Max(shift, 0))` (Width9, Width16, Width16ZeroLow)
+    // mutant: GSharpKernelFloatProvider.cs:308 `2L * 32 * n` -> `2 * 32 * n` (ParityMin, ParityMinPlus1: E - t wraps)
     // mutant: GpuBigIntDivRem.Sqrt.cs:124 `+ 48` -> `+ 47` (the estimate is twice the root)
     // mutant: GpuBigIntSqrtKernels.cu.cs:176 `AddSmallSigned(trial, slackWords, -1)` removed (NearSquarePlus2R steps to r + 1,
     // NearSquareMinus1)
@@ -497,13 +497,13 @@ public class GpuBigFloatRoundingTests : IDisposable
     // P1: Rsqrt returns RZ_p(1 / sqrt(a)), the reference RzRsqrt (the test's own integer square root of
     // floor(2^(2k) / s)). P2: the result satisfies the definition by itself, R²·2^(2e)·a <= 1 < (R + 1)²·2^(2e)·a with R of
     // exactly p bits, so an exact inverse root (a power of four) is returned exactly.
-    // mutant: GSharpKernelFloatProvider.cs:360 `n - words / 2` -> `n - words` (Ladder3n4, Width1, Width4, Parity*: fewer than
+    // mutant: GSharpKernelFloatProvider.cs:377 `n - words / 2` -> `n - words` (Ladder3n4, Width1, Width4, Parity*: fewer than
     // p bits)
-    // mutant: GSharpKernelFloatProvider.cs:347 `if (shift > 0)` -> `if (true)` (OddExponentFullWidth, OddExponentFullWidthWide:
+    // mutant: GSharpKernelFloatProvider.cs:354 `if (shift > 0)` -> `if (true)` (OddExponentFullWidth, OddExponentFullWidthWide:
     // the radicand loses its lowest bit and the result is 1 ulp too large)
-    // mutant: GSharpKernelFloatProvider.cs:345 `% 2 != 0` -> `% 2 == 0` (every case with an odd shift)
-    // mutant: GSharpKernelFloatProvider.cs:367 `- 32L * (words + marginWords)` -> `... + 1` (every case: twice the value)
-    // mutant: GSharpKernelFloatProvider.cs:344 `long shift = 32L * ...` -> `int shift = 32 * ...` (ParityMin, ParityMinPlus1)
+    // mutant: GSharpKernelFloatProvider.cs:352 `% 2 != 0` -> `% 2 == 0` (every case with an odd shift)
+    // mutant: GSharpKernelFloatProvider.cs:382 `- 32L * (words + marginWords)` -> `... + 1` (every case: twice the value)
+    // mutant: GSharpKernelFloatProvider.cs:351 `long shift = 32L * ...` -> `int shift = 32 * ...` (ParityMin, ParityMinPlus1)
     [SkippableTheory]
     [Scenario(TestScenario.Boundary)]
     [MemberData(nameof(RsqrtCasesOnBothEngines))]
@@ -673,7 +673,7 @@ public class GpuBigFloatRoundingTests : IDisposable
 
             // A significand of 1: floor(2^T / 1) = 2^T needs T + 1 bits, so a working width of exactly T bits failed on
             // the GPU (the device correction did not converge). 1 at several widths, and 1 stored in 9 words.
-            // mutant: GSharpKernelFloatProvider.cs:260 `reciprocalWords * 32 - 1` -> `reciprocalWords * 32 - 0` (all four on
+            // mutant: GSharpKernelFloatProvider.cs:267 `reciprocalWords * 32 - 1` -> `reciprocalWords * 32 - 0` (all four on
             // the GPU, and ReciprocalOfOneNearMin in the limit cases)
             ["ReciprocalOfOne1"] = Unary(FloatOperation.Reciprocal, new([1u], 3), 1),
             ["ReciprocalOfOne4"] = Unary(FloatOperation.Reciprocal, new([1u], 0), 4),

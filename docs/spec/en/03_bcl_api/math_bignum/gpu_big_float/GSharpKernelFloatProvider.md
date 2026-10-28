@@ -34,10 +34,10 @@ public sealed class GSharpKernelFloatProvider(IGpuBigFloatArithmetic fallbackStr
 | `Normalize(...)` | Normalizes a floating-point significand so that its most significant bit is aligned to the target word width. |
 | `Add(...)` | Computes radix-aligned signed addition of two arbitrary-precision floating-point numbers. |
 | `Multiply(...)` | Computes normalized multiplication of two arbitrary-precision floating-point numbers. |
-| `Divide(...)` | Computes normalized division using hybrid routing via G# device kernels and Newton-Raphson reciprocals. |
+| `Divide(...)` | Computes $\mathrm{RZ}_p(x / y)$: the exact quotient of the dividend scaled to at least $p + 1$ quotient bits, truncated to $p$ bits; a divisor much wider than the result is truncated and the quotient corrected (see [Wide Divisors and Radicands](#wide-divisors-and-radicands)). |
 | `Reciprocal(...)` | Computes the normalized reciprocal ($1 / x$) via G# device kernels. |
 | `Sqrt(...)` | Computes $\mathrm{RZ}_p(\sqrt{x})$: the exact integer square root of the value scaled to $2p$ bits, from an inverse square root estimate and a correction on the device. |
-| `Rsqrt(...)` | Computes $\mathrm{RZ}_p(1 / \sqrt{x})$: the exact $\lfloor 2^B / \sqrt{A} \rfloor$ of the value scaled to whole words without truncation, with enough margin words for $p + 1$ bits, truncated to $p$ bits. |
+| `Rsqrt(...)` | Computes $\mathrm{RZ}_p(1 / \sqrt{x})$: the exact $\lfloor 2^B / \sqrt{A} \rfloor$ of the value scaled to whole words without truncation, with enough margin words for $p + 1$ bits, truncated to $p$ bits; a radicand much wider than the result is truncated and the root corrected (see [Wide Divisors and Radicands](#wide-divisors-and-radicands)). |
 | `Exp(...)` | Computes $\mathrm{RZ}_p(e^x)$ on the GPU: reduction by $k \ln 2$ and $2^s$, a Paterson–Stockmeyer Taylor polynomial, $s$ squarings and the rounding check (see [Transcendental Functions](#transcendental-functions)). |
 | `Log(...)` | Computes $\mathrm{RZ}_p(\ln x)$ on the GPU: reduction by $2^e$ and an $\mathrm{atanh}$ series in Horner or Paterson–Stockmeyer form, with the rounding check. |
 | `Pow(...)` | Computes $\mathrm{RZ}_p(x^y)$ for $x > 0$: an exact power directly, every other power as $e^{y \cdot L}$ on the GPU with the rounding check. |
@@ -77,6 +77,18 @@ Console.WriteLine($"Created float provider: {provider.GetType().Name}");
 `GSharpKernelFloatProvider` manages temporary device scratch buffers deterministically using `context.GpuWorkspace.RentTemp(...)` without managed heap allocations on the GPU hot path.
 
 In CPU fallback mode (no `GSharpKernelProvider`, or `GpuKernelLoader.IsCpuFallbackMode`) every operation, `Pow` included, is forwarded once to the fallback strategy.
+
+### Wide Divisors and Radicands
+
+For a result of $n$ words ($p = 32n$ bits), `Divide` and `Rsqrt` cut a divisor or radicand of at least $n + 2 + g$ words to its top $K = n + 2$ words, where $g$ is [`GpuWorkspace.WideOperandThresholdWords`](../gpu_workspace/GpuWorkspace.md#wideoperandthresholdwords) (default 4). The result is the same bits as without the cut; only the work changes.
+
+- The integer computed from the top words, the quotient $Q_{hi}$ or the inverse root $x_{hi}$, is the exact floor or one above it. A smaller divisor or radicand makes the result larger, never smaller, and the 64 extra bits of the top words keep the excess below 1.
+- When a bit that the rounding to $p$ bits discards is set (one of the low 2 bits of $Q_{hi}$, which has $p + 2$ or $p + 3$ bits; the low word of $x_{hi}$, which has at least $p + 33$ bits), the floor and the value one above it round to the same $p$ bits, and the result is used as it is. Only the low word is read back.
+- Otherwise one product at the full width decides: $Q_{hi} \cdot R > N$ (the scaled dividend), or $x_{hi}^2 \cdot A > 2^{2B}$, means the estimate is one too large. A one-block kernel compares and decrements it on the device, without a read back. The divisor cut by nothing ($R$ of $K$ words or fewer bits) needs no check.
+
+This is the form of MPFR's `mpfr_div` for a divisor longer than the quotient (`src/div.c`), with the check made by one multiplication when the discarded bits leave the result open. The CPU fallback does not truncate.
+
+The cut pays off when the full-width computation is in a slower size range of the GPU division and inverse square root than the cut one. Measured on one GPU: for $n \le 16$ a divisor of about 30 words or more and a radicand of about 64 words or more run 5 to 15 times faster; below those sizes both forms take about the same time (ratios of 0.9 to 1.1 are within the variation of the fixed costs). For $n \ge 32$ the top $K$ words are already in the slow range, and the cut form was up to 2 times slower for operands of $4n$ to $16n$ words. That ratio comes mostly from the full-width computation getting faster with the width in that range, not from the cut form getting slower: at $n = 64$ the cut `Rsqrt` takes about 24 ms at every width, while the full-width one drops from 24 ms (66 words) to 14 to 17 ms (264 to 1024 words); the full-width `Divide` drops from 15 ms (68 words) to 11 ms (1024 words), while the cut one takes 16 to 18 ms up to 264 words and 24 ms at 1024 words. Set $g$ to `int.MaxValue` to turn the cut off.
 
 ### Transcendental Functions
 

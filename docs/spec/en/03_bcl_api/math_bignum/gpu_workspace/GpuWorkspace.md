@@ -69,6 +69,7 @@ Thrown when CUDA context or workspace initialization fails.
 | [Provider](#provider) | Gets the active GPU arithmetic execution provider implementation. |
 | [Stream](#stream) | Gets the dedicated CUDA Stream for this workspace, used for operations and CUDA Graph capture. |
 | [Transcendental](#transcendental) | Gets the tuning parameters of the big-float `Exp`, `Log` and `Pow` run on this workspace. |
+| [WideOperandThresholdWords](#wideoperandthresholdwords) | Gets or sets the threshold $g$, in words, from which the big-float `Divide` and `Rsqrt` on the GPU truncate a divisor or radicand much wider than the result. |
 | [WorkspacePointer](#workspacepointer) | Gets the raw native device pointer to the allocated workspace scratchpad memory (used by legacy native backend). |
 
 ## DeviceSmCount
@@ -134,6 +135,22 @@ Gets the tuning parameters of the big-float transcendental functions (`Exp`, `Lo
 ```csharp
 public GpuBigFloatTranscendentalOptions Transcendental { get; }
 ```
+
+## WideOperandThresholdWords
+
+Gets or sets the threshold $g$, in words, from which the big-float `Divide` and `Rsqrt` on the GPU truncate a divisor or radicand much wider than the result. Default `DefaultWideOperandThresholdWords` (4).
+
+```csharp
+public const int DefaultWideOperandThresholdWords = 4;
+public int WideOperandThresholdWords { get; set; }
+```
+
+For a result of $n$ words, a divisor or radicand of at least $n + 2 + g$ words is cut to its top $n + 2$ words, and one multiplication at the full width corrects the result when its discarded bits leave it open (see [Wide Divisors and Radicands](../gpu_big_float/GSharpKernelFloatProvider.md#wide-divisors-and-radicands)). The results are the same bits for every $g$ (the exact value rounded toward zero); $g$ changes only the speed. `int.MaxValue` turns the cut off. The CPU paths do not truncate.
+
+#### Exceptions
+
+`ArgumentOutOfRangeException`<br>
+The value is negative.
 
 ## WorkspacePointer
 
