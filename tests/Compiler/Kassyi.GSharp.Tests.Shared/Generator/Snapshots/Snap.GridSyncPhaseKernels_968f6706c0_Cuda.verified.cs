@@ -190,6 +190,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerSharedMemoryAcrossGridSyncKernel();
 IntPtr hfunc = s_hfunc_SharedMemoryAcrossGridSyncKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "GridSyncPhaseKernels.SharedMemoryAcrossGridSyncKernel");
 IntPtr d_buffer = IntPtr.Zero;
 IntPtr d_output = IntPtr.Zero;
 try
@@ -273,6 +274,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerSharedMemoryAcrossGridSyncKernel();
 IntPtr hfunc = s_hfunc_SharedMemoryAcrossGridSyncKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "GridSyncPhaseKernels.SharedMemoryAcrossGridSyncKernel");
 try
 {
 void** kernelParams = stackalloc void*[3];
@@ -347,6 +349,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerShuffleBeforeGridSyncKernel();
 IntPtr hfunc = s_hfunc_ShuffleBeforeGridSyncKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "GridSyncPhaseKernels.ShuffleBeforeGridSyncKernel");
 IntPtr d_data = IntPtr.Zero;
 IntPtr d_output = IntPtr.Zero;
 try
@@ -428,6 +431,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerShuffleBeforeGridSyncKernel();
 IntPtr hfunc = s_hfunc_ShuffleBeforeGridSyncKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "GridSyncPhaseKernels.ShuffleBeforeGridSyncKernel");
 try
 {
 void** kernelParams = stackalloc void*[2];
@@ -490,6 +494,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerBlockFinishesBeforeGridSyncKernel();
 IntPtr hfunc = s_hfunc_BlockFinishesBeforeGridSyncKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "GridSyncPhaseKernels.BlockFinishesBeforeGridSyncKernel");
 IntPtr d_a = IntPtr.Zero;
 try
 {
@@ -544,6 +549,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerBlockFinishesBeforeGridSyncKernel();
 IntPtr hfunc = s_hfunc_BlockFinishesBeforeGridSyncKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "GridSyncPhaseKernels.BlockFinishesBeforeGridSyncKernel");
 try
 {
 void** kernelParams = stackalloc void*[1];
@@ -602,6 +608,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerRepresentativeFinishesBeforeGridSyncKernel();
 IntPtr hfunc = s_hfunc_RepresentativeFinishesBeforeGridSyncKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "GridSyncPhaseKernels.RepresentativeFinishesBeforeGridSyncKernel");
 IntPtr d_a = IntPtr.Zero;
 try
 {
@@ -656,6 +663,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerRepresentativeFinishesBeforeGridSyncKernel();
 IntPtr hfunc = s_hfunc_RepresentativeFinishesBeforeGridSyncKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "GridSyncPhaseKernels.RepresentativeFinishesBeforeGridSyncKernel");
 try
 {
 void** kernelParams = stackalloc void*[1];
@@ -710,6 +718,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerNotCooperativeKernel();
 IntPtr hfunc = s_hfunc_NotCooperativeKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "GridSyncPhaseKernels.NotCooperativeKernel");
 IntPtr d_a = IntPtr.Zero;
 try
 {
@@ -765,6 +774,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerNotCooperativeKernel();
 IntPtr hfunc = s_hfunc_NotCooperativeKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "GridSyncPhaseKernels.NotCooperativeKernel");
 try
 {
 void** kernelParams = stackalloc void*[1];
