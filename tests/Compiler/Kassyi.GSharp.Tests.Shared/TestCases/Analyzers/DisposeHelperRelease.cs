@@ -182,3 +182,100 @@ public sealed class BorrowedThroughHelper : IDisposable
 
     private static void Release(ref Resource r) => r.Dispose();
 }
+
+// Review of #816, item 1 - GSH0027: the release of the borrowed field is three helpers deep on the direct path (B), and
+// four deep through A, which the walk reaches first
+public sealed class ShallowerPathAfterDeep : IDisposable
+{
+    private Resource _borrowed;
+
+    public ShallowerPathAfterDeep(Resource borrowed)
+    {
+        _borrowed = borrowed;
+    }
+
+    public void Dispose()
+    {
+        A();
+        B();
+    }
+
+    private void A() => B();
+
+    private void B() => C();
+
+    private void C() => D();
+
+    private void D() => _borrowed.Dispose();
+}
+
+// Item 1, control - GSH0027: the direct path alone
+public sealed class ShallowPathOnly : IDisposable
+{
+    private Resource _borrowed;
+
+    public ShallowPathOnly(Resource borrowed)
+    {
+        _borrowed = borrowed;
+    }
+
+    public void Dispose()
+    {
+        B();
+    }
+
+    private void B() => C();
+
+    private void C() => D();
+
+    private void D() => _borrowed.Dispose();
+}
+
+// Item 2 - GSH0022: nameof names the field without releasing it
+public sealed class NameOfOnly : IDisposable
+{
+    private Resource _a = new Resource();
+
+    public void Dispose()
+    {
+        _ = nameof(_a);
+    }
+}
+
+// Item 2, control - GSH0022: an empty Dispose
+public sealed class EmptyDispose : IDisposable
+{
+    private Resource _a = new Resource();
+
+    public void Dispose()
+    {
+    }
+}
+
+// Item 3 - no GSH0022: a local function of Dispose that calls another one
+public sealed class LocalCallsLocal : IDisposable
+{
+    private Resource _a = new Resource();
+
+    public void Dispose()
+    {
+        Outer();
+
+        void Outer() => Inner();
+
+        void Inner() => _a.Dispose();
+    }
+}
+
+// Item 3, control - no GSH0022: the local function called directly
+public sealed class LocalDirect : IDisposable
+{
+    private Resource _a = new Resource();
+
+    public void Dispose()
+    {
+        Inner();
+
+        void Inner() => _a.Dispose();
+    }
+}

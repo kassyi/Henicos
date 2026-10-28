@@ -295,27 +295,31 @@ public class DisposableOwnershipAnalyzer : DiagnosticAnalyzer
     private static FieldRelease GetRelease(ImmutableArray<SyntaxNode>.Builder disposeBodies, INamedTypeSymbol type,
         string fieldName)
     {
-        var visited = new HashSet<(SyntaxNode Body, string Name)>();
+        var visited = new Dictionary<(SyntaxNode Body, string Name), int>();
         var release = FieldRelease.None;
         foreach (var body in disposeBodies)
         {
-            release = Max(release, GetRelease(body, fieldName, isField: true, type, depth: 0, visited));
+            release = Max(release, GetRelease(body, body, fieldName, isField: true, type, depth: 0, visited));
         }
 
         return release;
     }
 
     // Whether <body> releases <name>: a field of <type> (also written this.<name>) or a parameter of the helper whose
-    // body this is. A call to a helper of the type (a method with a body, or a local function of <body>) is followed
-    // for each argument that is <name> (to the matching parameter) and, for a field, into the helper's body itself.
-    // Lambdas and nested types are not searched: they may never run.
-    private static FieldRelease GetRelease(SyntaxNode body, string name, bool isField, INamedTypeSymbol type, int depth,
-        HashSet<(SyntaxNode Body, string Name)> visited)
+    // body this is. A call to a helper of the type (a method with a body, or a local function of <member>, the body of
+    // the method that declares <body>) is followed for each argument that is <name> (to the matching parameter) and,
+    // for a field, into the helper's body itself. Lambdas and nested types are not searched: they may never run.
+    // [WHY] <visited> keeps the smallest depth each body was walked at for <name>: a body reached first on a deep path
+    // is walked again from a shallower one, which may follow its helpers further. A cycle stops there with None.
+    private static FieldRelease GetRelease(SyntaxNode body, SyntaxNode member, string name, bool isField,
+        INamedTypeSymbol type, int depth, Dictionary<(SyntaxNode Body, string Name), int> visited)
     {
-        if (!visited.Add((body, name)))
+        if (visited.TryGetValue((body, name), out var seen) && seen <= depth)
         {
             return FieldRelease.None;
         }
+
+        visited[(body, name)] = depth;
 
         var release = FieldRelease.None;
         foreach (var node in body.DescendantNodes(descendIntoChildren: static n =>
@@ -332,7 +336,7 @@ public class DisposableOwnershipAnalyzer : DiagnosticAnalyzer
                 return FieldRelease.Disposed;
             }
 
-            release = Max(release, GetHelperRelease(invocation, body, name, isField, type, depth, visited));
+            release = Max(release, GetHelperRelease(invocation, member, name, isField, type, depth, visited));
             if (release == FieldRelease.Disposed)
             {
                 return release;
@@ -342,26 +346,23 @@ public class DisposableOwnershipAnalyzer : DiagnosticAnalyzer
         return release;
     }
 
-    private static FieldRelease GetHelperRelease(InvocationExpressionSyntax invocation, SyntaxNode caller, string name,
-        bool isField, INamedTypeSymbol type, int depth, HashSet<(SyntaxNode Body, string Name)> visited)
+    private static FieldRelease GetHelperRelease(InvocationExpressionSyntax invocation, SyntaxNode member, string name,
+        bool isField, INamedTypeSymbol type, int depth, Dictionary<(SyntaxNode Body, string Name), int> visited)
     {
         var arguments = invocation.ArgumentList.Arguments;
-        var passedAt = -1;
-        for (var i = 0; i < arguments.Count; i++)
-        {
-            if (!arguments[i].RefKindKeyword.IsKind(SyntaxKind.OutKeyword) &&
-                RefersTo(arguments[i].Expression, name, isField))
-            {
-                passedAt = i;
-                break;
-            }
-        }
+        var passedAt = arguments
+            .AsStackEnumerable()
+            .IndexOf((Name: name, IsField: isField), static (argument, target) =>
+                !argument.RefKindKeyword.IsKind(SyntaxKind.OutKeyword) &&
+                RefersTo(argument.Expression, target.Name, target.IsField)
+            );
 
-        var helpers = GetHelpers(invocation, caller, type);
+        var helpers = GetHelpers(invocation, member, type);
         if (helpers.Count == 0)
         {
-            // A method the analysis cannot see (another type, a base type, a delegate) may release what it is given
-            return passedAt >= 0 ? FieldRelease.Escaped : FieldRelease.None;
+            // nameof(<name>) only names it; a method the analysis cannot see (another type, a base type, a delegate)
+            // may release what it is given
+            return passedAt >= 0 && !IsNameOf(invocation) ? FieldRelease.Escaped : FieldRelease.None;
         }
 
         if (passedAt < 0 && !isField)
@@ -375,28 +376,31 @@ public class DisposableOwnershipAnalyzer : DiagnosticAnalyzer
         }
 
         var release = FieldRelease.None;
-        foreach (var (helperBody, parameters) in helpers)
+        foreach (var (helperBody, helperMember, parameters) in helpers)
         {
             if (isField)
             {
-                release = Max(release, GetRelease(helperBody, name, isField: true, type, depth + 1, visited));
+                release = Max(release,
+                    GetRelease(helperBody, helperMember, name, isField: true, type, depth + 1, visited));
             }
 
             if (passedAt >= 0 && GetParameterName(arguments[passedAt], passedAt, parameters) is { } parameter)
             {
-                release = Max(release, GetRelease(helperBody, parameter, isField: false, type, depth + 1, visited));
+                release = Max(release,
+                    GetRelease(helperBody, helperMember, parameter, isField: false, type, depth + 1, visited));
             }
         }
 
         return release;
     }
 
-    // The bodies and parameters of the helpers that <invocation> may call: the methods of <type> with its name (every
-    // overload, since the syntax alone cannot pick one) and the local functions of <caller>
-    private static List<(SyntaxNode Body, ParameterListSyntax Parameters)> GetHelpers(
-        InvocationExpressionSyntax invocation, SyntaxNode caller, INamedTypeSymbol type)
+    // The bodies of the helpers that <invocation> may call, the member bodies that declare them and their parameters:
+    // the methods of <type> with its name (every overload, since the syntax alone cannot pick one) and the local
+    // functions of <member>, the body of the method the call is written in (a local function may call another one)
+    private static List<(SyntaxNode Body, SyntaxNode Member, ParameterListSyntax Parameters)> GetHelpers(
+        InvocationExpressionSyntax invocation, SyntaxNode member, INamedTypeSymbol type)
     {
-        var helpers = new List<(SyntaxNode Body, ParameterListSyntax Parameters)>();
+        var helpers = new List<(SyntaxNode Body, SyntaxNode Member, ParameterListSyntax Parameters)>();
         var name = invocation.Expression switch
         {
             IdentifierNameSyntax identifier => identifier.Identifier.Text,
@@ -409,9 +413,9 @@ public class DisposableOwnershipAnalyzer : DiagnosticAnalyzer
             return helpers;
         }
 
-        foreach (var member in type.GetMembers(name))
+        foreach (var candidate in type.GetMembers(name))
         {
-            if (member is not IMethodSymbol { MethodKind: MethodKind.Ordinary } method)
+            if (candidate is not IMethodSymbol { MethodKind: MethodKind.Ordinary } method)
             {
                 continue;
             }
@@ -421,27 +425,33 @@ public class DisposableOwnershipAnalyzer : DiagnosticAnalyzer
                 if (reference.GetSyntax() is MethodDeclarationSyntax declaration &&
                     ((SyntaxNode?)declaration.Body ?? declaration.ExpressionBody) is { } helperBody)
                 {
-                    helpers.Add((helperBody, declaration.ParameterList));
+                    helpers.Add((helperBody, helperBody, declaration.ParameterList));
                 }
             }
         }
 
-        // A local function is visible only when <invocation> is written directly in <caller>
+        // A local function is called by its name alone
         if (invocation.Expression is IdentifierNameSyntax or GenericNameSyntax)
         {
-            foreach (var node in caller.DescendantNodes(descendIntoChildren: static n =>
-                         n is not (TypeDeclarationSyntax or AnonymousFunctionExpressionSyntax)))
-            {
-                if (node is LocalFunctionStatementSyntax local && local.Identifier.Text == name &&
-                    ((SyntaxNode?)local.Body ?? local.ExpressionBody) is { } localBody)
-                {
-                    helpers.Add((localBody, local.ParameterList));
-                }
-            }
+            member.DescendantNodes(descendIntoChildren: static n =>
+                    n is not (TypeDeclarationSyntax or AnonymousFunctionExpressionSyntax)
+                ).AsStackEnumerable()
+                .OfType<LocalFunctionStatementSyntax>()
+                .Where(name, static (local, target) => local.Identifier.Text == target)
+                .Select(member, static (local, owner) => (GetLocalFunctionBody(local), owner, local.ParameterList))
+                .AddTo(helpers);
         }
 
         return helpers;
     }
+
+    // The body of a local function; an extern one has none, so its declaration (which holds no call) stands for it
+    private static SyntaxNode GetLocalFunctionBody(LocalFunctionStatementSyntax local) =>
+        (SyntaxNode?)local.Body ?? local.ExpressionBody ?? (SyntaxNode)local;
+
+    // nameof(...): the caller checks first that no helper has that name, so the call is the operator
+    private static bool IsNameOf(InvocationExpressionSyntax invocation) =>
+        invocation.Expression is IdentifierNameSyntax { Identifier.Text: "nameof" };
 
     // The parameter that <argument> (at <position>) binds to: by its name when it has one, otherwise by position
     private static string? GetParameterName(ArgumentSyntax argument, int position, ParameterListSyntax parameters)
