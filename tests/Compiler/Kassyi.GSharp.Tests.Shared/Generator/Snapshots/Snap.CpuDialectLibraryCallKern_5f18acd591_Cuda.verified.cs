@@ -397,7 +397,7 @@ finally
 }
 #pragma warning restore CS8500
 public const string SortKernel_Source = @"extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__CpuDialectLibraryCallKernels__SortKernel(GSharpArray<int> __gsharp_id_0_data){
-thrust::sort(thrust::device, __gsharp_id_0_data.begin(), __gsharp_id_0_data.end());
+__gsharp_sort(__gsharp_id_0_data);
 }
 ";
 public static readonly string SortKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +SortKernel_Source;

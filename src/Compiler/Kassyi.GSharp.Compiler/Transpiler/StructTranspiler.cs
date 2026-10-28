@@ -351,6 +351,9 @@ internal static class StructTranspiler
             {
                 context.Emitter.Writer.AppendLine($"__device__ void {GSharpInternalNames.Using.Dispose}();");
             }
+
+            // Declared the same way, defined only by the methods that sort with them (SortComparisonMembers)
+            SortComparisonMembers.WriteDeclarations(structSym, ref context);
         }
 
         context.Emitter.Writer.AppendLine(";");

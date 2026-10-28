@@ -352,9 +352,12 @@ enum class GSharpErrorCode : int {
     NotSupported = 1,
     InvalidOperation = 2,
     IndexOutOfRange = 3,
-    ArgumentOutOfRange = 4
+    ArgumentOutOfRange = 4,
+    Argument = 5
 };
 __device__ __forceinline__ void __gsharp_trap(GSharpErrorCode, const char*) { asm("trap;"); }
+// [WHY] A trap stops the kernel, so a trap in the comparison of a sort needs no translation (ErrorChannel.hpp does it on the CPU)
+struct __gsharp_sort_compare_scope { };
 
 // --- Dynamic shared memory ---
 // [WHY] Every dynamic SharedMemory<T> declaration is one region per block (static storage, like __shared__). Regions are
@@ -404,5 +407,6 @@ __device__ __forceinline__ unsigned char* __gsharp_dsmem_place(TDsmem* s, unsign
 }
 
 #include "Prelude/VectorConstructors.hpp"
+#include "Prelude/Sort.hpp"
 // --- ZeroAlloc.Linq (StackLinq) ---
 #include "StackLinq.cuh"

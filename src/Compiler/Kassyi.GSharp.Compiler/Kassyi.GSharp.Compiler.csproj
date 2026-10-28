@@ -62,6 +62,9 @@
 
     <!-- Analyzer Output -->
     <None Include="$(OutputPath)\$(AssemblyName).dll" Pack="true" PackagePath="analyzers\dotnet\cs" Visible="false" />
+
+    <!-- The licenses of the code the Prelude embeds into generated code (Sort.hpp: dotnet/runtime, MIT) -->
+    <None Include="..\..\..\THIRD-PARTY-NOTICES.txt" Pack="true" PackagePath="" Visible="false" />
   </ItemGroup>
 
   <PropertyGroup>
