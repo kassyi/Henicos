@@ -3,9 +3,6 @@ namespace Kassyi.GSharp.Compiler.Marshaling;
 /// <summary>Emits custom struct marshal and unmarshal helper methods between managed and native shadow representations.</summary>
 internal static class StructMarshalingEmitter
 {
-    private static readonly ITranspilerDialect s_cudaDialect = new GSharpCudaDialect();
-    private static readonly ITranspilerDialect s_cpuDialect = new StandardCppDialect();
-
     /// <summary>Emits the rendered structs of a kernel class (<see cref="RenderStructs"/>).</summary>
     /// <remarks>A struct whose <c>AotContexts</c> name is already taken gets no helpers; GSH0058 reports it.</remarks>
     internal static void WriteStructMarshaling(SourceWriter writer, EquatableArray<StructHostSource> structs, bool isCuda)
@@ -28,8 +25,8 @@ internal static class StructMarshalingEmitter
     /// parameters, one per <c>AotContexts</c> name (<see cref="CollectUniqueStructs"/>).
     /// </summary>
     /// <remarks>
-    /// The element of an array that only the CUDA launcher converts has no CPU text: the CPU launcher passes the array
-    /// as it is (until L4).
+    /// The element of an array has CPU text only when the CPU launcher converts it; an Identical element is passed as
+    /// the pinned array.
     /// </remarks>
     internal static EquatableArray<StructHostSource> RenderStructs(IMethodSymbol kernel)
     {
@@ -39,7 +36,7 @@ internal static class StructMarshalingEmitter
             .AsStackEnumerable()
             .Do(
                 cpuStructs,
-                static (parameter, structs) => TypeLayoutCalculator.CollectStructs(parameter.Type, structs)
+                static (parameter, structs) => CollectParameterStructs(parameter.Type, HostDialects.Cpu, structs)
             );
 
         var sources = ImmutableArray.CreateBuilder<StructHostSource>(structTypes.Length);
@@ -47,8 +44,8 @@ internal static class StructMarshalingEmitter
         {
             sources.Add(new StructHostSource(
                 AotHostNames.GetAotStructPath(s),
-                RenderStructForDialect(s, s_cudaDialect),
-                cpuStructs.Contains(s) ? RenderStructForDialect(s, s_cpuDialect) : string.Empty));
+                RenderStructForDialect(s, HostDialects.Cuda),
+                cpuStructs.Contains(s) ? RenderStructForDialect(s, HostDialects.Cpu) : string.Empty));
         }
 
         return sources.MoveToImmutable().AsEquatableArray();
@@ -61,6 +58,11 @@ internal static class StructMarshalingEmitter
         NativeStructEmitter.WriteNativeStructDeclaration(writer, s, structLayout);
         WriteMarshalMethod(writer, s, structLayout, dialect);
         WriteUnmarshalMethod(writer, s, structLayout, dialect);
+        if (!dialect.IsCuda)
+        {
+            WriteCopyArraysMethod(writer, s, structLayout);
+        }
+
         return writer.ToString();
     }
 
@@ -102,12 +104,25 @@ internal static class StructMarshalingEmitter
         return unique.ToImmutable();
     }
 
-    // An array-like parameter whose element the CUDA launcher converts goes through the element's shadow
+    // An array-like parameter whose element a launcher (CUDA or CPU) converts goes through the element's shadow
     private static void CollectParameterStructs(ITypeSymbol type, HashSet<INamedTypeSymbol> structs)
     {
         var marshaledType = type.UnwrapNullableArrayLike() ?? type;
         TypeLayoutCalculator.CollectStructs(
-            marshaledType.TryGetArrayLikeElementType(out var element) && KernelParameterShape.IsConvertedOnCuda(element)
+            marshaledType.TryGetArrayLikeElementType(out var element) &&
+            (KernelParameterShape.IsConvertedOnCuda(element) || KernelParameterShape.IsConverted(element, HostDialects.Cpu))
+                ? element
+                : type,
+            structs);
+    }
+
+    // The same for one dialect: the element of an array that this dialect's launcher converts
+    private static void CollectParameterStructs(ITypeSymbol type, ITranspilerDialect dialect,
+        HashSet<INamedTypeSymbol> structs)
+    {
+        var marshaledType = type.UnwrapNullableArrayLike() ?? type;
+        TypeLayoutCalculator.CollectStructs(
+            marshaledType.TryGetArrayLikeElementType(out var element) && KernelParameterShape.IsConverted(element, dialect)
                 ? element
                 : type,
             structs);
@@ -155,6 +170,105 @@ internal static class StructMarshalingEmitter
 
         writer.AppendLine();
     }
+
+    // public static void CopyArrays_<key>(ref <S> host)
+    // { <host mirror binding>; if (host.<array> != null) { host.<array> = (<array type>)host.<array>.Clone();
+    //   for (...) CopyArrays_<E>(ref host.<array>[i]); } CopyArrays_<nested>(ref host.<struct>);
+    //   for (int k = 0; k < <N>; k++) { <the same for host[k]> } }
+    // [WHY] The CPU launcher gives a kernel a copy of an [In] array and of a read-only container, whose writes the device
+    // never sends back (#798). Copying the elements is not enough when they hold arrays, which the CPU kernel would
+    // otherwise write in place, so every array they hold, at any depth, is copied as well. Only a struct that holds
+    // arrays gets the method.
+    private static void WriteCopyArraysMethod(SourceWriter writer, INamedTypeSymbol s, StructLayoutInfo structLayout)
+    {
+        if (!TypeLayoutCalculator.TryFindArrayField(s, out _))
+        {
+            return;
+        }
+
+        var hasMirror = NativeStructEmitter.NeedsHostMirror(s, structLayout);
+        writer.Append("public static void ");
+        writer.AppendCopyArraysMethodName(s);
+        using (writer.Parentheses())
+        {
+            writer.Append("ref ");
+            writer.AppendFullyQualifiedCsharpName(s);
+            writer.Append(hasMirror ? $" {MirroredHostParameter}" : " host");
+        }
+
+        writer.AppendLine();
+        using (writer.Scope())
+        {
+            WriteHostMirrorBinding(writer, s, hasMirror);
+            foreach (var member in StructAbiMembers.Get(s))
+            {
+                WriteCopyArraysMember(writer, member);
+            }
+        }
+
+        writer.AppendLine();
+    }
+
+    private static void WriteCopyArraysMember(SourceWriter writer, StructAbiMember member)
+    {
+        // GSH0078 reports the member; a fixed buffer holds only primitives
+        if (NativeStructEmitter.IsUnrepresentableReference(member) ||
+            member.Kind == StructAbiMemberKind.FixedBuffer ||
+            !HoldsArrays(member.Type))
+        {
+            return;
+        }
+
+        if (member.Kind == StructAbiMemberKind.InlineArrayElement)
+        {
+            // host[k] is the element of the inline array, whatever the field's accessibility
+            writer.AppendLine($"for (int k = 0; k < {member.ElementCount}; k++)");
+            using (writer.Scope())
+            {
+                WriteCopyArraysValue(writer, "host[k]", member.Type);
+            }
+
+            return;
+        }
+
+        WriteCopyArraysValue(writer, $"host.{member.Name.ToCSharpIdentifier()}", member.Type);
+    }
+
+    // if (<value> != null) { <value> = (<array type>)<value>.Clone(); [for (...) CopyArrays_<E>(ref <value>[i]);] }
+    // or CopyArrays_<S>(ref <value>); for a struct that holds arrays
+    private static void WriteCopyArraysValue(SourceWriter writer, string value, ITypeSymbol type)
+    {
+        if (!type.TryGetArrayLikeElementType(out var element))
+        {
+            writer.AppendCopyArraysMethodName(type);
+            writer.AppendLine($"(ref {value});");
+            return;
+        }
+
+        writer.AppendLine($"if ({value} != null)");
+        using (writer.Scope())
+        {
+            writer.Append($"{value} = (");
+            writer.AppendFullyQualifiedCsharpName(type);
+            writer.AppendLine($"){value}.Clone();");
+            if (HoldsArrays(element))
+            {
+                writer.AppendLine($"for (int i = 0; i < {value}.Length; i++)");
+                using (writer.Scope())
+                {
+                    writer.AppendCopyArraysMethodName(element);
+                    writer.AppendLine($"(ref {value}[i]);");
+                }
+            }
+        }
+    }
+
+    // An array, or a user struct with an array field at any depth (TypeLayoutCalculator.TryFindArrayField)
+    private static bool HoldsArrays(ITypeSymbol type) =>
+        type.IsArrayLikeType() ||
+        type is INamedTypeSymbol named &&
+        TypeLayoutCalculator.IsUserStruct(named) &&
+        TypeLayoutCalculator.TryFindArrayField(named, out _);
 
     // The host value of a struct with a host mirror arrives under this name, and `host` is then the mirror
     private const string MirroredHostParameter = "hostValue";
@@ -214,7 +328,7 @@ internal static class StructMarshalingEmitter
                 {
                     if (NeedsElementCopy(member.Type, dialect))
                     {
-                        WriteInlineArrayElementCopy(writer, member, toNative);
+                        WriteInlineArrayElementCopy(writer, member, toNative, dialect);
                     }
                     else
                     {
@@ -254,7 +368,8 @@ internal static class StructMarshalingEmitter
         TypeLayoutCalculator.GetStructLayout(named, dialect).Transfer != TransferClass.Identical;
 
     // for (int k = 0; k < <N>; k++) { <copy host[k] and ((<element shadow>*)pField)[k]> }
-    private static void WriteInlineArrayElementCopy(SourceWriter writer, StructAbiMember member, bool toNative)
+    private static void WriteInlineArrayElementCopy(SourceWriter writer, StructAbiMember member, bool toNative,
+        ITranspilerDialect dialect)
     {
         writer.AppendLine($"for (int k = 0; k < {member.ElementCount}; k++)");
         using (writer.Scope())
@@ -264,11 +379,11 @@ internal static class StructMarshalingEmitter
                 const string NativeElement = "((global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy*)pField)[k]";
                 if (toNative)
                 {
-                    WriteMarshalArrayMember(writer, "host[k]", NativeElement, arrayElementType);
+                    WriteMarshalArrayMember(writer, "host[k]", NativeElement, arrayElementType, dialect);
                 }
                 else
                 {
-                    WriteUnmarshalArrayMember(writer, "host[k]", NativeElement, arrayElementType);
+                    WriteUnmarshalArrayMember(writer, "host[k]", NativeElement, arrayElementType, dialect);
                 }
 
                 return;
@@ -300,7 +415,7 @@ internal static class StructMarshalingEmitter
         if (member.Type.TryGetArrayLikeElementType(out var elementType))
         {
             var name = member.Name.ToCSharpIdentifier();
-            WriteMarshalArrayMember(writer, $"host.{name}", $"native.{name}", elementType);
+            WriteMarshalArrayMember(writer, $"host.{name}", $"native.{name}", elementType, dialect);
         }
         else if (TypeLayoutCalculator.IsUserStruct(member.Type))
         {
@@ -332,8 +447,14 @@ internal static class StructMarshalingEmitter
     }
 
     private static void WriteMarshalArrayMember(SourceWriter writer, string host, string native,
-        ITypeSymbol elementType)
+        ITypeSymbol elementType, ITranspilerDialect dialect)
     {
+        if (!dialect.IsCuda)
+        {
+            WriteCpuMarshalArrayMember(writer, host, native, elementType, dialect);
+            return;
+        }
+
         writer.AppendLine($"if ({host} != null)");
         using (writer.Scope())
         {
@@ -463,7 +584,7 @@ internal static class StructMarshalingEmitter
         if (member.Type.TryGetArrayLikeElementType(out var elementType))
         {
             var name = member.Name.ToCSharpIdentifier();
-            WriteUnmarshalArrayMember(writer, $"host.{name}", $"native.{name}", elementType);
+            WriteUnmarshalArrayMember(writer, $"host.{name}", $"native.{name}", elementType, dialect);
         }
         else if (TypeLayoutCalculator.IsUserStruct(member.Type))
         {
@@ -495,8 +616,14 @@ internal static class StructMarshalingEmitter
     }
 
     private static void WriteUnmarshalArrayMember(SourceWriter writer, string host, string native,
-        ITypeSymbol elementType)
+        ITypeSymbol elementType, ITranspilerDialect dialect)
     {
+        if (!dialect.IsCuda)
+        {
+            WriteCpuUnmarshalArrayMember(writer, host, native, elementType, dialect);
+            return;
+        }
+
         writer.AppendLine(
             $"if ({host} != null && !isDevicePtr && {native}.Data != IntPtr.Zero)");
         using (writer.Scope())
@@ -554,6 +681,75 @@ internal static class StructMarshalingEmitter
                         writer.AppendLine("handle.Free();");
                     }
                 }
+            }
+        }
+    }
+
+    // if (<host> != null) {
+    //   var pinnedHandles = allocatedPtrs ?? throw new ArgumentNullException(nameof(allocatedPtrs));
+    //   [var shadow = new <element shadow>[<host>.Length]; for (...) Marshal_<element>(ref <host>[i], ref shadow[i], ...);]
+    //   var handle = GCHandle.Alloc(<host or shadow>, GCHandleType.Pinned); pinnedHandles.Add(GCHandle.ToIntPtr(handle));
+    //   <native>.Data = handle.AddrOfPinnedObject(); <native>.Length = <host>.Length; }
+    // [WHY] The CPU kernel runs in this process, so an array field is pinned and passed as it is, with no copy: the
+    // kernel writes the host array itself, and two fields that hold one array see one array, as in C# (design L5). An
+    // element that lays out differently goes through a pinned shadow array. The launcher frees every handle in its
+    // finally block; a missing list would leak the pins, so it throws before pinning anything.
+    private static void WriteCpuMarshalArrayMember(SourceWriter writer, string host, string native,
+        ITypeSymbol elementType, ITranspilerDialect dialect)
+    {
+        const string GcHandle = "System.Runtime.InteropServices.GCHandle";
+        writer.AppendLine($"if ({host} != null)");
+        using (writer.Scope())
+        {
+            writer.AppendLine(
+                "var pinnedHandles = allocatedPtrs ?? throw new System.ArgumentNullException(nameof(allocatedPtrs));");
+            var pinned = host;
+            if (KernelParameterShape.IsConverted(elementType, dialect))
+            {
+                writer.Append("var shadow = new ");
+                writer.AppendAotStructPath(elementType);
+                writer.AppendLine($"[{host}.Length];");
+                writer.AppendLine($"for (int i = 0; i < {host}.Length; i++)");
+                using (writer.Scope())
+                {
+                    writer.AppendMarshalMethodName(elementType);
+                    writer.AppendLine($"(ref {host}[i], ref shadow[i], false, allocatedPtrs, hStream);");
+                }
+
+                pinned = "shadow";
+            }
+
+            writer.AppendLine(
+                $"var handle = {GcHandle}.Alloc({pinned}, System.Runtime.InteropServices.GCHandleType.Pinned);");
+            writer.AppendLine($"pinnedHandles.Add({GcHandle}.ToIntPtr(handle));");
+            writer.AppendLine($"{native}.Data = handle.AddrOfPinnedObject();");
+            writer.AppendLine($"{native}.Length = {host}.Length;");
+        }
+    }
+
+    // The kernel wrote the pinned host array itself, so only a shadow array of converted elements is copied back:
+    // if (<host> != null && <native>.Data != IntPtr.Zero) { var shadow = (<element shadow>*)<native>.Data;
+    // for (...) Unmarshal_<element>(ref <host>[i], ref shadow[i], false, hStream); }
+    // The shadow stays pinned until the launcher's finally block, after the unmarshaling.
+    private static void WriteCpuUnmarshalArrayMember(SourceWriter writer, string host, string native,
+        ITypeSymbol elementType, ITranspilerDialect dialect)
+    {
+        if (!KernelParameterShape.IsConverted(elementType, dialect))
+        {
+            return;
+        }
+
+        writer.AppendLine($"if ({host} != null && {native}.Data != IntPtr.Zero)");
+        using (writer.Scope())
+        {
+            writer.Append("var shadow = (");
+            writer.AppendAotStructPath(elementType);
+            writer.AppendLine($"*){native}.Data;");
+            writer.AppendLine($"for (int i = 0; i < {host}.Length; i++)");
+            using (writer.Scope())
+            {
+                writer.AppendUnmarshalMethodName(elementType);
+                writer.AppendLine($"(ref {host}[i], ref shadow[i], false, hStream);");
             }
         }
     }

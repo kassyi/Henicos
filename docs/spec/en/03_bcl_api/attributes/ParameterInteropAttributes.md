@@ -22,6 +22,7 @@ public static void VectorAdd([In] float[] a, [In] float[] b, [Out] float[] c, in
 
 - **Default Behavior (`[In, Out]`)**: By default, G# assumes all arrays are read/write. It generates AOT wrapper code that copies data both to the device before kernel execution (`cuMemcpyHtoD`) and back to the host after execution (`cuMemcpyDtoH`).
 - **`[In]` Attribute**: Indicates the array is read-only. The AOT transpiler will **skip copying the array back** to the host after execution, saving valuable PCIe bandwidth.
+  A kernel write to an `[In]` array therefore never reaches the caller, and neither does a write to an array that its elements hold. The CPU paths (the native launcher and the managed fallback) give the kernel a copy of the array and of every array its elements hold, so that they produce the same result. A read-only container (`ReadOnlySpan<T>`, `ReadOnlyMemory<T>`, `ImmutableArray<T>`) is never copied back either, so the same holds for the arrays its elements hold.
 - **`[Out]` Attribute**: Indicates the array is write-only. The AOT transpiler will **skip copying the array to** the device before execution. It still allocates the required memory on the device (`cuMemAlloc`).
 
 Using these attributes appropriately is highly recommended for performance-critical kernels, as redundant PCIe transfers can drastically degrade performance compared to native C++ CUDA.
