@@ -18,6 +18,15 @@ internal static class ResumeLocalScenarios
         Assert.Equal(new[] { 1, 2 }, a);
     }
 
+    public static void SpanInOtherBranch(Action<Action> run)
+    {
+        var a = new int[2];
+
+        run(() => ResumeLocalKernels.LaunchSpanInOtherBranchKernel(a, 0, blockDimX: 1));
+
+        Assert.Equal(new[] { 1, 0 }, a);
+    }
+
     public static void ViewAfterLocal(Action<Action> run)
     {
         int[] first = [1, 2, 3, 4];

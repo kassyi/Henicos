@@ -22,6 +22,22 @@ public static partial class ResumeLocalKernels
         a[1] = 2;
     }
 
+    // U1: the span is used only on the branch without the barrier (the analyzer accepts it, C4): a = {1, 0}
+    [GpuKernel]
+    public static void SpanInOtherBranchKernel(int[] a, int flag)
+    {
+        Span<int> s = stackalloc int[4];
+        if (flag > 0)
+        {
+            Gpu.SyncThreads();
+        }
+        else
+        {
+            s[0] = 1;
+            a[0] = s[0];
+        }
+    }
+
     // The initializer reads a local assigned before the declaration: result[t] = (t odd ? second : first)[t] + 100
     [GpuKernel]
     public static void ViewAfterLocalKernel(int[] first, int[] second, int[] result)

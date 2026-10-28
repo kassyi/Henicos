@@ -21,6 +21,11 @@ public class ResumeLocalManagedTests : TranspilerTestBase
 
     [Fact]
     [Scenario(TestScenario.Boundary)]
+    public void Test_Managed_SpanUsedOnlyOnTheOtherBranch_KeepsItsMemory() =>
+        ResumeLocalScenarios.SpanInOtherBranch(s_runManaged);
+
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
     public void Test_Managed_InitializerReadsEarlierLocal_RunsWhereDeclared() =>
         ResumeLocalScenarios.ViewAfterLocal(s_runManaged);
 

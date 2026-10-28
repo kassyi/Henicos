@@ -21,6 +21,11 @@ public class ResumeLocalTests : TranspilerTestBase
 
     [SkippableFact]
     [Scenario(TestScenario.Boundary)]
+    public void Test_SpanUsedOnlyOnTheOtherBranch_KeepsItsMemory() =>
+        ResumeLocalScenarios.SpanInOtherBranch(s_runNative);
+
+    [SkippableFact]
+    [Scenario(TestScenario.Boundary)]
     public void Test_InitializerReadsEarlierLocal_RunsWhereDeclared() =>
         ResumeLocalScenarios.ViewAfterLocal(s_runNative);
 

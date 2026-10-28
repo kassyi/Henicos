@@ -1,3 +1,6 @@
+using Microsoft.CodeAnalysis.FlowAnalysis;
+using Microsoft.CodeAnalysis.Operations;
+
 namespace Kassyi.GSharp.Compiler.Diagnostics.Kernel;
 
 /// <summary>
@@ -33,6 +36,10 @@ internal readonly ref struct KernelBarrierValidator(
 
     private readonly bool _isDeviceIterator = !isKernel && IteratorTypeResolver.ContainsDirectYield(methodDecl.Body);
 
+    // Set by the scan when the body has a call that splits the state machine (a barrier, a warp shuffle, a grid sync, a
+    // call that suspends); only then is the control flow graph built for the cross-barrier rules
+    private readonly StrongBox<bool> _hasSplitPoint = new();
+
     // Computed on the first branch around a block barrier
     private readonly ThreadVarianceAnalysis _variance = new(semanticModel, methodDecl);
 
@@ -49,16 +56,19 @@ internal readonly ref struct KernelBarrierValidator(
         // 2. Body Traversal & Immediate Node Validations
         ScanKernelBody();
 
-        // Fast-path: If no barriers exist, cross-barrier constraints are completely skipped
+        // 3. Locals live across a point where the state machine splits (GSH0039, GSH0041, GSH0072), on the control flow
+        // graph: every split point counts, also a grid sync or a warp shuffle that the barrier list below leaves out
+        ValidateCrossBarrierLocals();
+
+        // Fast-path: If no barriers exist, the remaining cross-barrier constraints are completely skipped
         if (_barriers.Count == 0)
         {
             return;
         }
 
-        // 3. Post-Barrier Semantic Constraint Validations
+        // 4. Post-Barrier Semantic Constraint Validations
         ValidateRecursiveLocalFunctions();
         ValidateCrossBarrierGotos();
-        ValidateCrossBarrierLocals();
     }
 
     /// <summary>Validates the method header: the async modifier (GSH0046) and, for a device function, the iterator shape.</summary>
@@ -191,6 +201,7 @@ internal readonly ref struct KernelBarrierValidator(
                         suspendingCallee = callee;
                     }
 
+                    _hasSplitPoint.Value |= isPhaseBarrier || suspendingCallee != null;
                     if ((isPhaseBarrier || suspendingCallee != null) &&
                         (_isDeviceIterator || IsInsideIteratorForEachBody(inv)))
                     {
@@ -408,43 +419,33 @@ internal readonly ref struct KernelBarrierValidator(
         }
     }
 
-    /// <summary>Validates that ref structs, local pointers, and iterator locals do not survive across barrier boundaries (GSH0039, GSH0041, GSH0072).</summary>
+    /// <summary>
+    /// Validates that ref structs, local pointers, and iterator locals are not live across a point where the state machine
+    /// splits (GSH0039, GSH0041, GSH0072): some path from the split uses them before assigning them again
+    /// (<see cref="CrossBarrierLiveness"/>). The state machine cannot keep such a local in the thread's frame.
+    /// </summary>
     private void ValidateCrossBarrierLocals()
     {
-        if (_trackedLocals.Count == 0)
+        if (_trackedLocals.Count == 0 || !_hasSplitPoint.Value || !TryCreateControlFlowGraph(out var graph))
         {
             return;
         }
 
-        foreach (var tracked in _trackedLocals)
+        var locals = new ILocalSymbol[_trackedLocals.Count];
+        for (var i = 0; i < locals.Length; i++)
         {
-            var varStart = tracked.Declarator.SpanStart;
+            locals[i] = _trackedLocals[i].Symbol;
+        }
 
-            var firstBarrier = FindFirstBarrierAfter(varStart);
-            if (firstBarrier == null)
+        var liveAcrossSplit = CrossBarrierLiveness.FindLiveAcrossSplit(graph, locals, semanticModel);
+        for (var i = 0; i < locals.Length; i++)
+        {
+            if (!liveAcrossSplit[i])
             {
                 continue;
             }
 
-            var firstBarrierAfterEnd = firstBarrier.Span.End;
-
-            var scopeNode = tracked.Declarator.Parent?.Parent?.Parent ?? methodDecl;
-
-            var usedAfterBarrier = scopeNode.DescendantNodes()
-                .AsStackEnumerable()
-                .Any(
-                    (Model: semanticModel, Tracked: tracked, After: firstBarrierAfterEnd),
-                    static (childNode, s) =>
-                        childNode is IdentifierNameSyntax id &&
-                        id.SpanStart > s.After &&
-                        id.Identifier.ValueText == s.Tracked.IdentifierText &&
-                        s.Model.GetSymbol(id).IsEqualTo(s.Tracked.Symbol)
-                );
-            if (!usedAfterBarrier && !(tracked.IsIteratorLocal && IsUsedInLoopWithBarrier(tracked)))
-            {
-                continue;
-            }
-
+            var tracked = _trackedLocals[i];
             if (tracked.IsRefLikeOrRef)
             {
                 context.ReportDiagnostic(
@@ -468,40 +469,25 @@ internal readonly ref struct KernelBarrierValidator(
         }
     }
 
-    private bool IsUsedInLoopWithBarrier(TrackedLocalInfo tracked)
+    // The control flow graph of the body; none while the body does not bind (being edited), so nothing is reported then
+    private bool TryCreateControlFlowGraph([NotNullWhen(true)] out ControlFlowGraph? graph)
     {
-        foreach (var barrier in _barriers)
+        graph = null;
+        if (semanticModel.GetOperation(methodDecl) is not IMethodBodyOperation body)
         {
-            for (var ancestor = barrier.Parent; ancestor != null && ancestor != methodDecl; ancestor = ancestor.Parent)
+            return false;
+        }
+
+        foreach (var operation in body.Descendants())
+        {
+            if (operation is IInvalidOperation)
             {
-                if (ancestor is not (ForStatementSyntax or ForEachStatementSyntax or WhileStatementSyntax
-                    or DoStatementSyntax))
-                {
-                    continue;
-                }
-
-                if (tracked.Declarator.SpanStart >= ancestor.SpanStart)
-                {
-                    continue;
-                }
-
-                var referencedInLoop = ancestor.DescendantNodes()
-                    .AsStackEnumerable()
-                    .Any(
-                        (Model: semanticModel, Tracked: tracked),
-                        static (childNode, s) =>
-                            childNode is IdentifierNameSyntax id &&
-                            id.Identifier.ValueText == s.Tracked.IdentifierText &&
-                            s.Model.GetSymbol(id).IsEqualTo(s.Tracked.Symbol)
-                    );
-                if (referencedInLoop)
-                {
-                    return true;
-                }
+                return false;
             }
         }
 
-        return false;
+        graph = ControlFlowGraph.Create(body);
+        return true;
     }
 
     private InvocationExpressionSyntax? FindFirstBarrierAfter(int position)
