@@ -18,6 +18,7 @@ Script conventions and the catalog of agent scripts are in [agent-scripts.md](..
 | Does a symbol carry a G# attribute? | `.HasAttribute` with a `KnownAttributes` constant (also checks the declaring namespace, `KnownAttributes.IsDeclaredInOwnerNamespace`) | `AttributeClass?.Name == "GpuKernelAttribute"` |
 | Get the attribute data | `.GetAttribute` | `GetAttributes()` plus a loop |
 | Is this a `[GpuConstexpr]` parameter? | `.IsConstexprParameter` | `p.HasAttribute(KnownAttributes.GpuConstexpr)` |
+| Is this `SpecialType` a primitive value that device code supports (`bool`, `char`, the eight integer types, `float`, `double`; not `nint` / `nuint`, `decimal` or `Half`), or an arithmetic type (the same without `bool`)? | `.IsPrimitiveValue`, `.IsArithmetic` | a `SpecialType.System_*` list written again |
 | Do the locals start zeroed, or does a `[SkipLocalsInit]` apply (searched as Roslyn does: method, property of an accessor, enclosing methods, containing types outward, module)? For a symbol, or for a node (located in the user's source, also from a lowered tree) | `.AreLocalsZeroed`, `.AreLocalsZeroedAt` | `HasAttribute(KnownAttributes.SkipLocalsInit)` on the method, its type and the module spelled out |
 | Is this a cooperative kernel (`[GpuKernel(Cooperative = true)]`, launched with `cuLaunchCooperativeKernel`)? | `.IsCooperativeKernel` | `GetAttribute(GpuKernel)` plus a search of `NamedArguments` for `"Cooperative"` |
 | Compare symbols | `.IsEqualTo` | `SymbolEqualityComparer.Default.Equals` spelled out |

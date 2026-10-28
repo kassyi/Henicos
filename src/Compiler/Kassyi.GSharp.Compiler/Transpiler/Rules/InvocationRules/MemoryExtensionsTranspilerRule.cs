@@ -297,10 +297,7 @@ public sealed class MemoryExtensionsTranspilerRule : IInvocationTranspilerRule
 
     // Numbers, char, bool and enums: .NET orders them by value (an enum by its underlying value)
     private static bool HasPrimitiveOrder(ITypeSymbol type) =>
-        type.TypeKind == TypeKind.Enum || type.SpecialType is SpecialType.System_Boolean or SpecialType.System_Char or
-            SpecialType.System_SByte or SpecialType.System_Byte or SpecialType.System_Int16 or SpecialType.System_UInt16 or
-            SpecialType.System_Int32 or SpecialType.System_UInt32 or SpecialType.System_Int64 or SpecialType.System_UInt64 or
-            SpecialType.System_Single or SpecialType.System_Double;
+        type.TypeKind == TypeKind.Enum || type.SpecialType.IsPrimitiveValue();
 
     // A lambda, an anonymous method or a method group of a [GpuDeviceFunction]
     private static bool IsDeviceFunction(ExpressionSyntax expression, SemanticModel model, ITranspilerDialect dialect) =>
