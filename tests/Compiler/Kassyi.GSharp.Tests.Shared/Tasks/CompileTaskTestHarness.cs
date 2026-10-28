@@ -183,6 +183,7 @@ internal sealed class MockProcessRunner : IProcessRunner
     public int CmdExitCode { get; set; } = 0;
     public string CmdStandardOutput { get; set; } = "INCLUDE=C:\\dummy\r\nLIB=C:\\dummy";
     public int VersionCheckExitCode { get; set; } = 0;
+    public string VersionCheckOutput { get; set; } = "compiler version check ok";
 
     public ProcessResult Run(ProcessStartInfo startInfo, CancellationToken cancellationToken = default)
     {
@@ -206,7 +207,7 @@ internal sealed class MockProcessRunner : IProcessRunner
         {
             return new ProcessResult(
                 VersionCheckExitCode,
-                VersionCheckExitCode == 0 ? "compiler version check ok" : "",
+                VersionCheckExitCode == 0 ? VersionCheckOutput : "",
                 VersionCheckExitCode != 0 ? "compiler not found" : "");
         }
 

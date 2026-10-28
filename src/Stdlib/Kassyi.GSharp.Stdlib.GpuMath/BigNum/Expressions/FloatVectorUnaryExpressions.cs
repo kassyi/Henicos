@@ -37,8 +37,8 @@ internal static class FloatVectorElementwiseHelper
             return;
         }
 
-        var arithmetic = GetArithmetic(workspace);
-        var execContext = CreateExecutionContext(workspace);
+        var arithmetic = GpuWorkspaceArithmetic.FloatArithmetic(workspace);
+        var execContext = GpuWorkspaceArithmetic.CreateContext(workspace);
 
         var srcExps = ArrayPool<uint>.Shared.Rent(count);
         var srcSigns = ArrayPool<uint>.Shared.Rent(count);
@@ -85,8 +85,8 @@ internal static class FloatVectorElementwiseHelper
             return;
         }
 
-        var arithmetic = GetArithmetic(workspace);
-        var execContext = CreateExecutionContext(workspace);
+        var arithmetic = GpuWorkspaceArithmetic.FloatArithmetic(workspace);
+        var execContext = GpuWorkspaceArithmetic.CreateContext(workspace);
 
         var leftExps = ArrayPool<uint>.Shared.Rent(count);
         var leftSigns = ArrayPool<uint>.Shared.Rent(count);
@@ -128,14 +128,6 @@ internal static class FloatVectorElementwiseHelper
             ArrayPool<uint>.Shared.Return(dstSigns);
         }
     }
-
-    private static IGpuBigFloatArithmetic GetArithmetic(GpuWorkspace workspace) =>
-        workspace.Engine == GpuExecutionEngine.GSharpAot
-            ? GSharpKernelFloatProvider.Instance
-            : CSharpCpuBigFloatArithmetic.Instance;
-
-    private static GpuBigIntExecutionContext CreateExecutionContext(GpuWorkspace workspace) =>
-        new(workspace, workspace.MemoryManager, new LegacyProviderArithmeticAdapter(), workspace.Stream);
 }
 
 internal abstract class FloatVectorUnaryExpressionBase(

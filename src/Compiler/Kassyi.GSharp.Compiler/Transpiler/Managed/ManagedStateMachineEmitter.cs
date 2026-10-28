@@ -48,7 +48,6 @@ internal static class ManagedStateMachineEmitter
         writer.AppendLine($"{accessibility} class {contextName} {{");
         writer.AppendLine($"{memberAccessibility} int {GSharpInternalNames.StateMachine.State};");
         writer.AppendLine($"{memberAccessibility} uint {GSharpInternalNames.StateMachine.WarpExchange};");
-        writer.AppendLine($"{memberAccessibility} bool {GSharpInternalNames.StateMachine.YieldedForGridSync};");
 
         foreach (var parameter in copiedParameters)
         {

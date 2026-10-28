@@ -333,7 +333,7 @@ public class FatbinParserTests
 
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_IsCompatibleWith_CubinExactMatch()
+    public void Test_IsCompatibleWith_CubinSameMajorNewerMinor()
     {
         // Synthesize a CUBIN item (Type = 2) for sm_80
         byte[] cubinItem = CreateMockFatbin(type: FatbinItemInfo.TypeCubin, computeVersion: 80, major: 8, minor: 0);
@@ -341,10 +341,10 @@ public class FatbinParserTests
         Assert.True(success);
         Assert.NotNull(image);
 
-        // Native CUBIN requires exact architecture match
+        // A cubin runs on devices of the same major version with an equal or newer minor version
         Assert.True(image.IsCompatibleWith(8, 0));
-        Assert.False(image.IsCompatibleWith(8, 6)); // Incompatible for native cubin
-        Assert.False(image.IsCompatibleWith(9, 0)); // Incompatible for native cubin
+        Assert.True(image.IsCompatibleWith(8, 6));
+        Assert.False(image.IsCompatibleWith(9, 0)); // Another major version needs PTX
         Assert.False(image.IsCompatibleWith(7, 5));
     }
 
@@ -479,6 +479,9 @@ public class FatbinParserTests
     [InlineData(8, 0, 9, 0, true)]  // Newer major
     [InlineData(8, 6, 8, 0, false)] // Target older minor
     [InlineData(8, 0, 7, 5, false)] // Target older major
+    [InlineData(8, 6, 8, 6, true)]  // Default compute_86 PTX on its own architecture
+    [InlineData(8, 6, 9, 0, true)]  // Default compute_86 PTX is JIT-compiled on Hopper
+    [InlineData(8, 6, 12, 0, true)] // Default compute_86 PTX is JIT-compiled on Blackwell
     public void Test_IsCompatibleWith_Ptx_ForwardCompatibility(ushort ptxMajor, ushort ptxMinor, int deviceMajor, int deviceMinor, bool expected)
     {
         byte[] fatbinBytes = CreateMockFatbin(FatbinItemInfo.TypePtx, (uint)(ptxMajor * 10 + ptxMinor), ptxMajor, ptxMinor);
@@ -491,12 +494,14 @@ public class FatbinParserTests
 
     [Theory]
     [Scenario(TestScenario.HappyPath)]
-    [InlineData(8, 0, 8, 0, true)]  // Exact match
-    [InlineData(8, 0, 8, 6, false)] // Different minor
-    [InlineData(8, 0, 9, 0, false)] // Newer major (CUBIN is native machine code, not forward compatible)
-    [InlineData(8, 6, 8, 0, false)] // Older minor
-    [InlineData(8, 0, 7, 5, false)] // Older major
-    public void Test_IsCompatibleWith_Cubin_ExactMatchOnly(ushort cubinMajor, ushort cubinMinor, int deviceMajor, int deviceMinor, bool expected)
+    [InlineData(8, 6, 8, 6, true)]   // Exact match
+    [InlineData(8, 6, 8, 9, true)]   // Newer minor of the same major (sm_86 cubin on an RTX 40xx)
+    [InlineData(8, 0, 8, 6, true)]   // Newer minor of the same major
+    [InlineData(8, 6, 8, 0, false)]  // Older minor
+    [InlineData(8, 6, 9, 0, false)]  // Newer major (a cubin is not forward compatible across major versions)
+    [InlineData(8, 6, 12, 0, false)] // Newer major
+    [InlineData(8, 0, 7, 5, false)]  // Older major
+    public void Test_IsCompatibleWith_Cubin_SameMajorNewerMinor(ushort cubinMajor, ushort cubinMinor, int deviceMajor, int deviceMinor, bool expected)
     {
         byte[] fatbinBytes = CreateMockFatbin(FatbinItemInfo.TypeCubin, (uint)(cubinMajor * 10 + cubinMinor), cubinMajor, cubinMinor);
         bool parsed = FatbinParser.TryParse(fatbinBytes, out FatbinImage? image);
@@ -547,6 +552,46 @@ public class FatbinParserTests
         // On sm_75: Neither matches
         Assert.False(image.IsCompatibleWith(7, 5));
     }
+
+#if GSHARP_CUDA
+    [SkippableTheory]
+    [Category(TestCategory.Compiler)]
+    [Scenario(TestScenario.HappyPath)]
+    [InlineData("Kassyi.GSharp.Kernels_Kassyi_GSharp_Tests_Cuda.gfatbin")]
+    [InlineData("Kassyi.GSharp.Kernels_Kassyi_GSharp_Stdlib_GpuMath.gfatbin")]
+    public void Test_BuiltFatbin_DefaultArchitectures_HoldSass86AndPtx86(string fileName)
+    {
+        // The default GSharpTargetArchitectures keeps the sm_86 SASS and adds compute_86 PTX, so that GPUs newer than
+        // the 8.x family JIT-compile the module instead of failing to load it.
+        // The build skips the fatbins only without nvcc or with GSHARP_TEST_NO_CUDA=1; otherwise a missing file is a failure
+        Skip.If(Environment.GetEnvironmentVariable("GSHARP_TEST_NO_CUDA") == "1", "GSHARP_TEST_NO_CUDA=1 skips the fatbins.");
+        Skip.IfNot(IsNvccOnPath(), "nvcc is not on PATH, so the build skipped the fatbins.");
+        var path = Path.Combine(AppContext.BaseDirectory, fileName);
+        Assert.True(File.Exists(path), $"'{path}' was not built.");
+
+        bool parsed = FatbinParser.TryParse(File.ReadAllBytes(path), out FatbinImage? image);
+
+        Assert.True(parsed);
+        Assert.NotNull(image);
+        Assert.Contains(image.Items, i => i.Type == FatbinItemInfo.TypeCubin && i.ComputeVersion == 86);
+        Assert.Contains(image.Items, i => i.Type == FatbinItemInfo.TypePtx && i.ComputeVersion == 86);
+        Assert.True(image.IsCompatibleWith(12, 0));
+    }
+
+    private static bool IsNvccOnPath()
+    {
+        var fileName = OperatingSystem.IsWindows() ? "nvcc.exe" : "nvcc";
+        foreach (var directory in (Environment.GetEnvironmentVariable("PATH") ?? "").Split(Path.PathSeparator))
+        {
+            if (directory.Length > 0 && File.Exists(Path.Combine(directory.Trim('"'), fileName)))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+#endif
 
     internal static byte[] CreateMockFatbin(ushort type, uint computeVersion, ushort major, ushort minor)
     {

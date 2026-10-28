@@ -127,7 +127,7 @@ internal static class TypeLayoutCalculator
         var hostLayout = ComputeStructHostLayout(structType, kind, pack, explicitSize);
 
         // 3. TransferClass
-        var unsupported = FindUnsupportedLayout(structType, dialect, kind, deviceFields);
+        var unsupported = FindUnsupportedLayout(structType, dialect, kind, explicitSize, deviceFields);
         var transfer = unsupported.HasValue
             ? TransferClass.Unsupported
             : ClassifyTransfer(dialect, deviceLayout, deviceFields, hostLayout);
@@ -259,7 +259,8 @@ internal static class TypeLayoutCalculator
     }
 
     // Sequential: declaration order, each field aligned up (Pack caps the alignment). Explicit: the [FieldOffset]
-    // values, with StructLayout.Size as the minimum size. Either way the size is rounded up to the largest alignment.
+    // values. StructLayout.Size, of any layout kind, is the minimum size. Either way the size is rounded up to the
+    // largest alignment, as C++ sizeof is a multiple of alignof.
     private static TypeLayout ComputeDeviceStructLayout(INamedTypeSymbol structType, ITranspilerDialect dialect,
         TypeLayoutKind kind, int pack, int explicitSize, ImmutableArray<FieldLayout>.Builder? fields)
     {
@@ -286,7 +287,7 @@ internal static class TypeLayoutCalculator
             fields?.Add(new FieldLayout(member, offset, new TypeLayout(fieldSize, effectiveAlign)));
         }
 
-        if (kind == TypeLayoutKind.Explicit && explicitSize > 0)
+        if (explicitSize > 0)
         {
             end = Math.Max(end, explicitSize);
         }
@@ -298,8 +299,18 @@ internal static class TypeLayoutCalculator
     // overlap each other, each at an offset its alignment allows (design §3.3-4); a member must be a value the device
     // has a type for. A nested struct passes its own reason up.
     private static UnsupportedLayout? FindUnsupportedLayout(INamedTypeSymbol structType, ITranspilerDialect dialect,
-        TypeLayoutKind kind, ImmutableArray<FieldLayout> deviceFields)
+        TypeLayoutKind kind, int explicitSize, ImmutableArray<FieldLayout> deviceFields)
     {
+        // [WHY] C# accepts StructLayout.Size on an [InlineArray] struct, but the runtime refuses to load the type
+        // (TypeLoadException), so there is no host layout to follow
+        if (explicitSize > 0 && structType.GetAttribute(KnownAttributes.InlineArray) is not null)
+        {
+            return new UnsupportedLayout(
+                "an [InlineArray] struct cannot have StructLayout.Size; the runtime does not load it",
+                null,
+                null);
+        }
+
         if (kind == TypeLayoutKind.Explicit)
         {
             for (var i = 0; i < deviceFields.Length; i++)
@@ -333,6 +344,14 @@ internal static class TypeLayoutCalculator
 
         foreach (var member in StructAbiMembers.Get(structType))
         {
+            if (member.Kind == StructAbiMemberKind.UnknownHiddenField)
+            {
+                return new UnsupportedLayout(
+                    $"field '{member.Name}' is a compiler-generated field that G# does not lay out",
+                    null,
+                    null);
+            }
+
             var type = member.Type.UnwrapNullableArrayLike() ?? member.Type;
             if (type.IsArrayLikeType())
             {
@@ -410,12 +429,12 @@ internal static class TypeLayoutCalculator
             hostFieldsBuilder.Add(new FieldLayout(member, offset, new TypeLayout(fieldSize, effectiveAlign)));
         }
 
-        if (kind == TypeLayoutKind.Explicit && explicitSize > 0)
-        {
-            hostEnd = Math.Max(hostEnd, explicitSize);
-        }
-
-        var hostSize = Math.Max(AlignUp(hostEnd, hostMaxAlign), 1);
+        // [WHY] The CLR takes max(StructLayout.Size, end of the last field) as it is, of any layout kind, and rounds up
+        // to the alignment only when no Size is given (EEClassLayoutInfo, CalculateSizeWithMetadataSize / AlignSize in
+        // dotnet/runtime classlayoutinfo.cpp): [StructLayout(Size = 6)] with one int is 6 bytes, with a 6-byte stride
+        var hostSize = explicitSize > 0
+            ? Math.Max(explicitSize, hostEnd)
+            : Math.Max(AlignUp(hostEnd, hostMaxAlign), 1);
         return new HostLayout(true, hostSize, hostMaxAlign, hostFieldsBuilder.ToImmutable());
     }
 

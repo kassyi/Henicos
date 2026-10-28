@@ -22,7 +22,24 @@ public enum StructAbiMemberKind
     /// The hidden field (<c>&lt;a&gt;P</c>) that Roslyn declares for a primary constructor parameter that members read,
     /// named after the parameter.
     /// </summary>
-    CapturedParameter
+    CapturedParameter,
+
+    /// <summary>
+    /// The hidden field that stores the delegate of a field-like event (<c>event Action E;</c>), listed as the event
+    /// (<see cref="StructAbiMember.Symbol"/>), under its name and with the delegate type.
+    /// </summary>
+    /// <remarks>
+    /// [WHY] Roslyn declares the field (<c>SourceEventFieldSymbol</c>, implicitly declared, the event as its
+    /// <c>AssociatedSymbol</c>) but does not list it in <c>GetMembers()</c>, neither for a struct of the compilation nor
+    /// for one from metadata, so it is found through the event (<see cref="StructAbiMembers.IsFieldLikeEvent"/>).
+    /// </remarks>
+    EventBackingField,
+
+    /// <summary>
+    /// A compiler-generated field in <c>GetMembers()</c> that none of the other kinds explains. It has storage, so it is
+    /// listed rather than dropped, and the layout reports the struct as one the device cannot lay out (GSH0078).
+    /// </summary>
+    UnknownHiddenField
 }
 
 /// <summary>One member of a user struct's native layout.</summary>
@@ -48,8 +65,10 @@ public readonly record struct StructAbiMember(
 /// </summary>
 /// <remarks>
 /// The set holds instance fields, auto-properties (through the backing field, under the property name), <c>fixed</c>
-/// buffers, the element of an <c>[InlineArray(N)]</c> struct and the hidden fields of captured primary constructor
-/// parameters (under the parameter name), in the order of <c>GetMembers()</c>, each with its element count. That is
+/// buffers, the element of an <c>[InlineArray(N)]</c> struct, the hidden fields of captured primary constructor
+/// parameters (under the parameter name) and of field-like events (under the event name), in the order of
+/// <c>GetMembers()</c>, each with its element count. Every instance field that the C# compiler emits is listed (pinned by
+/// <c>StructAbiMembersTests</c> against the emitted metadata). That is
 /// the order in which the C# compiler emits the fields, so it is the host layout of a sequential struct: Roslyn lists
 /// the hidden fields of the captured parameters first.
 /// The layout, the shadow struct and the marshaling size a member as element layout times
@@ -105,6 +124,41 @@ internal static class StructAbiMembers
         return false;
     }
 
+    /// <summary>
+    /// Whether <paramref name="event"/> is a field-like event (<c>event Action E;</c>), which stores its delegate in a
+    /// hidden field.
+    /// </summary>
+    /// <remarks>
+    /// In source, it is declared as an event field that is neither <c>extern</c> nor the defining part of a
+    /// <c>partial</c> event (whose implementing part writes <c>add</c> and <c>remove</c>). From metadata, the C# compiler
+    /// marks its generated accessors <c>[CompilerGenerated]</c>. An event with <c>add</c> and <c>remove</c> written out
+    /// stores nothing.
+    /// </remarks>
+    internal static bool IsFieldLikeEvent(IEventSymbol @event)
+    {
+        if (@event.IsExtern)
+        {
+            return false;
+        }
+
+        if (@event.DeclaringSyntaxReferences.IsEmpty)
+        {
+            return @event.AddMethod is { } add && add.HasAttribute(KnownAttributes.CompilerGenerated);
+        }
+
+        foreach (var reference in @event.DeclaringSyntaxReferences)
+        {
+            if (reference.GetSyntax() is VariableDeclaratorSyntax { Parent.Parent: EventFieldDeclarationSyntax declaration } &&
+                !declaration.Modifiers.Any(SyntaxKind.PartialKeyword) &&
+                !declaration.Modifiers.Any(SyntaxKind.ExternKeyword))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     private static bool HasBackingField(ImmutableArray<ISymbol> members, IPropertySymbol property) =>
         members
             .AsStackEnumerable()
@@ -148,6 +202,12 @@ internal static class StructAbiMembers
                         return true;
                     }
                 }
+                else if (member is IEventSymbol { IsStatic: false } @event && IsFieldLikeEvent(@event))
+                {
+                    Current = new StructAbiMember(@event, @event.Name, @event.Type, 1,
+                        StructAbiMemberKind.EventBackingField);
+                    return true;
+                }
                 else if (_includeComputedProperties && member is IPropertySymbol { IsStatic: false, IsImplicitlyDeclared: false } property &&
                          !HasBackingField(_members, property))
                 {
@@ -177,7 +237,8 @@ internal static class StructAbiMembers
 
             if (field.IsImplicitlyDeclared)
             {
-                return false;
+                member = new StructAbiMember(field, field.Name, field.Type, 1, StructAbiMemberKind.UnknownHiddenField);
+                return true;
             }
 
             if (field is { IsFixedSizeBuffer: true, Type: IPointerTypeSymbol pointer })

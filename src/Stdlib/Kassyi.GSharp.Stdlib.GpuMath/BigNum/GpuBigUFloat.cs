@@ -96,6 +96,11 @@ public readonly struct GpuBigUFloat : IGpuBigNumber<GpuBigUFloat>
     /// <param name="left">The minuend operand.</param>
     /// <param name="right">The subtrahend operand.</param>
     /// <returns>A binary expression node representing the subtraction.</returns>
+    /// <remarks>
+    /// The expression is evaluated when it is converted to <see cref="GpuBigUFloat"/>. That evaluation throws
+    /// <see cref="OverflowException"/> when <paramref name="right"/> is greater than <paramref name="left"/>: an unsigned
+    /// value has no negative difference, as with a <see langword="checked"/> <see cref="uint"/> subtraction.
+    /// </remarks>
     public static BinaryExpr<GpuBigUFloat, SubOp> operator -(GpuBigUFloat left, GpuBigUFloat right) =>
         new(left, right);
 
@@ -197,6 +202,8 @@ public readonly struct GpuBigUFloat : IGpuBigNumber<GpuBigUFloat>
     /// </summary>
     /// <param name="other">The value to subtract.</param>
     /// <returns>The difference of this instance minus <paramref name="other"/>.</returns>
+    /// <exception cref="OverflowException"><paramref name="other"/> is greater than this instance, so the difference
+    /// is negative (as with a <see langword="checked"/> <see cref="uint"/> subtraction).</exception>
     public GpuBigUFloat Subtract(GpuBigUFloat other) => this - other;
 
     /// <summary>
@@ -301,6 +308,8 @@ public readonly struct GpuBigUFloat : IGpuBigNumber<GpuBigUFloat>
     /// </summary>
     /// <param name="expr">The binary subtraction expression.</param>
     /// <returns>The evaluated <see cref="GpuBigUFloat"/> result.</returns>
+    /// <exception cref="OverflowException">The subtrahend is greater than the minuend, so the difference is
+    /// negative.</exception>
     public static implicit operator GpuBigUFloat(BinaryExpr<GpuBigUFloat, SubOp> expr)
     {
         var visitor = new GpuBigFloatExpressionVisitor(expr.Left.Significand.Workspace);

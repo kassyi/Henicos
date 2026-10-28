@@ -150,6 +150,39 @@ Gets the type of embedded file (`1` = PTX, `2` = ELF/cuBIN).
 public ushort Type { get; }
 ```
 
+## Methods
+
+| Name | Description |
+| --- | --- |
+| [IsCompatibleWith(Int32, Int32)](#iscompatiblewithint32-int32) | Verifies if this embedded module is compatible with the specified GPU compute capability. |
+
+## IsCompatibleWith(Int32, Int32)
+
+Verifies if this embedded module is compatible with the specified GPU compute capability.
+
+```csharp
+public bool IsCompatibleWith(int deviceMajor, int deviceMinor);
+```
+
+#### Parameters
+
+`deviceMajor` _Int32_<br>
+The major compute capability version of the physical GPU (e.g., `8` for `sm_80`).
+
+`deviceMinor` _Int32_<br>
+The minor compute capability version of the physical GPU (e.g., `0` for `sm_80`, `6` for `sm_86`).
+
+#### Returns
+
+_Boolean_<br>
+`true` if this module can execute on the target architecture; otherwise, `false`.
+
+## Remarks
+
+- **PTX (`TypePtx`)**: runs on any device whose compute capability is equal to or newer than its target; the driver JIT-compiles it.
+- **cuBIN (`TypeCubin`)**: runs on devices of the same major version whose minor version is equal or newer. An `sm_86` cuBIN runs on 8.6 and 8.9, but not on 8.0 or 9.0.
+- Architecture-specific (`sm_90a`) and family-specific (`sm_100f`) cuBINs, and Tegra GPUs (8.7, Jetson Orin), which are not binary compatible with the desktop GPUs of the same major version, follow stricter or wider rules that this check does not model. It accepts everything the driver may accept and leaves the final decision to the driver.
+
 ## Examples
 
 ### Reading Embedded Module Metadata

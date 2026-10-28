@@ -29,6 +29,7 @@ public enum CUresult
     CudaErrorEccUncorrectable = 214,
     CudaErrorUnsupportedLimit = 215,
     CudaErrorContextAlreadyInUse = 216,
+    CudaErrorUnsupportedPtxVersion = 222,
     CudaErrorInvalidSource = 300,
     CudaErrorFileNotFound = 301,
     CudaErrorSharedObjectSymbolNotFound = 302,

@@ -16,8 +16,7 @@ public static class GpuBigUIntExpressionExtensions
         GpuBigUInt? targetResult = null)
     {
 
-        var execContext = new GpuBigIntExecutionContext(workspace, workspace.MemoryManager,
-            new LegacyProviderArithmeticAdapter(), workspace.Stream);
+        var execContext = GpuWorkspaceArithmetic.CreateContext(workspace);
 
         ScopedBigIntMemory targetMem;
         GpuBigUInt finalResult;

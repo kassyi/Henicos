@@ -163,35 +163,19 @@ internal sealed class DefaultGpuMemoryManager(IGpuExecutionProvider provider, In
         }
 
         CountRelease(buffer.TotalWords);
-
-        // A graph being captured keeps using the buffer on every launch, so it must not reach the shared pool. The own
-        // session is checked first; the driver is asked only to find a capture the user started.
-        var session = CurrentSession();
-        if (session is not null)
+        if (TryDefer(buffer))
         {
-            // Recorded before the clear, so that the buffer comes back (ReturnDeferred clears it again) even when a
-            // failed capture refuses the clear. The clear is a node of the graph, so a later node takes a zero buffer.
-            _deferred.TryAdd(buffer, 0);
-            session.AddFree(buffer);
-            provider.ClearMemoryAsync(buffer.Pointer, buffer.TotalWords, stream);
             return;
         }
 
         try
         {
-            if (IsStreamCapturing())
-            {
-                // A capture the user started: the graph is unknown here, so the buffer stays parked until Dispose
-                _deferred.TryAdd(buffer, 0);
-                return;
-            }
-
             provider.ClearMemoryAsync(buffer.Pointer, buffer.TotalWords, stream);
         }
         catch
         {
-            // The query or the clear failed (for example without a current context): the buffer is parked, not lost,
-            // and Dispose frees it
+            // The clear failed (for example without a current context): the buffer is parked, not lost, and Dispose
+            // frees it
             _deferred.TryAdd(buffer, 0);
             throw;
         }
@@ -207,6 +191,44 @@ internal sealed class DefaultGpuMemoryManager(IGpuExecutionProvider provider, In
         {
             DrainPool(null);
         }
+    }
+
+    // A graph being captured keeps using the buffer on every launch, so it must not reach the shared pool: parks a
+    // buffer that a capture may use and returns true. The own session is checked first; the driver is asked only to
+    // find a capture the user started.
+    private bool TryDefer(GpuBigIntDeviceBuffer buffer)
+    {
+        var session = CurrentSession();
+        if (session is not null)
+        {
+            // Recorded before the clear, so that the buffer comes back (ReturnDeferred clears it again) even when a
+            // failed capture refuses the clear. The clear is a node of the graph, so a later node takes a zero buffer.
+            _deferred.TryAdd(buffer, 0);
+            session.AddFree(buffer);
+            provider.ClearMemoryAsync(buffer.Pointer, buffer.TotalWords, stream);
+            return true;
+        }
+
+        bool capturing;
+        try
+        {
+            capturing = IsStreamCapturing();
+        }
+        catch
+        {
+            // The query failed (for example without a current context): the buffer is parked, not lost, and Dispose
+            // frees it
+            _deferred.TryAdd(buffer, 0);
+            throw;
+        }
+
+        if (capturing)
+        {
+            // A capture the user started: the graph is unknown here, so the buffer stays parked until Dispose
+            _deferred.TryAdd(buffer, 0);
+        }
+
+        return capturing;
     }
 
     /// <summary>
@@ -325,17 +347,33 @@ internal sealed class DefaultGpuMemoryManager(IGpuExecutionProvider provider, In
             while (lazyBag.Value.TryTake(out var pooled))
             {
                 Interlocked.Decrement(ref _pooledBuffers);
-                pooled.TryRetire(pooled.Generation);
-                try
-                {
-                    provider.FreeMemory(pooled.Pointer, stream);
-                    Interlocked.Increment(ref _driverFrees);
-                }
-                catch (Exception ex) when (exceptions is not null)
-                {
-                    exceptions.Add(ex);
-                }
+                ReleaseToDriver(pooled, immediate: false, exceptions);
             }
+        }
+    }
+
+    // Ends the lease of buffer, so that a surviving copy of a handle never reaches FreeMemory again, and frees it
+    // through the driver: in stream order on the workspace stream, or with the immediate device-wide free. A failure is
+    // added to exceptions, or rethrown without a list.
+    private void ReleaseToDriver(GpuBigIntDeviceBuffer buffer, bool immediate, List<Exception>? exceptions)
+    {
+        buffer.TryRetire(buffer.Generation);
+        try
+        {
+            if (immediate)
+            {
+                provider.FreeMemory(buffer.Pointer);
+            }
+            else
+            {
+                provider.FreeMemory(buffer.Pointer, stream);
+            }
+
+            Interlocked.Increment(ref _driverFrees);
+        }
+        catch (Exception ex) when (exceptions is not null)
+        {
+            exceptions.Add(ex);
         }
     }
 
@@ -393,16 +431,7 @@ internal sealed class DefaultGpuMemoryManager(IGpuExecutionProvider provider, In
                 continue;
             }
 
-            deferred.TryRetire(deferred.Generation);
-            try
-            {
-                provider.FreeMemory(deferred.Pointer);
-                Interlocked.Increment(ref _driverFrees);
-            }
-            catch (Exception ex)
-            {
-                exceptions.Add(ex);
-            }
+            ReleaseToDriver(deferred, immediate: true, exceptions);
         }
 
         foreach (var ptr in _activeAllocations.Keys)
@@ -413,18 +442,8 @@ internal sealed class DefaultGpuMemoryManager(IGpuExecutionProvider provider, In
                 continue;
             }
 
-            // End the lease first: a surviving copy of the handle must never reach FreeMemory again
-            live.TryRetire(live.Generation);
             CountRelease(live.TotalWords);
-            try
-            {
-                provider.FreeMemory(ptr, stream);
-                Interlocked.Increment(ref _driverFrees);
-            }
-            catch (Exception ex)
-            {
-                exceptions.Add(ex);
-            }
+            ReleaseToDriver(live, immediate: false, exceptions);
         }
 
         if (exceptions.Count > 0)

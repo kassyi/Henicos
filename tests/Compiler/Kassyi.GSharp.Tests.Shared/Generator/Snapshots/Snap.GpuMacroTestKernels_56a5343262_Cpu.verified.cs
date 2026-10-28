@@ -124,7 +124,6 @@ public static readonly string Kernel_MacroTest_FillAndSingle_FullSource=global::
 public class __gsharp_context_Kassyi__GSharp__Stdlib__GpuMath__Tests__Kernels__GpuMacroTestKernels__Kernel_uMacroTest_uFillAndSingle {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
-public bool __gsharp_yielded_for_grid_sync;
 }
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Stdlib__GpuMath__Tests__Kernels__GpuMacroTestKernels__Kernel_uMacroTest_uFillAndSingle(uint[] outputBuffer, int length, uint fillValue, uint singleValue, __gsharp_context_Kassyi__GSharp__Stdlib__GpuMath__Tests__Kernels__GpuMacroTestKernels__Kernel_uMacroTest_uFillAndSingle __gsharp_ctx) {
 {
@@ -138,7 +137,7 @@ for (int __gsharp_unroll_0 = global::Kassyi.GSharp.Core.ManagedGpuContext.BlockD
 outputBuffer[__gsharp_unroll_0] = fillValue;
 }
 
-__gsharp_ctx.__gsharp_yielded_for_grid_sync = true;
+global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested = true;
 __gsharp_ctx.__gsharp_state = 1;
 return;
 }
@@ -227,9 +226,9 @@ if (__gsharp_contexts[__gsharp_linear_tid].__gsharp_state != -1)
 {
 anyGridActive = true;
 anyBlockActive = true;
-__gsharp_contexts[__gsharp_linear_tid].__gsharp_yielded_for_grid_sync = false;
+global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested = false;
 __gsharp_statemachine_Kassyi__GSharp__Stdlib__GpuMath__Tests__Kernels__GpuMacroTestKernels__Kernel_uMacroTest_uFillAndSingle(outputBuffer, length, fillValue, singleValue, __gsharp_contexts[__gsharp_linear_tid]);
-if (__gsharp_contexts[__gsharp_linear_tid].__gsharp_yielded_for_grid_sync)
+if (global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested)
 {
 gridSyncRequested = true;
 }

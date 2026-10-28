@@ -60,7 +60,6 @@ public partial class SuspendingCallArgumentKernels
 public class __gsharp_frame_Kassyi__GSharp__Tests__Shared__Syntax__SuspendingCallArgumentKernels__PairSum {
 internal int __gsharp_state;
 internal uint __gsharp_warp_exchange;
-internal bool __gsharp_yielded_for_grid_sync;
 }
 public static bool __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__SuspendingCallArgumentKernels__PairSum(int value, uint scale, bool negate, global::Kassyi.GSharp.Tests.Shared.Syntax.PacketColor color, __gsharp_frame_Kassyi__GSharp__Tests__Shared__Syntax__SuspendingCallArgumentKernels__PairSum __gsharp_ctx, ref int __gsharp_result) {
 {
@@ -205,7 +204,6 @@ public static readonly string OmittedOptionalArgumentsKernel_FullSource=global::
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__SuspendingCallArgumentKernels__OmittedOptionalArgumentsKernel {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
-public bool __gsharp_yielded_for_grid_sync;
 public int tid;
 public int __gsharp_arg_temp_0;
 public int __gsharp_call_temp_1;
@@ -310,9 +308,9 @@ if (__gsharp_contexts[__gsharp_linear_tid].__gsharp_state != -1)
 {
 anyGridActive = true;
 anyBlockActive = true;
-__gsharp_contexts[__gsharp_linear_tid].__gsharp_yielded_for_grid_sync = false;
+global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested = false;
 __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__SuspendingCallArgumentKernels__OmittedOptionalArgumentsKernel(input, output, __gsharp_contexts[__gsharp_linear_tid]);
-if (__gsharp_contexts[__gsharp_linear_tid].__gsharp_yielded_for_grid_sync)
+if (global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested)
 {
 gridSyncRequested = true;
 }
@@ -431,7 +429,6 @@ public static readonly string NamedArgumentKernel_FullSource=global::Kassyi.GSha
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__SuspendingCallArgumentKernels__NamedArgumentKernel {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
-public bool __gsharp_yielded_for_grid_sync;
 public int tid;
 public int __gsharp_arg_temp_0;
 public int __gsharp_call_temp_1;
@@ -536,9 +533,9 @@ if (__gsharp_contexts[__gsharp_linear_tid].__gsharp_state != -1)
 {
 anyGridActive = true;
 anyBlockActive = true;
-__gsharp_contexts[__gsharp_linear_tid].__gsharp_yielded_for_grid_sync = false;
+global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested = false;
 __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__SuspendingCallArgumentKernels__NamedArgumentKernel(input, output, __gsharp_contexts[__gsharp_linear_tid]);
-if (__gsharp_contexts[__gsharp_linear_tid].__gsharp_yielded_for_grid_sync)
+if (global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested)
 {
 gridSyncRequested = true;
 }
@@ -659,7 +656,6 @@ public static readonly string ReorderedNamedArgumentsKernel_FullSource=global::K
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__SuspendingCallArgumentKernels__ReorderedNamedArgumentsKernel {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
-public bool __gsharp_yielded_for_grid_sync;
 public int tid;
 public global::Kassyi.GSharp.Tests.Shared.Syntax.PacketColor __gsharp_arg_temp_0;
 public int __gsharp_arg_temp_1;
@@ -766,9 +762,9 @@ if (__gsharp_contexts[__gsharp_linear_tid].__gsharp_state != -1)
 {
 anyGridActive = true;
 anyBlockActive = true;
-__gsharp_contexts[__gsharp_linear_tid].__gsharp_yielded_for_grid_sync = false;
+global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested = false;
 __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__SuspendingCallArgumentKernels__ReorderedNamedArgumentsKernel(input, output, __gsharp_contexts[__gsharp_linear_tid]);
-if (__gsharp_contexts[__gsharp_linear_tid].__gsharp_yielded_for_grid_sync)
+if (global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested)
 {
 gridSyncRequested = true;
 }

@@ -51,6 +51,10 @@ public static class GpuBigNumberStackLinqExtensions
         /// </summary>
         /// <param name="scalar">The scalar subtrahend.</param>
         /// <returns>A new parallel sequence containing the differences.</returns>
+        /// <remarks>
+        /// For <see cref="GpuBigUFloat"/>, evaluating an element whose difference is negative throws
+        /// <see cref="OverflowException"/> when the sequence is enumerated; the message does not name the element.
+        /// </remarks>
         public ParallelStackEnumerable<SelectEnumerator<TEnumerator, T, T>, T>
             SelectSubtract(T scalar) => source.Select(x => x - scalar);
 
@@ -210,6 +214,10 @@ public static class GpuBigNumberStackLinqExtensions
         /// </summary>
         /// <param name="scalar">The scalar subtrahend.</param>
         /// <returns>A new stack-allocated sequence containing the differences.</returns>
+        /// <remarks>
+        /// For <see cref="GpuBigUFloat"/>, evaluating an element whose difference is negative throws
+        /// <see cref="OverflowException"/> when the sequence is enumerated; the message does not name the element.
+        /// </remarks>
         public StackEnumerable<SelectEnumerator<TEnumerator, T, T>, T>
             SelectSubtract(T scalar) =>
             source.Select(x => x - scalar);
@@ -289,6 +297,10 @@ public static class GpuBigNumberStackLinqExtensions
     /// <param name="left">The minuend parallel sequence.</param>
     /// <param name="right">The subtrahend parallel sequence.</param>
     /// <returns>A new parallel sequence containing the element-wise differences.</returns>
+    /// <remarks>
+    /// For <see cref="GpuBigUFloat"/>, evaluating an element whose difference is negative throws
+    /// <see cref="OverflowException"/> when the sequence is enumerated; the message does not name the element.
+    /// </remarks>
     public static ParallelStackEnumerable<ZipStackEnumerator<TLeftEnumerator, TRightEnumerator, T, T, T>, T>
         ZipSubtract<TLeftEnumerator, TRightEnumerator, T>(
             this ParallelStackEnumerable<TLeftEnumerator, T> left,
@@ -404,6 +416,10 @@ public static class GpuBigNumberStackLinqExtensions
     /// <param name="left">The minuend sequence.</param>
     /// <param name="right">The subtrahend sequence.</param>
     /// <returns>A new stack-allocated sequence containing the element-wise differences.</returns>
+    /// <remarks>
+    /// For <see cref="GpuBigUFloat"/>, evaluating an element whose difference is negative throws
+    /// <see cref="OverflowException"/> when the sequence is enumerated; the message does not name the element.
+    /// </remarks>
     public static StackEnumerable<ZipStackEnumerator<TLeftEnumerator, TRightEnumerator, T, T, T>, T>
         ZipSubtract<TLeftEnumerator, TRightEnumerator, T>(
             this StackEnumerable<TLeftEnumerator, T> left,

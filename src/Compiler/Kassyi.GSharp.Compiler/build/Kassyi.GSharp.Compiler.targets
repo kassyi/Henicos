@@ -61,15 +61,36 @@
     </ItemGroup>
   </Target>
 
+  <!--
+    The generator lists the native sources it wrote (one file name per line, relative to the intermediate output path) in
+    Kassyi.GSharp.Kernels.artifacts (AotArtifactWriter.ManifestFileName). Only those are compiled, not every .cu / .cpp
+    under obj/. A source of an earlier build (the other dialect, an older assembly name) is then missing from FileWrites,
+    and IncrementalClean deletes it together with its fatbin or DLL.
+  -->
+  <Target Name="GSharpReadArtifactManifest">
+    <ReadLinesFromFile File="$(IntermediateOutputPath)Kassyi.GSharp.Kernels.artifacts"
+                       Condition="Exists('$(IntermediateOutputPath)Kassyi.GSharp.Kernels.artifacts')">
+      <Output TaskParameter="Lines" ItemName="_GSharpAotArtifactNames" />
+    </ReadLinesFromFile>
+
+    <ItemGroup>
+      <FileWrites Include="$(IntermediateOutputPath)Kassyi.GSharp.Kernels.artifacts"
+                  Condition="Exists('$(IntermediateOutputPath)Kassyi.GSharp.Kernels.artifacts')" />
+      <!-- The symbol file next to each source, read by the demangler -->
+      <FileWrites Include="@(_GSharpAotArtifactNames->'$(IntermediateOutputPath)%(Identity).gsym.json')" />
+    </ItemGroup>
+  </Target>
+
   <!-- Define the target to compile CUDA sources -->
   <!-- It runs after CoreCompile (so source generators have emitted .cu files) -->
-  <Target Name="GSharpCompileCuda" AfterTargets="CoreCompile"
+  <Target Name="GSharpCompileCuda" AfterTargets="CoreCompile" DependsOnTargets="GSharpReadArtifactManifest"
           Inputs="$(MSBuildAllProjects);@(Compile)"
           Outputs="$(IntermediateOutputPath)GSharpFatbins\_always_run_.marker">
     
     <ItemGroup>
-      <!-- Collect all generated .cu files in the intermediate output path -->
-      <_GSharpCudaSources Include="$(IntermediateOutputPath)**\*.cu" />
+      <!-- The generated .cu file listed in the manifest -->
+      <_GSharpCudaSources Include="@(_GSharpAotArtifactNames->'$(IntermediateOutputPath)%(Identity)')"
+                          Condition="'%(_GSharpAotArtifactNames.Extension)' == '.cu'" />
     </ItemGroup>
 
     <!-- Run nvcc via the custom task -->
@@ -86,16 +107,19 @@
     <!-- Register all native inputs and outputs to FileWrites for MSBuild clean -->
     <ItemGroup>
       <FileWrites Include="@(_GSharpCudaSources);@(_GSharpCompiledFatbins)" />
+      <!-- The nvcc command record next to each fatbin (CompileCudaToFatbinTask.CommandFileExtension) -->
+      <FileWrites Include="%(_GSharpCompiledFatbins.NvccCommandFile)" Condition="'%(_GSharpCompiledFatbins.NvccCommandFile)' != ''" />
     </ItemGroup>
   </Target>
 
-  <Target Name="GSharpCompileCpu" AfterTargets="CoreCompile"
+  <Target Name="GSharpCompileCpu" AfterTargets="CoreCompile" DependsOnTargets="GSharpReadArtifactManifest"
           Inputs="$(MSBuildAllProjects);@(Compile)"
           Outputs="$(IntermediateOutputPath)GSharpNativeDlls\_always_run_.marker">
     
     <ItemGroup>
-      <!-- Collect all generated .cpp files in the intermediate output path -->
-      <_GSharpCppSources Include="$(IntermediateOutputPath)**\*.cpp" />
+      <!-- The generated .cpp file listed in the manifest -->
+      <_GSharpCppSources Include="@(_GSharpAotArtifactNames->'$(IntermediateOutputPath)%(Identity)')"
+                         Condition="'%(_GSharpAotArtifactNames.Extension)' == '.cpp'" />
     </ItemGroup>
 
     <!-- Run MSVC via the custom task -->

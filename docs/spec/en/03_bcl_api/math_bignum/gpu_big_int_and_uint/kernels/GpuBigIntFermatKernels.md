@@ -3,7 +3,7 @@ title: "GpuBigIntFermatKernels Class (G#)"
 site: "G# Documentation"
 published: "2026-09-24T00:00:00.000Z"
 language: "en"
-description: "CUDA kernel implementations for Fermat number related operations and reductions."
+description: "CUDA kernels of the FermatAlgorithm probable-prime test (the fold modulo 2^(2E+1) - 2^E + 11) and shared NTT helpers."
 ---
 
 ## GpuBigIntFermatKernels Class
@@ -13,7 +13,7 @@ description: "CUDA kernel implementations for Fermat number related operations a
 **Namespace:** `Kassyi.GSharp.Stdlib.GpuMath.BigNum.Kernels`  
 **Assembly:** `Kassyi.GSharp.Stdlib.GpuMath.dll`
 
-Contains native G# (CUDA) kernels and device functions used for Fermat number arithmetic, primarily large modular reductions against Fermat primes and shared-memory matrix transpositions on the GPU.
+Contains native G# (CUDA) kernels and device functions used by `FermatAlgorithm`: the fold that reduces a square modulo `N = 2^(2E+1) - 2^E + 11 = 2X^2 - X + 11` (`X = 2^E`), and helpers shared with the NTT multiplication (unpacking, shared-memory transposition, shifts).
 
 ```csharp
 [SkipSnapshotConsistency("Tested in separate suites or WIP")]
@@ -25,7 +25,7 @@ public static partial class GpuBigIntFermatKernels
 
 | Name | Description |
 | --- | --- |
-| `FermatReduceContext` | Encapsulates the device buffers and shift/word parameters for the mega Fermat modular reduction kernel. |
+| `QuadraticFoldContext` | The buffers and sizes of `QuadraticFoldReduceKernel`. |
 
 ## Methods
 
@@ -35,27 +35,38 @@ public static partial class GpuBigIntFermatKernels
 | [DeviceTranspose32X32(uint[], uint[], int, int, bool)](#devicetranspose32x32uint-uint-int-int-bool) | A GPU device function (`[GpuDeviceFunction]`) that transposes a 2D matrix using 32x32 shared-memory tiles with bank-conflict padding. |
 | [DeviceShiftLeftParallel(uint[], uint[], int, int, bool)](#deviceshiftleftparalleluint-uint-int-int-bool) | A GPU device function (`[GpuDeviceFunction]`) that performs a parallel grid-stride left bit-shift across device buffers. |
 | [KernelTestBlockAddSubParallel(uint[], uint[], uint[], int, int)](#kerneltestblockaddsubparalleluint-uint-uint-int-int) | A GPU kernel (`[GpuKernel]`) entry point that invokes `GpuBigIntKernels.DeviceAddSubParallel` for block-level parallel addition or subtraction. |
-| [KernelFermatReduceMega(FermatReduceContext)](#kernelfermatreducemegafermatreducecontext) | A GPU kernel (`[GpuKernel]`) that performs a large multi-pass modular reduction using Fermat number properties. |
+| [GetQuotientWord(uint[], int, int, int, int)](#getquotientworduint-int-int-int-int) | A GPU device function (`[GpuDeviceFunction]`) that returns one word of the quotient `source >> m`, and 0 for a negative index. |
+| [QuadraticFoldPass(uint[], int, uint[], int, int, int, uint)](#quadraticfoldpassuint-int-uint-int-int-int-uint) | A GPU device function (`[GpuDeviceFunction]`) that performs one fold `r + q * 2^E - t * q` with one block. |
+| [QuadraticFoldReduceKernel(QuadraticFoldContext)](#quadraticfoldreducekernelquadraticfoldcontext) | A GPU kernel (`[GpuKernel]`) that reduces the square of a residue modulo `N` with three folds. |
 
-## FermatReduceContext Struct
+## QuadraticFoldContext Struct
 
-Encapsulates the device buffers and shift/word parameters for the mega Fermat modular reduction kernel.
+The buffers and sizes of `QuadraticFoldReduceKernel`, which reduces the square of a residue modulo `N = 2^m - c` (`m = 2E + 1`, `c = 2^E - ConstantTerm`).
 
 ```csharp
-public struct FermatReduceContext
+public struct QuadraticFoldContext
 {
-    public uint[] ValueT;
-    public uint[] MulResult;
-    public uint[] Quotient;
-    public uint[] Remainder;
-    public uint[] Temp;
-    [GpuReadOnly] public uint[] RemainderMask;
-    public int NumWords;
-    public int OutNumWords;
-    public int TotalShiftBits;
+    public uint[] Product;
+    public uint[] FirstFold;
+    public uint[] SecondFold;
+    public uint[] Residue;
+    public int ProductWords;
+    public int FirstFoldWords;
+    public int SecondFoldWords;
+    public int ResidueWords;
+    public int ModulusBits;
     public int Exponent;
+    public uint ConstantTerm;
 }
 ```
+
+| Field | Description |
+| --- | --- |
+| `Product` | The square to reduce, `ProductWords` (`2 * ceil(m / 32)`) words. |
+| `FirstFold`, `SecondFold` | The outputs of the first two folds: `m + E + 3` and `m + 2` bits. |
+| `Residue` | Receives the reduced value, `ResidueWords` (`ceil(m / 32)`) words. It may be the buffer that was squared. |
+| `ModulusBits`, `Exponent` | `m = 2E + 1` and `E`. |
+| `ConstantTerm` | `t` in `c = 2^E - t`: 11. |
 
 ## DeviceUnpack16(uint[], uint[], uint[], int, int, bool)
 
@@ -167,19 +178,39 @@ The number of 32-bit words to process.
 `sign` _int_<br>
 `1` for addition (`a + b`), or `-1` for subtraction (`a - b`).
 
-## KernelFermatReduceMega(FermatReduceContext)
+## GetQuotientWord(uint[], int, int, int, int)
 
-A GPU kernel (`[GpuKernel]`) that performs a large multi-pass modular reduction using Fermat number properties.
+A GPU device function (`[GpuDeviceFunction]`) that returns word `index` of the quotient `q = source >> (32 * foldWord + foldBit)`, and 0 for a negative index. `GpuBigIntKernels.GetShiftedRightWord` shifts the whole value, so its word -1 holds the top bits of the remainder; as a factor of `q * 2^E` and `t * q` those words must be 0.
+
+```csharp
+[GpuDeviceFunction]
+public static uint GetQuotientWord(uint[] source, int sourceWords, int index, int foldWord, int foldBit);
+```
+
+## QuadraticFoldPass(uint[], int, uint[], int, int, int, uint)
+
+A GPU device function (`[GpuDeviceFunction]`) run by one block: `result = r + q * 2^E - t * q` with `r = source mod 2^m` and `q = floor(source / 2^m)`, modulo `2^(32 * resultWords)`. `t * q` is subtracted as two carry-free numbers (the low and high halves of the 64-bit products `t * q_i`) in two's complement; carries are resolved per chunk of one block with a warp and block scan.
+
+```csharp
+[GpuDeviceFunction]
+public static void QuadraticFoldPass(uint[] source, int sourceWords, uint[] result, int resultWords, int modulusBits, int exponent, uint constantTerm);
+```
+
+## QuadraticFoldReduceKernel(QuadraticFoldContext)
+
+A GPU kernel (`[GpuKernel]`) that reduces the square of a residue modulo `N = 2^m - c` with three folds `F(x) = (x mod 2^m) + floor(x / 2^m) * c`. For a residue `u < 2^(m+1)` the result is congruent to `u^2` and below `2^m + 2^(E+1) <= 2N`, so it is again a valid residue, and one conditional subtraction of `N` makes it canonical.
 
 ```csharp
 [GpuKernel]
-public static void KernelFermatReduceMega(FermatReduceContext ctx);
+public static void QuadraticFoldReduceKernel(QuadraticFoldContext ctx);
 ```
+
+Launch it with one block (`gridDimX = 1`) of a multiple of 32 threads, at most 1024. The host reference of the kernel is `QuadraticFoldModulus.FoldReference` (internal), which the CPU fallback of `FermatAlgorithm` uses.
 
 #### Parameters
 
-`ctx` _FermatReduceContext_<br>
-The reduction context containing source, quotient, remainder, mask buffers, and bit-shift parameters.
+`ctx` _QuadraticFoldContext_<br>
+The product, the two fold temporaries, the residue and the sizes.
 
 ## Examples
 
@@ -193,15 +224,20 @@ using System;
 using Kassyi.GSharp.Stdlib.GpuMath.BigNum.Kernels;
 
 // Execution Context: G# Kernel (GPU)
-// Configure a FermatReduceContext for launching KernelFermatReduceMega via the G# execution pipeline.
-var ctx = new GpuBigIntFermatKernels.FermatReduceContext
+// The sizes of QuadraticFoldReduceKernel for E = 1000: m = 2E + 1 = 2001 bits.
+const int E = 1000;
+const int M = 2 * E + 1;
+var ctx = new GpuBigIntFermatKernels.QuadraticFoldContext
 {
-    NumWords = 64,
-    OutNumWords = 64,
-    TotalShiftBits = 1024,
-    Exponent = 20
+    ModulusBits = M,
+    Exponent = E,
+    ConstantTerm = 11,
+    ResidueWords = (M + 31) / 32,
+    ProductWords = 2 * ((M + 31) / 32),
+    FirstFoldWords = (M + E + 3 + 31) / 32,
+    SecondFoldWords = (M + 2 + 31) / 32
 };
-Console.WriteLine($"FermatReduceContext configured: NumWords={ctx.NumWords}, Exponent={ctx.Exponent}");
+Console.WriteLine($"QuadraticFoldContext configured: ResidueWords={ctx.ResidueWords}, FirstFoldWords={ctx.FirstFoldWords}");
 ```
 
 ## Remarks

@@ -130,7 +130,6 @@ public static readonly string GlobalBarrierKernel_FullSource=global::Kassyi.GSha
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Core__GridSyncManagedKernels__GlobalBarrierKernel {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
-public bool __gsharp_yielded_for_grid_sync;
 public int tid;
 public int totalThreads;
 public int nextId;
@@ -146,7 +145,7 @@ __gsharp_ctx.tid = global::Kassyi.GSharp.Core.BlockIndex.X * global::Kassyi.GSha
 __gsharp_ctx.totalThreads = global::Kassyi.GSharp.Core.GridDimension.X * global::Kassyi.GSharp.Core.BlockDimension.X;
 // Every thread writes its ID + 1 to the buffer
 buffer[__gsharp_ctx.tid] = __gsharp_ctx.tid + 1;
-__gsharp_ctx.__gsharp_yielded_for_grid_sync = true;
+global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested = true;
 __gsharp_ctx.__gsharp_state = 1;
 return;
 }
@@ -155,7 +154,7 @@ case 1:
 {
 __gsharp_ctx.nextId = (__gsharp_ctx.tid + 1) % __gsharp_ctx.totalThreads;
 __gsharp_ctx.nextVal = buffer[__gsharp_ctx.nextId];
-__gsharp_ctx.__gsharp_yielded_for_grid_sync = true;
+global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested = true;
 __gsharp_ctx.__gsharp_state = 2;
 return;
 }
@@ -238,9 +237,9 @@ if (__gsharp_contexts[__gsharp_linear_tid].__gsharp_state != -1)
 {
 anyGridActive = true;
 anyBlockActive = true;
-__gsharp_contexts[__gsharp_linear_tid].__gsharp_yielded_for_grid_sync = false;
+global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested = false;
 __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Core__GridSyncManagedKernels__GlobalBarrierKernel(buffer, __gsharp_contexts[__gsharp_linear_tid]);
-if (__gsharp_contexts[__gsharp_linear_tid].__gsharp_yielded_for_grid_sync)
+if (global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested)
 {
 gridSyncRequested = true;
 }
@@ -409,7 +408,6 @@ public static readonly string GlobalReductionKernel_FullSource=global::Kassyi.GS
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Core__GridSyncManagedKernels__GlobalReductionKernel {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
-public bool __gsharp_yielded_for_grid_sync;
 public int tid;
 public int myVal;
 public int localTid;
@@ -469,7 +467,7 @@ if (__gsharp_ctx.localTid == 0)
 blockSums[global::Kassyi.GSharp.Core.BlockIndex.X] = shared[0];
 }
 
-__gsharp_ctx.__gsharp_yielded_for_grid_sync = true;
+global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested = true;
 __gsharp_ctx.__gsharp_state = 6;
 return;
 }
@@ -573,9 +571,9 @@ if (__gsharp_contexts[__gsharp_linear_tid].__gsharp_state != -1)
 {
 anyGridActive = true;
 anyBlockActive = true;
-__gsharp_contexts[__gsharp_linear_tid].__gsharp_yielded_for_grid_sync = false;
+global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested = false;
 __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Core__GridSyncManagedKernels__GlobalReductionKernel(input, blockSums, totalSum, __gsharp_contexts[__gsharp_linear_tid]);
-if (__gsharp_contexts[__gsharp_linear_tid].__gsharp_yielded_for_grid_sync)
+if (global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested)
 {
 gridSyncRequested = true;
 }

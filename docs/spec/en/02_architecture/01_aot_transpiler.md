@@ -246,6 +246,38 @@ The `GpuKernelGenerator` reads several MSBuild properties via `AnalyzerConfigOpt
 - `IntermediateOutputPath`: Used to determine where to output generated artifacts and intermediate files.
 - `GSharpExportDeviceCode`: If `false`, the assembly writes no device code records for other assemblies and no managed state machines for them (§1.7). Defaults to `true` when unset. Set it to `false` in an application or a test assembly that no other assembly calls into; a library keeps the default.
 
+### 1.5.1 Target GPU Architectures (`GSharpTargetArchitectures`)
+
+`GSharpTargetArchitectures` selects the GPU code that nvcc puts into the fatbin. It is read by the `GSharpCompileCuda` target (not by the generator) and is a list of `arch,code` pairs separated by `;`. Each pair becomes one `-gencode arch=<arch>,code=<code>` option: `code=sm_XY` adds native code (SASS) for compute capability X.Y, and `code=compute_XY` adds PTX that the driver compiles (JIT) for the GPU at load time.
+
+When the property is empty, the default is `compute_86,sm_86;compute_86,compute_86` (`CompileCudaToFatbinTask.DefaultTargetArchitectures`):
+
+| GPU compute capability | What runs |
+| :- | :- |
+| 8.6, 8.9 (for example RTX 30xx, RTX 40xx) | The sm_86 SASS. A cubin runs on its own major version from its minor version up |
+| 8.7 (Jetson Orin, Tegra), 9.0 and newer (Hopper, Blackwell) | The compute_86 PTX, JIT-compiled by the driver on the first load and then kept in the driver's JIT cache (`CUDA_CACHE_PATH`). Tegra GPUs are not binary compatible with the desktop sm_86 SASS |
+| 7.5 (Turing, T4), 8.0 (A100) | Nothing: loading the module throws `InvalidOperationException`, which names the GPU and lists the images in the fatbin |
+
+Both default entries come from one compute_86 PTX, so the PTX costs only its space in the fatbin, not build time. To run on 7.5 or 8.0 GPUs, list them with the default entries:
+
+```xml
+<PropertyGroup>
+  <GSharpTargetArchitectures>compute_75,sm_75;compute_80,sm_80;compute_86,sm_86;compute_86,compute_86</GSharpTargetArchitectures>
+</PropertyGroup>
+```
+
+Each additional SASS architecture runs ptxas once more and adds its code to the fatbin. Keep the compute_86 PTX entry so that newer GPUs can still JIT-compile the module. A kernel that uses an instruction an older architecture lacks fails to build for that architecture.
+
+Next to each fatbin, the build writes `<fatbin>.nvcc`, a record of the nvcc options, the source list, the public key the fatbin is signed with (`GSHARP_SIGNING_KEY`) and the nvcc version used. A fatbin is rebuilt when its sources are newer or when the record differs from the current command, so changing `GSharpTargetArchitectures` (or the default, the signing key or the CUDA Toolkit) rebuilds the fatbin on the next build without cleaning `obj/`. For the fatbins that `GSharpCompileCuda` builds, the record is listed in `FileWrites`, so `dotnet clean` removes it.
+
+The record does not cover the `NVCC_PREPEND_FLAGS` / `NVCC_APPEND_FLAGS` environment variables, the version of the host C++ compiler, or the headers that the generated source includes. After changing one of them, rebuild (`dotnet build --no-incremental`) or delete the fatbins under `obj/`.
+
+### 1.5.2 Native Sources and the Artifact Manifest
+
+Each time the generator writes the native module (`Kassyi.GSharp.Kernels_{assembly}.g.cu` or `.g.cpp`, with its `.gsym.json`), it also writes `$(IntermediateOutputPath)Kassyi.GSharp.Kernels.artifacts`, which lists the file name of that module. An assembly without kernels gets an empty list. The `GSharpCompileCuda` and `GSharpCompileCpu` targets compile only the listed `.cu` and `.cpp` files, not every such file under `obj/`, and add them, the manifest and the symbol files to `FileWrites`.
+
+A source that an earlier build wrote and the current one did not (the other dialect after `GSharpTargetDialect` changed, an old assembly name, kernels that were all removed) is therefore not compiled again, and MSBuild's `IncrementalClean` deletes it together with its fatbin or native library at the end of the build. The generator writes nothing in an IDE design-time build, so the manifest of the last real build stays in place.
+
 ## 1.6 Expression Lowering (IIFE)
 
 To support expressive C# syntax like `switch` expressions, tuple swaps `(a,b) = (b,a)`, and null-coalescing `??` without incurring managed heap allocations or breaking C++ structural constraints, the transpiler employs **Immediately Invoked Function Expressions (IIFE)**.
