@@ -83,9 +83,16 @@ public static partial class AotContexts
 {
 }
 public const string TestMacroKernel_Source = @"extern ""C"" __global__ void __gsharp_k_TestSpace__MacroExpansionKernel__TestMacroKernel(GSharpArray<int> __gsharp_id_0_data, int __gsharp_id_1_length){
-for(int __gsharp_id_2_i = blockIdx.x * blockDim.x + threadIdx.x; __gsharp_id_2_i < __gsharp_id_1_length; __gsharp_id_2_i += gridDim.x * blockDim.x)
+{
+unsigned int __gsharp_gsl_n_0 = __gsharp_grid_stride_count(__gsharp_id_1_length);
+unsigned int __gsharp_gsl_s_0 = __gsharp_grid_stride_step();
+for(unsigned int __gsharp_gsl_0 = __gsharp_grid_stride_start(); __gsharp_gsl_0 < __gsharp_gsl_n_0; __gsharp_gsl_0 += __gsharp_gsl_s_0)
+{
+int __gsharp_id_2_i = (int)__gsharp_gsl_0;
 {
 __gsharp_id_0_data[__gsharp_id_2_i]=__gsharp_id_2_i;
+}
+}
 }
 cg::this_grid().sync();
 if((threadIdx.x|threadIdx.y|threadIdx.z|blockIdx.x|blockIdx.y|blockIdx.z)==0)
