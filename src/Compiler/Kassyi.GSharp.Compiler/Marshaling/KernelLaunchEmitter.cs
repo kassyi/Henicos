@@ -6,6 +6,9 @@ internal static class KernelLaunchEmitter
     /// <summary>The device copy of the auto result buffer in the generated launcher.</summary>
     private const string DeviceAutoResult = "d_" + GSharpInternalNames.ReturnValue.Buffer;
 
+    // The device scratch of the grid strategy of AsParallel() aggregates (KernelHostModel.GridScratchSlotBytes)
+    private const string DeviceGridScratch = "d_" + GSharpInternalNames.StackLinq.GridScratch;
+
     /// <summary>Emits local variable declarations for device pointers and tracking lists.</summary>
     internal static void WriteVariablesInitialization(SourceWriter writer, in KernelHostModel kernel, bool isDevicePtr)
     {
@@ -38,6 +41,8 @@ internal static class KernelLaunchEmitter
         {
             writer.AppendLine($"IntPtr {DeviceAutoResult} = IntPtr.Zero;");
         }
+
+        writer.AppendLineIf(kernel.GridScratchSlotBytes > 0, $"IntPtr {DeviceGridScratch} = IntPtr.Zero;");
     }
 
     /// <summary>Emits argument marshaling, device memory transfers, kernel launch, and result copyback.</summary>
@@ -46,6 +51,11 @@ internal static class KernelLaunchEmitter
         var kernelParamCount = kernel.Parameters.Length;
 
         if (kernel.ReturnsValue)
+        {
+            kernelParamCount++;
+        }
+
+        if (kernel.GridScratchSlotBytes > 0)
         {
             kernelParamCount++;
         }
@@ -74,6 +84,16 @@ internal static class KernelLaunchEmitter
                     $"out {DeviceAutoResult}, (IntPtr){GSharpInternalNames.ReturnValue.BufferSize}, hStream));");
                 writer.AppendLine("kernelParams[" + paramIndex + $"] = &{DeviceAutoResult};");
             }
+        }
+
+        if (kernel.GridScratchSlotBytes > 0)
+        {
+            // One slot per block for its partial result and one for the total, freed after the launch (WriteCleanup)
+            writer.AppendLine("// Allocate the scratch of the grid strategy of AsParallel() aggregates");
+            writer.AppendLine(
+                "CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(" +
+                $"out {DeviceGridScratch}, (IntPtr)(((long)gridDimX * gridDimY * gridDimZ + 1) * {kernel.GridScratchSlotBytes}), hStream));");
+            writer.AppendLine($"kernelParams[{kernelParamCount - 1}] = &{DeviceGridScratch};");
         }
 
         writer.AppendLine();
@@ -125,6 +145,15 @@ internal static class KernelLaunchEmitter
         foreach (var shape in kernel.Parameters)
         {
             WriteParameterFree(writer, shape, isDevicePtr);
+        }
+
+        if (kernel.GridScratchSlotBytes > 0)
+        {
+            writer.AppendLine($"if ({DeviceGridScratch} != IntPtr.Zero)");
+            using (writer.Scope())
+            {
+                writer.AppendLine($"CudaException.ThrowIfError(CudaDriverApi.cuMemFreeAsync({DeviceGridScratch}, hStream));");
+            }
         }
 
         if (!kernel.ReturnsValue)
