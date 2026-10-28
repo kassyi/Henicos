@@ -7,8 +7,7 @@ name: Hybrid CI Tests
 on:
   push:
     branches: ["main"]
-  pull_request:
-    branches: ["main"]
+  pull_request: # every base branch, so a PR stacked on another PR is tested too
 
 jobs:
   test-static-cloud:
