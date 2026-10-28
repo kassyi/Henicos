@@ -6,38 +6,25 @@ internal abstract class VectorUnaryExpressionBase(
     public int Length => vector.Length;
     public int WordsPerElement => vector.WordsPerElement;
 
-    private GpuBigUIntArray _finalValues;
-    private GpuBigUIntArray _finalSigns;
-    private bool _allocated;
+    // The result buffers, lent until the next evaluation or Dispose; a caller's target is never kept (design 4.6)
+    private readonly VectorResultCache _cache = new();
 
-    public GpuBigIntArray Evaluate(
+    public GpuBigIntArrayView Evaluate(
         GpuWorkspace workspace,
         int elementOffset = 0,
         int? elementCount = null,
-        GpuBigUIntArray? targetResult = null)
+        GpuBigUIntArrayView targetResult = default)
     {
         ValidateBeforeEvaluate();
 
         var evalCount = elementCount ?? (Length - elementOffset);
+        // The target is checked before the children run, so that a rejected target evaluates nothing
+        var targetValues = VectorResultCache.HasTarget(targetResult)
+            ? VectorResultCache.TargetValues(targetResult, evalCount, WordsPerElement)
+            : default;
+
         var vecResult = vector.Evaluate(workspace, elementOffset, evalCount);
-
-        if (targetResult != null)
-        {
-            _finalValues = targetResult.Value;
-            if (!_allocated)
-            {
-                _finalSigns = new GpuBigUIntArray(workspace, evalCount, 1);
-                _allocated = true;
-            }
-        }
-        else if (!_allocated)
-        {
-            _finalValues = new GpuBigUIntArray(workspace, evalCount, WordsPerElement);
-            _finalSigns = new GpuBigUIntArray(workspace, evalCount, 1);
-            _allocated = true;
-        }
-
-        var destination = new GpuBigIntArray(_finalValues, _finalSigns);
+        var destination = _cache.Signed(workspace, evalCount, WordsPerElement, targetValues);
         if (evalCount > 0)
         {
             EvaluateElements(workspace, vecResult, destination, evalCount);
@@ -52,24 +39,21 @@ internal abstract class VectorUnaryExpressionBase(
 
     protected abstract void EvaluateElements(
         GpuWorkspace workspace,
-        GpuBigIntArray source,
-        GpuBigIntArray destination,
+        GpuBigIntArrayView source,
+        GpuBigIntArrayView destination,
         int evalCount);
 
     public void Dispose()
     {
-        if (_allocated)
+        // A cache release that throws (a failed capture refuses the clear) does not skip the children
+        try
         {
-            if (_finalValues.Handle.Buffer != null)
-            {
-                _finalValues.Dispose();
-            }
-
-            _finalSigns.Dispose();
-            _allocated = false;
+            _cache.Dispose();
         }
-
-        vector.Dispose();
+        finally
+        {
+            vector.Dispose();
+        }
     }
 }
 
@@ -78,8 +62,8 @@ internal sealed class VectorSqrtExpression(
 {
     protected override void EvaluateElements(
         GpuWorkspace workspace,
-        GpuBigIntArray source,
-        GpuBigIntArray destination,
+        GpuBigIntArrayView source,
+        GpuBigIntArrayView destination,
         int evalCount)
     {
         var srcSigns = ArrayPool<uint>.Shared.Rent(evalCount);
@@ -123,8 +107,8 @@ internal sealed class VectorDivByUInt32Expression(
 
     protected override void EvaluateElements(
         GpuWorkspace workspace,
-        GpuBigIntArray source,
-        GpuBigIntArray destination,
+        GpuBigIntArrayView source,
+        GpuBigIntArrayView destination,
         int evalCount)
     {
         var srcSigns = ArrayPool<uint>.Shared.Rent(evalCount);

@@ -9,7 +9,7 @@ internal sealed class FloatVectorCompareScalarExpression(
     private GpuBigUIntArray _finalValues;
     private bool _allocated;
 
-    public GpuBigUIntArray Evaluate(GpuWorkspace workspace)
+    public GpuBigUIntArrayView Evaluate(GpuWorkspace workspace)
     {
         var vecResult = vector.Evaluate(workspace);
 
@@ -79,7 +79,7 @@ internal sealed class FloatVectorCompareVectorExpression(
     private GpuBigUIntArray _finalValues;
     private bool _allocated;
 
-    public GpuBigUIntArray Evaluate(GpuWorkspace workspace)
+    public GpuBigUIntArrayView Evaluate(GpuWorkspace workspace)
     {
         if (left.Length != right.Length)
         {

@@ -260,20 +260,16 @@ public class GpuBigFloatLinqAndVectorTests : IDisposable
         // Scalar comparisons (note v2 = 5 * 2^2 == 20 * 2^0)
         using var eqExpr = vec.AsVectorizedEnumerable().IsEqualTo(scalar20);
         var eqHost = new uint[length];
-        using (var eqDev = eqExpr.Evaluate(_context))
-        {
-            _context.Provider.CopyDeviceToHost(eqHost, eqDev.DevicePointer, length);
-        }
+        var eqDev = eqExpr.Evaluate(_context);
+        _context.Provider.CopyDeviceToHost(eqHost, eqDev.DevicePointer, length);
 
         Assert.Equal([0u, 0u, 1u, 0u, 0u], eqHost);
 
         // Vector-to-vector comparisons: vec >= otherVec -> [10==10(1), -5>=-2(0), 20>=15(1), 0==0(1), 50>=100(0)]
         using var gteVecExpr = vec.AsVectorizedEnumerable().IsGreaterThanOrEqualTo(otherVec.AsVectorizedEnumerable());
         var gteHost = new uint[length];
-        using (var gteDev = gteVecExpr.Evaluate(_context))
-        {
-            _context.Provider.CopyDeviceToHost(gteHost, gteDev.DevicePointer, length);
-        }
+        var gteDev = gteVecExpr.Evaluate(_context);
+        _context.Provider.CopyDeviceToHost(gteHost, gteDev.DevicePointer, length);
 
         Assert.Equal([1u, 0u, 1u, 1u, 0u], gteHost);
 

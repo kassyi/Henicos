@@ -42,4 +42,14 @@ public static class Uses
         GpuBigFloatArrayView slice = floats.Slice(0, 1);
         _ = slice.Length;
     }
+
+    // A vector result in a local, and an owned array passed as the target view
+    public static int VectorResult(
+        Kassyi.GSharp.Stdlib.GpuMath.BigNum.Expressions.IGpuBigIntVectorExpression expression,
+        Kassyi.GSharp.Stdlib.GpuMath.GpuWorkspace workspace,
+        GpuBigUIntArray target)
+    {
+        GpuBigIntArrayView result = expression.Evaluate(workspace, targetResult: target);
+        return result.Length;
+    }
 }
