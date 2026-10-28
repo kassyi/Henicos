@@ -109,6 +109,7 @@ if (__gsharp_ctx.tid < count)
 shared[__gsharp_ctx.tid] = value;
 }
 
+global::Kassyi.GSharp.Core.ManagedGpuContext.BlockBarrierRequested = true;
 __gsharp_ctx.__gsharp_state = 1;
 return false;
 }
@@ -116,6 +117,7 @@ return false;
 case 1:
 {
 __gsharp_ctx.rotated = __gsharp_ctx.tid < count ? shared[(__gsharp_ctx.tid + 1) % count] : 0;
+global::Kassyi.GSharp.Core.ManagedGpuContext.BlockBarrierRequested = true;
 __gsharp_ctx.__gsharp_state = 2;
 return false;
 }

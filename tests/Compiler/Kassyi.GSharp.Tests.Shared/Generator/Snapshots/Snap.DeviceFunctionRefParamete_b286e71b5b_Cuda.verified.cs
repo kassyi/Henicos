@@ -98,6 +98,7 @@ case 0:
 {
 previous = value;
 value += 1;
+global::Kassyi.GSharp.Core.ManagedGpuContext.BlockBarrierRequested = true;
 __gsharp_ctx.__gsharp_state = 1;
 return false;
 }

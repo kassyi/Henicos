@@ -204,6 +204,7 @@ case 0:
 {
 inner = new global::Kassyi.GSharp.Core.SharedMemory<int>(n, 0x84b31862e77be173UL, "DeviceDynamicSharedMemoryKernels.cs(16,21)");
 inner[global::Kassyi.GSharp.Core.ThreadIndex.X] = val * 2;
+global::Kassyi.GSharp.Core.ManagedGpuContext.BlockBarrierRequested = true;
 __gsharp_ctx.__gsharp_state = 1;
 return false;
 }
@@ -234,6 +235,7 @@ case 0:
 {
 inner = new global::Kassyi.GSharp.Core.SharedMemory<int>(n, 0x5e40b7025ff4f720UL, "DeviceDynamicSharedMemoryKernels.cs(38,21)");
 inner[global::Kassyi.GSharp.Core.ThreadIndex.X] = val * 2;
+global::Kassyi.GSharp.Core.ManagedGpuContext.BlockBarrierRequested = true;
 __gsharp_ctx.__gsharp_state = 1;
 return false;
 }
@@ -268,6 +270,7 @@ if (write)
 s[global::Kassyi.GSharp.Core.ThreadIndex.X] = val;
 }
 
+global::Kassyi.GSharp.Core.ManagedGpuContext.BlockBarrierRequested = true;
 __gsharp_ctx.__gsharp_state = 1;
 return false;
 }
@@ -305,6 +308,7 @@ if (__gsharp_ctx.tid >= writeStart && __gsharp_ctx.tid < count)
 s[__gsharp_ctx.tid] = val * 2;
 }
 
+global::Kassyi.GSharp.Core.ManagedGpuContext.BlockBarrierRequested = true;
 __gsharp_ctx.__gsharp_state = 1;
 return false;
 }
@@ -312,6 +316,7 @@ return false;
 case 1:
 {
 __gsharp_ctx.r = __gsharp_ctx.tid < count ? s[__gsharp_ctx.tid] : 0;
+global::Kassyi.GSharp.Core.ManagedGpuContext.BlockBarrierRequested = true;
 __gsharp_ctx.__gsharp_state = 2;
 return false;
 }

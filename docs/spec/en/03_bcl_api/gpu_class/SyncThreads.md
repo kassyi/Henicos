@@ -60,6 +60,8 @@ try {
 
 Maps to `__syncthreads()`. Acts as a barrier at which all threads in the block must wait before any is allowed to proceed. Crucial for avoiding read-after-write (RAW) hazards in Shared Memory.
 
+On the CPU paths (the native CPU library and managed execution) the threads of a block run one step at a time, from one barrier or warp shuffle to the next. A thread that reaches `Gpu.SyncThreads` waits there until every thread of its block that has not finished has reached it, also when the other threads need more steps to get there (for example a warp shuffle that only some warps run). A thread in the middle of a shuffle is not waiting, so it goes on until it reaches the barrier.
+
 ## See also
 
 
