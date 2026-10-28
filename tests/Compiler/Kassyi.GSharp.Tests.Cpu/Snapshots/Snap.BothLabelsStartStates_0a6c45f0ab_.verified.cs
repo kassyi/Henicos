@@ -13,6 +13,7 @@
             __gsharp_ctx->t = ThreadIndex.X;
             __gsharp_ctx->acc = __gsharp_ctx->t;
             __gsharp_ctx->step = 10;
+            __gsharp_yielded_for_block_barrier = true;
             __gsharp_state = 1;
             return;
         }
@@ -44,6 +45,7 @@
 
         case 3:
         {
+            __gsharp_yielded_for_block_barrier = true;
             __gsharp_state = 4;
             return;
         }
