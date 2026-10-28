@@ -62,38 +62,46 @@ public readonly struct GpuBigIntArray : IDisposable
     }
 
     /// <summary>
-    /// Gets a scalar representation of the specified element (for debugging, involves slow device-to-host read).
+    /// Gets a view of the specified element (for debugging, involves slow device-to-host read of the sign).
     /// </summary>
     /// <param name="index">The index of the element.</param>
-    /// <returns>A <see cref="GpuBigInt"/> pointing to the element's device memory.</returns>
-    public GpuBigInt GetElement(int index)
-    {
-        var value = Values.GetElement(index);
-        var signWord = Signs.GetElement(index);
-        
-        // Note: Reading from device memory to host is slow, this is just for debugging or single-element retrieval
-        var isNegative = signWord.Workspace.Provider.ReadWord(signWord.DevicePointer, stream: signWord.Workspace.Stream) != 0;
-        
-        return new GpuBigInt(value, isNegative);
-    }
+    /// <returns>
+    /// A borrowed view of the element's device memory and its sign. It lives only inside the calling method (a
+    /// <see langword="ref struct"/>) and must not be used after this array is disposed.
+    /// </returns>
+    /// <exception cref="ArgumentOutOfRangeException"><paramref name="index"/> is outside the array.</exception>
+    public GpuBigIntView GetElement(int index) => ((GpuBigIntArrayView)this).GetElement(index);
+
+    /// <summary>
+    /// Returns the element at <paramref name="index"/> as a <see cref="GpuBigInt"/> that does not own the buffer, for the
+    /// internal plumbing that needs the owned type; disposing it frees nothing.
+    /// </summary>
+    /// <param name="index">The index of the element.</param>
+    /// <returns>A borrowed <see cref="GpuBigInt"/>.</returns>
+    internal GpuBigInt BorrowElement(int index) => GetElement(index).AsBorrowed();
 
     /// <summary>
     /// Creates a zero-allocation sub-slice of this GPU array.
     /// </summary>
     /// <param name="elementOffset">The starting element index of the slice.</param>
     /// <param name="elementCount">The number of elements in the slice.</param>
-    /// <returns>A sliced view of the <see cref="GpuBigIntArray"/>.</returns>
-    public GpuBigIntArray Slice(int elementOffset, int elementCount)
-    {
-        if (elementOffset < 0 || elementCount < 0 || elementOffset + elementCount > Length)
-        {
-            throw new ArgumentOutOfRangeException();
-        }
+    /// <returns>
+    /// A borrowed view of the elements. It lives only inside the calling method (a <see langword="ref struct"/>) and must
+    /// not be used after this array is disposed.
+    /// </returns>
+    /// <exception cref="ArgumentOutOfRangeException">The range is not inside the array.</exception>
+    public GpuBigIntArrayView Slice(int elementOffset, int elementCount) =>
+        ((GpuBigIntArrayView)this).Slice(elementOffset, elementCount);
 
-        return new GpuBigIntArray(
-            Values.Slice(elementOffset, elementCount),
-            Signs.Slice(elementOffset, elementCount));
-    }
+    /// <summary>
+    /// Returns a range of elements as a <see cref="GpuBigIntArray"/> that does not own the buffers, for the internal
+    /// plumbing that needs the owned type; disposing it frees nothing.
+    /// </summary>
+    /// <param name="elementOffset">The starting element index.</param>
+    /// <param name="elementCount">The number of elements.</param>
+    /// <returns>A borrowed <see cref="GpuBigIntArray"/>.</returns>
+    internal GpuBigIntArray BorrowSlice(int elementOffset, int elementCount) =>
+        Slice(elementOffset, elementCount).AsBorrowed();
 
     /// <summary>
     /// Releases the GPU global device memory resources allocated for the underlying buffers.

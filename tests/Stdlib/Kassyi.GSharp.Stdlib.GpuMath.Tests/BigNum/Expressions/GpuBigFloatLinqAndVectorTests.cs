@@ -35,9 +35,9 @@ public class GpuBigFloatLinqAndVectorTests : IDisposable
         return new GpuBigFloat(sig, exponent, isNeg);
     }
 
-    private static double ToDouble(GpuBigFloat value)
+    private static double ToDouble(GpuBigFloatView value)
     {
-        var mag = (double)value.UFloat.Significand.ToBigInteger() * Math.Pow(2.0, value.UFloat.Exponent);
+        var mag = (double)value.Significand.ToBigInteger() * Math.Pow(2.0, value.Exponent);
         return value.IsNegative ? -mag : mag;
     }
 
@@ -752,7 +752,7 @@ public class GpuBigFloatLinqAndVectorTests : IDisposable
         using var array = new GpuBigFloatArray(_context, 2, 4);
 
         // 1. A 4-word all-ones value, then a 1-word 5: the element reads back as exactly 5.
-        // mutant: GpuBigFloatArray.cs:130 `valueWords < WordsPerElement` -> `>` / negated, L132 ClearMemoryAsync removed
+        // mutant: GpuBigFloatArray.cs:122 `valueWords < WordsPerElement` -> `>` / negated, L124 ClearMemoryAsync removed
         using var allOnes = new GpuBigFloat(
             new GpuBigUInt(_context, [0xFFFFFFFFu, 0xFFFFFFFFu, 0xFFFFFFFFu, 0xFFFFFFFFu]), 0, false);
         using var five = new GpuBigFloat(new GpuBigUInt(_context, [5u]), 3, true);
@@ -761,20 +761,20 @@ public class GpuBigFloatLinqAndVectorTests : IDisposable
 
         // GetElement returns views of the array's memory; they are not disposed.
         var element0 = array.GetElement(0);
-        Assert.Equal(new BigInteger(5), element0.UFloat.Significand.ToBigInteger());
+        Assert.Equal(new BigInteger(5), element0.Significand.ToBigInteger());
         Assert.Equal(3, element0.Exponent);
         Assert.True(element0.IsNegative);
 
         // 2. A 6-word value into element 0 must not touch element 1 (what element 0 holds is checked by
         // GpuBigFloatArray_SetElement_RoundsWideValuesTowardZero).
-        // mutant: GpuBigFloatArray.cs:128 `valueWords <= WordsPerElement` -> `valueWords <= WordsPerElement + 2` (copies 6 words over element 1)
+        // mutant: GpuBigFloatArray.cs:120 `valueWords <= WordsPerElement` -> `valueWords <= WordsPerElement + 2` (copies 6 words over element 1)
         using var seven = new GpuBigFloat(new GpuBigUInt(_context, [7u, 0u, 0u, 0u]), -2, false);
         array.SetElement(1, seven);
         using var wide = new GpuBigFloat(new GpuBigUInt(_context, [1u, 2u, 3u, 4u, 5u, 6u]), 0, false);
         array.SetElement(0, wide);
 
         var element1 = array.GetElement(1);
-        Assert.Equal(new BigInteger(7), element1.UFloat.Significand.ToBigInteger());
+        Assert.Equal(new BigInteger(7), element1.Significand.ToBigInteger());
         Assert.Equal(-2, element1.Exponent);
         Assert.False(element1.IsNegative);
     }
@@ -810,9 +810,9 @@ public class GpuBigFloatLinqAndVectorTests : IDisposable
 
     // The element holds RZ_128(v): v itself when its significand has at most 128 bits, otherwise v rounded toward zero
     // to 128 bits (#629). The neighbouring elements do not change.
-    // mutant: GpuBigFloatArray.cs:128 `valueWords <= WordsPerElement` -> `true` (SixWordsTopBitOnly, SixWordsTruncated,
+    // mutant: GpuBigFloatArray.cs:120 `valueWords <= WordsPerElement` -> `true` (SixWordsTopBitOnly, SixWordsTruncated,
     // SixWordsThatFit, SixWordsZero: the wide value is copied as it is, over its neighbour)
-    // mutant: GpuBigFloatArray.cs:149 `exponent = rounded.Exponent` -> `exponent = value.UFloat.Exponent` (SixWordsTopBitOnly,
+    // mutant: GpuBigFloatArray.cs:141 `exponent = rounded.Exponent` -> `exponent = value.Exponent` (SixWordsTopBitOnly,
     // SixWordsTruncated)
     [Theory]
     [Category(TestCategory.Stdlib)]
@@ -865,9 +865,9 @@ public class GpuBigFloatLinqAndVectorTests : IDisposable
     }
 
     // The element equals num / den exactly, and zero is stored as positive zero.
-    private static void AssertElement(GpuBigFloat element, BigInteger num, BigInteger den, string label)
+    private static void AssertElement(scoped GpuBigFloatView element, BigInteger num, BigInteger den, string label)
     {
-        var sig = element.UFloat.Significand.ToBigInteger();
+        var sig = element.Significand.ToBigInteger();
         Assert.True(
             BigFloatReference.EqualsRational(sig, element.Exponent, element.IsNegative, num, den)
             && (!element.IsNegative || !sig.IsZero),

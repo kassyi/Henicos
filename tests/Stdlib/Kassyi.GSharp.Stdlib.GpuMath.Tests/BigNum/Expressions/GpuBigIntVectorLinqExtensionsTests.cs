@@ -79,7 +79,7 @@ public partial class GpuBigIntVectorLinqExtensionsTests : IDisposable
         return result;
     }
 
-    private static BigInteger ToBigInt(GpuBigInt gpuVal)
+    private static BigInteger ToBigInt(GpuBigIntView gpuVal)
     {
         var val = gpuVal.Value.ToBigInteger();
         return gpuVal.IsNegative ? -val : val;

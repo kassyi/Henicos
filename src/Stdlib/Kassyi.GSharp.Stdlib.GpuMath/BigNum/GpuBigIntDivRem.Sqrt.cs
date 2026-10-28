@@ -18,7 +18,15 @@ public static partial class GpuBigIntDivRem
     /// <c>0 &lt;= s &lt; a * (2x + 1)</c>, without a host synchronization. If 1000 steps do not
     /// suffice, the next read of the workspace stream throws <see cref="InvalidOperationException"/>.
     /// </remarks>
-    internal static void InverseSqrt(GpuBigUInt targetOperand, GpuBigUInt resultBuffer, int marginWords = 0)
+    internal static void InverseSqrt(
+        scoped GpuBigUIntView targetOperand,
+        scoped GpuBigUIntView resultBuffer,
+        int marginWords = 0
+    ) =>
+        InverseSqrtCore(targetOperand.AsBorrowedBigUInt(), resultBuffer.AsBorrowedBigUInt(), marginWords);
+
+    // InverseSqrt on the owned type; the internal method above takes views and borrows them
+    private static void InverseSqrtCore(GpuBigUInt targetOperand, GpuBigUInt resultBuffer, int marginWords = 0)
     {
         var n = targetOperand.NumWords;
         if (resultBuffer.NumWords != n + marginWords)
@@ -86,8 +94,7 @@ public static partial class GpuBigIntDivRem
         var marginWords = SqrtFloorMarginWords(n);
 
         // A_top: the top n + 1 words of a, borrowed without a copy.
-        var top = new GpuBigIntMemoryHandle(operand.Handle.Buffer, operand.Handle.WordOffset + n - 1, n + 1)
-            .AsBorrowedBigUInt(workspace);
+        var top = operand.Handle.Slice(n - 1, n + 1).AsView(workspace);
         using var inverse = workspace.RentTemp(n + 1 + marginWords);
         InverseSqrt(top, inverse, marginWords);
 
@@ -125,7 +132,11 @@ public static partial class GpuBigIntDivRem
     /// <remarks>
     /// <para><b>Algorithm:</b> First calculates an initial guess via Newton-Raphson inverse square root on the GPU, then refines it using Heron's method to guarantee the exact mathematical floor integer square root.</para>
     /// </remarks>
-    public static void Sqrt(GpuBigUInt leftOperand, GpuBigUInt resultBuffer)
+    public static void Sqrt(scoped GpuBigUIntView leftOperand, scoped GpuBigUIntView resultBuffer) =>
+        SqrtCore(leftOperand.AsBorrowedBigUInt(), resultBuffer.AsBorrowedBigUInt());
+
+    // Sqrt on the owned type; the public method above takes views and borrows them
+    private static void SqrtCore(GpuBigUInt leftOperand, GpuBigUInt resultBuffer)
     {
         ThrowIfSizeMismatch(leftOperand, resultBuffer);
 

@@ -36,7 +36,6 @@ public struct Emitter(
     /// (<see cref="DynamicSharedMemoryEmitter"/>).
     /// </summary>
     public string? DynamicSharedMemorySlotScope;
-    public bool SkipLocalsInit;
     public bool IsGpuKernelEntry;
 
     /// <summary>The body is the state machine of a device function that may suspend (CPU dialects).</summary>

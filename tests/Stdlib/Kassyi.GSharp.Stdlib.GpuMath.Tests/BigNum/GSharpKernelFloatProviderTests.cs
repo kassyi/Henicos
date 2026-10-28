@@ -430,7 +430,7 @@ public class GSharpKernelFloatProviderTests : IDisposable
     [Category(TestCategory.Stdlib)]
     [Scenario(TestScenario.Boundary)]
     // mutant: GSharpKernelFloatProvider.cs:367 `- 32L * (words + marginWords)` -> `... + 1` (4 and 16, inverse)
-    // mutant: GpuBigIntDivRem.Sqrt.cs:102 `SqrtFloorCorrection(...)` removed (9: the estimate 3 - 2^-126 is kept)
+    // mutant: GpuBigIntDivRem.Sqrt.cs:109 `SqrtFloorCorrection(...)` removed (9: the estimate 3 - 2^-126 is kept)
     [InlineData(4u, false, 2, 1)]
     [InlineData(9u, false, 3, 1)]
     [InlineData(4u, true, 1, 2)]

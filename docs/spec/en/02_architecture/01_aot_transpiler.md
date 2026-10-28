@@ -272,6 +272,12 @@ Next to each fatbin, the build writes `<fatbin>.nvcc`, a record of the nvcc opti
 
 The record does not cover the `NVCC_PREPEND_FLAGS` / `NVCC_APPEND_FLAGS` environment variables, the version of the host C++ compiler, or the headers that the generated source includes. After changing one of them, rebuild (`dotnet build --no-incremental`) or delete the fatbins under `obj/`.
 
+### 1.5.2 Native Sources and the Artifact Manifest
+
+Each time the generator writes the native module (`Kassyi.GSharp.Kernels_{assembly}.g.cu` or `.g.cpp`, with its `.gsym.json`), it also writes `$(IntermediateOutputPath)Kassyi.GSharp.Kernels.artifacts`, which lists the file name of that module. An assembly without kernels gets an empty list. The `GSharpCompileCuda` and `GSharpCompileCpu` targets compile only the listed `.cu` and `.cpp` files, not every such file under `obj/`, and add them, the manifest and the symbol files to `FileWrites`.
+
+A source that an earlier build wrote and the current one did not (the other dialect after `GSharpTargetDialect` changed, an old assembly name, kernels that were all removed) is therefore not compiled again, and MSBuild's `IncrementalClean` deletes it together with its fatbin or native library at the end of the build. The generator writes nothing in an IDE design-time build, so the manifest of the last real build stays in place.
+
 ## 1.6 Expression Lowering (IIFE)
 
 To support expressive C# syntax like `switch` expressions, tuple swaps `(a,b) = (b,a)`, and null-coalescing `??` without incurring managed heap allocations or breaking C++ structural constraints, the transpiler employs **Immediately Invoked Function Expressions (IIFE)**.

@@ -59,8 +59,8 @@ public sealed class GSharpKernelFloatProvider(IGpuBigFloatArithmetic fallbackStr
         GpuWorkspace workspace, GpuBigIntMemoryHandle significand, long exponent, bool isNegative,
         GpuBigIntMemoryHandle resultSig)
     {
-        var valueView = significand.AsBorrowedBigUInt(workspace);
-        var resultView = resultSig.AsBorrowedBigUInt(workspace);
+        var valueView = significand.AsView(workspace);
+        var resultView = resultSig.AsView(workspace);
         var shift = GpuBigIntMath.NormalizeToMsb(valueView, resultView, out var actualBits);
         if (actualBits == 0)
         {
@@ -175,8 +175,8 @@ public sealed class GSharpKernelFloatProvider(IGpuBigFloatArithmetic fallbackStr
             return fallbackStrategy.Multiply(ref context, in left, in right, resultSig);
         }
 
-        var leftView = leftSig.AsBorrowedBigUInt(context.GpuWorkspace);
-        var rightView = rightSig.AsBorrowedBigUInt(context.GpuWorkspace);
+        var leftView = leftSig.AsView(context.GpuWorkspace);
+        var rightView = rightSig.AsView(context.GpuWorkspace);
         var prodWords = leftSig.NumWords + rightSig.NumWords;
         using var prodBuffer = context.GpuWorkspace.RentTemp(prodWords);
 
@@ -195,7 +195,7 @@ public sealed class GSharpKernelFloatProvider(IGpuBigFloatArithmetic fallbackStr
     {
         var leftSig = left.Significand;
         var rightSig = right.Significand;
-        var rightOperand = rightSig.AsBorrowedBigUInt(context.GpuWorkspace);
+        var rightOperand = rightSig.AsView(context.GpuWorkspace);
 
         // 1. Zero Division Check
         if (rightOperand.IsZero())
@@ -209,7 +209,7 @@ public sealed class GSharpKernelFloatProvider(IGpuBigFloatArithmetic fallbackStr
         }
 
         // 2. G# Kernel / Mega Division Path via GpuBigIntDivRem
-        var leftOperand = leftSig.AsBorrowedBigUInt(context.GpuWorkspace);
+        var leftOperand = leftSig.AsView(context.GpuWorkspace);
         if (leftOperand.IsZero())
         {
             context.GpuWorkspace.Provider.ClearMemoryAsync(resultSig.DevicePointer, resultSig.NumWords, context.Stream);
@@ -247,7 +247,7 @@ public sealed class GSharpKernelFloatProvider(IGpuBigFloatArithmetic fallbackStr
 
         var stream = context.Stream;
         var valueSig = value.Significand;
-        var valueOperand = valueSig.AsBorrowedBigUInt(context.GpuWorkspace);
+        var valueOperand = valueSig.AsView(context.GpuWorkspace);
         if (valueOperand.IsZero())
         {
             throw new DivideByZeroException("GBF Reciprocal of Zero.");
@@ -285,7 +285,7 @@ public sealed class GSharpKernelFloatProvider(IGpuBigFloatArithmetic fallbackStr
         }
 
         var workspace = context.GpuWorkspace;
-        var valueOperand = value.Significand.AsBorrowedBigUInt(workspace);
+        var valueOperand = value.Significand.AsView(workspace);
 
         var actualBits = valueOperand.GetBitLength();
         if (actualBits == 0)
@@ -329,7 +329,7 @@ public sealed class GSharpKernelFloatProvider(IGpuBigFloatArithmetic fallbackStr
         }
 
         var workspace = context.GpuWorkspace;
-        var valueOperand = value.Significand.AsBorrowedBigUInt(workspace);
+        var valueOperand = value.Significand.AsView(workspace);
 
         var actualBits = valueOperand.GetBitLength();
         if (actualBits == 0)

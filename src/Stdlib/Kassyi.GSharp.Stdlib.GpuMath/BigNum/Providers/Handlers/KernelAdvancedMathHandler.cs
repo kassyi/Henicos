@@ -948,7 +948,6 @@ public sealed class KernelAdvancedMathHandler : IGpuAdvancedMathProvider
         public readonly GpuBigUInt BlockCarries;
         public readonly int NumBlocks;
         public readonly int ChunkSize;
-        private readonly bool _ownsOperandB;
 
         /// <param name="workspace">The workspace whose temporary buffers are rented.</param>
         /// <param name="requiredLen">The word count of the largest product, which decides the transform length.</param>
@@ -978,12 +977,12 @@ public sealed class KernelAdvancedMathHandler : IGpuAdvancedMathProvider
 
             TransformLength = m;
             Twiddle = handler.GetOrCreateTwiddleFactors(workspace, m);
-            _ownsOperandB = allocateOperandB;
 
             Buf1A = workspace.RentTemp(m);
             Buf2A = workspace.RentTemp(m);
-            Buf1B = allocateOperandB ? workspace.RentTemp(m) : Buf1A;
-            Buf2B = allocateOperandB ? workspace.RentTemp(m) : Buf2A;
+            // Squaring shares the first operand's buffers through borrowed views, which Dispose does not free
+            Buf1B = allocateOperandB ? workspace.RentTemp(m) : Buf1A.AsBorrowed();
+            Buf2B = allocateOperandB ? workspace.RentTemp(m) : Buf2A.AsBorrowed();
             TmpBuf = workspace.RentTemp(m);
 
             UncarriedLow = workspace.RentTemp(m);
@@ -998,11 +997,8 @@ public sealed class KernelAdvancedMathHandler : IGpuAdvancedMathProvider
         {
             Buf1A.Dispose();
             Buf2A.Dispose();
-            if (_ownsOperandB)
-            {
-                Buf1B.Dispose();
-                Buf2B.Dispose();
-            }
+            Buf1B.Dispose();
+            Buf2B.Dispose();
 
             TmpBuf.Dispose();
             UncarriedLow.Dispose();
