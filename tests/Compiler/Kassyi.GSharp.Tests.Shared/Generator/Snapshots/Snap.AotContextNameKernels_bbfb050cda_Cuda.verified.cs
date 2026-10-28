@@ -133,6 +133,7 @@ __gsharp_id_0_data[threadIdx.x]=__gsharp_id_1_pair.__gsharp_mb_A;
 ";
 public static readonly string First_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +First_Source;
 private static IntPtr? s_hfunc_First;
+private static bool s_layoutChecked_First;
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel.</summary>
 public static void WarmupFunctionPointerFirst()
 {
@@ -145,7 +146,15 @@ s_hfunc_First = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.GetFunction(hM
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 public static unsafe void LaunchFirst(global::System.Int32[] data, global::Kassyi.GSharp.Tests.Shared.Generator.AotContextName.Pair pair, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, IntPtr hStream = default, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
+if (!s_layoutChecked_First)
+{
 if (global::System.Runtime.CompilerServices.Unsafe.SizeOf<global::Kassyi.GSharp.Tests.Shared.Generator.AotContextName.Pair>() != 4) global::Kassyi.GSharp.Runtime.Interop.LayoutGuard.ThrowSizeMismatch("Kassyi.GSharp.Tests.Shared.Generator.AotContextName.Pair", 4, global::System.Runtime.CompilerServices.Unsafe.SizeOf<global::Kassyi.GSharp.Tests.Shared.Generator.AotContextName.Pair>());
+{
+global::Kassyi.GSharp.Tests.Shared.Generator.AotContextName.Pair __gsharp_layout_probe = default;
+if (global::System.Runtime.CompilerServices.Unsafe.ByteOffset(ref global::System.Runtime.CompilerServices.Unsafe.As<global::Kassyi.GSharp.Tests.Shared.Generator.AotContextName.Pair, byte>(ref __gsharp_layout_probe), ref global::System.Runtime.CompilerServices.Unsafe.As<global::System.Int32, byte>(ref global::System.Runtime.CompilerServices.Unsafe.AsRef(in __gsharp_layout_probe.A))) != 0) global::Kassyi.GSharp.Runtime.Interop.LayoutGuard.ThrowFieldOffsetMismatch("Kassyi.GSharp.Tests.Shared.Generator.AotContextName.Pair", "A", 0, (long)global::System.Runtime.CompilerServices.Unsafe.ByteOffset(ref global::System.Runtime.CompilerServices.Unsafe.As<global::Kassyi.GSharp.Tests.Shared.Generator.AotContextName.Pair, byte>(ref __gsharp_layout_probe), ref global::System.Runtime.CompilerServices.Unsafe.As<global::System.Int32, byte>(ref global::System.Runtime.CompilerServices.Unsafe.AsRef(in __gsharp_layout_probe.A))));
+}
+s_layoutChecked_First = true;
+}
 if (data is null){
 throw new global::System.ArgumentNullException(nameof(data));
 }
@@ -256,6 +265,7 @@ __gsharp_id_0_data[threadIdx.x]=__gsharp_id_1_pair.__gsharp_mb_A+1;
 ";
 public static readonly string Second_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +Second_Source;
 private static IntPtr? s_hfunc_Second;
+private static bool s_layoutChecked_Second;
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel.</summary>
 public static void WarmupFunctionPointerSecond()
 {
@@ -268,7 +278,15 @@ s_hfunc_Second = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.GetFunction(h
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 public static unsafe void LaunchSecond(global::System.Int32[] data, global::Kassyi.GSharp.Tests.Shared.Generator.AotContextName.Pair pair, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, IntPtr hStream = default, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
+if (!s_layoutChecked_Second)
+{
 if (global::System.Runtime.CompilerServices.Unsafe.SizeOf<global::Kassyi.GSharp.Tests.Shared.Generator.AotContextName.Pair>() != 4) global::Kassyi.GSharp.Runtime.Interop.LayoutGuard.ThrowSizeMismatch("Kassyi.GSharp.Tests.Shared.Generator.AotContextName.Pair", 4, global::System.Runtime.CompilerServices.Unsafe.SizeOf<global::Kassyi.GSharp.Tests.Shared.Generator.AotContextName.Pair>());
+{
+global::Kassyi.GSharp.Tests.Shared.Generator.AotContextName.Pair __gsharp_layout_probe = default;
+if (global::System.Runtime.CompilerServices.Unsafe.ByteOffset(ref global::System.Runtime.CompilerServices.Unsafe.As<global::Kassyi.GSharp.Tests.Shared.Generator.AotContextName.Pair, byte>(ref __gsharp_layout_probe), ref global::System.Runtime.CompilerServices.Unsafe.As<global::System.Int32, byte>(ref global::System.Runtime.CompilerServices.Unsafe.AsRef(in __gsharp_layout_probe.A))) != 0) global::Kassyi.GSharp.Runtime.Interop.LayoutGuard.ThrowFieldOffsetMismatch("Kassyi.GSharp.Tests.Shared.Generator.AotContextName.Pair", "A", 0, (long)global::System.Runtime.CompilerServices.Unsafe.ByteOffset(ref global::System.Runtime.CompilerServices.Unsafe.As<global::Kassyi.GSharp.Tests.Shared.Generator.AotContextName.Pair, byte>(ref __gsharp_layout_probe), ref global::System.Runtime.CompilerServices.Unsafe.As<global::System.Int32, byte>(ref global::System.Runtime.CompilerServices.Unsafe.AsRef(in __gsharp_layout_probe.A))));
+}
+s_layoutChecked_Second = true;
+}
 if (data is null){
 throw new global::System.ArgumentNullException(nameof(data));
 }
@@ -379,6 +397,7 @@ __gsharp_id_0_data[threadIdx.x]=__gsharp_id_1_box.__gsharp_mb_Value;
 ";
 public static readonly string Third_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +Third_Source;
 private static IntPtr? s_hfunc_Third;
+private static bool s_layoutChecked_Third;
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel.</summary>
 public static void WarmupFunctionPointerThird()
 {
@@ -391,7 +410,15 @@ s_hfunc_Third = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.GetFunction(hM
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 public static unsafe void LaunchThird(global::System.Int32[] data, global::Kassyi.GSharp.Tests.Shared.Generator.AotContextName.Box<global::System.Int32> box, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, IntPtr hStream = default, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
+if (!s_layoutChecked_Third)
+{
 if (global::System.Runtime.CompilerServices.Unsafe.SizeOf<global::Kassyi.GSharp.Tests.Shared.Generator.AotContextName.Box<global::System.Int32>>() != 4) global::Kassyi.GSharp.Runtime.Interop.LayoutGuard.ThrowSizeMismatch("Kassyi.GSharp.Tests.Shared.Generator.AotContextName.Box<System.Int32>", 4, global::System.Runtime.CompilerServices.Unsafe.SizeOf<global::Kassyi.GSharp.Tests.Shared.Generator.AotContextName.Box<global::System.Int32>>());
+{
+global::Kassyi.GSharp.Tests.Shared.Generator.AotContextName.Box<global::System.Int32> __gsharp_layout_probe = default;
+if (global::System.Runtime.CompilerServices.Unsafe.ByteOffset(ref global::System.Runtime.CompilerServices.Unsafe.As<global::Kassyi.GSharp.Tests.Shared.Generator.AotContextName.Box<global::System.Int32>, byte>(ref __gsharp_layout_probe), ref global::System.Runtime.CompilerServices.Unsafe.As<global::System.Int32, byte>(ref global::System.Runtime.CompilerServices.Unsafe.AsRef(in __gsharp_layout_probe.Value))) != 0) global::Kassyi.GSharp.Runtime.Interop.LayoutGuard.ThrowFieldOffsetMismatch("Kassyi.GSharp.Tests.Shared.Generator.AotContextName.Box<System.Int32>", "Value", 0, (long)global::System.Runtime.CompilerServices.Unsafe.ByteOffset(ref global::System.Runtime.CompilerServices.Unsafe.As<global::Kassyi.GSharp.Tests.Shared.Generator.AotContextName.Box<global::System.Int32>, byte>(ref __gsharp_layout_probe), ref global::System.Runtime.CompilerServices.Unsafe.As<global::System.Int32, byte>(ref global::System.Runtime.CompilerServices.Unsafe.AsRef(in __gsharp_layout_probe.Value))));
+}
+s_layoutChecked_Third = true;
+}
 if (data is null){
 throw new global::System.ArgumentNullException(nameof(data));
 }

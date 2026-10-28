@@ -1,3 +1,5 @@
+using System.Runtime.ExceptionServices;
+
 namespace Kassyi.GSharp.Stdlib.GpuMath.BigNum.Expressions;
 
 /// <summary>
@@ -99,42 +101,56 @@ internal sealed class VectorResultCache : IDisposable
     /// <summary>
     /// Returns every array the cache allocated; a second call does nothing.
     /// </summary>
+    /// <exception cref="AggregateException">More than one release failed.</exception>
     public void Dispose()
     {
-        // Nested like SignedBinaryExpression, so that a release that throws (a failed capture refuses the clear) does not
-        // skip the others; each field is cleared even then, so that a second call frees nothing twice. A default array
-        // owns nothing, so its Dispose does nothing.
+        // Every release runs even when an earlier one throws (a failed capture refuses the clear), and each field is
+        // cleared either way, so that a second call frees nothing twice. A default array owns nothing, so its Dispose
+        // does nothing. The errors are thrown once at the end, as in GpuBigIntExpr (RunCleanupStep and
+        // ThrowIfCleanupFailed).
+        List<Exception>? errors = null;
+        Release(ref _values, ref errors);
+        Release(ref _signs, ref errors);
+        Release(ref _exponents, ref errors);
+        Release(ref _scan, ref errors);
+        ThrowIfReleaseFailed(errors);
+    }
+
+    /// <summary>
+    /// Disposes <paramref name="field"/> and clears it; an exception is collected, so that the next releases still run.
+    /// </summary>
+    internal static void Release<T>(ref T field, ref List<Exception>? errors)
+        where T : struct, IDisposable
+    {
         try
         {
-            _values.Dispose();
+            field.Dispose();
+        }
+        catch (Exception ex)
+        {
+            (errors ??= []).Add(ex);
         }
         finally
         {
-            _values = default;
-            try
-            {
-                _signs.Dispose();
-            }
-            finally
-            {
-                _signs = default;
-                try
-                {
-                    _exponents.Dispose();
-                }
-                finally
-                {
-                    _exponents = default;
-                    try
-                    {
-                        _scan.Dispose();
-                    }
-                    finally
-                    {
-                        _scan = default;
-                    }
-                }
-            }
+            field = default;
+        }
+    }
+
+    /// <summary>
+    /// Nothing when every release succeeded; the exception itself (its type and stack kept) when one failed, and an
+    /// <see cref="AggregateException"/> of all of them in order otherwise.
+    /// </summary>
+    internal static void ThrowIfReleaseFailed(List<Exception>? errors)
+    {
+        switch (errors)
+        {
+            case null:
+                return;
+            case [var single]:
+                ExceptionDispatchInfo.Throw(single);
+                break;
+            default:
+                throw new AggregateException("Releasing the cached result arrays failed.", errors);
         }
     }
 

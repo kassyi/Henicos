@@ -1,14 +1,8 @@
 name: Hybrid CI Tests
 
 # Static, syntax and CPU tests on GitHub-hosted runners (no CUDA).
-# - Ubuntu runs for every pull request and every push to main.
-# - Windows runs only after Ubuntu passed, and only for a push to main or a pull request labeled "full-ci".
-#   Windows minutes cost twice as much and a Windows run takes twice as long, so a pull request gets Windows
-#   runs only once it is ready to merge (see .agents/rules/test-execution.md). A push to main always runs
-#   Windows, so a merge without the label is still tested there.
-# - Adding a label does not start this workflow (no "labeled" trigger): a run that skips every job would replace
-#   the check results of the earlier run in the pull request view. Adding "full-ci" starts full-ci.yml (Windows
-#   only); later pushes to the pull request run Ubuntu, then Windows, here.
+# Ubuntu and Windows run side by side for every pull request and every push to main. The repository is public, so
+# GitHub-hosted runners have no minute limit on either OS.
 on:
   push:
     branches: ["main"]
@@ -26,17 +20,24 @@ on:
 permissions:
   contents: read
 
+# A new run for the same pull request or branch cancels the one still running.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 jobs:
-  test-ubuntu:
-    name: Run Static & Syntax Tests (ubuntu-latest)
-    runs-on: ubuntu-latest
-    # A new run for the same pull request or branch cancels this job while it is still running.
-    concurrency:
-      group: ${{ github.workflow }}-test-ubuntu-${{ github.event.pull_request.number || github.ref }}
-      cancel-in-progress: true
+  test:
+    name: Run Static & Syntax Tests (${{ matrix.os }})
+    strategy:
+      fail-fast: false # a failure on one OS does not cancel the other
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
     env:
       GSHARP_TEST_NO_CUDA: "1"
       DiffEngine_Disabled: "true"
+      # Seconds the vstest console waits for a test host to connect (default 90); the Windows runner is sometimes too slow when assemblies start in parallel
+      VSTEST_CONNECTION_TIMEOUT: "300"
 
     steps:
       - name: Enable long paths in Git (Windows)
@@ -44,10 +45,10 @@ jobs:
         run: git config --system core.longpaths true
 
       - name: Checkout code
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Setup .NET
-        uses: actions/setup-dotnet@v4
+        uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
         with:
           dotnet-version: "10.0.x"
 
@@ -55,57 +56,36 @@ jobs:
         run: dotnet restore
 
       - name: Build project
+        id: build
         run: dotnet build --no-restore -c Release
 
+      # The Integration tests start dotnet build processes of their own; they run in their own step below, so that
+      # they do not compete with the other test assemblies for the runner (#835)
       - name: Run Static Compilation & Syntax Tests
         env:
           GSHARP_TEST_NO_CUDA: "1"
-        run: dotnet test --filter "Category!=GpuExecution" --no-build -c Release
+        run: dotnet test --filter "Category!=GpuExecution&FullyQualifiedName!~Kassyi.GSharp.Tests.Integration." --no-build -c Release
 
       - name: Run CPU Native Toolchain Execution Tests
         env:
           GSHARP_TEST_NO_CUDA: "1"
         run: dotnet test tests/Compiler/Kassyi.GSharp.Tests.Cpu/Kassyi.GSharp.Tests.Cpu.csproj --filter "Category=GpuExecution&Category!=Stress&Category!=Benchmark" --no-build -c Release
 
-  test-windows:
-    name: Run Static & Syntax Tests (windows-latest)
-    needs: test-ubuntu
-    if: github.event_name == 'push' || contains(github.event.pull_request.labels.*.name, 'full-ci')
-    runs-on: windows-latest
-    # A new run for the same pull request or branch cancels this job while it is still running.
-    concurrency:
-      # The same group as full-ci.yml, so a run of either workflow cancels the Windows run of the other.
-      group: windows-tests-${{ github.event.pull_request.number || github.ref }}
-      cancel-in-progress: true
-    env:
-      GSHARP_TEST_NO_CUDA: "1"
-      DiffEngine_Disabled: "true"
+      # Runs after the other test steps, also when one of them failed (the job still fails), but not without a build
+      - name: Run MSBuild Integration Tests
+        if: ${{ !cancelled() && steps.build.outcome == 'success' }}
+        env:
+          GSHARP_TEST_NO_CUDA: "1"
+          # Every dotnet build of these tests writes its binary log here; uploaded below when the job fails
+          GSHARP_TEST_BUILD_LOG_DIR: ${{ runner.temp }}/integration-build-logs
+        run: dotnet test tests/Compiler/Kassyi.GSharp.Tests.Integration/Kassyi.GSharp.Tests.Integration.csproj --filter "Category!=GpuExecution" --no-build -c Release
 
-    steps:
-      - name: Enable long paths in Git (Windows)
-        if: runner.os == 'Windows'
-        run: git config --system core.longpaths true
-
-      - name: Checkout code
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
-
-      - name: Setup .NET
-        uses: actions/setup-dotnet@v4
+      - name: Upload Integration build logs
+        if: ${{ failure() }}
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
-          dotnet-version: "10.0.x"
-
-      - name: Restore dependencies
-        run: dotnet restore
-
-      - name: Build project
-        run: dotnet build --no-restore -c Release
-
-      - name: Run Static Compilation & Syntax Tests
-        env:
-          GSHARP_TEST_NO_CUDA: "1"
-        run: dotnet test --filter "Category!=GpuExecution" --no-build -c Release
-
-      - name: Run CPU Native Toolchain Execution Tests
-        env:
-          GSHARP_TEST_NO_CUDA: "1"
-        run: dotnet test tests/Compiler/Kassyi.GSharp.Tests.Cpu/Kassyi.GSharp.Tests.Cpu.csproj --filter "Category=GpuExecution&Category!=Stress&Category!=Benchmark" --no-build -c Release
+          name: integration-build-logs-${{ matrix.os }}
+          # The binary logs embed the generated projects and the imported targets, so the deleted temp directories are not needed
+          path: ${{ runner.temp }}/integration-build-logs/
+          if-no-files-found: ignore
+          retention-days: 14

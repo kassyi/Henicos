@@ -11,6 +11,7 @@
 #include <cstdio>
 #include <cstdlib>
 #include <limits>
+#include <new>
 
 // NaN and infinity: a C# constant such as float.NaN has no C++ literal (ConstexprLiteral)
 #define __gsharp_nan_f (std::numeric_limits<float>::quiet_NaN())

@@ -96,18 +96,20 @@ internal int tid;
 internal int rotated;
 }
 public static bool __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Core__SharedMemoryRegionKernels__RotateThroughDynamicSharedMemory(int value, int count, __gsharp_frame_Kassyi__GSharp__Tests__Shared__Core__SharedMemoryRegionKernels__RotateThroughDynamicSharedMemory __gsharp_ctx, ref int __gsharp_result) {
-global::Kassyi.GSharp.Core.SharedMemory<int> shared = new global::Kassyi.GSharp.Core.SharedMemory<int>(count, 0xa8ee59f66f63ce77UL);
+global::Kassyi.GSharp.Core.SharedMemory<int> shared = global::Kassyi.GSharp.Core.SharedMemory<int>.FindDynamic(0xa8ee59f66f63ce77UL);
 {
 switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
 __gsharp_ctx.tid = global::Kassyi.GSharp.Core.ThreadIndex.X;
+shared = new global::Kassyi.GSharp.Core.SharedMemory<int>(count, 0xa8ee59f66f63ce77UL, "SharedMemoryRegionKernels.cs(46,22)");
 if (__gsharp_ctx.tid < count)
 {
 shared[__gsharp_ctx.tid] = value;
 }
 
+global::Kassyi.GSharp.Core.ManagedGpuContext.BlockBarrierRequested = true;
 __gsharp_ctx.__gsharp_state = 1;
 return false;
 }
@@ -115,6 +117,7 @@ return false;
 case 1:
 {
 __gsharp_ctx.rotated = __gsharp_ctx.tid < count ? shared[(__gsharp_ctx.tid + 1) % count] : 0;
+global::Kassyi.GSharp.Core.ManagedGpuContext.BlockBarrierRequested = true;
 __gsharp_ctx.__gsharp_state = 2;
 return false;
 }

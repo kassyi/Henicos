@@ -365,7 +365,8 @@ public class GpuWorkspace : IGpuResourceScope
 
         try
         {
-            // No host-side synchronization: the manager releases its buffers in stream order on Stream.
+            // The manager releases its buffers in stream order on Stream; DisposeEngineResources waits for those frees
+            // before it destroys the stream.
             disposableManager.Dispose();
         }
         catch (Exception ex)
@@ -379,6 +380,19 @@ public class GpuWorkspace : IGpuResourceScope
         if (Stream == IntPtr.Zero)
         {
             return;
+        }
+
+        try
+        {
+            // The memory manager freed its buffers in stream order on Stream. A stream-ordered free still pending when
+            // its stream is destroyed never returns the memory to the driver (#659), so wait for this stream (only
+            // this one, not the whole device) before destroying it. A failed wait is reported, and the stream is
+            // still destroyed.
+            CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(Stream));
+        }
+        catch (Exception ex)
+        {
+            exceptions?.Add(ex);
         }
 
         try

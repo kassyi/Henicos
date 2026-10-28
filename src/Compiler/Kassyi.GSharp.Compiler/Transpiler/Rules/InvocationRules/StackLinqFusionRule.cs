@@ -86,7 +86,7 @@ public sealed class StackLinqFusionRule : IInvocationTranspilerRule
             EmitInitializations(in chain, folded, ref context, terminalStrategy, in terminalStage, ResultVar);
 
             writer.AppendLine($"int {StackLinqHelper.FusionLow} = 0;");
-            writer.AppendLine($"int {StackLinqHelper.FusionHigh} = {StackLinqHelper.FusionSource}.length;");
+            writer.AppendLine($"int {StackLinqHelper.FusionHigh} = {FusionLength(chain.SourceArrayExpression, ref context)};");
             for (var i = 0; i < folded; i++)
             {
                 if (chain.Stages[i].Operator.IsPositionStage())
@@ -199,6 +199,13 @@ public sealed class StackLinqFusionRule : IInvocationTranspilerRule
 
         terminalStrategy.EmitInitialValue(ref context, resultVar, in terminalStage);
     }
+
+
+    // The element count of the source: a stack array has no length member, so its declared count is written
+    private static string FusionLength(ExpressionSyntax source, ref TranspileContext context) =>
+        StackArrayLocals.TryGetLength(source, context.Query.SemanticModel, out var length)
+            ? length.ToString()
+            : $"{StackLinqHelper.FusionSource}.length";
 
     // Narrows [lo, hi) as C# does, with the count clamped to [0, hi - lo] (__gsharp_clamp_count)
     private static void EmitRangeStage(in LinqStage stage, int index, SourceWriter writer)

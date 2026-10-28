@@ -16,6 +16,7 @@
             if (!(__gsharp_ctx->__gsharp_unroll_0 < 0 + 2))
                 goto case 4;
             __gsharp_ctx->sum += __gsharp_ctx->__gsharp_unroll_0;
+            __gsharp_yielded_for_block_barrier = true;
             __gsharp_state = 2;
             return;
         }
@@ -43,6 +44,7 @@
             if (!(__gsharp_ctx->__gsharp_unroll_1 < 1 + 3))
                 goto case 8;
             __gsharp_ctx->sum += __gsharp_ctx->__gsharp_unroll_1;
+            __gsharp_yielded_for_block_barrier = true;
             __gsharp_state = 6;
             return;
         }

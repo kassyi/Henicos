@@ -2,10 +2,6 @@ namespace Kassyi.GSharp.Compiler.Lowering;
 
 /// <summary>Hoists local variables that cross execution barriers into a shared context struct.</summary>
 /// <param name="copiedParameters">Parameters that live in the frame of a device function (see <see cref="LoweredStateMachine.CopiedParameters"/>).</param>
-/// <param name="isDeviceFunction">
-/// Whether the body belongs to a device function. Its shared memory is not set up by the launcher, so the initializer of
-/// a hoisted <c>SharedMemory&lt;T&gt;</c> stays in the body.
-/// </param>
 /// <param name="semanticModel">
 /// The semantic model of the method's syntax tree, used to key hoisted declarations and references by symbol and region
 /// (<see cref="DeclarationKey"/>). When <see langword="null"/>, declarations and references are matched by name and region.
@@ -14,13 +10,25 @@ namespace Kassyi.GSharp.Compiler.Lowering;
 /// The device function that owns the body. With a semantic model, only references to its own parameters are rewritten
 /// to the frame copies of <paramref name="copiedParameters"/>.
 /// </param>
+/// <remarks>
+/// A local used after a label of the user that starts a state (<see cref="StateLabelPlanner"/>), in another state than
+/// its declaration, lives in the context like a local that crosses a barrier.
+/// </remarks>
 public class ContextHoister(
     IReadOnlyCollection<string>? copiedParameters = null,
-    bool isDeviceFunction = false,
     SemanticModel? semanticModel = null,
     IMethodSymbol? deviceFunction = null)
     : CSharpSyntaxRewriter
 {
+    // The plan that AstLoweringPipeline gives this pass and StateMachineLowerer, or null to make one from the block
+    private readonly StatePlan? _plan;
+
+    /// <summary>Creates a hoister that takes the labels that start a state from <paramref name="plan"/>.</summary>
+    internal ContextHoister(IReadOnlyCollection<string>? copiedParameters, SemanticModel? semanticModel,
+        IMethodSymbol? deviceFunction, StatePlan plan)
+        : this(copiedParameters, semanticModel, deviceFunction) =>
+        _plan = plan;
+
     private readonly HashSet<DeclarationKey> _hoistedVariables = [];
     private readonly HashSet<string> _copiedParameters = [];
 
@@ -52,6 +60,11 @@ public class ContextHoister(
         {
             barrierStarts[i] = analyzer.BarrierSpans[i].Start;
         }
+
+        var splitLabelStarts = FindSplitUserLabelStarts(block);
+        var lastReferenceStarts = splitLabelStarts.Length > 0
+            ? FindLastReferenceStarts(block)
+            : null;
 
         var variableCount = analyzer.Variables.Count;
         var keys = new DeclarationKey[variableCount];
@@ -88,6 +101,13 @@ public class ContextHoister(
             if (index < barrierCount && barrierStarts[index] < scopeEnd)
             {
                 _hoistedVariables.Add(keys[v]);
+                continue;
+            }
+
+            if (lastReferenceStarts != null &&
+                IsUsedAfterSplitLabel(splitLabelStarts, lastReferenceStarts, keys[v], declEnd, scopeEnd))
+            {
+                _hoistedVariables.Add(keys[v]);
             }
         }
 
@@ -107,6 +127,65 @@ public class ContextHoister(
         return (rewrittenBlock, hoistedDecls);
     }
 
+    // [WHY] A label of the user that starts a state ends the case block of its declaration, as a barrier does. Only a
+    // local that is used after such a label moves into the context (as pocl saves only the values used outside their
+    // region); the others stay locals. Lowering's own labels need no check: they appear only around barriers, which the
+    // barrier rule covers.
+    private int[] FindSplitUserLabelStarts(BlockSyntax block)
+    {
+        var plan = _plan ?? StateLabelPlanner.Plan(block, semanticModel);
+        var starts = ImmutableArray.CreateBuilder<int>();
+        foreach (var statement in block.Statements)
+        {
+            if (statement is LabeledStatementSyntax labeled &&
+                !LoweringIdentity.IsLoweringLabel(labeled) &&
+                plan.StartsState(labeled))
+            {
+                starts.Add(labeled.SpanStart);
+            }
+        }
+
+        return starts.ToArray();
+    }
+
+    // The start of the last reference to each declaration, in a value position
+    private Dictionary<DeclarationKey, int> FindLastReferenceStarts(BlockSyntax block)
+    {
+        var lastStarts = new Dictionary<DeclarationKey, int>();
+        foreach (var node in block.DescendantNodes())
+        {
+            if (node is not IdentifierNameSyntax identifier || IsNonValueIdentifierPosition(identifier))
+            {
+                continue;
+            }
+
+            var key = LoweringIdentity.ForReference(identifier, semanticModel);
+            if (!lastStarts.TryGetValue(key, out var last) || identifier.SpanStart > last)
+            {
+                lastStarts[key] = identifier.SpanStart;
+            }
+        }
+
+        return lastStarts;
+    }
+
+    // Whether a split label of the user lies between the declaration and the end of its scope, and the declaration is
+    // referenced after the first such label
+    private static bool IsUsedAfterSplitLabel(int[] splitLabelStarts, Dictionary<DeclarationKey, int> lastReferenceStarts,
+        DeclarationKey key, int declEnd, int scopeEnd)
+    {
+        var index = Array.BinarySearch(splitLabelStarts, declEnd);
+        if (index < 0)
+        {
+            index = ~index;
+        }
+
+        return index < splitLabelStarts.Length &&
+               splitLabelStarts[index] < scopeEnd &&
+               lastReferenceStarts.TryGetValue(key, out var lastReference) &&
+               lastReference > splitLabelStarts[index];
+    }
+
     public override SyntaxNode? VisitLocalDeclarationStatement(LocalDeclarationStatementSyntax node)
     {
         var remainingVariables = ImmutableArray.CreateBuilder<VariableDeclaratorSyntax>();
@@ -117,13 +196,9 @@ public class ContextHoister(
             if (_hoistedVariables.Contains(LoweringIdentity.ForDeclaration(variable, semanticModel)))
             {
                 // [WHY] Hoisted variables reside in the context struct, so initializations must become explicit member assignments.
-                var typeSyntax = (variable.Parent as VariableDeclarationSyntax)?.Type;
-                var isSharedMemory = typeSyntax is GenericNameSyntax
-                {
-                    Identifier.ValueText: TypeConstants.SharedMemoryType
-                };
-
-                if (variable.Initializer == null || (isSharedMemory && !isDeviceFunction))
+                // A SharedMemory<T> declaration too, in a kernel as in a device function: the allocation runs where the
+                // declaration is, so its count is evaluated there and a dynamic one is checked against sharedMemBytes (#544)
+                if (variable.Initializer == null)
                 {
                     continue;
                 }

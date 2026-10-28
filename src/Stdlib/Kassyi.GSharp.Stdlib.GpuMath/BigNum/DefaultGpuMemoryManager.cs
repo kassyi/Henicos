@@ -405,13 +405,14 @@ internal sealed class DefaultGpuMemoryManager(IGpuExecutionProvider provider, In
     /// </summary>
     /// <remarks>
     /// Buffers are released in stream order on the workspace stream, which every buffer of this manager is used on.
-    /// The calling thread therefore neither waits for that stream nor for unrelated streams of the device.
+    /// The calling thread therefore neither waits for that stream nor for unrelated streams of the device. A
+    /// stream-ordered free still pending when its stream is destroyed never returns the memory (#659), so the owner of
+    /// the stream must synchronize it before destroying it; <see cref="GpuWorkspace"/> does so in its disposal.
     /// The stream must not be capturing a CUDA Graph at this point.
     /// Every lease is ended before its buffer is released, so a handle that survives the manager reads as freed
     /// (<see cref="ObjectDisposedException"/>) and freeing it does nothing.
-    /// The deferred buffers of graphs that were not disposed are released with the immediate, device-wide free: a launch
-    /// of such a graph may still be running, and the workspace destroys its stream right after this call without
-    /// waiting for it (#659), so a stream-ordered free could leave the memory allocated.
+    /// The deferred buffers of graphs that were not disposed are released with the immediate, device-wide free, which
+    /// waits for a launch of such a graph that may still be running.
     /// </remarks>
     [ExcludeFromCodeCoverage] public void Dispose()
     {

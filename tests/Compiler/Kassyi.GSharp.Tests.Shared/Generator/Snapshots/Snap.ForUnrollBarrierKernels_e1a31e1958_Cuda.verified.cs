@@ -99,6 +99,7 @@ switch (__gsharp_ctx.__gsharp_state)
 case 0:
 {
 buffer[tid] = value;
+global::Kassyi.GSharp.Core.ManagedGpuContext.BlockBarrierRequested = true;
 __gsharp_ctx.__gsharp_state = 1;
 return false;
 }
@@ -106,6 +107,7 @@ return false;
 case 1:
 {
 __gsharp_ctx.r = buffer[(tid + 1) % 4];
+global::Kassyi.GSharp.Core.ManagedGpuContext.BlockBarrierRequested = true;
 __gsharp_ctx.__gsharp_state = 2;
 return false;
 }
