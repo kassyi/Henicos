@@ -18,5 +18,8 @@ public static partial class ShortCircuitSuspendingCallKernels
         // GSH0037: the right operand runs only for the threads whose left operand is true
         bool done = ThreadIndex.X < 16 && WaitAndConfirm();
         buffer[ThreadIndex.X] = done ? 1 : 0;
+
+        // The threads that skip the barrier above meet the others here
+        Gpu.SyncThreads();
     }
 }

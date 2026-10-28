@@ -1,6 +1,3 @@
-using Microsoft.CodeAnalysis.FlowAnalysis;
-using Microsoft.CodeAnalysis.Operations;
-
 namespace Kassyi.GSharp.Compiler.Diagnostics.Kernel;
 
 /// <summary>What must not cross a barrier: recursion into it (GSH0045), jumps (GSH0040) and locals (GSH0039, GSH0041, GSH0072) (<see cref="KernelBarrierValidator"/>).</summary>
@@ -90,7 +87,7 @@ internal static class CrossBarrierChecks
     /// </summary>
     internal static void ValidateCrossBarrierLocals(KernelBarrierScan scan)
     {
-        if (scan.TrackedLocals.Count == 0 || !scan.HasSplitPoint || !TryCreateControlFlowGraph(scan, out var graph))
+        if (scan.TrackedLocals.Count == 0 || !scan.HasSplitPoint || !scan.Flow.TryGetGraph(out var graph))
         {
             return;
         }
@@ -131,27 +128,6 @@ internal static class CrossBarrierChecks
                     tracked.IdentifierText);
             }
         }
-    }
-
-    // The control flow graph of the body; none while the body does not bind (being edited), so nothing is reported then
-    private static bool TryCreateControlFlowGraph(KernelBarrierScan scan, [NotNullWhen(true)] out ControlFlowGraph? graph)
-    {
-        graph = null;
-        if (scan.SemanticModel.GetOperation(scan.Method) is not IMethodBodyOperation body)
-        {
-            return false;
-        }
-
-        foreach (var operation in body.Descendants())
-        {
-            if (operation is IInvalidOperation)
-            {
-                return false;
-            }
-        }
-
-        graph = ControlFlowGraph.Create(body);
-        return true;
     }
 
     private static InvocationExpressionSyntax? FindFirstBarrierAfter(KernelBarrierScan scan, int position)

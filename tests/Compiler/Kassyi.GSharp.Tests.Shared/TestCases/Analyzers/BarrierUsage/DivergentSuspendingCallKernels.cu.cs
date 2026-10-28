@@ -19,5 +19,8 @@ public static partial class DivergentSuspendingCallKernels
             // GSH0037: the callee reaches a block barrier that only some threads arrive at
             WaitForBlock();
         }
+
+        // The threads that skip the barrier above meet the others here
+        Gpu.SyncThreads();
     }
 }

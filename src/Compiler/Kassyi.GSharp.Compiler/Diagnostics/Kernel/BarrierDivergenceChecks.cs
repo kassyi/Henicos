@@ -4,28 +4,15 @@ namespace Kassyi.GSharp.Compiler.Diagnostics.Kernel;
 internal static class BarrierDivergenceChecks
 {
     /// <summary>
-    /// Validates immediate syntactic ancestors of a barrier invocation (GSH0037, GSH0043, GSH0045, and GSH0003 for a
-    /// barrier in the scope of a <c>using</c>).
+    /// Validates the syntactic ancestors of a barrier invocation (GSH0043, GSH0045, and GSH0003 for a barrier in the
+    /// scope of a <c>using</c>): rules about where the barrier is written, not about the control flow.
     /// </summary>
     /// <param name="scan">The state of the run.</param>
     /// <param name="barrier">A block barrier, or a call to a device function that reaches a barrier.</param>
-    /// <param name="isBlockBarrier">Whether every thread of the block has to reach <paramref name="barrier"/> (GSH0037).</param>
-    internal static void InspectBarrierAncestors(KernelBarrierScan scan, InvocationExpressionSyntax barrier, bool isBlockBarrier)
+    internal static void InspectBarrierAncestors(KernelBarrierScan scan, InvocationExpressionSyntax barrier)
     {
-        SyntaxNode previous = barrier;
         for (var ancestor = barrier.Parent; ancestor != null && ancestor != scan.Method; ancestor = ancestor.Parent)
         {
-            var child = previous;
-            previous = ancestor;
-
-            // GSH0037: only the threads for which a thread-variant condition holds reach the barrier
-            if (isBlockBarrier && GetDivergingCondition(ancestor, child) is { } condition && scan.Variance.IsThreadVariant(condition))
-            {
-                scan.Context.ReportDiagnostic(
-                    GSharpDiagnostics.DivergentBarrierProhibited,
-                    barrier.GetLocation());
-            }
-
             switch (ancestor)
             {
                 // GSH0043: fixed block barrier prohibited
@@ -52,6 +39,29 @@ internal static class BarrierDivergenceChecks
 
                         break;
                     }
+            }
+        }
+    }
+
+    /// <summary>
+    /// Reports GSH0037 for a barrier, or a call that reaches one, that a thread-variant branch lets only some threads
+    /// reach while the others reach another split point (<see cref="BarrierDivergence.Condition"/>). A barrier that the
+    /// others skip only on their way out of the method (<see cref="BarrierDivergence.ExitOnly"/>) is not reported here.
+    /// </summary>
+    internal static void ValidateDivergentBarriers(KernelBarrierScan scan)
+    {
+        if (scan.SyncPoints.Count == 0 || !scan.Flow.TryGetUniformity(out var uniformity))
+        {
+            return;
+        }
+
+        foreach (var (barrier, scope) in scan.SyncPoints)
+        {
+            if (uniformity.GetBarrierDivergence(barrier, scope) == BarrierDivergence.Condition)
+            {
+                scan.Context.ReportDiagnostic(
+                    GSharpDiagnostics.DivergentBarrierProhibited,
+                    barrier.GetLocation());
             }
         }
     }

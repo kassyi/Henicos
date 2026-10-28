@@ -13,6 +13,9 @@ public static partial class DivergentBarrierKernels
             // GSH0037: Divergent barrier inside if statement
             Gpu.SyncThreads();
         }
+
+        // The threads that skip the barrier above meet the others here
+        Gpu.SyncThreads();
     }
 
     [GpuKernel]
@@ -28,6 +31,9 @@ public static partial class DivergentBarrierKernels
             // GSH0037: Divergent barrier inside else block
             Gpu.SyncThreads();
         }
+
+        // The threads that skip the barrier above meet the others here
+        Gpu.SyncThreads();
     }
 
     [GpuKernel]
@@ -44,5 +50,8 @@ public static partial class DivergentBarrierKernels
                 buffer[0] = 0;
                 break;
         }
+
+        // The threads that skip the barrier above meet the others here
+        Gpu.SyncThreads();
     }
 }
