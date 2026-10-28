@@ -44,7 +44,7 @@ public static class StateLabelPlanner
         foreach (var statement in statements)
         {
             if (statement is LabeledStatementSyntax labeled &&
-                (IsLoweringLabel(labeled) || labelCounts[labeled.Identifier.ValueText] > 1))
+                (LoweringIdentity.IsLoweringLabel(labeled) || labelCounts[labeled.Identifier.ValueText] > 1))
             {
                 stateLabels.Add(LoweringIdentity.ForDeclaration(labeled, model));
             }
@@ -105,9 +105,6 @@ public static class StateLabelPlanner
             }
         }
     }
-
-    private static bool IsLoweringLabel(LabeledStatementSyntax labeled) =>
-        labeled.Identifier.ValueText.StartsWith(GSharpInternalNames.Lowering.LabelPrefix, StringComparison.Ordinal);
 
     // How many labels of each name the body declares, nested ones included
     private static Dictionary<string, int> CountLabelNames(BlockSyntax body)

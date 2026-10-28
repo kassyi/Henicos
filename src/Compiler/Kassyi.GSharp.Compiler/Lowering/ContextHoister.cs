@@ -136,7 +136,7 @@ public class ContextHoister(
         foreach (var statement in block.Statements)
         {
             if (statement is LabeledStatementSyntax labeled &&
-                !labeled.Identifier.ValueText.StartsWith(GSharpInternalNames.Lowering.LabelPrefix, StringComparison.Ordinal) &&
+                !LoweringIdentity.IsLoweringLabel(labeled) &&
                 labels.Contains(LoweringIdentity.ForDeclaration(labeled, semanticModel)))
             {
                 starts.Add(labeled.SpanStart);
