@@ -35,7 +35,7 @@ The G# compiler and Roslyn analyzers enforce GPU safety and memory management ru
 | [GSH0019](GSH0019.md) | Error | Manual GetEnumerator calls are not supported |
 | [GSH0020](GSH0020.md) | Error | Missing IDisposable implementation |
 | [GSH0021](GSH0021.md) | Error | Undisposed GPU resource |
-| [GSH0022](GSH0022.md) | Error | Unsafe field overwrite |
+| [GSH0022](GSH0022.md) | Error | Undisposed GPU scope |
 | [GSH0023](GSH0023.md) | Error | Property getter side-effect |
 | [GSH0024](GSH0024.md) | Error | Cast operator side-effect |
 | [GSH0025](GSH0025.md) | Error | Unguarded multi-allocation |
