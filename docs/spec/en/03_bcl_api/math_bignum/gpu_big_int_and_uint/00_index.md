@@ -32,6 +32,7 @@ This separation ensures that GPU kernels remain purely mathematical and branchle
 - **[GpuBigInt.md](GpuBigInt.md)**: The signed wrapper struct for host-side orchestration.
 - **[GpuBigUIntArray.md](GpuBigUIntArray.md)**: Contiguous batch array of unsigned multi-precision integers.
 - **[GpuBigIntArray.md](GpuBigIntArray.md)**: Contiguous batch array of signed multi-precision integers.
+- **[GpuBigUIntView.md](GpuBigUIntView.md)** / **[GpuBigIntView.md](GpuBigIntView.md)** / **[GpuBigUIntArrayView.md](GpuBigUIntArrayView.md)** / **[GpuBigIntArrayView.md](GpuBigIntArrayView.md)**: Borrowed, stack-only views (`ref struct`, like `Span<T>`) of values and array ranges; the operations take them and owned values convert implicitly.
 - **[GpuBigUIntGeneric.md](GpuBigUIntGeneric.md)**: Fixed-size unsigned multi-precision integer struct (`GpuBigUInt<TSize>`) for value-type/kernel execution.
 - **[GpuUInt128.md](GpuUInt128.md)** / **[GpuUInt256.md](GpuUInt256.md)** / **[GpuUInt512.md](GpuUInt512.md)**: Fixed-width 128/256/512-bit unsigned integer structs for GPU device and host execution.
 - **[GpuBigUIntBuilder.md](GpuBigUIntBuilder.md)**: Factory builder facilitating C# 12 Collection Expression construction for fixed-size `GpuBigUInt<TSize>`.
@@ -75,7 +76,7 @@ GSharp includes a vast suite of advanced algorithms designed to leverage the GPU
 - **[Gcd.md](algorithms/Gcd.md)**: Greatest Common Divisor (Lehmer's GCD).
 - **[ModPow.md](algorithms/ModPow.md)**: Modular Exponentiation (RSA cryptography).
 - **[Ntt.md](algorithms/Ntt.md)**: Number Theoretic Transform for $O(N \log N)$ convolution of massive numbers.
-- **[FermatAlgorithm.md](algorithms/FermatAlgorithm.md)**: Fermat number PRP test and NTT squaring on the GPU (formerly `FermatRunner`, see [Fermat.md](algorithms/Fermat.md)), with non-blocking `RunFermatPrpAsync` / `GetStateAsync`.
+- **[FermatAlgorithm.md](algorithms/FermatAlgorithm.md)**: Fermat probable-prime test of `N = 2^(2E+1) - 2^E + 11` on the GPU (2E + 1 NTT squarings with a dedicated fold), with the Gerbicz-Li check, checkpoints and a non-blocking `RunAsync` (formerly `FermatRunner`, see [Fermat.md](algorithms/Fermat.md)).
 - **[PrimeSearchAlgorithm.md](algorithms/PrimeSearchAlgorithm.md)**: High-performance probable prime generation using trial division and Fermat PRP testing.
 - **[ChudnovskyAlgorithm.md](algorithms/ChudnovskyAlgorithm.md)**: Hybrid CPU/GPU Chudnovsky binary splitting pipeline for multi-million-digit $\pi$ computation.
 - **[BbpAlgorithm.md](algorithms/BbpAlgorithm.md)**: Bailey-Borwein-Plouffe (BBP) spigot algorithm for direct hexadecimal $\pi$ digit extraction.

@@ -56,7 +56,7 @@ Thrown if `workspace` is null.
 | --- | --- |
 | [DevicePointer](#devicepointer) | Gets the raw 64-bit device memory pointer to the first element in GPU address space. |
 | [Handle](#handle) | Gets the underlying GPU memory handle tracking device buffer allocation and lifetime. |
-| [IsTemp](#istemp) | Gets a value indicating whether this buffer represents an intermediate temporary buffer. |
+| [OwnsBuffer](#ownsbuffer) | Gets a value indicating whether this array owns its device buffer. |
 | [Length](#length) | Gets the number of elements in the array. |
 | [TotalWords](#totalwords) | Gets the total number of 32-bit words allocated for this array. |
 | [WordsPerElement](#wordsperelement) | Gets the number of 32-bit unsigned integer limbs per element. |
@@ -70,6 +70,11 @@ Gets the raw 64-bit device memory pointer to the first element in GPU global add
 public IntPtr DevicePointer { get; }
 ```
 
+#### Exceptions
+
+`ObjectDisposedException`<br>
+The buffer has been freed: this array or a copy of it was disposed, or its workspace was disposed.
+
 ## Handle
 
 Gets the underlying GPU memory handle tracking device buffer allocation and lifetime.
@@ -78,12 +83,12 @@ Gets the underlying GPU memory handle tracking device buffer allocation and life
 public GpuBigIntMemoryHandle Handle { get; }
 ```
 
-## IsTemp
+## OwnsBuffer
 
-Gets a value indicating whether this buffer represents an intermediate temporary buffer rented from the pool.
+Gets a value indicating whether this array owns its device buffer, so that disposing it returns the buffer to the pool. An array created by a constructor owns its buffer; a borrowed array used inside the library does not.
 
 ```csharp
-public bool IsTemp { get; }
+public bool OwnsBuffer { get; }
 ```
 
 ## Length
@@ -123,8 +128,8 @@ public GpuWorkspace Workspace { get; }
 | Name | Description |
 | --- | --- |
 | [Dispose()](#dispose) | Releases the GPU global device memory resources allocated for the underlying buffer. |
-| [GetElement(int)](#getelementint) | Gets a slice representation of the specified element without allocating a new buffer. |
-| [Slice(int, int)](#sliceint-int) | Creates a zero-allocation sub-slice of this GPU array. |
+| [GetElement(int)](#getelementint) | Gets a [`GpuBigUIntView`](GpuBigUIntView.md) of the specified element without allocating a new buffer. |
+| [Slice(int, int)](#sliceint-int) | Creates a [`GpuBigUIntArrayView`](GpuBigUIntArrayView.md) of a range of the elements. |
 
 ## Dispose()
 
@@ -139,8 +144,10 @@ public void Dispose();
 Gets a slice representation of the specified element pointing directly to the element's offset in GPU device memory without allocating an independent device buffer.
 
 ```csharp
-public GpuBigUInt GetElement(int index);
+public GpuBigUIntView GetElement(int index);
 ```
+
+The result is a borrowed view (a `ref struct`, like `Span<T>`): it lives only inside the calling method, has no `Dispose`, and must not be used after the array is disposed (its `DevicePointer` then throws `ObjectDisposedException`). Copy it with `ToOwned()` to keep the value.
 
 #### Parameters
 
@@ -149,8 +156,8 @@ The zero-based index of the element to retrieve.
 
 #### Returns
 
-_GpuBigUInt_<br>
-A `GpuBigUInt` instance pointing directly to the contiguous memory slice of the element.
+_[GpuBigUIntView](GpuBigUIntView.md)_<br>
+A view of the contiguous words of the element.
 
 #### Exceptions
 
@@ -162,8 +169,10 @@ Thrown if `index` is less than 0 or greater than or equal to [Length](#length).
 Creates a zero-allocation sub-slice of this GPU array.
 
 ```csharp
-public GpuBigUIntArray Slice(int elementOffset, int elementCount);
+public GpuBigUIntArrayView Slice(int elementOffset, int elementCount);
 ```
+
+The result is a borrowed view (a `ref struct`, like `Span<T>`): it lives only inside the calling method, has no `Dispose`, and must not be used after the array is disposed (its `DevicePointer` then throws `ObjectDisposedException`).
 
 #### Parameters
 
@@ -175,8 +184,8 @@ The number of elements in the slice.
 
 #### Returns
 
-_GpuBigUIntArray_<br>
-A sliced view of the `GpuBigUIntArray`.
+_[GpuBigUIntArrayView](GpuBigUIntArrayView.md)_<br>
+A view of the elements.
 
 #### Exceptions
 

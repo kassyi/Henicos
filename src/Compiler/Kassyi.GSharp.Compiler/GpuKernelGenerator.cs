@@ -775,6 +775,7 @@ public class GpuKernelGenerator : IIncrementalGenerator
     {
         if (kernelMethods.IsDefaultOrEmpty)
         {
+            AotArtifactWriter.WriteEmptyManifest(target, config, context);
             return;
         }
 

@@ -298,4 +298,55 @@ public static unsafe partial class StackArrayEscapeKernels
 
         output[0] = p[0];
     }
+
+    // X19: a stack array kept through a with expression, on a struct that holds an array and on a ref struct that holds
+    // a span
+    [GpuKernel]
+    public static void WithExpressionKernel(int[] output)
+    {
+        EscapeHolder outer = default;
+        EscapeHolder holder = default;
+        scoped EscapeSpanHolder outerSpan = default;
+        EscapeSpanHolder spanHolder = default;
+        {
+            int[] a = new int[4];
+            outer = holder with { Field = a };
+            Span<int> s = stackalloc int[4];
+            outerSpan = spanHolder with { Data = s };
+        }
+
+        output[0] = outer.Field[0] + outerSpan.Data[0];
+    }
+
+    [GpuDeviceFunction]
+    public static int* AtFixed(ref int x)
+    {
+        fixed (int* p = &x)
+        {
+            return p;
+        }
+    }
+
+    [GpuDeviceFunction]
+    public static int* AtUnsafe(ref int x) => (int*)System.Runtime.CompilerServices.Unsafe.AsPointer(ref x);
+
+    // X20: a pointer that a callee makes from a ref argument into a stack array
+    [GpuKernel]
+    public static void PointerFromRefKernel(int[] output)
+    {
+        int* outer = null;
+        int* other = null;
+        {
+            int[] a = new int[4];
+            outer = AtFixed(ref a[0]);
+            other = AtUnsafe(ref a[1]);
+        }
+
+        output[0] = *outer + *other;
+    }
+}
+
+public ref struct EscapeSpanHolder
+{
+    public Span<int> Data;
 }

@@ -176,7 +176,6 @@ public partial class DeviceFunctionBarrierEdgeCaseKernels
 public class __gsharp_frame_Kassyi__GSharp__Tests__Shared__Syntax__DeviceFunctionBarrierEdgeCaseKernels__DoubleThroughSharedMemory {
 internal int __gsharp_state;
 internal uint __gsharp_warp_exchange;
-internal bool __gsharp_yielded_for_grid_sync;
 internal int tid;
 }
 public static bool __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__DeviceFunctionBarrierEdgeCaseKernels__DoubleThroughSharedMemory(int value, __gsharp_frame_Kassyi__GSharp__Tests__Shared__Syntax__DeviceFunctionBarrierEdgeCaseKernels__DoubleThroughSharedMemory __gsharp_ctx, ref int __gsharp_result) {
@@ -208,7 +207,6 @@ throw new global::System.InvalidOperationException("The device function state ma
 public class __gsharp_frame_Kassyi__GSharp__Tests__Shared__Syntax__DeviceFunctionBarrierEdgeCaseKernels__SwapThroughDeclaration {
 internal int __gsharp_state;
 internal uint __gsharp_warp_exchange;
-internal bool __gsharp_yielded_for_grid_sync;
 internal int tid;
 internal int previous;
 }
@@ -248,7 +246,6 @@ throw new global::System.InvalidOperationException("The device function state ma
 public class __gsharp_frame_Kassyi__GSharp__Tests__Shared__Syntax__DeviceFunctionBarrierEdgeCaseKernels__CountedSwapWithNeighbor {
 internal int __gsharp_state;
 internal uint __gsharp_warp_exchange;
-internal bool __gsharp_yielded_for_grid_sync;
 }
 public static bool __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__DeviceFunctionBarrierEdgeCaseKernels__CountedSwapWithNeighbor(int[] calls, int value, __gsharp_frame_Kassyi__GSharp__Tests__Shared__Syntax__DeviceFunctionBarrierEdgeCaseKernels__CountedSwapWithNeighbor __gsharp_ctx, ref int __gsharp_result) {
 {
@@ -264,7 +261,7 @@ return false;
 
 case 1:
 {
-var __gsharp_warp_temp_0 = __gsharp_warp_shuffle_read_xor_sync(__gsharp_ctx, global::Kassyi.GSharp.Tests.Shared.Syntax.DeviceFunctionBarrierEdgeCaseKernels.FullMask, value, 1);
+var __gsharp_warp_temp_0 = __gsharp_warp_shuffle_read_xor_sync(__gsharp_ctx, global::Kassyi.GSharp.Tests.Shared.Syntax.DeviceFunctionBarrierEdgeCaseKernels.FullMask, value, 1, 32, "DeviceFunctionBarrierEdgeCaseKernels.cs(92,16)");
 {
 __gsharp_result = __gsharp_warp_temp_0;
 __gsharp_ctx.__gsharp_state = 0;
@@ -279,7 +276,6 @@ throw new global::System.InvalidOperationException("The device function state ma
 public class __gsharp_frame_Kassyi__GSharp__Tests__Shared__Syntax__DeviceFunctionBarrierEdgeCaseKernels__BroadcastFromLaneZero {
 internal int __gsharp_state;
 internal uint __gsharp_warp_exchange;
-internal bool __gsharp_yielded_for_grid_sync;
 }
 public static bool __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__DeviceFunctionBarrierEdgeCaseKernels__BroadcastFromLaneZero(int value, __gsharp_frame_Kassyi__GSharp__Tests__Shared__Syntax__DeviceFunctionBarrierEdgeCaseKernels__BroadcastFromLaneZero __gsharp_ctx, ref int __gsharp_result) {
 {
@@ -294,7 +290,7 @@ return false;
 
 case 1:
 {
-var __gsharp_warp_temp_0 = __gsharp_warp_shuffle_read_sync(__gsharp_ctx, global::Kassyi.GSharp.Tests.Shared.Syntax.DeviceFunctionBarrierEdgeCaseKernels.FullMask, value, 0);
+var __gsharp_warp_temp_0 = __gsharp_warp_shuffle_read_sync(__gsharp_ctx, global::Kassyi.GSharp.Tests.Shared.Syntax.DeviceFunctionBarrierEdgeCaseKernels.FullMask, value, 0, 32, "DeviceFunctionBarrierEdgeCaseKernels.cs(123,25)");
 int broadcast = __gsharp_warp_temp_0;
 {
 __gsharp_result = broadcast;
@@ -310,7 +306,6 @@ throw new global::System.InvalidOperationException("The device function state ma
 public class __gsharp_frame_Kassyi__GSharp__Tests__Shared__Syntax__DeviceFunctionBarrierEdgeCaseKernels__ShiftUpExpressionBody {
 internal int __gsharp_state;
 internal uint __gsharp_warp_exchange;
-internal bool __gsharp_yielded_for_grid_sync;
 }
 public static bool __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__DeviceFunctionBarrierEdgeCaseKernels__ShiftUpExpressionBody(int value, __gsharp_frame_Kassyi__GSharp__Tests__Shared__Syntax__DeviceFunctionBarrierEdgeCaseKernels__ShiftUpExpressionBody __gsharp_ctx, ref int __gsharp_result) {
 {
@@ -325,7 +320,7 @@ return false;
 
 case 1:
 {
-var __gsharp_warp_temp_0 = __gsharp_warp_shuffle_read_up_sync(__gsharp_ctx, global::Kassyi.GSharp.Tests.Shared.Syntax.DeviceFunctionBarrierEdgeCaseKernels.FullMask, value, 1u);
+var __gsharp_warp_temp_0 = __gsharp_warp_shuffle_read_up_sync(__gsharp_ctx, global::Kassyi.GSharp.Tests.Shared.Syntax.DeviceFunctionBarrierEdgeCaseKernels.FullMask, value, 1u, 32, "DeviceFunctionBarrierEdgeCaseKernels.cs(170,59)");
 {
 __gsharp_result = __gsharp_warp_temp_0;
 __gsharp_ctx.__gsharp_state = 0;
@@ -340,7 +335,6 @@ throw new global::System.InvalidOperationException("The device function state ma
 public class __gsharp_frame_Kassyi__GSharp__Tests__Shared__Syntax__DeviceFunctionBarrierEdgeCaseKernels__StoreBroadcastExpressionBody {
 internal int __gsharp_state;
 internal uint __gsharp_warp_exchange;
-internal bool __gsharp_yielded_for_grid_sync;
 }
 public static bool __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__DeviceFunctionBarrierEdgeCaseKernels__StoreBroadcastExpressionBody(int[] output, int value, __gsharp_frame_Kassyi__GSharp__Tests__Shared__Syntax__DeviceFunctionBarrierEdgeCaseKernels__StoreBroadcastExpressionBody __gsharp_ctx) {
 {
@@ -355,7 +349,7 @@ return false;
 
 case 1:
 {
-var __gsharp_warp_temp_0 = __gsharp_warp_shuffle_read_sync(__gsharp_ctx, global::Kassyi.GSharp.Tests.Shared.Syntax.DeviceFunctionBarrierEdgeCaseKernels.FullMask, value, 0);
+var __gsharp_warp_temp_0 = __gsharp_warp_shuffle_read_sync(__gsharp_ctx, global::Kassyi.GSharp.Tests.Shared.Syntax.DeviceFunctionBarrierEdgeCaseKernels.FullMask, value, 0, 32, "DeviceFunctionBarrierEdgeCaseKernels.cs(174,33)");
 output[global::Kassyi.GSharp.Core.ThreadIndex.X] = __gsharp_warp_temp_0;
 {
 __gsharp_ctx.__gsharp_state = 0;
@@ -370,7 +364,6 @@ throw new global::System.InvalidOperationException("The device function state ma
 public class __gsharp_frame_Kassyi__GSharp__Tests__Shared__Syntax__DeviceFunctionBarrierEdgeCaseKernels__IncrementAcrossBarrier {
 internal int __gsharp_state;
 internal uint __gsharp_warp_exchange;
-internal bool __gsharp_yielded_for_grid_sync;
 internal int tid;
 }
 public static bool __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__DeviceFunctionBarrierEdgeCaseKernels__IncrementAcrossBarrier(ref int value, int[] published, __gsharp_frame_Kassyi__GSharp__Tests__Shared__Syntax__DeviceFunctionBarrierEdgeCaseKernels__IncrementAcrossBarrier __gsharp_ctx) {
@@ -404,7 +397,6 @@ throw new global::System.InvalidOperationException("The device function state ma
 public class __gsharp_frame_Kassyi__GSharp__Tests__Shared__Syntax__DeviceFunctionBarrierEdgeCaseKernels__IncrementTwiceAcrossBarriers {
 internal int __gsharp_state;
 internal uint __gsharp_warp_exchange;
-internal bool __gsharp_yielded_for_grid_sync;
 internal global::Kassyi.GSharp.Tests.Shared.Syntax.DeviceFunctionBarrierEdgeCaseKernels.__gsharp_frame_Kassyi__GSharp__Tests__Shared__Syntax__DeviceFunctionBarrierEdgeCaseKernels__IncrementAcrossBarrier __gsharp_call_frame_0 = new();
 internal global::Kassyi.GSharp.Tests.Shared.Syntax.DeviceFunctionBarrierEdgeCaseKernels.__gsharp_frame_Kassyi__GSharp__Tests__Shared__Syntax__DeviceFunctionBarrierEdgeCaseKernels__IncrementAcrossBarrier __gsharp_call_frame_1 = new();
 }
@@ -449,7 +441,6 @@ throw new global::System.InvalidOperationException("The device function state ma
 public class __gsharp_frame_Kassyi__GSharp__Tests__Shared__Syntax__DeviceFunctionBarrierEdgeCaseKernels__SumWithNeighbor {
 internal int __gsharp_state;
 internal uint __gsharp_warp_exchange;
-internal bool __gsharp_yielded_for_grid_sync;
 internal int tid;
 }
 public static bool __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__DeviceFunctionBarrierEdgeCaseKernels__SumWithNeighbor(int value, ref int sum, __gsharp_frame_Kassyi__GSharp__Tests__Shared__Syntax__DeviceFunctionBarrierEdgeCaseKernels__SumWithNeighbor __gsharp_ctx) {

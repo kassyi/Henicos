@@ -3,17 +3,18 @@ namespace Kassyi.GSharp.Stdlib.GpuMath.BigNum;
 /// <summary>
 /// Provides a deterministic, stack-scoped RAII wrapper for temporary device memory allocations.
 /// </summary>
-/// <param name="manager">The memory manager responsible for recycling or releasing this memory segment.</param>
-/// <param name="handle">The device memory handle bound to this scoped allocation.</param>
+/// <param name="handle">
+/// The device memory handle bound to this scope. An owning handle is freed by <see cref="Dispose"/> through the manager
+/// that allocated it; a borrowed handle is only used.
+/// </param>
 /// <remarks>
 /// <para>
 /// Because this type is a <see langword="ref struct"/>, it is strictly stack-allocated and cannot escape the calling frame,
 /// preventing accidental memory leaks or heap allocations during high-throughput GPU kernel staging.
 /// </para>
 /// </remarks>
-public ref struct ScopedBigIntMemory(IGpuMemoryManager? manager, GpuBigIntMemoryHandle handle)
+public ref struct ScopedBigIntMemory(GpuBigIntMemoryHandle handle)
 {
-    private IGpuMemoryManager? _manager = manager;
     private GpuBigIntMemoryHandle _handle = handle;
 
     /// <summary>
@@ -22,16 +23,17 @@ public ref struct ScopedBigIntMemory(IGpuMemoryManager? manager, GpuBigIntMemory
     public GpuBigIntMemoryHandle Handle => _handle;
 
     /// <summary>
-    /// Releases the temporary allocation back to the associated <see cref="IGpuMemoryManager"/>.
+    /// Releases an owned allocation back to the <see cref="IGpuMemoryManager"/> that allocated it; a borrowed handle is
+    /// left alone.
     /// </summary>
     public void Dispose()
     {
-        if (_manager != null && !_handle.IsDefault)
+        if (!_handle.IsDefault && _handle.OwnsBuffer && _handle.Buffer.Manager is { } manager)
         {
-            _manager.Free(_handle);
-            _manager = null;
-            _handle = default;
+            manager.Free(_handle);
         }
+
+        _handle = default;
     }
 
     /// <summary>

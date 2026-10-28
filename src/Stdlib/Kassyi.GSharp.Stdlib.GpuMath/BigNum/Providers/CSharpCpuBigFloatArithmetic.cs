@@ -61,9 +61,19 @@ public sealed class CSharpCpuBigFloatArithmetic : IGpuBigFloatArithmetic
     public GpuFloatResult Normalize(
         ref GpuBigIntExecutionContext context,
         in GpuFloatOperand value,
+        GpuBigIntMemoryHandle resultSig) =>
+        NormalizeScaled(ref context, value.Significand, value.Exponent, value.IsNegative, resultSig);
+
+    // Normalizes valueSig·2^exponent into resultSig (RZ) and returns the exponent and the sign of the result. The
+    // exponent is computed in long and checked into int at the end (#661 §4.1): an intermediate exponent outside int is
+    // fine when the result fits, and a result exponent outside int throws OverflowException instead of wrapping around.
+    private static GpuFloatResult NormalizeScaled(
+        ref GpuBigIntExecutionContext context,
+        GpuBigIntMemoryHandle valueSig,
+        long exponent,
+        bool isNegative,
         GpuBigIntMemoryHandle resultSig)
     {
-        var valueSig = value.Significand;
         var valueWords = ArrayPool<uint>.Shared.Rent(valueSig.NumWords);
         var resultWords = ArrayPool<uint>.Shared.Rent(resultSig.NumWords);
         try
@@ -88,7 +98,7 @@ public sealed class CSharpCpuBigFloatArithmetic : IGpuBigFloatArithmetic
             ToWords(vNormalized, resultWords.AsSpan(0, resultSig.NumWords), resultSig.NumWords);
             context.GpuWorkspace.Provider.CopyHostToDevice(resultSig.DevicePointer, resultWords, resultSig.NumWords, context.Stream);
 
-            return new GpuFloatResult(value.Exponent - shift, value.IsNegative);
+            return new GpuFloatResult(checked((int)(exponent - shift)), isNegative);
         }
         finally
         {
@@ -165,7 +175,8 @@ public sealed class CSharpCpuBigFloatArithmetic : IGpuBigFloatArithmetic
             ToWords(vNormalized, resultWords.AsSpan(0, resultSig.NumWords), resultSig.NumWords);
             context.GpuWorkspace.Provider.CopyHostToDevice(resultSig.DevicePointer, resultWords, resultSig.NumWords, context.Stream);
 
-            return new GpuFloatResult(smaller.Exponent - shift, resultSign);
+            // The exponent of the result must fit in int (#661 §4.1).
+            return new GpuFloatResult(checked(smaller.Exponent - shift), resultSign);
         }
         finally
         {
@@ -196,7 +207,7 @@ public sealed class CSharpCpuBigFloatArithmetic : IGpuBigFloatArithmetic
             var vRight = ToBigInteger(rightWords.AsSpan(0, rightSig.NumWords));
 
             var vProd = vLeft * vRight;
-            var tempExp = left.Exponent + right.Exponent;
+            var tempExp = (long)left.Exponent + right.Exponent;
             var tempSign = !vProd.IsZero && (left.IsNegative != right.IsNegative);
 
             if (vProd.IsZero)
@@ -215,7 +226,8 @@ public sealed class CSharpCpuBigFloatArithmetic : IGpuBigFloatArithmetic
             ToWords(vNormalized, resultWords.AsSpan(0, resultSig.NumWords), resultSig.NumWords);
             context.GpuWorkspace.Provider.CopyHostToDevice(resultSig.DevicePointer, resultWords, resultSig.NumWords, context.Stream);
 
-            return new GpuFloatResult(tempExp - shift, tempSign);
+            // eL + eR is computed in long; the exponent of the result must fit in int (#661 §4.1).
+            return new GpuFloatResult(checked((int)(tempExp - shift)), tempSign);
         }
         finally
         {
@@ -249,10 +261,11 @@ public sealed class CSharpCpuBigFloatArithmetic : IGpuBigFloatArithmetic
                 throw new DivideByZeroException("GPU BigFloat CPU Fallback: Division by zero.");
             }
 
-            var shiftBits = resultSig.NumWords * 32 * 2;
+            // floor(L·2^s / R) has at least p + 1 bits for s = 32·(n + Rw), whatever the widths of L and R (#661).
+            var shiftBits = (resultSig.NumWords + rightSig.NumWords) * 32;
             var vQuotient = (vLeft << shiftBits) / vRight;
 
-            var tempExp = left.Exponent - right.Exponent - shiftBits;
+            var tempExp = (long)left.Exponent - right.Exponent - shiftBits;
             var resultSign = !vQuotient.IsZero && (left.IsNegative != right.IsNegative);
 
             var quotientWords = (int)((vQuotient.GetBitLength() + 31) / 32);
@@ -275,7 +288,7 @@ public sealed class CSharpCpuBigFloatArithmetic : IGpuBigFloatArithmetic
                 ArrayPool<uint>.Shared.Return(tempWords);
             }
 
-            return Normalize(ref context, new GpuFloatOperand(tempHandle, tempExp, resultSign), resultSig);
+            return NormalizeScaled(ref context, tempHandle, tempExp, resultSign, resultSig);
         }
         finally
         {
@@ -307,9 +320,12 @@ public sealed class CSharpCpuBigFloatArithmetic : IGpuBigFloatArithmetic
             var dividend = BigInteger.One << shiftBits;
             var vQuotient = dividend / vValue;
 
-            var tempExp = -value.Exponent - shiftBits;
+            var tempExp = -(long)value.Exponent - shiftBits;
 
-            using var tempResult = context.GpuWorkspace.RentTemp(resultSig.NumWords * 2);
+            // The quotient has up to 32·(v + n) - bits(V) + 2 bits: more than 2n words when V has leading zero words, so
+            // the buffer is sized from the quotient (as in Divide); a shorter one would drop its top words (#661).
+            var quotientWords = (int)((vQuotient.GetBitLength() + 31) / 32);
+            using var tempResult = context.GpuWorkspace.RentTemp(quotientWords);
             var tempHandle = tempResult.Handle;
 
             var tempWords = ArrayPool<uint>.Shared.Rent(tempResult.NumWords);
@@ -323,7 +339,7 @@ public sealed class CSharpCpuBigFloatArithmetic : IGpuBigFloatArithmetic
                 ArrayPool<uint>.Shared.Return(tempWords);
             }
 
-            return Normalize(ref context, new GpuFloatOperand(tempHandle, tempExp, value.IsNegative), resultSig);
+            return NormalizeScaled(ref context, tempHandle, tempExp, value.IsNegative, resultSig);
         }
         finally
         {

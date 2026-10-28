@@ -186,7 +186,6 @@ public static readonly string SgemmKernel_FullSource=global::Kassyi.GSharp.Gener
 public class __gsharp_context_Henicos__Benchmarks__ComputeBenchmarks__SgemmKernels__SgemmKernel {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
-public bool __gsharp_yielded_for_grid_sync;
 public int bx;
 public int by;
 public int tx;
@@ -357,9 +356,9 @@ if (__gsharp_contexts[__gsharp_linear_tid].__gsharp_state != -1)
 {
 anyGridActive = true;
 anyBlockActive = true;
-__gsharp_contexts[__gsharp_linear_tid].__gsharp_yielded_for_grid_sync = false;
+global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested = false;
 __gsharp_statemachine_Henicos__Benchmarks__ComputeBenchmarks__SgemmKernels__SgemmKernel(a, b, c, n, __gsharp_contexts[__gsharp_linear_tid]);
-if (__gsharp_contexts[__gsharp_linear_tid].__gsharp_yielded_for_grid_sync)
+if (global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested)
 {
 gridSyncRequested = true;
 }

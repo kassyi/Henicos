@@ -94,11 +94,38 @@
 (20,5)-(20,29) GSH0003 analyzer: The syntax 'DestructorDeclaration' is not supported in GSharp GPU kernels
 
 ## Diagnostics/OperatorMacroMissingTarget.cu.cs
-(36,9)-(36,18) GSH0003 analyzer: The syntax 'Macro target method 'OperatorMacroTargets.Missing' is missing or incompatible.' is not supported in GSharp GPU kernels
+(36,9)-(36,18) GSH0003 analyzer: The syntax 'Operator macro target 'OperatorMacroTargets.Missing' has no overload that takes (MissingTargetValue result, MissingTargetValue a, MissingTargetValue b): no method has that name' is not supported in GSharp GPU kernels
 
 ## Diagnostics/OperatorMacroContext.cu.cs
-(41,9)-(41,18) GSH0003 analyzer: The syntax 'Operator macro target 'OperatorMacroContextTargets.Add' takes a context of type 'OperatorMacroState', but no parameter or local of that type is in scope' is not supported in GSharp GPU kernels
-(53,9)-(53,18) GSH0003 analyzer: The syntax 'Operator macro target 'OperatorMacroContextTargets.Add' takes a context of type 'OperatorMacroState', but 2 parameters or locals of that type are in scope ('second', 'first')' is not supported in GSharp GPU kernels
+(43,9)-(43,18) GSH0003 analyzer: The syntax 'Operator macro target 'OperatorMacroContextTargets.Add' takes a context of type 'OperatorMacroState', but no parameter or local of that type is in scope' is not supported in GSharp GPU kernels
+(55,9)-(55,18) GSH0003 analyzer: The syntax 'Operator macro target 'OperatorMacroContextTargets.Add' takes a context of type 'OperatorMacroState', but 2 parameters or locals of that type are in scope ('second', 'first')' is not supported in GSharp GPU kernels
+
+## Diagnostics/OperatorMacroOverload.cu.cs
+(109,9)-(109,19) GSH0003 analyzer: The syntax 'Operator macro target 'NoOverloadOps.Shift' has no overload that takes (OverloadValue result, OverloadValue value, int shift): Shift(OverloadCtx, int, int): 'OverloadValue' does not convert to 'OverloadCtx' for 'ctx'; Shift(ref OverloadCtx, uint[], uint[], int): 'OverloadValue' does not convert to 'uint[]' for 'result'' is not supported in GSharp GPU kernels
+(121,9)-(121,18) GSH0003 analyzer: The syntax 'Operator macro target 'AmbiguousOps.Add' is ambiguous between Add(uint[], uint[], uint[]) and Add(ref OverloadCtx, uint[], uint[], uint[])' is not supported in GSharp GPU kernels
+(132,9)-(132,18) GSH0003 analyzer: The syntax 'Operator macro target 'RefResultOps.Add' has no overload that takes (OverloadRef result, OverloadRef left, OverloadRef right): Add(ref uint[], uint[], uint[]): 'ref' parameter 'result' takes only 'uint[]', not 'OverloadRef'' is not supported in GSharp GPU kernels
+(143,9)-(143,20) GSH0003 analyzer: The syntax 'The target 'raw' of operator macro 'TargetOps.Add' does not convert to 'OneWayRef' of parameter 'result'' is not supported in GSharp GPU kernels
+(245,9)-(245,19) GSH0003 analyzer: The syntax 'Operator macro target 'ShlOps.Shl' is ambiguous between Shl(uint[], uint[], long) and Shl(uint[], uint[], ShiftCount)' is not supported in GSharp GPU kernels
+(256,9)-(256,18) GSH0003 analyzer: The syntax 'Operator macro target 'MutualOps.Add' is ambiguous between Add(uint[], uint[], uint[]) and Add(MutualRef, MutualRef, MutualRef)' is not supported in GSharp GPU kernels
+(267,9)-(267,18) GSH0003 analyzer: The syntax 'Operator macro target 'InOps.Add' has no overload that takes (ConversionValue result, ConversionValue left, ConversionValue right): Add(uint[], in uint[], uint[]): 'in' parameter 'left' takes only 'uint[]', not 'ConversionValue'' is not supported in GSharp GPU kernels
+(268,9)-(268,18) GSH0003 analyzer: The syntax 'Operator macro target 'RefReadOnlyOps.Add' has no overload that takes (ConversionValue result, ConversionValue left, ConversionValue right): Add(uint[], ref readonly uint[], uint[]): 'ref readonly' parameter 'left' takes only 'uint[]', not 'ConversionValue'' is not supported in GSharp GPU kernels
+
+## Diagnostics/OperatorMacroUnsupportedForms.cu.cs
+(19,28)-(19,29) GSH0003 analyzer: The syntax 'unsubstituted type parameter' is not supported in GSharp GPU kernels
+(67,9)-(67,19) GSH0003 analyzer: The syntax 'The compound assignment '+=' does not expand operator macros: give each operator macro a simple assignment of its own, as in 't = a + b; c = c + t;'' is not supported in GSharp GPU kernels
+(68,9)-(68,15) GSH0003 analyzer: The syntax 'The compound assignment '+=' does not expand operator macros: give each operator macro a simple assignment of its own, as in 't = a + b; c = c + t;'' is not supported in GSharp GPU kernels
+(78,9)-(78,16) GSH0003 analyzer: The syntax 'Operator macro '++' is an increment or decrement operator, which assigns its operand and is not expanded; write the assignment with a binary operator macro' is not supported in GSharp GPU kernels
+(89,9)-(89,31) GSH0003 analyzer: The syntax 'Operator macro '+' is applied to nullable operands (a lifted operator), which it does not expand; apply it to the values ('.Value')' is not supported in GSharp GPU kernels
+(101,9)-(101,18) GSH0003 analyzer: The syntax 'Operator macro target 'FormOps.Mul' has no overload that takes (FormRef result, FormRef left, FormRef right): Mul(T, T, T): generic methods are not candidates' is not supported in GSharp GPU kernels
+
+## Diagnostics/OperatorMacroPositions.cu.cs
+(47,9)-(47,24) GSH0003 analyzer: The syntax 'Operator macro '+' is an operand of another operator macro, but its target 'PositionOps.Add' takes the result as 'uint[] result', not as a ref or out parameter of an unmanaged type, so it has no temporary to compute into; assign it to a variable first, as in 't = a + b; c = c + t;'' is not supported in GSharp GPU kernels
+(57,9)-(57,12) GSH0003 analyzer: The syntax 'Operator macro '++' is expanded only as the right side of an assignment statement, or as an operand of an operator macro there; assign it to a variable first, as in 't = a + b;'' is not supported in GSharp GPU kernels
+(58,9)-(58,12) GSH0003 analyzer: The syntax 'Operator macro '++' is expanded only as the right side of an assignment statement, or as an operand of an operator macro there; assign it to a variable first, as in 't = a + b;'' is not supported in GSharp GPU kernels
+(59,23)-(59,28) GSH0003 analyzer: The syntax 'Operator macro '+' is expanded only as the right side of an assignment statement, or as an operand of an operator macro there; assign it to a variable first, as in 't = a + b;'' is not supported in GSharp GPU kernels
+(105,9)-(105,24) GSH0003 analyzer: The syntax 'Operator macro '-' returns 'NarrowValue', but the operand of '-' takes 'WideValue'; assign it to a variable first, as in 't = a + b; c = c + t;'' is not supported in GSharp GPU kernels
+(146,40)-(146,45) GSH0003 analyzer: The syntax 'Operator macro '-' is under a user-defined conversion, which its expansion would drop; assign it to a variable first, as in 't = a + b;', and convert the variable' is not supported in GSharp GPU kernels
+(147,36)-(147,41) GSH0003 analyzer: The syntax 'Operator macro '-' is under a user-defined conversion, which its expansion would drop; assign it to a variable first, as in 't = a + b;', and convert the variable' is not supported in GSharp GPU kernels
 
 ## Analyzers/MacroArgumentSadPath.cs
 (5,14)-(5,41) GSH0036 analyzer: The class 'GEN_36_MacroArgumentSadPath' containing [GpuKernel] methods must be declared as partial to support source generation of contexts and launch methods.

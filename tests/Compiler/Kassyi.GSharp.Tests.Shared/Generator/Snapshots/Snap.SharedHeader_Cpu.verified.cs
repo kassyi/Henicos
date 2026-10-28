@@ -481,8 +481,101 @@ __forceinline__ int __gsharp_atomicExch(int* address, int val) { return atomicEx
 __forceinline__ unsigned int __gsharp_atomicExch(unsigned int* address, unsigned int val) { return atomicExch(address, val); }
 __forceinline__ unsigned long long __gsharp_atomicExch(unsigned long long* address, unsigned long long val) { return atomicExch(address, val); }
 
+// --- Runtime Error Channel (CPU Dialect) ---
+enum class GSharpErrorCode : int32_t {
+None = 0,
+NotSupported = 1,
+InvalidOperation = 2,
+IndexOutOfRange = 3,
+ArgumentOutOfRange = 4
+};
+
+struct GSharpErrorSlot {
+std::atomic<int32_t> code{0};
+const char* message{nullptr};
+// The first report's message, copied: a message formatted at run time (with the place and the values) does not
+// outlive the function that formats it. Reset keeps the text, so a message just consumed stays readable. The text is
+// UTF-8 (the host reads it so); a longer message is cut before the character that does not fit, never inside one.
+// 512 bytes hold the longest message of the prelude (a missing shuffle lane, with its place and hint)
+char text[512]{};
+
+inline void Reset() noexcept {
+message = nullptr;
+code.store(0, std::memory_order_release);
+}
+
+inline bool HasError() const noexcept {
+return code.load(std::memory_order_acquire) != 0;
+}
+
+inline void Report(GSharpErrorCode errCode, const char* msg) noexcept {
+int32_t expected = 0;
+if (code.compare_exchange_strong(expected, static_cast<int32_t>(errCode),
+std::memory_order_acq_rel,
+std::memory_order_relaxed)) {
+if (msg == nullptr) {
+message = nullptr;
+return;
+}
+size_t length = std::strlen(msg);
+if (length >= sizeof(text)) {
+length = sizeof(text) - 1;
+// msg[length] is the first byte left out; while it continues a UTF-8 character, leave that character out
+while (length > 0 && (static_cast<unsigned char>(msg[length]) & 0xC0u) == 0x80u) {
+--length;
+}
+}
+std::memcpy(text, msg, length);
+text[length] = '\0';
+message = text;
+}
+}
+};
+
+inline thread_local GSharpErrorSlot __gsharp_host_last_error;
+inline thread_local GSharpErrorSlot* __gsharp_active_error_slot = nullptr;
+
+extern ""C"" __declspec(dllexport) int32_t __gsharp_consume_last_error(const char** outMessage) {
+int32_t c = __gsharp_host_last_error.code.load(std::memory_order_acquire);
+if (c != 0) {
+if (outMessage != nullptr) {
+*outMessage = __gsharp_host_last_error.message;
+}
+__gsharp_host_last_error.Reset();
+}
+return c;
+}
+
+// Records a runtime failure for constructs the CPU dialect cannot execute (e.g. Gpu.InlinePtx).
+// First writer wins across OpenMP threads; the managed launch wrapper inspects the slot and throws.
+inline void __gsharp_unsupported(const char* message)
+{
+if (__gsharp_active_error_slot != nullptr) {
+__gsharp_active_error_slot->Report(GSharpErrorCode::NotSupported, message);
+} else {
+__gsharp_host_last_error.Report(GSharpErrorCode::NotSupported, message);
+}
+}
+
+// Records a portable trap failure (e.g. empty sequence or out-of-range index in StackLinq).
+// First writer wins across OpenMP threads; the managed launch wrapper inspects the slot and throws.
+inline void __gsharp_trap(GSharpErrorCode code, const char* message)
+{
+if (__gsharp_active_error_slot != nullptr) {
+__gsharp_active_error_slot->Report(code, message);
+} else {
+__gsharp_host_last_error.Report(code, message);
+}
+}
+
 // --- Warp & Synchronization ---
-inline unsigned __activemask() { return 0xFFFFFFFF; }
+// The lanes of the calling thread's warp that exist in the block: all 32, or fewer in the last warp of a block whose size
+// is not a multiple of 32. A converged warp on the GPU reports the same lanes.
+inline unsigned __activemask() {
+uint32_t tid = threadIdx.z * blockDim.y * blockDim.x + threadIdx.y * blockDim.x + threadIdx.x;
+uint32_t lanes = blockDim.x * blockDim.y * blockDim.z - (tid & ~31u);
+return lanes >= 32u ? 0xFFFFFFFFu : (1u << lanes) - 1u;
+}
 template <typename T> inline T __shfl_sync(unsigned mask, T var, int srcLane, int width=32) { return var; }
 template <typename T> inline T __shfl_up_sync(unsigned mask, T var, unsigned int delta, int width=32) { return var; }
 template <typename T> inline T __shfl_down_sync(unsigned mask, T var, unsigned int delta, int width=32) { return var; }
@@ -500,83 +593,119 @@ std::memcpy(&raw, &val, sizeof(T));
 // The root is the kernel context of the thread, also inside a device function's state machine.
 #define __gsharp_warp_exchange_assign(val) __gsharp_warp_exchange_assign_impl(val, &__gsharp_root->__gsharp_warp_exchange[__gsharp_root->__gsharp_warp_shuffle_count & 1u])
 
-template<typename TContext, typename T>
-inline T __gsharp_warp_shuffle_read_down_sync(TContext* __gsharp_ctx, uint32_t mask, T val, uint32_t delta, int width = 32) {
-uint32_t slot = __gsharp_ctx->__gsharp_warp_shuffle_count++ & 1u;
-uint32_t tid = threadIdx.z * blockDim.y * blockDim.x + threadIdx.y * blockDim.x + threadIdx.x;
-uint32_t laneId = tid % 32;
-uint32_t warpId = tid / 32;
-uint32_t logicalLane = laneId % width;
-uint32_t srcLane = logicalLane + delta;
+// The shuffles that CUDA leaves undefined report an InvalidOperationException with the place of the shuffle in the C#
+// source and return the caller's own value (#666): a width that is not 1, 2, 4, 8, 16 or 32, and a source lane that does
+// not exist in the block (the last warp of a block whose size is not a multiple of 32). A source outside the caller's
+// segment of the warp is defined: up and down return the caller's own value, xor reads an earlier segment and returns
+// the caller's own value for a later one, idx reads lane srcLane % width of the segment (#692). ManagedGpuContext applies
+// the same rules on the managed path.
+inline bool __gsharp_warp_shuffle_check_width(int width, const char* name, const char* location) {
+if (width == 1 || width == 2 || width == 4 || width == 8 || width == 16 || width == 32) {
+return true;
+}
+char text[512];
+std::snprintf(text, sizeof(text),
+""G#: %s at %s has width %d; the width must be 1, 2, 4, 8, 16 or 32 (CUDA leaves the result undefined)"",
+name, location, width);
+__gsharp_trap(GSharpErrorCode::InvalidOperation, text);
+return false;
+}
 
+inline uint32_t __gsharp_warp_linear_tid() {
+return threadIdx.z * blockDim.y * blockDim.x + threadIdx.y * blockDim.x + threadIdx.x;
+}
+
+// Reads the value that lane srcLane of the caller's warp published for this shuffle, after checking that the lane exists
+// in the block
+template<typename TContext, typename T>
+inline T __gsharp_warp_shuffle_read_lane(TContext* __gsharp_ctx, uint32_t slot, T val, uint32_t tid, uint32_t srcLane,
+const char* name, const char* location) {
+uint32_t threads = blockDim.x * blockDim.y * blockDim.z;
+uint32_t warpBase = tid & ~31u;
+uint32_t srcTid = warpBase + srcLane;
+if (srcTid >= threads) {
+char text[512];
+std::snprintf(text, sizeof(text),
+""G#: %s at %s reads lane %u of warp %u, which does not exist in a block of %u threads ""
+""(CUDA leaves the value undefined. Keep the source lane within the block by limiting delta, srcLane or laneMask, or launch a multiple of 32 threads; the mask does not limit which lane is read)"",
+name, location, srcLane, warpBase / 32u, threads);
+__gsharp_trap(GSharpErrorCode::InvalidOperation, text);
+return val;
+}
 T result;
-if (srcLane < (uint32_t)width) {
-uint32_t srcTid = warpId * 32 + (laneId - logicalLane) + srcLane;
 uint64_t raw = __gsharp_ctx->__gsharp_all_contexts[srcTid].__gsharp_warp_exchange[slot];
 std::memcpy(&result, &raw, sizeof(T));
-} else {
-result = val;
-}
 return result;
 }
 
 template<typename TContext, typename T>
-inline T __gsharp_warp_shuffle_read_up_sync(TContext* __gsharp_ctx, uint32_t mask, T val, uint32_t delta, int width = 32) {
+inline T __gsharp_warp_shuffle_read_down_sync(TContext* __gsharp_ctx, uint32_t mask, T val, uint32_t delta, int width,
+const char* location) {
 uint32_t slot = __gsharp_ctx->__gsharp_warp_shuffle_count++ & 1u;
-uint32_t tid = threadIdx.z * blockDim.y * blockDim.x + threadIdx.y * blockDim.x + threadIdx.x;
-uint32_t laneId = tid % 32;
-uint32_t warpId = tid / 32;
-uint32_t logicalLane = laneId % width;
-
-T result;
-if (logicalLane >= delta) {
-uint32_t srcLane = logicalLane - delta;
-uint32_t srcTid = warpId * 32 + (laneId - logicalLane) + srcLane;
-uint64_t raw = __gsharp_ctx->__gsharp_all_contexts[srcTid].__gsharp_warp_exchange[slot];
-std::memcpy(&result, &raw, sizeof(T));
-} else {
-result = val;
+const char* name = ""Warp.ShuffleDownSync"";
+if (!__gsharp_warp_shuffle_check_width(width, name, location)) {
+return val;
 }
-return result;
+uint32_t tid = __gsharp_warp_linear_tid();
+uint32_t laneId = tid % 32u;
+uint32_t logicalLane = laneId % (uint32_t)width;
+uint64_t srcLogicalLane = (uint64_t)logicalLane + delta;
+if (srcLogicalLane >= (uint64_t)width) {
+return val;
+}
+return __gsharp_warp_shuffle_read_lane(__gsharp_ctx, slot, val, tid, laneId - logicalLane + (uint32_t)srcLogicalLane, name, location);
 }
 
 template<typename TContext, typename T>
-inline T __gsharp_warp_shuffle_read_xor_sync(TContext* __gsharp_ctx, uint32_t mask, T val, uint32_t laneMask, int width = 32) {
+inline T __gsharp_warp_shuffle_read_up_sync(TContext* __gsharp_ctx, uint32_t mask, T val, uint32_t delta, int width,
+const char* location) {
 uint32_t slot = __gsharp_ctx->__gsharp_warp_shuffle_count++ & 1u;
-uint32_t tid = threadIdx.z * blockDim.y * blockDim.x + threadIdx.y * blockDim.x + threadIdx.x;
-uint32_t laneId = tid % 32;
-uint32_t warpId = tid / 32;
-uint32_t logicalLane = laneId % width;
-uint32_t srcLane = logicalLane ^ laneMask;
-
-T result;
-if (srcLane < (uint32_t)width) {
-uint32_t srcTid = warpId * 32 + (laneId - logicalLane) + srcLane;
-uint64_t raw = __gsharp_ctx->__gsharp_all_contexts[srcTid].__gsharp_warp_exchange[slot];
-std::memcpy(&result, &raw, sizeof(T));
-} else {
-result = val;
+const char* name = ""Warp.ShuffleUpSync"";
+if (!__gsharp_warp_shuffle_check_width(width, name, location)) {
+return val;
 }
-return result;
+uint32_t tid = __gsharp_warp_linear_tid();
+uint32_t laneId = tid % 32u;
+uint32_t logicalLane = laneId % (uint32_t)width;
+if (logicalLane < delta) {
+return val;
+}
+return __gsharp_warp_shuffle_read_lane(__gsharp_ctx, slot, val, tid, laneId - delta, name, location);
 }
 
 template<typename TContext, typename T>
-inline T __gsharp_warp_shuffle_read_sync(TContext* __gsharp_ctx, uint32_t mask, T val, uint32_t srcLane, int width = 32) {
+inline T __gsharp_warp_shuffle_read_xor_sync(TContext* __gsharp_ctx, uint32_t mask, T val, uint32_t laneMask, int width,
+const char* location) {
 uint32_t slot = __gsharp_ctx->__gsharp_warp_shuffle_count++ & 1u;
-uint32_t tid = threadIdx.z * blockDim.y * blockDim.x + threadIdx.y * blockDim.x + threadIdx.x;
-uint32_t laneId = tid % 32;
-uint32_t warpId = tid / 32;
-uint32_t logicalLane = laneId % width;
-
-T result;
-if (srcLane < (uint32_t)width && (mask & (1u << srcLane))) {
-uint32_t srcTid = warpId * 32 + (laneId - logicalLane) + srcLane;
-uint64_t raw = __gsharp_ctx->__gsharp_all_contexts[srcTid].__gsharp_warp_exchange[slot];
-std::memcpy(&result, &raw, sizeof(T));
-} else {
-result = val;
+const char* name = ""Warp.ShuffleXorSync"";
+if (!__gsharp_warp_shuffle_check_width(width, name, location)) {
+return val;
 }
-return result;
+uint32_t tid = __gsharp_warp_linear_tid();
+uint32_t laneId = tid % 32u;
+// CUDA lets a group of width lanes read its own group and the earlier ones; a later group gives the caller's own value
+// (PTX shfl.bfly reads lane j when j <= maxLane, the last lane of the caller's group)
+uint32_t srcLane = laneId ^ laneMask;
+if (srcLane > (laneId | ((uint32_t)width - 1u))) {
+return val;
+}
+return __gsharp_warp_shuffle_read_lane(__gsharp_ctx, slot, val, tid, srcLane, name, location);
+}
+
+template<typename TContext, typename T>
+inline T __gsharp_warp_shuffle_read_sync(TContext* __gsharp_ctx, uint32_t mask, T val, int32_t srcLane, int width,
+const char* location) {
+uint32_t slot = __gsharp_ctx->__gsharp_warp_shuffle_count++ & 1u;
+const char* name = ""Warp.ShuffleSync"";
+if (!__gsharp_warp_shuffle_check_width(width, name, location)) {
+return val;
+}
+uint32_t tid = __gsharp_warp_linear_tid();
+uint32_t laneId = tid % 32u;
+uint32_t logicalLane = laneId % (uint32_t)width;
+// CUDA reads lane srcLane % width of the caller's segment
+uint32_t srcLogicalLane = (uint32_t)srcLane & (uint32_t)(width - 1);
+return __gsharp_warp_shuffle_read_lane(__gsharp_ctx, slot, val, tid, laneId - logicalLane + srcLogicalLane, name, location);
 }
 
 template<typename T>
@@ -627,74 +756,6 @@ __gsharp_unsupported(""WMMA is not supported by the StandardCpp dialect."");
 template <class Shape, class TIn, class LayoutA, class LayoutB, class TAcc, class FragD, class FragA, class FragB, class FragC>
 inline void __gsharp_wmma_mma(FragD*, const FragA*, const FragB*, const FragC*) {
 __gsharp_unsupported(""WMMA is not supported by the StandardCpp dialect."");
-}
-
-// --- Runtime Error Channel (CPU Dialect) ---
-enum class GSharpErrorCode : int32_t {
-None = 0,
-NotSupported = 1,
-InvalidOperation = 2,
-IndexOutOfRange = 3,
-ArgumentOutOfRange = 4
-};
-
-struct GSharpErrorSlot {
-std::atomic<int32_t> code{0};
-const char* message{nullptr};
-
-inline void Reset() noexcept {
-message = nullptr;
-code.store(0, std::memory_order_release);
-}
-
-inline bool HasError() const noexcept {
-return code.load(std::memory_order_acquire) != 0;
-}
-
-inline void Report(GSharpErrorCode errCode, const char* msg) noexcept {
-int32_t expected = 0;
-if (code.compare_exchange_strong(expected, static_cast<int32_t>(errCode),
-std::memory_order_acq_rel,
-std::memory_order_relaxed)) {
-message = msg;
-}
-}
-};
-
-inline thread_local GSharpErrorSlot __gsharp_host_last_error;
-inline thread_local GSharpErrorSlot* __gsharp_active_error_slot = nullptr;
-
-extern ""C"" __declspec(dllexport) int32_t __gsharp_consume_last_error(const char** outMessage) {
-int32_t c = __gsharp_host_last_error.code.load(std::memory_order_acquire);
-if (c != 0) {
-if (outMessage != nullptr) {
-*outMessage = __gsharp_host_last_error.message;
-}
-__gsharp_host_last_error.Reset();
-}
-return c;
-}
-
-// Records a runtime failure for constructs the CPU dialect cannot execute (e.g. Gpu.InlinePtx).
-// First writer wins across OpenMP threads; the managed launch wrapper inspects the slot and throws.
-inline void __gsharp_unsupported(const char* message)
-{
-if (__gsharp_active_error_slot != nullptr) {
-__gsharp_active_error_slot->Report(GSharpErrorCode::NotSupported, message);
-} else {
-__gsharp_host_last_error.Report(GSharpErrorCode::NotSupported, message);
-}
-}
-
-// Records a portable trap failure (e.g. empty sequence or out-of-range index in StackLinq).
-// First writer wins across OpenMP threads; the managed launch wrapper inspects the slot and throws.
-inline void __gsharp_trap(GSharpErrorCode code, const char* message)
-{
-if (__gsharp_active_error_slot != nullptr) {
-__gsharp_active_error_slot->Report(code, message);
-} else {
-__gsharp_host_last_error.Report(code, message);
-}
 }
 
 #pragma once

@@ -125,16 +125,16 @@ public class ManagedExecutionTests : TranspilerTestBase
             // Test warp shuffles directly
             ManagedGpuContext.__gsharp_warp_exchange_assign(42);
             
-            var valUp = ManagedGpuContext.__gsharp_warp_shuffle_read_up_sync<object, int>(null, 0xFFFFFFFF, 0, 1, 32);
-            var valDown = ManagedGpuContext.__gsharp_warp_shuffle_read_down_sync<object, int>(null, 0xFFFFFFFF, 0, 1, 32);
-            var valXor = ManagedGpuContext.__gsharp_warp_shuffle_read_xor_sync<object, int>(null, 0xFFFFFFFF, 0, 1, 32);
-            var valSync = ManagedGpuContext.__gsharp_warp_shuffle_read_sync<object, int>(null, 0xFFFFFFFF, 0, 1, 32);
+            var valUp = ManagedGpuContext.__gsharp_warp_shuffle_read_up_sync<object, int>(null, 0xFFFFFFFF, 0, 1, 32, "ManagedExecutionTests");
+            var valDown = ManagedGpuContext.__gsharp_warp_shuffle_read_down_sync<object, int>(null, 0xFFFFFFFF, 0, 1, 32, "ManagedExecutionTests");
+            var valXor = ManagedGpuContext.__gsharp_warp_shuffle_read_xor_sync<object, int>(null, 0xFFFFFFFF, 0, 1, 32, "ManagedExecutionTests");
+            var valSync = ManagedGpuContext.__gsharp_warp_shuffle_read_sync<object, int>(null, 0xFFFFFFFF, 0, 1, 32, "ManagedExecutionTests");
 
-            // Out of bounds cases
-            ManagedGpuContext.__gsharp_warp_shuffle_read_up_sync<object, int>(null, 0xFFFFFFFF, 0, 33, 32);
-            ManagedGpuContext.__gsharp_warp_shuffle_read_down_sync<object, int>(null, 0xFFFFFFFF, 0, 33, 32);
-            ManagedGpuContext.__gsharp_warp_shuffle_read_xor_sync<object, int>(null, 0xFFFFFFFF, 0, 33, 32);
-            ManagedGpuContext.__gsharp_warp_shuffle_read_sync<object, int>(null, 0xFFFFFFFF, 0, 33, 32);
+            // Sources outside the segment (idx wraps to lane 1)
+            ManagedGpuContext.__gsharp_warp_shuffle_read_up_sync<object, int>(null, 0xFFFFFFFF, 0, 33, 32, "ManagedExecutionTests");
+            ManagedGpuContext.__gsharp_warp_shuffle_read_down_sync<object, int>(null, 0xFFFFFFFF, 0, 33, 32, "ManagedExecutionTests");
+            ManagedGpuContext.__gsharp_warp_shuffle_read_xor_sync<object, int>(null, 0xFFFFFFFF, 0, 33, 32, "ManagedExecutionTests");
+            ManagedGpuContext.__gsharp_warp_shuffle_read_sync<object, int>(null, 0xFFFFFFFF, 0, 33, 32, "ManagedExecutionTests");
         }
         finally
         {

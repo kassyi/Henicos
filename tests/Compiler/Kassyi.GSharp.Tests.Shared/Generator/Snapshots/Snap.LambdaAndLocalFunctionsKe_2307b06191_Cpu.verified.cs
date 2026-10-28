@@ -112,7 +112,6 @@ public static readonly string NonCapturingLambdaKernel_FullSource=global::Kassyi
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__LambdaAndLocalFunctionsKernels__NonCapturingLambdaKernel {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
-public bool __gsharp_yielded_for_grid_sync;
 }
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__LambdaAndLocalFunctionsKernels__NonCapturingLambdaKernel(int[] data, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__LambdaAndLocalFunctionsKernels__NonCapturingLambdaKernel __gsharp_ctx) {
 {
@@ -197,9 +196,9 @@ if (__gsharp_contexts[__gsharp_linear_tid].__gsharp_state != -1)
 {
 anyGridActive = true;
 anyBlockActive = true;
-__gsharp_contexts[__gsharp_linear_tid].__gsharp_yielded_for_grid_sync = false;
+global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested = false;
 __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__LambdaAndLocalFunctionsKernels__NonCapturingLambdaKernel(data, __gsharp_contexts[__gsharp_linear_tid]);
-if (__gsharp_contexts[__gsharp_linear_tid].__gsharp_yielded_for_grid_sync)
+if (global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested)
 {
 gridSyncRequested = true;
 }
@@ -306,7 +305,6 @@ public static readonly string ValueCapturingLambdaKernel_FullSource=global::Kass
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__LambdaAndLocalFunctionsKernels__ValueCapturingLambdaKernel {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
-public bool __gsharp_yielded_for_grid_sync;
 }
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__LambdaAndLocalFunctionsKernels__ValueCapturingLambdaKernel(int[] data, int factor, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__LambdaAndLocalFunctionsKernels__ValueCapturingLambdaKernel __gsharp_ctx) {
 {
@@ -391,9 +389,9 @@ if (__gsharp_contexts[__gsharp_linear_tid].__gsharp_state != -1)
 {
 anyGridActive = true;
 anyBlockActive = true;
-__gsharp_contexts[__gsharp_linear_tid].__gsharp_yielded_for_grid_sync = false;
+global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested = false;
 __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__LambdaAndLocalFunctionsKernels__ValueCapturingLambdaKernel(data, factor, __gsharp_contexts[__gsharp_linear_tid]);
-if (__gsharp_contexts[__gsharp_linear_tid].__gsharp_yielded_for_grid_sync)
+if (global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested)
 {
 gridSyncRequested = true;
 }
@@ -500,7 +498,6 @@ public static readonly string ImmediatelyEvaluatedLambdaKernel_FullSource=global
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__LambdaAndLocalFunctionsKernels__ImmediatelyEvaluatedLambdaKernel {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
-public bool __gsharp_yielded_for_grid_sync;
 }
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__LambdaAndLocalFunctionsKernels__ImmediatelyEvaluatedLambdaKernel(int[] data, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__LambdaAndLocalFunctionsKernels__ImmediatelyEvaluatedLambdaKernel __gsharp_ctx) {
 {
@@ -589,9 +586,9 @@ if (__gsharp_contexts[__gsharp_linear_tid].__gsharp_state != -1)
 {
 anyGridActive = true;
 anyBlockActive = true;
-__gsharp_contexts[__gsharp_linear_tid].__gsharp_yielded_for_grid_sync = false;
+global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested = false;
 __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__LambdaAndLocalFunctionsKernels__ImmediatelyEvaluatedLambdaKernel(data, __gsharp_contexts[__gsharp_linear_tid]);
-if (__gsharp_contexts[__gsharp_linear_tid].__gsharp_yielded_for_grid_sync)
+if (global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested)
 {
 gridSyncRequested = true;
 }
@@ -699,7 +696,6 @@ public static readonly string ShadowedVariableCaptureKernel_FullSource=global::K
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__LambdaAndLocalFunctionsKernels__ShadowedVariableCaptureKernel {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
-public bool __gsharp_yielded_for_grid_sync;
 }
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__LambdaAndLocalFunctionsKernels__ShadowedVariableCaptureKernel(int[] data, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__LambdaAndLocalFunctionsKernels__ShadowedVariableCaptureKernel __gsharp_ctx) {
 {
@@ -788,9 +784,9 @@ if (__gsharp_contexts[__gsharp_linear_tid].__gsharp_state != -1)
 {
 anyGridActive = true;
 anyBlockActive = true;
-__gsharp_contexts[__gsharp_linear_tid].__gsharp_yielded_for_grid_sync = false;
+global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested = false;
 __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__LambdaAndLocalFunctionsKernels__ShadowedVariableCaptureKernel(data, __gsharp_contexts[__gsharp_linear_tid]);
-if (__gsharp_contexts[__gsharp_linear_tid].__gsharp_yielded_for_grid_sync)
+if (global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested)
 {
 gridSyncRequested = true;
 }
@@ -902,7 +898,6 @@ public static readonly string NestedReturnsKernel_FullSource=global::Kassyi.GSha
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__LambdaAndLocalFunctionsKernels__NestedReturnsKernel {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
-public bool __gsharp_yielded_for_grid_sync;
 }
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__LambdaAndLocalFunctionsKernels__NestedReturnsKernel(int someValue, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__LambdaAndLocalFunctionsKernels__NestedReturnsKernel __gsharp_ctx, ref float __gsharp_auto_result) {
 {
@@ -996,9 +991,9 @@ if (__gsharp_contexts[__gsharp_linear_tid].__gsharp_state != -1)
 {
 anyGridActive = true;
 anyBlockActive = true;
-__gsharp_contexts[__gsharp_linear_tid].__gsharp_yielded_for_grid_sync = false;
+global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested = false;
 __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__LambdaAndLocalFunctionsKernels__NestedReturnsKernel(someValue, __gsharp_contexts[__gsharp_linear_tid], ref __gsharp_auto_result[__gsharp_linear_tid]);
-if (__gsharp_contexts[__gsharp_linear_tid].__gsharp_yielded_for_grid_sync)
+if (global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested)
 {
 gridSyncRequested = true;
 }

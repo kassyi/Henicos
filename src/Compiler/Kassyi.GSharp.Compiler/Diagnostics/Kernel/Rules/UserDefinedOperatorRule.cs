@@ -1,3 +1,4 @@
+using Kassyi.GSharp.Compiler.Transpiler.Rules.MacroRules;
 using Microsoft.CodeAnalysis.Operations;
 
 namespace Kassyi.GSharp.Compiler.Diagnostics.Kernel.Rules;
@@ -17,7 +18,7 @@ internal sealed class UserDefinedOperatorRule :
     public static readonly UserDefinedOperatorRule Instance = new();
 
     public ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics =>
-        ImmutableArray.Create(GSharpDiagnostics.UserDefinedOperatorNotSupported);
+        ImmutableArray.Create(GSharpDiagnostics.UserDefinedOperatorNotSupported, GSharpDiagnostics.UnsupportedSyntax);
 
     private UserDefinedOperatorRule()
     {
@@ -45,6 +46,12 @@ internal sealed class UserDefinedOperatorRule :
 
         if (methodSymbol.HasAttribute(KnownAttributes.GpuOperatorMacro))
         {
+            // Expanded only where GpuOperatorMacroTranspiler reaches it; elsewhere it would be a C++ struct operator
+            if (GpuOperatorMacroTranspiler.GetPositionFailure(node, context.SemanticModel) is { } failure)
+            {
+                context.ReportDiagnostic(GSharpDiagnostics.UnsupportedSyntax, node, failure);
+            }
+
             return;
         }
 

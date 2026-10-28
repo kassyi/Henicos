@@ -114,7 +114,7 @@ return false;
 case 1:
 __gsharp_switch_1_state_1:
 {
-auto __gsharp_warp_temp_0 = __gsharp_warp_shuffle_read_sync(__gsharp_root,0xFFFFFFFFu,__gsharp_id_0_data[__gsharp_ctx->__gsharp_id_1_lane],31-__gsharp_ctx->__gsharp_id_1_lane);
+auto __gsharp_warp_temp_0 = __gsharp_warp_shuffle_read_sync(__gsharp_root,0xFFFFFFFFu,__gsharp_id_0_data[__gsharp_ctx->__gsharp_id_1_lane],31-__gsharp_ctx->__gsharp_id_1_lane,32,""NonRecursiveDeviceFunctionBarrierKernels.cs(30,22)"");
 __gsharp_id_0_data[__gsharp_ctx->__gsharp_id_1_lane]=__gsharp_warp_temp_0;
 __gsharp_state = 0;return true;
 }
@@ -144,7 +144,6 @@ public partial class NonRecursiveDeviceFunctionBarrierKernels
 public class __gsharp_frame_Kassyi__GSharp__Tests__Shared__TestCases__Analyzers__BarrierUsage__NonRecursiveDeviceFunctionBarrierKernels__Exchange {
 internal int __gsharp_state;
 internal uint __gsharp_warp_exchange;
-internal bool __gsharp_yielded_for_grid_sync;
 internal int tid;
 }
 public static bool __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__TestCases__Analyzers__BarrierUsage__NonRecursiveDeviceFunctionBarrierKernels__Exchange(int value, int length, __gsharp_frame_Kassyi__GSharp__Tests__Shared__TestCases__Analyzers__BarrierUsage__NonRecursiveDeviceFunctionBarrierKernels__Exchange __gsharp_ctx, ref int __gsharp_result) {
@@ -176,7 +175,6 @@ throw new global::System.InvalidOperationException("The device function state ma
 public class __gsharp_frame_Kassyi__GSharp__Tests__Shared__TestCases__Analyzers__BarrierUsage__NonRecursiveDeviceFunctionBarrierKernels__ExchangeTwice {
 internal int __gsharp_state;
 internal uint __gsharp_warp_exchange;
-internal bool __gsharp_yielded_for_grid_sync;
 internal int __gsharp_call_temp_0;
 internal int once;
 internal int __gsharp_call_temp_1;
@@ -226,7 +224,6 @@ throw new global::System.InvalidOperationException("The device function state ma
 public class __gsharp_frame_Kassyi__GSharp__Tests__Shared__TestCases__Analyzers__BarrierUsage__NonRecursiveDeviceFunctionBarrierKernels__ReverseWarp {
 internal int __gsharp_state;
 internal uint __gsharp_warp_exchange;
-internal bool __gsharp_yielded_for_grid_sync;
 internal int lane;
 }
 public static bool __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__TestCases__Analyzers__BarrierUsage__NonRecursiveDeviceFunctionBarrierKernels__ReverseWarp(global::System.Span<int> data, __gsharp_frame_Kassyi__GSharp__Tests__Shared__TestCases__Analyzers__BarrierUsage__NonRecursiveDeviceFunctionBarrierKernels__ReverseWarp __gsharp_ctx) {
@@ -243,7 +240,7 @@ return false;
 
 case 1:
 {
-var __gsharp_warp_temp_0 = __gsharp_warp_shuffle_read_sync(__gsharp_ctx, 0xFFFFFFFFu, data[__gsharp_ctx.lane], 31 - __gsharp_ctx.lane);
+var __gsharp_warp_temp_0 = __gsharp_warp_shuffle_read_sync(__gsharp_ctx, 0xFFFFFFFFu, data[__gsharp_ctx.lane], 31 - __gsharp_ctx.lane, 32, "NonRecursiveDeviceFunctionBarrierKernels.cs(30,22)");
 data[__gsharp_ctx.lane] = __gsharp_warp_temp_0;
 {
 __gsharp_ctx.__gsharp_state = 0;
@@ -391,7 +388,6 @@ public static readonly string DeviceFunctionBarrierKernel_FullSource=global::Kas
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__TestCases__Analyzers__BarrierUsage__NonRecursiveDeviceFunctionBarrierKernels__DeviceFunctionBarrierKernel {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
-public bool __gsharp_yielded_for_grid_sync;
 public int tid;
 public int __gsharp_arg_temp_0;
 public int __gsharp_call_temp_1;
@@ -515,9 +511,9 @@ if (__gsharp_contexts[__gsharp_linear_tid].__gsharp_state != -1)
 {
 anyGridActive = true;
 anyBlockActive = true;
-__gsharp_contexts[__gsharp_linear_tid].__gsharp_yielded_for_grid_sync = false;
+global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested = false;
 __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__TestCases__Analyzers__BarrierUsage__NonRecursiveDeviceFunctionBarrierKernels__DeviceFunctionBarrierKernel(input, output, length, usePrimary, __gsharp_contexts[__gsharp_linear_tid]);
-if (__gsharp_contexts[__gsharp_linear_tid].__gsharp_yielded_for_grid_sync)
+if (global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested)
 {
 gridSyncRequested = true;
 }

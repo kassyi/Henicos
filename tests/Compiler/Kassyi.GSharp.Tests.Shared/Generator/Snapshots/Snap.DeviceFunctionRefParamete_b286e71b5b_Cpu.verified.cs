@@ -57,7 +57,7 @@ return false;
 case 1:
 __gsharp_switch_1_state_1:
 {
-auto __gsharp_warp_temp_0 = __gsharp_warp_shuffle_read_sync(__gsharp_root,0xFFFFFFFFu,__gsharp_id_0_value,0);
+auto __gsharp_warp_temp_0 = __gsharp_warp_shuffle_read_sync(__gsharp_root,0xFFFFFFFFu,__gsharp_id_0_value,0,32,""DeviceFunctionRefParameterBarrierKernels.cs(18,47)"");
 *__gsharp_result = __gsharp_warp_temp_0;
 __gsharp_state = 0;return true;
 __gsharp_state = 0;return true;
@@ -88,7 +88,6 @@ public partial class DeviceFunctionRefParameterBarrierKernels
 public class __gsharp_frame_Kassyi__GSharp__Tests__Shared__TestCases__Analyzers__BarrierUsage__DeviceFunctionRefParameterBarrierKernels__IncrementAcrossBarrier {
 internal int __gsharp_state;
 internal uint __gsharp_warp_exchange;
-internal bool __gsharp_yielded_for_grid_sync;
 }
 public static bool __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__TestCases__Analyzers__BarrierUsage__DeviceFunctionRefParameterBarrierKernels__IncrementAcrossBarrier(ref int value, ref int previous, __gsharp_frame_Kassyi__GSharp__Tests__Shared__TestCases__Analyzers__BarrierUsage__DeviceFunctionRefParameterBarrierKernels__IncrementAcrossBarrier __gsharp_ctx) {
 {
@@ -117,7 +116,6 @@ throw new global::System.InvalidOperationException("The device function state ma
 public class __gsharp_frame_Kassyi__GSharp__Tests__Shared__TestCases__Analyzers__BarrierUsage__DeviceFunctionRefParameterBarrierKernels__Broadcast {
 internal int __gsharp_state;
 internal uint __gsharp_warp_exchange;
-internal bool __gsharp_yielded_for_grid_sync;
 }
 public static bool __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__TestCases__Analyzers__BarrierUsage__DeviceFunctionRefParameterBarrierKernels__Broadcast(int value, __gsharp_frame_Kassyi__GSharp__Tests__Shared__TestCases__Analyzers__BarrierUsage__DeviceFunctionRefParameterBarrierKernels__Broadcast __gsharp_ctx, ref int __gsharp_result) {
 {
@@ -132,7 +130,7 @@ return false;
 
 case 1:
 {
-var __gsharp_warp_temp_0 = __gsharp_warp_shuffle_read_sync(__gsharp_ctx, 0xFFFFFFFFu, value, 0);
+var __gsharp_warp_temp_0 = __gsharp_warp_shuffle_read_sync(__gsharp_ctx, 0xFFFFFFFFu, value, 0, 32, "DeviceFunctionRefParameterBarrierKernels.cs(18,47)");
 {
 __gsharp_result = __gsharp_warp_temp_0;
 __gsharp_ctx.__gsharp_state = 0;
@@ -283,7 +281,6 @@ public static readonly string RefParameterKernel_FullSource=global::Kassyi.GShar
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__TestCases__Analyzers__BarrierUsage__DeviceFunctionRefParameterBarrierKernels__RefParameterKernel {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
-public bool __gsharp_yielded_for_grid_sync;
 public int value;
 public int previous;
 public bool __gsharp_cond_temp_0;
@@ -404,9 +401,9 @@ if (__gsharp_contexts[__gsharp_linear_tid].__gsharp_state != -1)
 {
 anyGridActive = true;
 anyBlockActive = true;
-__gsharp_contexts[__gsharp_linear_tid].__gsharp_yielded_for_grid_sync = false;
+global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested = false;
 __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__TestCases__Analyzers__BarrierUsage__DeviceFunctionRefParameterBarrierKernels__RefParameterKernel(buffer, usePrimary, __gsharp_contexts[__gsharp_linear_tid]);
-if (__gsharp_contexts[__gsharp_linear_tid].__gsharp_yielded_for_grid_sync)
+if (global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested)
 {
 gridSyncRequested = true;
 }

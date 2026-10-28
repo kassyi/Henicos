@@ -98,9 +98,9 @@ public GpuBigUFloat UFloat { get; }
 | [CompareTo(GpuBigFloat)](#comparetogpubigfloat) | Compares this instance to another `GpuBigFloat` and returns an integer indicating their relative order. |
 | [Dispose()](#dispose) | Releases the GPU global device memory resources allocated for the underlying significand. |
 | [DivideByUInt32(UInt32)](#dividebyuint32uint32) | Divides the floating-point number by a 32-bit unsigned integer scalar, returning the quotient and 32-bit remainder. |
-| [Equals(GpuBigFloat)](#equalsgpubigfloat) | Indicates whether the current instance is equal to another `GpuBigFloat` instance. |
+| [Equals(GpuBigFloat)](#equalsgpubigfloat) | Indicates whether the current instance has the same significand buffer, exponent and sign as another `GpuBigFloat`. |
 | [Equals(Object?)](#equalsobject) | Determines whether the specified object is equal to the current instance. |
-| [GetHashCode()](#gethashcode) | Returns the hash code for this instance. |
+| [GetHashCode()](#gethashcode) | Returns the hash code of the significand buffer, the exponent and the sign, consistent with `Equals(GpuBigFloat)`. |
 | [Normalize(Int32, Boolean)](#normalizeint32-boolean) | Normalizes the floating-point value such that the most significant bit of the significand is aligned. |
 | [Round(GpuBigFloatRoundingMode, Boolean, Boolean, Boolean)](#roundgpubigfloatroundingmode-boolean-boolean-boolean) | Rounds the floating-point value to the target significand precision using the specified rounding mode and discarded bit flags. |
 | [Subtract(GpuBigFloat)](#subtractgpubigfloat) | Subtracts another `GpuBigFloat` from this instance. |
@@ -159,11 +159,13 @@ A tuple containing the quotient `GpuBigFloat` and the 32-bit integer remainder.
 
 ### Equals(GpuBigFloat)
 
-Indicates whether the current instance is equal to another `GpuBigFloat` instance.
+Indicates whether the current instance has the same significand buffer, exponent and sign as another `GpuBigFloat`.
 
 ```csharp
 public bool Equals(GpuBigFloat other);
 ```
+
+Like the integer types, `Equals` and `GetHashCode` compare identity, not values: two separate buffers holding the same value, or the same value written with another exponent (`12 * 2^0` and `3 * 2^2`), are not equal. Use `==` or `CompareTo` to compare values on the GPU. Neither member reads device memory, so both also work on a disposed value. `+0` and `-0` are `==` but not `Equals`.
 
 ### Equals(Object?)
 
@@ -175,7 +177,7 @@ public override bool Equals(object? obj);
 
 ### GetHashCode()
 
-Returns the hash code for this instance.
+Returns the hash code of the significand buffer, the exponent and the sign, consistent with `Equals(GpuBigFloat)`.
 
 ```csharp
 public override int GetHashCode();
@@ -228,8 +230,8 @@ public GpuBigFloat Subtract(GpuBigFloat other);
 | `implicit operator GpuBigFloat(BinaryExpr<GpuBigFloat, AddOp>)` | Implicitly evaluates a binary addition expression via `GpuBigFloatExpressionVisitor`. |
 | `implicit operator GpuBigFloat(BinaryExpr<GpuBigFloat, SubOp>)` | Implicitly evaluates a binary subtraction expression via `GpuBigFloatExpressionVisitor`. |
 | `implicit operator GpuBigFloat(BinaryExpr<GpuBigFloat, MulOp>)` | Implicitly evaluates a binary multiplication expression via `GpuBigFloatExpressionVisitor`. |
-| `operator ==(GpuBigFloat, GpuBigFloat)` | Determines whether two specified `GpuBigFloat` instances are equal. |
-| `operator !=(GpuBigFloat, GpuBigFloat)` | Determines whether two specified `GpuBigFloat` instances are not equal. |
+| `operator ==(GpuBigFloat, GpuBigFloat)` | Determines whether two specified `GpuBigFloat` instances have the same value on the GPU. |
+| `operator !=(GpuBigFloat, GpuBigFloat)` | Determines whether two specified `GpuBigFloat` instances have different values on the GPU. |
 | `operator <(GpuBigFloat, GpuBigFloat)` | Determines whether one specified `GpuBigFloat` is less than another. |
 | `operator >(GpuBigFloat, GpuBigFloat)` | Determines whether one specified `GpuBigFloat` is greater than another. |
 | `operator <=(GpuBigFloat, GpuBigFloat)` | Determines whether one specified `GpuBigFloat` is less than or equal to another. |

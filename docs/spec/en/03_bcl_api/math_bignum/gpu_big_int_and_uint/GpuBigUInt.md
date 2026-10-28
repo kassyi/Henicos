@@ -82,7 +82,7 @@ Thrown when `hostData` is empty.
 | --- | --- |
 | [DevicePointer](#devicepointer) | Gets the raw 64-bit device memory pointer to the first limb word in GPU global address space. |
 | [Handle](#handle) | Gets the underlying GPU memory handle tracking device buffer allocation and lifetime. |
-| [IsTemp](#istemp) | Gets a value indicating whether this buffer represents an intermediate temporary buffer managed by expression evaluation. |
+| [OwnsBuffer](#ownsbuffer) | Gets a value indicating whether this value owns its device buffer, so that disposing it returns the buffer to the pool. |
 | [NumWords](#numwords) | Gets the number of 32-bit unsigned integer limbs (words) allocated for this big integer. |
 | [Value](#value) | Gets a deferred expression representing this instance, or evaluates and assigns a deferred expression into this instance in-place. |
 | [Workspace](#workspace) | Gets the `GpuWorkspace` associated with this GPU integer instance. |
@@ -95,6 +95,11 @@ Gets the raw 64-bit device memory pointer to the first limb word in GPU global a
 public IntPtr DevicePointer { get; }
 ```
 
+#### Exceptions
+
+`ObjectDisposedException`<br>
+The buffer has been freed: this value or a copy of it was disposed, or its workspace was disposed. A copy of a freed value never reads the memory of a later owner of the same buffer.
+
 ## Handle
 
 Gets the underlying GPU memory handle tracking device buffer allocation and lifetime.
@@ -103,13 +108,15 @@ Gets the underlying GPU memory handle tracking device buffer allocation and life
 public GpuBigIntMemoryHandle Handle { get; }
 ```
 
-## IsTemp
+## OwnsBuffer
 
-Gets a value indicating whether this buffer represents an intermediate temporary buffer managed by expression evaluation.
+Gets a value indicating whether this value owns its device buffer, so that disposing it returns the buffer to the pool.
 
 ```csharp
-public bool IsTemp { get; }
+public bool OwnsBuffer { get; }
 ```
+
+A value created by a constructor, or returned by an operation or an evaluation that allocates, owns its buffer. A borrowed value (a view of another value or array that the library wraps in a `GpuBigUInt`) does not, and disposing it does nothing.
 
 ## NumWords
 
@@ -143,22 +150,22 @@ public GpuWorkspace Workspace { get; }
 | [Clear(int, int?)](#clearint-int) | Clears (zeros out) a range of limb words in GPU device memory. |
 | [ClearWord(int)](#clearwordint) | Clears a single 32-bit limb word at the specified word index in GPU device memory. |
 | [CompareTo(GpuBigUInt)](#comparetogpubiguint) | Compares this instance to another `GpuBigUInt` and returns an integer indicating their relative magnitude. |
-| [CopyFrom(GpuBigUInt, int, int, int?)](#copyfromgpubiguint-int-int-int) | Copies limb words from another `GpuBigUInt` instance to this instance in GPU device memory. |
+| [CopyFrom(GpuBigUIntView, int, int, int?)](#copyfromgpubiguintview-int-int-int) | Copies limb words from another value or view to this instance in GPU device memory. |
 | [CreatePowerOfTwo(GpuWorkspace, int, int)](#createpoweroftwogpuworkspace-int-int) | Creates a new `GpuBigUInt` initialized to $2^{\text{bitIndex}}$. |
 | [Dispose()](#dispose) | Releases the underlying GPU global device memory handle back to the workspace memory pool. |
-| [Equals(GpuBigUInt)](#equalsgpubiguint) | Indicates whether the current instance is equal to another `GpuBigUInt` instance. |
+| [Equals(GpuBigUInt)](#equalsgpubiguint) | Indicates whether the current instance refers to the same device buffer as another `GpuBigUInt`. |
 | [Equals(object?)](#equalsobject) | Determines whether the specified object is equal to the current instance. |
 | [FromBigInteger(GpuWorkspace, BigInteger, int)](#frombigintegergpuworkspace-biginteger-int) | Creates a new `GpuBigUInt` instance from a .NET standard `BigInteger` value. |
 | [GetBitLength()](#getbitlength) | Calculates the minimum number of bits required to represent this big integer without leading zeros. |
 | [GetByteCount()](#getbytecount) | Calculates the minimum number of bytes required to represent this big integer. |
-| [GetHashCode()](#gethashcode) | Returns the hash code for this instance. |
+| [GetHashCode()](#gethashcode) | Returns the hash code of the buffer identity, consistent with `Equals(GpuBigUInt)`. |
 | [GetIsEven()](#getiseven) | Determines whether the value is an even integer. |
 | [GetIsNegative()](#getisnegative) | Determines whether the most significant bit in the highest word is set (used for two's complement sign tracking). |
 | [GetTopWords(int)](#gettopwordsint) | Copies the most significant limb words from GPU device memory to a host array. |
 | [GetTopWordsAsync(int, CancellationToken)](#gettopwordsasyncint-cancellationtoken) | Asynchronously copies the most significant limb words from GPU device memory to a host array, without blocking the calling thread. |
 | [IsOne()](#isone) | Determines whether the value of this instance is 1 (one). |
 | [IsZero()](#iszero) | Determines whether the value of this instance is 0 (zero). |
-| [ModInverse(GpuBigUInt)](#modinversegpubiguint) | Computes the modular multiplicative inverse of this instance modulo `modulus`. |
+| [ModInverse(GpuBigUIntView)](#modinversegpubiguintview) | Computes the modular multiplicative inverse of this instance modulo `modulus`. |
 | [PadTo(int)](#padtoint) | Allocates a new `GpuBigUInt` with the specified target word capacity and copies this instance's limbs into it. |
 | [SetIsNegative(bool)](#setisnegativebool) | Sets or clears the most significant bit in the highest word (used for two's complement sign tracking). |
 | [Square(int)](#squareint) | Computes the square of this number in-place on the GPU. |
@@ -234,12 +241,12 @@ The `GpuBigUInt` to compare with this instance.
 _int_<br>
 -1 if this is less than `other`, 0 if equal, 1 if greater.
 
-## CopyFrom(GpuBigUInt, int, int, int?)
+## CopyFrom(GpuBigUIntView, int, int, int?)
 
 Copies limb words from another `GpuBigUInt` instance to this instance in GPU device memory.
 
 ```csharp
-public void CopyFrom(GpuBigUInt source, int destOffsetWords = 0, int srcOffsetWords = 0, int? numWords = null);
+public void CopyFrom(scoped GpuBigUIntView source, int destOffsetWords = 0, int srcOffsetWords = 0, int? numWords = null);
 ```
 
 #### Parameters
@@ -288,9 +295,13 @@ Releases the underlying GPU global device memory handle back to the workspace me
 public void Dispose();
 ```
 
+#### Remarks
+
+`GpuBigUInt` is a value type, so copies of one value share one buffer. Only the first `Dispose` of the copies returns the buffer; disposing another copy later does nothing, also after the buffer has been handed to a new owner and after the workspace has been disposed. A borrowed value, such as an element of a `GpuBigUIntArray`, does not own its buffer and frees nothing.
+
 ## Equals(GpuBigUInt)
 
-Indicates whether the current instance is equal to another `GpuBigUInt` instance.
+Indicates whether the current instance refers to the same device buffer as another `GpuBigUInt`.
 
 ```csharp
 public bool Equals(GpuBigUInt other);
@@ -304,7 +315,11 @@ A `GpuBigUInt` to compare with this instance.
 #### Returns
 
 _bool_<br>
-`true` if the current instance is equal to the `other` parameter; otherwise, `false`.
+`true` if both instances have the same `Handle` (the same words of the same allocation); otherwise, `false`.
+
+#### Remarks
+
+Unlike the value-equal float types, `Equals` and `GetHashCode` compare the identity of the buffer: two separately allocated buffers holding the same value are not equal. Use `==` or `CompareTo` to compare values on the GPU. Neither member reads device memory, so both also work on a disposed value.
 
 ## Equals(object?)
 
@@ -376,7 +391,7 @@ The byte length of the number, or 1 if the value is zero.
 
 ## GetHashCode()
 
-Returns the hash code for this instance.
+Returns the hash code of the buffer identity, consistent with `Equals(GpuBigUInt)`.
 
 ```csharp
 public override int GetHashCode();
@@ -483,12 +498,12 @@ public bool IsZero();
 _bool_<br>
 `true` if all limb words equal 0; otherwise, `false`.
 
-## ModInverse(GpuBigUInt)
+## ModInverse(GpuBigUIntView)
 
 Computes the modular multiplicative inverse of this instance modulo `modulus`.
 
 ```csharp
-public GpuBigUInt ModInverse(GpuBigUInt modulus);
+public GpuBigUInt ModInverse(scoped GpuBigUIntView modulus);
 ```
 
 #### Parameters
@@ -662,7 +677,7 @@ public override string ToString();
 #### Returns
 
 _string_<br>
-A string containing word count and device pointer address.
+A string containing the word count and the handle (word offset, word count, generation). It does not read device memory, so it also works on a disposed value.
 
 ## Operators
 
