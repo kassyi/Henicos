@@ -339,45 +339,20 @@ public readonly struct GpuBigIntExpr
         CapturedResources captured, GpuBigInt result, bool ownsResult, IntPtr graph, Exception original)
     {
         List<Exception>? cleanupErrors = null;
-        try
+        if (graph != IntPtr.Zero)
         {
-            if (graph != IntPtr.Zero)
-            {
-                workspace.Provider.DestroyGraph(graph, IntPtr.Zero);
-            }
-        }
-        catch (Exception ex)
-        {
-            (cleanupErrors ??= []).Add(ex);
+            RunCleanupStep((workspace, graph), static s => s.workspace.Provider.DestroyGraph(s.graph, IntPtr.Zero),
+                ref cleanupErrors);
         }
 
-        try
+        RunCleanupStep((manager, captured), static s => s.manager.ReturnDeferred(s.captured.Buffers), ref cleanupErrors);
+        if (ownsResult)
         {
-            manager.ReturnDeferred(captured.Buffers);
-        }
-        catch (Exception ex)
-        {
-            (cleanupErrors ??= []).Add(ex);
-        }
-
-        try
-        {
-            if (ownsResult)
-            {
-                manager.Free(result.Value.Handle);
-            }
-        }
-        catch (Exception ex)
-        {
-            (cleanupErrors ??= []).Add(ex);
+            RunCleanupStep((manager, result.Value.Handle), static s => s.manager.Free(s.Handle), ref cleanupErrors);
         }
 
         GraphOwnership.Release(Node);
-        if (cleanupErrors is not null)
-        {
-            cleanupErrors.Insert(0, original);
-            throw new AggregateException("Creating the CUDA graph failed, and so did its cleanup.", cleanupErrors);
-        }
+        ThrowIfCleanupFailed("Creating the CUDA graph failed, and so did its cleanup.", original, cleanupErrors);
     }
 
     // The failure path of a capture (O14): end the capture, drop the partial graph and give back the deferred buffers.
@@ -397,32 +372,40 @@ public readonly struct GpuBigIntExpr
         }
 
         var captured = manager.EndDeferral(deferral);
+        if (graph != IntPtr.Zero)
+        {
+            RunCleanupStep((workspace, graph), static s => s.workspace.Provider.DestroyGraph(s.graph, IntPtr.Zero),
+                ref cleanupErrors);
+        }
+
+        RunCleanupStep((manager, captured), static s => s.manager.ReturnDeferred(s.captured.Buffers), ref cleanupErrors);
+        ThrowIfCleanupFailed("CUDA graph capture failed, and so did its cleanup.", original, cleanupErrors);
+    }
+
+    // Runs one cleanup step of a failure path; a step that throws is collected, so that the next steps still run
+    private static void RunCleanupStep<TState>(TState state, Action<TState> step, ref List<Exception>? errors)
+    {
         try
         {
-            if (graph != IntPtr.Zero)
-            {
-                workspace.Provider.DestroyGraph(graph, IntPtr.Zero);
-            }
+            step(state);
         }
         catch (Exception ex)
         {
-            (cleanupErrors ??= []).Add(ex);
+            (errors ??= []).Add(ex);
+        }
+    }
+
+    // After the cleanup of a failure path: nothing to throw when every step succeeded (the caller rethrows the
+    // original), otherwise the original first and then the cleanup errors (O14)
+    private static void ThrowIfCleanupFailed(string message, Exception original, List<Exception>? errors)
+    {
+        if (errors is null)
+        {
+            return;
         }
 
-        try
-        {
-            manager.ReturnDeferred(captured.Buffers);
-        }
-        catch (Exception ex)
-        {
-            (cleanupErrors ??= []).Add(ex);
-        }
-
-        if (cleanupErrors is not null)
-        {
-            cleanupErrors.Insert(0, original);
-            throw new AggregateException("CUDA graph capture failed, and so did its cleanup.", cleanupErrors);
-        }
+        errors.Insert(0, original);
+        throw new AggregateException(message, errors);
     }
 }
 
