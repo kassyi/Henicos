@@ -119,6 +119,47 @@ internal sealed partial class UniformityAnalysis
     }
 
     /// <summary>
+    /// The conditions of the divergent branches that make <paramref name="barrier"/> exit only (§3.2.3): the threads
+    /// on one side leave the method without reaching another split point. Empty unless the barrier is
+    /// <see cref="BarrierDivergence.ExitOnly"/> as a whole (a branch that makes it diverge otherwise is reported as such).
+    /// </summary>
+    public ImmutableArray<SyntaxNode> GetExitBranches(SyntaxNode barrier, SyncScope scope)
+    {
+        if (GetBarrierReport(barrier, scope).Divergence != BarrierDivergence.ExitOnly ||
+            !_splitsAt.TryGetValue(barrier, out var nodes))
+        {
+            return ImmutableArray<SyntaxNode>.Empty;
+        }
+
+        var branches = ImmutableArray.CreateBuilder<SyntaxNode>();
+        foreach (var node in nodes)
+        {
+            for (var branch = 0; branch < _branch.Length; branch++)
+            {
+                if (Diverges(_branch[branch], scope) &&
+                    GetRegion(branch).Contains(node) &&
+                    Classify(branch, node) == BarrierDivergence.ExitOnly &&
+                    _nodes[branch].Condition is { Syntax: { } condition } &&
+                    !branches.Contains(condition))
+                {
+                    branches.Add(condition);
+                }
+            }
+        }
+
+        return branches.ToImmutable();
+    }
+
+    /// <summary>
+    /// Whether the barrier-reaching call <paramref name="call"/>, outside any divergent branch of this method, lets some
+    /// threads leave the callee early before one of its barriers while nothing after the call splits the state machine
+    /// (the exit-only case of §3.2.4, which the kernel reports).
+    /// </summary>
+    public bool IsExitOnlyCall(SyntaxNode call) =>
+        GetBarrierReport(call, SyncScope.Block).Divergence == BarrierDivergence.None &&
+        GetCallComposition(call).Divergence == BarrierDivergence.ExitOnly;
+
+    /// <summary>
     /// The divergence of the barriers of <paramref name="method"/> that its export record carries for callers in other
     /// assemblies (B7): for each parameter alone, whether a thread-variant argument makes a barrier diverge.
     /// </summary>

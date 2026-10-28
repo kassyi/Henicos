@@ -31,6 +31,7 @@ public class InterproceduralUniformityAnalyzerTests : TranspilerTestBase
                 (error, 37, 9, 37, 35),
                 (error, 68, 9, 68, 20),
                 (warning, 69, 9, 69, 28),
+                (GSharpDiagnostics.BarrierAfterDivergentExit.Id, 71, 9, 71, 20),
                 (error, 82, 13, 82, 30),
                 (error, 86, 13, 86, 30),
                 (error, 91, 13, 91, 30),

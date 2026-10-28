@@ -487,6 +487,9 @@ internal readonly ref struct KernelBarrierValidator(
         }
 
         UniformityAnalysis? uniformity = null;
+
+        // GSH0084 in a kernel: each condition that sends threads out before a barrier, with the first barrier it skips
+        var exits = new Dictionary<SyntaxNode, (InvocationExpressionSyntax Barrier, SyncScope Scope)>();
         foreach (var (barrier, scope, isCall) in _syncPoints)
         {
             if (!isCall && IsInUnsplitBody(barrier))
@@ -507,11 +510,20 @@ internal readonly ref struct KernelBarrierValidator(
             var report = uniformity.GetBarrierReport(barrier, scope);
             if (isCall && report.Divergence != BarrierDivergence.Condition)
             {
-                report = uniformity.GetCallSiteReport(barrier);
+                var callSite = uniformity.GetCallSiteReport(barrier);
+                if (callSite.Divergence == BarrierDivergence.Condition || report.Divergence == BarrierDivergence.None)
+                {
+                    report = callSite;
+                }
             }
 
             if (report.Divergence != BarrierDivergence.Condition)
             {
+                if (isKernel)
+                {
+                    CollectExits(uniformity, barrier, scope, isCall, exits);
+                }
+
                 continue;
             }
 
@@ -526,12 +538,54 @@ internal readonly ref struct KernelBarrierValidator(
                     semanticModel.GetSymbol(barrier)?.Name ?? "", scope == SyncScope.Grid ? "grid" : "block");
             }
         }
+
+        ReportExits(exits);
+    }
+
+    // An exit-only barrier of a kernel: its exit conditions, or the call whose callee the threads leave early
+    private void CollectExits(UniformityAnalysis uniformity, InvocationExpressionSyntax barrier, SyncScope scope,
+        bool isCall, Dictionary<SyntaxNode, (InvocationExpressionSyntax Barrier, SyncScope Scope)> exits)
+    {
+        foreach (var branch in uniformity.GetExitBranches(barrier, scope))
+        {
+            // A case of a switch statement compares with the case value; the switch expression is what diverges
+            var condition = branch.FirstAncestorOrSelf<SwitchLabelSyntax>() is
+                { Parent: SwitchSectionSyntax { Parent: SwitchStatementSyntax switchStatement } }
+                ? switchStatement.Expression
+                : branch;
+            if (!exits.TryGetValue(condition, out var first) || barrier.SpanStart < first.Barrier.SpanStart)
+            {
+                exits[condition] = (barrier, scope);
+            }
+        }
+
+        if (isCall && uniformity.IsExitOnlyCall(barrier))
+        {
+            var callee = semanticModel.GetSymbol(barrier)?.Name ?? "";
+            context.ReportDiagnostic(GSharpDiagnostics.BarrierAfterDivergentExit, barrier.GetLocation(),
+                $"Some threads leave '{callee}' early", $"a barrier inside '{callee}'", "block");
+        }
+    }
+
+    // GSH0084 at each exit condition, with the first barrier it skips as the additional location
+    private void ReportExits(Dictionary<SyntaxNode, (InvocationExpressionSyntax Barrier, SyncScope Scope)> exits)
+    {
+        foreach (var pair in exits)
+        {
+            var (barrier, scope) = pair.Value;
+            context.ReportDiagnostic(Diagnostic.Create(GSharpDiagnostics.BarrierAfterDivergentExit,
+                pair.Key.GetLocation(),
+                [barrier.GetLocation()],
+                "Where this condition holds, a thread leaves the kernel",
+                $"'{semanticModel.GetSymbol(barrier)?.Name}'",
+                scope == SyncScope.Grid ? "grid" : "block"));
+        }
     }
 
     private const string DivergentBarrierMessage =
         "Gpu.SyncThreads(), or a call to a device function that reaches it, cannot be placed inside a conditional " +
         "branch or an operand that only some threads evaluate ('&&', '||', '??', '?:'). This causes undefined " +
-        "behavior on the GPU and deadlocks the CPU emulator.";
+        "behavior on the GPU and silently reorders shared memory accesses on the CPU emulator.";
 
     // [WHY] The state machine of the CPU dialects splits only the statements of the method and the inlined macro
     // bodies; a barrier in any other lambda or in a local function cannot be resumed (decision 1.5)

@@ -142,4 +142,66 @@ public static partial class ExitOnlyBarrierKernels
             Gpu.SyncGrid();
         }
     }
+
+    [GpuKernel]
+    [SkipSnapshotConsistency("Analyzer case")]
+    public static void EarlyReturnKernel(int[] buffer)
+    {
+        if (ThreadIndex.X >= buffer.Length)
+        {
+            return;
+        }
+
+        Gpu.SyncThreads();
+        buffer[ThreadIndex.X] = 1;
+    }
+
+    // A thread that breaks out of the loop leaves the kernel: nothing follows the loop
+    [GpuKernel]
+    [SkipSnapshotConsistency("Analyzer case")]
+    public static void VariantBreakKernel(int[] buffer, int count)
+    {
+        for (int i = 0; i < count; i++)
+        {
+            if (buffer[ThreadIndex.X] == i)
+            {
+                break;
+            }
+
+            Gpu.SyncThreads();
+        }
+    }
+
+    // Every thread takes the same side: no diagnostic
+    [GpuKernel]
+    [SkipSnapshotConsistency("Analyzer case")]
+    public static void UniformReturnKernel(int[] buffer, int count)
+    {
+        if (count == 0)
+        {
+            return;
+        }
+
+        Gpu.SyncThreads();
+    }
+
+    [GpuDeviceFunction]
+    public static void SyncWithin(int count)
+    {
+        if (ThreadIndex.X >= count)
+        {
+            return;
+        }
+
+        Gpu.SyncThreads();
+    }
+
+    // The callee lets some threads leave before its barrier, and nothing follows the call
+    [GpuKernel]
+    [SkipSnapshotConsistency("Analyzer case")]
+    public static void EarlyReturnInCalleeKernel(int[] buffer, int count)
+    {
+        buffer[ThreadIndex.X] = 0;
+        SyncWithin(count);
+    }
 }
