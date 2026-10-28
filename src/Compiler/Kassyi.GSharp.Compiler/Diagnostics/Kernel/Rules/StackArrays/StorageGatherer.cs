@@ -81,8 +81,8 @@ internal sealed class StorageGatherer(SemanticModel model, Dictionary<ISymbol, L
             case StackAllocArrayCreationExpressionSyntax or ImplicitStackAllocArrayCreationExpressionSyntax:
                 storages.Add(new Storage(CppScopes.GetScope(value), StackArrayEscapeRule.StackAllocName));
                 return true;
-            case CollectionExpressionSyntax when model.GetTypeInfo(value).ConvertedType.IsArrayLikeType() &&
-                                                 model.GetTypeInfo(value).ConvertedType is not IArrayTypeSymbol:
+            // A collection expression to a span, or to an array outside a declaration, is a stack array as well
+            case CollectionExpressionSyntax when model.GetTypeInfo(value).ConvertedType.IsArrayLikeType():
                 storages.Add(new Storage(CppScopes.GetScope(value), StackArrayEscapeRule.CollectionExpressionName));
                 return true;
             default:

@@ -112,6 +112,15 @@ public struct Emitter(
     public int UsingCounter;
 
     /// <summary>
+    /// Numbers the storages <c>__gsharp_stackalloc_&lt;n&gt;</c> that the statement prelude declares for the stack arrays
+    /// outside a declaration (StackAllocEmitter).
+    /// </summary>
+    public int StackAllocCounter;
+
+    /// <summary>The storage number of each node that the statement prelude declared a storage for, read where the node is written.</summary>
+    public Dictionary<SyntaxNode, int> StackAllocStorages { get; } = new();
+
+    /// <summary>
     /// The struct definitions whose <c>Dispose</c> a <c>using</c> of the method calls, in the order of first use; each
     /// definition is emitted after the structs (UsingTranspiler.WriteDisposeDefinitions).
     /// </summary>
