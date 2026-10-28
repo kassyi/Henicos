@@ -1007,7 +1007,7 @@ return;
 case 2:
 __gsharp_switch_1_state_2:
 {
-auto __gsharp_warp_temp_0 = __gsharp_warp_shuffle_read_down_sync(__gsharp_root,0xffffffffu,__gsharp_ctx->__gsharp_id_2__warpTemp_0,1);
+auto __gsharp_warp_temp_0 = __gsharp_warp_shuffle_read_down_sync(__gsharp_root,0xffffffffu,__gsharp_ctx->__gsharp_id_2__warpTemp_0,1,32,""InternalNameCollisionKernels.cs(84,23)"");
 int __gsharp_id_3_shifted = __gsharp_warp_temp_0;
 __gsharp_id_0_data[__gsharp_ctx->__gsharp_id_1_tid]=__gsharp_ctx->__gsharp_id_2__warpTemp_0*1000+__gsharp_id_3_shifted;
 __gsharp_state=-1;
@@ -1091,7 +1091,7 @@ return;
 
 case 2:
 {
-var __gsharp_warp_temp_0 = __gsharp_warp_shuffle_read_down_sync(__gsharp_ctx, 0xffffffffu, __gsharp_ctx._warpTemp_0, 1);
+var __gsharp_warp_temp_0 = __gsharp_warp_shuffle_read_down_sync(__gsharp_ctx, 0xffffffffu, __gsharp_ctx._warpTemp_0, 1, 32, "InternalNameCollisionKernels.cs(84,23)");
 int shifted = __gsharp_warp_temp_0;
 data[__gsharp_ctx.tid] = __gsharp_ctx._warpTemp_0 * 1000 + shifted;
 __gsharp_ctx.__gsharp_state = -1;

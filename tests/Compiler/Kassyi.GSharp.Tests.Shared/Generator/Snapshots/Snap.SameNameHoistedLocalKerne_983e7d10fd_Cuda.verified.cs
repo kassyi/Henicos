@@ -135,7 +135,7 @@ return false;
 
 case 2:
 {
-__gsharp_ctx.__gsharp_warp_temp_0 = __gsharp_warp_shuffle_read_up_sync(__gsharp_ctx, global::Kassyi.GSharp.Tests.Shared.Syntax.SameNameHoistedLocalKernels.FullMask, __gsharp_ctx.value, (uint)__gsharp_ctx.__gsharp_id_3_d);
+__gsharp_ctx.__gsharp_warp_temp_0 = __gsharp_warp_shuffle_read_up_sync(__gsharp_ctx, global::Kassyi.GSharp.Tests.Shared.Syntax.SameNameHoistedLocalKernels.FullMask, __gsharp_ctx.value, (uint)__gsharp_ctx.__gsharp_id_3_d, 32, "SameNameHoistedLocalKernels.cs(78,28)");
 __gsharp_ctx.neighbor = __gsharp_ctx.__gsharp_warp_temp_0;
 if (__gsharp_ctx.lane >= __gsharp_ctx.__gsharp_id_3_d)
 {
@@ -169,7 +169,7 @@ return false;
 
 case 6:
 {
-var __gsharp_warp_temp_1 = __gsharp_warp_shuffle_read_xor_sync(__gsharp_ctx, global::Kassyi.GSharp.Tests.Shared.Syntax.SameNameHoistedLocalKernels.FullMask, __gsharp_ctx.total, (int)__gsharp_ctx.__gsharp_id_6_d);
+var __gsharp_warp_temp_1 = __gsharp_warp_shuffle_read_xor_sync(__gsharp_ctx, global::Kassyi.GSharp.Tests.Shared.Syntax.SameNameHoistedLocalKernels.FullMask, __gsharp_ctx.total, (int)__gsharp_ctx.__gsharp_id_6_d, 32, "SameNameHoistedLocalKernels.cs(88,28)");
 int neighbor = __gsharp_warp_temp_1;
 __gsharp_ctx.total += neighbor;
 goto case 7;

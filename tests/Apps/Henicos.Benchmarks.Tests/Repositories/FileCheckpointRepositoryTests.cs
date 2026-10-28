@@ -1,4 +1,5 @@
 using Henicos.Benchmarks.Repositories;
+using Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms;
 
 namespace Henicos.Benchmarks.Tests.Repositories;
 
@@ -34,32 +35,49 @@ public class FileCheckpointRepositoryTests : IDisposable
     }
 
     [Fact]
-    public void SaveAndLoad_WorksCorrectly()
+    public void SaveAndLoad_RoundTripsEveryField()
     {
-        int iteration = 42;
-        uint[] state = new uint[] { 1, 2, 3, 4, 5 };
+        var checkpoint = CreateCheckpoint();
 
-        _repository.Save(iteration, state);
+        _repository.Save(checkpoint);
 
         Assert.True(_repository.Exists());
-        var (loadedIter, loadedState) = _repository.Load(state.Length);
+        var loaded = _repository.Load();
+        Assert.Equal(checkpoint.E, loaded.E);
+        Assert.Equal(checkpoint.Base, loaded.Base);
+        Assert.Equal(checkpoint.BlockSize, loaded.BlockSize);
+        Assert.Equal(checkpoint.Iteration, loaded.Iteration);
+        Assert.Equal(checkpoint.ChecksPassed, loaded.ChecksPassed);
+        Assert.Equal(checkpoint.Rollbacks, loaded.Rollbacks);
+        Assert.Equal(checkpoint.State.ToArray(), loaded.State.ToArray());
+        Assert.Equal(checkpoint.Check.ToArray(), loaded.Check.ToArray());
+        Assert.Equal(checkpoint.SnapshotE.ToArray(), loaded.SnapshotE.ToArray());
+        Assert.Equal(checkpoint.FinalK.ToArray(), loaded.FinalK.ToArray());
+    }
 
-        Assert.Equal(iteration, loadedIter);
-        Assert.Equal(state, loadedState);
+    [Fact]
+    public void SaveAndLoad_EmptySnapshot_RoundTrips()
+    {
+        var checkpoint = new FermatPrpCheckpoint(61, 3, 7, 49, new uint[] { 1, 2 }, new uint[] { 3, 4 },
+            ReadOnlyMemory<uint>.Empty, ReadOnlyMemory<uint>.Empty, 1, 0);
+
+        _repository.Save(checkpoint);
+
+        var loaded = _repository.Load();
+        Assert.True(loaded.SnapshotE.IsEmpty);
+        Assert.True(loaded.FinalK.IsEmpty);
     }
 
     [Fact]
     public void Load_ThrowsFileNotFoundException_WhenFileDoesNotExist()
     {
-        Assert.Throws<FileNotFoundException>(() => _repository.Load(5));
+        Assert.Throws<FileNotFoundException>(() => _repository.Load());
     }
 
     [Fact]
     public void Load_ThrowsInvalidDataException_WhenFileIsCorrupted_Truncated()
     {
-        int iteration = 42;
-        uint[] state = new uint[] { 1, 2, 3, 4, 5 };
-        _repository.Save(iteration, state);
+        _repository.Save(CreateCheckpoint());
 
         // Truncate the file slightly
         using (var fs = File.OpenWrite(_checkpointFile))
@@ -67,23 +85,68 @@ public class FileCheckpointRepositoryTests : IDisposable
             fs.SetLength(fs.Length - 5);
         }
 
-        Assert.Throws<InvalidDataException>(() => _repository.Load(state.Length));
+        Assert.Throws<InvalidDataException>(() => _repository.Load());
     }
 
     [Fact]
     public void Load_ThrowsInvalidDataException_WhenHashMismatches()
     {
-        int iteration = 42;
-        uint[] state = new uint[] { 1, 2, 3, 4, 5 };
-        _repository.Save(iteration, state);
+        _repository.Save(CreateCheckpoint());
 
-        // Corrupt the data portion (skip 4 bytes for iteration, then modify the state)
+        // Corrupt one byte of the payload after the magic.
         using (var fs = File.OpenWrite(_checkpointFile))
         {
-            fs.Seek(4, SeekOrigin.Begin);
+            fs.Seek(8, SeekOrigin.Begin);
             fs.WriteByte(0xFF);
         }
 
-        Assert.Throws<InvalidDataException>(() => _repository.Load(state.Length));
+        Assert.Throws<InvalidDataException>(() => _repository.Load());
     }
+
+    [Fact]
+    public void Load_ThrowsInvalidDataException_ForTheEarlierFormat()
+    {
+        // The earlier format: an int iteration, the raw state words and a SHA-256, without the magic. Its state was a
+        // redundant 2L + 16-word value that the current algorithm cannot resume from.
+        using (var fs = File.Create(_checkpointFile))
+        using (var bw = new BinaryWriter(fs))
+        {
+            bw.Write(100000);
+            bw.Write(new byte[4 * 18]);
+            bw.Write(new byte[32]);
+        }
+
+        var exception = Assert.Throws<InvalidDataException>(() => _repository.Load());
+        Assert.Contains("earlier format", exception.Message);
+    }
+
+    [Fact]
+    public void Load_LastPointOfARun_ResumesToTheSameVerdictAndIsRejectedByAnotherTest()
+    {
+        // The benchmark saves every verified point; after a finished run the file holds the last one (k = K'), which
+        // must carry u_K for the resumed run to decide again. E = 13 runs on the host: K = 27, B = 5, K' = 30.
+        FermatPrpResult expected;
+        using (var source = new FermatAlgorithm(13, 3))
+        {
+            expected = source.Run();
+            _repository.Save(source.CreateCheckpoint());
+        }
+
+        var loaded = _repository.Load();
+        Assert.False(loaded.FinalK.IsEmpty);
+
+        using var resumed = new FermatAlgorithm(13, 3);
+        resumed.Restore(loaded);
+        var result = resumed.Run();
+        Assert.Equal(expected.Residue64, result.Residue64);
+        Assert.Equal(expected.IsProbablePrime, result.IsProbablePrime);
+
+        // A file of another test is refused when it is restored.
+        using var other = new FermatAlgorithm(29, 3);
+        Assert.Throws<ArgumentException>(() => other.Restore(loaded));
+    }
+
+    private static FermatPrpCheckpoint CreateCheckpoint() =>
+        new(61, 3, 7, 126, new uint[] { 1, 2, 3, 4 }, new uint[] { 5, 6, 7, 8 }, new uint[] { 9, 10, 11, 12 },
+            new uint[] { 13, 14, 15, 16 }, 3, 1);
 }

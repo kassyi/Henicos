@@ -4,7 +4,7 @@
 #include "Prelude/MathAndBitOps.hpp"
 #include "Prelude/ThreadAndMemory.hpp"
 #include "Prelude/Atomics.hpp"
-#include "Prelude/WarpAndHints.hpp"
 #include "Prelude/ErrorChannel.hpp"
+#include "Prelude/WarpAndHints.hpp"
 #include "Prelude/Sort.hpp"
 #include "StackLinq.cuh"

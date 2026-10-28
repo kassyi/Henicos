@@ -192,7 +192,7 @@ methods:
       placeholder: T
       types: [int, uint, float]
     returnType: T
-    returnDescription: The value of var held by thread srcLane.
+    returnDescription: The value of var held by lane srcLane % width of the caller's segment. Reading a lane that does not exist in the block is undefined on CUDA and an InvalidOperationException on the CPU paths.
     parameters:
       - name: mask
         type: uint
@@ -205,7 +205,7 @@ methods:
         description: The source lane index (0-31) whose value is broadcasted.
       - name: width
         type: int
-        description: The sub-warp width in threads (power of 2, default 32).
+        description: The sub-warp width in threads, 1, 2, 4, 8, 16 or 32 (default 32); any other width is undefined on CUDA, reported as GSH0095 when constant, and an InvalidOperationException on the CPU paths.
         defaultValue: 32
 
   - name: ShuffleDownSync
@@ -216,7 +216,7 @@ methods:
       placeholder: T
       types: [int, uint, float, double]
     returnType: T
-    returnDescription: The shifted value from the higher-index lane, or the original value if out of bounds.
+    returnDescription: The value from the lane delta above the caller, or the caller's own value when that lane is outside the caller's segment. Reading a lane that does not exist in the block is undefined on CUDA and an InvalidOperationException on the CPU paths.
     parameters:
       - name: mask
         type: uint
@@ -229,7 +229,7 @@ methods:
         description: The positive lane index offset to shift down by.
       - name: width
         type: int
-        description: The sub-warp width in threads (power of 2, default 32).
+        description: The sub-warp width in threads, 1, 2, 4, 8, 16 or 32 (default 32); any other width is undefined on CUDA, reported as GSH0095 when constant, and an InvalidOperationException on the CPU paths.
         defaultValue: 32
 
   - name: ShuffleUpSync
@@ -240,7 +240,7 @@ methods:
       placeholder: T
       types: [int, uint, float]
     returnType: T
-    returnDescription: The shifted value from the lower-index lane, or the original value if out of bounds.
+    returnDescription: The value from the lane delta below the caller, or the caller's own value when that lane is outside the caller's segment. Reading a lane that does not exist in the block is undefined on CUDA and an InvalidOperationException on the CPU paths.
     parameters:
       - name: mask
         type: uint
@@ -253,7 +253,7 @@ methods:
         description: The positive lane index offset to shift up by.
       - name: width
         type: int
-        description: The sub-warp width in threads (power of 2, default 32).
+        description: The sub-warp width in threads, 1, 2, 4, 8, 16 or 32 (default 32); any other width is undefined on CUDA, reported as GSH0095 when constant, and an InvalidOperationException on the CPU paths.
         defaultValue: 32
 
   - name: ShuffleXorSync
@@ -264,7 +264,7 @@ methods:
       placeholder: T
       types: [int, uint, float]
     returnType: T
-    returnDescription: The value from the XOR-calculated lane.
+    returnDescription: The value from the lane laneMask XOR the caller when that lane is in the caller's group of width lanes or an earlier group, or the caller's own value when it is in a later group. Reading a lane that does not exist in the block is undefined on CUDA and an InvalidOperationException on the CPU paths.
     parameters:
       - name: mask
         type: uint
@@ -277,7 +277,7 @@ methods:
         description: The bitmask used to XOR against the calling thread's lane ID.
       - name: width
         type: int
-        description: The sub-warp width in threads (power of 2, default 32).
+        description: The sub-warp width in threads, 1, 2, 4, 8, 16 or 32 (default 32); any other width is undefined on CUDA, reported as GSH0095 when constant, and an InvalidOperationException on the CPU paths.
         defaultValue: 32
 
   - name: BallotSync

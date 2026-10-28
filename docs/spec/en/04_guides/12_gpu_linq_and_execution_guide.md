@@ -72,7 +72,7 @@ GpuBigInt result = parallelSumExpr.Evaluate();
 ```
 
 ### 3.3 Vectorized Batch Operations (`AsVectorizedEnumerable`)
-* **Capabilities**: Enforces coalesced memory streaming for high-throughput batch operations on both `GpuBigIntArray` (`IGpuBigIntVectorExpression`) and `GpuBigFloatArray` (`IGpuBigFloatVectorExpression`), outputting a new device array. Supports scalar batch projections (`SelectAdd`, `SelectSubtract`, `SelectMultiply`, `SelectDivide`, and `SelectModulo` on `GpuBigIntArray`), element-wise zip operations (`ZipAdd`, `ZipSubtract`, `ZipMultiply`, `ZipDivide`, and `ZipModulo` on `GpuBigIntArray`), slicing (`Skip`, `Take`), stream compaction (`Where` on `GpuBigIntArray`), and full-vector reductions (`Sum`, `Max`, `Min`, `Average`, `Count`).
+* **Capabilities**: Enforces coalesced memory streaming for high-throughput batch operations on both `GpuBigIntArray` (`IGpuBigIntVectorExpression`) and `GpuBigFloatArray` (`IGpuBigFloatVectorExpression`), writing into result buffers that the expression keeps and lends as a view (or into a `targetResult`). Supports scalar batch projections (`SelectAdd`, `SelectSubtract`, `SelectMultiply`, `SelectDivide`, and `SelectModulo` on `GpuBigIntArray`), element-wise zip operations (`ZipAdd`, `ZipSubtract`, `ZipMultiply`, `ZipDivide`, and `ZipModulo` on `GpuBigIntArray`), slicing (`Skip`, `Take`), stream compaction (`Where` on `GpuBigIntArray`), and full-vector reductions (`Sum`, `Max`, `Min`, `Average`, `Count`).
 
 ```csharp
 // Supported: Multiplies or divides each element by a scalar value in parallel (SIMD)
@@ -80,8 +80,8 @@ IGpuBigIntVectorExpression vecExpr = array.AsVectorizedEnumerable()
                                           .SelectMultiply(scalar)
                                           .SelectModulo(modulus);
 
-// Evaluates to a new GpuBigIntArray
-GpuBigIntArray resultArray = vecExpr.Evaluate(workspace);
+// Evaluates into the expression's result buffers and lends them as a view (valid until the next evaluation)
+GpuBigIntArrayView resultArray = vecExpr.Evaluate(workspace);
 
 // Supported: Performs a high-throughput multi-pass tree sum over the vector expression
 GpuBigIntExpr vectorSumExpr = vecExpr.Sum();

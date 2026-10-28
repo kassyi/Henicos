@@ -117,6 +117,10 @@ public ref struct GpuBigFloatExpressionVisitor(
 }
 ```
 
+`VisitSub` on `GpuBigUFloat` throws `OverflowException` when `right` is greater than `left`: an unsigned value has no negative difference, as with a `checked` `uint` subtraction. A difference of zero is positive zero.
+
+`VisitMul` and `VisitDiv` go through `IGpuBigFloatArithmetic.Multiply` and `Divide`: the result has the width of the wider operand and holds the exact value rounded toward zero to that width, and a result exponent outside `int` throws `OverflowException` (the exponents are combined in `long`).
+
 ## Examples
 
 ### Evaluating a Deferred GpuBigFloat Binary Expression

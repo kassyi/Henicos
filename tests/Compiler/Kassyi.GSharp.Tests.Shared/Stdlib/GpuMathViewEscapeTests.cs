@@ -5,14 +5,16 @@ namespace Kassyi.GSharp.Tests.Shared.Stdlib;
 
 /// <summary>
 /// The GpuMath views (<c>GpuBigUIntView</c> and the other <see langword="ref struct"/> views) cannot leave the call that
-/// obtained them: C# itself rejects storing, capturing, boxing and disposing them (#630, design 6.3 RS1-RS10).
+/// obtained them: C# itself rejects storing, capturing, boxing and disposing them (#630, design 6.3 RS1-RS11).
 /// </summary>
 /// <remarks>
 /// The inputs are C# that does not compile, so they are test-case files compiled here against the GpuMath assembly of
 /// the test output. The valid file shows that the reference works, so each error comes from the escape it tests.
 /// Mutants: make <c>GpuBigUIntArray.GetElement</c> return <c>GpuBigUInt</c> again (the RS7 lines compile); drop
 /// <see langword="ref"/> from <c>GpuBigUIntArrayView</c> (RS4 of the array view compiles); add an implicit
-/// <c>GSharpArrayProxy</c> conversion to <c>GpuBigUIntView</c> (RS4 of the view compiles by boxing the proxy).
+/// <c>GSharpArrayProxy</c> conversion to <c>GpuBigUIntView</c> (RS4 of the view compiles by boxing the proxy). The RS11
+/// field line fails for any <see langword="ref struct"/> field type; the captured and boxed results fail only while the
+/// vector expressions return views (dropping <see langword="ref"/> from <c>GpuBigUIntArrayView</c> boxes the mask).
 /// Dropping <see langword="ref"/> from <c>GpuBigUIntView</c> does not compile GpuMath itself (its
 /// <see langword="scoped"/> parameters).
 /// </remarks>
@@ -39,6 +41,10 @@ public class GpuMathViewEscapeTests
                 ("CS9244", 62, 9, 62, 24),    // RS9: Nullable<T>
                 ("CS0029", 69, 24, 69, 29),   // RS4: boxing an array view
                 ("CS0029", 70, 26, 70, 45),   // RS4: boxing a view (no implicit GSharpArrayProxy conversion)
+                ("CS8345", 78, 13, 78, 31),   // RS11: a vector expression's result in a field of a class
+                ("CS8175", 95, 41, 95, 47),   // RS11: an integer vector result captured by a lambda
+                ("CS0029", 104, 30, 104, 56), // RS11: a float vector result boxed
+                ("CS0029", 105, 29, 105, 53), // RS11: a boolean vector result boxed
             ],
             Errors("Stdlib/GpuMathViewEscape.cs")
         );

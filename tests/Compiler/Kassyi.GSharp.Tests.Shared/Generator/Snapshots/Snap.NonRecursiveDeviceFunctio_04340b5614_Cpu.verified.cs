@@ -114,7 +114,7 @@ return false;
 case 1:
 __gsharp_switch_1_state_1:
 {
-auto __gsharp_warp_temp_0 = __gsharp_warp_shuffle_read_sync(__gsharp_root,0xFFFFFFFFu,__gsharp_id_0_data[__gsharp_ctx->__gsharp_id_1_lane],31-__gsharp_ctx->__gsharp_id_1_lane);
+auto __gsharp_warp_temp_0 = __gsharp_warp_shuffle_read_sync(__gsharp_root,0xFFFFFFFFu,__gsharp_id_0_data[__gsharp_ctx->__gsharp_id_1_lane],31-__gsharp_ctx->__gsharp_id_1_lane,32,""NonRecursiveDeviceFunctionBarrierKernels.cs(30,22)"");
 __gsharp_id_0_data[__gsharp_ctx->__gsharp_id_1_lane]=__gsharp_warp_temp_0;
 __gsharp_state = 0;return true;
 }
@@ -240,7 +240,7 @@ return false;
 
 case 1:
 {
-var __gsharp_warp_temp_0 = __gsharp_warp_shuffle_read_sync(__gsharp_ctx, 0xFFFFFFFFu, data[__gsharp_ctx.lane], 31 - __gsharp_ctx.lane);
+var __gsharp_warp_temp_0 = __gsharp_warp_shuffle_read_sync(__gsharp_ctx, 0xFFFFFFFFu, data[__gsharp_ctx.lane], 31 - __gsharp_ctx.lane, 32, "NonRecursiveDeviceFunctionBarrierKernels.cs(30,22)");
 data[__gsharp_ctx.lane] = __gsharp_warp_temp_0;
 {
 __gsharp_ctx.__gsharp_state = 0;

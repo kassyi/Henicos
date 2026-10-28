@@ -345,6 +345,15 @@ public sealed class CSharpCpuBigIntProvider : IGpuExecutionProvider
     }
 
     /// <inheritdoc/>
+    public void SqrtFloorCorrection(GpuWorkspace workspace, GpuBigUInt operand, GpuBigUInt rootSquared,
+        GpuBigUInt root, GpuBigUInt slack, GpuBigUInt trial)
+    {
+        // The host has the exact integer square root, so the estimate is not needed.
+        var a = Read(operand.DevicePointer, operand.NumWords);
+        Write(a.Sqrt(), root.DevicePointer, root.NumWords);
+    }
+
+    /// <inheritdoc/>
     public void ReciprocalMega(GpuWorkspace workspace, GpuBigUInt targetOperand, GpuBigUInt resultBuffer,
         int marginWords, int numBits, int marginBits, int iterations, int targetBits)
     {

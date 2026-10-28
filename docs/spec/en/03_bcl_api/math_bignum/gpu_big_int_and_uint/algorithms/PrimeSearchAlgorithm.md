@@ -13,7 +13,7 @@ description: "Provides high-performance prime generation utilizing CPU trial fac
 **Namespace:** `Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms`  
 **Assembly:** `Kassyi.GSharp.Stdlib.GpuMath.dll`
 
-Provides high-performance probable prime (PRP) generation utilizing CPU trial factoring and Fermat probable prime testing (formerly `GpuPrimeGenerator`).
+Generates probable primes (PRP) on the CPU with trial division and the Miller-Rabin test (formerly `GpuPrimeGenerator`). Nothing runs on the GPU, for any bit length.
 
 ```csharp
 public static class PrimeSearchAlgorithm
@@ -27,7 +27,7 @@ public static class PrimeSearchAlgorithm
 
 ## Generate(Int32)
 
-Generates a strictly positive probable prime (PRP) of the specified bit length. Uses cryptographic random candidate generation (`RandomNumberGenerator.Fill`) with the most-significant bit and least-significant bit set, CPU trial division against small primes, and multi-base Fermat PRP testing.
+Generates a strictly positive probable prime (PRP) of the specified bit length. Uses cryptographic random candidate generation (`RandomNumberGenerator.Fill`) with the most-significant bit and least-significant bit set, CPU trial division against small primes, and 10 rounds of the Miller-Rabin test with `BigInteger`.
 
 ```csharp
 public static BigInteger Generate(int bitLength);

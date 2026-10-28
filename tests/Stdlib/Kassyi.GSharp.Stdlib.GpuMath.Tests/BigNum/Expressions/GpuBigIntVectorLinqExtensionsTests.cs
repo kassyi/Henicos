@@ -54,7 +54,7 @@ public partial class GpuBigIntVectorLinqExtensionsTests : IDisposable
         return array;
     }
 
-    private BigInteger[] ToHostArray(GpuBigIntArray array)
+    private BigInteger[] ToHostArray(GpuBigIntArrayView array)
     {
         int length = array.Length;
         int words = array.WordsPerElement;

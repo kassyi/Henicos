@@ -56,7 +56,7 @@ Thrown if `workspace` is null.
 | --- | --- |
 | [DevicePointer](#devicepointer) | Gets the raw 64-bit device memory pointer to the first element in GPU address space. |
 | [Handle](#handle) | Gets the underlying GPU memory handle tracking device buffer allocation and lifetime. |
-| [IsTemp](#istemp) | Gets a value indicating whether this buffer represents an intermediate temporary buffer. |
+| [OwnsBuffer](#ownsbuffer) | Gets a value indicating whether this array owns its device buffer. |
 | [Length](#length) | Gets the number of elements in the array. |
 | [TotalWords](#totalwords) | Gets the total number of 32-bit words allocated for this array. |
 | [WordsPerElement](#wordsperelement) | Gets the number of 32-bit unsigned integer limbs per element. |
@@ -83,12 +83,12 @@ Gets the underlying GPU memory handle tracking device buffer allocation and life
 public GpuBigIntMemoryHandle Handle { get; }
 ```
 
-## IsTemp
+## OwnsBuffer
 
-Gets a value indicating whether this buffer represents an intermediate temporary buffer rented from the pool.
+Gets a value indicating whether this array owns its device buffer, so that disposing it returns the buffer to the pool. An array created by a constructor owns its buffer; a borrowed array used inside the library does not.
 
 ```csharp
-public bool IsTemp { get; }
+public bool OwnsBuffer { get; }
 ```
 
 ## Length
