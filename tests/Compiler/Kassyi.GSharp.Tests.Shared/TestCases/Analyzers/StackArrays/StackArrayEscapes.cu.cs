@@ -254,4 +254,48 @@ public static unsafe partial class StackArrayEscapeKernels
         Shift(ref s);
         output[0] = s.Length;
     }
+
+    // X16: a collection expression created in an argument, kept by a local function in a captured variable
+    [GpuKernel]
+    public static void ArgumentStorageLocalFunctionKernel(int[] output, int[] seed)
+    {
+        int[] outer = seed;
+
+        void Put(int[] v)
+        {
+            outer = v;
+        }
+
+        for (int it = 0; it < 2; it++)
+        {
+            if (it == 0) Put([11 * (it + 1), 0]);
+        }
+
+        output[0] = outer[0];
+    }
+
+    // X17: a collection expression created in an argument, kept through a ref argument that outlives it
+    [GpuKernel]
+    public static void ArgumentStorageRefKernel(int[] output, int[] seed)
+    {
+        int[] outer = seed;
+        for (int it = 0; it < 2; it++)
+        {
+            if (it == 0) KeepIn([11, 0], ref outer);
+        }
+
+        output[0] = outer[0];
+    }
+
+    // X18: a pointer stackalloc of an inner block (C# keeps it until the method returns)
+    [GpuKernel]
+    public static void PointerStackAllocKernel(int[] output)
+    {
+        int* p = null;
+        {
+            p = stackalloc int[4];
+        }
+
+        output[0] = p[0];
+    }
 }

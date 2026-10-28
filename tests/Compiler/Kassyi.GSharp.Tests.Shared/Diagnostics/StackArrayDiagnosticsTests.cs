@@ -42,7 +42,10 @@ public class StackArrayDiagnosticsTests
                 (Analyzer, 181, 13, 181, 26),
                 (Analyzer, 184, 17, 184, 26),
                 (Analyzer, 253, 9, 253, 23),
-                (Analyzer, 254, 15, 254, 20)
+                (Analyzer, 254, 15, 254, 20),
+                (Analyzer, 266, 13, 266, 22),
+                (Analyzer, 284, 42, 284, 51),
+                (Analyzer, 296, 13, 296, 34)
             ],
             diagnostics.Ranges(GSharpDiagnostics.StackArrayEscapes.Id));
     }
@@ -68,6 +71,9 @@ public class StackArrayDiagnosticsTests
     [InlineData("'a' cannot be assigned to a variable declared outside its scope", 184)]
     [InlineData("'s' cannot be reassigned", 253)]
     [InlineData("'s' cannot be passed by ref or out", 254)]
+    [InlineData("'collection expression' cannot be assigned to a variable declared outside its scope", 266)]
+    [InlineData("'collection expression' cannot be passed to a call with a ref or out argument that outlives it", 284)]
+    [InlineData("'stackalloc' cannot be assigned to a variable declared outside its scope", 296)]
     [Scenario(TestScenario.SadPath)]
     public async Task Test_StackArrayEscape_MessageNamesTheStorageAndTheUse(string messagePart, int line)
     {
@@ -89,6 +95,19 @@ public class StackArrayDiagnosticsTests
         Assert.Equal(
             [(Analyzer, 17, 20, 17, 33)],
             diagnostics.Ranges(GSharpDiagnostics.UnsupportedSyntax.Id, "'multidimensional array'"));
+    }
+
+    [Theory]
+    [InlineData("Cpu")]
+    [InlineData("Cuda")]
+    [Scenario(TestScenario.SadPath)]
+    public async Task Test_DynamicStackAllocInAnArgument_ReportsGsh0003AtTheSize(string dialect)
+    {
+        var diagnostics = await KernelDiagnostics.RunTestCaseAsync(Shapes, dialect);
+
+        Assert.Equal(
+            [(Analyzer, 45, 43, 45, 44)],
+            diagnostics.Ranges(GSharpDiagnostics.UnsupportedSyntax.Id, "'dynamic array size'"));
     }
 
     [Theory]

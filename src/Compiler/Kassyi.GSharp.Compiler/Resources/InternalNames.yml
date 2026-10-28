@@ -162,6 +162,8 @@ Prelude:
     TempAddress: { Value: __gsharp_temp_address, Prelude: Types.hpp }
     # A stack array viewed as a span (StackArrayLocals.AppendView). Declared by Types.hpp and by the CUDA prelude.
     StackAllocSpan: { Value: __gsharp_stackalloc_span, Prelude: Types.hpp }
+    # The zero fill of a stackalloc outside a declaration (StackAllocEmitter). Declared by Types.hpp and by the CUDA prelude.
+    StackAllocZero: { Value: __gsharp_stackalloc_zero, Prelude: Types.hpp }
     # NaN and infinity of float and double, which have no C++ literal (ConstexprLiteral). Declared by Platform.hpp for
     # the CPU dialects and by the CUDA prelude (../Prelude.cu).
     NaNSingle: { Value: __gsharp_nan_f, Prelude: Platform.hpp }

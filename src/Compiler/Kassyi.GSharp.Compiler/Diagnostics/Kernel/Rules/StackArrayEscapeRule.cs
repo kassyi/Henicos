@@ -365,8 +365,8 @@ internal sealed class StackArrayEscapeRule : ISyntaxValidationRule<MethodDeclara
                 case StackAllocArrayCreationExpressionSyntax or ImplicitStackAllocArrayCreationExpressionSyntax:
                     storages.Add(new Storage(GetScope(value), StackAllocName));
                     break;
-                case CollectionExpressionSyntax when model.GetTypeInfo(value).ConvertedType.IsArrayLikeType() &&
-                                                     model.GetTypeInfo(value).ConvertedType is not IArrayTypeSymbol:
+                // A collection expression to a span, or to an array outside a declaration, is a stack array as well
+                case CollectionExpressionSyntax when model.GetTypeInfo(value).ConvertedType.IsArrayLikeType():
                     storages.Add(new Storage(GetScope(value), CollectionExpressionName));
                     break;
                 case InvocationExpressionSyntax invocation:
