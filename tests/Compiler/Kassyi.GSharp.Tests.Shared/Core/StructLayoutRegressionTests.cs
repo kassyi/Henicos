@@ -367,7 +367,44 @@ public class StructLayoutRegressionSequentialTests
         Assert.Equal(((byte)7, 0L, (byte)0), (outs[0].A, outs[0].B, outs[0].C));
         Assert.Equal(((byte)0, 0L, (byte)0), (outs[1].A, outs[1].B, outs[1].C));
     }
+#endif
 
+    [Fact]
+    [TestTarget(ExecutionTarget.GpuExecution)]
+    [Scenario(TestScenario.HappyPath)]
+    public void R4b_StructWithArrayField_ByRef_PreservesFieldsAndWritesBackArrayElement()
+    {
+        var o = new int[3];
+        var b = new LayoutReproBag { N = 3, Data = [10, 20, 30] };
+
+        StructLayoutRegressionKernels.LaunchBagByRefKernel(ref b, o);
+
+        Assert.Equal([3, 3, 20], o);
+        Assert.Equal(99, b.Data[1]);
+        Assert.Equal(7, b.N);
+    }
+
+    [Fact]
+    [TestTarget(ExecutionTarget.GpuExecution)]
+    [Scenario(TestScenario.HappyPath)]
+    public void R9_InlineArrayWithArrayFieldInElement_ByRef_ReadsElementArray()
+    {
+        var o = new int[1];
+        var x = new LayoutReproArrOuter();
+        x.P[0] = new LayoutReproWithArr { Data = [1] };
+        x.P[1] = new LayoutReproWithArr { Data = [55] };
+
+        StructLayoutRegressionKernels.LaunchInlineArrFieldKernel(ref x, o);
+
+        Assert.Equal(55, o[0]);
+    }
+}
+
+#if GSHARP_CPU
+// GC.GetGCMemoryInfo counts the pinned objects of the whole process, so no other test may run beside these
+[Collection(TestCollections.DeviceExclusive)]
+public class StructLayoutPinTests
+{
     // The CPU launcher pins the array fields of a converted struct; every launch must free the pins, also when the
     // native code reports an error after the marshaling (R4g). A launch that leaked would leave 2 pinned arrays
     [Fact]
@@ -401,35 +438,5 @@ public class StructLayoutRegressionSequentialTests
         GC.Collect();
         return GC.GetGCMemoryInfo().PinnedObjectsCount;
     }
-#endif
-
-    [Fact]
-    [TestTarget(ExecutionTarget.GpuExecution)]
-    [Scenario(TestScenario.HappyPath)]
-    public void R4b_StructWithArrayField_ByRef_PreservesFieldsAndWritesBackArrayElement()
-    {
-        var o = new int[3];
-        var b = new LayoutReproBag { N = 3, Data = [10, 20, 30] };
-
-        StructLayoutRegressionKernels.LaunchBagByRefKernel(ref b, o);
-
-        Assert.Equal([3, 3, 20], o);
-        Assert.Equal(99, b.Data[1]);
-        Assert.Equal(7, b.N);
-    }
-
-    [Fact]
-    [TestTarget(ExecutionTarget.GpuExecution)]
-    [Scenario(TestScenario.HappyPath)]
-    public void R9_InlineArrayWithArrayFieldInElement_ByRef_ReadsElementArray()
-    {
-        var o = new int[1];
-        var x = new LayoutReproArrOuter();
-        x.P[0] = new LayoutReproWithArr { Data = [1] };
-        x.P[1] = new LayoutReproWithArr { Data = [55] };
-
-        StructLayoutRegressionKernels.LaunchInlineArrFieldKernel(ref x, o);
-
-        Assert.Equal(55, o[0]);
-    }
 }
+#endif

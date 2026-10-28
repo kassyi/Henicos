@@ -12,7 +12,8 @@ public static class TestCollections
 
     /// <summary>
     /// Runs tests with no other test in parallel, for tests that stall CUDA driver-wide resources on purpose
-    /// (e.g. a blocking host function, which delays every host function and device-wide synchronizing call of the context).
+    /// (e.g. a blocking host function, which delays every host function and device-wide synchronizing call of the context)
+    /// and for tests that read a process-wide counter (e.g. the pinned object count of the GC).
     /// </summary>
     /// <remarks>
     /// xUnit only discovers collection definitions inside the test assembly, so each assembly that uses this collection
