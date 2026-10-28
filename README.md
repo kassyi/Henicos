@@ -178,7 +178,7 @@ flowchart TD
 | **`Kassyi.GSharp.Core`**     | Core attributes (`[GpuKernel]`), execution primitives (`ThreadIndex`), hardware intrinsics, and macros.       |
 | **`Kassyi.GSharp.Compiler`** | Roslyn Source Generator and AST transpiler. Handles static analysis and generates host wrappers.              |
 | **`Kassyi.GSharp.Runtime`**  | High-performance runtime for AOT caching, RAII VRAM management (`GpuBuffer<T>`), and CUDA Driver API interop. |
-| **`Kassyi.GSharp.Stdlib`**   | GPU-accelerated math libraries (arbitrary-precision arithmetic, NTT, Fermat transforms).                      |
+| **`Kassyi.GSharp.Stdlib`**   | GPU-accelerated math libraries (arbitrary-precision arithmetic, NTT, Fermat PRP tests).                       |
 | **`Henicos.Benchmarks`**     | Hardware validation suites (Chudnovsky Pi calculation, large-scale modular reduction, SGEMM).                 |
 
 ---
