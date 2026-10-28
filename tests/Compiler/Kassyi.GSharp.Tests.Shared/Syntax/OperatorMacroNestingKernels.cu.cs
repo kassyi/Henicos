@@ -167,3 +167,79 @@ public static partial class OperatorMacroNestingOrderKernels
         result[1] = log.Last.Value;
     }
 }
+
+// Outer operators of other shapes around a nested operator macro: a shift (operands [left, extra]), a unary operator,
+// and an identity cast around the inner operator
+public struct ShapeValue
+{
+    public int Value;
+
+    public ShapeValue(int value) => Value = value;
+
+    [GpuOperatorMacro(typeof(OperatorMacroShapeKernels), nameof(OperatorMacroShapeKernels.Combine))]
+    public static ShapeValue operator -(ShapeValue left, ShapeValue right) => throw new GpuOnlyException();
+
+    [GpuOperatorMacro(typeof(OperatorMacroShapeKernels), nameof(OperatorMacroShapeKernels.Shift))]
+    public static ShapeValue operator <<(ShapeValue value, int shift) => throw new GpuOnlyException();
+
+    [GpuOperatorMacro(typeof(OperatorMacroShapeKernels), nameof(OperatorMacroShapeKernels.Negate))]
+    public static ShapeValue operator -(ShapeValue value) => throw new GpuOnlyException();
+}
+
+public static partial class OperatorMacroShapeKernels
+{
+    [GpuDeviceFunction]
+    public static void Combine(ref ShapeValue result, ShapeValue left, ShapeValue right)
+    {
+        result.Value = left.Value * 10 + right.Value;
+    }
+
+    [GpuDeviceFunction]
+    public static void Shift(ref ShapeValue result, ShapeValue value, int shift)
+    {
+        result.Value = value.Value * 100 + shift;
+    }
+
+    [GpuDeviceFunction]
+    public static void Negate(ref ShapeValue result, ShapeValue value)
+    {
+        result.Value = 7 - value.Value;
+    }
+
+    [GpuKernel]
+    public static void ShapesKernel(int[] result)
+    {
+        ShapeValue a = new ShapeValue(1);
+        ShapeValue b = new ShapeValue(2);
+        ShapeValue c = new ShapeValue(3);
+        c = (a - b) << 2;
+        result[0] = c.Value;
+        c = -(a - b);
+        result[1] = c.Value;
+        c = new ShapeValue(3);
+        c = c - (ShapeValue)(a - b);
+        result[2] = c.Value;
+    }
+}
+
+public static partial class OperatorMacroNestingOrderKernels
+{
+    // The context is a ref parameter here: what the inner call writes through it is memory
+    [GpuDeviceFunction]
+    public static RvValue CombineThroughRef(ref RvLast log, RvValue a, RvValue b)
+    {
+        RvValue c = new RvValue(0);
+        c = log.Last & (a & b);
+        return c;
+    }
+
+    [GpuKernel]
+    public static void InnerWritesRefContextKernel(int[] result)
+    {
+        RvLast log = default;
+        log.Last = new RvValue(3);
+        RvValue c = CombineThroughRef(ref log, new RvValue(1), new RvValue(2));
+        result[0] = c.Value;
+        result[1] = log.Last.Value;
+    }
+}

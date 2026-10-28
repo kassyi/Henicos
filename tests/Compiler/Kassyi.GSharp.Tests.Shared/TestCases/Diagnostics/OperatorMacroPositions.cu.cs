@@ -106,3 +106,45 @@ public static partial class OperatorMacroPositionKernels
         output[0] = w.Value;
     }
 }
+
+// A cast pair with user-defined conversions around an operator macro: the expansion would drop both conversions
+public struct CastValue
+{
+    public int Value;
+
+    [GpuOperatorMacro(typeof(CastOps), nameof(CastOps.Sub))]
+    public static CastValue operator -(CastValue left, CastValue right) => throw new InvalidOperationException();
+
+    public static explicit operator CastProbe(CastValue value) => new() { Value = value.Value + 1000 };
+}
+
+public struct CastProbe
+{
+    public int Value;
+
+    public static explicit operator CastValue(CastProbe probe) => new() { Value = probe.Value + 1 };
+}
+
+public static partial class CastOps
+{
+    [GpuDeviceFunction]
+    public static void Sub(ref CastValue result, CastValue left, CastValue right)
+    {
+    }
+}
+
+public static partial class OperatorMacroPositionKernels
+{
+    // GSH0003: a - b is under user-defined conversions, nested and at the top level
+    [GpuKernel]
+    [SkipSnapshotConsistency("Diagnostics case")]
+    public static void UserDefinedCastKernel(int[] output)
+    {
+        CastValue a = default;
+        CastValue b = default;
+        CastValue c = default;
+        c = c - (CastValue)(CastProbe)(a - b);
+        c = (CastValue)(CastProbe)(a - b);
+        output[0] = c.Value;
+    }
+}

@@ -63,4 +63,28 @@ public class OperatorMacroNestingTests : TranspilerTestBase
         // log.Last = 3 is read before a & b sets it to 9: Combine(3, 12) = 42 (102 if read after)
         Assert.Equal([42, 9], result);
     }
+
+    [SkippableFact]
+    [Scenario(TestScenario.Boundary)]
+    public void Test_NestedOperatorMacroUnderShiftUnaryAndIdentityCast_IsComputedIntoATemporary()
+    {
+        var result = new int[3];
+
+        OperatorMacroShapeKernels.LaunchShapesKernel(result, blockDimX: 1);
+
+        // (a - b) << 2 = Shift(Combine(1, 2), 2) = 1202; -(a - b) = 7 - 12; c - (ShapeValue)(a - b) = 3 * 10 + 12
+        Assert.Equal([1202, -5, 42], result);
+    }
+
+    [SkippableFact]
+    [Scenario(TestScenario.Boundary)]
+    public void Test_OperandBeforeInnerCallThatWritesARefContext_IsReadFirst()
+    {
+        var result = new int[2];
+
+        OperatorMacroNestingOrderKernels.LaunchInnerWritesRefContextKernel(result, blockDimX: 1);
+
+        // log.Last = 3 is read through the ref parameter before a & b sets it to 9: Combine(3, 12) = 42
+        Assert.Equal([42, 9], result);
+    }
 }

@@ -277,7 +277,7 @@ public class UnsupportedConstructDiagnosticsTests
     [InlineData("Cpu")]
     [InlineData("Cuda")]
     [Scenario(TestScenario.SadPath)]
-    public async Task Test_NestedOperatorMacroWithoutTemporary_ReportsGsh0003(string dialect)
+    public async Task Test_NestedOperatorMacroThatCannotBeExpanded_ReportsGsh0003(string dialect)
     {
         var diagnostics = await KernelDiagnostics.RunTestCaseAsync("Diagnostics/OperatorMacroPositions.cu.cs", dialect);
 
@@ -312,7 +312,24 @@ public class UnsupportedConstructDiagnosticsTests
         Assert.Equal(
             [(Analyzer, 59, 23, 59, 28)],
             diagnostics.Ranges(GSharpDiagnostics.UnsupportedSyntax.Id, "Operator macro '+' is expanded only as the right side of an assignment statement"));
-        Assert.Equal(5, diagnostics.Length);
+        Assert.Equal(7, diagnostics.Length);
+    }
+
+    // #759 item 6: the expansion passes the operator's own result on, so a user-defined conversion around it would be dropped;
+    // an identity cast is transparent (OperatorMacroNestingTests)
+    [Theory]
+    [InlineData("Cpu")]
+    [InlineData("Cuda")]
+    [Scenario(TestScenario.SadPath)]
+    public async Task Test_OperatorMacroUnderUserDefinedConversion_ReportsGsh0003(string dialect)
+    {
+        var diagnostics = await KernelDiagnostics.RunTestCaseAsync("Diagnostics/OperatorMacroPositions.cu.cs", dialect);
+
+        Assert.Equal(
+            [(Analyzer, 146, 40, 146, 45), (Analyzer, 147, 36, 147, 41)],
+            diagnostics.Ranges(
+                GSharpDiagnostics.UnsupportedSyntax.Id,
+                "Operator macro '-' is under a user-defined conversion, which its expansion would drop; assign it to a variable first, as in 't = a + b;', and convert the variable"));
     }
 
     // StructSizeDiagnostics: SharedMemory<double>(5000) is 40000 bytes; 4096 doubles (exactly 32768 bytes) and 10000

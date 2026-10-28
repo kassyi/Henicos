@@ -322,7 +322,7 @@ internal static class GpuOperatorMacroTranspiler
     public static bool TryResolve(AssignmentExpressionSyntax assignment, SemanticModel semanticModel, out OperatorMacro macro)
     {
         macro = default;
-        var operatorCall = UnwrapExpression(assignment.Right);
+        var operatorCall = UnwrapExpression(assignment.Right, semanticModel);
         var (operatorMethod, isLifted, isIncrementOrDecrement) = GetOperator(operatorCall, semanticModel);
         if (!assignment.IsKind(SyntaxKind.SimpleAssignmentExpression))
         {
@@ -397,7 +397,7 @@ internal static class GpuOperatorMacroTranspiler
             }
 
             var operandType = operatorMethod.Parameters[operandIndex].Type;
-            var unwrapped = UnwrapExpression(operand);
+            var unwrapped = UnwrapExpression(operand, semanticModel);
             var (innerMethod, innerLifted, innerIncrementOrDecrement) = GetOperator(unwrapped, semanticModel);
             if (GetMacroAttribute(innerMethod) is not { } innerAttr || innerMethod == null)
             {
@@ -506,7 +506,8 @@ internal static class GpuOperatorMacroTranspiler
     /// </summary>
     public static string? GetPositionFailure(ExpressionSyntax operatorExpression, SemanticModel semanticModel)
     {
-        if (IsExpandedPosition(operatorExpression, semanticModel))
+        var position = GetPosition(operatorExpression, semanticModel);
+        if (position == Position.Expanded)
         {
             return null;
         }
@@ -514,36 +515,51 @@ internal static class GpuOperatorMacroTranspiler
         var op = operatorExpression is AssignmentExpressionSyntax assignment
             ? assignment.OperatorToken.Text
             : GetOperatorText(operatorExpression);
-        return $"Operator macro '{op}' is expanded only as the right side of an assignment statement, or as an operand of an operator macro there; assign it to a variable first, as in 't = a + b;'";
+        return position == Position.UnderConversion
+            ? $"Operator macro '{op}' is under a user-defined conversion, which its expansion would drop; assign it to a variable first, as in 't = a + b;', and convert the variable"
+            : $"Operator macro '{op}' is expanded only as the right side of an assignment statement, or as an operand of an operator macro there; assign it to a variable first, as in 't = a + b;'";
     }
 
-    private static bool IsExpandedPosition(ExpressionSyntax operatorExpression, SemanticModel semanticModel)
+    private enum Position
+    {
+        Expanded,
+        Elsewhere,
+
+        // Inside a cast with a user-defined conversion, which the expansion would not apply (#759)
+        UnderConversion
+    }
+
+    private static Position GetPosition(ExpressionSyntax operatorExpression, SemanticModel semanticModel)
     {
         // A compound assignment is the statement itself; TryResolve reports it
         if (operatorExpression is AssignmentExpressionSyntax)
         {
-            return operatorExpression.Parent is ExpressionStatementSyntax;
+            return operatorExpression.Parent is ExpressionStatementSyntax ? Position.Expanded : Position.Elsewhere;
         }
 
         SyntaxNode node = operatorExpression;
-        while (node.Parent is ParenthesizedExpressionSyntax or CastExpressionSyntax)
+        while (node.Parent is ParenthesizedExpressionSyntax ||
+               (node.Parent is CastExpressionSyntax cast && IsTransparentCast(cast, semanticModel)))
         {
             node = node.Parent;
         }
 
         return node.Parent switch
         {
+            CastExpressionSyntax => Position.UnderConversion,
             AssignmentExpressionSyntax assignment when assignment.Right == node =>
-                assignment.Parent is ExpressionStatementSyntax,
-            BinaryExpressionSyntax or PrefixUnaryExpressionSyntax when node.Parent is ExpressionSyntax parent &&
-                GetMacroAttribute(GetOperator(parent, semanticModel).Method) != null =>
-                IsExpandedPosition(parent, semanticModel),
-            _ => false
+                assignment.Parent is ExpressionStatementSyntax ? Position.Expanded : Position.Elsewhere,
+            ExpressionSyntax parent and (BinaryExpressionSyntax or PrefixUnaryExpressionSyntax)
+                when GetMacroAttribute(GetOperator(parent, semanticModel).Method) != null =>
+                GetPosition(parent, semanticModel),
+            _ => Position.Elsewhere
         };
     }
 
-    // The operator call inside the parentheses and casts written around it: c = (T)(a + b) calls + (#641)
-    private static ExpressionSyntax UnwrapExpression(ExpressionSyntax expression)
+    // The operator call inside the parentheses and the transparent casts written around it: c = (T)(a + b) calls +
+    // (#641). A cast with a user-defined conversion stops it: the expansion passes the operator's own result on, so
+    // the conversion would be dropped (#759); GetPositionFailure reports the operator inside
+    private static ExpressionSyntax UnwrapExpression(ExpressionSyntax expression, SemanticModel semanticModel)
     {
         while (true)
         {
@@ -552,7 +568,7 @@ internal static class GpuOperatorMacroTranspiler
                 case ParenthesizedExpressionSyntax parenthesized:
                     expression = parenthesized.Expression;
                     break;
-                case CastExpressionSyntax cast:
+                case CastExpressionSyntax cast when IsTransparentCast(cast, semanticModel):
                     expression = cast.Expression;
                     break;
                 default:
@@ -560,6 +576,10 @@ internal static class GpuOperatorMacroTranspiler
             }
         }
     }
+
+    // A cast whose conversion is not user-defined (an identity or built-in conversion), which the expansion can skip
+    private static bool IsTransparentCast(CastExpressionSyntax cast, SemanticModel semanticModel) =>
+        semanticModel.GetSafeOperation(cast) is not IConversionOperation { Conversion.IsUserDefined: true };
 
     // The user-defined operator that a binary, unary, increment or decrement expression calls, whether it is lifted to
     // nullable operands, and whether it is an increment or decrement

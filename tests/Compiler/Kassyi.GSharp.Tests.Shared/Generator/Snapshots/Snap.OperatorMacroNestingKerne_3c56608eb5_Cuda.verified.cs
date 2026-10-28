@@ -47,6 +47,8 @@ global::Kassyi.GSharp.Tests.Shared.Syntax.OperatorMacroNestingKernels.WarmupFunc
 global::Kassyi.GSharp.Tests.Shared.Syntax.OperatorMacroNestingKernels.WarmupFunctionPointerNestedOrderKernel();
 global::Kassyi.GSharp.Tests.Shared.Syntax.OperatorMacroNestingOrderKernels.WarmupFunctionPointerInnerReadsMemoryKernel();
 global::Kassyi.GSharp.Tests.Shared.Syntax.OperatorMacroNestingOrderKernels.WarmupFunctionPointerInnerWritesContextKernel();
+global::Kassyi.GSharp.Tests.Shared.Syntax.OperatorMacroShapeKernels.WarmupFunctionPointerShapesKernel();
+global::Kassyi.GSharp.Tests.Shared.Syntax.OperatorMacroNestingOrderKernels.WarmupFunctionPointerInnerWritesRefContextKernel();
 }}}
 
 
@@ -78,6 +80,19 @@ inline __device__ void __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__Operat
 
 struct __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__RvValue;
 inline __device__ __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__RvValue __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroNestingOrderKernels__WriteFirst(GSharpArray<int> __gsharp_id_0_data, int __gsharp_id_1_value);
+
+struct __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ShapeValue;
+inline __device__ void __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroShapeKernels__Combine(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ShapeValue* __gsharp_id_0_result, __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ShapeValue __gsharp_id_1_left, __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ShapeValue __gsharp_id_2_right);
+
+struct __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ShapeValue;
+inline __device__ void __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroShapeKernels__Shift(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ShapeValue* __gsharp_id_0_result, __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ShapeValue __gsharp_id_1_value, int __gsharp_id_2_shift);
+
+struct __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ShapeValue;
+inline __device__ void __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroShapeKernels__Negate(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ShapeValue* __gsharp_id_0_result, __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ShapeValue __gsharp_id_1_value);
+
+struct __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__RvValue;
+struct __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__RvLast;
+inline __device__ __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__RvValue __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroNestingOrderKernels__CombineThroughRef(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__RvLast* __gsharp_id_0_log, __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__RvValue __gsharp_id_1_a, __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__RvValue __gsharp_id_2_b);
 
 #ifndef __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__NestValue__
 #define __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__NestValue__
@@ -233,6 +248,104 @@ return __gsharp_self;
 inline __device__ __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__RvValue __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroNestingOrderKernels__WriteFirst(GSharpArray<int> __gsharp_id_0_data, int __gsharp_id_1_value){
 __gsharp_id_0_data[0]=__gsharp_id_1_value;
 return __gsharp_ctor_Kassyi__GSharp__Tests__Shared__Syntax__RvValue(__gsharp_id_1_value);
+}
+
+#ifndef __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ShapeValue__
+#define __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ShapeValue__
+struct __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ShapeValue
+{
+int __gsharp_mb_Value;
+}
+;
+static_assert(sizeof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ShapeValue)==4,""Kassyi.GSharp.Tests.Shared.Syntax.ShapeValue: size"");
+static_assert(alignof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ShapeValue)==4,""Kassyi.GSharp.Tests.Shared.Syntax.ShapeValue: alignment"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ShapeValue,__gsharp_mb_Value)==0,""Kassyi.GSharp.Tests.Shared.Syntax.ShapeValue.Value: offset"");
+__device__ inline __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ShapeValue __gsharp_ctor_Kassyi__GSharp__Tests__Shared__Syntax__ShapeValue(int __gsharp_id_0_value) {
+__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ShapeValue __gsharp_self{};
+__gsharp_self.__gsharp_mb_Value=__gsharp_id_0_value;
+return __gsharp_self;
+}
+#endif
+inline __device__ void __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroShapeKernels__Combine(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ShapeValue* __gsharp_id_0_result, __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ShapeValue __gsharp_id_1_left, __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ShapeValue __gsharp_id_2_right){
+(*__gsharp_id_0_result).__gsharp_mb_Value=__gsharp_id_1_left.__gsharp_mb_Value*10+__gsharp_id_2_right.__gsharp_mb_Value;
+}
+
+#ifndef __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ShapeValue__
+#define __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ShapeValue__
+struct __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ShapeValue
+{
+int __gsharp_mb_Value;
+}
+;
+static_assert(sizeof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ShapeValue)==4,""Kassyi.GSharp.Tests.Shared.Syntax.ShapeValue: size"");
+static_assert(alignof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ShapeValue)==4,""Kassyi.GSharp.Tests.Shared.Syntax.ShapeValue: alignment"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ShapeValue,__gsharp_mb_Value)==0,""Kassyi.GSharp.Tests.Shared.Syntax.ShapeValue.Value: offset"");
+__device__ inline __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ShapeValue __gsharp_ctor_Kassyi__GSharp__Tests__Shared__Syntax__ShapeValue(int __gsharp_id_0_value) {
+__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ShapeValue __gsharp_self{};
+__gsharp_self.__gsharp_mb_Value=__gsharp_id_0_value;
+return __gsharp_self;
+}
+#endif
+inline __device__ void __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroShapeKernels__Shift(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ShapeValue* __gsharp_id_0_result, __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ShapeValue __gsharp_id_1_value, int __gsharp_id_2_shift){
+(*__gsharp_id_0_result).__gsharp_mb_Value=__gsharp_id_1_value.__gsharp_mb_Value*100+__gsharp_id_2_shift;
+}
+
+#ifndef __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ShapeValue__
+#define __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ShapeValue__
+struct __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ShapeValue
+{
+int __gsharp_mb_Value;
+}
+;
+static_assert(sizeof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ShapeValue)==4,""Kassyi.GSharp.Tests.Shared.Syntax.ShapeValue: size"");
+static_assert(alignof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ShapeValue)==4,""Kassyi.GSharp.Tests.Shared.Syntax.ShapeValue: alignment"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ShapeValue,__gsharp_mb_Value)==0,""Kassyi.GSharp.Tests.Shared.Syntax.ShapeValue.Value: offset"");
+__device__ inline __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ShapeValue __gsharp_ctor_Kassyi__GSharp__Tests__Shared__Syntax__ShapeValue(int __gsharp_id_0_value) {
+__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ShapeValue __gsharp_self{};
+__gsharp_self.__gsharp_mb_Value=__gsharp_id_0_value;
+return __gsharp_self;
+}
+#endif
+inline __device__ void __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroShapeKernels__Negate(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ShapeValue* __gsharp_id_0_result, __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ShapeValue __gsharp_id_1_value){
+(*__gsharp_id_0_result).__gsharp_mb_Value=7-__gsharp_id_1_value.__gsharp_mb_Value;
+}
+
+#ifndef __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__RvValue__
+#define __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__RvValue__
+struct __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__RvValue
+{
+int __gsharp_mb_Value;
+}
+;
+static_assert(sizeof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__RvValue)==4,""Kassyi.GSharp.Tests.Shared.Syntax.RvValue: size"");
+static_assert(alignof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__RvValue)==4,""Kassyi.GSharp.Tests.Shared.Syntax.RvValue: alignment"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__RvValue,__gsharp_mb_Value)==0,""Kassyi.GSharp.Tests.Shared.Syntax.RvValue.Value: offset"");
+__device__ inline __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__RvValue __gsharp_ctor_Kassyi__GSharp__Tests__Shared__Syntax__RvValue(int __gsharp_id_0_value) {
+__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__RvValue __gsharp_self{};
+__gsharp_self.__gsharp_mb_Value=__gsharp_id_0_value;
+return __gsharp_self;
+}
+#endif
+#ifndef __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__RvLast__
+#define __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__RvLast__
+struct __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__RvLast
+{
+__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__RvValue __gsharp_mb_Last;
+}
+;
+static_assert(sizeof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__RvLast)==4,""Kassyi.GSharp.Tests.Shared.Syntax.RvLast: size"");
+static_assert(alignof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__RvLast)==4,""Kassyi.GSharp.Tests.Shared.Syntax.RvLast: alignment"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__RvLast,__gsharp_mb_Last)==0,""Kassyi.GSharp.Tests.Shared.Syntax.RvLast.Last: offset"");
+#endif
+inline __device__ __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__RvValue __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroNestingOrderKernels__CombineThroughRef(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__RvLast* __gsharp_id_0_log, __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__RvValue __gsharp_id_1_a, __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__RvValue __gsharp_id_2_b){
+__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__RvValue __gsharp_id_3_c = __gsharp_ctor_Kassyi__GSharp__Tests__Shared__Syntax__RvValue(0);
+{
+auto __gsharp_seq_0 = (*__gsharp_id_0_log).__gsharp_mb_Last;
+__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__RvValue __gsharp_seq_1{};
+__gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroNestingOrderKernels__CombineLast(&(*__gsharp_id_0_log),&__gsharp_seq_1,__gsharp_id_1_a,__gsharp_id_2_b);
+__gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroNestingOrderKernels__CombineLast(&(*__gsharp_id_0_log),&__gsharp_id_3_c,__gsharp_seq_0,__gsharp_seq_1);
+}
+return __gsharp_id_3_c;
 }
 
 ";
@@ -956,6 +1069,314 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerInnerWritesContextKernel();
 IntPtr hfunc = s_hfunc_InnerWritesContextKernel!.Value;
+try
+{
+void** kernelParams = stackalloc void*[1];
+// Marshal device array: result
+IntPtr* proxy_result = stackalloc IntPtr[2];
+proxy_result[0] = result;
+((int*)(proxy_result + 1))[0] = 0; // Length is unknown for raw IntPtr
+kernelParams[0] = proxy_result;
+CudaException.ThrowIfError(CudaDriverApi.cuLaunchKernel(
+hfunc,
+gridDimX, gridDimY, gridDimZ, // Grid dim
+blockDimX, blockDimY, blockDimZ, // Block dim
+sharedMemBytes, // Shared mem
+hStream, // Stream
+kernelParams,
+IntPtr.Zero // Extra
+));
+}
+finally
+{
+}
+}
+}
+#pragma warning restore CS8500
+public const string InnerWritesRefContextKernel_Source = @"#ifndef __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__RvValue__
+#define __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__RvValue__
+struct __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__RvValue
+{
+int __gsharp_mb_Value;
+}
+;
+static_assert(sizeof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__RvValue)==4,""Kassyi.GSharp.Tests.Shared.Syntax.RvValue: size"");
+static_assert(alignof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__RvValue)==4,""Kassyi.GSharp.Tests.Shared.Syntax.RvValue: alignment"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__RvValue,__gsharp_mb_Value)==0,""Kassyi.GSharp.Tests.Shared.Syntax.RvValue.Value: offset"");
+__device__ inline __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__RvValue __gsharp_ctor_Kassyi__GSharp__Tests__Shared__Syntax__RvValue(int __gsharp_id_0_value) {
+__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__RvValue __gsharp_self{};
+__gsharp_self.__gsharp_mb_Value=__gsharp_id_0_value;
+return __gsharp_self;
+}
+#endif
+#ifndef __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__RvLast__
+#define __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__RvLast__
+struct __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__RvLast
+{
+__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__RvValue __gsharp_mb_Last;
+}
+;
+static_assert(sizeof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__RvLast)==4,""Kassyi.GSharp.Tests.Shared.Syntax.RvLast: size"");
+static_assert(alignof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__RvLast)==4,""Kassyi.GSharp.Tests.Shared.Syntax.RvLast: alignment"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__RvLast,__gsharp_mb_Last)==0,""Kassyi.GSharp.Tests.Shared.Syntax.RvLast.Last: offset"");
+#endif
+extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroNestingOrderKernels__InnerWritesRefContextKernel(GSharpArray<int> __gsharp_id_0_result){
+__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__RvLast __gsharp_id_1_log = {};
+__gsharp_id_1_log.__gsharp_mb_Last=__gsharp_ctor_Kassyi__GSharp__Tests__Shared__Syntax__RvValue(3);
+__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__RvValue __gsharp_id_2_c = __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroNestingOrderKernels__CombineThroughRef(&__gsharp_id_1_log,__gsharp_ctor_Kassyi__GSharp__Tests__Shared__Syntax__RvValue(1),__gsharp_ctor_Kassyi__GSharp__Tests__Shared__Syntax__RvValue(2));
+__gsharp_id_0_result[0]=__gsharp_id_2_c.__gsharp_mb_Value;
+__gsharp_id_0_result[1]=__gsharp_id_1_log.__gsharp_mb_Last.__gsharp_mb_Value;
+}
+";
+public static readonly string InnerWritesRefContextKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +InnerWritesRefContextKernel_Source;
+private static IntPtr? s_hfunc_InnerWritesRefContextKernel;
+/// <summary>Preloads the CUDA module and resolves the function pointer for this kernel.</summary>
+public static void WarmupFunctionPointerInnerWritesRefContextKernel()
+{
+if (s_hfunc_InnerWritesRefContextKernel.HasValue) return;
+IntPtr hModule = global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetOrLoadModule();
+s_hfunc_InnerWritesRefContextKernel = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.GetFunction(hModule, "__gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroNestingOrderKernels__InnerWritesRefContextKernel");
+}
+#pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
+[global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
+[global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
+public static unsafe void LaunchInnerWritesRefContextKernel(global::System.Int32[] result, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, IntPtr hStream = default, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
+{
+if (result is null){
+throw new global::System.ArgumentNullException(nameof(result));
+}
+if (result.Length == 0){
+throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(result));
+}
+using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
+{
+WarmupFunctionPointerInnerWritesRefContextKernel();
+IntPtr hfunc = s_hfunc_InnerWritesRefContextKernel!.Value;
+IntPtr d_result = IntPtr.Zero;
+try
+{
+void** kernelParams = stackalloc void*[1];
+// Marshal array: result
+int result_size = result.Length * sizeof(global::System.Int32);
+IntPtr* proxy_result = stackalloc IntPtr[2];
+proxy_result[0] = IntPtr.Zero;
+((int*)(proxy_result + 1))[0] = result.Length;
+if (result_size > 0)
+{
+CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_result, (IntPtr)result_size, hStream));
+proxy_result[0] = d_result;
+fixed (global::System.Int32* p_result = result)
+{
+CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoDAsync_v2(d_result, (IntPtr)p_result, (IntPtr)result_size, hStream));
+CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
+}
+}
+kernelParams[0] = proxy_result;
+CudaException.ThrowIfError(CudaDriverApi.cuLaunchKernel(
+hfunc,
+gridDimX, gridDimY, gridDimZ, // Grid dim
+blockDimX, blockDimY, blockDimZ, // Block dim
+sharedMemBytes, // Shared mem
+hStream, // Stream
+kernelParams,
+IntPtr.Zero // Extra
+));
+// Copy back array: result
+if (result_size > 0 && d_result != IntPtr.Zero)
+{
+fixed (global::System.Int32* p_result = result)
+{
+CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoHAsync_v2((IntPtr)p_result, d_result, (IntPtr)result_size, hStream));
+CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
+}
+}
+}
+finally
+{
+if (d_result != IntPtr.Zero) CudaDriverApi.cuMemFreeAsync(d_result, hStream);
+}
+}
+}
+#pragma warning restore CS8500
+#pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
+[global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
+[global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
+public static unsafe void LaunchInnerWritesRefContextKernelPtr(IntPtr result, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, IntPtr hStream = default, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
+{
+using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
+{
+WarmupFunctionPointerInnerWritesRefContextKernel();
+IntPtr hfunc = s_hfunc_InnerWritesRefContextKernel!.Value;
+try
+{
+void** kernelParams = stackalloc void*[1];
+// Marshal device array: result
+IntPtr* proxy_result = stackalloc IntPtr[2];
+proxy_result[0] = result;
+((int*)(proxy_result + 1))[0] = 0; // Length is unknown for raw IntPtr
+kernelParams[0] = proxy_result;
+CudaException.ThrowIfError(CudaDriverApi.cuLaunchKernel(
+hfunc,
+gridDimX, gridDimY, gridDimZ, // Grid dim
+blockDimX, blockDimY, blockDimZ, // Block dim
+sharedMemBytes, // Shared mem
+hStream, // Stream
+kernelParams,
+IntPtr.Zero // Extra
+));
+}
+finally
+{
+}
+}
+}
+#pragma warning restore CS8500
+}
+}
+
+
+// File: Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroShapeKernels.g.cs
+// <auto-generated/>
+#nullable enable
+using System;
+#pragma warning disable RS1035 // Do not use APIs banned for analyzers
+#pragma warning disable RS1016
+#pragma warning disable RS1034
+using System.Text;
+using System.Runtime.InteropServices;
+using global::Kassyi.GSharp.Core;
+using global::Kassyi.GSharp.Runtime.Interop;
+using static global::Kassyi.GSharp.Core.ManagedGpuContext;
+using global::Kassyi.ZeroAlloc.Linq;
+namespace Kassyi.GSharp.Tests.Shared.Syntax
+{
+public partial class OperatorMacroShapeKernels
+{
+[global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
+[global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
+public static partial class AotContexts
+{
+}
+public const string ShapesKernel_Source = @"#ifndef __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ShapeValue__
+#define __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ShapeValue__
+struct __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ShapeValue
+{
+int __gsharp_mb_Value;
+}
+;
+static_assert(sizeof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ShapeValue)==4,""Kassyi.GSharp.Tests.Shared.Syntax.ShapeValue: size"");
+static_assert(alignof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ShapeValue)==4,""Kassyi.GSharp.Tests.Shared.Syntax.ShapeValue: alignment"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ShapeValue,__gsharp_mb_Value)==0,""Kassyi.GSharp.Tests.Shared.Syntax.ShapeValue.Value: offset"");
+__device__ inline __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ShapeValue __gsharp_ctor_Kassyi__GSharp__Tests__Shared__Syntax__ShapeValue(int __gsharp_id_0_value) {
+__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ShapeValue __gsharp_self{};
+__gsharp_self.__gsharp_mb_Value=__gsharp_id_0_value;
+return __gsharp_self;
+}
+#endif
+extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroShapeKernels__ShapesKernel(GSharpArray<int> __gsharp_id_0_result){
+__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ShapeValue __gsharp_id_1_a = __gsharp_ctor_Kassyi__GSharp__Tests__Shared__Syntax__ShapeValue(1);
+__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ShapeValue __gsharp_id_2_b = __gsharp_ctor_Kassyi__GSharp__Tests__Shared__Syntax__ShapeValue(2);
+__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ShapeValue __gsharp_id_3_c = __gsharp_ctor_Kassyi__GSharp__Tests__Shared__Syntax__ShapeValue(3);
+{
+__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ShapeValue __gsharp_seq_0{};
+__gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroShapeKernels__Combine(&__gsharp_seq_0,__gsharp_id_1_a,__gsharp_id_2_b);
+__gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroShapeKernels__Shift(&__gsharp_id_3_c,__gsharp_seq_0,2);
+}
+__gsharp_id_0_result[0]=__gsharp_id_3_c.__gsharp_mb_Value;
+{
+__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ShapeValue __gsharp_seq_1{};
+__gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroShapeKernels__Combine(&__gsharp_seq_1,__gsharp_id_1_a,__gsharp_id_2_b);
+__gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroShapeKernels__Negate(&__gsharp_id_3_c,__gsharp_seq_1);
+}
+__gsharp_id_0_result[1]=__gsharp_id_3_c.__gsharp_mb_Value;
+__gsharp_id_3_c=__gsharp_ctor_Kassyi__GSharp__Tests__Shared__Syntax__ShapeValue(3);
+{
+__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ShapeValue __gsharp_seq_2{};
+__gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroShapeKernels__Combine(&__gsharp_seq_2,__gsharp_id_1_a,__gsharp_id_2_b);
+__gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroShapeKernels__Combine(&__gsharp_id_3_c,__gsharp_id_3_c,__gsharp_seq_2);
+}
+__gsharp_id_0_result[2]=__gsharp_id_3_c.__gsharp_mb_Value;
+}
+";
+public static readonly string ShapesKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +ShapesKernel_Source;
+private static IntPtr? s_hfunc_ShapesKernel;
+/// <summary>Preloads the CUDA module and resolves the function pointer for this kernel.</summary>
+public static void WarmupFunctionPointerShapesKernel()
+{
+if (s_hfunc_ShapesKernel.HasValue) return;
+IntPtr hModule = global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetOrLoadModule();
+s_hfunc_ShapesKernel = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.GetFunction(hModule, "__gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroShapeKernels__ShapesKernel");
+}
+#pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
+[global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
+[global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
+public static unsafe void LaunchShapesKernel(global::System.Int32[] result, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, IntPtr hStream = default, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
+{
+if (result is null){
+throw new global::System.ArgumentNullException(nameof(result));
+}
+if (result.Length == 0){
+throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(result));
+}
+using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
+{
+WarmupFunctionPointerShapesKernel();
+IntPtr hfunc = s_hfunc_ShapesKernel!.Value;
+IntPtr d_result = IntPtr.Zero;
+try
+{
+void** kernelParams = stackalloc void*[1];
+// Marshal array: result
+int result_size = result.Length * sizeof(global::System.Int32);
+IntPtr* proxy_result = stackalloc IntPtr[2];
+proxy_result[0] = IntPtr.Zero;
+((int*)(proxy_result + 1))[0] = result.Length;
+if (result_size > 0)
+{
+CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_result, (IntPtr)result_size, hStream));
+proxy_result[0] = d_result;
+fixed (global::System.Int32* p_result = result)
+{
+CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoDAsync_v2(d_result, (IntPtr)p_result, (IntPtr)result_size, hStream));
+CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
+}
+}
+kernelParams[0] = proxy_result;
+CudaException.ThrowIfError(CudaDriverApi.cuLaunchKernel(
+hfunc,
+gridDimX, gridDimY, gridDimZ, // Grid dim
+blockDimX, blockDimY, blockDimZ, // Block dim
+sharedMemBytes, // Shared mem
+hStream, // Stream
+kernelParams,
+IntPtr.Zero // Extra
+));
+// Copy back array: result
+if (result_size > 0 && d_result != IntPtr.Zero)
+{
+fixed (global::System.Int32* p_result = result)
+{
+CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoHAsync_v2((IntPtr)p_result, d_result, (IntPtr)result_size, hStream));
+CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
+}
+}
+}
+finally
+{
+if (d_result != IntPtr.Zero) CudaDriverApi.cuMemFreeAsync(d_result, hStream);
+}
+}
+}
+#pragma warning restore CS8500
+#pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
+[global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
+[global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
+public static unsafe void LaunchShapesKernelPtr(IntPtr result, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, IntPtr hStream = default, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
+{
+using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
+{
+WarmupFunctionPointerShapesKernel();
+IntPtr hfunc = s_hfunc_ShapesKernel!.Value;
 try
 {
 void** kernelParams = stackalloc void*[1];
