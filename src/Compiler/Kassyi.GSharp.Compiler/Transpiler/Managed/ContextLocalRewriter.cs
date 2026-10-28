@@ -35,7 +35,7 @@ internal sealed class ContextLocalRewriter(
         var counts = new Dictionary<string, int>(StringComparer.Ordinal);
         foreach (var node in body.DescendantNodesAndSelf())
         {
-            if (node is LabeledStatementSyntax labeled && !IsLoweringLabel(labeled))
+            if (node is LabeledStatementSyntax labeled && !LoweringIdentity.IsLoweringLabel(labeled))
             {
                 var name = labeled.Identifier.ValueText;
                 counts[name] = counts.TryGetValue(name, out var count) ? count + 1 : 1;
@@ -46,7 +46,7 @@ internal sealed class ContextLocalRewriter(
         var ordinals = new Dictionary<string, int>(StringComparer.Ordinal);
         foreach (var node in body.DescendantNodesAndSelf())
         {
-            if (node is not LabeledStatementSyntax labeled || IsLoweringLabel(labeled) ||
+            if (node is not LabeledStatementSyntax labeled || LoweringIdentity.IsLoweringLabel(labeled) ||
                 counts[labeled.Identifier.ValueText] < 2)
             {
                 continue;
@@ -61,9 +61,6 @@ internal sealed class ContextLocalRewriter(
 
         return renames;
     }
-
-    private static bool IsLoweringLabel(LabeledStatementSyntax labeled) =>
-        labeled.Identifier.ValueText.StartsWith(GSharpInternalNames.Lowering.LabelPrefix, StringComparison.Ordinal);
 
     public override SyntaxNode? VisitLabeledStatement(LabeledStatementSyntax node)
     {
