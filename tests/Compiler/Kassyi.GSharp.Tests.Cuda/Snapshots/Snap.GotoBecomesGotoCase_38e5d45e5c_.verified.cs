@@ -12,6 +12,7 @@
             __gsharp_ctx->value = data[__gsharp_ctx->tid];
             if (!(flag != 0))
                 goto case 2;
+            __gsharp_yielded_for_block_barrier = true;
             __gsharp_state = 1;
             return;
         }
