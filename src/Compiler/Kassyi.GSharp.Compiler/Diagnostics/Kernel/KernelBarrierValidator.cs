@@ -1,6 +1,3 @@
-using Microsoft.CodeAnalysis.FlowAnalysis;
-using Microsoft.CodeAnalysis.Operations;
-
 namespace Kassyi.GSharp.Compiler.Diagnostics.Kernel;
 
 /// <summary>
@@ -9,15 +6,16 @@ namespace Kassyi.GSharp.Compiler.Diagnostics.Kernel;
 /// </summary>
 /// <remarks>
 /// A call to a device function that reaches a barrier suspends the caller like the barrier itself, so it counts as a
-/// barrier for the cross-barrier rules. The divergence rule (GSH0037) counts only calls that reach a block barrier.
-/// The same rules apply to the body of such a device function (<paramref name="isKernel"/> is false), which is lowered
-/// into a state machine as well.
+/// barrier for the cross-barrier rules. The divergence rule (GSH0037) counts the block and grid barriers and the calls
+/// that reach one, on the control flow graph (<see cref="UniformityAnalysis"/>). The same rules apply to the body of
+/// such a device function (<paramref name="isKernel"/> is false), which is lowered into a state machine as well.
 /// </remarks>
 internal readonly ref struct KernelBarrierValidator(
     SyntaxNodeAnalysisContext context,
     MethodDeclarationSyntax methodDecl,
     SemanticModel semanticModel,
-    bool isKernel)
+    bool isKernel,
+    MethodFlowGraph flow)
 {
     private readonly ImmutableArray<InvocationExpressionSyntax>.Builder _barriers =
         ImmutableArray.CreateBuilder<InvocationExpressionSyntax>();
@@ -40,8 +38,9 @@ internal readonly ref struct KernelBarrierValidator(
     // call that suspends); only then is the control flow graph built for the cross-barrier rules
     private readonly StrongBox<bool> _hasSplitPoint = new();
 
-    // Computed on the first branch around a block barrier
-    private readonly ThreadVarianceAnalysis _variance = new(semanticModel, methodDecl);
+    // The barriers and barrier-reaching calls that every thread of the block or the grid must reach (GSH0037)
+    private readonly ImmutableArray<(InvocationExpressionSyntax Barrier, SyncScope Scope)>.Builder _syncPoints =
+        ImmutableArray.CreateBuilder<(InvocationExpressionSyntax Barrier, SyncScope Scope)>();
 
     public void Analyze()
     {
@@ -60,13 +59,16 @@ internal readonly ref struct KernelBarrierValidator(
         // graph: every split point counts, also a grid sync or a warp shuffle that the barrier list below leaves out
         ValidateCrossBarrierLocals();
 
+        // 4. Barriers that only some of the threads reach (GSH0037), on the control flow graph
+        ValidateDivergentBarriers();
+
         // Fast-path: If no barriers exist, the remaining cross-barrier constraints are completely skipped
         if (_barriers.Count == 0)
         {
             return;
         }
 
-        // 4. Post-Barrier Semantic Constraint Validations
+        // 5. Post-Barrier Semantic Constraint Validations
         ValidateRecursiveLocalFunctions();
         ValidateCrossBarrierGotos();
     }
@@ -215,13 +217,23 @@ internal readonly ref struct KernelBarrierValidator(
                     if (isSyncThreads)
                     {
                         _barriers.Add(inv);
-                        InspectBarrierAncestors(inv, isBlockBarrier: true);
+                        _syncPoints.Add((inv, SyncScope.Block));
+                        InspectBarrierAncestors(inv);
                     }
                     else if (suspendingCallee != null)
                     {
                         _barriers.Add(inv);
-                        InspectBarrierAncestors(inv,
-                            SuspensionAnalysis.ReachesBlockBarrier(suspendingCallee, semanticModel.Compilation));
+                        if (SuspensionAnalysis.ReachesBlockBarrier(suspendingCallee, semanticModel.Compilation))
+                        {
+                            _syncPoints.Add((inv, SyncScope.Block));
+                        }
+
+                        InspectBarrierAncestors(inv);
+                    }
+                    else if (intrinsic.Kind == SyncIntrinsicKind.GridBarrier)
+                    {
+                        // B2: a grid barrier written directly in a branch
+                        _syncPoints.Add((inv, SyncScope.Grid));
                     }
 
                     break;
@@ -256,27 +268,14 @@ internal readonly ref struct KernelBarrierValidator(
     }
 
     /// <summary>
-    /// Validates immediate syntactic ancestors of a barrier invocation (GSH0037, GSH0043, GSH0045, and GSH0003 for a
-    /// barrier in the scope of a <c>using</c>).
+    /// Validates the syntactic ancestors of a barrier invocation (GSH0043, GSH0045, and GSH0003 for a barrier in the
+    /// scope of a <c>using</c>): rules about where the barrier is written, not about the control flow.
     /// </summary>
     /// <param name="barrier">A block barrier, or a call to a device function that reaches a barrier.</param>
-    /// <param name="isBlockBarrier">Whether every thread of the block has to reach <paramref name="barrier"/> (GSH0037).</param>
-    private void InspectBarrierAncestors(InvocationExpressionSyntax barrier, bool isBlockBarrier)
+    private void InspectBarrierAncestors(InvocationExpressionSyntax barrier)
     {
-        SyntaxNode previous = barrier;
         for (var ancestor = barrier.Parent; ancestor != null && ancestor != methodDecl; ancestor = ancestor.Parent)
         {
-            var child = previous;
-            previous = ancestor;
-
-            // GSH0037: only the threads for which a thread-variant condition holds reach the barrier
-            if (isBlockBarrier && GetDivergingCondition(ancestor, child) is { } condition && _variance.IsThreadVariant(condition))
-            {
-                context.ReportDiagnostic(
-                    GSharpDiagnostics.DivergentBarrierProhibited,
-                    barrier.GetLocation());
-            }
-
             switch (ancestor)
             {
                 // GSH0043: fixed block barrier prohibited
@@ -426,7 +425,7 @@ internal readonly ref struct KernelBarrierValidator(
     /// </summary>
     private void ValidateCrossBarrierLocals()
     {
-        if (_trackedLocals.Count == 0 || !_hasSplitPoint.Value || !TryCreateControlFlowGraph(out var graph))
+        if (_trackedLocals.Count == 0 || !_hasSplitPoint.Value || !flow.TryGetGraph(out var graph))
         {
             return;
         }
@@ -469,25 +468,27 @@ internal readonly ref struct KernelBarrierValidator(
         }
     }
 
-    // The control flow graph of the body; none while the body does not bind (being edited), so nothing is reported then
-    private bool TryCreateControlFlowGraph([NotNullWhen(true)] out ControlFlowGraph? graph)
+    /// <summary>
+    /// Reports GSH0037 for a barrier, or a call that reaches one, that a thread-variant branch lets only some threads
+    /// reach while the others reach another split point (<see cref="BarrierDivergence.Condition"/>). A barrier that the
+    /// others skip only on their way out of the method (<see cref="BarrierDivergence.ExitOnly"/>) is not reported here.
+    /// </summary>
+    private void ValidateDivergentBarriers()
     {
-        graph = null;
-        if (semanticModel.GetOperation(methodDecl) is not IMethodBodyOperation body)
+        if (_syncPoints.Count == 0 || !flow.TryGetUniformity(out var uniformity))
         {
-            return false;
+            return;
         }
 
-        foreach (var operation in body.Descendants())
+        foreach (var (barrier, scope) in _syncPoints)
         {
-            if (operation is IInvalidOperation)
+            if (uniformity.GetBarrierDivergence(barrier, scope) == BarrierDivergence.Condition)
             {
-                return false;
+                context.ReportDiagnostic(
+                    GSharpDiagnostics.DivergentBarrierProhibited,
+                    barrier.GetLocation());
             }
         }
-
-        graph = ControlFlowGraph.Create(body);
-        return true;
     }
 
     private InvocationExpressionSyntax? FindFirstBarrierAfter(int position)

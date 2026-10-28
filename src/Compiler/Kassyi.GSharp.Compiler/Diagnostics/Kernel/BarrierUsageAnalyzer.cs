@@ -83,10 +83,12 @@ public class BarrierUsageAnalyzer : DiagnosticAnalyzer
             return;
         }
 
+        // The control flow graph and the uniformity analysis, built once for the validators that need them
+        var flow = new MethodFlowGraph(semanticModel, methodDecl);
         if (methodSymbol.HasAttribute(KnownAttributes.GpuDeviceFunction))
         {
             // GSH0077: in every device function, as a device function without a barrier may declare one
-            DynamicSharedMemoryDivergenceValidator.Analyze(context, methodDecl, semanticModel);
+            DynamicSharedMemoryDivergenceValidator.Analyze(context, methodDecl, semanticModel, flow);
 
             // GSH0061: the frame of a recursive barrier-reaching device function would contain itself
             if (SuspensionAnalysis.IsRecursiveSuspendingFunction(methodSymbol, semanticModel.Compilation))
@@ -102,7 +104,7 @@ public class BarrierUsageAnalyzer : DiagnosticAnalyzer
             if (SuspensionAnalysis.IsSuspendingFunction(methodSymbol, semanticModel.Compilation) ||
                 IteratorTypeResolver.ContainsAnyYield(methodDecl.Body))
             {
-                new KernelBarrierValidator(context, methodDecl, semanticModel, isKernel: false).Analyze();
+                new KernelBarrierValidator(context, methodDecl, semanticModel, isKernel: false, flow).Analyze();
             }
 
             return;
@@ -113,8 +115,8 @@ public class BarrierUsageAnalyzer : DiagnosticAnalyzer
             return;
         }
 
-        new KernelBarrierValidator(context, methodDecl, semanticModel, isKernel: true).Analyze();
-        DynamicSharedMemoryDivergenceValidator.Analyze(context, methodDecl, semanticModel);
+        new KernelBarrierValidator(context, methodDecl, semanticModel, isKernel: true, flow).Analyze();
+        DynamicSharedMemoryDivergenceValidator.Analyze(context, methodDecl, semanticModel, flow);
     }
 
     // GSH0062: the state machine splits only the statements of a kernel or device function body, and the operands that

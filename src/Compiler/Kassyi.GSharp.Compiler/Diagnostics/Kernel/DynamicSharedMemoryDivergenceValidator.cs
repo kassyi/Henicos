@@ -15,104 +15,76 @@ namespace Kassyi.GSharp.Compiler.Diagnostics.Kernel;
 /// declaration is placed after the divergent one, every thread still agrees.
 /// </para>
 /// <para>
-/// The branch and loop conditions are those of GSH0037 (<see cref="KernelBarrierValidator.GetDivergingCondition"/>),
-/// plus the arms of a switch expression, decided by <see cref="ThreadVarianceAnalysis"/> within one method: the
-/// parameters of the method are uniform, so a device function whose count comes from a thread-variant argument of its
-/// caller is not reported.
+/// Both questions are answered on the control flow graph by <see cref="UniformityAnalysis"/>, within one method: a
+/// declaration or call is reached by only some threads when it lies in the influence region of a branch that varies
+/// within the block (an <c>if</c>, a loop, a <c>switch</c> statement or expression, a <c>?:</c>, the right operand of
+/// <c>&amp;&amp;</c>, an early <c>return</c>), and the count is the value that reaches the declaration. The parameters
+/// of the method are uniform, so a device function whose count comes from a thread-variant argument of its caller is
+/// not reported. A body that does not bind (being edited) is not analyzed.
 /// </para>
 /// </remarks>
 internal static class DynamicSharedMemoryDivergenceValidator
 {
     /// <summary>Reports GSH0077 in the body of the kernel or device function <paramref name="method"/>.</summary>
     public static void Analyze(SyntaxNodeAnalysisContext context, MethodDeclarationSyntax method,
-        SemanticModel semanticModel)
+        SemanticModel semanticModel, MethodFlowGraph flow)
     {
-        // Computed on the first dynamic declaration or call that reaches one
-        ThreadVarianceAnalysis? variance = null;
         foreach (var node in method.DescendantNodes())
         {
             switch (node)
             {
                 case VariableDeclaratorSyntax { Parent.Parent: LocalDeclarationStatementSyntax local } declarator:
-                    AnalyzeDeclarator(context, method, semanticModel, local, declarator, ref variance);
+                    AnalyzeDeclarator(context, semanticModel, local, declarator, flow);
                     break;
                 case InvocationExpressionSyntax invocation:
-                    AnalyzeInvocation(context, method, semanticModel, invocation, ref variance);
+                    AnalyzeInvocation(context, semanticModel, invocation, flow);
                     break;
             }
         }
     }
 
     // A declaration under a thread-variant condition and with a thread-variant count is reported once for each
-    private static void AnalyzeDeclarator(SyntaxNodeAnalysisContext context, MethodDeclarationSyntax method,
-        SemanticModel semanticModel, LocalDeclarationStatementSyntax local, VariableDeclaratorSyntax declarator,
-        ref ThreadVarianceAnalysis? variance)
+    private static void AnalyzeDeclarator(SyntaxNodeAnalysisContext context, SemanticModel semanticModel,
+        LocalDeclarationStatementSyntax local, VariableDeclaratorSyntax declarator, MethodFlowGraph flow)
     {
         if (!semanticModel.GetTypeSymbol(local.Declaration.Type).IsSharedMemoryType() ||
             !DynamicSharedMemoryAnalysis.TryGetCount(declarator, semanticModel, out var creation, out var count,
                 out var constantCount) ||
-            constantCount != null)
+            constantCount != null ||
+            !flow.TryGetUniformity(out var uniformity))
         {
             return;
         }
 
-        variance ??= new ThreadVarianceAnalysis(semanticModel, method);
         var name = declarator.Identifier.ValueText;
-        if (IsReachedByPartOfBlock(creation, method, variance))
+        if (uniformity.IsReachedByPartOfBlock(creation))
         {
             context.ReportDiagnostic(GSharpDiagnostics.DivergentDynamicSharedMemory, creation,
                 $"Only some threads of the block reach the dynamic SharedMemory<T> declaration '{name}'");
         }
 
-        if (variance.IsThreadVariant(count))
+        if (uniformity.IsThreadVariant(count))
         {
             context.ReportDiagnostic(GSharpDiagnostics.DivergentDynamicSharedMemory, count,
                 $"The count of the dynamic SharedMemory<T> declaration '{name}' depends on the thread");
         }
     }
 
-    private static void AnalyzeInvocation(SyntaxNodeAnalysisContext context, MethodDeclarationSyntax method,
-        SemanticModel semanticModel, InvocationExpressionSyntax invocation, ref ThreadVarianceAnalysis? variance)
+    private static void AnalyzeInvocation(SyntaxNodeAnalysisContext context, SemanticModel semanticModel,
+        InvocationExpressionSyntax invocation, MethodFlowGraph flow)
     {
         if (semanticModel.GetSymbol(invocation) is not IMethodSymbol callee ||
-            !DynamicSharedMemoryAnalysis.ReachesDynamicSharedMemory(callee, semanticModel.Compilation))
+            !DynamicSharedMemoryAnalysis.ReachesDynamicSharedMemory(callee, semanticModel.Compilation) ||
+            !flow.TryGetUniformity(out var uniformity))
         {
             return;
         }
 
-        variance ??= new ThreadVarianceAnalysis(semanticModel, method);
-        if (IsReachedByPartOfBlock(invocation, method, variance))
+        if (uniformity.IsReachedByPartOfBlock(invocation))
         {
             context.ReportDiagnostic(GSharpDiagnostics.DivergentDynamicSharedMemory, invocation,
                 $"Only some threads of the block reach the call to '{callee.Name}', which reaches a dynamic " +
                 "SharedMemory<T> declaration");
         }
     }
-
-    // Whether a branch, loop, operand or switch expression arm with a thread-variant condition encloses the node;
-    // reported once however many do
-    private static bool IsReachedByPartOfBlock(SyntaxNode node, MethodDeclarationSyntax method,
-        ThreadVarianceAnalysis variance)
-    {
-        var child = node;
-        for (var ancestor = node.Parent;
-             ancestor != null && ancestor != method;
-             child = ancestor, ancestor = ancestor.Parent)
-        {
-            if (GetDivergingCondition(ancestor, child) is { } condition && variance.IsThreadVariant(condition))
-            {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    // [WHY] GetDivergingCondition leaves out switch expression arms because a barrier there is GSH0062, not GSH0037;
-    // a dynamic declaration reached from an arm has no other diagnostic, so the arms are added here
-    private static ExpressionSyntax? GetDivergingCondition(SyntaxNode ancestor, SyntaxNode child) =>
-        KernelBarrierValidator.GetDivergingCondition(ancestor, child) ??
-        (ancestor is SwitchExpressionSyntax switchExpression && child != switchExpression.GoverningExpression
-            ? switchExpression.GoverningExpression
-            : null);
 }
