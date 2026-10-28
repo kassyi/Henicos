@@ -144,6 +144,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerGridSumKernel();
 IntPtr hfunc = s_hfunc_GridSumKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "ParallelAggregateGridKernels.GridSumKernel");
 IntPtr d_data = IntPtr.Zero;
 IntPtr d_result = IntPtr.Zero;
 IntPtr d___gsharp_grid_scratch = IntPtr.Zero;
@@ -233,6 +234,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerGridSumKernel();
 IntPtr hfunc = s_hfunc_GridSumKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "ParallelAggregateGridKernels.GridSumKernel");
 IntPtr d___gsharp_grid_scratch = IntPtr.Zero;
 try
 {
@@ -314,6 +316,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerGridLongSumKernel();
 IntPtr hfunc = s_hfunc_GridLongSumKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "ParallelAggregateGridKernels.GridLongSumKernel");
 IntPtr d_data = IntPtr.Zero;
 IntPtr d_result = IntPtr.Zero;
 IntPtr d___gsharp_grid_scratch = IntPtr.Zero;
@@ -403,6 +406,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerGridLongSumKernel();
 IntPtr hfunc = s_hfunc_GridLongSumKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "ParallelAggregateGridKernels.GridLongSumKernel");
 IntPtr d___gsharp_grid_scratch = IntPtr.Zero;
 try
 {
@@ -511,6 +515,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerGridRepeatedSumKernel();
 IntPtr hfunc = s_hfunc_GridRepeatedSumKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "ParallelAggregateGridKernels.GridRepeatedSumKernel");
 IntPtr d_a = IntPtr.Zero;
 IntPtr d_b = IntPtr.Zero;
 IntPtr d_result = IntPtr.Zero;
@@ -627,6 +632,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerGridRepeatedSumKernel();
 IntPtr hfunc = s_hfunc_GridRepeatedSumKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "ParallelAggregateGridKernels.GridRepeatedSumKernel");
 IntPtr d___gsharp_grid_scratch = IntPtr.Zero;
 try
 {
@@ -717,6 +723,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerGridSegmentSumKernel();
 IntPtr hfunc = s_hfunc_GridSegmentSumKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "ParallelAggregateGridKernels.GridSegmentSumKernel");
 IntPtr d_data = IntPtr.Zero;
 IntPtr d_result = IntPtr.Zero;
 try
@@ -800,6 +807,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerGridSegmentSumKernel();
 IntPtr hfunc = s_hfunc_GridSegmentSumKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "ParallelAggregateGridKernels.GridSegmentSumKernel");
 try
 {
 void** kernelParams = stackalloc void*[3];
@@ -879,6 +887,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerGridLambdaBlockIndexKernel();
 IntPtr hfunc = s_hfunc_GridLambdaBlockIndexKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "ParallelAggregateGridKernels.GridLambdaBlockIndexKernel");
 IntPtr d_data = IntPtr.Zero;
 IntPtr d_result = IntPtr.Zero;
 try
@@ -960,6 +969,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerGridLambdaBlockIndexKernel();
 IntPtr hfunc = s_hfunc_GridLambdaBlockIndexKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "ParallelAggregateGridKernels.GridLambdaBlockIndexKernel");
 try
 {
 void** kernelParams = stackalloc void*[2];

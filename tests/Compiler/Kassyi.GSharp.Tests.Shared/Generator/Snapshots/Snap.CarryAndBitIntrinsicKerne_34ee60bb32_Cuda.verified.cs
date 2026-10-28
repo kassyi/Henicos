@@ -123,6 +123,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerBitIntrinsicsKernel();
 IntPtr hfunc = s_hfunc_BitIntrinsicsKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "CarryAndBitIntrinsicKernels.BitIntrinsicsKernel");
 IntPtr d_input = IntPtr.Zero;
 IntPtr d_output = IntPtr.Zero;
 try
@@ -207,6 +208,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerBitIntrinsicsKernel();
 IntPtr hfunc = s_hfunc_BitIntrinsicsKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "CarryAndBitIntrinsicKernels.BitIntrinsicsKernel");
 try
 {
 void** kernelParams = stackalloc void*[3];
@@ -302,6 +304,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerCarryChainKernel();
 IntPtr hfunc = s_hfunc_CarryChainKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "CarryAndBitIntrinsicKernels.CarryChainKernel");
 IntPtr d_a = IntPtr.Zero;
 IntPtr d_b = IntPtr.Zero;
 IntPtr d_sum = IntPtr.Zero;
@@ -492,6 +495,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerCarryChainKernel();
 IntPtr hfunc = s_hfunc_CarryChainKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "CarryAndBitIntrinsicKernels.CarryChainKernel");
 try
 {
 void** kernelParams = stackalloc void*[6];

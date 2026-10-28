@@ -112,6 +112,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerInlinePtxKernel();
 IntPtr hfunc = s_hfunc_InlinePtxKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "ContractsAndPtxKernels.InlinePtxKernel");
 IntPtr d_data = IntPtr.Zero;
 try
 {
@@ -167,6 +168,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerInlinePtxKernel();
 IntPtr hfunc = s_hfunc_InlinePtxKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "ContractsAndPtxKernels.InlinePtxKernel");
 try
 {
 void** kernelParams = stackalloc void*[1];
@@ -221,6 +223,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerInlinePtxFollowedByWriteKernel();
 IntPtr hfunc = s_hfunc_InlinePtxFollowedByWriteKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "ContractsAndPtxKernels.InlinePtxFollowedByWriteKernel");
 IntPtr d_data = IntPtr.Zero;
 try
 {
@@ -276,6 +279,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerInlinePtxFollowedByWriteKernel();
 IntPtr hfunc = s_hfunc_InlinePtxFollowedByWriteKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "ContractsAndPtxKernels.InlinePtxFollowedByWriteKernel");
 try
 {
 void** kernelParams = stackalloc void*[1];

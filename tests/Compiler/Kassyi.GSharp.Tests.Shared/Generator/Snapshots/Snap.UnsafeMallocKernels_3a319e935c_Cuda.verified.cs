@@ -122,6 +122,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerMallocRoundTripKernel();
 IntPtr hfunc = s_hfunc_MallocRoundTripKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "UnsafeMallocKernels.MallocRoundTripKernel");
 IntPtr d_output = IntPtr.Zero;
 try
 {
@@ -177,6 +178,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerMallocRoundTripKernel();
 IntPtr hfunc = s_hfunc_MallocRoundTripKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "UnsafeMallocKernels.MallocRoundTripKernel");
 try
 {
 void** kernelParams = stackalloc void*[1];
