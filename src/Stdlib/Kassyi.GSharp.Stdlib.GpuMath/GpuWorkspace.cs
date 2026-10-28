@@ -114,6 +114,24 @@ public class GpuWorkspace : IGpuResourceScope
     } = new();
 
     /// <summary>
+    /// Gets when the big-float <c>Divide</c> and <c>Rsqrt</c> on the GPU cut a divisor or radicand much wider than the
+    /// result to its top words; the tests and the benchmarks change it to force the cut on or off.
+    /// </summary>
+    internal WideOperandOptions WideOperands
+    {
+        get;
+    } = new();
+
+    /// <summary>
+    /// Gets the counts of the truncated wide-operand paths of the big-float <c>Divide</c> and <c>Rsqrt</c> on this
+    /// workspace, which the tests read to see which path ran.
+    /// </summary>
+    internal WideOperandCounters WideOperandCounters
+    {
+        get;
+    } = new();
+
+    /// <summary>
     /// Gets the device copies of the constants that the big-float transcendental functions share (ln 2), uploaded on
     /// first use and released with the workspace.
     /// </summary>

@@ -208,6 +208,12 @@ public sealed class GSharpKernelFloatProvider(IGpuBigFloatArithmetic fallbackStr
             return fallbackStrategy.Divide(ref context, in left, in right, resultSig);
         }
 
+        // A divisor much wider than the result is cut to its top n + 2 words (#661 §4.12), up to the measured width.
+        if (context.GpuWorkspace.WideOperands.CutsDivisor(resultSig.NumWords, rightSig.NumWords))
+        {
+            return DivideByTruncatedDivisor(context.GpuWorkspace, in left, in right, resultSig);
+        }
+
         // 2. G# Kernel / Mega Division Path via GpuBigIntDivRem
         var leftOperand = leftSig.AsView(context.GpuWorkspace);
         if (leftOperand.IsZero())
@@ -355,17 +361,117 @@ public sealed class GSharpKernelFloatProvider(IGpuBigFloatArithmetic fallbackStr
             }
         }
 
+        using var scaled = workspace.RentTemp(words);
+        GpuBigIntMath.ShiftAndResize(valueOperand, checked((int)shift), scaled);
+
+        // A radicand much wider than the result is cut to its top n + 2 words (#661 §4.12), up to the measured width.
+        if (workspace.WideOperands.CutsRadicand(resultSig.NumWords, words))
+        {
+            return RsqrtOfTruncatedRadicand(workspace, scaled, words, (value.Exponent - shift) / 2, resultSig);
+        }
+
         // x = floor(2^B / sqrt(A)), B = 32(w + m), has at least B - 16w + 1 >= p + 1 bits for m = max(1, n - floor(w/2)),
         // so its truncation to p bits is RZ_p of the inverse root.
         var marginWords = Math.Max(1, resultSig.NumWords - words / 2);
-        using var scaled = workspace.RentTemp(words);
-        GpuBigIntMath.ShiftAndResize(valueOperand, checked((int)shift), scaled);
         using var inverse = workspace.RentTemp(words + marginWords);
         GpuBigIntDivRem.InverseSqrt(scaled, inverse, marginWords);
 
         // The exponents are computed in long; the exponent of the result must fit in int.
         var exponent = -((value.Exponent - shift) / 2) - 32L * (words + marginWords);
         return NormalizeScaled(workspace, inverse.Handle, exponent, false, resultSig);
+    }
+
+    // Divide by a divisor R of at least n + 2 + g words (#661 §4.12.3). With k = 32(n + 2) and
+    // j = max(0, bits(R) - k), N = floor(L·2^s) has bits(R) + p + 2 bits and
+    // Q_hi = floor(floor(N / 2^j) / floor(R / 2^j)) is Q* = floor(N / R) or Q* + 1, where Q* has p + 2 or p + 3 bits
+    // and Q_hi < 2^(p + 3) as well (N / 2^j < 2^(k + p + 2) over R / 2^j >= 2^(k - 1)). When the low 2 bits of Q_hi are
+    // not both 0, Q_hi rounds to the same p bits as Q*; otherwise Q_hi·R > N (one full-width product) means
+    // Q* = Q_hi - 1. Nothing cut (j = 0) leaves Q_hi = Q*.
+    private static GpuFloatResult DivideByTruncatedDivisor(GpuWorkspace workspace, in GpuFloatOperand left,
+        in GpuFloatOperand right, GpuBigIntMemoryHandle resultSig)
+    {
+        var leftOperand = left.Significand.AsView(workspace);
+        var rightOperand = right.Significand.AsView(workspace);
+        var leftBits = leftOperand.GetBitLength();
+        if (leftBits == 0)
+        {
+            workspace.Provider.ClearMemoryAsync(resultSig.DevicePointer, resultSig.NumWords, workspace.Stream);
+            return new GpuFloatResult(0, false);
+        }
+
+        workspace.WideOperandCounters.AddTruncation();
+        var n = resultSig.NumWords;
+        var truncatedWords = n + 2;
+        var rightBits = rightOperand.GetBitLength();
+        var truncation = Math.Max(0, rightBits - 32 * truncatedWords);
+        var dividendBits = rightBits + 32 * n + 2;
+        var shift = dividendBits - leftBits;
+
+        // floor(floor(L·2^s) / R) = floor(L·2^s / R) also for s < 0, so N may drop low bits of L.
+        using var dividend = workspace.RentTemp((dividendBits + 31) / 32);
+        GpuBigIntMath.ShiftAndResize(leftOperand, shift, dividend);
+        using var truncatedDividend = workspace.RentTemp((dividendBits - truncation + 31) / 32);
+        GpuBigIntMath.ShiftAndResize(dividend, -truncation, truncatedDividend);
+        using var truncatedDivisor = workspace.RentTemp(truncatedWords);
+        GpuBigIntMath.ShiftAndResize(rightOperand, -truncation, truncatedDivisor);
+
+        // Q_hi < 2^(p + 3) fits n + 1 words.
+        using var quotient = workspace.RentTemp(n + 1);
+        using var remainder = workspace.RentTemp(truncatedWords);
+        GpuBigIntDivRem.DivRem(truncatedDividend, truncatedDivisor, quotient, remainder);
+
+        if (truncation > 0 && (workspace.Provider.ReadWord(quotient.DevicePointer, 0, workspace.Stream) & 3) == 0)
+        {
+            using var product = workspace.RentTemp(quotient.NumWords + rightOperand.NumWords);
+            GpuBigIntMath.Mul(quotient, rightOperand, product);
+            CorrectTruncatedEstimate(workspace, product, dividend, quotient);
+        }
+
+        var exponent = (long)left.Exponent - right.Exponent - shift;
+        return NormalizeScaled(workspace, quotient.Handle, exponent, left.IsNegative != right.IsNegative, resultSig);
+    }
+
+    // Rsqrt of a radicand A of w >= n + 2 + g words (#661 §4.12.2): A has bit length 32w or 32w - 1, and the value is
+    // 2^(-h) / sqrt(A). With K = n + 2, j = 32(w - K), m = ceil(n/2) and B = 32(K + m) + j/2, the inverse root x_hi of
+    // the top K words is x* = floor(2^B / sqrt(A)) or x* + 1, of at least p + 33 bits. When its low word is not 0, x_hi
+    // rounds to the same p bits as x*; otherwise x_hi²·A > 2^(2B) (one full-width product) means x* = x_hi - 1.
+    private static GpuFloatResult RsqrtOfTruncatedRadicand(GpuWorkspace workspace, GpuBigUInt radicand, int words,
+        long halfExponent, GpuBigIntMemoryHandle resultSig)
+    {
+        workspace.WideOperandCounters.AddTruncation();
+        var truncatedWords = resultSig.NumWords + 2;
+        var marginWords = (resultSig.NumWords + 1) / 2;
+        var topWords = radicand.Handle.Slice(words - truncatedWords, truncatedWords).AsView(workspace);
+        using var inverse = workspace.RentTemp(truncatedWords + marginWords);
+        GpuBigIntDivRem.InverseSqrt(topWords, inverse, marginWords);
+
+        var exponentBits = 32L * (truncatedWords + marginWords) + 16L * (words - truncatedWords);
+        if (workspace.Provider.ReadWord(inverse.DevicePointer, 0, workspace.Stream) == 0)
+        {
+            using var square = workspace.RentTemp(2 * inverse.NumWords);
+            GpuBigIntMath.Mul(inverse, inverse, square);
+            using var product = workspace.RentTemp(square.NumWords + words);
+            GpuBigIntMath.Mul(square, radicand, product);
+            var boundBit = checked((int)(2 * exponentBits));
+            using var bound = GpuBigUInt.CreatePowerOfTwo(workspace, boundBit / 32 + 1, boundBit);
+            CorrectTruncatedEstimate(workspace, product, bound, inverse);
+        }
+
+        // The exponents are computed in long; the exponent of the result must fit in int.
+        return NormalizeScaled(workspace, inverse.Handle, -halfExponent - exponentBits, false, resultSig);
+    }
+
+    // Subtracts 1 from the estimate on the device when product > bound (TruncatedBoundCorrectionKernel, one block),
+    // without a readback.
+    private static void CorrectTruncatedEstimate(GpuWorkspace workspace, GpuBigUInt product, GpuBigUInt bound,
+        GpuBigUInt estimate)
+    {
+        workspace.WideOperandCounters.AddBoundCheck();
+        var words = Math.Max(product.NumWords, bound.NumWords);
+        var blockThreads = (uint)Math.Clamp((words + 31) / 32 * 32, 32, 1024);
+        GpuBigIntDivRemKernels.LaunchTruncatedBoundCorrectionKernelPtr(product.DevicePointer, product.NumWords,
+            bound.DevicePointer, bound.NumWords, estimate.DevicePointer, estimate.NumWords, gridDimX: 1,
+            blockDimX: blockThreads, hStream: workspace.Stream);
     }
 
     /// <inheritdoc/>

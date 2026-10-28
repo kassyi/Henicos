@@ -315,7 +315,7 @@ public class GSharpKernelFloatProviderTests : IDisposable
         });
 
         // 0 / -3 is +0 and clears every word of a result that held garbage.
-        // mutant: GSharpKernelFloatProvider.cs:215 ClearMemoryAsync removed, L216 `false` -> `true`
+        // mutant: GSharpKernelFloatProvider.cs:221 ClearMemoryAsync removed, L222 `false` -> `true`
         {
             using var dirty = new GpuBigUInt(workspace, [0xFFFFFFFFu, 0xFFFFFFFFu, 0xFFFFFFFFu, 0xFFFFFFFFu]);
             var context = CreateContext(workspace);
@@ -327,7 +327,7 @@ public class GSharpKernelFloatProviderTests : IDisposable
         }
 
         // Sqrt(0) is +0 and clears the result.
-        // mutant: GSharpKernelFloatProvider.cs:293 ClearMemoryAsync removed, L294 `false` -> `true`
+        // mutant: GSharpKernelFloatProvider.cs:299 ClearMemoryAsync removed, L300 `false` -> `true`
         {
             using var dirty = new GpuBigUInt(workspace, [0xFFFFFFFFu, 0xFFFFFFFFu, 0xFFFFFFFFu, 0xFFFFFFFFu]);
             var context = CreateContext(workspace);
@@ -347,7 +347,7 @@ public class GSharpKernelFloatProviderTests : IDisposable
         });
 
         // (-2)^3: a negative base is not supported.
-        // mutant: GSharpKernelFloatProvider.cs:413 `throw` removed (GpuBigFloatTranscendentals.Pow ignores the sign of the
+        // mutant: GSharpKernelFloatProvider.cs:519 `throw` removed (GpuBigFloatTranscendentals.Pow ignores the sign of the
         // base and would return 8)
         var powError = Assert.Throws<InvalidOperationException>(() =>
         {
@@ -429,7 +429,7 @@ public class GSharpKernelFloatProviderTests : IDisposable
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Stdlib)]
     [Scenario(TestScenario.Boundary)]
-    // mutant: GSharpKernelFloatProvider.cs:367 `- 32L * (words + marginWords)` -> `... + 1` (4 and 16, inverse)
+    // mutant: GSharpKernelFloatProvider.cs:380 `- 32L * (words + marginWords)` -> `... + 1` (4 and 16, inverse)
     // mutant: GpuBigIntDivRem.Sqrt.cs:109 `SqrtFloorCorrection(...)` removed (9: the estimate 3 - 2^-126 is kept)
     [InlineData(4u, false, 2, 1)]
     [InlineData(9u, false, 3, 1)]
@@ -458,7 +458,7 @@ public class GSharpKernelFloatProviderTests : IDisposable
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Stdlib)]
     [Scenario(TestScenario.Boundary)]
-    // mutant: GSharpKernelFloatProvider.cs:360 `n - words / 2` -> `n - words` (2 and 3, inverse: 113 bits)
+    // mutant: GSharpKernelFloatProvider.cs:375 `n - words / 2` -> `n - words` (2 and 3, inverse: 113 bits)
     [InlineData(2u, false)]
     [InlineData(2u, true)]
     [InlineData(3u, false)]
