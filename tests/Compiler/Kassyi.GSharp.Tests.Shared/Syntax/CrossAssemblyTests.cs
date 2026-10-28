@@ -150,6 +150,23 @@ public class CrossAssemblyTests : TranspilerTestBase
         Assert.Equal([-1, -1], result);
     }
 
+    // The launch runs the layout checks until one launch passes them: a check that throws leaves them armed, so the
+    // second launch stops as well
+    [Fact]
+    [Scenario(TestScenario.SadPath)]
+    public void Test_SwapPair_SecondLaunch_StillStopsAtTheOffsetGuard()
+    {
+        var result = new int[] { -1, -1 };
+        Assert.Throws<InvalidOperationException>(
+            () => CrossAssemblyKernels.LaunchSwapPairKernel(new SwapPair { A = 11, B = 22 }, result));
+
+        var exception = Assert.Throws<InvalidOperationException>(
+            () => CrossAssemblyKernels.LaunchSwapPairKernel(new SwapPair { A = 11, B = 22 }, result));
+
+        Assert.Contains("field 'A'", exception.Message);
+        Assert.Equal([-1, -1], result);
+    }
+
     [Fact]
     [Scenario(TestScenario.SadPath)]
     public void Test_PackedPair_PackedLayoutOfTheLibrary_StopsAtTheSizeGuard()

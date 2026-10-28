@@ -13,6 +13,11 @@ internal static class CpuHostLaunchEmitter
     public static void WriteKernelMembers(SourceWriter writer, in KernelEmission kernel, string assemblyName)
     {
         writer.AppendLine(kernel.ManagedCSharpSource);
+        // A launch that throws NotSupportedException runs no guards, so it gets no flag either
+        if (!HasNotSupportedParameter(kernel.Host))
+        {
+            WrapperEmitter.WriteLayoutCheckedField(writer, kernel.Host.CpuLayoutGuards, kernel.MemberKey);
+        }
         WriteCpuDelegateDeclaration(writer, kernel);
         WriteLaunchMethodCpu(writer, kernel, assemblyName);
     }
@@ -31,7 +36,7 @@ internal static class CpuHostLaunchEmitter
             // [WHY] Only the native launcher reads the host bytes as the C++ layout; the managed fallback uses the values
             if (!WriteNotSupportedThrow(writer, kernel.Host))
             {
-                WrapperEmitter.WriteLayoutGuards(writer, kernel.Host.CpuLayoutGuards);
+                WrapperEmitter.WriteLayoutGuards(writer, kernel.Host.CpuLayoutGuards, kernel.MemberKey);
                 WriteCpuDelegateGetOrCompile(writer, kernel);
                 WriteCpuFixedBlocksAndInvoke(writer, kernel.Host);
             }
@@ -42,6 +47,19 @@ internal static class CpuHostLaunchEmitter
 
     // throw new NotSupportedException("<GSH0082 text>"); in place of the native call, for the first struct parameter that
     // the CPU launcher cannot convert yet
+    private static bool HasNotSupportedParameter(in KernelHostModel kernel)
+    {
+        foreach (var shape in kernel.Parameters)
+        {
+            if (shape.CpuNotSupportedMessage is not null)
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     private static bool WriteNotSupportedThrow(SourceWriter writer, in KernelHostModel kernel)
     {
         foreach (var shape in kernel.Parameters)
