@@ -197,7 +197,6 @@ public static readonly string Sha256Kernel_FullSource=global::Kassyi.GSharp.Gene
 public class __gsharp_context_Henicos__Benchmarks__ComputeBenchmarks__Sha256Kernels__Sha256Kernel {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
-public bool __gsharp_yielded_for_grid_sync;
 }
 public static unsafe void __gsharp_statemachine_Henicos__Benchmarks__ComputeBenchmarks__Sha256Kernels__Sha256Kernel(byte[] input, uint[] output, int numMessages, __gsharp_context_Henicos__Benchmarks__ComputeBenchmarks__Sha256Kernels__Sha256Kernel __gsharp_ctx) {
 {
@@ -289,9 +288,9 @@ if (__gsharp_contexts[__gsharp_linear_tid].__gsharp_state != -1)
 {
 anyGridActive = true;
 anyBlockActive = true;
-__gsharp_contexts[__gsharp_linear_tid].__gsharp_yielded_for_grid_sync = false;
+global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested = false;
 __gsharp_statemachine_Henicos__Benchmarks__ComputeBenchmarks__Sha256Kernels__Sha256Kernel(input, output, numMessages, __gsharp_contexts[__gsharp_linear_tid]);
-if (__gsharp_contexts[__gsharp_linear_tid].__gsharp_yielded_for_grid_sync)
+if (global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested)
 {
 gridSyncRequested = true;
 }

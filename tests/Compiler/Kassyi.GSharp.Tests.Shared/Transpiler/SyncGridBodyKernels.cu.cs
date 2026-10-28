@@ -444,4 +444,37 @@ public static partial class SyncGridBodyKernels
             });
         });
     }
+
+    // K24 (#665): a parameterless Gpu.SyncGrid() in a device function; the managed path must synchronize the grid there
+    // as it does in a kernel
+    [GpuKernel(Cooperative = true)]
+    public static void DeviceFunctionSyncKernel(int[] a, int[] b)
+    {
+        int tid = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
+        int size = GridDimension.X * BlockDimension.X;
+        WriteSyncRead(a, b, tid, size);
+    }
+
+    [GpuDeviceFunction]
+    public static void WriteSyncRead(int[] a, int[] b, int tid, int n)
+    {
+        a[tid] = tid + 1;
+        Gpu.SyncGrid();
+        b[tid] = a[(tid + 1) % n];
+    }
+
+    // K25 (#665): the same grid sync two device functions deep
+    [GpuKernel(Cooperative = true)]
+    public static void NestedDeviceFunctionSyncKernel(int[] a, int[] b)
+    {
+        int tid = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
+        int size = GridDimension.X * BlockDimension.X;
+        CallWriteSyncRead(a, b, tid, size);
+    }
+
+    [GpuDeviceFunction]
+    public static void CallWriteSyncRead(int[] a, int[] b, int tid, int n)
+    {
+        WriteSyncRead(a, b, tid, n);
+    }
 }
