@@ -39,6 +39,16 @@ public sealed class MemoryExtensionsTranspilerRule : IInvocationTranspilerRule
         Comparison
     }
 
+    // The shape of one Sort call and the comparison it sorts by, passed from one stage of TryTranspile to the next
+    private readonly record struct SortCall(
+        ExpressionSyntax? Receiver,
+        bool HasItems,
+        ArgumentSyntax? ComparerArgument,
+        bool IsComparison,
+        ITypeSymbol KeyType,
+        ComparisonKind Kind = ComparisonKind.Default,
+        IMethodSymbol? CompareMember = null);
+
     public bool TryTranspile(InvocationExpressionSyntax node, ref TranspileContext context, IMethodSymbol symbol)
     {
         var method = symbol.GetConstructedReducedFrom() ?? symbol;
@@ -49,41 +59,63 @@ public sealed class MemoryExtensionsTranspilerRule : IInvocationTranspilerRule
             return false;
         }
 
-        var arguments = node.ArgumentList.Arguments;
-        if (!IsInParameterOrder(arguments, symbol))
+        if (!IsInParameterOrder(node.ArgumentList.Arguments, symbol))
         {
             context.Reporter.Fail(GSharpDiagnostics.UnsupportedSyntax, node, ReorderedArguments);
             return true;
         }
 
+        if (TryResolveComparison(ReadShape(node, symbol, method), node, ref context, out var call))
+        {
+            WriteSortCall(in call, node, symbol, ref context);
+        }
+
+        return true;
+    }
+
+    // The receiver, the items and the comparer argument of the call, from the parameters of the static method:
+    // (keys[, items][, comparer])
+    private static SortCall ReadShape(InvocationExpressionSyntax node, IMethodSymbol symbol, IMethodSymbol method)
+    {
         // The reduced call keys.Sort(...) has the span as its receiver; the static call has it as the first argument
         var receiver = symbol.ReducedFrom != null && node.Expression is MemberAccessExpressionSyntax access
             ? access.Expression
             : null;
 
-        // The parameters of the static method: (keys[, items][, comparer])
+        var arguments = node.ArgumentList.Arguments;
         var definition = method.OriginalDefinition;
         var hasItems = definition.Parameters.Length >= 2 && IsSpan(definition.Parameters[1].Type);
         var comparerArgument = definition.Parameters.Length == (hasItems ? 3 : 2)
             ? arguments[arguments.Count - 1]
             : null;
-        var keyType = method.TypeArguments[0];
-        var isComparison = comparerArgument != null && definition.Parameters[definition.Parameters.Length - 1].Type is not ITypeParameterSymbol;
-        if (!TryClassifyComparison(comparerArgument, isComparison, ref context, out var kind, out var compareMember))
+        var isComparison = comparerArgument != null &&
+                           definition.Parameters[definition.Parameters.Length - 1].Type is not ITypeParameterSymbol;
+        return new SortCall(receiver, hasItems, comparerArgument, isComparison, method.TypeArguments[0]);
+    }
+
+    // The comparison: the classified comparer argument, or the default order of the key; a receiver that the arguments
+    // interfere with is reported. Registers the comparison member that the call uses.
+    private static bool TryResolveComparison(in SortCall shape, InvocationExpressionSyntax node,
+        ref TranspileContext context, out SortCall call)
+    {
+        call = shape;
+        if (!TryClassifyComparison(shape.ComparerArgument, shape.IsComparison, ref context, out var kind,
+                out var compareMember))
         {
-            return true;
+            return false;
         }
 
-        if (kind == ComparisonKind.Default && !TryGetDefaultOrder(keyType, node, ref context, out compareMember))
+        if (kind == ComparisonKind.Default && !TryGetDefaultOrder(shape.KeyType, node, ref context, out compareMember))
         {
-            return true;
+            return false;
         }
 
-        if (receiver != null && ReceiverInterferes(receiver, arguments, context.Query.SemanticModel))
+        if (shape.Receiver != null &&
+            ReceiverInterferes(shape.Receiver, node.ArgumentList.Arguments, context.Query.SemanticModel))
         {
             context.Reporter.Fail(GSharpDiagnostics.UnsupportedSyntax, node,
                 ExpressionRules.InvocationExpressionTranspilerRule.ExtensionReceiverInterferes);
-            return true;
+            return false;
         }
 
         if (compareMember != null)
@@ -91,22 +123,33 @@ public sealed class MemoryExtensionsTranspilerRule : IInvocationTranspilerRule
             SortComparisonMembers.Use(compareMember, ref context);
         }
 
-        // <sort>(<keys>[, <items>][, <comparison>]) where the comparison of a comparer struct is
-        // [__gsharp_comparer = <comparer>](auto& l, auto& r) mutable { return __gsharp_comparer.__gsharp_compare(l, r); }
-        // and the CompareTo of struct keys is [](auto& l, auto& r) { return l.__gsharp_compare_to(r); }.
-        // [WHY] A lambda, not a pointer to the member: the sort calls it directly, so nvcc inlines the comparison.
+        call = shape with { Kind = kind, CompareMember = compareMember };
+        return true;
+    }
+
+    // <sort>(<keys>[, <items>][, <comparison>]) where the comparison of a comparer struct is
+    // [__gsharp_comparer = <comparer>](auto& l, auto& r) mutable { return __gsharp_comparer.__gsharp_compare(l, r); }
+    // and the CompareTo of struct keys is [](auto& l, auto& r) { return l.__gsharp_compare_to(r); }.
+    // [WHY] A lambda, not a pointer to the member: the sort calls it directly, so nvcc inlines the comparison.
+    private static void WriteSortCall(in SortCall call, InvocationExpressionSyntax node, IMethodSymbol symbol,
+        ref TranspileContext context)
+    {
+        var arguments = node.ArgumentList.Arguments;
+        var comparerParameter = call.ComparerArgument != null
+            ? symbol.FindParameter(arguments, arguments.Count - 1)
+            : null;
         using var sequence = EvaluationOrder.BeginCall(ref context, arguments, symbol, receiver: null, spillAll: false);
         var writer = context.Emitter.Writer;
-        writer.Append(GetFunctionName(hasItems, kind, compareMember != null));
+        writer.Append(GetFunctionName(call.HasItems, call.Kind, call.CompareMember != null));
         using (writer.Parentheses())
         {
-            if (receiver != null)
+            if (call.Receiver != null)
             {
-                context.Visitor.Visit(receiver);
+                context.Visitor.Visit(call.Receiver);
             }
 
-            var written = receiver != null ? 1 : 0;
-            var spans = comparerArgument != null ? arguments.Count - 1 : arguments.Count;
+            var written = call.Receiver != null ? 1 : 0;
+            var spans = call.ComparerArgument != null ? arguments.Count - 1 : arguments.Count;
             for (var i = 0; i < spans; i++)
             {
                 writer.AppendIf(written > 0, ",");
@@ -114,21 +157,18 @@ public sealed class MemoryExtensionsTranspilerRule : IInvocationTranspilerRule
                 written++;
             }
 
-            if (kind == ComparisonKind.Comparison && comparerArgument != null)
+            if (call.Kind == ComparisonKind.Comparison && call.ComparerArgument != null)
             {
                 writer.Append(",");
-                sequence.AppendArgument(comparerArgument, symbol.FindParameter(arguments, arguments.Count - 1), ref context);
+                sequence.AppendArgument(call.ComparerArgument, comparerParameter, ref context);
             }
-            else if (compareMember != null)
+            else if (call.CompareMember != null)
             {
                 writer.Append(",");
-                AppendMemberLambda(compareMember, kind == ComparisonKind.Comparer ? comparerArgument : null,
-                    comparerArgument != null ? symbol.FindParameter(arguments, arguments.Count - 1) : null, in sequence,
-                    ref context);
+                var comparer = call.Kind == ComparisonKind.Comparer ? call.ComparerArgument : null;
+                AppendMemberLambda(call.CompareMember, comparer, comparerParameter, in sequence, ref context);
             }
         }
-
-        return true;
     }
 
     private static void AppendMemberLambda(IMethodSymbol member, ArgumentSyntax? comparer, IParameterSymbol? parameter,
