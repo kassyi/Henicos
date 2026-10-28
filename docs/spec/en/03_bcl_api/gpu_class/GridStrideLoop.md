@@ -107,7 +107,7 @@ try {
 
 `maxBounds` is evaluated once, before the first iteration, as any C# argument is; a body that changes what it was read from does not change the number of iterations. A negative `maxBounds` runs no iteration.
 
-The call expands into a flat loop without any delegate allocation. The CUDA build, the native CPU build and the managed path all use the same three helpers:
+The call expands into a flat loop without any delegate allocation. The CUDA build and the native CPU build use three Prelude helpers, and the managed path calls the same computations in `ManagedGpuContext` (`GridStrideCount`, `GridStrideStart`, `GridStrideStep`):
 
 ```cpp
 // Execution Context: Generated C++ (GPU)
