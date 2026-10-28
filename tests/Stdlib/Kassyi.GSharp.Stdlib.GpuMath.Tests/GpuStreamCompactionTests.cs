@@ -31,7 +31,7 @@ public class GpuStreamCompactionTests : IDisposable
         // 2. Act
         // We use (elementCount / 2) threads because each thread processes 2 elements
         GpuStreamCompactionKernels.LaunchBlockExclusiveScan(
-            actualOutput, cpuInput, elementCount, new uint[1],
+            actualOutput, cpuInput, elementCount, new uint[1], [(uint)elementCount], 0, elementCount, new uint[1], false,
             gridDimX: 1, blockDimX: (uint)(elementCount / 2));
         
         // 3. Assert
@@ -62,7 +62,7 @@ public class GpuStreamCompactionTests : IDisposable
 
         // 2. Act
         GpuStreamCompactionKernels.LaunchBlockExclusiveScan(
-            actualOutput, cpuInput, elementCount, new uint[1],
+            actualOutput, cpuInput, elementCount, new uint[1], [(uint)elementCount], 0, elementCount, new uint[1], false,
             gridDimX: 1, blockDimX: (uint)(elementCount / 2));
         
         // 3. Assert
@@ -95,7 +95,7 @@ public class GpuStreamCompactionTests : IDisposable
 
         // 2. Act: Prefix Sum
         GpuStreamCompactionKernels.LaunchBlockExclusiveScan(
-            scanResult, cpuPredicates, elementCount, blockSums,
+            scanResult, cpuPredicates, elementCount, blockSums, [(uint)elementCount], 0, elementCount, new uint[1], true,
             gridDimX: 1, blockDimX: (uint)(elementCount / 2));
 
         uint[] actualOutput = new uint[expectedOutput.Length];

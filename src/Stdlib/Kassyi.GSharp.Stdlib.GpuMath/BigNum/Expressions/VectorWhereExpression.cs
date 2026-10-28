@@ -1,20 +1,39 @@
-
 namespace Kassyi.GSharp.Stdlib.GpuMath.BigNum.Expressions;
 
+/// <summary>
+/// Keeps the elements whose predicate is true (design D3 4.4). The number of selected elements is computed on the
+/// device into a word this node owns, so neither the selection nor its consumers (Count, Sum, Skip, ...) synchronize
+/// with the host; only the public <see cref="Evaluate"/> reads it, to return exactly the selected elements.
+/// </summary>
 internal class VectorWhereExpression(
     [TakesOwnership] IGpuBigIntVectorExpression source,
-    [TakesOwnership] IGpuBoolVectorExpression predicate) : IGpuBigIntVectorExpression
+    [TakesOwnership] IGpuBoolVectorExpression predicate) : IGpuBigIntVectorExpression, IDeviceCountedVector
 {
-    public int Length => source.Length;
+    public int Length => throw new InvalidOperationException(DeviceCounted.LengthUnknown);
+
+    public int Capacity => source.Capacity;
+
     public int WordsPerElement => source.WordsPerElement;
 
-    private GpuBigUIntArray _compactedValues;
-    private GpuBigUIntArray _compactedSigns;
-    private GpuBigUIntArray _scanResult;
-    private bool _allocated;
+    // The selected elements and the scan of the predicates (grown to the capacity), the count word, and the block sums
+    // of the scan: all owned here and reused, so that an evaluation allocates nothing after the first
+    private readonly VectorResultCache _cache = new();
+    private GpuBigUInt _count;
+    private StreamCompactionOrchestrator.ScanScratch? _scratch;
+    private int _scratchCapacity = -1;
+
+    public bool TryGetLength(out int length)
+    {
+        length = 0;
+        return false;
+    }
 
     public GpuBigIntArrayView Evaluate(GpuWorkspace workspace, int elementOffset = 0, int? elementCount = null,
-        GpuBigUIntArrayView targetResult = default)
+        GpuBigUIntArrayView targetResult = default) =>
+        DeviceCounted.Materialize(workspace, EvaluateCore(workspace, elementOffset, elementCount, targetResult));
+
+    public VectorEvaluation EvaluateCore(GpuWorkspace workspace, int elementOffset, int? elementCount,
+        GpuBigUIntArrayView targetResult)
     {
         if (VectorResultCache.HasTarget(targetResult))
         {
@@ -22,65 +41,105 @@ internal class VectorWhereExpression(
                 "Where expression does not support targetResult because its size is dynamic.");
         }
 
-        var evaluatedSource = source.Evaluate(workspace);
-        var evaluatedPredicates = predicate.Evaluate(workspace);
-
-        var originalCount = evaluatedSource.Length;
-        if (originalCount == 0)
+        var capacity = Capacity;
+        if (predicate.Capacity != capacity)
         {
-            return VectorResultCache.EmptySigned(workspace, WordsPerElement);
+            throw new ArgumentException(
+                $"The predicate has {predicate.Capacity} elements; the vector has {capacity}.", nameof(predicate));
         }
 
-        if (!_allocated)
+        var evalCount = elementCount ?? (capacity - elementOffset);
+        if (capacity == 0)
         {
-            _scanResult = new GpuBigUIntArray(workspace, originalCount, 1);
-            _compactedValues = new GpuBigUIntArray(workspace, originalCount, WordsPerElement);
-            _compactedSigns = new GpuBigUIntArray(workspace, originalCount, 1);
-            _allocated = true;
+            return new VectorEvaluation(VectorResultCache.EmptySigned(workspace, WordsPerElement),
+                DeviceElementCount.Static(0));
         }
 
-        // 1. Exclusive Scan on Predicates
-        StreamCompactionOrchestrator.ExecuteExclusiveScan(
-            workspace, _scanResult.DevicePointer, evaluatedPredicates.DevicePointer, originalCount);
+        var evaluatedSource = DeviceCounted.Evaluate(source, workspace);
+        var evaluatedPredicates = DeviceCounted.Evaluate(predicate, workspace);
 
-        // 2. Scatter (Compact) Data
-        StreamCompactionOrchestrator.CompactArray(
-            workspace,
-            new StreamCompactionOrchestrator.StreamCompactionRequest(
-                _compactedValues.DevicePointer,
-                evaluatedSource.Values.DevicePointer,
-                evaluatedPredicates.DevicePointer,
-                _scanResult.DevicePointer,
-                originalCount,
-                WordsPerElement));
+        // The input count: a Where after another one reads only the elements the first one selected (design J4)
+        var inputCount = DeviceCounted.Combine(evaluatedSource.Count, evaluatedPredicates.Count);
+        var scanCount = new StreamCompactionOrchestrator.ScanCount(inputCount.Base, inputCount.Skip, inputCount.Limit);
 
-        StreamCompactionOrchestrator.CompactArray(
-            workspace,
-            new StreamCompactionOrchestrator.StreamCompactionRequest(
-                _compactedSigns.DevicePointer,
-                evaluatedSource.Signs.DevicePointer,
-                evaluatedPredicates.DevicePointer,
-                _scanResult.DevicePointer,
-                originalCount,
-                1));
+        EnsureCountAndScratch(workspace, capacity);
+        var scan = _cache.Scan(workspace, capacity);
+        var selected = new GpuBigIntArrayView(
+            _cache.Values(workspace, capacity, WordsPerElement), _cache.Signs(workspace, capacity));
 
-        var finalCount = elementCount ?? (originalCount - elementOffset);
-        return new GpuBigIntArray(
-            _compactedValues.BorrowSlice(elementOffset, finalCount),
-            _compactedSigns.BorrowSlice(elementOffset, finalCount));
+        // 1. The scan of the predicates gives each selected element its position, and its total is the count
+        StreamCompactionOrchestrator.ExecuteExclusiveScan(workspace, scan.DevicePointer,
+            evaluatedPredicates.Flags.DevicePointer, capacity, ScratchOrThrow(), scanCount, _count.DevicePointer,
+            flags: true);
+
+        // 2. The selected elements move to their positions (values and signs in one launch)
+        StreamCompactionOrchestrator.CompactSignedVector(workspace, selected, evaluatedSource.Storage,
+            evaluatedPredicates.Flags.DevicePointer, scan.DevicePointer, scanCount);
+
+        var count = new DeviceElementCount(_count.DevicePointer, 0, capacity);
+        return new VectorEvaluation(selected.Slice(elementOffset, evalCount),
+            count.SkipFirst(elementOffset).TakeFirst(evalCount));
     }
 
-    public void Dispose()
+    private void EnsureCountAndScratch(GpuWorkspace workspace, int capacity)
     {
-        source.Dispose();
-        predicate.Dispose();
-        if (!_allocated)
+        if (_count.Handle.IsDefault)
+        {
+            _count = new GpuBigUInt(workspace, 1);
+        }
+
+        if (_scratchCapacity == capacity)
         {
             return;
         }
 
-        _scanResult.Dispose();
-        _compactedValues.Dispose();
-        _compactedSigns.Dispose();
+        var scratch = new StreamCompactionOrchestrator.ScanScratch(workspace, capacity);
+        _scratch?.Dispose();
+        _scratch = scratch;
+        _scratchCapacity = capacity;
+    }
+
+    private StreamCompactionOrchestrator.ScanScratch ScratchOrThrow() =>
+        _scratch ?? throw new InvalidOperationException("The scan scratch was not allocated.");
+
+    public void Dispose()
+    {
+        // A release that throws does not skip the others
+        try
+        {
+            _cache.Dispose();
+        }
+        finally
+        {
+            try
+            {
+                _count.Dispose();
+                _count = default;
+            }
+            finally
+            {
+                try
+                {
+                    if (_scratch != null)
+                    {
+                        _scratch.Dispose();
+                    }
+
+                    _scratch = null;
+                    _scratchCapacity = -1;
+                }
+                finally
+                {
+                    try
+                    {
+                        source.Dispose();
+                    }
+                    finally
+                    {
+                        predicate.Dispose();
+                    }
+                }
+            }
+        }
     }
 }

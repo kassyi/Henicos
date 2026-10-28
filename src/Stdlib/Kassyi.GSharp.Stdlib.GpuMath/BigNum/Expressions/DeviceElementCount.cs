@@ -184,15 +184,21 @@ internal static class DeviceCounted
                 "Combine the predicates into one Where (p.And(q)).");
     }
 
-    private static void ThrowIfCapturing(GpuWorkspace workspace)
+    /// <summary>Gets whether the workspace stream is capturing a CUDA graph.</summary>
+    public static bool IsCapturing(GpuWorkspace workspace)
     {
         if (workspace.Stream == IntPtr.Zero || GpuKernelLoader.IsCpuFallbackMode)
         {
-            return;
+            return false;
         }
 
         CudaException.ThrowIfError(CudaDriverApi.cuStreamIsCapturing(workspace.Stream, out var status));
-        if (status != CUstreamCaptureStatus.None)
+        return status != CUstreamCaptureStatus.None;
+    }
+
+    private static void ThrowIfCapturing(GpuWorkspace workspace)
+    {
+        if (IsCapturing(workspace))
         {
             throw new InvalidOperationException(
                 "The length of a filtered vector is known only on the device and cannot be read while a CUDA graph is " +

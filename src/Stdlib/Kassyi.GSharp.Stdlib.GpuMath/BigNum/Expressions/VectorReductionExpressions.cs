@@ -65,11 +65,21 @@ internal abstract class VectorReductionExpressionBase : IGpuBigIntExpression, ID
     /// </exception>
     /// <exception cref="OverflowException">The final sum does not fit in <see cref="NumWords"/> words.</exception>
     /// <exception cref="InvalidOperationException">The vector is empty and the reduction is Max or Min.</exception>
+    /// <exception cref="NotSupportedException">The workspace stream is capturing a CUDA graph.</exception>
     public GpuBigInt Evaluate(GpuWorkspace workspace, GpuBigUInt? targetResult = null)
     {
         if (targetResult is { } target && target.NumWords != NumWords)
         {
             throw new ArgumentException($"Destination buffer must have {NumWords} words.", nameof(targetResult));
+        }
+
+        // The sign, the emptiness and the overflow are read back from the header, which a capture cannot record; say so
+        // before a launch rather than fail on the read (design D3 4.8)
+        if (DeviceCounted.IsCapturing(workspace))
+        {
+            throw new NotSupportedException(
+                "Sum, Max and Min of a vector cannot be part of a CUDA graph: their sign and emptiness are read back " +
+                "to the host. Evaluate them directly; Count can be captured.");
         }
 
         // An empty vector has no passes. Max / Min have no value to return; stop before anything is launched.

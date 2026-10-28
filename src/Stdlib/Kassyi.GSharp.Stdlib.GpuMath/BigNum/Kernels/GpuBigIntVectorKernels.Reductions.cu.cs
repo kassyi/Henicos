@@ -113,16 +113,8 @@ public static partial class GpuBigIntVectorKernels
     /// The number of elements described by <paramref name="count"/> (design D3 4.1).
     /// </summary>
     [GpuDeviceFunction, GpuInline]
-    public static int ResolveElementCount(ElementCountContext count)
-    {
-        if (count.Base == null)
-        {
-            return count.Limit;
-        }
-
-        int n = (int)count.Base[0] - count.Skip;
-        return n < 0 ? 0 : (n > count.Limit ? count.Limit : n);
-    }
+    public static int ResolveElementCount(ElementCountContext count) =>
+        GpuStreamCompactionKernels.ResolveCount(count.Base, count.Skip, count.Limit);
 
     /// <summary>
     /// The number of inputs of reduction pass <paramref name="passIndex"/>: the element count for pass 0, then
