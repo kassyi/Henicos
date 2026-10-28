@@ -144,112 +144,190 @@ internal sealed class SquaringChainDriver
         cancellationToken.ThrowIfCancellationRequested();
         Load(start);
 
+        // The checks passed and the rollbacks always equal those of the last verified point, so they live in it.
         var verified = start;
         var k = start.Iteration;
-        var checksPassed = start.ChecksPassed;
-        var rollbacks = start.Rollbacks;
         var consecutiveFailures = 0;
         long iterations = 0;
 
         while (k < EndIteration)
         {
-            // One block: square up to the next boundary, stopping at the snapshot point and at the end of the chain.
-            var boundary = (k / BlockSize + 1) * BlockSize;
-            while (k < boundary)
-            {
-                var stop = boundary;
-                if (k < SnapshotAt)
-                {
-                    stop = Math.Min(stop, SnapshotAt);
-                }
-
-                if (k < ChainLength)
-                {
-                    stop = Math.Min(stop, ChainLength);
-                }
-
-                var faultInjection = FaultInjection;
-                if (faultInjection != null)
-                {
-                    stop = Math.Min(stop, k + 1);
-                }
-
-                _modulus.SquareState((int)(stop - k));
-                iterations += stop - k;
-                k = stop;
-                if (k == SnapshotAt)
-                {
-                    _modulus.Copy(SquaringRegister.Snapshot, SquaringRegister.State);
-                }
-
-                if (k == ChainLength)
-                {
-                    _modulus.Copy(SquaringRegister.Final, SquaringRegister.State);
-                }
-
-                if (faultInjection != null && faultInjection(k))
-                {
-                    CorruptState();
-                }
-            }
+            k = SquareToBoundary(k, ref iterations);
 
             if (k % CheckInterval != 0 && k != EndIteration)
             {
-                // d <- d * u_k
-                _modulus.Multiply(SquaringRegister.CheckD, SquaringRegister.CheckD, SquaringRegister.State);
+                ExtendCheck();
+            }
+            else if (await CheckBlockAsync(synchronous).ConfigureAwait(false) is { } d)
+            {
+                consecutiveFailures = 0;
+                verified = await ReadVerifiedPointAsync(k, d, verified, synchronous).ConfigureAwait(false);
+                onVerified?.Invoke(verified);
             }
             else
             {
-                // aux = d_old^(2^B) * u_0, then d <- d_old * u_k; equal when the block was squared correctly.
-                _modulus.Copy(SquaringRegister.CheckAux, SquaringRegister.CheckD);
-                _modulus.Square(SquaringRegister.CheckAux, BlockSize);
-                _modulus.Multiply(SquaringRegister.CheckAux, SquaringRegister.CheckAux, SquaringRegister.Start);
-                _modulus.Multiply(SquaringRegister.CheckD, SquaringRegister.CheckD, SquaringRegister.State);
-
-                var d = await ReadAsync(SquaringRegister.CheckD, synchronous).ConfigureAwait(false);
-                var aux = await ReadAsync(SquaringRegister.CheckAux, synchronous).ConfigureAwait(false);
-                if (d.AsSpan().SequenceEqual(aux))
-                {
-                    checksPassed++;
-                    consecutiveFailures = 0;
-                    var state = await ReadAsync(SquaringRegister.State, synchronous).ConfigureAwait(false);
-                    var snapshot = k > SnapshotAt
-                        ? await ReadAsync(SquaringRegister.Snapshot, synchronous).ConfigureAwait(false)
-                        : [];
-                    var final = k > ChainLength
-                        ? await ReadAsync(SquaringRegister.Final, synchronous).ConfigureAwait(false)
-                        : [];
-                    verified = new ChainPoint(k, state, d, snapshot, final, checksPassed, rollbacks);
-                    onVerified?.Invoke(verified);
-                }
-                else
-                {
-                    consecutiveFailures++;
-                    if (consecutiveFailures >= MaxConsecutiveFailures)
-                    {
-                        throw new InvalidOperationException(
-                            $"The Gerbicz-Li check failed {consecutiveFailures} times in a row (at iteration {k}, block size {BlockSize}); the last verified point is iteration {verified.Iteration}.");
-                    }
-
-                    // Back to the last verified point; its d already includes its u_k.
-                    rollbacks++;
-                    verified = verified with { Rollbacks = rollbacks };
-                    Load(verified);
-                    k = verified.Iteration;
-                }
+                verified = RollBack(verified, ++consecutiveFailures, k);
+                k = verified.Iteration;
             }
 
-            onBlock?.Invoke(k, checksPassed, rollbacks);
-            if (cancellationToken.IsCancellationRequested)
-            {
-                await WaitAsync(synchronous).ConfigureAwait(false);
-                Load(verified);
-                cancellationToken.ThrowIfCancellationRequested();
-            }
+            onBlock?.Invoke(k, verified.ChecksPassed, verified.Rollbacks);
+            await ThrowIfCanceledAsync(verified, synchronous, cancellationToken).ConfigureAwait(false);
         }
 
         await WaitAsync(synchronous).ConfigureAwait(false);
         return new ChainOutcome(verified, iterations);
+    }
+
+    /// <summary>
+    /// Squares the state from <paramref name="k"/> to the next block boundary, stopping at the snapshot point and at the
+    /// end of the chain to save <c>u_E</c> and <c>u_K</c>, and after every squaring when <see cref="FaultInjection"/> is set.
+    /// </summary>
+    /// <param name="k">The position before the block.</param>
+    /// <param name="iterations">Incremented by the squarings run.</param>
+    /// <returns>The block boundary <c>(floor(k / B) + 1) * B</c>.</returns>
+    private long SquareToBoundary(long k, ref long iterations)
+    {
+        var boundary = (k / BlockSize + 1) * BlockSize;
+        while (k < boundary)
+        {
+            var stop = boundary;
+            if (k < SnapshotAt)
+            {
+                stop = Math.Min(stop, SnapshotAt);
+            }
+
+            if (k < ChainLength)
+            {
+                stop = Math.Min(stop, ChainLength);
+            }
+
+            var faultInjection = FaultInjection;
+            if (faultInjection != null)
+            {
+                stop = Math.Min(stop, k + 1);
+            }
+
+            _modulus.SquareState((int)(stop - k));
+            iterations += stop - k;
+            k = stop;
+            if (k == SnapshotAt)
+            {
+                _modulus.Copy(SquaringRegister.Snapshot, SquaringRegister.State);
+            }
+
+            if (k == ChainLength)
+            {
+                _modulus.Copy(SquaringRegister.Final, SquaringRegister.State);
+            }
+
+            if (faultInjection != null && faultInjection(k))
+            {
+                CorruptState();
+            }
+        }
+
+        return boundary;
+    }
+
+    /// <summary>
+    /// Extends the Gerbicz-Li product at a block boundary <c>k</c> without a check: <c>d &lt;- d * u_k</c>, so that
+    /// <c>d = u_0 * u_B * ... * u_k</c> holds again.
+    /// </summary>
+    private void ExtendCheck() =>
+        _modulus.Multiply(SquaringRegister.CheckD, SquaringRegister.CheckD, SquaringRegister.State);
+
+    /// <summary>
+    /// Runs the Gerbicz-Li check at a block boundary <c>k</c> and extends <c>d</c> by <c>u_k</c>.
+    /// </summary>
+    /// <param name="synchronous">Whether to wait synchronously.</param>
+    /// <returns>The canonical new <c>d</c> when the check passes; <see langword="null"/> when it fails.</returns>
+    /// <remarks>
+    /// <para>
+    /// With <c>d_old = u_0 * u_B * ... * u_(k-B)</c> (the product up to the previous boundary) and every squaring right,
+    /// <c>d_old^(2^B) = u_B * u_(2B) * ... * u_k</c>, because squaring each factor <c>B</c> times moves it one block on.
+    /// So <c>aux = d_old^(2^B) * u_0</c> equals <c>d_new = d_old * u_k</c>. An error in the block changes
+    /// <c>u_k</c> but not <c>d_old</c>, so the two differ (barring a collision modulo <c>N</c>).
+    /// </para>
+    /// <para>The check costs <c>B</c> squarings of <c>aux</c> and two products; <c>d</c> is extended in either case.</para>
+    /// </remarks>
+    private async ValueTask<uint[]?> CheckBlockAsync(bool synchronous)
+    {
+        // aux = d_old^(2^B) * u_0, then d <- d_old * u_k.
+        _modulus.Copy(SquaringRegister.CheckAux, SquaringRegister.CheckD);
+        _modulus.Square(SquaringRegister.CheckAux, BlockSize);
+        _modulus.Multiply(SquaringRegister.CheckAux, SquaringRegister.CheckAux, SquaringRegister.Start);
+        _modulus.Multiply(SquaringRegister.CheckD, SquaringRegister.CheckD, SquaringRegister.State);
+
+        var d = await ReadAsync(SquaringRegister.CheckD, synchronous).ConfigureAwait(false);
+        var aux = await ReadAsync(SquaringRegister.CheckAux, synchronous).ConfigureAwait(false);
+        return d.AsSpan().SequenceEqual(aux) ? d : null;
+    }
+
+    /// <summary>
+    /// Reads the point at <paramref name="k"/> that has just passed a check: the state, <paramref name="d"/>, and the
+    /// saved <c>u_E</c> / <c>u_K</c> when <paramref name="k"/> is past them.
+    /// </summary>
+    /// <param name="k">The block boundary that passed the check.</param>
+    /// <param name="d">The canonical <c>d = u_0 * u_B * ... * u_k</c>, which already includes <c>u_k</c>.</param>
+    /// <param name="previous">The previous verified point, whose counts carry over.</param>
+    /// <param name="synchronous">Whether to wait synchronously.</param>
+    /// <returns>The new verified point, with one more check passed.</returns>
+    private async ValueTask<ChainPoint> ReadVerifiedPointAsync(long k, uint[] d, ChainPoint previous,
+        bool synchronous)
+    {
+        var state = await ReadAsync(SquaringRegister.State, synchronous).ConfigureAwait(false);
+        var snapshot = k > SnapshotAt
+            ? await ReadAsync(SquaringRegister.Snapshot, synchronous).ConfigureAwait(false)
+            : [];
+        var final = k > ChainLength
+            ? await ReadAsync(SquaringRegister.Final, synchronous).ConfigureAwait(false)
+            : [];
+        return new ChainPoint(k, state, d, snapshot, final, previous.ChecksPassed + 1, previous.Rollbacks);
+    }
+
+    /// <summary>
+    /// Goes back to the last verified point after a failed check, or ends the run when the checks failed
+    /// <see cref="MaxConsecutiveFailures"/> times in a row.
+    /// </summary>
+    /// <param name="verified">The last verified point.</param>
+    /// <param name="consecutiveFailures">The failed checks in a row, this one included.</param>
+    /// <param name="k">The position of the failed check (for the message).</param>
+    /// <returns>The verified point with one more rollback; the registers hold it.</returns>
+    /// <exception cref="InvalidOperationException"><paramref name="consecutiveFailures"/> reached the limit.</exception>
+    /// <remarks>
+    /// The invariant: a verified point at <c>k_v</c> holds <c>d = u_0 * u_B * ... * u_(k_v)</c>, which already includes
+    /// <c>u_(k_v)</c>. The chain continues with the next block and extends <c>d</c> at the next boundary only; extending it
+    /// here again would multiply <c>u_(k_v)</c> in twice and fail every later check (the defect of the earlier
+    /// implementation).
+    /// </remarks>
+    private ChainPoint RollBack(ChainPoint verified, int consecutiveFailures, long k)
+    {
+        if (consecutiveFailures >= MaxConsecutiveFailures)
+        {
+            throw new InvalidOperationException(
+                $"The Gerbicz-Li check failed {consecutiveFailures} times in a row (at iteration {k}, block size {BlockSize}); the last verified point is iteration {verified.Iteration}.");
+        }
+
+        var point = verified with { Rollbacks = verified.Rollbacks + 1 };
+        Load(point);
+        return point;
+    }
+
+    /// <summary>
+    /// Throws <see cref="OperationCanceledException"/> after waiting for the queued work and setting the registers back to
+    /// <paramref name="verified"/>, when the token is canceled.
+    /// </summary>
+    private async ValueTask ThrowIfCanceledAsync(ChainPoint verified, bool synchronous,
+        CancellationToken cancellationToken)
+    {
+        if (!cancellationToken.IsCancellationRequested)
+        {
+            return;
+        }
+
+        await WaitAsync(synchronous).ConfigureAwait(false);
+        Load(verified);
+        cancellationToken.ThrowIfCancellationRequested();
     }
 
     /// <summary>Flips one low bit of the state (bit 0, or bit 1 when bit 0 would make it <c>N</c>).</summary>
