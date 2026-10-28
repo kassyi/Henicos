@@ -88,10 +88,11 @@ public class GpuBigUFloatTests : IDisposable
         Assert.Equal(36.0, ToDouble(prod), precision: 8);
         Assert.Equal(4.0, ToDouble(quot), precision: 8);
 
-        // Zero-allocation CompareTo across different exponents (12 * 2^0 == 3 * 2^2)
+        // Zero-allocation CompareTo across different exponents (12 * 2^0 == 3 * 2^2). Equals is the identity of the
+        // significand buffer and the exponent (#638), so two equal values in separate buffers are == but not Equals.
         Assert.Equal(0, a.CompareTo(c));
-        Assert.True(a.Equals(c));
-        Assert.True(a.Equals((object)c));
+        Assert.False(a.Equals(c));
+        Assert.False(a.Equals((object)c));
         Assert.True(a == c);
         Assert.False(a != c);
         Assert.True(a <= c);
@@ -215,5 +216,39 @@ public class GpuBigUFloatTests : IDisposable
             Assert.Equal(3, quotient.Exponent);
             Assert.Equal(1u, remainder);
         }
+    }
+
+    [SkippableFact]
+    [Category(TestCategory.Stdlib)]
+    [Scenario(TestScenario.HappyPath)]
+    public void Equals_IsIdentity_EqualityOperatorComparesValues()
+    {
+        // The float types follow the integer rule (#638): Equals and GetHashCode compare the significand buffer, the
+        // exponent and the sign without reading the device; == compares values (12 * 2^0 == 3 * 2^2).
+        // mutant: GpuBigUFloat.Equals compares the values again (a.Equals(c) becomes true)
+        // mutant: GpuBigUFloat.Equals ignores Exponent (a.Equals(shifted) becomes true)
+        // mutant: GpuBigFloat.Equals ignores IsNegative (fa.Equals(negated) becomes true)
+        // mutant: GpuBigUFloat / GpuBigFloat operator == calls Equals (a == c becomes false)
+        CudaCapability.EnsureGpuAvailable();
+        using var aSig = new GpuBigUInt(_context, [12u]);
+        using var cSig = new GpuBigUInt(_context, [3u]);
+        var a = new GpuBigUFloat(aSig, 0);
+        var c = new GpuBigUFloat(cSig, 2);
+        var copy = a;
+        var shifted = new GpuBigUFloat(aSig, 1);
+        var fa = new GpuBigFloat(a, false);
+        var fc = new GpuBigFloat(c, false);
+        var negated = new GpuBigFloat(a, true);
+
+        Assert.Equal(
+            (false, true, true, true, false, 2),
+            (a.Equals(c), a == c, a.Equals(copy), a.GetHashCode() == copy.GetHashCode(), a.Equals(shifted),
+                new HashSet<GpuBigUFloat> { a, c, copy }.Count)
+        );
+        Assert.Equal(
+            (false, true, true, false, 2),
+            (fa.Equals(fc), fa == fc, fa.Equals(new GpuBigFloat(a, false)), fa.Equals(negated),
+                new HashSet<GpuBigFloat> { fa, fc, new GpuBigFloat(a, false) }.Count)
+        );
     }
 }
