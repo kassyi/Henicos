@@ -14,19 +14,26 @@ namespace Kassyi.GSharp.Compiler.Lowering;
 /// The device function that owns the body. With a semantic model, only references to its own parameters are rewritten
 /// to the frame copies of <paramref name="copiedParameters"/>.
 /// </param>
-/// <param name="stateLabels">
-/// The top-level labels that start a state (<see cref="StateLabelPlanner.FindStateLabels"/>), or <see langword="null"/>
-/// to find them in the block. A local used after such a label of the user, in another state than its declaration,
-/// lives in the context like a local that crosses a barrier.
-/// </param>
+/// <remarks>
+/// A local used after a label of the user that starts a state (<see cref="StateLabelPlanner"/>), in another state than
+/// its declaration, lives in the context like a local that crosses a barrier.
+/// </remarks>
 public class ContextHoister(
     IReadOnlyCollection<string>? copiedParameters = null,
     bool isDeviceFunction = false,
     SemanticModel? semanticModel = null,
-    IMethodSymbol? deviceFunction = null,
-    HashSet<DeclarationKey>? stateLabels = null)
+    IMethodSymbol? deviceFunction = null)
     : CSharpSyntaxRewriter
 {
+    // The plan that AstLoweringPipeline gives this pass and StateMachineLowerer, or null to make one from the block
+    private readonly StatePlan? _plan;
+
+    /// <summary>Creates a hoister that takes the labels that start a state from <paramref name="plan"/>.</summary>
+    internal ContextHoister(IReadOnlyCollection<string>? copiedParameters, bool isDeviceFunction,
+        SemanticModel? semanticModel, IMethodSymbol? deviceFunction, StatePlan plan)
+        : this(copiedParameters, isDeviceFunction, semanticModel, deviceFunction) =>
+        _plan = plan;
+
     private readonly HashSet<DeclarationKey> _hoistedVariables = [];
     private readonly HashSet<string> _copiedParameters = [];
 
@@ -131,13 +138,13 @@ public class ContextHoister(
     // barrier rule covers.
     private int[] FindSplitUserLabelStarts(BlockSyntax block)
     {
-        var labels = stateLabels ?? StateLabelPlanner.FindStateLabels(block, semanticModel);
+        var plan = _plan ?? StateLabelPlanner.Plan(block, semanticModel);
         var starts = ImmutableArray.CreateBuilder<int>();
         foreach (var statement in block.Statements)
         {
             if (statement is LabeledStatementSyntax labeled &&
-                !labeled.Identifier.ValueText.StartsWith(GSharpInternalNames.Lowering.LabelPrefix, StringComparison.Ordinal) &&
-                labels.Contains(LoweringIdentity.ForDeclaration(labeled, semanticModel)))
+                !LoweringIdentity.IsLoweringLabel(labeled) &&
+                plan.StartsState(labeled))
             {
                 starts.Add(labeled.SpanStart);
             }

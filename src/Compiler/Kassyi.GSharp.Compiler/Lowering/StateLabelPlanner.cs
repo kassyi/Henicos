@@ -20,17 +20,24 @@ namespace Kassyi.GSharp.Compiler.Lowering;
 /// points. A new state label can move another <c>goto</c> into another state than its label, so the search repeats until
 /// nothing changes; it ends because the set only grows (at most one round per label, plus one).
 /// <para>
-/// The type is internal: the lowering passes that take its result (<see cref="ContextHoister"/>,
-/// <see cref="StateMachineLowerer"/>) are public, but they take the set as <see cref="HashSet{T}"/> of
-/// <see cref="DeclarationKey"/> and find it themselves when it is not given, so no caller outside the compiler needs it.
+/// The type is internal: <see cref="AstLoweringPipeline"/> gives its <see cref="StatePlan"/> to the internal
+/// constructors of <see cref="ContextHoister"/> and <see cref="StateMachineLowerer"/>; their public constructors (the
+/// Tier 2 tests) make the plan themselves.
 /// </para>
 /// </remarks>
 internal static class StateLabelPlanner
 {
-    /// <summary>Returns the keys (<see cref="LoweringIdentity.ForDeclaration"/>) of the top-level labels of <paramref name="body"/> that start a state.</summary>
+    /// <summary>Finds the labels of <paramref name="body"/> that start a state and numbers the states they start.</summary>
     /// <param name="body">The flattened body that <see cref="StateMachineLowerer"/> lowers.</param>
     /// <param name="model">The semantic model that keys the labels by symbol, or <see langword="null"/> to key them by name.</param>
-    public static HashSet<DeclarationKey> FindStateLabels(BlockSyntax body, SemanticModel? model)
+    public static StatePlan Plan(BlockSyntax body, SemanticModel? model)
+    {
+        var stateLabels = FindStateLabels(body, model);
+        return new StatePlan(stateLabels, NumberLabelStates(body.Statements, stateLabels, model), model);
+    }
+
+    // The keys (LoweringIdentity.ForDeclaration) of the top-level labels of body that start a state
+    private static HashSet<DeclarationKey> FindStateLabels(BlockSyntax body, SemanticModel? model)
     {
         var stateLabels = new HashSet<DeclarationKey>();
         var statements = body.Statements;
@@ -52,7 +59,7 @@ internal static class StateLabelPlanner
         foreach (var statement in statements)
         {
             if (statement is LabeledStatementSyntax labeled &&
-                (IsLoweringLabel(labeled) || labelCounts?[labeled.Identifier.ValueText] > 1))
+                (LoweringIdentity.IsLoweringLabel(labeled) || labelCounts?[labeled.Identifier.ValueText] > 1))
             {
                 stateLabels.Add(LoweringIdentity.ForDeclaration(labeled, model));
             }
@@ -93,7 +100,29 @@ internal static class StateLabelPlanner
         return stateLabels;
     }
 
-    // The state each top-level statement falls in: a state label starts a new state at itself, a split point after itself
+    // The state that each label of stateLabels starts, numbered by the same rule that FindStateLabels uses to place the
+    // gotos, so a goto and its label always agree on the state
+    private static Dictionary<DeclarationKey, int> NumberLabelStates(SyntaxList<StatementSyntax> statements,
+        HashSet<DeclarationKey> stateLabels, SemanticModel? model)
+    {
+        var stateOfStatement = new int[statements.Count];
+        NumberStates(statements, stateLabels, model, stateOfStatement);
+        var labelStates = new Dictionary<DeclarationKey, int>();
+        for (var i = 0; i < statements.Count; i++)
+        {
+            if (statements[i] is LabeledStatementSyntax labeled &&
+                LoweringIdentity.ForDeclaration(labeled, model) is var key &&
+                stateLabels.Contains(key))
+            {
+                labelStates[key] = stateOfStatement[i];
+            }
+        }
+
+        return labelStates;
+    }
+
+    // The state each top-level statement falls in: a state label starts a new state at itself, a split point after itself.
+    // This is the only definition of the numbering (see NumberLabelStates).
     private static void NumberStates(SyntaxList<StatementSyntax> statements, HashSet<DeclarationKey> stateLabels,
         SemanticModel? model, int[] stateOfStatement)
     {
@@ -113,9 +142,6 @@ internal static class StateLabelPlanner
             }
         }
     }
-
-    private static bool IsLoweringLabel(LabeledStatementSyntax labeled) =>
-        labeled.Identifier.ValueText.StartsWith(GSharpInternalNames.Lowering.LabelPrefix, StringComparison.Ordinal);
 
     // How many labels of each name the body declares, nested ones included
     private static Dictionary<string, int> CountLabelNames(BlockSyntax body)
