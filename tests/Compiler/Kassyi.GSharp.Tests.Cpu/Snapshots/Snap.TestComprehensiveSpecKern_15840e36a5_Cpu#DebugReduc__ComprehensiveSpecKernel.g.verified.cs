@@ -408,7 +408,6 @@ public static readonly string ProcessPhysics_FullSource=global::Kassyi.GSharp.Ge
 public class __gsharp_context_DebugReduc__ComprehensiveSpecKernel__ProcessPhysics {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
-public bool __gsharp_yielded_for_grid_sync;
 public float Gravity;
 public int tx;
 public int ty;
@@ -644,9 +643,9 @@ if (__gsharp_contexts[__gsharp_linear_tid].__gsharp_state != -1)
 {
 anyGridActive = true;
 anyBlockActive = true;
-__gsharp_contexts[__gsharp_linear_tid].__gsharp_yielded_for_grid_sync = false;
+global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested = false;
 __gsharp_statemachine_DebugReduc__ComprehensiveSpecKernel__ProcessPhysics(particles, ref totalMagnitude, ref successFlag, largeStructVal, particleCount, unrollFactor, __gsharp_contexts[__gsharp_linear_tid]);
-if (__gsharp_contexts[__gsharp_linear_tid].__gsharp_yielded_for_grid_sync)
+if (global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested)
 {
 gridSyncRequested = true;
 }
@@ -759,7 +758,6 @@ public static readonly string CooperativePhysicsProcess_FullSource=global::Kassy
 public class __gsharp_context_DebugReduc__ComprehensiveSpecKernel__CooperativePhysicsProcess {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
-public bool __gsharp_yielded_for_grid_sync;
 public int tid;
 }
 public static unsafe void __gsharp_statemachine_DebugReduc__ComprehensiveSpecKernel__CooperativePhysicsProcess(int[] data, __gsharp_context_DebugReduc__ComprehensiveSpecKernel__CooperativePhysicsProcess __gsharp_ctx) {
@@ -770,7 +768,7 @@ case 0:
 {
 __gsharp_ctx.tid = global::Kassyi.GSharp.Core.ThreadIndex.X;
 data[__gsharp_ctx.tid] = __gsharp_ctx.tid;
-__gsharp_ctx.__gsharp_yielded_for_grid_sync = true;
+global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested = true;
 __gsharp_ctx.__gsharp_state = 1;
 return;
 }
@@ -850,9 +848,9 @@ if (__gsharp_contexts[__gsharp_linear_tid].__gsharp_state != -1)
 {
 anyGridActive = true;
 anyBlockActive = true;
-__gsharp_contexts[__gsharp_linear_tid].__gsharp_yielded_for_grid_sync = false;
+global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested = false;
 __gsharp_statemachine_DebugReduc__ComprehensiveSpecKernel__CooperativePhysicsProcess(data, __gsharp_contexts[__gsharp_linear_tid]);
-if (__gsharp_contexts[__gsharp_linear_tid].__gsharp_yielded_for_grid_sync)
+if (global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested)
 {
 gridSyncRequested = true;
 }

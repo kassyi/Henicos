@@ -96,6 +96,19 @@ public static class ManagedGpuContext
     [ThreadStatic]
     public static int GridDimZ;
 
+    /// <summary>
+    /// Set by generated code when the GPU thread being stepped reaches <c>Gpu.SyncGrid</c>, in the kernel or in any
+    /// device function it calls; the managed launcher clears it before each step and reads it after. For generated code
+    /// only.
+    /// </summary>
+    /// <remarks>
+    /// The managed launcher steps one GPU thread at a time on one host thread, so a request set during a step belongs to
+    /// that GPU thread, however deep the call that set it.
+    /// </remarks>
+    [ThreadStatic]
+    [EditorBrowsable(EditorBrowsableState.Never)]
+    public static bool GridSyncRequested;
+
     // One region per shared memory declaration per block. A later declaration never moves an earlier region: threads
     // keep the span they were handed, so moving a region would leave them writing to a copy nobody else reads. Only the
     // same declaration reached with a larger count moves its own region (see GrowRegion).

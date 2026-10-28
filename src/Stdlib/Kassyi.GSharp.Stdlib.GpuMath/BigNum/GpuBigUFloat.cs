@@ -10,6 +10,9 @@ namespace Kassyi.GSharp.Stdlib.GpuMath.BigNum;
 /// <para><b>Performance:</b> Backed by device memory allocations in <see cref="GpuBigUInt"/> significand with zero heap overhead on the host.</para>
 /// <para><b>Memory Management:</b> Implements <see cref="IDisposable"/> to release the GPU buffer allocated for <see cref="Significand"/>.</para>
 /// <para><b>Thread Safety:</b> Value-type semantics; distinct instances are safe for concurrent read operations.</para>
+/// <para><b>Equality:</b> <see cref="Equals(GpuBigUFloat)"/> and <see cref="GetHashCode"/> compare identity (the significand buffer and the exponent) and never
+/// read device memory; <c>==</c>, <c>!=</c> and <see cref="CompareTo(GpuBigUFloat)"/> compare values on the GPU. The two differ on
+/// purpose, as <c>==</c> and <see cref="double.Equals(double)"/> differ for <see cref="double.NaN"/>.</para>
 /// </remarks>
 [StructLayout(LayoutKind.Sequential)]
 public readonly struct GpuBigUFloat : IGpuBigNumber<GpuBigUFloat>
@@ -223,11 +226,19 @@ public readonly struct GpuBigUFloat : IGpuBigNumber<GpuBigUFloat>
     public int CompareTo(GpuBigUFloat other) => GpuBigNumberAlgorithms.Compare(this, other);
 
     /// <summary>
-    /// Indicates whether the current instance is equal to another <see cref="GpuBigUFloat"/> instance.
+    /// Indicates whether the current instance has the same significand buffer and exponent as another <see cref="GpuBigUFloat"/>.
     /// </summary>
     /// <param name="other">A <see cref="GpuBigUFloat"/> to compare with this instance.</param>
-    /// <returns><see langword="true"/> if the current instance is equal to the <paramref name="other"/> parameter; otherwise, <see langword="false"/>.</returns>
-    public bool Equals(GpuBigUFloat other) => CompareTo(other) == 0;
+    /// <returns>
+    /// <see langword="true"/> if <see cref="Significand"/> refers to the same buffer (<see cref="GpuBigUInt.Equals(GpuBigUInt)"/>) and <see cref="Exponent"/> is the same; otherwise, <see langword="false"/>.
+    /// </returns>
+    /// <remarks>
+    /// Like the integer types, <see cref="Equals(GpuBigUFloat)"/> and <see cref="GetHashCode"/> compare identity, not values: two
+    /// separate buffers holding the same value, or the same value written with another exponent (<c>12 * 2^0</c> and <c>3 * 2^2</c>), are not
+    /// equal. Use <c>==</c> or <see cref="CompareTo(GpuBigUFloat)"/> to compare values on the GPU. Neither member reads device
+    /// memory, so both also work on a disposed value.
+    /// </remarks>
+    public bool Equals(GpuBigUFloat other) => Significand.Equals(other.Significand) && Exponent == other.Exponent;
 
     /// <summary>
     /// Determines whether the specified object is equal to the current instance.
@@ -237,26 +248,26 @@ public readonly struct GpuBigUFloat : IGpuBigNumber<GpuBigUFloat>
     public override bool Equals(object? obj) => obj is GpuBigUFloat other && Equals(other);
 
     /// <summary>
-    /// Returns the hash code for this instance.
+    /// Returns the hash code of the significand buffer and the exponent, consistent with <see cref="Equals(GpuBigUFloat)"/>.
     /// </summary>
     /// <returns>A 32-bit signed integer hash code.</returns>
     public override int GetHashCode() => HashCode.Combine(Significand, Exponent);
 
     /// <summary>
-    /// Determines whether two specified <see cref="GpuBigUFloat"/> instances are equal.
+    /// Determines whether two specified <see cref="GpuBigUFloat"/> instances have the same value on the GPU.
     /// </summary>
     /// <param name="left">The first value to compare.</param>
     /// <param name="right">The second value to compare.</param>
-    /// <returns><see langword="true"/> if <paramref name="left"/> equals <paramref name="right"/>; otherwise, <see langword="false"/>.</returns>
-    public static bool operator ==(GpuBigUFloat left, GpuBigUFloat right) => left.Equals(right);
+    /// <returns><see langword="true"/> if the values are equal; otherwise, <see langword="false"/>.</returns>
+    public static bool operator ==(GpuBigUFloat left, GpuBigUFloat right) => left.CompareTo(right) == 0;
 
     /// <summary>
-    /// Determines whether two specified <see cref="GpuBigUFloat"/> instances are not equal.
+    /// Determines whether two specified <see cref="GpuBigUFloat"/> instances have different values on the GPU.
     /// </summary>
     /// <param name="left">The first value to compare.</param>
     /// <param name="right">The second value to compare.</param>
-    /// <returns><see langword="true"/> if <paramref name="left"/> does not equal <paramref name="right"/>; otherwise, <see langword="false"/>.</returns>
-    public static bool operator !=(GpuBigUFloat left, GpuBigUFloat right) => !left.Equals(right);
+    /// <returns><see langword="true"/> if the values differ; otherwise, <see langword="false"/>.</returns>
+    public static bool operator !=(GpuBigUFloat left, GpuBigUFloat right) => left.CompareTo(right) != 0;
 
     /// <summary>
     /// Determines whether one specified <see cref="GpuBigUFloat"/> is less than another specified <see cref="GpuBigUFloat"/>.

@@ -98,9 +98,9 @@ internal sealed class UnsupportedConstructRule :
     {
         if (node.Parent is ExpressionStatementSyntax &&
             GpuOperatorMacroTranspiler.TryResolve(node, context.SemanticModel, out var macro) &&
-            macro.IsTargetMissing)
+            macro.Failure is { } failure)
         {
-            context.ReportDiagnostic(GSharpDiagnostics.UnsupportedSyntax, node, macro.FormatMissingTarget());
+            context.ReportDiagnostic(GSharpDiagnostics.UnsupportedSyntax, node, failure);
         }
     }
 

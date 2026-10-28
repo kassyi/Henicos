@@ -120,7 +120,6 @@ public static readonly string WmmaInt8RowMajorKernel_FullSource=global::Kassyi.G
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Core__WmmaKernels__WmmaInt8RowMajorKernel {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
-public bool __gsharp_yielded_for_grid_sync;
 }
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Core__WmmaKernels__WmmaInt8RowMajorKernel(sbyte[] a, sbyte[] b, int[] c, int[] d, __gsharp_context_Kassyi__GSharp__Tests__Shared__Core__WmmaKernels__WmmaInt8RowMajorKernel __gsharp_ctx) {
 {
@@ -227,9 +226,9 @@ if (__gsharp_contexts[__gsharp_linear_tid].__gsharp_state != -1)
 {
 anyGridActive = true;
 anyBlockActive = true;
-__gsharp_contexts[__gsharp_linear_tid].__gsharp_yielded_for_grid_sync = false;
+global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested = false;
 __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Core__WmmaKernels__WmmaInt8RowMajorKernel(a, b, c, d, __gsharp_contexts[__gsharp_linear_tid]);
-if (__gsharp_contexts[__gsharp_linear_tid].__gsharp_yielded_for_grid_sync)
+if (global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested)
 {
 gridSyncRequested = true;
 }
@@ -341,7 +340,6 @@ public static readonly string WmmaInt8ColMajorBKernel_FullSource=global::Kassyi.
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Core__WmmaKernels__WmmaInt8ColMajorBKernel {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
-public bool __gsharp_yielded_for_grid_sync;
 }
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Core__WmmaKernels__WmmaInt8ColMajorBKernel(sbyte[] a, sbyte[] bColMajor, int[] c, int[] d, __gsharp_context_Kassyi__GSharp__Tests__Shared__Core__WmmaKernels__WmmaInt8ColMajorBKernel __gsharp_ctx) {
 {
@@ -448,9 +446,9 @@ if (__gsharp_contexts[__gsharp_linear_tid].__gsharp_state != -1)
 {
 anyGridActive = true;
 anyBlockActive = true;
-__gsharp_contexts[__gsharp_linear_tid].__gsharp_yielded_for_grid_sync = false;
+global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested = false;
 __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Core__WmmaKernels__WmmaInt8ColMajorBKernel(a, bColMajor, c, d, __gsharp_contexts[__gsharp_linear_tid]);
-if (__gsharp_contexts[__gsharp_linear_tid].__gsharp_yielded_for_grid_sync)
+if (global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested)
 {
 gridSyncRequested = true;
 }
@@ -562,7 +560,6 @@ public static readonly string WmmaInt8ColMajorStoreKernel_FullSource=global::Kas
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Core__WmmaKernels__WmmaInt8ColMajorStoreKernel {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
-public bool __gsharp_yielded_for_grid_sync;
 }
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Core__WmmaKernels__WmmaInt8ColMajorStoreKernel(sbyte[] a, sbyte[] b, int[] dColMajor, __gsharp_context_Kassyi__GSharp__Tests__Shared__Core__WmmaKernels__WmmaInt8ColMajorStoreKernel __gsharp_ctx) {
 {
@@ -663,9 +660,9 @@ if (__gsharp_contexts[__gsharp_linear_tid].__gsharp_state != -1)
 {
 anyGridActive = true;
 anyBlockActive = true;
-__gsharp_contexts[__gsharp_linear_tid].__gsharp_yielded_for_grid_sync = false;
+global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested = false;
 __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Core__WmmaKernels__WmmaInt8ColMajorStoreKernel(a, b, dColMajor, __gsharp_contexts[__gsharp_linear_tid]);
-if (__gsharp_contexts[__gsharp_linear_tid].__gsharp_yielded_for_grid_sync)
+if (global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested)
 {
 gridSyncRequested = true;
 }
@@ -776,7 +773,6 @@ public static readonly string WmmaDoubleM8N8K4Kernel_FullSource=global::Kassyi.G
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Core__WmmaKernels__WmmaDoubleM8N8K4Kernel {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
-public bool __gsharp_yielded_for_grid_sync;
 }
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Core__WmmaKernels__WmmaDoubleM8N8K4Kernel(double[] a, double[] b, double[] d, __gsharp_context_Kassyi__GSharp__Tests__Shared__Core__WmmaKernels__WmmaDoubleM8N8K4Kernel __gsharp_ctx) {
 {
@@ -877,9 +873,9 @@ if (__gsharp_contexts[__gsharp_linear_tid].__gsharp_state != -1)
 {
 anyGridActive = true;
 anyBlockActive = true;
-__gsharp_contexts[__gsharp_linear_tid].__gsharp_yielded_for_grid_sync = false;
+global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested = false;
 __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Core__WmmaKernels__WmmaDoubleM8N8K4Kernel(a, b, d, __gsharp_contexts[__gsharp_linear_tid]);
-if (__gsharp_contexts[__gsharp_linear_tid].__gsharp_yielded_for_grid_sync)
+if (global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested)
 {
 gridSyncRequested = true;
 }

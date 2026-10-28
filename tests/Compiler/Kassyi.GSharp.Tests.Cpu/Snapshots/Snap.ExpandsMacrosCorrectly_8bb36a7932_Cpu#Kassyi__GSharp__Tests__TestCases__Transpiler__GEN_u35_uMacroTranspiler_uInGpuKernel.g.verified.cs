@@ -256,7 +256,6 @@ public static readonly string MyKernel_FullSource=global::Kassyi.GSharp.Generate
 public class __gsharp_context_Kassyi__GSharp__Tests__TestCases__Transpiler__GEN_u35_uMacroTranspiler_uInGpuKernel__MyKernel {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
-public bool __gsharp_yielded_for_grid_sync;
 public int sum;
 public int i;
 }
@@ -298,7 +297,7 @@ __gsharp_ctx.sum += 2;
 
 if (__gsharp_ctx.sum > 0)
 __gsharp_ctx.sum += 10;
-__gsharp_ctx.__gsharp_yielded_for_grid_sync = true;
+global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested = true;
 __gsharp_ctx.__gsharp_state = 1;
 return;
 }
@@ -307,7 +306,7 @@ case 1:
 {
 __gsharp_ctx.sum += 20;
 __gsharp_ctx.sum += 1;
-__gsharp_ctx.__gsharp_yielded_for_grid_sync = true;
+global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested = true;
 __gsharp_ctx.__gsharp_state = 2;
 return;
 }
@@ -315,7 +314,7 @@ return;
 case 2:
 {
 __gsharp_ctx.sum += 2;
-__gsharp_ctx.__gsharp_yielded_for_grid_sync = true;
+global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested = true;
 __gsharp_ctx.__gsharp_state = 3;
 return;
 }
@@ -328,7 +327,7 @@ __gsharp_ctx.sum += __gsharp_ctx.i;
 __gsharp_ctx.sum *= 2;
 }
 
-__gsharp_ctx.__gsharp_yielded_for_grid_sync = true;
+global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested = true;
 __gsharp_ctx.__gsharp_state = 4;
 return;
 }
@@ -346,7 +345,7 @@ __gsharp_ctx.sum -= 10;
 __gsharp_ctx.sum -= 20;
 }
 
-__gsharp_ctx.__gsharp_yielded_for_grid_sync = true;
+global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested = true;
 __gsharp_ctx.__gsharp_state = 5;
 return;
 }
@@ -354,7 +353,7 @@ return;
 case 5:
 {
 __gsharp_ctx.sum += 3;
-__gsharp_ctx.__gsharp_yielded_for_grid_sync = true;
+global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested = true;
 __gsharp_ctx.__gsharp_state = 6;
 return;
 }
@@ -381,7 +380,7 @@ __gsharp_ctx.sum += 20;
 }
 
 __gsharp_ctx.sum += 1;
-__gsharp_ctx.__gsharp_yielded_for_grid_sync = true;
+global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested = true;
 __gsharp_ctx.__gsharp_state = 7;
 return;
 }
@@ -389,7 +388,7 @@ return;
 case 7:
 {
 __gsharp_ctx.sum += 2;
-__gsharp_ctx.__gsharp_yielded_for_grid_sync = true;
+global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested = true;
 __gsharp_ctx.__gsharp_state = 8;
 return;
 }
@@ -397,7 +396,7 @@ return;
 case 8:
 {
 __gsharp_ctx.sum += 3;
-__gsharp_ctx.__gsharp_yielded_for_grid_sync = true;
+global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested = true;
 __gsharp_ctx.__gsharp_state = 9;
 return;
 }
@@ -418,7 +417,7 @@ __gsharp_ctx.sum += 22;
 }
 
 LocalStep();
-__gsharp_ctx.__gsharp_yielded_for_grid_sync = true;
+global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested = true;
 __gsharp_ctx.__gsharp_state = 10;
 return;
 }
@@ -427,7 +426,7 @@ case 10:
 {
 __gsharp_ctx.sum += 33;
 __gsharp_ctx.sum += 1;
-__gsharp_ctx.__gsharp_yielded_for_grid_sync = true;
+global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested = true;
 __gsharp_ctx.__gsharp_state = 11;
 return;
 }
@@ -440,7 +439,7 @@ __gsharp_ctx.sum += 2;
 __gsharp_ctx.sum += 3;
 }
 
-__gsharp_ctx.__gsharp_yielded_for_grid_sync = true;
+global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested = true;
 __gsharp_ctx.__gsharp_state = 12;
 return;
 }
@@ -515,9 +514,9 @@ if (__gsharp_contexts[__gsharp_linear_tid].__gsharp_state != -1)
 {
 anyGridActive = true;
 anyBlockActive = true;
-__gsharp_contexts[__gsharp_linear_tid].__gsharp_yielded_for_grid_sync = false;
+global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested = false;
 __gsharp_statemachine_Kassyi__GSharp__Tests__TestCases__Transpiler__GEN_u35_uMacroTranspiler_uInGpuKernel__MyKernel(__gsharp_contexts[__gsharp_linear_tid]);
-if (__gsharp_contexts[__gsharp_linear_tid].__gsharp_yielded_for_grid_sync)
+if (global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested)
 {
 gridSyncRequested = true;
 }
