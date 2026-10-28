@@ -82,16 +82,39 @@ public sealed class GSharpKernelFloatProvider(IGpuBigFloatArithmetic fallbackStr
             return fallbackStrategy.Add(ref context, in left, in right, resultSig);
         }
 
-        // high: the larger exponent, or on a tie the wider significand; it is shifted onto low.
-        var leftIsHigh = left.Exponent > right.Exponent
-            || (left.Exponent == right.Exponent && left.Significand.NumWords >= right.Significand.NumWords);
+        var workspace = context.GpuWorkspace;
+        var leftIsHigh = BigFloatAddAlignment.LeftIsHigh(in left, in right);
         var high = leftIsHigh ? left : right;
         var low = leftIsHigh ? right : left;
-        return AddAligned(context.GpuWorkspace, in high, in low, resultSig);
+        if (!BigFloatAddAlignment.LowIsSticky(in high, in low, resultSig.NumWords))
+        {
+            return AddAligned(workspace, in high, in low, resultSig);
+        }
+
+        // L lies below 2^(e_H - p) (#775): a zero operand leaves the other one, and a nonzero L only matters as the
+        // sticky bit 2^(e_H - p - 1).
+        if (low.Significand.AsView(workspace).IsZero())
+        {
+            return NormalizeScaled(workspace, high.Significand, high.Exponent, high.IsNegative, resultSig);
+        }
+
+        if (high.Significand.AsView(workspace).IsZero())
+        {
+            return NormalizeScaled(workspace, low.Significand, low.Exponent, low.IsNegative, resultSig);
+        }
+
+        using var stickyBit = GpuBigUInt.CreatePowerOfTwo(workspace, 1, 0);
+        var sticky = new GpuFloatOperand(
+            stickyBit.Handle,
+            BigFloatAddAlignment.StickyExponent(in high, resultSig.NumWords),
+            low.IsNegative
+        );
+        return AddAligned(workspace, in high, in sticky, resultSig);
     }
 
     // RZ_p(high + low) through the exact sum: low is the base of the kernel and high is shifted left onto it by
-    // e_H - e_L bits (a negative right shift); the sum, at exponent e_L, is then normalized.
+    // e_H - e_L bits (a negative right shift); the sum, at exponent e_L, is then normalized. The caller keeps e_H - e_L
+    // within the widths (BigFloatAddAlignment).
     private static GpuFloatResult AddAligned(
         GpuWorkspace workspace, in GpuFloatOperand high, in GpuFloatOperand low, GpuBigIntMemoryHandle resultSig)
     {
@@ -103,7 +126,7 @@ public sealed class GSharpKernelFloatProvider(IGpuBigFloatArithmetic fallbackStr
 
         var highSig = high.Significand;
         var lowSig = low.Significand;
-        var shiftBits = Math.Abs(high.Exponent - low.Exponent);
+        var shiftBits = BigFloatAddAlignment.ShiftBits(high.Exponent, low.Exponent);
 
         // A right shift by -shiftBits bits as words and bits, with the bits in [0, 32).
         var wordShift = -shiftBits / 32;
@@ -114,7 +137,7 @@ public sealed class GSharpKernelFloatProvider(IGpuBigFloatArithmetic fallbackStr
             bitShift += 32;
         }
 
-        var alignedWords = Math.Max(lowSig.NumWords, highSig.NumWords + ((shiftBits + 31) / 32)) + 1;
+        var alignedWords = checked((int)(Math.Max(lowSig.NumWords, highSig.NumWords + (shiftBits + 31L) / 32) + 1));
         using var tempResult = workspace.RentTemp(alignedWords);
 
         var blockThreads = (uint)Math.Clamp(((alignedWords + 31) / 32) * 32, 32, 1024);
