@@ -72,6 +72,40 @@ public class FermatAlgorithmHostStageTests
         Assert.Equal(0, runner.Iteration);
     }
 
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void SmallDivisor_AllocatesNoChainUntilAMemberNeedsIt()
+    {
+        // E = 16, base 3: 3 divides N, so Run answers without the chain; no residue register is created for it
+        // (PR #761 review 1). A member that needs the state creates the chain then.
+        // mutant: FermatAlgorithm.cs constructor `if (_smallDivisor is null)` before EnsureChain removed (always eager)
+        const int E = 16;
+        using var runner = new FermatAlgorithm(E);
+        Assert.False(runner.HasChain);
+
+        var result = runner.Run();
+        Assert.Equal(3u, result.SmallDivisor);
+        Assert.Equal(ModulusOf(E), runner.GetModulus());
+        Assert.Equal(0, runner.CreateCheckpoint().Iteration);
+        Assert.Equal(new BigInteger(3), FromWords(runner.CreateCheckpoint().State.Span));
+        Assert.False(runner.HasChain);
+
+        // The benchmark path still runs (design F3: even E is measured with RunBenchmarkChunk).
+        runner.RunBenchmarkChunk(2);
+        Assert.True(runner.HasChain);
+        Assert.Equal(Squarings(E, 3, 2), FromWords(runner.GetState()));
+    }
+
+    [Fact]
+    [Scenario(TestScenario.HappyPath)]
+    public void NoSmallDivisor_CreatesTheChainInTheConstructor()
+    {
+        // Allocation failures still surface from the constructor when the chain is needed.
+        using var runner = new FermatAlgorithm(13);
+
+        Assert.True(runner.HasChain);
+    }
+
     [Theory]
     [Scenario(TestScenario.Boundary)]
     [InlineData(16u)]

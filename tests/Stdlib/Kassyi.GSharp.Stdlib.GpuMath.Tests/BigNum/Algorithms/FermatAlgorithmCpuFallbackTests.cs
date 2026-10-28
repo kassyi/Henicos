@@ -72,6 +72,30 @@ public class FermatAlgorithmCpuFallbackTests
 
     [Fact]
     [Scenario(TestScenario.Boundary)]
+    public void SmallDivisor_CpuFallback_AllocatesNoRegistersOrScratch()
+    {
+        // E = 40, base 3: the device stage would allocate the registers, the product and the workspace; with the
+        // divisor 3 known, Run needs none of them (PR #761 review 1), and Dispose has nothing to release.
+        const int E = 40;
+        GpuKernelLoader.ForceCpuFallback = true;
+        try
+        {
+            using var runner = new FermatAlgorithm(E);
+
+            var result = runner.Run();
+
+            Assert.Equal(3u, result.SmallDivisor);
+            Assert.False(runner.HasChain);
+            Assert.Equal(runner.ResidueWords, runner.CreateCheckpoint().State.Length);
+        }
+        finally
+        {
+            GpuKernelLoader.ForceCpuFallback = false;
+        }
+    }
+
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
     public void GetState_CpuFallback_FoldedSquareAboveN_IsReturnedCanonical()
     {
         const int E = 40;

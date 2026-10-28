@@ -45,8 +45,11 @@ public sealed class FermatAlgorithm : IDisposable
     /// </summary>
     public const int MaxExponent = QuadraticFoldModulus.MaxExponent;
 
-    private readonly ISquaringModulus _modulus;
-    private readonly SquaringChainDriver _driver;
+    private readonly int _blockSize;
+    private readonly int _checkIntervalBlocks;
+    private readonly long _endIteration;
+    private ISquaringModulus? _modulus;
+    private SquaringChainDriver? _driver;
     private readonly FermatPrpOptions _options;
     private readonly uint? _smallDivisor;
     private readonly uint[] _startWords = [];
@@ -89,28 +92,20 @@ public sealed class FermatAlgorithm : IDisposable
         _smallDivisor = SmallDivisor(e, @base);
         _pinsFallbackMode = e > QuadraticHostModulus.MaxExponent;
         _cpuFallbackAtCreation = _pinsFallbackMode && GpuKernelLoader.IsCpuFallbackMode;
-        _modulus = CreateModulus(e, _cpuFallbackAtCreation);
-        try
-        {
-            ResidueWords = _modulus.Words;
-            var n = _modulus.GetModulus();
-            _startWords = ToWords(@base % n, ResidueWords);
-            _modulus.Write(SquaringRegister.Start, _startWords);
-            _modulus.Write(SquaringRegister.State, _startWords);
-            _modulus.Write(SquaringRegister.Constant, ToWords(BigInteger.ModPow(@base, 10, n), ResidueWords));
+        ResidueWords = (2 * e + 1 + 31) / 32;
+        _blockSize = _options.BlockSize != 0
+            ? _options.BlockSize
+            : (int)Math.Clamp((long)Math.Sqrt(ChainLength), 2, 1000);
+        _checkIntervalBlocks = _options.CheckIntervalBlocks != 0 ? _options.CheckIntervalBlocks : _blockSize;
+        _endIteration = (ChainLength + _blockSize - 1) / _blockSize * _blockSize;
+        _startWords = StartWords(e, @base, ResidueWords);
+        _lastVerified = SquaringChainDriver.StartPoint(_startWords);
 
-            var blockSize = _options.BlockSize != 0
-                ? _options.BlockSize
-                : (int)Math.Clamp((long)Math.Sqrt(ChainLength), 2, 1000);
-            var intervalBlocks = _options.CheckIntervalBlocks != 0 ? _options.CheckIntervalBlocks : blockSize;
-            _driver = new SquaringChainDriver(_modulus, ChainLength, e, blockSize, intervalBlocks,
-                _options.MaxConsecutiveRollbacks);
-            _lastVerified = SquaringChainDriver.StartPoint(_startWords);
-        }
-        catch
+        // A small divisor decides the test without any squaring: the registers, the NTT scratch and the fold buffers
+        // (millions of words each for large E) are created only if a member that needs the state is called.
+        if (_smallDivisor is null)
         {
-            _modulus.Dispose();
-            throw;
+            EnsureChain();
         }
     }
 
@@ -130,7 +125,7 @@ public sealed class FermatAlgorithm : IDisposable
     public long ChainLength { get; }
 
     /// <summary>Gets the Gerbicz-Li block size in use (the option, or the automatic choice).</summary>
-    public int BlockSize => _driver.BlockSize;
+    public int BlockSize => _blockSize;
 
     /// <summary>
     /// Gets the squarings done on the state: the position of the last <see cref="Run"/> (or of a
@@ -146,16 +141,23 @@ public sealed class FermatAlgorithm : IDisposable
     /// </summary>
     internal Func<long, bool>? CorruptStateAt
     {
-        get => _driver.FaultInjection;
-        set => _driver.FaultInjection = value;
+        get => _driver?.FaultInjection;
+        set
+        {
+            EnsureChain();
+            _driver.FaultInjection = value;
+        }
     }
+
+    /// <summary>Gets whether the residues and their buffers exist (for tests: a small divisor creates none).</summary>
+    internal bool HasChain => _modulus != null;
 
     /// <summary>Returns <c>N = 2^(2E+1) - 2^E + 11</c>.</summary>
     /// <returns>The modulus; this allocates <c>O(E)</c> bits.</returns>
     public BigInteger GetModulus()
     {
         ThrowIfUnusable();
-        return _modulus.GetModulus();
+        return (BigInteger.One << ModulusBits) - (BigInteger.One << E) + QuadraticFoldModulus.ConstantTerm;
     }
 
     /// <summary>Runs the probable-prime test.</summary>
@@ -226,11 +228,11 @@ public sealed class FermatAlgorithm : IDisposable
                 nameof(checkpoint));
         }
 
-        if (checkpoint.Iteration < 0 || checkpoint.Iteration > _driver.EndIteration ||
+        if (checkpoint.Iteration < 0 || checkpoint.Iteration > _endIteration ||
             checkpoint.Iteration % BlockSize != 0)
         {
             throw new ArgumentException(
-                $"The checkpoint position {checkpoint.Iteration} is not a block boundary of this chain (0 to {_driver.EndIteration}, step {BlockSize}).",
+                $"The checkpoint position {checkpoint.Iteration} is not a block boundary of this chain (0 to {_endIteration}, step {BlockSize}).",
                 nameof(checkpoint));
         }
 
@@ -241,6 +243,7 @@ public sealed class FermatAlgorithm : IDisposable
                 nameof(checkpoint));
         }
 
+        EnsureChain();
         var snapshotWords = checkpoint.Iteration > E ? ResidueWords : 0;
         var finalWords = checkpoint.Iteration > ChainLength ? ResidueWords : 0;
         ThrowIfNotResidue(checkpoint.State.Span, ResidueWords, "State");
@@ -271,6 +274,7 @@ public sealed class FermatAlgorithm : IDisposable
         ThrowIfUnusable();
         ArgumentOutOfRangeException.ThrowIfNegative(iterations);
 
+        EnsureChain();
         _modulus.SquareState(iterations);
         _modulus.Synchronize();
         _iteration += iterations;
@@ -297,6 +301,7 @@ public sealed class FermatAlgorithm : IDisposable
             return ValueTask.FromCanceled(cancellationToken);
         }
 
+        EnsureChain();
         _modulus.SquareState(iterations);
         _iteration += iterations;
         return _modulus.SynchronizeAsync(cancellationToken);
@@ -307,6 +312,7 @@ public sealed class FermatAlgorithm : IDisposable
     public uint[] GetState()
     {
         ThrowIfUnusable();
+        EnsureChain();
         return _modulus.ReadCanonical(SquaringRegister.State);
     }
 
@@ -320,6 +326,7 @@ public sealed class FermatAlgorithm : IDisposable
     public ValueTask<uint[]> GetStateAsync(CancellationToken cancellationToken = default)
     {
         ThrowIfUnusable();
+        EnsureChain();
         return _modulus.ReadCanonicalAsync(SquaringRegister.State, cancellationToken);
     }
 
@@ -337,7 +344,11 @@ public sealed class FermatAlgorithm : IDisposable
         ThrowIfFallbackModeChanged();
         try
         {
-            _modulus.Dispose();
+            // Written out (not '?.') so that the ownership analyzer (GSH0022) sees the call.
+            if (_modulus != null)
+            {
+                _modulus.Dispose();
+            }
         }
         finally
         {
@@ -357,6 +368,7 @@ public sealed class FermatAlgorithm : IDisposable
             return new FermatPrpResult(false, divisor, 0, 0, 0, 0, 0, stopwatch.Elapsed);
         }
 
+        EnsureChain();
         var start = _pendingRestore ?? SquaringChainDriver.StartPoint(_startWords);
         _pendingRestore = null;
 
@@ -366,7 +378,7 @@ public sealed class FermatAlgorithm : IDisposable
             outcome = await _driver.RunAsync(start, synchronous, OnVerified, (k, checks, rollbacks) =>
             {
                 _iteration = k;
-                progress?.Report(new FermatPrpProgress(k, _driver.EndIteration, checks, rollbacks));
+                progress?.Report(new FermatPrpProgress(k, _endIteration, checks, rollbacks));
             }, cancellationToken).ConfigureAwait(false);
         }
         catch (OperationCanceledException)
@@ -381,7 +393,7 @@ public sealed class FermatAlgorithm : IDisposable
         _modulus.Multiply(SquaringRegister.Verdict, SquaringRegister.Final, SquaringRegister.Constant);
         var residue = _modulus.ReadCanonical(SquaringRegister.Verdict);
         var check = _modulus.ReadCanonical(SquaringRegister.Snapshot);
-        _iteration = _driver.EndIteration;
+        _iteration = _endIteration;
 
         return new FermatPrpResult(
             residue.AsSpan().SequenceEqual(check),
@@ -412,10 +424,63 @@ public sealed class FermatAlgorithm : IDisposable
                 "checkpoint");
         }
 
+        EnsureChain();
         if (expectedWords > 0 && !_modulus.IsBelowModulus(words))
         {
             throw new ArgumentException($"The checkpoint's {name} is not below N.", "checkpoint");
         }
+    }
+
+    /// <summary>
+    /// Creates the residues and their buffers when they do not exist yet: the modulus (host or device stage, in the
+    /// CPU fallback mode fixed at construction), the start <c>u_0 = a</c>, the constant <c>a^10</c> and the chain driver.
+    /// </summary>
+    [MemberNotNull(nameof(_modulus), nameof(_driver))]
+    private void EnsureChain()
+    {
+        if (_modulus != null && _driver != null)
+        {
+            return;
+        }
+
+        var modulus = CreateModulus(E, _cpuFallbackAtCreation);
+        try
+        {
+            modulus.Write(SquaringRegister.Start, _startWords);
+            modulus.Write(SquaringRegister.State, _startWords);
+            modulus.Write(SquaringRegister.Constant,
+                ToWords(BigInteger.ModPow(Base, 10, modulus.GetModulus()), ResidueWords));
+            _driver = new SquaringChainDriver(modulus, ChainLength, E, _blockSize, _checkIntervalBlocks,
+                _options.MaxConsecutiveRollbacks);
+            _modulus = modulus;
+        }
+        catch
+        {
+            modulus.Dispose();
+            throw;
+        }
+    }
+
+    /// <summary>
+    /// Returns <c>u_0 = a mod N</c> in <paramref name="words"/> words without building <c>N</c>: for <c>E &gt;= 32</c>,
+    /// <c>N &gt; 2^64 &gt; a</c>.
+    /// </summary>
+    private static uint[] StartWords(int e, uint @base, int words)
+    {
+        var start = new uint[words];
+        ulong value = @base;
+        if (e <= QuadraticHostModulus.MaxExponent)
+        {
+            value %= (1UL << (2 * e + 1)) - (1UL << e) + QuadraticFoldModulus.ConstantTerm;
+        }
+
+        start[0] = (uint)value;
+        if (words > 1)
+        {
+            start[1] = (uint)(value >> 32);
+        }
+
+        return start;
     }
 
     private static ISquaringModulus CreateModulus(int e, bool isCpuFallback) =>
