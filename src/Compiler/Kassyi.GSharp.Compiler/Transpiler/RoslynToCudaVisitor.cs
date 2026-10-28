@@ -600,6 +600,29 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker, IDisposable
         }
     }
 
+    // A declaration writes its array creation as a stack array (VariableDeclarationTranspilerRule); anywhere else the
+    // array would live on the heap, which device code does not have (GSH0001), or has more than one dimension (GSH0003)
+    public override void VisitArrayCreationExpression(ArrayCreationExpressionSyntax node)
+    {
+        if (GpuCodeConstraints.GetStackArrayShapeProblem(node, null, Context.Query.SemanticModel) is
+            GpuCodeConstraints.MultidimensionalArray)
+        {
+            Context.Reporter.Fail(GSharpDiagnostics.UnsupportedSyntax, node, GpuCodeConstraints.MultidimensionalArray);
+        }
+        else
+        {
+            Context.Reporter.Fail(GSharpDiagnostics.ObjectCreationNotSupported, node);
+        }
+
+        AppendUnsupportedPlaceholder(node);
+    }
+
+    public override void VisitImplicitArrayCreationExpression(ImplicitArrayCreationExpressionSyntax node)
+    {
+        Context.Reporter.Fail(GSharpDiagnostics.ObjectCreationNotSupported, node);
+        AppendUnsupportedPlaceholder(node);
+    }
+
     public override void VisitStackAllocArrayCreationExpression(StackAllocArrayCreationExpressionSyntax node)
     {
         if (node.Initializer != null)

@@ -11,6 +11,14 @@ namespace Kassyi.GSharp.Compiler.Lowering;
 /// </param>
 public class StateMachineLowerer(bool isDeviceFunction = false, SemanticModel? semanticModel = null)
 {
+    // The plan that AstLoweringPipeline gives this pass and ContextHoister, or null to make one from the block
+    private readonly StatePlan? _plan;
+
+    /// <summary>Creates a lowerer that takes the labels that start a state and their states from <paramref name="plan"/>.</summary>
+    internal StateMachineLowerer(bool isDeviceFunction, SemanticModel? semanticModel, StatePlan plan)
+        : this(isDeviceFunction, semanticModel) =>
+        _plan = plan;
+
     private readonly ImmutableArray<InvocationExpressionSyntax>.Builder _callSites =
         ImmutableArray.CreateBuilder<InvocationExpressionSyntax>();
 
@@ -20,167 +28,195 @@ public class StateMachineLowerer(bool isDeviceFunction = false, SemanticModel? s
     /// <summary>Transforms statements into switch sections keyed by state indices across barrier boundaries.</summary>
     public BlockSyntax Lower(BlockSyntax block)
     {
-        var statements = block.Statements;
-        var cases = ImmutableArray.CreateBuilder<SwitchSectionSyntax>();
-        var currentCaseStatements = ImmutableArray.CreateBuilder<StatementSyntax>();
-        var state = 0;
-        LabeledStatementSyntax? sectionLabel = null;
-
-        // 1. Pass 1: Identify all state boundaries (barriers AND labels) and assign sequential states.
-        var labelStates = new Dictionary<DeclarationKey, int>();
-        int simulatedState = 0;
-        foreach (var stmt in statements)
+        // The labels that start a state and their states, numbered by StateLabelPlanner (the only definition of the
+        // numbering). Any other label stays a label inside its state.
+        var plan = _plan ?? StateLabelPlanner.Plan(block, semanticModel);
+        var sections = new SectionBuilder();
+        foreach (var stmt in block.Statements)
         {
-            if (stmt is LabeledStatementSyntax labeled)
+            if (stmt is LabeledStatementSyntax labeled && plan.StartsState(labeled))
             {
-                simulatedState++;
-                labelStates[LoweringIdentity.ForDeclaration(labeled, semanticModel)] = simulatedState;
+                LowerStateLabel(labeled, plan.LabelStates, sections);
             }
-
-            if (BarrierHelper.GetPhaseBarrierInvocation(stmt) != null)
+            else if (BarrierHelper.GetPhaseBarrierInvocation(stmt) is { } splitPoint)
             {
-                simulatedState++;
-            }
-        }
-
-        // 2. Pass 2: Generate switch cases.
-        foreach (var stmt in statements)
-        {
-            if (stmt is LabeledStatementSyntax labeled)
-            {
-                // A label boundary requires falling through to the next state case without yielding.
-                commitState(state + 1, isBarrier: false);
-
-                // [WHY] The label after a statement of a Gpu.SyncGrid body that returns stays in its section: the return
-                // jumps to it with goto from wherever it is, also from a switch of the user, where a goto case would bind
-                // to that switch (#626)
-                if (IsSyncGridNextLabel(labeled.Identifier.ValueText))
-                {
-                    sectionLabel = labeled;
-                }
-
-                if (labeled.Statement is not EmptyStatementSyntax)
-                {
-                    currentCaseStatements.Add(RewriteGoto(labeled.Statement, labelStates));
-                }
-
-                continue;
-            }
-
-            var barrierInv = BarrierHelper.GetPhaseBarrierInvocation(stmt);
-            if (barrierInv != null)
-            {
-                if (BarrierHelper.IsSuspendingCall(barrierInv))
-                {
-                    // The call gets a state of its own: every resume runs it again until the callee completes
-                    commitState(state + 1, isBarrier: false);
-                    currentCaseStatements.Add(CreateResumeStatement(stmt, barrierInv, state));
-                }
-                else if (BarrierHelper.TryGetWarpShuffleRead(barrierInv, out var readFunction))
-                {
-                    // 1. Publish val to the context's warp exchange slot (__gsharp_warp_exchange_assign(val))
-                    var valArg = GetShuffleArgument(barrierInv, ShuffleValuePosition).Expression;
-                    currentCaseStatements.Add(
-                        SyntaxFactory.ExpressionStatement(
-                            SyntaxFactory.InvocationExpression(
-                                SyntaxFactory.IdentifierName(GSharpInternalNames.Prelude.WarpExchangeAssign),
-                                SyntaxFactory.ArgumentList(
-                                    SyntaxFactory.SingletonSeparatedList(SyntaxFactory.Argument(valArg))
-                                )
-                            )
-                        )
-                    );
-
-                    // 2. State Split & Return
-                    commitState(state + 1, isBarrier: true);
-
-                    // 3. Rewrite original Warp.ShuffleXXX(...) to __gsharp_warp_shuffle_read_XXX(...)
-                    var readStmt = RewriteWarpShuffleRead(stmt, barrierInv, readFunction);
-                    currentCaseStatements.Add(RewriteGoto(readStmt, labelStates));
-                }
-                else
-                {
-                    // The launcher keeps a thread that stopped at a barrier waiting there (#664): at a grid sync until
-                    // the next grid phase, at a block barrier until every thread of the block that has not finished
-                    // waits too. A shuffle is not a wait: the thread goes on in the next round
-                    if (BarrierHelper.IsGridBarrier(barrierInv))
-                    {
-                        currentCaseStatements.Add(SetFlag(GSharpInternalNames.StateMachine.YieldedForGridSync));
-                    }
-                    else if (BarrierHelper.IsBlockBarrier(barrierInv))
-                    {
-                        currentCaseStatements.Add(SetFlag(GSharpInternalNames.StateMachine.YieldedForBlockBarrier));
-                    }
-
-                    commitState(state + 1, isBarrier: true);
-                }
+                LowerSplitPoint(stmt, splitPoint, plan.LabelStates, sections);
             }
             else
             {
-                currentCaseStatements.Add(RewriteGoto(stmt, labelStates));
+                sections.Add(RewriteGoto(stmt, plan.LabelStates));
             }
         }
 
         if (isDeviceFunction)
         {
             // Falling off the end completes the call
-            currentCaseStatements.Add(SyntaxFactory.ReturnStatement());
-            commitSection();
+            sections.Add(SyntaxFactory.ReturnStatement());
+            sections.CommitSection();
         }
         else
         {
             // Final state: -1
-            commitState(-1, isBarrier: true);
+            sections.CommitState(-1, isBarrier: true);
         }
 
         // switch (__gsharp_state) { case 0: { ... } case 1: { ... } ... }
-        var switchStmt = SyntaxFactory.SwitchStatement(
-            SyntaxFactory.IdentifierName(GSharpInternalNames.StateMachine.State),
-            SyntaxFactory.List(cases)
+        return SyntaxFactory.Block(sections.ToSwitch());
+    }
+
+    private void LowerStateLabel(LabeledStatementSyntax labeled, IReadOnlyDictionary<DeclarationKey, int> labelStates,
+        SectionBuilder sections)
+    {
+        // A label boundary requires falling through to the next state case without yielding.
+        sections.CommitState(sections.State + 1, isBarrier: false);
+        CheckLabelState(labeled, sections.State, labelStates);
+
+        // [WHY] The label after a statement of a Gpu.SyncGrid body that returns stays in its section: the return jumps
+        // to it with goto from wherever it is, also from a switch of the user, where a goto case would bind to that
+        // switch (#626)
+        if (IsSyncGridNextLabel(labeled.Identifier.ValueText))
+        {
+            sections.KeepLabel(labeled);
+        }
+
+        if (labeled.Statement is not EmptyStatementSyntax)
+        {
+            sections.Add(RewriteGoto(labeled.Statement, labelStates));
+        }
+    }
+
+    private void LowerSplitPoint(StatementSyntax stmt, InvocationExpressionSyntax splitPoint,
+        IReadOnlyDictionary<DeclarationKey, int> labelStates, SectionBuilder sections)
+    {
+        if (BarrierHelper.IsSuspendingCall(splitPoint))
+        {
+            LowerSuspendingCall(stmt, splitPoint, sections);
+        }
+        else if (BarrierHelper.TryGetWarpShuffleRead(splitPoint, out var readFunction))
+        {
+            LowerWarpShuffle(stmt, splitPoint, readFunction, labelStates, sections);
+        }
+        else
+        {
+            LowerBarrier(splitPoint, sections);
+        }
+    }
+
+    // The call gets a state of its own: every resume runs it again until the callee completes
+    private void LowerSuspendingCall(StatementSyntax stmt, InvocationExpressionSyntax call, SectionBuilder sections)
+    {
+        sections.CommitState(sections.State + 1, isBarrier: false);
+        sections.Add(CreateResumeStatement(stmt, call, sections.State));
+    }
+
+    private void LowerWarpShuffle(StatementSyntax stmt, InvocationExpressionSyntax shuffle, string readFunction,
+        IReadOnlyDictionary<DeclarationKey, int> labelStates, SectionBuilder sections)
+    {
+        // 1. Publish val to the context's warp exchange slot
+        sections.Add(CreateWarpExchangeAssign(GetShuffleArgument(shuffle, ShuffleValuePosition).Expression));
+
+        // 2. State Split & Return
+        sections.CommitState(sections.State + 1, isBarrier: true);
+
+        // 3. Rewrite original Warp.ShuffleXXX(...) to __gsharp_warp_shuffle_read_XXX(...)
+        var readStmt = RewriteWarpShuffleRead(stmt, shuffle, readFunction);
+        sections.Add(RewriteGoto(readStmt, labelStates));
+    }
+
+    private static void LowerBarrier(InvocationExpressionSyntax barrier, SectionBuilder sections)
+    {
+        // The launcher keeps a thread that stopped at a barrier waiting there (#664): at a grid sync until the next grid
+        // phase, at a block barrier until every thread of the block that has not finished waits too. A shuffle is not a
+        // wait: the thread goes on in the next round
+        if (BarrierHelper.IsGridBarrier(barrier))
+        {
+            sections.Add(SetFlag(GSharpInternalNames.StateMachine.YieldedForGridSync));
+        }
+        else if (BarrierHelper.IsBlockBarrier(barrier))
+        {
+            sections.Add(SetFlag(GSharpInternalNames.StateMachine.YieldedForBlockBarrier));
+        }
+
+        sections.CommitState(sections.State + 1, isBarrier: true);
+    }
+
+    // __gsharp_warp_exchange_assign(<val>);
+    private static ExpressionStatementSyntax CreateWarpExchangeAssign(ExpressionSyntax value) =>
+        SyntaxFactory.ExpressionStatement(
+            SyntaxFactory.InvocationExpression(
+                SyntaxFactory.IdentifierName(GSharpInternalNames.Prelude.WarpExchangeAssign),
+                SyntaxFactory.ArgumentList(SyntaxFactory.SingletonSeparatedList(SyntaxFactory.Argument(value)))
+            )
         );
 
-        return SyntaxFactory.Block(switchStmt);
+    // The switch sections built so far, the statements of the section being built and the state it has
+    private sealed class SectionBuilder
+    {
+        private readonly ImmutableArray<SwitchSectionSyntax>.Builder _cases =
+            ImmutableArray.CreateBuilder<SwitchSectionSyntax>();
 
-        void commitState(int nextState, bool isBarrier)
+        private readonly ImmutableArray<StatementSyntax>.Builder _statements =
+            ImmutableArray.CreateBuilder<StatementSyntax>();
+
+        private LabeledStatementSyntax? _sectionLabel;
+
+        /// <summary>The state of the section being built.</summary>
+        public int State { get; private set; }
+
+        public void Add(StatementSyntax statement) => _statements.Add(statement);
+
+        /// <summary>Puts <paramref name="label"/> in front of the block of the section being built.</summary>
+        public void KeepLabel(LabeledStatementSyntax label) => _sectionLabel = label;
+
+        /// <summary>Ends the section with a jump to <paramref name="nextState"/> and starts the section of that state.</summary>
+        public void CommitState(int nextState, bool isBarrier)
         {
             if (isBarrier)
             {
                 // __gsharp_state = <next state>; return;
-                currentCaseStatements.Add(CreateStateAssignment(nextState));
-                currentCaseStatements.Add(CreateSuspendingReturn());
+                _statements.Add(CreateStateAssignment(nextState));
+                _statements.Add(CreateSuspendingReturn());
             }
             else
             {
                 // Unconditional jump to next state within the switch
-                currentCaseStatements.Add(SyntaxFactory.ParseStatement($"goto case {nextState};")
+                _statements.Add(SyntaxFactory.ParseStatement($"goto case {nextState};")
                     .WithTrailingTrivia(SyntaxFactory.CarriageReturnLineFeed));
             }
 
-            commitSection();
-            state = nextState;
+            CommitSection();
+            State = nextState;
         }
 
-        void commitSection()
+        /// <summary>Adds the section being built to the switch.</summary>
+        public void CommitSection()
         {
             // case <state>: { <statements> }
             var label = SyntaxFactory.CaseSwitchLabel(
-                SyntaxFactory.LiteralExpression(SyntaxKind.NumericLiteralExpression, SyntaxFactory.Literal(state))
+                SyntaxFactory.LiteralExpression(SyntaxKind.NumericLiteralExpression, SyntaxFactory.Literal(State))
             );
-            var block = SyntaxFactory.Block(currentCaseStatements);
+            var block = SyntaxFactory.Block(_statements);
             // case <state>: [<label>: ;] { <statements> }
-            var statements = sectionLabel != null
-                ? SyntaxFactory.List<StatementSyntax>([sectionLabel, block])
+            var statements = _sectionLabel != null
+                ? SyntaxFactory.List<StatementSyntax>([_sectionLabel, block])
                 : SyntaxFactory.SingletonList<StatementSyntax>(block);
-            cases.Add(
+            _cases.Add(
                 SyntaxFactory.SwitchSection(
                     SyntaxFactory.SingletonList<SwitchLabelSyntax>(label),
                     statements
                 )
             );
 
-            currentCaseStatements.Clear();
-            sectionLabel = null;
+            _statements.Clear();
+            _sectionLabel = null;
         }
+
+        // switch (__gsharp_state) { <sections> }
+        public SwitchStatementSyntax ToSwitch() =>
+            SyntaxFactory.SwitchStatement(
+                SyntaxFactory.IdentifierName(GSharpInternalNames.StateMachine.State),
+                SyntaxFactory.List(_cases)
+            );
     }
 
     // Emits: if (!__gsharp_resume(<call>, <frame index>[, <result target>])) { __gsharp_state = <resume state>; return; }
@@ -232,10 +268,25 @@ public class StateMachineLowerer(bool isDeviceFunction = false, SemanticModel? s
             new SyntaxAnnotation(LoweringAnnotations.StateMachineReturnAnnotationKind)
         );
 
-    private StatementSyntax RewriteGoto(StatementSyntax stmt, Dictionary<DeclarationKey, int> labelStates) =>
+    // [WHY] The plan numbers the states on the body before ContextHoister; this pass splits them on the body after it.
+    // ContextHoister moves no label or split point, so the numbers agree. A pass that broke that would make a goto case
+    // jump to another state than its label's, which neither the C# nor the C++ compiler would catch.
+    private void CheckLabelState(LabeledStatementSyntax labeled, int state,
+        IReadOnlyDictionary<DeclarationKey, int> labelStates)
+    {
+        if (!labelStates.TryGetValue(LoweringIdentity.ForDeclaration(labeled, semanticModel), out var planned) ||
+            planned != state)
+        {
+            throw new InvalidOperationException(
+                $"The label '{labeled.Identifier.ValueText}' starts state {state}, but the state plan numbered it differently.");
+        }
+    }
+
+    private StatementSyntax RewriteGoto(StatementSyntax stmt, IReadOnlyDictionary<DeclarationKey, int> labelStates) =>
         (StatementSyntax)new GotoRewriter(labelStates, semanticModel).Visit(stmt);
 
-    private class GotoRewriter(Dictionary<DeclarationKey, int> labelStates, SemanticModel? semanticModel) : CSharpSyntaxRewriter
+    private class GotoRewriter(IReadOnlyDictionary<DeclarationKey, int> labelStates, SemanticModel? semanticModel)
+        : CSharpSyntaxRewriter
     {
         public override SyntaxNode? VisitGotoStatement(GotoStatementSyntax node)
         {

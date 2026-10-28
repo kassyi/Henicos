@@ -898,7 +898,7 @@ public static int BadKernel()
 
 The G# compiler natively intercepts these syntax tree nodes and fails the build with the following deterministic errors (which are snapshot-tested using Verify.XUnit):
 
-1. **GSH0001**: `Object creation ('new') is not supported in GPU kernels. Only struct instantiation and SharedMemory<T> are allowed.` (Triggered by `new object()`)
+1. **GSH0001**: `Object creation ('new') is not supported in GPU kernels. Only struct instantiation, SharedMemory<T> and an array of a constant size that initializes a local variable are allowed; use stackalloc for a temporary array.` (Triggered by `new object()`)
 2. **GSH0002**: `The string type is not supported in GPU kernels` (Triggered by `string s = "hello"`)
 3. **GSH0003**: `The syntax 'ObjectCreationExpression' is not supported in GSharp GPU kernels` (Fallback trigger for any unknown syntax node)
 4. **GSH0004**: `Method 'BadKernel' is marked with [GpuKernel] but returns an unsupported type 'System.String'.`

@@ -26,7 +26,7 @@ During the MSBuild AOT code generation phase, the `Kassyi.Generators.GSharp` Ros
 
 | ID | Severity | Description & Resolution |
 | :--- | :--- | :--- |
-| [**GSH0001**](diagnostics/GSH0001.md) | Error | **Object creation not supported.** You attempted to use `new Class()`. Remove the allocation or use a `struct`. |
+| [**GSH0001**](diagnostics/GSH0001.md) | Error | **Object creation not supported.** You attempted to use `new Class()`, or created an array outside the initializer of a local variable. Remove the allocation, use a `struct`, or use a local array or `stackalloc`. |
 | [**GSH0002**](diagnostics/GSH0002.md) | Error | **String usage not supported.** You attempted to use the `string` type. |
 | [**GSH0003**](diagnostics/GSH0003.md) | Error | **Unsupported syntax.** Triggered when unknown/unsupported C# syntax nodes are encountered. |
 | [**GSH0004**](diagnostics/GSH0004.md) | Error | **Unsupported Return Type.** A `[GpuKernel]` method must return `void` or a supported value type. |
@@ -83,6 +83,7 @@ During the MSBuild AOT code generation phase, the `Kassyi.Generators.GSharp` Ros
 | [**GSH0088**](diagnostics/GSH0088.md) | Error | **Device code of another assembly is not exported.** GPU code calls a `[GpuDeviceFunction]`, or uses the constructor or computed property of a struct, of a referenced assembly that holds no `[assembly: GpuDeviceExport]` record for it. |
 | [**GSH0089**](diagnostics/GSH0089.md) | Error | **Device code of another assembly cannot be used.** The record of a referenced assembly was written by another G# version, or its build could not transpile it for the consumer's dialect. |
 | [**GSH0090**](diagnostics/GSH0090.md) | Error | **Device code of two assemblies has the same C++ name.** Two referenced assemblies, or a reference and the compilation, declare the same path, which becomes one C++ name. |
+| [**GSH0091**](diagnostics/GSH0091.md) | Error | **Stack array outlives its scope.** A local array, the stack array of a span or the storage of a `stackalloc` is reassigned, returned, or stored where it would outlive the C++ array that holds it (a variable of an outer scope, a parameter, memory the method did not create), directly, through another local or through a call with a `ref` / `out` argument. |
 | [**GSH0099**](diagnostics/GSH0099.md) | Warning | **An AsParallel() aggregate runs sequentially in each thread.** The threads of a block cannot share it (a thread-dependent branch or input, a private source, an order-dependent stage, a lambda with side effects, or a float / double sum); every thread still receives the whole sum. |
 | [**GSH0100**](diagnostics/GSH0100.md) | Warning | **Every block reduces the whole sequence of an AsParallel() aggregate.** The inputs are the same in the whole grid, but the kernel is not cooperative, so the blocks cannot share the work; mark it `[GpuKernel(Cooperative = true)]`. |
 | [**SLQ0001**](diagnostics/SLQ0001.md) | Warning | **Excessive StackLinq chain depth.** Triggered when a StackLinq query chain exceeds recommended nesting depth, threatening GPU register spilling or stack frame bloat. |

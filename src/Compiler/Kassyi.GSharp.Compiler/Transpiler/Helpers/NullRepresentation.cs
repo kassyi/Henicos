@@ -16,12 +16,56 @@ internal static class NullRepresentation
     /// <summary>
     /// Emits <c>(&lt;operand&gt;.data == nullptr)</c>, or <c>!=</c> when <paramref name="isNull"/> is false.
     /// </summary>
+    /// <remarks>
+    /// A stack array local is a C++ array, which has no <c>data</c> member; C# never gives null for it either (it is
+    /// created by its declaration and cannot be reassigned, GSH0091), so the test is the constant.
+    /// </remarks>
     public static void AppendArrayNullTest(ExpressionSyntax operand, bool isNull, ref TranspileContext context)
     {
+        operand = SkipNullPreservingConversions(operand, context.Query.SemanticModel);
+        if (StackArrayLocals.IsStackArrayReference(operand, context.Query.SemanticModel))
+        {
+            context.Emitter.Writer.Append(isNull ? "false" : "true");
+            return;
+        }
+
         using (context.Emitter.Writer.Parentheses())
         {
-            context.Visitor.Visit(operand);
+            // .data binds tighter than any operator, so an operand that is not a primary expression is parenthesized
+            if (operand is IdentifierNameSyntax or MemberAccessExpressionSyntax or ElementAccessExpressionSyntax
+                or InvocationExpressionSyntax or ThisExpressionSyntax)
+            {
+                context.Visitor.Visit(operand);
+            }
+            else
+            {
+                using (context.Emitter.Writer.Parentheses())
+                {
+                    context.Visitor.Visit(operand);
+                }
+            }
+
             context.Emitter.Writer.Append(isNull ? ".data == nullptr" : ".data != nullptr");
+        }
+    }
+
+    // Parentheses, and casts from one array-like type to another ((int[])a), do not change whether a value is null
+    private static ExpressionSyntax SkipNullPreservingConversions(ExpressionSyntax operand, SemanticModel model)
+    {
+        while (true)
+        {
+            switch (operand)
+            {
+                case ParenthesizedExpressionSyntax parenthesized:
+                    operand = parenthesized.Expression;
+                    break;
+                case CastExpressionSyntax cast when IsArrayNullComparable(model.GetTypeSymbol(cast)) &&
+                                                    IsArrayNullComparable(model.GetTypeSymbol(cast.Expression)):
+                    operand = cast.Expression;
+                    break;
+                default:
+                    return operand;
+            }
         }
     }
 
