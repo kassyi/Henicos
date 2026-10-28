@@ -16,8 +16,7 @@ public static class GpuBigUIntExpressionExtensions
         GpuBigUInt? targetResult = null)
     {
 
-        var execContext = new GpuBigIntExecutionContext(workspace, workspace.MemoryManager,
-            new LegacyProviderArithmeticAdapter(), workspace.Stream);
+        var execContext = GpuWorkspaceArithmetic.CreateContext(workspace);
 
         ScopedBigIntMemory targetMem;
         GpuBigUInt finalResult;
@@ -25,26 +24,21 @@ public static class GpuBigUIntExpressionExtensions
         if (targetResult != null)
         {
             var res = targetResult.Value;
-            var dummyHandle = new GpuBigIntMemoryHandle(new GpuBigIntDeviceBuffer(res.DevicePointer, res.NumWords), 0,
-                res.NumWords);
-            targetMem = new ScopedBigIntMemory(null, dummyHandle);
+            targetMem = new ScopedBigIntMemory(res.Handle.Borrow());
             finalResult = res;
         }
         else
         {
             finalResult = workspace.RentTemp(expr.NumWords);
-            var dummyHandle = new GpuBigIntMemoryHandle(
-                new GpuBigIntDeviceBuffer(finalResult.DevicePointer, finalResult.NumWords),
-                0, finalResult.NumWords);
-            targetMem = new ScopedBigIntMemory(null, dummyHandle);
+            targetMem = new ScopedBigIntMemory(finalResult.Handle.Borrow());
         }
 
         var visitor = new BigIntExpressionVisitor(execContext, targetMem);
         var scopedMem = expr.Accept(ref visitor);
 
-        if (scopedMem.Handle.Buffer != null && scopedMem.Handle.Buffer.Pointer != finalResult.DevicePointer)
+        if (!scopedMem.Handle.IsDefault && scopedMem.Handle.DevicePointer != finalResult.DevicePointer)
         {
-            workspace.Provider.CopyDeviceToDevice(finalResult.DevicePointer, scopedMem.Handle.Buffer.Pointer,
+            workspace.Provider.CopyDeviceToDevice(finalResult.DevicePointer, scopedMem.Handle.DevicePointer,
                 Math.Min(finalResult.NumWords, scopedMem.Handle.NumWords), workspace.Stream);
         }
 

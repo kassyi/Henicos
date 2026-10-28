@@ -349,6 +349,27 @@ public interface IGpuAdvancedMathProvider
         int actualBits, int iterations);
 
     /// <summary>
+    /// Corrects an integer square root estimate <c>r</c> of <c>a</c> to <c>floor(sqrt(a))</c>.
+    /// </summary>
+    /// <param name="workspace">The GPU workspace.</param>
+    /// <param name="operand">The operand <c>a</c>.</param>
+    /// <param name="rootSquared">The square <c>r^2</c> of the estimate, with as many words as <paramref name="operand"/>.</param>
+    /// <param name="root">The estimate <c>r</c>; receives <c>floor(sqrt(a))</c>. <c>2r + 1</c> must fit in
+    /// <c>operand.NumWords + 1</c> words.</param>
+    /// <param name="slack">Scratch of at least <c>operand.NumWords + 1</c> words.</param>
+    /// <param name="trial">Scratch of at least <c>operand.NumWords + 1</c> words.</param>
+    /// <exception cref="ArgumentException">Thrown when <paramref name="rootSquared"/>, <paramref name="slack"/> or
+    /// <paramref name="trial"/> is shorter than stated above.</exception>
+    /// <remarks>
+    /// The GPU provider computes the slack <c>a - r^2</c> on the device and moves <c>r</c> by at most 4 steps, without a
+    /// host synchronization; an estimate that is <c>floor(sqrt(a))</c> or one less needs at most one. When 4 steps do
+    /// not suffice, the next read of the stream throws <see cref="InvalidOperationException"/>. The CPU provider
+    /// computes <c>floor(sqrt(a))</c> directly.
+    /// </remarks>
+    void SqrtFloorCorrection(GpuWorkspace workspace, GpuBigUInt operand, GpuBigUInt rootSquared, GpuBigUInt root,
+        GpuBigUInt slack, GpuBigUInt trial);
+
+    /// <summary>
     /// Executes a high-precision reciprocal division algorithm using Newton-Raphson approximation kernels on the GPU.
     /// </summary>
     /// <param name="workspace">The GPU workspace.</param>

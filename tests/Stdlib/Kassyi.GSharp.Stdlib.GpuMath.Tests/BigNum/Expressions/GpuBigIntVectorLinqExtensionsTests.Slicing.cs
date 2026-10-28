@@ -18,7 +18,7 @@ public partial class GpuBigIntVectorLinqExtensionsTests
     {
         using var array = CreateArray(input);
         var expr = array.AsVectorizedEnumerable().Take(takeCount);
-        using var result = expr.Evaluate(_context);
+        var result = expr.Evaluate(_context);
         var hostResult = ToHostArray(result);
         Assert.Equal(expectedTake.Length, hostResult.Length);
         for(int i=0; i<expectedTake.Length; i++) Assert.Equal(expectedTake[i], hostResult[i]);
@@ -31,7 +31,7 @@ public partial class GpuBigIntVectorLinqExtensionsTests
     {
         using var array = CreateArray(input);
         var expr = array.AsVectorizedEnumerable().Skip(skipCount);
-        using var result = expr.Evaluate(_context);
+        var result = expr.Evaluate(_context);
         var hostResult = ToHostArray(result);
         Assert.Equal(expectedSkip.Length, hostResult.Length);
         for(int i=0; i<expectedSkip.Length; i++) Assert.Equal(expectedSkip[i], hostResult[i]);
@@ -44,7 +44,7 @@ public partial class GpuBigIntVectorLinqExtensionsTests
         using var array = CreateArray(new BigInteger[] { 10, 20, 30, 40, 50, 60 });
         // Skip 2 (30, 40, 50, 60) -> Take 2 (30, 40)
         var expr = array.AsVectorizedEnumerable().Skip(2).Take(2);
-        using var result = expr.Evaluate(_context);
+        var result = expr.Evaluate(_context);
         var hostResult = ToHostArray(result);
         Assert.Equal(2, hostResult.Length);
         Assert.Equal(30, hostResult[0]);

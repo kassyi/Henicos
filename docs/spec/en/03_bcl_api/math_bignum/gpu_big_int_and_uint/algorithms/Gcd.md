@@ -19,14 +19,14 @@ Calculates the Greatest Common Divisor (GCD) of two arbitrary-precision integers
 
 | Name | Description |
 | --- | --- |
-| [Gcd(GpuBigUInt, GpuBigUInt, GpuBigUInt)](#gcd-gpuuintbiginteger-gpuuintbiginteger-gpuuintbiginteger) | Computes the greatest common divisor of two absolute values. |
+| [Gcd(GpuBigUIntView, GpuBigUIntView, GpuBigUIntView)](#gcd-gpuuintbiginteger-gpuuintbiginteger-gpuuintbiginteger) | Computes the greatest common divisor of two absolute values. |
 
-## Gcd(GpuBigUInt, GpuBigUInt, GpuBigUInt)
+## Gcd(GpuBigUIntView, GpuBigUIntView, GpuBigUIntView)
 
 Executes Lehmer's GCD algorithm natively on the GPU buffer.
 
 ```csharp
-public static void Gcd(GpuBigUInt leftOperand, GpuBigUInt rightOperand, GpuBigUInt resultBuffer);
+public static void Gcd(scoped GpuBigUIntView leftOperand, scoped GpuBigUIntView rightOperand, scoped GpuBigUIntView resultBuffer);
 ```
 
 #### Parameters

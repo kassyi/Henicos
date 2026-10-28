@@ -149,13 +149,14 @@ public class GpuNumberOperatorGenerator : IIncrementalGenerator
                         $"public static {returnType} operator >>({structName} left, int shift) => {shiftBody("ShiftRight")};");
                 }
 
-                // Comparisons (Supported by both)
+                // Comparisons (Supported by both). == and != compare values: GpuBigUInt.Equals is the identity of the
+                // buffer (#638), while the fixed-width types compare values in Equals as well
+                var equality = isAstNode ? "left.CompareTo(right) == 0" : "left.Equals(right)";
+                var inequality = isAstNode ? "left.CompareTo(right) != 0" : "!left.Equals(right)";
                 inheritdoc();
-                writer.Line(
-                    $"public static bool operator ==({structName} left, {structName} right) => left.Equals(right);");
+                writer.Line($"public static bool operator ==({structName} left, {structName} right) => {equality};");
                 inheritdoc();
-                writer.Line(
-                    $"public static bool operator !=({structName} left, {structName} right) => !left.Equals(right);");
+                writer.Line($"public static bool operator !=({structName} left, {structName} right) => {inequality};");
                 inheritdoc();
                 writer.Line(
                     $"public static bool operator <({structName} left, {structName} right) => left.CompareTo(right) < 0;");

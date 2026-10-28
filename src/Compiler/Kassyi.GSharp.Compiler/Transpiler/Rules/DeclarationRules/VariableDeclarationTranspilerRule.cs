@@ -271,7 +271,7 @@ public sealed class VariableDeclarationTranspilerRule : SyntaxNodeTranspilerRule
             return true;
         }
 
-        return TryWriteFixedSizeArray(variable, elemType, isConst, sizeExpr, ref context);
+        return TryWriteFixedSizeArray(variable, variable.Initializer.Value, elemType, isConst, sizeExpr, ref context);
     }
 
     private static void WriteArrayDeclarationHeader(ITypeSymbol elemType, VariableDeclaratorSyntax variable,
@@ -300,8 +300,12 @@ public sealed class VariableDeclarationTranspilerRule : SyntaxNodeTranspilerRule
         context.Visitor.Visit(initializerNode);
     }
 
-    private static bool TryWriteFixedSizeArray(VariableDeclaratorSyntax variable, ITypeSymbol elemType, bool isConst,
-        ExpressionSyntax? sizeExpr, ref TranspileContext context)
+    // Span<int> s = stackalloc int[4];          ->  int s[4]{};
+    // the same under [SkipLocalsInit]            ->  int s[4];
+    // ReadOnlySpan<int> r = stackalloc int[4];  ->  const int r[4]{};  (a const array needs an initializer)
+    // int[] a = new int[4];                     ->  int a[4]{};        (a C# array is zeroed whatever the attribute says)
+    private static bool TryWriteFixedSizeArray(VariableDeclaratorSyntax variable, ExpressionSyntax creation,
+        ITypeSymbol elemType, bool isConst, ExpressionSyntax? sizeExpr, ref TranspileContext context)
     {
         if (sizeExpr == null)
         {
@@ -320,6 +324,12 @@ public sealed class VariableDeclarationTranspilerRule : SyntaxNodeTranspilerRule
             context.Visitor.Visit(sizeExpr);
         }
 
+        context.Emitter.Writer.AppendIf(
+            creation is not StackAllocArrayCreationExpressionSyntax ||
+            isConst ||
+            context.Query.SemanticModel.AreLocalsZeroedAt(creation),
+            "{}"
+        );
         return true;
     }
 

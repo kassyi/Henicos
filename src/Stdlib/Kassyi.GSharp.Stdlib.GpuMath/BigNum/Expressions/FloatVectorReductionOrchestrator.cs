@@ -43,7 +43,7 @@ internal static class FloatVectorReductionOrchestrator
 
     public static GpuBigFloat Reduce(
         GpuWorkspace workspace,
-        GpuBigFloatArray evaluated,
+        GpuBigFloatArrayView evaluated,
         FloatReductionKind kind)
     {
         var numWords = evaluated.WordsPerElement;
@@ -56,8 +56,8 @@ internal static class FloatVectorReductionOrchestrator
         {
             var first = evaluated.GetElement(0);
             var copySig = new GpuBigUInt(workspace, numWords);
-            workspace.Provider.CopyDeviceToDevice(copySig.DevicePointer, first.UFloat.Significand.DevicePointer, numWords, workspace.Stream);
-            return new GpuBigFloat(copySig, first.UFloat.Exponent, first.IsNegative);
+            workspace.Provider.CopyDeviceToDevice(copySig.DevicePointer, first.Significand.DevicePointer, numWords, workspace.Stream);
+            return new GpuBigFloat(copySig, first.Exponent, first.IsNegative);
         }
 
         var passes = new List<(int GridDimX, int BatchSize, int ChunkSize)>();
@@ -134,8 +134,8 @@ internal static class FloatVectorReductionOrchestrator
 
             var reduced = finalArray.GetElement(0);
             var resultSig = new GpuBigUInt(workspace, numWords);
-            workspace.Provider.CopyDeviceToDevice(resultSig.DevicePointer, reduced.UFloat.Significand.DevicePointer, numWords, workspace.Stream);
-            return new GpuBigFloat(resultSig, reduced.UFloat.Exponent, reduced.IsNegative);
+            workspace.Provider.CopyDeviceToDevice(resultSig.DevicePointer, reduced.Significand.DevicePointer, numWords, workspace.Stream);
+            return new GpuBigFloat(resultSig, reduced.Exponent, reduced.IsNegative);
         }
         finally
         {

@@ -169,6 +169,31 @@ internal static class SemanticModelExtensions
     }
 
     /// <summary>
+    /// Whether the locals at <paramref name="node"/> start zeroed: <see cref="SymbolExtensions.AreLocalsZeroed"/> of the
+    /// member around the node's position in the user's source.
+    /// </summary>
+    /// <remarks>
+    /// A node of a lowered tree is located through the original-span annotation of the node or of its nearest mapped
+    /// ancestor, so a body that lowering copied from another method follows the attributes of that method (Roslyn's
+    /// synthesized methods inherit the flag from their owner the same way). A node with no location counts as zeroed.
+    /// </remarks>
+    public static bool AreLocalsZeroedAt(this SemanticModel semanticModel, SyntaxNode node)
+    {
+        for (var current = node; current != null; current = current.Parent)
+        {
+            if (semanticModel.GetOriginalLocation(current) is { SourceTree: { } tree } location &&
+                semanticModel.Compilation.ContainsSyntaxTree(tree))
+            {
+                return GetSemanticModelForTree(semanticModel, tree)
+                    .GetEnclosingSymbol(location.SourceSpan.Start)
+                    .AreLocalsZeroed();
+            }
+        }
+
+        return true;
+    }
+
+    /// <summary>
     /// Gets the resolved symbol for the specified syntax node, or null if unresolvable.
     /// </summary>
     public static ISymbol? GetSymbol(this SemanticModel semanticModel, SyntaxNode node,

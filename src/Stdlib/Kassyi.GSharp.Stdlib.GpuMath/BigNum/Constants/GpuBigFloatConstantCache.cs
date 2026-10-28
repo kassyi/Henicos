@@ -53,8 +53,7 @@ internal sealed class GpuBigFloatConstantCache(GpuWorkspace workspace) : IDispos
 
             var handle = current.Handle;
             var offset = _ln2FractionBits / 32 - words;
-            return new GpuBigIntMemoryHandle(handle.Buffer, handle.WordOffset + offset, words)
-                .AsBorrowedBigUInt(workspace);
+            return handle.Slice(offset, words).AsBorrowedBigUInt(workspace);
         }
     }
 

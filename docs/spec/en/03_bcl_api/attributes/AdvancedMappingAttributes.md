@@ -64,6 +64,19 @@ public BclIntrinsicMapAttribute(
 
 Maps C# operator overloads (like `+` or `*`) to specific GPU device functions via `TargetType` and `TargetMethod`.
 
+An assignment `c = a + b` becomes a call `TargetMethod(c, a, b)`, or `TargetMethod(ctx, c, a, b)` when the method takes a context of a value type first (the one parameter or local of that type in scope). When `TargetMethod` is overloaded, G# picks the overload the way C# overload resolution would for a call with the operator's types (the return type for the result, the parameter types for the operands), not by declaration order:
+
+- A candidate is a static, non-generic `[GpuDeviceFunction]` method of that name with one parameter per result and operand, optionally after the context.
+- A value parameter accepts an implicit conversion (user-defined conversions included). A `ref`, `out`, `in` or `ref readonly` parameter accepts only its own type, and only the result may be `ref` or `out`.
+- Among the candidates that apply, G# chooses the one that is a better function member than every other, as C# does: no operand converts better to the other candidate, and at least one converts better to it. A conversion is better when the operand's type is the parameter type and the other parameter type is not; otherwise when its parameter type is the better conversion target (it converts implicitly to the other parameter type and not back, or it is a signed integral type and the other an unsigned one). A built-in conversion is not better than a user-defined one in itself: `Shl(uint[], uint[], long)` and `Shl(uint[], uint[], ShiftCount)` for an `int` shift are ambiguous, as they are in C#. When the parameter types are the same, a value parameter is better than an `in` or `ref readonly` one.
+- No applicable overload, two equally good ones (for example the same parameters with and without a context), or an assignment target that does not convert to the chosen result parameter is reported as GSH0003, with the reason.
+
+An operator macro is expanded only as the right side of an assignment statement (inside parentheses and casts, if any), or as an operand of an operator macro there. An operator macro used anywhere else (a statement of its own such as `++x;`, the initializer of a declaration, an argument) is reported as GSH0003.
+
+An operator macro used as an operand of another one (`c = c - (a - b)`) is computed into a temporary first, in the C# order of evaluation, when its target takes the result as a `ref` or `out` parameter of an unmanaged type (`Combine(ref Value result, Value left, Value right)`). An operand before it that its call could change is evaluated into a temporary before the call. A target that writes the result into the storage of the assignment target (`Add(uint[] result, ...)`) has no temporary to compute into, and the nested use is reported as GSH0003.
+
+A compound assignment whose operator or right side is an operator macro (`c += a + b` would otherwise compute `c = a + b`), an increment or decrement operator macro (`r = ++x`), and an operator macro applied to nullable operands (a lifted operator) are reported as GSH0003. Write `t = a + b; c = c + t;` instead of `c += a + b`.
+
 ## Examples
 
 ### Custom GPU Intrinsics

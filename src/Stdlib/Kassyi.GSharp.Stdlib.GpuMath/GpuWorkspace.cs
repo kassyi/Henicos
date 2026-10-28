@@ -50,6 +50,14 @@ public class GpuWorkspace : IGpuResourceScope
     /// <summary>
     /// Gets the dedicated CUDA Stream for this context, used for operations and CUDA Graph capture.
     /// </summary>
+    /// <remarks>
+    /// A buffer freed while this stream is captured stays out of the workspace pool, because the graph keeps using it.
+    /// A capture started by <c>GpuBigIntExpr.CompileToGraph</c> hands such buffers to its graph, which returns them when it
+    /// is disposed. A capture started directly on this stream cannot be tracked: buffers freed during it stay parked until
+    /// the workspace is disposed, and allocations during it come only from the pool. A capture of
+    /// <c>CompileToGraph</c> belongs to the thread that compiles; other threads using the workspace meanwhile go through
+    /// the shared pool. A capture does not fork this stream into others.
+    /// </remarks>
     public IntPtr Stream
     {
         get;
@@ -101,6 +109,24 @@ public class GpuWorkspace : IGpuResourceScope
     /// this workspace, on the GPU and in CPU fallback mode alike.
     /// </summary>
     public GpuBigFloatTranscendentalOptions Transcendental
+    {
+        get;
+    } = new();
+
+    /// <summary>
+    /// Gets when the big-float <c>Divide</c> and <c>Rsqrt</c> on the GPU cut a divisor or radicand much wider than the
+    /// result to its top words; the tests and the benchmarks change it to force the cut on or off.
+    /// </summary>
+    internal WideOperandOptions WideOperands
+    {
+        get;
+    } = new();
+
+    /// <summary>
+    /// Gets the counts of the truncated wide-operand paths of the big-float <c>Divide</c> and <c>Rsqrt</c> on this
+    /// workspace, which the tests read to see which path ran.
+    /// </summary>
+    internal WideOperandCounters WideOperandCounters
     {
         get;
     } = new();
@@ -213,6 +239,8 @@ public class GpuWorkspace : IGpuResourceScope
             return;
         }
 
+        List<Exception>? exceptions = disposing ? [] : null;
+
         IDisposable? contextScope = null;
         if (Engine == GpuExecutionEngine.GSharpAot)
         {
@@ -220,13 +248,13 @@ public class GpuWorkspace : IGpuResourceScope
             {
                 contextScope = new GpuKernelLoader.CudaContextScope(_isolatedContext);
             }
-            catch
+            catch (CudaException ex)
             {
-                // Fallback: If context fails to initialize during teardown, proceed with caution.
+                // The context could not be made current: still release what can be released, and report the failure
+                // with the other teardown errors (dropped on the finalizer thread, which must not throw).
+                exceptions?.Add(ex);
             }
         }
-
-        List<Exception>? exceptions = disposing ? [] : null;
 
         try
         {
@@ -376,26 +404,22 @@ public class GpuWorkspace : IGpuResourceScope
         Dispose(false);
     }
 
+    /// <summary>
+    /// Reads the allocation counters of <see cref="MemoryManager"/>, also after the workspace has been disposed.
+    /// </summary>
+    /// <returns>A snapshot of the counters; see <see cref="GpuMemoryStatistics"/>.</returns>
+    internal GpuMemoryStatistics GetMemoryStatistics() => ((DefaultGpuMemoryManager)MemoryManager).GetStatistics();
+
+    /// <summary>
+    /// Rents a temporary buffer from the pool; the caller owns it and returns it with <c>Dispose</c>.
+    /// </summary>
+    /// <param name="numWords">The number of 32-bit words.</param>
+    /// <returns>An owned <see cref="GpuBigUInt"/> whose contents are zero.</returns>
+    /// <exception cref="ObjectDisposedException">The workspace has been disposed.</exception>
     internal GpuBigUInt RentTemp(int numWords)
     {
         ObjectDisposedException.ThrowIf(Volatile.Read(ref _disposed) == 1, this);
-        var tempMem = MemoryManager.AllocateTemp(numWords);
-        return new GpuBigUInt(this, tempMem.Handle, isTemp: true);
-    }
-
-    internal void ReturnTemp(GpuBigUInt temp)
-    {
-        if (!temp.IsTemp)
-        {
-            return;
-        }
-
-        if (Volatile.Read(ref _disposed) == 1)
-        {
-            return;
-        }
-
-        MemoryManager.Free(temp.Handle);
+        return new GpuBigUInt(this, MemoryManager.Allocate(numWords));
     }
 }
 

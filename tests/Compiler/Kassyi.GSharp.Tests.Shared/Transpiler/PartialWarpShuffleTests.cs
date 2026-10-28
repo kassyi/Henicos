@@ -21,6 +21,11 @@ public class PartialWarpShuffleTests : TranspilerTestBase
 {
     private const string KernelFile = "PartialWarpShuffleKernels.cu.cs(";
 
+    // How to avoid the read, at the end of the message: a mask that leaves the lane out does not help (PR #751 review). The
+    // whole message must arrive, also through the native error slot
+    private const string MissingLaneHint =
+        "(CUDA leaves the value undefined. Keep the source lane within the block by limiting delta, srcLane or laneMask, or launch a multiple of 32 threads; the mask does not limit which lane is read)";
+
     [SkippableTheory]
     [Scenario(TestScenario.SadPath)]
     [InlineData(false)]
@@ -35,6 +40,7 @@ public class PartialWarpShuffleTests : TranspilerTestBase
 
         Assert.Contains("Warp.ShuffleDownSync at " + KernelFile, exception.Message);
         Assert.Contains("reads lane 16 of warp 0, which does not exist in a block of 9 threads", exception.Message);
+        Assert.EndsWith(MissingLaneHint, exception.Message);
     }
 
     [SkippableTheory]
@@ -52,6 +58,7 @@ public class PartialWarpShuffleTests : TranspilerTestBase
 
         Assert.Contains("Warp.ShuffleXorSync at " + KernelFile, exception.Message);
         Assert.Contains("reads lane 9 of warp 0, which does not exist in a block of 9 threads", exception.Message);
+        Assert.EndsWith(MissingLaneHint, exception.Message);
     }
 
     [SkippableTheory]

@@ -134,7 +134,7 @@ public class GpuUIntBigIntegerCoreTests : IDisposable
 
         // A value allocated by the constructor owns its buffer.
         using var owned = new GpuBigUInt(_context, 4);
-        Assert.False(owned.IsTemp);
+        Assert.True(owned.OwnsBuffer);
         Assert.Equal(4, owned.NumWords);
 
         // An unsigned value is never negative.
@@ -187,11 +187,12 @@ public class GpuUIntBigIntegerCoreTests : IDisposable
     {
         using var workspace = new GpuWorkspace(64, GpuExecutionEngine.GSharpAot);
 
-        // A rented value is a temporary.
-        // mutant: GpuWorkspace.cs:383 `isTemp: true` -> `isTemp: false`
-        var temp = workspace.RentTemp(4);
-        Assert.True(temp.IsTemp);
-        workspace.ReturnTemp(temp);
+        // A rented value is owned by the caller and returned with Dispose.
+        // mutant: GpuWorkspace.RentTemp wraps a borrowed handle
+        using (var temp = workspace.RentTemp(4))
+        {
+            Assert.True(temp.OwnsBuffer);
+        }
 
         workspace.Dispose();
 
