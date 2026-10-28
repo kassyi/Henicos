@@ -58,6 +58,81 @@ public class GpuBigFloatRoundingTests : IDisposable
         Assert.Equal((new BigInteger(0x8000_0000u), int.MaxValue, false), (highest.Significand, highest.Result.Exponent, highest.Result.IsNegative));
     }
 
+    // The operator * follows the contract of IGpuBigFloatArithmetic.Multiply, like / follows Divide: the exponents are
+    // added in long and the product is RZ_p for the width of the wider operand. It used to multiply the significands as
+    // integers and add the exponents in int, which wrapped around: 2^int.MinValue · 2^int.MinValue came out as 1.
+    [SkippableTheory]
+    [Scenario(TestScenario.SadPath)]
+    [InlineData("Gpu")]
+    [InlineData("Cpu")]
+    public void MultiplyOperator_ExponentBelowMin_ThrowsOverflow(string engine)
+    {
+        // 2^int.MinValue · 2^int.MinValue = 2^(2·int.MinValue): the exponent of the product does not fit in int.
+        using var tiny = new GpuBigFloat(new GpuBigUInt(_workspace, [1u]), int.MinValue, false);
+        Assert.Throws<OverflowException>(() =>
+        {
+            using var product = MultiplyByOperator(engine, tiny, tiny);
+        });
+    }
+
+    // 2^int.MaxValue · 2^1 = 2^(int.MaxValue + 1) = 0x80000000·2^(int.MaxValue - 30): eL + eR does not fit in int, the
+    // product does (it used to come out as 2^int.MinValue).
+    [SkippableTheory]
+    [Scenario(TestScenario.Boundary)]
+    [InlineData("Gpu")]
+    [InlineData("Cpu")]
+    public void MultiplyOperator_IntermediateAboveMax_Fits(string engine)
+    {
+        using var huge = new GpuBigFloat(new GpuBigUInt(_workspace, [1u]), int.MaxValue, false);
+        using var two = new GpuBigFloat(new GpuBigUInt(_workspace, [1u]), 1, false);
+        using var product = MultiplyByOperator(engine, huge, two);
+        Assert.Equal(
+            (new BigInteger(0x8000_0000u), int.MaxValue - 30, false),
+            (product.UFloat.Significand.ToBigInteger(), product.Exponent, product.IsNegative));
+    }
+
+    // A 4-word by 4-word product is rounded toward zero to 4 words: RZ_128 of the exact product, and the same bits as
+    // Multiply with a 4-word result (it used to keep all 8 words).
+    // mutant: GpuBigFloatExpressionVisitor.cs:100 `Math.Max(left words, right words)` -> `left words + right words` (both
+    // engines: the full product is kept; also MultiplyOperator_IntermediateAboveMax_Fits)
+    // mutant: GpuBigFloatExpressionVisitor.cs:108 `GpuFloatOperand.From(right)` -> `From(right, negate: true)` (both engines:
+    // the sign; also MultiplyOperator_IntermediateAboveMax_Fits)
+    [SkippableTheory]
+    [Scenario(TestScenario.Boundary)]
+    [InlineData("Gpu")]
+    [InlineData("Cpu")]
+    public void MultiplyOperator_RoundsLikeMultiply(string engine)
+    {
+        uint[] leftWords = [0x89AB_CDEFu, 0x0123_4567u, 0xFEDC_BA98u, 0x7654_3210u];
+        uint[] rightWords = [0x1357_9BDFu, 0x2468_ACE0u, 0x0F1E_2D3Cu, 0x8000_0001u];
+        using var left = new GpuBigFloat(new GpuBigUInt(_workspace, leftWords), -50, true);
+        using var right = new GpuBigFloat(new GpuBigUInt(_workspace, rightWords), 17, false);
+        using var product = MultiplyByOperator(engine, left, right);
+        var actual = (product.UFloat.Significand.ToBigInteger(), (long)product.Exponent, product.IsNegative);
+
+        // |L·R|·2^(-50 + 17), negative.
+        var (expectedSig, expectedExp) = BigFloatReference.RoundTowardZero(
+            FromWords(leftWords) * FromWords(rightWords), BigInteger.One << 33, 128);
+        Assert.Equal((expectedSig, expectedExp, true), actual);
+        var multiplyCase = Binary(FloatOperation.Multiply, new(leftWords, -50, true), new(rightWords, 17), 4);
+        var (sig, result) = Run(Arithmetic(engine), multiplyCase);
+        Assert.Equal((sig, (long)result.Exponent, result.IsNegative), actual);
+    }
+
+    // a * b through the operator: the default visitor of the workspace (the G# kernels) for "Gpu", a visitor with the CPU
+    // arithmetic for "Cpu".
+    private GpuBigFloat MultiplyByOperator(string engine, GpuBigFloat left, GpuBigFloat right)
+    {
+        if (engine == "Gpu")
+        {
+            GpuBigFloat product = left * right;
+            return product;
+        }
+
+        var visitor = new GpuBigFloatExpressionVisitor(_workspace, CSharpCpuBigFloatArithmetic.Instance);
+        return visitor.Visit(left * right);
+    }
+
     private enum FloatOperation
     {
         Add,

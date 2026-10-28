@@ -95,7 +95,7 @@ The second value.
 #### Returns
 
 _GpuBigFloatExpr_<br>
-An expression tree node that computes the product when evaluated.
+An expression tree node that computes the product when evaluated: the exact product rounded toward zero to the width of the wider operand, like `IGpuBigFloatArithmetic.Multiply`. Evaluating it throws `OverflowException` when the exponent of the product does not fit in `int`.
 
 ## Division (/)
 

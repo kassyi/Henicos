@@ -91,18 +91,31 @@ public ref struct GpuBigFloatExpressionVisitor(GpuWorkspace workspace, IGpuBigFl
     /// <typeparam name="T">The concrete GPU big number type (<see cref="GpuBigFloat"/> or <see cref="GpuBigUFloat"/>).</typeparam>
     /// <param name="left">The left multiplicand operand.</param>
     /// <param name="right">The right multiplier operand.</param>
-    /// <returns>A new <typeparamref name="T"/> containing the product.</returns>
+    /// <returns>A new <typeparamref name="T"/> containing the product rounded toward zero to the width of the wider
+    /// operand (<see cref="IGpuBigFloatArithmetic.Multiply"/>).</returns>
+    /// <exception cref="OverflowException">The exponent of the product does not fit in <see cref="int"/>.</exception>
     public T VisitMul<T>(T left, T right)
         where T : struct, IGpuBigNumber<T>
     {
-        // Directly reuse GpuBigUInt AST for significands
-        var sigExpr = left.Magnitude * right.Magnitude;
-        var resultSig = sigExpr.Node.Evaluate(Workspace);
+        var maxWords = Math.Max(left.Magnitude.NumWords, right.Magnitude.NumWords);
+        var resultSig = new GpuBigUInt(left.Workspace, maxWords);
 
-        var resultExp = left.Exponent + right.Exponent;
-        var resultSign = !resultSig.IsZero() && (left.IsNegative != right.IsNegative);
+        try
+        {
+            var execContext = new GpuBigIntExecutionContext(Workspace, Workspace.MemoryManager,
+                new LegacyProviderArithmeticAdapter(), Workspace.Stream);
+            var leftOp = GpuFloatOperand.From(left);
+            var rightOp = GpuFloatOperand.From(right);
 
-        return T.Create(resultSig, resultExp, resultSign);
+            var res = Arithmetic.Multiply(ref execContext, in leftOp, in rightOp, resultSig.Handle);
+
+            return T.Create(resultSig, res.Exponent, res.IsNegative);
+        }
+        catch
+        {
+            resultSig.Dispose();
+            throw;
+        }
     }
 
     /// <summary>
