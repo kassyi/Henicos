@@ -87,7 +87,7 @@ internal static class CrossBarrierChecks
     /// </summary>
     internal static void ValidateCrossBarrierLocals(KernelBarrierScan scan)
     {
-        if (scan.TrackedLocals.Count == 0 || !scan.HasSplitPoint || !scan.Flow.TryGetGraph(out var graph))
+        if (scan.TrackedLocals.Count == 0 || !scan.HasSplitPoint || !scan.Flow.TryGetLiveness(out var graph, out var liveness))
         {
             return;
         }
@@ -98,7 +98,7 @@ internal static class CrossBarrierChecks
             locals[i] = scan.TrackedLocals[i].Symbol;
         }
 
-        var liveAcrossSplit = CrossBarrierLiveness.FindLiveAcrossSplit(graph, locals, scan.SemanticModel);
+        var liveAcrossSplit = CrossBarrierLiveness.FindLiveAcrossSplit(graph, liveness, locals);
         for (var i = 0; i < locals.Length; i++)
         {
             if (!liveAcrossSplit[i])

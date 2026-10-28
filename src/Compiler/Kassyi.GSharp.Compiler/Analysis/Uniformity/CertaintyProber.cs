@@ -3,7 +3,11 @@ using Microsoft.CodeAnalysis.Operations;
 
 namespace Kassyi.GSharp.Compiler.Analysis;
 
-internal sealed partial class UniformityAnalysis
+/// <summary>
+/// Decides, for a <see cref="UniformityAnalysis"/>, whether a divergent branch certainly diverges (C10): a sparse
+/// conditional constant propagation over the graph with the thread (or block) coordinate fixed to 0 and to 1.
+/// </summary>
+internal sealed class CertaintyProber(UniformityState state)
 {
     // The condition of each branch in each probe run, computed on first use: [probe][coordinate][node]
     private readonly Constant[]?[,] _probeConditions = new Constant[]?[2, 2];
@@ -22,7 +26,7 @@ internal sealed partial class UniformityAnalysis
     /// [WHY] Only the X coordinate counts: a one-dimensional launch has a Y and Z width of 1, where a branch on
     /// <c>ThreadIndex.Y == 0</c> is taken by every thread, so judging it certain would reject correct code.
     /// </remarks>
-    private bool IsCertain(int branch, SyncScope scope) =>
+    public bool IsCertain(int branch, SyncScope scope) =>
         IsCertain(branch, Probe.Block) || (scope == SyncScope.Grid && IsCertain(branch, Probe.Grid));
 
     private bool IsCertain(int branch, Probe probe)
@@ -48,55 +52,22 @@ internal sealed partial class UniformityAnalysis
     // that the run reaches, Bottom for the others
     private Constant[] RunProbe(ProbeRun run)
     {
-        var count = _nodes.Count;
-        var values = _symbols.Count + _captures.Count;
-        var entry = new Constant[count][];
-        var reached = new bool[count];
-        entry[0] = new Constant[values];
-        reached[0] = true;
-        var state = new Constant[values];
+        var entry = new Constant[]?[state.NodeCount];
+        entry[0] = new Constant[state.Recorder.ValueCount];
+        var current = new Constant[state.Recorder.ValueCount];
         bool changed;
         do
         {
-            changed = false;
-            for (var node = 0; node < count; node++)
-            {
-                if (!reached[node])
-                {
-                    continue;
-                }
-
-                var condition = RunProbeNode(node, entry[node], state, run);
-                foreach (var successor in FeasibleSuccessors(node, condition))
-                {
-                    if (!reached[successor])
-                    {
-                        reached[successor] = true;
-                        entry[successor] = new Constant[values];
-                        changed = true;
-                    }
-
-                    var target = entry[successor];
-                    for (var value = 0; value < values; value++)
-                    {
-                        var merged = target[value].Join(state[value]);
-                        if (!merged.Equals(target[value]))
-                        {
-                            target[value] = merged;
-                            changed = true;
-                        }
-                    }
-                }
-            }
+            changed = PropagateProbe(entry, current, run);
         } while (changed);
 
-        var conditions = new Constant[count];
+        var conditions = new Constant[state.NodeCount];
         var siteArguments = run.Probe == Probe.Block ? new Dictionary<SyntaxNode, Constant[]>() : null;
-        for (var node = 0; node < count; node++)
+        for (var node = 0; node < state.NodeCount; node++)
         {
-            if (reached[node])
+            if (entry[node] is { } nodeEntry)
             {
-                conditions[node] = RunProbeNode(node, entry[node], state, run, siteArguments);
+                conditions[node] = RunProbeNode(node, nodeEntry, current, run, siteArguments);
             }
         }
 
@@ -108,51 +79,97 @@ internal sealed partial class UniformityAnalysis
         return conditions;
     }
 
+    // One pass over the reached nodes (those with an entry state): joins the state at the end of each into the entry of
+    // the successors the run takes; whether an entry changed
+    private bool PropagateProbe(Constant[]?[] entry, Constant[] current, ProbeRun run)
+    {
+        var changed = false;
+        for (var node = 0; node < state.NodeCount; node++)
+        {
+            if (entry[node] is not { } nodeEntry)
+            {
+                continue;
+            }
+
+            var condition = RunProbeNode(node, nodeEntry, current, run);
+            foreach (var successor in FeasibleSuccessors(node, condition))
+            {
+                if (entry[successor] is not { } target)
+                {
+                    target = new Constant[current.Length];
+                    entry[successor] = target;
+                    changed = true;
+                }
+
+                changed |= Join(target, current);
+            }
+        }
+
+        return changed;
+    }
+
+    // target joined with values; whether target changed
+    private static bool Join(Constant[] target, Constant[] values)
+    {
+        var changed = false;
+        for (var value = 0; value < values.Length; value++)
+        {
+            var merged = target[value].Join(values[value]);
+            if (!merged.Equals(target[value]))
+            {
+                target[value] = merged;
+                changed = true;
+            }
+        }
+
+        return changed;
+    }
+
     // The successors a run takes from node: one side of a branch whose condition is a constant, all of them otherwise
     private ImmutableArray<int> FeasibleSuccessors(int node, Constant condition)
     {
-        var flowNode = _nodes[node];
+        var flowNode = state.Graph.Nodes[node];
         if (!condition.IsValue || flowNode.WhenTrue < 0)
         {
-            return _successors[node];
+            return state.Successors[node];
         }
 
         return ImmutableArray.Create(condition.Value != 0 ? flowNode.WhenTrue : flowNode.WhenFalse);
     }
 
-    // Runs the events of node from its entry state into state; returns the value of its condition (Bottom without one)
-    private Constant RunProbeNode(int node, Constant[] entry, Constant[] state, ProbeRun run,
+    // Runs the events of node from its entry state into current; returns the value of its condition (Bottom without one)
+    private Constant RunProbeNode(int node, Constant[] entry, Constant[] current, ProbeRun run,
         Dictionary<SyntaxNode, Constant[]>? siteArguments = null)
     {
-        entry.AsSpan().CopyTo(state);
-        var flowNode = _nodes[node];
-        foreach (var flowEvent in flowNode.Events)
+        entry.AsSpan().CopyTo(current);
+        var flowNode = state.Graph.Nodes[node];
+        foreach (var flowEvent in state.NodeAt(node).Events)
         {
             switch (flowEvent.Kind)
             {
-                case FlowEventKind.Define:
-                    state[flowEvent.Value] = DefineInProbe(flowEvent.Value, run);
+                case UniformityEventKind.Define:
+                    current[flowEvent.Value] = DefineInProbe(flowEvent.Value, run);
                     break;
-                case FlowEventKind.Write when flowEvent is { Operation: { } operation, Graph: { } graph }:
-                    WriteInProbe(operation, graph, state, flowEvent.Opaque, run);
+                case UniformityEventKind.Write when flowEvent is { Operation: { } operation, Graph: { } graph }:
+                    WriteInProbe(operation, graph, current, flowEvent.Opaque, run);
                     break;
-                case FlowEventKind.Site when siteArguments != null &&
+                case UniformityEventKind.Site when siteArguments != null &&
                                              flowEvent is
                                              {
                                                  Operation: IInvocationOperation call,
                                                  Graph: { } callGraph
                                              }:
-                    RecordSiteArguments(call, callGraph, state, run, siteArguments);
+                    RecordSiteArguments(call, callGraph, current, run, siteArguments);
                     break;
             }
         }
 
         return flowNode is { Condition: { } condition, Graph: { } conditionGraph }
-            ? EvaluateInProbe(condition, conditionGraph, state, run)
+            ? EvaluateInProbe(condition, conditionGraph, current, run)
             : default;
     }
 
-    private void RecordSiteArguments(IInvocationOperation call, ControlFlowGraph graph, Constant[] state, ProbeRun run,
+    private void RecordSiteArguments(IInvocationOperation call, ControlFlowGraph graph, Constant[] current, ProbeRun run,
         Dictionary<SyntaxNode, Constant[]> siteArguments)
     {
         var values = new Constant[Math.Min(call.TargetMethod.Parameters.Length, 64)];
@@ -160,7 +177,7 @@ internal sealed partial class UniformityAnalysis
         {
             if (argument.Parameter is { } parameter && parameter.Ordinal < values.Length)
             {
-                values[parameter.Ordinal] = EvaluateInProbe(argument.Value, graph, state, run);
+                values[parameter.Ordinal] = EvaluateInProbe(argument.Value, graph, current, run);
             }
         }
 
@@ -180,7 +197,7 @@ internal sealed partial class UniformityAnalysis
     /// thread 1 of a block, as the thread index is: the callee may then be judged with that parameter as the
     /// coordinate (C10, decision 2.4).
     /// </summary>
-    private ulong GetIdentityMask(SyntaxNode call)
+    public ulong GetIdentityMask(SyntaxNode call)
     {
         GetProbeConditions(Probe.Block, 0);
         GetProbeConditions(Probe.Block, 1);
@@ -195,7 +212,7 @@ internal sealed partial class UniformityAnalysis
         {
             if (zero[i] is { IsValue: true, Value: 0 } && one[i] is { IsValue: true, Value: 1 })
             {
-                mask |= ParameterBit(i);
+                mask |= ArgumentMasks.Bit(i);
             }
         }
 
@@ -204,63 +221,72 @@ internal sealed partial class UniformityAnalysis
 
     // A parameter that receives the thread index itself is the coordinate of the run; any other is unknown
     private Constant DefineInProbe(int value, ProbeRun run) =>
-        _parameters.TryGetValue(value, out var parameter) && (_identityMask & ParameterBit(parameter.Ordinal)) != 0
+        state.Recorder.Parameters.TryGetValue(value, out var parameter) &&
+        (state.IdentityMask & ArgumentMasks.Bit(parameter.Ordinal)) != 0
             ? Constant.Of(run.Probe == Probe.Block ? run.Coordinate : 0)
             : Constant.Unknown;
 
-    private void WriteInProbe(IOperation operation, ControlFlowGraph graph, Constant[] state, SyntaxNode? opaque,
+    private void WriteInProbe(IOperation operation, ControlFlowGraph graph, Constant[] current, SyntaxNode? opaque,
         ProbeRun run)
     {
         switch (operation)
         {
             case IFlowCaptureOperation capture:
-                state[ValueOf(graph, capture.Id)] = EvaluateInProbe(capture.Value, graph, state, run);
-                break;
+                current[state.Recorder.ValueOf(graph, capture.Id)] = EvaluateInProbe(capture.Value, graph, current, run); break;
             case IDeconstructionAssignmentOperation deconstruction:
-                DeconstructInProbe(deconstruction.Target, deconstruction.Value, graph, state, opaque, run);
-                break;
+                DeconstructInProbe(deconstruction.Target, deconstruction.Value, graph, current, opaque, run); break;
             case ISimpleAssignmentOperation assignment:
-                var rebinds = assignment.IsRef ||
-                              assignment.Target is not ILocalReferenceOperation { Local.IsRef: true };
-                AssignInProbe(assignment.Target,
-                    rebinds ? EvaluateInProbe(assignment.Value, graph, state, run) : Constant.Unknown, state, opaque);
-                break;
+                AssignInProbe(assignment.Target, ValueOf(assignment, graph, current, run), current, opaque); break;
             case ICompoundAssignmentOperation compound:
-                AssignInProbe(compound.Target,
-                    compound.IsChecked || compound.OperatorMethod != null
-                        ? Constant.Unknown
-                        : Fold(compound.OperatorKind,
-                            EvaluateInProbe(compound.Target, graph, state, run),
-                            EvaluateInProbe(compound.Value, graph, state, run),
-                            compound.Target.Type,
-                            compound.Type),
-                    state, opaque);
-                break;
+                AssignInProbe(compound.Target, ValueOf(compound, graph, current, run), current, opaque); break;
             case IIncrementOrDecrementOperation increment:
-                var current = EvaluateInProbe(increment.Target, graph, state, run);
-                AssignInProbe(increment.Target,
-                    current.IsValue && !increment.IsChecked && increment.OperatorMethod == null
-                        ? Wrap(current.Value + (increment.Kind == OperationKind.Increment ? 1 : -1), increment.Type)
-                        : Constant.Unknown,
-                    state, opaque);
-                break;
-            case IInvocationOperation invocation:
-                foreach (var argument in invocation.Arguments)
-                {
-                    if (argument.Parameter?.RefKind is RefKind.Ref or RefKind.Out)
-                    {
-                        var target = argument.Value is IDeclarationExpressionOperation declared
-                            ? declared.Expression
-                            : argument.Value;
-                        AssignInProbe(target, Constant.Unknown, state, opaque);
-                    }
-                }
-
-                break;
+                AssignInProbe(increment.Target, ValueOf(increment, graph, current, run), current, opaque); break;
+            case IInvocationOperation invocation: ForgetArguments(invocation, current, opaque); break;
         }
     }
 
-    private void DeconstructInProbe(IOperation target, IOperation value, ControlFlowGraph graph, Constant[] state,
+    // Assigning through a ref local writes the variable it refers to, which is not followed
+    private Constant ValueOf(ISimpleAssignmentOperation assignment, ControlFlowGraph graph, Constant[] current,
+        ProbeRun run) =>
+        assignment.IsRef || assignment.Target is not ILocalReferenceOperation { Local.IsRef: true }
+            ? EvaluateInProbe(assignment.Value, graph, current, run)
+            : Constant.Unknown;
+
+    private Constant ValueOf(ICompoundAssignmentOperation compound, ControlFlowGraph graph, Constant[] current,
+        ProbeRun run) =>
+        compound.IsChecked || compound.OperatorMethod != null
+            ? Constant.Unknown
+            : Fold(compound.OperatorKind,
+                EvaluateInProbe(compound.Target, graph, current, run),
+                EvaluateInProbe(compound.Value, graph, current, run),
+                compound.Target.Type,
+                compound.Type);
+
+    private Constant ValueOf(IIncrementOrDecrementOperation increment, ControlFlowGraph graph, Constant[] current,
+        ProbeRun run)
+    {
+        var before = EvaluateInProbe(increment.Target, graph, current, run);
+        return before.IsValue && !increment.IsChecked && increment.OperatorMethod == null
+            ? Wrap(before.Value + (increment.Kind == OperationKind.Increment ? 1 : -1), increment.Type)
+            : Constant.Unknown;
+    }
+
+    // M(ref x), M(out y): no constant after the call
+    private void ForgetArguments(IInvocationOperation invocation, Constant[] current, SyntaxNode? opaque)
+    {
+        foreach (var argument in invocation.Arguments)
+        {
+            if (argument.Parameter?.RefKind is RefKind.Ref or RefKind.Out)
+            {
+                var target = argument.Value is IDeclarationExpressionOperation declared
+                    ? declared.Expression
+                    : argument.Value;
+                AssignInProbe(target, Constant.Unknown, current, opaque);
+            }
+        }
+    }
+
+    private void DeconstructInProbe(IOperation target, IOperation value, ControlFlowGraph graph, Constant[] current,
         SyntaxNode? opaque, ProbeRun run)
     {
         target = target is IDeclarationExpressionOperation declaration ? declaration.Expression : target;
@@ -276,38 +302,38 @@ internal sealed partial class UniformityAnalysis
             {
                 if (values != null && values.Elements.Length == targets.Elements.Length)
                 {
-                    DeconstructInProbe(targets.Elements[i], values.Elements[i], graph, state, opaque, run);
+                    DeconstructInProbe(targets.Elements[i], values.Elements[i], graph, current, opaque, run);
                 }
                 else
                 {
-                    AssignAllInProbe(targets.Elements[i], state, opaque);
+                    AssignAllInProbe(targets.Elements[i], current, opaque);
                 }
             }
 
             return;
         }
 
-        AssignInProbe(target, EvaluateInProbe(value, graph, state, run), state, opaque);
+        AssignInProbe(target, EvaluateInProbe(value, graph, current, run), current, opaque);
     }
 
-    private void AssignAllInProbe(IOperation target, Constant[] state, SyntaxNode? opaque)
+    private void AssignAllInProbe(IOperation target, Constant[] current, SyntaxNode? opaque)
     {
         target = target is IDeclarationExpressionOperation declaration ? declaration.Expression : target;
         if (target is ITupleOperation tuple)
         {
             foreach (var element in tuple.Elements)
             {
-                AssignAllInProbe(element, state, opaque);
+                AssignAllInProbe(element, current, opaque);
             }
 
             return;
         }
 
-        AssignInProbe(target, Constant.Unknown, state, opaque);
+        AssignInProbe(target, Constant.Unknown, current, opaque);
     }
 
     // As Assign: a write inside a lambda or local function to a local declared outside it may not happen
-    private void AssignInProbe(IOperation target, Constant value, Constant[] state, SyntaxNode? opaque)
+    private void AssignInProbe(IOperation target, Constant value, Constant[] current, SyntaxNode? opaque)
     {
         ISymbol? symbol = target switch
         {
@@ -317,22 +343,22 @@ internal sealed partial class UniformityAnalysis
         };
 
         // A member of a struct local or parameter: the struct is no longer one constant
-        if (symbol == null && GetStructRoot(target) is { } root)
+        if (symbol == null && UniformitySolver.GetStructRoot(target) is { } root)
         {
             symbol = root;
             value = Constant.Unknown;
         }
 
-        if (symbol == null || !_symbols.TryGetValue(symbol, out var index))
+        if (symbol == null || !state.Recorder.TryGetValue(symbol, out var index))
         {
             return;
         }
 
-        state[index] = opaque == null || IsDeclaredIn(symbol, opaque) ? value : state[index].Join(value);
+        current[index] = opaque == null || UniformitySolver.IsDeclaredIn(symbol, opaque) ? value : current[index].Join(value);
     }
 
     // The value of operation in the run: the coordinates, compile-time constants and what folds from them
-    private Constant EvaluateInProbe(IOperation operation, ControlFlowGraph graph, Constant[] state, ProbeRun run)
+    private Constant EvaluateInProbe(IOperation operation, ControlFlowGraph graph, Constant[] current, ProbeRun run)
     {
         if (operation.ConstantValue is { HasValue: true, Value: var constant })
         {
@@ -342,28 +368,28 @@ internal sealed partial class UniformityAnalysis
         return operation switch
         {
             ILocalReferenceOperation local =>
-                _symbols.TryGetValue(local.Local, out var index) ? state[index].OrUnknown() : Constant.Unknown,
+                state.Recorder.TryGetValue(local.Local, out var index) ? current[index].OrUnknown() : Constant.Unknown,
             IParameterReferenceOperation parameter =>
-                _symbols.TryGetValue(parameter.Parameter, out var index) ? state[index].OrUnknown() : Constant.Unknown,
+                state.Recorder.TryGetValue(parameter.Parameter, out var index) ? current[index].OrUnknown() : Constant.Unknown,
             IFlowCaptureReferenceOperation capture =>
-                _captures.TryGetValue((graph, capture.Id), out var index) ? state[index].OrUnknown() : Constant.Unknown,
+                state.Recorder.TryGetCapture(graph, capture.Id, out var index) ? current[index].OrUnknown() : Constant.Unknown,
             IPropertyReferenceOperation { Property: var property } => Coordinate(property, run),
             IInvocationOperation invocation when IsLaneId(invocation.TargetMethod) =>
                 Constant.Of(run.Probe == Probe.Block ? run.Coordinate : 0),
-            IConversionOperation conversion => Convert(conversion, EvaluateInProbe(conversion.Operand, graph, state, run)),
-            IParenthesizedOperation parenthesized => EvaluateInProbe(parenthesized.Operand, graph, state, run),
-            ISimpleAssignmentOperation assignment => EvaluateInProbe(assignment.Value, graph, state, run),
+            IConversionOperation conversion => Convert(conversion, EvaluateInProbe(conversion.Operand, graph, current, run)),
+            IParenthesizedOperation parenthesized => EvaluateInProbe(parenthesized.Operand, graph, current, run),
+            ISimpleAssignmentOperation assignment => EvaluateInProbe(assignment.Value, graph, current, run),
             IBinaryOperation { IsChecked: false, OperatorMethod: null } binary => Fold(binary.OperatorKind,
-                EvaluateInProbe(binary.LeftOperand, graph, state, run),
-                EvaluateInProbe(binary.RightOperand, graph, state, run),
+                EvaluateInProbe(binary.LeftOperand, graph, current, run),
+                EvaluateInProbe(binary.RightOperand, graph, current, run),
                 binary.LeftOperand.Type,
                 binary.Type),
             IUnaryOperation { IsChecked: false, OperatorMethod: null } unary =>
-                FoldUnary(unary.OperatorKind, EvaluateInProbe(unary.Operand, graph, state, run), unary.Type),
+                FoldUnary(unary.OperatorKind, EvaluateInProbe(unary.Operand, graph, current, run), unary.Type),
             IIsPatternOperation { Pattern: IConstantPatternOperation pattern } isPattern =>
                 Fold(BinaryOperatorKind.Equals,
-                    EvaluateInProbe(isPattern.Value, graph, state, run),
-                    EvaluateInProbe(pattern.Value, graph, state, run),
+                    EvaluateInProbe(isPattern.Value, graph, current, run),
+                    EvaluateInProbe(pattern.Value, graph, current, run),
                     isPattern.Value.Type,
                     isPattern.Type),
             _ => Constant.Unknown
@@ -485,64 +511,4 @@ internal sealed partial class UniformityAnalysis
             or SpecialType.System_SByte or SpecialType.System_Byte or SpecialType.System_Int16
             or SpecialType.System_UInt16 or SpecialType.System_Int32 or SpecialType.System_UInt32
             or SpecialType.System_Int64;
-
-    /// <summary>Which coordinate a probe run fixes.</summary>
-    private enum Probe
-    {
-        // ThreadIndex.X and Gpu.LaneId()
-        Block,
-
-        // BlockIndex.X
-        Grid
-    }
-
-    private readonly record struct ProbeRun(Probe Probe, int Coordinate);
-
-    /// <summary>A value of the constant propagation: not reached yet (Bottom), one constant, or unknown.</summary>
-    private readonly struct Constant : IEquatable<Constant>
-    {
-        private readonly byte _kind;
-
-        private Constant(byte kind, long value)
-        {
-            _kind = kind;
-            Value = value;
-        }
-
-        public static Constant Unknown => new(2, 0);
-
-        public long Value { get; }
-
-        public bool IsValue => _kind == 1;
-
-        public static Constant Of(long value) => new(1, value);
-
-        public static Constant FromObject(object? value) => value switch
-        {
-            bool flag => Of(flag ? 1 : 0),
-            int number => Of(number),
-            uint number => Of(number),
-            long number => Of(number),
-            short number => Of(number),
-            ushort number => Of(number),
-            byte number => Of(number),
-            sbyte number => Of(number),
-            char character => Of(character),
-            _ => Unknown
-        };
-
-        // A read of a value that no reached path assigned is not a constant
-        public Constant OrUnknown() => _kind == 0 ? Unknown : this;
-
-        public Constant Join(Constant other) =>
-            _kind == 0 ? other :
-            other._kind == 0 ? this :
-            _kind == 1 && other._kind == 1 && Value == other.Value ? this : Unknown;
-
-        public bool Equals(Constant other) => _kind == other._kind && Value == other.Value;
-
-        public override bool Equals(object? obj) => obj is Constant other && Equals(other);
-
-        public override int GetHashCode() => (_kind * 397) ^ Value.GetHashCode();
-    }
 }
