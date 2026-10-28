@@ -6,4 +6,5 @@
 #include "Prelude/Atomics.hpp"
 #include "Prelude/ErrorChannel.hpp"
 #include "Prelude/WarpAndHints.hpp"
+#include "Prelude/Sort.hpp"
 #include "StackLinq.cuh"

@@ -786,6 +786,24 @@
     "isEnabledByDefault": true
   },
   {
+    "name": "ParallelAggregateRunsSequentially",
+    "id": "GSH0099",
+    "title": "An AsParallel() aggregate runs sequentially in each thread",
+    "messageFormat": "'{0}' runs sequentially in each thread because {1}. Each thread still receives the sum of the whole sequence.",
+    "category": "GSharpTranspiler",
+    "defaultSeverity": "Warning",
+    "isEnabledByDefault": true
+  },
+  {
+    "name": "ParallelAggregateNotCooperative",
+    "id": "GSH0100",
+    "title": "Every block reduces the whole sequence of an AsParallel() aggregate",
+    "messageFormat": "The kernel '{0}' is not cooperative, so every block reduces the whole sequence of '{1}'. Mark it [GpuKernel(Cooperative = true)] to divide the work across the grid.",
+    "category": "GSharpTranspiler",
+    "defaultSeverity": "Warning",
+    "isEnabledByDefault": true
+  },
+  {
     "name": "StackLinqChainTooDeep",
     "id": "SLQ0001",
     "title": "StackLinq method chain is too deep",

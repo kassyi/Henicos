@@ -3,168 +3,135 @@ namespace Kassyi.GSharp.Compiler.Transpiler.Rules.InvocationRules;
 public sealed class StackLinqFusionRule : IInvocationTranspilerRule
 {
     private const string ResultVar = "__gsharp_fusion_res";
-    private const string ThreadId = "__gsharp_tid";
-    private const string Stride = "__gsharp_stride";
-    private const string Mask = "__gsharp_mask";
-    private const string WarpSums = "__gsharp_warp_sums";
-    private const string WarpId = "__gsharp_warp_id";
-    private const string LaneId = "__gsharp_lane_id";
-    private const string Offset = "__gsharp_offset";
 
-    private static readonly Dictionary<string, IStackLinqIntermediateStrategy> s_intermediateStrategies = new()
-    {
-        { "Where", new WhereStrategy() },
-        { "Select", new SelectStrategy() },
-        { "Take", new TakeStrategy() },
-        { "Skip", new SkipStrategy() },
-        { "TakeWhile", new TakeWhileStrategy() },
-        { "SkipWhile", new SkipWhileStrategy() },
-        { "TakeLast", new TakeLastStrategy() },
-        { "SkipLast", new SkipLastStrategy() }
-    };
+    private static readonly Dictionary<StackLinqOperator, IStackLinqIntermediateStrategy> s_intermediateStrategies =
+        new()
+        {
+            { StackLinqOperator.Where, new WhereStrategy() },
+            { StackLinqOperator.Select, new SelectStrategy() },
+            { StackLinqOperator.Take, new TakeStrategy() },
+            { StackLinqOperator.Skip, new SkipStrategy() },
+            { StackLinqOperator.TakeWhile, new TakeWhileStrategy() },
+            { StackLinqOperator.SkipWhile, new SkipWhileStrategy() },
+            { StackLinqOperator.TakeLast, new TakeLastStrategy() },
+            { StackLinqOperator.SkipLast, new SkipLastStrategy() }
+        };
 
-    private static readonly Dictionary<string, IStackLinqTerminalStrategy> s_terminalStrategies = new()
+    private static readonly Dictionary<StackLinqOperator, IStackLinqTerminalStrategy> s_terminalStrategies = new()
     {
-        { "Sum", new SumStrategy() },
-        { "Count", new CountStrategy() },
-        { "Any", new AnyStrategy() },
-        { "All", new AllStrategy() },
-        { "First", new ElementSelectionStrategy(stopOnFirstMatch: true, trapOnEmpty: true) },
-        { "FirstOrDefault", new ElementSelectionStrategy(stopOnFirstMatch: true, trapOnEmpty: false) },
-        { "Last", new ElementSelectionStrategy(stopOnFirstMatch: false, trapOnEmpty: true) },
-        { "LastOrDefault", new ElementSelectionStrategy(stopOnFirstMatch: false, trapOnEmpty: false) },
-        { "Max", new ExtremaStrategy(">") },
-        { "Min", new ExtremaStrategy("<") },
-        { "Average", new AverageStrategy() },
-        { "Aggregate", new AggregateStrategy() },
-        { "Contains", new ContainsStrategy() }
+        { StackLinqOperator.Sum, new SumStrategy() },
+        { StackLinqOperator.Count, new CountStrategy() },
+        { StackLinqOperator.Any, new AnyStrategy() },
+        { StackLinqOperator.All, new AllStrategy() },
+        { StackLinqOperator.First, new ElementSelectionStrategy(stopOnFirstMatch: true, trapOnEmpty: true) },
+        { StackLinqOperator.FirstOrDefault, new ElementSelectionStrategy(stopOnFirstMatch: true, trapOnEmpty: false) },
+        { StackLinqOperator.Last, new ElementSelectionStrategy(stopOnFirstMatch: false, trapOnEmpty: true) },
+        { StackLinqOperator.LastOrDefault, new ElementSelectionStrategy(stopOnFirstMatch: false, trapOnEmpty: false) },
+        { StackLinqOperator.Max, new ExtremaStrategy(">") },
+        { StackLinqOperator.Min, new ExtremaStrategy("<") },
+        { StackLinqOperator.Average, new AverageStrategy() },
+        { StackLinqOperator.Aggregate, new AggregateStrategy() },
+        { StackLinqOperator.Contains, new ContainsStrategy() }
     };
 
     public bool TryTranspile(InvocationExpressionSyntax node, ref TranspileContext context, IMethodSymbol symbol)
     {
-        if (!TryExtractChain(node, context.Query.SemanticModel, symbol, out var chain))
+        if (!StackLinqChainExtractor.TryExtract(node, context.Query.SemanticModel, symbol, out var chain))
         {
             return false;
         }
 
-        if (chain.IsParallel && context.Emitter.Dialect.IsCuda && chain.TerminalMethodName is "Sum" or "Count")
-        {
-            EmitParallelFusedLoop(in chain, ref context);
-        }
-        else
-        {
-            EmitFusedLoop(in chain, ref context);
-        }
-
+        // [WHY] AsParallel() keeps the meaning of C#: every calling thread receives the aggregate of the whole sequence
+        // (#624). On CUDA the threads of a block share the elements when ParallelAggregatePlanner shows that this gives the
+        // same value (integer sums, uniform inputs, every thread of the block reaching the call); otherwise each thread
+        // sums on its own, which is that result in every dialect and in any branch.
+        var strategy = chain.IsParallel && context.Emitter.Dialect.IsCuda
+            ? ParallelAggregatePlanner.Plan(node, context.Query.SemanticModel).Strategy
+            : ParallelAggregateStrategy.PerThread;
+        EmitFusedLoop(in chain, strategy, ref context);
         return true;
     }
 
-    private static bool TryExtractChain(
-        InvocationExpressionSyntax node,
-        SemanticModel semanticModel,
-        IMethodSymbol symbol,
-        out StackLinqChain chain)
+    // ([&]() -> auto {
+    //   auto&& __gsharp_fusion_src = <source>; int __gsharp_stage_<k>_n = <count>; ... <result> = <initial>;
+    //   int __gsharp_fusion_lo = 0, __gsharp_fusion_hi = __gsharp_fusion_src.length; <folded position stages>
+    //   for (int __gsharp_i = __gsharp_fusion_lo; __gsharp_i < __gsharp_fusion_hi; __gsharp_i++) { <stages> <terminal> }
+    //   return <result>; }())
+    // [WHY] C# evaluates the source and the stage arguments once, from left to right, when the chain is built; the
+    // position stages right after the source (Select may come between) only narrow the range of indices.
+    // The Block strategy (CUDA): the thread of rank r of the block takes the indices lo + r, lo + r + B, ... (64-bit, so
+    // that i += B cannot wrap) and __gsharp_block_reduce combines the partial sums, which gives every thread of the block
+    // the same total. The Grid strategy (cooperative kernels) does the same over the threads of the grid and combines the
+    // block totals in __gsharp_grid_reduce, through the hidden scratch parameter. Only the range stages and Select / Where
+    // can be in such a chain (ParallelAggregatePlanner).
+    private static void EmitFusedLoop(in StackLinqChain chain, ParallelAggregateStrategy strategy, ref TranspileContext context)
     {
-        chain = default;
-
-        if (!StackLinqHelper.IsStackLinqMethod(symbol))
-        {
-            return false;
-        }
-
-        var methodName = symbol.Name;
-        if (!s_terminalStrategies.ContainsKey(methodName))
-        {
-            return false;
-        }
-
-        var chainBuilder = ImmutableArray.CreateBuilder<LinqStage>();
-        var current = node;
-        var currentSymbol = symbol;
-        var isParallel = false;
-
-        while (true)
-        {
-            if (currentSymbol.Name == "AsStackEnumerable")
-            {
-                break;
-            }
-
-            if (currentSymbol.Name == "AsParallel")
-            {
-                isParallel = true;
-            }
-            else if (!s_intermediateStrategies.ContainsKey(currentSymbol.Name) &&
-                     !s_terminalStrategies.ContainsKey(currentSymbol.Name))
-            {
-                return false;
-            }
-            else
-            {
-                chainBuilder.Add(new LinqStage(currentSymbol.Name, current, currentSymbol));
-            }
-
-            if (current.Expression is MemberAccessExpressionSyntax
-                {
-                    Expression: InvocationExpressionSyntax nextInvocation
-                })
-            {
-                if (semanticModel.GetSymbol(nextInvocation) is IMethodSymbol nextSymbol &&
-                    StackLinqHelper.IsStackLinqMethod(nextSymbol))
-                {
-                    current = nextInvocation;
-                    currentSymbol = nextSymbol;
-                    continue;
-                }
-            }
-
-            if (current.ArgumentList.Arguments.Count <= 0 ||
-                current.ArgumentList.Arguments[0].Expression is not InvocationExpressionSyntax argInvocation)
-            {
-                return false;
-            }
-
-            if (semanticModel.GetSymbol(argInvocation) is not IMethodSymbol next ||
-                !StackLinqHelper.IsStackLinqMethod(next))
-            {
-                return false;
-            }
-
-            current = argInvocation;
-            currentSymbol = next;
-        }
-
-        var sourceArrayExpr = current.Expression is MemberAccessExpressionSyntax rootMemberAccess
-            ? rootMemberAccess.Expression
-            : current.ArgumentList.Arguments[0].Expression;
-
-        chainBuilder.Reverse();
-        chain = new StackLinqChain(sourceArrayExpr, chainBuilder.ToImmutable(), methodName, isParallel);
-        return true;
-    }
-
-    private static void EmitFusedLoop(in StackLinqChain chain, ref TranspileContext context)
-    {
-        var terminalName = chain.TerminalMethodName;
-        if (!s_terminalStrategies.TryGetValue(terminalName, out var terminalStrategy))
+        if (!s_terminalStrategies.TryGetValue(chain.Terminal, out var terminalStrategy))
         {
             return;
         }
 
         var terminalStage = chain.Stages[^1];
+        var folded = StackLinqChainExtractor.CountRangeStages(in chain, context.Query.SemanticModel);
+        var writer = context.Emitter.Writer;
+        var blockShared = strategy != ParallelAggregateStrategy.PerThread;
+        var isGrid = strategy == ParallelAggregateStrategy.Grid;
 
-        using (context.Emitter.Writer.ImmediatelyInvokedLambda("auto"))
+        using (writer.ImmediatelyInvokedLambda("auto"))
         {
-            EmitInitializations(in chain, ref context, terminalStrategy, in terminalStage, ResultVar);
+            writer.Append($"auto&& {StackLinqHelper.FusionSource} = ");
+            context.Visitor.Visit(chain.SourceArrayExpression);
+            writer.AppendLine(";");
 
-            AppendFusionLength(chain.SourceArrayExpression, ref context);
+            EmitInitializations(in chain, folded, ref context, terminalStrategy, in terminalStage, ResultVar);
 
-            context.Emitter.Writer.AppendLine($"for (int {StackLinqHelper.LoopIndex} = 0; {StackLinqHelper.LoopIndex} < {StackLinqHelper.FusionLength}; {StackLinqHelper.LoopIndex}++)");
-            using (context.Emitter.Writer.Scope())
+            writer.AppendLine($"int {StackLinqHelper.FusionLow} = 0;");
+            writer.AppendLine($"int {StackLinqHelper.FusionHigh} = {FusionLength(chain.SourceArrayExpression, ref context)};");
+            for (var i = 0; i < folded; i++)
             {
-                context.Emitter.Writer.Append($"auto {StackLinqHelper.ValuePrefix}0 = ");
-                context.Visitor.Visit(chain.SourceArrayExpression);
-                context.Emitter.Writer.AppendLine($"[{StackLinqHelper.LoopIndex}];");
+                if (chain.Stages[i].Operator.IsPositionStage())
+                {
+                    EmitRangeStage(chain.Stages[i], i, writer);
+                }
+            }
+
+            if (isGrid)
+            {
+                var rank = GSharpInternalNames.StackLinq.GridBlockRank;
+                var size = GSharpInternalNames.StackLinq.BlockSize;
+                writer.AppendLine(
+                    $"for (long long {StackLinqHelper.LoopIndex} = {StackLinqHelper.FusionLow} + (long long){rank}() * {size}() + {GSharpInternalNames.StackLinq.BlockRank}(); {StackLinqHelper.LoopIndex} < {StackLinqHelper.FusionHigh}; {StackLinqHelper.LoopIndex} += (long long){size}() * {GSharpInternalNames.StackLinq.GridBlockCount}())");
+            }
+            else if (blockShared)
+            {
+                writer.AppendLine(
+                    $"for (long long {StackLinqHelper.LoopIndex} = {StackLinqHelper.FusionLow} + (long long){GSharpInternalNames.StackLinq.BlockRank}(); {StackLinqHelper.LoopIndex} < {StackLinqHelper.FusionHigh}; {StackLinqHelper.LoopIndex} += {GSharpInternalNames.StackLinq.BlockSize}())");
+            }
+            else
+            {
+                writer.AppendLine(
+                    $"for (int {StackLinqHelper.LoopIndex} = {StackLinqHelper.FusionLow}; {StackLinqHelper.LoopIndex} < {StackLinqHelper.FusionHigh}; {StackLinqHelper.LoopIndex}++)");
+            }
+
+            using (writer.Scope())
+            {
+                // [WHY] TakeEnumerator checks its count before it pulls from the stages before it: once it has given n
+                // elements (or n <= 0), the next pull ends the sequence without calling them. Every pull after an
+                // element (the terminal, or a Where / Skip / SkipWhile after the Take that passes over it) starts the
+                // next iteration, so the check comes first in the body and a selector or predicate before the Take runs
+                // as many times as in C#.
+                for (var i = folded; i < chain.Stages.Length - 1; i++)
+                {
+                    if (chain.Stages[i].Operator == StackLinqOperator.Take)
+                    {
+                        writer.AppendLine(
+                            $"if ({StackLinqHelper.StagePrefix}{i}_count >= {StackLinqHelper.StagePrefix}{i}{StackLinqHelper.StageCountSuffix}) {{ break; }}");
+                    }
+                }
+
+                // The 64-bit index of the shared loop is narrowed for GSharpArray::operator[](int)
+                writer.AppendLine(
+                    $"auto {StackLinqHelper.ValuePrefix}0 = {StackLinqHelper.FusionSource}[{(blockShared ? "(int)" : "")}{StackLinqHelper.LoopIndex}];");
 
                 var valIndex = 0;
                 var openBraces = 0;
@@ -172,9 +139,10 @@ public sealed class StackLinqFusionRule : IInvocationTranspilerRule
                 for (var i = 0; i < chain.Stages.Length - 1; i++)
                 {
                     var stage = chain.Stages[i];
-                    if (s_intermediateStrategies.TryGetValue(stage.Name, out var strategy))
+                    if ((i >= folded || !stage.Operator.IsPositionStage()) &&
+                        s_intermediateStrategies.TryGetValue(stage.Operator, out var stageStrategy))
                     {
-                        strategy.Emit(ref context, in stage, i, ref valIndex, ref openBraces);
+                        stageStrategy.Emit(ref context, in stage, i, ref valIndex, ref openBraces);
                     }
                 }
 
@@ -182,44 +150,48 @@ public sealed class StackLinqFusionRule : IInvocationTranspilerRule
 
                 for (var i = 0; i < openBraces; i++)
                 {
-                    context.Emitter.Writer.AppendLine("}");
+                    writer.AppendLine("}");
                 }
             }
 
             terminalStrategy.EmitPostLoop(ref context, in terminalStage, ResultVar);
 
-            context.Emitter.Writer.Append($"return {ResultVar};");
-            context.Emitter.Writer.AppendLine();
+            if (isGrid)
+            {
+                writer.Append(
+                    $"return {GSharpInternalNames.StackLinq.GridReduce}({ResultVar}, {GSharpInternalNames.StackLinq.Plus}{{}}, {GSharpInternalNames.StackLinq.GridScratch});");
+            }
+            else if (blockShared)
+            {
+                writer.Append(
+                    $"return {GSharpInternalNames.StackLinq.BlockReduce}({ResultVar}, {GSharpInternalNames.StackLinq.Plus}{{}});");
+            }
+            else
+            {
+                writer.Append($"return {ResultVar};");
+            }
+
+            writer.AppendLine();
         }
     }
 
-    private static void EmitParallelFusedLoop(in StackLinqChain chain, ref TranspileContext context)
-    {
-        var terminalName = chain.TerminalMethodName;
-        if (!s_terminalStrategies.TryGetValue(terminalName, out var terminalStrategy))
-        {
-            return;
-        }
-
-        var terminalStage = chain.Stages[^1];
-
-        using (context.Emitter.Writer.ImmediatelyInvokedLambda("auto"))
-        {
-            EmitInitializations(in chain, ref context, terminalStrategy, in terminalStage, ResultVar);
-            EmitThreadLocalReductionLoop(in chain, ref context, terminalStrategy, in terminalStage, ResultVar);
-            EmitBlockWideReduction(ref context, in terminalStage, ResultVar);
-
-            context.Emitter.Writer.AppendLine($"return {ResultVar};");
-        }
-    }
-
-    private static void EmitInitializations(in StackLinqChain chain, ref TranspileContext context,
+    // The source, then each stage argument and the terminal's initial value, in the C# order
+    private static void EmitInitializations(in StackLinqChain chain, int folded, ref TranspileContext context,
         IStackLinqTerminalStrategy terminalStrategy, in LinqStage terminalStage, string resultVar)
     {
         for (var i = 0; i < chain.Stages.Length - 1; i++)
         {
             var stage = chain.Stages[i];
-            if (s_intermediateStrategies.TryGetValue(stage.Name, out var strategy))
+            if (stage.Operator.IsPositionStage())
+            {
+                // int __gsharp_stage_<i>_n = <count>;
+                context.Emitter.Writer.Append($"int {StackLinqHelper.StagePrefix}{i}{StackLinqHelper.StageCountSuffix} = ");
+                context.Visitor.Visit(StackLinqHelper.GetLambdaArgument(stage.Invocation, stage.Symbol).Expression);
+                context.Emitter.Writer.AppendLine(";");
+            }
+
+            if ((i >= folded || !stage.Operator.IsPositionStage()) &&
+                s_intermediateStrategies.TryGetValue(stage.Operator, out var strategy))
             {
                 strategy.EmitInitialValue(ref context, in stage, i);
             }
@@ -228,100 +200,35 @@ public sealed class StackLinqFusionRule : IInvocationTranspilerRule
         terminalStrategy.EmitInitialValue(ref context, resultVar, in terminalStage);
     }
 
-    // int <length> = <source>.length; or the element count of a stack array, which has no length member
-    private static void AppendFusionLength(ExpressionSyntax source, ref TranspileContext context)
+
+    // The element count of the source: a stack array has no length member, so its declared count is written
+    private static string FusionLength(ExpressionSyntax source, ref TranspileContext context) =>
+        StackArrayLocals.TryGetLength(source, context.Query.SemanticModel, out var length)
+            ? length.ToString()
+            : $"{StackLinqHelper.FusionSource}.length";
+
+    // Narrows [lo, hi) as C# does, with the count clamped to [0, hi - lo] (__gsharp_clamp_count)
+    private static void EmitRangeStage(in LinqStage stage, int index, SourceWriter writer)
     {
-        context.Emitter.Writer.Append($"int {StackLinqHelper.FusionLength} = ");
-        if (StackArrayLocals.TryGetLength(source, context.Query.SemanticModel, out var length))
+        var lo = StackLinqHelper.FusionLow;
+        var hi = StackLinqHelper.FusionHigh;
+        switch (stage.Operator)
         {
-            context.Emitter.Writer.AppendLine($"{length};");
-            return;
+            case StackLinqOperator.Skip:
+                writer.Append($"{lo} += ");
+                break;
+            case StackLinqOperator.Take:
+                writer.Append($"{hi} = {lo} + ");
+                break;
+            case StackLinqOperator.SkipLast:
+                writer.Append($"{hi} -= ");
+                break;
+            default:
+                writer.Append($"{lo} = {hi} - ");
+                break;
         }
 
-        context.Visitor.Visit(source);
-        context.Emitter.Writer.AppendLine(".length;");
-    }
-
-    private static void EmitThreadLocalReductionLoop(in StackLinqChain chain, ref TranspileContext context,
-        IStackLinqTerminalStrategy terminalStrategy, in LinqStage terminalStage, string resultVar)
-    {
-        AppendFusionLength(chain.SourceArrayExpression, ref context);
-
-        context.Emitter.Writer.AppendLine($"int {ThreadId} = threadIdx.x + blockIdx.x * blockDim.x;");
-        context.Emitter.Writer.AppendLine($"int {Stride} = blockDim.x * gridDim.x;");
-
-        context.Emitter.Writer.AppendLine($"for (int {StackLinqHelper.LoopIndex} = {ThreadId}; {StackLinqHelper.LoopIndex} < {StackLinqHelper.FusionLength}; {StackLinqHelper.LoopIndex} += {Stride})");
-        using (context.Emitter.Writer.Scope())
-        {
-            context.Emitter.Writer.Append($"auto {StackLinqHelper.ValuePrefix}0 = ");
-            context.Visitor.Visit(chain.SourceArrayExpression);
-            context.Emitter.Writer.AppendLine($"[{StackLinqHelper.LoopIndex}];");
-
-            var valIndex = 0;
-            var openBraces = 0;
-
-            for (var i = 0; i < chain.Stages.Length - 1; i++)
-            {
-                var stage = chain.Stages[i];
-                if (stage.Name == "AsParallel")
-                {
-                    continue;
-                }
-
-                if (s_intermediateStrategies.TryGetValue(stage.Name, out var strategy))
-                {
-                    strategy.Emit(ref context, in stage, i, ref valIndex, ref openBraces);
-                }
-            }
-
-            terminalStrategy.Emit(ref context, in terminalStage, resultVar, valIndex);
-
-            for (var i = 0; i < openBraces; i++)
-            {
-                context.Emitter.Writer.AppendLine("}");
-            }
-
-            terminalStrategy.EmitPostLoop(ref context, in terminalStage, resultVar);
-        }
-    }
-
-    private static void EmitBlockWideReduction(ref TranspileContext context,
-        in LinqStage terminalStage, string resultVar)
-    {
-        context.Emitter.Writer.AppendLine($"unsigned int {Mask} = 0xffffffff;");
-        EmitWarpShuffleSum(ref context, resultVar);
-
-        context.Emitter.Writer.Append("__shared__ ");
-        context.Emitter.Dialect.AppendType(ref context, terminalStage.Symbol.ReturnType);
-        context.Emitter.Writer.AppendLine($" {WarpSums}[32];");
-
-        context.Emitter.Writer.AppendLine($"int {WarpId} = threadIdx.x / 32;");
-        context.Emitter.Writer.AppendLine($"int {LaneId} = threadIdx.x % 32;");
-
-        context.Emitter.Writer.AppendLine($"if ({LaneId} == 0)");
-        using (context.Emitter.Writer.Scope())
-        {
-            context.Emitter.Writer.AppendLine($"{WarpSums}[{WarpId}] = {resultVar};");
-        }
-
-        context.Emitter.Writer.AppendLine("__syncthreads();");
-
-        context.Emitter.Writer.AppendLine($"if ({WarpId} == 0)");
-        using (context.Emitter.Writer.Scope())
-        {
-            context.Emitter.Writer.AppendLine(
-                $"{resultVar} = ({LaneId} < (blockDim.x + 31) / 32) ? {WarpSums}[{LaneId}] : 0;");
-            EmitWarpShuffleSum(ref context, resultVar);
-        }
-    }
-
-    private static void EmitWarpShuffleSum(ref TranspileContext context, string resultVar)
-    {
-        context.Emitter.Writer.AppendLine("#pragma unroll");
-        context.Emitter.Writer.AppendLine($"for (int {Offset} = 16; {Offset} > 0; {Offset} /= 2)");
-        using (context.Emitter.Writer.Scope())
-        {
-            context.Emitter.Writer.AppendLine($"{resultVar} += __shfl_down_sync({Mask}, {resultVar}, {Offset});");
-        }
+        writer.AppendLine(
+            $"{GSharpInternalNames.StackLinq.ClampCount}({StackLinqHelper.StagePrefix}{index}{StackLinqHelper.StageCountSuffix}, {hi} - {lo});");
     }
 }

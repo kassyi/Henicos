@@ -37,6 +37,12 @@ internal readonly record struct KernelHostModel
     /// <summary>A <c>[GpuKernel(Cooperative = true)]</c> kernel.</summary>
     public bool IsCooperative { get; init; }
 
+    /// <summary>
+    /// The bytes of one slot of the grid scratch of the AsParallel() aggregates of the kernel (CUDA, cooperative kernels),
+    /// or 0 when it has none (ParallelAggregatePlanner.GetGridScratchSlotBytes).
+    /// </summary>
+    public int GridScratchSlotBytes { get; init; }
+
     /// <summary>The parameter list of <c>Launch{Name}</c> as C# compares overloads.</summary>
     public string ManagedSignatureKey { get; init; }
 
@@ -59,7 +65,8 @@ internal readonly record struct KernelHostModel
     /// <summary>Reads the host launch ABI of <paramref name="kernel"/>.</summary>
     /// <param name="kernel">The kernel.</param>
     /// <param name="structs">The rendered structs of the parameters; the analyzer, which needs none, passes <see langword="default"/>.</param>
-    public static KernelHostModel Create(IMethodSymbol kernel, EquatableArray<StructHostSource> structs)
+    public static KernelHostModel Create(IMethodSymbol kernel, EquatableArray<StructHostSource> structs,
+        SemanticModel? model = null)
     {
         var builder = ImmutableArray.CreateBuilder<KernelParameterShape>(kernel.Parameters.Length);
         kernel.Parameters
@@ -80,6 +87,11 @@ internal readonly record struct KernelHostModel
                 ? null
                 : kernel.ReturnType.GetFullyQualifiedCsharpName(),
             IsCooperative = kernel.IsCooperativeKernel(),
+            GridScratchSlotBytes = model != null && kernel.IsCooperativeKernel() &&
+                                   kernel.TryGetDeclaringSyntax<MethodDeclarationSyntax>(out var declaration) &&
+                                   declaration.SyntaxTree == model.SyntaxTree
+                ? ParallelAggregatePlanner.GetGridScratchSlotBytes(declaration, model)
+                : 0,
             ManagedSignatureKey = KernelHostNames.GetSignatureKey(parameters, typedPointers: false),
             TypedPointerSignatureKey = KernelHostNames.GetSignatureKey(parameters, typedPointers: true),
             DisplaySignature = KernelHostNames.FormatSignature(kernel.Name, parameters),
