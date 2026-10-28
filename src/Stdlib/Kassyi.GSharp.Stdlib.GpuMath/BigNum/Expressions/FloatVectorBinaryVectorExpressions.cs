@@ -1,9 +1,20 @@
 namespace Kassyi.GSharp.Stdlib.GpuMath.BigNum.Expressions;
 
-internal readonly record struct FloatVectorZipOperands(
-    GpuBigFloatArray Left,
-    GpuBigFloatArray Right,
-    GpuBigFloatArray Destination);
+internal readonly ref struct FloatVectorZipOperands
+{
+    public FloatVectorZipOperands(GpuBigFloatArrayView left, GpuBigFloatArrayView right, GpuBigFloatArrayView destination)
+    {
+        Left = left;
+        Right = right;
+        Destination = destination;
+    }
+
+    public GpuBigFloatArrayView Left { get; }
+
+    public GpuBigFloatArrayView Right { get; }
+
+    public GpuBigFloatArrayView Destination { get; }
+}
 
 internal abstract class FloatVectorBinaryVectorExpressionBase(
     [TakesOwnership] IGpuBigFloatVectorExpression left,
@@ -20,11 +31,11 @@ internal abstract class FloatVectorBinaryVectorExpressionBase(
 
     protected uint BlockDimX => (uint)Math.Min(1024, WordsPerElement);
 
-    public GpuBigFloatArray Evaluate(
+    public GpuBigFloatArrayView Evaluate(
         GpuWorkspace workspace,
         int elementOffset = 0,
         int? elementCount = null,
-        GpuBigFloatArray? targetResult = null)
+        GpuBigFloatArrayView targetResult = default)
     {
         if (left.Length != right.Length)
         {
@@ -33,8 +44,8 @@ internal abstract class FloatVectorBinaryVectorExpressionBase(
 
         var evalCount = elementCount ?? (Length - elementOffset);
         // The target is checked before the children run, so that a rejected target evaluates nothing
-        var destination = targetResult is { } target
-            ? VectorResultCache.TargetFloat(target, evalCount, WordsPerElement)
+        var destination = VectorResultCache.HasTarget(targetResult)
+            ? VectorResultCache.TargetFloat(targetResult, evalCount, WordsPerElement)
             : _cache.Float(workspace, evalCount, WordsPerElement);
         var leftResult = left.Evaluate(workspace, elementOffset, evalCount);
         var rightResult = right.Evaluate(workspace, elementOffset, evalCount);
@@ -95,10 +106,22 @@ internal abstract class FloatVectorBinaryVectorExpressionBase(
 
     public void Dispose()
     {
-        _cache.Dispose();
-
-        left.Dispose();
-        right.Dispose();
+        // A cache release that throws (a failed capture refuses the clear) does not skip the children
+        try
+        {
+            _cache.Dispose();
+        }
+        finally
+        {
+            try
+            {
+                left.Dispose();
+            }
+            finally
+            {
+                right.Dispose();
+            }
+        }
     }
 }
 

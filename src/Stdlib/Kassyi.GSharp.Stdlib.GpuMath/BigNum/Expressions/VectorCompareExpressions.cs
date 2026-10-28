@@ -9,7 +9,7 @@ internal class VectorCompareScalarExpression(
     private GpuBigUIntArray _finalValues;
     private bool _allocated;
 
-    public GpuBigUIntArray Evaluate(GpuWorkspace workspace)
+    public GpuBigUIntArrayView Evaluate(GpuWorkspace workspace)
     {
         var vecResult = vector.Evaluate(workspace);
         var scalarResult = scalar.Evaluate(workspace);
@@ -70,7 +70,7 @@ internal class VectorCompareVectorExpression(
     private GpuBigUIntArray _finalValues;
     private bool _allocated;
 
-    public GpuBigUIntArray Evaluate(GpuWorkspace workspace)
+    public GpuBigUIntArrayView Evaluate(GpuWorkspace workspace)
     {
         if (left.Length != right.Length)
         {
@@ -115,7 +115,7 @@ internal class VectorCompareVectorExpression(
 
 internal static class VectorCompareLaunch
 {
-    public static GpuBigIntCmpKernels.AotContexts.SignedCompareOperand Operand(GpuBigIntArray vector) => new()
+    public static GpuBigIntCmpKernels.AotContexts.SignedCompareOperand Operand(GpuBigIntArrayView vector) => new()
     {
         Limbs = vector.Values.DevicePointer,
         Signs = vector.Signs.DevicePointer,

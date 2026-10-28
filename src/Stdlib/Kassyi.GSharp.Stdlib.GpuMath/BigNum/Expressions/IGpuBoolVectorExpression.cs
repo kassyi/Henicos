@@ -15,8 +15,8 @@ public interface IGpuBoolVectorExpression : IDisposable
     /// </summary>
     /// <param name="workspace">The GPU workspace memory context.</param>
     /// <returns>
-    /// A borrowed array containing 1 for true and 0 for false, valid until the next evaluation or until the expression is
-    /// disposed; do not dispose it. The next evaluation overwrites the values of a result still held, without an error.
+    /// A borrowed view containing 1 for true and 0 for false, valid until the next evaluation or until the expression is
+    /// disposed. The next evaluation overwrites the values of a result still held, without an error.
     /// </returns>
-    GpuBigUIntArray Evaluate(GpuWorkspace workspace);
+    GpuBigUIntArrayView Evaluate(GpuWorkspace workspace);
 }

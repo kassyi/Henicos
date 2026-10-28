@@ -1,9 +1,20 @@
 namespace Kassyi.GSharp.Stdlib.GpuMath.BigNum.Expressions;
 
-internal readonly record struct VectorZipOperands(
-    GpuBigIntArray Left,
-    GpuBigIntArray Right,
-    GpuBigIntArray Destination);
+internal readonly ref struct VectorZipOperands
+{
+    public VectorZipOperands(GpuBigIntArrayView left, GpuBigIntArrayView right, GpuBigIntArrayView destination)
+    {
+        Left = left;
+        Right = right;
+        Destination = destination;
+    }
+
+    public GpuBigIntArrayView Left { get; }
+
+    public GpuBigIntArrayView Right { get; }
+
+    public GpuBigIntArrayView Destination { get; }
+}
 
 internal abstract class VectorBinaryVectorExpressionBase(
     [TakesOwnership] IGpuBigIntVectorExpression left,
@@ -19,11 +30,11 @@ internal abstract class VectorBinaryVectorExpressionBase(
 
     protected uint BlockDimX => (uint)Math.Min(1024, WordsPerElement);
 
-    public GpuBigIntArray Evaluate(
+    public GpuBigIntArrayView Evaluate(
         GpuWorkspace workspace,
         int elementOffset = 0,
         int? elementCount = null,
-        GpuBigUIntArray? targetResult = null)
+        GpuBigUIntArrayView targetResult = default)
     {
         if (checkConstructorLength && left.Length != right.Length)
         {
@@ -32,9 +43,9 @@ internal abstract class VectorBinaryVectorExpressionBase(
 
         var evalCount = elementCount ?? (Length - elementOffset);
         // The target is checked before the children run, so that a rejected target evaluates nothing
-        GpuBigUIntArray? targetValues = targetResult is { } target
-            ? VectorResultCache.TargetValues(target, evalCount, WordsPerElement)
-            : null;
+        var targetValues = VectorResultCache.HasTarget(targetResult)
+            ? VectorResultCache.TargetValues(targetResult, evalCount, WordsPerElement)
+            : default;
 
         var leftResult = left.Evaluate(workspace, elementOffset, evalCount);
         var rightResult = right.Evaluate(workspace, elementOffset, evalCount);
@@ -86,9 +97,22 @@ internal abstract class VectorBinaryVectorExpressionBase(
 
     public void Dispose()
     {
-        _cache.Dispose();
-        left.Dispose();
-        right.Dispose();
+        // A cache release that throws (a failed capture refuses the clear) does not skip the children
+        try
+        {
+            _cache.Dispose();
+        }
+        finally
+        {
+            try
+            {
+                left.Dispose();
+            }
+            finally
+            {
+                right.Dispose();
+            }
+        }
     }
 }
 

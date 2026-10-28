@@ -27,8 +27,8 @@ internal static class FloatVectorElementwiseHelper
 
     public static void ExecuteUnary(
         GpuWorkspace workspace,
-        GpuBigFloatArray source,
-        GpuBigFloatArray destination,
+        GpuBigFloatArrayView source,
+        GpuBigFloatArrayView destination,
         int count,
         UnaryElementOp operation)
     {
@@ -74,9 +74,9 @@ internal static class FloatVectorElementwiseHelper
 
     public static void ExecuteBinary(
         GpuWorkspace workspace,
-        GpuBigFloatArray left,
-        GpuBigFloatArray right,
-        GpuBigFloatArray destination,
+        GpuBigFloatArrayView left,
+        GpuBigFloatArrayView right,
+        GpuBigFloatArrayView destination,
         int count,
         BinaryElementOp operation)
     {
@@ -147,18 +147,18 @@ internal abstract class FloatVectorUnaryExpressionBase(
     // The result buffers, lent until the next evaluation or Dispose; a caller's target is never kept (design 4.6)
     private readonly VectorResultCache _cache = new();
 
-    public GpuBigFloatArray Evaluate(
+    public GpuBigFloatArrayView Evaluate(
         GpuWorkspace workspace,
         int elementOffset = 0,
         int? elementCount = null,
-        GpuBigFloatArray? targetResult = null)
+        GpuBigFloatArrayView targetResult = default)
     {
         ValidateBeforeEvaluate();
 
         var evalCount = elementCount ?? (Length - elementOffset);
         // The target is checked before the child runs, so that a rejected target evaluates nothing
-        var destination = targetResult is { } target
-            ? VectorResultCache.TargetFloat(target, evalCount, WordsPerElement)
+        var destination = VectorResultCache.HasTarget(targetResult)
+            ? VectorResultCache.TargetFloat(targetResult, evalCount, WordsPerElement)
             : _cache.Float(workspace, evalCount, WordsPerElement);
         var vecResult = vector.Evaluate(workspace, elementOffset, evalCount);
 
@@ -178,9 +178,15 @@ internal abstract class FloatVectorUnaryExpressionBase(
 
     public void Dispose()
     {
-        _cache.Dispose();
-
-        vector.Dispose();
+        // A cache release that throws (a failed capture refuses the clear) does not skip the children
+        try
+        {
+            _cache.Dispose();
+        }
+        finally
+        {
+            vector.Dispose();
+        }
     }
 }
 

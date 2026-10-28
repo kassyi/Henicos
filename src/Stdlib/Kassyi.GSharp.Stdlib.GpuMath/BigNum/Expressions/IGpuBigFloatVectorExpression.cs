@@ -22,21 +22,22 @@ public interface IGpuBigFloatVectorExpression : IDisposable
     /// <param name="elementOffset">The starting element index to evaluate.</param>
     /// <param name="elementCount">The number of elements to evaluate. If null, evaluates to the end of the vector length.</param>
     /// <param name="targetResult">
-    /// An optional destination array with the expression's <see cref="WordsPerElement"/> and at least
-    /// <paramref name="elementCount"/> elements; only the first <paramref name="elementCount"/> are written. The expression
-    /// borrows it and never frees it.
+    /// An optional destination with the expression's <see cref="WordsPerElement"/> and at least
+    /// <paramref name="elementCount"/> elements; only the first <paramref name="elementCount"/> are written. The default
+    /// view means none (an array of 0 elements is a target); a <see cref="GpuBigFloatArray"/> converts to a view implicitly. The expression borrows it
+    /// and never frees it.
     /// </param>
     /// <returns>
-    /// A borrowed array of exactly the evaluated length, valid until the next evaluation or until the expression is
-    /// disposed; do not dispose it, and pass a target to keep the values. The next evaluation overwrites the values of a
-    /// result still held, without an error.
+    /// A borrowed view of exactly the evaluated length: the node's own result buffers, the target, or the input array. It
+    /// is valid until the next evaluation or until the expression is disposed; pass a target to keep the values. The next
+    /// evaluation overwrites the values of a result still held, without an error.
     /// </returns>
     /// <exception cref="ArgumentException">
     /// <paramref name="targetResult"/> has another number of words per element, or fewer elements than evaluated.
     /// </exception>
-    GpuBigFloatArray Evaluate(
+    GpuBigFloatArrayView Evaluate(
         GpuWorkspace workspace,
         int elementOffset = 0,
         int? elementCount = null,
-        GpuBigFloatArray? targetResult = null);
+        GpuBigFloatArrayView targetResult = default);
 }

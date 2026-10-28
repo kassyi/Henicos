@@ -9,19 +9,19 @@ internal abstract class VectorUnaryExpressionBase(
     // The result buffers, lent until the next evaluation or Dispose; a caller's target is never kept (design 4.6)
     private readonly VectorResultCache _cache = new();
 
-    public GpuBigIntArray Evaluate(
+    public GpuBigIntArrayView Evaluate(
         GpuWorkspace workspace,
         int elementOffset = 0,
         int? elementCount = null,
-        GpuBigUIntArray? targetResult = null)
+        GpuBigUIntArrayView targetResult = default)
     {
         ValidateBeforeEvaluate();
 
         var evalCount = elementCount ?? (Length - elementOffset);
         // The target is checked before the children run, so that a rejected target evaluates nothing
-        GpuBigUIntArray? targetValues = targetResult is { } target
-            ? VectorResultCache.TargetValues(target, evalCount, WordsPerElement)
-            : null;
+        var targetValues = VectorResultCache.HasTarget(targetResult)
+            ? VectorResultCache.TargetValues(targetResult, evalCount, WordsPerElement)
+            : default;
 
         var vecResult = vector.Evaluate(workspace, elementOffset, evalCount);
         var destination = _cache.Signed(workspace, evalCount, WordsPerElement, targetValues);
@@ -39,14 +39,21 @@ internal abstract class VectorUnaryExpressionBase(
 
     protected abstract void EvaluateElements(
         GpuWorkspace workspace,
-        GpuBigIntArray source,
-        GpuBigIntArray destination,
+        GpuBigIntArrayView source,
+        GpuBigIntArrayView destination,
         int evalCount);
 
     public void Dispose()
     {
-        _cache.Dispose();
-        vector.Dispose();
+        // A cache release that throws (a failed capture refuses the clear) does not skip the children
+        try
+        {
+            _cache.Dispose();
+        }
+        finally
+        {
+            vector.Dispose();
+        }
     }
 }
 
@@ -55,8 +62,8 @@ internal sealed class VectorSqrtExpression(
 {
     protected override void EvaluateElements(
         GpuWorkspace workspace,
-        GpuBigIntArray source,
-        GpuBigIntArray destination,
+        GpuBigIntArrayView source,
+        GpuBigIntArrayView destination,
         int evalCount)
     {
         var srcSigns = ArrayPool<uint>.Shared.Rent(evalCount);
@@ -100,8 +107,8 @@ internal sealed class VectorDivByUInt32Expression(
 
     protected override void EvaluateElements(
         GpuWorkspace workspace,
-        GpuBigIntArray source,
-        GpuBigIntArray destination,
+        GpuBigIntArrayView source,
+        GpuBigIntArrayView destination,
         int evalCount)
     {
         var srcSigns = ArrayPool<uint>.Shared.Rent(evalCount);

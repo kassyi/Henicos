@@ -6,7 +6,7 @@ namespace Kassyi.GSharp.Stdlib.GpuMath.BigNum.Expressions;
 /// <remarks>
 /// <para>
 /// Each array grows when an evaluation needs more elements than it holds and is reused otherwise, like the buffer of
-/// <c>ArrayBufferWriter&lt;T&gt;</c>; the node lends a slice of exactly the evaluated length, valid until the next evaluation
+/// <c>ArrayBufferWriter&lt;T&gt;</c>; the node lends a view of exactly the evaluated length, valid until the next evaluation
 /// or <see cref="Dispose"/>. The arrays have separate capacities: an evaluation into a caller's target uses only the
 /// signs of the cache.
 /// </para>
@@ -23,28 +23,41 @@ internal sealed class VectorResultCache : IDisposable
     private GpuBigUIntArray _scan;
 
     /// <summary>Lends <paramref name="count"/> elements of the cached values.</summary>
-    public GpuBigUIntArray Values(GpuWorkspace workspace, int count, int wordsPerElement) =>
+    public GpuBigUIntArrayView Values(GpuWorkspace workspace, int count, int wordsPerElement) =>
         Get(ref _values, workspace, count, wordsPerElement);
 
     /// <summary>Lends <paramref name="count"/> sign words.</summary>
-    public GpuBigUIntArray Signs(GpuWorkspace workspace, int count) => Get(ref _signs, workspace, count, 1);
+    public GpuBigUIntArrayView Signs(GpuWorkspace workspace, int count) => Get(ref _signs, workspace, count, 1);
 
     /// <summary>Lends <paramref name="count"/> exponent words.</summary>
-    public GpuBigUIntArray Exponents(GpuWorkspace workspace, int count) => Get(ref _exponents, workspace, count, 1);
+    public GpuBigUIntArrayView Exponents(GpuWorkspace workspace, int count) => Get(ref _exponents, workspace, count, 1);
 
     /// <summary>Lends <paramref name="count"/> words of scratch (the prefix sum of a Where).</summary>
-    public GpuBigUIntArray Scan(GpuWorkspace workspace, int count) => Get(ref _scan, workspace, count, 1);
+    public GpuBigUIntArrayView Scan(GpuWorkspace workspace, int count) => Get(ref _scan, workspace, count, 1);
 
     /// <summary>
     /// Lends a signed result of <paramref name="count"/> elements, with the values from <paramref name="checkedTarget"/>
-    /// (the result of <see cref="TargetValues"/>) if given.
+    /// (the result of <see cref="TargetValues"/>) unless it is the default view.
     /// </summary>
-    public GpuBigIntArray Signed(GpuWorkspace workspace, int count, int wordsPerElement, GpuBigUIntArray? checkedTarget) =>
-        new(checkedTarget ?? Values(workspace, count, wordsPerElement), Signs(workspace, count));
+    public GpuBigIntArrayView Signed(
+        GpuWorkspace workspace,
+        int count,
+        int wordsPerElement,
+        GpuBigUIntArrayView checkedTarget) =>
+        new(HasTarget(checkedTarget) ? checkedTarget : Values(workspace, count, wordsPerElement), Signs(workspace, count));
 
     /// <summary>Lends a floating-point result of <paramref name="count"/> elements.</summary>
-    public GpuBigFloatArray Float(GpuWorkspace workspace, int count, int wordsPerElement) =>
+    public GpuBigFloatArrayView Float(GpuWorkspace workspace, int count, int wordsPerElement) =>
         new(Values(workspace, count, wordsPerElement), Exponents(workspace, count), Signs(workspace, count));
+
+    /// <summary>
+    /// Returns whether a caller passed a target: only the default view means none. A target of 0 elements is a target
+    /// (its handle is the default one, since a zero-word allocation has no buffer) and goes to the checks.
+    /// </summary>
+    public static bool HasTarget(GpuBigUIntArrayView target) => target.Workspace is not null;
+
+    /// <inheritdoc cref="HasTarget(GpuBigUIntArrayView)"/>
+    public static bool HasTarget(GpuBigFloatArrayView target) => target.Workspace is not null;
 
     /// <summary>
     /// Checks a caller's target and borrows its first <paramref name="count"/> elements.
@@ -53,21 +66,35 @@ internal sealed class VectorResultCache : IDisposable
     /// The element width differs from the expression's (the kernel would write at the wrong offsets), or the target is
     /// shorter than the evaluation.
     /// </exception>
-    public static GpuBigUIntArray TargetValues(GpuBigUIntArray target, int count, int wordsPerElement)
+    public static GpuBigUIntArrayView TargetValues(GpuBigUIntArrayView target, int count, int wordsPerElement)
     {
         ThrowIfWrongShape(target.WordsPerElement, target.Length, count, wordsPerElement);
-        return target.BorrowSlice(0, count);
+        return target.Slice(0, count);
     }
 
     /// <summary>
     /// Checks a caller's floating-point target and borrows its first <paramref name="count"/> elements.
     /// </summary>
     /// <exception cref="ArgumentException">The element width differs, or the target is too short.</exception>
-    public static GpuBigFloatArray TargetFloat(GpuBigFloatArray target, int count, int wordsPerElement)
+    public static GpuBigFloatArrayView TargetFloat(GpuBigFloatArrayView target, int count, int wordsPerElement)
     {
         ThrowIfWrongShape(target.WordsPerElement, target.Length, count, wordsPerElement);
-        return target.BorrowSlice(0, count);
+        return target.Slice(0, count);
     }
+
+    /// <summary>
+    /// Returns an empty signed result that borrows nothing (an evaluation of no elements, design n8).
+    /// </summary>
+    public static GpuBigIntArrayView EmptySigned(GpuWorkspace workspace, int wordsPerElement) =>
+        new(new GpuBigUIntArrayView(workspace, default, 0, wordsPerElement), new GpuBigUIntArrayView(workspace, default, 0, 1));
+
+    /// <summary>
+    /// Returns an empty floating-point result that borrows nothing.
+    /// </summary>
+    public static GpuBigFloatArrayView EmptyFloat(GpuWorkspace workspace, int wordsPerElement) =>
+        new(new GpuBigUIntArrayView(workspace, default, 0, wordsPerElement),
+            new GpuBigUIntArrayView(workspace, default, 0, 1),
+            new GpuBigUIntArrayView(workspace, default, 0, 1));
 
     /// <summary>
     /// Returns every array the cache allocated; a second call does nothing.
@@ -130,12 +157,12 @@ internal sealed class VectorResultCache : IDisposable
     // The unit of growth is one array: the new array is allocated before the old one is returned and replaces it in the
     // field at once. A failed allocation leaves that array as it was, and an array grown earlier in the same evaluation
     // stays in its field (the arrays have separate capacities), so nothing leaks and Dispose returns it.
-    private static GpuBigUIntArray Get(ref GpuBigUIntArray field, GpuWorkspace workspace, int count, int wordsPerElement)
+    private static GpuBigUIntArrayView Get(ref GpuBigUIntArray field, GpuWorkspace workspace, int count, int wordsPerElement)
     {
         if (count == 0)
         {
             // An empty result borrows nothing (a zero-word allocation has no buffer)
-            return new GpuBigUIntArray(workspace, default, 0, wordsPerElement);
+            return new GpuBigUIntArrayView(workspace, default, 0, wordsPerElement);
         }
 
         if (field.Handle.IsDefault || field.Length < count)
@@ -146,6 +173,6 @@ internal sealed class VectorResultCache : IDisposable
             old.Dispose();
         }
 
-        return field.BorrowSlice(0, count);
+        return ((GpuBigUIntArrayView)field).Slice(0, count);
     }
 }

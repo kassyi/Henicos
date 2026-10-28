@@ -1,9 +1,20 @@
 namespace Kassyi.GSharp.Stdlib.GpuMath.BigNum.Expressions;
 
-internal readonly record struct FloatVectorScalarOperands(
-    GpuBigFloatArray Vector,
-    GpuFloatOperand Scalar,
-    GpuBigFloatArray Destination);
+internal readonly ref struct FloatVectorScalarOperands
+{
+    public FloatVectorScalarOperands(GpuBigFloatArrayView vector, GpuFloatOperand scalar, GpuBigFloatArrayView destination)
+    {
+        Vector = vector;
+        Scalar = scalar;
+        Destination = destination;
+    }
+
+    public GpuBigFloatArrayView Vector { get; }
+
+    public GpuFloatOperand Scalar { get; }
+
+    public GpuBigFloatArrayView Destination { get; }
+}
 
 internal abstract class FloatVectorBinaryScalarExpressionBase(
     [TakesOwnership] IGpuBigFloatVectorExpression vector,
@@ -20,16 +31,16 @@ internal abstract class FloatVectorBinaryScalarExpressionBase(
 
     protected uint BlockDimX => (uint)Math.Min(1024, WordsPerElement);
 
-    public GpuBigFloatArray Evaluate(
+    public GpuBigFloatArrayView Evaluate(
         GpuWorkspace workspace,
         int elementOffset = 0,
         int? elementCount = null,
-        GpuBigFloatArray? targetResult = null)
+        GpuBigFloatArrayView targetResult = default)
     {
         var evalCount = elementCount ?? (Length - elementOffset);
         // The target is checked before the child runs, so that a rejected target evaluates nothing
-        var destination = targetResult is { } target
-            ? VectorResultCache.TargetFloat(target, evalCount, WordsPerElement)
+        var destination = VectorResultCache.HasTarget(targetResult)
+            ? VectorResultCache.TargetFloat(targetResult, evalCount, WordsPerElement)
             : _cache.Float(workspace, evalCount, WordsPerElement);
         var vecResult = vector.Evaluate(workspace, elementOffset, evalCount);
 
@@ -87,9 +98,15 @@ internal abstract class FloatVectorBinaryScalarExpressionBase(
 
     public void Dispose()
     {
-        _cache.Dispose();
-
-        vector.Dispose();
+        // A cache release that throws (a failed capture refuses the clear) does not skip the children
+        try
+        {
+            _cache.Dispose();
+        }
+        finally
+        {
+            vector.Dispose();
+        }
     }
 }
 

@@ -46,18 +46,18 @@ int WordsPerElement { get; }
 
 | Name | Description |
 | --- | --- |
-| [Evaluate(GpuWorkspace, Int32, Int32?, GpuBigUIntArray?)](#evaluategpuworkspace-int32-int32-gpubiguintarray) | Evaluates the vectorized expression into a new or existing device array, optionally computing a slice. |
+| [Evaluate(GpuWorkspace, Int32, Int32?, GpuBigUIntArrayView)](#evaluategpuworkspace-int32-int32-gpubiguintarrayview) | Evaluates the vectorized expression into a new or existing device array, optionally computing a slice. |
 
-## Evaluate(GpuWorkspace, Int32, Int32?, GpuBigUIntArray?)
+## Evaluate(GpuWorkspace, Int32, Int32?, GpuBigUIntArrayView)
 
 Evaluates the vectorized expression into a new or existing device array, optionally computing only a sub-slice.
 
 ```csharp
-GpuBigIntArray Evaluate(
+GpuBigIntArrayView Evaluate(
     GpuWorkspace workspace,
     int elementOffset = 0,
     int? elementCount = null,
-    GpuBigUIntArray? targetResult = null);
+    GpuBigUIntArrayView targetResult = default);
 ```
 
 #### Parameters
@@ -71,13 +71,13 @@ The starting element index to evaluate. Defaults to `0`.
 `elementCount` _Int32?_<br>
 The number of elements to evaluate. If `null`, evaluates to the end of the vector length.
 
-`targetResult` _[GpuBigUIntArray](../GpuBigUIntArray.md)?_<br>
-An optional destination array for the evaluated values, with the expression's `WordsPerElement` and at least `elementCount` elements; only the first `elementCount` are written. The expression borrows it and never frees it.
+`targetResult` _[GpuBigUIntArrayView](../GpuBigUIntArrayView.md)_<br>
+An optional destination for the evaluated values, with the expression's `WordsPerElement` and at least `elementCount` elements; only the first `elementCount` are written. The default view means none (an array of 0 elements is a target); a `GpuBigUIntArray` converts to a view implicitly. The expression borrows it and never frees it.
 
 #### Returns
 
-_[GpuBigIntArray](../GpuBigIntArray.md)_<br>
-A borrowed array of exactly the evaluated length: the node's own result buffers (with the target's values if one was given) or the input. It is valid until the next evaluation or until the expression is disposed; do not dispose it, and pass a target to keep the values. The next evaluation overwrites the values of a result still held, without an error. A node grows its result buffers when an evaluation needs more elements than an earlier one.
+_[GpuBigIntArrayView](../GpuBigIntArrayView.md)_<br>
+A borrowed view of exactly the evaluated length: the node's own result buffers (with the target's values if one was given) or the input array. It is valid until the next evaluation or until the expression is disposed; pass a target to keep the values (a view has no `Dispose` and cannot be stored in a field). The next evaluation overwrites the values of a result still held, without an error. A node grows its result buffers when an evaluation needs more elements than an earlier one.
 
 #### Exceptions
 
@@ -107,7 +107,7 @@ using var scalar = new GpuBigUInt(workspace, new uint[] { 5, 0 });
 using IGpuBigIntVectorExpression expr = array.AsVectorizedEnumerable()
     .SelectAdd(new GpuBigInt(scalar, isNegative: false));
 
-GpuBigIntArray sliceResult = expr.Evaluate(workspace, elementOffset: 1, elementCount: 2);
+GpuBigIntArrayView sliceResult = expr.Evaluate(workspace, elementOffset: 1, elementCount: 2);
 Console.WriteLine($"Evaluated slice length: {sliceResult.Length}, WordsPerElement: {sliceResult.WordsPerElement}");
 ```
 

@@ -326,6 +326,231 @@ public sealed class ExpressionLifetimeTests : IDisposable
         Assert.Equal(before.LiveBuffers, _workspace.GetMemoryStatistics().LiveBuffers);
     }
 
+    [SkippableTheory]
+    [Scenario(TestScenario.HappyPath)]
+    [InlineData(0, 3)]
+    [InlineData(1, 2)]
+    public void Leaf_WithTarget_WritesTheTarget(int skip, int take)
+    {
+        // A leaf (alone or under Skip / Take) writes the first elements of a target as every other node does, and returns
+        // the target's values (Minor 2).
+        // mutant: the leaf ignores the target and returns the user's array
+        using var array = CreateArray([1, -2, 3]);
+        using var expression = array.AsVectorizedEnumerable().Skip(skip).Take(take);
+        using var target = new GpuBigUIntArray(_workspace, take + 1, Words);
+
+        var result = expression.Evaluate(_workspace, targetResult: target);
+
+        var expected = new BigInteger[] { 1, -2, 3 }.Skip(skip).Take(take).ToArray();
+        Assert.Equal(expected, Read(result));
+        Assert.Equal(expected.Select(BigInteger.Abs).Append(BigInteger.Zero), ReadValues(target));
+        Assert.Equal(target.DevicePointer, result.Values.DevicePointer);
+    }
+
+    [SkippableTheory]
+    [Scenario(TestScenario.SadPath)]
+    [InlineData(0, 3)]
+    [InlineData(1, 2)]
+    public void Leaf_Target_WithWrongShape_IsRejected(int skip, int take)
+    {
+        // A leaf rejects a target of another width or too short, as every other node does (Minor 2).
+        // mutant: the leaf without the target check
+        using var array = CreateArray([1, 2, 3]);
+        using var expression = array.AsVectorizedEnumerable().Skip(skip).Take(take);
+        using var wide = new GpuBigUIntArray(_workspace, take, Words + 1);
+        using var shortTarget = new GpuBigUIntArray(_workspace, take - 1, Words);
+
+        Assert.Throws<ArgumentException>(() => expression.Evaluate(_workspace, targetResult: wide));
+        Assert.Throws<ArgumentException>(() => expression.Evaluate(_workspace, targetResult: shortTarget));
+    }
+
+    [SkippableTheory]
+    [Scenario(TestScenario.Boundary)]
+    [InlineData(TargetNode.IntBinaryScalar)]
+    [InlineData(TargetNode.IntLeaf)]
+    [InlineData(TargetNode.FloatBinaryScalar)]
+    [InlineData(TargetNode.FloatLeaf)]
+    public void ZeroLengthTarget_IsRejected(TargetNode node)
+    {
+        // A target of 0 elements has no buffer (Allocate(0) returns the default handle), but it is a target, not "none":
+        // a 2-element evaluation into it throws instead of writing the node's cache.
+        // mutant: "no target" decided by the handle (IsEmpty) instead of the default view
+        using var array = CreateArray([1, 2]);
+        using var scalar = CreateScalar(10);
+        using var floats = CreateFloatArray([4, 9]);
+        using var floatScalar = CreateFloat(10);
+
+        if (node is TargetNode.IntBinaryScalar or TargetNode.IntLeaf)
+        {
+            using var expression = node == TargetNode.IntLeaf
+                ? array.AsVectorizedEnumerable()
+                : array.AsVectorizedEnumerable().SelectAdd(scalar);
+            using var target = new GpuBigUIntArray(_workspace, 0, expression.WordsPerElement);
+            Assert.Throws<ArgumentException>(() => expression.Evaluate(_workspace, targetResult: target));
+        }
+        else
+        {
+            using var expression = node == TargetNode.FloatLeaf
+                ? floats.AsVectorizedEnumerable()
+                : floats.AsVectorizedEnumerable().SelectAdd(floatScalar);
+            using var target = new GpuBigFloatArray(_workspace, 0, expression.WordsPerElement);
+            Assert.Throws<ArgumentException>(() => expression.Evaluate(_workspace, targetResult: target));
+        }
+    }
+
+    public enum TargetNode
+    {
+        IntBinaryScalar,
+        IntLeaf,
+        FloatBinaryScalar,
+        FloatLeaf
+    }
+
+    [SkippableFact]
+    [Scenario(TestScenario.Boundary)]
+    public void EmptySlice_Target_WithOtherWidth_IsRejected()
+    {
+        // A Skip / Take that leaves no element writes nothing, but still rejects a target of another width, as the nodes
+        // with a result cache do; the result is empty and borrows nothing (design n8).
+        // mutant: the empty Skip / Take without the target check
+        using var array = CreateArray([1, 2]);
+        using var floats = CreateFloatArray([4, 9]);
+        using var skipped = array.AsVectorizedEnumerable().Skip(2);
+        using var taken = floats.AsVectorizedEnumerable().Take(0);
+        using var wide = new GpuBigUIntArray(_workspace, 1, Words + 1);
+        using var wideFloat = new GpuBigFloatArray(_workspace, 1, taken.WordsPerElement + 1);
+        var before = _workspace.GetMemoryStatistics();
+
+        Assert.Throws<ArgumentException>(() => skipped.Evaluate(_workspace, targetResult: wide));
+        Assert.Throws<ArgumentException>(() => taken.Evaluate(_workspace, targetResult: wideFloat));
+        var empty = skipped.Evaluate(_workspace);
+
+        Assert.Equal(0, empty.Length);
+        Assert.Equal(Words, empty.WordsPerElement);
+        Assert.Equal(before.DriverAllocations, _workspace.GetMemoryStatistics().DriverAllocations);
+    }
+
+    [SkippableFact]
+    [Scenario(TestScenario.Boundary)]
+    public void Leaf_Result_DoesNotOwnTheArray()
+    {
+        // The leaf lends the user's array: the result owns nothing (Minor 2, design 4.6).
+        // mutant: the leaf returns the user's array itself (it owns its buffers)
+        using var array = CreateArray([1, 2]);
+        using var expression = array.AsVectorizedEnumerable();
+
+        var result = expression.Evaluate(_workspace);
+
+        Assert.False(result.Values.Handle.OwnsBuffer);
+        Assert.False(result.Signs.Handle.OwnsBuffer);
+        Assert.Equal([new BigInteger(1), 2], Read(result));
+    }
+
+    [SkippableTheory]
+    [Scenario(TestScenario.HappyPath)]
+    [InlineData(0, 2)]
+    [InlineData(1, 1)]
+    public void FloatLeaf_WithTarget_WritesTheTarget(int skip, int take)
+    {
+        // The float leaf (alone or under Skip / Take) writes the first elements of a target and returns them (Minor 2).
+        // mutant: the float leaf ignores the target
+        using var array = CreateFloatArray([4, 9]);
+        using var expression = array.AsVectorizedEnumerable().Skip(skip).Take(take);
+        using var target = new GpuBigFloatArray(_workspace, take + 1, expression.WordsPerElement);
+
+        var result = expression.Evaluate(_workspace, targetResult: target);
+
+        var expected = new double[] { 4, 9 }.Skip(skip).Take(take).ToArray();
+        Assert.Equal(expected, ReadFloat(result));
+        Assert.Equal(expected.Append(0).ToArray(), ReadFloat(target));
+        Assert.Equal(target.Significands.DevicePointer, result.Significands.DevicePointer);
+    }
+
+    [SkippableFact]
+    [Scenario(TestScenario.SadPath)]
+    public void FloatLeaf_Target_WithWrongShape_IsRejected()
+    {
+        // The float leaf rejects a target of another width or too short (Minor 2).
+        // mutant: the float leaf without the target check
+        using var array = CreateFloatArray([4, 9]);
+        using var expression = array.AsVectorizedEnumerable();
+        using var wide = new GpuBigFloatArray(_workspace, 2, expression.WordsPerElement + 1);
+        using var shortTarget = new GpuBigFloatArray(_workspace, 1, expression.WordsPerElement);
+
+        Assert.Throws<ArgumentException>(() => expression.Evaluate(_workspace, targetResult: wide));
+        Assert.Throws<ArgumentException>(() => expression.Evaluate(_workspace, targetResult: shortTarget));
+    }
+
+    [SkippableTheory]
+    [Scenario(TestScenario.Boundary)]
+    [InlineData(BoolKind.CompareScalar)]
+    [InlineData(BoolKind.CompareVector)]
+    [InlineData(BoolKind.And)]
+    [InlineData(BoolKind.Not)]
+    [InlineData(BoolKind.FloatCompareScalar)]
+    [InlineData(BoolKind.FloatCompareVector)]
+    public void BoolResult_IsBorrowed(BoolKind kind)
+    {
+        // A boolean node lends its result buffer (IGpuBoolVectorExpression XML): the result owns nothing, so that it
+        // cannot free the node's buffer, and the node returns the buffer on Dispose.
+        // mutant: the node returns its owned result array
+        using var array = CreateArray([1, 20]);
+        using var scalar = CreateScalar(10);
+        using var floats = CreateFloatArray([4, 9]);
+        using var floatScalar = CreateFloat(5);
+        var before = _workspace.GetMemoryStatistics();
+        var expression = CreateBoolNode(kind, array, scalar, floats, floatScalar);
+
+        var result = expression.Evaluate(_workspace);
+        var owns = result.Handle.OwnsBuffer;
+        var mask = new uint[2];
+        _workspace.Provider.CopyDeviceToHost(mask, result.DevicePointer, 2, _workspace.Stream);
+        expression.Dispose();
+
+        Assert.False(owns);
+        Assert.Equal(ExpectedMask(kind), mask);
+        Assert.Equal(before.LiveBuffers, _workspace.GetMemoryStatistics().LiveBuffers);
+    }
+
+    public enum BoolKind
+    {
+        CompareScalar,
+        CompareVector,
+        And,
+        Not,
+        FloatCompareScalar,
+        FloatCompareVector
+    }
+
+    private static IGpuBoolVectorExpression CreateBoolNode(
+        BoolKind kind, GpuBigIntArray array, GpuBigInt scalar, GpuBigFloatArray floats, GpuBigFloat floatScalar) =>
+        kind switch
+        {
+            // [1, 20] > 10 -> [0, 1]
+            BoolKind.CompareScalar => array.AsVectorizedEnumerable().IsGreaterThan(scalar),
+            // [1, 20] == [1, 20] -> [1, 1]
+            BoolKind.CompareVector => array.AsVectorizedEnumerable().IsEqualTo(array.AsVectorizedEnumerable()),
+            // ([1, 20] > 10) & ([1, 20] == [1, 20]) -> [0, 1]
+            BoolKind.And => array.AsVectorizedEnumerable().IsGreaterThan(scalar)
+                .And(array.AsVectorizedEnumerable().IsEqualTo(array.AsVectorizedEnumerable())),
+            // !([1, 20] > 10) -> [1, 0]
+            BoolKind.Not => array.AsVectorizedEnumerable().IsGreaterThan(scalar).Not(),
+            // [4, 9] > 5 -> [0, 1]
+            BoolKind.FloatCompareScalar => floats.AsVectorizedEnumerable().IsGreaterThan(floatScalar),
+            // [4, 9] < [4, 9] -> [0, 0]
+            BoolKind.FloatCompareVector => floats.AsVectorizedEnumerable().IsLessThan(floats.AsVectorizedEnumerable()),
+            _ => throw new ArgumentOutOfRangeException(nameof(kind))
+        };
+
+    private static uint[] ExpectedMask(BoolKind kind) =>
+        kind switch
+        {
+            BoolKind.CompareVector => [1, 1],
+            BoolKind.Not => [1, 0],
+            BoolKind.FloatCompareVector => [0, 0],
+            _ => [0, 1]
+        };
+
     public enum NodeKind
     {
         BinaryScalar,
@@ -386,7 +611,7 @@ public sealed class ExpressionLifetimeTests : IDisposable
         return array;
     }
 
-    private static double[] ReadFloat(GpuBigFloatArray array)
+    private static double[] ReadFloat(GpuBigFloatArrayView array)
     {
         var result = new double[array.Length];
         for (var i = 0; i < result.Length; i++)
@@ -421,7 +646,7 @@ public sealed class ExpressionLifetimeTests : IDisposable
     private GpuBigInt CreateScalar(BigInteger value) =>
         new(GpuBigUInt.FromBigInteger(_workspace, BigInteger.Abs(value), Words), value.Sign < 0);
 
-    private BigInteger[] Read(GpuBigIntArray array)
+    private BigInteger[] Read(GpuBigIntArrayView array)
     {
         var values = ReadValues(array.Values);
         var signs = new uint[array.Length];
@@ -429,7 +654,7 @@ public sealed class ExpressionLifetimeTests : IDisposable
         return values.Select((v, i) => signs[i] != 0 ? -v : v).ToArray();
     }
 
-    private BigInteger[] ReadValues(GpuBigUIntArray values)
+    private BigInteger[] ReadValues(GpuBigUIntArrayView values)
     {
         var host = new uint[values.TotalWords];
         _workspace.Provider.CopyDeviceToHost(host, values.DevicePointer, host.Length, _workspace.Stream);
