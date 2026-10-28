@@ -358,7 +358,7 @@ public float foreachSum;
 public global::System.Func<float, float, float> multiplier;
 }
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__Tier1IntegrationKernels__AllInOneKernel(int[] intInput, float[] floatInput, float[] results, global::Kassyi.GSharp.Tests.Shared.Syntax.Tier1CustomStruct config, ulong[] globalCounter, int count, int dynamicSharedSize, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__Tier1IntegrationKernels__AllInOneKernel __gsharp_ctx) {
-global::Kassyi.GSharp.Core.SharedMemory<float> dynamicSharedMem = new global::Kassyi.GSharp.Core.SharedMemory<float>(0xf4a8b89f8fdf4f71UL, "Tier1_IntegrationKernels.cs(154,52)", true);
+global::Kassyi.GSharp.Core.SharedMemory<float> dynamicSharedMem = global::Kassyi.GSharp.Core.SharedMemory<float>.FindDynamic(0xf4a8b89f8fdf4f71UL);
 {
 switch (__gsharp_ctx.__gsharp_state)
 {

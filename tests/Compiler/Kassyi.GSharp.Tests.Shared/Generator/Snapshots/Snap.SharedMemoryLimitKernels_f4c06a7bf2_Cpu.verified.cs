@@ -64,7 +64,7 @@ internal int __gsharp_state;
 internal uint __gsharp_warp_exchange;
 }
 public static bool __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Core__SharedMemoryLimitKernels__FirstRegion(int count, int tid, __gsharp_frame_Kassyi__GSharp__Tests__Shared__Core__SharedMemoryLimitKernels__FirstRegion __gsharp_ctx, ref int __gsharp_result) {
-global::Kassyi.GSharp.Core.SharedMemory<int> s = new global::Kassyi.GSharp.Core.SharedMemory<int>(0x78590bc00341a113UL, "SharedMemoryLimitKernels.cs(87,17)", true);
+global::Kassyi.GSharp.Core.SharedMemory<int> s = global::Kassyi.GSharp.Core.SharedMemory<int>.FindDynamic(0x78590bc00341a113UL);
 {
 switch (__gsharp_ctx.__gsharp_state)
 {
@@ -219,7 +219,7 @@ public uint __gsharp_warp_exchange;
 public int i;
 }
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Core__SharedMemoryLimitKernels__FillKernel(int[] output, int n, __gsharp_context_Kassyi__GSharp__Tests__Shared__Core__SharedMemoryLimitKernels__FillKernel __gsharp_ctx) {
-global::Kassyi.GSharp.Core.SharedMemory<int> s = new global::Kassyi.GSharp.Core.SharedMemory<int>(0xecc626cdde7f7467UL, "SharedMemoryLimitKernels.cs(18,17)", true);
+global::Kassyi.GSharp.Core.SharedMemory<int> s = global::Kassyi.GSharp.Core.SharedMemory<int>.FindDynamic(0xecc626cdde7f7467UL);
 {
 switch (__gsharp_ctx.__gsharp_state)
 {
@@ -654,8 +654,8 @@ public uint __gsharp_warp_exchange;
 public int tid;
 }
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Core__SharedMemoryLimitKernels__TwoRegionsKernel(int[] output, int a, int b, __gsharp_context_Kassyi__GSharp__Tests__Shared__Core__SharedMemoryLimitKernels__TwoRegionsKernel __gsharp_ctx) {
-global::Kassyi.GSharp.Core.SharedMemory<int> first = new global::Kassyi.GSharp.Core.SharedMemory<int>(0xc6fa9a003ca4ac1aUL, "SharedMemoryLimitKernels.cs(49,21)", true);
-global::Kassyi.GSharp.Core.SharedMemory<double> second = new global::Kassyi.GSharp.Core.SharedMemory<double>(0xc6fa9b003ca4adcdUL, "SharedMemoryLimitKernels.cs(50,22)", true);
+global::Kassyi.GSharp.Core.SharedMemory<int> first = global::Kassyi.GSharp.Core.SharedMemory<int>.FindDynamic(0xc6fa9a003ca4ac1aUL);
+global::Kassyi.GSharp.Core.SharedMemory<double> second = global::Kassyi.GSharp.Core.SharedMemory<double>.FindDynamic(0xc6fa9b003ca4adcdUL);
 {
 switch (__gsharp_ctx.__gsharp_state)
 {
@@ -886,7 +886,7 @@ public int tid;
 public int n;
 }
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Core__SharedMemoryLimitKernels__HoistedCountKernel(int[] output, __gsharp_context_Kassyi__GSharp__Tests__Shared__Core__SharedMemoryLimitKernels__HoistedCountKernel __gsharp_ctx) {
-global::Kassyi.GSharp.Core.SharedMemory<int> a = new global::Kassyi.GSharp.Core.SharedMemory<int>(0xd90fdd0a7254bddaUL, "SharedMemoryLimitKernels.cs(72,17)", true);
+global::Kassyi.GSharp.Core.SharedMemory<int> a = global::Kassyi.GSharp.Core.SharedMemory<int>.FindDynamic(0xd90fdd0a7254bddaUL);
 {
 switch (__gsharp_ctx.__gsharp_state)
 {
@@ -1126,7 +1126,7 @@ public int first;
 internal global::Kassyi.GSharp.Tests.Shared.Core.SharedMemoryLimitKernels.__gsharp_frame_Kassyi__GSharp__Tests__Shared__Core__SharedMemoryLimitKernels__FirstRegion __gsharp_call_frame_0 = new();
 }
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Core__SharedMemoryLimitKernels__RegionOrderKernel(int[] output, int a, int b, __gsharp_context_Kassyi__GSharp__Tests__Shared__Core__SharedMemoryLimitKernels__RegionOrderKernel __gsharp_ctx) {
-global::Kassyi.GSharp.Core.SharedMemory<double> second = new global::Kassyi.GSharp.Core.SharedMemory<double>(0x9418ed423d4a4ffbUL, "SharedMemoryLimitKernels.cs(102,22)", true);
+global::Kassyi.GSharp.Core.SharedMemory<double> second = global::Kassyi.GSharp.Core.SharedMemory<double>.FindDynamic(0x9418ed423d4a4ffbUL);
 {
 switch (__gsharp_ctx.__gsharp_state)
 {

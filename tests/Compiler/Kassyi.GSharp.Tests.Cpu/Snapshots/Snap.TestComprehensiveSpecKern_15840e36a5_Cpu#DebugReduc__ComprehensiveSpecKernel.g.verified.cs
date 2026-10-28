@@ -437,7 +437,7 @@ public int counter;
 }
 public static unsafe void __gsharp_statemachine_DebugReduc__ComprehensiveSpecKernel__ProcessPhysics(global::DebugReduc.PhysicsVector[] particles, ref float totalMagnitude, ref bool successFlag, global::DebugReduc.SpecTypes largeStructVal, int particleCount, int unrollFactor, __gsharp_context_DebugReduc__ComprehensiveSpecKernel__ProcessPhysics __gsharp_ctx) {
 global::Kassyi.GSharp.Core.SharedMemory<int> staticCache = new global::Kassyi.GSharp.Core.SharedMemory<int>(10000, 0xe20e17017ad9529aUL);
-global::Kassyi.GSharp.Core.SharedMemory<float> dynamicCache = new global::Kassyi.GSharp.Core.SharedMemory<float>(0xe20e18017ad9544dUL, "an unknown place", true);
+global::Kassyi.GSharp.Core.SharedMemory<float> dynamicCache = global::Kassyi.GSharp.Core.SharedMemory<float>.FindDynamic(0xe20e18017ad9544dUL);
 global::Kassyi.GSharp.Core.SharedMemory<int> targetTypedCache = new(256, 0xe20e15017ad94f34UL);
 {
 switch (__gsharp_ctx.__gsharp_state)

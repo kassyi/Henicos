@@ -40,11 +40,10 @@ internal static class SharedMemorySiteKeyAnnotator
     /// source. A dynamic declaration (a count that is not a C# constant, as for the CUDA and native CPU placement)
     /// becomes <c>new SharedMemory&lt;T&gt;(n, key, "&lt;place&gt;")</c>: a region of the launch's
     /// <c>sharedMemBytes</c>, and the place names it in the error of a launch that does not give it enough (#544). With
-    /// <paramref name="findOnly"/>, a dynamic declaration becomes <c>new SharedMemory&lt;T&gt;(key, "&lt;place&gt;", true)</c>,
-    /// which finds the region without placing it and without evaluating the count (a local that a resume has not
-    /// declared yet).
+    /// <paramref name="findOnly"/>, a dynamic declaration becomes <c>SharedMemory&lt;T&gt;.FindDynamic(key)</c>, which
+    /// finds the region without placing it and without evaluating the count (a local that a resume has not declared yet).
     /// </remarks>
-    public static BaseObjectCreationExpressionSyntax AddSharedMemorySiteKey(
+    public static ExpressionSyntax AddSharedMemorySiteKey(
         BaseObjectCreationExpressionSyntax original,
         BaseObjectCreationExpressionSyntax rewritten,
         SemanticModel semanticModel,
@@ -66,21 +65,27 @@ internal static class SharedMemorySiteKeyAnnotator
             return rewritten.WithArgumentList(SyntaxFactory.ArgumentList(arguments.Add(keyArgument)));
         }
 
-        var placeArgument = SyntaxFactory.Argument(SyntaxFactory.LiteralExpression(
-            SyntaxKind.StringLiteralExpression, SyntaxFactory.Literal(SourcePlace.Format(semanticModel, original))));
-        if (!findOnly)
+        // The callers pass SharedMemory<T> creations only, whose type the model knows
+        if (findOnly && semanticModel.GetTypeSymbol(original) is { } type)
         {
-            // new SharedMemory<T>(<n>, <key>, "<place>")
-            return rewritten.WithArgumentList(
-                SyntaxFactory.ArgumentList(arguments.Add(keyArgument).Add(placeArgument)));
+            // global::Kassyi.GSharp.Core.SharedMemory<T>.FindDynamic(<key>)
+            var sharedMemoryType = SyntaxFactory.ParseTypeName(type.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat));
+            return SyntaxFactory.InvocationExpression(
+                SyntaxFactory.MemberAccessExpression(
+                    SyntaxKind.SimpleMemberAccessExpression,
+                    sharedMemoryType,
+                    SyntaxFactory.IdentifierName(FindDynamicMethod)
+                ),
+                SyntaxFactory.ArgumentList(SyntaxFactory.SingletonSeparatedList(keyArgument))
+            ).WithTriviaFrom(rewritten);
         }
 
-        // new SharedMemory<T>(<key>, "<place>", true)
-        var findArguments = SyntaxFactory.SeparatedList([
-            keyArgument,
-            placeArgument,
-            SyntaxFactory.Argument(SyntaxFactory.LiteralExpression(SyntaxKind.TrueLiteralExpression))
-        ]);
-        return rewritten.WithArgumentList(SyntaxFactory.ArgumentList(findArguments));
+        // new SharedMemory<T>(<n>, <key>, "<place>")
+        var placeArgument = SyntaxFactory.Argument(SyntaxFactory.LiteralExpression(
+            SyntaxKind.StringLiteralExpression, SyntaxFactory.Literal(SourcePlace.Format(semanticModel, original))));
+        return rewritten.WithArgumentList(SyntaxFactory.ArgumentList(arguments.Add(keyArgument).Add(placeArgument)));
     }
+
+    // SharedMemory<T>.FindDynamic in Core
+    private const string FindDynamicMethod = "FindDynamic";
 }

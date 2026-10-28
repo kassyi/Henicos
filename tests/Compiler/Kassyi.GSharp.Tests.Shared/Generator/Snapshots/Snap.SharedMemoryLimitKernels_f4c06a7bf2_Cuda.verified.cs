@@ -94,7 +94,7 @@ internal int __gsharp_state;
 internal uint __gsharp_warp_exchange;
 }
 public static bool __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Core__SharedMemoryLimitKernels__FirstRegion(int count, int tid, __gsharp_frame_Kassyi__GSharp__Tests__Shared__Core__SharedMemoryLimitKernels__FirstRegion __gsharp_ctx, ref int __gsharp_result) {
-global::Kassyi.GSharp.Core.SharedMemory<int> s = new global::Kassyi.GSharp.Core.SharedMemory<int>(0x78590bc00341a113UL, "SharedMemoryLimitKernels.cs(87,17)", true);
+global::Kassyi.GSharp.Core.SharedMemory<int> s = global::Kassyi.GSharp.Core.SharedMemory<int>.FindDynamic(0x78590bc00341a113UL);
 {
 switch (__gsharp_ctx.__gsharp_state)
 {

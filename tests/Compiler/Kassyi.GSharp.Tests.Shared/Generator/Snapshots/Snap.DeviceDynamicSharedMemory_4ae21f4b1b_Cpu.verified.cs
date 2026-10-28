@@ -236,7 +236,7 @@ internal int __gsharp_state;
 internal uint __gsharp_warp_exchange;
 }
 public static bool __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__SuspendingHelper(int n, int val, __gsharp_frame_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__SuspendingHelper __gsharp_ctx, ref int __gsharp_result) {
-global::Kassyi.GSharp.Core.SharedMemory<int> inner = new global::Kassyi.GSharp.Core.SharedMemory<int>(0x84b31862e77be173UL, "DeviceDynamicSharedMemoryKernels.cs(16,21)", true);
+global::Kassyi.GSharp.Core.SharedMemory<int> inner = global::Kassyi.GSharp.Core.SharedMemory<int>.FindDynamic(0x84b31862e77be173UL);
 {
 switch (__gsharp_ctx.__gsharp_state)
 {
@@ -266,7 +266,7 @@ internal int __gsharp_state;
 internal uint __gsharp_warp_exchange;
 }
 public static bool __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__TwoKernelHelper(int n, int val, __gsharp_frame_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__TwoKernelHelper __gsharp_ctx, ref int __gsharp_result) {
-global::Kassyi.GSharp.Core.SharedMemory<int> inner = new global::Kassyi.GSharp.Core.SharedMemory<int>(0x5e40b7025ff4f720UL, "DeviceDynamicSharedMemoryKernels.cs(38,21)", true);
+global::Kassyi.GSharp.Core.SharedMemory<int> inner = global::Kassyi.GSharp.Core.SharedMemory<int>.FindDynamic(0x5e40b7025ff4f720UL);
 {
 switch (__gsharp_ctx.__gsharp_state)
 {
@@ -296,7 +296,7 @@ internal int __gsharp_state;
 internal uint __gsharp_warp_exchange;
 }
 public static bool __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__SuspendingPersistHelper(int n, int val, bool write, __gsharp_frame_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__SuspendingPersistHelper __gsharp_ctx, ref int __gsharp_result) {
-global::Kassyi.GSharp.Core.SharedMemory<int> s = new global::Kassyi.GSharp.Core.SharedMemory<int>(0x8e9b2cbfc1a4ab1eUL, "DeviceDynamicSharedMemoryKernels.cs(88,17)", true);
+global::Kassyi.GSharp.Core.SharedMemory<int> s = global::Kassyi.GSharp.Core.SharedMemory<int>.FindDynamic(0x8e9b2cbfc1a4ab1eUL);
 {
 switch (__gsharp_ctx.__gsharp_state)
 {
@@ -332,7 +332,7 @@ internal int tid;
 internal int r;
 }
 public static bool __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__GrowHelper(int count, int writeStart, int val, __gsharp_frame_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__GrowHelper __gsharp_ctx, ref int __gsharp_result) {
-global::Kassyi.GSharp.Core.SharedMemory<int> s = new global::Kassyi.GSharp.Core.SharedMemory<int>(0xa9215b4dd44568e3UL, "DeviceDynamicSharedMemoryKernels.cs(157,17)", true);
+global::Kassyi.GSharp.Core.SharedMemory<int> s = global::Kassyi.GSharp.Core.SharedMemory<int>.FindDynamic(0xa9215b4dd44568e3UL);
 {
 switch (__gsharp_ctx.__gsharp_state)
 {
@@ -513,7 +513,7 @@ public int helperResult;
 internal global::Kassyi.GSharp.Tests.Shared.Core.DeviceDynamicSharedMemoryKernels.__gsharp_frame_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__SuspendingHelper __gsharp_call_frame_0 = new();
 }
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__SuspendingCallerKernel(int[] output, int n, __gsharp_context_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__SuspendingCallerKernel __gsharp_ctx) {
-global::Kassyi.GSharp.Core.SharedMemory<int> outer = new global::Kassyi.GSharp.Core.SharedMemory<int>(0xd8d3c5e7a76b4685UL, "DeviceDynamicSharedMemoryKernels.cs(26,21)", true);
+global::Kassyi.GSharp.Core.SharedMemory<int> outer = global::Kassyi.GSharp.Core.SharedMemory<int>.FindDynamic(0xd8d3c5e7a76b4685UL);
 {
 switch (__gsharp_ctx.__gsharp_state)
 {
@@ -991,7 +991,7 @@ public int helperResult;
 internal global::Kassyi.GSharp.Tests.Shared.Core.DeviceDynamicSharedMemoryKernels.__gsharp_frame_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__TwoKernelHelper __gsharp_call_frame_0 = new();
 }
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__HelperAndCallerKernel(int[] output, int n, __gsharp_context_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__HelperAndCallerKernel __gsharp_ctx) {
-global::Kassyi.GSharp.Core.SharedMemory<int> outer = new global::Kassyi.GSharp.Core.SharedMemory<int>(0x7047eeed6a045198UL, "DeviceDynamicSharedMemoryKernels.cs(55,21)", true);
+global::Kassyi.GSharp.Core.SharedMemory<int> outer = global::Kassyi.GSharp.Core.SharedMemory<int>.FindDynamic(0x7047eeed6a045198UL);
 {
 switch (__gsharp_ctx.__gsharp_state)
 {
@@ -1233,7 +1233,7 @@ public int tid;
 public int helperResult;
 }
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__PlainCallerKernel(int[] output, int n, __gsharp_context_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__PlainCallerKernel __gsharp_ctx) {
-global::Kassyi.GSharp.Core.SharedMemory<int> outer = new global::Kassyi.GSharp.Core.SharedMemory<int>(0x3890c35093ada06bUL, "DeviceDynamicSharedMemoryKernels.cs(76,21)", true);
+global::Kassyi.GSharp.Core.SharedMemory<int> outer = global::Kassyi.GSharp.Core.SharedMemory<int>.FindDynamic(0x3890c35093ada06bUL);
 {
 switch (__gsharp_ctx.__gsharp_state)
 {
@@ -2180,7 +2180,7 @@ internal global::Kassyi.GSharp.Tests.Shared.Core.DeviceDynamicSharedMemoryKernel
 internal global::Kassyi.GSharp.Tests.Shared.Core.DeviceDynamicSharedMemoryKernels.__gsharp_frame_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__GrowHelper __gsharp_call_frame_1 = new();
 }
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__GrowAfterCallerKernel(int[] output, int small, int large, __gsharp_context_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__GrowAfterCallerKernel __gsharp_ctx) {
-global::Kassyi.GSharp.Core.SharedMemory<int> outer = new global::Kassyi.GSharp.Core.SharedMemory<int>(0x03275e9f903bff9bUL, "DeviceDynamicSharedMemoryKernels.cs(174,21)", true);
+global::Kassyi.GSharp.Core.SharedMemory<int> outer = global::Kassyi.GSharp.Core.SharedMemory<int>.FindDynamic(0x03275e9f903bff9bUL);
 {
 switch (__gsharp_ctx.__gsharp_state)
 {
@@ -2906,7 +2906,7 @@ internal global::Kassyi.GSharp.Tests.Shared.Core.DeviceDynamicSharedMemoryKernel
 internal global::Kassyi.GSharp.Tests.Shared.Core.DeviceDynamicSharedMemoryKernels.__gsharp_frame_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__GrowHelper __gsharp_call_frame_1 = new();
 }
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__ZeroThenGrowKernel(int[] output, int small, int large, __gsharp_context_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__ZeroThenGrowKernel __gsharp_ctx) {
-global::Kassyi.GSharp.Core.SharedMemory<int> outer = new global::Kassyi.GSharp.Core.SharedMemory<int>(0x989c8b7d9b352ae3UL, "DeviceDynamicSharedMemoryKernels.cs(246,21)", true);
+global::Kassyi.GSharp.Core.SharedMemory<int> outer = global::Kassyi.GSharp.Core.SharedMemory<int>.FindDynamic(0x989c8b7d9b352ae3UL);
 {
 switch (__gsharp_ctx.__gsharp_state)
 {
@@ -3164,7 +3164,7 @@ public int tid;
 public int helperResult;
 }
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__MiddleCallerKernel(int[] output, int n, __gsharp_context_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__MiddleCallerKernel __gsharp_ctx) {
-global::Kassyi.GSharp.Core.SharedMemory<int> outer = new global::Kassyi.GSharp.Core.SharedMemory<int>(0xe9e3e359170e8a1eUL, "DeviceDynamicSharedMemoryKernels.cs(267,21)", true);
+global::Kassyi.GSharp.Core.SharedMemory<int> outer = global::Kassyi.GSharp.Core.SharedMemory<int>.FindDynamic(0xe9e3e359170e8a1eUL);
 {
 switch (__gsharp_ctx.__gsharp_state)
 {
@@ -3603,7 +3603,7 @@ public int plain;
 public int noParameter;
 }
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__NestedFunctionCallerKernel(int[] output, int n, __gsharp_context_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__NestedFunctionCallerKernel __gsharp_ctx) {
-global::Kassyi.GSharp.Core.SharedMemory<int> outer = new global::Kassyi.GSharp.Core.SharedMemory<int>(0xd3a5cf7b48c876f0UL, "DeviceDynamicSharedMemoryKernels.cs(297,21)", true);
+global::Kassyi.GSharp.Core.SharedMemory<int> outer = global::Kassyi.GSharp.Core.SharedMemory<int>.FindDynamic(0xd3a5cf7b48c876f0UL);
 {
 switch (__gsharp_ctx.__gsharp_state)
 {
@@ -3833,9 +3833,9 @@ public uint __gsharp_warp_exchange;
 public int tid;
 }
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__NegativeCountKernel(int[] output, int n, int negative, __gsharp_context_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__NegativeCountKernel __gsharp_ctx) {
-global::Kassyi.GSharp.Core.SharedMemory<int> first = new global::Kassyi.GSharp.Core.SharedMemory<int>(0x0c3a526c39b2a941UL, "DeviceDynamicSharedMemoryKernels.cs(317,21)", true);
-global::Kassyi.GSharp.Core.SharedMemory<int> second = new global::Kassyi.GSharp.Core.SharedMemory<int>(0x0c3a516c39b2a78eUL, "DeviceDynamicSharedMemoryKernels.cs(319,22)", true);
-global::Kassyi.GSharp.Core.SharedMemory<int> third = new global::Kassyi.GSharp.Core.SharedMemory<int>(0x0c3a506c39b2a5dbUL, "DeviceDynamicSharedMemoryKernels.cs(320,21)", true);
+global::Kassyi.GSharp.Core.SharedMemory<int> first = global::Kassyi.GSharp.Core.SharedMemory<int>.FindDynamic(0x0c3a526c39b2a941UL);
+global::Kassyi.GSharp.Core.SharedMemory<int> second = global::Kassyi.GSharp.Core.SharedMemory<int>.FindDynamic(0x0c3a516c39b2a78eUL);
+global::Kassyi.GSharp.Core.SharedMemory<int> third = global::Kassyi.GSharp.Core.SharedMemory<int>.FindDynamic(0x0c3a506c39b2a5dbUL);
 {
 switch (__gsharp_ctx.__gsharp_state)
 {
