@@ -110,6 +110,42 @@ internal static class GpuCodeConstraints
     /// <summary>The GSH0003 text for a stack array whose size is not a constant.</summary>
     public const string DynamicArraySize = "dynamic array size";
 
+    /// <summary>The GSH0003 text for an array of more than one dimension, which has no stack array form.</summary>
+    public const string MultidimensionalArray = "multidimensional array";
+
+    /// <summary>
+    /// The GSH0003 text for an array of length zero: C# gives a non-null empty array, which the G# representation of a
+    /// null array (no data) cannot tell apart from null.
+    /// </summary>
+    public const string ZeroLengthArray = "zero-length array";
+
+    /// <summary>
+    /// The GSH0003 text (<see cref="MultidimensionalArray"/>, <see cref="ZeroLengthArray"/>) for the array that
+    /// <paramref name="value"/> creates as the initializer of a local of <paramref name="declaredType"/>, or
+    /// <see langword="null"/> when it can be a stack array. A span over an empty <c>stackalloc</c> or collection
+    /// expression is not reported: it is an empty span, as in C#.
+    /// </summary>
+    public static string? GetStackArrayShapeProblem(ExpressionSyntax value, ITypeSymbol? declaredType,
+        SemanticModel semanticModel)
+    {
+        if (declaredType is IArrayTypeSymbol { Rank: > 1 } ||
+            value is ArrayCreationExpressionSyntax { Type.RankSpecifiers: [{ Sizes.Count: > 1 }, ..] })
+        {
+            return MultidimensionalArray;
+        }
+
+        if (!InitializationSyntaxExtractor.TryGetArrayInitialization(value, out var count, out var size, out _))
+        {
+            return null;
+        }
+
+        var isEmptyArrayCreation = value is ArrayCreationExpressionSyntax &&
+                                   size != null &&
+                                   semanticModel.GetSafeConstantValue(size) is { HasValue: true, Value: 0 };
+        var isEmptyArrayInitializer = declaredType is IArrayTypeSymbol && count == 0;
+        return isEmptyArrayCreation || isEmptyArrayInitializer ? ZeroLengthArray : null;
+    }
+
     /// <summary>Whether the size of a stack array is a constant, which a C++ array declaration needs (GSH0003).</summary>
     public static bool IsConstantArraySize(ExpressionSyntax size, SemanticModel semanticModel) =>
         semanticModel.GetSafeConstantValue(size).HasValue;

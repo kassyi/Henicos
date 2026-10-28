@@ -259,6 +259,13 @@ public sealed class VariableDeclarationTranspilerRule : SyntaxNodeTranspilerRule
             return false;
         }
 
+        if (GpuCodeConstraints.GetStackArrayShapeProblem(variable.Initializer.Value, typeSymbol,
+                context.Query.SemanticModel) is { } problem)
+        {
+            context.Reporter.Fail(GSharpDiagnostics.UnsupportedSyntax, variable.Initializer.Value, problem);
+            return true;
+        }
+
         if (!InitializationSyntaxExtractor.TryGetArrayInitialization(variable.Initializer.Value, out var count,
                 out var sizeExpr, out var initializerNode))
         {
