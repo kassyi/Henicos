@@ -48,7 +48,7 @@ During the MSBuild AOT code generation phase, the `Kassyi.Generators.GSharp` Ros
 | [**GSH0019**](diagnostics/GSH0019.md) | Error | **Manual GetEnumerator calls are not supported.** Explicit calls to `GetEnumerator()` are prohibited to ensure zero-allocation. Use a `foreach` loop over supported types like `Span<T>` instead. |
 | [**GSH0020**](diagnostics/GSH0020.md) | Error | **Missing IDisposable implementation.** A class holds a disposable GPU resource (e.g., `GpuWorkspace`) but does not implement `IDisposable`. |
 | [**GSH0021**](diagnostics/GSH0021.md) | Error | **Undisposed GPU Resource.** The `Dispose()` method does not explicitly invoke `.Dispose()` on all owned GPU resources. |
-| [**GSH0022**](diagnostics/GSH0022.md) | Error | **Unsafe field overwrite.** A disposable field is overwritten without prior disposal. |
+| [**GSH0022**](diagnostics/GSH0022.md) | Error | **Undisposed GPU scope.** The Dispose() method of a type does not release an owned disposable field, directly or through a helper of the type. |
 | [**GSH0023**](diagnostics/GSH0023.md) | Error | **Property getter side-effect.** Property getters must not allocate disposable resources. |
 | [**GSH0024**](diagnostics/GSH0024.md) | Error | **Cast operator side-effect.** Implicit or explicit cast operators must not allocate disposable resources. |
 | [**GSH0025**](diagnostics/GSH0025.md) | Error | **Unguarded multi-allocation.** Multiple allocations in a constructor must be guarded with try-catch to avoid partial leaks. |
