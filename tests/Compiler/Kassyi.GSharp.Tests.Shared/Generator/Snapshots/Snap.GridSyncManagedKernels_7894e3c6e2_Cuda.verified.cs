@@ -118,6 +118,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerGlobalBarrierKernel();
 IntPtr hfunc = s_hfunc_GlobalBarrierKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "GridSyncManagedKernels.GlobalBarrierKernel");
 IntPtr d_buffer = IntPtr.Zero;
 try
 {
@@ -172,6 +173,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerGlobalBarrierKernel();
 IntPtr hfunc = s_hfunc_GlobalBarrierKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "GridSyncManagedKernels.GlobalBarrierKernel");
 try
 {
 void** kernelParams = stackalloc void*[1];
@@ -262,6 +264,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerGlobalReductionKernel();
 IntPtr hfunc = s_hfunc_GlobalReductionKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "GridSyncManagedKernels.GlobalReductionKernel");
 IntPtr d_input = IntPtr.Zero;
 IntPtr d_blockSums = IntPtr.Zero;
 IntPtr d_totalSum = IntPtr.Zero;
@@ -370,6 +373,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerGlobalReductionKernel();
 IntPtr hfunc = s_hfunc_GlobalReductionKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "GridSyncManagedKernels.GlobalReductionKernel");
 try
 {
 void** kernelParams = stackalloc void*[3];

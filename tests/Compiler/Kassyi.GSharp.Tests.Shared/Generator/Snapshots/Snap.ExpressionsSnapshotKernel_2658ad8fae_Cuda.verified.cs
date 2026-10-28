@@ -124,6 +124,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerBasicExpressionsKernel();
 IntPtr hfunc = s_hfunc_BasicExpressionsKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "ExpressionsSnapshotKernels.BasicExpressionsKernel");
 IntPtr d_output = IntPtr.Zero;
 try
 {
@@ -183,6 +184,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerBasicExpressionsKernel();
 IntPtr hfunc = s_hfunc_BasicExpressionsKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "ExpressionsSnapshotKernels.BasicExpressionsKernel");
 try
 {
 void** kernelParams = stackalloc void*[3];

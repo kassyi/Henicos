@@ -121,6 +121,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerMathFmaKernel();
 IntPtr hfunc = s_hfunc_MathFmaKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "MathFmaKernels.MathFmaKernel");
 IntPtr d_data = IntPtr.Zero;
 try
 {
@@ -180,6 +181,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerMathFmaKernel();
 IntPtr hfunc = s_hfunc_MathFmaKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "MathFmaKernels.MathFmaKernel");
 try
 {
 void** kernelParams = stackalloc void*[3];

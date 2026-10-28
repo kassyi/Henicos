@@ -140,6 +140,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerRunLinq();
 IntPtr hfunc = s_hfunc_RunLinq!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "StackLinqTestKernel.RunLinq");
 IntPtr d_data = IntPtr.Zero;
 try
 {
@@ -195,6 +196,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerRunLinq();
 IntPtr hfunc = s_hfunc_RunLinq!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "StackLinqTestKernel.RunLinq");
 try
 {
 void** kernelParams = stackalloc void*[1];
@@ -267,6 +269,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerRunLinqAny();
 IntPtr hfunc = s_hfunc_RunLinqAny!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "StackLinqTestKernel.RunLinqAny");
 IntPtr d_data = IntPtr.Zero;
 try
 {
@@ -322,6 +325,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerRunLinqAny();
 IntPtr hfunc = s_hfunc_RunLinqAny!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "StackLinqTestKernel.RunLinqAny");
 try
 {
 void** kernelParams = stackalloc void*[1];
@@ -394,6 +398,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerRunLinqSum();
 IntPtr hfunc = s_hfunc_RunLinqSum!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "StackLinqTestKernel.RunLinqSum");
 IntPtr d_data = IntPtr.Zero;
 try
 {
@@ -449,6 +454,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerRunLinqSum();
 IntPtr hfunc = s_hfunc_RunLinqSum!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "StackLinqTestKernel.RunLinqSum");
 try
 {
 void** kernelParams = stackalloc void*[1];
@@ -521,6 +527,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerRunLinqFirst();
 IntPtr hfunc = s_hfunc_RunLinqFirst!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "StackLinqTestKernel.RunLinqFirst");
 IntPtr d_data = IntPtr.Zero;
 try
 {
@@ -576,6 +583,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerRunLinqFirst();
 IntPtr hfunc = s_hfunc_RunLinqFirst!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "StackLinqTestKernel.RunLinqFirst");
 try
 {
 void** kernelParams = stackalloc void*[1];
@@ -657,6 +665,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerRunLinqIndexedAndSelectorSum();
 IntPtr hfunc = s_hfunc_RunLinqIndexedAndSelectorSum!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "StackLinqTestKernel.RunLinqIndexedAndSelectorSum");
 IntPtr d_data = IntPtr.Zero;
 try
 {
@@ -712,6 +721,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerRunLinqIndexedAndSelectorSum();
 IntPtr hfunc = s_hfunc_RunLinqIndexedAndSelectorSum!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "StackLinqTestKernel.RunLinqIndexedAndSelectorSum");
 try
 {
 void** kernelParams = stackalloc void*[1];

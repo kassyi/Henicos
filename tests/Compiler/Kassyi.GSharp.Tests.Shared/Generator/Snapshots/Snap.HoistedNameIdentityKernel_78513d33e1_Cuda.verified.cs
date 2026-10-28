@@ -133,6 +133,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerBarrierLocalSameNameInitializerKernel();
 IntPtr hfunc = s_hfunc_BarrierLocalSameNameInitializerKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "HoistedNameIdentityKernels.BarrierLocalSameNameInitializerKernel");
 IntPtr d_output = IntPtr.Zero;
 try
 {
@@ -188,6 +189,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerBarrierLocalSameNameInitializerKernel();
 IntPtr hfunc = s_hfunc_BarrierLocalSameNameInitializerKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "HoistedNameIdentityKernels.BarrierLocalSameNameInitializerKernel");
 try
 {
 void** kernelParams = stackalloc void*[1];
@@ -264,6 +266,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerBarrierLocalSameNameWithKernel();
 IntPtr hfunc = s_hfunc_BarrierLocalSameNameWithKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "HoistedNameIdentityKernels.BarrierLocalSameNameWithKernel");
 IntPtr d_output = IntPtr.Zero;
 try
 {
@@ -319,6 +322,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerBarrierLocalSameNameWithKernel();
 IntPtr hfunc = s_hfunc_BarrierLocalSameNameWithKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "HoistedNameIdentityKernels.BarrierLocalSameNameWithKernel");
 try
 {
 void** kernelParams = stackalloc void*[1];
@@ -389,6 +393,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerBarrierLocalSameNameMemberAccessKernel();
 IntPtr hfunc = s_hfunc_BarrierLocalSameNameMemberAccessKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "HoistedNameIdentityKernels.BarrierLocalSameNameMemberAccessKernel");
 IntPtr d_output = IntPtr.Zero;
 try
 {
@@ -444,6 +449,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerBarrierLocalSameNameMemberAccessKernel();
 IntPtr hfunc = s_hfunc_BarrierLocalSameNameMemberAccessKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "HoistedNameIdentityKernels.BarrierLocalSameNameMemberAccessKernel");
 try
 {
 void** kernelParams = stackalloc void*[1];
@@ -510,6 +516,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerBarrierLocalSameNameLambdaParameterKernel();
 IntPtr hfunc = s_hfunc_BarrierLocalSameNameLambdaParameterKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "HoistedNameIdentityKernels.BarrierLocalSameNameLambdaParameterKernel");
 IntPtr d_output = IntPtr.Zero;
 try
 {
@@ -565,6 +572,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerBarrierLocalSameNameLambdaParameterKernel();
 IntPtr hfunc = s_hfunc_BarrierLocalSameNameLambdaParameterKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "HoistedNameIdentityKernels.BarrierLocalSameNameLambdaParameterKernel");
 try
 {
 void** kernelParams = stackalloc void*[1];
@@ -637,6 +645,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerSiblingBlockSameLabelKernel();
 IntPtr hfunc = s_hfunc_SiblingBlockSameLabelKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "HoistedNameIdentityKernels.SiblingBlockSameLabelKernel");
 IntPtr d_output = IntPtr.Zero;
 try
 {
@@ -692,6 +701,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerSiblingBlockSameLabelKernel();
 IntPtr hfunc = s_hfunc_SiblingBlockSameLabelKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "HoistedNameIdentityKernels.SiblingBlockSameLabelKernel");
 try
 {
 void** kernelParams = stackalloc void*[1];

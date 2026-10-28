@@ -124,6 +124,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerCopyAsyncIntKernel();
 IntPtr hfunc = s_hfunc_CopyAsyncIntKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "CopyAsyncKernels.CopyAsyncIntKernel");
 IntPtr d_input = IntPtr.Zero;
 IntPtr d_output = IntPtr.Zero;
 try
@@ -206,6 +207,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerCopyAsyncIntKernel();
 IntPtr hfunc = s_hfunc_CopyAsyncIntKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "CopyAsyncKernels.CopyAsyncIntKernel");
 try
 {
 void** kernelParams = stackalloc void*[2];
@@ -275,6 +277,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerCopyAsyncVector4Kernel();
 IntPtr hfunc = s_hfunc_CopyAsyncVector4Kernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "CopyAsyncKernels.CopyAsyncVector4Kernel");
 IntPtr d_input = IntPtr.Zero;
 IntPtr d_output = IntPtr.Zero;
 try
@@ -357,6 +360,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerCopyAsyncVector4Kernel();
 IntPtr hfunc = s_hfunc_CopyAsyncVector4Kernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "CopyAsyncKernels.CopyAsyncVector4Kernel");
 try
 {
 void** kernelParams = stackalloc void*[2];
@@ -443,6 +447,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerCopyAsyncTwoGroupsKernel();
 IntPtr hfunc = s_hfunc_CopyAsyncTwoGroupsKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "CopyAsyncKernels.CopyAsyncTwoGroupsKernel");
 IntPtr d_input = IntPtr.Zero;
 IntPtr d_output = IntPtr.Zero;
 try
@@ -525,6 +530,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerCopyAsyncTwoGroupsKernel();
 IntPtr hfunc = s_hfunc_CopyAsyncTwoGroupsKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "CopyAsyncKernels.CopyAsyncTwoGroupsKernel");
 try
 {
 void** kernelParams = stackalloc void*[2];
