@@ -4492,12 +4492,12 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-int __gsharp_stackalloc_1[4];
-int* __gsharp_id_1_p = __gsharp_stackalloc_zero(__gsharp_stackalloc_1);
+int __gsharp_stack___gsharp_id_1_p[4]{};
+int* __gsharp_id_1_p = __gsharp_stack___gsharp_id_1_p;
 __gsharp_id_1_p[1]=5;
 __gsharp_id_0_output[0]=__gsharp_id_1_p[0]+__gsharp_id_1_p[1];
-int __gsharp_stackalloc_2[2];
-int* __gsharp_id_2_q = (__gsharp_stackalloc_2[0]=6,__gsharp_stackalloc_2[1]=7,__gsharp_stackalloc_span(__gsharp_stackalloc_2));
+int __gsharp_stack___gsharp_id_2_q[2]={ 6, 7 };
+int* __gsharp_id_2_q = __gsharp_stack___gsharp_id_2_q;
 __gsharp_id_0_output[1]=__gsharp_id_2_q[0]+__gsharp_id_2_q[1];
 __gsharp_state=-1;
 return;
