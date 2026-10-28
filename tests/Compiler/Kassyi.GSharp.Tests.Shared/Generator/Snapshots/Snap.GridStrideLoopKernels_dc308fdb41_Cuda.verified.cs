@@ -130,6 +130,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerCountVisitsKernel();
 IntPtr hfunc = s_hfunc_CountVisitsKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "GridStrideLoopKernels.CountVisitsKernel");
 IntPtr d_visits = IntPtr.Zero;
 try
 {
@@ -187,6 +188,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerCountVisitsKernel();
 IntPtr hfunc = s_hfunc_CountVisitsKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "GridStrideLoopKernels.CountVisitsKernel");
 try
 {
 void** kernelParams = stackalloc void*[2];
@@ -252,6 +254,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerCountVisitsWithContextKernel();
 IntPtr hfunc = s_hfunc_CountVisitsWithContextKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "GridStrideLoopKernels.CountVisitsWithContextKernel");
 IntPtr d_visits = IntPtr.Zero;
 try
 {
@@ -309,6 +312,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerCountVisitsWithContextKernel();
 IntPtr hfunc = s_hfunc_CountVisitsWithContextKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "GridStrideLoopKernels.CountVisitsWithContextKernel");
 try
 {
 void** kernelParams = stackalloc void*[2];
@@ -383,6 +387,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerCountReadOnceKernel();
 IntPtr hfunc = s_hfunc_CountReadOnceKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "GridStrideLoopKernels.CountReadOnceKernel");
 IntPtr d_length = IntPtr.Zero;
 IntPtr d_output = IntPtr.Zero;
 try
@@ -465,6 +470,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerCountReadOnceKernel();
 IntPtr hfunc = s_hfunc_CountReadOnceKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "GridStrideLoopKernels.CountReadOnceKernel");
 try
 {
 void** kernelParams = stackalloc void*[2];
@@ -538,6 +544,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerCountCallOnceKernel();
 IntPtr hfunc = s_hfunc_CountCallOnceKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "GridStrideLoopKernels.CountCallOnceKernel");
 IntPtr d_calls = IntPtr.Zero;
 IntPtr d_visits = IntPtr.Zero;
 try
@@ -622,6 +629,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerCountCallOnceKernel();
 IntPtr hfunc = s_hfunc_CountCallOnceKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "GridStrideLoopKernels.CountCallOnceKernel");
 try
 {
 void** kernelParams = stackalloc void*[3];
