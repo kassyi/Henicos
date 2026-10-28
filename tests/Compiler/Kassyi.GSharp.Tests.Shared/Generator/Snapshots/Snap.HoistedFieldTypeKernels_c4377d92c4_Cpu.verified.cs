@@ -271,7 +271,7 @@ return;
 case 1:
 __gsharp_switch_1_state_1:
 {
-__gsharp_ctx->__gsharp_warp_temp_0=__gsharp_warp_shuffle_read_down_sync(__gsharp_root,0xffffffff,__gsharp_ctx->__gsharp_id_5_val,16);
+__gsharp_ctx->__gsharp_warp_temp_0=__gsharp_warp_shuffle_read_down_sync(__gsharp_root,0xffffffff,__gsharp_ctx->__gsharp_id_5_val,16,32,""HoistedFieldTypeKernels.cs(32,16)"");
 __gsharp_ctx->__gsharp_id_5_val+=__gsharp_ctx->__gsharp_warp_temp_0;
 __gsharp_warp_exchange_assign(__gsharp_ctx->__gsharp_id_5_val);
 __gsharp_state=2;
@@ -280,7 +280,7 @@ return;
 case 2:
 __gsharp_switch_1_state_2:
 {
-__gsharp_ctx->__gsharp_warp_temp_1=__gsharp_warp_shuffle_read_down_sync(__gsharp_root,0xffffffff,__gsharp_ctx->__gsharp_id_5_val,8);
+__gsharp_ctx->__gsharp_warp_temp_1=__gsharp_warp_shuffle_read_down_sync(__gsharp_root,0xffffffff,__gsharp_ctx->__gsharp_id_5_val,8,32,""HoistedFieldTypeKernels.cs(33,16)"");
 __gsharp_ctx->__gsharp_id_5_val+=__gsharp_ctx->__gsharp_warp_temp_1;
 __gsharp_warp_exchange_assign(__gsharp_ctx->__gsharp_id_5_val);
 __gsharp_state=3;
@@ -289,7 +289,7 @@ return;
 case 3:
 __gsharp_switch_1_state_3:
 {
-__gsharp_ctx->__gsharp_warp_temp_2=__gsharp_warp_shuffle_read_down_sync(__gsharp_root,0xffffffff,__gsharp_ctx->__gsharp_id_5_val,4);
+__gsharp_ctx->__gsharp_warp_temp_2=__gsharp_warp_shuffle_read_down_sync(__gsharp_root,0xffffffff,__gsharp_ctx->__gsharp_id_5_val,4,32,""HoistedFieldTypeKernels.cs(34,16)"");
 __gsharp_ctx->__gsharp_id_5_val+=__gsharp_ctx->__gsharp_warp_temp_2;
 __gsharp_warp_exchange_assign(__gsharp_ctx->__gsharp_id_5_val);
 __gsharp_state=4;
@@ -298,7 +298,7 @@ return;
 case 4:
 __gsharp_switch_1_state_4:
 {
-__gsharp_ctx->__gsharp_warp_temp_3=__gsharp_warp_shuffle_read_down_sync(__gsharp_root,0xffffffff,__gsharp_ctx->__gsharp_id_5_val,2);
+__gsharp_ctx->__gsharp_warp_temp_3=__gsharp_warp_shuffle_read_down_sync(__gsharp_root,0xffffffff,__gsharp_ctx->__gsharp_id_5_val,2,32,""HoistedFieldTypeKernels.cs(35,16)"");
 __gsharp_ctx->__gsharp_id_5_val+=__gsharp_ctx->__gsharp_warp_temp_3;
 __gsharp_warp_exchange_assign(__gsharp_ctx->__gsharp_id_5_val);
 __gsharp_state=5;
@@ -307,7 +307,7 @@ return;
 case 5:
 __gsharp_switch_1_state_5:
 {
-auto __gsharp_warp_temp_4 = __gsharp_warp_shuffle_read_down_sync(__gsharp_root,0xffffffff,__gsharp_ctx->__gsharp_id_5_val,1);
+auto __gsharp_warp_temp_4 = __gsharp_warp_shuffle_read_down_sync(__gsharp_root,0xffffffff,__gsharp_ctx->__gsharp_id_5_val,1,32,""HoistedFieldTypeKernels.cs(36,16)"");
 __gsharp_ctx->__gsharp_id_5_val+=__gsharp_warp_temp_4;
 if(__gsharp_ctx->__gsharp_id_3_lane==0)
 {
@@ -396,7 +396,7 @@ return;
 
 case 1:
 {
-__gsharp_ctx.__gsharp_warp_temp_0 = __gsharp_warp_shuffle_read_down_sync(__gsharp_ctx, 0xffffffff, __gsharp_ctx.val, 16);
+__gsharp_ctx.__gsharp_warp_temp_0 = __gsharp_warp_shuffle_read_down_sync(__gsharp_ctx, 0xffffffff, __gsharp_ctx.val, 16, 32, "HoistedFieldTypeKernels.cs(32,16)");
 __gsharp_ctx.val += __gsharp_ctx.__gsharp_warp_temp_0;
 __gsharp_warp_exchange_assign(__gsharp_ctx.val);
 __gsharp_ctx.__gsharp_state = 2;
@@ -405,7 +405,7 @@ return;
 
 case 2:
 {
-__gsharp_ctx.__gsharp_warp_temp_1 = __gsharp_warp_shuffle_read_down_sync(__gsharp_ctx, 0xffffffff, __gsharp_ctx.val, 8);
+__gsharp_ctx.__gsharp_warp_temp_1 = __gsharp_warp_shuffle_read_down_sync(__gsharp_ctx, 0xffffffff, __gsharp_ctx.val, 8, 32, "HoistedFieldTypeKernels.cs(33,16)");
 __gsharp_ctx.val += __gsharp_ctx.__gsharp_warp_temp_1;
 __gsharp_warp_exchange_assign(__gsharp_ctx.val);
 __gsharp_ctx.__gsharp_state = 3;
@@ -414,7 +414,7 @@ return;
 
 case 3:
 {
-__gsharp_ctx.__gsharp_warp_temp_2 = __gsharp_warp_shuffle_read_down_sync(__gsharp_ctx, 0xffffffff, __gsharp_ctx.val, 4);
+__gsharp_ctx.__gsharp_warp_temp_2 = __gsharp_warp_shuffle_read_down_sync(__gsharp_ctx, 0xffffffff, __gsharp_ctx.val, 4, 32, "HoistedFieldTypeKernels.cs(34,16)");
 __gsharp_ctx.val += __gsharp_ctx.__gsharp_warp_temp_2;
 __gsharp_warp_exchange_assign(__gsharp_ctx.val);
 __gsharp_ctx.__gsharp_state = 4;
@@ -423,7 +423,7 @@ return;
 
 case 4:
 {
-__gsharp_ctx.__gsharp_warp_temp_3 = __gsharp_warp_shuffle_read_down_sync(__gsharp_ctx, 0xffffffff, __gsharp_ctx.val, 2);
+__gsharp_ctx.__gsharp_warp_temp_3 = __gsharp_warp_shuffle_read_down_sync(__gsharp_ctx, 0xffffffff, __gsharp_ctx.val, 2, 32, "HoistedFieldTypeKernels.cs(35,16)");
 __gsharp_ctx.val += __gsharp_ctx.__gsharp_warp_temp_3;
 __gsharp_warp_exchange_assign(__gsharp_ctx.val);
 __gsharp_ctx.__gsharp_state = 5;
@@ -432,7 +432,7 @@ return;
 
 case 5:
 {
-var __gsharp_warp_temp_4 = __gsharp_warp_shuffle_read_down_sync(__gsharp_ctx, 0xffffffff, __gsharp_ctx.val, 1);
+var __gsharp_warp_temp_4 = __gsharp_warp_shuffle_read_down_sync(__gsharp_ctx, 0xffffffff, __gsharp_ctx.val, 1, 32, "HoistedFieldTypeKernels.cs(36,16)");
 __gsharp_ctx.val += __gsharp_warp_temp_4;
 if (__gsharp_ctx.lane == 0)
 {

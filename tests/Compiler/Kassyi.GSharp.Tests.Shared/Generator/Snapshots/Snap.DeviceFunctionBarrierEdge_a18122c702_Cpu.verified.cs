@@ -133,7 +133,7 @@ return false;
 case 1:
 __gsharp_switch_1_state_1:
 {
-auto __gsharp_warp_temp_0 = __gsharp_warp_shuffle_read_xor_sync(__gsharp_root,4294967295U,__gsharp_id_1_value,1);
+auto __gsharp_warp_temp_0 = __gsharp_warp_shuffle_read_xor_sync(__gsharp_root,4294967295U,__gsharp_id_1_value,1,32,""DeviceFunctionBarrierEdgeCaseKernels.cs(92,16)"");
 *__gsharp_result = __gsharp_warp_temp_0;
 __gsharp_state = 0;return true;
 __gsharp_state = 0;return true;
@@ -162,7 +162,7 @@ return false;
 case 1:
 __gsharp_switch_1_state_1:
 {
-auto __gsharp_warp_temp_0 = __gsharp_warp_shuffle_read_sync(__gsharp_root,4294967295U,__gsharp_id_0_value,0);
+auto __gsharp_warp_temp_0 = __gsharp_warp_shuffle_read_sync(__gsharp_root,4294967295U,__gsharp_id_0_value,0,32,""DeviceFunctionBarrierEdgeCaseKernels.cs(123,25)"");
 int __gsharp_id_1_broadcast = __gsharp_warp_temp_0;
 *__gsharp_result = __gsharp_id_1_broadcast;
 __gsharp_state = 0;return true;
@@ -192,7 +192,7 @@ return false;
 case 1:
 __gsharp_switch_1_state_1:
 {
-auto __gsharp_warp_temp_0 = __gsharp_warp_shuffle_read_up_sync(__gsharp_root,4294967295U,__gsharp_id_0_value,1u);
+auto __gsharp_warp_temp_0 = __gsharp_warp_shuffle_read_up_sync(__gsharp_root,4294967295U,__gsharp_id_0_value,1u,32,""DeviceFunctionBarrierEdgeCaseKernels.cs(170,59)"");
 *__gsharp_result = __gsharp_warp_temp_0;
 __gsharp_state = 0;return true;
 __gsharp_state = 0;return true;
@@ -221,7 +221,7 @@ return false;
 case 1:
 __gsharp_switch_1_state_1:
 {
-auto __gsharp_warp_temp_0 = __gsharp_warp_shuffle_read_sync(__gsharp_root,4294967295U,__gsharp_id_1_value,0);
+auto __gsharp_warp_temp_0 = __gsharp_warp_shuffle_read_sync(__gsharp_root,4294967295U,__gsharp_id_1_value,0,32,""DeviceFunctionBarrierEdgeCaseKernels.cs(174,33)"");
 __gsharp_id_0_output[threadIdx.x]=__gsharp_warp_temp_0;
 __gsharp_state = 0;return true;
 }
@@ -447,7 +447,7 @@ return false;
 
 case 1:
 {
-var __gsharp_warp_temp_0 = __gsharp_warp_shuffle_read_xor_sync(__gsharp_ctx, global::Kassyi.GSharp.Tests.Shared.Syntax.DeviceFunctionBarrierEdgeCaseKernels.FullMask, value, 1);
+var __gsharp_warp_temp_0 = __gsharp_warp_shuffle_read_xor_sync(__gsharp_ctx, global::Kassyi.GSharp.Tests.Shared.Syntax.DeviceFunctionBarrierEdgeCaseKernels.FullMask, value, 1, 32, "DeviceFunctionBarrierEdgeCaseKernels.cs(92,16)");
 {
 __gsharp_result = __gsharp_warp_temp_0;
 __gsharp_ctx.__gsharp_state = 0;
@@ -476,7 +476,7 @@ return false;
 
 case 1:
 {
-var __gsharp_warp_temp_0 = __gsharp_warp_shuffle_read_sync(__gsharp_ctx, global::Kassyi.GSharp.Tests.Shared.Syntax.DeviceFunctionBarrierEdgeCaseKernels.FullMask, value, 0);
+var __gsharp_warp_temp_0 = __gsharp_warp_shuffle_read_sync(__gsharp_ctx, global::Kassyi.GSharp.Tests.Shared.Syntax.DeviceFunctionBarrierEdgeCaseKernels.FullMask, value, 0, 32, "DeviceFunctionBarrierEdgeCaseKernels.cs(123,25)");
 int broadcast = __gsharp_warp_temp_0;
 {
 __gsharp_result = broadcast;
@@ -506,7 +506,7 @@ return false;
 
 case 1:
 {
-var __gsharp_warp_temp_0 = __gsharp_warp_shuffle_read_up_sync(__gsharp_ctx, global::Kassyi.GSharp.Tests.Shared.Syntax.DeviceFunctionBarrierEdgeCaseKernels.FullMask, value, 1u);
+var __gsharp_warp_temp_0 = __gsharp_warp_shuffle_read_up_sync(__gsharp_ctx, global::Kassyi.GSharp.Tests.Shared.Syntax.DeviceFunctionBarrierEdgeCaseKernels.FullMask, value, 1u, 32, "DeviceFunctionBarrierEdgeCaseKernels.cs(170,59)");
 {
 __gsharp_result = __gsharp_warp_temp_0;
 __gsharp_ctx.__gsharp_state = 0;
@@ -535,7 +535,7 @@ return false;
 
 case 1:
 {
-var __gsharp_warp_temp_0 = __gsharp_warp_shuffle_read_sync(__gsharp_ctx, global::Kassyi.GSharp.Tests.Shared.Syntax.DeviceFunctionBarrierEdgeCaseKernels.FullMask, value, 0);
+var __gsharp_warp_temp_0 = __gsharp_warp_shuffle_read_sync(__gsharp_ctx, global::Kassyi.GSharp.Tests.Shared.Syntax.DeviceFunctionBarrierEdgeCaseKernels.FullMask, value, 0, 32, "DeviceFunctionBarrierEdgeCaseKernels.cs(174,33)");
 output[global::Kassyi.GSharp.Core.ThreadIndex.X] = __gsharp_warp_temp_0;
 {
 __gsharp_ctx.__gsharp_state = 0;

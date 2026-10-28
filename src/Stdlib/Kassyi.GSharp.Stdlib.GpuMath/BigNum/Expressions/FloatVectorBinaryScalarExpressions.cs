@@ -1,9 +1,20 @@
 namespace Kassyi.GSharp.Stdlib.GpuMath.BigNum.Expressions;
 
-internal readonly record struct FloatVectorScalarOperands(
-    GpuBigFloatArray Vector,
-    GpuFloatOperand Scalar,
-    GpuBigFloatArray Destination);
+internal readonly ref struct FloatVectorScalarOperands
+{
+    public FloatVectorScalarOperands(GpuBigFloatArrayView vector, GpuFloatOperand scalar, GpuBigFloatArrayView destination)
+    {
+        Vector = vector;
+        Scalar = scalar;
+        Destination = destination;
+    }
+
+    public GpuBigFloatArrayView Vector { get; }
+
+    public GpuFloatOperand Scalar { get; }
+
+    public GpuBigFloatArrayView Destination { get; }
+}
 
 internal abstract class FloatVectorBinaryScalarExpressionBase(
     [TakesOwnership] IGpuBigFloatVectorExpression vector,
@@ -15,35 +26,23 @@ internal abstract class FloatVectorBinaryScalarExpressionBase(
     public int Length => vector.Length;
     public int WordsPerElement { get; } = wordsPerElement;
 
-    private GpuBigFloatArray _result;
-    private bool _allocated;
+    // The result buffers, lent until the next evaluation or Dispose; a caller's target is never kept (design 4.6)
+    private readonly VectorResultCache _cache = new();
 
     protected uint BlockDimX => (uint)Math.Min(1024, WordsPerElement);
 
-    public GpuBigFloatArray Evaluate(
+    public GpuBigFloatArrayView Evaluate(
         GpuWorkspace workspace,
         int elementOffset = 0,
         int? elementCount = null,
-        GpuBigFloatArray? targetResult = null)
+        GpuBigFloatArrayView targetResult = default)
     {
         var evalCount = elementCount ?? (Length - elementOffset);
+        // The target is checked before the child runs, so that a rejected target evaluates nothing
+        var destination = VectorResultCache.HasTarget(targetResult)
+            ? VectorResultCache.TargetFloat(targetResult, evalCount, WordsPerElement)
+            : _cache.Float(workspace, evalCount, WordsPerElement);
         var vecResult = vector.Evaluate(workspace, elementOffset, evalCount);
-
-        GpuBigFloatArray destination;
-        if (targetResult != null)
-        {
-            destination = targetResult.Value;
-        }
-        else
-        {
-            if (!_allocated)
-            {
-                _result = new GpuBigFloatArray(workspace, evalCount, WordsPerElement);
-                _allocated = true;
-            }
-
-            destination = _result;
-        }
 
         var operands = new FloatVectorScalarOperands(vecResult, scalar, destination);
         // An empty vector launches nothing: a grid of 0 blocks is an invalid launch.
@@ -99,13 +98,15 @@ internal abstract class FloatVectorBinaryScalarExpressionBase(
 
     public void Dispose()
     {
-        if (_allocated)
+        // A cache release that throws (a failed capture refuses the clear) does not skip the children
+        try
         {
-            _result.Dispose();
-            _allocated = false;
+            _cache.Dispose();
         }
-
-        vector.Dispose();
+        finally
+        {
+            vector.Dispose();
+        }
     }
 }
 

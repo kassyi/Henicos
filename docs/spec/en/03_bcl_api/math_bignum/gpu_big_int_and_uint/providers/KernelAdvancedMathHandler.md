@@ -29,6 +29,7 @@ public sealed class KernelAdvancedMathHandler : IGpuAdvancedMathProvider
 | [ModInverse(GpuWorkspace, GpuBigUInt, GpuBigUInt, GpuBigUInt)](#modinversegpuworkspace-gpubiguint-gpubiguint-gpubiguint) | Computes the modular multiplicative inverse via `GpuBigIntGcdKernels.ExecuteExtendedBinaryGcdMacroKernel` (for odd moduli) or `ModInverseHostLoopController` (for even moduli). |
 | [InverseSqrtMega(GpuWorkspace, GpuBigUInt, GpuBigUInt, Int32, Int32, Int32)](#inversesqrtmegagpuworkspace-gpubiguint-gpubiguint-int32-int32-int32) | Launches `GpuBigIntSqrtKernels.InverseSqrtNewtonRaphsonMegaKernel` to compute the fixed-point inverse square root on the GPU. |
 | [ReciprocalMega(GpuWorkspace, GpuBigUInt, GpuBigUInt, Int32, Int32, Int32, Int32, Int32)](#reciprocalmegagpuworkspace-gpubiguint-gpubiguint-int32-int32-int32-int32-int32) | Launches `GpuBigIntDivRemKernels.ReciprocalNewtonRaphsonMegaKernel` to compute the fixed-point reciprocal on the GPU. |
+| [SqrtFloorCorrection(GpuWorkspace, GpuBigUInt, GpuBigUInt, GpuBigUInt, GpuBigUInt, GpuBigUInt)](#sqrtfloorcorrectiongpuworkspace-gpubiguint-gpubiguint-gpubiguint-gpubiguint-gpubiguint) | Launches `GpuBigIntSqrtKernels.SqrtFloorCorrectionKernel` to correct an integer square root estimate to $\lfloor\sqrt{a}\rfloor$ on the GPU. |
 | [ExecuteModPowNttMegaKernel(GpuWorkspace, GpuBigUInt, GpuBigUInt, GpuBigUInt, GpuBigUInt, GpuBigUInt, Int32, Int32, UInt32, UInt32)](#executemodpownttmegakernelgpuworkspace-gpubiguint-gpubiguint-gpubiguint-gpubiguint-gpubiguint-int32-int32-uint32-uint32) | Executes chunked `GpuBigIntDivRemKernels.ModPowNttMegaKernel` launches with per-chunk stream synchronization to prevent TDR watchdog timeouts. |
 
 ## Mul(GpuWorkspace, GpuBigUInt, UInt32, GpuBigUInt)
@@ -230,6 +231,45 @@ The target fixed-point fractional bit precision.
 
 `CudaException`<br>
 Thrown when cooperative kernel launch or NTT scratch allocation fails.
+
+## SqrtFloorCorrection(GpuWorkspace, GpuBigUInt, GpuBigUInt, GpuBigUInt, GpuBigUInt, GpuBigUInt)
+
+Launches `GpuBigIntSqrtKernels.SqrtFloorCorrectionKernel` (one block, no host synchronization): it computes the slack $a - r^2$ and moves `r` by at most 4 steps to $\lfloor\sqrt{a}\rfloor$. When 4 steps do not suffice, the next read of the stream throws `InvalidOperationException`.
+
+```csharp
+public void SqrtFloorCorrection(
+    GpuWorkspace workspace,
+    GpuBigUInt operand,
+    GpuBigUInt rootSquared,
+    GpuBigUInt root,
+    GpuBigUInt slack,
+    GpuBigUInt trial);
+```
+
+#### Parameters
+
+`workspace` _GpuWorkspace_<br>
+The GPU workspace.
+
+`operand` _GpuBigUInt_<br>
+The operand `a`.
+
+`rootSquared` _GpuBigUInt_<br>
+The square $r^2$ of the estimate, with as many words as `operand`.
+
+`root` _GpuBigUInt_<br>
+The estimate `r`; receives $\lfloor\sqrt{a}\rfloor$. $2r + 1$ must fit in `operand.NumWords + 1` words.
+
+`slack` _GpuBigUInt_<br>
+Scratch of at least `operand.NumWords + 1` words.
+
+`trial` _GpuBigUInt_<br>
+Scratch of at least `operand.NumWords + 1` words.
+
+#### Exceptions
+
+`ArgumentException`  
+`rootSquared`, `slack` or `trial` is shorter than stated above.
 
 ## ExecuteModPowNttMegaKernel(GpuWorkspace, GpuBigUInt, GpuBigUInt, GpuBigUInt, GpuBigUInt, GpuBigUInt, Int32, Int32, UInt32, UInt32)
 

@@ -24,6 +24,13 @@ public interface IGpuBigFloatArithmetic
     /// <param name="value">The input floating-point operand to normalize.</param>
     /// <param name="resultSig">The memory handle where the normalized significand limbs will be written.</param>
     /// <returns>A <see cref="GpuFloatResult"/> containing the normalized exponent and sign flag.</returns>
+    /// <exception cref="OverflowException">The exponent of the normalized value, the input exponent minus the shift that
+    /// moves the top bit to the top of <paramref name="resultSig"/>, does not fit in <see cref="int"/>.</exception>
+    /// <remarks>
+    /// The result is the value rounded toward zero to <c>p = 32·n</c> bits for the <c>n</c> words of
+    /// <paramref name="resultSig"/>: a significand of at most <c>p</c> bits is kept exactly, a wider one loses its low
+    /// bits. Zero gives a zero significand, exponent 0 and a positive sign.
+    /// </remarks>
     GpuFloatResult Normalize(
         ref GpuBigIntExecutionContext context,
         in GpuFloatOperand value,
@@ -37,6 +44,12 @@ public interface IGpuBigFloatArithmetic
     /// <param name="right">The right floating-point operand.</param>
     /// <param name="resultSig">The memory handle where the resulting significand will be stored.</param>
     /// <returns>A <see cref="GpuFloatResult"/> containing the resulting exponent and sign flag.</returns>
+    /// <exception cref="OverflowException">The exponent of the result does not fit in <see cref="int"/>.</exception>
+    /// <remarks>
+    /// The result is the exact sum rounded toward zero to <c>p = 32·n</c> bits for the <c>n</c> words of
+    /// <paramref name="resultSig"/>, with the significand normalized to its top bit; a sum of zero is positive zero. It
+    /// depends only on the values of the operands, and the GPU and the CPU provider return the same bits.
+    /// </remarks>
     GpuFloatResult Add(
         ref GpuBigIntExecutionContext context,
         in GpuFloatOperand left,
@@ -51,6 +64,13 @@ public interface IGpuBigFloatArithmetic
     /// <param name="right">The right floating-point operand.</param>
     /// <param name="resultSig">The memory handle where the product significand will be stored.</param>
     /// <returns>A <see cref="GpuFloatResult"/> containing the resulting exponent and sign flag.</returns>
+    /// <exception cref="OverflowException">The exponent of the result does not fit in <see cref="int"/>. A result
+    /// whose exponent fits is returned even when the sum of the operand exponents does not.</exception>
+    /// <remarks>
+    /// The result is the exact product rounded toward zero to <c>p = 32·n</c> bits for the <c>n</c> words of
+    /// <paramref name="resultSig"/>, with the significand normalized to its top bit. It depends only on the values of the
+    /// operands, and the GPU and the CPU provider return the same bits.
+    /// </remarks>
     GpuFloatResult Multiply(
         ref GpuBigIntExecutionContext context,
         in GpuFloatOperand left,
@@ -65,6 +85,14 @@ public interface IGpuBigFloatArithmetic
     /// <param name="right">The divisor floating-point operand.</param>
     /// <param name="resultSig">The memory handle where the quotient significand will be stored.</param>
     /// <returns>A <see cref="GpuFloatResult"/> containing the resulting exponent and sign flag.</returns>
+    /// <exception cref="DivideByZeroException"><paramref name="right"/> is zero.</exception>
+    /// <exception cref="OverflowException">The exponent of the result does not fit in <see cref="int"/>.</exception>
+    /// <remarks>
+    /// The result is the exact quotient rounded toward zero to <c>p = 32·n</c> bits for the <c>n</c> words of
+    /// <paramref name="resultSig"/>, with the significand normalized to its top bit, whatever the word counts of the
+    /// operands (a divisor much wider than the result included). It depends only on the values of the operands, and the
+    /// GPU and the CPU provider return the same bits.
+    /// </remarks>
     GpuFloatResult Divide(
         ref GpuBigIntExecutionContext context,
         in GpuFloatOperand left,
@@ -78,6 +106,15 @@ public interface IGpuBigFloatArithmetic
     /// <param name="value">The input floating-point operand.</param>
     /// <param name="resultSig">The memory handle where the reciprocal significand will be stored.</param>
     /// <returns>A <see cref="GpuFloatResult"/> containing the resulting exponent and sign flag.</returns>
+    /// <exception cref="DivideByZeroException"><paramref name="value"/> is zero.</exception>
+    /// <exception cref="OverflowException">The exponent of the result does not fit in <see cref="int"/> (the
+    /// reciprocal of a value with an exponent near <see cref="int.MaxValue"/>).</exception>
+    /// <remarks>
+    /// The result is the exact reciprocal rounded toward zero to <c>p = 32·n</c> bits for the <c>n</c> words of
+    /// <paramref name="resultSig"/>, with the significand normalized to its top bit, whatever the word count of
+    /// <paramref name="value"/> (a significand of 1, whose reciprocal is a power of two, included). It depends only on
+    /// the value, not on its leading zero words, and the GPU and the CPU provider return the same bits.
+    /// </remarks>
     GpuFloatResult Reciprocal(
         ref GpuBigIntExecutionContext context,
         in GpuFloatOperand value,
@@ -90,6 +127,15 @@ public interface IGpuBigFloatArithmetic
     /// <param name="value">The input radicand floating-point operand.</param>
     /// <param name="resultSig">The memory handle where the square root significand will be stored.</param>
     /// <returns>A <see cref="GpuFloatResult"/> containing the resulting exponent and sign flag.</returns>
+    /// <exception cref="InvalidOperationException"><paramref name="value"/> is negative.</exception>
+    /// <remarks>
+    /// The result is the exact square root rounded toward zero to <c>p = 32·n</c> bits for the <c>n</c> words of
+    /// <paramref name="resultSig"/>, with the significand normalized to its top bit, so an exact root (<c>sqrt(9) = 3</c>)
+    /// is returned exactly; the square root of zero is positive zero. It depends only on the value, and the GPU and the
+    /// CPU provider return the same bits. The GPU provider takes the integer square root of the value scaled to
+    /// <c>2p</c> bits: an inverse square root gives an estimate that is the root or one less, and a correction on the
+    /// device makes it exact.
+    /// </remarks>
     GpuFloatResult Sqrt(
         ref GpuBigIntExecutionContext context,
         in GpuFloatOperand value,
@@ -102,6 +148,16 @@ public interface IGpuBigFloatArithmetic
     /// <param name="value">The input floating-point operand.</param>
     /// <param name="resultSig">The memory handle where the reciprocal square root significand will be stored.</param>
     /// <returns>A <see cref="GpuFloatResult"/> containing the resulting exponent and sign flag.</returns>
+    /// <exception cref="InvalidOperationException"><paramref name="value"/> is negative.</exception>
+    /// <exception cref="DivideByZeroException"><paramref name="value"/> is zero.</exception>
+    /// <remarks>
+    /// The result is the exact inverse square root rounded toward zero to <c>p = 32·n</c> bits for the <c>n</c> words of
+    /// <paramref name="resultSig"/>, with the significand normalized to its top bit, so an exact one
+    /// (<c>1 / sqrt(4) = 1/2</c>) is returned exactly. It depends only on the value, and the GPU and the CPU provider return
+    /// the same bits. The GPU provider takes <c>floor(2^B / sqrt(A))</c> of the value scaled to whole words with an even
+    /// exponent, never truncated (a smaller radicand would round the result up), with enough margin words for
+    /// <c>p + 1</c> bits, and truncates it.
+    /// </remarks>
     GpuFloatResult Rsqrt(
         ref GpuBigIntExecutionContext context,
         in GpuFloatOperand value,

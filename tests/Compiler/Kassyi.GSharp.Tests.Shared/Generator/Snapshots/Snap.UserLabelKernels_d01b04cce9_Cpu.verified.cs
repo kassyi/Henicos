@@ -69,7 +69,7 @@ return;
 case 2:
 __gsharp_switch_1_state_2:
 {
-auto __gsharp_warp_temp_0 = __gsharp_warp_shuffle_read_down_sync(__gsharp_root,4294967295U,__gsharp_ctx->__gsharp_id_2_v,1);
+auto __gsharp_warp_temp_0 = __gsharp_warp_shuffle_read_down_sync(__gsharp_root,4294967295U,__gsharp_ctx->__gsharp_id_2_v,1,32,""UserLabelKernels.cs(37,16)"");
 __gsharp_ctx->__gsharp_id_3_acc+=__gsharp_warp_temp_0;
 __gsharp_ctx->__gsharp_id_2_v+=1;
 if(++__gsharp_ctx->__gsharp_id_4_k<3)
@@ -161,7 +161,7 @@ return;
 
 case 2:
 {
-var __gsharp_warp_temp_0 = __gsharp_warp_shuffle_read_down_sync(__gsharp_ctx, global::Kassyi.GSharp.Tests.Shared.Syntax.UserLabelKernels.FullMask, __gsharp_ctx.v, 1);
+var __gsharp_warp_temp_0 = __gsharp_warp_shuffle_read_down_sync(__gsharp_ctx, global::Kassyi.GSharp.Tests.Shared.Syntax.UserLabelKernels.FullMask, __gsharp_ctx.v, 1, 32, "UserLabelKernels.cs(37,16)");
 __gsharp_ctx.acc += __gsharp_warp_temp_0;
 __gsharp_ctx.v += 1;
 if (++__gsharp_ctx.k < 3)

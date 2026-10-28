@@ -51,7 +51,7 @@ public ref struct BigIntExpressionVisitor(GpuBigIntExecutionContext context, Sco
     public ScopedBigIntMemory VisitGpuUIntBigInteger(GpuBigUInt node)
     {
         // Wrapper without transferring ownership
-        return new ScopedBigIntMemory(null, node.Handle.Borrow());
+        return new ScopedBigIntMemory(node.Handle.Borrow());
     }
 
     private ScopedBigIntMemory GetResultBuffer(int numWords, bool isRoot)
