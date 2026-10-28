@@ -795,6 +795,15 @@
     "isEnabledByDefault": true
   },
   {
+    "name": "WarpActiveMaskInDivergentCode",
+    "id": "GSH0101",
+    "title": "Warp.ActiveMask() under a thread-dependent condition differs on the CPU",
+    "messageFormat": "Warp.ActiveMask() in '{0}' is reached only by the threads for which a condition that depends on the thread holds. The CPU dialects return every lane of the warp that exists in the block, while the GPU returns only the lanes that reach the call together, so the CPU result may differ from the GPU result.",
+    "category": "GSharpTranspiler",
+    "defaultSeverity": "Warning",
+    "isEnabledByDefault": true
+  },
+  {
     "name": "StackLinqChainTooDeep",
     "id": "SLQ0001",
     "title": "StackLinq method chain is too deep",

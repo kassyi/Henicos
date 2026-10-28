@@ -135,6 +135,11 @@ internal static class SyncIntrinsicClassifier
         };
     }
 
+    /// <summary>Whether <paramref name="method"/> is <c>Warp.ActiveMask()</c> of <c>Kassyi.GSharp.Core</c>.</summary>
+    public static bool IsWarpActiveMask(IMethodSymbol method) =>
+        method is { Name: TypeConstants.ActiveMaskMethod, ContainingType: { Name: TypeConstants.WarpType, ContainingType: null } type } &&
+        type.ContainingNamespace.IsCoreNamespace();
+
     /// <summary>Whether reading <paramref name="symbol"/> gives a value that may differ between the threads of a block (<c>ThreadIndex.X</c>, <c>.Y</c>, <c>.Z</c>).</summary>
     public static bool IsThreadVariantSource(ISymbol symbol) =>
         symbol is IPropertySymbol { ContainingType: { Name: TypeConstants.ThreadIndexType, ContainingType: null } type } &&
@@ -177,7 +182,7 @@ internal static class SyncIntrinsicClassifier
         "ShuffleXorSync" => Shuffle(WarpShuffleKind.Xor),
         "BallotSync" or "AllSync" or "AnySync" or "ReduceAddSync" or "ReduceMinSync" or "ReduceMaxSync"
             or "ReduceAndSync" or "ReduceOrSync" or "ReduceXorSync" => s_warpCollective,
-        "ActiveMask" => s_variantValue,
+        TypeConstants.ActiveMaskMethod => s_variantValue,
         _ => default
     };
 

@@ -216,16 +216,19 @@ public class PartialWarpShuffleTests : TranspilerTestBase
 
     private static IEnumerable<int> Lanes(int first, int count) => Enumerable.Range(first, count);
 
-    // The native path and CUDA: the managed Warp.ActiveMask has no implementation yet and throws GpuOnlyException
+    // The managed path computes the same lanes as the native prelude (#789)
     [SkippableTheory]
     [Scenario(TestScenario.Boundary)]
-    [InlineData(9)]
-    [InlineData(33)]
-    public void Test_ActiveMask_PartialWarp_HasOnlyLanesThatExist(int threads)
+    [InlineData(9, false)]
+    [InlineData(33, false)]
+    [InlineData(9, true)]
+    [InlineData(33, true)]
+    [InlineData(64, true)]
+    public void Test_ActiveMask_PartialWarp_HasOnlyLanesThatExist(int threads, bool forceManaged)
     {
         var result = new uint[threads];
 
-        Run(forceManaged: false, () => PartialWarpShuffleKernels.LaunchActiveMaskKernel(result, blockDimX: (uint)threads));
+        Run(forceManaged, () => PartialWarpShuffleKernels.LaunchActiveMaskKernel(result, blockDimX: (uint)threads));
 
         Assert.Equal(
             Enumerable.Range(0, threads).Select(t => t < threads / 32 * 32 ? 0xFFFFFFFFu : (1u << (threads % 32)) - 1u),

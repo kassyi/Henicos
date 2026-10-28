@@ -2198,7 +2198,7 @@ switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-result[global::Kassyi.GSharp.Core.ThreadIndex.X] = global::Kassyi.GSharp.Core.Warp.ActiveMask();
+result[global::Kassyi.GSharp.Core.ThreadIndex.X] = global::Kassyi.GSharp.Core.ManagedGpuContext.ActiveMask();
 __gsharp_ctx.__gsharp_state = -1;
 return;
 }
