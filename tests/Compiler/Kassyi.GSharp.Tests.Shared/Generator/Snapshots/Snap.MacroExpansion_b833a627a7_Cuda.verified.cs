@@ -127,6 +127,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerTestMacroKernel();
 IntPtr hfunc = s_hfunc_TestMacroKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "MacroExpansionKernel.TestMacroKernel");
 IntPtr d_data = IntPtr.Zero;
 try
 {
@@ -184,6 +185,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerTestMacroKernel();
 IntPtr hfunc = s_hfunc_TestMacroKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "MacroExpansionKernel.TestMacroKernel");
 try
 {
 void** kernelParams = stackalloc void*[2];

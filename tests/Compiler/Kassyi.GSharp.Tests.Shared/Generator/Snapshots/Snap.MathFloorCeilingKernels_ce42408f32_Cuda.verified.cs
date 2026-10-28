@@ -146,6 +146,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerFloorCeilingKernel();
 IntPtr hfunc = s_hfunc_FloorCeilingKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "MathFloorCeilingKernels.FloorCeilingKernel");
 IntPtr d_doubleInputs = IntPtr.Zero;
 IntPtr d_doubleFloor = IntPtr.Zero;
 IntPtr d_doubleCeiling = IntPtr.Zero;
@@ -336,6 +337,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerFloorCeilingKernel();
 IntPtr hfunc = s_hfunc_FloorCeilingKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "MathFloorCeilingKernels.FloorCeilingKernel");
 try
 {
 void** kernelParams = stackalloc void*[6];
@@ -445,6 +447,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerPowKernel();
 IntPtr hfunc = s_hfunc_PowKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "MathFloorCeilingKernels.PowKernel");
 IntPtr d_doubleBases = IntPtr.Zero;
 IntPtr d_doubleExponents = IntPtr.Zero;
 IntPtr d_doubleResults = IntPtr.Zero;
@@ -635,6 +638,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerPowKernel();
 IntPtr hfunc = s_hfunc_PowKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "MathFloorCeilingKernels.PowKernel");
 try
 {
 void** kernelParams = stackalloc void*[6];
@@ -732,6 +736,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerRoundKernel();
 IntPtr hfunc = s_hfunc_RoundKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "MathFloorCeilingKernels.RoundKernel");
 IntPtr d_doubleInputs = IntPtr.Zero;
 IntPtr d_doubleResults = IntPtr.Zero;
 IntPtr d_floatInputs = IntPtr.Zero;
@@ -868,6 +873,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerRoundKernel();
 IntPtr hfunc = s_hfunc_RoundKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "MathFloorCeilingKernels.RoundKernel");
 try
 {
 void** kernelParams = stackalloc void*[4];

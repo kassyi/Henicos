@@ -151,6 +151,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerAtomicArithmeticKernel();
 IntPtr hfunc = s_hfunc_AtomicArithmeticKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "AtomicIntrinsicsKernels.AtomicArithmeticKernel");
 IntPtr d_intState = IntPtr.Zero;
 IntPtr d_uintState = IntPtr.Zero;
 IntPtr d_ulongState = IntPtr.Zero;
@@ -287,6 +288,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerAtomicArithmeticKernel();
 IntPtr hfunc = s_hfunc_AtomicArithmeticKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "AtomicIntrinsicsKernels.AtomicArithmeticKernel");
 try
 {
 void** kernelParams = stackalloc void*[4];
@@ -355,6 +357,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerAtomicIncDecWrapKernel();
 IntPtr hfunc = s_hfunc_AtomicIncDecWrapKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "AtomicIntrinsicsKernels.AtomicIncDecWrapKernel");
 IntPtr d_state = IntPtr.Zero;
 try
 {
@@ -412,6 +415,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerAtomicIncDecWrapKernel();
 IntPtr hfunc = s_hfunc_AtomicIncDecWrapKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "AtomicIntrinsicsKernels.AtomicIncDecWrapKernel");
 try
 {
 void** kernelParams = stackalloc void*[2];
@@ -466,6 +470,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerAtomicFloatAddStressKernel();
 IntPtr hfunc = s_hfunc_AtomicFloatAddStressKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "AtomicIntrinsicsKernels.AtomicFloatAddStressKernel");
 IntPtr d_globalSum = IntPtr.Zero;
 try
 {
@@ -521,6 +526,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerAtomicFloatAddStressKernel();
 IntPtr hfunc = s_hfunc_AtomicFloatAddStressKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "AtomicIntrinsicsKernels.AtomicFloatAddStressKernel");
 try
 {
 void** kernelParams = stackalloc void*[1];
@@ -573,6 +579,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerAtomicRefParameterKernel();
 IntPtr hfunc = s_hfunc_AtomicRefParameterKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "AtomicIntrinsicsKernels.AtomicRefParameterKernel");
 IntPtr d_counter = IntPtr.Zero;
 try
 {
@@ -628,6 +635,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerAtomicRefParameterKernel();
 IntPtr hfunc = s_hfunc_AtomicRefParameterKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "AtomicIntrinsicsKernels.AtomicRefParameterKernel");
 try
 {
 void** kernelParams = stackalloc void*[1];

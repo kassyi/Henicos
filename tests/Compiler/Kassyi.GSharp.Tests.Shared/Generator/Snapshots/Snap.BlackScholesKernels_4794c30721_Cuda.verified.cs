@@ -420,6 +420,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerBlackScholesKernel();
 IntPtr hfunc = s_hfunc_BlackScholesKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "BlackScholesKernels.BlackScholesKernel");
 System.Collections.Generic.List<IntPtr> ctx_allocatedPtrs = new System.Collections.Generic.List<IntPtr>();
 try
 {
@@ -455,6 +456,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerBlackScholesKernel();
 IntPtr hfunc = s_hfunc_BlackScholesKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "BlackScholesKernels.BlackScholesKernel");
 try
 {
 void** kernelParams = stackalloc void*[1];

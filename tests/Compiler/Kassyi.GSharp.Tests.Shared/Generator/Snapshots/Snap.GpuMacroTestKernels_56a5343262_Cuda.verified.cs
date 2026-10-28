@@ -128,6 +128,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerKernel_MacroTest_FillAndSingle();
 IntPtr hfunc = s_hfunc_Kernel_MacroTest_FillAndSingle!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "GpuMacroTestKernels.Kernel_MacroTest_FillAndSingle");
 IntPtr d_outputBuffer = IntPtr.Zero;
 try
 {
@@ -188,6 +189,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerKernel_MacroTest_FillAndSingle();
 IntPtr hfunc = s_hfunc_Kernel_MacroTest_FillAndSingle!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "GpuMacroTestKernels.Kernel_MacroTest_FillAndSingle");
 try
 {
 void** kernelParams = stackalloc void*[4];

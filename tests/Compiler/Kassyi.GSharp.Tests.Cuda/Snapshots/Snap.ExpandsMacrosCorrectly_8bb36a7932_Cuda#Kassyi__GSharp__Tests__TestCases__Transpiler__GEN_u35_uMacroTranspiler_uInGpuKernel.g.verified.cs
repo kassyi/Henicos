@@ -159,6 +159,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerMyKernel();
 IntPtr hfunc = s_hfunc_MyKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "GEN_35_MacroTranspiler_InGpuKernel.MyKernel");
 try
 {
 void** kernelParams = stackalloc void*[0];
@@ -186,6 +187,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerMyKernel();
 IntPtr hfunc = s_hfunc_MyKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "GEN_35_MacroTranspiler_InGpuKernel.MyKernel");
 try
 {
 void** kernelParams = stackalloc void*[0];

@@ -62,6 +62,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerCopyAndReleaseKernel();
 IntPtr hfunc = s_hfunc_CopyAndReleaseKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "GenericIntrinsicCallKernels.CopyAndReleaseKernel");
 IntPtr d_dst = IntPtr.Zero;
 IntPtr d_src = IntPtr.Zero;
 try
@@ -144,6 +145,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerCopyAndReleaseKernel();
 IntPtr hfunc = s_hfunc_CopyAndReleaseKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "GenericIntrinsicCallKernels.CopyAndReleaseKernel");
 try
 {
 void** kernelParams = stackalloc void*[2];
