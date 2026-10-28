@@ -93,10 +93,10 @@ public class GpuBigFloatRoundingTests : IDisposable
 
     // A 4-word by 4-word product is rounded toward zero to 4 words: RZ_128 of the exact product, and the same bits as
     // Multiply with a 4-word result (it used to keep all 8 words).
-    // mutant: GpuBigFloatExpressionVisitor.cs:100 `Math.Max(left words, right words)` -> `left words + right words` (both
-    // engines: the full product is kept; also MultiplyOperator_IntermediateAboveMax_Fits)
-    // mutant: GpuBigFloatExpressionVisitor.cs:108 `GpuFloatOperand.From(right)` -> `From(right, negate: true)` (both engines:
-    // the sign; also MultiplyOperator_IntermediateAboveMax_Fits)
+    // mutant: GpuBigFloatExpressionVisitor.cs:73 VisitMul `extraWords: 0` -> `extraWords: 4` (both engines: a wider product
+    // is kept; also MultiplyOperator_IntermediateAboveMax_Fits)
+    // mutant: GpuBigFloatExpressionVisitor.cs:73 VisitMul `negateRight: false` -> `negateRight: true` (both engines: the
+    // sign; also MultiplyOperator_IntermediateAboveMax_Fits)
     [SkippableTheory]
     [Scenario(TestScenario.Boundary)]
     [InlineData("Gpu")]

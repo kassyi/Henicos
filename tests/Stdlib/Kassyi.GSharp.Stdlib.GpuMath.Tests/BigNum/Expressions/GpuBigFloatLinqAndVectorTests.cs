@@ -947,7 +947,7 @@ public class GpuBigFloatLinqAndVectorTests : IDisposable
     // An unsigned element-wise difference below zero throws OverflowException when the sequence is evaluated, on the
     // parallel and the sequential enumerable (#629). a = [6, 2], scalar 3, b = [3, 5]: the second element of each
     // difference is negative, the first is not.
-    // mutant: GpuBigFloatExpressionVisitor.cs:74 `if (!left.CanBeNegative && res.IsNegative)` -> `if (false)`
+    // mutant: GpuBigFloatExpressionVisitor.cs:114 `if (!left.CanBeNegative && res.IsNegative)` -> `if (false)`
     [Fact]
     [Category(TestCategory.Unit)]
     [Scenario(TestScenario.SadPath)]
