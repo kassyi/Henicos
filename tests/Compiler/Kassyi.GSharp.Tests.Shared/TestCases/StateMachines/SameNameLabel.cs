@@ -2,8 +2,8 @@ using Kassyi.GSharp.Core;
 
 namespace Kassyi.GSharp.Tests.Shared.TestCases.StateMachines;
 
-// Two labels named done end up in one state once the blocks are flattened; the managed output cannot declare both in one
-// block (CS0140), so labels whose name appears twice always start a state
+// Two labels named done end up in one state once the blocks are flattened. They start no state of their own (a goto
+// reaches each from its own state); the managed output renames them, since C# cannot declare both in one block (CS0140)
 public static class SameNameLabel
 {
     [GpuKernel]

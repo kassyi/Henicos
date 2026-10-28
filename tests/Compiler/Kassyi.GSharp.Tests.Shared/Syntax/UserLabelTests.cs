@@ -57,6 +57,12 @@ public class UserLabelTests : TranspilerTestBase
     [Scenario(TestScenario.Boundary)]
     [InlineData(0)]
     [InlineData(1)]
+    public void Test_SiblingSameLabel_SpanStaysLocal(int flag) => UserLabelScenarios.SiblingSameLabel(s_runNative, flag);
+
+    [SkippableTheory]
+    [Scenario(TestScenario.Boundary)]
+    [InlineData(0)]
+    [InlineData(1)]
     public void Test_CrossLabelInitialized_LocalUsedAfterSplitLabel(int flag) =>
         UserLabelScenarios.CrossLabelInitialized(s_runNative, flag);
 

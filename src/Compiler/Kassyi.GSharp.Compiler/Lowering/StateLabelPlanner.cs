@@ -8,11 +8,13 @@ namespace Kassyi.GSharp.Compiler.Lowering;
 /// before it stay in scope after it, as in Roslyn's async lowering, where only the suspension points start states.
 /// <list type="bullet">
 ///   <item><description>A label that lowering adds (<c>__gsharp_</c>) always starts a state.</description></item>
-///   <item><description>
-///     A label of the user starts one when a <c>goto</c> to it is in another state, or when another label of the same
-///     name exists in the body (the managed C# output would declare both in one block, CS0140).
-///   </description></item>
+///   <item><description>A label of the user starts one when a <c>goto</c> to it is in another state.</description></item>
 /// </list>
+/// Two labels of one name (in sibling scopes that lowering flattened) do not start states for that reason: the states
+/// must split only where a <c>goto</c> needs it, since every other state boundary is a split point (barrier, shuffle,
+/// suspending call) that the analyses of the lowered body rely on. The C++ output names labels by symbol, and the
+/// managed output renames them (<c>ContextLocalRewriter</c>), so they do not collide. Without a semantic model the
+/// labels are keyed by name, two labels of one name share a key, and both start a state as before.
 /// The states are the stretches between the statements that start a state: the labels found so far and the split
 /// points. A new state label can move another <c>goto</c> into another state than its label, so the search repeats until
 /// nothing changes; it ends because the set only grows (at most one round per label, plus one).
@@ -45,11 +47,11 @@ internal static class StateLabelPlanner
             return stateLabels;
         }
 
-        var labelCounts = CountLabelNames(body);
+        var labelCounts = model == null ? CountLabelNames(body) : null;
         foreach (var statement in statements)
         {
             if (statement is LabeledStatementSyntax labeled &&
-                (IsLoweringLabel(labeled) || labelCounts[labeled.Identifier.ValueText] > 1))
+                (IsLoweringLabel(labeled) || labelCounts?[labeled.Identifier.ValueText] > 1))
             {
                 stateLabels.Add(LoweringIdentity.ForDeclaration(labeled, model));
             }

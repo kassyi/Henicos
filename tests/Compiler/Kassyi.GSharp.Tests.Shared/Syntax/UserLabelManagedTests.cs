@@ -60,6 +60,13 @@ public class UserLabelManagedTests : TranspilerTestBase
     [Scenario(TestScenario.Boundary)]
     [InlineData(0)]
     [InlineData(1)]
+    public void Test_Managed_SiblingSameLabel_SpanStaysLocal(int flag) =>
+        UserLabelScenarios.SiblingSameLabel(s_runManaged, flag);
+
+    [Theory]
+    [Scenario(TestScenario.Boundary)]
+    [InlineData(0)]
+    [InlineData(1)]
     public void Test_Managed_CrossLabelInitialized_LocalUsedAfterSplitLabel(int flag) =>
         UserLabelScenarios.CrossLabelInitialized(s_runManaged, flag);
 

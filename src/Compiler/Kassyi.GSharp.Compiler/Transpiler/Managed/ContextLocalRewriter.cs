@@ -3,7 +3,8 @@ namespace Kassyi.GSharp.Compiler.Transpiler;
 /// <summary>
 /// Turns context accesses to ref struct locals back into locals, and renames the accesses to locals that share their
 /// name with another hoisted local (see <see cref="ManagedContextFields"/>). Accesses are matched to declarations by
-/// <see cref="DeclarationKey"/> (symbol and region).
+/// <see cref="DeclarationKey"/> (symbol and region). Labels that share their name with another label of the body are
+/// renamed with their gotos (<c>__gsharp_label_&lt;ordinal&gt;_&lt;name&gt;</c>).
 /// </summary>
 internal sealed class ContextLocalRewriter(
     HashSet<DeclarationKey> unhoistedKeys,
@@ -11,6 +12,72 @@ internal sealed class ContextLocalRewriter(
     SemanticModel semanticModel,
     string kernelName) : CSharpSyntaxRewriter
 {
+    private Dictionary<DeclarationKey, string>? _labelRenames;
+
+    public override SyntaxNode? Visit(SyntaxNode? node)
+    {
+        // The first call visits the whole body
+        if (_labelRenames == null && node != null)
+        {
+            _labelRenames = CreateLabelRenames(node, semanticModel);
+        }
+
+        return base.Visit(node);
+    }
+
+    // [WHY] StateMachineLowerer keeps a label that no goto in another state reaches in its state, and lowering flattens
+    // sibling scopes, so two labels of one name can end up in one block (CS0140) or one inside the other's block
+    // (CS0158). Each label of a repeated name gets its own name; a goto finds its label by symbol (C# labels cannot
+    // shadow each other, so the symbol is the one the source bound).
+    private static Dictionary<DeclarationKey, string> CreateLabelRenames(SyntaxNode body, SemanticModel model)
+    {
+        var counts = new Dictionary<string, int>(StringComparer.Ordinal);
+        foreach (var node in body.DescendantNodesAndSelf())
+        {
+            if (node is LabeledStatementSyntax labeled)
+            {
+                var name = labeled.Identifier.ValueText;
+                counts[name] = counts.TryGetValue(name, out var count) ? count + 1 : 1;
+            }
+        }
+
+        var renames = new Dictionary<DeclarationKey, string>();
+        var ordinals = new Dictionary<string, int>(StringComparer.Ordinal);
+        foreach (var node in body.DescendantNodesAndSelf())
+        {
+            if (node is not LabeledStatementSyntax labeled || counts[labeled.Identifier.ValueText] < 2)
+            {
+                continue;
+            }
+
+            var name = labeled.Identifier.ValueText;
+            var ordinal = ordinals.TryGetValue(name, out var previous) ? previous + 1 : 1;
+            ordinals[name] = ordinal;
+            renames[LoweringIdentity.ForDeclaration(labeled, model)] =
+                $"{GSharpInternalNames.Lowering.ManagedLabelPrefix}{ordinal}_{name}";
+        }
+
+        return renames;
+    }
+
+    public override SyntaxNode? VisitLabeledStatement(LabeledStatementSyntax node)
+    {
+        var visited = (LabeledStatementSyntax?)base.VisitLabeledStatement(node) ?? node;
+        return _labelRenames != null &&
+               _labelRenames.TryGetValue(LoweringIdentity.ForDeclaration(node, semanticModel), out var renamed)
+            ? visited.WithIdentifier(SyntaxFactory.Identifier(renamed).WithTriviaFrom(visited.Identifier))
+            : visited;
+    }
+
+    public override SyntaxNode? VisitGotoStatement(GotoStatementSyntax node)
+    {
+        var visited = (GotoStatementSyntax?)base.VisitGotoStatement(node) ?? node;
+        return node is { RawKind: (int)SyntaxKind.GotoStatement, Expression: IdentifierNameSyntax target } &&
+               _labelRenames != null &&
+               _labelRenames.TryGetValue(LoweringIdentity.ForReference(target, semanticModel), out var renamed)
+            ? visited.WithExpression(SyntaxFactory.IdentifierName(renamed).WithTriviaFrom(target))
+            : visited;
+    }
     /// <summary>
     /// Matches <c>__gsharp_ctx-&gt;X</c>, the context access that <see cref="ContextHoister"/> emits.
     /// </summary>

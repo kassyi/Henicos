@@ -176,6 +176,48 @@ public static partial class UserLabelKernels
         data[tid] = total;
     }
 
+    // Two sibling scopes with a barrier and a label of the same name each, and a stackalloc span used after the label.
+    // The labels start no state, so the span stays a local of its state. [WHY] Only the last scope has a span: a
+    // stackalloc span in a scope that lowering flattens in front of a later barrier is hoisted by the barrier rule, which
+    // the CPU paths cannot do (a separate problem, with or without labels)
+    [GpuKernel]
+    public static void SiblingSameLabelKernel(int[] data, int flag)
+    {
+        int tid = ThreadIndex.X;
+        int acc = data[tid];
+        {
+            Gpu.SyncThreads();
+            int first0 = acc;
+            int first1 = 0;
+            if ((tid & 1) == flag)
+            {
+                acc += first0 + 10;
+                goto done;
+            }
+
+            acc += first1 + 100;
+        done:
+            acc += first0 + 1;
+        }
+
+        {
+            Gpu.SyncThreads();
+            Span<int> second = stackalloc int[2];
+            second[1] = acc;
+            if ((tid & 1) != flag)
+            {
+                acc += second[1] * 2;
+                goto done;
+            }
+
+            acc += 1000;
+        done:
+            acc += second[1] + 2;
+        }
+
+        data[tid] = acc;
+    }
+
     // The shape of CrossLabelWriteKernel with an initialized declaration: the CPU paths hoist extra into the context,
     // CUDA splits the declaration
     [GpuKernel]
