@@ -25,9 +25,7 @@ public ref struct GpuBigFloatExpressionVisitor(GpuWorkspace workspace, IGpuBigFl
     public IGpuBigFloatArithmetic Arithmetic
     {
         get;
-    } = arithmetic ?? (workspace.Engine == GpuExecutionEngine.GSharpAot
-        ? GSharpKernelFloatProvider.Instance
-        : CSharpCpuBigFloatArithmetic.Instance);
+    } = arithmetic ?? GpuWorkspaceArithmetic.FloatArithmetic(workspace);
 
 
     /// <summary>
@@ -104,8 +102,7 @@ public ref struct GpuBigFloatExpressionVisitor(GpuWorkspace workspace, IGpuBigFl
 
         try
         {
-            var execContext = new GpuBigIntExecutionContext(Workspace, Workspace.MemoryManager,
-                new LegacyProviderArithmeticAdapter(), Workspace.Stream);
+            var execContext = GpuWorkspaceArithmetic.CreateContext(Workspace);
             var leftOp = GpuFloatOperand.From(left);
             var rightOp = GpuFloatOperand.From(right, negate: negateRight);
 

@@ -812,7 +812,7 @@ public class GpuBigFloatLinqAndVectorTests : IDisposable
     // to 128 bits (#629). The neighbouring elements do not change.
     // mutant: GpuBigFloatArray.cs:120 `valueWords <= WordsPerElement` -> `true` (SixWordsTopBitOnly, SixWordsTruncated,
     // SixWordsThatFit, SixWordsZero: the wide value is copied as it is, over its neighbour)
-    // mutant: GpuBigFloatArray.cs:141 `exponent = rounded.Exponent` -> `exponent = value.Exponent` (SixWordsTopBitOnly,
+    // mutant: GpuBigFloatArray.cs:138 `exponent = rounded.Exponent` -> `exponent = value.Exponent` (SixWordsTopBitOnly,
     // SixWordsTruncated)
     [Theory]
     [Category(TestCategory.Stdlib)]
@@ -947,7 +947,7 @@ public class GpuBigFloatLinqAndVectorTests : IDisposable
     // An unsigned element-wise difference below zero throws OverflowException when the sequence is evaluated, on the
     // parallel and the sequential enumerable (#629). a = [6, 2], scalar 3, b = [3, 5]: the second element of each
     // difference is negative, the first is not.
-    // mutant: GpuBigFloatExpressionVisitor.cs:114 `if (!left.CanBeNegative && res.IsNegative)` -> `if (false)`
+    // mutant: GpuBigFloatExpressionVisitor.cs:111 `if (!left.CanBeNegative && res.IsNegative)` -> `if (false)`
     [Fact]
     [Category(TestCategory.Unit)]
     [Scenario(TestScenario.SadPath)]

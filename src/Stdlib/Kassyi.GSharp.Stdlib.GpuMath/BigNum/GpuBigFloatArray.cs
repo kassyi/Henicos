@@ -130,12 +130,9 @@ public readonly struct GpuBigFloatArray : IDisposable
         }
         else
         {
-            // Round toward zero to the element width (#629), with the arithmetic the expression visitor picks.
-            var arithmetic = workspace.Engine == GpuExecutionEngine.GSharpAot
-                ? GSharpKernelFloatProvider.Instance
-                : (IGpuBigFloatArithmetic)CSharpCpuBigFloatArithmetic.Instance;
-            var context = new GpuBigIntExecutionContext(workspace, workspace.MemoryManager,
-                new LegacyProviderArithmeticAdapter(), stream);
+            // Round toward zero to the element width (#629), with the arithmetic the operators use.
+            var arithmetic = GpuWorkspaceArithmetic.FloatArithmetic(workspace);
+            var context = GpuWorkspaceArithmetic.CreateContext(workspace);
             var operand = new GpuFloatOperand(value.Significand.Handle, value.Exponent, value.IsNegative);
             var rounded = arithmetic.Normalize(ref context, in operand, destSig.Handle);
             exponent = rounded.Exponent;
