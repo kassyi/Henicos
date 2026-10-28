@@ -11,10 +11,20 @@ const fs = require('fs');
 const path = require('path');
 const { execFileSync } = require('child_process');
 
+// fill: the area gradient (opacity from top to bottom); line: the top edge and the legend swatch.
 const Series = [
-  { key: 'M1', name: 'M1 Wrong Results', light: '#2a78d6', dark: '#3987e5' },
-  { key: 'M2', name: 'M2 Build Failures & Missing Diagnostics', light: '#eb6834', dark: '#d95926' },
-  { key: 'M3', name: 'M3 Unconfirmed Suspicions', light: '#1baf7a', dark: '#199e70' },
+  {
+    key: 'M1', name: 'M1 Wrong Results', opacity: [0.55, 0.15], lineWidth: 2, dash: '',
+    light: { fill: '#e46962', line: '#b3261e' }, dark: { fill: '#f28b82', line: '#ffb4ab' },
+  },
+  {
+    key: 'M2', name: 'M2 Build Failures & Missing Diagnostics', opacity: [0.45, 0.10], lineWidth: 2, dash: '',
+    light: { fill: '#f2b90f', line: '#a45f00' }, dark: { fill: '#fdd663', line: '#ffb951' },
+  },
+  {
+    key: 'M3', name: 'M3 Unconfirmed Suspicions', opacity: [0.25, 0.05], lineWidth: 1.5, dash: '4 2',
+    light: { fill: '#74777f', line: '#74777f' }, dark: { fill: '#c4c6d0', line: '#c4c6d0' },
+  },
 ];
 const DayMs = 24 * 60 * 60 * 1000;
 // Days start at 00:00 JST (UTC+9).
@@ -127,13 +137,12 @@ function renderSvg(days) {
   const delay = i => Math.round(200 + (i / Math.max(days.length - 1, 1)) * 800);
 
   const parts = [];
-  parts.push(`<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif">`);
+  parts.push(`<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" font-family="Roboto,system-ui,-apple-system,'Segoe UI',sans-serif">`);
   parts.push(`<title>Open bugs by milestone (M1-M3), ${formatDate(last.day)}</title>`);
-  const lightVars = Series.map((s, i) => `--s${i}:${s.light};`).join('');
-  const darkVars = Series.map((s, i) => `--s${i}:${s.dark};`).join('');
+  const seriesVars = mode => Series.map((s, i) => `--s${i}f:${s[mode].fill};--s${i}l:${s[mode].line};`).join('');
   parts.push('<style>');
-  parts.push(`svg{--surface:#fcfcfb;--text1:#0b0b0b;--text2:#52514e;--grid:#e4e3df;--opened:#3d3c39;--closed:#9a9892;${lightVars}}`);
-  parts.push(`@media (prefers-color-scheme:dark){svg{--surface:#1a1a19;--text1:#f0efec;--text2:#c3c2b7;--grid:#3a3936;--opened:#e6e5e0;--closed:#7d7b75;${darkVars}}}`);
+  parts.push(`svg{--surface:#fcfcff;--text1:#1a1c1e;--text2:#44474f;--grid:#e1e2e8;--axis:#74777f;--opened:#44474f;--closed:#00897b;${seriesVars('light')}}`);
+  parts.push(`@media (prefers-color-scheme:dark){svg{--surface:#191c1e;--text1:#e2e2e6;--text2:#c4c6d0;--grid:#2e3135;--axis:#8e9099;--opened:#e2e2e6;--closed:#80cbc4;${seriesVars('dark')}}}`);
   parts.push('.t1{fill:var(--text1)}.t2{fill:var(--text2)}');
   parts.push(`.wipe{transform-origin:${plot.left}px 0;animation:wipe 1.4s ${EaseOut} both}`);
   parts.push(`.bar{transform-box:fill-box;animation:grow .7s ${EaseOutBack} both}`);
@@ -144,7 +153,12 @@ function renderSvg(days) {
   parts.push('@keyframes fade{from{opacity:0}to{opacity:1}}');
   parts.push('@media (prefers-reduced-motion:reduce){.wipe,.bar,.fade{animation:none}}');
   parts.push('</style>');
-  parts.push(`<defs><clipPath id="reveal"><rect class="wipe" x="${plot.left}" y="0" width="${plot.right - plot.left}" height="${height}"/></clipPath></defs>`);
+  parts.push('<defs>');
+  parts.push(`<clipPath id="reveal"><rect class="wipe" x="${plot.left}" y="0" width="${plot.right - plot.left}" height="${height}"/></clipPath>`);
+  Series.forEach((s, i) => {
+    parts.push(`<linearGradient id="g${i}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" style="stop-color:var(--s${i}f);stop-opacity:${s.opacity[0]}"/><stop offset="1" style="stop-color:var(--s${i}f);stop-opacity:${s.opacity[1]}"/></linearGradient>`);
+  });
+  parts.push('</defs>');
   parts.push(`<rect width="${width}" height="${height}" rx="8" fill="var(--surface)"/>`);
   parts.push(`<text x="16" y="28" font-size="16" font-weight="600" class="t1">Open bugs by milestone</text>`);
   parts.push(`<text x="${width - 16}" y="28" font-size="12" text-anchor="end" class="t2">updated ${formatDate(last.day)} (JST) · total ${totals[totals.length - 1]}</text>`);
@@ -158,7 +172,7 @@ function renderSvg(days) {
       legendX += 18 + label.length * 6.6 + 20;
     }
   };
-  legend(56, Series.map((s, i) => ({ fill: `var(--s${i})`, label: `${s.name}  ${last.counts[i]}` })));
+  legend(56, Series.map((s, i) => ({ fill: `var(--s${i}l)`, label: `${s.name}  ${last.counts[i]}` })));
   legend(78, [
     { fill: 'var(--opened)', label: `Opened per day (up)  ${last.opened}` },
     { fill: 'var(--closed)', label: `Closed per day (down)  ${last.closed}` },
@@ -175,7 +189,7 @@ function renderSvg(days) {
     parts.push(`<text x="${x(i)}" y="${plot.bottom + 18}" font-size="11" text-anchor="middle" class="t2">${formatDate(days[i].day).slice(5)}</text>`);
   }
 
-  // Stacked areas, revealed from left to right; the surface-colored stroke on each top edge separates the bands.
+  // Stacked areas with a gradient fill, revealed from left to right; a line in the series color marks each top edge.
   parts.push('<g clip-path="url(#reveal)">');
   const lower = days.map(() => 0);
   const labels = [];
@@ -183,8 +197,9 @@ function renderSvg(days) {
     const upper = days.map((d, k) => lower[k] + d.counts[i]);
     const edge = upper.map((v, k) => `${x(k).toFixed(1)},${y(v).toFixed(1)}`);
     const base = lower.map((v, k) => `${x(k).toFixed(1)},${y(v).toFixed(1)}`).reverse();
-    parts.push(`<polygon points="${edge.concat(base).join(' ')}" fill="var(--s${i})"/>`);
-    parts.push(`<polyline points="${edge.join(' ')}" fill="none" stroke="var(--surface)" stroke-width="2"/>`);
+    const dash = s.dash ? ` stroke-dasharray="${s.dash}"` : '';
+    parts.push(`<polygon points="${edge.concat(base).join(' ')}" fill="url(#g${i})"/>`);
+    parts.push(`<polyline points="${edge.join(' ')}" fill="none" stroke="var(--s${i}l)" stroke-width="${s.lineWidth}" stroke-linejoin="round"${dash}/>`);
 
     // Direct label at the right end when the band is tall enough to point at.
     const k = days.length - 1;
@@ -202,13 +217,13 @@ function renderSvg(days) {
     const left = (x(i) - barWidth / 2).toFixed(1);
     const style = `style="animation-delay:${delay(i)}ms"`;
     if (d.opened > 0) {
-      parts.push(`<rect class="bar up" ${style} x="${left}" y="${y(d.opened).toFixed(1)}" width="${barWidth.toFixed(1)}" height="${(y(0) - y(d.opened)).toFixed(1)}" rx="2" fill="var(--opened)" stroke="var(--surface)" stroke-width="2"/>`);
+      parts.push(`<rect class="bar up" ${style} x="${left}" y="${y(d.opened).toFixed(1)}" width="${barWidth.toFixed(1)}" height="${(y(0) - y(d.opened)).toFixed(1)}" rx="2" fill="var(--opened)" stroke="var(--surface)" stroke-width="1.5"/>`);
     }
     if (d.closed > 0) {
-      parts.push(`<rect class="bar down" ${style} x="${left}" y="${y(0).toFixed(1)}" width="${barWidth.toFixed(1)}" height="${(y(-d.closed) - y(0)).toFixed(1)}" rx="2" fill="var(--closed)" stroke="var(--surface)" stroke-width="2"/>`);
+      parts.push(`<rect class="bar down" ${style} x="${left}" y="${y(0).toFixed(1)}" width="${barWidth.toFixed(1)}" height="${(y(-d.closed) - y(0)).toFixed(1)}" rx="2" fill="var(--closed)" fill-opacity="0.55" stroke="var(--surface)" stroke-width="1"/>`);
     }
   });
-  parts.push(`<line x1="${plot.left}" x2="${plot.right}" y1="${y(0)}" y2="${y(0)}" stroke="var(--text2)" stroke-width="1"/>`);
+  parts.push(`<line x1="${plot.left}" x2="${plot.right}" y1="${y(0)}" y2="${y(0)}" stroke="var(--axis)" stroke-width="1.5"/>`);
   parts.push(...labels);
 
   parts.push('</svg>');
