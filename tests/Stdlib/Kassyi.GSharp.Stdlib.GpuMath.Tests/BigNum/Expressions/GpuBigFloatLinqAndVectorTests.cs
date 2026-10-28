@@ -752,7 +752,7 @@ public class GpuBigFloatLinqAndVectorTests : IDisposable
         using var array = new GpuBigFloatArray(_context, 2, 4);
 
         // 1. A 4-word all-ones value, then a 1-word 5: the element reads back as exactly 5.
-        // mutant: GpuBigFloatArray.cs:116 `NumWords < WordsPerElement` -> `>` / negated, L118 ClearMemoryAsync removed
+        // mutant: GpuBigFloatArray.cs:122 `valueWords < WordsPerElement` -> `>` / negated, L124 ClearMemoryAsync removed
         using var allOnes = new GpuBigFloat(
             new GpuBigUInt(_context, [0xFFFFFFFFu, 0xFFFFFFFFu, 0xFFFFFFFFu, 0xFFFFFFFFu]), 0, false);
         using var five = new GpuBigFloat(new GpuBigUInt(_context, [5u]), 3, true);
@@ -765,9 +765,9 @@ public class GpuBigFloatLinqAndVectorTests : IDisposable
         Assert.Equal(3, element0.Exponent);
         Assert.True(element0.IsNegative);
 
-        // 2. A 6-word value into element 0 must not touch element 1.
-        // (What element 0 holds afterwards is #629; only the neighbour is checked here.)
-        // mutant: GpuBigFloatArray.cs:121 `Math.Min` -> `Math.Max` (copies 6 words over element 1)
+        // 2. A 6-word value into element 0 must not touch element 1 (what element 0 holds is checked by
+        // GpuBigFloatArray_SetElement_RoundsWideValuesTowardZero).
+        // mutant: GpuBigFloatArray.cs:120 `valueWords <= WordsPerElement` -> `valueWords <= WordsPerElement + 2` (copies 6 words over element 1)
         using var seven = new GpuBigFloat(new GpuBigUInt(_context, [7u, 0u, 0u, 0u]), -2, false);
         array.SetElement(1, seven);
         using var wide = new GpuBigFloat(new GpuBigUInt(_context, [1u, 2u, 3u, 4u, 5u, 6u]), 0, false);
@@ -777,6 +777,112 @@ public class GpuBigFloatLinqAndVectorTests : IDisposable
         Assert.Equal(new BigInteger(7), element1.Significand.ToBigInteger());
         Assert.Equal(-2, element1.Exponent);
         Assert.False(element1.IsNegative);
+    }
+
+    /// <summary>
+    /// Values stored into a 4-word element (128-bit significand): significand words (little-endian), exponent, sign.
+    /// </summary>
+    private static readonly Dictionary<string, (uint[] Words, int Exponent, bool IsNegative)> s_setElementCases = new()
+    {
+        // 2^31 as a 6-word significand whose only set bit is its top bit (#629: the copy of the low 4 words stored 0).
+        ["SixWordsTopBitOnly"] = ([0u, 0u, 0u, 0u, 0u, 0x8000_0000u], -160, false),
+        // The top two words are zero: the value has 128 bits and must be stored exactly.
+        ["SixWordsThatFit"] = ([0x1234_5678u, 0x9ABC_DEF0u, 0x0FED_CBA9u, 0x8765_4321u, 0u, 0u], 5, false),
+        // Set bits below the top 128 bits are dropped toward zero; the sign is kept.
+        ["SixWordsTruncated"] = ([0xDEAD_BEEFu, 0x1234_5678u, 1u, 2u, 3u, 0x4000_0000u], -7, true),
+        // Zero in 6 words is stored as positive zero.
+        ["SixWordsZero"] = ([0u, 0u, 0u, 0u, 0u, 0u], 9, true),
+        // A value of 4 words or fewer is copied as it is.
+        ["TwoWords"] = ([7u, 9u], -3, false),
+        ["FourWords"] = ([1u, 2u, 3u, 4u], 11, true),
+    };
+
+    public static TheoryData<string> SetElementCases()
+    {
+        var data = new TheoryData<string>();
+        foreach (var name in s_setElementCases.Keys)
+        {
+            data.Add(name);
+        }
+
+        return data;
+    }
+
+    // The element holds RZ_128(v): v itself when its significand has at most 128 bits, otherwise v rounded toward zero
+    // to 128 bits (#629). The neighbouring elements do not change.
+    // mutant: GpuBigFloatArray.cs:120 `valueWords <= WordsPerElement` -> `true` (SixWordsTopBitOnly, SixWordsTruncated,
+    // SixWordsThatFit, SixWordsZero: the wide value is copied as it is, over its neighbour)
+    // mutant: GpuBigFloatArray.cs:138 `exponent = rounded.Exponent` -> `exponent = value.Exponent` (SixWordsTopBitOnly,
+    // SixWordsTruncated)
+    [Theory]
+    [Category(TestCategory.Stdlib)]
+    [Scenario(TestScenario.Boundary)]
+    [MemberData(nameof(SetElementCases))]
+    public void GpuBigFloatArray_SetElement_RoundsWideValuesTowardZero(string caseName)
+    {
+        var (words, exponent, isNegative) = s_setElementCases[caseName];
+        using var array = new GpuBigFloatArray(_context, 3, 4);
+        using var before = new GpuBigFloat(new GpuBigUInt(_context, [11u, 0u, 0u, 0u]), -1, false);
+        using var after = new GpuBigFloat(new GpuBigUInt(_context, [13u, 0u, 0u, 0u]), 2, true);
+        array.SetElement(0, before);
+        array.SetElement(2, after);
+
+        using var value = new GpuBigFloat(new GpuBigUInt(_context, words), exponent, isNegative);
+        array.SetElement(1, value);
+
+        // The expected value comes from the input words: RZ_128(|v|) (|v| itself when it fits) with the sign of v.
+        var (rzSig, rzExp) = BigFloatReference.RoundTowardZero(
+            FromWords(words) << Math.Max(exponent, 0), BigInteger.One << Math.Max(-exponent, 0), 128);
+        var expectedNum = rzExp >= 0 ? rzSig << (int)rzExp : rzSig;
+        var expectedDen = rzExp >= 0 ? BigInteger.One : BigInteger.One << (int)-rzExp;
+
+        // GetElement returns views of the array's memory; they are not disposed.
+        AssertElement(array.GetElement(1), isNegative ? -expectedNum : expectedNum, expectedDen, $"{caseName} element 1");
+        AssertElement(array.GetElement(0), 11, 2, $"{caseName} element 0");
+        AssertElement(array.GetElement(2), -52, 1, $"{caseName} element 2");
+    }
+
+    // Rounding a wide value moves its top bit to the top of the element and raises the exponent by the same shift; an
+    // exponent above int.MaxValue throws instead of wrapping around (#661 §4.10).
+    // mutant: GSharpKernelFloatProvider.cs:70 `checked((int)(exponent - shift))` -> `unchecked(...)`
+    [Fact]
+    [Category(TestCategory.Stdlib)]
+    [Scenario(TestScenario.SadPath)]
+    public void GpuBigFloatArray_SetElement_ExponentOutOfRange_Throws()
+    {
+        using var array = new GpuBigFloatArray(_context, 1, 4);
+
+        // 6 words with the top bit set: the shift is 128 - 192 = -64, so the exponent would be int.MaxValue - 10 + 64.
+        using var wide = new GpuBigFloat(
+            new GpuBigUInt(_context, [1u, 0u, 0u, 0u, 0u, 0x8000_0000u]), int.MaxValue - 10, false);
+        Assert.Throws<OverflowException>(() => array.SetElement(0, wide));
+
+        // The largest exponent that fits is stored: int.MaxValue - 64 + 64.
+        using var fits = new GpuBigFloat(
+            new GpuBigUInt(_context, [1u, 0u, 0u, 0u, 0u, 0x8000_0000u]), int.MaxValue - 64, false);
+        array.SetElement(0, fits);
+        Assert.Equal(int.MaxValue, array.GetElement(0).Exponent);
+    }
+
+    // The element equals num / den exactly, and zero is stored as positive zero.
+    private static void AssertElement(scoped GpuBigFloatView element, BigInteger num, BigInteger den, string label)
+    {
+        var sig = element.Significand.ToBigInteger();
+        Assert.True(
+            BigFloatReference.EqualsRational(sig, element.Exponent, element.IsNegative, num, den)
+            && (!element.IsNegative || !sig.IsZero),
+            $"{label}: expected {num}/{den}, actual {BigFloatReference.Describe(sig, element.Exponent, element.IsNegative)}");
+    }
+
+    private static BigInteger FromWords(uint[] words)
+    {
+        var value = BigInteger.Zero;
+        for (var i = words.Length - 1; i >= 0; i--)
+        {
+            value = (value << 32) | words[i];
+        }
+
+        return value;
     }
 
     private static void AssertExactSum<T>(string operation, BigInteger num, BigInteger den, T actual)
@@ -837,4 +943,23 @@ public class GpuBigFloatLinqAndVectorTests : IDisposable
     [Category(TestCategory.Unit)]
     [Scenario(TestScenario.HappyPath)]
     public void GpuBigUFloat_SelectZip_AllOverloads() => AssertSelectZipOverloads<GpuBigUFloat>();
+
+    // An unsigned element-wise difference below zero throws OverflowException when the sequence is evaluated, on the
+    // parallel and the sequential enumerable (#629). a = [6, 2], scalar 3, b = [3, 5]: the second element of each
+    // difference is negative, the first is not.
+    // mutant: GpuBigFloatExpressionVisitor.cs:111 `if (!left.CanBeNegative && res.IsNegative)` -> `if (false)`
+    [Fact]
+    [Category(TestCategory.Unit)]
+    [Scenario(TestScenario.SadPath)]
+    public void GpuBigUFloat_SelectZipSubtract_NegativeElement_ThrowsOverflow()
+    {
+        var a = new[] { CreateNumber<GpuBigUFloat>(6), CreateNumber<GpuBigUFloat>(2) };
+        var b = new[] { CreateNumber<GpuBigUFloat>(3), CreateNumber<GpuBigUFloat>(5) };
+        var scalar = CreateNumber<GpuBigUFloat>(3);
+
+        Assert.Throws<OverflowException>(() => a.AsStackEnumerable().AsParallel().SelectSubtract(scalar).Sum());
+        Assert.Throws<OverflowException>(() => a.AsStackEnumerable().SelectSubtract(scalar).Sum());
+        Assert.Throws<OverflowException>(() => a.AsStackEnumerable().AsParallel().ZipSubtract(b.AsStackEnumerable().AsParallel()).Sum());
+        Assert.Throws<OverflowException>(() => a.AsStackEnumerable().ZipSubtract(b.AsStackEnumerable()).Sum());
+    }
 }

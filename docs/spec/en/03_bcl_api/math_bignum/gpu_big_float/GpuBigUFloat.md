@@ -280,6 +280,11 @@ The value to subtract.
 _GpuBigUFloat_<br>
 The difference of this instance minus `other`.
 
+#### Exceptions
+
+`OverflowException`  
+Thrown when `other` is greater than this instance: an unsigned value has no negative difference, as with a `checked` `uint` subtraction.
+
 ## Operators
 
 | Name | Description |
@@ -287,7 +292,7 @@ The difference of this instance minus `other`.
 | `Addition(GpuBigUFloat, GpuBigUFloat)` | Creates a deferred `BinaryExpr<GpuBigUFloat, AddOp>` expression representing the addition of two unsigned floating-point values. |
 | `Subtraction(GpuBigUFloat, GpuBigUFloat)` | Creates a deferred `BinaryExpr<GpuBigUFloat, SubOp>` expression representing the subtraction of two unsigned floating-point values. |
 | `Implicit(BinaryExpr<GpuBigUFloat, AddOp> to GpuBigUFloat)` | Implicitly evaluates and converts an addition expression to an evaluated `GpuBigUFloat` instance. |
-| `Implicit(BinaryExpr<GpuBigUFloat, SubOp> to GpuBigUFloat)` | Implicitly evaluates and converts a subtraction expression to an evaluated `GpuBigUFloat` instance. |
+| `Implicit(BinaryExpr<GpuBigUFloat, SubOp> to GpuBigUFloat)` | Implicitly evaluates and converts a subtraction expression to an evaluated `GpuBigUFloat` instance. Throws `OverflowException` when the subtrahend is greater than the minuend. |
 | `Equality(GpuBigUFloat, GpuBigUFloat)` | Determines whether two specified `GpuBigUFloat` instances have the same value on the GPU. |
 | `Inequality(GpuBigUFloat, GpuBigUFloat)` | Determines whether two specified `GpuBigUFloat` instances have different values on the GPU. |
 | `LessThan(GpuBigUFloat, GpuBigUFloat)` | Determines whether one specified `GpuBigUFloat` is less than another specified `GpuBigUFloat`. |
