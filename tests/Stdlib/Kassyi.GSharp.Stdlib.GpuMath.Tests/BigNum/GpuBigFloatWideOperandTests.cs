@@ -62,7 +62,7 @@ public class GpuBigFloatWideOperandTests : IDisposable
     // PowerOfFourPlus1*, HardDecrement* stay one too large)
     // mutant: GSharpKernelFloatProvider.cs:451 `ReadWord(...) == 0` -> always true (Random*, HardSkip*, At*: the check
     // count)
-    // mutant: GSharpKernelFloatProvider.cs:446 `WordOffset + words - truncatedWords` -> `... - 1` (j one word short in
+    // mutant: GSharpKernelFloatProvider.cs:446 `Slice(words - truncatedWords` -> `... - 1` (j one word short in
     // the slice: every truncated case)
     // mutant: GSharpKernelFloatProvider.cs:450 `16L * (words - truncatedWords)` -> `16L * (words - truncatedWords - 1)`
     // (j one word short in B: every truncated case)
@@ -222,7 +222,7 @@ public class GpuBigFloatWideOperandTests : IDisposable
     }
 
     // The default threshold, and a negative one is rejected (the setting keeps its value).
-    // mutant: GpuWorkspace.cs:132 `ThrowIfNegative(value)` removed
+    // mutant: GpuWorkspace.cs:140 `ThrowIfNegative(value)` removed
     [SkippableFact]
     [Scenario(TestScenario.SadPath)]
     public void WideOperandThreshold_DefaultAndNegative()
