@@ -156,6 +156,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerKernel_LifecycleUpdate();
 IntPtr hfunc = s_hfunc_Kernel_LifecycleUpdate!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "ObjectLifecycleKernels.Kernel_LifecycleUpdate");
 IntPtr d_states = IntPtr.Zero;
 try
 {
@@ -215,6 +216,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerKernel_LifecycleUpdate();
 IntPtr hfunc = s_hfunc_Kernel_LifecycleUpdate!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "ObjectLifecycleKernels.Kernel_LifecycleUpdate");
 try
 {
 void** kernelParams = stackalloc void*[3];
@@ -301,6 +303,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerKernel_FactoryInitialization();
 IntPtr hfunc = s_hfunc_Kernel_FactoryInitialization!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "ObjectLifecycleKernels.Kernel_FactoryInitialization");
 IntPtr d_inputValues = IntPtr.Zero;
 IntPtr d_outputStates = IntPtr.Zero;
 try
@@ -385,6 +388,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerKernel_FactoryInitialization();
 IntPtr hfunc = s_hfunc_Kernel_FactoryInitialization!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "ObjectLifecycleKernels.Kernel_FactoryInitialization");
 try
 {
 void** kernelParams = stackalloc void*[3];

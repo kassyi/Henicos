@@ -211,6 +211,7 @@ public static class GpuKernelLoader
     public static void Shutdown()
     {
         s_functionCache.Clear();
+        DynamicSharedMemoryOptIn.Clear();
 
         if (!s_isGlobalInit)
         {

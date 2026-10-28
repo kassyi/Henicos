@@ -139,6 +139,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerSortIntKernel();
 IntPtr hfunc = s_hfunc_SortIntKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "SpanSortKernels.SortIntKernel");
 IntPtr d_data = IntPtr.Zero;
 try
 {
@@ -194,6 +195,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerSortIntKernel();
 IntPtr hfunc = s_hfunc_SortIntKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "SpanSortKernels.SortIntKernel");
 try
 {
 void** kernelParams = stackalloc void*[1];
@@ -246,6 +248,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerSortLongKernel();
 IntPtr hfunc = s_hfunc_SortLongKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "SpanSortKernels.SortLongKernel");
 IntPtr d_data = IntPtr.Zero;
 try
 {
@@ -301,6 +304,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerSortLongKernel();
 IntPtr hfunc = s_hfunc_SortLongKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "SpanSortKernels.SortLongKernel");
 try
 {
 void** kernelParams = stackalloc void*[1];
@@ -353,6 +357,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerSortUIntKernel();
 IntPtr hfunc = s_hfunc_SortUIntKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "SpanSortKernels.SortUIntKernel");
 IntPtr d_data = IntPtr.Zero;
 try
 {
@@ -408,6 +413,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerSortUIntKernel();
 IntPtr hfunc = s_hfunc_SortUIntKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "SpanSortKernels.SortUIntKernel");
 try
 {
 void** kernelParams = stackalloc void*[1];
@@ -460,6 +466,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerSortCharKernel();
 IntPtr hfunc = s_hfunc_SortCharKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "SpanSortKernels.SortCharKernel");
 IntPtr d_data = IntPtr.Zero;
 try
 {
@@ -515,6 +522,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerSortCharKernel();
 IntPtr hfunc = s_hfunc_SortCharKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "SpanSortKernels.SortCharKernel");
 try
 {
 void** kernelParams = stackalloc void*[1];
@@ -567,6 +575,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerSortEnumKernel();
 IntPtr hfunc = s_hfunc_SortEnumKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "SpanSortKernels.SortEnumKernel");
 IntPtr d_data = IntPtr.Zero;
 try
 {
@@ -622,6 +631,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerSortEnumKernel();
 IntPtr hfunc = s_hfunc_SortEnumKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "SpanSortKernels.SortEnumKernel");
 try
 {
 void** kernelParams = stackalloc void*[1];
@@ -674,6 +684,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerSortFloatKernel();
 IntPtr hfunc = s_hfunc_SortFloatKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "SpanSortKernels.SortFloatKernel");
 IntPtr d_data = IntPtr.Zero;
 try
 {
@@ -729,6 +740,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerSortFloatKernel();
 IntPtr hfunc = s_hfunc_SortFloatKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "SpanSortKernels.SortFloatKernel");
 try
 {
 void** kernelParams = stackalloc void*[1];
@@ -781,6 +793,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerSortDoubleKernel();
 IntPtr hfunc = s_hfunc_SortDoubleKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "SpanSortKernels.SortDoubleKernel");
 IntPtr d_data = IntPtr.Zero;
 try
 {
@@ -836,6 +849,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerSortDoubleKernel();
 IntPtr hfunc = s_hfunc_SortDoubleKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "SpanSortKernels.SortDoubleKernel");
 try
 {
 void** kernelParams = stackalloc void*[1];
@@ -898,6 +912,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerSortSegmentsKernel();
 IntPtr hfunc = s_hfunc_SortSegmentsKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "SpanSortKernels.SortSegmentsKernel");
 IntPtr d_data = IntPtr.Zero;
 try
 {
@@ -953,6 +968,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerSortSegmentsKernel();
 IntPtr hfunc = s_hfunc_SortSegmentsKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "SpanSortKernels.SortSegmentsKernel");
 try
 {
 void** kernelParams = stackalloc void*[1];
@@ -1027,6 +1043,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerSortComparerKernel();
 IntPtr hfunc = s_hfunc_SortComparerKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "SpanSortKernels.SortComparerKernel");
 IntPtr d_data = IntPtr.Zero;
 try
 {
@@ -1084,6 +1101,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerSortComparerKernel();
 IntPtr hfunc = s_hfunc_SortComparerKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "SpanSortKernels.SortComparerKernel");
 try
 {
 void** kernelParams = stackalloc void*[2];
@@ -1155,6 +1173,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerSortDescendingKernel();
 IntPtr hfunc = s_hfunc_SortDescendingKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "SpanSortKernels.SortDescendingKernel");
 IntPtr d_data = IntPtr.Zero;
 try
 {
@@ -1210,6 +1229,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerSortDescendingKernel();
 IntPtr hfunc = s_hfunc_SortDescendingKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "SpanSortKernels.SortDescendingKernel");
 try
 {
 void** kernelParams = stackalloc void*[1];
@@ -1265,6 +1285,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerSortComparisonKernel();
 IntPtr hfunc = s_hfunc_SortComparisonKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "SpanSortKernels.SortComparisonKernel");
 IntPtr d_data = IntPtr.Zero;
 try
 {
@@ -1322,6 +1343,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerSortComparisonKernel();
 IntPtr hfunc = s_hfunc_SortComparisonKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "SpanSortKernels.SortComparisonKernel");
 try
 {
 void** kernelParams = stackalloc void*[2];
@@ -1376,6 +1398,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerSortMethodGroupKernel();
 IntPtr hfunc = s_hfunc_SortMethodGroupKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "SpanSortKernels.SortMethodGroupKernel");
 IntPtr d_data = IntPtr.Zero;
 try
 {
@@ -1431,6 +1454,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerSortMethodGroupKernel();
 IntPtr hfunc = s_hfunc_SortMethodGroupKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "SpanSortKernels.SortMethodGroupKernel");
 try
 {
 void** kernelParams = stackalloc void*[1];
@@ -1483,6 +1507,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerSortNullComparerKernel();
 IntPtr hfunc = s_hfunc_SortNullComparerKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "SpanSortKernels.SortNullComparerKernel");
 IntPtr d_data = IntPtr.Zero;
 try
 {
@@ -1538,6 +1563,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerSortNullComparerKernel();
 IntPtr hfunc = s_hfunc_SortNullComparerKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "SpanSortKernels.SortNullComparerKernel");
 try
 {
 void** kernelParams = stackalloc void*[1];
@@ -1611,6 +1637,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerSortComparableKernel();
 IntPtr hfunc = s_hfunc_SortComparableKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "SpanSortKernels.SortComparableKernel");
 IntPtr d_data = IntPtr.Zero;
 try
 {
@@ -1666,6 +1693,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerSortComparableKernel();
 IntPtr hfunc = s_hfunc_SortComparableKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "SpanSortKernels.SortComparableKernel");
 try
 {
 void** kernelParams = stackalloc void*[1];
@@ -1721,6 +1749,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerSortPairsKernel();
 IntPtr hfunc = s_hfunc_SortPairsKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "SpanSortKernels.SortPairsKernel");
 IntPtr d_keys = IntPtr.Zero;
 IntPtr d_items = IntPtr.Zero;
 try
@@ -1803,6 +1832,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerSortPairsKernel();
 IntPtr hfunc = s_hfunc_SortPairsKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "SpanSortKernels.SortPairsKernel");
 try
 {
 void** kernelParams = stackalloc void*[2];
@@ -1863,6 +1893,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerSortPairsFloatKernel();
 IntPtr hfunc = s_hfunc_SortPairsFloatKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "SpanSortKernels.SortPairsFloatKernel");
 IntPtr d_keys = IntPtr.Zero;
 IntPtr d_items = IntPtr.Zero;
 try
@@ -1945,6 +1976,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerSortPairsFloatKernel();
 IntPtr hfunc = s_hfunc_SortPairsFloatKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "SpanSortKernels.SortPairsFloatKernel");
 try
 {
 void** kernelParams = stackalloc void*[2];
@@ -2027,6 +2059,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerSortPairsComparerKernel();
 IntPtr hfunc = s_hfunc_SortPairsComparerKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "SpanSortKernels.SortPairsComparerKernel");
 IntPtr d_keys = IntPtr.Zero;
 IntPtr d_items = IntPtr.Zero;
 try
@@ -2111,6 +2144,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerSortPairsComparerKernel();
 IntPtr hfunc = s_hfunc_SortPairsComparerKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "SpanSortKernels.SortPairsComparerKernel");
 try
 {
 void** kernelParams = stackalloc void*[3];
@@ -2176,6 +2210,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerSortPairsComparisonKernel();
 IntPtr hfunc = s_hfunc_SortPairsComparisonKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "SpanSortKernels.SortPairsComparisonKernel");
 IntPtr d_keys = IntPtr.Zero;
 IntPtr d_items = IntPtr.Zero;
 try
@@ -2260,6 +2295,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerSortPairsComparisonKernel();
 IntPtr hfunc = s_hfunc_SortPairsComparisonKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "SpanSortKernels.SortPairsComparisonKernel");
 try
 {
 void** kernelParams = stackalloc void*[3];
@@ -2343,6 +2379,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerSortPairsComparableKernel();
 IntPtr hfunc = s_hfunc_SortPairsComparableKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "SpanSortKernels.SortPairsComparableKernel");
 IntPtr d_keys = IntPtr.Zero;
 IntPtr d_items = IntPtr.Zero;
 try
@@ -2425,6 +2462,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerSortPairsComparableKernel();
 IntPtr hfunc = s_hfunc_SortPairsComparableKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "SpanSortKernels.SortPairsComparableKernel");
 try
 {
 void** kernelParams = stackalloc void*[2];
@@ -2499,6 +2537,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerSortBogusComparerKernel();
 IntPtr hfunc = s_hfunc_SortBogusComparerKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "SpanSortKernels.SortBogusComparerKernel");
 IntPtr d_data = IntPtr.Zero;
 try
 {
@@ -2554,6 +2593,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerSortBogusComparerKernel();
 IntPtr hfunc = s_hfunc_SortBogusComparerKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "SpanSortKernels.SortBogusComparerKernel");
 try
 {
 void** kernelParams = stackalloc void*[1];
@@ -2628,6 +2668,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerSortPairsInconsistentKernel();
 IntPtr hfunc = s_hfunc_SortPairsInconsistentKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "SpanSortKernels.SortPairsInconsistentKernel");
 IntPtr d_keys = IntPtr.Zero;
 IntPtr d_items = IntPtr.Zero;
 try
@@ -2710,6 +2751,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerSortPairsInconsistentKernel();
 IntPtr hfunc = s_hfunc_SortPairsInconsistentKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "SpanSortKernels.SortPairsInconsistentKernel");
 try
 {
 void** kernelParams = stackalloc void*[2];
@@ -2780,6 +2822,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerSortTrappingComparisonKernel();
 IntPtr hfunc = s_hfunc_SortTrappingComparisonKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "SpanSortKernels.SortTrappingComparisonKernel");
 IntPtr d_data = IntPtr.Zero;
 IntPtr d_table = IntPtr.Zero;
 try
@@ -2862,6 +2905,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerSortTrappingComparisonKernel();
 IntPtr hfunc = s_hfunc_SortTrappingComparisonKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "SpanSortKernels.SortTrappingComparisonKernel");
 try
 {
 void** kernelParams = stackalloc void*[2];

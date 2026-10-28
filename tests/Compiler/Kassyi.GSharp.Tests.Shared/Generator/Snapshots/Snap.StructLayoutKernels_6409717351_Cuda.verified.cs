@@ -132,6 +132,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerModifyStructLayoutKernel();
 IntPtr hfunc = s_hfunc_ModifyStructLayoutKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "StructLayoutKernels.ModifyStructLayoutKernel");
 IntPtr d_data = IntPtr.Zero;
 try
 {
@@ -187,6 +188,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerModifyStructLayoutKernel();
 IntPtr hfunc = s_hfunc_ModifyStructLayoutKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "StructLayoutKernels.ModifyStructLayoutKernel");
 try
 {
 void** kernelParams = stackalloc void*[1];
@@ -284,6 +286,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerModifyPackedInlineArrayKernel();
 IntPtr hfunc = s_hfunc_ModifyPackedInlineArrayKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "StructLayoutKernels.ModifyPackedInlineArrayKernel");
 IntPtr d_data = IntPtr.Zero;
 try
 {
@@ -339,6 +342,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerModifyPackedInlineArrayKernel();
 IntPtr hfunc = s_hfunc_ModifyPackedInlineArrayKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "StructLayoutKernels.ModifyPackedInlineArrayKernel");
 try
 {
 void** kernelParams = stackalloc void*[1];

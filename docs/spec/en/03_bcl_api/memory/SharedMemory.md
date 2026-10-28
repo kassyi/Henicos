@@ -194,6 +194,18 @@ bytes = AlignUp(bytes, 16) + n * sizeof(int); // second declaration: 16 .. 28
 Console.WriteLine(bytes); // 28
 ```
 
+#### Size limit per block
+
+On CUDA a block can use 48 KB of shared memory (static plus dynamic) on every GPU, and more on GPUs that allow it once the kernel opts in (99 KB on sm_86 and sm_89, 163 KB on sm_80, 227 KB on sm_90). The `sharedMemBytes` of the launch is the request: when it is larger than what the kernel currently allows, the CUDA launcher opts the kernel in to the device maximum (`cuFuncSetAttribute(CU_FUNC_ATTRIBUTE_MAX_DYNAMIC_SHARED_SIZE_BYTES)`). It does this once per kernel, so later launches make no extra driver call. The opt-in only permits the memory the launch asks for; it adds no work or synchronization and does not change the results.
+
+When the static shared memory of the kernel plus `sharedMemBytes` is more than the device allows per block, the CUDA launcher throws `ArgumentOutOfRangeException` (`ParamName` `sharedMemBytes`) before the launch, naming the kernel, the requested bytes and the limit:
+
+```text
+G#: sharedMemBytes 101377 plus 0 bytes of static shared memory exceeds the 101376 bytes of shared memory per block of this GPU (sm_86) (Kernels.TileKernel).
+```
+
+The CPU paths do not check this limit yet (#799).
+
 #### Growing a declaration
 
 A declaration reached again with a larger count grows its region:

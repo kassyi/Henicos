@@ -156,6 +156,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerFirst();
 IntPtr hfunc = s_hfunc_First!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "AotContextNameKernels.First");
 IntPtr d_data = IntPtr.Zero;
 try
 {
@@ -213,6 +214,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerFirst();
 IntPtr hfunc = s_hfunc_First!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "AotContextNameKernels.First");
 try
 {
 void** kernelParams = stackalloc void*[2];
@@ -279,6 +281,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerSecond();
 IntPtr hfunc = s_hfunc_Second!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "AotContextNameKernels.Second");
 IntPtr d_data = IntPtr.Zero;
 try
 {
@@ -336,6 +339,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerSecond();
 IntPtr hfunc = s_hfunc_Second!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "AotContextNameKernels.Second");
 try
 {
 void** kernelParams = stackalloc void*[2];
@@ -402,6 +406,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerThird();
 IntPtr hfunc = s_hfunc_Third!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "AotContextNameKernels.Third");
 IntPtr d_data = IntPtr.Zero;
 try
 {
@@ -459,6 +464,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerThird();
 IntPtr hfunc = s_hfunc_Third!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "AotContextNameKernels.Third");
 try
 {
 void** kernelParams = stackalloc void*[2];

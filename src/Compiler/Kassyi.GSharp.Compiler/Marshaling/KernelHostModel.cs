@@ -37,6 +37,9 @@ internal readonly record struct KernelHostModel
     /// <summary>A <c>[GpuKernel(Cooperative = true)]</c> kernel.</summary>
     public bool IsCooperative { get; init; }
 
+    /// <summary>The kernel in a run-time error of the managed path (<see cref="KernelHostNames.GetMessageName"/>).</summary>
+    public string MessageName { get; init; }
+
     /// <summary>
     /// The bytes of one slot of the grid scratch of the AsParallel() aggregates of the kernel (CUDA, cooperative kernels),
     /// or 0 when it has none (ParallelAggregatePlanner.GetGridScratchSlotBytes).
@@ -87,6 +90,7 @@ internal readonly record struct KernelHostModel
                 ? null
                 : kernel.ReturnType.GetFullyQualifiedCsharpName(),
             IsCooperative = kernel.IsCooperativeKernel(),
+            MessageName = KernelHostNames.GetMessageName(kernel),
             GridScratchSlotBytes = model != null && kernel.IsCooperativeKernel() &&
                                    kernel.TryGetDeclaringSyntax<MethodDeclarationSyntax>(out var declaration) &&
                                    declaration.SyntaxTree == model.SyntaxTree

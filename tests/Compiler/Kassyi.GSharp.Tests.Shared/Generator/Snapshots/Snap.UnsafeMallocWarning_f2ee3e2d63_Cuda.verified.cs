@@ -123,6 +123,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerMallocInKernel();
 IntPtr hfunc = s_hfunc_MallocInKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "UnsafeMallocWarningKernels.MallocInKernel");
 IntPtr d_output = IntPtr.Zero;
 try
 {
@@ -178,6 +179,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerMallocInKernel();
 IntPtr hfunc = s_hfunc_MallocInKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "UnsafeMallocWarningKernels.MallocInKernel");
 try
 {
 void** kernelParams = stackalloc void*[1];
@@ -232,6 +234,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerSuppressedMalloc();
 IntPtr hfunc = s_hfunc_SuppressedMalloc!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "UnsafeMallocWarningKernels.SuppressedMalloc");
 IntPtr d_output = IntPtr.Zero;
 try
 {
@@ -287,6 +290,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerSuppressedMalloc();
 IntPtr hfunc = s_hfunc_SuppressedMalloc!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "UnsafeMallocWarningKernels.SuppressedMalloc");
 try
 {
 void** kernelParams = stackalloc void*[1];
