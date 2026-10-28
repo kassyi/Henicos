@@ -38,10 +38,25 @@ internal static class HostLauncherTranspiler
             return;
         }
 
+        WriteLauncherSignature(in plan, methodSymbol, ref context);
+        var step = new KernelStep(
+            method,
+            GlobalCppNames.GetKernelName(methodSymbol),
+            hasContext,
+            plan.HasAutoResult,
+            hasContext && methodSymbol.IsCooperativeKernel(),
+            KernelHostNames.GetMessageName(methodSymbol)
+        );
+        WriteLauncherBody(GlobalCppNames.GetKernelDerivedName(ContextPrefix, methodSymbol), step, ref context);
+    }
+
+    // extern "C" __declspec(dllexport) void <launch export>(<launch dimensions>, <sharedMemBytes>, <kernel parameters>[, <result>* __restrict__ __gsharp_auto_result])
+    private static void WriteLauncherSignature(in MethodEmissionPlan plan, IMethodSymbol methodSymbol,
+        ref TranspileContext context)
+    {
+        var method = plan.Declaration;
         context.Emitter.Writer.AppendLine();
         context.Emitter.Writer.Append("extern \"C\" __declspec(dllexport) void");
-        var methodName = GlobalCppNames.GetKernelName(methodSymbol);
-        var contextName = GlobalCppNames.GetKernelDerivedName(ContextPrefix, methodSymbol);
         context.Emitter.Writer.Append(' ')
             .Append(GlobalCppNames.GetKernelDerivedName(LaunchExportPrefix, methodSymbol))
             .Append('(');
@@ -67,15 +82,11 @@ internal static class HostLauncherTranspiler
         }
 
         context.Emitter.Writer.AppendLine(")");
+    }
 
-        var step = new KernelStep(
-            method,
-            methodName,
-            hasContext,
-            plan.HasAutoResult,
-            hasContext && methodSymbol.IsCooperativeKernel(),
-            KernelHostNames.GetMessageName(methodSymbol)
-        );
+    // { <error slot> <the grid: cooperative phases or independent blocks> <report the error to the host> }
+    private static void WriteLauncherBody(string contextName, in KernelStep step, ref TranspileContext context)
+    {
         using (context.Emitter.Writer.Scope())
         {
             context.Emitter.Writer.AppendLine($"{HostLastError}.Reset();");
