@@ -95,6 +95,13 @@ public static class LoweringIdentity
         return 0;
     }
 
+    /// <summary>
+    /// Whether <paramref name="labeled"/> is a label that lowering added (<c>__gsharp_</c>): GSH0055 rejects <c>__</c> in
+    /// user identifiers, so the prefix tells the two kinds apart.
+    /// </summary>
+    internal static bool IsLoweringLabel(LabeledStatementSyntax labeled) =>
+        labeled.Identifier.ValueText.StartsWith(GSharpInternalNames.Lowering.LabelPrefix, StringComparison.Ordinal);
+
     private static string GetDeclaredName(SyntaxNode declaration) => declaration switch
     {
         ParameterSyntax p => p.Identifier.ValueText,
