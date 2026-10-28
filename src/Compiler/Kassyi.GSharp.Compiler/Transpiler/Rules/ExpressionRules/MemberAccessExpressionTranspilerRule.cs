@@ -231,6 +231,15 @@ public sealed class MemberAccessExpressionTranspilerRule : SyntaxNodeTranspilerR
                 return true;
             }
 
+            // A constant size is written as its value, as the declaration writes it: a const local it names is not
+            // declared again when the state machine resumes
+            if (sizeExpr != null &&
+                context.Query.SemanticModel.GetSafeConstantValue(sizeExpr) is { HasValue: true, Value: int size })
+            {
+                context.Emitter.Writer.Append(size);
+                return true;
+            }
+
             if (sizeExpr != null)
             {
                 context.Visitor.Visit(sizeExpr);

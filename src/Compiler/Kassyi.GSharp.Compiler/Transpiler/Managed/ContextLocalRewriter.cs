@@ -1,7 +1,8 @@
 namespace Kassyi.GSharp.Compiler.Transpiler;
 
 /// <summary>
-/// Turns context accesses to ref struct locals back into locals, and renames the accesses to locals that share their
+/// Turns context accesses to the locals that are declared again on every resume (<see cref="ResumeLocals"/>) back into
+/// locals, and renames the accesses to locals that share their
 /// name with another hoisted local (see <see cref="ManagedContextFields"/>). Accesses are matched to declarations by
 /// <see cref="DeclarationKey"/> (symbol and region). Labels that share their name with another label of the body are
 /// renamed with their gotos (<c>__gsharp_label_&lt;ordinal&gt;_&lt;name&gt;</c>). The only entry is <see cref="Rewrite"/>,
@@ -9,20 +10,20 @@ namespace Kassyi.GSharp.Compiler.Transpiler;
 /// </summary>
 internal sealed class ContextLocalRewriter : CSharpSyntaxRewriter
 {
-    private readonly HashSet<DeclarationKey> _unhoistedKeys;
+    private readonly IResumeLocalSet _resumeLocals;
     private readonly Dictionary<DeclarationKey, string> _renamedLocals;
     private readonly Dictionary<DeclarationKey, string> _labelRenames;
     private readonly SemanticModel _semanticModel;
     private readonly string _kernelName;
 
     private ContextLocalRewriter(
-        HashSet<DeclarationKey> unhoistedKeys,
+        IResumeLocalSet resumeLocals,
         Dictionary<DeclarationKey, string> renamedLocals,
         Dictionary<DeclarationKey, string> labelRenames,
         SemanticModel semanticModel,
         string kernelName)
     {
-        _unhoistedKeys = unhoistedKeys;
+        _resumeLocals = resumeLocals;
         _renamedLocals = renamedLocals;
         _labelRenames = labelRenames;
         _semanticModel = semanticModel;
@@ -31,14 +32,23 @@ internal sealed class ContextLocalRewriter : CSharpSyntaxRewriter
 
     /// <summary>Rewrites the lowered <paramref name="body"/> of a kernel or device function for the managed output.</summary>
     /// <param name="body">The whole lowered body; the label renames are decided over all of it.</param>
-    /// <param name="unhoistedKeys">The ref struct locals that go back from the context to locals (<see cref="ManagedContextFields"/>).</param>
+    /// <param name="resumeLocals">The locals that are declared again on every resume, and their initialization.</param>
     /// <param name="renamedLocals">The new names of locals that share their name with another hoisted local.</param>
     /// <param name="semanticModel">The semantic model that keys declarations, references and labels.</param>
     /// <param name="kernelName">The name of the kernel or device function, for internal-error reports.</param>
-    public static SyntaxNode? Rewrite(SyntaxNode body, HashSet<DeclarationKey> unhoistedKeys,
+    public static SyntaxNode? Rewrite(SyntaxNode body, IResumeLocalSet resumeLocals,
         Dictionary<DeclarationKey, string> renamedLocals, SemanticModel semanticModel, string kernelName) =>
-        new ContextLocalRewriter(unhoistedKeys, renamedLocals, CreateLabelRenames(body, semanticModel), semanticModel,
+        new ContextLocalRewriter(resumeLocals, renamedLocals, CreateLabelRenames(body, semanticModel), semanticModel,
             kernelName).Visit(body);
+
+    /// <summary>
+    /// Turns the context accesses of the resume locals of a native state machine back into locals; its labels stay as
+    /// they are, as the C++ names come from the declarations.
+    /// </summary>
+    public static SyntaxNode? RewriteResumeLocals(SyntaxNode body, IResumeLocalSet resumeLocals,
+        SemanticModel semanticModel, string kernelName) =>
+        new ContextLocalRewriter(resumeLocals, new Dictionary<DeclarationKey, string>(),
+            new Dictionary<DeclarationKey, string>(), semanticModel, kernelName).Visit(body);
 
     // [WHY] StateMachineLowerer keeps a label that no goto in another state reaches in its state, and lowering flattens
     // sibling scopes, so two labels of one name can end up in one block (CS0140) or one inside the other's block
@@ -113,7 +123,7 @@ internal sealed class ContextLocalRewriter : CSharpSyntaxRewriter
         SimpleNameSyntax name = _renamedLocals.TryGetValue(key, out var renamed)
             ? SyntaxFactory.IdentifierName(renamed)
             : memberAccess.Name;
-        return _unhoistedKeys.Contains(key)
+        return _resumeLocals.Contains(key)
             ? name.WithTriviaFrom(memberAccess)
             : memberAccess.WithName(name);
     }
@@ -130,12 +140,16 @@ internal sealed class ContextLocalRewriter : CSharpSyntaxRewriter
             // Only the declarator-derived initialization resolves through GetDeclaredSymbol; later assignments stay.
             // The member name carries the declarator's span and region, so it keys like the declarator itself.
             var declaredKey = LoweringIdentity.ForDeclaration(memberAccess.Name, _semanticModel);
-            if (declaredKey.Symbol is { } declaredSymbol && _unhoistedKeys.Contains(declaredKey) &&
+            if (declaredKey.Symbol is { } declaredSymbol && _resumeLocals.Contains(declaredKey) &&
                 !PlacesDynamicSharedMemory(assignment.Right))
             {
                 if (node.Parent is BlockSyntax or SwitchSectionSyntax)
                 {
-                    return null;
+                    var value = Visit(assignment.Right) as ExpressionSyntax ?? assignment.Right;
+                    SimpleNameSyntax name = _renamedLocals.TryGetValue(declaredKey, out var renamed)
+                        ? SyntaxFactory.IdentifierName(renamed).WithAdditionalAnnotations(memberAccess.Name.GetAnnotations(LoweringAnnotations.OriginalSpanAnnotationKind))
+                        : memberAccess.Name.WithoutTrivia();
+                    return _resumeLocals.CreateInitialization(declaredKey, name, value)?.WithTriviaFrom(node);
                 }
 
 #pragma warning disable RS0030 // Statement text for a human-readable internal-error report only
