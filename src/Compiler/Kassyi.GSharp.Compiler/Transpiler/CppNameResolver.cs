@@ -101,13 +101,21 @@ internal static class CppNameResolver
         _ => CppName.Verbatim(fallbackName)
     };
 
+    /// <summary>Resolves the C++ name that <paramref name="declarator"/> declares, with the region stamped on it.</summary>
+    public static CppName Resolve(VariableDeclaratorSyntax declarator, SemanticModel semanticModel,
+        ITranspilerDialect dialect) =>
+        ResolveDeclared(declarator, declarator.Identifier, semanticModel, dialect);
+
     /// <summary>Emits the name declared by <paramref name="declaration"/>.</summary>
-    public static void AppendDeclaredName(SyntaxNode declaration, SyntaxToken identifier, ref TranspileContext context)
-    {
-        var symbol = context.Query.SemanticModel.GetDeclaredSymbol<ISymbol>(declaration);
-        var region = LoweringIdentity.GetRegion(declaration);
-        context.Emitter.Writer.AppendCppName(Resolve(symbol, identifier.ValueText, context.Emitter.Dialect, region));
-    }
+    public static void AppendDeclaredName(SyntaxNode declaration, SyntaxToken identifier, ref TranspileContext context) =>
+        context.Emitter.Writer.AppendCppName(
+            ResolveDeclared(declaration, identifier, context.Query.SemanticModel, context.Emitter.Dialect)
+        );
+
+    private static CppName ResolveDeclared(SyntaxNode declaration, SyntaxToken identifier, SemanticModel semanticModel,
+        ITranspilerDialect dialect) =>
+        Resolve(semanticModel.GetDeclaredSymbol<ISymbol>(declaration), identifier.ValueText, dialect,
+            LoweringIdentity.GetRegion(declaration));
 
     /// <summary>Emits the name that <paramref name="reference"/> binds to.</summary>
     /// <remarks>
