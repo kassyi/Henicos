@@ -301,6 +301,7 @@ switch (__gsharp_ctx.__gsharp_state)
 case 0:
 {
 __gsharp_ctx.v.X = __gsharp_ctx.v.X + 1.0f;
+global::Kassyi.GSharp.Core.ManagedGpuContext.BlockBarrierRequested = true;
 __gsharp_ctx.__gsharp_state = 1;
 return false;
 }
@@ -333,6 +334,7 @@ switch (__gsharp_ctx.__gsharp_state)
 case 0:
 {
 __gsharp_ctx.value = __gsharp_ctx.value + 1;
+global::Kassyi.GSharp.Core.ManagedGpuContext.BlockBarrierRequested = true;
 __gsharp_ctx.__gsharp_state = 1;
 return false;
 }
@@ -365,6 +367,7 @@ switch (__gsharp_ctx.__gsharp_state)
 case 0:
 {
 __gsharp_ctx.v.A.B = __gsharp_ctx.v.A.B + 10;
+global::Kassyi.GSharp.Core.ManagedGpuContext.BlockBarrierRequested = true;
 __gsharp_ctx.__gsharp_state = 1;
 return false;
 }
@@ -397,6 +400,7 @@ switch (__gsharp_ctx.__gsharp_state)
 case 0:
 {
 __gsharp_ctx.v.Buffer[index] += 100;
+global::Kassyi.GSharp.Core.ManagedGpuContext.BlockBarrierRequested = true;
 __gsharp_ctx.__gsharp_state = 1;
 return false;
 }
@@ -429,6 +433,7 @@ switch (__gsharp_ctx.__gsharp_state)
 case 0:
 {
 ++__gsharp_ctx.v.Y;
+global::Kassyi.GSharp.Core.ManagedGpuContext.BlockBarrierRequested = true;
 __gsharp_ctx.__gsharp_state = 1;
 return false;
 }
@@ -461,6 +466,7 @@ switch (__gsharp_ctx.__gsharp_state)
 case 0:
 {
 global::Kassyi.GSharp.Tests.Shared.Syntax.SuspendingValueParameterKernels.AddOne(ref __gsharp_ctx.v.X);
+global::Kassyi.GSharp.Core.ManagedGpuContext.BlockBarrierRequested = true;
 __gsharp_ctx.__gsharp_state = 1;
 return false;
 }
@@ -489,6 +495,7 @@ switch (__gsharp_ctx.__gsharp_state)
 case 0:
 {
 values[index] = values[index] + 1000;
+global::Kassyi.GSharp.Core.ManagedGpuContext.BlockBarrierRequested = true;
 __gsharp_ctx.__gsharp_state = 1;
 return false;
 }
@@ -521,6 +528,7 @@ switch (__gsharp_ctx.__gsharp_state)
 case 0:
 {
 (__gsharp_ctx.v.X, __gsharp_ctx.v.Y) = (__gsharp_ctx.v.Y, __gsharp_ctx.v.X);
+global::Kassyi.GSharp.Core.ManagedGpuContext.BlockBarrierRequested = true;
 __gsharp_ctx.__gsharp_state = 1;
 return false;
 }
@@ -555,6 +563,7 @@ switch (__gsharp_ctx.__gsharp_state)
 case 0:
 {
 (__gsharp_ctx.a, __gsharp_ctx.b) = (__gsharp_ctx.b, __gsharp_ctx.a);
+global::Kassyi.GSharp.Core.ManagedGpuContext.BlockBarrierRequested = true;
 __gsharp_ctx.__gsharp_state = 1;
 return false;
 }

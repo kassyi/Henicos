@@ -210,6 +210,7 @@ switch (__gsharp_ctx.__gsharp_state)
 case 0:
 {
 c[tid] = tid;
+global::Kassyi.GSharp.Core.ManagedGpuContext.BlockBarrierRequested = true;
 __gsharp_ctx.__gsharp_state = 1;
 return false;
 }
@@ -219,6 +220,7 @@ case 1:
 __gsharp_ctx.lane = tid % global::Kassyi.GSharp.Core.BlockDimension.X;
 __gsharp_ctx.next = tid - __gsharp_ctx.lane + (__gsharp_ctx.lane + 1) % global::Kassyi.GSharp.Core.BlockDimension.X;
 __gsharp_ctx.value = c[__gsharp_ctx.next];
+global::Kassyi.GSharp.Core.ManagedGpuContext.BlockBarrierRequested = true;
 __gsharp_ctx.__gsharp_state = 2;
 return false;
 }

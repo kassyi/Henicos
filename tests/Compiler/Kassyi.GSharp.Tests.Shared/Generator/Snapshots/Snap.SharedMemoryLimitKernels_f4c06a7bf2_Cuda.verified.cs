@@ -107,6 +107,7 @@ if (tid < count)
 s[tid] = tid + 1;
 }
 
+global::Kassyi.GSharp.Core.ManagedGpuContext.BlockBarrierRequested = true;
 __gsharp_ctx.__gsharp_state = 1;
 return false;
 }

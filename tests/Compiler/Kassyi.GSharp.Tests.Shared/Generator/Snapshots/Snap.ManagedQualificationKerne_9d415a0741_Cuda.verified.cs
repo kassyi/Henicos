@@ -1351,6 +1351,7 @@ A = value,
 B = global::Kassyi.GSharp.Tests.Shared.Core.Qualification.QualifyMath.Twice(value)
 };
 buffer[tid] = __gsharp_ctx.pair.A + __gsharp_ctx.pair.B;
+global::Kassyi.GSharp.Core.ManagedGpuContext.BlockBarrierRequested = true;
 __gsharp_ctx.__gsharp_state = 1;
 return false;
 }
@@ -1358,6 +1359,7 @@ return false;
 case 1:
 {
 __gsharp_ctx.next = buffer[(tid + 1) % global::Kassyi.GSharp.Tests.Shared.Core.Qualification.QualifyConstants.Count];
+global::Kassyi.GSharp.Core.ManagedGpuContext.BlockBarrierRequested = true;
 __gsharp_ctx.__gsharp_state = 2;
 return false;
 }

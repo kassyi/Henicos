@@ -261,6 +261,7 @@ switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
+global::Kassyi.GSharp.Core.ManagedGpuContext.BlockBarrierRequested = true;
 __gsharp_ctx.__gsharp_state = 1;
 return false;
 }

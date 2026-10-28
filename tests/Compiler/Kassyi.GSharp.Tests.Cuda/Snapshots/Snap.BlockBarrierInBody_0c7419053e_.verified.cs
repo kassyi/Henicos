@@ -15,6 +15,7 @@
 
         case 1:
         {
+            __gsharp_yielded_for_block_barrier = true;
             __gsharp_state = 2;
             return;
         }

@@ -12,6 +12,12 @@ internal sealed partial class ManagedExecutionRewriter(SemanticModel semanticMod
     /// </summary>
     internal const string ManagedGridSyncRequested = "global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested";
 
+    /// <summary>
+    /// The thread-static flag through which a managed state machine tells the managed launcher that the thread waits at a
+    /// block barrier (<see cref="CpuHostLaunchEmitter"/>).
+    /// </summary>
+    internal const string ManagedBlockBarrierRequested = "global::Kassyi.GSharp.Core.ManagedGpuContext.BlockBarrierRequested";
+
     private int _inLambdaOrLocalFuncCount;
 
     // The label after the Gpu.SingleThread body being rewritten, when the body has a return, and the lambda depth of
@@ -100,6 +106,9 @@ internal sealed partial class ManagedExecutionRewriter(SemanticModel semanticMod
             // global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested
             GSharpInternalNames.StateMachine.YieldedForGridSync =>
                 SyntaxFactory.ParseExpression(ManagedGridSyncRequested).WithTriviaFrom(node),
+            // A block barrier the same way: global::Kassyi.GSharp.Core.ManagedGpuContext.BlockBarrierRequested
+            GSharpInternalNames.StateMachine.YieldedForBlockBarrier =>
+                SyntaxFactory.ParseExpression(ManagedBlockBarrierRequested).WithTriviaFrom(node),
             // __gsharp_ctx.<name>
             GSharpInternalNames.StateMachine.State
                 or GSharpInternalNames.StateMachine.WarpExchange =>
