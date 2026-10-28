@@ -159,12 +159,33 @@ internal static class CpuHostLaunchEmitter
             "if (global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ShouldUseManagedExecution(dllPath))");
         using (writer.Scope())
         {
+            WriteNullOptionalArraysAsEmpty(writer, kernel);
             WriteManagedContextAllocation(writer, kernel);
             WriteManagedGridLoop(writer, kernel);
             WrapperEmitter.WriteAutoResultReturn(writer, kernel);
             if (!kernel.ReturnsValue)
             {
                 writer.AppendLine("return;");
+            }
+        }
+    }
+
+    // if (<name> == null) { <name> = global::System.Array.Empty<<element>>(); }                 (an optional array only)
+    // [WHY] The device and the native launcher read a null optional array as one of length 0 (a GpuArrayProxy with no
+    // data), so the kernel's .Length is 0 there; the managed kernel gets the same array instead of a null (#806)
+    private static void WriteNullOptionalArraysAsEmpty(SourceWriter writer, in KernelHostModel kernel)
+    {
+        foreach (var shape in kernel.Parameters)
+        {
+            if (!shape.IsOptional || shape.Container != ArrayContainerKind.Array || shape.ElementTypeName is not { } element)
+            {
+                continue;
+            }
+
+            writer.AppendLine($"if ({shape.Identifier} == null)");
+            using (writer.Scope())
+            {
+                writer.AppendLine($"{shape.Identifier} = global::System.Array.Empty<{element}>();");
             }
         }
     }
