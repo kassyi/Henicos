@@ -68,7 +68,9 @@ public sealed class FermatAlgorithm : IDisposable
     /// than 2 or is 0, 1 or <c>N - 1</c> modulo <c>N</c> (possible only for small <c>E</c>); an option is negative,
     /// <see cref="FermatPrpOptions.BlockSize"/> exceeds <c>2E + 1</c>, or
     /// <see cref="FermatPrpOptions.MaxConsecutiveRollbacks"/> is less than 1. Checked before any allocation.</exception>
-    /// <exception cref="InvalidOperationException">GPU context initialization fails.</exception>
+    /// <exception cref="InvalidOperationException">GPU context initialization fails. When <c>gcd(a, N) != 1</c> nothing is
+    /// allocated here, and the failure surfaces on the first <see cref="GetState"/>, <see cref="RunBenchmarkChunk"/> or
+    /// <see cref="Restore"/> instead.</exception>
     public FermatAlgorithm(int e, uint @base = 3, FermatPrpOptions? options = null)
     {
         QuadraticFoldModulus.ThrowIfExponentOutOfRange(e);
@@ -92,12 +94,12 @@ public sealed class FermatAlgorithm : IDisposable
         _smallDivisor = SmallDivisor(e, @base);
         _pinsFallbackMode = e > QuadraticHostModulus.MaxExponent;
         _cpuFallbackAtCreation = _pinsFallbackMode && GpuKernelLoader.IsCpuFallbackMode;
-        ResidueWords = (2 * e + 1 + 31) / 32;
+        ResidueWords = QuadraticFoldModulus.WordsOf(e);
         _blockSize = _options.BlockSize != 0
             ? _options.BlockSize
             : (int)Math.Clamp((long)Math.Sqrt(ChainLength), 2, 1000);
         _checkIntervalBlocks = _options.CheckIntervalBlocks != 0 ? _options.CheckIntervalBlocks : _blockSize;
-        _endIteration = (ChainLength + _blockSize - 1) / _blockSize * _blockSize;
+        _endIteration = SquaringChainDriver.EndIterationOf(ChainLength, _blockSize);
         _startWords = StartWords(e, @base, ResidueWords);
         _lastVerified = SquaringChainDriver.StartPoint(_startWords);
 

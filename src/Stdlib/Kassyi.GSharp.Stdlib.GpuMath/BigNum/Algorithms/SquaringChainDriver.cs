@@ -65,7 +65,7 @@ internal sealed class SquaringChainDriver
         BlockSize = blockSize;
         CheckInterval = (long)checkIntervalBlocks * blockSize;
         MaxConsecutiveFailures = maxConsecutiveFailures;
-        EndIteration = (chainLength + blockSize - 1) / blockSize * blockSize;
+        EndIteration = EndIterationOf(chainLength, blockSize);
     }
 
     /// <summary>Gets <c>K</c>.</summary>
@@ -85,6 +85,12 @@ internal sealed class SquaringChainDriver
 
     /// <summary>Gets <c>K' = roundUp(K, B)</c>, where the chain ends with its last check.</summary>
     public long EndIteration { get; }
+
+    /// <summary>Returns <c>K' = roundUp(K, B)</c> for a chain of <paramref name="chainLength"/> squarings.</summary>
+    /// <param name="chainLength">The chain length <c>K</c>.</param>
+    /// <param name="blockSize">The block size <c>B</c>.</param>
+    public static long EndIterationOf(long chainLength, int blockSize) =>
+        (chainLength + blockSize - 1) / blockSize * blockSize;
 
     /// <summary>
     /// Gets or sets a test hook that receives the position after every squaring of the state and, when it returns

@@ -19,7 +19,7 @@ internal sealed class QuadraticHostModulus : ISquaringModulus
         ArgumentOutOfRangeException.ThrowIfLessThan(exponent, QuadraticFoldModulus.MinExponent);
         ArgumentOutOfRangeException.ThrowIfGreaterThan(exponent, MaxExponent);
         _modulus = (1UL << (2 * exponent + 1)) - (1UL << exponent) + QuadraticFoldModulus.ConstantTerm;
-        Words = (2 * exponent + 1 + 31) / 32;
+        Words = QuadraticFoldModulus.WordsOf(exponent);
     }
 
     /// <summary>Gets <c>N</c>.</summary>

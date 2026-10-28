@@ -56,7 +56,7 @@ internal sealed class QuadraticFoldModulus
         // In range, 2E + 1 <= 2^28 - 1 and m + E + 34 < 2^29, so the word counts below do not overflow int.
         E = exponent;
         ModulusBits = 2 * exponent + 1;
-        Words = (ModulusBits + 31) / 32;
+        Words = WordsOf(exponent);
         ProductWords = 2 * Words;
         FirstFoldWords = (ModulusBits + exponent + 3 + 31) / 32;
         SecondFoldWords = (ModulusBits + 2 + 31) / 32;
@@ -83,6 +83,10 @@ internal sealed class QuadraticFoldModulus
 
     /// <summary>Gets the words of <c>N</c>, <see cref="Words"/> long.</summary>
     public ReadOnlySpan<uint> Modulus => _modulus;
+
+    /// <summary>Returns <c>ceil((2E + 1) / 32)</c>, the <see cref="Words"/> of the modulus for <paramref name="exponent"/>.</summary>
+    /// <param name="exponent">The exponent <c>E</c>.</param>
+    public static int WordsOf(int exponent) => (2 * exponent + 1 + 31) / 32;
 
     /// <summary>Throws when <paramref name="exponent"/> is outside <see cref="MinExponent"/>..<see cref="MaxExponent"/>.</summary>
     /// <param name="exponent">The exponent <c>E</c>.</param>
