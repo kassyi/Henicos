@@ -129,6 +129,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerBitOpsKernel();
 IntPtr hfunc = s_hfunc_BitOpsKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "BitOpsTestKernels.BitOpsKernel");
 IntPtr d_u32Data = IntPtr.Zero;
 IntPtr d_u64Data = IntPtr.Zero;
 try
@@ -211,6 +212,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerBitOpsKernel();
 IntPtr hfunc = s_hfunc_BitOpsKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "BitOpsTestKernels.BitOpsKernel");
 try
 {
 void** kernelParams = stackalloc void*[2];

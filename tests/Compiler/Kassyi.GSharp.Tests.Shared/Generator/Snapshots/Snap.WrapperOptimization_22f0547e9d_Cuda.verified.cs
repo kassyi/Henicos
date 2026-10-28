@@ -160,6 +160,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerComplexSignatureKernel();
 IntPtr hfunc = s_hfunc_ComplexSignatureKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "WrapperOptimizationKernels.ComplexSignatureKernel");
 IntPtr d_scalarRef = IntPtr.Zero;
 IntPtr d_scalarOut = IntPtr.Zero;
 IntPtr d_arrayVal = IntPtr.Zero;
@@ -265,6 +266,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerComplexSignatureKernel();
 IntPtr hfunc = s_hfunc_ComplexSignatureKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "WrapperOptimizationKernels.ComplexSignatureKernel");
 try
 {
 void** kernelParams = stackalloc void*[5];

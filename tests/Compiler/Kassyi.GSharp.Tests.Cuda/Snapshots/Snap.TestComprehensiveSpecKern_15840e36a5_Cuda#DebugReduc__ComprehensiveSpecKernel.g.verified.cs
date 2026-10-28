@@ -360,6 +360,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerProcessPhysics();
 IntPtr hfunc = s_hfunc_ProcessPhysics!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "ComprehensiveSpecKernel.ProcessPhysics");
 IntPtr d_particles = IntPtr.Zero;
 IntPtr d_totalMagnitude = IntPtr.Zero;
 IntPtr d_successFlag = IntPtr.Zero;
@@ -452,6 +453,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerProcessPhysics();
 IntPtr hfunc = s_hfunc_ProcessPhysics!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "ComprehensiveSpecKernel.ProcessPhysics");
 try
 {
 void** kernelParams = stackalloc void*[6];
@@ -516,6 +518,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerCooperativePhysicsProcess();
 IntPtr hfunc = s_hfunc_CooperativePhysicsProcess!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "ComprehensiveSpecKernel.CooperativePhysicsProcess");
 IntPtr d_data = IntPtr.Zero;
 try
 {
@@ -570,6 +573,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerCooperativePhysicsProcess();
 IntPtr hfunc = s_hfunc_CooperativePhysicsProcess!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "ComprehensiveSpecKernel.CooperativePhysicsProcess");
 try
 {
 void** kernelParams = stackalloc void*[1];

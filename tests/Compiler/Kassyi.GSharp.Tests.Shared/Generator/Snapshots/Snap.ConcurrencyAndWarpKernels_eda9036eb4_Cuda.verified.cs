@@ -133,6 +133,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerSharedMemoryKernel();
 IntPtr hfunc = s_hfunc_SharedMemoryKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "ConcurrencyAndWarpKernels.SharedMemoryKernel");
 IntPtr d_data = IntPtr.Zero;
 try
 {
@@ -190,6 +191,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerSharedMemoryKernel();
 IntPtr hfunc = s_hfunc_SharedMemoryKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "ConcurrencyAndWarpKernels.SharedMemoryKernel");
 try
 {
 void** kernelParams = stackalloc void*[2];
@@ -254,6 +256,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerSharedMemoryReverseKernel();
 IntPtr hfunc = s_hfunc_SharedMemoryReverseKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "ConcurrencyAndWarpKernels.SharedMemoryReverseKernel");
 IntPtr d_data = IntPtr.Zero;
 try
 {
@@ -311,6 +314,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerSharedMemoryReverseKernel();
 IntPtr hfunc = s_hfunc_SharedMemoryReverseKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "ConcurrencyAndWarpKernels.SharedMemoryReverseKernel");
 try
 {
 void** kernelParams = stackalloc void*[2];
@@ -374,6 +378,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerIntrinsicsKernel();
 IntPtr hfunc = s_hfunc_IntrinsicsKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "ConcurrencyAndWarpKernels.IntrinsicsKernel");
 IntPtr d_data = IntPtr.Zero;
 try
 {
@@ -429,6 +434,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerIntrinsicsKernel();
 IntPtr hfunc = s_hfunc_IntrinsicsKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "ConcurrencyAndWarpKernels.IntrinsicsKernel");
 try
 {
 void** kernelParams = stackalloc void*[1];
@@ -481,6 +487,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerAtomicAddStressKernel();
 IntPtr hfunc = s_hfunc_AtomicAddStressKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "ConcurrencyAndWarpKernels.AtomicAddStressKernel");
 IntPtr d_globalSum = IntPtr.Zero;
 try
 {
@@ -536,6 +543,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerAtomicAddStressKernel();
 IntPtr hfunc = s_hfunc_AtomicAddStressKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "ConcurrencyAndWarpKernels.AtomicAddStressKernel");
 try
 {
 void** kernelParams = stackalloc void*[1];
@@ -593,6 +601,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerAtomicOrMaxStressKernel();
 IntPtr hfunc = s_hfunc_AtomicOrMaxStressKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "ConcurrencyAndWarpKernels.AtomicOrMaxStressKernel");
 IntPtr d_globalState = IntPtr.Zero;
 try
 {
@@ -648,6 +657,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerAtomicOrMaxStressKernel();
 IntPtr hfunc = s_hfunc_AtomicOrMaxStressKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "ConcurrencyAndWarpKernels.AtomicOrMaxStressKernel");
 try
 {
 void** kernelParams = stackalloc void*[1];

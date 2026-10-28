@@ -147,6 +147,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerInterlockedKernel();
 IntPtr hfunc = s_hfunc_InterlockedKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "InvocationAndIntrinsicsKernels.InterlockedKernel");
 IntPtr d_intBuf = IntPtr.Zero;
 IntPtr d_uintBuf = IntPtr.Zero;
 IntPtr d_longBuf = IntPtr.Zero;
@@ -283,6 +284,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerInterlockedKernel();
 IntPtr hfunc = s_hfunc_InterlockedKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "InvocationAndIntrinsicsKernels.InterlockedKernel");
 try
 {
 void** kernelParams = stackalloc void*[4];
@@ -387,6 +389,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerInterlockedEdgeCasesKernel();
 IntPtr hfunc = s_hfunc_InterlockedEdgeCasesKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "InvocationAndIntrinsicsKernels.InterlockedEdgeCasesKernel");
 IntPtr d_array = IntPtr.Zero;
 IntPtr d_structArray = IntPtr.Zero;
 try
@@ -469,6 +472,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerInterlockedEdgeCasesKernel();
 IntPtr hfunc = s_hfunc_InterlockedEdgeCasesKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "InvocationAndIntrinsicsKernels.InterlockedEdgeCasesKernel");
 try
 {
 void** kernelParams = stackalloc void*[2];
@@ -564,6 +568,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerMathKernel();
 IntPtr hfunc = s_hfunc_MathKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "InvocationAndIntrinsicsKernels.MathKernel");
 IntPtr d_doubleInputs = IntPtr.Zero;
 IntPtr d_doubleOutputs = IntPtr.Zero;
 IntPtr d_floatInputs = IntPtr.Zero;
@@ -700,6 +705,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerMathKernel();
 IntPtr hfunc = s_hfunc_MathKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "InvocationAndIntrinsicsKernels.MathKernel");
 try
 {
 void** kernelParams = stackalloc void*[4];
@@ -799,6 +805,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerMathEdgeCasesKernel();
 IntPtr hfunc = s_hfunc_MathEdgeCasesKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "InvocationAndIntrinsicsKernels.MathEdgeCasesKernel");
 IntPtr d_floatSpecialInputs = IntPtr.Zero;
 IntPtr d_floatSpecialResults = IntPtr.Zero;
 IntPtr d_doubleSpecialInputs = IntPtr.Zero;
@@ -935,6 +942,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerMathEdgeCasesKernel();
 IntPtr hfunc = s_hfunc_MathEdgeCasesKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "InvocationAndIntrinsicsKernels.MathEdgeCasesKernel");
 try
 {
 void** kernelParams = stackalloc void*[4];

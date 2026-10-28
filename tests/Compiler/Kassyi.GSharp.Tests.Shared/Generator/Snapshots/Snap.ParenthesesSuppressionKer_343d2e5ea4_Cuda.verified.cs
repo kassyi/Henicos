@@ -122,6 +122,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerParenthesesKernel();
 IntPtr hfunc = s_hfunc_ParenthesesKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "ParenthesesSuppressionKernels.ParenthesesKernel");
 IntPtr d_output = IntPtr.Zero;
 try
 {
@@ -183,6 +184,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerParenthesesKernel();
 IntPtr hfunc = s_hfunc_ParenthesesKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "ParenthesesSuppressionKernels.ParenthesesKernel");
 try
 {
 void** kernelParams = stackalloc void*[4];

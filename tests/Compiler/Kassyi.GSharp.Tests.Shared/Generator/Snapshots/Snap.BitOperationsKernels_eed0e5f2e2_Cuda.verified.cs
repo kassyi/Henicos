@@ -131,6 +131,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerRotate32Kernel();
 IntPtr hfunc = s_hfunc_Rotate32Kernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "BitOperationsKernels.Rotate32Kernel");
 IntPtr d_val = IntPtr.Zero;
 IntPtr d_shift = IntPtr.Zero;
 IntPtr d_rotLeftRes = IntPtr.Zero;
@@ -267,6 +268,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerRotate32Kernel();
 IntPtr hfunc = s_hfunc_Rotate32Kernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "BitOperationsKernels.Rotate32Kernel");
 try
 {
 void** kernelParams = stackalloc void*[4];
@@ -354,6 +356,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerRotate64Kernel();
 IntPtr hfunc = s_hfunc_Rotate64Kernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "BitOperationsKernels.Rotate64Kernel");
 IntPtr d_val = IntPtr.Zero;
 IntPtr d_shift = IntPtr.Zero;
 IntPtr d_rotLeftRes = IntPtr.Zero;
@@ -490,6 +493,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerRotate64Kernel();
 IntPtr hfunc = s_hfunc_Rotate64Kernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "BitOperationsKernels.Rotate64Kernel");
 try
 {
 void** kernelParams = stackalloc void*[4];
