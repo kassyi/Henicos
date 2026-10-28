@@ -85,7 +85,32 @@ public static class StateLabelPlanner
         return stateLabels;
     }
 
-    // The state each top-level statement falls in: a state label starts a new state at itself, a split point after itself
+    /// <summary>
+    /// Returns the state that each label of <paramref name="stateLabels"/> starts in <paramref name="statements"/>, numbered
+    /// by the same rule that <see cref="FindStateLabels"/> uses to place the gotos. <see cref="StateMachineLowerer"/>
+    /// takes its numbers from here, so a goto and its label always agree on the state.
+    /// </summary>
+    internal static Dictionary<DeclarationKey, int> NumberLabelStates(SyntaxList<StatementSyntax> statements,
+        HashSet<DeclarationKey> stateLabels, SemanticModel? model)
+    {
+        var stateOfStatement = new int[statements.Count];
+        NumberStates(statements, stateLabels, model, stateOfStatement);
+        var labelStates = new Dictionary<DeclarationKey, int>();
+        for (var i = 0; i < statements.Count; i++)
+        {
+            if (statements[i] is LabeledStatementSyntax labeled &&
+                LoweringIdentity.ForDeclaration(labeled, model) is var key &&
+                stateLabels.Contains(key))
+            {
+                labelStates[key] = stateOfStatement[i];
+            }
+        }
+
+        return labelStates;
+    }
+
+    // The state each top-level statement falls in: a state label starts a new state at itself, a split point after itself.
+    // This is the only definition of the numbering (see NumberLabelStates).
     private static void NumberStates(SyntaxList<StatementSyntax> statements, HashSet<DeclarationKey> stateLabels,
         SemanticModel? model, int[] stateOfStatement)
     {

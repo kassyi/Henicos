@@ -33,24 +33,10 @@ public class StateMachineLowerer(
         var state = 0;
         LabeledStatementSyntax? sectionLabel = null;
 
-        // 1. Pass 1: Identify all state boundaries (barriers and the labels that start a state) and assign sequential
-        // states. Any other label stays a label inside its state.
+        // 1. The state of each label that starts one, numbered by StateLabelPlanner (the only definition of the
+        // numbering). Any other label stays a label inside its state.
         var stateLabelKeys = stateLabels ?? StateLabelPlanner.FindStateLabels(block, semanticModel);
-        var labelStates = new Dictionary<DeclarationKey, int>();
-        int simulatedState = 0;
-        foreach (var stmt in statements)
-        {
-            if (stmt is LabeledStatementSyntax labeled && isStateLabel(labeled))
-            {
-                simulatedState++;
-                labelStates[LoweringIdentity.ForDeclaration(labeled, semanticModel)] = simulatedState;
-            }
-
-            if (BarrierHelper.GetPhaseBarrierInvocation(stmt) != null)
-            {
-                simulatedState++;
-            }
-        }
+        var labelStates = StateLabelPlanner.NumberLabelStates(statements, stateLabelKeys, semanticModel);
 
         // 2. Pass 2: Generate switch cases.
         foreach (var stmt in statements)
