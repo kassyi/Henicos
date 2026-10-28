@@ -43,10 +43,13 @@ public class StackArrayDiagnosticsTests
                 (Analyzer, 184, 17, 184, 26),
                 (Analyzer, 253, 9, 253, 23),
                 (Analyzer, 254, 15, 254, 20),
-                (Analyzer, 269, 13, 269, 46),
-                (Analyzer, 271, 13, 271, 53),
-                (Analyzer, 297, 13, 297, 38),
-                (Analyzer, 298, 13, 298, 39)
+                (Analyzer, 266, 13, 266, 22),
+                (Analyzer, 284, 42, 284, 51),
+                (Analyzer, 296, 13, 296, 34),
+                (Analyzer, 313, 13, 313, 46),
+                (Analyzer, 315, 13, 315, 53),
+                (Analyzer, 341, 13, 341, 38),
+                (Analyzer, 342, 13, 342, 39)
             ],
             diagnostics.Ranges(GSharpDiagnostics.StackArrayEscapes.Id));
     }
@@ -72,10 +75,13 @@ public class StackArrayDiagnosticsTests
     [InlineData("'a' cannot be assigned to a variable declared outside its scope", 184)]
     [InlineData("'s' cannot be reassigned", 253)]
     [InlineData("'s' cannot be passed by ref or out", 254)]
-    [InlineData("'a' cannot be assigned to a variable declared outside its scope", 269)]
-    [InlineData("'s' cannot be assigned to a variable declared outside its scope", 271)]
-    [InlineData("'a' cannot be assigned to a variable declared outside its scope", 297)]
-    [InlineData("'a' cannot be assigned to a variable declared outside its scope", 298)]
+    [InlineData("'collection expression' cannot be assigned to a variable declared outside its scope", 266)]
+    [InlineData("'collection expression' cannot be passed to a call with a ref or out argument that outlives it", 284)]
+    [InlineData("'stackalloc' cannot be assigned to a variable declared outside its scope", 296)]
+    [InlineData("'a' cannot be assigned to a variable declared outside its scope", 313)]
+    [InlineData("'s' cannot be assigned to a variable declared outside its scope", 315)]
+    [InlineData("'a' cannot be assigned to a variable declared outside its scope", 341)]
+    [InlineData("'a' cannot be assigned to a variable declared outside its scope", 342)]
     [Scenario(TestScenario.SadPath)]
     public async Task Test_StackArrayEscape_MessageNamesTheStorageAndTheUse(string messagePart, int line)
     {
@@ -97,6 +103,19 @@ public class StackArrayDiagnosticsTests
         Assert.Equal(
             [(Analyzer, 17, 20, 17, 33)],
             diagnostics.Ranges(GSharpDiagnostics.UnsupportedSyntax.Id, "'multidimensional array'"));
+    }
+
+    [Theory]
+    [InlineData("Cpu")]
+    [InlineData("Cuda")]
+    [Scenario(TestScenario.SadPath)]
+    public async Task Test_DynamicStackAllocInAnArgument_ReportsGsh0003AtTheSize(string dialect)
+    {
+        var diagnostics = await KernelDiagnostics.RunTestCaseAsync(Shapes, dialect);
+
+        Assert.Equal(
+            [(Analyzer, 45, 43, 45, 44)],
+            diagnostics.Ranges(GSharpDiagnostics.UnsupportedSyntax.Id, "'dynamic array size'"));
     }
 
     [Theory]

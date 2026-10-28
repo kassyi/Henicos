@@ -354,7 +354,7 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker, IDisposable
             return;
         }
 
-        DeclarationHoistingHelper.HoistDeclarationExpressions(node, ref Context);
+        StatementPrelude.Emit(node, ref Context);
         Visit(node.Expression);
         Context.Emitter.Writer.Append(';');
     }
@@ -579,8 +579,14 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker, IDisposable
     public override void VisitSingleVariableDesignation(SingleVariableDesignationSyntax node)
         => CppNameResolver.AppendDeclaredName(node, node.Identifier, ref Context);
 
-    public override void VisitCollectionExpression(CollectionExpressionSyntax node) =>
-        VisitBracedSeparatedList(node.Elements);
+    public override void VisitCollectionExpression(CollectionExpressionSyntax node)
+    {
+        // A collection expression converted to a span or an array outside a stack array declaration fills its storage
+        if (!StackAllocEmitter.TryEmit(node, ref Context))
+        {
+            VisitBracedSeparatedList(node.Elements);
+        }
+    }
 
     public override void VisitExpressionElement(ExpressionElementSyntax node) => Visit(node.Expression);
 
@@ -630,18 +636,12 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker, IDisposable
         AppendUnsupportedPlaceholder(node);
     }
 
-    public override void VisitStackAllocArrayCreationExpression(StackAllocArrayCreationExpressionSyntax node)
-    {
-        if (node.Initializer != null)
-        {
-            Visit(node.Initializer);
-        }
-        else
-        {
-            Context.Emitter.Writer.Append("{}");
-        }
-    }
+    // A stackalloc that is not the initializer of a stack array declaration (which writes T name[N] itself) fills the
+    // storage that the statement prelude declared (StackAllocEmitter)
+    public override void VisitStackAllocArrayCreationExpression(StackAllocArrayCreationExpressionSyntax node) =>
+        StackAllocEmitter.TryEmit(node, ref Context);
 
     public override void VisitImplicitStackAllocArrayCreationExpression(
-        ImplicitStackAllocArrayCreationExpressionSyntax node) => Visit(node.Initializer);
+        ImplicitStackAllocArrayCreationExpressionSyntax node) =>
+        StackAllocEmitter.TryEmit(node, ref Context);
 }
