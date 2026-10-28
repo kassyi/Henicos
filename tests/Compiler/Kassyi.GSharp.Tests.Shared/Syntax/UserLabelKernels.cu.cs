@@ -1,4 +1,5 @@
 // ReSharper disable All
+using System;
 using Kassyi.GSharp.Core;
 
 namespace Kassyi.GSharp.Tests.Shared.Syntax;
@@ -7,6 +8,19 @@ namespace Kassyi.GSharp.Tests.Shared.Syntax;
 /// Kernels with labels of the user and <c>goto</c>. The CPU dialects lower a kernel into a state machine and must keep
 /// the labels, the locals declared before them and the split points under them as CUDA runs them.
 /// </summary>
+/// <summary>A struct with a constructor, declared past a goto in <see cref="UserLabelKernels.GotoPastInitializationKernel"/>.</summary>
+public struct LabelPair
+{
+    public int A;
+    public int B;
+
+    public LabelPair(int a, int b)
+    {
+        A = a;
+        B = b;
+    }
+}
+
 public static partial class UserLabelKernels
 {
     private const uint FullMask = 0xFFFFFFFFu;
@@ -112,6 +126,71 @@ public static partial class UserLabelKernels
         value += before;
         int extra;
         extra = 7;
+        value += extra;
+    done:
+        extra = value * 2;
+        data[tid] = extra;
+    }
+
+    // The goto jumps past initialized declarations (an int through var, and a struct). C# allows it because nothing reads
+    // them after the label; C++ does not ([stmt.dcl]), so the declarations are emitted as a declaration and an assignment
+    [GpuKernel]
+    public static void GotoPastInitializationKernel(int[] data)
+    {
+        int tid = ThreadIndex.X;
+        if (data[tid] % 3 == 0)
+        {
+            goto skip;
+        }
+
+        var doubled = data[tid] * 2;
+        LabelPair pair = new LabelPair(doubled, 1);
+        data[tid] = pair.A + pair.B;
+    skip:
+        data[tid] += 1;
+    }
+
+    // The goto leaves a nested block and jumps past a const local, an array and a stackalloc span: C# zeroes both
+    // arrays, so their zero fill stays at the declaration
+    [GpuKernel]
+    public static void GotoPastConstAndArraysKernel(int[] data)
+    {
+        int tid = ThreadIndex.X;
+        int total = 0;
+        if (data[tid] % 4 == 0)
+        {
+            {
+                total += 100;
+                goto skip;
+            }
+        }
+
+        const int Scale = 3;
+        int[] counts = new int[4];
+        Span<int> scratch = stackalloc int[4];
+        counts[1] += data[tid] * Scale;
+        scratch[2] += counts[1] + 1;
+        total += counts[0] + counts[1] + scratch[1] + scratch[2];
+    skip:
+        total += 1;
+        data[tid] = total;
+    }
+
+    // The shape of CrossLabelWriteKernel with an initialized declaration: the CPU paths hoist extra into the context,
+    // CUDA splits the declaration
+    [GpuKernel]
+    public static void CrossLabelInitializedKernel(int[] data, int flag)
+    {
+        int tid = ThreadIndex.X;
+        int value = data[tid];
+        if (flag != 0)
+        {
+            Gpu.SyncThreads();
+            value += 1;
+            goto done;
+        }
+
+        int extra = 10;
         value += extra;
     done:
         extra = value * 2;

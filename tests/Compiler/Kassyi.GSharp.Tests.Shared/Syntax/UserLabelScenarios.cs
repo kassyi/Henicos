@@ -116,6 +116,42 @@ internal static class UserLabelScenarios
         }
     }
 
+    public static void GotoPastInitialization(Action<Action> run)
+    {
+        var data = CreateSequence();
+
+        run(() => UserLabelKernels.LaunchGotoPastInitializationKernel(data, blockDimX: WarpSize));
+
+        for (int i = 0; i < WarpSize; i++)
+        {
+            Assert.Equal(i % 3 == 0 ? i + 1 : i * 2 + 1 + 1, data[i]);
+        }
+    }
+
+    public static void GotoPastConstAndArrays(Action<Action> run)
+    {
+        var data = CreateSequence();
+
+        run(() => UserLabelKernels.LaunchGotoPastConstAndArraysKernel(data, blockDimX: WarpSize));
+
+        for (int i = 0; i < WarpSize; i++)
+        {
+            Assert.Equal(i % 4 == 0 ? 100 + 1 : i * 3 + (i * 3 + 1) + 1, data[i]);
+        }
+    }
+
+    public static void CrossLabelInitialized(Action<Action> run, int flag)
+    {
+        var data = CreateSequence();
+
+        run(() => UserLabelKernels.LaunchCrossLabelInitializedKernel(data, flag, blockDimX: WarpSize));
+
+        for (int i = 0; i < WarpSize; i++)
+        {
+            Assert.Equal((i + (flag != 0 ? 1 : 10)) * 2, data[i]);
+        }
+    }
+
     public static void LabeledBarrier(Action<Action> run)
     {
         var output = new int[4];

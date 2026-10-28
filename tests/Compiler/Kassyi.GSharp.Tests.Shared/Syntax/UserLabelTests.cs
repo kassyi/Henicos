@@ -44,6 +44,23 @@ public class UserLabelTests : TranspilerTestBase
         UserLabelScenarios.CrossLabelWrite(s_runNative, flag);
 
     [SkippableFact]
+    [Scenario(TestScenario.Boundary)]
+    public void Test_GotoPastInitialization_SkipsTheDeclarations() =>
+        UserLabelScenarios.GotoPastInitialization(s_runNative);
+
+    [SkippableFact]
+    [Scenario(TestScenario.Boundary)]
+    public void Test_GotoPastConstAndArrays_SkipsTheDeclarations() =>
+        UserLabelScenarios.GotoPastConstAndArrays(s_runNative);
+
+    [SkippableTheory]
+    [Scenario(TestScenario.Boundary)]
+    [InlineData(0)]
+    [InlineData(1)]
+    public void Test_CrossLabelInitialized_LocalUsedAfterSplitLabel(int flag) =>
+        UserLabelScenarios.CrossLabelInitialized(s_runNative, flag);
+
+    [SkippableFact]
     [Scenario(TestScenario.HappyPath)]
     public void Test_LabeledBarrier_SeparatesWritesFromReads()
     {
