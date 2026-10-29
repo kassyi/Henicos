@@ -1243,7 +1243,12 @@ __gsharp_id_0_a[0]=__gsharp_add_i32(__gsharp_id_0_a[0],2);
 }
 __gsharp_st_end_1:;
 }
-for(int __gsharp_id_2_i = blockIdx.x * blockDim.x + threadIdx.x; __gsharp_id_2_i < 2; __gsharp_id_2_i += gridDim.x * blockDim.x)
+{
+unsigned int __gsharp_gsl_n_0 = __gsharp_grid_stride_count(2);
+unsigned int __gsharp_gsl_s_0 = __gsharp_grid_stride_step();
+for(unsigned int __gsharp_gsl_0 = __gsharp_grid_stride_start(); __gsharp_gsl_0 < __gsharp_gsl_n_0; __gsharp_gsl_0 += __gsharp_gsl_s_0)
+{
+int __gsharp_id_2_i = (int)__gsharp_gsl_0;
 {
 if((threadIdx.x|threadIdx.y|threadIdx.z|blockIdx.x|blockIdx.y|blockIdx.z)==0)
 {
@@ -1254,6 +1259,8 @@ goto __gsharp_st_end_2;
 __gsharp_id_0_a[1]=__gsharp_add_i32(__gsharp_id_0_a[1],3);
 }
 __gsharp_st_end_2:;
+}
+}
 }
 }
 ";

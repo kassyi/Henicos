@@ -13,6 +13,10 @@ public static partial class MultiMethodInvoker
 
     [CudaImport("other_module")]
     public static partial void MethodThree([In] float[] input, [Out] float[] output, int length);
+
+    // A launch with dynamic shared memory opts the function in before the device allocations (#820)
+    [CudaImport("other_module", EntryPoint = "SharedKernel")]
+    public static partial void MethodFour([Out] uint[] output, int n, uint gridDimX, uint blockDimX, uint sharedMemBytes);
 }
 
 internal static partial class SecondaryInvoker
