@@ -45,7 +45,10 @@ internal abstract class VectorBinaryScalarExpressionBase(
         var scalarResult = scalar.Evaluate(workspace);
         try
         {
-            var destination = _cache.Signed(workspace, evalCount, WordsPerElement, targetValues);
+            // A target that shares words with an input is written from the cache after the launch (#864)
+            var staged = DeviceRanges.Overlaps(targetValues, vecResult) ||
+                DeviceRanges.Overlaps(targetValues.Handle, scalarResult.Value.Handle);
+            var destination = _cache.Signed(workspace, evalCount, WordsPerElement, staged ? default : targetValues);
             var operands = new VectorScalarOperands(vecResult, scalarResult, destination);
             // An empty vector launches nothing: a grid of 0 blocks is an invalid launch.
             if (evalCount > 0)
@@ -53,7 +56,7 @@ internal abstract class VectorBinaryScalarExpressionBase(
                 DispatchKernel(workspace, operands, (uint)evalCount);
             }
 
-            return destination;
+            return staged ? VectorResultCache.Deliver(workspace, destination, targetValues) : destination;
         }
         finally
         {

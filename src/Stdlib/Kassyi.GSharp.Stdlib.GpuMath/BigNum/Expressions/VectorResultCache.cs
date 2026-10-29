@@ -16,6 +16,12 @@ namespace Kassyi.GSharp.Stdlib.GpuMath.BigNum.Expressions;
 /// The cache owns only what it allocated; a caller's target is checked (<see cref="TargetValues"/>) and borrowed, never
 /// stored.
 /// </para>
+/// <para>
+/// A target that shares words with an input of the node (in place, or shifted by some elements) is not written by the
+/// node's kernel or host loop: an element would be written before another element read its input. The node computes
+/// into its cache and <see cref="Deliver(GpuWorkspace, GpuBigIntArrayView, GpuBigUIntArrayView)"/> copies the result
+/// into the target (#864), as the scalar roots do (#636).
+/// </para>
 /// </remarks>
 internal sealed class VectorResultCache : IDisposable
 {
@@ -82,6 +88,59 @@ internal sealed class VectorResultCache : IDisposable
     {
         ThrowIfWrongShape(target.WordsPerElement, target.Length, count, wordsPerElement);
         return target.Slice(0, count);
+    }
+
+    /// <summary>
+    /// Copies the values of a result that a node computed in its cache, because the target shares words with one of its
+    /// inputs (#864), into the target; returns the result with the target's values and the cache's signs.
+    /// </summary>
+    public static GpuBigIntArrayView Deliver(
+        GpuWorkspace workspace,
+        GpuBigIntArrayView computed,
+        GpuBigUIntArrayView checkedTarget)
+    {
+        CopyValues(workspace, checkedTarget, computed.Values);
+        return new GpuBigIntArrayView(checkedTarget, computed.Signs);
+    }
+
+    /// <summary>
+    /// Copies a floating-point result (a node's cache, or a leaf's input array) into the target, each component with
+    /// <see cref="CopyValues"/>, and returns the target (#864).
+    /// </summary>
+    public static GpuBigFloatArrayView Deliver(
+        GpuWorkspace workspace,
+        GpuBigFloatArrayView computed,
+        GpuBigFloatArrayView checkedTarget)
+    {
+        CopyValues(workspace, checkedTarget.Significands, computed.Significands);
+        CopyValues(workspace, checkedTarget.Exponents, computed.Exponents);
+        CopyValues(workspace, checkedTarget.Signs, computed.Signs);
+        return checkedTarget;
+    }
+
+    /// <summary>
+    /// Copies the words of <paramref name="source"/> into <paramref name="destination"/> (the same length): nothing for
+    /// the same words, through a temporary when the ranges partly overlap (<c>cuMemcpyDtoD</c> does not promise
+    /// overlapping copies), directly otherwise, as the scalar leaves do (#636).
+    /// </summary>
+    public static void CopyValues(GpuWorkspace workspace, GpuBigUIntArrayView destination, GpuBigUIntArrayView source)
+    {
+        var words = destination.TotalWords;
+        if (words == 0 || destination.DevicePointer == source.DevicePointer)
+        {
+            return;
+        }
+
+        var provider = workspace.Provider;
+        if (DeviceRanges.Overlaps(destination, source))
+        {
+            using var staging = new GpuBigUInt(workspace, words);
+            provider.CopyDeviceToDevice(staging.DevicePointer, source.DevicePointer, words, workspace.Stream);
+            provider.CopyDeviceToDevice(destination.DevicePointer, staging.DevicePointer, words, workspace.Stream);
+            return;
+        }
+
+        provider.CopyDeviceToDevice(destination.DevicePointer, source.DevicePointer, words, workspace.Stream);
     }
 
     /// <summary>

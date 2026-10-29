@@ -21,4 +21,21 @@ internal static class DeviceRanges
 
     /// <summary>Returns whether the words of two views overlap.</summary>
     public static bool Overlaps(scoped GpuBigUIntView a, scoped GpuBigUIntView b) => Overlaps(a.Handle, b.Handle);
+
+    /// <summary>Returns whether the words of two array views overlap; a default view overlaps nothing.</summary>
+    public static bool Overlaps(scoped GpuBigUIntArrayView a, scoped GpuBigUIntArrayView b) => Overlaps(a.Handle, b.Handle);
+
+    /// <summary>Returns whether the words of <paramref name="a"/> overlap the values or the signs of <paramref name="b"/>.</summary>
+    public static bool Overlaps(scoped GpuBigUIntArrayView a, scoped GpuBigIntArrayView b) =>
+        Overlaps(a, b.Values) || Overlaps(a, b.Signs);
+
+    /// <summary>
+    /// Returns whether the significands, the exponents or the signs of <paramref name="a"/> overlap <paramref name="b"/>.
+    /// </summary>
+    public static bool Overlaps(scoped GpuBigFloatArrayView a, GpuBigIntMemoryHandle b) =>
+        Overlaps(a.Significands.Handle, b) || Overlaps(a.Exponents.Handle, b) || Overlaps(a.Signs.Handle, b);
+
+    /// <summary>Returns whether any component of <paramref name="a"/> overlaps any component of <paramref name="b"/>.</summary>
+    public static bool Overlaps(scoped GpuBigFloatArrayView a, scoped GpuBigFloatArrayView b) =>
+        Overlaps(a, b.Significands.Handle) || Overlaps(a, b.Exponents.Handle) || Overlaps(a, b.Signs.Handle);
 }

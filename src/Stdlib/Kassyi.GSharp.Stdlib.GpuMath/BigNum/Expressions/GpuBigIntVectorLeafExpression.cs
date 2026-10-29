@@ -20,11 +20,8 @@ internal class GpuBigIntVectorLeafExpression(GpuBigIntArray array) : IGpuBigIntV
         // As every node: a target is checked, its first elements receive the values, and the result is a view of them
         // with the signs of the input
         var values = VectorResultCache.TargetValues(targetResult, count, WordsPerElement);
-        if (count > 0)
-        {
-            workspace.Provider.CopyDeviceToDevice(
-                values.DevicePointer, slice.Values.DevicePointer, values.TotalWords, workspace.Stream);
-        }
+        // A target that overlaps the array (a shifted view of it) is copied through a temporary
+        VectorResultCache.CopyValues(workspace, values, slice.Values);
 
         return new GpuBigIntArrayView(values, slice.Signs);
     }

@@ -55,14 +55,16 @@ internal abstract class VectorBinaryVectorExpressionBase(
             throw new ArgumentException("Vector lengths must match for Zip operations.");
         }
 
-        var destination = _cache.Signed(workspace, evalCount, WordsPerElement, targetValues);
+        // A target that shares words with an input is written from the cache after the launch (#864)
+        var staged = DeviceRanges.Overlaps(targetValues, leftResult) || DeviceRanges.Overlaps(targetValues, rightResult);
+        var destination = _cache.Signed(workspace, evalCount, WordsPerElement, staged ? default : targetValues);
         var operands = new VectorZipOperands(leftResult, rightResult, destination);
         // An empty vector launches nothing: a grid of 0 blocks is an invalid launch.
         if (evalCount > 0)
         {
             DispatchKernel(workspace, operands, (uint)evalCount);
         }
-        return destination;
+        return staged ? VectorResultCache.Deliver(workspace, destination, targetValues) : destination;
     }
 
     protected GpuBigIntVectorKernels.AotContexts.VectorBinaryOperation CreateZipOp(VectorZipOperands operands) =>

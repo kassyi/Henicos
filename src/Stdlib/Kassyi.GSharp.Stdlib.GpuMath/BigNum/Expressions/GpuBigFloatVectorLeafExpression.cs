@@ -22,18 +22,8 @@ internal sealed class GpuBigFloatVectorLeafExpression(GpuBigFloatArray array) : 
 
         // As every node: a target is checked, and its first elements receive the values
         var destination = VectorResultCache.TargetFloat(targetResult, count, WordsPerElement);
-        if (count > 0)
-        {
-            var provider = workspace.Provider;
-            provider.CopyDeviceToDevice(destination.Significands.DevicePointer, slice.Significands.DevicePointer,
-                destination.Significands.TotalWords, workspace.Stream);
-            provider.CopyDeviceToDevice(destination.Exponents.DevicePointer, slice.Exponents.DevicePointer, count,
-                workspace.Stream);
-            provider.CopyDeviceToDevice(destination.Signs.DevicePointer, slice.Signs.DevicePointer, count,
-                workspace.Stream);
-        }
-
-        return destination;
+        // A target that overlaps the array (a shifted view of it) is copied through a temporary
+        return VectorResultCache.Deliver(workspace, slice, destination);
     }
 
     public void Dispose()
