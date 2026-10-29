@@ -47,6 +47,22 @@ public class UniformitySecondReviewAnalyzerTests : TranspilerTestBase
             actual);
     }
 
+    [Fact]
+    [Scenario(TestScenario.SadPath)]
+    public async Task Test_GridBarrierThroughCallee_DivergesBetweenBlocks()
+    {
+        var actual = await RunAsync("Analyzers/BarrierUsage/GridCalleeKernels.cu.cs");
+
+        // 21: a call that reaches a grid barrier under 'BlockIndex.X == 0', reported as the direct grid barrier (27). A
+        // call that reaches only a block barrier under the same branch (46) does not diverge
+        Assert.Equal(
+            [
+                (GSharpDiagnostics.LaunchDependentDivergentBarrier.Id, 21, 13, 21, 29),
+                (GSharpDiagnostics.LaunchDependentDivergentBarrier.Id, 27, 13, 27, 27)
+            ],
+            actual);
+    }
+
     private static async Task<IReadOnlyList<(string Id, int StartLine, int StartCol, int EndLine, int EndCol)>> RunAsync(
         string relativeTestCasePath)
     {

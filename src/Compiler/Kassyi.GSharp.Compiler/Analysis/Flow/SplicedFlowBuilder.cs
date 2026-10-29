@@ -406,7 +406,8 @@ internal sealed class SplicedFlowBuilder
         }
     }
 
-    // Where a call splits the state machine; a barrier, or a call that reaches a block barrier, is also a site of GSH0037
+    // Where a call splits the state machine; a barrier, or a call that reaches a block barrier (with the grid scope when it
+    // reaches a grid barrier), is also a site of GSH0083
     private SplitPoint? GetSplit(IInvocationOperation invocation, ControlFlowGraph graph)
     {
         var method = invocation.TargetMethod;
@@ -426,8 +427,10 @@ internal sealed class SplicedFlowBuilder
             return null;
         }
 
-        return SuspensionAnalysis.ReachesBlockBarrier(method, _model.Compilation)
-            ? new SplitPoint(SplitKind.Call, invocation.Syntax, SyncScope.Block, invocation, graph)
+        var compilation = _model.Compilation;
+        return SuspensionAnalysis.ReachesBlockBarrier(method, compilation)
+            ? new SplitPoint(SplitKind.Call, invocation.Syntax, SuspensionAnalysis.GetBarrierScope(method, compilation),
+                invocation, graph)
             : new SplitPoint(SplitKind.Call, invocation.Syntax, null, null, graph);
     }
 

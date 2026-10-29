@@ -117,9 +117,12 @@ internal static class KernelConstructChecks
         else if (suspendingCallee != null)
         {
             scan.Barriers.Add(invocation);
-            if (SuspensionAnalysis.ReachesBlockBarrier(suspendingCallee, scan.SemanticModel.Compilation))
+            var compilation = scan.SemanticModel.Compilation;
+            if (SuspensionAnalysis.ReachesBlockBarrier(suspendingCallee, compilation))
             {
-                scan.SyncPoints.Add((invocation, SyncScope.Block, IsCall: true));
+                scan.SyncPoints.Add(
+                    (invocation, SuspensionAnalysis.GetBarrierScope(suspendingCallee, compilation), IsCall: true)
+                );
             }
 
             BarrierDivergenceChecks.InspectBarrierAncestors(scan, invocation);
