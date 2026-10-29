@@ -157,7 +157,8 @@ public class CudaImportGenerator : IIncrementalGenerator
                 writer.AppendLine(method.Signature);
                 using (writer.Scope())
                 {
-                    ModuleKernelLaunchEmitter.EmitLaunchBody(writer, method.ModuleName, method.EntryPoint, method.MethodName, parameters, method.PackContext);
+                    ModuleKernelLaunchEmitter.EmitLaunchBody(writer, method.ModuleName, method.EntryPoint, method.MethodName,
+                        $"{classGroup.ClassName}.{method.MethodName}", parameters, method.PackContext);
                 }
             }
         }
