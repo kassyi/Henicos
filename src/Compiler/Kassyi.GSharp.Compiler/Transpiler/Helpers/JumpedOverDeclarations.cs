@@ -2,7 +2,7 @@ namespace Kassyi.GSharp.Compiler.Transpiler.Helpers;
 
 /// <summary>
 /// Declares at the start of their statement list the locals that a <c>goto</c> jumps past (<see cref="GotoJumpAnalysis"/>)
-/// and whose C++ type has a default constructor.
+/// and whose C++ type has a default constructor: an array alias (<c>GSharpArray&lt;T&gt;</c>) or such a struct.
 /// </summary>
 /// <remarks>
 /// [WHY] A declaration that a goto jumps past is split into <c>&lt;type&gt; &lt;name&gt;;</c> and an assignment (#768). C++
@@ -16,14 +16,31 @@ namespace Kassyi.GSharp.Compiler.Transpiler.Helpers;
 internal static class JumpedOverDeclarations
 {
     /// <summary>Whether <paramref name="declarator"/> is declared at the start of its statement list.</summary>
+    /// <remarks>A local that the block around its switch declares (<see cref="SwitchSectionLocals"/>) is not declared again.</remarks>
     public static bool IsDeclaredAtListStart(VariableDeclaratorSyntax declarator, SemanticModel semanticModel) =>
         declarator.Parent is VariableDeclarationSyntax
         {
             Type: not RefTypeSyntax,
             Parent: LocalDeclarationStatementSyntax { UsingKeyword.RawKind: (int)SyntaxKind.None, IsConst: false } statement
         } &&
-        HasCppDefaultConstructor(semanticModel.GetTypeSymbol(statement.Declaration.Type)) &&
-        GotoJumpAnalysis.MayBeJumpedOver(statement);
+        IsArrayOrHasCppDefaultConstructor(declarator, statement, semanticModel) &&
+        GotoJumpAnalysis.MayBeJumpedOver(statement) &&
+        !SwitchSectionLocals.IsDeclaredBeforeSwitch(declarator, semanticModel);
+
+    // An array alias (int[] a = input, a Span<T> over an array) is a GSharpArray<T>, which has a default constructor; a
+    // stack array (new T[N], stackalloc) is a C++ array that keeps its own form (zero fill, VariableDeclarationTranspilerRule)
+    private static bool IsArrayOrHasCppDefaultConstructor(VariableDeclaratorSyntax declarator,
+        LocalDeclarationStatementSyntax statement, SemanticModel semanticModel)
+    {
+        var type = semanticModel.GetTypeSymbol(statement.Declaration.Type);
+        if (!type.IsArrayLikeType())
+        {
+            return HasCppDefaultConstructor(type);
+        }
+
+        return semanticModel.GetDeclaredSymbol<ISymbol>(declarator) is ILocalSymbol local &&
+               !StackArrayLocals.IsStackArray(local, out _);
+    }
 
     /// <summary>Writes <c>&lt;type&gt; &lt;name&gt;;</c> for each local of <paramref name="statements"/> declared at its start.</summary>
     public static void WriteDeclarations(SyntaxList<StatementSyntax> statements, ref TranspileContext context)

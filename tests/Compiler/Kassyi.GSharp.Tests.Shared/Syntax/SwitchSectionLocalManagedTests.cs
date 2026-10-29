@@ -42,6 +42,20 @@ public class SwitchSectionLocalManagedTests : TranspilerTestBase
     [Scenario(TestScenario.Boundary)]
     [InlineData(0)]
     [InlineData(1)]
+    public void Test_Managed_GotoPastArrayAlias_SkipsTheDeclaration(int flag) =>
+        SwitchSectionLocalScenarios.GotoPastArrayAlias(s_runManaged, flag);
+
+    [Theory]
+    [Scenario(TestScenario.Boundary)]
+    [InlineData(0)]
+    [InlineData(1)]
+    public void Test_Managed_GotoInSharedSection_DeclaredOnce(int flag) =>
+        SwitchSectionLocalScenarios.GotoInSharedSection(s_runManaged, flag);
+
+    [Theory]
+    [Scenario(TestScenario.Boundary)]
+    [InlineData(0)]
+    [InlineData(1)]
     public void Test_Managed_ByteConstant_KeepsItsTypeInAnotherSection(int flag) =>
         SwitchSectionLocalScenarios.ByteConstant(s_runManaged, flag);
 

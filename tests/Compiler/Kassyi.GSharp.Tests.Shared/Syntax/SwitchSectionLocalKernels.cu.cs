@@ -204,6 +204,50 @@ public static partial class SwitchSectionLocalKernels
         data[1] = 7;
     }
 
+    // A goto past an array alias and a span over it: both are GSharpArray<T>, which has a default constructor
+    [GpuKernel]
+    public static void GotoPastArrayAliasKernel(int[] data, int flag)
+    {
+        if (flag == 0)
+        {
+            goto skip;
+        }
+
+        int[] alias = data;
+        alias[0] = 9;
+        Span<int> view = alias;
+        view[0] += 5;
+    skip:
+        data[1] = 7;
+    }
+
+    // A struct shared by the sections that a goto in its own section also jumps past: the block around the switch
+    // declares it once
+    [GpuKernel]
+    public static void GotoInSharedSectionKernel(int[] data, int flag)
+    {
+        switch (flag)
+        {
+            case 0:
+                if (data[0] > 100)
+                {
+                    goto done;
+                }
+
+                SwitchHolder holder;
+                holder.Values = data;
+                holder.Count = 1;
+                data[1] = holder.Values[0] + holder.Count;
+            done:
+                break;
+            default:
+                holder.Values = data;
+                holder.Count = 2;
+                data[1] = holder.Values[0] + holder.Count;
+                break;
+        }
+    }
+
     // A warp shuffle before the declaration: the CPU lowering adds a temporary to the section
     [GpuKernel]
     public static void ShuffleBeforeDeclarationKernel(int[] output, int flag)

@@ -101,6 +101,25 @@ internal static class SwitchSectionLocalScenarios
         Assert.Equal(flag == 0 ? [10, 7] : new[] { 13, 7 }, data);
     }
 
+    public static void GotoPastArrayAlias(Action<Action> run, int flag)
+    {
+        int[] data = [10, 0];
+
+        run(() => SwitchSectionLocalKernels.LaunchGotoPastArrayAliasKernel(data, flag, blockDimX: 1));
+
+        // flag 1 writes 9 through the alias and adds 5 through the span
+        Assert.Equal(flag == 0 ? [10, 7] : new[] { 14, 7 }, data);
+    }
+
+    public static void GotoInSharedSection(Action<Action> run, int flag)
+    {
+        int[] data = [10, 0];
+
+        run(() => SwitchSectionLocalKernels.LaunchGotoInSharedSectionKernel(data, flag, blockDimX: 1));
+
+        Assert.Equal(flag == 0 ? 11 : 12, data[1]);
+    }
+
     public static void ShuffleBeforeDeclaration(Action<Action> run, int flag)
     {
 #if GSHARP_CPU
