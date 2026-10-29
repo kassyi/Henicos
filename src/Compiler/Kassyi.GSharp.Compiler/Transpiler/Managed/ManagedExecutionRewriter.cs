@@ -78,6 +78,23 @@ internal sealed partial class ManagedExecutionRewriter(SemanticModel semanticMod
     public override SyntaxNode? VisitMemberAccessExpression(MemberAccessExpressionSyntax node)
     {
         var visited = base.VisitMemberAccessExpression(node);
+        if (IsLengthOfOptionalArray(node) && visited is MemberAccessExpressionSyntax lengthAccess)
+        {
+            // (<array>?.Length ?? 0)
+            return SyntaxFactory.ParenthesizedExpression(
+                SyntaxFactory.BinaryExpression(
+                    SyntaxKind.CoalesceExpression,
+                    SyntaxFactory.ConditionalAccessExpression(
+                        lengthAccess.Expression.WithoutTrivia(),
+                        SyntaxFactory.MemberBindingExpression(lengthAccess.Name.WithoutTrivia())
+                    ),
+                    SyntaxFactory.LiteralExpression(
+                        SyntaxKind.NumericLiteralExpression,
+                        SyntaxFactory.Literal(0))
+                )
+            ).WithTriviaFrom(lengthAccess);
+        }
+
         if (!ContextLocalRewriter.IsContextPointerAccess(visited) ||
             visited is not MemberAccessExpressionSyntax memberAccess)
         {
@@ -89,6 +106,19 @@ internal sealed partial class ManagedExecutionRewriter(SemanticModel semanticMod
             memberAccess.Expression,
             memberAccess.Name).WithTriviaFrom(memberAccess);
     }
+
+    // <parameter>.Length where the parameter is an optional array (T[]?)
+    // [WHY] The device reads a null optional array as one of length 0 (its data pointer is null, as `x is null` sees),
+    // and the launchers pass it as null so that `x is null` stays true; the length is the one place that the managed
+    // kernel must read as 0 instead of throwing (#806)
+    private bool IsLengthOfOptionalArray(MemberAccessExpressionSyntax node) =>
+        node.IsKind(SyntaxKind.SimpleMemberAccessExpression) &&
+        node.Name is IdentifierNameSyntax { Identifier.ValueText: "Length" } &&
+        node.Expression is IdentifierNameSyntax &&
+        semanticModel.GetSymbol(node.Expression) is IParameterSymbol
+        {
+            Type: IArrayTypeSymbol, NullableAnnotation: NullableAnnotation.Annotated
+        };
 
     public override SyntaxNode? VisitIdentifierName(IdentifierNameSyntax node)
     {
