@@ -239,6 +239,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 WarmupFunctionPointerWriteExpectedOffsetsKernel();
 IntPtr hfunc = s_hfunc_WriteExpectedOffsetsKernel!.Value;
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "NestedVectorAlignmentKernels.WriteExpectedOffsetsKernel");
+var __gsharp_device_arrays = new global::Kassyi.GSharp.Runtime.Interop.DeviceArrayRegions();
 IntPtr d_offsets = IntPtr.Zero;
 try
 {
@@ -250,13 +251,17 @@ proxy_offsets[0] = IntPtr.Zero;
 ((int*)(proxy_offsets + 1))[0] = offsets.Length;
 if (offsets_size > 0)
 {
+if (!__gsharp_device_arrays.TryGetRegion(offsets, out d_offsets))
+{
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_offsets, (IntPtr)offsets_size, hStream));
-proxy_offsets[0] = d_offsets;
+__gsharp_device_arrays.Add(offsets, d_offsets);
 fixed (global::System.Int32* p_offsets = offsets)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoDAsync_v2(d_offsets, (IntPtr)p_offsets, (IntPtr)offsets_size, hStream));
 CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
 }
+}
+proxy_offsets[0] = d_offsets;
 }
 kernelParams[0] = proxy_offsets;
 CudaException.ThrowIfError(CudaDriverApi.cuLaunchKernel(
@@ -269,7 +274,7 @@ kernelParams,
 IntPtr.Zero // Extra
 ));
 // Copy back array: offsets
-if (offsets_size > 0 && d_offsets != IntPtr.Zero)
+if (offsets_size > 0 && d_offsets != IntPtr.Zero && __gsharp_device_arrays.TryClaimCopyBack(offsets))
 {
 fixed (global::System.Int32* p_offsets = offsets)
 {
@@ -280,7 +285,7 @@ CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
 }
 finally
 {
-if (d_offsets != IntPtr.Zero) CudaDriverApi.cuMemFreeAsync(d_offsets, hStream);
+__gsharp_device_arrays.Free(hStream);
 }
 }
 }

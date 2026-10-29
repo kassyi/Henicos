@@ -53,29 +53,146 @@ internal static class CpuHostLaunchEmitter
     // fallback and the native call both take the copy.
     private static void WriteKernelCopies(SourceWriter writer, in KernelHostModel kernel)
     {
-        foreach (var shape in kernel.Parameters)
+        var parameters = kernel.Parameters;
+        for (var i = 0; i < parameters.Length; i++)
         {
-            var copyArrays = shape.Cpu.ConvertedElementCopyArraysMethodName;
-            var needsCopy = shape.IsArray && (shape.IsReadOnlyContainer ? copyArrays is not null : !shape.CopyOut);
-            if (!needsCopy)
+            var shape = parameters[i];
+            if (!NeedsKernelCopy(shape))
             {
                 continue;
             }
+
+            // var <name>_source = <name>;     (an [In] T[] that a later [In] T[] may hold as well, WriteSharedKernelCopy)
+            writer.AppendLineIf(
+                IsSharedArray(shape) && HasLaterCopiedHolder(parameters, i),
+                $"var {shape.Name}_source = {shape.Identifier};"
+            );
 
             if (shape.IsOptional)
             {
                 writer.AppendLine(shape.IsNullableValue ? $"if ({shape.Identifier}.HasValue)" : $"if ({shape.Identifier} != null)");
                 using (writer.Scope())
                 {
-                    WriteKernelCopy(writer, shape, copyArrays);
+                    WriteKernelCopyOrShare(writer, parameters, i);
                 }
             }
             else
             {
-                WriteKernelCopy(writer, shape, copyArrays);
+                WriteKernelCopyOrShare(writer, parameters, i);
             }
         }
     }
+
+    // Whether the kernel gets a copy of the argument instead of the caller's array (WriteKernelCopies)
+    private static bool NeedsKernelCopy(in KernelParameterShape shape) =>
+        shape.IsArray &&
+        (shape.IsReadOnlyContainer ? shape.Cpu.ConvertedElementCopyArraysMethodName is not null : !shape.CopyOut);
+
+    // A T[] argument, which another T[] argument may hold as well: the CUDA launcher then gives both one device region
+    // (KernelLaunchEmitter.IsSharedArrayArgument, #721)
+    private static bool IsSharedArray(in KernelParameterShape shape) =>
+        shape is { IsArray: true, Container: ArrayContainerKind.Array, IsByRef: false };
+
+    // Whether two parameters may hold one array: both T[] of the same type
+    private static bool MayHoldSameArray(in KernelParameterShape shape, in KernelParameterShape other) =>
+        IsSharedArray(shape) && IsSharedArray(other) && shape.TypeName == other.TypeName;
+
+    private static bool HasLaterCopiedHolder(EquatableArray<KernelParameterShape> parameters, int index)
+    {
+        for (var k = index + 1; k < parameters.Length; k++)
+        {
+            if (NeedsKernelCopy(parameters[k]) && MayHoldSameArray(parameters[index], parameters[k]))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    // if (ReferenceEquals(<name>, <earlier [In]>_source)) { <name> = <earlier [In]>; } else if (...) ...
+    // else if (!ReferenceEquals(<name>, <writable holder>) && ...) { <copy> }
+    // [WHY] The CUDA launcher gives every holder of one array one device region, copied back when any holder is
+    // writable (#721). So an [In] array that a writable argument holds as well is not copied (the kernel writes the
+    // caller's array, as the copy back on CUDA does), and [In] arguments that hold one array share one copy.
+    private static void WriteKernelCopyOrShare(SourceWriter writer, EquatableArray<KernelParameterShape> parameters,
+        int index)
+    {
+        var shape = parameters[index];
+        var copyArrays = shape.Cpu.ConvertedElementCopyArraysMethodName;
+        if (!IsSharedArray(shape))
+        {
+            WriteKernelCopy(writer, shape, copyArrays);
+            return;
+        }
+
+        var hasCondition = false;
+        for (var k = 0; k < index; k++)
+        {
+            var earlier = parameters[k];
+            if (!NeedsKernelCopy(earlier) || !MayHoldSameArray(shape, earlier))
+            {
+                continue;
+            }
+
+            writer.AppendLine(
+                $"{(hasCondition ? "else if" : "if")} ({ReferenceEqualsMethod}({shape.Identifier}, {earlier.Name}_source))");
+            using (writer.Scope())
+            {
+                writer.AppendLine($"{shape.Identifier} = {earlier.Identifier};");
+            }
+
+            hasCondition = true;
+        }
+
+        var hasWritableHolder = false;
+        for (var k = 0; k < parameters.Length; k++)
+        {
+            hasWritableHolder |= IsWritableHolder(parameters, index, k);
+        }
+
+        if (hasWritableHolder)
+        {
+            writer.Append(hasCondition ? "else if " : "if ");
+            using (writer.Parentheses())
+            {
+                var first = true;
+                for (var k = 0; k < parameters.Length; k++)
+                {
+                    if (!IsWritableHolder(parameters, index, k))
+                    {
+                        continue;
+                    }
+
+                    writer.AppendIf(!first, " && ");
+                    writer.Append($"!{ReferenceEqualsMethod}({shape.Identifier}, {parameters[k].Identifier})");
+                    first = false;
+                }
+            }
+
+            writer.AppendLine();
+        }
+        else if (hasCondition)
+        {
+            writer.AppendLine("else");
+        }
+        else
+        {
+            WriteKernelCopy(writer, shape, copyArrays);
+            return;
+        }
+
+        using (writer.Scope())
+        {
+            WriteKernelCopy(writer, shape, copyArrays);
+        }
+    }
+
+    private const string ReferenceEqualsMethod = "global::System.Object.ReferenceEquals";
+
+    // Whether parameter <other> is a T[] that the kernel gets uncopied and that may hold the array of <index>
+    private static bool IsWritableHolder(EquatableArray<KernelParameterShape> parameters, int index, int other) =>
+        other != index && !NeedsKernelCopy(parameters[other]) && MayHoldSameArray(parameters[index], parameters[other]);
 
     private static void WriteKernelCopy(SourceWriter writer, in KernelParameterShape shape, string? copyArrays)
     {
@@ -480,10 +597,11 @@ internal static class CpuHostLaunchEmitter
     // native call or its error check throws.
     private static void WriteCpuFixedBlocksAndInvoke(SourceWriter writer, in KernelHostModel kernel)
     {
+        var parameters = kernel.Parameters;
         var hasConverted = false;
-        foreach (var shape in kernel.Parameters)
+        for (var i = 0; i < parameters.Length; i++)
         {
-            hasConverted |= WriteConvertedDeclaration(writer, shape);
+            hasConverted |= WriteConvertedDeclaration(writer, parameters, i);
         }
 
         if (!hasConverted)
@@ -496,9 +614,22 @@ internal static class CpuHostLaunchEmitter
         writer.AppendLine("try");
         using (writer.Scope())
         {
-            foreach (var shape in kernel.Parameters)
+            // [WHY] The same order as the CUDA launcher: an [Out] array that shares a shadow comes after the holders
+            // that convert their elements into it (#721)
+            for (var i = 0; i < parameters.Length; i++)
             {
-                WriteConvertedMarshal(writer, shape);
+                if (!IsConvertedLast(parameters[i]))
+                {
+                    WriteConvertedMarshal(writer, parameters, i);
+                }
+            }
+
+            for (var i = 0; i < parameters.Length; i++)
+            {
+                if (IsConvertedLast(parameters[i]))
+                {
+                    WriteConvertedMarshal(writer, parameters, i);
+                }
             }
 
             WriteFixedBlocksAndInvoke(writer, kernel);
@@ -511,9 +642,9 @@ internal static class CpuHostLaunchEmitter
         writer.AppendLine("finally");
         using (writer.Scope())
         {
-            foreach (var shape in kernel.Parameters)
+            for (var i = 0; i < parameters.Length; i++)
             {
-                WriteConvertedRelease(writer, shape);
+                WriteConvertedRelease(writer, parameters, i);
             }
         }
 
@@ -522,9 +653,13 @@ internal static class CpuHostLaunchEmitter
 
     // <shadow> <name>_native = default; var <name>_allocatedPtrs = new List<IntPtr>();                  (converted struct)
     // byte[]? <name>_shadow = null; var <name>_allocatedPtrs = ...; int <name>_size = checked(...);      (converted array)
+    // byte[]? <name>_sharedShadow = null;                         (a converted T[] that an earlier holder may share)
     // Returns whether the parameter is converted. The size is computed before the try block, when nothing is allocated.
-    private static bool WriteConvertedDeclaration(SourceWriter writer, in KernelParameterShape shape)
+    private static bool WriteConvertedDeclaration(SourceWriter writer, EquatableArray<KernelParameterShape> parameters,
+        int index)
     {
+        var shape = parameters[index];
+        writer.AppendLineIf(HasShadowSource(parameters, index), $"byte[]? {shape.Name}_sharedShadow = null;");
         switch (shape)
         {
             case { IsCpuConvertedStruct: true, AotStructPath: { } shadow }:
@@ -549,28 +684,107 @@ internal static class CpuHostLaunchEmitter
     // layout, which the kernel reads in place (the CUDA launcher copies the same shadow to the device). An [Out] element
     // with array fields is still marshaled: the kernel writes into its pinned arrays. A rented array holds the bytes of
     // an earlier use, so an [Out] shadow is cleared rather than left to the kernel.
-    private static void WriteConvertedMarshal(SourceWriter writer, in KernelParameterShape shape)
+    // A converted T[] that holds the array of a holder marshaled before it takes that shadow and fills nothing
+    // (WriteSharedShadowLookup).
+    private static void WriteConvertedMarshal(SourceWriter writer, EquatableArray<KernelParameterShape> parameters,
+        int index)
     {
+        var shape = parameters[index];
         switch (shape)
         {
             case { IsCpuConvertedStruct: true, MarshalMethodName: { } marshal }:
                 writer.AppendLine(
                     $"{marshal}(ref {shape.Identifier}, ref {shape.Name}_native, false, {shape.Name}_allocatedPtrs, hStream);");
                 break;
-            case { IsCpuConvertedArray: true }:
-                writer.AppendLine($"{shape.Name}_shadow = System.Buffers.ArrayPool<byte>.Shared.Rent({shape.Name}_size);");
+            case { IsCpuConvertedArray: true } when HasShadowSource(parameters, index):
+                WriteSharedShadowLookup(writer, parameters, index);
+                writer.AppendLine(
+                    $"{shape.Name}_shadow = {shape.Name}_sharedShadow ?? System.Buffers.ArrayPool<byte>.Shared.Rent({shape.Name}_size);");
                 ConvertedArrayEmitter.WriteShadowAndHostSpans(writer, shape, shape.Cpu);
-                if (!shape.CopyIn && !shape.Cpu.ConvertedElementHasArrayFields)
+                writer.AppendLine($"if ({shape.Name}_sharedShadow == null)");
+                using (writer.Scope())
                 {
-                    writer.AppendLine($"{shape.Name}_native.Clear();");
-                }
-                else
-                {
-                    ConvertedArrayEmitter.WriteElementMarshalLoop(writer, shape, shape.Cpu, $"{shape.Name}_allocatedPtrs");
+                    WriteConvertedElements(writer, shape);
                 }
 
                 break;
+            case { IsCpuConvertedArray: true }:
+                writer.AppendLine($"{shape.Name}_shadow = System.Buffers.ArrayPool<byte>.Shared.Rent({shape.Name}_size);");
+                ConvertedArrayEmitter.WriteShadowAndHostSpans(writer, shape, shape.Cpu);
+                WriteConvertedElements(writer, shape);
+                break;
         }
+    }
+
+    private static void WriteConvertedElements(SourceWriter writer, in KernelParameterShape shape)
+    {
+        if (!CopiesConvertedIn(shape))
+        {
+            writer.AppendLine($"{shape.Name}_native.Clear();");
+        }
+        else
+        {
+            ConvertedArrayEmitter.WriteElementMarshalLoop(writer, shape, shape.Cpu, $"{shape.Name}_allocatedPtrs");
+        }
+    }
+
+    // Whether the launcher converts the elements into the shadow: an [Out] array of elements without array fields is
+    // cleared instead
+    private static bool CopiesConvertedIn(in KernelParameterShape shape) =>
+        shape.CopyIn || shape.Cpu.ConvertedElementHasArrayFields;
+
+    // An [Out] converted T[] is marshaled after the other parameters (WriteCpuFixedBlocksAndInvoke)
+    private static bool IsConvertedLast(in KernelParameterShape shape) =>
+        shape.IsCpuConvertedArray && IsSharedArray(shape) && !CopiesConvertedIn(shape);
+
+    // Whether converted T[] <earlier> is marshaled before converted T[] <index> and may hold the same array
+    private static bool IsShadowSource(EquatableArray<KernelParameterShape> parameters, int index, int earlier)
+    {
+        var shape = parameters[index];
+        var other = parameters[earlier];
+        if (earlier == index || !shape.IsCpuConvertedArray || !other.IsCpuConvertedArray ||
+            !MayHoldSameArray(shape, other))
+        {
+            return false;
+        }
+
+        var shapeLast = IsConvertedLast(shape);
+        return shapeLast == IsConvertedLast(other) ? earlier < index : shapeLast;
+    }
+
+    private static bool HasShadowSource(EquatableArray<KernelParameterShape> parameters, int index)
+    {
+        for (var k = 0; k < parameters.Length; k++)
+        {
+            if (IsShadowSource(parameters, index, k))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    // <name>_sharedShadow = ReferenceEquals(<name>, <earlier>) ? <earlier>_shadow : ... : null;
+    // [WHY] Converted arguments that hold one array share one shadow, which the native kernel reads and writes in place,
+    // as the CUDA launcher gives them one device region (#721). The first holder converts the elements into it; an [Out]
+    // holder comes last, so that it never clears what an earlier holder converted. Every holder that copies back reads
+    // the same shadow, so the host elements get the same values.
+    private static void WriteSharedShadowLookup(SourceWriter writer, EquatableArray<KernelParameterShape> parameters,
+        int index)
+    {
+        var shape = parameters[index];
+        writer.Append($"{shape.Name}_sharedShadow = ");
+        for (var k = 0; k < parameters.Length; k++)
+        {
+            if (IsShadowSource(parameters, index, k))
+            {
+                writer.Append(
+                    $"{ReferenceEqualsMethod}({shape.Identifier}, {parameters[k].Identifier}) ? {parameters[k].Name}_shadow : ");
+            }
+        }
+
+        writer.AppendLine("null;");
     }
 
     // Unmarshal_<S>(ref <name>, ref <name>_native, false, hStream);                                     (converted struct)
@@ -593,8 +807,12 @@ internal static class CpuHostLaunchEmitter
 
     // foreach (var handle in <name>_allocatedPtrs) GCHandle.FromIntPtr(handle).Free();
     // if (<name>_shadow != null) ArrayPool<byte>.Shared.Return(<name>_shadow);                        (converted array)
-    private static void WriteConvertedRelease(SourceWriter writer, in KernelParameterShape shape)
+    // A shared shadow goes back to the pool from its owner only: ... && <name>_sharedShadow == null
+    private static void WriteConvertedRelease(SourceWriter writer, EquatableArray<KernelParameterShape> parameters,
+        int index)
     {
+        var shape = parameters[index];
+        var notShared = HasShadowSource(parameters, index) ? $" && {shape.Name}_sharedShadow == null" : "";
         switch (shape)
         {
             case { IsCpuConvertedStruct: true }:
@@ -603,7 +821,7 @@ internal static class CpuHostLaunchEmitter
             case { IsCpuConvertedArray: true }:
                 WriteHandleRelease(writer, shape);
                 writer.AppendLine(
-                    $"if ({shape.Name}_shadow != null) System.Buffers.ArrayPool<byte>.Shared.Return({shape.Name}_shadow);");
+                    $"if ({shape.Name}_shadow != null{notShared}) System.Buffers.ArrayPool<byte>.Shared.Return({shape.Name}_shadow);");
                 break;
         }
     }

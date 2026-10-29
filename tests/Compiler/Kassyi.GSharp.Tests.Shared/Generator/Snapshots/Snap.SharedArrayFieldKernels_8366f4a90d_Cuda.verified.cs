@@ -590,9 +590,11 @@ proxy_bags[0] = IntPtr.Zero;
 ((int*)(proxy_bags + 1))[0] = bags.Length;
 if (bags_size > 0)
 {
-CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_bags, (IntPtr)bags_size, hStream));
-proxy_bags[0] = d_bags;
 bags_shadow = System.Buffers.ArrayPool<byte>.Shared.Rent(bags_size);
+if (!__gsharp_device_arrays.TryGetRegion(bags, out d_bags))
+{
+CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_bags, (IntPtr)bags_size, hStream));
+__gsharp_device_arrays.Add(bags, d_bags);
 var bags_native = System.Runtime.InteropServices.MemoryMarshal.Cast<byte, AotContexts.ConvertBag>(bags_shadow.AsSpan(0, bags_size));
 System.Span<global::Kassyi.GSharp.Tests.Shared.Core.ConvertBag> bags_host = bags;
 for (int bags_index = 0; bags_index < bags_native.Length; bags_index++)
@@ -605,6 +607,8 @@ CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoDAsync_v2(d_bags, (IntPtr)p_
 CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
 }
 }
+proxy_bags[0] = d_bags;
+}
 kernelParams[0] = proxy_bags;
 CudaException.ThrowIfError(CudaDriverApi.cuLaunchKernel(
 hfunc,
@@ -616,7 +620,7 @@ kernelParams,
 IntPtr.Zero // Extra
 ));
 // Copy back array element by element: bags
-if (bags_size > 0 && d_bags != IntPtr.Zero && bags_shadow != null)
+if (bags_size > 0 && d_bags != IntPtr.Zero && bags_shadow != null && __gsharp_device_arrays.TryClaimCopyBack(bags))
 {
 fixed (byte* p_bags = bags_shadow)
 {
@@ -634,7 +638,6 @@ AotContexts.Unmarshal_ConvertBag(ref bags_host[bags_index], ref bags_native[bags
 finally
 {
 if (bags_shadow != null) System.Buffers.ArrayPool<byte>.Shared.Return(bags_shadow);
-if (d_bags != IntPtr.Zero) CudaDriverApi.cuMemFreeAsync(d_bags, hStream);
 __gsharp_device_arrays.Free(hStream);
 }
 }

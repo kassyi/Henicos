@@ -190,13 +190,17 @@ proxy_arrayVal[0] = IntPtr.Zero;
 ((int*)(proxy_arrayVal + 1))[0] = arrayVal.Length;
 if (arrayVal_size > 0)
 {
+if (!__gsharp_device_arrays.TryGetRegion(arrayVal, out d_arrayVal))
+{
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_arrayVal, (IntPtr)arrayVal_size, hStream));
-proxy_arrayVal[0] = d_arrayVal;
+__gsharp_device_arrays.Add(arrayVal, d_arrayVal);
 fixed (global::System.Int32* p_arrayVal = arrayVal)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoDAsync_v2(d_arrayVal, (IntPtr)p_arrayVal, (IntPtr)arrayVal_size, hStream));
 CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
 }
+}
+proxy_arrayVal[0] = d_arrayVal;
 }
 kernelParams[2] = proxy_arrayVal;
 AotContexts.MyCustomStruct native_structRef = default;
@@ -233,7 +237,7 @@ CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoHAsync_v2((IntPtr)ptr_scalar
 CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
 }
 // Copy back array: arrayVal
-if (arrayVal_size > 0 && d_arrayVal != IntPtr.Zero)
+if (arrayVal_size > 0 && d_arrayVal != IntPtr.Zero && __gsharp_device_arrays.TryClaimCopyBack(arrayVal))
 {
 fixed (global::System.Int32* p_arrayVal = arrayVal)
 {
@@ -250,7 +254,6 @@ finally
 {
 if (d_scalarRef != IntPtr.Zero) CudaDriverApi.cuMemFreeAsync(d_scalarRef, hStream);
 if (d_scalarOut != IntPtr.Zero) CudaDriverApi.cuMemFreeAsync(d_scalarOut, hStream);
-if (d_arrayVal != IntPtr.Zero) CudaDriverApi.cuMemFreeAsync(d_arrayVal, hStream);
 if (d_structRef != IntPtr.Zero) CudaDriverApi.cuMemFreeAsync(d_structRef, hStream);
 __gsharp_device_arrays.Free(hStream);
 }
