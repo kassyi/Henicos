@@ -383,7 +383,7 @@ finally
 }
 #pragma warning restore CS8500
 public const string LengthOptionalKernel_Source = @"extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__OptionalArrayKernels__LengthOptionalKernel(GSharpArray<int> __gsharp_id_0_o, GSharpArray<float> __gsharp_id_1_bias){
-if(threadIdx.x==0)
+if((int)threadIdx.x==0)
 {
 __gsharp_id_0_o[0]=__gsharp_id_1_bias.length;
 }
@@ -530,7 +530,7 @@ finally
 }
 #pragma warning restore CS8500
 public const string OutOptionalKernel_Source = @"extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__OptionalArrayKernels__OutOptionalKernel(GSharpArray<float> __gsharp_id_0_bias, GSharpArray<int> __gsharp_id_1_o){
-if(threadIdx.x==0)
+if((int)threadIdx.x==0)
 {
 __gsharp_id_1_o[0]=((__gsharp_id_0_bias.data == nullptr)?0:1);
 if((__gsharp_id_0_bias.data != nullptr))
@@ -677,9 +677,9 @@ finally
 }
 #pragma warning restore CS8500
 public const string InOutOptionalKernel_Source = @"extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__OptionalArrayKernels__InOutOptionalKernel(GSharpArray<float> __gsharp_id_0_bias, GSharpArray<int> __gsharp_id_1_o){
-if(threadIdx.x==0)
+if((int)threadIdx.x==0)
 {
-__gsharp_id_1_o[0]=((__gsharp_id_0_bias.data == nullptr)?0:(int)__gsharp_id_0_bias[0]);
+__gsharp_id_1_o[0]=((__gsharp_id_0_bias.data == nullptr)?0:__gsharp_to_i32(__gsharp_id_0_bias[0]));
 if((__gsharp_id_0_bias.data != nullptr))
 {
 __gsharp_id_0_bias[0]=__gsharp_id_0_bias[0]+1.0f;
