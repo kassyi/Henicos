@@ -14,6 +14,15 @@ public struct KernelParameterHolder
     public int[] Data;
 }
 
+public static class KernelParameterPointExtensions
+{
+    [GpuDeviceFunction]
+    public static void Bump(this ref KernelParameterPoint point, int d)
+    {
+        point.X += d;
+    }
+}
+
 /// <summary>
 /// Kernels that write into a value parameter before a barrier and read it after (#879). The CPU paths run a kernel as a
 /// state machine and pass the original arguments again on every resume, so a parameter the kernel writes must live in
@@ -102,6 +111,72 @@ public static partial class KernelValueParameterKernels
         }
 
         output[ThreadIndex.X] = value + ThreadIndex.X * 100;
+    }
+
+    [GpuDeviceFunction]
+    public static void AddTo(ref int target, int d)
+    {
+        target += d;
+    }
+
+    [GpuDeviceFunction]
+    public static void SetTo(out int target, int value)
+    {
+        target = value;
+    }
+
+    // The receiver of a `this ref` extension method is written
+    [GpuKernel]
+    public static void RefExtensionReceiverKernel(KernelParameterPoint point, int[] output)
+    {
+        int tid = ThreadIndex.X;
+        point.Bump(tid);
+        Gpu.SyncThreads();
+        output[tid] = point.X;
+    }
+
+    [GpuKernel]
+    public static void RefArgumentAndIncrementKernel(int value, int[] output)
+    {
+        int tid = ThreadIndex.X;
+        AddTo(ref value, tid);
+        value++;
+        Gpu.SyncThreads();
+        output[tid] = value;
+    }
+
+    [GpuKernel]
+    public static void OutArgumentKernel(int value, int[] output)
+    {
+        int tid = ThreadIndex.X;
+        SetTo(out value, tid * 3);
+        Gpu.SyncThreads();
+        output[tid] = value;
+    }
+
+    [GpuKernel]
+    public static void DeconstructionKernel(int value, int other, int[] output)
+    {
+        int tid = ThreadIndex.X;
+        (value, other) = (value + tid, other + 1);
+        Gpu.SyncThreads();
+        output[tid] = value * 1000 + other;
+    }
+
+    // A local function that the kernel calls before the barrier writes the parameter it captures
+    [GpuKernel]
+    public static void LocalFunctionWriteKernel(int value, int[] output)
+    {
+        int tid = ThreadIndex.X;
+
+        void Add(int d)
+        {
+            value += d;
+        }
+
+        Add(tid);
+        Gpu.SyncThreads();
+        output[tid] = value;
     }
 
     // Without a barrier the kernel runs once; the written parameter needs no copy

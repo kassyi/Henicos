@@ -8,18 +8,30 @@ public static class AstLoweringPipeline
     /// <param name="semanticModel">A semantic model of the compilation, used to find the calls that split the state machine.</param>
     /// <param name="deviceFunction">The symbol of <paramref name="method"/> if it is a device function, or <see langword="null"/> for a kernel.</param>
     /// <remarks>
-    /// For a kernel, the symbol of <paramref name="method"/> comes from <paramref name="semanticModel"/>, so that the value
-    /// parameters the kernel writes live in its context (<see cref="LoweredStateMachine.CopiedParameters"/>).
+    /// A kernel lowered through this overload has no symbol, so it copies none of its parameters; pass the kernel's symbol
+    /// to <see cref="Lower(MethodDeclarationSyntax, SemanticModel?, IMethodSymbol?, bool)"/> to lower it as the
+    /// generator does.
     /// </remarks>
     public static LoweredStateMachine Lower(MethodDeclarationSyntax method, SemanticModel? semanticModel,
-        IMethodSymbol? deviceFunction = null)
+        IMethodSymbol? deviceFunction = null) =>
+        Lower(method, semanticModel, deviceFunction, isDeviceFunction: deviceFunction != null);
+
+    /// <summary>Lowers the body of a kernel or device function, block or expression body, into a flat state machine.</summary>
+    /// <param name="method">A method that has a body (see <see cref="MethodDeclarationSyntaxExtensions.HasBody"/>).</param>
+    /// <param name="semanticModel">A semantic model of the compilation, used to find the calls that split the state machine.</param>
+    /// <param name="owner">
+    /// The symbol of <paramref name="method"/>. The value parameters it writes live in the frame
+    /// (<see cref="LoweredStateMachine.CopiedParameters"/>), because a kernel and a device function are both resumed
+    /// with their original arguments.
+    /// </param>
+    /// <param name="isDeviceFunction">Whether <paramref name="method"/> is a device function rather than a kernel.</param>
+    public static LoweredStateMachine Lower(MethodDeclarationSyntax method, SemanticModel? semanticModel,
+        IMethodSymbol? owner, bool isDeviceFunction)
     {
         var body = method.GetBodyNode()
                    ?? throw new InvalidOperationException("A method without a body cannot be lowered into a state machine.");
         var returnsValue = method.ReturnType is not PredefinedTypeSyntax { Keyword.RawKind: (int)SyntaxKind.VoidKeyword };
-        var owner = deviceFunction ??
-                    ResolveBodyModel(method, semanticModel)?.GetDeclaredSymbol<IMethodSymbol>(method);
-        return Lower(body, returnsValue, semanticModel, owner, isDeviceFunction: deviceFunction != null);
+        return Lower(body, returnsValue, semanticModel, owner, isDeviceFunction);
     }
 
     /// <summary>Lowers a kernel block into a flat state machine block and extracts hoisted context fields.</summary>
@@ -47,7 +59,7 @@ public static class AstLoweringPipeline
         annotatedBody = PreLoweringExpander.Expand(annotatedBody, bodyModel);
         annotatedBody = LabeledStatementSplitter.Split(annotatedBody);
 
-        // [WHY] A kernel is resumed with its original arguments as a device function is (#879)
+        // [WHY] A kernel is resumed with its original arguments, as a device function is (#879)
         var copiedParameters = owner != null
             ? FindAssignedValueParameters(body, owner, bodyModel)
             : ImmutableArray<string>.Empty;
@@ -71,7 +83,7 @@ public static class AstLoweringPipeline
         var statePlan = StateLabelPlanner.Plan(hoistedBody, bodyModel);
         var hoister = new ContextHoister(copiedParameters, bodyModel, owner, statePlan);
         var (contextHoistedBody, contextFields) = hoister.Hoist(hoistedBody);
-        if (!hoister.ReadsCopiedParameters)
+        if (!hoister.HasSplitPoint)
         {
             // [WHY] A body without a split point runs once and reads its parameters where they are
             copiedParameters = ImmutableArray<string>.Empty;
@@ -219,15 +231,22 @@ public static class AstLoweringPipeline
         }
     }
 
-    // [WHY] A struct instance method that is not readonly receives its receiver by reference and may change it. Without
-    // a semantic model every receiver counts as changed.
+    // [WHY] A struct instance method that is not readonly receives its receiver by reference and may change it, and so
+    // does an extension method whose `this` parameter is `ref` (`static void Bump(this ref Pt p)`, called as
+    // `point.Bump()`); an `in` or `ref readonly` one cannot. Without a semantic model every receiver counts as changed.
     private static bool MayChangeReceiver(InvocationExpressionSyntax invocation, SemanticModel? model) =>
         model == null ||
-        model.GetSymbol(invocation) is IMethodSymbol
+        model.GetSymbol(invocation) switch
         {
-            IsStatic: false,
-            IsReadOnly: false,
-            ContainingType: { IsValueType: true, IsReadOnly: false }
+            IMethodSymbol { MethodKind: MethodKind.ReducedExtension, ReducedFrom: { } extension } =>
+                extension.Parameters is [{ RefKind: RefKind.Ref }, ..],
+            IMethodSymbol
+            {
+                IsStatic: false,
+                IsReadOnly: false,
+                ContainingType: { IsValueType: true, IsReadOnly: false }
+            } => true,
+            _ => false
         };
 
     // [WHY] A write changes the storage of the variable its target starts at when every step from that variable reaches

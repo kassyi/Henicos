@@ -47,6 +47,26 @@ public class KernelValueParameterTests : TranspilerTestBase
 
     [SkippableFact]
     [Scenario(TestScenario.Boundary)]
+    public void Test_RefExtensionReceiver_SurvivesBarrier() => AssertRefExtensionReceiver();
+
+    [SkippableFact]
+    [Scenario(TestScenario.Boundary)]
+    public void Test_RefArgumentAndIncrement_SurvivesBarrier() => AssertRefArgumentAndIncrement();
+
+    [SkippableFact]
+    [Scenario(TestScenario.Boundary)]
+    public void Test_OutArgument_SurvivesBarrier() => AssertOutArgument();
+
+    [SkippableFact]
+    [Scenario(TestScenario.Boundary)]
+    public void Test_Deconstruction_SurvivesBarrier() => AssertDeconstruction();
+
+    [SkippableFact]
+    [Scenario(TestScenario.Boundary)]
+    public void Test_LocalFunctionWrite_SurvivesBarrier() => AssertLocalFunctionWrite();
+
+    [SkippableFact]
+    [Scenario(TestScenario.Boundary)]
     public void Test_ParameterWrittenWithoutBarrier_KeepsWrite() => AssertWithoutBarrier();
 
     internal static void AssertScalarParameter()
@@ -138,6 +158,57 @@ public class KernelValueParameterTests : TranspilerTestBase
         {
             // 1 -> 2 -> 5 -> 12
             Assert.Equal(12 + t * 100, output[t]);
+        }
+    }
+
+    internal static void AssertRefExtensionReceiver()
+    {
+        var output = new int[BlockSize];
+        KernelValueParameterKernels.LaunchRefExtensionReceiverKernel(new KernelParameterPoint { X = 7 }, output,
+            blockDimX: BlockSize);
+        for (int t = 0; t < BlockSize; t++)
+        {
+            Assert.Equal(7 + t, output[t]);
+        }
+    }
+
+    internal static void AssertRefArgumentAndIncrement()
+    {
+        var output = new int[BlockSize];
+        KernelValueParameterKernels.LaunchRefArgumentAndIncrementKernel(7, output, blockDimX: BlockSize);
+        for (int t = 0; t < BlockSize; t++)
+        {
+            Assert.Equal(7 + t + 1, output[t]);
+        }
+    }
+
+    internal static void AssertOutArgument()
+    {
+        var output = new int[BlockSize];
+        KernelValueParameterKernels.LaunchOutArgumentKernel(-5, output, blockDimX: BlockSize);
+        for (int t = 0; t < BlockSize; t++)
+        {
+            Assert.Equal(t * 3, output[t]);
+        }
+    }
+
+    internal static void AssertDeconstruction()
+    {
+        var output = new int[BlockSize];
+        KernelValueParameterKernels.LaunchDeconstructionKernel(7, 3, output, blockDimX: BlockSize);
+        for (int t = 0; t < BlockSize; t++)
+        {
+            Assert.Equal((7 + t) * 1000 + 4, output[t]);
+        }
+    }
+
+    internal static void AssertLocalFunctionWrite()
+    {
+        var output = new int[BlockSize];
+        KernelValueParameterKernels.LaunchLocalFunctionWriteKernel(20, output, blockDimX: BlockSize);
+        for (int t = 0; t < BlockSize; t++)
+        {
+            Assert.Equal(20 + t, output[t]);
         }
     }
 

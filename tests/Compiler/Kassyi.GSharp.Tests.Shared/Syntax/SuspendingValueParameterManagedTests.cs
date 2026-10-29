@@ -36,6 +36,11 @@ public class SuspendingValueParameterManagedTests : IDisposable
 
     [Fact]
     [Scenario(TestScenario.Boundary)]
+    public void Test_Managed_RefExtensionReceiverWrite_SurvivesBarrier() =>
+        SuspendingValueParameterTests.AssertRefExtensionWrite();
+
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
     public void Test_Managed_InlineArrayElementWrite_SurvivesBarrier() =>
         SuspendingValueParameterTests.AssertInlineArrayElementWrite();
 

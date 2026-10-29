@@ -66,6 +66,31 @@ public class KernelValueParameterManagedTests : IDisposable
 
     [Fact]
     [Scenario(TestScenario.Boundary)]
+    public void Test_Managed_RefExtensionReceiver_SurvivesBarrier() =>
+        KernelValueParameterTests.AssertRefExtensionReceiver();
+
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void Test_Managed_RefArgumentAndIncrement_SurvivesBarrier() =>
+        KernelValueParameterTests.AssertRefArgumentAndIncrement();
+
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void Test_Managed_OutArgument_SurvivesBarrier() =>
+        KernelValueParameterTests.AssertOutArgument();
+
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void Test_Managed_Deconstruction_SurvivesBarrier() =>
+        KernelValueParameterTests.AssertDeconstruction();
+
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void Test_Managed_LocalFunctionWrite_SurvivesBarrier() =>
+        KernelValueParameterTests.AssertLocalFunctionWrite();
+
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
     public void Test_Managed_ParameterWrittenWithoutBarrier_KeepsWrite() =>
         KernelValueParameterTests.AssertWithoutBarrier();
 }

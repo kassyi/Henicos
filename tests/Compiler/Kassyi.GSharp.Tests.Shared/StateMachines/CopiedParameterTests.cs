@@ -36,6 +36,7 @@ public class CopiedParameterTests
     [InlineData("NestedTupleAssignment", "v", "a")]
     [InlineData("MutatingMethodCall", "v")]
     [InlineData("NestedFieldMutatingMethodCall", "v")]
+    [InlineData("RefExtensionCall", "v")]
     public void Lower_WriteThroughValueParameter_CopiesParameter(string methodName, params string[] expected)
     {
         var lowered = LowerDeviceFunction("ValueParameterWrites.cs", methodName, withModel: true);
@@ -44,7 +45,8 @@ public class CopiedParameterTests
     }
 
     // An array or a pointer refers to memory that the resumed call sees again, a Span<T> cannot live in the frame, and a
-    // readonly method (or a method of a readonly struct) does not change its receiver
+    // readonly method (or a method of a readonly struct) or an extension method whose `this` is `in`, `ref readonly` or
+    // by value does not change its receiver
     [Theory]
     [Scenario(TestScenario.Boundary)]
     [InlineData("ArrayElementAssignment")]
@@ -54,6 +56,7 @@ public class CopiedParameterTests
     [InlineData("PointerFieldElementAssignment")]
     [InlineData("ReadOnlyMethodCall")]
     [InlineData("ReadOnlyStructMethodCall")]
+    [InlineData("NonRefExtensionCalls")]
     [InlineData("FieldReadOnly")]
     public void Lower_NoWriteIntoValueStorage_CopiesNothing(string methodName)
     {
@@ -204,7 +207,7 @@ public class CopiedParameterTests
         Assert.Empty(lowered.CopiedParameters);
     }
 
-    // A kernel is lowered without a device function symbol; its own symbol comes from the model (#879)
+    // A kernel is lowered with its own symbol as the owner of the copied parameters, as MethodEmissionPlan does (#879)
     [Fact]
     [Scenario(TestScenario.HappyPath)]
     public void Lower_KernelWritesValueParametersBeforeBarrier_CopiesThemIntoContext()
@@ -241,8 +244,10 @@ public class CopiedParameterTests
             .DescendantNodes()
             .OfType<MethodDeclarationSyntax>()
             .Single(m => m.Identifier.ValueText == methodName);
+        var symbol = model.GetDeclaredSymbol<IMethodSymbol>(method)
+                     ?? throw new InvalidOperationException($"{methodName} has no symbol.");
 
-        return AstLoweringPipeline.Lower(method, model);
+        return AstLoweringPipeline.Lower(method, model, symbol, isDeviceFunction: false);
     }
 
     private static bool IsContextMemberName(IdentifierNameSyntax name) =>

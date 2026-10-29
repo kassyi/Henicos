@@ -33,10 +33,10 @@ public class ContextHoister(
     private readonly HashSet<string> _copiedParameters = [];
 
     /// <summary>
-    /// Whether the last <see cref="Hoist"/> rewrote the references to the copied parameters. A body without a split point
-    /// is left as it is, and then reads its parameters directly.
+    /// Whether the block of the last <see cref="Hoist"/> has a split point. Without one the block is returned as it is, so
+    /// neither its locals nor its copied parameters are moved into the context.
     /// </summary>
-    internal bool ReadsCopiedParameters => _copiedParameters.Count > 0;
+    internal bool HasSplitPoint { get; private set; }
 
     /// <summary>Analyzes barrier crossings and rewrites variable accesses to point to the hoisted context structure.</summary>
     public (BlockSyntax RewrittenBlock, IReadOnlyList<VariableDeclaratorSyntax> HoistedVariables) Hoist(
@@ -50,7 +50,8 @@ public class ContextHoister(
         var analyzer = new HoistAnalyzer();
         analyzer.Visit(block);
 
-        if (analyzer.BarrierSpans.Count == 0)
+        HasSplitPoint = analyzer.BarrierSpans.Count > 0;
+        if (!HasSplitPoint)
         {
             return (block, hoistedDecls);
         }
