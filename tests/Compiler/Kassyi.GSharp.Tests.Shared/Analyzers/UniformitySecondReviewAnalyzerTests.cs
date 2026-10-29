@@ -63,6 +63,22 @@ public class UniformitySecondReviewAnalyzerTests : TranspilerTestBase
             actual);
     }
 
+    [Fact]
+    [Scenario(TestScenario.SadPath)]
+    public async Task Test_ReturnUnderBranchAndLambdaParameter_AreThreadVariant()
+    {
+        var actual = await RunAsync("Analyzers/BarrierUsage/ReturnAndLambdaVarianceKernels.cu.cs");
+
+        // 28: a constant that the callee returns under a divergent branch. 48: an outer local written from a lambda
+        // parameter
+        Assert.Equal(
+            [
+                (GSharpDiagnostics.LaunchDependentDivergentBarrier.Id, 28, 13, 28, 30),
+                (GSharpDiagnostics.LaunchDependentDivergentBarrier.Id, 48, 13, 48, 30)
+            ],
+            actual);
+    }
+
     private static async Task<IReadOnlyList<(string Id, int StartLine, int StartCol, int EndLine, int EndCol)>> RunAsync(
         string relativeTestCasePath)
     {
