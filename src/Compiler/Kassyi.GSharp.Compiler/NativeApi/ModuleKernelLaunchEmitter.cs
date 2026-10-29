@@ -73,11 +73,13 @@ internal static class ModuleKernelLaunchEmitter
     /// <summary>
     /// Emits the statements of a launcher body (without the enclosing braces).
     /// </summary>
+    /// <param name="launcherName">The launcher as <c>Type.Method</c>, named by the shared memory limit error.</param>
     public static void EmitLaunchBody(
         SourceWriter writer,
         string moduleName,
         string entryPoint,
         string methodName,
+        string launcherName,
         ImmutableArray<ModuleKernelLaunchParameter> parameters,
         bool packContext)
     {
@@ -87,6 +89,17 @@ internal static class ModuleKernelLaunchEmitter
         writer.Append(".Value, ");
         AppendStringLiteral(writer, entryPoint);
         writer.AppendLine(");");
+
+        // [WHY] sharedMemBytes above 48 KB needs the function's opt-in, and a request the device cannot hold is
+        // rejected with the launcher's name instead of the driver's bare CUDA_ERROR_INVALID_VALUE, as in
+        // CudaHostLaunchEmitter (#545, #820). Without the parameter the launch requests no dynamic shared memory.
+        if (HasLaunchParameter(parameters, "sharedMemBytes"))
+        {
+            writer.Append("global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(kernel, sharedMemBytes, ");
+            AppendStringLiteral(writer, launcherName);
+            writer.AppendLine(");");
+        }
+
         writer.AppendLine();
 
         EmitBufferAllocations(writer, parameters);
