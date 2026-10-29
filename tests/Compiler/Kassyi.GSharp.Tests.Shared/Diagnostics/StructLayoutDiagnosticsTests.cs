@@ -82,26 +82,29 @@ public class StructLayoutDiagnosticsTests
         Assert.Empty(diagnostics.Ranges(GSharpDiagnostics.StructLayoutNotRepresentable.Id, "Wrapper"));
     }
 
-    // VecHolder[] (line 60) and the inline array of Elem in InlineOuter (line 63), where Vector2 and Float2 move to
     // A kernel's returned struct is checked like an array parameter's element (#704): Overlap cannot be laid out
-    // (line 21), VecHolder moves V on CUDA only (line 24), AutoPair may be reordered on both (line 27), Plain is copied
+    // (line 23), Priced has a decimal field (line 26), VecHolder moves V on CUDA only (line 29), AutoPair may be
+    // reordered on both (line 32), Plain is copied
     [Theory]
     [InlineData("Cpu", false)]
     [InlineData("Cuda", true)]
     [Scenario(TestScenario.SadPath)]
-    public async Task Test_ReturnedStruct_ReportsGsh0078AndGsh0080AtTheReturnType(string dialect, bool isCuda)
+    public async Task Test_ReturnedStruct_ReportsGsh0078Gsh0079AndGsh0080AtTheReturnType(string dialect, bool isCuda)
     {
         var diagnostics = await KernelDiagnostics.RunTestCaseAsync("Diagnostics/StructLayoutReturnDiagnostics.cs",
             dialect);
 
-        Assert.Equal([(Analyzer, 21, 23, 21, 30)],
+        Assert.Equal([(Analyzer, 23, 23, 23, 30)],
             diagnostics.Ranges(GSharpDiagnostics.StructLayoutNotRepresentable.Id));
+        Assert.Equal([(Analyzer, 26, 23, 26, 29)],
+            diagnostics.Ranges(GSharpDiagnostics.FieldTypeHasNoDeviceRepresentation.Id, "'decimal' of field 'Price'"));
         IEnumerable<(DiagnosticOrigin, int, int, int, int)> converted = isCuda
-            ? [(Analyzer, 24, 23, 24, 32), (Analyzer, 27, 23, 27, 31)]
-            : [(Analyzer, 27, 23, 27, 31)];
+            ? [(Analyzer, 29, 23, 29, 32), (Analyzer, 32, 23, 32, 31)]
+            : [(Analyzer, 32, 23, 32, 31)];
         Assert.Equal(converted, diagnostics.Ranges(GSharpDiagnostics.StructArrayConvertedPerElement.Id));
     }
 
+    // VecHolder[] (line 60) and the inline array of Elem in InlineOuter (line 63), where Vector2 and Float2 move to
     // 8-byte offsets on CUDA only; on both dialects Bag[] (line 66), AutoPair[] (line 101) and the inline array of
     // WithArray in ArraysHolder (line 110), whose host layout the runtime may reorder
     [Theory]

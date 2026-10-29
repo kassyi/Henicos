@@ -7,6 +7,8 @@ namespace StructLayoutReturnDiagnosticsTest
     [StructLayout(LayoutKind.Explicit)]
     public struct Overlap { [FieldOffset(0)] public long A; [FieldOffset(4)] public int B; }
 
+    public struct Priced { public int Id; public decimal Price; }
+
     public struct VecHolder { public float A; public Vector2 V; }
 
     [StructLayout(LayoutKind.Auto)]
@@ -19,6 +21,9 @@ namespace StructLayoutReturnDiagnosticsTest
     {
         [GpuKernel]
         public static Overlap OverlapKernel() => default;
+
+        [GpuKernel]
+        public static Priced PricedKernel() => default;
 
         [GpuKernel]
         public static VecHolder VecKernel() => default;

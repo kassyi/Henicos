@@ -1560,7 +1560,7 @@ CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
 }
 kernelParams[0] = proxy_values;
 // Marshal auto result array
-int __gsharp_auto_result_size = __gsharp_auto_result.Length * sizeof(global::System.Single);
+int __gsharp_auto_result_size = checked(__gsharp_auto_result.Length * sizeof(global::System.Single));
 if (__gsharp_auto_result_size > 0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d___gsharp_auto_result, (IntPtr)__gsharp_auto_result_size, hStream));
@@ -1637,7 +1637,7 @@ proxy_values[0] = values;
 ((int*)(proxy_values + 1))[0] = 0; // Length is unknown for raw IntPtr
 kernelParams[0] = proxy_values;
 // Marshal auto result array
-int __gsharp_auto_result_size = __gsharp_auto_result.Length * sizeof(global::System.Single);
+int __gsharp_auto_result_size = checked(__gsharp_auto_result.Length * sizeof(global::System.Single));
 if (__gsharp_auto_result_size > 0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d___gsharp_auto_result, (IntPtr)__gsharp_auto_result_size, hStream));

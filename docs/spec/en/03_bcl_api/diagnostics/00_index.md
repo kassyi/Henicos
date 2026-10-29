@@ -86,7 +86,7 @@ The G# compiler and Roslyn analyzers enforce GPU safety and memory management ru
 | [GSH0077](GSH0077.md) | Warning | Dynamic SharedMemory<T> reached by only some threads or with a thread-dependent count |
 | [GSH0078](GSH0078.md) | Error | Struct cannot be laid out on the device |
 | [GSH0079](GSH0079.md) | Error | Struct field type has no device representation |
-| [GSH0080](GSH0080.md) | Warning | Struct array is converted element by element |
+| [GSH0080](GSH0080.md) | Warning | Struct array or returned struct is converted element by element |
 | [GSH0081](GSH0081.md) | Warning | Struct array allocates the array field of each element |
 | [GSH0088](GSH0088.md) | Error | Device code of another assembly is not exported |
 | [GSH0089](GSH0089.md) | Error | Device code of another assembly cannot be used |

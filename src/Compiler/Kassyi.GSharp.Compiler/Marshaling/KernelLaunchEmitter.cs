@@ -72,13 +72,14 @@ internal static class KernelLaunchEmitter
 
         if (kernel.ReturnTypeName is { } returnType)
         {
-            // [WHY] The device writes the returned elements in its own layout, which a converted struct does not share
+            // [WHY] The device writes the returned elements in its own layout, which a converted struct does not share;
+            // the size is checked, as in the CPU launcher, since a large grid of a large struct would wrap
             var elementType = kernel.IsCudaConvertedReturn
                 ? ConvertedArrayEmitter.GetReturnShadowPath(kernel.CudaReturn)
                 : returnType;
             writer.AppendLine("// Marshal auto result array");
             writer.AppendLine(
-                $"int {GSharpInternalNames.ReturnValue.BufferSize} = {GSharpInternalNames.ReturnValue.Buffer}.Length * sizeof({elementType});");
+                $"int {GSharpInternalNames.ReturnValue.BufferSize} = checked({GSharpInternalNames.ReturnValue.Buffer}.Length * sizeof({elementType}));");
 
             writer.AppendLine($"if ({GSharpInternalNames.ReturnValue.BufferSize} > 0)");
             using (writer.Scope())

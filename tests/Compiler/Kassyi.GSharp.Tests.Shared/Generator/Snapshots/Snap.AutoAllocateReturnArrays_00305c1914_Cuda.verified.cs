@@ -119,7 +119,7 @@ void** kernelParams = stackalloc void*[2];
 // Marshal scalar: a
 kernelParams[0] = &a;
 // Marshal auto result array
-int __gsharp_auto_result_size = __gsharp_auto_result.Length * sizeof(global::System.Single);
+int __gsharp_auto_result_size = checked(__gsharp_auto_result.Length * sizeof(global::System.Single));
 if (__gsharp_auto_result_size > 0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d___gsharp_auto_result, (IntPtr)__gsharp_auto_result_size, hStream));
@@ -183,7 +183,7 @@ void** kernelParams = stackalloc void*[2];
 // Marshal scalar: a
 kernelParams[0] = &a;
 // Marshal auto result array
-int __gsharp_auto_result_size = __gsharp_auto_result.Length * sizeof(global::System.Single);
+int __gsharp_auto_result_size = checked(__gsharp_auto_result.Length * sizeof(global::System.Single));
 if (__gsharp_auto_result_size > 0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d___gsharp_auto_result, (IntPtr)__gsharp_auto_result_size, hStream));
@@ -264,7 +264,7 @@ kernelParams[0] = &a;
 // Marshal scalar: b
 kernelParams[1] = &b;
 // Marshal auto result array
-int __gsharp_auto_result_size = __gsharp_auto_result.Length * sizeof(global::System.Int32);
+int __gsharp_auto_result_size = checked(__gsharp_auto_result.Length * sizeof(global::System.Int32));
 if (__gsharp_auto_result_size > 0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d___gsharp_auto_result, (IntPtr)__gsharp_auto_result_size, hStream));
@@ -330,7 +330,7 @@ kernelParams[0] = &a;
 // Marshal scalar: b
 kernelParams[1] = &b;
 // Marshal auto result array
-int __gsharp_auto_result_size = __gsharp_auto_result.Length * sizeof(global::System.Int32);
+int __gsharp_auto_result_size = checked(__gsharp_auto_result.Length * sizeof(global::System.Int32));
 if (__gsharp_auto_result_size > 0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d___gsharp_auto_result, (IntPtr)__gsharp_auto_result_size, hStream));

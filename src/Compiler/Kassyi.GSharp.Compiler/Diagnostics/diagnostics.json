@@ -716,7 +716,7 @@
   {
     "name": "StructArrayConvertedPerElement",
     "id": "GSH0080",
-    "title": "Struct array is converted element by element",
+    "title": "Struct array or returned struct is converted element by element",
     "messageFormat": "The array of '{0}' is converted element by element because its host and device layouts differ ({1}). Reorder the fields or avoid array fields to transfer it as one block.",
     "category": "GSharpTranspiler",
     "defaultSeverity": "Warning",
