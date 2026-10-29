@@ -176,11 +176,13 @@ namespace Kassyi.GSharp.Tests.Shared.Syntax
 {
 public partial class StructWithExpressionKernels
 {
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_frame_Kassyi__GSharp__Tests__Shared__Syntax__StructWithExpressionKernels__SuspendingWith {
 internal int __gsharp_state;
 internal uint __gsharp_warp_exchange;
 internal global::Kassyi.GSharp.Tests.Shared.Syntax.WithPlainStruct q;
 }
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static bool __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__StructWithExpressionKernels__SuspendingWith(global::Kassyi.GSharp.Tests.Shared.Syntax.WithPlainStruct p, int tid, __gsharp_frame_Kassyi__GSharp__Tests__Shared__Syntax__StructWithExpressionKernels__SuspendingWith __gsharp_ctx, ref int __gsharp_result) {
 {
 switch (__gsharp_ctx.__gsharp_state)

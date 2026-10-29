@@ -143,11 +143,13 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 }
 ";
 public static readonly string ShuffleDownKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source +ShuffleDownKernel_Source;
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Transpiler__PartialWarpShuffleKernels__ShuffleDownKernel {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
 public int v;
 }
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Transpiler__PartialWarpShuffleKernels__ShuffleDownKernel(int[] result, uint delta, __gsharp_context_Kassyi__GSharp__Tests__Shared__Transpiler__PartialWarpShuffleKernels__ShuffleDownKernel __gsharp_ctx) {
 {
 switch (__gsharp_ctx.__gsharp_state)
@@ -400,11 +402,13 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 }
 ";
 public static readonly string ShuffleXorKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source +ShuffleXorKernel_Source;
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Transpiler__PartialWarpShuffleKernels__ShuffleXorKernel {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
 public int v;
 }
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Transpiler__PartialWarpShuffleKernels__ShuffleXorKernel(int[] result, int laneMask, __gsharp_context_Kassyi__GSharp__Tests__Shared__Transpiler__PartialWarpShuffleKernels__ShuffleXorKernel __gsharp_ctx) {
 {
 switch (__gsharp_ctx.__gsharp_state)
@@ -657,11 +661,13 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 }
 ";
 public static readonly string ShuffleIdxKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source +ShuffleIdxKernel_Source;
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Transpiler__PartialWarpShuffleKernels__ShuffleIdxKernel {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
 public int v;
 }
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Transpiler__PartialWarpShuffleKernels__ShuffleIdxKernel(int[] result, int srcLane, int width, __gsharp_context_Kassyi__GSharp__Tests__Shared__Transpiler__PartialWarpShuffleKernels__ShuffleIdxKernel __gsharp_ctx) {
 {
 switch (__gsharp_ctx.__gsharp_state)
@@ -914,11 +920,13 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 }
 ";
 public static readonly string ShuffleDownWidthKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source +ShuffleDownWidthKernel_Source;
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Transpiler__PartialWarpShuffleKernels__ShuffleDownWidthKernel {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
 public int v;
 }
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Transpiler__PartialWarpShuffleKernels__ShuffleDownWidthKernel(int[] result, int width, __gsharp_context_Kassyi__GSharp__Tests__Shared__Transpiler__PartialWarpShuffleKernels__ShuffleDownWidthKernel __gsharp_ctx) {
 {
 switch (__gsharp_ctx.__gsharp_state)
@@ -1171,11 +1179,13 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 }
 ";
 public static readonly string ShuffleXorWidthKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source +ShuffleXorWidthKernel_Source;
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Transpiler__PartialWarpShuffleKernels__ShuffleXorWidthKernel {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
 public int v;
 }
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Transpiler__PartialWarpShuffleKernels__ShuffleXorWidthKernel(int[] result, int laneMask, int width, __gsharp_context_Kassyi__GSharp__Tests__Shared__Transpiler__PartialWarpShuffleKernels__ShuffleXorWidthKernel __gsharp_ctx) {
 {
 switch (__gsharp_ctx.__gsharp_state)
@@ -1428,11 +1438,13 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 }
 ";
 public static readonly string ShuffleUpWidthKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source +ShuffleUpWidthKernel_Source;
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Transpiler__PartialWarpShuffleKernels__ShuffleUpWidthKernel {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
 public int v;
 }
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Transpiler__PartialWarpShuffleKernels__ShuffleUpWidthKernel(int[] result, uint delta, int width, __gsharp_context_Kassyi__GSharp__Tests__Shared__Transpiler__PartialWarpShuffleKernels__ShuffleUpWidthKernel __gsharp_ctx) {
 {
 switch (__gsharp_ctx.__gsharp_state)
@@ -1685,11 +1697,13 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 }
 ";
 public static readonly string ShuffleNamedArgumentsKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source +ShuffleNamedArgumentsKernel_Source;
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Transpiler__PartialWarpShuffleKernels__ShuffleNamedArgumentsKernel {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
 public int v;
 }
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Transpiler__PartialWarpShuffleKernels__ShuffleNamedArgumentsKernel(int[] result, __gsharp_context_Kassyi__GSharp__Tests__Shared__Transpiler__PartialWarpShuffleKernels__ShuffleNamedArgumentsKernel __gsharp_ctx) {
 {
 switch (__gsharp_ctx.__gsharp_state)
@@ -1942,11 +1956,13 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 }
 ";
 public static readonly string ShuffleNamedValueKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source +ShuffleNamedValueKernel_Source;
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Transpiler__PartialWarpShuffleKernels__ShuffleNamedValueKernel {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
 public int v;
 }
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Transpiler__PartialWarpShuffleKernels__ShuffleNamedValueKernel(int[] result, __gsharp_context_Kassyi__GSharp__Tests__Shared__Transpiler__PartialWarpShuffleKernels__ShuffleNamedValueKernel __gsharp_ctx) {
 {
 switch (__gsharp_ctx.__gsharp_state)
@@ -2188,10 +2204,12 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 }
 ";
 public static readonly string ActiveMaskKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source +ActiveMaskKernel_Source;
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Transpiler__PartialWarpShuffleKernels__ActiveMaskKernel {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
 }
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Transpiler__PartialWarpShuffleKernels__ActiveMaskKernel(uint[] result, __gsharp_context_Kassyi__GSharp__Tests__Shared__Transpiler__PartialWarpShuffleKernels__ActiveMaskKernel __gsharp_ctx) {
 {
 switch (__gsharp_ctx.__gsharp_state)

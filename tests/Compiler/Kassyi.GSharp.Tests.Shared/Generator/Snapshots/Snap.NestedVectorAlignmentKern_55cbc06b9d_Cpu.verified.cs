@@ -232,10 +232,12 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 }
 ";
 public static readonly string WriteExpectedOffsetsKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source +WriteExpectedOffsetsKernel_Source;
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_context_Kassyi__GSharp__Tests__Runtime__NestedVectorAlignmentKernels__WriteExpectedOffsetsKernel {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
 }
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Runtime__NestedVectorAlignmentKernels__WriteExpectedOffsetsKernel(int[] offsets, __gsharp_context_Kassyi__GSharp__Tests__Runtime__NestedVectorAlignmentKernels__WriteExpectedOffsetsKernel __gsharp_ctx) {
 {
 switch (__gsharp_ctx.__gsharp_state)
@@ -549,10 +551,12 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 }
 ";
 public static readonly string RoundtripKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source +RoundtripKernel_Source;
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_context_Kassyi__GSharp__Tests__Runtime__NestedVectorAlignmentKernels__RoundtripKernel {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
 }
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Runtime__NestedVectorAlignmentKernels__RoundtripKernel(ref global::Kassyi.GSharp.Tests.Runtime.GEN56_AlignmentTestStruct data, __gsharp_context_Kassyi__GSharp__Tests__Runtime__NestedVectorAlignmentKernels__RoundtripKernel __gsharp_ctx) {
 {
 switch (__gsharp_ctx.__gsharp_state)

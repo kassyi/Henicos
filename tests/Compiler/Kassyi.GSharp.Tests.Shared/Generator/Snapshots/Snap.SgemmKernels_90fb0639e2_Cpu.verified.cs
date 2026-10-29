@@ -211,6 +211,7 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 }
 ";
 public static readonly string SgemmKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source +SgemmKernel_Source;
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_context_Henicos__Benchmarks__ComputeBenchmarks__SgemmKernels__SgemmKernel {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
@@ -224,6 +225,7 @@ public float cValue;
 public int m;
 public int k;
 }
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static unsafe void __gsharp_statemachine_Henicos__Benchmarks__ComputeBenchmarks__SgemmKernels__SgemmKernel(float[] a, float[] b, float[] c, int n, __gsharp_context_Henicos__Benchmarks__ComputeBenchmarks__SgemmKernels__SgemmKernel __gsharp_ctx) {
 global::Kassyi.GSharp.Core.SharedMemory<float> As = new(256, 0x73f1e09054a8d88dUL);
 global::Kassyi.GSharp.Core.SharedMemory<float> Bs = new(256, 0x73f1df9054a8d6daUL);

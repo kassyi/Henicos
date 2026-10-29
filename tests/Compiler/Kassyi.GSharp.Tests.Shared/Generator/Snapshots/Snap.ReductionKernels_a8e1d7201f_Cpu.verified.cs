@@ -275,6 +275,7 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 }
 ";
 public static readonly string ReductionKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source +ReductionKernel_Source;
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_context_Henicos__Benchmarks__ComputeBenchmarks__ReductionKernels__ReductionKernel {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
@@ -292,6 +293,7 @@ public float val;
 public float __gsharp_warp_temp_5;
 public float __gsharp_warp_temp_6;
 }
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static unsafe void __gsharp_statemachine_Henicos__Benchmarks__ComputeBenchmarks__ReductionKernels__ReductionKernel(global::Kassyi.GSharp.Core.Float4[] input, float[] output, int n, __gsharp_context_Henicos__Benchmarks__ComputeBenchmarks__ReductionKernels__ReductionKernel __gsharp_ctx) {
 global::Kassyi.GSharp.Core.SharedMemory<float> sdata = new(8, 0x80cb9df64cf94963UL);
 {

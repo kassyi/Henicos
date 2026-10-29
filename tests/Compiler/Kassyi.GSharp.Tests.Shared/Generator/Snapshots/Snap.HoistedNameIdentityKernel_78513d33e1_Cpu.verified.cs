@@ -159,12 +159,14 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 }
 ";
 public static readonly string BarrierLocalSameNameInitializerKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source +BarrierLocalSameNameInitializerKernel_Source;
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__HoistedNameIdentityKernels__BarrierLocalSameNameInitializerKernel {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
 public int tid;
 public int X;
 }
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__HoistedNameIdentityKernels__BarrierLocalSameNameInitializerKernel(int[] output, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__HoistedNameIdentityKernels__BarrierLocalSameNameInitializerKernel __gsharp_ctx) {
 {
 switch (__gsharp_ctx.__gsharp_state)
@@ -442,12 +444,14 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 }
 ";
 public static readonly string BarrierLocalSameNameWithKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source +BarrierLocalSameNameWithKernel_Source;
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__HoistedNameIdentityKernels__BarrierLocalSameNameWithKernel {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
 public int tid;
 public int X;
 }
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__HoistedNameIdentityKernels__BarrierLocalSameNameWithKernel(int[] output, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__HoistedNameIdentityKernels__BarrierLocalSameNameWithKernel __gsharp_ctx) {
 {
 switch (__gsharp_ctx.__gsharp_state)
@@ -723,12 +727,14 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 }
 ";
 public static readonly string BarrierLocalSameNameMemberAccessKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source +BarrierLocalSameNameMemberAccessKernel_Source;
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__HoistedNameIdentityKernels__BarrierLocalSameNameMemberAccessKernel {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
 public int tid;
 public int X;
 }
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__HoistedNameIdentityKernels__BarrierLocalSameNameMemberAccessKernel(int[] output, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__HoistedNameIdentityKernels__BarrierLocalSameNameMemberAccessKernel __gsharp_ctx) {
 {
 switch (__gsharp_ctx.__gsharp_state)
@@ -993,12 +999,14 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 }
 ";
 public static readonly string BarrierLocalSameNameLambdaParameterKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source +BarrierLocalSameNameLambdaParameterKernel_Source;
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__HoistedNameIdentityKernels__BarrierLocalSameNameLambdaParameterKernel {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
 public int t;
 public int i;
 }
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__HoistedNameIdentityKernels__BarrierLocalSameNameLambdaParameterKernel(int[] output, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__HoistedNameIdentityKernels__BarrierLocalSameNameLambdaParameterKernel __gsharp_ctx) {
 {
 switch (__gsharp_ctx.__gsharp_state)
@@ -1281,6 +1289,7 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 }
 ";
 public static readonly string SiblingBlockSameLabelKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source +SiblingBlockSameLabelKernel_Source;
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__HoistedNameIdentityKernels__SiblingBlockSameLabelKernel {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
@@ -1289,6 +1298,7 @@ public int acc;
 public int __gsharp_id_3_step;
 public int __gsharp_id_5_step;
 }
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__HoistedNameIdentityKernels__SiblingBlockSameLabelKernel(int[] output, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__HoistedNameIdentityKernels__SiblingBlockSameLabelKernel __gsharp_ctx) {
 {
 switch (__gsharp_ctx.__gsharp_state)

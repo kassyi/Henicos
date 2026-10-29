@@ -134,10 +134,12 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 }
 ";
 public static readonly string NormalReturnKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source +NormalReturnKernel_Source;
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Runtime__AutoAllocateReturnArraysKernels__NormalReturnKernel {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
 }
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Runtime__AutoAllocateReturnArraysKernels__NormalReturnKernel(int someValue, __gsharp_context_Kassyi__GSharp__Tests__Shared__Runtime__AutoAllocateReturnArraysKernels__NormalReturnKernel __gsharp_ctx, ref float __gsharp_auto_result) {
 {
 switch (__gsharp_ctx.__gsharp_state)
@@ -374,10 +376,12 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 }
 ";
 public static readonly string OneThreadKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source +OneThreadKernel_Source;
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Runtime__AutoAllocateReturnArraysKernels__OneThreadKernel {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
 }
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Runtime__AutoAllocateReturnArraysKernels__OneThreadKernel(__gsharp_context_Kassyi__GSharp__Tests__Shared__Runtime__AutoAllocateReturnArraysKernels__OneThreadKernel __gsharp_ctx, ref int __gsharp_auto_result) {
 {
 switch (__gsharp_ctx.__gsharp_state)
@@ -630,10 +634,12 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 }
 ";
 public static readonly string StructReturnKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source +StructReturnKernel_Source;
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Runtime__AutoAllocateReturnArraysKernels__StructReturnKernel {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
 }
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Runtime__AutoAllocateReturnArraysKernels__StructReturnKernel(__gsharp_context_Kassyi__GSharp__Tests__Shared__Runtime__AutoAllocateReturnArraysKernels__StructReturnKernel __gsharp_ctx, ref global::Kassyi.GSharp.Tests.Shared.Runtime.AutoAllocateReturnArraysKernels.TestStruct __gsharp_auto_result) {
 {
 switch (__gsharp_ctx.__gsharp_state)

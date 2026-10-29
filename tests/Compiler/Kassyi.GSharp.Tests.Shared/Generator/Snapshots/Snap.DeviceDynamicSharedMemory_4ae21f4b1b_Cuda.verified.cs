@@ -191,10 +191,12 @@ namespace Kassyi.GSharp.Tests.Shared.Core
 {
 public partial class DeviceDynamicSharedMemoryKernels
 {
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_frame_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__SuspendingHelper {
 internal int __gsharp_state;
 internal uint __gsharp_warp_exchange;
 }
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static bool __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__SuspendingHelper(int n, int val, __gsharp_frame_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__SuspendingHelper __gsharp_ctx, ref int __gsharp_result) {
 global::Kassyi.GSharp.Core.SharedMemory<int> inner = global::Kassyi.GSharp.Core.SharedMemory<int>.FindDynamic(0x84b31862e77be173UL);
 {
@@ -222,10 +224,12 @@ return true;
 throw new global::System.InvalidOperationException("The device function state machine reached an unknown state.");
 }
 
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_frame_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__TwoKernelHelper {
 internal int __gsharp_state;
 internal uint __gsharp_warp_exchange;
 }
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static bool __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__TwoKernelHelper(int n, int val, __gsharp_frame_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__TwoKernelHelper __gsharp_ctx, ref int __gsharp_result) {
 global::Kassyi.GSharp.Core.SharedMemory<int> inner = global::Kassyi.GSharp.Core.SharedMemory<int>.FindDynamic(0x5e40b7025ff4f720UL);
 {
@@ -253,10 +257,12 @@ return true;
 throw new global::System.InvalidOperationException("The device function state machine reached an unknown state.");
 }
 
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_frame_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__SuspendingPersistHelper {
 internal int __gsharp_state;
 internal uint __gsharp_warp_exchange;
 }
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static bool __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__SuspendingPersistHelper(int n, int val, bool write, __gsharp_frame_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__SuspendingPersistHelper __gsharp_ctx, ref int __gsharp_result) {
 global::Kassyi.GSharp.Core.SharedMemory<int> s = global::Kassyi.GSharp.Core.SharedMemory<int>.FindDynamic(0x8e9b2cbfc1a4ab1eUL);
 {
@@ -288,12 +294,14 @@ return true;
 throw new global::System.InvalidOperationException("The device function state machine reached an unknown state.");
 }
 
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_frame_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__GrowHelper {
 internal int __gsharp_state;
 internal uint __gsharp_warp_exchange;
 internal int tid;
 internal int r;
 }
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static bool __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__GrowHelper(int count, int writeStart, int val, __gsharp_frame_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__GrowHelper __gsharp_ctx, ref int __gsharp_result) {
 global::Kassyi.GSharp.Core.SharedMemory<int> s = global::Kassyi.GSharp.Core.SharedMemory<int>.FindDynamic(0xa9215b4dd44568e3UL);
 {

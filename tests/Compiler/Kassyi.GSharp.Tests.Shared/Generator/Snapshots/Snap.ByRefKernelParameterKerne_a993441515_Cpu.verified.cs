@@ -188,12 +188,14 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 }
 ";
 public static readonly string RefStructBarrierKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source +RefStructBarrierKernel_Source;
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__ByRefKernelParameterKernels__RefStructBarrierKernel {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
 public int tid;
 public int a;
 }
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__ByRefKernelParameterKernels__RefStructBarrierKernel(ref global::Kassyi.GSharp.Tests.Shared.Syntax.ByRefParameterStruct s, int[] o, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__ByRefKernelParameterKernels__RefStructBarrierKernel __gsharp_ctx) {
 {
 switch (__gsharp_ctx.__gsharp_state)
@@ -481,12 +483,14 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 }
 ";
 public static readonly string RefIntBarrierKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source +RefIntBarrierKernel_Source;
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__ByRefKernelParameterKernels__RefIntBarrierKernel {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
 public int tid;
 public int a;
 }
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__ByRefKernelParameterKernels__RefIntBarrierKernel(ref int x, int[] o, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__ByRefKernelParameterKernels__RefIntBarrierKernel __gsharp_ctx) {
 {
 switch (__gsharp_ctx.__gsharp_state)
@@ -776,11 +780,13 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 }
 ";
 public static readonly string OutStructBarrierKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source +OutStructBarrierKernel_Source;
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__ByRefKernelParameterKernels__OutStructBarrierKernel {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
 public int tid;
 }
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__ByRefKernelParameterKernels__OutStructBarrierKernel(ref global::Kassyi.GSharp.Tests.Shared.Syntax.ByRefParameterStruct s, int[] o, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__ByRefKernelParameterKernels__OutStructBarrierKernel __gsharp_ctx) {
 {
 switch (__gsharp_ctx.__gsharp_state)
@@ -1063,10 +1069,12 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 }
 ";
 public static readonly string RefReadOnlyStructNoBarrierKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source +RefReadOnlyStructNoBarrierKernel_Source;
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__ByRefKernelParameterKernels__RefReadOnlyStructNoBarrierKernel {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
 }
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__ByRefKernelParameterKernels__RefReadOnlyStructNoBarrierKernel(ref readonly global::Kassyi.GSharp.Tests.Shared.Syntax.ByRefParameterStruct s, int[] o, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__ByRefKernelParameterKernels__RefReadOnlyStructNoBarrierKernel __gsharp_ctx) {
 {
 switch (__gsharp_ctx.__gsharp_state)
@@ -1335,12 +1343,14 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 }
 ";
 public static readonly string RefReadOnlyStructBarrierKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source +RefReadOnlyStructBarrierKernel_Source;
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__ByRefKernelParameterKernels__RefReadOnlyStructBarrierKernel {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
 public int tid;
 public int a;
 }
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__ByRefKernelParameterKernels__RefReadOnlyStructBarrierKernel(ref readonly global::Kassyi.GSharp.Tests.Shared.Syntax.ByRefParameterStruct s, int[] o, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__ByRefKernelParameterKernels__RefReadOnlyStructBarrierKernel __gsharp_ctx) {
 {
 switch (__gsharp_ctx.__gsharp_state)
@@ -1617,12 +1627,14 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 }
 ";
 public static readonly string InStructBarrierKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source +InStructBarrierKernel_Source;
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__ByRefKernelParameterKernels__InStructBarrierKernel {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
 public int tid;
 public int a;
 }
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__ByRefKernelParameterKernels__InStructBarrierKernel(in global::Kassyi.GSharp.Tests.Shared.Syntax.ByRefParameterStruct s, int[] o, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__ByRefKernelParameterKernels__InStructBarrierKernel __gsharp_ctx) {
 {
 switch (__gsharp_ctx.__gsharp_state)
@@ -1893,12 +1905,14 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 }
 ";
 public static readonly string SpanBarrierKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source +SpanBarrierKernel_Source;
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__ByRefKernelParameterKernels__SpanBarrierKernel {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
 public int tid;
 public int a;
 }
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__ByRefKernelParameterKernels__SpanBarrierKernel(global::System.Span<int> sp, int[] o, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__ByRefKernelParameterKernels__SpanBarrierKernel __gsharp_ctx) {
 {
 switch (__gsharp_ctx.__gsharp_state)
@@ -2162,12 +2176,14 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 }
 ";
 public static readonly string ReadOnlySpanBarrierKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source +ReadOnlySpanBarrierKernel_Source;
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__ByRefKernelParameterKernels__ReadOnlySpanBarrierKernel {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
 public int tid;
 public int a;
 }
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__ByRefKernelParameterKernels__ReadOnlySpanBarrierKernel(global::System.ReadOnlySpan<int> rs, int[] o, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__ByRefKernelParameterKernels__ReadOnlySpanBarrierKernel __gsharp_ctx) {
 {
 switch (__gsharp_ctx.__gsharp_state)

@@ -89,12 +89,14 @@ namespace Kassyi.GSharp.Tests.Shared.Core
 {
 public partial class SharedMemoryRegionKernels
 {
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_frame_Kassyi__GSharp__Tests__Shared__Core__SharedMemoryRegionKernels__RotateThroughDynamicSharedMemory {
 internal int __gsharp_state;
 internal uint __gsharp_warp_exchange;
 internal int tid;
 internal int rotated;
 }
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static bool __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Core__SharedMemoryRegionKernels__RotateThroughDynamicSharedMemory(int value, int count, __gsharp_frame_Kassyi__GSharp__Tests__Shared__Core__SharedMemoryRegionKernels__RotateThroughDynamicSharedMemory __gsharp_ctx, ref int __gsharp_result) {
 global::Kassyi.GSharp.Core.SharedMemory<int> shared = global::Kassyi.GSharp.Core.SharedMemory<int>.FindDynamic(0xa8ee59f66f63ce77UL);
 {

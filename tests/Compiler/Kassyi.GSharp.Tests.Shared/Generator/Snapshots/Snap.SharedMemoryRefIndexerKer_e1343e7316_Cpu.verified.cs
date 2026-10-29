@@ -158,11 +158,13 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 }
 ";
 public static readonly string AtomicAddSharedMemoryKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source +AtomicAddSharedMemoryKernel_Source;
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Core__SharedMemoryRefIndexerKernels__AtomicAddSharedMemoryKernel {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
 public int tid;
 }
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Core__SharedMemoryRefIndexerKernels__AtomicAddSharedMemoryKernel(int[] output, __gsharp_context_Kassyi__GSharp__Tests__Shared__Core__SharedMemoryRefIndexerKernels__AtomicAddSharedMemoryKernel __gsharp_ctx) {
 global::Kassyi.GSharp.Core.SharedMemory<int> counter = new global::Kassyi.GSharp.Core.SharedMemory<int>(1, 0x62918454b9598ef2UL);
 {
@@ -440,11 +442,13 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 }
 ";
 public static readonly string MBarrierSharedMemoryKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source +MBarrierSharedMemoryKernel_Source;
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Core__SharedMemoryRefIndexerKernels__MBarrierSharedMemoryKernel {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
 public int tid;
 }
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Core__SharedMemoryRefIndexerKernels__MBarrierSharedMemoryKernel(int[] output, __gsharp_context_Kassyi__GSharp__Tests__Shared__Core__SharedMemoryRefIndexerKernels__MBarrierSharedMemoryKernel __gsharp_ctx) {
 global::Kassyi.GSharp.Core.SharedMemory<ulong> bar = new global::Kassyi.GSharp.Core.SharedMemory<ulong>(1, 0xdd78a4a1ffca49ecUL);
 global::Kassyi.GSharp.Core.SharedMemory<int> data = new global::Kassyi.GSharp.Core.SharedMemory<int>(32, 0xdd78a5a1ffca4b9fUL);

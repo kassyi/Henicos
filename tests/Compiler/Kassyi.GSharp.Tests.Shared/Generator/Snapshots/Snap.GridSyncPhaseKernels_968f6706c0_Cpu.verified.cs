@@ -54,10 +54,12 @@ namespace Kassyi.GSharp.Tests.Shared.Core
 {
 public partial class GridSyncPhaseKernels
 {
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_frame_Kassyi__GSharp__Tests__Shared__Core__GridSyncPhaseKernels__WaitForGrid {
 internal int __gsharp_state;
 internal uint __gsharp_warp_exchange;
 }
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static bool __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Core__GridSyncPhaseKernels__WaitForGrid(__gsharp_frame_Kassyi__GSharp__Tests__Shared__Core__GridSyncPhaseKernels__WaitForGrid __gsharp_ctx) {
 {
 switch (__gsharp_ctx.__gsharp_state)
@@ -270,6 +272,7 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 }
 ";
 public static readonly string SharedMemoryAcrossGridSyncKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source +SharedMemoryAcrossGridSyncKernel_Source;
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Core__GridSyncPhaseKernels__SharedMemoryAcrossGridSyncKernel {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
@@ -277,6 +280,7 @@ public int tid;
 public int local;
 public int next;
 }
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Core__GridSyncPhaseKernels__SharedMemoryAcrossGridSyncKernel(int[] buffer, int[] output, int n, __gsharp_context_Kassyi__GSharp__Tests__Shared__Core__GridSyncPhaseKernels__SharedMemoryAcrossGridSyncKernel __gsharp_ctx) {
 global::Kassyi.GSharp.Core.SharedMemory<int> staticCopy = new global::Kassyi.GSharp.Core.SharedMemory<int>(32, 0xa87fc7c9cb75d112UL);
 global::Kassyi.GSharp.Core.SharedMemory<int> dynamicCopy = global::Kassyi.GSharp.Core.SharedMemory<int>.FindDynamic(0xa87fc8c9cb75d2c5UL);
@@ -632,6 +636,7 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 }
 ";
 public static readonly string ShuffleBeforeGridSyncKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source +ShuffleBeforeGridSyncKernel_Source;
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Core__GridSyncPhaseKernels__ShuffleBeforeGridSyncKernel {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
@@ -641,6 +646,7 @@ public int gid;
 public int v;
 public int __gsharp_warp_temp_0;
 }
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Core__GridSyncPhaseKernels__ShuffleBeforeGridSyncKernel(int[] data, int[] output, __gsharp_context_Kassyi__GSharp__Tests__Shared__Core__GridSyncPhaseKernels__ShuffleBeforeGridSyncKernel __gsharp_ctx) {
 {
 switch (__gsharp_ctx.__gsharp_state)
@@ -978,10 +984,12 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 }
 ";
 public static readonly string BlockFinishesBeforeGridSyncKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source +BlockFinishesBeforeGridSyncKernel_Source;
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Core__GridSyncPhaseKernels__BlockFinishesBeforeGridSyncKernel {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
 }
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Core__GridSyncPhaseKernels__BlockFinishesBeforeGridSyncKernel(int[] a, __gsharp_context_Kassyi__GSharp__Tests__Shared__Core__GridSyncPhaseKernels__BlockFinishesBeforeGridSyncKernel __gsharp_ctx) {
 {
 switch (__gsharp_ctx.__gsharp_state)
@@ -1302,11 +1310,13 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 }
 ";
 public static readonly string RepresentativeFinishesBeforeGridSyncKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source +RepresentativeFinishesBeforeGridSyncKernel_Source;
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Core__GridSyncPhaseKernels__RepresentativeFinishesBeforeGridSyncKernel {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
 public int tid;
 }
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Core__GridSyncPhaseKernels__RepresentativeFinishesBeforeGridSyncKernel(int[] a, __gsharp_context_Kassyi__GSharp__Tests__Shared__Core__GridSyncPhaseKernels__RepresentativeFinishesBeforeGridSyncKernel __gsharp_ctx) {
 {
 switch (__gsharp_ctx.__gsharp_state)
@@ -1591,12 +1601,14 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 }
 ";
 public static readonly string NotCooperativeKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source +NotCooperativeKernel_Source;
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Core__GridSyncPhaseKernels__NotCooperativeKernel {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
 public int tid;
 internal global::Kassyi.GSharp.Tests.Shared.Core.GridSyncPhaseKernels.__gsharp_frame_Kassyi__GSharp__Tests__Shared__Core__GridSyncPhaseKernels__WaitForGrid __gsharp_call_frame_0 = new();
 }
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Core__GridSyncPhaseKernels__NotCooperativeKernel(int[] a, __gsharp_context_Kassyi__GSharp__Tests__Shared__Core__GridSyncPhaseKernels__NotCooperativeKernel __gsharp_ctx) {
 {
 switch (__gsharp_ctx.__gsharp_state)

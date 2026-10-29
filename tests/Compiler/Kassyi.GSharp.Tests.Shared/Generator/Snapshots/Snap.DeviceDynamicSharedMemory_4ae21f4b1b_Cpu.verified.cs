@@ -244,10 +244,12 @@ namespace Kassyi.GSharp.Tests.Shared.Core
 {
 public partial class DeviceDynamicSharedMemoryKernels
 {
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_frame_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__SuspendingHelper {
 internal int __gsharp_state;
 internal uint __gsharp_warp_exchange;
 }
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static bool __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__SuspendingHelper(int n, int val, __gsharp_frame_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__SuspendingHelper __gsharp_ctx, ref int __gsharp_result) {
 global::Kassyi.GSharp.Core.SharedMemory<int> inner = global::Kassyi.GSharp.Core.SharedMemory<int>.FindDynamic(0x84b31862e77be173UL);
 {
@@ -275,10 +277,12 @@ return true;
 throw new global::System.InvalidOperationException("The device function state machine reached an unknown state.");
 }
 
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_frame_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__TwoKernelHelper {
 internal int __gsharp_state;
 internal uint __gsharp_warp_exchange;
 }
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static bool __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__TwoKernelHelper(int n, int val, __gsharp_frame_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__TwoKernelHelper __gsharp_ctx, ref int __gsharp_result) {
 global::Kassyi.GSharp.Core.SharedMemory<int> inner = global::Kassyi.GSharp.Core.SharedMemory<int>.FindDynamic(0x5e40b7025ff4f720UL);
 {
@@ -306,10 +310,12 @@ return true;
 throw new global::System.InvalidOperationException("The device function state machine reached an unknown state.");
 }
 
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_frame_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__SuspendingPersistHelper {
 internal int __gsharp_state;
 internal uint __gsharp_warp_exchange;
 }
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static bool __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__SuspendingPersistHelper(int n, int val, bool write, __gsharp_frame_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__SuspendingPersistHelper __gsharp_ctx, ref int __gsharp_result) {
 global::Kassyi.GSharp.Core.SharedMemory<int> s = global::Kassyi.GSharp.Core.SharedMemory<int>.FindDynamic(0x8e9b2cbfc1a4ab1eUL);
 {
@@ -341,12 +347,14 @@ return true;
 throw new global::System.InvalidOperationException("The device function state machine reached an unknown state.");
 }
 
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_frame_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__GrowHelper {
 internal int __gsharp_state;
 internal uint __gsharp_warp_exchange;
 internal int tid;
 internal int r;
 }
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static bool __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__GrowHelper(int count, int writeStart, int val, __gsharp_frame_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__GrowHelper __gsharp_ctx, ref int __gsharp_result) {
 global::Kassyi.GSharp.Core.SharedMemory<int> s = global::Kassyi.GSharp.Core.SharedMemory<int>.FindDynamic(0xa9215b4dd44568e3UL);
 {
@@ -545,6 +553,7 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 }
 ";
 public static readonly string SuspendingCallerKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source +SuspendingCallerKernel_Source;
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__SuspendingCallerKernel {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
@@ -553,6 +562,7 @@ public int __gsharp_call_temp_0;
 public int helperResult;
 internal global::Kassyi.GSharp.Tests.Shared.Core.DeviceDynamicSharedMemoryKernels.__gsharp_frame_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__SuspendingHelper __gsharp_call_frame_0 = new();
 }
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__SuspendingCallerKernel(int[] output, int n, __gsharp_context_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__SuspendingCallerKernel __gsharp_ctx) {
 global::Kassyi.GSharp.Core.SharedMemory<int> outer = global::Kassyi.GSharp.Core.SharedMemory<int>.FindDynamic(0xd8d3c5e7a76b4685UL);
 {
@@ -828,6 +838,7 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 }
 ";
 public static readonly string HelperOnlyKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source +HelperOnlyKernel_Source;
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__HelperOnlyKernel {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
@@ -835,6 +846,7 @@ public int tid;
 public int __gsharp_call_temp_0;
 internal global::Kassyi.GSharp.Tests.Shared.Core.DeviceDynamicSharedMemoryKernels.__gsharp_frame_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__TwoKernelHelper __gsharp_call_frame_0 = new();
 }
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__HelperOnlyKernel(int[] output, int n, __gsharp_context_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__HelperOnlyKernel __gsharp_ctx) {
 {
 switch (__gsharp_ctx.__gsharp_state)
@@ -1111,6 +1123,7 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 }
 ";
 public static readonly string HelperAndCallerKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source +HelperAndCallerKernel_Source;
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__HelperAndCallerKernel {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
@@ -1119,6 +1132,7 @@ public int __gsharp_call_temp_0;
 public int helperResult;
 internal global::Kassyi.GSharp.Tests.Shared.Core.DeviceDynamicSharedMemoryKernels.__gsharp_frame_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__TwoKernelHelper __gsharp_call_frame_0 = new();
 }
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__HelperAndCallerKernel(int[] output, int n, __gsharp_context_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__HelperAndCallerKernel __gsharp_ctx) {
 global::Kassyi.GSharp.Core.SharedMemory<int> outer = global::Kassyi.GSharp.Core.SharedMemory<int>.FindDynamic(0x7047eeed6a045198UL);
 {
@@ -1401,12 +1415,14 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 }
 ";
 public static readonly string PlainCallerKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source +PlainCallerKernel_Source;
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__PlainCallerKernel {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
 public int tid;
 public int helperResult;
 }
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__PlainCallerKernel(int[] output, int n, __gsharp_context_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__PlainCallerKernel __gsharp_ctx) {
 global::Kassyi.GSharp.Core.SharedMemory<int> outer = global::Kassyi.GSharp.Core.SharedMemory<int>.FindDynamic(0x3890c35093ada06bUL);
 {
@@ -1692,6 +1708,7 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 }
 ";
 public static readonly string SuspendingPersistKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source +SuspendingPersistKernel_Source;
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__SuspendingPersistKernel {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
@@ -1702,6 +1719,7 @@ public int __gsharp_call_temp_2;
 internal global::Kassyi.GSharp.Tests.Shared.Core.DeviceDynamicSharedMemoryKernels.__gsharp_frame_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__SuspendingPersistHelper __gsharp_call_frame_0 = new();
 internal global::Kassyi.GSharp.Tests.Shared.Core.DeviceDynamicSharedMemoryKernels.__gsharp_frame_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__SuspendingPersistHelper __gsharp_call_frame_1 = new();
 }
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__SuspendingPersistKernel(int[] output, int n, __gsharp_context_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__SuspendingPersistKernel __gsharp_ctx) {
 {
 switch (__gsharp_ctx.__gsharp_state)
@@ -1974,11 +1992,13 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 }
 ";
 public static readonly string PlainPersistKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source +PlainPersistKernel_Source;
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__PlainPersistKernel {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
 public int tid;
 }
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__PlainPersistKernel(int[] output, int n, __gsharp_context_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__PlainPersistKernel __gsharp_ctx) {
 {
 switch (__gsharp_ctx.__gsharp_state)
@@ -2229,11 +2249,13 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 }
 ";
 public static readonly string StaticPersistKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source +StaticPersistKernel_Source;
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__StaticPersistKernel {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
 public int tid;
 }
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__StaticPersistKernel(int[] output, __gsharp_context_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__StaticPersistKernel __gsharp_ctx) {
 {
 switch (__gsharp_ctx.__gsharp_state)
@@ -2521,6 +2543,7 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 }
 ";
 public static readonly string GrowAfterCallerKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source +GrowAfterCallerKernel_Source;
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__GrowAfterCallerKernel {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
@@ -2532,6 +2555,7 @@ public int h2;
 internal global::Kassyi.GSharp.Tests.Shared.Core.DeviceDynamicSharedMemoryKernels.__gsharp_frame_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__GrowHelper __gsharp_call_frame_0 = new();
 internal global::Kassyi.GSharp.Tests.Shared.Core.DeviceDynamicSharedMemoryKernels.__gsharp_frame_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__GrowHelper __gsharp_call_frame_1 = new();
 }
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__GrowAfterCallerKernel(int[] output, int small, int large, __gsharp_context_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__GrowAfterCallerKernel __gsharp_ctx) {
 global::Kassyi.GSharp.Core.SharedMemory<int> outer = global::Kassyi.GSharp.Core.SharedMemory<int>.FindDynamic(0x03275e9f903bff9bUL);
 {
@@ -2809,10 +2833,12 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 }
 ";
 public static readonly string RecursiveKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source +RecursiveKernel_Source;
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__RecursiveKernel {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
 }
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__RecursiveKernel(int[] output, int n, __gsharp_context_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__RecursiveKernel __gsharp_ctx) {
 {
 switch (__gsharp_ctx.__gsharp_state)
@@ -3069,10 +3095,12 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 }
 ";
 public static readonly string NestedScopeKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source +NestedScopeKernel_Source;
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__NestedScopeKernel {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
 }
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__NestedScopeKernel(int[] output, int n, __gsharp_context_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__NestedScopeKernel __gsharp_ctx) {
 {
 switch (__gsharp_ctx.__gsharp_state)
@@ -3377,6 +3405,7 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 }
 ";
 public static readonly string ZeroThenGrowKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source +ZeroThenGrowKernel_Source;
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__ZeroThenGrowKernel {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
@@ -3388,6 +3417,7 @@ public int h1;
 internal global::Kassyi.GSharp.Tests.Shared.Core.DeviceDynamicSharedMemoryKernels.__gsharp_frame_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__GrowHelper __gsharp_call_frame_0 = new();
 internal global::Kassyi.GSharp.Tests.Shared.Core.DeviceDynamicSharedMemoryKernels.__gsharp_frame_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__GrowHelper __gsharp_call_frame_1 = new();
 }
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__ZeroThenGrowKernel(int[] output, int small, int large, __gsharp_context_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__ZeroThenGrowKernel __gsharp_ctx) {
 global::Kassyi.GSharp.Core.SharedMemory<int> outer = global::Kassyi.GSharp.Core.SharedMemory<int>.FindDynamic(0x989c8b7d9b352ae3UL);
 {
@@ -3686,12 +3716,14 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 }
 ";
 public static readonly string MiddleCallerKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source +MiddleCallerKernel_Source;
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__MiddleCallerKernel {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
 public int tid;
 public int helperResult;
 }
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__MiddleCallerKernel(int[] output, int n, __gsharp_context_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__MiddleCallerKernel __gsharp_ctx) {
 global::Kassyi.GSharp.Core.SharedMemory<int> outer = global::Kassyi.GSharp.Core.SharedMemory<int>.FindDynamic(0xe9e3e359170e8a1eUL);
 {
@@ -3943,10 +3975,12 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 }
 ";
 public static readonly string NoParameterCallerKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source +NoParameterCallerKernel_Source;
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__NoParameterCallerKernel {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
 }
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__NoParameterCallerKernel(int[] output, __gsharp_context_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__NoParameterCallerKernel __gsharp_ctx) {
 {
 switch (__gsharp_ctx.__gsharp_state)
@@ -4211,6 +4245,7 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 }
 ";
 public static readonly string NestedFunctionCallerKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source +NestedFunctionCallerKernel_Source;
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__NestedFunctionCallerKernel {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
@@ -4219,6 +4254,7 @@ public global::System.Func<int> callNoParameterHelper;
 public int plain;
 public int noParameter;
 }
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__NestedFunctionCallerKernel(int[] output, int n, __gsharp_context_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__NestedFunctionCallerKernel __gsharp_ctx) {
 global::Kassyi.GSharp.Core.SharedMemory<int> outer = global::Kassyi.GSharp.Core.SharedMemory<int>.FindDynamic(0xd3a5cf7b48c876f0UL);
 {
@@ -4489,11 +4525,13 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 }
 ";
 public static readonly string NegativeCountKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source +NegativeCountKernel_Source;
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__NegativeCountKernel {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
 public int tid;
 }
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__NegativeCountKernel(int[] output, int n, int negative, __gsharp_context_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__NegativeCountKernel __gsharp_ctx) {
 global::Kassyi.GSharp.Core.SharedMemory<int> first = global::Kassyi.GSharp.Core.SharedMemory<int>.FindDynamic(0x0c3a526c39b2a941UL);
 global::Kassyi.GSharp.Core.SharedMemory<int> second = global::Kassyi.GSharp.Core.SharedMemory<int>.FindDynamic(0x0c3a516c39b2a78eUL);

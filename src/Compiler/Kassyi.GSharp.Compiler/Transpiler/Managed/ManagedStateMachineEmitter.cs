@@ -99,6 +99,7 @@ internal static class ManagedStateMachineEmitter
         string accessibility = "public",
         string memberAccessibility = "public")
     {
+        writer.AppendLine(EditorBrowsableNever);
         writer.AppendLine($"{accessibility} class {contextName} {{");
         writer.AppendLine($"{memberAccessibility} int {GSharpInternalNames.StateMachine.State};");
         writer.AppendLine($"{memberAccessibility} uint {GSharpInternalNames.StateMachine.WarpExchange};");
@@ -158,6 +159,7 @@ internal static class ManagedStateMachineEmitter
         string accessibility,
         bool isUnsafe)
     {
+        writer.AppendLine(EditorBrowsableNever);
         AppendDeviceStateMachineSignature(writer, frameName, stateMachineName, methodSymbol, copiedParameters,
             accessibility, isUnsafe);
         writer.AppendLine(" {");
@@ -241,6 +243,7 @@ internal static class ManagedStateMachineEmitter
         ImmutableArray<ManagedContextField> localInits,
         string bodySource)
     {
+        writer.AppendLine(EditorBrowsableNever);
         EmitStateMachineSignature(writer, contextName, stateMachineName, methodSymbol, hasAutoResult);
         writer.AppendLine(") {");
 

@@ -148,10 +148,12 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 }
 ";
 public static readonly string InterlockedKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source +InterlockedKernel_Source;
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__InvocationAndIntrinsicsKernels__InterlockedKernel {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
 }
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__InvocationAndIntrinsicsKernels__InterlockedKernel(int[] intBuf, uint[] uintBuf, long[] longBuf, ulong[] ulongBuf, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__InvocationAndIntrinsicsKernels__InterlockedKernel __gsharp_ctx) {
 {
 switch (__gsharp_ctx.__gsharp_state)
@@ -444,10 +446,12 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 }
 ";
 public static readonly string InterlockedEdgeCasesKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source +InterlockedEdgeCasesKernel_Source;
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__InvocationAndIntrinsicsKernels__InterlockedEdgeCasesKernel {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
 }
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__InvocationAndIntrinsicsKernels__InterlockedEdgeCasesKernel(int[] array, global::Kassyi.GSharp.Tests.Shared.Syntax.AtomicTestStruct[] structArray, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__InvocationAndIntrinsicsKernels__InterlockedEdgeCasesKernel __gsharp_ctx) {
 {
 switch (__gsharp_ctx.__gsharp_state)
@@ -724,10 +728,12 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 }
 ";
 public static readonly string MathKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source +MathKernel_Source;
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__InvocationAndIntrinsicsKernels__MathKernel {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
 }
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__InvocationAndIntrinsicsKernels__MathKernel(double[] doubleInputs, double[] doubleOutputs, float[] floatInputs, float[] floatOutputs, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__InvocationAndIntrinsicsKernels__MathKernel __gsharp_ctx) {
 {
 switch (__gsharp_ctx.__gsharp_state)
@@ -1016,10 +1022,12 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 }
 ";
 public static readonly string MathEdgeCasesKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source +MathEdgeCasesKernel_Source;
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__InvocationAndIntrinsicsKernels__MathEdgeCasesKernel {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
 }
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__InvocationAndIntrinsicsKernels__MathEdgeCasesKernel(float[] floatSpecialInputs, float[] floatSpecialResults, double[] doubleSpecialInputs, double[] doubleSpecialResults, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__InvocationAndIntrinsicsKernels__MathEdgeCasesKernel __gsharp_ctx) {
 {
 switch (__gsharp_ctx.__gsharp_state)

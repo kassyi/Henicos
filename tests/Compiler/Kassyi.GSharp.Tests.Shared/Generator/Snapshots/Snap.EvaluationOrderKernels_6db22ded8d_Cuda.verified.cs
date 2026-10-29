@@ -251,10 +251,12 @@ namespace Kassyi.GSharp.Tests.Shared.Syntax
 {
 public partial class EvaluationOrderKernels
 {
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_frame_Kassyi__GSharp__Tests__Shared__Syntax__EvaluationOrderKernels__CombineAcrossBarrier {
 internal int __gsharp_state;
 internal uint __gsharp_warp_exchange;
 }
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static bool __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__EvaluationOrderKernels__CombineAcrossBarrier(int a, int b, __gsharp_frame_Kassyi__GSharp__Tests__Shared__Syntax__EvaluationOrderKernels__CombineAcrossBarrier __gsharp_ctx, ref int __gsharp_result) {
 {
 switch (__gsharp_ctx.__gsharp_state)

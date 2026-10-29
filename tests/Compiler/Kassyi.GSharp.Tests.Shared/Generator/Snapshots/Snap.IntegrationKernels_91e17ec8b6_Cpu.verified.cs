@@ -375,6 +375,7 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 }
 ";
 public static readonly string AllInOneKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source +AllInOneKernel_Source;
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__Tier1IntegrationKernels__AllInOneKernel {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
@@ -386,6 +387,7 @@ public float sum;
 public float foreachSum;
 public global::System.Func<float, float, float> multiplier;
 }
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__Tier1IntegrationKernels__AllInOneKernel(int[] intInput, float[] floatInput, float[] results, global::Kassyi.GSharp.Tests.Shared.Syntax.Tier1CustomStruct config, ulong[] globalCounter, int count, int dynamicSharedSize, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__Tier1IntegrationKernels__AllInOneKernel __gsharp_ctx) {
 global::Kassyi.GSharp.Core.SharedMemory<float> dynamicSharedMem = global::Kassyi.GSharp.Core.SharedMemory<float>.FindDynamic(0xf4a8b89f8fdf4f71UL);
 {

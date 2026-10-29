@@ -87,11 +87,13 @@ namespace Kassyi.GSharp.Tests.Shared.Syntax
 {
 public partial class ForUnrollBarrierKernels
 {
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_frame_Kassyi__GSharp__Tests__Shared__Syntax__ForUnrollBarrierKernels__Neighbor {
 internal int __gsharp_state;
 internal uint __gsharp_warp_exchange;
 internal int r;
 }
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static bool __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__ForUnrollBarrierKernels__Neighbor(int[] buffer, int tid, int value, __gsharp_frame_Kassyi__GSharp__Tests__Shared__Syntax__ForUnrollBarrierKernels__Neighbor __gsharp_ctx, ref int __gsharp_result) {
 {
 switch (__gsharp_ctx.__gsharp_state)
