@@ -34,6 +34,35 @@ internal static class IteratorTypeResolver
         type.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat);
 #pragma warning restore RS0030
 
+    /// <summary>
+    /// Formats a method for diagnostic message text as its name and parameter types, as in
+    /// <c>Shift(ref OverloadCtx, uint[], int)</c>.
+    /// </summary>
+    public static string FormatSignature(IMethodSymbol method)
+    {
+        var text = new StringBuilder();
+        text.Append(method.Name).Append('(');
+        for (var i = 0; i < method.Parameters.Length; i++)
+        {
+            var parameter = method.Parameters[i];
+            text.Append(i > 0 ? ", " : string.Empty)
+                .Append(FormatRefKind(parameter.RefKind))
+                .Append(FormatType(parameter.Type));
+        }
+
+        return text.Append(')').ToString();
+    }
+
+    /// <summary>The modifier of a parameter with <paramref name="refKind"/> in message text, with a trailing space (<c>ref </c>).</summary>
+    public static string FormatRefKind(RefKind refKind) => refKind switch
+    {
+        RefKind.Ref => "ref ",
+        RefKind.Out => "out ",
+        RefKind.In => "in ",
+        RefKind.RefReadOnlyParameter => "ref readonly ",
+        _ => string.Empty
+    };
+
     /// <summary>Formats a syntax node for diagnostic message text.</summary>
     public static string FormatSyntax(SyntaxNode node) =>
 #pragma warning disable RS0030 // Diagnostic message text only (not a hot path)

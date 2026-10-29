@@ -1,7 +1,10 @@
 namespace Kassyi.GSharp.Compiler.Diagnostics.Kernel.Rules;
 
 /// <summary>
-/// Ensures that prohibited APIs (like System.Math, System.Threading.Interlocked) are not used in GPU kernels.
+/// Reports, in GPU code (GSH0003): the members of <c>System.Math</c> and <c>System.MathF</c> that the project's dialect
+/// does not map to a native function (constants such as <c>Math.PI</c> and the mapped members are allowed), every member of
+/// <c>System.Threading.Interlocked</c> and <c>System.Numerics.BitOperations</c> (#570), and the host-only StackLinq
+/// operators.
 /// </summary>
 internal sealed class ProhibitedApiRule : ISyntaxValidationRule<MemberAccessExpressionSyntax>, ISyntaxValidationRule<InvocationExpressionSyntax>
 {
@@ -37,13 +40,27 @@ internal sealed class ProhibitedApiRule : ISyntaxValidationRule<MemberAccessExpr
 
     private static void AnalyzeSymbol(ISymbol? symbol, SyntaxNode locationNode, ref ValidationContext context)
     {
-        if (symbol is
+        if (symbol == null)
+        {
+            return;
+        }
+
+        if (IsMathMember(symbol))
+        {
+            // The dialect YAML decides per overload (Math.Abs(int) is mapped, Math.Abs(long) is not)
+            if (symbol is not IFieldSymbol { IsConst: true } && !context.Dialect.TryMapIntrinsic(symbol, out _))
             {
-                ContainingType.Name: TypeConstants.MathType or TypeConstants.MathFType
-                or TypeConstants.InterlockedType or TypeConstants.BitOperationsType
-            } &&
-            (symbol.ContainingNamespace.IsSystemNamespace() || symbol.ContainingNamespace.IsSystemThreading() ||
-             symbol.ContainingNamespace.IsSystemOrNumerics()))
+                context.ReportDiagnostic(
+                    GSharpDiagnostics.UnsupportedSyntax,
+                    locationNode,
+                    $"{symbol.ContainingType.Name}.{FormatMember(symbol)} (not mapped by {context.Dialect.Name})");
+            }
+        }
+        else if (symbol is
+                 {
+                     ContainingType.Name: TypeConstants.InterlockedType or TypeConstants.BitOperationsType
+                 } &&
+                 (symbol.ContainingNamespace.IsSystemThreading() || symbol.ContainingNamespace.IsSystemOrNumerics()))
         {
             context.ReportDiagnostic(
                 GSharpDiagnostics.UnsupportedSyntax,
@@ -58,4 +75,12 @@ internal sealed class ProhibitedApiRule : ISyntaxValidationRule<MemberAccessExpr
                 $"{method.Name} (host-only StackLinq operator)");
         }
     }
+
+    private static bool IsMathMember(ISymbol symbol) =>
+        symbol is { ContainingType.Name: TypeConstants.MathType or TypeConstants.MathFType } &&
+        symbol.ContainingNamespace.IsSystemNamespace();
+
+    // Abs(long): the overload decides whether the dialect maps it
+    private static string FormatMember(ISymbol symbol) =>
+        symbol is IMethodSymbol method ? IteratorTypeResolver.FormatSignature(method) : symbol.Name;
 }

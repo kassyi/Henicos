@@ -3,8 +3,8 @@ using static Kassyi.GSharp.Tests.Shared.Helpers.DiagnosticOrigin;
 namespace Kassyi.GSharp.Tests.Shared.Diagnostics;
 
 /// <summary>
-/// The checks that depend on the dialect (GSH0054, GSH0006, GSH0065) come from the analyzer, which reads
-/// <c>GSharpTargetDialect</c>; the generator reports none of them (S-46, #461).
+/// The checks that depend on the dialect (GSH0054, GSH0006, GSH0065, and GSH0003 for a Math member the dialect does not
+/// map) come from the analyzer, which reads <c>GSharpTargetDialect</c>; the generator reports none of them (S-46, #461).
 /// </summary>
 [Category(TestCategory.Compiler)]
 public class DialectDependentDiagnosticsTests
@@ -85,5 +85,58 @@ public class DialectDependentDiagnosticsTests
                 (Analyzer, 26, 16, 26, 21)
             ],
             diagnostics.Ranges(GSharpDiagnostics.StaticMemberAccessNotSupported.Id));
+    }
+
+    // #899: the members of Math and MathF that the dialect maps, and the constants, build with no diagnostic
+    [Theory]
+    [InlineData("Cpu")]
+    [InlineData("Cuda")]
+    [Scenario(TestScenario.HappyPath)]
+    public async Task Test_MappedMathMembers_ReportNothing(string dialect)
+    {
+        var diagnostics = await KernelDiagnostics.RunTestCaseAsync("Analyzers/MappedMathMembers.cs", dialect);
+
+        Assert.Empty(diagnostics);
+    }
+
+    // #899: the spec's comprehensive kernel calls Math.Sqrt, Math.Abs, Math.Max and Math.Min
+    [Theory]
+    [InlineData("Cpu")]
+    [InlineData("Cuda")]
+    [Scenario(TestScenario.HappyPath)]
+    public async Task Test_ComprehensiveSpecKernel_ReportsNoGsh0003(string dialect)
+    {
+        var diagnostics = await KernelDiagnostics.RunTestCaseAsync("ComprehensiveSpecKernel.cu.cs", dialect);
+
+        Assert.Empty(diagnostics.Ranges(GSharpDiagnostics.UnsupportedSyntax.Id));
+    }
+
+    // #899: a member that the dialect does not map, also an unmapped overload of a mapped name, is reported with the
+    // overload and the dialect
+    [Theory]
+    [InlineData("Cpu", "StandardCppDialect")]
+    [InlineData("Cuda", "GSharpCudaDialect")]
+    [Scenario(TestScenario.SadPath)]
+    public async Task Test_UnmappedMathMembers_ReportGsh0003WithTheDialect(string dialect, string dialectName)
+    {
+        var diagnostics = await KernelDiagnostics.RunTestCaseAsync("Analyzers/UnmappedMathMembers.cs", dialect);
+
+        Assert.Equal(
+            [
+                (Analyzer, 14, 16, 14, 24, $"Math.Abs(long) (not mapped by {dialectName})"),
+                (Analyzer, 14, 33, 14, 41, $"Math.Max(long, long) (not mapped by {dialectName})"),
+                (Analyzer, 15, 16, 15, 26, $"MathF.Cbrt(float) (not mapped by {dialectName})")
+            ],
+            diagnostics
+                .Where(static d => d.Id == GSharpDiagnostics.UnsupportedSyntax.Id)
+                .Select(static d => (d.Origin, d.StartLine, d.StartColumn, d.EndLine, d.EndColumn, ExtractSyntax(d.Message))));
+        Assert.All(diagnostics, static d => Assert.Equal(GSharpDiagnostics.UnsupportedSyntax.Id, d.Id));
+    }
+
+    // The '{0}' of "The syntax '{0}' is not supported in GSharp GPU kernels"
+    private static string ExtractSyntax(string message)
+    {
+        var start = message.IndexOf('\'') + 1;
+        return message[start..message.LastIndexOf('\'')];
     }
 }
