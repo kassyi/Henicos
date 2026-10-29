@@ -1,3 +1,5 @@
+using Microsoft.CodeAnalysis.Operations;
+
 namespace Kassyi.GSharp.Compiler.Transpiler.Rules.ExpressionRules;
 
 /// <summary>
@@ -19,6 +21,25 @@ public sealed class CastExpressionTranspilerRule : SyntaxNodeTranspilerRuleBase<
     /// <inheritdoc />
     public override void Transpile(CastExpressionSyntax node, ref TranspileContext context)
     {
+        // A float or double converted to an integer saturates and NaN gives 0, as .NET converts it; C++ leaves an
+        // out-of-range conversion undefined (#724). A type narrower than int is the int result truncated:
+        // (unsigned char)__gsharp_to_i32(x)
+        if (context.Query.SemanticModel.GetSafeOperation(node) is IConversionOperation conversion &&
+            conversion.Syntax.RawKind == node.RawKind &&
+            IntegerSemantics.GetConversionHelper(conversion, out var needsCast) is { } helper)
+        {
+            if (needsCast)
+            {
+                using (context.Emitter.Writer.Parentheses())
+                {
+                    context.Emitter.Dialect.AppendType(ref context, context.Query.SemanticModel.GetTypeSymbol(node.Type));
+                }
+            }
+
+            IntegerSemantics.AppendUnaryCall(helper, node.Expression, ref context);
+            return;
+        }
+
         using (context.Emitter.Writer.Parentheses())
         {
             context.Emitter.Dialect.AppendType(ref context, context.Query.SemanticModel.GetTypeSymbol(node.Type));

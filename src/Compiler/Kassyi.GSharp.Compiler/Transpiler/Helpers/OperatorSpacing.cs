@@ -11,18 +11,25 @@ internal static class OperatorSpacing
     public static void AppendOperator(string op, ExpressionSyntax operand, ref TranspileContext context)
     {
         context.Emitter.Writer.Append(op);
-        if (op.Length > 0 && op[op.Length - 1] is '-' or '+' && StartsWithSign(operand, op[op.Length - 1]))
+        if (op.Length > 0 && op[op.Length - 1] is '-' or '+' &&
+            StartsWithSign(operand, op[op.Length - 1], context.Query.SemanticModel))
         {
             context.Emitter.Writer.Append(' ');
         }
     }
 
     // Whether the C++ of <expression> begins with <sign>: the leftmost operand, down to a prefix operator. A negated
-    // numeric literal is written as a parenthesized constant ((-5)), so it does not begin with a sign.
-    public static bool StartsWithSign(ExpressionSyntax expression, char sign)
+    // numeric literal is written as a parenthesized constant ((-5)), and an operator written as a Prelude call
+    // (__gsharp_neg_i32(x), IntegerSemantics) begins with its name, so neither begins with a sign.
+    public static bool StartsWithSign(ExpressionSyntax expression, char sign, SemanticModel model)
     {
         while (true)
         {
+            if (IntegerSemantics.IsWrittenAsCall(expression, model))
+            {
+                return false;
+            }
+
             switch (expression)
             {
                 case PrefixUnaryExpressionSyntax prefix:

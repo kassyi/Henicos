@@ -1,3 +1,5 @@
+using Microsoft.CodeAnalysis.Operations;
+
 namespace Kassyi.GSharp.Compiler.Transpiler.Rules.ExpressionRules;
 
 /// <summary>
@@ -25,6 +27,15 @@ public sealed class PostfixUnaryExpressionTranspilerRule : SyntaxNodeTranspilerR
             context.Reporter.Fail(GSharpDiagnostics.UnsupportedSyntax, node,
                 ComputedPropertyGetterCall.IncrementOrDecrementOfComputedProperty);
             context.Visitor.AppendUnsupportedPlaceholder(node);
+            return;
+        }
+
+        // int and long ++ / -- wrap in C#; C++ leaves the overflow undefined (#722)
+        if (context.Query.SemanticModel.GetSafeOperation(node) is IIncrementOrDecrementOperation step &&
+            step.Syntax.RawKind == node.RawKind &&
+            IntegerSemantics.GetIncrementHelper(step, node, context.Query.SemanticModel) is { } helper)
+        {
+            IntegerSemantics.AppendStep(step, node, node.Operand, helper, ref context);
             return;
         }
 

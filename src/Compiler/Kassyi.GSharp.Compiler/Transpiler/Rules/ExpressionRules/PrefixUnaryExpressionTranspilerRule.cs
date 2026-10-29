@@ -47,16 +47,33 @@ public sealed class PrefixUnaryExpressionTranspilerRule : SyntaxNodeTranspilerRu
             return;
         }
 
+        // int and long negation and ++ / -- wrap in C#; C++ leaves the overflow undefined (#722)
+        var operation = context.Query.SemanticModel.GetSafeOperation(node);
+        if (operation?.Syntax.RawKind == node.RawKind)
+        {
+            if (operation is IUnaryOperation negation && IntegerSemantics.GetNegationHelper(negation) is { } helper)
+            {
+                IntegerSemantics.AppendUnaryCall(helper, node.Operand, ref context);
+                return;
+            }
+
+            if (operation is IIncrementOrDecrementOperation step &&
+                IntegerSemantics.GetIncrementHelper(step, node, context.Query.SemanticModel) is { } stepHelper)
+            {
+                IntegerSemantics.AppendStep(step, node, node.Operand, stepHelper, ref context);
+                return;
+            }
+        }
+
         // -u negates a long in C#, an unsigned int in C++ (#671). The converted operand begins with '(' or is a literal,
         // so it cannot merge with the operator
         if (node.IsKind(
                 SyntaxKind.UnaryMinusExpression, SyntaxKind.UnaryPlusExpression, SyntaxKind.BitwiseNotExpression) &&
-            context.Query.SemanticModel.GetSafeOperation(node) is IUnaryOperation operation &&
-            operation.Syntax.RawKind == node.RawKind &&
-            ArithmeticConversions.TryGetPromotedType(operation, out var promoted))
+            operation is IUnaryOperation unary && unary.Syntax.RawKind == node.RawKind &&
+            ArithmeticConversions.TryGetPromotedType(unary, out var promoted))
         {
             context.Emitter.Writer.Append(node.OperatorToken.Text);
-            ArithmeticConversions.AppendOperand(operation.Operand, node.Operand, promoted, ref context);
+            ArithmeticConversions.AppendOperand(unary.Operand, node.Operand, promoted, ref context);
             return;
         }
 

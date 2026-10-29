@@ -1,3 +1,5 @@
+using Microsoft.CodeAnalysis.Operations;
+
 namespace Kassyi.GSharp.Compiler.Transpiler.Rules.ExpressionRules;
 
 /// <summary>
@@ -72,17 +74,54 @@ public sealed class AssignmentExpressionTranspilerRule : SyntaxNodeTranspilerRul
             return;
         }
 
+        // int and long arithmetic that C++ leaves undefined goes through the Prelude, and a shift that stays a C++
+        // operator masks its count (#722)
+        var compound = context.Query.SemanticModel.GetSafeOperation(node) is ICompoundAssignmentOperation operation &&
+                       operation.Syntax.RawKind == node.RawKind
+            ? operation
+            : null;
+        string? binaryHelper = null;
+        var helper = compound != null ? IntegerSemantics.GetCompoundHelper(compound, out binaryHelper) : null;
+        var shiftMask = compound != null && helper == null ? IntegerSemantics.GetCompoundShiftMask(compound) : 0;
+
+        // C++ has no >>>=; the integer types are handled here (nint and nuint are not)
+        if (node.IsKind(SyntaxKind.UnsignedRightShiftAssignmentExpression) && helper == null && shiftMask == 0)
+        {
+            context.Reporter.Fail(GSharpDiagnostics.UnsupportedSyntax, node, node.Kind().ToString());
+            context.Visitor.AppendUnsupportedPlaceholder(node);
+            return;
+        }
+
         if (GetCompoundOperator(node) is { } binaryOperator &&
             OperandsInterfere(node, readsTarget: true, ref context, out var rightEffects))
         {
-            TranspileSequencedCompoundAssignment(node, binaryOperator, rightEffects, ref context);
+            TranspileSequencedCompoundAssignment(node, new CompoundOperator(binaryOperator, binaryHelper, shiftMask),
+                rightEffects, ref context);
+            return;
+        }
+
+        if (compound != null && helper != null && binaryHelper != null)
+        {
+            IntegerSemantics.AppendCompound(compound, node, helper, binaryHelper, ref context);
             return;
         }
 
         context.Visitor.Visit(node.Left);
+        if (shiftMask != 0)
+        {
+            // x >>>= n of an unsigned type is x >>= n
+            context.Emitter.Writer.Append(node.IsKind(SyntaxKind.LeftShiftAssignmentExpression) ? "<<=" : ">>=");
+            IntegerSemantics.AppendShiftCount(compound?.Value, node.Right, shiftMask, ref context);
+            return;
+        }
+
         context.Emitter.Writer.Append(node.OperatorToken.Text);
         context.Visitor.Visit(node.Right);
     }
+
+    // The operator of a compound assignment as the sequenced form writes it: <op>, a Prelude call (__gsharp_add_i32),
+    // or a shift whose count is masked
+    private readonly record struct CompoundOperator(string Operator, string? Helper, int ShiftMask);
 
     // [WHY] C# finds the location of the target first, then (for a compound assignment) reads it, then evaluates the
     // right side, and stores last (C# spec §12.21.2, §12.21.4). C++17 evaluates the right side of an assignment first
@@ -115,8 +154,10 @@ public sealed class AssignmentExpressionTranspilerRule : SyntaxNodeTranspilerRul
     //   return __gsharp_seq_0 = (<T>)(__gsharp_seq_1 <op> __gsharp_seq_2); }())
     // The cast is C#'s x = (T)(x op y), which narrows the promoted result back to the type of the target. The copy of
     // the target is left out (its temporary read in place) when the right side cannot write the variable it belongs to.
-    private static void TranspileSequencedCompoundAssignment(AssignmentExpressionSyntax node, string binaryOperator,
-        in ExpressionEffects rightEffects, ref TranspileContext context)
+    // The operation is <helper>(__gsharp_seq_1,__gsharp_seq_2) for int and long arithmetic, and a shift masks its count:
+    // __gsharp_seq_1>>(__gsharp_seq_2&31) (#722)
+    private static void TranspileSequencedCompoundAssignment(AssignmentExpressionSyntax node,
+        CompoundOperator binaryOperator, in ExpressionEffects rightEffects, ref TranspileContext context)
     {
         var writer = context.Emitter.Writer;
         var model = context.Query.SemanticModel;
@@ -135,11 +176,26 @@ public sealed class AssignmentExpressionTranspilerRule : SyntaxNodeTranspilerRul
             AppendTargetType(node.Left, current, ref context);
         }
 
+        if (binaryOperator.Helper != null)
+        {
+            writer.Append(binaryOperator.Helper);
+        }
+
         using (writer.Parentheses())
         {
             EvaluationOrder.AppendTempName(writer, current);
-            writer.Append(binaryOperator);
-            EvaluationOrder.AppendTempName(writer, value);
+            writer.Append(binaryOperator.Helper != null ? "," : binaryOperator.Operator);
+            if (binaryOperator.ShiftMask == 0)
+            {
+                EvaluationOrder.AppendTempName(writer, value);
+                return;
+            }
+
+            using (writer.Parentheses())
+            {
+                EvaluationOrder.AppendTempName(writer, value);
+                writer.Append($"&{binaryOperator.ShiftMask}");
+            }
         }
     }
 
@@ -165,7 +221,7 @@ public sealed class AssignmentExpressionTranspilerRule : SyntaxNodeTranspilerRul
     private static bool NeedsDecltype(ITypeSymbol? type) => type is null or ITypeParameterSymbol or { TypeKind: TypeKind.Error };
 
     // The binary operator of a compound assignment (+= gives +), or null for one that the sequence does not rewrite
-    // (>>>= has no C++ operator; ??= is handled before)
+    // (??= is handled before). >>>= is >> of an unsigned type; of int and long it is a Prelude call
     private static string? GetCompoundOperator(AssignmentExpressionSyntax node) => node.Kind() switch
     {
         SyntaxKind.AddAssignmentExpression => "+",
@@ -177,7 +233,7 @@ public sealed class AssignmentExpressionTranspilerRule : SyntaxNodeTranspilerRul
         SyntaxKind.OrAssignmentExpression => "|",
         SyntaxKind.ExclusiveOrAssignmentExpression => "^",
         SyntaxKind.LeftShiftAssignmentExpression => "<<",
-        SyntaxKind.RightShiftAssignmentExpression => ">>",
+        SyntaxKind.RightShiftAssignmentExpression or SyntaxKind.UnsignedRightShiftAssignmentExpression => ">>",
         _ => null
     };
 }

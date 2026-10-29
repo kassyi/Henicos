@@ -48,22 +48,54 @@ public sealed class BinaryExpressionTranspilerRule : SyntaxNodeTranspilerRuleBas
             }
         }
 
+        // int and long arithmetic that C++ leaves undefined goes through the Prelude (#722); a call leaves the order of its
+        // arguments unspecified, so interfering operands go through temporaries
+        var operation = GetOperation(node, ref context);
+        if (operation != null && IntegerSemantics.GetBinaryHelper(operation) is { } helper)
+        {
+            if (OperandsInterfere(node, ref context))
+            {
+                TranspileSequencedCall(node, helper, ref context);
+                return;
+            }
+
+            IntegerSemantics.AppendCall(helper, node.Left, node.Right, ref context);
+            return;
+        }
+
+        // A shift that stays a C++ operator uses the low bits of its count (C# spec §12.11); >>> of an unsigned type is >>
+        if (operation != null && IntegerSemantics.GetShiftMask(operation) is var mask and not 0)
+        {
+            context.Visitor.Visit(node.Left);
+            context.Emitter.Writer.Append(node.IsKind(SyntaxKind.LeftShiftExpression) ? "<<" : ">>");
+            IntegerSemantics.AppendShiftCount(operation.RightOperand, node.Right, mask, ref context);
+            return;
+        }
+
+        // C++ has no >>>; the integer types are handled above (nint and nuint are not)
+        if (node.IsKind(SyntaxKind.UnsignedRightShiftExpression))
+        {
+            context.Reporter.Fail(GSharpDiagnostics.UnsupportedSyntax, node, node.Kind().ToString());
+            context.Visitor.AppendUnsupportedPlaceholder(node);
+            return;
+        }
+
         // The operators that C++ leaves unsequenced are also the ones whose operands C# promotes together
         var unsequenced = IsUnsequencedInCpp(node);
-        var promotion = unsequenced ? GetPromotion(node, ref context) : null;
+        var promotion = unsequenced ? GetPromotion(operation) : null;
         if (unsequenced && OperandsInterfere(node, ref context))
         {
             TranspileSequenced(node, promotion, ref context);
             return;
         }
 
-        if (promotion is var (operation, type))
+        if (promotion is var (promoted, type))
         {
             // A converted operand begins with '(': the operator needs no space before it
-            ArithmeticConversions.AppendOperand(operation.LeftOperand, node.Left, type, ref context);
-            AppendOperator(node, ArithmeticConversions.IsConverted(operation.RightOperand, type) ? null : node.Right,
+            ArithmeticConversions.AppendOperand(promoted.LeftOperand, node.Left, type, ref context);
+            AppendOperator(node, ArithmeticConversions.IsConverted(promoted.RightOperand, type) ? null : node.Right,
                 ref context);
-            ArithmeticConversions.AppendOperand(operation.RightOperand, node.Right, type, ref context);
+            ArithmeticConversions.AppendOperand(promoted.RightOperand, node.Right, type, ref context);
             return;
         }
 
@@ -72,13 +104,17 @@ public sealed class BinaryExpressionTranspilerRule : SyntaxNodeTranspilerRuleBas
         context.Visitor.Visit(node.Right);
     }
 
-    // The bound operation and the type C# converts its operands to, when C++ would convert them to another one (#671).
-    // The operation must come from a node of the same kind: a lowered node is mapped back to the user's source by span
-    private static (IBinaryOperation Operation, ITypeSymbol Type)? GetPromotion(BinaryExpressionSyntax node,
-        ref TranspileContext context) =>
+    // The bound operation. It must come from a node of the same kind: a lowered node is mapped back to the user's source
+    // by span
+    private static IBinaryOperation? GetOperation(BinaryExpressionSyntax node, ref TranspileContext context) =>
         context.Query.SemanticModel.GetSafeOperation(node) is IBinaryOperation operation &&
-        operation.Syntax.RawKind == node.RawKind &&
-        ArithmeticConversions.TryGetPromotedType(operation, out var type)
+        operation.Syntax.RawKind == node.RawKind
+            ? operation
+            : null;
+
+    // The bound operation and the type C# converts its operands to, when C++ would convert them to another one (#671)
+    private static (IBinaryOperation Operation, ITypeSymbol Type)? GetPromotion(IBinaryOperation? operation) =>
+        operation != null && ArithmeticConversions.TryGetPromotedType(operation, out var type)
             ? (operation, type)
             : null;
 
@@ -102,7 +138,7 @@ public sealed class BinaryExpressionTranspilerRule : SyntaxNodeTranspilerRuleBas
 
     // [WHY] C# evaluates the left operand first (C# spec §12.4.1); C++ leaves the operands of the arithmetic, comparison
     // and bitwise operators unsequenced. <<, >> (C++17 [expr.shift]), &&, || and ?? (emitted in order) keep the C# order;
-    // is and as have a type on the right; >>> has no C++ operator of its own.
+    // is and as have a type on the right; >>> is a Prelude call or >>, both handled before.
     private static bool IsUnsequencedInCpp(BinaryExpressionSyntax node) =>
         !node.IsKind(SyntaxKind.LeftShiftExpression) &&
         !node.IsKind(SyntaxKind.RightShiftExpression) &&
@@ -142,6 +178,23 @@ public sealed class BinaryExpressionTranspilerRule : SyntaxNodeTranspilerRuleBas
         EvaluationOrder.AppendTempName(writer, left);
         AppendOperator(node, right: null, ref context);
         EvaluationOrder.AppendTempName(writer, right);
+    }
+
+    // ([&]() { auto __gsharp_seq_0 = <left>; auto __gsharp_seq_1 = <right>; return <helper>(__gsharp_seq_0,__gsharp_seq_1); }())
+    private static void TranspileSequencedCall(BinaryExpressionSyntax node, string helper, ref TranspileContext context)
+    {
+        var writer = context.Emitter.Writer;
+        using var sequence = EvaluationOrder.BeginSequence(writer);
+        var left = EvaluationOrder.DeclareTemp(ref context, node.Left, reference: false);
+        var right = EvaluationOrder.DeclareTemp(ref context, node.Right, reference: false);
+        sequence.Return();
+        writer.Append(helper);
+        using (writer.Parentheses())
+        {
+            EvaluationOrder.AppendTempName(writer, left);
+            writer.Append(',');
+            EvaluationOrder.AppendTempName(writer, right);
+        }
     }
 
     // __gsharp_seq_<temp>, converted to <type> when the operand it holds has another C# type

@@ -29,7 +29,9 @@ public struct Dim3
 /// </summary>
 // ReSharper disable once UnusedType.Global -- Public API exposed for GPU kernels
 // ReSharper disable once UnusedMember.Global -- Public API exposed for GPU kernels
-[CudaIntrinsicPattern("threadIdx.{0}")]
+// threadIdx, blockIdx, blockDim and gridDim are unsigned int in CUDA; the cast gives them the C# type int, so that
+// var and the arithmetic on them are signed as in C# (#521)
+[CudaIntrinsicPattern("(int)threadIdx.{0}")]
 public static class ThreadIndex
 {
     /// <summary>Gets the thread index along the X axis (<c>threadIdx.x</c>).</summary>
@@ -50,7 +52,7 @@ public static class ThreadIndex
 /// </summary>
 // ReSharper disable once UnusedType.Global -- Public API exposed for GPU kernels
 // ReSharper disable once UnusedMember.Global -- Public API exposed for GPU kernels
-[CudaIntrinsicPattern("blockIdx.{0}")]
+[CudaIntrinsicPattern("(int)blockIdx.{0}")]
 public static class BlockIndex
 {
     /// <summary>Gets the block index along the X axis (<c>blockIdx.x</c>).</summary>
@@ -71,7 +73,7 @@ public static class BlockIndex
 /// </summary>
 // ReSharper disable once UnusedType.Global -- Public API exposed for GPU kernels
 // ReSharper disable once UnusedMember.Global -- Public API exposed for GPU kernels
-[CudaIntrinsicPattern("blockDim.{0}")]
+[CudaIntrinsicPattern("(int)blockDim.{0}")]
 public static class BlockDimension
 {
     /// <summary>Gets the number of threads per block along the X axis (<c>blockDim.x</c>).</summary>
@@ -92,7 +94,7 @@ public static class BlockDimension
 /// </summary>
 // ReSharper disable once UnusedType.Global -- Public API exposed for GPU kernels
 // ReSharper disable once UnusedMember.Global -- Public API exposed for GPU kernels
-[CudaIntrinsicPattern("gridDim.{0}")]
+[CudaIntrinsicPattern("(int)gridDim.{0}")]
 public static class GridDimension
 {
     /// <summary>Gets the number of blocks per grid along the X axis (<c>gridDim.x</c>).</summary>
