@@ -58,7 +58,7 @@ public sealed class PrefixUnaryExpressionTranspilerRule : SyntaxNodeTranspilerRu
             }
 
             if (operation is IIncrementOrDecrementOperation step &&
-                IntegerSemantics.GetIncrementHelper(step, node, context.Query.SemanticModel) is { } stepHelper)
+                IntegerSemantics.GetIncrementHelper(step, node, ref context) is { } stepHelper)
             {
                 IntegerSemantics.AppendStep(step, node, node.Operand, stepHelper, ref context);
                 return;

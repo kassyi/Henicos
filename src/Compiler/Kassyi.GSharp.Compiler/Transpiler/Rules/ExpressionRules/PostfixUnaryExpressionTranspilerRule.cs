@@ -33,7 +33,7 @@ public sealed class PostfixUnaryExpressionTranspilerRule : SyntaxNodeTranspilerR
         // int and long ++ / -- wrap in C#; C++ leaves the overflow undefined (#722)
         if (context.Query.SemanticModel.GetSafeOperation(node) is IIncrementOrDecrementOperation step &&
             step.Syntax.RawKind == node.RawKind &&
-            IntegerSemantics.GetIncrementHelper(step, node, context.Query.SemanticModel) is { } helper)
+            IntegerSemantics.GetIncrementHelper(step, node, ref context) is { } helper)
         {
             IntegerSemantics.AppendStep(step, node, node.Operand, helper, ref context);
             return;

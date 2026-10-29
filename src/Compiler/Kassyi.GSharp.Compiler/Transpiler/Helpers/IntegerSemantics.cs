@@ -119,42 +119,54 @@ internal static class IntegerSemantics
     }
 
     /// <summary>
-    /// The Prelude function that writes the increment or decrement <paramref name="operation"/> of an int or long
-    /// (<paramref name="node"/>), or null when the C++ operator cannot overflow there. A step whose value is not used
-    /// is written as the compound assignment (<c>__gsharp_add_assign_i32(x,1)</c>), as is a prefix one; a postfix one
-    /// whose value is used returns the old value (<c>__gsharp_postinc_i32(x)</c>).
+    /// The Prelude function of the step of the increment or decrement <paramref name="operation"/> of an int or long
+    /// (<paramref name="node"/>): <c>__gsharp_add_i32</c> for <c>++</c>, <c>__gsharp_sub_i32</c> for <c>--</c>; null when
+    /// the C++ operator cannot overflow there (<see cref="AppendStep"/> writes the step).
     /// </summary>
+    /// <remarks>
+    /// The analysis of a for loop step runs once per step: its result is kept in
+    /// <see cref="Emitter.BoundedLoopSteps"/>.
+    /// </remarks>
     public static string? GetIncrementHelper(IIncrementOrDecrementOperation operation, ExpressionSyntax node,
-        SemanticModel model)
+        ref TranspileContext context)
     {
-        if (operation.OperatorMethod != null || operation.IsLifted || GetWidth(operation.Type) is not (var width and not 0) ||
-            !IsSigned(operation.Type) || IsBoundedLoopStep(operation, node, model))
+        if (GetStepHelper(operation) is not { } helper)
         {
             return null;
         }
 
-        var increment = operation.Kind == OperationKind.Increment;
-        if (!operation.IsPostfix || !IsValueUsed(node, model))
+        var steps = context.Emitter.BoundedLoopSteps;
+        if (!steps.TryGetValue(node, out var bounded))
         {
-            return increment
-                ? Pick(width, Names.AddAssignInt32, Names.AddAssignInt64)
-                : Pick(width, Names.SubtractAssignInt32, Names.SubtractAssignInt64);
+            bounded = IsBoundedLoopStep(operation, node, context.Query.SemanticModel);
+            steps[node] = bounded;
         }
 
-        return increment
-            ? Pick(width, Names.PostIncrementInt32, Names.PostIncrementInt64)
-            : Pick(width, Names.PostDecrementInt32, Names.PostDecrementInt64);
+        return bounded ? null : helper;
+    }
+
+    // __gsharp_add_i32 / __gsharp_sub_i32 for a predefined int or long ++ / --, before the loop counter analysis
+    private static string? GetStepHelper(IIncrementOrDecrementOperation operation)
+    {
+        if (operation.OperatorMethod != null || operation.IsLifted || GetWidth(operation.Type) is not (var width and not 0) ||
+            !IsSigned(operation.Type))
+        {
+            return null;
+        }
+
+        return operation.Kind == OperationKind.Increment
+            ? Pick(width, Names.AddInt32, Names.AddInt64)
+            : Pick(width, Names.SubtractInt32, Names.SubtractInt64);
     }
 
     /// <summary>
-    /// The Prelude function that writes the compound assignment <paramref name="operation"/>
-    /// (<c>__gsharp_add_assign_i32(x,y)</c>), and in <paramref name="binaryHelper"/> the one of its operator
-    /// (<c>__gsharp_add_i32</c>), which the form that evaluates its operands into temporaries uses; null for an
-    /// assignment that C++ gives the C# result (see <see cref="GetCompoundShiftMask"/>).
+    /// The Prelude function of the operator of the compound assignment <paramref name="operation"/>
+    /// (<c>__gsharp_add_i32</c> for an int <c>+=</c>), which <see cref="AppendCompound"/> and the form that evaluates the
+    /// operands into temporaries call; null for an assignment that C++ gives the C# result (see
+    /// <see cref="GetCompoundShiftMask"/>).
     /// </summary>
-    public static string? GetCompoundHelper(ICompoundAssignmentOperation operation, out string? binaryHelper)
+    public static string? GetCompoundHelper(ICompoundAssignmentOperation operation)
     {
-        binaryHelper = null;
         var type = GetCompoundOperatorType(operation);
         if (operation.OperatorMethod != null || operation.IsLifted || GetWidth(type) is not (var width and not 0) ||
             !IsSigned(type))
@@ -162,22 +174,16 @@ internal static class IntegerSemantics
             return null;
         }
 
-        (binaryHelper, var helper) = operation.OperatorKind switch
+        return operation.OperatorKind switch
         {
-            BinaryOperatorKind.Add => (Pick(width, Names.AddInt32, Names.AddInt64),
-                Pick(width, Names.AddAssignInt32, Names.AddAssignInt64)),
-            BinaryOperatorKind.Subtract => (Pick(width, Names.SubtractInt32, Names.SubtractInt64),
-                Pick(width, Names.SubtractAssignInt32, Names.SubtractAssignInt64)),
-            BinaryOperatorKind.Multiply => (Pick(width, Names.MultiplyInt32, Names.MultiplyInt64),
-                Pick(width, Names.MultiplyAssignInt32, Names.MultiplyAssignInt64)),
-            BinaryOperatorKind.LeftShift => (Pick(width, Names.ShiftLeftInt32, Names.ShiftLeftInt64),
-                Pick(width, Names.ShiftLeftAssignInt32, Names.ShiftLeftAssignInt64)),
-            BinaryOperatorKind.UnsignedRightShift => (
+            BinaryOperatorKind.Add => Pick(width, Names.AddInt32, Names.AddInt64),
+            BinaryOperatorKind.Subtract => Pick(width, Names.SubtractInt32, Names.SubtractInt64),
+            BinaryOperatorKind.Multiply => Pick(width, Names.MultiplyInt32, Names.MultiplyInt64),
+            BinaryOperatorKind.LeftShift => Pick(width, Names.ShiftLeftInt32, Names.ShiftLeftInt64),
+            BinaryOperatorKind.UnsignedRightShift =>
                 Pick(width, Names.UnsignedShiftRightInt32, Names.UnsignedShiftRightInt64),
-                Pick(width, Names.UnsignedShiftRightAssignInt32, Names.UnsignedShiftRightAssignInt64)),
-            _ => ((string?)null, (string?)null)
+            _ => null
         };
-        return helper;
     }
 
     /// <summary>
@@ -230,9 +236,11 @@ internal static class IntegerSemantics
                 or SpecialType.System_Char => Names.ConvertToInt32,
             _ => null
         };
-        needsCast = helper != null && !SymbolEqualityComparer.Default.Equals(integral, target) ||
-                    integral.SpecialType is SpecialType.System_SByte or SpecialType.System_Byte or
-                        SpecialType.System_Int16 or SpecialType.System_UInt16 or SpecialType.System_Char;
+        // An enum, or a type narrower than int, which the int32 result is truncated to
+        var isEnum = !SymbolEqualityComparer.Default.Equals(integral, target);
+        var isNarrow = integral.SpecialType is SpecialType.System_SByte or SpecialType.System_Byte or
+            SpecialType.System_Int16 or SpecialType.System_UInt16 or SpecialType.System_Char;
+        needsCast = helper != null && (isEnum || isNarrow);
         return helper;
     }
 
@@ -253,98 +261,179 @@ internal static class IntegerSemantics
         {
             IBinaryOperation binary => GetBinaryHelper(binary) != null,
             IUnaryOperation unary => GetNegationHelper(unary) != null,
-            IIncrementOrDecrementOperation step => GetIncrementHelper(step, expression, model) != null,
-            ICompoundAssignmentOperation compound => GetCompoundHelper(compound, out _) != null,
+            // The step of a for loop, the only one the counter analysis keeps as an operator, is never an operand
+            IIncrementOrDecrementOperation step => GetStepHelper(step) != null,
+            ICompoundAssignmentOperation compound => GetCompoundHelper(compound) != null,
             _ => false
         };
     }
 
     /// <summary>
     /// Writes the increment or decrement <paramref name="operation"/> (<paramref name="node"/>, of
-    /// <paramref name="operand"/>), for which <see cref="GetIncrementHelper"/> gave <paramref name="referenceHelper"/>:
+    /// <paramref name="operand"/>), for which <see cref="GetIncrementHelper"/> gave <paramref name="step"/>:
     /// <c>x=__gsharp_add_i32(x,1)</c> for a statement or a prefix step (parenthesized where its value is used), and
     /// <c>__gsharp_sub_i32((x=__gsharp_add_i32(x,1)),1)</c> for a postfix step whose value is used (the old value, as
-    /// the step wraps). The target is written twice, so it is a location whose evaluation writes nothing.
+    /// the step wraps). The target is written twice; the parts of it whose evaluation writes something are evaluated
+    /// into temporaries first (<see cref="AppendWithSpilledTarget"/>).
     /// </summary>
     /// <remarks>
-    /// [WHY] The target stays an expression: a <c>T&amp;</c> parameter bound to a member of a packed struct
-    /// (<c>#pragma pack(1)</c>) would read it as aligned (CUDA error 716). A target whose evaluation writes something
-    /// (<c>a[i++]++</c>) is passed by reference to <paramref name="referenceHelper"/> instead.
+    /// [WHY] The target stays an expression: a <c>T&amp;</c> bound to a member of a packed struct
+    /// (<c>#pragma pack(1)</c>) is read as aligned (CUDA error 716).
     /// </remarks>
     public static void AppendStep(IIncrementOrDecrementOperation operation, ExpressionSyntax node,
-        ExpressionSyntax operand, string referenceHelper, ref TranspileContext context)
+        ExpressionSyntax operand, string step, ref TranspileContext context)
     {
-        if (!CanRepeatTarget(operand, context.Query.SemanticModel))
-        {
-            AppendUnaryCall(referenceHelper, operand, ref context);
-            return;
-        }
-
+        var form = !IsValueUsed(node, context.Query.SemanticModel)
+            ? StepForm.Statement
+            : operation.IsPostfix
+                ? StepForm.OldValue
+                : StepForm.NewValue;
         var width = GetWidth(operation.Type);
-        var increment = operation.Kind == OperationKind.Increment;
-        var step = increment
-            ? Pick(width, Names.AddInt32, Names.AddInt64)
-            : Pick(width, Names.SubtractInt32, Names.SubtractInt64);
-        var writer = context.Emitter.Writer;
-        if (!IsValueUsed(node, context.Query.SemanticModel))
+        var undo = operation.Kind == OperationKind.Increment
+            ? Pick(width, Names.SubtractInt32, Names.SubtractInt64)
+            : Pick(width, Names.AddInt32, Names.AddInt64);
+        AppendWithSpilledTarget(operand, step, value: null, cast: null, form, undo, ref context);
+    }
+
+    /// <summary>
+    /// Writes the compound assignment <paramref name="operation"/> (<paramref name="node"/>), for which
+    /// <see cref="GetCompoundHelper"/> gave <paramref name="binaryHelper"/>, as <c>x=(T)__gsharp_add_i32(x,y)</c>
+    /// (parenthesized where its value is used; the cast narrows to a target narrower than the operator), with the parts
+    /// of the target whose evaluation writes something in temporaries (see <see cref="AppendStep"/>).
+    /// </summary>
+    public static void AppendCompound(ICompoundAssignmentOperation operation, AssignmentExpressionSyntax node,
+        string binaryHelper, ref TranspileContext context)
+    {
+        var cast = operation.Target.Type is { } target && target.SpecialType != GetCompoundOperatorType(operation)
+            ? target
+            : null;
+        var form = IsValueUsed(node, context.Query.SemanticModel) ? StepForm.NewValue : StepForm.Statement;
+        AppendWithSpilledTarget(node.Left, binaryHelper, node.Right, cast, form, undo: null, ref context);
+    }
+
+    // How the value of a step or a compound assignment is used: not at all, the new value, or the old value of a
+    // postfix step
+    private enum StepForm
+    {
+        Statement,
+        NewValue,
+        OldValue
+    }
+
+    // <target>=(<cast>)<helper>(<target>,<value or 1>) in the form <form>. When finding the target writes something
+    // (data[k++].B += 3), those parts are evaluated into temporaries first, in the C# order, and the target is written
+    // with them (C# spec §12.21.4: the location is found once):
+    // ([&]() { int __gsharp_seq_0 = <k++>; return data[__gsharp_seq_0].B=__gsharp_add_i32(data[__gsharp_seq_0].B,3); }())
+    private static void AppendWithSpilledTarget(ExpressionSyntax target, string helper, ExpressionSyntax? value,
+        ITypeSymbol? cast, StepForm form, string? undo, ref TranspileContext context)
+    {
+        var spills = ImmutableArray.CreateBuilder<(ExpressionSyntax Expression, bool Reference)>();
+        CollectSpills(target, context.Query.SemanticModel, spills);
+        if (spills.Count == 0)
         {
-            AppendRepeatedAssignment(operand, step, value: null, cast: null, ref context);
+            AppendStepForm(target, helper, value, cast, form, undo, inSequence: false, ref context);
             return;
         }
 
-        if (!operation.IsPostfix)
+        var spilled = context.Emitter.SpilledExpressions;
+        try
+        {
+            using var sequence = EvaluationOrder.BeginSequence(context.Emitter.Writer);
+            foreach (var (expression, reference) in spills)
+            {
+                spilled[expression] = EvaluationOrder.DeclareTemp(ref context, expression, reference);
+            }
+
+            sequence.Return();
+            AppendStepForm(target, helper, value, cast, form, undo, inSequence: true, ref context);
+        }
+        finally
+        {
+            foreach (var (expression, _) in spills)
+            {
+                spilled.Remove(expression);
+            }
+        }
+    }
+
+    // The parts of a target whose evaluation writes something, in the C# order: an index or a pointer (spilled as its
+    // value), or any other part that is not the receiver of an element or member access (spilled as a reference to the
+    // location it names, auto&&, as the sequenced compound assignment does)
+    private static void CollectSpills(ExpressionSyntax target, SemanticModel model,
+        ImmutableArray<(ExpressionSyntax Expression, bool Reference)>.Builder spills)
+    {
+        switch (target)
+        {
+            case ParenthesizedExpressionSyntax parenthesized:
+                CollectSpills(parenthesized.Expression, model, spills);
+                return;
+            case ElementAccessExpressionSyntax element:
+                CollectSpills(element.Expression, model, spills);
+                foreach (var argument in element.ArgumentList.Arguments)
+                {
+                    if (Writes(argument.Expression, model))
+                    {
+                        spills.Add((argument.Expression, false));
+                    }
+                }
+
+                return;
+            case MemberAccessExpressionSyntax member:
+                CollectSpills(member.Expression, model, spills);
+                return;
+            case PrefixUnaryExpressionSyntax { RawKind: (int)SyntaxKind.PointerIndirectionExpression } indirection:
+                if (Writes(indirection.Operand, model))
+                {
+                    spills.Add((indirection.Operand, false));
+                    return;
+                }
+
+                CollectSpills(indirection.Operand, model, spills);
+                return;
+            default:
+                if (Writes(target, model))
+                {
+                    spills.Add((target, true));
+                }
+
+                return;
+        }
+    }
+
+    private static bool Writes(ExpressionSyntax expression, SemanticModel model) =>
+        !ExpressionEffects.Of(expression, model).Writes.IsEmpty;
+
+    // The step itself; its value is parenthesized where it is a part of an expression (not the value a sequence returns)
+    private static void AppendStepForm(ExpressionSyntax target, string helper, ExpressionSyntax? value,
+        ITypeSymbol? cast, StepForm form, string? undo, bool inSequence, ref TranspileContext context)
+    {
+        var writer = context.Emitter.Writer;
+        if (form == StepForm.Statement || (form == StepForm.NewValue && inSequence))
+        {
+            AppendRepeatedAssignment(target, helper, value, cast, ref context);
+            return;
+        }
+
+        if (form == StepForm.NewValue)
         {
             using (writer.Parentheses())
             {
-                AppendRepeatedAssignment(operand, step, value: null, cast: null, ref context);
+                AppendRepeatedAssignment(target, helper, value, cast, ref context);
             }
 
             return;
         }
 
         // The value before the step: the new value stepped back, which wraps back as well
-        writer.Append(increment
-            ? Pick(width, Names.SubtractInt32, Names.SubtractInt64)
-            : Pick(width, Names.AddInt32, Names.AddInt64));
+        writer.Append(undo ?? helper);
         using (writer.Parentheses())
         {
             using (writer.Parentheses())
             {
-                AppendRepeatedAssignment(operand, step, value: null, cast: null, ref context);
+                AppendRepeatedAssignment(target, helper, value, cast, ref context);
             }
 
             writer.Append(",1");
-        }
-    }
-
-    /// <summary>
-    /// Writes the compound assignment <paramref name="operation"/> (<paramref name="node"/>), for which
-    /// <see cref="GetCompoundHelper"/> gave <paramref name="referenceHelper"/> and <paramref name="binaryHelper"/>, as
-    /// <c>x=(T)__gsharp_add_i32(x,y)</c> (parenthesized where its value is used; the cast narrows to a target narrower
-    /// than the operator), or as <c>__gsharp_add_assign_i32(x,y)</c> when evaluating the target writes something
-    /// (see <see cref="AppendStep"/>).
-    /// </summary>
-    public static void AppendCompound(ICompoundAssignmentOperation operation, AssignmentExpressionSyntax node,
-        string referenceHelper, string binaryHelper, ref TranspileContext context)
-    {
-        if (!CanRepeatTarget(node.Left, context.Query.SemanticModel))
-        {
-            AppendCall(referenceHelper, node.Left, node.Right, ref context);
-            return;
-        }
-
-        var cast = operation.Target.Type is { } target && target.SpecialType != GetCompoundOperatorType(operation)
-            ? target
-            : null;
-        if (!IsValueUsed(node, context.Query.SemanticModel))
-        {
-            AppendRepeatedAssignment(node.Left, binaryHelper, node.Right, cast, ref context);
-            return;
-        }
-
-        using (context.Emitter.Writer.Parentheses())
-        {
-            AppendRepeatedAssignment(node.Left, binaryHelper, node.Right, cast, ref context);
         }
     }
 
@@ -379,10 +468,6 @@ internal static class IntegerSemantics
         }
     }
 
-    // Whether the target of a step can be written twice: finding the location writes nothing
-    private static bool CanRepeatTarget(ExpressionSyntax target, SemanticModel model) =>
-        ExpressionEffects.OfLocation(target, model).Writes.IsEmpty;
-
     /// <summary>Writes <c>&lt;helper&gt;(&lt;left&gt;,&lt;right&gt;)</c>.</summary>
     public static void AppendCall(string helper, ExpressionSyntax left, ExpressionSyntax right,
         ref TranspileContext context)
@@ -396,25 +481,15 @@ internal static class IntegerSemantics
         }
     }
 
-    /// <summary>
-    /// Writes <c>&lt;helper&gt;(&lt;operand&gt;)</c> (a negation, a postfix step), or <c>&lt;helper&gt;(&lt;operand&gt;,1)</c>
-    /// for a step written as a compound assignment (<see cref="GetIncrementHelper"/>).
-    /// </summary>
+    /// <summary>Writes <c>&lt;helper&gt;(&lt;operand&gt;)</c> (a negation).</summary>
     public static void AppendUnaryCall(string helper, ExpressionSyntax operand, ref TranspileContext context)
     {
         context.Emitter.Writer.Append(helper);
         using (context.Emitter.Writer.Parentheses())
         {
             context.Visitor.Visit(Unparenthesize(operand));
-            if (IsAssignment(helper))
-            {
-                context.Emitter.Writer.Append(",1");
-            }
         }
     }
-
-    private static bool IsAssignment(string helper) =>
-        helper is Names.AddAssignInt32 or Names.AddAssignInt64 or Names.SubtractAssignInt32 or Names.SubtractAssignInt64;
 
     // An argument of a call needs no parentheses of its own: (i+1)*2 is __gsharp_mul_i32(__gsharp_add_i32(i,1),2)
     private static ExpressionSyntax Unparenthesize(ExpressionSyntax syntax)
@@ -429,11 +504,12 @@ internal static class IntegerSemantics
 
     /// <summary>
     /// Writes <paramref name="syntax"/> as the left operand of <c>&amp;</c>, parenthesized when its C++ binds more
-    /// loosely (<c>?:</c>, an assignment, <c>|</c>, <c>^</c>, <c>&amp;&amp;</c>, <c>||</c>, <c>??</c>).
+    /// loosely (an assignment, <c>|</c>, <c>^</c>, <c>&amp;&amp;</c>, <c>||</c>, <c>??</c>); <c>?:</c> is written in
+    /// parentheses of its own (ConditionalExpressionTranspilerRule).
     /// </summary>
     private static void AppendOperand(ExpressionSyntax syntax, ref TranspileContext context)
     {
-        var loose = syntax is ConditionalExpressionSyntax or AssignmentExpressionSyntax or
+        var loose = syntax is AssignmentExpressionSyntax or
             BinaryExpressionSyntax { RawKind: (int)SyntaxKind.BitwiseOrExpression or (int)SyntaxKind.ExclusiveOrExpression or
                 (int)SyntaxKind.LogicalAndExpression or (int)SyntaxKind.LogicalOrExpression or
                 (int)SyntaxKind.CoalesceExpression };
@@ -740,8 +816,9 @@ internal static class IntegerSemantics
             PrefixUnaryExpressionSyntax { RawKind: (int)SyntaxKind.AddressOfExpression } address => address.Operand,
             _ => null
         };
-        return expression is IdentifierNameSyntax &&
-               SymbolEqualityComparer.Default.Equals(model.GetSymbolInfo(expression).Symbol, counter);
+        // ref (i) and &(i) name the counter as well
+        return expression != null && Unparenthesize(expression) is IdentifierNameSyntax identifier &&
+               SymbolEqualityComparer.Default.Equals(model.GetSymbolInfo(identifier).Symbol, counter);
     }
 
     // Whether the value of an increment or assignment is read: not when it is a statement, a part of a for loop or the

@@ -103,6 +103,14 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker, IDisposable
             return;
         }
 
+        // A part of a target that a step or compound assignment evaluated into a temporary (IntegerSemantics)
+        if (Context.Emitter.SpilledExpressions.Count > 0 &&
+            Context.Emitter.SpilledExpressions.TryGetValue(node, out var spilled))
+        {
+            EvaluationOrder.AppendTempName(Context.Emitter.Writer, spilled);
+            return;
+        }
+
         var previousNode = Context.Emitter.CurrentNode;
         Context.Emitter.CurrentNode = node;
 

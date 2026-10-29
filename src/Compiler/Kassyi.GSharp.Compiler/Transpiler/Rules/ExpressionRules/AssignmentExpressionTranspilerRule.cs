@@ -80,8 +80,7 @@ public sealed class AssignmentExpressionTranspilerRule : SyntaxNodeTranspilerRul
                        operation.Syntax.RawKind == node.RawKind
             ? operation
             : null;
-        string? binaryHelper = null;
-        var helper = compound != null ? IntegerSemantics.GetCompoundHelper(compound, out binaryHelper) : null;
+        var helper = compound != null ? IntegerSemantics.GetCompoundHelper(compound) : null;
         var shiftMask = compound != null && helper == null ? IntegerSemantics.GetCompoundShiftMask(compound) : 0;
 
         // C++ has no >>>=; the integer types are handled here (nint and nuint are not)
@@ -95,14 +94,14 @@ public sealed class AssignmentExpressionTranspilerRule : SyntaxNodeTranspilerRul
         if (GetCompoundOperator(node) is { } binaryOperator &&
             OperandsInterfere(node, readsTarget: true, ref context, out var rightEffects))
         {
-            TranspileSequencedCompoundAssignment(node, new CompoundOperator(binaryOperator, binaryHelper, shiftMask),
+            TranspileSequencedCompoundAssignment(node, new CompoundOperator(binaryOperator, helper, shiftMask),
                 rightEffects, ref context);
             return;
         }
 
-        if (compound != null && helper != null && binaryHelper != null)
+        if (compound != null && helper != null)
         {
-            IntegerSemantics.AppendCompound(compound, node, helper, binaryHelper, ref context);
+            IntegerSemantics.AppendCompound(compound, node, helper, ref context);
             return;
         }
 
