@@ -3,7 +3,7 @@ namespace Kassyi.GSharp.Tests.Shared.Analyzers;
 
 /// <summary>
 /// Shapes that the second review of the barrier uniformity analysis (#772) found misjudged: exit-only guards followed by
-/// uniform control flow.
+/// uniform control flow, the discard arm of an exhaustive switch expression.
 /// </summary>
 [Category(TestCategory.Compiler)]
 public class UniformitySecondReviewAnalyzerTests : TranspilerTestBase
@@ -28,6 +28,21 @@ public class UniformitySecondReviewAnalyzerTests : TranspilerTestBase
                 (GSharpDiagnostics.BarrierAfterDivergentExit.Id, 68, 13, 68, 35),
                 (GSharpDiagnostics.LaunchDependentDivergentBarrier.Id, 91, 13, 91, 30),
                 (GSharpDiagnostics.LaunchDependentDivergentBarrier.Id, 115, 17, 115, 34)
+            ],
+            actual);
+    }
+
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public async Task Test_ExhaustiveSwitchExpression_DoesNotDiverge()
+    {
+        var actual = await RunAsync("Analyzers/BarrierUsage/SwitchExpressionBarrierKernels.cu.cs");
+
+        // 22: the barrier under 'v == 1', where v comes from a switch on the thread index. The barriers after it (25) and
+        // after a switch on a uniform value (39) are reached by every thread: the discard arm always matches
+        Assert.Equal(
+            [
+                (GSharpDiagnostics.LaunchDependentDivergentBarrier.Id, 22, 13, 22, 30)
             ],
             actual);
     }

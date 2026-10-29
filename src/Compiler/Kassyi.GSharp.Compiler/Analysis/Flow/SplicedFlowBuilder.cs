@@ -102,7 +102,7 @@ internal sealed class SplicedFlowBuilder
         }
 
         WalkTop(value, graph);
-        if (block.ConditionalSuccessor != null)
+        if (block.ConditionalSuccessor != null && GetConstantCondition(block) == null)
         {
             _current.Condition = value;
             _current.Graph = graph;
@@ -114,24 +114,43 @@ internal sealed class SplicedFlowBuilder
         }
     }
 
-    // The edges of a block; a branch with no destination (throw) leaves through the exit block
+    // The edges of a block; a branch with no destination (throw) leaves through the exit block. A branch whose condition
+    // is always true or always false (the discard arm of a switch expression, whose other side throws
+    // SwitchExpressionException) keeps only the side it takes
     private void ConnectBlock(ImmutableArray<BasicBlock> blocks, SplicedFlowNode[] starts, SplicedFlowNode[] ends, int source)
     {
         var block = blocks[source];
         var exitBlock = blocks.Length - 1;
-        var fall = block.FallThroughSuccessor is { } fallThrough
+        var jumpsWhenTrue = block.ConditionKind == ControlFlowConditionKind.WhenTrue;
+        var jumps = block.ConditionalSuccessor != null && GetConstantCondition(block) is { } constant
+            ? constant == jumpsWhenTrue
+            : (bool?)null;
+        var fall = block.FallThroughSuccessor is { } fallThrough && jumps != true
             ? ConnectEdge(blocks, starts, ends, source, fallThrough.Destination?.Ordinal ?? exitBlock)
             : -1;
-        if (block.ConditionalSuccessor is not { } conditional)
+        if (block.ConditionalSuccessor is not { } conditional || jumps == false)
         {
             return;
         }
 
         var jump = ConnectEdge(blocks, starts, ends, source, conditional.Destination?.Ordinal ?? exitBlock);
-        var jumpsWhenTrue = block.ConditionKind == ControlFlowConditionKind.WhenTrue;
+        if (jumps == true)
+        {
+            return;
+        }
+
         ends[source].WhenTrue = jumpsWhenTrue ? jump : fall;
         ends[source].WhenFalse = jumpsWhenTrue ? fall : jump;
     }
+
+    // The value of a branch condition known without running it: a discard pattern always matches, a constant is itself
+    private static bool? GetConstantCondition(BasicBlock block) =>
+        block.BranchValue switch
+        {
+            IIsPatternOperation { Pattern: IDiscardPatternOperation } => true,
+            { ConstantValue: { HasValue: true, Value: bool value } } => value,
+            _ => null
+        };
 
     // An edge between two blocks; in a Gpu.SyncGrid body, through a split node when the edge crosses a gap. Returns the
     // node the edge leads to.
