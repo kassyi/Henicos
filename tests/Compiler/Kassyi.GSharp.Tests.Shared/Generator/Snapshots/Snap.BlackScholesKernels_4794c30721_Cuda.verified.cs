@@ -385,13 +385,20 @@ static_assert(offsetof(__gsharp_ty_Henicos__Benchmarks__ComputeBenchmarks__Black
 static_assert(offsetof(__gsharp_ty_Henicos__Benchmarks__ComputeBenchmarks__BlackScholesKernels__BlackScholesContext,__gsharp_mb_N)==88,""Henicos.Benchmarks.ComputeBenchmarks.BlackScholesKernels.BlackScholesContext.N: offset"");
 #endif
 extern ""C"" __global__ void __gsharp_k_Henicos__Benchmarks__ComputeBenchmarks__BlackScholesKernels__BlackScholesKernel(__gsharp_ty_Henicos__Benchmarks__ComputeBenchmarks__BlackScholesKernels__BlackScholesContext __gsharp_id_0_ctx){
-for(int __gsharp_id_1_tid = blockIdx.x * blockDim.x + threadIdx.x; __gsharp_id_1_tid < __gsharp_id_0_ctx.__gsharp_mb_N; __gsharp_id_1_tid += gridDim.x * blockDim.x)
+{
+unsigned int __gsharp_gsl_n_0 = __gsharp_grid_stride_count(__gsharp_id_0_ctx.__gsharp_mb_N);
+unsigned int __gsharp_gsl_s_0 = __gsharp_grid_stride_step();
+for(unsigned int __gsharp_gsl_0 = __gsharp_grid_stride_start(); __gsharp_gsl_0 < __gsharp_gsl_n_0; __gsharp_gsl_0 += __gsharp_gsl_s_0)
+{
+int __gsharp_id_1_tid = (int)__gsharp_gsl_0;
 {
 float __gsharp_id_2_c;
 float __gsharp_id_3_p;
 __gsharp_fn_Henicos__Benchmarks__ComputeBenchmarks__BlackScholesKernels__CalculateOptionPrice(__gsharp_id_0_ctx.__gsharp_mb_S[__gsharp_id_1_tid],__gsharp_id_0_ctx.__gsharp_mb_X[__gsharp_id_1_tid],__gsharp_id_0_ctx.__gsharp_mb_T[__gsharp_id_1_tid],__gsharp_id_0_ctx.__gsharp_mb_R,__gsharp_id_0_ctx.__gsharp_mb_V,&__gsharp_id_2_c,&__gsharp_id_3_p);
 __gsharp_id_0_ctx.__gsharp_mb_CallResult[__gsharp_id_1_tid]=__gsharp_id_2_c;
 __gsharp_id_0_ctx.__gsharp_mb_PutResult[__gsharp_id_1_tid]=__gsharp_id_3_p;
+}
+}
 }
 }
 ";
