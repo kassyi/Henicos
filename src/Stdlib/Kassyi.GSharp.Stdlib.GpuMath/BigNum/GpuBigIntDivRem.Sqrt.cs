@@ -127,7 +127,8 @@ public static partial class GpuBigIntDivRem
     /// Computes the integer square root ($\lfloor\sqrt{\text{leftOperand}}\rfloor$) on the GPU using inverse square root approximation and Heron's refinement.
     /// </summary>
     /// <param name="leftOperand">The non-negative big integer operand.</param>
-    /// <param name="resultBuffer">The destination buffer receiving the integer square root.</param>
+    /// <param name="resultBuffer">The destination buffer receiving the integer square root. It may be the operand, or
+    /// overlap it: every path reads the operand completely before it writes the result.</param>
     /// <exception cref="ArgumentException">Thrown when <paramref name="leftOperand"/> and <paramref name="resultBuffer"/> have mismatched word lengths.</exception>
     /// <remarks>
     /// <para><b>Algorithm:</b> First calculates an initial guess via Newton-Raphson inverse square root on the GPU, then refines it using Heron's method to guarantee the exact mathematical floor integer square root.</para>

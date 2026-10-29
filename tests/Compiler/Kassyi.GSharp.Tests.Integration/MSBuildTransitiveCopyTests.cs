@@ -88,7 +88,7 @@ public class MSBuildTransitiveCopyTests : IDisposable
         File.WriteAllText(Path.Combine(consumerDir, "Consumer.csproj"), consumerProject);
 
         // 3. Build Consumer
-        var (exitCode, stdout, stderr) = await BuildProcessRunner.RunAsync(consumerDir, "build Consumer.csproj -c Debug -nr:false");
+        var (exitCode, stdout, stderr) = await BuildProcessRunner.RunBuildAsync(consumerDir, "Consumer.csproj");
 
         exitCode.Should().Be(0, $"Consumer project build should succeed. STDOUT:\n{stdout}\nSTDERR:\n{stderr}");
 
@@ -142,7 +142,7 @@ public class MSBuildTransitiveCopyTests : IDisposable
         File.WriteAllText(Path.Combine(producerObjDir, "Dummy.cu"), "// Dummy CUDA");
         File.WriteAllLines(Path.Combine(producerObjDir, "Kassyi.GSharp.Kernels.artifacts"), ["Dummy.cu"]);
 
-        var (exitCode, stdout, stderr) = await BuildProcessRunner.RunAsync(producerDir, "build ProducerFail.csproj -c Debug -nr:false");
+        var (exitCode, stdout, stderr) = await BuildProcessRunner.RunBuildAsync(producerDir, "ProducerFail.csproj");
 
         exitCode.Should().NotBe(0, $"Build should fail when task assembly is invalid or missing. STDOUT:\n{stdout}\nSTDERR:\n{stderr}");
         stdout.Should().Contain("MSB4062", $"MSBuild should report missing task assembly error. STDOUT:\n{stdout}\nSTDERR:\n{stderr}");

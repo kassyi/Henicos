@@ -31,14 +31,11 @@ internal static class ManagedCSharpTranspiler
         // Internal-error reports name the kernel as the user wrote it.
         var kernelName = methodDecl.Identifier.ValueText;
 
-        var (localInits, regularFields, unhoistedKeys, renamedLocals) =
+        var (localInits, regularFields, unhoistedLocals, renamedLocals) =
             ManagedContextFields.ProcessContextFields(contextFields, semanticModel, kernelName);
 
-        var unhoistedBody =
-            new ContextLocalRewriter(unhoistedKeys, renamedLocals, semanticModel, kernelName).Visit(loweredBody) as
-                BlockSyntax
-            ?? throw new InvalidOperationException(
-                $"Unhoisting ref-struct fields removed the body of kernel '{kernelName}'.");
+        var unhoistedBody = RewriteResumeLocals(loweredBody, unhoistedLocals, renamedLocals, semanticModel, kernelName,
+            methodSymbol.AreLocalsZeroed());
         var bodySource = RewriteAndNormalizeBody(unhoistedBody, semanticModel, isDeviceFunction: false);
 
         using var writer = new SourceWriter();
@@ -49,6 +46,18 @@ internal static class ManagedCSharpTranspiler
             writer, contextName, stateMachineName, methodSymbol, plan.HasAutoResult, localInits, bodySource);
         return writer.ToString();
     }
+
+    /// <summary>
+    /// The lowered body of <paramref name="methodName"/> with the context accesses of its resume locals turned back into
+    /// locals, the hoisted locals that share a name renamed and the labels that share a name renamed
+    /// (<see cref="ContextLocalRewriter"/>).
+    /// </summary>
+    internal static BlockSyntax RewriteResumeLocals(BlockSyntax loweredBody,
+        Dictionary<DeclarationKey, ManagedContextField> unhoistedLocals, Dictionary<DeclarationKey, string> renamedLocals,
+        SemanticModel semanticModel, string methodName, bool zeroFill) =>
+        ContextLocalRewriter.Rewrite(loweredBody, new ManagedResumeLocalSet(unhoistedLocals, zeroFill), renamedLocals,
+            semanticModel, methodName) as BlockSyntax
+        ?? throw new InvalidOperationException($"Unhoisting ref-struct fields removed the body of '{methodName}'.");
 
     /// <summary>
     /// Emits the frame class and the state machine of a device function that may suspend. The state machine returns
@@ -75,15 +84,12 @@ internal static class ManagedCSharpTranspiler
             GlobalCppNames.GetKernelDerivedName(GSharpInternalNames.Kernel.StateMachinePrefix, methodSymbol);
         var functionName = methodDecl.Identifier.ValueText;
 
-        var (localInits, regularFields, unhoistedKeys, renamedLocals) =
+        var (localInits, regularFields, unhoistedLocals, renamedLocals) =
             ManagedContextFields.ProcessContextFields(lowered.ContextFields, semanticModel, functionName);
         var copiedParameters = plan.GetCopiedParameters(lowered);
 
-        var unhoistedBody =
-            new ContextLocalRewriter(unhoistedKeys, renamedLocals, semanticModel, functionName)
-                .Visit(lowered.LoweredBody) as BlockSyntax
-            ?? throw new InvalidOperationException(
-                $"Unhoisting ref-struct fields removed the body of device function '{functionName}'.");
+        var unhoistedBody = RewriteResumeLocals(lowered.LoweredBody, unhoistedLocals, renamedLocals, semanticModel,
+            functionName, methodSymbol.AreLocalsZeroed());
         var bodySource = RewriteAndNormalizeBody(unhoistedBody, semanticModel, isDeviceFunction: true);
 
         // As visible as the function (a consumer of another assembly calls a public one); the frame's fields are the

@@ -26,9 +26,6 @@ public class DisposableOwnershipAnalyzer : DiagnosticAnalyzer
     [ThreadStatic]
     private static HashSet<string>? s_tBorrowedFields;
 
-    [ThreadStatic]
-    private static HashSet<string>? s_tDisposedMemberNames;
-
     private static void AnalyzeNamedType(SymbolAnalysisContext context)
     {
         var namedType = (INamedTypeSymbol)context.Symbol;
@@ -67,9 +64,7 @@ public class DisposableOwnershipAnalyzer : DiagnosticAnalyzer
             return;
         }
 
-        var disposedMemberNames = s_tDisposedMemberNames ??= new HashSet<string>(StringComparer.Ordinal);
-        disposedMemberNames.Clear();
-        ValidateDisposeImplementation(in validationCtx, disposedMemberNames);
+        ValidateDisposeImplementation(in validationCtx);
     }
 
     // An instance field, or the property behind a backing field, whose type is disposable; null for any other member
@@ -192,25 +187,26 @@ public class DisposableOwnershipAnalyzer : DiagnosticAnalyzer
         ctx.AnalysisContext.ReportDiagnostic(GSharpDiagnostics.MissingIDisposable, location);
     }
 
-    private static void ValidateDisposeImplementation(
-        in OwnershipValidationContext ctx,
-        HashSet<string> disposedMemberNames)
+    private static void ValidateDisposeImplementation(in OwnershipValidationContext ctx)
     {
-        InspectDisposeMethod(ctx.NamedType, disposedMemberNames, out var parameterlessDispose);
+        var disposeBodies = ImmutableArray.CreateBuilder<SyntaxNode>();
+        InspectDisposeMethod(ctx.NamedType, disposeBodies, out var parameterlessDispose);
 
         var locationForDispose = parameterlessDispose?.Identifier.GetLocation() ??
                                  (ctx.NamedType.Locations.Length > 0 ? ctx.NamedType.Locations[0] : null);
 
         foreach (var member in ctx.DisposableMembers)
         {
+            var release = GetRelease(disposeBodies, ctx.NamedType, member.Name);
             var isBorrowed = ctx.BorrowedFields.Contains(member.Name);
-            var isDisposed = disposedMemberNames.Contains(member.Name);
 
-            if (isBorrowed && isDisposed)
+            // [WHY] GSH0027 needs a certain release (an escaped field may only be logged); GSH0022 reports only a field
+            // that no path can release, so that a suspicion never rejects correct code (semantics charter §3)
+            if (isBorrowed && release == FieldRelease.Disposed)
             {
                 ctx.AnalysisContext.ReportDiagnostic(GSharpDiagnostics.DisposingBorrowedResource, locationForDispose);
             }
-            else if (!isBorrowed && !isDisposed && parameterlessDispose != null)
+            else if (!isBorrowed && release == FieldRelease.None && parameterlessDispose != null)
             {
                 ctx.AnalysisContext.ReportDiagnostic(GSharpDiagnostics.UndisposedGpuScope, locationForDispose,
                     member.Name);
@@ -220,7 +216,7 @@ public class DisposableOwnershipAnalyzer : DiagnosticAnalyzer
 
     private static void InspectDisposeMethod(
         INamedTypeSymbol namedType,
-        HashSet<string> disposedMemberNames,
+        ImmutableArray<SyntaxNode>.Builder disposeBodies,
         out MethodDeclarationSyntax? parameterlessDispose)
     {
         parameterlessDispose = null;
@@ -230,7 +226,7 @@ public class DisposableOwnershipAnalyzer : DiagnosticAnalyzer
         {
             if (member is IMethodSymbol method)
             {
-                InspectMethod(method, ref parameterlessDispose, disposedMemberNames);
+                InspectMethod(method, ref parameterlessDispose, disposeBodies);
             }
         }
 
@@ -249,7 +245,7 @@ public class DisposableOwnershipAnalyzer : DiagnosticAnalyzer
                         MethodKind: MethodKind.ExplicitInterfaceImplementation
                     } implMethod)
                 {
-                    InspectMethod(implMethod, ref parameterlessDispose, disposedMemberNames);
+                    InspectMethod(implMethod, ref parameterlessDispose, disposeBodies);
                 }
             }
         }
@@ -258,7 +254,7 @@ public class DisposableOwnershipAnalyzer : DiagnosticAnalyzer
     private static void InspectMethod(
         IMethodSymbol methodSymbol,
         ref MethodDeclarationSyntax? parameterlessDispose,
-        HashSet<string> disposedMemberNames)
+        ImmutableArray<SyntaxNode>.Builder disposeBodies)
     {
         foreach (var syntaxRef in methodSymbol.DeclaringSyntaxReferences)
         {
@@ -272,40 +268,226 @@ public class DisposableOwnershipAnalyzer : DiagnosticAnalyzer
                 parameterlessDispose = m;
             }
 
-            var root = (SyntaxNode?)m.Body ?? m.ExpressionBody;
-            if (root == null)
+            if (((SyntaxNode?)m.Body ?? m.ExpressionBody) is { } root)
+            {
+                disposeBodies.Add(root);
+            }
+        }
+    }
+
+    /// <summary>How surely a body releases a field or a parameter (ordered: a stronger result wins).</summary>
+    private enum FieldRelease
+    {
+        /// <summary>No path disposes it.</summary>
+        None,
+
+        /// <summary>It is passed to a method whose body the analysis does not follow, which may release it.</summary>
+        Escaped,
+
+        /// <summary>A path disposes it (<c>x.Dispose()</c> or <c>x?.Dispose()</c>, directly or in a helper).</summary>
+        Disposed
+    }
+
+    // How many helpers deep a field is followed, as CA2213 does (DefaultMaxInterproceduralMethodCallChain = 3); a
+    // helper deeper than that counts as Escaped
+    private const int MaxHelperDepth = 3;
+
+    private static FieldRelease GetRelease(ImmutableArray<SyntaxNode>.Builder disposeBodies, INamedTypeSymbol type,
+        string fieldName)
+    {
+        var visited = new Dictionary<(SyntaxNode Body, string Name), int>();
+        var release = FieldRelease.None;
+        foreach (var body in disposeBodies)
+        {
+            release = Max(release, GetRelease(body, body, fieldName, isField: true, type, depth: 0, visited));
+        }
+
+        return release;
+    }
+
+    // Whether <body> releases <name>: a field of <type> (also written this.<name>) or a parameter of the helper whose
+    // body this is. A call to a helper of the type (a method with a body, or a local function of <member>, the body of
+    // the method that declares <body>) is followed for each argument that is <name> (to the matching parameter) and,
+    // for a field, into the helper's body itself. Lambdas and nested types are not searched: they may never run.
+    // [WHY] <visited> keeps the smallest depth each body was walked at for <name>: a body reached first on a deep path
+    // is walked again from a shallower one, which may follow its helpers further. A cycle stops there with None.
+    private static FieldRelease GetRelease(SyntaxNode body, SyntaxNode member, string name, bool isField,
+        INamedTypeSymbol type, int depth, Dictionary<(SyntaxNode Body, string Name), int> visited)
+    {
+        if (visited.TryGetValue((body, name), out var seen) && seen <= depth)
+        {
+            return FieldRelease.None;
+        }
+
+        visited[(body, name)] = depth;
+
+        var release = FieldRelease.None;
+        foreach (var node in body.DescendantNodes(descendIntoChildren: static n =>
+                     n is not (TypeDeclarationSyntax or LocalFunctionStatementSyntax
+                         or AnonymousFunctionExpressionSyntax)))
+        {
+            if (node is not InvocationExpressionSyntax invocation)
             {
                 continue;
             }
 
-            // Prune traversal into independent scopes (local functions, lambdas, nested types) to minimize search complexity.
-            foreach (var node in root.DescendantNodes(descendIntoChildren: static n =>
-                         n is not (TypeDeclarationSyntax or LocalFunctionStatementSyntax
-                             or AnonymousFunctionExpressionSyntax)))
+            if (IsDisposeOf(invocation, name, isField))
             {
-                if (node is not InvocationExpressionSyntax
-                    {
-                        Expression: MemberAccessExpressionSyntax { Name.Identifier.Text: "Dispose" } ma
-                    })
-                {
-                    continue;
-                }
+                return FieldRelease.Disposed;
+            }
 
-                var targetName = ma.Expression switch
-                {
-                    IdentifierNameSyntax id => id.Identifier.Text,
-                    MemberAccessExpressionSyntax { Expression: ThisExpressionSyntax } memberMa => memberMa.Name
-                        .Identifier.Text,
-                    _ => null
-                };
+            release = Max(release, GetHelperRelease(invocation, member, name, isField, type, depth, visited));
+            if (release == FieldRelease.Disposed)
+            {
+                return release;
+            }
+        }
 
-                if (targetName != null)
+        return release;
+    }
+
+    private static FieldRelease GetHelperRelease(InvocationExpressionSyntax invocation, SyntaxNode member, string name,
+        bool isField, INamedTypeSymbol type, int depth, Dictionary<(SyntaxNode Body, string Name), int> visited)
+    {
+        var arguments = invocation.ArgumentList.Arguments;
+        var passedAt = arguments
+            .AsStackEnumerable()
+            .IndexOf((Name: name, IsField: isField), static (argument, target) =>
+                !argument.RefKindKeyword.IsKind(SyntaxKind.OutKeyword) &&
+                RefersTo(argument.Expression, target.Name, target.IsField)
+            );
+
+        var helpers = GetHelpers(invocation, member, type);
+        if (helpers.Count == 0)
+        {
+            // nameof(<name>) only names it; a method the analysis cannot see (another type, a base type, a delegate)
+            // may release what it is given
+            return passedAt >= 0 && !IsNameOf(invocation) ? FieldRelease.Escaped : FieldRelease.None;
+        }
+
+        if (passedAt < 0 && !isField)
+        {
+            return FieldRelease.None;
+        }
+
+        if (depth >= MaxHelperDepth)
+        {
+            return FieldRelease.Escaped;
+        }
+
+        var release = FieldRelease.None;
+        foreach (var (helperBody, helperMember, parameters) in helpers)
+        {
+            if (isField)
+            {
+                release = Max(release,
+                    GetRelease(helperBody, helperMember, name, isField: true, type, depth + 1, visited));
+            }
+
+            if (passedAt >= 0 && GetParameterName(arguments[passedAt], passedAt, parameters) is { } parameter)
+            {
+                release = Max(release,
+                    GetRelease(helperBody, helperMember, parameter, isField: false, type, depth + 1, visited));
+            }
+        }
+
+        return release;
+    }
+
+    // The bodies of the helpers that <invocation> may call, the member bodies that declare them and their parameters:
+    // the methods of <type> with its name (every overload, since the syntax alone cannot pick one) and the local
+    // functions of <member>, the body of the method the call is written in (a local function may call another one)
+    private static List<(SyntaxNode Body, SyntaxNode Member, ParameterListSyntax Parameters)> GetHelpers(
+        InvocationExpressionSyntax invocation, SyntaxNode member, INamedTypeSymbol type)
+    {
+        var helpers = new List<(SyntaxNode Body, SyntaxNode Member, ParameterListSyntax Parameters)>();
+        var name = invocation.Expression switch
+        {
+            IdentifierNameSyntax identifier => identifier.Identifier.Text,
+            GenericNameSyntax generic => generic.Identifier.Text,
+            MemberAccessExpressionSyntax { Expression: ThisExpressionSyntax } access => access.Name.Identifier.Text,
+            _ => null
+        };
+        if (name == null)
+        {
+            return helpers;
+        }
+
+        foreach (var candidate in type.GetMembers(name))
+        {
+            if (candidate is not IMethodSymbol { MethodKind: MethodKind.Ordinary } method)
+            {
+                continue;
+            }
+
+            foreach (var reference in method.DeclaringSyntaxReferences)
+            {
+                if (reference.GetSyntax() is MethodDeclarationSyntax declaration &&
+                    ((SyntaxNode?)declaration.Body ?? declaration.ExpressionBody) is { } helperBody)
                 {
-                    disposedMemberNames.Add(targetName);
+                    helpers.Add((helperBody, helperBody, declaration.ParameterList));
                 }
             }
         }
+
+        // A local function is called by its name alone
+        if (invocation.Expression is IdentifierNameSyntax or GenericNameSyntax)
+        {
+            member.DescendantNodes(descendIntoChildren: static n =>
+                    n is not (TypeDeclarationSyntax or AnonymousFunctionExpressionSyntax)
+                ).AsStackEnumerable()
+                .OfType<LocalFunctionStatementSyntax>()
+                .Where(name, static (local, target) => local.Identifier.Text == target)
+                .Select(member, static (local, owner) => (GetLocalFunctionBody(local), owner, local.ParameterList))
+                .AddTo(helpers);
+        }
+
+        return helpers;
     }
+
+    // The body of a local function; an extern one has none, so its declaration (which holds no call) stands for it
+    private static SyntaxNode GetLocalFunctionBody(LocalFunctionStatementSyntax local) =>
+        (SyntaxNode?)local.Body ?? local.ExpressionBody ?? (SyntaxNode)local;
+
+    // nameof(...): the caller checks first that no helper has that name, so the call is the operator
+    private static bool IsNameOf(InvocationExpressionSyntax invocation) =>
+        invocation.Expression is IdentifierNameSyntax { Identifier.Text: "nameof" };
+
+    // The parameter that <argument> (at <position>) binds to: by its name when it has one, otherwise by position
+    private static string? GetParameterName(ArgumentSyntax argument, int position, ParameterListSyntax parameters)
+    {
+        if (argument.NameColon is { } nameColon)
+        {
+            return nameColon.Name.Identifier.Text;
+        }
+
+        return position < parameters.Parameters.Count ? parameters.Parameters[position].Identifier.Text : null;
+    }
+
+    // <name>.Dispose() or <name>?.Dispose()
+    private static bool IsDisposeOf(InvocationExpressionSyntax invocation, string name, bool isField) =>
+        invocation.Expression switch
+        {
+            MemberAccessExpressionSyntax { Name.Identifier.Text: "Dispose" } access =>
+                RefersTo(access.Expression, name, isField),
+            MemberBindingExpressionSyntax { Name.Identifier.Text: "Dispose" } =>
+                invocation.Parent is ConditionalAccessExpressionSyntax conditional &&
+                conditional.WhenNotNull == invocation &&
+                RefersTo(conditional.Expression, name, isField),
+            _ => false
+        };
+
+    // <name>, or this.<name> for a field
+    private static bool RefersTo(ExpressionSyntax expression, string name, bool isField) =>
+        expression switch
+        {
+            IdentifierNameSyntax identifier => identifier.Identifier.Text == name,
+            MemberAccessExpressionSyntax { Expression: ThisExpressionSyntax } access =>
+                isField && access.Name.Identifier.Text == name,
+            _ => false
+        };
+
+    private static FieldRelease Max(FieldRelease a, FieldRelease b) => a > b ? a : b;
 
     private static void AnalyzeMethod(SyntaxNodeAnalysisContext context)
     {

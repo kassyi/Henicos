@@ -8,17 +8,21 @@ using Core;
 [ExcludeFromCodeCoverage]
 public static partial class GpuBigFloatKernels
 {
+    // The aligned sum of the big-float Add: ResultSig = BaseSig ± (ShiftedSig shifted right by WordShift words and
+    // BitShift bits; a negative WordShift shifts it left). The provider passes the operand with the smaller exponent as
+    // the base and shifts the one with the larger exponent onto it. SignScale 1 adds, -1 computes base - shifted, -2
+    // shifted - base.
     public struct GpuBigFloatAddContext
     {
         [GpuReadOnly]
-        public uint[] LargerSig;
+        public uint[] BaseSig;
 
-        public int LargerWords;
+        public int BaseWords;
 
         [GpuReadOnly]
-        public uint[] SmallerSig;
+        public uint[] ShiftedSig;
 
-        public int SmallerWords;
+        public int ShiftedWords;
         public uint[] ResultSig;
         public int NumWords;
         public int WordShift;
@@ -30,10 +34,10 @@ public static partial class GpuBigFloatKernels
     public static void FloatAddAlignedKernel(GpuBigFloatAddContext ctx)
     {
         GpuBigIntKernels.DeviceAddSubAlignedParallel(
-            ctx.LargerSig,
-            ctx.LargerWords,
-            ctx.SmallerSig,
-            ctx.SmallerWords,
+            ctx.BaseSig,
+            ctx.BaseWords,
+            ctx.ShiftedSig,
+            ctx.ShiftedWords,
             ctx.ResultSig,
             ctx.NumWords,
             ctx.WordShift,

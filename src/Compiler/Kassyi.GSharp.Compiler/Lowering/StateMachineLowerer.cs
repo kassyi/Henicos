@@ -125,18 +125,16 @@ public class StateMachineLowerer(bool isDeviceFunction = false, SemanticModel? s
 
     private static void LowerBarrier(InvocationExpressionSyntax barrier, SectionBuilder sections)
     {
+        // The launcher keeps a thread that stopped at a barrier waiting there (#664): at a grid sync until the next grid
+        // phase, at a block barrier until every thread of the block that has not finished waits too. A shuffle is not a
+        // wait: the thread goes on in the next round
         if (BarrierHelper.IsGridBarrier(barrier))
         {
-            // __gsharp_yielded_for_grid_sync = true;
-            sections.Add(
-                SyntaxFactory.ExpressionStatement(
-                    SyntaxFactory.AssignmentExpression(
-                        SyntaxKind.SimpleAssignmentExpression,
-                        SyntaxFactory.IdentifierName(GSharpInternalNames.StateMachine.YieldedForGridSync),
-                        SyntaxFactory.LiteralExpression(SyntaxKind.TrueLiteralExpression)
-                    )
-                )
-            );
+            sections.Add(SetFlag(GSharpInternalNames.StateMachine.YieldedForGridSync));
+        }
+        else if (BarrierHelper.IsBlockBarrier(barrier))
+        {
+            sections.Add(SetFlag(GSharpInternalNames.StateMachine.YieldedForBlockBarrier));
         }
 
         sections.CommitState(sections.State + 1, isBarrier: true);
@@ -325,6 +323,16 @@ public class StateMachineLowerer(bool isDeviceFunction = false, SemanticModel? s
         );
     }
 
+    // <flag> = true;
+    private static ExpressionStatementSyntax SetFlag(string flag) =>
+        SyntaxFactory.ExpressionStatement(
+            SyntaxFactory.AssignmentExpression(
+                SyntaxKind.SimpleAssignmentExpression,
+                SyntaxFactory.IdentifierName(flag),
+                SyntaxFactory.LiteralExpression(SyntaxKind.TrueLiteralExpression)
+            )
+        );
+
     private StatementSyntax RewriteWarpShuffleRead(StatementSyntax stmt, InvocationExpressionSyntax barrierInv,
         string readFunction)
     {
@@ -347,7 +355,7 @@ public class StateMachineLowerer(bool isDeviceFunction = false, SemanticModel? s
             SyntaxFactory.Argument(
                 SyntaxFactory.LiteralExpression(
                     SyntaxKind.StringLiteralExpression,
-                    SyntaxFactory.Literal(FormatShufflePlace(barrierInv))
+                    SyntaxFactory.Literal(SourcePlace.Format(semanticModel, barrierInv))
                 )
             )
         );
@@ -361,21 +369,6 @@ public class StateMachineLowerer(bool isDeviceFunction = false, SemanticModel? s
         return stmt.ReplaceNode(barrierInv, rewrittenInv);
     }
 
-    // The place of a shuffle in the user's source, for the run-time errors of the CPU paths: the file name without its
-    // directory (no absolute path is embedded in the generated code) and the 1-based line and column
-    private string FormatShufflePlace(InvocationExpressionSyntax shuffle)
-    {
-        if (semanticModel?.GetReportLocation(shuffle) is not { } location || location == Location.None)
-        {
-            return UnknownShufflePlace;
-        }
-
-        var span = location.GetLineSpan();
-        var start = span.StartLinePosition;
-        return $"{Path.GetFileName(span.Path)}({start.Line + 1},{start.Character + 1})";
-    }
-
-    private const string UnknownShufflePlace = "an unknown place";
 
     // The parameters of every Warp shuffle, in order: mask, var, the lane operand (srcLane, delta or laneMask), width
     private const int ShuffleMaskPosition = 0;

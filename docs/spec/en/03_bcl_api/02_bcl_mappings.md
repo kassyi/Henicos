@@ -74,8 +74,10 @@ _(Note: These functions adhere to IEEE-754 precision. For raw, uncompromised spe
 | .NET Method | CUDA Mapping (MathF - Single Float) | CUDA Mapping (Math - Double) |
 | :--- | :--- | :--- |
 | `Math.Abs` / `MathF.Abs` | `fabsf` | `fabs` |
-| `Math.Min` / `MathF.Min` | `fminf` | `fmin` |
-| `Math.Max` / `MathF.Max` | `fmaxf` | `fmax` |
+| `Math.Min` / `MathF.Min` / `float.Min` / `double.Min` | `__gsharp_min_f32` | `__gsharp_min_f64` |
+| `Math.Max` / `MathF.Max` / `float.Max` / `double.Max` | `__gsharp_max_f32` | `__gsharp_max_f64` |
+| `float.MinNumber` / `double.MinNumber` | `__gsharp_min_number_f32` (`fminf`) | `__gsharp_min_number_f64` (`fmin`) |
+| `float.MaxNumber` / `double.MaxNumber` | `__gsharp_max_number_f32` (`fmaxf`) | `__gsharp_max_number_f64` (`fmax`) |
 | `Math.Sqrt` / `MathF.Sqrt` | `sqrtf` | `sqrt` |
 | `Math.Exp` / `MathF.Exp` | `expf` | `exp` |
 | `Math.Log` / `MathF.Log` | `logf` | `log` |
@@ -86,6 +88,8 @@ _(Note: These functions adhere to IEEE-754 precision. For raw, uncompromised spe
 | `Math.Ceiling` / `MathF.Ceiling` | `ceilf` | `ceil` |
 | `Math.Floor` / `MathF.Floor` | `floorf` | `floor` |
 | `Math.Pow` / `MathF.Pow` | `powf` | `pow` |
+
+`Math.Max` / `Math.Min` (and `MathF`, `float.Max`, `double.Max`) give the .NET result on every path: NaN when either input is NaN, and `+0.0` is larger than `-0.0` (IEEE 754:2019 `maximum` / `minimum`). The C `fmaxf` / `fmax` return the other input for a NaN, so they are not used for these. On compute capability 8.0 and newer, the `float` overloads are one instruction (PTX `max.NaN.f32`), the cost of `fmaxf`; the `double` overloads add a NaN test. `float.MaxNumber` / `MinNumber` and `double.MaxNumber` / `MinNumber` (IEEE `maximumNumber` / `minimumNumber`: a NaN input is ignored, `+0.0` is larger than `-0.0`) compile to `fmaxf` / `fmax`, which are one instruction for both types; use them when NaN inputs need no propagation. `Math.Clamp` compares the value with `min` first, as .NET does, so `Math.Clamp(NaN, 0, 1)` is NaN and the sign of a zero value is kept. The NaN that a CUDA result holds can have a different payload from the .NET one; compare with `IsNaN`.
 
 `Math.Round` and `MathF.Round` round half to even, like the C# default (`Math.Round(2.5)` is `2`). They map to `rint` / `rintf`, not to `round`, which rounds half away from zero. Only the single-argument `double` and `float` overloads are supported. The overloads with a digits argument or a `MidpointRounding` argument, and `decimal`, are reported as `GSH0003`.
 

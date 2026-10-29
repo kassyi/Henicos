@@ -180,6 +180,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerReadSecondPaddedKernel();
 IntPtr hfunc = s_hfunc_ReadSecondPaddedKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "StructSizeKernels.ReadSecondPaddedKernel");
 IntPtr d_data = IntPtr.Zero;
 IntPtr d_o = IntPtr.Zero;
 try
@@ -262,6 +263,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerReadSecondPaddedKernel();
 IntPtr hfunc = s_hfunc_ReadSecondPaddedKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "StructSizeKernels.ReadSecondPaddedKernel");
 try
 {
 void** kernelParams = stackalloc void*[2];
@@ -343,6 +345,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerReadSecondOddKernel();
 IntPtr hfunc = s_hfunc_ReadSecondOddKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "StructSizeKernels.ReadSecondOddKernel");
 System.Collections.Generic.List<IntPtr> data_allocatedPtrs = new System.Collections.Generic.List<IntPtr>();
 byte[]? data_shadow = null;
 IntPtr d_data = IntPtr.Zero;
@@ -442,6 +445,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerReadSecondOddKernel();
 IntPtr hfunc = s_hfunc_ReadSecondOddKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "StructSizeKernels.ReadSecondOddKernel");
 try
 {
 void** kernelParams = stackalloc void*[2];
@@ -538,6 +542,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerReadSecondPackedKernel();
 IntPtr hfunc = s_hfunc_ReadSecondPackedKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "StructSizeKernels.ReadSecondPackedKernel");
 IntPtr d_data = IntPtr.Zero;
 IntPtr d_o = IntPtr.Zero;
 try
@@ -620,6 +625,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerReadSecondPackedKernel();
 IntPtr hfunc = s_hfunc_ReadSecondPackedKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "StructSizeKernels.ReadSecondPackedKernel");
 try
 {
 void** kernelParams = stackalloc void*[2];
@@ -699,6 +705,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerReadPaddedByValueKernel();
 IntPtr hfunc = s_hfunc_ReadPaddedByValueKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "StructSizeKernels.ReadPaddedByValueKernel");
 IntPtr d_o = IntPtr.Zero;
 try
 {
@@ -756,6 +763,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerReadPaddedByValueKernel();
 IntPtr hfunc = s_hfunc_ReadPaddedByValueKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "StructSizeKernels.ReadPaddedByValueKernel");
 try
 {
 void** kernelParams = stackalloc void*[2];

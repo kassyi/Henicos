@@ -153,6 +153,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerKeywordLocalsKernel();
 IntPtr hfunc = s_hfunc_KeywordLocalsKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "CppIdentifierRenameKernels.KeywordLocalsKernel");
 IntPtr d_register = IntPtr.Zero;
 IntPtr d_template = IntPtr.Zero;
 try
@@ -235,6 +236,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerKeywordLocalsKernel();
 IntPtr hfunc = s_hfunc_KeywordLocalsKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "CppIdentifierRenameKernels.KeywordLocalsKernel");
 try
 {
 void** kernelParams = stackalloc void*[2];
@@ -311,6 +313,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerVerbatimAndReservedNamesKernel();
 IntPtr hfunc = s_hfunc_VerbatimAndReservedNamesKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "CppIdentifierRenameKernels.VerbatimAndReservedNamesKernel");
 IntPtr d_int = IntPtr.Zero;
 IntPtr d_class = IntPtr.Zero;
 try
@@ -393,6 +396,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerVerbatimAndReservedNamesKernel();
 IntPtr hfunc = s_hfunc_VerbatimAndReservedNamesKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "CppIdentifierRenameKernels.VerbatimAndReservedNamesKernel");
 try
 {
 void** kernelParams = stackalloc void*[2];
@@ -457,6 +461,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerMappedFunctionNamedLocalsKernel();
 IntPtr hfunc = s_hfunc_MappedFunctionNamedLocalsKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "CppIdentifierRenameKernels.MappedFunctionNamedLocalsKernel");
 IntPtr d_data = IntPtr.Zero;
 try
 {
@@ -512,6 +517,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerMappedFunctionNamedLocalsKernel();
 IntPtr hfunc = s_hfunc_MappedFunctionNamedLocalsKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "CppIdentifierRenameKernels.MappedFunctionNamedLocalsKernel");
 try
 {
 void** kernelParams = stackalloc void*[1];
@@ -595,6 +601,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerDeclarationFormsKernel();
 IntPtr hfunc = s_hfunc_DeclarationFormsKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "CppIdentifierRenameKernels.DeclarationFormsKernel");
 IntPtr d_data = IntPtr.Zero;
 try
 {
@@ -650,6 +657,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerDeclarationFormsKernel();
 IntPtr hfunc = s_hfunc_DeclarationFormsKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "CppIdentifierRenameKernels.DeclarationFormsKernel");
 try
 {
 void** kernelParams = stackalloc void*[1];
@@ -810,6 +818,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerStructMemberNamesKernel();
 IntPtr hfunc = s_hfunc_StructMemberNamesKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "CppIdentifierRenameKernels.StructMemberNamesKernel");
 IntPtr d_items = IntPtr.Zero;
 IntPtr d_result = IntPtr.Zero;
 try
@@ -892,6 +901,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerStructMemberNamesKernel();
 IntPtr hfunc = s_hfunc_StructMemberNamesKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "CppIdentifierRenameKernels.StructMemberNamesKernel");
 try
 {
 void** kernelParams = stackalloc void*[2];
@@ -955,6 +965,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerBarrierHoistedNamesKernel();
 IntPtr hfunc = s_hfunc_BarrierHoistedNamesKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "CppIdentifierRenameKernels.BarrierHoistedNamesKernel");
 IntPtr d_data = IntPtr.Zero;
 try
 {
@@ -1018,6 +1029,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerBarrierHoistedNamesKernel();
 IntPtr hfunc = s_hfunc_BarrierHoistedNamesKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "CppIdentifierRenameKernels.BarrierHoistedNamesKernel");
 try
 {
 void** kernelParams = stackalloc void*[5];
@@ -1051,9 +1063,16 @@ finally
 }
 #pragma warning restore CS8500
 public const string GridStrideLambdaParameterKernel_Source = @"extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__CppIdentifierRenameKernels__GridStrideLambdaParameterKernel(GSharpArray<int> __gsharp_id_0_data, int __gsharp_id_1_count){
-for(int __gsharp_id_2_union = blockIdx.x * blockDim.x + threadIdx.x; __gsharp_id_2_union < __gsharp_id_1_count; __gsharp_id_2_union += gridDim.x * blockDim.x)
+{
+unsigned int __gsharp_gsl_n_0 = __gsharp_grid_stride_count(__gsharp_id_1_count);
+unsigned int __gsharp_gsl_s_0 = __gsharp_grid_stride_step();
+for(unsigned int __gsharp_gsl_0 = __gsharp_grid_stride_start(); __gsharp_gsl_0 < __gsharp_gsl_n_0; __gsharp_gsl_0 += __gsharp_gsl_s_0)
+{
+int __gsharp_id_2_union = (int)__gsharp_gsl_0;
 {
 __gsharp_id_0_data[__gsharp_id_2_union]=__gsharp_id_2_union*2;
+}
+}
 }
 }
 ";
@@ -1081,6 +1100,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerGridStrideLambdaParameterKernel();
 IntPtr hfunc = s_hfunc_GridStrideLambdaParameterKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "CppIdentifierRenameKernels.GridStrideLambdaParameterKernel");
 IntPtr d_data = IntPtr.Zero;
 try
 {
@@ -1138,6 +1158,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerGridStrideLambdaParameterKernel();
 IntPtr hfunc = s_hfunc_GridStrideLambdaParameterKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "CppIdentifierRenameKernels.GridStrideLambdaParameterKernel");
 try
 {
 void** kernelParams = stackalloc void*[2];
@@ -1199,6 +1220,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerKeywordLabelKernel();
 IntPtr hfunc = s_hfunc_KeywordLabelKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "CppIdentifierRenameKernels.KeywordLabelKernel");
 IntPtr d_data = IntPtr.Zero;
 try
 {
@@ -1256,6 +1278,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerKeywordLabelKernel();
 IntPtr hfunc = s_hfunc_KeywordLabelKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "CppIdentifierRenameKernels.KeywordLabelKernel");
 try
 {
 void** kernelParams = stackalloc void*[2];
@@ -1311,6 +1334,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointertemplate();
 IntPtr hfunc = s_hfunc_template!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "CppIdentifierRenameKernels.template");
 IntPtr d_data = IntPtr.Zero;
 try
 {
@@ -1366,6 +1390,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointertemplate();
 IntPtr hfunc = s_hfunc_template!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "CppIdentifierRenameKernels.template");
 try
 {
 void** kernelParams = stackalloc void*[1];

@@ -86,6 +86,28 @@ kernel,
 CudaException.ThrowIfError(CudaDriverApi.cuCtxSynchronize());
 d_output.CopyToHost(output);
 }
+public static partial void MethodFour(uint[] output, int n, uint gridDimX, uint blockDimX, uint sharedMemBytes)
+{
+using var scope = new GpuKernelLoader.CudaContextScope();
+var kernel = GpuKernelLoader.LoadAotKernel(s_fatbin_other_module.Value, "SharedKernel");
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(kernel, sharedMemBytes, "MultiMethodInvoker.MethodFour");
+using var d_output = new GpuBuffer<uint>(output.Length);
+unsafe
+{
+var p_output = d_output.DevicePointer;
+var p_n = n;
+var kernelParams = stackalloc void*[2];
+kernelParams[0] = &p_output;
+kernelParams[1] = &p_n;
+CudaException.ThrowIfError(CudaDriverApi.cuLaunchKernel(
+kernel,
+gridDimX, 1, 1,
+blockDimX, 1, 1,
+sharedMemBytes, IntPtr.Zero, kernelParams, IntPtr.Zero));
+}
+CudaException.ThrowIfError(CudaDriverApi.cuCtxSynchronize());
+d_output.CopyToHost(output);
+}
 }
 
 

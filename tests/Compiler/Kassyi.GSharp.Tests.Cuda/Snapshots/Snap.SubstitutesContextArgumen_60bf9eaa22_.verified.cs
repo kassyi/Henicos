@@ -16,6 +16,7 @@
             if (!(__gsharp_ctx->__gsharp_unroll_0 < 1 + 3))
                 goto case 4;
             __gsharp_ctx->acc.Total += __gsharp_ctx->__gsharp_unroll_0;
+            __gsharp_yielded_for_block_barrier = true;
             __gsharp_state = 2;
             return;
         }

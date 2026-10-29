@@ -128,6 +128,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerSimpleConstantSwitchKernel();
 IntPtr hfunc = s_hfunc_SimpleConstantSwitchKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "SwitchExpressionKernels.SimpleConstantSwitchKernel");
 IntPtr d_input = IntPtr.Zero;
 IntPtr d_output = IntPtr.Zero;
 try
@@ -210,6 +211,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerSimpleConstantSwitchKernel();
 IntPtr hfunc = s_hfunc_SimpleConstantSwitchKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "SwitchExpressionKernels.SimpleConstantSwitchKernel");
 try
 {
 void** kernelParams = stackalloc void*[2];
@@ -283,6 +285,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerFloatingPointReturnSwitchKernel();
 IntPtr hfunc = s_hfunc_FloatingPointReturnSwitchKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "SwitchExpressionKernels.FloatingPointReturnSwitchKernel");
 IntPtr d_input = IntPtr.Zero;
 IntPtr d_output = IntPtr.Zero;
 try
@@ -365,6 +368,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerFloatingPointReturnSwitchKernel();
 IntPtr hfunc = s_hfunc_FloatingPointReturnSwitchKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "SwitchExpressionKernels.FloatingPointReturnSwitchKernel");
 try
 {
 void** kernelParams = stackalloc void*[2];
@@ -440,6 +444,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerMultipleArmsBoundarySwitchKernel();
 IntPtr hfunc = s_hfunc_MultipleArmsBoundarySwitchKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "SwitchExpressionKernels.MultipleArmsBoundarySwitchKernel");
 IntPtr d_input = IntPtr.Zero;
 IntPtr d_output = IntPtr.Zero;
 try
@@ -522,6 +527,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerMultipleArmsBoundarySwitchKernel();
 IntPtr hfunc = s_hfunc_MultipleArmsBoundarySwitchKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "SwitchExpressionKernels.MultipleArmsBoundarySwitchKernel");
 try
 {
 void** kernelParams = stackalloc void*[2];

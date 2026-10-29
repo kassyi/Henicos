@@ -88,7 +88,7 @@ public GpuBigInt Evaluate(GpuBigUInt destination);
 #### Parameters
 
 `destination` _GpuBigUInt_<br>
-The pre-allocated GPU buffer to store the evaluated magnitude.
+The pre-allocated GPU buffer to store the evaluated magnitude. It may be the magnitude of an operand (`(a / b).Evaluate(a.Value)`): the root then computes into a temporary and copies the result.
 
 #### Returns
 

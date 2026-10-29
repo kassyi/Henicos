@@ -2,10 +2,6 @@ namespace Kassyi.GSharp.Compiler.Lowering;
 
 /// <summary>Hoists local variables that cross execution barriers into a shared context struct.</summary>
 /// <param name="copiedParameters">Parameters that live in the frame of a device function (see <see cref="LoweredStateMachine.CopiedParameters"/>).</param>
-/// <param name="isDeviceFunction">
-/// Whether the body belongs to a device function. Its shared memory is not set up by the launcher, so the initializer of
-/// a hoisted <c>SharedMemory&lt;T&gt;</c> stays in the body.
-/// </param>
 /// <param name="semanticModel">
 /// The semantic model of the method's syntax tree, used to key hoisted declarations and references by symbol and region
 /// (<see cref="DeclarationKey"/>). When <see langword="null"/>, declarations and references are matched by name and region.
@@ -20,7 +16,6 @@ namespace Kassyi.GSharp.Compiler.Lowering;
 /// </remarks>
 public class ContextHoister(
     IReadOnlyCollection<string>? copiedParameters = null,
-    bool isDeviceFunction = false,
     SemanticModel? semanticModel = null,
     IMethodSymbol? deviceFunction = null)
     : CSharpSyntaxRewriter
@@ -29,9 +24,9 @@ public class ContextHoister(
     private readonly StatePlan? _plan;
 
     /// <summary>Creates a hoister that takes the labels that start a state from <paramref name="plan"/>.</summary>
-    internal ContextHoister(IReadOnlyCollection<string>? copiedParameters, bool isDeviceFunction,
-        SemanticModel? semanticModel, IMethodSymbol? deviceFunction, StatePlan plan)
-        : this(copiedParameters, isDeviceFunction, semanticModel, deviceFunction) =>
+    internal ContextHoister(IReadOnlyCollection<string>? copiedParameters, SemanticModel? semanticModel,
+        IMethodSymbol? deviceFunction, StatePlan plan)
+        : this(copiedParameters, semanticModel, deviceFunction) =>
         _plan = plan;
 
     private readonly HashSet<DeclarationKey> _hoistedVariables = [];
@@ -201,13 +196,9 @@ public class ContextHoister(
             if (_hoistedVariables.Contains(LoweringIdentity.ForDeclaration(variable, semanticModel)))
             {
                 // [WHY] Hoisted variables reside in the context struct, so initializations must become explicit member assignments.
-                var typeSyntax = (variable.Parent as VariableDeclarationSyntax)?.Type;
-                var isSharedMemory = typeSyntax is GenericNameSyntax
-                {
-                    Identifier.ValueText: TypeConstants.SharedMemoryType
-                };
-
-                if (variable.Initializer == null || (isSharedMemory && !isDeviceFunction))
+                // A SharedMemory<T> declaration too, in a kernel as in a device function: the allocation runs where the
+                // declaration is, so its count is evaluated there and a dynamic one is checked against sharedMemBytes (#544)
+                if (variable.Initializer == null)
                 {
                     continue;
                 }

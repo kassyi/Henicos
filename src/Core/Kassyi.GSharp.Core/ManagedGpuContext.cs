@@ -1,6 +1,5 @@
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
-using System.Runtime.InteropServices;
 
 namespace Kassyi.GSharp.Core;
 
@@ -16,7 +15,7 @@ public readonly record struct GpuThreadContext(
 /// <summary>
 /// Provides a managed execution context for evaluating GPU kernels directly on the .NET host CPU without native toolchains.
 /// </summary>
-public static class ManagedGpuContext
+public static partial class ManagedGpuContext
 {
     /// <summary>
     /// Gets or sets a value indicating whether the current thread is executing within a managed cooperative scheduler.
@@ -109,151 +108,115 @@ public static class ManagedGpuContext
     [EditorBrowsable(EditorBrowsableState.Never)]
     public static bool GridSyncRequested;
 
-    // One region per shared memory declaration per block. A later declaration never moves an earlier region: threads
-    // keep the span they were handed, so moving a region would leave them writing to a copy nobody else reads. Only the
-    // same declaration reached with a larger count moves its own region (see GrowRegion).
-    // The thread-static state is kept between grids; only the region counts are reset.
-    [ThreadStatic]
-    private static SharedRegion?[]?[]? s_perBlockRegions;
-
-    [ThreadStatic]
-    private static int[]? s_perBlockRegionCount;
-
-    private sealed class SharedRegion
-    {
-        public ulong SiteKey;
-        public int TypeId;
-        public int ByteLength;
-        public byte[] Bytes = [];
-    }
-
-    // CUDA gives every template instantiation of a device function its own __shared__ array, so the element type is part
-    // of the identity of a declaration. The id is assigned once per closed type, without reflection.
-    private static class SharedMemoryTypeIds
-    {
-        private static int s_next;
-
-        public static int Next() => Interlocked.Increment(ref s_next);
-    }
-
-    private static class SharedMemoryTypeId<T> where T : unmanaged
-    {
-        public static readonly int Value = SharedMemoryTypeIds.Next();
-    }
-
-    private static int LinearBlockId => BlockIdxZ * GridDimY * GridDimX + BlockIdxY * GridDimX + BlockIdxX;
+    // Gpu.GridStrideLoop stops the start and the step here: no int index reaches 2^31, so index + step never wraps
+    // around in 32 bits
+    private const ulong GridStrideLimit = 0x80000000ul;
 
     /// <summary>
-    /// Initializes or resets the shared memory arrays for the entire grid execution.
+    /// The first index of the calling thread in <c>Gpu.GridStrideLoop</c>: its linear rank in the launch, in the order of
+    /// cooperative groups <c>grid.thread_rank()</c> (x fastest, blocks in the same order), saturated at 2^31. The same
+    /// computation as <c>__gsharp_grid_stride_start</c> of the C++ preludes. For generated code and the Core
+    /// implementation only.
     /// </summary>
-    /// <param name="totalBlocks">The total number of blocks in the grid.</param>
-    public static void InitializeGrid(int totalBlocks)
+    /// <returns>The rank of the thread, or 2^31 when it is 2^31 or more.</returns>
+    [EditorBrowsable(EditorBrowsableState.Never)]
+    public static uint GridStrideStart()
     {
-        if (s_perBlockRegions == null || s_perBlockRegionCount == null)
+        // Below 2^63: 65535 * 65535 * (2^31 - 1), as cooperative groups num_blocks() notes
+        ulong block = ((ulong)(uint)BlockIdxZ * (uint)GridDimY + (uint)BlockIdxY) * (uint)GridDimX + (uint)BlockIdxX;
+        if (block >= GridStrideLimit)
         {
-            s_perBlockRegions = new SharedRegion?[]?[totalBlocks];
-            s_perBlockRegionCount = new int[totalBlocks];
+            return (uint)GridStrideLimit;
         }
-        else
-        {
-            if (s_perBlockRegions.Length < totalBlocks)
-            {
-                Array.Resize(ref s_perBlockRegions, totalBlocks);
-                Array.Resize(ref s_perBlockRegionCount, totalBlocks);
-            }
 
-            Array.Clear(s_perBlockRegionCount, 0, totalBlocks);
-            // The regions themselves are reused by the next grid, so they are not cleared
-        }
+        ulong rank = block * ((ulong)(uint)BlockDimX * (uint)BlockDimY * (uint)BlockDimZ)
+            + ((ulong)(uint)ThreadIdxZ * (uint)BlockDimY + (uint)ThreadIdxY) * (uint)BlockDimX + (uint)ThreadIdxX;
+        return rank >= GridStrideLimit ? (uint)GridStrideLimit : (uint)rank;
     }
 
     /// <summary>
-    /// Returns the shared memory of a <see cref="SharedMemory{T}"/> declaration in the current block, allocating it the
-    /// first time the declaration is reached in the block.
+    /// The step of <c>Gpu.GridStrideLoop</c>: the number of threads in the launch, saturated at 2^31. The same computation
+    /// as <c>__gsharp_grid_stride_step</c> of the C++ preludes. For generated code and the Core implementation only.
     /// </summary>
-    /// <typeparam name="T">The unmanaged element type of the shared memory buffer.</typeparam>
-    /// <param name="siteKey">The key that identifies the declaration. The G# compiler computes it for generated code.</param>
-    /// <param name="count">The number of elements to allocate.</param>
-    /// <returns>A contiguous <see cref="Span{T}"/> pointing to the shared memory region of the declaration.</returns>
-    /// <exception cref="InvalidOperationException">The grid was not initialized.</exception>
+    /// <returns>The number of threads, or 2^31 when it is 2^31 or more.</returns>
+    [EditorBrowsable(EditorBrowsableState.Never)]
+    public static uint GridStrideStep()
+    {
+        ulong blocks = (ulong)(uint)GridDimX * (uint)GridDimY * (uint)GridDimZ;
+        if (blocks >= GridStrideLimit)
+        {
+            return (uint)GridStrideLimit;
+        }
+
+        ulong threads = blocks * ((ulong)(uint)BlockDimX * (uint)BlockDimY * (uint)BlockDimZ);
+        return threads >= GridStrideLimit ? (uint)GridStrideLimit : (uint)threads;
+    }
+
+    /// <summary>
+    /// The count of <c>Gpu.GridStrideLoop</c>, evaluated once: a negative count runs no iteration, as <c>i &lt; n</c> does
+    /// in C#. The same as <c>__gsharp_grid_stride_count</c> of the C++ preludes. For generated code and the Core
+    /// implementation only.
+    /// </summary>
+    /// <param name="count">The count argument of the loop.</param>
+    /// <returns><paramref name="count"/>, or 0 when it is negative.</returns>
+    [EditorBrowsable(EditorBrowsableState.Never)]
+    public static uint GridStrideCount(int count) => count < 0 ? 0u : (uint)count;
+
+    /// <summary>
+    /// Set by generated code when the GPU thread being stepped stops at <c>Gpu.SyncThreads</c>, in the kernel or in any
+    /// device function it calls; the managed launcher clears it before each step and reads it after, like
+    /// <see cref="GridSyncRequested"/>. For generated code only.
+    /// </summary>
     /// <remarks>
-    /// [WHY] On the GPU a <c>__shared__</c> variable has static storage: one buffer per declaration per block, shared by
-    /// every call of the function that declares it, from any call site and by every thread of the block. The buffer is
-    /// therefore looked up by the declaration (its key and element type), not by the order of allocations, which differs
-    /// between a caller and the device functions it calls and between threads that take different branches. A region
-    /// does not move when other declarations are allocated, so the spans of earlier threads stay valid. When the same
-    /// declaration is reached again with a larger <paramref name="count"/> (a device function called with a larger
-    /// dynamic size), its region grows and keeps its contents, as a CUDA launch sized for the largest call would.
+    /// The launcher keeps the thread waiting at the barrier until every thread of its block that has not finished waits
+    /// too, as on the GPU, where no thread passes a block barrier before the others have reached it.
     /// </remarks>
-    // ReSharper disable once UnusedMember.Global -- Public API for code generators
-    public static Span<T> AllocateSharedMemory<T>(ulong siteKey, int count) where T : unmanaged
+    [ThreadStatic]
+    [EditorBrowsable(EditorBrowsableState.Never)]
+    public static bool BlockBarrierRequested;
+
+    // The managed launcher of a cooperative kernel runs the grid in phases, each ending when every block has reached
+    // Gpu.SyncGrid (#664). The GPU never completes a grid sync that a block, or thread 0 of a block, does not reach, and a
+    // grid sync in a launch that is not cooperative is undefined there; the CPU paths report each with the same text.
+
+    /// <summary>
+    /// Creates the exception for a block that finished while the other blocks of a cooperative kernel wait at
+    /// <c>Gpu.SyncGrid</c>. For generated code only.
+    /// </summary>
+    /// <param name="kernel">The kernel, as <c>Type.Method</c>.</param>
+    /// <param name="blockIndex">The linear index of the block.</param>
+    /// <param name="gridDimX">The number of blocks in X.</param>
+    /// <param name="gridDimY">The number of blocks in Y.</param>
+    [EditorBrowsable(EditorBrowsableState.Never)]
+    public static InvalidOperationException BlockFinishedAtGridSync(string kernel, int blockIndex, uint gridDimX, uint gridDimY)
     {
-        if (count <= 0)
-        {
-            return [];
-        }
-
-        if (s_perBlockRegions == null || s_perBlockRegionCount == null)
-        {
-            throw new InvalidOperationException("Grid not initialized. Call InitializeGrid first.");
-        }
-
-        var byteCount = count * Unsafe.SizeOf<T>();
-        var typeId = SharedMemoryTypeId<T>.Value;
-        var blockId = LinearBlockId;
-        var regions = s_perBlockRegions[blockId] ??= new SharedRegion?[16];
-        var regionCount = s_perBlockRegionCount[blockId];
-
-        for (var i = 0; i < regionCount; i++)
-        {
-            var region = regions[i];
-            if (region == null || region.SiteKey != siteKey || region.TypeId != typeId)
-            {
-                continue;
-            }
-
-            if (byteCount > region.ByteLength)
-            {
-                GrowRegion(region, byteCount);
-            }
-
-            return MemoryMarshal.Cast<byte, T>(region.Bytes.AsSpan(0, byteCount));
-        }
-
-        if (regionCount == regions.Length)
-        {
-            Array.Resize(ref regions, regionCount * 2);
-            s_perBlockRegions[blockId] = regions;
-        }
-
-        var created = regions[regionCount] ??= new SharedRegion();
-        if (created.Bytes.Length < byteCount)
-        {
-            created.Bytes = new byte[byteCount];
-        }
-
-        created.SiteKey = siteKey;
-        created.TypeId = typeId;
-        created.ByteLength = byteCount;
-        s_perBlockRegionCount[blockId] = regionCount + 1;
-
-        return MemoryMarshal.Cast<byte, T>(created.Bytes.AsSpan(0, byteCount));
+        var block = (uint)blockIndex;
+        return new InvalidOperationException(
+            $"G#: block ({block % gridDimX},{block / gridDimX % gridDimY},{block / (gridDimX * gridDimY)}) of {kernel} " +
+            "finished while other blocks wait at Gpu.SyncGrid; on the GPU the grid sync never completes");
     }
 
-    // [WHY] The generated code declares a SharedMemory<T> again on every resume and a span cannot live across a barrier
-    // (GSH0039), so a span into the old array is not read once the region moves. A buffer kept from an earlier grid that
-    // already fits is used in place.
-    private static void GrowRegion(SharedRegion region, int byteCount)
-    {
-        if (region.Bytes.Length < byteCount)
-        {
-            var grown = new byte[byteCount];
-            region.Bytes.AsSpan(0, region.ByteLength).CopyTo(grown);
-            region.Bytes = grown;
-        }
+    /// <summary>
+    /// Creates the exception for thread 0 of a block that finished while the other threads of its block wait at
+    /// <c>Gpu.SyncGrid</c>. For generated code only.
+    /// </summary>
+    /// <param name="kernel">The kernel, as <c>Type.Method</c>.</param>
+    /// <param name="blockX">The block's index in X.</param>
+    /// <param name="blockY">The block's index in Y.</param>
+    /// <param name="blockZ">The block's index in Z.</param>
+    [EditorBrowsable(EditorBrowsableState.Never)]
+    public static InvalidOperationException RepresentativeFinishedAtGridSync(string kernel, int blockX, int blockY, int blockZ) =>
+        new($"G#: thread (0,0,0) of block ({blockX},{blockY},{blockZ}) of {kernel} finished while other threads of its " +
+            "block wait at Gpu.SyncGrid; on the GPU the grid sync never completes");
 
-        region.ByteLength = byteCount;
-    }
+    /// <summary>
+    /// Creates the exception for <c>Gpu.SyncGrid</c> reached in a kernel that is not
+    /// <c>[GpuKernel(Cooperative = true)]</c>. For generated code only.
+    /// </summary>
+    /// <param name="kernel">The kernel, as <c>Type.Method</c>.</param>
+    [EditorBrowsable(EditorBrowsableState.Never)]
+    public static InvalidOperationException GridSyncInKernelThatIsNotCooperative(string kernel) =>
+        new($"G#: Gpu.SyncGrid reached in {kernel}, which is not [GpuKernel(Cooperative = true)]");
 
     /// <summary>
     /// Sets the thread coordinates for the current cooperative scheduler step.

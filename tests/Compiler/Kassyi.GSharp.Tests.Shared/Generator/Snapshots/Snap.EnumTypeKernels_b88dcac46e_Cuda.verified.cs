@@ -160,6 +160,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerEvaluatePacketsKernel();
 IntPtr hfunc = s_hfunc_EvaluatePacketsKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "EnumTypeKernels.EvaluatePacketsKernel");
 IntPtr d_items = IntPtr.Zero;
 IntPtr d_output = IntPtr.Zero;
 try
@@ -244,6 +245,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerEvaluatePacketsKernel();
 IntPtr hfunc = s_hfunc_EvaluatePacketsKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "EnumTypeKernels.EvaluatePacketsKernel");
 try
 {
 void** kernelParams = stackalloc void*[3];

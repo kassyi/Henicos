@@ -301,6 +301,7 @@ switch (__gsharp_ctx.__gsharp_state)
 case 0:
 {
 __gsharp_ctx.v.X = __gsharp_ctx.v.X + 1.0f;
+global::Kassyi.GSharp.Core.ManagedGpuContext.BlockBarrierRequested = true;
 __gsharp_ctx.__gsharp_state = 1;
 return false;
 }
@@ -333,6 +334,7 @@ switch (__gsharp_ctx.__gsharp_state)
 case 0:
 {
 __gsharp_ctx.value = __gsharp_ctx.value + 1;
+global::Kassyi.GSharp.Core.ManagedGpuContext.BlockBarrierRequested = true;
 __gsharp_ctx.__gsharp_state = 1;
 return false;
 }
@@ -365,6 +367,7 @@ switch (__gsharp_ctx.__gsharp_state)
 case 0:
 {
 __gsharp_ctx.v.A.B = __gsharp_ctx.v.A.B + 10;
+global::Kassyi.GSharp.Core.ManagedGpuContext.BlockBarrierRequested = true;
 __gsharp_ctx.__gsharp_state = 1;
 return false;
 }
@@ -397,6 +400,7 @@ switch (__gsharp_ctx.__gsharp_state)
 case 0:
 {
 __gsharp_ctx.v.Buffer[index] += 100;
+global::Kassyi.GSharp.Core.ManagedGpuContext.BlockBarrierRequested = true;
 __gsharp_ctx.__gsharp_state = 1;
 return false;
 }
@@ -429,6 +433,7 @@ switch (__gsharp_ctx.__gsharp_state)
 case 0:
 {
 ++__gsharp_ctx.v.Y;
+global::Kassyi.GSharp.Core.ManagedGpuContext.BlockBarrierRequested = true;
 __gsharp_ctx.__gsharp_state = 1;
 return false;
 }
@@ -461,6 +466,7 @@ switch (__gsharp_ctx.__gsharp_state)
 case 0:
 {
 global::Kassyi.GSharp.Tests.Shared.Syntax.SuspendingValueParameterKernels.AddOne(ref __gsharp_ctx.v.X);
+global::Kassyi.GSharp.Core.ManagedGpuContext.BlockBarrierRequested = true;
 __gsharp_ctx.__gsharp_state = 1;
 return false;
 }
@@ -489,6 +495,7 @@ switch (__gsharp_ctx.__gsharp_state)
 case 0:
 {
 values[index] = values[index] + 1000;
+global::Kassyi.GSharp.Core.ManagedGpuContext.BlockBarrierRequested = true;
 __gsharp_ctx.__gsharp_state = 1;
 return false;
 }
@@ -521,6 +528,7 @@ switch (__gsharp_ctx.__gsharp_state)
 case 0:
 {
 (__gsharp_ctx.v.X, __gsharp_ctx.v.Y) = (__gsharp_ctx.v.Y, __gsharp_ctx.v.X);
+global::Kassyi.GSharp.Core.ManagedGpuContext.BlockBarrierRequested = true;
 __gsharp_ctx.__gsharp_state = 1;
 return false;
 }
@@ -555,6 +563,7 @@ switch (__gsharp_ctx.__gsharp_state)
 case 0:
 {
 (__gsharp_ctx.a, __gsharp_ctx.b) = (__gsharp_ctx.b, __gsharp_ctx.a);
+global::Kassyi.GSharp.Core.ManagedGpuContext.BlockBarrierRequested = true;
 __gsharp_ctx.__gsharp_state = 1;
 return false;
 }
@@ -649,6 +658,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerStructFieldWriteKernel();
 IntPtr hfunc = s_hfunc_StructFieldWriteKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "SuspendingValueParameterKernels.StructFieldWriteKernel");
 IntPtr d_fieldOut = IntPtr.Zero;
 IntPtr d_scalarOut = IntPtr.Zero;
 try
@@ -731,6 +741,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerStructFieldWriteKernel();
 IntPtr hfunc = s_hfunc_StructFieldWriteKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "SuspendingValueParameterKernels.StructFieldWriteKernel");
 try
 {
 void** kernelParams = stackalloc void*[2];
@@ -816,6 +827,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerNestedFieldWriteKernel();
 IntPtr hfunc = s_hfunc_NestedFieldWriteKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "SuspendingValueParameterKernels.NestedFieldWriteKernel");
 IntPtr d_output = IntPtr.Zero;
 try
 {
@@ -871,6 +883,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerNestedFieldWriteKernel();
 IntPtr hfunc = s_hfunc_NestedFieldWriteKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "SuspendingValueParameterKernels.NestedFieldWriteKernel");
 try
 {
 void** kernelParams = stackalloc void*[1];
@@ -963,6 +976,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerInlineArrayElementWriteKernel();
 IntPtr hfunc = s_hfunc_InlineArrayElementWriteKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "SuspendingValueParameterKernels.InlineArrayElementWriteKernel");
 IntPtr d_output = IntPtr.Zero;
 try
 {
@@ -1018,6 +1032,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerInlineArrayElementWriteKernel();
 IntPtr hfunc = s_hfunc_InlineArrayElementWriteKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "SuspendingValueParameterKernels.InlineArrayElementWriteKernel");
 try
 {
 void** kernelParams = stackalloc void*[1];
@@ -1086,6 +1101,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerPrefixIncrementFieldKernel();
 IntPtr hfunc = s_hfunc_PrefixIncrementFieldKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "SuspendingValueParameterKernels.PrefixIncrementFieldKernel");
 IntPtr d_output = IntPtr.Zero;
 try
 {
@@ -1141,6 +1157,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerPrefixIncrementFieldKernel();
 IntPtr hfunc = s_hfunc_PrefixIncrementFieldKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "SuspendingValueParameterKernels.PrefixIncrementFieldKernel");
 try
 {
 void** kernelParams = stackalloc void*[1];
@@ -1209,6 +1226,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerRefFieldArgumentKernel();
 IntPtr hfunc = s_hfunc_RefFieldArgumentKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "SuspendingValueParameterKernels.RefFieldArgumentKernel");
 IntPtr d_output = IntPtr.Zero;
 try
 {
@@ -1264,6 +1282,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerRefFieldArgumentKernel();
 IntPtr hfunc = s_hfunc_RefFieldArgumentKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "SuspendingValueParameterKernels.RefFieldArgumentKernel");
 try
 {
 void** kernelParams = stackalloc void*[1];
@@ -1323,6 +1342,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerArrayElementWriteKernel();
 IntPtr hfunc = s_hfunc_ArrayElementWriteKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "SuspendingValueParameterKernels.ArrayElementWriteKernel");
 IntPtr d_values = IntPtr.Zero;
 IntPtr d_output = IntPtr.Zero;
 try
@@ -1405,6 +1425,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerArrayElementWriteKernel();
 IntPtr hfunc = s_hfunc_ArrayElementWriteKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "SuspendingValueParameterKernels.ArrayElementWriteKernel");
 try
 {
 void** kernelParams = stackalloc void*[2];
@@ -1479,6 +1500,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerTupleSwapFieldsKernel();
 IntPtr hfunc = s_hfunc_TupleSwapFieldsKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "SuspendingValueParameterKernels.TupleSwapFieldsKernel");
 IntPtr d_output = IntPtr.Zero;
 try
 {
@@ -1534,6 +1556,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerTupleSwapFieldsKernel();
 IntPtr hfunc = s_hfunc_TupleSwapFieldsKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "SuspendingValueParameterKernels.TupleSwapFieldsKernel");
 try
 {
 void** kernelParams = stackalloc void*[1];
@@ -1587,6 +1610,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerTupleSwapScalarsKernel();
 IntPtr hfunc = s_hfunc_TupleSwapScalarsKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "SuspendingValueParameterKernels.TupleSwapScalarsKernel");
 IntPtr d_output = IntPtr.Zero;
 try
 {
@@ -1642,6 +1666,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerTupleSwapScalarsKernel();
 IntPtr hfunc = s_hfunc_TupleSwapScalarsKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "SuspendingValueParameterKernels.TupleSwapScalarsKernel");
 try
 {
 void** kernelParams = stackalloc void*[1];

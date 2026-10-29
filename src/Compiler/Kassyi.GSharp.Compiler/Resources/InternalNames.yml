@@ -19,6 +19,9 @@ StateMachine:
     Context: { Value: __gsharp_ctx, Prelude: WarpAndHints.hpp }
     State: __gsharp_state
     YieldedForGridSync: __gsharp_yielded_for_grid_sync
+    # Set when the thread stops at a block barrier (Gpu.SyncThreads); the launcher keeps it waiting there until every
+    # thread of the block that has not finished waits too
+    YieldedForBlockBarrier: __gsharp_yielded_for_block_barrier
     WarpExchange: { Value: __gsharp_warp_exchange, Prelude: WarpAndHints.hpp }
     WarpShuffleCount: { Value: __gsharp_warp_shuffle_count, Prelude: WarpAndHints.hpp }
     AllContexts: { Value: __gsharp_all_contexts, Prelude: WarpAndHints.hpp }
@@ -68,6 +71,11 @@ Lowering:
     ForEachSourcePrefix: __gsharp_foreach_src_
     ForEachIndexPrefix: __gsharp_foreach_i_
     UnrollIndexPrefix: __gsharp_unroll_
+    # The unsigned index of a Gpu.GridStrideLoop and its count and step, each read once before the loop (__gsharp_gsl_<n>,
+    # __gsharp_gsl_n_<n>, __gsharp_gsl_s_<n>); the C++ emitter and the managed rewrite both spell them
+    GridStrideIndexPrefix: __gsharp_gsl_
+    GridStrideCountPrefix: __gsharp_gsl_n_
+    GridStrideStepPrefix: __gsharp_gsl_s_
     # The done flag of a Gpu.SyncGrid(body) with a return (__gsharp_sg_done_<body>) and the label after the statement that
     # returns (__gsharp_sg_next_<body>_<statement>); the CUDA emitter and the CPU lowering both spell them
     SyncGridDonePrefix: __gsharp_sg_done_
@@ -75,6 +83,18 @@ Lowering:
     # The label after a Gpu.SingleThread body with a return (__gsharp_st_end_<body>), which a return of the body jumps to;
     # the C++ emitter and the managed rewrite both spell it
     SingleThreadEndLabelPrefix: __gsharp_st_end_
+    # A ref struct or stackalloc pointer local that a state machine declares again on every resume (ResumeLocals): the
+    # index of the loop that zeroes its stackalloc memory where it is declared, and the managed stackalloc storage that the
+    # local is bound to there (__gsharp_resume_storage_<local>)
+    ResumeFillIndex: __gsharp_resume_fill
+    ResumeStoragePrefix: __gsharp_resume_storage_
+    # The C++ array behind a stackalloc pointer (int __gsharp_stack_<local>[n]; int* <local> = __gsharp_stack_<local>;), so
+    # that the pointer can be incremented and assigned like the C# pointer
+    StackStoragePrefix: __gsharp_stack_
+    # A label of the user whose name another label of the body also has, in the managed output
+    # (__gsharp_label_<ordinal>_<name>); lowering can flatten sibling scopes into one block, and C# forbids two labels of
+    # one name there (CS0140, CS0158). The C++ output names labels by symbol instead
+    ManagedLabelPrefix: __gsharp_label_
 
 Iterator:
   Summary: Labels synthesized by inlining a device iterator body into a foreach site (IteratorInliner).
@@ -118,6 +138,16 @@ Launcher:
     ThreadX: __gsharp_tx
     ThreadY: __gsharp_ty
     ThreadZ: __gsharp_tz
+    # The sharedMemBytes of the launch, a parameter of the native launcher
+    SharedMemBytes: __gsharp_shared_mem_bytes
+    # The native launcher of a cooperative kernel (#664): the contexts and shared memory arenas of every block, the state
+    # of each block at the end of a grid phase, and whether the next phase starts
+    GridContexts: __gsharp_grid_contexts
+    BlockArenas: __gsharp_block_arenas
+    BlockStatus: __gsharp_block_status
+    NextGridPhase: __gsharp_next_grid_phase
+    # Whether a thread of the block reached Gpu.SyncGrid in the last step
+    GridSyncReached: __gsharp_grid_sync_reached
     StructArgumentPrefix: __gsharp_arg_
     LayoutProbe: __gsharp_layout_probe
 
@@ -135,17 +165,36 @@ Prelude:
     ActiveErrorSlot: { Value: __gsharp_active_error_slot, Prelude: ErrorChannel.hpp }
     Unsupported: { Value: __gsharp_unsupported, Prelude: ErrorChannel.hpp }
     Trap: { Value: __gsharp_trap, Prelude: ErrorChannel.hpp }
+    # A failure after which the kernel step cannot go on: reports, then throws __gsharp_step_abort, which the native
+    # launcher catches around each block
+    TrapAbort: { Value: __gsharp_trap_abort, Prelude: ErrorChannel.hpp }
+    StepAbort: { Value: __gsharp_step_abort, Prelude: ErrorChannel.hpp }
     ConsumeLastError: { Value: __gsharp_consume_last_error, Prelude: ErrorChannel.hpp }
     SetThreadIndex: { Value: __gsharp_set_thread_idx, Prelude: ThreadAndMemory.hpp }
-    # Declared by ThreadAndMemory.hpp for the CPU dialects and by the CUDA prelude (../Prelude.cu) as the extern dynamic
-    # shared memory buffer.
-    DynamicSharedMemory: { Value: __gsharp_dynamic_smem, Prelude: ThreadAndMemory.hpp }
+    # Gpu.GridStrideLoop: declared by ThreadAndMemory.hpp for the CPU dialects and by the CUDA prelude
+    GridStrideStart: { Value: __gsharp_grid_stride_start, Prelude: ThreadAndMemory.hpp }
+    GridStrideStep: { Value: __gsharp_grid_stride_step, Prelude: ThreadAndMemory.hpp }
+    GridStrideCount: { Value: __gsharp_grid_stride_count, Prelude: ThreadAndMemory.hpp }
+    # The extern dynamic shared memory buffer of the CUDA prelude; the CPU dialects place dynamic declarations in the
+    # arena of ThreadAndMemory.hpp instead.
+    DynamicSharedMemory: { Value: __gsharp_dynamic_smem, Prelude: ../Prelude.cu }
     # Declared by the CUDA prelude only.
     DynamicSharedMemorySize: { Value: __gsharp_dynamic_smem_size, Prelude: ../Prelude.cu }
     DynamicSharedMemoryInit: { Value: __gsharp_dsmem_init, Prelude: ../Prelude.cu }
     DynamicSharedMemoryPlace: { Value: __gsharp_dsmem_place, Prelude: ../Prelude.cu }
     ResetSharedMemory: { Value: __gsharp_reset_smem, Prelude: ThreadAndMemory.hpp }
-    AllocateSharedMemory: { Value: __gsharp_allocate_smem, Prelude: ThreadAndMemory.hpp }
+    # The shared memory arena of a block, and the call that makes a block of a cooperative kernel use its own (#664)
+    SharedMemoryArena: { Value: __gsharp_block_smem, Prelude: ThreadAndMemory.hpp }
+    BindSharedMemory: { Value: __gsharp_bind_smem, Prelude: ThreadAndMemory.hpp }
+    # The grid phases of the native launcher of a cooperative kernel (#664)
+    BlockAtGridSync: { Value: __gsharp_block_at_grid_sync, Prelude: ThreadAndMemory.hpp }
+    BlockFinished: { Value: __gsharp_block_finished, Prelude: ThreadAndMemory.hpp }
+    EndGridPhase: { Value: __gsharp_end_grid_phase, Prelude: ThreadAndMemory.hpp }
+    ReportRepresentativeFinished: { Value: __gsharp_report_representative_finished, Prelude: ThreadAndMemory.hpp }
+    # A CPU SharedMemory<T> declaration: a constant count is static (a buffer of its own), any other count is dynamic (a
+    # region of the launch's sharedMemBytes); the native launcher resets the arena of each block
+    AllocateStaticSharedMemory: { Value: __gsharp_allocate_smem_static, Prelude: ThreadAndMemory.hpp }
+    AllocateDynamicSharedMemory: { Value: __gsharp_allocate_smem_dynamic, Prelude: ThreadAndMemory.hpp }
     WarpExchangeAssign: { Value: __gsharp_warp_exchange_assign, Prelude: WarpAndHints.hpp, Managed: ManagedGpuContext.cs }
     WarpShuffleReadSync: { Value: __gsharp_warp_shuffle_read_sync, Prelude: WarpAndHints.hpp, Managed: ManagedGpuContext.cs }
     WarpShuffleReadDownSync: { Value: __gsharp_warp_shuffle_read_down_sync, Prelude: WarpAndHints.hpp, Managed: ManagedGpuContext.cs }
@@ -164,6 +213,8 @@ Prelude:
     TempAddress: { Value: __gsharp_temp_address, Prelude: Types.hpp }
     # A stack array viewed as a span (StackArrayLocals.AppendView). Declared by Types.hpp and by the CUDA prelude.
     StackAllocSpan: { Value: __gsharp_stackalloc_span, Prelude: Types.hpp }
+    # The zero fill of a stackalloc outside a declaration (StackAllocEmitter). Declared by Types.hpp and by the CUDA prelude.
+    StackAllocZero: { Value: __gsharp_stackalloc_zero, Prelude: Types.hpp }
     # NaN and infinity of float and double, which have no C++ literal (ConstexprLiteral). Declared by Platform.hpp for
     # the CPU dialects and by the CUDA prelude (../Prelude.cu).
     NaNSingle: { Value: __gsharp_nan_f, Prelude: Platform.hpp }
