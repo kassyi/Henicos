@@ -59,8 +59,8 @@ public static partial class AtomicIntrinsicsKernels
     }
 
     // Every overload of every atomic, one slot per operation (#728). Each thread records the old value it got at
-    // old[slot * BlockDimension.X + tid]. Thread t adds one unit or passes t + 1, 16 - t or bit t, so the host can rebuild
-    // the order in which the operations ran from the old values alone.
+    // old[slot * BlockDimension.X + tid]. Thread t adds one unit or passes t + 1, 16 - t, bit t or t shifted into the top
+    // bits, so the host can rebuild the order in which the operations ran from the old values alone.
     [GpuKernel]
     public static void AtomicOldValueKernel(int[] ints, int[] intOld, uint[] uints, uint[] uintOld, ulong[] ulongs,
         ulong[] ulongOld, float[] floats, float[] floatOld)
@@ -81,8 +81,8 @@ public static partial class AtomicIntrinsicsKernels
         uintOld[1 * n + tid] = Gpu.AtomicSub(ref uints[1], 1u);
         uintOld[2 * n + tid] = Gpu.AtomicExch(ref uints[2], (uint)tid + 1u);
         uintOld[3 * n + tid] = Gpu.AtomicCAS(ref uints[3], 0u, (uint)tid + 1u);
-        uintOld[4 * n + tid] = Gpu.AtomicMin(ref uints[4], (uint)(31 - tid));
-        uintOld[5 * n + tid] = Gpu.AtomicMax(ref uints[5], (uint)tid);
+        uintOld[4 * n + tid] = Gpu.AtomicMin(ref uints[4], (uint)(31 - tid) << 27);
+        uintOld[5 * n + tid] = Gpu.AtomicMax(ref uints[5], (uint)tid << 27);
         uintOld[6 * n + tid] = Gpu.AtomicAnd(ref uints[6], ~(1u << tid));
         uintOld[7 * n + tid] = Gpu.AtomicOr(ref uints[7], 1u << tid);
         uintOld[8 * n + tid] = Gpu.AtomicXor(ref uints[8], 1u << tid);
@@ -93,8 +93,8 @@ public static partial class AtomicIntrinsicsKernels
         ulongOld[0 * n + tid] = Gpu.AtomicAdd(ref ulongs[0], 1ul);
         ulongOld[1 * n + tid] = Gpu.AtomicExch(ref ulongs[1], (ulong)tid + 1ul);
         ulongOld[2 * n + tid] = Gpu.AtomicCAS(ref ulongs[2], 0ul, (ulong)tid + 1ul);
-        ulongOld[3 * n + tid] = Gpu.AtomicMin(ref ulongs[3], (ulong)(31 - tid));
-        ulongOld[4 * n + tid] = Gpu.AtomicMax(ref ulongs[4], (ulong)tid << 32);
+        ulongOld[3 * n + tid] = Gpu.AtomicMin(ref ulongs[3], (ulong)(31 - tid) << 59);
+        ulongOld[4 * n + tid] = Gpu.AtomicMax(ref ulongs[4], (ulong)tid << 59);
         ulongOld[5 * n + tid] = Gpu.AtomicAnd(ref ulongs[5], ~(1ul << (tid + 32)));
         ulongOld[6 * n + tid] = Gpu.AtomicOr(ref ulongs[6], 1ul << (tid + 32));
         ulongOld[7 * n + tid] = Gpu.AtomicXor(ref ulongs[7], 1ul << (tid + 32));

@@ -1,5 +1,8 @@
 #if GSHARP_CPU
 using System;
+using System.Collections.Concurrent;
+using System.Threading;
+using Kassyi.GSharp.Runtime.Aot;
 using Kassyi.GSharp.Tests.Shared.Helpers;
 using Xunit;
 
@@ -45,5 +48,54 @@ public class AtomicIntrinsicsManagedTests : TranspilerTestBase
     [Scenario(TestScenario.Boundary)]
     public void Test_Managed_EveryAtomicOverload_ReturnsTheOldValueOfOneOrder() =>
         AtomicIntrinsicsScenarios.OldValues(s_runManaged);
+
+    // Two host threads run managed launches on the same array at the same time: each update is atomic, so none is lost.
+    // 2 x 20 launches of 16 x 256 additions of 1 give 163840, which a float holds exactly
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void Test_Managed_ConcurrentLaunchesOnOneArray_LoseNoUpdate()
+    {
+        const int hostThreads = 2;
+        const int launchesPerThread = 20;
+        const uint threadsPerBlock = 256;
+        const uint blocksPerGrid = 16;
+        float[] sum = [0f];
+        var failures = new ConcurrentQueue<Exception>();
+        using var start = new Barrier(hostThreads);
+        var threads = new Thread[hostThreads];
+        for (var i = 0; i < hostThreads; i++)
+        {
+            threads[i] = new Thread(() =>
+            {
+                try
+                {
+                    CpuKernelLoader.ForceManagedExecution = true;
+                    start.SignalAndWait();
+                    for (var launch = 0; launch < launchesPerThread; launch++)
+                    {
+                        AtomicIntrinsicsKernels.LaunchAtomicFloatAddStressKernel(
+                            sum, gridDimX: blocksPerGrid, blockDimX: threadsPerBlock);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    failures.Enqueue(ex);
+                }
+                finally
+                {
+                    CpuKernelLoader.ForceManagedExecution = false;
+                }
+            });
+            threads[i].Start();
+        }
+
+        foreach (var thread in threads)
+        {
+            thread.Join();
+        }
+
+        Assert.Empty(failures);
+        Assert.Equal(hostThreads * launchesPerThread * threadsPerBlock * blocksPerGrid, sum[0]);
+    }
 }
 #endif

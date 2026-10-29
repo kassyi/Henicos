@@ -86,7 +86,9 @@ internal static class AtomicIntrinsicsScenarios
     }
 
     // Each slot starts where its operation wraps or saturates within the 32 operations (Add / Sub across the end of the
-    // range, Inc / Dec across the limit 9), so a path that computes in a wider type or skips the wrap gives other values
+    // range, Inc / Dec across the limit 9), so a path that computes in a wider type or skips the wrap gives other values.
+    // The unsigned Min / Max values cross the top bit (t << 27, t << 59), so a path that compares them as signed
+    // integers gives other values too
     public static void OldValues(Action<Action> run)
     {
         const int n = WarpSizedBlock;
@@ -119,8 +121,9 @@ internal static class AtomicIntrinsicsScenarios
         AssertOneOrder("uint Sub", initialUints[1], uints[1], uintOld, 1, static (s, _) => unchecked(s - 1u));
         AssertOneOrder("uint Exch", initialUints[2], uints[2], uintOld, 2, static (_, t) => (uint)t + 1u);
         AssertOneOrder("uint CAS", initialUints[3], uints[3], uintOld, 3, static (s, t) => s == 0u ? (uint)t + 1u : s);
-        AssertOneOrder("uint Min", initialUints[4], uints[4], uintOld, 4, static (s, t) => Math.Min(s, (uint)(31 - t)));
-        AssertOneOrder("uint Max", initialUints[5], uints[5], uintOld, 5, static (s, t) => Math.Max(s, (uint)t));
+        AssertOneOrder("uint Min", initialUints[4], uints[4], uintOld, 4,
+            static (s, t) => Math.Min(s, (uint)(31 - t) << 27));
+        AssertOneOrder("uint Max", initialUints[5], uints[5], uintOld, 5, static (s, t) => Math.Max(s, (uint)t << 27));
         AssertOneOrder("uint And", initialUints[6], uints[6], uintOld, 6, static (s, t) => s & ~(1u << t));
         AssertOneOrder("uint Or", initialUints[7], uints[7], uintOld, 7, static (s, t) => s | (1u << t));
         AssertOneOrder("uint Xor", initialUints[8], uints[8], uintOld, 8, static (s, t) => s ^ (1u << t));
@@ -132,9 +135,12 @@ internal static class AtomicIntrinsicsScenarios
         AssertOneOrder("ulong Exch", initialUlongs[1], ulongs[1], ulongOld, 1, static (_, t) => (ulong)t + 1ul);
         AssertOneOrder("ulong CAS", initialUlongs[2], ulongs[2], ulongOld, 2,
             static (s, t) => s == 0ul ? (ulong)t + 1ul : s);
-        AssertOneOrder("ulong Min", initialUlongs[3], ulongs[3], ulongOld, 3, static (s, t) => Math.Min(s, (ulong)(31 - t)));
-        AssertOneOrder("ulong Max", initialUlongs[4], ulongs[4], ulongOld, 4, static (s, t) => Math.Max(s, (ulong)t << 32));
-        AssertOneOrder("ulong And", initialUlongs[5], ulongs[5], ulongOld, 5, static (s, t) => s & ~(1ul << (t + 32)));
+        AssertOneOrder("ulong Min", initialUlongs[3], ulongs[3], ulongOld, 3,
+            static (s, t) => Math.Min(s, (ulong)(31 - t) << 59));
+        AssertOneOrder("ulong Max", initialUlongs[4], ulongs[4], ulongOld, 4,
+            static (s, t) => Math.Max(s, (ulong)t << 59));
+        AssertOneOrder("ulong And", initialUlongs[5], ulongs[5], ulongOld, 5,
+            static (s, t) => s & ~(1ul << (t + 32)));
         AssertOneOrder("ulong Or", initialUlongs[6], ulongs[6], ulongOld, 6, static (s, t) => s | (1ul << (t + 32)));
         AssertOneOrder("ulong Xor", initialUlongs[7], ulongs[7], ulongOld, 7, static (s, t) => s ^ (1ul << (t + 32)));
         Assert.Equal((ulong)(n * (n + 1) / 2), ulongs[8]);
@@ -160,6 +166,11 @@ internal static class AtomicIntrinsicsScenarios
     /// changes the state no other thread can have seen it, unless the state comes back (Inc / Dec, which every thread
     /// applies alike, so any of them will do). A path that returns the new value instead of the old one, or that loses
     /// an update, leaves no thread for some state and fails.
+    /// <para>
+    /// The premise: a state comes back to an earlier value only in a slot where every thread applies the same operation
+    /// (Add / Sub of one unit, Inc / Dec). A new slot must keep that, by giving each thread its own operand (t + 1,
+    /// bit t) where the state could come back, or the check may reject a correct order.
+    /// </para>
     /// </remarks>
     private static void AssertOneOrder<T>(string name, T initial, T final, T[] olds, int slot, Func<T, int, T> apply)
         where T : IEquatable<T>
