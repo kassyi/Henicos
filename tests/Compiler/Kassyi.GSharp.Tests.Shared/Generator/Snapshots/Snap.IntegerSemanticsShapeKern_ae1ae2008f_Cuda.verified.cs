@@ -59,7 +59,13 @@ namespace Kassyi.GSharp.Generated
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 internal static class GSharpSharedCudaDeviceCode
 {
-public const string Source = @"";
+public const string Source = @"inline __device__ void __gsharp_fn_Kassyi__GSharp__Tests__TestCases__Emission__IntegerSemanticsShapeKernels__Keep(int* __gsharp_id_0_value);
+
+inline __device__ void __gsharp_fn_Kassyi__GSharp__Tests__TestCases__Emission__IntegerSemanticsShapeKernels__Keep(int* __gsharp_id_0_value){
+(*__gsharp_id_0_value)=__gsharp_add_i32((*__gsharp_id_0_value),0);
+}
+
+";
 }
 }
 
@@ -99,7 +105,7 @@ __gsharp_id_0_a[5]=__gsharp_ushr_i32(__gsharp_id_5_x,__gsharp_id_3_s[__gsharp_id
 __gsharp_id_0_a[6]=__gsharp_shl_i32(__gsharp_id_5_x,33);
 __gsharp_id_2_u[0]=__gsharp_id_2_u[__gsharp_id_4_t]<<(__gsharp_add_i32(__gsharp_id_3_s[__gsharp_id_4_t],1)&31);
 __gsharp_id_2_u[1]=__gsharp_id_2_u[__gsharp_id_4_t]>>3;
-__gsharp_id_2_u[2]=__gsharp_id_2_u[__gsharp_id_4_t]>>(((__gsharp_id_4_t>0?__gsharp_id_3_s[__gsharp_id_4_t]:40))&31);
+__gsharp_id_2_u[2]=__gsharp_id_2_u[__gsharp_id_4_t]>>((__gsharp_id_4_t>0?__gsharp_id_3_s[__gsharp_id_4_t]:40)&31);
 __gsharp_id_1_l[0]=__gsharp_add_i64(__gsharp_mul_i64(__gsharp_id_6_y,__gsharp_id_6_y),__gsharp_id_5_x);
 __gsharp_id_1_l[1]=__gsharp_shl_i64(__gsharp_id_6_y,__gsharp_id_3_s[__gsharp_id_4_t]);
 __gsharp_id_1_l[2]=__gsharp_id_6_y>>1;
@@ -118,8 +124,14 @@ __gsharp_id_7_h=(short)__gsharp_add_i32(__gsharp_id_7_h,1);
 __gsharp_id_7_h=(short)__gsharp_shl_i32(__gsharp_id_7_h,1);
 __gsharp_id_0_a[10]=__gsharp_id_7_h;
 int __gsharp_id_8_k = __gsharp_id_4_t;
-__gsharp_add_assign_i32(__gsharp_id_0_a[__gsharp_sub_i32((__gsharp_id_8_k=__gsharp_add_i32(__gsharp_id_8_k,1)),1)],__gsharp_id_5_x);
-__gsharp_sub_assign_i32(__gsharp_id_0_a[__gsharp_sub_i32((__gsharp_id_8_k=__gsharp_add_i32(__gsharp_id_8_k,1)),1)],1);
+([&]() {
+auto __gsharp_seq_0 = __gsharp_sub_i32((__gsharp_id_8_k=__gsharp_add_i32(__gsharp_id_8_k,1)),1);
+return __gsharp_id_0_a[__gsharp_seq_0]=__gsharp_add_i32(__gsharp_id_0_a[__gsharp_seq_0],__gsharp_id_5_x);
+}());
+([&]() {
+auto __gsharp_seq_1 = __gsharp_sub_i32((__gsharp_id_8_k=__gsharp_add_i32(__gsharp_id_8_k,1)),1);
+return __gsharp_id_0_a[__gsharp_seq_1]=__gsharp_sub_i32(__gsharp_id_0_a[__gsharp_seq_1],1);
+}());
 }
 ";
 public static readonly string WrappedKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +WrappedKernel_Source;
@@ -647,6 +659,10 @@ __gsharp_id_0_a[__gsharp_id_5_i]=1;
 for(int __gsharp_id_6_i = 0;__gsharp_id_6_i<__gsharp_id_1_n;__gsharp_id_6_i=__gsharp_sub_i32(__gsharp_id_6_i,1))
 {
 __gsharp_id_0_a[0]=__gsharp_id_6_i;
+}
+for(int __gsharp_id_7_i = 0;__gsharp_id_7_i<__gsharp_id_1_n;__gsharp_id_7_i=__gsharp_add_i32(__gsharp_id_7_i,1))
+{
+__gsharp_fn_Kassyi__GSharp__Tests__TestCases__Emission__IntegerSemanticsShapeKernels__Keep(&(__gsharp_id_7_i));
 }
 }
 ";

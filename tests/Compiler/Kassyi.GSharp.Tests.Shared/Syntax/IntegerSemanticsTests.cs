@@ -41,6 +41,11 @@ public class IntegerSemanticsTests : TranspilerTestBase
 
     [SkippableFact]
     [Scenario(TestScenario.Boundary)]
+    public void Test_PackedTargetsWithSideEffects_AreWrittenOnce() =>
+        IntegerSemanticsScenarios.PackedTargets(s_runNative);
+
+    [SkippableFact]
+    [Scenario(TestScenario.Boundary)]
     public void Test_OperatorsAcrossBarriers_KeepCSharpSemantics() =>
         IntegerSemanticsScenarios.AcrossBarrier(s_runNative);
 }

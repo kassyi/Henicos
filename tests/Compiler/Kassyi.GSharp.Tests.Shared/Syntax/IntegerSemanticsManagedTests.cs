@@ -44,6 +44,11 @@ public class IntegerSemanticsManagedTests : TranspilerTestBase
 
     [Fact]
     [Scenario(TestScenario.Boundary)]
+    public void Test_Managed_PackedTargetsWithSideEffects_AreWrittenOnce() =>
+        IntegerSemanticsScenarios.PackedTargets(s_runManaged);
+
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
     public void Test_Managed_OperatorsAcrossBarriers_KeepCSharpSemantics() =>
         IntegerSemanticsScenarios.AcrossBarrier(s_runManaged);
 

@@ -109,6 +109,18 @@ public static partial class IntegerSemanticsShapeKernels
         {
             a[0] = i;
         }
+
+        // A reference to the counter, even in parentheses, may write it
+        for (int i = 0; i < n; i++)
+        {
+            Keep(ref (i));
+        }
+    }
+
+    [GpuDeviceFunction]
+    private static void Keep(ref int value)
+    {
+        value += 0;
     }
 
     // A float or double converted to an integer saturates; a type narrower than int truncates the int result

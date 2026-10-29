@@ -146,6 +146,33 @@ internal static class IntegerSemanticsScenarios
             counts);
     }
 
+    public static void PackedTargets(Action<Action> run)
+    {
+        int[] bs = [1, int.MaxValue, int.MinValue, -1];
+        var data = new PackedCounter[bs.Length * 2];
+        for (var i = 0; i < data.Length; i++)
+        {
+            data[i] = new PackedCounter { A = (byte)i, B = bs[i / 2], C = long.MaxValue - i };
+        }
+
+        var expected = (PackedCounter[])data.Clone();
+        var old = new int[bs.Length * 3];
+        var expectedOld = new int[old.Length];
+
+        run(() => IntegerSemanticsKernels.LaunchPackedTargetKernel(data, old, blockDimX: (uint)bs.Length));
+
+        for (var t = 0; t < bs.Length; t++)
+        {
+            IntegerSemanticsKernels.PackedTargetSteps(expected, expectedOld, t);
+        }
+
+        // Thread 1: int.MaxValue += 3 wraps; the postfix step returns the value before it
+        Assert.Equal(int.MinValue + 2, expected[2].B);
+        Assert.Equal(int.MaxValue, expectedOld[3]);
+        Assert.Equal(expected, data);
+        Assert.Equal(expectedOld, old);
+    }
+
     public static void AcrossBarrier(Action<Action> run)
     {
         int[] a = [int.MaxValue, 3, -1];

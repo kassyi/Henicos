@@ -48,6 +48,7 @@ global::Kassyi.GSharp.Tests.Shared.Syntax.IntegerSemanticsKernels.WarmupFunction
 global::Kassyi.GSharp.Tests.Shared.Syntax.IntegerSemanticsKernels.WarmupFunctionPointerConversionsKernel();
 global::Kassyi.GSharp.Tests.Shared.Syntax.IntegerSemanticsKernels.WarmupFunctionPointerSignedBuiltInsKernel();
 global::Kassyi.GSharp.Tests.Shared.Syntax.IntegerSemanticsKernels.WarmupFunctionPointerLoopCountersKernel();
+global::Kassyi.GSharp.Tests.Shared.Syntax.IntegerSemanticsKernels.WarmupFunctionPointerPackedTargetKernel();
 global::Kassyi.GSharp.Tests.Shared.Syntax.IntegerSemanticsKernels.WarmupFunctionPointerAcrossBarrierKernel();
 }}}
 
@@ -65,6 +66,9 @@ public const string Source = @"inline __device__ void __gsharp_fn_Kassyi__GSharp
 inline __device__ void __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__IntegerSemanticsKernels__LongOperators(long long __gsharp_id_0_a, long long __gsharp_id_1_b, int __gsharp_id_2_s, GSharpArray<long long> __gsharp_id_3_o, int __gsharp_id_4_index);
 
 inline __device__ void __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__IntegerSemanticsKernels__ConvertOperators(float __gsharp_id_0_f, double __gsharp_id_1_d, GSharpArray<long long> __gsharp_id_2_o, int __gsharp_id_3_index);
+
+struct __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__PackedCounter;
+inline __device__ void __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__IntegerSemanticsKernels__PackedTargetSteps(GSharpArray<__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__PackedCounter> __gsharp_id_0_data, GSharpArray<int> __gsharp_id_1_old, int __gsharp_id_2_t);
 
 inline __device__ void __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__IntegerSemanticsKernels__IntOperators(int __gsharp_id_0_a, int __gsharp_id_1_b, int __gsharp_id_2_s, GSharpArray<int> __gsharp_id_3_o, int __gsharp_id_4_index){
 int __gsharp_id_5_v = __gsharp_mul_i32(__gsharp_id_4_index,38);
@@ -121,8 +125,14 @@ __gsharp_id_3_o[__gsharp_add_i32(__gsharp_id_5_v,33)]=(int)((long long)(unsigned
 __gsharp_id_3_o[__gsharp_add_i32(__gsharp_id_5_v,34)]=__gsharp_neg_i32(__gsharp_mul_i32(__gsharp_id_0_a,__gsharp_id_1_b));
 __gsharp_id_3_o[__gsharp_add_i32(__gsharp_id_5_v,35)]=__gsharp_mul_i32(__gsharp_add_i32(__gsharp_id_0_a,__gsharp_id_1_b),__gsharp_sub_i32(__gsharp_id_0_a,__gsharp_id_1_b));
 int __gsharp_id_12_k = __gsharp_add_i32(__gsharp_id_5_v,36);
-__gsharp_add_assign_i32(__gsharp_id_3_o[__gsharp_sub_i32((__gsharp_id_12_k=__gsharp_add_i32(__gsharp_id_12_k,1)),1)],__gsharp_id_0_a);
-__gsharp_sub_assign_i32(__gsharp_id_3_o[__gsharp_sub_i32((__gsharp_id_12_k=__gsharp_add_i32(__gsharp_id_12_k,1)),1)],1);
+([&]() {
+auto __gsharp_seq_0 = __gsharp_sub_i32((__gsharp_id_12_k=__gsharp_add_i32(__gsharp_id_12_k,1)),1);
+return __gsharp_id_3_o[__gsharp_seq_0]=__gsharp_add_i32(__gsharp_id_3_o[__gsharp_seq_0],__gsharp_id_0_a);
+}());
+([&]() {
+auto __gsharp_seq_1 = __gsharp_sub_i32((__gsharp_id_12_k=__gsharp_add_i32(__gsharp_id_12_k,1)),1);
+return __gsharp_id_3_o[__gsharp_seq_1]=__gsharp_sub_i32(__gsharp_id_3_o[__gsharp_seq_1],1);
+}());
 }
 
 inline __device__ void __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__IntegerSemanticsKernels__LongOperators(long long __gsharp_id_0_a, long long __gsharp_id_1_b, int __gsharp_id_2_s, GSharpArray<long long> __gsharp_id_3_o, int __gsharp_id_4_index){
@@ -190,6 +200,44 @@ __gsharp_id_2_o[__gsharp_add_i32(__gsharp_id_4_v,14)]=(unsigned char)__gsharp_to
 __gsharp_id_2_o[__gsharp_add_i32(__gsharp_id_4_v,15)]=(short)__gsharp_to_i32(__gsharp_id_1_d);
 __gsharp_id_2_o[__gsharp_add_i32(__gsharp_id_4_v,16)]=(unsigned short)__gsharp_to_i32(__gsharp_id_1_d);
 __gsharp_id_2_o[__gsharp_add_i32(__gsharp_id_4_v,17)]=__gsharp_add_i32(__gsharp_to_i32(__gsharp_id_0_f*0.5f),__gsharp_to_i32((float)__gsharp_id_1_d));
+}
+
+#pragma pack(push, 1)
+#ifndef __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__PackedCounter__
+#define __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__PackedCounter__
+struct __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__PackedCounter
+{
+unsigned char __gsharp_mb_A;
+int __gsharp_mb_B;
+long long __gsharp_mb_C;
+}
+;
+static_assert(sizeof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__PackedCounter)==13,""Kassyi.GSharp.Tests.Shared.Syntax.PackedCounter: size"");
+static_assert(alignof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__PackedCounter)==1,""Kassyi.GSharp.Tests.Shared.Syntax.PackedCounter: alignment"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__PackedCounter,__gsharp_mb_A)==0,""Kassyi.GSharp.Tests.Shared.Syntax.PackedCounter.A: offset"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__PackedCounter,__gsharp_mb_B)==1,""Kassyi.GSharp.Tests.Shared.Syntax.PackedCounter.B: offset"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__PackedCounter,__gsharp_mb_C)==5,""Kassyi.GSharp.Tests.Shared.Syntax.PackedCounter.C: offset"");
+#endif
+#pragma pack(pop)
+inline __device__ void __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__IntegerSemanticsKernels__PackedTargetSteps(GSharpArray<__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__PackedCounter> __gsharp_id_0_data, GSharpArray<int> __gsharp_id_1_old, int __gsharp_id_2_t){
+int __gsharp_id_3_k = __gsharp_mul_i32(2,__gsharp_id_2_t);
+([&]() {
+auto __gsharp_seq_0 = __gsharp_sub_i32((__gsharp_id_3_k=__gsharp_add_i32(__gsharp_id_3_k,1)),1);
+return __gsharp_id_0_data[__gsharp_seq_0].__gsharp_mb_B=__gsharp_add_i32(__gsharp_id_0_data[__gsharp_seq_0].__gsharp_mb_B,3);
+}());
+__gsharp_id_1_old[__gsharp_mul_i32(__gsharp_id_2_t,3)]=([&]() {
+auto __gsharp_seq_1 = __gsharp_sub_i32((__gsharp_id_3_k=__gsharp_add_i32(__gsharp_id_3_k,1)),1);
+return __gsharp_sub_i32((__gsharp_id_0_data[__gsharp_seq_1].__gsharp_mb_B=__gsharp_add_i32(__gsharp_id_0_data[__gsharp_seq_1].__gsharp_mb_B,1)),1);
+}());
+([&]() {
+auto __gsharp_seq_2 = (__gsharp_id_3_k=__gsharp_sub_i32(__gsharp_id_3_k,1));
+return __gsharp_id_0_data[__gsharp_seq_2].__gsharp_mb_C=__gsharp_mul_i64(__gsharp_id_0_data[__gsharp_seq_2].__gsharp_mb_C,5);
+}());
+__gsharp_id_1_old[__gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_2_t,3),1)]=__gsharp_id_3_k;
+__gsharp_id_1_old[__gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_2_t,3),2)]=([&]() {
+auto __gsharp_seq_3 = __gsharp_add_i32((__gsharp_id_3_k=__gsharp_sub_i32(__gsharp_id_3_k,1)),1);
+return __gsharp_add_i32((__gsharp_id_0_data[__gsharp_seq_3].__gsharp_mb_B=__gsharp_sub_i32(__gsharp_id_0_data[__gsharp_seq_3].__gsharp_mb_B,1)),1);
+}());
 }
 
 ";
@@ -1132,6 +1180,182 @@ IntPtr* proxy_counts = stackalloc IntPtr[2];
 proxy_counts[0] = counts;
 ((int*)(proxy_counts + 1))[0] = 0; // Length is unknown for raw IntPtr
 kernelParams[2] = proxy_counts;
+CudaException.ThrowIfError(CudaDriverApi.cuLaunchKernel(
+hfunc,
+gridDimX, gridDimY, gridDimZ, // Grid dim
+blockDimX, blockDimY, blockDimZ, // Block dim
+sharedMemBytes, // Shared mem
+hStream, // Stream
+kernelParams,
+IntPtr.Zero // Extra
+));
+}
+finally
+{
+}
+}
+}
+#pragma warning restore CS8500
+public const string PackedTargetKernel_Source = @"#pragma pack(push, 1)
+#ifndef __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__PackedCounter__
+#define __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__PackedCounter__
+struct __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__PackedCounter
+{
+unsigned char __gsharp_mb_A;
+int __gsharp_mb_B;
+long long __gsharp_mb_C;
+}
+;
+static_assert(sizeof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__PackedCounter)==13,""Kassyi.GSharp.Tests.Shared.Syntax.PackedCounter: size"");
+static_assert(alignof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__PackedCounter)==1,""Kassyi.GSharp.Tests.Shared.Syntax.PackedCounter: alignment"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__PackedCounter,__gsharp_mb_A)==0,""Kassyi.GSharp.Tests.Shared.Syntax.PackedCounter.A: offset"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__PackedCounter,__gsharp_mb_B)==1,""Kassyi.GSharp.Tests.Shared.Syntax.PackedCounter.B: offset"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__PackedCounter,__gsharp_mb_C)==5,""Kassyi.GSharp.Tests.Shared.Syntax.PackedCounter.C: offset"");
+#endif
+#pragma pack(pop)
+extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__IntegerSemanticsKernels__PackedTargetKernel(GSharpArray<__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__PackedCounter> __gsharp_id_0_data, GSharpArray<int> __gsharp_id_1_old){
+__gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__IntegerSemanticsKernels__PackedTargetSteps(__gsharp_id_0_data,__gsharp_id_1_old,(int)threadIdx.x);
+}
+";
+public static readonly string PackedTargetKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +PackedTargetKernel_Source;
+private static IntPtr? s_hfunc_PackedTargetKernel;
+private static bool s_layoutChecked_PackedTargetKernel;
+/// <summary>Preloads the CUDA module and resolves the function pointer for this kernel.</summary>
+public static void WarmupFunctionPointerPackedTargetKernel()
+{
+if (s_hfunc_PackedTargetKernel.HasValue) return;
+IntPtr hModule = global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetOrLoadModule();
+s_hfunc_PackedTargetKernel = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.GetFunction(hModule, "__gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__IntegerSemanticsKernels__PackedTargetKernel");
+}
+#pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
+[global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
+[global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
+public static unsafe void LaunchPackedTargetKernel(global::Kassyi.GSharp.Tests.Shared.Syntax.PackedCounter[] data, global::System.Int32[] old, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, IntPtr hStream = default, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
+{
+if (!s_layoutChecked_PackedTargetKernel)
+{
+if (global::System.Runtime.CompilerServices.Unsafe.SizeOf<global::Kassyi.GSharp.Tests.Shared.Syntax.PackedCounter>() != 13) global::Kassyi.GSharp.Runtime.Interop.LayoutGuard.ThrowSizeMismatch("Kassyi.GSharp.Tests.Shared.Syntax.PackedCounter", 13, global::System.Runtime.CompilerServices.Unsafe.SizeOf<global::Kassyi.GSharp.Tests.Shared.Syntax.PackedCounter>());
+{
+global::Kassyi.GSharp.Tests.Shared.Syntax.PackedCounter __gsharp_layout_probe = default;
+if (global::System.Runtime.CompilerServices.Unsafe.ByteOffset(ref global::System.Runtime.CompilerServices.Unsafe.As<global::Kassyi.GSharp.Tests.Shared.Syntax.PackedCounter, byte>(ref __gsharp_layout_probe), ref global::System.Runtime.CompilerServices.Unsafe.As<global::System.Byte, byte>(ref global::System.Runtime.CompilerServices.Unsafe.AsRef(in __gsharp_layout_probe.A))) != 0) global::Kassyi.GSharp.Runtime.Interop.LayoutGuard.ThrowFieldOffsetMismatch("Kassyi.GSharp.Tests.Shared.Syntax.PackedCounter", "A", 0, (long)global::System.Runtime.CompilerServices.Unsafe.ByteOffset(ref global::System.Runtime.CompilerServices.Unsafe.As<global::Kassyi.GSharp.Tests.Shared.Syntax.PackedCounter, byte>(ref __gsharp_layout_probe), ref global::System.Runtime.CompilerServices.Unsafe.As<global::System.Byte, byte>(ref global::System.Runtime.CompilerServices.Unsafe.AsRef(in __gsharp_layout_probe.A))));
+if (global::System.Runtime.CompilerServices.Unsafe.ByteOffset(ref global::System.Runtime.CompilerServices.Unsafe.As<global::Kassyi.GSharp.Tests.Shared.Syntax.PackedCounter, byte>(ref __gsharp_layout_probe), ref global::System.Runtime.CompilerServices.Unsafe.As<global::System.Int32, byte>(ref global::System.Runtime.CompilerServices.Unsafe.AsRef(in __gsharp_layout_probe.B))) != 1) global::Kassyi.GSharp.Runtime.Interop.LayoutGuard.ThrowFieldOffsetMismatch("Kassyi.GSharp.Tests.Shared.Syntax.PackedCounter", "B", 1, (long)global::System.Runtime.CompilerServices.Unsafe.ByteOffset(ref global::System.Runtime.CompilerServices.Unsafe.As<global::Kassyi.GSharp.Tests.Shared.Syntax.PackedCounter, byte>(ref __gsharp_layout_probe), ref global::System.Runtime.CompilerServices.Unsafe.As<global::System.Int32, byte>(ref global::System.Runtime.CompilerServices.Unsafe.AsRef(in __gsharp_layout_probe.B))));
+if (global::System.Runtime.CompilerServices.Unsafe.ByteOffset(ref global::System.Runtime.CompilerServices.Unsafe.As<global::Kassyi.GSharp.Tests.Shared.Syntax.PackedCounter, byte>(ref __gsharp_layout_probe), ref global::System.Runtime.CompilerServices.Unsafe.As<global::System.Int64, byte>(ref global::System.Runtime.CompilerServices.Unsafe.AsRef(in __gsharp_layout_probe.C))) != 5) global::Kassyi.GSharp.Runtime.Interop.LayoutGuard.ThrowFieldOffsetMismatch("Kassyi.GSharp.Tests.Shared.Syntax.PackedCounter", "C", 5, (long)global::System.Runtime.CompilerServices.Unsafe.ByteOffset(ref global::System.Runtime.CompilerServices.Unsafe.As<global::Kassyi.GSharp.Tests.Shared.Syntax.PackedCounter, byte>(ref __gsharp_layout_probe), ref global::System.Runtime.CompilerServices.Unsafe.As<global::System.Int64, byte>(ref global::System.Runtime.CompilerServices.Unsafe.AsRef(in __gsharp_layout_probe.C))));
+}
+s_layoutChecked_PackedTargetKernel = true;
+}
+if (data is null){
+throw new global::System.ArgumentNullException(nameof(data));
+}
+if (data.Length == 0){
+throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(data));
+}
+if (old is null){
+throw new global::System.ArgumentNullException(nameof(old));
+}
+if (old.Length == 0){
+throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(old));
+}
+using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
+{
+WarmupFunctionPointerPackedTargetKernel();
+IntPtr hfunc = s_hfunc_PackedTargetKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "IntegerSemanticsKernels.PackedTargetKernel");
+IntPtr d_data = IntPtr.Zero;
+IntPtr d_old = IntPtr.Zero;
+try
+{
+void** kernelParams = stackalloc void*[2];
+// Marshal array: data
+int data_size = data.Length * sizeof(global::Kassyi.GSharp.Tests.Shared.Syntax.PackedCounter);
+IntPtr* proxy_data = stackalloc IntPtr[2];
+proxy_data[0] = IntPtr.Zero;
+((int*)(proxy_data + 1))[0] = data.Length;
+if (data_size > 0)
+{
+CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_data, (IntPtr)data_size, hStream));
+proxy_data[0] = d_data;
+fixed (global::Kassyi.GSharp.Tests.Shared.Syntax.PackedCounter* p_data = data)
+{
+CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoDAsync_v2(d_data, (IntPtr)p_data, (IntPtr)data_size, hStream));
+CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
+}
+}
+kernelParams[0] = proxy_data;
+// Marshal array: old
+int old_size = old.Length * sizeof(global::System.Int32);
+IntPtr* proxy_old = stackalloc IntPtr[2];
+proxy_old[0] = IntPtr.Zero;
+((int*)(proxy_old + 1))[0] = old.Length;
+if (old_size > 0)
+{
+CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_old, (IntPtr)old_size, hStream));
+proxy_old[0] = d_old;
+fixed (global::System.Int32* p_old = old)
+{
+CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoDAsync_v2(d_old, (IntPtr)p_old, (IntPtr)old_size, hStream));
+CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
+}
+}
+kernelParams[1] = proxy_old;
+CudaException.ThrowIfError(CudaDriverApi.cuLaunchKernel(
+hfunc,
+gridDimX, gridDimY, gridDimZ, // Grid dim
+blockDimX, blockDimY, blockDimZ, // Block dim
+sharedMemBytes, // Shared mem
+hStream, // Stream
+kernelParams,
+IntPtr.Zero // Extra
+));
+// Copy back array: data
+if (data_size > 0 && d_data != IntPtr.Zero)
+{
+fixed (global::Kassyi.GSharp.Tests.Shared.Syntax.PackedCounter* p_data = data)
+{
+CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoHAsync_v2((IntPtr)p_data, d_data, (IntPtr)data_size, hStream));
+CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
+}
+}
+// Copy back array: old
+if (old_size > 0 && d_old != IntPtr.Zero)
+{
+fixed (global::System.Int32* p_old = old)
+{
+CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoHAsync_v2((IntPtr)p_old, d_old, (IntPtr)old_size, hStream));
+CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
+}
+}
+}
+finally
+{
+if (d_data != IntPtr.Zero) CudaDriverApi.cuMemFreeAsync(d_data, hStream);
+if (d_old != IntPtr.Zero) CudaDriverApi.cuMemFreeAsync(d_old, hStream);
+}
+}
+}
+#pragma warning restore CS8500
+#pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
+[global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
+[global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
+public static unsafe void LaunchPackedTargetKernelPtr(IntPtr data, IntPtr old, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, IntPtr hStream = default, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
+{
+using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
+{
+WarmupFunctionPointerPackedTargetKernel();
+IntPtr hfunc = s_hfunc_PackedTargetKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "IntegerSemanticsKernels.PackedTargetKernel");
+try
+{
+void** kernelParams = stackalloc void*[2];
+// Marshal device array: data
+IntPtr* proxy_data = stackalloc IntPtr[2];
+proxy_data[0] = data;
+((int*)(proxy_data + 1))[0] = 0; // Length is unknown for raw IntPtr
+kernelParams[0] = proxy_data;
+// Marshal device array: old
+IntPtr* proxy_old = stackalloc IntPtr[2];
+proxy_old[0] = old;
+((int*)(proxy_old + 1))[0] = 0; // Length is unknown for raw IntPtr
+kernelParams[1] = proxy_old;
 CudaException.ThrowIfError(CudaDriverApi.cuLaunchKernel(
 hfunc,
 gridDimX, gridDimY, gridDimZ, // Grid dim

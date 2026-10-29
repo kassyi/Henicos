@@ -1,4 +1,5 @@
 // ReSharper disable All
+using System.Runtime.InteropServices;
 using Kassyi.GSharp.Core;
 
 namespace Kassyi.GSharp.Tests.Shared.Syntax;
@@ -251,6 +252,26 @@ public static partial class IntegerSemanticsKernels
         counts[t * 4 + 3] = last;
     }
 
+    // Steps whose target finds its location with a side effect (k++), on misaligned members of a packed struct: the index
+    // is evaluated once into a temporary, and the member is written as an expression, never bound to a T& (CUDA error
+    // 716 on a misaligned int&)
+    [GpuDeviceFunction]
+    public static void PackedTargetSteps(PackedCounter[] data, int[] old, int t)
+    {
+        int k = 2 * t;
+        data[k++].B += 3;
+        old[t * 3] = data[k++].B++;
+        data[--k].C *= 5;
+        old[t * 3 + 1] = k;
+        old[t * 3 + 2] = data[k--].B--;
+    }
+
+    [GpuKernel]
+    public static void PackedTargetKernel(PackedCounter[] data, int[] old)
+    {
+        PackedTargetSteps(data, old, ThreadIndex.X);
+    }
+
     // On the CPU dialects the barriers turn the kernel into a state machine; the lowered tree must keep the C# operators
     [GpuKernel]
     public static void AcrossBarrierKernel(int[] a, int[] s, int[] o)
@@ -266,4 +287,18 @@ public static partial class IntegerSemanticsKernels
         o[t * 4 + 2] = x++;
         o[t * 4 + 3] = (int)(x * 1.0e10f);
     }
+}
+
+/// <summary>A packed struct whose <see cref="B"/> (offset 1) and <see cref="C"/> (offset 5) are misaligned.</summary>
+[StructLayout(LayoutKind.Sequential, Pack = 1)]
+public struct PackedCounter
+{
+    /// <summary>A byte that moves the next members off their alignment.</summary>
+    public byte A;
+
+    /// <summary>An int at offset 1.</summary>
+    public int B;
+
+    /// <summary>A long at offset 5.</summary>
+    public long C;
 }
