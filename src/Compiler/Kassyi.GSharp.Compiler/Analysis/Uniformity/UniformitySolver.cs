@@ -9,6 +9,9 @@ namespace Kassyi.GSharp.Compiler.Analysis;
 /// </summary>
 internal sealed class UniformitySolver(UniformityState state)
 {
+    // The values written in the influence region of each branch, each once, computed on first use
+    private ImmutableArray<int>?[] _writtenInRegion = [];
+
     /// <summary>The forward data flow and the influence regions, alternately until the regions stop growing; both only grow.</summary>
     public void Solve()
     {
@@ -22,6 +25,7 @@ internal sealed class UniformitySolver(UniformityState state)
 
         state.Region = new ThreadVariance[count];
         state.Branch = new ThreadVariance[count];
+        _writtenInRegion = new ImmutableArray<int>?[count];
 
         var current = new ThreadVariance[values];
         do
@@ -150,7 +154,7 @@ internal sealed class UniformitySolver(UniformityState state)
             state.Branch[node] = variance;
             var region = state.PostDominators.GetRegion(node);
             changed |= AddToRegion(region, variance);
-            changed |= AddAtJoins(node, region, variance);
+            changed |= AddAtJoins(node, variance);
         }
 
         return changed;
@@ -173,27 +177,50 @@ internal sealed class UniformitySolver(UniformityState state)
     }
 
     // A value written in the region may differ where the paths of the branch meet again
-    private bool AddAtJoins(int branch, ImmutableArray<int> region, ThreadVariance variance)
+    private bool AddAtJoins(int branch, ThreadVariance variance)
     {
+        var written = GetWrittenInRegion(branch);
         var changed = false;
         foreach (var join in state.PostDominators.GetJoins(branch))
         {
             var target = state.In[join];
-            foreach (var member in region)
+            foreach (var value in written)
             {
-                foreach (var value in state.NodeAt(member).Written)
-                {
-                    var merged = target[value] | variance;
-                    if (merged != target[value])
-                    {
-                        target[value] = merged;
-                        changed = true;
-                    }
-                }
+                var merged = target[value] | variance;
+                changed |= merged != target[value];
+                target[value] = merged;
             }
         }
 
         return changed;
+    }
+
+    // The values that the nodes of the influence region of branch write, each once; the region does not change, only the
+    // variance of the branch grows
+    private ImmutableArray<int> GetWrittenInRegion(int branch)
+    {
+        if (_writtenInRegion[branch] is { } cached)
+        {
+            return cached;
+        }
+
+        var seen = new bool[state.Recorder.ValueCount];
+        var written = ImmutableArray.CreateBuilder<int>();
+        foreach (var member in state.PostDominators.GetRegion(branch))
+        {
+            foreach (var value in state.NodeAt(member).Written)
+            {
+                if (!seen[value])
+                {
+                    seen[value] = true;
+                    written.Add(value);
+                }
+            }
+        }
+
+        var result = written.ToImmutable();
+        _writtenInRegion[branch] = result;
+        return result;
     }
 
     // target |= values; whether target changed
