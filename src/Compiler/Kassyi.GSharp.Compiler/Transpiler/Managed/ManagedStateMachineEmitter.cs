@@ -185,7 +185,7 @@ internal static class ManagedStateMachineEmitter
             });
             writer.AppendCsharpTypeName(p.Type);
             writer.Append(IsCopied(copiedParameters, p)
-                ? $" {GSharpInternalNames.SuspendingCall.CopiedParameterPrefix}{p.Name}, "
+                ? $" {GSharpInternalNames.StateMachine.CopiedParameterPrefix}{p.Name}, "
                 : $" {p.Name.ToCSharpIdentifier()}, ");
         }
 
@@ -214,7 +214,7 @@ internal static class ManagedStateMachineEmitter
             foreach (var parameter in copiedParameters)
             {
                 writer.AppendLine(
-                    $"{GSharpInternalNames.StateMachine.Context}.{parameter.Name.ToCSharpIdentifier()} = {GSharpInternalNames.SuspendingCall.CopiedParameterPrefix}{parameter.Name};");
+                    $"{GSharpInternalNames.StateMachine.Context}.{parameter.Name.ToCSharpIdentifier()} = {GSharpInternalNames.StateMachine.CopiedParameterPrefix}{parameter.Name};");
             }
         }
     }
@@ -230,10 +230,11 @@ internal static class ManagedStateMachineEmitter
         string stateMachineName,
         IMethodSymbol methodSymbol,
         bool hasAutoResult,
+        ImmutableArray<IParameterSymbol> copiedParameters,
         ImmutableArray<ManagedContextField> localInits,
         string bodySource)
     {
-        EmitStateMachineSignature(writer, contextName, stateMachineName, methodSymbol, hasAutoResult);
+        EmitStateMachineSignature(writer, contextName, stateMachineName, methodSymbol, hasAutoResult, copiedParameters);
         writer.AppendLine(") {");
 
         foreach (var localInit in localInits)
@@ -241,6 +242,7 @@ internal static class ManagedStateMachineEmitter
             AppendResumeLocal(writer, localInit);
         }
 
+        AppendCopiedParameterInitialization(writer, copiedParameters);
         writer.AppendLine(bodySource);
         writer.AppendLine("}");
     }
@@ -251,7 +253,8 @@ internal static class ManagedStateMachineEmitter
         string contextName,
         string stateMachineName,
         IMethodSymbol methodSymbol,
-        bool hasAutoResult)
+        bool hasAutoResult,
+        ImmutableArray<IParameterSymbol> copiedParameters)
     {
         writer.Append($"public static unsafe void {stateMachineName}(");
         foreach (var p in methodSymbol.Parameters)
@@ -264,7 +267,9 @@ internal static class ManagedStateMachineEmitter
                 _ => ""
             });
             writer.AppendCsharpTypeName(p.Type);
-            writer.Append($" {p.Name.ToCSharpIdentifier()}, ");
+            writer.Append(IsCopied(copiedParameters, p)
+                ? $" {GSharpInternalNames.StateMachine.CopiedParameterPrefix}{p.Name}, "
+                : $" {p.Name.ToCSharpIdentifier()}, ");
         }
 
         writer.Append($"{contextName} {GSharpInternalNames.StateMachine.Context}");

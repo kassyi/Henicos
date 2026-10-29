@@ -33,6 +33,7 @@ internal static class ManagedCSharpTranspiler
 
         var (localInits, regularFields, unhoistedLocals, renamedLocals) =
             ManagedContextFields.ProcessContextFields(contextFields, semanticModel, kernelName);
+        var copiedParameters = plan.GetCopiedParameters(lowered);
 
         var unhoistedBody = RewriteResumeLocals(loweredBody, unhoistedLocals, renamedLocals, semanticModel, kernelName,
             methodSymbol.AreLocalsZeroed());
@@ -40,10 +41,10 @@ internal static class ManagedCSharpTranspiler
 
         using var writer = new SourceWriter();
         ManagedStateMachineEmitter.EmitContextClass(
-            writer, contextName, regularFields, ImmutableArray<IParameterSymbol>.Empty, lowered.CallSites,
-            semanticModel);
+            writer, contextName, regularFields, copiedParameters, lowered.CallSites, semanticModel);
         ManagedStateMachineEmitter.EmitStateMachineMethod(
-            writer, contextName, stateMachineName, methodSymbol, plan.HasAutoResult, localInits, bodySource);
+            writer, contextName, stateMachineName, methodSymbol, plan.HasAutoResult, copiedParameters, localInits,
+            bodySource);
         return writer.ToString();
     }
 
