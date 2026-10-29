@@ -54,6 +54,8 @@
     <ProjectReference Include="..\..\..\src\Compiler\Kassyi.GSharp.Compiler.Tasks\Kassyi.GSharp.Compiler.Tasks.csproj" />
     <ProjectReference Include="..\..\..\src\Apps\Henicos.Benchmarks\Henicos.Benchmarks.csproj" />
     <_GSharpCudaSources Include="..\..\..\src\Apps\Henicos.Benchmarks\ComputeBenchmarks\Native\*.cu" />
+    <!-- Hand-written external-module kernels for the [CudaImport] tests (DynamicSharedMemoryModuleTests) -->
+    <_GSharpCudaSources Include="Native\*.cu" />
   </ItemGroup>
 
   <PropertyGroup>
