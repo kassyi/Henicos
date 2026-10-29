@@ -18,7 +18,7 @@ Core static methods for GPU hardware interaction, synchronization, and intrinsic
 - [WarpShuffleDown](WarpShuffleDown.md): Exchanges variables by shifting data down by a specified delta.
 - [WarpShuffleUp](WarpShuffleUp.md): Exchanges variables by shifting data up by a specified delta.
 - [WarpShuffleXor](WarpShuffleXor.md): Exchanges variables by applying an XOR operation to lane IDs.
-- [GridStrideLoop](GridStrideLoop.md): Executes a standard CUDA grid-stride loop.
+- [GridStrideLoop](GridStrideLoop.md): Runs a body once for each index, spread over every thread of the launch.
 - [ForUnroll](ForUnroll.md): Unrolls a loop body at compile-time by duplicating the source code across the specified range.
 - [SingleThread](SingleThread.md): Runs the body once per launch, on thread (0,0,0) of block (0,0,0).
 - [Constant](Constant.md): Injects string literals as raw C++ constant expressions.
