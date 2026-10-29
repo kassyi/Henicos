@@ -275,7 +275,7 @@ public const string DebugName_Value = "global::System.Int32";
 [System.Runtime.InteropServices.FieldOffset(4)]
 public global::System.Int32 Value;
 }
-public static unsafe void Marshal_RefTestStruct(ref global::Kassyi.GSharp.Tests.Shared.Syntax.RefTestStruct host, ref AotContexts.RefTestStruct native, bool isDevicePtr, System.Collections.Generic.List<IntPtr>? allocatedPtrs, IntPtr hStream = default)
+public static unsafe void Marshal_RefTestStruct(ref global::Kassyi.GSharp.Tests.Shared.Syntax.RefTestStruct host, ref AotContexts.RefTestStruct native, bool isDevicePtr, global::Kassyi.GSharp.Runtime.Interop.DeviceArrayRegions? allocatedPtrs, IntPtr hStream = default)
 {
 native = System.Runtime.CompilerServices.Unsafe.As<global::Kassyi.GSharp.Tests.Shared.Syntax.RefTestStruct, AotContexts.RefTestStruct>(ref host);
 }

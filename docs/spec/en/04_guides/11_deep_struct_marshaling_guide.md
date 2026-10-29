@@ -135,7 +135,10 @@ When a kernel accepts a custom struct containing arrays, the G# Source Generator
    - Allocates GPU global memory via `CudaDriverApi.cuMemAlloc_v2`.
    - Pins host memory using `GCHandle.Alloc(..., GCHandleType.Pinned)`.
    - Executes synchronous Host-to-Device copy via `cuMemcpyHtoD_v2`.
-   - Records device pointer in an internal tracking list (`allocatedPtrs`).
+   - Records the device pointer per host array in the launch's `DeviceArrayRegions` (`allocatedPtrs`). An array that
+     the launch already copied, through another field of the same struct, a field of another struct argument or an
+     element of a converted array, is looked up there by reference and reuses that region instead of being copied
+     again: as in C#, the fields hold one array, so a write through one of them is seen through the others.
 3. **Unmarshaling & Cleanup Routine (`Unmarshal_...`)**:
    Upon kernel completion:
    - Automatically synchronizes modified device memory back to host arrays via `cuMemcpyDtoH_v2`.

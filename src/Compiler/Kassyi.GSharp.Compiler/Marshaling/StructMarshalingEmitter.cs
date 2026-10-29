@@ -3,6 +3,9 @@ namespace Kassyi.GSharp.Compiler.Marshaling;
 /// <summary>Emits custom struct marshal and unmarshal helper methods between managed and native shadow representations.</summary>
 internal static class StructMarshalingEmitter
 {
+    /// <summary>The runtime type that the CUDA launcher passes to <c>Marshal_</c> as <c>allocatedPtrs</c>.</summary>
+    internal const string DeviceArrayRegionsType = "global::Kassyi.GSharp.Runtime.Interop.DeviceArrayRegions";
+
     /// <summary>Emits the rendered structs of a kernel class (<see cref="RenderStructs"/>).</summary>
     /// <remarks>A struct whose <c>AotContexts</c> name is already taken gets no helpers; GSH0058 reports it.</remarks>
     internal static void WriteStructMarshaling(SourceWriter writer, EquatableArray<StructHostSource> structs, bool isCuda)
@@ -140,8 +143,10 @@ internal static class StructMarshalingEmitter
             writer.AppendFullyQualifiedCsharpName(s);
             writer.Append(hasMirror ? $" {MirroredHostParameter}, ref " : " host, ref ");
             writer.AppendAotStructPath(s);
-            writer.Append(
-                " native, bool isDevicePtr, System.Collections.Generic.List<IntPtr>? allocatedPtrs, IntPtr hStream = default");
+            // CUDA records one device region per host array (DeviceArrayRegions, #707); the CPU records GCHandles
+            writer.Append(dialect.IsCuda
+                ? $" native, bool isDevicePtr, {DeviceArrayRegionsType}? allocatedPtrs, IntPtr hStream = default"
+                : " native, bool isDevicePtr, System.Collections.Generic.List<IntPtr>? allocatedPtrs, IntPtr hStream = default");
         }
 
         writer.AppendLine();
@@ -473,63 +478,88 @@ internal static class StructMarshalingEmitter
                 writer.AppendLine("if (size > 0)");
                 using (writer.Scope())
                 {
-                    writer.AppendLine(
-                        "CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(" +
-                        $"out {native}.Data, (IntPtr)size, hStream));");
-                    writer.AppendLine($"allocatedPtrs?.Add({native}.Data);");
-
-                    if (TypeLayoutCalculator.IsUserStruct(elementType))
+                    WriteSharedRegionLookup(writer, host, native);
+                    writer.AppendLine("else");
+                    using (writer.Scope())
                     {
-                        writer.Append("var tempArray = new ");
-                        writer.AppendAotStructPath(elementType);
-                        writer.AppendLine($"[{host}.Length];");
-
-                        writer.AppendLine($"for (int i = 0; i < {host}.Length; i++)");
-                        using (writer.Scope())
-                        {
-                            writer.AppendMarshalMethodName(elementType);
-                            writer.AppendLine(
-                                $"(ref {host}[i], ref tempArray[i], false, allocatedPtrs, hStream);");
-                        }
-
-                        writer.AppendLine(
-                            "var handle = System.Runtime.InteropServices.GCHandle.Alloc(tempArray, System.Runtime.InteropServices.GCHandleType.Pinned);");
-                        writer.AppendLine("try");
-                        using (writer.Scope())
-                        {
-                            writer.AppendLine(
-                                "CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoDAsync_v2(" +
-                                $"{native}.Data, handle.AddrOfPinnedObject(), (IntPtr)size, hStream));");
-                        }
-
-                        writer.AppendLine("finally");
-                        using (writer.Scope())
-                        {
-                            writer.AppendLine("handle.Free();");
-                        }
-                    }
-                    else
-                    {
-                        writer.AppendLine(
-                            $"var handle = System.Runtime.InteropServices.GCHandle.Alloc({host}, " +
-                            "System.Runtime.InteropServices.GCHandleType.Pinned);");
-                        writer.AppendLine("try");
-                        using (writer.Scope())
-                        {
-                            writer.AppendLine(
-                                "CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoDAsync_v2(" +
-                                $"{native}.Data, handle.AddrOfPinnedObject(), (IntPtr)size, hStream));");
-                        }
-
-                        writer.AppendLine("finally");
-                        using (writer.Scope())
-                        {
-                            writer.AppendLine("handle.Free();");
-                        }
+                        WriteDeviceArrayCopy(writer, host, native, elementType);
                     }
                 }
 
                 writer.AppendLine($"{native}.Length = {host}.Length;");
+            }
+        }
+    }
+
+    // if (allocatedPtrs != null && allocatedPtrs.TryGetRegion(<host>, out var region)) { <native>.Data = region; }
+    // [WHY] In C# two fields that hold one array are one object, so the device must see one region too (#707): an array
+    // that this launch already copied, through any field of any struct argument, gets that region and is not copied
+    // again. Unmarshal_ then copies the same region back once per field, which writes the same bytes.
+    private static void WriteSharedRegionLookup(SourceWriter writer, string host, string native)
+    {
+        writer.AppendLine($"if (allocatedPtrs != null && allocatedPtrs.TryGetRegion({host}, out var region))");
+        using (writer.Scope())
+        {
+            writer.AppendLine($"{native}.Data = region;");
+        }
+    }
+
+    // cuMemAllocAsync(out <native>.Data, size); allocatedPtrs?.Add(<host>, <native>.Data); <copy the elements>
+    // The region is recorded before the elements are marshaled, so an element that holds the same array finds it
+    private static void WriteDeviceArrayCopy(SourceWriter writer, string host, string native, ITypeSymbol elementType)
+    {
+        writer.AppendLine(
+            "CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(" +
+            $"out {native}.Data, (IntPtr)size, hStream));");
+        writer.AppendLine($"allocatedPtrs?.Add({host}, {native}.Data);");
+
+        if (TypeLayoutCalculator.IsUserStruct(elementType))
+        {
+            writer.Append("var tempArray = new ");
+            writer.AppendAotStructPath(elementType);
+            writer.AppendLine($"[{host}.Length];");
+
+            writer.AppendLine($"for (int i = 0; i < {host}.Length; i++)");
+            using (writer.Scope())
+            {
+                writer.AppendMarshalMethodName(elementType);
+                writer.AppendLine(
+                    $"(ref {host}[i], ref tempArray[i], false, allocatedPtrs, hStream);");
+            }
+
+            writer.AppendLine(
+                "var handle = System.Runtime.InteropServices.GCHandle.Alloc(tempArray, System.Runtime.InteropServices.GCHandleType.Pinned);");
+            writer.AppendLine("try");
+            using (writer.Scope())
+            {
+                writer.AppendLine(
+                    "CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoDAsync_v2(" +
+                    $"{native}.Data, handle.AddrOfPinnedObject(), (IntPtr)size, hStream));");
+            }
+
+            writer.AppendLine("finally");
+            using (writer.Scope())
+            {
+                writer.AppendLine("handle.Free();");
+            }
+        }
+        else
+        {
+            writer.AppendLine(
+                $"var handle = System.Runtime.InteropServices.GCHandle.Alloc({host}, " +
+                "System.Runtime.InteropServices.GCHandleType.Pinned);");
+            writer.AppendLine("try");
+            using (writer.Scope())
+            {
+                writer.AppendLine(
+                    "CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoDAsync_v2(" +
+                    $"{native}.Data, handle.AddrOfPinnedObject(), (IntPtr)size, hStream));");
+            }
+
+            writer.AppendLine("finally");
+            using (writer.Scope())
+            {
+                writer.AppendLine("handle.Free();");
             }
         }
     }

@@ -102,7 +102,7 @@ public const string DebugName_Field5_Double2 = "global::Kassyi.GSharp.Core.Doubl
 [System.Runtime.InteropServices.FieldOffset(48)]
 public fixed byte Field5_Double2[16];
 }
-public static unsafe void Marshal_GEN56_AlignmentTestStruct(ref global::Kassyi.GSharp.Tests.Runtime.GEN56_AlignmentTestStruct host, ref AotContexts.GEN56_AlignmentTestStruct native, bool isDevicePtr, System.Collections.Generic.List<IntPtr>? allocatedPtrs, IntPtr hStream = default)
+public static unsafe void Marshal_GEN56_AlignmentTestStruct(ref global::Kassyi.GSharp.Tests.Runtime.GEN56_AlignmentTestStruct host, ref AotContexts.GEN56_AlignmentTestStruct native, bool isDevicePtr, global::Kassyi.GSharp.Runtime.Interop.DeviceArrayRegions? allocatedPtrs, IntPtr hStream = default)
 {
 native = default;
 native.Field1_Byte = host.Field1_Byte;
@@ -405,13 +405,13 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 WarmupFunctionPointerRoundtripKernel();
 IntPtr hfunc = s_hfunc_RoundtripKernel!.Value;
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "NestedVectorAlignmentKernels.RoundtripKernel");
-System.Collections.Generic.List<IntPtr> data_allocatedPtrs = new System.Collections.Generic.List<IntPtr>();
+var __gsharp_device_arrays = new global::Kassyi.GSharp.Runtime.Interop.DeviceArrayRegions();
 IntPtr d_data = IntPtr.Zero;
 try
 {
 void** kernelParams = stackalloc void*[1];
 AotContexts.GEN56_AlignmentTestStruct native_data = default;
-AotContexts.Marshal_GEN56_AlignmentTestStruct(ref data, ref native_data, false, data_allocatedPtrs, hStream);
+AotContexts.Marshal_GEN56_AlignmentTestStruct(ref data, ref native_data, false, __gsharp_device_arrays, hStream);
 // Marshal ref/out struct: data
 int data_size = sizeof(AotContexts.GEN56_AlignmentTestStruct);
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_data, (IntPtr)data_size, hStream));
@@ -435,8 +435,8 @@ AotContexts.Unmarshal_GEN56_AlignmentTestStruct(ref data, ref native_data, false
 }
 finally
 {
-foreach (var ptr in data_allocatedPtrs) CudaDriverApi.cuMemFreeAsync(ptr, hStream);
 if (d_data != IntPtr.Zero) CudaDriverApi.cuMemFreeAsync(d_data, hStream);
+__gsharp_device_arrays.Free(hStream);
 }
 }
 }

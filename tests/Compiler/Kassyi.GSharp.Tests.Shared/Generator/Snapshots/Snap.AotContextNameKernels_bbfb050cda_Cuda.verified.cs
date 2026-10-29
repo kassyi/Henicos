@@ -91,7 +91,7 @@ public const string DebugName_A = "global::System.Int32";
 [System.Runtime.InteropServices.FieldOffset(0)]
 public global::System.Int32 A;
 }
-public static unsafe void Marshal_Pair(ref global::Kassyi.GSharp.Tests.Shared.Generator.AotContextName.Pair host, ref AotContexts.Pair native, bool isDevicePtr, System.Collections.Generic.List<IntPtr>? allocatedPtrs, IntPtr hStream = default)
+public static unsafe void Marshal_Pair(ref global::Kassyi.GSharp.Tests.Shared.Generator.AotContextName.Pair host, ref AotContexts.Pair native, bool isDevicePtr, global::Kassyi.GSharp.Runtime.Interop.DeviceArrayRegions? allocatedPtrs, IntPtr hStream = default)
 {
 native = System.Runtime.CompilerServices.Unsafe.As<global::Kassyi.GSharp.Tests.Shared.Generator.AotContextName.Pair, AotContexts.Pair>(ref host);
 }
@@ -106,7 +106,7 @@ public const string DebugName_Value = "global::System.Int32";
 [System.Runtime.InteropServices.FieldOffset(0)]
 public global::System.Int32 Value;
 }
-public static unsafe void Marshal_Box(ref global::Kassyi.GSharp.Tests.Shared.Generator.AotContextName.Box<global::System.Int32> host, ref AotContexts.Box native, bool isDevicePtr, System.Collections.Generic.List<IntPtr>? allocatedPtrs, IntPtr hStream = default)
+public static unsafe void Marshal_Box(ref global::Kassyi.GSharp.Tests.Shared.Generator.AotContextName.Box<global::System.Int32> host, ref AotContexts.Box native, bool isDevicePtr, global::Kassyi.GSharp.Runtime.Interop.DeviceArrayRegions? allocatedPtrs, IntPtr hStream = default)
 {
 native = System.Runtime.CompilerServices.Unsafe.As<global::Kassyi.GSharp.Tests.Shared.Generator.AotContextName.Box<global::System.Int32>, AotContexts.Box>(ref host);
 }
