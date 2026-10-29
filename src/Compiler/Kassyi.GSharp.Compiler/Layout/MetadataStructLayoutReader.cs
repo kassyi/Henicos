@@ -18,6 +18,10 @@ namespace Kassyi.GSharp.Compiler.Layout;
 /// reads), under 0.01% of the generator's time. A type of the compilation, or of a compilation reference (the IDE),
 /// has no metadata and is read from its attributes by <see cref="StructLayoutReader"/>.
 /// </para>
+/// <para>
+/// The raw <c>Size</c> of an empty struct differs between the two paths: its attribute states none (0), but Roslyn emits
+/// a ClassLayout row with <c>Size = 1</c> for it. The computed layout is the same, 1 byte either way.
+/// </para>
 /// </remarks>
 internal static class MetadataStructLayoutReader
 {
@@ -38,7 +42,7 @@ internal static class MetadataStructLayoutReader
             return false;
         }
 
-#pragma warning disable RS0030 // Reads the ClassLayout table of a metadata reference; see the remarks of the class (#736)
+#pragma warning disable RS0030 // TypeDef flags and ClassLayout row, which Roslyn's public API does not expose; measured: at most 0.4 ms per compilation (#736, class remarks)
         var reader = module.GetMetadataReader();
         var handle = (System.Reflection.Metadata.TypeDefinitionHandle)
             System.Reflection.Metadata.Ecma335.MetadataTokens.EntityHandle(definition.MetadataToken);
@@ -69,7 +73,7 @@ internal static class MetadataStructLayoutReader
             return false;
         }
 
-#pragma warning disable RS0030 // Reads the FieldLayout table of a metadata reference; see the remarks of the class (#736)
+#pragma warning disable RS0030 // FieldLayout row, which Roslyn's public API does not expose; measured with TryRead: at most 0.4 ms per compilation (#736, class remarks)
         var handle = (System.Reflection.Metadata.FieldDefinitionHandle)
             System.Reflection.Metadata.Ecma335.MetadataTokens.EntityHandle(definition.MetadataToken);
         offset = Math.Max(module.GetMetadataReader().GetFieldDefinition(handle).GetOffset(), 0);
