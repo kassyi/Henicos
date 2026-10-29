@@ -48,9 +48,9 @@ return __gsharp_id_1_total;
 
 inline int __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__ZeroInitKernels__SumArray(GSharpArray<int> __gsharp_id_0_values){
 int __gsharp_id_1_total = 0;
-for(int __gsharp_id_2_i = 0;__gsharp_id_2_i<__gsharp_id_0_values.length;__gsharp_id_2_i++)
+for(int __gsharp_id_2_i = 0;__gsharp_id_2_i<__gsharp_array_ref(__gsharp_id_0_values, ""G#: a null array is read at ZeroInitKernels.cs(266,29)"").length;__gsharp_id_2_i++)
 {
-__gsharp_id_1_total+=__gsharp_id_0_values[__gsharp_id_2_i];
+__gsharp_id_1_total+=__gsharp_array_ref(__gsharp_id_0_values, ""G#: a null array is read at ZeroInitKernels.cs(268,22)"")[__gsharp_id_2_i];
 }
 return __gsharp_id_1_total;
 }
@@ -3192,7 +3192,7 @@ int __gsharp_id_3_a[4]={ 11*(__gsharp_id_2_it+1), 0, 0, 0 };
 GSharpArray<int> __gsharp_id_4_b = __gsharp_id_3_a;
 GSharpArray<int> __gsharp_id_5_inner = __gsharp_id_1_seed;
 __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__ZeroInitKernels__KeepIn(__gsharp_id_3_a,&__gsharp_id_5_inner);
-__gsharp_id_0_output[__gsharp_id_2_it]=__gsharp_id_4_b[0]+__gsharp_id_5_inner[0];
+__gsharp_id_0_output[__gsharp_id_2_it]=__gsharp_array_ref(__gsharp_id_4_b, ""G#: a null array is read at ZeroInitKernels.cs(344,26)"")[0]+__gsharp_array_ref(__gsharp_id_5_inner, ""G#: a null array is read at ZeroInitKernels.cs(344,33)"")[0];
 }
 __gsharp_state=-1;
 return;

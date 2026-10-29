@@ -9,7 +9,7 @@ internal static class GSharpSharedCpuDeviceCode
 public const string Source = @"inline int __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__GridStrideLoopKernels__CountedLength(GSharpArray<int> __gsharp_id_0_calls, int __gsharp_id_1_count);
 
 inline int __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__GridStrideLoopKernels__CountedLength(GSharpArray<int> __gsharp_id_0_calls, int __gsharp_id_1_count){
-__gsharp_atomicAdd(&__gsharp_id_0_calls[0],1);
+__gsharp_atomicAdd(&__gsharp_array_ref(__gsharp_id_0_calls, ""G#: a null array is read at GridStrideLoopKernels.cs(52,29)"")[0],1);
 return __gsharp_id_1_count;
 }
 

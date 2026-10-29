@@ -63,7 +63,7 @@ internal static class GSharpSharedCudaDeviceCode
 public const string Source = @"inline __device__ int __gsharp_fn_Kassyi__GSharp__Tests__Shared__Runtime__StackLinqRangeKernels__CountedThree(GSharpArray<int> __gsharp_id_0_counter);
 
 inline __device__ int __gsharp_fn_Kassyi__GSharp__Tests__Shared__Runtime__StackLinqRangeKernels__CountedThree(GSharpArray<int> __gsharp_id_0_counter){
-__gsharp_id_0_counter[0]=__gsharp_id_0_counter[0]+1;
+__gsharp_array_ref(__gsharp_id_0_counter, ""G#: a null array is read at StackLinqRangeKernels.cs(98,9)"")[0]=__gsharp_array_ref(__gsharp_id_0_counter, ""G#: a null array is read at StackLinqRangeKernels.cs(98,22)"")[0]+1;
 return 3;
 }
 

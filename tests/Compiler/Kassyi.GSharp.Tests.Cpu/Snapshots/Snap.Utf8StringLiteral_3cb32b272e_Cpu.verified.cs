@@ -1,6 +1,6 @@
 ﻿extern "C" __declspec(dllexport) void __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__StringsAndAttributesTarget__Utf8StringLiteral(GSharpArray<unsigned char> __gsharp_id_0_output){
 GSharpArray<unsigned char> __gsharp_id_1_utf8 = "GPU"u8;
-__gsharp_id_0_output[0]=__gsharp_id_1_utf8[0];
+__gsharp_array_ref(__gsharp_id_0_output, "G#: a null array is read at StringsAndAttributesTests.cs(23,9)")[0]=__gsharp_id_1_utf8[0];
 }
 extern "C" __declspec(dllexport) void __gsharp_launch_Kassyi__GSharp__Tests__Shared__Syntax__StringsAndAttributesTarget__Utf8StringLiteral(uint32_t __gsharp_grid_dim_x, uint32_t __gsharp_grid_dim_y, uint32_t __gsharp_grid_dim_z, uint32_t __gsharp_block_dim_x, uint32_t __gsharp_block_dim_y, uint32_t __gsharp_block_dim_z, uint32_t __gsharp_shared_mem_bytes, GSharpArray<unsigned char> __gsharp_id_0_output)
 {

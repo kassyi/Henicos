@@ -151,6 +151,7 @@ int bias_size = (bias?.Length ?? 0) * sizeof(global::System.Single);
 IntPtr* proxy_bias = stackalloc IntPtr[2];
 proxy_bias[0] = IntPtr.Zero;
 ((int*)(proxy_bias + 1))[0] = (bias?.Length ?? 0);
+((int*)(proxy_bias + 1))[1] = bias is null ? global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy.NullReadsAsEmpty : 0;
 if (bias_size > 0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_bias, (IntPtr)bias_size, hStream));
@@ -220,6 +221,7 @@ kernelParams[0] = proxy_x;
 IntPtr* proxy_bias = stackalloc IntPtr[2];
 proxy_bias[0] = bias;
 ((int*)(proxy_bias + 1))[0] = 0; // Length is unknown for raw IntPtr
+((int*)(proxy_bias + 1))[1] = bias == IntPtr.Zero ? global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy.NullReadsAsEmpty : 0;
 kernelParams[1] = proxy_bias;
 CudaException.ThrowIfError(CudaDriverApi.cuLaunchKernel(
 hfunc,
@@ -296,6 +298,7 @@ int bias_size = (bias?.Length ?? 0) * sizeof(global::System.Single);
 IntPtr* proxy_bias = stackalloc IntPtr[2];
 proxy_bias[0] = IntPtr.Zero;
 ((int*)(proxy_bias + 1))[0] = (bias?.Length ?? 0);
+((int*)(proxy_bias + 1))[1] = bias is null ? global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy.NullReadsAsEmpty : 0;
 if (bias_size > 0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_bias, (IntPtr)bias_size, hStream));
@@ -365,6 +368,7 @@ kernelParams[0] = proxy_x;
 IntPtr* proxy_bias = stackalloc IntPtr[2];
 proxy_bias[0] = bias;
 ((int*)(proxy_bias + 1))[0] = 0; // Length is unknown for raw IntPtr
+((int*)(proxy_bias + 1))[1] = bias == IntPtr.Zero ? global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy.NullReadsAsEmpty : 0;
 kernelParams[1] = proxy_bias;
 CudaException.ThrowIfError(CudaDriverApi.cuLaunchKernel(
 hfunc,
@@ -443,6 +447,7 @@ int bias_size = (bias?.Length ?? 0) * sizeof(global::System.Single);
 IntPtr* proxy_bias = stackalloc IntPtr[2];
 proxy_bias[0] = IntPtr.Zero;
 ((int*)(proxy_bias + 1))[0] = (bias?.Length ?? 0);
+((int*)(proxy_bias + 1))[1] = bias is null ? global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy.NullReadsAsEmpty : 0;
 if (bias_size > 0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_bias, (IntPtr)bias_size, hStream));
@@ -512,6 +517,7 @@ kernelParams[0] = proxy_o;
 IntPtr* proxy_bias = stackalloc IntPtr[2];
 proxy_bias[0] = bias;
 ((int*)(proxy_bias + 1))[0] = 0; // Length is unknown for raw IntPtr
+((int*)(proxy_bias + 1))[1] = bias == IntPtr.Zero ? global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy.NullReadsAsEmpty : 0;
 kernelParams[1] = proxy_bias;
 CudaException.ThrowIfError(CudaDriverApi.cuLaunchKernel(
 hfunc,
@@ -578,6 +584,7 @@ int bias_size = (bias?.Length ?? 0) * sizeof(global::System.Single);
 IntPtr* proxy_bias = stackalloc IntPtr[2];
 proxy_bias[0] = IntPtr.Zero;
 ((int*)(proxy_bias + 1))[0] = (bias?.Length ?? 0);
+((int*)(proxy_bias + 1))[1] = bias is null ? global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy.NullReadsAsEmpty : 0;
 if (bias_size > 0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_bias, (IntPtr)bias_size, hStream));
@@ -654,6 +661,7 @@ void** kernelParams = stackalloc void*[2];
 IntPtr* proxy_bias = stackalloc IntPtr[2];
 proxy_bias[0] = bias;
 ((int*)(proxy_bias + 1))[0] = 0; // Length is unknown for raw IntPtr
+((int*)(proxy_bias + 1))[1] = bias == IntPtr.Zero ? global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy.NullReadsAsEmpty : 0;
 kernelParams[0] = proxy_bias;
 // Marshal device array: o
 IntPtr* proxy_o = stackalloc IntPtr[2];
@@ -725,6 +733,7 @@ int bias_size = (bias?.Length ?? 0) * sizeof(global::System.Single);
 IntPtr* proxy_bias = stackalloc IntPtr[2];
 proxy_bias[0] = IntPtr.Zero;
 ((int*)(proxy_bias + 1))[0] = (bias?.Length ?? 0);
+((int*)(proxy_bias + 1))[1] = bias is null ? global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy.NullReadsAsEmpty : 0;
 if (bias_size > 0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_bias, (IntPtr)bias_size, hStream));
@@ -805,6 +814,7 @@ void** kernelParams = stackalloc void*[2];
 IntPtr* proxy_bias = stackalloc IntPtr[2];
 proxy_bias[0] = bias;
 ((int*)(proxy_bias + 1))[0] = 0; // Length is unknown for raw IntPtr
+((int*)(proxy_bias + 1))[1] = bias == IntPtr.Zero ? global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy.NullReadsAsEmpty : 0;
 kernelParams[0] = proxy_bias;
 // Marshal device array: o
 IntPtr* proxy_o = stackalloc IntPtr[2];

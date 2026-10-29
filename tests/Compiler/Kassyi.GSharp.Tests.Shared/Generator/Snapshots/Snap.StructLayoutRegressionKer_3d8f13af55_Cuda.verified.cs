@@ -317,6 +317,10 @@ handle.Free();
 }
 }
 }
+else
+{
+native.Data.Data = global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy.EmptyArrayData;
+}
 native.Data.Length = host.Data.Length;
 }
 }
@@ -389,6 +393,10 @@ finally
 handle.Free();
 }
 }
+}
+else
+{
+native.Elems.Data = global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy.EmptyArrayData;
 }
 native.Elems.Length = host.Elems.Length;
 }
@@ -463,6 +471,10 @@ handle.Free();
 }
 }
 }
+else
+{
+native.Items.Data = global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy.EmptyArrayData;
+}
 native.Items.Length = host.Items.Length;
 }
 }
@@ -530,6 +542,10 @@ handle.Free();
 }
 }
 }
+else
+{
+native.A.Data = global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy.EmptyArrayData;
+}
 native.A.Length = host.A.Length;
 }
 }
@@ -562,6 +578,10 @@ finally
 handle.Free();
 }
 }
+}
+else
+{
+native.B.Data = global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy.EmptyArrayData;
 }
 native.B.Length = host.B.Length;
 }
@@ -846,6 +866,10 @@ finally
 handle.Free();
 }
 }
+}
+else
+{
+native.Data.Data = global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy.EmptyArrayData;
 }
 native.Data.Length = host.Data.Length;
 }
@@ -1497,8 +1521,8 @@ static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Core__LayoutRe
 #endif
 extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Core__StructLayoutRegressionKernels__BagByValKernel(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Core__LayoutReproBag __gsharp_id_0_b, GSharpArray<int> __gsharp_id_1_o){
 __gsharp_id_1_o[0]=__gsharp_id_0_b.__gsharp_mb_N;
-__gsharp_id_1_o[1]=__gsharp_id_0_b.__gsharp_mb_Data.length;
-__gsharp_id_1_o[2]=__gsharp_id_0_b.__gsharp_mb_Data[1];
+__gsharp_id_1_o[1]=__gsharp_array_ref(__gsharp_id_0_b.__gsharp_mb_Data, ""G#: a null array is read at StructLayoutRegressionKernels.cs(201,16)"").length;
+__gsharp_id_1_o[2]=__gsharp_array_ref(__gsharp_id_0_b.__gsharp_mb_Data, ""G#: a null array is read at StructLayoutRegressionKernels.cs(202,16)"")[1];
 }
 ";
 public static readonly string BagByValKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +BagByValKernel_Source;
@@ -1630,9 +1654,9 @@ static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Core__LayoutRe
 #endif
 extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Core__StructLayoutRegressionKernels__BagByRefKernel(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Core__LayoutReproBag* __gsharp_id_0_b, GSharpArray<int> __gsharp_id_1_o){
 __gsharp_id_1_o[0]=(*__gsharp_id_0_b).__gsharp_mb_N;
-__gsharp_id_1_o[1]=(*__gsharp_id_0_b).__gsharp_mb_Data.length;
-__gsharp_id_1_o[2]=(*__gsharp_id_0_b).__gsharp_mb_Data[1];
-(*__gsharp_id_0_b).__gsharp_mb_Data[1]=99;
+__gsharp_id_1_o[1]=__gsharp_array_ref((*__gsharp_id_0_b).__gsharp_mb_Data, ""G#: a null array is read at StructLayoutRegressionKernels.cs(210,16)"").length;
+__gsharp_id_1_o[2]=__gsharp_array_ref((*__gsharp_id_0_b).__gsharp_mb_Data, ""G#: a null array is read at StructLayoutRegressionKernels.cs(211,16)"")[1];
+__gsharp_array_ref((*__gsharp_id_0_b).__gsharp_mb_Data, ""G#: a null array is read at StructLayoutRegressionKernels.cs(212,9)"")[1]=99;
 (*__gsharp_id_0_b).__gsharp_mb_N=7;
 }
 ";
@@ -1775,7 +1799,7 @@ static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Core__LayoutRe
 #endif
 extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Core__StructLayoutRegressionKernels__BagLengthKernel(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Core__LayoutReproBag __gsharp_id_0_b, GSharpArray<int> __gsharp_id_1_o){
 __gsharp_id_1_o[0]=__gsharp_id_0_b.__gsharp_mb_N;
-__gsharp_id_1_o[1]=__gsharp_id_0_b.__gsharp_mb_Data.length;
+__gsharp_id_1_o[1]=((__gsharp_id_0_b.__gsharp_mb_Data.data == nullptr)?(-1):__gsharp_array_ref(__gsharp_id_0_b.__gsharp_mb_Data, ""G#: a null array is read at StructLayoutRegressionKernels.cs(221,38)"").length);
 }
 ";
 public static readonly string BagLengthKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +BagLengthKernel_Source;
@@ -1919,8 +1943,8 @@ static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Core__LayoutRe
 static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Core__LayoutReproElemHolder,__gsharp_mb_Elems)==8,""Kassyi.GSharp.Tests.Shared.Core.LayoutReproElemHolder.Elems: offset"");
 #endif
 extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Core__StructLayoutRegressionKernels__ElemWriteKernel(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Core__LayoutReproElemHolder __gsharp_id_0_h){
-__gsharp_id_0_h.__gsharp_mb_Elems[0].__gsharp_mb_Tag=9;
-__gsharp_id_0_h.__gsharp_mb_Elems[0].__gsharp_mb_Items[0]=5;
+__gsharp_array_ref(__gsharp_id_0_h.__gsharp_mb_Elems, ""G#: a null array is read at StructLayoutRegressionKernels.cs(229,9)"")[0].__gsharp_mb_Tag=9;
+__gsharp_array_ref(__gsharp_array_ref(__gsharp_id_0_h.__gsharp_mb_Elems, ""G#: a null array is read at StructLayoutRegressionKernels.cs(230,9)"")[0].__gsharp_mb_Items, ""G#: a null array is read at StructLayoutRegressionKernels.cs(230,9)"")[0]=5;
 }
 ";
 public static readonly string ElemWriteKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +ElemWriteKernel_Source;
@@ -2027,8 +2051,8 @@ static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Core__LayoutRe
 #endif
 extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Core__StructLayoutRegressionKernels__ElemHolderArrayKernel(GSharpArray<__gsharp_ty_Kassyi__GSharp__Tests__Shared__Core__LayoutReproElemHolder> __gsharp_id_0_hs){
 __gsharp_id_0_hs[0].__gsharp_mb_N=4;
-__gsharp_id_0_hs[0].__gsharp_mb_Elems[0].__gsharp_mb_Tag=9;
-__gsharp_id_0_hs[0].__gsharp_mb_Elems[0].__gsharp_mb_Items[0]=5;
+__gsharp_array_ref(__gsharp_id_0_hs[0].__gsharp_mb_Elems, ""G#: a null array is read at StructLayoutRegressionKernels.cs(239,9)"")[0].__gsharp_mb_Tag=9;
+__gsharp_array_ref(__gsharp_array_ref(__gsharp_id_0_hs[0].__gsharp_mb_Elems, ""G#: a null array is read at StructLayoutRegressionKernels.cs(240,9)"")[0].__gsharp_mb_Items, ""G#: a null array is read at StructLayoutRegressionKernels.cs(240,9)"")[0]=5;
 }
 ";
 public static readonly string ElemHolderArrayKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +ElemHolderArrayKernel_Source;
@@ -2167,7 +2191,7 @@ static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Core__LayoutRe
 static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Core__LayoutReproBag,__gsharp_mb_Data)==8,""Kassyi.GSharp.Tests.Shared.Core.LayoutReproBag.Data: offset"");
 #endif
 extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Core__StructLayoutRegressionKernels__BagNativeErrorKernel(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Core__LayoutReproBag __gsharp_id_0_b, GSharpArray<int> __gsharp_id_1_o){
-__gsharp_id_1_o[0]=__gsharp_id_0_b.__gsharp_mb_Data[0];
+__gsharp_id_1_o[0]=__gsharp_array_ref(__gsharp_id_0_b.__gsharp_mb_Data, ""G#: a null array is read at StructLayoutRegressionKernels.cs(248,16)"")[0];
 /* reported as an error on the CPU dialect */
 ;
 }
@@ -2300,8 +2324,8 @@ static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Core__LayoutRe
 static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Core__LayoutReproPair,__gsharp_mb_B)==16,""Kassyi.GSharp.Tests.Shared.Core.LayoutReproPair.B: offset"");
 #endif
 extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Core__StructLayoutRegressionKernels__AliasKernel(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Core__LayoutReproPair __gsharp_id_0_p){
-__gsharp_id_0_p.__gsharp_mb_A[0]=1;
-__gsharp_id_0_p.__gsharp_mb_B[1]=__gsharp_id_0_p.__gsharp_mb_A[0]+1;
+__gsharp_array_ref(__gsharp_id_0_p.__gsharp_mb_A, ""G#: a null array is read at StructLayoutRegressionKernels.cs(256,9)"")[0]=1;
+__gsharp_array_ref(__gsharp_id_0_p.__gsharp_mb_B, ""G#: a null array is read at StructLayoutRegressionKernels.cs(257,9)"")[1]=__gsharp_array_ref(__gsharp_id_0_p.__gsharp_mb_A, ""G#: a null array is read at StructLayoutRegressionKernels.cs(257,18)"")[0]+1;
 }
 ";
 public static readonly string AliasKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +AliasKernel_Source;
@@ -2395,7 +2419,7 @@ static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Core__LayoutRe
 #endif
 extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Core__StructLayoutRegressionKernels__BagArrayKernel(GSharpArray<__gsharp_ty_Kassyi__GSharp__Tests__Shared__Core__LayoutReproBag> __gsharp_id_0_b, GSharpArray<int> __gsharp_id_1_o){
 __gsharp_id_1_o[0]=__gsharp_id_0_b[0].__gsharp_mb_N;
-__gsharp_id_1_o[1]=__gsharp_id_0_b[0].__gsharp_mb_Data.length;
+__gsharp_id_1_o[1]=__gsharp_array_ref(__gsharp_id_0_b[0].__gsharp_mb_Data, ""G#: a null array is read at StructLayoutRegressionKernels.cs(265,16)"").length;
 __gsharp_id_1_o[2]=__gsharp_id_0_b[1].__gsharp_mb_N;
 }
 ";
@@ -4530,7 +4554,7 @@ static_assert(alignof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Core__LayoutRep
 static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Core__LayoutReproArrOuter,__gsharp_mb_P)==0,""Kassyi.GSharp.Tests.Shared.Core.LayoutReproArrOuter.P: offset"");
 #endif
 extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Core__StructLayoutRegressionKernels__InlineArrFieldKernel(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Core__LayoutReproArrOuter* __gsharp_id_0_x, GSharpArray<int> __gsharp_id_1_o){
-__gsharp_id_1_o[0]=(*__gsharp_id_0_x).__gsharp_mb_P[1].__gsharp_mb_Data[0];
+__gsharp_id_1_o[0]=__gsharp_array_ref((*__gsharp_id_0_x).__gsharp_mb_P[1].__gsharp_mb_Data, ""G#: a null array is read at StructLayoutRegressionKernels.cs(389,16)"")[0];
 }
 ";
 public static readonly string InlineArrFieldKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +InlineArrFieldKernel_Source;

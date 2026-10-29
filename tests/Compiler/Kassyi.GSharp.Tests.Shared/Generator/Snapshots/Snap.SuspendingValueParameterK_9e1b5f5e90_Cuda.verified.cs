@@ -229,9 +229,9 @@ return __gsharp_id_0_v.__gsharp_mb_X;
 }
 
 inline __device__ int __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__SuspendingValueParameterKernels__MutateArrayElementThenSync(GSharpArray<int> __gsharp_id_0_values, int __gsharp_id_1_index){
-__gsharp_id_0_values[__gsharp_id_1_index]=__gsharp_id_0_values[__gsharp_id_1_index]+1000;
+__gsharp_array_ref(__gsharp_id_0_values, ""G#: a null array is read at SuspendingValueParameterKernels.cs(102,9)"")[__gsharp_id_1_index]=__gsharp_array_ref(__gsharp_id_0_values, ""G#: a null array is read at SuspendingValueParameterKernels.cs(102,25)"")[__gsharp_id_1_index]+1000;
 __syncthreads();
-return __gsharp_id_0_values[__gsharp_id_1_index];
+return __gsharp_array_ref(__gsharp_id_0_values, ""G#: a null array is read at SuspendingValueParameterKernels.cs(104,16)"")[__gsharp_id_1_index];
 }
 
 #ifndef __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__SuspendVector2__

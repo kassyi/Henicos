@@ -161,7 +161,8 @@ internal static class StatementTranspilers
 
             CppNameResolver.AppendDeclaredName(node, node.Identifier, ref context);
             context.Emitter.Writer.Append(" : ");
-            context.Visitor.Visit(node.Expression);
+            // foreach over a null array throws NullReferenceException at the loop entry in C# (#706)
+            ArrayNullCheck.AppendReceiver(node.Expression, ref context);
         }
 
         context.Emitter.Writer.AppendLine();

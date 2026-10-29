@@ -63,9 +63,9 @@ internal static class GSharpSharedCudaDeviceCode
 public const string Source = @"inline __device__ int __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__ForUnrollBarrierKernels__Neighbor(GSharpArray<int> __gsharp_id_0_buffer, int __gsharp_id_1_tid, int __gsharp_id_2_value);
 
 inline __device__ int __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__ForUnrollBarrierKernels__Neighbor(GSharpArray<int> __gsharp_id_0_buffer, int __gsharp_id_1_tid, int __gsharp_id_2_value){
-__gsharp_id_0_buffer[__gsharp_id_1_tid]=__gsharp_id_2_value;
+__gsharp_array_ref(__gsharp_id_0_buffer, ""G#: a null array is read at ForUnrollBarrierKernels.cs(20,9)"")[__gsharp_id_1_tid]=__gsharp_id_2_value;
 __syncthreads();
-int __gsharp_id_3_r = __gsharp_id_0_buffer[(__gsharp_id_1_tid+1)%4];
+int __gsharp_id_3_r = __gsharp_array_ref(__gsharp_id_0_buffer, ""G#: a null array is read at ForUnrollBarrierKernels.cs(22,17)"")[(__gsharp_id_1_tid+1)%4];
 __syncthreads();
 return __gsharp_id_3_r;
 }
@@ -998,7 +998,7 @@ for(unsigned int __gsharp_gsl_0 = __gsharp_grid_stride_start(); __gsharp_gsl_0 <
 {
 int __gsharp_id_6_i = (int)__gsharp_gsl_0;
 {
-__gsharp_id_1_scratch[__gsharp_id_6_i]=__gsharp_id_5_src[(__gsharp_id_6_i+1)%__gsharp_id_3_n]+1;
+__gsharp_id_1_scratch[__gsharp_id_6_i]=__gsharp_array_ref(__gsharp_id_5_src, ""G#: a null array is read at ForUnrollBarrierKernels.cs(115,30)"")[(__gsharp_id_6_i+1)%__gsharp_id_3_n]+1;
 }
 }
 }
@@ -1025,7 +1025,7 @@ for(unsigned int __gsharp_gsl_2 = __gsharp_grid_stride_start(); __gsharp_gsl_2 <
 {
 int __gsharp_id_6_i = (int)__gsharp_gsl_2;
 {
-__gsharp_id_1_scratch[__gsharp_id_6_i]=__gsharp_id_5_src[(__gsharp_id_6_i+1)%__gsharp_id_3_n]+1;
+__gsharp_id_1_scratch[__gsharp_id_6_i]=__gsharp_array_ref(__gsharp_id_5_src, ""G#: a null array is read at ForUnrollBarrierKernels.cs(115,30)"")[(__gsharp_id_6_i+1)%__gsharp_id_3_n]+1;
 }
 }
 }
@@ -1052,7 +1052,7 @@ for(unsigned int __gsharp_gsl_4 = __gsharp_grid_stride_start(); __gsharp_gsl_4 <
 {
 int __gsharp_id_6_i = (int)__gsharp_gsl_4;
 {
-__gsharp_id_1_scratch[__gsharp_id_6_i]=__gsharp_id_5_src[(__gsharp_id_6_i+1)%__gsharp_id_3_n]+1;
+__gsharp_id_1_scratch[__gsharp_id_6_i]=__gsharp_array_ref(__gsharp_id_5_src, ""G#: a null array is read at ForUnrollBarrierKernels.cs(115,30)"")[(__gsharp_id_6_i+1)%__gsharp_id_3_n]+1;
 }
 }
 }

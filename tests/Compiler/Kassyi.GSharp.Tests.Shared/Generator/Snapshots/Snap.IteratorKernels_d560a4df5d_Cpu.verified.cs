@@ -33,7 +33,7 @@ inline int __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__IteratorKernels__R
 
 inline int __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__IteratorKernels__RecordEval(int __gsharp_id_0_value, int __gsharp_id_1_slot, int* __gsharp_id_2_stepCounter, GSharpArray<int> __gsharp_id_3_evalLog){
 (*__gsharp_id_2_stepCounter)+=1;
-__gsharp_id_3_evalLog[__gsharp_id_1_slot]=(*__gsharp_id_2_stepCounter);
+__gsharp_array_ref(__gsharp_id_3_evalLog, ""G#: a null array is read at IteratorKernels.cs(284,9)"")[__gsharp_id_1_slot]=(*__gsharp_id_2_stepCounter);
 return __gsharp_id_0_value;
 }
 
@@ -346,7 +346,7 @@ int __gsharp_id_3_sum = 0;
 {
 GSharpArray<int> __gsharp_il_1_0_data = __gsharp_id_0_data;
 int __gsharp_il_1_1_length = __gsharp_id_1_length;
-for(auto __gsharp_il_1_2_x : __gsharp_il_1_0_data)
+for(auto __gsharp_il_1_2_x : __gsharp_array_ref(__gsharp_il_1_0_data, ""G#: a null array is read at IteratorKernels.cs(63,27)""))
 {
 if(__gsharp_il_1_2_x%2==0)
 {
@@ -1177,7 +1177,7 @@ int __gsharp_id_3_sum = 0;
 {
 GSharpArray<int> __gsharp_il_1_0_data = __gsharp_id_0_data;
 int __gsharp_il_1_1_limit = __gsharp_id_1_limit;
-for(auto __gsharp_il_1_2_x : __gsharp_il_1_0_data)
+for(auto __gsharp_il_1_2_x : __gsharp_array_ref(__gsharp_il_1_0_data, ""G#: a null array is read at IteratorKernels.cs(98,27)""))
 {
 if(__gsharp_il_1_2_x>__gsharp_il_1_1_limit)
 {
@@ -3091,7 +3091,7 @@ static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__IterDi
 #ifndef __GSHARP_DISPOSE___gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__IterDisposable__
 #define __GSHARP_DISPOSE___gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__IterDisposable__
 __device__ inline void __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__IterDisposable::__gsharp_dispose() {
-__gsharp_mb_Log[__gsharp_mb_Slot]+=__gsharp_mb_Marker;
+__gsharp_array_ref(__gsharp_mb_Log, ""G#: a null array is read at IteratorKernels.cs(39,9)"")[__gsharp_mb_Slot]+=__gsharp_mb_Marker;
 }
 #endif
 struct __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__IteratorKernels__UsingAndSpanBreakKernel {

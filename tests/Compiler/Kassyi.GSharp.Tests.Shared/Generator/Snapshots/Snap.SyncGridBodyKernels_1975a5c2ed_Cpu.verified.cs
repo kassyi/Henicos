@@ -37,7 +37,7 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-__gsharp_id_0_c[__gsharp_id_1_tid]=__gsharp_id_1_tid;
+__gsharp_array_ref(__gsharp_id_0_c, ""G#: a null array is read at SyncGridBodyKernels.cs(244,9)"")[__gsharp_id_1_tid]=__gsharp_id_1_tid;
 __gsharp_yielded_for_block_barrier=true;
 __gsharp_state=1;
 return false;
@@ -47,7 +47,7 @@ __gsharp_switch_1_state_1:
 {
 __gsharp_ctx->__gsharp_id_2_lane=__gsharp_id_1_tid%blockDim.x;
 __gsharp_ctx->__gsharp_id_3_next=__gsharp_id_1_tid-__gsharp_ctx->__gsharp_id_2_lane+(__gsharp_ctx->__gsharp_id_2_lane+1)%blockDim.x;
-__gsharp_ctx->__gsharp_id_4_value=__gsharp_id_0_c[__gsharp_ctx->__gsharp_id_3_next];
+__gsharp_ctx->__gsharp_id_4_value=__gsharp_array_ref(__gsharp_id_0_c, ""G#: a null array is read at SyncGridBodyKernels.cs(248,21)"")[__gsharp_ctx->__gsharp_id_3_next];
 __gsharp_yielded_for_block_barrier=true;
 __gsharp_state=2;
 return false;
@@ -55,7 +55,7 @@ return false;
 case 2:
 __gsharp_switch_1_state_2:
 {
-__gsharp_id_0_c[__gsharp_id_1_tid]=__gsharp_ctx->__gsharp_id_4_value;
+__gsharp_array_ref(__gsharp_id_0_c, ""G#: a null array is read at SyncGridBodyKernels.cs(250,9)"")[__gsharp_id_1_tid]=__gsharp_ctx->__gsharp_id_4_value;
 __gsharp_state = 0;return true;
 }
 }
@@ -78,7 +78,7 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-__gsharp_id_0_a[__gsharp_id_3_tid]=__gsharp_id_3_tid+1;
+__gsharp_array_ref(__gsharp_id_0_a, ""G#: a null array is read at SyncGridBodyKernels.cs(234,13)"")[__gsharp_id_3_tid]=__gsharp_id_3_tid+1;
 __gsharp_yielded_for_grid_sync=true;
 __gsharp_state=1;
 return false;
@@ -103,7 +103,7 @@ return false;
 case 3:
 __gsharp_switch_1_state_3:
 {
-__gsharp_id_1_b[__gsharp_id_3_tid]=__gsharp_id_0_a[(__gsharp_id_3_tid+1)%__gsharp_id_4_n];
+__gsharp_array_ref(__gsharp_id_1_b, ""G#: a null array is read at SyncGridBodyKernels.cs(236,13)"")[__gsharp_id_3_tid]=__gsharp_array_ref(__gsharp_id_0_a, ""G#: a null array is read at SyncGridBodyKernels.cs(236,22)"")[(__gsharp_id_3_tid+1)%__gsharp_id_4_n];
 __gsharp_state = 0;return true;
 }
 }
@@ -114,12 +114,12 @@ return false;
 }
 
 inline int __gsharp_fn_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__ReadPlusOne(GSharpArray<int> __gsharp_id_0_a, int __gsharp_id_1_i, int* __gsharp_id_2_value){
-(*__gsharp_id_2_value)=__gsharp_id_0_a[__gsharp_id_1_i]+1;
+(*__gsharp_id_2_value)=__gsharp_array_ref(__gsharp_id_0_a, ""G#: a null array is read at SyncGridBodyKernels.cs(307,17)"")[__gsharp_id_1_i]+1;
 return (*__gsharp_id_2_value);
 }
 
 inline bool __gsharp_fn_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__TryDouble(GSharpArray<int> __gsharp_id_0_a, int __gsharp_id_1_i, int* __gsharp_id_2_value){
-(*__gsharp_id_2_value)=__gsharp_id_0_a[__gsharp_id_1_i]*2;
+(*__gsharp_id_2_value)=__gsharp_array_ref(__gsharp_id_0_a, ""G#: a null array is read at SyncGridBodyKernels.cs(314,17)"")[__gsharp_id_1_i]*2;
 return (*__gsharp_id_2_value)>=0;
 }
 
@@ -135,7 +135,7 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-__gsharp_id_0_a[__gsharp_id_2_tid]=__gsharp_id_2_tid+1;
+__gsharp_array_ref(__gsharp_id_0_a, ""G#: a null array is read at SyncGridBodyKernels.cs(461,9)"")[__gsharp_id_2_tid]=__gsharp_id_2_tid+1;
 __gsharp_yielded_for_grid_sync=true;
 __gsharp_state=1;
 return false;
@@ -143,7 +143,7 @@ return false;
 case 1:
 __gsharp_switch_1_state_1:
 {
-__gsharp_id_1_b[__gsharp_id_2_tid]=__gsharp_id_0_a[(__gsharp_id_2_tid+1)%__gsharp_id_3_n];
+__gsharp_array_ref(__gsharp_id_1_b, ""G#: a null array is read at SyncGridBodyKernels.cs(463,9)"")[__gsharp_id_2_tid]=__gsharp_array_ref(__gsharp_id_0_a, ""G#: a null array is read at SyncGridBodyKernels.cs(463,18)"")[(__gsharp_id_2_tid+1)%__gsharp_id_3_n];
 __gsharp_state = 0;return true;
 }
 }

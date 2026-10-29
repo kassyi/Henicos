@@ -93,38 +93,38 @@ inline __device__ void __gsharp_fn_Kassyi__GSharp__Tests__Shared__Transpiler__Sy
 
 inline __device__ void __gsharp_fn_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__Step(GSharpArray<int> __gsharp_id_0_a, GSharpArray<int> __gsharp_id_1_b, GSharpArray<int> __gsharp_id_2_c, int __gsharp_id_3_tid, int __gsharp_id_4_n){
 {
-__gsharp_id_0_a[__gsharp_id_3_tid]=__gsharp_id_3_tid+1;
+__gsharp_array_ref(__gsharp_id_0_a, ""G#: a null array is read at SyncGridBodyKernels.cs(234,13)"")[__gsharp_id_3_tid]=__gsharp_id_3_tid+1;
 cg::this_grid().sync();
 __gsharp_fn_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__ShiftInBlock(__gsharp_id_2_c,__gsharp_id_3_tid);
 cg::this_grid().sync();
-__gsharp_id_1_b[__gsharp_id_3_tid]=__gsharp_id_0_a[(__gsharp_id_3_tid+1)%__gsharp_id_4_n];
+__gsharp_array_ref(__gsharp_id_1_b, ""G#: a null array is read at SyncGridBodyKernels.cs(236,13)"")[__gsharp_id_3_tid]=__gsharp_array_ref(__gsharp_id_0_a, ""G#: a null array is read at SyncGridBodyKernels.cs(236,22)"")[(__gsharp_id_3_tid+1)%__gsharp_id_4_n];
 }
 }
 
 inline __device__ void __gsharp_fn_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__ShiftInBlock(GSharpArray<int> __gsharp_id_0_c, int __gsharp_id_1_tid){
-__gsharp_id_0_c[__gsharp_id_1_tid]=__gsharp_id_1_tid;
+__gsharp_array_ref(__gsharp_id_0_c, ""G#: a null array is read at SyncGridBodyKernels.cs(244,9)"")[__gsharp_id_1_tid]=__gsharp_id_1_tid;
 __syncthreads();
 int __gsharp_id_2_lane = __gsharp_id_1_tid%blockDim.x;
 int __gsharp_id_3_next = __gsharp_id_1_tid-__gsharp_id_2_lane+(__gsharp_id_2_lane+1)%blockDim.x;
-int __gsharp_id_4_value = __gsharp_id_0_c[__gsharp_id_3_next];
+int __gsharp_id_4_value = __gsharp_array_ref(__gsharp_id_0_c, ""G#: a null array is read at SyncGridBodyKernels.cs(248,21)"")[__gsharp_id_3_next];
 __syncthreads();
-__gsharp_id_0_c[__gsharp_id_1_tid]=__gsharp_id_4_value;
+__gsharp_array_ref(__gsharp_id_0_c, ""G#: a null array is read at SyncGridBodyKernels.cs(250,9)"")[__gsharp_id_1_tid]=__gsharp_id_4_value;
 }
 
 inline __device__ int __gsharp_fn_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__ReadPlusOne(GSharpArray<int> __gsharp_id_0_a, int __gsharp_id_1_i, int* __gsharp_id_2_value){
-(*__gsharp_id_2_value)=__gsharp_id_0_a[__gsharp_id_1_i]+1;
+(*__gsharp_id_2_value)=__gsharp_array_ref(__gsharp_id_0_a, ""G#: a null array is read at SyncGridBodyKernels.cs(307,17)"")[__gsharp_id_1_i]+1;
 return (*__gsharp_id_2_value);
 }
 
 inline __device__ bool __gsharp_fn_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__TryDouble(GSharpArray<int> __gsharp_id_0_a, int __gsharp_id_1_i, int* __gsharp_id_2_value){
-(*__gsharp_id_2_value)=__gsharp_id_0_a[__gsharp_id_1_i]*2;
+(*__gsharp_id_2_value)=__gsharp_array_ref(__gsharp_id_0_a, ""G#: a null array is read at SyncGridBodyKernels.cs(314,17)"")[__gsharp_id_1_i]*2;
 return (*__gsharp_id_2_value)>=0;
 }
 
 inline __device__ void __gsharp_fn_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__WriteSyncRead(GSharpArray<int> __gsharp_id_0_a, GSharpArray<int> __gsharp_id_1_b, int __gsharp_id_2_tid, int __gsharp_id_3_n){
-__gsharp_id_0_a[__gsharp_id_2_tid]=__gsharp_id_2_tid+1;
+__gsharp_array_ref(__gsharp_id_0_a, ""G#: a null array is read at SyncGridBodyKernels.cs(461,9)"")[__gsharp_id_2_tid]=__gsharp_id_2_tid+1;
 cg::this_grid().sync();
-__gsharp_id_1_b[__gsharp_id_2_tid]=__gsharp_id_0_a[(__gsharp_id_2_tid+1)%__gsharp_id_3_n];
+__gsharp_array_ref(__gsharp_id_1_b, ""G#: a null array is read at SyncGridBodyKernels.cs(463,9)"")[__gsharp_id_2_tid]=__gsharp_array_ref(__gsharp_id_0_a, ""G#: a null array is read at SyncGridBodyKernels.cs(463,18)"")[(__gsharp_id_2_tid+1)%__gsharp_id_3_n];
 }
 
 inline __device__ void __gsharp_fn_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__CallWriteSyncRead(GSharpArray<int> __gsharp_id_0_a, GSharpArray<int> __gsharp_id_1_b, int __gsharp_id_2_tid, int __gsharp_id_3_n){

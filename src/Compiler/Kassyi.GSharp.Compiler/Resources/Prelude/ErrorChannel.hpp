@@ -5,7 +5,8 @@ enum class GSharpErrorCode : int32_t {
     InvalidOperation = 2,
     IndexOutOfRange = 3,
     ArgumentOutOfRange = 4,
-    Argument = 5
+    Argument = 5,
+    NullReference = 6
 };
 
 struct GSharpErrorSlot {
@@ -115,6 +116,22 @@ struct __gsharp_step_abort {};
 {
     __gsharp_trap(code, message);
     throw __gsharp_step_abort{};
+}
+
+// GSharpArray::flags bit 0: a null optional kernel argument, which reads as an empty array (#838)
+#define __gsharp_array_null_reads_empty 1
+// The array that an array-typed C# expression reads (Length, an element, foreach): a null array ends the step with
+// NullReferenceException, as C# throws (#706), and a null optional kernel argument reads as an empty array. The step
+// ends (__gsharp_trap_abort) because the read would dereference nullptr next. An rvalue is returned by value, so that a
+// range-based for over it does not keep a reference to a destroyed temporary
+template <typename A>
+inline A __gsharp_array_ref(A&& array, const char* message)
+{
+    if (array.data == nullptr && (array.flags & __gsharp_array_null_reads_empty) == 0)
+    {
+        __gsharp_trap_abort(GSharpErrorCode::NullReference, message);
+    }
+    return static_cast<A&&>(array);
 }
 
 // Marks the comparison of a sort that the thread is running, while it lives (Sort.hpp)

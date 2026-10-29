@@ -202,6 +202,7 @@ internal static class KernelLaunchEmitter
                 writer.AppendLine($"IntPtr* proxy_{shape.Name} = stackalloc IntPtr[2];");
                 writer.AppendLine($"proxy_{shape.Name}[0] = {shape.Identifier};");
                 writer.AppendLine($"((int*)(proxy_{shape.Name} + 1))[0] = 0; // Length is unknown for raw IntPtr");
+                WriteNullReadsAsEmptyFlag(writer, shape, $"{shape.Identifier} == IntPtr.Zero");
                 writer.AppendLine($"kernelParams[{paramIndex}] = proxy_{shape.Name};");
             }
             else
@@ -292,6 +293,7 @@ internal static class KernelLaunchEmitter
         writer.AppendLine($"IntPtr* proxy_{shape.Name} = stackalloc IntPtr[2];");
         writer.AppendLine($"proxy_{shape.Name}[0] = IntPtr.Zero;");
         writer.AppendLine($"((int*)(proxy_{shape.Name} + 1))[0] = {lenExpr};");
+        WriteNullReadsAsEmptyFlag(writer, shape, $"{shape.Identifier} is null");
 
         writer.AppendLine($"if ({shape.Name}_size > 0)");
         using (writer.Scope())
@@ -320,6 +322,22 @@ internal static class KernelLaunchEmitter
         writer.AppendLine($"kernelParams[{paramIndex}] = proxy_{shape.Name};");
     }
 
+    // ((int*)(proxy_<name> + 1))[1] = <null test> ? GSharpArrayProxy.NullReadsAsEmpty : 0;   (an optional T[] only)
+    // [WHY] The device reads a null optional array argument as an empty one (#838), also through a local or a device
+    // function, while reading any other null array throws (#706); the flags word of GSharpArray tells them apart. It is
+    // written explicitly because stackalloc is not zeroed under [SkipLocalsInit]. A non-optional array is never null on
+    // the device, so its flags word is never read.
+    private static void WriteNullReadsAsEmptyFlag(SourceWriter writer, in KernelParameterShape shape, string nullTest)
+    {
+        if (!shape.IsNullableReference)
+        {
+            return;
+        }
+
+        writer.AppendLine(
+            $"((int*)(proxy_{shape.Name} + 1))[1] = {nullTest} ? global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy.NullReadsAsEmpty : 0;");
+    }
+
     // [WHY] The host and device layouts of the element differ (GSH0080), so the elements are converted into a shadow
     // array of the device layout, rented from ArrayPool, and the shadow is copied in one transfer.
     private static void WriteConvertedArrayMarshal(SourceWriter writer, in KernelParameterShape shape, int paramIndex)
@@ -333,6 +351,7 @@ internal static class KernelLaunchEmitter
         writer.AppendLine($"IntPtr* proxy_{name} = stackalloc IntPtr[2];");
         writer.AppendLine($"proxy_{name}[0] = IntPtr.Zero;");
         writer.AppendLine($"((int*)(proxy_{name} + 1))[0] = {lenExpr};");
+        WriteNullReadsAsEmptyFlag(writer, shape, $"{shape.Identifier} is null");
 
         writer.AppendLine($"if ({name}_size > 0)");
         using (writer.Scope())

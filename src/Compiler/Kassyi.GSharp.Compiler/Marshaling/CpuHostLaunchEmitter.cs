@@ -685,6 +685,13 @@ internal static class CpuHostLaunchEmitter
     {
         switch (shape)
         {
+            case { IsArray: true, IsNullableReference: true }:
+                // A null optional array reads as an empty one on the device (GSharpArray::flags, #706)
+                writer.Append(
+                    $"new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy {{ Data = (IntPtr)p_{shape.Name}, Length = {shape.LengthExpression}, ");
+                writer.Append(
+                    $"Flags = {shape.Identifier} is null ? global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy.NullReadsAsEmpty : 0 }}");
+                break;
             case { IsArray: true }:
                 writer.Append(
                     $"new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy {{ Data = (IntPtr)p_{shape.Name}, Length = {shape.LengthExpression} }}");

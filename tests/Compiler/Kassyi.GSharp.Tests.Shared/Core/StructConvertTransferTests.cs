@@ -119,7 +119,8 @@ public class StructConvertTransferTests
     }
 
     // The shadow array comes from ArrayPool, so the second launch gets the bytes of the first one back; a null array
-    // field must not leave the freed device pointer of the first launch in it
+    // field must not leave the freed device pointer of the first launch in it: the kernels read -1 for a null field
+    // (reading its Length would throw, as in C#, #706)
     [Fact]
     [Scenario(TestScenario.Boundary)]
     public void ArrayWithArrayFields_SecondLaunchWithNullFields_SeesNoStaleArray()
@@ -132,7 +133,7 @@ public class StructConvertTransferTests
 
         StructConvertTransferKernels.LaunchBagReadKernel([new ConvertBag { N = 5 }, new ConvertBag { N = 6 }], o);
 
-        Assert.Equal([5, 0, 6], o);
+        Assert.Equal([5, -1, 6], o);
     }
 
     // The same through an inline array of elements with array fields inside the converted element
@@ -149,7 +150,7 @@ public class StructConvertTransferTests
         var second = new ConvertBagPairHolder { Tag = 2 };
         StructConvertTransferKernels.LaunchPairHolderReadKernel([second, second], o);
 
-        Assert.Equal([2, 0], o);
+        Assert.Equal([2, -1], o);
     }
 
     // The same for an [Out] array, whose elements are still marshaled because they have array fields
@@ -167,7 +168,7 @@ public class StructConvertTransferTests
         var bags = new[] { new ConvertBag(), new ConvertBag() };
         StructConvertTransferKernels.LaunchOutBagLengthKernel(bags, o, blockDimX: 2);
 
-        Assert.Equal([0, 0], o);
+        Assert.Equal([-1, -1], o);
         Assert.Equal([7, 7], bags.Select(static b => b.N));
     }
 }

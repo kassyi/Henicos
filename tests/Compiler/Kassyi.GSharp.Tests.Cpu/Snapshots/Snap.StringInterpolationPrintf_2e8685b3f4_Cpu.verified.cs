@@ -1,8 +1,8 @@
 ﻿extern "C" __declspec(dllexport) void __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__StringsAndAttributesTarget__StringInterpolationPrintf(GSharpArray<unsigned int> __gsharp_id_0_data){
-unsigned int __gsharp_id_1_reg = __gsharp_id_0_data[0];
+unsigned int __gsharp_id_1_reg = __gsharp_array_ref(__gsharp_id_0_data, "G#: a null array is read at StringsAndAttributesTests.cs(15,20)")[0];
 __gsharp_unsupported("Gpu.InlinePtx is not supported by the StandardCppDialect dialect");
 ;
-__gsharp_id_0_data[0]=__gsharp_id_1_reg;
+__gsharp_array_ref(__gsharp_id_0_data, "G#: a null array is read at StringsAndAttributesTests.cs(17,9)")[0]=__gsharp_id_1_reg;
 }
 extern "C" __declspec(dllexport) void __gsharp_launch_Kassyi__GSharp__Tests__Shared__Syntax__StringsAndAttributesTarget__StringInterpolationPrintf(uint32_t __gsharp_grid_dim_x, uint32_t __gsharp_grid_dim_y, uint32_t __gsharp_grid_dim_z, uint32_t __gsharp_block_dim_x, uint32_t __gsharp_block_dim_y, uint32_t __gsharp_block_dim_z, uint32_t __gsharp_shared_mem_bytes, GSharpArray<unsigned int> __gsharp_id_0_data)
 {

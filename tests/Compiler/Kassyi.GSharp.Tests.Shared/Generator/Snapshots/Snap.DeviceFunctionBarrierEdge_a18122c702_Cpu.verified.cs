@@ -133,7 +133,7 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-__gsharp_id_0_calls[threadIdx.x]+=1;
+__gsharp_array_ref(__gsharp_id_0_calls, ""G#: a null array is read at DeviceFunctionBarrierEdgeCaseKernels.cs(91,9)"")[threadIdx.x]+=1;
 __gsharp_warp_exchange_assign(__gsharp_id_1_value);
 __gsharp_state=1;
 return false;
@@ -236,7 +236,7 @@ case 1:
 __gsharp_switch_1_state_1:
 {
 auto __gsharp_warp_temp_0 = __gsharp_warp_shuffle_read_sync(__gsharp_root,4294967295U,__gsharp_id_1_value,0,32,""DeviceFunctionBarrierEdgeCaseKernels.cs(174,33)"");
-__gsharp_id_0_output[threadIdx.x]=__gsharp_warp_temp_0;
+__gsharp_array_ref(__gsharp_id_0_output, ""G#: a null array is read at DeviceFunctionBarrierEdgeCaseKernels.cs(174,9)"")[threadIdx.x]=__gsharp_warp_temp_0;
 __gsharp_state = 0;return true;
 }
 }
@@ -271,7 +271,7 @@ return false;
 case 1:
 __gsharp_switch_1_state_1:
 {
-__gsharp_id_1_published[__gsharp_ctx->__gsharp_id_2_tid]=__gsharp_ctx->__gsharp_id_3_shared[__gsharp_ctx->__gsharp_id_2_tid];
+__gsharp_array_ref(__gsharp_id_1_published, ""G#: a null array is read at DeviceFunctionBarrierEdgeCaseKernels.cs(198,9)"")[__gsharp_ctx->__gsharp_id_2_tid]=__gsharp_ctx->__gsharp_id_3_shared[__gsharp_ctx->__gsharp_id_2_tid];
 (*__gsharp_id_0_value)+=10;
 __gsharp_state = 0;return true;
 }

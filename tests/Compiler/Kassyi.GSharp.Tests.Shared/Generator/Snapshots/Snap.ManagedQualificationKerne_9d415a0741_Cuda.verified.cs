@@ -99,9 +99,9 @@ inline __device__ int __gsharp_fn_Kassyi__GSharp__Tests__Shared__Core__Qualifica
 __gsharp_ty_Kassyi__GSharp__Tests__Shared__Core__Qualification__QualifyPair __gsharp_id_3_pair = ([&]() {
 __gsharp_ty_Kassyi__GSharp__Tests__Shared__Core__Qualification__QualifyPair __gsharp_tmp{}; __gsharp_tmp.__gsharp_mb_A = __gsharp_id_2_value; __gsharp_tmp.__gsharp_mb_B = __gsharp_fn_Kassyi__GSharp__Tests__Shared__Core__Qualification__QualifyMath__Twice(__gsharp_id_2_value); return __gsharp_tmp; }
 ());
-__gsharp_id_0_buffer[__gsharp_id_1_tid]=__gsharp_id_3_pair.__gsharp_mb_A+__gsharp_id_3_pair.__gsharp_mb_B;
+__gsharp_array_ref(__gsharp_id_0_buffer, ""G#: a null array is read at ManagedQualificationKernels.cs(52,13)"")[__gsharp_id_1_tid]=__gsharp_id_3_pair.__gsharp_mb_A+__gsharp_id_3_pair.__gsharp_mb_B;
 __syncthreads();
-int __gsharp_id_4_next = __gsharp_id_0_buffer[(__gsharp_id_1_tid+1)%4];
+int __gsharp_id_4_next = __gsharp_array_ref(__gsharp_id_0_buffer, ""G#: a null array is read at ManagedQualificationKernels.cs(54,24)"")[(__gsharp_id_1_tid+1)%4];
 __syncthreads();
 return __gsharp_id_4_next;
 }

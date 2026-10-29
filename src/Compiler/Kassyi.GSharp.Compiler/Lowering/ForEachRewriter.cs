@@ -4,7 +4,7 @@ namespace Kassyi.GSharp.Compiler.Lowering;
 /// Lowers <c>foreach</c> statements that contain a phase barrier into <c>for</c> loops (for arrays and spans) prior to
 /// <see cref="LoopRewriter"/>.
 /// </summary>
-public class ForEachRewriter : CSharpSyntaxRewriter
+public class ForEachRewriter(SemanticModel? semanticModel = null) : CSharpSyntaxRewriter
 {
     private int _loopCounter;
 
@@ -56,8 +56,16 @@ public class ForEachRewriter : CSharpSyntaxRewriter
         var expr = ((ExpressionSyntax)Visit(node.Expression)).WithoutTrivia();
         var body = (StatementSyntax)Visit(node.Statement);
 
-        return LowerArrayForEach(node, expr, body, id);
+        return LowerArrayForEach(node, expr, body, id, GetNullCheckPlace(node.Expression));
     }
+
+    // [WHY] foreach over a null array throws NullReferenceException at the loop entry in C# (#706). The lowered source
+    // is a synthesized local the transpiler cannot type, so the decision and the place of the source expression travel
+    // in the data of its ForEachArraySourceAnnotationKind annotation, which ContextHoister keeps.
+    private string? GetNullCheckPlace(ExpressionSyntax source) =>
+        semanticModel != null && ArrayNullCheck.NeedsCheck(source, semanticModel)
+            ? SourcePlace.Format(semanticModel, source)
+            : null;
 
     // {
     //     var __gsharp_foreach_src_<id> = <expr>;
@@ -73,7 +81,8 @@ public class ForEachRewriter : CSharpSyntaxRewriter
         ForEachStatementSyntax node,
         ExpressionSyntax expr,
         StatementSyntax body,
-        int id)
+        int id,
+        string? nullCheckPlace = null)
     {
         var annotations = ImmutableArray.CreateRange(
             node.GetAnnotations(LoweringAnnotations.OriginalSpanAnnotationKind)
@@ -109,7 +118,7 @@ public class ForEachRewriter : CSharpSyntaxRewriter
                 SyntaxKind.SimpleMemberAccessExpression,
                 SyntaxFactory.IdentifierName(srcName)
                     .WithAdditionalAnnotations(
-                        new SyntaxAnnotation(LoweringAnnotations.ForEachArraySourceAnnotationKind)),
+                        new SyntaxAnnotation(LoweringAnnotations.ForEachArraySourceAnnotationKind, nullCheckPlace)),
                 SyntaxFactory.IdentifierName("Length")
             )
         ).WithAdditionalAnnotations(annotations);

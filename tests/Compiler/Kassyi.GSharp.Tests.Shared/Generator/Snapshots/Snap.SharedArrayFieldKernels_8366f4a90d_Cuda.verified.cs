@@ -127,6 +127,10 @@ handle.Free();
 }
 }
 }
+else
+{
+native.A.Data = global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy.EmptyArrayData;
+}
 native.A.Length = host.A.Length;
 }
 }
@@ -159,6 +163,10 @@ finally
 handle.Free();
 }
 }
+}
+else
+{
+native.B.Data = global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy.EmptyArrayData;
 }
 native.B.Length = host.B.Length;
 }
@@ -239,6 +247,10 @@ handle.Free();
 }
 }
 }
+else
+{
+native.Data.Data = global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy.EmptyArrayData;
+}
 native.Data.Length = host.Data.Length;
 }
 }
@@ -306,6 +318,10 @@ handle.Free();
 }
 }
 }
+else
+{
+native.Data.Data = global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy.EmptyArrayData;
+}
 native.Data.Length = host.Data.Length;
 }
 }
@@ -348,8 +364,8 @@ static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Core__SharedAr
 extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Core__SharedArrayFieldKernels__TwoFieldsKernel(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Core__SharedArrayPair __gsharp_id_0_p){
 if(threadIdx.x==0)
 {
-__gsharp_id_0_p.__gsharp_mb_A[0]=1;
-__gsharp_id_0_p.__gsharp_mb_B[1]=__gsharp_id_0_p.__gsharp_mb_A[0]+__gsharp_id_0_p.__gsharp_mb_B[0];
+__gsharp_array_ref(__gsharp_id_0_p.__gsharp_mb_A, ""G#: a null array is read at SharedArrayFieldKernels.cs(27,13)"")[0]=1;
+__gsharp_array_ref(__gsharp_id_0_p.__gsharp_mb_B, ""G#: a null array is read at SharedArrayFieldKernels.cs(28,13)"")[1]=__gsharp_array_ref(__gsharp_id_0_p.__gsharp_mb_A, ""G#: a null array is read at SharedArrayFieldKernels.cs(28,22)"")[0]+__gsharp_array_ref(__gsharp_id_0_p.__gsharp_mb_B, ""G#: a null array is read at SharedArrayFieldKernels.cs(28,31)"")[0];
 }
 }
 ";
@@ -443,8 +459,8 @@ static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Core__SharedAr
 extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Core__SharedArrayFieldKernels__TwoStructsKernel(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Core__SharedArrayHolder __gsharp_id_0_first, __gsharp_ty_Kassyi__GSharp__Tests__Shared__Core__SharedArrayHolder __gsharp_id_1_second){
 if(threadIdx.x==0)
 {
-__gsharp_id_0_first.__gsharp_mb_Data[0]=3;
-__gsharp_id_1_second.__gsharp_mb_Data[1]=__gsharp_id_0_first.__gsharp_mb_Data[0]+__gsharp_id_1_second.__gsharp_mb_Data[0];
+__gsharp_array_ref(__gsharp_id_0_first.__gsharp_mb_Data, ""G#: a null array is read at SharedArrayFieldKernels.cs(38,13)"")[0]=3;
+__gsharp_array_ref(__gsharp_id_1_second.__gsharp_mb_Data, ""G#: a null array is read at SharedArrayFieldKernels.cs(39,13)"")[1]=__gsharp_array_ref(__gsharp_id_0_first.__gsharp_mb_Data, ""G#: a null array is read at SharedArrayFieldKernels.cs(39,30)"")[0]+__gsharp_array_ref(__gsharp_id_1_second.__gsharp_mb_Data, ""G#: a null array is read at SharedArrayFieldKernels.cs(39,46)"")[0];
 }
 }
 ";
@@ -547,8 +563,8 @@ static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Core__ConvertB
 extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Core__SharedArrayFieldKernels__ElementFieldsKernel(GSharpArray<__gsharp_ty_Kassyi__GSharp__Tests__Shared__Core__ConvertBag> __gsharp_id_0_bags){
 if(threadIdx.x==0)
 {
-__gsharp_id_0_bags[0].__gsharp_mb_Data[0]=5;
-__gsharp_id_0_bags[1].__gsharp_mb_Data[1]=__gsharp_id_0_bags[0].__gsharp_mb_Data[0]+__gsharp_id_0_bags[1].__gsharp_mb_Data[0];
+__gsharp_array_ref(__gsharp_id_0_bags[0].__gsharp_mb_Data, ""G#: a null array is read at SharedArrayFieldKernels.cs(49,13)"")[0]=5;
+__gsharp_array_ref(__gsharp_id_0_bags[1].__gsharp_mb_Data, ""G#: a null array is read at SharedArrayFieldKernels.cs(50,13)"")[1]=__gsharp_array_ref(__gsharp_id_0_bags[0].__gsharp_mb_Data, ""G#: a null array is read at SharedArrayFieldKernels.cs(50,31)"")[0]+__gsharp_array_ref(__gsharp_id_0_bags[1].__gsharp_mb_Data, ""G#: a null array is read at SharedArrayFieldKernels.cs(50,49)"")[0];
 }
 }
 ";

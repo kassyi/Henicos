@@ -115,7 +115,7 @@ return __gsharp_id_3_previous;
 }
 
 inline __device__ int __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__DeviceFunctionBarrierEdgeCaseKernels__CountedSwapWithNeighbor(GSharpArray<int> __gsharp_id_0_calls, int __gsharp_id_1_value){
-__gsharp_id_0_calls[threadIdx.x]+=1;
+__gsharp_array_ref(__gsharp_id_0_calls, ""G#: a null array is read at DeviceFunctionBarrierEdgeCaseKernels.cs(91,9)"")[threadIdx.x]+=1;
 return __shfl_xor_sync(4294967295U,__gsharp_id_1_value,1,32);
 }
 
@@ -129,7 +129,7 @@ return __shfl_up_sync(4294967295U,__gsharp_id_0_value,1u,32);
 }
 
 inline __device__ void __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__DeviceFunctionBarrierEdgeCaseKernels__StoreBroadcastExpressionBody(GSharpArray<int> __gsharp_id_0_output, int __gsharp_id_1_value){
-__gsharp_id_0_output[threadIdx.x]=__shfl_sync(4294967295U,__gsharp_id_1_value,0,32);
+__gsharp_array_ref(__gsharp_id_0_output, ""G#: a null array is read at DeviceFunctionBarrierEdgeCaseKernels.cs(174,9)"")[threadIdx.x]=__shfl_sync(4294967295U,__gsharp_id_1_value,0,32);
 }
 
 inline __device__ void __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__DeviceFunctionBarrierEdgeCaseKernels__IncrementAcrossBarrier(int* __gsharp_id_0_value, GSharpArray<int> __gsharp_id_1_published){
@@ -138,7 +138,7 @@ int __gsharp_id_2_tid = threadIdx.x;
 __shared__ int __gsharp_id_3_shared[256];
 __gsharp_id_3_shared[__gsharp_id_2_tid]=(*__gsharp_id_0_value);
 __syncthreads();
-__gsharp_id_1_published[__gsharp_id_2_tid]=__gsharp_id_3_shared[__gsharp_id_2_tid];
+__gsharp_array_ref(__gsharp_id_1_published, ""G#: a null array is read at DeviceFunctionBarrierEdgeCaseKernels.cs(198,9)"")[__gsharp_id_2_tid]=__gsharp_id_3_shared[__gsharp_id_2_tid];
 (*__gsharp_id_0_value)+=10;
 }
 

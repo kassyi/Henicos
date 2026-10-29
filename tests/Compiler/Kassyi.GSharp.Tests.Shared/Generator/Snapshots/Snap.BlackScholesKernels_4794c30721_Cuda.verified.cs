@@ -167,6 +167,10 @@ handle.Free();
 }
 }
 }
+else
+{
+native.S.Data = global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy.EmptyArrayData;
+}
 native.S.Length = host.S.Length;
 }
 }
@@ -200,6 +204,10 @@ handle.Free();
 }
 }
 }
+else
+{
+native.X.Data = global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy.EmptyArrayData;
+}
 native.X.Length = host.X.Length;
 }
 }
@@ -232,6 +240,10 @@ finally
 handle.Free();
 }
 }
+}
+else
+{
+native.T.Data = global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy.EmptyArrayData;
 }
 native.T.Length = host.T.Length;
 }
@@ -268,6 +280,10 @@ handle.Free();
 }
 }
 }
+else
+{
+native.CallResult.Data = global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy.EmptyArrayData;
+}
 native.CallResult.Length = host.CallResult.Length;
 }
 }
@@ -300,6 +316,10 @@ finally
 handle.Free();
 }
 }
+}
+else
+{
+native.PutResult.Data = global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy.EmptyArrayData;
 }
 native.PutResult.Length = host.PutResult.Length;
 }
@@ -429,9 +449,9 @@ int __gsharp_id_1_tid = (int)__gsharp_gsl_0;
 {
 float __gsharp_id_2_c;
 float __gsharp_id_3_p;
-__gsharp_fn_Henicos__Benchmarks__ComputeBenchmarks__BlackScholesKernels__CalculateOptionPrice(__gsharp_id_0_ctx.__gsharp_mb_S[__gsharp_id_1_tid],__gsharp_id_0_ctx.__gsharp_mb_X[__gsharp_id_1_tid],__gsharp_id_0_ctx.__gsharp_mb_T[__gsharp_id_1_tid],__gsharp_id_0_ctx.__gsharp_mb_R,__gsharp_id_0_ctx.__gsharp_mb_V,&__gsharp_id_2_c,&__gsharp_id_3_p);
-__gsharp_id_0_ctx.__gsharp_mb_CallResult[__gsharp_id_1_tid]=__gsharp_id_2_c;
-__gsharp_id_0_ctx.__gsharp_mb_PutResult[__gsharp_id_1_tid]=__gsharp_id_3_p;
+__gsharp_fn_Henicos__Benchmarks__ComputeBenchmarks__BlackScholesKernels__CalculateOptionPrice(__gsharp_array_ref(__gsharp_id_0_ctx.__gsharp_mb_S, ""G#: a null array is read at BlackScholesKernels.cs(29,34)"")[__gsharp_id_1_tid],__gsharp_array_ref(__gsharp_id_0_ctx.__gsharp_mb_X, ""G#: a null array is read at BlackScholesKernels.cs(29,46)"")[__gsharp_id_1_tid],__gsharp_array_ref(__gsharp_id_0_ctx.__gsharp_mb_T, ""G#: a null array is read at BlackScholesKernels.cs(29,58)"")[__gsharp_id_1_tid],__gsharp_id_0_ctx.__gsharp_mb_R,__gsharp_id_0_ctx.__gsharp_mb_V,&__gsharp_id_2_c,&__gsharp_id_3_p);
+__gsharp_array_ref(__gsharp_id_0_ctx.__gsharp_mb_CallResult, ""G#: a null array is read at BlackScholesKernels.cs(30,13)"")[__gsharp_id_1_tid]=__gsharp_id_2_c;
+__gsharp_array_ref(__gsharp_id_0_ctx.__gsharp_mb_PutResult, ""G#: a null array is read at BlackScholesKernels.cs(31,13)"")[__gsharp_id_1_tid]=__gsharp_id_3_p;
 }
 }
 }

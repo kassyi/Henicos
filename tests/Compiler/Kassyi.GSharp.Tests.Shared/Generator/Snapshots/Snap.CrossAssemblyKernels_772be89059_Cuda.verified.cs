@@ -227,9 +227,9 @@ return __gsharp_id_0_v.x*__gsharp_id_0_v.x+__gsharp_id_0_v.y*__gsharp_id_0_v.y+_
 }
 
 inline __device__ int __gsharp_fn_Kassyi__GSharp__Tests__DeviceLibrary__LibMath__Exchange(GSharpArray<int> __gsharp_id_0_buffer, int __gsharp_id_1_tid, int __gsharp_id_2_value){
-__gsharp_id_0_buffer[__gsharp_id_1_tid]=__gsharp_id_2_value;
+__gsharp_array_ref(__gsharp_id_0_buffer, ""G#: a null array is read at LibMath.cu.cs(148,9)"")[__gsharp_id_1_tid]=__gsharp_id_2_value;
 __syncthreads();
-int __gsharp_id_3_next = __gsharp_id_0_buffer[(__gsharp_id_1_tid+1)%blockDim.x];
+int __gsharp_id_3_next = __gsharp_array_ref(__gsharp_id_0_buffer, ""G#: a null array is read at LibMath.cu.cs(150,20)"")[(__gsharp_id_1_tid+1)%blockDim.x];
 __syncthreads();
 return __gsharp_id_3_next;
 }

@@ -21,7 +21,7 @@ return __gsharp_id_0_block*(blockDim.x*blockDim.y*blockDim.z)+__gsharp_id_1_thre
 inline void __gsharp_fn_Kassyi__GSharp__Tests__Shared__Transpiler__SingleThreadKernels__MarkOnce(GSharpArray<int> __gsharp_id_0_runs, int __gsharp_id_1_id){
 if((threadIdx.x|threadIdx.y|threadIdx.z|blockIdx.x|blockIdx.y|blockIdx.z)==0)
 {
-__gsharp_id_0_runs[__gsharp_id_1_id]+=1;
+__gsharp_array_ref(__gsharp_id_0_runs, ""G#: a null array is read at SingleThreadKernels.cs(63,13)"")[__gsharp_id_1_id]+=1;
 }
 }
 
@@ -34,11 +34,11 @@ if(__gsharp_id_3_i==__gsharp_id_1_stop)
 {
 goto __gsharp_st_end_0;
 }
-__gsharp_id_0_a[0]+=1;
+__gsharp_array_ref(__gsharp_id_0_a, ""G#: a null array is read at SingleThreadKernels.cs(148,17)"")[0]+=1;
 }
 }
 __gsharp_st_end_0:;
-__gsharp_id_0_a[__gsharp_id_2_tid+1]+=2;
+__gsharp_array_ref(__gsharp_id_0_a, ""G#: a null array is read at SingleThreadKernels.cs(151,9)"")[__gsharp_id_2_tid+1]+=2;
 }
 
 ";

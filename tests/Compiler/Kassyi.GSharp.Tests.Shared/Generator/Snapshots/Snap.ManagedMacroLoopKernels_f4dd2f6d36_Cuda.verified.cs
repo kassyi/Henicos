@@ -137,7 +137,7 @@ for(unsigned int __gsharp_gsl_0 = __gsharp_grid_stride_start(); __gsharp_gsl_0 <
 {
 int __gsharp_id_3_i = (int)__gsharp_gsl_0;
 {
-__gsharp_id_0_data[__gsharp_id_3_i]=__gsharp_id_2_value+__gsharp_id_3_i;
+__gsharp_array_ref(__gsharp_id_0_data, ""G#: a null array is read at ManagedMacroLoopKernels.cs(153,42)"")[__gsharp_id_3_i]=__gsharp_id_2_value+__gsharp_id_3_i;
 }
 }
 }
@@ -164,7 +164,7 @@ for(unsigned int __gsharp_gsl_0 = __gsharp_grid_stride_start(); __gsharp_gsl_0 <
 int __gsharp_id_4_i = (int)__gsharp_gsl_0;
 {
 __gsharp_id_2_acc.__gsharp_mb_Total+=__gsharp_id_4_i;
-__gsharp_id_0_data[__gsharp_id_4_i]=__gsharp_id_2_acc.__gsharp_mb_Total;
+__gsharp_array_ref(__gsharp_id_0_data, ""G#: a null array is read at ManagedMacroLoopKernels.cs(163,13)"")[__gsharp_id_4_i]=__gsharp_id_2_acc.__gsharp_mb_Total;
 }
 }
 }
@@ -178,7 +178,7 @@ for(unsigned int __gsharp_gsl_0 = __gsharp_grid_stride_start(); __gsharp_gsl_0 <
 {
 int __gsharp_id_2_i = (int)__gsharp_gsl_0;
 {
-__gsharp_id_0_data[__gsharp_id_2_i]+=1;
+__gsharp_array_ref(__gsharp_id_0_data, ""G#: a null array is read at ManagedMacroLoopKernels.cs(227,42)"")[__gsharp_id_2_i]+=1;
 }
 }
 }

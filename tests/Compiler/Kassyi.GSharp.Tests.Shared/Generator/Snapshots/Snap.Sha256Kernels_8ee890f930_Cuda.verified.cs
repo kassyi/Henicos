@@ -105,7 +105,7 @@ unsigned int __gsharp_id_4_w[64]{};
 int __gsharp_id_5_offset = __gsharp_id_0_tid*64;
 for(int __gsharp_id_6_i = 0;__gsharp_id_6_i<16;__gsharp_id_6_i++)
 {
-__gsharp_id_4_w[__gsharp_id_6_i]=(unsigned int)(__gsharp_id_1_input[__gsharp_id_5_offset+__gsharp_id_6_i*4]<<24)|(unsigned int)(__gsharp_id_1_input[__gsharp_id_5_offset+__gsharp_id_6_i*4+1]<<16)|(unsigned int)(__gsharp_id_1_input[__gsharp_id_5_offset+__gsharp_id_6_i*4+2]<<8)|__gsharp_id_1_input[__gsharp_id_5_offset+__gsharp_id_6_i*4+3];
+__gsharp_id_4_w[__gsharp_id_6_i]=(unsigned int)(__gsharp_array_ref(__gsharp_id_1_input, ""G#: a null array is read at Sha256Kernels.cs(59,27)"")[__gsharp_id_5_offset+__gsharp_id_6_i*4]<<24)|(unsigned int)(__gsharp_array_ref(__gsharp_id_1_input, ""G#: a null array is read at Sha256Kernels.cs(60,27)"")[__gsharp_id_5_offset+__gsharp_id_6_i*4+1]<<16)|(unsigned int)(__gsharp_array_ref(__gsharp_id_1_input, ""G#: a null array is read at Sha256Kernels.cs(61,27)"")[__gsharp_id_5_offset+__gsharp_id_6_i*4+2]<<8)|__gsharp_array_ref(__gsharp_id_1_input, ""G#: a null array is read at Sha256Kernels.cs(62,20)"")[__gsharp_id_5_offset+__gsharp_id_6_i*4+3];
 }
 for(int __gsharp_id_7_i = 16;__gsharp_id_7_i<64;__gsharp_id_7_i++)
 {
@@ -132,14 +132,14 @@ __gsharp_id_10_c=__gsharp_id_9_b;
 __gsharp_id_9_b=__gsharp_id_8_a;
 __gsharp_id_8_a=__gsharp_id_17_t1+__gsharp_id_18_t2;
 }
-__gsharp_id_2_output[__gsharp_id_0_tid*8+0]=__gsharp_id_8_a+0x6a09e667;
-__gsharp_id_2_output[__gsharp_id_0_tid*8+1]=__gsharp_id_9_b+0xbb67ae85;
-__gsharp_id_2_output[__gsharp_id_0_tid*8+2]=__gsharp_id_10_c+0x3c6ef372;
-__gsharp_id_2_output[__gsharp_id_0_tid*8+3]=__gsharp_id_11_d+0xa54ff53a;
-__gsharp_id_2_output[__gsharp_id_0_tid*8+4]=__gsharp_id_12_e+0x510e527f;
-__gsharp_id_2_output[__gsharp_id_0_tid*8+5]=__gsharp_id_13_f+0x9b05688c;
-__gsharp_id_2_output[__gsharp_id_0_tid*8+6]=__gsharp_id_14_g+0x1f83d9ab;
-__gsharp_id_2_output[__gsharp_id_0_tid*8+7]=__gsharp_id_15_h+0x5be0cd19;
+__gsharp_array_ref(__gsharp_id_2_output, ""G#: a null array is read at Sha256Kernels.cs(93,9)"")[__gsharp_id_0_tid*8+0]=__gsharp_id_8_a+0x6a09e667;
+__gsharp_array_ref(__gsharp_id_2_output, ""G#: a null array is read at Sha256Kernels.cs(94,9)"")[__gsharp_id_0_tid*8+1]=__gsharp_id_9_b+0xbb67ae85;
+__gsharp_array_ref(__gsharp_id_2_output, ""G#: a null array is read at Sha256Kernels.cs(95,9)"")[__gsharp_id_0_tid*8+2]=__gsharp_id_10_c+0x3c6ef372;
+__gsharp_array_ref(__gsharp_id_2_output, ""G#: a null array is read at Sha256Kernels.cs(96,9)"")[__gsharp_id_0_tid*8+3]=__gsharp_id_11_d+0xa54ff53a;
+__gsharp_array_ref(__gsharp_id_2_output, ""G#: a null array is read at Sha256Kernels.cs(97,9)"")[__gsharp_id_0_tid*8+4]=__gsharp_id_12_e+0x510e527f;
+__gsharp_array_ref(__gsharp_id_2_output, ""G#: a null array is read at Sha256Kernels.cs(98,9)"")[__gsharp_id_0_tid*8+5]=__gsharp_id_13_f+0x9b05688c;
+__gsharp_array_ref(__gsharp_id_2_output, ""G#: a null array is read at Sha256Kernels.cs(99,9)"")[__gsharp_id_0_tid*8+6]=__gsharp_id_14_g+0x1f83d9ab;
+__gsharp_array_ref(__gsharp_id_2_output, ""G#: a null array is read at Sha256Kernels.cs(100,9)"")[__gsharp_id_0_tid*8+7]=__gsharp_id_15_h+0x5be0cd19;
 }
 
 ";

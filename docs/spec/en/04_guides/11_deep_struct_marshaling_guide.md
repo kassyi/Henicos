@@ -316,7 +316,7 @@ When designing AOT Context structures, follow this type support specification:
 | **Raw Pointers** | `uint*`, `void*`, `IntPtr` | **Supported** | Device pointer (`T*`) | Raw pointer pass (for pre-allocated buffers) |
 | **Nested Structs** | Custom user structs | **Supported** | Nested C++ `struct` | Recursive marshaling & unmarshaling |
 | **Enums** | `enum MyEnum : int` | **Supported** | Integral scalar type | Cast to underlying integer type |
-| **Nullable / Null Arrays** | `uint[]? buf = null` | **Supported** | `nullptr` | Allocation skipped; passes `null` safely |
+| **Nullable / Null Arrays** | `uint[]? buf = null` | **Supported** | `nullptr` | Allocation skipped; the device sees `null` (`is null` is true). Reading it (`Length`, an element, `foreach`) throws `NullReferenceException`, as in C# (§7) |
 | **Reference Classes** | `class MyClass { ... }` | **Prohibited** | N/A | Compile-time diagnostic error |
 | **Multi-dimensional Arrays** | `int[,]`, `float[,,]` | **Prohibited** | N/A | Must flatten to 1D `int[]` |
 | **Jagged Arrays** | `int[][]` | **Prohibited** | N/A | Must flatten to 1D `int[]` |
@@ -392,6 +392,17 @@ public struct SolverContext
 G# natively handles `null` array members:
 - On the host, if `ctx.DebugTelemetry == null`, the generator **skips** `cuMemAlloc_v2`.
 - In the native shadow struct, `native.DebugTelemetry` is set to `IntPtr.Zero` (`nullptr`).
+- An empty array (`new float[0]`, `[]`) is not `null`: it has no allocation either, but its device pointer is
+  `GSharpArrayProxy.EmptyArrayData`, a non-null address that is never dereferenced (the native CPU build passes the
+  pinned address of the empty array). On every path `ctx.DebugTelemetry is null` is false for it and `Length` is 0.
+- A launch never rejects a struct whose array field is `null`: a kernel that does not read the field runs normally.
+- Reading a `null` array field (`Length`, an element, `foreach`) follows C# and throws `NullReferenceException`: on the
+  native CPU build with the place in your source (`G#: a null array is read at Kernels.cu.cs(12,17)`), on the managed
+  path as .NET throws it, and on the checked CUDA build. The release CUDA build does not check. The same holds for an
+  array local, a device function parameter or an array element that holds `null`. Converting the array to a span
+  (`ReadOnlySpan<T> s = ctx.DebugTelemetry;`) gives an empty span, as in C#. If you mean "no data", write `= []`.
+- A `null` optional kernel argument (`float[]? bias` passed as `null` or `[]`) keeps its own contract: the kernel reads
+  it as an array of length 0, also through a local or a device function.
 - On the GPU, the kernel can safely test for presence:
 
 ```csharp

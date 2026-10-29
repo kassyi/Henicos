@@ -147,6 +147,7 @@ C# arrays provided as kernel parameters are exclusively passed as flat pointers 
 * A C# parameter `int[] data` transpiles to `int* data` in CUDA.
 * Multidimensional arrays (`int[,]`) are unsupported. Developers must manually compute offsets on flattened 1D arrays (e.g., `y * width + x`).
 * **Implicit Marshaling**: When invoking the generated `LaunchX` stub, the host C# array is automatically pinned via `GCHandle`, allocated on the GPU (`cuMemAlloc`), copied to device memory (`cuMemcpyHtoD`), and copied back after execution (`cuMemcpyDtoH`).
+* **Null and empty arrays**: `null` and an empty array are different values on the device, as in C#. Reading a `null` array (`Length` or another `System.Array` member, an element, `foreach`) throws `NullReferenceException` on the native CPU build (with the place in the source), on the managed path and on the checked CUDA build; the release CUDA build does not check ([6. Semantics](06_semantics.md)). An empty array reads as length 0 and is not `null`. `is null`, `?.`, `??` and converting the array to a span read nothing and never throw. A non-optional array parameter rejects `null` and `[]` at launch; an optional one (`T[]?`) reads as length 0 when it is `null` or `[]`.
 
 ### 2.3.2 Modifiers (`ref` and `out`)
 C# parameter modifiers denote specific pointer behaviors:
