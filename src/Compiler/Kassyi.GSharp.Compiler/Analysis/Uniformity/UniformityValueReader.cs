@@ -120,14 +120,23 @@ internal sealed class UniformityValueReader(UniformityState state)
             return summary;
         }
 
-        // [WHY] A recursive call adds nothing that the other calls of the cycle do not; it is left out, not cached
+        // [WHY] A recursive call adds nothing that the other calls of the cycle do not; it is left out, not cached. A
+        // summary computed on the way into such a call took it as uniform, so it depends on where the cycle was entered:
+        // it is not cached either, and the analyses that use it are marked the same way up to the cycle's entry
         if (!state.CalleesInProgress.Add(callee))
         {
+            state.MetCalleeInProgress = true;
             return default;
         }
 
-        summary = AnalyzeCallee(callee, declaration, masks);
+        summary = AnalyzeCallee(callee, declaration, masks, out var metCalleeInProgress);
         state.CalleesInProgress.Remove(callee);
+        if (metCalleeInProgress)
+        {
+            state.MetCalleeInProgress = true;
+            return summary;
+        }
+
         return cache.GetOrAdd(masks, summary);
     }
 
@@ -183,11 +192,18 @@ internal sealed class UniformityValueReader(UniformityState state)
     }
 
     private CalleeVariance AnalyzeCallee(IMethodSymbol callee, MethodDeclarationSyntax declaration,
-        ArgumentMasks masks)
+        ArgumentMasks masks, out bool metCalleeInProgress)
     {
+        metCalleeInProgress = false;
         var model = state.Model.Compilation.GetCachedSemanticModel(declaration.SyntaxTree);
-        return MethodFlowGraph.TryCreate(model, declaration, out var graph)
-            ? UniformityAnalysis.AnalyzeBody(graph, model, callee, masks, state.CalleesInProgress).Summarize()
-            : default;
+        if (!MethodFlowGraph.TryCreate(model, declaration, out var graph))
+        {
+            return default;
+        }
+
+        var analysis = UniformityAnalysis.AnalyzeBody(graph, model, callee, masks, state.CalleesInProgress);
+        var summary = analysis.Summarize();
+        metCalleeInProgress = analysis.MetCalleeInProgress;
+        return summary;
     }
 }

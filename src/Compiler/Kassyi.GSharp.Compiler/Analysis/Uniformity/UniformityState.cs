@@ -58,6 +58,12 @@ internal sealed class UniformityState
     /// <summary>The variance of each expression the graph evaluates, once recorded (<see cref="UniformitySolver.Observe"/>).</summary>
     public Dictionary<SyntaxNode, ThreadVariance>? Observed { get; set; }
 
+    /// <summary>
+    /// Whether the analysis met a device function that was still being analyzed further up (a recursion cycle), whose
+    /// summary it took as uniform: its own results then depend on where the cycle was entered and must not be cached.
+    /// </summary>
+    public bool MetCalleeInProgress { get; set; }
+
     /// <summary>The argument masks of each barrier-reaching call, once recorded.</summary>
     public Dictionary<SyntaxNode, ArgumentMasks>? SiteMasks { get; set; }
 

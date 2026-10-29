@@ -109,6 +109,9 @@ internal sealed class UniformityAnalysis
     public static ExportedBarrierDivergence GetExportedDivergence(IMethodSymbol method, Compilation compilation) =>
         BarrierClassifier.GetExportedDivergence(method, compilation);
 
+    /// <inheritdoc cref="UniformityState.MetCalleeInProgress"/>
+    public bool MetCalleeInProgress => _state.MetCalleeInProgress;
+
     /// <inheritdoc cref="UniformityValueReader.Summarize"/>
     public CalleeVariance Summarize() => _state.Reader.Summarize();
 
