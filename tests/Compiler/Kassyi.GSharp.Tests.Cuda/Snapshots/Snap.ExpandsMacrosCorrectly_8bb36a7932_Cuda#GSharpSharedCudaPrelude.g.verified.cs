@@ -71,9 +71,15 @@ return (long long)((unsigned long long)a >> (n & 63));
 
 // float and double to an integer type, as .NET 9 and later convert them: truncated toward zero, saturated at the ends of
 // the type, NaN to 0. The C# specification leaves the out-of-range result unspecified (§10.3.2) and C++ leaves it
-// undefined. A type narrower than int is the int32 result truncated (the transpiler writes (T)__gsharp_to_i32(x)),
-// which is what .NET 9 and 10 give ((byte)-1f is 255); .NET 11 saturates to the narrow type instead
-// (dotnet/runtime#128604), which G# does not follow yet.
+// undefined. These helpers cover int, uint, long and ulong.
+//
+// A type narrower than int (sbyte, byte, short, ushort, char) has no helper of its own: the transpiler writes
+// (T)__gsharp_to_i32(x), which saturates to int32 and then keeps the low bits of the result. That is the result of
+// .NET 9 and 10: (byte)300f is 44, (sbyte)-129f is 127, (ushort)-40000f is 25536, (byte)-1f is 255, and NaN is 0.
+// .NET 11 saturates to the target type instead (dotnet/runtime#128604): (byte)298f is 255, (ushort)-42f is 0.
+// G# follows .NET 10 for now because the managed path runs the C# on the host runtime, so on net10.0 the GPU, the
+// native CPU build and the managed path all give the same value. IntegerSemanticsScenarios.Conversions will fail on a
+// .NET 11 host; switching these conversions to the .NET 11 result when the host moves to .NET 11 is #890.
 // CUDA's round-toward-zero conversions (cvt.rzi) saturate; they are the same instruction as a C cast. Only float to a
 // 32-bit type gives 0 for NaN (sm_86); from double, and to a 64-bit type, cvt.rzi gives the sign bit alone (0x80000000,
 // 0x8000000000000000), so NaN is tested first (3 to 4 more instructions on sm_86).

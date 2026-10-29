@@ -236,7 +236,12 @@ internal static class IntegerSemantics
                 or SpecialType.System_Char => Names.ConvertToInt32,
             _ => null
         };
-        // An enum, or a type narrower than int, which the int32 result is truncated to
+        // An enum, or a type narrower than int, which the int32 result is truncated to: (byte)__gsharp_to_i32(x).
+        // This is the .NET 9 and 10 result, saturated to int32 and then truncated ((byte)300f is 44, (sbyte)-129f is
+        // 127, (ushort)-40000f is 25536, (byte)-1f is 255, NaN is 0). .NET 11 saturates to the target type instead
+        // ((byte)298f is 255, (ushort)-42f is 0; dotnet/runtime#128604). G# follows .NET 10 for now: the managed path
+        // runs on the host runtime, so on net10.0 all three paths agree. IntegerSemanticsScenarios.Conversions fails
+        // on a .NET 11 host; see #890 for the switch.
         var isEnum = !SymbolEqualityComparer.Default.Equals(integral, target);
         var isNarrow = integral.SpecialType is SpecialType.System_SByte or SpecialType.System_Byte or
             SpecialType.System_Int16 or SpecialType.System_UInt16 or SpecialType.System_Char;
