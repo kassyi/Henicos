@@ -96,7 +96,8 @@ public static partial class SwitchSuspensionKernels
         output[tid] = value;
     }
 
-    // goto case (to a label named by a constant) and goto default between sections that shuffle
+    // goto case and goto default between sections that shuffle; goto case 2 reaches the section labeled by the constant
+    // LastCase, so the jump is matched by value, not by its spelling
     [GpuKernel]
     public static void GotoCaseKernel(int[] output, int flag)
     {
@@ -106,7 +107,7 @@ public static partial class SwitchSuspensionKernels
         {
             case 0:
                 value = Warp.ShuffleXorSync(FullMask, value, 1);
-                goto case LastCase;
+                goto case 2;
             case 1:
                 value += 50;
                 goto default;

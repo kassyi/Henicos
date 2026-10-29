@@ -82,8 +82,13 @@ internal static class SwitchStatementFlattener
 
         dispatch.Add(Goto(defaultLabel ?? endLabel));
 
+        // [WHY] The dispatch carries the span of the switch, so a diagnostic on the temporary or a comparison is
+        // reported at the switch (Reporter.GetReportLocation takes the nearest annotated ancestor)
         var statements = ImmutableArray.CreateBuilder<StatementSyntax>();
-        statements.Add(SyntaxFactory.Block(dispatch));
+        statements.Add(
+            SyntaxFactory.Block(dispatch)
+                .WithAdditionalAnnotations(node.GetAnnotations(LoweringAnnotations.OriginalSpanAnnotationKind))
+        );
         var jumps = new SwitchJumpRewriter(endLabel, defaultLabel, caseTargets.ToImmutable(), semanticModel);
         for (var i = 0; i < sections.Length; i++)
         {
@@ -99,9 +104,11 @@ internal static class SwitchStatementFlattener
         return SyntaxFactory.Block(statements);
     }
 
-    // [WHY] goto case names the case by its constant value (`goto case Last;` reaches `case 2:` when Last is 2), and C#
-    // converts both to the governing type, so integral values are compared as numbers whatever their type. Without a
-    // semantic model, or for a value that does not resolve, the expression itself is the key (see IsSameCase).
+    // [WHY] goto case names the case by its constant value (`goto case 2;` reaches `case Last:` when Last is 2), and C#
+    // converts both to the governing type, so integral values are compared as numbers whatever their type (`goto case
+    // 66;` reaches `case 'B':`). A float or double switch is legal C# and flattens too; its constants are compared as
+    // double, since ToDecimal throws for NaN and the infinities. Without a semantic model, or for a value that does not
+    // resolve, the expression itself is the key (see IsSameCase).
     private static object GetCaseKey(ExpressionSyntax value, SemanticModel? semanticModel)
     {
         if (semanticModel?.GetSafeConstantValue(value) is { HasValue: true, Value: { } constant })

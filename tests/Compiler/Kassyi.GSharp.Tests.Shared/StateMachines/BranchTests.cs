@@ -109,6 +109,21 @@ public class BranchTests : StateMachineTestBase
         });
     }
 
+    // goto case 66 in a char switch reaches case 'B' (#708): the flattened goto is matched by constant value with the
+    // semantic model, across the int and char types of the two constants
+    [Fact]
+    [Category(TestCategory.Compiler)]
+    [Scenario(TestScenario.Boundary)]
+    public Task Pipeline_SwitchGotoCaseChar_MatchesCaseByValue() =>
+        VerifyPipelineLowerFromTestCase("SwitchGotoCaseChar.cs");
+
+    // goto case (Mode)2 in an enum switch reaches case Mode.Third (#708)
+    [Fact]
+    [Category(TestCategory.Compiler)]
+    [Scenario(TestScenario.Boundary)]
+    public Task Pipeline_SwitchGotoCaseEnum_MatchesCaseByValue() =>
+        VerifyPipelineLowerFromTestCase("SwitchGotoCaseEnum.cs");
+
     // A switch without a split point stays a switch, and one without a default jumps to its end when nothing matches
     [Fact]
     [Category(TestCategory.Compiler)]
