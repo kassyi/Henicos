@@ -24,6 +24,16 @@ public class UniformityCalleeCacheTests
         Assert.True(ReturnsThreadVariant(compilation, second));
     }
 
+    // A recursive call with other argument masks than the call in progress is analyzed, not left out as uniform
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void Test_RecursiveCallWithOtherMasks_IsAnalyzed()
+    {
+        var compilation = RoslynTestUtility.CreateCompilation(RoslynTestUtility.ReadTestCase(TestCase));
+
+        Assert.True(ReturnsThreadVariant(compilation, "MaskKernel"));
+    }
+
     // Whether the call that the kernel stores (output[0] = <call>) returns a thread-variant value
     private static bool ReturnsThreadVariant(Compilation compilation, string kernel)
     {

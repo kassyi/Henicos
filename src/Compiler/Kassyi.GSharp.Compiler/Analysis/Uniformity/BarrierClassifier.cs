@@ -133,8 +133,7 @@ internal sealed class BarrierClassifier(UniformityState state)
             return default;
         }
 
-        var analysis = UniformityAnalysis.AnalyzeBody(graph, model, definition, default,
-            new HashSet<IMethodSymbol>(SymbolEqualityComparer.Default));
+        var analysis = UniformityAnalysis.AnalyzeBody(graph, model, definition, default, CalleeCall.CreateSet());
         var uniform = analysis.Summarize().Barrier;
         var condition = 0;
         var exitOnly = 0;

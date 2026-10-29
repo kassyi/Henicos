@@ -7,7 +7,7 @@ namespace Kassyi.GSharp.Compiler.Analysis;
 internal sealed class UniformityState
 {
     public UniformityState(SemanticModel model, IMethodSymbol method, SplicedFlowGraph graph, UniformityRecorder recorder,
-        HashSet<IMethodSymbol> calleesInProgress)
+        HashSet<CalleeCall> calleesInProgress)
     {
         Model = model;
         Method = method;
@@ -30,8 +30,11 @@ internal sealed class UniformityState
 
     public UniformityRecorder Recorder { get; }
 
-    /// <summary>The device functions being analyzed on the way to this one, which a recursive call leaves out.</summary>
-    public HashSet<IMethodSymbol> CalleesInProgress { get; }
+    /// <summary>
+    /// The device functions being analyzed on the way to this one, with the argument masks of each, which a recursive
+    /// call with the same masks leaves out.
+    /// </summary>
+    public HashSet<CalleeCall> CalleesInProgress { get; }
 
     /// <summary>The successors of each node.</summary>
     public ImmutableArray<int>[] Successors { get; }

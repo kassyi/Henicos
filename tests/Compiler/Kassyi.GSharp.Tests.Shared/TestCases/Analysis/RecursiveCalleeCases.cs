@@ -23,4 +23,26 @@ public static class Recursion
     {
         output[0] = B(3);
     }
+
+    // MaskA -> MaskB -> MaskA, where the recursive call passes the thread index: MaskA returns p, so the outer call
+    // returns the thread index although its own arguments are uniform (#772 second review)
+    [GpuDeviceFunction]
+    public static int MaskA(int p, bool q)
+    {
+        if (q)
+        {
+            return p;
+        }
+
+        return MaskB(p);
+    }
+
+    [GpuDeviceFunction]
+    public static int MaskB(int p) => MaskA(ThreadIndex.X, true);
+
+    [GpuKernel]
+    public static void MaskKernel(int[] output)
+    {
+        output[0] = MaskA(0, false);
+    }
 }

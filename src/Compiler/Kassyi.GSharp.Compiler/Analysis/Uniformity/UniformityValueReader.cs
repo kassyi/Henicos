@@ -120,17 +120,19 @@ internal sealed class UniformityValueReader(UniformityState state)
             return summary;
         }
 
-        // [WHY] A recursive call adds nothing that the other calls of the cycle do not; it is left out, not cached. A
+        // [WHY] A recursive call with the same argument masks adds nothing that the other calls of the cycle do not; it is
+        // left out, not cached (one with other masks may make other values thread-variant, so it is analyzed). A
         // summary computed on the way into such a call took it as uniform, so it depends on where the cycle was entered:
         // it is not cached either, and the analyses that use it are marked the same way up to the cycle's entry
-        if (!state.CalleesInProgress.Add(callee))
+        var key = new CalleeCall(callee, masks);
+        if (!state.CalleesInProgress.Add(key))
         {
             state.MetCalleeInProgress = true;
             return default;
         }
 
         summary = AnalyzeCallee(callee, declaration, masks, out var metCalleeInProgress);
-        state.CalleesInProgress.Remove(callee);
+        state.CalleesInProgress.Remove(key);
         if (metCalleeInProgress)
         {
             state.MetCalleeInProgress = true;

@@ -56,15 +56,14 @@ internal sealed class UniformityAnalysis
     /// </summary>
     public static UniformityAnalysis Analyze(SplicedFlowGraph graph, UniformityRecorder recorder, SemanticModel model,
         IMethodSymbol method) =>
-        Run(new UniformityState(model, method, graph, recorder,
-            new HashSet<IMethodSymbol>(SymbolEqualityComparer.Default)));
+        Run(new UniformityState(model, method, graph, recorder, CalleeCall.CreateSet()));
 
     /// <summary>
     /// Analyzes <paramref name="graph"/>, the body of <paramref name="method"/>, for a call whose arguments vary as
     /// <paramref name="masks"/> says.
     /// </summary>
     public static UniformityAnalysis AnalyzeBody(ControlFlowGraph graph, SemanticModel model, IMethodSymbol method,
-        ArgumentMasks masks, HashSet<IMethodSymbol> calleesInProgress)
+        ArgumentMasks masks, HashSet<CalleeCall> calleesInProgress)
     {
         var recorder = new UniformityRecorder(method, masks);
         var spliced = SplicedFlowBuilder.Build(graph, model, ImmutableArray.Create<IFlowRecorder>(recorder));
