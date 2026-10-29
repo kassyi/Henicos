@@ -121,8 +121,8 @@ internal static class NativeBindingEmitter
                 using (writer.Scope())
                 {
                     var entryPoint = string.IsNullOrEmpty(m.EntryPoint) ? m.Name : m.EntryPoint ?? m.Name;
-                    ModuleKernelLaunchEmitter.EmitLaunchBody(writer, moduleName, entryPoint, m.Name, parameters,
-                        packContext: false);
+                    ModuleKernelLaunchEmitter.EmitLaunchBody(writer, moduleName, entryPoint, m.Name, $"{def.ClassName}.{m.Name}",
+                        parameters, packContext: false);
                 }
 
                 writer.AppendLine();
