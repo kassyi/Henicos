@@ -97,7 +97,7 @@ internal sealed class UnsupportedConstructRule :
     public void Analyze(AssignmentExpressionSyntax node, ref ValidationContext context)
     {
         if (node.Parent is ExpressionStatementSyntax &&
-            GpuOperatorMacroTranspiler.TryResolve(node, context.SemanticModel, out var macro) &&
+            GpuOperatorMacroResolver.TryResolve(node, context.SemanticModel, out var macro) &&
             macro.Failure is { } failure)
         {
             context.ReportDiagnostic(GSharpDiagnostics.UnsupportedSyntax, node, failure);

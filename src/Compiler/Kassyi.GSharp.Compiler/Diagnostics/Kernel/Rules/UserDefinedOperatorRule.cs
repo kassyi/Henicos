@@ -47,7 +47,7 @@ internal sealed class UserDefinedOperatorRule :
         if (methodSymbol.HasAttribute(KnownAttributes.GpuOperatorMacro))
         {
             // Expanded only where GpuOperatorMacroTranspiler reaches it; elsewhere it would be a C++ struct operator
-            if (GpuOperatorMacroTranspiler.GetPositionFailure(node, context.SemanticModel) is { } failure)
+            if (GpuOperatorMacroResolver.GetPositionFailure(node, context.SemanticModel) is { } failure)
             {
                 context.ReportDiagnostic(GSharpDiagnostics.UnsupportedSyntax, node, failure);
             }
