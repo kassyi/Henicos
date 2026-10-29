@@ -590,9 +590,9 @@ proxy_bags[0] = IntPtr.Zero;
 ((int*)(proxy_bags + 1))[0] = bags.Length;
 if (bags_size > 0)
 {
-bags_shadow = System.Buffers.ArrayPool<byte>.Shared.Rent(bags_size);
 if (!__gsharp_device_arrays.TryGetRegion(bags, out d_bags))
 {
+bags_shadow = System.Buffers.ArrayPool<byte>.Shared.Rent(bags_size);
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_bags, (IntPtr)bags_size, hStream));
 __gsharp_device_arrays.Add(bags, d_bags);
 var bags_native = System.Runtime.InteropServices.MemoryMarshal.Cast<byte, AotContexts.ConvertBag>(bags_shadow.AsSpan(0, bags_size));
@@ -606,6 +606,10 @@ fixed (byte* p_bags = bags_shadow)
 CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoDAsync_v2(d_bags, (IntPtr)p_bags, (IntPtr)bags_size, hStream));
 CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
 }
+}
+else
+{
+bags_shadow = System.Buffers.ArrayPool<byte>.Shared.Rent(bags_size);
 }
 proxy_bags[0] = d_bags;
 }

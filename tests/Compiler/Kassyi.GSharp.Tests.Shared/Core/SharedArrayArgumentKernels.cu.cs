@@ -9,6 +9,13 @@ namespace Kassyi.GSharp.Tests.Shared.Core;
 /// kernel writes an element through one holder and then reads it through another, so a launcher that gives each holder
 /// its own copy reads the old value, and its copy back of the second copy loses the write through the first.
 /// </summary>
+/// <summary>An enum over int, whose array the runtime also lets a caller pass as an int[].</summary>
+public enum SharedArrayTag
+{
+    None,
+    First
+}
+
 public static partial class SharedArrayArgumentKernels
 {
     // C#: when a and b are one array, the write through a is seen through b
@@ -109,6 +116,40 @@ public static partial class SharedArrayArgumentKernels
         {
             first[0].N = 7;
             second[1].N = second[0].N + first[0].N;
+        }
+    }
+
+    // An [In] int[] and a writable uint[] that are one array ((uint[])(object)x): reference identity ignores the
+    // element type, so the [In] argument still sees the write
+    [GpuKernel]
+    public static void InIntAndWritableUIntKernel([In] int[] input, uint[] output)
+    {
+        if (ThreadIndex.X == 0)
+        {
+            output[0] = 5;
+            output[1] = (uint)input[0] / 5u;
+        }
+    }
+
+    // The same with an enum array and an array of its underlying type
+    [GpuKernel]
+    public static void InEnumAndWritableIntKernel([In] SharedArrayTag[] tags, int[] values)
+    {
+        if (ThreadIndex.X == 0)
+        {
+            values[0] = 3;
+            values[1] = (int)tags[0] + 1;
+        }
+    }
+
+    // Two [In] arguments of different element types that are one array share one copy on the CPU
+    [GpuKernel]
+    public static void TwoInDifferentTypesKernel([In] int[] first, [In] uint[] second, uint[] result)
+    {
+        if (ThreadIndex.X == 0)
+        {
+            first[0] = 9;
+            result[0] = second[0];
         }
     }
 }

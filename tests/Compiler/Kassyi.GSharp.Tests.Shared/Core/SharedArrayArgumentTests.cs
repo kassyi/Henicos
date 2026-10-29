@@ -172,6 +172,47 @@ public class SharedArrayArgumentTests : TranspilerTestBase
         Assert.Equal(14, bags[1].N);
     }
 
+    [SkippableTheory]
+    [Scenario(TestScenario.Boundary)]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void InIntAndWritableUInt_SameArray_InSeesWrite(bool forceManaged)
+    {
+        var x = new int[2];
+
+        Run(forceManaged, () => SharedArrayArgumentKernels.LaunchInIntAndWritableUIntKernel(x, (uint[])(object)x));
+
+        Assert.Equal([5, 1], x);
+    }
+
+    [SkippableTheory]
+    [Scenario(TestScenario.Boundary)]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void InEnumAndWritableInt_SameArray_InSeesWrite(bool forceManaged)
+    {
+        var x = new int[2];
+
+        Run(forceManaged, () => SharedArrayArgumentKernels.LaunchInEnumAndWritableIntKernel((SharedArrayTag[])(object)x, x));
+
+        Assert.Equal([3, 4], x);
+    }
+
+    [SkippableTheory]
+    [Scenario(TestScenario.Boundary)]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void TwoInDifferentTypes_SameArray_ShareWritesButNotCopiedBack(bool forceManaged)
+    {
+        var x = new int[1];
+        var result = new uint[1];
+
+        Run(forceManaged, () => SharedArrayArgumentKernels.LaunchTwoInDifferentTypesKernel(x, (uint[])(object)x, result));
+
+        Assert.Equal([9u], result);
+        Assert.Equal([0], x);
+    }
+
     private void Run(bool forceManaged, Action launch)
     {
         Skip.If(forceManaged && IsCudaDialect, "The managed execution path exists only on the CPU dialects.");

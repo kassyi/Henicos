@@ -15,7 +15,8 @@ namespace Kassyi.GSharp.Runtime.Interop;
 /// </remarks>
 public sealed class DeviceArrayRegions
 {
-    private readonly List<IntPtr> _regions = [];
+    // Created on the first Add, so that a launch whose arrays are all null or empty allocates only this object
+    private List<IntPtr>? _regions;
     private Dictionary<object, Entry>? _byArray;
 
     /// <summary>Gets the region already allocated for <paramref name="array"/> in this launch.</summary>
@@ -42,7 +43,7 @@ public sealed class DeviceArrayRegions
     {
         _byArray ??= new Dictionary<object, Entry>(ReferenceEqualityComparer.Instance);
         _byArray.Add(array, new Entry(region));
-        _regions.Add(region);
+        (_regions ??= []).Add(region);
     }
 
     /// <summary>
@@ -80,6 +81,11 @@ public sealed class DeviceArrayRegions
     /// <param name="hStream">The stream of the launch.</param>
     public void Free(IntPtr hStream)
     {
+        if (_regions is null)
+        {
+            return;
+        }
+
         foreach (var region in _regions)
         {
             // [WHY] Runs in the launcher's finally block: a failed free must not hide the launch's own exception

@@ -89,6 +89,48 @@ public class WrapperAllocationTests : TranspilerTestBase
         }
     }
 
+    // The array launcher of a kernel with a single T[] argument allocates no table of shared device regions (#721):
+    // the 360 bytes of a DeviceArrayRegions per launch would exceed the bound by far over 100 launches
+    [SkippableFact]
+    [Scenario(TestScenario.Boundary)]
+    public void Test_LaunchSingleArray_ShouldNotAllocateRegionTable()
+    {
+        using var _ctx = new GpuKernelLoader.CudaContextScope();
+        int[] array = [0];
+        WrapperAllocationKernels.LaunchSingleArrayKernel(array);
+
+        for (int warmup = 0; warmup < 5; warmup++)
+        {
+            RunSingleArrayBatch(array);
+        }
+
+        long allocated = long.MaxValue;
+        for (int attempt = 0; attempt < 3; attempt++)
+        {
+            long bytesBefore = GC.GetAllocatedBytesForCurrentThread();
+            RunSingleArrayBatch(array);
+            long bytesAfter = GC.GetAllocatedBytesForCurrentThread();
+            allocated = Math.Min(allocated, bytesAfter - bytesBefore);
+            if (allocated == 0)
+            {
+                break;
+            }
+        }
+
+        // The same bound as the Ptr launcher: 56 bytes of driver overhead per call and 48 bytes of noise
+        Assert.True(allocated <= 5648 + 48, $"Allocated {allocated} bytes, expected <= 5696 bytes");
+        Assert.True(array[0] >= 601, $"The kernel ran {array[0]} times, expected at least 601");
+    }
+
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    private static void RunSingleArrayBatch(int[] array)
+    {
+        for (int i = 0; i < 100; i++)
+        {
+            WrapperAllocationKernels.LaunchSingleArrayKernel(array, gridDimX: 1, blockDimX: 1);
+        }
+    }
+
     [MethodImpl(MethodImplOptions.NoInlining)]
     private static void RunHotPathBatch(IntPtr d_ioVal, IntPtr d_outVal, IntPtr d_arrayVal, uint constantVal)
     {

@@ -179,6 +179,13 @@ internal readonly record struct KernelParameterShape
     /// </summary>
     public bool IsCudaConvertedArray => IsArray && Cuda.ConvertedElementAotStructPath is not null;
 
+    /// <summary>
+    /// Whether the parameter is a <c>T[]</c> passed by value, which another such argument or a struct field may hold as
+    /// well: the launchers then give every holder the same array (one device region on CUDA, #721). Only a <c>T[]</c> has
+    /// an identity to compare; a span or a segment over an array is a slice, whose overlaps are #857.
+    /// </summary>
+    public bool IsSharableArray => IsArray && Container == ArrayContainerKind.Array && !IsByRef;
+
     /// <summary>Whether the parameter is <c>ref</c> or <c>out</c>.</summary>
     public bool IsByRef => RefKind is RefKind.Ref or RefKind.Out;
 

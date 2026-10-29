@@ -64,7 +64,7 @@ internal static class CpuHostLaunchEmitter
 
             // var <name>_source = <name>;     (an [In] T[] that a later [In] T[] may hold as well, WriteSharedKernelCopy)
             writer.AppendLineIf(
-                IsSharedArray(shape) && HasLaterCopiedHolder(parameters, i),
+                shape.IsSharableArray && HasLaterCopiedHolder(parameters, i),
                 $"var {shape.Name}_source = {shape.Identifier};"
             );
 
@@ -88,14 +88,14 @@ internal static class CpuHostLaunchEmitter
         shape.IsArray &&
         (shape.IsReadOnlyContainer ? shape.Cpu.ConvertedElementCopyArraysMethodName is not null : !shape.CopyOut);
 
-    // A T[] argument, which another T[] argument may hold as well: the CUDA launcher then gives both one device region
-    // (KernelLaunchEmitter.IsSharedArrayArgument, #721)
-    private static bool IsSharedArray(in KernelParameterShape shape) =>
-        shape is { IsArray: true, Container: ArrayContainerKind.Array, IsByRef: false };
-
-    // Whether two parameters may hold one array: both T[] of the same type
+    // Whether two parameters may hold one array: both T[] (KernelParameterShape.IsSharableArray), of any element type,
+    // since the runtime lets one array be an int[] and a uint[], or an enum array and an array of its underlying type
     private static bool MayHoldSameArray(in KernelParameterShape shape, in KernelParameterShape other) =>
-        IsSharedArray(shape) && IsSharedArray(other) && shape.TypeName == other.TypeName;
+        shape.IsSharableArray && other.IsSharableArray;
+
+    // Whether <other> may hold the array of <shape> and has the same type, so that one can take the other's shadow
+    private static bool MayShareCopy(in KernelParameterShape shape, in KernelParameterShape other) =>
+        MayHoldSameArray(shape, other) && shape.TypeName == other.TypeName;
 
     private static bool HasLaterCopiedHolder(EquatableArray<KernelParameterShape> parameters, int index)
     {
@@ -120,7 +120,7 @@ internal static class CpuHostLaunchEmitter
     {
         var shape = parameters[index];
         var copyArrays = shape.Cpu.ConvertedElementCopyArraysMethodName;
-        if (!IsSharedArray(shape))
+        if (!shape.IsSharableArray)
         {
             WriteKernelCopy(writer, shape, copyArrays);
             return;
@@ -139,7 +139,10 @@ internal static class CpuHostLaunchEmitter
                 $"{(hasCondition ? "else if" : "if")} ({ReferenceEqualsMethod}({shape.Identifier}, {earlier.Name}_source))");
             using (writer.Scope())
             {
-                writer.AppendLine($"{shape.Identifier} = {earlier.Identifier};");
+                // An array of another element type that is the same object (int[] / uint[]) is cast through object
+                writer.AppendLine(shape.TypeName == earlier.TypeName
+                    ? $"{shape.Identifier} = {earlier.Identifier};"
+                    : $"{shape.Identifier} = ({shape.TypeName})(object){earlier.Identifier};");
             }
 
             hasCondition = true;
@@ -735,7 +738,7 @@ internal static class CpuHostLaunchEmitter
 
     // An [Out] converted T[] is marshaled after the other parameters (WriteCpuFixedBlocksAndInvoke)
     private static bool IsConvertedLast(in KernelParameterShape shape) =>
-        shape.IsCpuConvertedArray && IsSharedArray(shape) && !CopiesConvertedIn(shape);
+        shape.IsCpuConvertedArray && shape.IsSharableArray && !CopiesConvertedIn(shape);
 
     // Whether converted T[] <earlier> is marshaled before converted T[] <index> and may hold the same array
     private static bool IsShadowSource(EquatableArray<KernelParameterShape> parameters, int index, int earlier)
@@ -743,7 +746,7 @@ internal static class CpuHostLaunchEmitter
         var shape = parameters[index];
         var other = parameters[earlier];
         if (earlier == index || !shape.IsCpuConvertedArray || !other.IsCpuConvertedArray ||
-            !MayHoldSameArray(shape, other))
+            !MayShareCopy(shape, other))
         {
             return false;
         }

@@ -21,4 +21,14 @@ public static partial class WrapperAllocationKernels
             outVal = 0;
         }
     }
+
+    // An array launcher with one T[] argument: no other holder can share its array, so it needs no DeviceArrayRegions
+    [GpuKernel]
+    public static void SingleArrayKernel(int[] a)
+    {
+        if (ThreadIndex.X == 0)
+        {
+            a[0] += 1;
+        }
+    }
 }
