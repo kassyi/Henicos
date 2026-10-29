@@ -15,11 +15,11 @@ public class ConstexprLiteralTests
     [Scenario(TestScenario.HappyPath)]
     [InlineData(SpecialType.System_Boolean, true, "true", "true")]
     [InlineData(SpecialType.System_Boolean, false, "false", "false")]
-    [InlineData(SpecialType.System_SByte, (sbyte)-5, "-5", "-5")]
-    [InlineData(SpecialType.System_Int16, (short)-5, "-5", "-5")]
+    [InlineData(SpecialType.System_SByte, (sbyte)-5, "((signed char)-5)", "-5")]
+    [InlineData(SpecialType.System_Int16, (short)-5, "((short)-5)", "-5")]
     [InlineData(SpecialType.System_Int32, -5, "-5", "-5")]
-    [InlineData(SpecialType.System_Byte, (byte)5, "5", "5")]
-    [InlineData(SpecialType.System_UInt16, (ushort)5, "5", "5")]
+    [InlineData(SpecialType.System_Byte, (byte)5, "((unsigned char)5)", "5")]
+    [InlineData(SpecialType.System_UInt16, (ushort)5, "((unsigned short)5)", "5")]
     [InlineData(SpecialType.System_UInt32, 5U, "5U", "5U")]
     [InlineData(SpecialType.System_Int64, 5L, "5LL", "5L")]
     [InlineData(SpecialType.System_UInt64, 5UL, "5ULL", "5UL")]
@@ -77,6 +77,7 @@ public class ConstexprLiteralTests
     [InlineData("Ns.Mode", 1, "1", "(global::Ns.Mode)1")]
     [InlineData("Ns.Mode", -1, "-1", "(global::Ns.Mode)(-1)")]
     [InlineData("Ns.UIntMode", 5U, "5U", "(global::Ns.UIntMode)5U")]
+    [InlineData("Ns.ByteMode", (byte)255, "((unsigned char)255)", "(global::Ns.ByteMode)255")]
     public void Test_Format_EnumValues(
         string metadataName,
         object value,

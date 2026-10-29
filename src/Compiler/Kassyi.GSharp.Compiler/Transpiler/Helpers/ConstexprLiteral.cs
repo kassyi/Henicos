@@ -39,7 +39,8 @@ internal static class ConstexprLiteral
     /// from the Prelude (<see cref="GSharpInternalNames.Prelude.NaNSingle"/> and its siblings, which are not
     /// <c>constexpr</c> on CUDA), C# from <c>float.NaN</c> and the like. A <c>Nullable&lt;T&gt;</c> is formatted as
     /// <c>T</c>. A negative C++ value is parenthesized (<c>(-5)</c>), so that it cannot merge with a <c>-</c> or <c>+</c>
-    /// written before it into <c>--</c> or <c>++</c>.
+    /// written before it into <c>--</c> or <c>++</c>. A C++ value of a type narrower than <c>int</c> (also the base of an
+    /// enum) is cast to it (<c>((unsigned char)255)</c>), so that <c>auto</c> takes the C# type.
     /// </summary>
     /// <returns><see langword="false"/> when <paramref name="type"/> has no literal on the device (<c>decimal</c>, <c>string</c>).</returns>
     public static bool TryFormatConstant(ITypeSymbol type, object value, out (string Cpp, string CSharp) literal)
@@ -140,16 +141,16 @@ internal static class ConstexprLiteral
                 }
 
             case SpecialType.System_SByte:
-                {
-                    var text = Convert.ToSByte(value, CultureInfo.InvariantCulture).ToString(CultureInfo.InvariantCulture);
-                    return (text, text);
-                }
+                return FormatNarrow(
+                    "signed char",
+                    Convert.ToSByte(value, CultureInfo.InvariantCulture).ToString(CultureInfo.InvariantCulture)
+                );
 
             case SpecialType.System_Int16:
-                {
-                    var text = Convert.ToInt16(value, CultureInfo.InvariantCulture).ToString(CultureInfo.InvariantCulture);
-                    return (text, text);
-                }
+                return FormatNarrow(
+                    "short",
+                    Convert.ToInt16(value, CultureInfo.InvariantCulture).ToString(CultureInfo.InvariantCulture)
+                );
 
             case SpecialType.System_Int32:
                 {
@@ -160,16 +161,16 @@ internal static class ConstexprLiteral
                 }
 
             case SpecialType.System_Byte:
-                {
-                    var text = Convert.ToByte(value, CultureInfo.InvariantCulture).ToString(CultureInfo.InvariantCulture);
-                    return (text, text);
-                }
+                return FormatNarrow(
+                    "unsigned char",
+                    Convert.ToByte(value, CultureInfo.InvariantCulture).ToString(CultureInfo.InvariantCulture)
+                );
 
             case SpecialType.System_UInt16:
-                {
-                    var text = Convert.ToUInt16(value, CultureInfo.InvariantCulture).ToString(CultureInfo.InvariantCulture);
-                    return (text, text);
-                }
+                return FormatNarrow(
+                    "unsigned short",
+                    Convert.ToUInt16(value, CultureInfo.InvariantCulture).ToString(CultureInfo.InvariantCulture)
+                );
 
             case SpecialType.System_UInt32:
                 {
@@ -204,6 +205,12 @@ internal static class ConstexprLiteral
                     $"Type '{specialType}' is not a supported [GpuConstexpr] parameter type.");
         }
     }
+
+    // ((<C++ type>)<digits>): C++ has no literal narrower than int, so a bare literal would give auto, a template
+    // argument or an overload int where C# keeps the narrow type (#859). The whole cast is parenthesized so that it
+    // stays one operand wherever the literal is written
+    private static (string Cpp, string CSharp) FormatNarrow(string cppType, string digits) =>
+        ("((" + cppType + ")" + digits + ")", digits);
 
     private static (string Cpp, string CSharp) FormatSingle(float value)
     {
