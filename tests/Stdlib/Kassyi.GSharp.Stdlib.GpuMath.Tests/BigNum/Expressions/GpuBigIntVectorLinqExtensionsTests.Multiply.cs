@@ -116,6 +116,76 @@ public partial class GpuBigIntVectorLinqExtensionsTests
         Assert.Equal(-expected, actual[1]);
     }
 
+    [SkippableTheory]
+    [Category(TestCategory.Unit)]
+    [Scenario(TestScenario.Boundary)]
+    [InlineData(4)]
+    [InlineData(33)]
+    [InlineData(1025)]
+    public void ZipMultiply_PropagateChain_IsExact(int leftWords)
+    {
+        // left = [0xFFFFFFFF, 1, ..., 1, 0xFFFFFFFF] (low word first) times 0xFFFFFFFF: the low pass leaves words
+        // 1 .. leftWords - 2 at 0xFFFFFFFF, and the high pass adds 0xFFFFFFFE to word 1 and 0 to the words after it, so
+        // its carry runs through every middle word (propagate, not generate), across warps and, for 1025 words, chunks.
+        var leftValue = PropagateChainOperand(leftWords);
+        var rightValue = new BigInteger(uint.MaxValue);
+
+        using var leftArray = CreateArray([leftValue, -leftValue], leftWords);
+        using var rightArray = CreateArray([rightValue, rightValue], 1);
+        using var expr = leftArray.AsVectorizedEnumerable().ZipMultiply(rightArray.AsVectorizedEnumerable());
+        var actual = ToHostArray(expr.Evaluate(_context));
+
+        // The product is exact; the carry crosses the run of 0xFFFFFFFF words.
+        // mutant: GpuBigIntVectorKernels.Mul.cu.cs, `p = (uint)sum == 0xFFFFFFFFu ? 1u : 0u` -> `p = 0u`
+        // input: every case (the random full-width cases do not reach a propagate chain)
+        Assert.Equal(leftValue * rightValue, actual[0]);
+        Assert.Equal(-(leftValue * rightValue), actual[1]);
+    }
+
+    [SkippableTheory]
+    [Category(TestCategory.Unit)]
+    [Scenario(TestScenario.Boundary)]
+    [InlineData(4, 4)]
+    [InlineData(33, 2)]
+    [InlineData(1025, 2)]
+    public void FloatZipMultiply_FullWidthSignificands_IsExact(int leftWords, int rightWords)
+    {
+        // The float vector product shares DeviceVectorMulVectorParallel: its significand is the exact integer product
+        // of the operand significands (leftWords + rightWords words) and its exponent is the sum of the exponents.
+        var random = new Random(2883 + leftWords);
+        var left = RandomFullWidthElements(random, 3, leftWords);
+        left[1] = -PropagateChainOperand(leftWords);
+        var right = RandomFullWidthElements(random, 3, rightWords);
+        right[2] = (BigInteger.One << (32 * rightWords)) - 1;
+
+        using var leftArray = new GpuBigFloatArray(_context, left.Length, leftWords);
+        using var rightArray = new GpuBigFloatArray(_context, right.Length, rightWords);
+        for (int e = 0; e < left.Length; e++)
+        {
+            using var leftFloat = CreateFloat(left[e], leftWords, exponent: 3);
+            using var rightFloat = CreateFloat(right[e], rightWords, exponent: -5);
+            leftArray.SetElement(e, leftFloat);
+            rightArray.SetElement(e, rightFloat);
+        }
+
+        using var expr = leftArray.AsVectorizedEnumerable().ZipMultiply(rightArray.AsVectorizedEnumerable());
+        var result = expr.Evaluate(_context);
+        Assert.Equal(leftWords + rightWords, result.WordsPerElement);
+
+        for (int e = 0; e < left.Length; e++)
+        {
+            var element = result.GetElement(e);
+            var magnitude = element.Significand.ToBigInteger();
+            var actual = element.IsNegative ? -magnitude : magnitude;
+
+            // The significand is the exact product (main truncated it like the integer product, #883).
+            // mutant: GpuBigIntVectorKernels.Mul.cu.cs, the low pass's carry out `= g | (p & carryIn)` -> `= 0u`
+            // input: every case (rightWords >= 2)
+            Assert.True(left[e] * right[e] == actual, $"seed {2883 + leftWords}, element {e}");
+            Assert.Equal(-2, element.Exponent);
+        }
+    }
+
     [SkippableFact]
     [Category(TestCategory.Unit)]
     [Scenario(TestScenario.SadPath)]
@@ -131,6 +201,29 @@ public partial class GpuBigIntVectorLinqExtensionsTests
 
         Assert.Equal(4, expr.WordsPerElement);
         Assert.Throws<ArgumentException>(() => expr.Evaluate(_context, targetResult: shortTarget));
+    }
+
+    /// <summary>The words <c>[0xFFFFFFFF, 1, ..., 1, 0xFFFFFFFF]</c>, low word first.</summary>
+    private static BigInteger PropagateChainOperand(int numWords)
+    {
+        var words = new uint[numWords];
+        for (int i = 0; i < numWords; i++)
+        {
+            words[i] = i == 0 || i == numWords - 1 ? uint.MaxValue : 1u;
+        }
+
+        var bytes = new byte[numWords * 4];
+        Buffer.BlockCopy(words, 0, bytes, 0, bytes.Length);
+        return new BigInteger(bytes, isUnsigned: true, isBigEndian: false);
+    }
+
+    private GpuBigFloat CreateFloat(BigInteger value, int numWords, int exponent)
+    {
+        bool isNegative = value < 0;
+        var bytes = BigInteger.Abs(value).ToByteArray(isUnsigned: true, isBigEndian: false);
+        var words = new uint[numWords];
+        Buffer.BlockCopy(bytes, 0, words, 0, Math.Min(bytes.Length, words.Length * 4));
+        return new GpuBigFloat(new GpuBigUInt(_context, words), exponent, isNegative);
     }
 
     /// <summary>A value of exactly <paramref name="numWords"/> words: random words with the top bit set.</summary>

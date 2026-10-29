@@ -73,7 +73,9 @@ public static partial class GpuBigIntVectorKernels
     /// </summary>
     /// <remarks>
     /// The product is exact when <c>Result.NumWords</c> is at least <c>Left.NumWords + Right.NumWords</c>, as every caller
-    /// sizes it; words beyond <c>Result.NumWords</c> are not written.
+    /// sizes it; words beyond <c>Result.NumWords</c> are not written. When <c>Left.NumWords</c> is greater than
+    /// <c>BlockDimension.X</c>, the carry between chunks comes from <see cref="PropagateBlockCarry"/>, so the block width
+    /// must be a multiple of 32 (the callers launch <c>min(1024, words)</c> threads, which is 1024 in that case; #887).
     /// </remarks>
     [GpuDeviceFunction]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -141,8 +143,10 @@ public static partial class GpuBigIntVectorKernels
 
                         // The carry out of the low pass's top word is word i + leftWords, which no earlier row reached
                         // (row i - 1 ends at word i - 1 + leftWords). The thread computes it itself: the block carry
-                        // out is not reliable in a partial last warp. The high pass carries nothing out: after row i
-                        // the partial product is below 2^(32 * (i + 1 + leftWords)).
+                        // out is the carry of thread bDim - 1, and in a single chunk bDim = leftWords + rightWords >
+                        // leftWords, so that thread holds no word (g = p = 0) and its carry out is 0. The high pass
+                        // carries nothing out: after row i the partial product is below
+                        // 2^(32 * (i + 1 + leftWords)).
                         if (half == 0 && j == leftWords - 1 && pos + 1 < resultWords)
                         {
                             op.Result.Limbs[offsetResult + pos + 1] = g | (p & carryIn);
