@@ -16,7 +16,7 @@ public static partial class DivergentSuspendingCallKernels
     {
         if (ThreadIndex.X == 0)
         {
-            // GSH0037: the callee reaches a block barrier that only some threads arrive at
+            // GSH0083: the callee reaches a block barrier that only some threads arrive at
             WaitForBlock();
         }
 

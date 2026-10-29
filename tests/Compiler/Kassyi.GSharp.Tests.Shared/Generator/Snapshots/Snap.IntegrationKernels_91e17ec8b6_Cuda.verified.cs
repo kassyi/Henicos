@@ -292,6 +292,8 @@ atomicAdd(&__gsharp_id_4_globalCounter[0],(unsigned long long)__gsharp_id_14_bit
 }
 __gsharp_id_2_results[__gsharp_id_7_tid]=__gsharp_id_17_sum;
 }
+}
+}
 int __gsharp_id_30_t = threadIdx.x;
 float* __gsharp_id_31_dynamicSharedMem = (float*)__gsharp_dsmem_place<__gsharp_dsmem_Kassyi__GSharp__Tests__Shared__Syntax__Tier1IntegrationKernels__AllInOneKernel::Slot<0xf4a8b89f8fdf4f71ull>>(__gsharp_dsmem, (unsigned long long)(long long)(__gsharp_id_6_dynamicSharedSize) * sizeof(float), __GSHARP_DSMEM_ALIGN(float));
 if(__gsharp_id_30_t<__gsharp_id_5_count)
@@ -344,8 +346,6 @@ __gsharp_id_41_loopCounter++;
 }
 while(__gsharp_id_41_loopCounter<3);
 __gsharp_id_2_results[__gsharp_id_30_t]=__gsharp_id_35_finalVal;
-}
-}
 }
 }
 ";

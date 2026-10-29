@@ -9,11 +9,21 @@ namespace Kassyi.GSharp.Compiler.Analysis;
 /// (§3.2.4), and what the barriers of the method give its callers.
 /// </summary>
 /// <remarks>
-/// A barrier in the influence region of a divergent branch is <see cref="BarrierDivergence.Condition"/> when the threads
-/// that skip it (a successor of the branch that does not reach the barrier without coming back through the branch) can
-/// reach any point where the state machine splits, the barrier itself included; otherwise only on their way out of the
-/// method, <see cref="BarrierDivergence.ExitOnly"/>. A block barrier is divergent only on a branch that varies within a
-/// block; a grid barrier also on one that varies between blocks.
+/// <para>
+/// A barrier in the influence region of a divergent branch is skipped by the threads of a successor of the branch when
+/// some path from that successor reaches the immediate post-dominator of the branch (or the end of the method) without
+/// passing the barrier and without coming back through the branch. The other successors of <c>||</c>, <c>&amp;&amp;</c>
+/// and <c>?:</c> may still reach the barrier on another path; that does not make the threads on the skipping path reach
+/// it. The barrier is <see cref="BarrierDivergence.Condition"/> when the threads on a skipping path can reach a point
+/// where the state machine splits (another one, or the barrier itself again after the paths meet: the next iteration of
+/// a loop); otherwise they only leave the method, <see cref="BarrierDivergence.ExitOnly"/>.
+/// </para>
+/// <para>
+/// A block barrier is divergent only on a branch that varies within a block; a grid barrier also on one that varies
+/// between blocks. No divergent branch is certain at compile time: which threads take it depends on the launch (a block
+/// of one thread, or one whose X width is 1), which the compiler does not know (semantics charter §3). The divergence is
+/// a warning (GSH0083, GSH0084); the barriers that do diverge are caught at run time.
+/// </para>
 /// </remarks>
 internal sealed class BarrierClassifier(UniformityState state)
 {
@@ -21,22 +31,21 @@ internal sealed class BarrierClassifier(UniformityState state)
     /// Whether only some of the threads that must reach the barrier or barrier-reaching call <paramref name="barrier"/>
     /// reach it because a divergent branch of this method decides it.
     /// </summary>
-    public BarrierReport GetBarrierReport(SyntaxNode barrier, SyncScope scope)
+    public BarrierDivergence GetBarrierDivergence(SyntaxNode barrier, SyncScope scope)
     {
         if (!state.Recorder.SplitsAt.TryGetValue(barrier, out var nodes))
         {
-            return default;
+            return BarrierDivergence.None;
         }
 
-        var result = default(BarrierReport);
+        var result = BarrierDivergence.None;
         foreach (var node in nodes)
         {
             for (var branch = 0; branch < state.Branch.Length; branch++)
             {
                 if (Diverges(state.Branch[branch], scope) && state.PostDominators.GetRegion(branch).Contains(node))
                 {
-                    result = Combine(result,
-                        new BarrierReport(Classify(branch, node), state.Prober.IsCertain(branch, scope)));
+                    result = Combine(result, Classify(branch, node));
                 }
             }
         }
@@ -48,18 +57,18 @@ internal sealed class BarrierClassifier(UniformityState state)
     /// Whether the call <paramref name="call"/> to a device function that reaches a block barrier makes only some
     /// threads reach a barrier inside the callee, given which arguments vary (§3.2.4).
     /// </summary>
-    public BarrierReport GetCallSiteReport(SyntaxNode call)
+    public BarrierDivergence GetCallSiteDivergence(SyntaxNode call)
     {
         if (!state.Recorder.Sites.TryGetValue(call, out var site) || site.Call is not { } invocation)
         {
-            return default;
+            return BarrierDivergence.None;
         }
 
         var masks = GetSiteMasks(call);
         var callee = invocation.TargetMethod;
         return state.Reader.TryGetDeviceFunction(callee, out var definition, out var declaration)
-            ? GetLocalCallSiteReport(call, definition, declaration, masks)
-            : GetImportedCallSiteReport(call, callee, masks);
+            ? GetLocalCallSiteDivergence(call, definition, declaration, masks)
+            : GetImportedCallSiteDivergence(call, callee, masks);
     }
 
     /// <summary>
@@ -68,7 +77,7 @@ internal sealed class BarrierClassifier(UniformityState state)
     /// </summary>
     public ImmutableArray<SyntaxNode> GetExitBranches(SyntaxNode barrier, SyncScope scope)
     {
-        if (GetBarrierReport(barrier, scope).Divergence != BarrierDivergence.ExitOnly ||
+        if (GetBarrierDivergence(barrier, scope) != BarrierDivergence.ExitOnly ||
             !state.Recorder.SplitsAt.TryGetValue(barrier, out var nodes))
         {
             return ImmutableArray<SyntaxNode>.Empty;
@@ -98,8 +107,8 @@ internal sealed class BarrierClassifier(UniformityState state)
     /// threads leave the callee early before one of its barriers while nothing after the call splits the state machine.
     /// </summary>
     public bool IsExitOnlyCall(SyntaxNode call) =>
-        GetBarrierReport(call, SyncScope.Block).Divergence == BarrierDivergence.None &&
-        GetCallComposition(call).Divergence == BarrierDivergence.ExitOnly;
+        GetBarrierDivergence(call, SyncScope.Block) == BarrierDivergence.None &&
+        GetCallComposition(call) == BarrierDivergence.ExitOnly;
 
     /// <summary>
     /// The divergence of the barriers of <paramref name="method"/> that its export record carries for callers in other
@@ -128,7 +137,7 @@ internal sealed class BarrierClassifier(UniformityState state)
         foreach (var parameter in definition.Parameters)
         {
             var summary = analysis.GetCalleeSummary(definition, declaration,
-                new ArgumentMasks(ArgumentMasks.Bit(parameter.Ordinal), 0, 0));
+                new ArgumentMasks(ArgumentMasks.Bit(parameter.Ordinal), 0));
             var bit = 1 << Math.Min(parameter.Ordinal, 31);
             if (summary.Barrier == BarrierDivergence.Condition && uniform != BarrierDivergence.Condition)
             {
@@ -147,18 +156,18 @@ internal sealed class BarrierClassifier(UniformityState state)
     /// Σ of the analyzed method (§3.2.4): its barriers in the region of a divergent branch, and for each
     /// barrier-reaching call outside such a region, what the callee gives for its arguments.
     /// </summary>
-    public BarrierReport SummarizeBarriers()
+    public BarrierDivergence SummarizeBarriers()
     {
-        var result = default(BarrierReport);
+        var result = BarrierDivergence.None;
         foreach (var pair in state.Recorder.Sites)
         {
-            var report = GetBarrierReport(pair.Key, pair.Value.Scope);
-            if (report.Divergence == BarrierDivergence.None && pair.Value.Call != null)
+            var divergence = GetBarrierDivergence(pair.Key, pair.Value.Scope);
+            if (divergence == BarrierDivergence.None && pair.Value.Call != null)
             {
-                report = GetCallComposition(pair.Key);
+                divergence = GetCallComposition(pair.Key);
             }
 
-            result = Combine(result, report);
+            result = Combine(result, divergence);
         }
 
         return result;
@@ -174,36 +183,45 @@ internal sealed class BarrierClassifier(UniformityState state)
 
         var masks = state.Reader.GetArgumentMasks(call, graph, current);
         siteMasks[call.Syntax] = siteMasks.TryGetValue(call.Syntax, out var seen)
-            ? new ArgumentMasks(seen.Block | masks.Block, seen.Grid | masks.Grid, seen.Identity & masks.Identity)
+            ? new ArgumentMasks(seen.Block | masks.Block, seen.Grid | masks.Grid)
             : masks;
     }
 
     private static bool Diverges(ThreadVariance branch, SyncScope scope) =>
         scope == SyncScope.Grid ? branch != ThreadVariance.Uniform : branch == ThreadVariance.Block;
 
-    // A barrier at node in the influence region of branch: Condition when a successor of the branch that does not reach
-    // the barrier (without coming back through the branch) can reach a split point, the barrier itself included
+    // A barrier at node in the influence region of branch: Condition when the threads on a path that skips it can reach a
+    // split point, ExitOnly when they only leave the method
     private BarrierDivergence Classify(int branch, int node)
     {
+        var stop = state.PostDominators.GetImmediatePostDominator(branch);
         var skips = false;
         foreach (var successor in state.Successors[branch])
         {
-            if (Reaches(successor, node, avoid: branch))
+            if (!Skips(successor, node, branch, stop))
             {
                 continue;
             }
 
             skips = true;
-            if (ReachesSplit(successor))
+            if (ReachesSplitAvoiding(successor, node) || (stop < state.NodeCount && Reaches(stop, node, avoid: -1)))
             {
                 return BarrierDivergence.Condition;
             }
         }
 
-        // [WHY] A barrier in the region that every successor reaches can only come from a graph that the structured
+        // [WHY] A barrier in the region that no successor can skip can only come from a graph that the structured
         // statements of C# do not build; it is not taken for an exit
         return skips ? BarrierDivergence.ExitOnly : BarrierDivergence.Condition;
     }
+
+    // Whether a path from successor reaches stop (the immediate post-dominator of branch, or the end of the method when
+    // stop is the virtual exit) without passing node or coming back through branch
+    private bool Skips(int successor, int node, int branch, int stop) =>
+        successor != node &&
+        Search(successor, (Node: node, Branch: branch, Stop: stop, State: state),
+            static (s, n) => n == s.Stop || (s.Stop >= s.State.NodeCount && s.State.Successors[n].Length == 0),
+            static (s, n) => n != s.Node && n != s.Branch);
 
     private bool Reaches(int from, int target, int avoid) =>
         Search(from, (Target: target, Avoid: avoid), static (s, node) => node == s.Target,
@@ -211,6 +229,12 @@ internal sealed class BarrierClassifier(UniformityState state)
 
     private bool ReachesSplit(int from) =>
         Search(from, state, static (s, node) => s.NodeAt(node).HasSplit, static (_, _) => true);
+
+    // A split point reachable from 'from' without passing avoid (the barrier that the path skips)
+    private bool ReachesSplitAvoiding(int from, int avoid) =>
+        from != avoid &&
+        Search(from, (State: state, Avoid: avoid), static (s, node) => s.State.NodeAt(node).HasSplit,
+            static (s, node) => node != s.Avoid);
 
     // A depth-first search from 'from' for a node that found accepts, through the successors that follow accepts
     private bool Search<T>(int from, T context, Func<T, int, bool> found, Func<T, int, bool> follows)
@@ -244,41 +268,39 @@ internal sealed class BarrierClassifier(UniformityState state)
     // A callee in this compilation: reported where the call is when the callee diverges with these arguments and not
     // with uniform ones (the callee reports that case itself), or when the threads that leave the callee early meet the
     // others at a split point after the call
-    private BarrierReport GetLocalCallSiteReport(SyntaxNode call, IMethodSymbol definition,
+    private BarrierDivergence GetLocalCallSiteDivergence(SyntaxNode call, IMethodSymbol definition,
         MethodDeclarationSyntax declaration, ArgumentMasks masks)
     {
         var summary = state.Reader.GetCalleeSummary(definition, declaration, masks);
         var uniform = state.Reader.GetCalleeSummary(definition, declaration, default);
         return summary.Barrier switch
         {
-            BarrierDivergence.Condition when uniform.Barrier != BarrierDivergence.Condition =>
-                new BarrierReport(BarrierDivergence.Condition, summary.Certain),
-            BarrierDivergence.ExitOnly when ReachesSplitAfter(call) =>
-                new BarrierReport(BarrierDivergence.Condition, summary.Certain),
-            _ => default
+            BarrierDivergence.Condition when uniform.Barrier != BarrierDivergence.Condition => BarrierDivergence.Condition,
+            BarrierDivergence.ExitOnly when ReachesSplitAfter(call) => BarrierDivergence.Condition,
+            _ => BarrierDivergence.None
         };
     }
 
-    // [WHY] Another assembly records one bit per parameter, not the certainty: a call site is a warning at most
-    private BarrierReport GetImportedCallSiteReport(SyntaxNode call, IMethodSymbol callee, ArgumentMasks masks)
+    // A callee of another assembly, judged from the one bit per parameter that its export record carries
+    private BarrierDivergence GetImportedCallSiteDivergence(SyntaxNode call, IMethodSymbol callee, ArgumentMasks masks)
     {
         if (!DeviceExportTable.TryFindFunction((callee.ReducedFrom ?? callee).OriginalDefinition,
                 state.Model.Compilation, out var imported))
         {
-            return default;
+            return BarrierDivergence.None;
         }
 
         var variant = ExportBits(masks.Block);
         var record = imported.Record;
         if ((record.DivergentConditionParameters & variant) != 0)
         {
-            return new BarrierReport(BarrierDivergence.Condition, Certain: false);
+            return BarrierDivergence.Condition;
         }
 
         return (record.HasExitOnlyBarrier || (record.DivergentExitOnlyParameters & variant) != 0) &&
                ReachesSplitAfter(call)
-            ? new BarrierReport(BarrierDivergence.Condition, Certain: false)
-            : default;
+            ? BarrierDivergence.Condition
+            : BarrierDivergence.None;
     }
 
     // The export bits of a parameter mask: parameters past the 32nd share the last bit
@@ -289,27 +311,22 @@ internal sealed class BarrierClassifier(UniformityState state)
     }
 
     // What a barrier-reaching call outside a divergent region adds to the summary of the method that makes it
-    private BarrierReport GetCallComposition(SyntaxNode call)
+    private BarrierDivergence GetCallComposition(SyntaxNode call)
     {
         if (!state.Recorder.Sites.TryGetValue(call, out var site) ||
             site.Call is not { } invocation ||
             !state.Reader.TryGetDeviceFunction(invocation.TargetMethod, out var definition, out var declaration))
         {
-            return default;
+            return BarrierDivergence.None;
         }
 
-        var summary = state.Reader.GetCalleeSummary(definition, declaration, GetSiteMasks(call));
-        return summary.Barrier == BarrierDivergence.ExitOnly && ReachesSplitAfter(call)
-            ? new BarrierReport(BarrierDivergence.Condition, summary.Certain)
-            : new BarrierReport(summary.Barrier, summary.Certain);
+        var barrier = state.Reader.GetCalleeSummary(definition, declaration, GetSiteMasks(call)).Barrier;
+        return barrier == BarrierDivergence.ExitOnly && ReachesSplitAfter(call) ? BarrierDivergence.Condition : barrier;
     }
 
-    // The stronger divergence; the certainty of the branches that give it
-    private static BarrierReport Combine(BarrierReport current, BarrierReport next) =>
-        next.Divergence > current.Divergence ? next :
-        next.Divergence == current.Divergence && next.Divergence != BarrierDivergence.None
-            ? current with { Certain = current.Certain || next.Certain }
-            : current;
+    // The stronger divergence
+    private static BarrierDivergence Combine(BarrierDivergence current, BarrierDivergence next) =>
+        next > current ? next : current;
 
     // Whether a split point follows the call: later in its node, or on any path from the node
     private bool ReachesSplitAfter(SyntaxNode call)
@@ -339,12 +356,11 @@ internal sealed class BarrierClassifier(UniformityState state)
         return false;
     }
 
-    // The argument masks of a barrier-reaching call: the variance from the solved state, the identity from the probes
+    // The argument masks of a barrier-reaching call, from the solved state
     private ArgumentMasks GetSiteMasks(SyntaxNode call)
     {
         RecordAllSiteMasks();
-        var masks = state.SiteMasks != null && state.SiteMasks.TryGetValue(call, out var recorded) ? recorded : default;
-        return masks with { Identity = state.Prober.GetIdentityMask(call) & masks.Block };
+        return state.SiteMasks != null && state.SiteMasks.TryGetValue(call, out var recorded) ? recorded : default;
     }
 
     // Records the argument masks of every barrier-reaching call, from the solved state

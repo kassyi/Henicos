@@ -46,12 +46,13 @@ internal static class BarrierDivergenceChecks
     /// <summary>
     /// Reports a barrier, or a call that reaches one, that a thread-variant branch lets only some threads reach while
     /// the others reach another split point (<see cref="BarrierDivergence.Condition"/>): the branch may be in this
-    /// method, or in the callee, depending on the arguments or leaving it early (§3.2.4). It is GSH0037 (error) when
-    /// the branch certainly diverges (<see cref="BarrierReport.Certain"/>), GSH0083 (warning) otherwise. A barrier that
-    /// the others skip only on their way out of the method (<see cref="BarrierDivergence.ExitOnly"/>) is not reported
-    /// here.
+    /// method, or in the callee, depending on the arguments or leaving it early (§3.2.4). It is GSH0083, a warning: which
+    /// threads take the branch depends on the launch (a block of one thread, or an X width of 1) and on run-time values,
+    /// which the compiler does not know, so no divergent branch is certain (semantics charter §3); the barriers that do
+    /// diverge are caught at run time. A barrier that the others skip only on their way out of the method
+    /// (<see cref="BarrierDivergence.ExitOnly"/>) is not reported here.
     /// A barrier written in a body that the CPU dialects do not split (a lambda other than the bodies of
-    /// <c>Gpu.ForUnroll</c> and <c>Gpu.SyncGrid(body)</c>, or a local function) is always GSH0037.
+    /// <c>Gpu.ForUnroll</c> and <c>Gpu.SyncGrid(body)</c>, or a local function) fails in every launch: GSH0037.
     /// </summary>
     internal static void ValidateDivergentBarriers(KernelBarrierScan scan)
     {
@@ -77,10 +78,9 @@ internal static class BarrierDivergenceChecks
                 return;
             }
 
-            var report = GetReport(uniformity, barrier, scope, isCall);
-            if (report.Divergence == BarrierDivergence.Condition)
+            if (GetDivergence(uniformity, barrier, scope, isCall) == BarrierDivergence.Condition)
             {
-                ReportDivergentBarrier(scan, barrier, scope, report.Certain);
+                ReportDivergentBarrier(scan, barrier, scope);
             }
             else if (scan.IsKernel)
             {
@@ -93,35 +93,24 @@ internal static class BarrierDivergenceChecks
 
     // The divergence of a barrier in this method; for a call, the call site's when it diverges there, or when the
     // method itself says nothing
-    private static BarrierReport GetReport(UniformityAnalysis uniformity, InvocationExpressionSyntax barrier,
+    private static BarrierDivergence GetDivergence(UniformityAnalysis uniformity, InvocationExpressionSyntax barrier,
         SyncScope scope, bool isCall)
     {
-        var report = uniformity.GetBarrierReport(barrier, scope);
-        if (!isCall || report.Divergence == BarrierDivergence.Condition)
+        var divergence = uniformity.GetBarrierDivergence(barrier, scope);
+        if (!isCall || divergence == BarrierDivergence.Condition)
         {
-            return report;
+            return divergence;
         }
 
-        var callSite = uniformity.GetCallSiteReport(barrier);
-        return callSite.Divergence == BarrierDivergence.Condition || report.Divergence == BarrierDivergence.None
-            ? callSite
-            : report;
+        var callSite = uniformity.GetCallSiteDivergence(barrier);
+        return callSite == BarrierDivergence.Condition || divergence == BarrierDivergence.None ? callSite : divergence;
     }
 
-    // GSH0037 when the branch certainly diverges, GSH0083 when it depends on the launch or on run-time values
+    // GSH0083: whether the branch diverges depends on the launch or on run-time values
     private static void ReportDivergentBarrier(KernelBarrierScan scan, InvocationExpressionSyntax barrier,
-        SyncScope scope, bool certain)
-    {
-        if (certain)
-        {
-            scan.Context.ReportDiagnostic(GSharpDiagnostics.DivergentBarrierProhibited, barrier.GetLocation(),
-                DivergentBarrierMessage);
-            return;
-        }
-
+        SyncScope scope) =>
         scan.Context.ReportDiagnostic(GSharpDiagnostics.LaunchDependentDivergentBarrier, barrier.GetLocation(),
             scan.SemanticModel.GetSymbol(barrier)?.Name ?? "", scope == SyncScope.Grid ? "grid" : "block");
-    }
 
     // GSH0037 for a barrier in a lambda or local function that the state machine does not split
     private static void ReportUnsplitBarrier(KernelBarrierScan scan, InvocationExpressionSyntax barrier) =>
@@ -172,11 +161,6 @@ internal static class BarrierDivergenceChecks
                 scope == SyncScope.Grid ? "grid" : "block"));
         }
     }
-
-    private const string DivergentBarrierMessage =
-        "Gpu.SyncThreads(), or a call to a device function that reaches it, cannot be placed inside a conditional " +
-        "branch or an operand that only some threads evaluate ('&&', '||', '??', '?:'). This causes undefined " +
-        "behavior on the GPU and silently reorders shared memory accesses on the CPU emulator.";
 
     // [WHY] The state machine of the CPU dialects splits only the statements of the method and the inlined macro
     // bodies; a barrier in any other lambda or in a local function cannot be resumed (decision 1.5)

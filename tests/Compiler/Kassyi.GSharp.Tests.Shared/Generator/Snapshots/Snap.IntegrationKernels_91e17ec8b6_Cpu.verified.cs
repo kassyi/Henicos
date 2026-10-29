@@ -251,6 +251,8 @@ atomicAdd(&__gsharp_id_4_globalCounter[0],(unsigned long long)__gsharp_id_14_bit
 }
 __gsharp_id_2_results[__gsharp_id_7_tid]=__gsharp_id_17_sum;
 }
+}
+}
 __gsharp_ctx->__gsharp_id_30_t=threadIdx.x;
 __gsharp_ctx->__gsharp_id_31_dynamicSharedMem={ (float*)__gsharp_allocate_smem_dynamic(0xf4a8b89f8fdf4f71ull, (__gsharp_id_6_dynamicSharedSize) * sizeof(float), alignof(float), ""Tier1_IntegrationKernels.cs(163,48)"") };
 if(__gsharp_ctx->__gsharp_id_30_t<__gsharp_id_5_count)
@@ -309,8 +311,6 @@ __gsharp_id_41_loopCounter++;
 }
 while(__gsharp_id_41_loopCounter<3);
 __gsharp_id_2_results[__gsharp_ctx->__gsharp_id_30_t]=__gsharp_id_35_finalVal;
-}
-}
 }
 __gsharp_state=-1;
 return;
@@ -498,6 +498,7 @@ global::Kassyi.GSharp.Core.Gpu.AtomicAdd(ref globalCounter[0], (ulong)bitwise);
 // The loop leaves its sum in the result; the barrier comes after the loop (GBI-31)
 results[__gsharp_unroll_0] = sum;
 }
+}
 
 __gsharp_ctx.t = global::Kassyi.GSharp.Core.ThreadIndex.X;
 dynamicSharedMem = new global::Kassyi.GSharp.Core.SharedMemory<float>(dynamicSharedSize, 0xf4a8b89f8fdf4f71UL, "Tier1_IntegrationKernels.cs(163,48)");
@@ -557,7 +558,6 @@ loopCounter++;
 }
 while (loopCounter < 3);
 results[__gsharp_ctx.t] = finalVal;
-}
 }
 
 __gsharp_ctx.__gsharp_state = -1;

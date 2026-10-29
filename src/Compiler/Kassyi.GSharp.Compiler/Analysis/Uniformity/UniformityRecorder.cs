@@ -35,9 +35,6 @@ internal sealed class UniformityRecorder(IMethodSymbol method, ArgumentMasks mas
     /// <summary>The barriers and barrier-reaching calls of the graph.</summary>
     public Dictionary<SyntaxNode, BarrierSite> Sites { get; } = new();
 
-    /// <summary>The parameters of the analyzed method by value index.</summary>
-    public Dictionary<int, IParameterSymbol> Parameters { get; } = new();
-
     /// <summary>The number of values: locals, parameters and flow captures.</summary>
     public int ValueCount => _symbols.Count + _captures.Count;
 
@@ -74,7 +71,6 @@ internal sealed class UniformityRecorder(IMethodSymbol method, ArgumentMasks mas
             var bit = ArgumentMasks.Bit(parameter.Ordinal);
             var variance = (masks.Block & bit) != 0 ? ThreadVariance.Block :
                 (masks.Grid & bit) != 0 ? ThreadVariance.Grid : ThreadVariance.Uniform;
-            Parameters[ValueOf(parameter)] = parameter;
             Define(parameter, variance, node);
         }
     }

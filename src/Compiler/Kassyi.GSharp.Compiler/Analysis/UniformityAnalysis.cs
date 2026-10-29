@@ -31,7 +31,7 @@ namespace Kassyi.GSharp.Compiler.Analysis;
 /// points are solved together until none grows (<see cref="UniformitySolver"/>).
 /// </para>
 /// <para>
-/// Barriers: <see cref="BarrierClassifier"/>; whether a divergent branch certainly diverges: <see cref="CertaintyProber"/>.
+/// Barriers: <see cref="BarrierClassifier"/>.
 /// </para>
 /// <para>
 /// The graph is the spliced flow graph of the method (<see cref="SplicedFlowBuilder"/>), on which
@@ -56,7 +56,7 @@ internal sealed class UniformityAnalysis
     /// </summary>
     public static UniformityAnalysis Analyze(SplicedFlowGraph graph, UniformityRecorder recorder, SemanticModel model,
         IMethodSymbol method) =>
-        Run(new UniformityState(model, method, graph, recorder, identityMask: 0,
+        Run(new UniformityState(model, method, graph, recorder,
             new HashSet<IMethodSymbol>(SymbolEqualityComparer.Default)));
 
     /// <summary>
@@ -68,7 +68,7 @@ internal sealed class UniformityAnalysis
     {
         var recorder = new UniformityRecorder(method, masks);
         var spliced = SplicedFlowBuilder.Build(graph, model, ImmutableArray.Create<IFlowRecorder>(recorder));
-        return Run(new UniformityState(model, method, spliced, recorder, masks.Identity, calleesInProgress));
+        return Run(new UniformityState(model, method, spliced, recorder, calleesInProgress));
     }
 
     /// <summary>Whether only some threads of a block reach the call or object creation <paramref name="node"/>.</summary>
@@ -91,12 +91,12 @@ internal sealed class UniformityAnalysis
                variance == ThreadVariance.Block;
     }
 
-    /// <inheritdoc cref="BarrierClassifier.GetBarrierReport"/>
-    public BarrierReport GetBarrierReport(SyntaxNode barrier, SyncScope scope) =>
-        _state.Barriers.GetBarrierReport(barrier, scope);
+    /// <inheritdoc cref="BarrierClassifier.GetBarrierDivergence"/>
+    public BarrierDivergence GetBarrierDivergence(SyntaxNode barrier, SyncScope scope) =>
+        _state.Barriers.GetBarrierDivergence(barrier, scope);
 
-    /// <inheritdoc cref="BarrierClassifier.GetCallSiteReport"/>
-    public BarrierReport GetCallSiteReport(SyntaxNode call) => _state.Barriers.GetCallSiteReport(call);
+    /// <inheritdoc cref="BarrierClassifier.GetCallSiteDivergence"/>
+    public BarrierDivergence GetCallSiteDivergence(SyntaxNode call) => _state.Barriers.GetCallSiteDivergence(call);
 
     /// <inheritdoc cref="BarrierClassifier.GetExitBranches"/>
     public ImmutableArray<SyntaxNode> GetExitBranches(SyntaxNode barrier, SyncScope scope) =>

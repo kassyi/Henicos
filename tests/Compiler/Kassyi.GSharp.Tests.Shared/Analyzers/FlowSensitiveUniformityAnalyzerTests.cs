@@ -18,8 +18,7 @@ public class FlowSensitiveUniformityAnalyzerTests : TranspilerTestBase
     {
         var actual = await RunAsync("Analyzers/BarrierUsage/FlowSensitiveUniformityKernels.cu.cs");
 
-        // GSH0037 where the branch certainly diverges (128, 197, 202, 245), GSH0083 where it depends on the launch or on
-        // run-time values. 80: loop-carried value. 100: deconstructed element. 114: while with a thread-variant count. 128: switch
+        // GSH0083 for every divergent branch. 80: loop-carried value. 100: deconstructed element. 114: while with a thread-variant count. 128: switch
         // section. 143 / 144: right operand of && and branch of ?:. 161: continue. 177: break. 197: grid barrier on the
         // block index. 202: grid barrier on the thread index. 245: a local assigned on one branch, read after the join
         Assert.Equal(
@@ -27,16 +26,16 @@ public class FlowSensitiveUniformityAnalyzerTests : TranspilerTestBase
                 (GSharpDiagnostics.LaunchDependentDivergentBarrier.Id, 80, 17, 80, 34),
                 (GSharpDiagnostics.LaunchDependentDivergentBarrier.Id, 100, 13, 100, 30),
                 (GSharpDiagnostics.LaunchDependentDivergentBarrier.Id, 114, 13, 114, 30),
-                (GSharpDiagnostics.DivergentBarrierProhibited.Id, 128, 17, 128, 34),
+                (GSharpDiagnostics.LaunchDependentDivergentBarrier.Id, 128, 17, 128, 34),
                 (GSharpDiagnostics.LaunchDependentDivergentBarrier.Id, 143, 43, 143, 59),
                 (GSharpDiagnostics.LaunchDependentDivergentBarrier.Id, 144, 43, 144, 59),
                 (GSharpDiagnostics.LaunchDependentDivergentBarrier.Id, 161, 13, 161, 30),
                 (GSharpDiagnostics.LaunchDependentDivergentBarrier.Id, 177, 13, 177, 30),
-                (GSharpDiagnostics.DivergentBarrierProhibited.Id, 197, 13, 197, 27),
-                (GSharpDiagnostics.DivergentBarrierProhibited.Id, 202, 13, 202, 27),
+                (GSharpDiagnostics.LaunchDependentDivergentBarrier.Id, 197, 13, 197, 27),
+                (GSharpDiagnostics.LaunchDependentDivergentBarrier.Id, 202, 13, 202, 27),
                 (GSharpDiagnostics.BarrierAfterDivergentExit.Id, 214, 13, 214, 30),
                 (GSharpDiagnostics.BarrierAfterDivergentExit.Id, 226, 13, 226, 31),
-                (GSharpDiagnostics.DivergentBarrierProhibited.Id, 245, 13, 245, 30)
+                (GSharpDiagnostics.LaunchDependentDivergentBarrier.Id, 245, 13, 245, 30)
             ],
             actual);
     }

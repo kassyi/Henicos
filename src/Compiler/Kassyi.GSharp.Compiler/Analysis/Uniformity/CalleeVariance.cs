@@ -6,9 +6,7 @@ namespace Kassyi.GSharp.Compiler.Analysis;
 /// </param>
 /// <param name="ByReference">The variance of what it leaves in its <c>ref</c> and <c>out</c> parameters.</param>
 /// <param name="Barrier">Whether only some threads reach a barrier in it (§3.2.4, the composed summary).</param>
-/// <param name="Certain">Whether a branch behind <paramref name="Barrier"/> certainly diverges.</param>
 internal readonly record struct CalleeVariance(
     ThreadVariance Return,
     ThreadVariance ByReference,
-    BarrierDivergence Barrier,
-    bool Certain);
+    BarrierDivergence Barrier);

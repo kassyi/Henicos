@@ -50,7 +50,7 @@ The G# compiler and Roslyn analyzers enforce GPU safety and memory management ru
 | [GSH0034](GSH0034.md) | Error | The 'params' modifier is prohibited in GPU device code |
 | [GSH0035](GSH0035.md) | Error | Cannot call parallel-dependent processing from a single-thread context |
 | [GSH0036](GSH0036.md) | Error | Kernel class must be partial |
-| [GSH0037](GSH0037.md) | Error | Divergent barriers are prohibited |
+| [GSH0037](GSH0037.md) | Error | Barrier in a lambda or local function that the CPU dialects do not split |
 | [GSH0038](GSH0038.md) | Error | Exception handling is not supported in GPU kernels |
 | [GSH0039](GSH0039.md) | Error | ref structs cannot be held across barrier synchronization |
 | [GSH0040](GSH0040.md) | Error | goto statements cannot cross barrier synchronization |

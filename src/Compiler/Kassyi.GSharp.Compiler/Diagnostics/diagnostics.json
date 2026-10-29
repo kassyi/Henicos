@@ -337,7 +337,7 @@
   {
     "name": "DivergentBarrierProhibited",
     "id": "GSH0037",
-    "title": "Divergent barriers are prohibited",
+    "title": "Barrier in a lambda or local function that the CPU dialects do not split",
     "messageFormat": "{0}",
     "category": "GSharpTranspiler",
     "defaultSeverity": "Error",

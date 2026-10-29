@@ -32,6 +32,11 @@ internal sealed class PostDominatorTree
         _joins = new ImmutableArray<int>?[successors.Length];
     }
 
+    /// <summary>
+    /// The immediate post-dominator of <paramref name="node"/>; the number of nodes when it is the virtual exit.
+    /// </summary>
+    public int GetImmediatePostDominator(int node) => _postDominator[node];
+
     /// <summary>The influence region of a branch: the nodes its successors reach before its immediate post-dominator.</summary>
     public ImmutableArray<int> GetRegion(int branch)
     {

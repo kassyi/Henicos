@@ -7,20 +7,18 @@ namespace Kassyi.GSharp.Compiler.Analysis;
 internal sealed class UniformityState
 {
     public UniformityState(SemanticModel model, IMethodSymbol method, SplicedFlowGraph graph, UniformityRecorder recorder,
-        ulong identityMask, HashSet<IMethodSymbol> calleesInProgress)
+        HashSet<IMethodSymbol> calleesInProgress)
     {
         Model = model;
         Method = method;
         Graph = graph;
         Recorder = recorder;
-        IdentityMask = identityMask;
         CalleesInProgress = calleesInProgress;
         Successors = graph.GetSuccessors();
         PostDominators = new PostDominatorTree(Successors, graph.Exit);
         Reader = new UniformityValueReader(this);
         Solver = new UniformitySolver(this);
         Barriers = new BarrierClassifier(this);
-        Prober = new CertaintyProber(this);
     }
 
     public SemanticModel Model { get; }
@@ -31,9 +29,6 @@ internal sealed class UniformityState
     public SplicedFlowGraph Graph { get; }
 
     public UniformityRecorder Recorder { get; }
-
-    /// <summary>The parameters that receive the thread index itself.</summary>
-    public ulong IdentityMask { get; }
 
     /// <summary>The device functions being analyzed on the way to this one, which a recursive call leaves out.</summary>
     public HashSet<IMethodSymbol> CalleesInProgress { get; }
@@ -50,8 +45,6 @@ internal sealed class UniformityState
     public UniformitySolver Solver { get; }
 
     public BarrierClassifier Barriers { get; }
-
-    public CertaintyProber Prober { get; }
 
     /// <summary>The variance of each value at the start of each node.</summary>
     public ThreadVariance[][] In { get; set; } = [];

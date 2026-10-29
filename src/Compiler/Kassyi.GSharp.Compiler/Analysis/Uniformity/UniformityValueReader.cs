@@ -76,13 +76,10 @@ internal sealed class UniformityValueReader(UniformityState state)
         IInvocationOperation invocation, ControlFlowGraph graph, ThreadVariance[] current)
     {
         var masks = GetArgumentMasks(invocation, graph, current);
-        return GetCalleeSummary(callee, declaration, masks with { Identity = 0 });
+        return GetCalleeSummary(callee, declaration, masks);
     }
 
-    /// <summary>
-    /// Which parameters receive a value that varies within a block, or between blocks only (the identity mask comes from
-    /// the probe runs: <see cref="CertaintyProber.GetIdentityMask"/>).
-    /// </summary>
+    /// <summary>Which parameters receive a value that varies within a block, or between blocks only.</summary>
     public ArgumentMasks GetArgumentMasks(IInvocationOperation invocation, ControlFlowGraph graph,
         ThreadVariance[] current)
     {
@@ -107,7 +104,7 @@ internal sealed class UniformityValueReader(UniformityState state)
             }
         }
 
-        return new ArgumentMasks(blockMask, gridMask, 0);
+        return new ArgumentMasks(blockMask, gridMask);
     }
 
     /// <summary>What a call of <paramref name="callee"/> with <paramref name="masks"/> gives its caller, cached per compilation.</summary>
@@ -160,8 +157,7 @@ internal sealed class UniformityValueReader(UniformityState state)
             }
         }
 
-        var barrier = state.Barriers.SummarizeBarriers();
-        return new CalleeVariance(returned, byReference, barrier.Divergence, barrier.Certain);
+        return new CalleeVariance(returned, byReference, state.Barriers.SummarizeBarriers());
     }
 
     // A parameter of the analyzed method has a value from the start; one of a lambda or local function that is not
