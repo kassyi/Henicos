@@ -152,13 +152,8 @@ internal static class ObjectCreationHelper
             return StructCreationKind.Mapped;
         }
 
-        // A declared parameterless constructor whose body is not here (another assembly without a record): T{} would
-        // skip the body and the field initializers (#609)
-        if (constructor.Parameters.Length == 0)
-        {
-            return StructCreationKind.Unsupported;
-        }
-
+        // A declared parameterless constructor whose body is not here (another assembly without a record) is not
+        // positional, so it is Unsupported: T{} would skip the body and the field initializers (#609)
         return IsPositionalConstructor(typeSymbol, constructor)
             ? StructCreationKind.Braces
             : StructCreationKind.Unsupported;

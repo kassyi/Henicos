@@ -353,7 +353,7 @@ public class CrossAssemblyDiagnosticsTests
 
     // #609: Counter() of a library has a body. Without a record the consumer cannot run it, so a written new Counter()
     // is GSH0088 at its new keyword and new T() with T = Counter, which the analyzer cannot see, is GSH0003 at the
-    // creation; with a record both call the imported constructor
+    // creation (the written one is GSH0003 as well, as new Pair(1) is); with a record both call the imported constructor
     [Theory]
     [InlineData("Cpu", false)]
     [InlineData("Cuda", false)]
@@ -365,21 +365,45 @@ public class CrossAssemblyDiagnosticsTests
         var library = DeviceLibraryBuilder.Build("XasmLib", exports ? null : s_noExport,
             RoslynTestUtility.ReadTestCase(Folder + "ParameterlessLibrary.cs"));
 
-        var direct = await RunAsync(dialect, RoslynTestUtility.ReadTestCase(Folder + "ParameterlessDirectConsumer.cs"),
-            library);
-        var generic = await RunAsync(dialect, RoslynTestUtility.ReadTestCase(Folder + "ParameterlessConsumer.cs"),
-            library);
+        var (direct, directSource) = await RunWithGeneratedSourceAsync(dialect,
+            RoslynTestUtility.ReadTestCase(Folder + "ParameterlessDirectConsumer.cs"), library);
+        var (generic, genericSource) = await RunWithGeneratedSourceAsync(dialect,
+            RoslynTestUtility.ReadTestCase(Folder + "ParameterlessConsumer.cs"), library);
 
         if (exports)
         {
             Assert.Empty(direct.Concat(generic).Where(static d => d.Id.StartsWith("GSH", StringComparison.Ordinal)));
+
+            // Both creations call the library's constructor, which sets Value = 1, instead of Counter{}
+            Assert.Contains("__gsharp_id_1_counter = __gsharp_ctor_XasmLib__Counter();", directSource,
+                StringComparison.Ordinal);
+            Assert.Contains("__gsharp_self.__gsharp_mb_Value = __gsharp_ctor_XasmLib__Counter();", genericSource,
+                StringComparison.Ordinal);
             return;
         }
 
         // Line 11: var counter = new Counter(); line 9: public T Value = new T();
         Assert.Equal([(Analyzer, 11, 27, 11, 30)], direct.Ranges(GSharpDiagnostics.DeviceFunctionNotExported.Id));
+        Assert.Equal([(Analyzer, 11, 27, 11, 40)],
+            direct.Ranges(GSharpDiagnostics.UnsupportedSyntax.Id, "constructor 'XasmLib.Counter()' without a device equivalent"));
         Assert.Equal([(Analyzer, 9, 26, 9, 33)],
             generic.Ranges(GSharpDiagnostics.UnsupportedSyntax.Id, "constructor 'XasmLib.Counter()' without a device equivalent"));
+    }
+
+    // The diagnostics of a run and the text of the sources the generator added
+    private static async Task<(ImmutableArray<ReportedDiagnostic> Diagnostics, string Generated)>
+        RunWithGeneratedSourceAsync(string dialect, string consumer, params MetadataReference[] libraries)
+    {
+        var run = await KernelDiagnostics.RunCompilationAsync(DeviceLibraryBuilder.CreateConsumer(consumer, libraries),
+            dialect);
+        var generated = string.Concat(run.Output.SyntaxTrees
+            .Where(tree => !run.Input.SyntaxTrees.Contains(tree))
+            .Select(static tree => tree.ToString()));
+        var diagnostics = run.Analyzer
+            .Select(static d => ReportedDiagnostic.From(Analyzer, d))
+            .Concat(run.Generator.Select(static d => ReportedDiagnostic.From(DiagnosticOrigin.Generator, d)))
+            .ToImmutableArray();
+        return (diagnostics, generated);
     }
 
     private static async Task<ImmutableArray<ReportedDiagnostic>> RunAsync(string dialect, string consumer,
