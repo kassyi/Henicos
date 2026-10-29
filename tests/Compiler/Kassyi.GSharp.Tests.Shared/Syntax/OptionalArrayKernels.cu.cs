@@ -1,6 +1,7 @@
 #nullable enable
 using System;
 using System.Collections.Immutable;
+using System.Runtime.InteropServices;
 using Kassyi.GSharp.Core;
 
 namespace Kassyi.GSharp.Tests.Shared.Syntax;
@@ -19,6 +20,43 @@ public static partial class OptionalArrayKernels
     {
         int i = ThreadIndex.X;
         x[i] = bias == null ? -1f : (null != bias ? bias[i] : -2f);
+    }
+
+    [GpuKernel]
+    public static void LengthOptionalKernel(int[] o, float[]? bias)
+    {
+        if (ThreadIndex.X == 0)
+        {
+#pragma warning disable CS8602 // The device reads a null array as one of length 0
+            o[0] = bias.Length;
+#pragma warning restore CS8602
+        }
+    }
+
+    [GpuKernel]
+    public static void OutOptionalKernel([Out] float[]? bias, int[] o)
+    {
+        if (ThreadIndex.X == 0)
+        {
+            o[0] = bias is null ? 0 : 1;
+            if (bias is not null)
+            {
+                bias[0] = 5f;
+            }
+        }
+    }
+
+    [GpuKernel]
+    public static void InOutOptionalKernel([In, Out] float[]? bias, int[] o)
+    {
+        if (ThreadIndex.X == 0)
+        {
+            o[0] = bias is null ? 0 : (int)bias[0];
+            if (bias is not null)
+            {
+                bias[0] = bias[0] + 1f;
+            }
+        }
     }
 
     [GpuKernel]
