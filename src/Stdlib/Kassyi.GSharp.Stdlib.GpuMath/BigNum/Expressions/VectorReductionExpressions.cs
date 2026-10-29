@@ -323,14 +323,17 @@ internal class VectorCountExpression([TakesOwnership] IGpuBigIntVectorExpression
 {
     public int NumWords => 1;
 
-    // A length known on the host needs no evaluation; a device count (after Where) evaluates the vector and lets a
-    // kernel write the count, so that no host synchronization is needed and a CUDA graph counts again on every launch
+    // A length known on the host needs no evaluation and is written with a host copy, which also works under the CPU
+    // fallback; a device count (after Where) evaluates the vector and lets a kernel write the count, so that no host
+    // synchronization is needed and a CUDA graph counts again on every launch
     public GpuBigInt Evaluate(GpuWorkspace workspace, GpuBigUInt? targetResult = null)
     {
-        var count = vector.TryGetLength(out var length)
-            ? DeviceElementCount.Static(length)
-            : DeviceCounted.Evaluate(vector, workspace).Count;
+        if (vector.TryGetLength(out var length))
+        {
+            return WriteHostCount(workspace, targetResult, length);
+        }
 
+        var count = DeviceCounted.Evaluate(vector, workspace).Count;
         var destination = targetResult ?? new GpuBigUInt(workspace, NumWords);
         try
         {
@@ -348,6 +351,19 @@ internal class VectorCountExpression([TakesOwnership] IGpuBigIntVectorExpression
             destination.Dispose();
             throw;
         }
+    }
+
+    private static GpuBigInt WriteHostCount(GpuWorkspace workspace, GpuBigUInt? targetResult, int length)
+    {
+        if (targetResult is { } target)
+        {
+            var words = new uint[target.NumWords];
+            words[0] = (uint)length;
+            workspace.Provider.CopyHostToDevice(target.DevicePointer, words, words.Length, workspace.Stream);
+            return new GpuBigInt(target, false);
+        }
+
+        return new GpuBigInt(new GpuBigUInt(workspace, new[] { (uint)length }), false);
     }
 
     public void Dispose() => vector.Dispose();

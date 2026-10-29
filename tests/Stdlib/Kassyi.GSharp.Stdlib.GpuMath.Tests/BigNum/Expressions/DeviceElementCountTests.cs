@@ -142,6 +142,35 @@ public sealed class DeviceElementCountTests : IDisposable
         Assert.Equal(new BigInteger(count), result.Value.ToBigInteger(result.IsNegative));
     }
 
+    [SkippableFact]
+    [Scenario(TestScenario.Boundary)]
+    public void Count_HostLength_UnderCpuFallbackWithContext_IsTheLength()
+    {
+        // A length known on the host is written with a host copy, as before the device count (#863): under the CPU
+        // fallback the workspace memory is host memory, and a kernel launched on it with the context of this class
+        // current leaves the result untouched (0) or fails with CudaErrorLaunchFailed (#874).
+        // mutant: the host-length path launches WriteElementCountKernel
+        // ForceCpuFallback is AsyncLocal, so the override cannot leak into other tests.
+        GpuKernelLoader.ForceCpuFallback = true;
+        try
+        {
+            using var workspace = new GpuWorkspace(64);
+            using var array = new GpuBigIntArray(workspace, 4, 2);
+            using var target = new GpuBigUInt(workspace, 2);
+            workspace.Provider.CopyHostToDevice(target.DevicePointer, [0xFFFF_FFFFu, 0xFFFF_FFFFu], 2, workspace.Stream);
+
+            using var count = array.AsVectorizedEnumerable().Count().Evaluate(workspace);
+            var taken = array.AsVectorizedEnumerable().Take(3).Count().Evaluate(target);
+
+            Assert.Equal(new BigInteger(4), count.Value.ToBigInteger());
+            Assert.Equal(new BigInteger(3), taken.Value.ToBigInteger());
+        }
+        finally
+        {
+            GpuKernelLoader.ForceCpuFallback = false;
+        }
+    }
+
     public static TheoryData<int, int> SkipTakeCases()
     {
         var data = new TheoryData<int, int>();
