@@ -12,11 +12,15 @@ namespace Kassyi.GSharp.Compiler.Analysis;
 /// <para>
 /// A barrier in the influence region of a divergent branch is skipped by the threads of a successor of the branch when
 /// some path from that successor reaches the immediate post-dominator of the branch (or the end of the method) without
-/// passing the barrier and without coming back through the branch. The other successors of <c>||</c>, <c>&amp;&amp;</c>
-/// and <c>?:</c> may still reach the barrier on another path; that does not make the threads on the skipping path reach
-/// it. The barrier is <see cref="BarrierDivergence.Condition"/> when the threads on a skipping path can reach a point
-/// where the state machine splits (another one, or the barrier itself again after the paths meet: the next iteration of
-/// a loop); otherwise they only leave the method, <see cref="BarrierDivergence.ExitOnly"/>.
+/// passing the barrier and without coming back through the branch, while another successor reaches the barrier: the
+/// branch then decides which threads reach it. A successor from which no other successor reaches the barrier skips it
+/// only on a later, uniform branch, which this branch does not decide. The other successors of <c>||</c>,
+/// <c>&amp;&amp;</c> and <c>?:</c> may still reach the barrier on another path; that does not make the threads on the
+/// skipping path reach it. The barrier is <see cref="BarrierDivergence.Condition"/> when the threads on a skipping path
+/// can reach a point where the state machine splits and from which they can go on to the post-dominator or the end
+/// without the barrier, so that they wait there while the others wait at the barrier (another split point, or the
+/// barrier itself again after the paths meet: the next iteration of a loop); otherwise they only leave the method,
+/// <see cref="BarrierDivergence.ExitOnly"/>.
 /// </para>
 /// <para>
 /// A block barrier is divergent only on a branch that varies within a block; a grid barrier also on one that varies
@@ -195,16 +199,18 @@ internal sealed class BarrierClassifier(UniformityState state)
     private BarrierDivergence Classify(int branch, int node)
     {
         var stop = state.PostDominators.GetImmediatePostDominator(branch);
+        var successors = state.Successors[branch];
         var skips = false;
-        foreach (var successor in state.Successors[branch])
+        foreach (var successor in successors)
         {
-            if (!Skips(successor, node, branch, stop))
+            if (!Skips(successor, node, branch, stop) || !OtherReaches(successors, successor, node, branch))
             {
                 continue;
             }
 
             skips = true;
-            if (ReachesSplitAvoiding(successor, node) || (stop < state.NodeCount && Reaches(stop, node, avoid: -1)))
+            if (ReachesMeetingSplit(successor, node, stop) ||
+                (stop < state.NodeCount && Reaches(stop, node, avoid: -1)))
             {
                 return BarrierDivergence.Condition;
             }
@@ -230,11 +236,38 @@ internal sealed class BarrierClassifier(UniformityState state)
     private bool ReachesSplit(int from) =>
         Search(from, state, static (s, node) => s.NodeAt(node).HasSplit, static (_, _) => true);
 
-    // A split point reachable from 'from' without passing avoid (the barrier that the path skips)
-    private bool ReachesSplitAvoiding(int from, int avoid) =>
-        from != avoid &&
-        Search(from, (State: state, Avoid: avoid), static (s, node) => s.State.NodeAt(node).HasSplit,
-            static (s, node) => node != s.Avoid);
+    // Whether a successor of branch other than successor reaches node without coming back through branch: only then
+    // does branch decide whether the threads on successor reach node
+    private bool OtherReaches(ImmutableArray<int> successors, int successor, int node, int branch)
+    {
+        foreach (var other in successors)
+        {
+            if (other != successor && Reaches(other, node, avoid: branch))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    // A split point that the threads on a path from 'from' reach without passing node (the barrier that they skip), and
+    // from which they can go on to stop or to the end of the method without passing node: they wait there while the
+    // others wait at node. A split from which every path leads to node only comes before it
+    private bool ReachesMeetingSplit(int from, int node, int stop) =>
+        from != node &&
+        Search(from, (Classifier: this, Node: node, Stop: stop),
+            static (s, n) => s.Classifier.IsMeetingSplit(n, s.Node, s.Stop),
+            static (s, n) => n != s.Node);
+
+    private bool IsMeetingSplit(int split, int node, int stop) =>
+        state.NodeAt(split).HasSplit && ReachesStopAvoiding(split, node, stop);
+
+    // Whether a path from 'from' reaches stop or the end of the method without passing node
+    private bool ReachesStopAvoiding(int from, int node, int stop) =>
+        Search(from, (Node: node, Stop: stop, State: state),
+            static (s, n) => n == s.Stop || s.State.Successors[n].Length == 0,
+            static (s, n) => n != s.Node);
 
     // A depth-first search from 'from' for a node that found accepts, through the successors that follow accepts
     private bool Search<T>(int from, T context, Func<T, int, bool> found, Func<T, int, bool> follows)
