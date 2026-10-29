@@ -14,9 +14,9 @@ using Xunit;
 namespace Kassyi.GSharp.Tests.Generators.StateMachines;
 
 /// <summary>
-/// Tier 2 tests for the arguments of a suspending call that lowering evaluates into temporaries
+/// Tier 2 tests for the arguments of a suspending call or a warp shuffle that lowering evaluates into temporaries
 /// (<see cref="WarpInstructionRewriter"/>): an identifier argument whose variable a later argument writes is evaluated
-/// first as well, as C# reads it (#608).
+/// first as well, as C# reads it (#608), and the arguments of a shuffle are evaluated once, in the order written (#788).
 /// </summary>
 [Category(TestCategory.Compiler)]
 public class SuspendingCallArgumentOrderTests

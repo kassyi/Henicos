@@ -7,7 +7,9 @@ internal static class HoistedFieldTypeResolver
 {
     /// <summary>
     /// Returns the type of the hoisted field that <paramref name="field"/> declares, trying the declared symbol, the
-    /// initializer type, a predefined declared type and the <c>foreach</c> index annotation in this order.
+    /// initializer type (the type it converts to for an argument temporary,
+    /// <see cref="LoweringAnnotations.ArgumentTempAnnotationKind"/>), a predefined declared type and the <c>foreach</c>
+    /// index annotation in this order.
     /// </summary>
     /// <exception cref="InvalidOperationException">No lookup produced a usable type (an internal compiler error).</exception>
     /// <remarks>
@@ -23,7 +25,9 @@ internal static class HoistedFieldTypeResolver
             IParameterSymbol parameter => parameter.Type,
             _ => null
         };
-        var type2 = field.Initializer != null ? semanticModel.GetTypeSymbol(field.Initializer.Value) : null;
+        var type2 = field.Initializer?.Value is { } initializer
+            ? GetInitializerType(field, initializer, semanticModel)
+            : null;
 
         if (IsAcceptable(type1))
         {
@@ -48,6 +52,15 @@ internal static class HoistedFieldTypeResolver
 
         throw new InvalidOperationException(BuildErrorMessage(field, semanticModel, kernelName, declaredSymbol, type1, type2));
     }
+
+    // [WHY] An argument temporary holds the value the callee receives: 'Half / 2' passed to a uint parameter is a uint
+    // there, though its own type is int, and an int field would not convert implicitly the way the constant did (#788)
+    private static ITypeSymbol? GetInitializerType(VariableDeclaratorSyntax field, ExpressionSyntax initializer,
+        SemanticModel semanticModel) =>
+        field.HasAnnotations(LoweringAnnotations.ArgumentTempAnnotationKind) &&
+        semanticModel.GetConvertedTypeSymbol(initializer) is { } convertedType
+            ? convertedType
+            : semanticModel.GetTypeSymbol(initializer);
 
     private static SpecialType? TryGetSpecialType(SyntaxKind kind) => kind switch
     {

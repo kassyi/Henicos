@@ -5,8 +5,9 @@ namespace Kassyi.GSharp.Compiler.Lowering;
 /// the state machine can split on them.
 /// </summary>
 /// <param name="semanticModel">
-/// A semantic model of the compilation, which tells whether a later argument of a suspending call writes the variable
-/// that an earlier one reads (<see cref="ExpressionEffects"/>). Without it, the arguments are compared by name.
+/// A semantic model of the compilation, which tells whether a later argument of a suspending call or a warp shuffle
+/// writes the variable that an earlier one reads (<see cref="ExpressionEffects"/>) and which arguments are constant.
+/// Without it, the arguments are compared by name and only literals count as constant.
 /// </param>
 public class WarpInstructionRewriter(SemanticModel? semanticModel = null) : CSharpSyntaxRewriter
 {
@@ -269,10 +270,16 @@ public class WarpInstructionRewriter(SemanticModel? semanticModel = null) : CSha
             }
 
             return argument.Expression is LiteralExpressionSyntax ||
-                   (argument.Expression is IdentifierNameSyntax && !isWrittenLater)
+                   (argument.Expression is IdentifierNameSyntax && !isWrittenLater) ||
+                   IsConstant(argument.Expression)
                 ? argument
                 : argument.WithExpression(Spill(argument.Expression));
         }
+
+        // [WHY] A constant expression has no side effect and the same value on every evaluation, like a literal. Left in
+        // place, it also keeps its implicit constant conversion ('Half / 2' to a uint parameter), which a variable lacks.
+        private bool IsConstant(ExpressionSyntax expression) =>
+            parent._semanticModel is { } model && model.GetSafeConstantValue(expression).HasValue;
 
         private ElementAccessExpressionSyntax SpillIndices(ElementAccessExpressionSyntax elementAccess)
         {
@@ -299,15 +306,18 @@ public class WarpInstructionRewriter(SemanticModel? semanticModel = null) : CSha
         private IdentifierNameSyntax Spill(ExpressionSyntax expression)
         {
             var tempName = parent.GetNextArgumentTempName();
-            hoistedAssignments.Add(CreateTempDeclaration(tempName, expression.WithoutTrivia()));
+            hoistedAssignments.Add(CreateTempDeclaration(tempName, expression.WithoutTrivia(),
+                new SyntaxAnnotation(LoweringAnnotations.ArgumentTempAnnotationKind)));
             return SyntaxFactory.IdentifierName(tempName).WithTriviaFrom(expression);
         }
 
         // var <tempName> = <value>;
-        internal static LocalDeclarationStatementSyntax CreateTempDeclaration(string tempName, ExpressionSyntax value)
+        internal static LocalDeclarationStatementSyntax CreateTempDeclaration(string tempName, ExpressionSyntax value,
+            params SyntaxAnnotation[] declaratorAnnotations)
         {
             var declarator = SyntaxFactory.VariableDeclarator(SyntaxFactory.Identifier(tempName))
-                .WithInitializer(SyntaxFactory.EqualsValueClause(value));
+                .WithInitializer(SyntaxFactory.EqualsValueClause(value))
+                .WithAdditionalAnnotations(declaratorAnnotations);
             return SyntaxFactory.LocalDeclarationStatement(
                 SyntaxFactory.VariableDeclaration(
                     SyntaxFactory.IdentifierName("var"),

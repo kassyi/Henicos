@@ -73,6 +73,13 @@ public static class LoweringAnnotations
     public const string ScopedBlockAnnotationKind = "GSharpScopedBlock";
 
     /// <summary>
+    /// Annotation kind that marks the declarator of an argument temporary (<c>__gsharp_arg_temp_&lt;n&gt;</c>) of a
+    /// suspending call or a warp shuffle. Its hoisted field takes the type the argument converts to (the parameter's), not
+    /// the argument's own type, so that the temporary passes wherever the argument did.
+    /// </summary>
+    public const string ArgumentTempAnnotationKind = "GSharpArgumentTemp";
+
+    /// <summary>
     /// The <see cref="SyncIntrinsicAnnotationKind"/> annotation for a call to <paramref name="intrinsic"/>, or
     /// <see langword="null"/> when the intrinsic does not split the state machine.
     /// </summary>

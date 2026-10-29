@@ -226,6 +226,23 @@ internal static class SemanticModelExtensions
     }
 
     /// <summary>
+    /// Gets the type the specified expression converts to in its context (the parameter type for an argument), or null if
+    /// unresolvable.
+    /// </summary>
+    public static ITypeSymbol? GetConvertedTypeSymbol(this SemanticModel semanticModel, SyntaxNode node,
+        CancellationToken cancellationToken = default)
+    {
+        if (IsInSameTree(semanticModel, node))
+        {
+            return semanticModel.GetTypeInfo(node, cancellationToken).ConvertedType;
+        }
+
+        return TryFindOriginalNode(semanticModel, node, out var targetModel, out var original)
+            ? targetModel.GetTypeInfo(original, cancellationToken).ConvertedType
+            : null;
+    }
+
+    /// <summary>
     /// Gets the declared symbol for the specified syntax node cast to <typeparamref name="T"/>, or null if unresolvable or of different type.
     /// </summary>
     public static T? GetDeclaredSymbol<T>(this SemanticModel semanticModel, SyntaxNode node,
