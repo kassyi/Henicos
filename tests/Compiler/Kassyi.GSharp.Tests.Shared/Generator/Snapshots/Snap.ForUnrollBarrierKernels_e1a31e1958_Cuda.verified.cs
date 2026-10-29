@@ -991,40 +991,82 @@ public const string MegaReducedKernel_Source = @"extern ""C"" __global__ void __
 // [GpuUnroll] start=0, count=3
 {
 auto __gsharp_id_5_src = (0==0?__gsharp_id_0_input:__gsharp_id_2_temp);
-for(int __gsharp_id_6_i = blockIdx.x * blockDim.x + threadIdx.x; __gsharp_id_6_i < __gsharp_id_3_n; __gsharp_id_6_i += gridDim.x * blockDim.x)
+{
+unsigned int __gsharp_gsl_n_0 = __gsharp_grid_stride_count(__gsharp_id_3_n);
+unsigned int __gsharp_gsl_s_0 = __gsharp_grid_stride_step();
+for(unsigned int __gsharp_gsl_0 = __gsharp_grid_stride_start(); __gsharp_gsl_0 < __gsharp_gsl_n_0; __gsharp_gsl_0 += __gsharp_gsl_s_0)
+{
+int __gsharp_id_6_i = (int)__gsharp_gsl_0;
 {
 __gsharp_id_1_scratch[__gsharp_id_6_i]=__gsharp_id_5_src[(__gsharp_id_6_i+1)%__gsharp_id_3_n]+1;
 }
+}
+}
 __syncthreads();
-for(int __gsharp_id_7_i = blockIdx.x * blockDim.x + threadIdx.x; __gsharp_id_7_i < __gsharp_id_3_n; __gsharp_id_7_i += gridDim.x * blockDim.x)
+{
+unsigned int __gsharp_gsl_n_1 = __gsharp_grid_stride_count(__gsharp_id_3_n);
+unsigned int __gsharp_gsl_s_1 = __gsharp_grid_stride_step();
+for(unsigned int __gsharp_gsl_1 = __gsharp_grid_stride_start(); __gsharp_gsl_1 < __gsharp_gsl_n_1; __gsharp_gsl_1 += __gsharp_gsl_s_1)
+{
+int __gsharp_id_7_i = (int)__gsharp_gsl_1;
 {
 __gsharp_id_2_temp[__gsharp_id_7_i]=__gsharp_id_1_scratch[__gsharp_id_7_i];
+}
+}
 }
 __syncthreads();
 }
 {
 auto __gsharp_id_5_src = (1==0?__gsharp_id_0_input:__gsharp_id_2_temp);
-for(int __gsharp_id_6_i = blockIdx.x * blockDim.x + threadIdx.x; __gsharp_id_6_i < __gsharp_id_3_n; __gsharp_id_6_i += gridDim.x * blockDim.x)
+{
+unsigned int __gsharp_gsl_n_2 = __gsharp_grid_stride_count(__gsharp_id_3_n);
+unsigned int __gsharp_gsl_s_2 = __gsharp_grid_stride_step();
+for(unsigned int __gsharp_gsl_2 = __gsharp_grid_stride_start(); __gsharp_gsl_2 < __gsharp_gsl_n_2; __gsharp_gsl_2 += __gsharp_gsl_s_2)
+{
+int __gsharp_id_6_i = (int)__gsharp_gsl_2;
 {
 __gsharp_id_1_scratch[__gsharp_id_6_i]=__gsharp_id_5_src[(__gsharp_id_6_i+1)%__gsharp_id_3_n]+1;
 }
+}
+}
 __syncthreads();
-for(int __gsharp_id_7_i = blockIdx.x * blockDim.x + threadIdx.x; __gsharp_id_7_i < __gsharp_id_3_n; __gsharp_id_7_i += gridDim.x * blockDim.x)
+{
+unsigned int __gsharp_gsl_n_3 = __gsharp_grid_stride_count(__gsharp_id_3_n);
+unsigned int __gsharp_gsl_s_3 = __gsharp_grid_stride_step();
+for(unsigned int __gsharp_gsl_3 = __gsharp_grid_stride_start(); __gsharp_gsl_3 < __gsharp_gsl_n_3; __gsharp_gsl_3 += __gsharp_gsl_s_3)
+{
+int __gsharp_id_7_i = (int)__gsharp_gsl_3;
 {
 __gsharp_id_2_temp[__gsharp_id_7_i]=__gsharp_id_1_scratch[__gsharp_id_7_i];
+}
+}
 }
 __syncthreads();
 }
 {
 auto __gsharp_id_5_src = (2==0?__gsharp_id_0_input:__gsharp_id_2_temp);
-for(int __gsharp_id_6_i = blockIdx.x * blockDim.x + threadIdx.x; __gsharp_id_6_i < __gsharp_id_3_n; __gsharp_id_6_i += gridDim.x * blockDim.x)
+{
+unsigned int __gsharp_gsl_n_4 = __gsharp_grid_stride_count(__gsharp_id_3_n);
+unsigned int __gsharp_gsl_s_4 = __gsharp_grid_stride_step();
+for(unsigned int __gsharp_gsl_4 = __gsharp_grid_stride_start(); __gsharp_gsl_4 < __gsharp_gsl_n_4; __gsharp_gsl_4 += __gsharp_gsl_s_4)
+{
+int __gsharp_id_6_i = (int)__gsharp_gsl_4;
 {
 __gsharp_id_1_scratch[__gsharp_id_6_i]=__gsharp_id_5_src[(__gsharp_id_6_i+1)%__gsharp_id_3_n]+1;
 }
+}
+}
 __syncthreads();
-for(int __gsharp_id_7_i = blockIdx.x * blockDim.x + threadIdx.x; __gsharp_id_7_i < __gsharp_id_3_n; __gsharp_id_7_i += gridDim.x * blockDim.x)
+{
+unsigned int __gsharp_gsl_n_5 = __gsharp_grid_stride_count(__gsharp_id_3_n);
+unsigned int __gsharp_gsl_s_5 = __gsharp_grid_stride_step();
+for(unsigned int __gsharp_gsl_5 = __gsharp_grid_stride_start(); __gsharp_gsl_5 < __gsharp_gsl_n_5; __gsharp_gsl_5 += __gsharp_gsl_s_5)
+{
+int __gsharp_id_7_i = (int)__gsharp_gsl_5;
 {
 __gsharp_id_2_temp[__gsharp_id_7_i]=__gsharp_id_1_scratch[__gsharp_id_7_i];
+}
+}
 }
 __syncthreads();
 }
