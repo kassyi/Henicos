@@ -129,6 +129,28 @@ public struct PcNoParameters()
     public int Y;
 }
 
+// new T() in a generic struct calls the parameterless constructor of the type argument: PcNoParameters runs X = 5,
+// PcExplicitNoParameters runs its body, PcPlain (no parameterless constructor declared) is zero (#609)
+public struct PcGenericHolder<T>() where T : struct
+{
+    public T Value = new T();
+}
+
+public struct PcExplicitNoParameters
+{
+    public int X;
+
+    public PcExplicitNoParameters()
+    {
+        X = 7;
+    }
+}
+
+public struct PcPlain
+{
+    public int X;
+}
+
 public static partial class PrimaryConstructorKernels
 {
     [GpuKernel]
@@ -267,5 +289,15 @@ public static partial class PrimaryConstructorKernels
         var created = new PcNoParameters();
         PcNoParameters defaulted = default;
         output[tid] = created.X * 100 + created.Y * 10 + defaulted.X;
+    }
+
+    [GpuKernel]
+    public static void GenericNewKernel(int[] output)
+    {
+        int tid = ThreadIndex.X;
+        var primary = new PcGenericHolder<PcNoParameters>();
+        var explicitBody = new PcGenericHolder<PcExplicitNoParameters>();
+        var plain = new PcGenericHolder<PcPlain>();
+        output[tid] = primary.Value.X * 100 + explicitBody.Value.X * 10 + plain.Value.X;
     }
 }

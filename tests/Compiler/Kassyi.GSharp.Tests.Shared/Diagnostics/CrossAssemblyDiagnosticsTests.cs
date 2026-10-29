@@ -351,6 +351,37 @@ public class CrossAssemblyDiagnosticsTests
                 .Replace("CUDA_FAILED", cudaFailed ? "true" : "false", StringComparison.Ordinal)
                 .Replace("CPP_FAILED", cppFailed ? "true" : "false", StringComparison.Ordinal));
 
+    // #609: Counter() of a library has a body. Without a record the consumer cannot run it, so a written new Counter()
+    // is GSH0088 at its new keyword and new T() with T = Counter, which the analyzer cannot see, is GSH0003 at the
+    // creation; with a record both call the imported constructor
+    [Theory]
+    [InlineData("Cpu", false)]
+    [InlineData("Cuda", false)]
+    [InlineData("Cpu", true)]
+    [InlineData("Cuda", true)]
+    [Scenario(TestScenario.SadPath)]
+    public async Task Test_ParameterlessConstructorOfALibrary_IsReportedUnlessRecorded(string dialect, bool exports)
+    {
+        var library = DeviceLibraryBuilder.Build("XasmLib", exports ? null : s_noExport,
+            RoslynTestUtility.ReadTestCase(Folder + "ParameterlessLibrary.cs"));
+
+        var direct = await RunAsync(dialect, RoslynTestUtility.ReadTestCase(Folder + "ParameterlessDirectConsumer.cs"),
+            library);
+        var generic = await RunAsync(dialect, RoslynTestUtility.ReadTestCase(Folder + "ParameterlessConsumer.cs"),
+            library);
+
+        if (exports)
+        {
+            Assert.Empty(direct.Concat(generic).Where(static d => d.Id.StartsWith("GSH", StringComparison.Ordinal)));
+            return;
+        }
+
+        // Line 11: var counter = new Counter(); line 9: public T Value = new T();
+        Assert.Equal([(Analyzer, 11, 27, 11, 30)], direct.Ranges(GSharpDiagnostics.DeviceFunctionNotExported.Id));
+        Assert.Equal([(Analyzer, 9, 26, 9, 33)],
+            generic.Ranges(GSharpDiagnostics.UnsupportedSyntax.Id, "constructor 'XasmLib.Counter()' without a device equivalent"));
+    }
+
     private static async Task<ImmutableArray<ReportedDiagnostic>> RunAsync(string dialect, string consumer,
         params MetadataReference[] libraries)
     {

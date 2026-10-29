@@ -55,6 +55,11 @@ public class PrimaryConstructorManagedTests : TranspilerTestBase
 
     [Fact]
     [Scenario(TestScenario.Boundary)]
+    public void Test_Managed_GenericNew_RunsTheParameterlessConstructor() =>
+        PrimaryConstructorScenarios.GenericNewRunsTheParameterlessConstructor(s_runManaged);
+
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
     public void Test_Managed_CapturedParametersAndAutoProperties_Roundtrip() =>
         PrimaryConstructorScenarios.CapturedParametersAndAutoPropertiesRoundtrip(s_runManaged, checkShadow: false);
 
