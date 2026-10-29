@@ -14,12 +14,9 @@ internal sealed class FloatVectorWhereExpression(
 
     public int WordsPerElement => source.WordsPerElement;
 
-    // The selected elements and the scan of the predicates (grown to the capacity), the count word, and the block sums
-    // of the scan: all owned here and reused
-    private readonly VectorResultCache _cache = new();
-    private GpuBigUInt _count;
-    private StreamCompactionOrchestrator.ScanScratch? _scratch;
-    private int _scratchCapacity = -1;
+    // The selected elements, the scan of the predicates, the count word and the block sums of the scan: owned here and
+    // reused, so that an evaluation allocates nothing after the first
+    private readonly WhereDeviceState _state = new();
 
     public bool TryGetLength(out int length)
     {
@@ -64,83 +61,32 @@ internal sealed class FloatVectorWhereExpression(
         var inputCount = DeviceCounted.Combine(evaluatedSource.Count, evaluatedPredicates.Count);
         var scanCount = new StreamCompactionOrchestrator.ScanCount(inputCount.Base, inputCount.Skip, inputCount.Limit);
 
-        EnsureCountAndScratch(workspace, capacity);
-        var scan = _cache.Scan(workspace, capacity);
-        var selected = _cache.Float(workspace, capacity, WordsPerElement);
-
-        StreamCompactionOrchestrator.ExecuteExclusiveScan(workspace, scan.DevicePointer,
-            evaluatedPredicates.Flags.DevicePointer, capacity, ScratchOrThrow(), scanCount, _count.DevicePointer,
-            flags: true);
+        var scan = _state.ScanFlags(workspace, evaluatedPredicates.Flags.DevicePointer, capacity, scanCount);
+        var selected = _state.Cache.Float(workspace, capacity, WordsPerElement);
         StreamCompactionOrchestrator.CompactFloatVector(workspace, selected, evaluatedSource.Storage,
             evaluatedPredicates.Flags.DevicePointer, scan.DevicePointer, scanCount);
 
-        var count = new DeviceElementCount(_count.DevicePointer, 0, capacity);
+        var count = _state.Count(capacity);
         return new FloatVectorEvaluation(selected.Slice(elementOffset, evalCount),
             count.SkipFirst(elementOffset).TakeFirst(evalCount));
     }
-
-    private void EnsureCountAndScratch(GpuWorkspace workspace, int capacity)
-    {
-        if (_count.Handle.IsDefault)
-        {
-            _count = new GpuBigUInt(workspace, 1);
-        }
-
-        if (_scratchCapacity == capacity)
-        {
-            return;
-        }
-
-        var scratch = new StreamCompactionOrchestrator.ScanScratch(workspace, capacity);
-        if (_scratch != null)
-        {
-            _scratch.Dispose();
-        }
-
-        _scratch = scratch;
-        _scratchCapacity = capacity;
-    }
-
-    private StreamCompactionOrchestrator.ScanScratch ScratchOrThrow() =>
-        _scratch ?? throw new InvalidOperationException("The scan scratch was not allocated.");
 
     public void Dispose()
     {
         // A release that throws does not skip the others
         try
         {
-            _cache.Dispose();
+            _state.Dispose();
         }
         finally
         {
             try
             {
-                _count.Dispose();
-                _count = default;
+                source.Dispose();
             }
             finally
             {
-                try
-                {
-                    if (_scratch != null)
-                    {
-                        _scratch.Dispose();
-                    }
-
-                    _scratch = null;
-                    _scratchCapacity = -1;
-                }
-                finally
-                {
-                    try
-                    {
-                        source.Dispose();
-                    }
-                    finally
-                    {
-                        predicate.Dispose();
-                    }
-                }
+                predicate.Dispose();
             }
         }
     }

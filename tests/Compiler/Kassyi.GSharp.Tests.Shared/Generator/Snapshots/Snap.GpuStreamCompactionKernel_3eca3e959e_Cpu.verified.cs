@@ -312,7 +312,7 @@ public uint valueB;
 public int __gsharp_id_25_d;
 public int __gsharp_id_30_d;
 }
-public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuStreamCompactionKernels__BlockExclusiveScan(uint[] output, uint[] input, int elementCount, uint[] blockSums, uint[] countBase, int countSkip, int countLimit, uint[] total, bool flags, __gsharp_context_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuStreamCompactionKernels__BlockExclusiveScan __gsharp_ctx) {
+public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuStreamCompactionKernels__BlockExclusiveScan(uint[] output, uint[] input, int elementCount, uint[]? blockSums, uint[]? countBase, int countSkip, int countLimit, uint[]? total, bool flags, __gsharp_context_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuStreamCompactionKernels__BlockExclusiveScan __gsharp_ctx) {
 global::Kassyi.GSharp.Core.SharedMemory<uint> sharedMem = new global::Kassyi.GSharp.Core.SharedMemory<uint>(2048 + 128, 0x6ed35e2e7a53fee8UL);
 {
 switch (__gsharp_ctx.__gsharp_state)
@@ -459,7 +459,7 @@ private unsafe delegate void BlockExclusiveScan_Delegate(uint gridDimX, uint gri
 #pragma warning disable CS8500
 [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
-public static unsafe void LaunchBlockExclusiveScan(global::System.UInt32[] output, global::System.UInt32[] input, global::System.Int32 elementCount, global::System.UInt32[] blockSums, global::System.UInt32[] countBase, global::System.Int32 countSkip, global::System.Int32 countLimit, global::System.UInt32[] total, global::System.Boolean flags, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, IntPtr hStream = default, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
+public static unsafe void LaunchBlockExclusiveScan(global::System.UInt32[] output, global::System.UInt32[] input, global::System.Int32 elementCount, global::System.UInt32[]? blockSums, global::System.UInt32[]? countBase, global::System.Int32 countSkip, global::System.Int32 countLimit, global::System.UInt32[]? total, global::System.Boolean flags, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, IntPtr hStream = default, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 if (output is null){
 throw new global::System.ArgumentNullException(nameof(output));
@@ -473,23 +473,14 @@ throw new global::System.ArgumentNullException(nameof(input));
 if (input.Length == 0){
 throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(input));
 }
-if (blockSums is null){
-throw new global::System.ArgumentNullException(nameof(blockSums));
+if (blockSums is { Length: 0 }){
+blockSums = null;
 }
-if (blockSums.Length == 0){
-throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(blockSums));
+if (countBase is { Length: 0 }){
+countBase = null;
 }
-if (countBase is null){
-throw new global::System.ArgumentNullException(nameof(countBase));
-}
-if (countBase.Length == 0){
-throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(countBase));
-}
-if (total is null){
-throw new global::System.ArgumentNullException(nameof(total));
-}
-if (total.Length == 0){
-throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(total));
+if (total is { Length: 0 }){
+total = null;
 }
 var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
 var dllName = $"Kassyi.GSharp.Kernels_SnapshotTest{archSuffix}.dll";
@@ -595,7 +586,7 @@ fixed (global::System.UInt32* p_blockSums = blockSums)
 fixed (global::System.UInt32* p_countBase = countBase)
 fixed (global::System.UInt32* p_total = total)
 {
-hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, sharedMemBytes, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (IntPtr)p_output, Length = output.Length }, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (IntPtr)p_input, Length = input.Length }, elementCount, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (IntPtr)p_blockSums, Length = blockSums.Length }, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (IntPtr)p_countBase, Length = countBase.Length }, countSkip, countLimit, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (IntPtr)p_total, Length = total.Length }, flags);
+hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, sharedMemBytes, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (IntPtr)p_output, Length = output.Length }, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (IntPtr)p_input, Length = input.Length }, elementCount, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (IntPtr)p_blockSums, Length = (blockSums?.Length ?? 0) }, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (IntPtr)p_countBase, Length = (countBase?.Length ?? 0) }, countSkip, countLimit, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (IntPtr)p_total, Length = (total?.Length ?? 0) }, flags);
 global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ThrowIfNativeError(dllPath);
 }
 }
@@ -1283,7 +1274,7 @@ public class __gsharp_context_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
 }
-public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuStreamCompactionKernels__CompactSignedVector(uint[] outputValues, uint[] outputSigns, uint[] inputValues, uint[] inputSigns, uint[] predicates, uint[] scanResult, int elementCount, int wordsPerElement, uint[] countBase, int countSkip, int countLimit, __gsharp_context_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuStreamCompactionKernels__CompactSignedVector __gsharp_ctx) {
+public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuStreamCompactionKernels__CompactSignedVector(uint[] outputValues, uint[] outputSigns, uint[] inputValues, uint[] inputSigns, uint[] predicates, uint[] scanResult, int elementCount, int wordsPerElement, uint[]? countBase, int countSkip, int countLimit, __gsharp_context_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuStreamCompactionKernels__CompactSignedVector __gsharp_ctx) {
 {
 switch (__gsharp_ctx.__gsharp_state)
 {
@@ -1320,7 +1311,7 @@ private unsafe delegate void CompactSignedVector_Delegate(uint gridDimX, uint gr
 #pragma warning disable CS8500
 [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
-public static unsafe void LaunchCompactSignedVector(global::System.UInt32[] outputValues, global::System.UInt32[] outputSigns, global::System.UInt32[] inputValues, global::System.UInt32[] inputSigns, global::System.UInt32[] predicates, global::System.UInt32[] scanResult, global::System.Int32 elementCount, global::System.Int32 wordsPerElement, global::System.UInt32[] countBase, global::System.Int32 countSkip, global::System.Int32 countLimit, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, IntPtr hStream = default, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
+public static unsafe void LaunchCompactSignedVector(global::System.UInt32[] outputValues, global::System.UInt32[] outputSigns, global::System.UInt32[] inputValues, global::System.UInt32[] inputSigns, global::System.UInt32[] predicates, global::System.UInt32[] scanResult, global::System.Int32 elementCount, global::System.Int32 wordsPerElement, global::System.UInt32[]? countBase, global::System.Int32 countSkip, global::System.Int32 countLimit, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, IntPtr hStream = default, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 if (outputValues is null){
 throw new global::System.ArgumentNullException(nameof(outputValues));
@@ -1358,11 +1349,8 @@ throw new global::System.ArgumentNullException(nameof(scanResult));
 if (scanResult.Length == 0){
 throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(scanResult));
 }
-if (countBase is null){
-throw new global::System.ArgumentNullException(nameof(countBase));
-}
-if (countBase.Length == 0){
-throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(countBase));
+if (countBase is { Length: 0 }){
+countBase = null;
 }
 var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
 var dllName = $"Kassyi.GSharp.Kernels_SnapshotTest{archSuffix}.dll";
@@ -1470,7 +1458,7 @@ fixed (global::System.UInt32* p_predicates = predicates)
 fixed (global::System.UInt32* p_scanResult = scanResult)
 fixed (global::System.UInt32* p_countBase = countBase)
 {
-hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, sharedMemBytes, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (IntPtr)p_outputValues, Length = outputValues.Length }, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (IntPtr)p_outputSigns, Length = outputSigns.Length }, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (IntPtr)p_inputValues, Length = inputValues.Length }, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (IntPtr)p_inputSigns, Length = inputSigns.Length }, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (IntPtr)p_predicates, Length = predicates.Length }, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (IntPtr)p_scanResult, Length = scanResult.Length }, elementCount, wordsPerElement, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (IntPtr)p_countBase, Length = countBase.Length }, countSkip, countLimit);
+hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, sharedMemBytes, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (IntPtr)p_outputValues, Length = outputValues.Length }, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (IntPtr)p_outputSigns, Length = outputSigns.Length }, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (IntPtr)p_inputValues, Length = inputValues.Length }, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (IntPtr)p_inputSigns, Length = inputSigns.Length }, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (IntPtr)p_predicates, Length = predicates.Length }, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (IntPtr)p_scanResult, Length = scanResult.Length }, elementCount, wordsPerElement, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (IntPtr)p_countBase, Length = (countBase?.Length ?? 0) }, countSkip, countLimit);
 global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ThrowIfNativeError(dllPath);
 }
 }
@@ -1592,7 +1580,7 @@ public class __gsharp_context_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
 }
-public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuStreamCompactionKernels__CompactFloatVector(uint[] outputSignificands, uint[] outputExponents, uint[] outputSigns, uint[] inputSignificands, uint[] inputExponents, uint[] inputSigns, uint[] predicates, uint[] scanResult, int elementCount, int wordsPerElement, uint[] countBase, int countSkip, int countLimit, __gsharp_context_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuStreamCompactionKernels__CompactFloatVector __gsharp_ctx) {
+public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuStreamCompactionKernels__CompactFloatVector(uint[] outputSignificands, uint[] outputExponents, uint[] outputSigns, uint[] inputSignificands, uint[] inputExponents, uint[] inputSigns, uint[] predicates, uint[] scanResult, int elementCount, int wordsPerElement, uint[]? countBase, int countSkip, int countLimit, __gsharp_context_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuStreamCompactionKernels__CompactFloatVector __gsharp_ctx) {
 {
 switch (__gsharp_ctx.__gsharp_state)
 {
@@ -1630,7 +1618,7 @@ private unsafe delegate void CompactFloatVector_Delegate(uint gridDimX, uint gri
 #pragma warning disable CS8500
 [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
-public static unsafe void LaunchCompactFloatVector(global::System.UInt32[] outputSignificands, global::System.UInt32[] outputExponents, global::System.UInt32[] outputSigns, global::System.UInt32[] inputSignificands, global::System.UInt32[] inputExponents, global::System.UInt32[] inputSigns, global::System.UInt32[] predicates, global::System.UInt32[] scanResult, global::System.Int32 elementCount, global::System.Int32 wordsPerElement, global::System.UInt32[] countBase, global::System.Int32 countSkip, global::System.Int32 countLimit, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, IntPtr hStream = default, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
+public static unsafe void LaunchCompactFloatVector(global::System.UInt32[] outputSignificands, global::System.UInt32[] outputExponents, global::System.UInt32[] outputSigns, global::System.UInt32[] inputSignificands, global::System.UInt32[] inputExponents, global::System.UInt32[] inputSigns, global::System.UInt32[] predicates, global::System.UInt32[] scanResult, global::System.Int32 elementCount, global::System.Int32 wordsPerElement, global::System.UInt32[]? countBase, global::System.Int32 countSkip, global::System.Int32 countLimit, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, IntPtr hStream = default, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 if (outputSignificands is null){
 throw new global::System.ArgumentNullException(nameof(outputSignificands));
@@ -1680,11 +1668,8 @@ throw new global::System.ArgumentNullException(nameof(scanResult));
 if (scanResult.Length == 0){
 throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(scanResult));
 }
-if (countBase is null){
-throw new global::System.ArgumentNullException(nameof(countBase));
-}
-if (countBase.Length == 0){
-throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(countBase));
+if (countBase is { Length: 0 }){
+countBase = null;
 }
 var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
 var dllName = $"Kassyi.GSharp.Kernels_SnapshotTest{archSuffix}.dll";
@@ -1794,7 +1779,7 @@ fixed (global::System.UInt32* p_predicates = predicates)
 fixed (global::System.UInt32* p_scanResult = scanResult)
 fixed (global::System.UInt32* p_countBase = countBase)
 {
-hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, sharedMemBytes, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (IntPtr)p_outputSignificands, Length = outputSignificands.Length }, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (IntPtr)p_outputExponents, Length = outputExponents.Length }, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (IntPtr)p_outputSigns, Length = outputSigns.Length }, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (IntPtr)p_inputSignificands, Length = inputSignificands.Length }, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (IntPtr)p_inputExponents, Length = inputExponents.Length }, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (IntPtr)p_inputSigns, Length = inputSigns.Length }, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (IntPtr)p_predicates, Length = predicates.Length }, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (IntPtr)p_scanResult, Length = scanResult.Length }, elementCount, wordsPerElement, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (IntPtr)p_countBase, Length = countBase.Length }, countSkip, countLimit);
+hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, sharedMemBytes, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (IntPtr)p_outputSignificands, Length = outputSignificands.Length }, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (IntPtr)p_outputExponents, Length = outputExponents.Length }, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (IntPtr)p_outputSigns, Length = outputSigns.Length }, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (IntPtr)p_inputSignificands, Length = inputSignificands.Length }, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (IntPtr)p_inputExponents, Length = inputExponents.Length }, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (IntPtr)p_inputSigns, Length = inputSigns.Length }, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (IntPtr)p_predicates, Length = predicates.Length }, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (IntPtr)p_scanResult, Length = scanResult.Length }, elementCount, wordsPerElement, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (IntPtr)p_countBase, Length = (countBase?.Length ?? 0) }, countSkip, countLimit);
 global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ThrowIfNativeError(dllPath);
 }
 }

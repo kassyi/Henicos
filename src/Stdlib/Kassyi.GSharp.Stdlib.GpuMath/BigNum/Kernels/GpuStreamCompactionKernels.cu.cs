@@ -24,7 +24,7 @@ public static partial class GpuStreamCompactionKernels
     /// <paramref name="countBase"/>, otherwise <c>clamp(countBase[0] - skip, 0, limit)</c>.
     /// </summary>
     [GpuDeviceFunction, GpuInline]
-    public static int ResolveCount([GpuReadOnly] uint[] countBase, int skip, int limit)
+    public static int ResolveCount([GpuReadOnly] uint[]? countBase, int skip, int limit)
     {
         if (countBase == null)
         {
@@ -50,8 +50,8 @@ public static partial class GpuStreamCompactionKernels
     /// <param name="flags">The input are the predicates of a Where: a non-zero value counts as 1. The block sums of
     /// the next levels are counts, not flags.</param>
     [GpuKernel]
-    public static void BlockExclusiveScan(uint[] output, uint[] input, int elementCount, uint[] blockSums,
-        uint[] countBase, int countSkip, int countLimit, uint[] total, bool flags)
+    public static void BlockExclusiveScan(uint[] output, uint[] input, int elementCount, uint[]? blockSums,
+        uint[]? countBase, int countSkip, int countLimit, uint[]? total, bool flags)
     {
         var sharedMem = new SharedMemory<uint>(2048 + 128);
 
@@ -210,7 +210,7 @@ public static partial class GpuStreamCompactionKernels
     [GpuKernel]
     public static void CompactSignedVector(uint[] outputValues, uint[] outputSigns, uint[] inputValues,
         uint[] inputSigns, uint[] predicates, uint[] scanResult, int elementCount, int wordsPerElement,
-        uint[] countBase, int countSkip, int countLimit)
+        uint[]? countBase, int countSkip, int countLimit)
     {
         int globalTid = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
         int n = ResolveCount(countBase, countSkip, countLimit);
@@ -237,7 +237,7 @@ public static partial class GpuStreamCompactionKernels
     [GpuKernel]
     public static void CompactFloatVector(uint[] outputSignificands, uint[] outputExponents, uint[] outputSigns,
         uint[] inputSignificands, uint[] inputExponents, uint[] inputSigns, uint[] predicates, uint[] scanResult,
-        int elementCount, int wordsPerElement, uint[] countBase, int countSkip, int countLimit)
+        int elementCount, int wordsPerElement, uint[]? countBase, int countSkip, int countLimit)
     {
         int globalTid = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
         int n = ResolveCount(countBase, countSkip, countLimit);

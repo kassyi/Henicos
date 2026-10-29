@@ -3,7 +3,8 @@ namespace Kassyi.GSharp.Stdlib.GpuMath.BigNum.Expressions;
 internal class VectorTakeExpression([TakesOwnership] IGpuBigIntVectorExpression source, int count)
     : IGpuBigIntVectorExpression, IDeviceCountedVector
 {
-    public int Length => source.TryGetLength(out _) ? Math.Min(source.Length, count) : source.Length;
+    public int Length =>
+        TryGetLength(out var length) ? length : throw new InvalidOperationException(DeviceCounted.LengthUnknown);
 
     public int Capacity => Math.Min(source.Capacity, count);
 
@@ -60,7 +61,8 @@ internal class VectorSkipExpression([TakesOwnership] IGpuBigIntVectorExpression 
     // Skipping past the capacity skips everything; a device count below the skip gives 0 through SkipFirst
     private readonly int _skipCount = Math.Min(count, source.Capacity);
 
-    public int Length => source.TryGetLength(out _) ? source.Length - _skipCount : source.Length;
+    public int Length =>
+        TryGetLength(out var length) ? length : throw new InvalidOperationException(DeviceCounted.LengthUnknown);
 
     public int Capacity => source.Capacity - _skipCount;
 

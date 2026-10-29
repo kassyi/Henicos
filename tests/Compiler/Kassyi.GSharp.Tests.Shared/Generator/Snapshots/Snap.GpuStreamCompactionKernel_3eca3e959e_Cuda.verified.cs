@@ -188,7 +188,7 @@ s_hfunc_BlockExclusiveScan = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.G
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
-public static unsafe void LaunchBlockExclusiveScan(global::System.UInt32[] output, global::System.UInt32[] input, global::System.Int32 elementCount, global::System.UInt32[] blockSums, global::System.UInt32[] countBase, global::System.Int32 countSkip, global::System.Int32 countLimit, global::System.UInt32[] total, global::System.Boolean flags, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, IntPtr hStream = default, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
+public static unsafe void LaunchBlockExclusiveScan(global::System.UInt32[] output, global::System.UInt32[] input, global::System.Int32 elementCount, global::System.UInt32[]? blockSums, global::System.UInt32[]? countBase, global::System.Int32 countSkip, global::System.Int32 countLimit, global::System.UInt32[]? total, global::System.Boolean flags, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, IntPtr hStream = default, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 if (output is null){
 throw new global::System.ArgumentNullException(nameof(output));
@@ -202,23 +202,14 @@ throw new global::System.ArgumentNullException(nameof(input));
 if (input.Length == 0){
 throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(input));
 }
-if (blockSums is null){
-throw new global::System.ArgumentNullException(nameof(blockSums));
+if (blockSums is { Length: 0 }){
+blockSums = null;
 }
-if (blockSums.Length == 0){
-throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(blockSums));
+if (countBase is { Length: 0 }){
+countBase = null;
 }
-if (countBase is null){
-throw new global::System.ArgumentNullException(nameof(countBase));
-}
-if (countBase.Length == 0){
-throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(countBase));
-}
-if (total is null){
-throw new global::System.ArgumentNullException(nameof(total));
-}
-if (total.Length == 0){
-throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(total));
+if (total is { Length: 0 }){
+total = null;
 }
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
@@ -268,10 +259,10 @@ kernelParams[1] = proxy_input;
 // Marshal scalar: elementCount
 kernelParams[2] = &elementCount;
 // Marshal array: blockSums
-int blockSums_size = blockSums.Length * sizeof(global::System.UInt32);
+int blockSums_size = (blockSums?.Length ?? 0) * sizeof(global::System.UInt32);
 IntPtr* proxy_blockSums = stackalloc IntPtr[2];
 proxy_blockSums[0] = IntPtr.Zero;
-((int*)(proxy_blockSums + 1))[0] = blockSums.Length;
+((int*)(proxy_blockSums + 1))[0] = (blockSums?.Length ?? 0);
 if (blockSums_size > 0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_blockSums, (IntPtr)blockSums_size, hStream));
@@ -284,10 +275,10 @@ CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
 }
 kernelParams[3] = proxy_blockSums;
 // Marshal array: countBase
-int countBase_size = countBase.Length * sizeof(global::System.UInt32);
+int countBase_size = (countBase?.Length ?? 0) * sizeof(global::System.UInt32);
 IntPtr* proxy_countBase = stackalloc IntPtr[2];
 proxy_countBase[0] = IntPtr.Zero;
-((int*)(proxy_countBase + 1))[0] = countBase.Length;
+((int*)(proxy_countBase + 1))[0] = (countBase?.Length ?? 0);
 if (countBase_size > 0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_countBase, (IntPtr)countBase_size, hStream));
@@ -304,10 +295,10 @@ kernelParams[5] = &countSkip;
 // Marshal scalar: countLimit
 kernelParams[6] = &countLimit;
 // Marshal array: total
-int total_size = total.Length * sizeof(global::System.UInt32);
+int total_size = (total?.Length ?? 0) * sizeof(global::System.UInt32);
 IntPtr* proxy_total = stackalloc IntPtr[2];
 proxy_total[0] = IntPtr.Zero;
-((int*)(proxy_total + 1))[0] = total.Length;
+((int*)(proxy_total + 1))[0] = (total?.Length ?? 0);
 if (total_size > 0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_total, (IntPtr)total_size, hStream));
@@ -889,7 +880,7 @@ s_hfunc_CompactSignedVector = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
-public static unsafe void LaunchCompactSignedVector(global::System.UInt32[] outputValues, global::System.UInt32[] outputSigns, global::System.UInt32[] inputValues, global::System.UInt32[] inputSigns, global::System.UInt32[] predicates, global::System.UInt32[] scanResult, global::System.Int32 elementCount, global::System.Int32 wordsPerElement, global::System.UInt32[] countBase, global::System.Int32 countSkip, global::System.Int32 countLimit, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, IntPtr hStream = default, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
+public static unsafe void LaunchCompactSignedVector(global::System.UInt32[] outputValues, global::System.UInt32[] outputSigns, global::System.UInt32[] inputValues, global::System.UInt32[] inputSigns, global::System.UInt32[] predicates, global::System.UInt32[] scanResult, global::System.Int32 elementCount, global::System.Int32 wordsPerElement, global::System.UInt32[]? countBase, global::System.Int32 countSkip, global::System.Int32 countLimit, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, IntPtr hStream = default, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 if (outputValues is null){
 throw new global::System.ArgumentNullException(nameof(outputValues));
@@ -927,11 +918,8 @@ throw new global::System.ArgumentNullException(nameof(scanResult));
 if (scanResult.Length == 0){
 throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(scanResult));
 }
-if (countBase is null){
-throw new global::System.ArgumentNullException(nameof(countBase));
-}
-if (countBase.Length == 0){
-throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(countBase));
+if (countBase is { Length: 0 }){
+countBase = null;
 }
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
@@ -1049,10 +1037,10 @@ kernelParams[6] = &elementCount;
 // Marshal scalar: wordsPerElement
 kernelParams[7] = &wordsPerElement;
 // Marshal array: countBase
-int countBase_size = countBase.Length * sizeof(global::System.UInt32);
+int countBase_size = (countBase?.Length ?? 0) * sizeof(global::System.UInt32);
 IntPtr* proxy_countBase = stackalloc IntPtr[2];
 proxy_countBase[0] = IntPtr.Zero;
-((int*)(proxy_countBase + 1))[0] = countBase.Length;
+((int*)(proxy_countBase + 1))[0] = (countBase?.Length ?? 0);
 if (countBase_size > 0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_countBase, (IntPtr)countBase_size, hStream));
@@ -1256,7 +1244,7 @@ s_hfunc_CompactFloatVector = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.G
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
-public static unsafe void LaunchCompactFloatVector(global::System.UInt32[] outputSignificands, global::System.UInt32[] outputExponents, global::System.UInt32[] outputSigns, global::System.UInt32[] inputSignificands, global::System.UInt32[] inputExponents, global::System.UInt32[] inputSigns, global::System.UInt32[] predicates, global::System.UInt32[] scanResult, global::System.Int32 elementCount, global::System.Int32 wordsPerElement, global::System.UInt32[] countBase, global::System.Int32 countSkip, global::System.Int32 countLimit, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, IntPtr hStream = default, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
+public static unsafe void LaunchCompactFloatVector(global::System.UInt32[] outputSignificands, global::System.UInt32[] outputExponents, global::System.UInt32[] outputSigns, global::System.UInt32[] inputSignificands, global::System.UInt32[] inputExponents, global::System.UInt32[] inputSigns, global::System.UInt32[] predicates, global::System.UInt32[] scanResult, global::System.Int32 elementCount, global::System.Int32 wordsPerElement, global::System.UInt32[]? countBase, global::System.Int32 countSkip, global::System.Int32 countLimit, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, IntPtr hStream = default, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 if (outputSignificands is null){
 throw new global::System.ArgumentNullException(nameof(outputSignificands));
@@ -1306,11 +1294,8 @@ throw new global::System.ArgumentNullException(nameof(scanResult));
 if (scanResult.Length == 0){
 throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(scanResult));
 }
-if (countBase is null){
-throw new global::System.ArgumentNullException(nameof(countBase));
-}
-if (countBase.Length == 0){
-throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(countBase));
+if (countBase is { Length: 0 }){
+countBase = null;
 }
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
@@ -1462,10 +1447,10 @@ kernelParams[8] = &elementCount;
 // Marshal scalar: wordsPerElement
 kernelParams[9] = &wordsPerElement;
 // Marshal array: countBase
-int countBase_size = countBase.Length * sizeof(global::System.UInt32);
+int countBase_size = (countBase?.Length ?? 0) * sizeof(global::System.UInt32);
 IntPtr* proxy_countBase = stackalloc IntPtr[2];
 proxy_countBase[0] = IntPtr.Zero;
-((int*)(proxy_countBase + 1))[0] = countBase.Length;
+((int*)(proxy_countBase + 1))[0] = (countBase?.Length ?? 0);
 if (countBase_size > 0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_countBase, (IntPtr)countBase_size, hStream));

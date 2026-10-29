@@ -7,7 +7,8 @@ internal sealed class FloatVectorSkipExpression(
     // Skipping past the capacity skips everything; a device count below the skip gives 0 through SkipFirst
     private readonly int _effectiveSkip = Math.Clamp(skipCount, 0, inner.Capacity);
 
-    public int Length => inner.TryGetLength(out _) ? inner.Length - _effectiveSkip : inner.Length;
+    public int Length =>
+        TryGetLength(out var length) ? length : throw new InvalidOperationException(DeviceCounted.LengthUnknown);
     public int Capacity => inner.Capacity - _effectiveSkip;
     public int WordsPerElement => inner.WordsPerElement;
 
@@ -62,7 +63,8 @@ internal sealed class FloatVectorTakeExpression(
     [TakesOwnership] IGpuBigFloatVectorExpression inner,
     int takeCount) : IGpuBigFloatVectorExpression, IDeviceCountedFloatVector
 {
-    public int Length => inner.TryGetLength(out _) ? Math.Clamp(takeCount, 0, inner.Length) : inner.Length;
+    public int Length =>
+        TryGetLength(out var length) ? length : throw new InvalidOperationException(DeviceCounted.LengthUnknown);
 
     public int Capacity => Math.Clamp(takeCount, 0, inner.Capacity);
 
