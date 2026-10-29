@@ -1031,8 +1031,8 @@ __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ReproArrayWrap_g1_bSystem__In
 auto __gsharp_id_3_b = ([&]() {
 __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ReproArrayWrap_g1_bSystem__Single_e __gsharp_tmp{}; __gsharp_tmp.__gsharp_mb_Items = __gsharp_id_1_floats; return __gsharp_tmp; }
 ());
-__gsharp_array_ref(__gsharp_id_2_a.__gsharp_mb_Items, ""G#: a null array is read at StructReproKernels.cs(99,9)"")[0]=__gsharp_array_ref(__gsharp_id_2_a.__gsharp_mb_Items, ""G#: a null array is read at StructReproKernels.cs(99,22)"")[1]+__gsharp_array_ref(__gsharp_id_2_a.__gsharp_mb_Items, ""G#: a null array is read at StructReproKernels.cs(99,35)"")[2];
-__gsharp_array_ref(__gsharp_id_3_b.__gsharp_mb_Items, ""G#: a null array is read at StructReproKernels.cs(100,9)"")[0]=__gsharp_array_ref(__gsharp_id_3_b.__gsharp_mb_Items, ""G#: a null array is read at StructReproKernels.cs(100,22)"")[1]+__gsharp_array_ref(__gsharp_id_3_b.__gsharp_mb_Items, ""G#: a null array is read at StructReproKernels.cs(100,35)"")[2];
+__gsharp_array_at(__gsharp_id_2_a.__gsharp_mb_Items, 0, ""G#: a null array is read at StructReproKernels.cs(99,9)"")=__gsharp_array_at(__gsharp_id_2_a.__gsharp_mb_Items, 1, ""G#: a null array is read at StructReproKernels.cs(99,22)"")+__gsharp_array_at(__gsharp_id_2_a.__gsharp_mb_Items, 2, ""G#: a null array is read at StructReproKernels.cs(99,35)"");
+__gsharp_array_at(__gsharp_id_3_b.__gsharp_mb_Items, 0, ""G#: a null array is read at StructReproKernels.cs(100,9)"")=__gsharp_array_at(__gsharp_id_3_b.__gsharp_mb_Items, 1, ""G#: a null array is read at StructReproKernels.cs(100,22)"")+__gsharp_array_at(__gsharp_id_3_b.__gsharp_mb_Items, 2, ""G#: a null array is read at StructReproKernels.cs(100,35)"");
 __gsharp_state=-1;
 return;
 }

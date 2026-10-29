@@ -216,11 +216,13 @@ void** kernelParams = stackalloc void*[3];
 IntPtr* proxy_input = stackalloc IntPtr[2];
 proxy_input[0] = input;
 ((int*)(proxy_input + 1))[0] = 0; // Length is unknown for raw IntPtr
+((int*)(proxy_input + 1))[1] = 0;
 kernelParams[0] = proxy_input;
 // Marshal device array: output
 IntPtr* proxy_output = stackalloc IntPtr[2];
 proxy_output[0] = output;
 ((int*)(proxy_output + 1))[0] = 0; // Length is unknown for raw IntPtr
+((int*)(proxy_output + 1))[1] = 0;
 kernelParams[1] = proxy_output;
 // Marshal scalar: n
 kernelParams[2] = &n;
@@ -503,31 +505,37 @@ void** kernelParams = stackalloc void*[6];
 IntPtr* proxy_a = stackalloc IntPtr[2];
 proxy_a[0] = a;
 ((int*)(proxy_a + 1))[0] = 0; // Length is unknown for raw IntPtr
+((int*)(proxy_a + 1))[1] = 0;
 kernelParams[0] = proxy_a;
 // Marshal device array: b
 IntPtr* proxy_b = stackalloc IntPtr[2];
 proxy_b[0] = b;
 ((int*)(proxy_b + 1))[0] = 0; // Length is unknown for raw IntPtr
+((int*)(proxy_b + 1))[1] = 0;
 kernelParams[1] = proxy_b;
 // Marshal device array: sum
 IntPtr* proxy_sum = stackalloc IntPtr[2];
 proxy_sum[0] = sum;
 ((int*)(proxy_sum + 1))[0] = 0; // Length is unknown for raw IntPtr
+((int*)(proxy_sum + 1))[1] = 0;
 kernelParams[2] = proxy_sum;
 // Marshal device array: carryOut
 IntPtr* proxy_carryOut = stackalloc IntPtr[2];
 proxy_carryOut[0] = carryOut;
 ((int*)(proxy_carryOut + 1))[0] = 0; // Length is unknown for raw IntPtr
+((int*)(proxy_carryOut + 1))[1] = 0;
 kernelParams[3] = proxy_carryOut;
 // Marshal device array: difference
 IntPtr* proxy_difference = stackalloc IntPtr[2];
 proxy_difference[0] = difference;
 ((int*)(proxy_difference + 1))[0] = 0; // Length is unknown for raw IntPtr
+((int*)(proxy_difference + 1))[1] = 0;
 kernelParams[4] = proxy_difference;
 // Marshal device array: borrowOut
 IntPtr* proxy_borrowOut = stackalloc IntPtr[2];
 proxy_borrowOut[0] = borrowOut;
 ((int*)(proxy_borrowOut + 1))[0] = 0; // Length is unknown for raw IntPtr
+((int*)(proxy_borrowOut + 1))[1] = 0;
 kernelParams[5] = proxy_borrowOut;
 CudaException.ThrowIfError(CudaDriverApi.cuLaunchKernel(
 hfunc,

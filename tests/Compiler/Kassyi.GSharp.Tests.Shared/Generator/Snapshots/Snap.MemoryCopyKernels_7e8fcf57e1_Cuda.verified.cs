@@ -201,11 +201,13 @@ void** kernelParams = stackalloc void*[3];
 IntPtr* proxy_src = stackalloc IntPtr[2];
 proxy_src[0] = src;
 ((int*)(proxy_src + 1))[0] = 0; // Length is unknown for raw IntPtr
+((int*)(proxy_src + 1))[1] = 0;
 kernelParams[0] = proxy_src;
 // Marshal device array: dst
 IntPtr* proxy_dst = stackalloc IntPtr[2];
 proxy_dst[0] = dst;
 ((int*)(proxy_dst + 1))[0] = 0; // Length is unknown for raw IntPtr
+((int*)(proxy_dst + 1))[1] = 0;
 kernelParams[1] = proxy_dst;
 // Marshal scalar: n
 kernelParams[2] = &n;

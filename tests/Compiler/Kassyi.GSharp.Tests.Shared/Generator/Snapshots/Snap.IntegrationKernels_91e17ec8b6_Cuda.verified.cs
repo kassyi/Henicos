@@ -536,16 +536,19 @@ void** kernelParams = stackalloc void*[7];
 IntPtr* proxy_intInput = stackalloc IntPtr[2];
 proxy_intInput[0] = intInput;
 ((int*)(proxy_intInput + 1))[0] = 0; // Length is unknown for raw IntPtr
+((int*)(proxy_intInput + 1))[1] = 0;
 kernelParams[0] = proxy_intInput;
 // Marshal device array: floatInput
 IntPtr* proxy_floatInput = stackalloc IntPtr[2];
 proxy_floatInput[0] = floatInput;
 ((int*)(proxy_floatInput + 1))[0] = 0; // Length is unknown for raw IntPtr
+((int*)(proxy_floatInput + 1))[1] = 0;
 kernelParams[1] = proxy_floatInput;
 // Marshal device array: results
 IntPtr* proxy_results = stackalloc IntPtr[2];
 proxy_results[0] = results;
 ((int*)(proxy_results + 1))[0] = 0; // Length is unknown for raw IntPtr
+((int*)(proxy_results + 1))[1] = 0;
 kernelParams[2] = proxy_results;
 // Marshal device struct: config
 kernelParams[3] = &config;
@@ -553,6 +556,7 @@ kernelParams[3] = &config;
 IntPtr* proxy_globalCounter = stackalloc IntPtr[2];
 proxy_globalCounter[0] = globalCounter;
 ((int*)(proxy_globalCounter + 1))[0] = 0; // Length is unknown for raw IntPtr
+((int*)(proxy_globalCounter + 1))[1] = 0;
 kernelParams[4] = proxy_globalCounter;
 // Marshal scalar: count
 kernelParams[5] = &count;

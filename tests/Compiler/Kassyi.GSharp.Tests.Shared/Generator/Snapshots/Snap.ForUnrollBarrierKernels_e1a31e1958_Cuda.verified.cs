@@ -63,9 +63,9 @@ internal static class GSharpSharedCudaDeviceCode
 public const string Source = @"inline __device__ int __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__ForUnrollBarrierKernels__Neighbor(GSharpArray<int> __gsharp_id_0_buffer, int __gsharp_id_1_tid, int __gsharp_id_2_value);
 
 inline __device__ int __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__ForUnrollBarrierKernels__Neighbor(GSharpArray<int> __gsharp_id_0_buffer, int __gsharp_id_1_tid, int __gsharp_id_2_value){
-__gsharp_array_ref(__gsharp_id_0_buffer, ""G#: a null array is read at ForUnrollBarrierKernels.cs(20,9)"")[__gsharp_id_1_tid]=__gsharp_id_2_value;
+__gsharp_array_at(__gsharp_id_0_buffer, __gsharp_id_1_tid, ""G#: a null array is read at ForUnrollBarrierKernels.cs(20,9)"")=__gsharp_id_2_value;
 __syncthreads();
-int __gsharp_id_3_r = __gsharp_array_ref(__gsharp_id_0_buffer, ""G#: a null array is read at ForUnrollBarrierKernels.cs(22,17)"")[(__gsharp_id_1_tid+1)%4];
+int __gsharp_id_3_r = __gsharp_array_at(__gsharp_id_0_buffer, (__gsharp_id_1_tid+1)%4, ""G#: a null array is read at ForUnrollBarrierKernels.cs(22,17)"");
 __syncthreads();
 return __gsharp_id_3_r;
 }
@@ -297,11 +297,13 @@ void** kernelParams = stackalloc void*[2];
 IntPtr* proxy_buffer = stackalloc IntPtr[2];
 proxy_buffer[0] = buffer;
 ((int*)(proxy_buffer + 1))[0] = 0; // Length is unknown for raw IntPtr
+((int*)(proxy_buffer + 1))[1] = 0;
 kernelParams[0] = proxy_buffer;
 // Marshal device array: output
 IntPtr* proxy_output = stackalloc IntPtr[2];
 proxy_output[0] = output;
 ((int*)(proxy_output + 1))[0] = 0; // Length is unknown for raw IntPtr
+((int*)(proxy_output + 1))[1] = 0;
 kernelParams[1] = proxy_output;
 CudaException.ThrowIfError(CudaDriverApi.cuLaunchKernel(
 hfunc,
@@ -456,11 +458,13 @@ void** kernelParams = stackalloc void*[2];
 IntPtr* proxy_buffer = stackalloc IntPtr[2];
 proxy_buffer[0] = buffer;
 ((int*)(proxy_buffer + 1))[0] = 0; // Length is unknown for raw IntPtr
+((int*)(proxy_buffer + 1))[1] = 0;
 kernelParams[0] = proxy_buffer;
 // Marshal device array: output
 IntPtr* proxy_output = stackalloc IntPtr[2];
 proxy_output[0] = output;
 ((int*)(proxy_output + 1))[0] = 0; // Length is unknown for raw IntPtr
+((int*)(proxy_output + 1))[1] = 0;
 kernelParams[1] = proxy_output;
 CudaException.ThrowIfError(CudaDriverApi.cuLaunchKernel(
 hfunc,
@@ -635,11 +639,13 @@ void** kernelParams = stackalloc void*[2];
 IntPtr* proxy_buffer = stackalloc IntPtr[2];
 proxy_buffer[0] = buffer;
 ((int*)(proxy_buffer + 1))[0] = 0; // Length is unknown for raw IntPtr
+((int*)(proxy_buffer + 1))[1] = 0;
 kernelParams[0] = proxy_buffer;
 // Marshal device array: output
 IntPtr* proxy_output = stackalloc IntPtr[2];
 proxy_output[0] = output;
 ((int*)(proxy_output + 1))[0] = 0; // Length is unknown for raw IntPtr
+((int*)(proxy_output + 1))[1] = 0;
 kernelParams[1] = proxy_output;
 CudaException.ThrowIfError(CudaDriverApi.cuLaunchKernel(
 hfunc,
@@ -783,11 +789,13 @@ void** kernelParams = stackalloc void*[2];
 IntPtr* proxy_buffer = stackalloc IntPtr[2];
 proxy_buffer[0] = buffer;
 ((int*)(proxy_buffer + 1))[0] = 0; // Length is unknown for raw IntPtr
+((int*)(proxy_buffer + 1))[1] = 0;
 kernelParams[0] = proxy_buffer;
 // Marshal device array: output
 IntPtr* proxy_output = stackalloc IntPtr[2];
 proxy_output[0] = output;
 ((int*)(proxy_output + 1))[0] = 0; // Length is unknown for raw IntPtr
+((int*)(proxy_output + 1))[1] = 0;
 kernelParams[1] = proxy_output;
 CudaException.ThrowIfError(CudaDriverApi.cuLaunchKernel(
 hfunc,
@@ -965,11 +973,13 @@ void** kernelParams = stackalloc void*[2];
 IntPtr* proxy_buffer = stackalloc IntPtr[2];
 proxy_buffer[0] = buffer;
 ((int*)(proxy_buffer + 1))[0] = 0; // Length is unknown for raw IntPtr
+((int*)(proxy_buffer + 1))[1] = 0;
 kernelParams[0] = proxy_buffer;
 // Marshal device array: output
 IntPtr* proxy_output = stackalloc IntPtr[2];
 proxy_output[0] = output;
 ((int*)(proxy_output + 1))[0] = 0; // Length is unknown for raw IntPtr
+((int*)(proxy_output + 1))[1] = 0;
 kernelParams[1] = proxy_output;
 CudaException.ThrowIfError(CudaDriverApi.cuLaunchKernel(
 hfunc,
@@ -998,7 +1008,7 @@ for(unsigned int __gsharp_gsl_0 = __gsharp_grid_stride_start(); __gsharp_gsl_0 <
 {
 int __gsharp_id_6_i = (int)__gsharp_gsl_0;
 {
-__gsharp_id_1_scratch[__gsharp_id_6_i]=__gsharp_array_ref(__gsharp_id_5_src, ""G#: a null array is read at ForUnrollBarrierKernels.cs(115,30)"")[(__gsharp_id_6_i+1)%__gsharp_id_3_n]+1;
+__gsharp_id_1_scratch[__gsharp_id_6_i]=__gsharp_array_at(__gsharp_id_5_src, (__gsharp_id_6_i+1)%__gsharp_id_3_n, ""G#: a null array is read at ForUnrollBarrierKernels.cs(115,30)"")+1;
 }
 }
 }
@@ -1025,7 +1035,7 @@ for(unsigned int __gsharp_gsl_2 = __gsharp_grid_stride_start(); __gsharp_gsl_2 <
 {
 int __gsharp_id_6_i = (int)__gsharp_gsl_2;
 {
-__gsharp_id_1_scratch[__gsharp_id_6_i]=__gsharp_array_ref(__gsharp_id_5_src, ""G#: a null array is read at ForUnrollBarrierKernels.cs(115,30)"")[(__gsharp_id_6_i+1)%__gsharp_id_3_n]+1;
+__gsharp_id_1_scratch[__gsharp_id_6_i]=__gsharp_array_at(__gsharp_id_5_src, (__gsharp_id_6_i+1)%__gsharp_id_3_n, ""G#: a null array is read at ForUnrollBarrierKernels.cs(115,30)"")+1;
 }
 }
 }
@@ -1052,7 +1062,7 @@ for(unsigned int __gsharp_gsl_4 = __gsharp_grid_stride_start(); __gsharp_gsl_4 <
 {
 int __gsharp_id_6_i = (int)__gsharp_gsl_4;
 {
-__gsharp_id_1_scratch[__gsharp_id_6_i]=__gsharp_array_ref(__gsharp_id_5_src, ""G#: a null array is read at ForUnrollBarrierKernels.cs(115,30)"")[(__gsharp_id_6_i+1)%__gsharp_id_3_n]+1;
+__gsharp_id_1_scratch[__gsharp_id_6_i]=__gsharp_array_at(__gsharp_id_5_src, (__gsharp_id_6_i+1)%__gsharp_id_3_n, ""G#: a null array is read at ForUnrollBarrierKernels.cs(115,30)"")+1;
 }
 }
 }
@@ -1228,16 +1238,19 @@ void** kernelParams = stackalloc void*[4];
 IntPtr* proxy_input = stackalloc IntPtr[2];
 proxy_input[0] = input;
 ((int*)(proxy_input + 1))[0] = 0; // Length is unknown for raw IntPtr
+((int*)(proxy_input + 1))[1] = 0;
 kernelParams[0] = proxy_input;
 // Marshal device array: scratch
 IntPtr* proxy_scratch = stackalloc IntPtr[2];
 proxy_scratch[0] = scratch;
 ((int*)(proxy_scratch + 1))[0] = 0; // Length is unknown for raw IntPtr
+((int*)(proxy_scratch + 1))[1] = 0;
 kernelParams[1] = proxy_scratch;
 // Marshal device array: temp
 IntPtr* proxy_temp = stackalloc IntPtr[2];
 proxy_temp[0] = temp;
 ((int*)(proxy_temp + 1))[0] = 0; // Length is unknown for raw IntPtr
+((int*)(proxy_temp + 1))[1] = 0;
 kernelParams[2] = proxy_temp;
 // Marshal scalar: n
 kernelParams[3] = &n;

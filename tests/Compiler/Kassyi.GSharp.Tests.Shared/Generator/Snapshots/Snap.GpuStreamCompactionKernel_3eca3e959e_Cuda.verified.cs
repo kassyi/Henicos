@@ -312,11 +312,13 @@ void** kernelParams = stackalloc void*[4];
 IntPtr* proxy_output = stackalloc IntPtr[2];
 proxy_output[0] = output;
 ((int*)(proxy_output + 1))[0] = 0; // Length is unknown for raw IntPtr
+((int*)(proxy_output + 1))[1] = 0;
 kernelParams[0] = proxy_output;
 // Marshal device array: input
 IntPtr* proxy_input = stackalloc IntPtr[2];
 proxy_input[0] = input;
 ((int*)(proxy_input + 1))[0] = 0; // Length is unknown for raw IntPtr
+((int*)(proxy_input + 1))[1] = 0;
 kernelParams[1] = proxy_input;
 // Marshal scalar: elementCount
 kernelParams[2] = &elementCount;
@@ -324,6 +326,7 @@ kernelParams[2] = &elementCount;
 IntPtr* proxy_blockSums = stackalloc IntPtr[2];
 proxy_blockSums[0] = blockSums;
 ((int*)(proxy_blockSums + 1))[0] = 0; // Length is unknown for raw IntPtr
+((int*)(proxy_blockSums + 1))[1] = 0;
 kernelParams[3] = proxy_blockSums;
 CudaException.ThrowIfError(CudaDriverApi.cuLaunchKernel(
 hfunc,
@@ -482,11 +485,13 @@ void** kernelParams = stackalloc void*[3];
 IntPtr* proxy_output = stackalloc IntPtr[2];
 proxy_output[0] = output;
 ((int*)(proxy_output + 1))[0] = 0; // Length is unknown for raw IntPtr
+((int*)(proxy_output + 1))[1] = 0;
 kernelParams[0] = proxy_output;
 // Marshal device array: blockSums
 IntPtr* proxy_blockSums = stackalloc IntPtr[2];
 proxy_blockSums[0] = blockSums;
 ((int*)(proxy_blockSums + 1))[0] = 0; // Length is unknown for raw IntPtr
+((int*)(proxy_blockSums + 1))[1] = 0;
 kernelParams[1] = proxy_blockSums;
 // Marshal scalar: elementCount
 kernelParams[2] = &elementCount;
@@ -716,21 +721,25 @@ void** kernelParams = stackalloc void*[6];
 IntPtr* proxy_output = stackalloc IntPtr[2];
 proxy_output[0] = output;
 ((int*)(proxy_output + 1))[0] = 0; // Length is unknown for raw IntPtr
+((int*)(proxy_output + 1))[1] = 0;
 kernelParams[0] = proxy_output;
 // Marshal device array: input
 IntPtr* proxy_input = stackalloc IntPtr[2];
 proxy_input[0] = input;
 ((int*)(proxy_input + 1))[0] = 0; // Length is unknown for raw IntPtr
+((int*)(proxy_input + 1))[1] = 0;
 kernelParams[1] = proxy_input;
 // Marshal device array: predicates
 IntPtr* proxy_predicates = stackalloc IntPtr[2];
 proxy_predicates[0] = predicates;
 ((int*)(proxy_predicates + 1))[0] = 0; // Length is unknown for raw IntPtr
+((int*)(proxy_predicates + 1))[1] = 0;
 kernelParams[2] = proxy_predicates;
 // Marshal device array: scanResult
 IntPtr* proxy_scanResult = stackalloc IntPtr[2];
 proxy_scanResult[0] = scanResult;
 ((int*)(proxy_scanResult + 1))[0] = 0; // Length is unknown for raw IntPtr
+((int*)(proxy_scanResult + 1))[1] = 0;
 kernelParams[3] = proxy_scanResult;
 // Marshal scalar: elementCount
 kernelParams[4] = &elementCount;
@@ -850,6 +859,7 @@ void** kernelParams = stackalloc void*[2];
 IntPtr* proxy_output = stackalloc IntPtr[2];
 proxy_output[0] = output;
 ((int*)(proxy_output + 1))[0] = 0; // Length is unknown for raw IntPtr
+((int*)(proxy_output + 1))[1] = 0;
 kernelParams[0] = proxy_output;
 // Marshal scalar: totalWords
 kernelParams[1] = &totalWords;

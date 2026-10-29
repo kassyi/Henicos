@@ -81,7 +81,7 @@ static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__Operat
 static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroContextState,__gsharp_mb_Calls)==4,""Kassyi.GSharp.Tests.Shared.Syntax.OperatorMacroContextState.Calls: offset"");
 #endif
 inline __device__ void __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroContextOps__AddWithOffset(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroContextState* __gsharp_id_0_ctx, GSharpArray<unsigned int> __gsharp_id_1_result, GSharpArray<unsigned int> __gsharp_id_2_left, GSharpArray<unsigned int> __gsharp_id_3_right){
-__gsharp_array_ref(__gsharp_id_1_result, ""G#: a null array is read at OperatorMacroContextKernels.cs(18,9)"")[0]=__gsharp_array_ref(__gsharp_id_2_left, ""G#: a null array is read at OperatorMacroContextKernels.cs(18,21)"")[0]+__gsharp_array_ref(__gsharp_id_3_right, ""G#: a null array is read at OperatorMacroContextKernels.cs(18,31)"")[0]+(*__gsharp_id_0_ctx).__gsharp_mb_Offset;
+__gsharp_array_at(__gsharp_id_1_result, 0, ""G#: a null array is read at OperatorMacroContextKernels.cs(18,9)"")=__gsharp_array_at(__gsharp_id_2_left, 0, ""G#: a null array is read at OperatorMacroContextKernels.cs(18,21)"")+__gsharp_array_at(__gsharp_id_3_right, 0, ""G#: a null array is read at OperatorMacroContextKernels.cs(18,31)"")+(*__gsharp_id_0_ctx).__gsharp_mb_Offset;
 (*__gsharp_id_0_ctx).__gsharp_mb_Calls=(*__gsharp_id_0_ctx).__gsharp_mb_Calls+1u;
 }
 
@@ -99,7 +99,7 @@ static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__Operat
 static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroContextState,__gsharp_mb_Calls)==4,""Kassyi.GSharp.Tests.Shared.Syntax.OperatorMacroContextState.Calls: offset"");
 #endif
 inline __device__ void __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroContextOps__ShiftWithOffset(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroContextState __gsharp_id_0_ctx, GSharpArray<unsigned int> __gsharp_id_1_result, GSharpArray<unsigned int> __gsharp_id_2_operand, int __gsharp_id_3_shift){
-__gsharp_array_ref(__gsharp_id_1_result, ""G#: a null array is read at OperatorMacroContextKernels.cs(26,9)"")[0]=(__gsharp_array_ref(__gsharp_id_2_operand, ""G#: a null array is read at OperatorMacroContextKernels.cs(26,22)"")[0]<<__gsharp_id_3_shift)+__gsharp_id_0_ctx.__gsharp_mb_Offset;
+__gsharp_array_at(__gsharp_id_1_result, 0, ""G#: a null array is read at OperatorMacroContextKernels.cs(26,9)"")=(__gsharp_array_at(__gsharp_id_2_operand, 0, ""G#: a null array is read at OperatorMacroContextKernels.cs(26,22)"")<<__gsharp_id_3_shift)+__gsharp_id_0_ctx.__gsharp_mb_Offset;
 }
 
 #ifndef __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroContextState__
@@ -439,21 +439,25 @@ kernelParams[0] = &bigCtx;
 IntPtr* proxy_left = stackalloc IntPtr[2];
 proxy_left[0] = left;
 ((int*)(proxy_left + 1))[0] = 0; // Length is unknown for raw IntPtr
+((int*)(proxy_left + 1))[1] = 0;
 kernelParams[1] = proxy_left;
 // Marshal device array: right
 IntPtr* proxy_right = stackalloc IntPtr[2];
 proxy_right[0] = right;
 ((int*)(proxy_right + 1))[0] = 0; // Length is unknown for raw IntPtr
+((int*)(proxy_right + 1))[1] = 0;
 kernelParams[2] = proxy_right;
 // Marshal device array: result
 IntPtr* proxy_result = stackalloc IntPtr[2];
 proxy_result[0] = result;
 ((int*)(proxy_result + 1))[0] = 0; // Length is unknown for raw IntPtr
+((int*)(proxy_result + 1))[1] = 0;
 kernelParams[3] = proxy_result;
 // Marshal device array: calls
 IntPtr* proxy_calls = stackalloc IntPtr[2];
 proxy_calls[0] = calls;
 ((int*)(proxy_calls + 1))[0] = 0; // Length is unknown for raw IntPtr
+((int*)(proxy_calls + 1))[1] = 0;
 kernelParams[4] = proxy_calls;
 CudaException.ThrowIfError(CudaDriverApi.cuLaunchKernel(
 hfunc,
@@ -649,11 +653,13 @@ kernelParams[0] = &bigCtx;
 IntPtr* proxy_operand = stackalloc IntPtr[2];
 proxy_operand[0] = operand;
 ((int*)(proxy_operand + 1))[0] = 0; // Length is unknown for raw IntPtr
+((int*)(proxy_operand + 1))[1] = 0;
 kernelParams[1] = proxy_operand;
 // Marshal device array: result
 IntPtr* proxy_result = stackalloc IntPtr[2];
 proxy_result[0] = result;
 ((int*)(proxy_result + 1))[0] = 0; // Length is unknown for raw IntPtr
+((int*)(proxy_result + 1))[1] = 0;
 kernelParams[2] = proxy_result;
 CudaException.ThrowIfError(CudaDriverApi.cuLaunchKernel(
 hfunc,
@@ -891,21 +897,25 @@ kernelParams[0] = &bigCtx;
 IntPtr* proxy_left = stackalloc IntPtr[2];
 proxy_left[0] = left;
 ((int*)(proxy_left + 1))[0] = 0; // Length is unknown for raw IntPtr
+((int*)(proxy_left + 1))[1] = 0;
 kernelParams[1] = proxy_left;
 // Marshal device array: right
 IntPtr* proxy_right = stackalloc IntPtr[2];
 proxy_right[0] = right;
 ((int*)(proxy_right + 1))[0] = 0; // Length is unknown for raw IntPtr
+((int*)(proxy_right + 1))[1] = 0;
 kernelParams[2] = proxy_right;
 // Marshal device array: result
 IntPtr* proxy_result = stackalloc IntPtr[2];
 proxy_result[0] = result;
 ((int*)(proxy_result + 1))[0] = 0; // Length is unknown for raw IntPtr
+((int*)(proxy_result + 1))[1] = 0;
 kernelParams[3] = proxy_result;
 // Marshal device array: calls
 IntPtr* proxy_calls = stackalloc IntPtr[2];
 proxy_calls[0] = calls;
 ((int*)(proxy_calls + 1))[0] = 0; // Length is unknown for raw IntPtr
+((int*)(proxy_calls + 1))[1] = 0;
 kernelParams[4] = proxy_calls;
 CudaException.ThrowIfError(CudaDriverApi.cuLaunchKernel(
 hfunc,
@@ -1191,26 +1201,31 @@ void** kernelParams = stackalloc void*[5];
 IntPtr* proxy_offset = stackalloc IntPtr[2];
 proxy_offset[0] = offset;
 ((int*)(proxy_offset + 1))[0] = 0; // Length is unknown for raw IntPtr
+((int*)(proxy_offset + 1))[1] = 0;
 kernelParams[0] = proxy_offset;
 // Marshal device array: left
 IntPtr* proxy_left = stackalloc IntPtr[2];
 proxy_left[0] = left;
 ((int*)(proxy_left + 1))[0] = 0; // Length is unknown for raw IntPtr
+((int*)(proxy_left + 1))[1] = 0;
 kernelParams[1] = proxy_left;
 // Marshal device array: right
 IntPtr* proxy_right = stackalloc IntPtr[2];
 proxy_right[0] = right;
 ((int*)(proxy_right + 1))[0] = 0; // Length is unknown for raw IntPtr
+((int*)(proxy_right + 1))[1] = 0;
 kernelParams[2] = proxy_right;
 // Marshal device array: result
 IntPtr* proxy_result = stackalloc IntPtr[2];
 proxy_result[0] = result;
 ((int*)(proxy_result + 1))[0] = 0; // Length is unknown for raw IntPtr
+((int*)(proxy_result + 1))[1] = 0;
 kernelParams[3] = proxy_result;
 // Marshal device array: calls
 IntPtr* proxy_calls = stackalloc IntPtr[2];
 proxy_calls[0] = calls;
 ((int*)(proxy_calls + 1))[0] = 0; // Length is unknown for raw IntPtr
+((int*)(proxy_calls + 1))[1] = 0;
 kernelParams[4] = proxy_calls;
 CudaException.ThrowIfError(CudaDriverApi.cuLaunchKernel(
 hfunc,

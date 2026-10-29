@@ -324,7 +324,7 @@ return false;
 }
 
 inline int __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__DeviceFunctionBarrierKernels__TakeTicket(GSharpArray<int> __gsharp_id_0_tickets, int __gsharp_id_1_index){
-__gsharp_array_ref(__gsharp_id_0_tickets, ""G#: a null array is read at DeviceFunctionBarrierKernels.cs(94,9)"")[__gsharp_id_1_index]+=1;
+__gsharp_array_at(__gsharp_id_0_tickets, __gsharp_id_1_index, ""G#: a null array is read at DeviceFunctionBarrierKernels.cs(94,9)"")+=1;
 return 0;
 }
 

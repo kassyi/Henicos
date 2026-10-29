@@ -450,6 +450,18 @@ __gsharp_trap_abort(GSharpErrorCode::NullReference, message);
 return static_cast<A&&>(array);
 }
 
+// The element array[index] as a location, with the check of __gsharp_array_ref. The array and the index are both
+// evaluated before the check, as C# evaluates them before ldelem / stelem throws (#706)
+template <typename A, typename I>
+inline decltype(auto) __gsharp_array_at(A&& array, I index, const char* message)
+{
+if (array.data == nullptr && (array.flags & __gsharp_array_null_reads_empty) == 0)
+{
+__gsharp_trap_abort(GSharpErrorCode::NullReference, message);
+}
+return array[index];
+}
+
 // Marks the comparison of a sort that the thread is running, while it lives (Sort.hpp)
 struct __gsharp_sort_compare_scope
 {

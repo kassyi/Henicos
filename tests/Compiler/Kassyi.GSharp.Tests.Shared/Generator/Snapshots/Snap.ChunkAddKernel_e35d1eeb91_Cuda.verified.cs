@@ -295,21 +295,25 @@ void** kernelParams = stackalloc void*[6];
 IntPtr* proxy_dA = stackalloc IntPtr[2];
 proxy_dA[0] = dA;
 ((int*)(proxy_dA + 1))[0] = 0; // Length is unknown for raw IntPtr
+((int*)(proxy_dA + 1))[1] = 0;
 kernelParams[0] = proxy_dA;
 // Marshal device array: dB
 IntPtr* proxy_dB = stackalloc IntPtr[2];
 proxy_dB[0] = dB;
 ((int*)(proxy_dB + 1))[0] = 0; // Length is unknown for raw IntPtr
+((int*)(proxy_dB + 1))[1] = 0;
 kernelParams[1] = proxy_dB;
 // Marshal device array: dResult
 IntPtr* proxy_dResult = stackalloc IntPtr[2];
 proxy_dResult[0] = dResult;
 ((int*)(proxy_dResult + 1))[0] = 0; // Length is unknown for raw IntPtr
+((int*)(proxy_dResult + 1))[1] = 0;
 kernelParams[2] = proxy_dResult;
 // Marshal device array: carryBuffer
 IntPtr* proxy_carryBuffer = stackalloc IntPtr[2];
 proxy_carryBuffer[0] = carryBuffer;
 ((int*)(proxy_carryBuffer + 1))[0] = 0; // Length is unknown for raw IntPtr
+((int*)(proxy_carryBuffer + 1))[1] = 0;
 kernelParams[3] = proxy_carryBuffer;
 // Marshal scalar: numWords
 kernelParams[4] = &numWords;

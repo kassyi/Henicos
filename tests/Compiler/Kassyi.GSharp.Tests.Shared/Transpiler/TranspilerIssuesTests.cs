@@ -87,7 +87,7 @@ public class TranspilerIssuesTests : TranspilerTestBase
         Assert.Contains("return val*factor+1;", cudaSource.WithCSharpNames());
         // The target is not a [GpuKernel], so its array parameter may be null and each read is checked (#706)
         Assert.Matches(
-            @"__gsharp_array_ref\(data, ""[^""]*""\)\[0\]=Compute\(__gsharp_array_ref\(data, ""[^""]*""\)\[0\]\);",
+            @"__gsharp_array_at\(data, 0, ""[^""]*""\)=Compute\(__gsharp_array_at\(data, 0, ""[^""]*""\)\);",
             cudaSource.WithCSharpNames());
     }
 
@@ -116,7 +116,7 @@ public class TranspilerIssuesTests : TranspilerTestBase
             "struct Kassyi.GSharp.Tests.Shared.Transpiler.GenericBox_IssuesTest<System.Single>",
             cudaSource.WithCSharpNames());
         Assert.Matches(
-            @"Kassyi\.GSharp\.Tests\.Shared\.Transpiler\.GenericBox_IssuesTest<System\.Single> b = __gsharp_array_ref\(boxes, ""[^""]*""\)\[0\];",
+            @"Kassyi\.GSharp\.Tests\.Shared\.Transpiler\.GenericBox_IssuesTest<System\.Single> b = __gsharp_array_at\(boxes, 0, ""[^""]*""\);",
             cudaSource.WithCSharpNames());
     }
 }

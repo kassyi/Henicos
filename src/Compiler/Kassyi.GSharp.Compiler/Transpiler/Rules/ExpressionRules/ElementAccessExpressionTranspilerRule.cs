@@ -19,8 +19,13 @@ public sealed class ElementAccessExpressionTranspilerRule : SyntaxNodeTranspiler
     /// <inheritdoc />
     public override void Transpile(ElementAccessExpressionSyntax node, ref TranspileContext context)
     {
-        // An element of a null array throws NullReferenceException in C# (#706)
-        ArrayNullCheck.AppendElementReceiver(node, ref context);
+        // An element of a null array throws NullReferenceException in C# (#706), after the index is evaluated
+        if (ArrayNullCheck.TryAppendCheckedElement(node, ref context))
+        {
+            return;
+        }
+
+        context.Visitor.Visit(node.Expression);
         using (context.Emitter.Writer.Brackets())
         {
             for (var i = 0; i < node.ArgumentList.Arguments.Count; i++)

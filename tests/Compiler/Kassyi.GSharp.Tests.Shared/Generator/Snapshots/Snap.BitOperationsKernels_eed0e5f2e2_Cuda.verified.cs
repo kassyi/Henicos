@@ -276,21 +276,25 @@ void** kernelParams = stackalloc void*[4];
 IntPtr* proxy_val = stackalloc IntPtr[2];
 proxy_val[0] = val;
 ((int*)(proxy_val + 1))[0] = 0; // Length is unknown for raw IntPtr
+((int*)(proxy_val + 1))[1] = 0;
 kernelParams[0] = proxy_val;
 // Marshal device array: shift
 IntPtr* proxy_shift = stackalloc IntPtr[2];
 proxy_shift[0] = shift;
 ((int*)(proxy_shift + 1))[0] = 0; // Length is unknown for raw IntPtr
+((int*)(proxy_shift + 1))[1] = 0;
 kernelParams[1] = proxy_shift;
 // Marshal device array: rotLeftRes
 IntPtr* proxy_rotLeftRes = stackalloc IntPtr[2];
 proxy_rotLeftRes[0] = rotLeftRes;
 ((int*)(proxy_rotLeftRes + 1))[0] = 0; // Length is unknown for raw IntPtr
+((int*)(proxy_rotLeftRes + 1))[1] = 0;
 kernelParams[2] = proxy_rotLeftRes;
 // Marshal device array: rotRightRes
 IntPtr* proxy_rotRightRes = stackalloc IntPtr[2];
 proxy_rotRightRes[0] = rotRightRes;
 ((int*)(proxy_rotRightRes + 1))[0] = 0; // Length is unknown for raw IntPtr
+((int*)(proxy_rotRightRes + 1))[1] = 0;
 kernelParams[3] = proxy_rotRightRes;
 CudaException.ThrowIfError(CudaDriverApi.cuLaunchKernel(
 hfunc,
@@ -501,21 +505,25 @@ void** kernelParams = stackalloc void*[4];
 IntPtr* proxy_val = stackalloc IntPtr[2];
 proxy_val[0] = val;
 ((int*)(proxy_val + 1))[0] = 0; // Length is unknown for raw IntPtr
+((int*)(proxy_val + 1))[1] = 0;
 kernelParams[0] = proxy_val;
 // Marshal device array: shift
 IntPtr* proxy_shift = stackalloc IntPtr[2];
 proxy_shift[0] = shift;
 ((int*)(proxy_shift + 1))[0] = 0; // Length is unknown for raw IntPtr
+((int*)(proxy_shift + 1))[1] = 0;
 kernelParams[1] = proxy_shift;
 // Marshal device array: rotLeftRes
 IntPtr* proxy_rotLeftRes = stackalloc IntPtr[2];
 proxy_rotLeftRes[0] = rotLeftRes;
 ((int*)(proxy_rotLeftRes + 1))[0] = 0; // Length is unknown for raw IntPtr
+((int*)(proxy_rotLeftRes + 1))[1] = 0;
 kernelParams[2] = proxy_rotLeftRes;
 // Marshal device array: rotRightRes
 IntPtr* proxy_rotRightRes = stackalloc IntPtr[2];
 proxy_rotRightRes[0] = rotRightRes;
 ((int*)(proxy_rotRightRes + 1))[0] = 0; // Length is unknown for raw IntPtr
+((int*)(proxy_rotRightRes + 1))[1] = 0;
 kernelParams[3] = proxy_rotRightRes;
 CudaException.ThrowIfError(CudaDriverApi.cuLaunchKernel(
 hfunc,

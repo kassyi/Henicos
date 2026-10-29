@@ -296,21 +296,25 @@ void** kernelParams = stackalloc void*[4];
 IntPtr* proxy_intState = stackalloc IntPtr[2];
 proxy_intState[0] = intState;
 ((int*)(proxy_intState + 1))[0] = 0; // Length is unknown for raw IntPtr
+((int*)(proxy_intState + 1))[1] = 0;
 kernelParams[0] = proxy_intState;
 // Marshal device array: uintState
 IntPtr* proxy_uintState = stackalloc IntPtr[2];
 proxy_uintState[0] = uintState;
 ((int*)(proxy_uintState + 1))[0] = 0; // Length is unknown for raw IntPtr
+((int*)(proxy_uintState + 1))[1] = 0;
 kernelParams[1] = proxy_uintState;
 // Marshal device array: ulongState
 IntPtr* proxy_ulongState = stackalloc IntPtr[2];
 proxy_ulongState[0] = ulongState;
 ((int*)(proxy_ulongState + 1))[0] = 0; // Length is unknown for raw IntPtr
+((int*)(proxy_ulongState + 1))[1] = 0;
 kernelParams[2] = proxy_ulongState;
 // Marshal device array: floatState
 IntPtr* proxy_floatState = stackalloc IntPtr[2];
 proxy_floatState[0] = floatState;
 ((int*)(proxy_floatState + 1))[0] = 0; // Length is unknown for raw IntPtr
+((int*)(proxy_floatState + 1))[1] = 0;
 kernelParams[3] = proxy_floatState;
 CudaException.ThrowIfError(CudaDriverApi.cuLaunchKernel(
 hfunc,
@@ -423,6 +427,7 @@ void** kernelParams = stackalloc void*[2];
 IntPtr* proxy_state = stackalloc IntPtr[2];
 proxy_state[0] = state;
 ((int*)(proxy_state + 1))[0] = 0; // Length is unknown for raw IntPtr
+((int*)(proxy_state + 1))[1] = 0;
 kernelParams[0] = proxy_state;
 // Marshal scalar: limit
 kernelParams[1] = &limit;
@@ -534,6 +539,7 @@ void** kernelParams = stackalloc void*[1];
 IntPtr* proxy_globalSum = stackalloc IntPtr[2];
 proxy_globalSum[0] = globalSum;
 ((int*)(proxy_globalSum + 1))[0] = 0; // Length is unknown for raw IntPtr
+((int*)(proxy_globalSum + 1))[1] = 0;
 kernelParams[0] = proxy_globalSum;
 CudaException.ThrowIfError(CudaDriverApi.cuLaunchKernel(
 hfunc,
@@ -643,6 +649,7 @@ void** kernelParams = stackalloc void*[1];
 IntPtr* proxy_counter = stackalloc IntPtr[2];
 proxy_counter[0] = counter;
 ((int*)(proxy_counter + 1))[0] = 0; // Length is unknown for raw IntPtr
+((int*)(proxy_counter + 1))[1] = 0;
 kernelParams[0] = proxy_counter;
 CudaException.ThrowIfError(CudaDriverApi.cuLaunchKernel(
 hfunc,

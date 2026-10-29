@@ -1,6 +1,6 @@
 ﻿extern "C" __declspec(dllexport) void __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__StringsAndAttributesTarget__NameOfExpression(GSharpArray<int> __gsharp_id_0_output){
 System_String __gsharp_id_1_name = nameof(__gsharp_id_0_output);
-__gsharp_array_ref(__gsharp_id_0_output, "G#: a null array is read at StringsAndAttributesTests.cs(29,9)")[0]=__gsharp_id_1_name.length;
+__gsharp_array_at(__gsharp_id_0_output, 0, "G#: a null array is read at StringsAndAttributesTests.cs(29,9)")=__gsharp_id_1_name.length;
 }
 extern "C" __declspec(dllexport) void __gsharp_launch_Kassyi__GSharp__Tests__Shared__Syntax__StringsAndAttributesTarget__NameOfExpression(uint32_t __gsharp_grid_dim_x, uint32_t __gsharp_grid_dim_y, uint32_t __gsharp_grid_dim_z, uint32_t __gsharp_block_dim_x, uint32_t __gsharp_block_dim_y, uint32_t __gsharp_block_dim_z, uint32_t __gsharp_shared_mem_bytes, GSharpArray<int> __gsharp_id_0_output)
 {

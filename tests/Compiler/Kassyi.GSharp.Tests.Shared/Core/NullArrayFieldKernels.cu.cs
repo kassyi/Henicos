@@ -132,4 +132,70 @@ public static partial class NullArrayFieldKernels
             o[0] += v;
         }
     }
+
+    // C# evaluates the array, then the index, then throws: Bump writes o[1] before the NullReferenceException (#878)
+    [GpuKernel]
+    public static void IndexSideEffectKernel(NullArrayHolder h, int[] o)
+    {
+        o[0] = h.Data[Bump(o)];
+    }
+
+    [GpuKernel]
+    public static void StoreIndexSideEffectKernel(NullArrayHolder h, int[] o)
+    {
+        h.Data[Bump(o)] = 1;
+    }
+
+    // A kernel array parameter that the kernel assigns may hold null: its reads are checked, also in a state machine.
+    // The write is after the barrier: a write before it is lost on resume (#879)
+    [GpuKernel]
+    public static void WrittenParameterWithBarrierKernel(NullArrayHolder h, int[] values, int[] o)
+    {
+        Gpu.SyncThreads();
+        values = h.Data;
+        o[0] = values.Length;
+    }
+
+#nullable enable
+    // An optional parameter that the kernel assigns is no longer the launcher's value: a null read throws on every path
+    [GpuKernel]
+    public static void WrittenOptionalKernel(NullArrayHolder h, int[] o, int[]? bias)
+    {
+        bias = h.Data;
+#pragma warning disable CS8602 // C#: NullReferenceException when h.Data is null
+        o[0] = bias.Length;
+#pragma warning restore CS8602
+    }
+
+    // An unwritten optional parameter in a state machine reads as empty, also through a device function
+    [GpuKernel]
+    public static void OptionalWithBarrierKernel(int[] o, int[]? bias)
+    {
+        Gpu.SyncThreads();
+#pragma warning disable CS8602, CS8604 // The device reads a null optional array as one of length 0
+        o[0] = Len(bias) + bias.Length;
+#pragma warning restore CS8602, CS8604
+    }
+#nullable restore
+
+    // C# reads h.Data (null) before Replace swaps h for g, so the access throws although g.Data is not null
+    [GpuKernel]
+    public static void IndexReplacesReceiverKernel(NullArrayHolder h, NullArrayHolder g, int[] o)
+    {
+        o[0] = h.Data[Replace(ref h, g)];
+    }
+
+    [GpuDeviceFunction]
+    private static int Replace(ref NullArrayHolder target, NullArrayHolder source)
+    {
+        target = source;
+        return 0;
+    }
+
+    [GpuDeviceFunction]
+    private static int Bump(int[] o)
+    {
+        o[1] = 5;
+        return 0;
+    }
 }

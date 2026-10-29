@@ -278,6 +278,7 @@ kernelParams[1] = &scalarOut;
 IntPtr* proxy_arrayVal = stackalloc IntPtr[2];
 proxy_arrayVal[0] = arrayVal;
 ((int*)(proxy_arrayVal + 1))[0] = 0; // Length is unknown for raw IntPtr
+((int*)(proxy_arrayVal + 1))[1] = 0;
 kernelParams[2] = proxy_arrayVal;
 // Marshal device struct: structRef
 kernelParams[3] = &structRef;

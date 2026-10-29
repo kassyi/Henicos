@@ -71,23 +71,13 @@ internal static class ArrayNullCheck
 
     /// <summary>
     /// Writes the receiver of the member access <paramref name="node"/> with the check when the member reads the array:
-    /// an instance member of <c>System.Array</c> (<paramref name="member"/>), or the <c>Length</c> of a lowered
-    /// <c>foreach</c> source whose annotation carries the place (<c>ForEachRewriter</c>).
+    /// an instance member of <c>System.Array</c> (<paramref name="member"/>).
     /// </summary>
     /// <returns><see langword="false"/>, writing nothing, when the receiver needs no check.</returns>
     public static bool TryAppendMemberReceiver(MemberAccessExpressionSyntax node, ISymbol? member,
         ref TranspileContext context)
     {
         var receiver = node.Expression;
-        foreach (var annotation in receiver.GetAnnotations(LoweringAnnotations.ForEachArraySourceAnnotationKind))
-        {
-            if (annotation.Data is { } place)
-            {
-                AppendCheck(receiver, place, ref context);
-                return true;
-            }
-        }
-
         if (!IsArrayMember(member) || !NeedsCheck(receiver, context.Query.SemanticModel))
         {
             return false;
@@ -98,24 +88,101 @@ internal static class ArrayNullCheck
     }
 
     /// <summary>
-    /// Writes the receiver of the element access <paramref name="node"/>, with the check when it needs one
-    /// (<see cref="AppendReceiver"/>).
+    /// Writes the element access <paramref name="node"/> with the check when its receiver needs one:
+    /// <c>__gsharp_array_at(&lt;receiver&gt;, &lt;index&gt;, "&lt;message&gt;")</c>, the element as a location.
     /// </summary>
+    /// <returns><see langword="false"/>, writing nothing, when the access needs no check.</returns>
     /// <remarks>
-    /// A range (<c>a[1..]</c>) is left out: .NET throws <see cref="ArgumentNullException"/> for it, which needs an error
-    /// code of its own.
+    /// <para>
+    /// C# evaluates the array, then the index, and only then throws for a null array (ldelem / stelem), so the index is
+    /// evaluated before the check: <c>h.Data[Bump(o)]</c> runs <c>Bump</c> first. A check on the receiver alone
+    /// (<c>__gsharp_array_ref(a)[i]</c>) would run before the index, since C++17 sequences <c>E1</c> before <c>E2</c>.
+    /// The call leaves the order of its arguments unspecified, so when the receiver and the index interfere they are
+    /// evaluated in C# order into temporaries first (<see cref="EvaluationOrder"/>):
+    /// <c>([&amp;]() -&gt; decltype(auto) { auto __gsharp_seq_0 = &lt;receiver&gt;; auto __gsharp_seq_1 = &lt;index&gt;; return __gsharp_array_at(__gsharp_seq_0, __gsharp_seq_1, "&lt;message&gt;"); }())</c>.
+    /// </para>
+    /// <para>
+    /// A range (<c>a[1..]</c>) and an index from the end (<c>a[^1]</c>) are left out: .NET throws
+    /// <see cref="ArgumentNullException"/> for a range, which needs an error code of its own (#871).
+    /// </para>
     /// </remarks>
-    public static void AppendElementReceiver(ElementAccessExpressionSyntax node, ref TranspileContext context)
+    public static bool TryAppendCheckedElement(ElementAccessExpressionSyntax node, ref TranspileContext context)
     {
-        if (node.ArgumentList.Arguments
-            .AsStackEnumerable()
-            .Any(static argument => argument.Expression is RangeExpressionSyntax))
+        var model = context.Query.SemanticModel;
+        if (node.ArgumentList.Arguments is not [var argument] ||
+            IsIndexOrRange(argument.Expression, model) ||
+            !NeedsCheck(node.Expression, model))
         {
-            context.Visitor.Visit(node.Expression);
-            return;
+            return false;
         }
 
-        AppendReceiver(node.Expression, ref context);
+        var place = SourcePlace.Format(model, node.Expression);
+        var writer = context.Emitter.Writer;
+        if (EvaluationOrder.LastSpilledOperand(
+                [ExpressionEffects.Of(node.Expression, model), ExpressionEffects.Of(argument.Expression, model)]) < 0)
+        {
+            AppendElementCall(node.Expression, argument.Expression, place, ref context);
+            return true;
+        }
+
+        using var sequence = EvaluationOrder.BeginSequence(writer, "decltype(auto)");
+        var receiver = EvaluationOrder.DeclareTemp(ref context, node.Expression, reference: false);
+        var index = EvaluationOrder.DeclareTemp(ref context, argument.Expression, reference: false);
+        sequence.Return();
+        writer.Append(GSharpInternalNames.Prelude.ArrayAt);
+        using (writer.Parentheses())
+        {
+            EvaluationOrder.AppendTempName(writer, receiver);
+            writer.Append(", ");
+            EvaluationOrder.AppendTempName(writer, index);
+            writer.Append(", ");
+            CppStringLiteral.Append(writer, MessagePrefix + place);
+        }
+
+        return true;
+    }
+
+    // __gsharp_array_at(<receiver>, <index>, "G#: a null array is read at <place>")
+    private static void AppendElementCall(ExpressionSyntax receiver, ExpressionSyntax index, string place,
+        ref TranspileContext context)
+    {
+        var writer = context.Emitter.Writer;
+        writer.Append(GSharpInternalNames.Prelude.ArrayAt);
+        using (writer.Parentheses())
+        {
+            context.Visitor.Visit(receiver);
+            writer.Append(", ");
+            context.Visitor.Visit(index);
+            writer.Append(", ");
+            CppStringLiteral.Append(writer, MessagePrefix + place);
+        }
+    }
+
+    /// <summary>
+    /// Writes <paramref name="expression"/> through the check when lowering marked it
+    /// (<see cref="LoweringAnnotations.ArrayNullCheckAnnotationKind"/>, the source of a lowered <c>foreach</c>), with the
+    /// place the annotation carries.
+    /// </summary>
+    /// <returns><see langword="false"/>, writing nothing, when the expression carries no such annotation.</returns>
+    public static bool TryAppendAnnotatedCheck(ExpressionSyntax expression, ref TranspileContext context)
+    {
+        if (!expression.HasAnnotations(LoweringAnnotations.ArrayNullCheckAnnotationKind))
+        {
+            return false;
+        }
+
+        foreach (var annotation in expression.GetAnnotations(LoweringAnnotations.ArrayNullCheckAnnotationKind))
+        {
+            if (annotation.Data is { } place)
+            {
+                // The expression itself, without the annotation that brought it here
+                AppendCheck(expression.WithoutAnnotations(LoweringAnnotations.ArrayNullCheckAnnotationKind), place,
+                    ref context);
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /// <summary>
@@ -133,6 +200,12 @@ internal static class ArrayNullCheck
         }
     }
 
+    // a[^1] and a[1..]: an argument of type System.Index or System.Range
+    private static bool IsIndexOrRange(ExpressionSyntax argument, SemanticModel model) =>
+        argument is RangeExpressionSyntax ||
+        model.GetTypeSymbol(argument) is INamedTypeSymbol { Name: "Index" or "Range" } type &&
+        type.ContainingNamespace.IsSystemNamespace();
+
     // An instance member of System.Array: Length, LongLength, Rank, GetLength, ... (not an extension method such as AsSpan)
     private static bool IsArrayMember(ISymbol? member) =>
         member is { IsStatic: false, ContainingType.SpecialType: SpecialType.System_Array } &&
@@ -148,7 +221,12 @@ internal static class ArrayNullCheck
         return expression;
     }
 
-    private static bool IsUnwrittenKernelParameter(IParameterSymbol parameter, Compilation compilation)
+    /// <summary>
+    /// Whether <paramref name="parameter"/> is a by-value parameter of a <c>[GpuKernel]</c> that the kernel never writes
+    /// (an assignment, also in a tuple or a local function, a <c>ref</c> / <c>out</c> argument, a <c>ref</c> to it): it
+    /// holds what the launcher passed. The managed path rewrites the <c>Length</c> of such an optional array the same way.
+    /// </summary>
+    public static bool IsUnwrittenKernelParameter(IParameterSymbol parameter, Compilation compilation)
     {
         if (parameter is not { RefKind: RefKind.None, ContainingSymbol: IMethodSymbol method } ||
             !method.HasAttribute(KnownAttributes.GpuKernel))

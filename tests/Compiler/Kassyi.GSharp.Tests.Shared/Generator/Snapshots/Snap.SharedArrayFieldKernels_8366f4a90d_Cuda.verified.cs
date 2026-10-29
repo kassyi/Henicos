@@ -364,8 +364,8 @@ static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Core__SharedAr
 extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Core__SharedArrayFieldKernels__TwoFieldsKernel(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Core__SharedArrayPair __gsharp_id_0_p){
 if(threadIdx.x==0)
 {
-__gsharp_array_ref(__gsharp_id_0_p.__gsharp_mb_A, ""G#: a null array is read at SharedArrayFieldKernels.cs(27,13)"")[0]=1;
-__gsharp_array_ref(__gsharp_id_0_p.__gsharp_mb_B, ""G#: a null array is read at SharedArrayFieldKernels.cs(28,13)"")[1]=__gsharp_array_ref(__gsharp_id_0_p.__gsharp_mb_A, ""G#: a null array is read at SharedArrayFieldKernels.cs(28,22)"")[0]+__gsharp_array_ref(__gsharp_id_0_p.__gsharp_mb_B, ""G#: a null array is read at SharedArrayFieldKernels.cs(28,31)"")[0];
+__gsharp_array_at(__gsharp_id_0_p.__gsharp_mb_A, 0, ""G#: a null array is read at SharedArrayFieldKernels.cs(27,13)"")=1;
+__gsharp_array_at(__gsharp_id_0_p.__gsharp_mb_B, 1, ""G#: a null array is read at SharedArrayFieldKernels.cs(28,13)"")=__gsharp_array_at(__gsharp_id_0_p.__gsharp_mb_A, 0, ""G#: a null array is read at SharedArrayFieldKernels.cs(28,22)"")+__gsharp_array_at(__gsharp_id_0_p.__gsharp_mb_B, 0, ""G#: a null array is read at SharedArrayFieldKernels.cs(28,31)"");
 }
 }
 ";
@@ -459,8 +459,8 @@ static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Core__SharedAr
 extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Core__SharedArrayFieldKernels__TwoStructsKernel(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Core__SharedArrayHolder __gsharp_id_0_first, __gsharp_ty_Kassyi__GSharp__Tests__Shared__Core__SharedArrayHolder __gsharp_id_1_second){
 if(threadIdx.x==0)
 {
-__gsharp_array_ref(__gsharp_id_0_first.__gsharp_mb_Data, ""G#: a null array is read at SharedArrayFieldKernels.cs(38,13)"")[0]=3;
-__gsharp_array_ref(__gsharp_id_1_second.__gsharp_mb_Data, ""G#: a null array is read at SharedArrayFieldKernels.cs(39,13)"")[1]=__gsharp_array_ref(__gsharp_id_0_first.__gsharp_mb_Data, ""G#: a null array is read at SharedArrayFieldKernels.cs(39,30)"")[0]+__gsharp_array_ref(__gsharp_id_1_second.__gsharp_mb_Data, ""G#: a null array is read at SharedArrayFieldKernels.cs(39,46)"")[0];
+__gsharp_array_at(__gsharp_id_0_first.__gsharp_mb_Data, 0, ""G#: a null array is read at SharedArrayFieldKernels.cs(38,13)"")=3;
+__gsharp_array_at(__gsharp_id_1_second.__gsharp_mb_Data, 1, ""G#: a null array is read at SharedArrayFieldKernels.cs(39,13)"")=__gsharp_array_at(__gsharp_id_0_first.__gsharp_mb_Data, 0, ""G#: a null array is read at SharedArrayFieldKernels.cs(39,30)"")+__gsharp_array_at(__gsharp_id_1_second.__gsharp_mb_Data, 0, ""G#: a null array is read at SharedArrayFieldKernels.cs(39,46)"");
 }
 }
 ";
@@ -563,8 +563,8 @@ static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Core__ConvertB
 extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Core__SharedArrayFieldKernels__ElementFieldsKernel(GSharpArray<__gsharp_ty_Kassyi__GSharp__Tests__Shared__Core__ConvertBag> __gsharp_id_0_bags){
 if(threadIdx.x==0)
 {
-__gsharp_array_ref(__gsharp_id_0_bags[0].__gsharp_mb_Data, ""G#: a null array is read at SharedArrayFieldKernels.cs(49,13)"")[0]=5;
-__gsharp_array_ref(__gsharp_id_0_bags[1].__gsharp_mb_Data, ""G#: a null array is read at SharedArrayFieldKernels.cs(50,13)"")[1]=__gsharp_array_ref(__gsharp_id_0_bags[0].__gsharp_mb_Data, ""G#: a null array is read at SharedArrayFieldKernels.cs(50,31)"")[0]+__gsharp_array_ref(__gsharp_id_0_bags[1].__gsharp_mb_Data, ""G#: a null array is read at SharedArrayFieldKernels.cs(50,49)"")[0];
+__gsharp_array_at(__gsharp_id_0_bags[0].__gsharp_mb_Data, 0, ""G#: a null array is read at SharedArrayFieldKernels.cs(49,13)"")=5;
+__gsharp_array_at(__gsharp_id_0_bags[1].__gsharp_mb_Data, 1, ""G#: a null array is read at SharedArrayFieldKernels.cs(50,13)"")=__gsharp_array_at(__gsharp_id_0_bags[0].__gsharp_mb_Data, 0, ""G#: a null array is read at SharedArrayFieldKernels.cs(50,31)"")+__gsharp_array_at(__gsharp_id_0_bags[1].__gsharp_mb_Data, 0, ""G#: a null array is read at SharedArrayFieldKernels.cs(50,49)"");
 }
 }
 ";
@@ -673,6 +673,7 @@ void** kernelParams = stackalloc void*[1];
 IntPtr* proxy_bags = stackalloc IntPtr[2];
 proxy_bags[0] = bags;
 ((int*)(proxy_bags + 1))[0] = 0; // Length is unknown for raw IntPtr
+((int*)(proxy_bags + 1))[1] = 0;
 kernelParams[0] = proxy_bags;
 CudaException.ThrowIfError(CudaDriverApi.cuLaunchKernel(
 hfunc,

@@ -244,11 +244,13 @@ void** kernelParams = stackalloc void*[2];
 IntPtr* proxy_register = stackalloc IntPtr[2];
 proxy_register[0] = register;
 ((int*)(proxy_register + 1))[0] = 0; // Length is unknown for raw IntPtr
+((int*)(proxy_register + 1))[1] = 0;
 kernelParams[0] = proxy_register;
 // Marshal device array: template
 IntPtr* proxy_template = stackalloc IntPtr[2];
 proxy_template[0] = template;
 ((int*)(proxy_template + 1))[0] = 0; // Length is unknown for raw IntPtr
+((int*)(proxy_template + 1))[1] = 0;
 kernelParams[1] = proxy_template;
 CudaException.ThrowIfError(CudaDriverApi.cuLaunchKernel(
 hfunc,
@@ -404,11 +406,13 @@ void** kernelParams = stackalloc void*[2];
 IntPtr* proxy_int = stackalloc IntPtr[2];
 proxy_int[0] = @int;
 ((int*)(proxy_int + 1))[0] = 0; // Length is unknown for raw IntPtr
+((int*)(proxy_int + 1))[1] = 0;
 kernelParams[0] = proxy_int;
 // Marshal device array: @class
 IntPtr* proxy_class = stackalloc IntPtr[2];
 proxy_class[0] = @class;
 ((int*)(proxy_class + 1))[0] = 0; // Length is unknown for raw IntPtr
+((int*)(proxy_class + 1))[1] = 0;
 kernelParams[1] = proxy_class;
 CudaException.ThrowIfError(CudaDriverApi.cuLaunchKernel(
 hfunc,
@@ -525,6 +529,7 @@ void** kernelParams = stackalloc void*[1];
 IntPtr* proxy_data = stackalloc IntPtr[2];
 proxy_data[0] = data;
 ((int*)(proxy_data + 1))[0] = 0; // Length is unknown for raw IntPtr
+((int*)(proxy_data + 1))[1] = 0;
 kernelParams[0] = proxy_data;
 CudaException.ThrowIfError(CudaDriverApi.cuLaunchKernel(
 hfunc,
@@ -665,6 +670,7 @@ void** kernelParams = stackalloc void*[1];
 IntPtr* proxy_data = stackalloc IntPtr[2];
 proxy_data[0] = data;
 ((int*)(proxy_data + 1))[0] = 0; // Length is unknown for raw IntPtr
+((int*)(proxy_data + 1))[1] = 0;
 kernelParams[0] = proxy_data;
 CudaException.ThrowIfError(CudaDriverApi.cuLaunchKernel(
 hfunc,
@@ -909,11 +915,13 @@ void** kernelParams = stackalloc void*[2];
 IntPtr* proxy_items = stackalloc IntPtr[2];
 proxy_items[0] = items;
 ((int*)(proxy_items + 1))[0] = 0; // Length is unknown for raw IntPtr
+((int*)(proxy_items + 1))[1] = 0;
 kernelParams[0] = proxy_items;
 // Marshal device array: result
 IntPtr* proxy_result = stackalloc IntPtr[2];
 proxy_result[0] = result;
 ((int*)(proxy_result + 1))[0] = 0; // Length is unknown for raw IntPtr
+((int*)(proxy_result + 1))[1] = 0;
 kernelParams[1] = proxy_result;
 CudaException.ThrowIfError(CudaDriverApi.cuLaunchKernel(
 hfunc,
@@ -1037,6 +1045,7 @@ void** kernelParams = stackalloc void*[5];
 IntPtr* proxy_data = stackalloc IntPtr[2];
 proxy_data[0] = data;
 ((int*)(proxy_data + 1))[0] = 0; // Length is unknown for raw IntPtr
+((int*)(proxy_data + 1))[1] = 0;
 kernelParams[0] = proxy_data;
 // Marshal scalar: bx
 kernelParams[1] = &bx;
@@ -1166,6 +1175,7 @@ void** kernelParams = stackalloc void*[2];
 IntPtr* proxy_data = stackalloc IntPtr[2];
 proxy_data[0] = data;
 ((int*)(proxy_data + 1))[0] = 0; // Length is unknown for raw IntPtr
+((int*)(proxy_data + 1))[1] = 0;
 kernelParams[0] = proxy_data;
 // Marshal scalar: count
 kernelParams[1] = &count;
@@ -1286,6 +1296,7 @@ void** kernelParams = stackalloc void*[2];
 IntPtr* proxy_data = stackalloc IntPtr[2];
 proxy_data[0] = data;
 ((int*)(proxy_data + 1))[0] = 0; // Length is unknown for raw IntPtr
+((int*)(proxy_data + 1))[1] = 0;
 kernelParams[0] = proxy_data;
 // Marshal scalar: rounds
 kernelParams[1] = &rounds;
@@ -1398,6 +1409,7 @@ void** kernelParams = stackalloc void*[1];
 IntPtr* proxy_data = stackalloc IntPtr[2];
 proxy_data[0] = data;
 ((int*)(proxy_data + 1))[0] = 0; // Length is unknown for raw IntPtr
+((int*)(proxy_data + 1))[1] = 0;
 kernelParams[0] = proxy_data;
 CudaException.ThrowIfError(CudaDriverApi.cuLaunchKernel(
 hfunc,

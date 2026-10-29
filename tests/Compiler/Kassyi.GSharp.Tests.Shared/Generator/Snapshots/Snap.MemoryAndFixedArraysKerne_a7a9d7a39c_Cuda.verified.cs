@@ -285,16 +285,19 @@ void** kernelParams = stackalloc void*[3];
 IntPtr* proxy_intOutput = stackalloc IntPtr[2];
 proxy_intOutput[0] = intOutput;
 ((int*)(proxy_intOutput + 1))[0] = 0; // Length is unknown for raw IntPtr
+((int*)(proxy_intOutput + 1))[1] = 0;
 kernelParams[0] = proxy_intOutput;
 // Marshal device array: floatOutput
 IntPtr* proxy_floatOutput = stackalloc IntPtr[2];
 proxy_floatOutput[0] = floatOutput;
 ((int*)(proxy_floatOutput + 1))[0] = 0; // Length is unknown for raw IntPtr
+((int*)(proxy_floatOutput + 1))[1] = 0;
 kernelParams[1] = proxy_floatOutput;
 // Marshal device array: pointOutput
 IntPtr* proxy_pointOutput = stackalloc IntPtr[2];
 proxy_pointOutput[0] = pointOutput;
 ((int*)(proxy_pointOutput + 1))[0] = 0; // Length is unknown for raw IntPtr
+((int*)(proxy_pointOutput + 1))[1] = 0;
 kernelParams[2] = proxy_pointOutput;
 CudaException.ThrowIfError(CudaDriverApi.cuLaunchKernel(
 hfunc,

@@ -59,9 +59,9 @@ public class ForEachRewriter(SemanticModel? semanticModel = null) : CSharpSyntax
         return LowerArrayForEach(node, expr, body, id, GetNullCheckPlace(node.Expression));
     }
 
-    // [WHY] foreach over a null array throws NullReferenceException at the loop entry in C# (#706). The lowered source
-    // is a synthesized local the transpiler cannot type, so the decision and the place of the source expression travel
-    // in the data of its ForEachArraySourceAnnotationKind annotation, which ContextHoister keeps.
+    // [WHY] foreach over a null array throws NullReferenceException at the loop entry in C# (#706). The source is
+    // checked once, where the lowered local is initialized; the decision and the place of the source expression travel
+    // in an ArrayNullCheckAnnotationKind annotation on the initializer, which ContextHoister keeps.
     private string? GetNullCheckPlace(ExpressionSyntax source) =>
         semanticModel != null && ArrayNullCheck.NeedsCheck(source, semanticModel)
             ? SourcePlace.Format(semanticModel, source)
@@ -90,8 +90,13 @@ public class ForEachRewriter(SemanticModel? semanticModel = null) : CSharpSyntax
         var srcName = $"{GSharpInternalNames.Lowering.ForEachSourcePrefix}{id}";
         var indexName = $"{GSharpInternalNames.Lowering.ForEachIndexPrefix}{id}";
 
+        var source = nullCheckPlace == null
+            ? expr
+            : expr.WithAdditionalAnnotations(
+                new SyntaxAnnotation(LoweringAnnotations.ArrayNullCheckAnnotationKind, nullCheckPlace)
+            );
         var srcDeclarator = SyntaxFactory.VariableDeclarator(SyntaxFactory.Identifier(srcName))
-            .WithInitializer(SyntaxFactory.EqualsValueClause(expr));
+            .WithInitializer(SyntaxFactory.EqualsValueClause(source));
         var srcStatement = SyntaxFactory.LocalDeclarationStatement(
             SyntaxFactory.VariableDeclaration(
                 SyntaxFactory.IdentifierName("var"),
@@ -118,7 +123,7 @@ public class ForEachRewriter(SemanticModel? semanticModel = null) : CSharpSyntax
                 SyntaxKind.SimpleMemberAccessExpression,
                 SyntaxFactory.IdentifierName(srcName)
                     .WithAdditionalAnnotations(
-                        new SyntaxAnnotation(LoweringAnnotations.ForEachArraySourceAnnotationKind, nullCheckPlace)),
+                        new SyntaxAnnotation(LoweringAnnotations.ForEachArraySourceAnnotationKind)),
                 SyntaxFactory.IdentifierName("Length")
             )
         ).WithAdditionalAnnotations(annotations);

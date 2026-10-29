@@ -459,6 +459,19 @@ __gsharp_trap(GSharpErrorCode::NullReference, message);
 #endif
 return static_cast<A&&>(array);
 }
+// The element array[index] as a location, with the check of __gsharp_array_ref. The array and the index are both
+// evaluated before the check, as C# evaluates them before ldelem / stelem throws (#706)
+template <typename A, typename I>
+__device__ __forceinline__ decltype(auto) __gsharp_array_at(A&& array, I index, const char* message)
+{
+#ifdef GSHARP_CHECKED
+if (array.data == nullptr && (array.flags & __gsharp_array_null_reads_empty) == 0)
+{
+__gsharp_trap(GSharpErrorCode::NullReference, message);
+}
+#endif
+return array[index];
+}
 // [WHY] A trap stops the kernel, so a trap in the comparison of a sort needs no translation (ErrorChannel.hpp does it on the CPU)
 struct __gsharp_sort_compare_scope { };
 

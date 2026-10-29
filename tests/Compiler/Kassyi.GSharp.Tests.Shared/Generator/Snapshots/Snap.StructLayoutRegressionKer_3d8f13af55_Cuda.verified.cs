@@ -1064,11 +1064,13 @@ void** kernelParams = stackalloc void*[2];
 IntPtr* proxy_h = stackalloc IntPtr[2];
 proxy_h[0] = h;
 ((int*)(proxy_h + 1))[0] = 0; // Length is unknown for raw IntPtr
+((int*)(proxy_h + 1))[1] = 0;
 kernelParams[0] = proxy_h;
 // Marshal device array: o
 IntPtr* proxy_o = stackalloc IntPtr[2];
 proxy_o[0] = o;
 ((int*)(proxy_o + 1))[0] = 0; // Length is unknown for raw IntPtr
+((int*)(proxy_o + 1))[1] = 0;
 kernelParams[1] = proxy_o;
 CudaException.ThrowIfError(CudaDriverApi.cuLaunchKernel(
 hfunc,
@@ -1283,11 +1285,13 @@ void** kernelParams = stackalloc void*[2];
 IntPtr* proxy_h = stackalloc IntPtr[2];
 proxy_h[0] = h;
 ((int*)(proxy_h + 1))[0] = 0; // Length is unknown for raw IntPtr
+((int*)(proxy_h + 1))[1] = 0;
 kernelParams[0] = proxy_h;
 // Marshal device array: o
 IntPtr* proxy_o = stackalloc IntPtr[2];
 proxy_o[0] = o;
 ((int*)(proxy_o + 1))[0] = 0; // Length is unknown for raw IntPtr
+((int*)(proxy_o + 1))[1] = 0;
 kernelParams[1] = proxy_o;
 CudaException.ThrowIfError(CudaDriverApi.cuLaunchKernel(
 hfunc,
@@ -1489,6 +1493,7 @@ kernelParams[0] = &x;
 IntPtr* proxy_o = stackalloc IntPtr[2];
 proxy_o[0] = o;
 ((int*)(proxy_o + 1))[0] = 0; // Length is unknown for raw IntPtr
+((int*)(proxy_o + 1))[1] = 0;
 kernelParams[1] = proxy_o;
 CudaException.ThrowIfError(CudaDriverApi.cuLaunchKernel(
 hfunc,
@@ -1522,7 +1527,7 @@ static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Core__LayoutRe
 extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Core__StructLayoutRegressionKernels__BagByValKernel(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Core__LayoutReproBag __gsharp_id_0_b, GSharpArray<int> __gsharp_id_1_o){
 __gsharp_id_1_o[0]=__gsharp_id_0_b.__gsharp_mb_N;
 __gsharp_id_1_o[1]=__gsharp_array_ref(__gsharp_id_0_b.__gsharp_mb_Data, ""G#: a null array is read at StructLayoutRegressionKernels.cs(201,16)"").length;
-__gsharp_id_1_o[2]=__gsharp_array_ref(__gsharp_id_0_b.__gsharp_mb_Data, ""G#: a null array is read at StructLayoutRegressionKernels.cs(202,16)"")[1];
+__gsharp_id_1_o[2]=__gsharp_array_at(__gsharp_id_0_b.__gsharp_mb_Data, 1, ""G#: a null array is read at StructLayoutRegressionKernels.cs(202,16)"");
 }
 ";
 public static readonly string BagByValKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +BagByValKernel_Source;
@@ -1622,6 +1627,7 @@ kernelParams[0] = &b;
 IntPtr* proxy_o = stackalloc IntPtr[2];
 proxy_o[0] = o;
 ((int*)(proxy_o + 1))[0] = 0; // Length is unknown for raw IntPtr
+((int*)(proxy_o + 1))[1] = 0;
 kernelParams[1] = proxy_o;
 CudaException.ThrowIfError(CudaDriverApi.cuLaunchKernel(
 hfunc,
@@ -1655,8 +1661,8 @@ static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Core__LayoutRe
 extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Core__StructLayoutRegressionKernels__BagByRefKernel(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Core__LayoutReproBag* __gsharp_id_0_b, GSharpArray<int> __gsharp_id_1_o){
 __gsharp_id_1_o[0]=(*__gsharp_id_0_b).__gsharp_mb_N;
 __gsharp_id_1_o[1]=__gsharp_array_ref((*__gsharp_id_0_b).__gsharp_mb_Data, ""G#: a null array is read at StructLayoutRegressionKernels.cs(210,16)"").length;
-__gsharp_id_1_o[2]=__gsharp_array_ref((*__gsharp_id_0_b).__gsharp_mb_Data, ""G#: a null array is read at StructLayoutRegressionKernels.cs(211,16)"")[1];
-__gsharp_array_ref((*__gsharp_id_0_b).__gsharp_mb_Data, ""G#: a null array is read at StructLayoutRegressionKernels.cs(212,9)"")[1]=99;
+__gsharp_id_1_o[2]=__gsharp_array_at((*__gsharp_id_0_b).__gsharp_mb_Data, 1, ""G#: a null array is read at StructLayoutRegressionKernels.cs(211,16)"");
+__gsharp_array_at((*__gsharp_id_0_b).__gsharp_mb_Data, 1, ""G#: a null array is read at StructLayoutRegressionKernels.cs(212,9)"")=99;
 (*__gsharp_id_0_b).__gsharp_mb_N=7;
 }
 ";
@@ -1767,6 +1773,7 @@ kernelParams[0] = &b;
 IntPtr* proxy_o = stackalloc IntPtr[2];
 proxy_o[0] = o;
 ((int*)(proxy_o + 1))[0] = 0; // Length is unknown for raw IntPtr
+((int*)(proxy_o + 1))[1] = 0;
 kernelParams[1] = proxy_o;
 CudaException.ThrowIfError(CudaDriverApi.cuLaunchKernel(
 hfunc,
@@ -1899,6 +1906,7 @@ kernelParams[0] = &b;
 IntPtr* proxy_o = stackalloc IntPtr[2];
 proxy_o[0] = o;
 ((int*)(proxy_o + 1))[0] = 0; // Length is unknown for raw IntPtr
+((int*)(proxy_o + 1))[1] = 0;
 kernelParams[1] = proxy_o;
 CudaException.ThrowIfError(CudaDriverApi.cuLaunchKernel(
 hfunc,
@@ -1943,8 +1951,8 @@ static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Core__LayoutRe
 static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Core__LayoutReproElemHolder,__gsharp_mb_Elems)==8,""Kassyi.GSharp.Tests.Shared.Core.LayoutReproElemHolder.Elems: offset"");
 #endif
 extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Core__StructLayoutRegressionKernels__ElemWriteKernel(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Core__LayoutReproElemHolder __gsharp_id_0_h){
-__gsharp_array_ref(__gsharp_id_0_h.__gsharp_mb_Elems, ""G#: a null array is read at StructLayoutRegressionKernels.cs(229,9)"")[0].__gsharp_mb_Tag=9;
-__gsharp_array_ref(__gsharp_array_ref(__gsharp_id_0_h.__gsharp_mb_Elems, ""G#: a null array is read at StructLayoutRegressionKernels.cs(230,9)"")[0].__gsharp_mb_Items, ""G#: a null array is read at StructLayoutRegressionKernels.cs(230,9)"")[0]=5;
+__gsharp_array_at(__gsharp_id_0_h.__gsharp_mb_Elems, 0, ""G#: a null array is read at StructLayoutRegressionKernels.cs(229,9)"").__gsharp_mb_Tag=9;
+__gsharp_array_at(__gsharp_array_at(__gsharp_id_0_h.__gsharp_mb_Elems, 0, ""G#: a null array is read at StructLayoutRegressionKernels.cs(230,9)"").__gsharp_mb_Items, 0, ""G#: a null array is read at StructLayoutRegressionKernels.cs(230,9)"")=5;
 }
 ";
 public static readonly string ElemWriteKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +ElemWriteKernel_Source;
@@ -2051,8 +2059,8 @@ static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Core__LayoutRe
 #endif
 extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Core__StructLayoutRegressionKernels__ElemHolderArrayKernel(GSharpArray<__gsharp_ty_Kassyi__GSharp__Tests__Shared__Core__LayoutReproElemHolder> __gsharp_id_0_hs){
 __gsharp_id_0_hs[0].__gsharp_mb_N=4;
-__gsharp_array_ref(__gsharp_id_0_hs[0].__gsharp_mb_Elems, ""G#: a null array is read at StructLayoutRegressionKernels.cs(239,9)"")[0].__gsharp_mb_Tag=9;
-__gsharp_array_ref(__gsharp_array_ref(__gsharp_id_0_hs[0].__gsharp_mb_Elems, ""G#: a null array is read at StructLayoutRegressionKernels.cs(240,9)"")[0].__gsharp_mb_Items, ""G#: a null array is read at StructLayoutRegressionKernels.cs(240,9)"")[0]=5;
+__gsharp_array_at(__gsharp_id_0_hs[0].__gsharp_mb_Elems, 0, ""G#: a null array is read at StructLayoutRegressionKernels.cs(239,9)"").__gsharp_mb_Tag=9;
+__gsharp_array_at(__gsharp_array_at(__gsharp_id_0_hs[0].__gsharp_mb_Elems, 0, ""G#: a null array is read at StructLayoutRegressionKernels.cs(240,9)"").__gsharp_mb_Items, 0, ""G#: a null array is read at StructLayoutRegressionKernels.cs(240,9)"")=5;
 }
 ";
 public static readonly string ElemHolderArrayKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +ElemHolderArrayKernel_Source;
@@ -2160,6 +2168,7 @@ void** kernelParams = stackalloc void*[1];
 IntPtr* proxy_hs = stackalloc IntPtr[2];
 proxy_hs[0] = hs;
 ((int*)(proxy_hs + 1))[0] = 0; // Length is unknown for raw IntPtr
+((int*)(proxy_hs + 1))[1] = 0;
 kernelParams[0] = proxy_hs;
 CudaException.ThrowIfError(CudaDriverApi.cuLaunchKernel(
 hfunc,
@@ -2191,7 +2200,7 @@ static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Core__LayoutRe
 static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Core__LayoutReproBag,__gsharp_mb_Data)==8,""Kassyi.GSharp.Tests.Shared.Core.LayoutReproBag.Data: offset"");
 #endif
 extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Core__StructLayoutRegressionKernels__BagNativeErrorKernel(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Core__LayoutReproBag __gsharp_id_0_b, GSharpArray<int> __gsharp_id_1_o){
-__gsharp_id_1_o[0]=__gsharp_array_ref(__gsharp_id_0_b.__gsharp_mb_Data, ""G#: a null array is read at StructLayoutRegressionKernels.cs(248,16)"")[0];
+__gsharp_id_1_o[0]=__gsharp_array_at(__gsharp_id_0_b.__gsharp_mb_Data, 0, ""G#: a null array is read at StructLayoutRegressionKernels.cs(248,16)"");
 /* reported as an error on the CPU dialect */
 ;
 }
@@ -2293,6 +2302,7 @@ kernelParams[0] = &b;
 IntPtr* proxy_o = stackalloc IntPtr[2];
 proxy_o[0] = o;
 ((int*)(proxy_o + 1))[0] = 0; // Length is unknown for raw IntPtr
+((int*)(proxy_o + 1))[1] = 0;
 kernelParams[1] = proxy_o;
 CudaException.ThrowIfError(CudaDriverApi.cuLaunchKernel(
 hfunc,
@@ -2324,8 +2334,8 @@ static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Core__LayoutRe
 static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Core__LayoutReproPair,__gsharp_mb_B)==16,""Kassyi.GSharp.Tests.Shared.Core.LayoutReproPair.B: offset"");
 #endif
 extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Core__StructLayoutRegressionKernels__AliasKernel(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Core__LayoutReproPair __gsharp_id_0_p){
-__gsharp_array_ref(__gsharp_id_0_p.__gsharp_mb_A, ""G#: a null array is read at StructLayoutRegressionKernels.cs(256,9)"")[0]=1;
-__gsharp_array_ref(__gsharp_id_0_p.__gsharp_mb_B, ""G#: a null array is read at StructLayoutRegressionKernels.cs(257,9)"")[1]=__gsharp_array_ref(__gsharp_id_0_p.__gsharp_mb_A, ""G#: a null array is read at StructLayoutRegressionKernels.cs(257,18)"")[0]+1;
+__gsharp_array_at(__gsharp_id_0_p.__gsharp_mb_A, 0, ""G#: a null array is read at StructLayoutRegressionKernels.cs(256,9)"")=1;
+__gsharp_array_at(__gsharp_id_0_p.__gsharp_mb_B, 1, ""G#: a null array is read at StructLayoutRegressionKernels.cs(257,9)"")=__gsharp_array_at(__gsharp_id_0_p.__gsharp_mb_A, 0, ""G#: a null array is read at StructLayoutRegressionKernels.cs(257,18)"")+1;
 }
 ";
 public static readonly string AliasKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +AliasKernel_Source;
@@ -2561,11 +2571,13 @@ void** kernelParams = stackalloc void*[2];
 IntPtr* proxy_b = stackalloc IntPtr[2];
 proxy_b[0] = b;
 ((int*)(proxy_b + 1))[0] = 0; // Length is unknown for raw IntPtr
+((int*)(proxy_b + 1))[1] = 0;
 kernelParams[0] = proxy_b;
 // Marshal device array: o
 IntPtr* proxy_o = stackalloc IntPtr[2];
 proxy_o[0] = o;
 ((int*)(proxy_o + 1))[0] = 0; // Length is unknown for raw IntPtr
+((int*)(proxy_o + 1))[1] = 0;
 kernelParams[1] = proxy_o;
 CudaException.ThrowIfError(CudaDriverApi.cuLaunchKernel(
 hfunc,
@@ -2708,6 +2720,7 @@ kernelParams[0] = &t;
 IntPtr* proxy_o = stackalloc IntPtr[2];
 proxy_o[0] = o;
 ((int*)(proxy_o + 1))[0] = 0; // Length is unknown for raw IntPtr
+((int*)(proxy_o + 1))[1] = 0;
 kernelParams[1] = proxy_o;
 CudaException.ThrowIfError(CudaDriverApi.cuLaunchKernel(
 hfunc,
@@ -2846,6 +2859,7 @@ kernelParams[0] = &c;
 IntPtr* proxy_o = stackalloc IntPtr[2];
 proxy_o[0] = o;
 ((int*)(proxy_o + 1))[0] = 0; // Length is unknown for raw IntPtr
+((int*)(proxy_o + 1))[1] = 0;
 kernelParams[1] = proxy_o;
 CudaException.ThrowIfError(CudaDriverApi.cuLaunchKernel(
 hfunc,
@@ -2984,6 +2998,7 @@ kernelParams[0] = &b;
 IntPtr* proxy_o = stackalloc IntPtr[2];
 proxy_o[0] = o;
 ((int*)(proxy_o + 1))[0] = 0; // Length is unknown for raw IntPtr
+((int*)(proxy_o + 1))[1] = 0;
 kernelParams[1] = proxy_o;
 CudaException.ThrowIfError(CudaDriverApi.cuLaunchKernel(
 hfunc,
@@ -3125,6 +3140,7 @@ kernelParams[0] = &n;
 IntPtr* proxy_o = stackalloc IntPtr[2];
 proxy_o[0] = o;
 ((int*)(proxy_o + 1))[0] = 0; // Length is unknown for raw IntPtr
+((int*)(proxy_o + 1))[1] = 0;
 kernelParams[1] = proxy_o;
 CudaException.ThrowIfError(CudaDriverApi.cuLaunchKernel(
 hfunc,
@@ -3267,6 +3283,7 @@ kernelParams[0] = &t;
 IntPtr* proxy_o = stackalloc IntPtr[2];
 proxy_o[0] = o;
 ((int*)(proxy_o + 1))[0] = 0; // Length is unknown for raw IntPtr
+((int*)(proxy_o + 1))[1] = 0;
 kernelParams[1] = proxy_o;
 CudaException.ThrowIfError(CudaDriverApi.cuLaunchKernel(
 hfunc,
@@ -3409,6 +3426,7 @@ kernelParams[0] = &t;
 IntPtr* proxy_o = stackalloc IntPtr[2];
 proxy_o[0] = o;
 ((int*)(proxy_o + 1))[0] = 0; // Length is unknown for raw IntPtr
+((int*)(proxy_o + 1))[1] = 0;
 kernelParams[1] = proxy_o;
 CudaException.ThrowIfError(CudaDriverApi.cuLaunchKernel(
 hfunc,
@@ -3551,6 +3569,7 @@ kernelParams[0] = &t;
 IntPtr* proxy_o = stackalloc IntPtr[2];
 proxy_o[0] = o;
 ((int*)(proxy_o + 1))[0] = 0; // Length is unknown for raw IntPtr
+((int*)(proxy_o + 1))[1] = 0;
 kernelParams[1] = proxy_o;
 CudaException.ThrowIfError(CudaDriverApi.cuLaunchKernel(
 hfunc,
@@ -3695,6 +3714,7 @@ kernelParams[0] = &p;
 IntPtr* proxy_o = stackalloc IntPtr[2];
 proxy_o[0] = o;
 ((int*)(proxy_o + 1))[0] = 0; // Length is unknown for raw IntPtr
+((int*)(proxy_o + 1))[1] = 0;
 kernelParams[1] = proxy_o;
 CudaException.ThrowIfError(CudaDriverApi.cuLaunchKernel(
 hfunc,
@@ -3860,6 +3880,7 @@ kernelParams[0] = &n;
 IntPtr* proxy_o = stackalloc IntPtr[2];
 proxy_o[0] = o;
 ((int*)(proxy_o + 1))[0] = 0; // Length is unknown for raw IntPtr
+((int*)(proxy_o + 1))[1] = 0;
 kernelParams[1] = proxy_o;
 CudaException.ThrowIfError(CudaDriverApi.cuLaunchKernel(
 hfunc,
@@ -4005,6 +4026,7 @@ kernelParams[0] = &u;
 IntPtr* proxy_o = stackalloc IntPtr[2];
 proxy_o[0] = o;
 ((int*)(proxy_o + 1))[0] = 0; // Length is unknown for raw IntPtr
+((int*)(proxy_o + 1))[1] = 0;
 kernelParams[1] = proxy_o;
 CudaException.ThrowIfError(CudaDriverApi.cuLaunchKernel(
 hfunc,
@@ -4174,11 +4196,13 @@ void** kernelParams = stackalloc void*[2];
 IntPtr* proxy_u = stackalloc IntPtr[2];
 proxy_u[0] = u;
 ((int*)(proxy_u + 1))[0] = 0; // Length is unknown for raw IntPtr
+((int*)(proxy_u + 1))[1] = 0;
 kernelParams[0] = proxy_u;
 // Marshal device array: o
 IntPtr* proxy_o = stackalloc IntPtr[2];
 proxy_o[0] = o;
 ((int*)(proxy_o + 1))[0] = 0; // Length is unknown for raw IntPtr
+((int*)(proxy_o + 1))[1] = 0;
 kernelParams[1] = proxy_o;
 CudaException.ThrowIfError(CudaDriverApi.cuLaunchKernel(
 hfunc,
@@ -4356,11 +4380,13 @@ void** kernelParams = stackalloc void*[2];
 IntPtr* proxy_a = stackalloc IntPtr[2];
 proxy_a[0] = a;
 ((int*)(proxy_a + 1))[0] = 0; // Length is unknown for raw IntPtr
+((int*)(proxy_a + 1))[1] = 0;
 kernelParams[0] = proxy_a;
 // Marshal device array: o
 IntPtr* proxy_o = stackalloc IntPtr[2];
 proxy_o[0] = o;
 ((int*)(proxy_o + 1))[0] = 0; // Length is unknown for raw IntPtr
+((int*)(proxy_o + 1))[1] = 0;
 kernelParams[1] = proxy_o;
 CudaException.ThrowIfError(CudaDriverApi.cuLaunchKernel(
 hfunc,
@@ -4492,6 +4518,7 @@ void** kernelParams = stackalloc void*[1];
 IntPtr* proxy_a = stackalloc IntPtr[2];
 proxy_a[0] = a;
 ((int*)(proxy_a + 1))[0] = 0; // Length is unknown for raw IntPtr
+((int*)(proxy_a + 1))[1] = 0;
 kernelParams[0] = proxy_a;
 CudaException.ThrowIfError(CudaDriverApi.cuLaunchKernel(
 hfunc,
@@ -4554,7 +4581,7 @@ static_assert(alignof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Core__LayoutRep
 static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Core__LayoutReproArrOuter,__gsharp_mb_P)==0,""Kassyi.GSharp.Tests.Shared.Core.LayoutReproArrOuter.P: offset"");
 #endif
 extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Core__StructLayoutRegressionKernels__InlineArrFieldKernel(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Core__LayoutReproArrOuter* __gsharp_id_0_x, GSharpArray<int> __gsharp_id_1_o){
-__gsharp_id_1_o[0]=__gsharp_array_ref((*__gsharp_id_0_x).__gsharp_mb_P[1].__gsharp_mb_Data, ""G#: a null array is read at StructLayoutRegressionKernels.cs(389,16)"")[0];
+__gsharp_id_1_o[0]=__gsharp_array_at((*__gsharp_id_0_x).__gsharp_mb_P[1].__gsharp_mb_Data, 0, ""G#: a null array is read at StructLayoutRegressionKernels.cs(389,16)"");
 }
 ";
 public static readonly string InlineArrFieldKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +InlineArrFieldKernel_Source;
@@ -4664,6 +4691,7 @@ kernelParams[0] = &x;
 IntPtr* proxy_o = stackalloc IntPtr[2];
 proxy_o[0] = o;
 ((int*)(proxy_o + 1))[0] = 0; // Length is unknown for raw IntPtr
+((int*)(proxy_o + 1))[1] = 0;
 kernelParams[1] = proxy_o;
 CudaException.ThrowIfError(CudaDriverApi.cuLaunchKernel(
 hfunc,

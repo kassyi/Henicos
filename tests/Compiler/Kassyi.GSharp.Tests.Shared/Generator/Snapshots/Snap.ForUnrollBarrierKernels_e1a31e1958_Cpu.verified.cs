@@ -22,7 +22,7 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-__gsharp_array_ref(__gsharp_id_0_buffer, ""G#: a null array is read at ForUnrollBarrierKernels.cs(20,9)"")[__gsharp_id_1_tid]=__gsharp_id_2_value;
+__gsharp_array_at(__gsharp_id_0_buffer, __gsharp_id_1_tid, ""G#: a null array is read at ForUnrollBarrierKernels.cs(20,9)"")=__gsharp_id_2_value;
 __gsharp_yielded_for_block_barrier=true;
 __gsharp_state=1;
 return false;
@@ -30,7 +30,7 @@ return false;
 case 1:
 __gsharp_switch_1_state_1:
 {
-__gsharp_ctx->__gsharp_id_3_r=__gsharp_array_ref(__gsharp_id_0_buffer, ""G#: a null array is read at ForUnrollBarrierKernels.cs(22,17)"")[(__gsharp_id_1_tid+1)%4];
+__gsharp_ctx->__gsharp_id_3_r=__gsharp_array_at(__gsharp_id_0_buffer, (__gsharp_id_1_tid+1)%4, ""G#: a null array is read at ForUnrollBarrierKernels.cs(22,17)"");
 __gsharp_yielded_for_block_barrier=true;
 __gsharp_state=2;
 return false;
@@ -1817,7 +1817,7 @@ for(unsigned int __gsharp_gsl_0 = __gsharp_grid_stride_start(); __gsharp_gsl_0 <
 {
 int __gsharp_id_6_i = (int)__gsharp_gsl_0;
 {
-__gsharp_id_1_scratch[__gsharp_id_6_i]=__gsharp_array_ref(__gsharp_ctx->__gsharp_id_5_src, ""G#: a null array is read at ForUnrollBarrierKernels.cs(115,30)"")[(__gsharp_id_6_i+1)%__gsharp_id_3_n]+1;
+__gsharp_id_1_scratch[__gsharp_id_6_i]=__gsharp_array_at(__gsharp_ctx->__gsharp_id_5_src, (__gsharp_id_6_i+1)%__gsharp_id_3_n, ""G#: a null array is read at ForUnrollBarrierKernels.cs(115,30)"")+1;
 }
 }
 }

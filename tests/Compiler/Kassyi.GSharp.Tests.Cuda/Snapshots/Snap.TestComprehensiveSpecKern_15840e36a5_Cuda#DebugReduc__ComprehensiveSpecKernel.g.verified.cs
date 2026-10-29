@@ -461,6 +461,7 @@ void** kernelParams = stackalloc void*[6];
 IntPtr* proxy_particles = stackalloc IntPtr[2];
 proxy_particles[0] = particles;
 ((int*)(proxy_particles + 1))[0] = 0; // Length is unknown for raw IntPtr
+((int*)(proxy_particles + 1))[1] = 0;
 kernelParams[0] = proxy_particles;
 // Marshal device scalar: totalMagnitude
 kernelParams[1] = &totalMagnitude;
@@ -581,6 +582,7 @@ void** kernelParams = stackalloc void*[1];
 IntPtr* proxy_data = stackalloc IntPtr[2];
 proxy_data[0] = data;
 ((int*)(proxy_data + 1))[0] = 0; // Length is unknown for raw IntPtr
+((int*)(proxy_data + 1))[1] = 0;
 kernelParams[0] = proxy_data;
 CudaException.ThrowIfError(CudaDriverApi.cuLaunchCooperativeKernel(
 hfunc,

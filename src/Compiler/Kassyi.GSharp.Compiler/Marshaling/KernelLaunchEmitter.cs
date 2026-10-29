@@ -202,7 +202,16 @@ internal static class KernelLaunchEmitter
                 writer.AppendLine($"IntPtr* proxy_{shape.Name} = stackalloc IntPtr[2];");
                 writer.AppendLine($"proxy_{shape.Name}[0] = {shape.Identifier};");
                 writer.AppendLine($"((int*)(proxy_{shape.Name} + 1))[0] = 0; // Length is unknown for raw IntPtr");
-                WriteNullReadsAsEmptyFlag(writer, shape, $"{shape.Identifier} == IntPtr.Zero");
+                // The caller's pointer may be IntPtr.Zero for any array, so the flags word is always written: 0 for
+                // a non-optional array, whose null then reads as null (#706)
+                if (shape.IsNullableReference)
+                {
+                    WriteNullReadsAsEmptyFlag(writer, shape, $"{shape.Identifier} == IntPtr.Zero");
+                }
+                else
+                {
+                    writer.AppendLine($"((int*)(proxy_{shape.Name} + 1))[1] = 0;");
+                }
                 writer.AppendLine($"kernelParams[{paramIndex}] = proxy_{shape.Name};");
             }
             else

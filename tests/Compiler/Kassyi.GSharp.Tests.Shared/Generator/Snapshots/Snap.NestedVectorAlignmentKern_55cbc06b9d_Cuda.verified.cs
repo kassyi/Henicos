@@ -302,6 +302,7 @@ void** kernelParams = stackalloc void*[1];
 IntPtr* proxy_offsets = stackalloc IntPtr[2];
 proxy_offsets[0] = offsets;
 ((int*)(proxy_offsets + 1))[0] = 0; // Length is unknown for raw IntPtr
+((int*)(proxy_offsets + 1))[1] = 0;
 kernelParams[0] = proxy_offsets;
 CudaException.ThrowIfError(CudaDriverApi.cuLaunchKernel(
 hfunc,

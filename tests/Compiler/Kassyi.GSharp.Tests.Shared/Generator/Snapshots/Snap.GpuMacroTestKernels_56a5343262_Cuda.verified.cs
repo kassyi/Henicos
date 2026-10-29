@@ -197,6 +197,7 @@ void** kernelParams = stackalloc void*[4];
 IntPtr* proxy_outputBuffer = stackalloc IntPtr[2];
 proxy_outputBuffer[0] = outputBuffer;
 ((int*)(proxy_outputBuffer + 1))[0] = 0; // Length is unknown for raw IntPtr
+((int*)(proxy_outputBuffer + 1))[1] = 0;
 kernelParams[0] = proxy_outputBuffer;
 // Marshal scalar: length
 kernelParams[1] = &length;

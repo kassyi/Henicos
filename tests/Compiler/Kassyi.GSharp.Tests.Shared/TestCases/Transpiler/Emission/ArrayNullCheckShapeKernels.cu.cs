@@ -30,7 +30,8 @@ public static partial class ArrayNullCheckShapeKernels
     }
 
     [GpuKernel]
-    public static void CheckedKernel(NullCheckHolder h, int[] written, int[] o)
+    public static void CheckedKernel(NullCheckHolder h, int[] written, int[] o, int[] tupled, int[] outWritten,
+        int[] fnWritten)
     {
         written = h.Data;
         int[] copy = h.Data;
@@ -41,6 +42,21 @@ public static partial class ArrayNullCheckShapeKernels
         System.ReadOnlySpan<int> span = h.Data;
         o[4] = span.Length + (h.Data is null ? 1 : 0);
         o[5] = (o[0] > 0 ? o : null).Length;
+
+        // Writes of a parameter in a tuple, through out and inside a local function
+        int x;
+        (tupled, x) = (h.Data, 1);
+        Take(h.Data, out outWritten);
+        Reset();
+        o[6] = tupled.Length + outWritten.Length + fnWritten.Length + x;
+
+        void Reset() => fnWritten = h.Data;
+    }
+
+    [GpuDeviceFunction]
+    private static void Take(int[] source, out int[] target)
+    {
+        target = source;
     }
 
     [GpuDeviceFunction]

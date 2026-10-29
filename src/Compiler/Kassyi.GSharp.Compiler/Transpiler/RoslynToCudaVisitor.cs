@@ -108,6 +108,12 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker, IDisposable
 
         try
         {
+            // The source of a lowered foreach, which C# checks for null at the loop entry (#706)
+            if (node is ExpressionSyntax expression && ArrayNullCheck.TryAppendAnnotatedCheck(expression, ref Context))
+            {
+                return;
+            }
+
             if (Context.RuleRegistry.GetRule(node.Kind()) is { } rule)
             {
                 rule.Transpile(node, ref Context);

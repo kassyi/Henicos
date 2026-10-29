@@ -1482,7 +1482,7 @@ __gsharp_switch_1_state_0:
 {
 __gsharp_id_1_o[0]=__gsharp_id_0_b.__gsharp_mb_N;
 __gsharp_id_1_o[1]=__gsharp_array_ref(__gsharp_id_0_b.__gsharp_mb_Data, ""G#: a null array is read at StructLayoutRegressionKernels.cs(201,16)"").length;
-__gsharp_id_1_o[2]=__gsharp_array_ref(__gsharp_id_0_b.__gsharp_mb_Data, ""G#: a null array is read at StructLayoutRegressionKernels.cs(202,16)"")[1];
+__gsharp_id_1_o[2]=__gsharp_array_at(__gsharp_id_0_b.__gsharp_mb_Data, 1, ""G#: a null array is read at StructLayoutRegressionKernels.cs(202,16)"");
 __gsharp_state=-1;
 return;
 }
@@ -1746,8 +1746,8 @@ __gsharp_switch_1_state_0:
 {
 __gsharp_id_1_o[0]=(*__gsharp_id_0_b).__gsharp_mb_N;
 __gsharp_id_1_o[1]=__gsharp_array_ref((*__gsharp_id_0_b).__gsharp_mb_Data, ""G#: a null array is read at StructLayoutRegressionKernels.cs(210,16)"").length;
-__gsharp_id_1_o[2]=__gsharp_array_ref((*__gsharp_id_0_b).__gsharp_mb_Data, ""G#: a null array is read at StructLayoutRegressionKernels.cs(211,16)"")[1];
-__gsharp_array_ref((*__gsharp_id_0_b).__gsharp_mb_Data, ""G#: a null array is read at StructLayoutRegressionKernels.cs(212,9)"")[1]=99;
+__gsharp_id_1_o[2]=__gsharp_array_at((*__gsharp_id_0_b).__gsharp_mb_Data, 1, ""G#: a null array is read at StructLayoutRegressionKernels.cs(211,16)"");
+__gsharp_array_at((*__gsharp_id_0_b).__gsharp_mb_Data, 1, ""G#: a null array is read at StructLayoutRegressionKernels.cs(212,9)"")=99;
 (*__gsharp_id_0_b).__gsharp_mb_N=7;
 __gsharp_state=-1;
 return;
@@ -2286,8 +2286,8 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-__gsharp_array_ref(__gsharp_id_0_h.__gsharp_mb_Elems, ""G#: a null array is read at StructLayoutRegressionKernels.cs(229,9)"")[0].__gsharp_mb_Tag=9;
-__gsharp_array_ref(__gsharp_array_ref(__gsharp_id_0_h.__gsharp_mb_Elems, ""G#: a null array is read at StructLayoutRegressionKernels.cs(230,9)"")[0].__gsharp_mb_Items, ""G#: a null array is read at StructLayoutRegressionKernels.cs(230,9)"")[0]=5;
+__gsharp_array_at(__gsharp_id_0_h.__gsharp_mb_Elems, 0, ""G#: a null array is read at StructLayoutRegressionKernels.cs(229,9)"").__gsharp_mb_Tag=9;
+__gsharp_array_at(__gsharp_array_at(__gsharp_id_0_h.__gsharp_mb_Elems, 0, ""G#: a null array is read at StructLayoutRegressionKernels.cs(230,9)"").__gsharp_mb_Items, 0, ""G#: a null array is read at StructLayoutRegressionKernels.cs(230,9)"")=5;
 __gsharp_state=-1;
 return;
 }
@@ -2553,8 +2553,8 @@ case 0:
 __gsharp_switch_1_state_0:
 {
 __gsharp_id_0_hs[0].__gsharp_mb_N=4;
-__gsharp_array_ref(__gsharp_id_0_hs[0].__gsharp_mb_Elems, ""G#: a null array is read at StructLayoutRegressionKernels.cs(239,9)"")[0].__gsharp_mb_Tag=9;
-__gsharp_array_ref(__gsharp_array_ref(__gsharp_id_0_hs[0].__gsharp_mb_Elems, ""G#: a null array is read at StructLayoutRegressionKernels.cs(240,9)"")[0].__gsharp_mb_Items, ""G#: a null array is read at StructLayoutRegressionKernels.cs(240,9)"")[0]=5;
+__gsharp_array_at(__gsharp_id_0_hs[0].__gsharp_mb_Elems, 0, ""G#: a null array is read at StructLayoutRegressionKernels.cs(239,9)"").__gsharp_mb_Tag=9;
+__gsharp_array_at(__gsharp_array_at(__gsharp_id_0_hs[0].__gsharp_mb_Elems, 0, ""G#: a null array is read at StructLayoutRegressionKernels.cs(240,9)"").__gsharp_mb_Items, 0, ""G#: a null array is read at StructLayoutRegressionKernels.cs(240,9)"")=5;
 __gsharp_state=-1;
 return;
 }
@@ -2826,7 +2826,7 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-__gsharp_id_1_o[0]=__gsharp_array_ref(__gsharp_id_0_b.__gsharp_mb_Data, ""G#: a null array is read at StructLayoutRegressionKernels.cs(248,16)"")[0];
+__gsharp_id_1_o[0]=__gsharp_array_at(__gsharp_id_0_b.__gsharp_mb_Data, 0, ""G#: a null array is read at StructLayoutRegressionKernels.cs(248,16)"");
 __gsharp_unsupported(""Gpu.InlinePtx is not supported by the StandardCppDialect dialect"");
 __gsharp_state = -1;
 return;
@@ -3091,8 +3091,8 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-__gsharp_array_ref(__gsharp_id_0_p.__gsharp_mb_A, ""G#: a null array is read at StructLayoutRegressionKernels.cs(256,9)"")[0]=1;
-__gsharp_array_ref(__gsharp_id_0_p.__gsharp_mb_B, ""G#: a null array is read at StructLayoutRegressionKernels.cs(257,9)"")[1]=__gsharp_array_ref(__gsharp_id_0_p.__gsharp_mb_A, ""G#: a null array is read at StructLayoutRegressionKernels.cs(257,18)"")[0]+1;
+__gsharp_array_at(__gsharp_id_0_p.__gsharp_mb_A, 0, ""G#: a null array is read at StructLayoutRegressionKernels.cs(256,9)"")=1;
+__gsharp_array_at(__gsharp_id_0_p.__gsharp_mb_B, 1, ""G#: a null array is read at StructLayoutRegressionKernels.cs(257,9)"")=__gsharp_array_at(__gsharp_id_0_p.__gsharp_mb_A, 0, ""G#: a null array is read at StructLayoutRegressionKernels.cs(257,18)"")+1;
 __gsharp_state=-1;
 return;
 }
@@ -7171,7 +7171,7 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-__gsharp_id_1_o[0]=__gsharp_array_ref((*__gsharp_id_0_x).__gsharp_mb_P[1].__gsharp_mb_Data, ""G#: a null array is read at StructLayoutRegressionKernels.cs(389,16)"")[0];
+__gsharp_id_1_o[0]=__gsharp_array_at((*__gsharp_id_0_x).__gsharp_mb_P[1].__gsharp_mb_Data, 0, ""G#: a null array is read at StructLayoutRegressionKernels.cs(389,16)"");
 __gsharp_state=-1;
 return;
 }

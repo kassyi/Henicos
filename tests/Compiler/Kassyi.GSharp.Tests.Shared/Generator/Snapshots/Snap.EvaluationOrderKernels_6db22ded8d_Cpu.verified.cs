@@ -64,17 +64,17 @@ return __gsharp_id_0_a*10+__gsharp_id_1_b;
 }
 
 inline int __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__EvaluationOrderKernels__Store(GSharpArray<int> __gsharp_id_0_data, int __gsharp_id_1_value){
-__gsharp_array_ref(__gsharp_id_0_data, ""G#: a null array is read at EvaluationOrderKernels.cs(52,9)"")[0]=__gsharp_id_1_value;
+__gsharp_array_at(__gsharp_id_0_data, 0, ""G#: a null array is read at EvaluationOrderKernels.cs(52,9)"")=__gsharp_id_1_value;
 return __gsharp_id_1_value;
 }
 
 inline int __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__EvaluationOrderKernels__Bump(GSharpArray<int> __gsharp_id_0_data){
-__gsharp_array_ref(__gsharp_id_0_data, ""G#: a null array is read at EvaluationOrderKernels.cs(59,9)"")[0]+=100;
+__gsharp_array_at(__gsharp_id_0_data, 0, ""G#: a null array is read at EvaluationOrderKernels.cs(59,9)"")+=100;
 return 0;
 }
 
 inline int __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__EvaluationOrderKernels__Record(GSharpArray<int> __gsharp_id_0_log, int __gsharp_id_1_index){
-__gsharp_array_ref(__gsharp_id_0_log, ""G#: a null array is read at EvaluationOrderKernels.cs(67,9)"")[__gsharp_id_1_index]+=1;
+__gsharp_array_at(__gsharp_id_0_log, __gsharp_id_1_index, ""G#: a null array is read at EvaluationOrderKernels.cs(67,9)"")+=1;
 return __gsharp_id_1_index*2;
 }
 
@@ -151,7 +151,7 @@ return 0;
 }
 
 inline int& __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__EvaluationOrderKernels__Pick(GSharpArray<int> __gsharp_id_0_a, int __gsharp_id_1_i, int __gsharp_id_2_j){
-return __gsharp_array_ref(__gsharp_id_0_a, ""G#: a null array is read at EvaluationOrderKernels.cs(127,62)"")[__gsharp_id_1_i+__gsharp_id_2_j];
+return __gsharp_array_at(__gsharp_id_0_a, __gsharp_id_1_i+__gsharp_id_2_j, ""G#: a null array is read at EvaluationOrderKernels.cs(127,62)"");
 }
 
 inline int& __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__EvaluationOrderKernels__Choose(int* __gsharp_id_0_a, int* __gsharp_id_1_b, bool __gsharp_id_2_first){

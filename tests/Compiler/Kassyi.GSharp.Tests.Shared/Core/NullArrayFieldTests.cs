@@ -207,6 +207,95 @@ public class NullArrayFieldTests : TranspilerTestBase
         Assert.Equal([0, 0], o);
     }
 
+    // C# evaluates the index before it throws for the null array: Bump has written o[1] (#878 review)
+    [SkippableTheory]
+    [Scenario(TestScenario.SadPath)]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void ReadElement_IndexWithSideEffect_RunsTheIndexBeforeThrowing(bool forceManaged)
+    {
+        var o = new[] { -1, -1 };
+
+        AssertNullRead(forceManaged, "(140,16)",
+            () => NullArrayFieldKernels.LaunchIndexSideEffectKernel(new NullArrayHolder { Data = null }, o));
+        Assert.Equal([-1, 5], o);
+    }
+
+    [SkippableTheory]
+    [Scenario(TestScenario.SadPath)]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void WriteElement_IndexWithSideEffect_RunsTheIndexBeforeThrowing(bool forceManaged)
+    {
+        var o = new[] { -1, -1 };
+
+        AssertNullRead(forceManaged, "(146,9)",
+            () => NullArrayFieldKernels.LaunchStoreIndexSideEffectKernel(new NullArrayHolder { Data = null }, o));
+        Assert.Equal([-1, 5], o);
+    }
+
+    // The array is read before the index replaces the struct it came from (the receiver and the index interfere)
+    [SkippableTheory]
+    [Scenario(TestScenario.SadPath)]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void ReadElement_IndexReplacesTheReceiverStruct_ReadsTheArrayFirst(bool forceManaged)
+    {
+        var o = new[] { -1 };
+
+        AssertNullRead(forceManaged, "(185,16)",
+            () => NullArrayFieldKernels.LaunchIndexReplacesReceiverKernel(
+                new NullArrayHolder { Data = null },
+                new NullArrayHolder { Data = [42] },
+                o
+            ));
+        Assert.Equal([-1], o);
+    }
+
+    [SkippableTheory]
+    [Scenario(TestScenario.SadPath)]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void WrittenParameterWithBarrier_NullField_ThrowsNullReference(bool forceManaged)
+    {
+        var o = new[] { -1 };
+
+        AssertNullRead(forceManaged, "(156,16)",
+            () => NullArrayFieldKernels.LaunchWrittenParameterWithBarrierKernel(new NullArrayHolder { Data = null }, [1, 2], o));
+    }
+
+    // The managed path rewrote bias.Length to 0 for any optional parameter (#838); once the kernel assigns it, the
+    // read follows C# on every path
+    [SkippableTheory]
+    [Scenario(TestScenario.SadPath)]
+    [InlineData(false, true)]
+    [InlineData(false, false)]
+    [InlineData(true, true)]
+    [InlineData(true, false)]
+    public void WrittenOptional_NullField_ThrowsNullReference(bool forceManaged, bool biasIsNull)
+    {
+        var o = new[] { -1 };
+
+        AssertNullRead(forceManaged, "(166,16)",
+            () => NullArrayFieldKernels.LaunchWrittenOptionalKernel(new NullArrayHolder { Data = null }, o, biasIsNull ? null : [1]));
+    }
+
+    [SkippableTheory]
+    [Scenario(TestScenario.Boundary)]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void OptionalWithBarrier_NullAndValue_ReadsItsLength(bool forceManaged)
+    {
+        Skip.If(forceManaged, "The managed path reads a null optional argument as null outside the kernel itself (#852).");
+        var o = new[] { -1 };
+
+        Run(forceManaged, () => NullArrayFieldKernels.LaunchOptionalWithBarrierKernel(o, null));
+        Assert.Equal([0], o);
+
+        Run(forceManaged, () => NullArrayFieldKernels.LaunchOptionalWithBarrierKernel(o, [1, 2]));
+        Assert.Equal([4], o);
+    }
+
     // The native CPU build names the place of the receiver; the managed path throws .NET's own exception
     private void AssertNullRead(bool forceManaged, string place, Action launch)
     {
