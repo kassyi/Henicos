@@ -335,7 +335,13 @@ internal sealed partial class ManagedExecutionRewriter
                 .WithTriviaFrom(node);
         }
 
-        if (isDeviceFunction && _inLambdaOrLocalFuncCount == 0)
+        // A managed version returns as the user's method does
+        if (bodyKind == ManagedBodyKind.ManagedVersion)
+        {
+            return base.VisitReturnStatement(node);
+        }
+
+        if (bodyKind == ManagedBodyKind.SuspendingDeviceFunction && _inLambdaOrLocalFuncCount == 0)
         {
             return RewriteDeviceFunctionReturn(node);
         }

@@ -5,6 +5,14 @@ namespace Kassyi.GSharp.Compiler.Transpiler;
 /// </summary>
 internal static class ManagedStateMachineEmitter
 {
+    /// <summary>
+    /// The attribute that keeps a generated member out of IntelliSense: the members only the generated managed code
+    /// calls (state machines, their contexts and frames, managed versions) are public when the function is, so a
+    /// library's consumers would see them.
+    /// </summary>
+    public const string EditorBrowsableNever =
+        "[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]";
+
 #pragma warning disable RS0030 // Final emission of a node; the text is not parsed, compared, or edited afterwards
     // Generated code is left-aligned (transpiler-emission §3), so the normalized source has no indentation
     internal static string ToSource(SyntaxNode node) => node.NormalizeWhitespace(indentation: "").ToFullString();

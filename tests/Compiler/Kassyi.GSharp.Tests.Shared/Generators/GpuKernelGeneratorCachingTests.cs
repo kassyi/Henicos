@@ -40,6 +40,12 @@ public class GpuKernelGeneratorCachingTests(ITestOutputHelper output)
     private static readonly string s_dynamicSharedMemoryCallee =
         RoslynTestUtility.ReadTestCase("Generators/GpuDevice_DynamicSharedMemoryCallee.cu.cs");
 
+    private static readonly string s_managedVersionCaller =
+        RoslynTestUtility.ReadTestCase("Generators/GpuKernel_ManagedVersionCaller.cu.cs");
+
+    private static readonly string s_managedVersionCallee =
+        RoslynTestUtility.ReadTestCase("Generators/GpuDevice_ManagedVersionCallee.cu.cs");
+
     private static readonly CSharpParseOptions s_parseOptions = new(LanguageVersion.Preview);
 
     [Theory]
@@ -315,6 +321,87 @@ public class GpuKernelGeneratorCachingTests(ITestOutputHelper output)
 
         AssertSameOutput(CreateDriver("Cuda").RunGenerators(after), incremental);
     }
+
+    // #711: a callee in another file that starts to expand an operator macro gets a managed version, and the caller's
+    // managed state machine must call it
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void Test_CalleeInAnotherFileGainsOperatorMacro_ReemitsCallerAndManagedVersion()
+    {
+        var calleeAfter = s_managedVersionCallee.Replace("z.V = x.V + y.V;", "z = x + y;", StringComparison.Ordinal);
+        Assert.NotEqual(s_managedVersionCallee, calleeAfter);
+
+        var kernelTree = CSharpSyntaxTree.ParseText(s_managedVersionCaller, s_parseOptions, path: "kernel.cs");
+        var calleeTreeBefore = CSharpSyntaxTree.ParseText(s_managedVersionCallee, s_parseOptions, path: "callee.cs");
+        var calleeTreeAfter = CSharpSyntaxTree.ParseText(calleeAfter, s_parseOptions, path: "callee.cs");
+
+        var before = CreateCompilation(kernelTree, calleeTreeBefore);
+        var after = before.ReplaceSyntaxTree(calleeTreeBefore, calleeTreeAfter);
+
+        var first = CreateDriver("Cpu").RunGenerators(before);
+        var sourcesBefore = first.GetRunResult().Results.Single().GeneratedSources;
+        Assert.DoesNotContain("__gsharp_managed_", GetWrapper(sourcesBefore), StringComparison.Ordinal);
+        Assert.DoesNotContain(sourcesBefore,
+            static s => s.HintName.EndsWith("ManagedVersionHelpers.DeviceStateMachines.g.cs", StringComparison.Ordinal));
+
+        var incremental = first.RunGenerators(after);
+
+        var result = incremental.GetRunResult().Results.Single();
+        Assert.Null(result.Exception);
+        var kernelOutput = Assert.Single(result.TrackedSteps[GpuKernelGenerator.KernelTrackingName]
+            .SelectMany(static run => run.Outputs));
+        Assert.Equal(IncrementalStepRunReason.Modified, kernelOutput.Reason);
+
+        var managedName = GSharpInternalNames.ManagedVersion.MethodPrefix +
+                          "TestNamespace__ManagedVersionCaching__ManagedVersionHelpers__Sum";
+        Assert.Contains($"ManagedVersionHelpers.{managedName}(tid, n)", GetWrapper(result.GeneratedSources),
+            StringComparison.Ordinal);
+        var version = Assert.Single(
+            result.GeneratedSources,
+            static s => s.HintName.EndsWith("ManagedVersionHelpers.DeviceStateMachines.g.cs", StringComparison.Ordinal));
+        Assert.Contains($"public static int {managedName}(int a, int b)", version.SourceText.ToString(),
+            StringComparison.Ordinal);
+        Assert.Contains("ManagedVersionHelpers.Add(ref z, x, y);", version.SourceText.ToString(),
+            StringComparison.Ordinal);
+
+        AssertSameOutput(CreateDriver("Cpu").RunGenerators(after), incremental);
+    }
+
+    // An edit that changes no classification leaves the kernel and the managed versions as they were
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void Test_UnrelatedEdit_LeavesManagedVersionsCached()
+    {
+        var callee = s_managedVersionCallee.Replace("z.V = x.V + y.V;", "z = x + y;", StringComparison.Ordinal);
+        var compilation = CreateCompilation(
+            CSharpSyntaxTree.ParseText(s_managedVersionCaller, s_parseOptions, path: "kernel.cs"),
+            CSharpSyntaxTree.ParseText(callee, s_parseOptions, path: "callee.cs"));
+        var unrelated = compilation.AddSyntaxTrees(
+            CSharpSyntaxTree.ParseText("namespace Other { class Unrelated { } }", s_parseOptions, path: "other.cs"));
+
+        var incremental = CreateDriver("Cpu").RunGenerators(compilation).RunGenerators(unrelated);
+
+        var result = incremental.GetRunResult().Results.Single();
+        Assert.Null(result.Exception);
+        Assert.All(
+            result.TrackedSteps[GpuKernelGenerator.KernelTrackingName].SelectMany(static run => run.Outputs),
+            static o => Assert.NotEqual(IncrementalStepRunReason.Modified, o.Reason));
+        Assert.All(
+            result.TrackedSteps[GpuKernelGenerator.DeviceFunctionTrackingName].SelectMany(static run => run.Outputs),
+            static o => Assert.NotEqual(IncrementalStepRunReason.Modified, o.Reason));
+        var stateMachineOutputs = result.TrackedOutputSteps["SourceOutput"]
+            .Where(static run => run.Inputs[0].Source.Name == GpuKernelGenerator.DeviceStateMachinesTrackingName)
+            .SelectMany(static run => run.Outputs)
+            .ToList();
+        Assert.NotEmpty(stateMachineOutputs);
+        Assert.All(stateMachineOutputs, static o => Assert.Equal(IncrementalStepRunReason.Cached, o.Reason));
+    }
+
+    private static string GetWrapper(ImmutableArray<GeneratedSourceResult> sources) =>
+        Assert.Single(
+            sources,
+            static s => s.HintName.EndsWith("ManagedVersionCachingKernels.g.cs", StringComparison.Ordinal)
+        ).SourceText.ToString();
 
     // The paths fix the declaration order of the partial class's parts
     private static CSharpCompilation CreateSiblingCompilation(string siblingSource) =>

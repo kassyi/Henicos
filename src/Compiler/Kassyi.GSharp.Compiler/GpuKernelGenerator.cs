@@ -371,6 +371,12 @@ public class GpuKernelGenerator : IIncrementalGenerator
                     managedCSharpSource = MethodTranspiler.GenerateManagedDeviceFunctionSource(in plan);
                 }
             }
+            else if (plan.HasManagedVersion)
+            {
+                // A function that does not suspend and expands an operator macro (or calls one that does) runs from its
+                // managed version on the managed path (#711)
+                managedCSharpSource = MethodTranspiler.GenerateManagedVersionSource(in plan);
+            }
 
             var frames = new EquatableArray<string>(frameDependencies.ToImmutable());
             var compilation = context.SemanticModel.Compilation;

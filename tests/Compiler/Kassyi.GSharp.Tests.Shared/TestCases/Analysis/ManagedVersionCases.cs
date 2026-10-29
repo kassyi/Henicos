@@ -1,0 +1,114 @@
+using Kassyi.GSharp.Core;
+
+namespace ManagedVersionCases;
+
+public struct Ctx
+{
+    public int Calls;
+}
+
+public struct Value
+{
+    public int V;
+
+    public Value(int v) => V = v;
+
+    [GpuOperatorMacro(typeof(Functions), nameof(Functions.Add))]
+    public static Value operator +(Value left, Value right) => throw new GpuOnlyException();
+
+    // Not an operator macro: runs as written
+    public static Value operator -(Value left, Value right) => new Value(left.V - right.V);
+}
+
+// The inputs of ManagedVersionAnalysisTests (#711)
+public static partial class Functions
+{
+    [GpuDeviceFunction]
+    public static void Add(ref Ctx ctx, ref Value result, Value left, Value right)
+    {
+        result.V = left.V + right.V;
+    }
+
+    // Expands the operator macro itself
+    [GpuDeviceFunction]
+    public static int Direct(ref Ctx ctx, int a)
+    {
+        Value x = new Value(a);
+        Value z = new Value(0);
+        z = x + x;
+        return z.V;
+    }
+
+    // Reaches Direct through a call
+    [GpuDeviceFunction]
+    public static int Transitive(ref Ctx ctx, int a) => Direct(ref ctx, a) + 1;
+
+    // Reaches Transitive through a call
+    [GpuDeviceFunction]
+    public static int TwoLevels(ref Ctx ctx, int a) => Transitive(ref ctx, a) * 2;
+
+    // A user-defined operator without [GpuOperatorMacro] and plain arithmetic: nothing to rewrite
+    [GpuDeviceFunction]
+    public static int Plain(int a)
+    {
+        Value x = new Value(a);
+        Value z = new Value(0);
+        z = x - x;
+        return z.V + a;
+    }
+
+    // Calls only Plain
+    [GpuDeviceFunction]
+    public static int CallsPlain(int a) => Plain(a) * 3;
+
+    // A cycle that reaches no operator macro
+    [GpuDeviceFunction]
+    public static int Ping(int a) => a > 0 ? Pong(a - 1) : 0;
+
+    [GpuDeviceFunction]
+    public static int Pong(int a) => a > 0 ? Ping(a - 1) : 0;
+
+    // A cycle that reaches one: both members need a version
+    [GpuDeviceFunction]
+    public static int Tick(ref Ctx ctx, int a) => a > 0 ? Tock(ref ctx, a - 1) : 0;
+
+    [GpuDeviceFunction]
+    public static int Tock(ref Ctx ctx, int a) => a > 0 ? Tick(ref ctx, a - 1) : Direct(ref ctx, a);
+
+    // Reaches a barrier: it has a state machine, whose body is rewritten instead
+    [GpuDeviceFunction]
+    public static int Suspends(ref Ctx ctx, int a)
+    {
+        Value x = new Value(a);
+        Value z = new Value(0);
+        z = x + x;
+        Gpu.SyncThreads();
+        return z.V;
+    }
+
+    // Names a function that needs a version as a method group only
+    [GpuDeviceFunction]
+    public static void PassesMethodGroup()
+    {
+        Gpu.ForUnroll(0, 2, AddAt);
+    }
+
+    [GpuDeviceFunction]
+    public static void AddAt(int i)
+    {
+        Ctx ctx = default;
+        Value x = new Value(i);
+        Value z = new Value(0);
+        z = x + x;
+    }
+
+    // An extension method that expands the operator macro, and a function that calls it in the reduced form
+    [GpuDeviceFunction]
+    public static int CallsExtension(ref Ctx ctx, int a) => ctx.Doubled(a);
+}
+
+public static partial class Extensions
+{
+    [GpuDeviceFunction]
+    public static int Doubled(this ref Ctx ctx, int a) => Functions.Direct(ref ctx, a);
+}
