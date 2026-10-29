@@ -10,10 +10,11 @@ public class TestClass_SYN91_92
         }
     }
 
-    public static void ComplexOperators(int a, int b, int c)
+    // uint: int + and * are Prelude calls (#722), unsigned arithmetic stays an operator
+    public static void ComplexOperators(int a, int b, int c, uint x, uint y, uint z)
     {
         bool r1 = (a & b) == c;
-        int r2 = a * (b + c);
+        uint r2 = x * (y + z);
     }
 }
 
@@ -26,7 +27,7 @@ public partial class ParenthesesSuppressionTests
     [GeneratedRegex(@"bool\s+r1\s*=\s*\(a\s*&\s*b\)\s*==\s*c;")]
     private static partial Regex BoolAssignmentRegex();
 
-    [GeneratedRegex(@"(int32_t|int)\s+r2\s*=\s*a\s*\*\s*\(b\s*\+\s*c\);")]
+    [GeneratedRegex(@"(uint32_t|unsigned int)\s+r2\s*=\s*x\s*\*\s*\(y\s*\+\s*z\);")]
     private static partial Regex IntAssignmentRegex();
 
     [SkippableFact]
