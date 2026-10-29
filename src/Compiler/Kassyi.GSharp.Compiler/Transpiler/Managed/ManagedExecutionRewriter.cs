@@ -170,6 +170,14 @@ internal sealed partial class ManagedExecutionRewriter(SemanticModel semanticMod
     public override SyntaxNode? VisitAnonymousMethodExpression(AnonymousMethodExpressionSyntax node) =>
         VisitNestedCallable(node, base.VisitAnonymousMethodExpression);
 
+    // global::<containing type>.<name>: the callee of a call that the rewriter writes itself
+    private static ExpressionSyntax SpellDeviceFunction(IMethodSymbol callee) =>
+        SyntaxFactory.MemberAccessExpression(
+            SyntaxKind.SimpleMemberAccessExpression,
+            SyntaxFactory.ParseExpression(callee.ContainingType.GetFullyQualifiedCsharpName()),
+            SyntaxFactory.IdentifierName(SyntaxFactory.Identifier(callee.Name.ToCSharpIdentifier()))
+        );
+
     private SyntaxNode? VisitNestedCallable<TNode>(TNode node, Func<TNode, SyntaxNode?> baseVisitor)
     {
         _inLambdaOrLocalFuncCount++;

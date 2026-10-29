@@ -254,6 +254,25 @@ public class UnsupportedConstructDiagnosticsTests
             diagnostics.Ranges(GSharpDiagnostics.UnsupportedSyntax.Id, "Operator macro '+' is applied to nullable operands"));
     }
 
+    // The target receives the result in the storage it holds: an unassigned local or out parameter has none (#711)
+    [Theory]
+    [InlineData("Cpu")]
+    [InlineData("Cuda")]
+    [Scenario(TestScenario.SadPath)]
+    public async Task Test_OperatorMacroIntoUnassignedTarget_ReportsGsh0003(string dialect)
+    {
+        var diagnostics = await KernelDiagnostics.RunTestCaseAsync("Diagnostics/OperatorMacroUnsupportedForms.cu.cs", dialect);
+
+        Assert.Equal(
+            [(Analyzer, 112, 9, 112, 18)],
+            diagnostics.Ranges(GSharpDiagnostics.UnsupportedSyntax.Id,
+                "The target 'c' of operator macro 'FormOps.Add' is not assigned before the assignment"));
+        Assert.Equal(
+            [(Analyzer, 119, 9, 119, 30)],
+            diagnostics.Ranges(GSharpDiagnostics.UnsupportedSyntax.Id,
+                "The target 'result' of operator macro 'FormOps.AddValues' is not assigned before the assignment"));
+    }
+
     [Theory]
     [InlineData("Cpu")]
     [InlineData("Cuda")]
@@ -267,8 +286,9 @@ public class UnsupportedConstructDiagnosticsTests
             diagnostics.Ranges(
                 GSharpDiagnostics.UnsupportedSyntax.Id,
                 "Operator macro target 'FormOps.Mul' has no overload that takes (FormRef result, FormRef left, FormRef right): Mul(T, T, T): generic methods are not candidates"));
-        // The five forms above, and the type parameter T in the signature of Mul<T> (a generic device function, reported on its own)
-        Assert.Equal(6, diagnostics.Length);
+        // The five forms above, the two unassigned targets, and the type parameter T in the signature of Mul<T> (a generic
+        // device function, reported on its own)
+        Assert.Equal(8, diagnostics.Length);
     }
 
     // An operator macro nested in another one is computed into a temporary only when its target takes the result as a ref or

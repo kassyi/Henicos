@@ -481,7 +481,12 @@ case 0:
 __gsharp_ctx.a = new global::Kassyi.GSharp.Tests.Shared.Syntax.NestValue(values[0]);
 __gsharp_ctx.b = new global::Kassyi.GSharp.Tests.Shared.Syntax.NestValue(values[1]);
 __gsharp_ctx.c = new global::Kassyi.GSharp.Tests.Shared.Syntax.NestValue(values[2]);
-__gsharp_ctx.c = __gsharp_ctx.c - (__gsharp_ctx.a - __gsharp_ctx.b);
+{
+global::Kassyi.GSharp.Tests.Shared.Syntax.NestValue __gsharp_macro_tmp_0 = default;
+global::Kassyi.GSharp.Tests.Shared.Syntax.OperatorMacroNestingKernels.Combine(ref __gsharp_macro_tmp_0, __gsharp_ctx.a, __gsharp_ctx.b);
+global::Kassyi.GSharp.Tests.Shared.Syntax.OperatorMacroNestingKernels.Combine(ref __gsharp_ctx.c, __gsharp_ctx.c, __gsharp_macro_tmp_0);
+}
+
 global::Kassyi.GSharp.Core.ManagedGpuContext.BlockBarrierRequested = true;
 __gsharp_ctx.__gsharp_state = 1;
 return;
@@ -492,7 +497,16 @@ case 1:
 result[0] = __gsharp_ctx.c.Value;
 // Both operands nested, and nested twice
 global::Kassyi.GSharp.Tests.Shared.Syntax.NestValue d = new global::Kassyi.GSharp.Tests.Shared.Syntax.NestValue(0);
-d = (__gsharp_ctx.a - __gsharp_ctx.b) - (__gsharp_ctx.b - (__gsharp_ctx.a - __gsharp_ctx.c));
+{
+global::Kassyi.GSharp.Tests.Shared.Syntax.NestValue __gsharp_macro_tmp_0 = default;
+global::Kassyi.GSharp.Tests.Shared.Syntax.OperatorMacroNestingKernels.Combine(ref __gsharp_macro_tmp_0, __gsharp_ctx.a, __gsharp_ctx.b);
+global::Kassyi.GSharp.Tests.Shared.Syntax.NestValue __gsharp_macro_tmp_1 = default;
+global::Kassyi.GSharp.Tests.Shared.Syntax.NestValue __gsharp_macro_tmp_2 = default;
+global::Kassyi.GSharp.Tests.Shared.Syntax.OperatorMacroNestingKernels.Combine(ref __gsharp_macro_tmp_2, __gsharp_ctx.a, __gsharp_ctx.c);
+global::Kassyi.GSharp.Tests.Shared.Syntax.OperatorMacroNestingKernels.Combine(ref __gsharp_macro_tmp_1, __gsharp_ctx.b, __gsharp_macro_tmp_2);
+global::Kassyi.GSharp.Tests.Shared.Syntax.OperatorMacroNestingKernels.Combine(ref d, __gsharp_macro_tmp_0, __gsharp_macro_tmp_1);
+}
+
 result[1] = d.Value;
 __gsharp_ctx.__gsharp_state = -1;
 return;
@@ -778,7 +792,13 @@ log.Entries = entries;
 global::Kassyi.GSharp.Tests.Shared.Syntax.LoggedValue a = new global::Kassyi.GSharp.Tests.Shared.Syntax.LoggedValue(1);
 global::Kassyi.GSharp.Tests.Shared.Syntax.LoggedValue b = new global::Kassyi.GSharp.Tests.Shared.Syntax.LoggedValue(2);
 global::Kassyi.GSharp.Tests.Shared.Syntax.LoggedValue c = new global::Kassyi.GSharp.Tests.Shared.Syntax.LoggedValue(0);
-c = new global::Kassyi.GSharp.Tests.Shared.Syntax.LoggedValue(entries[0]) - (a - b);
+{
+global::Kassyi.GSharp.Tests.Shared.Syntax.LoggedValue __gsharp_macro_tmp_0 = new global::Kassyi.GSharp.Tests.Shared.Syntax.LoggedValue(entries[0]);
+global::Kassyi.GSharp.Tests.Shared.Syntax.LoggedValue __gsharp_macro_tmp_1 = default;
+global::Kassyi.GSharp.Tests.Shared.Syntax.OperatorMacroNestingKernels.CombineAndLog(ref log, ref __gsharp_macro_tmp_1, a, b);
+global::Kassyi.GSharp.Tests.Shared.Syntax.OperatorMacroNestingKernels.CombineAndLog(ref log, ref c, __gsharp_macro_tmp_0, __gsharp_macro_tmp_1);
+}
+
 result[0] = c.Value;
 __gsharp_ctx.__gsharp_state = -1;
 return;
@@ -1088,7 +1108,13 @@ global::Kassyi.GSharp.Tests.Shared.Syntax.RvSource source = default;
 source.Data = data;
 global::Kassyi.GSharp.Tests.Shared.Syntax.RvValue a = new global::Kassyi.GSharp.Tests.Shared.Syntax.RvValue(1);
 global::Kassyi.GSharp.Tests.Shared.Syntax.RvValue c = new global::Kassyi.GSharp.Tests.Shared.Syntax.RvValue(0);
-c = global::Kassyi.GSharp.Tests.Shared.Syntax.OperatorMacroNestingOrderKernels.WriteFirst(data, 5) - (a / source);
+{
+global::Kassyi.GSharp.Tests.Shared.Syntax.RvValue __gsharp_macro_tmp_0 = global::Kassyi.GSharp.Tests.Shared.Syntax.OperatorMacroNestingOrderKernels.WriteFirst(data, 5);
+global::Kassyi.GSharp.Tests.Shared.Syntax.RvValue __gsharp_macro_tmp_1 = default;
+global::Kassyi.GSharp.Tests.Shared.Syntax.OperatorMacroNestingOrderKernels.CombineRead(ref __gsharp_macro_tmp_1, a, source);
+global::Kassyi.GSharp.Tests.Shared.Syntax.OperatorMacroNestingOrderKernels.CombineValues(ref c, __gsharp_macro_tmp_0, __gsharp_macro_tmp_1);
+}
+
 result[0] = c.Value;
 __gsharp_ctx.__gsharp_state = -1;
 return;
@@ -1375,7 +1401,13 @@ log.Last = new global::Kassyi.GSharp.Tests.Shared.Syntax.RvValue(3);
 global::Kassyi.GSharp.Tests.Shared.Syntax.RvValue a = new global::Kassyi.GSharp.Tests.Shared.Syntax.RvValue(1);
 global::Kassyi.GSharp.Tests.Shared.Syntax.RvValue b = new global::Kassyi.GSharp.Tests.Shared.Syntax.RvValue(2);
 global::Kassyi.GSharp.Tests.Shared.Syntax.RvValue c = new global::Kassyi.GSharp.Tests.Shared.Syntax.RvValue(0);
-c = log.Last & (a & b);
+{
+global::Kassyi.GSharp.Tests.Shared.Syntax.RvValue __gsharp_macro_tmp_0 = log.Last;
+global::Kassyi.GSharp.Tests.Shared.Syntax.RvValue __gsharp_macro_tmp_1 = default;
+global::Kassyi.GSharp.Tests.Shared.Syntax.OperatorMacroNestingOrderKernels.CombineLast(ref log, ref __gsharp_macro_tmp_1, a, b);
+global::Kassyi.GSharp.Tests.Shared.Syntax.OperatorMacroNestingOrderKernels.CombineLast(ref log, ref c, __gsharp_macro_tmp_0, __gsharp_macro_tmp_1);
+}
+
 result[0] = c.Value;
 result[1] = log.Last.Value;
 __gsharp_ctx.__gsharp_state = -1;
@@ -1948,12 +1980,27 @@ case 0:
 global::Kassyi.GSharp.Tests.Shared.Syntax.ShapeValue a = new global::Kassyi.GSharp.Tests.Shared.Syntax.ShapeValue(1);
 global::Kassyi.GSharp.Tests.Shared.Syntax.ShapeValue b = new global::Kassyi.GSharp.Tests.Shared.Syntax.ShapeValue(2);
 global::Kassyi.GSharp.Tests.Shared.Syntax.ShapeValue c = new global::Kassyi.GSharp.Tests.Shared.Syntax.ShapeValue(3);
-c = (a - b) << 2;
+{
+global::Kassyi.GSharp.Tests.Shared.Syntax.ShapeValue __gsharp_macro_tmp_0 = default;
+global::Kassyi.GSharp.Tests.Shared.Syntax.OperatorMacroShapeKernels.Combine(ref __gsharp_macro_tmp_0, a, b);
+global::Kassyi.GSharp.Tests.Shared.Syntax.OperatorMacroShapeKernels.Shift(ref c, __gsharp_macro_tmp_0, 2);
+}
+
 result[0] = c.Value;
-c = -(a - b);
+{
+global::Kassyi.GSharp.Tests.Shared.Syntax.ShapeValue __gsharp_macro_tmp_0 = default;
+global::Kassyi.GSharp.Tests.Shared.Syntax.OperatorMacroShapeKernels.Combine(ref __gsharp_macro_tmp_0, a, b);
+global::Kassyi.GSharp.Tests.Shared.Syntax.OperatorMacroShapeKernels.Negate(ref c, __gsharp_macro_tmp_0);
+}
+
 result[1] = c.Value;
 c = new global::Kassyi.GSharp.Tests.Shared.Syntax.ShapeValue(3);
-c = c - (global::Kassyi.GSharp.Tests.Shared.Syntax.ShapeValue)(a - b);
+{
+global::Kassyi.GSharp.Tests.Shared.Syntax.ShapeValue __gsharp_macro_tmp_0 = default;
+global::Kassyi.GSharp.Tests.Shared.Syntax.OperatorMacroShapeKernels.Combine(ref __gsharp_macro_tmp_0, a, b);
+global::Kassyi.GSharp.Tests.Shared.Syntax.OperatorMacroShapeKernels.Combine(ref c, c, __gsharp_macro_tmp_0);
+}
+
 result[2] = c.Value;
 __gsharp_ctx.__gsharp_state = -1;
 return;

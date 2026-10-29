@@ -96,9 +96,14 @@ internal sealed class UnsupportedConstructRule :
     // An operator macro is expanded only as an assignment statement (MacroTranspiler)
     public void Analyze(AssignmentExpressionSyntax node, ref ValidationContext context)
     {
-        if (node.Parent is ExpressionStatementSyntax &&
-            GpuOperatorMacroResolver.TryResolve(node, context.SemanticModel, out var macro) &&
-            macro.Failure is { } failure)
+        if (node.Parent is not ExpressionStatementSyntax ||
+            !GpuOperatorMacroResolver.TryResolve(node, context.SemanticModel, out var macro))
+        {
+            return;
+        }
+
+        if ((macro.Failure ?? GpuOperatorMacroResolver.GetUnassignedTargetFailure(node, macro, context.SemanticModel)) is
+            { } failure)
         {
             context.ReportDiagnostic(GSharpDiagnostics.UnsupportedSyntax, node, failure);
         }

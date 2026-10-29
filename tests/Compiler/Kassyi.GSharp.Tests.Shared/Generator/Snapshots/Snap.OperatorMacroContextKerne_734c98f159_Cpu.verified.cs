@@ -294,7 +294,7 @@ case 0:
 global::Kassyi.GSharp.Tests.Shared.Syntax.OperatorMacroContextValue a = left;
 global::Kassyi.GSharp.Tests.Shared.Syntax.OperatorMacroContextValue b = right;
 global::Kassyi.GSharp.Tests.Shared.Syntax.OperatorMacroContextValue c = result;
-c = a + b;
+global::Kassyi.GSharp.Tests.Shared.Syntax.OperatorMacroContextOps.AddWithOffset(ref bigCtx, (uint[])c, (uint[])a, (uint[])b);
 calls[0] = bigCtx.Calls;
 __gsharp_ctx.__gsharp_state = -1;
 return;
@@ -603,7 +603,7 @@ case 0:
 {
 global::Kassyi.GSharp.Tests.Shared.Syntax.OperatorMacroContextValue a = operand;
 global::Kassyi.GSharp.Tests.Shared.Syntax.OperatorMacroContextValue c = result;
-c = a << 3;
+global::Kassyi.GSharp.Tests.Shared.Syntax.OperatorMacroContextOps.ShiftWithOffset(bigCtx, (uint[])c, (uint[])a, 3);
 __gsharp_ctx.__gsharp_state = -1;
 return;
 }
@@ -1215,7 +1215,7 @@ case 1:
 a = left;
 b = right;
 c = result;
-c = a + b;
+global::Kassyi.GSharp.Tests.Shared.Syntax.OperatorMacroContextOps.AddWithOffset(ref __gsharp_ctx.local, (uint[])c, (uint[])a, (uint[])b);
 global::Kassyi.GSharp.Core.ManagedGpuContext.BlockBarrierRequested = true;
 __gsharp_ctx.__gsharp_state = 2;
 return;

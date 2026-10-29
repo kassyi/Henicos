@@ -100,4 +100,22 @@ public static partial class OperatorMacroUnsupportedFormKernels
         FormRef c = output;
         c = a * b;
     }
+
+    // GSH0003: c has no storage for the target to write into (#711: the managed expansion would not compile)
+    [GpuKernel]
+    [SkipSnapshotConsistency("Diagnostics case")]
+    public static void UnassignedTargetKernel(uint[] left, uint[] right)
+    {
+        FormRef a = left;
+        FormRef b = right;
+        FormRef c;
+        c = a + b;
+    }
+
+    // GSH0003: an out parameter is not assigned before its first assignment either
+    [GpuDeviceFunction]
+    public static void AddInto(out FormValue result, FormValue left, FormValue right)
+    {
+        result = left + right;
+    }
 }

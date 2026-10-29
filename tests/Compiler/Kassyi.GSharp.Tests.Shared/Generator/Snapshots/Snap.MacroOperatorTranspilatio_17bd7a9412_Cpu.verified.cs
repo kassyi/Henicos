@@ -241,9 +241,9 @@ case 0:
 global::TestNamespace.DummyRef a = dA;
 global::TestNamespace.DummyRef b = dB;
 global::TestNamespace.DummyRef c = dResult;
-c = a + b;
-c = ~a;
-c = a << 5;
+global::TestNamespace.DummyKernels.DummyOp(ref ctx, (uint[])c, (uint[])a, (uint[])b);
+global::TestNamespace.DummyKernels.DummyUnaryOp((uint[])c, (uint[])a);
+global::TestNamespace.DummyKernels.DummyShiftOp(ctx, (uint[])c, (uint[])a, 5);
 __gsharp_ctx.__gsharp_state = -1;
 return;
 }

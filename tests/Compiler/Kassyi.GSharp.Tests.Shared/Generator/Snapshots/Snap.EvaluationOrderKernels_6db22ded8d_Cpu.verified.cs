@@ -2607,7 +2607,7 @@ case 0:
 {
 int i = 0;
 global::Kassyi.GSharp.Tests.Shared.Syntax.EoScalar c = default;
-c = global::Kassyi.GSharp.Tests.Shared.Syntax.EvaluationOrderKernels.Take(ref i) - global::Kassyi.GSharp.Tests.Shared.Syntax.EvaluationOrderKernels.Take(ref i);
+global::Kassyi.GSharp.Tests.Shared.Syntax.EvaluationOrderKernels.CombineInto(ref c, global::Kassyi.GSharp.Tests.Shared.Syntax.EvaluationOrderKernels.Take(ref i), global::Kassyi.GSharp.Tests.Shared.Syntax.EvaluationOrderKernels.Take(ref i));
 result[0] = c.Value;
 __gsharp_ctx.__gsharp_state = -1;
 return;
@@ -2865,7 +2865,7 @@ global::Kassyi.GSharp.Tests.Shared.Syntax.EoScalar b = default;
 global::Kassyi.GSharp.Tests.Shared.Syntax.EoScalar c = default;
 a.Value = input[0];
 b.Value = input[1];
-c = a - b;
+global::Kassyi.GSharp.Tests.Shared.Syntax.EvaluationOrderKernels.CombineInto(ref c, a, b);
 result[0] = c.Value;
 __gsharp_ctx.__gsharp_state = -1;
 return;

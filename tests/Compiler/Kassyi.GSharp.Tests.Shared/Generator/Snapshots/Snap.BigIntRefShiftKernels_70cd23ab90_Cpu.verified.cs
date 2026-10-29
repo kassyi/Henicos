@@ -289,8 +289,8 @@ global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.GpuBigIntContext ctx = de
 global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.GpuBigIntRef x = input;
 global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.GpuBigIntRef left = shiftedLeft;
 global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.GpuBigIntRef right = shiftedRight;
-left = x << 3;
-right = x >> 3;
+global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Kernels.GpuBigIntKernels.ExecuteShiftLeft(ref ctx, (uint[])left, (uint[])x, 3);
+global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Kernels.GpuBigIntKernels.ExecuteShiftRight(ref ctx, (uint[])right, (uint[])x, 3);
 __gsharp_ctx.__gsharp_state = -1;
 return;
 }

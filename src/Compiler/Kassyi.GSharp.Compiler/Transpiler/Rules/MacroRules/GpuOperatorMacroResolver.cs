@@ -198,6 +198,39 @@ internal static class GpuOperatorMacroResolver
         return true;
     }
 
+    /// <summary>
+    /// Why the target of <paramref name="assignment"/> (the user's tree, an operator macro <paramref name="macro"/> with a
+    /// target) cannot receive the result, or <see langword="null"/> when it can: a local or <c>out</c> parameter that is
+    /// not definitely assigned before the assignment.
+    /// </summary>
+    /// <remarks>
+    /// [WHY] The expansion passes the target to the target method, which writes the result into the storage the target
+    /// holds; it does not assign the target. An unassigned target has no storage: the C++ code reads an uninitialized
+    /// value, and the managed expansion does not compile (CS0165 / CS0269).
+    /// </remarks>
+    public static string? GetUnassignedTargetFailure(AssignmentExpressionSyntax assignment, OperatorMacro macro,
+        SemanticModel semanticModel)
+    {
+        if (macro.TargetMethod == null || assignment.Parent is not ExpressionStatementSyntax statement ||
+            semanticModel.GetSymbol(assignment.Left) is not { } symbol ||
+            symbol is not (ILocalSymbol or IParameterSymbol { RefKind: RefKind.Out }))
+        {
+            return null;
+        }
+
+        var flow = semanticModel.AnalyzeDataFlow(statement);
+        if (flow is not { Succeeded: true } ||
+            flow.DefinitelyAssignedOnEntry
+                .AsStackEnumerable()
+                .Any(symbol, static (assigned, s) => assigned.IsEqualTo(s)))
+        {
+            return null;
+        }
+
+        return
+            $"The target '{symbol.Name}' of operator macro '{macro.TargetName}' is not assigned before the assignment: the target receives the result in the storage it holds, so assign it first, as in '{symbol.Name} = <storage>; {symbol.Name} = a + b;'";
+    }
+
     // The target that <operatorCall> (an operator macro <operatorMethod>) maps to, and the operator macros among its
     // operands, each computed into a temporary; or why it cannot be expanded
     private static OperatorMacro ResolveCall(ExpressionSyntax operatorCall, IMethodSymbol operatorMethod,
