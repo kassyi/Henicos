@@ -18,6 +18,15 @@ public struct SwitchPair
 }
 
 /// <summary>
+/// A struct with an array field: its C++ form has a default constructor, so a jump may not cross its declaration.
+/// </summary>
+public struct SwitchHolder
+{
+    public int[] Values;
+    public int Count;
+}
+
+/// <summary>
 /// Kernels whose switch sections share a local. In C# the switch block is one scope, so a local declared in one section
 /// can be assigned and read in a later section; the jump to that section skips its initializer.
 /// </summary>
@@ -112,6 +121,104 @@ public static partial class SwitchSectionLocalKernels
                 break;
             default:
                 output[0] = Offset + 2;
+                break;
+        }
+    }
+
+    // A byte const keeps its type in the other section: x++ wraps to 0 as in C#
+    [GpuKernel]
+    public static void ByteConstantKernel(int[] output, int flag)
+    {
+        switch (flag)
+        {
+            case 0:
+                const byte Max = 255;
+                var x = Max;
+                x++;
+                output[0] = x;
+                break;
+            default:
+                var y = Max;
+                y++;
+                output[0] = y + Max;
+                break;
+        }
+    }
+
+    [GpuDeviceFunction]
+    public static int ReadIn(in int value) => value;
+
+    // A section const passed as an in argument, in its own section and in another
+    [GpuKernel]
+    public static void ConstantInArgumentKernel(int[] output, int flag)
+    {
+        switch (flag)
+        {
+            case 0:
+                const int K = 40;
+                output[0] = ReadIn(K);
+                break;
+            default:
+                output[0] = ReadIn(K) + 1;
+                break;
+        }
+    }
+
+    // A struct with an array field and an array alias shared by the sections
+    [GpuKernel]
+    public static void ArrayFieldStructKernel(int[] data, int[] other, int flag)
+    {
+        switch (flag)
+        {
+            case 0:
+                SwitchHolder holder;
+                holder.Values = data;
+                holder.Count = 2;
+                int[] alias = other;
+                alias[0] = holder.Values[0] + holder.Count;
+                break;
+            default:
+                holder.Values = other;
+                holder.Count = 5;
+                alias = data;
+                alias[0] = holder.Values[0] + holder.Count;
+                break;
+        }
+    }
+
+    // A goto past a struct with an array field (the split of #768)
+    [GpuKernel]
+    public static void GotoPastArrayFieldStructKernel(int[] data, int flag)
+    {
+        SwitchHolder source;
+        source.Values = data;
+        source.Count = 3;
+        if (flag == 0)
+        {
+            goto skip;
+        }
+
+        SwitchHolder holder = source;
+        data[0] = holder.Values[0] + holder.Count;
+    skip:
+        data[1] = 7;
+    }
+
+    // A warp shuffle before the declaration: the CPU lowering adds a temporary to the section
+    [GpuKernel]
+    public static void ShuffleBeforeDeclarationKernel(int[] output, int flag)
+    {
+        int tid = ThreadIndex.X;
+        switch (flag)
+        {
+            case 0:
+                output[tid] = Warp.ShuffleXorSync(0xFFFFFFFFu, tid, 1);
+                int x = 1;
+                output[tid] += x;
+                break;
+            default:
+                x = 2;
+                output[tid] = x + tid;
                 break;
         }
     }

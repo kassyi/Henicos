@@ -109,10 +109,11 @@ internal static class GpuCodeConstraints
 
     /// <summary>
     /// The GSH0003 text for a local that a switch section declares and another section uses, of a type that the C++
-    /// cannot declare before the first case label and assign later (a stack array, a span, a ref local).
+    /// cannot declare before the switch and assign later: a span (or another ref struct), a ref local, a stack array, or
+    /// a local with a form of its own (shared memory, WMMA fragment, iterator, class).
     /// </summary>
-    public const string SwitchSectionLocalNotSplittable =
-        "a stack array, span or ref local used by another switch section than the one that declares it";
+    public const string SwitchSectionLocalNotDeclarable =
+        "span, ref local, stack array or other local that needs its initializer, used by another switch section than the one that declares it";
 
     /// <summary>The GSH0003 text for a stack array whose size is not a constant.</summary>
     public const string DynamicArraySize = "dynamic array size";

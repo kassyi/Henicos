@@ -255,6 +255,7 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker, IDisposable
 
     public override void VisitBlock(BlockSyntax node)
     {
+        JumpedOverDeclarations.WriteDeclarations(node.Statements, ref Context);
         foreach (var statement in node.Statements)
         {
             // [WHY] A nested block is emitted without braces, since lowering wraps statements of one scope in blocks; a
@@ -400,13 +401,6 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker, IDisposable
             default:
                 // [WHY] Lowering rewrites hoisted locals into references that carry the declarator's original span.
                 symbol ??= Context.Query.SemanticModel.GetDeclaredSymbol<ISymbol>(node);
-
-                // A const local of a switch section is not declared; another section may name it (SwitchSectionLocals)
-                if (symbol is ILocalSymbol local && SwitchSectionLocals.IsInlinedConstant(local))
-                {
-                    Context.Emitter.Writer.Append(ConstexprLiteral.FormatCppConstant(local.Type, local.ConstantValue));
-                    return;
-                }
 
                 if (symbol != null &&
                     GpuCodeConstraints.IsHostStaticMemberReference(node, symbol, Context.Query.SemanticModel, Context.Emitter.Dialect))

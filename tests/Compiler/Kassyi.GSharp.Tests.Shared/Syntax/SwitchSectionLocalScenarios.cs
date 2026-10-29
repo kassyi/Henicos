@@ -62,6 +62,64 @@ internal static class SwitchSectionLocalScenarios
         Assert.Equal(flag == 0 ? 41 : 42, output[0]);
     }
 
+    public static void ByteConstant(Action<Action> run, int flag)
+    {
+        var output = new int[1];
+
+        run(() => SwitchSectionLocalKernels.LaunchByteConstantKernel(output, flag, blockDimX: 1));
+
+        // byte 255 + 1 wraps to 0; the default section adds 255 to it
+        Assert.Equal(flag == 0 ? 0 : 255, output[0]);
+    }
+
+    public static void ConstantInArgument(Action<Action> run, int flag)
+    {
+        var output = new int[1];
+
+        run(() => SwitchSectionLocalKernels.LaunchConstantInArgumentKernel(output, flag, blockDimX: 1));
+
+        Assert.Equal(flag == 0 ? 40 : 41, output[0]);
+    }
+
+    public static void ArrayFieldStruct(Action<Action> run, int flag)
+    {
+        int[] data = [10];
+        int[] other = [20];
+
+        run(() => SwitchSectionLocalKernels.LaunchArrayFieldStructKernel(data, other, flag, blockDimX: 1));
+
+        // case 0 writes data[0] + 2 to other; the default section writes other[0] + 5 to data
+        Assert.Equal(flag == 0 ? [10, 12] : new[] { 25, 20 }, new[] { data[0], other[0] });
+    }
+
+    public static void GotoPastArrayFieldStruct(Action<Action> run, int flag)
+    {
+        int[] data = [10, 0];
+
+        run(() => SwitchSectionLocalKernels.LaunchGotoPastArrayFieldStructKernel(data, flag, blockDimX: 1));
+
+        Assert.Equal(flag == 0 ? [10, 7] : new[] { 13, 7 }, data);
+    }
+
+    public static void ShuffleBeforeDeclaration(Action<Action> run, int flag)
+    {
+#if GSHARP_CPU
+        // The CPU state machine does not split at a warp shuffle inside a switch section yet (#708): the native path
+        // reads a wrong value and the managed path calls the GPU-only intrinsic. The kernel still checks that the build
+        // keeps the shared local (#795).
+        Skip.If(flag == 0, "#708: a warp shuffle inside a switch section does not suspend the CPU state machine");
+#endif
+        var output = new int[WarpSize];
+
+        run(() => SwitchSectionLocalKernels.LaunchShuffleBeforeDeclarationKernel(output, flag, blockDimX: WarpSize));
+
+        for (int i = 0; i < WarpSize; i++)
+        {
+            // ShuffleXorSync(.., 1) reads the neighbour lane i ^ 1
+            Assert.Equal(flag == 0 ? (i ^ 1) + 1 : i + 2, output[i]);
+        }
+    }
+
     private static int[] CreateSequence()
     {
         var data = new int[WarpSize];

@@ -38,6 +38,41 @@ public class SwitchSectionLocalManagedTests : TranspilerTestBase
     public void Test_Managed_SectionConstant_LaterSectionReadsTheValue(int flag) =>
         SwitchSectionLocalScenarios.SectionConstant(s_runManaged, flag);
 
+    [Theory]
+    [Scenario(TestScenario.Boundary)]
+    [InlineData(0)]
+    [InlineData(1)]
+    public void Test_Managed_ByteConstant_KeepsItsTypeInAnotherSection(int flag) =>
+        SwitchSectionLocalScenarios.ByteConstant(s_runManaged, flag);
+
+    [Theory]
+    [Scenario(TestScenario.Boundary)]
+    [InlineData(0)]
+    [InlineData(1)]
+    public void Test_Managed_ConstantInArgument_PassedByReference(int flag) =>
+        SwitchSectionLocalScenarios.ConstantInArgument(s_runManaged, flag);
+
+    [Theory]
+    [Scenario(TestScenario.Boundary)]
+    [InlineData(0)]
+    [InlineData(1)]
+    public void Test_Managed_ArrayFieldStruct_SharedBySections(int flag) =>
+        SwitchSectionLocalScenarios.ArrayFieldStruct(s_runManaged, flag);
+
+    [Theory]
+    [Scenario(TestScenario.Boundary)]
+    [InlineData(0)]
+    [InlineData(1)]
+    public void Test_Managed_GotoPastArrayFieldStruct_SkipsTheDeclaration(int flag) =>
+        SwitchSectionLocalScenarios.GotoPastArrayFieldStruct(s_runManaged, flag);
+
+    [SkippableTheory]
+    [Scenario(TestScenario.Boundary)]
+    [InlineData(0)]
+    [InlineData(1)]
+    public void Test_Managed_ShuffleBeforeDeclaration_LocalSharedAfterLowering(int flag) =>
+        SwitchSectionLocalScenarios.ShuffleBeforeDeclaration(s_runManaged, flag);
+
     private static void RunManaged(Action launch)
     {
         bool previousState = CpuKernelLoader.ForceManagedExecution;

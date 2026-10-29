@@ -34,4 +34,39 @@ public class SwitchSectionLocalTests : TranspilerTestBase
     [InlineData(1)]
     public void Test_SectionConstant_LaterSectionReadsTheValue(int flag) =>
         SwitchSectionLocalScenarios.SectionConstant(s_runNative, flag);
+
+    [SkippableTheory]
+    [Scenario(TestScenario.Boundary)]
+    [InlineData(0)]
+    [InlineData(1)]
+    public void Test_ByteConstant_KeepsItsTypeInAnotherSection(int flag) =>
+        SwitchSectionLocalScenarios.ByteConstant(s_runNative, flag);
+
+    [SkippableTheory]
+    [Scenario(TestScenario.Boundary)]
+    [InlineData(0)]
+    [InlineData(1)]
+    public void Test_ConstantInArgument_PassedByReference(int flag) =>
+        SwitchSectionLocalScenarios.ConstantInArgument(s_runNative, flag);
+
+    [SkippableTheory]
+    [Scenario(TestScenario.Boundary)]
+    [InlineData(0)]
+    [InlineData(1)]
+    public void Test_ArrayFieldStruct_SharedBySections(int flag) =>
+        SwitchSectionLocalScenarios.ArrayFieldStruct(s_runNative, flag);
+
+    [SkippableTheory]
+    [Scenario(TestScenario.Boundary)]
+    [InlineData(0)]
+    [InlineData(1)]
+    public void Test_GotoPastArrayFieldStruct_SkipsTheDeclaration(int flag) =>
+        SwitchSectionLocalScenarios.GotoPastArrayFieldStruct(s_runNative, flag);
+
+    [SkippableTheory]
+    [Scenario(TestScenario.Boundary)]
+    [InlineData(0)]
+    [InlineData(1)]
+    public void Test_ShuffleBeforeDeclaration_LocalSharedAfterLowering(int flag) =>
+        SwitchSectionLocalScenarios.ShuffleBeforeDeclaration(s_runNative, flag);
 }
