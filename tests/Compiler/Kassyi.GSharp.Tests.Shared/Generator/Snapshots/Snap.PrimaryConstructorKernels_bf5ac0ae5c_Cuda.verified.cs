@@ -348,16 +348,16 @@ static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__PcScal
 static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__PcScaled,__gsharp_mb_Y)==4,""Kassyi.GSharp.Tests.Shared.Syntax.PcScaled.Y: offset"");
 __device__ inline __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__PcScaled __gsharp_ctor_Kassyi__GSharp__Tests__Shared__Syntax__PcScaled(int __gsharp_id_0_a) {
 __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__PcScaled __gsharp_self{};
-__gsharp_self.__gsharp_mb_X = __gsharp_id_0_a+1;
-__gsharp_self.__gsharp_mb_Y = __gsharp_id_0_a*2;
+__gsharp_self.__gsharp_mb_X = __gsharp_add_i32(__gsharp_id_0_a,1);
+__gsharp_self.__gsharp_mb_Y = __gsharp_mul_i32(__gsharp_id_0_a,2);
 return __gsharp_self;
 }
 #endif
 extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__PrimaryConstructorKernels__InitializersKernel(GSharpArray<int> __gsharp_id_0_output){
-int __gsharp_id_1_tid = threadIdx.x;
-auto __gsharp_id_2_s = __gsharp_ctor_Kassyi__GSharp__Tests__Shared__Syntax__PcScaled(__gsharp_id_1_tid+5);
-__gsharp_id_0_output[2*__gsharp_id_1_tid]=__gsharp_id_2_s.__gsharp_mb_X;
-__gsharp_id_0_output[2*__gsharp_id_1_tid+1]=__gsharp_id_2_s.__gsharp_mb_Y;
+int __gsharp_id_1_tid = (int)threadIdx.x;
+auto __gsharp_id_2_s = __gsharp_ctor_Kassyi__GSharp__Tests__Shared__Syntax__PcScaled(__gsharp_add_i32(__gsharp_id_1_tid,5));
+__gsharp_id_0_output[__gsharp_mul_i32(2,__gsharp_id_1_tid)]=__gsharp_id_2_s.__gsharp_mb_X;
+__gsharp_id_0_output[__gsharp_add_i32(__gsharp_mul_i32(2,__gsharp_id_1_tid),1)]=__gsharp_id_2_s.__gsharp_mb_Y;
 }
 ";
 public static readonly string InitializersKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +InitializersKernel_Source;
@@ -479,18 +479,18 @@ static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__PcScal
 static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__PcScaled,__gsharp_mb_Y)==4,""Kassyi.GSharp.Tests.Shared.Syntax.PcScaled.Y: offset"");
 __device__ inline __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__PcScaled __gsharp_ctor_Kassyi__GSharp__Tests__Shared__Syntax__PcScaled(int __gsharp_id_0_a) {
 __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__PcScaled __gsharp_self{};
-__gsharp_self.__gsharp_mb_X = __gsharp_id_0_a+1;
-__gsharp_self.__gsharp_mb_Y = __gsharp_id_0_a*2;
+__gsharp_self.__gsharp_mb_X = __gsharp_add_i32(__gsharp_id_0_a,1);
+__gsharp_self.__gsharp_mb_Y = __gsharp_mul_i32(__gsharp_id_0_a,2);
 return __gsharp_self;
 }
 #endif
 extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__PrimaryConstructorKernels__InitializersWithObjectInitializerKernel(GSharpArray<int> __gsharp_id_0_output){
-int __gsharp_id_1_tid = threadIdx.x;
+int __gsharp_id_1_tid = (int)threadIdx.x;
 auto __gsharp_id_2_s = ([&]() {
 __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__PcScaled __gsharp_tmp = __gsharp_ctor_Kassyi__GSharp__Tests__Shared__Syntax__PcScaled(__gsharp_id_1_tid); __gsharp_tmp.__gsharp_mb_Y = 9; return __gsharp_tmp; }
 ());
-__gsharp_id_0_output[2*__gsharp_id_1_tid]=__gsharp_id_2_s.__gsharp_mb_X;
-__gsharp_id_0_output[2*__gsharp_id_1_tid+1]=__gsharp_id_2_s.__gsharp_mb_Y;
+__gsharp_id_0_output[__gsharp_mul_i32(2,__gsharp_id_1_tid)]=__gsharp_id_2_s.__gsharp_mb_X;
+__gsharp_id_0_output[__gsharp_add_i32(__gsharp_mul_i32(2,__gsharp_id_1_tid),1)]=__gsharp_id_2_s.__gsharp_mb_Y;
 }
 ";
 public static readonly string InitializersWithObjectInitializerKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +InitializersWithObjectInitializerKernel_Source;
@@ -606,7 +606,7 @@ int __gsharp_mb_a;
 int __gsharp_mb_b;
 int __gsharp_mb_X;
 __device__ inline int __gsharp_mb_Sum() const {
-return __gsharp_mb_a+__gsharp_mb_b+__gsharp_mb_X;
+return __gsharp_add_i32(__gsharp_add_i32(__gsharp_mb_a,__gsharp_mb_b),__gsharp_mb_X);
 }
 __device__ inline int __gsharp_mb_B() const {
 return __gsharp_mb_b;
@@ -630,12 +630,12 @@ return __gsharp_self;
 }
 #endif
 extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__PrimaryConstructorKernels__CapturedKernel(GSharpArray<int> __gsharp_id_0_output){
-int __gsharp_id_1_tid = threadIdx.x;
+int __gsharp_id_1_tid = (int)threadIdx.x;
 auto __gsharp_id_2_s = __gsharp_ctor_Kassyi__GSharp__Tests__Shared__Syntax__PcCaptured(__gsharp_id_1_tid, 10);
-__gsharp_id_0_output[3*__gsharp_id_1_tid]=__gsharp_id_2_s.__gsharp_mb_Sum();
+__gsharp_id_0_output[__gsharp_mul_i32(3,__gsharp_id_1_tid)]=__gsharp_id_2_s.__gsharp_mb_Sum();
 __gsharp_id_2_s.__gsharp_mb_B(7);
-__gsharp_id_0_output[3*__gsharp_id_1_tid+1]=__gsharp_id_2_s.__gsharp_mb_B();
-__gsharp_id_0_output[3*__gsharp_id_1_tid+2]=__gsharp_id_2_s.__gsharp_mb_Sum();
+__gsharp_id_0_output[__gsharp_add_i32(__gsharp_mul_i32(3,__gsharp_id_1_tid),1)]=__gsharp_id_2_s.__gsharp_mb_B();
+__gsharp_id_0_output[__gsharp_add_i32(__gsharp_mul_i32(3,__gsharp_id_1_tid),2)]=__gsharp_id_2_s.__gsharp_mb_Sum();
 }
 ";
 public static readonly string CapturedKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +CapturedKernel_Source;
@@ -751,7 +751,7 @@ int __gsharp_mb_a;
 int __gsharp_mb_b;
 int __gsharp_mb_X;
 __device__ inline int __gsharp_mb_Sum() const {
-return __gsharp_mb_a+__gsharp_mb_b+__gsharp_mb_X;
+return __gsharp_add_i32(__gsharp_add_i32(__gsharp_mb_a,__gsharp_mb_b),__gsharp_mb_X);
 }
 __device__ inline int __gsharp_mb_B() const {
 return __gsharp_mb_b;
@@ -776,8 +776,8 @@ return __gsharp_self;
 #endif
 extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__PrimaryConstructorKernels__CapturedThroughRefKernel(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__PcCaptured* __gsharp_id_0_data, GSharpArray<int> __gsharp_id_1_output){
 __gsharp_id_1_output[0]=(*__gsharp_id_0_data).__gsharp_mb_Sum();
-(*__gsharp_id_0_data).__gsharp_mb_B((*__gsharp_id_0_data).__gsharp_mb_B()+1);
-(*__gsharp_id_0_data).__gsharp_mb_X=(*__gsharp_id_0_data).__gsharp_mb_X+100;
+(*__gsharp_id_0_data).__gsharp_mb_B(__gsharp_add_i32((*__gsharp_id_0_data).__gsharp_mb_B(),1));
+(*__gsharp_id_0_data).__gsharp_mb_X=__gsharp_add_i32((*__gsharp_id_0_data).__gsharp_mb_X,100);
 }
 ";
 public static readonly string CapturedThroughRefKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +CapturedThroughRefKernel_Source;
@@ -922,7 +922,7 @@ unsigned char __gsharp_mb_tag;
 long long __gsharp_mb_big;
 int __gsharp_mb_X;
 __device__ inline long long __gsharp_mb_Tagged() const {
-return __gsharp_mb_tag+__gsharp_mb_big+__gsharp_mb_X;
+return __gsharp_add_i64(__gsharp_add_i64(__gsharp_mb_tag,__gsharp_mb_big),__gsharp_mb_X);
 }
 }
 ;
@@ -1125,7 +1125,7 @@ __gsharp_id_1_output[1]=(double)((unsigned char*)(__gsharp_id_3_p+1)-(unsigned c
 }
 __gsharp_id_1_output[0]=(*__gsharp_id_0_data).__gsharp_mb_Scaled();
 (*__gsharp_id_0_data).__gsharp_mb_First=(unsigned char)((*__gsharp_id_0_data).__gsharp_mb_First+1);
-(*__gsharp_id_0_data).__gsharp_mb_Last=(*__gsharp_id_0_data).__gsharp_mb_Last+10;
+(*__gsharp_id_0_data).__gsharp_mb_Last=__gsharp_add_i32((*__gsharp_id_0_data).__gsharp_mb_Last,10);
 (*__gsharp_id_0_data).__gsharp_mb_Scale((*__gsharp_id_0_data).__gsharp_mb_Scale()*2.0);
 }
 ";
@@ -1622,7 +1622,7 @@ return __gsharp_self;
 }
 #endif
 extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__PrimaryConstructorKernels__RoundtripConvertedArrayKernel(GSharpArray<__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__PcConverted> __gsharp_id_0_items, GSharpArray<float> __gsharp_id_1_output){
-int __gsharp_id_2_i = threadIdx.x;
+int __gsharp_id_2_i = (int)threadIdx.x;
 if(__gsharp_id_2_i<__gsharp_id_0_items.length)
 {
 __gsharp_id_1_output[__gsharp_id_2_i]=__gsharp_id_0_items[__gsharp_id_2_i].__gsharp_mb_Read();
@@ -1858,7 +1858,7 @@ static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__PcConv
 extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__PrimaryConstructorKernels__RoundtripConvertedPairKernel(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__PcConvertedPairHolder* __gsharp_id_0_data, GSharpArray<float> __gsharp_id_1_output){
 __gsharp_id_1_output[0]=(*__gsharp_id_0_data).__gsharp_mb_Items[0].__gsharp_mb_Read();
 __gsharp_id_1_output[1]=(*__gsharp_id_0_data).__gsharp_mb_Items[1].__gsharp_mb_Read();
-(*__gsharp_id_0_data).__gsharp_mb_Items[1].__gsharp_mb_A((unsigned char)((*__gsharp_id_0_data).__gsharp_mb_Items[1].__gsharp_mb_A()+(*__gsharp_id_0_data).__gsharp_mb_Tag));
+(*__gsharp_id_0_data).__gsharp_mb_Items[1].__gsharp_mb_A((unsigned char)(__gsharp_add_i32((*__gsharp_id_0_data).__gsharp_mb_Items[1].__gsharp_mb_A(),(*__gsharp_id_0_data).__gsharp_mb_Tag)));
 }
 ";
 public static readonly string RoundtripConvertedPairKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +RoundtripConvertedPairKernel_Source;
@@ -2161,14 +2161,14 @@ __device__ inline __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__PcRecord __
 __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__PcRecord __gsharp_self{};
 __gsharp_self.__gsharp_mb_X = __gsharp_id_0_X;
 __gsharp_self.__gsharp_mb_Y = __gsharp_id_1_Y;
-__gsharp_self.__gsharp_mb_Z = __gsharp_id_0_X+__gsharp_id_1_Y;
+__gsharp_self.__gsharp_mb_Z = __gsharp_add_i32(__gsharp_id_0_X,__gsharp_id_1_Y);
 return __gsharp_self;
 }
 #endif
 extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__PrimaryConstructorKernels__RecordKernel(GSharpArray<int> __gsharp_id_0_output){
-int __gsharp_id_1_tid = threadIdx.x;
+int __gsharp_id_1_tid = (int)threadIdx.x;
 auto __gsharp_id_2_r = __gsharp_ctor_Kassyi__GSharp__Tests__Shared__Syntax__PcRecord(__gsharp_id_1_tid, 2);
-__gsharp_id_0_output[__gsharp_id_1_tid]=__gsharp_id_2_r.__gsharp_mb_X*100+__gsharp_id_2_r.__gsharp_mb_Y*10+__gsharp_id_2_r.__gsharp_mb_Z;
+__gsharp_id_0_output[__gsharp_id_1_tid]=__gsharp_add_i32(__gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_2_r.__gsharp_mb_X,100),__gsharp_mul_i32(__gsharp_id_2_r.__gsharp_mb_Y,10)),__gsharp_id_2_r.__gsharp_mb_Z);
 }
 ";
 public static readonly string RecordKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +RecordKernel_Source;
@@ -2288,17 +2288,17 @@ static_assert(alignof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__PcChain
 static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__PcChained,__gsharp_mb_X)==0,""Kassyi.GSharp.Tests.Shared.Syntax.PcChained.X: offset"");
 __device__ inline __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__PcChained __gsharp_ctor_Kassyi__GSharp__Tests__Shared__Syntax__PcChained_o0(int __gsharp_id_0_a) {
 __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__PcChained __gsharp_self{};
-__gsharp_self.__gsharp_mb_X = __gsharp_id_0_a*10;
+__gsharp_self.__gsharp_mb_X = __gsharp_mul_i32(__gsharp_id_0_a,10);
 return __gsharp_self;
 }
 __device__ inline __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__PcChained __gsharp_ctor_Kassyi__GSharp__Tests__Shared__Syntax__PcChained_o1(int __gsharp_id_0_a, int __gsharp_id_1_b) {
-__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__PcChained __gsharp_self = __gsharp_ctor_Kassyi__GSharp__Tests__Shared__Syntax__PcChained_o0(__gsharp_id_0_a+__gsharp_id_1_b);
-__gsharp_self.__gsharp_mb_X+=1;
+__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__PcChained __gsharp_self = __gsharp_ctor_Kassyi__GSharp__Tests__Shared__Syntax__PcChained_o0(__gsharp_add_i32(__gsharp_id_0_a,__gsharp_id_1_b));
+__gsharp_self.__gsharp_mb_X=__gsharp_add_i32(__gsharp_self.__gsharp_mb_X,1);
 return __gsharp_self;
 }
 #endif
 extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__PrimaryConstructorKernels__ChainedKernel(GSharpArray<int> __gsharp_id_0_output){
-int __gsharp_id_1_tid = threadIdx.x;
+int __gsharp_id_1_tid = (int)threadIdx.x;
 auto __gsharp_id_2_s = __gsharp_ctor_Kassyi__GSharp__Tests__Shared__Syntax__PcChained_o1(__gsharp_id_1_tid, 1);
 __gsharp_id_0_output[__gsharp_id_1_tid]=__gsharp_id_2_s.__gsharp_mb_X;
 }
@@ -2427,10 +2427,10 @@ return __gsharp_self;
 }
 #endif
 extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__PrimaryConstructorKernels__NoParametersKernel(GSharpArray<int> __gsharp_id_0_output){
-int __gsharp_id_1_tid = threadIdx.x;
+int __gsharp_id_1_tid = (int)threadIdx.x;
 auto __gsharp_id_2_created = __gsharp_ctor_Kassyi__GSharp__Tests__Shared__Syntax__PcNoParameters();
 __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__PcNoParameters __gsharp_id_3_defaulted = {};
-__gsharp_id_0_output[__gsharp_id_1_tid]=__gsharp_id_2_created.__gsharp_mb_X*100+__gsharp_id_2_created.__gsharp_mb_Y*10+__gsharp_id_3_defaulted.__gsharp_mb_X;
+__gsharp_id_0_output[__gsharp_id_1_tid]=__gsharp_add_i32(__gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_2_created.__gsharp_mb_X,100),__gsharp_mul_i32(__gsharp_id_2_created.__gsharp_mb_Y,10)),__gsharp_id_3_defaulted.__gsharp_mb_X);
 }
 ";
 public static readonly string NoParametersKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +NoParametersKernel_Source;

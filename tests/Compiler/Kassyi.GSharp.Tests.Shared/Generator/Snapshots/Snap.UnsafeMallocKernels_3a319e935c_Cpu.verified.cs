@@ -51,16 +51,16 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-int __gsharp_id_1_tid = threadIdx.x;
+int __gsharp_id_1_tid = (int)threadIdx.x;
 int* __gsharp_id_2_block = (int*)malloc(16);
-for(int __gsharp_id_3_i = 0;__gsharp_id_3_i<4;__gsharp_id_3_i++)
+for(int __gsharp_id_3_i = 0;__gsharp_id_3_i<4;__gsharp_id_3_i=__gsharp_add_i32(__gsharp_id_3_i,1))
 {
-__gsharp_id_2_block[__gsharp_id_3_i]=__gsharp_id_1_tid*10+__gsharp_id_3_i;
+__gsharp_id_2_block[__gsharp_id_3_i]=__gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_1_tid,10),__gsharp_id_3_i);
 }
 int __gsharp_id_4_sum = 0;
-for(int __gsharp_id_5_i = 0;__gsharp_id_5_i<4;__gsharp_id_5_i++)
+for(int __gsharp_id_5_i = 0;__gsharp_id_5_i<4;__gsharp_id_5_i=__gsharp_add_i32(__gsharp_id_5_i,1))
 {
-__gsharp_id_4_sum+=__gsharp_id_2_block[__gsharp_id_5_i];
+__gsharp_id_4_sum=__gsharp_add_i32(__gsharp_id_4_sum,__gsharp_id_2_block[__gsharp_id_5_i]);
 }
 __gsharp_id_0_output[__gsharp_id_1_tid]=__gsharp_id_4_sum;
 free(__gsharp_id_2_block);

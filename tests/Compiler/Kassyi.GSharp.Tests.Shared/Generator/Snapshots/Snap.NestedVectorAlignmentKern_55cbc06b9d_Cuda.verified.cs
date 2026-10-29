@@ -382,8 +382,8 @@ static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Runtime__GEN56_uAlignm
 static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Runtime__GEN56_uAlignmentTestStruct,__gsharp_mb_Field5_Double2)==48,""Kassyi.GSharp.Tests.Runtime.GEN56_AlignmentTestStruct.Field5_Double2: offset"");
 #endif
 extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Runtime__NestedVectorAlignmentKernels__RoundtripKernel(__gsharp_ty_Kassyi__GSharp__Tests__Runtime__GEN56_uAlignmentTestStruct* __gsharp_id_0_data){
-(*__gsharp_id_0_data).__gsharp_mb_Field1_Byte=(unsigned char)((*__gsharp_id_0_data).__gsharp_mb_Field1_Byte+1-1);
-(*__gsharp_id_0_data).__gsharp_mb_Field4_Short=(short)((*__gsharp_id_0_data).__gsharp_mb_Field4_Short+1-1);
+(*__gsharp_id_0_data).__gsharp_mb_Field1_Byte=(unsigned char)(__gsharp_sub_i32((*__gsharp_id_0_data).__gsharp_mb_Field1_Byte+1,1));
+(*__gsharp_id_0_data).__gsharp_mb_Field4_Short=(short)(__gsharp_sub_i32((*__gsharp_id_0_data).__gsharp_mb_Field4_Short+1,1));
 }
 ";
 public static readonly string RoundtripKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +RoundtripKernel_Source;

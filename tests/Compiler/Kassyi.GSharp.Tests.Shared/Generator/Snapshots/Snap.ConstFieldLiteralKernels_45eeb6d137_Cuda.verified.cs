@@ -1548,12 +1548,12 @@ finally
 #pragma warning restore CS8500
 public const string NegativeOperandKernel_Source = @"extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__ConstFieldLiteralKernels__NegativeOperandKernel(GSharpArray<int> __gsharp_id_0_ints, GSharpArray<long long> __gsharp_id_1_longs, GSharpArray<float> __gsharp_id_2_singles, GSharpArray<int> __gsharp_id_3_values){
 int __gsharp_id_4_x = __gsharp_id_3_values[0];
-__gsharp_id_0_ints[0]=__gsharp_id_4_x-(-5);
-__gsharp_id_0_ints[1]=__gsharp_id_4_x-(-5);
-__gsharp_id_0_ints[2]=- -__gsharp_id_4_x;
-__gsharp_id_0_ints[3]=__gsharp_id_4_x+ +__gsharp_id_4_x;
-__gsharp_id_0_ints[4]=__gsharp_id_4_x- -__gsharp_id_4_x*2;
-__gsharp_id_0_ints[5]=__gsharp_id_4_x- - -__gsharp_id_4_x;
+__gsharp_id_0_ints[0]=__gsharp_sub_i32(__gsharp_id_4_x,(-5));
+__gsharp_id_0_ints[1]=__gsharp_sub_i32(__gsharp_id_4_x,(-5));
+__gsharp_id_0_ints[2]=__gsharp_neg_i32(__gsharp_neg_i32(__gsharp_id_4_x));
+__gsharp_id_0_ints[3]=__gsharp_add_i32(__gsharp_id_4_x,+__gsharp_id_4_x);
+__gsharp_id_0_ints[4]=__gsharp_sub_i32(__gsharp_id_4_x,__gsharp_mul_i32(__gsharp_neg_i32(__gsharp_id_4_x),2));
+__gsharp_id_0_ints[5]=__gsharp_sub_i32(__gsharp_id_4_x,__gsharp_neg_i32(__gsharp_neg_i32(__gsharp_id_4_x)));
 __gsharp_id_1_longs[0]=__gsharp_id_4_x-(-7LL);
 __gsharp_id_2_singles[0]=-(-0.0f);
 __gsharp_id_2_singles[1]=1.0f- -(-0.0f);
@@ -1932,8 +1932,8 @@ finally
 #pragma warning restore CS8500
 public const string SuffixKernel_Source = @"extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__ConstFieldLiteralKernels__SuffixKernel(GSharpArray<unsigned long long> __gsharp_id_0_output, unsigned int __gsharp_id_1_factor, int __gsharp_id_2_shift){
 __gsharp_id_0_output[0]=4294967295U*__gsharp_id_1_factor;
-__gsharp_id_0_output[1]=(unsigned long long)(1LL<<__gsharp_id_2_shift);
-__gsharp_id_0_output[2]=1ULL<<(__gsharp_id_2_shift+23);
+__gsharp_id_0_output[1]=(unsigned long long)(__gsharp_shl_i64(1LL,__gsharp_id_2_shift));
+__gsharp_id_0_output[2]=1ULL<<(__gsharp_add_i32(__gsharp_id_2_shift,23)&63);
 auto __gsharp_id_3_seven = 7U;
 __gsharp_id_0_output[3]=__gsharp_id_3_seven-8;
 }
@@ -2239,7 +2239,7 @@ long long __gsharp_il_1_1_wide = (-9223372036854775807LL-1);
 long long __gsharp_il_2_5_value = __gsharp_il_1_0_narrow;
 {
 __gsharp_id_0_longs[__gsharp_id_4_k]=__gsharp_il_2_5_value;
-__gsharp_id_4_k++;
+__gsharp_id_4_k=__gsharp_add_i32(__gsharp_id_4_k,1);
 }
 __gsharp_iter_next_1_0:;
 }
@@ -2247,7 +2247,7 @@ __gsharp_iter_next_1_0:;
 long long __gsharp_il_3_5_value = __gsharp_il_1_1_wide;
 {
 __gsharp_id_0_longs[__gsharp_id_4_k]=__gsharp_il_3_5_value;
-__gsharp_id_4_k++;
+__gsharp_id_4_k=__gsharp_add_i32(__gsharp_id_4_k,1);
 }
 __gsharp_iter_next_1_1:;
 }
@@ -2260,7 +2260,7 @@ long long __gsharp_il_4_1_wide = (-9223372036854775807LL-1);
 long long __gsharp_il_5_6_value = __gsharp_il_4_0_narrow;
 {
 __gsharp_id_0_longs[__gsharp_id_4_k]=__gsharp_il_5_6_value;
-__gsharp_id_4_k++;
+__gsharp_id_4_k=__gsharp_add_i32(__gsharp_id_4_k,1);
 }
 __gsharp_iter_next_4_0:;
 }
@@ -2268,7 +2268,7 @@ __gsharp_iter_next_4_0:;
 long long __gsharp_il_6_6_value = __gsharp_il_4_1_wide;
 {
 __gsharp_id_0_longs[__gsharp_id_4_k]=__gsharp_il_6_6_value;
-__gsharp_id_4_k++;
+__gsharp_id_4_k=__gsharp_add_i32(__gsharp_id_4_k,1);
 }
 __gsharp_iter_next_4_1:;
 }
@@ -2285,7 +2285,7 @@ double __gsharp_il_7_4_zero = {};
 double __gsharp_il_8_8_value = __gsharp_il_7_0_nan;
 {
 __gsharp_id_2_doubles[__gsharp_id_7_d]=__gsharp_il_8_8_value;
-__gsharp_id_7_d++;
+__gsharp_id_7_d=__gsharp_add_i32(__gsharp_id_7_d,1);
 }
 __gsharp_iter_next_7_0:;
 }
@@ -2293,7 +2293,7 @@ __gsharp_iter_next_7_0:;
 double __gsharp_il_9_8_value = __gsharp_il_7_1_infinity;
 {
 __gsharp_id_2_doubles[__gsharp_id_7_d]=__gsharp_il_9_8_value;
-__gsharp_id_7_d++;
+__gsharp_id_7_d=__gsharp_add_i32(__gsharp_id_7_d,1);
 }
 __gsharp_iter_next_7_1:;
 }
@@ -2301,7 +2301,7 @@ __gsharp_iter_next_7_1:;
 double __gsharp_il_10_8_value = __gsharp_il_7_2_doubleNaN;
 {
 __gsharp_id_2_doubles[__gsharp_id_7_d]=__gsharp_il_10_8_value;
-__gsharp_id_7_d++;
+__gsharp_id_7_d=__gsharp_add_i32(__gsharp_id_7_d,1);
 }
 __gsharp_iter_next_7_2:;
 }
@@ -2309,7 +2309,7 @@ __gsharp_iter_next_7_2:;
 double __gsharp_il_11_8_value = __gsharp_il_7_3_negativeInfinity;
 {
 __gsharp_id_2_doubles[__gsharp_id_7_d]=__gsharp_il_11_8_value;
-__gsharp_id_7_d++;
+__gsharp_id_7_d=__gsharp_add_i32(__gsharp_id_7_d,1);
 }
 __gsharp_iter_next_7_3:;
 }
@@ -2317,7 +2317,7 @@ __gsharp_iter_next_7_3:;
 double __gsharp_il_12_8_value = __gsharp_il_7_4_zero;
 {
 __gsharp_id_2_doubles[__gsharp_id_7_d]=__gsharp_il_12_8_value;
-__gsharp_id_7_d++;
+__gsharp_id_7_d=__gsharp_add_i32(__gsharp_id_7_d,1);
 }
 __gsharp_iter_next_7_4:;
 }
@@ -2514,7 +2514,7 @@ if((-2)==0)
 {
 goto __gsharp_id_4_skip_Unroll_m2;
 }
-__gsharp_id_0_output[(-2)+2]=__gsharp_id_2_x-(-2);
+__gsharp_id_0_output[__gsharp_add_i32((-2),2)]=__gsharp_sub_i32(__gsharp_id_2_x,(-2));
 __gsharp_id_4_skip_Unroll_m2:;
 }
 {
@@ -2522,7 +2522,7 @@ if((-1)==0)
 {
 goto __gsharp_id_4_skip_Unroll_m1;
 }
-__gsharp_id_0_output[(-1)+2]=__gsharp_id_2_x-(-1);
+__gsharp_id_0_output[__gsharp_add_i32((-1),2)]=__gsharp_sub_i32(__gsharp_id_2_x,(-1));
 __gsharp_id_4_skip_Unroll_m1:;
 }
 {
@@ -2530,7 +2530,7 @@ if(0==0)
 {
 goto __gsharp_id_4_skip_Unroll_0;
 }
-__gsharp_id_0_output[0+2]=__gsharp_id_2_x-0;
+__gsharp_id_0_output[__gsharp_add_i32(0,2)]=__gsharp_sub_i32(__gsharp_id_2_x,0);
 __gsharp_id_4_skip_Unroll_0:;
 }
 {
@@ -2538,7 +2538,7 @@ if(1==0)
 {
 goto __gsharp_id_4_skip_Unroll_1;
 }
-__gsharp_id_0_output[1+2]=__gsharp_id_2_x-1;
+__gsharp_id_0_output[__gsharp_add_i32(1,2)]=__gsharp_sub_i32(__gsharp_id_2_x,1);
 __gsharp_id_4_skip_Unroll_1:;
 }
 }

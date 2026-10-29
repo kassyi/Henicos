@@ -57,16 +57,16 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-int __gsharp_id_4_tid = threadIdx.x;
+int __gsharp_id_4_tid = (int)threadIdx.x;
 atomicSub(&__gsharp_id_0_intState[0],1);
-atomicMin(&__gsharp_id_0_intState[1],__gsharp_id_4_tid-5);
-atomicAnd(&__gsharp_id_1_uintState[0],~(1u<<__gsharp_id_4_tid));
-atomicXor(&__gsharp_id_1_uintState[1],1u<<__gsharp_id_4_tid);
+atomicMin(&__gsharp_id_0_intState[1],__gsharp_sub_i32(__gsharp_id_4_tid,5));
+atomicAnd(&__gsharp_id_1_uintState[0],~(1u<<(__gsharp_id_4_tid&31)));
+atomicXor(&__gsharp_id_1_uintState[1],1u<<(__gsharp_id_4_tid&31));
 atomicMin(&__gsharp_id_1_uintState[2],(unsigned int)__gsharp_id_4_tid);
 atomicMax(&__gsharp_id_1_uintState[3],(__gsharp_id_4_tid==31?4294967295U:(unsigned int)__gsharp_id_4_tid));
-atomicXor(&__gsharp_id_2_ulongState[0],1ull<<(__gsharp_id_4_tid+32));
+atomicXor(&__gsharp_id_2_ulongState[0],1ull<<(__gsharp_add_i32(__gsharp_id_4_tid,32)&63));
 atomicMin(&__gsharp_id_2_ulongState[1],(unsigned long long)__gsharp_id_4_tid);
-atomicAnd(&__gsharp_id_2_ulongState[2],~(1ull<<__gsharp_id_4_tid));
+atomicAnd(&__gsharp_id_2_ulongState[2],~(1ull<<(__gsharp_id_4_tid&63)));
 atomicAdd(&__gsharp_id_3_floatState[0],0.5f);
 if(__gsharp_id_4_tid==0)
 {
@@ -814,7 +814,7 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-__gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__AtomicIntrinsicsKernels__AccumulateThroughRef(&__gsharp_id_0_counter[0],threadIdx.x+1);
+__gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__AtomicIntrinsicsKernels__AccumulateThroughRef(&__gsharp_id_0_counter[0],__gsharp_add_i32((int)threadIdx.x,1));
 __gsharp_state=-1;
 return;
 }

@@ -1313,7 +1313,7 @@ __gsharp_id_1_o[3]=(float)((unsigned char*)(__gsharp_id_3_p+1)-(unsigned char*)_
 __gsharp_id_1_o[4]=(float)((unsigned char*)&__gsharp_id_2_s.__gsharp_mb_C-(unsigned char*)__gsharp_id_3_p);
 }
 (*__gsharp_id_0_x).__gsharp_mb_Items[1].__gsharp_mb_V=float2{9.0f, 10.0f};
-(*__gsharp_id_0_x).__gsharp_mb_C=(*__gsharp_id_0_x).__gsharp_mb_C+1;
+(*__gsharp_id_0_x).__gsharp_mb_C=__gsharp_add_i32((*__gsharp_id_0_x).__gsharp_mb_C,1);
 }
 ";
 public static readonly string InlineElemKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +InlineElemKernel_Source;
@@ -2259,7 +2259,7 @@ static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Core__LayoutRe
 #endif
 extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Core__StructLayoutRegressionKernels__AliasKernel(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Core__LayoutReproPair __gsharp_id_0_p){
 __gsharp_id_0_p.__gsharp_mb_A[0]=1;
-__gsharp_id_0_p.__gsharp_mb_B[1]=__gsharp_id_0_p.__gsharp_mb_A[0]+1;
+__gsharp_id_0_p.__gsharp_mb_B[1]=__gsharp_add_i32(__gsharp_id_0_p.__gsharp_mb_A[0],1);
 }
 ";
 public static readonly string AliasKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +AliasKernel_Source;
@@ -3376,8 +3376,8 @@ static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Core__LayoutRe
 static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Core__LayoutReproTwoBools,__gsharp_mb_X)==4,""Kassyi.GSharp.Tests.Shared.Core.LayoutReproTwoBools.X: offset"");
 #endif
 extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Core__StructLayoutRegressionKernels__MutateByValKernel(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Core__LayoutReproTwoBools __gsharp_id_0_t, GSharpArray<int> __gsharp_id_1_o){
-int __gsharp_id_2_tid = blockIdx.x*blockDim.x+threadIdx.x;
-__gsharp_id_0_t.__gsharp_mb_X+=__gsharp_id_2_tid;
+int __gsharp_id_2_tid = __gsharp_add_i32(__gsharp_mul_i32((int)blockIdx.x,(int)blockDim.x),(int)threadIdx.x);
+__gsharp_id_0_t.__gsharp_mb_X=__gsharp_add_i32(__gsharp_id_0_t.__gsharp_mb_X,__gsharp_id_2_tid);
 __gsharp_id_1_o[__gsharp_id_2_tid]=__gsharp_id_0_t.__gsharp_mb_X;
 }
 ";

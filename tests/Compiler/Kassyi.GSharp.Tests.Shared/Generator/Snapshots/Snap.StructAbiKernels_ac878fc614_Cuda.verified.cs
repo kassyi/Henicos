@@ -423,7 +423,7 @@ static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Core__AbiPacke
 #pragma pack(pop)
 extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Core__StructAbiKernels__RoundtripPackedKernel(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Core__AbiPackedStruct* __gsharp_id_0_data){
 (*__gsharp_id_0_data).__gsharp_mb_A=(unsigned char)((*__gsharp_id_0_data).__gsharp_mb_A+1);
-(*__gsharp_id_0_data).__gsharp_mb_C=(*__gsharp_id_0_data).__gsharp_mb_C+1;
+(*__gsharp_id_0_data).__gsharp_mb_C=__gsharp_add_i32((*__gsharp_id_0_data).__gsharp_mb_C,1);
 }
 ";
 public static readonly string RoundtripPackedKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +RoundtripPackedKernel_Source;
@@ -714,7 +714,7 @@ static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Core__AbiInlin
 #endif
 extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Core__StructAbiKernels__RoundtripInlineArrayKernel(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Core__AbiInlineArrayStruct* __gsharp_id_0_data){
 (*__gsharp_id_0_data).__gsharp_mb_A=(unsigned char)((*__gsharp_id_0_data).__gsharp_mb_A+1);
-(*__gsharp_id_0_data).__gsharp_mb_C=(*__gsharp_id_0_data).__gsharp_mb_C+1;
+(*__gsharp_id_0_data).__gsharp_mb_C=__gsharp_add_i32((*__gsharp_id_0_data).__gsharp_mb_C,1);
 }
 ";
 public static readonly string RoundtripInlineArrayKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +RoundtripInlineArrayKernel_Source;
@@ -992,7 +992,7 @@ static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Core__AbiCoreF
 #endif
 extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Core__StructAbiKernels__RoundtripCoreFieldKernel(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Core__AbiCoreFieldStruct* __gsharp_id_0_data){
 (*__gsharp_id_0_data).__gsharp_mb_A=(unsigned char)((*__gsharp_id_0_data).__gsharp_mb_A+1);
-(*__gsharp_id_0_data).__gsharp_mb_C=(*__gsharp_id_0_data).__gsharp_mb_C+1;
+(*__gsharp_id_0_data).__gsharp_mb_C=__gsharp_add_i32((*__gsharp_id_0_data).__gsharp_mb_C,1);
 }
 ";
 public static readonly string RoundtripCoreFieldKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +RoundtripCoreFieldKernel_Source;
@@ -1283,7 +1283,7 @@ static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Core__AbiPriva
 #endif
 extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Core__StructAbiKernels__RoundtripPrivateInlineArrayKernel(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Core__AbiPrivateInlineArrayStruct* __gsharp_id_0_data){
 (*__gsharp_id_0_data).__gsharp_mb_A=(unsigned char)((*__gsharp_id_0_data).__gsharp_mb_A+1);
-(*__gsharp_id_0_data).__gsharp_mb_C=(*__gsharp_id_0_data).__gsharp_mb_C+1;
+(*__gsharp_id_0_data).__gsharp_mb_C=__gsharp_add_i32((*__gsharp_id_0_data).__gsharp_mb_C,1);
 }
 ";
 public static readonly string RoundtripPrivateInlineArrayKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +RoundtripPrivateInlineArrayKernel_Source;
@@ -1531,7 +1531,7 @@ static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Core__AbiFixed
 #endif
 extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Core__StructAbiKernels__RoundtripFixedBufferKernel(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Core__AbiFixedBufferStruct* __gsharp_id_0_data){
 (*__gsharp_id_0_data).__gsharp_mb_A=(unsigned char)((*__gsharp_id_0_data).__gsharp_mb_A+1);
-(*__gsharp_id_0_data).__gsharp_mb_C=(*__gsharp_id_0_data).__gsharp_mb_C+1;
+(*__gsharp_id_0_data).__gsharp_mb_C=__gsharp_add_i32((*__gsharp_id_0_data).__gsharp_mb_C,1);
 }
 ";
 public static readonly string RoundtripFixedBufferKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +RoundtripFixedBufferKernel_Source;
@@ -1778,7 +1778,7 @@ static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Core__AbiAutoP
 extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Core__StructAbiKernels__RoundtripAutoPropertyKernel(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Core__AbiAutoPropertyStruct* __gsharp_id_0_data){
 (*__gsharp_id_0_data).__gsharp_mb_A=(unsigned char)((*__gsharp_id_0_data).__gsharp_mb_A+1);
 (*__gsharp_id_0_data).__gsharp_mb_B=(*__gsharp_id_0_data).__gsharp_mb_B+1.0;
-(*__gsharp_id_0_data).__gsharp_mb_C=(*__gsharp_id_0_data).__gsharp_mb_C+1;
+(*__gsharp_id_0_data).__gsharp_mb_C=__gsharp_add_i32((*__gsharp_id_0_data).__gsharp_mb_C,1);
 }
 ";
 public static readonly string RoundtripAutoPropertyKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +RoundtripAutoPropertyKernel_Source;
@@ -1888,13 +1888,13 @@ __device__ inline int __gsharp_mb_Sum() const {
 return __gsharp_mb_A+1;
 }
 __device__ inline int __gsharp_mb_Twice() const {
-return __gsharp_mb_Sum()*2;
+return __gsharp_mul_i32(__gsharp_mb_Sum(),2);
 }
 __device__ inline int __gsharp_mb_Product() const {
-return __gsharp_mb_A*__gsharp_mb_C;
+return __gsharp_mul_i32(__gsharp_mb_A,__gsharp_mb_C);
 }
 __device__ inline int __gsharp_mb_Difference() const {
-return (*this).__gsharp_mb_C-(*this).__gsharp_mb_Sum();
+return __gsharp_sub_i32((*this).__gsharp_mb_C,(*this).__gsharp_mb_Sum());
 }
 }
 ;
@@ -2027,13 +2027,13 @@ __device__ inline int __gsharp_mb_Sum() const {
 return __gsharp_mb_A+1;
 }
 __device__ inline int __gsharp_mb_Twice() const {
-return __gsharp_mb_Sum()*2;
+return __gsharp_mul_i32(__gsharp_mb_Sum(),2);
 }
 __device__ inline int __gsharp_mb_Product() const {
-return __gsharp_mb_A*__gsharp_mb_C;
+return __gsharp_mul_i32(__gsharp_mb_A,__gsharp_mb_C);
 }
 __device__ inline int __gsharp_mb_Difference() const {
-return (*this).__gsharp_mb_C-(*this).__gsharp_mb_Sum();
+return __gsharp_sub_i32((*this).__gsharp_mb_C,(*this).__gsharp_mb_Sum());
 }
 }
 ;
@@ -2043,7 +2043,7 @@ static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Core__AbiCompu
 static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Core__AbiComputedPropertyStruct,__gsharp_mb_C)==4,""Kassyi.GSharp.Tests.Shared.Core.AbiComputedPropertyStruct.C: offset"");
 #endif
 extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Core__StructAbiKernels__RoundtripComputedPropertyKernel(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Core__AbiComputedPropertyStruct* __gsharp_id_0_data){
-(*__gsharp_id_0_data).__gsharp_mb_C=(*__gsharp_id_0_data).__gsharp_mb_C+1;
+(*__gsharp_id_0_data).__gsharp_mb_C=__gsharp_add_i32((*__gsharp_id_0_data).__gsharp_mb_C,1);
 }
 ";
 public static readonly string RoundtripComputedPropertyKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +RoundtripComputedPropertyKernel_Source;
@@ -2153,13 +2153,13 @@ __device__ inline int __gsharp_mb_Sum() const {
 return __gsharp_mb_A+1;
 }
 __device__ inline int __gsharp_mb_Twice() const {
-return __gsharp_mb_Sum()*2;
+return __gsharp_mul_i32(__gsharp_mb_Sum(),2);
 }
 __device__ inline int __gsharp_mb_Product() const {
-return __gsharp_mb_A*__gsharp_mb_C;
+return __gsharp_mul_i32(__gsharp_mb_A,__gsharp_mb_C);
 }
 __device__ inline int __gsharp_mb_Difference() const {
-return (*this).__gsharp_mb_C-(*this).__gsharp_mb_Sum();
+return __gsharp_sub_i32((*this).__gsharp_mb_C,(*this).__gsharp_mb_Sum());
 }
 }
 ;
@@ -2293,13 +2293,13 @@ __device__ inline int __gsharp_mb_Sum() const {
 return __gsharp_mb_A+1;
 }
 __device__ inline int __gsharp_mb_Twice() const {
-return __gsharp_mb_Sum()*2;
+return __gsharp_mul_i32(__gsharp_mb_Sum(),2);
 }
 __device__ inline int __gsharp_mb_Product() const {
-return __gsharp_mb_A*__gsharp_mb_C;
+return __gsharp_mul_i32(__gsharp_mb_A,__gsharp_mb_C);
 }
 __device__ inline int __gsharp_mb_Difference() const {
-return (*this).__gsharp_mb_C-(*this).__gsharp_mb_Sum();
+return __gsharp_sub_i32((*this).__gsharp_mb_C,(*this).__gsharp_mb_Sum());
 }
 }
 ;

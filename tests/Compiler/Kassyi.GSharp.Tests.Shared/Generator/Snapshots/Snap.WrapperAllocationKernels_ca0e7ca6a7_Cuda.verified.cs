@@ -86,7 +86,7 @@ public const string AllocationTestKernel_Source = @"extern ""C"" __global__ void
 if((long long)(*__gsharp_id_0_ioVal)>(long long)__gsharp_id_3_constantVal)
 {
 (*__gsharp_id_1_outVal)=__gsharp_id_2_arrayVal[0];
-(*__gsharp_id_0_ioVal)=(int)(*__gsharp_id_1_outVal)+1;
+(*__gsharp_id_0_ioVal)=__gsharp_add_i32(__gsharp_to_i32((*__gsharp_id_1_outVal)),1);
 }
 else
 {

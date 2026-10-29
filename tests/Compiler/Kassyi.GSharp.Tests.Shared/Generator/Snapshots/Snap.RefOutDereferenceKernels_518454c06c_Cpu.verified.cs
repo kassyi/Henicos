@@ -45,7 +45,7 @@ struct __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__RefTestStruct
 int __gsharp_mb_Field;
 int __gsharp_mb_Value;
 __device__ inline int __gsharp_mb_ComputedSum() const {
-return __gsharp_mb_Field+__gsharp_mb_Value;
+return __gsharp_add_i32(__gsharp_mb_Field,__gsharp_mb_Value);
 }
 __device__ inline int __gsharp_mb_PassComputedToIn() const {
 return __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__RefOutDereferenceKernels__ReadInInt(__gsharp_temp_address<int>(__gsharp_mb_ComputedSum()));
@@ -73,27 +73,27 @@ inline void __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__RefOutDereference
 }
 
 inline int __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__RefOutDereferenceKernels__ReadRefReadOnlyInt(const int* __gsharp_id_0_value){
-return (*__gsharp_id_0_value)+10;
+return __gsharp_add_i32((*__gsharp_id_0_value),10);
 }
 
 inline int __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__RefOutDereferenceKernels__ReadInInt(const int* __gsharp_id_0_value){
-return (*__gsharp_id_0_value)+20;
+return __gsharp_add_i32((*__gsharp_id_0_value),20);
 }
 
 inline int __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__RefOutDereferenceKernels__ReadInLong(const long long* __gsharp_id_0_value){
-return (int)((*__gsharp_id_0_value)+30ll);
+return (int)(__gsharp_add_i64((*__gsharp_id_0_value),30ll));
 }
 
 inline int __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__RefOutDereferenceKernels__ReadInDouble(const double* __gsharp_id_0_value){
-return (int)((*__gsharp_id_0_value)*2.0);
+return __gsharp_to_i32((*__gsharp_id_0_value)*2.0);
 }
 
 inline int __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__RefOutDereferenceKernels__ForwardRefReadOnlyInt(const int* __gsharp_id_0_value){
-return __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__RefOutDereferenceKernels__ReadRefReadOnlyInt(&(*__gsharp_id_0_value))+__gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__RefOutDereferenceKernels__ReadInInt(&(*__gsharp_id_0_value))+__gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__RefOutDereferenceKernels__ReadInInt(&(*__gsharp_id_0_value));
+return __gsharp_add_i32(__gsharp_add_i32(__gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__RefOutDereferenceKernels__ReadRefReadOnlyInt(&(*__gsharp_id_0_value)),__gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__RefOutDereferenceKernels__ReadInInt(&(*__gsharp_id_0_value))),__gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__RefOutDereferenceKernels__ReadInInt(&(*__gsharp_id_0_value)));
 }
 
 inline int __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__RefOutDereferenceKernels__ForwardInInt(const int* __gsharp_id_0_value){
-return __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__RefOutDereferenceKernels__ReadInInt(&(*__gsharp_id_0_value))+__gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__RefOutDereferenceKernels__ReadRefReadOnlyInt(&(*__gsharp_id_0_value))+__gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__RefOutDereferenceKernels__ReadInInt(&(*__gsharp_id_0_value));
+return __gsharp_add_i32(__gsharp_add_i32(__gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__RefOutDereferenceKernels__ReadInInt(&(*__gsharp_id_0_value)),__gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__RefOutDereferenceKernels__ReadRefReadOnlyInt(&(*__gsharp_id_0_value))),__gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__RefOutDereferenceKernels__ReadInInt(&(*__gsharp_id_0_value)));
 }
 
 #ifndef __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__RefTestStruct__
@@ -103,7 +103,7 @@ struct __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__RefTestStruct
 int __gsharp_mb_Field;
 int __gsharp_mb_Value;
 __device__ inline int __gsharp_mb_ComputedSum() const {
-return __gsharp_mb_Field+__gsharp_mb_Value;
+return __gsharp_add_i32(__gsharp_mb_Field,__gsharp_mb_Value);
 }
 __device__ inline int __gsharp_mb_PassComputedToIn() const {
 return __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__RefOutDereferenceKernels__ReadInInt(__gsharp_temp_address<int>(__gsharp_mb_ComputedSum()));
@@ -123,7 +123,7 @@ return __gsharp_self;
 }
 #endif
 inline int __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__RefOutDereferenceKernels__ReadRefReadOnlyStruct(const __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__RefTestStruct* __gsharp_id_0_s){
-return (*__gsharp_id_0_s).__gsharp_mb_Field*100+(*__gsharp_id_0_s).__gsharp_mb_Value;
+return __gsharp_add_i32(__gsharp_mul_i32((*__gsharp_id_0_s).__gsharp_mb_Field,100),(*__gsharp_id_0_s).__gsharp_mb_Value);
 }
 
 #ifndef __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__RefTestStruct__
@@ -133,7 +133,7 @@ struct __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__RefTestStruct
 int __gsharp_mb_Field;
 int __gsharp_mb_Value;
 __device__ inline int __gsharp_mb_ComputedSum() const {
-return __gsharp_mb_Field+__gsharp_mb_Value;
+return __gsharp_add_i32(__gsharp_mb_Field,__gsharp_mb_Value);
 }
 __device__ inline int __gsharp_mb_PassComputedToIn() const {
 return __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__RefOutDereferenceKernels__ReadInInt(__gsharp_temp_address<int>(__gsharp_mb_ComputedSum()));
@@ -153,7 +153,7 @@ return __gsharp_self;
 }
 #endif
 inline int __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__RefOutDereferenceKernels__ReadInStruct(const __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__RefTestStruct* __gsharp_id_0_s){
-return (*__gsharp_id_0_s).__gsharp_mb_Field*10+(*__gsharp_id_0_s).__gsharp_mb_Value;
+return __gsharp_add_i32(__gsharp_mul_i32((*__gsharp_id_0_s).__gsharp_mb_Field,10),(*__gsharp_id_0_s).__gsharp_mb_Value);
 }
 
 #ifndef __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__RefTestStruct__
@@ -163,7 +163,7 @@ struct __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__RefTestStruct
 int __gsharp_mb_Field;
 int __gsharp_mb_Value;
 __device__ inline int __gsharp_mb_ComputedSum() const {
-return __gsharp_mb_Field+__gsharp_mb_Value;
+return __gsharp_add_i32(__gsharp_mb_Field,__gsharp_mb_Value);
 }
 __device__ inline int __gsharp_mb_PassComputedToIn() const {
 return __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__RefOutDereferenceKernels__ReadInInt(__gsharp_temp_address<int>(__gsharp_mb_ComputedSum()));
@@ -183,7 +183,7 @@ return __gsharp_self;
 }
 #endif
 inline int __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__RefOutDereferenceKernels__ForwardRefReadOnlyAndInStruct(const __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__RefTestStruct* __gsharp_id_0_a, const __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__RefTestStruct* __gsharp_id_1_b){
-return __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__RefOutDereferenceKernels__ReadRefReadOnlyStruct(&(*__gsharp_id_0_a))+__gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__RefOutDereferenceKernels__ReadInStruct(&(*__gsharp_id_1_b))+__gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__RefOutDereferenceKernels__ReadInStruct(&(*__gsharp_id_0_a))+__gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__RefOutDereferenceKernels__ReadRefReadOnlyStruct(&(*__gsharp_id_1_b));
+return __gsharp_add_i32(__gsharp_add_i32(__gsharp_add_i32(__gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__RefOutDereferenceKernels__ReadRefReadOnlyStruct(&(*__gsharp_id_0_a)),__gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__RefOutDereferenceKernels__ReadInStruct(&(*__gsharp_id_1_b))),__gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__RefOutDereferenceKernels__ReadInStruct(&(*__gsharp_id_0_a))),__gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__RefOutDereferenceKernels__ReadRefReadOnlyStruct(&(*__gsharp_id_1_b)));
 }
 
 ";
@@ -240,7 +240,7 @@ struct __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__RefTestStruct
 int __gsharp_mb_Field;
 int __gsharp_mb_Value;
 __device__ inline int __gsharp_mb_ComputedSum() const {
-return __gsharp_mb_Field+__gsharp_mb_Value;
+return __gsharp_add_i32(__gsharp_mb_Field,__gsharp_mb_Value);
 }
 __device__ inline int __gsharp_mb_PassComputedToIn() const {
 return __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__RefOutDereferenceKernels__ReadInInt(__gsharp_temp_address<int>(__gsharp_mb_ComputedSum()));
@@ -287,7 +287,7 @@ int __gsharp_id_3_a;
 int __gsharp_id_4_b;
 int __gsharp_id_5_val = 1;
 __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__RefOutDereferenceKernels__ChainedAssignmentRef(&__gsharp_id_5_val,&__gsharp_id_3_a,&__gsharp_id_4_b);
-__gsharp_id_0_data[0]=((__gsharp_id_1_flag?100:0))+__gsharp_id_2_s.__gsharp_mb_Field+__gsharp_id_3_a+__gsharp_id_4_b+__gsharp_id_5_val;
+__gsharp_id_0_data[0]=__gsharp_add_i32(__gsharp_add_i32(__gsharp_add_i32(__gsharp_add_i32((__gsharp_id_1_flag?100:0),__gsharp_id_2_s.__gsharp_mb_Field),__gsharp_id_3_a),__gsharp_id_4_b),__gsharp_id_5_val);
 __gsharp_state=-1;
 return;
 }
@@ -522,7 +522,7 @@ struct __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__RefTestStruct
 int __gsharp_mb_Field;
 int __gsharp_mb_Value;
 __device__ inline int __gsharp_mb_ComputedSum() const {
-return __gsharp_mb_Field+__gsharp_mb_Value;
+return __gsharp_add_i32(__gsharp_mb_Field,__gsharp_mb_Value);
 }
 __device__ inline int __gsharp_mb_PassComputedToIn() const {
 return __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__RefOutDereferenceKernels__ReadInInt(__gsharp_temp_address<int>(__gsharp_mb_ComputedSum()));
@@ -559,19 +559,19 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-int __gsharp_id_2_tid = threadIdx.x;
+int __gsharp_id_2_tid = (int)threadIdx.x;
 int __gsharp_id_3_x = __gsharp_id_0_input[__gsharp_id_2_tid];
-int __gsharp_id_4_y = __gsharp_id_3_x+3;
+int __gsharp_id_4_y = __gsharp_add_i32(__gsharp_id_3_x,3);
 __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__RefTestStruct __gsharp_id_5_s1 = ([&]() {
 __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__RefTestStruct __gsharp_tmp{}; __gsharp_tmp.__gsharp_mb_Field = __gsharp_id_3_x; __gsharp_tmp.__gsharp_mb_Value = 7; return __gsharp_tmp; }
 ());
 __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__RefTestStruct __gsharp_id_6_s2 = ([&]() {
 __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__RefTestStruct __gsharp_tmp{}; __gsharp_tmp.__gsharp_mb_Field = __gsharp_id_4_y; __gsharp_tmp.__gsharp_mb_Value = 9; return __gsharp_tmp; }
 ());
-__gsharp_id_1_output[__gsharp_id_2_tid*4]=__gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__RefOutDereferenceKernels__ReadRefReadOnlyInt(&__gsharp_id_3_x)*1000+__gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__RefOutDereferenceKernels__ReadInInt(&__gsharp_id_4_y);
-__gsharp_id_1_output[__gsharp_id_2_tid*4+1]=__gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__RefOutDereferenceKernels__ForwardRefReadOnlyInt(&__gsharp_id_3_x)*1000+__gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__RefOutDereferenceKernels__ForwardInInt(&__gsharp_id_4_y);
-__gsharp_id_1_output[__gsharp_id_2_tid*4+2]=__gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__RefOutDereferenceKernels__ReadRefReadOnlyStruct(&__gsharp_id_5_s1)*1000+__gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__RefOutDereferenceKernels__ReadInStruct(&__gsharp_id_6_s2);
-__gsharp_id_1_output[__gsharp_id_2_tid*4+3]=__gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__RefOutDereferenceKernels__ForwardRefReadOnlyAndInStruct(&__gsharp_id_5_s1,&__gsharp_id_6_s2);
+__gsharp_id_1_output[__gsharp_mul_i32(__gsharp_id_2_tid,4)]=__gsharp_add_i32(__gsharp_mul_i32(__gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__RefOutDereferenceKernels__ReadRefReadOnlyInt(&__gsharp_id_3_x),1000),__gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__RefOutDereferenceKernels__ReadInInt(&__gsharp_id_4_y));
+__gsharp_id_1_output[__gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_2_tid,4),1)]=__gsharp_add_i32(__gsharp_mul_i32(__gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__RefOutDereferenceKernels__ForwardRefReadOnlyInt(&__gsharp_id_3_x),1000),__gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__RefOutDereferenceKernels__ForwardInInt(&__gsharp_id_4_y));
+__gsharp_id_1_output[__gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_2_tid,4),2)]=__gsharp_add_i32(__gsharp_mul_i32(__gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__RefOutDereferenceKernels__ReadRefReadOnlyStruct(&__gsharp_id_5_s1),1000),__gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__RefOutDereferenceKernels__ReadInStruct(&__gsharp_id_6_s2));
+__gsharp_id_1_output[__gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_2_tid,4),3)]=__gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__RefOutDereferenceKernels__ForwardRefReadOnlyAndInStruct(&__gsharp_id_5_s1,&__gsharp_id_6_s2);
 __gsharp_state=-1;
 return;
 }
@@ -818,7 +818,7 @@ struct __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__RefTestStruct
 int __gsharp_mb_Field;
 int __gsharp_mb_Value;
 __device__ inline int __gsharp_mb_ComputedSum() const {
-return __gsharp_mb_Field+__gsharp_mb_Value;
+return __gsharp_add_i32(__gsharp_mb_Field,__gsharp_mb_Value);
 }
 __device__ inline int __gsharp_mb_PassComputedToIn() const {
 return __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__RefOutDereferenceKernels__ReadInInt(__gsharp_temp_address<int>(__gsharp_mb_ComputedSum()));
@@ -855,21 +855,21 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-int __gsharp_id_2_tid = threadIdx.x;
+int __gsharp_id_2_tid = (int)threadIdx.x;
 int __gsharp_id_3_x = __gsharp_id_0_input[__gsharp_id_2_tid];
 float __gsharp_id_4_f = __gsharp_id_3_x+0.5f;
 __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__RefTestStruct __gsharp_id_5_s = ([&]() {
 __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__RefTestStruct __gsharp_tmp{}; __gsharp_tmp.__gsharp_mb_Field = __gsharp_id_3_x; __gsharp_tmp.__gsharp_mb_Value = 4; return __gsharp_tmp; }
 ());
 __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__RefTestStruct __gsharp_id_6_sCtor = __gsharp_ctor_Kassyi__GSharp__Tests__Shared__Syntax__RefTestStruct(__gsharp_id_3_x, 4);
-__gsharp_id_1_output[__gsharp_id_2_tid*6]=__gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__RefOutDereferenceKernels__ReadInInt(__gsharp_temp_address<int>(5))*1000+__gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__RefOutDereferenceKernels__ReadInInt(__gsharp_temp_address<int>(__gsharp_id_3_x+1));
-__gsharp_id_1_output[__gsharp_id_2_tid*6+1]=__gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__RefOutDereferenceKernels__ReadInStruct(__gsharp_temp_address<__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__RefTestStruct>(([&]() {
+__gsharp_id_1_output[__gsharp_mul_i32(__gsharp_id_2_tid,6)]=__gsharp_add_i32(__gsharp_mul_i32(__gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__RefOutDereferenceKernels__ReadInInt(__gsharp_temp_address<int>(5)),1000),__gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__RefOutDereferenceKernels__ReadInInt(__gsharp_temp_address<int>(__gsharp_add_i32(__gsharp_id_3_x,1))));
+__gsharp_id_1_output[__gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_2_tid,6),1)]=__gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__RefOutDereferenceKernels__ReadInStruct(__gsharp_temp_address<__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__RefTestStruct>(([&]() {
 __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__RefTestStruct __gsharp_tmp{}; __gsharp_tmp.__gsharp_mb_Field = __gsharp_id_3_x; __gsharp_tmp.__gsharp_mb_Value = 4; return __gsharp_tmp; }
 ())));
-__gsharp_id_1_output[__gsharp_id_2_tid*6+2]=__gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__RefOutDereferenceKernels__ForwardInInt(__gsharp_temp_address<int>(__gsharp_id_3_x+2));
-__gsharp_id_1_output[__gsharp_id_2_tid*6+3]=__gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__RefOutDereferenceKernels__ReadInInt(__gsharp_temp_address<int>(threadIdx.x))*10000+__gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__RefOutDereferenceKernels__ReadInInt(__gsharp_temp_address<int>(blockDim.x))*100+__gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__RefOutDereferenceKernels__ReadInInt(__gsharp_temp_address<int>(__gsharp_id_0_input.length));
-__gsharp_id_1_output[__gsharp_id_2_tid*6+4]=__gsharp_id_5_s.__gsharp_mb_PassComputedToIn()*10000+__gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__RefOutDereferenceKernels__ReadInInt(__gsharp_temp_address<int>(__gsharp_id_5_s.__gsharp_mb_ComputedSum()))*100+__gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__RefOutDereferenceKernels__ReadInInt(__gsharp_temp_address<int>(15));
-__gsharp_id_1_output[__gsharp_id_2_tid*6+5]=__gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__RefOutDereferenceKernels__ReadInLong(__gsharp_temp_address<long long>(__gsharp_id_3_x))*1000000+__gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__RefOutDereferenceKernels__ReadInLong(__gsharp_temp_address<long long>(__gsharp_id_3_x+1))*10000+__gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__RefOutDereferenceKernels__ReadInDouble(__gsharp_temp_address<double>(__gsharp_id_4_f))*100+__gsharp_id_6_sCtor.__gsharp_mb_Field*10+__gsharp_id_6_sCtor.__gsharp_mb_Value;
+__gsharp_id_1_output[__gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_2_tid,6),2)]=__gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__RefOutDereferenceKernels__ForwardInInt(__gsharp_temp_address<int>(__gsharp_add_i32(__gsharp_id_3_x,2)));
+__gsharp_id_1_output[__gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_2_tid,6),3)]=__gsharp_add_i32(__gsharp_add_i32(__gsharp_mul_i32(__gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__RefOutDereferenceKernels__ReadInInt(__gsharp_temp_address<int>((int)threadIdx.x)),10000),__gsharp_mul_i32(__gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__RefOutDereferenceKernels__ReadInInt(__gsharp_temp_address<int>((int)blockDim.x)),100)),__gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__RefOutDereferenceKernels__ReadInInt(__gsharp_temp_address<int>(__gsharp_id_0_input.length)));
+__gsharp_id_1_output[__gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_2_tid,6),4)]=__gsharp_add_i32(__gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_5_s.__gsharp_mb_PassComputedToIn(),10000),__gsharp_mul_i32(__gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__RefOutDereferenceKernels__ReadInInt(__gsharp_temp_address<int>(__gsharp_id_5_s.__gsharp_mb_ComputedSum())),100)),__gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__RefOutDereferenceKernels__ReadInInt(__gsharp_temp_address<int>(15)));
+__gsharp_id_1_output[__gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_2_tid,6),5)]=__gsharp_add_i32(__gsharp_add_i32(__gsharp_add_i32(__gsharp_add_i32(__gsharp_mul_i32(__gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__RefOutDereferenceKernels__ReadInLong(__gsharp_temp_address<long long>(__gsharp_id_3_x)),1000000),__gsharp_mul_i32(__gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__RefOutDereferenceKernels__ReadInLong(__gsharp_temp_address<long long>(__gsharp_add_i32(__gsharp_id_3_x,1))),10000)),__gsharp_mul_i32(__gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__RefOutDereferenceKernels__ReadInDouble(__gsharp_temp_address<double>(__gsharp_id_4_f)),100)),__gsharp_mul_i32(__gsharp_id_6_sCtor.__gsharp_mb_Field,10)),__gsharp_id_6_sCtor.__gsharp_mb_Value);
 __gsharp_state=-1;
 return;
 }
@@ -1114,7 +1114,7 @@ struct __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__RefTestStruct
 int __gsharp_mb_Field;
 int __gsharp_mb_Value;
 __device__ inline int __gsharp_mb_ComputedSum() const {
-return __gsharp_mb_Field+__gsharp_mb_Value;
+return __gsharp_add_i32(__gsharp_mb_Field,__gsharp_mb_Value);
 }
 __device__ inline int __gsharp_mb_PassComputedToIn() const {
 return __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__RefOutDereferenceKernels__ReadInInt(__gsharp_temp_address<int>(__gsharp_mb_ComputedSum()));
@@ -1151,10 +1151,10 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-int __gsharp_id_3_tid = threadIdx.x;
-__gsharp_id_2_output[__gsharp_id_3_tid*3]=__gsharp_id_0_scalar+__gsharp_id_1_s.__gsharp_mb_Field*100+__gsharp_id_1_s.__gsharp_mb_Value;
-__gsharp_id_2_output[__gsharp_id_3_tid*3+1]=__gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__RefOutDereferenceKernels__ReadInInt(&__gsharp_id_0_scalar)*1000+__gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__RefOutDereferenceKernels__ReadRefReadOnlyInt(&__gsharp_id_0_scalar);
-__gsharp_id_2_output[__gsharp_id_3_tid*3+2]=__gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__RefOutDereferenceKernels__ReadInStruct(&__gsharp_id_1_s)*1000+__gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__RefOutDereferenceKernels__ReadRefReadOnlyStruct(&__gsharp_id_1_s);
+int __gsharp_id_3_tid = (int)threadIdx.x;
+__gsharp_id_2_output[__gsharp_mul_i32(__gsharp_id_3_tid,3)]=__gsharp_add_i32(__gsharp_add_i32(__gsharp_id_0_scalar,__gsharp_mul_i32(__gsharp_id_1_s.__gsharp_mb_Field,100)),__gsharp_id_1_s.__gsharp_mb_Value);
+__gsharp_id_2_output[__gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_3_tid,3),1)]=__gsharp_add_i32(__gsharp_mul_i32(__gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__RefOutDereferenceKernels__ReadInInt(&__gsharp_id_0_scalar),1000),__gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__RefOutDereferenceKernels__ReadRefReadOnlyInt(&__gsharp_id_0_scalar));
+__gsharp_id_2_output[__gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_3_tid,3),2)]=__gsharp_add_i32(__gsharp_mul_i32(__gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__RefOutDereferenceKernels__ReadInStruct(&__gsharp_id_1_s),1000),__gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__RefOutDereferenceKernels__ReadRefReadOnlyStruct(&__gsharp_id_1_s));
 __gsharp_state=-1;
 return;
 }

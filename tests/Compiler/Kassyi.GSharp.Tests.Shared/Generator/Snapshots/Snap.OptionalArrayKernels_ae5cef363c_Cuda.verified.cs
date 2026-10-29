@@ -90,7 +90,7 @@ public static partial class AotContexts
 {
 }
 public const string IsNullBiasKernel_Source = @"extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__OptionalArrayKernels__IsNullBiasKernel(GSharpArray<float> __gsharp_id_0_x, GSharpArray<float> __gsharp_id_1_bias){
-int __gsharp_id_2_i = threadIdx.x;
+int __gsharp_id_2_i = (int)threadIdx.x;
 __gsharp_id_0_x[__gsharp_id_2_i]=((__gsharp_id_1_bias.data == nullptr)?__gsharp_id_0_x[__gsharp_id_2_i]:__gsharp_id_0_x[__gsharp_id_2_i]+__gsharp_id_1_bias[__gsharp_id_2_i]);
 }
 ";
@@ -235,7 +235,7 @@ finally
 }
 #pragma warning restore CS8500
 public const string EqualsNullBiasKernel_Source = @"extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__OptionalArrayKernels__EqualsNullBiasKernel(GSharpArray<float> __gsharp_id_0_x, GSharpArray<float> __gsharp_id_1_bias){
-int __gsharp_id_2_i = threadIdx.x;
+int __gsharp_id_2_i = (int)threadIdx.x;
 __gsharp_id_0_x[__gsharp_id_2_i]=((__gsharp_id_1_bias.data == nullptr)?(-1.0f):(((__gsharp_id_1_bias.data != nullptr)?__gsharp_id_1_bias[__gsharp_id_2_i]:(-2.0f))));
 }
 ";
@@ -380,7 +380,7 @@ finally
 }
 #pragma warning restore CS8500
 public const string MemoryAddKernel_Source = @"extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__OptionalArrayKernels__MemoryAddKernel(GSharpArray<float> __gsharp_id_0_x, GSharpArray<float> __gsharp_id_1_y){
-int __gsharp_id_2_i = threadIdx.x;
+int __gsharp_id_2_i = (int)threadIdx.x;
 __gsharp_id_0_x[__gsharp_id_2_i]=__gsharp_id_0_x[__gsharp_id_2_i]+__gsharp_id_1_y[__gsharp_id_2_i];
 }
 ";
@@ -514,7 +514,7 @@ finally
 }
 #pragma warning restore CS8500
 public const string SegmentScaleKernel_Source = @"extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__OptionalArrayKernels__SegmentScaleKernel(GSharpArray<float> __gsharp_id_0_segment){
-int __gsharp_id_1_i = threadIdx.x;
+int __gsharp_id_1_i = (int)threadIdx.x;
 __gsharp_id_0_segment[__gsharp_id_1_i]=__gsharp_id_0_segment[__gsharp_id_1_i]*2.0f+__gsharp_id_0_segment.length;
 }
 ";
@@ -621,7 +621,7 @@ finally
 }
 #pragma warning restore CS8500
 public const string ImmutableAddKernel_Source = @"extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__OptionalArrayKernels__ImmutableAddKernel(GSharpArray<float> __gsharp_id_0_x, GSharpArray<float> __gsharp_id_1_y){
-int __gsharp_id_2_i = threadIdx.x;
+int __gsharp_id_2_i = (int)threadIdx.x;
 __gsharp_id_0_x[__gsharp_id_2_i]=__gsharp_id_0_x[__gsharp_id_2_i]+__gsharp_id_1_y[__gsharp_id_2_i];
 }
 ";
@@ -761,7 +761,7 @@ finally
 }
 #pragma warning restore CS8500
 public const string OptionalMemoryKernel_Source = @"extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__OptionalArrayKernels__OptionalMemoryKernel(GSharpArray<float> __gsharp_id_0_x, GSharpArray<float> __gsharp_id_1_bias){
-int __gsharp_id_2_i = threadIdx.x;
+int __gsharp_id_2_i = (int)threadIdx.x;
 if((__gsharp_id_1_bias.data != nullptr))
 {
 __gsharp_id_0_x[__gsharp_id_2_i]=__gsharp_id_0_x[__gsharp_id_2_i]+__gsharp_id_1_bias[__gsharp_id_2_i];
@@ -909,7 +909,7 @@ finally
 }
 #pragma warning restore CS8500
 public const string OptionalSegmentKernel_Source = @"extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__OptionalArrayKernels__OptionalSegmentKernel(GSharpArray<float> __gsharp_id_0_x, GSharpArray<float> __gsharp_id_1_bias){
-int __gsharp_id_2_i = threadIdx.x;
+int __gsharp_id_2_i = (int)threadIdx.x;
 if((__gsharp_id_1_bias.data != nullptr))
 {
 __gsharp_id_0_x[__gsharp_id_2_i]=__gsharp_id_0_x[__gsharp_id_2_i]+__gsharp_id_1_bias[__gsharp_id_2_i];
@@ -1058,7 +1058,7 @@ finally
 #pragma warning restore CS8500
 public const string ScaleKernel_Source = @"extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__OptionalArrayKernels__ScaleKernel(GSharpArray<float> __gsharp_id_0_values, float* __restrict__ __gsharp_auto_result){
 unsigned int __gsharp_global_tid = (blockIdx.z * gridDim.y * gridDim.x + blockIdx.y * gridDim.x + blockIdx.x) * (blockDim.x * blockDim.y * blockDim.z) + threadIdx.z * blockDim.y * blockDim.x + threadIdx.y * blockDim.x + threadIdx.x;
-__gsharp_auto_result[__gsharp_global_tid] = __gsharp_id_0_values[threadIdx.x]*2.0f;
+__gsharp_auto_result[__gsharp_global_tid] = __gsharp_id_0_values[(int)threadIdx.x]*2.0f;
 return;
 }
 ";

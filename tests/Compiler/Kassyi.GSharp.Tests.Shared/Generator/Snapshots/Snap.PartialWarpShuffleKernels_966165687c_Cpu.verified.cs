@@ -52,7 +52,7 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-__gsharp_ctx->__gsharp_id_2_v=threadIdx.x+1;
+__gsharp_ctx->__gsharp_id_2_v=__gsharp_add_i32((int)threadIdx.x,1);
 __gsharp_warp_exchange_assign(__gsharp_ctx->__gsharp_id_2_v);
 __gsharp_state=1;
 return;
@@ -62,7 +62,7 @@ __gsharp_switch_1_state_1:
 {
 auto __gsharp_warp_temp_0 = __gsharp_warp_shuffle_read_down_sync(__gsharp_root,0xFFFFFFFFu,__gsharp_ctx->__gsharp_id_2_v,__gsharp_id_1_delta,32,""PartialWarpShuffleKernels.cs(15,13)"");
 __gsharp_ctx->__gsharp_id_2_v=__gsharp_warp_temp_0;
-__gsharp_id_0_result[threadIdx.x]=__gsharp_ctx->__gsharp_id_2_v;
+__gsharp_id_0_result[(int)threadIdx.x]=__gsharp_ctx->__gsharp_id_2_v;
 __gsharp_state=-1;
 return;
 }
@@ -309,7 +309,7 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-__gsharp_ctx->__gsharp_id_2_v=threadIdx.x+1;
+__gsharp_ctx->__gsharp_id_2_v=__gsharp_add_i32((int)threadIdx.x,1);
 __gsharp_warp_exchange_assign(__gsharp_ctx->__gsharp_id_2_v);
 __gsharp_state=1;
 return;
@@ -319,7 +319,7 @@ __gsharp_switch_1_state_1:
 {
 auto __gsharp_warp_temp_0 = __gsharp_warp_shuffle_read_xor_sync(__gsharp_root,0xFFFFFFFFu,__gsharp_ctx->__gsharp_id_2_v,__gsharp_id_1_laneMask,32,""PartialWarpShuffleKernels.cs(23,13)"");
 __gsharp_ctx->__gsharp_id_2_v=__gsharp_warp_temp_0;
-__gsharp_id_0_result[threadIdx.x]=__gsharp_ctx->__gsharp_id_2_v;
+__gsharp_id_0_result[(int)threadIdx.x]=__gsharp_ctx->__gsharp_id_2_v;
 __gsharp_state=-1;
 return;
 }
@@ -566,7 +566,7 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-__gsharp_ctx->__gsharp_id_3_v=threadIdx.x+1;
+__gsharp_ctx->__gsharp_id_3_v=__gsharp_add_i32((int)threadIdx.x,1);
 __gsharp_warp_exchange_assign(__gsharp_ctx->__gsharp_id_3_v);
 __gsharp_state=1;
 return;
@@ -576,7 +576,7 @@ __gsharp_switch_1_state_1:
 {
 auto __gsharp_warp_temp_0 = __gsharp_warp_shuffle_read_sync(__gsharp_root,0xFFFFFFFFu,__gsharp_ctx->__gsharp_id_3_v,__gsharp_id_1_srcLane,__gsharp_id_2_width,""PartialWarpShuffleKernels.cs(31,13)"");
 __gsharp_ctx->__gsharp_id_3_v=__gsharp_warp_temp_0;
-__gsharp_id_0_result[threadIdx.x]=__gsharp_ctx->__gsharp_id_3_v;
+__gsharp_id_0_result[(int)threadIdx.x]=__gsharp_ctx->__gsharp_id_3_v;
 __gsharp_state=-1;
 return;
 }
@@ -823,7 +823,7 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-__gsharp_ctx->__gsharp_id_2_v=threadIdx.x+1;
+__gsharp_ctx->__gsharp_id_2_v=__gsharp_add_i32((int)threadIdx.x,1);
 __gsharp_warp_exchange_assign(__gsharp_ctx->__gsharp_id_2_v);
 __gsharp_state=1;
 return;
@@ -833,7 +833,7 @@ __gsharp_switch_1_state_1:
 {
 auto __gsharp_warp_temp_0 = __gsharp_warp_shuffle_read_down_sync(__gsharp_root,0xFFFFFFFFu,__gsharp_ctx->__gsharp_id_2_v,1u,__gsharp_id_1_width,""PartialWarpShuffleKernels.cs(39,13)"");
 __gsharp_ctx->__gsharp_id_2_v=__gsharp_warp_temp_0;
-__gsharp_id_0_result[threadIdx.x]=__gsharp_ctx->__gsharp_id_2_v;
+__gsharp_id_0_result[(int)threadIdx.x]=__gsharp_ctx->__gsharp_id_2_v;
 __gsharp_state=-1;
 return;
 }
@@ -1080,7 +1080,7 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-__gsharp_ctx->__gsharp_id_3_v=threadIdx.x+1;
+__gsharp_ctx->__gsharp_id_3_v=__gsharp_add_i32((int)threadIdx.x,1);
 __gsharp_warp_exchange_assign(__gsharp_ctx->__gsharp_id_3_v);
 __gsharp_state=1;
 return;
@@ -1090,7 +1090,7 @@ __gsharp_switch_1_state_1:
 {
 auto __gsharp_warp_temp_0 = __gsharp_warp_shuffle_read_xor_sync(__gsharp_root,0xFFFFFFFFu,__gsharp_ctx->__gsharp_id_3_v,__gsharp_id_1_laneMask,__gsharp_id_2_width,""PartialWarpShuffleKernels.cs(47,13)"");
 __gsharp_ctx->__gsharp_id_3_v=__gsharp_warp_temp_0;
-__gsharp_id_0_result[threadIdx.x]=__gsharp_ctx->__gsharp_id_3_v;
+__gsharp_id_0_result[(int)threadIdx.x]=__gsharp_ctx->__gsharp_id_3_v;
 __gsharp_state=-1;
 return;
 }
@@ -1337,7 +1337,7 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-__gsharp_ctx->__gsharp_id_3_v=threadIdx.x+1;
+__gsharp_ctx->__gsharp_id_3_v=__gsharp_add_i32((int)threadIdx.x,1);
 __gsharp_warp_exchange_assign(__gsharp_ctx->__gsharp_id_3_v);
 __gsharp_state=1;
 return;
@@ -1347,7 +1347,7 @@ __gsharp_switch_1_state_1:
 {
 auto __gsharp_warp_temp_0 = __gsharp_warp_shuffle_read_up_sync(__gsharp_root,0xFFFFFFFFu,__gsharp_ctx->__gsharp_id_3_v,__gsharp_id_1_delta,__gsharp_id_2_width,""PartialWarpShuffleKernels.cs(55,13)"");
 __gsharp_ctx->__gsharp_id_3_v=__gsharp_warp_temp_0;
-__gsharp_id_0_result[threadIdx.x]=__gsharp_ctx->__gsharp_id_3_v;
+__gsharp_id_0_result[(int)threadIdx.x]=__gsharp_ctx->__gsharp_id_3_v;
 __gsharp_state=-1;
 return;
 }
@@ -1594,7 +1594,7 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-__gsharp_ctx->__gsharp_id_1_v=threadIdx.x+1;
+__gsharp_ctx->__gsharp_id_1_v=__gsharp_add_i32((int)threadIdx.x,1);
 __gsharp_warp_exchange_assign(__gsharp_ctx->__gsharp_id_1_v);
 __gsharp_state=1;
 return;
@@ -1604,7 +1604,7 @@ __gsharp_switch_1_state_1:
 {
 auto __gsharp_warp_temp_0 = __gsharp_warp_shuffle_read_sync(__gsharp_root,0xFFFFFFFFu,__gsharp_ctx->__gsharp_id_1_v,3,8,""PartialWarpShuffleKernels.cs(64,13)"");
 __gsharp_ctx->__gsharp_id_1_v=__gsharp_warp_temp_0;
-__gsharp_id_0_result[threadIdx.x]=__gsharp_ctx->__gsharp_id_1_v;
+__gsharp_id_0_result[(int)threadIdx.x]=__gsharp_ctx->__gsharp_id_1_v;
 __gsharp_state=-1;
 return;
 }
@@ -1851,7 +1851,7 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-__gsharp_ctx->__gsharp_id_1_v=threadIdx.x+1;
+__gsharp_ctx->__gsharp_id_1_v=__gsharp_add_i32((int)threadIdx.x,1);
 __gsharp_warp_exchange_assign(__gsharp_ctx->__gsharp_id_1_v);
 __gsharp_state=1;
 return;
@@ -1861,7 +1861,7 @@ __gsharp_switch_1_state_1:
 {
 auto __gsharp_warp_temp_0 = __gsharp_warp_shuffle_read_sync(__gsharp_root,0xFFFFFFFFu,__gsharp_ctx->__gsharp_id_1_v,3,8,""PartialWarpShuffleKernels.cs(73,13)"");
 __gsharp_ctx->__gsharp_id_1_v=__gsharp_warp_temp_0;
-__gsharp_id_0_result[threadIdx.x]=__gsharp_ctx->__gsharp_id_1_v;
+__gsharp_id_0_result[(int)threadIdx.x]=__gsharp_ctx->__gsharp_id_1_v;
 __gsharp_state=-1;
 return;
 }
@@ -2107,7 +2107,7 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-__gsharp_id_0_result[threadIdx.x]=__activemask();
+__gsharp_id_0_result[(int)threadIdx.x]=__activemask();
 __gsharp_state=-1;
 return;
 }

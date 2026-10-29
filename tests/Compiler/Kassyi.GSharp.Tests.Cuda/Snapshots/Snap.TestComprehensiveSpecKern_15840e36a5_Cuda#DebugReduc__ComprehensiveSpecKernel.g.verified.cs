@@ -196,19 +196,19 @@ __gsharp_dsmem_DebugReduc__ComprehensiveSpecKernel__ProcessPhysics* __gsharp_dsm
 __gsharp_dsmem_init(__gsharp_dsmem);
 (*__gsharp_id_2_successFlag)=false;
 float __gsharp_id_6_Gravity = 9.8f;
-int __gsharp_id_7_tx = threadIdx.x;
-int __gsharp_id_8_ty = threadIdx.y;
-int __gsharp_id_9_tz = threadIdx.z;
-int __gsharp_id_10_bx = blockIdx.x;
-int __gsharp_id_11_by = blockIdx.y;
-int __gsharp_id_12_bz = blockIdx.z;
-int __gsharp_id_13_bdimX = blockDim.x;
-int __gsharp_id_14_bdimY = blockDim.y;
-int __gsharp_id_15_bdimZ = blockDim.z;
-int __gsharp_id_16_gdimX = gridDim.x;
-int __gsharp_id_17_gdimY = gridDim.y;
-int __gsharp_id_18_gdimZ = gridDim.z;
-int __gsharp_id_19_tid = __gsharp_id_7_tx+__gsharp_id_10_bx*__gsharp_id_13_bdimX;
+int __gsharp_id_7_tx = (int)threadIdx.x;
+int __gsharp_id_8_ty = (int)threadIdx.y;
+int __gsharp_id_9_tz = (int)threadIdx.z;
+int __gsharp_id_10_bx = (int)blockIdx.x;
+int __gsharp_id_11_by = (int)blockIdx.y;
+int __gsharp_id_12_bz = (int)blockIdx.z;
+int __gsharp_id_13_bdimX = (int)blockDim.x;
+int __gsharp_id_14_bdimY = (int)blockDim.y;
+int __gsharp_id_15_bdimZ = (int)blockDim.z;
+int __gsharp_id_16_gdimX = (int)gridDim.x;
+int __gsharp_id_17_gdimY = (int)gridDim.y;
+int __gsharp_id_18_gdimZ = (int)gridDim.z;
+int __gsharp_id_19_tid = __gsharp_add_i32(__gsharp_id_7_tx,__gsharp_mul_i32(__gsharp_id_10_bx,__gsharp_id_13_bdimX));
 __shared__ int __gsharp_id_20_staticCache[10000];
 float* __gsharp_id_21_dynamicCache = (float*)__gsharp_dsmem_place<__gsharp_dsmem_DebugReduc__ComprehensiveSpecKernel__ProcessPhysics::Slot<0xe20e18017ad9544dull>>(__gsharp_dsmem, (unsigned long long)(long long)(__gsharp_id_4_particleCount) * sizeof(float), __GSHARP_DSMEM_ALIGN(float));
 __shared__ int __gsharp_id_22_targetTypedCache[256];
@@ -239,11 +239,11 @@ int __gsharp_id_30_counter = 0;
 while(__gsharp_id_30_counter<2)
 {
 __gsharp_id_28_mag=(float)__gsharp_min_f32(__gsharp_id_28_mag,__gsharp_id_28_mag+1);
-__gsharp_id_30_counter++;
+__gsharp_id_30_counter=__gsharp_add_i32(__gsharp_id_30_counter,1);
 }
 do
 {
-__gsharp_id_30_counter--;
+__gsharp_id_30_counter=__gsharp_sub_i32(__gsharp_id_30_counter,1);
 }
 while(__gsharp_id_30_counter>0);
 switch(__gsharp_id_7_tx)
@@ -289,7 +289,7 @@ bool __gsharp_id_37_condition1 = __gsharp_id_7_tx>0;
 bool __gsharp_id_38_condition2 = __gsharp_id_8_ty==0;
 if(__gsharp_id_37_condition1&&__gsharp_id_38_condition2)
 {
-int __gsharp_id_39_bitwise = (__gsharp_id_7_tx<<2)|(__gsharp_id_8_ty>>1)^0xFF;
+int __gsharp_id_39_bitwise = (__gsharp_shl_i32(__gsharp_id_7_tx,2))|(__gsharp_id_8_ty>>1)^0xFF;
 __gsharp_id_39_bitwise&=~1;
 }
 else
@@ -489,7 +489,7 @@ finally
 }
 #pragma warning restore CS8500
 public const string CooperativePhysicsProcess_Source = @"extern ""C"" __global__ void __gsharp_k_DebugReduc__ComprehensiveSpecKernel__CooperativePhysicsProcess(GSharpArray<int> __gsharp_id_0_data){
-int __gsharp_id_1_tid = threadIdx.x;
+int __gsharp_id_1_tid = (int)threadIdx.x;
 __gsharp_id_0_data[__gsharp_id_1_tid]=__gsharp_id_1_tid;
 cg::this_grid().sync();
 }

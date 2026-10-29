@@ -20,7 +20,7 @@ public static partial class AotContexts
 {
 }
 public const string CopyAndReleaseKernel_Source = @"extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__NativeApi__GenericIntrinsicCallKernels__CopyAndReleaseKernel(GSharpArray<int> __gsharp_id_0_dst, GSharpArray<int> __gsharp_id_1_src){
-int __gsharp_id_2_tid = threadIdx.x;
+int __gsharp_id_2_tid = (int)threadIdx.x;
 test_copy_async<int>(&__gsharp_id_0_dst[__gsharp_id_2_tid],&__gsharp_id_1_src[__gsharp_id_2_tid]);
 test_copy_async<int>(&__gsharp_id_0_dst[__gsharp_id_2_tid],&__gsharp_id_1_src[__gsharp_id_2_tid]);
 test_release(__gsharp_id_2_tid);
@@ -28,7 +28,7 @@ test_release(__gsharp_id_2_tid);
 auto&& __gsharp_seq_0 = __gsharp_id_0_dst[__gsharp_id_2_tid];
 auto __gsharp_seq_1 = __gsharp_seq_0;
 auto __gsharp_seq_2 = test_count();
-return __gsharp_seq_0 = (int)(__gsharp_seq_1+__gsharp_seq_2);
+return __gsharp_seq_0 = (int)__gsharp_add_i32(__gsharp_seq_1,__gsharp_seq_2);
 }());
 }
 ";

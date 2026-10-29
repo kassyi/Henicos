@@ -16,7 +16,7 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-int __gsharp_id_2_tid = threadIdx.x;
+int __gsharp_id_2_tid = (int)threadIdx.x;
 int __gsharp_id_3_val = __gsharp_id_0_input[__gsharp_id_2_tid];
 __gsharp_id_1_output[__gsharp_id_2_tid]=([&]() {
 switch(__gsharp_id_3_val)

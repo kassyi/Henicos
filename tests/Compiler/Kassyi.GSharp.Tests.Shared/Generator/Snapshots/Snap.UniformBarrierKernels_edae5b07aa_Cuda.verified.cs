@@ -89,7 +89,7 @@ public static partial class AotContexts
 public const string FlatBarrierKernel_Source = @"extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__TestCases__Analyzers__BarrierUsage__UniformBarrierKernels__FlatBarrierKernel(GSharpArray<int> __gsharp_id_0_buffer){
 __gsharp_id_0_buffer[0]=1;
 __syncthreads();
-__gsharp_id_0_buffer[0]+=2;
+__gsharp_id_0_buffer[0]=__gsharp_add_i32(__gsharp_id_0_buffer[0],2);
 }
 ";
 public static readonly string FlatBarrierKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +FlatBarrierKernel_Source;
@@ -434,7 +434,7 @@ GSharpArray<int> __gsharp_id_1_localSpan = GSharpArray<int>{__gsharp_id_0_buffer
 __gsharp_id_1_localSpan[0]=100;
 __syncthreads();
 GSharpArray<int> __gsharp_id_2_localSpan = GSharpArray<int>{__gsharp_id_0_buffer, 10};
-__gsharp_id_2_localSpan[0]+=200;
+__gsharp_id_2_localSpan[0]=__gsharp_add_i32(__gsharp_id_2_localSpan[0],200);
 }
 ";
 public static readonly string ScopedSpanBeforeBarrierKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +ScopedSpanBeforeBarrierKernel_Source;

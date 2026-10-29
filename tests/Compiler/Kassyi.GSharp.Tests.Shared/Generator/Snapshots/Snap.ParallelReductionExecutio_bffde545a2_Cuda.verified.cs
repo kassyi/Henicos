@@ -95,9 +95,9 @@ __gsharp_fusion_res += __gsharp_val_0;
 }
 return __gsharp_block_reduce(__gsharp_fusion_res, __gsharp_plus{});
 }());
-if(threadIdx.x==0)
+if((int)threadIdx.x==0)
 {
-__gsharp_id_1_result[blockIdx.x]=__gsharp_id_2_sum;
+__gsharp_id_1_result[(int)blockIdx.x]=__gsharp_id_2_sum;
 }
 }
 ";
