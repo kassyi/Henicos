@@ -92,7 +92,7 @@ public const string DebugName_A = "global::System.Int32";
 [System.Runtime.InteropServices.FieldOffset(0)]
 public global::System.Int32 A;
 }
-public static unsafe void Marshal_StructSizeOddInt(ref global::Kassyi.GSharp.Tests.Shared.Core.StructSizeOddInt host, ref AotContexts.StructSizeOddInt native, bool isDevicePtr, global::Kassyi.GSharp.Runtime.Interop.DeviceArrayRegions? allocatedPtrs, IntPtr hStream = default)
+public static unsafe void Marshal_StructSizeOddInt(ref global::Kassyi.GSharp.Tests.Shared.Core.StructSizeOddInt host, ref AotContexts.StructSizeOddInt native, bool isDevicePtr, global::Kassyi.GSharp.Runtime.Interop.DeviceArrayRegions? deviceArrays, IntPtr hStream = default)
 {
 native = default;
 native.A = host.A;
@@ -108,7 +108,7 @@ public const string DebugName_A = "global::System.Int32";
 [System.Runtime.InteropServices.FieldOffset(0)]
 public global::System.Int32 A;
 }
-public static unsafe void Marshal_StructSizePaddedInt(ref global::Kassyi.GSharp.Tests.Shared.Core.StructSizePaddedInt host, ref AotContexts.StructSizePaddedInt native, bool isDevicePtr, global::Kassyi.GSharp.Runtime.Interop.DeviceArrayRegions? allocatedPtrs, IntPtr hStream = default)
+public static unsafe void Marshal_StructSizePaddedInt(ref global::Kassyi.GSharp.Tests.Shared.Core.StructSizePaddedInt host, ref AotContexts.StructSizePaddedInt native, bool isDevicePtr, global::Kassyi.GSharp.Runtime.Interop.DeviceArrayRegions? deviceArrays, IntPtr hStream = default)
 {
 native = System.Runtime.CompilerServices.Unsafe.As<global::Kassyi.GSharp.Tests.Shared.Core.StructSizePaddedInt, AotContexts.StructSizePaddedInt>(ref host);
 }

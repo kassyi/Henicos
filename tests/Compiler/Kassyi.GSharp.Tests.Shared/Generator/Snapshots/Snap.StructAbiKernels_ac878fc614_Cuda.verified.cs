@@ -110,7 +110,7 @@ public const string DebugName_C = "global::System.Int32";
 [System.Runtime.InteropServices.FieldOffset(9)]
 public global::System.Int32 C;
 }
-public static unsafe void Marshal_AbiPackedStruct(ref global::Kassyi.GSharp.Tests.Shared.Core.AbiPackedStruct host, ref AotContexts.AbiPackedStruct native, bool isDevicePtr, global::Kassyi.GSharp.Runtime.Interop.DeviceArrayRegions? allocatedPtrs, IntPtr hStream = default)
+public static unsafe void Marshal_AbiPackedStruct(ref global::Kassyi.GSharp.Tests.Shared.Core.AbiPackedStruct host, ref AotContexts.AbiPackedStruct native, bool isDevicePtr, global::Kassyi.GSharp.Runtime.Interop.DeviceArrayRegions? deviceArrays, IntPtr hStream = default)
 {
 native = System.Runtime.CompilerServices.Unsafe.As<global::Kassyi.GSharp.Tests.Shared.Core.AbiPackedStruct, AotContexts.AbiPackedStruct>(ref host);
 }
@@ -131,7 +131,7 @@ public const string DebugName_C = "global::System.Int32";
 [System.Runtime.InteropServices.FieldOffset(20)]
 public global::System.Int32 C;
 }
-public static unsafe void Marshal_AbiInlineArrayStruct(ref global::Kassyi.GSharp.Tests.Shared.Core.AbiInlineArrayStruct host, ref AotContexts.AbiInlineArrayStruct native, bool isDevicePtr, global::Kassyi.GSharp.Runtime.Interop.DeviceArrayRegions? allocatedPtrs, IntPtr hStream = default)
+public static unsafe void Marshal_AbiInlineArrayStruct(ref global::Kassyi.GSharp.Tests.Shared.Core.AbiInlineArrayStruct host, ref AotContexts.AbiInlineArrayStruct native, bool isDevicePtr, global::Kassyi.GSharp.Runtime.Interop.DeviceArrayRegions? deviceArrays, IntPtr hStream = default)
 {
 native = System.Runtime.CompilerServices.Unsafe.As<global::Kassyi.GSharp.Tests.Shared.Core.AbiInlineArrayStruct, AotContexts.AbiInlineArrayStruct>(ref host);
 }
@@ -146,7 +146,7 @@ public const string DebugName_Element = "global::System.Int32";
 [System.Runtime.InteropServices.FieldOffset(0)]
 public fixed byte Element[16];
 }
-public static unsafe void Marshal_AbiFourInts(ref global::Kassyi.GSharp.Tests.Shared.Core.AbiFourInts host, ref AotContexts.AbiFourInts native, bool isDevicePtr, global::Kassyi.GSharp.Runtime.Interop.DeviceArrayRegions? allocatedPtrs, IntPtr hStream = default)
+public static unsafe void Marshal_AbiFourInts(ref global::Kassyi.GSharp.Tests.Shared.Core.AbiFourInts host, ref AotContexts.AbiFourInts native, bool isDevicePtr, global::Kassyi.GSharp.Runtime.Interop.DeviceArrayRegions? deviceArrays, IntPtr hStream = default)
 {
 native = System.Runtime.CompilerServices.Unsafe.As<global::Kassyi.GSharp.Tests.Shared.Core.AbiFourInts, AotContexts.AbiFourInts>(ref host);
 }
@@ -167,7 +167,7 @@ public const string DebugName_C = "global::System.Int32";
 [System.Runtime.InteropServices.FieldOffset(16)]
 public global::System.Int32 C;
 }
-public static unsafe void Marshal_AbiCoreFieldStruct(ref global::Kassyi.GSharp.Tests.Shared.Core.AbiCoreFieldStruct host, ref AotContexts.AbiCoreFieldStruct native, bool isDevicePtr, global::Kassyi.GSharp.Runtime.Interop.DeviceArrayRegions? allocatedPtrs, IntPtr hStream = default)
+public static unsafe void Marshal_AbiCoreFieldStruct(ref global::Kassyi.GSharp.Tests.Shared.Core.AbiCoreFieldStruct host, ref AotContexts.AbiCoreFieldStruct native, bool isDevicePtr, global::Kassyi.GSharp.Runtime.Interop.DeviceArrayRegions? deviceArrays, IntPtr hStream = default)
 {
 native = System.Runtime.CompilerServices.Unsafe.As<global::Kassyi.GSharp.Tests.Shared.Core.AbiCoreFieldStruct, AotContexts.AbiCoreFieldStruct>(ref host);
 }
@@ -188,7 +188,7 @@ public const string DebugName_C = "global::System.Int32";
 [System.Runtime.InteropServices.FieldOffset(20)]
 public global::System.Int32 C;
 }
-public static unsafe void Marshal_AbiPrivateInlineArrayStruct(ref global::Kassyi.GSharp.Tests.Shared.Core.AbiPrivateInlineArrayStruct host, ref AotContexts.AbiPrivateInlineArrayStruct native, bool isDevicePtr, global::Kassyi.GSharp.Runtime.Interop.DeviceArrayRegions? allocatedPtrs, IntPtr hStream = default)
+public static unsafe void Marshal_AbiPrivateInlineArrayStruct(ref global::Kassyi.GSharp.Tests.Shared.Core.AbiPrivateInlineArrayStruct host, ref AotContexts.AbiPrivateInlineArrayStruct native, bool isDevicePtr, global::Kassyi.GSharp.Runtime.Interop.DeviceArrayRegions? deviceArrays, IntPtr hStream = default)
 {
 native = System.Runtime.CompilerServices.Unsafe.As<global::Kassyi.GSharp.Tests.Shared.Core.AbiPrivateInlineArrayStruct, AotContexts.AbiPrivateInlineArrayStruct>(ref host);
 }
@@ -203,7 +203,7 @@ public const string DebugName__element0 = "global::System.Int32";
 [System.Runtime.InteropServices.FieldOffset(0)]
 public fixed byte _element0[16];
 }
-public static unsafe void Marshal_AbiPrivateFourInts(ref global::Kassyi.GSharp.Tests.Shared.Core.AbiPrivateFourInts host, ref AotContexts.AbiPrivateFourInts native, bool isDevicePtr, global::Kassyi.GSharp.Runtime.Interop.DeviceArrayRegions? allocatedPtrs, IntPtr hStream = default)
+public static unsafe void Marshal_AbiPrivateFourInts(ref global::Kassyi.GSharp.Tests.Shared.Core.AbiPrivateFourInts host, ref AotContexts.AbiPrivateFourInts native, bool isDevicePtr, global::Kassyi.GSharp.Runtime.Interop.DeviceArrayRegions? deviceArrays, IntPtr hStream = default)
 {
 native = System.Runtime.CompilerServices.Unsafe.As<global::Kassyi.GSharp.Tests.Shared.Core.AbiPrivateFourInts, AotContexts.AbiPrivateFourInts>(ref host);
 }
@@ -224,7 +224,7 @@ public const string DebugName_C = "global::System.Int32";
 [System.Runtime.InteropServices.FieldOffset(20)]
 public global::System.Int32 C;
 }
-public static unsafe void Marshal_AbiFixedBufferStruct(ref global::Kassyi.GSharp.Tests.Shared.Core.AbiFixedBufferStruct host, ref AotContexts.AbiFixedBufferStruct native, bool isDevicePtr, global::Kassyi.GSharp.Runtime.Interop.DeviceArrayRegions? allocatedPtrs, IntPtr hStream = default)
+public static unsafe void Marshal_AbiFixedBufferStruct(ref global::Kassyi.GSharp.Tests.Shared.Core.AbiFixedBufferStruct host, ref AotContexts.AbiFixedBufferStruct native, bool isDevicePtr, global::Kassyi.GSharp.Runtime.Interop.DeviceArrayRegions? deviceArrays, IntPtr hStream = default)
 {
 native = System.Runtime.CompilerServices.Unsafe.As<global::Kassyi.GSharp.Tests.Shared.Core.AbiFixedBufferStruct, AotContexts.AbiFixedBufferStruct>(ref host);
 }
@@ -245,7 +245,7 @@ public const string DebugName_C = "global::System.Int32";
 [System.Runtime.InteropServices.FieldOffset(16)]
 public global::System.Int32 C;
 }
-public static unsafe void Marshal_AbiAutoPropertyStruct(ref global::Kassyi.GSharp.Tests.Shared.Core.AbiAutoPropertyStruct host, ref AotContexts.AbiAutoPropertyStruct native, bool isDevicePtr, global::Kassyi.GSharp.Runtime.Interop.DeviceArrayRegions? allocatedPtrs, IntPtr hStream = default)
+public static unsafe void Marshal_AbiAutoPropertyStruct(ref global::Kassyi.GSharp.Tests.Shared.Core.AbiAutoPropertyStruct host, ref AotContexts.AbiAutoPropertyStruct native, bool isDevicePtr, global::Kassyi.GSharp.Runtime.Interop.DeviceArrayRegions? deviceArrays, IntPtr hStream = default)
 {
 native = System.Runtime.CompilerServices.Unsafe.As<global::Kassyi.GSharp.Tests.Shared.Core.AbiAutoPropertyStruct, AotContexts.AbiAutoPropertyStruct>(ref host);
 }
@@ -263,7 +263,7 @@ public const string DebugName_C = "global::System.Int32";
 [System.Runtime.InteropServices.FieldOffset(4)]
 public global::System.Int32 C;
 }
-public static unsafe void Marshal_AbiComputedPropertyStruct(ref global::Kassyi.GSharp.Tests.Shared.Core.AbiComputedPropertyStruct host, ref AotContexts.AbiComputedPropertyStruct native, bool isDevicePtr, global::Kassyi.GSharp.Runtime.Interop.DeviceArrayRegions? allocatedPtrs, IntPtr hStream = default)
+public static unsafe void Marshal_AbiComputedPropertyStruct(ref global::Kassyi.GSharp.Tests.Shared.Core.AbiComputedPropertyStruct host, ref AotContexts.AbiComputedPropertyStruct native, bool isDevicePtr, global::Kassyi.GSharp.Runtime.Interop.DeviceArrayRegions? deviceArrays, IntPtr hStream = default)
 {
 native = System.Runtime.CompilerServices.Unsafe.As<global::Kassyi.GSharp.Tests.Shared.Core.AbiComputedPropertyStruct, AotContexts.AbiComputedPropertyStruct>(ref host);
 }

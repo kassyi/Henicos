@@ -134,7 +134,7 @@ public const string DebugName_N = "global::System.Int32";
 [System.Runtime.InteropServices.FieldOffset(88)]
 public global::System.Int32 N;
 }
-public static unsafe void Marshal_BlackScholesKernels_BlackScholesContext(ref global::Henicos.Benchmarks.ComputeBenchmarks.BlackScholesKernels.BlackScholesContext host, ref AotContexts.BlackScholes native, bool isDevicePtr, global::Kassyi.GSharp.Runtime.Interop.DeviceArrayRegions? allocatedPtrs, IntPtr hStream = default)
+public static unsafe void Marshal_BlackScholesKernels_BlackScholesContext(ref global::Henicos.Benchmarks.ComputeBenchmarks.BlackScholesKernels.BlackScholesContext host, ref AotContexts.BlackScholes native, bool isDevicePtr, global::Kassyi.GSharp.Runtime.Interop.DeviceArrayRegions? deviceArrays, IntPtr hStream = default)
 {
 native = default;
 if (host.S != null)
@@ -148,14 +148,14 @@ else
 int size = host.S.Length * sizeof(global::System.Single);
 if (size > 0)
 {
-if (allocatedPtrs != null && allocatedPtrs.TryGetRegion(host.S, out var region))
+if (deviceArrays != null && deviceArrays.TryGetRegion(host.S, out var region))
 {
 native.S.Data = region;
 }
 else
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out native.S.Data, (IntPtr)size, hStream));
-allocatedPtrs?.Add(host.S, native.S.Data);
+deviceArrays?.Add(host.S, native.S.Data);
 var handle = System.Runtime.InteropServices.GCHandle.Alloc(host.S, System.Runtime.InteropServices.GCHandleType.Pinned);
 try
 {
@@ -181,14 +181,14 @@ else
 int size = host.X.Length * sizeof(global::System.Single);
 if (size > 0)
 {
-if (allocatedPtrs != null && allocatedPtrs.TryGetRegion(host.X, out var region))
+if (deviceArrays != null && deviceArrays.TryGetRegion(host.X, out var region))
 {
 native.X.Data = region;
 }
 else
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out native.X.Data, (IntPtr)size, hStream));
-allocatedPtrs?.Add(host.X, native.X.Data);
+deviceArrays?.Add(host.X, native.X.Data);
 var handle = System.Runtime.InteropServices.GCHandle.Alloc(host.X, System.Runtime.InteropServices.GCHandleType.Pinned);
 try
 {
@@ -214,14 +214,14 @@ else
 int size = host.T.Length * sizeof(global::System.Single);
 if (size > 0)
 {
-if (allocatedPtrs != null && allocatedPtrs.TryGetRegion(host.T, out var region))
+if (deviceArrays != null && deviceArrays.TryGetRegion(host.T, out var region))
 {
 native.T.Data = region;
 }
 else
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out native.T.Data, (IntPtr)size, hStream));
-allocatedPtrs?.Add(host.T, native.T.Data);
+deviceArrays?.Add(host.T, native.T.Data);
 var handle = System.Runtime.InteropServices.GCHandle.Alloc(host.T, System.Runtime.InteropServices.GCHandleType.Pinned);
 try
 {
@@ -249,14 +249,14 @@ else
 int size = host.CallResult.Length * sizeof(global::System.Single);
 if (size > 0)
 {
-if (allocatedPtrs != null && allocatedPtrs.TryGetRegion(host.CallResult, out var region))
+if (deviceArrays != null && deviceArrays.TryGetRegion(host.CallResult, out var region))
 {
 native.CallResult.Data = region;
 }
 else
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out native.CallResult.Data, (IntPtr)size, hStream));
-allocatedPtrs?.Add(host.CallResult, native.CallResult.Data);
+deviceArrays?.Add(host.CallResult, native.CallResult.Data);
 var handle = System.Runtime.InteropServices.GCHandle.Alloc(host.CallResult, System.Runtime.InteropServices.GCHandleType.Pinned);
 try
 {
@@ -282,14 +282,14 @@ else
 int size = host.PutResult.Length * sizeof(global::System.Single);
 if (size > 0)
 {
-if (allocatedPtrs != null && allocatedPtrs.TryGetRegion(host.PutResult, out var region))
+if (deviceArrays != null && deviceArrays.TryGetRegion(host.PutResult, out var region))
 {
 native.PutResult.Data = region;
 }
 else
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out native.PutResult.Data, (IntPtr)size, hStream));
-allocatedPtrs?.Add(host.PutResult, native.PutResult.Data);
+deviceArrays?.Add(host.PutResult, native.PutResult.Data);
 var handle = System.Runtime.InteropServices.GCHandle.Alloc(host.PutResult, System.Runtime.InteropServices.GCHandleType.Pinned);
 try
 {

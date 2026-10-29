@@ -99,7 +99,7 @@ public const string DebugName_B = "global::System.Single";
 [System.Runtime.InteropServices.FieldOffset(4)]
 public global::System.Single B;
 }
-public static unsafe void Marshal_ByRefParameterStruct(ref global::Kassyi.GSharp.Tests.Shared.Syntax.ByRefParameterStruct host, ref AotContexts.ByRefParameterStruct native, bool isDevicePtr, global::Kassyi.GSharp.Runtime.Interop.DeviceArrayRegions? allocatedPtrs, IntPtr hStream = default)
+public static unsafe void Marshal_ByRefParameterStruct(ref global::Kassyi.GSharp.Tests.Shared.Syntax.ByRefParameterStruct host, ref AotContexts.ByRefParameterStruct native, bool isDevicePtr, global::Kassyi.GSharp.Runtime.Interop.DeviceArrayRegions? deviceArrays, IntPtr hStream = default)
 {
 native = System.Runtime.CompilerServices.Unsafe.As<global::Kassyi.GSharp.Tests.Shared.Syntax.ByRefParameterStruct, AotContexts.ByRefParameterStruct>(ref host);
 }

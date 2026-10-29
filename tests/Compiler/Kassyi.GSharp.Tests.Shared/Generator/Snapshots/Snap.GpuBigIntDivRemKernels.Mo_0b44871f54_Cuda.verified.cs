@@ -1068,10 +1068,10 @@ public const string DebugName_Exponent = "global::Kassyi.GSharp.Stdlib.GpuMath.B
 [System.Runtime.InteropServices.FieldOffset(704)]
 public AotContexts.ExponentSlice Exponent;
 }
-public static unsafe void Marshal_ModPowNttContext(ref global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.ModPowNttContext host, ref AotContexts.ModPowNtt native, bool isDevicePtr, global::Kassyi.GSharp.Runtime.Interop.DeviceArrayRegions? allocatedPtrs, IntPtr hStream = default)
+public static unsafe void Marshal_ModPowNttContext(ref global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.ModPowNttContext host, ref AotContexts.ModPowNtt native, bool isDevicePtr, global::Kassyi.GSharp.Runtime.Interop.DeviceArrayRegions? deviceArrays, IntPtr hStream = default)
 {
 native = default;
-Marshal_NewtonRaphsonContext(ref host.Core, ref native.Core, isDevicePtr, allocatedPtrs, hStream);
+Marshal_NewtonRaphsonContext(ref host.Core, ref native.Core, isDevicePtr, deviceArrays, hStream);
 if (host.ReciprocalMod != null)
 {
 if (isDevicePtr)
@@ -1083,14 +1083,14 @@ else
 int size = host.ReciprocalMod.Length * sizeof(global::System.UInt32);
 if (size > 0)
 {
-if (allocatedPtrs != null && allocatedPtrs.TryGetRegion(host.ReciprocalMod, out var region))
+if (deviceArrays != null && deviceArrays.TryGetRegion(host.ReciprocalMod, out var region))
 {
 native.ReciprocalMod.Data = region;
 }
 else
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out native.ReciprocalMod.Data, (IntPtr)size, hStream));
-allocatedPtrs?.Add(host.ReciprocalMod, native.ReciprocalMod.Data);
+deviceArrays?.Add(host.ReciprocalMod, native.ReciprocalMod.Data);
 var handle = System.Runtime.InteropServices.GCHandle.Alloc(host.ReciprocalMod, System.Runtime.InteropServices.GCHandleType.Pinned);
 try
 {
@@ -1105,7 +1105,7 @@ handle.Free();
 native.ReciprocalMod.Length = host.ReciprocalMod.Length;
 }
 }
-Marshal_ExponentSliceContext(ref host.Exponent, ref native.Exponent, isDevicePtr, allocatedPtrs, hStream);
+Marshal_ExponentSliceContext(ref host.Exponent, ref native.Exponent, isDevicePtr, deviceArrays, hStream);
 }
 public static unsafe void Unmarshal_ModPowNttContext(ref global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.ModPowNttContext host, ref AotContexts.ModPowNtt native, bool isDevicePtr, IntPtr hStream = default)
 {
@@ -1150,13 +1150,13 @@ public const string DebugName_CorrectionStatus = "global::System.UInt32[]";
 [System.Runtime.InteropServices.FieldOffset(672)]
 public global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy CorrectionStatus;
 }
-public static unsafe void Marshal_NewtonRaphsonContext(ref global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.NewtonRaphsonContext host, ref AotContexts.NewtonRaphson native, bool isDevicePtr, global::Kassyi.GSharp.Runtime.Interop.DeviceArrayRegions? allocatedPtrs, IntPtr hStream = default)
+public static unsafe void Marshal_NewtonRaphsonContext(ref global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.NewtonRaphsonContext host, ref AotContexts.NewtonRaphson native, bool isDevicePtr, global::Kassyi.GSharp.Runtime.Interop.DeviceArrayRegions? deviceArrays, IntPtr hStream = default)
 {
 native = default;
-Marshal_OperandContext(ref host.Operands, ref native.Operands, isDevicePtr, allocatedPtrs, hStream);
-Marshal_DimensionContext(ref host.Dimensions, ref native.Dimensions, isDevicePtr, allocatedPtrs, hStream);
-Marshal_Ntt(ref host.Ntt, ref native.Ntt, isDevicePtr, allocatedPtrs, hStream);
-Marshal_WorkspaceStateContext(ref host.Workspace, ref native.Workspace, isDevicePtr, allocatedPtrs, hStream);
+Marshal_OperandContext(ref host.Operands, ref native.Operands, isDevicePtr, deviceArrays, hStream);
+Marshal_DimensionContext(ref host.Dimensions, ref native.Dimensions, isDevicePtr, deviceArrays, hStream);
+Marshal_Ntt(ref host.Ntt, ref native.Ntt, isDevicePtr, deviceArrays, hStream);
+Marshal_WorkspaceStateContext(ref host.Workspace, ref native.Workspace, isDevicePtr, deviceArrays, hStream);
 if (host.CarryBuffer != null)
 {
 if (isDevicePtr)
@@ -1168,14 +1168,14 @@ else
 int size = host.CarryBuffer.Length * sizeof(global::System.Int64);
 if (size > 0)
 {
-if (allocatedPtrs != null && allocatedPtrs.TryGetRegion(host.CarryBuffer, out var region))
+if (deviceArrays != null && deviceArrays.TryGetRegion(host.CarryBuffer, out var region))
 {
 native.CarryBuffer.Data = region;
 }
 else
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out native.CarryBuffer.Data, (IntPtr)size, hStream));
-allocatedPtrs?.Add(host.CarryBuffer, native.CarryBuffer.Data);
+deviceArrays?.Add(host.CarryBuffer, native.CarryBuffer.Data);
 var handle = System.Runtime.InteropServices.GCHandle.Alloc(host.CarryBuffer, System.Runtime.InteropServices.GCHandleType.Pinned);
 try
 {
@@ -1201,14 +1201,14 @@ else
 int size = host.CorrectionStatus.Length * sizeof(global::System.UInt32);
 if (size > 0)
 {
-if (allocatedPtrs != null && allocatedPtrs.TryGetRegion(host.CorrectionStatus, out var region))
+if (deviceArrays != null && deviceArrays.TryGetRegion(host.CorrectionStatus, out var region))
 {
 native.CorrectionStatus.Data = region;
 }
 else
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out native.CorrectionStatus.Data, (IntPtr)size, hStream));
-allocatedPtrs?.Add(host.CorrectionStatus, native.CorrectionStatus.Data);
+deviceArrays?.Add(host.CorrectionStatus, native.CorrectionStatus.Data);
 var handle = System.Runtime.InteropServices.GCHandle.Alloc(host.CorrectionStatus, System.Runtime.InteropServices.GCHandleType.Pinned);
 try
 {
@@ -1288,7 +1288,7 @@ public const string DebugName_CarryBuffer = "global::System.Int64[]";
 [System.Runtime.InteropServices.FieldOffset(96)]
 public global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy CarryBuffer;
 }
-public static unsafe void Marshal_OperandContext(ref global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.OperandContext host, ref AotContexts.Operand native, bool isDevicePtr, global::Kassyi.GSharp.Runtime.Interop.DeviceArrayRegions? allocatedPtrs, IntPtr hStream = default)
+public static unsafe void Marshal_OperandContext(ref global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.OperandContext host, ref AotContexts.Operand native, bool isDevicePtr, global::Kassyi.GSharp.Runtime.Interop.DeviceArrayRegions? deviceArrays, IntPtr hStream = default)
 {
 native = default;
 if (host.LeftOperand != null)
@@ -1302,14 +1302,14 @@ else
 int size = host.LeftOperand.Length * sizeof(global::System.UInt32);
 if (size > 0)
 {
-if (allocatedPtrs != null && allocatedPtrs.TryGetRegion(host.LeftOperand, out var region))
+if (deviceArrays != null && deviceArrays.TryGetRegion(host.LeftOperand, out var region))
 {
 native.LeftOperand.Data = region;
 }
 else
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out native.LeftOperand.Data, (IntPtr)size, hStream));
-allocatedPtrs?.Add(host.LeftOperand, native.LeftOperand.Data);
+deviceArrays?.Add(host.LeftOperand, native.LeftOperand.Data);
 var handle = System.Runtime.InteropServices.GCHandle.Alloc(host.LeftOperand, System.Runtime.InteropServices.GCHandleType.Pinned);
 try
 {
@@ -1335,14 +1335,14 @@ else
 int size = host.RightOperand.Length * sizeof(global::System.UInt32);
 if (size > 0)
 {
-if (allocatedPtrs != null && allocatedPtrs.TryGetRegion(host.RightOperand, out var region))
+if (deviceArrays != null && deviceArrays.TryGetRegion(host.RightOperand, out var region))
 {
 native.RightOperand.Data = region;
 }
 else
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out native.RightOperand.Data, (IntPtr)size, hStream));
-allocatedPtrs?.Add(host.RightOperand, native.RightOperand.Data);
+deviceArrays?.Add(host.RightOperand, native.RightOperand.Data);
 var handle = System.Runtime.InteropServices.GCHandle.Alloc(host.RightOperand, System.Runtime.InteropServices.GCHandleType.Pinned);
 try
 {
@@ -1368,14 +1368,14 @@ else
 int size = host.TargetOperand.Length * sizeof(global::System.UInt32);
 if (size > 0)
 {
-if (allocatedPtrs != null && allocatedPtrs.TryGetRegion(host.TargetOperand, out var region))
+if (deviceArrays != null && deviceArrays.TryGetRegion(host.TargetOperand, out var region))
 {
 native.TargetOperand.Data = region;
 }
 else
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out native.TargetOperand.Data, (IntPtr)size, hStream));
-allocatedPtrs?.Add(host.TargetOperand, native.TargetOperand.Data);
+deviceArrays?.Add(host.TargetOperand, native.TargetOperand.Data);
 var handle = System.Runtime.InteropServices.GCHandle.Alloc(host.TargetOperand, System.Runtime.InteropServices.GCHandleType.Pinned);
 try
 {
@@ -1401,14 +1401,14 @@ else
 int size = host.ResultBuffer.Length * sizeof(global::System.UInt32);
 if (size > 0)
 {
-if (allocatedPtrs != null && allocatedPtrs.TryGetRegion(host.ResultBuffer, out var region))
+if (deviceArrays != null && deviceArrays.TryGetRegion(host.ResultBuffer, out var region))
 {
 native.ResultBuffer.Data = region;
 }
 else
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out native.ResultBuffer.Data, (IntPtr)size, hStream));
-allocatedPtrs?.Add(host.ResultBuffer, native.ResultBuffer.Data);
+deviceArrays?.Add(host.ResultBuffer, native.ResultBuffer.Data);
 var handle = System.Runtime.InteropServices.GCHandle.Alloc(host.ResultBuffer, System.Runtime.InteropServices.GCHandleType.Pinned);
 try
 {
@@ -1434,14 +1434,14 @@ else
 int size = host.Constant.Length * sizeof(global::System.UInt32);
 if (size > 0)
 {
-if (allocatedPtrs != null && allocatedPtrs.TryGetRegion(host.Constant, out var region))
+if (deviceArrays != null && deviceArrays.TryGetRegion(host.Constant, out var region))
 {
 native.Constant.Data = region;
 }
 else
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out native.Constant.Data, (IntPtr)size, hStream));
-allocatedPtrs?.Add(host.Constant, native.Constant.Data);
+deviceArrays?.Add(host.Constant, native.Constant.Data);
 var handle = System.Runtime.InteropServices.GCHandle.Alloc(host.Constant, System.Runtime.InteropServices.GCHandleType.Pinned);
 try
 {
@@ -1467,14 +1467,14 @@ else
 int size = host.Constant3.Length * sizeof(global::System.UInt32);
 if (size > 0)
 {
-if (allocatedPtrs != null && allocatedPtrs.TryGetRegion(host.Constant3, out var region))
+if (deviceArrays != null && deviceArrays.TryGetRegion(host.Constant3, out var region))
 {
 native.Constant3.Data = region;
 }
 else
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out native.Constant3.Data, (IntPtr)size, hStream));
-allocatedPtrs?.Add(host.Constant3, native.Constant3.Data);
+deviceArrays?.Add(host.Constant3, native.Constant3.Data);
 var handle = System.Runtime.InteropServices.GCHandle.Alloc(host.Constant3, System.Runtime.InteropServices.GCHandleType.Pinned);
 try
 {
@@ -1500,14 +1500,14 @@ else
 int size = host.CarryBuffer.Length * sizeof(global::System.Int64);
 if (size > 0)
 {
-if (allocatedPtrs != null && allocatedPtrs.TryGetRegion(host.CarryBuffer, out var region))
+if (deviceArrays != null && deviceArrays.TryGetRegion(host.CarryBuffer, out var region))
 {
 native.CarryBuffer.Data = region;
 }
 else
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out native.CarryBuffer.Data, (IntPtr)size, hStream));
-allocatedPtrs?.Add(host.CarryBuffer, native.CarryBuffer.Data);
+deviceArrays?.Add(host.CarryBuffer, native.CarryBuffer.Data);
 var handle = System.Runtime.InteropServices.GCHandle.Alloc(host.CarryBuffer, System.Runtime.InteropServices.GCHandleType.Pinned);
 try
 {
@@ -1672,7 +1672,7 @@ public const string DebugName_NumBits = "global::System.Int32";
 [System.Runtime.InteropServices.FieldOffset(36)]
 public global::System.Int32 NumBits;
 }
-public static unsafe void Marshal_DimensionContext(ref global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.DimensionContext host, ref AotContexts.Dimension native, bool isDevicePtr, global::Kassyi.GSharp.Runtime.Interop.DeviceArrayRegions? allocatedPtrs, IntPtr hStream = default)
+public static unsafe void Marshal_DimensionContext(ref global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.DimensionContext host, ref AotContexts.Dimension native, bool isDevicePtr, global::Kassyi.GSharp.Runtime.Interop.DeviceArrayRegions? deviceArrays, IntPtr hStream = default)
 {
 native = System.Runtime.CompilerServices.Unsafe.As<global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.DimensionContext, AotContexts.Dimension>(ref host);
 }
@@ -1693,12 +1693,12 @@ public const string DebugName_TwiddleFactors = "global::Kassyi.GSharp.Stdlib.Gpu
 [System.Runtime.InteropServices.FieldOffset(152)]
 public AotContexts.TwiddleFactor TwiddleFactors;
 }
-public static unsafe void Marshal_Ntt(ref global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.Ntt host, ref AotContexts.Ntt native, bool isDevicePtr, global::Kassyi.GSharp.Runtime.Interop.DeviceArrayRegions? allocatedPtrs, IntPtr hStream = default)
+public static unsafe void Marshal_Ntt(ref global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.Ntt host, ref AotContexts.Ntt native, bool isDevicePtr, global::Kassyi.GSharp.Runtime.Interop.DeviceArrayRegions? deviceArrays, IntPtr hStream = default)
 {
 native = default;
 native.TransformLength = host.TransformLength;
-Marshal_BufferContext(ref host.Buffers, ref native.Buffers, isDevicePtr, allocatedPtrs, hStream);
-Marshal_TwiddleFactorContext(ref host.TwiddleFactors, ref native.TwiddleFactors, isDevicePtr, allocatedPtrs, hStream);
+Marshal_BufferContext(ref host.Buffers, ref native.Buffers, isDevicePtr, deviceArrays, hStream);
+Marshal_TwiddleFactorContext(ref host.TwiddleFactors, ref native.TwiddleFactors, isDevicePtr, deviceArrays, hStream);
 }
 public static unsafe void Unmarshal_Ntt(ref global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.Ntt host, ref AotContexts.Ntt native, bool isDevicePtr, IntPtr hStream = default)
 {
@@ -1737,7 +1737,7 @@ public const string DebugName_CarryBuffer = "global::System.Int64[]";
 [System.Runtime.InteropServices.FieldOffset(128)]
 public global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy CarryBuffer;
 }
-public static unsafe void Marshal_BufferContext(ref global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.BufferContext host, ref AotContexts.Buffer native, bool isDevicePtr, global::Kassyi.GSharp.Runtime.Interop.DeviceArrayRegions? allocatedPtrs, IntPtr hStream = default)
+public static unsafe void Marshal_BufferContext(ref global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.BufferContext host, ref AotContexts.Buffer native, bool isDevicePtr, global::Kassyi.GSharp.Runtime.Interop.DeviceArrayRegions? deviceArrays, IntPtr hStream = default)
 {
 native = default;
 if (host.Buffer1 != null)
@@ -1751,14 +1751,14 @@ else
 int size = host.Buffer1.Length * sizeof(global::System.UInt32);
 if (size > 0)
 {
-if (allocatedPtrs != null && allocatedPtrs.TryGetRegion(host.Buffer1, out var region))
+if (deviceArrays != null && deviceArrays.TryGetRegion(host.Buffer1, out var region))
 {
 native.Buffer1.Data = region;
 }
 else
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out native.Buffer1.Data, (IntPtr)size, hStream));
-allocatedPtrs?.Add(host.Buffer1, native.Buffer1.Data);
+deviceArrays?.Add(host.Buffer1, native.Buffer1.Data);
 var handle = System.Runtime.InteropServices.GCHandle.Alloc(host.Buffer1, System.Runtime.InteropServices.GCHandleType.Pinned);
 try
 {
@@ -1784,14 +1784,14 @@ else
 int size = host.Buffer2.Length * sizeof(global::System.UInt32);
 if (size > 0)
 {
-if (allocatedPtrs != null && allocatedPtrs.TryGetRegion(host.Buffer2, out var region))
+if (deviceArrays != null && deviceArrays.TryGetRegion(host.Buffer2, out var region))
 {
 native.Buffer2.Data = region;
 }
 else
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out native.Buffer2.Data, (IntPtr)size, hStream));
-allocatedPtrs?.Add(host.Buffer2, native.Buffer2.Data);
+deviceArrays?.Add(host.Buffer2, native.Buffer2.Data);
 var handle = System.Runtime.InteropServices.GCHandle.Alloc(host.Buffer2, System.Runtime.InteropServices.GCHandleType.Pinned);
 try
 {
@@ -1817,14 +1817,14 @@ else
 int size = host.Buffer3.Length * sizeof(global::System.UInt32);
 if (size > 0)
 {
-if (allocatedPtrs != null && allocatedPtrs.TryGetRegion(host.Buffer3, out var region))
+if (deviceArrays != null && deviceArrays.TryGetRegion(host.Buffer3, out var region))
 {
 native.Buffer3.Data = region;
 }
 else
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out native.Buffer3.Data, (IntPtr)size, hStream));
-allocatedPtrs?.Add(host.Buffer3, native.Buffer3.Data);
+deviceArrays?.Add(host.Buffer3, native.Buffer3.Data);
 var handle = System.Runtime.InteropServices.GCHandle.Alloc(host.Buffer3, System.Runtime.InteropServices.GCHandleType.Pinned);
 try
 {
@@ -1850,14 +1850,14 @@ else
 int size = host.ValueT.Length * sizeof(global::System.UInt32);
 if (size > 0)
 {
-if (allocatedPtrs != null && allocatedPtrs.TryGetRegion(host.ValueT, out var region))
+if (deviceArrays != null && deviceArrays.TryGetRegion(host.ValueT, out var region))
 {
 native.ValueT.Data = region;
 }
 else
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out native.ValueT.Data, (IntPtr)size, hStream));
-allocatedPtrs?.Add(host.ValueT, native.ValueT.Data);
+deviceArrays?.Add(host.ValueT, native.ValueT.Data);
 var handle = System.Runtime.InteropServices.GCHandle.Alloc(host.ValueT, System.Runtime.InteropServices.GCHandleType.Pinned);
 try
 {
@@ -1883,14 +1883,14 @@ else
 int size = host.Quotient.Length * sizeof(global::System.UInt32);
 if (size > 0)
 {
-if (allocatedPtrs != null && allocatedPtrs.TryGetRegion(host.Quotient, out var region))
+if (deviceArrays != null && deviceArrays.TryGetRegion(host.Quotient, out var region))
 {
 native.Quotient.Data = region;
 }
 else
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out native.Quotient.Data, (IntPtr)size, hStream));
-allocatedPtrs?.Add(host.Quotient, native.Quotient.Data);
+deviceArrays?.Add(host.Quotient, native.Quotient.Data);
 var handle = System.Runtime.InteropServices.GCHandle.Alloc(host.Quotient, System.Runtime.InteropServices.GCHandleType.Pinned);
 try
 {
@@ -1916,14 +1916,14 @@ else
 int size = host.Remainder.Length * sizeof(global::System.UInt32);
 if (size > 0)
 {
-if (allocatedPtrs != null && allocatedPtrs.TryGetRegion(host.Remainder, out var region))
+if (deviceArrays != null && deviceArrays.TryGetRegion(host.Remainder, out var region))
 {
 native.Remainder.Data = region;
 }
 else
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out native.Remainder.Data, (IntPtr)size, hStream));
-allocatedPtrs?.Add(host.Remainder, native.Remainder.Data);
+deviceArrays?.Add(host.Remainder, native.Remainder.Data);
 var handle = System.Runtime.InteropServices.GCHandle.Alloc(host.Remainder, System.Runtime.InteropServices.GCHandleType.Pinned);
 try
 {
@@ -1949,14 +1949,14 @@ else
 int size = host.RemainderMask.Length * sizeof(global::System.UInt32);
 if (size > 0)
 {
-if (allocatedPtrs != null && allocatedPtrs.TryGetRegion(host.RemainderMask, out var region))
+if (deviceArrays != null && deviceArrays.TryGetRegion(host.RemainderMask, out var region))
 {
 native.RemainderMask.Data = region;
 }
 else
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out native.RemainderMask.Data, (IntPtr)size, hStream));
-allocatedPtrs?.Add(host.RemainderMask, native.RemainderMask.Data);
+deviceArrays?.Add(host.RemainderMask, native.RemainderMask.Data);
 var handle = System.Runtime.InteropServices.GCHandle.Alloc(host.RemainderMask, System.Runtime.InteropServices.GCHandleType.Pinned);
 try
 {
@@ -1982,14 +1982,14 @@ else
 int size = host.TemporaryBuffer.Length * sizeof(global::System.UInt32);
 if (size > 0)
 {
-if (allocatedPtrs != null && allocatedPtrs.TryGetRegion(host.TemporaryBuffer, out var region))
+if (deviceArrays != null && deviceArrays.TryGetRegion(host.TemporaryBuffer, out var region))
 {
 native.TemporaryBuffer.Data = region;
 }
 else
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out native.TemporaryBuffer.Data, (IntPtr)size, hStream));
-allocatedPtrs?.Add(host.TemporaryBuffer, native.TemporaryBuffer.Data);
+deviceArrays?.Add(host.TemporaryBuffer, native.TemporaryBuffer.Data);
 var handle = System.Runtime.InteropServices.GCHandle.Alloc(host.TemporaryBuffer, System.Runtime.InteropServices.GCHandleType.Pinned);
 try
 {
@@ -2015,14 +2015,14 @@ else
 int size = host.CarryBuffer.Length * sizeof(global::System.Int64);
 if (size > 0)
 {
-if (allocatedPtrs != null && allocatedPtrs.TryGetRegion(host.CarryBuffer, out var region))
+if (deviceArrays != null && deviceArrays.TryGetRegion(host.CarryBuffer, out var region))
 {
 native.CarryBuffer.Data = region;
 }
 else
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out native.CarryBuffer.Data, (IntPtr)size, hStream));
-allocatedPtrs?.Add(host.CarryBuffer, native.CarryBuffer.Data);
+deviceArrays?.Add(host.CarryBuffer, native.CarryBuffer.Data);
 var handle = System.Runtime.InteropServices.GCHandle.Alloc(host.CarryBuffer, System.Runtime.InteropServices.GCHandleType.Pinned);
 try
 {
@@ -2207,7 +2207,7 @@ public const string DebugName_Inverse3 = "global::System.UInt32[]";
 [System.Runtime.InteropServices.FieldOffset(80)]
 public global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy Inverse3;
 }
-public static unsafe void Marshal_TwiddleFactorContext(ref global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.TwiddleFactorContext host, ref AotContexts.TwiddleFactor native, bool isDevicePtr, global::Kassyi.GSharp.Runtime.Interop.DeviceArrayRegions? allocatedPtrs, IntPtr hStream = default)
+public static unsafe void Marshal_TwiddleFactorContext(ref global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.TwiddleFactorContext host, ref AotContexts.TwiddleFactor native, bool isDevicePtr, global::Kassyi.GSharp.Runtime.Interop.DeviceArrayRegions? deviceArrays, IntPtr hStream = default)
 {
 native = default;
 if (host.Forward1 != null)
@@ -2221,14 +2221,14 @@ else
 int size = host.Forward1.Length * sizeof(global::System.UInt32);
 if (size > 0)
 {
-if (allocatedPtrs != null && allocatedPtrs.TryGetRegion(host.Forward1, out var region))
+if (deviceArrays != null && deviceArrays.TryGetRegion(host.Forward1, out var region))
 {
 native.Forward1.Data = region;
 }
 else
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out native.Forward1.Data, (IntPtr)size, hStream));
-allocatedPtrs?.Add(host.Forward1, native.Forward1.Data);
+deviceArrays?.Add(host.Forward1, native.Forward1.Data);
 var handle = System.Runtime.InteropServices.GCHandle.Alloc(host.Forward1, System.Runtime.InteropServices.GCHandleType.Pinned);
 try
 {
@@ -2254,14 +2254,14 @@ else
 int size = host.Forward2.Length * sizeof(global::System.UInt32);
 if (size > 0)
 {
-if (allocatedPtrs != null && allocatedPtrs.TryGetRegion(host.Forward2, out var region))
+if (deviceArrays != null && deviceArrays.TryGetRegion(host.Forward2, out var region))
 {
 native.Forward2.Data = region;
 }
 else
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out native.Forward2.Data, (IntPtr)size, hStream));
-allocatedPtrs?.Add(host.Forward2, native.Forward2.Data);
+deviceArrays?.Add(host.Forward2, native.Forward2.Data);
 var handle = System.Runtime.InteropServices.GCHandle.Alloc(host.Forward2, System.Runtime.InteropServices.GCHandleType.Pinned);
 try
 {
@@ -2287,14 +2287,14 @@ else
 int size = host.Forward3.Length * sizeof(global::System.UInt32);
 if (size > 0)
 {
-if (allocatedPtrs != null && allocatedPtrs.TryGetRegion(host.Forward3, out var region))
+if (deviceArrays != null && deviceArrays.TryGetRegion(host.Forward3, out var region))
 {
 native.Forward3.Data = region;
 }
 else
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out native.Forward3.Data, (IntPtr)size, hStream));
-allocatedPtrs?.Add(host.Forward3, native.Forward3.Data);
+deviceArrays?.Add(host.Forward3, native.Forward3.Data);
 var handle = System.Runtime.InteropServices.GCHandle.Alloc(host.Forward3, System.Runtime.InteropServices.GCHandleType.Pinned);
 try
 {
@@ -2320,14 +2320,14 @@ else
 int size = host.Inverse1.Length * sizeof(global::System.UInt32);
 if (size > 0)
 {
-if (allocatedPtrs != null && allocatedPtrs.TryGetRegion(host.Inverse1, out var region))
+if (deviceArrays != null && deviceArrays.TryGetRegion(host.Inverse1, out var region))
 {
 native.Inverse1.Data = region;
 }
 else
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out native.Inverse1.Data, (IntPtr)size, hStream));
-allocatedPtrs?.Add(host.Inverse1, native.Inverse1.Data);
+deviceArrays?.Add(host.Inverse1, native.Inverse1.Data);
 var handle = System.Runtime.InteropServices.GCHandle.Alloc(host.Inverse1, System.Runtime.InteropServices.GCHandleType.Pinned);
 try
 {
@@ -2353,14 +2353,14 @@ else
 int size = host.Inverse2.Length * sizeof(global::System.UInt32);
 if (size > 0)
 {
-if (allocatedPtrs != null && allocatedPtrs.TryGetRegion(host.Inverse2, out var region))
+if (deviceArrays != null && deviceArrays.TryGetRegion(host.Inverse2, out var region))
 {
 native.Inverse2.Data = region;
 }
 else
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out native.Inverse2.Data, (IntPtr)size, hStream));
-allocatedPtrs?.Add(host.Inverse2, native.Inverse2.Data);
+deviceArrays?.Add(host.Inverse2, native.Inverse2.Data);
 var handle = System.Runtime.InteropServices.GCHandle.Alloc(host.Inverse2, System.Runtime.InteropServices.GCHandleType.Pinned);
 try
 {
@@ -2386,14 +2386,14 @@ else
 int size = host.Inverse3.Length * sizeof(global::System.UInt32);
 if (size > 0)
 {
-if (allocatedPtrs != null && allocatedPtrs.TryGetRegion(host.Inverse3, out var region))
+if (deviceArrays != null && deviceArrays.TryGetRegion(host.Inverse3, out var region))
 {
 native.Inverse3.Data = region;
 }
 else
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out native.Inverse3.Data, (IntPtr)size, hStream));
-allocatedPtrs?.Add(host.Inverse3, native.Inverse3.Data);
+deviceArrays?.Add(host.Inverse3, native.Inverse3.Data);
 var handle = System.Runtime.InteropServices.GCHandle.Alloc(host.Inverse3, System.Runtime.InteropServices.GCHandleType.Pinned);
 try
 {
@@ -2518,11 +2518,11 @@ public const string DebugName_NttScratch = "global::Kassyi.GSharp.Stdlib.GpuMath
 [System.Runtime.InteropServices.FieldOffset(128)]
 public AotContexts.NttConvolutionScratch NttScratch;
 }
-public static unsafe void Marshal_WorkspaceStateContext(ref global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.WorkspaceStateContext host, ref AotContexts.WorkspaceState native, bool isDevicePtr, global::Kassyi.GSharp.Runtime.Interop.DeviceArrayRegions? allocatedPtrs, IntPtr hStream = default)
+public static unsafe void Marshal_WorkspaceStateContext(ref global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.WorkspaceStateContext host, ref AotContexts.WorkspaceState native, bool isDevicePtr, global::Kassyi.GSharp.Runtime.Interop.DeviceArrayRegions? deviceArrays, IntPtr hStream = default)
 {
 native = default;
-Marshal_IterationScratchContext(ref host.Iteration, ref native.Iteration, isDevicePtr, allocatedPtrs, hStream);
-Marshal_NttConvolutionScratchContext(ref host.NttScratch, ref native.NttScratch, isDevicePtr, allocatedPtrs, hStream);
+Marshal_IterationScratchContext(ref host.Iteration, ref native.Iteration, isDevicePtr, deviceArrays, hStream);
+Marshal_NttConvolutionScratchContext(ref host.NttScratch, ref native.NttScratch, isDevicePtr, deviceArrays, hStream);
 }
 public static unsafe void Unmarshal_WorkspaceStateContext(ref global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.WorkspaceStateContext host, ref AotContexts.WorkspaceState native, bool isDevicePtr, IntPtr hStream = default)
 {
@@ -2557,7 +2557,7 @@ public const string DebugName_ModulusExpanded = "global::System.UInt32[]";
 [System.Runtime.InteropServices.FieldOffset(112)]
 public global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy ModulusExpanded;
 }
-public static unsafe void Marshal_IterationScratchContext(ref global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.IterationScratchContext host, ref AotContexts.IterationScratch native, bool isDevicePtr, global::Kassyi.GSharp.Runtime.Interop.DeviceArrayRegions? allocatedPtrs, IntPtr hStream = default)
+public static unsafe void Marshal_IterationScratchContext(ref global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.IterationScratchContext host, ref AotContexts.IterationScratch native, bool isDevicePtr, global::Kassyi.GSharp.Runtime.Interop.DeviceArrayRegions? deviceArrays, IntPtr hStream = default)
 {
 native = default;
 if (host.XSquared != null)
@@ -2571,14 +2571,14 @@ else
 int size = host.XSquared.Length * sizeof(global::System.UInt32);
 if (size > 0)
 {
-if (allocatedPtrs != null && allocatedPtrs.TryGetRegion(host.XSquared, out var region))
+if (deviceArrays != null && deviceArrays.TryGetRegion(host.XSquared, out var region))
 {
 native.XSquared.Data = region;
 }
 else
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out native.XSquared.Data, (IntPtr)size, hStream));
-allocatedPtrs?.Add(host.XSquared, native.XSquared.Data);
+deviceArrays?.Add(host.XSquared, native.XSquared.Data);
 var handle = System.Runtime.InteropServices.GCHandle.Alloc(host.XSquared, System.Runtime.InteropServices.GCHandleType.Pinned);
 try
 {
@@ -2604,14 +2604,14 @@ else
 int size = host.AxSquared.Length * sizeof(global::System.UInt32);
 if (size > 0)
 {
-if (allocatedPtrs != null && allocatedPtrs.TryGetRegion(host.AxSquared, out var region))
+if (deviceArrays != null && deviceArrays.TryGetRegion(host.AxSquared, out var region))
 {
 native.AxSquared.Data = region;
 }
 else
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out native.AxSquared.Data, (IntPtr)size, hStream));
-allocatedPtrs?.Add(host.AxSquared, native.AxSquared.Data);
+deviceArrays?.Add(host.AxSquared, native.AxSquared.Data);
 var handle = System.Runtime.InteropServices.GCHandle.Alloc(host.AxSquared, System.Runtime.InteropServices.GCHandleType.Pinned);
 try
 {
@@ -2637,14 +2637,14 @@ else
 int size = host.CurrentProduct.Length * sizeof(global::System.UInt32);
 if (size > 0)
 {
-if (allocatedPtrs != null && allocatedPtrs.TryGetRegion(host.CurrentProduct, out var region))
+if (deviceArrays != null && deviceArrays.TryGetRegion(host.CurrentProduct, out var region))
 {
 native.CurrentProduct.Data = region;
 }
 else
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out native.CurrentProduct.Data, (IntPtr)size, hStream));
-allocatedPtrs?.Add(host.CurrentProduct, native.CurrentProduct.Data);
+deviceArrays?.Add(host.CurrentProduct, native.CurrentProduct.Data);
 var handle = System.Runtime.InteropServices.GCHandle.Alloc(host.CurrentProduct, System.Runtime.InteropServices.GCHandleType.Pinned);
 try
 {
@@ -2670,14 +2670,14 @@ else
 int size = host.Diff.Length * sizeof(global::System.UInt32);
 if (size > 0)
 {
-if (allocatedPtrs != null && allocatedPtrs.TryGetRegion(host.Diff, out var region))
+if (deviceArrays != null && deviceArrays.TryGetRegion(host.Diff, out var region))
 {
 native.Diff.Data = region;
 }
 else
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out native.Diff.Data, (IntPtr)size, hStream));
-allocatedPtrs?.Add(host.Diff, native.Diff.Data);
+deviceArrays?.Add(host.Diff, native.Diff.Data);
 var handle = System.Runtime.InteropServices.GCHandle.Alloc(host.Diff, System.Runtime.InteropServices.GCHandleType.Pinned);
 try
 {
@@ -2703,14 +2703,14 @@ else
 int size = host.NextXUnshifted.Length * sizeof(global::System.UInt32);
 if (size > 0)
 {
-if (allocatedPtrs != null && allocatedPtrs.TryGetRegion(host.NextXUnshifted, out var region))
+if (deviceArrays != null && deviceArrays.TryGetRegion(host.NextXUnshifted, out var region))
 {
 native.NextXUnshifted.Data = region;
 }
 else
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out native.NextXUnshifted.Data, (IntPtr)size, hStream));
-allocatedPtrs?.Add(host.NextXUnshifted, native.NextXUnshifted.Data);
+deviceArrays?.Add(host.NextXUnshifted, native.NextXUnshifted.Data);
 var handle = System.Runtime.InteropServices.GCHandle.Alloc(host.NextXUnshifted, System.Runtime.InteropServices.GCHandleType.Pinned);
 try
 {
@@ -2736,14 +2736,14 @@ else
 int size = host.NextXShifted.Length * sizeof(global::System.UInt32);
 if (size > 0)
 {
-if (allocatedPtrs != null && allocatedPtrs.TryGetRegion(host.NextXShifted, out var region))
+if (deviceArrays != null && deviceArrays.TryGetRegion(host.NextXShifted, out var region))
 {
 native.NextXShifted.Data = region;
 }
 else
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out native.NextXShifted.Data, (IntPtr)size, hStream));
-allocatedPtrs?.Add(host.NextXShifted, native.NextXShifted.Data);
+deviceArrays?.Add(host.NextXShifted, native.NextXShifted.Data);
 var handle = System.Runtime.InteropServices.GCHandle.Alloc(host.NextXShifted, System.Runtime.InteropServices.GCHandleType.Pinned);
 try
 {
@@ -2769,14 +2769,14 @@ else
 int size = host.NextIter.Length * sizeof(global::System.UInt32);
 if (size > 0)
 {
-if (allocatedPtrs != null && allocatedPtrs.TryGetRegion(host.NextIter, out var region))
+if (deviceArrays != null && deviceArrays.TryGetRegion(host.NextIter, out var region))
 {
 native.NextIter.Data = region;
 }
 else
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out native.NextIter.Data, (IntPtr)size, hStream));
-allocatedPtrs?.Add(host.NextIter, native.NextIter.Data);
+deviceArrays?.Add(host.NextIter, native.NextIter.Data);
 var handle = System.Runtime.InteropServices.GCHandle.Alloc(host.NextIter, System.Runtime.InteropServices.GCHandleType.Pinned);
 try
 {
@@ -2802,14 +2802,14 @@ else
 int size = host.ModulusExpanded.Length * sizeof(global::System.UInt32);
 if (size > 0)
 {
-if (allocatedPtrs != null && allocatedPtrs.TryGetRegion(host.ModulusExpanded, out var region))
+if (deviceArrays != null && deviceArrays.TryGetRegion(host.ModulusExpanded, out var region))
 {
 native.ModulusExpanded.Data = region;
 }
 else
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out native.ModulusExpanded.Data, (IntPtr)size, hStream));
-allocatedPtrs?.Add(host.ModulusExpanded, native.ModulusExpanded.Data);
+deviceArrays?.Add(host.ModulusExpanded, native.ModulusExpanded.Data);
 var handle = System.Runtime.InteropServices.GCHandle.Alloc(host.ModulusExpanded, System.Runtime.InteropServices.GCHandleType.Pinned);
 try
 {
@@ -2984,7 +2984,7 @@ public const string DebugName_BlockCarries = "global::System.UInt32[]";
 [System.Runtime.InteropServices.FieldOffset(112)]
 public global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy BlockCarries;
 }
-public static unsafe void Marshal_NttConvolutionScratchContext(ref global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.NttConvolutionScratchContext host, ref AotContexts.NttConvolutionScratch native, bool isDevicePtr, global::Kassyi.GSharp.Runtime.Interop.DeviceArrayRegions? allocatedPtrs, IntPtr hStream = default)
+public static unsafe void Marshal_NttConvolutionScratchContext(ref global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.NttConvolutionScratchContext host, ref AotContexts.NttConvolutionScratch native, bool isDevicePtr, global::Kassyi.GSharp.Runtime.Interop.DeviceArrayRegions? deviceArrays, IntPtr hStream = default)
 {
 native = default;
 if (host.NttBuf1A != null)
@@ -2998,14 +2998,14 @@ else
 int size = host.NttBuf1A.Length * sizeof(global::System.UInt32);
 if (size > 0)
 {
-if (allocatedPtrs != null && allocatedPtrs.TryGetRegion(host.NttBuf1A, out var region))
+if (deviceArrays != null && deviceArrays.TryGetRegion(host.NttBuf1A, out var region))
 {
 native.NttBuf1A.Data = region;
 }
 else
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out native.NttBuf1A.Data, (IntPtr)size, hStream));
-allocatedPtrs?.Add(host.NttBuf1A, native.NttBuf1A.Data);
+deviceArrays?.Add(host.NttBuf1A, native.NttBuf1A.Data);
 var handle = System.Runtime.InteropServices.GCHandle.Alloc(host.NttBuf1A, System.Runtime.InteropServices.GCHandleType.Pinned);
 try
 {
@@ -3031,14 +3031,14 @@ else
 int size = host.NttBuf2A.Length * sizeof(global::System.UInt32);
 if (size > 0)
 {
-if (allocatedPtrs != null && allocatedPtrs.TryGetRegion(host.NttBuf2A, out var region))
+if (deviceArrays != null && deviceArrays.TryGetRegion(host.NttBuf2A, out var region))
 {
 native.NttBuf2A.Data = region;
 }
 else
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out native.NttBuf2A.Data, (IntPtr)size, hStream));
-allocatedPtrs?.Add(host.NttBuf2A, native.NttBuf2A.Data);
+deviceArrays?.Add(host.NttBuf2A, native.NttBuf2A.Data);
 var handle = System.Runtime.InteropServices.GCHandle.Alloc(host.NttBuf2A, System.Runtime.InteropServices.GCHandleType.Pinned);
 try
 {
@@ -3064,14 +3064,14 @@ else
 int size = host.NttBuf1B.Length * sizeof(global::System.UInt32);
 if (size > 0)
 {
-if (allocatedPtrs != null && allocatedPtrs.TryGetRegion(host.NttBuf1B, out var region))
+if (deviceArrays != null && deviceArrays.TryGetRegion(host.NttBuf1B, out var region))
 {
 native.NttBuf1B.Data = region;
 }
 else
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out native.NttBuf1B.Data, (IntPtr)size, hStream));
-allocatedPtrs?.Add(host.NttBuf1B, native.NttBuf1B.Data);
+deviceArrays?.Add(host.NttBuf1B, native.NttBuf1B.Data);
 var handle = System.Runtime.InteropServices.GCHandle.Alloc(host.NttBuf1B, System.Runtime.InteropServices.GCHandleType.Pinned);
 try
 {
@@ -3097,14 +3097,14 @@ else
 int size = host.NttBuf2B.Length * sizeof(global::System.UInt32);
 if (size > 0)
 {
-if (allocatedPtrs != null && allocatedPtrs.TryGetRegion(host.NttBuf2B, out var region))
+if (deviceArrays != null && deviceArrays.TryGetRegion(host.NttBuf2B, out var region))
 {
 native.NttBuf2B.Data = region;
 }
 else
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out native.NttBuf2B.Data, (IntPtr)size, hStream));
-allocatedPtrs?.Add(host.NttBuf2B, native.NttBuf2B.Data);
+deviceArrays?.Add(host.NttBuf2B, native.NttBuf2B.Data);
 var handle = System.Runtime.InteropServices.GCHandle.Alloc(host.NttBuf2B, System.Runtime.InteropServices.GCHandleType.Pinned);
 try
 {
@@ -3130,14 +3130,14 @@ else
 int size = host.TmpBuf.Length * sizeof(global::System.UInt32);
 if (size > 0)
 {
-if (allocatedPtrs != null && allocatedPtrs.TryGetRegion(host.TmpBuf, out var region))
+if (deviceArrays != null && deviceArrays.TryGetRegion(host.TmpBuf, out var region))
 {
 native.TmpBuf.Data = region;
 }
 else
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out native.TmpBuf.Data, (IntPtr)size, hStream));
-allocatedPtrs?.Add(host.TmpBuf, native.TmpBuf.Data);
+deviceArrays?.Add(host.TmpBuf, native.TmpBuf.Data);
 var handle = System.Runtime.InteropServices.GCHandle.Alloc(host.TmpBuf, System.Runtime.InteropServices.GCHandleType.Pinned);
 try
 {
@@ -3163,14 +3163,14 @@ else
 int size = host.UncarriedLow.Length * sizeof(global::System.UInt32);
 if (size > 0)
 {
-if (allocatedPtrs != null && allocatedPtrs.TryGetRegion(host.UncarriedLow, out var region))
+if (deviceArrays != null && deviceArrays.TryGetRegion(host.UncarriedLow, out var region))
 {
 native.UncarriedLow.Data = region;
 }
 else
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out native.UncarriedLow.Data, (IntPtr)size, hStream));
-allocatedPtrs?.Add(host.UncarriedLow, native.UncarriedLow.Data);
+deviceArrays?.Add(host.UncarriedLow, native.UncarriedLow.Data);
 var handle = System.Runtime.InteropServices.GCHandle.Alloc(host.UncarriedLow, System.Runtime.InteropServices.GCHandleType.Pinned);
 try
 {
@@ -3196,14 +3196,14 @@ else
 int size = host.UncarriedHigh.Length * sizeof(global::System.UInt32);
 if (size > 0)
 {
-if (allocatedPtrs != null && allocatedPtrs.TryGetRegion(host.UncarriedHigh, out var region))
+if (deviceArrays != null && deviceArrays.TryGetRegion(host.UncarriedHigh, out var region))
 {
 native.UncarriedHigh.Data = region;
 }
 else
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out native.UncarriedHigh.Data, (IntPtr)size, hStream));
-allocatedPtrs?.Add(host.UncarriedHigh, native.UncarriedHigh.Data);
+deviceArrays?.Add(host.UncarriedHigh, native.UncarriedHigh.Data);
 var handle = System.Runtime.InteropServices.GCHandle.Alloc(host.UncarriedHigh, System.Runtime.InteropServices.GCHandleType.Pinned);
 try
 {
@@ -3229,14 +3229,14 @@ else
 int size = host.BlockCarries.Length * sizeof(global::System.UInt32);
 if (size > 0)
 {
-if (allocatedPtrs != null && allocatedPtrs.TryGetRegion(host.BlockCarries, out var region))
+if (deviceArrays != null && deviceArrays.TryGetRegion(host.BlockCarries, out var region))
 {
 native.BlockCarries.Data = region;
 }
 else
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out native.BlockCarries.Data, (IntPtr)size, hStream));
-allocatedPtrs?.Add(host.BlockCarries, native.BlockCarries.Data);
+deviceArrays?.Add(host.BlockCarries, native.BlockCarries.Data);
 var handle = System.Runtime.InteropServices.GCHandle.Alloc(host.BlockCarries, System.Runtime.InteropServices.GCHandleType.Pinned);
 try
 {
@@ -3399,7 +3399,7 @@ public const string DebugName_EndWord = "global::System.Int32";
 [System.Runtime.InteropServices.FieldOffset(24)]
 public global::System.Int32 EndWord;
 }
-public static unsafe void Marshal_ExponentSliceContext(ref global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.ExponentSliceContext host, ref AotContexts.ExponentSlice native, bool isDevicePtr, global::Kassyi.GSharp.Runtime.Interop.DeviceArrayRegions? allocatedPtrs, IntPtr hStream = default)
+public static unsafe void Marshal_ExponentSliceContext(ref global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.ExponentSliceContext host, ref AotContexts.ExponentSlice native, bool isDevicePtr, global::Kassyi.GSharp.Runtime.Interop.DeviceArrayRegions? deviceArrays, IntPtr hStream = default)
 {
 native = default;
 if (host.Words != null)
@@ -3413,14 +3413,14 @@ else
 int size = host.Words.Length * sizeof(global::System.UInt32);
 if (size > 0)
 {
-if (allocatedPtrs != null && allocatedPtrs.TryGetRegion(host.Words, out var region))
+if (deviceArrays != null && deviceArrays.TryGetRegion(host.Words, out var region))
 {
 native.Words.Data = region;
 }
 else
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out native.Words.Data, (IntPtr)size, hStream));
-allocatedPtrs?.Add(host.Words, native.Words.Data);
+deviceArrays?.Add(host.Words, native.Words.Data);
 var handle = System.Runtime.InteropServices.GCHandle.Alloc(host.Words, System.Runtime.InteropServices.GCHandleType.Pinned);
 try
 {

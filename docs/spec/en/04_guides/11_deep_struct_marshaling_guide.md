@@ -132,17 +132,20 @@ When a kernel accepts a custom struct containing arrays, the G# Source Generator
 2. **Marshaling Routine (`Marshal_...`)**:
    Loops through the struct fields on the host. For every non-null array:
    - Queries array length and calculates byte size.
-   - Allocates GPU global memory via `CudaDriverApi.cuMemAlloc_v2`.
-   - Pins host memory using `GCHandle.Alloc(..., GCHandleType.Pinned)`.
-   - Executes synchronous Host-to-Device copy via `cuMemcpyHtoD_v2`.
-   - Records the device pointer per host array in the launch's `DeviceArrayRegions` (`allocatedPtrs`). An array that
+   - Looks the array up by reference in the launch's `DeviceArrayRegions` (the `deviceArrays` parameter). An array that
      the launch already copied, through another field of the same struct, a field of another struct argument or an
-     element of a converted array, is looked up there by reference and reuses that region instead of being copied
-     again: as in C#, the fields hold one array, so a write through one of them is seen through the others.
-3. **Unmarshaling & Cleanup Routine (`Unmarshal_...`)**:
+     element of a converted array, reuses that region and is neither allocated nor copied again: as in C#, the fields
+     hold one array, so a write through one of them is seen through the others.
+   - Otherwise allocates GPU global memory on the launch stream via `CudaDriverApi.cuMemAllocAsync` and records the
+     region in `DeviceArrayRegions`.
+   - Pins host memory using `GCHandle.Alloc(..., GCHandleType.Pinned)` and copies it to the device via
+     `cuMemcpyHtoDAsync_v2`.
+3. **Unmarshaling Routine (`Unmarshal_...`) and Cleanup**:
    Upon kernel completion:
-   - Automatically synchronizes modified device memory back to host arrays via `cuMemcpyDtoH_v2`.
-   - Frees all temporary GPU allocations in a `finally` block via `cuMemFree_v2`.
+   - `Unmarshal_` copies the device memory of every array field back to its host array via `cuMemcpyDtoHAsync_v2`. An
+     array held by several fields is copied back once per field; every copy writes the same bytes.
+   - The launcher then frees every region of the launch once, in its `finally` block, through
+     `DeviceArrayRegions.Free`, which calls `cuMemFreeAsync` on the launch stream.
 
 ### Complete Memory Lifecycle
 
@@ -158,10 +161,11 @@ sequenceDiagram
     activate Launcher
     
     Note over Launcher,Driver: Phase 1: Pre-Launch Marshaling (HtoD)
-    Launcher->>Driver: cuMemAlloc_v2(out native.Input, sizeIn)
-    Launcher->>Driver: cuMemcpyHtoD_v2(native.Input, pinnedHostIn, sizeIn)
-    Launcher->>Driver: cuMemAlloc_v2(out native.Output, sizeOut)
-    Launcher->>Driver: cuMemcpyHtoD_v2(native.Output, pinnedHostOut, sizeOut)
+    Launcher->>Driver: cuMemAllocAsync(out native.Input, sizeIn, hStream)
+    Launcher->>Driver: cuMemcpyHtoDAsync_v2(native.Input, pinnedHostIn, sizeIn, hStream)
+    Launcher->>Driver: cuMemAllocAsync(out native.Output, sizeOut, hStream)
+    Launcher->>Driver: cuMemcpyHtoDAsync_v2(native.Output, pinnedHostOut, sizeOut, hStream)
+    Note over Launcher: Each region is recorded in DeviceArrayRegions; a field holding an array already recorded reuses its region
     
     Note over Launcher,GPU: Phase 2: Kernel Execution
     Launcher->>GPU: cuLaunchKernel(native_ctx by value)
@@ -171,12 +175,13 @@ sequenceDiagram
     deactivate GPU
     
     Note over Launcher,Driver: Phase 3: Post-Launch Unmarshaling (DtoH)
-    Launcher->>Driver: cuMemcpyDtoH_v2(pinnedHostOut, native.Output, sizeOut)
+    Launcher->>Driver: cuMemcpyDtoHAsync_v2(pinnedHostIn, native.Input, sizeIn, hStream)
+    Launcher->>Driver: cuMemcpyDtoHAsync_v2(pinnedHostOut, native.Output, sizeOut, hStream)
     Note over Launcher,Host: hostOut now contains kernel results!
     
-    Note over Launcher,Driver: Phase 4: Automatic Resource Cleanup (finally)
-    Launcher->>Driver: cuMemFree_v2(native.Input)
-    Launcher->>Driver: cuMemFree_v2(native.Output)
+    Note over Launcher,Driver: Phase 4: Automatic Resource Cleanup (launcher finally, DeviceArrayRegions.Free)
+    Launcher->>Driver: cuMemFreeAsync(native.Input, hStream)
+    Launcher->>Driver: cuMemFreeAsync(native.Output, hStream)
     
     Launcher-->>Host: Return to Caller
     deactivate Launcher

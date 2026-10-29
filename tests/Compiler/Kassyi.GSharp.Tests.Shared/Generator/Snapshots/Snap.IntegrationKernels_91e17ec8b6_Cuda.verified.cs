@@ -114,7 +114,7 @@ public const string DebugName_BoolVal = "global::System.Boolean";
 [System.Runtime.InteropServices.FieldOffset(8)]
 public global::System.Boolean BoolVal;
 }
-public static unsafe void Marshal_Tier1CustomStruct(ref global::Kassyi.GSharp.Tests.Shared.Syntax.Tier1CustomStruct host, ref AotContexts.Tier1CustomStruct native, bool isDevicePtr, global::Kassyi.GSharp.Runtime.Interop.DeviceArrayRegions? allocatedPtrs, IntPtr hStream = default)
+public static unsafe void Marshal_Tier1CustomStruct(ref global::Kassyi.GSharp.Tests.Shared.Syntax.Tier1CustomStruct host, ref AotContexts.Tier1CustomStruct native, bool isDevicePtr, global::Kassyi.GSharp.Runtime.Interop.DeviceArrayRegions? deviceArrays, IntPtr hStream = default)
 {
 native = System.Runtime.CompilerServices.Unsafe.As<global::Kassyi.GSharp.Tests.Shared.Syntax.Tier1CustomStruct, AotContexts.Tier1CustomStruct>(ref host);
 }

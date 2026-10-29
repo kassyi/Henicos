@@ -3,8 +3,16 @@ namespace Kassyi.GSharp.Compiler.Marshaling;
 /// <summary>Emits custom struct marshal and unmarshal helper methods between managed and native shadow representations.</summary>
 internal static class StructMarshalingEmitter
 {
-    /// <summary>The runtime type that the CUDA launcher passes to <c>Marshal_</c> as <c>allocatedPtrs</c>.</summary>
+    /// <summary>The runtime type that the CUDA launcher passes to <c>Marshal_</c> as <c>deviceArrays</c>.</summary>
     internal const string DeviceArrayRegionsType = "global::Kassyi.GSharp.Runtime.Interop.DeviceArrayRegions";
+
+    // The Marshal_ parameter that records the arrays of a launch: one device region per host array on CUDA, the
+    // GCHandles that pin them on the CPU
+    private const string CudaArraysParameter = "deviceArrays";
+    private const string CpuArraysParameter = "allocatedPtrs";
+
+    private static string ArraysParameter(ITranspilerDialect dialect) =>
+        dialect.IsCuda ? CudaArraysParameter : CpuArraysParameter;
 
     /// <summary>Emits the rendered structs of a kernel class (<see cref="RenderStructs"/>).</summary>
     /// <remarks>A struct whose <c>AotContexts</c> name is already taken gets no helpers; GSH0058 reports it.</remarks>
@@ -145,8 +153,8 @@ internal static class StructMarshalingEmitter
             writer.AppendAotStructPath(s);
             // CUDA records one device region per host array (DeviceArrayRegions, #707); the CPU records GCHandles
             writer.Append(dialect.IsCuda
-                ? $" native, bool isDevicePtr, {DeviceArrayRegionsType}? allocatedPtrs, IntPtr hStream = default"
-                : " native, bool isDevicePtr, System.Collections.Generic.List<IntPtr>? allocatedPtrs, IntPtr hStream = default");
+                ? $" native, bool isDevicePtr, {DeviceArrayRegionsType}? {CudaArraysParameter}, IntPtr hStream = default"
+                : $" native, bool isDevicePtr, System.Collections.Generic.List<IntPtr>? {CpuArraysParameter}, IntPtr hStream = default");
         }
 
         writer.AppendLine();
@@ -398,7 +406,7 @@ internal static class StructMarshalingEmitter
             if (toNative)
             {
                 writer.AppendMarshalMethodName(member.Type);
-                writer.AppendLine($"(ref host[k], ref (({shadow}*)pField)[k], isDevicePtr, allocatedPtrs, hStream);");
+                writer.AppendLine($"(ref host[k], ref (({shadow}*)pField)[k], isDevicePtr, {ArraysParameter(dialect)}, hStream);");
             }
             else
             {
@@ -427,7 +435,7 @@ internal static class StructMarshalingEmitter
             writer.AppendMarshalMethodName(member.Type);
             using (writer.Parentheses())
             {
-                writer.Append($"ref host.{member.Name.ToCSharpIdentifier()}, ref native.{member.Name.ToCSharpIdentifier()}, isDevicePtr, allocatedPtrs, hStream");
+                writer.Append($"ref host.{member.Name.ToCSharpIdentifier()}, ref native.{member.Name.ToCSharpIdentifier()}, isDevicePtr, {ArraysParameter(dialect)}, hStream");
             }
 
             writer.AppendLine(";");
@@ -491,27 +499,28 @@ internal static class StructMarshalingEmitter
         }
     }
 
-    // if (allocatedPtrs != null && allocatedPtrs.TryGetRegion(<host>, out var region)) { <native>.Data = region; }
+    // if (deviceArrays != null && deviceArrays.TryGetRegion(<host>, out var region)) { <native>.Data = region; }
     // [WHY] In C# two fields that hold one array are one object, so the device must see one region too (#707): an array
     // that this launch already copied, through any field of any struct argument, gets that region and is not copied
     // again. Unmarshal_ then copies the same region back once per field, which writes the same bytes.
     private static void WriteSharedRegionLookup(SourceWriter writer, string host, string native)
     {
-        writer.AppendLine($"if (allocatedPtrs != null && allocatedPtrs.TryGetRegion({host}, out var region))");
+        writer.AppendLine(
+            $"if ({CudaArraysParameter} != null && {CudaArraysParameter}.TryGetRegion({host}, out var region))");
         using (writer.Scope())
         {
             writer.AppendLine($"{native}.Data = region;");
         }
     }
 
-    // cuMemAllocAsync(out <native>.Data, size); allocatedPtrs?.Add(<host>, <native>.Data); <copy the elements>
+    // cuMemAllocAsync(out <native>.Data, size); deviceArrays?.Add(<host>, <native>.Data); <copy the elements>
     // The region is recorded before the elements are marshaled, so an element that holds the same array finds it
     private static void WriteDeviceArrayCopy(SourceWriter writer, string host, string native, ITypeSymbol elementType)
     {
         writer.AppendLine(
             "CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(" +
             $"out {native}.Data, (IntPtr)size, hStream));");
-        writer.AppendLine($"allocatedPtrs?.Add({host}, {native}.Data);");
+        writer.AppendLine($"{CudaArraysParameter}?.Add({host}, {native}.Data);");
 
         if (TypeLayoutCalculator.IsUserStruct(elementType))
         {
@@ -524,7 +533,7 @@ internal static class StructMarshalingEmitter
             {
                 writer.AppendMarshalMethodName(elementType);
                 writer.AppendLine(
-                    $"(ref {host}[i], ref tempArray[i], false, allocatedPtrs, hStream);");
+                    $"(ref {host}[i], ref tempArray[i], false, {CudaArraysParameter}, hStream);");
             }
 
             writer.AppendLine(
@@ -732,7 +741,7 @@ internal static class StructMarshalingEmitter
         using (writer.Scope())
         {
             writer.AppendLine(
-                "var pinnedHandles = allocatedPtrs ?? throw new System.ArgumentNullException(nameof(allocatedPtrs));");
+                $"var pinnedHandles = {CpuArraysParameter} ?? throw new System.ArgumentNullException(nameof({CpuArraysParameter}));");
             var pinned = host;
             if (KernelParameterShape.IsConverted(elementType, dialect))
             {
@@ -743,7 +752,7 @@ internal static class StructMarshalingEmitter
                 using (writer.Scope())
                 {
                     writer.AppendMarshalMethodName(elementType);
-                    writer.AppendLine($"(ref {host}[i], ref shadow[i], false, allocatedPtrs, hStream);");
+                    writer.AppendLine($"(ref {host}[i], ref shadow[i], false, {CpuArraysParameter}, hStream);");
                 }
 
                 pinned = "shadow";

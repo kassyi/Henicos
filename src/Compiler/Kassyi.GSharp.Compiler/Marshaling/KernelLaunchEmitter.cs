@@ -215,7 +215,7 @@ internal static class KernelLaunchEmitter
         switch (shape.Kind)
         {
             case KernelParameterKind.CustomStruct:
-                WriteCustomStructMarshal(writer, shape, paramIndex, isDevicePtr);
+                WriteCustomStructMarshal(writer, shape, paramIndex);
                 break;
             case KernelParameterKind.Array:
                 WriteArrayMarshal(writer, shape, paramIndex);
@@ -229,8 +229,8 @@ internal static class KernelLaunchEmitter
         }
     }
 
-    private static void WriteCustomStructMarshal(SourceWriter writer, in KernelParameterShape shape, int paramIndex,
-        bool isDevicePtr)
+    // Only the managed-array launcher gets here: the Ptr launcher passes a struct through (IsPassedThrough)
+    private static void WriteCustomStructMarshal(SourceWriter writer, in KernelParameterShape shape, int paramIndex)
     {
         if (shape.IsDirectCudaValueStruct)
         {
@@ -244,7 +244,7 @@ internal static class KernelLaunchEmitter
         using (writer.Parentheses())
         {
             writer.Append(
-                $"ref {shape.Identifier}, ref native_{shape.Name}, {(isDevicePtr ? "true" : "false")}, {(isDevicePtr ? "null" : DeviceArrays)}, hStream");
+                $"ref {shape.Identifier}, ref native_{shape.Name}, false, {DeviceArrays}, hStream");
         }
 
         writer.AppendLine(";");

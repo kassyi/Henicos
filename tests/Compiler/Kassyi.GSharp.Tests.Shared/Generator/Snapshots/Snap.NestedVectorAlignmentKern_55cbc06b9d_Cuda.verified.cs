@@ -102,7 +102,7 @@ public const string DebugName_Field5_Double2 = "global::Kassyi.GSharp.Core.Doubl
 [System.Runtime.InteropServices.FieldOffset(48)]
 public fixed byte Field5_Double2[16];
 }
-public static unsafe void Marshal_GEN56_AlignmentTestStruct(ref global::Kassyi.GSharp.Tests.Runtime.GEN56_AlignmentTestStruct host, ref AotContexts.GEN56_AlignmentTestStruct native, bool isDevicePtr, global::Kassyi.GSharp.Runtime.Interop.DeviceArrayRegions? allocatedPtrs, IntPtr hStream = default)
+public static unsafe void Marshal_GEN56_AlignmentTestStruct(ref global::Kassyi.GSharp.Tests.Runtime.GEN56_AlignmentTestStruct host, ref AotContexts.GEN56_AlignmentTestStruct native, bool isDevicePtr, global::Kassyi.GSharp.Runtime.Interop.DeviceArrayRegions? deviceArrays, IntPtr hStream = default)
 {
 native = default;
 native.Field1_Byte = host.Field1_Byte;
