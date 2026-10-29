@@ -55,6 +55,20 @@ public class CrossAssemblyTests : TranspilerTestBase
 
     [Fact]
     [Scenario(TestScenario.HappyPath)]
+    public void Test_AddPair_OperatorMacroOfTheLibrary()
+    {
+        Pair[] pairs = [new() { A = 1, B = 2 }, new() { A = 10, B = 20 }, new() { A = -5, B = 5 }, new() { A = 7, B = 0 }];
+        var result = new int[4];
+        var calls = new int[4];
+
+        CrossAssemblyKernels.LaunchAddPairKernel(pairs, result, calls, blockDimX: 4);
+
+        Assert.Equal([3, 30, 0, 7], result);
+        Assert.Equal([1, 1, 1, 1], calls);
+    }
+
+    [Fact]
+    [Scenario(TestScenario.HappyPath)]
     public void Test_Vec2_ConstructorAndComputedProperty()
     {
         float[] xs = [1f, 2f, 3f, 4f];

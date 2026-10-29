@@ -274,6 +274,7 @@ internal sealed class DeviceExportTable
             GetBool(named, nameof(DeviceExportRecord.CudaFailed)),
             GetBool(named, nameof(DeviceExportRecord.CppFailed)),
             GetBool(named, nameof(DeviceExportRecord.ManagedStateMachine)),
+            GetBool(named, nameof(DeviceExportRecord.ManagedVersion)),
             GetString(named, nameof(DeviceExportRecord.InternalError)));
 
         imported = new ImportedDeviceRecord(record, assemblyName, formatVersion, preludeHash);

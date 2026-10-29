@@ -77,6 +77,10 @@ An operator macro used as an operand of another one (`c = c - (a - b)`) is compu
 
 A compound assignment whose operator or right side is an operator macro (`c += a + b` would otherwise compute `c = a + b`), an increment or decrement operator macro (`r = ++x`), and an operator macro applied to nullable operands (a lifted operator) are reported as GSH0003. Write `t = a + b; c = c + t;` instead of `c += a + b`.
 
+The target method writes the result into the storage that the assignment target holds; it does not assign the target. A target that is a local or an `out` parameter not assigned before the assignment (`Value c; c = a + b;`) has no storage and is reported as GSH0003: assign it first.
+
+The managed path of the CPU dialect expands an operator macro the same way, into the C# call of the chosen overload (its value operands cast to the overload's parameter types, so that C# calls the same overload). A `[GpuDeviceFunction]` that does not suspend runs there as the method you wrote, except one whose body expands an operator macro, or calls a device function that does: G# emits a *managed version* of it (`__gsharp_managed_{path}`, in the partial class that declares it, hidden from IntelliSense), and the managed kernels and the other managed versions call that instead. Calling such a function from host code outside a kernel launch still runs your method, whose operator throws `GpuOnlyException`.
+
 ## Examples
 
 ### Custom GPU Intrinsics

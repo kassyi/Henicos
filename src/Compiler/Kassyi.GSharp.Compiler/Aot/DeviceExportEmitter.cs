@@ -315,6 +315,7 @@ internal static class DeviceExportEmitter
             cuda.Failed || cuda.Definition.Length == 0,
             cpp.Failed || cpp.Definition.Length == 0,
             ManagedStateMachine: false,
+            ManagedVersion: false,
             internalError);
     }
 
@@ -461,6 +462,7 @@ internal static class DeviceExportEmitter
             AppendBoolProperty(writer, nameof(DeviceExportRecord.CudaFailed), record.CudaFailed);
             AppendBoolProperty(writer, nameof(DeviceExportRecord.CppFailed), record.CppFailed);
             AppendBoolProperty(writer, nameof(DeviceExportRecord.ManagedStateMachine), record.ManagedStateMachine);
+            AppendBoolProperty(writer, nameof(DeviceExportRecord.ManagedVersion), record.ManagedVersion);
             AppendStringProperty(writer, nameof(DeviceExportRecord.InternalError), record.InternalError);
         }
 

@@ -34,6 +34,7 @@ internal readonly record struct DeviceExportRecord(
     bool CudaFailed,
     bool CppFailed,
     bool ManagedStateMachine,
+    bool ManagedVersion,
     string InternalError)
 {
     /// <summary>The kind of a device function record.</summary>

@@ -145,4 +145,10 @@ public sealed class GpuDeviceExportAttribute : Attribute
 
     /// <summary>Gets or sets whether the assembly holds the managed state machine of a suspending function.</summary>
     public bool ManagedStateMachine { get; set; }
+
+    /// <summary>
+    /// Gets or sets whether the assembly holds the managed version of a function that does not suspend and expands an
+    /// operator macro, directly or through a call, which the managed path of a consumer calls instead of the function.
+    /// </summary>
+    public bool ManagedVersion { get; set; }
 }
