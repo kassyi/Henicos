@@ -41,6 +41,14 @@ public static partial class CrossAssemblyKernels
         calls[tid] = counter.Calls;
     }
 
+    // A library function that expands an operator macro whose target is private to the library (#711)
+    [GpuKernel]
+    public static void DifferenceKernel(Pair[] pairs, int[] result)
+    {
+        int tid = ThreadIndex.X;
+        result[tid] = LibMath.Difference(pairs[tid]);
+    }
+
     // A public function that calls an internal one of the library
     [GpuKernel]
     public static void TwiceKernel(int[] values, int[] result)

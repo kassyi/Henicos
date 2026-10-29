@@ -102,11 +102,42 @@ internal sealed class UnsupportedConstructRule :
             return;
         }
 
-        if ((macro.Failure ?? GpuOperatorMacroResolver.GetUnassignedTargetFailure(node, macro, context.SemanticModel)) is
-            { } failure)
+        var failure = macro.Failure ??
+                      GpuOperatorMacroResolver.GetUnassignedTargetFailure(node, macro, context.SemanticModel) ??
+                      (context.NeedsManagedStateMachines && context.MethodSymbol.ContainingType is { } within
+                          ? GetUnreachableTargetFailure(macro, within, context.SemanticModel.Compilation)
+                          : null);
+        if (failure is not null)
         {
             context.ReportDiagnostic(GSharpDiagnostics.UnsupportedSyntax, node, failure);
         }
+    }
+
+    // The first target of <macro> or of an operator macro nested in it that the managed expansion cannot call
+    // (ManagedAccessorSet.GetUnreachableTargetFailure)
+    private static string? GetUnreachableTargetFailure(GpuOperatorMacroResolver.OperatorMacro macro,
+        INamedTypeSymbol within, Compilation compilation)
+    {
+        if (macro.TargetMethod is { } target &&
+            ManagedAccessorSet.GetUnreachableTargetFailure(target, within, compilation) is { } failure)
+        {
+            return failure;
+        }
+
+        if (macro.Nested.IsDefaultOrEmpty)
+        {
+            return null;
+        }
+
+        foreach (var nested in macro.Nested)
+        {
+            if (GetUnreachableTargetFailure(nested.Inner, within, compilation) is { } innerFailure)
+            {
+                return innerFailure;
+            }
+        }
+
+        return null;
     }
 
     private static bool IsInSignature(SyntaxNode node)

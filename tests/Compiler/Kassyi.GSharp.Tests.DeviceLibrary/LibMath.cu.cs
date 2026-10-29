@@ -124,6 +124,27 @@ public struct LibValue
     public static LibValue operator +(LibValue left, LibValue right) => throw new GpuOnlyException();
 }
 
+/// <summary>A value whose <c>-</c> is an operator macro with a private target of the library.</summary>
+public struct LibSecretValue
+{
+    public int V;
+
+    public LibSecretValue(int v) => V = v;
+
+    [GpuOperatorMacro(typeof(LibSecretOps), "Difference")]
+    public static LibSecretValue operator -(LibSecretValue left, LibSecretValue right) => throw new GpuOnlyException();
+}
+
+/// <summary>Holds the private target of <see cref="LibSecretValue"/>'s <c>-</c>.</summary>
+public static partial class LibSecretOps
+{
+    [GpuDeviceFunction]
+    private static void Difference(ref LibSecretValue result, LibSecretValue left, LibSecretValue right)
+    {
+        result.V = left.V - right.V;
+    }
+}
+
 /// <summary>Device functions that the kernels of another assembly call.</summary>
 public static partial class LibMath
 {
@@ -177,6 +198,20 @@ public static partial class LibMath
         LibValue b = new LibValue(pair.B);
         LibValue c = new LibValue(0);
         c = a + b;
+        return c.V;
+    }
+
+    /// <summary>
+    /// Subtracts through an operator macro whose target is private to another class of the library: the library's managed
+    /// version calls the target through an [UnsafeAccessor] stub (#711).
+    /// </summary>
+    [GpuDeviceFunction]
+    public static int Difference(Pair pair)
+    {
+        LibSecretValue a = new LibSecretValue(pair.A);
+        LibSecretValue b = new LibSecretValue(pair.B);
+        LibSecretValue c = new LibSecretValue(0);
+        c = a - b;
         return c.V;
     }
 

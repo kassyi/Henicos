@@ -36,7 +36,8 @@ internal static class ManagedCSharpTranspiler
 
         var unhoistedBody = RewriteResumeLocals(loweredBody, unhoistedLocals, renamedLocals, semanticModel, kernelName,
             methodSymbol.AreLocalsZeroed());
-        var bodySource = RewriteAndNormalizeBody(unhoistedBody, semanticModel, isDeviceFunction: false);
+        var accessors = new ManagedAccessorSet(methodSymbol, semanticModel.Compilation);
+        var bodySource = RewriteAndNormalizeBody(unhoistedBody, semanticModel, isDeviceFunction: false, accessors);
 
         using var writer = new SourceWriter();
         ManagedStateMachineEmitter.EmitContextClass(
@@ -44,6 +45,7 @@ internal static class ManagedCSharpTranspiler
             semanticModel);
         ManagedStateMachineEmitter.EmitStateMachineMethod(
             writer, contextName, stateMachineName, methodSymbol, plan.HasAutoResult, localInits, bodySource);
+        accessors.WriteTo(writer);
         return writer.ToString();
     }
 
@@ -90,7 +92,8 @@ internal static class ManagedCSharpTranspiler
 
         var unhoistedBody = RewriteResumeLocals(lowered.LoweredBody, unhoistedLocals, renamedLocals, semanticModel,
             functionName, methodSymbol.AreLocalsZeroed());
-        var bodySource = RewriteAndNormalizeBody(unhoistedBody, semanticModel, isDeviceFunction: true);
+        var accessors = new ManagedAccessorSet(methodSymbol, semanticModel.Compilation);
+        var bodySource = RewriteAndNormalizeBody(unhoistedBody, semanticModel, isDeviceFunction: true, accessors);
 
         // As visible as the function (a consumer of another assembly calls a public one); the frame's fields are the
         // assembly's own (#538 3rd review M1)
@@ -102,6 +105,7 @@ internal static class ManagedCSharpTranspiler
         ManagedStateMachineEmitter.EmitDeviceStateMachineMethod(
             writer, frameName, stateMachineName, methodSymbol, copiedParameters, localInits, bodySource, accessibility,
             ManagedStateMachineAvailability.NeedsUnsafe(methodSymbol, methodDecl));
+        accessors.WriteTo(writer);
         return writer.ToString();
     }
 
@@ -123,7 +127,8 @@ internal static class ManagedCSharpTranspiler
 
         var declaration = plan.Declaration;
         var semanticModel = plan.SemanticModel;
-        var rewriter = new ManagedExecutionRewriter(semanticModel, ManagedBodyKind.ManagedVersion);
+        var accessors = new ManagedAccessorSet(methodSymbol, semanticModel.Compilation);
+        var rewriter = new ManagedExecutionRewriter(semanticModel, ManagedBodyKind.ManagedVersion, accessors);
 
         // <modifiers> static <return type> __gsharp_managed_<path><type parameters>(<parameters>) <constraints> <body>
         // The signature is the user's, with every name written in full (the generated file has none of the user's using
@@ -152,6 +157,7 @@ internal static class ManagedCSharpTranspiler
         writer.AppendLine(ManagedStateMachineEmitter.EditorBrowsableNever);
         writer.AppendLine(ManagedStateMachineEmitter.ToSource(method));
         writer.AppendLine();
+        accessors.WriteTo(writer);
         return writer.ToString();
     }
 
@@ -228,10 +234,10 @@ internal static class ManagedCSharpTranspiler
     }
 
     private static string RewriteAndNormalizeBody(BlockSyntax loweredBody, SemanticModel semanticModel,
-        bool isDeviceFunction)
+        bool isDeviceFunction, ManagedAccessorSet accessors)
     {
         var rewriter = new ManagedExecutionRewriter(semanticModel,
-            isDeviceFunction ? ManagedBodyKind.SuspendingDeviceFunction : ManagedBodyKind.Kernel);
+            isDeviceFunction ? ManagedBodyKind.SuspendingDeviceFunction : ManagedBodyKind.Kernel, accessors);
         var rewritten = rewriter.Visit(loweredBody) as BlockSyntax
                         ?? throw new InvalidOperationException("Managed execution rewriting removed the kernel body.");
         // A device function's state machine is emitted by every assembly that exports its device code, so it is written

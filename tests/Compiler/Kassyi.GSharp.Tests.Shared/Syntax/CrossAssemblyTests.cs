@@ -68,6 +68,18 @@ public class CrossAssemblyTests : TranspilerTestBase
     }
 
     [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void Test_Difference_PrivateOperatorMacroTargetOfTheLibrary()
+    {
+        Pair[] pairs = [new() { A = 1, B = 2 }, new() { A = 10, B = 20 }, new() { A = -5, B = 5 }, new() { A = 7, B = 0 }];
+        var result = new int[4];
+
+        CrossAssemblyKernels.LaunchDifferenceKernel(pairs, result, blockDimX: 4);
+
+        Assert.Equal([-1, -10, -10, 7], result);
+    }
+
+    [Fact]
     [Scenario(TestScenario.HappyPath)]
     public void Test_Vec2_ConstructorAndComputedProperty()
     {

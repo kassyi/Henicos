@@ -1,0 +1,347 @@
+namespace Kassyi.GSharp.Compiler.Transpiler;
+
+/// <summary>
+/// The <c>[UnsafeAccessor]</c> stubs through which one managed body (a kernel or device function state machine, or a
+/// managed version) calls a device function that C# does not let it name: the target of an operator macro that is
+/// private to another type, or internal to another assembly (#711).
+/// </summary>
+/// <remarks>
+/// <para>
+/// [WHY] An operator macro names its target by attribute, so the target need not be accessible where the operator is
+/// used; the native code calls it by its C++ name, which has no accessibility. The managed expansion is C#, so it calls
+/// the target through a stub that the runtime binds to the method by name, as <c>UnsafeAccessorKind.StaticMethod</c>
+/// does (.NET 8; the declaring type named by <c>[UnsafeAccessorType]</c>, which also reaches a static or inaccessible
+/// type, .NET 10; Kassyi.GSharp.Core requires .NET 10).
+/// </para>
+/// <para>
+/// Each stub is a private nested class of the type that holds the body, generic over the type parameters of the
+/// target's declaring types (the runtime matches them by position, <c>!0</c>, <c>!1</c>, ...), with the extern accessor
+/// and a method <c>Invoke</c> that passes the arguments on:
+/// <c>private static class __gsharp_accessor_&lt;body&gt;_&lt;n&gt;&lt;T&gt; { [UnsafeAccessor(...)] private static extern R Target(object? _, ...); internal static R Invoke(...) =&gt; Target(null, ...); }</c>.
+/// </para>
+/// </remarks>
+internal sealed class ManagedAccessorSet(IMethodSymbol caller, Compilation compilation)
+{
+    private const string AttributeNamespace = "global::System.Runtime.CompilerServices.";
+
+    private readonly Dictionary<IMethodSymbol, string> _holders = new(SymbolEqualityComparer.Default);
+    private readonly ImmutableArray<(IMethodSymbol Target, string TargetName, string Holder)>.Builder _stubs =
+        ImmutableArray.CreateBuilder<(IMethodSymbol, string, string)>();
+
+    /// <summary>Whether the body may name <paramref name="callee"/> directly.</summary>
+    public bool IsAccessible(IMethodSymbol callee) =>
+        caller.ContainingType is not { } within || compilation.IsSymbolAccessibleWithin(callee, within);
+
+    /// <summary>
+    /// The callee of a call of <paramref name="callee"/> through its stub, which calls the method named
+    /// <paramref name="targetName"/> (the function itself or its managed version):
+    /// <c>global::&lt;body type&gt;.__gsharp_accessor_&lt;body&gt;_&lt;n&gt;[&lt;type arguments&gt;].Invoke</c>.
+    /// </summary>
+    public ExpressionSyntax Spell(IMethodSymbol callee, string targetName)
+    {
+        var definition = callee.OriginalDefinition;
+        if (!_holders.TryGetValue(definition, out var holder))
+        {
+            holder = GlobalCppNames.GetKernelDerivedName(GSharpInternalNames.ManagedVersion.AccessorPrefix, caller) +
+                     "_" + _stubs.Count.ToString(CultureInfo.InvariantCulture);
+            _holders.Add(definition, holder);
+            _stubs.Add((definition, targetName, holder));
+        }
+
+        using var writer = new SourceWriter();
+        writer.AppendFullyQualifiedCsharpName(caller.ContainingType);
+        writer.Append($".{holder}");
+        var typeArguments = GetTypeArguments(callee.ContainingType);
+        if (typeArguments.Length > 0)
+        {
+            writer.Append("<");
+            for (var i = 0; i < typeArguments.Length; i++)
+            {
+                writer.AppendIf(i > 0, ", ");
+                writer.AppendCsharpTypeName(typeArguments[i]);
+            }
+
+            writer.Append(">");
+        }
+
+        writer.Append(".Invoke");
+        return SyntaxFactory.ParseExpression(writer.ToString());
+    }
+
+    /// <summary>Writes the stubs that <see cref="Spell"/> handed out, nothing when it handed out none.</summary>
+    public void WriteTo(SourceWriter writer)
+    {
+        foreach (var (target, targetName, holder) in _stubs)
+        {
+            WriteStub(writer, target, targetName, holder);
+        }
+    }
+
+    private static void WriteStub(SourceWriter writer, IMethodSymbol target, string targetName, string holder)
+    {
+        var typeParameters = GetTypeParameters(target.ContainingType);
+        var isUnsafe = target.Parameters
+                           .AsStackEnumerable()
+                           .Any(static p => p.Type is IPointerTypeSymbol or IFunctionPointerTypeSymbol) ||
+                       target.ReturnType is IPointerTypeSymbol or IFunctionPointerTypeSymbol;
+
+        // private static [unsafe] class <holder>[<T...>] [where ...]
+        writer.AppendLine(ManagedStateMachineEmitter.EditorBrowsableNever);
+        writer.Append("private static ");
+        writer.AppendIf(isUnsafe, "unsafe ");
+        writer.Append($"class {holder}");
+        AppendTypeParameterList(writer, typeParameters);
+        writer.AppendLine();
+        AppendConstraints(writer, typeParameters);
+        using (writer.Scope())
+        {
+            // [UnsafeAccessor(UnsafeAccessorKind.StaticMethod, Name = "<target>")]
+            // private static extern <return> Target(<declaring type marker>, <parameters>);
+            writer.AppendLine(
+                $"[{AttributeNamespace}UnsafeAccessor({AttributeNamespace}UnsafeAccessorKind.StaticMethod, Name = \"{targetName}\")]");
+            writer.Append("private static extern ");
+            AppendReturnType(writer, target);
+            writer.Append(" Target");
+            using (writer.Parentheses())
+            {
+                AppendDeclaringTypeMarker(writer, target.ContainingType, typeParameters.Length);
+                AppendParameters(writer, target, withLeadingComma: true);
+            }
+
+            writer.AppendLine(";");
+
+            // internal static <return> Invoke(<parameters>) => Target(default, <arguments>);
+            writer.Append("internal static ");
+            AppendReturnType(writer, target);
+            writer.Append(" Invoke");
+            using (writer.Parentheses())
+            {
+                AppendParameters(writer, target, withLeadingComma: false);
+            }
+
+            writer.Append(" => Target");
+            using (writer.Parentheses())
+            {
+                writer.Append("default");
+                for (var i = 0; i < target.Parameters.Length; i++)
+                {
+                    writer.Append(", ");
+                    writer.Append(target.Parameters[i].RefKind switch
+                    {
+                        RefKind.Ref => "ref ",
+                        RefKind.Out => "out ",
+                        RefKind.In or RefKind.RefReadOnlyParameter => "in ",
+                        _ => ""
+                    });
+                    writer.Append($"p{i.ToString(CultureInfo.InvariantCulture)}");
+                }
+            }
+
+            writer.AppendLine(";");
+        }
+
+        writer.AppendLine();
+    }
+
+    // The first parameter of a static accessor names the type to look the method up in; its value is not used. A class
+    // (static ones and inaccessible ones too) by name: [UnsafeAccessorType("<declaring type>, <assembly>")] object? _.
+    // A struct by its type, as UnsafeAccessorType does not take value types: <declaring type> _
+    private static void AppendDeclaringTypeMarker(SourceWriter writer, INamedTypeSymbol declaringType,
+        int typeParameterCount)
+    {
+        if (declaringType.IsValueType)
+        {
+            writer.AppendCsharpTypeName(declaringType.OriginalDefinition);
+            writer.Append(" _");
+            return;
+        }
+
+        var name = GetRuntimeTypeName(declaringType, typeParameterCount);
+        writer.Append($"[{AttributeNamespace}UnsafeAccessorType(\"{name}\")] object? _");
+    }
+
+    /// <summary>
+    /// Why the managed path cannot call <paramref name="target"/> from code in <paramref name="within"/>, or
+    /// <see langword="null"/> when it can: the target and the struct that declares it are both inaccessible there.
+    /// </summary>
+    /// <remarks>
+    /// [WHY] C# cannot name the struct, and the runtime's <c>[UnsafeAccessorType]</c>, which names an inaccessible type by
+    /// string, does not take value types; reaching it would take reflection, which G# does not emit. A class (static or
+    /// not) is named by string, and an accessible struct by its type, so any other target is reached.
+    /// </remarks>
+    public static string? GetUnreachableTargetFailure(IMethodSymbol target, INamedTypeSymbol within,
+        Compilation compilation)
+    {
+        if (compilation.IsSymbolAccessibleWithin(target, within) ||
+            target.ContainingType is not { IsValueType: true } declaringType ||
+            compilation.IsSymbolAccessibleWithin(declaringType, within))
+        {
+            return null;
+        }
+
+        return
+            $"Operator macro target '{declaringType.Name}.{target.Name}' is not accessible here and is declared in struct '{declaringType.Name}', which is not accessible either: the managed CPU path calls such a target through [UnsafeAccessor], which can name an inaccessible class but not an inaccessible struct; make '{declaringType.Name}' or the target accessible here";
+    }
+
+    private static void AppendReturnType(SourceWriter writer, IMethodSymbol target)
+    {
+        if (target.ReturnsVoid)
+        {
+            writer.Append("void");
+            return;
+        }
+
+        writer.AppendCsharpTypeName(target.ReturnType);
+    }
+
+    // [, ]<modifier> <type> p<i>, ...
+    private static void AppendParameters(SourceWriter writer, IMethodSymbol target, bool withLeadingComma)
+    {
+        for (var i = 0; i < target.Parameters.Length; i++)
+        {
+            var parameter = target.Parameters[i];
+            writer.AppendIf(withLeadingComma || i > 0, ", ");
+            writer.Append(parameter.RefKind switch
+            {
+                RefKind.Ref => "ref ",
+                RefKind.Out => "out ",
+                RefKind.In => "in ",
+                RefKind.RefReadOnlyParameter => "ref readonly ",
+                _ => ""
+            });
+            writer.AppendCsharpTypeName(parameter.Type);
+            writer.Append($" p{i.ToString(CultureInfo.InvariantCulture)}");
+        }
+    }
+
+    // <T, U>: the declaring types' own names, which their constraints refer to
+    private static void AppendTypeParameterList(SourceWriter writer, ImmutableArray<ITypeParameterSymbol> typeParameters)
+    {
+        if (typeParameters.Length == 0)
+        {
+            return;
+        }
+
+        writer.Append("<");
+        for (var i = 0; i < typeParameters.Length; i++)
+        {
+            writer.AppendIf(i > 0, ", ");
+            writer.Append(typeParameters[i].Name.ToCSharpIdentifier());
+        }
+
+        writer.Append(">");
+    }
+
+    // where T : unmanaged, ...: the runtime requires the constraints of the declaring types' parameters
+    private static void AppendConstraints(SourceWriter writer, ImmutableArray<ITypeParameterSymbol> typeParameters)
+    {
+        foreach (var parameter in typeParameters)
+        {
+            var kind = parameter.HasUnmanagedTypeConstraint ? "unmanaged"
+                : parameter.HasValueTypeConstraint ? "struct"
+                : parameter.HasReferenceTypeConstraint ? "class"
+                : parameter.HasNotNullConstraint ? "notnull"
+                : null;
+            var hasConstructor = parameter.HasConstructorConstraint && !parameter.HasValueTypeConstraint;
+            if (kind is null && parameter.ConstraintTypes.IsEmpty && !hasConstructor)
+            {
+                continue;
+            }
+
+            writer.Append($"where {parameter.Name.ToCSharpIdentifier()} : ");
+            var first = true;
+            if (kind is not null)
+            {
+                writer.Append(kind);
+                first = false;
+            }
+
+            foreach (var constraint in parameter.ConstraintTypes)
+            {
+                writer.AppendIf(!first, ", ");
+                writer.AppendCsharpTypeName(constraint);
+                first = false;
+            }
+
+            writer.AppendIf(hasConstructor, first ? "new()" : ", new()");
+            writer.AppendLine();
+        }
+    }
+
+    // N.Outer`1+Inner[[!0]], Assembly: the type name that UnsafeAccessorType resolves, with the type parameters of the
+    // stub's class standing for those of the declaring types
+    private static string GetRuntimeTypeName(INamedTypeSymbol type, int typeParameterCount)
+    {
+        var name = new StringBuilder();
+        AppendNestedName(name, type);
+        if (typeParameterCount > 0)
+        {
+            name.Append('[');
+            for (var i = 0; i < typeParameterCount; i++)
+            {
+                name.Append(i > 0 ? ",[!" : "[!").Append(i.ToString(CultureInfo.InvariantCulture)).Append(']');
+            }
+
+            name.Append(']');
+        }
+
+        return name.Append(", ").Append(type.ContainingAssembly.Identity.Name).ToString();
+    }
+
+    private static void AppendNestedName(StringBuilder name, INamedTypeSymbol type)
+    {
+        if (type.ContainingType is { } outer)
+        {
+            AppendNestedName(name, outer);
+            name.Append('+');
+        }
+        else if (type.ContainingNamespace is { IsGlobalNamespace: false } ns)
+        {
+            name.Append(ns.GetFullNamespaceName()).Append('.');
+        }
+
+        name.Append(type.MetadataName);
+    }
+
+    // The type parameters of <type> and the types that contain it, the outermost first
+    private static ImmutableArray<ITypeParameterSymbol> GetTypeParameters(INamedTypeSymbol? type)
+    {
+        var parameters = ImmutableArray.CreateBuilder<ITypeParameterSymbol>();
+        AddTypeParameters(type?.OriginalDefinition, parameters);
+        return parameters.ToImmutable();
+    }
+
+    private static void AddTypeParameters(INamedTypeSymbol? type, ImmutableArray<ITypeParameterSymbol>.Builder parameters)
+    {
+        if (type is null)
+        {
+            return;
+        }
+
+        AddTypeParameters(type.ContainingType, parameters);
+        type.TypeParameters
+            .AsStackEnumerable()
+            .AddTo(parameters);
+    }
+
+    // The type arguments of <type> and the types that contain it, the outermost first
+    private static ImmutableArray<ITypeSymbol> GetTypeArguments(INamedTypeSymbol? type)
+    {
+        var arguments = ImmutableArray.CreateBuilder<ITypeSymbol>();
+        AddTypeArguments(type, arguments);
+        return arguments.ToImmutable();
+    }
+
+    private static void AddTypeArguments(INamedTypeSymbol? type, ImmutableArray<ITypeSymbol>.Builder arguments)
+    {
+        if (type is null)
+        {
+            return;
+        }
+
+        AddTypeArguments(type.ContainingType, arguments);
+        type.TypeArguments
+            .AsStackEnumerable()
+            .AddTo(arguments);
+    }
+}

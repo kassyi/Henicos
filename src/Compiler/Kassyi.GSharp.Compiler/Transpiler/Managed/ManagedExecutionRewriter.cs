@@ -16,7 +16,14 @@ internal enum ManagedBodyKind
 /// <summary>
 /// Rewrites lowered device function calls and state machine constructs into managed execution equivalents.
 /// </summary>
-internal sealed partial class ManagedExecutionRewriter(SemanticModel semanticModel, ManagedBodyKind bodyKind)
+/// <param name="semanticModel">The model of the user's tree that the body comes from.</param>
+/// <param name="bodyKind">What the body is emitted as.</param>
+/// <param name="accessors">
+/// The stubs through which the body calls an operator macro target it cannot name; <see langword="null"/> to name every
+/// target directly.
+/// </param>
+internal sealed partial class ManagedExecutionRewriter(SemanticModel semanticModel, ManagedBodyKind bodyKind,
+    ManagedAccessorSet? accessors = null)
     : CSharpSyntaxRewriter
 {
     /// <summary>

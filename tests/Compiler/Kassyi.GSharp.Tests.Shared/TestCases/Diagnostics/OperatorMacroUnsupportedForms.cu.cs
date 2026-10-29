@@ -119,3 +119,95 @@ public static partial class OperatorMacroUnsupportedFormKernels
         result = left + right;
     }
 }
+
+public struct FormOutValue
+{
+    public uint Value;
+
+    [GpuOperatorMacro(typeof(FormOutOps), nameof(FormOutOps.Add))]
+    public static FormOutValue operator +(FormOutValue left, FormOutValue right) => throw new InvalidOperationException();
+}
+
+public static partial class FormOutOps
+{
+    [GpuDeviceFunction]
+    public static void Add(out FormOutValue result, FormOutValue left, FormOutValue right)
+    {
+        result.Value = left.Value + right.Value;
+    }
+}
+
+public struct FormHolder
+{
+    public FormValue Inner;
+    public uint Other;
+}
+
+public static partial class OperatorMacroTargetAssignmentKernels
+{
+    // No GSH0003: the target method assigns its out result
+    [GpuKernel]
+    [SkipSnapshotConsistency("Diagnostics case")]
+    public static void OutResultKernel(uint[] output)
+    {
+        FormOutValue a = default;
+        FormOutValue c;
+        c = a + a;
+        output[0] = c.Value;
+    }
+
+    // No GSH0003: an out parameter that the target method assigns
+    [GpuDeviceFunction]
+    public static void SumInto(out FormOutValue result, FormOutValue left)
+    {
+        result = left + left;
+    }
+
+    // No GSH0003: the local function assigns a local that the method assigned (not where declared) before calling it
+    [GpuKernel]
+    [SkipSnapshotConsistency("Diagnostics case")]
+    public static void LocalFunctionKernel(uint[] output)
+    {
+        FormValue a = default, c;
+        c = default;
+        void Add()
+        {
+            c = a + a;
+        }
+
+        Add();
+        output[0] = c.Value;
+    }
+
+    // No GSH0003: both branches assign the target
+    [GpuKernel]
+    [SkipSnapshotConsistency("Diagnostics case")]
+    public static void BranchesKernel(uint[] input, uint[] output)
+    {
+        FormValue a = default;
+        FormValue c;
+        if (input[0] > 0u)
+        {
+            c = a;
+        }
+        else
+        {
+            c = default;
+        }
+
+        c = a + a;
+        output[0] = c.Value;
+    }
+
+    // GSH0003: a field of a struct local that is not fully assigned has no storage either
+    [GpuKernel]
+    [SkipSnapshotConsistency("Diagnostics case")]
+    public static void PartlyAssignedStructKernel(uint[] output)
+    {
+        FormValue a = default;
+        FormHolder h;
+        h.Other = 0u;
+        h.Inner = a + a;
+        output[0] = h.Other;
+    }
+}

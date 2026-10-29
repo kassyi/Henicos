@@ -6,9 +6,21 @@ namespace Kassyi.GSharp.Compiler.Transpiler;
 // device functions stay the user's methods.
 internal sealed partial class ManagedExecutionRewriter
 {
-    // The callee of a call that the rewriter writes itself (the target of an operator macro)
-    private ExpressionSyntax SpellDeviceFunction(IMethodSymbol callee) =>
-        SpellCallee(callee, typeArguments: null, IsRouted(callee));
+    // The callee of a call that the rewriter writes itself (the target of an operator macro). An operator macro names
+    // its target by attribute, so the target need not be accessible here: such a target is called through an
+    // [UnsafeAccessor] stub (ManagedAccessorSet), which reaches its managed version when it has one
+    private ExpressionSyntax SpellDeviceFunction(IMethodSymbol callee)
+    {
+        var routed = IsRouted(callee);
+        if (accessors is null || accessors.IsAccessible(callee))
+        {
+            return SpellCallee(callee, typeArguments: null, routed);
+        }
+
+        return accessors.Spell(callee, routed
+            ? GlobalCppNames.GetKernelDerivedName(GSharpInternalNames.ManagedVersion.MethodPrefix, callee)
+            : callee.Name);
+    }
 
     private bool IsRouted(IMethodSymbol method) =>
         ManagedVersionAnalysis.HasManagedVersion(method, semanticModel.Compilation);

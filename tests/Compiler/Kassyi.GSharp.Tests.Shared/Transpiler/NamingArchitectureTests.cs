@@ -30,6 +30,8 @@ public partial class NamingArchitectureTests
         "GpuOperatorMacroResolver.cs:parameter.Name",
         "GpuOperatorMacroResolver.cs:method.Name",
         "GpuOperatorMacroResolver.cs:innerResult.Name",
+        "ManagedAccessorSet.cs:declaringType.Name",
+        "ManagedAccessorSet.cs:target.Name",
         "MethodSignatureTranspiler.cs:methodSymbol.ContainingType.Name",
         "MethodSignatureTranspiler.cs:methodSymbol.Name",
         "HoistedFieldTypeResolver.cs:typeParameter.Name",

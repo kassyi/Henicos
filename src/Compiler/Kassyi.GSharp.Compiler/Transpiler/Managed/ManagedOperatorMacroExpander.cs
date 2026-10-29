@@ -121,7 +121,7 @@ internal static class ManagedOperatorMacroExpander
                 var type = semanticModel.GetTypeSymbol(operand);
                 if (i <= last && effects is not null && !effects[i].IsEmpty)
                 {
-                    arguments.Add(Spill(visited, type, parameter));
+                    arguments.Add(Spill(visited, type, parameter, IsVariable(operand)));
                     continue;
                 }
 
@@ -134,21 +134,25 @@ internal static class ManagedOperatorMacroExpander
             );
         }
 
-        // The operand evaluated into a temporary now, in the C# order:
-        // ref <type> <temp> = ref <operand>;    for a ref or out result, which the call writes through
-        // <type> <temp> = <operand>;             for a value (an 'in' parameter takes the value too, as the operator did)
-        private ArgumentSyntax Spill(ExpressionSyntax operand, ITypeSymbol? type, IParameterSymbol parameter)
+        // The operand evaluated into a temporary now, in the C# order, as the C++ emitter does (EvaluationOrder.DeclareTemp:
+        // auto&& for a parameter passed by reference):
+        // ref <type> <temp> = ref <operand>;            a ref or out result, which the call writes through
+        // ref readonly <type> <temp> = ref <operand>;   a variable passed to an 'in' or 'ref readonly' parameter of its
+        //                                               own type: the call reads the variable itself, as in C++
+        // <type> <temp> = <operand>;                    any other value
+        private ArgumentSyntax Spill(ExpressionSyntax operand, ITypeSymbol? type, IParameterSymbol parameter,
+            bool isVariable)
         {
             var temp = NextTemp();
-            if (parameter.RefKind is RefKind.Ref or RefKind.Out && type is not null)
+            var reference = type is null ? RefKind.None : parameter.RefKind switch
             {
-                Statements.Add(DeclareLocal(type, temp, SyntaxFactory.RefExpression(operand), isRef: true));
-            }
-            else
-            {
-                Statements.Add(DeclareLocal(type, temp, operand));
-            }
-
+                RefKind.Ref or RefKind.Out => RefKind.Ref,
+                RefKind.In or RefKind.RefReadOnlyParameter when isVariable && type.IsEqualTo(parameter.Type) =>
+                    RefKind.RefReadOnly,
+                _ => RefKind.None
+            };
+            Statements.Add(DeclareLocal(type, temp,
+                reference == RefKind.None ? operand : SyntaxFactory.RefExpression(operand), reference));
             return CreateArgument(Temp(temp), parameter, type, isVariable: true);
         }
 
@@ -217,15 +221,23 @@ internal static class ManagedOperatorMacroExpander
         private static ArgumentSyntax WithModifier(ExpressionSyntax expression, SyntaxKind modifier) =>
             SyntaxFactory.Argument(expression).WithRefKindKeyword(SyntaxFactory.Token(modifier));
 
-        // [ref] <type> <name> = <value>;   (var when the type is not known)
+        // [ref [readonly]] <type> <name> = <value>;   (var when the type is not known)
         private static LocalDeclarationStatementSyntax DeclareLocal(ITypeSymbol? type, string name,
-            ExpressionSyntax value, bool isRef = false)
+            ExpressionSyntax value, RefKind reference = RefKind.None)
         {
             TypeSyntax typeSyntax = type is null ? SyntaxFactory.IdentifierName("var") : ParseType(type);
-            if (isRef)
+            typeSyntax = reference switch
             {
-                typeSyntax = SyntaxFactory.RefType(typeSyntax);
-            }
+                // ref <type>
+                RefKind.Ref => SyntaxFactory.RefType(typeSyntax),
+                // ref readonly <type>
+                RefKind.RefReadOnly => SyntaxFactory.RefType(
+                    SyntaxFactory.Token(SyntaxKind.RefKeyword),
+                    SyntaxFactory.Token(SyntaxKind.ReadOnlyKeyword),
+                    typeSyntax
+                ),
+                _ => typeSyntax
+            };
 
             var declarator = SyntaxFactory.VariableDeclarator(SyntaxFactory.Identifier(name))
                 .WithInitializer(SyntaxFactory.EqualsValueClause(value));

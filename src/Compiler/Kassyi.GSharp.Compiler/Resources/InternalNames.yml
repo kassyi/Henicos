@@ -49,6 +49,10 @@ ManagedVersion:
     # The temporaries of one expanded operator macro: the result of an inner operator macro, or an operand evaluated
     # before it in the C# order (__gsharp_macro_tmp_<n>).
     MacroTempPrefix: __gsharp_macro_tmp_
+    # The nested class that holds the [UnsafeAccessor] stub through which a managed body calls an operator macro target it
+    # cannot name (ManagedAccessorSet): followed by the body of the body's function name and a counter
+    # (__gsharp_accessor_<path>_<n>).
+    AccessorPrefix: __gsharp_accessor_
 
 DynamicSharedMemory:
   Summary: >-
