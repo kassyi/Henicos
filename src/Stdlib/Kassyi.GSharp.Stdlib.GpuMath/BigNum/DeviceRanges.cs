@@ -35,6 +35,8 @@ internal static class DeviceRanges
     public static bool Overlaps(scoped GpuBigFloatArrayView a, GpuBigIntMemoryHandle b) =>
         Overlaps(a.Significands.Handle, b) || Overlaps(a.Exponents.Handle, b) || Overlaps(a.Signs.Handle, b);
 
+    // The pairs of different components (significands over exponents) have no test: only the internal constructors of
+    // a float view can build them
     /// <summary>Returns whether any component of <paramref name="a"/> overlaps any component of <paramref name="b"/>.</summary>
     public static bool Overlaps(scoped GpuBigFloatArrayView a, scoped GpuBigFloatArrayView b) =>
         Overlaps(a, b.Significands.Handle) || Overlaps(a, b.Exponents.Handle) || Overlaps(a, b.Signs.Handle);

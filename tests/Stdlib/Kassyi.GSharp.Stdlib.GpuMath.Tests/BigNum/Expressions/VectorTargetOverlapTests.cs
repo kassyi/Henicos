@@ -22,7 +22,7 @@ namespace Kassyi.GSharp.Stdlib.GpuMath.Tests.BigNum.Expressions;
 /// <para>
 /// mutant: <c>DeviceRanges.Overlaps(GpuBigUIntArrayView, GpuBigUIntArrayView)</c> and
 /// <c>DeviceRanges.Overlaps(GpuBigFloatArrayView, GpuBigIntMemoryHandle)</c> return <see langword="false"/>: the
-/// TargetAhead case of every node except the leaves fails (with most InPlace / TargetBehind cases, 87 in all on an
+/// TargetAhead case of every node except the leaves fails (with most InPlace / TargetBehind cases, 87 to 88 on an
 /// RTX 3070 Ti), and so does the public SelectDivide reproduction. The leaves have no failing witness: the driver copy
 /// of a partly overlapping range happened to be right there, and the staging copy follows the <c>cuMemcpyDtoD</c>
 /// contract, which does not promise it.
@@ -280,6 +280,46 @@ public sealed class VectorTargetOverlapTests : IDisposable
 
     [SkippableFact]
     [Scenario(TestScenario.Boundary)]
+    public void IntLeaf_TargetOverTheInputSigns_KeepsTheSigns()
+    {
+        // With 1-word elements the public Signs array of the input passes the shape check as a target: the leaf writes
+        // the magnitudes over the signs it returns, so it keeps a copy of the signs first.
+        // mutant: GpuBigIntVectorLeafExpression without the signs staging (the magnitudes are read back as signs)
+        const int count = 64;
+        var values = Enumerable.Range(0, count).Select(static i => new BigInteger(i % 3 == 0 ? -(i + 7) : i + 7))
+            .ToArray();
+        using var array = CreateSignedArray(values);
+        using var expression = array.AsVectorizedEnumerable();
+        GpuBigUIntArrayView signs = array.Signs;
+
+        var result = expression.Evaluate(_workspace, 0, count, signs);
+
+        Assert.Equal(values, ReadSigned(result));
+    }
+
+    [SkippableFact]
+    [Scenario(TestScenario.Boundary)]
+    public void Int_TargetOverTheInputSigns_ReceivesTheExactResult()
+    {
+        // The target is the input's own signs shifted by one element: the kernel would write a magnitude over the sign
+        // another block still reads, so the overlap check covers the signs of an input, not only its values.
+        // mutant: DeviceRanges.Overlaps(GpuBigUIntArrayView, GpuBigIntArrayView) without `|| Overlaps(a, b.Signs)`
+        // (signs flipped)
+        const int count = 65536;
+        var random = new Random(Seed);
+        var values = Enumerable.Range(0, count).Select(_ => new BigInteger(random.Next(0, 1 << 30))).ToArray();
+        using var array = CreateSignedArray(values);
+        using var scalar = new GpuBigInt(GpuBigUInt.FromBigInteger(_workspace, 5, 1), false);
+        using var expression = array.AsVectorizedEnumerable().SelectSubtract(scalar);
+        GpuBigUIntArrayView signs = array.Signs;
+
+        var result = expression.Evaluate(_workspace, 0, count - 1, signs.Slice(1, count - 1));
+
+        Assert.Equal(values.Take(count - 1).Select(static v => v - 5), ReadSigned(result));
+    }
+
+    [SkippableFact]
+    [Scenario(TestScenario.Boundary)]
     public void Float_ScalarInsideTheTarget_IsReadBeforeItIsOverwritten()
     {
         // The float divisor's significand lies in the words of the target's last element (float side of the test above).
@@ -495,6 +535,17 @@ public sealed class VectorTargetOverlapTests : IDisposable
         var array = new GpuBigIntArray(_workspace, values.Length, words);
         WriteWords(array.Values.DevicePointer, values, words);
         _workspace.Provider.ClearMemoryAsync(array.Signs.DevicePointer, values.Length, _workspace.Stream);
+        return array;
+    }
+
+    // A 1-word signed array
+    private GpuBigIntArray CreateSignedArray(BigInteger[] values)
+    {
+        var array = new GpuBigIntArray(_workspace, values.Length, 1);
+        var magnitudes = values.Select(BigInteger.Abs).ToArray();
+        var signs = values.Select(static v => v.Sign < 0 ? 1u : 0u).ToArray();
+        WriteWords(array.Values.DevicePointer, magnitudes, 1);
+        _workspace.Provider.CopyHostToDevice(array.Signs.DevicePointer, signs, signs.Length, _workspace.Stream);
         return array;
     }
 

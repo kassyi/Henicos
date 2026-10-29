@@ -22,7 +22,9 @@ internal sealed class GpuBigFloatVectorLeafExpression(GpuBigFloatArray array) : 
 
         // As every node: a target is checked, and its first elements receive the values
         var destination = VectorResultCache.TargetFloat(targetResult, count, WordsPerElement);
-        // A target that overlaps the array (a shifted view of it) is copied through a temporary
+        // A target that overlaps the array (a shifted view of it) is copied through a temporary, component by component.
+        // A target component over another component of the input (significands over exponents) is not handled: the
+        // public API cannot build one (a float view of arbitrary components needs the internal constructor)
         return VectorResultCache.Deliver(workspace, slice, destination);
     }
 
