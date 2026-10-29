@@ -83,6 +83,25 @@ public class StructLayoutDiagnosticsTests
     }
 
     // VecHolder[] (line 60) and the inline array of Elem in InlineOuter (line 63), where Vector2 and Float2 move to
+    // A kernel's returned struct is checked like an array parameter's element (#704): Overlap cannot be laid out
+    // (line 21), VecHolder moves V on CUDA only (line 24), AutoPair may be reordered on both (line 27), Plain is copied
+    [Theory]
+    [InlineData("Cpu", false)]
+    [InlineData("Cuda", true)]
+    [Scenario(TestScenario.SadPath)]
+    public async Task Test_ReturnedStruct_ReportsGsh0078AndGsh0080AtTheReturnType(string dialect, bool isCuda)
+    {
+        var diagnostics = await KernelDiagnostics.RunTestCaseAsync("Diagnostics/StructLayoutReturnDiagnostics.cs",
+            dialect);
+
+        Assert.Equal([(Analyzer, 21, 23, 21, 30)],
+            diagnostics.Ranges(GSharpDiagnostics.StructLayoutNotRepresentable.Id));
+        IEnumerable<(DiagnosticOrigin, int, int, int, int)> converted = isCuda
+            ? [(Analyzer, 24, 23, 24, 32), (Analyzer, 27, 23, 27, 31)]
+            : [(Analyzer, 27, 23, 27, 31)];
+        Assert.Equal(converted, diagnostics.Ranges(GSharpDiagnostics.StructArrayConvertedPerElement.Id));
+    }
+
     // 8-byte offsets on CUDA only; on both dialects Bag[] (line 66), AutoPair[] (line 101) and the inline array of
     // WithArray in ArraysHolder (line 110), whose host layout the runtime may reorder
     [Theory]

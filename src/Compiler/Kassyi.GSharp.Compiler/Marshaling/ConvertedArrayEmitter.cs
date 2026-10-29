@@ -2,7 +2,7 @@ namespace Kassyi.GSharp.Compiler.Marshaling;
 
 /// <summary>
 /// Emits the element-by-element conversion of an array-like parameter whose element lays out differently on the device,
-/// for the CUDA launcher (<see cref="KernelLaunchEmitter"/>) and the CPU launcher (<see cref="CpuHostLaunchEmitter"/>).
+/// and of the auto result array of a kernel that returns such a struct, for the CUDA launcher (<see cref="KernelLaunchEmitter"/>) and the CPU launcher (<see cref="CpuHostLaunchEmitter"/>).
 /// </summary>
 /// <remarks>
 /// Both launchers convert the elements into a shadow array of the device layout, rented from <c>ArrayPool</c>. They differ
@@ -68,6 +68,35 @@ internal static class ConvertedArrayEmitter
                 $"ref {name}_native[{name}_index], false, hStream);");
         }
     }
+
+    // var __gsharp_auto_result_native = MemoryMarshal.Cast<byte, <element shadow>>(
+    //     __gsharp_auto_result_shadow.AsSpan(0, __gsharp_auto_result_size));
+    // The auto result array of a kernel that returns a converted struct, in the device layout (#704)
+    internal static void WriteReturnShadowSpan(SourceWriter writer, in ParameterTransfer transfer) =>
+        writer.AppendLine(
+            $"var {GSharpInternalNames.ReturnValue.BufferNative} = System.Runtime.InteropServices.MemoryMarshal" +
+            $".Cast<byte, {GetReturnShadowPath(transfer)}>({GSharpInternalNames.ReturnValue.BufferShadow}" +
+            $".AsSpan(0, {GSharpInternalNames.ReturnValue.BufferSize}));");
+
+    // for (int __gsharp_auto_result_index = 0; ...; __gsharp_auto_result_index++)
+    // { Unmarshal_<E>(ref __gsharp_auto_result[i], ref __gsharp_auto_result_native[i], false, hStream); }
+    internal static void WriteReturnUnmarshalLoop(SourceWriter writer, in ParameterTransfer transfer)
+    {
+        const string Index = GSharpInternalNames.ReturnValue.BufferIndex;
+        const string Native = GSharpInternalNames.ReturnValue.BufferNative;
+        writer.AppendLine($"for (int {Index} = 0; {Index} < {Native}.Length; {Index}++)");
+        using (writer.Scope())
+        {
+            writer.AppendLine(
+                $"{transfer.ConvertedElementUnmarshalMethodName}(ref {GSharpInternalNames.ReturnValue.Buffer}[{Index}], " +
+                $"ref {Native}[{Index}], false, hStream);");
+        }
+    }
+
+    /// <summary>The <c>AotContexts</c> path of the converted struct that a kernel returns.</summary>
+    internal static string GetReturnShadowPath(in ParameterTransfer transfer) =>
+        transfer.ConvertedElementAotStructPath ??
+        throw new InvalidOperationException("The kernel does not return a converted struct.");
 
     /// <summary>The <c>AotContexts</c> path of the converted element of <paramref name="shape"/>.</summary>
     internal static string GetElementShadowPath(in KernelParameterShape shape, in ParameterTransfer transfer) =>

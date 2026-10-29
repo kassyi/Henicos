@@ -38,6 +38,7 @@ internal static class StructMarshalingEmitter
                 cpuStructs,
                 static (parameter, structs) => CollectParameterStructs(parameter.Type, HostDialects.Cpu, structs)
             );
+        CollectReturnStruct(kernel.ReturnType, HostDialects.Cpu, cpuStructs);
 
         var sources = ImmutableArray.CreateBuilder<StructHostSource>(structTypes.Length);
         foreach (var s in structTypes)
@@ -83,6 +84,8 @@ internal static class StructMarshalingEmitter
             kernel.Parameters
                 .AsStackEnumerable()
                 .Do(structTypes, static (parameter, structs) => CollectParameterStructs(parameter.Type, structs));
+            CollectReturnStruct(kernel.ReturnType, HostDialects.Cuda, structTypes);
+            CollectReturnStruct(kernel.ReturnType, HostDialects.Cpu, structTypes);
         }
 
         var byName = new Dictionary<string, INamedTypeSymbol>(StringComparer.Ordinal);
@@ -126,6 +129,17 @@ internal static class StructMarshalingEmitter
                 ? element
                 : type,
             structs);
+    }
+
+    // [WHY] The auto result array of a kernel that returns a user struct is read back like an [Out] array: element by
+    // element through Unmarshal_ when the struct lays out differently on the dialect's device (#704), otherwise as it is
+    private static void CollectReturnStruct(ITypeSymbol returnType, ITranspilerDialect dialect,
+        HashSet<INamedTypeSymbol> structs)
+    {
+        if (KernelParameterShape.IsConvertedReturn(returnType, dialect))
+        {
+            TypeLayoutCalculator.CollectStructs(returnType, structs);
+        }
     }
 
     private static void WriteMarshalMethod(SourceWriter writer, INamedTypeSymbol s, StructLayoutInfo structLayout,

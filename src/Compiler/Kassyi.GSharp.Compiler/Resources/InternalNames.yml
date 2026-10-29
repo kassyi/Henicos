@@ -147,10 +147,13 @@ Launcher:
     LayoutProbe: __gsharp_layout_probe
 
 ReturnValue:
-  Summary: The buffer that a kernel returning a value writes into, and the device-side locals that fill it.
+  Summary: The buffer that a kernel returning a value writes into, the device-side locals that fill it, and the launcher locals that convert a returned struct whose layouts differ.
   Names:
     Buffer: __gsharp_auto_result
     BufferSize: __gsharp_auto_result_size
+    BufferShadow: __gsharp_auto_result_shadow
+    BufferNative: __gsharp_auto_result_native
+    BufferIndex: __gsharp_auto_result_index
     GlobalThreadIndex: __gsharp_global_tid
 
 Prelude:

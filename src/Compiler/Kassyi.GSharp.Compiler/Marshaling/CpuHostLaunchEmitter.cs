@@ -141,7 +141,11 @@ internal static class CpuHostLaunchEmitter
 
             if (kernel.Host.ReturnTypeName is { } returnType)
             {
-                writer.Append($", {returnType}* {GSharpInternalNames.ReturnValue.Buffer}");
+                // A returned struct whose layouts differ is written into its native shadow array (#704)
+                var elementType = kernel.Host.IsCpuConvertedReturn
+                    ? ConvertedArrayEmitter.GetReturnShadowPath(kernel.Host.CpuReturn)
+                    : returnType;
+                writer.Append($", {elementType}* {GSharpInternalNames.ReturnValue.Buffer}");
             }
         }
 
@@ -486,6 +490,8 @@ internal static class CpuHostLaunchEmitter
             hasConverted |= WriteConvertedDeclaration(writer, shape);
         }
 
+        hasConverted |= WriteConvertedAutoResultDeclaration(writer, kernel);
+
         if (!hasConverted)
         {
             WriteFixedBlocksAndInvoke(writer, kernel);
@@ -501,10 +507,16 @@ internal static class CpuHostLaunchEmitter
                 WriteConvertedMarshal(writer, shape);
             }
 
+            WriteConvertedAutoResultMarshal(writer, kernel);
             WriteFixedBlocksAndInvoke(writer, kernel);
             foreach (var shape in kernel.Parameters)
             {
                 WriteConvertedUnmarshal(writer, shape);
+            }
+
+            if (kernel.IsCpuConvertedReturn)
+            {
+                ConvertedArrayEmitter.WriteReturnUnmarshalLoop(writer, kernel.CpuReturn);
             }
         }
 
@@ -515,6 +527,10 @@ internal static class CpuHostLaunchEmitter
             {
                 WriteConvertedRelease(writer, shape);
             }
+
+            writer.AppendLineIf(kernel.IsCpuConvertedReturn,
+                $"if ({GSharpInternalNames.ReturnValue.BufferShadow} != null) " +
+                $"System.Buffers.ArrayPool<byte>.Shared.Return({GSharpInternalNames.ReturnValue.BufferShadow});");
         }
 
         WrapperEmitter.WriteAutoResultReturn(writer, kernel);
@@ -539,6 +555,40 @@ internal static class CpuHostLaunchEmitter
             default:
                 return false;
         }
+    }
+
+    // byte[]? __gsharp_auto_result_shadow = null;
+    // int __gsharp_auto_result_size = checked(__gsharp_auto_result.Length * sizeof(<shadow>));
+    // Returns whether the kernel returns a converted struct
+    private static bool WriteConvertedAutoResultDeclaration(SourceWriter writer, in KernelHostModel kernel)
+    {
+        if (!kernel.IsCpuConvertedReturn)
+        {
+            return false;
+        }
+
+        writer.AppendLine($"byte[]? {GSharpInternalNames.ReturnValue.BufferShadow} = null;");
+        writer.AppendLine(
+            $"int {GSharpInternalNames.ReturnValue.BufferSize} = checked({GSharpInternalNames.ReturnValue.Buffer}.Length * " +
+            $"sizeof({ConvertedArrayEmitter.GetReturnShadowPath(kernel.CpuReturn)}));");
+        return true;
+    }
+
+    // __gsharp_auto_result_shadow = ArrayPool<byte>.Shared.Rent(__gsharp_auto_result_size); <shadow span>;
+    // __gsharp_auto_result_native.Clear();
+    // [WHY] The native kernel writes the returned structs in the device layout, into a rented shadow array that is
+    // converted back element by element after the call (#704). A rented array holds the bytes of an earlier use.
+    private static void WriteConvertedAutoResultMarshal(SourceWriter writer, in KernelHostModel kernel)
+    {
+        if (!kernel.IsCpuConvertedReturn)
+        {
+            return;
+        }
+
+        writer.AppendLine(
+            $"{GSharpInternalNames.ReturnValue.BufferShadow} = System.Buffers.ArrayPool<byte>.Shared.Rent({GSharpInternalNames.ReturnValue.BufferSize});");
+        ConvertedArrayEmitter.WriteReturnShadowSpan(writer, kernel.CpuReturn);
+        writer.AppendLine($"{GSharpInternalNames.ReturnValue.BufferNative}.Clear();");
     }
 
     // Marshal_<S>(ref <name>, ref <name>_native, false, <name>_allocatedPtrs, hStream);                (converted struct)
@@ -635,7 +685,14 @@ internal static class CpuHostLaunchEmitter
             }
         }
 
-        if (kernel.ReturnTypeName is { } returnType)
+        if (kernel.IsCpuConvertedReturn)
+        {
+            writer.AppendLine(
+                $"fixed ({ConvertedArrayEmitter.GetReturnShadowPath(kernel.CpuReturn)}* {PinnedAutoResult} = " +
+                $"{GSharpInternalNames.ReturnValue.BufferNative})");
+            hasFixed = true;
+        }
+        else if (kernel.ReturnTypeName is { } returnType)
         {
             writer.AppendLine($"fixed ({returnType}* {PinnedAutoResult} = {GSharpInternalNames.ReturnValue.Buffer})");
             hasFixed = true;

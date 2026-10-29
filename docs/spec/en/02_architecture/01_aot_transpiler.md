@@ -136,7 +136,7 @@ For developer ergonomics, `[GpuKernel]` methods can return unmanaged value types
 1. The `Launch` method dynamically allocates an output array of size `gridDim * blockDim` on the host.
 2. Under the hood, the transpiler injects an implicit `__gsharp_auto_result` device pointer into the kernel signature.
 3. Each thread evaluates the `return` statement and assigns the result directly into `__gsharp_auto_result[tid]`.
-4. The populated array is returned directly by the `Launch` wrapper.
+4. The populated array is returned directly by the `Launch` wrapper. When the returned struct lays out differently on the device ([GSH0080](../03_bcl_api/diagnostics/GSH0080.md)), the device writes it in its own layout into a shadow array, which the launcher converts back element by element (`Unmarshal_`) before returning.
 
 ## 1.4 Stub Emission (`GpuKernelGenerator`)
 

@@ -72,9 +72,13 @@ internal static class KernelLaunchEmitter
 
         if (kernel.ReturnTypeName is { } returnType)
         {
+            // [WHY] The device writes the returned elements in its own layout, which a converted struct does not share
+            var elementType = kernel.IsCudaConvertedReturn
+                ? ConvertedArrayEmitter.GetReturnShadowPath(kernel.CudaReturn)
+                : returnType;
             writer.AppendLine("// Marshal auto result array");
             writer.AppendLine(
-                $"int {GSharpInternalNames.ReturnValue.BufferSize} = {GSharpInternalNames.ReturnValue.Buffer}.Length * sizeof({returnType});");
+                $"int {GSharpInternalNames.ReturnValue.BufferSize} = {GSharpInternalNames.ReturnValue.Buffer}.Length * sizeof({elementType});");
 
             writer.AppendLine($"if ({GSharpInternalNames.ReturnValue.BufferSize} > 0)");
             using (writer.Scope())
@@ -110,6 +114,12 @@ internal static class KernelLaunchEmitter
             return;
         }
 
+        if (kernel.IsCudaConvertedReturn)
+        {
+            WriteConvertedAutoResultCopyBack(writer, kernel.CudaReturn);
+            return;
+        }
+
         writer.AppendLine($"if ({GSharpInternalNames.ReturnValue.Buffer} != null && {DeviceAutoResult} != IntPtr.Zero)");
         using (writer.Scope())
         {
@@ -135,6 +145,46 @@ internal static class KernelLaunchEmitter
                 {
                     writer.AppendLine("handle.Free();");
                 }
+            }
+        }
+    }
+
+    // if (__gsharp_auto_result_size > 0 && d___gsharp_auto_result != IntPtr.Zero) {
+    //   var __gsharp_auto_result_shadow = ArrayPool<byte>.Shared.Rent(__gsharp_auto_result_size);
+    //   try { fixed (byte* p = shadow) { <copy to host>; <synchronize> } <shadow span>; <Unmarshal_ loop> }
+    //   finally { ArrayPool<byte>.Shared.Return(__gsharp_auto_result_shadow); }
+    // }
+    // [WHY] The device wrote the returned structs in its layout: they are read into a shadow array of that layout and
+    // converted element by element, as an [Out] array of such structs is (#704)
+    private static void WriteConvertedAutoResultCopyBack(SourceWriter writer, in ParameterTransfer transfer)
+    {
+        const string Shadow = GSharpInternalNames.ReturnValue.BufferShadow;
+        const string Size = GSharpInternalNames.ReturnValue.BufferSize;
+        writer.AppendLine("// Copy back the auto result array element by element");
+        writer.AppendLine($"if ({Size} > 0 && {DeviceAutoResult} != IntPtr.Zero)");
+        using (writer.Scope())
+        {
+            writer.AppendLine($"var {Shadow} = System.Buffers.ArrayPool<byte>.Shared.Rent({Size});");
+            writer.AppendLine("try");
+            using (writer.Scope())
+            {
+                writer.AppendLine($"fixed (byte* p_{Shadow} = {Shadow})");
+                using (writer.Scope())
+                {
+                    writer.AppendLine(
+                        "CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoHAsync_v2(" +
+                        $"(IntPtr)p_{Shadow}, {DeviceAutoResult}, (IntPtr){Size}, hStream));");
+                    writer.AppendLine("CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));");
+                }
+
+                ConvertedArrayEmitter.WriteReturnShadowSpan(writer, transfer);
+                ConvertedArrayEmitter.WriteReturnUnmarshalLoop(writer, transfer);
+            }
+
+            writer.AppendLine("finally");
+            using (writer.Scope())
+            {
+                writer.AppendLine($"System.Buffers.ArrayPool<byte>.Shared.Return({Shadow});");
             }
         }
     }

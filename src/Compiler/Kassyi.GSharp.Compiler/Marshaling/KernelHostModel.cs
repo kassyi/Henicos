@@ -32,6 +32,15 @@ internal readonly record struct KernelHostModel
     /// <summary>The fully qualified return type, or <see langword="null"/> for <c>void</c>.</summary>
     public string? ReturnTypeName { get; init; }
 
+    /// <summary>
+    /// How the CUDA launcher reads the auto result array back: converted element by element through a shadow array
+    /// when the returned user struct lays out differently on the device, otherwise <see langword="default"/> (#704).
+    /// </summary>
+    public ParameterTransfer CudaReturn { get; init; }
+
+    /// <summary>The same for the CPU launcher.</summary>
+    public ParameterTransfer CpuReturn { get; init; }
+
     /// <summary>A <c>[GpuKernel(Cooperative = true)]</c> kernel.</summary>
     public bool IsCooperative { get; init; }
 
@@ -69,6 +78,12 @@ internal readonly record struct KernelHostModel
 
     public bool ReturnsValue => ReturnTypeName is not null;
 
+    /// <summary>Whether the CUDA launcher converts the returned elements (<see cref="CudaReturn"/>).</summary>
+    public bool IsCudaConvertedReturn => CudaReturn.ConvertedElementAotStructPath is not null;
+
+    /// <summary>Whether the CPU launcher converts the returned elements (<see cref="CpuReturn"/>).</summary>
+    public bool IsCpuConvertedReturn => CpuReturn.ConvertedElementAotStructPath is not null;
+
     /// <summary>Reads the host launch ABI of <paramref name="kernel"/>.</summary>
     /// <param name="kernel">The kernel.</param>
     /// <param name="structs">The rendered structs of the parameters; the analyzer, which needs none, passes <see langword="default"/>.</param>
@@ -93,6 +108,8 @@ internal readonly record struct KernelHostModel
             ReturnTypeName = kernel.ReturnType.SpecialType == SpecialType.System_Void
                 ? null
                 : kernel.ReturnType.GetFullyQualifiedCsharpName(),
+            CudaReturn = ParameterTransfer.CreateForReturn(kernel.ReturnType, HostDialects.Cuda),
+            CpuReturn = ParameterTransfer.CreateForReturn(kernel.ReturnType, HostDialects.Cpu),
             IsCooperative = kernel.IsCooperativeKernel(),
             MessageName = KernelHostNames.GetMessageName(kernel),
             GridScratchSlotBytes = model != null && kernel.IsCooperativeKernel() &&

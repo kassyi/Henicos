@@ -44,6 +44,39 @@ public class AutoAllocateReturnArraysTests
         }
     }
 
+    // #704: the device writes the returned elements in its layout; the launcher reads them back through it
+    [SkippableFact]
+    [TestTarget(ExecutionTarget.GpuExecution)]
+    [Scenario(TestScenario.HappyPath)]
+    public void VectorResultKernel_LayoutsDiffer_ReturnsTheFieldsAtTheirPlaces()
+    {
+        var result = AutoAllocateReturnArraysKernels.LaunchVectorResultKernel(10f, blockDimX: 4);
+
+        Assert.Equal(4, result.Length);
+        for (int i = 0; i < result.Length; i++)
+        {
+            float t = i * 10f;
+            var r = result[i];
+            Assert.Equal(
+                new[] { t + 1f, t + 2f, t + 3f, t + 4f, t + 5f, t + 6f, t + 7f, t + 8f },
+                new[] { r.A, r.V.X, r.V.Y, r.B, r.W.X, r.W.Y, r.W.Z, r.W.W });
+        }
+    }
+
+    [SkippableFact]
+    [TestTarget(ExecutionTarget.GpuExecution)]
+    [Scenario(TestScenario.HappyPath)]
+    public void AutoLayoutResultKernel_HostLayoutUnknown_ReturnsTheFieldsAtTheirPlaces()
+    {
+        var result = AutoAllocateReturnArraysKernels.LaunchAutoLayoutResultKernel(blockDimX: 3);
+
+        Assert.Equal(3, result.Length);
+        for (int i = 0; i < result.Length; i++)
+        {
+            Assert.Equal(((byte)(i + 1), 1000L * i + 7L, (byte)(i + 100)), (result[i].A, result[i].B, result[i].C));
+        }
+    }
+
     [Fact]
     [Scenario(TestScenario.SadPath)]
     public void KernelLaunchZeroDimension_ThrowsArgumentOutOfRangeException()
