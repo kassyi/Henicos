@@ -15,6 +15,10 @@ internal static class SymbolExtensions
                 { Name: TypeConstants.SystemNamespace, ContainingNamespace.IsGlobalNamespace: true }
             };
 
+    /// <summary>Whether <paramref name="type"/> is <c>System.Math</c> or <c>System.MathF</c>.</summary>
+    public static bool IsSystemMathType(this ITypeSymbol? type) =>
+        type is { Name: TypeConstants.MathType or TypeConstants.MathFType } && type.ContainingNamespace.IsSystemNamespace();
+
     public static bool IsSystemThreading(this INamespaceSymbol? ns) =>
         ns is
         {

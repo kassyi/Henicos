@@ -45,7 +45,7 @@ internal sealed class ProhibitedApiRule : ISyntaxValidationRule<MemberAccessExpr
             return;
         }
 
-        if (IsMathMember(symbol))
+        if (symbol.ContainingType.IsSystemMathType())
         {
             // The dialect YAML decides per overload (Math.Abs(int) is mapped, Math.Abs(long) is not)
             if (symbol is not IFieldSymbol { IsConst: true } && !context.Dialect.TryMapIntrinsic(symbol, out _))
@@ -75,10 +75,6 @@ internal sealed class ProhibitedApiRule : ISyntaxValidationRule<MemberAccessExpr
                 $"{method.Name} (host-only StackLinq operator)");
         }
     }
-
-    private static bool IsMathMember(ISymbol symbol) =>
-        symbol is { ContainingType.Name: TypeConstants.MathType or TypeConstants.MathFType } &&
-        symbol.ContainingNamespace.IsSystemNamespace();
 
     // Abs(long): the overload decides whether the dialect maps it
     private static string FormatMember(ISymbol symbol) =>
