@@ -26,7 +26,12 @@ internal static class TransferPlanner
 
         if (type.TryGetArrayLikeElementType(out var element))
         {
-            return new TransferPlan.ArrayView(PlanType(element, dialect, inProgress), dialect.ArrayViewLayout.Size);
+            // [WHY] Unsupported anywhere in the tree is the plan of the whole tree, so that a check of the outermost
+            // plan finds it; an array of an unsupported element is that element's plan
+            var elementPlan = PlanType(element, dialect, inProgress);
+            return elementPlan is TransferPlan.Unsupported
+                ? elementPlan
+                : new TransferPlan.ArrayView(elementPlan, dialect.ArrayViewLayout.Size);
         }
 
         if (type is IPointerTypeSymbol or IFunctionPointerTypeSymbol ||
@@ -102,16 +107,22 @@ internal static class TransferPlanner
             return value;
         }
 
-        // [WHY] A value whose host layout the CLR decides at run time (a reference field) leaves no host layout for the
-        // Nullable around it either
-        if (!TypeLayoutCalculator.TryGetHostLayout(nullableType, out var host))
+        // [WHY] A Nullable converts through HasValue and GetValueOrDefault (design Q2 a), so it needs no host layout:
+        // a LayoutKind.Auto value crosses as its own Convert plan. A value that holds a managed reference (an array
+        // field) is still refused (design N4); the array would have to be carried out of a Nullable copy
+        if (!valueType.IsUnmanagedType)
         {
-            return Unsupported($"the host layout of '{TypeLayoutCalculator.FormatTypeName(nullableType)}' is not known");
+            return Unsupported($"the value of '{TypeLayoutCalculator.FormatTypeName(nullableType)}' holds a managed reference");
         }
 
         var device = TypeLayoutCalculator.GetDeviceLayout(nullableType, dialect);
         var valueOffset = TypeLayoutCalculator.AlignUp(1, TypeLayoutCalculator.GetDeviceLayout(valueType, dialect).Alignment);
-        return new TransferPlan.Nullable(value, valueOffset, host.Size, device.Size);
+        return new TransferPlan.Nullable(
+            value,
+            valueOffset,
+            TypeLayoutCalculator.TryGetHostLayout(nullableType, out var host) ? host.Size : null,
+            device.Size
+        );
     }
 
     private static TransferPlan PlanStruct(INamedTypeSymbol structType, ITranspilerDialect dialect,
@@ -120,7 +131,13 @@ internal static class TransferPlanner
         var isUserStruct = TypeLayoutCalculator.IsUserStruct(structType);
         if (!isUserStruct && !TypeLayoutCalculator.HasDeviceRepresentation(structType, dialect))
         {
-            return Unsupported($"'{TypeLayoutCalculator.FormatTypeName(structType)}' has no device representation");
+            var typeName = TypeLayoutCalculator.FormatTypeName(structType);
+            return new TransferPlan.Unsupported(
+                GSharpDiagnostics.StructLayoutNotRepresentable.Id,
+                $"'{typeName}' has no device representation",
+                null,
+                typeName
+            );
         }
 
         var layout = TypeLayoutCalculator.GetStructLayout(structType, dialect);
@@ -136,7 +153,12 @@ internal static class TransferPlanner
                 : Unsupported(unsupported.Reason);
         }
 
-        var members = PlanMembers(layout, dialect, inProgress);
+        var members = PlanMembers(layout, dialect, inProgress, out var unsupportedMember);
+        if (unsupportedMember is { } problem)
+        {
+            return problem;
+        }
+
         var csharpType = structType.GetFullyQualifiedCsharpName();
 
         if (layout.Transfer == TransferClass.Identical)
@@ -160,29 +182,64 @@ internal static class TransferPlanner
         );
     }
 
-    // [WHY] An index loop: the host and device fields are two arrays in the same member order
+    // [WHY] An index loop: the host and device fields are two arrays in the same member order. The layout model does
+    // not look into a Nullable or an array member, so the first member whose own plan is unsupported is passed up as
+    // the struct's plan (unsupported)
     private static EquatableArray<MemberPlan> PlanMembers(StructLayoutInfo layout, ITranspilerDialect dialect,
-        HashSet<ITypeSymbol> inProgress)
+        HashSet<ITypeSymbol> inProgress, out TransferPlan.Unsupported? unsupported)
     {
+        unsupported = null;
         var members = ImmutableArray.CreateBuilder<MemberPlan>(layout.DeviceFields.Length);
         for (var i = 0; i < layout.DeviceFields.Length; i++)
         {
             var field = layout.DeviceFields[i];
             var member = field.Member;
+            var plan = PlanType(member.Type, dialect, inProgress);
+            if (plan is TransferPlan.Unsupported memberProblem)
+            {
+                unsupported = FromMember(member, memberProblem);
+                return default;
+            }
+
             var access = GetAccess(member, out var accessAssembly);
             members.Add(new MemberPlan(
                 member.Name,
                 layout.Host.IsKnown ? layout.Host.Fields[i].Offset : null,
                 field.Offset,
                 member.ElementCount,
+                member.Kind,
                 member.Type.GetFullyQualifiedCsharpName(),
                 access,
                 accessAssembly,
-                PlanType(member.Type, dialect, inProgress)
+                plan
             ));
         }
 
         return members.MoveToImmutable().AsEquatableArray();
+    }
+
+    // The plan of a struct whose member cannot cross, worded as the layout model words a nested struct's problem
+    // (TypeLayoutCalculator.FindUnsupportedLayout): a type without a device representation below the member is
+    // GSH0079 with the path from the struct, anything else GSH0078 with the member's reason
+    private static TransferPlan.Unsupported FromMember(StructAbiMember member, TransferPlan.Unsupported problem)
+    {
+        var reason = $"field '{member.Name}' of type '{TypeLayoutCalculator.FormatTypeName(member.Type)}': {problem.Reason}";
+        if (problem.FieldTypeName is null)
+        {
+            return Unsupported(reason);
+        }
+
+        var path = problem.FieldPath is null
+            ? member.Name
+            : member.Kind == StructAbiMemberKind.InlineArrayElement
+                ? problem.FieldPath
+                : $"{member.Name}.{problem.FieldPath}";
+        return new TransferPlan.Unsupported(
+            GSharpDiagnostics.FieldTypeHasNoDeviceRepresentation.Id,
+            reason,
+            path,
+            problem.FieldTypeName
+        );
     }
 
     // An ordinary field that a launcher can name: public, or internal in its own assembly. A pointer cannot be a type

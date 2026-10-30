@@ -59,10 +59,17 @@ internal abstract record TransferPlan(int? HostSize, int DeviceSize)
     public sealed record StructRef(string CSharpType, string ShadowPath, int? HostSize, int DeviceSize)
         : TransferPlan(HostSize, DeviceSize);
 
-    /// <summary>A <c>Nullable&lt;T&gt;</c>: <c>HasValue</c> and the value, which has its own plan.</summary>
+    /// <summary>
+    /// A <c>Nullable&lt;T&gt;</c>: <c>HasValue</c> and the value, which has its own plan. The host side reads and
+    /// writes it through <c>HasValue</c> and <c>GetValueOrDefault()</c>, so <c>T</c> may have a host layout that the
+    /// CLR decides at run time (<c>LayoutKind.Auto</c>); a <c>T</c> that holds a managed reference is
+    /// <see cref="Unsupported"/>.
+    /// </summary>
     /// <param name="Value">The plan of <c>T</c>.</param>
     /// <param name="ValueDeviceOffset">The device offset of the value after the <c>HasValue</c> flag.</param>
-    /// <param name="HostSize">The host size.</param>
+    /// <param name="HostSize">
+    /// The host size, or <see langword="null"/> when the CLR decides the layout of <c>T</c> at run time.
+    /// </param>
     /// <param name="DeviceSize">The device size.</param>
     public sealed record Nullable(TransferPlan Value, int ValueDeviceOffset, int? HostSize, int DeviceSize)
         : TransferPlan(HostSize, DeviceSize);
@@ -82,11 +89,18 @@ internal abstract record TransferPlan(int? HostSize, int DeviceSize)
 
     /// <summary>The value cannot cross the boundary; the diagnostic says why.</summary>
     /// <remarks>
+    /// <para>
     /// GSH0078 takes the planned type (<c>{0}</c>, which the reporting rule has) and <see cref="Reason"/>. GSH0079
     /// takes <see cref="FieldTypeName"/> and <see cref="FieldPath"/>, both set; it is used only for a member of a
     /// struct. A planned type outside the user structs that has no device representation (<c>decimal</c> as a
     /// parameter) is GSH0078 with the reason <c>'decimal' has no device representation</c>, as there is no field to
-    /// name.
+    /// name; it keeps the type in <see cref="FieldTypeName"/>, so that a struct member of that type becomes GSH0079.
+    /// </para>
+    /// <para>
+    /// Unsupported anywhere in a plan is the plan of the whole: an array or a <c>Nullable&lt;T&gt;</c> of an
+    /// unsupported type is that type's plan, and a struct with such a member is unsupported with that member's
+    /// reason and the path from the struct, so that a check of the outermost plan finds it.
+    /// </para>
     /// </remarks>
     /// <param name="DiagnosticId">The ID of the diagnostic to report (GSH0078 or GSH0079).</param>
     /// <param name="Reason">The reason, as the end of the GSH0078 message.</param>
@@ -95,8 +109,9 @@ internal abstract record TransferPlan(int? HostSize, int DeviceSize)
     /// <see langword="null"/>.
     /// </param>
     /// <param name="FieldTypeName">
-    /// The C# spelling of that member's type (<see cref="TypeLayoutCalculator.FormatTypeName"/>), otherwise
-    /// <see langword="null"/>.
+    /// The C# spelling (<see cref="TypeLayoutCalculator.FormatTypeName"/>) of the type that has no device
+    /// representation: that member's type, or the planned type itself when <see cref="FieldPath"/> is
+    /// <see langword="null"/>; <see langword="null"/> when the reason is something else.
     /// </param>
     public sealed record Unsupported(string DiagnosticId, string Reason, string? FieldPath, string? FieldTypeName)
         : TransferPlan(0, 0);
@@ -120,6 +135,10 @@ internal enum MemberAccess
 /// <param name="HostOffset">The host offset, or <see langword="null"/> when the CLR decides it at run time.</param>
 /// <param name="DeviceOffset">The device offset.</param>
 /// <param name="ElementCount">The element count of an inline array or a fixed buffer, otherwise 1.</param>
+/// <param name="Kind">
+/// What the member is (<see cref="StructAbiMember.Kind"/>): the emitters copy a fixed buffer, an inline array element
+/// (also of <c>[InlineArray(1)]</c>, whose count is 1) and a captured parameter each in its own way.
+/// </param>
 /// <param name="FullyQualifiedTypeName">The <c>global::</c>-qualified member type.</param>
 /// <param name="Access">Whether a launcher can name the member.</param>
 /// <param name="AccessAssembly">
@@ -131,6 +150,7 @@ internal sealed record MemberPlan(
     int? HostOffset,
     int DeviceOffset,
     int ElementCount,
+    StructAbiMemberKind Kind,
     string FullyQualifiedTypeName,
     MemberAccess Access,
     string AccessAssembly,

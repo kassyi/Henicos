@@ -38,6 +38,9 @@ public class TransferPlannerTests
         "StructLayoutDiagnostics.cs", "StructLayoutSizeDiagnostics.cs", "StructLayoutEventDiagnostics.cs"
     ];
 
+    // Structs whose plan is decided by a member's Nullable, array or inline array plan; Roslyn only, not compiled
+    private static readonly string s_transferPlanCases = Path.Combine("Layout", "TransferPlanCases.cs");
+
     // The type arguments that each generic struct of the cases is planned with
     private static readonly Dictionary<string, Type[]> s_typeArguments = new()
     {
@@ -124,7 +127,7 @@ public class TransferPlannerTests
         var failures = new List<string>();
         var kinds = new HashSet<Type>();
         var compared = 0;
-        foreach (var symbol in EnumerateLayoutCaseStructs().Select(static c => c.Symbol).Concat(EnumerateDiagnosticCaseStructs()))
+        foreach (var symbol in EnumerateLayoutCaseStructs().Select(static c => c.Symbol).Concat(EnumerateUnsupportedCaseStructs()))
         {
             Assert.True(TypeLayoutCalculator.IsUserStruct(symbol), symbol.ToDisplayString());
             foreach (var dialect in s_dialects)
@@ -270,7 +273,145 @@ public class TransferPlannerTests
         Assert.Equal("GSH0078", plan.DiagnosticId);
         Assert.Equal("'decimal' has no device representation", plan.Reason);
         Assert.Null(plan.FieldPath);
-        Assert.Null(plan.FieldTypeName);
+        // The type is kept, so that a struct member of this type becomes GSH0079 naming it
+        Assert.Equal("decimal", plan.FieldTypeName);
+    }
+
+    // A member whose own plan is unsupported (a Nullable, an array, an inline array of an unsupported type) makes the
+    // enclosing struct unsupported, although the layout model accepts the struct; the field path runs from the struct
+    [Theory]
+    [Category(TestCategory.Compiler)]
+    [Scenario(TestScenario.SadPath)]
+    [InlineData("NullablePricedHolder", "GSH0079", "Item.Price", "decimal", "field 'Item' of type ")]
+    [InlineData("NullableMisalignedHolder", "GSH0078", null, null, "field 'Item' of type ")]
+    [InlineData("NullableBagHolder", "GSH0078", null, null, "field 'Item' of type ")]
+    [InlineData("DecimalArrayHolder", "GSH0079", "Items", "decimal", "field 'Items' of type 'decimal[]': ")]
+    [InlineData("PricedArrayHolder", "GSH0079", "Items.Price", "decimal", "field 'Items' of type ")]
+    [InlineData("NestedHolder", "GSH0079", "Holder.Item.Price", "decimal", "field 'Holder' of type ")]
+    [InlineData("PricedOptionsHolder", "GSH0079", "Options.Price", "decimal", "field 'Options' of type ")]
+    public void Plan_MemberWithAnUnsupportedPlan_MakesTheStructUnsupported(string name, string diagnosticId,
+        string? fieldPath, string? fieldTypeName, string reasonStart)
+    {
+        var symbol = GetTransferPlanCase(name);
+        foreach (var dialect in s_dialects)
+        {
+            // The layout model alone does not see the problem
+            Assert.Null(TypeLayoutCalculator.GetStructLayout(symbol, dialect).Unsupported);
+
+            var plan = Assert.IsType<TransferPlan.Unsupported>(TransferPlanner.Plan(symbol, dialect));
+            Assert.Equal(diagnosticId, plan.DiagnosticId);
+            Assert.Equal(fieldPath, plan.FieldPath);
+            Assert.Equal(fieldTypeName, plan.FieldTypeName);
+            Assert.StartsWith(reasonStart, plan.Reason, StringComparison.Ordinal);
+        }
+    }
+
+    // An array or a Nullable of a type that cannot cross is that type's plan, not an ArrayView or Nullable around it,
+    // so that a check of the outermost plan finds it
+    [Fact]
+    [Category(TestCategory.Compiler)]
+    [Scenario(TestScenario.SadPath)]
+    public void Plan_ArrayOrNullableOfAnUnsupportedType_IsTheUnsupportedPlanOfThatType()
+    {
+        var (compilation, _, _) = GetContext(s_transferPlanCases);
+        var priced = GetTransferPlanCase(compilation, "Priced");
+        var decimalType = compilation.GetSpecialType(SpecialType.System_Decimal);
+        foreach (var dialect in s_dialects)
+        {
+            var pricedPlan = Assert.IsType<TransferPlan.Unsupported>(TransferPlanner.Plan(priced, dialect));
+            Assert.Equal("Price", pricedPlan.FieldPath);
+
+            Assert.Equal(pricedPlan, TransferPlanner.Plan(compilation.CreateArrayTypeSymbol(priced), dialect));
+            Assert.Equal(pricedPlan, TransferPlanner.Plan(MakeNullable(compilation, priced), dialect));
+            Assert.Equal(TransferPlanner.Plan(decimalType, dialect),
+                TransferPlanner.Plan(compilation.CreateArrayTypeSymbol(decimalType), dialect));
+        }
+    }
+
+    // Nullable<T> converts through HasValue and GetValueOrDefault (design Q2 a), so an auto-layout T crosses as its
+    // own Convert plan; only the host size, which the runtime decides, is unknown
+    [Fact]
+    [Category(TestCategory.Compiler)]
+    [Scenario(TestScenario.Boundary)]
+    public void Plan_NullableOfAnAutoLayoutStruct_IsNullableWithARuntimeHostSize()
+    {
+        var (compilation, _, _) = GetContext(s_transferPlanCases);
+        var autoPair = GetTransferPlanCase(compilation, "AutoPair");
+        foreach (var dialect in s_dialects)
+        {
+            var nullable = Assert.IsType<TransferPlan.Nullable>(TransferPlanner.Plan(MakeNullable(compilation, autoPair), dialect));
+            Assert.Null(nullable.HostSize);
+            Assert.Equal(TransferPlanner.Plan(autoPair, dialect), nullable.Value);
+            Assert.IsType<TransferPlan.Convert>(nullable.Value);
+            Assert.Equal(8, nullable.ValueDeviceOffset);
+            Assert.Equal(24, nullable.DeviceSize);
+
+            var holder = Assert.IsType<TransferPlan.Convert>(TransferPlanner.Plan(GetTransferPlanCase(compilation, "AutoPairHolder"), dialect));
+            Assert.Equal(nullable, holder.Members.Single(static m => m.Name == "Item").Plan);
+        }
+    }
+
+    // A Nullable whose value holds a managed reference (an array field) stays GSH0078 (design N4, section 8 step 5)
+    [Fact]
+    [Category(TestCategory.Compiler)]
+    [Scenario(TestScenario.SadPath)]
+    public void Plan_NullableOfAStructHoldingAnArray_IsGsh0078()
+    {
+        var (compilation, _, _) = GetContext(s_transferPlanCases);
+        var bag = GetTransferPlanCase(compilation, "Bag");
+        foreach (var dialect in s_dialects)
+        {
+            Assert.IsType<TransferPlan.Convert>(TransferPlanner.Plan(bag, dialect));
+            var plan = Assert.IsType<TransferPlan.Unsupported>(TransferPlanner.Plan(MakeNullable(compilation, bag), dialect));
+            Assert.Equal("GSH0078", plan.DiagnosticId);
+            Assert.Null(plan.FieldPath);
+            Assert.Null(plan.FieldTypeName);
+        }
+    }
+
+    // The Nullable's host size is the runtime's when the value's layout is known
+    [Fact]
+    [Category(TestCategory.Compiler)]
+    [Scenario(TestScenario.HappyPath)]
+    public void Plan_NullableOfASequentialValue_HasTheRuntimeHostSize()
+    {
+        var plan = Assert.IsType<TransferPlan.Convert>(TransferPlanner.Plan(GetLayoutCaseStruct(nameof(NullableFieldsStruct)), HostDialects.Cuda));
+        int?[] expected = [Unsafe.SizeOf<int?>(), Unsafe.SizeOf<double?>(), Unsafe.SizeOf<Float2?>()];
+        Assert.Equal(expected, plan.Members.Select(static m => m.Plan).OfType<TransferPlan.Nullable>().Select(static n => n.HostSize));
+    }
+
+    // A member plan carries the member kind, which the emitters switch on once they read plans instead of symbols;
+    // an [InlineArray(1)] element has the count of a plain field and is told apart only by the kind
+    [Fact]
+    [Category(TestCategory.Compiler)]
+    [Scenario(TestScenario.Boundary)]
+    public void Plan_Members_CarryTheirKind()
+    {
+        foreach (var dialect in s_dialects)
+        {
+            var plan = TransferPlanner.Plan(GetTransferPlanCase("MemberKinds"), dialect);
+            var members = plan switch
+            {
+                TransferPlan.Blit blit => blit.Members,
+                TransferPlan.Convert convert => convert.Members,
+                _ => throw new InvalidOperationException(plan.ToString())
+            };
+
+            Assert.Equal(
+                new[]
+                {
+                    // Roslyn declares the hidden field of a captured parameter first
+                    ("captured", StructAbiMemberKind.CapturedParameter, 1), ("Field", StructAbiMemberKind.Field, 1),
+                    ("Property", StructAbiMemberKind.AutoProperty, 1), ("Buffer", StructAbiMemberKind.FixedBuffer, 2),
+                    ("Single", StructAbiMemberKind.Field, 1)
+                },
+                members.Select(static m => (m.Name, m.Kind, m.ElementCount)));
+
+            var one = Assert.IsType<TransferPlan.Blit>(members.Single(static m => m.Name == "Single").Plan);
+            var element = Assert.Single(one.Members);
+            Assert.Equal(StructAbiMemberKind.InlineArrayElement, element.Kind);
+            Assert.Equal(1, element.ElementCount);
+        }
     }
 
     // The planner keeps no symbol: two compilations of the same source give equal plans, as the generator cache needs
@@ -359,28 +500,35 @@ public class TransferPlannerTests
 
         if (type.TryGetArrayLikeElementType(out var element))
         {
-            if (plan is TransferPlan.ArrayView view)
+            // An array of an unsupported element is the element's plan itself
+            switch (plan)
             {
-                return compared + ComparePlan(view.Element, element, dialect, ancestors, $"{where}[]", failures);
+                case TransferPlan.ArrayView view:
+                    return compared + ComparePlan(view.Element, element, dialect, ancestors, $"{where}[]", failures);
+                case TransferPlan.Unsupported when plan == TransferPlanner.Plan(element, dialect):
+                    return compared;
+                default:
+                    failures.Add($"{where}: {plan}, expected ArrayView or the element's Unsupported");
+                    return compared;
             }
-
-            failures.Add($"{where}: {plan.GetType().Name}, expected ArrayView");
-            return compared;
         }
 
         if (type is INamedTypeSymbol { OriginalDefinition.SpecialType: SpecialType.System_Nullable_T } nullableType)
         {
-            if (plan is TransferPlan.Nullable nullable)
+            // Unsupported when the value is, or holds a managed reference (#976 F2: the value converts through
+            // GetValueOrDefault, but an array inside a Nullable stays a diagnostic)
+            var valueType = nullableType.TypeArguments[0];
+            var valuePlan = TransferPlanner.Plan(valueType, dialect);
+            switch (plan)
             {
-                return compared + ComparePlan(nullable.Value, nullableType.TypeArguments[0], dialect, ancestors, $"{where}?", failures);
+                case TransferPlan.Nullable nullable when valueType.IsUnmanagedType:
+                    return compared + ComparePlan(nullable.Value, valueType, dialect, ancestors, $"{where}?", failures);
+                case TransferPlan.Unsupported when valuePlan is TransferPlan.Unsupported ? plan == valuePlan : !valueType.IsUnmanagedType:
+                    return compared;
+                default:
+                    failures.Add($"{where}: {plan}, expected Nullable or Unsupported");
+                    return compared;
             }
-
-            if (plan is not TransferPlan.Unsupported)
-            {
-                failures.Add($"{where}: {plan.GetType().Name}, expected Nullable or Unsupported");
-            }
-
-            return compared;
         }
 
         if (type is not INamedTypeSymbol { TypeKind: TypeKind.Struct } structType ||
@@ -417,6 +565,29 @@ public class TransferPlannerTests
                 actual.FieldTypeName != expectedTypeName)
             {
                 failures.Add($"{where}: {plan}, expected Unsupported({expectedId}, {unsupported.Reason}, {unsupported.FieldPath}, {expectedTypeName})");
+            }
+
+            return compared;
+        }
+
+        // The layout model accepts the struct, but a member's own plan (a Nullable, an array) is unsupported: the
+        // struct is unsupported with that member's reason
+        var unsupportedMember = layout.DeviceFields
+            .Select(f => (f.Member, Plan: TransferPlanner.Plan(f.Member.Type, dialect)))
+            .FirstOrDefault(static m => m.Plan is TransferPlan.Unsupported);
+        if (unsupportedMember.Plan is TransferPlan.Unsupported memberProblem)
+        {
+            var expectedPath = memberProblem.FieldTypeName is null ? null
+                : memberProblem.FieldPath is null ? unsupportedMember.Member.Name
+                : unsupportedMember.Member.Kind == StructAbiMemberKind.InlineArrayElement ? memberProblem.FieldPath
+                : $"{unsupportedMember.Member.Name}.{memberProblem.FieldPath}";
+            if (plan is not TransferPlan.Unsupported actual ||
+                actual.DiagnosticId != (expectedPath is null ? "GSH0078" : "GSH0079") ||
+                !actual.Reason.EndsWith($": {memberProblem.Reason}", StringComparison.Ordinal) ||
+                actual.FieldPath != expectedPath ||
+                actual.FieldTypeName != memberProblem.FieldTypeName)
+            {
+                failures.Add($"{where}: {plan}, expected the Unsupported of member '{unsupportedMember.Member.Name}' ({memberProblem})");
             }
 
             return compared;
@@ -460,6 +631,15 @@ public class TransferPlannerTests
     private static (Compilation Compilation, SyntaxTree Tree, SemanticModel Model) GetContext(string relativePath) =>
         RoslynTestUtility.GetTestCaseContext(relativePath);
 
+    private static INamedTypeSymbol GetTransferPlanCase(string name) =>
+        GetTransferPlanCase(GetContext(s_transferPlanCases).Compilation, name);
+
+    private static INamedTypeSymbol GetTransferPlanCase(Compilation compilation, string name) =>
+        compilation.GetTypeByMetadataName($"TransferPlanCasesTest.{name}") ?? throw new InvalidOperationException(name);
+
+    private static INamedTypeSymbol MakeNullable(Compilation compilation, ITypeSymbol value) =>
+        compilation.GetSpecialType(SpecialType.System_Nullable_T).Construct(value);
+
     private static INamedTypeSymbol GetLayoutCaseStruct(string name) =>
         EnumerateLayoutCaseStructs().First(c => c.Symbol.Name == name).Symbol;
 
@@ -500,11 +680,13 @@ public class TransferPlannerTests
         }
     }
 
-    private static IEnumerable<INamedTypeSymbol> EnumerateDiagnosticCaseStructs() =>
+    private static IEnumerable<INamedTypeSymbol> EnumerateUnsupportedCaseStructs() =>
         s_diagnosticFiles
+            .Select(static file => Path.Combine("Diagnostics", file))
+            .Append(s_transferPlanCases)
             .SelectMany(static file =>
             {
-                var (_, tree, model) = GetContext(Path.Combine("Diagnostics", file));
+                var (_, tree, model) = GetContext(file);
                 return tree.GetRoot().DescendantNodes()
                     .OfType<StructDeclarationSyntax>()
                     .Select(d => model.GetDeclaredSymbol(d) ?? throw new InvalidOperationException(d.Identifier.Text));
