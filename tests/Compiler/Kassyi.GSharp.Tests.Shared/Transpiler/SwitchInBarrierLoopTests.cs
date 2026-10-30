@@ -8,9 +8,9 @@ using Xunit;
 namespace Kassyi.GSharp.Tests.Shared.Transpiler;
 
 /// <summary>
-/// Runs <see cref="SwitchInBarrierLoopKernels"/> (#670) with one block of 12 threads. On the CPU dialects each test runs
-/// on the managed path and on the default path (the native library when it exists). No thread reads what another wrote,
-/// so the expected values are the kernels run as plain C#, one thread at a time.
+/// Runs <see cref="SwitchInBarrierLoopKernels"/> (#670) with one block of 12 threads. On the CPU dialects each test
+/// runs on the managed path and on the default path (the native library when it exists). No thread reads what another
+/// wrote, so the expected value of each thread is worked out from its mode.
 /// </summary>
 [Category(TestCategory.Compiler)]
 [TestTarget(ExecutionTarget.GpuExecution)]
@@ -44,7 +44,8 @@ public class SwitchInBarrierLoopTests : TranspilerTestBase
         var a = new int[Threads];
         var mode = Modes(6);
 
-        Run(forceManaged, () => SwitchInBarrierLoopKernels.LaunchContinueInSwitchWithoutCaseKernel(a, mode, blockDimX: Threads));
+        Run(forceManaged, () =>
+            SwitchInBarrierLoopKernels.LaunchContinueInSwitchWithoutCaseKernel(a, mode, blockDimX: Threads));
 
         Assert.Equal(mode.Select(static m => m == 0 ? 0 : 3), a);
     }
@@ -73,41 +74,17 @@ public class SwitchInBarrierLoopTests : TranspilerTestBase
         var a = new int[Threads];
         var mode = Modes(4);
 
-        Run(forceManaged, () => SwitchInBarrierLoopKernels.LaunchContinueInNestedSwitchKernel(a, mode, blockDimX: Threads));
+        Run(forceManaged, () =>
+            SwitchInBarrierLoopKernels.LaunchContinueInNestedSwitchKernel(a, mode, blockDimX: Threads));
 
         // Mode 0 continues every iteration; 1 and 3 add 10, 2 adds 100, each followed by 1, three times
         Assert.Equal(mode.Select(static m => m switch { 0 => 0, 2 => 303, _ => 33 }), a);
     }
 
-    // The loop of ContinueInSwitchKernel as plain C#, for one thread of the given mode
-    private static int LoopWithSwitch(int mode)
-    {
-        var a = 0;
-        for (var i = 0; i < 3; i++)
-        {
-            switch (mode)
-            {
-                case 0:
-                    continue;
-                case 1:
-                    a += 10;
-                    break;
-                case 2:
-                    a += 20;
-                    break;
-                case 3:
-                    a += 100;
-                    break;
-                case 4:
-                    a += 1000;
-                    break;
-            }
-
-            a += 1;
-        }
-
-        return a;
-    }
+    // One thread of ContinueInSwitchKernel: mode 0 continues all three iterations; every other mode adds its case
+    // value (none for mode 5) and then 1, three times
+    private static int LoopWithSwitch(int mode) =>
+        mode == 0 ? 0 : 3 * (mode switch { 1 => 10, 2 => 20, 3 => 100, 4 => 1000, _ => 0 } + 1);
 
     private static int[] Modes(int count) => Enumerable.Range(0, Threads).Select(t => t % count).ToArray();
 

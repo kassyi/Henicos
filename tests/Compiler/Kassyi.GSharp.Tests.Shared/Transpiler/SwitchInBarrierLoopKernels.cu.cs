@@ -59,7 +59,7 @@ public static partial class SwitchInBarrierLoopKernels
         }
     }
 
-    // K3: a goto of the user from a switch to a label after the loop, in another state than the goto, in the last iteration
+    // K3: a goto of the user from a switch to a label after the loop (another state), in the last iteration
     [GpuKernel]
     public static void GotoOutOfSwitchKernel(int[] a, int[] mode)
     {

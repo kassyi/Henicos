@@ -287,20 +287,27 @@ public class StateMachineLowerer(bool isDeviceFunction = false, SemanticModel? s
         }
     }
 
-    // The labels that start a state and that a goto inside a switch of the user reaches (see LowerStateLabel). The
-    // state machine's own switch does not exist yet, so every switch in the body is the user's.
+    // The label a plain goto names, when the goto is inside a switch of the user: such a goto stays a goto, and its
+    // label stays at the start of its state (see LowerStateLabel). The state machine's own switch does not exist yet,
+    // so every enclosing switch is the user's. FindLabelsReachedFromSwitch and GotoRewriter both decide by this test
+    private static IdentifierNameSyntax? GetLabelJumpedToFromSwitch(GotoStatementSyntax jump) =>
+        jump.IsKind(SyntaxKind.GotoStatement) &&
+        jump.Expression is IdentifierNameSyntax target &&
+        jump.Ancestors()
+            .AsStackEnumerable()
+            .Any(static node => node is SwitchStatementSyntax)
+            ? target
+            : null;
+
+    // The labels that start a state and that a goto inside a switch of the user reaches (see LowerStateLabel)
     private HashSet<DeclarationKey> FindLabelsReachedFromSwitch(BlockSyntax block,
         IReadOnlyDictionary<DeclarationKey, int> labelStates)
     {
         var labels = new HashSet<DeclarationKey>();
         block.DescendantNodes()
             .AsStackEnumerable()
-            .OfType<SwitchStatementSyntax>()
-            .SelectMany(static userSwitch => userSwitch.DescendantNodes()
-                .AsStackEnumerable()
-            ).OfType<GotoStatementSyntax>()
-            .Where(static jump => jump.IsKind(SyntaxKind.GotoStatement))
-            .Select(static jump => jump.Expression as IdentifierNameSyntax)
+            .OfType<GotoStatementSyntax>()
+            .Select(GetLabelJumpedToFromSwitch)
             .OfType<IdentifierNameSyntax>()
             .Select(semanticModel, static (target, model) => LoweringIdentity.ForReference(target, model))
             .Where(labelStates, static (key, states) => states.ContainsKey(key))
@@ -314,30 +321,14 @@ public class StateMachineLowerer(bool isDeviceFunction = false, SemanticModel? s
     private class GotoRewriter(IReadOnlyDictionary<DeclarationKey, int> labelStates, SemanticModel? semanticModel)
         : CSharpSyntaxRewriter
     {
-        // How many switches of the user enclose the node being visited
-        private int _switchDepth;
-
-        public override SyntaxNode? VisitSwitchStatement(SwitchStatementSyntax node)
-        {
-            _switchDepth++;
-            try
-            {
-                return base.VisitSwitchStatement(node);
-            }
-            finally
-            {
-                _switchDepth--;
-            }
-        }
-
         public override SyntaxNode? VisitGotoStatement(GotoStatementSyntax node)
         {
             // A goto to the label after a returning statement of a Gpu.SyncGrid body, and a goto inside a switch of the
             // user, stay gotos to the label that their section keeps (see LowerStateLabel)
-            if (!node.IsKind(SyntaxKind.GotoStatement) ||
+            if (GetLabelJumpedToFromSwitch(node) is not null ||
+                !node.IsKind(SyntaxKind.GotoStatement) ||
                 node.Expression is not IdentifierNameSyntax id ||
-                IsSyncGridNextLabel(id.Identifier.ValueText) ||
-                _switchDepth > 0)
+                IsSyncGridNextLabel(id.Identifier.ValueText))
             {
                 return base.VisitGotoStatement(node);
             }
