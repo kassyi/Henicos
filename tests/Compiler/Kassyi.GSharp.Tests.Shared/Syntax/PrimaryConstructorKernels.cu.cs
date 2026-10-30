@@ -134,6 +134,37 @@ public struct PcNoParameters()
 public struct PcGenericHolder<T>() where T : struct
 {
     public T Value = new T();
+
+    // default(T) runs no constructor
+    public T Defaulted = default(T);
+}
+
+// The initializer runs before the body: X = 3, then X = 3 * 10 + 1 = 31
+public struct PcInitializerAndBody
+{
+    public int X = 3;
+
+    public PcInitializerAndBody()
+    {
+        X = X * 10 + 1;
+    }
+}
+
+// : this(4) runs the initializer X = 1 and Y = 4 * 10 + X = 41 in the chained constructor, then the body Y += 2: 43
+public struct PcChainedNoParameters
+{
+    public int X = 1;
+    public int Y;
+
+    public PcChainedNoParameters() : this(4)
+    {
+        Y += 2;
+    }
+
+    public PcChainedNoParameters(int y)
+    {
+        Y = y * 10 + X;
+    }
 }
 
 public struct PcExplicitNoParameters
@@ -299,5 +330,16 @@ public static partial class PrimaryConstructorKernels
         var explicitBody = new PcGenericHolder<PcExplicitNoParameters>();
         var plain = new PcGenericHolder<PcPlain>();
         output[tid] = primary.Value.X * 100 + explicitBody.Value.X * 10 + plain.Value.X;
+    }
+
+    [GpuKernel]
+    public static void GenericNewOrderKernel(int[] output)
+    {
+        int tid = ThreadIndex.X;
+        var initializerAndBody = new PcGenericHolder<PcInitializerAndBody>();
+        var chained = new PcGenericHolder<PcChainedNoParameters>();
+        output[tid * 3] = initializerAndBody.Value.X;
+        output[tid * 3 + 1] = chained.Value.X * 100 + chained.Value.Y;
+        output[tid * 3 + 2] = initializerAndBody.Defaulted.X * 100 + chained.Defaulted.X * 10 + chained.Defaulted.Y;
     }
 }

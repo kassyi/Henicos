@@ -60,6 +60,11 @@ public class PrimaryConstructorTests : TranspilerTestBase
 
     [SkippableFact]
     [Scenario(TestScenario.Boundary)]
+    public void Test_GenericNew_KeepsInitializerChainAndDefaultOrder() =>
+        PrimaryConstructorScenarios.GenericNewKeepsConstructorOrder(s_runNative);
+
+    [SkippableFact]
+    [Scenario(TestScenario.Boundary)]
     public void Test_CapturedParametersAndAutoProperties_Roundtrip() =>
         PrimaryConstructorScenarios.CapturedParametersAndAutoPropertiesRoundtrip(s_runNative, checkShadow: true);
 
