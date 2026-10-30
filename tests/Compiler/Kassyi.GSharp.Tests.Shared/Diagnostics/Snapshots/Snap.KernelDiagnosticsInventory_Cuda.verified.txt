@@ -119,6 +119,12 @@
 (78,9)-(78,16) GSH0003 analyzer: The syntax 'Operator macro '++' is an increment or decrement operator, which assigns its operand and is not expanded; write the assignment with a binary operator macro' is not supported in GSharp GPU kernels
 (89,9)-(89,31) GSH0003 analyzer: The syntax 'Operator macro '+' is applied to nullable operands (a lifted operator), which it does not expand; apply it to the values ('.Value')' is not supported in GSharp GPU kernels
 (101,9)-(101,18) GSH0003 analyzer: The syntax 'Operator macro target 'FormOps.Mul' has no overload that takes (FormRef result, FormRef left, FormRef right): Mul(T, T, T): generic methods are not candidates' is not supported in GSharp GPU kernels
+(112,9)-(112,18) GSH0003 analyzer: The syntax 'The target 'c' of operator macro 'FormOps.Add' is not assigned before the assignment: the target receives the result in the storage it holds, so assign 'c' first, as in 'c = default;'' is not supported in GSharp GPU kernels
+(119,9)-(119,30) GSH0003 analyzer: The syntax 'The target 'result' of operator macro 'FormOps.AddValues' is not assigned before the assignment: the target receives the result in the storage it holds, so assign 'result' first, as in 'result = default;'' is not supported in GSharp GPU kernels
+(210,9)-(210,24) GSH0003 analyzer: The syntax 'The target 'h.Inner' of operator macro 'FormOps.AddValues' is not assigned before the assignment: the target receives the result in the storage it holds, so assign 'h' first, as in 'h = default;'' is not supported in GSharp GPU kernels
+(259,9)-(259,18) GSH0003 analyzer: The syntax 'The context 'log' of operator macro 'FormCtxOps.AddCount' is not assigned before the assignment: the target receives the context variable itself, so assign 'log' first, as in 'log = default;'' is not supported in GSharp GPU kernels
+(269,9)-(269,24) GSH0003 analyzer: The syntax 'The context 'log' of operator macro 'FormCtxOps.AddCount' is not assigned before the assignment: the target receives the context variable itself, so assign 'log' first, as in 'log = default;'' is not supported in GSharp GPU kernels
+(292,9)-(292,27) GSH0003 analyzer: The syntax 'The target 'h.Computed' of operator macro 'FormOps.AddValues' is a property without storage: the target writes the result through its 'ref' parameter 'result', which would reach a copy and never the setter; compute into a variable first and assign it, as in 't = a + b; h.Computed = t;'' is not supported in GSharp GPU kernels
 
 ## Diagnostics/OperatorMacroPositions.cu.cs
 (47,9)-(47,24) GSH0003 analyzer: The syntax 'Operator macro '+' is an operand of another operator macro, but its target 'PositionOps.Add' takes the result as 'uint[] result', not as a ref or out parameter of an unmanaged type, so it has no temporary to compute into; assign it to a variable first, as in 't = a + b; c = c + t;'' is not supported in GSharp GPU kernels
@@ -128,6 +134,8 @@
 (105,9)-(105,24) GSH0003 analyzer: The syntax 'Operator macro '-' returns 'NarrowValue', but the operand of '-' takes 'WideValue'; assign it to a variable first, as in 't = a + b; c = c + t;'' is not supported in GSharp GPU kernels
 (146,40)-(146,45) GSH0003 analyzer: The syntax 'Operator macro '-' is under a user-defined conversion, which its expansion would drop; assign it to a variable first, as in 't = a + b;', and convert the variable' is not supported in GSharp GPU kernels
 (147,36)-(147,41) GSH0003 analyzer: The syntax 'Operator macro '-' is under a user-defined conversion, which its expansion would drop; assign it to a variable first, as in 't = a + b;', and convert the variable' is not supported in GSharp GPU kernels
+
+## Diagnostics/OperatorMacroUnreachableTarget.cu.cs
 
 ## Analyzers/MacroArgumentSadPath.cs
 (5,14)-(5,41) GSH0036 analyzer: The class 'GEN_36_MacroArgumentSadPath' containing [GpuKernel] methods must be declared as partial to support source generation of contexts and launch methods.

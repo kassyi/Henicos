@@ -254,6 +254,97 @@ public class UnsupportedConstructDiagnosticsTests
             diagnostics.Ranges(GSharpDiagnostics.UnsupportedSyntax.Id, "Operator macro '+' is applied to nullable operands"));
     }
 
+    // The target receives the result in the storage it holds: an unassigned local or out parameter has none (#711)
+    [Theory]
+    [InlineData("Cpu")]
+    [InlineData("Cuda")]
+    [Scenario(TestScenario.SadPath)]
+    public async Task Test_OperatorMacroIntoUnassignedTarget_ReportsGsh0003(string dialect)
+    {
+        var diagnostics = await KernelDiagnostics.RunTestCaseAsync("Diagnostics/OperatorMacroUnsupportedForms.cu.cs", dialect);
+
+        Assert.Equal(
+            [(Analyzer, 112, 9, 112, 18)],
+            diagnostics.Ranges(GSharpDiagnostics.UnsupportedSyntax.Id,
+                "The target 'c' of operator macro 'FormOps.Add' is not assigned before the assignment"));
+        Assert.Equal(
+            [(Analyzer, 119, 9, 119, 30)],
+            diagnostics.Ranges(GSharpDiagnostics.UnsupportedSyntax.Id,
+                "The target 'result' of operator macro 'FormOps.AddValues' is not assigned before the assignment"));
+        Assert.Equal(
+            [(Analyzer, 210, 9, 210, 24)],
+            diagnostics.Ranges(GSharpDiagnostics.UnsupportedSyntax.Id,
+                "The target 'h.Inner' of operator macro 'FormOps.AddValues' is not assigned before the assignment"));
+    }
+
+    // The context is passed to the target as the variable itself: an unassigned local has no value to pass (#711), in a
+    // kernel and in a device function (where an inner operator macro takes it too, reported once); one assigned before is
+    // not reported
+    [Theory]
+    [InlineData("Cpu")]
+    [InlineData("Cuda")]
+    [Scenario(TestScenario.SadPath)]
+    public async Task Test_OperatorMacroWithUnassignedContext_ReportsGsh0003(string dialect)
+    {
+        var diagnostics = await KernelDiagnostics.RunTestCaseAsync("Diagnostics/OperatorMacroUnsupportedForms.cu.cs", dialect);
+
+        Assert.Equal(
+            [(Analyzer, 259, 9, 259, 18), (Analyzer, 269, 9, 269, 24)],
+            diagnostics.Ranges(GSharpDiagnostics.UnsupportedSyntax.Id,
+                "The context 'log' of operator macro 'FormCtxOps.AddCount' is not assigned before the assignment"));
+    }
+
+    // A property with accessors of its own is not storage: the target would write into a copy and the setter would not
+    // run (#711)
+    [Theory]
+    [InlineData("Cpu")]
+    [InlineData("Cuda")]
+    [Scenario(TestScenario.SadPath)]
+    public async Task Test_OperatorMacroIntoComputedProperty_ReportsGsh0003(string dialect)
+    {
+        var diagnostics = await KernelDiagnostics.RunTestCaseAsync("Diagnostics/OperatorMacroUnsupportedForms.cu.cs", dialect);
+
+        Assert.Equal(
+            [(Analyzer, 292, 9, 292, 27)],
+            diagnostics.Ranges(GSharpDiagnostics.UnsupportedSyntax.Id,
+                "The target 'h.Computed' of operator macro 'FormOps.AddValues' is a property without storage"));
+    }
+
+    // The managed fallback cannot call a target of an inaccessible struct ([UnsafeAccessorType] takes no value types), also
+    // as an inner operator macro; a target of an inaccessible class it reaches through [UnsafeAccessor]. A kernel on CUDA
+    // has no managed form
+    [Theory]
+    [InlineData("Cpu", true)]
+    [InlineData("Cuda", false)]
+    [Scenario(TestScenario.SadPath)]
+    public async Task Test_OperatorMacroTargetOfAnInaccessibleStruct_ReportsGsh0003OnTheManagedPath(string dialect,
+        bool reported)
+    {
+        var diagnostics = await KernelDiagnostics.RunTestCaseAsync("Diagnostics/OperatorMacroUnreachableTarget.cu.cs", dialect);
+
+        Assert.Equal(
+            reported ? [(Analyzer, 50, 9, 50, 18), (Analyzer, 53, 9, 53, 24)] : [],
+            diagnostics.Ranges(GSharpDiagnostics.UnsupportedSyntax.Id,
+                "Operator macro target 'Hidden.Add' is not accessible here and is declared in struct 'Hidden', which is not accessible either"));
+        Assert.Empty(diagnostics.Ranges(GSharpDiagnostics.UnsupportedSyntax.Id, "HiddenOps"));
+    }
+
+    // Targets that do receive the result: an out result of the target method (a local and an out parameter), a local
+    // that a local function assigns after the method assigned it, and a local that both branches assign
+    [Theory]
+    [InlineData("Cpu")]
+    [InlineData("Cuda")]
+    [Scenario(TestScenario.HappyPath)]
+    public async Task Test_OperatorMacroIntoAssignedTarget_ReportsNothing(string dialect)
+    {
+        var diagnostics = await KernelDiagnostics.RunTestCaseAsync("Diagnostics/OperatorMacroUnsupportedForms.cu.cs", dialect);
+
+        Assert.Equal(
+            [(Analyzer, 112, 9, 112, 18), (Analyzer, 119, 9, 119, 30), (Analyzer, 210, 9, 210, 24)],
+            diagnostics.Ranges(GSharpDiagnostics.UnsupportedSyntax.Id,
+                "is not assigned before the assignment: the target receives the result"));
+    }
+
     [Theory]
     [InlineData("Cpu")]
     [InlineData("Cuda")]
@@ -267,8 +358,9 @@ public class UnsupportedConstructDiagnosticsTests
             diagnostics.Ranges(
                 GSharpDiagnostics.UnsupportedSyntax.Id,
                 "Operator macro target 'FormOps.Mul' has no overload that takes (FormRef result, FormRef left, FormRef right): Mul(T, T, T): generic methods are not candidates"));
-        // The five forms above, and the type parameter T in the signature of Mul<T> (a generic device function, reported on its own)
-        Assert.Equal(6, diagnostics.Length);
+        // The five forms above, the three unassigned targets, the two unassigned contexts, the computed property target,
+        // and the type parameter T in the signature of Mul<T> (a generic device function, reported on its own)
+        Assert.Equal(12, diagnostics.Length);
     }
 
     // An operator macro nested in another one is computed into a temporary only when its target takes the result as a ref or

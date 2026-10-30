@@ -147,6 +147,12 @@ public sealed class GpuDeviceExportAttribute : Attribute
     public bool ManagedStateMachine { get; set; }
 
     /// <summary>
+    /// Gets or sets whether the assembly holds the managed version of a function that does not suspend and expands an
+    /// operator macro, directly or through a call, which the managed path of a consumer calls instead of the function.
+    /// </summary>
+    public bool ManagedVersion { get; set; }
+
+    /// <summary>
     /// Gets or sets the parameters, one bit per ordinal (past the 32nd sharing the last bit), whose thread-variant
     /// argument makes only some threads reach a barrier of the device function, where uniform arguments do not (GSH0083
     /// at the call site).
