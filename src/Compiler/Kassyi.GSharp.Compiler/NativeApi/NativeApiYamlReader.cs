@@ -26,6 +26,9 @@ namespace Kassyi.GSharp.Compiler.NativeApi;
 /// escaped <c>summary</c> and <c>description</c> keys) and, for a nested class, in the top-level <c>classes</c> list.
 /// <c>isUnsafe: true</c> declares an intrinsic <c>unsafe</c>; one that returns a pointer throws through
 /// <c>GpuOnlyException.Throw&lt;nint&gt;().ToPointer()</c>.</para>
+/// <para><c>managed: ManagedAtomics.Add</c> names the member of <c>Kassyi.GSharp.Core</c> that runs an intrinsic on the
+/// managed CPU path: the stub forwards its arguments to it (<c>=&gt; Kassyi.GSharp.Core.ManagedAtomics.Add(ref address, val);</c>)
+/// instead of throwing.</para>
 /// <code>
 /// classes:
 ///   - name: Gpu.Unsafe
@@ -215,6 +218,7 @@ internal static class NativeApiYamlReader
             EntryPoint = OptionalScalar(mapping, "entryPoint"),
             StringMarshalling = OptionalScalar(mapping, "stringMarshalling"),
             IsUnsafe = OptionalBoolean(mapping, "isUnsafe"),
+            ManagedName = OptionalScalar(mapping, "managed"),
             Summary = OptionalScalar(mapping, "summary"),
             XmlDoc = OptionalScalar(mapping, "xmlDoc"),
             ReturnType = OptionalScalar(mapping, "returnType") ?? "void",
@@ -226,6 +230,13 @@ internal static class NativeApiYamlReader
         {
             throw Schema(LineOf(mapping, "className"),
                 $"'className' value '{method.ClassName}' is not a valid C# class name or nested class path.");
+        }
+
+        if (method.ManagedName is not null &&
+            (bindingKind != NativeApiBindingKind.Intrinsic || !IsValidDottedName(method.ManagedName)))
+        {
+            throw Schema(LineOf(mapping, "managed"),
+                $"'managed' value '{method.ManagedName}' must be a dotted member name of Kassyi.GSharp.Core on an intrinsic.");
         }
 
         if (method.StringMarshalling is not null)

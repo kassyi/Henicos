@@ -7,9 +7,9 @@ namespace Kassyi.GSharp.Compiler.Diagnostics.Kernel;
 /// <remarks>
 /// <para>
 /// A call to a device function that reaches a barrier suspends the caller like the barrier itself, so it counts as a
-/// barrier for the cross-barrier rules. The divergence rule (GSH0037) counts only calls that reach a block barrier.
-/// The same rules apply to the body of such a device function (<paramref name="isKernel"/> is false), which is lowered
-/// into a state machine as well.
+/// barrier for the cross-barrier rules. The divergence rule (GSH0037) counts the block and grid barriers and the calls
+/// that reach one, on the control flow graph (<see cref="UniformityAnalysis"/>). The same rules apply to the body of
+/// such a device function (<paramref name="isKernel"/> is false), which is lowered into a state machine as well.
 /// </para>
 /// <para>
 /// The checks are classes by responsibility: the constructs checked or collected node by node
@@ -23,9 +23,10 @@ internal readonly ref struct KernelBarrierValidator(
     SyntaxNodeAnalysisContext context,
     MethodDeclarationSyntax methodDecl,
     SemanticModel semanticModel,
-    bool isKernel)
+    bool isKernel,
+    MethodFlowGraph flow)
 {
-    private readonly KernelBarrierScan _scan = new(context, methodDecl, semanticModel, isKernel);
+    private readonly KernelBarrierScan _scan = new(context, methodDecl, semanticModel, isKernel, flow);
 
     public void Analyze()
     {
@@ -42,12 +43,15 @@ internal readonly ref struct KernelBarrierValidator(
         // 3. Locals live across a point where the state machine splits (GSH0039, GSH0041, GSH0072), on the control flow
         // graph: every split point counts, also a grid sync or a warp shuffle that the barrier list leaves out
         CrossBarrierChecks.ValidateCrossBarrierLocals(_scan);
+
+        // 4. Barriers that only some of the threads reach (GSH0037), on the control flow graph
+        BarrierDivergenceChecks.ValidateDivergentBarriers(_scan);
         if (_scan.Barriers.Count == 0)
         {
             return;
         }
 
-        // 4. The rules about barriers in local functions (GSH0045) and jumps across them (GSH0040)
+        // 5. The rules about barriers in local functions (GSH0045) and jumps across them (GSH0040)
         CrossBarrierChecks.ValidateRecursiveLocalFunctions(_scan);
         CrossBarrierChecks.ValidateCrossBarrierGotos(_scan);
     }

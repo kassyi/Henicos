@@ -92,7 +92,7 @@ public const string DebugName_A = "global::System.Int32";
 [System.Runtime.InteropServices.FieldOffset(0)]
 public global::System.Int32 A;
 }
-public static unsafe void Marshal_StructSizeOddInt(ref global::Kassyi.GSharp.Tests.Shared.Core.StructSizeOddInt host, ref AotContexts.StructSizeOddInt native, bool isDevicePtr, System.Collections.Generic.List<IntPtr>? allocatedPtrs, IntPtr hStream = default)
+public static unsafe void Marshal_StructSizeOddInt(ref global::Kassyi.GSharp.Tests.Shared.Core.StructSizeOddInt host, ref AotContexts.StructSizeOddInt native, bool isDevicePtr, global::Kassyi.GSharp.Runtime.Interop.DeviceArrayRegions? deviceArrays, IntPtr hStream = default)
 {
 native = default;
 native.A = host.A;
@@ -108,7 +108,7 @@ public const string DebugName_A = "global::System.Int32";
 [System.Runtime.InteropServices.FieldOffset(0)]
 public global::System.Int32 A;
 }
-public static unsafe void Marshal_StructSizePaddedInt(ref global::Kassyi.GSharp.Tests.Shared.Core.StructSizePaddedInt host, ref AotContexts.StructSizePaddedInt native, bool isDevicePtr, System.Collections.Generic.List<IntPtr>? allocatedPtrs, IntPtr hStream = default)
+public static unsafe void Marshal_StructSizePaddedInt(ref global::Kassyi.GSharp.Tests.Shared.Core.StructSizePaddedInt host, ref AotContexts.StructSizePaddedInt native, bool isDevicePtr, global::Kassyi.GSharp.Runtime.Interop.DeviceArrayRegions? deviceArrays, IntPtr hStream = default)
 {
 native = System.Runtime.CompilerServices.Unsafe.As<global::Kassyi.GSharp.Tests.Shared.Core.StructSizePaddedInt, AotContexts.StructSizePaddedInt>(ref host);
 }
@@ -346,7 +346,6 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 WarmupFunctionPointerReadSecondOddKernel();
 IntPtr hfunc = s_hfunc_ReadSecondOddKernel!.Value;
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "StructSizeKernels.ReadSecondOddKernel");
-System.Collections.Generic.List<IntPtr> data_allocatedPtrs = new System.Collections.Generic.List<IntPtr>();
 byte[]? data_shadow = null;
 IntPtr d_data = IntPtr.Zero;
 IntPtr d_o = IntPtr.Zero;
@@ -367,7 +366,7 @@ var data_native = System.Runtime.InteropServices.MemoryMarshal.Cast<byte, AotCon
 System.Span<global::Kassyi.GSharp.Tests.Shared.Core.StructSizeOddInt> data_host = data;
 for (int data_index = 0; data_index < data_native.Length; data_index++)
 {
-AotContexts.Marshal_StructSizeOddInt(ref data_host[data_index], ref data_native[data_index], false, data_allocatedPtrs, hStream);
+AotContexts.Marshal_StructSizeOddInt(ref data_host[data_index], ref data_native[data_index], false, null, hStream);
 }
 fixed (byte* p_data = data_shadow)
 {
@@ -428,7 +427,6 @@ CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
 }
 finally
 {
-foreach (var ptr in data_allocatedPtrs) CudaDriverApi.cuMemFreeAsync(ptr, hStream);
 if (data_shadow != null) System.Buffers.ArrayPool<byte>.Shared.Return(data_shadow);
 if (d_data != IntPtr.Zero) CudaDriverApi.cuMemFreeAsync(d_data, hStream);
 if (d_o != IntPtr.Zero) CudaDriverApi.cuMemFreeAsync(d_o, hStream);

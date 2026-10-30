@@ -1,4 +1,8 @@
+using System;
+using System.Collections.Generic;
+using System.IO;
 using System.Numerics;
+using Kassyi.GSharp.Compiler.NativeApi;
 using Kassyi.GSharp.Core;
 
 namespace Kassyi.GSharp.Tests.Shared.Core;
@@ -49,29 +53,13 @@ public class CoreIntrinsicsTests
 
     [Fact]
     [Scenario(TestScenario.SadPath)]
-    public void Test_GpuAtomicsAndArithmetics_HostInvocation_ThrowsGpuOnlyException()
+    public void Test_GpuArithmetics_HostInvocation_ThrowsGpuOnlyException()
     {
-        // Sad Path: Atomic and carry arithmetic intrinsics must throw GpuOnlyException
-        int intVal = 10;
+        // Sad Path: Carry arithmetic intrinsics must throw GpuOnlyException (the atomics: the theory below)
         uint uintVal = 20;
         ulong ulongVal = 30;
-        float floatVal = 40.0f;
         ulong carry = 0;
         long borrow = 0;
-
-        Assert.Throws<GpuOnlyException>(() => Gpu.AtomicAdd(ref intVal, 1));
-        Assert.Throws<GpuOnlyException>(() => Gpu.AtomicAdd(ref uintVal, 1u));
-        Assert.Throws<GpuOnlyException>(() => Gpu.AtomicAdd(ref ulongVal, 1ul));
-        Assert.Throws<GpuOnlyException>(() => Gpu.AtomicAdd(ref floatVal, 1.0f));
-
-        Assert.Throws<GpuOnlyException>(() => Gpu.AtomicSub(ref intVal, 1));
-        Assert.Throws<GpuOnlyException>(() => Gpu.AtomicSub(ref uintVal, 1u));
-
-        Assert.Throws<GpuOnlyException>(() => Gpu.AtomicOr(ref uintVal, 1u));
-        Assert.Throws<GpuOnlyException>(() => Gpu.AtomicOr(ref ulongVal, 1ul));
-
-        Assert.Throws<GpuOnlyException>(() => Gpu.AtomicMax(ref uintVal, 1u));
-        Assert.Throws<GpuOnlyException>(() => Gpu.AtomicMax(ref ulongVal, 1ul));
 
         Assert.Throws<GpuOnlyException>(() => Gpu.AddWithCarry(uintVal, 1u, ref carry));
         Assert.Throws<GpuOnlyException>(() => Gpu.SubWithBorrow(uintVal, 1u, ref borrow));
@@ -81,6 +69,97 @@ public class CoreIntrinsicsTests
         Assert.Throws<GpuOnlyException>(() => Gpu.MultiplyHigh(ulongVal, 2ul));
         Assert.Throws<GpuOnlyException>(() => Gpu.FunnelShiftLeft(uintVal, uintVal, 2u));
         Assert.Throws<GpuOnlyException>(() => Gpu.FunnelShiftRight(uintVal, uintVal, 2u));
+    }
+
+    // Every stub that forwards to ManagedAtomics, by "<name>(<element type>)"; each call starts from 7 and must leave it
+    private static readonly Dictionary<string, Action> s_forwardedAtomicStubs = new()
+    {
+        ["AtomicAdd(int)"] = static () => Run(7, static (ref int v) => Gpu.AtomicAdd(ref v, 1)),
+        ["AtomicAdd(uint)"] = static () => Run(7u, static (ref uint v) => Gpu.AtomicAdd(ref v, 1u)),
+        ["AtomicAdd(ulong)"] = static () => Run(7ul, static (ref ulong v) => Gpu.AtomicAdd(ref v, 1ul)),
+        ["AtomicAdd(float)"] = static () => Run(7f, static (ref float v) => Gpu.AtomicAdd(ref v, 1f)),
+        ["AtomicSub(int)"] = static () => Run(7, static (ref int v) => Gpu.AtomicSub(ref v, 1)),
+        ["AtomicSub(uint)"] = static () => Run(7u, static (ref uint v) => Gpu.AtomicSub(ref v, 1u)),
+        ["AtomicOr(uint)"] = static () => Run(7u, static (ref uint v) => Gpu.AtomicOr(ref v, 8u)),
+        ["AtomicOr(ulong)"] = static () => Run(7ul, static (ref ulong v) => Gpu.AtomicOr(ref v, 8ul)),
+        ["AtomicMax(uint)"] = static () => Run(7u, static (ref uint v) => Gpu.AtomicMax(ref v, 9u)),
+        ["AtomicMax(ulong)"] = static () => Run(7ul, static (ref ulong v) => Gpu.AtomicMax(ref v, 9ul)),
+        ["AtomicExch(int)"] = static () => Run(7, static (ref int v) => Gpu.AtomicExch(ref v, 1)),
+        ["AtomicExch(uint)"] = static () => Run(7u, static (ref uint v) => Gpu.AtomicExch(ref v, 1u)),
+        ["AtomicExch(ulong)"] = static () => Run(7ul, static (ref ulong v) => Gpu.AtomicExch(ref v, 1ul)),
+        ["AtomicExch(float)"] = static () => Run(7f, static (ref float v) => Gpu.AtomicExch(ref v, 1f)),
+        ["AtomicMin(int)"] = static () => Run(7, static (ref int v) => Gpu.AtomicMin(ref v, 1)),
+        ["AtomicMin(uint)"] = static () => Run(7u, static (ref uint v) => Gpu.AtomicMin(ref v, 1u)),
+        ["AtomicMin(ulong)"] = static () => Run(7ul, static (ref ulong v) => Gpu.AtomicMin(ref v, 1ul)),
+        ["AtomicInc(uint)"] = static () => Run(7u, static (ref uint v) => Gpu.AtomicInc(ref v, 9u)),
+        ["AtomicDec(uint)"] = static () => Run(7u, static (ref uint v) => Gpu.AtomicDec(ref v, 9u)),
+        ["AtomicCAS(int)"] = static () => Run(7, static (ref int v) => Gpu.AtomicCAS(ref v, 7, 1)),
+        ["AtomicCAS(uint)"] = static () => Run(7u, static (ref uint v) => Gpu.AtomicCAS(ref v, 7u, 1u)),
+        ["AtomicCAS(ulong)"] = static () => Run(7ul, static (ref ulong v) => Gpu.AtomicCAS(ref v, 7ul, 1ul)),
+        ["AtomicAnd(int)"] = static () => Run(7, static (ref int v) => Gpu.AtomicAnd(ref v, 1)),
+        ["AtomicAnd(uint)"] = static () => Run(7u, static (ref uint v) => Gpu.AtomicAnd(ref v, 1u)),
+        ["AtomicAnd(ulong)"] = static () => Run(7ul, static (ref ulong v) => Gpu.AtomicAnd(ref v, 1ul)),
+        ["AtomicXor(int)"] = static () => Run(7, static (ref int v) => Gpu.AtomicXor(ref v, 1)),
+        ["AtomicXor(uint)"] = static () => Run(7u, static (ref uint v) => Gpu.AtomicXor(ref v, 1u)),
+        ["AtomicXor(ulong)"] = static () => Run(7ul, static (ref ulong v) => Gpu.AtomicXor(ref v, 1ul)),
+        ["ReductionAdd(int)"] = static () => Run(7, static (ref int v) => Gpu.ReductionAdd(ref v, 1)),
+        ["ReductionAdd(uint)"] = static () => Run(7u, static (ref uint v) => Gpu.ReductionAdd(ref v, 1u)),
+        ["ReductionAdd(ulong)"] = static () => Run(7ul, static (ref ulong v) => Gpu.ReductionAdd(ref v, 1ul)),
+        ["ReductionAdd(float)"] = static () => Run(7f, static (ref float v) => Gpu.ReductionAdd(ref v, 1f)),
+    };
+
+    public static TheoryData<string> ForwardedAtomicStubs => new(s_forwardedAtomicStubs.Keys);
+
+    // Outside a managed launch a stub that forwards to ManagedAtomics still throws, and throws before it writes (#728)
+    [Theory]
+    [Scenario(TestScenario.SadPath)]
+    [MemberData(nameof(ForwardedAtomicStubs))]
+    public void Test_ForwardedAtomicStub_HostInvocation_ThrowsGpuOnlyExceptionAndLeavesTheValue(string stub)
+    {
+        s_forwardedAtomicStubs[stub]();
+    }
+
+    // The table above lists every overload that ptx_intrinsics.yml forwards to a managed member, and nothing else
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void Test_ForwardedAtomicStubs_CoverEveryOverloadWithAManagedMember()
+    {
+        var yaml = File.ReadAllText(RepositoryPaths.Combine("src", "NativeApi", "ptx_intrinsics.yml"));
+        Assert.True(NativeApiYamlReader.TryRead(yaml, out var definition, out var error), error?.Message);
+
+        var expected = new SortedSet<string>(StringComparer.Ordinal);
+        foreach (var method in definition.Methods)
+        {
+            if (method.ManagedName is null)
+            {
+                continue;
+            }
+
+            if (method.TypeTemplate is { } template)
+            {
+                foreach (var type in template.Types)
+                {
+                    expected.Add($"{method.Name}({type})");
+                }
+            }
+            else
+            {
+                // AtomicInc / AtomicDec: the type of the first parameter without its "ref "
+                expected.Add($"{method.Name}({method.Parameters[0].Type["ref ".Length..]})");
+            }
+        }
+
+        Assert.Equal(expected, new SortedSet<string>(s_forwardedAtomicStubs.Keys, StringComparer.Ordinal));
+    }
+
+    private delegate void RefAction<T>(ref T value);
+
+    // The call throws GpuOnlyException and leaves the value as it was
+    private static void Run<T>(T initial, RefAction<T> call)
+    {
+        var value = initial;
+        Assert.Throws<GpuOnlyException>(() => call(ref value));
+        Assert.Equal(initial, value);
     }
 
     [Fact]
