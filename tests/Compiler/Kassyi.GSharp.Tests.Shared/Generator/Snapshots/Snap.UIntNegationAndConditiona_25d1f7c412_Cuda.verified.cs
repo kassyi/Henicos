@@ -62,18 +62,18 @@ inline __device__ void __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__UIntNe
 
 inline __device__ void __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__UIntNegationAndConditionalKernels__Negate(unsigned int __gsharp_id_0_u, GSharpArray<long long> __gsharp_id_1_values, int __gsharp_id_2_index){
 long long __gsharp_id_3_x = -(long long)__gsharp_id_0_u;
-__gsharp_id_1_values[__gsharp_mul_i32(__gsharp_id_2_index,3)]=__gsharp_id_3_x;
-__gsharp_id_1_values[__gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_2_index,3),1)]=__gsharp_mul_i64(-(long long)__gsharp_id_0_u,2);
+__gsharp_array_at(__gsharp_id_1_values, __gsharp_mul_i32(__gsharp_id_2_index,3), ""G#: a null array is read at UIntNegationAndConditionalKernels.cs(22,9)"")=__gsharp_id_3_x;
+__gsharp_array_at(__gsharp_id_1_values, __gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_2_index,3),1), ""G#: a null array is read at UIntNegationAndConditionalKernels.cs(23,9)"")=__gsharp_mul_i64(-(long long)__gsharp_id_0_u,2);
 auto __gsharp_id_4_negated = -(long long)__gsharp_id_0_u;
-__gsharp_id_1_values[__gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_2_index,3),2)]=__gsharp_id_4_negated;
+__gsharp_array_at(__gsharp_id_1_values, __gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_2_index,3),2), ""G#: a null array is read at UIntNegationAndConditionalKernels.cs(27,9)"")=__gsharp_id_4_negated;
 }
 
 inline __device__ void __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__UIntNegationAndConditionalKernels__Choose(bool __gsharp_id_0_c, unsigned int __gsharp_id_1_u, int __gsharp_id_2_n, GSharpArray<long long> __gsharp_id_3_longs, GSharpArray<double> __gsharp_id_4_doubles, int __gsharp_id_5_index){
 long long __gsharp_id_6_y = (__gsharp_id_0_c?(long long)__gsharp_id_1_u:(long long)__gsharp_id_2_n);
-__gsharp_id_3_longs[__gsharp_mul_i32(__gsharp_id_5_index,2)]=__gsharp_id_6_y;
-__gsharp_id_3_longs[__gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_5_index,2),1)]=(__gsharp_id_0_c?(long long)__gsharp_id_1_u:(-1LL));
+__gsharp_array_at(__gsharp_id_3_longs, __gsharp_mul_i32(__gsharp_id_5_index,2), ""G#: a null array is read at UIntNegationAndConditionalKernels.cs(45,9)"")=__gsharp_id_6_y;
+__gsharp_array_at(__gsharp_id_3_longs, __gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_5_index,2),1), ""G#: a null array is read at UIntNegationAndConditionalKernels.cs(46,9)"")=(__gsharp_id_0_c?(long long)__gsharp_id_1_u:(-1LL));
 double __gsharp_id_7_d = (__gsharp_id_0_c?(double)__gsharp_id_1_u:(double)__gsharp_id_2_n);
-__gsharp_id_4_doubles[__gsharp_id_5_index]=__gsharp_id_7_d;
+__gsharp_array_at(__gsharp_id_4_doubles, __gsharp_id_5_index, ""G#: a null array is read at UIntNegationAndConditionalKernels.cs(48,9)"")=__gsharp_id_7_d;
 }
 
 ";
@@ -149,6 +149,7 @@ int us_size = us.Length * sizeof(global::System.UInt32);
 IntPtr* proxy_us = stackalloc IntPtr[2];
 proxy_us[0] = IntPtr.Zero;
 ((int*)(proxy_us + 1))[0] = us.Length;
+((int*)(proxy_us + 1))[1] = 0;
 if (us_size > 0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_us, (IntPtr)us_size, hStream));
@@ -165,6 +166,7 @@ int values_size = values.Length * sizeof(global::System.Int64);
 IntPtr* proxy_values = stackalloc IntPtr[2];
 proxy_values[0] = IntPtr.Zero;
 ((int*)(proxy_values + 1))[0] = values.Length;
+((int*)(proxy_values + 1))[1] = 0;
 if (values_size > 0)
 {
 if (global::System.Object.ReferenceEquals(values, us))
@@ -236,11 +238,13 @@ void** kernelParams = stackalloc void*[2];
 IntPtr* proxy_us = stackalloc IntPtr[2];
 proxy_us[0] = us;
 ((int*)(proxy_us + 1))[0] = 0; // Length is unknown for raw IntPtr
+((int*)(proxy_us + 1))[1] = 0;
 kernelParams[0] = proxy_us;
 // Marshal device array: values
 IntPtr* proxy_values = stackalloc IntPtr[2];
 proxy_values[0] = values;
 ((int*)(proxy_values + 1))[0] = 0; // Length is unknown for raw IntPtr
+((int*)(proxy_values + 1))[1] = 0;
 kernelParams[1] = proxy_values;
 CudaException.ThrowIfError(CudaDriverApi.cuLaunchKernel(
 hfunc,
@@ -319,6 +323,7 @@ int us_size = us.Length * sizeof(global::System.UInt32);
 IntPtr* proxy_us = stackalloc IntPtr[2];
 proxy_us[0] = IntPtr.Zero;
 ((int*)(proxy_us + 1))[0] = us.Length;
+((int*)(proxy_us + 1))[1] = 0;
 if (us_size > 0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_us, (IntPtr)us_size, hStream));
@@ -335,6 +340,7 @@ int ns_size = ns.Length * sizeof(global::System.Int32);
 IntPtr* proxy_ns = stackalloc IntPtr[2];
 proxy_ns[0] = IntPtr.Zero;
 ((int*)(proxy_ns + 1))[0] = ns.Length;
+((int*)(proxy_ns + 1))[1] = 0;
 if (ns_size > 0)
 {
 if (global::System.Object.ReferenceEquals(ns, us))
@@ -358,6 +364,7 @@ int longs_size = longs.Length * sizeof(global::System.Int64);
 IntPtr* proxy_longs = stackalloc IntPtr[2];
 proxy_longs[0] = IntPtr.Zero;
 ((int*)(proxy_longs + 1))[0] = longs.Length;
+((int*)(proxy_longs + 1))[1] = 0;
 if (longs_size > 0)
 {
 if (global::System.Object.ReferenceEquals(longs, us))
@@ -385,6 +392,7 @@ int doubles_size = doubles.Length * sizeof(global::System.Double);
 IntPtr* proxy_doubles = stackalloc IntPtr[2];
 proxy_doubles[0] = IntPtr.Zero;
 ((int*)(proxy_doubles + 1))[0] = doubles.Length;
+((int*)(proxy_doubles + 1))[1] = 0;
 if (doubles_size > 0)
 {
 if (global::System.Object.ReferenceEquals(doubles, us))
@@ -484,21 +492,25 @@ void** kernelParams = stackalloc void*[4];
 IntPtr* proxy_us = stackalloc IntPtr[2];
 proxy_us[0] = us;
 ((int*)(proxy_us + 1))[0] = 0; // Length is unknown for raw IntPtr
+((int*)(proxy_us + 1))[1] = 0;
 kernelParams[0] = proxy_us;
 // Marshal device array: ns
 IntPtr* proxy_ns = stackalloc IntPtr[2];
 proxy_ns[0] = ns;
 ((int*)(proxy_ns + 1))[0] = 0; // Length is unknown for raw IntPtr
+((int*)(proxy_ns + 1))[1] = 0;
 kernelParams[1] = proxy_ns;
 // Marshal device array: longs
 IntPtr* proxy_longs = stackalloc IntPtr[2];
 proxy_longs[0] = longs;
 ((int*)(proxy_longs + 1))[0] = 0; // Length is unknown for raw IntPtr
+((int*)(proxy_longs + 1))[1] = 0;
 kernelParams[2] = proxy_longs;
 // Marshal device array: doubles
 IntPtr* proxy_doubles = stackalloc IntPtr[2];
 proxy_doubles[0] = doubles;
 ((int*)(proxy_doubles + 1))[0] = 0; // Length is unknown for raw IntPtr
+((int*)(proxy_doubles + 1))[1] = 0;
 kernelParams[3] = proxy_doubles;
 CudaException.ThrowIfError(CudaDriverApi.cuLaunchKernel(
 hfunc,

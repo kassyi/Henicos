@@ -1763,7 +1763,7 @@ __gsharp_switch_2_state_0:
 __gsharp_id_3_holder.__gsharp_mb_Values=__gsharp_id_0_data;
 __gsharp_id_3_holder.__gsharp_mb_Count=2;
 __gsharp_id_4_alias = __gsharp_id_1_other;
-__gsharp_id_4_alias[0]=__gsharp_add_i32(__gsharp_id_3_holder.__gsharp_mb_Values[0],__gsharp_id_3_holder.__gsharp_mb_Count);
+__gsharp_array_at(__gsharp_id_4_alias, 0, ""G#: a null array is read at SwitchSectionLocalKernels.cs(178,17)"")=__gsharp_add_i32(__gsharp_array_at(__gsharp_id_3_holder.__gsharp_mb_Values, 0, ""G#: a null array is read at SwitchSectionLocalKernels.cs(178,28)""),__gsharp_id_3_holder.__gsharp_mb_Count);
 break;
 }
 default:
@@ -1772,7 +1772,7 @@ __gsharp_switch_2_state_default:
 __gsharp_id_3_holder.__gsharp_mb_Values=__gsharp_id_1_other;
 __gsharp_id_3_holder.__gsharp_mb_Count=5;
 __gsharp_id_4_alias=__gsharp_id_0_data;
-__gsharp_id_4_alias[0]=__gsharp_add_i32(__gsharp_id_3_holder.__gsharp_mb_Values[0],__gsharp_id_3_holder.__gsharp_mb_Count);
+__gsharp_array_at(__gsharp_id_4_alias, 0, ""G#: a null array is read at SwitchSectionLocalKernels.cs(184,17)"")=__gsharp_add_i32(__gsharp_array_at(__gsharp_id_3_holder.__gsharp_mb_Values, 0, ""G#: a null array is read at SwitchSectionLocalKernels.cs(184,28)""),__gsharp_id_3_holder.__gsharp_mb_Count);
 break;
 }
 }
@@ -2058,7 +2058,7 @@ if(__gsharp_id_1_flag==0)
 goto __gsharp_id_4_skip;
 }
 __gsharp_id_3_holder = __gsharp_id_2_source;
-__gsharp_id_0_data[0]=__gsharp_add_i32(__gsharp_id_3_holder.__gsharp_mb_Values[0],__gsharp_id_3_holder.__gsharp_mb_Count);
+__gsharp_id_0_data[0]=__gsharp_add_i32(__gsharp_array_at(__gsharp_id_3_holder.__gsharp_mb_Values, 0, ""G#: a null array is read at SwitchSectionLocalKernels.cs(202,19)""),__gsharp_id_3_holder.__gsharp_mb_Count);
 __gsharp_id_4_skip:
 __gsharp_id_0_data[1]=7;
 __gsharp_state=-1;
@@ -2315,7 +2315,7 @@ if(__gsharp_id_1_flag==0)
 goto __gsharp_id_4_skip;
 }
 __gsharp_id_2_alias = __gsharp_id_0_data;
-__gsharp_id_2_alias[0]=9;
+__gsharp_array_at(__gsharp_id_2_alias, 0, ""G#: a null array is read at SwitchSectionLocalKernels.cs(217,9)"")=9;
 __gsharp_id_3_view = __gsharp_id_2_alias;
 __gsharp_id_3_view[0]=__gsharp_add_i32(__gsharp_id_3_view[0],5);
 __gsharp_id_4_skip:
@@ -2592,7 +2592,7 @@ goto __gsharp_id_3_done;
 }
 __gsharp_id_2_holder.__gsharp_mb_Values=__gsharp_id_0_data;
 __gsharp_id_2_holder.__gsharp_mb_Count=1;
-__gsharp_id_0_data[1]=__gsharp_add_i32(__gsharp_id_2_holder.__gsharp_mb_Values[0],__gsharp_id_2_holder.__gsharp_mb_Count);
+__gsharp_id_0_data[1]=__gsharp_add_i32(__gsharp_array_at(__gsharp_id_2_holder.__gsharp_mb_Values, 0, ""G#: a null array is read at SwitchSectionLocalKernels.cs(240,27)""),__gsharp_id_2_holder.__gsharp_mb_Count);
 __gsharp_id_3_done:
 break;
 }
@@ -2601,7 +2601,7 @@ __gsharp_switch_2_state_default:
 {
 __gsharp_id_2_holder.__gsharp_mb_Values=__gsharp_id_0_data;
 __gsharp_id_2_holder.__gsharp_mb_Count=2;
-__gsharp_id_0_data[1]=__gsharp_add_i32(__gsharp_id_2_holder.__gsharp_mb_Values[0],__gsharp_id_2_holder.__gsharp_mb_Count);
+__gsharp_id_0_data[1]=__gsharp_add_i32(__gsharp_array_at(__gsharp_id_2_holder.__gsharp_mb_Values, 0, ""G#: a null array is read at SwitchSectionLocalKernels.cs(246,27)""),__gsharp_id_2_holder.__gsharp_mb_Count);
 break;
 }
 }

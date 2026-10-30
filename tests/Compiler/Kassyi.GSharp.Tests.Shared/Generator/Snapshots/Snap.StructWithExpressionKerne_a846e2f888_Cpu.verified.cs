@@ -19,8 +19,8 @@ struct __gsharp_frame_Kassyi__GSharp__Tests__Shared__Syntax__StructWithExpressio
 template <typename TRoot> inline bool __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__StructWithExpressionKernels__SuspendingWith(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__WithPlainStruct __gsharp_id_0_p, int __gsharp_id_1_tid, __gsharp_frame_Kassyi__GSharp__Tests__Shared__Syntax__StructWithExpressionKernels__SuspendingWith* __gsharp_ctx, TRoot* __gsharp_root, int* __gsharp_result);
 
 inline int __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__StructWithExpressionKernels__Bump(GSharpArray<int> __gsharp_id_0_counter){
-__gsharp_id_0_counter[0]=__gsharp_add_i32(__gsharp_id_0_counter[0],1);
-return __gsharp_id_0_counter[0];
+__gsharp_array_at(__gsharp_id_0_counter, 0, ""G#: a null array is read at StructWithExpressionKernels.cs(65,9)"")=__gsharp_add_i32(__gsharp_array_at(__gsharp_id_0_counter, 0, ""G#: a null array is read at StructWithExpressionKernels.cs(65,9)""),1);
+return __gsharp_array_at(__gsharp_id_0_counter, 0, ""G#: a null array is read at StructWithExpressionKernels.cs(66,16)"");
 }
 
 #ifndef __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__WithPlainStruct__
@@ -39,7 +39,7 @@ static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__WithPl
 static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__WithPlainStruct,__gsharp_mb_Z)==8,""Kassyi.GSharp.Tests.Shared.Syntax.WithPlainStruct.Z: offset"");
 #endif
 inline __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__WithPlainStruct __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__StructWithExpressionKernels__MakePlain(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__WithPlainStruct __gsharp_id_0_seed, GSharpArray<int> __gsharp_id_1_counter){
-__gsharp_id_1_counter[0]=__gsharp_add_i32(__gsharp_id_1_counter[0],1);
+__gsharp_array_at(__gsharp_id_1_counter, 0, ""G#: a null array is read at StructWithExpressionKernels.cs(72,9)"")=__gsharp_add_i32(__gsharp_array_at(__gsharp_id_1_counter, 0, ""G#: a null array is read at StructWithExpressionKernels.cs(72,9)""),1);
 return __gsharp_id_0_seed;
 }
 
@@ -2202,8 +2202,8 @@ __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__WithArrayStruct __gsharp_tmp 
 __gsharp_tmp.__gsharp_mb_Count = 5;
 return __gsharp_tmp;
 }());
-__gsharp_id_2_b.__gsharp_mb_Data[0]=7;
-__gsharp_id_0_r[1]=__gsharp_id_1_a.__gsharp_mb_Data[0];
+__gsharp_array_at(__gsharp_id_2_b.__gsharp_mb_Data, 0, ""G#: a null array is read at StructWithExpressionKernels.cs(162,9)"")=7;
+__gsharp_id_0_r[1]=__gsharp_array_at(__gsharp_id_1_a.__gsharp_mb_Data, 0, ""G#: a null array is read at StructWithExpressionKernels.cs(163,16)"");
 __gsharp_id_0_r[2]=__gsharp_id_1_a.__gsharp_mb_Count;
 __gsharp_id_0_r[3]=__gsharp_id_2_b.__gsharp_mb_Count;
 __gsharp_state=-1;

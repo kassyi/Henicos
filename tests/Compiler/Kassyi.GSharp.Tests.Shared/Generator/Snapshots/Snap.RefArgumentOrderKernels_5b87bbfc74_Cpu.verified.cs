@@ -125,7 +125,7 @@ return false;
 case 1:
 __gsharp_switch_1_state_1:
 {
-__gsharp_id_2_result[(int)threadIdx.x]=__gsharp_add_i32(__gsharp_id_0_a,__gsharp_id_1_b);
+__gsharp_array_at(__gsharp_id_2_result, (int)threadIdx.x, ""G#: a null array is read at RefArgumentOrderKernels.cs(147,9)"")=__gsharp_add_i32(__gsharp_id_0_a,__gsharp_id_1_b);
 __gsharp_state = 0;return true;
 }
 }
@@ -176,7 +176,7 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-__gsharp_id_1_idx[(int)threadIdx.x]=__gsharp_sub_i32(63,(int)threadIdx.x);
+__gsharp_array_at(__gsharp_id_1_idx, (int)threadIdx.x, ""G#: a null array is read at RefArgumentOrderKernels.cs(160,9)"")=__gsharp_sub_i32(63,(int)threadIdx.x);
 __gsharp_yielded_for_block_barrier=true;
 __gsharp_state=1;
 return false;
@@ -274,7 +274,7 @@ return false;
 case 1:
 __gsharp_switch_1_state_1:
 {
-__gsharp_id_2_result[(int)threadIdx.x]=__gsharp_id_1_v;
+__gsharp_array_at(__gsharp_id_2_result, (int)threadIdx.x, ""G#: a null array is read at RefArgumentOrderKernels.cs(186,9)"")=__gsharp_id_1_v;
 __gsharp_state = 0;return true;
 }
 }
@@ -296,7 +296,7 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-__gsharp_id_1_data[(int)threadIdx.x]=99;
+__gsharp_array_at(__gsharp_id_1_data, (int)threadIdx.x, ""G#: a null array is read at RefArgumentOrderKernels.cs(198,9)"")=99;
 __gsharp_yielded_for_block_barrier=true;
 __gsharp_state=1;
 return false;
@@ -304,7 +304,7 @@ return false;
 case 1:
 __gsharp_switch_1_state_1:
 {
-__gsharp_id_2_result[(int)threadIdx.x]=__gsharp_id_0_v;
+__gsharp_array_at(__gsharp_id_2_result, (int)threadIdx.x, ""G#: a null array is read at RefArgumentOrderKernels.cs(200,9)"")=__gsharp_id_0_v;
 __gsharp_state = 0;return true;
 }
 }
@@ -367,7 +367,7 @@ return false;
 case 1:
 __gsharp_switch_1_state_1:
 {
-__gsharp_id_2_result[(int)threadIdx.x]=__gsharp_add_i32(__gsharp_mul_i32((*__gsharp_id_0_p),10),__gsharp_id_1_q);
+__gsharp_array_at(__gsharp_id_2_result, (int)threadIdx.x, ""G#: a null array is read at RefArgumentOrderKernels.cs(207,9)"")=__gsharp_add_i32(__gsharp_mul_i32((*__gsharp_id_0_p),10),__gsharp_id_1_q);
 __gsharp_state = 0;return true;
 }
 }
@@ -389,7 +389,7 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-__gsharp_id_1_data[(int)threadIdx.x]=5;
+__gsharp_array_at(__gsharp_id_1_data, (int)threadIdx.x, ""G#: a null array is read at RefArgumentOrderKernels.cs(213,9)"")=5;
 __gsharp_yielded_for_block_barrier=true;
 __gsharp_state=1;
 return false;
@@ -397,7 +397,7 @@ return false;
 case 1:
 __gsharp_switch_1_state_1:
 {
-__gsharp_id_2_result[(int)threadIdx.x]=(*__gsharp_id_0_p);
+__gsharp_array_at(__gsharp_id_2_result, (int)threadIdx.x, ""G#: a null array is read at RefArgumentOrderKernels.cs(215,9)"")=(*__gsharp_id_0_p);
 __gsharp_state = 0;return true;
 }
 }
@@ -1496,7 +1496,7 @@ __gsharp_switch_1_state_0:
 __gsharp_ctx->__gsharp_id_2_d=__gsharp_id_0_data;
 __gsharp_ctx->__gsharp_arg_temp_0=__gsharp_ctx->__gsharp_id_2_d;
 __gsharp_ctx->__gsharp_arg_temp_1=(int)threadIdx.x;
-__gsharp_ctx->__gsharp_arg_temp_2=(__gsharp_ctx->__gsharp_id_2_d=__gsharp_id_1_other).length;
+__gsharp_ctx->__gsharp_arg_temp_2=__gsharp_array_ref((__gsharp_ctx->__gsharp_id_2_d=__gsharp_id_1_other), ""G#: a null array is read at RefArgumentOrderKernels.cs(46,47)"").length;
 goto __gsharp_switch_1_state_1;
 }
 case 1:
@@ -1788,7 +1788,7 @@ __gsharp_switch_1_state_0:
 __gsharp_ctx->__gsharp_id_2_holder.__gsharp_mb_Data=__gsharp_id_0_data;
 __gsharp_ctx->__gsharp_arg_temp_0=__gsharp_ctx->__gsharp_id_2_holder.__gsharp_mb_Data;
 __gsharp_ctx->__gsharp_arg_temp_1=(int)threadIdx.x;
-__gsharp_ctx->__gsharp_arg_temp_2=(__gsharp_ctx->__gsharp_id_2_holder.__gsharp_mb_Data=__gsharp_id_1_other).length;
+__gsharp_ctx->__gsharp_arg_temp_2=__gsharp_array_ref((__gsharp_ctx->__gsharp_id_2_holder.__gsharp_mb_Data=__gsharp_id_1_other), ""G#: a null array is read at RefArgumentOrderKernels.cs(55,57)"").length;
 goto __gsharp_switch_1_state_1;
 }
 case 1:

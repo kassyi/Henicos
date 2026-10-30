@@ -177,6 +177,7 @@ int states_size = states.Length * sizeof(global::Kassyi.GSharp.Tests.Shared.Synt
 IntPtr* proxy_states = stackalloc IntPtr[2];
 proxy_states[0] = IntPtr.Zero;
 ((int*)(proxy_states + 1))[0] = states.Length;
+((int*)(proxy_states + 1))[1] = 0;
 if (states_size > 0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_states, (IntPtr)states_size, hStream));
@@ -235,6 +236,7 @@ void** kernelParams = stackalloc void*[3];
 IntPtr* proxy_states = stackalloc IntPtr[2];
 proxy_states[0] = states;
 ((int*)(proxy_states + 1))[0] = 0; // Length is unknown for raw IntPtr
+((int*)(proxy_states + 1))[1] = 0;
 kernelParams[0] = proxy_states;
 // Marshal scalar: length
 kernelParams[1] = &length;
@@ -336,6 +338,7 @@ int inputValues_size = inputValues.Length * sizeof(global::System.Int32);
 IntPtr* proxy_inputValues = stackalloc IntPtr[2];
 proxy_inputValues[0] = IntPtr.Zero;
 ((int*)(proxy_inputValues + 1))[0] = inputValues.Length;
+((int*)(proxy_inputValues + 1))[1] = 0;
 if (inputValues_size > 0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_inputValues, (IntPtr)inputValues_size, hStream));
@@ -352,6 +355,7 @@ int outputStates_size = outputStates.Length * sizeof(global::Kassyi.GSharp.Tests
 IntPtr* proxy_outputStates = stackalloc IntPtr[2];
 proxy_outputStates[0] = IntPtr.Zero;
 ((int*)(proxy_outputStates + 1))[0] = outputStates.Length;
+((int*)(proxy_outputStates + 1))[1] = 0;
 if (outputStates_size > 0)
 {
 if (global::System.Object.ReferenceEquals(outputStates, inputValues))
@@ -425,11 +429,13 @@ void** kernelParams = stackalloc void*[3];
 IntPtr* proxy_inputValues = stackalloc IntPtr[2];
 proxy_inputValues[0] = inputValues;
 ((int*)(proxy_inputValues + 1))[0] = 0; // Length is unknown for raw IntPtr
+((int*)(proxy_inputValues + 1))[1] = 0;
 kernelParams[0] = proxy_inputValues;
 // Marshal device array: outputStates
 IntPtr* proxy_outputStates = stackalloc IntPtr[2];
 proxy_outputStates[0] = outputStates;
 ((int*)(proxy_outputStates + 1))[0] = 0; // Length is unknown for raw IntPtr
+((int*)(proxy_outputStates + 1))[1] = 0;
 kernelParams[1] = proxy_outputStates;
 // Marshal scalar: length
 kernelParams[2] = &length;

@@ -224,7 +224,7 @@ public sealed class ExpressionLifetimeTests : IDisposable
         using var b = CreateScalar(4);
         var before = _workspace.GetMemoryStatistics();
 
-        var expression = new VectorAddScalarExpression(
+        IGpuBigIntVectorExpression expression = new VectorAddScalarExpression(
             new GpuBigIntVectorLeafExpression(array),
             new SignedAddExpression(new GpuBigIntLeafExpression(a), new GpuBigIntLeafExpression(b)));
         var first = Read(expression.Evaluate(_workspace));

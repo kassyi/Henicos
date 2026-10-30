@@ -20,14 +20,36 @@ public static partial class GpuStreamCompactionKernels
     }
 
     /// <summary>
+    /// The number of elements described by <paramref name="count"/> (design D3 4.1): its limit without a count word,
+    /// otherwise <c>clamp(Base[0] - Skip, 0, Limit)</c>.
+    /// </summary>
+    [GpuDeviceFunction, GpuInline]
+    public static int ResolveCount(GpuBigIntVectorKernels.ElementCountContext count)
+    {
+        if (count.Base == null)
+        {
+            return count.Limit;
+        }
+
+        int n = (int)count.Base[0] - count.Skip;
+        return n < 0 ? 0 : (n > count.Limit ? count.Limit : n);
+    }
+
+    /// <summary>
     /// Performs a block-wide exclusive prefix sum (Blelloch Scan) on a uint array.
     /// </summary>
     /// <param name="output">The destination array for the exclusive scan result.</param>
-    /// <param name="input">The source array containing 1s and 0s (or any uints).</param>
+    /// <param name="input">The source array.</param>
     /// <param name="elementCount">The number of valid elements to process (must be &lt;= block dimension * 2).</param>
     /// <param name="blockSums">An auxiliary array to store the total sum of this block (used for multi-block scan).</param>
+    /// <param name="count">The number of input elements (see <see cref="ResolveCount"/>); the elements after it count
+    /// as 0.</param>
+    /// <param name="total">Receives the sum of all elements when the launch is a single block, or null.</param>
+    /// <param name="flags">The input are the predicates of a Where: a non-zero value counts as 1. The block sums of
+    /// the next levels are counts, not flags.</param>
     [GpuKernel]
-    public static void BlockExclusiveScan(uint[] output, uint[] input, int elementCount, uint[] blockSums)
+    public static void BlockExclusiveScan(uint[] output, uint[] input, int elementCount, uint[]? blockSums,
+        GpuBigIntVectorKernels.ElementCountContext count, uint[]? total, bool flags)
     {
         var sharedMem = new SharedMemory<uint>(2048 + 128);
 
@@ -48,8 +70,12 @@ public static partial class GpuStreamCompactionKernels
         int globalA = globalOffset + indexA;
         int globalB = globalOffset + indexB;
 
-        sharedMem[indexA + offsetA] = (globalA < elementCount) ? input[globalA] : 0u;
-        sharedMem[indexB + offsetB] = (globalB < elementCount) ? input[globalB] : 0u;
+        // Only the elements before the input count take part; a flag counts as 0 or 1
+        int n = ResolveCount(count);
+        uint valueA = (globalA < elementCount && globalA < n) ? input[globalA] : 0u;
+        uint valueB = (globalB < elementCount && globalB < n) ? input[globalB] : 0u;
+        sharedMem[indexA + offsetA] = flags ? (valueA != 0u ? 1u : 0u) : valueA;
+        sharedMem[indexB + offsetB] = flags ? (valueB != 0u ? 1u : 0u) : valueB;
 
         for (int d = treeSize >> 1; d > 0; d >>= 1)
         {
@@ -76,6 +102,12 @@ public static partial class GpuStreamCompactionKernels
             if (blockSums != null)
             {
                 blockSums[bIdx] = sharedMem[lastIndex + lastOffset];
+            }
+
+            // A single-block launch is the whole scan (or its last level), so its block sum is the total
+            if (total != null && GridDimension.X == 1)
+            {
+                total[0] = sharedMem[lastIndex + lastOffset];
             }
 
             sharedMem[lastIndex + lastOffset] = 0u;
@@ -167,6 +199,61 @@ public static partial class GpuStreamCompactionKernels
         {
             output[dstOffset + i] = input[srcOffset + i];
         }
+    }
+
+    /// <summary>
+    /// Scatters the selected elements of a signed vector (values and signs in one launch) to their scanned positions;
+    /// only the elements before the input count are read.
+    /// </summary>
+    [GpuKernel]
+    public static void CompactSignedVector(uint[] outputValues, uint[] outputSigns, uint[] inputValues,
+        uint[] inputSigns, uint[] predicates, uint[] scanResult, int elementCount, int wordsPerElement,
+        GpuBigIntVectorKernels.ElementCountContext count)
+    {
+        int globalTid = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
+        int n = ResolveCount(count);
+        if (globalTid >= elementCount || globalTid >= n || predicates[globalTid] == 0)
+        {
+            return;
+        }
+
+        int destinationIndex = (int)scanResult[globalTid];
+        int srcOffset = globalTid * wordsPerElement;
+        int dstOffset = destinationIndex * wordsPerElement;
+        for (int i = 0; i < wordsPerElement; i++)
+        {
+            outputValues[dstOffset + i] = inputValues[srcOffset + i];
+        }
+
+        outputSigns[destinationIndex] = inputSigns[globalTid];
+    }
+
+    /// <summary>
+    /// Scatters the selected elements of a floating-point vector (significands, exponents and signs in one launch);
+    /// only the elements before the input count are read.
+    /// </summary>
+    [GpuKernel]
+    public static void CompactFloatVector(uint[] outputSignificands, uint[] outputExponents, uint[] outputSigns,
+        uint[] inputSignificands, uint[] inputExponents, uint[] inputSigns, uint[] predicates, uint[] scanResult,
+        int elementCount, int wordsPerElement, GpuBigIntVectorKernels.ElementCountContext count)
+    {
+        int globalTid = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
+        int n = ResolveCount(count);
+        if (globalTid >= elementCount || globalTid >= n || predicates[globalTid] == 0)
+        {
+            return;
+        }
+
+        int destinationIndex = (int)scanResult[globalTid];
+        int srcOffset = globalTid * wordsPerElement;
+        int dstOffset = destinationIndex * wordsPerElement;
+        for (int i = 0; i < wordsPerElement; i++)
+        {
+            outputSignificands[dstOffset + i] = inputSignificands[srcOffset + i];
+        }
+
+        outputExponents[destinationIndex] = inputExponents[globalTid];
+        outputSigns[destinationIndex] = inputSigns[globalTid];
     }
 
     [GpuKernel]

@@ -1,7 +1,7 @@
 namespace Kassyi.GSharp.Stdlib.GpuMath.BigNum.Expressions;
 
 internal abstract class VectorUnaryExpressionBase(
-    [TakesOwnership] IGpuBigIntVectorExpression vector) : IGpuBigIntVectorExpression
+    [TakesOwnership] IGpuBigIntVectorExpression vector) : IGpuBigIntVectorExpression, IDeviceCountedVector
 {
     public int Length => vector.Length;
     public int WordsPerElement => vector.WordsPerElement;
@@ -9,30 +9,39 @@ internal abstract class VectorUnaryExpressionBase(
     // The result buffers, lent until the next evaluation or Dispose; a caller's target is never kept (design 4.6)
     private readonly VectorResultCache _cache = new();
 
-    public GpuBigIntArrayView Evaluate(
+    public int Capacity => vector.Capacity;
+
+    public bool TryGetLength(out int length) => vector.TryGetLength(out length);
+
+    // Evaluates the window of the capacity; the elements are the first Count of them (design D3 4.3)
+    public VectorEvaluation EvaluateCore(
         GpuWorkspace workspace,
-        int elementOffset = 0,
-        int? elementCount = null,
-        GpuBigUIntArrayView targetResult = default)
+        int elementOffset,
+        int? elementCount,
+        GpuBigUIntArrayView targetResult)
     {
         ValidateBeforeEvaluate();
 
-        var evalCount = elementCount ?? (Length - elementOffset);
+        var evalCount = elementCount ?? (Capacity - elementOffset);
         // The target is checked before the children run, so that a rejected target evaluates nothing
         var targetValues = VectorResultCache.HasTarget(targetResult)
             ? VectorResultCache.TargetValues(targetResult, evalCount, WordsPerElement)
             : default;
 
-        var vecResult = vector.Evaluate(workspace, elementOffset, evalCount);
+        var vecResult = DeviceCounted.Evaluate(vector, workspace, elementOffset, evalCount);
         // A target that shares words with the input is written from the cache after the loop: the loop writes element i
         // before it reads element i + 1 (#864)
-        var output = VectorOutput.Open(_cache, workspace, evalCount, WordsPerElement, targetValues, vecResult);
-        if (evalCount > 0)
+        var output = VectorOutput.Open(_cache, workspace, evalCount, WordsPerElement, targetValues, vecResult.Storage);
+
+        // The elements run on the host one by one: only the elements, not the rest of the capacity, so that a value
+        // after the count cannot throw (a negative square root). A device count costs one synchronization here.
+        var elements = vecResult.Count.IsStatic ? evalCount : vecResult.Count.Read(workspace);
+        if (elements > 0)
         {
-            EvaluateElements(workspace, vecResult, output.Destination, evalCount);
+            EvaluateElements(workspace, vecResult.Storage, output.Destination, elements);
         }
 
-        return output.Close(workspace);
+        return new VectorEvaluation(output.Close(workspace, vecResult.Count), vecResult.Count);
     }
 
     protected virtual void ValidateBeforeEvaluate()

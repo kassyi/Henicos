@@ -155,6 +155,7 @@ int output_size = output.Length * sizeof(global::System.Int32);
 IntPtr* proxy_output = stackalloc IntPtr[2];
 proxy_output[0] = IntPtr.Zero;
 ((int*)(proxy_output + 1))[0] = output.Length;
+((int*)(proxy_output + 1))[1] = 0;
 if (output_size > 0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_output, (IntPtr)output_size, hStream));
@@ -211,6 +212,7 @@ void** kernelParams = stackalloc void*[2];
 IntPtr* proxy_output = stackalloc IntPtr[2];
 proxy_output[0] = output;
 ((int*)(proxy_output + 1))[0] = 0; // Length is unknown for raw IntPtr
+((int*)(proxy_output + 1))[1] = 0;
 kernelParams[0] = proxy_output;
 // Marshal scalar: flag
 kernelParams[1] = &flag;
@@ -323,6 +325,7 @@ int data_size = data.Length * sizeof(global::System.Int32);
 IntPtr* proxy_data = stackalloc IntPtr[2];
 proxy_data[0] = IntPtr.Zero;
 ((int*)(proxy_data + 1))[0] = data.Length;
+((int*)(proxy_data + 1))[1] = 0;
 if (data_size > 0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_data, (IntPtr)data_size, hStream));
@@ -377,6 +380,7 @@ void** kernelParams = stackalloc void*[1];
 IntPtr* proxy_data = stackalloc IntPtr[2];
 proxy_data[0] = data;
 ((int*)(proxy_data + 1))[0] = 0; // Length is unknown for raw IntPtr
+((int*)(proxy_data + 1))[1] = 0;
 kernelParams[0] = proxy_data;
 CudaException.ThrowIfError(CudaDriverApi.cuLaunchKernel(
 hfunc,
@@ -472,6 +476,7 @@ int data_size = data.Length * sizeof(global::System.Int32);
 IntPtr* proxy_data = stackalloc IntPtr[2];
 proxy_data[0] = IntPtr.Zero;
 ((int*)(proxy_data + 1))[0] = data.Length;
+((int*)(proxy_data + 1))[1] = 0;
 if (data_size > 0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_data, (IntPtr)data_size, hStream));
@@ -526,6 +531,7 @@ void** kernelParams = stackalloc void*[1];
 IntPtr* proxy_data = stackalloc IntPtr[2];
 proxy_data[0] = data;
 ((int*)(proxy_data + 1))[0] = 0; // Length is unknown for raw IntPtr
+((int*)(proxy_data + 1))[1] = 0;
 kernelParams[0] = proxy_data;
 CudaException.ThrowIfError(CudaDriverApi.cuLaunchKernel(
 hfunc,
@@ -598,6 +604,7 @@ int output_size = output.Length * sizeof(global::System.Int32);
 IntPtr* proxy_output = stackalloc IntPtr[2];
 proxy_output[0] = IntPtr.Zero;
 ((int*)(proxy_output + 1))[0] = output.Length;
+((int*)(proxy_output + 1))[1] = 0;
 if (output_size > 0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_output, (IntPtr)output_size, hStream));
@@ -654,6 +661,7 @@ void** kernelParams = stackalloc void*[2];
 IntPtr* proxy_output = stackalloc IntPtr[2];
 proxy_output[0] = output;
 ((int*)(proxy_output + 1))[0] = 0; // Length is unknown for raw IntPtr
+((int*)(proxy_output + 1))[1] = 0;
 kernelParams[0] = proxy_output;
 // Marshal scalar: flag
 kernelParams[1] = &flag;
@@ -732,6 +740,7 @@ int output_size = output.Length * sizeof(global::System.Int32);
 IntPtr* proxy_output = stackalloc IntPtr[2];
 proxy_output[0] = IntPtr.Zero;
 ((int*)(proxy_output + 1))[0] = output.Length;
+((int*)(proxy_output + 1))[1] = 0;
 if (output_size > 0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_output, (IntPtr)output_size, hStream));
@@ -788,6 +797,7 @@ void** kernelParams = stackalloc void*[2];
 IntPtr* proxy_output = stackalloc IntPtr[2];
 proxy_output[0] = output;
 ((int*)(proxy_output + 1))[0] = 0; // Length is unknown for raw IntPtr
+((int*)(proxy_output + 1))[1] = 0;
 kernelParams[0] = proxy_output;
 // Marshal scalar: flag
 kernelParams[1] = &flag;
@@ -862,6 +872,7 @@ int output_size = output.Length * sizeof(global::System.Int32);
 IntPtr* proxy_output = stackalloc IntPtr[2];
 proxy_output[0] = IntPtr.Zero;
 ((int*)(proxy_output + 1))[0] = output.Length;
+((int*)(proxy_output + 1))[1] = 0;
 if (output_size > 0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_output, (IntPtr)output_size, hStream));
@@ -918,6 +929,7 @@ void** kernelParams = stackalloc void*[2];
 IntPtr* proxy_output = stackalloc IntPtr[2];
 proxy_output[0] = output;
 ((int*)(proxy_output + 1))[0] = 0; // Length is unknown for raw IntPtr
+((int*)(proxy_output + 1))[1] = 0;
 kernelParams[0] = proxy_output;
 // Marshal scalar: flag
 kernelParams[1] = &flag;
@@ -962,7 +974,7 @@ __gsharp_switch_1_state_0:
 __gsharp_id_3_holder.__gsharp_mb_Values=__gsharp_id_0_data;
 __gsharp_id_3_holder.__gsharp_mb_Count=2;
 __gsharp_id_4_alias = __gsharp_id_1_other;
-__gsharp_id_4_alias[0]=__gsharp_add_i32(__gsharp_id_3_holder.__gsharp_mb_Values[0],__gsharp_id_3_holder.__gsharp_mb_Count);
+__gsharp_array_at(__gsharp_id_4_alias, 0, ""G#: a null array is read at SwitchSectionLocalKernels.cs(178,17)"")=__gsharp_add_i32(__gsharp_array_at(__gsharp_id_3_holder.__gsharp_mb_Values, 0, ""G#: a null array is read at SwitchSectionLocalKernels.cs(178,28)""),__gsharp_id_3_holder.__gsharp_mb_Count);
 break;
 }
 default:
@@ -971,7 +983,7 @@ __gsharp_switch_1_state_default:
 __gsharp_id_3_holder.__gsharp_mb_Values=__gsharp_id_1_other;
 __gsharp_id_3_holder.__gsharp_mb_Count=5;
 __gsharp_id_4_alias=__gsharp_id_0_data;
-__gsharp_id_4_alias[0]=__gsharp_add_i32(__gsharp_id_3_holder.__gsharp_mb_Values[0],__gsharp_id_3_holder.__gsharp_mb_Count);
+__gsharp_array_at(__gsharp_id_4_alias, 0, ""G#: a null array is read at SwitchSectionLocalKernels.cs(184,17)"")=__gsharp_add_i32(__gsharp_array_at(__gsharp_id_3_holder.__gsharp_mb_Values, 0, ""G#: a null array is read at SwitchSectionLocalKernels.cs(184,28)""),__gsharp_id_3_holder.__gsharp_mb_Count);
 break;
 }
 }
@@ -1019,6 +1031,7 @@ int data_size = data.Length * sizeof(global::System.Int32);
 IntPtr* proxy_data = stackalloc IntPtr[2];
 proxy_data[0] = IntPtr.Zero;
 ((int*)(proxy_data + 1))[0] = data.Length;
+((int*)(proxy_data + 1))[1] = 0;
 if (data_size > 0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_data, (IntPtr)data_size, hStream));
@@ -1035,6 +1048,7 @@ int other_size = other.Length * sizeof(global::System.Int32);
 IntPtr* proxy_other = stackalloc IntPtr[2];
 proxy_other[0] = IntPtr.Zero;
 ((int*)(proxy_other + 1))[0] = other.Length;
+((int*)(proxy_other + 1))[1] = 0;
 if (other_size > 0)
 {
 if (global::System.Object.ReferenceEquals(other, data))
@@ -1108,11 +1122,13 @@ void** kernelParams = stackalloc void*[3];
 IntPtr* proxy_data = stackalloc IntPtr[2];
 proxy_data[0] = data;
 ((int*)(proxy_data + 1))[0] = 0; // Length is unknown for raw IntPtr
+((int*)(proxy_data + 1))[1] = 0;
 kernelParams[0] = proxy_data;
 // Marshal device array: other
 IntPtr* proxy_other = stackalloc IntPtr[2];
 proxy_other[0] = other;
 ((int*)(proxy_other + 1))[0] = 0; // Length is unknown for raw IntPtr
+((int*)(proxy_other + 1))[1] = 0;
 kernelParams[1] = proxy_other;
 // Marshal scalar: flag
 kernelParams[2] = &flag;
@@ -1155,7 +1171,7 @@ if(__gsharp_id_1_flag==0)
 goto __gsharp_id_4_skip;
 }
 __gsharp_id_3_holder = __gsharp_id_2_source;
-__gsharp_id_0_data[0]=__gsharp_add_i32(__gsharp_id_3_holder.__gsharp_mb_Values[0],__gsharp_id_3_holder.__gsharp_mb_Count);
+__gsharp_id_0_data[0]=__gsharp_add_i32(__gsharp_array_at(__gsharp_id_3_holder.__gsharp_mb_Values, 0, ""G#: a null array is read at SwitchSectionLocalKernels.cs(202,19)""),__gsharp_id_3_holder.__gsharp_mb_Count);
 __gsharp_id_4_skip:
 __gsharp_id_0_data[1]=7;
 }
@@ -1194,6 +1210,7 @@ int data_size = data.Length * sizeof(global::System.Int32);
 IntPtr* proxy_data = stackalloc IntPtr[2];
 proxy_data[0] = IntPtr.Zero;
 ((int*)(proxy_data + 1))[0] = data.Length;
+((int*)(proxy_data + 1))[1] = 0;
 if (data_size > 0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_data, (IntPtr)data_size, hStream));
@@ -1250,6 +1267,7 @@ void** kernelParams = stackalloc void*[2];
 IntPtr* proxy_data = stackalloc IntPtr[2];
 proxy_data[0] = data;
 ((int*)(proxy_data + 1))[0] = 0; // Length is unknown for raw IntPtr
+((int*)(proxy_data + 1))[1] = 0;
 kernelParams[0] = proxy_data;
 // Marshal scalar: flag
 kernelParams[1] = &flag;
@@ -1277,7 +1295,7 @@ if(__gsharp_id_1_flag==0)
 goto __gsharp_id_4_skip;
 }
 __gsharp_id_2_alias = __gsharp_id_0_data;
-__gsharp_id_2_alias[0]=9;
+__gsharp_array_at(__gsharp_id_2_alias, 0, ""G#: a null array is read at SwitchSectionLocalKernels.cs(217,9)"")=9;
 __gsharp_id_3_view = __gsharp_id_2_alias;
 __gsharp_id_3_view[0]=__gsharp_add_i32(__gsharp_id_3_view[0],5);
 __gsharp_id_4_skip:
@@ -1318,6 +1336,7 @@ int data_size = data.Length * sizeof(global::System.Int32);
 IntPtr* proxy_data = stackalloc IntPtr[2];
 proxy_data[0] = IntPtr.Zero;
 ((int*)(proxy_data + 1))[0] = data.Length;
+((int*)(proxy_data + 1))[1] = 0;
 if (data_size > 0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_data, (IntPtr)data_size, hStream));
@@ -1374,6 +1393,7 @@ void** kernelParams = stackalloc void*[2];
 IntPtr* proxy_data = stackalloc IntPtr[2];
 proxy_data[0] = data;
 ((int*)(proxy_data + 1))[0] = 0; // Length is unknown for raw IntPtr
+((int*)(proxy_data + 1))[1] = 0;
 kernelParams[0] = proxy_data;
 // Marshal scalar: flag
 kernelParams[1] = &flag;
@@ -1420,7 +1440,7 @@ goto __gsharp_id_3_done;
 }
 __gsharp_id_2_holder.__gsharp_mb_Values=__gsharp_id_0_data;
 __gsharp_id_2_holder.__gsharp_mb_Count=1;
-__gsharp_id_0_data[1]=__gsharp_add_i32(__gsharp_id_2_holder.__gsharp_mb_Values[0],__gsharp_id_2_holder.__gsharp_mb_Count);
+__gsharp_id_0_data[1]=__gsharp_add_i32(__gsharp_array_at(__gsharp_id_2_holder.__gsharp_mb_Values, 0, ""G#: a null array is read at SwitchSectionLocalKernels.cs(240,27)""),__gsharp_id_2_holder.__gsharp_mb_Count);
 __gsharp_id_3_done:
 break;
 }
@@ -1429,7 +1449,7 @@ __gsharp_switch_1_state_default:
 {
 __gsharp_id_2_holder.__gsharp_mb_Values=__gsharp_id_0_data;
 __gsharp_id_2_holder.__gsharp_mb_Count=2;
-__gsharp_id_0_data[1]=__gsharp_add_i32(__gsharp_id_2_holder.__gsharp_mb_Values[0],__gsharp_id_2_holder.__gsharp_mb_Count);
+__gsharp_id_0_data[1]=__gsharp_add_i32(__gsharp_array_at(__gsharp_id_2_holder.__gsharp_mb_Values, 0, ""G#: a null array is read at SwitchSectionLocalKernels.cs(246,27)""),__gsharp_id_2_holder.__gsharp_mb_Count);
 break;
 }
 }
@@ -1470,6 +1490,7 @@ int data_size = data.Length * sizeof(global::System.Int32);
 IntPtr* proxy_data = stackalloc IntPtr[2];
 proxy_data[0] = IntPtr.Zero;
 ((int*)(proxy_data + 1))[0] = data.Length;
+((int*)(proxy_data + 1))[1] = 0;
 if (data_size > 0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_data, (IntPtr)data_size, hStream));
@@ -1526,6 +1547,7 @@ void** kernelParams = stackalloc void*[2];
 IntPtr* proxy_data = stackalloc IntPtr[2];
 proxy_data[0] = data;
 ((int*)(proxy_data + 1))[0] = 0; // Length is unknown for raw IntPtr
+((int*)(proxy_data + 1))[1] = 0;
 kernelParams[0] = proxy_data;
 // Marshal scalar: flag
 kernelParams[1] = &flag;
@@ -1604,6 +1626,7 @@ int output_size = output.Length * sizeof(global::System.Int32);
 IntPtr* proxy_output = stackalloc IntPtr[2];
 proxy_output[0] = IntPtr.Zero;
 ((int*)(proxy_output + 1))[0] = output.Length;
+((int*)(proxy_output + 1))[1] = 0;
 if (output_size > 0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_output, (IntPtr)output_size, hStream));
@@ -1660,6 +1683,7 @@ void** kernelParams = stackalloc void*[2];
 IntPtr* proxy_output = stackalloc IntPtr[2];
 proxy_output[0] = output;
 ((int*)(proxy_output + 1))[0] = 0; // Length is unknown for raw IntPtr
+((int*)(proxy_output + 1))[1] = 0;
 kernelParams[0] = proxy_output;
 // Marshal scalar: flag
 kernelParams[1] = &flag;

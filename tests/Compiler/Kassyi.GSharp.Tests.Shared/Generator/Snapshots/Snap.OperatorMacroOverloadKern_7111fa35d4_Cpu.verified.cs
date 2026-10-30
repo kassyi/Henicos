@@ -70,7 +70,7 @@ static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ShiftC
 #endif
 inline void __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__ShiftOps__Shift_o1(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ShiftCtx* __gsharp_id_0_ctx, GSharpArray<unsigned int> __gsharp_id_1_result, GSharpArray<unsigned int> __gsharp_id_2_value, int __gsharp_id_3_shift){
 int __gsharp_id_4_tid = (int)threadIdx.x;
-__gsharp_id_1_result[__gsharp_id_4_tid]=(__gsharp_id_2_value[__gsharp_id_4_tid]<<(__gsharp_id_3_shift&31))+(unsigned int)(*__gsharp_id_0_ctx).__gsharp_mb_Bias;
+__gsharp_array_at(__gsharp_id_1_result, __gsharp_id_4_tid, ""G#: a null array is read at OperatorMacroOverloadKernels.cs(25,9)"")=(__gsharp_array_at(__gsharp_id_2_value, __gsharp_id_4_tid, ""G#: a null array is read at OperatorMacroOverloadKernels.cs(25,24)"")<<(__gsharp_id_3_shift&31))+(unsigned int)(*__gsharp_id_0_ctx).__gsharp_mb_Bias;
 }
 
 #ifndef __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ShiftCtx__
@@ -86,7 +86,7 @@ static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ShiftC
 #endif
 inline void __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__ReversedShiftOps__Shift_o0(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ShiftCtx* __gsharp_id_0_ctx, GSharpArray<unsigned int> __gsharp_id_1_result, GSharpArray<unsigned int> __gsharp_id_2_value, int __gsharp_id_3_shift){
 int __gsharp_id_4_tid = (int)threadIdx.x;
-__gsharp_id_1_result[__gsharp_id_4_tid]=(__gsharp_id_2_value[__gsharp_id_4_tid]<<(__gsharp_id_3_shift&31))+(unsigned int)(*__gsharp_id_0_ctx).__gsharp_mb_Bias;
+__gsharp_array_at(__gsharp_id_1_result, __gsharp_id_4_tid, ""G#: a null array is read at OperatorMacroOverloadKernels.cs(36,9)"")=(__gsharp_array_at(__gsharp_id_2_value, __gsharp_id_4_tid, ""G#: a null array is read at OperatorMacroOverloadKernels.cs(36,24)"")<<(__gsharp_id_3_shift&31))+(unsigned int)(*__gsharp_id_0_ctx).__gsharp_mb_Bias;
 }
 
 #ifndef __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ShiftCtx__
@@ -105,7 +105,7 @@ inline void __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__ReversedShiftOps_
 
 inline void __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__PickOps__Add_o0(GSharpArray<unsigned int> __gsharp_id_0_result, GSharpArray<unsigned int> __gsharp_id_1_left, GSharpArray<unsigned int> __gsharp_id_2_right){
 int __gsharp_id_3_tid = (int)threadIdx.x;
-__gsharp_id_0_result[__gsharp_id_3_tid]=__gsharp_id_1_left[__gsharp_id_3_tid]+__gsharp_id_2_right[__gsharp_id_3_tid]+0U;
+__gsharp_array_at(__gsharp_id_0_result, __gsharp_id_3_tid, ""G#: a null array is read at OperatorMacroOverloadKernels.cs(84,9)"")=__gsharp_array_at(__gsharp_id_1_left, __gsharp_id_3_tid, ""G#: a null array is read at OperatorMacroOverloadKernels.cs(84,23)"")+__gsharp_array_at(__gsharp_id_2_right, __gsharp_id_3_tid, ""G#: a null array is read at OperatorMacroOverloadKernels.cs(84,35)"")+0U;
 }
 
 #ifndef __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__PickRef__
@@ -133,17 +133,17 @@ return __gsharp_self;
 #endif
 inline void __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__PickOps__Add_o1(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__PickRef __gsharp_id_0_result, __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__PickRef __gsharp_id_1_left, __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__PickRef __gsharp_id_2_right){
 int __gsharp_id_3_tid = (int)threadIdx.x;
-__gsharp_id_0_result.__gsharp_mb_Data[__gsharp_id_3_tid]=__gsharp_id_1_left.__gsharp_mb_Data[__gsharp_id_3_tid]+__gsharp_id_2_right.__gsharp_mb_Data[__gsharp_id_3_tid]+1000U;
+__gsharp_array_at(__gsharp_id_0_result.__gsharp_mb_Data, __gsharp_id_3_tid, ""G#: a null array is read at OperatorMacroOverloadKernels.cs(91,9)"")=__gsharp_array_at(__gsharp_id_1_left.__gsharp_mb_Data, __gsharp_id_3_tid, ""G#: a null array is read at OperatorMacroOverloadKernels.cs(91,28)"")+__gsharp_array_at(__gsharp_id_2_right.__gsharp_mb_Data, __gsharp_id_3_tid, ""G#: a null array is read at OperatorMacroOverloadKernels.cs(91,45)"")+1000U;
 }
 
 inline void __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__ShrOps__Shr_o0(GSharpArray<unsigned int> __gsharp_id_0_result, GSharpArray<unsigned int> __gsharp_id_1_value, float __gsharp_id_2_shift){
 int __gsharp_id_3_tid = (int)threadIdx.x;
-__gsharp_id_0_result[__gsharp_id_3_tid]=__gsharp_id_1_value[__gsharp_id_3_tid]+1000u;
+__gsharp_array_at(__gsharp_id_0_result, __gsharp_id_3_tid, ""G#: a null array is read at OperatorMacroOverloadKernels.cs(163,9)"")=__gsharp_array_at(__gsharp_id_1_value, __gsharp_id_3_tid, ""G#: a null array is read at OperatorMacroOverloadKernels.cs(163,23)"")+1000u;
 }
 
 inline void __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__ShrOps__Shr_o1(GSharpArray<unsigned int> __gsharp_id_0_result, GSharpArray<unsigned int> __gsharp_id_1_value, long long __gsharp_id_2_shift){
 int __gsharp_id_3_tid = (int)threadIdx.x;
-__gsharp_id_0_result[__gsharp_id_3_tid]=__gsharp_id_1_value[__gsharp_id_3_tid]>>((int)__gsharp_id_2_shift&31);
+__gsharp_array_at(__gsharp_id_0_result, __gsharp_id_3_tid, ""G#: a null array is read at OperatorMacroOverloadKernels.cs(170,9)"")=__gsharp_array_at(__gsharp_id_1_value, __gsharp_id_3_tid, ""G#: a null array is read at OperatorMacroOverloadKernels.cs(170,23)"")>>((int)__gsharp_id_2_shift&31);
 }
 
 #ifndef __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__SubRef__
@@ -168,7 +168,7 @@ return __gsharp_self;
 #endif
 inline void __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__SubOps__Sub_o0(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__SubRef __gsharp_id_0_result, const __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__SubRef* __gsharp_id_1_left, __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__SubRef __gsharp_id_2_right){
 int __gsharp_id_3_tid = (int)threadIdx.x;
-__gsharp_id_0_result.__gsharp_mb_Data[__gsharp_id_3_tid]=(*__gsharp_id_1_left).__gsharp_mb_Data[__gsharp_id_3_tid]-__gsharp_id_2_right.__gsharp_mb_Data[__gsharp_id_3_tid]+1000u;
+__gsharp_array_at(__gsharp_id_0_result.__gsharp_mb_Data, __gsharp_id_3_tid, ""G#: a null array is read at OperatorMacroOverloadKernels.cs(196,9)"")=__gsharp_array_at((*__gsharp_id_1_left).__gsharp_mb_Data, __gsharp_id_3_tid, ""G#: a null array is read at OperatorMacroOverloadKernels.cs(196,28)"")-__gsharp_array_at(__gsharp_id_2_right.__gsharp_mb_Data, __gsharp_id_3_tid, ""G#: a null array is read at OperatorMacroOverloadKernels.cs(196,45)"")+1000u;
 }
 
 #ifndef __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__SubRef__
@@ -193,12 +193,12 @@ return __gsharp_self;
 #endif
 inline void __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__SubOps__Sub_o1(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__SubRef __gsharp_id_0_result, __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__SubRef __gsharp_id_1_left, __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__SubRef __gsharp_id_2_right){
 int __gsharp_id_3_tid = (int)threadIdx.x;
-__gsharp_id_0_result.__gsharp_mb_Data[__gsharp_id_3_tid]=__gsharp_id_1_left.__gsharp_mb_Data[__gsharp_id_3_tid]-__gsharp_id_2_right.__gsharp_mb_Data[__gsharp_id_3_tid];
+__gsharp_array_at(__gsharp_id_0_result.__gsharp_mb_Data, __gsharp_id_3_tid, ""G#: a null array is read at OperatorMacroOverloadKernels.cs(203,9)"")=__gsharp_array_at(__gsharp_id_1_left.__gsharp_mb_Data, __gsharp_id_3_tid, ""G#: a null array is read at OperatorMacroOverloadKernels.cs(203,28)"")-__gsharp_array_at(__gsharp_id_2_right.__gsharp_mb_Data, __gsharp_id_3_tid, ""G#: a null array is read at OperatorMacroOverloadKernels.cs(203,45)"");
 }
 
 inline void __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__CtxOps__Add_o0(GSharpArray<unsigned int> __gsharp_id_0_result, GSharpArray<unsigned int> __gsharp_id_1_left, GSharpArray<unsigned int> __gsharp_id_2_right){
 int __gsharp_id_3_tid = (int)threadIdx.x;
-__gsharp_id_0_result[__gsharp_id_3_tid]=__gsharp_id_1_left[__gsharp_id_3_tid]+__gsharp_id_2_right[__gsharp_id_3_tid];
+__gsharp_array_at(__gsharp_id_0_result, __gsharp_id_3_tid, ""G#: a null array is read at OperatorMacroOverloadKernels.cs(227,9)"")=__gsharp_array_at(__gsharp_id_1_left, __gsharp_id_3_tid, ""G#: a null array is read at OperatorMacroOverloadKernels.cs(227,23)"")+__gsharp_array_at(__gsharp_id_2_right, __gsharp_id_3_tid, ""G#: a null array is read at OperatorMacroOverloadKernels.cs(227,35)"");
 }
 
 #ifndef __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ShiftCtx__
@@ -237,17 +237,17 @@ return __gsharp_self;
 #endif
 inline void __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__CtxOps__Add_o1(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ShiftCtx* __gsharp_id_0_ctx, __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__CtxRef __gsharp_id_1_result, __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__CtxRef __gsharp_id_2_left, __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__CtxRef __gsharp_id_3_right){
 int __gsharp_id_4_tid = (int)threadIdx.x;
-__gsharp_id_1_result.__gsharp_mb_Data[__gsharp_id_4_tid]=__gsharp_id_2_left.__gsharp_mb_Data[__gsharp_id_4_tid]+__gsharp_id_3_right.__gsharp_mb_Data[__gsharp_id_4_tid]+(unsigned int)(*__gsharp_id_0_ctx).__gsharp_mb_Bias;
+__gsharp_array_at(__gsharp_id_1_result.__gsharp_mb_Data, __gsharp_id_4_tid, ""G#: a null array is read at OperatorMacroOverloadKernels.cs(234,9)"")=__gsharp_array_at(__gsharp_id_2_left.__gsharp_mb_Data, __gsharp_id_4_tid, ""G#: a null array is read at OperatorMacroOverloadKernels.cs(234,28)"")+__gsharp_array_at(__gsharp_id_3_right.__gsharp_mb_Data, __gsharp_id_4_tid, ""G#: a null array is read at OperatorMacroOverloadKernels.cs(234,45)"")+(unsigned int)(*__gsharp_id_0_ctx).__gsharp_mb_Bias;
 }
 
 inline void __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__ConstantShrOps__Shr_o0(GSharpArray<unsigned int> __gsharp_id_0_result, GSharpArray<unsigned int> __gsharp_id_1_value, unsigned char __gsharp_id_2_shift){
 int __gsharp_id_3_tid = (int)threadIdx.x;
-__gsharp_id_0_result[__gsharp_id_3_tid]=__gsharp_id_1_value[__gsharp_id_3_tid]+1000u;
+__gsharp_array_at(__gsharp_id_0_result, __gsharp_id_3_tid, ""G#: a null array is read at OperatorMacroOverloadKernels.cs(292,9)"")=__gsharp_array_at(__gsharp_id_1_value, __gsharp_id_3_tid, ""G#: a null array is read at OperatorMacroOverloadKernels.cs(292,23)"")+1000u;
 }
 
 inline void __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__ConstantShrOps__Shr_o1(GSharpArray<unsigned int> __gsharp_id_0_result, GSharpArray<unsigned int> __gsharp_id_1_value, long long __gsharp_id_2_shift){
 int __gsharp_id_3_tid = (int)threadIdx.x;
-__gsharp_id_0_result[__gsharp_id_3_tid]=__gsharp_id_1_value[__gsharp_id_3_tid]>>((int)__gsharp_id_2_shift&31);
+__gsharp_array_at(__gsharp_id_0_result, __gsharp_id_3_tid, ""G#: a null array is read at OperatorMacroOverloadKernels.cs(299,9)"")=__gsharp_array_at(__gsharp_id_1_value, __gsharp_id_3_tid, ""G#: a null array is read at OperatorMacroOverloadKernels.cs(299,23)"")>>((int)__gsharp_id_2_shift&31);
 }
 
 ";

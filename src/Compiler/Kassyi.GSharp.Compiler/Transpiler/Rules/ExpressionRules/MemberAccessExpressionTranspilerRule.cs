@@ -155,8 +155,13 @@ public sealed class MemberAccessExpressionTranspilerRule : SyntaxNodeTranspilerR
     private static void TranspileMemberAccess(MemberAccessExpressionSyntax node, ISymbol? memberSymbol,
         ref TranspileContext context)
     {
-        // A stack array has no members in C++; its span members are called on a view of it (s.Slice(1))
-        StackArrayLocals.AppendView(node.Expression, ref context);
+        // A member of System.Array (Length, Rank, ...) throws NullReferenceException on a null array in C# (#706). A
+        // stack array has no members in C++; its span members are called on a view of it (s.Slice(1))
+        if (!ArrayNullCheck.TryAppendMemberReceiver(node, memberSymbol, ref context))
+        {
+            StackArrayLocals.AppendView(node.Expression, ref context);
+        }
+
         context.Emitter.Writer.Append(node.IsKind(SyntaxKind.PointerMemberAccessExpression) ? "->" : ".");
 
         // [WHY] Members of structs that G# emits are resolved before the dialect mapping, which would otherwise rewrite

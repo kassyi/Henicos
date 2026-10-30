@@ -23,17 +23,21 @@ struct __gsharp_using_scope {
 
 template <class T> inline const T* __gsharp_temp_address(const T& v) { return &v; }
 
+// A C# array or span: data is nullptr for a null array (and the default span), and never nullptr for an array that
+// exists, also an empty one (#706). flags uses the padding after length (16 bytes as before): bit 0
+// (__gsharp_array_null_reads_empty) marks a null optional kernel argument, which reads as an empty array
 template <typename T>
 struct GSharpArray {
     T* data;
     int length;
+    int flags;
 
-    inline GSharpArray() : data(nullptr), length(0) {}
-    inline GSharpArray(T* d, int l) : data(d), length(l) {}
+    inline GSharpArray() : data(nullptr), length(0), flags(0) {}
+    inline GSharpArray(T* d, int l) : data(d), length(l), flags(0) {}
     // A stack array (T name[N]) viewed as a span or array argument; T may be const for a ReadOnlySpan. G# reports the
     // uses that would keep the view beyond the array's scope (GSH0091)
     template <int N>
-    inline GSharpArray(T (&storage)[N]) : data(storage), length(N) {}
+    inline GSharpArray(T (&storage)[N]) : data(storage), length(N), flags(0) {}
 
     // The span members that C# calls on a span or an array (Span<T>.Slice, Span<T>.Fill, MemoryExtensions.AsSpan)
     inline GSharpArray<T> Slice(int start) const { return GSharpArray<T>(data + start, length - start); }
@@ -43,7 +47,7 @@ struct GSharpArray {
     
     // Allows implicit conversion from GSharpArray<U> to GSharpArray<T> if U* is convertible to T* (e.g. T to const T)
     template <typename U>
-    inline GSharpArray(const GSharpArray<U>& other) : data(other.data), length(other.length) {}
+    inline GSharpArray(const GSharpArray<U>& other) : data(other.data), length(other.length), flags(other.flags) {}
     inline T* begin() { return data; }
     inline T* end() { return data + length; }
     inline const T* begin() const { return data; }
