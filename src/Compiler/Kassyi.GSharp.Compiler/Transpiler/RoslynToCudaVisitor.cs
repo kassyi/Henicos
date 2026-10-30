@@ -370,10 +370,11 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker, IDisposable
 
         var symbol = Context.Query.SemanticModel.GetSymbol(node);
 
-        // A Core intrinsic named without its type (using static Kassyi.GSharp.Core.Gpu) maps as Gpu.<name> does (#565)
+        // A Core intrinsic named without its type (using static Kassyi.GSharp.Core.Gpu) maps as Gpu.<name> does (#565);
+        // so does a Math or MathF member (using static System.Math), which ProhibitedApiRule allows when it is mapped (#899)
         if (symbol is IMethodSymbol or IPropertySymbol or IFieldSymbol &&
             symbol is { IsStatic: true, ContainingType: { } owner } &&
-            owner.ContainingNamespace.IsCoreNamespace() &&
+            (owner.ContainingNamespace.IsCoreNamespace() || owner.IsSystemMathType()) &&
             MemberAccessExpressionTranspilerRule.TryTranspileIntrinsic(symbol, ref Context))
         {
             return;
