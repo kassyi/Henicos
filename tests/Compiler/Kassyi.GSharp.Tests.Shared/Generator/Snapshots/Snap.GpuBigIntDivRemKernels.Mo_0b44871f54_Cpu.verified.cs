@@ -300,9 +300,9 @@ __gsharp_switch_1_state_0:
 {
 __gsharp_ctx->__gsharp_id_7_m=__gsharp_id_0_core.__gsharp_mb_Ntt.__gsharp_mb_TransformLength;
 __gsharp_ctx->__gsharp_id_8_n2=1;
-while(__gsharp_ctx->__gsharp_id_8_n2*__gsharp_ctx->__gsharp_id_8_n2<__gsharp_ctx->__gsharp_id_7_m)
+while(__gsharp_mul_i32(__gsharp_ctx->__gsharp_id_8_n2,__gsharp_ctx->__gsharp_id_8_n2)<__gsharp_ctx->__gsharp_id_7_m)
 {
-__gsharp_ctx->__gsharp_id_8_n2*=2;
+__gsharp_ctx->__gsharp_id_8_n2=__gsharp_mul_i32(__gsharp_ctx->__gsharp_id_8_n2,2);
 }
 __gsharp_ctx->__gsharp_id_9_n1=__gsharp_ctx->__gsharp_id_7_m/__gsharp_ctx->__gsharp_id_8_n2;
 if(__gsharp_ctx->__gsharp_id_7_m<=512)
@@ -357,8 +357,8 @@ return false;
 case 3:
 __gsharp_switch_1_state_3:
 {
-__gsharp_ctx->__gsharp_id_15_chunkSize=blockDim.x;
-__gsharp_ctx->__gsharp_id_16_numBlocks=(__gsharp_id_6_numWordsResult+__gsharp_ctx->__gsharp_id_15_chunkSize-1)/__gsharp_ctx->__gsharp_id_15_chunkSize;
+__gsharp_ctx->__gsharp_id_15_chunkSize=(int)blockDim.x;
+__gsharp_ctx->__gsharp_id_16_numBlocks=(__gsharp_sub_i32(__gsharp_add_i32(__gsharp_id_6_numWordsResult,__gsharp_ctx->__gsharp_id_15_chunkSize),1))/__gsharp_ctx->__gsharp_id_15_chunkSize;
 ExecuteResolveNttCarriesBlocked(__gsharp_ctx->__gsharp_id_10_nttScratch.__gsharp_mb_UncarriedLow,__gsharp_ctx->__gsharp_id_10_nttScratch.__gsharp_mb_UncarriedHigh,__gsharp_id_3_resultDest,__gsharp_ctx->__gsharp_id_10_nttScratch.__gsharp_mb_BlockCarries,__gsharp_ctx->__gsharp_id_7_m,__gsharp_id_6_numWordsResult,__gsharp_ctx->__gsharp_id_15_chunkSize);
 __gsharp_yielded_for_grid_sync=true;
 __gsharp_state=4;
@@ -630,10 +630,10 @@ __gsharp_switch_1_state_0:
 {
 __gsharp_ctx->__gsharp_id_8_nA=__gsharp_id_5_aActualWords;
 __gsharp_ctx->__gsharp_id_9_n=__gsharp_id_0_core.__gsharp_mb_Dimensions.__gsharp_mb_NumberOfWords;
-__gsharp_ctx->__gsharp_id_10_targetWords=(__gsharp_id_4_targetBits+31)/32;
+__gsharp_ctx->__gsharp_id_10_targetWords=(__gsharp_add_i32(__gsharp_id_4_targetBits,31))/32;
 __gsharp_ctx->__gsharp_id_11_iterScratch=__gsharp_id_0_core.__gsharp_mb_Workspace.__gsharp_mb_Iteration;
 __gsharp_ctx->__gsharp_arg_temp_0=__gsharp_ctx->__gsharp_id_11_iterScratch.__gsharp_mb_CurrentProduct;
-__gsharp_ctx->__gsharp_arg_temp_1=__gsharp_ctx->__gsharp_id_8_nA+__gsharp_ctx->__gsharp_id_10_targetWords;
+__gsharp_ctx->__gsharp_arg_temp_1=__gsharp_add_i32(__gsharp_ctx->__gsharp_id_8_nA,__gsharp_ctx->__gsharp_id_10_targetWords);
 goto __gsharp_switch_1_state_1;
 }
 case 1:
@@ -654,10 +654,10 @@ for(unsigned int __gsharp_gsl_0 = __gsharp_grid_stride_start(); __gsharp_gsl_0 <
 {
 int __gsharp_id_15_idx = (int)__gsharp_gsl_0;
 {
-int __gsharp_id_16_srcIdx = __gsharp_id_15_idx+__gsharp_ctx->__gsharp_id_12_wordShift;
-unsigned int __gsharp_id_17_w0 = ((__gsharp_id_16_srcIdx<__gsharp_ctx->__gsharp_id_8_nA+__gsharp_ctx->__gsharp_id_10_targetWords)?__gsharp_array_at(__gsharp_ctx->__gsharp_id_11_iterScratch.__gsharp_mb_CurrentProduct, __gsharp_id_16_srcIdx, ""G#: a null array is read at GpuBigIntDivRemKernels.ModPow.cs(133,53)""):0u);
-unsigned int __gsharp_id_18_w1 = ((__gsharp_id_16_srcIdx+1<__gsharp_ctx->__gsharp_id_8_nA+__gsharp_ctx->__gsharp_id_10_targetWords)?__gsharp_array_at(__gsharp_ctx->__gsharp_id_11_iterScratch.__gsharp_mb_CurrentProduct, __gsharp_id_16_srcIdx+1, ""G#: a null array is read at GpuBigIntDivRemKernels.ModPow.cs(134,57)""):0u);
-unsigned int __gsharp_id_19_shiftedValue = (__gsharp_id_17_w0>>__gsharp_ctx->__gsharp_id_13_bitShift)|((__gsharp_ctx->__gsharp_id_13_bitShift==0?0u:(__gsharp_id_18_w1<<(32-__gsharp_ctx->__gsharp_id_13_bitShift))));
+int __gsharp_id_16_srcIdx = __gsharp_add_i32(__gsharp_id_15_idx,__gsharp_ctx->__gsharp_id_12_wordShift);
+unsigned int __gsharp_id_17_w0 = ((__gsharp_id_16_srcIdx<__gsharp_add_i32(__gsharp_ctx->__gsharp_id_8_nA,__gsharp_ctx->__gsharp_id_10_targetWords))?__gsharp_array_at(__gsharp_ctx->__gsharp_id_11_iterScratch.__gsharp_mb_CurrentProduct, __gsharp_id_16_srcIdx, ""G#: a null array is read at GpuBigIntDivRemKernels.ModPow.cs(133,53)""):0u);
+unsigned int __gsharp_id_18_w1 = ((__gsharp_add_i32(__gsharp_id_16_srcIdx,1)<__gsharp_add_i32(__gsharp_ctx->__gsharp_id_8_nA,__gsharp_ctx->__gsharp_id_10_targetWords))?__gsharp_array_at(__gsharp_ctx->__gsharp_id_11_iterScratch.__gsharp_mb_CurrentProduct, __gsharp_add_i32(__gsharp_id_16_srcIdx,1), ""G#: a null array is read at GpuBigIntDivRemKernels.ModPow.cs(134,57)""):0u);
+unsigned int __gsharp_id_19_shiftedValue = (__gsharp_id_17_w0>>(__gsharp_ctx->__gsharp_id_13_bitShift&31))|((__gsharp_ctx->__gsharp_id_13_bitShift==0?0u:(__gsharp_id_18_w1<<(__gsharp_sub_i32(32,__gsharp_ctx->__gsharp_id_13_bitShift)&31))));
 __gsharp_array_at(__gsharp_id_6_quotientBuffer, __gsharp_id_15_idx, ""G#: a null array is read at GpuBigIntDivRemKernels.ModPow.cs(136,13)"")=__gsharp_id_19_shiftedValue;
 }
 }
@@ -670,7 +670,7 @@ case 2:
 __gsharp_switch_1_state_2:
 {
 __gsharp_ctx->__gsharp_arg_temp_2=__gsharp_ctx->__gsharp_id_11_iterScratch.__gsharp_mb_NextIter;
-__gsharp_ctx->__gsharp_arg_temp_3=__gsharp_ctx->__gsharp_id_14_destWords+__gsharp_ctx->__gsharp_id_9_n;
+__gsharp_ctx->__gsharp_arg_temp_3=__gsharp_add_i32(__gsharp_ctx->__gsharp_id_14_destWords,__gsharp_ctx->__gsharp_id_9_n);
 goto __gsharp_switch_1_state_3;
 }
 case 3:
@@ -681,7 +681,7 @@ if(!__gsharp_fn_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuBigIntDivRe
 __gsharp_state=3;
 return false;
 }
-__gsharp_ctx->__gsharp_id_20_evalWords=__gsharp_id_5_aActualWords+1;
+__gsharp_ctx->__gsharp_id_20_evalWords=__gsharp_add_i32(__gsharp_id_5_aActualWords,1);
 __gsharp_ctx->__gsharp_id_21_subCtx=([&]() {
 __gsharp_ty_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Algorithms__GpuBigIntContext __gsharp_tmp{}; __gsharp_tmp.__gsharp_mb_Operands = ([&]() {
 __gsharp_ty_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Algorithms__OperandContext __gsharp_tmp{}; __gsharp_tmp.__gsharp_mb_CarryBuffer = __gsharp_id_0_core.__gsharp_mb_CarryBuffer; return __gsharp_tmp; }
@@ -723,7 +723,7 @@ if(!(__gsharp_ctx->__gsharp_id_23_iter<1000))
 {
 goto __gsharp_switch_1_state_16;
 }
-__gsharp_ctx->__gsharp_id_24_topWord=__gsharp_array_at(__gsharp_ctx->__gsharp_id_11_iterScratch.__gsharp_mb_Diff, __gsharp_ctx->__gsharp_id_20_evalWords-1, ""G#: a null array is read at GpuBigIntDivRemKernels.ModPow.cs(162,28)"");
+__gsharp_ctx->__gsharp_id_24_topWord=__gsharp_array_at(__gsharp_ctx->__gsharp_id_11_iterScratch.__gsharp_mb_Diff, __gsharp_sub_i32(__gsharp_ctx->__gsharp_id_20_evalWords,1), ""G#: a null array is read at GpuBigIntDivRemKernels.ModPow.cs(162,28)"");
 __gsharp_ctx->__gsharp_id_25_underflow=(__gsharp_ctx->__gsharp_id_24_topWord&0x80000000u)!=0;
 __gsharp_yielded_for_grid_sync=true;
 __gsharp_state=7;
@@ -758,7 +758,7 @@ return false;
 case 10:
 __gsharp_switch_1_state_10:
 {
-__gsharp_ctx->__gsharp_id_26_top2=__gsharp_array_at(__gsharp_ctx->__gsharp_id_11_iterScratch.__gsharp_mb_Diff, __gsharp_ctx->__gsharp_id_20_evalWords-1, ""G#: a null array is read at GpuBigIntDivRemKernels.ModPow.cs(181,29)"");
+__gsharp_ctx->__gsharp_id_26_top2=__gsharp_array_at(__gsharp_ctx->__gsharp_id_11_iterScratch.__gsharp_mb_Diff, __gsharp_sub_i32(__gsharp_ctx->__gsharp_id_20_evalWords,1), ""G#: a null array is read at GpuBigIntDivRemKernels.ModPow.cs(181,29)"");
 __gsharp_ctx->__gsharp_id_27_underflow2=(__gsharp_ctx->__gsharp_id_26_top2&0x80000000u)!=0;
 __gsharp_yielded_for_grid_sync=true;
 __gsharp_state=11;
@@ -795,7 +795,7 @@ goto __gsharp_switch_1_state_15;
 case 15:
 __gsharp_switch_1_state_15:
 {
-__gsharp_ctx->__gsharp_id_23_iter++;
+__gsharp_ctx->__gsharp_id_23_iter=__gsharp_add_i32(__gsharp_ctx->__gsharp_id_23_iter,1);
 goto __gsharp_switch_1_state_6;
 goto __gsharp_switch_1_state_16;
 }
@@ -1254,6 +1254,33 @@ host.ReciprocalMod = (global::System.UInt32[])host.ReciprocalMod.Clone();
 }
 CopyArrays_ExponentSliceContext(ref host.Exponent);
 }
+public static bool HoldsArray_ModPowNttContext(global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.ModPowNttContext host, object array)
+{
+if (HoldsArray_NewtonRaphsonContext(host.Core, array))
+{
+return true;
+}
+if (global::System.Object.ReferenceEquals(host.ReciprocalMod, array))
+{
+return true;
+}
+if (HoldsArray_ExponentSliceContext(host.Exponent, array))
+{
+return true;
+}
+return false;
+}
+public static bool HoldsArray_ModPowNttContext(System.ReadOnlySpan<global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.ModPowNttContext> items, object array)
+{
+for (int i = 0; i < items.Length; i++)
+{
+if (HoldsArray_ModPowNttContext(items[i], array))
+{
+return true;
+}
+}
+return false;
+}
 [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Explicit, Size = 688)]
 public unsafe partial struct NewtonRaphson
 {
@@ -1320,6 +1347,41 @@ if (host.CorrectionStatus != null)
 {
 host.CorrectionStatus = (global::System.UInt32[])host.CorrectionStatus.Clone();
 }
+}
+public static bool HoldsArray_NewtonRaphsonContext(global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.NewtonRaphsonContext host, object array)
+{
+if (HoldsArray_OperandContext(host.Operands, array))
+{
+return true;
+}
+if (HoldsArray_Ntt(host.Ntt, array))
+{
+return true;
+}
+if (HoldsArray_WorkspaceStateContext(host.Workspace, array))
+{
+return true;
+}
+if (global::System.Object.ReferenceEquals(host.CarryBuffer, array))
+{
+return true;
+}
+if (global::System.Object.ReferenceEquals(host.CorrectionStatus, array))
+{
+return true;
+}
+return false;
+}
+public static bool HoldsArray_NewtonRaphsonContext(System.ReadOnlySpan<global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.NewtonRaphsonContext> items, object array)
+{
+for (int i = 0; i < items.Length; i++)
+{
+if (HoldsArray_NewtonRaphsonContext(items[i], array))
+{
+return true;
+}
+}
+return false;
 }
 [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Explicit, Size = 112)]
 public unsafe partial struct Operand
@@ -1440,6 +1502,49 @@ if (host.CarryBuffer != null)
 host.CarryBuffer = (global::System.Int64[])host.CarryBuffer.Clone();
 }
 }
+public static bool HoldsArray_OperandContext(global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.OperandContext host, object array)
+{
+if (global::System.Object.ReferenceEquals(host.LeftOperand, array))
+{
+return true;
+}
+if (global::System.Object.ReferenceEquals(host.RightOperand, array))
+{
+return true;
+}
+if (global::System.Object.ReferenceEquals(host.TargetOperand, array))
+{
+return true;
+}
+if (global::System.Object.ReferenceEquals(host.ResultBuffer, array))
+{
+return true;
+}
+if (global::System.Object.ReferenceEquals(host.Constant, array))
+{
+return true;
+}
+if (global::System.Object.ReferenceEquals(host.Constant3, array))
+{
+return true;
+}
+if (global::System.Object.ReferenceEquals(host.CarryBuffer, array))
+{
+return true;
+}
+return false;
+}
+public static bool HoldsArray_OperandContext(System.ReadOnlySpan<global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.OperandContext> items, object array)
+{
+for (int i = 0; i < items.Length; i++)
+{
+if (HoldsArray_OperandContext(items[i], array))
+{
+return true;
+}
+}
+return false;
+}
 [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Explicit, Size = 40)]
 public unsafe partial struct Dimension
 {
@@ -1512,6 +1617,29 @@ public static void CopyArrays_Ntt(ref global::Kassyi.GSharp.Stdlib.GpuMath.BigNu
 {
 CopyArrays_BufferContext(ref host.Buffers);
 CopyArrays_TwiddleFactorContext(ref host.TwiddleFactors);
+}
+public static bool HoldsArray_Ntt(global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.Ntt host, object array)
+{
+if (HoldsArray_BufferContext(host.Buffers, array))
+{
+return true;
+}
+if (HoldsArray_TwiddleFactorContext(host.TwiddleFactors, array))
+{
+return true;
+}
+return false;
+}
+public static bool HoldsArray_Ntt(System.ReadOnlySpan<global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.Ntt> items, object array)
+{
+for (int i = 0; i < items.Length; i++)
+{
+if (HoldsArray_Ntt(items[i], array))
+{
+return true;
+}
+}
+return false;
 }
 [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Explicit, Size = 144)]
 public unsafe partial struct Buffer
@@ -1662,6 +1790,57 @@ if (host.CarryBuffer != null)
 host.CarryBuffer = (global::System.Int64[])host.CarryBuffer.Clone();
 }
 }
+public static bool HoldsArray_BufferContext(global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.BufferContext host, object array)
+{
+if (global::System.Object.ReferenceEquals(host.Buffer1, array))
+{
+return true;
+}
+if (global::System.Object.ReferenceEquals(host.Buffer2, array))
+{
+return true;
+}
+if (global::System.Object.ReferenceEquals(host.Buffer3, array))
+{
+return true;
+}
+if (global::System.Object.ReferenceEquals(host.ValueT, array))
+{
+return true;
+}
+if (global::System.Object.ReferenceEquals(host.Quotient, array))
+{
+return true;
+}
+if (global::System.Object.ReferenceEquals(host.Remainder, array))
+{
+return true;
+}
+if (global::System.Object.ReferenceEquals(host.RemainderMask, array))
+{
+return true;
+}
+if (global::System.Object.ReferenceEquals(host.TemporaryBuffer, array))
+{
+return true;
+}
+if (global::System.Object.ReferenceEquals(host.CarryBuffer, array))
+{
+return true;
+}
+return false;
+}
+public static bool HoldsArray_BufferContext(System.ReadOnlySpan<global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.BufferContext> items, object array)
+{
+for (int i = 0; i < items.Length; i++)
+{
+if (HoldsArray_BufferContext(items[i], array))
+{
+return true;
+}
+}
+return false;
+}
 [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Explicit, Size = 96)]
 public unsafe partial struct TwiddleFactor
 {
@@ -1766,6 +1945,45 @@ if (host.Inverse3 != null)
 host.Inverse3 = (global::System.UInt32[])host.Inverse3.Clone();
 }
 }
+public static bool HoldsArray_TwiddleFactorContext(global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.TwiddleFactorContext host, object array)
+{
+if (global::System.Object.ReferenceEquals(host.Forward1, array))
+{
+return true;
+}
+if (global::System.Object.ReferenceEquals(host.Forward2, array))
+{
+return true;
+}
+if (global::System.Object.ReferenceEquals(host.Forward3, array))
+{
+return true;
+}
+if (global::System.Object.ReferenceEquals(host.Inverse1, array))
+{
+return true;
+}
+if (global::System.Object.ReferenceEquals(host.Inverse2, array))
+{
+return true;
+}
+if (global::System.Object.ReferenceEquals(host.Inverse3, array))
+{
+return true;
+}
+return false;
+}
+public static bool HoldsArray_TwiddleFactorContext(System.ReadOnlySpan<global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.TwiddleFactorContext> items, object array)
+{
+for (int i = 0; i < items.Length; i++)
+{
+if (HoldsArray_TwiddleFactorContext(items[i], array))
+{
+return true;
+}
+}
+return false;
+}
 [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Explicit, Size = 256)]
 public unsafe partial struct WorkspaceState
 {
@@ -1791,6 +2009,29 @@ public static void CopyArrays_WorkspaceStateContext(ref global::Kassyi.GSharp.St
 {
 CopyArrays_IterationScratchContext(ref host.Iteration);
 CopyArrays_NttConvolutionScratchContext(ref host.NttScratch);
+}
+public static bool HoldsArray_WorkspaceStateContext(global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.WorkspaceStateContext host, object array)
+{
+if (HoldsArray_IterationScratchContext(host.Iteration, array))
+{
+return true;
+}
+if (HoldsArray_NttConvolutionScratchContext(host.NttScratch, array))
+{
+return true;
+}
+return false;
+}
+public static bool HoldsArray_WorkspaceStateContext(System.ReadOnlySpan<global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.WorkspaceStateContext> items, object array)
+{
+for (int i = 0; i < items.Length; i++)
+{
+if (HoldsArray_WorkspaceStateContext(items[i], array))
+{
+return true;
+}
+}
+return false;
 }
 [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Explicit, Size = 128)]
 public unsafe partial struct IterationScratch
@@ -1926,6 +2167,53 @@ if (host.ModulusExpanded != null)
 host.ModulusExpanded = (global::System.UInt32[])host.ModulusExpanded.Clone();
 }
 }
+public static bool HoldsArray_IterationScratchContext(global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.IterationScratchContext host, object array)
+{
+if (global::System.Object.ReferenceEquals(host.XSquared, array))
+{
+return true;
+}
+if (global::System.Object.ReferenceEquals(host.AxSquared, array))
+{
+return true;
+}
+if (global::System.Object.ReferenceEquals(host.CurrentProduct, array))
+{
+return true;
+}
+if (global::System.Object.ReferenceEquals(host.Diff, array))
+{
+return true;
+}
+if (global::System.Object.ReferenceEquals(host.NextXUnshifted, array))
+{
+return true;
+}
+if (global::System.Object.ReferenceEquals(host.NextXShifted, array))
+{
+return true;
+}
+if (global::System.Object.ReferenceEquals(host.NextIter, array))
+{
+return true;
+}
+if (global::System.Object.ReferenceEquals(host.ModulusExpanded, array))
+{
+return true;
+}
+return false;
+}
+public static bool HoldsArray_IterationScratchContext(System.ReadOnlySpan<global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.IterationScratchContext> items, object array)
+{
+for (int i = 0; i < items.Length; i++)
+{
+if (HoldsArray_IterationScratchContext(items[i], array))
+{
+return true;
+}
+}
+return false;
+}
 [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Explicit, Size = 128)]
 public unsafe partial struct NttConvolutionScratch
 {
@@ -2060,6 +2348,53 @@ if (host.BlockCarries != null)
 host.BlockCarries = (global::System.UInt32[])host.BlockCarries.Clone();
 }
 }
+public static bool HoldsArray_NttConvolutionScratchContext(global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.NttConvolutionScratchContext host, object array)
+{
+if (global::System.Object.ReferenceEquals(host.NttBuf1A, array))
+{
+return true;
+}
+if (global::System.Object.ReferenceEquals(host.NttBuf2A, array))
+{
+return true;
+}
+if (global::System.Object.ReferenceEquals(host.NttBuf1B, array))
+{
+return true;
+}
+if (global::System.Object.ReferenceEquals(host.NttBuf2B, array))
+{
+return true;
+}
+if (global::System.Object.ReferenceEquals(host.TmpBuf, array))
+{
+return true;
+}
+if (global::System.Object.ReferenceEquals(host.UncarriedLow, array))
+{
+return true;
+}
+if (global::System.Object.ReferenceEquals(host.UncarriedHigh, array))
+{
+return true;
+}
+if (global::System.Object.ReferenceEquals(host.BlockCarries, array))
+{
+return true;
+}
+return false;
+}
+public static bool HoldsArray_NttConvolutionScratchContext(System.ReadOnlySpan<global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.NttConvolutionScratchContext> items, object array)
+{
+for (int i = 0; i < items.Length; i++)
+{
+if (HoldsArray_NttConvolutionScratchContext(items[i], array))
+{
+return true;
+}
+}
+return false;
+}
 [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Explicit, Size = 32)]
 public unsafe partial struct ExponentSlice
 {
@@ -2104,6 +2439,25 @@ if (host.Words != null)
 host.Words = (global::System.UInt32[])host.Words.Clone();
 }
 }
+public static bool HoldsArray_ExponentSliceContext(global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.ExponentSliceContext host, object array)
+{
+if (global::System.Object.ReferenceEquals(host.Words, array))
+{
+return true;
+}
+return false;
+}
+public static bool HoldsArray_ExponentSliceContext(System.ReadOnlySpan<global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.ExponentSliceContext> items, object array)
+{
+for (int i = 0; i < items.Length; i++)
+{
+if (HoldsArray_ExponentSliceContext(items[i], array))
+{
+return true;
+}
+}
+return false;
+}
 #pragma warning restore CS8500
 }
 public const string InitializeOneModuloKernel_Source = @"struct __gsharp_context_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuBigIntDivRemKernels__InitializeOneModuloKernel {
@@ -2124,7 +2478,7 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-if(threadIdx.x==0&&blockIdx.x==0)
+if((int)threadIdx.x==0&&(int)blockIdx.x==0)
 {
 __gsharp_id_0_result[0]=__gsharp_fn_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuBigIntDivRemKernels__OneModulo(__gsharp_id_1_modulus,__gsharp_id_2_numWords);
 }
@@ -2650,10 +3004,10 @@ __gsharp_ctx->__gsharp_id_3_expSlice=__gsharp_id_0_ctx.__gsharp_mb_Exponent;
 __gsharp_ctx->__gsharp_id_4_n=__gsharp_ctx->__gsharp_id_1_core.__gsharp_mb_Dimensions.__gsharp_mb_NumberOfWords;
 __gsharp_ctx->__gsharp_id_5_expWords=__gsharp_ctx->__gsharp_id_3_expSlice.__gsharp_mb_TotalWords;
 __gsharp_ctx->__gsharp_id_6_targetBits=__gsharp_ctx->__gsharp_id_1_core.__gsharp_mb_Dimensions.__gsharp_mb_TargetBits;
-__gsharp_ctx->__gsharp_id_7_maxABits=2*__gsharp_ctx->__gsharp_id_4_n*32;
-__gsharp_ctx->__gsharp_id_8_aActualWords=(__gsharp_ctx->__gsharp_id_7_maxABits+31)/32;
-__gsharp_ctx->__gsharp_id_9_targetWords=(__gsharp_ctx->__gsharp_id_6_targetBits+31)/32;
-__gsharp_ctx->__gsharp_id_10_outWords=__gsharp_ctx->__gsharp_id_8_aActualWords+__gsharp_ctx->__gsharp_id_9_targetWords;
+__gsharp_ctx->__gsharp_id_7_maxABits=__gsharp_mul_i32(__gsharp_mul_i32(2,__gsharp_ctx->__gsharp_id_4_n),32);
+__gsharp_ctx->__gsharp_id_8_aActualWords=(__gsharp_add_i32(__gsharp_ctx->__gsharp_id_7_maxABits,31))/32;
+__gsharp_ctx->__gsharp_id_9_targetWords=(__gsharp_add_i32(__gsharp_ctx->__gsharp_id_6_targetBits,31))/32;
+__gsharp_ctx->__gsharp_id_10_outWords=__gsharp_add_i32(__gsharp_ctx->__gsharp_id_8_aActualWords,__gsharp_ctx->__gsharp_id_9_targetWords);
 if(!(__gsharp_ctx->__gsharp_id_3_expSlice.__gsharp_mb_StartWord==0))
 {
 goto __gsharp_switch_1_state_2;
@@ -2666,7 +3020,7 @@ for(unsigned int __gsharp_gsl_0 = __gsharp_grid_stride_start(); __gsharp_gsl_0 <
 {
 int __gsharp_id_12_idx = (int)__gsharp_gsl_0;
 {
-if(__gsharp_id_12_idx<2*__gsharp_ctx->__gsharp_id_4_n)
+if(__gsharp_id_12_idx<__gsharp_mul_i32(2,__gsharp_ctx->__gsharp_id_4_n))
 {
 __gsharp_array_at(__gsharp_ctx->__gsharp_id_2_iterScratch.__gsharp_mb_AxSquared, __gsharp_id_12_idx, ""G#: a null array is read at GpuBigIntDivRemKernels.ModPow.cs(225,21)"")=(__gsharp_id_12_idx==0?__gsharp_ctx->__gsharp_id_11_oneModulo:0u);
 __gsharp_array_at(__gsharp_ctx->__gsharp_id_2_iterScratch.__gsharp_mb_XSquared, __gsharp_id_12_idx, ""G#: a null array is read at GpuBigIntDivRemKernels.ModPow.cs(226,21)"")=(__gsharp_id_12_idx<__gsharp_ctx->__gsharp_id_4_n?__gsharp_array_at(__gsharp_ctx->__gsharp_id_1_core.__gsharp_mb_Operands.__gsharp_mb_TargetOperand, __gsharp_id_12_idx, ""G#: a null array is read at GpuBigIntDivRemKernels.ModPow.cs(226,59)""):0u);
@@ -2718,9 +3072,9 @@ goto __gsharp_switch_1_state_7;
 __gsharp_ctx->__gsharp_arg_temp_0=__gsharp_ctx->__gsharp_id_2_iterScratch.__gsharp_mb_AxSquared;
 __gsharp_ctx->__gsharp_arg_temp_1=__gsharp_ctx->__gsharp_id_2_iterScratch.__gsharp_mb_XSquared;
 __gsharp_ctx->__gsharp_arg_temp_2=__gsharp_ctx->__gsharp_id_2_iterScratch.__gsharp_mb_NextXUnshifted;
-__gsharp_ctx->__gsharp_arg_temp_3=2*__gsharp_ctx->__gsharp_id_4_n;
-__gsharp_ctx->__gsharp_arg_temp_4=2*__gsharp_ctx->__gsharp_id_4_n;
-__gsharp_ctx->__gsharp_arg_temp_5=4*__gsharp_ctx->__gsharp_id_4_n;
+__gsharp_ctx->__gsharp_arg_temp_3=__gsharp_mul_i32(2,__gsharp_ctx->__gsharp_id_4_n);
+__gsharp_ctx->__gsharp_arg_temp_4=__gsharp_mul_i32(2,__gsharp_ctx->__gsharp_id_4_n);
+__gsharp_ctx->__gsharp_arg_temp_5=__gsharp_mul_i32(4,__gsharp_ctx->__gsharp_id_4_n);
 goto __gsharp_switch_1_state_5;
 }
 case 5:
@@ -2754,9 +3108,9 @@ __gsharp_switch_1_state_7:
 __gsharp_ctx->__gsharp_arg_temp_11=__gsharp_ctx->__gsharp_id_2_iterScratch.__gsharp_mb_XSquared;
 __gsharp_ctx->__gsharp_arg_temp_12=__gsharp_ctx->__gsharp_id_2_iterScratch.__gsharp_mb_XSquared;
 __gsharp_ctx->__gsharp_arg_temp_13=__gsharp_ctx->__gsharp_id_2_iterScratch.__gsharp_mb_NextXUnshifted;
-__gsharp_ctx->__gsharp_arg_temp_14=2*__gsharp_ctx->__gsharp_id_4_n;
-__gsharp_ctx->__gsharp_arg_temp_15=2*__gsharp_ctx->__gsharp_id_4_n;
-__gsharp_ctx->__gsharp_arg_temp_16=4*__gsharp_ctx->__gsharp_id_4_n;
+__gsharp_ctx->__gsharp_arg_temp_14=__gsharp_mul_i32(2,__gsharp_ctx->__gsharp_id_4_n);
+__gsharp_ctx->__gsharp_arg_temp_15=__gsharp_mul_i32(2,__gsharp_ctx->__gsharp_id_4_n);
+__gsharp_ctx->__gsharp_arg_temp_16=__gsharp_mul_i32(4,__gsharp_ctx->__gsharp_id_4_n);
 goto __gsharp_switch_1_state_8;
 }
 case 8:
@@ -2788,7 +3142,7 @@ goto __gsharp_switch_1_state_10;
 case 10:
 __gsharp_switch_1_state_10:
 {
-__gsharp_ctx->__gsharp_id_15_bit++;
+__gsharp_ctx->__gsharp_id_15_bit=__gsharp_add_i32(__gsharp_ctx->__gsharp_id_15_bit,1);
 goto __gsharp_switch_1_state_4;
 goto __gsharp_switch_1_state_11;
 }
@@ -2800,7 +3154,7 @@ goto __gsharp_switch_1_state_12;
 case 12:
 __gsharp_switch_1_state_12:
 {
-__gsharp_ctx->__gsharp_id_13_i++;
+__gsharp_ctx->__gsharp_id_13_i=__gsharp_add_i32(__gsharp_ctx->__gsharp_id_13_i,1);
 goto __gsharp_switch_1_state_3;
 goto __gsharp_switch_1_state_13;
 }

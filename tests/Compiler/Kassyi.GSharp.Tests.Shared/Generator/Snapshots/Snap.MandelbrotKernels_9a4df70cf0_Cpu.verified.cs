@@ -51,8 +51,8 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-auto __gsharp_id_8_col = blockIdx.x*blockDim.x+threadIdx.x;
-auto __gsharp_id_9_row = blockIdx.y*blockDim.y+threadIdx.y;
+auto __gsharp_id_8_col = __gsharp_add_i32(__gsharp_mul_i32((int)blockIdx.x,(int)blockDim.x),(int)threadIdx.x);
+auto __gsharp_id_9_row = __gsharp_add_i32(__gsharp_mul_i32((int)blockIdx.y,(int)blockDim.y),(int)threadIdx.y);
 if(__gsharp_id_8_col<__gsharp_id_1_width&&__gsharp_id_9_row<__gsharp_id_2_height)
 {
 auto __gsharp_id_10_x0 = __gsharp_id_4_xMin+(__gsharp_id_5_xMax-__gsharp_id_4_xMin)*__gsharp_id_8_col/__gsharp_id_1_width;
@@ -65,9 +65,9 @@ while(__gsharp_id_12_x*__gsharp_id_12_x+__gsharp_id_13_y*__gsharp_id_13_y<=4.0f&
 auto __gsharp_id_15_xtemp = __gsharp_id_12_x*__gsharp_id_12_x-__gsharp_id_13_y*__gsharp_id_13_y+__gsharp_id_10_x0;
 __gsharp_id_13_y=2.0f*__gsharp_id_12_x*__gsharp_id_13_y+__gsharp_id_11_y0;
 __gsharp_id_12_x=__gsharp_id_15_xtemp;
-__gsharp_id_14_iter++;
+__gsharp_id_14_iter=__gsharp_add_i32(__gsharp_id_14_iter,1);
 }
-__gsharp_id_0_output[__gsharp_id_9_row*__gsharp_id_1_width+__gsharp_id_8_col]=__gsharp_id_14_iter;
+__gsharp_id_0_output[__gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_9_row,__gsharp_id_1_width),__gsharp_id_8_col)]=__gsharp_id_14_iter;
 }
 __gsharp_state=-1;
 return;

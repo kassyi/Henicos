@@ -51,11 +51,11 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-auto __gsharp_id_4_col = blockIdx.x*blockDim.x+threadIdx.x;
-auto __gsharp_id_5_row = blockIdx.y*blockDim.y+threadIdx.y;
+auto __gsharp_id_4_col = __gsharp_add_i32(__gsharp_mul_i32((int)blockIdx.x,(int)blockDim.x),(int)threadIdx.x);
+auto __gsharp_id_5_row = __gsharp_add_i32(__gsharp_mul_i32((int)blockIdx.y,(int)blockDim.y),(int)threadIdx.y);
 if(__gsharp_id_4_col<__gsharp_id_2_width&&__gsharp_id_5_row<__gsharp_id_3_height)
 {
-__gsharp_id_1_output[__gsharp_id_4_col*__gsharp_id_3_height+__gsharp_id_5_row]=__gsharp_id_0_input[__gsharp_id_5_row*__gsharp_id_2_width+__gsharp_id_4_col];
+__gsharp_id_1_output[__gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_4_col,__gsharp_id_3_height),__gsharp_id_5_row)]=__gsharp_id_0_input[__gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_5_row,__gsharp_id_2_width),__gsharp_id_4_col)];
 }
 __gsharp_state=-1;
 return;
@@ -180,7 +180,10 @@ throw new global::System.ArgumentNullException(nameof(output));
 if (output.Length == 0){
 throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(output));
 }
+if (!global::System.Object.ReferenceEquals(input, output))
+{
 input = (global::System.Single[])input.Clone();
+}
 var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
 var dllName = $"Kassyi.GSharp.Kernels_SnapshotTest{archSuffix}.dll";
 var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);

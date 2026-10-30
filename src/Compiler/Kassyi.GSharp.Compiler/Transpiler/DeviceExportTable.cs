@@ -274,7 +274,10 @@ internal sealed class DeviceExportTable
             GetBool(named, nameof(DeviceExportRecord.CudaFailed)),
             GetBool(named, nameof(DeviceExportRecord.CppFailed)),
             GetBool(named, nameof(DeviceExportRecord.ManagedStateMachine)),
-            GetString(named, nameof(DeviceExportRecord.InternalError)));
+            GetString(named, nameof(DeviceExportRecord.InternalError)),
+            GetInt(named, nameof(DeviceExportRecord.DivergentConditionParameters)),
+            GetInt(named, nameof(DeviceExportRecord.DivergentExitOnlyParameters)),
+            GetBool(named, nameof(DeviceExportRecord.HasExitOnlyBarrier)));
 
         imported = new ImportedDeviceRecord(record, assemblyName, formatVersion, preludeHash);
         return record.CppName.Length > 0;
@@ -285,6 +288,9 @@ internal sealed class DeviceExportTable
 
     private static bool GetBool(Dictionary<string, TypedConstant> named, string name) =>
         named.TryGetValue(name, out var value) && value.Value is true;
+
+    private static int GetInt(Dictionary<string, TypedConstant> named, string name) =>
+        named.TryGetValue(name, out var value) && value.Value is int number ? number : 0;
 
     private static EquatableArray<string> GetArray(Dictionary<string, TypedConstant> named, string name)
     {

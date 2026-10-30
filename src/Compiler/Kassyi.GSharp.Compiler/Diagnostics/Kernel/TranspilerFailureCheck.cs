@@ -89,6 +89,18 @@ internal static class TranspilerFailureCheck
                 return;
             }
 
+            // UnsupportedConstructRule reports checked and unchecked in the method it walks, also where the transpiler
+            // writes a constant as its value and never visits them; the generator still states them in the native
+            // source. One in code the rule does not walk (the getter of a computed property) stays a failure here
+            if (failure.Descriptor.Id == GSharpDiagnostics.UnsupportedSyntax.Id &&
+                failure.MessageArgs is
+                    [nameof(SyntaxKind.CheckedExpression) or nameof(SyntaxKind.UncheckedExpression) or
+                    nameof(SyntaxKind.CheckedStatement) or nameof(SyntaxKind.UncheckedStatement)] &&
+                IsInDeclaration(failure.Location))
+            {
+                return;
+            }
+
             if (isDeviceIteratorCandidate &&
                 (failure.Descriptor.Id == GSharpDiagnostics.KernelReturnMustBeVoidOrBlittable.Id ||
                  failure.Descriptor.Id == GSharpDiagnostics.InstanceDeviceFunctionNotSupported.Id))
@@ -98,6 +110,10 @@ internal static class TranspilerFailureCheck
 
             diagnostics.Add(Diagnostic.Create(failure.Descriptor, failure.Location, failure.MessageArgs));
         }
+
+        private bool IsInDeclaration(Location location) =>
+            location.IsInSource && location.SourceTree == declaration.SyntaxTree &&
+            declaration.Span.Contains(location.SourceSpan);
 
         private bool IsInOtherDeviceIteratorMethod(Location location)
         {

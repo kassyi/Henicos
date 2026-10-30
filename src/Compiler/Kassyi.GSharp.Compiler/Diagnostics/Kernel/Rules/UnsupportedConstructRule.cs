@@ -4,16 +4,24 @@ namespace Kassyi.GSharp.Compiler.Diagnostics.Kernel.Rules;
 
 /// <summary>
 /// Reports the constructs that the transpiler cannot emit: <c>new</c> of a class (GSH0001), <see cref="string"/>
-/// (GSH0002), and function pointer variables, stack arrays of a dynamic size, unsupported switch expression arms and
-/// operator macros without a target (GSH0003).
+/// (GSH0002), and function pointer variables, stack arrays of a dynamic size, unsupported switch expression arms,
+/// operator macros without a target and <c>checked</c> / <c>unchecked</c> (GSH0003).
 /// </summary>
-/// <remarks>The transpiler decides with the same <see cref="GpuCodeConstraints"/> members and emits nothing for these.</remarks>
+/// <remarks>
+/// The transpiler decides with the same <see cref="GpuCodeConstraints"/> members and emits nothing for these.
+/// <c>checked</c> and <c>unchecked</c> (#723) are reported here rather than from the transpiler's failures: inside a
+/// constant (<c>unchecked((int)3e10) * 1</c>) the transpiler writes the value and never visits them, and C# leaves that
+/// value unspecified. Where the transpiler does visit them it still fails (the generator's <c>#error</c>), and
+/// <c>TranspilerFailureCheck</c> drops that failure so that the analyzer reports each one once.
+/// </remarks>
 internal sealed class UnsupportedConstructRule :
     ISyntaxValidationRule<VariableDeclarationSyntax>,
     ISyntaxValidationRule<PredefinedTypeSyntax>,
     ISyntaxValidationRule<BaseObjectCreationExpressionSyntax>,
     ISyntaxValidationRule<SwitchExpressionArmSyntax>,
-    ISyntaxValidationRule<AssignmentExpressionSyntax>
+    ISyntaxValidationRule<AssignmentExpressionSyntax>,
+    ISyntaxValidationRule<CheckedExpressionSyntax>,
+    ISyntaxValidationRule<CheckedStatementSyntax>
 {
     public static readonly UnsupportedConstructRule Instance = new();
 
@@ -66,6 +74,12 @@ internal sealed class UnsupportedConstructRule :
 
         context.ReportDiagnostic(GSharpDiagnostics.StringNotSupported, node);
     }
+
+    public void Analyze(CheckedExpressionSyntax node, ref ValidationContext context) =>
+        context.ReportDiagnostic(GSharpDiagnostics.UnsupportedSyntax, node, node.Kind().ToString());
+
+    public void Analyze(CheckedStatementSyntax node, ref ValidationContext context) =>
+        context.ReportDiagnostic(GSharpDiagnostics.UnsupportedSyntax, node, node.Kind().ToString());
 
     public void Analyze(BaseObjectCreationExpressionSyntax node, ref ValidationContext context)
     {

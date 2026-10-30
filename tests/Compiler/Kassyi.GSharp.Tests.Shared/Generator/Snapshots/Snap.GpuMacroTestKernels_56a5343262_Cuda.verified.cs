@@ -141,12 +141,12 @@ proxy_outputBuffer[0] = IntPtr.Zero;
 if (outputBuffer_size > 0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_outputBuffer, (IntPtr)outputBuffer_size, hStream));
-proxy_outputBuffer[0] = d_outputBuffer;
 fixed (global::System.UInt32* p_outputBuffer = outputBuffer)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoDAsync_v2(d_outputBuffer, (IntPtr)p_outputBuffer, (IntPtr)outputBuffer_size, hStream));
 CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
 }
+proxy_outputBuffer[0] = d_outputBuffer;
 }
 kernelParams[0] = proxy_outputBuffer;
 // Marshal scalar: length

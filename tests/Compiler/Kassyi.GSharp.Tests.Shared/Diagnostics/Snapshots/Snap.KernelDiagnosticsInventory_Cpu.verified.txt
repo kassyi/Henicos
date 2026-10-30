@@ -24,6 +24,8 @@
 (20,35)-(20,54) GSH0003 analyzer: The syntax 'FunctionPointerType' is not supported in GSharp GPU kernels
 (29,9)-(29,28) GSH0003 analyzer: The syntax 'FunctionPointerType' is not supported in GSharp GPU kernels
 (38,9)-(38,12) GSH0002 analyzer: The string type is not supported in GPU kernels
+(47,19)-(47,39) GSH0003 analyzer: The syntax 'UncheckedExpression' is not supported in GSharp GPU kernels
+(48,19)-(48,46) GSH0003 analyzer: The syntax 'UncheckedExpression' is not supported in GSharp GPU kernels
 
 ## Diagnostics/UnsupportedSyntaxKinds.cu.cs
 (13,26)-(13,28) GSH0003 analyzer: The syntax 'IndexExpression' is not supported in GSharp GPU kernels

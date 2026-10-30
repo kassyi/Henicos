@@ -17,122 +17,122 @@ inline void __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__MixedSignPromotio
 inline unsigned int __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__MixedSignPromotionKernels__TakeFive(int* __gsharp_id_0_k);
 
 inline void __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__MixedSignPromotionKernels__IntOperators(unsigned int __gsharp_id_0_u, int __gsharp_id_1_n, GSharpArray<long long> __gsharp_id_2_values, GSharpArray<int> __gsharp_id_3_flags, int __gsharp_id_4_pair){
-int __gsharp_id_5_v = __gsharp_id_4_pair*18;
+int __gsharp_id_5_v = __gsharp_mul_i32(__gsharp_id_4_pair,18);
 __gsharp_array_at(__gsharp_id_2_values, __gsharp_id_5_v, ""G#: a null array is read at MixedSignPromotionKernels.cs(27,9)"")=(long long)__gsharp_id_0_u+(long long)__gsharp_id_1_n;
-__gsharp_array_at(__gsharp_id_2_values, __gsharp_id_5_v+1, ""G#: a null array is read at MixedSignPromotionKernels.cs(28,9)"")=(long long)__gsharp_id_0_u-(long long)__gsharp_id_1_n;
-__gsharp_array_at(__gsharp_id_2_values, __gsharp_id_5_v+2, ""G#: a null array is read at MixedSignPromotionKernels.cs(29,9)"")=(long long)__gsharp_id_0_u*(long long)__gsharp_id_1_n;
-__gsharp_array_at(__gsharp_id_2_values, __gsharp_id_5_v+3, ""G#: a null array is read at MixedSignPromotionKernels.cs(30,9)"")=(long long)__gsharp_id_0_u/(long long)__gsharp_id_1_n;
-__gsharp_array_at(__gsharp_id_2_values, __gsharp_id_5_v+4, ""G#: a null array is read at MixedSignPromotionKernels.cs(31,9)"")=(long long)__gsharp_id_0_u%(long long)__gsharp_id_1_n;
-__gsharp_array_at(__gsharp_id_2_values, __gsharp_id_5_v+5, ""G#: a null array is read at MixedSignPromotionKernels.cs(32,9)"")=(long long)__gsharp_id_0_u&(long long)__gsharp_id_1_n;
-__gsharp_array_at(__gsharp_id_2_values, __gsharp_id_5_v+6, ""G#: a null array is read at MixedSignPromotionKernels.cs(33,9)"")=(long long)__gsharp_id_0_u|(long long)__gsharp_id_1_n;
-__gsharp_array_at(__gsharp_id_2_values, __gsharp_id_5_v+7, ""G#: a null array is read at MixedSignPromotionKernels.cs(34,9)"")=(long long)__gsharp_id_0_u^(long long)__gsharp_id_1_n;
-__gsharp_array_at(__gsharp_id_2_values, __gsharp_id_5_v+8, ""G#: a null array is read at MixedSignPromotionKernels.cs(35,9)"")=(long long)__gsharp_id_1_n+(long long)__gsharp_id_0_u;
-__gsharp_array_at(__gsharp_id_2_values, __gsharp_id_5_v+9, ""G#: a null array is read at MixedSignPromotionKernels.cs(36,9)"")=(long long)__gsharp_id_1_n-(long long)__gsharp_id_0_u;
-__gsharp_array_at(__gsharp_id_2_values, __gsharp_id_5_v+10, ""G#: a null array is read at MixedSignPromotionKernels.cs(37,9)"")=(long long)__gsharp_id_1_n*(long long)__gsharp_id_0_u;
-__gsharp_array_at(__gsharp_id_2_values, __gsharp_id_5_v+11, ""G#: a null array is read at MixedSignPromotionKernels.cs(38,9)"")=(__gsharp_id_0_u!=0?(long long)__gsharp_id_1_n/(long long)__gsharp_id_0_u:0);
-__gsharp_array_at(__gsharp_id_2_values, __gsharp_id_5_v+12, ""G#: a null array is read at MixedSignPromotionKernels.cs(39,9)"")=(__gsharp_id_0_u!=0?(long long)__gsharp_id_1_n%(long long)__gsharp_id_0_u:0);
-__gsharp_array_at(__gsharp_id_2_values, __gsharp_id_5_v+13, ""G#: a null array is read at MixedSignPromotionKernels.cs(40,9)"")=(long long)__gsharp_id_1_n&(long long)__gsharp_id_0_u;
-__gsharp_array_at(__gsharp_id_2_values, __gsharp_id_5_v+14, ""G#: a null array is read at MixedSignPromotionKernels.cs(41,9)"")=(long long)__gsharp_id_1_n|(long long)__gsharp_id_0_u;
-__gsharp_array_at(__gsharp_id_2_values, __gsharp_id_5_v+15, ""G#: a null array is read at MixedSignPromotionKernels.cs(42,9)"")=(long long)__gsharp_id_1_n^(long long)__gsharp_id_0_u;
+__gsharp_array_at(__gsharp_id_2_values, __gsharp_add_i32(__gsharp_id_5_v,1), ""G#: a null array is read at MixedSignPromotionKernels.cs(28,9)"")=(long long)__gsharp_id_0_u-(long long)__gsharp_id_1_n;
+__gsharp_array_at(__gsharp_id_2_values, __gsharp_add_i32(__gsharp_id_5_v,2), ""G#: a null array is read at MixedSignPromotionKernels.cs(29,9)"")=(long long)__gsharp_id_0_u*(long long)__gsharp_id_1_n;
+__gsharp_array_at(__gsharp_id_2_values, __gsharp_add_i32(__gsharp_id_5_v,3), ""G#: a null array is read at MixedSignPromotionKernels.cs(30,9)"")=(long long)__gsharp_id_0_u/(long long)__gsharp_id_1_n;
+__gsharp_array_at(__gsharp_id_2_values, __gsharp_add_i32(__gsharp_id_5_v,4), ""G#: a null array is read at MixedSignPromotionKernels.cs(31,9)"")=(long long)__gsharp_id_0_u%(long long)__gsharp_id_1_n;
+__gsharp_array_at(__gsharp_id_2_values, __gsharp_add_i32(__gsharp_id_5_v,5), ""G#: a null array is read at MixedSignPromotionKernels.cs(32,9)"")=(long long)__gsharp_id_0_u&(long long)__gsharp_id_1_n;
+__gsharp_array_at(__gsharp_id_2_values, __gsharp_add_i32(__gsharp_id_5_v,6), ""G#: a null array is read at MixedSignPromotionKernels.cs(33,9)"")=(long long)__gsharp_id_0_u|(long long)__gsharp_id_1_n;
+__gsharp_array_at(__gsharp_id_2_values, __gsharp_add_i32(__gsharp_id_5_v,7), ""G#: a null array is read at MixedSignPromotionKernels.cs(34,9)"")=(long long)__gsharp_id_0_u^(long long)__gsharp_id_1_n;
+__gsharp_array_at(__gsharp_id_2_values, __gsharp_add_i32(__gsharp_id_5_v,8), ""G#: a null array is read at MixedSignPromotionKernels.cs(35,9)"")=(long long)__gsharp_id_1_n+(long long)__gsharp_id_0_u;
+__gsharp_array_at(__gsharp_id_2_values, __gsharp_add_i32(__gsharp_id_5_v,9), ""G#: a null array is read at MixedSignPromotionKernels.cs(36,9)"")=(long long)__gsharp_id_1_n-(long long)__gsharp_id_0_u;
+__gsharp_array_at(__gsharp_id_2_values, __gsharp_add_i32(__gsharp_id_5_v,10), ""G#: a null array is read at MixedSignPromotionKernels.cs(37,9)"")=(long long)__gsharp_id_1_n*(long long)__gsharp_id_0_u;
+__gsharp_array_at(__gsharp_id_2_values, __gsharp_add_i32(__gsharp_id_5_v,11), ""G#: a null array is read at MixedSignPromotionKernels.cs(38,9)"")=(__gsharp_id_0_u!=0?(long long)__gsharp_id_1_n/(long long)__gsharp_id_0_u:0);
+__gsharp_array_at(__gsharp_id_2_values, __gsharp_add_i32(__gsharp_id_5_v,12), ""G#: a null array is read at MixedSignPromotionKernels.cs(39,9)"")=(__gsharp_id_0_u!=0?(long long)__gsharp_id_1_n%(long long)__gsharp_id_0_u:0);
+__gsharp_array_at(__gsharp_id_2_values, __gsharp_add_i32(__gsharp_id_5_v,13), ""G#: a null array is read at MixedSignPromotionKernels.cs(40,9)"")=(long long)__gsharp_id_1_n&(long long)__gsharp_id_0_u;
+__gsharp_array_at(__gsharp_id_2_values, __gsharp_add_i32(__gsharp_id_5_v,14), ""G#: a null array is read at MixedSignPromotionKernels.cs(41,9)"")=(long long)__gsharp_id_1_n|(long long)__gsharp_id_0_u;
+__gsharp_array_at(__gsharp_id_2_values, __gsharp_add_i32(__gsharp_id_5_v,15), ""G#: a null array is read at MixedSignPromotionKernels.cs(42,9)"")=(long long)__gsharp_id_1_n^(long long)__gsharp_id_0_u;
 auto __gsharp_id_6_sum = (long long)__gsharp_id_0_u+(long long)__gsharp_id_1_n;
-__gsharp_array_at(__gsharp_id_2_values, __gsharp_id_5_v+16, ""G#: a null array is read at MixedSignPromotionKernels.cs(46,9)"")=__gsharp_id_6_sum;
-__gsharp_array_at(__gsharp_id_2_values, __gsharp_id_5_v+17, ""G#: a null array is read at MixedSignPromotionKernels.cs(49,9)"")=((long long)__gsharp_id_0_u&(long long)__gsharp_id_1_n)-1;
-int __gsharp_id_7_f = __gsharp_id_4_pair*12;
+__gsharp_array_at(__gsharp_id_2_values, __gsharp_add_i32(__gsharp_id_5_v,16), ""G#: a null array is read at MixedSignPromotionKernels.cs(46,9)"")=__gsharp_id_6_sum;
+__gsharp_array_at(__gsharp_id_2_values, __gsharp_add_i32(__gsharp_id_5_v,17), ""G#: a null array is read at MixedSignPromotionKernels.cs(49,9)"")=__gsharp_sub_i64((long long)__gsharp_id_0_u&(long long)__gsharp_id_1_n,1);
+int __gsharp_id_7_f = __gsharp_mul_i32(__gsharp_id_4_pair,12);
 __gsharp_array_at(__gsharp_id_3_flags, __gsharp_id_7_f, ""G#: a null array is read at MixedSignPromotionKernels.cs(52,9)"")=((long long)__gsharp_id_0_u==(long long)__gsharp_id_1_n?1:0);
-__gsharp_array_at(__gsharp_id_3_flags, __gsharp_id_7_f+1, ""G#: a null array is read at MixedSignPromotionKernels.cs(53,9)"")=((long long)__gsharp_id_0_u!=(long long)__gsharp_id_1_n?1:0);
-__gsharp_array_at(__gsharp_id_3_flags, __gsharp_id_7_f+2, ""G#: a null array is read at MixedSignPromotionKernels.cs(54,9)"")=((long long)__gsharp_id_0_u<(long long)__gsharp_id_1_n?1:0);
-__gsharp_array_at(__gsharp_id_3_flags, __gsharp_id_7_f+3, ""G#: a null array is read at MixedSignPromotionKernels.cs(55,9)"")=((long long)__gsharp_id_0_u>(long long)__gsharp_id_1_n?1:0);
-__gsharp_array_at(__gsharp_id_3_flags, __gsharp_id_7_f+4, ""G#: a null array is read at MixedSignPromotionKernels.cs(56,9)"")=((long long)__gsharp_id_0_u<=(long long)__gsharp_id_1_n?1:0);
-__gsharp_array_at(__gsharp_id_3_flags, __gsharp_id_7_f+5, ""G#: a null array is read at MixedSignPromotionKernels.cs(57,9)"")=((long long)__gsharp_id_0_u>=(long long)__gsharp_id_1_n?1:0);
-__gsharp_array_at(__gsharp_id_3_flags, __gsharp_id_7_f+6, ""G#: a null array is read at MixedSignPromotionKernels.cs(58,9)"")=((long long)__gsharp_id_1_n==(long long)__gsharp_id_0_u?1:0);
-__gsharp_array_at(__gsharp_id_3_flags, __gsharp_id_7_f+7, ""G#: a null array is read at MixedSignPromotionKernels.cs(59,9)"")=((long long)__gsharp_id_1_n!=(long long)__gsharp_id_0_u?1:0);
-__gsharp_array_at(__gsharp_id_3_flags, __gsharp_id_7_f+8, ""G#: a null array is read at MixedSignPromotionKernels.cs(60,9)"")=((long long)__gsharp_id_1_n<(long long)__gsharp_id_0_u?1:0);
-__gsharp_array_at(__gsharp_id_3_flags, __gsharp_id_7_f+9, ""G#: a null array is read at MixedSignPromotionKernels.cs(61,9)"")=((long long)__gsharp_id_1_n>(long long)__gsharp_id_0_u?1:0);
-__gsharp_array_at(__gsharp_id_3_flags, __gsharp_id_7_f+10, ""G#: a null array is read at MixedSignPromotionKernels.cs(62,9)"")=((long long)__gsharp_id_1_n<=(long long)__gsharp_id_0_u?1:0);
-__gsharp_array_at(__gsharp_id_3_flags, __gsharp_id_7_f+11, ""G#: a null array is read at MixedSignPromotionKernels.cs(63,9)"")=((long long)__gsharp_id_1_n>=(long long)__gsharp_id_0_u?1:0);
+__gsharp_array_at(__gsharp_id_3_flags, __gsharp_add_i32(__gsharp_id_7_f,1), ""G#: a null array is read at MixedSignPromotionKernels.cs(53,9)"")=((long long)__gsharp_id_0_u!=(long long)__gsharp_id_1_n?1:0);
+__gsharp_array_at(__gsharp_id_3_flags, __gsharp_add_i32(__gsharp_id_7_f,2), ""G#: a null array is read at MixedSignPromotionKernels.cs(54,9)"")=((long long)__gsharp_id_0_u<(long long)__gsharp_id_1_n?1:0);
+__gsharp_array_at(__gsharp_id_3_flags, __gsharp_add_i32(__gsharp_id_7_f,3), ""G#: a null array is read at MixedSignPromotionKernels.cs(55,9)"")=((long long)__gsharp_id_0_u>(long long)__gsharp_id_1_n?1:0);
+__gsharp_array_at(__gsharp_id_3_flags, __gsharp_add_i32(__gsharp_id_7_f,4), ""G#: a null array is read at MixedSignPromotionKernels.cs(56,9)"")=((long long)__gsharp_id_0_u<=(long long)__gsharp_id_1_n?1:0);
+__gsharp_array_at(__gsharp_id_3_flags, __gsharp_add_i32(__gsharp_id_7_f,5), ""G#: a null array is read at MixedSignPromotionKernels.cs(57,9)"")=((long long)__gsharp_id_0_u>=(long long)__gsharp_id_1_n?1:0);
+__gsharp_array_at(__gsharp_id_3_flags, __gsharp_add_i32(__gsharp_id_7_f,6), ""G#: a null array is read at MixedSignPromotionKernels.cs(58,9)"")=((long long)__gsharp_id_1_n==(long long)__gsharp_id_0_u?1:0);
+__gsharp_array_at(__gsharp_id_3_flags, __gsharp_add_i32(__gsharp_id_7_f,7), ""G#: a null array is read at MixedSignPromotionKernels.cs(59,9)"")=((long long)__gsharp_id_1_n!=(long long)__gsharp_id_0_u?1:0);
+__gsharp_array_at(__gsharp_id_3_flags, __gsharp_add_i32(__gsharp_id_7_f,8), ""G#: a null array is read at MixedSignPromotionKernels.cs(60,9)"")=((long long)__gsharp_id_1_n<(long long)__gsharp_id_0_u?1:0);
+__gsharp_array_at(__gsharp_id_3_flags, __gsharp_add_i32(__gsharp_id_7_f,9), ""G#: a null array is read at MixedSignPromotionKernels.cs(61,9)"")=((long long)__gsharp_id_1_n>(long long)__gsharp_id_0_u?1:0);
+__gsharp_array_at(__gsharp_id_3_flags, __gsharp_add_i32(__gsharp_id_7_f,10), ""G#: a null array is read at MixedSignPromotionKernels.cs(62,9)"")=((long long)__gsharp_id_1_n<=(long long)__gsharp_id_0_u?1:0);
+__gsharp_array_at(__gsharp_id_3_flags, __gsharp_add_i32(__gsharp_id_7_f,11), ""G#: a null array is read at MixedSignPromotionKernels.cs(63,9)"")=((long long)__gsharp_id_1_n>=(long long)__gsharp_id_0_u?1:0);
 }
 
 inline void __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__MixedSignPromotionKernels__ShortOperators(unsigned int __gsharp_id_0_u, short __gsharp_id_1_s, GSharpArray<long long> __gsharp_id_2_values, GSharpArray<int> __gsharp_id_3_flags, int __gsharp_id_4_pair){
-int __gsharp_id_5_v = __gsharp_id_4_pair*18;
+int __gsharp_id_5_v = __gsharp_mul_i32(__gsharp_id_4_pair,18);
 __gsharp_array_at(__gsharp_id_2_values, __gsharp_id_5_v, ""G#: a null array is read at MixedSignPromotionKernels.cs(70,9)"")=(long long)__gsharp_id_0_u+(long long)__gsharp_id_1_s;
-__gsharp_array_at(__gsharp_id_2_values, __gsharp_id_5_v+1, ""G#: a null array is read at MixedSignPromotionKernels.cs(71,9)"")=(long long)__gsharp_id_0_u-(long long)__gsharp_id_1_s;
-__gsharp_array_at(__gsharp_id_2_values, __gsharp_id_5_v+2, ""G#: a null array is read at MixedSignPromotionKernels.cs(72,9)"")=(long long)__gsharp_id_0_u*(long long)__gsharp_id_1_s;
-__gsharp_array_at(__gsharp_id_2_values, __gsharp_id_5_v+3, ""G#: a null array is read at MixedSignPromotionKernels.cs(73,9)"")=(long long)__gsharp_id_0_u/(long long)__gsharp_id_1_s;
-__gsharp_array_at(__gsharp_id_2_values, __gsharp_id_5_v+4, ""G#: a null array is read at MixedSignPromotionKernels.cs(74,9)"")=(long long)__gsharp_id_0_u%(long long)__gsharp_id_1_s;
-__gsharp_array_at(__gsharp_id_2_values, __gsharp_id_5_v+5, ""G#: a null array is read at MixedSignPromotionKernels.cs(75,9)"")=(long long)__gsharp_id_0_u&(long long)__gsharp_id_1_s;
-__gsharp_array_at(__gsharp_id_2_values, __gsharp_id_5_v+6, ""G#: a null array is read at MixedSignPromotionKernels.cs(76,9)"")=(long long)__gsharp_id_0_u|(long long)__gsharp_id_1_s;
-__gsharp_array_at(__gsharp_id_2_values, __gsharp_id_5_v+7, ""G#: a null array is read at MixedSignPromotionKernels.cs(77,9)"")=(long long)__gsharp_id_0_u^(long long)__gsharp_id_1_s;
-__gsharp_array_at(__gsharp_id_2_values, __gsharp_id_5_v+8, ""G#: a null array is read at MixedSignPromotionKernels.cs(78,9)"")=(long long)__gsharp_id_1_s+(long long)__gsharp_id_0_u;
-__gsharp_array_at(__gsharp_id_2_values, __gsharp_id_5_v+9, ""G#: a null array is read at MixedSignPromotionKernels.cs(79,9)"")=(long long)__gsharp_id_1_s-(long long)__gsharp_id_0_u;
-__gsharp_array_at(__gsharp_id_2_values, __gsharp_id_5_v+10, ""G#: a null array is read at MixedSignPromotionKernels.cs(80,9)"")=(long long)__gsharp_id_1_s*(long long)__gsharp_id_0_u;
-__gsharp_array_at(__gsharp_id_2_values, __gsharp_id_5_v+11, ""G#: a null array is read at MixedSignPromotionKernels.cs(81,9)"")=(__gsharp_id_0_u!=0?(long long)__gsharp_id_1_s/(long long)__gsharp_id_0_u:0);
-__gsharp_array_at(__gsharp_id_2_values, __gsharp_id_5_v+12, ""G#: a null array is read at MixedSignPromotionKernels.cs(82,9)"")=(__gsharp_id_0_u!=0?(long long)__gsharp_id_1_s%(long long)__gsharp_id_0_u:0);
-__gsharp_array_at(__gsharp_id_2_values, __gsharp_id_5_v+13, ""G#: a null array is read at MixedSignPromotionKernels.cs(83,9)"")=(long long)__gsharp_id_1_s&(long long)__gsharp_id_0_u;
-__gsharp_array_at(__gsharp_id_2_values, __gsharp_id_5_v+14, ""G#: a null array is read at MixedSignPromotionKernels.cs(84,9)"")=(long long)__gsharp_id_1_s|(long long)__gsharp_id_0_u;
-__gsharp_array_at(__gsharp_id_2_values, __gsharp_id_5_v+15, ""G#: a null array is read at MixedSignPromotionKernels.cs(85,9)"")=(long long)__gsharp_id_1_s^(long long)__gsharp_id_0_u;
+__gsharp_array_at(__gsharp_id_2_values, __gsharp_add_i32(__gsharp_id_5_v,1), ""G#: a null array is read at MixedSignPromotionKernels.cs(71,9)"")=(long long)__gsharp_id_0_u-(long long)__gsharp_id_1_s;
+__gsharp_array_at(__gsharp_id_2_values, __gsharp_add_i32(__gsharp_id_5_v,2), ""G#: a null array is read at MixedSignPromotionKernels.cs(72,9)"")=(long long)__gsharp_id_0_u*(long long)__gsharp_id_1_s;
+__gsharp_array_at(__gsharp_id_2_values, __gsharp_add_i32(__gsharp_id_5_v,3), ""G#: a null array is read at MixedSignPromotionKernels.cs(73,9)"")=(long long)__gsharp_id_0_u/(long long)__gsharp_id_1_s;
+__gsharp_array_at(__gsharp_id_2_values, __gsharp_add_i32(__gsharp_id_5_v,4), ""G#: a null array is read at MixedSignPromotionKernels.cs(74,9)"")=(long long)__gsharp_id_0_u%(long long)__gsharp_id_1_s;
+__gsharp_array_at(__gsharp_id_2_values, __gsharp_add_i32(__gsharp_id_5_v,5), ""G#: a null array is read at MixedSignPromotionKernels.cs(75,9)"")=(long long)__gsharp_id_0_u&(long long)__gsharp_id_1_s;
+__gsharp_array_at(__gsharp_id_2_values, __gsharp_add_i32(__gsharp_id_5_v,6), ""G#: a null array is read at MixedSignPromotionKernels.cs(76,9)"")=(long long)__gsharp_id_0_u|(long long)__gsharp_id_1_s;
+__gsharp_array_at(__gsharp_id_2_values, __gsharp_add_i32(__gsharp_id_5_v,7), ""G#: a null array is read at MixedSignPromotionKernels.cs(77,9)"")=(long long)__gsharp_id_0_u^(long long)__gsharp_id_1_s;
+__gsharp_array_at(__gsharp_id_2_values, __gsharp_add_i32(__gsharp_id_5_v,8), ""G#: a null array is read at MixedSignPromotionKernels.cs(78,9)"")=(long long)__gsharp_id_1_s+(long long)__gsharp_id_0_u;
+__gsharp_array_at(__gsharp_id_2_values, __gsharp_add_i32(__gsharp_id_5_v,9), ""G#: a null array is read at MixedSignPromotionKernels.cs(79,9)"")=(long long)__gsharp_id_1_s-(long long)__gsharp_id_0_u;
+__gsharp_array_at(__gsharp_id_2_values, __gsharp_add_i32(__gsharp_id_5_v,10), ""G#: a null array is read at MixedSignPromotionKernels.cs(80,9)"")=(long long)__gsharp_id_1_s*(long long)__gsharp_id_0_u;
+__gsharp_array_at(__gsharp_id_2_values, __gsharp_add_i32(__gsharp_id_5_v,11), ""G#: a null array is read at MixedSignPromotionKernels.cs(81,9)"")=(__gsharp_id_0_u!=0?(long long)__gsharp_id_1_s/(long long)__gsharp_id_0_u:0);
+__gsharp_array_at(__gsharp_id_2_values, __gsharp_add_i32(__gsharp_id_5_v,12), ""G#: a null array is read at MixedSignPromotionKernels.cs(82,9)"")=(__gsharp_id_0_u!=0?(long long)__gsharp_id_1_s%(long long)__gsharp_id_0_u:0);
+__gsharp_array_at(__gsharp_id_2_values, __gsharp_add_i32(__gsharp_id_5_v,13), ""G#: a null array is read at MixedSignPromotionKernels.cs(83,9)"")=(long long)__gsharp_id_1_s&(long long)__gsharp_id_0_u;
+__gsharp_array_at(__gsharp_id_2_values, __gsharp_add_i32(__gsharp_id_5_v,14), ""G#: a null array is read at MixedSignPromotionKernels.cs(84,9)"")=(long long)__gsharp_id_1_s|(long long)__gsharp_id_0_u;
+__gsharp_array_at(__gsharp_id_2_values, __gsharp_add_i32(__gsharp_id_5_v,15), ""G#: a null array is read at MixedSignPromotionKernels.cs(85,9)"")=(long long)__gsharp_id_1_s^(long long)__gsharp_id_0_u;
 auto __gsharp_id_6_sum = (long long)__gsharp_id_0_u+(long long)__gsharp_id_1_s;
-__gsharp_array_at(__gsharp_id_2_values, __gsharp_id_5_v+16, ""G#: a null array is read at MixedSignPromotionKernels.cs(87,9)"")=__gsharp_id_6_sum;
-__gsharp_array_at(__gsharp_id_2_values, __gsharp_id_5_v+17, ""G#: a null array is read at MixedSignPromotionKernels.cs(88,9)"")=((long long)__gsharp_id_0_u&(long long)__gsharp_id_1_s)-1;
-int __gsharp_id_7_f = __gsharp_id_4_pair*12;
+__gsharp_array_at(__gsharp_id_2_values, __gsharp_add_i32(__gsharp_id_5_v,16), ""G#: a null array is read at MixedSignPromotionKernels.cs(87,9)"")=__gsharp_id_6_sum;
+__gsharp_array_at(__gsharp_id_2_values, __gsharp_add_i32(__gsharp_id_5_v,17), ""G#: a null array is read at MixedSignPromotionKernels.cs(88,9)"")=__gsharp_sub_i64((long long)__gsharp_id_0_u&(long long)__gsharp_id_1_s,1);
+int __gsharp_id_7_f = __gsharp_mul_i32(__gsharp_id_4_pair,12);
 __gsharp_array_at(__gsharp_id_3_flags, __gsharp_id_7_f, ""G#: a null array is read at MixedSignPromotionKernels.cs(91,9)"")=((long long)__gsharp_id_0_u==(long long)__gsharp_id_1_s?1:0);
-__gsharp_array_at(__gsharp_id_3_flags, __gsharp_id_7_f+1, ""G#: a null array is read at MixedSignPromotionKernels.cs(92,9)"")=((long long)__gsharp_id_0_u!=(long long)__gsharp_id_1_s?1:0);
-__gsharp_array_at(__gsharp_id_3_flags, __gsharp_id_7_f+2, ""G#: a null array is read at MixedSignPromotionKernels.cs(93,9)"")=((long long)__gsharp_id_0_u<(long long)__gsharp_id_1_s?1:0);
-__gsharp_array_at(__gsharp_id_3_flags, __gsharp_id_7_f+3, ""G#: a null array is read at MixedSignPromotionKernels.cs(94,9)"")=((long long)__gsharp_id_0_u>(long long)__gsharp_id_1_s?1:0);
-__gsharp_array_at(__gsharp_id_3_flags, __gsharp_id_7_f+4, ""G#: a null array is read at MixedSignPromotionKernels.cs(95,9)"")=((long long)__gsharp_id_0_u<=(long long)__gsharp_id_1_s?1:0);
-__gsharp_array_at(__gsharp_id_3_flags, __gsharp_id_7_f+5, ""G#: a null array is read at MixedSignPromotionKernels.cs(96,9)"")=((long long)__gsharp_id_0_u>=(long long)__gsharp_id_1_s?1:0);
-__gsharp_array_at(__gsharp_id_3_flags, __gsharp_id_7_f+6, ""G#: a null array is read at MixedSignPromotionKernels.cs(97,9)"")=((long long)__gsharp_id_1_s==(long long)__gsharp_id_0_u?1:0);
-__gsharp_array_at(__gsharp_id_3_flags, __gsharp_id_7_f+7, ""G#: a null array is read at MixedSignPromotionKernels.cs(98,9)"")=((long long)__gsharp_id_1_s!=(long long)__gsharp_id_0_u?1:0);
-__gsharp_array_at(__gsharp_id_3_flags, __gsharp_id_7_f+8, ""G#: a null array is read at MixedSignPromotionKernels.cs(99,9)"")=((long long)__gsharp_id_1_s<(long long)__gsharp_id_0_u?1:0);
-__gsharp_array_at(__gsharp_id_3_flags, __gsharp_id_7_f+9, ""G#: a null array is read at MixedSignPromotionKernels.cs(100,9)"")=((long long)__gsharp_id_1_s>(long long)__gsharp_id_0_u?1:0);
-__gsharp_array_at(__gsharp_id_3_flags, __gsharp_id_7_f+10, ""G#: a null array is read at MixedSignPromotionKernels.cs(101,9)"")=((long long)__gsharp_id_1_s<=(long long)__gsharp_id_0_u?1:0);
-__gsharp_array_at(__gsharp_id_3_flags, __gsharp_id_7_f+11, ""G#: a null array is read at MixedSignPromotionKernels.cs(102,9)"")=((long long)__gsharp_id_1_s>=(long long)__gsharp_id_0_u?1:0);
+__gsharp_array_at(__gsharp_id_3_flags, __gsharp_add_i32(__gsharp_id_7_f,1), ""G#: a null array is read at MixedSignPromotionKernels.cs(92,9)"")=((long long)__gsharp_id_0_u!=(long long)__gsharp_id_1_s?1:0);
+__gsharp_array_at(__gsharp_id_3_flags, __gsharp_add_i32(__gsharp_id_7_f,2), ""G#: a null array is read at MixedSignPromotionKernels.cs(93,9)"")=((long long)__gsharp_id_0_u<(long long)__gsharp_id_1_s?1:0);
+__gsharp_array_at(__gsharp_id_3_flags, __gsharp_add_i32(__gsharp_id_7_f,3), ""G#: a null array is read at MixedSignPromotionKernels.cs(94,9)"")=((long long)__gsharp_id_0_u>(long long)__gsharp_id_1_s?1:0);
+__gsharp_array_at(__gsharp_id_3_flags, __gsharp_add_i32(__gsharp_id_7_f,4), ""G#: a null array is read at MixedSignPromotionKernels.cs(95,9)"")=((long long)__gsharp_id_0_u<=(long long)__gsharp_id_1_s?1:0);
+__gsharp_array_at(__gsharp_id_3_flags, __gsharp_add_i32(__gsharp_id_7_f,5), ""G#: a null array is read at MixedSignPromotionKernels.cs(96,9)"")=((long long)__gsharp_id_0_u>=(long long)__gsharp_id_1_s?1:0);
+__gsharp_array_at(__gsharp_id_3_flags, __gsharp_add_i32(__gsharp_id_7_f,6), ""G#: a null array is read at MixedSignPromotionKernels.cs(97,9)"")=((long long)__gsharp_id_1_s==(long long)__gsharp_id_0_u?1:0);
+__gsharp_array_at(__gsharp_id_3_flags, __gsharp_add_i32(__gsharp_id_7_f,7), ""G#: a null array is read at MixedSignPromotionKernels.cs(98,9)"")=((long long)__gsharp_id_1_s!=(long long)__gsharp_id_0_u?1:0);
+__gsharp_array_at(__gsharp_id_3_flags, __gsharp_add_i32(__gsharp_id_7_f,8), ""G#: a null array is read at MixedSignPromotionKernels.cs(99,9)"")=((long long)__gsharp_id_1_s<(long long)__gsharp_id_0_u?1:0);
+__gsharp_array_at(__gsharp_id_3_flags, __gsharp_add_i32(__gsharp_id_7_f,9), ""G#: a null array is read at MixedSignPromotionKernels.cs(100,9)"")=((long long)__gsharp_id_1_s>(long long)__gsharp_id_0_u?1:0);
+__gsharp_array_at(__gsharp_id_3_flags, __gsharp_add_i32(__gsharp_id_7_f,10), ""G#: a null array is read at MixedSignPromotionKernels.cs(101,9)"")=((long long)__gsharp_id_1_s<=(long long)__gsharp_id_0_u?1:0);
+__gsharp_array_at(__gsharp_id_3_flags, __gsharp_add_i32(__gsharp_id_7_f,11), ""G#: a null array is read at MixedSignPromotionKernels.cs(102,9)"")=((long long)__gsharp_id_1_s>=(long long)__gsharp_id_0_u?1:0);
 }
 
 inline void __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__MixedSignPromotionKernels__SByteOperators(unsigned int __gsharp_id_0_u, signed char __gsharp_id_1_b, GSharpArray<long long> __gsharp_id_2_values, GSharpArray<int> __gsharp_id_3_flags, int __gsharp_id_4_pair){
-int __gsharp_id_5_v = __gsharp_id_4_pair*18;
+int __gsharp_id_5_v = __gsharp_mul_i32(__gsharp_id_4_pair,18);
 __gsharp_array_at(__gsharp_id_2_values, __gsharp_id_5_v, ""G#: a null array is read at MixedSignPromotionKernels.cs(109,9)"")=(long long)__gsharp_id_0_u+(long long)__gsharp_id_1_b;
-__gsharp_array_at(__gsharp_id_2_values, __gsharp_id_5_v+1, ""G#: a null array is read at MixedSignPromotionKernels.cs(110,9)"")=(long long)__gsharp_id_0_u-(long long)__gsharp_id_1_b;
-__gsharp_array_at(__gsharp_id_2_values, __gsharp_id_5_v+2, ""G#: a null array is read at MixedSignPromotionKernels.cs(111,9)"")=(long long)__gsharp_id_0_u*(long long)__gsharp_id_1_b;
-__gsharp_array_at(__gsharp_id_2_values, __gsharp_id_5_v+3, ""G#: a null array is read at MixedSignPromotionKernels.cs(112,9)"")=(long long)__gsharp_id_0_u/(long long)__gsharp_id_1_b;
-__gsharp_array_at(__gsharp_id_2_values, __gsharp_id_5_v+4, ""G#: a null array is read at MixedSignPromotionKernels.cs(113,9)"")=(long long)__gsharp_id_0_u%(long long)__gsharp_id_1_b;
-__gsharp_array_at(__gsharp_id_2_values, __gsharp_id_5_v+5, ""G#: a null array is read at MixedSignPromotionKernels.cs(114,9)"")=(long long)__gsharp_id_0_u&(long long)__gsharp_id_1_b;
-__gsharp_array_at(__gsharp_id_2_values, __gsharp_id_5_v+6, ""G#: a null array is read at MixedSignPromotionKernels.cs(115,9)"")=(long long)__gsharp_id_0_u|(long long)__gsharp_id_1_b;
-__gsharp_array_at(__gsharp_id_2_values, __gsharp_id_5_v+7, ""G#: a null array is read at MixedSignPromotionKernels.cs(116,9)"")=(long long)__gsharp_id_0_u^(long long)__gsharp_id_1_b;
-__gsharp_array_at(__gsharp_id_2_values, __gsharp_id_5_v+8, ""G#: a null array is read at MixedSignPromotionKernels.cs(117,9)"")=(long long)__gsharp_id_1_b+(long long)__gsharp_id_0_u;
-__gsharp_array_at(__gsharp_id_2_values, __gsharp_id_5_v+9, ""G#: a null array is read at MixedSignPromotionKernels.cs(118,9)"")=(long long)__gsharp_id_1_b-(long long)__gsharp_id_0_u;
-__gsharp_array_at(__gsharp_id_2_values, __gsharp_id_5_v+10, ""G#: a null array is read at MixedSignPromotionKernels.cs(119,9)"")=(long long)__gsharp_id_1_b*(long long)__gsharp_id_0_u;
-__gsharp_array_at(__gsharp_id_2_values, __gsharp_id_5_v+11, ""G#: a null array is read at MixedSignPromotionKernels.cs(120,9)"")=(__gsharp_id_0_u!=0?(long long)__gsharp_id_1_b/(long long)__gsharp_id_0_u:0);
-__gsharp_array_at(__gsharp_id_2_values, __gsharp_id_5_v+12, ""G#: a null array is read at MixedSignPromotionKernels.cs(121,9)"")=(__gsharp_id_0_u!=0?(long long)__gsharp_id_1_b%(long long)__gsharp_id_0_u:0);
-__gsharp_array_at(__gsharp_id_2_values, __gsharp_id_5_v+13, ""G#: a null array is read at MixedSignPromotionKernels.cs(122,9)"")=(long long)__gsharp_id_1_b&(long long)__gsharp_id_0_u;
-__gsharp_array_at(__gsharp_id_2_values, __gsharp_id_5_v+14, ""G#: a null array is read at MixedSignPromotionKernels.cs(123,9)"")=(long long)__gsharp_id_1_b|(long long)__gsharp_id_0_u;
-__gsharp_array_at(__gsharp_id_2_values, __gsharp_id_5_v+15, ""G#: a null array is read at MixedSignPromotionKernels.cs(124,9)"")=(long long)__gsharp_id_1_b^(long long)__gsharp_id_0_u;
+__gsharp_array_at(__gsharp_id_2_values, __gsharp_add_i32(__gsharp_id_5_v,1), ""G#: a null array is read at MixedSignPromotionKernels.cs(110,9)"")=(long long)__gsharp_id_0_u-(long long)__gsharp_id_1_b;
+__gsharp_array_at(__gsharp_id_2_values, __gsharp_add_i32(__gsharp_id_5_v,2), ""G#: a null array is read at MixedSignPromotionKernels.cs(111,9)"")=(long long)__gsharp_id_0_u*(long long)__gsharp_id_1_b;
+__gsharp_array_at(__gsharp_id_2_values, __gsharp_add_i32(__gsharp_id_5_v,3), ""G#: a null array is read at MixedSignPromotionKernels.cs(112,9)"")=(long long)__gsharp_id_0_u/(long long)__gsharp_id_1_b;
+__gsharp_array_at(__gsharp_id_2_values, __gsharp_add_i32(__gsharp_id_5_v,4), ""G#: a null array is read at MixedSignPromotionKernels.cs(113,9)"")=(long long)__gsharp_id_0_u%(long long)__gsharp_id_1_b;
+__gsharp_array_at(__gsharp_id_2_values, __gsharp_add_i32(__gsharp_id_5_v,5), ""G#: a null array is read at MixedSignPromotionKernels.cs(114,9)"")=(long long)__gsharp_id_0_u&(long long)__gsharp_id_1_b;
+__gsharp_array_at(__gsharp_id_2_values, __gsharp_add_i32(__gsharp_id_5_v,6), ""G#: a null array is read at MixedSignPromotionKernels.cs(115,9)"")=(long long)__gsharp_id_0_u|(long long)__gsharp_id_1_b;
+__gsharp_array_at(__gsharp_id_2_values, __gsharp_add_i32(__gsharp_id_5_v,7), ""G#: a null array is read at MixedSignPromotionKernels.cs(116,9)"")=(long long)__gsharp_id_0_u^(long long)__gsharp_id_1_b;
+__gsharp_array_at(__gsharp_id_2_values, __gsharp_add_i32(__gsharp_id_5_v,8), ""G#: a null array is read at MixedSignPromotionKernels.cs(117,9)"")=(long long)__gsharp_id_1_b+(long long)__gsharp_id_0_u;
+__gsharp_array_at(__gsharp_id_2_values, __gsharp_add_i32(__gsharp_id_5_v,9), ""G#: a null array is read at MixedSignPromotionKernels.cs(118,9)"")=(long long)__gsharp_id_1_b-(long long)__gsharp_id_0_u;
+__gsharp_array_at(__gsharp_id_2_values, __gsharp_add_i32(__gsharp_id_5_v,10), ""G#: a null array is read at MixedSignPromotionKernels.cs(119,9)"")=(long long)__gsharp_id_1_b*(long long)__gsharp_id_0_u;
+__gsharp_array_at(__gsharp_id_2_values, __gsharp_add_i32(__gsharp_id_5_v,11), ""G#: a null array is read at MixedSignPromotionKernels.cs(120,9)"")=(__gsharp_id_0_u!=0?(long long)__gsharp_id_1_b/(long long)__gsharp_id_0_u:0);
+__gsharp_array_at(__gsharp_id_2_values, __gsharp_add_i32(__gsharp_id_5_v,12), ""G#: a null array is read at MixedSignPromotionKernels.cs(121,9)"")=(__gsharp_id_0_u!=0?(long long)__gsharp_id_1_b%(long long)__gsharp_id_0_u:0);
+__gsharp_array_at(__gsharp_id_2_values, __gsharp_add_i32(__gsharp_id_5_v,13), ""G#: a null array is read at MixedSignPromotionKernels.cs(122,9)"")=(long long)__gsharp_id_1_b&(long long)__gsharp_id_0_u;
+__gsharp_array_at(__gsharp_id_2_values, __gsharp_add_i32(__gsharp_id_5_v,14), ""G#: a null array is read at MixedSignPromotionKernels.cs(123,9)"")=(long long)__gsharp_id_1_b|(long long)__gsharp_id_0_u;
+__gsharp_array_at(__gsharp_id_2_values, __gsharp_add_i32(__gsharp_id_5_v,15), ""G#: a null array is read at MixedSignPromotionKernels.cs(124,9)"")=(long long)__gsharp_id_1_b^(long long)__gsharp_id_0_u;
 auto __gsharp_id_6_sum = (long long)__gsharp_id_0_u+(long long)__gsharp_id_1_b;
-__gsharp_array_at(__gsharp_id_2_values, __gsharp_id_5_v+16, ""G#: a null array is read at MixedSignPromotionKernels.cs(126,9)"")=__gsharp_id_6_sum;
-__gsharp_array_at(__gsharp_id_2_values, __gsharp_id_5_v+17, ""G#: a null array is read at MixedSignPromotionKernels.cs(127,9)"")=((long long)__gsharp_id_0_u&(long long)__gsharp_id_1_b)-1;
-int __gsharp_id_7_f = __gsharp_id_4_pair*12;
+__gsharp_array_at(__gsharp_id_2_values, __gsharp_add_i32(__gsharp_id_5_v,16), ""G#: a null array is read at MixedSignPromotionKernels.cs(126,9)"")=__gsharp_id_6_sum;
+__gsharp_array_at(__gsharp_id_2_values, __gsharp_add_i32(__gsharp_id_5_v,17), ""G#: a null array is read at MixedSignPromotionKernels.cs(127,9)"")=__gsharp_sub_i64((long long)__gsharp_id_0_u&(long long)__gsharp_id_1_b,1);
+int __gsharp_id_7_f = __gsharp_mul_i32(__gsharp_id_4_pair,12);
 __gsharp_array_at(__gsharp_id_3_flags, __gsharp_id_7_f, ""G#: a null array is read at MixedSignPromotionKernels.cs(130,9)"")=((long long)__gsharp_id_0_u==(long long)__gsharp_id_1_b?1:0);
-__gsharp_array_at(__gsharp_id_3_flags, __gsharp_id_7_f+1, ""G#: a null array is read at MixedSignPromotionKernels.cs(131,9)"")=((long long)__gsharp_id_0_u!=(long long)__gsharp_id_1_b?1:0);
-__gsharp_array_at(__gsharp_id_3_flags, __gsharp_id_7_f+2, ""G#: a null array is read at MixedSignPromotionKernels.cs(132,9)"")=((long long)__gsharp_id_0_u<(long long)__gsharp_id_1_b?1:0);
-__gsharp_array_at(__gsharp_id_3_flags, __gsharp_id_7_f+3, ""G#: a null array is read at MixedSignPromotionKernels.cs(133,9)"")=((long long)__gsharp_id_0_u>(long long)__gsharp_id_1_b?1:0);
-__gsharp_array_at(__gsharp_id_3_flags, __gsharp_id_7_f+4, ""G#: a null array is read at MixedSignPromotionKernels.cs(134,9)"")=((long long)__gsharp_id_0_u<=(long long)__gsharp_id_1_b?1:0);
-__gsharp_array_at(__gsharp_id_3_flags, __gsharp_id_7_f+5, ""G#: a null array is read at MixedSignPromotionKernels.cs(135,9)"")=((long long)__gsharp_id_0_u>=(long long)__gsharp_id_1_b?1:0);
-__gsharp_array_at(__gsharp_id_3_flags, __gsharp_id_7_f+6, ""G#: a null array is read at MixedSignPromotionKernels.cs(136,9)"")=((long long)__gsharp_id_1_b==(long long)__gsharp_id_0_u?1:0);
-__gsharp_array_at(__gsharp_id_3_flags, __gsharp_id_7_f+7, ""G#: a null array is read at MixedSignPromotionKernels.cs(137,9)"")=((long long)__gsharp_id_1_b!=(long long)__gsharp_id_0_u?1:0);
-__gsharp_array_at(__gsharp_id_3_flags, __gsharp_id_7_f+8, ""G#: a null array is read at MixedSignPromotionKernels.cs(138,9)"")=((long long)__gsharp_id_1_b<(long long)__gsharp_id_0_u?1:0);
-__gsharp_array_at(__gsharp_id_3_flags, __gsharp_id_7_f+9, ""G#: a null array is read at MixedSignPromotionKernels.cs(139,9)"")=((long long)__gsharp_id_1_b>(long long)__gsharp_id_0_u?1:0);
-__gsharp_array_at(__gsharp_id_3_flags, __gsharp_id_7_f+10, ""G#: a null array is read at MixedSignPromotionKernels.cs(140,9)"")=((long long)__gsharp_id_1_b<=(long long)__gsharp_id_0_u?1:0);
-__gsharp_array_at(__gsharp_id_3_flags, __gsharp_id_7_f+11, ""G#: a null array is read at MixedSignPromotionKernels.cs(141,9)"")=((long long)__gsharp_id_1_b>=(long long)__gsharp_id_0_u?1:0);
+__gsharp_array_at(__gsharp_id_3_flags, __gsharp_add_i32(__gsharp_id_7_f,1), ""G#: a null array is read at MixedSignPromotionKernels.cs(131,9)"")=((long long)__gsharp_id_0_u!=(long long)__gsharp_id_1_b?1:0);
+__gsharp_array_at(__gsharp_id_3_flags, __gsharp_add_i32(__gsharp_id_7_f,2), ""G#: a null array is read at MixedSignPromotionKernels.cs(132,9)"")=((long long)__gsharp_id_0_u<(long long)__gsharp_id_1_b?1:0);
+__gsharp_array_at(__gsharp_id_3_flags, __gsharp_add_i32(__gsharp_id_7_f,3), ""G#: a null array is read at MixedSignPromotionKernels.cs(133,9)"")=((long long)__gsharp_id_0_u>(long long)__gsharp_id_1_b?1:0);
+__gsharp_array_at(__gsharp_id_3_flags, __gsharp_add_i32(__gsharp_id_7_f,4), ""G#: a null array is read at MixedSignPromotionKernels.cs(134,9)"")=((long long)__gsharp_id_0_u<=(long long)__gsharp_id_1_b?1:0);
+__gsharp_array_at(__gsharp_id_3_flags, __gsharp_add_i32(__gsharp_id_7_f,5), ""G#: a null array is read at MixedSignPromotionKernels.cs(135,9)"")=((long long)__gsharp_id_0_u>=(long long)__gsharp_id_1_b?1:0);
+__gsharp_array_at(__gsharp_id_3_flags, __gsharp_add_i32(__gsharp_id_7_f,6), ""G#: a null array is read at MixedSignPromotionKernels.cs(136,9)"")=((long long)__gsharp_id_1_b==(long long)__gsharp_id_0_u?1:0);
+__gsharp_array_at(__gsharp_id_3_flags, __gsharp_add_i32(__gsharp_id_7_f,7), ""G#: a null array is read at MixedSignPromotionKernels.cs(137,9)"")=((long long)__gsharp_id_1_b!=(long long)__gsharp_id_0_u?1:0);
+__gsharp_array_at(__gsharp_id_3_flags, __gsharp_add_i32(__gsharp_id_7_f,8), ""G#: a null array is read at MixedSignPromotionKernels.cs(138,9)"")=((long long)__gsharp_id_1_b<(long long)__gsharp_id_0_u?1:0);
+__gsharp_array_at(__gsharp_id_3_flags, __gsharp_add_i32(__gsharp_id_7_f,9), ""G#: a null array is read at MixedSignPromotionKernels.cs(139,9)"")=((long long)__gsharp_id_1_b>(long long)__gsharp_id_0_u?1:0);
+__gsharp_array_at(__gsharp_id_3_flags, __gsharp_add_i32(__gsharp_id_7_f,10), ""G#: a null array is read at MixedSignPromotionKernels.cs(140,9)"")=((long long)__gsharp_id_1_b<=(long long)__gsharp_id_0_u?1:0);
+__gsharp_array_at(__gsharp_id_3_flags, __gsharp_add_i32(__gsharp_id_7_f,11), ""G#: a null array is read at MixedSignPromotionKernels.cs(141,9)"")=((long long)__gsharp_id_1_b>=(long long)__gsharp_id_0_u?1:0);
 }
 
 inline void __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__MixedSignPromotionKernels__ConstantOperators(unsigned int __gsharp_id_0_u, GSharpArray<long long> __gsharp_id_1_values, GSharpArray<int> __gsharp_id_2_flags, int __gsharp_id_3_index){
-__gsharp_array_at(__gsharp_id_1_values, __gsharp_id_3_index*3, ""G#: a null array is read at MixedSignPromotionKernels.cs(170,9)"")=__gsharp_id_0_u-8;
-__gsharp_array_at(__gsharp_id_1_values, __gsharp_id_3_index*3+1, ""G#: a null array is read at MixedSignPromotionKernels.cs(171,9)"")=(long long)__gsharp_id_0_u+(-8LL);
-__gsharp_array_at(__gsharp_id_1_values, __gsharp_id_3_index*3+2, ""G#: a null array is read at MixedSignPromotionKernels.cs(172,9)"")=__gsharp_id_0_u+8u;
+__gsharp_array_at(__gsharp_id_1_values, __gsharp_mul_i32(__gsharp_id_3_index,3), ""G#: a null array is read at MixedSignPromotionKernels.cs(170,9)"")=__gsharp_id_0_u-8;
+__gsharp_array_at(__gsharp_id_1_values, __gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_3_index,3),1), ""G#: a null array is read at MixedSignPromotionKernels.cs(171,9)"")=(long long)__gsharp_id_0_u+(-8LL);
+__gsharp_array_at(__gsharp_id_1_values, __gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_3_index,3),2), ""G#: a null array is read at MixedSignPromotionKernels.cs(172,9)"")=__gsharp_id_0_u+8u;
 __gsharp_array_at(__gsharp_id_2_flags, __gsharp_id_3_index, ""G#: a null array is read at MixedSignPromotionKernels.cs(174,9)"")=((long long)__gsharp_id_0_u==(-1LL)?1:0);
 }
 
 inline unsigned int __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__MixedSignPromotionKernels__TakeFive(int* __gsharp_id_0_k){
-(*__gsharp_id_0_k)-=5;
+(*__gsharp_id_0_k)=__gsharp_sub_i32((*__gsharp_id_0_k),5);
 return 3u;
 }
 
@@ -181,7 +181,7 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-int __gsharp_id_4_pair = threadIdx.x;
+int __gsharp_id_4_pair = (int)threadIdx.x;
 __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__MixedSignPromotionKernels__IntOperators(__gsharp_id_0_us[__gsharp_id_4_pair/__gsharp_id_1_ns.length],__gsharp_id_1_ns[__gsharp_id_4_pair%__gsharp_id_1_ns.length],__gsharp_id_2_values,__gsharp_id_3_flags,__gsharp_id_4_pair);
 __gsharp_state=-1;
 return;
@@ -439,7 +439,7 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-int __gsharp_id_4_pair = threadIdx.x;
+int __gsharp_id_4_pair = (int)threadIdx.x;
 __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__MixedSignPromotionKernels__ShortOperators(__gsharp_id_0_us[__gsharp_id_4_pair/__gsharp_id_1_ss.length],__gsharp_id_1_ss[__gsharp_id_4_pair%__gsharp_id_1_ss.length],__gsharp_id_2_values,__gsharp_id_3_flags,__gsharp_id_4_pair);
 __gsharp_state=-1;
 return;
@@ -697,7 +697,7 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-int __gsharp_id_4_pair = threadIdx.x;
+int __gsharp_id_4_pair = (int)threadIdx.x;
 __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__MixedSignPromotionKernels__SByteOperators(__gsharp_id_0_us[__gsharp_id_4_pair/__gsharp_id_1_bs.length],__gsharp_id_1_bs[__gsharp_id_4_pair%__gsharp_id_1_bs.length],__gsharp_id_2_values,__gsharp_id_3_flags,__gsharp_id_4_pair);
 __gsharp_state=-1;
 return;
@@ -955,7 +955,7 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-int __gsharp_id_3_tid = threadIdx.x;
+int __gsharp_id_3_tid = (int)threadIdx.x;
 __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__MixedSignPromotionKernels__ConstantOperators(__gsharp_id_0_us[__gsharp_id_3_tid],__gsharp_id_1_values,__gsharp_id_2_flags,__gsharp_id_3_tid);
 __gsharp_state=-1;
 return;
@@ -1210,7 +1210,7 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-__gsharp_ctx->__gsharp_id_4_tid=threadIdx.x;
+__gsharp_ctx->__gsharp_id_4_tid=(int)threadIdx.x;
 __gsharp_ctx->__gsharp_id_5_u=__gsharp_id_0_us[__gsharp_ctx->__gsharp_id_4_tid];
 __gsharp_ctx->__gsharp_id_6_n=__gsharp_id_1_ns[__gsharp_ctx->__gsharp_id_4_tid];
 __gsharp_yielded_for_block_barrier=true;
@@ -1228,10 +1228,10 @@ return;
 case 2:
 __gsharp_switch_1_state_2:
 {
-__gsharp_id_2_values[__gsharp_ctx->__gsharp_id_4_tid*2]=__gsharp_ctx->__gsharp_id_7_sum;
+__gsharp_id_2_values[__gsharp_mul_i32(__gsharp_ctx->__gsharp_id_4_tid,2)]=__gsharp_ctx->__gsharp_id_7_sum;
 __gsharp_id_3_flags[__gsharp_ctx->__gsharp_id_4_tid]=((long long)__gsharp_ctx->__gsharp_id_5_u<(long long)__gsharp_ctx->__gsharp_id_6_n?1:0);
 int __gsharp_id_8_k = __gsharp_ctx->__gsharp_id_4_tid;
-__gsharp_id_2_values[__gsharp_ctx->__gsharp_id_4_tid*2+1]=([&]() {
+__gsharp_id_2_values[__gsharp_add_i32(__gsharp_mul_i32(__gsharp_ctx->__gsharp_id_4_tid,2),1)]=([&]() {
 auto __gsharp_seq_0 = __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__MixedSignPromotionKernels__TakeFive(&__gsharp_id_8_k);
 auto __gsharp_seq_1 = __gsharp_id_8_k;
 return (long long)__gsharp_seq_0+(long long)__gsharp_seq_1;

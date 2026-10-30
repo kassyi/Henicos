@@ -56,7 +56,7 @@ public class CollectionsAndMemoryTests : TranspilerTestBase
         Assert.Empty(diagnostics);
         // The target is not a [GpuKernel], so its array parameters may be null and each read is checked (#706)
         Assert.Matches(
-            @"__gsharp_array_at\(output, 0, ""[^""]*""\)=__gsharp_array_at\(flatGrid, row\*width\+col, ""[^""]*""\)",
+            @"__gsharp_array_at\(output, 0, ""[^""]*""\)=__gsharp_array_at\(flatGrid, __gsharp_add_i32\(__gsharp_mul_i32\(row,width\),col\), ""[^""]*""\)",
             cudaSource.WithCSharpNames());
     }
 }

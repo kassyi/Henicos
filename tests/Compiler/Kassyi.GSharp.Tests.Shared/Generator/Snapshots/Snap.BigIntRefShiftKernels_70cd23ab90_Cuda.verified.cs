@@ -104,10 +104,10 @@ auto __gsharp_id_4_wordShift = __gsharp_id_3_shiftBits/32;
 auto __gsharp_id_5_bitShift = __gsharp_id_3_shiftBits%32;
 for(int __gsharp_id_6_i = 0;__gsharp_id_6_i<(*__gsharp_id_0_ctx).__gsharp_mb_NumberOfWords;__gsharp_id_6_i++)
 {
-auto __gsharp_id_7_srcIdx0 = __gsharp_id_6_i-__gsharp_id_4_wordShift;
-auto __gsharp_id_8_srcIdx1 = __gsharp_id_7_srcIdx0-1;
-auto __gsharp_id_9_safeIdx0 = (__gsharp_id_7_srcIdx0<0?0:((__gsharp_id_7_srcIdx0>=(*__gsharp_id_0_ctx).__gsharp_mb_NumberOfWords?(*__gsharp_id_0_ctx).__gsharp_mb_NumberOfWords-1:__gsharp_id_7_srcIdx0)));
-auto __gsharp_id_10_safeIdx1 = (__gsharp_id_8_srcIdx1<0?0:((__gsharp_id_8_srcIdx1>=(*__gsharp_id_0_ctx).__gsharp_mb_NumberOfWords?(*__gsharp_id_0_ctx).__gsharp_mb_NumberOfWords-1:__gsharp_id_8_srcIdx1)));
+auto __gsharp_id_7_srcIdx0 = __gsharp_sub_i32(__gsharp_id_6_i,__gsharp_id_4_wordShift);
+auto __gsharp_id_8_srcIdx1 = __gsharp_sub_i32(__gsharp_id_7_srcIdx0,1);
+auto __gsharp_id_9_safeIdx0 = (__gsharp_id_7_srcIdx0<0?0:((__gsharp_id_7_srcIdx0>=(*__gsharp_id_0_ctx).__gsharp_mb_NumberOfWords?__gsharp_sub_i32((*__gsharp_id_0_ctx).__gsharp_mb_NumberOfWords,1):__gsharp_id_7_srcIdx0)));
+auto __gsharp_id_10_safeIdx1 = (__gsharp_id_8_srcIdx1<0?0:((__gsharp_id_8_srcIdx1>=(*__gsharp_id_0_ctx).__gsharp_mb_NumberOfWords?__gsharp_sub_i32((*__gsharp_id_0_ctx).__gsharp_mb_NumberOfWords,1):__gsharp_id_8_srcIdx1)));
 auto __gsharp_id_11_w0 = __gsharp_array_at(__gsharp_id_2_left, __gsharp_id_9_safeIdx0, ""G#: a null array is read at GpuBigIntKernels.cu.cs(435,22)"");
 auto __gsharp_id_12_w1 = __gsharp_array_at(__gsharp_id_2_left, __gsharp_id_10_safeIdx1, ""G#: a null array is read at GpuBigIntKernels.cu.cs(436,22)"");
 auto __gsharp_id_13_mask0 = (__gsharp_id_7_srcIdx0>=0&&__gsharp_id_7_srcIdx0<(*__gsharp_id_0_ctx).__gsharp_mb_NumberOfWords?0xFFFFFFFFu:0u);
@@ -115,7 +115,7 @@ auto __gsharp_id_14_mask1 = (__gsharp_id_8_srcIdx1>=0&&__gsharp_id_8_srcIdx1<(*_
 __gsharp_id_11_w0&=__gsharp_id_13_mask0;
 __gsharp_id_12_w1&=__gsharp_id_14_mask1;
 auto __gsharp_id_15_shiftMask = (__gsharp_id_5_bitShift==0?0u:0xFFFFFFFFu);
-__gsharp_array_at(__gsharp_id_1_result, __gsharp_id_6_i, ""G#: a null array is read at GpuBigIntKernels.cu.cs(445,13)"")=(__gsharp_id_11_w0<<__gsharp_id_5_bitShift)|((__gsharp_id_12_w1>>(32-__gsharp_id_5_bitShift))&__gsharp_id_15_shiftMask);
+__gsharp_array_at(__gsharp_id_1_result, __gsharp_id_6_i, ""G#: a null array is read at GpuBigIntKernels.cu.cs(445,13)"")=(__gsharp_id_11_w0<<(__gsharp_id_5_bitShift&31))|((__gsharp_id_12_w1>>(__gsharp_sub_i32(32,__gsharp_id_5_bitShift)&31))&__gsharp_id_15_shiftMask);
 }
 }
 
@@ -124,10 +124,10 @@ auto __gsharp_id_4_wordShift = __gsharp_id_3_shiftBits/32;
 auto __gsharp_id_5_bitShift = __gsharp_id_3_shiftBits%32;
 for(int __gsharp_id_6_i = 0;__gsharp_id_6_i<(*__gsharp_id_0_ctx).__gsharp_mb_NumberOfWords;__gsharp_id_6_i++)
 {
-auto __gsharp_id_7_srcIdx0 = __gsharp_id_6_i+__gsharp_id_4_wordShift;
-auto __gsharp_id_8_srcIdx1 = __gsharp_id_7_srcIdx0+1;
-auto __gsharp_id_9_safeIdx0 = (__gsharp_id_7_srcIdx0<0?0:((__gsharp_id_7_srcIdx0>=(*__gsharp_id_0_ctx).__gsharp_mb_NumberOfWords?(*__gsharp_id_0_ctx).__gsharp_mb_NumberOfWords-1:__gsharp_id_7_srcIdx0)));
-auto __gsharp_id_10_safeIdx1 = (__gsharp_id_8_srcIdx1<0?0:((__gsharp_id_8_srcIdx1>=(*__gsharp_id_0_ctx).__gsharp_mb_NumberOfWords?(*__gsharp_id_0_ctx).__gsharp_mb_NumberOfWords-1:__gsharp_id_8_srcIdx1)));
+auto __gsharp_id_7_srcIdx0 = __gsharp_add_i32(__gsharp_id_6_i,__gsharp_id_4_wordShift);
+auto __gsharp_id_8_srcIdx1 = __gsharp_add_i32(__gsharp_id_7_srcIdx0,1);
+auto __gsharp_id_9_safeIdx0 = (__gsharp_id_7_srcIdx0<0?0:((__gsharp_id_7_srcIdx0>=(*__gsharp_id_0_ctx).__gsharp_mb_NumberOfWords?__gsharp_sub_i32((*__gsharp_id_0_ctx).__gsharp_mb_NumberOfWords,1):__gsharp_id_7_srcIdx0)));
+auto __gsharp_id_10_safeIdx1 = (__gsharp_id_8_srcIdx1<0?0:((__gsharp_id_8_srcIdx1>=(*__gsharp_id_0_ctx).__gsharp_mb_NumberOfWords?__gsharp_sub_i32((*__gsharp_id_0_ctx).__gsharp_mb_NumberOfWords,1):__gsharp_id_8_srcIdx1)));
 auto __gsharp_id_11_w0 = __gsharp_array_at(__gsharp_id_2_left, __gsharp_id_9_safeIdx0, ""G#: a null array is read at GpuBigIntKernels.cu.cs(462,22)"");
 auto __gsharp_id_12_w1 = __gsharp_array_at(__gsharp_id_2_left, __gsharp_id_10_safeIdx1, ""G#: a null array is read at GpuBigIntKernels.cu.cs(463,22)"");
 auto __gsharp_id_13_mask0 = (__gsharp_id_7_srcIdx0>=0&&__gsharp_id_7_srcIdx0<(*__gsharp_id_0_ctx).__gsharp_mb_NumberOfWords?0xFFFFFFFFu:0u);
@@ -135,7 +135,7 @@ auto __gsharp_id_14_mask1 = (__gsharp_id_8_srcIdx1>=0&&__gsharp_id_8_srcIdx1<(*_
 __gsharp_id_11_w0&=__gsharp_id_13_mask0;
 __gsharp_id_12_w1&=__gsharp_id_14_mask1;
 auto __gsharp_id_15_shiftMask = (__gsharp_id_5_bitShift==0?0u:0xFFFFFFFFu);
-__gsharp_array_at(__gsharp_id_1_result, __gsharp_id_6_i, ""G#: a null array is read at GpuBigIntKernels.cu.cs(472,13)"")=(__gsharp_id_11_w0>>__gsharp_id_5_bitShift)|((__gsharp_id_12_w1<<(32-__gsharp_id_5_bitShift))&__gsharp_id_15_shiftMask);
+__gsharp_array_at(__gsharp_id_1_result, __gsharp_id_6_i, ""G#: a null array is read at GpuBigIntKernels.cu.cs(472,13)"")=(__gsharp_id_11_w0>>(__gsharp_id_5_bitShift&31))|((__gsharp_id_12_w1<<(__gsharp_sub_i32(32,__gsharp_id_5_bitShift)&31))&__gsharp_id_15_shiftMask);
 }
 }
 
@@ -280,12 +280,12 @@ proxy_input[0] = IntPtr.Zero;
 if (input_size > 0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_input, (IntPtr)input_size, hStream));
-proxy_input[0] = d_input;
 fixed (global::System.UInt32* p_input = input)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoDAsync_v2(d_input, (IntPtr)p_input, (IntPtr)input_size, hStream));
 CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
 }
+proxy_input[0] = d_input;
 }
 kernelParams[0] = proxy_input;
 // Marshal array: shiftedLeft
@@ -295,13 +295,20 @@ proxy_shiftedLeft[0] = IntPtr.Zero;
 ((int*)(proxy_shiftedLeft + 1))[0] = shiftedLeft.Length;
 if (shiftedLeft_size > 0)
 {
+if (global::System.Object.ReferenceEquals(shiftedLeft, input))
+{
+d_shiftedLeft = d_input;
+}
+else
+{
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_shiftedLeft, (IntPtr)shiftedLeft_size, hStream));
-proxy_shiftedLeft[0] = d_shiftedLeft;
 fixed (global::System.UInt32* p_shiftedLeft = shiftedLeft)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoDAsync_v2(d_shiftedLeft, (IntPtr)p_shiftedLeft, (IntPtr)shiftedLeft_size, hStream));
 CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
 }
+}
+proxy_shiftedLeft[0] = d_shiftedLeft;
 }
 kernelParams[1] = proxy_shiftedLeft;
 // Marshal array: shiftedRight
@@ -311,13 +318,24 @@ proxy_shiftedRight[0] = IntPtr.Zero;
 ((int*)(proxy_shiftedRight + 1))[0] = shiftedRight.Length;
 if (shiftedRight_size > 0)
 {
+if (global::System.Object.ReferenceEquals(shiftedRight, input))
+{
+d_shiftedRight = d_input;
+}
+else if (global::System.Object.ReferenceEquals(shiftedRight, shiftedLeft))
+{
+d_shiftedRight = d_shiftedLeft;
+}
+else
+{
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_shiftedRight, (IntPtr)shiftedRight_size, hStream));
-proxy_shiftedRight[0] = d_shiftedRight;
 fixed (global::System.UInt32* p_shiftedRight = shiftedRight)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoDAsync_v2(d_shiftedRight, (IntPtr)p_shiftedRight, (IntPtr)shiftedRight_size, hStream));
 CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
 }
+}
+proxy_shiftedRight[0] = d_shiftedRight;
 }
 kernelParams[2] = proxy_shiftedRight;
 CudaException.ThrowIfError(CudaDriverApi.cuLaunchKernel(
@@ -339,7 +357,7 @@ CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
 }
 }
 // Copy back array: shiftedLeft
-if (shiftedLeft_size > 0 && d_shiftedLeft != IntPtr.Zero)
+if (shiftedLeft_size > 0 && d_shiftedLeft != IntPtr.Zero && !global::System.Object.ReferenceEquals(shiftedLeft, input))
 {
 fixed (global::System.UInt32* p_shiftedLeft = shiftedLeft)
 {
@@ -348,7 +366,7 @@ CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
 }
 }
 // Copy back array: shiftedRight
-if (shiftedRight_size > 0 && d_shiftedRight != IntPtr.Zero)
+if (shiftedRight_size > 0 && d_shiftedRight != IntPtr.Zero && !global::System.Object.ReferenceEquals(shiftedRight, input) && !global::System.Object.ReferenceEquals(shiftedRight, shiftedLeft))
 {
 fixed (global::System.UInt32* p_shiftedRight = shiftedRight)
 {
@@ -360,8 +378,8 @@ CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
 finally
 {
 if (d_input != IntPtr.Zero) CudaDriverApi.cuMemFreeAsync(d_input, hStream);
-if (d_shiftedLeft != IntPtr.Zero) CudaDriverApi.cuMemFreeAsync(d_shiftedLeft, hStream);
-if (d_shiftedRight != IntPtr.Zero) CudaDriverApi.cuMemFreeAsync(d_shiftedRight, hStream);
+if (d_shiftedLeft != IntPtr.Zero && d_shiftedLeft != d_input) CudaDriverApi.cuMemFreeAsync(d_shiftedLeft, hStream);
+if (d_shiftedRight != IntPtr.Zero && d_shiftedRight != d_input && d_shiftedRight != d_shiftedLeft) CudaDriverApi.cuMemFreeAsync(d_shiftedRight, hStream);
 }
 }
 }

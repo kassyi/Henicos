@@ -83,17 +83,17 @@ case 0:
 __gsharp_switch_1_state_0:
 {
 __gsharp_ctx->__gsharp_id_3_sdata={ (float*)__gsharp_allocate_smem_static(0x80cb9df64cf94963ull, (8) * sizeof(float), alignof(float)) };
-__gsharp_ctx->__gsharp_id_4_tid=threadIdx.x;
-__gsharp_ctx->__gsharp_id_5_i=blockIdx.x*(blockDim.x*2)+__gsharp_ctx->__gsharp_id_4_tid;
+__gsharp_ctx->__gsharp_id_4_tid=(int)threadIdx.x;
+__gsharp_ctx->__gsharp_id_5_i=__gsharp_add_i32(__gsharp_mul_i32((int)blockIdx.x,__gsharp_mul_i32((int)blockDim.x,2)),__gsharp_ctx->__gsharp_id_4_tid);
 __gsharp_ctx->__gsharp_id_6_sum=0.0f;
 if(__gsharp_ctx->__gsharp_id_5_i<__gsharp_id_2_n)
 {
 auto __gsharp_id_7_v = __gsharp_id_0_input[__gsharp_ctx->__gsharp_id_5_i];
 __gsharp_ctx->__gsharp_id_6_sum=__gsharp_id_7_v.__gsharp_mb_X+__gsharp_id_7_v.__gsharp_mb_Y+__gsharp_id_7_v.__gsharp_mb_Z+__gsharp_id_7_v.__gsharp_mb_W;
 }
-if(__gsharp_ctx->__gsharp_id_5_i+blockDim.x<__gsharp_id_2_n)
+if(__gsharp_add_i32(__gsharp_ctx->__gsharp_id_5_i,(int)blockDim.x)<__gsharp_id_2_n)
 {
-auto __gsharp_id_8_v = __gsharp_id_0_input[__gsharp_ctx->__gsharp_id_5_i+blockDim.x];
+auto __gsharp_id_8_v = __gsharp_id_0_input[__gsharp_add_i32(__gsharp_ctx->__gsharp_id_5_i,(int)blockDim.x)];
 __gsharp_ctx->__gsharp_id_6_sum+=__gsharp_id_8_v.__gsharp_mb_X+__gsharp_id_8_v.__gsharp_mb_Y+__gsharp_id_8_v.__gsharp_mb_Z+__gsharp_id_8_v.__gsharp_mb_W;
 }
 __gsharp_warp_exchange_assign(__gsharp_ctx->__gsharp_id_6_sum);
@@ -188,7 +188,7 @@ auto __gsharp_warp_temp_7 = __gsharp_warp_shuffle_read_down_sync(__gsharp_root,0
 __gsharp_ctx->__gsharp_id_11_val+=__gsharp_warp_temp_7;
 if(__gsharp_ctx->__gsharp_id_4_tid==0)
 {
-__gsharp_id_1_output[blockIdx.x]=__gsharp_ctx->__gsharp_id_11_val;
+__gsharp_id_1_output[(int)blockIdx.x]=__gsharp_ctx->__gsharp_id_11_val;
 }
 goto __gsharp_switch_1_state_10;
 }
@@ -439,7 +439,10 @@ throw new global::System.ArgumentNullException(nameof(output));
 if (output.Length == 0){
 throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(output));
 }
+if (!global::System.Object.ReferenceEquals(input, output))
+{
 input = (global::Kassyi.GSharp.Core.Float4[])input.Clone();
+}
 var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
 var dllName = $"Kassyi.GSharp.Kernels_SnapshotTest{archSuffix}.dll";
 var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);

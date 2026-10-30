@@ -246,7 +246,26 @@ internal static class StatementTranspilers
     /// <summary>
     /// Transpiles a switch statement and its case sections into C++ switch-case syntax.
     /// </summary>
+    /// <remarks>
+    /// A local that one section declares and another uses is declared in a block around the switch (#795):
+    /// <c>{ &lt;declarations&gt; switch (...) { ... } }</c>.
+    /// </remarks>
     public static void TranspileSwitchStatement(SwitchStatementSyntax node, ref TranspileContext context)
+    {
+        if (!SwitchSectionLocals.ReportAndFindSharedLocals(node, ref context))
+        {
+            TranspileSwitchBlock(node, ref context);
+            return;
+        }
+
+        using (context.Emitter.Writer.Scope())
+        {
+            SwitchSectionLocals.WriteDeclarations(node, ref context);
+            TranspileSwitchBlock(node, ref context);
+        }
+    }
+
+    private static void TranspileSwitchBlock(SwitchStatementSyntax node, ref TranspileContext context)
     {
         StatementPrelude.Emit(node.Expression, ref context);
         var switchId = ++context.Emitter.SwitchIdCounter;
@@ -283,6 +302,7 @@ internal static class StatementTranspilers
 
         using (context.Emitter.Writer.Scope())
         {
+            JumpedOverDeclarations.WriteDeclarations(node.Statements, ref context);
             foreach (var stmt in node.Statements)
             {
                 if (stmt is BlockSyntax nested &&
@@ -316,8 +336,12 @@ internal static class StatementTranspilers
     {
         if (node.IsKind(SyntaxKind.GotoCaseStatement))
         {
-            context.Emitter.Writer.Append($"goto {GSharpInternalNames.Lowering.SwitchStatePrefix}{context.Emitter.CurrentSwitchId}_state_");
-            context.Visitor.Visit(node.Expression);
+            context.Emitter.Writer.Append("goto ");
+            if (node.Expression is { } value)
+            {
+                SwitchStateLabel.Append(value, ref context);
+            }
+
             context.Emitter.Writer.AppendLine(";");
             return;
         }

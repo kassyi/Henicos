@@ -28,12 +28,16 @@ struct __gsharp_using_scope {
 
 template <class T> __device__ __host__ inline const T* __gsharp_temp_address(const T& v) { return &v; }
 
+#include "Prelude/IntegerSemantics.hpp"
+
 // A C# array or span: data is nullptr for a null array (and the default span), and never nullptr for an array that
 // exists, also an empty one (#706). flags uses the padding after length (16 bytes as before): bit 0
 // (__gsharp_array_null_reads_empty) marks a null optional kernel argument, which reads as an empty array
 template <typename T>
 struct GSharpArray {
-    T* __restrict__ data;
+    // Not __restrict__: in C# two arrays (arguments, struct fields, a ref into one of them) may be one object, and the
+    // launcher then gives them one device region (#552, #707)
+    T* data;
     int length;
     int flags;
 

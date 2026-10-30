@@ -119,7 +119,7 @@ extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__TestCases
 (*__gsharp_id_1_scalarOut)=0;
 if((long long)(*__gsharp_id_0_scalarRef)>(long long)__gsharp_id_4_constantVal)
 {
-(*__gsharp_id_1_scalarOut)=__gsharp_id_2_arrayVal[0]+(*__gsharp_id_3_structRef).__gsharp_mb_A;
+(*__gsharp_id_1_scalarOut)=__gsharp_add_i32(__gsharp_id_2_arrayVal[0],(*__gsharp_id_3_structRef).__gsharp_mb_A);
 (*__gsharp_id_3_structRef).__gsharp_mb_B=(*__gsharp_id_1_scalarOut);
 }
 }
@@ -161,7 +161,6 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 WarmupFunctionPointerComplexSignatureKernel();
 IntPtr hfunc = s_hfunc_ComplexSignatureKernel!.Value;
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "WrapperOptimizationKernels.ComplexSignatureKernel");
-var __gsharp_device_arrays = new global::Kassyi.GSharp.Runtime.Interop.DeviceArrayRegions();
 IntPtr d_scalarRef = IntPtr.Zero;
 IntPtr d_scalarOut = IntPtr.Zero;
 IntPtr d_arrayVal = IntPtr.Zero;
@@ -191,16 +190,16 @@ proxy_arrayVal[0] = IntPtr.Zero;
 if (arrayVal_size > 0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_arrayVal, (IntPtr)arrayVal_size, hStream));
-proxy_arrayVal[0] = d_arrayVal;
 fixed (global::System.Int32* p_arrayVal = arrayVal)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoDAsync_v2(d_arrayVal, (IntPtr)p_arrayVal, (IntPtr)arrayVal_size, hStream));
 CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
 }
+proxy_arrayVal[0] = d_arrayVal;
 }
 kernelParams[2] = proxy_arrayVal;
 AotContexts.MyCustomStruct native_structRef = default;
-AotContexts.Marshal_MyCustomStruct(ref structRef, ref native_structRef, false, __gsharp_device_arrays, hStream);
+AotContexts.Marshal_MyCustomStruct(ref structRef, ref native_structRef, false, null, hStream);
 // Marshal ref/out struct: structRef
 int structRef_size = sizeof(AotContexts.MyCustomStruct);
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_structRef, (IntPtr)structRef_size, hStream));
@@ -252,7 +251,6 @@ if (d_scalarRef != IntPtr.Zero) CudaDriverApi.cuMemFreeAsync(d_scalarRef, hStrea
 if (d_scalarOut != IntPtr.Zero) CudaDriverApi.cuMemFreeAsync(d_scalarOut, hStream);
 if (d_arrayVal != IntPtr.Zero) CudaDriverApi.cuMemFreeAsync(d_arrayVal, hStream);
 if (d_structRef != IntPtr.Zero) CudaDriverApi.cuMemFreeAsync(d_structRef, hStream);
-__gsharp_device_arrays.Free(hStream);
 }
 }
 }

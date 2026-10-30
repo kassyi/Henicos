@@ -133,9 +133,11 @@ When a kernel accepts a custom struct containing arrays, the G# Source Generator
    Loops through the struct fields on the host. For every non-null array:
    - Queries array length and calculates byte size.
    - Looks the array up by reference in the launch's `DeviceArrayRegions` (the `deviceArrays` parameter). An array that
-     the launch already copied, through another field of the same struct, a field of another struct argument or an
-     element of a converted array, reuses that region and is neither allocated nor copied again: as in C#, the fields
-     hold one array, so a write through one of them is seen through the others.
+     the launch already copied, through another field of the same struct, a field of another struct argument, an
+     element of a converted array or a `T[]` kernel argument, reuses that region and is neither allocated nor copied
+     again: as in C#, the holders hold one array, so a write through one of them is seen through the others. The
+     launcher marshals an `[Out]` array argument after every other parameter, so a field always finds a region that
+     was copied in.
    - Otherwise allocates GPU global memory on the launch stream via `CudaDriverApi.cuMemAllocAsync` and records the
      region in `DeviceArrayRegions`.
    - Pins host memory using `GCHandle.Alloc(..., GCHandleType.Pinned)` and copies it to the device via
@@ -143,7 +145,11 @@ When a kernel accepts a custom struct containing arrays, the G# Source Generator
 3. **Unmarshaling Routine (`Unmarshal_...`) and Cleanup**:
    Upon kernel completion:
    - `Unmarshal_` copies the device memory of every array field back to its host array via `cuMemcpyDtoHAsync_v2`. An
-     array held by several fields is copied back once per field; every copy writes the same bytes.
+     array held by several fields is copied back once per field; every copy writes the same bytes. Array arguments
+     that hold one array copy it back once between them (`DeviceArrayRegions.TryClaimCopyBack`). A launch whose only
+     possible holders are `T[]` arguments has no `DeviceArrayRegions`: each argument compares itself with the arguments
+     marshaled before it (`ReferenceEquals`) and takes the region of the one that holds its array, so most launchers
+     allocate nothing per launch.
    - The launcher then frees every region of the launch once, in its `finally` block, through
      `DeviceArrayRegions.Free`, which calls `cuMemFreeAsync` on the launch stream.
 

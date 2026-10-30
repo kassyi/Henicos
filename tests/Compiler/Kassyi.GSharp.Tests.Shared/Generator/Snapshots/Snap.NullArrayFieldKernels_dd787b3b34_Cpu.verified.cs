@@ -101,6 +101,25 @@ if (host.Data != null)
 host.Data = (global::System.Int32[])host.Data.Clone();
 }
 }
+public static bool HoldsArray_NullArrayHolder(global::Kassyi.GSharp.Tests.Shared.Core.NullArrayHolder host, object array)
+{
+if (global::System.Object.ReferenceEquals(host.Data, array))
+{
+return true;
+}
+return false;
+}
+public static bool HoldsArray_NullArrayHolder(System.ReadOnlySpan<global::Kassyi.GSharp.Tests.Shared.Core.NullArrayHolder> items, object array)
+{
+for (int i = 0; i < items.Length; i++)
+{
+if (HoldsArray_NullArrayHolder(items[i], array))
+{
+return true;
+}
+}
+return false;
+}
 [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Explicit, Size = 32)]
 public unsafe partial struct NullArrayPair
 {
@@ -145,6 +164,29 @@ if (host.B != null)
 host.B = (global::System.Int32[])host.B.Clone();
 }
 }
+public static bool HoldsArray_NullArrayPair(global::Kassyi.GSharp.Tests.Shared.Core.NullArrayPair host, object array)
+{
+if (global::System.Object.ReferenceEquals(host.A, array))
+{
+return true;
+}
+if (global::System.Object.ReferenceEquals(host.B, array))
+{
+return true;
+}
+return false;
+}
+public static bool HoldsArray_NullArrayPair(System.ReadOnlySpan<global::Kassyi.GSharp.Tests.Shared.Core.NullArrayPair> items, object array)
+{
+for (int i = 0; i < items.Length; i++)
+{
+if (HoldsArray_NullArrayPair(items[i], array))
+{
+return true;
+}
+}
+return false;
+}
 #pragma warning restore CS8500
 }
 public const string LengthKernel_Source = @"#ifndef __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Tests__Shared__Core__NullArrayHolder__
@@ -178,7 +220,7 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-__gsharp_id_1_o[0]=__gsharp_array_ref(__gsharp_id_0_h.__gsharp_mb_Data, ""G#: a null array is read at NullArrayFieldKernels.cs(26,16)"").length+7;
+__gsharp_id_1_o[0]=__gsharp_add_i32(__gsharp_array_ref(__gsharp_id_0_h.__gsharp_mb_Data, ""G#: a null array is read at NullArrayFieldKernels.cs(26,16)"").length,7);
 __gsharp_state=-1;
 return;
 }
@@ -962,7 +1004,7 @@ __gsharp_switch_1_state_0:
 {
 for(auto __gsharp_id_2_v : __gsharp_array_ref(__gsharp_id_0_h.__gsharp_mb_Data, ""G#: a null array is read at NullArrayFieldKernels.cs(46,27)""))
 {
-__gsharp_id_1_o[0]+=__gsharp_id_2_v;
+__gsharp_id_1_o[0]=__gsharp_add_i32(__gsharp_id_1_o[0],__gsharp_id_2_v);
 }
 __gsharp_state=-1;
 return;
@@ -1739,7 +1781,7 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-__gsharp_id_1_o[0]=__gsharp_array_ref(__gsharp_id_0_h.__gsharp_mb_Data, ""G#: a null array is read at NullArrayFieldKernels.cs(71,16)"").length+7;
+__gsharp_id_1_o[0]=__gsharp_add_i32(__gsharp_array_ref(__gsharp_id_0_h.__gsharp_mb_Data, ""G#: a null array is read at NullArrayFieldKernels.cs(71,16)"").length,7);
 __gsharp_id_1_o[1]=((__gsharp_id_0_h.__gsharp_mb_Data.data == nullptr)?1:0);
 __gsharp_state=-1;
 return;
@@ -2267,7 +2309,7 @@ GSharpArray<int> __gsharp_id_2_s = __gsharp_id_0_h.__gsharp_mb_Data;
 __gsharp_id_1_o[0]=__gsharp_id_2_s.length;
 for(auto __gsharp_id_3_v : __gsharp_id_2_s)
 {
-__gsharp_id_1_o[0]+=__gsharp_id_3_v;
+__gsharp_id_1_o[0]=__gsharp_add_i32(__gsharp_id_1_o[0],__gsharp_id_3_v);
 }
 __gsharp_state=-1;
 return;
@@ -3340,7 +3382,7 @@ return;
 case 2:
 __gsharp_switch_1_state_2:
 {
-__gsharp_id_1_o[0]+=__gsharp_ctx->__gsharp_id_2_v;
+__gsharp_id_1_o[0]=__gsharp_add_i32(__gsharp_id_1_o[0],__gsharp_ctx->__gsharp_id_2_v);
 goto __gsharp_switch_1_state_3;
 }
 case 3:
@@ -4709,7 +4751,7 @@ return;
 case 1:
 __gsharp_switch_1_state_1:
 {
-__gsharp_id_0_o[0]=__gsharp_fn_Kassyi__GSharp__Tests__Shared__Core__NullArrayFieldKernels__Len(__gsharp_id_1_bias)+__gsharp_id_1_bias.length;
+__gsharp_id_0_o[0]=__gsharp_add_i32(__gsharp_fn_Kassyi__GSharp__Tests__Shared__Core__NullArrayFieldKernels__Len(__gsharp_id_1_bias),__gsharp_id_1_bias.length);
 __gsharp_state=-1;
 return;
 }

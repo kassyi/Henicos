@@ -12,16 +12,16 @@ inline void __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__UIntNegationAndCo
 
 inline void __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__UIntNegationAndConditionalKernels__Negate(unsigned int __gsharp_id_0_u, GSharpArray<long long> __gsharp_id_1_values, int __gsharp_id_2_index){
 long long __gsharp_id_3_x = -(long long)__gsharp_id_0_u;
-__gsharp_array_at(__gsharp_id_1_values, __gsharp_id_2_index*3, ""G#: a null array is read at UIntNegationAndConditionalKernels.cs(22,9)"")=__gsharp_id_3_x;
-__gsharp_array_at(__gsharp_id_1_values, __gsharp_id_2_index*3+1, ""G#: a null array is read at UIntNegationAndConditionalKernels.cs(23,9)"")=-(long long)__gsharp_id_0_u*2;
+__gsharp_array_at(__gsharp_id_1_values, __gsharp_mul_i32(__gsharp_id_2_index,3), ""G#: a null array is read at UIntNegationAndConditionalKernels.cs(22,9)"")=__gsharp_id_3_x;
+__gsharp_array_at(__gsharp_id_1_values, __gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_2_index,3),1), ""G#: a null array is read at UIntNegationAndConditionalKernels.cs(23,9)"")=__gsharp_mul_i64(-(long long)__gsharp_id_0_u,2);
 auto __gsharp_id_4_negated = -(long long)__gsharp_id_0_u;
-__gsharp_array_at(__gsharp_id_1_values, __gsharp_id_2_index*3+2, ""G#: a null array is read at UIntNegationAndConditionalKernels.cs(27,9)"")=__gsharp_id_4_negated;
+__gsharp_array_at(__gsharp_id_1_values, __gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_2_index,3),2), ""G#: a null array is read at UIntNegationAndConditionalKernels.cs(27,9)"")=__gsharp_id_4_negated;
 }
 
 inline void __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__UIntNegationAndConditionalKernels__Choose(bool __gsharp_id_0_c, unsigned int __gsharp_id_1_u, int __gsharp_id_2_n, GSharpArray<long long> __gsharp_id_3_longs, GSharpArray<double> __gsharp_id_4_doubles, int __gsharp_id_5_index){
 long long __gsharp_id_6_y = (__gsharp_id_0_c?(long long)__gsharp_id_1_u:(long long)__gsharp_id_2_n);
-__gsharp_array_at(__gsharp_id_3_longs, __gsharp_id_5_index*2, ""G#: a null array is read at UIntNegationAndConditionalKernels.cs(45,9)"")=__gsharp_id_6_y;
-__gsharp_array_at(__gsharp_id_3_longs, __gsharp_id_5_index*2+1, ""G#: a null array is read at UIntNegationAndConditionalKernels.cs(46,9)"")=(__gsharp_id_0_c?(long long)__gsharp_id_1_u:(-1LL));
+__gsharp_array_at(__gsharp_id_3_longs, __gsharp_mul_i32(__gsharp_id_5_index,2), ""G#: a null array is read at UIntNegationAndConditionalKernels.cs(45,9)"")=__gsharp_id_6_y;
+__gsharp_array_at(__gsharp_id_3_longs, __gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_5_index,2),1), ""G#: a null array is read at UIntNegationAndConditionalKernels.cs(46,9)"")=(__gsharp_id_0_c?(long long)__gsharp_id_1_u:(-1LL));
 double __gsharp_id_7_d = (__gsharp_id_0_c?(double)__gsharp_id_1_u:(double)__gsharp_id_2_n);
 __gsharp_array_at(__gsharp_id_4_doubles, __gsharp_id_5_index, ""G#: a null array is read at UIntNegationAndConditionalKernels.cs(48,9)"")=__gsharp_id_7_d;
 }
@@ -71,7 +71,7 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-int __gsharp_id_2_tid = threadIdx.x;
+int __gsharp_id_2_tid = (int)threadIdx.x;
 __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__UIntNegationAndConditionalKernels__Negate(__gsharp_id_0_us[__gsharp_id_2_tid],__gsharp_id_1_values,__gsharp_id_2_tid);
 __gsharp_state=-1;
 return;
@@ -315,7 +315,7 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-int __gsharp_id_4_tid = threadIdx.x;
+int __gsharp_id_4_tid = (int)threadIdx.x;
 int __gsharp_id_5_pair = __gsharp_id_4_tid/2;
 __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__UIntNegationAndConditionalKernels__Choose(__gsharp_id_4_tid%2==0,__gsharp_id_0_us[__gsharp_id_5_pair],__gsharp_id_1_ns[__gsharp_id_5_pair],__gsharp_id_2_longs,__gsharp_id_3_doubles,__gsharp_id_4_tid);
 __gsharp_state=-1;

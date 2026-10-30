@@ -63,7 +63,7 @@ __gsharp_switch_1_state_0:
 {
 void* __gsharp_id_1_block = malloc(16);
 free(__gsharp_id_1_block);
-__gsharp_id_0_output[threadIdx.x]=1;
+__gsharp_id_0_output[(int)threadIdx.x]=1;
 __gsharp_state=-1;
 return;
 }
@@ -302,7 +302,7 @@ __gsharp_switch_1_state_0:
 {
 void* __gsharp_id_1_block = malloc(16);
 free(__gsharp_id_1_block);
-__gsharp_id_0_output[threadIdx.x]=2;
+__gsharp_id_0_output[(int)threadIdx.x]=2;
 __gsharp_state=-1;
 return;
 }

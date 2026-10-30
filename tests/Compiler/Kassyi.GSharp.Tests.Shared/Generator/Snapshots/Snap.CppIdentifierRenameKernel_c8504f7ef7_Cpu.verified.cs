@@ -13,17 +13,17 @@ inline int __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__CppIdentifierRenam
 inline int __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__CppIdentifierRenameKernels__class(int __gsharp_id_0_x);
 
 inline bool __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__CppIdentifierRenameKernels__TryCombine(int __gsharp_id_0_register, int __gsharp_id_1_template, int* __gsharp_id_2_union){
-int __gsharp_id_3_typename = __gsharp_id_0_register+__gsharp_id_1_template;
-(*__gsharp_id_2_union)=__gsharp_id_3_typename*2;
+int __gsharp_id_3_typename = __gsharp_add_i32(__gsharp_id_0_register,__gsharp_id_1_template);
+(*__gsharp_id_2_union)=__gsharp_mul_i32(__gsharp_id_3_typename,2);
 return (*__gsharp_id_2_union)>0;
 }
 
 inline int __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__CppIdentifierRenameKernels__friend(int __gsharp_id_0_x){
-return __gsharp_id_0_x+1;
+return __gsharp_add_i32(__gsharp_id_0_x,1);
 }
 
 inline int __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__CppIdentifierRenameKernels__class(int __gsharp_id_0_x){
-return __gsharp_id_0_x*2;
+return __gsharp_mul_i32(__gsharp_id_0_x,2);
 }
 
 ";
@@ -71,16 +71,16 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-int __gsharp_id_2_tid = threadIdx.x;
+int __gsharp_id_2_tid = (int)threadIdx.x;
 int __gsharp_id_3_union = __gsharp_id_0_register[__gsharp_id_2_tid];
-int __gsharp_id_4_and = __gsharp_id_3_union+1;
-int __gsharp_id_5_or = __gsharp_id_4_and+1;
-int __gsharp_id_6_not = __gsharp_id_5_or+1;
-int __gsharp_id_7_xor = __gsharp_id_6_not+1;
-int __gsharp_id_8_compl = __gsharp_id_7_xor+1;
-int __gsharp_id_9_typename = __gsharp_id_8_compl+1;
-int __gsharp_id_10_mutable = __gsharp_id_9_typename+1;
-__gsharp_id_1_template[__gsharp_id_2_tid]=__gsharp_id_3_union+__gsharp_id_4_and+__gsharp_id_5_or+__gsharp_id_6_not+__gsharp_id_7_xor+__gsharp_id_8_compl+__gsharp_id_9_typename+__gsharp_id_10_mutable;
+int __gsharp_id_4_and = __gsharp_add_i32(__gsharp_id_3_union,1);
+int __gsharp_id_5_or = __gsharp_add_i32(__gsharp_id_4_and,1);
+int __gsharp_id_6_not = __gsharp_add_i32(__gsharp_id_5_or,1);
+int __gsharp_id_7_xor = __gsharp_add_i32(__gsharp_id_6_not,1);
+int __gsharp_id_8_compl = __gsharp_add_i32(__gsharp_id_7_xor,1);
+int __gsharp_id_9_typename = __gsharp_add_i32(__gsharp_id_8_compl,1);
+int __gsharp_id_10_mutable = __gsharp_add_i32(__gsharp_id_9_typename,1);
+__gsharp_id_1_template[__gsharp_id_2_tid]=__gsharp_add_i32(__gsharp_add_i32(__gsharp_add_i32(__gsharp_add_i32(__gsharp_add_i32(__gsharp_add_i32(__gsharp_add_i32(__gsharp_id_3_union,__gsharp_id_4_and),__gsharp_id_5_or),__gsharp_id_6_not),__gsharp_id_7_xor),__gsharp_id_8_compl),__gsharp_id_9_typename),__gsharp_id_10_mutable);
 __gsharp_state=-1;
 return;
 }
@@ -331,20 +331,20 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-int __gsharp_id_2_threadIdx = __gsharp_id_0_int[threadIdx.x];
-int __gsharp_id_3_blockIdx = __gsharp_id_2_threadIdx+1;
-int __gsharp_id_4_blockDim = __gsharp_id_3_blockIdx+1;
-int __gsharp_id_5_gridDim = __gsharp_id_4_blockDim+1;
-int __gsharp_id_6_warpSize = __gsharp_id_5_gridDim+1;
-int __gsharp_id_7_NULL = __gsharp_id_6_warpSize+1;
-int __gsharp_id_8_EOF = __gsharp_id_7_NULL+1;
-int __gsharp_id_9_INFINITY = __gsharp_id_8_EOF+1;
-int __gsharp_id_10_NAN = __gsharp_id_9_INFINITY+1;
-int __gsharp_id_11_RAND_MAX = __gsharp_id_10_NAN+1;
-int __gsharp_id_12_EXIT_SUCCESS = __gsharp_id_11_RAND_MAX+1;
-int __gsharp_id_13__Value = __gsharp_id_12_EXIT_SUCCESS+1;
-int __gsharp_id_14_char = __gsharp_id_13__Value+1;
-__gsharp_id_1_class[threadIdx.x]=__gsharp_id_2_threadIdx+__gsharp_id_3_blockIdx+__gsharp_id_4_blockDim+__gsharp_id_5_gridDim+__gsharp_id_6_warpSize+__gsharp_id_7_NULL+__gsharp_id_8_EOF+__gsharp_id_9_INFINITY+__gsharp_id_10_NAN+__gsharp_id_11_RAND_MAX+__gsharp_id_12_EXIT_SUCCESS+__gsharp_id_13__Value+__gsharp_id_14_char;
+int __gsharp_id_2_threadIdx = __gsharp_id_0_int[(int)threadIdx.x];
+int __gsharp_id_3_blockIdx = __gsharp_add_i32(__gsharp_id_2_threadIdx,1);
+int __gsharp_id_4_blockDim = __gsharp_add_i32(__gsharp_id_3_blockIdx,1);
+int __gsharp_id_5_gridDim = __gsharp_add_i32(__gsharp_id_4_blockDim,1);
+int __gsharp_id_6_warpSize = __gsharp_add_i32(__gsharp_id_5_gridDim,1);
+int __gsharp_id_7_NULL = __gsharp_add_i32(__gsharp_id_6_warpSize,1);
+int __gsharp_id_8_EOF = __gsharp_add_i32(__gsharp_id_7_NULL,1);
+int __gsharp_id_9_INFINITY = __gsharp_add_i32(__gsharp_id_8_EOF,1);
+int __gsharp_id_10_NAN = __gsharp_add_i32(__gsharp_id_9_INFINITY,1);
+int __gsharp_id_11_RAND_MAX = __gsharp_add_i32(__gsharp_id_10_NAN,1);
+int __gsharp_id_12_EXIT_SUCCESS = __gsharp_add_i32(__gsharp_id_11_RAND_MAX,1);
+int __gsharp_id_13__Value = __gsharp_add_i32(__gsharp_id_12_EXIT_SUCCESS,1);
+int __gsharp_id_14_char = __gsharp_add_i32(__gsharp_id_13__Value,1);
+__gsharp_id_1_class[(int)threadIdx.x]=__gsharp_add_i32(__gsharp_add_i32(__gsharp_add_i32(__gsharp_add_i32(__gsharp_add_i32(__gsharp_add_i32(__gsharp_add_i32(__gsharp_add_i32(__gsharp_add_i32(__gsharp_add_i32(__gsharp_add_i32(__gsharp_add_i32(__gsharp_id_2_threadIdx,__gsharp_id_3_blockIdx),__gsharp_id_4_blockDim),__gsharp_id_5_gridDim),__gsharp_id_6_warpSize),__gsharp_id_7_NULL),__gsharp_id_8_EOF),__gsharp_id_9_INFINITY),__gsharp_id_10_NAN),__gsharp_id_11_RAND_MAX),__gsharp_id_12_EXIT_SUCCESS),__gsharp_id_13__Value),__gsharp_id_14_char);
 __gsharp_state=-1;
 return;
 }
@@ -599,14 +599,14 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-int __gsharp_id_1_tid = threadIdx.x;
+int __gsharp_id_1_tid = (int)threadIdx.x;
 int __gsharp_id_2_value = __gsharp_id_0_data[__gsharp_id_1_tid];
 int __gsharp_id_3_min = min(__gsharp_id_2_value,10);
 int __gsharp_id_4_max = max(__gsharp_id_2_value,10);
-int __gsharp_id_5_abs = abs(__gsharp_id_3_min-__gsharp_id_4_max);
+int __gsharp_id_5_abs = abs(__gsharp_sub_i32(__gsharp_id_3_min,__gsharp_id_4_max));
 int __gsharp_id_6_fminf = min(__gsharp_id_5_abs,5);
 int __gsharp_id_7_fmaxf = max(__gsharp_id_6_fminf,1);
-__gsharp_id_0_data[__gsharp_id_1_tid]=__gsharp_id_3_min+__gsharp_id_4_max+__gsharp_id_5_abs+__gsharp_id_6_fminf+__gsharp_id_7_fmaxf;
+__gsharp_id_0_data[__gsharp_id_1_tid]=__gsharp_add_i32(__gsharp_add_i32(__gsharp_add_i32(__gsharp_add_i32(__gsharp_id_3_min,__gsharp_id_4_max),__gsharp_id_5_abs),__gsharp_id_6_fminf),__gsharp_id_7_fmaxf);
 __gsharp_state=-1;
 return;
 }
@@ -848,28 +848,28 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-int __gsharp_id_1_tid = threadIdx.x;
+int __gsharp_id_1_tid = (int)threadIdx.x;
 int __gsharp_id_2_total = 0;
 int __gsharp_id_3_mutable;
 if(__gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__CppIdentifierRenameKernels__TryCombine(__gsharp_id_0_data[__gsharp_id_1_tid],1,&__gsharp_id_3_mutable))
 {
-__gsharp_id_2_total+=__gsharp_id_3_mutable;
+__gsharp_id_2_total=__gsharp_add_i32(__gsharp_id_2_total,__gsharp_id_3_mutable);
 }
 const int __gsharp_id_4_friend[3]={ 1, 2, 3 };
 for(auto __gsharp_id_5_not : __gsharp_id_4_friend)
 {
-__gsharp_id_2_total+=__gsharp_id_5_not;
+__gsharp_id_2_total=__gsharp_add_i32(__gsharp_id_2_total,__gsharp_id_5_not);
 }
 auto __gsharp_id_6_requires = [&](int __gsharp_id_7_concept) {
-return __gsharp_id_7_concept*3;
+return __gsharp_mul_i32(__gsharp_id_7_concept,3);
 }
 ;
-__gsharp_id_2_total+=__gsharp_id_6_requires(2);
+__gsharp_id_2_total=__gsharp_add_i32(__gsharp_id_2_total,__gsharp_id_6_requires(2));
 System_Func<int, int> __gsharp_id_8_constexpr = [&](auto __gsharp_id_9_xor) {
-return __gsharp_id_9_xor+4;
+return __gsharp_add_i32(__gsharp_id_9_xor,4);
 }
 ;
-__gsharp_id_2_total+=__gsharp_id_8_constexpr(1);
+__gsharp_id_2_total=__gsharp_add_i32(__gsharp_id_2_total,__gsharp_id_8_constexpr(1));
 int __gsharp_id_10_and = 7;
 int __gsharp_id_11_or = 8;
 ([&]() {
@@ -878,7 +878,7 @@ auto __gsharp_tuple_1 = __gsharp_id_10_and;
 __gsharp_id_10_and = __gsharp_tuple_0;
 __gsharp_id_11_or = __gsharp_tuple_1;
 }());
-__gsharp_id_2_total+=__gsharp_id_10_and*10+__gsharp_id_11_or;
+__gsharp_id_2_total=__gsharp_add_i32(__gsharp_id_2_total,__gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_10_and,10),__gsharp_id_11_or));
 __gsharp_id_0_data[__gsharp_id_1_tid]=__gsharp_id_2_total;
 __gsharp_state=-1;
 return;
@@ -1200,7 +1200,7 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-int __gsharp_id_2_tid = threadIdx.x;
+int __gsharp_id_2_tid = (int)threadIdx.x;
 __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__CppKeywordFields __gsharp_id_3_item = __gsharp_id_0_items[__gsharp_id_2_tid];
 __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__CppKeywordBuffer4 __gsharp_id_4_buffer = __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__CppKeywordBuffer4{};
 __gsharp_id_4_buffer[0]=__gsharp_id_3_item.__gsharp_mb_register;
@@ -1210,12 +1210,12 @@ __gsharp_id_4_buffer[3]=__gsharp_id_3_item.__gsharp_mb_Count;
 int __gsharp_id_5_sum = 0;
 for(auto __gsharp_id_6_value : __gsharp_id_4_buffer)
 {
-__gsharp_id_5_sum+=__gsharp_id_6_value;
+__gsharp_id_5_sum=__gsharp_add_i32(__gsharp_id_5_sum,__gsharp_id_6_value);
 }
 __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__CppKeywordProps __gsharp_id_7_props = ([&]() {
 __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__CppKeywordProps __gsharp_tmp{}; __gsharp_tmp.__gsharp_mb_union = __gsharp_id_3_item.__gsharp_mb__Value; return __gsharp_tmp; }
 ());
-__gsharp_id_3_item.__gsharp_mb_inner.__gsharp_mb_template=__gsharp_id_5_sum+__gsharp_id_7_props.__gsharp_mb_union;
+__gsharp_id_3_item.__gsharp_mb_inner.__gsharp_mb_template=__gsharp_add_i32(__gsharp_id_5_sum,__gsharp_id_7_props.__gsharp_mb_union);
 __gsharp_id_0_items[__gsharp_id_2_tid]=__gsharp_id_3_item;
 __gsharp_id_1_result[__gsharp_id_2_tid]=__gsharp_id_3_item.__gsharp_mb_inner.__gsharp_mb_template;
 __gsharp_state=-1;
@@ -1501,9 +1501,9 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-__gsharp_ctx->__gsharp_id_5_tid=threadIdx.x;
+__gsharp_ctx->__gsharp_id_5_tid=(int)threadIdx.x;
 __gsharp_ctx->__gsharp_id_6_template={ (int*)__gsharp_allocate_smem_static(0x5baa53526ed1de37ull, (32) * sizeof(int), alignof(int)) };
-__gsharp_ctx->__gsharp_id_7_register=__gsharp_id_0_data[__gsharp_ctx->__gsharp_id_5_tid]+__gsharp_id_1_bx+__gsharp_id_2_tx+__gsharp_id_3_ctx+__gsharp_id_4_anyActive;
+__gsharp_ctx->__gsharp_id_7_register=__gsharp_add_i32(__gsharp_add_i32(__gsharp_add_i32(__gsharp_add_i32(__gsharp_id_0_data[__gsharp_ctx->__gsharp_id_5_tid],__gsharp_id_1_bx),__gsharp_id_2_tx),__gsharp_id_3_ctx),__gsharp_id_4_anyActive);
 __gsharp_ctx->__gsharp_id_6_template[__gsharp_ctx->__gsharp_id_5_tid]=__gsharp_ctx->__gsharp_id_7_register;
 __gsharp_yielded_for_block_barrier=true;
 __gsharp_state=1;
@@ -1512,8 +1512,8 @@ return;
 case 1:
 __gsharp_switch_1_state_1:
 {
-int __gsharp_id_8_union = __gsharp_ctx->__gsharp_id_6_template[(__gsharp_ctx->__gsharp_id_5_tid+1)%32];
-__gsharp_id_0_data[__gsharp_ctx->__gsharp_id_5_tid]=__gsharp_ctx->__gsharp_id_7_register*1000+__gsharp_id_8_union;
+int __gsharp_id_8_union = __gsharp_ctx->__gsharp_id_6_template[(__gsharp_add_i32(__gsharp_ctx->__gsharp_id_5_tid,1))%32];
+__gsharp_id_0_data[__gsharp_ctx->__gsharp_id_5_tid]=__gsharp_add_i32(__gsharp_mul_i32(__gsharp_ctx->__gsharp_id_7_register,1000),__gsharp_id_8_union);
 __gsharp_state=-1;
 return;
 }
@@ -1769,7 +1769,7 @@ for(unsigned int __gsharp_gsl_0 = __gsharp_grid_stride_start(); __gsharp_gsl_0 <
 {
 int __gsharp_id_2_union = (int)__gsharp_gsl_0;
 {
-__gsharp_id_0_data[__gsharp_id_2_union]=__gsharp_id_2_union*2;
+__gsharp_id_0_data[__gsharp_id_2_union]=__gsharp_mul_i32(__gsharp_id_2_union,2);
 }
 }
 }
@@ -2020,10 +2020,10 @@ if(__gsharp_id_1_rounds>0)
 {
 goto __gsharp_id_2_register;
 }
-__gsharp_id_0_data[threadIdx.x]=0;
+__gsharp_id_0_data[(int)threadIdx.x]=0;
 __gsharp_state = -1;return;
 __gsharp_id_2_register:
-__gsharp_id_0_data[threadIdx.x]=__gsharp_id_0_data[threadIdx.x]*__gsharp_id_1_rounds;
+__gsharp_id_0_data[(int)threadIdx.x]=__gsharp_mul_i32(__gsharp_id_0_data[(int)threadIdx.x],__gsharp_id_1_rounds);
 __gsharp_state=-1;
 return;
 }
@@ -2270,7 +2270,7 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-int __gsharp_id_1_tid = threadIdx.x;
+int __gsharp_id_1_tid = (int)threadIdx.x;
 __gsharp_id_0_data[__gsharp_id_1_tid]=__gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__CppIdentifierRenameKernels__class(__gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__CppIdentifierRenameKernels__friend(__gsharp_id_0_data[__gsharp_id_1_tid]));
 __gsharp_state=-1;
 return;

@@ -45,7 +45,6 @@ public static void Warmup()
 GetOrLoadModule();
 global::Kassyi.GSharp.Tests.Shared.TestCases.Analyzers.BarrierUsage.UniformBarrierKernels.WarmupFunctionPointerFlatBarrierKernel();
 global::Kassyi.GSharp.Tests.Shared.TestCases.Analyzers.BarrierUsage.UniformBarrierKernels.WarmupFunctionPointerLoopBarrierKernel();
-global::Kassyi.GSharp.Tests.Shared.TestCases.Analyzers.BarrierUsage.UniformBarrierKernels.WarmupFunctionPointerSafeLocalFunctionBarrierKernel();
 global::Kassyi.GSharp.Tests.Shared.TestCases.Analyzers.BarrierUsage.UniformBarrierKernels.WarmupFunctionPointerScopedSpanBeforeBarrierKernel();
 global::Kassyi.GSharp.Tests.Shared.TestCases.Analyzers.BarrierUsage.UniformBarrierKernels.WarmupFunctionPointerSafeGotoWithinPhaseKernel();
 }}}
@@ -89,7 +88,7 @@ public static partial class AotContexts
 public const string FlatBarrierKernel_Source = @"extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__TestCases__Analyzers__BarrierUsage__UniformBarrierKernels__FlatBarrierKernel(GSharpArray<int> __gsharp_id_0_buffer){
 __gsharp_id_0_buffer[0]=1;
 __syncthreads();
-__gsharp_id_0_buffer[0]+=2;
+__gsharp_id_0_buffer[0]=__gsharp_add_i32(__gsharp_id_0_buffer[0],2);
 }
 ";
 public static readonly string FlatBarrierKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +FlatBarrierKernel_Source;
@@ -129,12 +128,12 @@ proxy_buffer[0] = IntPtr.Zero;
 if (buffer_size > 0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_buffer, (IntPtr)buffer_size, hStream));
-proxy_buffer[0] = d_buffer;
 fixed (global::System.Int32* p_buffer = buffer)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoDAsync_v2(d_buffer, (IntPtr)p_buffer, (IntPtr)buffer_size, hStream));
 CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
 }
+proxy_buffer[0] = d_buffer;
 }
 kernelParams[0] = proxy_buffer;
 CudaException.ThrowIfError(CudaDriverApi.cuLaunchKernel(
@@ -243,12 +242,12 @@ proxy_buffer[0] = IntPtr.Zero;
 if (buffer_size > 0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_buffer, (IntPtr)buffer_size, hStream));
-proxy_buffer[0] = d_buffer;
 fixed (global::System.Int32* p_buffer = buffer)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoDAsync_v2(d_buffer, (IntPtr)p_buffer, (IntPtr)buffer_size, hStream));
 CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
 }
+proxy_buffer[0] = d_buffer;
 }
 kernelParams[0] = proxy_buffer;
 // Marshal scalar: steps
@@ -316,128 +315,12 @@ finally
 }
 }
 #pragma warning restore CS8500
-public const string SafeLocalFunctionBarrierKernel_Source = @"extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__TestCases__Analyzers__BarrierUsage__UniformBarrierKernels__SafeLocalFunctionBarrierKernel(GSharpArray<int> __gsharp_id_0_buffer){
-auto __gsharp_id_1_LocalSync = [&]() {
-__syncthreads();
-}
-;
-__gsharp_id_0_buffer[0]=42;
-__gsharp_id_1_LocalSync();
-__gsharp_id_0_buffer[0]=84;
-}
-";
-public static readonly string SafeLocalFunctionBarrierKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +SafeLocalFunctionBarrierKernel_Source;
-private static IntPtr? s_hfunc_SafeLocalFunctionBarrierKernel;
-/// <summary>Preloads the CUDA module and resolves the function pointer for this kernel.</summary>
-public static void WarmupFunctionPointerSafeLocalFunctionBarrierKernel()
-{
-if (s_hfunc_SafeLocalFunctionBarrierKernel.HasValue) return;
-IntPtr hModule = global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetOrLoadModule();
-s_hfunc_SafeLocalFunctionBarrierKernel = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.GetFunction(hModule, "__gsharp_k_Kassyi__GSharp__Tests__Shared__TestCases__Analyzers__BarrierUsage__UniformBarrierKernels__SafeLocalFunctionBarrierKernel");
-}
-#pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
-[global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
-[global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
-public static unsafe void LaunchSafeLocalFunctionBarrierKernel(global::System.Int32[] buffer, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, IntPtr hStream = default, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
-{
-if (buffer is null){
-throw new global::System.ArgumentNullException(nameof(buffer));
-}
-if (buffer.Length == 0){
-throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(buffer));
-}
-using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
-{
-WarmupFunctionPointerSafeLocalFunctionBarrierKernel();
-IntPtr hfunc = s_hfunc_SafeLocalFunctionBarrierKernel!.Value;
-global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "UniformBarrierKernels.SafeLocalFunctionBarrierKernel");
-IntPtr d_buffer = IntPtr.Zero;
-try
-{
-void** kernelParams = stackalloc void*[1];
-// Marshal array: buffer
-int buffer_size = buffer.Length * sizeof(global::System.Int32);
-IntPtr* proxy_buffer = stackalloc IntPtr[2];
-proxy_buffer[0] = IntPtr.Zero;
-((int*)(proxy_buffer + 1))[0] = buffer.Length;
-if (buffer_size > 0)
-{
-CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_buffer, (IntPtr)buffer_size, hStream));
-proxy_buffer[0] = d_buffer;
-fixed (global::System.Int32* p_buffer = buffer)
-{
-CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoDAsync_v2(d_buffer, (IntPtr)p_buffer, (IntPtr)buffer_size, hStream));
-CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
-}
-}
-kernelParams[0] = proxy_buffer;
-CudaException.ThrowIfError(CudaDriverApi.cuLaunchKernel(
-hfunc,
-gridDimX, gridDimY, gridDimZ, // Grid dim
-blockDimX, blockDimY, blockDimZ, // Block dim
-sharedMemBytes, // Shared mem
-hStream, // Stream
-kernelParams,
-IntPtr.Zero // Extra
-));
-// Copy back array: buffer
-if (buffer_size > 0 && d_buffer != IntPtr.Zero)
-{
-fixed (global::System.Int32* p_buffer = buffer)
-{
-CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoHAsync_v2((IntPtr)p_buffer, d_buffer, (IntPtr)buffer_size, hStream));
-CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
-}
-}
-}
-finally
-{
-if (d_buffer != IntPtr.Zero) CudaDriverApi.cuMemFreeAsync(d_buffer, hStream);
-}
-}
-}
-#pragma warning restore CS8500
-#pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
-[global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
-[global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
-public static unsafe void LaunchSafeLocalFunctionBarrierKernelPtr(IntPtr buffer, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, IntPtr hStream = default, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
-{
-using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
-{
-WarmupFunctionPointerSafeLocalFunctionBarrierKernel();
-IntPtr hfunc = s_hfunc_SafeLocalFunctionBarrierKernel!.Value;
-global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "UniformBarrierKernels.SafeLocalFunctionBarrierKernel");
-try
-{
-void** kernelParams = stackalloc void*[1];
-// Marshal device array: buffer
-IntPtr* proxy_buffer = stackalloc IntPtr[2];
-proxy_buffer[0] = buffer;
-((int*)(proxy_buffer + 1))[0] = 0; // Length is unknown for raw IntPtr
-((int*)(proxy_buffer + 1))[1] = 0;
-kernelParams[0] = proxy_buffer;
-CudaException.ThrowIfError(CudaDriverApi.cuLaunchKernel(
-hfunc,
-gridDimX, gridDimY, gridDimZ, // Grid dim
-blockDimX, blockDimY, blockDimZ, // Block dim
-sharedMemBytes, // Shared mem
-hStream, // Stream
-kernelParams,
-IntPtr.Zero // Extra
-));
-}
-finally
-{
-}
-}
-}
-#pragma warning restore CS8500
 public const string ScopedSpanBeforeBarrierKernel_Source = @"extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__TestCases__Analyzers__BarrierUsage__UniformBarrierKernels__ScopedSpanBeforeBarrierKernel(int* __restrict__ __gsharp_id_0_buffer){
 GSharpArray<int> __gsharp_id_1_localSpan = GSharpArray<int>{__gsharp_id_0_buffer, 10};
 __gsharp_id_1_localSpan[0]=100;
 __syncthreads();
 GSharpArray<int> __gsharp_id_2_localSpan = GSharpArray<int>{__gsharp_id_0_buffer, 10};
-__gsharp_id_2_localSpan[0]+=200;
+__gsharp_id_2_localSpan[0]=__gsharp_add_i32(__gsharp_id_2_localSpan[0],200);
 }
 ";
 public static readonly string ScopedSpanBeforeBarrierKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +ScopedSpanBeforeBarrierKernel_Source;
@@ -557,12 +440,12 @@ proxy_buffer[0] = IntPtr.Zero;
 if (buffer_size > 0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_buffer, (IntPtr)buffer_size, hStream));
-proxy_buffer[0] = d_buffer;
 fixed (global::System.Int32* p_buffer = buffer)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoDAsync_v2(d_buffer, (IntPtr)p_buffer, (IntPtr)buffer_size, hStream));
 CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
 }
+proxy_buffer[0] = d_buffer;
 }
 kernelParams[0] = proxy_buffer;
 CudaException.ThrowIfError(CudaDriverApi.cuLaunchKernel(

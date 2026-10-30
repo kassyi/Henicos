@@ -362,10 +362,10 @@ static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Core__SharedAr
 static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Core__SharedArrayPair,__gsharp_mb_B)==16,""Kassyi.GSharp.Tests.Shared.Core.SharedArrayPair.B: offset"");
 #endif
 extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Core__SharedArrayFieldKernels__TwoFieldsKernel(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Core__SharedArrayPair __gsharp_id_0_p){
-if(threadIdx.x==0)
+if((int)threadIdx.x==0)
 {
 __gsharp_array_at(__gsharp_id_0_p.__gsharp_mb_A, 0, ""G#: a null array is read at SharedArrayFieldKernels.cs(27,13)"")=1;
-__gsharp_array_at(__gsharp_id_0_p.__gsharp_mb_B, 1, ""G#: a null array is read at SharedArrayFieldKernels.cs(28,13)"")=__gsharp_array_at(__gsharp_id_0_p.__gsharp_mb_A, 0, ""G#: a null array is read at SharedArrayFieldKernels.cs(28,22)"")+__gsharp_array_at(__gsharp_id_0_p.__gsharp_mb_B, 0, ""G#: a null array is read at SharedArrayFieldKernels.cs(28,31)"");
+__gsharp_array_at(__gsharp_id_0_p.__gsharp_mb_B, 1, ""G#: a null array is read at SharedArrayFieldKernels.cs(28,13)"")=__gsharp_add_i32(__gsharp_array_at(__gsharp_id_0_p.__gsharp_mb_A, 0, ""G#: a null array is read at SharedArrayFieldKernels.cs(28,22)""),__gsharp_array_at(__gsharp_id_0_p.__gsharp_mb_B, 0, ""G#: a null array is read at SharedArrayFieldKernels.cs(28,31)""));
 }
 }
 ";
@@ -457,10 +457,10 @@ static_assert(alignof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Core__SharedArr
 static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Core__SharedArrayHolder,__gsharp_mb_Data)==0,""Kassyi.GSharp.Tests.Shared.Core.SharedArrayHolder.Data: offset"");
 #endif
 extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Core__SharedArrayFieldKernels__TwoStructsKernel(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Core__SharedArrayHolder __gsharp_id_0_first, __gsharp_ty_Kassyi__GSharp__Tests__Shared__Core__SharedArrayHolder __gsharp_id_1_second){
-if(threadIdx.x==0)
+if((int)threadIdx.x==0)
 {
 __gsharp_array_at(__gsharp_id_0_first.__gsharp_mb_Data, 0, ""G#: a null array is read at SharedArrayFieldKernels.cs(38,13)"")=3;
-__gsharp_array_at(__gsharp_id_1_second.__gsharp_mb_Data, 1, ""G#: a null array is read at SharedArrayFieldKernels.cs(39,13)"")=__gsharp_array_at(__gsharp_id_0_first.__gsharp_mb_Data, 0, ""G#: a null array is read at SharedArrayFieldKernels.cs(39,30)"")+__gsharp_array_at(__gsharp_id_1_second.__gsharp_mb_Data, 0, ""G#: a null array is read at SharedArrayFieldKernels.cs(39,46)"");
+__gsharp_array_at(__gsharp_id_1_second.__gsharp_mb_Data, 1, ""G#: a null array is read at SharedArrayFieldKernels.cs(39,13)"")=__gsharp_add_i32(__gsharp_array_at(__gsharp_id_0_first.__gsharp_mb_Data, 0, ""G#: a null array is read at SharedArrayFieldKernels.cs(39,30)""),__gsharp_array_at(__gsharp_id_1_second.__gsharp_mb_Data, 0, ""G#: a null array is read at SharedArrayFieldKernels.cs(39,46)""));
 }
 }
 ";
@@ -561,10 +561,10 @@ static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Core__ConvertB
 static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Core__ConvertBag,__gsharp_mb_Data)==8,""Kassyi.GSharp.Tests.Shared.Core.ConvertBag.Data: offset"");
 #endif
 extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Core__SharedArrayFieldKernels__ElementFieldsKernel(GSharpArray<__gsharp_ty_Kassyi__GSharp__Tests__Shared__Core__ConvertBag> __gsharp_id_0_bags){
-if(threadIdx.x==0)
+if((int)threadIdx.x==0)
 {
 __gsharp_array_at(__gsharp_id_0_bags[0].__gsharp_mb_Data, 0, ""G#: a null array is read at SharedArrayFieldKernels.cs(49,13)"")=5;
-__gsharp_array_at(__gsharp_id_0_bags[1].__gsharp_mb_Data, 1, ""G#: a null array is read at SharedArrayFieldKernels.cs(50,13)"")=__gsharp_array_at(__gsharp_id_0_bags[0].__gsharp_mb_Data, 0, ""G#: a null array is read at SharedArrayFieldKernels.cs(50,31)"")+__gsharp_array_at(__gsharp_id_0_bags[1].__gsharp_mb_Data, 0, ""G#: a null array is read at SharedArrayFieldKernels.cs(50,49)"");
+__gsharp_array_at(__gsharp_id_0_bags[1].__gsharp_mb_Data, 1, ""G#: a null array is read at SharedArrayFieldKernels.cs(50,13)"")=__gsharp_add_i32(__gsharp_array_at(__gsharp_id_0_bags[0].__gsharp_mb_Data, 0, ""G#: a null array is read at SharedArrayFieldKernels.cs(50,31)""),__gsharp_array_at(__gsharp_id_0_bags[1].__gsharp_mb_Data, 0, ""G#: a null array is read at SharedArrayFieldKernels.cs(50,49)""));
 }
 }
 ";
@@ -606,9 +606,11 @@ proxy_bags[0] = IntPtr.Zero;
 ((int*)(proxy_bags + 1))[0] = bags.Length;
 if (bags_size > 0)
 {
-CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_bags, (IntPtr)bags_size, hStream));
-proxy_bags[0] = d_bags;
+if (!__gsharp_device_arrays.TryGetRegion(bags, out d_bags))
+{
 bags_shadow = System.Buffers.ArrayPool<byte>.Shared.Rent(bags_size);
+CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_bags, (IntPtr)bags_size, hStream));
+__gsharp_device_arrays.Add(bags, d_bags);
 var bags_native = System.Runtime.InteropServices.MemoryMarshal.Cast<byte, AotContexts.ConvertBag>(bags_shadow.AsSpan(0, bags_size));
 System.Span<global::Kassyi.GSharp.Tests.Shared.Core.ConvertBag> bags_host = bags;
 for (int bags_index = 0; bags_index < bags_native.Length; bags_index++)
@@ -621,6 +623,12 @@ CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoDAsync_v2(d_bags, (IntPtr)p_
 CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
 }
 }
+else
+{
+bags_shadow = System.Buffers.ArrayPool<byte>.Shared.Rent(bags_size);
+}
+proxy_bags[0] = d_bags;
+}
 kernelParams[0] = proxy_bags;
 CudaException.ThrowIfError(CudaDriverApi.cuLaunchKernel(
 hfunc,
@@ -632,7 +640,7 @@ kernelParams,
 IntPtr.Zero // Extra
 ));
 // Copy back array element by element: bags
-if (bags_size > 0 && d_bags != IntPtr.Zero && bags_shadow != null)
+if (bags_size > 0 && d_bags != IntPtr.Zero && bags_shadow != null && __gsharp_device_arrays.TryClaimCopyBack(bags))
 {
 fixed (byte* p_bags = bags_shadow)
 {
@@ -650,7 +658,6 @@ AotContexts.Unmarshal_ConvertBag(ref bags_host[bags_index], ref bags_native[bags
 finally
 {
 if (bags_shadow != null) System.Buffers.ArrayPool<byte>.Shared.Return(bags_shadow);
-if (d_bags != IntPtr.Zero) CudaDriverApi.cuMemFreeAsync(d_bags, hStream);
 __gsharp_device_arrays.Free(hStream);
 }
 }

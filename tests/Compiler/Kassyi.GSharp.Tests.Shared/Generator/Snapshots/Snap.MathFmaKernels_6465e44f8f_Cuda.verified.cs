@@ -83,7 +83,7 @@ public static partial class AotContexts
 {
 }
 public const string MathFmaKernel_Source = @"extern ""C"" __global__ void __gsharp_k_Henicos__Benchmarks__ComputeBenchmarks__MathFmaKernels__MathFmaKernel(GSharpArray<float> __gsharp_id_0_data, int __gsharp_id_1_n, int __gsharp_id_2_iterations){
-auto __gsharp_id_3_idx = blockIdx.x*blockDim.x+threadIdx.x;
+auto __gsharp_id_3_idx = __gsharp_add_i32(__gsharp_mul_i32((int)blockIdx.x,(int)blockDim.x),(int)threadIdx.x);
 if(__gsharp_id_3_idx<__gsharp_id_1_n)
 {
 auto __gsharp_id_4_a = __gsharp_id_0_data[__gsharp_id_3_idx];
@@ -134,12 +134,12 @@ proxy_data[0] = IntPtr.Zero;
 if (data_size > 0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_data, (IntPtr)data_size, hStream));
-proxy_data[0] = d_data;
 fixed (global::System.Single* p_data = data)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoDAsync_v2(d_data, (IntPtr)p_data, (IntPtr)data_size, hStream));
 CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
 }
+proxy_data[0] = d_data;
 }
 kernelParams[0] = proxy_data;
 // Marshal scalar: n

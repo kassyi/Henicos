@@ -71,13 +71,13 @@ inline __device__ int __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__UsingDi
 inline __device__ int __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__UsingDisposalKernels__DisposeAfterReturnValue(GSharpArray<int> __gsharp_id_0_log);
 
 inline __device__ void __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__UsingDisposalKernels__Note(GSharpArray<int> __gsharp_id_0_log, int __gsharp_id_1_value){
-__gsharp_array_at(__gsharp_id_0_log, 0, ""G#: a null array is read at UsingDisposalKernels.cs(35,9)"")=__gsharp_array_at(__gsharp_id_0_log, 0, ""G#: a null array is read at UsingDisposalKernels.cs(35,18)"")+1;
+__gsharp_array_at(__gsharp_id_0_log, 0, ""G#: a null array is read at UsingDisposalKernels.cs(35,9)"")=__gsharp_add_i32(__gsharp_array_at(__gsharp_id_0_log, 0, ""G#: a null array is read at UsingDisposalKernels.cs(35,18)""),1);
 __gsharp_array_at(__gsharp_id_0_log, __gsharp_array_at(__gsharp_id_0_log, 0, ""G#: a null array is read at UsingDisposalKernels.cs(36,13)""), ""G#: a null array is read at UsingDisposalKernels.cs(36,9)"")=__gsharp_id_1_value;
 }
 
 inline __device__ int __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__UsingDisposalKernels__NoteAndGet(GSharpArray<int> __gsharp_id_0_log, int __gsharp_id_1_value){
 __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__UsingDisposalKernels__Note(__gsharp_id_0_log,__gsharp_id_1_value);
-return __gsharp_id_1_value+1;
+return __gsharp_add_i32(__gsharp_id_1_value,1);
 }
 
 #ifndef __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__UsingRecorder__
@@ -97,7 +97,7 @@ static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__UsingR
 #ifndef __GSHARP_DISPOSE___gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__UsingRecorder__
 #define __GSHARP_DISPOSE___gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__UsingRecorder__
 __device__ inline void __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__UsingRecorder::__gsharp_dispose() {
-__gsharp_array_at(__gsharp_mb_Log, 0, ""G#: a null array is read at UsingDisposalKernels.cs(16,9)"")=__gsharp_array_at(__gsharp_mb_Log, 0, ""G#: a null array is read at UsingDisposalKernels.cs(16,18)"")+1;
+__gsharp_array_at(__gsharp_mb_Log, 0, ""G#: a null array is read at UsingDisposalKernels.cs(16,9)"")=__gsharp_add_i32(__gsharp_array_at(__gsharp_mb_Log, 0, ""G#: a null array is read at UsingDisposalKernels.cs(16,18)""),1);
 __gsharp_array_at(__gsharp_mb_Log, __gsharp_array_at(__gsharp_mb_Log, 0, ""G#: a null array is read at UsingDisposalKernels.cs(17,13)""), ""G#: a null array is read at UsingDisposalKernels.cs(17,9)"")=__gsharp_mb_Id;
 }
 #endif
@@ -153,7 +153,7 @@ static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__UsingR
 #ifndef __GSHARP_DISPOSE___gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__UsingRecorder__
 #define __GSHARP_DISPOSE___gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__UsingRecorder__
 __device__ inline void __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__UsingRecorder::__gsharp_dispose() {
-__gsharp_array_at(__gsharp_mb_Log, 0, ""G#: a null array is read at UsingDisposalKernels.cs(16,9)"")=__gsharp_array_at(__gsharp_mb_Log, 0, ""G#: a null array is read at UsingDisposalKernels.cs(16,18)"")+1;
+__gsharp_array_at(__gsharp_mb_Log, 0, ""G#: a null array is read at UsingDisposalKernels.cs(16,9)"")=__gsharp_add_i32(__gsharp_array_at(__gsharp_mb_Log, 0, ""G#: a null array is read at UsingDisposalKernels.cs(16,18)""),1);
 __gsharp_array_at(__gsharp_mb_Log, __gsharp_array_at(__gsharp_mb_Log, 0, ""G#: a null array is read at UsingDisposalKernels.cs(17,13)""), ""G#: a null array is read at UsingDisposalKernels.cs(17,9)"")=__gsharp_mb_Id;
 }
 #endif
@@ -205,12 +205,12 @@ proxy_log[0] = IntPtr.Zero;
 if (log_size > 0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_log, (IntPtr)log_size, hStream));
-proxy_log[0] = d_log;
 fixed (global::System.Int32* p_log = log)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoDAsync_v2(d_log, (IntPtr)p_log, (IntPtr)log_size, hStream));
 CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
 }
+proxy_log[0] = d_log;
 }
 kernelParams[0] = proxy_log;
 CudaException.ThrowIfError(CudaDriverApi.cuLaunchKernel(
@@ -291,7 +291,7 @@ static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__UsingR
 #ifndef __GSHARP_DISPOSE___gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__UsingRecorder__
 #define __GSHARP_DISPOSE___gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__UsingRecorder__
 __device__ inline void __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__UsingRecorder::__gsharp_dispose() {
-__gsharp_array_at(__gsharp_mb_Log, 0, ""G#: a null array is read at UsingDisposalKernels.cs(16,9)"")=__gsharp_array_at(__gsharp_mb_Log, 0, ""G#: a null array is read at UsingDisposalKernels.cs(16,18)"")+1;
+__gsharp_array_at(__gsharp_mb_Log, 0, ""G#: a null array is read at UsingDisposalKernels.cs(16,9)"")=__gsharp_add_i32(__gsharp_array_at(__gsharp_mb_Log, 0, ""G#: a null array is read at UsingDisposalKernels.cs(16,18)""),1);
 __gsharp_array_at(__gsharp_mb_Log, __gsharp_array_at(__gsharp_mb_Log, 0, ""G#: a null array is read at UsingDisposalKernels.cs(17,13)""), ""G#: a null array is read at UsingDisposalKernels.cs(17,9)"")=__gsharp_mb_Id;
 }
 #endif
@@ -348,12 +348,12 @@ proxy_log[0] = IntPtr.Zero;
 if (log_size > 0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_log, (IntPtr)log_size, hStream));
-proxy_log[0] = d_log;
 fixed (global::System.Int32* p_log = log)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoDAsync_v2(d_log, (IntPtr)p_log, (IntPtr)log_size, hStream));
 CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
 }
+proxy_log[0] = d_log;
 }
 kernelParams[0] = proxy_log;
 // Marshal scalar: stop
@@ -438,7 +438,7 @@ static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__UsingR
 #ifndef __GSHARP_DISPOSE___gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__UsingRecorder__
 #define __GSHARP_DISPOSE___gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__UsingRecorder__
 __device__ inline void __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__UsingRecorder::__gsharp_dispose() {
-__gsharp_array_at(__gsharp_mb_Log, 0, ""G#: a null array is read at UsingDisposalKernels.cs(16,9)"")=__gsharp_array_at(__gsharp_mb_Log, 0, ""G#: a null array is read at UsingDisposalKernels.cs(16,18)"")+1;
+__gsharp_array_at(__gsharp_mb_Log, 0, ""G#: a null array is read at UsingDisposalKernels.cs(16,9)"")=__gsharp_add_i32(__gsharp_array_at(__gsharp_mb_Log, 0, ""G#: a null array is read at UsingDisposalKernels.cs(16,18)""),1);
 __gsharp_array_at(__gsharp_mb_Log, __gsharp_array_at(__gsharp_mb_Log, 0, ""G#: a null array is read at UsingDisposalKernels.cs(17,13)""), ""G#: a null array is read at UsingDisposalKernels.cs(17,9)"")=__gsharp_mb_Id;
 }
 #endif
@@ -447,7 +447,7 @@ for(int __gsharp_id_1_i = 0;__gsharp_id_1_i<4;__gsharp_id_1_i++)
 {
 {
 auto __gsharp_id_2_resource = ([&]() {
-__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__UsingRecorder __gsharp_tmp{}; __gsharp_tmp.__gsharp_mb_Log = __gsharp_id_0_log; __gsharp_tmp.__gsharp_mb_Id = 100+__gsharp_id_1_i; return __gsharp_tmp; }
+__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__UsingRecorder __gsharp_tmp{}; __gsharp_tmp.__gsharp_mb_Log = __gsharp_id_0_log; __gsharp_tmp.__gsharp_mb_Id = __gsharp_add_i32(100,__gsharp_id_1_i); return __gsharp_tmp; }
 ());
 __gsharp_using_scope<__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__UsingRecorder> __gsharp_using_guard_0{__gsharp_id_2_resource};
 if(__gsharp_id_1_i==1)
@@ -501,12 +501,12 @@ proxy_log[0] = IntPtr.Zero;
 if (log_size > 0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_log, (IntPtr)log_size, hStream));
-proxy_log[0] = d_log;
 fixed (global::System.Int32* p_log = log)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoDAsync_v2(d_log, (IntPtr)p_log, (IntPtr)log_size, hStream));
 CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
 }
+proxy_log[0] = d_log;
 }
 kernelParams[0] = proxy_log;
 CudaException.ThrowIfError(CudaDriverApi.cuLaunchKernel(
@@ -587,7 +587,7 @@ static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__UsingR
 #ifndef __GSHARP_DISPOSE___gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__UsingRecorder__
 #define __GSHARP_DISPOSE___gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__UsingRecorder__
 __device__ inline void __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__UsingRecorder::__gsharp_dispose() {
-__gsharp_array_at(__gsharp_mb_Log, 0, ""G#: a null array is read at UsingDisposalKernels.cs(16,9)"")=__gsharp_array_at(__gsharp_mb_Log, 0, ""G#: a null array is read at UsingDisposalKernels.cs(16,18)"")+1;
+__gsharp_array_at(__gsharp_mb_Log, 0, ""G#: a null array is read at UsingDisposalKernels.cs(16,9)"")=__gsharp_add_i32(__gsharp_array_at(__gsharp_mb_Log, 0, ""G#: a null array is read at UsingDisposalKernels.cs(16,18)""),1);
 __gsharp_array_at(__gsharp_mb_Log, __gsharp_array_at(__gsharp_mb_Log, 0, ""G#: a null array is read at UsingDisposalKernels.cs(17,13)""), ""G#: a null array is read at UsingDisposalKernels.cs(17,9)"")=__gsharp_mb_Id;
 }
 #endif
@@ -654,12 +654,12 @@ proxy_log[0] = IntPtr.Zero;
 if (log_size > 0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_log, (IntPtr)log_size, hStream));
-proxy_log[0] = d_log;
 fixed (global::System.Int32* p_log = log)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoDAsync_v2(d_log, (IntPtr)p_log, (IntPtr)log_size, hStream));
 CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
 }
+proxy_log[0] = d_log;
 }
 kernelParams[0] = proxy_log;
 CudaException.ThrowIfError(CudaDriverApi.cuLaunchKernel(
@@ -740,7 +740,7 @@ static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__UsingR
 #ifndef __GSHARP_DISPOSE___gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__UsingRecorder__
 #define __GSHARP_DISPOSE___gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__UsingRecorder__
 __device__ inline void __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__UsingRecorder::__gsharp_dispose() {
-__gsharp_array_at(__gsharp_mb_Log, 0, ""G#: a null array is read at UsingDisposalKernels.cs(16,9)"")=__gsharp_array_at(__gsharp_mb_Log, 0, ""G#: a null array is read at UsingDisposalKernels.cs(16,18)"")+1;
+__gsharp_array_at(__gsharp_mb_Log, 0, ""G#: a null array is read at UsingDisposalKernels.cs(16,9)"")=__gsharp_add_i32(__gsharp_array_at(__gsharp_mb_Log, 0, ""G#: a null array is read at UsingDisposalKernels.cs(16,18)""),1);
 __gsharp_array_at(__gsharp_mb_Log, __gsharp_array_at(__gsharp_mb_Log, 0, ""G#: a null array is read at UsingDisposalKernels.cs(17,13)""), ""G#: a null array is read at UsingDisposalKernels.cs(17,9)"")=__gsharp_mb_Id;
 }
 #endif
@@ -801,12 +801,12 @@ proxy_log[0] = IntPtr.Zero;
 if (log_size > 0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_log, (IntPtr)log_size, hStream));
-proxy_log[0] = d_log;
 fixed (global::System.Int32* p_log = log)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoDAsync_v2(d_log, (IntPtr)p_log, (IntPtr)log_size, hStream));
 CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
 }
+proxy_log[0] = d_log;
 }
 kernelParams[0] = proxy_log;
 // Marshal scalar: stop
@@ -891,7 +891,7 @@ static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__UsingR
 #ifndef __GSHARP_DISPOSE___gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__UsingRecorder__
 #define __GSHARP_DISPOSE___gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__UsingRecorder__
 __device__ inline void __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__UsingRecorder::__gsharp_dispose() {
-__gsharp_array_at(__gsharp_mb_Log, 0, ""G#: a null array is read at UsingDisposalKernels.cs(16,9)"")=__gsharp_array_at(__gsharp_mb_Log, 0, ""G#: a null array is read at UsingDisposalKernels.cs(16,18)"")+1;
+__gsharp_array_at(__gsharp_mb_Log, 0, ""G#: a null array is read at UsingDisposalKernels.cs(16,9)"")=__gsharp_add_i32(__gsharp_array_at(__gsharp_mb_Log, 0, ""G#: a null array is read at UsingDisposalKernels.cs(16,18)""),1);
 __gsharp_array_at(__gsharp_mb_Log, __gsharp_array_at(__gsharp_mb_Log, 0, ""G#: a null array is read at UsingDisposalKernels.cs(17,13)""), ""G#: a null array is read at UsingDisposalKernels.cs(17,9)"")=__gsharp_mb_Id;
 }
 #endif
@@ -899,7 +899,7 @@ extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__U
 for(int __gsharp_id_1_i = 0;__gsharp_id_1_i<3;__gsharp_id_1_i++)
 {
 auto __gsharp_id_2_resource = ([&]() {
-__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__UsingRecorder __gsharp_tmp{}; __gsharp_tmp.__gsharp_mb_Log = __gsharp_id_0_log; __gsharp_tmp.__gsharp_mb_Id = 100+__gsharp_id_1_i; return __gsharp_tmp; }
+__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__UsingRecorder __gsharp_tmp{}; __gsharp_tmp.__gsharp_mb_Log = __gsharp_id_0_log; __gsharp_tmp.__gsharp_mb_Id = __gsharp_add_i32(100,__gsharp_id_1_i); return __gsharp_tmp; }
 ());
 __gsharp_using_scope<__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__UsingRecorder> __gsharp_using_guard_0{__gsharp_id_2_resource};
 if(__gsharp_id_1_i==1)
@@ -947,12 +947,12 @@ proxy_log[0] = IntPtr.Zero;
 if (log_size > 0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_log, (IntPtr)log_size, hStream));
-proxy_log[0] = d_log;
 fixed (global::System.Int32* p_log = log)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoDAsync_v2(d_log, (IntPtr)p_log, (IntPtr)log_size, hStream));
 CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
 }
+proxy_log[0] = d_log;
 }
 kernelParams[0] = proxy_log;
 CudaException.ThrowIfError(CudaDriverApi.cuLaunchKernel(
@@ -1036,7 +1036,7 @@ __device__ inline void __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__UsingP
 ([&]() {
 auto&& __gsharp_seq_0 = ([&]() -> decltype(auto) {
 auto __gsharp_seq_1 = __gsharp_mb_Log;
-auto __gsharp_seq_2 = ++__gsharp_array_at(__gsharp_mb_Log, 0, ""G#: a null array is read at UsingDisposalKernels.cs(27,36)"");
+auto __gsharp_seq_2 = (__gsharp_array_at(__gsharp_mb_Log, 0, ""G#: a null array is read at UsingDisposalKernels.cs(27,36)"")=__gsharp_add_i32(__gsharp_array_at(__gsharp_mb_Log, 0, ""G#: a null array is read at UsingDisposalKernels.cs(27,36)""),1));
 return __gsharp_array_at(__gsharp_seq_1, __gsharp_seq_2, ""G#: a null array is read at UsingDisposalKernels.cs(27,30)"");
 }());
 int __gsharp_seq_3 = __gsharp_mb_Id;
@@ -1096,12 +1096,12 @@ proxy_log[0] = IntPtr.Zero;
 if (log_size > 0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_log, (IntPtr)log_size, hStream));
-proxy_log[0] = d_log;
 fixed (global::System.Int32* p_log = log)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoDAsync_v2(d_log, (IntPtr)p_log, (IntPtr)log_size, hStream));
 CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
 }
+proxy_log[0] = d_log;
 }
 kernelParams[0] = proxy_log;
 CudaException.ThrowIfError(CudaDriverApi.cuLaunchKernel(
@@ -1182,7 +1182,7 @@ static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__UsingR
 #ifndef __GSHARP_DISPOSE___gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__UsingRecorder__
 #define __GSHARP_DISPOSE___gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__UsingRecorder__
 __device__ inline void __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__UsingRecorder::__gsharp_dispose() {
-__gsharp_array_at(__gsharp_mb_Log, 0, ""G#: a null array is read at UsingDisposalKernels.cs(16,9)"")=__gsharp_array_at(__gsharp_mb_Log, 0, ""G#: a null array is read at UsingDisposalKernels.cs(16,18)"")+1;
+__gsharp_array_at(__gsharp_mb_Log, 0, ""G#: a null array is read at UsingDisposalKernels.cs(16,9)"")=__gsharp_add_i32(__gsharp_array_at(__gsharp_mb_Log, 0, ""G#: a null array is read at UsingDisposalKernels.cs(16,18)""),1);
 __gsharp_array_at(__gsharp_mb_Log, __gsharp_array_at(__gsharp_mb_Log, 0, ""G#: a null array is read at UsingDisposalKernels.cs(17,13)""), ""G#: a null array is read at UsingDisposalKernels.cs(17,9)"")=__gsharp_mb_Id;
 }
 #endif
@@ -1234,12 +1234,12 @@ proxy_log[0] = IntPtr.Zero;
 if (log_size > 0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_log, (IntPtr)log_size, hStream));
-proxy_log[0] = d_log;
 fixed (global::System.Int32* p_log = log)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoDAsync_v2(d_log, (IntPtr)p_log, (IntPtr)log_size, hStream));
 CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
 }
+proxy_log[0] = d_log;
 }
 kernelParams[0] = proxy_log;
 CudaException.ThrowIfError(CudaDriverApi.cuLaunchKernel(
@@ -1345,12 +1345,12 @@ proxy_log[0] = IntPtr.Zero;
 if (log_size > 0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_log, (IntPtr)log_size, hStream));
-proxy_log[0] = d_log;
 fixed (global::System.Int32* p_log = log)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoDAsync_v2(d_log, (IntPtr)p_log, (IntPtr)log_size, hStream));
 CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
 }
+proxy_log[0] = d_log;
 }
 kernelParams[0] = proxy_log;
 CudaException.ThrowIfError(CudaDriverApi.cuLaunchKernel(
@@ -1431,7 +1431,7 @@ static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__UsingR
 #ifndef __GSHARP_DISPOSE___gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__UsingRecorder__
 #define __GSHARP_DISPOSE___gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__UsingRecorder__
 __device__ inline void __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__UsingRecorder::__gsharp_dispose() {
-__gsharp_array_at(__gsharp_mb_Log, 0, ""G#: a null array is read at UsingDisposalKernels.cs(16,9)"")=__gsharp_array_at(__gsharp_mb_Log, 0, ""G#: a null array is read at UsingDisposalKernels.cs(16,18)"")+1;
+__gsharp_array_at(__gsharp_mb_Log, 0, ""G#: a null array is read at UsingDisposalKernels.cs(16,9)"")=__gsharp_add_i32(__gsharp_array_at(__gsharp_mb_Log, 0, ""G#: a null array is read at UsingDisposalKernels.cs(16,18)""),1);
 __gsharp_array_at(__gsharp_mb_Log, __gsharp_array_at(__gsharp_mb_Log, 0, ""G#: a null array is read at UsingDisposalKernels.cs(17,13)""), ""G#: a null array is read at UsingDisposalKernels.cs(17,9)"")=__gsharp_mb_Id;
 }
 #endif
@@ -1484,12 +1484,12 @@ proxy_log[0] = IntPtr.Zero;
 if (log_size > 0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_log, (IntPtr)log_size, hStream));
-proxy_log[0] = d_log;
 fixed (global::System.Int32* p_log = log)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoDAsync_v2(d_log, (IntPtr)p_log, (IntPtr)log_size, hStream));
 CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
 }
+proxy_log[0] = d_log;
 }
 kernelParams[0] = proxy_log;
 CudaException.ThrowIfError(CudaDriverApi.cuLaunchKernel(

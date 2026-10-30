@@ -23,6 +23,9 @@ public static partial class SyncSpellingAnalyzerKernels
         {
             SyncThreads(); // GSH0037
         }
+
+        // The threads that skip the barrier above meet the others here
+        SyncThreads();
     }
 
     [GpuKernel]
@@ -33,6 +36,9 @@ public static partial class SyncSpellingAnalyzerKernels
         {
             G.SyncThreads(); // GSH0037
         }
+
+        // The threads that skip the barrier above meet the others here
+        G.SyncThreads();
     }
 
     [GpuDeviceFunction]
@@ -46,6 +52,9 @@ public static partial class SyncSpellingAnalyzerKernels
         {
             SyncQualified(); // GSH0037: the callee reaches a block barrier
         }
+
+        // The threads that skip the barrier above meet the others here
+        SyncQualified();
     }
 
     [GpuDeviceFunction]
@@ -68,5 +77,8 @@ public static partial class SyncSpellingAnalyzerKernels
         {
             GridSync(); // GSH0037: the callee reaches a grid barrier, which every thread must reach as well
         }
+
+        // The threads that skip the barrier above meet the others here
+        GridSync();
     }
 }

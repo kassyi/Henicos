@@ -72,6 +72,7 @@ internal static class StructMarshalingEmitter
         if (!dialect.IsCuda)
         {
             WriteCopyArraysMethod(writer, s, structLayout);
+            WriteHoldsArrayMethods(writer, s, structLayout);
         }
 
         return writer.ToString();
@@ -279,6 +280,144 @@ internal static class StructMarshalingEmitter
     // An array, or a user struct with an array field at any depth (TypeLayoutCalculator.TryFindArrayField)
     private static bool HoldsArrays(ITypeSymbol type) =>
         type.IsArrayLikeType() ||
+        type is INamedTypeSymbol named &&
+        TypeLayoutCalculator.IsUserStruct(named) &&
+        TypeLayoutCalculator.TryFindArrayField(named, out _);
+
+    // public static bool HoldsArray_<key>(<S> host, object array)
+    // { <host mirror binding>; if (ReferenceEquals(host.<array>, array) [|| HoldsArray_<E>(host.<array>, array)]) return true;
+    //   if (HoldsArray_<nested>(host.<struct>, array)) return true; for (int k = 0; k < <N>; k++) { <the same for host[k]> }
+    //   return false; }
+    // public static bool HoldsArray_<key>(ReadOnlySpan<<S>> items, object array)
+    // { for (int i = 0; i < items.Length; i++) { if (HoldsArray_<key>(items[i], array)) { return true; } } return false; }
+    // [WHY] On CUDA an [In] array argument and an array field that hold one array share one device region, which the field
+    // copies back (#721), so the CPU launcher gives such an [In] argument the caller's array instead of a copy; these
+    // methods find the field, at any depth. Only a T[] has an identity to compare, so only T[] fields are compared and
+    // walked into. Only a struct that holds arrays gets the methods.
+    private static void WriteHoldsArrayMethods(SourceWriter writer, INamedTypeSymbol s, StructLayoutInfo structLayout)
+    {
+        if (!TypeLayoutCalculator.TryFindArrayField(s, out _))
+        {
+            return;
+        }
+
+        var hasMirror = NativeStructEmitter.NeedsHostMirror(s, structLayout);
+        writer.Append("public static bool ");
+        writer.AppendHoldsArrayMethodName(s);
+        using (writer.Parentheses())
+        {
+            writer.AppendFullyQualifiedCsharpName(s);
+            writer.Append(hasMirror ? $" {MirroredHostParameter}, object array" : " host, object array");
+        }
+
+        writer.AppendLine();
+        using (writer.Scope())
+        {
+            WriteHostMirrorBinding(writer, s, hasMirror);
+            foreach (var member in StructAbiMembers.Get(s))
+            {
+                WriteHoldsArrayMember(writer, member);
+            }
+
+            writer.AppendLine("return false;");
+        }
+
+        writer.AppendLine();
+        writer.Append("public static bool ");
+        writer.AppendHoldsArrayMethodName(s);
+        using (writer.Parentheses())
+        {
+            writer.Append("System.ReadOnlySpan<");
+            writer.AppendFullyQualifiedCsharpName(s);
+            writer.Append("> items, object array");
+        }
+
+        writer.AppendLine();
+        using (writer.Scope())
+        {
+            writer.AppendLine("for (int i = 0; i < items.Length; i++)");
+            using (writer.Scope())
+            {
+                writer.Append("if ");
+                using (writer.Parentheses())
+                {
+                    writer.AppendHoldsArrayMethodName(s);
+                    writer.Append("(items[i], array)");
+                }
+
+                writer.AppendLine();
+                using (writer.Scope())
+                {
+                    writer.AppendLine("return true;");
+                }
+            }
+
+            writer.AppendLine("return false;");
+        }
+
+        writer.AppendLine();
+    }
+
+    private static void WriteHoldsArrayMember(SourceWriter writer, StructAbiMember member)
+    {
+        // GSH0078 reports the member; a fixed buffer holds only primitives
+        if (NativeStructEmitter.IsUnrepresentableReference(member) ||
+            member.Kind == StructAbiMemberKind.FixedBuffer ||
+            !HoldsComparableArrays(member.Type))
+        {
+            return;
+        }
+
+        if (member.Kind == StructAbiMemberKind.InlineArrayElement)
+        {
+            // host[k] is the element of the inline array, whatever the field's accessibility
+            writer.AppendLine($"for (int k = 0; k < {member.ElementCount}; k++)");
+            using (writer.Scope())
+            {
+                WriteHoldsArrayValue(writer, "host[k]", member.Type);
+            }
+
+            return;
+        }
+
+        WriteHoldsArrayValue(writer, $"host.{member.Name.ToCSharpIdentifier()}", member.Type);
+    }
+
+    // if (ReferenceEquals(<value>, array) [|| HoldsArray_<E>(<value>, array)]) { return true; }    (a T[] value)
+    // if (HoldsArray_<S>(<value>, array)) { return true; }                          (a struct that holds T[] fields)
+    private static void WriteHoldsArrayValue(SourceWriter writer, string value, ITypeSymbol type)
+    {
+        writer.Append("if ");
+        using (writer.Parentheses())
+        {
+            if (type is IArrayTypeSymbol arrayType)
+            {
+                writer.Append($"global::System.Object.ReferenceEquals({value}, array)");
+                if (HoldsComparableArrays(arrayType.ElementType))
+                {
+                    writer.Append(" || ");
+                    writer.AppendHoldsArrayMethodName(arrayType.ElementType);
+                    writer.Append($"({value}, array)");
+                }
+            }
+            else
+            {
+                writer.AppendHoldsArrayMethodName(type);
+                writer.Append($"({value}, array)");
+            }
+        }
+
+        writer.AppendLine();
+        using (writer.Scope())
+        {
+            writer.AppendLine("return true;");
+        }
+    }
+
+    // A T[], or a user struct with an array field at any depth (TypeLayoutCalculator.TryFindArrayField), whose HoldsArray_
+    // method exists
+    private static bool HoldsComparableArrays(ITypeSymbol type) =>
+        type is IArrayTypeSymbol ||
         type is INamedTypeSymbol named &&
         TypeLayoutCalculator.IsUserStruct(named) &&
         TypeLayoutCalculator.TryFindArrayField(named, out _);
@@ -534,54 +673,57 @@ internal static class StructMarshalingEmitter
             $"out {native}.Data, (IntPtr)size, hStream));");
         writer.AppendLine($"{CudaArraysParameter}?.Add({host}, {native}.Data);");
 
-        if (TypeLayoutCalculator.IsUserStruct(elementType))
+        if (!TypeLayoutCalculator.IsUserStruct(elementType))
         {
-            writer.Append("var tempArray = new ");
-            writer.AppendAotStructPath(elementType);
-            writer.AppendLine($"[{host}.Length];");
-
-            writer.AppendLine($"for (int i = 0; i < {host}.Length; i++)");
-            using (writer.Scope())
-            {
-                writer.AppendMarshalMethodName(elementType);
-                writer.AppendLine(
-                    $"(ref {host}[i], ref tempArray[i], false, {CudaArraysParameter}, hStream);");
-            }
-
-            writer.AppendLine(
-                "var handle = System.Runtime.InteropServices.GCHandle.Alloc(tempArray, System.Runtime.InteropServices.GCHandleType.Pinned);");
-            writer.AppendLine("try");
-            using (writer.Scope())
-            {
-                writer.AppendLine(
-                    "CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoDAsync_v2(" +
-                    $"{native}.Data, handle.AddrOfPinnedObject(), (IntPtr)size, hStream));");
-            }
-
-            writer.AppendLine("finally");
-            using (writer.Scope())
-            {
-                writer.AppendLine("handle.Free();");
-            }
+            WritePinnedCopy(writer, host, $"{native}.Data", toDevice: true);
+            return;
         }
-        else
-        {
-            writer.AppendLine(
-                $"var handle = System.Runtime.InteropServices.GCHandle.Alloc({host}, " +
-                "System.Runtime.InteropServices.GCHandleType.Pinned);");
-            writer.AppendLine("try");
-            using (writer.Scope())
-            {
-                writer.AppendLine(
-                    "CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoDAsync_v2(" +
-                    $"{native}.Data, handle.AddrOfPinnedObject(), (IntPtr)size, hStream));");
-            }
 
-            writer.AppendLine("finally");
-            using (writer.Scope())
-            {
-                writer.AppendLine("handle.Free();");
-            }
+        writer.Append("var tempArray = new ");
+        writer.AppendAotStructPath(elementType);
+        writer.AppendLine($"[{host}.Length];");
+
+        writer.AppendLine($"for (int i = 0; i < {host}.Length; i++)");
+        using (writer.Scope())
+        {
+            writer.AppendMarshalMethodName(elementType);
+            writer.AppendLine(
+                $"(ref {host}[i], ref tempArray[i], false, {CudaArraysParameter}, hStream);");
+        }
+
+        WritePinnedCopy(writer, "tempArray", $"{native}.Data", toDevice: true);
+    }
+
+    /// <summary>
+    /// Emits <c>var handle = GCHandle.Alloc(&lt;pinned&gt;, Pinned); try { &lt;copy&gt; } finally { handle.Free(); }</c>,
+    /// where the copy moves <c>size</c> bytes between the pinned host array and <paramref name="device"/>.
+    /// </summary>
+    /// <param name="writer">The writer of the generated launcher or <c>Marshal_</c> / <c>Unmarshal_</c> method.</param>
+    /// <param name="pinned">The host array, or the shadow array of its converted elements.</param>
+    /// <param name="device">The device pointer expression (<c>native.Data</c>, <c>d_&lt;name&gt;</c>).</param>
+    /// <param name="toDevice"><c>cuMemcpyHtoDAsync_v2</c> when true, <c>cuMemcpyDtoHAsync_v2</c> otherwise.</param>
+    /// <param name="synchronize">Whether the stream is synchronized inside the <c>try</c>, before the handle is freed.</param>
+    internal static void WritePinnedCopy(SourceWriter writer, string pinned, string device, bool toDevice,
+        bool synchronize = false)
+    {
+        writer.AppendLine(
+            $"var handle = System.Runtime.InteropServices.GCHandle.Alloc({pinned}, " +
+            "System.Runtime.InteropServices.GCHandleType.Pinned);");
+        writer.AppendLine("try");
+        using (writer.Scope())
+        {
+            writer.AppendLine(toDevice
+                ? "CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoDAsync_v2(" +
+                $"{device}, handle.AddrOfPinnedObject(), (IntPtr)size, hStream));"
+                : "CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoHAsync_v2(" +
+                $"handle.AddrOfPinnedObject(), {device}, (IntPtr)size, hStream));");
+            writer.AppendLineIf(synchronize, "CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));");
+        }
+
+        writer.AppendLine("finally");
+        using (writer.Scope())
+        {
+            writer.AppendLine("handle.Free();");
         }
     }
 
@@ -690,21 +832,7 @@ internal static class StructMarshalingEmitter
                     writer.AppendAotStructPath(elementType);
                     writer.AppendLine($"[{host}.Length];");
 
-                    writer.AppendLine(
-                        "var handle = System.Runtime.InteropServices.GCHandle.Alloc(tempArray, System.Runtime.InteropServices.GCHandleType.Pinned);");
-                    writer.AppendLine("try");
-                    using (writer.Scope())
-                    {
-                        writer.AppendLine(
-                            "CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoHAsync_v2(" +
-                                $"handle.AddrOfPinnedObject(), {native}.Data, (IntPtr)size, hStream));");
-                    }
-
-                    writer.AppendLine("finally");
-                    using (writer.Scope())
-                    {
-                        writer.AppendLine("handle.Free();");
-                    }
+                    WritePinnedCopy(writer, "tempArray", $"{native}.Data", toDevice: false);
 
                     writer.AppendLine($"for (int i = 0; i < {host}.Length; i++)");
                     using (writer.Scope())
@@ -715,22 +843,7 @@ internal static class StructMarshalingEmitter
                 }
                 else
                 {
-                    writer.AppendLine(
-                        $"var handle = System.Runtime.InteropServices.GCHandle.Alloc({host}, " +
-                            "System.Runtime.InteropServices.GCHandleType.Pinned);");
-                    writer.AppendLine("try");
-                    using (writer.Scope())
-                    {
-                        writer.AppendLine(
-                            "CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoHAsync_v2(" +
-                                $"handle.AddrOfPinnedObject(), {native}.Data, (IntPtr)size, hStream));");
-                    }
-
-                    writer.AppendLine("finally");
-                    using (writer.Scope())
-                    {
-                        writer.AppendLine("handle.Free();");
-                    }
+                    WritePinnedCopy(writer, host, $"{native}.Data", toDevice: false);
                 }
             }
         }

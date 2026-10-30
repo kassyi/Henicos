@@ -69,8 +69,8 @@ public class TranspilerIssuesTests : TranspilerTestBase
             nameof(TranspilerIssuesTarget.GeneralTupleSupport), isDevice: false, dialect: CurrentDialect);
 
         Assert.Empty(diagnostics);
-        Assert.Contains("auto __gsharp_tuple_0 = y*2;", cudaSource.WithCSharpNames());
-        Assert.Contains("auto __gsharp_tuple_1 = x+3;", cudaSource.WithCSharpNames());
+        Assert.Contains("auto __gsharp_tuple_0 = __gsharp_mul_i32(y,2);", cudaSource.WithCSharpNames());
+        Assert.Contains("auto __gsharp_tuple_1 = __gsharp_add_i32(x,3);", cudaSource.WithCSharpNames());
         Assert.Contains("x = __gsharp_tuple_0;", cudaSource.WithCSharpNames());
         Assert.Contains("y = __gsharp_tuple_1;", cudaSource.WithCSharpNames());
     }
@@ -84,7 +84,7 @@ public class TranspilerIssuesTests : TranspilerTestBase
 
         Assert.Empty(diagnostics);
         Assert.Contains("auto Compute = [&](int val)", cudaSource.WithCSharpNames());
-        Assert.Contains("return val*factor+1;", cudaSource.WithCSharpNames());
+        Assert.Contains("return __gsharp_add_i32(__gsharp_mul_i32(val,factor),1);", cudaSource.WithCSharpNames());
         // The target is not a [GpuKernel], so its array parameter may be null and each read is checked (#706)
         Assert.Matches(
             @"__gsharp_array_at\(data, 0, ""[^""]*""\)=Compute\(__gsharp_array_at\(data, 0, ""[^""]*""\)\);",
@@ -100,7 +100,7 @@ public class TranspilerIssuesTests : TranspilerTestBase
 
         Assert.Empty(diagnostics);
         Assert.Contains("int fixedBuf[8]{};", cudaSource.WithCSharpNames());
-        Assert.Contains("fixedBuf[0]+8", cudaSource.WithCSharpNames());
+        Assert.Contains("__gsharp_add_i32(fixedBuf[0],8)", cudaSource.WithCSharpNames());
     }
 
     [Fact]

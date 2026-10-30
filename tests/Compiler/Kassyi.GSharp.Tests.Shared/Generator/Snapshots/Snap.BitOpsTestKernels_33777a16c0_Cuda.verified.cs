@@ -143,12 +143,12 @@ proxy_u32Data[0] = IntPtr.Zero;
 if (u32Data_size > 0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_u32Data, (IntPtr)u32Data_size, hStream));
-proxy_u32Data[0] = d_u32Data;
 fixed (global::System.UInt32* p_u32Data = u32Data)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoDAsync_v2(d_u32Data, (IntPtr)p_u32Data, (IntPtr)u32Data_size, hStream));
 CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
 }
+proxy_u32Data[0] = d_u32Data;
 }
 kernelParams[0] = proxy_u32Data;
 // Marshal array: u64Data
@@ -158,13 +158,20 @@ proxy_u64Data[0] = IntPtr.Zero;
 ((int*)(proxy_u64Data + 1))[0] = u64Data.Length;
 if (u64Data_size > 0)
 {
+if (global::System.Object.ReferenceEquals(u64Data, u32Data))
+{
+d_u64Data = d_u32Data;
+}
+else
+{
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_u64Data, (IntPtr)u64Data_size, hStream));
-proxy_u64Data[0] = d_u64Data;
 fixed (global::System.UInt64* p_u64Data = u64Data)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoDAsync_v2(d_u64Data, (IntPtr)p_u64Data, (IntPtr)u64Data_size, hStream));
 CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
 }
+}
+proxy_u64Data[0] = d_u64Data;
 }
 kernelParams[1] = proxy_u64Data;
 CudaException.ThrowIfError(CudaDriverApi.cuLaunchKernel(
@@ -186,7 +193,7 @@ CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
 }
 }
 // Copy back array: u64Data
-if (u64Data_size > 0 && d_u64Data != IntPtr.Zero)
+if (u64Data_size > 0 && d_u64Data != IntPtr.Zero && !global::System.Object.ReferenceEquals(u64Data, u32Data))
 {
 fixed (global::System.UInt64* p_u64Data = u64Data)
 {
@@ -198,7 +205,7 @@ CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
 finally
 {
 if (d_u32Data != IntPtr.Zero) CudaDriverApi.cuMemFreeAsync(d_u32Data, hStream);
-if (d_u64Data != IntPtr.Zero) CudaDriverApi.cuMemFreeAsync(d_u64Data, hStream);
+if (d_u64Data != IntPtr.Zero && d_u64Data != d_u32Data) CudaDriverApi.cuMemFreeAsync(d_u64Data, hStream);
 }
 }
 }
