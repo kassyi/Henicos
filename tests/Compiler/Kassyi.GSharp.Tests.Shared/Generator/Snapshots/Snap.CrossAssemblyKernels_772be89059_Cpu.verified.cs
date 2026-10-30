@@ -272,7 +272,7 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-__gsharp_id_0_buffer[__gsharp_id_1_tid]=__gsharp_id_2_value;
+__gsharp_array_at(__gsharp_id_0_buffer, __gsharp_id_1_tid, ""G#: a null array is read at LibMath.cu.cs(222,9)"")=__gsharp_id_2_value;
 __gsharp_yielded_for_block_barrier=true;
 __gsharp_state=1;
 return false;
@@ -280,7 +280,7 @@ return false;
 case 1:
 __gsharp_switch_1_state_1:
 {
-__gsharp_ctx->__gsharp_id_3_next=__gsharp_id_0_buffer[(__gsharp_add_i32(__gsharp_id_1_tid,1))%(int)blockDim.x];
+__gsharp_ctx->__gsharp_id_3_next=__gsharp_array_at(__gsharp_id_0_buffer, (__gsharp_add_i32(__gsharp_id_1_tid,1))%(int)blockDim.x, ""G#: a null array is read at LibMath.cu.cs(224,20)"");
 __gsharp_yielded_for_block_barrier=true;
 __gsharp_state=2;
 return false;

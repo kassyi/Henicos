@@ -89,7 +89,7 @@ return __gsharp_self;
 #endif
 inline void __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroNestingKernels__CombineAndLog(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__NestLog* __gsharp_id_0_log, __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__LoggedValue* __gsharp_id_1_result, __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__LoggedValue __gsharp_id_2_left, __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__LoggedValue __gsharp_id_3_right){
 (*__gsharp_id_1_result).__gsharp_mb_Value=__gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_2_left.__gsharp_mb_Value,10),__gsharp_id_3_right.__gsharp_mb_Value);
-(*__gsharp_id_0_log).__gsharp_mb_Entries[0]=100;
+__gsharp_array_at((*__gsharp_id_0_log).__gsharp_mb_Entries, 0, ""G#: a null array is read at OperatorMacroNestingKernels.cs(51,9)"")=100;
 }
 
 #ifndef __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__RvValue__
@@ -140,7 +140,7 @@ static_assert(alignof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__RvSourc
 static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__RvSource,__gsharp_mb_Data)==0,""Kassyi.GSharp.Tests.Shared.Syntax.RvSource.Data: offset"");
 #endif
 inline void __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroNestingOrderKernels__CombineRead(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__RvValue* __gsharp_id_0_result, __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__RvValue __gsharp_id_1_left, __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__RvSource __gsharp_id_2_source){
-(*__gsharp_id_0_result).__gsharp_mb_Value=__gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_1_left.__gsharp_mb_Value,10),__gsharp_id_2_source.__gsharp_mb_Data[0]);
+(*__gsharp_id_0_result).__gsharp_mb_Value=__gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_1_left.__gsharp_mb_Value,10),__gsharp_array_at(__gsharp_id_2_source.__gsharp_mb_Data, 0, ""G#: a null array is read at OperatorMacroNestingKernels.cs(126,42)""));
 }
 
 #ifndef __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__RvValue__
@@ -192,7 +192,7 @@ return __gsharp_self;
 }
 #endif
 inline __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__RvValue __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroNestingOrderKernels__WriteFirst(GSharpArray<int> __gsharp_id_0_data, int __gsharp_id_1_value){
-__gsharp_id_0_data[0]=__gsharp_id_1_value;
+__gsharp_array_at(__gsharp_id_0_data, 0, ""G#: a null array is read at OperatorMacroNestingKernels.cs(140,9)"")=__gsharp_id_1_value;
 return __gsharp_ctor_Kassyi__GSharp__Tests__Shared__Syntax__RvValue(__gsharp_id_1_value);
 }
 

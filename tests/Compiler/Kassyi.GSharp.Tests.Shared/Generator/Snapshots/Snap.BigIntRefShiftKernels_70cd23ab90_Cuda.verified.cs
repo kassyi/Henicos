@@ -108,14 +108,14 @@ auto __gsharp_id_7_srcIdx0 = __gsharp_sub_i32(__gsharp_id_6_i,__gsharp_id_4_word
 auto __gsharp_id_8_srcIdx1 = __gsharp_sub_i32(__gsharp_id_7_srcIdx0,1);
 auto __gsharp_id_9_safeIdx0 = (__gsharp_id_7_srcIdx0<0?0:((__gsharp_id_7_srcIdx0>=(*__gsharp_id_0_ctx).__gsharp_mb_NumberOfWords?__gsharp_sub_i32((*__gsharp_id_0_ctx).__gsharp_mb_NumberOfWords,1):__gsharp_id_7_srcIdx0)));
 auto __gsharp_id_10_safeIdx1 = (__gsharp_id_8_srcIdx1<0?0:((__gsharp_id_8_srcIdx1>=(*__gsharp_id_0_ctx).__gsharp_mb_NumberOfWords?__gsharp_sub_i32((*__gsharp_id_0_ctx).__gsharp_mb_NumberOfWords,1):__gsharp_id_8_srcIdx1)));
-auto __gsharp_id_11_w0 = __gsharp_id_2_left[__gsharp_id_9_safeIdx0];
-auto __gsharp_id_12_w1 = __gsharp_id_2_left[__gsharp_id_10_safeIdx1];
+auto __gsharp_id_11_w0 = __gsharp_array_at(__gsharp_id_2_left, __gsharp_id_9_safeIdx0, ""G#: a null array is read at GpuBigIntKernels.cu.cs(435,22)"");
+auto __gsharp_id_12_w1 = __gsharp_array_at(__gsharp_id_2_left, __gsharp_id_10_safeIdx1, ""G#: a null array is read at GpuBigIntKernels.cu.cs(436,22)"");
 auto __gsharp_id_13_mask0 = (__gsharp_id_7_srcIdx0>=0&&__gsharp_id_7_srcIdx0<(*__gsharp_id_0_ctx).__gsharp_mb_NumberOfWords?0xFFFFFFFFu:0u);
 auto __gsharp_id_14_mask1 = (__gsharp_id_8_srcIdx1>=0&&__gsharp_id_8_srcIdx1<(*__gsharp_id_0_ctx).__gsharp_mb_NumberOfWords?0xFFFFFFFFu:0u);
 __gsharp_id_11_w0&=__gsharp_id_13_mask0;
 __gsharp_id_12_w1&=__gsharp_id_14_mask1;
 auto __gsharp_id_15_shiftMask = (__gsharp_id_5_bitShift==0?0u:0xFFFFFFFFu);
-__gsharp_id_1_result[__gsharp_id_6_i]=(__gsharp_id_11_w0<<(__gsharp_id_5_bitShift&31))|((__gsharp_id_12_w1>>(__gsharp_sub_i32(32,__gsharp_id_5_bitShift)&31))&__gsharp_id_15_shiftMask);
+__gsharp_array_at(__gsharp_id_1_result, __gsharp_id_6_i, ""G#: a null array is read at GpuBigIntKernels.cu.cs(445,13)"")=(__gsharp_id_11_w0<<(__gsharp_id_5_bitShift&31))|((__gsharp_id_12_w1>>(__gsharp_sub_i32(32,__gsharp_id_5_bitShift)&31))&__gsharp_id_15_shiftMask);
 }
 }
 
@@ -128,14 +128,14 @@ auto __gsharp_id_7_srcIdx0 = __gsharp_add_i32(__gsharp_id_6_i,__gsharp_id_4_word
 auto __gsharp_id_8_srcIdx1 = __gsharp_add_i32(__gsharp_id_7_srcIdx0,1);
 auto __gsharp_id_9_safeIdx0 = (__gsharp_id_7_srcIdx0<0?0:((__gsharp_id_7_srcIdx0>=(*__gsharp_id_0_ctx).__gsharp_mb_NumberOfWords?__gsharp_sub_i32((*__gsharp_id_0_ctx).__gsharp_mb_NumberOfWords,1):__gsharp_id_7_srcIdx0)));
 auto __gsharp_id_10_safeIdx1 = (__gsharp_id_8_srcIdx1<0?0:((__gsharp_id_8_srcIdx1>=(*__gsharp_id_0_ctx).__gsharp_mb_NumberOfWords?__gsharp_sub_i32((*__gsharp_id_0_ctx).__gsharp_mb_NumberOfWords,1):__gsharp_id_8_srcIdx1)));
-auto __gsharp_id_11_w0 = __gsharp_id_2_left[__gsharp_id_9_safeIdx0];
-auto __gsharp_id_12_w1 = __gsharp_id_2_left[__gsharp_id_10_safeIdx1];
+auto __gsharp_id_11_w0 = __gsharp_array_at(__gsharp_id_2_left, __gsharp_id_9_safeIdx0, ""G#: a null array is read at GpuBigIntKernels.cu.cs(462,22)"");
+auto __gsharp_id_12_w1 = __gsharp_array_at(__gsharp_id_2_left, __gsharp_id_10_safeIdx1, ""G#: a null array is read at GpuBigIntKernels.cu.cs(463,22)"");
 auto __gsharp_id_13_mask0 = (__gsharp_id_7_srcIdx0>=0&&__gsharp_id_7_srcIdx0<(*__gsharp_id_0_ctx).__gsharp_mb_NumberOfWords?0xFFFFFFFFu:0u);
 auto __gsharp_id_14_mask1 = (__gsharp_id_8_srcIdx1>=0&&__gsharp_id_8_srcIdx1<(*__gsharp_id_0_ctx).__gsharp_mb_NumberOfWords?0xFFFFFFFFu:0u);
 __gsharp_id_11_w0&=__gsharp_id_13_mask0;
 __gsharp_id_12_w1&=__gsharp_id_14_mask1;
 auto __gsharp_id_15_shiftMask = (__gsharp_id_5_bitShift==0?0u:0xFFFFFFFFu);
-__gsharp_id_1_result[__gsharp_id_6_i]=(__gsharp_id_11_w0>>(__gsharp_id_5_bitShift&31))|((__gsharp_id_12_w1<<(__gsharp_sub_i32(32,__gsharp_id_5_bitShift)&31))&__gsharp_id_15_shiftMask);
+__gsharp_array_at(__gsharp_id_1_result, __gsharp_id_6_i, ""G#: a null array is read at GpuBigIntKernels.cu.cs(472,13)"")=(__gsharp_id_11_w0>>(__gsharp_id_5_bitShift&31))|((__gsharp_id_12_w1<<(__gsharp_sub_i32(32,__gsharp_id_5_bitShift)&31))&__gsharp_id_15_shiftMask);
 }
 }
 
@@ -277,6 +277,7 @@ int input_size = input.Length * sizeof(global::System.UInt32);
 IntPtr* proxy_input = stackalloc IntPtr[2];
 proxy_input[0] = IntPtr.Zero;
 ((int*)(proxy_input + 1))[0] = input.Length;
+((int*)(proxy_input + 1))[1] = 0;
 if (input_size > 0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_input, (IntPtr)input_size, hStream));
@@ -293,6 +294,7 @@ int shiftedLeft_size = shiftedLeft.Length * sizeof(global::System.UInt32);
 IntPtr* proxy_shiftedLeft = stackalloc IntPtr[2];
 proxy_shiftedLeft[0] = IntPtr.Zero;
 ((int*)(proxy_shiftedLeft + 1))[0] = shiftedLeft.Length;
+((int*)(proxy_shiftedLeft + 1))[1] = 0;
 if (shiftedLeft_size > 0)
 {
 if (global::System.Object.ReferenceEquals(shiftedLeft, input))
@@ -316,6 +318,7 @@ int shiftedRight_size = shiftedRight.Length * sizeof(global::System.UInt32);
 IntPtr* proxy_shiftedRight = stackalloc IntPtr[2];
 proxy_shiftedRight[0] = IntPtr.Zero;
 ((int*)(proxy_shiftedRight + 1))[0] = shiftedRight.Length;
+((int*)(proxy_shiftedRight + 1))[1] = 0;
 if (shiftedRight_size > 0)
 {
 if (global::System.Object.ReferenceEquals(shiftedRight, input))
@@ -401,16 +404,19 @@ void** kernelParams = stackalloc void*[3];
 IntPtr* proxy_input = stackalloc IntPtr[2];
 proxy_input[0] = input;
 ((int*)(proxy_input + 1))[0] = 0; // Length is unknown for raw IntPtr
+((int*)(proxy_input + 1))[1] = 0;
 kernelParams[0] = proxy_input;
 // Marshal device array: shiftedLeft
 IntPtr* proxy_shiftedLeft = stackalloc IntPtr[2];
 proxy_shiftedLeft[0] = shiftedLeft;
 ((int*)(proxy_shiftedLeft + 1))[0] = 0; // Length is unknown for raw IntPtr
+((int*)(proxy_shiftedLeft + 1))[1] = 0;
 kernelParams[1] = proxy_shiftedLeft;
 // Marshal device array: shiftedRight
 IntPtr* proxy_shiftedRight = stackalloc IntPtr[2];
 proxy_shiftedRight[0] = shiftedRight;
 ((int*)(proxy_shiftedRight + 1))[0] = 0; // Length is unknown for raw IntPtr
+((int*)(proxy_shiftedRight + 1))[1] = 0;
 kernelParams[2] = proxy_shiftedRight;
 CudaException.ThrowIfError(CudaDriverApi.cuLaunchKernel(
 hfunc,

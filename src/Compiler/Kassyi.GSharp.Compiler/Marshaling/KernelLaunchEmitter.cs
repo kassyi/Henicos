@@ -241,6 +241,8 @@ internal static class KernelLaunchEmitter
                 writer.AppendLine($"IntPtr* proxy_{shape.Name} = stackalloc IntPtr[2];");
                 writer.AppendLine($"proxy_{shape.Name}[0] = {shape.Identifier};");
                 writer.AppendLine($"((int*)(proxy_{shape.Name} + 1))[0] = 0; // Length is unknown for raw IntPtr");
+                // The caller's pointer may be IntPtr.Zero for any array: a non-optional one then reads as null (#706)
+                WriteNullReadsAsEmptyFlag(writer, shape, $"{shape.Identifier} == IntPtr.Zero");
                 writer.AppendLine($"kernelParams[{paramIndex}] = proxy_{shape.Name};");
             }
             else
@@ -330,6 +332,7 @@ internal static class KernelLaunchEmitter
         writer.AppendLine($"IntPtr* proxy_{shape.Name} = stackalloc IntPtr[2];");
         writer.AppendLine($"proxy_{shape.Name}[0] = IntPtr.Zero;");
         writer.AppendLine($"((int*)(proxy_{shape.Name} + 1))[0] = {lenExpr};");
+        WriteNullReadsAsEmptyFlag(writer, shape, $"{shape.Identifier} is null");
 
         WriteSizeTest(writer, plan, paramIndex);
         using (writer.Scope())
@@ -339,6 +342,24 @@ internal static class KernelLaunchEmitter
         }
 
         writer.AppendLine($"kernelParams[{paramIndex}] = proxy_{shape.Name};");
+    }
+
+    // ((int*)(proxy_<name> + 1))[1] = <null test> ? GSharpArrayProxy.NullReadsAsEmpty : 0;          (an optional T[])
+    // ((int*)(proxy_<name> + 1))[1] = 0;                                                         (any other array)
+    // [WHY] The device reads a null optional array argument as an empty one (#838), also through a local or a device
+    // function, while reading any other null array throws (#706); the flags word of GSharpArray tells them apart. It is
+    // written for every array because stackalloc is not zeroed under [SkipLocalsInit], and the device copies flags into
+    // every local and field that takes the array, so it is always defined.
+    private static void WriteNullReadsAsEmptyFlag(SourceWriter writer, in KernelParameterShape shape, string nullTest)
+    {
+        if (!shape.IsNullableReference)
+        {
+            writer.AppendLine($"((int*)(proxy_{shape.Name} + 1))[1] = 0;");
+            return;
+        }
+
+        writer.AppendLine(
+            $"((int*)(proxy_{shape.Name} + 1))[1] = {nullTest} ? global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy.NullReadsAsEmpty : 0;");
     }
 
     // if ([<name> is not null && ]<name>_size > 0), the null test before a table lookup only
@@ -475,6 +496,7 @@ internal static class KernelLaunchEmitter
         writer.AppendLine($"IntPtr* proxy_{name} = stackalloc IntPtr[2];");
         writer.AppendLine($"proxy_{name}[0] = IntPtr.Zero;");
         writer.AppendLine($"((int*)(proxy_{name} + 1))[0] = {lenExpr};");
+        WriteNullReadsAsEmptyFlag(writer, shape, $"{shape.Identifier} is null");
 
         WriteSizeTest(writer, plan, paramIndex);
         using (writer.Scope())

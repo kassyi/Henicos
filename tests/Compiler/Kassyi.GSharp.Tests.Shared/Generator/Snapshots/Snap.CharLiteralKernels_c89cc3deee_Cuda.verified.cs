@@ -138,6 +138,7 @@ int output_size = output.Length * sizeof(global::System.Int32);
 IntPtr* proxy_output = stackalloc IntPtr[2];
 proxy_output[0] = IntPtr.Zero;
 ((int*)(proxy_output + 1))[0] = output.Length;
+((int*)(proxy_output + 1))[1] = 0;
 if (output_size > 0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_output, (IntPtr)output_size, hStream));
@@ -154,6 +155,7 @@ int text_size = text.Length * sizeof(global::System.Char);
 IntPtr* proxy_text = stackalloc IntPtr[2];
 proxy_text[0] = IntPtr.Zero;
 ((int*)(proxy_text + 1))[0] = text.Length;
+((int*)(proxy_text + 1))[1] = 0;
 if (text_size > 0)
 {
 if (global::System.Object.ReferenceEquals(text, output))
@@ -225,11 +227,13 @@ void** kernelParams = stackalloc void*[2];
 IntPtr* proxy_output = stackalloc IntPtr[2];
 proxy_output[0] = output;
 ((int*)(proxy_output + 1))[0] = 0; // Length is unknown for raw IntPtr
+((int*)(proxy_output + 1))[1] = 0;
 kernelParams[0] = proxy_output;
 // Marshal device array: text
 IntPtr* proxy_text = stackalloc IntPtr[2];
 proxy_text[0] = text;
 ((int*)(proxy_text + 1))[0] = 0; // Length is unknown for raw IntPtr
+((int*)(proxy_text + 1))[1] = 0;
 kernelParams[1] = proxy_text;
 CudaException.ThrowIfError(CudaDriverApi.cuLaunchKernel(
 hfunc,

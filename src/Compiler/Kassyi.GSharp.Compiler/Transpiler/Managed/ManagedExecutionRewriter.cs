@@ -132,10 +132,13 @@ internal sealed partial class ManagedExecutionRewriter(SemanticModel semanticMod
             memberAccess.Name).WithTriviaFrom(memberAccess);
     }
 
-    // <parameter>.Length where the parameter is an optional array (T[]?)
+    // <parameter>.Length where the parameter is an optional array (T[]?) of the kernel that the kernel never writes
     // [WHY] The device reads a null optional array as one of length 0 (its data pointer is null, as `x is null` sees),
     // and the launchers pass it as null so that `x is null` stays true; the length is the one place that the managed
-    // kernel must read as 0 instead of throwing (#806)
+    // kernel must read as 0 instead of throwing (#806). Once the kernel assigns the parameter it may hold any null
+    // array, whose Length throws on the device too (#706), so the rule is ArrayNullCheck's: an unwritten kernel
+    // parameter only. A device function parameter is not rewritten either (the managed path does not carry where a null
+    // came from, #852)
     private bool IsLengthOfOptionalArray(MemberAccessExpressionSyntax node) =>
         node.IsKind(SyntaxKind.SimpleMemberAccessExpression) &&
         node.Name is IdentifierNameSyntax { Identifier.ValueText: "Length" } &&
@@ -143,7 +146,8 @@ internal sealed partial class ManagedExecutionRewriter(SemanticModel semanticMod
         semanticModel.GetSymbol(node.Expression) is IParameterSymbol
         {
             Type: IArrayTypeSymbol, NullableAnnotation: NullableAnnotation.Annotated
-        };
+        } parameter &&
+        ArrayNullCheck.IsUnwrittenKernelParameter(parameter, semanticModel.Compilation);
 
     public override SyntaxNode? VisitIdentifierName(IdentifierNameSyntax node)
     {

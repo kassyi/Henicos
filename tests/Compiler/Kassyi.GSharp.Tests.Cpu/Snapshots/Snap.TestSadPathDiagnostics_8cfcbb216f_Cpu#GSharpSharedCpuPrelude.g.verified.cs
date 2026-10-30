@@ -91,17 +91,21 @@ inline ~__gsharp_using_scope() { resource.__gsharp_dispose(); }
 
 template <class T> inline const T* __gsharp_temp_address(const T& v) { return &v; }
 
+// A C# array or span: data is nullptr for a null array (and the default span), and never nullptr for an array that
+// exists, also an empty one (#706). flags uses the padding after length (16 bytes as before): bit 0
+// (__gsharp_array_null_reads_empty) marks a null optional kernel argument, which reads as an empty array
 template <typename T>
 struct GSharpArray {
 T* data;
 int length;
+int flags;
 
-inline GSharpArray() : data(nullptr), length(0) {}
-inline GSharpArray(T* d, int l) : data(d), length(l) {}
+inline GSharpArray() : data(nullptr), length(0), flags(0) {}
+inline GSharpArray(T* d, int l) : data(d), length(l), flags(0) {}
 // A stack array (T name[N]) viewed as a span or array argument; T may be const for a ReadOnlySpan. G# reports the
 // uses that would keep the view beyond the array's scope (GSH0091)
 template <int N>
-inline GSharpArray(T (&storage)[N]) : data(storage), length(N) {}
+inline GSharpArray(T (&storage)[N]) : data(storage), length(N), flags(0) {}
 
 // The span members that C# calls on a span or an array (Span<T>.Slice, Span<T>.Fill, MemoryExtensions.AsSpan)
 inline GSharpArray<T> Slice(int start) const { return GSharpArray<T>(data + start, length - start); }
@@ -111,7 +115,7 @@ inline GSharpArray<T> AsSpan() const { return *this; }
 
 // Allows implicit conversion from GSharpArray<U> to GSharpArray<T> if U* is convertible to T* (e.g. T to const T)
 template <typename U>
-inline GSharpArray(const GSharpArray<U>& other) : data(other.data), length(other.length) {}
+inline GSharpArray(const GSharpArray<U>& other) : data(other.data), length(other.length), flags(other.flags) {}
 inline T* begin() { return data; }
 inline T* end() { return data + length; }
 inline const T* begin() const { return data; }
@@ -396,7 +400,8 @@ NotSupported = 1,
 InvalidOperation = 2,
 IndexOutOfRange = 3,
 ArgumentOutOfRange = 4,
-Argument = 5
+Argument = 5,
+NullReference = 6
 };
 
 struct GSharpErrorSlot {
@@ -506,6 +511,34 @@ struct __gsharp_step_abort {};
 {
 __gsharp_trap(code, message);
 throw __gsharp_step_abort{};
+}
+
+// GSharpArray::flags bit 0: a null optional kernel argument, which reads as an empty array (#838)
+#define __gsharp_array_null_reads_empty 1
+// The array that an array-typed C# expression reads (Length, an element, foreach): a null array ends the step with
+// NullReferenceException, as C# throws (#706), and a null optional kernel argument reads as an empty array. The step
+// ends (__gsharp_trap_abort) because the read would dereference nullptr next. An rvalue is returned by value, so that a
+// range-based for over it does not keep a reference to a destroyed temporary
+template <typename A>
+inline A __gsharp_array_ref(A&& array, const char* message)
+{
+if (array.data == nullptr && (array.flags & __gsharp_array_null_reads_empty) == 0)
+{
+__gsharp_trap_abort(GSharpErrorCode::NullReference, message);
+}
+return static_cast<A&&>(array);
+}
+
+// The element array[index] as a location, with the check of __gsharp_array_ref. The array and the index are both
+// evaluated before the check, as C# evaluates them before ldelem / stelem throws (#706)
+template <typename A, typename I>
+inline decltype(auto) __gsharp_array_at(A&& array, I index, const char* message)
+{
+if (array.data == nullptr && (array.flags & __gsharp_array_null_reads_empty) == 0)
+{
+__gsharp_trap_abort(GSharpErrorCode::NullReference, message);
+}
+return array[index];
 }
 
 // Marks the comparison of a sort that the thread is running, while it lives (Sort.hpp)

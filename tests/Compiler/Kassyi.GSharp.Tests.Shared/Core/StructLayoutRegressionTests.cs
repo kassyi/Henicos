@@ -87,20 +87,21 @@ public class StructLayoutRegressionTests
         Assert.Equal([3, 3, 20], o);
     }
 
-    // A null array field reads as an empty array on both dialects (the device has no null array); an empty one is empty
+    // A null array field stays null on the device and an empty one is an empty array, not null, on both dialects (#706);
+    // reading the Length of the null one would throw, as in C# (NullArrayFieldTests)
     [Theory]
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Scenario(TestScenario.Boundary)]
     [InlineData(false)]
     [InlineData(true)]
-    public void R4d_StructWithNullOrEmptyArrayField_ByValue_ReadsLengthZero(bool isNull)
+    public void R4d_StructWithNullOrEmptyArrayField_ByValue_NullIsNullAndEmptyHasLengthZero(bool isNull)
     {
-        var o = new int[] { -1, -1 };
+        var o = new int[] { -2, -2 };
         var b = new LayoutReproBag { N = 3, Data = isNull ? null : [] };
 
         StructLayoutRegressionKernels.LaunchBagLengthKernel(b, o);
 
-        Assert.Equal([3, 0], o);
+        Assert.Equal([3, isNull ? -1 : 0], o);
     }
 
     [Fact]

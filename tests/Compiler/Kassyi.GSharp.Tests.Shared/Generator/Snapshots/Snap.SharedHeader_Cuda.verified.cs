@@ -114,19 +114,23 @@ __forceinline__ unsigned long long __gsharp_to_u64(float x) { return __gsharp_to
 #endif
 
 
+// A C# array or span: data is nullptr for a null array (and the default span), and never nullptr for an array that
+// exists, also an empty one (#706). flags uses the padding after length (16 bytes as before): bit 0
+// (__gsharp_array_null_reads_empty) marks a null optional kernel argument, which reads as an empty array
 template <typename T>
 struct GSharpArray {
 // Not __restrict__: in C# two arrays (arguments, struct fields, a ref into one of them) may be one object, and the
 // launcher then gives them one device region (#552, #707)
 T* data;
 int length;
+int flags;
 
-__device__ inline GSharpArray() : data(nullptr), length(0) {}
-__device__ inline GSharpArray(T* d, int l) : data(d), length(l) {}
+__device__ inline GSharpArray() : data(nullptr), length(0), flags(0) {}
+__device__ inline GSharpArray(T* d, int l) : data(d), length(l), flags(0) {}
 // A stack array (T name[N]) viewed as a span or array argument; T may be const for a ReadOnlySpan. G# reports the
 // uses that would keep the view beyond the array's scope (GSH0091)
 template <int N>
-__device__ inline GSharpArray(T (&storage)[N]) : data(storage), length(N) {}
+__device__ inline GSharpArray(T (&storage)[N]) : data(storage), length(N), flags(0) {}
 
 // The span members that C# calls on a span or an array (Span<T>.Slice, Span<T>.Fill, MemoryExtensions.AsSpan)
 __device__ inline GSharpArray<T> Slice(int start) const { return GSharpArray<T>(data + start, length - start); }
@@ -136,7 +140,7 @@ __device__ inline GSharpArray<T> AsSpan() const { return *this; }
 
 // Allows implicit conversion from GSharpArray<U> to GSharpArray<T> if U* is convertible to T* (e.g. T to const T)
 template <typename U>
-__device__ inline GSharpArray(const GSharpArray<U>& other) : data(other.data), length(other.length) {}
+__device__ inline GSharpArray(const GSharpArray<U>& other) : data(other.data), length(other.length), flags(other.flags) {}
 
 __device__ inline T* begin() { return data; }
 __device__ inline T* end() { return data + length; }
@@ -514,9 +518,41 @@ NotSupported = 1,
 InvalidOperation = 2,
 IndexOutOfRange = 3,
 ArgumentOutOfRange = 4,
-Argument = 5
+Argument = 5,
+NullReference = 6
 };
 __device__ __forceinline__ void __gsharp_trap(GSharpErrorCode, const char*) { asm(""trap;""); }
+
+// GSharpArray::flags bit 0: a null optional kernel argument, which reads as an empty array (#838)
+#define __gsharp_array_null_reads_empty 1
+// The array that an array-typed C# expression reads (Length, an element, foreach): a null array fails as C# throws
+// NullReferenceException (#706), a null optional kernel argument reads as an empty array. Only the checked build
+// (GSHARP_CHECKED) tests; otherwise it is the array itself, at no cost. An rvalue is returned by value, so that a
+// range-based for over it does not keep a reference to a destroyed temporary
+template <typename A>
+__device__ __forceinline__ A __gsharp_array_ref(A&& array, const char* message)
+{
+#ifdef GSHARP_CHECKED
+if (array.data == nullptr && (array.flags & __gsharp_array_null_reads_empty) == 0)
+{
+__gsharp_trap(GSharpErrorCode::NullReference, message);
+}
+#endif
+return static_cast<A&&>(array);
+}
+// The element array[index] as a location, with the check of __gsharp_array_ref. The array and the index are both
+// evaluated before the check, as C# evaluates them before ldelem / stelem throws (#706)
+template <typename A, typename I>
+__device__ __forceinline__ decltype(auto) __gsharp_array_at(A&& array, I index, const char* message)
+{
+#ifdef GSHARP_CHECKED
+if (array.data == nullptr && (array.flags & __gsharp_array_null_reads_empty) == 0)
+{
+__gsharp_trap(GSharpErrorCode::NullReference, message);
+}
+#endif
+return array[index];
+}
 // [WHY] A trap stops the kernel, so a trap in the comparison of a sort needs no translation (ErrorChannel.hpp does it on the CPU)
 struct __gsharp_sort_compare_scope { };
 
