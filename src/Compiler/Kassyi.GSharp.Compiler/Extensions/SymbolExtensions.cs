@@ -413,4 +413,33 @@ internal static class SymbolExtensions
             ? parameters[parameters.Length - 1]
             : null;
     }
+
+    /// <summary>
+    /// Formats a method for diagnostic message text as its name and parameter types, as in
+    /// <c>Shift(ref OverloadCtx, uint[], int)</c>.
+    /// </summary>
+    public static string FormatSignature(this IMethodSymbol method)
+    {
+        var text = new StringBuilder();
+        text.Append(method.Name).Append('(');
+        for (var i = 0; i < method.Parameters.Length; i++)
+        {
+            var parameter = method.Parameters[i];
+            text.Append(i > 0 ? ", " : string.Empty)
+                .Append(parameter.RefKind.FormatRefKind())
+                .Append(IteratorTypeResolver.FormatType(parameter.Type));
+        }
+
+        return text.Append(')').ToString();
+    }
+
+    /// <summary>The modifier of a parameter with <paramref name="refKind"/> in message text, with a trailing space (<c>ref </c>).</summary>
+    public static string FormatRefKind(this RefKind refKind) => refKind switch
+    {
+        RefKind.Ref => "ref ",
+        RefKind.Out => "out ",
+        RefKind.In => "in ",
+        RefKind.RefReadOnlyParameter => "ref readonly ",
+        _ => string.Empty
+    };
 }

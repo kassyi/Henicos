@@ -2,11 +2,15 @@ namespace Kassyi.GSharp.Compiler.Diagnostics.Kernel.Rules;
 
 /// <summary>
 /// Reports, in GPU code (GSH0003): the members of <c>System.Math</c> and <c>System.MathF</c> that the project's dialect
-/// does not map to a native function (constants such as <c>Math.PI</c> and the mapped members are allowed), every member of
-/// <c>System.Threading.Interlocked</c> and <c>System.Numerics.BitOperations</c> (#570), and the host-only StackLinq
+/// does not map to a native function (constants such as <c>Math.PI</c> and the calls of mapped members are allowed; a
+/// mapped member used as a method group is not, as its native function is an overload set that converts to no delegate),
+/// every member of <c>System.Threading.Interlocked</c> and <c>System.Numerics.BitOperations</c> (#570), and the host-only StackLinq
 /// operators.
 /// </summary>
-internal sealed class ProhibitedApiRule : ISyntaxValidationRule<MemberAccessExpressionSyntax>, ISyntaxValidationRule<InvocationExpressionSyntax>
+internal sealed class ProhibitedApiRule :
+    ISyntaxValidationRule<MemberAccessExpressionSyntax>,
+    ISyntaxValidationRule<InvocationExpressionSyntax>,
+    ISyntaxValidationRule<IdentifierNameSyntax>
 {
     public static readonly ProhibitedApiRule Instance = new();
     public ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(GSharpDiagnostics.UnsupportedSyntax);
@@ -38,6 +42,21 @@ internal sealed class ProhibitedApiRule : ISyntaxValidationRule<MemberAccessExpr
         AnalyzeSymbol(symbol, node, ref context);
     }
 
+    // A Math or MathF method named without its type (using static System.Math) and not called: a method group. A called
+    // one is analyzed at its invocation, a qualified one at its member access
+    public void Analyze(IdentifierNameSyntax node, ref ValidationContext context)
+    {
+        if ((node.Parent is InvocationExpressionSyntax invocation && invocation.Expression == node) ||
+            (node.Parent is MemberAccessExpressionSyntax member && member.Name == node) ||
+            context.SemanticModel.GetSymbol(node) is not IMethodSymbol { ContainingType: var type } method ||
+            !type.IsSystemMathType())
+        {
+            return;
+        }
+
+        AnalyzeSymbol(method, node, ref context);
+    }
+
     private static void AnalyzeSymbol(ISymbol? symbol, SyntaxNode locationNode, ref ValidationContext context)
     {
         if (symbol == null)
@@ -54,6 +73,13 @@ internal sealed class ProhibitedApiRule : ISyntaxValidationRule<MemberAccessExpr
                     GSharpDiagnostics.UnsupportedSyntax,
                     locationNode,
                     $"{symbol.ContainingType.Name}.{FormatMember(symbol)} (not mapped by {context.Dialect.Name})");
+            }
+            else if (symbol is IMethodSymbol && !IsInvoked(locationNode))
+            {
+                context.ReportDiagnostic(
+                    GSharpDiagnostics.UnsupportedSyntax,
+                    locationNode,
+                    $"{symbol.ContainingType.Name}.{FormatMember(symbol)} (used as a method group)");
             }
         }
         else if (symbol is
@@ -76,7 +102,12 @@ internal sealed class ProhibitedApiRule : ISyntaxValidationRule<MemberAccessExpr
         }
     }
 
+    // Whether the node is a call or the method it calls (Math.Abs in Math.Abs(x)); otherwise a method group
+    private static bool IsInvoked(SyntaxNode node) =>
+        node is InvocationExpressionSyntax ||
+        (node.Parent is InvocationExpressionSyntax invocation && invocation.Expression == node);
+
     // Abs(long): the overload decides whether the dialect maps it
     private static string FormatMember(ISymbol symbol) =>
-        symbol is IMethodSymbol method ? IteratorTypeResolver.FormatSignature(method) : symbol.Name;
+        symbol is IMethodSymbol method ? method.FormatSignature() : symbol.Name;
 }

@@ -125,14 +125,19 @@ public class DialectDependentDiagnosticsTests
         AssertCompiles("Analyzers/UnmappedMathMembers.cs");
         Assert.Equal(
             [
-                (Analyzer, 16, 16, 16, 24, $"Math.Abs(long) (not mapped by {dialectName})"),
-                (Analyzer, 16, 33, 16, 41, $"Math.Max(long, long) (not mapped by {dialectName})"),
-                (Analyzer, 17, 16, 17, 26, $"MathF.Cbrt(float) (not mapped by {dialectName})"),
+                (Analyzer, 17, 16, 17, 24, $"Math.Abs(long) (not mapped by {dialectName})"),
+                (Analyzer, 17, 33, 17, 41, $"Math.Max(long, long) (not mapped by {dialectName})"),
+                (Analyzer, 18, 16, 18, 26, $"MathF.Cbrt(float) (not mapped by {dialectName})"),
                 // A method group: the member access
-                (Analyzer, 18, 30, 18, 38, $"Math.Abs(long) (not mapped by {dialectName})"),
+                (Analyzer, 19, 30, 19, 38, $"Math.Abs(long) (not mapped by {dialectName})"),
                 // Through using static System.Math: the whole invocation
-                (Analyzer, 19, 16, 19, 26, $"Math.Cbrt(double) (not mapped by {dialectName})"),
-                (Analyzer, 20, 16, 20, 25, $"Math.Abs(long) (not mapped by {dialectName})")
+                (Analyzer, 20, 16, 20, 26, $"Math.Cbrt(double) (not mapped by {dialectName})"),
+                (Analyzer, 21, 16, 21, 25, $"Math.Abs(long) (not mapped by {dialectName})"),
+                // A mapped member as a method group, qualified and through using static, and an unmapped one through
+                // using static: the member access or the name
+                (Analyzer, 22, 29, 22, 37, "Math.Abs(int) (used as a method group)"),
+                (Analyzer, 23, 29, 23, 32, "Math.Abs(int) (used as a method group)"),
+                (Analyzer, 24, 31, 24, 34, $"Math.Abs(long) (not mapped by {dialectName})")
             ],
             diagnostics
                 .Where(static d => d.Id == GSharpDiagnostics.UnsupportedSyntax.Id)
