@@ -567,6 +567,120 @@ public class TypeLayoutCalculatorTests
         }
     }
 
+    // Every member hands over the field that stores it, so the offset of an auto-property of an explicit struct is read
+    // from its backing field. From source the member is the property; from metadata Roslyn does not link the backing
+    // field to it, so the member is that field itself (#853 review)
+    [Theory]
+    [Category(TestCategory.Compiler)]
+    [Scenario(TestScenario.HappyPath)]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void StructAbiMember_StorageField_IsTheFieldThatHoldsTheMember(bool fromMetadata)
+    {
+        var structType = fromMetadata
+            ? LoadFromMetadata("Layout/HostLayoutCases.cs").LayoutNamespace
+                .GetTypeMembers(nameof(ExplicitAutoPropertyStruct)).Single()
+            : GetStructSymbol(nameof(ExplicitAutoPropertyStruct));
+
+        var members = new List<StructAbiMember>();
+        foreach (var member in StructAbiMembers.Get(structType))
+        {
+            members.Add(member);
+        }
+
+        Assert.Equal(2, members.Count);
+        foreach (var member in members)
+        {
+            var storage = Assert.IsAssignableFrom<IFieldSymbol>(member.StorageField);
+            Assert.True(
+                fromMetadata
+                    ? SymbolEqualityComparer.Default.Equals(storage, member.Symbol)
+                    : SymbolEqualityComparer.Default.Equals(storage.AssociatedSymbol, member.Symbol),
+                $"{member.Name}: {storage.Name} does not hold {member.Symbol.Name}"
+            );
+        }
+
+        Assert.Equal([0, 4], members.Select(static m => StructLayoutReader.GetFieldOffset(m.StorageField)));
+    }
+
+    // A ClassLayout row with a PackingSize above 255, or with a ClassSize above int.MaxValue (System.Reflection.Metadata
+    // throws BadImageFormatException on reading it), is malformed. As Roslyn's PEModule.GetTypeLayout does, the reader
+    // drops such a value, and falls back to the attributes on a row it cannot read, instead of throwing out of the
+    // generator or feeding the value into the layout (#853 review)
+    [Theory]
+    [Category(TestCategory.Compiler)]
+    [Scenario(TestScenario.SadPath)]
+    [InlineData((ushort)512, 0u)]
+    [InlineData((ushort)0, uint.MaxValue)]
+    public void StructLayout_FromMalformedClassLayoutRow_DropsAnOutOfRangePackAndSize(ushort packingSize, uint size)
+    {
+        var library = MetadataReference.CreateFromImage(BuildStructWithClassLayoutRow(packingSize, size));
+        var consumer = DeviceLibraryBuilder.CreateConsumer("class Consumer { }", library);
+        var structType = consumer.GetTypeByMetadataName("Malformed.BadLayout");
+
+        Assert.NotNull(structType);
+        StructLayoutReader.Read(structType, out var kind, out var pack, out var readSize);
+        Assert.Equal((TypeLayoutKind.Sequential, 0, 0), (kind, pack, readSize));
+    }
+
+    // A library with one sequential struct, Malformed.BadLayout, whose ClassLayout row holds the given values, which the
+    // C# compiler never emits
+    private static System.Collections.Immutable.ImmutableArray<byte> BuildStructWithClassLayoutRow(ushort packingSize,
+        uint size)
+    {
+        var metadata = new System.Reflection.Metadata.Ecma335.MetadataBuilder();
+        metadata.AddModule(
+            0,
+            metadata.GetOrAddString("Malformed.dll"),
+            metadata.GetOrAddGuid(new Guid("5f1d8a52-3b0e-4c41-9b0b-0c3f6d2e7a11")),
+            default,
+            default
+        );
+        metadata.AddAssembly(
+            metadata.GetOrAddString("Malformed"),
+            new Version(1, 0, 0, 0),
+            default,
+            default,
+            default,
+            System.Reflection.AssemblyHashAlgorithm.None
+        );
+        var runtime = metadata.AddAssemblyReference(
+            metadata.GetOrAddString("System.Runtime"),
+            new Version(4, 0, 0, 0),
+            default,
+            default,
+            default,
+            default
+        );
+        var valueType = metadata.AddTypeReference(
+            runtime,
+            metadata.GetOrAddString("System"),
+            metadata.GetOrAddString("ValueType")
+        );
+        var firstField = System.Reflection.Metadata.Ecma335.MetadataTokens.FieldDefinitionHandle(1);
+        var firstMethod = System.Reflection.Metadata.Ecma335.MetadataTokens.MethodDefinitionHandle(1);
+        metadata.AddTypeDefinition(default, default, metadata.GetOrAddString("<Module>"), default, firstField, firstMethod);
+        var type = metadata.AddTypeDefinition(
+            System.Reflection.TypeAttributes.Public | System.Reflection.TypeAttributes.Sealed |
+            System.Reflection.TypeAttributes.SequentialLayout,
+            metadata.GetOrAddString("Malformed"),
+            metadata.GetOrAddString("BadLayout"),
+            valueType,
+            firstField,
+            firstMethod
+        );
+        metadata.AddTypeLayout(type, packingSize, size);
+
+        var peBuilder = new System.Reflection.PortableExecutable.ManagedPEBuilder(
+            System.Reflection.PortableExecutable.PEHeaderBuilder.CreateLibraryHeader(),
+            new System.Reflection.Metadata.Ecma335.MetadataRootBuilder(metadata),
+            new System.Reflection.Metadata.BlobBuilder()
+        );
+        var image = new System.Reflection.Metadata.BlobBuilder();
+        peBuilder.Serialize(image);
+        return image.ToImmutableArray();
+    }
+
     // The test case compiled into a library, and the Layout namespace of that library as a consumer sees it
     private static (Compilation Consumer, INamespaceSymbol LayoutNamespace) LoadFromMetadata(string testCase)
     {

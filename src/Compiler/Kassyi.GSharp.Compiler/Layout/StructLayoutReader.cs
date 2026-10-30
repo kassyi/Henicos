@@ -41,19 +41,15 @@ internal static class StructLayoutReader
     }
 
     /// <summary>
-    /// The <c>[FieldOffset]</c> of a member of a <see cref="TypeLayoutKind.Explicit"/> struct, or 0 when it has none.
+    /// The <c>[FieldOffset]</c> of a member of a <see cref="TypeLayoutKind.Explicit"/> struct, read from the field that
+    /// holds it (<see cref="StructAbiMember.StorageField"/>), or 0 when it has none.
     /// </summary>
     /// <remarks>
     /// Ask only for a member of an explicit struct: a sequential one has no offset to read, so the metadata path does
     /// not look up its FieldLayout row. <c>[field: FieldOffset]</c> on an auto-property sits on its backing field.
     /// </remarks>
-    public static int GetFieldOffset(ISymbol member)
+    public static int GetFieldOffset(IFieldSymbol? field)
     {
-        var field = member is IPropertySymbol property
-            ? property.ContainingType.GetMembers()
-                .AsStackEnumerable()
-                .FirstOrDefault(property, static (m, p) => m is IFieldSymbol f && f.AssociatedSymbol.IsEqualTo(p)) as IFieldSymbol
-            : member as IFieldSymbol;
         if (field is null)
         {
             return 0;

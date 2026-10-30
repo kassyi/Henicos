@@ -51,12 +51,18 @@ public enum StructAbiMemberKind
 /// <param name="Type">The type of one element: the pointed-at type of a <c>fixed</c> buffer, the field type otherwise.</param>
 /// <param name="ElementCount">The number of elements: 1, or N for a <c>fixed</c> buffer or the element of an <c>[InlineArray(N)]</c> struct.</param>
 /// <param name="Kind">What the member was declared as.</param>
+/// <param name="StorageField">
+/// The field that holds the member: the field itself, or the backing field of an auto-property; null for a computed
+/// property and for a field-like event (Roslyn does not list its field). Read the member's offset from it
+/// (<see cref="StructLayoutReader.GetFieldOffset"/>) instead of searching for it again.
+/// </param>
 public readonly record struct StructAbiMember(
     ISymbol Symbol,
     string Name,
     ITypeSymbol Type,
     int ElementCount,
-    StructAbiMemberKind Kind);
+    StructAbiMemberKind Kind,
+    IFieldSymbol? StorageField);
 
 /// <summary>
 /// The members that make up the native layout of a user struct. The device definition (<c>StructTranspiler</c>), the
@@ -205,14 +211,14 @@ internal static class StructAbiMembers
                 else if (member is IEventSymbol { IsStatic: false } @event && IsFieldLikeEvent(@event))
                 {
                     Current = new StructAbiMember(@event, @event.Name, @event.Type, 1,
-                        StructAbiMemberKind.EventBackingField);
+                        StructAbiMemberKind.EventBackingField, null);
                     return true;
                 }
                 else if (_includeComputedProperties && member is IPropertySymbol { IsStatic: false, IsImplicitlyDeclared: false } property &&
                          !HasBackingField(_members, property))
                 {
                     Current = new StructAbiMember(property, property.Name, property.Type, 1,
-                        StructAbiMemberKind.ComputedProperty);
+                        StructAbiMemberKind.ComputedProperty, null);
                     return true;
                 }
             }
@@ -225,26 +231,28 @@ internal static class StructAbiMembers
             member = default;
             if (field.AssociatedSymbol is IPropertySymbol property)
             {
-                member = new StructAbiMember(property, property.Name, field.Type, 1, StructAbiMemberKind.AutoProperty);
+                member = new StructAbiMember(property, property.Name, field.Type, 1, StructAbiMemberKind.AutoProperty, field);
                 return true;
             }
 
             if (TryGetCapturedParameterName(field, out var parameterName))
             {
-                member = new StructAbiMember(field, parameterName, field.Type, 1, StructAbiMemberKind.CapturedParameter);
+                member = new StructAbiMember(field, parameterName, field.Type, 1, StructAbiMemberKind.CapturedParameter,
+                    field);
                 return true;
             }
 
             if (field.IsImplicitlyDeclared)
             {
-                member = new StructAbiMember(field, field.Name, field.Type, 1, StructAbiMemberKind.UnknownHiddenField);
+                member = new StructAbiMember(field, field.Name, field.Type, 1, StructAbiMemberKind.UnknownHiddenField,
+                    field);
                 return true;
             }
 
             if (field is { IsFixedSizeBuffer: true, Type: IPointerTypeSymbol pointer })
             {
                 member = new StructAbiMember(field, field.Name, pointer.PointedAtType, field.FixedSize,
-                    StructAbiMemberKind.FixedBuffer);
+                    StructAbiMemberKind.FixedBuffer, field);
                 return true;
             }
 
@@ -252,11 +260,11 @@ internal static class StructAbiMembers
             {
                 _inlineElementTaken = true;
                 member = new StructAbiMember(field, field.Name, field.Type, _inlineArrayLength,
-                    StructAbiMemberKind.InlineArrayElement);
+                    StructAbiMemberKind.InlineArrayElement, field);
                 return true;
             }
 
-            member = new StructAbiMember(field, field.Name, field.Type, 1, StructAbiMemberKind.Field);
+            member = new StructAbiMember(field, field.Name, field.Type, 1, StructAbiMemberKind.Field, field);
             return true;
         }
     }

@@ -274,7 +274,7 @@ internal static class TypeLayoutCalculator
             int offset;
             if (kind == TypeLayoutKind.Explicit)
             {
-                offset = StructLayoutReader.GetFieldOffset(member.Symbol);
+                offset = StructLayoutReader.GetFieldOffset(member.StorageField);
                 end = Math.Max(end, offset + fieldSize);
             }
             else
@@ -416,7 +416,7 @@ internal static class TypeLayoutCalculator
             int offset;
             if (kind == TypeLayoutKind.Explicit)
             {
-                offset = StructLayoutReader.GetFieldOffset(member.Symbol);
+                offset = StructLayoutReader.GetFieldOffset(member.StorageField);
                 hostEnd = Math.Max(hostEnd, offset + fieldSize);
             }
             else

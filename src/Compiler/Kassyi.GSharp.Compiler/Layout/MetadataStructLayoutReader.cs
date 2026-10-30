@@ -35,9 +35,7 @@ internal static class MetadataStructLayoutReader
         pack = 0;
         size = 0;
 
-        // A constructed generic type shares the row of its definition
-        var definition = structType.OriginalDefinition;
-        if (definition.ContainingModule?.GetMetadata() is not { } module || definition.MetadataToken == 0)
+        if (!TryGetRow(structType, out var module, out var token))
         {
             return false;
         }
@@ -45,20 +43,38 @@ internal static class MetadataStructLayoutReader
 #pragma warning disable RS0030 // TypeDef flags and ClassLayout row, which Roslyn's public API does not expose; measured: at most 0.4 ms per compilation (#736, class remarks)
         var reader = module.GetMetadataReader();
         var handle = (System.Reflection.Metadata.TypeDefinitionHandle)
-            System.Reflection.Metadata.Ecma335.MetadataTokens.EntityHandle(definition.MetadataToken);
+            System.Reflection.Metadata.Ecma335.MetadataTokens.EntityHandle(token);
         var typeDefinition = reader.GetTypeDefinition(handle);
-        var classLayout = typeDefinition.GetLayout();
+        System.Reflection.Metadata.TypeLayout classLayout;
+        try
+        {
+            classLayout = typeDefinition.GetLayout();
+        }
+        catch (BadImageFormatException)
+        {
+            // [WHY] A ClassSize above int.MaxValue is malformed, and GetLayout throws on it. Roslyn's own
+            // PEModule.GetTypeLayout catches the same exception; here the struct falls back to the attribute read
+            // (StructLayoutReader), which finds none for a metadata type, instead of failing the generator (CS8785)
+            return false;
+        }
+
         kind = (typeDefinition.Attributes & System.Reflection.TypeAttributes.LayoutMask) switch
         {
             System.Reflection.TypeAttributes.ExplicitLayout => TypeLayoutKind.Explicit,
             System.Reflection.TypeAttributes.AutoLayout => TypeLayoutKind.Auto,
             _ => TypeLayoutKind.Sequential
         };
-        pack = classLayout.PackingSize;
-        size = classLayout.Size;
+
+        // A packing size above 255 or a negative size is malformed; Roslyn's PEModule.GetTypeLayout drops both
+        pack = classLayout.PackingSize <= MaxPackingSize ? classLayout.PackingSize : 0;
+        size = Math.Max(classLayout.Size, 0);
 #pragma warning restore RS0030
         return true;
     }
+
+    // The largest packing size Roslyn reads from a ClassLayout row; ECMA-335 stores it in two bytes, and Roslyn reads a
+    // larger value as none
+    private const int MaxPackingSize = 255;
 
     /// <summary>
     /// Reads the offset of <paramref name="field"/> when it comes from a metadata reference (0 when its FieldLayout row
@@ -67,17 +83,34 @@ internal static class MetadataStructLayoutReader
     public static bool TryGetFieldOffset(IFieldSymbol field, out int offset)
     {
         offset = 0;
-        var definition = field.OriginalDefinition;
-        if (definition.ContainingModule?.GetMetadata() is not { } module || definition.MetadataToken == 0)
+        if (!TryGetRow(field, out var module, out var token))
         {
             return false;
         }
 
 #pragma warning disable RS0030 // FieldLayout row, which Roslyn's public API does not expose; measured with TryRead: at most 0.4 ms per compilation (#736, class remarks)
         var handle = (System.Reflection.Metadata.FieldDefinitionHandle)
-            System.Reflection.Metadata.Ecma335.MetadataTokens.EntityHandle(definition.MetadataToken);
-        offset = Math.Max(module.GetMetadataReader().GetFieldDefinition(handle).GetOffset(), 0);
+            System.Reflection.Metadata.Ecma335.MetadataTokens.EntityHandle(token);
+        try
+        {
+            offset = Math.Max(module.GetMetadataReader().GetFieldDefinition(handle).GetOffset(), 0);
+        }
+        catch (BadImageFormatException)
+        {
+            // [WHY] The same fallback as TryRead: a malformed FieldLayout row is read through the attributes instead
+            return false;
+        }
 #pragma warning restore RS0030
         return true;
+    }
+
+    // The module and token of a symbol from a metadata reference. A constructed generic type, and a member of one, shares
+    // the row of its definition; a symbol of the compilation or of a compilation reference has no metadata or token 0
+    private static bool TryGetRow(ISymbol symbol, [NotNullWhen(true)] out ModuleMetadata? module, out int token)
+    {
+        var definition = symbol.OriginalDefinition;
+        module = definition.ContainingModule?.GetMetadata();
+        token = definition.MetadataToken;
+        return module is not null && token != 0;
     }
 }
