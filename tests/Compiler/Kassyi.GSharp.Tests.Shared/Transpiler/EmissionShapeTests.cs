@@ -172,13 +172,13 @@ public partial class EmissionShapeTests
         AssertContainsLines(cuda,
             "for(int __gsharp_id_5_typed : __gsharp_id_0_data)",
             "{",
-            "__gsharp_id_4_sum+=__gsharp_id_5_typed;",
+            "__gsharp_id_4_sum=__gsharp_add_i32(__gsharp_id_4_sum,__gsharp_id_5_typed);",
             "}",
             "int __gsharp_id_6_i;",
             "int __gsharp_id_7_j;",
             "for(__gsharp_id_6_i=0,__gsharp_id_7_j=__gsharp_id_2_n;__gsharp_id_6_i<__gsharp_id_7_j;__gsharp_id_6_i++,__gsharp_id_7_j--)",
             "{",
-            "__gsharp_id_4_sum+=__gsharp_id_6_i*__gsharp_id_7_j;",
+            "__gsharp_id_4_sum=__gsharp_add_i32(__gsharp_id_4_sum,__gsharp_mul_i32(__gsharp_id_6_i,__gsharp_id_7_j));",
             "}",
             "int __gsharp_id_9_first;",
             $"for(auto __gsharp_id_8_picked : ({Statements}TryGet(__gsharp_id_0_data,&__gsharp_id_9_first)?__gsharp_id_0_data:__gsharp_id_1_output))");
@@ -188,10 +188,11 @@ public partial class EmissionShapeTests
             $"return ({Statements}TryGet(__gsharp_id_0_data,&__gsharp_id_1_v)?__gsharp_id_1_v:0);",
             "}");
         AssertContainsLines(cuda,
-            "__gsharp_id_4_sum+=" + "__gsharp_ctor_" + Ns + "EarlyReturnConstructor(__gsharp_id_3_tid).__gsharp_mb_A;",
+            "__gsharp_id_4_sum=__gsharp_add_i32(__gsharp_id_4_sum," + "__gsharp_ctor_" + Ns +
+            "EarlyReturnConstructor(__gsharp_id_3_tid).__gsharp_mb_A);",
             "auto __gsharp_id_10_addFound = [&](int __gsharp_id_11_x) {",
             "int __gsharp_id_13_found;",
-            $"int __gsharp_id_12_r = ({Statements}TryGet(__gsharp_id_0_data,&__gsharp_id_13_found)?__gsharp_id_13_found+__gsharp_id_11_x:__gsharp_id_11_x);");
+            $"int __gsharp_id_12_r = ({Statements}TryGet(__gsharp_id_0_data,&__gsharp_id_13_found)?__gsharp_add_i32(__gsharp_id_13_found,__gsharp_id_11_x):__gsharp_id_11_x);");
         Assert.Single(Regex.Matches(cuda, @"int __gsharp_id_13_found;"));
         AssertContainsLines(cpu,
             "int __gsharp_id_1_w;",
@@ -212,7 +213,7 @@ public partial class EmissionShapeTests
             "{",
             "return __gsharp_self;",
             "}",
-            "__gsharp_self.__gsharp_mb_A=-__gsharp_id_0_a;",
+            "__gsharp_self.__gsharp_mb_A=__gsharp_neg_i32(__gsharp_id_0_a);",
             "return __gsharp_self;",
             "}");
     }

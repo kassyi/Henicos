@@ -218,7 +218,7 @@ public static partial class StructLayoutRegressionKernels
     public static void BagLengthKernel(LayoutReproBag b, int[] o)
     {
         o[0] = b.N;
-        o[1] = b.Data.Length;
+        o[1] = b.Data is null ? -1 : b.Data.Length;
     }
 
     // R4f: an array field whose elements are converted (they hold arrays) inside a struct passed by value: the

@@ -51,9 +51,9 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-int __gsharp_id_3_tid = threadIdx.x;
+int __gsharp_id_3_tid = (int)threadIdx.x;
 auto __gsharp_id_4_Lookup = [&](GSharpArray<const int> __gsharp_id_5_values, const int __gsharp_id_6_factor, int __gsharp_id_7_index) {
-return __gsharp_id_5_values[__gsharp_id_7_index]*__gsharp_id_6_factor;
+return __gsharp_mul_i32(__gsharp_array_at(__gsharp_id_5_values, __gsharp_id_7_index, ""G#: a null array is read at LocalFunctionParameterKernels.cs(16,20)""),__gsharp_id_6_factor);
 }
 ;
 __gsharp_id_0_output[__gsharp_id_3_tid]=__gsharp_id_4_Lookup(__gsharp_id_1_table,__gsharp_id_2_scale,__gsharp_id_3_tid);
@@ -137,10 +137,12 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 }
 ";
 public static readonly string ReadOnlyLocalFunctionParameterKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source +ReadOnlyLocalFunctionParameterKernel_Source;
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__LocalFunctionParameterKernels__ReadOnlyLocalFunctionParameterKernel {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
 }
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__LocalFunctionParameterKernels__ReadOnlyLocalFunctionParameterKernel(int[] output, int[] table, int scale, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__LocalFunctionParameterKernels__ReadOnlyLocalFunctionParameterKernel __gsharp_ctx) {
 {
 switch (__gsharp_ctx.__gsharp_state)

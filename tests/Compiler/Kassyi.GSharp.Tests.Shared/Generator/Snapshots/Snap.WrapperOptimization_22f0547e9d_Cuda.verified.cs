@@ -92,7 +92,7 @@ public const string DebugName_B = "global::System.Single";
 [System.Runtime.InteropServices.FieldOffset(4)]
 public global::System.Single B;
 }
-public static unsafe void Marshal_MyCustomStruct(ref global::Kassyi.GSharp.Tests.Shared.TestCases.MyCustomStruct host, ref AotContexts.MyCustomStruct native, bool isDevicePtr, System.Collections.Generic.List<IntPtr>? allocatedPtrs, IntPtr hStream = default)
+public static unsafe void Marshal_MyCustomStruct(ref global::Kassyi.GSharp.Tests.Shared.TestCases.MyCustomStruct host, ref AotContexts.MyCustomStruct native, bool isDevicePtr, global::Kassyi.GSharp.Runtime.Interop.DeviceArrayRegions? deviceArrays, IntPtr hStream = default)
 {
 native = System.Runtime.CompilerServices.Unsafe.As<global::Kassyi.GSharp.Tests.Shared.TestCases.MyCustomStruct, AotContexts.MyCustomStruct>(ref host);
 }
@@ -119,7 +119,7 @@ extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__TestCases
 (*__gsharp_id_1_scalarOut)=0;
 if((long long)(*__gsharp_id_0_scalarRef)>(long long)__gsharp_id_4_constantVal)
 {
-(*__gsharp_id_1_scalarOut)=__gsharp_id_2_arrayVal[0]+(*__gsharp_id_3_structRef).__gsharp_mb_A;
+(*__gsharp_id_1_scalarOut)=__gsharp_add_i32(__gsharp_id_2_arrayVal[0],(*__gsharp_id_3_structRef).__gsharp_mb_A);
 (*__gsharp_id_3_structRef).__gsharp_mb_B=(*__gsharp_id_1_scalarOut);
 }
 }
@@ -164,7 +164,6 @@ global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, shared
 IntPtr d_scalarRef = IntPtr.Zero;
 IntPtr d_scalarOut = IntPtr.Zero;
 IntPtr d_arrayVal = IntPtr.Zero;
-System.Collections.Generic.List<IntPtr> structRef_allocatedPtrs = new System.Collections.Generic.List<IntPtr>();
 IntPtr d_structRef = IntPtr.Zero;
 try
 {
@@ -188,19 +187,20 @@ int arrayVal_size = arrayVal.Length * sizeof(global::System.Int32);
 IntPtr* proxy_arrayVal = stackalloc IntPtr[2];
 proxy_arrayVal[0] = IntPtr.Zero;
 ((int*)(proxy_arrayVal + 1))[0] = arrayVal.Length;
+((int*)(proxy_arrayVal + 1))[1] = 0;
 if (arrayVal_size > 0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_arrayVal, (IntPtr)arrayVal_size, hStream));
-proxy_arrayVal[0] = d_arrayVal;
 fixed (global::System.Int32* p_arrayVal = arrayVal)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoDAsync_v2(d_arrayVal, (IntPtr)p_arrayVal, (IntPtr)arrayVal_size, hStream));
 CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
 }
+proxy_arrayVal[0] = d_arrayVal;
 }
 kernelParams[2] = proxy_arrayVal;
 AotContexts.MyCustomStruct native_structRef = default;
-AotContexts.Marshal_MyCustomStruct(ref structRef, ref native_structRef, false, structRef_allocatedPtrs, hStream);
+AotContexts.Marshal_MyCustomStruct(ref structRef, ref native_structRef, false, null, hStream);
 // Marshal ref/out struct: structRef
 int structRef_size = sizeof(AotContexts.MyCustomStruct);
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_structRef, (IntPtr)structRef_size, hStream));
@@ -251,7 +251,6 @@ finally
 if (d_scalarRef != IntPtr.Zero) CudaDriverApi.cuMemFreeAsync(d_scalarRef, hStream);
 if (d_scalarOut != IntPtr.Zero) CudaDriverApi.cuMemFreeAsync(d_scalarOut, hStream);
 if (d_arrayVal != IntPtr.Zero) CudaDriverApi.cuMemFreeAsync(d_arrayVal, hStream);
-foreach (var ptr in structRef_allocatedPtrs) CudaDriverApi.cuMemFreeAsync(ptr, hStream);
 if (d_structRef != IntPtr.Zero) CudaDriverApi.cuMemFreeAsync(d_structRef, hStream);
 }
 }
@@ -278,6 +277,7 @@ kernelParams[1] = &scalarOut;
 IntPtr* proxy_arrayVal = stackalloc IntPtr[2];
 proxy_arrayVal[0] = arrayVal;
 ((int*)(proxy_arrayVal + 1))[0] = 0; // Length is unknown for raw IntPtr
+((int*)(proxy_arrayVal + 1))[1] = 0;
 kernelParams[2] = proxy_arrayVal;
 // Marshal device struct: structRef
 kernelParams[3] = &structRef;

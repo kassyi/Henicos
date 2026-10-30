@@ -51,7 +51,7 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-int __gsharp_id_2_idx = threadIdx.x+blockIdx.x*blockDim.x;
+int __gsharp_id_2_idx = __gsharp_add_i32((int)threadIdx.x,__gsharp_mul_i32((int)blockIdx.x,(int)blockDim.x));
 if(__gsharp_id_2_idx<__gsharp_id_1_n)
 {
 __gsharp_id_0_data[__gsharp_id_2_idx]*=2.0f;
@@ -136,10 +136,12 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 }
 ";
 public static readonly string InOutKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source +InOutKernel_Source;
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_context_Kassyi__GSharp__Tests__TestCases__GEN_u57_uInOutArrayMarshaling__InOutKernel {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
 }
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__TestCases__GEN_u57_uInOutArrayMarshaling__InOutKernel(float[] data, int n, __gsharp_context_Kassyi__GSharp__Tests__TestCases__GEN_u57_uInOutArrayMarshaling__InOutKernel __gsharp_ctx) {
 {
 switch (__gsharp_ctx.__gsharp_state)

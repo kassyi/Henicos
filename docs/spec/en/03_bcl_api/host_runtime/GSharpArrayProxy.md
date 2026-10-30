@@ -20,12 +20,18 @@ A managed proxy struct representing the 16-byte memory layout of the native `GSh
 public struct GSharpArrayProxy
 ```
 
+A `null` array is `Data == IntPtr.Zero`. An empty array has a non-null `Data` that is never dereferenced
+([EmptyArrayData](#emptyarraydata) on CUDA), so the device tells `null` from empty as C# does.
+
 ## Fields
 
 | Name | Description |
 | --- | --- |
 | [Data](#data) | The raw device pointer (`IntPtr`) at byte offset `0`. |
 | [Length](#length) | The element count (`int`) at byte offset `8`. |
+| [Flags](#flags) | Bit flags (`int`) at byte offset `12`. |
+| [EmptyArrayData](#emptyarraydata) | The `Data` of an empty array on CUDA. |
+| [NullReadsAsEmpty](#nullreadsasempty) | The `Flags` bit of a `null` optional kernel argument. |
 
 ## Data
 
@@ -43,6 +49,35 @@ The element count (`int`) at byte offset `8`.
 ```csharp
 [FieldOffset(8)]
 public int Length;
+```
+
+## Flags
+
+Bit flags (`int`) at byte offset `12`, `GSharpArray<T>::flags` on the device. The launchers set
+[NullReadsAsEmpty](#nullreadsasempty) for a `null` optional kernel argument; every other value has `0`.
+
+```csharp
+[FieldOffset(12)]
+public int Flags;
+```
+
+## EmptyArrayData
+
+The `Data` of an empty array on CUDA: a non-null address (`256`) that is never dereferenced, aligned for any element
+type. No allocation returns it (`cuMemAlloc` rejects zero bytes).
+
+```csharp
+public const nint EmptyArrayData = 256;
+```
+
+## NullReadsAsEmpty
+
+The [Flags](#flags) bit (`1`) that the launchers set for a `null` optional kernel argument (`T[]?`). The device reads such
+an argument as an array of length 0, also through a local or a device function, while reading any other `null` array
+throws `NullReferenceException`.
+
+```csharp
+public const int NullReadsAsEmpty = 1;
 ```
 
 ## Operators

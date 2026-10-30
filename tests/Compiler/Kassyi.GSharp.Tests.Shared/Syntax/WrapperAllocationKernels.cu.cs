@@ -21,4 +21,53 @@ public static partial class WrapperAllocationKernels
             outVal = 0;
         }
     }
+
+    // An array launcher with one T[] argument: no other holder can share its array, so it needs no DeviceArrayRegions
+    [GpuKernel]
+    public static void SingleArrayKernel(int[] a)
+    {
+        if (ThreadIndex.X == 0)
+        {
+            a[0] += 1;
+        }
+    }
+
+    // Two T[] arguments: the launcher tests whether they are one array without a DeviceArrayRegions
+    [GpuKernel]
+    public static void TwoArraysKernel(int[] a, int[] b)
+    {
+        if (ThreadIndex.X == 0)
+        {
+            a[0] += 1;
+            b[0] += 1;
+        }
+    }
+
+    // The same next to a struct argument that holds no array
+    [GpuKernel]
+    public static void StructAndTwoArraysKernel(ref ArrayFreeCounter counter, int[] a, int[] b)
+    {
+        if (ThreadIndex.X == 0)
+        {
+            counter.Value += 1;
+            a[0] += 1;
+            b[0] += 1;
+        }
+    }
+
+    // A struct argument that Marshal_ converts but that holds no array: no array of it can be shared, so the launcher
+    // needs no DeviceArrayRegions
+    [GpuKernel]
+    public static void ArrayFreeStructKernel(ref ArrayFreeCounter counter)
+    {
+        if (ThreadIndex.X == 0)
+        {
+            counter.Value += 1;
+        }
+    }
+}
+
+public struct ArrayFreeCounter
+{
+    public int Value;
 }

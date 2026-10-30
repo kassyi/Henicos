@@ -3,6 +3,8 @@ name: Hybrid CI Tests
 # Static, syntax and CPU tests on GitHub-hosted runners (no CUDA).
 # Ubuntu and Windows run side by side for every pull request and every push to main. The repository is public, so
 # GitHub-hosted runners have no minute limit on either OS.
+# Each OS runs three jobs in parallel, each building only what it tests (#988): Tests.Cpu, Tests.Cuda, and the other
+# test projects of the solution. Before the split the two generator-heavy suites competed for one 4-core runner.
 on:
   push:
     branches: ["main"]
@@ -27,17 +29,32 @@ concurrency:
 
 jobs:
   test:
-    name: Run Static & Syntax Tests (${{ matrix.os }})
+    name: ${{ matrix.title }} (${{ matrix.os }})
     strategy:
-      fail-fast: false # a failure on one OS does not cancel the other
+      fail-fast: false # a failure on one OS or in one suite does not cancel the other jobs
       matrix:
         os: [ubuntu-latest, windows-latest]
+        suite: [cpu, cuda, rest]
+        include:
+          - suite: cpu
+            title: Tests.Cpu
+            target: tests/Compiler/Kassyi.GSharp.Tests.Cpu/Kassyi.GSharp.Tests.Cpu.csproj
+          - suite: cuda
+            title: Tests.Cuda
+            target: tests/Compiler/Kassyi.GSharp.Tests.Cuda/Kassyi.GSharp.Tests.Cuda.csproj
+          # Every other test project of Henicos.slnx, written to this solution filter by the step "Select the other
+          # test projects", so a new test project runs here without a workflow change
+          - suite: rest
+            title: Other tests
+            target: tmp/ci/rest.slnf
     runs-on: ${{ matrix.os }}
     env:
       GSHARP_TEST_NO_CUDA: "1"
       DiffEngine_Disabled: "true"
       # Seconds the vstest console waits for a test host to connect (default 90); the Windows runner is sometimes too slow when assemblies start in parallel
       VSTEST_CONNECTION_TIMEOUT: "300"
+      # Every dotnet test writes a .trx here; uploaded below for `node scripts/human/ci-test-durations.js`
+      TEST_RESULTS_DIR: ${{ github.workspace }}/tmp/test-results
 
     steps:
       - name: Enable long paths in Git (Windows)
@@ -52,36 +69,54 @@ jobs:
         with:
           dotnet-version: "10.0.x"
 
+      # One cache per OS and suite: the suites restore different packages, and the first job to finish would
+      # otherwise save a cache without the packages of the others
+      - name: Cache NuGet packages
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.nuget/packages
+          key: nuget-${{ runner.os }}-${{ matrix.suite }}-${{ hashFiles('**/*.csproj', '**/Directory.Build.props', '**/Directory.Build.targets', '**/Directory.Packages.props', '**/global.json', '**/nuget.config', '**/NuGet.Config') }}
+          restore-keys: nuget-${{ runner.os }}-${{ matrix.suite }}-
+
+      - name: Select the other test projects
+        if: matrix.suite == 'rest'
+        run: >-
+          node scripts/human/ci-solution-filter.js
+          --exclude tests/Compiler/Kassyi.GSharp.Tests.Cpu/Kassyi.GSharp.Tests.Cpu.csproj
+          --exclude tests/Compiler/Kassyi.GSharp.Tests.Cuda/Kassyi.GSharp.Tests.Cuda.csproj
+          --out ${{ matrix.target }}
+
       - name: Restore dependencies
-        run: dotnet restore
+        run: dotnet restore ${{ matrix.target }}
 
       - name: Build project
         id: build
-        run: dotnet build --no-restore -c Release
+        run: dotnet build ${{ matrix.target }} --no-restore -c Release
 
       # The Integration tests start dotnet build processes of their own; they run in their own step below, so that
       # they do not compete with the other test assemblies for the runner (#835)
       - name: Run Static Compilation & Syntax Tests
         env:
           GSHARP_TEST_NO_CUDA: "1"
-        run: dotnet test --filter "Category!=GpuExecution&FullyQualifiedName!~Kassyi.GSharp.Tests.Integration." --no-build -c Release
+        run: dotnet test ${{ matrix.target }} --filter "Category!=GpuExecution&FullyQualifiedName!~Kassyi.GSharp.Tests.Integration." --no-build -c Release --logger trx --results-directory "${{ env.TEST_RESULTS_DIR }}"
 
       - name: Run CPU Native Toolchain Execution Tests
+        if: matrix.suite == 'cpu'
         env:
           GSHARP_TEST_NO_CUDA: "1"
-        run: dotnet test tests/Compiler/Kassyi.GSharp.Tests.Cpu/Kassyi.GSharp.Tests.Cpu.csproj --filter "Category=GpuExecution&Category!=Stress&Category!=Benchmark" --no-build -c Release
+        run: dotnet test tests/Compiler/Kassyi.GSharp.Tests.Cpu/Kassyi.GSharp.Tests.Cpu.csproj --filter "Category=GpuExecution&Category!=Stress&Category!=Benchmark" --no-build -c Release --logger trx --results-directory "${{ env.TEST_RESULTS_DIR }}"
 
       # Runs after the other test steps, also when one of them failed (the job still fails), but not without a build
       - name: Run MSBuild Integration Tests
-        if: ${{ !cancelled() && steps.build.outcome == 'success' }}
+        if: ${{ matrix.suite == 'rest' && !cancelled() && steps.build.outcome == 'success' }}
         env:
           GSHARP_TEST_NO_CUDA: "1"
           # Every dotnet build of these tests writes its binary log here; uploaded below when the job fails
           GSHARP_TEST_BUILD_LOG_DIR: ${{ runner.temp }}/integration-build-logs
-        run: dotnet test tests/Compiler/Kassyi.GSharp.Tests.Integration/Kassyi.GSharp.Tests.Integration.csproj --filter "Category!=GpuExecution" --no-build -c Release
+        run: dotnet test tests/Compiler/Kassyi.GSharp.Tests.Integration/Kassyi.GSharp.Tests.Integration.csproj --filter "Category!=GpuExecution" --no-build -c Release --logger trx --results-directory "${{ env.TEST_RESULTS_DIR }}"
 
       - name: Upload Integration build logs
-        if: ${{ failure() }}
+        if: ${{ failure() && matrix.suite == 'rest' }}
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: integration-build-logs-${{ matrix.os }}
@@ -89,3 +124,13 @@ jobs:
           path: ${{ runner.temp }}/integration-build-logs/
           if-no-files-found: ignore
           retention-days: 14
+
+      # On every run, passed or failed: the per-test durations for `node scripts/human/ci-test-durations.js <dir>`
+      - name: Upload test results
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: test-results-${{ matrix.os }}-${{ matrix.suite }}
+          path: ${{ env.TEST_RESULTS_DIR }}/
+          if-no-files-found: ignore
+          retention-days: 7

@@ -72,13 +72,13 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-int __gsharp_id_3_tid = threadIdx.x;
+int __gsharp_id_3_tid = (int)threadIdx.x;
 __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__PacketItem __gsharp_id_4_item = __gsharp_id_0_items[__gsharp_id_3_tid];
 int __gsharp_id_5_localColor = __gsharp_id_4_item.__gsharp_mb_Color;
 unsigned int __gsharp_id_6_localFlags = __gsharp_id_4_item.__gsharp_mb_Flags;
 if((__gsharp_id_6_localFlags&1U)!=0U)
 {
-__gsharp_id_2_output[__gsharp_id_3_tid]=__gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__EnumTypeKernels__ScoreColor(__gsharp_id_5_localColor)+((__gsharp_id_5_localColor==__gsharp_id_1_bonusColor?100:0))+__gsharp_id_4_item.__gsharp_mb_Payload;
+__gsharp_id_2_output[__gsharp_id_3_tid]=__gsharp_add_i32(__gsharp_add_i32(__gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__EnumTypeKernels__ScoreColor(__gsharp_id_5_localColor),(__gsharp_id_5_localColor==__gsharp_id_1_bonusColor?100:0)),__gsharp_id_4_item.__gsharp_mb_Payload);
 }
 else
 {
@@ -164,10 +164,12 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 }
 ";
 public static readonly string EvaluatePacketsKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source +EvaluatePacketsKernel_Source;
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__EnumTypeKernels__EvaluatePacketsKernel {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
 }
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__EnumTypeKernels__EvaluatePacketsKernel(global::Kassyi.GSharp.Tests.Shared.Syntax.PacketItem[] items, global::Kassyi.GSharp.Tests.Shared.Syntax.PacketColor bonusColor, int[] output, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__EnumTypeKernels__EvaluatePacketsKernel __gsharp_ctx) {
 {
 switch (__gsharp_ctx.__gsharp_state)

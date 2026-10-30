@@ -51,6 +51,8 @@ public class KernelDiagnosticsInventoryTests
         "Diagnostics/OperatorMacroUnsupportedForms.cu.cs",
         // GSH0003 (operator macro outside an assignment statement, nested without storage for its result)
         "Diagnostics/OperatorMacroPositions.cu.cs",
+        // GSH0003 (operator macro target of an inaccessible struct, on the managed path)
+        "Diagnostics/OperatorMacroUnreachableTarget.cu.cs",
         // GSH0003 (ForUnroll, SyncGrid), GSH0006, GSH0012
         "Analyzers/MacroArgumentSadPath.cs",
         // GSH0011

@@ -11,12 +11,12 @@ public const string Source = @"inline bool __gsharp_fn_Kassyi__GSharp__Tests__Sh
 inline bool __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__InlineOutVarKernels__TryStep(int __gsharp_id_0_input, int* __gsharp_id_1_next);
 
 inline bool __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__InlineOutVarKernels__TrySquare(int __gsharp_id_0_input, int* __gsharp_id_1_output){
-(*__gsharp_id_1_output)=__gsharp_id_0_input*__gsharp_id_0_input;
+(*__gsharp_id_1_output)=__gsharp_mul_i32(__gsharp_id_0_input,__gsharp_id_0_input);
 return __gsharp_id_0_input>0;
 }
 
 inline bool __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__InlineOutVarKernels__TryStep(int __gsharp_id_0_input, int* __gsharp_id_1_next){
-(*__gsharp_id_1_next)=__gsharp_id_0_input-1;
+(*__gsharp_id_1_next)=__gsharp_sub_i32(__gsharp_id_0_input,1);
 return (*__gsharp_id_1_next)>0;
 }
 
@@ -65,7 +65,7 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-int __gsharp_id_3_tid = threadIdx.x;
+int __gsharp_id_3_tid = (int)threadIdx.x;
 int __gsharp_id_5_res;
 bool __gsharp_id_4_ok = __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__InlineOutVarKernels__TrySquare(__gsharp_id_0_input[__gsharp_id_3_tid],&__gsharp_id_5_res);
 __gsharp_id_1_output[__gsharp_id_3_tid]=__gsharp_id_5_res;
@@ -157,10 +157,12 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 }
 ";
 public static readonly string HappyPathKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source +HappyPathKernel_Source;
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__InlineOutVarKernels__HappyPathKernel {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
 }
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__InlineOutVarKernels__HappyPathKernel(int[] input, int[] output, int[] success, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__InlineOutVarKernels__HappyPathKernel __gsharp_ctx) {
 {
 switch (__gsharp_ctx.__gsharp_state)
@@ -336,15 +338,15 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-int __gsharp_id_2_tid = threadIdx.x;
+int __gsharp_id_2_tid = (int)threadIdx.x;
 int __gsharp_id_3_val;
 if(__gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__InlineOutVarKernels__TrySquare(__gsharp_id_0_input[__gsharp_id_2_tid],&__gsharp_id_3_val))
 {
-__gsharp_id_1_output[__gsharp_id_2_tid]=__gsharp_id_3_val+10;
+__gsharp_id_1_output[__gsharp_id_2_tid]=__gsharp_add_i32(__gsharp_id_3_val,10);
 }
 else
 {
-__gsharp_id_1_output[__gsharp_id_2_tid]=__gsharp_id_3_val-10;
+__gsharp_id_1_output[__gsharp_id_2_tid]=__gsharp_sub_i32(__gsharp_id_3_val,10);
 }
 __gsharp_state=-1;
 return;
@@ -426,10 +428,12 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 }
 ";
 public static readonly string IfConditionKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source +IfConditionKernel_Source;
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__InlineOutVarKernels__IfConditionKernel {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
 }
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__InlineOutVarKernels__IfConditionKernel(int[] input, int[] output, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__InlineOutVarKernels__IfConditionKernel __gsharp_ctx) {
 {
 switch (__gsharp_ctx.__gsharp_state)
@@ -596,13 +600,13 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-int __gsharp_id_2_tid = threadIdx.x;
+int __gsharp_id_2_tid = (int)threadIdx.x;
 int __gsharp_id_3_curr = __gsharp_id_0_input[__gsharp_id_2_tid];
 int __gsharp_id_4_sum = 0;
 int __gsharp_id_5_nextVal;
 while(__gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__InlineOutVarKernels__TryStep(__gsharp_id_3_curr,&__gsharp_id_5_nextVal))
 {
-__gsharp_id_4_sum+=__gsharp_id_5_nextVal;
+__gsharp_id_4_sum=__gsharp_add_i32(__gsharp_id_4_sum,__gsharp_id_5_nextVal);
 __gsharp_id_3_curr=__gsharp_id_5_nextVal;
 }
 __gsharp_id_1_output[__gsharp_id_2_tid]=__gsharp_id_4_sum;
@@ -686,10 +690,12 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 }
 ";
 public static readonly string WhileConditionKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source +WhileConditionKernel_Source;
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__InlineOutVarKernels__WhileConditionKernel {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
 }
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__InlineOutVarKernels__WhileConditionKernel(int[] input, int[] output, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__InlineOutVarKernels__WhileConditionKernel __gsharp_ctx) {
 {
 switch (__gsharp_ctx.__gsharp_state)

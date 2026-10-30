@@ -79,4 +79,21 @@ public static partial class PartialWarpShuffleKernels
     {
         result[ThreadIndex.X] = Warp.ActiveMask();
     }
+
+    // Warp.ActiveMask() in a device function that does not suspend, which the managed path runs as the user's method
+    [GpuKernel]
+    public static void ActiveMaskViaDeviceKernel(uint[] result)
+    {
+        result[ThreadIndex.X] = MaskViaDevice();
+    }
+
+    [GpuDeviceFunction]
+    public static uint MaskViaDevice() => Warp.ActiveMask();
+
+    // A 2-D block: the lanes of a warp follow the linear thread index (x first, then y)
+    [GpuKernel]
+    public static void ActiveMask2DKernel(uint[] result)
+    {
+        result[ThreadIndex.Y * BlockDimension.X + ThreadIndex.X] = Warp.ActiveMask();
+    }
 }
