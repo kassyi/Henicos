@@ -45,17 +45,15 @@ internal abstract class FloatVectorBinaryScalarExpressionBase(
         var vecResult = vector.Evaluate(workspace, elementOffset, evalCount);
 
         // A target that shares words with an input is written from the cache after the launch (#864)
-        var staged = DeviceRanges.Overlaps(target, vecResult) || DeviceRanges.Overlaps(target, scalar.Significand);
-        var destination = VectorResultCache.HasTarget(target) && !staged
-            ? target
-            : _cache.Float(workspace, evalCount, WordsPerElement);
-        var operands = new FloatVectorScalarOperands(vecResult, scalar, destination);
+        var output = VectorOutput.Open(_cache, workspace, evalCount, WordsPerElement, target, vecResult,
+            scalar: scalar.Significand);
+        var operands = new FloatVectorScalarOperands(vecResult, scalar, output.Destination);
         // An empty vector launches nothing: a grid of 0 blocks is an invalid launch.
         if (evalCount > 0)
         {
             DispatchKernel(workspace, operands, (uint)evalCount);
         }
-        return staged ? VectorResultCache.Deliver(workspace, destination, target) : destination;
+        return output.Close(workspace);
     }
 
     protected static GpuBigIntVectorKernels.AotContexts.VectorFloatBinaryOperation CreateScalarFloatOp(FloatVectorScalarOperands operands)

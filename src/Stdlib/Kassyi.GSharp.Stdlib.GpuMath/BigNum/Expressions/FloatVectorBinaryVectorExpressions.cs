@@ -56,17 +56,14 @@ internal abstract class FloatVectorBinaryVectorExpressionBase(
         }
 
         // A target that shares words with an input is written from the cache after the launch (#864)
-        var staged = DeviceRanges.Overlaps(target, leftResult) || DeviceRanges.Overlaps(target, rightResult);
-        var destination = VectorResultCache.HasTarget(target) && !staged
-            ? target
-            : _cache.Float(workspace, evalCount, WordsPerElement);
-        var operands = new FloatVectorZipOperands(leftResult, rightResult, destination);
+        var output = VectorOutput.Open(_cache, workspace, evalCount, WordsPerElement, target, leftResult, rightResult);
+        var operands = new FloatVectorZipOperands(leftResult, rightResult, output.Destination);
         // An empty vector launches nothing: a grid of 0 blocks is an invalid launch.
         if (evalCount > 0)
         {
             DispatchKernel(workspace, operands, (uint)evalCount);
         }
-        return staged ? VectorResultCache.Deliver(workspace, destination, target) : destination;
+        return output.Close(workspace);
     }
 
     protected static GpuBigIntVectorKernels.AotContexts.VectorFloatBinaryOperation CreateZipFloatOp(FloatVectorZipOperands operands) =>

@@ -15,17 +15,18 @@ namespace Kassyi.GSharp.Stdlib.GpuMath.Tests.BigNum.Expressions;
 /// test reinterprets one buffer instead, which gives the node the same pointers.
 /// </para>
 /// <para>
-/// The integer results are compared with <see cref="BigInteger"/> computed from the host input. The floating-point
-/// results are compared word for word with the same expression evaluated into a disjoint target from a pristine copy of
-/// the input (the floating-point values themselves are checked by <c>GpuBigFloatLinqAndVectorTests</c>).
+/// Both element types go through one check: the target's words are compared with the same expression evaluated into a
+/// disjoint target from a pristine copy of the input, and the device words the evaluation keeps show whether the node
+/// computed in its cache. The integer results are also compared with <see cref="BigInteger"/> computed from the host
+/// input (the floating-point values themselves are checked by <c>GpuBigFloatLinqAndVectorTests</c>).
 /// </para>
 /// <para>
 /// mutant: <c>DeviceRanges.Overlaps(GpuBigUIntArrayView, GpuBigUIntArrayView)</c> and
 /// <c>DeviceRanges.Overlaps(GpuBigFloatArrayView, GpuBigIntMemoryHandle)</c> return <see langword="false"/>: the
-/// TargetAhead case of every node except the leaves fails (with most InPlace / TargetBehind cases, 87 to 88 on an
-/// RTX 3070 Ti), and so does the public SelectDivide reproduction. The leaves have no failing witness: the driver copy
-/// of a partly overlapping range happened to be right there, and the staging copy follows the <c>cuMemcpyDtoD</c>
-/// contract, which does not promise it.
+/// TargetAhead case of every node except the leaves gives wrong words, every overlapping case of those nodes fails the
+/// staging check (119 of 156 cases fail on an RTX 3070 Ti), and so does the public SelectDivide reproduction. The
+/// leaves have no failing witness: the driver copy of a partly overlapping range happened to be right there, and the
+/// staging copy follows the <c>cuMemcpyDtoD</c> contract, which does not promise it.
 /// </para>
 /// </remarks>
 [Category(TestCategory.Unit)]
@@ -153,46 +154,16 @@ public sealed class VectorTargetOverlapTests : IDisposable
     {
         var (count, words) = IsHostLoop(op) ? (HostCount, HostWords) : (KernelCount, KernelWords);
         var random = new Random(Seed + (int)op * 97 + (int)layout * 7 + (int)overlapped);
-        // The products are kept below 2^(32 * words): the multiply kernels drop the carry out of the left operand's top
-        // word (a separate bug), which this test is not about
-        var leftBits = op is IntOp.SelectMultiply or IntOp.ZipMultiply ? words * 16 : words * 32 - 2;
-        var left = RandomValues(random, count, leftBits);
+        var left = RandomValues(random, count, words * 32 - 2);
         var right = RandomValues(random, count, words * 16).Select(static v => v | 1).ToArray();
         var scalarValue = RandomValue(random, words * 16) | 1;
         var divisor = (uint)random.Next(3, int.MaxValue) | 1u;
+        var subject = new IntSubject(this, op, count, words, left, right, scalarValue, divisor);
 
-        // A buffer large enough for an input and a target of up to twice the input width, either one shifted by one
-        // input element
-        var storageWords = (count + 1) * 2 * words + words;
-        using var storage = new GpuBigUIntArray(_workspace, storageWords, 1);
-        using var separate = new GpuBigUIntArray(_workspace, storageWords, 1);
-        var (inputOffset, targetOffset) = Offsets(layout, words);
+        AssertOverlapMatchesDisjoint(subject, op == IntOp.Leaf, layout, overlapped);
 
-        using var leftArray = overlapped == Operand.Left
-            ? Place(storage, inputOffset, left, words)
-            : Place(separate, 0, left, words);
-        using var rightArray = overlapped == Operand.Right
-            ? Place(storage, inputOffset, right, words)
-            : Place(separate, (count + 1) * words, right, words);
-        using var scalar = new GpuBigInt(GpuBigUInt.FromBigInteger(_workspace, scalarValue, words), false);
-        using var expression = CreateIntNode(op, leftArray, rightArray, scalar, divisor);
-        using var disjointTarget = new GpuBigUIntArray(_workspace, count, expression.WordsPerElement);
-        var target = layout == Layout.Disjoint
-            ? (GpuBigUIntArrayView)disjointTarget
-            : new GpuBigUIntArrayView(_workspace, storage.Handle.Slice(targetOffset, count * expression.WordsPerElement),
-                count, expression.WordsPerElement);
-
-        var result = expression.Evaluate(_workspace, 0, count, target);
-
-        // Each element is the operation on the host input: an element written before another element read its input
-        // would give a wrong value there.
-        // mutant: DeviceRanges.Overlaps(GpuBigUIntArrayView, GpuBigUIntArrayView) `=> false` (every non-leaf
-        // TargetAhead case fails)
-        var expected = ExpectedInt(op, left, right, scalarValue, divisor);
-        Assert.Equal(expected, ReadSigned(result));
-        // The values are delivered in the caller's target, also when the node computed them in its cache
-        Assert.Equal(target.DevicePointer, result.Values.DevicePointer);
-        Assert.Equal(expected.Select(BigInteger.Abs), ReadValues(target));
+        // Each element is also the operation on the host input, so that a bug the disjoint evaluation shares shows too
+        Assert.Equal(ExpectedInt(op, left, right, scalarValue, divisor), subject.Signed);
     }
 
     [SkippableTheory]
@@ -205,52 +176,9 @@ public sealed class VectorTargetOverlapTests : IDisposable
         // Small positive integers: in the domain of every operation (Log, Rsqrt, Reciprocal, Pow)
         var left = Enumerable.Range(0, count).Select(_ => (uint)random.Next(1, 64)).ToArray();
         var right = Enumerable.Range(0, count).Select(_ => (uint)random.Next(1, 4)).ToArray();
+        var subject = new FloatSubject(this, op, count, words, left, right);
 
-        // The reference: the same expression on a pristine copy, into a disjoint target
-        uint[][] expected;
-        {
-            using var pristineLeft = CreateFloatArray(left, words);
-            using var pristineRight = CreateFloatArray(right, words);
-            using var scalar = CreateFloat(2, words);
-            using var reference = CreateFloatNode(op, pristineLeft, pristineRight, scalar);
-            using var referenceTarget = new GpuBigFloatArray(_workspace, count, reference.WordsPerElement);
-            reference.Evaluate(_workspace, 0, count, referenceTarget);
-            expected = ReadFloatWords(referenceTarget);
-        }
-
-        var outWords = 2 * words + 1;
-        using var significands = new GpuBigUIntArray(_workspace, (count + 1) * outWords, 1);
-        using var exponents = new GpuBigUIntArray(_workspace, count + 1, 1);
-        using var signs = new GpuBigUIntArray(_workspace, count + 1, 1);
-        var (inputOffset, targetOffset) = Offsets(layout, words);
-        var (inputScalarOffset, targetScalarOffset) = Offsets(layout, 1);
-
-        using var overlappedArray = PlaceFloat(significands, exponents, signs, inputOffset, inputScalarOffset,
-            overlapped == Operand.Left ? left : right, words);
-        using var otherArray = CreateFloatArray(overlapped == Operand.Left ? right : left, words);
-        using var floatScalar = CreateFloat(2, words);
-        using var expression = overlapped == Operand.Left
-            ? CreateFloatNode(op, overlappedArray, otherArray, floatScalar)
-            : CreateFloatNode(op, otherArray, overlappedArray, floatScalar);
-        var width = expression.WordsPerElement;
-        using var disjointTarget = new GpuBigFloatArray(_workspace, count, width);
-        var target = layout == Layout.Disjoint
-            ? (GpuBigFloatArrayView)disjointTarget
-            : new GpuBigFloatArrayView(
-                new GpuBigUIntArrayView(_workspace, significands.Handle.Slice(targetOffset, count * width), count, width),
-                new GpuBigUIntArrayView(_workspace, exponents.Handle.Slice(targetScalarOffset, count), count, 1),
-                new GpuBigUIntArrayView(_workspace, signs.Handle.Slice(targetScalarOffset, count), count, 1));
-
-        var result = expression.Evaluate(_workspace, 0, count, target);
-
-        // Same words as the disjoint evaluation: significands, exponents and signs.
-        // mutant: DeviceRanges.Overlaps(GpuBigFloatArrayView, GpuBigIntMemoryHandle) `=> false` (every non-leaf
-        // TargetAhead case fails)
-        Assert.Equal(target.Significands.DevicePointer, result.Significands.DevicePointer);
-        var actual = ReadFloatWords(target);
-        Assert.Equal(expected[0], actual[0]);
-        Assert.Equal(expected[1], actual[1]);
-        Assert.Equal(expected[2], actual[2]);
+        AssertOverlapMatchesDisjoint(subject, op == FloatOp.Leaf, layout, overlapped);
     }
 
     [SkippableFact]
@@ -329,24 +257,20 @@ public sealed class VectorTargetOverlapTests : IDisposable
         var random = new Random(Seed);
         var values = Enumerable.Range(0, count).Select(_ => (uint)random.Next(1, 1 << 20)).ToArray();
 
+        // The reference: the same expression on a pristine copy, into a disjoint target; its node gives the width
         uint[][] expected;
+        int width;
         {
             using var pristine = CreateFloatArray(values, words);
             using var divisor = CreateFloat(3, words);
             using var reference = pristine.AsVectorizedEnumerable().SelectDivide(divisor);
-            using var referenceTarget = new GpuBigFloatArray(_workspace, count, reference.WordsPerElement);
+            width = reference.WordsPerElement;
+            using var referenceTarget = new GpuBigFloatArray(_workspace, count, width);
             reference.Evaluate(_workspace, 0, count, referenceTarget);
             expected = ReadFloatWords(referenceTarget);
         }
 
         using var input = CreateFloatArray(values, words);
-        int width;
-        using (var probeDivisor = CreateFloat(3, words))
-        using (var probe = input.AsVectorizedEnumerable().SelectDivide(probeDivisor))
-        {
-            width = probe.WordsPerElement;
-        }
-
         using var significands = new GpuBigUIntArray(_workspace, count * width, 1);
         using var exponents = new GpuBigUIntArray(_workspace, count, 1);
         using var signs = new GpuBigUIntArray(_workspace, count, 1);
@@ -392,6 +316,200 @@ public sealed class VectorTargetOverlapTests : IDisposable
 
         var expected = values.Take(count - 1).Select(v => subtract ? v - scalarValue : v / scalarValue);
         Assert.Equal(expected, ReadSigned(result));
+    }
+
+    // The check both element types share. The overlapped operand and the target are placed in one buffer per component
+    // (int: the values; float: the significands, the exponents and the signs) as the layout says; the other operand is
+    // an array of its own.
+    private void AssertOverlapMatchesDisjoint(OverlapSubject subject, bool isLeaf, Layout layout, Operand overlapped)
+    {
+        // The reference: the same expression on pristine inputs, into a disjoint target; its node gives the width
+        var (width, expected) = subject.EvaluateReference();
+        var count = subject.Count;
+        var inputWords = subject.InputComponentWords;
+        var targetWords = subject.TargetComponentWords(width);
+        var buffers = new List<GpuBigUIntArray>();
+        try
+        {
+            var inputs = new GpuBigIntMemoryHandle[inputWords.Length];
+            var targets = new GpuBigIntMemoryHandle[inputWords.Length];
+            for (var k = 0; k < inputWords.Length; k++)
+            {
+                // Large enough for the input and the target, either one shifted by one input element
+                var storageWords = inputWords[k] + count * Math.Max(inputWords[k], targetWords[k]);
+                var storage = new GpuBigUIntArray(_workspace, storageWords, 1);
+                buffers.Add(storage);
+                var (inputOffset, targetOffset) = Offsets(layout, inputWords[k]);
+                inputs[k] = storage.Handle.Slice(inputOffset, count * inputWords[k]);
+                if (layout == Layout.Disjoint)
+                {
+                    var separate = new GpuBigUIntArray(_workspace, count * targetWords[k], 1);
+                    buffers.Add(separate);
+                    targets[k] = separate.Handle;
+                }
+                else
+                {
+                    targets[k] = storage.Handle.Slice(targetOffset, count * targetWords[k]);
+                }
+            }
+
+            var (resultPointer, retainedWords) = subject.Evaluate(inputs, targets, width, overlapped);
+
+            // Every component of the target holds the words of the disjoint evaluation: an element written before
+            // another element read its input would differ there.
+            // mutant: DeviceRanges.Overlaps(GpuBigUIntArrayView, GpuBigUIntArrayView) or
+            // DeviceRanges.Overlaps(GpuBigFloatArrayView, GpuBigIntMemoryHandle) `=> false` (both: every non-leaf
+            // TargetAhead case fails here; with the staging check below, every non-leaf overlapping case fails)
+            for (var k = 0; k < targets.Length; k++)
+            {
+                Assert.Equal(expected[k], ReadWords(targets[k].DevicePointer, count * targetWords[k]));
+            }
+
+            // The result is delivered in the caller's target, also when the node computed it in its cache
+            Assert.Equal(targets[0].DevicePointer, resultPointer);
+
+            // The node computes in its cache (count * width words or more, kept until the node is disposed) exactly
+            // when the target overlaps an input: a disjoint target is written directly, with no cache and no copy. A
+            // leaf keeps no values cache in any layout: it copies its input into the target.
+            // mutant: IntVectorResultKind.Overlaps(GpuBigUIntArrayView, GpuBigIntArrayView) and
+            // FloatVectorResultKind.Overlaps(GpuBigFloatArrayView, GpuBigFloatArrayView)
+            // `=> VectorResultCache.HasTarget(target)` (every target staged: every non-leaf Disjoint case fails)
+            Assert.Equal(layout != Layout.Disjoint && !isLeaf, retainedWords >= (long)count * width);
+        }
+        finally
+        {
+            foreach (var buffer in buffers)
+            {
+                buffer.Dispose();
+            }
+        }
+    }
+
+    // One element type of the overlap matrix: the widths of its components, and how a node is built and evaluated
+    private abstract class OverlapSubject(int count)
+    {
+        public int Count => count;
+
+        // The words per element of each component of an input that a target can overlap
+        public abstract int[] InputComponentWords { get; }
+
+        // The words per element of each component of a target, in the order of InputComponentWords
+        public abstract int[] TargetComponentWords(int width);
+
+        // Evaluates the node on pristine inputs into a disjoint target: the node's width and the target's words
+        public abstract (int Width, uint[][] Words) EvaluateReference();
+
+        // Evaluates the node with the overlapped operand in the input handles into the target handles: the pointer of
+        // the result's first component and the device words the evaluation left allocated
+        public abstract (IntPtr ResultPointer, long RetainedWords) Evaluate(
+            GpuBigIntMemoryHandle[] inputs,
+            GpuBigIntMemoryHandle[] targets,
+            int width,
+            Operand overlapped);
+    }
+
+    private sealed class IntSubject(
+        VectorTargetOverlapTests owner,
+        IntOp op,
+        int count,
+        int words,
+        BigInteger[] left,
+        BigInteger[] right,
+        BigInteger scalarValue,
+        uint divisor) : OverlapSubject(count)
+    {
+        // The signed result of the overlapped evaluation
+        public BigInteger[] Signed { get; private set; } = [];
+
+        public override int[] InputComponentWords => [words];
+
+        public override int[] TargetComponentWords(int width) => [width];
+
+        public override (int Width, uint[][] Words) EvaluateReference()
+        {
+            var workspace = owner._workspace;
+            using var leftArray = owner.CreateIntArray(left, words);
+            using var rightArray = owner.CreateIntArray(right, words);
+            using var scalar = new GpuBigInt(GpuBigUInt.FromBigInteger(workspace, scalarValue, words), false);
+            using var expression = CreateIntNode(op, leftArray, rightArray, scalar, divisor);
+            using var target = new GpuBigUIntArray(workspace, Count, expression.WordsPerElement);
+            expression.Evaluate(workspace, 0, Count, target);
+            return (expression.WordsPerElement, [owner.ReadWords(target)]);
+        }
+
+        public override (IntPtr ResultPointer, long RetainedWords) Evaluate(
+            GpuBigIntMemoryHandle[] inputs,
+            GpuBigIntMemoryHandle[] targets,
+            int width,
+            Operand overlapped)
+        {
+            var workspace = owner._workspace;
+            using var leftArray = overlapped == Operand.Left
+                ? owner.Place(inputs[0], left, words)
+                : owner.CreateIntArray(left, words);
+            using var rightArray = overlapped == Operand.Right
+                ? owner.Place(inputs[0], right, words)
+                : owner.CreateIntArray(right, words);
+            using var scalar = new GpuBigInt(GpuBigUInt.FromBigInteger(workspace, scalarValue, words), false);
+            using var expression = CreateIntNode(op, leftArray, rightArray, scalar, divisor);
+            var target = new GpuBigUIntArrayView(workspace, targets[0], Count, width);
+
+            var before = workspace.GetMemoryStatistics().LiveWords;
+            var result = expression.Evaluate(workspace, 0, Count, target);
+            var retained = workspace.GetMemoryStatistics().LiveWords - before;
+
+            Signed = owner.ReadSigned(result);
+            return (result.Values.DevicePointer, retained);
+        }
+    }
+
+    private sealed class FloatSubject(
+        VectorTargetOverlapTests owner,
+        FloatOp op,
+        int count,
+        int words,
+        uint[] left,
+        uint[] right) : OverlapSubject(count)
+    {
+        public override int[] InputComponentWords => [words, 1, 1];
+
+        public override int[] TargetComponentWords(int width) => [width, 1, 1];
+
+        public override (int Width, uint[][] Words) EvaluateReference()
+        {
+            using var leftArray = owner.CreateFloatArray(left, words);
+            using var rightArray = owner.CreateFloatArray(right, words);
+            using var scalar = owner.CreateFloat(2, words);
+            using var expression = CreateFloatNode(op, leftArray, rightArray, scalar);
+            using var target = new GpuBigFloatArray(owner._workspace, Count, expression.WordsPerElement);
+            expression.Evaluate(owner._workspace, 0, Count, target);
+            return (expression.WordsPerElement, owner.ReadFloatWords(target));
+        }
+
+        public override (IntPtr ResultPointer, long RetainedWords) Evaluate(
+            GpuBigIntMemoryHandle[] inputs,
+            GpuBigIntMemoryHandle[] targets,
+            int width,
+            Operand overlapped)
+        {
+            var workspace = owner._workspace;
+            using var overlappedArray = owner.PlaceFloat(inputs, overlapped == Operand.Left ? left : right, words);
+            using var otherArray = owner.CreateFloatArray(overlapped == Operand.Left ? right : left, words);
+            using var scalar = owner.CreateFloat(2, words);
+            using var expression = overlapped == Operand.Left
+                ? CreateFloatNode(op, overlappedArray, otherArray, scalar)
+                : CreateFloatNode(op, otherArray, overlappedArray, scalar);
+            var target = new GpuBigFloatArrayView(
+                new GpuBigUIntArrayView(workspace, targets[0], Count, width),
+                new GpuBigUIntArrayView(workspace, targets[1], Count, 1),
+                new GpuBigUIntArrayView(workspace, targets[2], Count, 1));
+
+            var before = workspace.GetMemoryStatistics().LiveWords;
+            var result = expression.Evaluate(workspace, 0, Count, target);
+            var retained = workspace.GetMemoryStatistics().LiveWords - before;
+
+            return (result.Significands.DevicePointer, retained);
+        }
     }
 
     private static bool IsZip(IntOp op) => op >= IntOp.ZipAdd;
@@ -520,10 +638,9 @@ public sealed class VectorTargetOverlapTests : IDisposable
     private static BigInteger[] RandomValues(Random random, int count, int bits) =>
         Enumerable.Range(0, count).Select(_ => RandomValue(random, bits)).ToArray();
 
-    // A non-negative array whose values are the words of storage from wordOffset; its signs are an array of its own
-    private GpuBigIntArray Place(GpuBigUIntArray storage, int wordOffset, BigInteger[] values, int words)
+    // A non-negative array whose values are the words of the handle; its signs are an array of its own
+    private GpuBigIntArray Place(GpuBigIntMemoryHandle handle, BigInteger[] values, int words)
     {
-        var handle = storage.Handle.Slice(wordOffset, values.Length * words);
         WriteWords(handle.DevicePointer, values, words);
         var signs = new GpuBigUIntArray(_workspace, values.Length, 1);
         _workspace.Provider.ClearMemoryAsync(signs.DevicePointer, values.Length, _workspace.Stream);
@@ -549,15 +666,15 @@ public sealed class VectorTargetOverlapTests : IDisposable
         return array;
     }
 
-    // A float array of small integers (exponent 0, positive) whose components are the words of the three buffers
-    private GpuBigFloatArray PlaceFloat(GpuBigUIntArray significands, GpuBigUIntArray exponents, GpuBigUIntArray signs,
-        int wordOffset, int scalarOffset, uint[] values, int words)
+    // A float array of small integers (exponent 0, positive) whose components are the words of the three handles
+    // (significands, exponents, signs)
+    private GpuBigFloatArray PlaceFloat(GpuBigIntMemoryHandle[] components, uint[] values, int words)
     {
         var count = values.Length;
         var array = new GpuBigFloatArray(
-            new GpuBigUIntArray(_workspace, significands.Handle.Slice(wordOffset, count * words), count, words),
-            new GpuBigUIntArray(_workspace, exponents.Handle.Slice(scalarOffset, count), count, 1),
-            new GpuBigUIntArray(_workspace, signs.Handle.Slice(scalarOffset, count), count, 1));
+            new GpuBigUIntArray(_workspace, components[0], count, words),
+            new GpuBigUIntArray(_workspace, components[1], count, 1),
+            new GpuBigUIntArray(_workspace, components[2], count, 1));
         WriteFloat(array, values, words);
         return array;
     }
@@ -610,10 +727,12 @@ public sealed class VectorTargetOverlapTests : IDisposable
         ReadWords(array.Significands), ReadWords(array.Exponents), ReadWords(array.Signs)
     ];
 
-    private uint[] ReadWords(GpuBigUIntArrayView values)
+    private uint[] ReadWords(GpuBigUIntArrayView values) => ReadWords(values.DevicePointer, values.TotalWords);
+
+    private uint[] ReadWords(IntPtr source, int words)
     {
-        var host = new uint[values.TotalWords];
-        _workspace.Provider.CopyDeviceToHost(host, values.DevicePointer, host.Length, _workspace.Stream);
+        var host = new uint[words];
+        _workspace.Provider.CopyDeviceToHost(host, source, host.Length, _workspace.Stream);
         return host;
     }
 
