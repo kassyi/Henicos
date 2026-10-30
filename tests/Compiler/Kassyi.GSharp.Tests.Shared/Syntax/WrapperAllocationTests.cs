@@ -131,6 +131,48 @@ public class WrapperAllocationTests : TranspilerTestBase
         }
     }
 
+    // The array launcher of a kernel whose only struct argument holds no array allocates no table of shared device
+    // regions (#707): an empty DeviceArrayRegions per launch would exceed the bound over 100 launches
+    [SkippableFact]
+    [Scenario(TestScenario.Boundary)]
+    public void Test_LaunchArrayFreeStruct_ShouldNotAllocateRegionTable()
+    {
+        using var _ctx = new GpuKernelLoader.CudaContextScope();
+        var counter = new ArrayFreeCounter();
+        WrapperAllocationKernels.LaunchArrayFreeStructKernel(ref counter);
+
+        for (int warmup = 0; warmup < 5; warmup++)
+        {
+            RunArrayFreeStructBatch(ref counter);
+        }
+
+        long allocated = long.MaxValue;
+        for (int attempt = 0; attempt < 3; attempt++)
+        {
+            long bytesBefore = GC.GetAllocatedBytesForCurrentThread();
+            RunArrayFreeStructBatch(ref counter);
+            long bytesAfter = GC.GetAllocatedBytesForCurrentThread();
+            allocated = Math.Min(allocated, bytesAfter - bytesBefore);
+            if (allocated == 0)
+            {
+                break;
+            }
+        }
+
+        // The same bound as the Ptr launcher: 56 bytes of driver overhead per call and 48 bytes of noise
+        Assert.True(allocated <= 5648 + 48, $"Allocated {allocated} bytes, expected <= 5696 bytes");
+        Assert.True(counter.Value >= 601, $"The kernel ran {counter.Value} times, expected at least 601");
+    }
+
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    private static void RunArrayFreeStructBatch(ref ArrayFreeCounter counter)
+    {
+        for (int i = 0; i < 100; i++)
+        {
+            WrapperAllocationKernels.LaunchArrayFreeStructKernel(ref counter, gridDimX: 1, blockDimX: 1);
+        }
+    }
+
     [MethodImpl(MethodImplOptions.NoInlining)]
     private static void RunHotPathBatch(IntPtr d_ioVal, IntPtr d_outVal, IntPtr d_arrayVal, uint constantVal)
     {

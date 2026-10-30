@@ -163,6 +163,12 @@ internal readonly record struct KernelParameterShape
     /// <summary>Whether the launcher copies an array argument back to the host (see <see cref="ArrayCopyDirection"/>).</summary>
     public bool CopyOut { get; init; }
 
+    /// <summary>
+    /// Whether the parameter is a user struct with array fields at any depth
+    /// (<see cref="TypeLayoutCalculator.TryFindArrayField"/>), which its <c>Marshal_</c> copies.
+    /// </summary>
+    public bool HasArrayFields { get; init; }
+
     /// <summary>How the parameter crosses to the CUDA device.</summary>
     public ParameterTransfer Cuda { get; init; }
 
@@ -185,6 +191,13 @@ internal readonly record struct KernelParameterShape
     /// an identity to compare; a span or a segment over an array is a slice, whose overlaps are #857.
     /// </summary>
     public bool IsSharableArray => IsArray && Container == ArrayContainerKind.Array && !IsByRef;
+
+    /// <summary>
+    /// Whether the CUDA launcher's <c>Marshal_</c> calls for this parameter copy arrays: a user struct with
+    /// <see cref="HasArrayFields"/>, or a converted array whose element has array fields.
+    /// </summary>
+    public bool MarshalsCudaArrays =>
+        (IsCustomStruct && HasArrayFields) || (IsCudaConvertedArray && Cuda.ConvertedElementHasArrayFields);
 
     /// <summary>Whether the parameter is <c>ref</c> or <c>out</c>.</summary>
     public bool IsByRef => RefKind is RefKind.Ref or RefKind.Out;
@@ -303,6 +316,8 @@ internal readonly record struct KernelParameterShape
                 MarshalMethodName = AotHostNames.GetQualifiedMarshalMethodName(marshaledType),
                 UnmarshalMethodName = AotHostNames.GetQualifiedUnmarshalMethodName(marshaledType),
                 BufferElementTypeName = shape.IsByRef ? GetBufferElementTypeName(parameter.Type) : null,
+                HasArrayFields = marshaledType is INamedTypeSymbol named &&
+                    TypeLayoutCalculator.TryFindArrayField(named, out _),
                 Cuda = ParameterTransfer.Create(marshaledType, HostDialects.Cuda),
                 Cpu = ParameterTransfer.Create(marshaledType, HostDialects.Cpu)
             };

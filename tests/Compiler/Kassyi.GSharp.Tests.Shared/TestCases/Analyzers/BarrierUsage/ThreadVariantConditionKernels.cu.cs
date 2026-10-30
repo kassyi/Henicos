@@ -12,9 +12,12 @@ public static partial class ThreadVariantConditionKernels
         bool first = lane == 0;
         if (first)
         {
-            // GSH0037: 'first' is derived from ThreadIndex
+            // GSH0083: 'first' is derived from ThreadIndex
             Gpu.SyncThreads();
         }
+
+        // The threads that skip the barrier above meet the others here
+        Gpu.SyncThreads();
     }
 
     [GpuKernel]
@@ -29,9 +32,12 @@ public static partial class ThreadVariantConditionKernels
 
         if (flag == 1)
         {
-            // GSH0037: 'flag' is assigned only in the threads where ThreadIndex.X == 0
+            // GSH0083: 'flag' is assigned only in the threads where ThreadIndex.X == 0
             Gpu.SyncThreads();
         }
+
+        // The threads that skip the barrier above meet the others here
+        Gpu.SyncThreads();
     }
 
     [GpuKernel]
@@ -41,9 +47,12 @@ public static partial class ThreadVariantConditionKernels
         for (int i = ThreadIndex.X; i < count; i += BlockDimension.X)
         {
             buffer[i] += 1;
-            // GSH0037: the number of iterations differs between threads
+            // GSH0083: the number of iterations differs between threads
             Gpu.SyncThreads();
         }
+
+        // The threads that skip the barrier above meet the others here
+        Gpu.SyncThreads();
     }
 
     [GpuKernel]
@@ -52,8 +61,11 @@ public static partial class ThreadVariantConditionKernels
     {
         if (Gpu.LaneId() < 16)
         {
-            // GSH0037: the lane id differs between threads
+            // GSH0083: the lane id differs between threads
             Gpu.SyncThreads();
         }
+
+        // The threads that skip the barrier above meet the others here
+        Gpu.SyncThreads();
     }
 }

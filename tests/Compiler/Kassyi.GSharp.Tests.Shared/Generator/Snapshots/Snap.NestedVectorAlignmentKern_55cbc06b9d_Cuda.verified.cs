@@ -405,13 +405,12 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 WarmupFunctionPointerRoundtripKernel();
 IntPtr hfunc = s_hfunc_RoundtripKernel!.Value;
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "NestedVectorAlignmentKernels.RoundtripKernel");
-var __gsharp_device_arrays = new global::Kassyi.GSharp.Runtime.Interop.DeviceArrayRegions();
 IntPtr d_data = IntPtr.Zero;
 try
 {
 void** kernelParams = stackalloc void*[1];
 AotContexts.GEN56_AlignmentTestStruct native_data = default;
-AotContexts.Marshal_GEN56_AlignmentTestStruct(ref data, ref native_data, false, __gsharp_device_arrays, hStream);
+AotContexts.Marshal_GEN56_AlignmentTestStruct(ref data, ref native_data, false, null, hStream);
 // Marshal ref/out struct: data
 int data_size = sizeof(AotContexts.GEN56_AlignmentTestStruct);
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_data, (IntPtr)data_size, hStream));
@@ -436,7 +435,6 @@ AotContexts.Unmarshal_GEN56_AlignmentTestStruct(ref data, ref native_data, false
 finally
 {
 if (d_data != IntPtr.Zero) CudaDriverApi.cuMemFreeAsync(d_data, hStream);
-__gsharp_device_arrays.Free(hStream);
 }
 }
 }

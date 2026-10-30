@@ -27,12 +27,9 @@ public class ConditionalEvaluationRewriter : CSharpSyntaxRewriter
 
     public override SyntaxNode VisitSwitchSection(SwitchSectionSyntax node)
     {
-        var statements = RewriteStatements(node.Statements);
-
-        // [WHY] A declaration directly under a case label is skipped by jumps to later labels, which C++ rejects
-        return statements.Count == node.Statements.Count
-            ? node.WithStatements(statements)
-            : node.WithStatements(SyntaxFactory.SingletonList<StatementSyntax>(SyntaxFactory.Block(statements)));
+        // [WHY] The temporaries stay directly in the section, which the C++ braces (TranspileSwitchSection). A block
+        // around them would end the C# scope of the section's locals, which another section may use (#795).
+        return node.WithStatements(RewriteStatements(node.Statements));
     }
 
     public override SyntaxNode? Visit(SyntaxNode? node)

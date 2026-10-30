@@ -190,17 +190,21 @@ internal static class KernelLaunchEmitter
     // (DeviceArrayRegions)
     private const string DeviceArrays = GSharpInternalNames.Launcher.DeviceArrays;
 
-    // Whether two holders of one array are possible: a struct argument or a converted array (whose Marshal_ calls record
-    // the arrays they copy), or two T[] arguments. A launch with a single T[] argument allocates no table; the IntPtr
-    // wrapper copies nothing
+    // Whether two holders of one array are possible: a struct argument or a converted array that holds arrays (whose
+    // Marshal_ calls record the arrays they copy), or two T[] arguments. A launch with a single T[] argument allocates no
+    // table; the IntPtr wrapper copies nothing
     private static bool UsesDeviceArrayRegions(in KernelHostModel kernel, bool isDevicePtr) =>
         !isDevicePtr &&
         (kernel.Parameters
              .AsStackEnumerable()
-             .Any(static shape => (shape.IsCustomStruct && !shape.IsDirectCudaValueStruct) || shape.IsCudaConvertedArray) ||
+             .Any(static shape => shape.MarshalsCudaArrays) ||
          kernel.Parameters
              .AsStackEnumerable()
              .Count(static shape => shape.IsSharableArray) > 1);
+
+    // The table that a parameter's Marshal_ calls record their arrays in, null when they copy none
+    private static string DeviceArraysFor(in KernelParameterShape shape) =>
+        shape.MarshalsCudaArrays ? DeviceArrays : "null";
 
     // [WHY] An array argument is a reference: two arguments, or an argument and a struct field, that hold one array are
     // one object in C#, so the managed-array launcher gives them one device region, found by reference identity in the
@@ -285,7 +289,7 @@ internal static class KernelLaunchEmitter
         using (writer.Parentheses())
         {
             writer.Append(
-                $"ref {shape.Identifier}, ref native_{shape.Name}, false, {DeviceArrays}, hStream");
+                $"ref {shape.Identifier}, ref native_{shape.Name}, false, {DeviceArraysFor(shape)}, hStream");
         }
 
         writer.AppendLine(";");
@@ -452,7 +456,7 @@ internal static class KernelLaunchEmitter
         }
 
         ConvertedArrayEmitter.WriteShadowAndHostSpans(writer, shape, shape.Cuda);
-        ConvertedArrayEmitter.WriteElementMarshalLoop(writer, shape, shape.Cuda, DeviceArrays);
+        ConvertedArrayEmitter.WriteElementMarshalLoop(writer, shape, shape.Cuda, DeviceArraysFor(shape));
         writer.AppendLine($"fixed (byte* p_{name} = {name}_shadow)");
         using (writer.Scope())
         {

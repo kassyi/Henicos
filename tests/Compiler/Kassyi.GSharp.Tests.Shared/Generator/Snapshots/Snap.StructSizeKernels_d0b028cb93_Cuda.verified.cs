@@ -377,7 +377,7 @@ var data_native = System.Runtime.InteropServices.MemoryMarshal.Cast<byte, AotCon
 System.Span<global::Kassyi.GSharp.Tests.Shared.Core.StructSizeOddInt> data_host = data;
 for (int data_index = 0; data_index < data_native.Length; data_index++)
 {
-AotContexts.Marshal_StructSizeOddInt(ref data_host[data_index], ref data_native[data_index], false, __gsharp_device_arrays, hStream);
+AotContexts.Marshal_StructSizeOddInt(ref data_host[data_index], ref data_native[data_index], false, null, hStream);
 }
 fixed (byte* p_data = data_shadow)
 {

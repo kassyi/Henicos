@@ -31,4 +31,20 @@ public static partial class WrapperAllocationKernels
             a[0] += 1;
         }
     }
+
+    // A struct argument that Marshal_ converts but that holds no array: no array of it can be shared, so the launcher
+    // needs no DeviceArrayRegions
+    [GpuKernel]
+    public static void ArrayFreeStructKernel(ref ArrayFreeCounter counter)
+    {
+        if (ThreadIndex.X == 0)
+        {
+            counter.Value += 1;
+        }
+    }
+}
+
+public struct ArrayFreeCounter
+{
+    public int Value;
 }
