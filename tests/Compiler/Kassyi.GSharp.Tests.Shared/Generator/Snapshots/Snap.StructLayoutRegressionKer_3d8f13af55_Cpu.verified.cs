@@ -121,6 +121,25 @@ if (host.Data != null)
 host.Data = (global::System.Int32[])host.Data.Clone();
 }
 }
+public static bool HoldsArray_LayoutReproBag(global::Kassyi.GSharp.Tests.Shared.Core.LayoutReproBag host, object array)
+{
+if (global::System.Object.ReferenceEquals(host.Data, array))
+{
+return true;
+}
+return false;
+}
+public static bool HoldsArray_LayoutReproBag(System.ReadOnlySpan<global::Kassyi.GSharp.Tests.Shared.Core.LayoutReproBag> items, object array)
+{
+for (int i = 0; i < items.Length; i++)
+{
+if (HoldsArray_LayoutReproBag(items[i], array))
+{
+return true;
+}
+}
+return false;
+}
 [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Explicit, Size = 24)]
 public unsafe partial struct LayoutReproElemHolder
 {
@@ -172,6 +191,25 @@ CopyArrays_LayoutReproInnerBag(ref host.Elems[i]);
 }
 }
 }
+public static bool HoldsArray_LayoutReproElemHolder(global::Kassyi.GSharp.Tests.Shared.Core.LayoutReproElemHolder host, object array)
+{
+if (global::System.Object.ReferenceEquals(host.Elems, array) || HoldsArray_LayoutReproInnerBag(host.Elems, array))
+{
+return true;
+}
+return false;
+}
+public static bool HoldsArray_LayoutReproElemHolder(System.ReadOnlySpan<global::Kassyi.GSharp.Tests.Shared.Core.LayoutReproElemHolder> items, object array)
+{
+for (int i = 0; i < items.Length; i++)
+{
+if (HoldsArray_LayoutReproElemHolder(items[i], array))
+{
+return true;
+}
+}
+return false;
+}
 [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Explicit, Size = 24)]
 public unsafe partial struct LayoutReproInnerBag
 {
@@ -205,6 +243,25 @@ if (host.Items != null)
 {
 host.Items = (global::System.Int32[])host.Items.Clone();
 }
+}
+public static bool HoldsArray_LayoutReproInnerBag(global::Kassyi.GSharp.Tests.Shared.Core.LayoutReproInnerBag host, object array)
+{
+if (global::System.Object.ReferenceEquals(host.Items, array))
+{
+return true;
+}
+return false;
+}
+public static bool HoldsArray_LayoutReproInnerBag(System.ReadOnlySpan<global::Kassyi.GSharp.Tests.Shared.Core.LayoutReproInnerBag> items, object array)
+{
+for (int i = 0; i < items.Length; i++)
+{
+if (HoldsArray_LayoutReproInnerBag(items[i], array))
+{
+return true;
+}
+}
+return false;
 }
 [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Explicit, Size = 32)]
 public unsafe partial struct LayoutReproPair
@@ -249,6 +306,29 @@ if (host.B != null)
 {
 host.B = (global::System.Int32[])host.B.Clone();
 }
+}
+public static bool HoldsArray_LayoutReproPair(global::Kassyi.GSharp.Tests.Shared.Core.LayoutReproPair host, object array)
+{
+if (global::System.Object.ReferenceEquals(host.A, array))
+{
+return true;
+}
+if (global::System.Object.ReferenceEquals(host.B, array))
+{
+return true;
+}
+return false;
+}
+public static bool HoldsArray_LayoutReproPair(System.ReadOnlySpan<global::Kassyi.GSharp.Tests.Shared.Core.LayoutReproPair> items, object array)
+{
+for (int i = 0; i < items.Length; i++)
+{
+if (HoldsArray_LayoutReproPair(items[i], array))
+{
+return true;
+}
+}
+return false;
 }
 [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Explicit, Size = 8)]
 public unsafe partial struct LayoutReproTwoBools
@@ -431,6 +511,25 @@ public static void CopyArrays_LayoutReproArrOuter(ref global::Kassyi.GSharp.Test
 {
 CopyArrays_LayoutReproArrPair(ref host.P);
 }
+public static bool HoldsArray_LayoutReproArrOuter(global::Kassyi.GSharp.Tests.Shared.Core.LayoutReproArrOuter host, object array)
+{
+if (HoldsArray_LayoutReproArrPair(host.P, array))
+{
+return true;
+}
+return false;
+}
+public static bool HoldsArray_LayoutReproArrOuter(System.ReadOnlySpan<global::Kassyi.GSharp.Tests.Shared.Core.LayoutReproArrOuter> items, object array)
+{
+for (int i = 0; i < items.Length; i++)
+{
+if (HoldsArray_LayoutReproArrOuter(items[i], array))
+{
+return true;
+}
+}
+return false;
+}
 [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Explicit, Size = 32)]
 public unsafe partial struct LayoutReproArrPair
 {
@@ -466,6 +565,28 @@ for (int k = 0; k < 2; k++)
 CopyArrays_LayoutReproWithArr(ref host[k]);
 }
 }
+public static bool HoldsArray_LayoutReproArrPair(global::Kassyi.GSharp.Tests.Shared.Core.LayoutReproArrPair host, object array)
+{
+for (int k = 0; k < 2; k++)
+{
+if (HoldsArray_LayoutReproWithArr(host[k], array))
+{
+return true;
+}
+}
+return false;
+}
+public static bool HoldsArray_LayoutReproArrPair(System.ReadOnlySpan<global::Kassyi.GSharp.Tests.Shared.Core.LayoutReproArrPair> items, object array)
+{
+for (int i = 0; i < items.Length; i++)
+{
+if (HoldsArray_LayoutReproArrPair(items[i], array))
+{
+return true;
+}
+}
+return false;
+}
 [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Explicit, Size = 16)]
 public unsafe partial struct LayoutReproWithArr
 {
@@ -494,6 +615,25 @@ if (host.Data != null)
 {
 host.Data = (global::System.Int32[])host.Data.Clone();
 }
+}
+public static bool HoldsArray_LayoutReproWithArr(global::Kassyi.GSharp.Tests.Shared.Core.LayoutReproWithArr host, object array)
+{
+if (global::System.Object.ReferenceEquals(host.Data, array))
+{
+return true;
+}
+return false;
+}
+public static bool HoldsArray_LayoutReproWithArr(System.ReadOnlySpan<global::Kassyi.GSharp.Tests.Shared.Core.LayoutReproWithArr> items, object array)
+{
+for (int i = 0; i < items.Length; i++)
+{
+if (HoldsArray_LayoutReproWithArr(items[i], array))
+{
+return true;
+}
+}
+return false;
 }
 #pragma warning restore CS8500
 }
