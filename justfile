@@ -17,6 +17,14 @@ test-coverage *args="":
 coverage-diff base="main":
     node scripts/human/coverage-diff.js --run --base {{base}}
 
+# Differential tests: C# oracle vs managed vs native CPU (no GPU)
+test-differential-cpu *args="":
+    dotnet test tests/Compiler/Kassyi.GSharp.Tests.Cpu/Kassyi.GSharp.Tests.Cpu.csproj --filter "Category=Differential&Category!=Stress" {{args}}
+
+# Differential tests: C# oracle vs CUDA (agents: wrap in node scripts/agent/gpu-lock.js -- "...")
+test-differential-cuda *args="":
+    dotnet test tests/Compiler/Kassyi.GSharp.Tests.Cuda/Kassyi.GSharp.Tests.Cuda.csproj --filter "Category=Differential&Category!=Stress" {{args}}
+
 # Run tests multiple times to detect flaky tests
 # count can take the time: 
 #	test-stability 5h15m # for 5 hours 15 minutes
