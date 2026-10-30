@@ -51,13 +51,13 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-auto __gsharp_id_3_idx = blockIdx.x*blockDim.x+threadIdx.x;
+auto __gsharp_id_3_idx = __gsharp_add_i32(__gsharp_mul_i32((int)blockIdx.x,(int)blockDim.x),(int)threadIdx.x);
 if(__gsharp_id_3_idx<__gsharp_id_1_n)
 {
 auto __gsharp_id_4_a = __gsharp_id_0_data[__gsharp_id_3_idx];
 auto __gsharp_id_5_b = 1.00001f;
 auto __gsharp_id_6_c = 0.00001f;
-for(int __gsharp_id_7_i = 0;__gsharp_id_7_i<__gsharp_id_2_iterations;__gsharp_id_7_i++)
+for(int __gsharp_id_7_i = 0;__gsharp_id_7_i<__gsharp_id_2_iterations;__gsharp_id_7_i=__gsharp_add_i32(__gsharp_id_7_i,1))
 {
 __gsharp_id_4_a=__gsharp_id_4_a*__gsharp_id_5_b+__gsharp_id_6_c;
 }
@@ -143,10 +143,12 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 }
 ";
 public static readonly string MathFmaKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source +MathFmaKernel_Source;
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_context_Henicos__Benchmarks__ComputeBenchmarks__MathFmaKernels__MathFmaKernel {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
 }
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static unsafe void __gsharp_statemachine_Henicos__Benchmarks__ComputeBenchmarks__MathFmaKernels__MathFmaKernel(float[] data, int n, int iterations, __gsharp_context_Henicos__Benchmarks__ComputeBenchmarks__MathFmaKernels__MathFmaKernel __gsharp_ctx) {
 {
 switch (__gsharp_ctx.__gsharp_state)

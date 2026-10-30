@@ -63,9 +63,9 @@ __gsharp_fusion_res += __gsharp_val_0;
 }
 return __gsharp_fusion_res;
 }());
-if(threadIdx.x==0)
+if((int)threadIdx.x==0)
 {
-__gsharp_id_1_result[blockIdx.x]=__gsharp_id_2_sum;
+__gsharp_id_1_result[(int)blockIdx.x]=__gsharp_id_2_sum;
 }
 __gsharp_state=-1;
 return;
@@ -147,10 +147,12 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 }
 ";
 public static readonly string IntParallelSum_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source +IntParallelSum_Source;
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Runtime__ParallelReductionExecutionKernels__IntParallelSum {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
 }
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Runtime__ParallelReductionExecutionKernels__IntParallelSum(int[] data, int[] result, __gsharp_context_Kassyi__GSharp__Tests__Shared__Runtime__ParallelReductionExecutionKernels__IntParallelSum __gsharp_ctx) {
 {
 switch (__gsharp_ctx.__gsharp_state)

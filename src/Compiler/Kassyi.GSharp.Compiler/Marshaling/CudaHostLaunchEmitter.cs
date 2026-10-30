@@ -40,18 +40,19 @@ internal static class CudaHostLaunchEmitter
             using (writer.Scope())
             {
                 WriteCudaKernelCompilationCall(writer, kernel);
-                KernelLaunchEmitter.WriteVariablesInitialization(writer, kernel.Host, isDevicePtr);
+                var sharing = ArraySharingPlan.ForCuda(kernel.Host, isDevicePtr);
+                KernelLaunchEmitter.WriteVariablesInitialization(writer, kernel.Host, sharing, isDevicePtr);
 
                 writer.AppendLine("try");
                 using (writer.Scope())
                 {
-                    KernelLaunchEmitter.WriteMarshalAndLaunchKernel(writer, kernel.Host, isDevicePtr);
+                    KernelLaunchEmitter.WriteMarshalAndLaunchKernel(writer, kernel.Host, sharing, isDevicePtr);
                 }
 
                 writer.AppendLine("finally");
                 using (writer.Scope())
                 {
-                    KernelLaunchEmitter.WriteCleanup(writer, kernel.Host, isDevicePtr);
+                    KernelLaunchEmitter.WriteCleanup(writer, kernel.Host, sharing, isDevicePtr);
                 }
             }
 

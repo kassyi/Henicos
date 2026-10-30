@@ -2,8 +2,9 @@ using Kassyi.GSharp.Core;
 
 namespace Kassyi.GSharp.Tests.TestCases.Diagnostics;
 
-// GSH0077 boundary: every thread of the block reaches these dynamic SharedMemory<T> declarations with the same count,
-// and the fixed-size declaration and the call in thread-variant branches do not use the dynamic buffer
+// GSH0077 boundary: every thread of the block reaches these dynamic SharedMemory<T> declarations with the same count
+// (also after an exhaustive switch expression on the thread index), and the fixed-size declaration and the call in
+// thread-variant branches do not use the dynamic buffer
 public static partial class UniformDynamicSharedMemoryKernels
 {
     [GpuDeviceFunction]
@@ -49,5 +50,22 @@ public static partial class UniformDynamicSharedMemoryKernels
         }
 
         output[tid] = r;
+    }
+
+    // An exhaustive switch expression on the thread index: its discard arm always matches, so every thread reaches the
+    // declaration after it (the throw of SwitchExpressionException that Roslyn keeps is never taken)
+    [GpuKernel]
+    [SkipSnapshotConsistency("Diagnostics case")]
+    public static void AfterSwitchExpressionKernel(int[] output, int n)
+    {
+        int tid = ThreadIndex.X;
+        int v = tid switch
+        {
+            0 => 1,
+            _ => 2
+        };
+        var afterSwitch = new SharedMemory<int>(n);
+        afterSwitch[tid] = v;
+        output[tid] = afterSwitch[tid];
     }
 }

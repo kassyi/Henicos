@@ -210,6 +210,8 @@ public static void VectorZipMulKernel(
 
 A GPU device function (`[GpuDeviceFunction]`) that performs block-parallel multi-word multiplication for vector-scalar or vector-vector batches.
 
+The product is exact when the result has at least `numWordsA + numWordsB` words, which is the width `SelectMultiply` and `ZipMultiply` give it; a target of another width is rejected with `ArgumentException` before the launch. Each row of the schoolbook product adds the low halves of the word products and then the high halves, so that every word sums two values and a one-bit carry.
+
 ```csharp
 [GpuDeviceFunction]
 [MethodImpl(MethodImplOptions.AggressiveInlining)]

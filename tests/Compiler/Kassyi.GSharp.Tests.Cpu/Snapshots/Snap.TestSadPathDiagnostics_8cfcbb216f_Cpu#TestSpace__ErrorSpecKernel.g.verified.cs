@@ -24,10 +24,12 @@ public const string BadKernel_Source = @"#error ""(11,13): GSH0002: The string t
 #error ""(12,26): GSH0001: Object creation ('new') is not supported in GPU kernels. Only struct instantiation, SharedMemory<T> and an array of a constant size that initializes a local variable are allowed; use stackalloc for a temporary array.""
 ";
 public static readonly string BadKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source +BadKernel_Source;
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_context_TestSpace__ErrorSpecKernel__BadKernel {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
 }
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static unsafe void __gsharp_statemachine_TestSpace__ErrorSpecKernel__BadKernel(__gsharp_context_TestSpace__ErrorSpecKernel__BadKernel __gsharp_ctx, ref int __gsharp_auto_result) {
 {
 switch (__gsharp_ctx.__gsharp_state)

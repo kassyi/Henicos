@@ -132,14 +132,26 @@ When a kernel accepts a custom struct containing arrays, the G# Source Generator
 2. **Marshaling Routine (`Marshal_...`)**:
    Loops through the struct fields on the host. For every non-null array:
    - Queries array length and calculates byte size.
-   - Allocates GPU global memory via `CudaDriverApi.cuMemAlloc_v2`.
-   - Pins host memory using `GCHandle.Alloc(..., GCHandleType.Pinned)`.
-   - Executes synchronous Host-to-Device copy via `cuMemcpyHtoD_v2`.
-   - Records device pointer in an internal tracking list (`allocatedPtrs`).
-3. **Unmarshaling & Cleanup Routine (`Unmarshal_...`)**:
+   - Looks the array up by reference in the launch's `DeviceArrayRegions` (the `deviceArrays` parameter). An array that
+     the launch already copied, through another field of the same struct, a field of another struct argument, an
+     element of a converted array or a `T[]` kernel argument, reuses that region and is neither allocated nor copied
+     again: as in C#, the holders hold one array, so a write through one of them is seen through the others. The
+     launcher marshals an `[Out]` array argument after every other parameter, so a field always finds a region that
+     was copied in.
+   - Otherwise allocates GPU global memory on the launch stream via `CudaDriverApi.cuMemAllocAsync` and records the
+     region in `DeviceArrayRegions`.
+   - Pins host memory using `GCHandle.Alloc(..., GCHandleType.Pinned)` and copies it to the device via
+     `cuMemcpyHtoDAsync_v2`.
+3. **Unmarshaling Routine (`Unmarshal_...`) and Cleanup**:
    Upon kernel completion:
-   - Automatically synchronizes modified device memory back to host arrays via `cuMemcpyDtoH_v2`.
-   - Frees all temporary GPU allocations in a `finally` block via `cuMemFree_v2`.
+   - `Unmarshal_` copies the device memory of every array field back to its host array via `cuMemcpyDtoHAsync_v2`. An
+     array held by several fields is copied back once per field; every copy writes the same bytes. Array arguments
+     that hold one array copy it back once between them (`DeviceArrayRegions.TryClaimCopyBack`). A launch whose only
+     possible holders are `T[]` arguments has no `DeviceArrayRegions`: each argument compares itself with the arguments
+     marshaled before it (`ReferenceEquals`) and takes the region of the one that holds its array, so most launchers
+     allocate nothing per launch.
+   - The launcher then frees every region of the launch once, in its `finally` block, through
+     `DeviceArrayRegions.Free`, which calls `cuMemFreeAsync` on the launch stream.
 
 ### Complete Memory Lifecycle
 
@@ -155,10 +167,11 @@ sequenceDiagram
     activate Launcher
     
     Note over Launcher,Driver: Phase 1: Pre-Launch Marshaling (HtoD)
-    Launcher->>Driver: cuMemAlloc_v2(out native.Input, sizeIn)
-    Launcher->>Driver: cuMemcpyHtoD_v2(native.Input, pinnedHostIn, sizeIn)
-    Launcher->>Driver: cuMemAlloc_v2(out native.Output, sizeOut)
-    Launcher->>Driver: cuMemcpyHtoD_v2(native.Output, pinnedHostOut, sizeOut)
+    Launcher->>Driver: cuMemAllocAsync(out native.Input, sizeIn, hStream)
+    Launcher->>Driver: cuMemcpyHtoDAsync_v2(native.Input, pinnedHostIn, sizeIn, hStream)
+    Launcher->>Driver: cuMemAllocAsync(out native.Output, sizeOut, hStream)
+    Launcher->>Driver: cuMemcpyHtoDAsync_v2(native.Output, pinnedHostOut, sizeOut, hStream)
+    Note over Launcher: Each region is recorded in DeviceArrayRegions; a field holding an array already recorded reuses its region
     
     Note over Launcher,GPU: Phase 2: Kernel Execution
     Launcher->>GPU: cuLaunchKernel(native_ctx by value)
@@ -168,12 +181,13 @@ sequenceDiagram
     deactivate GPU
     
     Note over Launcher,Driver: Phase 3: Post-Launch Unmarshaling (DtoH)
-    Launcher->>Driver: cuMemcpyDtoH_v2(pinnedHostOut, native.Output, sizeOut)
+    Launcher->>Driver: cuMemcpyDtoHAsync_v2(pinnedHostIn, native.Input, sizeIn, hStream)
+    Launcher->>Driver: cuMemcpyDtoHAsync_v2(pinnedHostOut, native.Output, sizeOut, hStream)
     Note over Launcher,Host: hostOut now contains kernel results!
     
-    Note over Launcher,Driver: Phase 4: Automatic Resource Cleanup (finally)
-    Launcher->>Driver: cuMemFree_v2(native.Input)
-    Launcher->>Driver: cuMemFree_v2(native.Output)
+    Note over Launcher,Driver: Phase 4: Automatic Resource Cleanup (launcher finally, DeviceArrayRegions.Free)
+    Launcher->>Driver: cuMemFreeAsync(native.Input, hStream)
+    Launcher->>Driver: cuMemFreeAsync(native.Output, hStream)
     
     Launcher-->>Host: Return to Caller
     deactivate Launcher
@@ -308,7 +322,7 @@ When designing AOT Context structures, follow this type support specification:
 | **Raw Pointers** | `uint*`, `void*`, `IntPtr` | **Supported** | Device pointer (`T*`) | Raw pointer pass (for pre-allocated buffers) |
 | **Nested Structs** | Custom user structs | **Supported** | Nested C++ `struct` | Recursive marshaling & unmarshaling |
 | **Enums** | `enum MyEnum : int` | **Supported** | Integral scalar type | Cast to underlying integer type |
-| **Nullable / Null Arrays** | `uint[]? buf = null` | **Supported** | `nullptr` | Allocation skipped; passes `null` safely |
+| **Nullable / Null Arrays** | `uint[]? buf = null` | **Supported** | `nullptr` | Allocation skipped; the device sees `null` (`is null` is true). Reading it (`Length`, an element, `foreach`) throws `NullReferenceException`, as in C# (§7) |
 | **Reference Classes** | `class MyClass { ... }` | **Prohibited** | N/A | Compile-time diagnostic error |
 | **Multi-dimensional Arrays** | `int[,]`, `float[,,]` | **Prohibited** | N/A | Must flatten to 1D `int[]` |
 | **Jagged Arrays** | `int[][]` | **Prohibited** | N/A | Must flatten to 1D `int[]` |
@@ -384,6 +398,20 @@ public struct SolverContext
 G# natively handles `null` array members:
 - On the host, if `ctx.DebugTelemetry == null`, the generator **skips** `cuMemAlloc_v2`.
 - In the native shadow struct, `native.DebugTelemetry` is set to `IntPtr.Zero` (`nullptr`).
+- An empty array (`new float[0]`, `[]`) is not `null`: it has no allocation either, but its device pointer is
+  `GSharpArrayProxy.EmptyArrayData`, a non-null address that is never dereferenced (the native CPU build passes the
+  pinned address of the empty array). On every path `ctx.DebugTelemetry is null` is false for it and `Length` is 0.
+- A launch never rejects a struct whose array field is `null`: a kernel that does not read the field runs normally.
+- Reading a `null` array field (`Length`, an element, `foreach`) follows C# and throws `NullReferenceException`: on the
+  native CPU build with the place in your source (`G#: a null array is read at Kernels.cu.cs(12,17)`), on the managed
+  path as .NET throws it, and on the checked CUDA build. The release CUDA build does not check. The same holds for an
+  array local, a device function parameter or an array element that holds `null`. Converting the array to a span
+  (`ReadOnlySpan<T> s = ctx.DebugTelemetry;`) gives an empty span, as in C#. If you mean "no data", write `= []`.
+- A `null` optional kernel argument (`float[]? bias` passed as `null` or `[]`) keeps its own contract: the kernel reads
+  it as an array of length 0, also through a local or a device function, on CUDA and the native CPU build. The managed
+  path reads its `Length` as 0 only where the kernel reads the parameter itself; through a local or a device function
+  it throws `NullReferenceException` there (#852). Once the kernel assigns the parameter, it is an ordinary array and a
+  `null` read throws on every path.
 - On the GPU, the kernel can safely test for presence:
 
 ```csharp

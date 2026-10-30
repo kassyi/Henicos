@@ -67,7 +67,7 @@ __gsharp_switch_1_state_0:
 __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__AggregateStruct __gsharp_id_1_s = ([&]() {
 __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__AggregateStruct __gsharp_tmp{}; __gsharp_tmp.__gsharp_mb_A = 1; __gsharp_tmp.__gsharp_mb_B = 2; return __gsharp_tmp; }
 ());
-__gsharp_id_0_output[0]=__gsharp_id_1_s.__gsharp_mb_A+__gsharp_id_1_s.__gsharp_mb_B;
+__gsharp_id_0_output[0]=__gsharp_add_i32(__gsharp_id_1_s.__gsharp_mb_A,__gsharp_id_1_s.__gsharp_mb_B);
 __gsharp_state=-1;
 return;
 }
@@ -148,10 +148,12 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 }
 ";
 public static readonly string AggregateInitKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source +AggregateInitKernel_Source;
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__StructAggregateInitKernels__AggregateInitKernel {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
 }
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__StructAggregateInitKernels__AggregateInitKernel(int[] output, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__StructAggregateInitKernels__AggregateInitKernel __gsharp_ctx) {
 {
 switch (__gsharp_ctx.__gsharp_state)
@@ -336,7 +338,7 @@ __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__OuterStruct __gsharp_tmp{}; _
 __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__InnerStruct __gsharp_tmp{}; __gsharp_tmp.__gsharp_mb_X = 1; return __gsharp_tmp; }
 ()); __gsharp_tmp.__gsharp_mb_Y = 10; return __gsharp_tmp; }
 ());
-__gsharp_id_0_output[0]=__gsharp_id_1_outer.__gsharp_mb_B.__gsharp_mb_X+__gsharp_id_1_outer.__gsharp_mb_Y;
+__gsharp_id_0_output[0]=__gsharp_add_i32(__gsharp_id_1_outer.__gsharp_mb_B.__gsharp_mb_X,__gsharp_id_1_outer.__gsharp_mb_Y);
 __gsharp_state=-1;
 return;
 }
@@ -417,10 +419,12 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 }
 ";
 public static readonly string DeeplyNestedInitKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source +DeeplyNestedInitKernel_Source;
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__StructAggregateInitKernels__DeeplyNestedInitKernel {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
 }
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__StructAggregateInitKernels__DeeplyNestedInitKernel(int[] output, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__StructAggregateInitKernels__DeeplyNestedInitKernel __gsharp_ctx) {
 {
 switch (__gsharp_ctx.__gsharp_state)

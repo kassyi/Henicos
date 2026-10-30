@@ -8,6 +8,6 @@ public static partial class TestKernelContainer
     [SkipSnapshotConsistency("Analyzer case")]
     public static void UsingStaticKernel(float[] data)
     {
-        data[ThreadIndex.X] = (float)Sin(data[ThreadIndex.X]);
+        data[ThreadIndex.X] = (float)Cbrt(data[ThreadIndex.X]);
     }
 }

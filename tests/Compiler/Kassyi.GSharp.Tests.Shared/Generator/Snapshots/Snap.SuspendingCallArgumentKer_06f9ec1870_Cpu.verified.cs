@@ -30,8 +30,8 @@ __gsharp_switch_1_state_1:
 {
 auto __gsharp_warp_temp_0 = __gsharp_warp_shuffle_read_xor_sync(__gsharp_root,4294967295U,__gsharp_id_0_value,1,32,""SuspendingCallArgumentKernels.cs(17,24)"");
 int __gsharp_id_4_neighbor = __gsharp_warp_temp_0;
-int __gsharp_id_5_result = (__gsharp_id_0_value+__gsharp_id_4_neighbor)*(int)__gsharp_id_1_scale+(int)__gsharp_id_3_color;
-*__gsharp_result = (__gsharp_id_2_negate?-__gsharp_id_5_result:__gsharp_id_5_result);
+int __gsharp_id_5_result = __gsharp_add_i32(__gsharp_mul_i32(__gsharp_add_i32(__gsharp_id_0_value,__gsharp_id_4_neighbor),(int)__gsharp_id_1_scale),(int)__gsharp_id_3_color);
+*__gsharp_result = (__gsharp_id_2_negate?__gsharp_neg_i32(__gsharp_id_5_result):__gsharp_id_5_result);
 __gsharp_state = 0;return true;
 __gsharp_state = 0;return true;
 }
@@ -59,10 +59,12 @@ namespace Kassyi.GSharp.Tests.Shared.Syntax
 {
 public partial class SuspendingCallArgumentKernels
 {
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_frame_Kassyi__GSharp__Tests__Shared__Syntax__SuspendingCallArgumentKernels__PairSum {
 internal int __gsharp_state;
 internal uint __gsharp_warp_exchange;
 }
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static bool __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__SuspendingCallArgumentKernels__PairSum(int value, uint scale, bool negate, global::Kassyi.GSharp.Tests.Shared.Syntax.PacketColor color, __gsharp_frame_Kassyi__GSharp__Tests__Shared__Syntax__SuspendingCallArgumentKernels__PairSum __gsharp_ctx, ref int __gsharp_result) {
 {
 switch (__gsharp_ctx.__gsharp_state)
@@ -138,7 +140,7 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-__gsharp_ctx->__gsharp_id_2_tid=threadIdx.x;
+__gsharp_ctx->__gsharp_id_2_tid=(int)threadIdx.x;
 __gsharp_ctx->__gsharp_arg_temp_0=__gsharp_id_0_input[__gsharp_ctx->__gsharp_id_2_tid];
 goto __gsharp_switch_1_state_1;
 }
@@ -231,6 +233,7 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 }
 ";
 public static readonly string OmittedOptionalArgumentsKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source +OmittedOptionalArgumentsKernel_Source;
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__SuspendingCallArgumentKernels__OmittedOptionalArgumentsKernel {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
@@ -239,6 +242,7 @@ public int __gsharp_arg_temp_0;
 public int __gsharp_call_temp_1;
 internal global::Kassyi.GSharp.Tests.Shared.Syntax.SuspendingCallArgumentKernels.__gsharp_frame_Kassyi__GSharp__Tests__Shared__Syntax__SuspendingCallArgumentKernels__PairSum __gsharp_call_frame_0 = new();
 }
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__SuspendingCallArgumentKernels__OmittedOptionalArgumentsKernel(int[] input, int[] output, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__SuspendingCallArgumentKernels__OmittedOptionalArgumentsKernel __gsharp_ctx) {
 {
 switch (__gsharp_ctx.__gsharp_state)
@@ -413,7 +417,7 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-__gsharp_ctx->__gsharp_id_2_tid=threadIdx.x;
+__gsharp_ctx->__gsharp_id_2_tid=(int)threadIdx.x;
 __gsharp_ctx->__gsharp_arg_temp_0=__gsharp_id_0_input[__gsharp_ctx->__gsharp_id_2_tid];
 goto __gsharp_switch_1_state_1;
 }
@@ -506,6 +510,7 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 }
 ";
 public static readonly string NamedArgumentKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source +NamedArgumentKernel_Source;
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__SuspendingCallArgumentKernels__NamedArgumentKernel {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
@@ -514,6 +519,7 @@ public int __gsharp_arg_temp_0;
 public int __gsharp_call_temp_1;
 internal global::Kassyi.GSharp.Tests.Shared.Syntax.SuspendingCallArgumentKernels.__gsharp_frame_Kassyi__GSharp__Tests__Shared__Syntax__SuspendingCallArgumentKernels__PairSum __gsharp_call_frame_0 = new();
 }
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__SuspendingCallArgumentKernels__NamedArgumentKernel(int[] input, int[] output, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__SuspendingCallArgumentKernels__NamedArgumentKernel __gsharp_ctx) {
 {
 switch (__gsharp_ctx.__gsharp_state)
@@ -689,9 +695,9 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-__gsharp_ctx->__gsharp_id_2_tid=threadIdx.x;
+__gsharp_ctx->__gsharp_id_2_tid=(int)threadIdx.x;
 __gsharp_ctx->__gsharp_arg_temp_0=1;
-__gsharp_ctx->__gsharp_arg_temp_1=__gsharp_id_0_input[__gsharp_ctx->__gsharp_id_2_tid]+1;
+__gsharp_ctx->__gsharp_arg_temp_1=__gsharp_add_i32(__gsharp_id_0_input[__gsharp_ctx->__gsharp_id_2_tid],1);
 goto __gsharp_switch_1_state_1;
 }
 case 1:
@@ -783,6 +789,7 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 }
 ";
 public static readonly string ReorderedNamedArgumentsKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source +ReorderedNamedArgumentsKernel_Source;
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__SuspendingCallArgumentKernels__ReorderedNamedArgumentsKernel {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
@@ -792,6 +799,7 @@ public int __gsharp_arg_temp_1;
 public int __gsharp_call_temp_2;
 internal global::Kassyi.GSharp.Tests.Shared.Syntax.SuspendingCallArgumentKernels.__gsharp_frame_Kassyi__GSharp__Tests__Shared__Syntax__SuspendingCallArgumentKernels__PairSum __gsharp_call_frame_0 = new();
 }
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__SuspendingCallArgumentKernels__ReorderedNamedArgumentsKernel(int[] input, int[] output, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__SuspendingCallArgumentKernels__ReorderedNamedArgumentsKernel __gsharp_ctx) {
 {
 switch (__gsharp_ctx.__gsharp_state)

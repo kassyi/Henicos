@@ -9,7 +9,7 @@ internal static class GSharpSharedCpuDeviceCode
 public const string Source = @"inline int __gsharp_fn_Kassyi__GSharp__Tests__Shared__TestCases__DefaultAndNamedArgumentsTestCase__ComputeStep(int __gsharp_id_0_input, int __gsharp_id_1_offset, int __gsharp_id_2_scale);
 
 inline int __gsharp_fn_Kassyi__GSharp__Tests__Shared__TestCases__DefaultAndNamedArgumentsTestCase__ComputeStep(int __gsharp_id_0_input, int __gsharp_id_1_offset, int __gsharp_id_2_scale){
-return (__gsharp_id_0_input+__gsharp_id_1_offset)*__gsharp_id_2_scale;
+return __gsharp_mul_i32(__gsharp_add_i32(__gsharp_id_0_input,__gsharp_id_1_offset),__gsharp_id_2_scale);
 }
 
 ";
@@ -57,11 +57,11 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-int __gsharp_id_1_tid = threadIdx.x;
+int __gsharp_id_1_tid = (int)threadIdx.x;
 int __gsharp_id_2_r1 = __gsharp_fn_Kassyi__GSharp__Tests__Shared__TestCases__DefaultAndNamedArgumentsTestCase__ComputeStep(__gsharp_id_0_data[__gsharp_id_1_tid],0,1);
 int __gsharp_id_3_r2 = __gsharp_fn_Kassyi__GSharp__Tests__Shared__TestCases__DefaultAndNamedArgumentsTestCase__ComputeStep(__gsharp_id_0_data[__gsharp_id_1_tid],5,2);
 int __gsharp_id_4_r3 = __gsharp_fn_Kassyi__GSharp__Tests__Shared__TestCases__DefaultAndNamedArgumentsTestCase__ComputeStep(__gsharp_id_0_data[__gsharp_id_1_tid],0,4);
-__gsharp_id_0_data[__gsharp_id_1_tid]=__gsharp_id_2_r1+__gsharp_id_3_r2+__gsharp_id_4_r3;
+__gsharp_id_0_data[__gsharp_id_1_tid]=__gsharp_add_i32(__gsharp_add_i32(__gsharp_id_2_r1,__gsharp_id_3_r2),__gsharp_id_4_r3);
 __gsharp_state=-1;
 return;
 }
@@ -142,10 +142,12 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 }
 ";
 public static readonly string SampleKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source +SampleKernel_Source;
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__TestCases__DefaultAndNamedArgumentsTestCase__SampleKernel {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
 }
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__TestCases__DefaultAndNamedArgumentsTestCase__SampleKernel(int[] data, __gsharp_context_Kassyi__GSharp__Tests__Shared__TestCases__DefaultAndNamedArgumentsTestCase__SampleKernel __gsharp_ctx) {
 {
 switch (__gsharp_ctx.__gsharp_state)

@@ -104,13 +104,13 @@ static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__Packet
 static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__PacketItem,__gsharp_mb_Payload)==8,""Kassyi.GSharp.Tests.Shared.Syntax.PacketItem.Payload: offset"");
 #endif
 extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__EnumTypeKernels__EvaluatePacketsKernel(GSharpArray<__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__PacketItem> __gsharp_id_0_items, int __gsharp_id_1_bonusColor, GSharpArray<int> __gsharp_id_2_output){
-int __gsharp_id_3_tid = threadIdx.x;
+int __gsharp_id_3_tid = (int)threadIdx.x;
 __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__PacketItem __gsharp_id_4_item = __gsharp_id_0_items[__gsharp_id_3_tid];
 int __gsharp_id_5_localColor = __gsharp_id_4_item.__gsharp_mb_Color;
 unsigned int __gsharp_id_6_localFlags = __gsharp_id_4_item.__gsharp_mb_Flags;
 if((__gsharp_id_6_localFlags&1U)!=0U)
 {
-__gsharp_id_2_output[__gsharp_id_3_tid]=__gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__EnumTypeKernels__ScoreColor(__gsharp_id_5_localColor)+((__gsharp_id_5_localColor==__gsharp_id_1_bonusColor?100:0))+__gsharp_id_4_item.__gsharp_mb_Payload;
+__gsharp_id_2_output[__gsharp_id_3_tid]=__gsharp_add_i32(__gsharp_add_i32(__gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__EnumTypeKernels__ScoreColor(__gsharp_id_5_localColor),(__gsharp_id_5_localColor==__gsharp_id_1_bonusColor?100:0)),__gsharp_id_4_item.__gsharp_mb_Payload);
 }
 else
 {
@@ -171,15 +171,16 @@ int items_size = items.Length * sizeof(global::Kassyi.GSharp.Tests.Shared.Syntax
 IntPtr* proxy_items = stackalloc IntPtr[2];
 proxy_items[0] = IntPtr.Zero;
 ((int*)(proxy_items + 1))[0] = items.Length;
+((int*)(proxy_items + 1))[1] = 0;
 if (items_size > 0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_items, (IntPtr)items_size, hStream));
-proxy_items[0] = d_items;
 fixed (global::Kassyi.GSharp.Tests.Shared.Syntax.PacketItem* p_items = items)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoDAsync_v2(d_items, (IntPtr)p_items, (IntPtr)items_size, hStream));
 CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
 }
+proxy_items[0] = d_items;
 }
 kernelParams[0] = proxy_items;
 // Marshal scalar: bonusColor
@@ -189,15 +190,23 @@ int output_size = output.Length * sizeof(global::System.Int32);
 IntPtr* proxy_output = stackalloc IntPtr[2];
 proxy_output[0] = IntPtr.Zero;
 ((int*)(proxy_output + 1))[0] = output.Length;
+((int*)(proxy_output + 1))[1] = 0;
 if (output_size > 0)
 {
+if (global::System.Object.ReferenceEquals(output, items))
+{
+d_output = d_items;
+}
+else
+{
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_output, (IntPtr)output_size, hStream));
-proxy_output[0] = d_output;
 fixed (global::System.Int32* p_output = output)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoDAsync_v2(d_output, (IntPtr)p_output, (IntPtr)output_size, hStream));
 CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
 }
+}
+proxy_output[0] = d_output;
 }
 kernelParams[2] = proxy_output;
 CudaException.ThrowIfError(CudaDriverApi.cuLaunchKernel(
@@ -219,7 +228,7 @@ CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
 }
 }
 // Copy back array: output
-if (output_size > 0 && d_output != IntPtr.Zero)
+if (output_size > 0 && d_output != IntPtr.Zero && !global::System.Object.ReferenceEquals(output, items))
 {
 fixed (global::System.Int32* p_output = output)
 {
@@ -231,7 +240,7 @@ CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
 finally
 {
 if (d_items != IntPtr.Zero) CudaDriverApi.cuMemFreeAsync(d_items, hStream);
-if (d_output != IntPtr.Zero) CudaDriverApi.cuMemFreeAsync(d_output, hStream);
+if (d_output != IntPtr.Zero && d_output != d_items) CudaDriverApi.cuMemFreeAsync(d_output, hStream);
 }
 }
 }
@@ -253,6 +262,7 @@ void** kernelParams = stackalloc void*[3];
 IntPtr* proxy_items = stackalloc IntPtr[2];
 proxy_items[0] = items;
 ((int*)(proxy_items + 1))[0] = 0; // Length is unknown for raw IntPtr
+((int*)(proxy_items + 1))[1] = 0;
 kernelParams[0] = proxy_items;
 // Marshal scalar: bonusColor
 kernelParams[1] = &bonusColor;
@@ -260,6 +270,7 @@ kernelParams[1] = &bonusColor;
 IntPtr* proxy_output = stackalloc IntPtr[2];
 proxy_output[0] = output;
 ((int*)(proxy_output + 1))[0] = 0; // Length is unknown for raw IntPtr
+((int*)(proxy_output + 1))[1] = 0;
 kernelParams[2] = proxy_output;
 CudaException.ThrowIfError(CudaDriverApi.cuLaunchKernel(
 hfunc,

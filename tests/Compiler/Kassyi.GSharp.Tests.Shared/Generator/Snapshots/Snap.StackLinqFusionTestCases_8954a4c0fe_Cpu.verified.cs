@@ -51,7 +51,7 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-int __gsharp_id_1_tid = blockIdx.x*blockDim.x+threadIdx.x;
+int __gsharp_id_1_tid = __gsharp_add_i32(__gsharp_mul_i32((int)blockIdx.x,(int)blockDim.x),(int)threadIdx.x);
 if(__gsharp_id_1_tid==0)
 {
 int __gsharp_id_2_sum = ([&]() -> auto {
@@ -68,7 +68,7 @@ return __gsharp_id_3_x>5;
 )(__gsharp_val_0))
 {
 auto __gsharp_val_1 = ([&](auto __gsharp_id_4_x) {
-return __gsharp_id_4_x*2;
+return __gsharp_mul_i32(__gsharp_id_4_x,2);
 }
 )(__gsharp_val_0);
 __gsharp_fusion_res += __gsharp_val_1;
@@ -158,10 +158,12 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 }
 ";
 public static readonly string SimpleWhereSelectSum_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source +SimpleWhereSelectSum_Source;
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__TestCases__StackLinqFusionTestCases__SimpleWhereSelectSum {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
 }
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__TestCases__StackLinqFusionTestCases__SimpleWhereSelectSum(int[] data, __gsharp_context_Kassyi__GSharp__Tests__Shared__TestCases__StackLinqFusionTestCases__SimpleWhereSelectSum __gsharp_ctx) {
 {
 switch (__gsharp_ctx.__gsharp_state)
@@ -318,7 +320,7 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-int __gsharp_id_1_tid = blockIdx.x*blockDim.x+threadIdx.x;
+int __gsharp_id_1_tid = __gsharp_add_i32(__gsharp_mul_i32((int)blockIdx.x,(int)blockDim.x),(int)threadIdx.x);
 if(__gsharp_id_1_tid==0)
 {
 int __gsharp_id_2_sum = ([&]() -> auto {
@@ -427,10 +429,12 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 }
 ";
 public static readonly string MultipleWhere_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source +MultipleWhere_Source;
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__TestCases__StackLinqFusionTestCases__MultipleWhere {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
 }
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__TestCases__StackLinqFusionTestCases__MultipleWhere(int[] data, __gsharp_context_Kassyi__GSharp__Tests__Shared__TestCases__StackLinqFusionTestCases__MultipleWhere __gsharp_ctx) {
 {
 switch (__gsharp_ctx.__gsharp_state)
@@ -587,7 +591,7 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-int __gsharp_id_1_tid = blockIdx.x*blockDim.x+threadIdx.x;
+int __gsharp_id_1_tid = __gsharp_add_i32(__gsharp_mul_i32((int)blockIdx.x,(int)blockDim.x),(int)threadIdx.x);
 if(__gsharp_id_1_tid==0)
 {
 int __gsharp_id_2_sum = ([&]() -> auto {
@@ -599,11 +603,11 @@ for (int __gsharp_i = __gsharp_fusion_lo; __gsharp_i < __gsharp_fusion_hi; __gsh
 {
 auto __gsharp_val_0 = __gsharp_fusion_src[__gsharp_i];
 auto __gsharp_val_1 = ([&](auto __gsharp_id_3_x) {
-return __gsharp_id_3_x*2;
+return __gsharp_mul_i32(__gsharp_id_3_x,2);
 }
 )(__gsharp_val_0);
 auto __gsharp_val_2 = ([&](auto __gsharp_id_4_x) {
-return __gsharp_id_4_x+1;
+return __gsharp_add_i32(__gsharp_id_4_x,1);
 }
 )(__gsharp_val_1);
 __gsharp_fusion_res += __gsharp_val_2;
@@ -692,10 +696,12 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 }
 ";
 public static readonly string MultipleSelect_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source +MultipleSelect_Source;
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__TestCases__StackLinqFusionTestCases__MultipleSelect {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
 }
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__TestCases__StackLinqFusionTestCases__MultipleSelect(int[] data, __gsharp_context_Kassyi__GSharp__Tests__Shared__TestCases__StackLinqFusionTestCases__MultipleSelect __gsharp_ctx) {
 {
 switch (__gsharp_ctx.__gsharp_state)
@@ -852,7 +858,7 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-int __gsharp_id_1_tid = blockIdx.x*blockDim.x+threadIdx.x;
+int __gsharp_id_1_tid = __gsharp_add_i32(__gsharp_mul_i32((int)blockIdx.x,(int)blockDim.x),(int)threadIdx.x);
 if(__gsharp_id_1_tid==0)
 {
 int __gsharp_id_2_sum = ([&]() -> auto {
@@ -890,11 +896,11 @@ return __gsharp_id_5_x<=80;
 )(__gsharp_val_0)))
 {break;
 }auto __gsharp_val_1 = ([&](auto __gsharp_id_6_x) {
-return __gsharp_id_6_x*2;
+return __gsharp_mul_i32(__gsharp_id_6_x,2);
 }
 )(__gsharp_val_0);
 auto __gsharp_val_2 = ([&](auto __gsharp_id_7_x) {
-return __gsharp_id_7_x+1;
+return __gsharp_add_i32(__gsharp_id_7_x,1);
 }
 )(__gsharp_val_1);
 if (([&](auto __gsharp_id_8_x) {
@@ -990,10 +996,12 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 }
 ";
 public static readonly string HellPattern_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source +HellPattern_Source;
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__TestCases__StackLinqFusionTestCases__HellPattern {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
 }
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__TestCases__StackLinqFusionTestCases__HellPattern(int[] data, __gsharp_context_Kassyi__GSharp__Tests__Shared__TestCases__StackLinqFusionTestCases__HellPattern __gsharp_ctx) {
 {
 switch (__gsharp_ctx.__gsharp_state)

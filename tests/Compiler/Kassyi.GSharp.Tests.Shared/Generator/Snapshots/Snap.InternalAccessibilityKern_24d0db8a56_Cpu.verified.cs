@@ -52,8 +52,8 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-int __gsharp_id_2_tid = threadIdx.x;
-__gsharp_id_1_output[__gsharp_id_2_tid]=__gsharp_id_0_input[__gsharp_id_2_tid]*2;
+int __gsharp_id_2_tid = (int)threadIdx.x;
+__gsharp_id_1_output[__gsharp_id_2_tid]=__gsharp_mul_i32(__gsharp_id_0_input[__gsharp_id_2_tid],2);
 __gsharp_state=-1;
 return;
 }
@@ -134,10 +134,12 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 }
 ";
 public static readonly string DoubleKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source +DoubleKernel_Source;
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__InternalAccessibilityKernels__DoubleKernel {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
 }
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__InternalAccessibilityKernels__DoubleKernel(int[] input, int[] output, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__InternalAccessibilityKernels__DoubleKernel __gsharp_ctx) {
 {
 switch (__gsharp_ctx.__gsharp_state)

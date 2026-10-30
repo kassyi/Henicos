@@ -13,13 +13,13 @@ inline int __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__UsingDisposalKerne
 inline int __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__UsingDisposalKernels__DisposeAfterReturnValue(GSharpArray<int> __gsharp_id_0_log);
 
 inline void __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__UsingDisposalKernels__Note(GSharpArray<int> __gsharp_id_0_log, int __gsharp_id_1_value){
-__gsharp_id_0_log[0]=__gsharp_id_0_log[0]+1;
-__gsharp_id_0_log[__gsharp_id_0_log[0]]=__gsharp_id_1_value;
+__gsharp_array_at(__gsharp_id_0_log, 0, ""G#: a null array is read at UsingDisposalKernels.cs(35,9)"")=__gsharp_add_i32(__gsharp_array_at(__gsharp_id_0_log, 0, ""G#: a null array is read at UsingDisposalKernels.cs(35,18)""),1);
+__gsharp_array_at(__gsharp_id_0_log, __gsharp_array_at(__gsharp_id_0_log, 0, ""G#: a null array is read at UsingDisposalKernels.cs(36,13)""), ""G#: a null array is read at UsingDisposalKernels.cs(36,9)"")=__gsharp_id_1_value;
 }
 
 inline int __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__UsingDisposalKernels__NoteAndGet(GSharpArray<int> __gsharp_id_0_log, int __gsharp_id_1_value){
 __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__UsingDisposalKernels__Note(__gsharp_id_0_log,__gsharp_id_1_value);
-return __gsharp_id_1_value+1;
+return __gsharp_add_i32(__gsharp_id_1_value,1);
 }
 
 #ifndef __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__UsingRecorder__
@@ -39,8 +39,8 @@ static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__UsingR
 #ifndef __GSHARP_DISPOSE___gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__UsingRecorder__
 #define __GSHARP_DISPOSE___gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__UsingRecorder__
 __device__ inline void __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__UsingRecorder::__gsharp_dispose() {
-__gsharp_mb_Log[0]=__gsharp_mb_Log[0]+1;
-__gsharp_mb_Log[__gsharp_mb_Log[0]]=__gsharp_mb_Id;
+__gsharp_array_at(__gsharp_mb_Log, 0, ""G#: a null array is read at UsingDisposalKernels.cs(16,9)"")=__gsharp_add_i32(__gsharp_array_at(__gsharp_mb_Log, 0, ""G#: a null array is read at UsingDisposalKernels.cs(16,18)""),1);
+__gsharp_array_at(__gsharp_mb_Log, __gsharp_array_at(__gsharp_mb_Log, 0, ""G#: a null array is read at UsingDisposalKernels.cs(17,13)""), ""G#: a null array is read at UsingDisposalKernels.cs(17,9)"")=__gsharp_mb_Id;
 }
 #endif
 inline int __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__UsingDisposalKernels__DisposeAfterReturnValue(GSharpArray<int> __gsharp_id_0_log){
@@ -95,8 +95,8 @@ static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__UsingR
 #ifndef __GSHARP_DISPOSE___gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__UsingRecorder__
 #define __GSHARP_DISPOSE___gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__UsingRecorder__
 __device__ inline void __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__UsingRecorder::__gsharp_dispose() {
-__gsharp_mb_Log[0]=__gsharp_mb_Log[0]+1;
-__gsharp_mb_Log[__gsharp_mb_Log[0]]=__gsharp_mb_Id;
+__gsharp_array_at(__gsharp_mb_Log, 0, ""G#: a null array is read at UsingDisposalKernels.cs(16,9)"")=__gsharp_add_i32(__gsharp_array_at(__gsharp_mb_Log, 0, ""G#: a null array is read at UsingDisposalKernels.cs(16,18)""),1);
+__gsharp_array_at(__gsharp_mb_Log, __gsharp_array_at(__gsharp_mb_Log, 0, ""G#: a null array is read at UsingDisposalKernels.cs(17,13)""), ""G#: a null array is read at UsingDisposalKernels.cs(17,9)"")=__gsharp_mb_Id;
 }
 #endif
 struct __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__UsingDisposalKernels__UsingStatementKernel {
@@ -205,10 +205,12 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 }
 ";
 public static readonly string UsingStatementKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source +UsingStatementKernel_Source;
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__UsingDisposalKernels__UsingStatementKernel {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
 }
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__UsingDisposalKernels__UsingStatementKernel(int[] log, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__UsingDisposalKernels__UsingStatementKernel __gsharp_ctx) {
 {
 switch (__gsharp_ctx.__gsharp_state)
@@ -369,8 +371,8 @@ static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__UsingR
 #ifndef __GSHARP_DISPOSE___gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__UsingRecorder__
 #define __GSHARP_DISPOSE___gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__UsingRecorder__
 __device__ inline void __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__UsingRecorder::__gsharp_dispose() {
-__gsharp_mb_Log[0]=__gsharp_mb_Log[0]+1;
-__gsharp_mb_Log[__gsharp_mb_Log[0]]=__gsharp_mb_Id;
+__gsharp_array_at(__gsharp_mb_Log, 0, ""G#: a null array is read at UsingDisposalKernels.cs(16,9)"")=__gsharp_add_i32(__gsharp_array_at(__gsharp_mb_Log, 0, ""G#: a null array is read at UsingDisposalKernels.cs(16,18)""),1);
+__gsharp_array_at(__gsharp_mb_Log, __gsharp_array_at(__gsharp_mb_Log, 0, ""G#: a null array is read at UsingDisposalKernels.cs(17,13)""), ""G#: a null array is read at UsingDisposalKernels.cs(17,9)"")=__gsharp_mb_Id;
 }
 #endif
 struct __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__UsingDisposalKernels__UsingEarlyReturnKernel {
@@ -484,10 +486,12 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 }
 ";
 public static readonly string UsingEarlyReturnKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source +UsingEarlyReturnKernel_Source;
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__UsingDisposalKernels__UsingEarlyReturnKernel {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
 }
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__UsingDisposalKernels__UsingEarlyReturnKernel(int[] log, int stop, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__UsingDisposalKernels__UsingEarlyReturnKernel __gsharp_ctx) {
 {
 switch (__gsharp_ctx.__gsharp_state)
@@ -657,8 +661,8 @@ static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__UsingR
 #ifndef __GSHARP_DISPOSE___gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__UsingRecorder__
 #define __GSHARP_DISPOSE___gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__UsingRecorder__
 __device__ inline void __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__UsingRecorder::__gsharp_dispose() {
-__gsharp_mb_Log[0]=__gsharp_mb_Log[0]+1;
-__gsharp_mb_Log[__gsharp_mb_Log[0]]=__gsharp_mb_Id;
+__gsharp_array_at(__gsharp_mb_Log, 0, ""G#: a null array is read at UsingDisposalKernels.cs(16,9)"")=__gsharp_add_i32(__gsharp_array_at(__gsharp_mb_Log, 0, ""G#: a null array is read at UsingDisposalKernels.cs(16,18)""),1);
+__gsharp_array_at(__gsharp_mb_Log, __gsharp_array_at(__gsharp_mb_Log, 0, ""G#: a null array is read at UsingDisposalKernels.cs(17,13)""), ""G#: a null array is read at UsingDisposalKernels.cs(17,9)"")=__gsharp_mb_Id;
 }
 #endif
 struct __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__UsingDisposalKernels__UsingInLoopKernel {
@@ -679,11 +683,11 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-for(int __gsharp_id_1_i = 0;__gsharp_id_1_i<4;__gsharp_id_1_i++)
+for(int __gsharp_id_1_i = 0;__gsharp_id_1_i<4;__gsharp_id_1_i=__gsharp_add_i32(__gsharp_id_1_i,1))
 {
 {
 auto __gsharp_id_2_resource = ([&]() {
-__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__UsingRecorder __gsharp_tmp{}; __gsharp_tmp.__gsharp_mb_Log = __gsharp_id_0_log; __gsharp_tmp.__gsharp_mb_Id = 100+__gsharp_id_1_i; return __gsharp_tmp; }
+__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__UsingRecorder __gsharp_tmp{}; __gsharp_tmp.__gsharp_mb_Log = __gsharp_id_0_log; __gsharp_tmp.__gsharp_mb_Id = __gsharp_add_i32(100,__gsharp_id_1_i); return __gsharp_tmp; }
 ());
 __gsharp_using_scope<__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__UsingRecorder> __gsharp_using_guard_0{__gsharp_id_2_resource};
 if(__gsharp_id_1_i==1)
@@ -778,10 +782,12 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 }
 ";
 public static readonly string UsingInLoopKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source +UsingInLoopKernel_Source;
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__UsingDisposalKernels__UsingInLoopKernel {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
 }
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__UsingDisposalKernels__UsingInLoopKernel(int[] log, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__UsingDisposalKernels__UsingInLoopKernel __gsharp_ctx) {
 {
 switch (__gsharp_ctx.__gsharp_state)
@@ -955,8 +961,8 @@ static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__UsingR
 #ifndef __GSHARP_DISPOSE___gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__UsingRecorder__
 #define __GSHARP_DISPOSE___gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__UsingRecorder__
 __device__ inline void __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__UsingRecorder::__gsharp_dispose() {
-__gsharp_mb_Log[0]=__gsharp_mb_Log[0]+1;
-__gsharp_mb_Log[__gsharp_mb_Log[0]]=__gsharp_mb_Id;
+__gsharp_array_at(__gsharp_mb_Log, 0, ""G#: a null array is read at UsingDisposalKernels.cs(16,9)"")=__gsharp_add_i32(__gsharp_array_at(__gsharp_mb_Log, 0, ""G#: a null array is read at UsingDisposalKernels.cs(16,18)""),1);
+__gsharp_array_at(__gsharp_mb_Log, __gsharp_array_at(__gsharp_mb_Log, 0, ""G#: a null array is read at UsingDisposalKernels.cs(17,13)""), ""G#: a null array is read at UsingDisposalKernels.cs(17,9)"")=__gsharp_mb_Id;
 }
 #endif
 struct __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__UsingDisposalKernels__NestedUsingKernel {
@@ -1080,10 +1086,12 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 }
 ";
 public static readonly string NestedUsingKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source +NestedUsingKernel_Source;
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__UsingDisposalKernels__NestedUsingKernel {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
 }
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__UsingDisposalKernels__NestedUsingKernel(int[] log, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__UsingDisposalKernels__NestedUsingKernel __gsharp_ctx) {
 {
 switch (__gsharp_ctx.__gsharp_state)
@@ -1265,8 +1273,8 @@ static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__UsingR
 #ifndef __GSHARP_DISPOSE___gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__UsingRecorder__
 #define __GSHARP_DISPOSE___gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__UsingRecorder__
 __device__ inline void __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__UsingRecorder::__gsharp_dispose() {
-__gsharp_mb_Log[0]=__gsharp_mb_Log[0]+1;
-__gsharp_mb_Log[__gsharp_mb_Log[0]]=__gsharp_mb_Id;
+__gsharp_array_at(__gsharp_mb_Log, 0, ""G#: a null array is read at UsingDisposalKernels.cs(16,9)"")=__gsharp_add_i32(__gsharp_array_at(__gsharp_mb_Log, 0, ""G#: a null array is read at UsingDisposalKernels.cs(16,18)""),1);
+__gsharp_array_at(__gsharp_mb_Log, __gsharp_array_at(__gsharp_mb_Log, 0, ""G#: a null array is read at UsingDisposalKernels.cs(17,13)""), ""G#: a null array is read at UsingDisposalKernels.cs(17,9)"")=__gsharp_mb_Id;
 }
 #endif
 struct __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__UsingDisposalKernels__UsingDeclarationKernel {
@@ -1384,10 +1392,12 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 }
 ";
 public static readonly string UsingDeclarationKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source +UsingDeclarationKernel_Source;
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__UsingDisposalKernels__UsingDeclarationKernel {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
 }
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__UsingDisposalKernels__UsingDeclarationKernel(int[] log, int stop, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__UsingDisposalKernels__UsingDeclarationKernel __gsharp_ctx) {
 {
 switch (__gsharp_ctx.__gsharp_state)
@@ -1560,8 +1570,8 @@ static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__UsingR
 #ifndef __GSHARP_DISPOSE___gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__UsingRecorder__
 #define __GSHARP_DISPOSE___gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__UsingRecorder__
 __device__ inline void __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__UsingRecorder::__gsharp_dispose() {
-__gsharp_mb_Log[0]=__gsharp_mb_Log[0]+1;
-__gsharp_mb_Log[__gsharp_mb_Log[0]]=__gsharp_mb_Id;
+__gsharp_array_at(__gsharp_mb_Log, 0, ""G#: a null array is read at UsingDisposalKernels.cs(16,9)"")=__gsharp_add_i32(__gsharp_array_at(__gsharp_mb_Log, 0, ""G#: a null array is read at UsingDisposalKernels.cs(16,18)""),1);
+__gsharp_array_at(__gsharp_mb_Log, __gsharp_array_at(__gsharp_mb_Log, 0, ""G#: a null array is read at UsingDisposalKernels.cs(17,13)""), ""G#: a null array is read at UsingDisposalKernels.cs(17,9)"")=__gsharp_mb_Id;
 }
 #endif
 struct __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__UsingDisposalKernels__UsingDeclarationInLoopKernel {
@@ -1582,10 +1592,10 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-for(int __gsharp_id_1_i = 0;__gsharp_id_1_i<3;__gsharp_id_1_i++)
+for(int __gsharp_id_1_i = 0;__gsharp_id_1_i<3;__gsharp_id_1_i=__gsharp_add_i32(__gsharp_id_1_i,1))
 {
 auto __gsharp_id_2_resource = ([&]() {
-__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__UsingRecorder __gsharp_tmp{}; __gsharp_tmp.__gsharp_mb_Log = __gsharp_id_0_log; __gsharp_tmp.__gsharp_mb_Id = 100+__gsharp_id_1_i; return __gsharp_tmp; }
+__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__UsingRecorder __gsharp_tmp{}; __gsharp_tmp.__gsharp_mb_Log = __gsharp_id_0_log; __gsharp_tmp.__gsharp_mb_Id = __gsharp_add_i32(100,__gsharp_id_1_i); return __gsharp_tmp; }
 ());
 __gsharp_using_scope<__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__UsingRecorder> __gsharp_using_guard_0{__gsharp_id_2_resource};
 if(__gsharp_id_1_i==1)
@@ -1674,10 +1684,12 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 }
 ";
 public static readonly string UsingDeclarationInLoopKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source +UsingDeclarationInLoopKernel_Source;
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__UsingDisposalKernels__UsingDeclarationInLoopKernel {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
 }
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__UsingDisposalKernels__UsingDeclarationInLoopKernel(int[] log, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__UsingDisposalKernels__UsingDeclarationInLoopKernel __gsharp_ctx) {
 {
 switch (__gsharp_ctx.__gsharp_state)
@@ -1842,9 +1854,13 @@ static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__UsingP
 #define __GSHARP_DISPOSE___gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__UsingPatternRecorder__
 __device__ inline void __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__UsingPatternRecorder::__gsharp_dispose() {
 ([&]() {
-auto&& __gsharp_seq_0 = __gsharp_mb_Log[++__gsharp_mb_Log[0]];
-int __gsharp_seq_1 = __gsharp_mb_Id;
-return __gsharp_seq_0 = __gsharp_seq_1;
+auto&& __gsharp_seq_0 = ([&]() -> decltype(auto) {
+auto __gsharp_seq_1 = __gsharp_mb_Log;
+auto __gsharp_seq_2 = (__gsharp_array_at(__gsharp_mb_Log, 0, ""G#: a null array is read at UsingDisposalKernels.cs(27,36)"")=__gsharp_add_i32(__gsharp_array_at(__gsharp_mb_Log, 0, ""G#: a null array is read at UsingDisposalKernels.cs(27,36)""),1));
+return __gsharp_array_at(__gsharp_seq_1, __gsharp_seq_2, ""G#: a null array is read at UsingDisposalKernels.cs(27,30)"");
+}());
+int __gsharp_seq_3 = __gsharp_mb_Id;
+return __gsharp_seq_0 = __gsharp_seq_3;
 }());
 }
 #endif
@@ -1958,10 +1974,12 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 }
 ";
 public static readonly string PatternDisposeKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source +PatternDisposeKernel_Source;
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__UsingDisposalKernels__PatternDisposeKernel {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
 }
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__UsingDisposalKernels__PatternDisposeKernel(int[] log, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__UsingDisposalKernels__PatternDisposeKernel __gsharp_ctx) {
 {
 switch (__gsharp_ctx.__gsharp_state)
@@ -2127,8 +2145,8 @@ static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__UsingR
 #ifndef __GSHARP_DISPOSE___gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__UsingRecorder__
 #define __GSHARP_DISPOSE___gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__UsingRecorder__
 __device__ inline void __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__UsingRecorder::__gsharp_dispose() {
-__gsharp_mb_Log[0]=__gsharp_mb_Log[0]+1;
-__gsharp_mb_Log[__gsharp_mb_Log[0]]=__gsharp_mb_Id;
+__gsharp_array_at(__gsharp_mb_Log, 0, ""G#: a null array is read at UsingDisposalKernels.cs(16,9)"")=__gsharp_add_i32(__gsharp_array_at(__gsharp_mb_Log, 0, ""G#: a null array is read at UsingDisposalKernels.cs(16,18)""),1);
+__gsharp_array_at(__gsharp_mb_Log, __gsharp_array_at(__gsharp_mb_Log, 0, ""G#: a null array is read at UsingDisposalKernels.cs(17,13)""), ""G#: a null array is read at UsingDisposalKernels.cs(17,9)"")=__gsharp_mb_Id;
 }
 #endif
 struct __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__UsingDisposalKernels__UsingExpressionKernel {
@@ -2237,10 +2255,12 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 }
 ";
 public static readonly string UsingExpressionKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source +UsingExpressionKernel_Source;
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__UsingDisposalKernels__UsingExpressionKernel {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
 }
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__UsingDisposalKernels__UsingExpressionKernel(int[] log, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__UsingDisposalKernels__UsingExpressionKernel __gsharp_ctx) {
 {
 switch (__gsharp_ctx.__gsharp_state)
@@ -2482,10 +2502,12 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 }
 ";
 public static readonly string DeviceFunctionUsingKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source +DeviceFunctionUsingKernel_Source;
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__UsingDisposalKernels__DeviceFunctionUsingKernel {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
 }
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__UsingDisposalKernels__DeviceFunctionUsingKernel(int[] log, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__UsingDisposalKernels__DeviceFunctionUsingKernel __gsharp_ctx) {
 {
 switch (__gsharp_ctx.__gsharp_state)
@@ -2636,8 +2658,8 @@ static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__UsingR
 #ifndef __GSHARP_DISPOSE___gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__UsingRecorder__
 #define __GSHARP_DISPOSE___gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__UsingRecorder__
 __device__ inline void __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__UsingRecorder::__gsharp_dispose() {
-__gsharp_mb_Log[0]=__gsharp_mb_Log[0]+1;
-__gsharp_mb_Log[__gsharp_mb_Log[0]]=__gsharp_mb_Id;
+__gsharp_array_at(__gsharp_mb_Log, 0, ""G#: a null array is read at UsingDisposalKernels.cs(16,9)"")=__gsharp_add_i32(__gsharp_array_at(__gsharp_mb_Log, 0, ""G#: a null array is read at UsingDisposalKernels.cs(16,18)""),1);
+__gsharp_array_at(__gsharp_mb_Log, __gsharp_array_at(__gsharp_mb_Log, 0, ""G#: a null array is read at UsingDisposalKernels.cs(17,13)""), ""G#: a null array is read at UsingDisposalKernels.cs(17,9)"")=__gsharp_mb_Id;
 }
 #endif
 struct __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__UsingDisposalKernels__UsingBeforeBarrierKernel {
@@ -2753,10 +2775,12 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 }
 ";
 public static readonly string UsingBeforeBarrierKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source +UsingBeforeBarrierKernel_Source;
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__UsingDisposalKernels__UsingBeforeBarrierKernel {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
 }
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__UsingDisposalKernels__UsingBeforeBarrierKernel(int[] log, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__UsingDisposalKernels__UsingBeforeBarrierKernel __gsharp_ctx) {
 {
 switch (__gsharp_ctx.__gsharp_state)

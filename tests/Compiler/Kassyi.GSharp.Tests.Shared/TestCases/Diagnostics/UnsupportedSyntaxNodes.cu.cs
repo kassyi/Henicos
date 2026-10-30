@@ -38,4 +38,13 @@ public static unsafe partial class UnsupportedSyntaxNodeKernels
         var text = "abc";
         data[0] = 1;
     }
+
+    // GSH0003 also where checked or unchecked is a part of a constant, which the transpiler writes as its value
+    [GpuKernel]
+    [SkipSnapshotConsistency("Diagnostics case")]
+    public static void NestedUncheckedConstantKernel(int[] data)
+    {
+        data[0] = unchecked((int)3e10) * 1;
+        data[1] = unchecked(int.MaxValue + 1);
+    }
 }

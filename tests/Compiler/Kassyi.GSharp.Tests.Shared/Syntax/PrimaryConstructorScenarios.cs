@@ -138,6 +138,35 @@ internal static class PrimaryConstructorScenarios
         }
     }
 
+    public static void GenericNewRunsTheParameterlessConstructor(Action<Action> run)
+    {
+        var output = new int[Count];
+
+        run(() => PrimaryConstructorKernels.LaunchGenericNewKernel(output, blockDimX: Count));
+
+        // new T() runs X = 5 of PcNoParameters and the body X = 7 of PcExplicitNoParameters; PcPlain stays 0 (#609)
+        for (int i = 0; i < Count; i++)
+        {
+            Assert.Equal(570, output[i]);
+        }
+    }
+
+    public static void GenericNewKeepsConstructorOrder(Action<Action> run)
+    {
+        var output = new int[3 * Count];
+
+        run(() => PrimaryConstructorKernels.LaunchGenericNewOrderKernel(output, blockDimX: Count));
+
+        // The initializer before the body (31), : this(4) with the initializer in the chained constructor (143), and
+        // default(T), which runs no constructor (0)
+        var host = new PcGenericHolder<PcChainedNoParameters>();
+        Assert.Equal(143, host.Value.X * 100 + host.Value.Y);
+        for (int i = 0; i < Count; i++)
+        {
+            Assert.Equal([31, 143, 0], output.AsSpan(i * 3, 3).ToArray());
+        }
+    }
+
     public static void CapturedParametersAndAutoPropertiesRoundtrip(Action<Action> run, bool checkShadow)
     {
         var data = new PcCapturedAutoProperty(3, 1.5);

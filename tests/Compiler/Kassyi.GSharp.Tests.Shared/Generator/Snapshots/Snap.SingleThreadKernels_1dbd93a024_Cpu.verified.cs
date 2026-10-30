@@ -13,32 +13,32 @@ inline void __gsharp_fn_Kassyi__GSharp__Tests__Shared__Transpiler__SingleThreadK
 inline void __gsharp_fn_Kassyi__GSharp__Tests__Shared__Transpiler__SingleThreadKernels__AddUntil(GSharpArray<int> __gsharp_id_0_a, int __gsharp_id_1_stop, int __gsharp_id_2_tid);
 
 inline int __gsharp_fn_Kassyi__GSharp__Tests__Shared__Transpiler__SingleThreadKernels__LinearThreadIndex(){
-int __gsharp_id_0_block = (blockIdx.z*gridDim.y+blockIdx.y)*gridDim.x+blockIdx.x;
-int __gsharp_id_1_thread = (threadIdx.z*blockDim.y+threadIdx.y)*blockDim.x+threadIdx.x;
-return __gsharp_id_0_block*(blockDim.x*blockDim.y*blockDim.z)+__gsharp_id_1_thread;
+int __gsharp_id_0_block = __gsharp_add_i32(__gsharp_mul_i32(__gsharp_add_i32(__gsharp_mul_i32((int)blockIdx.z,(int)gridDim.y),(int)blockIdx.y),(int)gridDim.x),(int)blockIdx.x);
+int __gsharp_id_1_thread = __gsharp_add_i32(__gsharp_mul_i32(__gsharp_add_i32(__gsharp_mul_i32((int)threadIdx.z,(int)blockDim.y),(int)threadIdx.y),(int)blockDim.x),(int)threadIdx.x);
+return __gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_0_block,__gsharp_mul_i32(__gsharp_mul_i32((int)blockDim.x,(int)blockDim.y),(int)blockDim.z)),__gsharp_id_1_thread);
 }
 
 inline void __gsharp_fn_Kassyi__GSharp__Tests__Shared__Transpiler__SingleThreadKernels__MarkOnce(GSharpArray<int> __gsharp_id_0_runs, int __gsharp_id_1_id){
 if((threadIdx.x|threadIdx.y|threadIdx.z|blockIdx.x|blockIdx.y|blockIdx.z)==0)
 {
-__gsharp_id_0_runs[__gsharp_id_1_id]+=1;
+__gsharp_array_at(__gsharp_id_0_runs, __gsharp_id_1_id, ""G#: a null array is read at SingleThreadKernels.cs(63,13)"")=__gsharp_add_i32(__gsharp_array_at(__gsharp_id_0_runs, __gsharp_id_1_id, ""G#: a null array is read at SingleThreadKernels.cs(63,13)""),1);
 }
 }
 
 inline void __gsharp_fn_Kassyi__GSharp__Tests__Shared__Transpiler__SingleThreadKernels__AddUntil(GSharpArray<int> __gsharp_id_0_a, int __gsharp_id_1_stop, int __gsharp_id_2_tid){
 if((threadIdx.x|threadIdx.y|threadIdx.z|blockIdx.x|blockIdx.y|blockIdx.z)==0)
 {
-for(int __gsharp_id_3_i = 0;__gsharp_id_3_i<4;__gsharp_id_3_i++)
+for(int __gsharp_id_3_i = 0;__gsharp_id_3_i<4;__gsharp_id_3_i=__gsharp_add_i32(__gsharp_id_3_i,1))
 {
 if(__gsharp_id_3_i==__gsharp_id_1_stop)
 {
 goto __gsharp_st_end_0;
 }
-__gsharp_id_0_a[0]+=1;
+__gsharp_array_at(__gsharp_id_0_a, 0, ""G#: a null array is read at SingleThreadKernels.cs(148,17)"")=__gsharp_add_i32(__gsharp_array_at(__gsharp_id_0_a, 0, ""G#: a null array is read at SingleThreadKernels.cs(148,17)""),1);
 }
 }
 __gsharp_st_end_0:;
-__gsharp_id_0_a[__gsharp_id_2_tid+1]+=2;
+__gsharp_array_at(__gsharp_id_0_a, __gsharp_add_i32(__gsharp_id_2_tid,1), ""G#: a null array is read at SingleThreadKernels.cs(151,9)"")=__gsharp_add_i32(__gsharp_array_at(__gsharp_id_0_a, __gsharp_add_i32(__gsharp_id_2_tid,1), ""G#: a null array is read at SingleThreadKernels.cs(151,9)""),2);
 }
 
 ";
@@ -89,7 +89,7 @@ __gsharp_switch_1_state_0:
 int __gsharp_id_1_id = __gsharp_fn_Kassyi__GSharp__Tests__Shared__Transpiler__SingleThreadKernels__LinearThreadIndex();
 if((threadIdx.x|threadIdx.y|threadIdx.z|blockIdx.x|blockIdx.y|blockIdx.z)==0)
 {
-__gsharp_id_0_runs[__gsharp_id_1_id]+=1;
+__gsharp_id_0_runs[__gsharp_id_1_id]=__gsharp_add_i32(__gsharp_id_0_runs[__gsharp_id_1_id],1);
 }
 __gsharp_state=-1;
 return;
@@ -171,10 +171,12 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 }
 ";
 public static readonly string MarkKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source +MarkKernel_Source;
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Transpiler__SingleThreadKernels__MarkKernel {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
 }
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Transpiler__SingleThreadKernels__MarkKernel(int[] runs, __gsharp_context_Kassyi__GSharp__Tests__Shared__Transpiler__SingleThreadKernels__MarkKernel __gsharp_ctx) {
 {
 switch (__gsharp_ctx.__gsharp_state)
@@ -341,7 +343,7 @@ __gsharp_switch_1_state_1:
 {
 if((threadIdx.x|threadIdx.y|threadIdx.z|blockIdx.x|blockIdx.y|blockIdx.z)==0)
 {
-__gsharp_id_0_runs[__gsharp_ctx->__gsharp_id_1_id]+=1;
+__gsharp_id_0_runs[__gsharp_ctx->__gsharp_id_1_id]=__gsharp_add_i32(__gsharp_id_0_runs[__gsharp_ctx->__gsharp_id_1_id],1);
 }
 __gsharp_state=-1;
 return;
@@ -423,11 +425,13 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 }
 ";
 public static readonly string MarkAfterBarrierKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source +MarkAfterBarrierKernel_Source;
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Transpiler__SingleThreadKernels__MarkAfterBarrierKernel {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
 public int id;
 }
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Transpiler__SingleThreadKernels__MarkAfterBarrierKernel(int[] runs, __gsharp_context_Kassyi__GSharp__Tests__Shared__Transpiler__SingleThreadKernels__MarkAfterBarrierKernel __gsharp_ctx) {
 {
 switch (__gsharp_ctx.__gsharp_state)
@@ -590,7 +594,7 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-int __gsharp_id_1_tid = blockIdx.x*blockDim.x+threadIdx.x;
+int __gsharp_id_1_tid = __gsharp_add_i32(__gsharp_mul_i32((int)blockIdx.x,(int)blockDim.x),(int)threadIdx.x);
 __gsharp_id_0_a[__gsharp_id_1_tid]=1;
 if((threadIdx.x|threadIdx.y|threadIdx.z|blockIdx.x|blockIdx.y|blockIdx.z)==0)
 {
@@ -676,10 +680,12 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 }
 ";
 public static readonly string OverwriteFirstKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source +OverwriteFirstKernel_Source;
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Transpiler__SingleThreadKernels__OverwriteFirstKernel {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
 }
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Transpiler__SingleThreadKernels__OverwriteFirstKernel(int[] a, __gsharp_context_Kassyi__GSharp__Tests__Shared__Transpiler__SingleThreadKernels__OverwriteFirstKernel __gsharp_ctx) {
 {
 switch (__gsharp_ctx.__gsharp_state)
@@ -917,10 +923,12 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 }
 ";
 public static readonly string DeviceFunctionMarkKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source +DeviceFunctionMarkKernel_Source;
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Transpiler__SingleThreadKernels__DeviceFunctionMarkKernel {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
 }
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Transpiler__SingleThreadKernels__DeviceFunctionMarkKernel(int[] runs, __gsharp_context_Kassyi__GSharp__Tests__Shared__Transpiler__SingleThreadKernels__DeviceFunctionMarkKernel __gsharp_ctx) {
 {
 switch (__gsharp_ctx.__gsharp_state)
@@ -1071,16 +1079,16 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-int __gsharp_id_2_tid = blockIdx.x*blockDim.x+threadIdx.x;
+int __gsharp_id_2_tid = __gsharp_add_i32(__gsharp_mul_i32((int)blockIdx.x,(int)blockDim.x),(int)threadIdx.x);
 if((threadIdx.x|threadIdx.y|threadIdx.z|blockIdx.x|blockIdx.y|blockIdx.z)==0)
 {
-for(int __gsharp_id_3_i = 0;__gsharp_id_3_i<4;__gsharp_id_3_i++)
+for(int __gsharp_id_3_i = 0;__gsharp_id_3_i<4;__gsharp_id_3_i=__gsharp_add_i32(__gsharp_id_3_i,1))
 {
 if(__gsharp_id_3_i==__gsharp_id_1_stop)
 {
 goto __gsharp_st_end_0;
 }
-__gsharp_id_0_a[0]+=1;
+__gsharp_id_0_a[0]=__gsharp_add_i32(__gsharp_id_0_a[0],1);
 }
 }
 __gsharp_st_end_0:;
@@ -1090,10 +1098,10 @@ if(__gsharp_id_1_stop<0)
 {
 goto __gsharp_st_end_1;
 }
-__gsharp_id_0_a[0]+=10;
+__gsharp_id_0_a[0]=__gsharp_add_i32(__gsharp_id_0_a[0],10);
 }
 __gsharp_st_end_1:;
-__gsharp_id_0_a[__gsharp_id_2_tid+1]+=2;
+__gsharp_id_0_a[__gsharp_add_i32(__gsharp_id_2_tid,1)]=__gsharp_add_i32(__gsharp_id_0_a[__gsharp_add_i32(__gsharp_id_2_tid,1)],2);
 __gsharp_state=-1;
 return;
 }
@@ -1174,10 +1182,12 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 }
 ";
 public static readonly string ReturnInBodyKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source +ReturnInBodyKernel_Source;
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Transpiler__SingleThreadKernels__ReturnInBodyKernel {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
 }
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Transpiler__SingleThreadKernels__ReturnInBodyKernel(int[] a, int stop, __gsharp_context_Kassyi__GSharp__Tests__Shared__Transpiler__SingleThreadKernels__ReturnInBodyKernel __gsharp_ctx) {
 {
 switch (__gsharp_ctx.__gsharp_state)
@@ -1363,7 +1373,7 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-__gsharp_ctx->__gsharp_id_2_tid=blockIdx.x*blockDim.x+threadIdx.x;
+__gsharp_ctx->__gsharp_id_2_tid=__gsharp_add_i32(__gsharp_mul_i32((int)blockIdx.x,(int)blockDim.x),(int)threadIdx.x);
 __gsharp_yielded_for_block_barrier=true;
 __gsharp_state=1;
 return;
@@ -1373,13 +1383,13 @@ __gsharp_switch_1_state_1:
 {
 if((threadIdx.x|threadIdx.y|threadIdx.z|blockIdx.x|blockIdx.y|blockIdx.z)==0)
 {
-for(int __gsharp_id_3_i = 0;__gsharp_id_3_i<4;__gsharp_id_3_i++)
+for(int __gsharp_id_3_i = 0;__gsharp_id_3_i<4;__gsharp_id_3_i=__gsharp_add_i32(__gsharp_id_3_i,1))
 {
 if(__gsharp_id_3_i==__gsharp_id_1_stop)
 {
 goto __gsharp_st_end_0;
 }
-__gsharp_id_0_a[0]+=1;
+__gsharp_id_0_a[0]=__gsharp_add_i32(__gsharp_id_0_a[0],1);
 }
 }
 __gsharp_st_end_0:;
@@ -1389,10 +1399,10 @@ if(__gsharp_id_1_stop<0)
 {
 goto __gsharp_st_end_1;
 }
-__gsharp_id_0_a[0]+=10;
+__gsharp_id_0_a[0]=__gsharp_add_i32(__gsharp_id_0_a[0],10);
 }
 __gsharp_st_end_1:;
-__gsharp_id_0_a[__gsharp_ctx->__gsharp_id_2_tid+1]+=2;
+__gsharp_id_0_a[__gsharp_add_i32(__gsharp_ctx->__gsharp_id_2_tid,1)]=__gsharp_add_i32(__gsharp_id_0_a[__gsharp_add_i32(__gsharp_ctx->__gsharp_id_2_tid,1)],2);
 __gsharp_state=-1;
 return;
 }
@@ -1473,11 +1483,13 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 }
 ";
 public static readonly string ReturnInBodyAfterBarrierKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source +ReturnInBodyAfterBarrierKernel_Source;
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Transpiler__SingleThreadKernels__ReturnInBodyAfterBarrierKernel {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
 public int tid;
 }
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Transpiler__SingleThreadKernels__ReturnInBodyAfterBarrierKernel(int[] a, int stop, __gsharp_context_Kassyi__GSharp__Tests__Shared__Transpiler__SingleThreadKernels__ReturnInBodyAfterBarrierKernel __gsharp_ctx) {
 {
 switch (__gsharp_ctx.__gsharp_state)
@@ -1669,7 +1681,7 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-__gsharp_fn_Kassyi__GSharp__Tests__Shared__Transpiler__SingleThreadKernels__AddUntil(__gsharp_id_0_a,__gsharp_id_1_stop,blockIdx.x*blockDim.x+threadIdx.x);
+__gsharp_fn_Kassyi__GSharp__Tests__Shared__Transpiler__SingleThreadKernels__AddUntil(__gsharp_id_0_a,__gsharp_id_1_stop,__gsharp_add_i32(__gsharp_mul_i32((int)blockIdx.x,(int)blockDim.x),(int)threadIdx.x));
 __gsharp_state=-1;
 return;
 }
@@ -1750,10 +1762,12 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 }
 ";
 public static readonly string ReturnInDeviceFunctionBodyKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source +ReturnInDeviceFunctionBodyKernel_Source;
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Transpiler__SingleThreadKernels__ReturnInDeviceFunctionBodyKernel {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
 }
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Transpiler__SingleThreadKernels__ReturnInDeviceFunctionBodyKernel(int[] a, int stop, __gsharp_context_Kassyi__GSharp__Tests__Shared__Transpiler__SingleThreadKernels__ReturnInDeviceFunctionBodyKernel __gsharp_ctx) {
 {
 switch (__gsharp_ctx.__gsharp_state)
@@ -1904,11 +1918,11 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-int __gsharp_id_2_tid = blockIdx.x*blockDim.x+threadIdx.x;
+int __gsharp_id_2_tid = __gsharp_add_i32(__gsharp_mul_i32((int)blockIdx.x,(int)blockDim.x),(int)threadIdx.x);
 if((threadIdx.x|threadIdx.y|threadIdx.z|blockIdx.x|blockIdx.y|blockIdx.z)==0)
 {
 auto __gsharp_id_3_Twice = [&](int __gsharp_id_4_v) {
-return __gsharp_id_4_v*2;
+return __gsharp_mul_i32(__gsharp_id_4_v,2);
 }
 ;
 if(__gsharp_id_1_stop==0)
@@ -1918,7 +1932,7 @@ goto __gsharp_st_end_0;
 __gsharp_id_0_a[0]=__gsharp_id_3_Twice(__gsharp_id_1_stop);
 }
 __gsharp_st_end_0:;
-__gsharp_id_0_a[__gsharp_id_2_tid+1]+=2;
+__gsharp_id_0_a[__gsharp_add_i32(__gsharp_id_2_tid,1)]=__gsharp_add_i32(__gsharp_id_0_a[__gsharp_add_i32(__gsharp_id_2_tid,1)],2);
 __gsharp_state=-1;
 return;
 }
@@ -1999,10 +2013,12 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 }
 ";
 public static readonly string ReturnInBodyWithLocalFunctionKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source +ReturnInBodyWithLocalFunctionKernel_Source;
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Transpiler__SingleThreadKernels__ReturnInBodyWithLocalFunctionKernel {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
 }
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Transpiler__SingleThreadKernels__ReturnInBodyWithLocalFunctionKernel(int[] a, int stop, __gsharp_context_Kassyi__GSharp__Tests__Shared__Transpiler__SingleThreadKernels__ReturnInBodyWithLocalFunctionKernel __gsharp_ctx) {
 {
 switch (__gsharp_ctx.__gsharp_state)
@@ -2174,7 +2190,7 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-int __gsharp_id_2_tid = blockIdx.x*blockDim.x+threadIdx.x;
+int __gsharp_id_2_tid = __gsharp_add_i32(__gsharp_mul_i32((int)blockIdx.x,(int)blockDim.x),(int)threadIdx.x);
 if((threadIdx.x|threadIdx.y|threadIdx.z|blockIdx.x|blockIdx.y|blockIdx.z)==0)
 {
 if((threadIdx.x|threadIdx.y|threadIdx.z|blockIdx.x|blockIdx.y|blockIdx.z)==0)
@@ -2183,17 +2199,17 @@ if(__gsharp_id_1_stop==1)
 {
 goto __gsharp_st_end_1;
 }
-__gsharp_id_0_a[0]+=1;
+__gsharp_id_0_a[0]=__gsharp_add_i32(__gsharp_id_0_a[0],1);
 }
 __gsharp_st_end_1:;
 if(__gsharp_id_1_stop==2)
 {
 goto __gsharp_st_end_0;
 }
-__gsharp_id_0_a[0]+=10;
+__gsharp_id_0_a[0]=__gsharp_add_i32(__gsharp_id_0_a[0],10);
 }
 __gsharp_st_end_0:;
-__gsharp_id_0_a[__gsharp_id_2_tid+1]+=2;
+__gsharp_id_0_a[__gsharp_add_i32(__gsharp_id_2_tid,1)]=__gsharp_add_i32(__gsharp_id_0_a[__gsharp_add_i32(__gsharp_id_2_tid,1)],2);
 __gsharp_state=-1;
 return;
 }
@@ -2274,10 +2290,12 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 }
 ";
 public static readonly string NestedReturnKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source +NestedReturnKernel_Source;
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Transpiler__SingleThreadKernels__NestedReturnKernel {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
 }
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Transpiler__SingleThreadKernels__NestedReturnKernel(int[] a, int stop, __gsharp_context_Kassyi__GSharp__Tests__Shared__Transpiler__SingleThreadKernels__NestedReturnKernel __gsharp_ctx) {
 {
 switch (__gsharp_ctx.__gsharp_state)
@@ -2467,7 +2485,7 @@ if(0==0)
 {
 goto __gsharp_st_end_0;
 }
-__gsharp_id_0_a[0]+=2;
+__gsharp_id_0_a[0]=__gsharp_add_i32(__gsharp_id_0_a[0],2);
 }
 __gsharp_st_end_0:;
 }
@@ -2478,7 +2496,7 @@ if(1==0)
 {
 goto __gsharp_st_end_1;
 }
-__gsharp_id_0_a[0]+=2;
+__gsharp_id_0_a[0]=__gsharp_add_i32(__gsharp_id_0_a[0],2);
 }
 __gsharp_st_end_1:;
 }
@@ -2495,7 +2513,7 @@ if(__gsharp_id_2_i==0)
 {
 goto __gsharp_st_end_2;
 }
-__gsharp_id_0_a[1]+=3;
+__gsharp_id_0_a[1]=__gsharp_add_i32(__gsharp_id_0_a[1],3);
 }
 __gsharp_st_end_2:;
 }
@@ -2581,10 +2599,12 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 }
 ";
 public static readonly string ReturnInLoopMacroKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source +ReturnInLoopMacroKernel_Source;
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Transpiler__SingleThreadKernels__ReturnInLoopMacroKernel {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
 }
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Transpiler__SingleThreadKernels__ReturnInLoopMacroKernel(int[] a, __gsharp_context_Kassyi__GSharp__Tests__Shared__Transpiler__SingleThreadKernels__ReturnInLoopMacroKernel __gsharp_ctx) {
 {
 switch (__gsharp_ctx.__gsharp_state)

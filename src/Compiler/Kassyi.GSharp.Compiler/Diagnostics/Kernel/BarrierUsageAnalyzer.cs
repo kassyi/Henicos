@@ -2,7 +2,7 @@ namespace Kassyi.GSharp.Compiler.Diagnostics.Kernel;
 
 /// <summary>
 /// Roslyn analyzer that enforces GPU kernel barrier synchronization and state machine constraints (GSH0037 - GSH0047,
-/// GSH0061, GSH0062), and the thread divergence of dynamic shared memory placement (GSH0077).
+/// GSH0061, GSH0062, GSH0083, GSH0084), and the thread divergence of dynamic shared memory placement (GSH0077).
 /// Optimized for minimal AST passes, zero-allocation traversal, and fast-path exits.
 /// </summary>
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
@@ -25,7 +25,9 @@ public class BarrierUsageAnalyzer : DiagnosticAnalyzer
             GSharpDiagnostics.SuspendingCallInUnsupportedContext, // GSH0062
             GSharpDiagnostics.IteratorShapeNotSupported, // GSH0070
             GSharpDiagnostics.IteratorBodyConstructNotSupported, // GSH0072
-            GSharpDiagnostics.DivergentDynamicSharedMemory // GSH0077
+            GSharpDiagnostics.DivergentDynamicSharedMemory, // GSH0077
+            GSharpDiagnostics.LaunchDependentDivergentBarrier, // GSH0083
+            GSharpDiagnostics.BarrierAfterDivergentExit // GSH0084
         );
 
     public override void Initialize(AnalysisContext context)
@@ -83,10 +85,12 @@ public class BarrierUsageAnalyzer : DiagnosticAnalyzer
             return;
         }
 
+        // The control flow graph and the uniformity analysis, built once for the validators that need them
+        var flow = new MethodFlowGraph(semanticModel, methodDecl);
         if (methodSymbol.HasAttribute(KnownAttributes.GpuDeviceFunction))
         {
             // GSH0077: in every device function, as a device function without a barrier may declare one
-            DynamicSharedMemoryDivergenceValidator.Analyze(context, methodDecl, semanticModel);
+            DynamicSharedMemoryDivergenceValidator.Analyze(context, methodDecl, semanticModel, flow);
 
             // GSH0061: the frame of a recursive barrier-reaching device function would contain itself
             if (SuspensionAnalysis.IsRecursiveSuspendingFunction(methodSymbol, semanticModel.Compilation))
@@ -102,7 +106,7 @@ public class BarrierUsageAnalyzer : DiagnosticAnalyzer
             if (SuspensionAnalysis.IsSuspendingFunction(methodSymbol, semanticModel.Compilation) ||
                 IteratorTypeResolver.ContainsAnyYield(methodDecl.Body))
             {
-                new KernelBarrierValidator(context, methodDecl, semanticModel, isKernel: false).Analyze();
+                new KernelBarrierValidator(context, methodDecl, semanticModel, isKernel: false, flow).Analyze();
             }
 
             return;
@@ -113,8 +117,8 @@ public class BarrierUsageAnalyzer : DiagnosticAnalyzer
             return;
         }
 
-        new KernelBarrierValidator(context, methodDecl, semanticModel, isKernel: true).Analyze();
-        DynamicSharedMemoryDivergenceValidator.Analyze(context, methodDecl, semanticModel);
+        new KernelBarrierValidator(context, methodDecl, semanticModel, isKernel: true, flow).Analyze();
+        DynamicSharedMemoryDivergenceValidator.Analyze(context, methodDecl, semanticModel, flow);
     }
 
     // GSH0062: the state machine splits only the statements of a kernel or device function body, and the operands that
@@ -184,7 +188,7 @@ public class BarrierUsageAnalyzer : DiagnosticAnalyzer
     }
 
     // The body lambda of a Gpu.ForUnroll or Gpu.SyncGrid(body), however the call is spelled (#503)
-    private static bool IsInlinedMacroBody(SyntaxNode lambda, SemanticModel semanticModel) =>
+    internal static bool IsInlinedMacroBody(SyntaxNode lambda, SemanticModel semanticModel) =>
         GpuMacroClassifier.ClassifyBody(lambda, semanticModel).Kind is GpuMacroKind.ForUnroll or GpuMacroKind.SyncGrid;
 
     private static ArgumentSyntax? FindNonVariableByReferenceArgument(InvocationExpressionSyntax invocation) =>

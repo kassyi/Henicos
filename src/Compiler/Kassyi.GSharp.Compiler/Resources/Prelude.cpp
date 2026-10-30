@@ -2,6 +2,7 @@
 #include "Prelude/Types.hpp"
 #include "Prelude/VectorConstructors.hpp"
 #include "Prelude/MathAndBitOps.hpp"
+#include "Prelude/IntegerSemantics.hpp"
 #include "Prelude/ErrorChannel.hpp"
 #include "Prelude/ThreadAndMemory.hpp"
 #include "Prelude/Atomics.hpp"

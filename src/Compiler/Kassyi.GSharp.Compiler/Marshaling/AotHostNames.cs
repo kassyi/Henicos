@@ -22,6 +22,12 @@ internal static class AotHostNames
     /// </summary>
     public const string CopyArraysMethodPrefix = "CopyArrays_";
 
+    /// <summary>
+    /// The prefix of the CPU methods that tell whether a host struct, or any element of a span of it, holds a given array
+    /// in an array field at any depth.
+    /// </summary>
+    public const string HoldsArrayMethodPrefix = "HoldsArray_";
+
     /// <summary>The prefix of the class that loads the fatbin module of one assembly.</summary>
     public const string ModuleContextPrefix = "GSharpModuleContext_";
 
@@ -109,6 +115,13 @@ internal static class AotHostNames
         return ref writer;
     }
 
+    /// <summary>Appends <c>HoldsArray_{key}</c>.</summary>
+    public static ref readonly SourceWriter AppendHoldsArrayMethodName(this in SourceWriter writer, ISymbol symbol)
+    {
+        writer.Append(HoldsArrayMethodPrefix).AppendMarshalTypeKey(symbol);
+        return ref writer;
+    }
+
     /// <summary>Appends <c>AotContexts.Marshal_{key}</c>, the way a kernel wrapper calls it.</summary>
     public static ref readonly SourceWriter AppendQualifiedMarshalMethodName(this in SourceWriter writer, ISymbol symbol)
     {
@@ -128,6 +141,14 @@ internal static class AotHostNames
     {
         using var writer = new SourceWriter();
         writer.Append(AotContextsClassName).Append('.').AppendCopyArraysMethodName(symbol);
+        return writer.ToString();
+    }
+
+    /// <summary>Gets <c>AotContexts.HoldsArray_{key}</c>, the way a kernel wrapper calls it.</summary>
+    public static string GetQualifiedHoldsArrayMethodName(ISymbol symbol)
+    {
+        using var writer = new SourceWriter();
+        writer.Append(AotContextsClassName).Append('.').AppendHoldsArrayMethodName(symbol);
         return writer.ToString();
     }
 

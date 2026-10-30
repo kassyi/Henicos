@@ -51,8 +51,8 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-auto __gsharp_id_8_col = blockIdx.x*blockDim.x+threadIdx.x;
-auto __gsharp_id_9_row = blockIdx.y*blockDim.y+threadIdx.y;
+auto __gsharp_id_8_col = __gsharp_add_i32(__gsharp_mul_i32((int)blockIdx.x,(int)blockDim.x),(int)threadIdx.x);
+auto __gsharp_id_9_row = __gsharp_add_i32(__gsharp_mul_i32((int)blockIdx.y,(int)blockDim.y),(int)threadIdx.y);
 if(__gsharp_id_8_col<__gsharp_id_1_width&&__gsharp_id_9_row<__gsharp_id_2_height)
 {
 auto __gsharp_id_10_x0 = __gsharp_id_4_xMin+(__gsharp_id_5_xMax-__gsharp_id_4_xMin)*__gsharp_id_8_col/__gsharp_id_1_width;
@@ -65,9 +65,9 @@ while(__gsharp_id_12_x*__gsharp_id_12_x+__gsharp_id_13_y*__gsharp_id_13_y<=4.0f&
 auto __gsharp_id_15_xtemp = __gsharp_id_12_x*__gsharp_id_12_x-__gsharp_id_13_y*__gsharp_id_13_y+__gsharp_id_10_x0;
 __gsharp_id_13_y=2.0f*__gsharp_id_12_x*__gsharp_id_13_y+__gsharp_id_11_y0;
 __gsharp_id_12_x=__gsharp_id_15_xtemp;
-__gsharp_id_14_iter++;
+__gsharp_id_14_iter=__gsharp_add_i32(__gsharp_id_14_iter,1);
 }
-__gsharp_id_0_output[__gsharp_id_9_row*__gsharp_id_1_width+__gsharp_id_8_col]=__gsharp_id_14_iter;
+__gsharp_id_0_output[__gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_9_row,__gsharp_id_1_width),__gsharp_id_8_col)]=__gsharp_id_14_iter;
 }
 __gsharp_state=-1;
 return;
@@ -149,10 +149,12 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 }
 ";
 public static readonly string MandelbrotKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source +MandelbrotKernel_Source;
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_context_Henicos__Benchmarks__ComputeBenchmarks__MandelbrotKernels__MandelbrotKernel {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
 }
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static unsafe void __gsharp_statemachine_Henicos__Benchmarks__ComputeBenchmarks__MandelbrotKernels__MandelbrotKernel(int[] output, int width, int height, int maxIter, float xMin, float xMax, float yMin, float yMax, __gsharp_context_Henicos__Benchmarks__ComputeBenchmarks__MandelbrotKernels__MandelbrotKernel __gsharp_ctx) {
 {
 switch (__gsharp_ctx.__gsharp_state)
