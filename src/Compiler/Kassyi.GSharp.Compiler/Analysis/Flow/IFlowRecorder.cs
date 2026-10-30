@@ -17,6 +17,12 @@ internal interface IFlowRecorder
     /// <summary>A local is read (a reference that is not the target of an assignment).</summary>
     void OnLocalReference(ILocalReferenceOperation reference, int node);
 
+    /// <summary>A parameter is used (read, or the target of an assignment that <see cref="OnAssignment"/> follows).</summary>
+    void OnParameterReference(IParameterReferenceOperation reference, int node);
+
+    /// <summary>The value of a flow capture is used.</summary>
+    void OnFlowCaptureReference(IFlowCaptureReferenceOperation reference, int node);
+
     /// <summary>An assignment is about to evaluate its value.</summary>
     void BeforeAssignmentValue(IAssignmentOperation assignment, int node);
 

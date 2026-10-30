@@ -85,6 +85,14 @@ internal sealed class UniformityRecorder(IMethodSymbol method, ArgumentMasks mas
     {
     }
 
+    public void OnParameterReference(IParameterReferenceOperation reference, int node)
+    {
+    }
+
+    public void OnFlowCaptureReference(IFlowCaptureReferenceOperation reference, int node)
+    {
+    }
+
     public void BeforeAssignmentValue(IAssignmentOperation assignment, int node)
     {
     }

@@ -245,6 +245,8 @@ internal sealed class SplicedFlowBuilder
             case IDelegateCreationOperation { Target: IMethodReferenceOperation { Method.MethodKind: MethodKind.LocalFunction } reference }:
                 SpliceLocalFunction(reference.Method.OriginalDefinition, graph, SplicedBodyKind.LocalFunctionDelegate); return;
             case ILocalReferenceOperation reference: WalkLocalReference(reference); return;
+            case IParameterReferenceOperation reference: WalkParameterReference(reference); return;
+            case IFlowCaptureReferenceOperation reference: WalkFlowCaptureReference(reference); return;
             case ISimpleAssignmentOperation assignment: WalkSimpleAssignment(assignment, graph); return;
             case IDeconstructionAssignmentOperation deconstruction: WalkDeconstruction(deconstruction, graph); return;
             case IAssignmentOperation assignment: WalkCompoundAssignment(assignment, graph); return;
@@ -269,6 +271,22 @@ internal sealed class SplicedFlowBuilder
         foreach (var recorder in _recorders)
         {
             recorder.OnLocalReference(reference, _current.Index);
+        }
+    }
+
+    private void WalkParameterReference(IParameterReferenceOperation reference)
+    {
+        foreach (var recorder in _recorders)
+        {
+            recorder.OnParameterReference(reference, _current.Index);
+        }
+    }
+
+    private void WalkFlowCaptureReference(IFlowCaptureReferenceOperation reference)
+    {
+        foreach (var recorder in _recorders)
+        {
+            recorder.OnFlowCaptureReference(reference, _current.Index);
         }
     }
 
