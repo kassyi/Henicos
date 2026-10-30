@@ -206,21 +206,20 @@ public class BarrierUsageAnalyzer : DiagnosticAnalyzer
             );
 
     // (the operation of the expression is the argument's value only when no conversion sits between them, and a value
-    // that is not a variable is copied into a temporary)
+    // that is not a variable, a field of a value included, is copied into a temporary)
     private static bool IsPassedByReference(ArgumentSyntax argument, SemanticModel semanticModel) =>
         !argument.RefKindKeyword.IsKind(SyntaxKind.None) ||
         semanticModel.GetSafeOperation(argument.Expression) is
-            (ILocalReferenceOperation or IParameterReferenceOperation or IFieldReferenceOperation
-            or IArrayElementReferenceOperation or IPropertyReferenceOperation { Property.RefKind: not RefKind.None }
-            or IInvocationOperation { TargetMethod.RefKind: not RefKind.None }) and
-            {
-                Parent: IArgumentOperation { Parameter.RefKind: RefKind.In or RefKind.RefReadOnlyParameter }
-            };
+        {
+            Parent: IArgumentOperation { Parameter.RefKind: RefKind.In or RefKind.RefReadOnlyParameter }
+        } operation &&
+        operation.IsVariable();
 
-    // A local, parameter, field or array element, also as a field of one of them
+    // A local, parameter, field or array element, also as a field of one of them or of the struct itself (this, base)
     private static bool IsVariable(ExpressionSyntax expression) => expression switch
     {
-        IdentifierNameSyntax or ElementAccessExpressionSyntax or DeclarationExpressionSyntax => true,
+        IdentifierNameSyntax or ElementAccessExpressionSyntax or DeclarationExpressionSyntax or ThisExpressionSyntax
+            or BaseExpressionSyntax => true,
         MemberAccessExpressionSyntax member => IsVariable(member.Expression),
         ParenthesizedExpressionSyntax parenthesized => IsVariable(parenthesized.Expression),
         _ => false

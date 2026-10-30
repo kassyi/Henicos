@@ -264,6 +264,17 @@ public class BarrierUsageAnalyzerTests : TranspilerTestBase
             actual);
     }
 
+    // A field of a value passed to an in parameter without the keyword is a copy, and ref this.F names a field of the
+    // struct itself; neither is a by-reference argument that GSH0062 reports (#850 review)
+    [Fact]
+    [Scenario(TestScenario.HappyPath)]
+    public async Task Test_ValueFieldOrOwnFieldArgument_DoesNotReportGSH0062()
+    {
+        var actual = await RunAsync("Analyzers/BarrierUsage/ValueFieldInArgumentKernels.cu.cs");
+
+        Assert.DoesNotContain(actual, static d => d.Id == GSharpDiagnostics.SuspendingCallInUnsupportedContext.Id);
+    }
+
     [Fact]
     [Scenario(TestScenario.SadPath)]
     public async Task Test_AsyncYieldInKernel_ReportsGSH0046()

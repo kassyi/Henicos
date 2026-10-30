@@ -208,6 +208,20 @@ public class RefArgumentOrderTests : TranspilerTestBase
         Assert.All(result, static v => Assert.Equal(71, v));
     }
 
+    [SkippableTheory]
+    [Scenario(TestScenario.Boundary)]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void Test_ValueFieldToInParameter_PassesACopyEvaluatedOnce(bool forceManaged)
+    {
+        var result = new int[Threads];
+
+        Run(forceManaged, () =>
+            RefArgumentOrderKernels.LaunchValueFieldToInParameterKernel(result, blockDimX: Threads));
+
+        Assert.All(result, static v => Assert.Equal(23, v));
+    }
+
     private void Run(bool forceManaged, Action launch)
     {
         Skip.If(forceManaged && IsCudaDialect, "The managed execution path exists only on the CPU dialects.");

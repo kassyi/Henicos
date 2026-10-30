@@ -408,7 +408,8 @@ public class WarpInstructionRewriter(SemanticModel? semanticModel = null) : CSha
 
         // A ref, out or in argument, or an argument of an in / ref readonly parameter that names a variable, which C#
         // passes by reference too (an argument that needs a conversion or is not a variable is passed as a copy)
-        // (the operation of the expression is the argument's value only when no conversion sits between them)
+        // (the operation of the expression is the argument's value only when no conversion sits between them; a field of
+        // a value is a value, which is copied)
         private bool IsPassedByReference(ArgumentSyntax argument) =>
             !argument.RefKindKeyword.IsKind(SyntaxKind.None) ||
             (parent._semanticModel?.GetSafeOperation(argument.Expression) is
@@ -416,7 +417,8 @@ public class WarpInstructionRewriter(SemanticModel? semanticModel = null) : CSha
                 or IFieldReferenceOperation) and
                 {
                     Parent: IArgumentOperation { Parameter.RefKind: RefKind.In or RefKind.RefReadOnlyParameter }
-                });
+                } operation &&
+             operation.IsVariable());
 
         private IdentifierNameSyntax Spill(ExpressionSyntax expression)
         {

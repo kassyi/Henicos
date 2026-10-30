@@ -125,6 +125,23 @@ public static partial class RefArgumentOrderKernels
         SumAfterBarrier(x, SetThenReturnOne(ref x), result);
     }
 
+    // A field of a value passed to an in parameter: C# passes a copy evaluated once, before j is read (2 * 10 + 3)
+    [GpuKernel]
+    public static void ValueFieldToInParameterKernel(int[] result)
+    {
+        int j = 2;
+        ReadInAfterBarrier(MakeCell(j++).F, j, result);
+    }
+
+    [GpuDeviceFunction]
+    private static RefOrderCell MakeCell(int f)
+    {
+        RefOrderCell c;
+        c.F = f;
+        c.G = 0;
+        return c;
+    }
+
     [GpuDeviceFunction]
     private static int WaitAndReturnInt(int value)
     {
