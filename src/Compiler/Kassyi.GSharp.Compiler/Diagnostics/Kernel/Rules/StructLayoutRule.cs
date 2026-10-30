@@ -1,10 +1,11 @@
 namespace Kassyi.GSharp.Compiler.Diagnostics.Kernel.Rules;
 
 /// <summary>
-/// Checks the user structs of kernel parameters and device locals against the layout model of the project's dialect:
-/// a struct the device cannot lay out (GSH0078) or a member type the device has no type for (GSH0079); an array whose
-/// elements the launcher converts one by one (GSH0080), and on CUDA an array whose elements each allocate their array
-/// fields (GSH0081; the CPU launcher pins them instead). Each is reported at the type of the parameter or local.
+/// Checks the user structs of kernel parameters, kernel return types and device locals against the layout model of the
+/// project's dialect: a struct the device cannot lay out (GSH0078) or a member type the device has no type for (GSH0079);
+/// an array or a returned struct whose elements the launcher converts one by one (GSH0080), and on CUDA an array whose
+/// elements each allocate their array fields (GSH0081; the CPU launcher pins them instead). Each is reported at the type
+/// of the parameter, return value or local.
 /// </summary>
 /// <remarks>
 /// The layouts are those of <see cref="TypeLayoutCalculator"/>, which the generated device definition, shadow struct
@@ -70,6 +71,16 @@ internal sealed class StructLayoutRule :
             {
                 ReportConverted(element, typeSyntax, ref context);
             }
+        }
+
+        // The returned values come back as an array with one element per thread, converted like an array parameter's
+        // (#704). A managed return type is GSH0004 (KernelSignatureRule).
+        if (method.ReturnType.IsUnmanagedType &&
+            TryGetUserStruct(method.ReturnType, out var returnStruct, out _) &&
+            !ReportUnsupported(returnStruct, node.ReturnType, ref context) &&
+            TypeLayoutCalculator.GetStructLayout(returnStruct, context.Dialect).Transfer == TransferClass.Convert)
+        {
+            ReportConverted(returnStruct, node.ReturnType, ref context);
         }
     }
 

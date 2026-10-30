@@ -2,7 +2,7 @@ namespace Kassyi.GSharp.Compiler.Marshaling;
 
 /// <summary>
 /// Emits the element-by-element conversion of an array-like parameter whose element lays out differently on the device,
-/// for the CUDA launcher (<see cref="KernelLaunchEmitter"/>) and the CPU launcher (<see cref="CpuHostLaunchEmitter"/>).
+/// and of the auto result array of a kernel that returns such a struct, for the CUDA launcher (<see cref="KernelLaunchEmitter"/>) and the CPU launcher (<see cref="CpuHostLaunchEmitter"/>).
 /// </summary>
 /// <remarks>
 /// Both launchers convert the elements into a shadow array of the device layout, rented from <c>ArrayPool</c>. They differ

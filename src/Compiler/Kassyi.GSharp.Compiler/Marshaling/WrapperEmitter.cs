@@ -5,8 +5,6 @@ namespace Kassyi.GSharp.Compiler.Marshaling;
 /// <summary>Generates host-side C# wrapper classes that load and invoke GPU kernels.</summary>
 internal static class WrapperEmitter
 {
-    private const string TotalThreads = "__gsharp_total_threads";
-
     private const string EmptyArrayMessage = "Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.";
 
     internal readonly struct InteropParameterInfo(
@@ -426,22 +424,4 @@ internal static class WrapperEmitter
             writer.AppendLine($"throw new global::System.ArgumentException(\"{EmptyArrayMessage}\", nameof({name}));");
         }
     }
-
-    internal static void WriteAutoResultAllocation(SourceWriter writer, in KernelHostModel kernel)
-    {
-        if (kernel.ReturnTypeName is not { } returnType)
-        {
-            return;
-        }
-
-        writer.AppendLine(
-            "if (gridDimX == 0 || gridDimY == 0 || gridDimZ == 0 || blockDimX == 0 || blockDimY == 0 || blockDimZ == 0)" +
-            " throw new global::System.ArgumentOutOfRangeException(\"Dimensions\", \"Launch dimensions must be greater than 0.\");");
-        writer.AppendLine(
-            $"uint {TotalThreads}; checked {{ {TotalThreads} = (gridDimX * gridDimY * gridDimZ) * (blockDimX * blockDimY * blockDimZ); }}");
-        writer.AppendLine($"var {GSharpInternalNames.ReturnValue.Buffer} = new {returnType}[{TotalThreads}];");
-    }
-
-    internal static void WriteAutoResultReturn(SourceWriter writer, in KernelHostModel kernel) =>
-        writer.AppendLineIf(kernel.ReturnsValue, $"return {GSharpInternalNames.ReturnValue.Buffer};");
 }

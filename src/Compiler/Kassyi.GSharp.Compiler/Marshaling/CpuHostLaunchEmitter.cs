@@ -6,8 +6,6 @@ namespace Kassyi.GSharp.Compiler.Marshaling;
 /// </summary>
 internal static class CpuHostLaunchEmitter
 {
-    private const string PinnedAutoResult = "p_" + GSharpInternalNames.ReturnValue.Buffer;
-
     private const string ReferenceEqualsMethod = ArraySharingPlan.ReferenceEqualsMethod;
 
     /// <summary>Emits the managed source, the delegate declaration and the launch wrapper of one kernel.</summary>
@@ -27,7 +25,7 @@ internal static class CpuHostLaunchEmitter
         {
             WrapperEmitter.WriteOutParameterDefaults(writer, kernel.Host);
             WrapperEmitter.WriteArrayArgumentChecks(writer, kernel.Host);
-            WrapperEmitter.WriteAutoResultAllocation(writer, kernel.Host);
+            AutoResultEmitter.WriteAllocation(writer, kernel.Host);
             var sharing = ArraySharingPlan.ForCpu(kernel.Host);
             CpuArrayCopyEmitter.WriteKernelCopies(writer, sharing);
             WriteDllPath(writer, assemblyName);
@@ -72,10 +70,7 @@ internal static class CpuHostLaunchEmitter
                 }
             }
 
-            if (kernel.Host.ReturnTypeName is { } returnType)
-            {
-                writer.Append($", {returnType}* {GSharpInternalNames.ReturnValue.Buffer}");
-            }
+            AutoResultEmitter.WriteCpuDelegateParameter(writer, kernel.Host);
         }
 
         writer.AppendLine(";");
@@ -117,10 +112,12 @@ internal static class CpuHostLaunchEmitter
             hasConverted |= WriteConvertedDeclaration(writer, sharing, i);
         }
 
+        hasConverted |= AutoResultEmitter.WriteCpuConvertedDeclaration(writer, kernel);
+
         if (!hasConverted)
         {
             WriteFixedBlocksAndInvoke(writer, kernel);
-            WrapperEmitter.WriteAutoResultReturn(writer, kernel);
+            AutoResultEmitter.WriteReturn(writer, kernel);
             return;
         }
 
@@ -145,11 +142,14 @@ internal static class CpuHostLaunchEmitter
                 }
             }
 
+            AutoResultEmitter.WriteCpuConvertedMarshal(writer, kernel);
             WriteFixedBlocksAndInvoke(writer, kernel);
             foreach (var shape in kernel.Parameters)
             {
                 WriteConvertedUnmarshal(writer, shape);
             }
+
+            AutoResultEmitter.WriteCpuConvertedUnmarshal(writer, kernel);
         }
 
         writer.AppendLine("finally");
@@ -159,9 +159,11 @@ internal static class CpuHostLaunchEmitter
             {
                 WriteConvertedRelease(writer, sharing, i);
             }
+
+            AutoResultEmitter.WriteCpuConvertedRelease(writer, kernel);
         }
 
-        WrapperEmitter.WriteAutoResultReturn(writer, kernel);
+        AutoResultEmitter.WriteReturn(writer, kernel);
     }
 
     // <shadow> <name>_native = default; var <name>_allocatedPtrs = new List<IntPtr>();                  (converted struct)
@@ -328,11 +330,7 @@ internal static class CpuHostLaunchEmitter
             }
         }
 
-        if (kernel.ReturnTypeName is { } returnType)
-        {
-            writer.AppendLine($"fixed ({returnType}* {PinnedAutoResult} = {GSharpInternalNames.ReturnValue.Buffer})");
-            hasFixed = true;
-        }
+        hasFixed |= AutoResultEmitter.WriteCpuFixed(writer, kernel);
 
         if (hasFixed)
         {
@@ -364,7 +362,7 @@ internal static class CpuHostLaunchEmitter
             if (kernel.ReturnsValue)
             {
                 writer.Append(", ");
-                writer.Append(PinnedAutoResult);
+                writer.Append(AutoResultEmitter.PinnedAutoResult);
             }
         }
 
