@@ -2,18 +2,9 @@ namespace Kassyi.GSharp.Compiler.Transpiler;
 
 internal sealed partial class ManagedExecutionRewriter
 {
-    private const string ManagedActiveMask = "global::Kassyi.GSharp.Core.ManagedGpuContext.ActiveMask()";
-
     // __gsharp_resume(Foo(args), n[, target]) becomes Class.__gsharp_statemachine_Foo(args, __gsharp_ctx.__gsharp_call_frame_n[, ref target])
     public override SyntaxNode? VisitInvocationExpression(InvocationExpressionSyntax node)
     {
-        // Warp.ActiveMask() is a GPU-only stub; the managed form computes the lanes the native prelude does (#789):
-        // global::Kassyi.GSharp.Core.ManagedGpuContext.ActiveMask()
-        if (semanticModel.GetSymbol(node) is IMethodSymbol method && SyncIntrinsicClassifier.IsWarpActiveMask(method))
-        {
-            return SyntaxFactory.ParseExpression(ManagedActiveMask).WithTriviaFrom(node);
-        }
-
         if (node.Expression is not IdentifierNameSyntax
             {
                 Identifier.ValueText: GSharpInternalNames.SuspendingCall.ResumeCall

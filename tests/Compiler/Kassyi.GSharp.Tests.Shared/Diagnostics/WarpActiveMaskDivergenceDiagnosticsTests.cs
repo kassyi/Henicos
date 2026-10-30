@@ -12,8 +12,10 @@ public class WarpActiveMaskDivergenceDiagnosticsTests
 {
     private const string TestCase = "Analyzers/WarpActiveMaskDivergentSadPath.cs";
 
-    // An if, ?:, for and && with a thread-dependent condition, and an if in a device function; not the call every thread
-    // reaches, the one under a uniform condition, or the body of Gpu.GridStrideLoop
+    // An if, ?:, for and && with a thread-dependent condition, an if in a device function, a call after an earlier
+    // thread-dependent return (the bounds guard) or break of the same body, and an if on a device function parameter; not
+    // the call every thread reaches, the one under a uniform condition, the body of Gpu.GridStrideLoop, a call after a
+    // loop that every thread leaves, after a return of a local function, or after a return under a uniform condition
     [Fact]
     [Scenario(TestScenario.SadPath)]
     public async Task Test_ActiveMaskUnderThreadDependentCondition_OnCpu_ReportsGsh0101AtTheCall()
@@ -26,7 +28,10 @@ public class WarpActiveMaskDivergenceDiagnosticsTests
                 (Analyzer, 24, 29, 24, 46),
                 (Analyzer, 27, 20, 27, 37),
                 (Analyzer, 30, 29, 30, 46),
-                (Analyzer, 43, 20, 43, 37)
+                (Analyzer, 43, 20, 43, 37),
+                (Analyzer, 61, 16, 61, 33),
+                (Analyzer, 75, 20, 75, 37),
+                (Analyzer, 113, 20, 113, 37)
             ],
             diagnostics.Ranges(GSharpDiagnostics.WarpActiveMaskInDivergentCode.Id));
     }
