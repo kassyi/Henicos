@@ -14,6 +14,8 @@
 | `just test-runtime` | JIT engine / transpiler infrastructure (`Category=Runtime\|Transpiler`) |
 | `just test-unit` | General unit tests (`Category=Unit`) |
 | `just test-alignment` | Memory alignment / struct layout (`Category=Alignment`) |
+| `just test-differential-cpu` | Differential tests on Tests.Cpu: each kernel on the managed and native paths against the sequential C# oracle (`Category=Differential`, no GPU) |
+| `just test-differential-cuda` | The same differential tests on Tests.Cuda against CUDA (uses the GPU; run through `gpu-lock.js`). Long runs: `just test-stability`, whose `TEST_SEED` adds one input seed per iteration |
 | `just test-all` | Everything |
 | `just coverage-diff [base]` | `just test` with coverage, then the lines changed since `base` (default `main`) that no test executed |
 | `just mutate [gpumath\|compiler\|compiler-cuda] [since]` | Stryker.NET mutation test of the host code (`gpumath`: `Kassyi.GSharp.Stdlib.GpuMath`, `compiler`: `Kassyi.GSharp.Compiler` with `Tests.Cpu`, `compiler-cuda`: the same compiler with the `Tests.Cuda` snapshots, whose build takes about an hour), optionally only the files changed after `since`. Runs for hours and uses the GPU (`gpumath`); report in `tmp/stryker/<phase>`. Stryker does not write the AOT artifacts under `obj/` (generator-invariants §7), so the build is usable after the run as it is |
@@ -29,6 +31,7 @@ Pick the command matching the domain you modified. Methodology (TDD, snapshot hi
 `.github/workflows/gpu-tests.yml` ("Hybrid CI") runs the tests without CUDA on GitHub-hosted runners. The repository is public, so these runners have no minute limit.
 
 - **Ubuntu** and **Windows** run side by side for every pull request (every base branch, so a stacked PR is tested too) and every push to `main`. A failure on one OS does not cancel the other.
+- Each OS runs three jobs in parallel, each building only what it tests: `Tests.Cpu`, `Tests.Cuda` and `Other tests` (every other project of the solution, including the Integration tests). Every job uploads its `.trx` files as `test-results-<os>-<suite>` (kept 7 days); `node scripts/human/ci-test-durations.js <dir>` lists the slowest tests, classes and collections from them.
 - A new run for the same pull request cancels the one still running. A change to `docs/**`, `.agents/**` or Markdown files alone runs nothing.
 
 What an agent does:

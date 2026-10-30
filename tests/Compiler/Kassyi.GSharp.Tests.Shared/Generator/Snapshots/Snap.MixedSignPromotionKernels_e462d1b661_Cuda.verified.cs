@@ -70,122 +70,122 @@ inline __device__ void __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__MixedS
 inline __device__ unsigned int __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__MixedSignPromotionKernels__TakeFive(int* __gsharp_id_0_k);
 
 inline __device__ void __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__MixedSignPromotionKernels__IntOperators(unsigned int __gsharp_id_0_u, int __gsharp_id_1_n, GSharpArray<long long> __gsharp_id_2_values, GSharpArray<int> __gsharp_id_3_flags, int __gsharp_id_4_pair){
-int __gsharp_id_5_v = __gsharp_id_4_pair*18;
-__gsharp_id_2_values[__gsharp_id_5_v]=(long long)__gsharp_id_0_u+(long long)__gsharp_id_1_n;
-__gsharp_id_2_values[__gsharp_id_5_v+1]=(long long)__gsharp_id_0_u-(long long)__gsharp_id_1_n;
-__gsharp_id_2_values[__gsharp_id_5_v+2]=(long long)__gsharp_id_0_u*(long long)__gsharp_id_1_n;
-__gsharp_id_2_values[__gsharp_id_5_v+3]=(long long)__gsharp_id_0_u/(long long)__gsharp_id_1_n;
-__gsharp_id_2_values[__gsharp_id_5_v+4]=(long long)__gsharp_id_0_u%(long long)__gsharp_id_1_n;
-__gsharp_id_2_values[__gsharp_id_5_v+5]=(long long)__gsharp_id_0_u&(long long)__gsharp_id_1_n;
-__gsharp_id_2_values[__gsharp_id_5_v+6]=(long long)__gsharp_id_0_u|(long long)__gsharp_id_1_n;
-__gsharp_id_2_values[__gsharp_id_5_v+7]=(long long)__gsharp_id_0_u^(long long)__gsharp_id_1_n;
-__gsharp_id_2_values[__gsharp_id_5_v+8]=(long long)__gsharp_id_1_n+(long long)__gsharp_id_0_u;
-__gsharp_id_2_values[__gsharp_id_5_v+9]=(long long)__gsharp_id_1_n-(long long)__gsharp_id_0_u;
-__gsharp_id_2_values[__gsharp_id_5_v+10]=(long long)__gsharp_id_1_n*(long long)__gsharp_id_0_u;
-__gsharp_id_2_values[__gsharp_id_5_v+11]=(__gsharp_id_0_u!=0?(long long)__gsharp_id_1_n/(long long)__gsharp_id_0_u:0);
-__gsharp_id_2_values[__gsharp_id_5_v+12]=(__gsharp_id_0_u!=0?(long long)__gsharp_id_1_n%(long long)__gsharp_id_0_u:0);
-__gsharp_id_2_values[__gsharp_id_5_v+13]=(long long)__gsharp_id_1_n&(long long)__gsharp_id_0_u;
-__gsharp_id_2_values[__gsharp_id_5_v+14]=(long long)__gsharp_id_1_n|(long long)__gsharp_id_0_u;
-__gsharp_id_2_values[__gsharp_id_5_v+15]=(long long)__gsharp_id_1_n^(long long)__gsharp_id_0_u;
+int __gsharp_id_5_v = __gsharp_mul_i32(__gsharp_id_4_pair,18);
+__gsharp_array_at(__gsharp_id_2_values, __gsharp_id_5_v, ""G#: a null array is read at MixedSignPromotionKernels.cs(27,9)"")=(long long)__gsharp_id_0_u+(long long)__gsharp_id_1_n;
+__gsharp_array_at(__gsharp_id_2_values, __gsharp_add_i32(__gsharp_id_5_v,1), ""G#: a null array is read at MixedSignPromotionKernels.cs(28,9)"")=(long long)__gsharp_id_0_u-(long long)__gsharp_id_1_n;
+__gsharp_array_at(__gsharp_id_2_values, __gsharp_add_i32(__gsharp_id_5_v,2), ""G#: a null array is read at MixedSignPromotionKernels.cs(29,9)"")=(long long)__gsharp_id_0_u*(long long)__gsharp_id_1_n;
+__gsharp_array_at(__gsharp_id_2_values, __gsharp_add_i32(__gsharp_id_5_v,3), ""G#: a null array is read at MixedSignPromotionKernels.cs(30,9)"")=(long long)__gsharp_id_0_u/(long long)__gsharp_id_1_n;
+__gsharp_array_at(__gsharp_id_2_values, __gsharp_add_i32(__gsharp_id_5_v,4), ""G#: a null array is read at MixedSignPromotionKernels.cs(31,9)"")=(long long)__gsharp_id_0_u%(long long)__gsharp_id_1_n;
+__gsharp_array_at(__gsharp_id_2_values, __gsharp_add_i32(__gsharp_id_5_v,5), ""G#: a null array is read at MixedSignPromotionKernels.cs(32,9)"")=(long long)__gsharp_id_0_u&(long long)__gsharp_id_1_n;
+__gsharp_array_at(__gsharp_id_2_values, __gsharp_add_i32(__gsharp_id_5_v,6), ""G#: a null array is read at MixedSignPromotionKernels.cs(33,9)"")=(long long)__gsharp_id_0_u|(long long)__gsharp_id_1_n;
+__gsharp_array_at(__gsharp_id_2_values, __gsharp_add_i32(__gsharp_id_5_v,7), ""G#: a null array is read at MixedSignPromotionKernels.cs(34,9)"")=(long long)__gsharp_id_0_u^(long long)__gsharp_id_1_n;
+__gsharp_array_at(__gsharp_id_2_values, __gsharp_add_i32(__gsharp_id_5_v,8), ""G#: a null array is read at MixedSignPromotionKernels.cs(35,9)"")=(long long)__gsharp_id_1_n+(long long)__gsharp_id_0_u;
+__gsharp_array_at(__gsharp_id_2_values, __gsharp_add_i32(__gsharp_id_5_v,9), ""G#: a null array is read at MixedSignPromotionKernels.cs(36,9)"")=(long long)__gsharp_id_1_n-(long long)__gsharp_id_0_u;
+__gsharp_array_at(__gsharp_id_2_values, __gsharp_add_i32(__gsharp_id_5_v,10), ""G#: a null array is read at MixedSignPromotionKernels.cs(37,9)"")=(long long)__gsharp_id_1_n*(long long)__gsharp_id_0_u;
+__gsharp_array_at(__gsharp_id_2_values, __gsharp_add_i32(__gsharp_id_5_v,11), ""G#: a null array is read at MixedSignPromotionKernels.cs(38,9)"")=(__gsharp_id_0_u!=0?(long long)__gsharp_id_1_n/(long long)__gsharp_id_0_u:0);
+__gsharp_array_at(__gsharp_id_2_values, __gsharp_add_i32(__gsharp_id_5_v,12), ""G#: a null array is read at MixedSignPromotionKernels.cs(39,9)"")=(__gsharp_id_0_u!=0?(long long)__gsharp_id_1_n%(long long)__gsharp_id_0_u:0);
+__gsharp_array_at(__gsharp_id_2_values, __gsharp_add_i32(__gsharp_id_5_v,13), ""G#: a null array is read at MixedSignPromotionKernels.cs(40,9)"")=(long long)__gsharp_id_1_n&(long long)__gsharp_id_0_u;
+__gsharp_array_at(__gsharp_id_2_values, __gsharp_add_i32(__gsharp_id_5_v,14), ""G#: a null array is read at MixedSignPromotionKernels.cs(41,9)"")=(long long)__gsharp_id_1_n|(long long)__gsharp_id_0_u;
+__gsharp_array_at(__gsharp_id_2_values, __gsharp_add_i32(__gsharp_id_5_v,15), ""G#: a null array is read at MixedSignPromotionKernels.cs(42,9)"")=(long long)__gsharp_id_1_n^(long long)__gsharp_id_0_u;
 auto __gsharp_id_6_sum = (long long)__gsharp_id_0_u+(long long)__gsharp_id_1_n;
-__gsharp_id_2_values[__gsharp_id_5_v+16]=__gsharp_id_6_sum;
-__gsharp_id_2_values[__gsharp_id_5_v+17]=((long long)__gsharp_id_0_u&(long long)__gsharp_id_1_n)-1;
-int __gsharp_id_7_f = __gsharp_id_4_pair*12;
-__gsharp_id_3_flags[__gsharp_id_7_f]=((long long)__gsharp_id_0_u==(long long)__gsharp_id_1_n?1:0);
-__gsharp_id_3_flags[__gsharp_id_7_f+1]=((long long)__gsharp_id_0_u!=(long long)__gsharp_id_1_n?1:0);
-__gsharp_id_3_flags[__gsharp_id_7_f+2]=((long long)__gsharp_id_0_u<(long long)__gsharp_id_1_n?1:0);
-__gsharp_id_3_flags[__gsharp_id_7_f+3]=((long long)__gsharp_id_0_u>(long long)__gsharp_id_1_n?1:0);
-__gsharp_id_3_flags[__gsharp_id_7_f+4]=((long long)__gsharp_id_0_u<=(long long)__gsharp_id_1_n?1:0);
-__gsharp_id_3_flags[__gsharp_id_7_f+5]=((long long)__gsharp_id_0_u>=(long long)__gsharp_id_1_n?1:0);
-__gsharp_id_3_flags[__gsharp_id_7_f+6]=((long long)__gsharp_id_1_n==(long long)__gsharp_id_0_u?1:0);
-__gsharp_id_3_flags[__gsharp_id_7_f+7]=((long long)__gsharp_id_1_n!=(long long)__gsharp_id_0_u?1:0);
-__gsharp_id_3_flags[__gsharp_id_7_f+8]=((long long)__gsharp_id_1_n<(long long)__gsharp_id_0_u?1:0);
-__gsharp_id_3_flags[__gsharp_id_7_f+9]=((long long)__gsharp_id_1_n>(long long)__gsharp_id_0_u?1:0);
-__gsharp_id_3_flags[__gsharp_id_7_f+10]=((long long)__gsharp_id_1_n<=(long long)__gsharp_id_0_u?1:0);
-__gsharp_id_3_flags[__gsharp_id_7_f+11]=((long long)__gsharp_id_1_n>=(long long)__gsharp_id_0_u?1:0);
+__gsharp_array_at(__gsharp_id_2_values, __gsharp_add_i32(__gsharp_id_5_v,16), ""G#: a null array is read at MixedSignPromotionKernels.cs(46,9)"")=__gsharp_id_6_sum;
+__gsharp_array_at(__gsharp_id_2_values, __gsharp_add_i32(__gsharp_id_5_v,17), ""G#: a null array is read at MixedSignPromotionKernels.cs(49,9)"")=__gsharp_sub_i64((long long)__gsharp_id_0_u&(long long)__gsharp_id_1_n,1);
+int __gsharp_id_7_f = __gsharp_mul_i32(__gsharp_id_4_pair,12);
+__gsharp_array_at(__gsharp_id_3_flags, __gsharp_id_7_f, ""G#: a null array is read at MixedSignPromotionKernels.cs(52,9)"")=((long long)__gsharp_id_0_u==(long long)__gsharp_id_1_n?1:0);
+__gsharp_array_at(__gsharp_id_3_flags, __gsharp_add_i32(__gsharp_id_7_f,1), ""G#: a null array is read at MixedSignPromotionKernels.cs(53,9)"")=((long long)__gsharp_id_0_u!=(long long)__gsharp_id_1_n?1:0);
+__gsharp_array_at(__gsharp_id_3_flags, __gsharp_add_i32(__gsharp_id_7_f,2), ""G#: a null array is read at MixedSignPromotionKernels.cs(54,9)"")=((long long)__gsharp_id_0_u<(long long)__gsharp_id_1_n?1:0);
+__gsharp_array_at(__gsharp_id_3_flags, __gsharp_add_i32(__gsharp_id_7_f,3), ""G#: a null array is read at MixedSignPromotionKernels.cs(55,9)"")=((long long)__gsharp_id_0_u>(long long)__gsharp_id_1_n?1:0);
+__gsharp_array_at(__gsharp_id_3_flags, __gsharp_add_i32(__gsharp_id_7_f,4), ""G#: a null array is read at MixedSignPromotionKernels.cs(56,9)"")=((long long)__gsharp_id_0_u<=(long long)__gsharp_id_1_n?1:0);
+__gsharp_array_at(__gsharp_id_3_flags, __gsharp_add_i32(__gsharp_id_7_f,5), ""G#: a null array is read at MixedSignPromotionKernels.cs(57,9)"")=((long long)__gsharp_id_0_u>=(long long)__gsharp_id_1_n?1:0);
+__gsharp_array_at(__gsharp_id_3_flags, __gsharp_add_i32(__gsharp_id_7_f,6), ""G#: a null array is read at MixedSignPromotionKernels.cs(58,9)"")=((long long)__gsharp_id_1_n==(long long)__gsharp_id_0_u?1:0);
+__gsharp_array_at(__gsharp_id_3_flags, __gsharp_add_i32(__gsharp_id_7_f,7), ""G#: a null array is read at MixedSignPromotionKernels.cs(59,9)"")=((long long)__gsharp_id_1_n!=(long long)__gsharp_id_0_u?1:0);
+__gsharp_array_at(__gsharp_id_3_flags, __gsharp_add_i32(__gsharp_id_7_f,8), ""G#: a null array is read at MixedSignPromotionKernels.cs(60,9)"")=((long long)__gsharp_id_1_n<(long long)__gsharp_id_0_u?1:0);
+__gsharp_array_at(__gsharp_id_3_flags, __gsharp_add_i32(__gsharp_id_7_f,9), ""G#: a null array is read at MixedSignPromotionKernels.cs(61,9)"")=((long long)__gsharp_id_1_n>(long long)__gsharp_id_0_u?1:0);
+__gsharp_array_at(__gsharp_id_3_flags, __gsharp_add_i32(__gsharp_id_7_f,10), ""G#: a null array is read at MixedSignPromotionKernels.cs(62,9)"")=((long long)__gsharp_id_1_n<=(long long)__gsharp_id_0_u?1:0);
+__gsharp_array_at(__gsharp_id_3_flags, __gsharp_add_i32(__gsharp_id_7_f,11), ""G#: a null array is read at MixedSignPromotionKernels.cs(63,9)"")=((long long)__gsharp_id_1_n>=(long long)__gsharp_id_0_u?1:0);
 }
 
 inline __device__ void __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__MixedSignPromotionKernels__ShortOperators(unsigned int __gsharp_id_0_u, short __gsharp_id_1_s, GSharpArray<long long> __gsharp_id_2_values, GSharpArray<int> __gsharp_id_3_flags, int __gsharp_id_4_pair){
-int __gsharp_id_5_v = __gsharp_id_4_pair*18;
-__gsharp_id_2_values[__gsharp_id_5_v]=(long long)__gsharp_id_0_u+(long long)__gsharp_id_1_s;
-__gsharp_id_2_values[__gsharp_id_5_v+1]=(long long)__gsharp_id_0_u-(long long)__gsharp_id_1_s;
-__gsharp_id_2_values[__gsharp_id_5_v+2]=(long long)__gsharp_id_0_u*(long long)__gsharp_id_1_s;
-__gsharp_id_2_values[__gsharp_id_5_v+3]=(long long)__gsharp_id_0_u/(long long)__gsharp_id_1_s;
-__gsharp_id_2_values[__gsharp_id_5_v+4]=(long long)__gsharp_id_0_u%(long long)__gsharp_id_1_s;
-__gsharp_id_2_values[__gsharp_id_5_v+5]=(long long)__gsharp_id_0_u&(long long)__gsharp_id_1_s;
-__gsharp_id_2_values[__gsharp_id_5_v+6]=(long long)__gsharp_id_0_u|(long long)__gsharp_id_1_s;
-__gsharp_id_2_values[__gsharp_id_5_v+7]=(long long)__gsharp_id_0_u^(long long)__gsharp_id_1_s;
-__gsharp_id_2_values[__gsharp_id_5_v+8]=(long long)__gsharp_id_1_s+(long long)__gsharp_id_0_u;
-__gsharp_id_2_values[__gsharp_id_5_v+9]=(long long)__gsharp_id_1_s-(long long)__gsharp_id_0_u;
-__gsharp_id_2_values[__gsharp_id_5_v+10]=(long long)__gsharp_id_1_s*(long long)__gsharp_id_0_u;
-__gsharp_id_2_values[__gsharp_id_5_v+11]=(__gsharp_id_0_u!=0?(long long)__gsharp_id_1_s/(long long)__gsharp_id_0_u:0);
-__gsharp_id_2_values[__gsharp_id_5_v+12]=(__gsharp_id_0_u!=0?(long long)__gsharp_id_1_s%(long long)__gsharp_id_0_u:0);
-__gsharp_id_2_values[__gsharp_id_5_v+13]=(long long)__gsharp_id_1_s&(long long)__gsharp_id_0_u;
-__gsharp_id_2_values[__gsharp_id_5_v+14]=(long long)__gsharp_id_1_s|(long long)__gsharp_id_0_u;
-__gsharp_id_2_values[__gsharp_id_5_v+15]=(long long)__gsharp_id_1_s^(long long)__gsharp_id_0_u;
+int __gsharp_id_5_v = __gsharp_mul_i32(__gsharp_id_4_pair,18);
+__gsharp_array_at(__gsharp_id_2_values, __gsharp_id_5_v, ""G#: a null array is read at MixedSignPromotionKernels.cs(70,9)"")=(long long)__gsharp_id_0_u+(long long)__gsharp_id_1_s;
+__gsharp_array_at(__gsharp_id_2_values, __gsharp_add_i32(__gsharp_id_5_v,1), ""G#: a null array is read at MixedSignPromotionKernels.cs(71,9)"")=(long long)__gsharp_id_0_u-(long long)__gsharp_id_1_s;
+__gsharp_array_at(__gsharp_id_2_values, __gsharp_add_i32(__gsharp_id_5_v,2), ""G#: a null array is read at MixedSignPromotionKernels.cs(72,9)"")=(long long)__gsharp_id_0_u*(long long)__gsharp_id_1_s;
+__gsharp_array_at(__gsharp_id_2_values, __gsharp_add_i32(__gsharp_id_5_v,3), ""G#: a null array is read at MixedSignPromotionKernels.cs(73,9)"")=(long long)__gsharp_id_0_u/(long long)__gsharp_id_1_s;
+__gsharp_array_at(__gsharp_id_2_values, __gsharp_add_i32(__gsharp_id_5_v,4), ""G#: a null array is read at MixedSignPromotionKernels.cs(74,9)"")=(long long)__gsharp_id_0_u%(long long)__gsharp_id_1_s;
+__gsharp_array_at(__gsharp_id_2_values, __gsharp_add_i32(__gsharp_id_5_v,5), ""G#: a null array is read at MixedSignPromotionKernels.cs(75,9)"")=(long long)__gsharp_id_0_u&(long long)__gsharp_id_1_s;
+__gsharp_array_at(__gsharp_id_2_values, __gsharp_add_i32(__gsharp_id_5_v,6), ""G#: a null array is read at MixedSignPromotionKernels.cs(76,9)"")=(long long)__gsharp_id_0_u|(long long)__gsharp_id_1_s;
+__gsharp_array_at(__gsharp_id_2_values, __gsharp_add_i32(__gsharp_id_5_v,7), ""G#: a null array is read at MixedSignPromotionKernels.cs(77,9)"")=(long long)__gsharp_id_0_u^(long long)__gsharp_id_1_s;
+__gsharp_array_at(__gsharp_id_2_values, __gsharp_add_i32(__gsharp_id_5_v,8), ""G#: a null array is read at MixedSignPromotionKernels.cs(78,9)"")=(long long)__gsharp_id_1_s+(long long)__gsharp_id_0_u;
+__gsharp_array_at(__gsharp_id_2_values, __gsharp_add_i32(__gsharp_id_5_v,9), ""G#: a null array is read at MixedSignPromotionKernels.cs(79,9)"")=(long long)__gsharp_id_1_s-(long long)__gsharp_id_0_u;
+__gsharp_array_at(__gsharp_id_2_values, __gsharp_add_i32(__gsharp_id_5_v,10), ""G#: a null array is read at MixedSignPromotionKernels.cs(80,9)"")=(long long)__gsharp_id_1_s*(long long)__gsharp_id_0_u;
+__gsharp_array_at(__gsharp_id_2_values, __gsharp_add_i32(__gsharp_id_5_v,11), ""G#: a null array is read at MixedSignPromotionKernels.cs(81,9)"")=(__gsharp_id_0_u!=0?(long long)__gsharp_id_1_s/(long long)__gsharp_id_0_u:0);
+__gsharp_array_at(__gsharp_id_2_values, __gsharp_add_i32(__gsharp_id_5_v,12), ""G#: a null array is read at MixedSignPromotionKernels.cs(82,9)"")=(__gsharp_id_0_u!=0?(long long)__gsharp_id_1_s%(long long)__gsharp_id_0_u:0);
+__gsharp_array_at(__gsharp_id_2_values, __gsharp_add_i32(__gsharp_id_5_v,13), ""G#: a null array is read at MixedSignPromotionKernels.cs(83,9)"")=(long long)__gsharp_id_1_s&(long long)__gsharp_id_0_u;
+__gsharp_array_at(__gsharp_id_2_values, __gsharp_add_i32(__gsharp_id_5_v,14), ""G#: a null array is read at MixedSignPromotionKernels.cs(84,9)"")=(long long)__gsharp_id_1_s|(long long)__gsharp_id_0_u;
+__gsharp_array_at(__gsharp_id_2_values, __gsharp_add_i32(__gsharp_id_5_v,15), ""G#: a null array is read at MixedSignPromotionKernels.cs(85,9)"")=(long long)__gsharp_id_1_s^(long long)__gsharp_id_0_u;
 auto __gsharp_id_6_sum = (long long)__gsharp_id_0_u+(long long)__gsharp_id_1_s;
-__gsharp_id_2_values[__gsharp_id_5_v+16]=__gsharp_id_6_sum;
-__gsharp_id_2_values[__gsharp_id_5_v+17]=((long long)__gsharp_id_0_u&(long long)__gsharp_id_1_s)-1;
-int __gsharp_id_7_f = __gsharp_id_4_pair*12;
-__gsharp_id_3_flags[__gsharp_id_7_f]=((long long)__gsharp_id_0_u==(long long)__gsharp_id_1_s?1:0);
-__gsharp_id_3_flags[__gsharp_id_7_f+1]=((long long)__gsharp_id_0_u!=(long long)__gsharp_id_1_s?1:0);
-__gsharp_id_3_flags[__gsharp_id_7_f+2]=((long long)__gsharp_id_0_u<(long long)__gsharp_id_1_s?1:0);
-__gsharp_id_3_flags[__gsharp_id_7_f+3]=((long long)__gsharp_id_0_u>(long long)__gsharp_id_1_s?1:0);
-__gsharp_id_3_flags[__gsharp_id_7_f+4]=((long long)__gsharp_id_0_u<=(long long)__gsharp_id_1_s?1:0);
-__gsharp_id_3_flags[__gsharp_id_7_f+5]=((long long)__gsharp_id_0_u>=(long long)__gsharp_id_1_s?1:0);
-__gsharp_id_3_flags[__gsharp_id_7_f+6]=((long long)__gsharp_id_1_s==(long long)__gsharp_id_0_u?1:0);
-__gsharp_id_3_flags[__gsharp_id_7_f+7]=((long long)__gsharp_id_1_s!=(long long)__gsharp_id_0_u?1:0);
-__gsharp_id_3_flags[__gsharp_id_7_f+8]=((long long)__gsharp_id_1_s<(long long)__gsharp_id_0_u?1:0);
-__gsharp_id_3_flags[__gsharp_id_7_f+9]=((long long)__gsharp_id_1_s>(long long)__gsharp_id_0_u?1:0);
-__gsharp_id_3_flags[__gsharp_id_7_f+10]=((long long)__gsharp_id_1_s<=(long long)__gsharp_id_0_u?1:0);
-__gsharp_id_3_flags[__gsharp_id_7_f+11]=((long long)__gsharp_id_1_s>=(long long)__gsharp_id_0_u?1:0);
+__gsharp_array_at(__gsharp_id_2_values, __gsharp_add_i32(__gsharp_id_5_v,16), ""G#: a null array is read at MixedSignPromotionKernels.cs(87,9)"")=__gsharp_id_6_sum;
+__gsharp_array_at(__gsharp_id_2_values, __gsharp_add_i32(__gsharp_id_5_v,17), ""G#: a null array is read at MixedSignPromotionKernels.cs(88,9)"")=__gsharp_sub_i64((long long)__gsharp_id_0_u&(long long)__gsharp_id_1_s,1);
+int __gsharp_id_7_f = __gsharp_mul_i32(__gsharp_id_4_pair,12);
+__gsharp_array_at(__gsharp_id_3_flags, __gsharp_id_7_f, ""G#: a null array is read at MixedSignPromotionKernels.cs(91,9)"")=((long long)__gsharp_id_0_u==(long long)__gsharp_id_1_s?1:0);
+__gsharp_array_at(__gsharp_id_3_flags, __gsharp_add_i32(__gsharp_id_7_f,1), ""G#: a null array is read at MixedSignPromotionKernels.cs(92,9)"")=((long long)__gsharp_id_0_u!=(long long)__gsharp_id_1_s?1:0);
+__gsharp_array_at(__gsharp_id_3_flags, __gsharp_add_i32(__gsharp_id_7_f,2), ""G#: a null array is read at MixedSignPromotionKernels.cs(93,9)"")=((long long)__gsharp_id_0_u<(long long)__gsharp_id_1_s?1:0);
+__gsharp_array_at(__gsharp_id_3_flags, __gsharp_add_i32(__gsharp_id_7_f,3), ""G#: a null array is read at MixedSignPromotionKernels.cs(94,9)"")=((long long)__gsharp_id_0_u>(long long)__gsharp_id_1_s?1:0);
+__gsharp_array_at(__gsharp_id_3_flags, __gsharp_add_i32(__gsharp_id_7_f,4), ""G#: a null array is read at MixedSignPromotionKernels.cs(95,9)"")=((long long)__gsharp_id_0_u<=(long long)__gsharp_id_1_s?1:0);
+__gsharp_array_at(__gsharp_id_3_flags, __gsharp_add_i32(__gsharp_id_7_f,5), ""G#: a null array is read at MixedSignPromotionKernels.cs(96,9)"")=((long long)__gsharp_id_0_u>=(long long)__gsharp_id_1_s?1:0);
+__gsharp_array_at(__gsharp_id_3_flags, __gsharp_add_i32(__gsharp_id_7_f,6), ""G#: a null array is read at MixedSignPromotionKernels.cs(97,9)"")=((long long)__gsharp_id_1_s==(long long)__gsharp_id_0_u?1:0);
+__gsharp_array_at(__gsharp_id_3_flags, __gsharp_add_i32(__gsharp_id_7_f,7), ""G#: a null array is read at MixedSignPromotionKernels.cs(98,9)"")=((long long)__gsharp_id_1_s!=(long long)__gsharp_id_0_u?1:0);
+__gsharp_array_at(__gsharp_id_3_flags, __gsharp_add_i32(__gsharp_id_7_f,8), ""G#: a null array is read at MixedSignPromotionKernels.cs(99,9)"")=((long long)__gsharp_id_1_s<(long long)__gsharp_id_0_u?1:0);
+__gsharp_array_at(__gsharp_id_3_flags, __gsharp_add_i32(__gsharp_id_7_f,9), ""G#: a null array is read at MixedSignPromotionKernels.cs(100,9)"")=((long long)__gsharp_id_1_s>(long long)__gsharp_id_0_u?1:0);
+__gsharp_array_at(__gsharp_id_3_flags, __gsharp_add_i32(__gsharp_id_7_f,10), ""G#: a null array is read at MixedSignPromotionKernels.cs(101,9)"")=((long long)__gsharp_id_1_s<=(long long)__gsharp_id_0_u?1:0);
+__gsharp_array_at(__gsharp_id_3_flags, __gsharp_add_i32(__gsharp_id_7_f,11), ""G#: a null array is read at MixedSignPromotionKernels.cs(102,9)"")=((long long)__gsharp_id_1_s>=(long long)__gsharp_id_0_u?1:0);
 }
 
 inline __device__ void __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__MixedSignPromotionKernels__SByteOperators(unsigned int __gsharp_id_0_u, signed char __gsharp_id_1_b, GSharpArray<long long> __gsharp_id_2_values, GSharpArray<int> __gsharp_id_3_flags, int __gsharp_id_4_pair){
-int __gsharp_id_5_v = __gsharp_id_4_pair*18;
-__gsharp_id_2_values[__gsharp_id_5_v]=(long long)__gsharp_id_0_u+(long long)__gsharp_id_1_b;
-__gsharp_id_2_values[__gsharp_id_5_v+1]=(long long)__gsharp_id_0_u-(long long)__gsharp_id_1_b;
-__gsharp_id_2_values[__gsharp_id_5_v+2]=(long long)__gsharp_id_0_u*(long long)__gsharp_id_1_b;
-__gsharp_id_2_values[__gsharp_id_5_v+3]=(long long)__gsharp_id_0_u/(long long)__gsharp_id_1_b;
-__gsharp_id_2_values[__gsharp_id_5_v+4]=(long long)__gsharp_id_0_u%(long long)__gsharp_id_1_b;
-__gsharp_id_2_values[__gsharp_id_5_v+5]=(long long)__gsharp_id_0_u&(long long)__gsharp_id_1_b;
-__gsharp_id_2_values[__gsharp_id_5_v+6]=(long long)__gsharp_id_0_u|(long long)__gsharp_id_1_b;
-__gsharp_id_2_values[__gsharp_id_5_v+7]=(long long)__gsharp_id_0_u^(long long)__gsharp_id_1_b;
-__gsharp_id_2_values[__gsharp_id_5_v+8]=(long long)__gsharp_id_1_b+(long long)__gsharp_id_0_u;
-__gsharp_id_2_values[__gsharp_id_5_v+9]=(long long)__gsharp_id_1_b-(long long)__gsharp_id_0_u;
-__gsharp_id_2_values[__gsharp_id_5_v+10]=(long long)__gsharp_id_1_b*(long long)__gsharp_id_0_u;
-__gsharp_id_2_values[__gsharp_id_5_v+11]=(__gsharp_id_0_u!=0?(long long)__gsharp_id_1_b/(long long)__gsharp_id_0_u:0);
-__gsharp_id_2_values[__gsharp_id_5_v+12]=(__gsharp_id_0_u!=0?(long long)__gsharp_id_1_b%(long long)__gsharp_id_0_u:0);
-__gsharp_id_2_values[__gsharp_id_5_v+13]=(long long)__gsharp_id_1_b&(long long)__gsharp_id_0_u;
-__gsharp_id_2_values[__gsharp_id_5_v+14]=(long long)__gsharp_id_1_b|(long long)__gsharp_id_0_u;
-__gsharp_id_2_values[__gsharp_id_5_v+15]=(long long)__gsharp_id_1_b^(long long)__gsharp_id_0_u;
+int __gsharp_id_5_v = __gsharp_mul_i32(__gsharp_id_4_pair,18);
+__gsharp_array_at(__gsharp_id_2_values, __gsharp_id_5_v, ""G#: a null array is read at MixedSignPromotionKernels.cs(109,9)"")=(long long)__gsharp_id_0_u+(long long)__gsharp_id_1_b;
+__gsharp_array_at(__gsharp_id_2_values, __gsharp_add_i32(__gsharp_id_5_v,1), ""G#: a null array is read at MixedSignPromotionKernels.cs(110,9)"")=(long long)__gsharp_id_0_u-(long long)__gsharp_id_1_b;
+__gsharp_array_at(__gsharp_id_2_values, __gsharp_add_i32(__gsharp_id_5_v,2), ""G#: a null array is read at MixedSignPromotionKernels.cs(111,9)"")=(long long)__gsharp_id_0_u*(long long)__gsharp_id_1_b;
+__gsharp_array_at(__gsharp_id_2_values, __gsharp_add_i32(__gsharp_id_5_v,3), ""G#: a null array is read at MixedSignPromotionKernels.cs(112,9)"")=(long long)__gsharp_id_0_u/(long long)__gsharp_id_1_b;
+__gsharp_array_at(__gsharp_id_2_values, __gsharp_add_i32(__gsharp_id_5_v,4), ""G#: a null array is read at MixedSignPromotionKernels.cs(113,9)"")=(long long)__gsharp_id_0_u%(long long)__gsharp_id_1_b;
+__gsharp_array_at(__gsharp_id_2_values, __gsharp_add_i32(__gsharp_id_5_v,5), ""G#: a null array is read at MixedSignPromotionKernels.cs(114,9)"")=(long long)__gsharp_id_0_u&(long long)__gsharp_id_1_b;
+__gsharp_array_at(__gsharp_id_2_values, __gsharp_add_i32(__gsharp_id_5_v,6), ""G#: a null array is read at MixedSignPromotionKernels.cs(115,9)"")=(long long)__gsharp_id_0_u|(long long)__gsharp_id_1_b;
+__gsharp_array_at(__gsharp_id_2_values, __gsharp_add_i32(__gsharp_id_5_v,7), ""G#: a null array is read at MixedSignPromotionKernels.cs(116,9)"")=(long long)__gsharp_id_0_u^(long long)__gsharp_id_1_b;
+__gsharp_array_at(__gsharp_id_2_values, __gsharp_add_i32(__gsharp_id_5_v,8), ""G#: a null array is read at MixedSignPromotionKernels.cs(117,9)"")=(long long)__gsharp_id_1_b+(long long)__gsharp_id_0_u;
+__gsharp_array_at(__gsharp_id_2_values, __gsharp_add_i32(__gsharp_id_5_v,9), ""G#: a null array is read at MixedSignPromotionKernels.cs(118,9)"")=(long long)__gsharp_id_1_b-(long long)__gsharp_id_0_u;
+__gsharp_array_at(__gsharp_id_2_values, __gsharp_add_i32(__gsharp_id_5_v,10), ""G#: a null array is read at MixedSignPromotionKernels.cs(119,9)"")=(long long)__gsharp_id_1_b*(long long)__gsharp_id_0_u;
+__gsharp_array_at(__gsharp_id_2_values, __gsharp_add_i32(__gsharp_id_5_v,11), ""G#: a null array is read at MixedSignPromotionKernels.cs(120,9)"")=(__gsharp_id_0_u!=0?(long long)__gsharp_id_1_b/(long long)__gsharp_id_0_u:0);
+__gsharp_array_at(__gsharp_id_2_values, __gsharp_add_i32(__gsharp_id_5_v,12), ""G#: a null array is read at MixedSignPromotionKernels.cs(121,9)"")=(__gsharp_id_0_u!=0?(long long)__gsharp_id_1_b%(long long)__gsharp_id_0_u:0);
+__gsharp_array_at(__gsharp_id_2_values, __gsharp_add_i32(__gsharp_id_5_v,13), ""G#: a null array is read at MixedSignPromotionKernels.cs(122,9)"")=(long long)__gsharp_id_1_b&(long long)__gsharp_id_0_u;
+__gsharp_array_at(__gsharp_id_2_values, __gsharp_add_i32(__gsharp_id_5_v,14), ""G#: a null array is read at MixedSignPromotionKernels.cs(123,9)"")=(long long)__gsharp_id_1_b|(long long)__gsharp_id_0_u;
+__gsharp_array_at(__gsharp_id_2_values, __gsharp_add_i32(__gsharp_id_5_v,15), ""G#: a null array is read at MixedSignPromotionKernels.cs(124,9)"")=(long long)__gsharp_id_1_b^(long long)__gsharp_id_0_u;
 auto __gsharp_id_6_sum = (long long)__gsharp_id_0_u+(long long)__gsharp_id_1_b;
-__gsharp_id_2_values[__gsharp_id_5_v+16]=__gsharp_id_6_sum;
-__gsharp_id_2_values[__gsharp_id_5_v+17]=((long long)__gsharp_id_0_u&(long long)__gsharp_id_1_b)-1;
-int __gsharp_id_7_f = __gsharp_id_4_pair*12;
-__gsharp_id_3_flags[__gsharp_id_7_f]=((long long)__gsharp_id_0_u==(long long)__gsharp_id_1_b?1:0);
-__gsharp_id_3_flags[__gsharp_id_7_f+1]=((long long)__gsharp_id_0_u!=(long long)__gsharp_id_1_b?1:0);
-__gsharp_id_3_flags[__gsharp_id_7_f+2]=((long long)__gsharp_id_0_u<(long long)__gsharp_id_1_b?1:0);
-__gsharp_id_3_flags[__gsharp_id_7_f+3]=((long long)__gsharp_id_0_u>(long long)__gsharp_id_1_b?1:0);
-__gsharp_id_3_flags[__gsharp_id_7_f+4]=((long long)__gsharp_id_0_u<=(long long)__gsharp_id_1_b?1:0);
-__gsharp_id_3_flags[__gsharp_id_7_f+5]=((long long)__gsharp_id_0_u>=(long long)__gsharp_id_1_b?1:0);
-__gsharp_id_3_flags[__gsharp_id_7_f+6]=((long long)__gsharp_id_1_b==(long long)__gsharp_id_0_u?1:0);
-__gsharp_id_3_flags[__gsharp_id_7_f+7]=((long long)__gsharp_id_1_b!=(long long)__gsharp_id_0_u?1:0);
-__gsharp_id_3_flags[__gsharp_id_7_f+8]=((long long)__gsharp_id_1_b<(long long)__gsharp_id_0_u?1:0);
-__gsharp_id_3_flags[__gsharp_id_7_f+9]=((long long)__gsharp_id_1_b>(long long)__gsharp_id_0_u?1:0);
-__gsharp_id_3_flags[__gsharp_id_7_f+10]=((long long)__gsharp_id_1_b<=(long long)__gsharp_id_0_u?1:0);
-__gsharp_id_3_flags[__gsharp_id_7_f+11]=((long long)__gsharp_id_1_b>=(long long)__gsharp_id_0_u?1:0);
+__gsharp_array_at(__gsharp_id_2_values, __gsharp_add_i32(__gsharp_id_5_v,16), ""G#: a null array is read at MixedSignPromotionKernels.cs(126,9)"")=__gsharp_id_6_sum;
+__gsharp_array_at(__gsharp_id_2_values, __gsharp_add_i32(__gsharp_id_5_v,17), ""G#: a null array is read at MixedSignPromotionKernels.cs(127,9)"")=__gsharp_sub_i64((long long)__gsharp_id_0_u&(long long)__gsharp_id_1_b,1);
+int __gsharp_id_7_f = __gsharp_mul_i32(__gsharp_id_4_pair,12);
+__gsharp_array_at(__gsharp_id_3_flags, __gsharp_id_7_f, ""G#: a null array is read at MixedSignPromotionKernels.cs(130,9)"")=((long long)__gsharp_id_0_u==(long long)__gsharp_id_1_b?1:0);
+__gsharp_array_at(__gsharp_id_3_flags, __gsharp_add_i32(__gsharp_id_7_f,1), ""G#: a null array is read at MixedSignPromotionKernels.cs(131,9)"")=((long long)__gsharp_id_0_u!=(long long)__gsharp_id_1_b?1:0);
+__gsharp_array_at(__gsharp_id_3_flags, __gsharp_add_i32(__gsharp_id_7_f,2), ""G#: a null array is read at MixedSignPromotionKernels.cs(132,9)"")=((long long)__gsharp_id_0_u<(long long)__gsharp_id_1_b?1:0);
+__gsharp_array_at(__gsharp_id_3_flags, __gsharp_add_i32(__gsharp_id_7_f,3), ""G#: a null array is read at MixedSignPromotionKernels.cs(133,9)"")=((long long)__gsharp_id_0_u>(long long)__gsharp_id_1_b?1:0);
+__gsharp_array_at(__gsharp_id_3_flags, __gsharp_add_i32(__gsharp_id_7_f,4), ""G#: a null array is read at MixedSignPromotionKernels.cs(134,9)"")=((long long)__gsharp_id_0_u<=(long long)__gsharp_id_1_b?1:0);
+__gsharp_array_at(__gsharp_id_3_flags, __gsharp_add_i32(__gsharp_id_7_f,5), ""G#: a null array is read at MixedSignPromotionKernels.cs(135,9)"")=((long long)__gsharp_id_0_u>=(long long)__gsharp_id_1_b?1:0);
+__gsharp_array_at(__gsharp_id_3_flags, __gsharp_add_i32(__gsharp_id_7_f,6), ""G#: a null array is read at MixedSignPromotionKernels.cs(136,9)"")=((long long)__gsharp_id_1_b==(long long)__gsharp_id_0_u?1:0);
+__gsharp_array_at(__gsharp_id_3_flags, __gsharp_add_i32(__gsharp_id_7_f,7), ""G#: a null array is read at MixedSignPromotionKernels.cs(137,9)"")=((long long)__gsharp_id_1_b!=(long long)__gsharp_id_0_u?1:0);
+__gsharp_array_at(__gsharp_id_3_flags, __gsharp_add_i32(__gsharp_id_7_f,8), ""G#: a null array is read at MixedSignPromotionKernels.cs(138,9)"")=((long long)__gsharp_id_1_b<(long long)__gsharp_id_0_u?1:0);
+__gsharp_array_at(__gsharp_id_3_flags, __gsharp_add_i32(__gsharp_id_7_f,9), ""G#: a null array is read at MixedSignPromotionKernels.cs(139,9)"")=((long long)__gsharp_id_1_b>(long long)__gsharp_id_0_u?1:0);
+__gsharp_array_at(__gsharp_id_3_flags, __gsharp_add_i32(__gsharp_id_7_f,10), ""G#: a null array is read at MixedSignPromotionKernels.cs(140,9)"")=((long long)__gsharp_id_1_b<=(long long)__gsharp_id_0_u?1:0);
+__gsharp_array_at(__gsharp_id_3_flags, __gsharp_add_i32(__gsharp_id_7_f,11), ""G#: a null array is read at MixedSignPromotionKernels.cs(141,9)"")=((long long)__gsharp_id_1_b>=(long long)__gsharp_id_0_u?1:0);
 }
 
 inline __device__ void __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__MixedSignPromotionKernels__ConstantOperators(unsigned int __gsharp_id_0_u, GSharpArray<long long> __gsharp_id_1_values, GSharpArray<int> __gsharp_id_2_flags, int __gsharp_id_3_index){
-__gsharp_id_1_values[__gsharp_id_3_index*3]=__gsharp_id_0_u-8;
-__gsharp_id_1_values[__gsharp_id_3_index*3+1]=(long long)__gsharp_id_0_u+(-8LL);
-__gsharp_id_1_values[__gsharp_id_3_index*3+2]=__gsharp_id_0_u+8u;
-__gsharp_id_2_flags[__gsharp_id_3_index]=((long long)__gsharp_id_0_u==(-1LL)?1:0);
+__gsharp_array_at(__gsharp_id_1_values, __gsharp_mul_i32(__gsharp_id_3_index,3), ""G#: a null array is read at MixedSignPromotionKernels.cs(170,9)"")=__gsharp_id_0_u-8;
+__gsharp_array_at(__gsharp_id_1_values, __gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_3_index,3),1), ""G#: a null array is read at MixedSignPromotionKernels.cs(171,9)"")=(long long)__gsharp_id_0_u+(-8LL);
+__gsharp_array_at(__gsharp_id_1_values, __gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_3_index,3),2), ""G#: a null array is read at MixedSignPromotionKernels.cs(172,9)"")=__gsharp_id_0_u+8u;
+__gsharp_array_at(__gsharp_id_2_flags, __gsharp_id_3_index, ""G#: a null array is read at MixedSignPromotionKernels.cs(174,9)"")=((long long)__gsharp_id_0_u==(-1LL)?1:0);
 }
 
 inline __device__ unsigned int __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__MixedSignPromotionKernels__TakeFive(int* __gsharp_id_0_k){
-(*__gsharp_id_0_k)-=5;
+(*__gsharp_id_0_k)=__gsharp_sub_i32((*__gsharp_id_0_k),5);
 return 3u;
 }
 
@@ -217,7 +217,7 @@ public static partial class AotContexts
 {
 }
 public const string IntPairsKernel_Source = @"extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__MixedSignPromotionKernels__IntPairsKernel(GSharpArray<unsigned int> __gsharp_id_0_us, GSharpArray<int> __gsharp_id_1_ns, GSharpArray<long long> __gsharp_id_2_values, GSharpArray<int> __gsharp_id_3_flags){
-int __gsharp_id_4_pair = threadIdx.x;
+int __gsharp_id_4_pair = (int)threadIdx.x;
 __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__MixedSignPromotionKernels__IntOperators(__gsharp_id_0_us[__gsharp_id_4_pair/__gsharp_id_1_ns.length],__gsharp_id_1_ns[__gsharp_id_4_pair%__gsharp_id_1_ns.length],__gsharp_id_2_values,__gsharp_id_3_flags,__gsharp_id_4_pair);
 }
 ";
@@ -276,15 +276,16 @@ int us_size = us.Length * sizeof(global::System.UInt32);
 IntPtr* proxy_us = stackalloc IntPtr[2];
 proxy_us[0] = IntPtr.Zero;
 ((int*)(proxy_us + 1))[0] = us.Length;
+((int*)(proxy_us + 1))[1] = 0;
 if (us_size > 0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_us, (IntPtr)us_size, hStream));
-proxy_us[0] = d_us;
 fixed (global::System.UInt32* p_us = us)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoDAsync_v2(d_us, (IntPtr)p_us, (IntPtr)us_size, hStream));
 CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
 }
+proxy_us[0] = d_us;
 }
 kernelParams[0] = proxy_us;
 // Marshal array: ns
@@ -292,15 +293,23 @@ int ns_size = ns.Length * sizeof(global::System.Int32);
 IntPtr* proxy_ns = stackalloc IntPtr[2];
 proxy_ns[0] = IntPtr.Zero;
 ((int*)(proxy_ns + 1))[0] = ns.Length;
+((int*)(proxy_ns + 1))[1] = 0;
 if (ns_size > 0)
 {
+if (global::System.Object.ReferenceEquals(ns, us))
+{
+d_ns = d_us;
+}
+else
+{
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_ns, (IntPtr)ns_size, hStream));
-proxy_ns[0] = d_ns;
 fixed (global::System.Int32* p_ns = ns)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoDAsync_v2(d_ns, (IntPtr)p_ns, (IntPtr)ns_size, hStream));
 CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
 }
+}
+proxy_ns[0] = d_ns;
 }
 kernelParams[1] = proxy_ns;
 // Marshal array: values
@@ -308,15 +317,27 @@ int values_size = values.Length * sizeof(global::System.Int64);
 IntPtr* proxy_values = stackalloc IntPtr[2];
 proxy_values[0] = IntPtr.Zero;
 ((int*)(proxy_values + 1))[0] = values.Length;
+((int*)(proxy_values + 1))[1] = 0;
 if (values_size > 0)
 {
+if (global::System.Object.ReferenceEquals(values, us))
+{
+d_values = d_us;
+}
+else if (global::System.Object.ReferenceEquals(values, ns))
+{
+d_values = d_ns;
+}
+else
+{
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_values, (IntPtr)values_size, hStream));
-proxy_values[0] = d_values;
 fixed (global::System.Int64* p_values = values)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoDAsync_v2(d_values, (IntPtr)p_values, (IntPtr)values_size, hStream));
 CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
 }
+}
+proxy_values[0] = d_values;
 }
 kernelParams[2] = proxy_values;
 // Marshal array: flags
@@ -324,15 +345,31 @@ int flags_size = flags.Length * sizeof(global::System.Int32);
 IntPtr* proxy_flags = stackalloc IntPtr[2];
 proxy_flags[0] = IntPtr.Zero;
 ((int*)(proxy_flags + 1))[0] = flags.Length;
+((int*)(proxy_flags + 1))[1] = 0;
 if (flags_size > 0)
 {
+if (global::System.Object.ReferenceEquals(flags, us))
+{
+d_flags = d_us;
+}
+else if (global::System.Object.ReferenceEquals(flags, ns))
+{
+d_flags = d_ns;
+}
+else if (global::System.Object.ReferenceEquals(flags, values))
+{
+d_flags = d_values;
+}
+else
+{
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_flags, (IntPtr)flags_size, hStream));
-proxy_flags[0] = d_flags;
 fixed (global::System.Int32* p_flags = flags)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoDAsync_v2(d_flags, (IntPtr)p_flags, (IntPtr)flags_size, hStream));
 CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
 }
+}
+proxy_flags[0] = d_flags;
 }
 kernelParams[3] = proxy_flags;
 CudaException.ThrowIfError(CudaDriverApi.cuLaunchKernel(
@@ -354,7 +391,7 @@ CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
 }
 }
 // Copy back array: ns
-if (ns_size > 0 && d_ns != IntPtr.Zero)
+if (ns_size > 0 && d_ns != IntPtr.Zero && !global::System.Object.ReferenceEquals(ns, us))
 {
 fixed (global::System.Int32* p_ns = ns)
 {
@@ -363,7 +400,7 @@ CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
 }
 }
 // Copy back array: values
-if (values_size > 0 && d_values != IntPtr.Zero)
+if (values_size > 0 && d_values != IntPtr.Zero && !global::System.Object.ReferenceEquals(values, us) && !global::System.Object.ReferenceEquals(values, ns))
 {
 fixed (global::System.Int64* p_values = values)
 {
@@ -372,7 +409,7 @@ CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
 }
 }
 // Copy back array: flags
-if (flags_size > 0 && d_flags != IntPtr.Zero)
+if (flags_size > 0 && d_flags != IntPtr.Zero && !global::System.Object.ReferenceEquals(flags, us) && !global::System.Object.ReferenceEquals(flags, ns) && !global::System.Object.ReferenceEquals(flags, values))
 {
 fixed (global::System.Int32* p_flags = flags)
 {
@@ -384,9 +421,9 @@ CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
 finally
 {
 if (d_us != IntPtr.Zero) CudaDriverApi.cuMemFreeAsync(d_us, hStream);
-if (d_ns != IntPtr.Zero) CudaDriverApi.cuMemFreeAsync(d_ns, hStream);
-if (d_values != IntPtr.Zero) CudaDriverApi.cuMemFreeAsync(d_values, hStream);
-if (d_flags != IntPtr.Zero) CudaDriverApi.cuMemFreeAsync(d_flags, hStream);
+if (d_ns != IntPtr.Zero && d_ns != d_us) CudaDriverApi.cuMemFreeAsync(d_ns, hStream);
+if (d_values != IntPtr.Zero && d_values != d_us && d_values != d_ns) CudaDriverApi.cuMemFreeAsync(d_values, hStream);
+if (d_flags != IntPtr.Zero && d_flags != d_us && d_flags != d_ns && d_flags != d_values) CudaDriverApi.cuMemFreeAsync(d_flags, hStream);
 }
 }
 }
@@ -408,21 +445,25 @@ void** kernelParams = stackalloc void*[4];
 IntPtr* proxy_us = stackalloc IntPtr[2];
 proxy_us[0] = us;
 ((int*)(proxy_us + 1))[0] = 0; // Length is unknown for raw IntPtr
+((int*)(proxy_us + 1))[1] = 0;
 kernelParams[0] = proxy_us;
 // Marshal device array: ns
 IntPtr* proxy_ns = stackalloc IntPtr[2];
 proxy_ns[0] = ns;
 ((int*)(proxy_ns + 1))[0] = 0; // Length is unknown for raw IntPtr
+((int*)(proxy_ns + 1))[1] = 0;
 kernelParams[1] = proxy_ns;
 // Marshal device array: values
 IntPtr* proxy_values = stackalloc IntPtr[2];
 proxy_values[0] = values;
 ((int*)(proxy_values + 1))[0] = 0; // Length is unknown for raw IntPtr
+((int*)(proxy_values + 1))[1] = 0;
 kernelParams[2] = proxy_values;
 // Marshal device array: flags
 IntPtr* proxy_flags = stackalloc IntPtr[2];
 proxy_flags[0] = flags;
 ((int*)(proxy_flags + 1))[0] = 0; // Length is unknown for raw IntPtr
+((int*)(proxy_flags + 1))[1] = 0;
 kernelParams[3] = proxy_flags;
 CudaException.ThrowIfError(CudaDriverApi.cuLaunchKernel(
 hfunc,
@@ -441,7 +482,7 @@ finally
 }
 #pragma warning restore CS8500
 public const string ShortPairsKernel_Source = @"extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__MixedSignPromotionKernels__ShortPairsKernel(GSharpArray<unsigned int> __gsharp_id_0_us, GSharpArray<short> __gsharp_id_1_ss, GSharpArray<long long> __gsharp_id_2_values, GSharpArray<int> __gsharp_id_3_flags){
-int __gsharp_id_4_pair = threadIdx.x;
+int __gsharp_id_4_pair = (int)threadIdx.x;
 __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__MixedSignPromotionKernels__ShortOperators(__gsharp_id_0_us[__gsharp_id_4_pair/__gsharp_id_1_ss.length],__gsharp_id_1_ss[__gsharp_id_4_pair%__gsharp_id_1_ss.length],__gsharp_id_2_values,__gsharp_id_3_flags,__gsharp_id_4_pair);
 }
 ";
@@ -500,15 +541,16 @@ int us_size = us.Length * sizeof(global::System.UInt32);
 IntPtr* proxy_us = stackalloc IntPtr[2];
 proxy_us[0] = IntPtr.Zero;
 ((int*)(proxy_us + 1))[0] = us.Length;
+((int*)(proxy_us + 1))[1] = 0;
 if (us_size > 0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_us, (IntPtr)us_size, hStream));
-proxy_us[0] = d_us;
 fixed (global::System.UInt32* p_us = us)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoDAsync_v2(d_us, (IntPtr)p_us, (IntPtr)us_size, hStream));
 CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
 }
+proxy_us[0] = d_us;
 }
 kernelParams[0] = proxy_us;
 // Marshal array: ss
@@ -516,15 +558,23 @@ int ss_size = ss.Length * sizeof(global::System.Int16);
 IntPtr* proxy_ss = stackalloc IntPtr[2];
 proxy_ss[0] = IntPtr.Zero;
 ((int*)(proxy_ss + 1))[0] = ss.Length;
+((int*)(proxy_ss + 1))[1] = 0;
 if (ss_size > 0)
 {
+if (global::System.Object.ReferenceEquals(ss, us))
+{
+d_ss = d_us;
+}
+else
+{
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_ss, (IntPtr)ss_size, hStream));
-proxy_ss[0] = d_ss;
 fixed (global::System.Int16* p_ss = ss)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoDAsync_v2(d_ss, (IntPtr)p_ss, (IntPtr)ss_size, hStream));
 CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
 }
+}
+proxy_ss[0] = d_ss;
 }
 kernelParams[1] = proxy_ss;
 // Marshal array: values
@@ -532,15 +582,27 @@ int values_size = values.Length * sizeof(global::System.Int64);
 IntPtr* proxy_values = stackalloc IntPtr[2];
 proxy_values[0] = IntPtr.Zero;
 ((int*)(proxy_values + 1))[0] = values.Length;
+((int*)(proxy_values + 1))[1] = 0;
 if (values_size > 0)
 {
+if (global::System.Object.ReferenceEquals(values, us))
+{
+d_values = d_us;
+}
+else if (global::System.Object.ReferenceEquals(values, ss))
+{
+d_values = d_ss;
+}
+else
+{
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_values, (IntPtr)values_size, hStream));
-proxy_values[0] = d_values;
 fixed (global::System.Int64* p_values = values)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoDAsync_v2(d_values, (IntPtr)p_values, (IntPtr)values_size, hStream));
 CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
 }
+}
+proxy_values[0] = d_values;
 }
 kernelParams[2] = proxy_values;
 // Marshal array: flags
@@ -548,15 +610,31 @@ int flags_size = flags.Length * sizeof(global::System.Int32);
 IntPtr* proxy_flags = stackalloc IntPtr[2];
 proxy_flags[0] = IntPtr.Zero;
 ((int*)(proxy_flags + 1))[0] = flags.Length;
+((int*)(proxy_flags + 1))[1] = 0;
 if (flags_size > 0)
 {
+if (global::System.Object.ReferenceEquals(flags, us))
+{
+d_flags = d_us;
+}
+else if (global::System.Object.ReferenceEquals(flags, ss))
+{
+d_flags = d_ss;
+}
+else if (global::System.Object.ReferenceEquals(flags, values))
+{
+d_flags = d_values;
+}
+else
+{
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_flags, (IntPtr)flags_size, hStream));
-proxy_flags[0] = d_flags;
 fixed (global::System.Int32* p_flags = flags)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoDAsync_v2(d_flags, (IntPtr)p_flags, (IntPtr)flags_size, hStream));
 CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
 }
+}
+proxy_flags[0] = d_flags;
 }
 kernelParams[3] = proxy_flags;
 CudaException.ThrowIfError(CudaDriverApi.cuLaunchKernel(
@@ -578,7 +656,7 @@ CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
 }
 }
 // Copy back array: ss
-if (ss_size > 0 && d_ss != IntPtr.Zero)
+if (ss_size > 0 && d_ss != IntPtr.Zero && !global::System.Object.ReferenceEquals(ss, us))
 {
 fixed (global::System.Int16* p_ss = ss)
 {
@@ -587,7 +665,7 @@ CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
 }
 }
 // Copy back array: values
-if (values_size > 0 && d_values != IntPtr.Zero)
+if (values_size > 0 && d_values != IntPtr.Zero && !global::System.Object.ReferenceEquals(values, us) && !global::System.Object.ReferenceEquals(values, ss))
 {
 fixed (global::System.Int64* p_values = values)
 {
@@ -596,7 +674,7 @@ CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
 }
 }
 // Copy back array: flags
-if (flags_size > 0 && d_flags != IntPtr.Zero)
+if (flags_size > 0 && d_flags != IntPtr.Zero && !global::System.Object.ReferenceEquals(flags, us) && !global::System.Object.ReferenceEquals(flags, ss) && !global::System.Object.ReferenceEquals(flags, values))
 {
 fixed (global::System.Int32* p_flags = flags)
 {
@@ -608,9 +686,9 @@ CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
 finally
 {
 if (d_us != IntPtr.Zero) CudaDriverApi.cuMemFreeAsync(d_us, hStream);
-if (d_ss != IntPtr.Zero) CudaDriverApi.cuMemFreeAsync(d_ss, hStream);
-if (d_values != IntPtr.Zero) CudaDriverApi.cuMemFreeAsync(d_values, hStream);
-if (d_flags != IntPtr.Zero) CudaDriverApi.cuMemFreeAsync(d_flags, hStream);
+if (d_ss != IntPtr.Zero && d_ss != d_us) CudaDriverApi.cuMemFreeAsync(d_ss, hStream);
+if (d_values != IntPtr.Zero && d_values != d_us && d_values != d_ss) CudaDriverApi.cuMemFreeAsync(d_values, hStream);
+if (d_flags != IntPtr.Zero && d_flags != d_us && d_flags != d_ss && d_flags != d_values) CudaDriverApi.cuMemFreeAsync(d_flags, hStream);
 }
 }
 }
@@ -632,21 +710,25 @@ void** kernelParams = stackalloc void*[4];
 IntPtr* proxy_us = stackalloc IntPtr[2];
 proxy_us[0] = us;
 ((int*)(proxy_us + 1))[0] = 0; // Length is unknown for raw IntPtr
+((int*)(proxy_us + 1))[1] = 0;
 kernelParams[0] = proxy_us;
 // Marshal device array: ss
 IntPtr* proxy_ss = stackalloc IntPtr[2];
 proxy_ss[0] = ss;
 ((int*)(proxy_ss + 1))[0] = 0; // Length is unknown for raw IntPtr
+((int*)(proxy_ss + 1))[1] = 0;
 kernelParams[1] = proxy_ss;
 // Marshal device array: values
 IntPtr* proxy_values = stackalloc IntPtr[2];
 proxy_values[0] = values;
 ((int*)(proxy_values + 1))[0] = 0; // Length is unknown for raw IntPtr
+((int*)(proxy_values + 1))[1] = 0;
 kernelParams[2] = proxy_values;
 // Marshal device array: flags
 IntPtr* proxy_flags = stackalloc IntPtr[2];
 proxy_flags[0] = flags;
 ((int*)(proxy_flags + 1))[0] = 0; // Length is unknown for raw IntPtr
+((int*)(proxy_flags + 1))[1] = 0;
 kernelParams[3] = proxy_flags;
 CudaException.ThrowIfError(CudaDriverApi.cuLaunchKernel(
 hfunc,
@@ -665,7 +747,7 @@ finally
 }
 #pragma warning restore CS8500
 public const string SBytePairsKernel_Source = @"extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__MixedSignPromotionKernels__SBytePairsKernel(GSharpArray<unsigned int> __gsharp_id_0_us, GSharpArray<signed char> __gsharp_id_1_bs, GSharpArray<long long> __gsharp_id_2_values, GSharpArray<int> __gsharp_id_3_flags){
-int __gsharp_id_4_pair = threadIdx.x;
+int __gsharp_id_4_pair = (int)threadIdx.x;
 __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__MixedSignPromotionKernels__SByteOperators(__gsharp_id_0_us[__gsharp_id_4_pair/__gsharp_id_1_bs.length],__gsharp_id_1_bs[__gsharp_id_4_pair%__gsharp_id_1_bs.length],__gsharp_id_2_values,__gsharp_id_3_flags,__gsharp_id_4_pair);
 }
 ";
@@ -724,15 +806,16 @@ int us_size = us.Length * sizeof(global::System.UInt32);
 IntPtr* proxy_us = stackalloc IntPtr[2];
 proxy_us[0] = IntPtr.Zero;
 ((int*)(proxy_us + 1))[0] = us.Length;
+((int*)(proxy_us + 1))[1] = 0;
 if (us_size > 0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_us, (IntPtr)us_size, hStream));
-proxy_us[0] = d_us;
 fixed (global::System.UInt32* p_us = us)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoDAsync_v2(d_us, (IntPtr)p_us, (IntPtr)us_size, hStream));
 CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
 }
+proxy_us[0] = d_us;
 }
 kernelParams[0] = proxy_us;
 // Marshal array: bs
@@ -740,15 +823,23 @@ int bs_size = bs.Length * sizeof(global::System.SByte);
 IntPtr* proxy_bs = stackalloc IntPtr[2];
 proxy_bs[0] = IntPtr.Zero;
 ((int*)(proxy_bs + 1))[0] = bs.Length;
+((int*)(proxy_bs + 1))[1] = 0;
 if (bs_size > 0)
 {
+if (global::System.Object.ReferenceEquals(bs, us))
+{
+d_bs = d_us;
+}
+else
+{
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_bs, (IntPtr)bs_size, hStream));
-proxy_bs[0] = d_bs;
 fixed (global::System.SByte* p_bs = bs)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoDAsync_v2(d_bs, (IntPtr)p_bs, (IntPtr)bs_size, hStream));
 CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
 }
+}
+proxy_bs[0] = d_bs;
 }
 kernelParams[1] = proxy_bs;
 // Marshal array: values
@@ -756,15 +847,27 @@ int values_size = values.Length * sizeof(global::System.Int64);
 IntPtr* proxy_values = stackalloc IntPtr[2];
 proxy_values[0] = IntPtr.Zero;
 ((int*)(proxy_values + 1))[0] = values.Length;
+((int*)(proxy_values + 1))[1] = 0;
 if (values_size > 0)
 {
+if (global::System.Object.ReferenceEquals(values, us))
+{
+d_values = d_us;
+}
+else if (global::System.Object.ReferenceEquals(values, bs))
+{
+d_values = d_bs;
+}
+else
+{
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_values, (IntPtr)values_size, hStream));
-proxy_values[0] = d_values;
 fixed (global::System.Int64* p_values = values)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoDAsync_v2(d_values, (IntPtr)p_values, (IntPtr)values_size, hStream));
 CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
 }
+}
+proxy_values[0] = d_values;
 }
 kernelParams[2] = proxy_values;
 // Marshal array: flags
@@ -772,15 +875,31 @@ int flags_size = flags.Length * sizeof(global::System.Int32);
 IntPtr* proxy_flags = stackalloc IntPtr[2];
 proxy_flags[0] = IntPtr.Zero;
 ((int*)(proxy_flags + 1))[0] = flags.Length;
+((int*)(proxy_flags + 1))[1] = 0;
 if (flags_size > 0)
 {
+if (global::System.Object.ReferenceEquals(flags, us))
+{
+d_flags = d_us;
+}
+else if (global::System.Object.ReferenceEquals(flags, bs))
+{
+d_flags = d_bs;
+}
+else if (global::System.Object.ReferenceEquals(flags, values))
+{
+d_flags = d_values;
+}
+else
+{
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_flags, (IntPtr)flags_size, hStream));
-proxy_flags[0] = d_flags;
 fixed (global::System.Int32* p_flags = flags)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoDAsync_v2(d_flags, (IntPtr)p_flags, (IntPtr)flags_size, hStream));
 CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
 }
+}
+proxy_flags[0] = d_flags;
 }
 kernelParams[3] = proxy_flags;
 CudaException.ThrowIfError(CudaDriverApi.cuLaunchKernel(
@@ -802,7 +921,7 @@ CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
 }
 }
 // Copy back array: bs
-if (bs_size > 0 && d_bs != IntPtr.Zero)
+if (bs_size > 0 && d_bs != IntPtr.Zero && !global::System.Object.ReferenceEquals(bs, us))
 {
 fixed (global::System.SByte* p_bs = bs)
 {
@@ -811,7 +930,7 @@ CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
 }
 }
 // Copy back array: values
-if (values_size > 0 && d_values != IntPtr.Zero)
+if (values_size > 0 && d_values != IntPtr.Zero && !global::System.Object.ReferenceEquals(values, us) && !global::System.Object.ReferenceEquals(values, bs))
 {
 fixed (global::System.Int64* p_values = values)
 {
@@ -820,7 +939,7 @@ CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
 }
 }
 // Copy back array: flags
-if (flags_size > 0 && d_flags != IntPtr.Zero)
+if (flags_size > 0 && d_flags != IntPtr.Zero && !global::System.Object.ReferenceEquals(flags, us) && !global::System.Object.ReferenceEquals(flags, bs) && !global::System.Object.ReferenceEquals(flags, values))
 {
 fixed (global::System.Int32* p_flags = flags)
 {
@@ -832,9 +951,9 @@ CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
 finally
 {
 if (d_us != IntPtr.Zero) CudaDriverApi.cuMemFreeAsync(d_us, hStream);
-if (d_bs != IntPtr.Zero) CudaDriverApi.cuMemFreeAsync(d_bs, hStream);
-if (d_values != IntPtr.Zero) CudaDriverApi.cuMemFreeAsync(d_values, hStream);
-if (d_flags != IntPtr.Zero) CudaDriverApi.cuMemFreeAsync(d_flags, hStream);
+if (d_bs != IntPtr.Zero && d_bs != d_us) CudaDriverApi.cuMemFreeAsync(d_bs, hStream);
+if (d_values != IntPtr.Zero && d_values != d_us && d_values != d_bs) CudaDriverApi.cuMemFreeAsync(d_values, hStream);
+if (d_flags != IntPtr.Zero && d_flags != d_us && d_flags != d_bs && d_flags != d_values) CudaDriverApi.cuMemFreeAsync(d_flags, hStream);
 }
 }
 }
@@ -856,21 +975,25 @@ void** kernelParams = stackalloc void*[4];
 IntPtr* proxy_us = stackalloc IntPtr[2];
 proxy_us[0] = us;
 ((int*)(proxy_us + 1))[0] = 0; // Length is unknown for raw IntPtr
+((int*)(proxy_us + 1))[1] = 0;
 kernelParams[0] = proxy_us;
 // Marshal device array: bs
 IntPtr* proxy_bs = stackalloc IntPtr[2];
 proxy_bs[0] = bs;
 ((int*)(proxy_bs + 1))[0] = 0; // Length is unknown for raw IntPtr
+((int*)(proxy_bs + 1))[1] = 0;
 kernelParams[1] = proxy_bs;
 // Marshal device array: values
 IntPtr* proxy_values = stackalloc IntPtr[2];
 proxy_values[0] = values;
 ((int*)(proxy_values + 1))[0] = 0; // Length is unknown for raw IntPtr
+((int*)(proxy_values + 1))[1] = 0;
 kernelParams[2] = proxy_values;
 // Marshal device array: flags
 IntPtr* proxy_flags = stackalloc IntPtr[2];
 proxy_flags[0] = flags;
 ((int*)(proxy_flags + 1))[0] = 0; // Length is unknown for raw IntPtr
+((int*)(proxy_flags + 1))[1] = 0;
 kernelParams[3] = proxy_flags;
 CudaException.ThrowIfError(CudaDriverApi.cuLaunchKernel(
 hfunc,
@@ -889,7 +1012,7 @@ finally
 }
 #pragma warning restore CS8500
 public const string ConstantOperandsKernel_Source = @"extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__MixedSignPromotionKernels__ConstantOperandsKernel(GSharpArray<unsigned int> __gsharp_id_0_us, GSharpArray<long long> __gsharp_id_1_values, GSharpArray<int> __gsharp_id_2_flags){
-int __gsharp_id_3_tid = threadIdx.x;
+int __gsharp_id_3_tid = (int)threadIdx.x;
 __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__MixedSignPromotionKernels__ConstantOperators(__gsharp_id_0_us[__gsharp_id_3_tid],__gsharp_id_1_values,__gsharp_id_2_flags,__gsharp_id_3_tid);
 }
 ";
@@ -941,15 +1064,16 @@ int us_size = us.Length * sizeof(global::System.UInt32);
 IntPtr* proxy_us = stackalloc IntPtr[2];
 proxy_us[0] = IntPtr.Zero;
 ((int*)(proxy_us + 1))[0] = us.Length;
+((int*)(proxy_us + 1))[1] = 0;
 if (us_size > 0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_us, (IntPtr)us_size, hStream));
-proxy_us[0] = d_us;
 fixed (global::System.UInt32* p_us = us)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoDAsync_v2(d_us, (IntPtr)p_us, (IntPtr)us_size, hStream));
 CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
 }
+proxy_us[0] = d_us;
 }
 kernelParams[0] = proxy_us;
 // Marshal array: values
@@ -957,15 +1081,23 @@ int values_size = values.Length * sizeof(global::System.Int64);
 IntPtr* proxy_values = stackalloc IntPtr[2];
 proxy_values[0] = IntPtr.Zero;
 ((int*)(proxy_values + 1))[0] = values.Length;
+((int*)(proxy_values + 1))[1] = 0;
 if (values_size > 0)
 {
+if (global::System.Object.ReferenceEquals(values, us))
+{
+d_values = d_us;
+}
+else
+{
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_values, (IntPtr)values_size, hStream));
-proxy_values[0] = d_values;
 fixed (global::System.Int64* p_values = values)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoDAsync_v2(d_values, (IntPtr)p_values, (IntPtr)values_size, hStream));
 CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
 }
+}
+proxy_values[0] = d_values;
 }
 kernelParams[1] = proxy_values;
 // Marshal array: flags
@@ -973,15 +1105,27 @@ int flags_size = flags.Length * sizeof(global::System.Int32);
 IntPtr* proxy_flags = stackalloc IntPtr[2];
 proxy_flags[0] = IntPtr.Zero;
 ((int*)(proxy_flags + 1))[0] = flags.Length;
+((int*)(proxy_flags + 1))[1] = 0;
 if (flags_size > 0)
 {
+if (global::System.Object.ReferenceEquals(flags, us))
+{
+d_flags = d_us;
+}
+else if (global::System.Object.ReferenceEquals(flags, values))
+{
+d_flags = d_values;
+}
+else
+{
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_flags, (IntPtr)flags_size, hStream));
-proxy_flags[0] = d_flags;
 fixed (global::System.Int32* p_flags = flags)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoDAsync_v2(d_flags, (IntPtr)p_flags, (IntPtr)flags_size, hStream));
 CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
 }
+}
+proxy_flags[0] = d_flags;
 }
 kernelParams[2] = proxy_flags;
 CudaException.ThrowIfError(CudaDriverApi.cuLaunchKernel(
@@ -1003,7 +1147,7 @@ CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
 }
 }
 // Copy back array: values
-if (values_size > 0 && d_values != IntPtr.Zero)
+if (values_size > 0 && d_values != IntPtr.Zero && !global::System.Object.ReferenceEquals(values, us))
 {
 fixed (global::System.Int64* p_values = values)
 {
@@ -1012,7 +1156,7 @@ CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
 }
 }
 // Copy back array: flags
-if (flags_size > 0 && d_flags != IntPtr.Zero)
+if (flags_size > 0 && d_flags != IntPtr.Zero && !global::System.Object.ReferenceEquals(flags, us) && !global::System.Object.ReferenceEquals(flags, values))
 {
 fixed (global::System.Int32* p_flags = flags)
 {
@@ -1024,8 +1168,8 @@ CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
 finally
 {
 if (d_us != IntPtr.Zero) CudaDriverApi.cuMemFreeAsync(d_us, hStream);
-if (d_values != IntPtr.Zero) CudaDriverApi.cuMemFreeAsync(d_values, hStream);
-if (d_flags != IntPtr.Zero) CudaDriverApi.cuMemFreeAsync(d_flags, hStream);
+if (d_values != IntPtr.Zero && d_values != d_us) CudaDriverApi.cuMemFreeAsync(d_values, hStream);
+if (d_flags != IntPtr.Zero && d_flags != d_us && d_flags != d_values) CudaDriverApi.cuMemFreeAsync(d_flags, hStream);
 }
 }
 }
@@ -1047,16 +1191,19 @@ void** kernelParams = stackalloc void*[3];
 IntPtr* proxy_us = stackalloc IntPtr[2];
 proxy_us[0] = us;
 ((int*)(proxy_us + 1))[0] = 0; // Length is unknown for raw IntPtr
+((int*)(proxy_us + 1))[1] = 0;
 kernelParams[0] = proxy_us;
 // Marshal device array: values
 IntPtr* proxy_values = stackalloc IntPtr[2];
 proxy_values[0] = values;
 ((int*)(proxy_values + 1))[0] = 0; // Length is unknown for raw IntPtr
+((int*)(proxy_values + 1))[1] = 0;
 kernelParams[1] = proxy_values;
 // Marshal device array: flags
 IntPtr* proxy_flags = stackalloc IntPtr[2];
 proxy_flags[0] = flags;
 ((int*)(proxy_flags + 1))[0] = 0; // Length is unknown for raw IntPtr
+((int*)(proxy_flags + 1))[1] = 0;
 kernelParams[2] = proxy_flags;
 CudaException.ThrowIfError(CudaDriverApi.cuLaunchKernel(
 hfunc,
@@ -1075,16 +1222,16 @@ finally
 }
 #pragma warning restore CS8500
 public const string AcrossBarrierKernel_Source = @"extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__MixedSignPromotionKernels__AcrossBarrierKernel(GSharpArray<unsigned int> __gsharp_id_0_us, GSharpArray<int> __gsharp_id_1_ns, GSharpArray<long long> __gsharp_id_2_values, GSharpArray<int> __gsharp_id_3_flags){
-int __gsharp_id_4_tid = threadIdx.x;
+int __gsharp_id_4_tid = (int)threadIdx.x;
 unsigned int __gsharp_id_5_u = __gsharp_id_0_us[__gsharp_id_4_tid];
 int __gsharp_id_6_n = __gsharp_id_1_ns[__gsharp_id_4_tid];
 __syncthreads();
 long long __gsharp_id_7_sum = (long long)__gsharp_id_5_u+(long long)__gsharp_id_6_n;
 __syncthreads();
-__gsharp_id_2_values[__gsharp_id_4_tid*2]=__gsharp_id_7_sum;
+__gsharp_id_2_values[__gsharp_mul_i32(__gsharp_id_4_tid,2)]=__gsharp_id_7_sum;
 __gsharp_id_3_flags[__gsharp_id_4_tid]=((long long)__gsharp_id_5_u<(long long)__gsharp_id_6_n?1:0);
 int __gsharp_id_8_k = __gsharp_id_4_tid;
-__gsharp_id_2_values[__gsharp_id_4_tid*2+1]=([&]() {
+__gsharp_id_2_values[__gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_4_tid,2),1)]=([&]() {
 auto __gsharp_seq_0 = __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__MixedSignPromotionKernels__TakeFive(&__gsharp_id_8_k);
 auto __gsharp_seq_1 = __gsharp_id_8_k;
 return (long long)__gsharp_seq_0+(long long)__gsharp_seq_1;
@@ -1146,15 +1293,16 @@ int us_size = us.Length * sizeof(global::System.UInt32);
 IntPtr* proxy_us = stackalloc IntPtr[2];
 proxy_us[0] = IntPtr.Zero;
 ((int*)(proxy_us + 1))[0] = us.Length;
+((int*)(proxy_us + 1))[1] = 0;
 if (us_size > 0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_us, (IntPtr)us_size, hStream));
-proxy_us[0] = d_us;
 fixed (global::System.UInt32* p_us = us)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoDAsync_v2(d_us, (IntPtr)p_us, (IntPtr)us_size, hStream));
 CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
 }
+proxy_us[0] = d_us;
 }
 kernelParams[0] = proxy_us;
 // Marshal array: ns
@@ -1162,15 +1310,23 @@ int ns_size = ns.Length * sizeof(global::System.Int32);
 IntPtr* proxy_ns = stackalloc IntPtr[2];
 proxy_ns[0] = IntPtr.Zero;
 ((int*)(proxy_ns + 1))[0] = ns.Length;
+((int*)(proxy_ns + 1))[1] = 0;
 if (ns_size > 0)
 {
+if (global::System.Object.ReferenceEquals(ns, us))
+{
+d_ns = d_us;
+}
+else
+{
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_ns, (IntPtr)ns_size, hStream));
-proxy_ns[0] = d_ns;
 fixed (global::System.Int32* p_ns = ns)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoDAsync_v2(d_ns, (IntPtr)p_ns, (IntPtr)ns_size, hStream));
 CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
 }
+}
+proxy_ns[0] = d_ns;
 }
 kernelParams[1] = proxy_ns;
 // Marshal array: values
@@ -1178,15 +1334,27 @@ int values_size = values.Length * sizeof(global::System.Int64);
 IntPtr* proxy_values = stackalloc IntPtr[2];
 proxy_values[0] = IntPtr.Zero;
 ((int*)(proxy_values + 1))[0] = values.Length;
+((int*)(proxy_values + 1))[1] = 0;
 if (values_size > 0)
 {
+if (global::System.Object.ReferenceEquals(values, us))
+{
+d_values = d_us;
+}
+else if (global::System.Object.ReferenceEquals(values, ns))
+{
+d_values = d_ns;
+}
+else
+{
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_values, (IntPtr)values_size, hStream));
-proxy_values[0] = d_values;
 fixed (global::System.Int64* p_values = values)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoDAsync_v2(d_values, (IntPtr)p_values, (IntPtr)values_size, hStream));
 CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
 }
+}
+proxy_values[0] = d_values;
 }
 kernelParams[2] = proxy_values;
 // Marshal array: flags
@@ -1194,15 +1362,31 @@ int flags_size = flags.Length * sizeof(global::System.Int32);
 IntPtr* proxy_flags = stackalloc IntPtr[2];
 proxy_flags[0] = IntPtr.Zero;
 ((int*)(proxy_flags + 1))[0] = flags.Length;
+((int*)(proxy_flags + 1))[1] = 0;
 if (flags_size > 0)
 {
+if (global::System.Object.ReferenceEquals(flags, us))
+{
+d_flags = d_us;
+}
+else if (global::System.Object.ReferenceEquals(flags, ns))
+{
+d_flags = d_ns;
+}
+else if (global::System.Object.ReferenceEquals(flags, values))
+{
+d_flags = d_values;
+}
+else
+{
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_flags, (IntPtr)flags_size, hStream));
-proxy_flags[0] = d_flags;
 fixed (global::System.Int32* p_flags = flags)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoDAsync_v2(d_flags, (IntPtr)p_flags, (IntPtr)flags_size, hStream));
 CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
 }
+}
+proxy_flags[0] = d_flags;
 }
 kernelParams[3] = proxy_flags;
 CudaException.ThrowIfError(CudaDriverApi.cuLaunchKernel(
@@ -1224,7 +1408,7 @@ CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
 }
 }
 // Copy back array: ns
-if (ns_size > 0 && d_ns != IntPtr.Zero)
+if (ns_size > 0 && d_ns != IntPtr.Zero && !global::System.Object.ReferenceEquals(ns, us))
 {
 fixed (global::System.Int32* p_ns = ns)
 {
@@ -1233,7 +1417,7 @@ CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
 }
 }
 // Copy back array: values
-if (values_size > 0 && d_values != IntPtr.Zero)
+if (values_size > 0 && d_values != IntPtr.Zero && !global::System.Object.ReferenceEquals(values, us) && !global::System.Object.ReferenceEquals(values, ns))
 {
 fixed (global::System.Int64* p_values = values)
 {
@@ -1242,7 +1426,7 @@ CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
 }
 }
 // Copy back array: flags
-if (flags_size > 0 && d_flags != IntPtr.Zero)
+if (flags_size > 0 && d_flags != IntPtr.Zero && !global::System.Object.ReferenceEquals(flags, us) && !global::System.Object.ReferenceEquals(flags, ns) && !global::System.Object.ReferenceEquals(flags, values))
 {
 fixed (global::System.Int32* p_flags = flags)
 {
@@ -1254,9 +1438,9 @@ CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
 finally
 {
 if (d_us != IntPtr.Zero) CudaDriverApi.cuMemFreeAsync(d_us, hStream);
-if (d_ns != IntPtr.Zero) CudaDriverApi.cuMemFreeAsync(d_ns, hStream);
-if (d_values != IntPtr.Zero) CudaDriverApi.cuMemFreeAsync(d_values, hStream);
-if (d_flags != IntPtr.Zero) CudaDriverApi.cuMemFreeAsync(d_flags, hStream);
+if (d_ns != IntPtr.Zero && d_ns != d_us) CudaDriverApi.cuMemFreeAsync(d_ns, hStream);
+if (d_values != IntPtr.Zero && d_values != d_us && d_values != d_ns) CudaDriverApi.cuMemFreeAsync(d_values, hStream);
+if (d_flags != IntPtr.Zero && d_flags != d_us && d_flags != d_ns && d_flags != d_values) CudaDriverApi.cuMemFreeAsync(d_flags, hStream);
 }
 }
 }
@@ -1278,21 +1462,25 @@ void** kernelParams = stackalloc void*[4];
 IntPtr* proxy_us = stackalloc IntPtr[2];
 proxy_us[0] = us;
 ((int*)(proxy_us + 1))[0] = 0; // Length is unknown for raw IntPtr
+((int*)(proxy_us + 1))[1] = 0;
 kernelParams[0] = proxy_us;
 // Marshal device array: ns
 IntPtr* proxy_ns = stackalloc IntPtr[2];
 proxy_ns[0] = ns;
 ((int*)(proxy_ns + 1))[0] = 0; // Length is unknown for raw IntPtr
+((int*)(proxy_ns + 1))[1] = 0;
 kernelParams[1] = proxy_ns;
 // Marshal device array: values
 IntPtr* proxy_values = stackalloc IntPtr[2];
 proxy_values[0] = values;
 ((int*)(proxy_values + 1))[0] = 0; // Length is unknown for raw IntPtr
+((int*)(proxy_values + 1))[1] = 0;
 kernelParams[2] = proxy_values;
 // Marshal device array: flags
 IntPtr* proxy_flags = stackalloc IntPtr[2];
 proxy_flags[0] = flags;
 ((int*)(proxy_flags + 1))[0] = 0; // Length is unknown for raw IntPtr
+((int*)(proxy_flags + 1))[1] = 0;
 kernelParams[3] = proxy_flags;
 CudaException.ThrowIfError(CudaDriverApi.cuLaunchKernel(
 hfunc,

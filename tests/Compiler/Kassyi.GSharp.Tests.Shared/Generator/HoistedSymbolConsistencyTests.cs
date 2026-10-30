@@ -51,7 +51,7 @@ public class HoistedSymbolConsistencyTests
                 LoweredStateMachine lowered;
                 try
                 {
-                    lowered = AstLoweringPipeline.Lower(method, model, isSuspendingDevice ? symbol : null);
+                    lowered = AstLoweringPipeline.Lower(method, model, symbol, isSuspendingDevice);
                 }
                 catch (Exception ex)
                 {

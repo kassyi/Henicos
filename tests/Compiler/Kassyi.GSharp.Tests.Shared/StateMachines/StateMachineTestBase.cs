@@ -127,15 +127,17 @@ public abstract class StateMachineTestBase
             .OfType<MethodDeclarationSyntax>()
             .First();
 
+        // Lowered as the generator lowers a kernel: with its symbol, so that the value parameters it writes are copied
+        var symbol = model.GetDeclaredSymbol<IMethodSymbol>(method);
         if (preLowerTransform == null)
         {
-            return (AstLoweringPipeline.Lower(method, model), model);
+            return (AstLoweringPipeline.Lower(method, model, symbol, isDeviceFunction: false), model);
         }
 
         var body = method.Body ?? throw new InvalidOperationException("Test case method must have a block body.");
         var annotated = LoweringAnnotations.AnnotateOriginalSpans(body, compilation);
         var expanded = preLowerTransform(annotated, model);
-        return (AstLoweringPipeline.Lower(expanded, model), model);
+        return (AstLoweringPipeline.Lower(expanded, model, symbol, isDeviceFunction: false), model);
     }
 
     protected static Task VerifyStateMachineLower(Action action,
@@ -164,7 +166,7 @@ public abstract class StateMachineTestBase
     protected static Task VerifyPipelineLower(Action action,
         [CallerArgumentExpression(nameof(action))]
         string source = "", [CallerMemberName] string methodName = "") =>
-        VerifyTransformation(action, b => AstLoweringPipeline.Lower(b).LoweredBody, source, methodName);
+        VerifyTransformation(action, b => AstLoweringPipeline.Lower(b, null, null, isDeviceFunction: false).LoweredBody, source, methodName);
 
     protected static Task VerifyHoist(Action action,
         [CallerArgumentExpression(nameof(action))]

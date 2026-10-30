@@ -13,8 +13,8 @@ using Xunit;
 namespace Kassyi.GSharp.Tests.Generators.StateMachines;
 
 /// <summary>
-/// Tier 2 tests for the value parameters that a suspending device function copies into its frame
-/// (<see cref="LoweredStateMachine.CopiedParameters"/>, #455) and for the references that <see cref="ContextHoister"/>
+/// Tier 2 tests for the value parameters that a suspending device function (#455) or a kernel (#879) copies into its
+/// frame (<see cref="LoweredStateMachine.CopiedParameters"/>) and for the references that <see cref="ContextHoister"/>
 /// rewrites to the copy.
 /// </summary>
 [Category(TestCategory.Compiler)]
@@ -36,6 +36,7 @@ public class CopiedParameterTests
     [InlineData("NestedTupleAssignment", "v", "a")]
     [InlineData("MutatingMethodCall", "v")]
     [InlineData("NestedFieldMutatingMethodCall", "v")]
+    [InlineData("RefExtensionCall", "v")]
     public void Lower_WriteThroughValueParameter_CopiesParameter(string methodName, params string[] expected)
     {
         var lowered = LowerDeviceFunction("ValueParameterWrites.cs", methodName, withModel: true);
@@ -44,7 +45,8 @@ public class CopiedParameterTests
     }
 
     // An array or a pointer refers to memory that the resumed call sees again, a Span<T> cannot live in the frame, and a
-    // readonly method (or a method of a readonly struct) does not change its receiver
+    // readonly method (or a method of a readonly struct) or an extension method whose `this` is `in`, `ref readonly` or
+    // by value does not change its receiver
     [Theory]
     [Scenario(TestScenario.Boundary)]
     [InlineData("ArrayElementAssignment")]
@@ -54,6 +56,7 @@ public class CopiedParameterTests
     [InlineData("PointerFieldElementAssignment")]
     [InlineData("ReadOnlyMethodCall")]
     [InlineData("ReadOnlyStructMethodCall")]
+    [InlineData("NonRefExtensionCalls")]
     [InlineData("FieldReadOnly")]
     public void Lower_NoWriteIntoValueStorage_CopiesNothing(string methodName)
     {
@@ -129,7 +132,7 @@ public class CopiedParameterTests
             ownerBody.Statements[2]
         ]));
 
-        var lowered = AstLoweringPipeline.Lower(combined, model, ownerSymbol);
+        var lowered = AstLoweringPipeline.Lower(combined, model, ownerSymbol, isDeviceFunction: true);
 
         Assert.Equal(["v"], lowered.CopiedParameters);
         var references = lowered.LoweredBody.DescendantNodes()
@@ -159,10 +162,11 @@ public class CopiedParameterTests
             .Single(static m => m.Identifier.ValueText == "FieldAssignment");
         var symbol = model.GetDeclaredSymbol<IMethodSymbol>(method)
                      ?? throw new InvalidOperationException("FieldAssignment has no symbol.");
-        var unbound = (BlockSyntax)SyntaxFactory.ParseStatement(
-            (method.Body ?? throw new InvalidOperationException("FieldAssignment has no block body.")).ToFullString());
+        // The model cannot find the barrier of an unbound body either; it is annotated by spelling
+        var unbound = TestSyncAnnotator.Annotate((BlockSyntax)SyntaxFactory.ParseStatement(
+            (method.Body ?? throw new InvalidOperationException("FieldAssignment has no block body.")).ToFullString()));
 
-        var lowered = AstLoweringPipeline.Lower(unbound, model, symbol);
+        var lowered = AstLoweringPipeline.Lower(unbound, model, symbol, isDeviceFunction: true);
 
         Assert.Equal(["v"], lowered.CopiedParameters);
     }
@@ -198,9 +202,52 @@ public class CopiedParameterTests
             ownerBody.Statements[2]
         ]));
 
-        var lowered = AstLoweringPipeline.Lower(combined, model, ownerSymbol);
+        var lowered = AstLoweringPipeline.Lower(combined, model, ownerSymbol, isDeviceFunction: true);
 
         Assert.Empty(lowered.CopiedParameters);
+    }
+
+    // A kernel is lowered with its own symbol as the owner of the copied parameters, as MethodEmissionPlan does (#879)
+    [Fact]
+    [Scenario(TestScenario.HappyPath)]
+    public void Lower_KernelWritesValueParametersBeforeBarrier_CopiesThemIntoContext()
+    {
+        var lowered = LowerKernel("WrittenBeforeBarrierKernel");
+
+        Assert.Equal(["value", "values"], lowered.CopiedParameters);
+        var references = lowered.LoweredBody.DescendantNodes()
+            .OfType<IdentifierNameSyntax>()
+            .Where(static name => name.Identifier.ValueText is "value" or "values" or "read")
+            .ToArray();
+        Assert.Equal(6, references.Length);
+        Assert.All(references, static name => Assert.Equal(name.Identifier.ValueText != "read", IsContextMemberName(name)));
+    }
+
+    // Without a split point the kernel runs once, so its parameters stay where they are
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void Lower_KernelWritesValueParameterWithoutBarrier_CopiesNothing()
+    {
+        var lowered = LowerKernel("WrittenWithoutBarrierKernel");
+
+        Assert.Empty(lowered.CopiedParameters);
+        Assert.DoesNotContain(
+            lowered.LoweredBody.DescendantNodes().OfType<IdentifierNameSyntax>(),
+            IsContextMemberName);
+    }
+
+    private static LoweredStateMachine LowerKernel(string methodName)
+    {
+        var (_, tree, model) = RoslynTestUtility.GetTestCaseContext(
+            Path.Combine("StateMachines", "KernelParameterWrites.cs"));
+        var method = tree.GetRoot()
+            .DescendantNodes()
+            .OfType<MethodDeclarationSyntax>()
+            .Single(m => m.Identifier.ValueText == methodName);
+        var symbol = model.GetDeclaredSymbol<IMethodSymbol>(method)
+                     ?? throw new InvalidOperationException($"{methodName} has no symbol.");
+
+        return AstLoweringPipeline.Lower(method, model, symbol, isDeviceFunction: false);
     }
 
     private static bool IsContextMemberName(IdentifierNameSyntax name) =>
@@ -220,7 +267,7 @@ public class CopiedParameterTests
 
         // Without a model the barriers are annotated by spelling (TestSyncAnnotator), as the pipeline does by symbol
         return withModel
-            ? AstLoweringPipeline.Lower(method, model, symbol)
-            : AstLoweringPipeline.Lower(TestSyncAnnotator.Annotate(method), null, symbol);
+            ? AstLoweringPipeline.Lower(method, model, symbol, isDeviceFunction: true)
+            : AstLoweringPipeline.Lower(TestSyncAnnotator.Annotate(method), null, symbol, isDeviceFunction: true);
     }
 }

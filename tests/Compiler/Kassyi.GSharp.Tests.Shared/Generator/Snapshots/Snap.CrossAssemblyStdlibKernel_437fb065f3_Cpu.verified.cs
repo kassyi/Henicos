@@ -40,7 +40,7 @@ for(int __gsharp_id_2_i = 0;__gsharp_id_2_i<5;__gsharp_id_2_i++)
 {
 __gsharp_id_1_inv*=2u-__gsharp_id_0_n0*__gsharp_id_1_inv;
 }
-return (unsigned int)-(int)__gsharp_id_1_inv;
+return (unsigned int)__gsharp_neg_i32((int)__gsharp_id_1_inv);
 }
 
 __forceinline__ unsigned int __gsharp_fn_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuBigIntKernels__PackCarryState(__gsharp_ty_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuBigIntKernels__CarryState __gsharp_id_0_state){
@@ -105,7 +105,7 @@ goto __gsharp_switch_1_state_4;
 case 4:
 __gsharp_switch_1_state_4:
 {
-__gsharp_ctx->__gsharp_id_4_i*=2;
+__gsharp_ctx->__gsharp_id_4_i=__gsharp_mul_i32(__gsharp_ctx->__gsharp_id_4_i,2);
 goto __gsharp_switch_1_state_1;
 goto __gsharp_switch_1_state_5;
 }
@@ -168,7 +168,7 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-int __gsharp_id_2_tid = threadIdx.x;
+int __gsharp_id_2_tid = (int)threadIdx.x;
 __gsharp_id_1_result[__gsharp_id_2_tid]=__gsharp_fn_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__CooperativeMath__ComputeMontgomeryMu(__gsharp_id_0_moduli[__gsharp_id_2_tid]);
 __gsharp_state=-1;
 return;
@@ -250,10 +250,12 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 }
 ";
 public static readonly string MontgomeryMuKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source +MontgomeryMuKernel_Source;
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Stdlib__CrossAssemblyStdlibKernels__MontgomeryMuKernel {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
 }
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Stdlib__CrossAssemblyStdlibKernels__MontgomeryMuKernel(uint[] moduli, uint[] result, __gsharp_context_Kassyi__GSharp__Tests__Shared__Stdlib__CrossAssemblyStdlibKernels__MontgomeryMuKernel __gsharp_ctx) {
 {
 switch (__gsharp_ctx.__gsharp_state)
@@ -429,7 +431,7 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-__gsharp_ctx->__gsharp_id_3_lane=threadIdx.x;
+__gsharp_ctx->__gsharp_id_3_lane=(int)threadIdx.x;
 __gsharp_ctx->__gsharp_arg_temp_0=__gsharp_ctor_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuBigIntKernels__CarryState(__gsharp_id_0_generate[__gsharp_ctx->__gsharp_id_3_lane], __gsharp_id_1_propagate[__gsharp_ctx->__gsharp_id_3_lane]);
 goto __gsharp_switch_1_state_1;
 }
@@ -523,6 +525,7 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 }
 ";
 public static readonly string WarpScanKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source +WarpScanKernel_Source;
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Stdlib__CrossAssemblyStdlibKernels__WarpScanKernel {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
@@ -531,6 +534,7 @@ public global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Kernels.GpuBigIntKernels.Carr
 public global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Kernels.GpuBigIntKernels.CarryState __gsharp_call_temp_1;
 internal global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Kernels.GpuBigIntKernels.__gsharp_frame_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuBigIntKernels__WarpScanGp __gsharp_call_frame_0 = new();
 }
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Stdlib__CrossAssemblyStdlibKernels__WarpScanKernel(uint[] generate, uint[] propagate, uint[] result, __gsharp_context_Kassyi__GSharp__Tests__Shared__Stdlib__CrossAssemblyStdlibKernels__WarpScanKernel __gsharp_ctx) {
 {
 switch (__gsharp_ctx.__gsharp_state)

@@ -130,9 +130,8 @@ internal readonly record struct KernelHostModel
     }
 
     // [WHY] A block-copied struct is passed in the bytes the CLR gives it, so the predicted size and the offsets of the
-    // fields that the launcher can name are checked against the runtime. Roslyn does not show [StructLayout] and
-    // [FieldOffset] of a struct from metadata (they are pseudo-attributes), so such a struct is predicted as sequential
-    // and only this check stops one that is not (#511 review). A nested Identical struct is checked as well.
+    // fields that the launcher can name are checked against the runtime, once per launcher, as a safety net for a layout
+    // the compiler mispredicts (#511 review). A nested Identical struct is checked as well.
     private static void CollectBlockCopiedStructs(
         ITypeSymbol type,
         ITranspilerDialect dialect,

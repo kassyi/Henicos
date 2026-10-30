@@ -17,7 +17,10 @@ namespace Kassyi.GSharp.Compiler.Models;
 /// <param name="InternalError">The exception that stopped the transpilation (GSH0048), or empty.</param>
 /// <param name="FrameName">The C++ frame type of a device function that may suspend, or empty for any other device function.</param>
 /// <param name="FrameDependencies">The frame types that this function's frame contains; they are defined before it.</param>
-/// <param name="ManagedCSharpSource">The managed state machine of a device function that may suspend, or empty.</param>
+/// <param name="ManagedCSharpSource">
+/// The managed state machine of a device function that may suspend, the managed version of one that does not and needs
+/// one (#711), or empty.
+/// </param>
 /// <param name="Export">The device code export record of the function, or default when it is not exported (an iterator).</param>
 /// <param name="StructExports">The device code export records of the structs that the function uses.</param>
 internal readonly record struct TranspiledDeviceMethodResult(

@@ -1,6 +1,3 @@
-using Microsoft.CodeAnalysis.FlowAnalysis;
-using Microsoft.CodeAnalysis.Operations;
-
 namespace Kassyi.GSharp.Compiler.Diagnostics.Kernel;
 
 /// <summary>What must not cross a barrier: recursion into it (GSH0045), jumps (GSH0040) and locals (GSH0039, GSH0041, GSH0072) (<see cref="KernelBarrierValidator"/>).</summary>
@@ -104,13 +101,13 @@ internal static class CrossBarrierChecks
             variables.Add(local.Symbol);
         }
 
-        AddRefStructValueParameters(scan, variables);
-        if (variables.Count == 0 || !TryCreateControlFlowGraph(scan, out var graph))
+        AddTrackedParameters(scan, variables);
+        if (variables.Count == 0 || !scan.Flow.TryGetLiveness(out var graph, out var liveness))
         {
             return;
         }
 
-        var liveAcrossSplit = CrossBarrierLiveness.FindLiveAcrossSplit(graph, variables, scan.SemanticModel);
+        var liveAcrossSplit = CrossBarrierLiveness.FindLiveAcrossSplit(graph, liveness, variables);
         for (var i = scan.TrackedLocals.Count; i < variables.Count; i++)
         {
             if (liveAcrossSplit[i])
@@ -153,9 +150,9 @@ internal static class CrossBarrierChecks
         }
     }
 
-    // The by-value parameters of a ref struct type (Span<T>, ReadOnlySpan<T>, a user ref struct; not SharedMemory<T>,
-    // which the CPU dialects keep per declaration); the location of each is its identifier
-    private static void AddRefStructValueParameters(KernelBarrierScan scan, ImmutableArray<ISymbol>.Builder variables)
+    // The parameters that the liveness follows (LivenessRecorder.IsTrackedParameter); the location of each is its
+    // identifier
+    private static void AddTrackedParameters(KernelBarrierScan scan, ImmutableArray<ISymbol>.Builder variables)
     {
         if (scan.SemanticModel.GetDeclaredSymbol<IMethodSymbol>(scan.Method) is not { } method)
         {
@@ -164,30 +161,9 @@ internal static class CrossBarrierChecks
 
         method.Parameters
             .AsStackEnumerable()
-            .Where(static p => p is { RefKind: RefKind.None, Type.IsRefLikeType: true } && !p.Type.IsSharedMemoryType())
+            .Where(LivenessRecorder.IsTrackedParameter)
             .Select(static ISymbol (p) => p)
             .AddTo(variables);
-    }
-
-    // The control flow graph of the body; none while the body does not bind (being edited), so nothing is reported then
-    private static bool TryCreateControlFlowGraph(KernelBarrierScan scan, [NotNullWhen(true)] out ControlFlowGraph? graph)
-    {
-        graph = null;
-        if (scan.SemanticModel.GetOperation(scan.Method) is not IMethodBodyOperation body)
-        {
-            return false;
-        }
-
-        foreach (var operation in body.Descendants())
-        {
-            if (operation is IInvalidOperation)
-            {
-                return false;
-            }
-        }
-
-        graph = ControlFlowGraph.Create(body);
-        return true;
     }
 
     private static InvocationExpressionSyntax? FindFirstBarrierAfter(KernelBarrierScan scan, int position)

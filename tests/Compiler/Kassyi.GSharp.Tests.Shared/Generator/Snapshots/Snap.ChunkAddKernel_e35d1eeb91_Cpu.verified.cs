@@ -51,25 +51,25 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-int __gsharp_id_6_chunkIdx = blockIdx.x*blockDim.x+threadIdx.x;
-int __gsharp_id_7_start = __gsharp_id_6_chunkIdx*__gsharp_id_5_chunkSize;
+int __gsharp_id_6_chunkIdx = __gsharp_add_i32(__gsharp_mul_i32((int)blockIdx.x,(int)blockDim.x),(int)threadIdx.x);
+int __gsharp_id_7_start = __gsharp_mul_i32(__gsharp_id_6_chunkIdx,__gsharp_id_5_chunkSize);
 if(__gsharp_id_7_start>=__gsharp_id_4_numWords)
 {
 __gsharp_state = -1;return;
 }
-int __gsharp_id_8_end = __gsharp_id_7_start+__gsharp_id_5_chunkSize;
+int __gsharp_id_8_end = __gsharp_add_i32(__gsharp_id_7_start,__gsharp_id_5_chunkSize);
 if(__gsharp_id_8_end>__gsharp_id_4_numWords)
 {
 __gsharp_id_8_end=__gsharp_id_4_numWords;
 }
 unsigned long long __gsharp_id_9_localCarry = 0;
-for(int __gsharp_id_10_i = __gsharp_id_7_start;__gsharp_id_10_i<__gsharp_id_8_end;__gsharp_id_10_i++)
+for(int __gsharp_id_10_i = __gsharp_id_7_start;__gsharp_id_10_i<__gsharp_id_8_end;__gsharp_id_10_i=__gsharp_add_i32(__gsharp_id_10_i,1))
 {
 unsigned long long __gsharp_id_11_current = (unsigned long long)__gsharp_id_0_dA[__gsharp_id_10_i]+(unsigned long long)__gsharp_id_1_dB[__gsharp_id_10_i]+__gsharp_id_9_localCarry;
 __gsharp_id_2_dResult[__gsharp_id_10_i]=(unsigned int)(__gsharp_id_11_current&0xFFFFFFFF);
 __gsharp_id_9_localCarry=__gsharp_id_11_current>>32;
 }
-__gsharp_id_3_carryBuffer[__gsharp_id_6_chunkIdx+1]=(long long)__gsharp_id_9_localCarry;
+__gsharp_id_3_carryBuffer[__gsharp_add_i32(__gsharp_id_6_chunkIdx,1)]=(long long)__gsharp_id_9_localCarry;
 __gsharp_state=-1;
 return;
 }
@@ -150,10 +150,12 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 }
 ";
 public static readonly string ChunkAddKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source +ChunkAddKernel_Source;
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_context_Kassyi__GSharp__Stdlib__GpuMath__BigNum__GpuBigIntKernels__ChunkAddKernel {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
 }
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Stdlib__GpuMath__BigNum__GpuBigIntKernels__ChunkAddKernel(uint[] dA, uint[] dB, uint[] dResult, long[] carryBuffer, int numWords, int chunkSize, __gsharp_context_Kassyi__GSharp__Stdlib__GpuMath__BigNum__GpuBigIntKernels__ChunkAddKernel __gsharp_ctx) {
 {
 switch (__gsharp_ctx.__gsharp_state)

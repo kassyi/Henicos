@@ -33,6 +33,15 @@ public struct SuspendWithBuffer
     public int Tag;
 }
 
+public static class SuspendVector2Extensions
+{
+    [GpuDeviceFunction]
+    public static void AddToX(this ref SuspendVector2 v, float d)
+    {
+        v.X += d;
+    }
+}
+
 /// <summary>
 /// Device functions that suspend after writing into a value parameter (#455). The caller passes the original arguments
 /// again on every resume, so a parameter written through a field, a nested field, an <c>[InlineArray]</c> element, an
@@ -72,6 +81,15 @@ public static partial class SuspendingValueParameterKernels
         v.Buffer[index] += 100;
         Gpu.SyncThreads();
         return v.Buffer[index] + v.Tag;
+    }
+
+    // The receiver of a `this ref` extension method is written (#884 review)
+    [GpuDeviceFunction]
+    public static float RefExtensionThenSync(SuspendVector2 v)
+    {
+        v.AddToX(1.0f);
+        Gpu.SyncThreads();
+        return v.X;
     }
 
     [GpuDeviceFunction]
@@ -128,6 +146,15 @@ public static partial class SuspendingValueParameterKernels
         v.X = tid;
         fieldOut[tid] = MutateFieldThenSync(v);
         scalarOut[tid] = MutateScalarThenSync(tid);
+    }
+
+    [GpuKernel]
+    public static void RefExtensionWriteKernel(float[] output)
+    {
+        int tid = ThreadIndex.X;
+        SuspendVector2 v = default;
+        v.X = tid;
+        output[tid] = RefExtensionThenSync(v);
     }
 
     [GpuKernel]

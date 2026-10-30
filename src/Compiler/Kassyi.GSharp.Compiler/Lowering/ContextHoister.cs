@@ -1,23 +1,23 @@
 namespace Kassyi.GSharp.Compiler.Lowering;
 
 /// <summary>Hoists local variables that cross execution barriers into a shared context struct.</summary>
-/// <param name="copiedParameters">Parameters that live in the frame of a device function (see <see cref="LoweredStateMachine.CopiedParameters"/>).</param>
+/// <param name="copiedParameters">Parameters that live in the frame of the method (see <see cref="LoweredStateMachine.CopiedParameters"/>).</param>
 /// <param name="semanticModel">
 /// The semantic model of the method's syntax tree, used to key hoisted declarations and references by symbol and region
 /// (<see cref="DeclarationKey"/>). When <see langword="null"/>, declarations and references are matched by name and region.
 /// </param>
-/// <param name="deviceFunction">
-/// The device function that owns the body. With a semantic model, only references to its own parameters are rewritten
-/// to the frame copies of <paramref name="copiedParameters"/>.
+/// <param name="method">
+/// The kernel or device function that owns the body. With a semantic model, only references to its own parameters are
+/// rewritten to the frame copies of <paramref name="copiedParameters"/>.
 /// </param>
 /// <remarks>
-/// A local used after a label of the user that starts a state (<see cref="StateLabelPlanner"/>), in another state than
-/// its declaration, lives in the context like a local that crosses a barrier.
+/// A local used after a label that starts a state (<see cref="StateLabelPlanner"/>), in another state than its
+/// declaration, lives in the context like a local that crosses a barrier.
 /// </remarks>
 public class ContextHoister(
     IReadOnlyCollection<string>? copiedParameters = null,
     SemanticModel? semanticModel = null,
-    IMethodSymbol? deviceFunction = null)
+    IMethodSymbol? method = null)
     : CSharpSyntaxRewriter
 {
     // The plan that AstLoweringPipeline gives this pass and StateMachineLowerer, or null to make one from the block
@@ -25,12 +25,18 @@ public class ContextHoister(
 
     /// <summary>Creates a hoister that takes the labels that start a state from <paramref name="plan"/>.</summary>
     internal ContextHoister(IReadOnlyCollection<string>? copiedParameters, SemanticModel? semanticModel,
-        IMethodSymbol? deviceFunction, StatePlan plan)
-        : this(copiedParameters, semanticModel, deviceFunction) =>
+        IMethodSymbol? method, StatePlan plan)
+        : this(copiedParameters, semanticModel, method) =>
         _plan = plan;
 
     private readonly HashSet<DeclarationKey> _hoistedVariables = [];
     private readonly HashSet<string> _copiedParameters = [];
+
+    /// <summary>
+    /// Whether the block of the last <see cref="Hoist"/> has a split point. Without one the block is returned as it is, so
+    /// neither its locals nor its copied parameters are moved into the context.
+    /// </summary>
+    internal bool HasSplitPoint { get; private set; }
 
     /// <summary>Analyzes barrier crossings and rewrites variable accesses to point to the hoisted context structure.</summary>
     public (BlockSyntax RewrittenBlock, IReadOnlyList<VariableDeclaratorSyntax> HoistedVariables) Hoist(
@@ -44,7 +50,8 @@ public class ContextHoister(
         var analyzer = new HoistAnalyzer();
         analyzer.Visit(block);
 
-        if (analyzer.BarrierSpans.Count == 0)
+        HasSplitPoint = analyzer.BarrierSpans.Count > 0;
+        if (!HasSplitPoint)
         {
             return (block, hoistedDecls);
         }
@@ -61,7 +68,7 @@ public class ContextHoister(
             barrierStarts[i] = analyzer.BarrierSpans[i].Start;
         }
 
-        var splitLabelStarts = FindSplitUserLabelStarts(block);
+        var splitLabelStarts = FindSplitLabelStarts(block);
         var lastReferenceStarts = splitLabelStarts.Length > 0
             ? FindLastReferenceStarts(block)
             : null;
@@ -127,19 +134,17 @@ public class ContextHoister(
         return (rewrittenBlock, hoistedDecls);
     }
 
-    // [WHY] A label of the user that starts a state ends the case block of its declaration, as a barrier does. Only a
-    // local that is used after such a label moves into the context (as pocl saves only the values used outside their
-    // region); the others stay locals. Lowering's own labels need no check: they appear only around barriers, which the
-    // barrier rule covers.
-    private int[] FindSplitUserLabelStarts(BlockSyntax block)
+    // [WHY] A label that starts a state ends the case block of its declaration, as a barrier does. Only a local that is
+    // used after such a label moves into the context (as pocl saves only the values used outside their region); the
+    // others stay locals. Lowering's own labels count too: a flattened switch starts a state at every section, and C#
+    // lets a section use a local that an earlier section declares after its last barrier (#708, #795).
+    private int[] FindSplitLabelStarts(BlockSyntax block)
     {
         var plan = _plan ?? StateLabelPlanner.Plan(block, semanticModel);
         var starts = ImmutableArray.CreateBuilder<int>();
         foreach (var statement in block.Statements)
         {
-            if (statement is LabeledStatementSyntax labeled &&
-                !LoweringIdentity.IsLoweringLabel(labeled) &&
-                plan.StartsState(labeled))
+            if (statement is LabeledStatementSyntax labeled && plan.StartsState(labeled))
             {
                 starts.Add(labeled.SpanStart);
             }
@@ -342,9 +347,9 @@ public class ContextHoister(
         // [WHY] Only the lowered method's own parameter lives in the frame. A parameter of the same name that belongs
         // to a lambda, a local function or a body that an expansion copied in (an inlined iterator) stays a plain
         // reference.
-        return deviceFunction != null &&
+        return method != null &&
                key.Symbol is IParameterSymbol parameter &&
-               parameter.ContainingSymbol.OriginalDefinition.IsEqualTo(deviceFunction.OriginalDefinition);
+               parameter.ContainingSymbol.OriginalDefinition.IsEqualTo(method.OriginalDefinition);
     }
 
     // [WHY] The member name keeps the original span of the replaced node, so that the transpiler resolves it to the

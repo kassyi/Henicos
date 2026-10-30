@@ -53,9 +53,9 @@ __gsharp_switch_1_state_0:
 {
 int __gsharp_id_1_sum = 0;
 #pragma unroll
-for(int __gsharp_id_2_i = 0;__gsharp_id_2_i<4;__gsharp_id_2_i++)
+for(int __gsharp_id_2_i = 0;__gsharp_id_2_i<4;__gsharp_id_2_i=__gsharp_add_i32(__gsharp_id_2_i,1))
 {
-__gsharp_id_1_sum+=__gsharp_id_2_i+1;
+__gsharp_id_1_sum=__gsharp_add_i32(__gsharp_id_1_sum,__gsharp_add_i32(__gsharp_id_2_i,1));
 }
 __gsharp_id_0_data[0]=__gsharp_id_1_sum;
 __gsharp_state=-1;
@@ -138,10 +138,12 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 }
 ";
 public static readonly string LoopUnrollForKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source +LoopUnrollForKernel_Source;
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__LoopUnrollKernels__LoopUnrollForKernel {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
 }
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__LoopUnrollKernels__LoopUnrollForKernel(int[] data, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__LoopUnrollKernels__LoopUnrollForKernel __gsharp_ctx) {
 {
 switch (__gsharp_ctx.__gsharp_state)
@@ -301,9 +303,9 @@ __gsharp_switch_1_state_0:
 {
 int __gsharp_id_1_sum = 0;
 #pragma unroll 4
-for(int __gsharp_id_2_i = 0;__gsharp_id_2_i<4;__gsharp_id_2_i++)
+for(int __gsharp_id_2_i = 0;__gsharp_id_2_i<4;__gsharp_id_2_i=__gsharp_add_i32(__gsharp_id_2_i,1))
 {
-__gsharp_id_1_sum+=(__gsharp_id_2_i+1)*10;
+__gsharp_id_1_sum=__gsharp_add_i32(__gsharp_id_1_sum,__gsharp_mul_i32(__gsharp_add_i32(__gsharp_id_2_i,1),10));
 }
 __gsharp_id_0_data[0]=__gsharp_id_1_sum;
 __gsharp_state=-1;
@@ -386,10 +388,12 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 }
 ";
 public static readonly string LoopUnrollFactorKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source +LoopUnrollFactorKernel_Source;
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__LoopUnrollKernels__LoopUnrollFactorKernel {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
 }
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__LoopUnrollKernels__LoopUnrollFactorKernel(int[] data, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__LoopUnrollKernels__LoopUnrollFactorKernel __gsharp_ctx) {
 {
 switch (__gsharp_ctx.__gsharp_state)
@@ -552,8 +556,8 @@ int __gsharp_id_2_sum = 0;
 #pragma unroll
 while(__gsharp_id_1_count<3)
 {
-__gsharp_id_2_sum+=5;
-__gsharp_id_1_count++;
+__gsharp_id_2_sum=__gsharp_add_i32(__gsharp_id_2_sum,5);
+__gsharp_id_1_count=__gsharp_add_i32(__gsharp_id_1_count,1);
 }
 __gsharp_id_0_data[0]=__gsharp_id_2_sum;
 __gsharp_state=-1;
@@ -636,10 +640,12 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 }
 ";
 public static readonly string LoopUnrollWhileKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source +LoopUnrollWhileKernel_Source;
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__LoopUnrollKernels__LoopUnrollWhileKernel {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
 }
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__LoopUnrollKernels__LoopUnrollWhileKernel(int[] data, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__LoopUnrollKernels__LoopUnrollWhileKernel __gsharp_ctx) {
 {
 switch (__gsharp_ctx.__gsharp_state)
@@ -800,12 +806,12 @@ case 0:
 __gsharp_switch_1_state_0:
 {
 int __gsharp_id_1_sum = 0;
-for(int __gsharp_id_2_i = 0;__gsharp_id_2_i<2;__gsharp_id_2_i++)
+for(int __gsharp_id_2_i = 0;__gsharp_id_2_i<2;__gsharp_id_2_i=__gsharp_add_i32(__gsharp_id_2_i,1))
 {
 #pragma unroll
-for(int __gsharp_id_3_j = 0;__gsharp_id_3_j<3;__gsharp_id_3_j++)
+for(int __gsharp_id_3_j = 0;__gsharp_id_3_j<3;__gsharp_id_3_j=__gsharp_add_i32(__gsharp_id_3_j,1))
 {
-__gsharp_id_1_sum+=(__gsharp_id_2_i+1)*(__gsharp_id_3_j+1);
+__gsharp_id_1_sum=__gsharp_add_i32(__gsharp_id_1_sum,__gsharp_mul_i32(__gsharp_add_i32(__gsharp_id_2_i,1),__gsharp_add_i32(__gsharp_id_3_j,1)));
 }
 }
 __gsharp_id_0_data[0]=__gsharp_id_1_sum;
@@ -889,10 +895,12 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 }
 ";
 public static readonly string LoopUnrollNestedKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source +LoopUnrollNestedKernel_Source;
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__LoopUnrollKernels__LoopUnrollNestedKernel {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
 }
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__LoopUnrollKernels__LoopUnrollNestedKernel(int[] data, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__LoopUnrollKernels__LoopUnrollNestedKernel __gsharp_ctx) {
 {
 switch (__gsharp_ctx.__gsharp_state)
@@ -1055,9 +1063,9 @@ __gsharp_switch_1_state_0:
 {
 int __gsharp_id_1_sum = 0;
 #pragma unroll
-for(int __gsharp_id_2_i = 0;__gsharp_id_2_i<4;__gsharp_id_2_i++)
+for(int __gsharp_id_2_i = 0;__gsharp_id_2_i<4;__gsharp_id_2_i=__gsharp_add_i32(__gsharp_id_2_i,1))
 {
-__gsharp_id_1_sum+=2;
+__gsharp_id_1_sum=__gsharp_add_i32(__gsharp_id_1_sum,2);
 }
 __gsharp_id_0_data[0]=__gsharp_id_1_sum;
 __gsharp_state=-1;
@@ -1140,10 +1148,12 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 }
 ";
 public static readonly string LoopUnrollSingleStatementKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source +LoopUnrollSingleStatementKernel_Source;
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__LoopUnrollKernels__LoopUnrollSingleStatementKernel {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
 }
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__LoopUnrollKernels__LoopUnrollSingleStatementKernel(int[] data, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__LoopUnrollKernels__LoopUnrollSingleStatementKernel __gsharp_ctx) {
 {
 switch (__gsharp_ctx.__gsharp_state)

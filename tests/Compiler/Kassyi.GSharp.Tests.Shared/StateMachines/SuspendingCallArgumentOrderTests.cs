@@ -101,6 +101,7 @@ public class SuspendingCallArgumentOrderTests
             .DescendantNodes()
             .OfType<MethodDeclarationSyntax>()
             .Single(m => m.Identifier.ValueText == methodName);
-        return AstLoweringPipeline.Lower(method, model);
+        return AstLoweringPipeline.Lower(method, model, model.GetDeclaredSymbol<IMethodSymbol>(method),
+            isDeviceFunction: false);
     }
 }

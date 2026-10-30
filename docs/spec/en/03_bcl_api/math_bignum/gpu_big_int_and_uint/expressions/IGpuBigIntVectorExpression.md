@@ -23,7 +23,8 @@ public interface IGpuBigIntVectorExpression : IDisposable
 
 | Name | Description |
 | --- | --- |
-| [Length](#length) | Gets the number of elements in the vector. |
+| [Capacity](#capacity) | Gets the upper bound of the number of elements, known before evaluation. |
+| [Length](#length) | Gets the number of elements in the vector; throws when it is known only on the device. |
 | [WordsPerElement](#wordsperelement) | Gets the number of 32-bit limbs (words) per element. |
 
 ## Length
@@ -32,6 +33,27 @@ Gets the number of elements in the vector.
 
 ```csharp
 int Length { get; }
+```
+
+#### Exceptions
+
+`InvalidOperationException`<br>
+The number is known only on the device (the expression contains a `Where`). Use `Capacity`, `TryGetLength` or `Count()`.
+
+## Capacity
+
+Gets the upper bound of the number of elements, known before evaluation: the `Length` when it is known on the host, otherwise the length of the input of the `Where`.
+
+```csharp
+int Capacity { get; }
+```
+
+## TryGetLength(out Int32)
+
+Gets the number of elements when it is known on the host without evaluating, as `Enumerable.TryGetNonEnumeratedCount` does. Returns `false` (and 0) when the number is known only on the device.
+
+```csharp
+bool TryGetLength(out int length);
 ```
 
 ## WordsPerElement
@@ -47,6 +69,7 @@ int WordsPerElement { get; }
 | Name | Description |
 | --- | --- |
 | [Evaluate(GpuWorkspace, Int32, Int32?, GpuBigUIntArrayView)](#evaluategpuworkspace-int32-int32-gpubiguintarrayview) | Evaluates the vectorized expression into a new or existing device array, optionally computing a slice. |
+| [TryGetLength(out Int32)](#trygetlengthout-int32) | Gets the number of elements when it is known on the host. |
 
 ## Evaluate(GpuWorkspace, Int32, Int32?, GpuBigUIntArrayView)
 
@@ -72,7 +95,7 @@ The starting element index to evaluate. Defaults to `0`.
 The number of elements to evaluate. If `null`, evaluates to the end of the vector length.
 
 `targetResult` _[GpuBigUIntArrayView](../GpuBigUIntArrayView.md)_<br>
-An optional destination for the evaluated values, with the expression's `WordsPerElement` and at least `elementCount` elements; only the first `elementCount` are written. The default view means none (an array of 0 elements is a target); a `GpuBigUIntArray` converts to a view implicitly. The expression borrows it and never frees it.
+An optional destination for the evaluated values, with the expression's `WordsPerElement` and at least `elementCount` elements; only the first `elementCount` are written. The default view means none (an array of 0 elements is a target); a `GpuBigUIntArray` converts to a view implicitly. The expression borrows it and never frees it. It may share memory with an input (the input array itself, or a shifted view of it): the node then computes into its own result buffers and copies the result into the target.
 
 #### Returns
 

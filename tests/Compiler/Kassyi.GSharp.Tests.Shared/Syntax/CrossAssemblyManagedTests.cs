@@ -56,6 +56,34 @@ public class CrossAssemblyManagedTests : TranspilerTestBase
         Assert.Equal([2, 4, 6, 8], result);
     }
 
+    // The library emits the managed version of AddPair and records it; the managed fallback calls it (#711)
+    [Fact]
+    [Scenario(TestScenario.HappyPath)]
+    public void Test_Managed_AddPair_OperatorMacroOfTheLibrary()
+    {
+        Pair[] pairs = [new() { A = 1, B = 2 }, new() { A = 10, B = 20 }, new() { A = -5, B = 5 }, new() { A = 7, B = 0 }];
+        var result = new int[4];
+        var calls = new int[4];
+
+        ManagedKernelRun.Run(() => CrossAssemblyKernels.LaunchAddPairKernel(pairs, result, calls, blockDimX: 4));
+
+        Assert.Equal([3, 30, 0, 7], result);
+        Assert.Equal([1, 1, 1, 1], calls);
+    }
+
+    // The library's managed version of Difference calls the private target through an [UnsafeAccessor] stub (#711)
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void Test_Managed_Difference_PrivateOperatorMacroTargetOfTheLibrary()
+    {
+        Pair[] pairs = [new() { A = 1, B = 2 }, new() { A = 10, B = 20 }, new() { A = -5, B = 5 }, new() { A = 7, B = 0 }];
+        var result = new int[4];
+
+        ManagedKernelRun.Run(() => CrossAssemblyKernels.LaunchDifferenceKernel(pairs, result, blockDimX: 4));
+
+        Assert.Equal([-1, -10, -10, 7], result);
+    }
+
     [Fact]
     [Scenario(TestScenario.HappyPath)]
     public void Test_Managed_Vec2_ConstructorAndComputedProperty()
@@ -120,6 +148,36 @@ public class CrossAssemblyManagedTests : TranspilerTestBase
         Assert.Equal([7f, 8f, 9f, 10f], particles);
         Assert.Equal([0, 2, 4, -2], scaled);
         Assert.Equal([301, 602, 903, 0], alpha);
+    }
+
+    // The library structs whose layout lives in the metadata tables (#736): Explicit, Pack = 1, Size = 16, a union
+    [Fact]
+    [Scenario(TestScenario.HappyPath)]
+    public void Test_Managed_LayoutOfTheLibraryStructs()
+    {
+        var swapped = new int[] { -1, -1 };
+        var packed = new int[] { -1, -1 };
+        Sized[] sized = [new() { A = 5 }, new() { A = -6 }, new() { A = 7 }, new() { A = int.MaxValue }];
+        var sizedResult = new int[4];
+        float[] values = [1f, -2.5f, 0f, float.MaxValue];
+        var unions = values.Select(static (v, i) => new IntFloatUnion { Value = v, Tag = 100 + i }).ToArray();
+        var bits = new int[4];
+
+        ManagedKernelRun.Run(() =>
+        {
+            CrossAssemblyKernels.LaunchSwapPairKernel(new SwapPair { A = 11, B = 22 }, swapped);
+            CrossAssemblyKernels.LaunchPackedPairKernel(new PackedPair { Tag = 7, Value = 0x01020304 }, packed);
+            CrossAssemblyKernels.LaunchSizedKernel(sized, sizedResult, blockDimX: 4);
+            CrossAssemblyKernels.LaunchIntFloatUnionKernel(unions, bits, blockDimX: 4);
+        });
+
+        Assert.Equal([11, 22], swapped);
+        Assert.Equal([7, 0x01020304], packed);
+        Assert.Equal([5, -6, 7, int.MaxValue], sizedResult);
+        Assert.Equal([0, 10, 20, 30], sized.Select(static d => d.A));
+        Assert.Equal(values.Select(BitConverter.SingleToInt32Bits), bits);
+        Assert.Equal(values.Select(static v => BitConverter.SingleToInt32Bits(-v)), unions.Select(static d => d.Bits));
+        Assert.Equal([100, 101, 102, 103], unions.Select(static d => d.Tag));
     }
 }
 #endif

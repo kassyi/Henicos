@@ -51,7 +51,7 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-int __gsharp_id_6_i = threadIdx.x;
+int __gsharp_id_6_i = (int)threadIdx.x;
 __gsharp_id_0_ints[__gsharp_id_6_i]=1000000;
 __gsharp_id_1_uints[__gsharp_id_6_i]=0xFFFF0000u;
 __gsharp_id_2_longs[__gsharp_id_6_i]=10000000000ll;
@@ -138,10 +138,12 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 }
 ";
 public static readonly string DigitSeparatorKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source +DigitSeparatorKernel_Source;
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__DigitSeparatorLiteralKernels__DigitSeparatorKernel {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
 }
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__DigitSeparatorLiteralKernels__DigitSeparatorKernel(int[] ints, uint[] uints, long[] longs, ulong[] ulongs, float[] floats, double[] doubles, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__DigitSeparatorLiteralKernels__DigitSeparatorKernel __gsharp_ctx) {
 {
 switch (__gsharp_ctx.__gsharp_state)

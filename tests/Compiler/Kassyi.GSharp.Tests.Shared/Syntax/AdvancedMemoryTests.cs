@@ -58,7 +58,8 @@ public class AdvancedMemoryTests : TranspilerTestBase
             nameof(AdvancedMemoryTarget.UnsafeAsPointer), dialect: CurrentDialect);
 
         Assert.Empty(diagnostics);
-        Assert.Contains("int* ptr = (int*)AsPointer(&data[0]);", cudaSource.WithCSharpNames());
+        // The target is not a [GpuKernel], so its array parameter may be null and each read is checked (#706)
+        Assert.Matches(@"int\* ptr = \(int\*\)AsPointer\(&__gsharp_array_at\(data, 0, ""[^""]*""\)\);", cudaSource.WithCSharpNames());
         Assert.Contains("*ptr=777;", cudaSource.WithCSharpNames());
     }
 
@@ -95,11 +96,12 @@ public class AdvancedMemoryTests : TranspilerTestBase
         Assert.Empty(diagnostics);
         if (IsCudaDialect)
         {
-            Assert.Contains("float4 v = vectors[0];", cudaSource.WithCSharpNames());
+            // The target is not a [GpuKernel], so its array parameter may be null and each read is checked (#706)
+            Assert.Matches(@"float4 v = __gsharp_array_at\(vectors, 0, ""[^""]*""\);", cudaSource.WithCSharpNames());
         }
         else
         {
-            Assert.Contains("Kassyi.GSharp.Core.Float4 v = vectors[0];", cudaSource.WithCSharpNames());
+            Assert.Matches(@"Kassyi\.GSharp\.Core\.Float4 v = __gsharp_array_at\(vectors, 0, ""[^""]*""\);", cudaSource.WithCSharpNames());
         }
     }
 

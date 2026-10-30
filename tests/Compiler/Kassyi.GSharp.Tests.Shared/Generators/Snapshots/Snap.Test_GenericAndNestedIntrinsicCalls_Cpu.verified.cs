@@ -37,7 +37,7 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-int __gsharp_id_2_tid = threadIdx.x;
+int __gsharp_id_2_tid = (int)threadIdx.x;
 test_copy_async<int>(&__gsharp_id_0_dst[__gsharp_id_2_tid],&__gsharp_id_1_src[__gsharp_id_2_tid]);
 test_copy_async<int>(&__gsharp_id_0_dst[__gsharp_id_2_tid],&__gsharp_id_1_src[__gsharp_id_2_tid]);
 test_release(__gsharp_id_2_tid);
@@ -45,7 +45,7 @@ test_release(__gsharp_id_2_tid);
 auto&& __gsharp_seq_0 = __gsharp_id_0_dst[__gsharp_id_2_tid];
 auto __gsharp_seq_1 = __gsharp_seq_0;
 auto __gsharp_seq_2 = test_count();
-return __gsharp_seq_0 = (int)(__gsharp_seq_1+__gsharp_seq_2);
+return __gsharp_seq_0 = (int)__gsharp_add_i32(__gsharp_seq_1,__gsharp_seq_2);
 }());
 __gsharp_state=-1;
 return;
@@ -127,10 +127,12 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 }
 ";
 public static readonly string CopyAndReleaseKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source +CopyAndReleaseKernel_Source;
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_context_Kassyi__GSharp__Tests__NativeApi__GenericIntrinsicCallKernels__CopyAndReleaseKernel {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
 }
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__NativeApi__GenericIntrinsicCallKernels__CopyAndReleaseKernel(int[] dst, int[] src, __gsharp_context_Kassyi__GSharp__Tests__NativeApi__GenericIntrinsicCallKernels__CopyAndReleaseKernel __gsharp_ctx) {
 {
 switch (__gsharp_ctx.__gsharp_state)

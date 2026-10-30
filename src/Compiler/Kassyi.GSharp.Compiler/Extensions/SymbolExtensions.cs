@@ -15,6 +15,10 @@ internal static class SymbolExtensions
                 { Name: TypeConstants.SystemNamespace, ContainingNamespace.IsGlobalNamespace: true }
             };
 
+    /// <summary>Whether <paramref name="type"/> is <c>System.Math</c> or <c>System.MathF</c>.</summary>
+    public static bool IsSystemMathType(this ITypeSymbol? type) =>
+        type is { Name: TypeConstants.MathType or TypeConstants.MathFType } && type.ContainingNamespace.IsSystemNamespace();
+
     public static bool IsSystemThreading(this INamespaceSymbol? ns) =>
         ns is
         {
@@ -295,37 +299,6 @@ internal static class SymbolExtensions
                attr.AttributeClass?.ContainingNamespace.IsSystemRuntimeInteropServices() == true;
     }
 
-    /// <summary>Gets a positive [StructLayout(Pack = n)] value; returns false when absent or 0.</summary>
-    public static bool TryGetStructLayoutPack(this INamedTypeSymbol type, out int pack)
-    {
-        // Only the first [StructLayout] counts
-        pack = type.GetAttributes()
-                   .AsStackEnumerable()
-                   .TryFirst(static attr => attr.IsStructLayoutAttribute(), out var layout) &&
-               layout.NamedArguments
-                   .AsStackEnumerable()
-                   .TryFirst(static kvp => kvp is { Key: "Pack", Value.IsNull: false }, out var packArgument) &&
-               packArgument.Value.Value is int p and > 0
-            ? p
-            : 0;
-        return pack > 0;
-    }
-
-    /// <summary>Reads <c>Size</c> from the first <c>[StructLayout]</c> of <paramref name="type"/>, when it is greater than zero.</summary>
-    public static bool TryGetStructLayoutSize(this INamedTypeSymbol type, out int size)
-    {
-        size = type.GetAttributes()
-                   .AsStackEnumerable()
-                   .TryFirst(static attr => attr.IsStructLayoutAttribute(), out var layout) &&
-               layout.NamedArguments
-                   .AsStackEnumerable()
-                   .TryFirst(static kvp => kvp is { Key: "Size", Value.IsNull: false }, out var sizeArgument) &&
-               sizeArgument.Value.Value is int n and > 0
-            ? n
-            : 0;
-        return size > 0;
-    }
-
     /// <summary>
     /// Determines whether the symbol has an attribute matching the specified short name.
     /// </summary>
@@ -409,4 +382,33 @@ internal static class SymbolExtensions
             ? parameters[parameters.Length - 1]
             : null;
     }
+
+    /// <summary>
+    /// Formats a method for diagnostic message text as its name and parameter types, as in
+    /// <c>Shift(ref OverloadCtx, uint[], int)</c>.
+    /// </summary>
+    public static string FormatSignature(this IMethodSymbol method)
+    {
+        var text = new StringBuilder();
+        text.Append(method.Name).Append('(');
+        for (var i = 0; i < method.Parameters.Length; i++)
+        {
+            var parameter = method.Parameters[i];
+            text.Append(i > 0 ? ", " : string.Empty)
+                .Append(parameter.RefKind.FormatRefKind())
+                .Append(IteratorTypeResolver.FormatType(parameter.Type));
+        }
+
+        return text.Append(')').ToString();
+    }
+
+    /// <summary>The modifier of a parameter with <paramref name="refKind"/> in message text, with a trailing space (<c>ref </c>).</summary>
+    public static string FormatRefKind(this RefKind refKind) => refKind switch
+    {
+        RefKind.Ref => "ref ",
+        RefKind.Out => "out ",
+        RefKind.In => "in ",
+        RefKind.RefReadOnlyParameter => "ref readonly ",
+        _ => string.Empty
+    };
 }

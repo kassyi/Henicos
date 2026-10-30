@@ -53,7 +53,7 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-__gsharp_ctx->__gsharp_id_3_tid=threadIdx.x;
+__gsharp_ctx->__gsharp_id_3_tid=(int)threadIdx.x;
 __gsharp_ctx->__gsharp_id_4_shared={ (int*)__gsharp_allocate_smem_static(0x800ff4ae45fcc41eull, (256) * sizeof(int), alignof(int)) };
 __gsharp_ctx->__gsharp_id_4_shared[__gsharp_ctx->__gsharp_id_3_tid]=__gsharp_id_0_input[__gsharp_ctx->__gsharp_id_3_tid];
 if(!(__gsharp_id_2_length<0))
@@ -79,7 +79,7 @@ goto __gsharp_switch_1_state_3;
 case 3:
 __gsharp_switch_1_state_3:
 {
-__gsharp_id_1_output[__gsharp_ctx->__gsharp_id_3_tid]=__gsharp_ctx->__gsharp_id_4_shared[__gsharp_id_2_length-1-__gsharp_ctx->__gsharp_id_3_tid];
+__gsharp_id_1_output[__gsharp_ctx->__gsharp_id_3_tid]=__gsharp_ctx->__gsharp_id_4_shared[__gsharp_sub_i32(__gsharp_sub_i32(__gsharp_id_2_length,1),__gsharp_ctx->__gsharp_id_3_tid)];
 __gsharp_state=-1;
 return;
 }
@@ -160,11 +160,13 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 }
 ";
 public static readonly string ReverseWithElseBarrierKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source +ReverseWithElseBarrierKernel_Source;
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__ElseBarrierKernels__ReverseWithElseBarrierKernel {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
 public int tid;
 }
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__ElseBarrierKernels__ReverseWithElseBarrierKernel(int[] input, int[] output, int length, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__ElseBarrierKernels__ReverseWithElseBarrierKernel __gsharp_ctx) {
 global::Kassyi.GSharp.Core.SharedMemory<int> shared = new(256, 0x800ff4ae45fcc41eUL);
 {

@@ -6,7 +6,10 @@ internal enum MethodEmissionKind
     /// <summary>A kernel entry point.</summary>
     Kernel,
 
-    /// <summary>A device function that never suspends.</summary>
+    /// <summary>
+    /// A device function that never suspends. The managed path runs the user's method, or its managed version when it
+    /// expands an operator macro (<see cref="MethodEmissionPlan.HasManagedVersion"/>).
+    /// </summary>
     DeviceFunction,
 
     /// <summary>
@@ -18,7 +21,7 @@ internal enum MethodEmissionKind
     /// <summary>
     /// A static <c>[GpuDeviceFunction]</c> returning <c>IEnumerable&lt;T&gt;</c> that uses <c>yield</c>. Expanded inline at
     /// each <c>foreach</c> site in device code; emits no standalone device function. The managed path uses the user's C#
-    /// iterator directly.
+    /// iterator directly, or its managed version as for <see cref="DeviceFunction"/>.
     /// </summary>
     Iterator
 }
@@ -50,12 +53,14 @@ internal readonly struct MethodEmissionPlan
     }
 
     // Shared by the copies of the plan (it is passed by value), so the method is lowered once
+    // The owner is the symbol of the declaration, kernel or device function, whose written parameters live in the frame
     private sealed class DeferredLowering(MethodDeclarationSyntax declaration, SemanticModel semanticModel,
-        IMethodSymbol? deviceFunction)
+        IMethodSymbol owner, bool isDeviceFunction)
     {
         private LoweredStateMachine? _lowered;
 
-        public LoweredStateMachine Value => _lowered ??= AstLoweringPipeline.Lower(declaration, semanticModel, deviceFunction);
+        public LoweredStateMachine Value =>
+            _lowered ??= AstLoweringPipeline.Lower(declaration, semanticModel, owner, isDeviceFunction);
     }
 
     public MethodDeclarationSyntax Declaration { get; }
@@ -83,6 +88,15 @@ internal readonly struct MethodEmissionPlan
     /// The method is a <c>[GpuKernel]</c> that returns a value, which each thread writes into the auto result buffer.
     /// </summary>
     public bool HasAutoResult { get; }
+
+    /// <summary>
+    /// The method is a device function that does not suspend and gets a managed version, which the managed bodies G#
+    /// emits call instead of it (<see cref="ManagedVersionAnalysis.HasManagedVersion"/>, #711). The C++ outputs do not
+    /// read it.
+    /// </summary>
+    public bool HasManagedVersion =>
+        Kind is MethodEmissionKind.DeviceFunction or MethodEmissionKind.Iterator && Symbol is { } symbol &&
+        Declaration.HasBody() && ManagedVersionAnalysis.HasManagedVersion(symbol, SemanticModel.Compilation);
 
     /// <summary>The method returns <see langword="void"/>; <see langword="false"/> when it has no symbol.</summary>
     public bool ReturnsVoid => Symbol is { ReturnType.SpecialType: SpecialType.System_Void };
@@ -147,8 +161,9 @@ internal readonly struct MethodEmissionPlan
 
         if (isKernel)
         {
-            var kernelLowering = isGpuKernelEntry && declaration.HasBody()
-                ? new DeferredLowering(declaration, semanticModel, deviceFunction: null)
+            // A kernel entry always has a symbol; the null test only narrows it
+            var kernelLowering = isGpuKernelEntry && symbol != null && declaration.HasBody()
+                ? new DeferredLowering(declaration, semanticModel, symbol, isDeviceFunction: false)
                 : null;
             return new MethodEmissionPlan(declaration, semanticModel, MethodEmissionKind.Kernel, symbol, kernelLowering,
                 isGpuKernelEntry, hasAutoResult);
@@ -170,6 +185,7 @@ internal readonly struct MethodEmissionPlan
         }
 
         return new MethodEmissionPlan(declaration, semanticModel, MethodEmissionKind.SuspendingDeviceFunction, symbol,
-            new DeferredLowering(declaration, semanticModel, symbol), isGpuKernelEntry, hasAutoResult);
+            new DeferredLowering(declaration, semanticModel, symbol, isDeviceFunction: true), isGpuKernelEntry,
+            hasAutoResult);
     }
 }

@@ -5,6 +5,14 @@ namespace Kassyi.GSharp.Compiler.Transpiler;
 /// </summary>
 internal static class ManagedStateMachineEmitter
 {
+    /// <summary>
+    /// The attribute that keeps a generated member out of IntelliSense: the members only the generated managed code
+    /// calls (state machines, their contexts and frames, managed versions) are public when the function is, so a
+    /// library's consumers would see them.
+    /// </summary>
+    public const string EditorBrowsableNever =
+        "[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]";
+
 #pragma warning disable RS0030 // Final emission of a node; the text is not parsed, compared, or edited afterwards
     // Generated code is left-aligned (transpiler-emission §3), so the normalized source has no indentation
     internal static string ToSource(SyntaxNode node) => node.NormalizeWhitespace(indentation: "").ToFullString();
@@ -91,36 +99,38 @@ internal static class ManagedStateMachineEmitter
         string accessibility = "public",
         string memberAccessibility = "public")
     {
-        writer.AppendLine($"{accessibility} class {contextName} {{");
-        writer.AppendLine($"{memberAccessibility} int {GSharpInternalNames.StateMachine.State};");
-        writer.AppendLine($"{memberAccessibility} uint {GSharpInternalNames.StateMachine.WarpExchange};");
-
-        foreach (var parameter in copiedParameters)
+        writer.AppendLine(EditorBrowsableNever);
+        using (writer.Scope($"{accessibility} class {contextName} {{"))
         {
-            writer.Append($"{memberAccessibility} ");
-            writer.AppendCsharpTypeName(parameter.Type);
-            writer.AppendLine($" {parameter.Name.ToCSharpIdentifier()};");
+            writer.AppendLine($"{memberAccessibility} int {GSharpInternalNames.StateMachine.State};");
+            writer.AppendLine($"{memberAccessibility} uint {GSharpInternalNames.StateMachine.WarpExchange};");
+
+            foreach (var parameter in copiedParameters)
+            {
+                writer.Append($"{memberAccessibility} ");
+                writer.AppendCsharpTypeName(parameter.Type);
+                writer.AppendLine($" {parameter.Name.ToCSharpIdentifier()};");
+            }
+
+            foreach (var field in regularFields)
+            {
+                writer.Append($"{memberAccessibility} ");
+                AppendFieldType(writer, field);
+                writer.AppendLine($" {field.Name};");
+            }
+
+            // Each call that may suspend keeps the callee's frame, which is declared in the callee's class
+            for (var i = 0; i < callSites.Count; i++)
+            {
+                var callee = semanticModel.GetSymbol(callSites[i]) as IMethodSymbol
+                             ?? throw new InvalidOperationException(
+                                 "A call that may suspend does not resolve to a device function.");
+                writer.Append("internal ");
+                AppendDeviceFunctionMember(writer, callee, GSharpInternalNames.SuspendingCall.FrameTypePrefix);
+                writer.AppendLine($" {GSharpInternalNames.SuspendingCall.CallFramePrefix}{i} = new();");
+            }
         }
 
-        foreach (var field in regularFields)
-        {
-            writer.Append($"{memberAccessibility} ");
-            AppendFieldType(writer, field);
-            writer.AppendLine($" {field.Name};");
-        }
-
-        // Each call that may suspend keeps the callee's frame, which is declared in the callee's class
-        for (var i = 0; i < callSites.Count; i++)
-        {
-            var callee = semanticModel.GetSymbol(callSites[i]) as IMethodSymbol
-                         ?? throw new InvalidOperationException(
-                             "A call that may suspend does not resolve to a device function.");
-            writer.Append("internal ");
-            AppendDeviceFunctionMember(writer, callee, GSharpInternalNames.SuspendingCall.FrameTypePrefix);
-            writer.AppendLine($" {GSharpInternalNames.SuspendingCall.CallFramePrefix}{i} = new();");
-        }
-
-        writer.AppendLine("}");
         writer.AppendLine();
     }
 
@@ -150,19 +160,22 @@ internal static class ManagedStateMachineEmitter
         string accessibility,
         bool isUnsafe)
     {
+        writer.AppendLine(EditorBrowsableNever);
         AppendDeviceStateMachineSignature(writer, frameName, stateMachineName, methodSymbol, copiedParameters,
             accessibility, isUnsafe);
-        writer.AppendLine(" {");
-        foreach (var localInit in localInits)
+        using (writer.Scope(" {"))
         {
-            AppendResumeLocal(writer, localInit);
+            foreach (var localInit in localInits)
+            {
+                AppendResumeLocal(writer, localInit);
+            }
+
+            AppendCopiedParameterInitialization(writer, copiedParameters);
+            writer.AppendLine(bodySource);
+            writer.AppendLine(
+                "throw new global::System.InvalidOperationException(\"The device function state machine reached an unknown state.\");");
         }
 
-        AppendCopiedParameterInitialization(writer, copiedParameters);
-        writer.AppendLine(bodySource);
-        writer.AppendLine(
-            "throw new global::System.InvalidOperationException(\"The device function state machine reached an unknown state.\");");
-        writer.AppendLine("}");
         writer.AppendLine();
     }
 
@@ -173,7 +186,25 @@ internal static class ManagedStateMachineEmitter
     {
         writer.Append($"{accessibility} static ");
         writer.AppendIf(isUnsafe, "unsafe ");
-        writer.Append($"bool {stateMachineName}(");
+        writer.Append($"bool {stateMachineName}");
+        using (writer.Parentheses())
+        {
+            AppendParameterList(writer, methodSymbol, copiedParameters);
+            writer.Append($"{frameName} {GSharpInternalNames.StateMachine.Context}");
+            if (!methodSymbol.ReturnsVoid)
+            {
+                writer.Append(", ref ");
+                writer.AppendCsharpTypeName(methodSymbol.ReturnType);
+                writer.Append($" {GSharpInternalNames.SuspendingCall.Result}");
+            }
+        }
+    }
+
+    // <ref kind> <type> <name or __gsharp_in_name>, ... (each followed by ", "; the context parameter comes last). A
+    // parameter that the body writes is renamed, because the frame keeps its copy under the plain name
+    private static void AppendParameterList(SourceWriter writer, IMethodSymbol methodSymbol,
+        ImmutableArray<IParameterSymbol> copiedParameters)
+    {
         foreach (var p in methodSymbol.Parameters)
         {
             writer.Append(p.RefKind switch
@@ -185,19 +216,9 @@ internal static class ManagedStateMachineEmitter
             });
             writer.AppendCsharpTypeName(p.Type);
             writer.Append(IsCopied(copiedParameters, p)
-                ? $" {GSharpInternalNames.SuspendingCall.CopiedParameterPrefix}{p.Name}, "
+                ? $" {GSharpInternalNames.StateMachine.CopiedParameterPrefix}{p.Name}, "
                 : $" {p.Name.ToCSharpIdentifier()}, ");
         }
-
-        writer.Append($"{frameName} {GSharpInternalNames.StateMachine.Context}");
-        if (!methodSymbol.ReturnsVoid)
-        {
-            writer.Append(", ref ");
-            writer.AppendCsharpTypeName(methodSymbol.ReturnType);
-            writer.Append($" {GSharpInternalNames.SuspendingCall.Result}");
-        }
-
-        writer.Append(")");
     }
 
     // On the first entry, the parameters the body assigns are copied into the frame; later resumes keep the frame's copy
@@ -214,7 +235,7 @@ internal static class ManagedStateMachineEmitter
             foreach (var parameter in copiedParameters)
             {
                 writer.AppendLine(
-                    $"{GSharpInternalNames.StateMachine.Context}.{parameter.Name.ToCSharpIdentifier()} = {GSharpInternalNames.SuspendingCall.CopiedParameterPrefix}{parameter.Name};");
+                    $"{GSharpInternalNames.StateMachine.Context}.{parameter.Name.ToCSharpIdentifier()} = {GSharpInternalNames.StateMachine.CopiedParameterPrefix}{parameter.Name};");
             }
         }
     }
@@ -230,19 +251,22 @@ internal static class ManagedStateMachineEmitter
         string stateMachineName,
         IMethodSymbol methodSymbol,
         bool hasAutoResult,
+        ImmutableArray<IParameterSymbol> copiedParameters,
         ImmutableArray<ManagedContextField> localInits,
         string bodySource)
     {
-        EmitStateMachineSignature(writer, contextName, stateMachineName, methodSymbol, hasAutoResult);
-        writer.AppendLine(") {");
-
-        foreach (var localInit in localInits)
+        writer.AppendLine(EditorBrowsableNever);
+        EmitStateMachineSignature(writer, contextName, stateMachineName, methodSymbol, hasAutoResult, copiedParameters);
+        using (writer.Scope(" {"))
         {
-            AppendResumeLocal(writer, localInit);
-        }
+            foreach (var localInit in localInits)
+            {
+                AppendResumeLocal(writer, localInit);
+            }
 
-        writer.AppendLine(bodySource);
-        writer.AppendLine("}");
+            AppendCopiedParameterInitialization(writer, copiedParameters);
+            writer.AppendLine(bodySource);
+        }
     }
 
     // Out parameters become ref: a suspended call returns before it assigns them, and resumed calls must keep previous writes
@@ -251,29 +275,20 @@ internal static class ManagedStateMachineEmitter
         string contextName,
         string stateMachineName,
         IMethodSymbol methodSymbol,
-        bool hasAutoResult)
+        bool hasAutoResult,
+        ImmutableArray<IParameterSymbol> copiedParameters)
     {
-        writer.Append($"public static unsafe void {stateMachineName}(");
-        foreach (var p in methodSymbol.Parameters)
+        writer.Append($"public static unsafe void {stateMachineName}");
+        using (writer.Parentheses())
         {
-            writer.Append(p.RefKind switch
+            AppendParameterList(writer, methodSymbol, copiedParameters);
+            writer.Append($"{contextName} {GSharpInternalNames.StateMachine.Context}");
+            if (hasAutoResult)
             {
-                RefKind.Ref or RefKind.Out => "ref ",
-                RefKind.In => "in ",
-                RefKind.RefReadOnlyParameter => "ref readonly ",
-                _ => ""
-            });
-            writer.AppendCsharpTypeName(p.Type);
-            writer.Append($" {p.Name.ToCSharpIdentifier()}, ");
-        }
-
-        writer.Append($"{contextName} {GSharpInternalNames.StateMachine.Context}");
-
-        if (hasAutoResult)
-        {
-            writer.Append(", ref ");
-            writer.AppendCsharpTypeName(methodSymbol.ReturnType);
-            writer.Append(" " + GSharpInternalNames.ReturnValue.Buffer);
+                writer.Append(", ref ");
+                writer.AppendCsharpTypeName(methodSymbol.ReturnType);
+                writer.Append(" " + GSharpInternalNames.ReturnValue.Buffer);
+            }
         }
     }
 }

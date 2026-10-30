@@ -51,16 +51,16 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-int __gsharp_id_4_row = blockIdx.y*blockDim.y+threadIdx.y;
-int __gsharp_id_5_col = blockIdx.x*blockDim.x+threadIdx.x;
+int __gsharp_id_4_row = __gsharp_add_i32(__gsharp_mul_i32((int)blockIdx.y,(int)blockDim.y),(int)threadIdx.y);
+int __gsharp_id_5_col = __gsharp_add_i32(__gsharp_mul_i32((int)blockIdx.x,(int)blockDim.x),(int)threadIdx.x);
 if(__gsharp_id_4_row<__gsharp_id_3_n&&__gsharp_id_5_col<__gsharp_id_3_n)
 {
 float __gsharp_id_6_sum = 0;
-for(int __gsharp_id_7_k = 0;__gsharp_id_7_k<__gsharp_id_3_n;__gsharp_id_7_k++)
+for(int __gsharp_id_7_k = 0;__gsharp_id_7_k<__gsharp_id_3_n;__gsharp_id_7_k=__gsharp_add_i32(__gsharp_id_7_k,1))
 {
-__gsharp_id_6_sum+=__gsharp_id_0_a[__gsharp_id_4_row*__gsharp_id_3_n+__gsharp_id_7_k]*__gsharp_id_1_b[__gsharp_id_7_k*__gsharp_id_3_n+__gsharp_id_5_col];
+__gsharp_id_6_sum+=__gsharp_id_0_a[__gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_4_row,__gsharp_id_3_n),__gsharp_id_7_k)]*__gsharp_id_1_b[__gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_7_k,__gsharp_id_3_n),__gsharp_id_5_col)];
 }
-__gsharp_id_2_c[__gsharp_id_4_row*__gsharp_id_3_n+__gsharp_id_5_col]=__gsharp_id_6_sum;
+__gsharp_id_2_c[__gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_4_row,__gsharp_id_3_n),__gsharp_id_5_col)]=__gsharp_id_6_sum;
 }
 __gsharp_state=-1;
 return;
@@ -142,10 +142,12 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 }
 ";
 public static readonly string MatrixMultiplyStressKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source +MatrixMultiplyStressKernel_Source;
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Runtime__HeavyGpuStressKernels__MatrixMultiplyStressKernel {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
 }
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Runtime__HeavyGpuStressKernels__MatrixMultiplyStressKernel(float[] a, float[] b, float[] c, int n, __gsharp_context_Kassyi__GSharp__Tests__Shared__Runtime__HeavyGpuStressKernels__MatrixMultiplyStressKernel __gsharp_ctx) {
 {
 switch (__gsharp_ctx.__gsharp_state)

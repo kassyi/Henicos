@@ -328,40 +328,4 @@ public static partial class GpuBigIntCmpKernels
             dResult[i] = (dA[i] == 0) ? 1u : 0u;
         });
     }
-
-    [GpuKernel]
-    public static void VectorAnyTrueKernel(uint[] dA, uint[] dResult, int length)
-    {
-        Gpu.GridStrideLoop(length, i =>
-        {
-            uint isTrue = dA[i] != 0 ? 1u : 0u;
-            uint mask = Warp.ActiveMask();
-            for (uint offset = 16; offset > 0; offset /= 2)
-            {
-                isTrue |= Warp.ShuffleDownSync(mask, isTrue, offset);
-            }
-            if ((ThreadIndex.X & 31) == 0 && isTrue != 0)
-            {
-                Gpu.AtomicMax(ref dResult[0], 1);
-            }
-        });
-    }
-
-    [GpuKernel]
-    public static void VectorAllTrueKernel(uint[] dA, uint[] dResult, int length)
-    {
-        Gpu.GridStrideLoop(length, i =>
-        {
-            uint isFalse = dA[i] == 0 ? 1u : 0u;
-            uint mask = Warp.ActiveMask();
-            for (uint offset = 16; offset > 0; offset /= 2)
-            {
-                isFalse |= Warp.ShuffleDownSync(mask, isFalse, offset);
-            }
-            if ((ThreadIndex.X & 31) == 0 && isFalse != 0)
-            {
-                Gpu.AtomicExch(ref dResult[0], 0); // Sets to 0 if any is false
-            }
-        });
-    }
 }

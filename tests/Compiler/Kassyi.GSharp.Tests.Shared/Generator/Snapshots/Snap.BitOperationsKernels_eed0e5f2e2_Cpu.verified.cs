@@ -51,7 +51,7 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-int __gsharp_id_4_tid = threadIdx.x;
+int __gsharp_id_4_tid = (int)threadIdx.x;
 __gsharp_id_2_rotLeftRes[__gsharp_id_4_tid]=__gsharp_rotl32(__gsharp_id_0_val[__gsharp_id_4_tid],__gsharp_id_1_shift[__gsharp_id_4_tid]);
 __gsharp_id_3_rotRightRes[__gsharp_id_4_tid]=__gsharp_rotr32(__gsharp_id_0_val[__gsharp_id_4_tid],__gsharp_id_1_shift[__gsharp_id_4_tid]);
 __gsharp_state=-1;
@@ -134,10 +134,12 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 }
 ";
 public static readonly string Rotate32Kernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source +Rotate32Kernel_Source;
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__BitOperationsKernels__Rotate32Kernel {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
 }
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__BitOperationsKernels__Rotate32Kernel(uint[] val, int[] shift, uint[] rotLeftRes, uint[] rotRightRes, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__BitOperationsKernels__Rotate32Kernel __gsharp_ctx) {
 {
 switch (__gsharp_ctx.__gsharp_state)
@@ -311,7 +313,7 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-int __gsharp_id_4_tid = threadIdx.x;
+int __gsharp_id_4_tid = (int)threadIdx.x;
 __gsharp_id_2_rotLeftRes[__gsharp_id_4_tid]=__gsharp_rotl64(__gsharp_id_0_val[__gsharp_id_4_tid],__gsharp_id_1_shift[__gsharp_id_4_tid]);
 __gsharp_id_3_rotRightRes[__gsharp_id_4_tid]=__gsharp_rotr64(__gsharp_id_0_val[__gsharp_id_4_tid],__gsharp_id_1_shift[__gsharp_id_4_tid]);
 __gsharp_state=-1;
@@ -394,10 +396,12 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 }
 ";
 public static readonly string Rotate64Kernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source +Rotate64Kernel_Source;
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__BitOperationsKernels__Rotate64Kernel {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
 }
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__BitOperationsKernels__Rotate64Kernel(ulong[] val, int[] shift, ulong[] rotLeftRes, ulong[] rotRightRes, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__BitOperationsKernels__Rotate64Kernel __gsharp_ctx) {
 {
 switch (__gsharp_ctx.__gsharp_state)

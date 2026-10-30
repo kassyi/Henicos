@@ -90,6 +90,13 @@ internal sealed class ApiMethodDefinition
     /// <summary>Gets or sets whether the method is declared <c>unsafe</c> (it takes or returns a pointer).</summary>
     public bool IsUnsafe { get; set; }
 
+    /// <summary>
+    /// Gets or sets the member of <c>Kassyi.GSharp.Core</c> that runs an intrinsic on the managed CPU path
+    /// (<c>managed: ManagedAtomics.Add</c>). The stub forwards its arguments to it instead of throwing; the member throws
+    /// <c>GpuOnlyException</c> itself outside a managed launch. <see langword="null"/> for an intrinsic that only throws.
+    /// </summary>
+    public string? ManagedName { get; set; }
+
     public string? Summary { get; set; }
 
     /// <summary>

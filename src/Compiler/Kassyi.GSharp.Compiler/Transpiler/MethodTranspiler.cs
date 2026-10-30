@@ -160,7 +160,8 @@ public static class MethodTranspiler
         }
         else
         {
-            MethodSignatureTranspiler.WriteMethodSignature(in plan, lowered != null, ref context);
+            MethodSignatureTranspiler.WriteMethodSignature(in plan, lowered != null, ref context,
+                lowered?.CopiedParameters);
         }
     }
 
@@ -276,8 +277,15 @@ public static class MethodTranspiler
     internal static string GenerateManagedDeviceFunctionSource(in MethodEmissionPlan plan) =>
         ManagedCSharpTranspiler.GenerateDeviceFunction(in plan);
 
+    /// <summary>
+    /// Transpiles a device function that does not suspend into its managed version (#711): its body rewritten for the
+    /// managed path, under a name of its own.
+    /// </summary>
+    internal static string GenerateManagedVersionSource(in MethodEmissionPlan plan) =>
+        ManagedCSharpTranspiler.GenerateManagedVersion(in plan);
+
     // kernelName is the C# name, used only in internal-error reports. A kernel context also holds the warp exchange of the
-    // thread; a device function frame holds its copied parameters instead and reaches the warp exchange through the root.
+    // thread; a device function frame reaches the warp exchange through the root. Both hold their copied parameters.
     private static void WriteContextStruct(string contextName, string kernelName, LoweredStateMachine lowered,
         in MethodEmissionPlan plan, bool isFrame, ref TranspileContext context)
     {
@@ -291,8 +299,7 @@ public static class MethodTranspiler
 
             foreach (var parameter in plan.GetCopiedParameters(lowered))
             {
-                WriteMember(parameter.Type, CppNameResolver.Resolve(parameter, parameter.Name, context.Emitter.Dialect),
-                    ref context);
+                WriteCopiedParameterMember(parameter, ref context);
             }
 
             foreach (var field in lowered.ContextFields)
@@ -325,6 +332,23 @@ public static class MethodTranspiler
         context.Emitter.Writer.AppendLine($"uint32_t {GSharpInternalNames.StateMachine.WarpShuffleCount} = 0;");
         context.Emitter.Writer.AppendLine($"bool {GSharpInternalNames.StateMachine.YieldedForGridSync} = false;");
         context.Emitter.Writer.AppendLine($"bool {GSharpInternalNames.StateMachine.YieldedForBlockBarrier} = false;");
+    }
+
+    // <parameter type> <name>; typed as the parameter is declared, so that a [GpuReadOnly] array keeps its const
+    // elements and the copy on the first entry compiles
+    private static void WriteCopiedParameterMember(IParameterSymbol parameter, ref TranspileContext context)
+    {
+        var name = CppNameResolver.Resolve(parameter, parameter.Name, context.Emitter.Dialect);
+        if (!parameter.TryGetDeclaringSyntax<ParameterSyntax>(out var syntax))
+        {
+            WriteMember(parameter.Type, name, ref context);
+            return;
+        }
+
+        var type = parameter.Type.UnwrapNullableArrayLike();
+        StructTranspiler.RegisterUsedStructIfApplicable(type, ref context);
+        context.Emitter.Dialect.AppendParameter(ref context, syntax, type, parameter);
+        context.Emitter.Writer.Append(' ').AppendCppName(name).AppendLine(";");
     }
 
     // <type> <name>;
@@ -447,7 +471,7 @@ public static class MethodTranspiler
             {
                 var name = CppNameResolver.Resolve(parameter, parameter.Name, context.Emitter.Dialect);
                 context.Emitter.Writer.Append($"{GSharpInternalNames.StateMachine.Context}->").AppendCppName(name)
-                    .Append($"={GSharpInternalNames.SuspendingCall.CopiedParameterPrefix}").AppendCppName(name)
+                    .Append($"={GSharpInternalNames.StateMachine.CopiedParameterPrefix}").AppendCppName(name)
                     .AppendLine(";");
             }
         }

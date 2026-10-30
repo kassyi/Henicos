@@ -77,8 +77,9 @@ public class DivergentDynamicSharedMemoryDiagnosticsTests
         Assert.All(reported, static d => Assert.Equal(DiagnosticSeverity.Warning, d.Severity));
     }
 
-    // A uniform condition (n > 0), a uniform count (BlockDimension.X), and a fixed-size declaration and a call that
-    // does not reach dynamic shared memory under 'if (tid < 16)'
+    // A uniform condition (n > 0), a uniform count (BlockDimension.X), a fixed-size declaration and a call that does not
+    // reach dynamic shared memory under 'if (tid < 16)', and a declaration after an exhaustive switch expression on the
+    // thread index, whose discard arm every thread takes (#772 second review)
     [Theory]
     [InlineData("Cpu")]
     [InlineData("Cuda")]

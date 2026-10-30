@@ -8,7 +8,29 @@ public interface IGpuBigIntVectorExpression : IDisposable
     /// <summary>
     /// Gets the number of elements in the vector.
     /// </summary>
+    /// <exception cref="InvalidOperationException">
+    /// The number is known only on the device (the expression contains a <c>Where</c>); use <see cref="Capacity"/>,
+    /// <see cref="TryGetLength"/> or <c>Count()</c>.
+    /// </exception>
     int Length { get; }
+
+    /// <summary>
+    /// Gets the upper bound of the number of elements, known before evaluation: the <see cref="Length"/> when it is
+    /// known on the host, otherwise the length of the input of the <c>Where</c>.
+    /// </summary>
+    int Capacity => Length;
+
+    /// <summary>
+    /// Gets the number of elements when it is known on the host without evaluating, as
+    /// <c>Enumerable.TryGetNonEnumeratedCount</c> does.
+    /// </summary>
+    /// <param name="length">The number of elements, or 0 when it is known only on the device.</param>
+    /// <returns><see langword="true"/> when the number is known on the host.</returns>
+    bool TryGetLength(out int length)
+    {
+        length = Length;
+        return true;
+    }
 
     /// <summary>
     /// Gets the number of 32-bit words per element.
@@ -25,7 +47,8 @@ public interface IGpuBigIntVectorExpression : IDisposable
     /// An optional destination for the evaluated values, with the expression's <see cref="WordsPerElement"/> and at least
     /// <paramref name="elementCount"/> elements; only the first <paramref name="elementCount"/> are written. The default
     /// view means none (an array of 0 elements is a target); a <see cref="GpuBigUIntArray"/> converts to a view implicitly. The expression borrows it
-    /// and never frees it.
+    /// and never frees it. It may share memory with an input (the input array itself, or a shifted view of it): the node
+    /// then computes into its own result buffers and copies the result into the target.
     /// </param>
     /// <returns>
     /// A borrowed view of exactly the evaluated length: the node's own result buffers (with the target's values if one

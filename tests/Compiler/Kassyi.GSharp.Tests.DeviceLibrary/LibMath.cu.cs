@@ -11,8 +11,8 @@ public struct Pair
 }
 
 /// <summary>
-/// Two integers in the reverse of the declaration order. A consumer cannot read [StructLayout] and [FieldOffset] of a
-/// type from metadata (Roslyn keeps them as pseudo-attributes), so it predicts A at 0 and B at 4.
+/// Two integers in the reverse of the declaration order. [StructLayout] and [FieldOffset] are pseudo-attributes, which
+/// a consumer reads from the metadata tables, not from the custom attributes (#736).
 /// </summary>
 [StructLayout(LayoutKind.Explicit)]
 public struct SwapPair
@@ -24,12 +24,33 @@ public struct SwapPair
     public int B;
 }
 
-/// <summary>A byte and an integer without padding (5 bytes); a consumer predicts the sequential 8 bytes.</summary>
+/// <summary>A byte and an integer without padding (5 bytes, from Pack = 1 in the metadata).</summary>
 [StructLayout(LayoutKind.Sequential, Pack = 1)]
 public struct PackedPair
 {
     public byte Tag;
     public int Value;
+}
+
+/// <summary>One integer in 16 bytes (StructLayout.Size in the metadata): array elements sit 16 bytes apart (#736).</summary>
+[StructLayout(LayoutKind.Sequential, Size = 16)]
+public struct Sized
+{
+    public int A;
+}
+
+/// <summary>An integer and a float that share their bytes, and a tag after them (8 bytes, #736).</summary>
+[StructLayout(LayoutKind.Explicit)]
+public struct IntFloatUnion
+{
+    [FieldOffset(0)]
+    public int Bits;
+
+    [FieldOffset(0)]
+    public float Value;
+
+    [FieldOffset(4)]
+    public int Tag;
 }
 
 /// <summary>A vector with a constructor and a computed property, which the library's records bring to a consumer.</summary>
@@ -107,6 +128,44 @@ public struct Zeta
     }
 }
 
+/// <summary>The counter that <see cref="LibValue"/>'s operator macro takes as its context.</summary>
+public struct LibCounter
+{
+    public int Calls;
+}
+
+/// <summary>A value whose <c>+</c> is an operator macro of the library.</summary>
+public struct LibValue
+{
+    public int V;
+
+    public LibValue(int v) => V = v;
+
+    [GpuOperatorMacro(typeof(LibMath), nameof(LibMath.AddValues))]
+    public static LibValue operator +(LibValue left, LibValue right) => throw new GpuOnlyException();
+}
+
+/// <summary>A value whose <c>-</c> is an operator macro with a private target of the library.</summary>
+public struct LibSecretValue
+{
+    public int V;
+
+    public LibSecretValue(int v) => V = v;
+
+    [GpuOperatorMacro(typeof(LibSecretOps), "Difference")]
+    public static LibSecretValue operator -(LibSecretValue left, LibSecretValue right) => throw new GpuOnlyException();
+}
+
+/// <summary>Holds the private target of <see cref="LibSecretValue"/>'s <c>-</c>.</summary>
+public static partial class LibSecretOps
+{
+    [GpuDeviceFunction]
+    private static void Difference(ref LibSecretValue result, LibSecretValue left, LibSecretValue right)
+    {
+        result.V = left.V - right.V;
+    }
+}
+
 /// <summary>Device functions that the kernels of another assembly call.</summary>
 public static partial class LibMath
 {
@@ -140,6 +199,42 @@ public static partial class LibMath
     /// <summary>Uses Float3 inside the library only.</summary>
     [GpuDeviceFunction]
     public static float Length3(float x, float y, float z) => Dot3(new Float3(x, y, z));
+
+    /// <summary>The target of <see cref="LibValue"/>'s <c>+</c>.</summary>
+    [GpuDeviceFunction]
+    public static void AddValues(ref LibCounter counter, ref LibValue result, LibValue left, LibValue right)
+    {
+        result.V = left.V + right.V;
+        counter.Calls = counter.Calls + 1;
+    }
+
+    /// <summary>
+    /// Adds the pair through the operator macro (#711): the library emits the managed version that a consumer's managed
+    /// fallback calls.
+    /// </summary>
+    [GpuDeviceFunction]
+    public static int AddPair(ref LibCounter counter, Pair pair)
+    {
+        LibValue a = new LibValue(pair.A);
+        LibValue b = new LibValue(pair.B);
+        LibValue c = new LibValue(0);
+        c = a + b;
+        return c.V;
+    }
+
+    /// <summary>
+    /// Subtracts through an operator macro whose target is private to another class of the library: the library's managed
+    /// version calls the target through an [UnsafeAccessor] stub (#711).
+    /// </summary>
+    [GpuDeviceFunction]
+    public static int Difference(Pair pair)
+    {
+        LibSecretValue a = new LibSecretValue(pair.A);
+        LibSecretValue b = new LibSecretValue(pair.B);
+        LibSecretValue c = new LibSecretValue(0);
+        c = a - b;
+        return c.V;
+    }
 
     /// <summary>Writes the value, waits for the block, and reads the next thread's value (two barriers).</summary>
     [GpuDeviceFunction]
