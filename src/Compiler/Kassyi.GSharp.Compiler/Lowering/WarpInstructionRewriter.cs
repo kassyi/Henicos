@@ -168,7 +168,7 @@ public class WarpInstructionRewriter(SemanticModel? semanticModel = null) : CSha
             for (var i = 0; i < arguments.Count; i++)
             {
                 var argument = arguments[i];
-                var spilled = SpillArgument(argument, IsWrittenByLaterArgument(arguments, i));
+                var spilled = SpillArgument(arguments, i);
                 changed |= spilled != argument;
                 spilledArguments.Add(spilled);
             }
@@ -179,18 +179,21 @@ public class WarpInstructionRewriter(SemanticModel? semanticModel = null) : CSha
                 : call;
         }
 
-        // [WHY] C# reads an argument before it evaluates the next one, but an identifier argument that is not spilled is
-        // read at the call, after the spilled later arguments: one whose variable a later argument writes
-        // ('S(a, Next(ref a))') is spilled as well, so that it keeps the value C# reads (#608).
-        private bool IsWrittenByLaterArgument(SeparatedSyntaxList<ArgumentSyntax> arguments, int index)
-        {
-            var argument = arguments[index];
-            if (argument.Expression is not IdentifierNameSyntax identifier ||
-                !argument.RefKindKeyword.IsKind(SyntaxKind.None))
-            {
-                return false;
-            }
+        // [WHY] An argument, or an index that selects a ref argument, can stay where it stands only when it has no side
+        // effect and the same value before and after the arguments that follow it: those are spilled and run before the
+        // call, while what stays is read at the call. This is the one rule for both (#788 review).
+        private bool CanStayInPlace(ExpressionSyntax expression, SeparatedSyntaxList<ArgumentSyntax> arguments,
+            int index) =>
+            expression is LiteralExpressionSyntax ||
+            (expression is IdentifierNameSyntax identifier && !IsWrittenByLaterArgument(identifier, arguments, index)) ||
+            IsConstant(expression);
 
+        // [WHY] C# reads an argument before it evaluates the next one, but an identifier that is not spilled is read at
+        // the call, after the spilled later arguments: one whose variable a later argument writes ('S(a, Next(ref a))',
+        // 'S(ref a[i], i++)') is spilled as well, so that it keeps the value C# reads (#608).
+        private bool IsWrittenByLaterArgument(IdentifierNameSyntax identifier,
+            SeparatedSyntaxList<ArgumentSyntax> arguments, int index)
+        {
             var model = parent._semanticModel;
             if (model == null)
             {
@@ -232,8 +235,9 @@ public class WarpInstructionRewriter(SemanticModel? semanticModel = null) : CSha
         private static bool IsNamed(ExpressionSyntax expression, string name) =>
             expression is IdentifierNameSyntax identifier && identifier.Identifier.ValueText == name;
 
-        private ArgumentSyntax SpillArgument(ArgumentSyntax argument, bool isWrittenLater)
+        private ArgumentSyntax SpillArgument(SeparatedSyntaxList<ArgumentSyntax> arguments, int index)
         {
+            var argument = arguments[index];
             if (argument.Expression is DeclarationExpressionSyntax
                 {
                     Designation: SingleVariableDesignationSyntax designation
@@ -265,13 +269,11 @@ public class WarpInstructionRewriter(SemanticModel? semanticModel = null) : CSha
             {
                 // The reference itself must stay a variable, so only the indices that select it are evaluated once
                 return argument.Expression is ElementAccessExpressionSyntax elementAccess
-                    ? argument.WithExpression(SpillIndices(elementAccess))
+                    ? argument.WithExpression(SpillIndices(elementAccess, arguments, index))
                     : argument;
             }
 
-            return argument.Expression is LiteralExpressionSyntax ||
-                   (argument.Expression is IdentifierNameSyntax && !isWrittenLater) ||
-                   IsConstant(argument.Expression)
+            return CanStayInPlace(argument.Expression, arguments, index)
                 ? argument
                 : argument.WithExpression(Spill(argument.Expression));
         }
@@ -281,20 +283,22 @@ public class WarpInstructionRewriter(SemanticModel? semanticModel = null) : CSha
         private bool IsConstant(ExpressionSyntax expression) =>
             parent._semanticModel is { } model && model.GetSafeConstantValue(expression).HasValue;
 
-        private ElementAccessExpressionSyntax SpillIndices(ElementAccessExpressionSyntax elementAccess)
+        // index is the position of the ref argument that the element access is, among the arguments of the call
+        private ElementAccessExpressionSyntax SpillIndices(ElementAccessExpressionSyntax elementAccess,
+            SeparatedSyntaxList<ArgumentSyntax> arguments, int index)
         {
             // Outer indices of a jagged access are evaluated before inner ones, so the receiver is spilled first
             var receiver = elementAccess.Expression is ElementAccessExpressionSyntax inner
-                ? SpillIndices(inner)
+                ? SpillIndices(inner, arguments, index)
                 : elementAccess.Expression;
 
             var indices = elementAccess.ArgumentList.Arguments;
             var spilledIndices = ImmutableArray.CreateBuilder<ArgumentSyntax>(indices.Count);
-            foreach (var index in indices)
+            foreach (var elementIndex in indices)
             {
-                spilledIndices.Add(index.Expression is IdentifierNameSyntax or LiteralExpressionSyntax
-                    ? index
-                    : index.WithExpression(Spill(index.Expression)));
+                spilledIndices.Add(CanStayInPlace(elementIndex.Expression, arguments, index)
+                    ? elementIndex
+                    : elementIndex.WithExpression(Spill(elementIndex.Expression)));
             }
 
             return elementAccess

@@ -53,8 +53,9 @@ internal static class HoistedFieldTypeResolver
         throw new InvalidOperationException(BuildErrorMessage(field, semanticModel, kernelName, declaredSymbol, type1, type2));
     }
 
-    // [WHY] An argument temporary holds the value the callee receives: 'Half / 2' passed to a uint parameter is a uint
-    // there, though its own type is int, and an int field would not convert implicitly the way the constant did (#788)
+    // [WHY] An argument temporary holds the value the callee receives, converted to the parameter type: a target-typed
+    // 'flag != 0 ? i : u' (int and uint) has no type of its own and is a long for a long parameter, and an int
+    // expression passed to a long parameter is a long there (#788)
     private static ITypeSymbol? GetInitializerType(VariableDeclaratorSyntax field, ExpressionSyntax initializer,
         SemanticModel semanticModel) =>
         field.HasAnnotations(LoweringAnnotations.ArgumentTempAnnotationKind) &&

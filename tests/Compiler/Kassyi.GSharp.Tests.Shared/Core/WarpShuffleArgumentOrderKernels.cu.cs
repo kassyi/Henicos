@@ -92,4 +92,39 @@ public static partial class WarpShuffleArgumentOrderKernels
         rounds[ThreadIndex.X] = n;
         afterV[ThreadIndex.X] = v;
     }
+
+    // int / uint has no natural type: the conditional takes the parameter type (long; float for the shuffle overload),
+    // so the spilled temporary has the converted type, not one of its own
+    [GpuKernel]
+    public static void TargetTypedArgumentKernel(long[] viaCall, float[] viaShuffle, int flag)
+    {
+        int i = ThreadIndex.X + 1;
+        uint u = (uint)ThreadIndex.X + 100u;
+        viaCall[ThreadIndex.X] = WaitAndReturn(flag != 0 ? i : u);
+        viaShuffle[ThreadIndex.X] = Warp.ShuffleSync(0xFFFFFFFFu, flag != 0 ? i : u, 1);
+    }
+
+    [GpuDeviceFunction]
+    private static long WaitAndReturn(long x)
+    {
+        Gpu.SyncThreads();
+        return x;
+    }
+
+    // The index of a ref argument is read before the later argument increments it: C# selects data[i] with the old i,
+    // although the suspending call runs after i++ was evaluated
+    [GpuKernel]
+    public static void RefElementIndexWrittenLaterKernel(int[] data, int[] afterI)
+    {
+        int i = ThreadIndex.X * 2;
+        AddAfterBarrier(ref data[i], i++);
+        afterI[ThreadIndex.X] = i;
+    }
+
+    [GpuDeviceFunction]
+    private static void AddAfterBarrier(ref int target, int value)
+    {
+        Gpu.SyncThreads();
+        target += value + 1000;
+    }
 }
