@@ -169,6 +169,14 @@ internal readonly record struct KernelParameterShape
     /// </summary>
     public bool HasArrayFields { get; init; }
 
+    /// <summary>
+    /// <c>AotContexts.HoldsArray_{key}</c> of a user struct with <see cref="HasArrayFields"/>, or of the element of an
+    /// array-like parameter whose element the CPU launcher converts and has array fields, otherwise
+    /// <see langword="null"/>: the CPU method that tells whether the argument (or any of its elements) holds a given
+    /// array in a field.
+    /// </summary>
+    public string? CpuHoldsArrayMethodName { get; init; }
+
     /// <summary>How the parameter crosses to the CUDA device.</summary>
     public ParameterTransfer Cuda { get; init; }
 
@@ -309,6 +317,8 @@ internal readonly record struct KernelParameterShape
         // A user struct wins over by-reference: ref MyStruct goes through the native shadow struct as well
         if (TypeLayoutCalculator.IsUserStruct(marshaledType))
         {
+            var hasArrayFields = marshaledType is INamedTypeSymbol named &&
+                TypeLayoutCalculator.TryFindArrayField(named, out _);
             return shape with
             {
                 Kind = KernelParameterKind.CustomStruct,
@@ -316,8 +326,8 @@ internal readonly record struct KernelParameterShape
                 MarshalMethodName = AotHostNames.GetQualifiedMarshalMethodName(marshaledType),
                 UnmarshalMethodName = AotHostNames.GetQualifiedUnmarshalMethodName(marshaledType),
                 BufferElementTypeName = shape.IsByRef ? GetBufferElementTypeName(parameter.Type) : null,
-                HasArrayFields = marshaledType is INamedTypeSymbol named &&
-                    TypeLayoutCalculator.TryFindArrayField(named, out _),
+                HasArrayFields = hasArrayFields,
+                CpuHoldsArrayMethodName = hasArrayFields ? AotHostNames.GetQualifiedHoldsArrayMethodName(marshaledType) : null,
                 Cuda = ParameterTransfer.Create(marshaledType, HostDialects.Cuda),
                 Cpu = ParameterTransfer.Create(marshaledType, HostDialects.Cpu)
             };
@@ -325,14 +335,18 @@ internal readonly record struct KernelParameterShape
 
         if (marshaledType.TryGetArrayLikeElementType(out var elementType))
         {
+            var cpu = ParameterTransfer.Create(marshaledType, HostDialects.Cpu);
             return shape with
             {
                 Kind = KernelParameterKind.Array,
                 Container = GetContainer(marshaledType),
                 ElementTypeName = elementType.GetFullyQualifiedCsharpName(),
                 BufferElementTypeName = GetBufferElementTypeName(elementType),
+                CpuHoldsArrayMethodName = cpu.ConvertedElementHasArrayFields
+                    ? AotHostNames.GetQualifiedHoldsArrayMethodName(elementType)
+                    : null,
                 Cuda = ParameterTransfer.Create(marshaledType, HostDialects.Cuda),
-                Cpu = ParameterTransfer.Create(marshaledType, HostDialects.Cpu)
+                Cpu = cpu
             };
         }
 

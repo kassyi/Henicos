@@ -202,7 +202,6 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 WarmupFunctionPointerGenericIntFirstKernel();
 IntPtr hfunc = s_hfunc_GenericIntFirstKernel!.Value;
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "StructReproKernels.GenericIntFirstKernel");
-var __gsharp_device_arrays = new global::Kassyi.GSharp.Runtime.Interop.DeviceArrayRegions();
 IntPtr d_ints = IntPtr.Zero;
 IntPtr d_floats = IntPtr.Zero;
 try
@@ -215,15 +214,11 @@ proxy_ints[0] = IntPtr.Zero;
 ((int*)(proxy_ints + 1))[0] = ints.Length;
 if (ints_size > 0)
 {
-if (!__gsharp_device_arrays.TryGetRegion(ints, out d_ints))
-{
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_ints, (IntPtr)ints_size, hStream));
-__gsharp_device_arrays.Add(ints, d_ints);
 fixed (global::System.Int32* p_ints = ints)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoDAsync_v2(d_ints, (IntPtr)p_ints, (IntPtr)ints_size, hStream));
 CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
-}
 }
 proxy_ints[0] = d_ints;
 }
@@ -235,10 +230,13 @@ proxy_floats[0] = IntPtr.Zero;
 ((int*)(proxy_floats + 1))[0] = floats.Length;
 if (floats_size > 0)
 {
-if (!__gsharp_device_arrays.TryGetRegion(floats, out d_floats))
+if (global::System.Object.ReferenceEquals(floats, ints))
+{
+d_floats = d_ints;
+}
+else
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_floats, (IntPtr)floats_size, hStream));
-__gsharp_device_arrays.Add(floats, d_floats);
 fixed (global::System.Single* p_floats = floats)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoDAsync_v2(d_floats, (IntPtr)p_floats, (IntPtr)floats_size, hStream));
@@ -258,7 +256,7 @@ kernelParams,
 IntPtr.Zero // Extra
 ));
 // Copy back array: ints
-if (ints_size > 0 && d_ints != IntPtr.Zero && __gsharp_device_arrays.TryClaimCopyBack(ints))
+if (ints_size > 0 && d_ints != IntPtr.Zero)
 {
 fixed (global::System.Int32* p_ints = ints)
 {
@@ -267,7 +265,7 @@ CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
 }
 }
 // Copy back array: floats
-if (floats_size > 0 && d_floats != IntPtr.Zero && __gsharp_device_arrays.TryClaimCopyBack(floats))
+if (floats_size > 0 && d_floats != IntPtr.Zero && !global::System.Object.ReferenceEquals(floats, ints))
 {
 fixed (global::System.Single* p_floats = floats)
 {
@@ -278,7 +276,8 @@ CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
 }
 finally
 {
-__gsharp_device_arrays.Free(hStream);
+if (d_ints != IntPtr.Zero) CudaDriverApi.cuMemFreeAsync(d_ints, hStream);
+if (d_floats != IntPtr.Zero && d_floats != d_ints) CudaDriverApi.cuMemFreeAsync(d_floats, hStream);
 }
 }
 }
@@ -390,7 +389,6 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 WarmupFunctionPointerGenericFloatFirstKernel();
 IntPtr hfunc = s_hfunc_GenericFloatFirstKernel!.Value;
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "StructReproKernels.GenericFloatFirstKernel");
-var __gsharp_device_arrays = new global::Kassyi.GSharp.Runtime.Interop.DeviceArrayRegions();
 IntPtr d_ints = IntPtr.Zero;
 IntPtr d_floats = IntPtr.Zero;
 try
@@ -403,15 +401,11 @@ proxy_ints[0] = IntPtr.Zero;
 ((int*)(proxy_ints + 1))[0] = ints.Length;
 if (ints_size > 0)
 {
-if (!__gsharp_device_arrays.TryGetRegion(ints, out d_ints))
-{
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_ints, (IntPtr)ints_size, hStream));
-__gsharp_device_arrays.Add(ints, d_ints);
 fixed (global::System.Int32* p_ints = ints)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoDAsync_v2(d_ints, (IntPtr)p_ints, (IntPtr)ints_size, hStream));
 CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
-}
 }
 proxy_ints[0] = d_ints;
 }
@@ -423,10 +417,13 @@ proxy_floats[0] = IntPtr.Zero;
 ((int*)(proxy_floats + 1))[0] = floats.Length;
 if (floats_size > 0)
 {
-if (!__gsharp_device_arrays.TryGetRegion(floats, out d_floats))
+if (global::System.Object.ReferenceEquals(floats, ints))
+{
+d_floats = d_ints;
+}
+else
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_floats, (IntPtr)floats_size, hStream));
-__gsharp_device_arrays.Add(floats, d_floats);
 fixed (global::System.Single* p_floats = floats)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoDAsync_v2(d_floats, (IntPtr)p_floats, (IntPtr)floats_size, hStream));
@@ -446,7 +443,7 @@ kernelParams,
 IntPtr.Zero // Extra
 ));
 // Copy back array: ints
-if (ints_size > 0 && d_ints != IntPtr.Zero && __gsharp_device_arrays.TryClaimCopyBack(ints))
+if (ints_size > 0 && d_ints != IntPtr.Zero)
 {
 fixed (global::System.Int32* p_ints = ints)
 {
@@ -455,7 +452,7 @@ CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
 }
 }
 // Copy back array: floats
-if (floats_size > 0 && d_floats != IntPtr.Zero && __gsharp_device_arrays.TryClaimCopyBack(floats))
+if (floats_size > 0 && d_floats != IntPtr.Zero && !global::System.Object.ReferenceEquals(floats, ints))
 {
 fixed (global::System.Single* p_floats = floats)
 {
@@ -466,7 +463,8 @@ CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
 }
 finally
 {
-__gsharp_device_arrays.Free(hStream);
+if (d_ints != IntPtr.Zero) CudaDriverApi.cuMemFreeAsync(d_ints, hStream);
+if (d_floats != IntPtr.Zero && d_floats != d_ints) CudaDriverApi.cuMemFreeAsync(d_floats, hStream);
 }
 }
 }
@@ -612,7 +610,6 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 WarmupFunctionPointerGenericNestedKernel();
 IntPtr hfunc = s_hfunc_GenericNestedKernel!.Value;
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "StructReproKernels.GenericNestedKernel");
-var __gsharp_device_arrays = new global::Kassyi.GSharp.Runtime.Interop.DeviceArrayRegions();
 IntPtr d_ints = IntPtr.Zero;
 IntPtr d_floats = IntPtr.Zero;
 try
@@ -625,15 +622,11 @@ proxy_ints[0] = IntPtr.Zero;
 ((int*)(proxy_ints + 1))[0] = ints.Length;
 if (ints_size > 0)
 {
-if (!__gsharp_device_arrays.TryGetRegion(ints, out d_ints))
-{
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_ints, (IntPtr)ints_size, hStream));
-__gsharp_device_arrays.Add(ints, d_ints);
 fixed (global::System.Int32* p_ints = ints)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoDAsync_v2(d_ints, (IntPtr)p_ints, (IntPtr)ints_size, hStream));
 CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
-}
 }
 proxy_ints[0] = d_ints;
 }
@@ -645,10 +638,13 @@ proxy_floats[0] = IntPtr.Zero;
 ((int*)(proxy_floats + 1))[0] = floats.Length;
 if (floats_size > 0)
 {
-if (!__gsharp_device_arrays.TryGetRegion(floats, out d_floats))
+if (global::System.Object.ReferenceEquals(floats, ints))
+{
+d_floats = d_ints;
+}
+else
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_floats, (IntPtr)floats_size, hStream));
-__gsharp_device_arrays.Add(floats, d_floats);
 fixed (global::System.Single* p_floats = floats)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoDAsync_v2(d_floats, (IntPtr)p_floats, (IntPtr)floats_size, hStream));
@@ -668,7 +664,7 @@ kernelParams,
 IntPtr.Zero // Extra
 ));
 // Copy back array: ints
-if (ints_size > 0 && d_ints != IntPtr.Zero && __gsharp_device_arrays.TryClaimCopyBack(ints))
+if (ints_size > 0 && d_ints != IntPtr.Zero)
 {
 fixed (global::System.Int32* p_ints = ints)
 {
@@ -677,7 +673,7 @@ CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
 }
 }
 // Copy back array: floats
-if (floats_size > 0 && d_floats != IntPtr.Zero && __gsharp_device_arrays.TryClaimCopyBack(floats))
+if (floats_size > 0 && d_floats != IntPtr.Zero && !global::System.Object.ReferenceEquals(floats, ints))
 {
 fixed (global::System.Single* p_floats = floats)
 {
@@ -688,7 +684,8 @@ CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
 }
 finally
 {
-__gsharp_device_arrays.Free(hStream);
+if (d_ints != IntPtr.Zero) CudaDriverApi.cuMemFreeAsync(d_ints, hStream);
+if (d_floats != IntPtr.Zero && d_floats != d_ints) CudaDriverApi.cuMemFreeAsync(d_floats, hStream);
 }
 }
 }
@@ -796,7 +793,6 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 WarmupFunctionPointerGenericArrayFieldKernel();
 IntPtr hfunc = s_hfunc_GenericArrayFieldKernel!.Value;
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "StructReproKernels.GenericArrayFieldKernel");
-var __gsharp_device_arrays = new global::Kassyi.GSharp.Runtime.Interop.DeviceArrayRegions();
 IntPtr d_ints = IntPtr.Zero;
 IntPtr d_floats = IntPtr.Zero;
 try
@@ -809,15 +805,11 @@ proxy_ints[0] = IntPtr.Zero;
 ((int*)(proxy_ints + 1))[0] = ints.Length;
 if (ints_size > 0)
 {
-if (!__gsharp_device_arrays.TryGetRegion(ints, out d_ints))
-{
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_ints, (IntPtr)ints_size, hStream));
-__gsharp_device_arrays.Add(ints, d_ints);
 fixed (global::System.Int32* p_ints = ints)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoDAsync_v2(d_ints, (IntPtr)p_ints, (IntPtr)ints_size, hStream));
 CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
-}
 }
 proxy_ints[0] = d_ints;
 }
@@ -829,10 +821,13 @@ proxy_floats[0] = IntPtr.Zero;
 ((int*)(proxy_floats + 1))[0] = floats.Length;
 if (floats_size > 0)
 {
-if (!__gsharp_device_arrays.TryGetRegion(floats, out d_floats))
+if (global::System.Object.ReferenceEquals(floats, ints))
+{
+d_floats = d_ints;
+}
+else
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_floats, (IntPtr)floats_size, hStream));
-__gsharp_device_arrays.Add(floats, d_floats);
 fixed (global::System.Single* p_floats = floats)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoDAsync_v2(d_floats, (IntPtr)p_floats, (IntPtr)floats_size, hStream));
@@ -852,7 +847,7 @@ kernelParams,
 IntPtr.Zero // Extra
 ));
 // Copy back array: ints
-if (ints_size > 0 && d_ints != IntPtr.Zero && __gsharp_device_arrays.TryClaimCopyBack(ints))
+if (ints_size > 0 && d_ints != IntPtr.Zero)
 {
 fixed (global::System.Int32* p_ints = ints)
 {
@@ -861,7 +856,7 @@ CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
 }
 }
 // Copy back array: floats
-if (floats_size > 0 && d_floats != IntPtr.Zero && __gsharp_device_arrays.TryClaimCopyBack(floats))
+if (floats_size > 0 && d_floats != IntPtr.Zero && !global::System.Object.ReferenceEquals(floats, ints))
 {
 fixed (global::System.Single* p_floats = floats)
 {
@@ -872,7 +867,8 @@ CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
 }
 finally
 {
-__gsharp_device_arrays.Free(hStream);
+if (d_ints != IntPtr.Zero) CudaDriverApi.cuMemFreeAsync(d_ints, hStream);
+if (d_floats != IntPtr.Zero && d_floats != d_ints) CudaDriverApi.cuMemFreeAsync(d_floats, hStream);
 }
 }
 }

@@ -77,6 +77,29 @@ if (host.B != null)
 host.B = (global::System.Int32[])host.B.Clone();
 }
 }
+public static bool HoldsArray_SharedArrayPair(global::Kassyi.GSharp.Tests.Shared.Core.SharedArrayPair host, object array)
+{
+if (global::System.Object.ReferenceEquals(host.A, array))
+{
+return true;
+}
+if (global::System.Object.ReferenceEquals(host.B, array))
+{
+return true;
+}
+return false;
+}
+public static bool HoldsArray_SharedArrayPair(System.ReadOnlySpan<global::Kassyi.GSharp.Tests.Shared.Core.SharedArrayPair> items, object array)
+{
+for (int i = 0; i < items.Length; i++)
+{
+if (HoldsArray_SharedArrayPair(items[i], array))
+{
+return true;
+}
+}
+return false;
+}
 [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Explicit, Size = 16)]
 public unsafe partial struct SharedArrayHolder
 {
@@ -105,6 +128,25 @@ if (host.Data != null)
 {
 host.Data = (global::System.Int32[])host.Data.Clone();
 }
+}
+public static bool HoldsArray_SharedArrayHolder(global::Kassyi.GSharp.Tests.Shared.Core.SharedArrayHolder host, object array)
+{
+if (global::System.Object.ReferenceEquals(host.Data, array))
+{
+return true;
+}
+return false;
+}
+public static bool HoldsArray_SharedArrayHolder(System.ReadOnlySpan<global::Kassyi.GSharp.Tests.Shared.Core.SharedArrayHolder> items, object array)
+{
+for (int i = 0; i < items.Length; i++)
+{
+if (HoldsArray_SharedArrayHolder(items[i], array))
+{
+return true;
+}
+}
+return false;
 }
 [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Explicit, Size = 24)]
 public unsafe partial struct ConvertBag
@@ -139,6 +181,25 @@ if (host.Data != null)
 {
 host.Data = (global::System.Int32[])host.Data.Clone();
 }
+}
+public static bool HoldsArray_ConvertBag(global::Kassyi.GSharp.Tests.Shared.Core.ConvertBag host, object array)
+{
+if (global::System.Object.ReferenceEquals(host.Data, array))
+{
+return true;
+}
+return false;
+}
+public static bool HoldsArray_ConvertBag(System.ReadOnlySpan<global::Kassyi.GSharp.Tests.Shared.Core.ConvertBag> items, object array)
+{
+for (int i = 0; i < items.Length; i++)
+{
+if (HoldsArray_ConvertBag(items[i], array))
+{
+return true;
+}
+}
+return false;
 }
 #pragma warning restore CS8500
 }

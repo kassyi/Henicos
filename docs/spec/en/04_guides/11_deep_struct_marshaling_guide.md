@@ -146,7 +146,10 @@ When a kernel accepts a custom struct containing arrays, the G# Source Generator
    Upon kernel completion:
    - `Unmarshal_` copies the device memory of every array field back to its host array via `cuMemcpyDtoHAsync_v2`. An
      array held by several fields is copied back once per field; every copy writes the same bytes. Array arguments
-     that hold one array copy it back once between them (`DeviceArrayRegions.TryClaimCopyBack`).
+     that hold one array copy it back once between them (`DeviceArrayRegions.TryClaimCopyBack`). A launch whose only
+     possible holders are `T[]` arguments has no `DeviceArrayRegions`: each argument compares itself with the arguments
+     marshaled before it (`ReferenceEquals`) and takes the region of the one that holds its array, so most launchers
+     allocate nothing per launch.
    - The launcher then frees every region of the launch once, in its `finally` block, through
      `DeviceArrayRegions.Free`, which calls `cuMemFreeAsync` on the launch stream.
 

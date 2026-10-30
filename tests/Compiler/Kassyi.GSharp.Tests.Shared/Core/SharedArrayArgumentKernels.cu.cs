@@ -16,6 +16,14 @@ public enum SharedArrayTag
     First
 }
 
+/// <summary>An element whose layout the launcher converts (<see cref="LayoutKind.Auto"/>) and that holds no array.</summary>
+[StructLayout(LayoutKind.Auto)]
+public struct SharedArrayAutoElement
+{
+    public byte A;
+    public long B;
+}
+
 public static partial class SharedArrayArgumentKernels
 {
     // C#: when a and b are one array, the write through a is seen through b
@@ -119,6 +127,17 @@ public static partial class SharedArrayArgumentKernels
         }
     }
 
+    // The same with elements that hold no array: the launcher compares the two arguments without a table
+    [GpuKernel]
+    public static void ConvertedNoArrayArgumentsKernel(SharedArrayAutoElement[] first, SharedArrayAutoElement[] second)
+    {
+        if (ThreadIndex.X == 0)
+        {
+            first[0].B = 7;
+            second[1].B = second[0].B + first[0].B;
+        }
+    }
+
     // An [In] int[] and a writable uint[] that are one array ((uint[])(object)x): reference identity ignores the
     // element type, so the [In] argument still sees the write
     [GpuKernel]
@@ -142,6 +161,31 @@ public static partial class SharedArrayArgumentKernels
         }
     }
 
+    // Three arguments where only the first and the last are one array: the third finds the first among the two before
+    // it, and the write through it is seen through the first, while the second keeps its own array
+    [GpuKernel]
+    public static void ThreeArgumentsPartialKernel([In] int[] a, [In] int[] b, int[] w)
+    {
+        if (ThreadIndex.X == 0)
+        {
+            b[1] = 9;
+            w[0] = 5;
+            w[1] = a[0] + b[0];
+        }
+    }
+
+    // An [Out] argument that is one array with the argument before it, next to a third array: the [Out] argument is
+    // marshaled last and takes the region that the first copied in
+    [GpuKernel]
+    public static void OutAmongThreeKernel(int[] a, [Out] int[] o, int[] c)
+    {
+        if (ThreadIndex.X == 0)
+        {
+            o[1] = a[0] + c[0];
+            c[1] = o[1];
+        }
+    }
+
     // Two [In] arguments of different element types that are one array share one copy on the CPU
     [GpuKernel]
     public static void TwoInDifferentTypesKernel([In] int[] first, [In] uint[] second, uint[] result)
@@ -150,6 +194,31 @@ public static partial class SharedArrayArgumentKernels
         {
             first[0] = 9;
             result[0] = second[0];
+        }
+    }
+
+    // An [In] argument and a struct field that are one array: the writes through either are seen through the other, and
+    // the array is copied back through the field. With different arrays, the write through the [In] argument stays on
+    // the device
+    [GpuKernel]
+    public static void InAndFieldKernel([In] int[] input, SharedArrayHolder h)
+    {
+        if (ThreadIndex.X == 0)
+        {
+            input[1] = 9;
+            h.Data[0] = 4;
+            h.Data[1] = input[0] + h.Data[1];
+        }
+    }
+
+    // The same with the array field of an element of a writable converted array
+    [GpuKernel]
+    public static void InAndElementFieldKernel([In] int[] input, ConvertBag[] bags)
+    {
+        if (ThreadIndex.X == 0)
+        {
+            bags[0].Data[0] = 6;
+            bags[0].Data[1] = input[0] + 1;
         }
     }
 }

@@ -1,15 +1,14 @@
 namespace Kassyi.GSharp.Compiler.Marshaling;
 
-using static GSharpInternalNames.Launcher;
-
-/// <summary>Emits the CPU host launch members of a kernel wrapper class: delegate, managed fallback and native call.</summary>
+/// <summary>
+/// Emits the CPU host launch members of a kernel wrapper class: delegate, the copies of <c>[In]</c> arrays
+/// (<see cref="CpuArrayCopyEmitter"/>), managed fallback (<see cref="ManagedFallbackEmitter"/>) and native call.
+/// </summary>
 internal static class CpuHostLaunchEmitter
 {
     private const string PinnedAutoResult = "p_" + GSharpInternalNames.ReturnValue.Buffer;
 
-    // The managed launcher's context slot for the thread currently being stepped.
-    private const string LinearContext =
-        $"{GSharpInternalNames.Launcher.Contexts}[{GSharpInternalNames.Launcher.LinearThreadIndex}]";
+    private const string ReferenceEqualsMethod = ArraySharingPlan.ReferenceEqualsMethod;
 
     /// <summary>Emits the managed source, the delegate declaration and the launch wrapper of one kernel.</summary>
     public static void WriteKernelMembers(SourceWriter writer, in KernelEmission kernel, string assemblyName)
@@ -29,205 +28,19 @@ internal static class CpuHostLaunchEmitter
             WrapperEmitter.WriteOutParameterDefaults(writer, kernel.Host);
             WrapperEmitter.WriteArrayArgumentChecks(writer, kernel.Host);
             WrapperEmitter.WriteAutoResultAllocation(writer, kernel.Host);
-            WriteKernelCopies(writer, kernel.Host);
-            WriteManagedExecutionFallback(writer, kernel.Host, assemblyName);
+            var sharing = ArraySharingPlan.ForCpu(kernel.Host);
+            CpuArrayCopyEmitter.WriteKernelCopies(writer, sharing);
+            WriteDllPath(writer, assemblyName);
+            ManagedFallbackEmitter.WriteManagedExecutionFallback(writer, kernel.Host);
 
             // [WHY] Only the native launcher reads the host bytes as the C++ layout; the managed fallback uses the values
             WrapperEmitter.WriteLayoutGuards(writer, kernel.Host.CpuLayoutGuards, kernel.MemberKey);
             WriteCpuDelegateGetOrCompile(writer, kernel);
-            WriteCpuFixedBlocksAndInvoke(writer, kernel.Host);
+            WriteCpuFixedBlocksAndInvoke(writer, kernel.Host, sharing);
         }
 
         writer.AppendLine("#pragma warning restore CS8500");
     }
-
-    // if (<name> != null) {                                                       (an optional argument only)
-    //   <name> = (<array type>)<name>.Clone();                         (<span>.ToArray() for the other containers)
-    // or, for elements that hold arrays:
-    //   var <name>_copy = <the same copy>; for (...) CopyArrays_<E>(ref <name>_copy[<name>_copyIndex]);
-    //   <name> = <name>_copy;                                          (ImmutableArray.Create(<name>_copy))
-    // }
-    // [WHY] The device gets a copy of an [In] array and never sends it back, and never sends back a read-only container
-    // either, so on the CPU the kernel works on a copy as well (#798; the GPU result is the one to match). A read-only
-    // container is copied only when its elements hold arrays, the one thing a kernel can write through it. The managed
-    // fallback and the native call both take the copy.
-    private static void WriteKernelCopies(SourceWriter writer, in KernelHostModel kernel)
-    {
-        var parameters = kernel.Parameters;
-        for (var i = 0; i < parameters.Length; i++)
-        {
-            var shape = parameters[i];
-            if (!NeedsKernelCopy(shape))
-            {
-                continue;
-            }
-
-            // var <name>_source = <name>;     (an [In] T[] that a later [In] T[] may hold as well, WriteSharedKernelCopy)
-            writer.AppendLineIf(
-                shape.IsSharableArray && HasLaterCopiedHolder(parameters, i),
-                $"var {shape.Name}_source = {shape.Identifier};"
-            );
-
-            if (shape.IsOptional)
-            {
-                writer.AppendLine(shape.IsNullableValue ? $"if ({shape.Identifier}.HasValue)" : $"if ({shape.Identifier} != null)");
-                using (writer.Scope())
-                {
-                    WriteKernelCopyOrShare(writer, parameters, i);
-                }
-            }
-            else
-            {
-                WriteKernelCopyOrShare(writer, parameters, i);
-            }
-        }
-    }
-
-    // Whether the kernel gets a copy of the argument instead of the caller's array (WriteKernelCopies)
-    private static bool NeedsKernelCopy(in KernelParameterShape shape) =>
-        shape.IsArray &&
-        (shape.IsReadOnlyContainer ? shape.Cpu.ConvertedElementCopyArraysMethodName is not null : !shape.CopyOut);
-
-    // Whether two parameters may hold one array: both T[] (KernelParameterShape.IsSharableArray), of any element type,
-    // since the runtime lets one array be an int[] and a uint[], or an enum array and an array of its underlying type
-    private static bool MayHoldSameArray(in KernelParameterShape shape, in KernelParameterShape other) =>
-        shape.IsSharableArray && other.IsSharableArray;
-
-    // Whether <other> may hold the array of <shape> and has the same type, so that one can take the other's shadow
-    private static bool MayShareCopy(in KernelParameterShape shape, in KernelParameterShape other) =>
-        MayHoldSameArray(shape, other) && shape.TypeName == other.TypeName;
-
-    private static bool HasLaterCopiedHolder(EquatableArray<KernelParameterShape> parameters, int index)
-    {
-        for (var k = index + 1; k < parameters.Length; k++)
-        {
-            if (NeedsKernelCopy(parameters[k]) && MayHoldSameArray(parameters[index], parameters[k]))
-            {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    // if (ReferenceEquals(<name>, <earlier [In]>_source)) { <name> = <earlier [In]>; } else if (...) ...
-    // else if (!ReferenceEquals(<name>, <writable holder>) && ...) { <copy> }
-    // [WHY] The CUDA launcher gives every holder of one array one device region, copied back when any holder is
-    // writable (#721). So an [In] array that a writable argument holds as well is not copied (the kernel writes the
-    // caller's array, as the copy back on CUDA does), and [In] arguments that hold one array share one copy.
-    private static void WriteKernelCopyOrShare(SourceWriter writer, EquatableArray<KernelParameterShape> parameters,
-        int index)
-    {
-        var shape = parameters[index];
-        var copyArrays = shape.Cpu.ConvertedElementCopyArraysMethodName;
-        if (!shape.IsSharableArray)
-        {
-            WriteKernelCopy(writer, shape, copyArrays);
-            return;
-        }
-
-        var hasCondition = false;
-        for (var k = 0; k < index; k++)
-        {
-            var earlier = parameters[k];
-            if (!NeedsKernelCopy(earlier) || !MayHoldSameArray(shape, earlier))
-            {
-                continue;
-            }
-
-            writer.AppendLine(
-                $"{(hasCondition ? "else if" : "if")} ({ReferenceEqualsMethod}({shape.Identifier}, {earlier.Name}_source))");
-            using (writer.Scope())
-            {
-                // An array of another element type that is the same object (int[] / uint[]) is cast through object
-                writer.AppendLine(shape.TypeName == earlier.TypeName
-                    ? $"{shape.Identifier} = {earlier.Identifier};"
-                    : $"{shape.Identifier} = ({shape.TypeName})(object){earlier.Identifier};");
-            }
-
-            hasCondition = true;
-        }
-
-        var hasWritableHolder = false;
-        for (var k = 0; k < parameters.Length; k++)
-        {
-            hasWritableHolder |= IsWritableHolder(parameters, index, k);
-        }
-
-        if (hasWritableHolder)
-        {
-            writer.Append(hasCondition ? "else if " : "if ");
-            using (writer.Parentheses())
-            {
-                var first = true;
-                for (var k = 0; k < parameters.Length; k++)
-                {
-                    if (!IsWritableHolder(parameters, index, k))
-                    {
-                        continue;
-                    }
-
-                    writer.AppendIf(!first, " && ");
-                    writer.Append($"!{ReferenceEqualsMethod}({shape.Identifier}, {parameters[k].Identifier})");
-                    first = false;
-                }
-            }
-
-            writer.AppendLine();
-        }
-        else if (hasCondition)
-        {
-            writer.AppendLine("else");
-        }
-        else
-        {
-            WriteKernelCopy(writer, shape, copyArrays);
-            return;
-        }
-
-        using (writer.Scope())
-        {
-            WriteKernelCopy(writer, shape, copyArrays);
-        }
-    }
-
-    private const string ReferenceEqualsMethod = "global::System.Object.ReferenceEquals";
-
-    // Whether parameter <other> is a T[] that the kernel gets uncopied and that may hold the array of <index>
-    private static bool IsWritableHolder(EquatableArray<KernelParameterShape> parameters, int index, int other) =>
-        other != index && !NeedsKernelCopy(parameters[other]) && MayHoldSameArray(parameters[index], parameters[other]);
-
-    private static void WriteKernelCopy(SourceWriter writer, in KernelParameterShape shape, string? copyArrays)
-    {
-        // A read-only container (ImmutableArray among them) is copied only for elements that hold arrays
-        if (copyArrays is null)
-        {
-            writer.Append($"{shape.Identifier} = ");
-            WriteElementsCopy(writer, shape);
-            writer.AppendLine(";");
-            return;
-        }
-
-        var name = shape.Name;
-        writer.Append($"var {name}_copy = ");
-        WriteElementsCopy(writer, shape);
-        writer.AppendLine(";");
-        writer.AppendLine($"for (int {name}_copyIndex = 0; {name}_copyIndex < {name}_copy.Length; {name}_copyIndex++)");
-        using (writer.Scope())
-        {
-            writer.AppendLine($"{copyArrays}(ref {name}_copy[{name}_copyIndex]);");
-        }
-
-        writer.AppendLine(shape.Container == ArrayContainerKind.ImmutableArray
-            ? $"{shape.Identifier} = global::System.Collections.Immutable.ImmutableArray.Create({name}_copy);"
-            : $"{shape.Identifier} = {name}_copy;");
-    }
-
-    // (<array type>)<name>.Clone(), or <span>.ToArray() for the other containers: a new array of the elements
-    private static void WriteElementsCopy(SourceWriter writer, in KernelParameterShape shape) =>
-        writer.Append(shape.Container == ArrayContainerKind.Array
-            ? $"({shape.TypeName}){shape.Identifier}.Clone()"
-            : $"{shape.SpanExpression}.ToArray()");
 
     private static void WriteCpuDelegateDeclaration(SourceWriter writer, in KernelEmission kernel)
     {
@@ -269,26 +82,6 @@ internal static class CpuHostLaunchEmitter
         writer.AppendLine();
     }
 
-    // The managed launcher has the shape of the native one (HostLauncherTranspiler), one method per generated loop:
-    // WriteManagedGridLoop (grid phases) > WriteManagedGridPhase (blocks) > WriteManagedBlock > WriteManagedBarrierRounds
-    // (rounds between barriers) > WriteManagedThreadStep (one thread)
-    private static void WriteManagedExecutionFallback(SourceWriter writer, in KernelHostModel kernel, string assemblyName)
-    {
-        WriteDllPath(writer, assemblyName);
-        writer.AppendLine(
-            "if (global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ShouldUseManagedExecution(dllPath))");
-        using (writer.Scope())
-        {
-            WriteManagedContextAllocation(writer, kernel);
-            WriteManagedGridLoop(writer, kernel);
-            WrapperEmitter.WriteAutoResultReturn(writer, kernel);
-            if (!kernel.ReturnsValue)
-            {
-                writer.AppendLine("return;");
-            }
-        }
-    }
-
     // var dllPath = <the native library of the assembly for this architecture>;
     private static void WriteDllPath(SourceWriter writer, string assemblyName)
     {
@@ -300,290 +93,6 @@ internal static class CpuHostLaunchEmitter
             $"var dllName = $\"Kassyi.GSharp.Kernels_{safeAssemblyName}{{archSuffix}}.dll\";");
         writer.AppendLine(
             "var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);");
-    }
-
-    // The contexts of every thread of the grid, the shared memory of the grid and the barrier waits
-    private static void WriteManagedContextAllocation(SourceWriter writer, in KernelHostModel kernel)
-    {
-        writer.AppendLine($"int {TotalBlocks} = (int)(gridDimX * gridDimY * gridDimZ);");
-        writer.AppendLine($"int {ThreadsPerBlock} = (int)(blockDimX * blockDimY * blockDimZ);");
-        writer.AppendLine($"var {Contexts} = new {kernel.ContextName}[{TotalBlocks} * {ThreadsPerBlock}];");
-        writer.AppendLine($"for (int i = 0; i < {Contexts}.Length; i++)");
-        using (writer.Scope())
-        {
-            writer.AppendLine($"{Contexts}[i] = new {kernel.ContextName}();");
-        }
-
-        // A cooperative kernel's blocks run in grid phases and keep their dynamic shared memory for the grid; the
-        // blocks of any other kernel run to their end one after another and use one array in turn
-        writer.AppendLine(
-            $"global::Kassyi.GSharp.Core.ManagedGpuContext.InitializeGrid({TotalBlocks}, sharedMemBytes, {(kernel.IsCooperative ? "true" : "false")});");
-
-        // A thread that stopped at a block barrier waits there until every thread of its block that has not finished
-        // waits too; in a cooperative kernel, a thread that reached the grid sync waits until the next grid phase (#664)
-        writer.AppendLine($"var threadAtBlockBarrier = new bool[{Contexts}.Length];");
-        if (kernel.IsCooperative)
-        {
-            writer.AppendLine($"var threadAtGridSync = new bool[{Contexts}.Length];");
-        }
-    }
-
-    // bool anyGridActive = true; try { while (anyGridActive) { <grid phase> } } finally { EndGrid(); }
-    private static void WriteManagedGridLoop(SourceWriter writer, in KernelHostModel kernel)
-    {
-        writer.AppendLine("bool anyGridActive = true;");
-        // The dynamic shared memory of the blocks lives for one grid (#544), also when a step throws
-        writer.AppendLine("try");
-        using (writer.Scope())
-        {
-            // Each pass runs every block until its threads reach Gpu.SyncGrid or finish: one grid phase (#664)
-            writer.AppendLine("while (anyGridActive)");
-            using (writer.Scope())
-            {
-                WriteManagedGridPhase(writer, kernel);
-            }
-        }
-
-        writer.AppendLine("finally");
-        using (writer.Scope())
-        {
-            writer.AppendLine("global::Kassyi.GSharp.Core.ManagedGpuContext.EndGrid();");
-        }
-    }
-
-    // One grid phase: every block in turn, then (cooperative) the check that no block finished while others wait
-    private static void WriteManagedGridPhase(SourceWriter writer, in KernelHostModel kernel)
-    {
-        writer.AppendLine("anyGridActive = false;");
-        if (kernel.IsCooperative)
-        {
-            writer.AppendLine("int firstFinishedBlock = -1;");
-            writer.AppendLine("bool anyBlockAtGridSync = false;");
-        }
-
-        writer.AppendLine($"for (int {BlockLoopIndex} = 0; {BlockLoopIndex} < {TotalBlocks}; {BlockLoopIndex}++)");
-        using (writer.Scope())
-        {
-            WriteManagedBlock(writer, kernel);
-        }
-
-        if (kernel.IsCooperative)
-        {
-            // A block that finished while others wait never arrives at the grid sync of the GPU
-            writer.AppendLine("if (anyBlockAtGridSync && firstFinishedBlock >= 0)");
-            using (writer.Scope())
-            {
-                writer.AppendLine(
-                    $"throw global::Kassyi.GSharp.Core.ManagedGpuContext.BlockFinishedAtGridSync({SymbolDisplay.FormatLiteral(kernel.MessageName, quote: true)}, firstFinishedBlock, gridDimX, gridDimY);");
-            }
-        }
-    }
-
-    // One block of the managed launcher, stepped until its threads reach Gpu.SyncGrid or finish
-    private static void WriteManagedBlock(SourceWriter writer, in KernelHostModel kernel)
-    {
-        writer.AppendLine($"int {BlockX} = {BlockLoopIndex} % (int)gridDimX;");
-        writer.AppendLine($"int {BlockY} = ({BlockLoopIndex} / (int)gridDimX) % (int)gridDimY;");
-        writer.AppendLine($"int {BlockZ} = {BlockLoopIndex} / (int)(gridDimX * gridDimY);");
-
-        writer.AppendLine("global::Kassyi.GSharp.Core.ManagedGpuContext.IsActive = true;");
-        writer.AppendLine("try");
-        using (writer.Scope())
-        {
-            WriteManagedBlockSetup(writer);
-            if (kernel.IsCooperative)
-            {
-                // The threads that wait at the grid sync go on in this phase
-                writer.AppendLine(
-                    $"global::System.Array.Clear(threadAtGridSync, {BlockLoopIndex} * {ThreadsPerBlock}, {ThreadsPerBlock});");
-                writer.AppendLine("bool blockAtGridSync = false;");
-            }
-
-            WriteManagedBarrierRounds(writer, kernel);
-            if (kernel.IsCooperative)
-            {
-                WriteManagedBlockGridSyncStatus(writer, kernel);
-            }
-        }
-
-        writer.AppendLine("finally");
-        using (writer.Scope())
-        {
-            writer.AppendLine("global::Kassyi.GSharp.Core.ManagedGpuContext.IsActive = false;");
-        }
-    }
-
-    // The block's coordinates and dimensions in ManagedGpuContext, and a fresh warp exchange
-    private static void WriteManagedBlockSetup(SourceWriter writer)
-    {
-        writer.AppendLine($"global::Kassyi.GSharp.Core.ManagedGpuContext.BlockIdxX = {BlockX};");
-        writer.AppendLine($"global::Kassyi.GSharp.Core.ManagedGpuContext.BlockIdxY = {BlockY};");
-        writer.AppendLine($"global::Kassyi.GSharp.Core.ManagedGpuContext.BlockIdxZ = {BlockZ};");
-        writer.AppendLine("global::Kassyi.GSharp.Core.ManagedGpuContext.BlockDimX = (int)blockDimX;");
-        writer.AppendLine("global::Kassyi.GSharp.Core.ManagedGpuContext.BlockDimY = (int)blockDimY;");
-        writer.AppendLine("global::Kassyi.GSharp.Core.ManagedGpuContext.BlockDimZ = (int)blockDimZ;");
-        writer.AppendLine("global::Kassyi.GSharp.Core.ManagedGpuContext.GridDimX = (int)gridDimX;");
-        writer.AppendLine("global::Kassyi.GSharp.Core.ManagedGpuContext.GridDimY = (int)gridDimY;");
-        writer.AppendLine("global::Kassyi.GSharp.Core.ManagedGpuContext.GridDimZ = (int)gridDimZ;");
-        writer.AppendLine("global::Kassyi.GSharp.Core.ManagedGpuContext.ResetWarpExchange();");
-    }
-
-    // [WHY] A thread that reached a barrier waits there while the other threads of the block go on to it: they may need
-    // more steps (a shuffle before it). When no thread can run, the threads at a block barrier pass it together; the
-    // block's part of the phase ends when no thread can run and none waits at a block barrier.
-    // bool anyBlockActive = true; while (anyBlockActive) { anyBlockActive = false; <threads> <block barrier release> }
-    private static void WriteManagedBarrierRounds(SourceWriter writer, in KernelHostModel kernel)
-    {
-        writer.AppendLine("bool anyBlockActive = true;");
-        writer.AppendLine("while (anyBlockActive)");
-        using (writer.Scope())
-        {
-            writer.AppendLine("anyBlockActive = false;");
-            writer.AppendLine($"for (int {ThreadLoopIndex} = 0; {ThreadLoopIndex} < {ThreadsPerBlock}; {ThreadLoopIndex}++)");
-            using (writer.Scope())
-            {
-                WriteManagedThreadStep(writer, kernel);
-            }
-
-            WriteManagedBlockBarrierRelease(writer);
-        }
-    }
-
-    // if (!anyBlockActive) { for (<threads of the block>) { if (<waits at the block barrier>) { <release it>; anyBlockActive = true; } } }
-    private static void WriteManagedBlockBarrierRelease(SourceWriter writer)
-    {
-        writer.AppendLine("if (!anyBlockActive)");
-        using (writer.Scope())
-        {
-            writer.AppendLine(
-                $"for (int {LinearThreadIndex} = {BlockLoopIndex} * {ThreadsPerBlock}; {LinearThreadIndex} < ({BlockLoopIndex} + 1) * {ThreadsPerBlock}; {LinearThreadIndex}++)");
-            using (writer.Scope())
-            {
-                writer.AppendLine($"if (threadAtBlockBarrier[{LinearThreadIndex}])");
-                using (writer.Scope())
-                {
-                    writer.AppendLine($"threadAtBlockBarrier[{LinearThreadIndex}] = false;");
-                    writer.AppendLine("anyBlockActive = true;");
-                }
-            }
-        }
-    }
-
-    // Cooperative: whether the block waits at the grid sync, with the check of its thread 0, or finished
-    private static void WriteManagedBlockGridSyncStatus(SourceWriter writer, in KernelHostModel kernel)
-    {
-        writer.AppendLine("if (blockAtGridSync)");
-        using (writer.Scope())
-        {
-            // The grid sync of the GPU waits for thread 0 of every block
-            writer.AppendLine(
-                $"if ({Contexts}[{BlockLoopIndex} * {ThreadsPerBlock}].{GSharpInternalNames.StateMachine.State} == -1)");
-            using (writer.Scope())
-            {
-                writer.AppendLine(
-                    $"throw global::Kassyi.GSharp.Core.ManagedGpuContext.RepresentativeFinishedAtGridSync({SymbolDisplay.FormatLiteral(kernel.MessageName, quote: true)}, {BlockX}, {BlockY}, {BlockZ});");
-            }
-
-            writer.AppendLine("anyBlockAtGridSync = true;");
-        }
-
-        writer.AppendLine("else if (firstFinishedBlock < 0)");
-        using (writer.Scope())
-        {
-            writer.AppendLine($"firstFinishedBlock = {BlockLoopIndex};");
-        }
-    }
-
-    // One step of one thread: from where it stopped to its next barrier, grid sync or end
-    private static void WriteManagedThreadStep(SourceWriter writer, in KernelHostModel kernel)
-    {
-        writer.AppendLine($"int {ThreadX} = {ThreadLoopIndex} % (int)blockDimX;");
-        writer.AppendLine($"int {ThreadY} = ({ThreadLoopIndex} / (int)blockDimX) % (int)blockDimY;");
-        writer.AppendLine($"int {ThreadZ} = {ThreadLoopIndex} / (int)(blockDimX * blockDimY);");
-        writer.AppendLine($"global::Kassyi.GSharp.Core.ManagedGpuContext.ThreadIdxX = {ThreadX};");
-        writer.AppendLine($"global::Kassyi.GSharp.Core.ManagedGpuContext.ThreadIdxY = {ThreadY};");
-        writer.AppendLine($"global::Kassyi.GSharp.Core.ManagedGpuContext.ThreadIdxZ = {ThreadZ};");
-
-        writer.AppendLine($"int {LinearThreadIndex} = {BlockLoopIndex} * {ThreadsPerBlock} + {ThreadLoopIndex};");
-        // A thread that waits at a block barrier or at the grid sync does not run
-        var runnable = kernel.IsCooperative ? CooperativeRunnableCondition : RunnableCondition;
-        writer.AppendLine($"if ({runnable})");
-        using (writer.Scope())
-        {
-            writer.AppendLine("anyGridActive = true;");
-            // The state machines of the kernel and of the device functions it calls request a grid sync (#665) and report
-            // a block barrier through thread-static flags; the launcher steps one GPU thread at a time on this host thread
-            writer.AppendLine($"{ManagedExecutionRewriter.ManagedGridSyncRequested} = false;");
-            writer.AppendLine($"{ManagedExecutionRewriter.ManagedBlockBarrierRequested} = false;");
-            WriteStateMachineCall(writer, kernel);
-            WriteManagedWaits(writer, kernel);
-
-            // The next round runs while a thread can go on: one that stopped at a shuffle runs again, one at a barrier
-            // waits
-            writer.AppendLine($"if ({runnable})");
-            using (writer.Scope())
-            {
-                writer.AppendLine("anyBlockActive = true;");
-            }
-        }
-    }
-
-    // <context>.__gsharp_state != -1 && !threadAtBlockBarrier[<thread>]
-    private const string RunnableCondition =
-        $"{LinearContext}.{GSharpInternalNames.StateMachine.State} != -1 && !threadAtBlockBarrier[{LinearThreadIndex}]";
-
-    // ... && !threadAtGridSync[<thread>]
-    private const string CooperativeRunnableCondition = $"{RunnableCondition} && !threadAtGridSync[{LinearThreadIndex}]";
-
-    // <state machine>(<arguments>, __gsharp_contexts[<thread>][, ref __gsharp_auto_result[<thread>]]);
-    private static void WriteStateMachineCall(SourceWriter writer, in KernelHostModel kernel)
-    {
-        writer.Append($"{kernel.StateMachineName}(");
-        foreach (var p in kernel.Parameters)
-        {
-            writer.Append(p.RefKind switch
-            {
-                RefKind.Ref or RefKind.Out => "ref ",
-                RefKind.RefReadOnlyParameter => "in ",
-                _ => string.Empty
-            });
-            writer.Append(p.Identifier);
-            writer.Append(", ");
-        }
-
-        writer.Append(LinearContext);
-        if (kernel.ReturnsValue)
-        {
-            writer.Append($", ref {GSharpInternalNames.ReturnValue.Buffer}[{LinearThreadIndex}]");
-        }
-
-        writer.AppendLine(");");
-    }
-
-    // After a step: a thread that reached the grid sync (cooperative: waits; otherwise an error) or a block barrier waits
-    private static void WriteManagedWaits(SourceWriter writer, in KernelHostModel kernel)
-    {
-        writer.AppendLine($"if ({ManagedExecutionRewriter.ManagedGridSyncRequested})");
-        using (writer.Scope())
-        {
-            if (kernel.IsCooperative)
-            {
-                writer.AppendLine($"threadAtGridSync[{LinearThreadIndex}] = true;");
-                writer.AppendLine("blockAtGridSync = true;");
-            }
-            else
-            {
-                // Undefined on the GPU: grid.sync() in a launch that is not cooperative
-                writer.AppendLine(
-                    $"throw global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncInKernelThatIsNotCooperative({SymbolDisplay.FormatLiteral(kernel.MessageName, quote: true)});");
-            }
-        }
-
-        writer.AppendLine($"if ({ManagedExecutionRewriter.ManagedBlockBarrierRequested})");
-        using (writer.Scope())
-        {
-            writer.AppendLine($"threadAtBlockBarrier[{LinearThreadIndex}] = true;");
-        }
     }
 
     private static void WriteCpuDelegateGetOrCompile(SourceWriter writer, in KernelEmission kernel)
@@ -598,13 +107,14 @@ internal static class CpuHostLaunchEmitter
     // [WHY] Marshal_ pins the array fields of a converted struct or element and records each handle; this one finally
     // block frees them and returns the rented shadows after the call and the copy back, also when the marshaling, the
     // native call or its error check throws.
-    private static void WriteCpuFixedBlocksAndInvoke(SourceWriter writer, in KernelHostModel kernel)
+    private static void WriteCpuFixedBlocksAndInvoke(SourceWriter writer, in KernelHostModel kernel,
+        in ArraySharingPlan sharing)
     {
         var parameters = kernel.Parameters;
         var hasConverted = false;
         for (var i = 0; i < parameters.Length; i++)
         {
-            hasConverted |= WriteConvertedDeclaration(writer, parameters, i);
+            hasConverted |= WriteConvertedDeclaration(writer, sharing, i);
         }
 
         if (!hasConverted)
@@ -621,17 +131,17 @@ internal static class CpuHostLaunchEmitter
             // that convert their elements into it (#721)
             for (var i = 0; i < parameters.Length; i++)
             {
-                if (!IsConvertedLast(parameters[i]))
+                if (!sharing.IsMarshaledLast(i))
                 {
-                    WriteConvertedMarshal(writer, parameters, i);
+                    WriteConvertedMarshal(writer, sharing, i);
                 }
             }
 
             for (var i = 0; i < parameters.Length; i++)
             {
-                if (IsConvertedLast(parameters[i]))
+                if (sharing.IsMarshaledLast(i))
                 {
-                    WriteConvertedMarshal(writer, parameters, i);
+                    WriteConvertedMarshal(writer, sharing, i);
                 }
             }
 
@@ -647,7 +157,7 @@ internal static class CpuHostLaunchEmitter
         {
             for (var i = 0; i < parameters.Length; i++)
             {
-                WriteConvertedRelease(writer, parameters, i);
+                WriteConvertedRelease(writer, sharing, i);
             }
         }
 
@@ -658,11 +168,10 @@ internal static class CpuHostLaunchEmitter
     // byte[]? <name>_shadow = null; var <name>_allocatedPtrs = ...; int <name>_size = checked(...);      (converted array)
     // byte[]? <name>_sharedShadow = null;                         (a converted T[] that an earlier holder may share)
     // Returns whether the parameter is converted. The size is computed before the try block, when nothing is allocated.
-    private static bool WriteConvertedDeclaration(SourceWriter writer, EquatableArray<KernelParameterShape> parameters,
-        int index)
+    private static bool WriteConvertedDeclaration(SourceWriter writer, in ArraySharingPlan sharing, int index)
     {
-        var shape = parameters[index];
-        writer.AppendLineIf(HasShadowSource(parameters, index), $"byte[]? {shape.Name}_sharedShadow = null;");
+        var shape = sharing.Parameters[index];
+        writer.AppendLineIf(sharing.HasShadowSource(index), $"byte[]? {shape.Name}_sharedShadow = null;");
         switch (shape)
         {
             case { IsCpuConvertedStruct: true, AotStructPath: { } shadow }:
@@ -689,39 +198,40 @@ internal static class CpuHostLaunchEmitter
     // an earlier use, so an [Out] shadow is cleared rather than left to the kernel.
     // A converted T[] that holds the array of a holder marshaled before it takes that shadow and fills nothing
     // (WriteSharedShadowLookup).
-    private static void WriteConvertedMarshal(SourceWriter writer, EquatableArray<KernelParameterShape> parameters,
-        int index)
+    private static void WriteConvertedMarshal(SourceWriter writer, in ArraySharingPlan sharing, int index)
     {
-        var shape = parameters[index];
+        var shape = sharing.Parameters[index];
         switch (shape)
         {
             case { IsCpuConvertedStruct: true, MarshalMethodName: { } marshal }:
                 writer.AppendLine(
                     $"{marshal}(ref {shape.Identifier}, ref {shape.Name}_native, false, {shape.Name}_allocatedPtrs, hStream);");
                 break;
-            case { IsCpuConvertedArray: true } when HasShadowSource(parameters, index):
-                WriteSharedShadowLookup(writer, parameters, index);
+            case { IsCpuConvertedArray: true } when sharing.HasShadowSource(index):
+                WriteSharedShadowLookup(writer, sharing, index);
                 writer.AppendLine(
                     $"{shape.Name}_shadow = {shape.Name}_sharedShadow ?? System.Buffers.ArrayPool<byte>.Shared.Rent({shape.Name}_size);");
                 ConvertedArrayEmitter.WriteShadowAndHostSpans(writer, shape, shape.Cpu);
                 writer.AppendLine($"if ({shape.Name}_sharedShadow == null)");
                 using (writer.Scope())
                 {
-                    WriteConvertedElements(writer, shape);
+                    WriteConvertedElements(writer, sharing, index);
                 }
 
                 break;
             case { IsCpuConvertedArray: true }:
                 writer.AppendLine($"{shape.Name}_shadow = System.Buffers.ArrayPool<byte>.Shared.Rent({shape.Name}_size);");
                 ConvertedArrayEmitter.WriteShadowAndHostSpans(writer, shape, shape.Cpu);
-                WriteConvertedElements(writer, shape);
+                WriteConvertedElements(writer, sharing, index);
                 break;
         }
     }
 
-    private static void WriteConvertedElements(SourceWriter writer, in KernelParameterShape shape)
+    // An [Out] array of elements without array fields is cleared instead of converted (ArraySharingPlan.CopiesIn)
+    private static void WriteConvertedElements(SourceWriter writer, in ArraySharingPlan sharing, int index)
     {
-        if (!CopiesConvertedIn(shape))
+        var shape = sharing.Parameters[index];
+        if (!sharing.CopiesIn(index))
         {
             writer.AppendLine($"{shape.Name}_native.Clear();");
         }
@@ -731,59 +241,22 @@ internal static class CpuHostLaunchEmitter
         }
     }
 
-    // Whether the launcher converts the elements into the shadow: an [Out] array of elements without array fields is
-    // cleared instead
-    private static bool CopiesConvertedIn(in KernelParameterShape shape) =>
-        shape.CopyIn || shape.Cpu.ConvertedElementHasArrayFields;
-
-    // An [Out] converted T[] is marshaled after the other parameters (WriteCpuFixedBlocksAndInvoke)
-    private static bool IsConvertedLast(in KernelParameterShape shape) =>
-        shape.IsCpuConvertedArray && shape.IsSharableArray && !CopiesConvertedIn(shape);
-
-    // Whether converted T[] <earlier> is marshaled before converted T[] <index> and may hold the same array
-    private static bool IsShadowSource(EquatableArray<KernelParameterShape> parameters, int index, int earlier)
-    {
-        var shape = parameters[index];
-        var other = parameters[earlier];
-        if (earlier == index || !shape.IsCpuConvertedArray || !other.IsCpuConvertedArray ||
-            !MayShareCopy(shape, other))
-        {
-            return false;
-        }
-
-        var shapeLast = IsConvertedLast(shape);
-        return shapeLast == IsConvertedLast(other) ? earlier < index : shapeLast;
-    }
-
-    private static bool HasShadowSource(EquatableArray<KernelParameterShape> parameters, int index)
-    {
-        for (var k = 0; k < parameters.Length; k++)
-        {
-            if (IsShadowSource(parameters, index, k))
-            {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
     // <name>_sharedShadow = ReferenceEquals(<name>, <earlier>) ? <earlier>_shadow : ... : null;
     // [WHY] Converted arguments that hold one array share one shadow, which the native kernel reads and writes in place,
     // as the CUDA launcher gives them one device region (#721). The first holder converts the elements into it; an [Out]
     // holder comes last, so that it never clears what an earlier holder converted. Every holder that copies back reads
     // the same shadow, so the host elements get the same values.
-    private static void WriteSharedShadowLookup(SourceWriter writer, EquatableArray<KernelParameterShape> parameters,
-        int index)
+    private static void WriteSharedShadowLookup(SourceWriter writer, in ArraySharingPlan sharing, int index)
     {
-        var shape = parameters[index];
+        var shape = sharing.Parameters[index];
         writer.Append($"{shape.Name}_sharedShadow = ");
-        for (var k = 0; k < parameters.Length; k++)
+        for (var k = 0; k < sharing.Parameters.Length; k++)
         {
-            if (IsShadowSource(parameters, index, k))
+            if (sharing.IsShadowSource(index, k))
             {
+                var source = sharing.Parameters[k];
                 writer.Append(
-                    $"{ReferenceEqualsMethod}({shape.Identifier}, {parameters[k].Identifier}) ? {parameters[k].Name}_shadow : ");
+                    $"{ReferenceEqualsMethod}({shape.Identifier}, {source.Identifier}) ? {source.Name}_shadow : ");
             }
         }
 
@@ -811,11 +284,10 @@ internal static class CpuHostLaunchEmitter
     // foreach (var handle in <name>_allocatedPtrs) GCHandle.FromIntPtr(handle).Free();
     // if (<name>_shadow != null) ArrayPool<byte>.Shared.Return(<name>_shadow);                        (converted array)
     // A shared shadow goes back to the pool from its owner only: ... && <name>_sharedShadow == null
-    private static void WriteConvertedRelease(SourceWriter writer, EquatableArray<KernelParameterShape> parameters,
-        int index)
+    private static void WriteConvertedRelease(SourceWriter writer, in ArraySharingPlan sharing, int index)
     {
-        var shape = parameters[index];
-        var notShared = HasShadowSource(parameters, index) ? $" && {shape.Name}_sharedShadow == null" : "";
+        var shape = sharing.Parameters[index];
+        var notShared = sharing.HasShadowSource(index) ? $" && {shape.Name}_sharedShadow == null" : "";
         switch (shape)
         {
             case { IsCpuConvertedStruct: true }:

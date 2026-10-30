@@ -213,6 +213,116 @@ public class SharedArrayArgumentTests : TranspilerTestBase
         Assert.Equal([0], x);
     }
 
+    [SkippableTheory]
+    [Scenario(TestScenario.HappyPath)]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void ConvertedNoArrayArguments_SameArray_ShareWrites(bool forceManaged)
+    {
+        var x = new SharedArrayAutoElement[2];
+
+        Run(forceManaged, () => SharedArrayArgumentKernels.LaunchConvertedNoArrayArgumentsKernel(x, x));
+
+        Assert.Equal(7, x[0].B);
+        Assert.Equal(14, x[1].B);
+    }
+
+    [SkippableTheory]
+    [Scenario(TestScenario.Boundary)]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void ConvertedNoArrayArguments_DifferentArrays_StayApart(bool forceManaged)
+    {
+        var first = new SharedArrayAutoElement[2];
+        var second = new SharedArrayAutoElement[2];
+
+        Run(forceManaged, () => SharedArrayArgumentKernels.LaunchConvertedNoArrayArgumentsKernel(first, second));
+
+        Assert.Equal(7, first[0].B);
+        Assert.Equal(0, first[1].B);
+        Assert.Equal(0, second[0].B);
+        Assert.Equal(7, second[1].B);
+    }
+
+    [SkippableTheory]
+    [Scenario(TestScenario.HappyPath)]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void InAndField_SameArray_InSeesWriteThroughField(bool forceManaged)
+    {
+        var x = new int[2];
+
+        Run(forceManaged, () => SharedArrayArgumentKernels.LaunchInAndFieldKernel(x, new SharedArrayHolder { Data = x }));
+
+        Assert.Equal([4, 13], x);
+    }
+
+    [SkippableTheory]
+    [Scenario(TestScenario.HappyPath)]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void InAndElementField_SameArray_InSeesWriteThroughElement(bool forceManaged)
+    {
+        var x = new int[2];
+        ConvertBag[] bags = [new ConvertBag { N = 1, Data = x }];
+
+        Run(forceManaged, () => SharedArrayArgumentKernels.LaunchInAndElementFieldKernel(x, bags));
+
+        Assert.Equal([6, 7], x);
+    }
+
+    // An [In] argument whose array no other holder has is still copied: its write never reaches the caller
+    [SkippableTheory]
+    [Scenario(TestScenario.Boundary)]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void InAndField_DifferentArrays_InIsNotWritten(bool forceManaged)
+    {
+        var input = new int[2];
+        var data = new int[2];
+
+        Run(forceManaged, () => SharedArrayArgumentKernels.LaunchInAndFieldKernel(
+            input,
+            new SharedArrayHolder { Data = data }
+        ));
+
+        Assert.Equal([0, 0], input);
+        Assert.Equal([4, 0], data);
+    }
+
+    // C#: w is x, so w[1] = a[0] + b[0] reads the 5 written through w; b is y, an [In] array the kernel's write never
+    // leaves
+    [SkippableTheory]
+    [Scenario(TestScenario.HappyPath)]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void ThreeArguments_FirstAndLastSameArray_ShareWrites(bool forceManaged)
+    {
+        int[] x = [0, 0];
+        int[] y = [3, 0];
+
+        Run(forceManaged, () => SharedArrayArgumentKernels.LaunchThreeArgumentsPartialKernel(x, y, x));
+
+        Assert.Equal([5, 8], x);
+        Assert.Equal([3, 0], y);
+    }
+
+    // C#: o is x, so o[1] = a[0] + c[0] lands in x and c[1] reads it back
+    [SkippableTheory]
+    [Scenario(TestScenario.Boundary)]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void OutAmongThree_OutSameArrayAsFirst_IsCopiedInAndBack(bool forceManaged)
+    {
+        int[] x = [2, 0];
+        int[] y = [10, 0];
+
+        Run(forceManaged, () => SharedArrayArgumentKernels.LaunchOutAmongThreeKernel(x, x, y));
+
+        Assert.Equal([2, 12], x);
+        Assert.Equal([10, 12], y);
+    }
+
     private void Run(bool forceManaged, Action launch)
     {
         Skip.If(forceManaged && IsCudaDialect, "The managed execution path exists only on the CPU dialects.");

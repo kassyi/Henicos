@@ -11,7 +11,8 @@ namespace Kassyi.GSharp.Runtime.Interop;
 /// write through one of them is seen through the others. The launcher and the generated <c>Marshal_</c> methods
 /// therefore look an array up here by reference identity before they copy it, and give every holder the region of its
 /// first copy (#707, #721). An array argument copies its region back only once (<see cref="TryClaimCopyBack"/>). The
-/// launcher frees each region once after the launch (<see cref="Free"/>).
+/// launcher frees each region once after the launch (<see cref="Free"/>). A launch whose only holders are array
+/// arguments compares them pairwise instead and has no table.
 /// </remarks>
 public sealed class DeviceArrayRegions
 {

@@ -132,7 +132,6 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 WarmupFunctionPointerRotate32Kernel();
 IntPtr hfunc = s_hfunc_Rotate32Kernel!.Value;
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "BitOperationsKernels.Rotate32Kernel");
-var __gsharp_device_arrays = new global::Kassyi.GSharp.Runtime.Interop.DeviceArrayRegions();
 IntPtr d_val = IntPtr.Zero;
 IntPtr d_shift = IntPtr.Zero;
 IntPtr d_rotLeftRes = IntPtr.Zero;
@@ -147,15 +146,11 @@ proxy_val[0] = IntPtr.Zero;
 ((int*)(proxy_val + 1))[0] = val.Length;
 if (val_size > 0)
 {
-if (!__gsharp_device_arrays.TryGetRegion(val, out d_val))
-{
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_val, (IntPtr)val_size, hStream));
-__gsharp_device_arrays.Add(val, d_val);
 fixed (global::System.UInt32* p_val = val)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoDAsync_v2(d_val, (IntPtr)p_val, (IntPtr)val_size, hStream));
 CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
-}
 }
 proxy_val[0] = d_val;
 }
@@ -167,10 +162,13 @@ proxy_shift[0] = IntPtr.Zero;
 ((int*)(proxy_shift + 1))[0] = shift.Length;
 if (shift_size > 0)
 {
-if (!__gsharp_device_arrays.TryGetRegion(shift, out d_shift))
+if (global::System.Object.ReferenceEquals(shift, val))
+{
+d_shift = d_val;
+}
+else
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_shift, (IntPtr)shift_size, hStream));
-__gsharp_device_arrays.Add(shift, d_shift);
 fixed (global::System.Int32* p_shift = shift)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoDAsync_v2(d_shift, (IntPtr)p_shift, (IntPtr)shift_size, hStream));
@@ -187,10 +185,17 @@ proxy_rotLeftRes[0] = IntPtr.Zero;
 ((int*)(proxy_rotLeftRes + 1))[0] = rotLeftRes.Length;
 if (rotLeftRes_size > 0)
 {
-if (!__gsharp_device_arrays.TryGetRegion(rotLeftRes, out d_rotLeftRes))
+if (global::System.Object.ReferenceEquals(rotLeftRes, val))
+{
+d_rotLeftRes = d_val;
+}
+else if (global::System.Object.ReferenceEquals(rotLeftRes, shift))
+{
+d_rotLeftRes = d_shift;
+}
+else
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_rotLeftRes, (IntPtr)rotLeftRes_size, hStream));
-__gsharp_device_arrays.Add(rotLeftRes, d_rotLeftRes);
 fixed (global::System.UInt32* p_rotLeftRes = rotLeftRes)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoDAsync_v2(d_rotLeftRes, (IntPtr)p_rotLeftRes, (IntPtr)rotLeftRes_size, hStream));
@@ -207,10 +212,21 @@ proxy_rotRightRes[0] = IntPtr.Zero;
 ((int*)(proxy_rotRightRes + 1))[0] = rotRightRes.Length;
 if (rotRightRes_size > 0)
 {
-if (!__gsharp_device_arrays.TryGetRegion(rotRightRes, out d_rotRightRes))
+if (global::System.Object.ReferenceEquals(rotRightRes, val))
+{
+d_rotRightRes = d_val;
+}
+else if (global::System.Object.ReferenceEquals(rotRightRes, shift))
+{
+d_rotRightRes = d_shift;
+}
+else if (global::System.Object.ReferenceEquals(rotRightRes, rotLeftRes))
+{
+d_rotRightRes = d_rotLeftRes;
+}
+else
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_rotRightRes, (IntPtr)rotRightRes_size, hStream));
-__gsharp_device_arrays.Add(rotRightRes, d_rotRightRes);
 fixed (global::System.UInt32* p_rotRightRes = rotRightRes)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoDAsync_v2(d_rotRightRes, (IntPtr)p_rotRightRes, (IntPtr)rotRightRes_size, hStream));
@@ -230,7 +246,7 @@ kernelParams,
 IntPtr.Zero // Extra
 ));
 // Copy back array: val
-if (val_size > 0 && d_val != IntPtr.Zero && __gsharp_device_arrays.TryClaimCopyBack(val))
+if (val_size > 0 && d_val != IntPtr.Zero)
 {
 fixed (global::System.UInt32* p_val = val)
 {
@@ -239,7 +255,7 @@ CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
 }
 }
 // Copy back array: shift
-if (shift_size > 0 && d_shift != IntPtr.Zero && __gsharp_device_arrays.TryClaimCopyBack(shift))
+if (shift_size > 0 && d_shift != IntPtr.Zero && !global::System.Object.ReferenceEquals(shift, val))
 {
 fixed (global::System.Int32* p_shift = shift)
 {
@@ -248,7 +264,7 @@ CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
 }
 }
 // Copy back array: rotLeftRes
-if (rotLeftRes_size > 0 && d_rotLeftRes != IntPtr.Zero && __gsharp_device_arrays.TryClaimCopyBack(rotLeftRes))
+if (rotLeftRes_size > 0 && d_rotLeftRes != IntPtr.Zero && !global::System.Object.ReferenceEquals(rotLeftRes, val) && !global::System.Object.ReferenceEquals(rotLeftRes, shift))
 {
 fixed (global::System.UInt32* p_rotLeftRes = rotLeftRes)
 {
@@ -257,7 +273,7 @@ CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
 }
 }
 // Copy back array: rotRightRes
-if (rotRightRes_size > 0 && d_rotRightRes != IntPtr.Zero && __gsharp_device_arrays.TryClaimCopyBack(rotRightRes))
+if (rotRightRes_size > 0 && d_rotRightRes != IntPtr.Zero && !global::System.Object.ReferenceEquals(rotRightRes, val) && !global::System.Object.ReferenceEquals(rotRightRes, shift) && !global::System.Object.ReferenceEquals(rotRightRes, rotLeftRes))
 {
 fixed (global::System.UInt32* p_rotRightRes = rotRightRes)
 {
@@ -268,7 +284,10 @@ CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
 }
 finally
 {
-__gsharp_device_arrays.Free(hStream);
+if (d_val != IntPtr.Zero) CudaDriverApi.cuMemFreeAsync(d_val, hStream);
+if (d_shift != IntPtr.Zero && d_shift != d_val) CudaDriverApi.cuMemFreeAsync(d_shift, hStream);
+if (d_rotLeftRes != IntPtr.Zero && d_rotLeftRes != d_val && d_rotLeftRes != d_shift) CudaDriverApi.cuMemFreeAsync(d_rotLeftRes, hStream);
+if (d_rotRightRes != IntPtr.Zero && d_rotRightRes != d_val && d_rotRightRes != d_shift && d_rotRightRes != d_rotLeftRes) CudaDriverApi.cuMemFreeAsync(d_rotRightRes, hStream);
 }
 }
 }
@@ -371,7 +390,6 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 WarmupFunctionPointerRotate64Kernel();
 IntPtr hfunc = s_hfunc_Rotate64Kernel!.Value;
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "BitOperationsKernels.Rotate64Kernel");
-var __gsharp_device_arrays = new global::Kassyi.GSharp.Runtime.Interop.DeviceArrayRegions();
 IntPtr d_val = IntPtr.Zero;
 IntPtr d_shift = IntPtr.Zero;
 IntPtr d_rotLeftRes = IntPtr.Zero;
@@ -386,15 +404,11 @@ proxy_val[0] = IntPtr.Zero;
 ((int*)(proxy_val + 1))[0] = val.Length;
 if (val_size > 0)
 {
-if (!__gsharp_device_arrays.TryGetRegion(val, out d_val))
-{
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_val, (IntPtr)val_size, hStream));
-__gsharp_device_arrays.Add(val, d_val);
 fixed (global::System.UInt64* p_val = val)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoDAsync_v2(d_val, (IntPtr)p_val, (IntPtr)val_size, hStream));
 CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
-}
 }
 proxy_val[0] = d_val;
 }
@@ -406,10 +420,13 @@ proxy_shift[0] = IntPtr.Zero;
 ((int*)(proxy_shift + 1))[0] = shift.Length;
 if (shift_size > 0)
 {
-if (!__gsharp_device_arrays.TryGetRegion(shift, out d_shift))
+if (global::System.Object.ReferenceEquals(shift, val))
+{
+d_shift = d_val;
+}
+else
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_shift, (IntPtr)shift_size, hStream));
-__gsharp_device_arrays.Add(shift, d_shift);
 fixed (global::System.Int32* p_shift = shift)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoDAsync_v2(d_shift, (IntPtr)p_shift, (IntPtr)shift_size, hStream));
@@ -426,10 +443,17 @@ proxy_rotLeftRes[0] = IntPtr.Zero;
 ((int*)(proxy_rotLeftRes + 1))[0] = rotLeftRes.Length;
 if (rotLeftRes_size > 0)
 {
-if (!__gsharp_device_arrays.TryGetRegion(rotLeftRes, out d_rotLeftRes))
+if (global::System.Object.ReferenceEquals(rotLeftRes, val))
+{
+d_rotLeftRes = d_val;
+}
+else if (global::System.Object.ReferenceEquals(rotLeftRes, shift))
+{
+d_rotLeftRes = d_shift;
+}
+else
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_rotLeftRes, (IntPtr)rotLeftRes_size, hStream));
-__gsharp_device_arrays.Add(rotLeftRes, d_rotLeftRes);
 fixed (global::System.UInt64* p_rotLeftRes = rotLeftRes)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoDAsync_v2(d_rotLeftRes, (IntPtr)p_rotLeftRes, (IntPtr)rotLeftRes_size, hStream));
@@ -446,10 +470,21 @@ proxy_rotRightRes[0] = IntPtr.Zero;
 ((int*)(proxy_rotRightRes + 1))[0] = rotRightRes.Length;
 if (rotRightRes_size > 0)
 {
-if (!__gsharp_device_arrays.TryGetRegion(rotRightRes, out d_rotRightRes))
+if (global::System.Object.ReferenceEquals(rotRightRes, val))
+{
+d_rotRightRes = d_val;
+}
+else if (global::System.Object.ReferenceEquals(rotRightRes, shift))
+{
+d_rotRightRes = d_shift;
+}
+else if (global::System.Object.ReferenceEquals(rotRightRes, rotLeftRes))
+{
+d_rotRightRes = d_rotLeftRes;
+}
+else
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_rotRightRes, (IntPtr)rotRightRes_size, hStream));
-__gsharp_device_arrays.Add(rotRightRes, d_rotRightRes);
 fixed (global::System.UInt64* p_rotRightRes = rotRightRes)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoDAsync_v2(d_rotRightRes, (IntPtr)p_rotRightRes, (IntPtr)rotRightRes_size, hStream));
@@ -469,7 +504,7 @@ kernelParams,
 IntPtr.Zero // Extra
 ));
 // Copy back array: val
-if (val_size > 0 && d_val != IntPtr.Zero && __gsharp_device_arrays.TryClaimCopyBack(val))
+if (val_size > 0 && d_val != IntPtr.Zero)
 {
 fixed (global::System.UInt64* p_val = val)
 {
@@ -478,7 +513,7 @@ CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
 }
 }
 // Copy back array: shift
-if (shift_size > 0 && d_shift != IntPtr.Zero && __gsharp_device_arrays.TryClaimCopyBack(shift))
+if (shift_size > 0 && d_shift != IntPtr.Zero && !global::System.Object.ReferenceEquals(shift, val))
 {
 fixed (global::System.Int32* p_shift = shift)
 {
@@ -487,7 +522,7 @@ CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
 }
 }
 // Copy back array: rotLeftRes
-if (rotLeftRes_size > 0 && d_rotLeftRes != IntPtr.Zero && __gsharp_device_arrays.TryClaimCopyBack(rotLeftRes))
+if (rotLeftRes_size > 0 && d_rotLeftRes != IntPtr.Zero && !global::System.Object.ReferenceEquals(rotLeftRes, val) && !global::System.Object.ReferenceEquals(rotLeftRes, shift))
 {
 fixed (global::System.UInt64* p_rotLeftRes = rotLeftRes)
 {
@@ -496,7 +531,7 @@ CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
 }
 }
 // Copy back array: rotRightRes
-if (rotRightRes_size > 0 && d_rotRightRes != IntPtr.Zero && __gsharp_device_arrays.TryClaimCopyBack(rotRightRes))
+if (rotRightRes_size > 0 && d_rotRightRes != IntPtr.Zero && !global::System.Object.ReferenceEquals(rotRightRes, val) && !global::System.Object.ReferenceEquals(rotRightRes, shift) && !global::System.Object.ReferenceEquals(rotRightRes, rotLeftRes))
 {
 fixed (global::System.UInt64* p_rotRightRes = rotRightRes)
 {
@@ -507,7 +542,10 @@ CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
 }
 finally
 {
-__gsharp_device_arrays.Free(hStream);
+if (d_val != IntPtr.Zero) CudaDriverApi.cuMemFreeAsync(d_val, hStream);
+if (d_shift != IntPtr.Zero && d_shift != d_val) CudaDriverApi.cuMemFreeAsync(d_shift, hStream);
+if (d_rotLeftRes != IntPtr.Zero && d_rotLeftRes != d_val && d_rotLeftRes != d_shift) CudaDriverApi.cuMemFreeAsync(d_rotLeftRes, hStream);
+if (d_rotRightRes != IntPtr.Zero && d_rotRightRes != d_val && d_rotRightRes != d_shift && d_rotRightRes != d_rotLeftRes) CudaDriverApi.cuMemFreeAsync(d_rotRightRes, hStream);
 }
 }
 }

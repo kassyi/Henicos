@@ -9,15 +9,19 @@ internal static class KernelLaunchEmitter
     // The device scratch of the grid strategy of AsParallel() aggregates (KernelHostModel.GridScratchSlotBytes)
     private const string DeviceGridScratch = "d_" + GSharpInternalNames.StackLinq.GridScratch;
 
+    // The device regions of the arrays that array arguments, struct arguments and converted elements hold
+    // (DeviceArrayRegions, ArraySharingMode.Table)
+    private const string DeviceArrays = GSharpInternalNames.Launcher.DeviceArrays;
+
+    private const string ReferenceEqualsMethod = ArraySharingPlan.ReferenceEqualsMethod;
+
     /// <summary>Emits local variable declarations for device pointers and tracking lists.</summary>
-    internal static void WriteVariablesInitialization(SourceWriter writer, in KernelHostModel kernel, bool isDevicePtr)
+    internal static void WriteVariablesInitialization(SourceWriter writer, in KernelHostModel kernel,
+        in ArraySharingPlan plan, bool isDevicePtr)
     {
         // One table for the whole launch, so that every array argument, struct argument and converted element finds the
         // arrays the others already copied (#707, #721)
-        writer.AppendLineIf(
-            UsesDeviceArrayRegions(kernel, isDevicePtr),
-            $"var {DeviceArrays} = new {StructMarshalingEmitter.DeviceArrayRegionsType}();"
-        );
+        writer.AppendLineIf(plan.UsesTable, $"var {DeviceArrays} = new {StructMarshalingEmitter.DeviceArrayRegionsType}();");
         foreach (var shape in kernel.Parameters)
         {
             if (isDevicePtr)
@@ -45,7 +49,28 @@ internal static class KernelLaunchEmitter
     }
 
     /// <summary>Emits argument marshaling, device memory transfers, kernel launch, and result copyback.</summary>
-    internal static void WriteMarshalAndLaunchKernel(SourceWriter writer, in KernelHostModel kernel, bool isDevicePtr)
+    internal static void WriteMarshalAndLaunchKernel(SourceWriter writer, in KernelHostModel kernel,
+        in ArraySharingPlan plan, bool isDevicePtr)
+    {
+        var kernelParamCount = WriteKernelParamsDeclaration(writer, kernel);
+        WriteParameterMarshals(writer, plan, isDevicePtr);
+        WriteAutoResultMarshal(writer, kernel);
+        WriteGridScratchAllocation(writer, kernel, kernelParamCount);
+        writer.AppendLine();
+
+        WriteLaunchKernelCall(writer, kernel.IsCooperative);
+
+        for (var i = 0; i < kernel.Parameters.Length; i++)
+        {
+            WriteParameterUnmarshal(writer, plan, i, isDevicePtr);
+        }
+
+        WriteAutoResultCopyBack(writer, kernel);
+    }
+
+    // void** kernelParams = stackalloc void*[<parameters>[ + auto result][ + grid scratch]];
+    // Returns the number of slots.
+    private static int WriteKernelParamsDeclaration(SourceWriter writer, in KernelHostModel kernel)
     {
         var kernelParamCount = kernel.Parameters.Length;
 
@@ -62,63 +87,72 @@ internal static class KernelLaunchEmitter
         writer.Append("void** kernelParams = stackalloc void*[");
         writer.Append(kernelParamCount.ToString());
         writer.AppendLine("];");
+        return kernelParamCount;
+    }
 
-        // [WHY] A holder that copies its array in comes first, so that an [Out] array argument that shares the region
-        // finds it already filled (#721): the region is copied in when any of its holders needs that
-        var usesRegions = UsesDeviceArrayRegions(kernel, isDevicePtr);
-        for (var i = 0; i < kernel.Parameters.Length; i++)
+    // [WHY] A holder that copies its array in comes first, so that an [Out] array argument that shares the region finds
+    // it already filled (#721): the region is copied in when any of its holders needs that. Kernel parameter slots keep
+    // the parameter index.
+    private static void WriteParameterMarshals(SourceWriter writer, in ArraySharingPlan plan, bool isDevicePtr)
+    {
+        for (var i = 0; i < plan.Parameters.Length; i++)
         {
-            if (!IsMarshaledLast(kernel.Parameters[i], usesRegions))
+            if (!plan.IsMarshaledLast(i))
             {
-                WriteParameterMarshal(writer, kernel.Parameters[i], i, isDevicePtr, usesRegions);
+                WriteParameterMarshal(writer, plan, i, isDevicePtr);
             }
         }
 
-        for (var i = 0; i < kernel.Parameters.Length; i++)
+        for (var i = 0; i < plan.Parameters.Length; i++)
         {
-            if (IsMarshaledLast(kernel.Parameters[i], usesRegions))
+            if (plan.IsMarshaledLast(i))
             {
-                WriteParameterMarshal(writer, kernel.Parameters[i], i, isDevicePtr, usesRegions);
+                WriteParameterMarshal(writer, plan, i, isDevicePtr);
             }
         }
+    }
 
-        var paramIndex = kernel.Parameters.Length;
-
-        if (kernel.ReturnTypeName is { } returnType)
+    // int __gsharp_auto_result_size = <buffer>.Length * sizeof(<result>);
+    // if (<size> > 0) { cuMemAllocAsync(out d___gsharp_auto_result, <size>); kernelParams[<parameters>] = &d_...; }
+    private static void WriteAutoResultMarshal(SourceWriter writer, in KernelHostModel kernel)
+    {
+        if (kernel.ReturnTypeName is not { } returnType)
         {
-            writer.AppendLine("// Marshal auto result array");
-            writer.AppendLine(
-                $"int {GSharpInternalNames.ReturnValue.BufferSize} = {GSharpInternalNames.ReturnValue.Buffer}.Length * sizeof({returnType});");
-
-            writer.AppendLine($"if ({GSharpInternalNames.ReturnValue.BufferSize} > 0)");
-            using (writer.Scope())
-            {
-                writer.AppendLine(
-                    "CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(" +
-                    $"out {DeviceAutoResult}, (IntPtr){GSharpInternalNames.ReturnValue.BufferSize}, hStream));");
-                writer.AppendLine("kernelParams[" + paramIndex + $"] = &{DeviceAutoResult};");
-            }
+            return;
         }
 
-        if (kernel.GridScratchSlotBytes > 0)
+        writer.AppendLine("// Marshal auto result array");
+        writer.AppendLine(
+            $"int {GSharpInternalNames.ReturnValue.BufferSize} = {GSharpInternalNames.ReturnValue.Buffer}.Length * sizeof({returnType});");
+
+        writer.AppendLine($"if ({GSharpInternalNames.ReturnValue.BufferSize} > 0)");
+        using (writer.Scope())
         {
-            // One slot per block for its partial result and one for the total, freed after the launch (WriteCleanup)
-            writer.AppendLine("// Allocate the scratch of the grid strategy of AsParallel() aggregates");
             writer.AppendLine(
                 "CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(" +
-                $"out {DeviceGridScratch}, (IntPtr)(((long)gridDimX * gridDimY * gridDimZ + 1) * {kernel.GridScratchSlotBytes}), hStream));");
-            writer.AppendLine($"kernelParams[{kernelParamCount - 1}] = &{DeviceGridScratch};");
+                $"out {DeviceAutoResult}, (IntPtr){GSharpInternalNames.ReturnValue.BufferSize}, hStream));");
+            writer.AppendLine("kernelParams[" + kernel.Parameters.Length + $"] = &{DeviceAutoResult};");
         }
+    }
 
-        writer.AppendLine();
-
-        WriteLaunchKernelCall(writer, kernel.IsCooperative);
-
-        foreach (var shape in kernel.Parameters)
+    // One slot per block for its partial result and one for the total, freed after the launch (WriteCleanup)
+    private static void WriteGridScratchAllocation(SourceWriter writer, in KernelHostModel kernel, int kernelParamCount)
+    {
+        if (kernel.GridScratchSlotBytes <= 0)
         {
-            WriteParameterUnmarshal(writer, shape, isDevicePtr, usesRegions);
+            return;
         }
 
+        writer.AppendLine("// Allocate the scratch of the grid strategy of AsParallel() aggregates");
+        writer.AppendLine(
+            "CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(" +
+            $"out {DeviceGridScratch}, (IntPtr)(((long)gridDimX * gridDimY * gridDimZ + 1) * {kernel.GridScratchSlotBytes}), hStream));");
+        writer.AppendLine($"kernelParams[{kernelParamCount - 1}] = &{DeviceGridScratch};");
+    }
+
+    // if (<buffer> != null && d___gsharp_auto_result != IntPtr.Zero) { int size = ...; if (size > 0) { <pinned copy back> } }
+    private static void WriteAutoResultCopyBack(SourceWriter writer, in KernelHostModel kernel)
+    {
         if (kernel.ReturnTypeName is not { } resultType)
         {
             return;
@@ -132,37 +166,27 @@ internal static class KernelLaunchEmitter
             writer.AppendLine("if (size > 0)");
             using (writer.Scope())
             {
-                writer.AppendLine(
-                    "var handle = System.Runtime.InteropServices.GCHandle.Alloc(" +
-                    $"{GSharpInternalNames.ReturnValue.Buffer}, System.Runtime.InteropServices.GCHandleType.Pinned);");
-                writer.AppendLine("try");
-                using (writer.Scope())
-                {
-                    writer.AppendLine(
-                        "CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoHAsync_v2(" +
-                        $"handle.AddrOfPinnedObject(), {DeviceAutoResult}, (IntPtr)size, hStream));");
-                    writer.AppendLine("CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));");
-                }
-
-                writer.AppendLine("finally");
-                using (writer.Scope())
-                {
-                    writer.AppendLine("handle.Free();");
-                }
+                StructMarshalingEmitter.WritePinnedCopy(
+                    writer,
+                    GSharpInternalNames.ReturnValue.Buffer,
+                    DeviceAutoResult,
+                    toDevice: false,
+                    synchronize: true
+                );
             }
         }
     }
 
     /// <summary>Emits cleanup code to asynchronously free allocated device memory buffers.</summary>
-    internal static void WriteCleanup(SourceWriter writer, in KernelHostModel kernel, bool isDevicePtr)
+    internal static void WriteCleanup(SourceWriter writer, in KernelHostModel kernel, in ArraySharingPlan plan,
+        bool isDevicePtr)
     {
-        var usesRegions = UsesDeviceArrayRegions(kernel, isDevicePtr);
-        foreach (var shape in kernel.Parameters)
+        for (var i = 0; i < kernel.Parameters.Length; i++)
         {
-            WriteParameterFree(writer, shape, isDevicePtr, usesRegions);
+            WriteParameterFree(writer, plan, i, isDevicePtr);
         }
 
-        writer.AppendLineIf(usesRegions, $"{DeviceArrays}.Free(hStream);");
+        writer.AppendLineIf(plan.UsesTable, $"{DeviceArrays}.Free(hStream);");
 
         if (kernel.GridScratchSlotBytes > 0)
         {
@@ -186,43 +210,12 @@ internal static class KernelLaunchEmitter
         }
     }
 
-    // The device regions of the arrays that array arguments, struct arguments and converted elements hold
-    // (DeviceArrayRegions)
-    private const string DeviceArrays = GSharpInternalNames.Launcher.DeviceArrays;
-
-    // Whether two holders of one array are possible: a struct argument or a converted array that holds arrays (whose
-    // Marshal_ calls record the arrays they copy), or two T[] arguments. A launch with a single T[] argument allocates no
-    // table; the IntPtr wrapper copies nothing
-    private static bool UsesDeviceArrayRegions(in KernelHostModel kernel, bool isDevicePtr) =>
-        !isDevicePtr &&
-        (kernel.Parameters
-             .AsStackEnumerable()
-             .Any(static shape => shape.MarshalsCudaArrays) ||
-         kernel.Parameters
-             .AsStackEnumerable()
-             .Count(static shape => shape.IsSharableArray) > 1);
-
     // The table that a parameter's Marshal_ calls record their arrays in, null when they copy none
     private static string DeviceArraysFor(in KernelParameterShape shape) =>
         shape.MarshalsCudaArrays ? DeviceArrays : "null";
 
-    // [WHY] An array argument is a reference: two arguments, or an argument and a struct field, that hold one array are
-    // one object in C#, so the managed-array launcher gives them one device region, found by reference identity in the
-    // launch's DeviceArrayRegions (#721), whenever the launch has one (UsesDeviceArrayRegions).
-    private static bool IsSharedArrayArgument(in KernelParameterShape shape, bool usesRegions) =>
-        usesRegions && shape.IsSharableArray;
-
-    // Whether the launcher copies the array argument to the device: [Out] does not, except for converted elements that
-    // hold arrays, whose device pointers Marshal_ writes into the shadow
-    private static bool CopiesIn(in KernelParameterShape shape) =>
-        shape.CopyIn || (shape.IsCudaConvertedArray && shape.Cuda.ConvertedElementHasArrayFields);
-
-    // An [Out] array argument is marshaled after every other parameter (WriteMarshalAndLaunchKernel)
-    private static bool IsMarshaledLast(in KernelParameterShape shape, bool usesRegions) =>
-        IsSharedArrayArgument(shape, usesRegions) && !CopiesIn(shape);
-
-    // "<name> is not null && " for an optional array: the size test already excludes null, but the nullable analysis of
-    // the generated code does not know it
+    // "<name> is not null && " for an optional array whose table lookup follows: the size test already excludes null,
+    // but the nullable analysis of the generated code does not know it
     private static string NotNullPrefix(in KernelParameterShape shape) =>
         shape.IsNullableReference ? $"{shape.Identifier} is not null && " : "";
 
@@ -230,9 +223,10 @@ internal static class KernelLaunchEmitter
     private static bool IsPassedThrough(in KernelParameterShape shape, bool isDevicePtr) =>
         isDevicePtr && (shape.IsArray || shape.IsCustomStruct || shape.IsByRef);
 
-    private static void WriteParameterMarshal(SourceWriter writer, in KernelParameterShape shape, int paramIndex,
-        bool isDevicePtr, bool usesRegions)
+    private static void WriteParameterMarshal(SourceWriter writer, in ArraySharingPlan plan, int paramIndex,
+        bool isDevicePtr)
     {
+        var shape = plan.Parameters[paramIndex];
         if (IsPassedThrough(shape, isDevicePtr))
         {
             var kind = shape.Kind switch
@@ -263,7 +257,7 @@ internal static class KernelLaunchEmitter
                 WriteCustomStructMarshal(writer, shape, paramIndex);
                 break;
             case KernelParameterKind.Array:
-                WriteArrayMarshal(writer, shape, paramIndex, usesRegions);
+                WriteArrayMarshal(writer, plan, paramIndex);
                 break;
             case KernelParameterKind.RefScalar:
                 WriteRefOrOutScalarMarshal(writer, shape, paramIndex);
@@ -319,65 +313,145 @@ internal static class KernelLaunchEmitter
         }
     }
 
-    private static void WriteArrayMarshal(SourceWriter writer, in KernelParameterShape shape, int paramIndex,
-        bool usesRegions)
+    private static void WriteArrayMarshal(SourceWriter writer, in ArraySharingPlan plan, int paramIndex)
     {
+        var shape = plan.Parameters[paramIndex];
         if (shape.IsCudaConvertedArray)
         {
-            WriteConvertedArrayMarshal(writer, shape, paramIndex, usesRegions);
+            WriteConvertedArrayMarshal(writer, plan, paramIndex);
             return;
         }
 
-        var elementType = GetElementTypeName(shape);
-        var isOutOnly = !shape.CopyIn;
         var lenExpr = shape.LengthExpression;
 
         writer.AppendLine($"// Marshal array: {shape.Identifier}");
-        writer.AppendLine($"int {shape.Name}_size = {lenExpr} * sizeof({elementType});");
+        writer.AppendLine($"int {shape.Name}_size = {lenExpr} * sizeof({GetElementTypeName(shape)});");
 
         writer.AppendLine($"IntPtr* proxy_{shape.Name} = stackalloc IntPtr[2];");
         writer.AppendLine($"proxy_{shape.Name}[0] = IntPtr.Zero;");
         writer.AppendLine($"((int*)(proxy_{shape.Name} + 1))[0] = {lenExpr};");
 
-        var shared = IsSharedArrayArgument(shape, usesRegions);
-        writer.AppendLine($"if ({(shared ? NotNullPrefix(shape) : "")}{shape.Name}_size > 0)");
+        WriteSizeTest(writer, plan, paramIndex);
         using (writer.Scope())
         {
-            // if (!deviceArrays.TryGetRegion(<name>, out d_<name>)) { <allocate>; deviceArrays.Add(...); <copy in> }
-            // An array that another holder already copied gets its region and is not copied again
-            if (shared)
-            {
-                writer.AppendLine($"if (!{DeviceArrays}.TryGetRegion({shape.Identifier}, out d_{shape.Name}))");
-                using (writer.Scope())
-                {
-                    WriteArrayAllocationAndCopyIn(writer, shape, elementType, isOutOnly, shared);
-                }
-            }
-            else
-            {
-                WriteArrayAllocationAndCopyIn(writer, shape, elementType, isOutOnly, shared);
-            }
-
+            WriteRegion(writer, plan, paramIndex, rentOnReuse: false);
             writer.AppendLine($"proxy_{shape.Name}[0] = d_{shape.Name};");
         }
 
         writer.AppendLine($"kernelParams[{paramIndex}] = proxy_{shape.Name};");
     }
 
+    // if ([<name> is not null && ]<name>_size > 0), the null test before a table lookup only
+    private static void WriteSizeTest(SourceWriter writer, in ArraySharingPlan plan, int paramIndex)
+    {
+        var shape = plan.Parameters[paramIndex];
+        var notNull = plan.UsesTable && plan.IsShared(paramIndex) ? NotNullPrefix(shape) : "";
+        writer.AppendLine($"if ({notNull}{shape.Name}_size > 0)");
+    }
+
+    // Table:    if (!deviceArrays.TryGetRegion(<name>, out d_<name>)) { <own region> } [else { <rent shadow> }]
+    // Pairwise: if (ReferenceEquals(<name>, <earlier>)) { d_<name> = d_<earlier>; [<rent shadow>] } else if ...
+    //           else { <own region> }  (the shadow only when <earlier> does not copy back)
+    // [WHY] An array argument is a reference: two arguments, or an argument and a struct field, that hold one array are
+    // one object in C#, so the launcher gives them one device region (#721). An array that a holder before it already
+    // copied gets that region and is not copied again; a converted holder that copies back rents a shadow to copy the
+    // region back into (WriteConvertedArrayUnmarshal). Arguments alone are compared pairwise, with no allocation; the
+    // table is there when a struct or element holds arrays (ArraySharingPlan).
+    private static void WriteRegion(SourceWriter writer, in ArraySharingPlan plan, int paramIndex, bool rentOnReuse)
+    {
+        var shape = plan.Parameters[paramIndex];
+        var name = shape.Name;
+        if (!plan.IsShared(paramIndex))
+        {
+            WriteOwnRegion(writer, plan, paramIndex);
+            return;
+        }
+
+        if (plan.UsesTable)
+        {
+            writer.AppendLine($"if (!{DeviceArrays}.TryGetRegion({shape.Identifier}, out d_{name}))");
+            using (writer.Scope())
+            {
+                WriteOwnRegion(writer, plan, paramIndex);
+            }
+
+            if (rentOnReuse)
+            {
+                writer.AppendLine("else");
+                using (writer.Scope())
+                {
+                    WriteShadowRent(writer, name);
+                }
+            }
+
+            return;
+        }
+
+        var hasEarlier = false;
+        for (var k = 0; k < plan.Parameters.Length; k++)
+        {
+            if (!plan.IsEarlierHolder(paramIndex, k))
+            {
+                continue;
+            }
+
+            var earlier = plan.Parameters[k];
+            writer.AppendLine(
+                $"{(hasEarlier ? "else if" : "if")} ({ReferenceEqualsMethod}({shape.Identifier}, {earlier.Identifier}))");
+            using (writer.Scope())
+            {
+                writer.AppendLine($"d_{name} = d_{earlier.Name};");
+                // An earlier holder that copies back copies this array back as well (WriteCopyBackClaim)
+                if (rentOnReuse && !plan.IsEarlierCopyBack(paramIndex, k))
+                {
+                    WriteShadowRent(writer, name);
+                }
+            }
+
+            hasEarlier = true;
+        }
+
+        if (!hasEarlier)
+        {
+            WriteOwnRegion(writer, plan, paramIndex);
+            return;
+        }
+
+        writer.AppendLine("else");
+        using (writer.Scope())
+        {
+            WriteOwnRegion(writer, plan, paramIndex);
+        }
+    }
+
+    private static void WriteOwnRegion(SourceWriter writer, in ArraySharingPlan plan, int paramIndex)
+    {
+        var shape = plan.Parameters[paramIndex];
+        var recorded = plan.UsesTable && plan.IsShared(paramIndex);
+        if (shape.IsCudaConvertedArray)
+        {
+            WriteConvertedArrayAllocationAndCopyIn(writer, shape, recorded, plan.CopiesIn(paramIndex));
+        }
+        else
+        {
+            WriteArrayAllocationAndCopyIn(writer, shape, recorded, plan.CopiesIn(paramIndex));
+        }
+    }
+
     private static void WriteArrayAllocationAndCopyIn(SourceWriter writer, in KernelParameterShape shape,
-        string elementType, bool isOutOnly, bool shared)
+        bool recorded, bool copiesIn)
     {
         writer.AppendLine(
             $"CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_{shape.Name}, (IntPtr){shape.Name}_size, hStream));");
-        writer.AppendLineIf(shared, $"{DeviceArrays}.Add({shape.Identifier}, d_{shape.Name});");
+        writer.AppendLineIf(recorded, $"{DeviceArrays}.Add({shape.Identifier}, d_{shape.Name});");
 
-        if (isOutOnly)
+        if (!copiesIn)
         {
             writer.AppendLine($"// Skip HtoD copy for [Out] array: {shape.Identifier}");
             return;
         }
 
-        writer.AppendLine($"fixed ({elementType}* p_{shape.Name} = {shape.SpanExpression})");
+        writer.AppendLine($"fixed ({GetElementTypeName(shape)}* p_{shape.Name} = {shape.SpanExpression})");
         using (writer.Scope())
         {
             writer.AppendLine(
@@ -389,9 +463,9 @@ internal static class KernelLaunchEmitter
 
     // [WHY] The host and device layouts of the element differ (GSH0080), so the elements are converted into a shadow
     // array of the device layout, rented from ArrayPool, and the shadow is copied in one transfer.
-    private static void WriteConvertedArrayMarshal(SourceWriter writer, in KernelParameterShape shape, int paramIndex,
-        bool usesRegions)
+    private static void WriteConvertedArrayMarshal(SourceWriter writer, in ArraySharingPlan plan, int paramIndex)
     {
+        var shape = plan.Parameters[paramIndex];
         var name = shape.Name;
         var lenExpr = shape.LengthExpression;
 
@@ -402,34 +476,10 @@ internal static class KernelLaunchEmitter
         writer.AppendLine($"proxy_{name}[0] = IntPtr.Zero;");
         writer.AppendLine($"((int*)(proxy_{name} + 1))[0] = {lenExpr};");
 
-        var shared = IsSharedArrayArgument(shape, usesRegions);
-        writer.AppendLine($"if ({(shared ? NotNullPrefix(shape) : "")}{name}_size > 0)");
+        WriteSizeTest(writer, plan, paramIndex);
         using (writer.Scope())
         {
-            // The same lookup as WriteArrayMarshal: a holder that finds the region neither converts nor copies, and
-            // rents a shadow only to copy the region back into (WriteConvertedArrayUnmarshal)
-            if (shared)
-            {
-                writer.AppendLine($"if (!{DeviceArrays}.TryGetRegion({shape.Identifier}, out d_{name}))");
-                using (writer.Scope())
-                {
-                    WriteConvertedArrayAllocationAndCopyIn(writer, shape, shared);
-                }
-
-                if (CopiesBack(shape))
-                {
-                    writer.AppendLine("else");
-                    using (writer.Scope())
-                    {
-                        WriteShadowRent(writer, name);
-                    }
-                }
-            }
-            else
-            {
-                WriteConvertedArrayAllocationAndCopyIn(writer, shape, shared);
-            }
-
+            WriteRegion(writer, plan, paramIndex, rentOnReuse: plan.CopiesBack(paramIndex));
             writer.AppendLine($"proxy_{name}[0] = d_{name};");
         }
 
@@ -437,7 +487,7 @@ internal static class KernelLaunchEmitter
     }
 
     private static void WriteConvertedArrayAllocationAndCopyIn(SourceWriter writer, in KernelParameterShape shape,
-        bool shared)
+        bool recorded, bool copiesIn)
     {
         var name = shape.Name;
         WriteShadowRent(writer, name);
@@ -445,11 +495,11 @@ internal static class KernelLaunchEmitter
             "CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(" +
             $"out d_{name}, (IntPtr){name}_size, hStream));");
         // Recorded before the elements are marshaled, so that an element that holds the same array finds it
-        writer.AppendLineIf(shared, $"{DeviceArrays}.Add({shape.Identifier}, d_{name});");
+        writer.AppendLineIf(recorded, $"{DeviceArrays}.Add({shape.Identifier}, d_{name});");
 
         // [WHY] An [Out] array still needs its elements' array fields on the device: the kernel writes into
         // them, and Unmarshal_ copies them back through the device pointers that Marshal_ stores
-        if (!CopiesIn(shape))
+        if (!copiesIn)
         {
             writer.AppendLine($"// Skip HtoD copy for [Out] array: {shape.Identifier}");
             return;
@@ -469,9 +519,6 @@ internal static class KernelLaunchEmitter
 
     private static void WriteShadowRent(SourceWriter writer, string name) =>
         writer.AppendLine($"{name}_shadow = System.Buffers.ArrayPool<byte>.Shared.Rent({name}_size);");
-
-    // Whether the launcher copies the array argument back to the host: not [In], not a read-only container
-    private static bool CopiesBack(in KernelParameterShape shape) => shape.CopyOut && !shape.IsReadOnlyContainer;
 
     private static void WriteRefOrOutScalarMarshal(SourceWriter writer, in KernelParameterShape shape, int paramIndex)
     {
@@ -534,9 +581,10 @@ internal static class KernelLaunchEmitter
         writer.AppendLine();
     }
 
-    private static void WriteParameterUnmarshal(SourceWriter writer, in KernelParameterShape shape, bool isDevicePtr,
-        bool usesRegions)
+    private static void WriteParameterUnmarshal(SourceWriter writer, in ArraySharingPlan plan, int paramIndex,
+        bool isDevicePtr)
     {
+        var shape = plan.Parameters[paramIndex];
         if (IsPassedThrough(shape, isDevicePtr))
         {
             return;
@@ -548,7 +596,7 @@ internal static class KernelLaunchEmitter
                 WriteCustomStructUnmarshal(writer, shape, isDevicePtr);
                 break;
             case KernelParameterKind.Array:
-                WriteArrayUnmarshal(writer, shape, isDevicePtr, usesRegions);
+                WriteArrayUnmarshal(writer, plan, paramIndex, isDevicePtr);
                 break;
             case KernelParameterKind.RefScalar:
                 WriteRefOrOutScalarUnmarshal(writer, shape, isDevicePtr);
@@ -589,15 +637,16 @@ internal static class KernelLaunchEmitter
         writer.AppendLine(";");
     }
 
-    private static void WriteArrayUnmarshal(SourceWriter writer, in KernelParameterShape shape, bool isDevicePtr,
-        bool usesRegions)
+    private static void WriteArrayUnmarshal(SourceWriter writer, in ArraySharingPlan plan, int paramIndex,
+        bool isDevicePtr)
     {
         if (isDevicePtr)
         {
             return;
         }
 
-        if (!CopiesBack(shape))
+        var shape = plan.Parameters[paramIndex];
+        if (!plan.CopiesBack(paramIndex))
         {
             writer.AppendLine($"// Skip DtoH copy for [In] array: {shape.Identifier}");
             return;
@@ -605,12 +654,19 @@ internal static class KernelLaunchEmitter
 
         if (shape.IsCudaConvertedArray)
         {
-            WriteConvertedArrayUnmarshal(writer, shape, usesRegions);
+            WriteConvertedArrayUnmarshal(writer, plan, paramIndex);
             return;
         }
 
         writer.AppendLine($"// Copy back array: {shape.Identifier}");
-        writer.AppendLine($"if ({shape.Name}_size > 0 && d_{shape.Name} != IntPtr.Zero{CopyBackClaim(shape, usesRegions)})");
+        writer.Append("if ");
+        using (writer.Parentheses())
+        {
+            writer.Append($"{shape.Name}_size > 0 && d_{shape.Name} != IntPtr.Zero");
+            WriteCopyBackClaim(writer, plan, paramIndex);
+        }
+
+        writer.AppendLine();
         using (writer.Scope())
         {
             writer.AppendLine($"fixed ({GetElementTypeName(shape)}* p_{shape.Name} = {shape.SpanExpression})");
@@ -623,12 +679,19 @@ internal static class KernelLaunchEmitter
         }
     }
 
-    private static void WriteConvertedArrayUnmarshal(SourceWriter writer, in KernelParameterShape shape,
-        bool usesRegions)
+    private static void WriteConvertedArrayUnmarshal(SourceWriter writer, in ArraySharingPlan plan, int paramIndex)
     {
+        var shape = plan.Parameters[paramIndex];
         var name = shape.Name;
         writer.AppendLine($"// Copy back array element by element: {shape.Identifier}");
-        writer.AppendLine($"if ({name}_size > 0 && d_{name} != IntPtr.Zero && {name}_shadow != null{CopyBackClaim(shape, usesRegions)})");
+        writer.Append("if ");
+        using (writer.Parentheses())
+        {
+            writer.Append($"{name}_size > 0 && d_{name} != IntPtr.Zero && {name}_shadow != null");
+            WriteCopyBackClaim(writer, plan, paramIndex);
+        }
+
+        writer.AppendLine();
         using (writer.Scope())
         {
             writer.AppendLine($"fixed (byte* p_{name} = {name}_shadow)");
@@ -645,14 +708,33 @@ internal static class KernelLaunchEmitter
         }
     }
 
-    // " && [<name> is not null && ]deviceArrays.TryClaimCopyBack(<name>)" for an array argument that may share its region
+    // Table:    " && [<name> is not null && ]deviceArrays.TryClaimCopyBack(<name>)"
+    // Pairwise: " && !ReferenceEquals(<name>, <earlier holder that copies back>)" for each
     // [WHY] The region holds the writes of every holder, so the first holder that copies back copies them all, and the
     // others would write the same bytes again (#721). A holder that never copies back ([In], a read-only container)
     // claims nothing, so a writable holder of the same array still copies it back.
-    private static string CopyBackClaim(in KernelParameterShape shape, bool usesRegions) =>
-        IsSharedArrayArgument(shape, usesRegions)
-            ? $" && {NotNullPrefix(shape)}{DeviceArrays}.TryClaimCopyBack({shape.Identifier})"
-            : "";
+    private static void WriteCopyBackClaim(SourceWriter writer, in ArraySharingPlan plan, int paramIndex)
+    {
+        var shape = plan.Parameters[paramIndex];
+        if (!plan.IsShared(paramIndex))
+        {
+            return;
+        }
+
+        if (plan.UsesTable)
+        {
+            writer.Append($" && {NotNullPrefix(shape)}{DeviceArrays}.TryClaimCopyBack({shape.Identifier})");
+            return;
+        }
+
+        for (var k = 0; k < plan.Parameters.Length; k++)
+        {
+            if (plan.IsEarlierCopyBack(paramIndex, k))
+            {
+                writer.Append($" && !{ReferenceEqualsMethod}({shape.Identifier}, {plan.Parameters[k].Identifier})");
+            }
+        }
+    }
 
     private static void WriteRefOrOutScalarUnmarshal(SourceWriter writer, in KernelParameterShape shape, bool isDevicePtr)
     {
@@ -677,25 +759,44 @@ internal static class KernelLaunchEmitter
         }
     }
 
-    private static void WriteParameterFree(SourceWriter writer, in KernelParameterShape shape, bool isDevicePtr,
-        bool usesRegions)
+    // if (d_<name> != IntPtr.Zero[ && d_<name> != d_<earlier holder>...]) cuMemFreeAsync(d_<name>, hStream);
+    // The launch's DeviceArrayRegions frees the region of an array that the table records (WriteCleanup); a pairwise
+    // holder that took the region of a holder before it leaves the free to that holder
+    private static void WriteParameterFree(SourceWriter writer, in ArraySharingPlan plan, int paramIndex,
+        bool isDevicePtr)
     {
         if (isDevicePtr)
         {
             return;
         }
 
+        var shape = plan.Parameters[paramIndex];
         if (shape.IsCudaConvertedArray)
         {
             writer.AppendLine(
                 $"if ({shape.Name}_shadow != null) System.Buffers.ArrayPool<byte>.Shared.Return({shape.Name}_shadow);");
         }
 
-        // The launch's DeviceArrayRegions frees the region of an array argument that may share it (WriteCleanup)
-        if ((shape.IsArray && !IsSharedArrayArgument(shape, usesRegions)) || shape.IsByRef)
+        var freesOwnRegion = shape.IsByRef || (shape.IsArray && !(plan.UsesTable && plan.IsShared(paramIndex)));
+        if (!freesOwnRegion)
         {
-            writer.AppendLine($"if (d_{shape.Name} != IntPtr.Zero) CudaDriverApi.cuMemFreeAsync(d_{shape.Name}, hStream);");
+            return;
         }
+
+        writer.Append("if ");
+        using (writer.Parentheses())
+        {
+            writer.Append($"d_{shape.Name} != IntPtr.Zero");
+            for (var k = 0; k < plan.Parameters.Length; k++)
+            {
+                if (plan.IsEarlierHolder(paramIndex, k))
+                {
+                    writer.Append($" && d_{shape.Name} != d_{plan.Parameters[k].Name}");
+                }
+            }
+        }
+
+        writer.AppendLine($" CudaDriverApi.cuMemFreeAsync(d_{shape.Name}, hStream);");
     }
 
     private static string GetElementTypeName(in KernelParameterShape shape) =>

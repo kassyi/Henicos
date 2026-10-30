@@ -31,9 +31,10 @@ public static void VectorAdd([In] float[] a, [In] float[] b, [Out] float[] c, in
   any of its holders copies in (no `[Out]`), and back to the host once when any of them copies back (no `[In]`, not a
   read-only container). For example, `K([In] int[] a, int[] b)` called as `K(x, x)` reads through `a` what the kernel
   wrote through `b`, and `x` gets the writes. The CPU paths give the kernel the caller's array in that case; they copy
-  an `[In]` array only when no other array argument that copies back holds it, and `[In]` arguments that hold one array
-  share that copy. A span, `Memory<T>` or `ArraySegment<T>` over an array is a slice with no identity of its own; such
-  arguments are not shared.
+  an `[In]` array only when no other holder that sends the writes back holds it: an array argument that copies back, a
+  struct argument with the array in a field at any depth, or an element of an array argument that copies back. `[In]`
+  arguments that hold one array share that copy. A span, `Memory<T>` or `ArraySegment<T>` over an array is a slice with
+  no identity of its own; such arguments are not shared.
 
 Using these attributes appropriately is highly recommended for performance-critical kernels, as redundant PCIe transfers can drastically degrade performance compared to native C++ CUDA.
 

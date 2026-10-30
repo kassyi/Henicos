@@ -161,6 +161,41 @@ if (host.PutResult != null)
 host.PutResult = (global::System.Single[])host.PutResult.Clone();
 }
 }
+public static bool HoldsArray_BlackScholesKernels_BlackScholesContext(global::Henicos.Benchmarks.ComputeBenchmarks.BlackScholesKernels.BlackScholesContext host, object array)
+{
+if (global::System.Object.ReferenceEquals(host.S, array))
+{
+return true;
+}
+if (global::System.Object.ReferenceEquals(host.X, array))
+{
+return true;
+}
+if (global::System.Object.ReferenceEquals(host.T, array))
+{
+return true;
+}
+if (global::System.Object.ReferenceEquals(host.CallResult, array))
+{
+return true;
+}
+if (global::System.Object.ReferenceEquals(host.PutResult, array))
+{
+return true;
+}
+return false;
+}
+public static bool HoldsArray_BlackScholesKernels_BlackScholesContext(System.ReadOnlySpan<global::Henicos.Benchmarks.ComputeBenchmarks.BlackScholesKernels.BlackScholesContext> items, object array)
+{
+for (int i = 0; i < items.Length; i++)
+{
+if (HoldsArray_BlackScholesKernels_BlackScholesContext(items[i], array))
+{
+return true;
+}
+}
+return false;
+}
 #pragma warning restore CS8500
 }
 public const string BlackScholesKernel_Source = @"#ifndef __GSHARP_STRUCT___gsharp_ty_Henicos__Benchmarks__ComputeBenchmarks__BlackScholesKernels__BlackScholesContext__

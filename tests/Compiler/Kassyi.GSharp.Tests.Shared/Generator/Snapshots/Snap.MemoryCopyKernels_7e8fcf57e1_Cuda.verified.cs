@@ -121,7 +121,6 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 WarmupFunctionPointerMemoryCopyKernel();
 IntPtr hfunc = s_hfunc_MemoryCopyKernel!.Value;
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "MemoryCopyKernels.MemoryCopyKernel");
-var __gsharp_device_arrays = new global::Kassyi.GSharp.Runtime.Interop.DeviceArrayRegions();
 IntPtr d_src = IntPtr.Zero;
 IntPtr d_dst = IntPtr.Zero;
 try
@@ -134,15 +133,11 @@ proxy_src[0] = IntPtr.Zero;
 ((int*)(proxy_src + 1))[0] = src.Length;
 if (src_size > 0)
 {
-if (!__gsharp_device_arrays.TryGetRegion(src, out d_src))
-{
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_src, (IntPtr)src_size, hStream));
-__gsharp_device_arrays.Add(src, d_src);
 fixed (global::System.Single* p_src = src)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoDAsync_v2(d_src, (IntPtr)p_src, (IntPtr)src_size, hStream));
 CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
-}
 }
 proxy_src[0] = d_src;
 }
@@ -156,10 +151,13 @@ proxy_dst[0] = IntPtr.Zero;
 ((int*)(proxy_dst + 1))[0] = dst.Length;
 if (dst_size > 0)
 {
-if (!__gsharp_device_arrays.TryGetRegion(dst, out d_dst))
+if (global::System.Object.ReferenceEquals(dst, src))
+{
+d_dst = d_src;
+}
+else
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_dst, (IntPtr)dst_size, hStream));
-__gsharp_device_arrays.Add(dst, d_dst);
 // Skip HtoD copy for [Out] array: dst
 }
 proxy_dst[0] = d_dst;
@@ -176,7 +174,7 @@ IntPtr.Zero // Extra
 ));
 // Skip DtoH copy for [In] array: src
 // Copy back array: dst
-if (dst_size > 0 && d_dst != IntPtr.Zero && __gsharp_device_arrays.TryClaimCopyBack(dst))
+if (dst_size > 0 && d_dst != IntPtr.Zero)
 {
 fixed (global::System.Single* p_dst = dst)
 {
@@ -187,7 +185,8 @@ CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
 }
 finally
 {
-__gsharp_device_arrays.Free(hStream);
+if (d_src != IntPtr.Zero) CudaDriverApi.cuMemFreeAsync(d_src, hStream);
+if (d_dst != IntPtr.Zero && d_dst != d_src) CudaDriverApi.cuMemFreeAsync(d_dst, hStream);
 }
 }
 }
