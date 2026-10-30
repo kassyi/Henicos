@@ -133,4 +133,57 @@ internal static class SwitchSuspensionScenarios
             Assert.Equal(value * 10 + flag + 1, output[i]);
         }
     }
+
+    public static void SectionConstantAcrossBarrier(Action<Action> run, int flag)
+    {
+        var output = new int[WarpSize];
+
+        run(() => SwitchSuspensionKernels.LaunchSectionConstantAcrossBarrierKernel(output, flag, blockDimX: WarpSize));
+
+        // case 0: (byte)(255 + 1) == 0; default: (byte)(255 + 1) + 255 == 255
+        Assert.All(output, value => Assert.Equal(flag == 0 ? 0 : 255, value));
+    }
+
+    public static void SectionConstantChain(Action<Action> run, int flag)
+    {
+        var output = new int[WarpSize];
+
+        run(() => SwitchSuspensionKernels.LaunchSectionConstantChainKernel(output, flag, blockDimX: WarpSize));
+
+        Assert.All(output, value => Assert.Equal(flag switch { 0 => 3, 1 => 6, _ => 9 }, value));
+    }
+
+#if GSHARP_CPU
+    public static void NaNCase(Action<Action> run, float selector)
+    {
+        var output = new int[WarpSize];
+
+        run(() => SwitchNaNCaseKernels.LaunchNaNCaseKernel(output, selector, blockDimX: WarpSize));
+
+        for (int i = 0; i < WarpSize; i++)
+        {
+            // C# matches case float.NaN for a NaN value (the switch compares with float.IsNaN)
+            int expected = float.IsNaN(selector) ? i ^ 1 : selector == 1f ? i + 100 : i + 1000;
+            Assert.Equal(expected, output[i]);
+        }
+    }
+#endif
+
+    public static void SectionConstantCaseLabel(Action<Action> run, int flag)
+    {
+        var output = new int[WarpSize];
+
+        run(() => SwitchSuspensionKernels.LaunchSectionConstantCaseLabelKernel(output, flag, blockDimX: WarpSize));
+
+        for (int i = 0; i < WarpSize; i++)
+        {
+            int expected = flag switch
+            {
+                0 => i ^ 1,
+                1 => (i ^ 2) + 100,
+                _ => i + 1000
+            };
+            Assert.Equal(expected, output[i]);
+        }
+    }
 }

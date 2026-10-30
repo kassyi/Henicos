@@ -169,4 +169,76 @@ public static partial class SwitchSuspensionKernels
 
         output[tid] = value * 10 + k;
     }
+
+    // A const of a section that another section reads, declared before the barrier of its own section: the default
+    // section reads 255, not the value of a context field that only the first section assigns. The byte type is kept, so
+    // the first section wraps to 0
+    [GpuKernel]
+    public static void SectionConstantAcrossBarrierKernel(int[] output, int flag)
+    {
+        int tid = ThreadIndex.X;
+        switch (flag)
+        {
+            case 0:
+                const byte Max = 255;
+                Gpu.SyncThreads();
+                var x = Max;
+                x++;
+                output[tid] = x;
+                break;
+            default:
+                var y = Max;
+                y++;
+                output[tid] = y + Max;
+                break;
+        }
+    }
+
+    // A const of a section used as the case label of another section, in a switch flattened for its shuffles: the
+    // dispatch compares with the const's value before any section runs
+    [GpuKernel]
+    public static void SectionConstantCaseLabelKernel(int[] output, int flag)
+    {
+        int tid = ThreadIndex.X;
+        int value = tid;
+        switch (flag)
+        {
+            case 0:
+                const int Next = 1;
+                value = Warp.ShuffleXorSync(FullMask, value, 1);
+                break;
+            case Next:
+                value = Warp.ShuffleXorSync(FullMask, value, 2) + 100;
+                break;
+            default:
+                value += 1000;
+                break;
+        }
+
+        output[tid] = value;
+    }
+
+    // A const of a section that reads a const of an earlier section, each before a barrier: the consts move ahead of the
+    // dispatch in source order, so B reads the value of A that is already assigned
+    [GpuKernel]
+    public static void SectionConstantChainKernel(int[] output, int flag)
+    {
+        int tid = ThreadIndex.X;
+        switch (flag)
+        {
+            case 0:
+                const int A = 3;
+                Gpu.SyncThreads();
+                output[tid] = A;
+                break;
+            case 1:
+                const int B = A * 2;
+                Gpu.SyncThreads();
+                output[tid] = B;
+                break;
+            default:
+                output[tid] = A + B;
+                break;
+        }
+    }
 }

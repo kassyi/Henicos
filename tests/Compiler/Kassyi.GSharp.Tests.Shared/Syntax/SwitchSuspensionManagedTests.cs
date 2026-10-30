@@ -63,6 +63,37 @@ public class SwitchSuspensionManagedTests : TranspilerTestBase
     public void Test_Managed_GoverningEvaluatedOnce_SideEffectRunsOnce(int flag) =>
         SwitchSuspensionScenarios.GoverningEvaluatedOnce(s_runManaged, flag);
 
+    [Theory]
+    [Scenario(TestScenario.Boundary)]
+    [InlineData(0)]
+    [InlineData(1)]
+    public void Test_Managed_SectionConstantAcrossBarrier_OtherSectionReadsItsValue(int flag) =>
+        SwitchSuspensionScenarios.SectionConstantAcrossBarrier(s_runManaged, flag);
+
+    [Theory]
+    [Scenario(TestScenario.Boundary)]
+    [InlineData(0)]
+    [InlineData(1)]
+    [InlineData(2)]
+    public void Test_Managed_SectionConstantCaseLabel_DispatchMatchesItsValue(int flag) =>
+        SwitchSuspensionScenarios.SectionConstantCaseLabel(s_runManaged, flag);
+
+    [Theory]
+    [Scenario(TestScenario.Boundary)]
+    [InlineData(0)]
+    [InlineData(1)]
+    [InlineData(2)]
+    public void Test_Managed_SectionConstantChain_LaterConstReadsEarlierOne(int flag) =>
+        SwitchSuspensionScenarios.SectionConstantChain(s_runManaged, flag);
+
+    [Theory]
+    [Scenario(TestScenario.Boundary)]
+    [InlineData(float.NaN)]
+    [InlineData(1f)]
+    [InlineData(2f)]
+    public void Test_Managed_NaNCase_MatchesNaN(float selector) =>
+        SwitchSuspensionScenarios.NaNCase(s_runManaged, selector);
+
     private static void RunManaged(Action launch)
     {
         bool previousState = CpuKernelLoader.ForceManagedExecution;

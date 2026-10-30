@@ -59,4 +59,37 @@ public class SwitchSuspensionTests : TranspilerTestBase
     [InlineData(5)]
     public void Test_GoverningEvaluatedOnce_SideEffectRunsOnce(int flag) =>
         SwitchSuspensionScenarios.GoverningEvaluatedOnce(s_runNative, flag);
+
+    [SkippableTheory]
+    [Scenario(TestScenario.Boundary)]
+    [InlineData(0)]
+    [InlineData(1)]
+    public void Test_SectionConstantAcrossBarrier_OtherSectionReadsItsValue(int flag) =>
+        SwitchSuspensionScenarios.SectionConstantAcrossBarrier(s_runNative, flag);
+
+    [SkippableTheory]
+    [Scenario(TestScenario.Boundary)]
+    [InlineData(0)]
+    [InlineData(1)]
+    [InlineData(2)]
+    public void Test_SectionConstantCaseLabel_DispatchMatchesItsValue(int flag) =>
+        SwitchSuspensionScenarios.SectionConstantCaseLabel(s_runNative, flag);
+
+    [SkippableTheory]
+    [Scenario(TestScenario.Boundary)]
+    [InlineData(0)]
+    [InlineData(1)]
+    [InlineData(2)]
+    public void Test_SectionConstantChain_LaterConstReadsEarlierOne(int flag) =>
+        SwitchSuspensionScenarios.SectionConstantChain(s_runNative, flag);
+
+#if GSHARP_CPU
+    [SkippableTheory]
+    [Scenario(TestScenario.Boundary)]
+    [InlineData(float.NaN)]
+    [InlineData(1f)]
+    [InlineData(2f)]
+    public void Test_NaNCase_MatchesNaN(float selector) =>
+        SwitchSuspensionScenarios.NaNCase(s_runNative, selector);
+#endif
 }
