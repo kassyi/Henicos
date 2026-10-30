@@ -44,6 +44,7 @@ public static void Warmup()
 // Force load the module first
 GetOrLoadModule();
 global::Kassyi.GSharp.Tests.Shared.Syntax.WrapperAllocationKernels.WarmupFunctionPointerAllocationTestKernel();
+global::Kassyi.GSharp.Tests.Shared.Syntax.WrapperAllocationKernels.WarmupFunctionPointerArrayFreeStructKernel();
 }}}
 
 
@@ -81,12 +82,29 @@ public partial class WrapperAllocationKernels
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 public static partial class AotContexts
 {
+#pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
+[System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Explicit, Size = 4)]
+public unsafe partial struct ArrayFreeCounter
+{
+public const string DebugName_Value = "global::System.Int32";
+[System.Runtime.InteropServices.FieldOffset(0)]
+public global::System.Int32 Value;
+}
+public static unsafe void Marshal_ArrayFreeCounter(ref global::Kassyi.GSharp.Tests.Shared.Syntax.ArrayFreeCounter host, ref AotContexts.ArrayFreeCounter native, bool isDevicePtr, global::Kassyi.GSharp.Runtime.Interop.DeviceArrayRegions? deviceArrays, IntPtr hStream = default)
+{
+native = System.Runtime.CompilerServices.Unsafe.As<global::Kassyi.GSharp.Tests.Shared.Syntax.ArrayFreeCounter, AotContexts.ArrayFreeCounter>(ref host);
+}
+public static unsafe void Unmarshal_ArrayFreeCounter(ref global::Kassyi.GSharp.Tests.Shared.Syntax.ArrayFreeCounter host, ref AotContexts.ArrayFreeCounter native, bool isDevicePtr, IntPtr hStream = default)
+{
+host = System.Runtime.CompilerServices.Unsafe.As<AotContexts.ArrayFreeCounter, global::Kassyi.GSharp.Tests.Shared.Syntax.ArrayFreeCounter>(ref native);
+}
+#pragma warning restore CS8500
 }
 public const string AllocationTestKernel_Source = @"extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__WrapperAllocationKernels__AllocationTestKernel(int* __gsharp_id_0_ioVal, float* __gsharp_id_1_outVal, GSharpArray<int> __gsharp_id_2_arrayVal, unsigned int __gsharp_id_3_constantVal){
 if((long long)(*__gsharp_id_0_ioVal)>(long long)__gsharp_id_3_constantVal)
 {
 (*__gsharp_id_1_outVal)=__gsharp_id_2_arrayVal[0];
-(*__gsharp_id_0_ioVal)=(int)(*__gsharp_id_1_outVal)+1;
+(*__gsharp_id_0_ioVal)=__gsharp_add_i32(__gsharp_to_i32((*__gsharp_id_1_outVal)),1);
 }
 else
 {
@@ -223,6 +241,118 @@ proxy_arrayVal[0] = arrayVal;
 kernelParams[2] = proxy_arrayVal;
 // Marshal scalar: constantVal
 kernelParams[3] = &constantVal;
+CudaException.ThrowIfError(CudaDriverApi.cuLaunchKernel(
+hfunc,
+gridDimX, gridDimY, gridDimZ, // Grid dim
+blockDimX, blockDimY, blockDimZ, // Block dim
+sharedMemBytes, // Shared mem
+hStream, // Stream
+kernelParams,
+IntPtr.Zero // Extra
+));
+}
+finally
+{
+}
+}
+}
+#pragma warning restore CS8500
+public const string ArrayFreeStructKernel_Source = @"#ifndef __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ArrayFreeCounter__
+#define __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ArrayFreeCounter__
+struct __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ArrayFreeCounter
+{
+int __gsharp_mb_Value;
+}
+;
+static_assert(sizeof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ArrayFreeCounter)==4,""Kassyi.GSharp.Tests.Shared.Syntax.ArrayFreeCounter: size"");
+static_assert(alignof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ArrayFreeCounter)==4,""Kassyi.GSharp.Tests.Shared.Syntax.ArrayFreeCounter: alignment"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ArrayFreeCounter,__gsharp_mb_Value)==0,""Kassyi.GSharp.Tests.Shared.Syntax.ArrayFreeCounter.Value: offset"");
+#endif
+extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__WrapperAllocationKernels__ArrayFreeStructKernel(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ArrayFreeCounter* __gsharp_id_0_counter){
+if((int)threadIdx.x==0)
+{
+(*__gsharp_id_0_counter).__gsharp_mb_Value=__gsharp_add_i32((*__gsharp_id_0_counter).__gsharp_mb_Value,1);
+}
+}
+";
+public static readonly string ArrayFreeStructKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +ArrayFreeStructKernel_Source;
+private static IntPtr? s_hfunc_ArrayFreeStructKernel;
+private static bool s_layoutChecked_ArrayFreeStructKernel;
+/// <summary>Preloads the CUDA module and resolves the function pointer for this kernel.</summary>
+public static void WarmupFunctionPointerArrayFreeStructKernel()
+{
+if (s_hfunc_ArrayFreeStructKernel.HasValue) return;
+IntPtr hModule = global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetOrLoadModule();
+s_hfunc_ArrayFreeStructKernel = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.GetFunction(hModule, "__gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__WrapperAllocationKernels__ArrayFreeStructKernel");
+}
+#pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
+[global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
+[global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
+public static unsafe void LaunchArrayFreeStructKernel(ref global::Kassyi.GSharp.Tests.Shared.Syntax.ArrayFreeCounter counter, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, IntPtr hStream = default, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
+{
+if (!s_layoutChecked_ArrayFreeStructKernel)
+{
+if (global::System.Runtime.CompilerServices.Unsafe.SizeOf<global::Kassyi.GSharp.Tests.Shared.Syntax.ArrayFreeCounter>() != 4) global::Kassyi.GSharp.Runtime.Interop.LayoutGuard.ThrowSizeMismatch("Kassyi.GSharp.Tests.Shared.Syntax.ArrayFreeCounter", 4, global::System.Runtime.CompilerServices.Unsafe.SizeOf<global::Kassyi.GSharp.Tests.Shared.Syntax.ArrayFreeCounter>());
+{
+global::Kassyi.GSharp.Tests.Shared.Syntax.ArrayFreeCounter __gsharp_layout_probe = default;
+if (global::System.Runtime.CompilerServices.Unsafe.ByteOffset(ref global::System.Runtime.CompilerServices.Unsafe.As<global::Kassyi.GSharp.Tests.Shared.Syntax.ArrayFreeCounter, byte>(ref __gsharp_layout_probe), ref global::System.Runtime.CompilerServices.Unsafe.As<global::System.Int32, byte>(ref global::System.Runtime.CompilerServices.Unsafe.AsRef(in __gsharp_layout_probe.Value))) != 0) global::Kassyi.GSharp.Runtime.Interop.LayoutGuard.ThrowFieldOffsetMismatch("Kassyi.GSharp.Tests.Shared.Syntax.ArrayFreeCounter", "Value", 0, (long)global::System.Runtime.CompilerServices.Unsafe.ByteOffset(ref global::System.Runtime.CompilerServices.Unsafe.As<global::Kassyi.GSharp.Tests.Shared.Syntax.ArrayFreeCounter, byte>(ref __gsharp_layout_probe), ref global::System.Runtime.CompilerServices.Unsafe.As<global::System.Int32, byte>(ref global::System.Runtime.CompilerServices.Unsafe.AsRef(in __gsharp_layout_probe.Value))));
+}
+s_layoutChecked_ArrayFreeStructKernel = true;
+}
+using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
+{
+WarmupFunctionPointerArrayFreeStructKernel();
+IntPtr hfunc = s_hfunc_ArrayFreeStructKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "WrapperAllocationKernels.ArrayFreeStructKernel");
+IntPtr d_counter = IntPtr.Zero;
+try
+{
+void** kernelParams = stackalloc void*[1];
+AotContexts.ArrayFreeCounter native_counter = default;
+AotContexts.Marshal_ArrayFreeCounter(ref counter, ref native_counter, false, null, hStream);
+// Marshal ref/out struct: counter
+int counter_size = sizeof(AotContexts.ArrayFreeCounter);
+CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_counter, (IntPtr)counter_size, hStream));
+// Fast zero-allocation copy to device
+CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoDAsync_v2(d_counter, (IntPtr)(&native_counter), (IntPtr)counter_size, hStream));
+CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
+kernelParams[0] = &d_counter;
+CudaException.ThrowIfError(CudaDriverApi.cuLaunchKernel(
+hfunc,
+gridDimX, gridDimY, gridDimZ, // Grid dim
+blockDimX, blockDimY, blockDimZ, // Block dim
+sharedMemBytes, // Shared mem
+hStream, // Stream
+kernelParams,
+IntPtr.Zero // Extra
+));
+// Fast zero-allocation copy from device
+CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoHAsync_v2((IntPtr)(&native_counter), d_counter, (IntPtr)counter_size, hStream));
+CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
+AotContexts.Unmarshal_ArrayFreeCounter(ref counter, ref native_counter, false, hStream);
+}
+finally
+{
+if (d_counter != IntPtr.Zero) CudaDriverApi.cuMemFreeAsync(d_counter, hStream);
+}
+}
+}
+#pragma warning restore CS8500
+#pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
+[global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
+[global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
+public static unsafe void LaunchArrayFreeStructKernelPtr(IntPtr counter, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, IntPtr hStream = default, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
+{
+using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
+{
+WarmupFunctionPointerArrayFreeStructKernel();
+IntPtr hfunc = s_hfunc_ArrayFreeStructKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "WrapperAllocationKernels.ArrayFreeStructKernel");
+try
+{
+void** kernelParams = stackalloc void*[1];
+// Marshal device struct: counter
+kernelParams[0] = &counter;
 CudaException.ThrowIfError(CudaDriverApi.cuLaunchKernel(
 hfunc,
 gridDimX, gridDimY, gridDimZ, // Grid dim

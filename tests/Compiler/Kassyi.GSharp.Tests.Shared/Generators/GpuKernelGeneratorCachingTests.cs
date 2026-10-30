@@ -83,8 +83,8 @@ public class GpuKernelGeneratorCachingTests(ITestOutputHelper output)
             .Where(static s => s.HintName.EndsWith("CachingKernels.g.cs", StringComparison.Ordinal))
             .ToList();
         Assert.Single(wrappers);
-        // The embedded kernel source is the edited one (emitted operators have no spaces)
-        Assert.Contains("factor+1", wrappers[0].SourceText.ToString(), StringComparison.Ordinal);
+        // The embedded kernel source is the edited one (int arithmetic is a Prelude call, #722)
+        Assert.Contains("factor),1)", wrappers[0].SourceText.ToString(), StringComparison.Ordinal);
     }
 
     // An edit to one class's kernel reruns that class's wrapper only: each class model compares on its own
@@ -270,8 +270,8 @@ public class GpuKernelGeneratorCachingTests(ITestOutputHelper output)
         var wrapper = Assert.Single(
             result.GeneratedSources,
             static s => s.HintName.EndsWith("IteratorCachingKernels.g.cs", StringComparison.Ordinal));
-        Assert.Contains("+20", wrapper.SourceText.ToString(), StringComparison.Ordinal);
-        Assert.DoesNotContain("+10", wrapper.SourceText.ToString(), StringComparison.Ordinal);
+        Assert.Contains(",20)", wrapper.SourceText.ToString(), StringComparison.Ordinal);
+        Assert.DoesNotContain(",10)", wrapper.SourceText.ToString(), StringComparison.Ordinal);
 
         AssertSameOutput(CreateDriver(dialect).RunGenerators(after), incremental);
     }

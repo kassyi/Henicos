@@ -54,7 +54,7 @@ public class CollectionsAndMemoryTests : TranspilerTestBase
             nameof(CollectionsAndMemoryTarget.MultidimensionalIndexer), dialect: CurrentDialect);
 
         Assert.Empty(diagnostics);
-        Assert.Contains("output[0]=flatGrid[row*width+col];", cudaSource.WithCSharpNames());
+        Assert.Contains("output[0]=flatGrid[__gsharp_add_i32(__gsharp_mul_i32(row,width),col)];", cudaSource.WithCSharpNames());
     }
 }
 

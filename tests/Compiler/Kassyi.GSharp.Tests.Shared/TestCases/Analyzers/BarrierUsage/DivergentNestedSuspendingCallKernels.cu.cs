@@ -25,5 +25,8 @@ public static partial class DivergentNestedSuspendingCallKernels
             // GSH0037: the barrier is two calls deep
             WaitThroughHelper();
         }
+
+        // The threads that skip the barrier above meet the others here
+        Gpu.SyncThreads();
     }
 }

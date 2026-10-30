@@ -91,7 +91,7 @@ int __gsharp_id_1_sum = 0;
 #pragma unroll
 for(int __gsharp_id_2_i = 0;__gsharp_id_2_i<4;__gsharp_id_2_i++)
 {
-__gsharp_id_1_sum+=__gsharp_id_2_i+1;
+__gsharp_id_1_sum=__gsharp_add_i32(__gsharp_id_1_sum,__gsharp_add_i32(__gsharp_id_2_i,1));
 }
 __gsharp_id_0_data[0]=__gsharp_id_1_sum;
 }
@@ -206,7 +206,7 @@ int __gsharp_id_1_sum = 0;
 #pragma unroll 4
 for(int __gsharp_id_2_i = 0;__gsharp_id_2_i<4;__gsharp_id_2_i++)
 {
-__gsharp_id_1_sum+=(__gsharp_id_2_i+1)*10;
+__gsharp_id_1_sum=__gsharp_add_i32(__gsharp_id_1_sum,__gsharp_mul_i32(__gsharp_add_i32(__gsharp_id_2_i,1),10));
 }
 __gsharp_id_0_data[0]=__gsharp_id_1_sum;
 }
@@ -322,8 +322,8 @@ int __gsharp_id_2_sum = 0;
 #pragma unroll
 while(__gsharp_id_1_count<3)
 {
-__gsharp_id_2_sum+=5;
-__gsharp_id_1_count++;
+__gsharp_id_2_sum=__gsharp_add_i32(__gsharp_id_2_sum,5);
+__gsharp_id_1_count=__gsharp_add_i32(__gsharp_id_1_count,1);
 }
 __gsharp_id_0_data[0]=__gsharp_id_2_sum;
 }
@@ -440,7 +440,7 @@ for(int __gsharp_id_2_i = 0;__gsharp_id_2_i<2;__gsharp_id_2_i++)
 #pragma unroll
 for(int __gsharp_id_3_j = 0;__gsharp_id_3_j<3;__gsharp_id_3_j++)
 {
-__gsharp_id_1_sum+=(__gsharp_id_2_i+1)*(__gsharp_id_3_j+1);
+__gsharp_id_1_sum=__gsharp_add_i32(__gsharp_id_1_sum,__gsharp_mul_i32(__gsharp_add_i32(__gsharp_id_2_i,1),__gsharp_add_i32(__gsharp_id_3_j,1)));
 }
 }
 __gsharp_id_0_data[0]=__gsharp_id_1_sum;
@@ -556,7 +556,7 @@ int __gsharp_id_1_sum = 0;
 #pragma unroll
 for(int __gsharp_id_2_i = 0;__gsharp_id_2_i<4;__gsharp_id_2_i++)
 {
-__gsharp_id_1_sum+=2;
+__gsharp_id_1_sum=__gsharp_add_i32(__gsharp_id_1_sum,2);
 }
 __gsharp_id_0_data[0]=__gsharp_id_1_sum;
 }

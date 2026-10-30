@@ -28,7 +28,7 @@ public partial class NamingArchitectureTests
         "GpuOperatorMacroTranspiler.cs:symbol.Name",
         "GpuOperatorMacroTranspiler.cs:resultParameter.Name",
         "GpuOperatorMacroTranspiler.cs:parameter.Name",
-        "GpuOperatorMacroTranspiler.cs:method.Name",
+        "IteratorTypeResolver.cs:method.Name",
         "GpuOperatorMacroTranspiler.cs:innerResult.Name",
         "MethodSignatureTranspiler.cs:methodSymbol.ContainingType.Name",
         "MethodSignatureTranspiler.cs:methodSymbol.Name",

@@ -62,16 +62,16 @@ inline __device__ void __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__UIntNe
 
 inline __device__ void __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__UIntNegationAndConditionalKernels__Negate(unsigned int __gsharp_id_0_u, GSharpArray<long long> __gsharp_id_1_values, int __gsharp_id_2_index){
 long long __gsharp_id_3_x = -(long long)__gsharp_id_0_u;
-__gsharp_id_1_values[__gsharp_id_2_index*3]=__gsharp_id_3_x;
-__gsharp_id_1_values[__gsharp_id_2_index*3+1]=-(long long)__gsharp_id_0_u*2;
+__gsharp_id_1_values[__gsharp_mul_i32(__gsharp_id_2_index,3)]=__gsharp_id_3_x;
+__gsharp_id_1_values[__gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_2_index,3),1)]=__gsharp_mul_i64(-(long long)__gsharp_id_0_u,2);
 auto __gsharp_id_4_negated = -(long long)__gsharp_id_0_u;
-__gsharp_id_1_values[__gsharp_id_2_index*3+2]=__gsharp_id_4_negated;
+__gsharp_id_1_values[__gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_2_index,3),2)]=__gsharp_id_4_negated;
 }
 
 inline __device__ void __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__UIntNegationAndConditionalKernels__Choose(bool __gsharp_id_0_c, unsigned int __gsharp_id_1_u, int __gsharp_id_2_n, GSharpArray<long long> __gsharp_id_3_longs, GSharpArray<double> __gsharp_id_4_doubles, int __gsharp_id_5_index){
 long long __gsharp_id_6_y = (__gsharp_id_0_c?(long long)__gsharp_id_1_u:(long long)__gsharp_id_2_n);
-__gsharp_id_3_longs[__gsharp_id_5_index*2]=__gsharp_id_6_y;
-__gsharp_id_3_longs[__gsharp_id_5_index*2+1]=(__gsharp_id_0_c?(long long)__gsharp_id_1_u:(-1LL));
+__gsharp_id_3_longs[__gsharp_mul_i32(__gsharp_id_5_index,2)]=__gsharp_id_6_y;
+__gsharp_id_3_longs[__gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_5_index,2),1)]=(__gsharp_id_0_c?(long long)__gsharp_id_1_u:(-1LL));
 double __gsharp_id_7_d = (__gsharp_id_0_c?(double)__gsharp_id_1_u:(double)__gsharp_id_2_n);
 __gsharp_id_4_doubles[__gsharp_id_5_index]=__gsharp_id_7_d;
 }
@@ -104,7 +104,7 @@ public static partial class AotContexts
 {
 }
 public const string NegationKernel_Source = @"extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__UIntNegationAndConditionalKernels__NegationKernel(GSharpArray<unsigned int> __gsharp_id_0_us, GSharpArray<long long> __gsharp_id_1_values){
-int __gsharp_id_2_tid = threadIdx.x;
+int __gsharp_id_2_tid = (int)threadIdx.x;
 __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__UIntNegationAndConditionalKernels__Negate(__gsharp_id_0_us[__gsharp_id_2_tid],__gsharp_id_1_values,__gsharp_id_2_tid);
 }
 ";
@@ -252,7 +252,7 @@ finally
 }
 #pragma warning restore CS8500
 public const string ConditionalKernel_Source = @"extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__UIntNegationAndConditionalKernels__ConditionalKernel(GSharpArray<unsigned int> __gsharp_id_0_us, GSharpArray<int> __gsharp_id_1_ns, GSharpArray<long long> __gsharp_id_2_longs, GSharpArray<double> __gsharp_id_3_doubles){
-int __gsharp_id_4_tid = threadIdx.x;
+int __gsharp_id_4_tid = (int)threadIdx.x;
 int __gsharp_id_5_pair = __gsharp_id_4_tid/2;
 __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__UIntNegationAndConditionalKernels__Choose(__gsharp_id_4_tid%2==0,__gsharp_id_0_us[__gsharp_id_5_pair],__gsharp_id_1_ns[__gsharp_id_5_pair],__gsharp_id_2_longs,__gsharp_id_3_doubles,__gsharp_id_4_tid);
 }

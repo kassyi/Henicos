@@ -50,7 +50,7 @@ The G# compiler and Roslyn analyzers enforce GPU safety and memory management ru
 | [GSH0034](GSH0034.md) | Error | The 'params' modifier is prohibited in GPU device code |
 | [GSH0035](GSH0035.md) | Error | Cannot call parallel-dependent processing from a single-thread context |
 | [GSH0036](GSH0036.md) | Error | Kernel class must be partial |
-| [GSH0037](GSH0037.md) | Error | Divergent barriers are prohibited |
+| [GSH0037](GSH0037.md) | Error | Barrier in a lambda or local function that the CPU dialects do not split |
 | [GSH0038](GSH0038.md) | Error | Exception handling is not supported in GPU kernels |
 | [GSH0039](GSH0039.md) | Error | ref structs cannot be held across barrier synchronization |
 | [GSH0040](GSH0040.md) | Error | goto statements cannot cross barrier synchronization |
@@ -88,6 +88,8 @@ The G# compiler and Roslyn analyzers enforce GPU safety and memory management ru
 | [GSH0079](GSH0079.md) | Error | Struct field type has no device representation |
 | [GSH0080](GSH0080.md) | Warning | Struct array is converted element by element |
 | [GSH0081](GSH0081.md) | Warning | Struct array allocates the array field of each element |
+| [GSH0083](GSH0083.md) | Warning | Barrier that only some threads may reach, depending on the launch or on run-time values |
+| [GSH0084](GSH0084.md) | Warning | Barrier after an exit that only some threads take |
 | [GSH0088](GSH0088.md) | Error | Device code of another assembly is not exported |
 | [GSH0089](GSH0089.md) | Error | Device code of another assembly cannot be used |
 | [GSH0090](GSH0090.md) | Error | Device code of two assemblies has the same C++ name |
@@ -95,6 +97,7 @@ The G# compiler and Roslyn analyzers enforce GPU safety and memory management ru
 | [GSH0095](GSH0095.md) | Error | Warp shuffle width must be 1, 2, 4, 8, 16 or 32 |
 | [GSH0099](GSH0099.md) | Warning | An AsParallel() aggregate runs sequentially in each thread |
 | [GSH0100](GSH0100.md) | Warning | Every block reduces the whole sequence of an AsParallel() aggregate |
+| [GSH0101](GSH0101.md) | Warning | Warp.ActiveMask() under a thread-dependent condition differs on the CPU |
 | [SLQ0001](SLQ0001.md) | Warning | Excessive StackLinq chain depth |
 | [RS0030](RS0030.md) | Error | GPU intrinsic invoked from host code or banned API used in kernel |
 

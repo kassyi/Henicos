@@ -71,7 +71,7 @@ inline __device__ long long __gsharp_fn_Kassyi__GSharp__Tests__Shared__Core__War
 inline __device__ void __gsharp_fn_Kassyi__GSharp__Tests__Shared__Core__WarpShuffleArgumentOrderKernels__AddAfterBarrier(int* __gsharp_id_0_target, int __gsharp_id_1_value);
 
 inline __device__ int __gsharp_fn_Kassyi__GSharp__Tests__Shared__Core__WarpShuffleArgumentOrderKernels__ShuffleDownByHalfOfHalf(int __gsharp_id_0_v){
-return __shfl_down_sync(0xFFFFFFFFu,__gsharp_id_0_v,4/2,32);
+return __shfl_down_sync(0xFFFFFFFFu,__gsharp_id_0_v,2U,32);
 }
 
 inline __device__ int __gsharp_fn_Kassyi__GSharp__Tests__Shared__Core__WarpShuffleArgumentOrderKernels__ShuffleDownBy(int __gsharp_id_0_v, unsigned int __gsharp_id_1_delta){
@@ -85,7 +85,7 @@ return __gsharp_id_0_x;
 
 inline __device__ void __gsharp_fn_Kassyi__GSharp__Tests__Shared__Core__WarpShuffleArgumentOrderKernels__AddAfterBarrier(int* __gsharp_id_0_target, int __gsharp_id_1_value){
 __syncthreads();
-(*__gsharp_id_0_target)+=__gsharp_id_1_value+1000;
+(*__gsharp_id_0_target)=__gsharp_add_i32((*__gsharp_id_0_target),__gsharp_add_i32(__gsharp_id_1_value,1000));
 }
 
 ";
@@ -246,10 +246,10 @@ public static partial class AotContexts
 {
 }
 public const string ShuffleDownPostIncrementKernel_Source = @"extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Core__WarpShuffleArgumentOrderKernels__ShuffleDownPostIncrementKernel(GSharpArray<int> __gsharp_id_0_result, GSharpArray<int> __gsharp_id_1_afterV){
-int __gsharp_id_2_v = (threadIdx.x+1)*10;
-int __gsharp_id_3_r = __shfl_down_sync(0xFFFFFFFFu,__gsharp_id_2_v++,1u,32);
-__gsharp_id_0_result[threadIdx.x]=__gsharp_id_3_r;
-__gsharp_id_1_afterV[threadIdx.x]=__gsharp_id_2_v;
+int __gsharp_id_2_v = __gsharp_mul_i32(__gsharp_add_i32((int)threadIdx.x,1),10);
+int __gsharp_id_3_r = __shfl_down_sync(0xFFFFFFFFu,__gsharp_sub_i32((__gsharp_id_2_v=__gsharp_add_i32(__gsharp_id_2_v,1)),1),1u,32);
+__gsharp_id_0_result[(int)threadIdx.x]=__gsharp_id_3_r;
+__gsharp_id_1_afterV[(int)threadIdx.x]=__gsharp_id_2_v;
 }
 ";
 public static readonly string ShuffleDownPostIncrementKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +ShuffleDownPostIncrementKernel_Source;
@@ -402,14 +402,14 @@ int __gsharp_id_4_wOrder = 0;
 int __gsharp_id_5_mOrder = 0;
 int __gsharp_id_6_lOrder = 0;
 int __gsharp_id_7_r = ([&]() {
-int __gsharp_seq_0 = (__gsharp_id_3_vOrder=++__gsharp_id_2_step)+100;
-int __gsharp_seq_1 = ((__gsharp_id_4_wOrder=++__gsharp_id_2_step)*0)+8;
-unsigned int __gsharp_seq_2 = (unsigned int)((__gsharp_id_5_mOrder=++__gsharp_id_2_step)*0)|0xFFFFFFFFu;
-int __gsharp_seq_3 = (__gsharp_id_6_lOrder=++__gsharp_id_2_step)*0;
+int __gsharp_seq_0 = __gsharp_add_i32(__gsharp_id_3_vOrder=(__gsharp_id_2_step=__gsharp_add_i32(__gsharp_id_2_step,1)),100);
+int __gsharp_seq_1 = __gsharp_add_i32((__gsharp_id_4_wOrder=(__gsharp_id_2_step=__gsharp_add_i32(__gsharp_id_2_step,1)))*0,8);
+unsigned int __gsharp_seq_2 = (unsigned int)((__gsharp_id_5_mOrder=(__gsharp_id_2_step=__gsharp_add_i32(__gsharp_id_2_step,1)))*0)|0xFFFFFFFFu;
+int __gsharp_seq_3 = (__gsharp_id_6_lOrder=(__gsharp_id_2_step=__gsharp_add_i32(__gsharp_id_2_step,1)))*0;
 return __shfl_sync(__gsharp_seq_2,__gsharp_seq_0,__gsharp_seq_3,__gsharp_seq_1);
 }());
-__gsharp_id_0_result[threadIdx.x]=__gsharp_id_7_r;
-if(threadIdx.x==0)
+__gsharp_id_0_result[(int)threadIdx.x]=__gsharp_id_7_r;
+if((int)threadIdx.x==0)
 {
 __gsharp_id_1_orderOut[0]=__gsharp_id_3_vOrder;
 __gsharp_id_1_orderOut[1]=__gsharp_id_4_wOrder;
@@ -563,8 +563,8 @@ finally
 }
 #pragma warning restore CS8500
 public const string ShuffleDownConstantDeltaKernel_Source = @"extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Core__WarpShuffleArgumentOrderKernels__ShuffleDownConstantDeltaKernel(GSharpArray<int> __gsharp_id_0_result){
-int __gsharp_id_1_v = threadIdx.x;
-__gsharp_id_0_result[threadIdx.x]=__shfl_down_sync(0xFFFFFFFFu,__gsharp_id_1_v,4/2,32);
+int __gsharp_id_1_v = (int)threadIdx.x;
+__gsharp_id_0_result[(int)threadIdx.x]=__shfl_down_sync(0xFFFFFFFFu,__gsharp_id_1_v,2U,32);
 }
 ";
 public static readonly string ShuffleDownConstantDeltaKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +ShuffleDownConstantDeltaKernel_Source;
@@ -673,7 +673,7 @@ finally
 }
 #pragma warning restore CS8500
 public const string DeviceFunctionShuffleConstantDeltaKernel_Source = @"extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Core__WarpShuffleArgumentOrderKernels__DeviceFunctionShuffleConstantDeltaKernel(GSharpArray<int> __gsharp_id_0_result){
-__gsharp_id_0_result[threadIdx.x]=__gsharp_fn_Kassyi__GSharp__Tests__Shared__Core__WarpShuffleArgumentOrderKernels__ShuffleDownByHalfOfHalf(threadIdx.x);
+__gsharp_id_0_result[(int)threadIdx.x]=__gsharp_fn_Kassyi__GSharp__Tests__Shared__Core__WarpShuffleArgumentOrderKernels__ShuffleDownByHalfOfHalf((int)threadIdx.x);
 }
 ";
 public static readonly string DeviceFunctionShuffleConstantDeltaKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +DeviceFunctionShuffleConstantDeltaKernel_Source;
@@ -782,7 +782,7 @@ finally
 }
 #pragma warning restore CS8500
 public const string SuspendingCallConstantArgumentKernel_Source = @"extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Core__WarpShuffleArgumentOrderKernels__SuspendingCallConstantArgumentKernel(GSharpArray<int> __gsharp_id_0_result){
-__gsharp_id_0_result[threadIdx.x]=__gsharp_fn_Kassyi__GSharp__Tests__Shared__Core__WarpShuffleArgumentOrderKernels__ShuffleDownBy(threadIdx.x,4/2);
+__gsharp_id_0_result[(int)threadIdx.x]=__gsharp_fn_Kassyi__GSharp__Tests__Shared__Core__WarpShuffleArgumentOrderKernels__ShuffleDownBy((int)threadIdx.x,2U);
 }
 ";
 public static readonly string SuspendingCallConstantArgumentKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +SuspendingCallConstantArgumentKernel_Source;
@@ -891,14 +891,14 @@ finally
 }
 #pragma warning restore CS8500
 public const string ShuffleInWhileConditionKernel_Source = @"extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Core__WarpShuffleArgumentOrderKernels__ShuffleInWhileConditionKernel(GSharpArray<int> __gsharp_id_0_rounds, GSharpArray<int> __gsharp_id_1_afterV){
-int __gsharp_id_2_v = threadIdx.x*100;
+int __gsharp_id_2_v = __gsharp_mul_i32((int)threadIdx.x,100);
 int __gsharp_id_3_n = 0;
-while(__shfl_sync(0xFFFFFFFFu,__gsharp_id_2_v++,0,32)<3)
+while(__shfl_sync(0xFFFFFFFFu,__gsharp_sub_i32((__gsharp_id_2_v=__gsharp_add_i32(__gsharp_id_2_v,1)),1),0,32)<3)
 {
-__gsharp_id_3_n++;
+__gsharp_id_3_n=__gsharp_add_i32(__gsharp_id_3_n,1);
 }
-__gsharp_id_0_rounds[threadIdx.x]=__gsharp_id_3_n;
-__gsharp_id_1_afterV[threadIdx.x]=__gsharp_id_2_v;
+__gsharp_id_0_rounds[(int)threadIdx.x]=__gsharp_id_3_n;
+__gsharp_id_1_afterV[(int)threadIdx.x]=__gsharp_id_2_v;
 }
 ";
 public static readonly string ShuffleInWhileConditionKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +ShuffleInWhileConditionKernel_Source;
@@ -1045,10 +1045,10 @@ finally
 }
 #pragma warning restore CS8500
 public const string TargetTypedArgumentKernel_Source = @"extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Core__WarpShuffleArgumentOrderKernels__TargetTypedArgumentKernel(GSharpArray<long long> __gsharp_id_0_viaCall, GSharpArray<float> __gsharp_id_1_viaShuffle, int __gsharp_id_2_flag){
-int __gsharp_id_3_i = threadIdx.x+1;
-unsigned int __gsharp_id_4_u = (unsigned int)threadIdx.x+100u;
-__gsharp_id_0_viaCall[threadIdx.x]=__gsharp_fn_Kassyi__GSharp__Tests__Shared__Core__WarpShuffleArgumentOrderKernels__WaitAndReturn((__gsharp_id_2_flag!=0?(long long)__gsharp_id_3_i:(long long)__gsharp_id_4_u));
-__gsharp_id_1_viaShuffle[threadIdx.x]=__shfl_sync(0xFFFFFFFFu,(__gsharp_id_2_flag!=0?(float)__gsharp_id_3_i:(float)__gsharp_id_4_u),1,32);
+int __gsharp_id_3_i = __gsharp_add_i32((int)threadIdx.x,1);
+unsigned int __gsharp_id_4_u = (unsigned int)(int)threadIdx.x+100u;
+__gsharp_id_0_viaCall[(int)threadIdx.x]=__gsharp_fn_Kassyi__GSharp__Tests__Shared__Core__WarpShuffleArgumentOrderKernels__WaitAndReturn((__gsharp_id_2_flag!=0?(long long)__gsharp_id_3_i:(long long)__gsharp_id_4_u));
+__gsharp_id_1_viaShuffle[(int)threadIdx.x]=__shfl_sync(0xFFFFFFFFu,(__gsharp_id_2_flag!=0?(float)__gsharp_id_3_i:(float)__gsharp_id_4_u),1,32);
 }
 ";
 public static readonly string TargetTypedArgumentKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +TargetTypedArgumentKernel_Source;
@@ -1199,13 +1199,13 @@ finally
 }
 #pragma warning restore CS8500
 public const string RefElementIndexWrittenLaterKernel_Source = @"extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Core__WarpShuffleArgumentOrderKernels__RefElementIndexWrittenLaterKernel(GSharpArray<int> __gsharp_id_0_data, GSharpArray<int> __gsharp_id_1_afterI){
-int __gsharp_id_2_i = threadIdx.x*2;
+int __gsharp_id_2_i = __gsharp_mul_i32((int)threadIdx.x,2);
 ([&]() {
 auto&& __gsharp_seq_0 = __gsharp_id_0_data[__gsharp_id_2_i];
-int __gsharp_seq_1 = __gsharp_id_2_i++;
+int __gsharp_seq_1 = __gsharp_sub_i32((__gsharp_id_2_i=__gsharp_add_i32(__gsharp_id_2_i,1)),1);
 return __gsharp_fn_Kassyi__GSharp__Tests__Shared__Core__WarpShuffleArgumentOrderKernels__AddAfterBarrier(&__gsharp_seq_0,__gsharp_seq_1);
 }());
-__gsharp_id_1_afterI[threadIdx.x]=__gsharp_id_2_i;
+__gsharp_id_1_afterI[(int)threadIdx.x]=__gsharp_id_2_i;
 }
 ";
 public static readonly string RefElementIndexWrittenLaterKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +RefElementIndexWrittenLaterKernel_Source;

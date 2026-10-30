@@ -75,7 +75,7 @@ static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__Lifecy
 static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__LifecycleObjectState,__gsharp_mb_Status)==8,""Kassyi.GSharp.Tests.Shared.Syntax.LifecycleObjectState.Status: offset"");
 #endif
 inline __device__ __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__LifecycleObjectState __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__ObjectLifecycleKernels__TransformState(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__LifecycleObjectState __gsharp_id_0_state, int __gsharp_id_1_multiplier){
-__gsharp_id_0_state.__gsharp_mb_Value=__gsharp_id_0_state.__gsharp_mb_Value*__gsharp_id_1_multiplier;
+__gsharp_id_0_state.__gsharp_mb_Value=__gsharp_mul_i32(__gsharp_id_0_state.__gsharp_mb_Value,__gsharp_id_1_multiplier);
 __gsharp_id_0_state.__gsharp_mb_Status=(__gsharp_id_0_state.__gsharp_mb_Value>100?1:0);
 return __gsharp_id_0_state;
 }
@@ -123,7 +123,7 @@ static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__Lifecy
 static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__LifecycleObjectState,__gsharp_mb_Status)==8,""Kassyi.GSharp.Tests.Shared.Syntax.LifecycleObjectState.Status: offset"");
 #endif
 extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__ObjectLifecycleKernels__Kernel_uLifecycleUpdate(GSharpArray<__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__LifecycleObjectState> __gsharp_id_0_states, int __gsharp_id_1_length, int __gsharp_id_2_multiplier){
-int __gsharp_id_3_tid = blockIdx.x*blockDim.x+threadIdx.x;
+int __gsharp_id_3_tid = __gsharp_add_i32(__gsharp_mul_i32((int)blockIdx.x,(int)blockDim.x),(int)threadIdx.x);
 if(__gsharp_id_3_tid<__gsharp_id_1_length)
 {
 __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__LifecycleObjectState __gsharp_id_4_s = __gsharp_id_0_states[__gsharp_id_3_tid];
@@ -272,11 +272,11 @@ static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__Lifecy
 static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__LifecycleObjectState,__gsharp_mb_Status)==8,""Kassyi.GSharp.Tests.Shared.Syntax.LifecycleObjectState.Status: offset"");
 #endif
 extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__ObjectLifecycleKernels__Kernel_uFactoryInitialization(GSharpArray<int> __gsharp_id_0_inputValues, GSharpArray<__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__LifecycleObjectState> __gsharp_id_1_outputStates, int __gsharp_id_2_length){
-int __gsharp_id_3_tid = blockIdx.x*blockDim.x+threadIdx.x;
+int __gsharp_id_3_tid = __gsharp_add_i32(__gsharp_mul_i32((int)blockIdx.x,(int)blockDim.x),(int)threadIdx.x);
 if(__gsharp_id_3_tid<__gsharp_id_2_length)
 {
 __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__LifecycleObjectState __gsharp_id_4_state = {};
-__gsharp_id_4_state.__gsharp_mb_Id=__gsharp_id_3_tid+1;
+__gsharp_id_4_state.__gsharp_mb_Id=__gsharp_add_i32(__gsharp_id_3_tid,1);
 __gsharp_id_4_state.__gsharp_mb_Value=__gsharp_id_0_inputValues[__gsharp_id_3_tid];
 __gsharp_id_4_state.__gsharp_mb_Status=(__gsharp_id_0_inputValues[__gsharp_id_3_tid]<0?(-1):((__gsharp_id_0_inputValues[__gsharp_id_3_tid]==0?0:1)));
 __gsharp_id_1_outputStates[__gsharp_id_3_tid]=__gsharp_id_4_state;

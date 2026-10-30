@@ -87,7 +87,7 @@ public static partial class AotContexts
 {
 }
 public const string RunLinq_Source = @"extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__TestCases__StackLinqTestKernel__RunLinq(GSharpArray<int> __gsharp_id_0_data){
-int __gsharp_id_1_tid = blockIdx.x*blockDim.x+threadIdx.x;
+int __gsharp_id_1_tid = __gsharp_add_i32(__gsharp_mul_i32((int)blockIdx.x,(int)blockDim.x),(int)threadIdx.x);
 if(__gsharp_id_1_tid==0)
 {
 int __gsharp_id_2_count = ([&]() -> auto {
@@ -104,7 +104,7 @@ return __gsharp_id_3_x>5;
 )(__gsharp_val_0))
 {
 auto __gsharp_val_1 = ([&](auto __gsharp_id_4_x) {
-return __gsharp_id_4_x*2;
+return __gsharp_mul_i32(__gsharp_id_4_x,2);
 }
 )(__gsharp_val_0);
 __gsharp_fusion_res++;
@@ -222,7 +222,7 @@ finally
 }
 #pragma warning restore CS8500
 public const string RunLinqAny_Source = @"extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__TestCases__StackLinqTestKernel__RunLinqAny(GSharpArray<int> __gsharp_id_0_data){
-int __gsharp_id_1_tid = blockIdx.x*blockDim.x+threadIdx.x;
+int __gsharp_id_1_tid = __gsharp_add_i32(__gsharp_mul_i32((int)blockIdx.x,(int)blockDim.x),(int)threadIdx.x);
 if(__gsharp_id_1_tid==0)
 {
 bool __gsharp_id_2_hasEven = ([&]() -> auto {
@@ -351,7 +351,7 @@ finally
 }
 #pragma warning restore CS8500
 public const string RunLinqSum_Source = @"extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__TestCases__StackLinqTestKernel__RunLinqSum(GSharpArray<int> __gsharp_id_0_data){
-int __gsharp_id_1_tid = blockIdx.x*blockDim.x+threadIdx.x;
+int __gsharp_id_1_tid = __gsharp_add_i32(__gsharp_mul_i32((int)blockIdx.x,(int)blockDim.x),(int)threadIdx.x);
 if(__gsharp_id_1_tid==0)
 {
 int __gsharp_id_2_sum = ([&]() -> auto {
@@ -363,7 +363,7 @@ for (int __gsharp_i = __gsharp_fusion_lo; __gsharp_i < __gsharp_fusion_hi; __gsh
 {
 auto __gsharp_val_0 = __gsharp_fusion_src[__gsharp_i];
 auto __gsharp_val_1 = ([&](auto __gsharp_id_3_x) {
-return __gsharp_id_3_x*2;
+return __gsharp_mul_i32(__gsharp_id_3_x,2);
 }
 )(__gsharp_val_0);
 __gsharp_fusion_res += __gsharp_val_1;
@@ -480,7 +480,7 @@ finally
 }
 #pragma warning restore CS8500
 public const string RunLinqFirst_Source = @"extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__TestCases__StackLinqTestKernel__RunLinqFirst(GSharpArray<int> __gsharp_id_0_data){
-int __gsharp_id_1_tid = blockIdx.x*blockDim.x+threadIdx.x;
+int __gsharp_id_1_tid = __gsharp_add_i32(__gsharp_mul_i32((int)blockIdx.x,(int)blockDim.x),(int)threadIdx.x);
 if(__gsharp_id_1_tid==0)
 {
 int __gsharp_id_2_first = ([&]() -> auto {
@@ -609,7 +609,7 @@ finally
 }
 #pragma warning restore CS8500
 public const string RunLinqIndexedAndSelectorSum_Source = @"extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__TestCases__StackLinqTestKernel__RunLinqIndexedAndSelectorSum(GSharpArray<int> __gsharp_id_0_data){
-int __gsharp_id_1_tid = blockIdx.x*blockDim.x+threadIdx.x;
+int __gsharp_id_1_tid = __gsharp_add_i32(__gsharp_mul_i32((int)blockIdx.x,(int)blockDim.x),(int)threadIdx.x);
 if(__gsharp_id_1_tid==0)
 {
 int __gsharp_id_2_sum = ([&]() -> auto {
@@ -626,11 +626,11 @@ return __gsharp_id_3_x>5&&__gsharp_id_4_i%2==0;
 )(__gsharp_val_0))
 {
 auto __gsharp_val_1 = ([&](auto __gsharp_id_5_x, auto __gsharp_id_6_i) {
-return __gsharp_id_5_x+__gsharp_id_6_i;
+return __gsharp_add_i32(__gsharp_id_5_x,__gsharp_id_6_i);
 }
 )(__gsharp_val_0);
 __gsharp_fusion_res += ([&](auto __gsharp_id_7_x) {
-return __gsharp_id_7_x*3;
+return __gsharp_mul_i32(__gsharp_id_7_x,3);
 }
 )(__gsharp_val_1);
 }

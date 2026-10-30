@@ -13,13 +13,13 @@ inline int __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__UsingDisposalKerne
 inline int __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__UsingDisposalKernels__DisposeAfterReturnValue(GSharpArray<int> __gsharp_id_0_log);
 
 inline void __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__UsingDisposalKernels__Note(GSharpArray<int> __gsharp_id_0_log, int __gsharp_id_1_value){
-__gsharp_id_0_log[0]=__gsharp_id_0_log[0]+1;
+__gsharp_id_0_log[0]=__gsharp_add_i32(__gsharp_id_0_log[0],1);
 __gsharp_id_0_log[__gsharp_id_0_log[0]]=__gsharp_id_1_value;
 }
 
 inline int __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__UsingDisposalKernels__NoteAndGet(GSharpArray<int> __gsharp_id_0_log, int __gsharp_id_1_value){
 __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__UsingDisposalKernels__Note(__gsharp_id_0_log,__gsharp_id_1_value);
-return __gsharp_id_1_value+1;
+return __gsharp_add_i32(__gsharp_id_1_value,1);
 }
 
 #ifndef __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__UsingRecorder__
@@ -39,7 +39,7 @@ static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__UsingR
 #ifndef __GSHARP_DISPOSE___gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__UsingRecorder__
 #define __GSHARP_DISPOSE___gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__UsingRecorder__
 __device__ inline void __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__UsingRecorder::__gsharp_dispose() {
-__gsharp_mb_Log[0]=__gsharp_mb_Log[0]+1;
+__gsharp_mb_Log[0]=__gsharp_add_i32(__gsharp_mb_Log[0],1);
 __gsharp_mb_Log[__gsharp_mb_Log[0]]=__gsharp_mb_Id;
 }
 #endif
@@ -95,7 +95,7 @@ static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__UsingR
 #ifndef __GSHARP_DISPOSE___gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__UsingRecorder__
 #define __GSHARP_DISPOSE___gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__UsingRecorder__
 __device__ inline void __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__UsingRecorder::__gsharp_dispose() {
-__gsharp_mb_Log[0]=__gsharp_mb_Log[0]+1;
+__gsharp_mb_Log[0]=__gsharp_add_i32(__gsharp_mb_Log[0],1);
 __gsharp_mb_Log[__gsharp_mb_Log[0]]=__gsharp_mb_Id;
 }
 #endif
@@ -369,7 +369,7 @@ static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__UsingR
 #ifndef __GSHARP_DISPOSE___gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__UsingRecorder__
 #define __GSHARP_DISPOSE___gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__UsingRecorder__
 __device__ inline void __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__UsingRecorder::__gsharp_dispose() {
-__gsharp_mb_Log[0]=__gsharp_mb_Log[0]+1;
+__gsharp_mb_Log[0]=__gsharp_add_i32(__gsharp_mb_Log[0],1);
 __gsharp_mb_Log[__gsharp_mb_Log[0]]=__gsharp_mb_Id;
 }
 #endif
@@ -657,7 +657,7 @@ static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__UsingR
 #ifndef __GSHARP_DISPOSE___gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__UsingRecorder__
 #define __GSHARP_DISPOSE___gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__UsingRecorder__
 __device__ inline void __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__UsingRecorder::__gsharp_dispose() {
-__gsharp_mb_Log[0]=__gsharp_mb_Log[0]+1;
+__gsharp_mb_Log[0]=__gsharp_add_i32(__gsharp_mb_Log[0],1);
 __gsharp_mb_Log[__gsharp_mb_Log[0]]=__gsharp_mb_Id;
 }
 #endif
@@ -679,11 +679,11 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-for(int __gsharp_id_1_i = 0;__gsharp_id_1_i<4;__gsharp_id_1_i++)
+for(int __gsharp_id_1_i = 0;__gsharp_id_1_i<4;__gsharp_id_1_i=__gsharp_add_i32(__gsharp_id_1_i,1))
 {
 {
 auto __gsharp_id_2_resource = ([&]() {
-__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__UsingRecorder __gsharp_tmp{}; __gsharp_tmp.__gsharp_mb_Log = __gsharp_id_0_log; __gsharp_tmp.__gsharp_mb_Id = 100+__gsharp_id_1_i; return __gsharp_tmp; }
+__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__UsingRecorder __gsharp_tmp{}; __gsharp_tmp.__gsharp_mb_Log = __gsharp_id_0_log; __gsharp_tmp.__gsharp_mb_Id = __gsharp_add_i32(100,__gsharp_id_1_i); return __gsharp_tmp; }
 ());
 __gsharp_using_scope<__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__UsingRecorder> __gsharp_using_guard_0{__gsharp_id_2_resource};
 if(__gsharp_id_1_i==1)
@@ -955,7 +955,7 @@ static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__UsingR
 #ifndef __GSHARP_DISPOSE___gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__UsingRecorder__
 #define __GSHARP_DISPOSE___gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__UsingRecorder__
 __device__ inline void __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__UsingRecorder::__gsharp_dispose() {
-__gsharp_mb_Log[0]=__gsharp_mb_Log[0]+1;
+__gsharp_mb_Log[0]=__gsharp_add_i32(__gsharp_mb_Log[0],1);
 __gsharp_mb_Log[__gsharp_mb_Log[0]]=__gsharp_mb_Id;
 }
 #endif
@@ -1265,7 +1265,7 @@ static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__UsingR
 #ifndef __GSHARP_DISPOSE___gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__UsingRecorder__
 #define __GSHARP_DISPOSE___gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__UsingRecorder__
 __device__ inline void __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__UsingRecorder::__gsharp_dispose() {
-__gsharp_mb_Log[0]=__gsharp_mb_Log[0]+1;
+__gsharp_mb_Log[0]=__gsharp_add_i32(__gsharp_mb_Log[0],1);
 __gsharp_mb_Log[__gsharp_mb_Log[0]]=__gsharp_mb_Id;
 }
 #endif
@@ -1560,7 +1560,7 @@ static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__UsingR
 #ifndef __GSHARP_DISPOSE___gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__UsingRecorder__
 #define __GSHARP_DISPOSE___gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__UsingRecorder__
 __device__ inline void __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__UsingRecorder::__gsharp_dispose() {
-__gsharp_mb_Log[0]=__gsharp_mb_Log[0]+1;
+__gsharp_mb_Log[0]=__gsharp_add_i32(__gsharp_mb_Log[0],1);
 __gsharp_mb_Log[__gsharp_mb_Log[0]]=__gsharp_mb_Id;
 }
 #endif
@@ -1582,10 +1582,10 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-for(int __gsharp_id_1_i = 0;__gsharp_id_1_i<3;__gsharp_id_1_i++)
+for(int __gsharp_id_1_i = 0;__gsharp_id_1_i<3;__gsharp_id_1_i=__gsharp_add_i32(__gsharp_id_1_i,1))
 {
 auto __gsharp_id_2_resource = ([&]() {
-__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__UsingRecorder __gsharp_tmp{}; __gsharp_tmp.__gsharp_mb_Log = __gsharp_id_0_log; __gsharp_tmp.__gsharp_mb_Id = 100+__gsharp_id_1_i; return __gsharp_tmp; }
+__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__UsingRecorder __gsharp_tmp{}; __gsharp_tmp.__gsharp_mb_Log = __gsharp_id_0_log; __gsharp_tmp.__gsharp_mb_Id = __gsharp_add_i32(100,__gsharp_id_1_i); return __gsharp_tmp; }
 ());
 __gsharp_using_scope<__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__UsingRecorder> __gsharp_using_guard_0{__gsharp_id_2_resource};
 if(__gsharp_id_1_i==1)
@@ -1842,7 +1842,7 @@ static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__UsingP
 #define __GSHARP_DISPOSE___gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__UsingPatternRecorder__
 __device__ inline void __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__UsingPatternRecorder::__gsharp_dispose() {
 ([&]() {
-auto&& __gsharp_seq_0 = __gsharp_mb_Log[++__gsharp_mb_Log[0]];
+auto&& __gsharp_seq_0 = __gsharp_mb_Log[(__gsharp_mb_Log[0]=__gsharp_add_i32(__gsharp_mb_Log[0],1))];
 int __gsharp_seq_1 = __gsharp_mb_Id;
 return __gsharp_seq_0 = __gsharp_seq_1;
 }());
@@ -2127,7 +2127,7 @@ static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__UsingR
 #ifndef __GSHARP_DISPOSE___gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__UsingRecorder__
 #define __GSHARP_DISPOSE___gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__UsingRecorder__
 __device__ inline void __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__UsingRecorder::__gsharp_dispose() {
-__gsharp_mb_Log[0]=__gsharp_mb_Log[0]+1;
+__gsharp_mb_Log[0]=__gsharp_add_i32(__gsharp_mb_Log[0],1);
 __gsharp_mb_Log[__gsharp_mb_Log[0]]=__gsharp_mb_Id;
 }
 #endif
@@ -2636,7 +2636,7 @@ static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__UsingR
 #ifndef __GSHARP_DISPOSE___gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__UsingRecorder__
 #define __GSHARP_DISPOSE___gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__UsingRecorder__
 __device__ inline void __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__UsingRecorder::__gsharp_dispose() {
-__gsharp_mb_Log[0]=__gsharp_mb_Log[0]+1;
+__gsharp_mb_Log[0]=__gsharp_add_i32(__gsharp_mb_Log[0],1);
 __gsharp_mb_Log[__gsharp_mb_Log[0]]=__gsharp_mb_Id;
 }
 #endif

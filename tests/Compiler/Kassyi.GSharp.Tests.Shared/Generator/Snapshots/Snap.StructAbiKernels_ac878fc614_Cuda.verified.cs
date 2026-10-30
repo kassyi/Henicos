@@ -110,7 +110,7 @@ public const string DebugName_C = "global::System.Int32";
 [System.Runtime.InteropServices.FieldOffset(9)]
 public global::System.Int32 C;
 }
-public static unsafe void Marshal_AbiPackedStruct(ref global::Kassyi.GSharp.Tests.Shared.Core.AbiPackedStruct host, ref AotContexts.AbiPackedStruct native, bool isDevicePtr, System.Collections.Generic.List<IntPtr>? allocatedPtrs, IntPtr hStream = default)
+public static unsafe void Marshal_AbiPackedStruct(ref global::Kassyi.GSharp.Tests.Shared.Core.AbiPackedStruct host, ref AotContexts.AbiPackedStruct native, bool isDevicePtr, global::Kassyi.GSharp.Runtime.Interop.DeviceArrayRegions? deviceArrays, IntPtr hStream = default)
 {
 native = System.Runtime.CompilerServices.Unsafe.As<global::Kassyi.GSharp.Tests.Shared.Core.AbiPackedStruct, AotContexts.AbiPackedStruct>(ref host);
 }
@@ -131,7 +131,7 @@ public const string DebugName_C = "global::System.Int32";
 [System.Runtime.InteropServices.FieldOffset(20)]
 public global::System.Int32 C;
 }
-public static unsafe void Marshal_AbiInlineArrayStruct(ref global::Kassyi.GSharp.Tests.Shared.Core.AbiInlineArrayStruct host, ref AotContexts.AbiInlineArrayStruct native, bool isDevicePtr, System.Collections.Generic.List<IntPtr>? allocatedPtrs, IntPtr hStream = default)
+public static unsafe void Marshal_AbiInlineArrayStruct(ref global::Kassyi.GSharp.Tests.Shared.Core.AbiInlineArrayStruct host, ref AotContexts.AbiInlineArrayStruct native, bool isDevicePtr, global::Kassyi.GSharp.Runtime.Interop.DeviceArrayRegions? deviceArrays, IntPtr hStream = default)
 {
 native = System.Runtime.CompilerServices.Unsafe.As<global::Kassyi.GSharp.Tests.Shared.Core.AbiInlineArrayStruct, AotContexts.AbiInlineArrayStruct>(ref host);
 }
@@ -146,7 +146,7 @@ public const string DebugName_Element = "global::System.Int32";
 [System.Runtime.InteropServices.FieldOffset(0)]
 public fixed byte Element[16];
 }
-public static unsafe void Marshal_AbiFourInts(ref global::Kassyi.GSharp.Tests.Shared.Core.AbiFourInts host, ref AotContexts.AbiFourInts native, bool isDevicePtr, System.Collections.Generic.List<IntPtr>? allocatedPtrs, IntPtr hStream = default)
+public static unsafe void Marshal_AbiFourInts(ref global::Kassyi.GSharp.Tests.Shared.Core.AbiFourInts host, ref AotContexts.AbiFourInts native, bool isDevicePtr, global::Kassyi.GSharp.Runtime.Interop.DeviceArrayRegions? deviceArrays, IntPtr hStream = default)
 {
 native = System.Runtime.CompilerServices.Unsafe.As<global::Kassyi.GSharp.Tests.Shared.Core.AbiFourInts, AotContexts.AbiFourInts>(ref host);
 }
@@ -167,7 +167,7 @@ public const string DebugName_C = "global::System.Int32";
 [System.Runtime.InteropServices.FieldOffset(16)]
 public global::System.Int32 C;
 }
-public static unsafe void Marshal_AbiCoreFieldStruct(ref global::Kassyi.GSharp.Tests.Shared.Core.AbiCoreFieldStruct host, ref AotContexts.AbiCoreFieldStruct native, bool isDevicePtr, System.Collections.Generic.List<IntPtr>? allocatedPtrs, IntPtr hStream = default)
+public static unsafe void Marshal_AbiCoreFieldStruct(ref global::Kassyi.GSharp.Tests.Shared.Core.AbiCoreFieldStruct host, ref AotContexts.AbiCoreFieldStruct native, bool isDevicePtr, global::Kassyi.GSharp.Runtime.Interop.DeviceArrayRegions? deviceArrays, IntPtr hStream = default)
 {
 native = System.Runtime.CompilerServices.Unsafe.As<global::Kassyi.GSharp.Tests.Shared.Core.AbiCoreFieldStruct, AotContexts.AbiCoreFieldStruct>(ref host);
 }
@@ -188,7 +188,7 @@ public const string DebugName_C = "global::System.Int32";
 [System.Runtime.InteropServices.FieldOffset(20)]
 public global::System.Int32 C;
 }
-public static unsafe void Marshal_AbiPrivateInlineArrayStruct(ref global::Kassyi.GSharp.Tests.Shared.Core.AbiPrivateInlineArrayStruct host, ref AotContexts.AbiPrivateInlineArrayStruct native, bool isDevicePtr, System.Collections.Generic.List<IntPtr>? allocatedPtrs, IntPtr hStream = default)
+public static unsafe void Marshal_AbiPrivateInlineArrayStruct(ref global::Kassyi.GSharp.Tests.Shared.Core.AbiPrivateInlineArrayStruct host, ref AotContexts.AbiPrivateInlineArrayStruct native, bool isDevicePtr, global::Kassyi.GSharp.Runtime.Interop.DeviceArrayRegions? deviceArrays, IntPtr hStream = default)
 {
 native = System.Runtime.CompilerServices.Unsafe.As<global::Kassyi.GSharp.Tests.Shared.Core.AbiPrivateInlineArrayStruct, AotContexts.AbiPrivateInlineArrayStruct>(ref host);
 }
@@ -203,7 +203,7 @@ public const string DebugName__element0 = "global::System.Int32";
 [System.Runtime.InteropServices.FieldOffset(0)]
 public fixed byte _element0[16];
 }
-public static unsafe void Marshal_AbiPrivateFourInts(ref global::Kassyi.GSharp.Tests.Shared.Core.AbiPrivateFourInts host, ref AotContexts.AbiPrivateFourInts native, bool isDevicePtr, System.Collections.Generic.List<IntPtr>? allocatedPtrs, IntPtr hStream = default)
+public static unsafe void Marshal_AbiPrivateFourInts(ref global::Kassyi.GSharp.Tests.Shared.Core.AbiPrivateFourInts host, ref AotContexts.AbiPrivateFourInts native, bool isDevicePtr, global::Kassyi.GSharp.Runtime.Interop.DeviceArrayRegions? deviceArrays, IntPtr hStream = default)
 {
 native = System.Runtime.CompilerServices.Unsafe.As<global::Kassyi.GSharp.Tests.Shared.Core.AbiPrivateFourInts, AotContexts.AbiPrivateFourInts>(ref host);
 }
@@ -224,7 +224,7 @@ public const string DebugName_C = "global::System.Int32";
 [System.Runtime.InteropServices.FieldOffset(20)]
 public global::System.Int32 C;
 }
-public static unsafe void Marshal_AbiFixedBufferStruct(ref global::Kassyi.GSharp.Tests.Shared.Core.AbiFixedBufferStruct host, ref AotContexts.AbiFixedBufferStruct native, bool isDevicePtr, System.Collections.Generic.List<IntPtr>? allocatedPtrs, IntPtr hStream = default)
+public static unsafe void Marshal_AbiFixedBufferStruct(ref global::Kassyi.GSharp.Tests.Shared.Core.AbiFixedBufferStruct host, ref AotContexts.AbiFixedBufferStruct native, bool isDevicePtr, global::Kassyi.GSharp.Runtime.Interop.DeviceArrayRegions? deviceArrays, IntPtr hStream = default)
 {
 native = System.Runtime.CompilerServices.Unsafe.As<global::Kassyi.GSharp.Tests.Shared.Core.AbiFixedBufferStruct, AotContexts.AbiFixedBufferStruct>(ref host);
 }
@@ -245,7 +245,7 @@ public const string DebugName_C = "global::System.Int32";
 [System.Runtime.InteropServices.FieldOffset(16)]
 public global::System.Int32 C;
 }
-public static unsafe void Marshal_AbiAutoPropertyStruct(ref global::Kassyi.GSharp.Tests.Shared.Core.AbiAutoPropertyStruct host, ref AotContexts.AbiAutoPropertyStruct native, bool isDevicePtr, System.Collections.Generic.List<IntPtr>? allocatedPtrs, IntPtr hStream = default)
+public static unsafe void Marshal_AbiAutoPropertyStruct(ref global::Kassyi.GSharp.Tests.Shared.Core.AbiAutoPropertyStruct host, ref AotContexts.AbiAutoPropertyStruct native, bool isDevicePtr, global::Kassyi.GSharp.Runtime.Interop.DeviceArrayRegions? deviceArrays, IntPtr hStream = default)
 {
 native = System.Runtime.CompilerServices.Unsafe.As<global::Kassyi.GSharp.Tests.Shared.Core.AbiAutoPropertyStruct, AotContexts.AbiAutoPropertyStruct>(ref host);
 }
@@ -263,7 +263,7 @@ public const string DebugName_C = "global::System.Int32";
 [System.Runtime.InteropServices.FieldOffset(4)]
 public global::System.Int32 C;
 }
-public static unsafe void Marshal_AbiComputedPropertyStruct(ref global::Kassyi.GSharp.Tests.Shared.Core.AbiComputedPropertyStruct host, ref AotContexts.AbiComputedPropertyStruct native, bool isDevicePtr, System.Collections.Generic.List<IntPtr>? allocatedPtrs, IntPtr hStream = default)
+public static unsafe void Marshal_AbiComputedPropertyStruct(ref global::Kassyi.GSharp.Tests.Shared.Core.AbiComputedPropertyStruct host, ref AotContexts.AbiComputedPropertyStruct native, bool isDevicePtr, global::Kassyi.GSharp.Runtime.Interop.DeviceArrayRegions? deviceArrays, IntPtr hStream = default)
 {
 native = System.Runtime.CompilerServices.Unsafe.As<global::Kassyi.GSharp.Tests.Shared.Core.AbiComputedPropertyStruct, AotContexts.AbiComputedPropertyStruct>(ref host);
 }
@@ -423,7 +423,7 @@ static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Core__AbiPacke
 #pragma pack(pop)
 extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Core__StructAbiKernels__RoundtripPackedKernel(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Core__AbiPackedStruct* __gsharp_id_0_data){
 (*__gsharp_id_0_data).__gsharp_mb_A=(unsigned char)((*__gsharp_id_0_data).__gsharp_mb_A+1);
-(*__gsharp_id_0_data).__gsharp_mb_C=(*__gsharp_id_0_data).__gsharp_mb_C+1;
+(*__gsharp_id_0_data).__gsharp_mb_C=__gsharp_add_i32((*__gsharp_id_0_data).__gsharp_mb_C,1);
 }
 ";
 public static readonly string RoundtripPackedKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +RoundtripPackedKernel_Source;
@@ -457,13 +457,12 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 WarmupFunctionPointerRoundtripPackedKernel();
 IntPtr hfunc = s_hfunc_RoundtripPackedKernel!.Value;
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "StructAbiKernels.RoundtripPackedKernel");
-System.Collections.Generic.List<IntPtr> data_allocatedPtrs = new System.Collections.Generic.List<IntPtr>();
 IntPtr d_data = IntPtr.Zero;
 try
 {
 void** kernelParams = stackalloc void*[1];
 AotContexts.AbiPackedStruct native_data = default;
-AotContexts.Marshal_AbiPackedStruct(ref data, ref native_data, false, data_allocatedPtrs, hStream);
+AotContexts.Marshal_AbiPackedStruct(ref data, ref native_data, false, null, hStream);
 // Marshal ref/out struct: data
 int data_size = sizeof(AotContexts.AbiPackedStruct);
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_data, (IntPtr)data_size, hStream));
@@ -487,7 +486,6 @@ AotContexts.Unmarshal_AbiPackedStruct(ref data, ref native_data, false, hStream)
 }
 finally
 {
-foreach (var ptr in data_allocatedPtrs) CudaDriverApi.cuMemFreeAsync(ptr, hStream);
 if (d_data != IntPtr.Zero) CudaDriverApi.cuMemFreeAsync(d_data, hStream);
 }
 }
@@ -714,7 +712,7 @@ static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Core__AbiInlin
 #endif
 extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Core__StructAbiKernels__RoundtripInlineArrayKernel(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Core__AbiInlineArrayStruct* __gsharp_id_0_data){
 (*__gsharp_id_0_data).__gsharp_mb_A=(unsigned char)((*__gsharp_id_0_data).__gsharp_mb_A+1);
-(*__gsharp_id_0_data).__gsharp_mb_C=(*__gsharp_id_0_data).__gsharp_mb_C+1;
+(*__gsharp_id_0_data).__gsharp_mb_C=__gsharp_add_i32((*__gsharp_id_0_data).__gsharp_mb_C,1);
 }
 ";
 public static readonly string RoundtripInlineArrayKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +RoundtripInlineArrayKernel_Source;
@@ -749,13 +747,12 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 WarmupFunctionPointerRoundtripInlineArrayKernel();
 IntPtr hfunc = s_hfunc_RoundtripInlineArrayKernel!.Value;
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "StructAbiKernels.RoundtripInlineArrayKernel");
-System.Collections.Generic.List<IntPtr> data_allocatedPtrs = new System.Collections.Generic.List<IntPtr>();
 IntPtr d_data = IntPtr.Zero;
 try
 {
 void** kernelParams = stackalloc void*[1];
 AotContexts.AbiInlineArrayStruct native_data = default;
-AotContexts.Marshal_AbiInlineArrayStruct(ref data, ref native_data, false, data_allocatedPtrs, hStream);
+AotContexts.Marshal_AbiInlineArrayStruct(ref data, ref native_data, false, null, hStream);
 // Marshal ref/out struct: data
 int data_size = sizeof(AotContexts.AbiInlineArrayStruct);
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_data, (IntPtr)data_size, hStream));
@@ -779,7 +776,6 @@ AotContexts.Unmarshal_AbiInlineArrayStruct(ref data, ref native_data, false, hSt
 }
 finally
 {
-foreach (var ptr in data_allocatedPtrs) CudaDriverApi.cuMemFreeAsync(ptr, hStream);
 if (d_data != IntPtr.Zero) CudaDriverApi.cuMemFreeAsync(d_data, hStream);
 }
 }
@@ -992,7 +988,7 @@ static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Core__AbiCoreF
 #endif
 extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Core__StructAbiKernels__RoundtripCoreFieldKernel(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Core__AbiCoreFieldStruct* __gsharp_id_0_data){
 (*__gsharp_id_0_data).__gsharp_mb_A=(unsigned char)((*__gsharp_id_0_data).__gsharp_mb_A+1);
-(*__gsharp_id_0_data).__gsharp_mb_C=(*__gsharp_id_0_data).__gsharp_mb_C+1;
+(*__gsharp_id_0_data).__gsharp_mb_C=__gsharp_add_i32((*__gsharp_id_0_data).__gsharp_mb_C,1);
 }
 ";
 public static readonly string RoundtripCoreFieldKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +RoundtripCoreFieldKernel_Source;
@@ -1026,13 +1022,12 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 WarmupFunctionPointerRoundtripCoreFieldKernel();
 IntPtr hfunc = s_hfunc_RoundtripCoreFieldKernel!.Value;
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "StructAbiKernels.RoundtripCoreFieldKernel");
-System.Collections.Generic.List<IntPtr> data_allocatedPtrs = new System.Collections.Generic.List<IntPtr>();
 IntPtr d_data = IntPtr.Zero;
 try
 {
 void** kernelParams = stackalloc void*[1];
 AotContexts.AbiCoreFieldStruct native_data = default;
-AotContexts.Marshal_AbiCoreFieldStruct(ref data, ref native_data, false, data_allocatedPtrs, hStream);
+AotContexts.Marshal_AbiCoreFieldStruct(ref data, ref native_data, false, null, hStream);
 // Marshal ref/out struct: data
 int data_size = sizeof(AotContexts.AbiCoreFieldStruct);
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_data, (IntPtr)data_size, hStream));
@@ -1056,7 +1051,6 @@ AotContexts.Unmarshal_AbiCoreFieldStruct(ref data, ref native_data, false, hStre
 }
 finally
 {
-foreach (var ptr in data_allocatedPtrs) CudaDriverApi.cuMemFreeAsync(ptr, hStream);
 if (d_data != IntPtr.Zero) CudaDriverApi.cuMemFreeAsync(d_data, hStream);
 }
 }
@@ -1283,7 +1277,7 @@ static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Core__AbiPriva
 #endif
 extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Core__StructAbiKernels__RoundtripPrivateInlineArrayKernel(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Core__AbiPrivateInlineArrayStruct* __gsharp_id_0_data){
 (*__gsharp_id_0_data).__gsharp_mb_A=(unsigned char)((*__gsharp_id_0_data).__gsharp_mb_A+1);
-(*__gsharp_id_0_data).__gsharp_mb_C=(*__gsharp_id_0_data).__gsharp_mb_C+1;
+(*__gsharp_id_0_data).__gsharp_mb_C=__gsharp_add_i32((*__gsharp_id_0_data).__gsharp_mb_C,1);
 }
 ";
 public static readonly string RoundtripPrivateInlineArrayKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +RoundtripPrivateInlineArrayKernel_Source;
@@ -1318,13 +1312,12 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 WarmupFunctionPointerRoundtripPrivateInlineArrayKernel();
 IntPtr hfunc = s_hfunc_RoundtripPrivateInlineArrayKernel!.Value;
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "StructAbiKernels.RoundtripPrivateInlineArrayKernel");
-System.Collections.Generic.List<IntPtr> data_allocatedPtrs = new System.Collections.Generic.List<IntPtr>();
 IntPtr d_data = IntPtr.Zero;
 try
 {
 void** kernelParams = stackalloc void*[1];
 AotContexts.AbiPrivateInlineArrayStruct native_data = default;
-AotContexts.Marshal_AbiPrivateInlineArrayStruct(ref data, ref native_data, false, data_allocatedPtrs, hStream);
+AotContexts.Marshal_AbiPrivateInlineArrayStruct(ref data, ref native_data, false, null, hStream);
 // Marshal ref/out struct: data
 int data_size = sizeof(AotContexts.AbiPrivateInlineArrayStruct);
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_data, (IntPtr)data_size, hStream));
@@ -1348,7 +1341,6 @@ AotContexts.Unmarshal_AbiPrivateInlineArrayStruct(ref data, ref native_data, fal
 }
 finally
 {
-foreach (var ptr in data_allocatedPtrs) CudaDriverApi.cuMemFreeAsync(ptr, hStream);
 if (d_data != IntPtr.Zero) CudaDriverApi.cuMemFreeAsync(d_data, hStream);
 }
 }
@@ -1531,7 +1523,7 @@ static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Core__AbiFixed
 #endif
 extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Core__StructAbiKernels__RoundtripFixedBufferKernel(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Core__AbiFixedBufferStruct* __gsharp_id_0_data){
 (*__gsharp_id_0_data).__gsharp_mb_A=(unsigned char)((*__gsharp_id_0_data).__gsharp_mb_A+1);
-(*__gsharp_id_0_data).__gsharp_mb_C=(*__gsharp_id_0_data).__gsharp_mb_C+1;
+(*__gsharp_id_0_data).__gsharp_mb_C=__gsharp_add_i32((*__gsharp_id_0_data).__gsharp_mb_C,1);
 }
 ";
 public static readonly string RoundtripFixedBufferKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +RoundtripFixedBufferKernel_Source;
@@ -1564,13 +1556,12 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 WarmupFunctionPointerRoundtripFixedBufferKernel();
 IntPtr hfunc = s_hfunc_RoundtripFixedBufferKernel!.Value;
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "StructAbiKernels.RoundtripFixedBufferKernel");
-System.Collections.Generic.List<IntPtr> data_allocatedPtrs = new System.Collections.Generic.List<IntPtr>();
 IntPtr d_data = IntPtr.Zero;
 try
 {
 void** kernelParams = stackalloc void*[1];
 AotContexts.AbiFixedBufferStruct native_data = default;
-AotContexts.Marshal_AbiFixedBufferStruct(ref data, ref native_data, false, data_allocatedPtrs, hStream);
+AotContexts.Marshal_AbiFixedBufferStruct(ref data, ref native_data, false, null, hStream);
 // Marshal ref/out struct: data
 int data_size = sizeof(AotContexts.AbiFixedBufferStruct);
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_data, (IntPtr)data_size, hStream));
@@ -1594,7 +1585,6 @@ AotContexts.Unmarshal_AbiFixedBufferStruct(ref data, ref native_data, false, hSt
 }
 finally
 {
-foreach (var ptr in data_allocatedPtrs) CudaDriverApi.cuMemFreeAsync(ptr, hStream);
 if (d_data != IntPtr.Zero) CudaDriverApi.cuMemFreeAsync(d_data, hStream);
 }
 }
@@ -1778,7 +1768,7 @@ static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Core__AbiAutoP
 extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Core__StructAbiKernels__RoundtripAutoPropertyKernel(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Core__AbiAutoPropertyStruct* __gsharp_id_0_data){
 (*__gsharp_id_0_data).__gsharp_mb_A=(unsigned char)((*__gsharp_id_0_data).__gsharp_mb_A+1);
 (*__gsharp_id_0_data).__gsharp_mb_B=(*__gsharp_id_0_data).__gsharp_mb_B+1.0;
-(*__gsharp_id_0_data).__gsharp_mb_C=(*__gsharp_id_0_data).__gsharp_mb_C+1;
+(*__gsharp_id_0_data).__gsharp_mb_C=__gsharp_add_i32((*__gsharp_id_0_data).__gsharp_mb_C,1);
 }
 ";
 public static readonly string RoundtripAutoPropertyKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +RoundtripAutoPropertyKernel_Source;
@@ -1811,13 +1801,12 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 WarmupFunctionPointerRoundtripAutoPropertyKernel();
 IntPtr hfunc = s_hfunc_RoundtripAutoPropertyKernel!.Value;
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "StructAbiKernels.RoundtripAutoPropertyKernel");
-System.Collections.Generic.List<IntPtr> data_allocatedPtrs = new System.Collections.Generic.List<IntPtr>();
 IntPtr d_data = IntPtr.Zero;
 try
 {
 void** kernelParams = stackalloc void*[1];
 AotContexts.AbiAutoPropertyStruct native_data = default;
-AotContexts.Marshal_AbiAutoPropertyStruct(ref data, ref native_data, false, data_allocatedPtrs, hStream);
+AotContexts.Marshal_AbiAutoPropertyStruct(ref data, ref native_data, false, null, hStream);
 // Marshal ref/out struct: data
 int data_size = sizeof(AotContexts.AbiAutoPropertyStruct);
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_data, (IntPtr)data_size, hStream));
@@ -1841,7 +1830,6 @@ AotContexts.Unmarshal_AbiAutoPropertyStruct(ref data, ref native_data, false, hS
 }
 finally
 {
-foreach (var ptr in data_allocatedPtrs) CudaDriverApi.cuMemFreeAsync(ptr, hStream);
 if (d_data != IntPtr.Zero) CudaDriverApi.cuMemFreeAsync(d_data, hStream);
 }
 }
@@ -1888,13 +1876,13 @@ __device__ inline int __gsharp_mb_Sum() const {
 return __gsharp_mb_A+1;
 }
 __device__ inline int __gsharp_mb_Twice() const {
-return __gsharp_mb_Sum()*2;
+return __gsharp_mul_i32(__gsharp_mb_Sum(),2);
 }
 __device__ inline int __gsharp_mb_Product() const {
-return __gsharp_mb_A*__gsharp_mb_C;
+return __gsharp_mul_i32(__gsharp_mb_A,__gsharp_mb_C);
 }
 __device__ inline int __gsharp_mb_Difference() const {
-return (*this).__gsharp_mb_C-(*this).__gsharp_mb_Sum();
+return __gsharp_sub_i32((*this).__gsharp_mb_C,(*this).__gsharp_mb_Sum());
 }
 }
 ;
@@ -2027,13 +2015,13 @@ __device__ inline int __gsharp_mb_Sum() const {
 return __gsharp_mb_A+1;
 }
 __device__ inline int __gsharp_mb_Twice() const {
-return __gsharp_mb_Sum()*2;
+return __gsharp_mul_i32(__gsharp_mb_Sum(),2);
 }
 __device__ inline int __gsharp_mb_Product() const {
-return __gsharp_mb_A*__gsharp_mb_C;
+return __gsharp_mul_i32(__gsharp_mb_A,__gsharp_mb_C);
 }
 __device__ inline int __gsharp_mb_Difference() const {
-return (*this).__gsharp_mb_C-(*this).__gsharp_mb_Sum();
+return __gsharp_sub_i32((*this).__gsharp_mb_C,(*this).__gsharp_mb_Sum());
 }
 }
 ;
@@ -2043,7 +2031,7 @@ static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Core__AbiCompu
 static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Core__AbiComputedPropertyStruct,__gsharp_mb_C)==4,""Kassyi.GSharp.Tests.Shared.Core.AbiComputedPropertyStruct.C: offset"");
 #endif
 extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Core__StructAbiKernels__RoundtripComputedPropertyKernel(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Core__AbiComputedPropertyStruct* __gsharp_id_0_data){
-(*__gsharp_id_0_data).__gsharp_mb_C=(*__gsharp_id_0_data).__gsharp_mb_C+1;
+(*__gsharp_id_0_data).__gsharp_mb_C=__gsharp_add_i32((*__gsharp_id_0_data).__gsharp_mb_C,1);
 }
 ";
 public static readonly string RoundtripComputedPropertyKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +RoundtripComputedPropertyKernel_Source;
@@ -2076,13 +2064,12 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 WarmupFunctionPointerRoundtripComputedPropertyKernel();
 IntPtr hfunc = s_hfunc_RoundtripComputedPropertyKernel!.Value;
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "StructAbiKernels.RoundtripComputedPropertyKernel");
-System.Collections.Generic.List<IntPtr> data_allocatedPtrs = new System.Collections.Generic.List<IntPtr>();
 IntPtr d_data = IntPtr.Zero;
 try
 {
 void** kernelParams = stackalloc void*[1];
 AotContexts.AbiComputedPropertyStruct native_data = default;
-AotContexts.Marshal_AbiComputedPropertyStruct(ref data, ref native_data, false, data_allocatedPtrs, hStream);
+AotContexts.Marshal_AbiComputedPropertyStruct(ref data, ref native_data, false, null, hStream);
 // Marshal ref/out struct: data
 int data_size = sizeof(AotContexts.AbiComputedPropertyStruct);
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_data, (IntPtr)data_size, hStream));
@@ -2106,7 +2093,6 @@ AotContexts.Unmarshal_AbiComputedPropertyStruct(ref data, ref native_data, false
 }
 finally
 {
-foreach (var ptr in data_allocatedPtrs) CudaDriverApi.cuMemFreeAsync(ptr, hStream);
 if (d_data != IntPtr.Zero) CudaDriverApi.cuMemFreeAsync(d_data, hStream);
 }
 }
@@ -2153,13 +2139,13 @@ __device__ inline int __gsharp_mb_Sum() const {
 return __gsharp_mb_A+1;
 }
 __device__ inline int __gsharp_mb_Twice() const {
-return __gsharp_mb_Sum()*2;
+return __gsharp_mul_i32(__gsharp_mb_Sum(),2);
 }
 __device__ inline int __gsharp_mb_Product() const {
-return __gsharp_mb_A*__gsharp_mb_C;
+return __gsharp_mul_i32(__gsharp_mb_A,__gsharp_mb_C);
 }
 __device__ inline int __gsharp_mb_Difference() const {
-return (*this).__gsharp_mb_C-(*this).__gsharp_mb_Sum();
+return __gsharp_sub_i32((*this).__gsharp_mb_C,(*this).__gsharp_mb_Sum());
 }
 }
 ;
@@ -2293,13 +2279,13 @@ __device__ inline int __gsharp_mb_Sum() const {
 return __gsharp_mb_A+1;
 }
 __device__ inline int __gsharp_mb_Twice() const {
-return __gsharp_mb_Sum()*2;
+return __gsharp_mul_i32(__gsharp_mb_Sum(),2);
 }
 __device__ inline int __gsharp_mb_Product() const {
-return __gsharp_mb_A*__gsharp_mb_C;
+return __gsharp_mul_i32(__gsharp_mb_A,__gsharp_mb_C);
 }
 __device__ inline int __gsharp_mb_Difference() const {
-return (*this).__gsharp_mb_C-(*this).__gsharp_mb_Sum();
+return __gsharp_sub_i32((*this).__gsharp_mb_C,(*this).__gsharp_mb_Sum());
 }
 }
 ;
@@ -2351,14 +2337,13 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 WarmupFunctionPointerReadComputedPropertyThroughRefKernel();
 IntPtr hfunc = s_hfunc_ReadComputedPropertyThroughRefKernel!.Value;
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "StructAbiKernels.ReadComputedPropertyThroughRefKernel");
-System.Collections.Generic.List<IntPtr> data_allocatedPtrs = new System.Collections.Generic.List<IntPtr>();
 IntPtr d_data = IntPtr.Zero;
 IntPtr d_result = IntPtr.Zero;
 try
 {
 void** kernelParams = stackalloc void*[2];
 AotContexts.AbiComputedPropertyStruct native_data = default;
-AotContexts.Marshal_AbiComputedPropertyStruct(ref data, ref native_data, false, data_allocatedPtrs, hStream);
+AotContexts.Marshal_AbiComputedPropertyStruct(ref data, ref native_data, false, null, hStream);
 // Marshal ref/out struct: data
 int data_size = sizeof(AotContexts.AbiComputedPropertyStruct);
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_data, (IntPtr)data_size, hStream));
@@ -2407,7 +2392,6 @@ CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
 }
 finally
 {
-foreach (var ptr in data_allocatedPtrs) CudaDriverApi.cuMemFreeAsync(ptr, hStream);
 if (d_data != IntPtr.Zero) CudaDriverApi.cuMemFreeAsync(d_data, hStream);
 if (d_result != IntPtr.Zero) CudaDriverApi.cuMemFreeAsync(d_result, hStream);
 }

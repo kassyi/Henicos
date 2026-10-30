@@ -53,7 +53,7 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-__gsharp_ctx->__gsharp_id_3_tid=threadIdx.x;
+__gsharp_ctx->__gsharp_id_3_tid=(int)threadIdx.x;
 __gsharp_ctx->__gsharp_id_4_shared={ (int*)__gsharp_allocate_smem_static(0x800ff4ae45fcc41eull, (256) * sizeof(int), alignof(int)) };
 __gsharp_ctx->__gsharp_id_4_shared[__gsharp_ctx->__gsharp_id_3_tid]=__gsharp_id_0_input[__gsharp_ctx->__gsharp_id_3_tid];
 if(!(__gsharp_id_2_length<0))
@@ -79,7 +79,7 @@ goto __gsharp_switch_1_state_3;
 case 3:
 __gsharp_switch_1_state_3:
 {
-__gsharp_id_1_output[__gsharp_ctx->__gsharp_id_3_tid]=__gsharp_ctx->__gsharp_id_4_shared[__gsharp_id_2_length-1-__gsharp_ctx->__gsharp_id_3_tid];
+__gsharp_id_1_output[__gsharp_ctx->__gsharp_id_3_tid]=__gsharp_ctx->__gsharp_id_4_shared[__gsharp_sub_i32(__gsharp_sub_i32(__gsharp_id_2_length,1),__gsharp_ctx->__gsharp_id_3_tid)];
 __gsharp_state=-1;
 return;
 }

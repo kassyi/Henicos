@@ -62,11 +62,11 @@ inline __device__ int __gsharp_fn_Kassyi__GSharp__Tests__Shared__TestCases__Anal
 inline __device__ void __gsharp_fn_Kassyi__GSharp__Tests__Shared__TestCases__Analyzers__BarrierUsage__NonRecursiveDeviceFunctionBarrierKernels__ReverseWarp(GSharpArray<int> __gsharp_id_0_data);
 
 inline __device__ int __gsharp_fn_Kassyi__GSharp__Tests__Shared__TestCases__Analyzers__BarrierUsage__NonRecursiveDeviceFunctionBarrierKernels__Exchange(int __gsharp_id_0_value, int __gsharp_id_1_length){
-int __gsharp_id_2_tid = threadIdx.x;
+int __gsharp_id_2_tid = (int)threadIdx.x;
 __shared__ int __gsharp_id_3_shared[256];
 __gsharp_id_3_shared[__gsharp_id_2_tid]=__gsharp_id_0_value;
 __syncthreads();
-return __gsharp_id_3_shared[__gsharp_id_1_length-1-__gsharp_id_2_tid];
+return __gsharp_id_3_shared[__gsharp_sub_i32(__gsharp_sub_i32(__gsharp_id_1_length,1),__gsharp_id_2_tid)];
 }
 
 inline __device__ int __gsharp_fn_Kassyi__GSharp__Tests__Shared__TestCases__Analyzers__BarrierUsage__NonRecursiveDeviceFunctionBarrierKernels__ExchangeTwice(int __gsharp_id_0_value, int __gsharp_id_1_length){
@@ -75,8 +75,8 @@ return __gsharp_fn_Kassyi__GSharp__Tests__Shared__TestCases__Analyzers__BarrierU
 }
 
 inline __device__ void __gsharp_fn_Kassyi__GSharp__Tests__Shared__TestCases__Analyzers__BarrierUsage__NonRecursiveDeviceFunctionBarrierKernels__ReverseWarp(GSharpArray<int> __gsharp_id_0_data){
-int __gsharp_id_1_lane = threadIdx.x&31;
-__gsharp_id_0_data[__gsharp_id_1_lane]=__shfl_sync(0xFFFFFFFFu,__gsharp_id_0_data[__gsharp_id_1_lane],31-__gsharp_id_1_lane,32);
+int __gsharp_id_1_lane = (int)threadIdx.x&31;
+__gsharp_id_0_data[__gsharp_id_1_lane]=__shfl_sync(0xFFFFFFFFu,__gsharp_id_0_data[__gsharp_id_1_lane],__gsharp_sub_i32(31,__gsharp_id_1_lane),32);
 }
 
 ";
@@ -239,7 +239,7 @@ public static partial class AotContexts
 {
 }
 public const string DeviceFunctionBarrierKernel_Source = @"extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__TestCases__Analyzers__BarrierUsage__NonRecursiveDeviceFunctionBarrierKernels__DeviceFunctionBarrierKernel(GSharpArray<int> __gsharp_id_0_input, GSharpArray<int> __gsharp_id_1_output, int __gsharp_id_2_length, int __gsharp_id_3_usePrimary){
-int __gsharp_id_4_tid = threadIdx.x;
+int __gsharp_id_4_tid = (int)threadIdx.x;
 __gsharp_id_1_output[__gsharp_id_4_tid]=__gsharp_fn_Kassyi__GSharp__Tests__Shared__TestCases__Analyzers__BarrierUsage__NonRecursiveDeviceFunctionBarrierKernels__ExchangeTwice(__gsharp_id_0_input[__gsharp_id_4_tid],__gsharp_id_2_length);
 if(__gsharp_id_3_usePrimary!=0)
 {

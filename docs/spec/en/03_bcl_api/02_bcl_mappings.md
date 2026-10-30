@@ -93,6 +93,8 @@ _(Note: These functions adhere to IEEE-754 precision. For raw, uncompromised spe
 
 `Math.Round` and `MathF.Round` round half to even, like the C# default (`Math.Round(2.5)` is `2`). They map to `rint` / `rintf`, not to `round`, which rounds half away from zero. Only the single-argument `double` and `float` overloads are supported. The overloads with a digits argument or a `MidpointRounding` argument, and `decimal`, are reported as `GSH0003`.
 
+`Math.Abs`, `Math.Min` and `Math.Max` also have an `int` overload (`abs`, `min`, `max`), and `Math.Clamp` (`float`, `double`, `int`) maps to `__gsharp_clamp`. The constants (`Math.PI`, `Math.E`, `MathF.PI`) are written as their values. The C++ dialect maps the same members as the CUDA dialect. Any other member or overload (for example `Math.Abs(long)` or `MathF.Cbrt`) is reported as `GSH0003`, with its parameter types and the dialect that does not map it.
+
 ---
 
 ## 10.4 `System.MemoryExtensions.Sort`

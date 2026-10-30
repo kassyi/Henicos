@@ -83,9 +83,9 @@ public static partial class AotContexts
 {
 }
 public const string ReadOnlyLocalFunctionParameterKernel_Source = @"extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__LocalFunctionParameterKernels__ReadOnlyLocalFunctionParameterKernel(GSharpArray<int> __gsharp_id_0_output, GSharpArray<const int> __gsharp_id_1_table, const int __gsharp_id_2_scale){
-int __gsharp_id_3_tid = threadIdx.x;
+int __gsharp_id_3_tid = (int)threadIdx.x;
 auto __gsharp_id_4_Lookup = [&](GSharpArray<const int> __gsharp_id_5_values, const int __gsharp_id_6_factor, int __gsharp_id_7_index) {
-return __gsharp_id_5_values[__gsharp_id_7_index]*__gsharp_id_6_factor;
+return __gsharp_mul_i32(__gsharp_id_5_values[__gsharp_id_7_index],__gsharp_id_6_factor);
 }
 ;
 __gsharp_id_0_output[__gsharp_id_3_tid]=__gsharp_id_4_Lookup(__gsharp_id_1_table,__gsharp_id_2_scale,__gsharp_id_3_tid);

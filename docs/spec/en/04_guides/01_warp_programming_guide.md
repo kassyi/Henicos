@@ -151,6 +151,8 @@ public static void DivergentExecution(int val)
 }
 ```
 
+> **On the CPU dialects**: the native C++ build and the managed path run the threads of a warp one after another, so `Warp.ActiveMask()` there returns every lane of the warp that exists in the block (all 32, or fewer in the last warp of a block whose size is not a multiple of 32). That is the GPU result where every lane reaches the call. Inside a branch like the one above the GPU returns fewer lanes, and [GSH0101](../03_bcl_api/diagnostics/GSH0101.md) warns about the call. It also warns after a thread-dependent early `return` (the bounds guard). It does not warn in the body of `Gpu.GridStrideLoop`: in its last round the threads whose index is past the end have left the loop, so there the GPU may return fewer lanes than the CPU paths. Moving the call before the branch gives the same result on both; `Warp.BallotSync` is not available on the CPU dialects yet.
+
 #### Pattern 3: Partial Warp Processing (Tail Boundaries)
 
 When the total data size $N$ is not a multiple of 32, the final warp only processes $K$ active items:

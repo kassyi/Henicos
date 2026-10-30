@@ -62,12 +62,12 @@ public const string Source = @"inline __device__ bool __gsharp_fn_Kassyi__GSharp
 inline __device__ bool __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__InlineOutVarKernels__TryStep(int __gsharp_id_0_input, int* __gsharp_id_1_next);
 
 inline __device__ bool __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__InlineOutVarKernels__TrySquare(int __gsharp_id_0_input, int* __gsharp_id_1_output){
-(*__gsharp_id_1_output)=__gsharp_id_0_input*__gsharp_id_0_input;
+(*__gsharp_id_1_output)=__gsharp_mul_i32(__gsharp_id_0_input,__gsharp_id_0_input);
 return __gsharp_id_0_input>0;
 }
 
 inline __device__ bool __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__InlineOutVarKernels__TryStep(int __gsharp_id_0_input, int* __gsharp_id_1_next){
-(*__gsharp_id_1_next)=__gsharp_id_0_input-1;
+(*__gsharp_id_1_next)=__gsharp_sub_i32(__gsharp_id_0_input,1);
 return (*__gsharp_id_1_next)>0;
 }
 
@@ -99,7 +99,7 @@ public static partial class AotContexts
 {
 }
 public const string HappyPathKernel_Source = @"extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__InlineOutVarKernels__HappyPathKernel(GSharpArray<int> __gsharp_id_0_input, GSharpArray<int> __gsharp_id_1_output, GSharpArray<int> __gsharp_id_2_success){
-int __gsharp_id_3_tid = threadIdx.x;
+int __gsharp_id_3_tid = (int)threadIdx.x;
 int __gsharp_id_5_res;
 bool __gsharp_id_4_ok = __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__InlineOutVarKernels__TrySquare(__gsharp_id_0_input[__gsharp_id_3_tid],&__gsharp_id_5_res);
 __gsharp_id_1_output[__gsharp_id_3_tid]=__gsharp_id_5_res;
@@ -295,15 +295,15 @@ finally
 }
 #pragma warning restore CS8500
 public const string IfConditionKernel_Source = @"extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__InlineOutVarKernels__IfConditionKernel(GSharpArray<int> __gsharp_id_0_input, GSharpArray<int> __gsharp_id_1_output){
-int __gsharp_id_2_tid = threadIdx.x;
+int __gsharp_id_2_tid = (int)threadIdx.x;
 int __gsharp_id_3_val;
 if(__gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__InlineOutVarKernels__TrySquare(__gsharp_id_0_input[__gsharp_id_2_tid],&__gsharp_id_3_val))
 {
-__gsharp_id_1_output[__gsharp_id_2_tid]=__gsharp_id_3_val+10;
+__gsharp_id_1_output[__gsharp_id_2_tid]=__gsharp_add_i32(__gsharp_id_3_val,10);
 }
 else
 {
-__gsharp_id_1_output[__gsharp_id_2_tid]=__gsharp_id_3_val-10;
+__gsharp_id_1_output[__gsharp_id_2_tid]=__gsharp_sub_i32(__gsharp_id_3_val,10);
 }
 }
 ";
@@ -451,13 +451,13 @@ finally
 }
 #pragma warning restore CS8500
 public const string WhileConditionKernel_Source = @"extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__InlineOutVarKernels__WhileConditionKernel(GSharpArray<int> __gsharp_id_0_input, GSharpArray<int> __gsharp_id_1_output){
-int __gsharp_id_2_tid = threadIdx.x;
+int __gsharp_id_2_tid = (int)threadIdx.x;
 int __gsharp_id_3_curr = __gsharp_id_0_input[__gsharp_id_2_tid];
 int __gsharp_id_4_sum = 0;
 int __gsharp_id_5_nextVal;
 while(__gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__InlineOutVarKernels__TryStep(__gsharp_id_3_curr,&__gsharp_id_5_nextVal))
 {
-__gsharp_id_4_sum+=__gsharp_id_5_nextVal;
+__gsharp_id_4_sum=__gsharp_add_i32(__gsharp_id_4_sum,__gsharp_id_5_nextVal);
 __gsharp_id_3_curr=__gsharp_id_5_nextVal;
 }
 __gsharp_id_1_output[__gsharp_id_2_tid]=__gsharp_id_4_sum;

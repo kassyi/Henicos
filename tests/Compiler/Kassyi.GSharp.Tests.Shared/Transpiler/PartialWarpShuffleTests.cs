@@ -216,20 +216,56 @@ public class PartialWarpShuffleTests : TranspilerTestBase
 
     private static IEnumerable<int> Lanes(int first, int count) => Enumerable.Range(first, count);
 
-    // The native path and CUDA: the managed Warp.ActiveMask has no implementation yet and throws GpuOnlyException
+    // The managed path computes the same lanes as the native prelude (#789)
     [SkippableTheory]
     [Scenario(TestScenario.Boundary)]
-    [InlineData(9)]
-    [InlineData(33)]
-    public void Test_ActiveMask_PartialWarp_HasOnlyLanesThatExist(int threads)
+    [InlineData(9, false)]
+    [InlineData(33, false)]
+    [InlineData(9, true)]
+    [InlineData(33, true)]
+    [InlineData(64, true)]
+    public void Test_ActiveMask_PartialWarp_HasOnlyLanesThatExist(int threads, bool forceManaged)
     {
         var result = new uint[threads];
 
-        Run(forceManaged: false, () => PartialWarpShuffleKernels.LaunchActiveMaskKernel(result, blockDimX: (uint)threads));
+        Run(forceManaged, () => PartialWarpShuffleKernels.LaunchActiveMaskKernel(result, blockDimX: (uint)threads));
 
         Assert.Equal(
             Enumerable.Range(0, threads).Select(t => t < threads / 32 * 32 ? 0xFFFFFFFFu : (1u << (threads % 32)) - 1u),
             result);
+    }
+
+    // The managed path runs a device function that does not suspend as the user's method, so the stub itself computes the
+    // mask there (#789)
+    [SkippableTheory]
+    [Scenario(TestScenario.HappyPath)]
+    [InlineData(9, false)]
+    [InlineData(40, false)]
+    [InlineData(9, true)]
+    [InlineData(40, true)]
+    public void Test_ActiveMask_InDeviceFunction_HasOnlyLanesThatExist(int threads, bool forceManaged)
+    {
+        var result = new uint[threads];
+
+        Run(forceManaged, () => PartialWarpShuffleKernels.LaunchActiveMaskViaDeviceKernel(result, blockDimX: (uint)threads));
+
+        Assert.Equal(
+            Enumerable.Range(0, threads).Select(t => t < threads / 32 * 32 ? 0xFFFFFFFFu : (1u << (threads % 32)) - 1u),
+            result);
+    }
+
+    // 5 x 7 = 35 threads: the first warp is full, the second has 3 lanes, whatever the shape of the block
+    [SkippableTheory]
+    [Scenario(TestScenario.Boundary)]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void Test_ActiveMask_TwoDimensionalBlock_FollowsTheLinearThreadIndex(bool forceManaged)
+    {
+        var result = new uint[35];
+
+        Run(forceManaged, () => PartialWarpShuffleKernels.LaunchActiveMask2DKernel(result, blockDimX: 5, blockDimY: 7));
+
+        Assert.Equal([.. Enumerable.Repeat(0xFFFFFFFFu, 32), .. Enumerable.Repeat(7u, 3)], result);
     }
 
     private void SkipUndefinedOnCuda() =>
