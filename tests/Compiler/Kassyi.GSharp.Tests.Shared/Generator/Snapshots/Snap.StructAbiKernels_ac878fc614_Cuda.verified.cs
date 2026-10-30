@@ -457,13 +457,12 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 WarmupFunctionPointerRoundtripPackedKernel();
 IntPtr hfunc = s_hfunc_RoundtripPackedKernel!.Value;
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "StructAbiKernels.RoundtripPackedKernel");
-var __gsharp_device_arrays = new global::Kassyi.GSharp.Runtime.Interop.DeviceArrayRegions();
 IntPtr d_data = IntPtr.Zero;
 try
 {
 void** kernelParams = stackalloc void*[1];
 AotContexts.AbiPackedStruct native_data = default;
-AotContexts.Marshal_AbiPackedStruct(ref data, ref native_data, false, __gsharp_device_arrays, hStream);
+AotContexts.Marshal_AbiPackedStruct(ref data, ref native_data, false, null, hStream);
 // Marshal ref/out struct: data
 int data_size = sizeof(AotContexts.AbiPackedStruct);
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_data, (IntPtr)data_size, hStream));
@@ -488,7 +487,6 @@ AotContexts.Unmarshal_AbiPackedStruct(ref data, ref native_data, false, hStream)
 finally
 {
 if (d_data != IntPtr.Zero) CudaDriverApi.cuMemFreeAsync(d_data, hStream);
-__gsharp_device_arrays.Free(hStream);
 }
 }
 }
@@ -749,13 +747,12 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 WarmupFunctionPointerRoundtripInlineArrayKernel();
 IntPtr hfunc = s_hfunc_RoundtripInlineArrayKernel!.Value;
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "StructAbiKernels.RoundtripInlineArrayKernel");
-var __gsharp_device_arrays = new global::Kassyi.GSharp.Runtime.Interop.DeviceArrayRegions();
 IntPtr d_data = IntPtr.Zero;
 try
 {
 void** kernelParams = stackalloc void*[1];
 AotContexts.AbiInlineArrayStruct native_data = default;
-AotContexts.Marshal_AbiInlineArrayStruct(ref data, ref native_data, false, __gsharp_device_arrays, hStream);
+AotContexts.Marshal_AbiInlineArrayStruct(ref data, ref native_data, false, null, hStream);
 // Marshal ref/out struct: data
 int data_size = sizeof(AotContexts.AbiInlineArrayStruct);
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_data, (IntPtr)data_size, hStream));
@@ -780,7 +777,6 @@ AotContexts.Unmarshal_AbiInlineArrayStruct(ref data, ref native_data, false, hSt
 finally
 {
 if (d_data != IntPtr.Zero) CudaDriverApi.cuMemFreeAsync(d_data, hStream);
-__gsharp_device_arrays.Free(hStream);
 }
 }
 }
@@ -1026,13 +1022,12 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 WarmupFunctionPointerRoundtripCoreFieldKernel();
 IntPtr hfunc = s_hfunc_RoundtripCoreFieldKernel!.Value;
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "StructAbiKernels.RoundtripCoreFieldKernel");
-var __gsharp_device_arrays = new global::Kassyi.GSharp.Runtime.Interop.DeviceArrayRegions();
 IntPtr d_data = IntPtr.Zero;
 try
 {
 void** kernelParams = stackalloc void*[1];
 AotContexts.AbiCoreFieldStruct native_data = default;
-AotContexts.Marshal_AbiCoreFieldStruct(ref data, ref native_data, false, __gsharp_device_arrays, hStream);
+AotContexts.Marshal_AbiCoreFieldStruct(ref data, ref native_data, false, null, hStream);
 // Marshal ref/out struct: data
 int data_size = sizeof(AotContexts.AbiCoreFieldStruct);
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_data, (IntPtr)data_size, hStream));
@@ -1057,7 +1052,6 @@ AotContexts.Unmarshal_AbiCoreFieldStruct(ref data, ref native_data, false, hStre
 finally
 {
 if (d_data != IntPtr.Zero) CudaDriverApi.cuMemFreeAsync(d_data, hStream);
-__gsharp_device_arrays.Free(hStream);
 }
 }
 }
@@ -1318,13 +1312,12 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 WarmupFunctionPointerRoundtripPrivateInlineArrayKernel();
 IntPtr hfunc = s_hfunc_RoundtripPrivateInlineArrayKernel!.Value;
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "StructAbiKernels.RoundtripPrivateInlineArrayKernel");
-var __gsharp_device_arrays = new global::Kassyi.GSharp.Runtime.Interop.DeviceArrayRegions();
 IntPtr d_data = IntPtr.Zero;
 try
 {
 void** kernelParams = stackalloc void*[1];
 AotContexts.AbiPrivateInlineArrayStruct native_data = default;
-AotContexts.Marshal_AbiPrivateInlineArrayStruct(ref data, ref native_data, false, __gsharp_device_arrays, hStream);
+AotContexts.Marshal_AbiPrivateInlineArrayStruct(ref data, ref native_data, false, null, hStream);
 // Marshal ref/out struct: data
 int data_size = sizeof(AotContexts.AbiPrivateInlineArrayStruct);
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_data, (IntPtr)data_size, hStream));
@@ -1349,7 +1342,6 @@ AotContexts.Unmarshal_AbiPrivateInlineArrayStruct(ref data, ref native_data, fal
 finally
 {
 if (d_data != IntPtr.Zero) CudaDriverApi.cuMemFreeAsync(d_data, hStream);
-__gsharp_device_arrays.Free(hStream);
 }
 }
 }
@@ -1564,13 +1556,12 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 WarmupFunctionPointerRoundtripFixedBufferKernel();
 IntPtr hfunc = s_hfunc_RoundtripFixedBufferKernel!.Value;
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "StructAbiKernels.RoundtripFixedBufferKernel");
-var __gsharp_device_arrays = new global::Kassyi.GSharp.Runtime.Interop.DeviceArrayRegions();
 IntPtr d_data = IntPtr.Zero;
 try
 {
 void** kernelParams = stackalloc void*[1];
 AotContexts.AbiFixedBufferStruct native_data = default;
-AotContexts.Marshal_AbiFixedBufferStruct(ref data, ref native_data, false, __gsharp_device_arrays, hStream);
+AotContexts.Marshal_AbiFixedBufferStruct(ref data, ref native_data, false, null, hStream);
 // Marshal ref/out struct: data
 int data_size = sizeof(AotContexts.AbiFixedBufferStruct);
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_data, (IntPtr)data_size, hStream));
@@ -1595,7 +1586,6 @@ AotContexts.Unmarshal_AbiFixedBufferStruct(ref data, ref native_data, false, hSt
 finally
 {
 if (d_data != IntPtr.Zero) CudaDriverApi.cuMemFreeAsync(d_data, hStream);
-__gsharp_device_arrays.Free(hStream);
 }
 }
 }
@@ -1811,13 +1801,12 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 WarmupFunctionPointerRoundtripAutoPropertyKernel();
 IntPtr hfunc = s_hfunc_RoundtripAutoPropertyKernel!.Value;
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "StructAbiKernels.RoundtripAutoPropertyKernel");
-var __gsharp_device_arrays = new global::Kassyi.GSharp.Runtime.Interop.DeviceArrayRegions();
 IntPtr d_data = IntPtr.Zero;
 try
 {
 void** kernelParams = stackalloc void*[1];
 AotContexts.AbiAutoPropertyStruct native_data = default;
-AotContexts.Marshal_AbiAutoPropertyStruct(ref data, ref native_data, false, __gsharp_device_arrays, hStream);
+AotContexts.Marshal_AbiAutoPropertyStruct(ref data, ref native_data, false, null, hStream);
 // Marshal ref/out struct: data
 int data_size = sizeof(AotContexts.AbiAutoPropertyStruct);
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_data, (IntPtr)data_size, hStream));
@@ -1842,7 +1831,6 @@ AotContexts.Unmarshal_AbiAutoPropertyStruct(ref data, ref native_data, false, hS
 finally
 {
 if (d_data != IntPtr.Zero) CudaDriverApi.cuMemFreeAsync(d_data, hStream);
-__gsharp_device_arrays.Free(hStream);
 }
 }
 }
@@ -2076,13 +2064,12 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 WarmupFunctionPointerRoundtripComputedPropertyKernel();
 IntPtr hfunc = s_hfunc_RoundtripComputedPropertyKernel!.Value;
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "StructAbiKernels.RoundtripComputedPropertyKernel");
-var __gsharp_device_arrays = new global::Kassyi.GSharp.Runtime.Interop.DeviceArrayRegions();
 IntPtr d_data = IntPtr.Zero;
 try
 {
 void** kernelParams = stackalloc void*[1];
 AotContexts.AbiComputedPropertyStruct native_data = default;
-AotContexts.Marshal_AbiComputedPropertyStruct(ref data, ref native_data, false, __gsharp_device_arrays, hStream);
+AotContexts.Marshal_AbiComputedPropertyStruct(ref data, ref native_data, false, null, hStream);
 // Marshal ref/out struct: data
 int data_size = sizeof(AotContexts.AbiComputedPropertyStruct);
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_data, (IntPtr)data_size, hStream));
@@ -2107,7 +2094,6 @@ AotContexts.Unmarshal_AbiComputedPropertyStruct(ref data, ref native_data, false
 finally
 {
 if (d_data != IntPtr.Zero) CudaDriverApi.cuMemFreeAsync(d_data, hStream);
-__gsharp_device_arrays.Free(hStream);
 }
 }
 }
@@ -2351,14 +2337,13 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 WarmupFunctionPointerReadComputedPropertyThroughRefKernel();
 IntPtr hfunc = s_hfunc_ReadComputedPropertyThroughRefKernel!.Value;
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "StructAbiKernels.ReadComputedPropertyThroughRefKernel");
-var __gsharp_device_arrays = new global::Kassyi.GSharp.Runtime.Interop.DeviceArrayRegions();
 IntPtr d_data = IntPtr.Zero;
 IntPtr d_result = IntPtr.Zero;
 try
 {
 void** kernelParams = stackalloc void*[2];
 AotContexts.AbiComputedPropertyStruct native_data = default;
-AotContexts.Marshal_AbiComputedPropertyStruct(ref data, ref native_data, false, __gsharp_device_arrays, hStream);
+AotContexts.Marshal_AbiComputedPropertyStruct(ref data, ref native_data, false, null, hStream);
 // Marshal ref/out struct: data
 int data_size = sizeof(AotContexts.AbiComputedPropertyStruct);
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_data, (IntPtr)data_size, hStream));
@@ -2409,7 +2394,6 @@ finally
 {
 if (d_data != IntPtr.Zero) CudaDriverApi.cuMemFreeAsync(d_data, hStream);
 if (d_result != IntPtr.Zero) CudaDriverApi.cuMemFreeAsync(d_result, hStream);
-__gsharp_device_arrays.Free(hStream);
 }
 }
 }

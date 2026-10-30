@@ -346,7 +346,6 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 WarmupFunctionPointerReadSecondOddKernel();
 IntPtr hfunc = s_hfunc_ReadSecondOddKernel!.Value;
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "StructSizeKernels.ReadSecondOddKernel");
-var __gsharp_device_arrays = new global::Kassyi.GSharp.Runtime.Interop.DeviceArrayRegions();
 byte[]? data_shadow = null;
 IntPtr d_data = IntPtr.Zero;
 IntPtr d_o = IntPtr.Zero;
@@ -367,7 +366,7 @@ var data_native = System.Runtime.InteropServices.MemoryMarshal.Cast<byte, AotCon
 System.Span<global::Kassyi.GSharp.Tests.Shared.Core.StructSizeOddInt> data_host = data;
 for (int data_index = 0; data_index < data_native.Length; data_index++)
 {
-AotContexts.Marshal_StructSizeOddInt(ref data_host[data_index], ref data_native[data_index], false, __gsharp_device_arrays, hStream);
+AotContexts.Marshal_StructSizeOddInt(ref data_host[data_index], ref data_native[data_index], false, null, hStream);
 }
 fixed (byte* p_data = data_shadow)
 {
@@ -431,7 +430,6 @@ finally
 if (data_shadow != null) System.Buffers.ArrayPool<byte>.Shared.Return(data_shadow);
 if (d_data != IntPtr.Zero) CudaDriverApi.cuMemFreeAsync(d_data, hStream);
 if (d_o != IntPtr.Zero) CudaDriverApi.cuMemFreeAsync(d_o, hStream);
-__gsharp_device_arrays.Free(hStream);
 }
 }
 }

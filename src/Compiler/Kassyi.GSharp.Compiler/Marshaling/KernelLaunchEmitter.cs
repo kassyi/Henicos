@@ -173,13 +173,17 @@ internal static class KernelLaunchEmitter
     // The device regions of the arrays that struct arguments and converted elements hold (DeviceArrayRegions)
     private const string DeviceArrays = GSharpInternalNames.Launcher.DeviceArrays;
 
-    // Whether the launcher marshals a struct argument or a converted array, whose Marshal_ calls record the arrays they
-    // copy; the IntPtr wrapper copies none
+    // Whether the launcher marshals a struct argument or a converted array that holds arrays, whose Marshal_ calls record
+    // the arrays they copy; the IntPtr wrapper copies none
     private static bool UsesDeviceArrayRegions(in KernelHostModel kernel, bool isDevicePtr) =>
         !isDevicePtr &&
         kernel.Parameters
             .AsStackEnumerable()
-            .Any(static shape => (shape.IsCustomStruct && !shape.IsDirectCudaValueStruct) || shape.IsCudaConvertedArray);
+            .Any(static shape => shape.MarshalsCudaArrays);
+
+    // The table that a parameter's Marshal_ calls record their arrays in, null when they copy none
+    private static string DeviceArraysFor(in KernelParameterShape shape) =>
+        shape.MarshalsCudaArrays ? DeviceArrays : "null";
 
     // [WHY] The IntPtr wrapper receives device memory that the caller owns, so it forwards it without copying
     private static bool IsPassedThrough(in KernelParameterShape shape, bool isDevicePtr) =>
@@ -244,7 +248,7 @@ internal static class KernelLaunchEmitter
         using (writer.Parentheses())
         {
             writer.Append(
-                $"ref {shape.Identifier}, ref native_{shape.Name}, false, {DeviceArrays}, hStream");
+                $"ref {shape.Identifier}, ref native_{shape.Name}, false, {DeviceArraysFor(shape)}, hStream");
         }
 
         writer.AppendLine(";");
@@ -352,7 +356,7 @@ internal static class KernelLaunchEmitter
             else
             {
                 ConvertedArrayEmitter.WriteShadowAndHostSpans(writer, shape, shape.Cuda);
-                ConvertedArrayEmitter.WriteElementMarshalLoop(writer, shape, shape.Cuda, DeviceArrays);
+                ConvertedArrayEmitter.WriteElementMarshalLoop(writer, shape, shape.Cuda, DeviceArraysFor(shape));
                 writer.AppendLine($"fixed (byte* p_{name} = {name}_shadow)");
                 using (writer.Scope())
                 {

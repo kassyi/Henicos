@@ -171,14 +171,13 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 WarmupFunctionPointerRefStructBarrierKernel();
 IntPtr hfunc = s_hfunc_RefStructBarrierKernel!.Value;
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "ByRefKernelParameterKernels.RefStructBarrierKernel");
-var __gsharp_device_arrays = new global::Kassyi.GSharp.Runtime.Interop.DeviceArrayRegions();
 IntPtr d_s = IntPtr.Zero;
 IntPtr d_o = IntPtr.Zero;
 try
 {
 void** kernelParams = stackalloc void*[2];
 AotContexts.ByRefParameterStruct native_s = default;
-AotContexts.Marshal_ByRefParameterStruct(ref s, ref native_s, false, __gsharp_device_arrays, hStream);
+AotContexts.Marshal_ByRefParameterStruct(ref s, ref native_s, false, null, hStream);
 // Marshal ref/out struct: s
 int s_size = sizeof(AotContexts.ByRefParameterStruct);
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_s, (IntPtr)s_size, hStream));
@@ -229,7 +228,6 @@ finally
 {
 if (d_s != IntPtr.Zero) CudaDriverApi.cuMemFreeAsync(d_s, hStream);
 if (d_o != IntPtr.Zero) CudaDriverApi.cuMemFreeAsync(d_o, hStream);
-__gsharp_device_arrays.Free(hStream);
 }
 }
 }
@@ -471,14 +469,13 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 WarmupFunctionPointerOutStructBarrierKernel();
 IntPtr hfunc = s_hfunc_OutStructBarrierKernel!.Value;
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "ByRefKernelParameterKernels.OutStructBarrierKernel");
-var __gsharp_device_arrays = new global::Kassyi.GSharp.Runtime.Interop.DeviceArrayRegions();
 IntPtr d_s = IntPtr.Zero;
 IntPtr d_o = IntPtr.Zero;
 try
 {
 void** kernelParams = stackalloc void*[2];
 AotContexts.ByRefParameterStruct native_s = default;
-AotContexts.Marshal_ByRefParameterStruct(ref s, ref native_s, false, __gsharp_device_arrays, hStream);
+AotContexts.Marshal_ByRefParameterStruct(ref s, ref native_s, false, null, hStream);
 // Marshal ref/out struct: s
 int s_size = sizeof(AotContexts.ByRefParameterStruct);
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_s, (IntPtr)s_size, hStream));
@@ -526,7 +523,6 @@ finally
 {
 if (d_s != IntPtr.Zero) CudaDriverApi.cuMemFreeAsync(d_s, hStream);
 if (d_o != IntPtr.Zero) CudaDriverApi.cuMemFreeAsync(d_o, hStream);
-__gsharp_device_arrays.Free(hStream);
 }
 }
 }
