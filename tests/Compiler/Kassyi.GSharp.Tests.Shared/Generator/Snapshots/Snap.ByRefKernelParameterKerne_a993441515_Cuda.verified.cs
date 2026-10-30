@@ -99,7 +99,7 @@ public const string DebugName_B = "global::System.Single";
 [System.Runtime.InteropServices.FieldOffset(4)]
 public global::System.Single B;
 }
-public static unsafe void Marshal_ByRefParameterStruct(ref global::Kassyi.GSharp.Tests.Shared.Syntax.ByRefParameterStruct host, ref AotContexts.ByRefParameterStruct native, bool isDevicePtr, System.Collections.Generic.List<IntPtr>? allocatedPtrs, IntPtr hStream = default)
+public static unsafe void Marshal_ByRefParameterStruct(ref global::Kassyi.GSharp.Tests.Shared.Syntax.ByRefParameterStruct host, ref AotContexts.ByRefParameterStruct native, bool isDevicePtr, global::Kassyi.GSharp.Runtime.Interop.DeviceArrayRegions? deviceArrays, IntPtr hStream = default)
 {
 native = System.Runtime.CompilerServices.Unsafe.As<global::Kassyi.GSharp.Tests.Shared.Syntax.ByRefParameterStruct, AotContexts.ByRefParameterStruct>(ref host);
 }
@@ -171,14 +171,13 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 WarmupFunctionPointerRefStructBarrierKernel();
 IntPtr hfunc = s_hfunc_RefStructBarrierKernel!.Value;
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "ByRefKernelParameterKernels.RefStructBarrierKernel");
-System.Collections.Generic.List<IntPtr> s_allocatedPtrs = new System.Collections.Generic.List<IntPtr>();
 IntPtr d_s = IntPtr.Zero;
 IntPtr d_o = IntPtr.Zero;
 try
 {
 void** kernelParams = stackalloc void*[2];
 AotContexts.ByRefParameterStruct native_s = default;
-AotContexts.Marshal_ByRefParameterStruct(ref s, ref native_s, false, s_allocatedPtrs, hStream);
+AotContexts.Marshal_ByRefParameterStruct(ref s, ref native_s, false, null, hStream);
 // Marshal ref/out struct: s
 int s_size = sizeof(AotContexts.ByRefParameterStruct);
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_s, (IntPtr)s_size, hStream));
@@ -227,7 +226,6 @@ CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
 }
 finally
 {
-foreach (var ptr in s_allocatedPtrs) CudaDriverApi.cuMemFreeAsync(ptr, hStream);
 if (d_s != IntPtr.Zero) CudaDriverApi.cuMemFreeAsync(d_s, hStream);
 if (d_o != IntPtr.Zero) CudaDriverApi.cuMemFreeAsync(d_o, hStream);
 }
@@ -471,14 +469,13 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 WarmupFunctionPointerOutStructBarrierKernel();
 IntPtr hfunc = s_hfunc_OutStructBarrierKernel!.Value;
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "ByRefKernelParameterKernels.OutStructBarrierKernel");
-System.Collections.Generic.List<IntPtr> s_allocatedPtrs = new System.Collections.Generic.List<IntPtr>();
 IntPtr d_s = IntPtr.Zero;
 IntPtr d_o = IntPtr.Zero;
 try
 {
 void** kernelParams = stackalloc void*[2];
 AotContexts.ByRefParameterStruct native_s = default;
-AotContexts.Marshal_ByRefParameterStruct(ref s, ref native_s, false, s_allocatedPtrs, hStream);
+AotContexts.Marshal_ByRefParameterStruct(ref s, ref native_s, false, null, hStream);
 // Marshal ref/out struct: s
 int s_size = sizeof(AotContexts.ByRefParameterStruct);
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_s, (IntPtr)s_size, hStream));
@@ -524,7 +521,6 @@ CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
 }
 finally
 {
-foreach (var ptr in s_allocatedPtrs) CudaDriverApi.cuMemFreeAsync(ptr, hStream);
 if (d_s != IntPtr.Zero) CudaDriverApi.cuMemFreeAsync(d_s, hStream);
 if (d_o != IntPtr.Zero) CudaDriverApi.cuMemFreeAsync(d_o, hStream);
 }
