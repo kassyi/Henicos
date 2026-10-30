@@ -33,13 +33,6 @@ internal abstract class VectorBinaryScalarExpressionBase(
 
     public bool TryGetLength(out int length) => vector.TryGetLength(out length);
 
-    public GpuBigIntArrayView Evaluate(
-        GpuWorkspace workspace,
-        int elementOffset = 0,
-        int? elementCount = null,
-        GpuBigUIntArrayView targetResult = default) =>
-        DeviceCounted.Materialize(workspace, EvaluateCore(workspace, elementOffset, elementCount, targetResult));
-
     // Evaluates the window of the capacity; the elements are the first Count of them (design D3 4.3)
     public VectorEvaluation EvaluateCore(
         GpuWorkspace workspace,

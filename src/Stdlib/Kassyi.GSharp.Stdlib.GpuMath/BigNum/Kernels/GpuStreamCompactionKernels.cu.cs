@@ -20,19 +20,19 @@ public static partial class GpuStreamCompactionKernels
     }
 
     /// <summary>
-    /// The number of elements described by a count word (design D3 4.1): <paramref name="limit"/> without
-    /// <paramref name="countBase"/>, otherwise <c>clamp(countBase[0] - skip, 0, limit)</c>.
+    /// The number of elements described by <paramref name="count"/> (design D3 4.1): its limit without a count word,
+    /// otherwise <c>clamp(Base[0] - Skip, 0, Limit)</c>.
     /// </summary>
     [GpuDeviceFunction, GpuInline]
-    public static int ResolveCount([GpuReadOnly] uint[]? countBase, int skip, int limit)
+    public static int ResolveCount(GpuBigIntVectorKernels.ElementCountContext count)
     {
-        if (countBase == null)
+        if (count.Base == null)
         {
-            return limit;
+            return count.Limit;
         }
 
-        int n = (int)countBase[0] - skip;
-        return n < 0 ? 0 : (n > limit ? limit : n);
+        int n = (int)count.Base[0] - count.Skip;
+        return n < 0 ? 0 : (n > count.Limit ? count.Limit : n);
     }
 
     /// <summary>
@@ -42,16 +42,14 @@ public static partial class GpuStreamCompactionKernels
     /// <param name="input">The source array.</param>
     /// <param name="elementCount">The number of valid elements to process (must be &lt;= block dimension * 2).</param>
     /// <param name="blockSums">An auxiliary array to store the total sum of this block (used for multi-block scan).</param>
-    /// <param name="countBase">With <paramref name="countSkip"/> and <paramref name="countLimit"/>: the number of
-    /// input elements (see <see cref="ResolveCount"/>); the elements after it count as 0.</param>
-    /// <param name="countSkip">The skip of the count word.</param>
-    /// <param name="countLimit">The limit of the count.</param>
+    /// <param name="count">The number of input elements (see <see cref="ResolveCount"/>); the elements after it count
+    /// as 0.</param>
     /// <param name="total">Receives the sum of all elements when the launch is a single block, or null.</param>
     /// <param name="flags">The input are the predicates of a Where: a non-zero value counts as 1. The block sums of
     /// the next levels are counts, not flags.</param>
     [GpuKernel]
     public static void BlockExclusiveScan(uint[] output, uint[] input, int elementCount, uint[]? blockSums,
-        uint[]? countBase, int countSkip, int countLimit, uint[]? total, bool flags)
+        GpuBigIntVectorKernels.ElementCountContext count, uint[]? total, bool flags)
     {
         var sharedMem = new SharedMemory<uint>(2048 + 128);
 
@@ -73,7 +71,7 @@ public static partial class GpuStreamCompactionKernels
         int globalB = globalOffset + indexB;
 
         // Only the elements before the input count take part; a flag counts as 0 or 1
-        int n = ResolveCount(countBase, countSkip, countLimit);
+        int n = ResolveCount(count);
         uint valueA = (globalA < elementCount && globalA < n) ? input[globalA] : 0u;
         uint valueB = (globalB < elementCount && globalB < n) ? input[globalB] : 0u;
         sharedMem[indexA + offsetA] = flags ? (valueA != 0u ? 1u : 0u) : valueA;
@@ -210,10 +208,10 @@ public static partial class GpuStreamCompactionKernels
     [GpuKernel]
     public static void CompactSignedVector(uint[] outputValues, uint[] outputSigns, uint[] inputValues,
         uint[] inputSigns, uint[] predicates, uint[] scanResult, int elementCount, int wordsPerElement,
-        uint[]? countBase, int countSkip, int countLimit)
+        GpuBigIntVectorKernels.ElementCountContext count)
     {
         int globalTid = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
-        int n = ResolveCount(countBase, countSkip, countLimit);
+        int n = ResolveCount(count);
         if (globalTid >= elementCount || globalTid >= n || predicates[globalTid] == 0)
         {
             return;
@@ -237,10 +235,10 @@ public static partial class GpuStreamCompactionKernels
     [GpuKernel]
     public static void CompactFloatVector(uint[] outputSignificands, uint[] outputExponents, uint[] outputSigns,
         uint[] inputSignificands, uint[] inputExponents, uint[] inputSigns, uint[] predicates, uint[] scanResult,
-        int elementCount, int wordsPerElement, uint[]? countBase, int countSkip, int countLimit)
+        int elementCount, int wordsPerElement, GpuBigIntVectorKernels.ElementCountContext count)
     {
         int globalTid = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
-        int n = ResolveCount(countBase, countSkip, countLimit);
+        int n = ResolveCount(count);
         if (globalTid >= elementCount || globalTid >= n || predicates[globalTid] == 0)
         {
             return;

@@ -10,6 +10,7 @@ namespace Kassyi.GSharp.Stdlib.GpuMath.Tests.BigNum.Expressions;
 /// </remarks>
 [Category(TestCategory.Unit)]
 [TestTarget(ExecutionTarget.GpuExecution)]
+[Collection(TestCollections.DeviceExclusive)]
 public sealed class FloatWhereDeviceCountTests : IDisposable
 {
     private const int Words = 4;
@@ -44,14 +45,13 @@ public sealed class FloatWhereDeviceCountTests : IDisposable
         // zero padding)
         // mutant: the float Where keeps the capacity as its count; Average divides by the capacity
         var array = CreateArray([-3, -1, 5]);
+        using var negative = array.AsVectorizedEnumerable().Where(array.AsVectorizedEnumerable().IsLessThan(Float(0)));
 
-        IGpuBigFloatVectorExpression Negative() => array.AsVectorizedEnumerable().Where(array.AsVectorizedEnumerable().IsLessThan(Float(0)));
-
-        Assert.Equal(2, Negative().Count(_workspace));
-        Assert.Equal(-4.0, ToDouble(Negative().Sum(_workspace)));
-        Assert.Equal(-1.0, ToDouble(Negative().Max(_workspace)));
-        Assert.Equal(-3.0, ToDouble(Negative().Min(_workspace)));
-        Assert.Equal(-2.0, ToDouble(Negative().Average(_workspace)));
+        Assert.Equal(2, negative.Count(_workspace));
+        Assert.Equal(-4.0, ReadOwned(negative.Sum(_workspace)));
+        Assert.Equal(-1.0, ReadOwned(negative.Max(_workspace)));
+        Assert.Equal(-3.0, ReadOwned(negative.Min(_workspace)));
+        Assert.Equal(-2.0, ReadOwned(negative.Average(_workspace)));
     }
 
     [SkippableFact]
@@ -60,14 +60,13 @@ public sealed class FloatWhereDeviceCountTests : IDisposable
     {
         // Nothing selected: Max / Min / Average throw as System.Linq, Sum is 0, Count is 0
         var array = CreateArray([1, 2, 3]);
+        using var none = array.AsVectorizedEnumerable().Where(array.AsVectorizedEnumerable().IsLessThan(Float(0)));
 
-        IGpuBigFloatVectorExpression None() => array.AsVectorizedEnumerable().Where(array.AsVectorizedEnumerable().IsLessThan(Float(0)));
-
-        Assert.Equal(0, None().Count(_workspace));
-        Assert.Equal(0.0, ToDouble(None().Sum(_workspace)));
-        Assert.Throws<InvalidOperationException>(() => None().Max(_workspace));
-        Assert.Throws<InvalidOperationException>(() => None().Min(_workspace));
-        Assert.Throws<InvalidOperationException>(() => None().Average(_workspace));
+        Assert.Equal(0, none.Count(_workspace));
+        Assert.Equal(0.0, ReadOwned(none.Sum(_workspace)));
+        Assert.Throws<InvalidOperationException>(() => none.Max(_workspace));
+        Assert.Throws<InvalidOperationException>(() => none.Min(_workspace));
+        Assert.Throws<InvalidOperationException>(() => none.Average(_workspace));
     }
 
     [SkippableFact]
@@ -79,10 +78,37 @@ public sealed class FloatWhereDeviceCountTests : IDisposable
         // mutant: the host loop over the capacity
         var array = CreateArray([4, -1, 16, -5, 64]);
 
-        var logs = array.AsVectorizedEnumerable().Where(array.AsVectorizedEnumerable().IsGreaterThan(Float(0))).SelectLog();
-        using var max = logs.Max(_workspace);
+        using var logs = array.AsVectorizedEnumerable().Where(array.AsVectorizedEnumerable().IsGreaterThan(Float(0)))
+            .SelectLog();
 
-        Assert.Equal(Math.Log(64), ToDouble(max), 8);
+        Assert.Equal(Math.Log(64), ReadOwned(logs.Max(_workspace)), 8);
+    }
+
+    [SkippableFact]
+    [Scenario(TestScenario.SadPath)]
+    public void HostLoop_InACapture_ThrowsInvalidOperation()
+    {
+        // SelectSqrt runs on the host element by element, so it reads the device count; inside a capture that is an
+        // InvalidOperationException with the reason, not a CUDA error that invalidates the capture.
+        // mutant: DeviceElementCount.Read without the capture check
+        var array = CreateArray([4, -1, 16]);
+        using var roots = array.AsVectorizedEnumerable().Where(array.AsVectorizedEnumerable().IsGreaterThan(Float(0)))
+            .SelectSqrt();
+
+        var provider = _workspace.Provider;
+        provider.BeginCapture(_workspace.Stream);
+        Exception? error;
+        try
+        {
+            error = Record.Exception(() => roots.Count(_workspace));
+        }
+        finally
+        {
+            provider.DestroyGraph(provider.EndCapture(_workspace.Stream), IntPtr.Zero);
+        }
+
+        Assert.IsType<InvalidOperationException>(error);
+        Assert.Equal(2, roots.Count(_workspace));
     }
 
     [SkippableFact]
@@ -94,12 +120,12 @@ public sealed class FloatWhereDeviceCountTests : IDisposable
         var selected = values.Where(v => v > 0).ToArray();
         var array = CreateArray(values);
 
-        IGpuBigFloatVectorExpression Positive() => array.AsVectorizedEnumerable().Where(array.AsVectorizedEnumerable().IsGreaterThan(Float(0)));
+        using var positive = array.AsVectorizedEnumerable().Where(array.AsVectorizedEnumerable().IsGreaterThan(Float(0)));
 
-        Assert.Equal(selected.Length, Positive().Count(_workspace));
-        Assert.Equal((double)selected.Max(), ToDouble(Positive().Max(_workspace)));
-        Assert.Equal((double)selected.Min(), ToDouble(Positive().Min(_workspace)));
-        Assert.Equal((double)selected.Sum(), ToDouble(Positive().Sum(_workspace)));
+        Assert.Equal(selected.Length, positive.Count(_workspace));
+        Assert.Equal((double)selected.Max(), ReadOwned(positive.Max(_workspace)));
+        Assert.Equal((double)selected.Min(), ReadOwned(positive.Min(_workspace)));
+        Assert.Equal((double)selected.Sum(), ReadOwned(positive.Sum(_workspace)));
     }
 
     [SkippableFact]
@@ -108,10 +134,10 @@ public sealed class FloatWhereDeviceCountTests : IDisposable
     {
         var array = CreateArray([-3, 7, -1, 9, -8]);
 
-        using var max = array.AsVectorizedEnumerable().Where(array.AsVectorizedEnumerable().IsLessThan(Float(0)))
-            .Skip(1).Take(1).Max(_workspace);
+        using var window = array.AsVectorizedEnumerable().Where(array.AsVectorizedEnumerable().IsLessThan(Float(0)))
+            .Skip(1).Take(1);
 
-        Assert.Equal(-1.0, ToDouble(max));
+        Assert.Equal(-1.0, ReadOwned(window.Max(_workspace)));
     }
 
     [SkippableFact]
@@ -158,6 +184,15 @@ public sealed class FloatWhereDeviceCountTests : IDisposable
         }
 
         return array;
+    }
+
+    // The value of a reduction result, which the caller owns
+    private static double ReadOwned(GpuBigFloat value)
+    {
+        using (value)
+        {
+            return ToDouble(value);
+        }
     }
 
     private static double ToDouble(GpuBigFloatView value)

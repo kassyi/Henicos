@@ -1,14 +1,15 @@
-namespace Kassyi.GSharp.Stdlib.GpuMath.BigNum.Expressions;
+#nullable enable
+namespace Kassyi.GSharp.Stdlib.GpuMath.Tests.BigNum.Expressions;
 
 /// <summary>
-/// A leaf whose number of elements is a word in device memory, for tests: the storage holds the capacity, and only the
+/// A leaf whose number of elements is a word in device memory: the storage holds the capacity, and only the
 /// first <c>countWord[0]</c> elements are elements (design D3 6.4, allowed by T1). It lets the consumers of a device
 /// count be tested before <c>Where</c> produces one.
 /// </summary>
 internal sealed class DeviceCountedLeafExpression(GpuBigIntArray storage, GpuBigUInt countWord)
-    : IGpuBigIntVectorExpression, IDeviceCountedVector
+    : IDeviceCountedVector
 {
-    public int Length => throw new InvalidOperationException(DeviceCounted.LengthUnknown);
+    public int Length => DeviceCounted.KnownLength(this);
 
     public int Capacity => storage.Length;
 
@@ -32,10 +33,6 @@ internal sealed class DeviceCountedLeafExpression(GpuBigIntArray storage, GpuBig
         var whole = new DeviceElementCount(countWord.DevicePointer, 0, storage.Length);
         return new VectorEvaluation(storage.Slice(elementOffset, count), whole.SkipFirst(elementOffset).TakeFirst(count));
     }
-
-    public GpuBigIntArrayView Evaluate(GpuWorkspace workspace, int elementOffset = 0, int? elementCount = null,
-        GpuBigUIntArrayView targetResult = default) =>
-        DeviceCounted.Materialize(workspace, EvaluateCore(workspace, elementOffset, elementCount, targetResult));
 
     public void Dispose()
     {

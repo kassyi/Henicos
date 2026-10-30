@@ -12,9 +12,6 @@ internal sealed class FloatVectorCompareScalarExpression(
 
     public bool TryGetLength(out int length) => vector.TryGetLength(out length);
 
-    public GpuBigUIntArrayView Evaluate(GpuWorkspace workspace) =>
-        DeviceCounted.Materialize(workspace, EvaluateCore(workspace));
-
     public BoolVectorEvaluation EvaluateCore(GpuWorkspace workspace)
     {
         var evaluated = DeviceCounted.Evaluate(vector, workspace);
@@ -78,7 +75,6 @@ internal sealed class FloatVectorCompareScalarExpression(
     }
 }
 
-
 internal sealed class FloatVectorCompareVectorExpression(
     [TakesOwnership] IGpuBigFloatVectorExpression left,
     [TakesOwnership] IGpuBigFloatVectorExpression right,
@@ -90,9 +86,6 @@ internal sealed class FloatVectorCompareVectorExpression(
     private bool _allocated;
 
     public bool TryGetLength(out int length) => left.TryGetLength(out length);
-
-    public GpuBigUIntArrayView Evaluate(GpuWorkspace workspace) =>
-        DeviceCounted.Materialize(workspace, EvaluateCore(workspace));
 
     public BoolVectorEvaluation EvaluateCore(GpuWorkspace workspace)
     {

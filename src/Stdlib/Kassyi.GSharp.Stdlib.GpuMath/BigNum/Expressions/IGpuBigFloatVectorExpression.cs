@@ -10,7 +10,7 @@ public interface IGpuBigFloatVectorExpression : IDisposable
     /// </summary>
     /// <exception cref="InvalidOperationException">
     /// The number is known only on the device (the expression contains a <c>Where</c>); use <see cref="Capacity"/>,
-    /// <see cref="TryGetLength"/> or <c>Count()</c>.
+    /// <see cref="TryGetLength"/> or <c>Count(GpuWorkspace)</c>.
     /// </exception>
     int Length { get; }
 

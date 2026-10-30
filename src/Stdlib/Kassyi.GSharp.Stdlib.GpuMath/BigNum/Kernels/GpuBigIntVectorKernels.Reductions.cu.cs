@@ -110,20 +110,13 @@ public static partial class GpuBigIntVectorKernels
     }
 
     /// <summary>
-    /// The number of elements described by <paramref name="count"/> (design D3 4.1).
-    /// </summary>
-    [GpuDeviceFunction, GpuInline]
-    public static int ResolveElementCount(ElementCountContext count) =>
-        GpuStreamCompactionKernels.ResolveCount(count.Base, count.Skip, count.Limit);
-
-    /// <summary>
     /// The number of inputs of reduction pass <paramref name="passIndex"/>: the element count for pass 0, then
     /// <c>ceil(previous / chunkSize)</c>.
     /// </summary>
     [GpuDeviceFunction, GpuInline]
     public static int PassBatchSize(ElementCountContext count, int passIndex, int chunkSize)
     {
-        int batch = ResolveElementCount(count);
+        int batch = GpuStreamCompactionKernels.ResolveCount(count);
         for (int p = 0; p < passIndex; p++)
         {
             batch = (batch + chunkSize - 1) / chunkSize;
@@ -240,7 +233,7 @@ public static partial class GpuBigIntVectorKernels
         SharedMemory<uint> sharedCarry = new SharedMemory<uint>(32);
         SharedMemory<uint> overflow = new SharedMemory<uint>(1);
 
-        int count = ResolveElementCount(ctx.Count);
+        int count = GpuStreamCompactionKernels.ResolveCount(ctx.Count);
         if (count == 0)
         {
             for (int offset = 0; offset < ctx.ResultWords; offset += bDim)

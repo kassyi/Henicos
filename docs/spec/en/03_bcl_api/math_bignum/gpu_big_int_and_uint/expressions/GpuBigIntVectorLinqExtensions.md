@@ -75,7 +75,7 @@ public static IGpuBigIntVectorExpression Where(
 
 The number of selected elements is computed on the device, and the host does not wait for it: `Count`, `Sum`, `Max`, `Min`, `Any`, `All`, `Skip`, `Take` and the element-wise operations after a `Where` use only the selected elements, as `System.Linq` does. `Length` of the result throws `InvalidOperationException`; `Capacity` is the length of `source`, and `Evaluate` reads the count (one synchronization) and returns exactly the selected elements. `predicate` must have the length of `source` (`ArgumentException`).
 
-Two `Where` calls on different inputs cannot be combined element-wise, because their counts are known only on the device (`NotSupportedException`): write `v.Where(p.And(q))`. `v.Where(p).Where(m)` works when `m` has the capacity's length.
+Two separately built `Where` results cannot be combined element-wise, because their counts are known only on the device (`NotSupportedException`): write `v.Where(p.And(q))`. `v.Where(p).Where(m)` works when `m` has the capacity's length.
 
 ## SelectAdd / SelectSubtract / SelectMultiply
 

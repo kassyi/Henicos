@@ -35,13 +35,6 @@ internal abstract class FloatVectorBinaryScalarExpressionBase(
 
     public bool TryGetLength(out int length) => vector.TryGetLength(out length);
 
-    public GpuBigFloatArrayView Evaluate(
-        GpuWorkspace workspace,
-        int elementOffset = 0,
-        int? elementCount = null,
-        GpuBigFloatArrayView targetResult = default) =>
-        DeviceCounted.Materialize(workspace, EvaluateCore(workspace, elementOffset, elementCount, targetResult));
-
     // Evaluates the window of the capacity; the elements are the first Count of them (design D3 4.3)
     public FloatVectorEvaluation EvaluateCore(
         GpuWorkspace workspace,
@@ -75,7 +68,6 @@ internal abstract class FloatVectorBinaryScalarExpressionBase(
     /// rest of the capacity, which costs one synchronization when the count is on the device.
     /// </summary>
     protected virtual bool RunsOnHost => false;
-
 
     protected static GpuBigIntVectorKernels.AotContexts.VectorFloatBinaryOperation CreateScalarFloatOp(FloatVectorScalarOperands operands)
     {

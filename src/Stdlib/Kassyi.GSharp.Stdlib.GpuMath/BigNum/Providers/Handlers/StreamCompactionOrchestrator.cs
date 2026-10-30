@@ -1,3 +1,5 @@
+using Kassyi.GSharp.Stdlib.GpuMath.BigNum.Expressions;
+
 namespace Kassyi.GSharp.Stdlib.GpuMath.BigNum.Providers.Handlers;
 
 /// <summary>
@@ -19,14 +21,8 @@ public static class StreamCompactionOrchestrator
     {
         using var scratch = new ScanScratch(workspace, elementCount);
         ExecuteExclusiveScan(workspace, outputPtr, inputPtr, elementCount, scratch,
-            new ScanCount(IntPtr.Zero, 0, elementCount), IntPtr.Zero, flags: false);
+            DeviceElementCount.Static(elementCount), IntPtr.Zero, flags: false);
     }
-
-    /// <summary>
-    /// The number of input elements of a scan, on the device: <c>clamp(Base[0] - Skip, 0, Limit)</c>, or
-    /// <c>Limit</c> without a base (design D3 4.1). The elements after it count as 0.
-    /// </summary>
-    internal readonly record struct ScanCount(IntPtr Base, int Skip, int Limit);
 
     /// <summary>
     /// The block-sum buffers of every level of a multi-block scan, sized once from the capacity, so that a scan
@@ -80,17 +76,18 @@ public static class StreamCompactionOrchestrator
     }
 
     /// <summary>
-    /// Executes an exclusive prefix sum over the first <paramref name="count"/> elements (the rest count as 0), with
+    /// Executes an exclusive prefix sum over the first <paramref name="count"/> elements (the rest count as 0; a count
+    /// on the device is read there, never on the host), with
     /// the block sums in <paramref name="scratch"/>; writes the sum of all elements into <paramref name="totalPtr"/>
     /// unless it is zero. The total comes from the single-block scan of the last level, so no kernel is added. With
     /// <paramref name="flags"/>, the input are predicates and a non-zero value counts as 1.
     /// </summary>
     internal static void ExecuteExclusiveScan(GpuWorkspace workspace, IntPtr outputPtr, IntPtr inputPtr,
-        int elementCount, ScanScratch scratch, ScanCount count, IntPtr totalPtr, bool flags) =>
+        int elementCount, ScanScratch scratch, DeviceElementCount count, IntPtr totalPtr, bool flags) =>
         ExecuteExclusiveScan(workspace, outputPtr, inputPtr, elementCount, scratch, 0, count, totalPtr, flags);
 
     private static void ExecuteExclusiveScan(GpuWorkspace workspace, IntPtr outputPtr, IntPtr inputPtr,
-        int elementCount, ScanScratch scratch, int level, ScanCount count, IntPtr totalPtr, bool flags)
+        int elementCount, ScanScratch scratch, int level, DeviceElementCount count, IntPtr totalPtr, bool flags)
     {
         if (elementCount == 0)
         {
@@ -116,8 +113,8 @@ public static class StreamCompactionOrchestrator
             blockDim = BitOperations.RoundUpToPowerOf2(blockDim);
 
             GpuStreamCompactionKernels.LaunchBlockExclusiveScanPtr(
-                outputPtr, inputPtr, elementCount, IntPtr.Zero, count.Base, count.Skip, count.Limit, totalPtr,
-                flags, gridDimX: 1, blockDimX: blockDim, hStream: workspace.Stream);
+                outputPtr, inputPtr, elementCount, IntPtr.Zero, count.ToScanContext(), totalPtr, flags, gridDimX: 1,
+                blockDimX: blockDim, hStream: workspace.Stream);
             return;
         }
 
@@ -126,13 +123,13 @@ public static class StreamCompactionOrchestrator
 
         // 1. Scan each block individually and record block sums
         GpuStreamCompactionKernels.LaunchBlockExclusiveScanPtr(
-            outputPtr, inputPtr, elementCount, blockSums.DevicePointer, count.Base, count.Skip, count.Limit,
-            IntPtr.Zero, flags, gridDimX: (uint)numBlocks, blockDimX: fullBlockDim, hStream: workspace.Stream);
+            outputPtr, inputPtr, elementCount, blockSums.DevicePointer, count.ToScanContext(), IntPtr.Zero, flags,
+            gridDimX: (uint)numBlocks, blockDimX: fullBlockDim, hStream: workspace.Stream);
 
         // 2. Recursively scan the block sums (all of them are inputs, and they are counts); its last level writes the
         //    total
         ExecuteExclusiveScan(workspace, scannedBlockSums.DevicePointer, blockSums.DevicePointer, numBlocks, scratch,
-            level + 1, new ScanCount(IntPtr.Zero, 0, numBlocks), totalPtr, flags: false);
+            level + 1, DeviceElementCount.Static(numBlocks), totalPtr, flags: false);
 
         // 3. Add the scanned block sums back to the output
         GpuStreamCompactionKernels.LaunchAddBlockSumsPtr(
@@ -141,65 +138,33 @@ public static class StreamCompactionOrchestrator
     }
 
     /// <summary>
-    /// Zero-fills the destination and scatters the selected elements of a signed vector (values and signs in one
-    /// launch); only the elements before <paramref name="count"/> are read.
+    /// Zero-fills the destination and scatters the selected elements of a vector (all components in one launch); only
+    /// the elements before <paramref name="count"/> are read. <typeparamref name="TKind"/> supplies what differs
+    /// between integer and floating-point vectors.
     /// </summary>
-    internal static void CompactSignedVector(GpuWorkspace workspace, GpuBigIntArrayView output,
-        GpuBigIntArrayView input, IntPtr predicatesPtr, IntPtr scanPtr, ScanCount count)
+    internal static void Compact<TKind, TResult>(GpuWorkspace workspace, TResult output, TResult input,
+        IntPtr predicatesPtr, IntPtr scanPtr, DeviceElementCount count)
+        where TKind : IVectorCompactKind<TResult>
+        where TResult : struct, allows ref struct
     {
-        var elementCount = input.Length;
+        var elementCount = TKind.Length(input);
         if (elementCount == 0)
         {
             return;
         }
 
         const int threadsPerBlock = 256;
-        var totalWords = elementCount * input.WordsPerElement;
-        GpuStreamCompactionKernels.LaunchMemsetZeroPtr(
-            output.Values.DevicePointer, totalWords,
-            gridDimX: (uint)((totalWords + threadsPerBlock - 1) / threadsPerBlock), blockDimX: threadsPerBlock,
-            hStream: workspace.Stream);
-        GpuStreamCompactionKernels.LaunchMemsetZeroPtr(
-            output.Signs.DevicePointer, elementCount,
-            gridDimX: (uint)((elementCount + threadsPerBlock - 1) / threadsPerBlock), blockDimX: threadsPerBlock,
-            hStream: workspace.Stream);
-        GpuStreamCompactionKernels.LaunchCompactSignedVectorPtr(
-            output.Values.DevicePointer, output.Signs.DevicePointer, input.Values.DevicePointer,
-            input.Signs.DevicePointer, predicatesPtr, scanPtr, elementCount, input.WordsPerElement, count.Base,
-            count.Skip, count.Limit, gridDimX: (uint)((elementCount + threadsPerBlock - 1) / threadsPerBlock),
-            blockDimX: threadsPerBlock, hStream: workspace.Stream);
-    }
-
-    /// <summary>
-    /// The floating-point form of <see cref="CompactSignedVector"/>: significands, exponents and signs in one launch.
-    /// </summary>
-    internal static void CompactFloatVector(GpuWorkspace workspace, GpuBigFloatArrayView output,
-        GpuBigFloatArrayView input, IntPtr predicatesPtr, IntPtr scanPtr, ScanCount count)
-    {
-        var elementCount = input.Length;
-        if (elementCount == 0)
+        for (var c = 0; c < TKind.ComponentCount; c++)
         {
-            return;
+            var (pointer, wordsPerElement) = TKind.Component(output, c);
+            var words = elementCount * wordsPerElement;
+            GpuStreamCompactionKernels.LaunchMemsetZeroPtr(
+                pointer, words, gridDimX: (uint)((words + threadsPerBlock - 1) / threadsPerBlock),
+                blockDimX: threadsPerBlock, hStream: workspace.Stream);
         }
 
-        const int threadsPerBlock = 256;
-        var totalWords = elementCount * input.WordsPerElement;
-        var elementGrid = (uint)((elementCount + threadsPerBlock - 1) / threadsPerBlock);
-        GpuStreamCompactionKernels.LaunchMemsetZeroPtr(
-            output.Significands.DevicePointer, totalWords,
-            gridDimX: (uint)((totalWords + threadsPerBlock - 1) / threadsPerBlock), blockDimX: threadsPerBlock,
-            hStream: workspace.Stream);
-        GpuStreamCompactionKernels.LaunchMemsetZeroPtr(
-            output.Exponents.DevicePointer, elementCount, gridDimX: elementGrid, blockDimX: threadsPerBlock,
-            hStream: workspace.Stream);
-        GpuStreamCompactionKernels.LaunchMemsetZeroPtr(
-            output.Signs.DevicePointer, elementCount, gridDimX: elementGrid, blockDimX: threadsPerBlock,
-            hStream: workspace.Stream);
-        GpuStreamCompactionKernels.LaunchCompactFloatVectorPtr(
-            output.Significands.DevicePointer, output.Exponents.DevicePointer, output.Signs.DevicePointer,
-            input.Significands.DevicePointer, input.Exponents.DevicePointer, input.Signs.DevicePointer, predicatesPtr,
-            scanPtr, elementCount, input.WordsPerElement, count.Base, count.Skip, count.Limit, gridDimX: elementGrid,
-            blockDimX: threadsPerBlock, hStream: workspace.Stream);
+        TKind.LaunchScatter(workspace, output, input, predicatesPtr, scanPtr, count,
+            gridDimX: (uint)((elementCount + threadsPerBlock - 1) / threadsPerBlock), blockDimX: threadsPerBlock);
     }
 
     /// <summary>

@@ -3,8 +3,7 @@ namespace Kassyi.GSharp.Stdlib.GpuMath.BigNum.Expressions;
 internal class VectorTakeExpression([TakesOwnership] IGpuBigIntVectorExpression source, int count)
     : IGpuBigIntVectorExpression, IDeviceCountedVector
 {
-    public int Length =>
-        TryGetLength(out var length) ? length : throw new InvalidOperationException(DeviceCounted.LengthUnknown);
+    public int Length => DeviceCounted.KnownLength(this);
 
     public int Capacity => Math.Min(source.Capacity, count);
 
@@ -34,10 +33,6 @@ internal class VectorTakeExpression([TakesOwnership] IGpuBigIntVectorExpression 
         return DeviceCounted.Evaluate(source, workspace, elementOffset, effectiveCount, targetResult);
     }
 
-    public GpuBigIntArrayView Evaluate(GpuWorkspace workspace, int elementOffset = 0, int? elementCount = null,
-        GpuBigUIntArrayView targetResult = default) =>
-        DeviceCounted.Materialize(workspace, EvaluateCore(workspace, elementOffset, elementCount, targetResult));
-
     public void Dispose() => source.Dispose();
 }
 
@@ -61,8 +56,7 @@ internal class VectorSkipExpression([TakesOwnership] IGpuBigIntVectorExpression 
     // Skipping past the capacity skips everything; a device count below the skip gives 0 through SkipFirst
     private readonly int _skipCount = Math.Min(count, source.Capacity);
 
-    public int Length =>
-        TryGetLength(out var length) ? length : throw new InvalidOperationException(DeviceCounted.LengthUnknown);
+    public int Length => DeviceCounted.KnownLength(this);
 
     public int Capacity => source.Capacity - _skipCount;
 
@@ -89,10 +83,6 @@ internal class VectorSkipExpression([TakesOwnership] IGpuBigIntVectorExpression 
         // Pass the requested element slice but shifted by the Skip count
         return DeviceCounted.Evaluate(source, workspace, elementOffset + _skipCount, evalCount, targetResult);
     }
-
-    public GpuBigIntArrayView Evaluate(GpuWorkspace workspace, int elementOffset = 0, int? elementCount = null,
-        GpuBigUIntArrayView targetResult = default) =>
-        DeviceCounted.Materialize(workspace, EvaluateCore(workspace, elementOffset, elementCount, targetResult));
 
     public void Dispose() => source.Dispose();
 }

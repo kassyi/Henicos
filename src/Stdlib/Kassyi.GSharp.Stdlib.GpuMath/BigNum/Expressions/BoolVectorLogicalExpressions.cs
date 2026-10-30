@@ -12,9 +12,6 @@ internal class VectorLogicalExpression(
 
     public bool TryGetLength(out int length) => left.TryGetLength(out length);
 
-    public GpuBigUIntArrayView Evaluate(GpuWorkspace workspace) =>
-        DeviceCounted.Materialize(workspace, EvaluateCore(workspace));
-
     // The flags of the capacity; both inputs have the same count, or one of them a device count (design J4)
     public BoolVectorEvaluation EvaluateCore(GpuWorkspace workspace)
     {
@@ -91,9 +88,6 @@ internal class VectorNotExpression([TakesOwnership] IGpuBoolVectorExpression sou
     private bool _allocated;
 
     public bool TryGetLength(out int length) => source.TryGetLength(out length);
-
-    public GpuBigUIntArrayView Evaluate(GpuWorkspace workspace) =>
-        DeviceCounted.Materialize(workspace, EvaluateCore(workspace));
 
     public BoolVectorEvaluation EvaluateCore(GpuWorkspace workspace)
     {

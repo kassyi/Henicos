@@ -227,8 +227,21 @@ public static class GpuBigFloatVectorLinqExtensions
         /// Filters a vectorized sequence of floating-point values based on a predicate.
         /// Executes a Stream Compaction (Where) operation on the GPU.
         /// </summary>
-        /// <param name="predicate">A vectorized boolean expression to test each element.</param>
+        /// <param name="predicate">A vectorized boolean expression to test each element; it must have the length (the
+        /// capacity) of the source.</param>
         /// <returns>A new vectorized expression representing the filtered array.</returns>
+        /// <remarks>
+        /// <para>The number of selected elements is computed on the device, and the host does not wait for it:
+        /// <c>Count</c>, <c>Sum</c>, <c>Max</c>, <c>Min</c>, <c>Average</c>, <c>Skip</c>, <c>Take</c> and the element-wise
+        /// operations after a <c>Where</c> use only the selected elements. <c>Length</c> of the result throws
+        /// <see cref="InvalidOperationException"/>; <c>Capacity</c> is the length of the source, and <c>Evaluate</c>
+        /// reads the count (one synchronization) and returns exactly the selected elements.</para>
+        /// <para>Two separately built <c>Where</c> results cannot be combined element-wise (their counts are known only
+        /// on the device; <see cref="NotSupportedException"/>): write <c>v.Where(p.And(q))</c> instead of combining
+        /// <c>v.Where(p)</c> with <c>w.Where(q)</c>. <c>v.Where(p).Where(m)</c> works when <c>m</c> has the capacity's
+        /// length.</para>
+        /// </remarks>
+        /// <exception cref="ArgumentException">At evaluation: <paramref name="predicate"/> has another length.</exception>
         public IGpuBigFloatVectorExpression Where(IGpuBoolVectorExpression predicate)
         {
             ArgumentNullException.ThrowIfNull(source);

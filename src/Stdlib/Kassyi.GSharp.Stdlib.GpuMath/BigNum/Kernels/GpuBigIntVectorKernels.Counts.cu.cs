@@ -10,7 +10,7 @@ public static partial class GpuBigIntVectorKernels
     [GpuKernel]
     public static void VectorAnyTrueKernel(VectorBoolReductionContext ctx)
     {
-        int n = ResolveElementCount(ctx.Count);
+        int n = GpuStreamCompactionKernels.ResolveCount(ctx.Count);
         int i = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
         int stride = GridDimension.X * BlockDimension.X;
         for (; i < n; i += stride)
@@ -29,7 +29,7 @@ public static partial class GpuBigIntVectorKernels
     [GpuKernel]
     public static void VectorAllTrueKernel(VectorBoolReductionContext ctx)
     {
-        int n = ResolveElementCount(ctx.Count);
+        int n = GpuStreamCompactionKernels.ResolveCount(ctx.Count);
         int i = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
         int stride = GridDimension.X * BlockDimension.X;
         for (; i < n; i += stride)
@@ -48,7 +48,7 @@ public static partial class GpuBigIntVectorKernels
     [GpuKernel]
     public static void WriteElementCountKernel(ElementCountWriteContext ctx)
     {
-        int n = ResolveElementCount(ctx.Count);
+        int n = GpuStreamCompactionKernels.ResolveCount(ctx.Count);
         for (int w = ThreadIndex.X; w < ctx.DestinationWords; w += BlockDimension.X)
         {
             ctx.Destination[w] = w == 0 ? (uint)n : 0u;

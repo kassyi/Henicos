@@ -8,19 +8,35 @@ internal static class GSharpSharedCpuDeviceCode
 {
 public const string Source = @"__forceinline__ int __gsharp_fn_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuStreamCompactionKernels__GetConflictFreeOffset(int __gsharp_id_0_n);
 
-__forceinline__ int __gsharp_fn_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuStreamCompactionKernels__ResolveCount(GSharpArray<const unsigned int> __gsharp_id_0_countBase, int __gsharp_id_1_skip, int __gsharp_id_2_limit);
+struct __gsharp_ty_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuBigIntVectorKernels__ElementCountContext;
+__forceinline__ int __gsharp_fn_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuStreamCompactionKernels__ResolveCount(__gsharp_ty_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuBigIntVectorKernels__ElementCountContext __gsharp_id_0_count);
 
 __forceinline__ int __gsharp_fn_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuStreamCompactionKernels__GetConflictFreeOffset(int __gsharp_id_0_n){
 return (__gsharp_id_0_n>>5)+(__gsharp_id_0_n>>(2*5));
 }
 
-__forceinline__ int __gsharp_fn_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuStreamCompactionKernels__ResolveCount(GSharpArray<const unsigned int> __gsharp_id_0_countBase, int __gsharp_id_1_skip, int __gsharp_id_2_limit){
-if((__gsharp_id_0_countBase.data == nullptr))
+#ifndef __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuBigIntVectorKernels__ElementCountContext__
+#define __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuBigIntVectorKernels__ElementCountContext__
+struct __gsharp_ty_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuBigIntVectorKernels__ElementCountContext
 {
-return __gsharp_id_2_limit;
+GSharpArray<const unsigned int> __gsharp_mb_Base;
+int __gsharp_mb_Skip;
+int __gsharp_mb_Limit;
 }
-int __gsharp_id_3_n = (int)__gsharp_id_0_countBase[0]-__gsharp_id_1_skip;
-return (__gsharp_id_3_n<0?0:((__gsharp_id_3_n>__gsharp_id_2_limit?__gsharp_id_2_limit:__gsharp_id_3_n)));
+;
+static_assert(sizeof(__gsharp_ty_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuBigIntVectorKernels__ElementCountContext)==24,""Kassyi.GSharp.Stdlib.GpuMath.BigNum.Kernels.GpuBigIntVectorKernels.ElementCountContext: size"");
+static_assert(alignof(__gsharp_ty_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuBigIntVectorKernels__ElementCountContext)==8,""Kassyi.GSharp.Stdlib.GpuMath.BigNum.Kernels.GpuBigIntVectorKernels.ElementCountContext: alignment"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuBigIntVectorKernels__ElementCountContext,__gsharp_mb_Base)==0,""Kassyi.GSharp.Stdlib.GpuMath.BigNum.Kernels.GpuBigIntVectorKernels.ElementCountContext.Base: offset"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuBigIntVectorKernels__ElementCountContext,__gsharp_mb_Skip)==16,""Kassyi.GSharp.Stdlib.GpuMath.BigNum.Kernels.GpuBigIntVectorKernels.ElementCountContext.Skip: offset"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuBigIntVectorKernels__ElementCountContext,__gsharp_mb_Limit)==20,""Kassyi.GSharp.Stdlib.GpuMath.BigNum.Kernels.GpuBigIntVectorKernels.ElementCountContext.Limit: offset"");
+#endif
+__forceinline__ int __gsharp_fn_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuStreamCompactionKernels__ResolveCount(__gsharp_ty_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuBigIntVectorKernels__ElementCountContext __gsharp_id_0_count){
+if((__gsharp_id_0_count.__gsharp_mb_Base.data == nullptr))
+{
+return __gsharp_id_0_count.__gsharp_mb_Limit;
+}
+int __gsharp_id_1_n = (int)__gsharp_id_0_count.__gsharp_mb_Base[0]-__gsharp_id_0_count.__gsharp_mb_Skip;
+return (__gsharp_id_1_n<0?0:((__gsharp_id_1_n>__gsharp_id_0_count.__gsharp_mb_Limit?__gsharp_id_0_count.__gsharp_mb_Limit:__gsharp_id_1_n)));
 }
 
 ";
@@ -49,34 +65,90 @@ public partial class GpuStreamCompactionKernels
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 public static partial class AotContexts
 {
+#pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
+[System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Explicit, Size = 24)]
+public unsafe partial struct ElementCount
+{
+public const string DebugName_Base = "global::System.UInt32[]";
+[System.Runtime.InteropServices.FieldOffset(0)]
+public global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy Base;
+public const string DebugName_Skip = "global::System.Int32";
+[System.Runtime.InteropServices.FieldOffset(16)]
+public global::System.Int32 Skip;
+public const string DebugName_Limit = "global::System.Int32";
+[System.Runtime.InteropServices.FieldOffset(20)]
+public global::System.Int32 Limit;
 }
-public const string BlockExclusiveScan_Source = @"struct __gsharp_context_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuStreamCompactionKernels__BlockExclusiveScan {
+public static unsafe void Marshal_GpuBigIntVectorKernels_ElementCountContext(ref global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Kernels.GpuBigIntVectorKernels.ElementCountContext host, ref AotContexts.ElementCount native, bool isDevicePtr, System.Collections.Generic.List<IntPtr>? allocatedPtrs, IntPtr hStream = default)
+{
+native = default;
+if (host.Base != null)
+{
+var pinnedHandles = allocatedPtrs ?? throw new System.ArgumentNullException(nameof(allocatedPtrs));
+var handle = System.Runtime.InteropServices.GCHandle.Alloc(host.Base, System.Runtime.InteropServices.GCHandleType.Pinned);
+pinnedHandles.Add(System.Runtime.InteropServices.GCHandle.ToIntPtr(handle));
+native.Base.Data = handle.AddrOfPinnedObject();
+native.Base.Length = host.Base.Length;
+}
+native.Skip = host.Skip;
+native.Limit = host.Limit;
+}
+public static unsafe void Unmarshal_GpuBigIntVectorKernels_ElementCountContext(ref global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Kernels.GpuBigIntVectorKernels.ElementCountContext host, ref AotContexts.ElementCount native, bool isDevicePtr, IntPtr hStream = default)
+{
+host.Skip = native.Skip;
+host.Limit = native.Limit;
+}
+public static void CopyArrays_GpuBigIntVectorKernels_ElementCountContext(ref global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Kernels.GpuBigIntVectorKernels.ElementCountContext host)
+{
+if (host.Base != null)
+{
+host.Base = (global::System.UInt32[])host.Base.Clone();
+}
+}
+#pragma warning restore CS8500
+}
+public const string BlockExclusiveScan_Source = @"#ifndef __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuBigIntVectorKernels__ElementCountContext__
+#define __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuBigIntVectorKernels__ElementCountContext__
+struct __gsharp_ty_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuBigIntVectorKernels__ElementCountContext
+{
+GSharpArray<const unsigned int> __gsharp_mb_Base;
+int __gsharp_mb_Skip;
+int __gsharp_mb_Limit;
+}
+;
+static_assert(sizeof(__gsharp_ty_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuBigIntVectorKernels__ElementCountContext)==24,""Kassyi.GSharp.Stdlib.GpuMath.BigNum.Kernels.GpuBigIntVectorKernels.ElementCountContext: size"");
+static_assert(alignof(__gsharp_ty_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuBigIntVectorKernels__ElementCountContext)==8,""Kassyi.GSharp.Stdlib.GpuMath.BigNum.Kernels.GpuBigIntVectorKernels.ElementCountContext: alignment"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuBigIntVectorKernels__ElementCountContext,__gsharp_mb_Base)==0,""Kassyi.GSharp.Stdlib.GpuMath.BigNum.Kernels.GpuBigIntVectorKernels.ElementCountContext.Base: offset"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuBigIntVectorKernels__ElementCountContext,__gsharp_mb_Skip)==16,""Kassyi.GSharp.Stdlib.GpuMath.BigNum.Kernels.GpuBigIntVectorKernels.ElementCountContext.Skip: offset"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuBigIntVectorKernels__ElementCountContext,__gsharp_mb_Limit)==20,""Kassyi.GSharp.Stdlib.GpuMath.BigNum.Kernels.GpuBigIntVectorKernels.ElementCountContext.Limit: offset"");
+#endif
+struct __gsharp_context_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuStreamCompactionKernels__BlockExclusiveScan {
 int __gsharp_state = 0;
 __gsharp_context_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuStreamCompactionKernels__BlockExclusiveScan* __gsharp_all_contexts = nullptr;
 uint64_t __gsharp_warp_exchange[2] = {};
 uint32_t __gsharp_warp_shuffle_count = 0;
 bool __gsharp_yielded_for_grid_sync = false;
 bool __gsharp_yielded_for_block_barrier = false;
-Kassyi_GSharp_Core_SharedMemory<unsigned int> __gsharp_id_9_sharedMem;
-int __gsharp_id_10_tid;
-int __gsharp_id_11_bIdx;
-int __gsharp_id_12_elementsPerBlock;
-int __gsharp_id_13_globalOffset;
-int __gsharp_id_14_treeSize;
-int __gsharp_id_15_stride;
-int __gsharp_id_16_indexA;
-int __gsharp_id_17_indexB;
-int __gsharp_id_18_offsetA;
-int __gsharp_id_19_offsetB;
-int __gsharp_id_20_globalA;
-int __gsharp_id_21_globalB;
-int __gsharp_id_22_n;
-unsigned int __gsharp_id_23_valueA;
-unsigned int __gsharp_id_24_valueB;
-int __gsharp_id_25_d;
-int __gsharp_id_30_d;
+Kassyi_GSharp_Core_SharedMemory<unsigned int> __gsharp_id_7_sharedMem;
+int __gsharp_id_8_tid;
+int __gsharp_id_9_bIdx;
+int __gsharp_id_10_elementsPerBlock;
+int __gsharp_id_11_globalOffset;
+int __gsharp_id_12_treeSize;
+int __gsharp_id_13_stride;
+int __gsharp_id_14_indexA;
+int __gsharp_id_15_indexB;
+int __gsharp_id_16_offsetA;
+int __gsharp_id_17_offsetB;
+int __gsharp_id_18_globalA;
+int __gsharp_id_19_globalB;
+int __gsharp_id_20_n;
+unsigned int __gsharp_id_21_valueA;
+unsigned int __gsharp_id_22_valueB;
+int __gsharp_id_23_d;
+int __gsharp_id_28_d;
 };
-extern ""C"" __declspec(dllexport) void __gsharp_k_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuStreamCompactionKernels__BlockExclusiveScan(GSharpArray<unsigned int> __gsharp_id_0_output, GSharpArray<unsigned int> __gsharp_id_1_input, int __gsharp_id_2_elementCount, GSharpArray<unsigned int> __gsharp_id_3_blockSums, GSharpArray<unsigned int> __gsharp_id_4_countBase, int __gsharp_id_5_countSkip, int __gsharp_id_6_countLimit, GSharpArray<unsigned int> __gsharp_id_7_total, bool __gsharp_id_8_flags, __gsharp_context_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuStreamCompactionKernels__BlockExclusiveScan* __gsharp_ctx){
+extern ""C"" __declspec(dllexport) void __gsharp_k_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuStreamCompactionKernels__BlockExclusiveScan(GSharpArray<unsigned int> __gsharp_id_0_output, GSharpArray<unsigned int> __gsharp_id_1_input, int __gsharp_id_2_elementCount, GSharpArray<unsigned int> __gsharp_id_3_blockSums, __gsharp_ty_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuBigIntVectorKernels__ElementCountContext __gsharp_id_4_count, GSharpArray<unsigned int> __gsharp_id_5_total, bool __gsharp_id_6_flags, __gsharp_context_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuStreamCompactionKernels__BlockExclusiveScan* __gsharp_ctx){
 #define __gsharp_state __gsharp_ctx->__gsharp_state
 #define __gsharp_yielded_for_grid_sync __gsharp_ctx->__gsharp_yielded_for_grid_sync
 #define __gsharp_yielded_for_block_barrier __gsharp_ctx->__gsharp_yielded_for_block_barrier
@@ -86,31 +158,31 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-__gsharp_ctx->__gsharp_id_9_sharedMem={ (unsigned int*)__gsharp_allocate_smem_static(0x6ed35e2e7a53fee8ull, (2048+128) * sizeof(unsigned int), alignof(unsigned int)) };
-__gsharp_ctx->__gsharp_id_10_tid=threadIdx.x;
-__gsharp_ctx->__gsharp_id_11_bIdx=blockIdx.x;
-__gsharp_ctx->__gsharp_id_12_elementsPerBlock=blockDim.x*2;
-__gsharp_ctx->__gsharp_id_13_globalOffset=__gsharp_ctx->__gsharp_id_11_bIdx*__gsharp_ctx->__gsharp_id_12_elementsPerBlock;
-__gsharp_ctx->__gsharp_id_14_treeSize=__gsharp_ctx->__gsharp_id_12_elementsPerBlock;
-__gsharp_ctx->__gsharp_id_15_stride=1;
-__gsharp_ctx->__gsharp_id_16_indexA=__gsharp_ctx->__gsharp_id_10_tid;
-__gsharp_ctx->__gsharp_id_17_indexB=__gsharp_ctx->__gsharp_id_10_tid+(__gsharp_ctx->__gsharp_id_14_treeSize/2);
-__gsharp_ctx->__gsharp_id_18_offsetA=__gsharp_fn_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuStreamCompactionKernels__GetConflictFreeOffset(__gsharp_ctx->__gsharp_id_16_indexA);
-__gsharp_ctx->__gsharp_id_19_offsetB=__gsharp_fn_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuStreamCompactionKernels__GetConflictFreeOffset(__gsharp_ctx->__gsharp_id_17_indexB);
-__gsharp_ctx->__gsharp_id_20_globalA=__gsharp_ctx->__gsharp_id_13_globalOffset+__gsharp_ctx->__gsharp_id_16_indexA;
-__gsharp_ctx->__gsharp_id_21_globalB=__gsharp_ctx->__gsharp_id_13_globalOffset+__gsharp_ctx->__gsharp_id_17_indexB;
-__gsharp_ctx->__gsharp_id_22_n=__gsharp_fn_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuStreamCompactionKernels__ResolveCount(__gsharp_id_4_countBase,__gsharp_id_5_countSkip,__gsharp_id_6_countLimit);
-__gsharp_ctx->__gsharp_id_23_valueA=((__gsharp_ctx->__gsharp_id_20_globalA<__gsharp_id_2_elementCount&&__gsharp_ctx->__gsharp_id_20_globalA<__gsharp_ctx->__gsharp_id_22_n)?__gsharp_id_1_input[__gsharp_ctx->__gsharp_id_20_globalA]:0u);
-__gsharp_ctx->__gsharp_id_24_valueB=((__gsharp_ctx->__gsharp_id_21_globalB<__gsharp_id_2_elementCount&&__gsharp_ctx->__gsharp_id_21_globalB<__gsharp_ctx->__gsharp_id_22_n)?__gsharp_id_1_input[__gsharp_ctx->__gsharp_id_21_globalB]:0u);
-__gsharp_ctx->__gsharp_id_9_sharedMem[__gsharp_ctx->__gsharp_id_16_indexA+__gsharp_ctx->__gsharp_id_18_offsetA]=(__gsharp_id_8_flags?((__gsharp_ctx->__gsharp_id_23_valueA!=0u?1u:0u)):__gsharp_ctx->__gsharp_id_23_valueA);
-__gsharp_ctx->__gsharp_id_9_sharedMem[__gsharp_ctx->__gsharp_id_17_indexB+__gsharp_ctx->__gsharp_id_19_offsetB]=(__gsharp_id_8_flags?((__gsharp_ctx->__gsharp_id_24_valueB!=0u?1u:0u)):__gsharp_ctx->__gsharp_id_24_valueB);
-__gsharp_ctx->__gsharp_id_25_d=__gsharp_ctx->__gsharp_id_14_treeSize>>1;
+__gsharp_ctx->__gsharp_id_7_sharedMem={ (unsigned int*)__gsharp_allocate_smem_static(0x50a36458aec438a9ull, (2048+128) * sizeof(unsigned int), alignof(unsigned int)) };
+__gsharp_ctx->__gsharp_id_8_tid=threadIdx.x;
+__gsharp_ctx->__gsharp_id_9_bIdx=blockIdx.x;
+__gsharp_ctx->__gsharp_id_10_elementsPerBlock=blockDim.x*2;
+__gsharp_ctx->__gsharp_id_11_globalOffset=__gsharp_ctx->__gsharp_id_9_bIdx*__gsharp_ctx->__gsharp_id_10_elementsPerBlock;
+__gsharp_ctx->__gsharp_id_12_treeSize=__gsharp_ctx->__gsharp_id_10_elementsPerBlock;
+__gsharp_ctx->__gsharp_id_13_stride=1;
+__gsharp_ctx->__gsharp_id_14_indexA=__gsharp_ctx->__gsharp_id_8_tid;
+__gsharp_ctx->__gsharp_id_15_indexB=__gsharp_ctx->__gsharp_id_8_tid+(__gsharp_ctx->__gsharp_id_12_treeSize/2);
+__gsharp_ctx->__gsharp_id_16_offsetA=__gsharp_fn_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuStreamCompactionKernels__GetConflictFreeOffset(__gsharp_ctx->__gsharp_id_14_indexA);
+__gsharp_ctx->__gsharp_id_17_offsetB=__gsharp_fn_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuStreamCompactionKernels__GetConflictFreeOffset(__gsharp_ctx->__gsharp_id_15_indexB);
+__gsharp_ctx->__gsharp_id_18_globalA=__gsharp_ctx->__gsharp_id_11_globalOffset+__gsharp_ctx->__gsharp_id_14_indexA;
+__gsharp_ctx->__gsharp_id_19_globalB=__gsharp_ctx->__gsharp_id_11_globalOffset+__gsharp_ctx->__gsharp_id_15_indexB;
+__gsharp_ctx->__gsharp_id_20_n=__gsharp_fn_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuStreamCompactionKernels__ResolveCount(__gsharp_id_4_count);
+__gsharp_ctx->__gsharp_id_21_valueA=((__gsharp_ctx->__gsharp_id_18_globalA<__gsharp_id_2_elementCount&&__gsharp_ctx->__gsharp_id_18_globalA<__gsharp_ctx->__gsharp_id_20_n)?__gsharp_id_1_input[__gsharp_ctx->__gsharp_id_18_globalA]:0u);
+__gsharp_ctx->__gsharp_id_22_valueB=((__gsharp_ctx->__gsharp_id_19_globalB<__gsharp_id_2_elementCount&&__gsharp_ctx->__gsharp_id_19_globalB<__gsharp_ctx->__gsharp_id_20_n)?__gsharp_id_1_input[__gsharp_ctx->__gsharp_id_19_globalB]:0u);
+__gsharp_ctx->__gsharp_id_7_sharedMem[__gsharp_ctx->__gsharp_id_14_indexA+__gsharp_ctx->__gsharp_id_16_offsetA]=(__gsharp_id_6_flags?((__gsharp_ctx->__gsharp_id_21_valueA!=0u?1u:0u)):__gsharp_ctx->__gsharp_id_21_valueA);
+__gsharp_ctx->__gsharp_id_7_sharedMem[__gsharp_ctx->__gsharp_id_15_indexB+__gsharp_ctx->__gsharp_id_17_offsetB]=(__gsharp_id_6_flags?((__gsharp_ctx->__gsharp_id_22_valueB!=0u?1u:0u)):__gsharp_ctx->__gsharp_id_22_valueB);
+__gsharp_ctx->__gsharp_id_23_d=__gsharp_ctx->__gsharp_id_12_treeSize>>1;
 goto __gsharp_switch_1_state_1;
 }
 case 1:
 __gsharp_switch_1_state_1:
 {
-if(!(__gsharp_ctx->__gsharp_id_25_d>0))
+if(!(__gsharp_ctx->__gsharp_id_23_d>0))
 {
 goto __gsharp_switch_1_state_4;
 }
@@ -121,52 +193,52 @@ return;
 case 2:
 __gsharp_switch_1_state_2:
 {
-if(__gsharp_ctx->__gsharp_id_10_tid<__gsharp_ctx->__gsharp_id_25_d)
+if(__gsharp_ctx->__gsharp_id_8_tid<__gsharp_ctx->__gsharp_id_23_d)
 {
-int __gsharp_id_26_ai = __gsharp_ctx->__gsharp_id_15_stride*(2*__gsharp_ctx->__gsharp_id_10_tid+1)-1;
-int __gsharp_id_27_bi = __gsharp_ctx->__gsharp_id_15_stride*(2*__gsharp_ctx->__gsharp_id_10_tid+2)-1;
-__gsharp_id_26_ai+=__gsharp_fn_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuStreamCompactionKernels__GetConflictFreeOffset(__gsharp_id_26_ai);
-__gsharp_id_27_bi+=__gsharp_fn_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuStreamCompactionKernels__GetConflictFreeOffset(__gsharp_id_27_bi);
-__gsharp_ctx->__gsharp_id_9_sharedMem[__gsharp_id_27_bi]+=__gsharp_ctx->__gsharp_id_9_sharedMem[__gsharp_id_26_ai];
+int __gsharp_id_24_ai = __gsharp_ctx->__gsharp_id_13_stride*(2*__gsharp_ctx->__gsharp_id_8_tid+1)-1;
+int __gsharp_id_25_bi = __gsharp_ctx->__gsharp_id_13_stride*(2*__gsharp_ctx->__gsharp_id_8_tid+2)-1;
+__gsharp_id_24_ai+=__gsharp_fn_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuStreamCompactionKernels__GetConflictFreeOffset(__gsharp_id_24_ai);
+__gsharp_id_25_bi+=__gsharp_fn_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuStreamCompactionKernels__GetConflictFreeOffset(__gsharp_id_25_bi);
+__gsharp_ctx->__gsharp_id_7_sharedMem[__gsharp_id_25_bi]+=__gsharp_ctx->__gsharp_id_7_sharedMem[__gsharp_id_24_ai];
 }
-__gsharp_ctx->__gsharp_id_15_stride*=2;
+__gsharp_ctx->__gsharp_id_13_stride*=2;
 goto __gsharp_switch_1_state_3;
 }
 case 3:
 __gsharp_switch_1_state_3:
 {
-__gsharp_ctx->__gsharp_id_25_d>>=1;
+__gsharp_ctx->__gsharp_id_23_d>>=1;
 goto __gsharp_switch_1_state_1;
 goto __gsharp_switch_1_state_4;
 }
 case 4:
 __gsharp_switch_1_state_4:
 {
-if(__gsharp_ctx->__gsharp_id_10_tid==0)
+if(__gsharp_ctx->__gsharp_id_8_tid==0)
 {
-int __gsharp_id_28_lastIndex = __gsharp_ctx->__gsharp_id_14_treeSize-1;
-int __gsharp_id_29_lastOffset = __gsharp_fn_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuStreamCompactionKernels__GetConflictFreeOffset(__gsharp_id_28_lastIndex);
+int __gsharp_id_26_lastIndex = __gsharp_ctx->__gsharp_id_12_treeSize-1;
+int __gsharp_id_27_lastOffset = __gsharp_fn_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuStreamCompactionKernels__GetConflictFreeOffset(__gsharp_id_26_lastIndex);
 if((__gsharp_id_3_blockSums.data != nullptr))
 {
-__gsharp_id_3_blockSums[__gsharp_ctx->__gsharp_id_11_bIdx]=__gsharp_ctx->__gsharp_id_9_sharedMem[__gsharp_id_28_lastIndex+__gsharp_id_29_lastOffset];
+__gsharp_id_3_blockSums[__gsharp_ctx->__gsharp_id_9_bIdx]=__gsharp_ctx->__gsharp_id_7_sharedMem[__gsharp_id_26_lastIndex+__gsharp_id_27_lastOffset];
 }
-if((__gsharp_id_7_total.data != nullptr)&&gridDim.x==1)
+if((__gsharp_id_5_total.data != nullptr)&&gridDim.x==1)
 {
-__gsharp_id_7_total[0]=__gsharp_ctx->__gsharp_id_9_sharedMem[__gsharp_id_28_lastIndex+__gsharp_id_29_lastOffset];
+__gsharp_id_5_total[0]=__gsharp_ctx->__gsharp_id_7_sharedMem[__gsharp_id_26_lastIndex+__gsharp_id_27_lastOffset];
 }
-__gsharp_ctx->__gsharp_id_9_sharedMem[__gsharp_id_28_lastIndex+__gsharp_id_29_lastOffset]=0u;
+__gsharp_ctx->__gsharp_id_7_sharedMem[__gsharp_id_26_lastIndex+__gsharp_id_27_lastOffset]=0u;
 }
-__gsharp_ctx->__gsharp_id_30_d=1;
+__gsharp_ctx->__gsharp_id_28_d=1;
 goto __gsharp_switch_1_state_5;
 }
 case 5:
 __gsharp_switch_1_state_5:
 {
-if(!(__gsharp_ctx->__gsharp_id_30_d<__gsharp_ctx->__gsharp_id_14_treeSize))
+if(!(__gsharp_ctx->__gsharp_id_28_d<__gsharp_ctx->__gsharp_id_12_treeSize))
 {
 goto __gsharp_switch_1_state_8;
 }
-__gsharp_ctx->__gsharp_id_15_stride>>=1;
+__gsharp_ctx->__gsharp_id_13_stride>>=1;
 __gsharp_yielded_for_block_barrier=true;
 __gsharp_state=6;
 return;
@@ -174,22 +246,22 @@ return;
 case 6:
 __gsharp_switch_1_state_6:
 {
-if(__gsharp_ctx->__gsharp_id_10_tid<__gsharp_ctx->__gsharp_id_30_d)
+if(__gsharp_ctx->__gsharp_id_8_tid<__gsharp_ctx->__gsharp_id_28_d)
 {
-int __gsharp_id_31_ai = __gsharp_ctx->__gsharp_id_15_stride*(2*__gsharp_ctx->__gsharp_id_10_tid+1)-1;
-int __gsharp_id_32_bi = __gsharp_ctx->__gsharp_id_15_stride*(2*__gsharp_ctx->__gsharp_id_10_tid+2)-1;
-__gsharp_id_31_ai+=__gsharp_fn_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuStreamCompactionKernels__GetConflictFreeOffset(__gsharp_id_31_ai);
-__gsharp_id_32_bi+=__gsharp_fn_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuStreamCompactionKernels__GetConflictFreeOffset(__gsharp_id_32_bi);
-unsigned int __gsharp_id_33_temp = __gsharp_ctx->__gsharp_id_9_sharedMem[__gsharp_id_31_ai];
-__gsharp_ctx->__gsharp_id_9_sharedMem[__gsharp_id_31_ai]=__gsharp_ctx->__gsharp_id_9_sharedMem[__gsharp_id_32_bi];
-__gsharp_ctx->__gsharp_id_9_sharedMem[__gsharp_id_32_bi]+=__gsharp_id_33_temp;
+int __gsharp_id_29_ai = __gsharp_ctx->__gsharp_id_13_stride*(2*__gsharp_ctx->__gsharp_id_8_tid+1)-1;
+int __gsharp_id_30_bi = __gsharp_ctx->__gsharp_id_13_stride*(2*__gsharp_ctx->__gsharp_id_8_tid+2)-1;
+__gsharp_id_29_ai+=__gsharp_fn_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuStreamCompactionKernels__GetConflictFreeOffset(__gsharp_id_29_ai);
+__gsharp_id_30_bi+=__gsharp_fn_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuStreamCompactionKernels__GetConflictFreeOffset(__gsharp_id_30_bi);
+unsigned int __gsharp_id_31_temp = __gsharp_ctx->__gsharp_id_7_sharedMem[__gsharp_id_29_ai];
+__gsharp_ctx->__gsharp_id_7_sharedMem[__gsharp_id_29_ai]=__gsharp_ctx->__gsharp_id_7_sharedMem[__gsharp_id_30_bi];
+__gsharp_ctx->__gsharp_id_7_sharedMem[__gsharp_id_30_bi]+=__gsharp_id_31_temp;
 }
 goto __gsharp_switch_1_state_7;
 }
 case 7:
 __gsharp_switch_1_state_7:
 {
-__gsharp_ctx->__gsharp_id_30_d*=2;
+__gsharp_ctx->__gsharp_id_28_d*=2;
 goto __gsharp_switch_1_state_5;
 goto __gsharp_switch_1_state_8;
 }
@@ -203,13 +275,13 @@ return;
 case 9:
 __gsharp_switch_1_state_9:
 {
-if(__gsharp_ctx->__gsharp_id_20_globalA<__gsharp_id_2_elementCount)
+if(__gsharp_ctx->__gsharp_id_18_globalA<__gsharp_id_2_elementCount)
 {
-__gsharp_id_0_output[__gsharp_ctx->__gsharp_id_20_globalA]=__gsharp_ctx->__gsharp_id_9_sharedMem[__gsharp_ctx->__gsharp_id_16_indexA+__gsharp_ctx->__gsharp_id_18_offsetA];
+__gsharp_id_0_output[__gsharp_ctx->__gsharp_id_18_globalA]=__gsharp_ctx->__gsharp_id_7_sharedMem[__gsharp_ctx->__gsharp_id_14_indexA+__gsharp_ctx->__gsharp_id_16_offsetA];
 }
-if(__gsharp_ctx->__gsharp_id_21_globalB<__gsharp_id_2_elementCount)
+if(__gsharp_ctx->__gsharp_id_19_globalB<__gsharp_id_2_elementCount)
 {
-__gsharp_id_0_output[__gsharp_ctx->__gsharp_id_21_globalB]=__gsharp_ctx->__gsharp_id_9_sharedMem[__gsharp_ctx->__gsharp_id_17_indexB+__gsharp_ctx->__gsharp_id_19_offsetB];
+__gsharp_id_0_output[__gsharp_ctx->__gsharp_id_19_globalB]=__gsharp_ctx->__gsharp_id_7_sharedMem[__gsharp_ctx->__gsharp_id_15_indexB+__gsharp_ctx->__gsharp_id_17_offsetB];
 }
 __gsharp_state=-1;
 return;
@@ -219,8 +291,9 @@ return;
 #undef __gsharp_yielded_for_grid_sync
 #undef __gsharp_yielded_for_block_barrier
 }
-extern ""C"" __declspec(dllexport) void __gsharp_launch_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuStreamCompactionKernels__BlockExclusiveScan(uint32_t __gsharp_grid_dim_x, uint32_t __gsharp_grid_dim_y, uint32_t __gsharp_grid_dim_z, uint32_t __gsharp_block_dim_x, uint32_t __gsharp_block_dim_y, uint32_t __gsharp_block_dim_z, uint32_t __gsharp_shared_mem_bytes, GSharpArray<unsigned int> __gsharp_id_0_output, GSharpArray<unsigned int> __gsharp_id_1_input, int __gsharp_id_2_elementCount, GSharpArray<unsigned int> __gsharp_id_3_blockSums, GSharpArray<unsigned int> __gsharp_id_4_countBase, int __gsharp_id_5_countSkip, int __gsharp_id_6_countLimit, GSharpArray<unsigned int> __gsharp_id_7_total, bool __gsharp_id_8_flags)
+extern ""C"" __declspec(dllexport) void __gsharp_launch_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuStreamCompactionKernels__BlockExclusiveScan(uint32_t __gsharp_grid_dim_x, uint32_t __gsharp_grid_dim_y, uint32_t __gsharp_grid_dim_z, uint32_t __gsharp_block_dim_x, uint32_t __gsharp_block_dim_y, uint32_t __gsharp_block_dim_z, uint32_t __gsharp_shared_mem_bytes, GSharpArray<unsigned int> __gsharp_id_0_output, GSharpArray<unsigned int> __gsharp_id_1_input, int __gsharp_id_2_elementCount, GSharpArray<unsigned int> __gsharp_id_3_blockSums, const __gsharp_ty_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuBigIntVectorKernels__ElementCountContext* __gsharp_arg_4, GSharpArray<unsigned int> __gsharp_id_5_total, bool __gsharp_id_6_flags)
 {
+__gsharp_ty_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuBigIntVectorKernels__ElementCountContext __gsharp_id_4_count = *__gsharp_arg_4;
 __gsharp_host_last_error.Reset();
 GSharpErrorSlot __gsharp_launch_error;
 int32_t __gsharp_total_blocks = (int32_t)(__gsharp_grid_dim_x * __gsharp_grid_dim_y * __gsharp_grid_dim_z);
@@ -255,7 +328,7 @@ uint32_t __gsharp_ctx_tid = __gsharp_tz * __gsharp_block_dim_y * __gsharp_block_
 if (__gsharp_contexts[__gsharp_ctx_tid].__gsharp_state != -1 && !__gsharp_contexts[__gsharp_ctx_tid].__gsharp_yielded_for_block_barrier && !__gsharp_contexts[__gsharp_ctx_tid].__gsharp_yielded_for_grid_sync)
 {
 __gsharp_set_thread_idx(__gsharp_tx, __gsharp_ty, __gsharp_tz, __gsharp_bx, __gsharp_by, __gsharp_bz, __gsharp_block_dim_x, __gsharp_block_dim_y, __gsharp_block_dim_z, __gsharp_grid_dim_x, __gsharp_grid_dim_y, __gsharp_grid_dim_z);
-__gsharp_k_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuStreamCompactionKernels__BlockExclusiveScan(__gsharp_id_0_output, __gsharp_id_1_input, __gsharp_id_2_elementCount, __gsharp_id_3_blockSums, __gsharp_id_4_countBase, __gsharp_id_5_countSkip, __gsharp_id_6_countLimit, __gsharp_id_7_total, __gsharp_id_8_flags, &__gsharp_contexts[__gsharp_ctx_tid]);
+__gsharp_k_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuStreamCompactionKernels__BlockExclusiveScan(__gsharp_id_0_output, __gsharp_id_1_input, __gsharp_id_2_elementCount, __gsharp_id_3_blockSums, __gsharp_id_4_count, __gsharp_id_5_total, __gsharp_id_6_flags, &__gsharp_contexts[__gsharp_ctx_tid]);
 if (__gsharp_contexts[__gsharp_ctx_tid].__gsharp_yielded_for_grid_sync)
 {
 __gsharp_trap(GSharpErrorCode::InvalidOperation, ""G#: Gpu.SyncGrid reached in GpuStreamCompactionKernels.BlockExclusiveScan, which is not [GpuKernel(Cooperative = true)]"");
@@ -309,11 +382,11 @@ public int globalB;
 public int n;
 public uint valueA;
 public uint valueB;
-public int __gsharp_id_25_d;
-public int __gsharp_id_30_d;
+public int __gsharp_id_23_d;
+public int __gsharp_id_28_d;
 }
-public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuStreamCompactionKernels__BlockExclusiveScan(uint[] output, uint[] input, int elementCount, uint[]? blockSums, uint[]? countBase, int countSkip, int countLimit, uint[]? total, bool flags, __gsharp_context_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuStreamCompactionKernels__BlockExclusiveScan __gsharp_ctx) {
-global::Kassyi.GSharp.Core.SharedMemory<uint> sharedMem = new global::Kassyi.GSharp.Core.SharedMemory<uint>(2048 + 128, 0x6ed35e2e7a53fee8UL);
+public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuStreamCompactionKernels__BlockExclusiveScan(uint[] output, uint[] input, int elementCount, uint[]? blockSums, global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Kernels.GpuBigIntVectorKernels.ElementCountContext count, uint[]? total, bool flags, __gsharp_context_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuStreamCompactionKernels__BlockExclusiveScan __gsharp_ctx) {
+global::Kassyi.GSharp.Core.SharedMemory<uint> sharedMem = new global::Kassyi.GSharp.Core.SharedMemory<uint>(2048 + 128, 0x50a36458aec438a9UL);
 {
 switch (__gsharp_ctx.__gsharp_state)
 {
@@ -331,18 +404,18 @@ __gsharp_ctx.offsetA = global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Kernels.GpuSt
 __gsharp_ctx.offsetB = global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Kernels.GpuStreamCompactionKernels.GetConflictFreeOffset(__gsharp_ctx.indexB);
 __gsharp_ctx.globalA = __gsharp_ctx.globalOffset + __gsharp_ctx.indexA;
 __gsharp_ctx.globalB = __gsharp_ctx.globalOffset + __gsharp_ctx.indexB;
-__gsharp_ctx.n = global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Kernels.GpuStreamCompactionKernels.ResolveCount(countBase, countSkip, countLimit);
+__gsharp_ctx.n = global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Kernels.GpuStreamCompactionKernels.ResolveCount(count);
 __gsharp_ctx.valueA = (__gsharp_ctx.globalA < elementCount && __gsharp_ctx.globalA < __gsharp_ctx.n) ? input[__gsharp_ctx.globalA] : 0u;
 __gsharp_ctx.valueB = (__gsharp_ctx.globalB < elementCount && __gsharp_ctx.globalB < __gsharp_ctx.n) ? input[__gsharp_ctx.globalB] : 0u;
 sharedMem[__gsharp_ctx.indexA + __gsharp_ctx.offsetA] = flags ? (__gsharp_ctx.valueA != 0u ? 1u : 0u) : __gsharp_ctx.valueA;
 sharedMem[__gsharp_ctx.indexB + __gsharp_ctx.offsetB] = flags ? (__gsharp_ctx.valueB != 0u ? 1u : 0u) : __gsharp_ctx.valueB;
-__gsharp_ctx.__gsharp_id_25_d = __gsharp_ctx.treeSize >> 1;
+__gsharp_ctx.__gsharp_id_23_d = __gsharp_ctx.treeSize >> 1;
 goto case 1;
 }
 
 case 1:
 {
-if (!(__gsharp_ctx.__gsharp_id_25_d > 0))
+if (!(__gsharp_ctx.__gsharp_id_23_d > 0))
 goto case 4;
 global::Kassyi.GSharp.Core.ManagedGpuContext.BlockBarrierRequested = true;
 __gsharp_ctx.__gsharp_state = 2;
@@ -351,7 +424,7 @@ return;
 
 case 2:
 {
-if (__gsharp_ctx.tid < __gsharp_ctx.__gsharp_id_25_d)
+if (__gsharp_ctx.tid < __gsharp_ctx.__gsharp_id_23_d)
 {
 int ai = __gsharp_ctx.stride * (2 * __gsharp_ctx.tid + 1) - 1;
 int bi = __gsharp_ctx.stride * (2 * __gsharp_ctx.tid + 2) - 1;
@@ -366,7 +439,7 @@ goto case 3;
 
 case 3:
 {
-__gsharp_ctx.__gsharp_id_25_d >>= 1;
+__gsharp_ctx.__gsharp_id_23_d >>= 1;
 goto case 1;
 goto case 4;
 }
@@ -391,13 +464,13 @@ total[0] = sharedMem[lastIndex + lastOffset];
 sharedMem[lastIndex + lastOffset] = 0u;
 }
 
-__gsharp_ctx.__gsharp_id_30_d = 1;
+__gsharp_ctx.__gsharp_id_28_d = 1;
 goto case 5;
 }
 
 case 5:
 {
-if (!(__gsharp_ctx.__gsharp_id_30_d < __gsharp_ctx.treeSize))
+if (!(__gsharp_ctx.__gsharp_id_28_d < __gsharp_ctx.treeSize))
 goto case 8;
 __gsharp_ctx.stride >>= 1;
 global::Kassyi.GSharp.Core.ManagedGpuContext.BlockBarrierRequested = true;
@@ -407,7 +480,7 @@ return;
 
 case 6:
 {
-if (__gsharp_ctx.tid < __gsharp_ctx.__gsharp_id_30_d)
+if (__gsharp_ctx.tid < __gsharp_ctx.__gsharp_id_28_d)
 {
 int ai = __gsharp_ctx.stride * (2 * __gsharp_ctx.tid + 1) - 1;
 int bi = __gsharp_ctx.stride * (2 * __gsharp_ctx.tid + 2) - 1;
@@ -423,7 +496,7 @@ goto case 7;
 
 case 7:
 {
-__gsharp_ctx.__gsharp_id_30_d *= 2;
+__gsharp_ctx.__gsharp_id_28_d *= 2;
 goto case 5;
 goto case 8;
 }
@@ -455,11 +528,11 @@ return;
 }
 
 [System.Runtime.InteropServices.UnmanagedFunctionPointer(System.Runtime.InteropServices.CallingConvention.Cdecl)]
-private unsafe delegate void BlockExclusiveScan_Delegate(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ, uint sharedMemBytes, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy output, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy input, global::System.Int32 elementCount, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy blockSums, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy countBase, global::System.Int32 countSkip, global::System.Int32 countLimit, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy total, global::System.Boolean flags);
+private unsafe delegate void BlockExclusiveScan_Delegate(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ, uint sharedMemBytes, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy output, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy input, global::System.Int32 elementCount, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy blockSums, AotContexts.ElementCount* count, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy total, global::System.Boolean flags);
 #pragma warning disable CS8500
 [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
-public static unsafe void LaunchBlockExclusiveScan(global::System.UInt32[] output, global::System.UInt32[] input, global::System.Int32 elementCount, global::System.UInt32[]? blockSums, global::System.UInt32[]? countBase, global::System.Int32 countSkip, global::System.Int32 countLimit, global::System.UInt32[]? total, global::System.Boolean flags, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, IntPtr hStream = default, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
+public static unsafe void LaunchBlockExclusiveScan(global::System.UInt32[] output, global::System.UInt32[] input, global::System.Int32 elementCount, global::System.UInt32[]? blockSums, global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Kernels.GpuBigIntVectorKernels.ElementCountContext count, global::System.UInt32[]? total, global::System.Boolean flags, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, IntPtr hStream = default, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 if (output is null){
 throw new global::System.ArgumentNullException(nameof(output));
@@ -475,9 +548,6 @@ throw new global::System.ArgumentException("Kernel array arguments must not be e
 }
 if (blockSums is { Length: 0 }){
 blockSums = null;
-}
-if (countBase is { Length: 0 }){
-countBase = null;
 }
 if (total is { Length: 0 }){
 total = null;
@@ -538,7 +608,7 @@ if (__gsharp_contexts[__gsharp_linear_tid].__gsharp_state != -1 && !threadAtBloc
 anyGridActive = true;
 global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested = false;
 global::Kassyi.GSharp.Core.ManagedGpuContext.BlockBarrierRequested = false;
-__gsharp_statemachine_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuStreamCompactionKernels__BlockExclusiveScan(output, input, elementCount, blockSums, countBase, countSkip, countLimit, total, flags, __gsharp_contexts[__gsharp_linear_tid]);
+__gsharp_statemachine_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuStreamCompactionKernels__BlockExclusiveScan(output, input, elementCount, blockSums, count, total, flags, __gsharp_contexts[__gsharp_linear_tid]);
 if (global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested)
 {
 throw global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncInKernelThatIsNotCooperative("GpuStreamCompactionKernels.BlockExclusiveScan");
@@ -580,14 +650,24 @@ global::Kassyi.GSharp.Core.ManagedGpuContext.EndGrid();
 return;
 }
 var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<BlockExclusiveScan_Delegate>("__gsharp_launch_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuStreamCompactionKernels__BlockExclusiveScan", dllPath);
+AotContexts.ElementCount count_native = default;
+var count_allocatedPtrs = new System.Collections.Generic.List<IntPtr>();
+try
+{
+AotContexts.Marshal_GpuBigIntVectorKernels_ElementCountContext(ref count, ref count_native, false, count_allocatedPtrs, hStream);
 fixed (global::System.UInt32* p_output = output)
 fixed (global::System.UInt32* p_input = input)
 fixed (global::System.UInt32* p_blockSums = blockSums)
-fixed (global::System.UInt32* p_countBase = countBase)
 fixed (global::System.UInt32* p_total = total)
 {
-hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, sharedMemBytes, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (IntPtr)p_output, Length = output.Length }, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (IntPtr)p_input, Length = input.Length }, elementCount, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (IntPtr)p_blockSums, Length = (blockSums?.Length ?? 0) }, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (IntPtr)p_countBase, Length = (countBase?.Length ?? 0) }, countSkip, countLimit, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (IntPtr)p_total, Length = (total?.Length ?? 0) }, flags);
+hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, sharedMemBytes, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (IntPtr)p_output, Length = output.Length }, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (IntPtr)p_input, Length = input.Length }, elementCount, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (IntPtr)p_blockSums, Length = (blockSums?.Length ?? 0) }, &count_native, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (IntPtr)p_total, Length = (total?.Length ?? 0) }, flags);
 global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ThrowIfNativeError(dllPath);
+}
+AotContexts.Unmarshal_GpuBigIntVectorKernels_ElementCountContext(ref count, ref count_native, false, hStream);
+}
+finally
+{
+foreach (var handle in count_allocatedPtrs) System.Runtime.InteropServices.GCHandle.FromIntPtr(handle).Free();
 }
 }
 #pragma warning restore CS8500
@@ -1158,7 +1238,22 @@ global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ThrowIfNativeError(dllPath);
 }
 }
 #pragma warning restore CS8500
-public const string CompactSignedVector_Source = @"struct __gsharp_context_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuStreamCompactionKernels__CompactSignedVector {
+public const string CompactSignedVector_Source = @"#ifndef __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuBigIntVectorKernels__ElementCountContext__
+#define __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuBigIntVectorKernels__ElementCountContext__
+struct __gsharp_ty_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuBigIntVectorKernels__ElementCountContext
+{
+GSharpArray<const unsigned int> __gsharp_mb_Base;
+int __gsharp_mb_Skip;
+int __gsharp_mb_Limit;
+}
+;
+static_assert(sizeof(__gsharp_ty_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuBigIntVectorKernels__ElementCountContext)==24,""Kassyi.GSharp.Stdlib.GpuMath.BigNum.Kernels.GpuBigIntVectorKernels.ElementCountContext: size"");
+static_assert(alignof(__gsharp_ty_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuBigIntVectorKernels__ElementCountContext)==8,""Kassyi.GSharp.Stdlib.GpuMath.BigNum.Kernels.GpuBigIntVectorKernels.ElementCountContext: alignment"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuBigIntVectorKernels__ElementCountContext,__gsharp_mb_Base)==0,""Kassyi.GSharp.Stdlib.GpuMath.BigNum.Kernels.GpuBigIntVectorKernels.ElementCountContext.Base: offset"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuBigIntVectorKernels__ElementCountContext,__gsharp_mb_Skip)==16,""Kassyi.GSharp.Stdlib.GpuMath.BigNum.Kernels.GpuBigIntVectorKernels.ElementCountContext.Skip: offset"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuBigIntVectorKernels__ElementCountContext,__gsharp_mb_Limit)==20,""Kassyi.GSharp.Stdlib.GpuMath.BigNum.Kernels.GpuBigIntVectorKernels.ElementCountContext.Limit: offset"");
+#endif
+struct __gsharp_context_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuStreamCompactionKernels__CompactSignedVector {
 int __gsharp_state = 0;
 __gsharp_context_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuStreamCompactionKernels__CompactSignedVector* __gsharp_all_contexts = nullptr;
 uint64_t __gsharp_warp_exchange[2] = {};
@@ -1166,7 +1261,7 @@ uint32_t __gsharp_warp_shuffle_count = 0;
 bool __gsharp_yielded_for_grid_sync = false;
 bool __gsharp_yielded_for_block_barrier = false;
 };
-extern ""C"" __declspec(dllexport) void __gsharp_k_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuStreamCompactionKernels__CompactSignedVector(GSharpArray<unsigned int> __gsharp_id_0_outputValues, GSharpArray<unsigned int> __gsharp_id_1_outputSigns, GSharpArray<unsigned int> __gsharp_id_2_inputValues, GSharpArray<unsigned int> __gsharp_id_3_inputSigns, GSharpArray<unsigned int> __gsharp_id_4_predicates, GSharpArray<unsigned int> __gsharp_id_5_scanResult, int __gsharp_id_6_elementCount, int __gsharp_id_7_wordsPerElement, GSharpArray<unsigned int> __gsharp_id_8_countBase, int __gsharp_id_9_countSkip, int __gsharp_id_10_countLimit, __gsharp_context_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuStreamCompactionKernels__CompactSignedVector* __gsharp_ctx){
+extern ""C"" __declspec(dllexport) void __gsharp_k_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuStreamCompactionKernels__CompactSignedVector(GSharpArray<unsigned int> __gsharp_id_0_outputValues, GSharpArray<unsigned int> __gsharp_id_1_outputSigns, GSharpArray<unsigned int> __gsharp_id_2_inputValues, GSharpArray<unsigned int> __gsharp_id_3_inputSigns, GSharpArray<unsigned int> __gsharp_id_4_predicates, GSharpArray<unsigned int> __gsharp_id_5_scanResult, int __gsharp_id_6_elementCount, int __gsharp_id_7_wordsPerElement, __gsharp_ty_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuBigIntVectorKernels__ElementCountContext __gsharp_id_8_count, __gsharp_context_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuStreamCompactionKernels__CompactSignedVector* __gsharp_ctx){
 #define __gsharp_state __gsharp_ctx->__gsharp_state
 #define __gsharp_yielded_for_grid_sync __gsharp_ctx->__gsharp_yielded_for_grid_sync
 #define __gsharp_yielded_for_block_barrier __gsharp_ctx->__gsharp_yielded_for_block_barrier
@@ -1176,20 +1271,20 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-int __gsharp_id_11_globalTid = blockIdx.x*blockDim.x+threadIdx.x;
-int __gsharp_id_12_n = __gsharp_fn_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuStreamCompactionKernels__ResolveCount(__gsharp_id_8_countBase,__gsharp_id_9_countSkip,__gsharp_id_10_countLimit);
-if(__gsharp_id_11_globalTid>=__gsharp_id_6_elementCount||__gsharp_id_11_globalTid>=__gsharp_id_12_n||__gsharp_id_4_predicates[__gsharp_id_11_globalTid]==0)
+int __gsharp_id_9_globalTid = blockIdx.x*blockDim.x+threadIdx.x;
+int __gsharp_id_10_n = __gsharp_fn_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuStreamCompactionKernels__ResolveCount(__gsharp_id_8_count);
+if(__gsharp_id_9_globalTid>=__gsharp_id_6_elementCount||__gsharp_id_9_globalTid>=__gsharp_id_10_n||__gsharp_id_4_predicates[__gsharp_id_9_globalTid]==0)
 {
 __gsharp_state = -1;return;
 }
-int __gsharp_id_13_destinationIndex = (int)__gsharp_id_5_scanResult[__gsharp_id_11_globalTid];
-int __gsharp_id_14_srcOffset = __gsharp_id_11_globalTid*__gsharp_id_7_wordsPerElement;
-int __gsharp_id_15_dstOffset = __gsharp_id_13_destinationIndex*__gsharp_id_7_wordsPerElement;
-for(int __gsharp_id_16_i = 0;__gsharp_id_16_i<__gsharp_id_7_wordsPerElement;__gsharp_id_16_i++)
+int __gsharp_id_11_destinationIndex = (int)__gsharp_id_5_scanResult[__gsharp_id_9_globalTid];
+int __gsharp_id_12_srcOffset = __gsharp_id_9_globalTid*__gsharp_id_7_wordsPerElement;
+int __gsharp_id_13_dstOffset = __gsharp_id_11_destinationIndex*__gsharp_id_7_wordsPerElement;
+for(int __gsharp_id_14_i = 0;__gsharp_id_14_i<__gsharp_id_7_wordsPerElement;__gsharp_id_14_i++)
 {
-__gsharp_id_0_outputValues[__gsharp_id_15_dstOffset+__gsharp_id_16_i]=__gsharp_id_2_inputValues[__gsharp_id_14_srcOffset+__gsharp_id_16_i];
+__gsharp_id_0_outputValues[__gsharp_id_13_dstOffset+__gsharp_id_14_i]=__gsharp_id_2_inputValues[__gsharp_id_12_srcOffset+__gsharp_id_14_i];
 }
-__gsharp_id_1_outputSigns[__gsharp_id_13_destinationIndex]=__gsharp_id_3_inputSigns[__gsharp_id_11_globalTid];
+__gsharp_id_1_outputSigns[__gsharp_id_11_destinationIndex]=__gsharp_id_3_inputSigns[__gsharp_id_9_globalTid];
 __gsharp_state=-1;
 return;
 }
@@ -1198,8 +1293,9 @@ return;
 #undef __gsharp_yielded_for_grid_sync
 #undef __gsharp_yielded_for_block_barrier
 }
-extern ""C"" __declspec(dllexport) void __gsharp_launch_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuStreamCompactionKernels__CompactSignedVector(uint32_t __gsharp_grid_dim_x, uint32_t __gsharp_grid_dim_y, uint32_t __gsharp_grid_dim_z, uint32_t __gsharp_block_dim_x, uint32_t __gsharp_block_dim_y, uint32_t __gsharp_block_dim_z, uint32_t __gsharp_shared_mem_bytes, GSharpArray<unsigned int> __gsharp_id_0_outputValues, GSharpArray<unsigned int> __gsharp_id_1_outputSigns, GSharpArray<unsigned int> __gsharp_id_2_inputValues, GSharpArray<unsigned int> __gsharp_id_3_inputSigns, GSharpArray<unsigned int> __gsharp_id_4_predicates, GSharpArray<unsigned int> __gsharp_id_5_scanResult, int __gsharp_id_6_elementCount, int __gsharp_id_7_wordsPerElement, GSharpArray<unsigned int> __gsharp_id_8_countBase, int __gsharp_id_9_countSkip, int __gsharp_id_10_countLimit)
+extern ""C"" __declspec(dllexport) void __gsharp_launch_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuStreamCompactionKernels__CompactSignedVector(uint32_t __gsharp_grid_dim_x, uint32_t __gsharp_grid_dim_y, uint32_t __gsharp_grid_dim_z, uint32_t __gsharp_block_dim_x, uint32_t __gsharp_block_dim_y, uint32_t __gsharp_block_dim_z, uint32_t __gsharp_shared_mem_bytes, GSharpArray<unsigned int> __gsharp_id_0_outputValues, GSharpArray<unsigned int> __gsharp_id_1_outputSigns, GSharpArray<unsigned int> __gsharp_id_2_inputValues, GSharpArray<unsigned int> __gsharp_id_3_inputSigns, GSharpArray<unsigned int> __gsharp_id_4_predicates, GSharpArray<unsigned int> __gsharp_id_5_scanResult, int __gsharp_id_6_elementCount, int __gsharp_id_7_wordsPerElement, const __gsharp_ty_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuBigIntVectorKernels__ElementCountContext* __gsharp_arg_8)
 {
+__gsharp_ty_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuBigIntVectorKernels__ElementCountContext __gsharp_id_8_count = *__gsharp_arg_8;
 __gsharp_host_last_error.Reset();
 GSharpErrorSlot __gsharp_launch_error;
 int32_t __gsharp_total_blocks = (int32_t)(__gsharp_grid_dim_x * __gsharp_grid_dim_y * __gsharp_grid_dim_z);
@@ -1234,7 +1330,7 @@ uint32_t __gsharp_ctx_tid = __gsharp_tz * __gsharp_block_dim_y * __gsharp_block_
 if (__gsharp_contexts[__gsharp_ctx_tid].__gsharp_state != -1 && !__gsharp_contexts[__gsharp_ctx_tid].__gsharp_yielded_for_block_barrier && !__gsharp_contexts[__gsharp_ctx_tid].__gsharp_yielded_for_grid_sync)
 {
 __gsharp_set_thread_idx(__gsharp_tx, __gsharp_ty, __gsharp_tz, __gsharp_bx, __gsharp_by, __gsharp_bz, __gsharp_block_dim_x, __gsharp_block_dim_y, __gsharp_block_dim_z, __gsharp_grid_dim_x, __gsharp_grid_dim_y, __gsharp_grid_dim_z);
-__gsharp_k_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuStreamCompactionKernels__CompactSignedVector(__gsharp_id_0_outputValues, __gsharp_id_1_outputSigns, __gsharp_id_2_inputValues, __gsharp_id_3_inputSigns, __gsharp_id_4_predicates, __gsharp_id_5_scanResult, __gsharp_id_6_elementCount, __gsharp_id_7_wordsPerElement, __gsharp_id_8_countBase, __gsharp_id_9_countSkip, __gsharp_id_10_countLimit, &__gsharp_contexts[__gsharp_ctx_tid]);
+__gsharp_k_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuStreamCompactionKernels__CompactSignedVector(__gsharp_id_0_outputValues, __gsharp_id_1_outputSigns, __gsharp_id_2_inputValues, __gsharp_id_3_inputSigns, __gsharp_id_4_predicates, __gsharp_id_5_scanResult, __gsharp_id_6_elementCount, __gsharp_id_7_wordsPerElement, __gsharp_id_8_count, &__gsharp_contexts[__gsharp_ctx_tid]);
 if (__gsharp_contexts[__gsharp_ctx_tid].__gsharp_yielded_for_grid_sync)
 {
 __gsharp_trap(GSharpErrorCode::InvalidOperation, ""G#: Gpu.SyncGrid reached in GpuStreamCompactionKernels.CompactSignedVector, which is not [GpuKernel(Cooperative = true)]"");
@@ -1274,14 +1370,14 @@ public class __gsharp_context_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
 }
-public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuStreamCompactionKernels__CompactSignedVector(uint[] outputValues, uint[] outputSigns, uint[] inputValues, uint[] inputSigns, uint[] predicates, uint[] scanResult, int elementCount, int wordsPerElement, uint[]? countBase, int countSkip, int countLimit, __gsharp_context_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuStreamCompactionKernels__CompactSignedVector __gsharp_ctx) {
+public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuStreamCompactionKernels__CompactSignedVector(uint[] outputValues, uint[] outputSigns, uint[] inputValues, uint[] inputSigns, uint[] predicates, uint[] scanResult, int elementCount, int wordsPerElement, global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Kernels.GpuBigIntVectorKernels.ElementCountContext count, __gsharp_context_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuStreamCompactionKernels__CompactSignedVector __gsharp_ctx) {
 {
 switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
 int globalTid = global::Kassyi.GSharp.Core.BlockIndex.X * global::Kassyi.GSharp.Core.BlockDimension.X + global::Kassyi.GSharp.Core.ThreadIndex.X;
-int n = global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Kernels.GpuStreamCompactionKernels.ResolveCount(countBase, countSkip, countLimit);
+int n = global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Kernels.GpuStreamCompactionKernels.ResolveCount(count);
 if (globalTid >= elementCount || globalTid >= n || predicates[globalTid] == 0)
 {
 {
@@ -1307,11 +1403,11 @@ return;
 }
 
 [System.Runtime.InteropServices.UnmanagedFunctionPointer(System.Runtime.InteropServices.CallingConvention.Cdecl)]
-private unsafe delegate void CompactSignedVector_Delegate(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ, uint sharedMemBytes, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy outputValues, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy outputSigns, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy inputValues, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy inputSigns, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy predicates, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy scanResult, global::System.Int32 elementCount, global::System.Int32 wordsPerElement, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy countBase, global::System.Int32 countSkip, global::System.Int32 countLimit);
+private unsafe delegate void CompactSignedVector_Delegate(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ, uint sharedMemBytes, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy outputValues, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy outputSigns, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy inputValues, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy inputSigns, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy predicates, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy scanResult, global::System.Int32 elementCount, global::System.Int32 wordsPerElement, AotContexts.ElementCount* count);
 #pragma warning disable CS8500
 [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
-public static unsafe void LaunchCompactSignedVector(global::System.UInt32[] outputValues, global::System.UInt32[] outputSigns, global::System.UInt32[] inputValues, global::System.UInt32[] inputSigns, global::System.UInt32[] predicates, global::System.UInt32[] scanResult, global::System.Int32 elementCount, global::System.Int32 wordsPerElement, global::System.UInt32[]? countBase, global::System.Int32 countSkip, global::System.Int32 countLimit, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, IntPtr hStream = default, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
+public static unsafe void LaunchCompactSignedVector(global::System.UInt32[] outputValues, global::System.UInt32[] outputSigns, global::System.UInt32[] inputValues, global::System.UInt32[] inputSigns, global::System.UInt32[] predicates, global::System.UInt32[] scanResult, global::System.Int32 elementCount, global::System.Int32 wordsPerElement, global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Kernels.GpuBigIntVectorKernels.ElementCountContext count, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, IntPtr hStream = default, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 if (outputValues is null){
 throw new global::System.ArgumentNullException(nameof(outputValues));
@@ -1348,9 +1444,6 @@ throw new global::System.ArgumentNullException(nameof(scanResult));
 }
 if (scanResult.Length == 0){
 throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(scanResult));
-}
-if (countBase is { Length: 0 }){
-countBase = null;
 }
 var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
 var dllName = $"Kassyi.GSharp.Kernels_SnapshotTest{archSuffix}.dll";
@@ -1408,7 +1501,7 @@ if (__gsharp_contexts[__gsharp_linear_tid].__gsharp_state != -1 && !threadAtBloc
 anyGridActive = true;
 global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested = false;
 global::Kassyi.GSharp.Core.ManagedGpuContext.BlockBarrierRequested = false;
-__gsharp_statemachine_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuStreamCompactionKernels__CompactSignedVector(outputValues, outputSigns, inputValues, inputSigns, predicates, scanResult, elementCount, wordsPerElement, countBase, countSkip, countLimit, __gsharp_contexts[__gsharp_linear_tid]);
+__gsharp_statemachine_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuStreamCompactionKernels__CompactSignedVector(outputValues, outputSigns, inputValues, inputSigns, predicates, scanResult, elementCount, wordsPerElement, count, __gsharp_contexts[__gsharp_linear_tid]);
 if (global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested)
 {
 throw global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncInKernelThatIsNotCooperative("GpuStreamCompactionKernels.CompactSignedVector");
@@ -1450,20 +1543,45 @@ global::Kassyi.GSharp.Core.ManagedGpuContext.EndGrid();
 return;
 }
 var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<CompactSignedVector_Delegate>("__gsharp_launch_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuStreamCompactionKernels__CompactSignedVector", dllPath);
+AotContexts.ElementCount count_native = default;
+var count_allocatedPtrs = new System.Collections.Generic.List<IntPtr>();
+try
+{
+AotContexts.Marshal_GpuBigIntVectorKernels_ElementCountContext(ref count, ref count_native, false, count_allocatedPtrs, hStream);
 fixed (global::System.UInt32* p_outputValues = outputValues)
 fixed (global::System.UInt32* p_outputSigns = outputSigns)
 fixed (global::System.UInt32* p_inputValues = inputValues)
 fixed (global::System.UInt32* p_inputSigns = inputSigns)
 fixed (global::System.UInt32* p_predicates = predicates)
 fixed (global::System.UInt32* p_scanResult = scanResult)
-fixed (global::System.UInt32* p_countBase = countBase)
 {
-hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, sharedMemBytes, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (IntPtr)p_outputValues, Length = outputValues.Length }, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (IntPtr)p_outputSigns, Length = outputSigns.Length }, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (IntPtr)p_inputValues, Length = inputValues.Length }, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (IntPtr)p_inputSigns, Length = inputSigns.Length }, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (IntPtr)p_predicates, Length = predicates.Length }, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (IntPtr)p_scanResult, Length = scanResult.Length }, elementCount, wordsPerElement, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (IntPtr)p_countBase, Length = (countBase?.Length ?? 0) }, countSkip, countLimit);
+hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, sharedMemBytes, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (IntPtr)p_outputValues, Length = outputValues.Length }, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (IntPtr)p_outputSigns, Length = outputSigns.Length }, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (IntPtr)p_inputValues, Length = inputValues.Length }, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (IntPtr)p_inputSigns, Length = inputSigns.Length }, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (IntPtr)p_predicates, Length = predicates.Length }, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (IntPtr)p_scanResult, Length = scanResult.Length }, elementCount, wordsPerElement, &count_native);
 global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ThrowIfNativeError(dllPath);
+}
+AotContexts.Unmarshal_GpuBigIntVectorKernels_ElementCountContext(ref count, ref count_native, false, hStream);
+}
+finally
+{
+foreach (var handle in count_allocatedPtrs) System.Runtime.InteropServices.GCHandle.FromIntPtr(handle).Free();
 }
 }
 #pragma warning restore CS8500
-public const string CompactFloatVector_Source = @"struct __gsharp_context_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuStreamCompactionKernels__CompactFloatVector {
+public const string CompactFloatVector_Source = @"#ifndef __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuBigIntVectorKernels__ElementCountContext__
+#define __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuBigIntVectorKernels__ElementCountContext__
+struct __gsharp_ty_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuBigIntVectorKernels__ElementCountContext
+{
+GSharpArray<const unsigned int> __gsharp_mb_Base;
+int __gsharp_mb_Skip;
+int __gsharp_mb_Limit;
+}
+;
+static_assert(sizeof(__gsharp_ty_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuBigIntVectorKernels__ElementCountContext)==24,""Kassyi.GSharp.Stdlib.GpuMath.BigNum.Kernels.GpuBigIntVectorKernels.ElementCountContext: size"");
+static_assert(alignof(__gsharp_ty_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuBigIntVectorKernels__ElementCountContext)==8,""Kassyi.GSharp.Stdlib.GpuMath.BigNum.Kernels.GpuBigIntVectorKernels.ElementCountContext: alignment"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuBigIntVectorKernels__ElementCountContext,__gsharp_mb_Base)==0,""Kassyi.GSharp.Stdlib.GpuMath.BigNum.Kernels.GpuBigIntVectorKernels.ElementCountContext.Base: offset"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuBigIntVectorKernels__ElementCountContext,__gsharp_mb_Skip)==16,""Kassyi.GSharp.Stdlib.GpuMath.BigNum.Kernels.GpuBigIntVectorKernels.ElementCountContext.Skip: offset"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuBigIntVectorKernels__ElementCountContext,__gsharp_mb_Limit)==20,""Kassyi.GSharp.Stdlib.GpuMath.BigNum.Kernels.GpuBigIntVectorKernels.ElementCountContext.Limit: offset"");
+#endif
+struct __gsharp_context_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuStreamCompactionKernels__CompactFloatVector {
 int __gsharp_state = 0;
 __gsharp_context_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuStreamCompactionKernels__CompactFloatVector* __gsharp_all_contexts = nullptr;
 uint64_t __gsharp_warp_exchange[2] = {};
@@ -1471,7 +1589,7 @@ uint32_t __gsharp_warp_shuffle_count = 0;
 bool __gsharp_yielded_for_grid_sync = false;
 bool __gsharp_yielded_for_block_barrier = false;
 };
-extern ""C"" __declspec(dllexport) void __gsharp_k_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuStreamCompactionKernels__CompactFloatVector(GSharpArray<unsigned int> __gsharp_id_0_outputSignificands, GSharpArray<unsigned int> __gsharp_id_1_outputExponents, GSharpArray<unsigned int> __gsharp_id_2_outputSigns, GSharpArray<unsigned int> __gsharp_id_3_inputSignificands, GSharpArray<unsigned int> __gsharp_id_4_inputExponents, GSharpArray<unsigned int> __gsharp_id_5_inputSigns, GSharpArray<unsigned int> __gsharp_id_6_predicates, GSharpArray<unsigned int> __gsharp_id_7_scanResult, int __gsharp_id_8_elementCount, int __gsharp_id_9_wordsPerElement, GSharpArray<unsigned int> __gsharp_id_10_countBase, int __gsharp_id_11_countSkip, int __gsharp_id_12_countLimit, __gsharp_context_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuStreamCompactionKernels__CompactFloatVector* __gsharp_ctx){
+extern ""C"" __declspec(dllexport) void __gsharp_k_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuStreamCompactionKernels__CompactFloatVector(GSharpArray<unsigned int> __gsharp_id_0_outputSignificands, GSharpArray<unsigned int> __gsharp_id_1_outputExponents, GSharpArray<unsigned int> __gsharp_id_2_outputSigns, GSharpArray<unsigned int> __gsharp_id_3_inputSignificands, GSharpArray<unsigned int> __gsharp_id_4_inputExponents, GSharpArray<unsigned int> __gsharp_id_5_inputSigns, GSharpArray<unsigned int> __gsharp_id_6_predicates, GSharpArray<unsigned int> __gsharp_id_7_scanResult, int __gsharp_id_8_elementCount, int __gsharp_id_9_wordsPerElement, __gsharp_ty_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuBigIntVectorKernels__ElementCountContext __gsharp_id_10_count, __gsharp_context_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuStreamCompactionKernels__CompactFloatVector* __gsharp_ctx){
 #define __gsharp_state __gsharp_ctx->__gsharp_state
 #define __gsharp_yielded_for_grid_sync __gsharp_ctx->__gsharp_yielded_for_grid_sync
 #define __gsharp_yielded_for_block_barrier __gsharp_ctx->__gsharp_yielded_for_block_barrier
@@ -1481,21 +1599,21 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-int __gsharp_id_13_globalTid = blockIdx.x*blockDim.x+threadIdx.x;
-int __gsharp_id_14_n = __gsharp_fn_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuStreamCompactionKernels__ResolveCount(__gsharp_id_10_countBase,__gsharp_id_11_countSkip,__gsharp_id_12_countLimit);
-if(__gsharp_id_13_globalTid>=__gsharp_id_8_elementCount||__gsharp_id_13_globalTid>=__gsharp_id_14_n||__gsharp_id_6_predicates[__gsharp_id_13_globalTid]==0)
+int __gsharp_id_11_globalTid = blockIdx.x*blockDim.x+threadIdx.x;
+int __gsharp_id_12_n = __gsharp_fn_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuStreamCompactionKernels__ResolveCount(__gsharp_id_10_count);
+if(__gsharp_id_11_globalTid>=__gsharp_id_8_elementCount||__gsharp_id_11_globalTid>=__gsharp_id_12_n||__gsharp_id_6_predicates[__gsharp_id_11_globalTid]==0)
 {
 __gsharp_state = -1;return;
 }
-int __gsharp_id_15_destinationIndex = (int)__gsharp_id_7_scanResult[__gsharp_id_13_globalTid];
-int __gsharp_id_16_srcOffset = __gsharp_id_13_globalTid*__gsharp_id_9_wordsPerElement;
-int __gsharp_id_17_dstOffset = __gsharp_id_15_destinationIndex*__gsharp_id_9_wordsPerElement;
-for(int __gsharp_id_18_i = 0;__gsharp_id_18_i<__gsharp_id_9_wordsPerElement;__gsharp_id_18_i++)
+int __gsharp_id_13_destinationIndex = (int)__gsharp_id_7_scanResult[__gsharp_id_11_globalTid];
+int __gsharp_id_14_srcOffset = __gsharp_id_11_globalTid*__gsharp_id_9_wordsPerElement;
+int __gsharp_id_15_dstOffset = __gsharp_id_13_destinationIndex*__gsharp_id_9_wordsPerElement;
+for(int __gsharp_id_16_i = 0;__gsharp_id_16_i<__gsharp_id_9_wordsPerElement;__gsharp_id_16_i++)
 {
-__gsharp_id_0_outputSignificands[__gsharp_id_17_dstOffset+__gsharp_id_18_i]=__gsharp_id_3_inputSignificands[__gsharp_id_16_srcOffset+__gsharp_id_18_i];
+__gsharp_id_0_outputSignificands[__gsharp_id_15_dstOffset+__gsharp_id_16_i]=__gsharp_id_3_inputSignificands[__gsharp_id_14_srcOffset+__gsharp_id_16_i];
 }
-__gsharp_id_1_outputExponents[__gsharp_id_15_destinationIndex]=__gsharp_id_4_inputExponents[__gsharp_id_13_globalTid];
-__gsharp_id_2_outputSigns[__gsharp_id_15_destinationIndex]=__gsharp_id_5_inputSigns[__gsharp_id_13_globalTid];
+__gsharp_id_1_outputExponents[__gsharp_id_13_destinationIndex]=__gsharp_id_4_inputExponents[__gsharp_id_11_globalTid];
+__gsharp_id_2_outputSigns[__gsharp_id_13_destinationIndex]=__gsharp_id_5_inputSigns[__gsharp_id_11_globalTid];
 __gsharp_state=-1;
 return;
 }
@@ -1504,8 +1622,9 @@ return;
 #undef __gsharp_yielded_for_grid_sync
 #undef __gsharp_yielded_for_block_barrier
 }
-extern ""C"" __declspec(dllexport) void __gsharp_launch_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuStreamCompactionKernels__CompactFloatVector(uint32_t __gsharp_grid_dim_x, uint32_t __gsharp_grid_dim_y, uint32_t __gsharp_grid_dim_z, uint32_t __gsharp_block_dim_x, uint32_t __gsharp_block_dim_y, uint32_t __gsharp_block_dim_z, uint32_t __gsharp_shared_mem_bytes, GSharpArray<unsigned int> __gsharp_id_0_outputSignificands, GSharpArray<unsigned int> __gsharp_id_1_outputExponents, GSharpArray<unsigned int> __gsharp_id_2_outputSigns, GSharpArray<unsigned int> __gsharp_id_3_inputSignificands, GSharpArray<unsigned int> __gsharp_id_4_inputExponents, GSharpArray<unsigned int> __gsharp_id_5_inputSigns, GSharpArray<unsigned int> __gsharp_id_6_predicates, GSharpArray<unsigned int> __gsharp_id_7_scanResult, int __gsharp_id_8_elementCount, int __gsharp_id_9_wordsPerElement, GSharpArray<unsigned int> __gsharp_id_10_countBase, int __gsharp_id_11_countSkip, int __gsharp_id_12_countLimit)
+extern ""C"" __declspec(dllexport) void __gsharp_launch_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuStreamCompactionKernels__CompactFloatVector(uint32_t __gsharp_grid_dim_x, uint32_t __gsharp_grid_dim_y, uint32_t __gsharp_grid_dim_z, uint32_t __gsharp_block_dim_x, uint32_t __gsharp_block_dim_y, uint32_t __gsharp_block_dim_z, uint32_t __gsharp_shared_mem_bytes, GSharpArray<unsigned int> __gsharp_id_0_outputSignificands, GSharpArray<unsigned int> __gsharp_id_1_outputExponents, GSharpArray<unsigned int> __gsharp_id_2_outputSigns, GSharpArray<unsigned int> __gsharp_id_3_inputSignificands, GSharpArray<unsigned int> __gsharp_id_4_inputExponents, GSharpArray<unsigned int> __gsharp_id_5_inputSigns, GSharpArray<unsigned int> __gsharp_id_6_predicates, GSharpArray<unsigned int> __gsharp_id_7_scanResult, int __gsharp_id_8_elementCount, int __gsharp_id_9_wordsPerElement, const __gsharp_ty_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuBigIntVectorKernels__ElementCountContext* __gsharp_arg_10)
 {
+__gsharp_ty_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuBigIntVectorKernels__ElementCountContext __gsharp_id_10_count = *__gsharp_arg_10;
 __gsharp_host_last_error.Reset();
 GSharpErrorSlot __gsharp_launch_error;
 int32_t __gsharp_total_blocks = (int32_t)(__gsharp_grid_dim_x * __gsharp_grid_dim_y * __gsharp_grid_dim_z);
@@ -1540,7 +1659,7 @@ uint32_t __gsharp_ctx_tid = __gsharp_tz * __gsharp_block_dim_y * __gsharp_block_
 if (__gsharp_contexts[__gsharp_ctx_tid].__gsharp_state != -1 && !__gsharp_contexts[__gsharp_ctx_tid].__gsharp_yielded_for_block_barrier && !__gsharp_contexts[__gsharp_ctx_tid].__gsharp_yielded_for_grid_sync)
 {
 __gsharp_set_thread_idx(__gsharp_tx, __gsharp_ty, __gsharp_tz, __gsharp_bx, __gsharp_by, __gsharp_bz, __gsharp_block_dim_x, __gsharp_block_dim_y, __gsharp_block_dim_z, __gsharp_grid_dim_x, __gsharp_grid_dim_y, __gsharp_grid_dim_z);
-__gsharp_k_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuStreamCompactionKernels__CompactFloatVector(__gsharp_id_0_outputSignificands, __gsharp_id_1_outputExponents, __gsharp_id_2_outputSigns, __gsharp_id_3_inputSignificands, __gsharp_id_4_inputExponents, __gsharp_id_5_inputSigns, __gsharp_id_6_predicates, __gsharp_id_7_scanResult, __gsharp_id_8_elementCount, __gsharp_id_9_wordsPerElement, __gsharp_id_10_countBase, __gsharp_id_11_countSkip, __gsharp_id_12_countLimit, &__gsharp_contexts[__gsharp_ctx_tid]);
+__gsharp_k_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuStreamCompactionKernels__CompactFloatVector(__gsharp_id_0_outputSignificands, __gsharp_id_1_outputExponents, __gsharp_id_2_outputSigns, __gsharp_id_3_inputSignificands, __gsharp_id_4_inputExponents, __gsharp_id_5_inputSigns, __gsharp_id_6_predicates, __gsharp_id_7_scanResult, __gsharp_id_8_elementCount, __gsharp_id_9_wordsPerElement, __gsharp_id_10_count, &__gsharp_contexts[__gsharp_ctx_tid]);
 if (__gsharp_contexts[__gsharp_ctx_tid].__gsharp_yielded_for_grid_sync)
 {
 __gsharp_trap(GSharpErrorCode::InvalidOperation, ""G#: Gpu.SyncGrid reached in GpuStreamCompactionKernels.CompactFloatVector, which is not [GpuKernel(Cooperative = true)]"");
@@ -1580,14 +1699,14 @@ public class __gsharp_context_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
 }
-public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuStreamCompactionKernels__CompactFloatVector(uint[] outputSignificands, uint[] outputExponents, uint[] outputSigns, uint[] inputSignificands, uint[] inputExponents, uint[] inputSigns, uint[] predicates, uint[] scanResult, int elementCount, int wordsPerElement, uint[]? countBase, int countSkip, int countLimit, __gsharp_context_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuStreamCompactionKernels__CompactFloatVector __gsharp_ctx) {
+public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuStreamCompactionKernels__CompactFloatVector(uint[] outputSignificands, uint[] outputExponents, uint[] outputSigns, uint[] inputSignificands, uint[] inputExponents, uint[] inputSigns, uint[] predicates, uint[] scanResult, int elementCount, int wordsPerElement, global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Kernels.GpuBigIntVectorKernels.ElementCountContext count, __gsharp_context_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuStreamCompactionKernels__CompactFloatVector __gsharp_ctx) {
 {
 switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
 int globalTid = global::Kassyi.GSharp.Core.BlockIndex.X * global::Kassyi.GSharp.Core.BlockDimension.X + global::Kassyi.GSharp.Core.ThreadIndex.X;
-int n = global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Kernels.GpuStreamCompactionKernels.ResolveCount(countBase, countSkip, countLimit);
+int n = global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Kernels.GpuStreamCompactionKernels.ResolveCount(count);
 if (globalTid >= elementCount || globalTid >= n || predicates[globalTid] == 0)
 {
 {
@@ -1614,11 +1733,11 @@ return;
 }
 
 [System.Runtime.InteropServices.UnmanagedFunctionPointer(System.Runtime.InteropServices.CallingConvention.Cdecl)]
-private unsafe delegate void CompactFloatVector_Delegate(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ, uint sharedMemBytes, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy outputSignificands, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy outputExponents, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy outputSigns, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy inputSignificands, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy inputExponents, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy inputSigns, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy predicates, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy scanResult, global::System.Int32 elementCount, global::System.Int32 wordsPerElement, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy countBase, global::System.Int32 countSkip, global::System.Int32 countLimit);
+private unsafe delegate void CompactFloatVector_Delegate(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ, uint sharedMemBytes, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy outputSignificands, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy outputExponents, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy outputSigns, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy inputSignificands, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy inputExponents, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy inputSigns, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy predicates, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy scanResult, global::System.Int32 elementCount, global::System.Int32 wordsPerElement, AotContexts.ElementCount* count);
 #pragma warning disable CS8500
 [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
-public static unsafe void LaunchCompactFloatVector(global::System.UInt32[] outputSignificands, global::System.UInt32[] outputExponents, global::System.UInt32[] outputSigns, global::System.UInt32[] inputSignificands, global::System.UInt32[] inputExponents, global::System.UInt32[] inputSigns, global::System.UInt32[] predicates, global::System.UInt32[] scanResult, global::System.Int32 elementCount, global::System.Int32 wordsPerElement, global::System.UInt32[]? countBase, global::System.Int32 countSkip, global::System.Int32 countLimit, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, IntPtr hStream = default, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
+public static unsafe void LaunchCompactFloatVector(global::System.UInt32[] outputSignificands, global::System.UInt32[] outputExponents, global::System.UInt32[] outputSigns, global::System.UInt32[] inputSignificands, global::System.UInt32[] inputExponents, global::System.UInt32[] inputSigns, global::System.UInt32[] predicates, global::System.UInt32[] scanResult, global::System.Int32 elementCount, global::System.Int32 wordsPerElement, global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Kernels.GpuBigIntVectorKernels.ElementCountContext count, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, IntPtr hStream = default, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 if (outputSignificands is null){
 throw new global::System.ArgumentNullException(nameof(outputSignificands));
@@ -1667,9 +1786,6 @@ throw new global::System.ArgumentNullException(nameof(scanResult));
 }
 if (scanResult.Length == 0){
 throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(scanResult));
-}
-if (countBase is { Length: 0 }){
-countBase = null;
 }
 var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
 var dllName = $"Kassyi.GSharp.Kernels_SnapshotTest{archSuffix}.dll";
@@ -1727,7 +1843,7 @@ if (__gsharp_contexts[__gsharp_linear_tid].__gsharp_state != -1 && !threadAtBloc
 anyGridActive = true;
 global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested = false;
 global::Kassyi.GSharp.Core.ManagedGpuContext.BlockBarrierRequested = false;
-__gsharp_statemachine_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuStreamCompactionKernels__CompactFloatVector(outputSignificands, outputExponents, outputSigns, inputSignificands, inputExponents, inputSigns, predicates, scanResult, elementCount, wordsPerElement, countBase, countSkip, countLimit, __gsharp_contexts[__gsharp_linear_tid]);
+__gsharp_statemachine_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuStreamCompactionKernels__CompactFloatVector(outputSignificands, outputExponents, outputSigns, inputSignificands, inputExponents, inputSigns, predicates, scanResult, elementCount, wordsPerElement, count, __gsharp_contexts[__gsharp_linear_tid]);
 if (global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested)
 {
 throw global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncInKernelThatIsNotCooperative("GpuStreamCompactionKernels.CompactFloatVector");
@@ -1769,6 +1885,11 @@ global::Kassyi.GSharp.Core.ManagedGpuContext.EndGrid();
 return;
 }
 var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<CompactFloatVector_Delegate>("__gsharp_launch_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuStreamCompactionKernels__CompactFloatVector", dllPath);
+AotContexts.ElementCount count_native = default;
+var count_allocatedPtrs = new System.Collections.Generic.List<IntPtr>();
+try
+{
+AotContexts.Marshal_GpuBigIntVectorKernels_ElementCountContext(ref count, ref count_native, false, count_allocatedPtrs, hStream);
 fixed (global::System.UInt32* p_outputSignificands = outputSignificands)
 fixed (global::System.UInt32* p_outputExponents = outputExponents)
 fixed (global::System.UInt32* p_outputSigns = outputSigns)
@@ -1777,10 +1898,15 @@ fixed (global::System.UInt32* p_inputExponents = inputExponents)
 fixed (global::System.UInt32* p_inputSigns = inputSigns)
 fixed (global::System.UInt32* p_predicates = predicates)
 fixed (global::System.UInt32* p_scanResult = scanResult)
-fixed (global::System.UInt32* p_countBase = countBase)
 {
-hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, sharedMemBytes, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (IntPtr)p_outputSignificands, Length = outputSignificands.Length }, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (IntPtr)p_outputExponents, Length = outputExponents.Length }, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (IntPtr)p_outputSigns, Length = outputSigns.Length }, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (IntPtr)p_inputSignificands, Length = inputSignificands.Length }, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (IntPtr)p_inputExponents, Length = inputExponents.Length }, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (IntPtr)p_inputSigns, Length = inputSigns.Length }, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (IntPtr)p_predicates, Length = predicates.Length }, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (IntPtr)p_scanResult, Length = scanResult.Length }, elementCount, wordsPerElement, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (IntPtr)p_countBase, Length = (countBase?.Length ?? 0) }, countSkip, countLimit);
+hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, sharedMemBytes, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (IntPtr)p_outputSignificands, Length = outputSignificands.Length }, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (IntPtr)p_outputExponents, Length = outputExponents.Length }, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (IntPtr)p_outputSigns, Length = outputSigns.Length }, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (IntPtr)p_inputSignificands, Length = inputSignificands.Length }, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (IntPtr)p_inputExponents, Length = inputExponents.Length }, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (IntPtr)p_inputSigns, Length = inputSigns.Length }, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (IntPtr)p_predicates, Length = predicates.Length }, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (IntPtr)p_scanResult, Length = scanResult.Length }, elementCount, wordsPerElement, &count_native);
 global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ThrowIfNativeError(dllPath);
+}
+AotContexts.Unmarshal_GpuBigIntVectorKernels_ElementCountContext(ref count, ref count_native, false, hStream);
+}
+finally
+{
+foreach (var handle in count_allocatedPtrs) System.Runtime.InteropServices.GCHandle.FromIntPtr(handle).Free();
 }
 }
 #pragma warning restore CS8500

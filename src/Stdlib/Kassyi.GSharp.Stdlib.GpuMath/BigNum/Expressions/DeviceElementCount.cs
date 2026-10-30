@@ -34,6 +34,7 @@ internal readonly record struct DeviceElementCount(IntPtr Base, int Skip, int Li
     /// <summary>
     /// Reads the count on the host: one synchronization of the workspace stream when the count is on the device.
     /// </summary>
+    /// <exception cref="InvalidOperationException">The count is on the device and the stream is capturing a graph.</exception>
     public int Read(GpuWorkspace workspace)
     {
         if (IsStatic)
@@ -41,12 +42,20 @@ internal readonly record struct DeviceElementCount(IntPtr Base, int Skip, int Li
             return Limit;
         }
 
+        // Every host read goes through here (Materialize, the host element loops), so a capture is refused once
+        DeviceCounted.ThrowIfCapturing(workspace);
         var n = (long)workspace.Provider.ReadWord(Base, 0, workspace.Stream) - Skip;
         return (int)Math.Clamp(n, 0, Limit);
     }
 
     /// <summary>The kernel argument for this count.</summary>
     public GpuBigIntVectorKernels.AotContexts.ElementCount ToContext() =>
+        new() { Base = Base, Skip = Skip, Limit = Limit };
+
+    /// <summary>
+    /// The kernel argument for the scan and scatter kernels, whose class has its own host copy of the same context.
+    /// </summary>
+    public GpuStreamCompactionKernels.AotContexts.ElementCount ToScanContext() =>
         new() { Base = Base, Skip = Skip, Limit = Limit };
 }
 
@@ -98,8 +107,11 @@ internal readonly ref struct BoolVectorEvaluation
     public DeviceElementCount Count { get; }
 }
 
-/// <summary>Implemented by the GpuMath vector nodes, which pass a device count to each other.</summary>
-internal interface IDeviceCountedVector
+/// <summary>
+/// Implemented by the GpuMath vector nodes, which pass a device count to each other. A node writes only
+/// <see cref="EvaluateCore"/>; its public <c>Evaluate</c> is that evaluation cut to the count.
+/// </summary>
+internal interface IDeviceCountedVector : IGpuBigIntVectorExpression
 {
     /// <summary>
     /// Evaluates elements <paramref name="elementOffset"/> to <c>elementOffset + elementCount</c> of the capacity;
@@ -107,19 +119,30 @@ internal interface IDeviceCountedVector
     /// </summary>
     VectorEvaluation EvaluateCore(GpuWorkspace workspace, int elementOffset, int? elementCount,
         GpuBigUIntArrayView targetResult);
+
+    GpuBigIntArrayView IGpuBigIntVectorExpression.Evaluate(GpuWorkspace workspace, int elementOffset,
+        int? elementCount, GpuBigUIntArrayView targetResult) =>
+        DeviceCounted.Materialize(workspace, EvaluateCore(workspace, elementOffset, elementCount, targetResult));
 }
 
-/// <summary>Implemented by the GpuMath floating-point vector nodes.</summary>
-internal interface IDeviceCountedFloatVector
+/// <summary>Implemented by the GpuMath floating-point vector nodes, as <see cref="IDeviceCountedVector"/>.</summary>
+internal interface IDeviceCountedFloatVector : IGpuBigFloatVectorExpression
 {
     FloatVectorEvaluation EvaluateCore(GpuWorkspace workspace, int elementOffset, int? elementCount,
         GpuBigFloatArrayView targetResult);
+
+    GpuBigFloatArrayView IGpuBigFloatVectorExpression.Evaluate(GpuWorkspace workspace, int elementOffset,
+        int? elementCount, GpuBigFloatArrayView targetResult) =>
+        DeviceCounted.Materialize(workspace, EvaluateCore(workspace, elementOffset, elementCount, targetResult));
 }
 
-/// <summary>Implemented by the GpuMath flag vector nodes.</summary>
-internal interface IDeviceCountedBoolVector
+/// <summary>Implemented by the GpuMath flag vector nodes, as <see cref="IDeviceCountedVector"/>.</summary>
+internal interface IDeviceCountedBoolVector : IGpuBoolVectorExpression
 {
     BoolVectorEvaluation EvaluateCore(GpuWorkspace workspace);
+
+    GpuBigUIntArrayView IGpuBoolVectorExpression.Evaluate(GpuWorkspace workspace) =>
+        DeviceCounted.Materialize(workspace, EvaluateCore(workspace));
 }
 
 /// <summary>Evaluation of vector nodes with a device count, and the public view of the result.</summary>
@@ -128,6 +151,17 @@ internal static class DeviceCounted
     /// <summary>The message of <c>Length</c> when the count is known only on the device.</summary>
     public const string LengthUnknown =
         "The number of elements of a filtered vector is known only on the device. Use Capacity, TryGetLength or Count().";
+
+    /// <summary>
+    /// The <c>Length</c> of a node whose count may be known only on the device: its <c>TryGetLength</c>, or
+    /// <see cref="InvalidOperationException"/>.
+    /// </summary>
+    public static int KnownLength(IGpuBigIntVectorExpression node) =>
+        node.TryGetLength(out var length) ? length : throw new InvalidOperationException(LengthUnknown);
+
+    /// <inheritdoc cref="KnownLength(IGpuBigIntVectorExpression)"/>
+    public static int KnownLength(IGpuBigFloatVectorExpression node) =>
+        node.TryGetLength(out var length) ? length : throw new InvalidOperationException(LengthUnknown);
 
     /// <summary>
     /// Evaluates <paramref name="node"/> for another node; a node outside GpuMath has a host count (its length).
@@ -181,7 +215,6 @@ internal static class DeviceCounted
             return evaluation.Storage;
         }
 
-        ThrowIfCapturing(workspace);
         return evaluation.Storage.Slice(0, evaluation.Count.Read(workspace));
     }
 
@@ -193,7 +226,6 @@ internal static class DeviceCounted
             return evaluation.Storage;
         }
 
-        ThrowIfCapturing(workspace);
         return evaluation.Storage.Slice(0, evaluation.Count.Read(workspace));
     }
 
@@ -205,7 +237,6 @@ internal static class DeviceCounted
             return evaluation.Flags;
         }
 
-        ThrowIfCapturing(workspace);
         return evaluation.Flags.Slice(0, evaluation.Count.Read(workspace));
     }
 
@@ -245,7 +276,9 @@ internal static class DeviceCounted
         return status != CUstreamCaptureStatus.None;
     }
 
-    private static void ThrowIfCapturing(GpuWorkspace workspace)
+    /// <summary>Throws when the workspace stream is capturing a CUDA graph, which cannot record a host read.</summary>
+    /// <exception cref="InvalidOperationException">The stream is capturing.</exception>
+    public static void ThrowIfCapturing(GpuWorkspace workspace)
     {
         if (IsCapturing(workspace))
         {

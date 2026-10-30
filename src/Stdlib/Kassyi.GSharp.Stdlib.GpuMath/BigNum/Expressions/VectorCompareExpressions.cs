@@ -12,9 +12,6 @@ internal class VectorCompareScalarExpression(
 
     public bool TryGetLength(out int length) => vector.TryGetLength(out length);
 
-    public GpuBigUIntArrayView Evaluate(GpuWorkspace workspace) =>
-        DeviceCounted.Materialize(workspace, EvaluateCore(workspace));
-
     // The flags of the capacity; the elements are the first Count of them, as for the input (design D3 4.3)
     public BoolVectorEvaluation EvaluateCore(GpuWorkspace workspace)
     {
@@ -81,9 +78,6 @@ internal class VectorCompareVectorExpression(
     private bool _allocated;
 
     public bool TryGetLength(out int length) => left.TryGetLength(out length);
-
-    public GpuBigUIntArrayView Evaluate(GpuWorkspace workspace) =>
-        DeviceCounted.Materialize(workspace, EvaluateCore(workspace));
 
     public BoolVectorEvaluation EvaluateCore(GpuWorkspace workspace)
     {

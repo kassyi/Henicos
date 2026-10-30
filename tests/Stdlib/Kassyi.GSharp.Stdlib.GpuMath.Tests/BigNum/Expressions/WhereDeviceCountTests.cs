@@ -205,6 +205,23 @@ public sealed class WhereDeviceCountTests : IDisposable
 
     [SkippableFact]
     [Scenario(TestScenario.SadPath)]
+    public void HostLoopAfterWhere_InAGraph_ThrowsAndTheWorkspaceStillWorks()
+    {
+        // SelectSqrt runs a host loop over the elements, so it reads the device count; inside a capture that is the
+        // same InvalidOperationException as the public Evaluate, not a CUDA error that invalidates the capture.
+        // mutant: DeviceElementCount.Read without the capture check (AggregateException, CudaErrorStreamCaptureUnsupported)
+        var array = CreateArray([4, 9, 16, 25]);
+        var flags = Flags([1, 0, 1, 1]);
+        var count = array.AsVectorizedEnumerable().Where(flags).SelectSqrt().Count();
+
+        Assert.Throws<InvalidOperationException>(() => count.CompileToGraph(_workspace));
+
+        // The workspace is usable afterwards: the same Where counted without a graph
+        Assert.Equal(new BigInteger(3), ReadScalar(array.AsVectorizedEnumerable().Where(Flags([1, 0, 1, 1])).Count()));
+    }
+
+    [SkippableFact]
+    [Scenario(TestScenario.SadPath)]
     public void PublicEvaluate_InACapture_Throws()
     {
         // The public Evaluate of a filtered vector reads the count; inside a capture that is an InvalidOperationException

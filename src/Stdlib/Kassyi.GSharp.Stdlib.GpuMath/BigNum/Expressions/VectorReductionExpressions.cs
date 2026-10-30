@@ -16,7 +16,7 @@ internal abstract class VectorReductionExpressionBase : IGpuBigIntExpression, ID
     // One entry per pass: the pass reduces up to BatchSize elements into GridDimX partial results. Built from the
     // capacity, with one pass even for a single element, so that every non-empty input goes through the finalize
     // kernel. With a device count each pass derives its own batch on the device, and the blocks past it write nothing.
-    private readonly List<(int GridDimX, int BatchSize)> _passes = [];
+    private readonly List<(int GridDimX, int BatchSize)> _passes;
 
     // [0]: the converted elements; [1 + i]: the output of pass i. All (N + 1) words per element.
     private readonly List<GpuBigUIntArray> _buffers = [];
@@ -42,18 +42,7 @@ internal abstract class VectorReductionExpressionBase : IGpuBigIntExpression, ID
     protected VectorReductionExpressionBase([TakesOwnership] IGpuBigIntVectorExpression vector)
     {
         _vector = vector;
-
-        var batchSize = vector.Capacity;
-        if (batchSize > 0)
-        {
-            do
-            {
-                var nextBatchSize = (batchSize + ChunkSize - 1) / ChunkSize;
-                _passes.Add((GridDimX: nextBatchSize, BatchSize: batchSize));
-                batchSize = nextBatchSize;
-            }
-            while (batchSize > 1);
-        }
+        _passes = ReductionPasses.Plan(vector.Capacity, ChunkSize);
     }
 
     /// <summary>
@@ -68,42 +57,8 @@ internal abstract class VectorReductionExpressionBase : IGpuBigIntExpression, ID
     /// <exception cref="NotSupportedException">The workspace stream is capturing a CUDA graph.</exception>
     public GpuBigInt Evaluate(GpuWorkspace workspace, GpuBigUInt? targetResult = null)
     {
-        if (targetResult is { } target && target.NumWords != NumWords)
-        {
-            throw new ArgumentException($"Destination buffer must have {NumWords} words.", nameof(targetResult));
-        }
-
-        // The sign, the emptiness and the overflow are read back from the header, which a capture cannot record; say so
-        // before a launch rather than fail on the read (design D3 4.8)
-        if (DeviceCounted.IsCapturing(workspace))
-        {
-            throw new NotSupportedException(
-                "Sum, Max and Min of a vector cannot be part of a CUDA graph: their sign and emptiness are read back " +
-                "to the host. Evaluate them directly; Count can be captured.");
-        }
-
-        // An empty vector has no passes. Max / Min have no value to return; stop before anything is launched.
-        if (_passes.Count == 0 && EmptyIsError)
-        {
-            throw new InvalidOperationException("Sequence contains no elements");
-        }
-
-        // A static empty vector is not evaluated: no element is read, and its nodes would launch empty grids.
-        GpuBigIntArrayView vecResult = default;
-        var count = DeviceElementCount.Static(0);
-        if (_passes.Count > 0)
-        {
-            var evaluated = DeviceCounted.Evaluate(_vector, workspace);
-            if (evaluated.Storage.WordsPerElement != NumWords)
-            {
-                // The kernels read the elements, and size the accumulator and the result, with NumWords.
-                throw new InvalidOperationException(
-                    $"The vector evaluated to {evaluated.Storage.WordsPerElement} words per element, not {NumWords}.");
-            }
-
-            vecResult = evaluated.Storage;
-            count = evaluated.Count;
-        }
+        ThrowIfCannotEvaluate(workspace, targetResult);
+        var evaluated = EvaluateSource(workspace);
 
         var destination = targetResult ?? new GpuBigUInt(workspace, NumWords);
         try
@@ -111,28 +66,76 @@ internal abstract class VectorReductionExpressionBase : IGpuBigIntExpression, ID
             // An empty Sum also goes through the finalize kernel, which writes +0 and a count of 0.
             EnsureBuffers(workspace);
             var header = _header ?? throw new InvalidOperationException("The reduction header was not allocated.");
-            Reduce(workspace, vecResult, count, destination, header);
-
-            workspace.Provider.CopyDeviceToHost(_headerHost, header.DevicePointer, 2, workspace.Stream);
-            if (_headerHost[1] == 0u && EmptyIsError)
-            {
-                // Reached when the count is known only on the device (after Where); a static empty vector stopped
-                // above.
-                throw new InvalidOperationException("Sequence contains no elements");
-            }
-
-            if ((_headerHost[0] & 2u) != 0u)
-            {
-                throw new OverflowException($"The sum does not fit in {NumWords} words.");
-            }
-
-            return new GpuBigInt(destination, (_headerHost[0] & 1u) != 0u);
+            Reduce(workspace, evaluated, destination, header);
+            return ReadHeader(workspace, destination, header);
         }
         catch when (!targetResult.HasValue)
         {
             destination.Dispose();
             throw;
         }
+    }
+
+    // Everything that refuses the evaluation before a launch: a target of another width, a capture (the sign, the
+    // emptiness and the overflow are read back from the header, which a capture cannot record; design D3 4.8), and
+    // Max / Min of a static empty vector, which has no passes and no value to return
+    private void ThrowIfCannotEvaluate(GpuWorkspace workspace, GpuBigUInt? targetResult)
+    {
+        if (targetResult is { } target && target.NumWords != NumWords)
+        {
+            throw new ArgumentException($"Destination buffer must have {NumWords} words.", nameof(targetResult));
+        }
+
+        if (DeviceCounted.IsCapturing(workspace))
+        {
+            throw new NotSupportedException(
+                "Sum, Max and Min of a vector cannot be part of a CUDA graph: their sign and emptiness are read back " +
+                "to the host. Evaluate them directly; Count can be captured.");
+        }
+
+        if (_passes.Count == 0 && EmptyIsError)
+        {
+            throw new InvalidOperationException("Sequence contains no elements");
+        }
+    }
+
+    // The elements and their count. A static empty vector is not evaluated: no element is read, and its nodes would
+    // launch empty grids.
+    private VectorEvaluation EvaluateSource(GpuWorkspace workspace)
+    {
+        if (_passes.Count == 0)
+        {
+            return new VectorEvaluation(default, DeviceElementCount.Static(0));
+        }
+
+        var evaluated = DeviceCounted.Evaluate(_vector, workspace);
+        if (evaluated.Storage.WordsPerElement != NumWords)
+        {
+            // The kernels read the elements, and size the accumulator and the result, with NumWords.
+            throw new InvalidOperationException(
+                $"The vector evaluated to {evaluated.Storage.WordsPerElement} words per element, not {NumWords}.");
+        }
+
+        return evaluated;
+    }
+
+    // The only readback: the sign, the overflow and the number of reduced elements
+    private GpuBigInt ReadHeader(GpuWorkspace workspace, GpuBigUInt destination, GpuBigUInt header)
+    {
+        workspace.Provider.CopyDeviceToHost(_headerHost, header.DevicePointer, 2, workspace.Stream);
+        if (_headerHost[1] == 0u && EmptyIsError)
+        {
+            // Reached when the count is known only on the device (after Where); a static empty vector stopped before
+            // the launch.
+            throw new InvalidOperationException("Sequence contains no elements");
+        }
+
+        if ((_headerHost[0] & 2u) != 0u)
+        {
+            throw new OverflowException($"The sum does not fit in {NumWords} words.");
+        }
+
+        return new GpuBigInt(destination, (_headerHost[0] & 1u) != 0u);
     }
 
     private void EnsureBuffers(GpuWorkspace workspace)
@@ -168,48 +171,61 @@ internal abstract class VectorReductionExpressionBase : IGpuBigIntExpression, ID
         }
     }
 
-    private void Reduce(GpuWorkspace workspace, GpuBigIntArrayView vecResult, DeviceElementCount count,
-        GpuBigUInt destination, GpuBigUInt header)
+    private void Reduce(GpuWorkspace workspace, VectorEvaluation evaluated, GpuBigUInt destination, GpuBigUInt header)
     {
         // Whole warps: the block-wide max reductions of the chunk kernels combine lanes of full warps only.
         var blockDimX = (uint)Math.Min(1024, (AccumulatorWords + 31) & ~31);
+        var countContext = evaluated.Count.ToContext();
 
-        // An empty vector (the empty vecResult) has nothing to convert and no passes (a grid of 0 blocks is an invalid
-        // launch); the finalize kernel does not read its source when the count is 0.
-        if (!vecResult.IsEmpty)
+        ConvertToAccumulator(workspace, evaluated.Storage, blockDimX);
+        var reduced = RunPasses(workspace, countContext, blockDimX);
+        LaunchFinalize(workspace, reduced, countContext, destination, header, blockDimX);
+    }
+
+    // Converts the whole capacity into the accumulator buffer (the passes read only the elements). An empty vector
+    // (the empty view) has nothing to convert: a grid of 0 blocks is an invalid launch.
+    private void ConvertToAccumulator(GpuWorkspace workspace, GpuBigIntArrayView source, uint blockDimX)
+    {
+        if (source.IsEmpty)
         {
-            var source = vecResult;
-            var convertCtx = new GpuBigIntVectorKernels.AotContexts.VectorSignConvert
-            {
-                Source = new GpuBigIntVectorKernels.AotContexts.SignedVectorOperandReadOnly
-                {
-                    Limbs = source.Values.DevicePointer,
-                    Signs = source.Signs.DevicePointer,
-                    NumWords = NumWords
-                },
-                Dest = _buffers[0].DevicePointer,
-                DestWords = AccumulatorWords,
-                BatchSize = source.Length
-            };
-
-            // The whole capacity is converted; the passes read only the elements
-            if (UseOffsetBinary)
-            {
-                GpuBigIntVectorKernels.LaunchVectorSignMagnitudeToOffsetBinaryKernelPtr(
-                    convertCtx, (uint)source.Length, 1, 1, blockDimX, 1, 1, 0, workspace.Stream);
-            }
-            else
-            {
-                GpuBigIntVectorKernels.LaunchVectorSignMagnitudeToTwosComplementKernelPtr(
-                    convertCtx, (uint)source.Length, 1, 1, blockDimX, 1, 1, 0, workspace.Stream);
-            }
+            return;
         }
 
-        var countContext = count.ToContext();
+        var convertCtx = new GpuBigIntVectorKernels.AotContexts.VectorSignConvert
+        {
+            Source = new GpuBigIntVectorKernels.AotContexts.SignedVectorOperandReadOnly
+            {
+                Limbs = source.Values.DevicePointer,
+                Signs = source.Signs.DevicePointer,
+                NumWords = NumWords
+            },
+            Dest = _buffers[0].DevicePointer,
+            DestWords = AccumulatorWords,
+            BatchSize = source.Length
+        };
+
+        if (UseOffsetBinary)
+        {
+            GpuBigIntVectorKernels.LaunchVectorSignMagnitudeToOffsetBinaryKernelPtr(
+                convertCtx, (uint)source.Length, 1, 1, blockDimX, 1, 1, 0, workspace.Stream);
+        }
+        else
+        {
+            GpuBigIntVectorKernels.LaunchVectorSignMagnitudeToTwosComplementKernelPtr(
+                convertCtx, (uint)source.Length, 1, 1, blockDimX, 1, 1, 0, workspace.Stream);
+        }
+    }
+
+    // Runs the passes over the accumulator buffers; returns the buffer that holds the reduced accumulator (the converted
+    // elements themselves when there is no pass, which the finalize kernel does not read for a count of 0)
+    private IntPtr RunPasses(
+        GpuWorkspace workspace,
+        GpuBigIntVectorKernels.AotContexts.ElementCount countContext,
+        uint blockDimX)
+    {
         var currentInputPtr = _buffers[0].DevicePointer;
         for (var i = 0; i < _passes.Count; i++)
         {
-            var pass = _passes[i];
             var currentOutputPtr = _buffers[i + 1].DevicePointer;
             var chunkCtx = new GpuBigIntVectorKernels.AotContexts.VectorReductionChunk
             {
@@ -221,13 +237,25 @@ internal abstract class VectorReductionExpressionBase : IGpuBigIntExpression, ID
                 ChunkSize = ChunkSize
             };
 
-            DispatchChunkKernel(workspace, chunkCtx, (uint)pass.GridDimX, blockDimX);
+            DispatchChunkKernel(workspace, chunkCtx, (uint)_passes[i].GridDimX, blockDimX);
             currentInputPtr = currentOutputPtr;
         }
 
+        return currentInputPtr;
+    }
+
+    // Writes the magnitude into the destination and the sign, the overflow and the count into the header
+    private void LaunchFinalize(
+        GpuWorkspace workspace,
+        IntPtr reduced,
+        GpuBigIntVectorKernels.AotContexts.ElementCount countContext,
+        GpuBigUInt destination,
+        GpuBigUInt header,
+        uint blockDimX)
+    {
         var finalizeCtx = new GpuBigIntVectorKernels.AotContexts.VectorReductionFinalize
         {
-            Source = currentInputPtr,
+            Source = reduced,
             Destination = destination.DevicePointer,
             Header = header.DevicePointer,
             SourceWords = AccumulatorWords,

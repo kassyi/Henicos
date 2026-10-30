@@ -7,8 +7,7 @@ internal sealed class FloatVectorSkipExpression(
     // Skipping past the capacity skips everything; a device count below the skip gives 0 through SkipFirst
     private readonly int _effectiveSkip = Math.Clamp(skipCount, 0, inner.Capacity);
 
-    public int Length =>
-        TryGetLength(out var length) ? length : throw new InvalidOperationException(DeviceCounted.LengthUnknown);
+    public int Length => DeviceCounted.KnownLength(this);
     public int Capacity => inner.Capacity - _effectiveSkip;
     public int WordsPerElement => inner.WordsPerElement;
 
@@ -18,13 +17,6 @@ internal sealed class FloatVectorSkipExpression(
         length = known ? innerLength - _effectiveSkip : 0;
         return known;
     }
-
-    public GpuBigFloatArrayView Evaluate(
-        GpuWorkspace workspace,
-        int elementOffset = 0,
-        int? elementCount = null,
-        GpuBigFloatArrayView targetResult = default) =>
-        DeviceCounted.Materialize(workspace, EvaluateCore(workspace, elementOffset, elementCount, targetResult));
 
     public FloatVectorEvaluation EvaluateCore(
         GpuWorkspace workspace,
@@ -63,8 +55,7 @@ internal sealed class FloatVectorTakeExpression(
     [TakesOwnership] IGpuBigFloatVectorExpression inner,
     int takeCount) : IGpuBigFloatVectorExpression, IDeviceCountedFloatVector
 {
-    public int Length =>
-        TryGetLength(out var length) ? length : throw new InvalidOperationException(DeviceCounted.LengthUnknown);
+    public int Length => DeviceCounted.KnownLength(this);
 
     public int Capacity => Math.Clamp(takeCount, 0, inner.Capacity);
 
@@ -76,13 +67,6 @@ internal sealed class FloatVectorTakeExpression(
         length = known ? Math.Clamp(takeCount, 0, innerLength) : 0;
         return known;
     }
-
-    public GpuBigFloatArrayView Evaluate(
-        GpuWorkspace workspace,
-        int elementOffset = 0,
-        int? elementCount = null,
-        GpuBigFloatArrayView targetResult = default) =>
-        DeviceCounted.Materialize(workspace, EvaluateCore(workspace, elementOffset, elementCount, targetResult));
 
     public FloatVectorEvaluation EvaluateCore(
         GpuWorkspace workspace,

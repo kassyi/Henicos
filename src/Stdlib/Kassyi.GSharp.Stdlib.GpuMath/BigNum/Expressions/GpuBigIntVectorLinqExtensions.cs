@@ -26,8 +26,8 @@ public static class GpuBigIntVectorLinqExtensions
     /// after a <c>Where</c> use only the selected elements. <c>Length</c> of the result throws
     /// <see cref="InvalidOperationException"/>; <c>Capacity</c> is the length of <paramref name="source"/>, and
     /// <c>Evaluate</c> reads the count (one synchronization) and returns exactly the selected elements.</para>
-    /// <para>Two <c>Where</c> calls on different inputs cannot be combined element-wise (their counts are known only on the
-    /// device; <see cref="NotSupportedException"/>): write <c>v.Where(p.And(q))</c> instead of combining
+    /// <para>Two separately built <c>Where</c> results cannot be combined element-wise (their counts are known only on
+    /// the device; <see cref="NotSupportedException"/>): write <c>v.Where(p.And(q))</c> instead of combining
     /// <c>v.Where(p)</c> with <c>w.Where(q)</c>. <c>v.Where(p).Where(m)</c> works when <c>m</c> has the capacity's length.</para>
     /// </remarks>
     /// <exception cref="ArgumentException">At evaluation: <paramref name="predicate"/> has another length.</exception>

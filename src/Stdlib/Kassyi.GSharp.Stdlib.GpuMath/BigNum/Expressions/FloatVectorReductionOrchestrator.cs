@@ -69,88 +69,31 @@ internal static class FloatVectorReductionOrchestrator
 
         if (evaluated.Length == 1)
         {
-            var first = evaluated.GetElement(0);
-            var copySig = new GpuBigUInt(workspace, numWords);
-            workspace.Provider.CopyDeviceToDevice(copySig.DevicePointer, first.Significand.DevicePointer, numWords, workspace.Stream);
-            return new GpuBigFloat(copySig, first.Exponent, first.IsNegative);
+            return CopyElement(workspace, evaluated.GetElement(0));
         }
 
-        var passes = new List<(int GridDimX, int BatchSize, int ChunkSize)>();
-        var batchSize = evaluated.Length;
-        while (batchSize > 1)
-        {
-            var nextBatchSize = (batchSize + ChunkSize - 1) / ChunkSize;
-            passes.Add((GridDimX: nextBatchSize, BatchSize: batchSize, ChunkSize));
-            batchSize = nextBatchSize;
-        }
-
+        var passes = ReductionPasses.Plan(evaluated.Length, ChunkSize);
         var tempBuffers = new List<GpuBigFloatArray>();
         using var finalArray = new GpuBigFloatArray(workspace, 1, numWords);
         try
         {
-            foreach (var pass in passes)
+            // Every pass but the last has more than one partial result; the last writes finalArray
+            for (var i = 0; i < passes.Count - 1; i++)
             {
-                if (pass.GridDimX > 1)
-                {
-                    tempBuffers.Add(new GpuBigFloatArray(workspace, pass.GridDimX, numWords));
-                }
+                tempBuffers.Add(new GpuBigFloatArray(workspace, passes[i].GridDimX, numWords));
             }
 
             // Whole warps: the block-wide max reductions of the chunk kernels assume no partial warp.
             var blockDimX = (uint)Math.Min(1024, (numWords + 31) & ~31);
             var currentInput = evaluated;
-            var tempIdx = 0;
-
             for (var i = 0; i < passes.Count; i++)
             {
-                var pass = passes[i];
-                var isLastPass = i == passes.Count - 1;
-                var currentOutput = isLastPass ? finalArray : tempBuffers[tempIdx++];
-
-                var chunkCtx = new GpuBigIntVectorKernels.AotContexts.VectorFloatReductionChunk
-                {
-                    Input = new GpuBigIntVectorKernels.AotContexts.FloatVectorOperandReadOnly
-                    {
-                        Limbs = currentInput.Significands.DevicePointer,
-                        Exponents = currentInput.Exponents.DevicePointer,
-                        Signs = currentInput.Signs.DevicePointer,
-                        NumWords = numWords
-                    },
-                    Output = new GpuBigIntVectorKernels.AotContexts.FloatVectorOutput
-                    {
-                        Limbs = currentOutput.Significands.DevicePointer,
-                        Exponents = currentOutput.Exponents.DevicePointer,
-                        Signs = currentOutput.Signs.DevicePointer,
-                        NumWords = numWords
-                    },
-                    BatchSize = pass.BatchSize,
-                    ChunkSize = pass.ChunkSize
-                };
-
-                var gridDimX = (uint)pass.GridDimX;
-                switch (kind)
-                {
-                    case FloatReductionKind.Sum:
-                        GpuBigIntVectorKernels.LaunchVectorFloatSumReductionChunkKernelPtr(
-                            chunkCtx, gridDimX, 1, 1, blockDimX, 1, 1, 0, workspace.Stream);
-                        break;
-                    case FloatReductionKind.Max:
-                        GpuBigIntVectorKernels.LaunchVectorFloatMaxReductionChunkKernelPtr(
-                            chunkCtx, gridDimX, 1, 1, blockDimX, 1, 1, 0, workspace.Stream);
-                        break;
-                    case FloatReductionKind.Min:
-                        GpuBigIntVectorKernels.LaunchVectorFloatMinReductionChunkKernelPtr(
-                            chunkCtx, gridDimX, 1, 1, blockDimX, 1, 1, 0, workspace.Stream);
-                        break;
-                }
-
+                GpuBigFloatArrayView currentOutput = i == passes.Count - 1 ? finalArray : tempBuffers[i];
+                LaunchChunk(workspace, kind, currentInput, currentOutput, passes[i], blockDimX);
                 currentInput = currentOutput;
             }
 
-            var reduced = finalArray.GetElement(0);
-            var resultSig = new GpuBigUInt(workspace, numWords);
-            workspace.Provider.CopyDeviceToDevice(resultSig.DevicePointer, reduced.Significand.DevicePointer, numWords, workspace.Stream);
-            return new GpuBigFloat(resultSig, reduced.Exponent, reduced.IsNegative);
+            return CopyElement(workspace, finalArray.GetElement(0));
         }
         finally
         {
@@ -158,6 +101,64 @@ internal static class FloatVectorReductionOrchestrator
             {
                 temp.Dispose();
             }
+        }
+    }
+
+    // A new value that the caller owns, with the significand of the element copied on the device
+    private static GpuBigFloat CopyElement(GpuWorkspace workspace, GpuBigFloatView element)
+    {
+        var numWords = element.Significand.NumWords;
+        var significand = new GpuBigUInt(workspace, numWords);
+        workspace.Provider.CopyDeviceToDevice(significand.DevicePointer, element.Significand.DevicePointer, numWords,
+            workspace.Stream);
+        return new GpuBigFloat(significand, element.Exponent, element.IsNegative);
+    }
+
+    // One pass: reduces each chunk of ChunkSize inputs into one partial result
+    private static void LaunchChunk(
+        GpuWorkspace workspace,
+        FloatReductionKind kind,
+        GpuBigFloatArrayView input,
+        GpuBigFloatArrayView output,
+        (int GridDimX, int BatchSize) pass,
+        uint blockDimX)
+    {
+        var numWords = input.WordsPerElement;
+        var chunkCtx = new GpuBigIntVectorKernels.AotContexts.VectorFloatReductionChunk
+        {
+            Input = new GpuBigIntVectorKernels.AotContexts.FloatVectorOperandReadOnly
+            {
+                Limbs = input.Significands.DevicePointer,
+                Exponents = input.Exponents.DevicePointer,
+                Signs = input.Signs.DevicePointer,
+                NumWords = numWords
+            },
+            Output = new GpuBigIntVectorKernels.AotContexts.FloatVectorOutput
+            {
+                Limbs = output.Significands.DevicePointer,
+                Exponents = output.Exponents.DevicePointer,
+                Signs = output.Signs.DevicePointer,
+                NumWords = numWords
+            },
+            BatchSize = pass.BatchSize,
+            ChunkSize = ChunkSize
+        };
+
+        var gridDimX = (uint)pass.GridDimX;
+        switch (kind)
+        {
+            case FloatReductionKind.Sum:
+                GpuBigIntVectorKernels.LaunchVectorFloatSumReductionChunkKernelPtr(
+                    chunkCtx, gridDimX, 1, 1, blockDimX, 1, 1, 0, workspace.Stream);
+                break;
+            case FloatReductionKind.Max:
+                GpuBigIntVectorKernels.LaunchVectorFloatMaxReductionChunkKernelPtr(
+                    chunkCtx, gridDimX, 1, 1, blockDimX, 1, 1, 0, workspace.Stream);
+                break;
+            case FloatReductionKind.Min:
+                GpuBigIntVectorKernels.LaunchVectorFloatMinReductionChunkKernelPtr(
+                    chunkCtx, gridDimX, 1, 1, blockDimX, 1, 1, 0, workspace.Stream);
+                break;
         }
     }
 }
