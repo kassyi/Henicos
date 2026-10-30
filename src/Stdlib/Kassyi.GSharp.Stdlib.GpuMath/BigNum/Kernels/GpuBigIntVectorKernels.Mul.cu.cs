@@ -67,6 +67,16 @@ public static partial class GpuBigIntVectorKernels
         DeviceVectorMulVectorParallel(mulCtx);
     }
 
+    /// <summary>
+    /// Multiplies the magnitudes of one element per block (schoolbook, one row per word of the right operand) into
+    /// <c>Result</c>.
+    /// </summary>
+    /// <remarks>
+    /// The product is exact when <c>Result.NumWords</c> is at least <c>Left.NumWords + Right.NumWords</c>, as every caller
+    /// sizes it; words beyond <c>Result.NumWords</c> are not written. When <c>Left.NumWords</c> is greater than
+    /// <c>BlockDimension.X</c>, the carry between chunks comes from <see cref="PropagateBlockCarry"/>, so the block width
+    /// must be a multiple of 32 (the callers launch <c>min(1024, words)</c> threads, which is 1024 in that case; #887).
+    /// </remarks>
     [GpuDeviceFunction]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static void DeviceVectorMulVectorParallel(VectorMulContext ctx, bool syncThreads = true)
@@ -82,13 +92,15 @@ public static partial class GpuBigIntVectorKernels
         int offsetB = op.IsScalar ? 0 : batchIdx * op.Right.NumWords;
         int offsetResult = batchIdx * op.Result.NumWords;
 
-        SharedMemory<uint> sharedCarry = new SharedMemory<uint>(32);
-        SharedMemory<uint> sharedH = new SharedMemory<uint>(32);
+        int leftWords = op.Left.NumWords;
+        int resultWords = op.Result.NumWords;
 
-        for (int offset = 0; offset < op.Result.NumWords; offset += bDim)
+        SharedMemory<uint> sharedCarry = new SharedMemory<uint>(32);
+
+        for (int offset = 0; offset < resultWords; offset += bDim)
         {
             int idx = offset + tid;
-            if (idx < op.Result.NumWords)
+            if (idx < resultWords)
             {
                 op.Result.Limbs[offsetResult + idx] = 0u;
             }
@@ -96,6 +108,10 @@ public static partial class GpuBigIntVectorKernels
 
         Gpu.SyncThreads();
 
+        // Row i adds a * b_i at word i. Thread j holds a_j * b_i = H_j:L_j; the low halves go to words i + j and the
+        // high halves to words i + j + 1 in two passes, so that each word adds two values and a carry (below 2^33) and
+        // the carry scan stays one bit per word. Adding both halves in one pass would add three values per word, whose
+        // carry can be 2 (#883).
         for (int i = 0; i < op.Right.NumWords; i++)
         {
             uint bVal = op.Right.Limbs[offsetB + i];
@@ -104,47 +120,41 @@ public static partial class GpuBigIntVectorKernels
                 continue;
             }
 
-            uint blockCarryIn = 0u;
-            uint blockHIn = 0u;
-
-            for (int offset = 0; offset < op.Left.NumWords; offset += bDim)
+            for (int half = 0; half < 2; half++)
             {
-                int j = offset + tid;
-                bool valid = j < op.Left.NumWords && (i + j < op.Result.NumWords);
-
-                uint aVal = valid ? op.Left.Limbs[offsetA + j] : 0u;
-                ulong prod = (ulong)aVal * bVal;
-                uint L = (uint)(prod & 0xFFFFFFFFul);
-                uint H = (uint)(prod >> 32);
-
-                uint prevH = Warp.ShuffleUpSync(0xFFFFFFFFu, H, 1);
-                if (laneId == 0)
+                uint blockCarryIn = 0u;
+                for (int offset = 0; offset < leftWords; offset += bDim)
                 {
-                    prevH = blockHIn;
+                    int j = offset + tid;
+                    int pos = i + j + half;
+                    bool valid = j < leftWords && pos < resultWords;
+
+                    ulong prod = valid ? (ulong)op.Left.Limbs[offsetA + j] * bVal : 0ul;
+                    uint part = half == 0 ? (uint)(prod & 0xFFFFFFFFul) : (uint)(prod >> 32);
+                    ulong sum = (ulong)(valid ? op.Result.Limbs[offsetResult + pos] : 0u) + part;
+                    uint g = (uint)(sum >> 32);
+                    uint p = (uint)sum == 0xFFFFFFFFu ? 1u : 0u;
+
+                    uint carryIn = PropagateBlockCarry(g, p, blockCarryIn, sharedCarry, laneId, warpId, bDim,
+                        out blockCarryIn);
+                    if (valid)
+                    {
+                        op.Result.Limbs[offsetResult + pos] = (uint)sum + carryIn;
+
+                        // The carry out of the low pass's top word goes to word i + leftWords, which no earlier row
+                        // reached (row i - 1 ends at word i - 1 + leftWords), so it is assigned, not added. The top
+                        // thread computes it itself instead of reading the block carry-out: that is the carry of thread
+                        // bDim - 1, which usually holds no word, and is undefined when the last warp is partial (#887).
+                        // The high pass carries nothing out: after row i the partial product is below
+                        // 2^(32 * (i + 1 + leftWords)).
+                        if (half == 0 && j == leftWords - 1 && pos + 1 < resultWords)
+                        {
+                            op.Result.Limbs[offsetResult + pos + 1] = g | (p & carryIn);
+                        }
+                    }
+
+                    Gpu.SyncThreads();
                 }
-
-                ulong sum1 = (ulong)L + prevH;
-                uint currentResult = valid ? op.Result.Limbs[offsetResult + i + j] : 0u;
-                ulong sum2 = sum1 + currentResult;
-
-                uint finalL = (uint)(sum2 & 0xFFFFFFFFul);
-                uint g = (uint)(sum2 >> 32);
-                uint p = (uint)sum2 == 0xFFFFFFFFu ? 1u : 0u;
-
-                if (laneId == 31)
-                {
-                    sharedH[warpId] = H;
-                }
-
-                uint carryIn = PropagateBlockCarry(g, p, blockCarryIn, sharedCarry, laneId, warpId, bDim,
-                    out blockCarryIn);
-                if (valid)
-                {
-                    op.Result.Limbs[offsetResult + i + j] = finalL + carryIn;
-                }
-
-                blockHIn = sharedH[((bDim + 31) / 32) - 1];
-                Gpu.SyncThreads();
             }
         }
 

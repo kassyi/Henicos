@@ -182,9 +182,53 @@ internal static class NativeIntrinsicEmitter
             }
 
             AppendConstraintClauses(writer, m, placeholder, t);
-            AppendThrowingBody(writer, returnType);
+            if (m.ManagedName is { } managedName)
+            {
+                AppendForwardingBody(writer, m, managedName);
+            }
+            else
+            {
+                AppendThrowingBody(writer, returnType);
+            }
+
             writer.Line();
         }
+    }
+
+    //  => Kassyi.GSharp.Core.<managed member>(<ref|in|out> <parameter>, ...);
+    // The managed member runs the intrinsic on the managed CPU path and throws outside a managed launch itself
+    private static void AppendForwardingBody(SourceWriter writer, ApiMethodDefinition m, string managedName)
+    {
+        writer.Append($" => Kassyi.GSharp.Core.{managedName}");
+        using (writer.Parentheses())
+        {
+            for (var i = 0; i < m.Parameters.Length; i++)
+            {
+                var p = m.Parameters[i];
+                writer.AppendIf(i > 0, ", ");
+                writer.Append(ArgumentModifier(p.Type));
+                writer.Append(p.Name);
+            }
+        }
+
+        writer.AppendLine(";");
+    }
+
+    // The modifier an argument of a parameter of type <type> is passed with: ref T -> "ref ", ref readonly T and in T ->
+    // "in ", out T -> "out "
+    private static string ArgumentModifier(string type)
+    {
+        if (type.StartsWith("ref readonly ", StringComparison.Ordinal) || type.StartsWith("in ", StringComparison.Ordinal))
+        {
+            return "in ";
+        }
+
+        if (type.StartsWith("ref ", StringComparison.Ordinal))
+        {
+            return "ref ";
+        }
+
+        return type.StartsWith("out ", StringComparison.Ordinal) ? "out " : string.Empty;
     }
 
     //  => GpuOnlyException.Throw();  |  => GpuOnlyException.Throw<<return type>>();

@@ -76,6 +76,9 @@ Lowering:
     # the C# order of evaluation, so they share the group
     SequenceTempPrefix: __gsharp_seq_
     ConditionTempPrefix: __gsharp_cond_temp_
+    # The governing value of a switch statement that lowering flattens because a section holds a split point
+    # (SwitchStatementFlattener); its labels are __gsharp_SwitchSection_<id>_<section> and __gsharp_SwitchEnd_<id>
+    SwitchTempPrefix: __gsharp_switch_temp_
     AggregateTemp: __gsharp_tmp
     TupleTempPrefix: __gsharp_tuple_
     CoalesceTarget: __gsharp_coalesce_target
@@ -141,6 +144,8 @@ Launcher:
     ContextItem: __gsharp_launch_ctx
     AnyActive: __gsharp_any_active
     CudaContextScope: __gsharp_cuda_context_scope
+    # The CUDA launcher's DeviceArrayRegions: one device region per host array that its struct arguments hold (#707)
+    DeviceArrays: __gsharp_device_arrays
     GridDimX: __gsharp_grid_dim_x
     GridDimY: __gsharp_grid_dim_y
     GridDimZ: __gsharp_grid_dim_z

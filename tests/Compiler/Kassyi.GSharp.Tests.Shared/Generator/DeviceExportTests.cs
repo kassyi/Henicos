@@ -45,6 +45,8 @@ public class DeviceExportTests
                 "M:DeviceExportCase.LibMath.Scale(System.Int32)",
                 "M:DeviceExportCase.LibMath.Scale(System.Single)",
                 "M:DeviceExportCase.LibMath.Scratch(System.Int32,System.Int32)",
+                "M:DeviceExportCase.LibMath.SyncIfEven(System.Int32[],System.Int32)",
+                "M:DeviceExportCase.LibMath.SyncWithin(System.Int32)",
                 "M:DeviceExportCase.LibMath.TakeOne(System.Int32@)",
                 "M:DeviceExportCase.LibMath.Twice(System.Int32)",
                 "M:DeviceExportCase.LibMath.WriteThrough(System.Int32@,System.Int32[])"
@@ -53,7 +55,7 @@ public class DeviceExportTests
 
         Assert.All(records, static r =>
         {
-            Assert.Equal(1, r.FormatVersion);
+            Assert.Equal(DeviceExportRecord.CurrentFormatVersion, r.FormatVersion);
             Assert.Equal(DeviceExportRecord.CurrentPreludeHash, r.PreludeHash);
             Assert.False(r.GetBool("CudaFailed"), r.Id);
             Assert.False(r.GetBool("CppFailed"), r.Id);
@@ -90,6 +92,17 @@ public class DeviceExportTests
         // not suspend has none
         Assert.True(exchange.GetBool("ManagedStateMachine"));
         Assert.False(mu.GetBool("ManagedStateMachine"));
+
+        // B7: the parameters whose thread-variant argument makes a barrier diverge, and an early exit before a barrier
+        var syncIfEven = Find("M:DeviceExportCase.LibMath.SyncIfEven(System.Int32[],System.Int32)");
+        Assert.Equal(0b10, syncIfEven.GetInt("DivergentConditionParameters"));
+        Assert.Equal(0, syncIfEven.GetInt("DivergentExitOnlyParameters"));
+        Assert.False(syncIfEven.GetBool("HasExitOnlyBarrier"));
+        var syncWithin = Find("M:DeviceExportCase.LibMath.SyncWithin(System.Int32)");
+        Assert.Equal(0, syncWithin.GetInt("DivergentConditionParameters"));
+        Assert.True(syncWithin.GetBool("HasExitOnlyBarrier"));
+        Assert.Equal(0, exchange.GetInt("DivergentConditionParameters"));
+        Assert.False(exchange.GetBool("HasExitOnlyBarrier"));
 
         // A ref parameter alone is RefParameters; a ref parameter and an array write is Memory
         Assert.Equal("RefParameters", Find("M:DeviceExportCase.LibMath.Bump(System.Int32@)").GetString("Effect"));
@@ -491,6 +504,9 @@ public class DeviceExportTests
 
         public bool GetBool(string name) =>
             attribute.NamedArguments.FirstOrDefault(a => a.Key == name).Value.Value is true;
+
+        public int GetInt(string name) =>
+            attribute.NamedArguments.FirstOrDefault(a => a.Key == name).Value.Value is int value ? value : 0;
 
         public string[] GetArray(string name) =>
             attribute.NamedArguments.FirstOrDefault(a => a.Key == name).Value is { Kind: TypedConstantKind.Array } array

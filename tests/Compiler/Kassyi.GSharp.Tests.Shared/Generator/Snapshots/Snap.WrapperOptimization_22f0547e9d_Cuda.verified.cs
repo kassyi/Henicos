@@ -92,7 +92,7 @@ public const string DebugName_B = "global::System.Single";
 [System.Runtime.InteropServices.FieldOffset(4)]
 public global::System.Single B;
 }
-public static unsafe void Marshal_MyCustomStruct(ref global::Kassyi.GSharp.Tests.Shared.TestCases.MyCustomStruct host, ref AotContexts.MyCustomStruct native, bool isDevicePtr, System.Collections.Generic.List<IntPtr>? allocatedPtrs, IntPtr hStream = default)
+public static unsafe void Marshal_MyCustomStruct(ref global::Kassyi.GSharp.Tests.Shared.TestCases.MyCustomStruct host, ref AotContexts.MyCustomStruct native, bool isDevicePtr, global::Kassyi.GSharp.Runtime.Interop.DeviceArrayRegions? deviceArrays, IntPtr hStream = default)
 {
 native = System.Runtime.CompilerServices.Unsafe.As<global::Kassyi.GSharp.Tests.Shared.TestCases.MyCustomStruct, AotContexts.MyCustomStruct>(ref host);
 }
@@ -164,7 +164,6 @@ global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, shared
 IntPtr d_scalarRef = IntPtr.Zero;
 IntPtr d_scalarOut = IntPtr.Zero;
 IntPtr d_arrayVal = IntPtr.Zero;
-System.Collections.Generic.List<IntPtr> structRef_allocatedPtrs = new System.Collections.Generic.List<IntPtr>();
 IntPtr d_structRef = IntPtr.Zero;
 try
 {
@@ -200,7 +199,7 @@ CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
 }
 kernelParams[2] = proxy_arrayVal;
 AotContexts.MyCustomStruct native_structRef = default;
-AotContexts.Marshal_MyCustomStruct(ref structRef, ref native_structRef, false, structRef_allocatedPtrs, hStream);
+AotContexts.Marshal_MyCustomStruct(ref structRef, ref native_structRef, false, null, hStream);
 // Marshal ref/out struct: structRef
 int structRef_size = sizeof(AotContexts.MyCustomStruct);
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_structRef, (IntPtr)structRef_size, hStream));
@@ -251,7 +250,6 @@ finally
 if (d_scalarRef != IntPtr.Zero) CudaDriverApi.cuMemFreeAsync(d_scalarRef, hStream);
 if (d_scalarOut != IntPtr.Zero) CudaDriverApi.cuMemFreeAsync(d_scalarOut, hStream);
 if (d_arrayVal != IntPtr.Zero) CudaDriverApi.cuMemFreeAsync(d_arrayVal, hStream);
-foreach (var ptr in structRef_allocatedPtrs) CudaDriverApi.cuMemFreeAsync(ptr, hStream);
 if (d_structRef != IntPtr.Zero) CudaDriverApi.cuMemFreeAsync(d_structRef, hStream);
 }
 }
