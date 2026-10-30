@@ -12,18 +12,17 @@ internal static class KernelLaunchEmitter
     /// <summary>Emits local variable declarations for device pointers and tracking lists.</summary>
     internal static void WriteVariablesInitialization(SourceWriter writer, in KernelHostModel kernel, bool isDevicePtr)
     {
+        // One table for the whole launch, so that every struct argument and converted element finds the arrays the
+        // others already copied (#707)
+        writer.AppendLineIf(
+            UsesDeviceArrayRegions(kernel, isDevicePtr),
+            $"var {DeviceArrays} = new {StructMarshalingEmitter.DeviceArrayRegionsType}();"
+        );
         foreach (var shape in kernel.Parameters)
         {
             if (isDevicePtr)
             {
                 continue;
-            }
-
-            if ((shape.IsCustomStruct && !shape.IsDirectCudaValueStruct) || shape.IsCudaConvertedArray)
-            {
-                writer.AppendLine(
-                    $"System.Collections.Generic.List<IntPtr> {shape.Name}_allocatedPtrs =" +
-                    " new System.Collections.Generic.List<IntPtr>();");
             }
 
             if (shape.IsCudaConvertedArray)
@@ -147,6 +146,8 @@ internal static class KernelLaunchEmitter
             WriteParameterFree(writer, shape, isDevicePtr);
         }
 
+        writer.AppendLineIf(UsesDeviceArrayRegions(kernel, isDevicePtr), $"{DeviceArrays}.Free(hStream);");
+
         if (kernel.GridScratchSlotBytes > 0)
         {
             writer.AppendLine($"if ({DeviceGridScratch} != IntPtr.Zero)");
@@ -168,6 +169,21 @@ internal static class KernelLaunchEmitter
                 $"CudaException.ThrowIfError(CudaDriverApi.cuMemFreeAsync({DeviceAutoResult}, hStream));");
         }
     }
+
+    // The device regions of the arrays that struct arguments and converted elements hold (DeviceArrayRegions)
+    private const string DeviceArrays = GSharpInternalNames.Launcher.DeviceArrays;
+
+    // Whether the launcher marshals a struct argument or a converted array that holds arrays, whose Marshal_ calls record
+    // the arrays they copy; the IntPtr wrapper copies none
+    private static bool UsesDeviceArrayRegions(in KernelHostModel kernel, bool isDevicePtr) =>
+        !isDevicePtr &&
+        kernel.Parameters
+            .AsStackEnumerable()
+            .Any(static shape => shape.MarshalsCudaArrays);
+
+    // The table that a parameter's Marshal_ calls record their arrays in, null when they copy none
+    private static string DeviceArraysFor(in KernelParameterShape shape) =>
+        shape.MarshalsCudaArrays ? DeviceArrays : "null";
 
     // [WHY] The IntPtr wrapper receives device memory that the caller owns, so it forwards it without copying
     private static bool IsPassedThrough(in KernelParameterShape shape, bool isDevicePtr) =>
@@ -203,7 +219,7 @@ internal static class KernelLaunchEmitter
         switch (shape.Kind)
         {
             case KernelParameterKind.CustomStruct:
-                WriteCustomStructMarshal(writer, shape, paramIndex, isDevicePtr);
+                WriteCustomStructMarshal(writer, shape, paramIndex);
                 break;
             case KernelParameterKind.Array:
                 WriteArrayMarshal(writer, shape, paramIndex);
@@ -217,8 +233,8 @@ internal static class KernelLaunchEmitter
         }
     }
 
-    private static void WriteCustomStructMarshal(SourceWriter writer, in KernelParameterShape shape, int paramIndex,
-        bool isDevicePtr)
+    // Only the managed-array launcher gets here: the Ptr launcher passes a struct through (IsPassedThrough)
+    private static void WriteCustomStructMarshal(SourceWriter writer, in KernelParameterShape shape, int paramIndex)
     {
         if (shape.IsDirectCudaValueStruct)
         {
@@ -232,7 +248,7 @@ internal static class KernelLaunchEmitter
         using (writer.Parentheses())
         {
             writer.Append(
-                $"ref {shape.Identifier}, ref native_{shape.Name}, {(isDevicePtr ? "true" : "false")}, {(isDevicePtr ? "null" : $"{shape.Name}_allocatedPtrs")}, hStream");
+                $"ref {shape.Identifier}, ref native_{shape.Name}, false, {DeviceArraysFor(shape)}, hStream");
         }
 
         writer.AppendLine(";");
@@ -340,7 +356,7 @@ internal static class KernelLaunchEmitter
             else
             {
                 ConvertedArrayEmitter.WriteShadowAndHostSpans(writer, shape, shape.Cuda);
-                ConvertedArrayEmitter.WriteElementMarshalLoop(writer, shape, shape.Cuda);
+                ConvertedArrayEmitter.WriteElementMarshalLoop(writer, shape, shape.Cuda, DeviceArraysFor(shape));
                 writer.AppendLine($"fixed (byte* p_{name} = {name}_shadow)");
                 using (writer.Scope())
                 {
@@ -553,12 +569,6 @@ internal static class KernelLaunchEmitter
         if (isDevicePtr)
         {
             return;
-        }
-
-        if ((shape.IsCustomStruct && !shape.IsDirectCudaValueStruct) || shape.IsCudaConvertedArray)
-        {
-            writer.AppendLine(
-                $"foreach (var ptr in {shape.Name}_allocatedPtrs) CudaDriverApi.cuMemFreeAsync(ptr, hStream);");
         }
 
         if (shape.IsCudaConvertedArray)

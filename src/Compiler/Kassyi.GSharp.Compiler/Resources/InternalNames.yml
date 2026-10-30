@@ -126,6 +126,8 @@ Launcher:
     ContextItem: __gsharp_launch_ctx
     AnyActive: __gsharp_any_active
     CudaContextScope: __gsharp_cuda_context_scope
+    # The CUDA launcher's DeviceArrayRegions: one device region per host array that its struct arguments hold (#707)
+    DeviceArrays: __gsharp_device_arrays
     GridDimX: __gsharp_grid_dim_x
     GridDimY: __gsharp_grid_dim_y
     GridDimZ: __gsharp_grid_dim_z
