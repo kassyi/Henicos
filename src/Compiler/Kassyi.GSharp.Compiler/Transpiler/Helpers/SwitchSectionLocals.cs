@@ -34,32 +34,19 @@ internal static class SwitchSectionLocals
     {
         var model = context.Query.SemanticModel;
         var declaresAny = false;
-        foreach (var section in switchStatement.Sections)
+        foreach (var (section, declaration, declarator) in new SectionDeclarators(switchStatement))
         {
-            foreach (var statement in section.Statements)
+            if (IsDeclaredBeforeSwitch(declarator, declaration, section, model))
             {
-                if (statement is not LocalDeclarationStatementSyntax declaration)
-                {
-                    continue;
-                }
+                declaresAny = true;
+                continue;
+            }
 
-                foreach (var declarator in declaration.Declaration.Variables)
-                {
-                    if (!IsNamedInOtherSection(declarator, section, model))
-                    {
-                        declaresAny |= declaration.IsConst && IsDeclaredBeforeSwitch(declarator, declaration, section, model);
-                        continue;
-                    }
-
-                    if (declaration.IsConst || CanDeclareBeforeSwitch(declaration, declarator, model))
-                    {
-                        declaresAny = true;
-                        continue;
-                    }
-
-                    context.Reporter.Fail(GSharpDiagnostics.UnsupportedSyntax, declarator,
-                        GpuCodeConstraints.SwitchSectionLocalNotDeclarable);
-                }
+            // A const can always be declared before the switch, so only a variable is left here
+            if (!declaration.IsConst && IsNamedInOtherSection(declarator, section, model))
+            {
+                context.Reporter.Fail(GSharpDiagnostics.UnsupportedSyntax, declarator,
+                    GpuCodeConstraints.SwitchSectionLocalNotDeclarable);
             }
         }
 
@@ -74,42 +61,32 @@ internal static class SwitchSectionLocals
     public static void WriteDeclarations(SwitchStatementSyntax switchStatement, ref TranspileContext context)
     {
         var model = context.Query.SemanticModel;
-        foreach (var section in switchStatement.Sections)
+        foreach (var (section, declaration, declarator) in new SectionDeclarators(switchStatement))
         {
-            foreach (var statement in section.Statements)
+            if (!IsDeclaredBeforeSwitch(declarator, declaration, section, model))
             {
-                if (statement is not LocalDeclarationStatementSyntax declaration)
-                {
-                    continue;
-                }
-
-                var typeSymbol = model.GetTypeSymbol(declaration.Declaration.Type);
-                foreach (var declarator in declaration.Declaration.Variables)
-                {
-                    if (!IsDeclaredBeforeSwitch(declarator, declaration, section, model))
-                    {
-                        continue;
-                    }
-
-                    if (declaration.IsConst)
-                    {
-                        context.Emitter.Writer.Append("const ");
-                    }
-
-                    context.Emitter.Dialect.AppendType(ref context, typeSymbol);
-                    context.Emitter.Writer.Append(' ');
-                    CppNameResolver.AppendDeclaredName(declarator, declarator.Identifier, ref context);
-                    if (declaration.IsConst)
-                    {
-                        DeclarationTranspilerHelper.WriteDeclaratorInitializer(declarator, ref context);
-                    }
-
-                    context.Emitter.Writer.AppendLine(";");
-                }
+                continue;
             }
+
+            if (declaration.IsConst)
+            {
+                context.Emitter.Writer.Append("const ");
+            }
+
+            context.Emitter.Dialect.AppendType(ref context, model.GetTypeSymbol(declaration.Declaration.Type));
+            context.Emitter.Writer.Append(' ');
+            CppNameResolver.AppendDeclaredName(declarator, declarator.Identifier, ref context);
+            if (declaration.IsConst)
+            {
+                DeclarationTranspilerHelper.WriteDeclaratorInitializer(declarator, ref context);
+            }
+
+            context.Emitter.Writer.AppendLine(";");
         }
     }
 
+    // The one condition for a local that the block around the switch declares; ReportAndFindSharedLocals,
+    // WriteDeclarations and the public overload all read it, so they agree on the same locals
     private static bool IsDeclaredBeforeSwitch(VariableDeclaratorSyntax declarator,
         LocalDeclarationStatementSyntax declaration, SwitchSectionSyntax section, SemanticModel model)
     {
@@ -179,6 +156,48 @@ internal static class SwitchSectionLocals
                 .AsStackEnumerable()
                 .Any(l, static (node, l) => l.IsReferencedBy(node))
             );
+
+    // Each declarator of a local declaration directly in a section of the switch, with its section and statement:
+    // the one walk that ReportAndFindSharedLocals and WriteDeclarations share
+    private struct SectionDeclarators(SwitchStatementSyntax switchStatement)
+    {
+        private int _section;
+        private int _statement = -1;
+        private int _declarator = -1;
+
+        public (SwitchSectionSyntax Section, LocalDeclarationStatementSyntax Declaration, VariableDeclaratorSyntax Declarator)
+            Current { get; private set; }
+
+        public readonly SectionDeclarators GetEnumerator() => this;
+
+        public bool MoveNext()
+        {
+            var sections = switchStatement.Sections;
+            while (_section < sections.Count)
+            {
+                var section = sections[_section];
+                var statements = section.Statements;
+                if (_statement >= 0 &&
+                    statements[_statement] is LocalDeclarationStatementSyntax declaration &&
+                    ++_declarator < declaration.Declaration.Variables.Count)
+                {
+                    Current = (section, declaration, declaration.Declaration.Variables[_declarator]);
+                    return true;
+                }
+
+                _declarator = -1;
+                if (++_statement < statements.Count)
+                {
+                    continue;
+                }
+
+                _statement = -1;
+                _section++;
+            }
+
+            return false;
+        }
+    }
 
     private readonly struct LocalIdentity(string name, ISymbol? symbol, int region, SemanticModel semanticModel)
     {
