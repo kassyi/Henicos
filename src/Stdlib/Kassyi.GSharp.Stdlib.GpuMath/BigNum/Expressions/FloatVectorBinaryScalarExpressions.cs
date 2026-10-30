@@ -60,7 +60,9 @@ internal abstract class FloatVectorBinaryScalarExpressionBase(
             DispatchKernel(workspace, operands, (uint)elements);
         }
 
-        return new FloatVectorEvaluation(output.Close(workspace), vecResult.Count);
+        // A host loop wrote only the elements; a kernel wrote the whole window
+        var written = RunsOnHost ? vecResult.Count : DeviceElementCount.Static(evalCount);
+        return new FloatVectorEvaluation(output.Close(workspace, written), vecResult.Count);
     }
 
     /// <summary>

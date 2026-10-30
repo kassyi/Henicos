@@ -167,7 +167,7 @@ internal abstract class FloatVectorUnaryExpressionBase(
         // an element operation throw (Log(0))
         FloatVectorElementwiseHelper.ExecuteUnary(workspace, vecResult.Storage, output.Destination,
             vecResult.Elements(workspace), EvaluateElement);
-        return new FloatVectorEvaluation(output.Close(workspace), vecResult.Count);
+        return new FloatVectorEvaluation(output.Close(workspace, vecResult.Count), vecResult.Count);
     }
 
     protected virtual void ValidateBeforeEvaluate()

@@ -285,6 +285,46 @@ public sealed class DeviceElementCountTests : IDisposable
     }
 
     [SkippableFact]
+    [Scenario(TestScenario.Boundary)]
+    public void HostLoop_IntoATargetOverItsInput_LeavesTheTailAsItWas()
+    {
+        // SelectSqrt runs on the host over the 7 elements only. Its target is the input storage itself (20 elements),
+        // so the node computes in its cache and copies the result into the target; the copy covers the device count,
+        // so the target's elements after it keep their values, as a separate target's would (the host loop never
+        // writes them).
+        // mutant: VectorUnaryExpressionBase closes the output with DeviceElementCount.Static(evalCount) (the whole
+        // window is copied, and the cache's unwritten tail replaces the loud values)
+        const int capacity = 20;
+        var values = Values(7, true);
+        var storage = new BigInteger[capacity];
+        for (var i = 0; i < capacity; i++)
+        {
+            storage[i] = i < values.Length ? values[i] : (i % 2 == 0 ? s_loud : -s_loud);
+        }
+
+        var array = CreateArray(storage);
+        _owned.Add(array);
+        using var countWord = GpuBigUInt.FromBigInteger(_workspace, values.Length, 1);
+        using var roots = new DeviceCountedLeafExpression(array, countWord).SelectSqrt();
+        GpuBigUIntArrayView target = array.Values;
+
+        var result = roots.Evaluate(_workspace, 0, capacity, target);
+
+        // The elements are the square roots, delivered in the target
+        Assert.Equal(values.Select(v => (BigInteger)Math.Sqrt((double)v)), Read(result));
+        Assert.Equal(target.DevicePointer, result.Values.DevicePointer);
+
+        // The tail after the device count keeps the magnitudes it had
+        var words = new uint[capacity * Words];
+        _workspace.Provider.CopyDeviceToHost(words, target.DevicePointer, words.Length, _workspace.Stream);
+        for (var i = values.Length; i < capacity; i++)
+        {
+            Assert.True(words[i * Words] == 0u && words[i * Words + 1] == 0u && words[i * Words + 2] == 1u << 6,
+                $"element {i}: {words[i * Words + 2]:X8} {words[i * Words + 1]:X8} {words[i * Words]:X8}");
+        }
+    }
+
+    [SkippableFact]
     [Scenario(TestScenario.HappyPath)]
     public void PublicEvaluate_ReturnsExactlyTheCount()
     {

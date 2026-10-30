@@ -54,4 +54,21 @@ public static partial class GpuBigIntVectorKernels
             ctx.Destination[w] = w == 0 ? (uint)n : 0u;
         }
     }
+
+    /// <summary>
+    /// Copies the words of the first n elements (n from <c>Count</c>) from <c>Source</c> to <c>Destination</c> and
+    /// leaves the other words of <c>Destination</c> as they were: a result computed in a node's cache is delivered into
+    /// the caller's target without reading the count on the host.
+    /// </summary>
+    [GpuKernel]
+    public static void CopyCountedElementsKernel(CountedCopyContext ctx)
+    {
+        int words = GpuStreamCompactionKernels.ResolveCount(ctx.Count) * ctx.WordsPerElement;
+        int i = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
+        int stride = GridDimension.X * BlockDimension.X;
+        for (; i < words; i += stride)
+        {
+            ctx.Destination[i] = ctx.Source[i];
+        }
+    }
 }

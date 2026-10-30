@@ -151,6 +151,21 @@ public static partial class GpuBigIntVectorKernels
         public ElementCountContext Count;
     }
 
+    /// <summary>
+    /// The copy of the first n elements of a result (n from <see cref="Count"/>) into a target that does not share words
+    /// with it.
+    /// </summary>
+    public struct CountedCopyContext
+    {
+        public uint[] Destination;
+
+        [GpuReadOnly]
+        public uint[] Source;
+
+        public int WordsPerElement;
+        public ElementCountContext Count;
+    }
+
     public struct ElementCountWriteContext
     {
         public uint[] Destination;
