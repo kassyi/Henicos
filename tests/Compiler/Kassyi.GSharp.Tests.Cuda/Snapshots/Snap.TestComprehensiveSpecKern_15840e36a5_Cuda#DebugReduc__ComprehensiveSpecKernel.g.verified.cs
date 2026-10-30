@@ -375,12 +375,12 @@ proxy_particles[0] = IntPtr.Zero;
 if (particles_size > 0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_particles, (IntPtr)particles_size, hStream));
-proxy_particles[0] = d_particles;
 fixed (global::DebugReduc.PhysicsVector* p_particles = particles)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoDAsync_v2(d_particles, (IntPtr)p_particles, (IntPtr)particles_size, hStream));
 CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
 }
+proxy_particles[0] = d_particles;
 }
 kernelParams[0] = proxy_particles;
 // Marshal ref/out scalar: totalMagnitude
@@ -531,12 +531,12 @@ proxy_data[0] = IntPtr.Zero;
 if (data_size > 0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_data, (IntPtr)data_size, hStream));
-proxy_data[0] = d_data;
 fixed (global::System.Int32* p_data = data)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoDAsync_v2(d_data, (IntPtr)p_data, (IntPtr)data_size, hStream));
 CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
 }
+proxy_data[0] = d_data;
 }
 kernelParams[0] = proxy_data;
 CudaException.ThrowIfError(CudaDriverApi.cuLaunchCooperativeKernel(

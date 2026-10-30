@@ -131,12 +131,12 @@ proxy_inputs[0] = IntPtr.Zero;
 if (inputs_size > 0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_inputs, (IntPtr)inputs_size, hStream));
-proxy_inputs[0] = d_inputs;
 fixed (global::System.Single* p_inputs = inputs)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoDAsync_v2(d_inputs, (IntPtr)p_inputs, (IntPtr)inputs_size, hStream));
 CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
 }
+proxy_inputs[0] = d_inputs;
 }
 kernelParams[0] = proxy_inputs;
 // Marshal array: results
@@ -146,13 +146,20 @@ proxy_results[0] = IntPtr.Zero;
 ((int*)(proxy_results + 1))[0] = results.Length;
 if (results_size > 0)
 {
+if (global::System.Object.ReferenceEquals(results, inputs))
+{
+d_results = d_inputs;
+}
+else
+{
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_results, (IntPtr)results_size, hStream));
-proxy_results[0] = d_results;
 fixed (global::System.Single* p_results = results)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoDAsync_v2(d_results, (IntPtr)p_results, (IntPtr)results_size, hStream));
 CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
 }
+}
+proxy_results[0] = d_results;
 }
 kernelParams[1] = proxy_results;
 CudaException.ThrowIfError(CudaDriverApi.cuLaunchKernel(
@@ -174,7 +181,7 @@ CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
 }
 }
 // Copy back array: results
-if (results_size > 0 && d_results != IntPtr.Zero)
+if (results_size > 0 && d_results != IntPtr.Zero && !global::System.Object.ReferenceEquals(results, inputs))
 {
 fixed (global::System.Single* p_results = results)
 {
@@ -186,7 +193,7 @@ CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
 finally
 {
 if (d_inputs != IntPtr.Zero) CudaDriverApi.cuMemFreeAsync(d_inputs, hStream);
-if (d_results != IntPtr.Zero) CudaDriverApi.cuMemFreeAsync(d_results, hStream);
+if (d_results != IntPtr.Zero && d_results != d_inputs) CudaDriverApi.cuMemFreeAsync(d_results, hStream);
 }
 }
 }

@@ -135,14 +135,18 @@ proxy_input[0] = IntPtr.Zero;
 if (input_size > 0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_input, (IntPtr)input_size, hStream));
-proxy_input[0] = d_input;
 fixed (global::System.Single* p_input = input)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoDAsync_v2(d_input, (IntPtr)p_input, (IntPtr)input_size, hStream));
 CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
 }
+proxy_input[0] = d_input;
 }
 kernelParams[0] = proxy_input;
+// Marshal scalar: width
+kernelParams[2] = &width;
+// Marshal scalar: height
+kernelParams[3] = &height;
 // Marshal array: output
 int output_size = output.Length * sizeof(global::System.Single);
 IntPtr* proxy_output = stackalloc IntPtr[2];
@@ -150,15 +154,18 @@ proxy_output[0] = IntPtr.Zero;
 ((int*)(proxy_output + 1))[0] = output.Length;
 if (output_size > 0)
 {
+if (global::System.Object.ReferenceEquals(output, input))
+{
+d_output = d_input;
+}
+else
+{
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_output, (IntPtr)output_size, hStream));
-proxy_output[0] = d_output;
 // Skip HtoD copy for [Out] array: output
 }
+proxy_output[0] = d_output;
+}
 kernelParams[1] = proxy_output;
-// Marshal scalar: width
-kernelParams[2] = &width;
-// Marshal scalar: height
-kernelParams[3] = &height;
 CudaException.ThrowIfError(CudaDriverApi.cuLaunchKernel(
 hfunc,
 gridDimX, gridDimY, gridDimZ, // Grid dim
@@ -182,7 +189,7 @@ CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
 finally
 {
 if (d_input != IntPtr.Zero) CudaDriverApi.cuMemFreeAsync(d_input, hStream);
-if (d_output != IntPtr.Zero) CudaDriverApi.cuMemFreeAsync(d_output, hStream);
+if (d_output != IntPtr.Zero && d_output != d_input) CudaDriverApi.cuMemFreeAsync(d_output, hStream);
 }
 }
 }
