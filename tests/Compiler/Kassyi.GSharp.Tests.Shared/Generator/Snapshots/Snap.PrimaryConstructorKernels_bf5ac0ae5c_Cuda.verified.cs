@@ -108,7 +108,7 @@ public const string DebugName_X = "global::System.Int32";
 [System.Runtime.InteropServices.FieldOffset(8)]
 public global::System.Int32 X;
 }
-public static unsafe void Marshal_PcCaptured(ref global::Kassyi.GSharp.Tests.Shared.Syntax.PcCaptured host, ref AotContexts.PcCaptured native, bool isDevicePtr, System.Collections.Generic.List<IntPtr>? allocatedPtrs, IntPtr hStream = default)
+public static unsafe void Marshal_PcCaptured(ref global::Kassyi.GSharp.Tests.Shared.Syntax.PcCaptured host, ref AotContexts.PcCaptured native, bool isDevicePtr, global::Kassyi.GSharp.Runtime.Interop.DeviceArrayRegions? deviceArrays, IntPtr hStream = default)
 {
 native = System.Runtime.CompilerServices.Unsafe.As<global::Kassyi.GSharp.Tests.Shared.Syntax.PcCaptured, AotContexts.PcCaptured>(ref host);
 }
@@ -129,7 +129,7 @@ public const string DebugName_X = "global::System.Int32";
 [System.Runtime.InteropServices.FieldOffset(16)]
 public global::System.Int32 X;
 }
-public static unsafe void Marshal_PcCapturedMixed(ref global::Kassyi.GSharp.Tests.Shared.Syntax.PcCapturedMixed host, ref AotContexts.PcCapturedMixed native, bool isDevicePtr, System.Collections.Generic.List<IntPtr>? allocatedPtrs, IntPtr hStream = default)
+public static unsafe void Marshal_PcCapturedMixed(ref global::Kassyi.GSharp.Tests.Shared.Syntax.PcCapturedMixed host, ref AotContexts.PcCapturedMixed native, bool isDevicePtr, global::Kassyi.GSharp.Runtime.Interop.DeviceArrayRegions? deviceArrays, IntPtr hStream = default)
 {
 native = System.Runtime.CompilerServices.Unsafe.As<global::Kassyi.GSharp.Tests.Shared.Syntax.PcCapturedMixed, AotContexts.PcCapturedMixed>(ref host);
 }
@@ -153,7 +153,7 @@ public const string DebugName_Last = "global::System.Int32";
 [System.Runtime.InteropServices.FieldOffset(20)]
 public global::System.Int32 Last;
 }
-public static unsafe void Marshal_PcCapturedAutoProperty(ref global::Kassyi.GSharp.Tests.Shared.Syntax.PcCapturedAutoProperty host, ref AotContexts.PcCapturedAutoProperty native, bool isDevicePtr, System.Collections.Generic.List<IntPtr>? allocatedPtrs, IntPtr hStream = default)
+public static unsafe void Marshal_PcCapturedAutoProperty(ref global::Kassyi.GSharp.Tests.Shared.Syntax.PcCapturedAutoProperty host, ref AotContexts.PcCapturedAutoProperty native, bool isDevicePtr, global::Kassyi.GSharp.Runtime.Interop.DeviceArrayRegions? deviceArrays, IntPtr hStream = default)
 {
 native = System.Runtime.CompilerServices.Unsafe.As<global::Kassyi.GSharp.Tests.Shared.Syntax.PcCapturedAutoProperty, AotContexts.PcCapturedAutoProperty>(ref host);
 }
@@ -190,7 +190,7 @@ System.Runtime.CompilerServices.Unsafe.ByteOffset(ref System.Runtime.CompilerSer
 }
 }
 }
-public static unsafe void Marshal_PcConverted(ref global::Kassyi.GSharp.Tests.Shared.Syntax.PcConverted hostValue, ref AotContexts.PcConverted native, bool isDevicePtr, System.Collections.Generic.List<IntPtr>? allocatedPtrs, IntPtr hStream = default)
+public static unsafe void Marshal_PcConverted(ref global::Kassyi.GSharp.Tests.Shared.Syntax.PcConverted hostValue, ref AotContexts.PcConverted native, bool isDevicePtr, global::Kassyi.GSharp.Runtime.Interop.DeviceArrayRegions? deviceArrays, IntPtr hStream = default)
 {
 native = default;
 if (System.Runtime.CompilerServices.Unsafe.SizeOf<global::Kassyi.GSharp.Tests.Shared.Syntax.PcConverted>() != System.Runtime.CompilerServices.Unsafe.SizeOf<AotContexts.PcConverted.__gsharp_host_mirror>()) global::Kassyi.GSharp.Runtime.Interop.LayoutGuard.ThrowSizeMismatch("Kassyi.GSharp.Tests.Shared.Syntax.PcConverted", System.Runtime.CompilerServices.Unsafe.SizeOf<AotContexts.PcConverted.__gsharp_host_mirror>(), System.Runtime.CompilerServices.Unsafe.SizeOf<global::Kassyi.GSharp.Tests.Shared.Syntax.PcConverted>());
@@ -225,11 +225,11 @@ public const string DebugName_Inner = "global::Kassyi.GSharp.Tests.Shared.Syntax
 [System.Runtime.InteropServices.FieldOffset(8)]
 public AotContexts.PcConverted Inner;
 }
-public static unsafe void Marshal_PcConvertedOuter(ref global::Kassyi.GSharp.Tests.Shared.Syntax.PcConvertedOuter host, ref AotContexts.PcConvertedOuter native, bool isDevicePtr, System.Collections.Generic.List<IntPtr>? allocatedPtrs, IntPtr hStream = default)
+public static unsafe void Marshal_PcConvertedOuter(ref global::Kassyi.GSharp.Tests.Shared.Syntax.PcConvertedOuter host, ref AotContexts.PcConvertedOuter native, bool isDevicePtr, global::Kassyi.GSharp.Runtime.Interop.DeviceArrayRegions? deviceArrays, IntPtr hStream = default)
 {
 native = default;
 native.Before = host.Before;
-Marshal_PcConverted(ref host.Inner, ref native.Inner, isDevicePtr, allocatedPtrs, hStream);
+Marshal_PcConverted(ref host.Inner, ref native.Inner, isDevicePtr, deviceArrays, hStream);
 }
 public static unsafe void Unmarshal_PcConvertedOuter(ref global::Kassyi.GSharp.Tests.Shared.Syntax.PcConvertedOuter host, ref AotContexts.PcConvertedOuter native, bool isDevicePtr, IntPtr hStream = default)
 {
@@ -246,11 +246,11 @@ public const string DebugName_Items = "global::Kassyi.GSharp.Tests.Shared.Syntax
 [System.Runtime.InteropServices.FieldOffset(8)]
 public AotContexts.PcConvertedPair Items;
 }
-public static unsafe void Marshal_PcConvertedPairHolder(ref global::Kassyi.GSharp.Tests.Shared.Syntax.PcConvertedPairHolder host, ref AotContexts.PcConvertedPairHolder native, bool isDevicePtr, System.Collections.Generic.List<IntPtr>? allocatedPtrs, IntPtr hStream = default)
+public static unsafe void Marshal_PcConvertedPairHolder(ref global::Kassyi.GSharp.Tests.Shared.Syntax.PcConvertedPairHolder host, ref AotContexts.PcConvertedPairHolder native, bool isDevicePtr, global::Kassyi.GSharp.Runtime.Interop.DeviceArrayRegions? deviceArrays, IntPtr hStream = default)
 {
 native = default;
 native.Tag = host.Tag;
-Marshal_PcConvertedPair(ref host.Items, ref native.Items, isDevicePtr, allocatedPtrs, hStream);
+Marshal_PcConvertedPair(ref host.Items, ref native.Items, isDevicePtr, deviceArrays, hStream);
 }
 public static unsafe void Unmarshal_PcConvertedPairHolder(ref global::Kassyi.GSharp.Tests.Shared.Syntax.PcConvertedPairHolder host, ref AotContexts.PcConvertedPairHolder native, bool isDevicePtr, IntPtr hStream = default)
 {
@@ -264,14 +264,14 @@ public const string DebugName__element0 = "global::Kassyi.GSharp.Tests.Shared.Sy
 [System.Runtime.InteropServices.FieldOffset(0)]
 public fixed byte _element0[48];
 }
-public static unsafe void Marshal_PcConvertedPair(ref global::Kassyi.GSharp.Tests.Shared.Syntax.PcConvertedPair host, ref AotContexts.PcConvertedPair native, bool isDevicePtr, System.Collections.Generic.List<IntPtr>? allocatedPtrs, IntPtr hStream = default)
+public static unsafe void Marshal_PcConvertedPair(ref global::Kassyi.GSharp.Tests.Shared.Syntax.PcConvertedPair host, ref AotContexts.PcConvertedPair native, bool isDevicePtr, global::Kassyi.GSharp.Runtime.Interop.DeviceArrayRegions? deviceArrays, IntPtr hStream = default)
 {
 native = default;
 fixed (byte* pField = native._element0)
 {
 for (int k = 0; k < 2; k++)
 {
-Marshal_PcConverted(ref host[k], ref ((AotContexts.PcConverted*)pField)[k], isDevicePtr, allocatedPtrs, hStream);
+Marshal_PcConverted(ref host[k], ref ((AotContexts.PcConverted*)pField)[k], isDevicePtr, deviceArrays, hStream);
 }
 }
 }
@@ -309,7 +309,7 @@ System.Runtime.CompilerServices.Unsafe.ByteOffset(ref System.Runtime.CompilerSer
 }
 }
 }
-public static unsafe void Marshal_PcSized(ref global::Kassyi.GSharp.Tests.Shared.Syntax.PcSized hostValue, ref AotContexts.PcSized native, bool isDevicePtr, System.Collections.Generic.List<IntPtr>? allocatedPtrs, IntPtr hStream = default)
+public static unsafe void Marshal_PcSized(ref global::Kassyi.GSharp.Tests.Shared.Syntax.PcSized hostValue, ref AotContexts.PcSized native, bool isDevicePtr, global::Kassyi.GSharp.Runtime.Interop.DeviceArrayRegions? deviceArrays, IntPtr hStream = default)
 {
 native = default;
 if (System.Runtime.CompilerServices.Unsafe.SizeOf<global::Kassyi.GSharp.Tests.Shared.Syntax.PcSized>() != System.Runtime.CompilerServices.Unsafe.SizeOf<AotContexts.PcSized.__gsharp_host_mirror>()) global::Kassyi.GSharp.Runtime.Interop.LayoutGuard.ThrowSizeMismatch("Kassyi.GSharp.Tests.Shared.Syntax.PcSized", System.Runtime.CompilerServices.Unsafe.SizeOf<AotContexts.PcSized.__gsharp_host_mirror>(), System.Runtime.CompilerServices.Unsafe.SizeOf<global::Kassyi.GSharp.Tests.Shared.Syntax.PcSized>());
@@ -815,14 +815,13 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 WarmupFunctionPointerCapturedThroughRefKernel();
 IntPtr hfunc = s_hfunc_CapturedThroughRefKernel!.Value;
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "PrimaryConstructorKernels.CapturedThroughRefKernel");
-System.Collections.Generic.List<IntPtr> data_allocatedPtrs = new System.Collections.Generic.List<IntPtr>();
 IntPtr d_data = IntPtr.Zero;
 IntPtr d_output = IntPtr.Zero;
 try
 {
 void** kernelParams = stackalloc void*[2];
 AotContexts.PcCaptured native_data = default;
-AotContexts.Marshal_PcCaptured(ref data, ref native_data, false, data_allocatedPtrs, hStream);
+AotContexts.Marshal_PcCaptured(ref data, ref native_data, false, null, hStream);
 // Marshal ref/out struct: data
 int data_size = sizeof(AotContexts.PcCaptured);
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_data, (IntPtr)data_size, hStream));
@@ -871,7 +870,6 @@ CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
 }
 finally
 {
-foreach (var ptr in data_allocatedPtrs) CudaDriverApi.cuMemFreeAsync(ptr, hStream);
 if (d_data != IntPtr.Zero) CudaDriverApi.cuMemFreeAsync(d_data, hStream);
 if (d_output != IntPtr.Zero) CudaDriverApi.cuMemFreeAsync(d_output, hStream);
 }
@@ -984,14 +982,13 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 WarmupFunctionPointerMeasureCapturedMixedKernel();
 IntPtr hfunc = s_hfunc_MeasureCapturedMixedKernel!.Value;
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "PrimaryConstructorKernels.MeasureCapturedMixedKernel");
-System.Collections.Generic.List<IntPtr> data_allocatedPtrs = new System.Collections.Generic.List<IntPtr>();
 IntPtr d_data = IntPtr.Zero;
 IntPtr d_layout = IntPtr.Zero;
 try
 {
 void** kernelParams = stackalloc void*[2];
 AotContexts.PcCapturedMixed native_data = default;
-AotContexts.Marshal_PcCapturedMixed(ref data, ref native_data, false, data_allocatedPtrs, hStream);
+AotContexts.Marshal_PcCapturedMixed(ref data, ref native_data, false, null, hStream);
 // Marshal ref/out struct: data
 int data_size = sizeof(AotContexts.PcCapturedMixed);
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_data, (IntPtr)data_size, hStream));
@@ -1040,7 +1037,6 @@ CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
 }
 finally
 {
-foreach (var ptr in data_allocatedPtrs) CudaDriverApi.cuMemFreeAsync(ptr, hStream);
 if (d_data != IntPtr.Zero) CudaDriverApi.cuMemFreeAsync(d_data, hStream);
 if (d_layout != IntPtr.Zero) CudaDriverApi.cuMemFreeAsync(d_layout, hStream);
 }
@@ -1160,14 +1156,13 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 WarmupFunctionPointerRoundtripCapturedAutoPropertyKernel();
 IntPtr hfunc = s_hfunc_RoundtripCapturedAutoPropertyKernel!.Value;
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "PrimaryConstructorKernels.RoundtripCapturedAutoPropertyKernel");
-System.Collections.Generic.List<IntPtr> data_allocatedPtrs = new System.Collections.Generic.List<IntPtr>();
 IntPtr d_data = IntPtr.Zero;
 IntPtr d_output = IntPtr.Zero;
 try
 {
 void** kernelParams = stackalloc void*[2];
 AotContexts.PcCapturedAutoProperty native_data = default;
-AotContexts.Marshal_PcCapturedAutoProperty(ref data, ref native_data, false, data_allocatedPtrs, hStream);
+AotContexts.Marshal_PcCapturedAutoProperty(ref data, ref native_data, false, null, hStream);
 // Marshal ref/out struct: data
 int data_size = sizeof(AotContexts.PcCapturedAutoProperty);
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_data, (IntPtr)data_size, hStream));
@@ -1216,7 +1211,6 @@ CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
 }
 finally
 {
-foreach (var ptr in data_allocatedPtrs) CudaDriverApi.cuMemFreeAsync(ptr, hStream);
 if (d_data != IntPtr.Zero) CudaDriverApi.cuMemFreeAsync(d_data, hStream);
 if (d_output != IntPtr.Zero) CudaDriverApi.cuMemFreeAsync(d_output, hStream);
 }
@@ -1320,14 +1314,13 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 WarmupFunctionPointerRoundtripConvertedKernel();
 IntPtr hfunc = s_hfunc_RoundtripConvertedKernel!.Value;
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "PrimaryConstructorKernels.RoundtripConvertedKernel");
-System.Collections.Generic.List<IntPtr> data_allocatedPtrs = new System.Collections.Generic.List<IntPtr>();
 IntPtr d_data = IntPtr.Zero;
 IntPtr d_output = IntPtr.Zero;
 try
 {
 void** kernelParams = stackalloc void*[2];
 AotContexts.PcConverted native_data = default;
-AotContexts.Marshal_PcConverted(ref data, ref native_data, false, data_allocatedPtrs, hStream);
+AotContexts.Marshal_PcConverted(ref data, ref native_data, false, null, hStream);
 // Marshal ref/out struct: data
 int data_size = sizeof(AotContexts.PcConverted);
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_data, (IntPtr)data_size, hStream));
@@ -1376,7 +1369,6 @@ CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
 }
 finally
 {
-foreach (var ptr in data_allocatedPtrs) CudaDriverApi.cuMemFreeAsync(ptr, hStream);
 if (d_data != IntPtr.Zero) CudaDriverApi.cuMemFreeAsync(d_data, hStream);
 if (d_output != IntPtr.Zero) CudaDriverApi.cuMemFreeAsync(d_output, hStream);
 }
@@ -1493,14 +1485,13 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 WarmupFunctionPointerRoundtripConvertedOuterKernel();
 IntPtr hfunc = s_hfunc_RoundtripConvertedOuterKernel!.Value;
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "PrimaryConstructorKernels.RoundtripConvertedOuterKernel");
-System.Collections.Generic.List<IntPtr> data_allocatedPtrs = new System.Collections.Generic.List<IntPtr>();
 IntPtr d_data = IntPtr.Zero;
 IntPtr d_output = IntPtr.Zero;
 try
 {
 void** kernelParams = stackalloc void*[2];
 AotContexts.PcConvertedOuter native_data = default;
-AotContexts.Marshal_PcConvertedOuter(ref data, ref native_data, false, data_allocatedPtrs, hStream);
+AotContexts.Marshal_PcConvertedOuter(ref data, ref native_data, false, null, hStream);
 // Marshal ref/out struct: data
 int data_size = sizeof(AotContexts.PcConvertedOuter);
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_data, (IntPtr)data_size, hStream));
@@ -1549,7 +1540,6 @@ CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
 }
 finally
 {
-foreach (var ptr in data_allocatedPtrs) CudaDriverApi.cuMemFreeAsync(ptr, hStream);
 if (d_data != IntPtr.Zero) CudaDriverApi.cuMemFreeAsync(d_data, hStream);
 if (d_output != IntPtr.Zero) CudaDriverApi.cuMemFreeAsync(d_output, hStream);
 }
@@ -1662,7 +1652,6 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 WarmupFunctionPointerRoundtripConvertedArrayKernel();
 IntPtr hfunc = s_hfunc_RoundtripConvertedArrayKernel!.Value;
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "PrimaryConstructorKernels.RoundtripConvertedArrayKernel");
-System.Collections.Generic.List<IntPtr> items_allocatedPtrs = new System.Collections.Generic.List<IntPtr>();
 byte[]? items_shadow = null;
 IntPtr d_items = IntPtr.Zero;
 IntPtr d_output = IntPtr.Zero;
@@ -1683,7 +1672,7 @@ var items_native = System.Runtime.InteropServices.MemoryMarshal.Cast<byte, AotCo
 System.Span<global::Kassyi.GSharp.Tests.Shared.Syntax.PcConverted> items_host = items;
 for (int items_index = 0; items_index < items_native.Length; items_index++)
 {
-AotContexts.Marshal_PcConverted(ref items_host[items_index], ref items_native[items_index], false, items_allocatedPtrs, hStream);
+AotContexts.Marshal_PcConverted(ref items_host[items_index], ref items_native[items_index], false, null, hStream);
 }
 fixed (byte* p_items = items_shadow)
 {
@@ -1744,7 +1733,6 @@ CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
 }
 finally
 {
-foreach (var ptr in items_allocatedPtrs) CudaDriverApi.cuMemFreeAsync(ptr, hStream);
 if (items_shadow != null) System.Buffers.ArrayPool<byte>.Shared.Return(items_shadow);
 if (d_items != IntPtr.Zero) CudaDriverApi.cuMemFreeAsync(d_items, hStream);
 if (d_output != IntPtr.Zero) CudaDriverApi.cuMemFreeAsync(d_output, hStream);
@@ -1886,14 +1874,13 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 WarmupFunctionPointerRoundtripConvertedPairKernel();
 IntPtr hfunc = s_hfunc_RoundtripConvertedPairKernel!.Value;
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "PrimaryConstructorKernels.RoundtripConvertedPairKernel");
-System.Collections.Generic.List<IntPtr> data_allocatedPtrs = new System.Collections.Generic.List<IntPtr>();
 IntPtr d_data = IntPtr.Zero;
 IntPtr d_output = IntPtr.Zero;
 try
 {
 void** kernelParams = stackalloc void*[2];
 AotContexts.PcConvertedPairHolder native_data = default;
-AotContexts.Marshal_PcConvertedPairHolder(ref data, ref native_data, false, data_allocatedPtrs, hStream);
+AotContexts.Marshal_PcConvertedPairHolder(ref data, ref native_data, false, null, hStream);
 // Marshal ref/out struct: data
 int data_size = sizeof(AotContexts.PcConvertedPairHolder);
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_data, (IntPtr)data_size, hStream));
@@ -1942,7 +1929,6 @@ CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
 }
 finally
 {
-foreach (var ptr in data_allocatedPtrs) CudaDriverApi.cuMemFreeAsync(ptr, hStream);
 if (d_data != IntPtr.Zero) CudaDriverApi.cuMemFreeAsync(d_data, hStream);
 if (d_output != IntPtr.Zero) CudaDriverApi.cuMemFreeAsync(d_output, hStream);
 }
@@ -2044,14 +2030,13 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 WarmupFunctionPointerRoundtripSizedKernel();
 IntPtr hfunc = s_hfunc_RoundtripSizedKernel!.Value;
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "PrimaryConstructorKernels.RoundtripSizedKernel");
-System.Collections.Generic.List<IntPtr> data_allocatedPtrs = new System.Collections.Generic.List<IntPtr>();
 IntPtr d_data = IntPtr.Zero;
 IntPtr d_output = IntPtr.Zero;
 try
 {
 void** kernelParams = stackalloc void*[2];
 AotContexts.PcSized native_data = default;
-AotContexts.Marshal_PcSized(ref data, ref native_data, false, data_allocatedPtrs, hStream);
+AotContexts.Marshal_PcSized(ref data, ref native_data, false, null, hStream);
 // Marshal ref/out struct: data
 int data_size = sizeof(AotContexts.PcSized);
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_data, (IntPtr)data_size, hStream));
@@ -2100,7 +2085,6 @@ CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
 }
 finally
 {
-foreach (var ptr in data_allocatedPtrs) CudaDriverApi.cuMemFreeAsync(ptr, hStream);
 if (d_data != IntPtr.Zero) CudaDriverApi.cuMemFreeAsync(d_data, hStream);
 if (d_output != IntPtr.Zero) CudaDriverApi.cuMemFreeAsync(d_output, hStream);
 }

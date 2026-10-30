@@ -566,7 +566,7 @@ internal static class CpuHostLaunchEmitter
                 }
                 else
                 {
-                    ConvertedArrayEmitter.WriteElementMarshalLoop(writer, shape, shape.Cpu);
+                    ConvertedArrayEmitter.WriteElementMarshalLoop(writer, shape, shape.Cpu, $"{shape.Name}_allocatedPtrs");
                 }
 
                 break;
