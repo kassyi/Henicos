@@ -54,7 +54,10 @@ public class CollectionsAndMemoryTests : TranspilerTestBase
             nameof(CollectionsAndMemoryTarget.MultidimensionalIndexer), dialect: CurrentDialect);
 
         Assert.Empty(diagnostics);
-        Assert.Contains("output[0]=flatGrid[__gsharp_add_i32(__gsharp_mul_i32(row,width),col)];", cudaSource.WithCSharpNames());
+        // The target is not a [GpuKernel], so its array parameters may be null and each read is checked (#706)
+        Assert.Matches(
+            @"__gsharp_array_at\(output, 0, ""[^""]*""\)=__gsharp_array_at\(flatGrid, __gsharp_add_i32\(__gsharp_mul_i32\(row,width\),col\), ""[^""]*""\)",
+            cudaSource.WithCSharpNames());
     }
 }
 

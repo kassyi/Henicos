@@ -89,7 +89,7 @@ if((__gsharp_id_0_count.__gsharp_mb_Base.data == nullptr))
 {
 return __gsharp_id_0_count.__gsharp_mb_Limit;
 }
-int __gsharp_id_1_n = __gsharp_sub_i32((int)__gsharp_id_0_count.__gsharp_mb_Base[0],__gsharp_id_0_count.__gsharp_mb_Skip);
+int __gsharp_id_1_n = __gsharp_sub_i32((int)__gsharp_array_at(__gsharp_id_0_count.__gsharp_mb_Base, 0, ""G#: a null array is read at GpuStreamCompactionKernels.cs(34,22)""),__gsharp_id_0_count.__gsharp_mb_Skip);
 return (__gsharp_id_1_n<0?0:((__gsharp_id_1_n>__gsharp_id_0_count.__gsharp_mb_Limit?__gsharp_id_0_count.__gsharp_mb_Limit:__gsharp_id_1_n)));
 }
 
@@ -165,6 +165,10 @@ finally
 handle.Free();
 }
 }
+}
+else
+{
+native.Base.Data = global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy.EmptyArrayData;
 }
 native.Base.Length = host.Base.Length;
 }
@@ -332,6 +336,7 @@ int output_size = output.Length * sizeof(global::System.UInt32);
 IntPtr* proxy_output = stackalloc IntPtr[2];
 proxy_output[0] = IntPtr.Zero;
 ((int*)(proxy_output + 1))[0] = output.Length;
+((int*)(proxy_output + 1))[1] = 0;
 if (output_size > 0)
 {
 if (!__gsharp_device_arrays.TryGetRegion(output, out d_output))
@@ -352,6 +357,7 @@ int input_size = input.Length * sizeof(global::System.UInt32);
 IntPtr* proxy_input = stackalloc IntPtr[2];
 proxy_input[0] = IntPtr.Zero;
 ((int*)(proxy_input + 1))[0] = input.Length;
+((int*)(proxy_input + 1))[1] = 0;
 if (input_size > 0)
 {
 if (!__gsharp_device_arrays.TryGetRegion(input, out d_input))
@@ -374,6 +380,7 @@ int blockSums_size = (blockSums?.Length ?? 0) * sizeof(global::System.UInt32);
 IntPtr* proxy_blockSums = stackalloc IntPtr[2];
 proxy_blockSums[0] = IntPtr.Zero;
 ((int*)(proxy_blockSums + 1))[0] = (blockSums?.Length ?? 0);
+((int*)(proxy_blockSums + 1))[1] = blockSums is null ? global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy.NullReadsAsEmpty : 0;
 if (blockSums is not null && blockSums_size > 0)
 {
 if (!__gsharp_device_arrays.TryGetRegion(blockSums, out d_blockSums))
@@ -398,6 +405,7 @@ int total_size = (total?.Length ?? 0) * sizeof(global::System.UInt32);
 IntPtr* proxy_total = stackalloc IntPtr[2];
 proxy_total[0] = IntPtr.Zero;
 ((int*)(proxy_total + 1))[0] = (total?.Length ?? 0);
+((int*)(proxy_total + 1))[1] = total is null ? global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy.NullReadsAsEmpty : 0;
 if (total is not null && total_size > 0)
 {
 if (!__gsharp_device_arrays.TryGetRegion(total, out d_total))
@@ -486,11 +494,13 @@ void** kernelParams = stackalloc void*[7];
 IntPtr* proxy_output = stackalloc IntPtr[2];
 proxy_output[0] = output;
 ((int*)(proxy_output + 1))[0] = 0; // Length is unknown for raw IntPtr
+((int*)(proxy_output + 1))[1] = 0;
 kernelParams[0] = proxy_output;
 // Marshal device array: input
 IntPtr* proxy_input = stackalloc IntPtr[2];
 proxy_input[0] = input;
 ((int*)(proxy_input + 1))[0] = 0; // Length is unknown for raw IntPtr
+((int*)(proxy_input + 1))[1] = 0;
 kernelParams[1] = proxy_input;
 // Marshal scalar: elementCount
 kernelParams[2] = &elementCount;
@@ -498,6 +508,7 @@ kernelParams[2] = &elementCount;
 IntPtr* proxy_blockSums = stackalloc IntPtr[2];
 proxy_blockSums[0] = blockSums;
 ((int*)(proxy_blockSums + 1))[0] = 0; // Length is unknown for raw IntPtr
+((int*)(proxy_blockSums + 1))[1] = blockSums == IntPtr.Zero ? global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy.NullReadsAsEmpty : 0;
 kernelParams[3] = proxy_blockSums;
 // Marshal device struct: count
 kernelParams[4] = &count;
@@ -505,6 +516,7 @@ kernelParams[4] = &count;
 IntPtr* proxy_total = stackalloc IntPtr[2];
 proxy_total[0] = total;
 ((int*)(proxy_total + 1))[0] = 0; // Length is unknown for raw IntPtr
+((int*)(proxy_total + 1))[1] = total == IntPtr.Zero ? global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy.NullReadsAsEmpty : 0;
 kernelParams[5] = proxy_total;
 // Marshal scalar: flags
 kernelParams[6] = &flags;
@@ -583,6 +595,7 @@ int output_size = output.Length * sizeof(global::System.UInt32);
 IntPtr* proxy_output = stackalloc IntPtr[2];
 proxy_output[0] = IntPtr.Zero;
 ((int*)(proxy_output + 1))[0] = output.Length;
+((int*)(proxy_output + 1))[1] = 0;
 if (output_size > 0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_output, (IntPtr)output_size, hStream));
@@ -599,6 +612,7 @@ int blockSums_size = blockSums.Length * sizeof(global::System.UInt32);
 IntPtr* proxy_blockSums = stackalloc IntPtr[2];
 proxy_blockSums[0] = IntPtr.Zero;
 ((int*)(proxy_blockSums + 1))[0] = blockSums.Length;
+((int*)(proxy_blockSums + 1))[1] = 0;
 if (blockSums_size > 0)
 {
 if (global::System.Object.ReferenceEquals(blockSums, output))
@@ -672,11 +686,13 @@ void** kernelParams = stackalloc void*[3];
 IntPtr* proxy_output = stackalloc IntPtr[2];
 proxy_output[0] = output;
 ((int*)(proxy_output + 1))[0] = 0; // Length is unknown for raw IntPtr
+((int*)(proxy_output + 1))[1] = 0;
 kernelParams[0] = proxy_output;
 // Marshal device array: blockSums
 IntPtr* proxy_blockSums = stackalloc IntPtr[2];
 proxy_blockSums[0] = blockSums;
 ((int*)(proxy_blockSums + 1))[0] = 0; // Length is unknown for raw IntPtr
+((int*)(proxy_blockSums + 1))[1] = 0;
 kernelParams[1] = proxy_blockSums;
 // Marshal scalar: elementCount
 kernelParams[2] = &elementCount;
@@ -770,6 +786,7 @@ int output_size = output.Length * sizeof(global::System.UInt32);
 IntPtr* proxy_output = stackalloc IntPtr[2];
 proxy_output[0] = IntPtr.Zero;
 ((int*)(proxy_output + 1))[0] = output.Length;
+((int*)(proxy_output + 1))[1] = 0;
 if (output_size > 0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_output, (IntPtr)output_size, hStream));
@@ -786,6 +803,7 @@ int input_size = input.Length * sizeof(global::System.UInt32);
 IntPtr* proxy_input = stackalloc IntPtr[2];
 proxy_input[0] = IntPtr.Zero;
 ((int*)(proxy_input + 1))[0] = input.Length;
+((int*)(proxy_input + 1))[1] = 0;
 if (input_size > 0)
 {
 if (global::System.Object.ReferenceEquals(input, output))
@@ -809,6 +827,7 @@ int predicates_size = predicates.Length * sizeof(global::System.UInt32);
 IntPtr* proxy_predicates = stackalloc IntPtr[2];
 proxy_predicates[0] = IntPtr.Zero;
 ((int*)(proxy_predicates + 1))[0] = predicates.Length;
+((int*)(proxy_predicates + 1))[1] = 0;
 if (predicates_size > 0)
 {
 if (global::System.Object.ReferenceEquals(predicates, output))
@@ -836,6 +855,7 @@ int scanResult_size = scanResult.Length * sizeof(global::System.UInt32);
 IntPtr* proxy_scanResult = stackalloc IntPtr[2];
 proxy_scanResult[0] = IntPtr.Zero;
 ((int*)(proxy_scanResult + 1))[0] = scanResult.Length;
+((int*)(proxy_scanResult + 1))[1] = 0;
 if (scanResult_size > 0)
 {
 if (global::System.Object.ReferenceEquals(scanResult, output))
@@ -939,21 +959,25 @@ void** kernelParams = stackalloc void*[6];
 IntPtr* proxy_output = stackalloc IntPtr[2];
 proxy_output[0] = output;
 ((int*)(proxy_output + 1))[0] = 0; // Length is unknown for raw IntPtr
+((int*)(proxy_output + 1))[1] = 0;
 kernelParams[0] = proxy_output;
 // Marshal device array: input
 IntPtr* proxy_input = stackalloc IntPtr[2];
 proxy_input[0] = input;
 ((int*)(proxy_input + 1))[0] = 0; // Length is unknown for raw IntPtr
+((int*)(proxy_input + 1))[1] = 0;
 kernelParams[1] = proxy_input;
 // Marshal device array: predicates
 IntPtr* proxy_predicates = stackalloc IntPtr[2];
 proxy_predicates[0] = predicates;
 ((int*)(proxy_predicates + 1))[0] = 0; // Length is unknown for raw IntPtr
+((int*)(proxy_predicates + 1))[1] = 0;
 kernelParams[2] = proxy_predicates;
 // Marshal device array: scanResult
 IntPtr* proxy_scanResult = stackalloc IntPtr[2];
 proxy_scanResult[0] = scanResult;
 ((int*)(proxy_scanResult + 1))[0] = 0; // Length is unknown for raw IntPtr
+((int*)(proxy_scanResult + 1))[1] = 0;
 kernelParams[3] = proxy_scanResult;
 // Marshal scalar: elementCount
 kernelParams[4] = &elementCount;
@@ -1077,6 +1101,7 @@ int outputValues_size = outputValues.Length * sizeof(global::System.UInt32);
 IntPtr* proxy_outputValues = stackalloc IntPtr[2];
 proxy_outputValues[0] = IntPtr.Zero;
 ((int*)(proxy_outputValues + 1))[0] = outputValues.Length;
+((int*)(proxy_outputValues + 1))[1] = 0;
 if (outputValues_size > 0)
 {
 if (!__gsharp_device_arrays.TryGetRegion(outputValues, out d_outputValues))
@@ -1097,6 +1122,7 @@ int outputSigns_size = outputSigns.Length * sizeof(global::System.UInt32);
 IntPtr* proxy_outputSigns = stackalloc IntPtr[2];
 proxy_outputSigns[0] = IntPtr.Zero;
 ((int*)(proxy_outputSigns + 1))[0] = outputSigns.Length;
+((int*)(proxy_outputSigns + 1))[1] = 0;
 if (outputSigns_size > 0)
 {
 if (!__gsharp_device_arrays.TryGetRegion(outputSigns, out d_outputSigns))
@@ -1117,6 +1143,7 @@ int inputValues_size = inputValues.Length * sizeof(global::System.UInt32);
 IntPtr* proxy_inputValues = stackalloc IntPtr[2];
 proxy_inputValues[0] = IntPtr.Zero;
 ((int*)(proxy_inputValues + 1))[0] = inputValues.Length;
+((int*)(proxy_inputValues + 1))[1] = 0;
 if (inputValues_size > 0)
 {
 if (!__gsharp_device_arrays.TryGetRegion(inputValues, out d_inputValues))
@@ -1137,6 +1164,7 @@ int inputSigns_size = inputSigns.Length * sizeof(global::System.UInt32);
 IntPtr* proxy_inputSigns = stackalloc IntPtr[2];
 proxy_inputSigns[0] = IntPtr.Zero;
 ((int*)(proxy_inputSigns + 1))[0] = inputSigns.Length;
+((int*)(proxy_inputSigns + 1))[1] = 0;
 if (inputSigns_size > 0)
 {
 if (!__gsharp_device_arrays.TryGetRegion(inputSigns, out d_inputSigns))
@@ -1157,6 +1185,7 @@ int predicates_size = predicates.Length * sizeof(global::System.UInt32);
 IntPtr* proxy_predicates = stackalloc IntPtr[2];
 proxy_predicates[0] = IntPtr.Zero;
 ((int*)(proxy_predicates + 1))[0] = predicates.Length;
+((int*)(proxy_predicates + 1))[1] = 0;
 if (predicates_size > 0)
 {
 if (!__gsharp_device_arrays.TryGetRegion(predicates, out d_predicates))
@@ -1177,6 +1206,7 @@ int scanResult_size = scanResult.Length * sizeof(global::System.UInt32);
 IntPtr* proxy_scanResult = stackalloc IntPtr[2];
 proxy_scanResult[0] = IntPtr.Zero;
 ((int*)(proxy_scanResult + 1))[0] = scanResult.Length;
+((int*)(proxy_scanResult + 1))[1] = 0;
 if (scanResult_size > 0)
 {
 if (!__gsharp_device_arrays.TryGetRegion(scanResult, out d_scanResult))
@@ -1289,31 +1319,37 @@ void** kernelParams = stackalloc void*[9];
 IntPtr* proxy_outputValues = stackalloc IntPtr[2];
 proxy_outputValues[0] = outputValues;
 ((int*)(proxy_outputValues + 1))[0] = 0; // Length is unknown for raw IntPtr
+((int*)(proxy_outputValues + 1))[1] = 0;
 kernelParams[0] = proxy_outputValues;
 // Marshal device array: outputSigns
 IntPtr* proxy_outputSigns = stackalloc IntPtr[2];
 proxy_outputSigns[0] = outputSigns;
 ((int*)(proxy_outputSigns + 1))[0] = 0; // Length is unknown for raw IntPtr
+((int*)(proxy_outputSigns + 1))[1] = 0;
 kernelParams[1] = proxy_outputSigns;
 // Marshal device array: inputValues
 IntPtr* proxy_inputValues = stackalloc IntPtr[2];
 proxy_inputValues[0] = inputValues;
 ((int*)(proxy_inputValues + 1))[0] = 0; // Length is unknown for raw IntPtr
+((int*)(proxy_inputValues + 1))[1] = 0;
 kernelParams[2] = proxy_inputValues;
 // Marshal device array: inputSigns
 IntPtr* proxy_inputSigns = stackalloc IntPtr[2];
 proxy_inputSigns[0] = inputSigns;
 ((int*)(proxy_inputSigns + 1))[0] = 0; // Length is unknown for raw IntPtr
+((int*)(proxy_inputSigns + 1))[1] = 0;
 kernelParams[3] = proxy_inputSigns;
 // Marshal device array: predicates
 IntPtr* proxy_predicates = stackalloc IntPtr[2];
 proxy_predicates[0] = predicates;
 ((int*)(proxy_predicates + 1))[0] = 0; // Length is unknown for raw IntPtr
+((int*)(proxy_predicates + 1))[1] = 0;
 kernelParams[4] = proxy_predicates;
 // Marshal device array: scanResult
 IntPtr* proxy_scanResult = stackalloc IntPtr[2];
 proxy_scanResult[0] = scanResult;
 ((int*)(proxy_scanResult + 1))[0] = 0; // Length is unknown for raw IntPtr
+((int*)(proxy_scanResult + 1))[1] = 0;
 kernelParams[5] = proxy_scanResult;
 // Marshal scalar: elementCount
 kernelParams[6] = &elementCount;
@@ -1454,6 +1490,7 @@ int outputSignificands_size = outputSignificands.Length * sizeof(global::System.
 IntPtr* proxy_outputSignificands = stackalloc IntPtr[2];
 proxy_outputSignificands[0] = IntPtr.Zero;
 ((int*)(proxy_outputSignificands + 1))[0] = outputSignificands.Length;
+((int*)(proxy_outputSignificands + 1))[1] = 0;
 if (outputSignificands_size > 0)
 {
 if (!__gsharp_device_arrays.TryGetRegion(outputSignificands, out d_outputSignificands))
@@ -1474,6 +1511,7 @@ int outputExponents_size = outputExponents.Length * sizeof(global::System.UInt32
 IntPtr* proxy_outputExponents = stackalloc IntPtr[2];
 proxy_outputExponents[0] = IntPtr.Zero;
 ((int*)(proxy_outputExponents + 1))[0] = outputExponents.Length;
+((int*)(proxy_outputExponents + 1))[1] = 0;
 if (outputExponents_size > 0)
 {
 if (!__gsharp_device_arrays.TryGetRegion(outputExponents, out d_outputExponents))
@@ -1494,6 +1532,7 @@ int outputSigns_size = outputSigns.Length * sizeof(global::System.UInt32);
 IntPtr* proxy_outputSigns = stackalloc IntPtr[2];
 proxy_outputSigns[0] = IntPtr.Zero;
 ((int*)(proxy_outputSigns + 1))[0] = outputSigns.Length;
+((int*)(proxy_outputSigns + 1))[1] = 0;
 if (outputSigns_size > 0)
 {
 if (!__gsharp_device_arrays.TryGetRegion(outputSigns, out d_outputSigns))
@@ -1514,6 +1553,7 @@ int inputSignificands_size = inputSignificands.Length * sizeof(global::System.UI
 IntPtr* proxy_inputSignificands = stackalloc IntPtr[2];
 proxy_inputSignificands[0] = IntPtr.Zero;
 ((int*)(proxy_inputSignificands + 1))[0] = inputSignificands.Length;
+((int*)(proxy_inputSignificands + 1))[1] = 0;
 if (inputSignificands_size > 0)
 {
 if (!__gsharp_device_arrays.TryGetRegion(inputSignificands, out d_inputSignificands))
@@ -1534,6 +1574,7 @@ int inputExponents_size = inputExponents.Length * sizeof(global::System.UInt32);
 IntPtr* proxy_inputExponents = stackalloc IntPtr[2];
 proxy_inputExponents[0] = IntPtr.Zero;
 ((int*)(proxy_inputExponents + 1))[0] = inputExponents.Length;
+((int*)(proxy_inputExponents + 1))[1] = 0;
 if (inputExponents_size > 0)
 {
 if (!__gsharp_device_arrays.TryGetRegion(inputExponents, out d_inputExponents))
@@ -1554,6 +1595,7 @@ int inputSigns_size = inputSigns.Length * sizeof(global::System.UInt32);
 IntPtr* proxy_inputSigns = stackalloc IntPtr[2];
 proxy_inputSigns[0] = IntPtr.Zero;
 ((int*)(proxy_inputSigns + 1))[0] = inputSigns.Length;
+((int*)(proxy_inputSigns + 1))[1] = 0;
 if (inputSigns_size > 0)
 {
 if (!__gsharp_device_arrays.TryGetRegion(inputSigns, out d_inputSigns))
@@ -1574,6 +1616,7 @@ int predicates_size = predicates.Length * sizeof(global::System.UInt32);
 IntPtr* proxy_predicates = stackalloc IntPtr[2];
 proxy_predicates[0] = IntPtr.Zero;
 ((int*)(proxy_predicates + 1))[0] = predicates.Length;
+((int*)(proxy_predicates + 1))[1] = 0;
 if (predicates_size > 0)
 {
 if (!__gsharp_device_arrays.TryGetRegion(predicates, out d_predicates))
@@ -1594,6 +1637,7 @@ int scanResult_size = scanResult.Length * sizeof(global::System.UInt32);
 IntPtr* proxy_scanResult = stackalloc IntPtr[2];
 proxy_scanResult[0] = IntPtr.Zero;
 ((int*)(proxy_scanResult + 1))[0] = scanResult.Length;
+((int*)(proxy_scanResult + 1))[1] = 0;
 if (scanResult_size > 0)
 {
 if (!__gsharp_device_arrays.TryGetRegion(scanResult, out d_scanResult))
@@ -1724,41 +1768,49 @@ void** kernelParams = stackalloc void*[11];
 IntPtr* proxy_outputSignificands = stackalloc IntPtr[2];
 proxy_outputSignificands[0] = outputSignificands;
 ((int*)(proxy_outputSignificands + 1))[0] = 0; // Length is unknown for raw IntPtr
+((int*)(proxy_outputSignificands + 1))[1] = 0;
 kernelParams[0] = proxy_outputSignificands;
 // Marshal device array: outputExponents
 IntPtr* proxy_outputExponents = stackalloc IntPtr[2];
 proxy_outputExponents[0] = outputExponents;
 ((int*)(proxy_outputExponents + 1))[0] = 0; // Length is unknown for raw IntPtr
+((int*)(proxy_outputExponents + 1))[1] = 0;
 kernelParams[1] = proxy_outputExponents;
 // Marshal device array: outputSigns
 IntPtr* proxy_outputSigns = stackalloc IntPtr[2];
 proxy_outputSigns[0] = outputSigns;
 ((int*)(proxy_outputSigns + 1))[0] = 0; // Length is unknown for raw IntPtr
+((int*)(proxy_outputSigns + 1))[1] = 0;
 kernelParams[2] = proxy_outputSigns;
 // Marshal device array: inputSignificands
 IntPtr* proxy_inputSignificands = stackalloc IntPtr[2];
 proxy_inputSignificands[0] = inputSignificands;
 ((int*)(proxy_inputSignificands + 1))[0] = 0; // Length is unknown for raw IntPtr
+((int*)(proxy_inputSignificands + 1))[1] = 0;
 kernelParams[3] = proxy_inputSignificands;
 // Marshal device array: inputExponents
 IntPtr* proxy_inputExponents = stackalloc IntPtr[2];
 proxy_inputExponents[0] = inputExponents;
 ((int*)(proxy_inputExponents + 1))[0] = 0; // Length is unknown for raw IntPtr
+((int*)(proxy_inputExponents + 1))[1] = 0;
 kernelParams[4] = proxy_inputExponents;
 // Marshal device array: inputSigns
 IntPtr* proxy_inputSigns = stackalloc IntPtr[2];
 proxy_inputSigns[0] = inputSigns;
 ((int*)(proxy_inputSigns + 1))[0] = 0; // Length is unknown for raw IntPtr
+((int*)(proxy_inputSigns + 1))[1] = 0;
 kernelParams[5] = proxy_inputSigns;
 // Marshal device array: predicates
 IntPtr* proxy_predicates = stackalloc IntPtr[2];
 proxy_predicates[0] = predicates;
 ((int*)(proxy_predicates + 1))[0] = 0; // Length is unknown for raw IntPtr
+((int*)(proxy_predicates + 1))[1] = 0;
 kernelParams[6] = proxy_predicates;
 // Marshal device array: scanResult
 IntPtr* proxy_scanResult = stackalloc IntPtr[2];
 proxy_scanResult[0] = scanResult;
 ((int*)(proxy_scanResult + 1))[0] = 0; // Length is unknown for raw IntPtr
+((int*)(proxy_scanResult + 1))[1] = 0;
 kernelParams[7] = proxy_scanResult;
 // Marshal scalar: elementCount
 kernelParams[8] = &elementCount;
@@ -1824,6 +1876,7 @@ int output_size = output.Length * sizeof(global::System.UInt32);
 IntPtr* proxy_output = stackalloc IntPtr[2];
 proxy_output[0] = IntPtr.Zero;
 ((int*)(proxy_output + 1))[0] = output.Length;
+((int*)(proxy_output + 1))[1] = 0;
 if (output_size > 0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_output, (IntPtr)output_size, hStream));
@@ -1880,6 +1933,7 @@ void** kernelParams = stackalloc void*[2];
 IntPtr* proxy_output = stackalloc IntPtr[2];
 proxy_output[0] = output;
 ((int*)(proxy_output + 1))[0] = 0; // Length is unknown for raw IntPtr
+((int*)(proxy_output + 1))[1] = 0;
 kernelParams[0] = proxy_output;
 // Marshal scalar: totalWords
 kernelParams[1] = &totalWords;

@@ -10,9 +10,9 @@ static_assert(alignof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__Volatil
 static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__VolatileState_uMicroMod,__gsharp_mb_Flag)==0,"Kassyi.GSharp.Tests.Shared.Syntax.VolatileState_MicroMod.Flag: offset");
 #endif
 extern "C" __declspec(dllexport) void __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__MicroModifiersTarget__VolatileModifier(GSharpArray<__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__VolatileState_uMicroMod> __gsharp_id_0_states){
-__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__VolatileState_uMicroMod __gsharp_id_1_s = __gsharp_id_0_states[0];
+__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__VolatileState_uMicroMod __gsharp_id_1_s = __gsharp_array_at(__gsharp_id_0_states, 0, "G#: a null array is read at MicroModifiersTests.cs(36,36)");
 __gsharp_id_1_s.__gsharp_mb_Flag=1;
-__gsharp_id_0_states[0]=__gsharp_id_1_s;
+__gsharp_array_at(__gsharp_id_0_states, 0, "G#: a null array is read at MicroModifiersTests.cs(38,9)")=__gsharp_id_1_s;
 }
 extern "C" __declspec(dllexport) void __gsharp_launch_Kassyi__GSharp__Tests__Shared__Syntax__MicroModifiersTarget__VolatileModifier(uint32_t __gsharp_grid_dim_x, uint32_t __gsharp_grid_dim_y, uint32_t __gsharp_grid_dim_z, uint32_t __gsharp_block_dim_x, uint32_t __gsharp_block_dim_y, uint32_t __gsharp_block_dim_z, uint32_t __gsharp_shared_mem_bytes, GSharpArray<__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__VolatileState_uMicroMod> __gsharp_id_0_states)
 {

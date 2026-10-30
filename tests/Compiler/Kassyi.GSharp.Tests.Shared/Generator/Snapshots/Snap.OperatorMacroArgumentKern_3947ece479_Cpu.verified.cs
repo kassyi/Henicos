@@ -87,7 +87,7 @@ static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__InCoun
 inline void __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__ArgumentOps__CombineInAndCount(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__InCounter* __gsharp_id_0_ctx, __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__InValue* __gsharp_id_1_result, const __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__InValue* __gsharp_id_2_left, __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__InValue __gsharp_id_3_right){
 (*__gsharp_id_1_result).__gsharp_mb_V=__gsharp_add_i32(__gsharp_mul_i32((*__gsharp_id_2_left).__gsharp_mb_V,10),__gsharp_id_3_right.__gsharp_mb_V);
 (*__gsharp_id_0_ctx).__gsharp_mb_Calls=__gsharp_add_i32((*__gsharp_id_0_ctx).__gsharp_mb_Calls,1);
-(*__gsharp_id_0_ctx).__gsharp_mb_Values[0]=__gsharp_ctor_Kassyi__GSharp__Tests__Shared__Syntax__InValue(7);
+__gsharp_array_at((*__gsharp_id_0_ctx).__gsharp_mb_Values, 0, ""G#: a null array is read at OperatorMacroArgumentKernels.cs(104,9)"")=__gsharp_ctor_Kassyi__GSharp__Tests__Shared__Syntax__InValue(7);
 }
 
 #ifndef __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__SpillCtx__
@@ -201,7 +201,7 @@ return __gsharp_self;
 }
 #endif
 inline __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__InValue& __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__ArgumentOps__At(GSharpArray<__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__InValue> __gsharp_id_0_values, int __gsharp_id_1_index){
-return __gsharp_id_0_values[__gsharp_id_1_index];
+return __gsharp_array_at(__gsharp_id_0_values, __gsharp_id_1_index, ""G#: a null array is read at OperatorMacroArgumentKernels.cs(138,70)"");
 }
 
 #ifndef __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__OutValue__

@@ -138,6 +138,7 @@ int outputBuffer_size = outputBuffer.Length * sizeof(global::System.UInt32);
 IntPtr* proxy_outputBuffer = stackalloc IntPtr[2];
 proxy_outputBuffer[0] = IntPtr.Zero;
 ((int*)(proxy_outputBuffer + 1))[0] = outputBuffer.Length;
+((int*)(proxy_outputBuffer + 1))[1] = 0;
 if (outputBuffer_size > 0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_outputBuffer, (IntPtr)outputBuffer_size, hStream));
@@ -197,6 +198,7 @@ void** kernelParams = stackalloc void*[4];
 IntPtr* proxy_outputBuffer = stackalloc IntPtr[2];
 proxy_outputBuffer[0] = outputBuffer;
 ((int*)(proxy_outputBuffer + 1))[0] = 0; // Length is unknown for raw IntPtr
+((int*)(proxy_outputBuffer + 1))[1] = 0;
 kernelParams[0] = proxy_outputBuffer;
 // Marshal scalar: length
 kernelParams[1] = &length;

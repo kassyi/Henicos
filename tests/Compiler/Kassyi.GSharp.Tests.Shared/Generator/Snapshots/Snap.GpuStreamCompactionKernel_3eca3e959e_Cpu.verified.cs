@@ -35,7 +35,7 @@ if((__gsharp_id_0_count.__gsharp_mb_Base.data == nullptr))
 {
 return __gsharp_id_0_count.__gsharp_mb_Limit;
 }
-int __gsharp_id_1_n = __gsharp_sub_i32((int)__gsharp_id_0_count.__gsharp_mb_Base[0],__gsharp_id_0_count.__gsharp_mb_Skip);
+int __gsharp_id_1_n = __gsharp_sub_i32((int)__gsharp_array_at(__gsharp_id_0_count.__gsharp_mb_Base, 0, ""G#: a null array is read at GpuStreamCompactionKernels.cs(34,22)""),__gsharp_id_0_count.__gsharp_mb_Skip);
 return (__gsharp_id_1_n<0?0:((__gsharp_id_1_n>__gsharp_id_0_count.__gsharp_mb_Limit?__gsharp_id_0_count.__gsharp_mb_Limit:__gsharp_id_1_n)));
 }
 
@@ -681,7 +681,7 @@ fixed (global::System.UInt32* p_input = input)
 fixed (global::System.UInt32* p_blockSums = blockSums)
 fixed (global::System.UInt32* p_total = total)
 {
-hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, sharedMemBytes, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (IntPtr)p_output, Length = output.Length }, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (IntPtr)p_input, Length = input.Length }, elementCount, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (IntPtr)p_blockSums, Length = (blockSums?.Length ?? 0) }, &count_native, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (IntPtr)p_total, Length = (total?.Length ?? 0) }, flags);
+hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, sharedMemBytes, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (IntPtr)p_output, Length = output.Length }, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (IntPtr)p_input, Length = input.Length }, elementCount, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (IntPtr)p_blockSums, Length = (blockSums?.Length ?? 0), Flags = blockSums is null ? global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy.NullReadsAsEmpty : 0 }, &count_native, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (IntPtr)p_total, Length = (total?.Length ?? 0), Flags = total is null ? global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy.NullReadsAsEmpty : 0 }, flags);
 global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ThrowIfNativeError(dllPath);
 }
 AotContexts.Unmarshal_GpuBigIntVectorKernels_ElementCountContext(ref count, ref count_native, false, hStream);

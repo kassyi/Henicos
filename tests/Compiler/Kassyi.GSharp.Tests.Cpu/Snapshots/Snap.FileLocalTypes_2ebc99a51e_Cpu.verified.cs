@@ -15,7 +15,7 @@ extern "C" __declspec(dllexport) void __gsharp_k_Kassyi__GSharp__Tests__Shared__
 __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__FileLocalPair_uMicroMod_f0 __gsharp_id_1_p = ([&]() {
 __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__FileLocalPair_uMicroMod_f0 __gsharp_tmp{}; __gsharp_tmp.__gsharp_mb_Left = 10; __gsharp_tmp.__gsharp_mb_Right = 20; return __gsharp_tmp; }
 ());
-__gsharp_id_0_output[0]=__gsharp_add_i32(__gsharp_id_1_p.__gsharp_mb_Left,__gsharp_id_1_p.__gsharp_mb_Right);
+__gsharp_array_at(__gsharp_id_0_output, 0, "G#: a null array is read at MicroModifiersTests.cs(21,9)")=__gsharp_add_i32(__gsharp_id_1_p.__gsharp_mb_Left,__gsharp_id_1_p.__gsharp_mb_Right);
 }
 extern "C" __declspec(dllexport) void __gsharp_launch_Kassyi__GSharp__Tests__Shared__Syntax__MicroModifiersTarget__FileLocalTypes(uint32_t __gsharp_grid_dim_x, uint32_t __gsharp_grid_dim_y, uint32_t __gsharp_grid_dim_z, uint32_t __gsharp_block_dim_x, uint32_t __gsharp_block_dim_y, uint32_t __gsharp_block_dim_z, uint32_t __gsharp_shared_mem_bytes, GSharpArray<int> __gsharp_id_0_output)
 {

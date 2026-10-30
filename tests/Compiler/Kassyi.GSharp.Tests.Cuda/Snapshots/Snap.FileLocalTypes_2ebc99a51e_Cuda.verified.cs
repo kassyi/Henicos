@@ -15,5 +15,5 @@ extern "C" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__Mic
 __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__FileLocalPair_uMicroMod_f0 __gsharp_id_1_p = ([&]() {
 __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__FileLocalPair_uMicroMod_f0 __gsharp_tmp{}; __gsharp_tmp.__gsharp_mb_Left = 10; __gsharp_tmp.__gsharp_mb_Right = 20; return __gsharp_tmp; }
 ());
-__gsharp_id_0_output[0]=__gsharp_add_i32(__gsharp_id_1_p.__gsharp_mb_Left,__gsharp_id_1_p.__gsharp_mb_Right);
+__gsharp_array_at(__gsharp_id_0_output, 0, "G#: a null array is read at MicroModifiersTests.cs(21,9)")=__gsharp_add_i32(__gsharp_id_1_p.__gsharp_mb_Left,__gsharp_id_1_p.__gsharp_mb_Right);
 }

@@ -84,8 +84,9 @@ public class ContractsAndPtxTests : TranspilerTestBase
             nameof(ContractsAndPtxTarget.ConstexprPropagation), dialect: CurrentDialect);
 
         Assert.Empty(diagnostics);
-        // TileSize * 2 is a constant, written as its value (#722)
-        Assert.Contains("[0]=64;", cudaSource);
+        // TileSize * 2 is a constant, written as its value (#722); the target is not a [GpuKernel], so its array
+        // parameter may be null and the write is checked (#706)
+        Assert.Matches(@"__gsharp_array_at\(\w*output, 0, ""[^""]*""\)=64;", cudaSource);
     }
 
     [Fact]

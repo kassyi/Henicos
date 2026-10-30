@@ -67,113 +67,113 @@ inline __device__ int __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__SmallCo
 inline __device__ int __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__SmallConstantVarKernels__TakeShort(short __gsharp_id_0_value);
 
 inline __device__ void __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__SmallConstantVarKernels__NarrowConstantUses(GSharpArray<int> __gsharp_id_0_input, GSharpArray<int> __gsharp_id_1_output){
-switch((unsigned char)__gsharp_id_0_input[0])
+switch((unsigned char)__gsharp_array_at(__gsharp_id_0_input, 0, ""G#: a null array is read at SmallConstantVarKernels.cs(109,40)""))
 {
 case (unsigned char)0:
 __gsharp_switch_1_state_0:
 {
-__gsharp_id_1_output[0]=10;
+__gsharp_array_at(__gsharp_id_1_output, 0, ""G#: a null array is read at SmallConstantVarKernels.cs(112,17)"")=10;
 goto __gsharp_switch_1_state_255;
 }
 case (unsigned char)255:
 __gsharp_switch_1_state_255:
 {
-__gsharp_id_1_output[1]=11;
+__gsharp_array_at(__gsharp_id_1_output, 1, ""G#: a null array is read at SmallConstantVarKernels.cs(115,17)"")=11;
 break;
 }
 default:
 __gsharp_switch_1_state_default:
 {
-__gsharp_id_1_output[1]=12;
+__gsharp_array_at(__gsharp_id_1_output, 1, ""G#: a null array is read at SmallConstantVarKernels.cs(118,17)"")=12;
 break;
 }
 }
-switch((unsigned char)__gsharp_id_0_input[1])
+switch((unsigned char)__gsharp_array_at(__gsharp_id_0_input, 1, ""G#: a null array is read at SmallConstantVarKernels.cs(123,23)""))
 {
 case (unsigned char)255:
 __gsharp_switch_2_state_255:
 {
-__gsharp_id_1_output[2]=20;
+__gsharp_array_at(__gsharp_id_1_output, 2, ""G#: a null array is read at SmallConstantVarKernels.cs(126,17)"")=20;
 break;
 }
 default:
 __gsharp_switch_2_state_default:
 {
-__gsharp_id_1_output[2]=21;
+__gsharp_array_at(__gsharp_id_1_output, 2, ""G#: a null array is read at SmallConstantVarKernels.cs(129,17)"")=21;
 break;
 }
 }
-switch(__gsharp_id_0_input[2])
+switch(__gsharp_array_at(__gsharp_id_0_input, 2, ""G#: a null array is read at SmallConstantVarKernels.cs(133,17)""))
 {
 case (-1):
 __gsharp_switch_3_state_m1:
 {
-__gsharp_id_1_output[3]=30;
+__gsharp_array_at(__gsharp_id_1_output, 3, ""G#: a null array is read at SmallConstantVarKernels.cs(136,17)"")=30;
 goto __gsharp_switch_3_state_1;
 }
 case 1:
 __gsharp_switch_3_state_1:
 {
-__gsharp_id_1_output[4]=31;
+__gsharp_array_at(__gsharp_id_1_output, 4, ""G#: a null array is read at SmallConstantVarKernels.cs(139,17)"")=31;
 break;
 }
 }
-switch((char16_t)__gsharp_id_0_input[3])
+switch((char16_t)__gsharp_array_at(__gsharp_id_0_input, 3, ""G#: a null array is read at SmallConstantVarKernels.cs(143,23)""))
 {
 case (char16_t)97:
 __gsharp_switch_4_state_97:
 {
-__gsharp_id_1_output[5]=40;
+__gsharp_array_at(__gsharp_id_1_output, 5, ""G#: a null array is read at SmallConstantVarKernels.cs(146,17)"")=40;
 goto __gsharp_switch_4_state_98;
 }
 case (char16_t)98:
 __gsharp_switch_4_state_98:
 {
-__gsharp_id_1_output[6]=41;
+__gsharp_array_at(__gsharp_id_1_output, 6, ""G#: a null array is read at SmallConstantVarKernels.cs(149,17)"")=41;
 break;
 }
 }
-__gsharp_id_1_output[7]=max(255,__gsharp_id_0_input[4]);
-__gsharp_id_1_output[8]=min((-32768),__gsharp_id_0_input[4]);
-__gsharp_id_1_output[9]=__gsharp_clamp(__gsharp_id_0_input[5],0,255);
-short __gsharp_id_2_shortValue = (short)__gsharp_id_0_input[6];
+__gsharp_array_at(__gsharp_id_1_output, 7, ""G#: a null array is read at SmallConstantVarKernels.cs(154,9)"")=max(255,__gsharp_array_at(__gsharp_id_0_input, 4, ""G#: a null array is read at SmallConstantVarKernels.cs(154,39)""));
+__gsharp_array_at(__gsharp_id_1_output, 8, ""G#: a null array is read at SmallConstantVarKernels.cs(155,9)"")=min((-32768),__gsharp_array_at(__gsharp_id_0_input, 4, ""G#: a null array is read at SmallConstantVarKernels.cs(155,40)""));
+__gsharp_array_at(__gsharp_id_1_output, 9, ""G#: a null array is read at SmallConstantVarKernels.cs(156,9)"")=__gsharp_clamp(__gsharp_array_at(__gsharp_id_0_input, 5, ""G#: a null array is read at SmallConstantVarKernels.cs(156,32)""),0,255);
+short __gsharp_id_2_shortValue = (short)__gsharp_array_at(__gsharp_id_0_input, 6, ""G#: a null array is read at SmallConstantVarKernels.cs(159,35)"");
 __gsharp_id_2_shortValue++;
-auto __gsharp_id_3_mixedTrue = (__gsharp_id_0_input[7]>0?(short)255:__gsharp_id_2_shortValue);
+auto __gsharp_id_3_mixedTrue = (__gsharp_array_at(__gsharp_id_0_input, 7, ""G#: a null array is read at SmallConstantVarKernels.cs(161,25)"")>0?(short)255:__gsharp_id_2_shortValue);
 __gsharp_id_3_mixedTrue++;
-__gsharp_id_1_output[10]=__gsharp_id_3_mixedTrue;
-auto __gsharp_id_4_mixedFalse = (__gsharp_id_0_input[7]<0?(short)255:__gsharp_id_2_shortValue);
+__gsharp_array_at(__gsharp_id_1_output, 10, ""G#: a null array is read at SmallConstantVarKernels.cs(163,9)"")=__gsharp_id_3_mixedTrue;
+auto __gsharp_id_4_mixedFalse = (__gsharp_array_at(__gsharp_id_0_input, 7, ""G#: a null array is read at SmallConstantVarKernels.cs(164,26)"")<0?(short)255:__gsharp_id_2_shortValue);
 __gsharp_id_4_mixedFalse++;
-__gsharp_id_1_output[11]=__gsharp_id_4_mixedFalse;
-__gsharp_id_1_output[12]=__gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__SmallConstantVarKernels__TakeByte((unsigned char)255);
-__gsharp_id_1_output[13]=__gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__SmallConstantVarKernels__TakeInt(255);
-__gsharp_id_1_output[14]=__gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__SmallConstantVarKernels__TakeShort((short)255);
-switch(__gsharp_id_0_input[8]>0)
+__gsharp_array_at(__gsharp_id_1_output, 11, ""G#: a null array is read at SmallConstantVarKernels.cs(166,9)"")=__gsharp_id_4_mixedFalse;
+__gsharp_array_at(__gsharp_id_1_output, 12, ""G#: a null array is read at SmallConstantVarKernels.cs(169,9)"")=__gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__SmallConstantVarKernels__TakeByte((unsigned char)255);
+__gsharp_array_at(__gsharp_id_1_output, 13, ""G#: a null array is read at SmallConstantVarKernels.cs(170,9)"")=__gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__SmallConstantVarKernels__TakeInt(255);
+__gsharp_array_at(__gsharp_id_1_output, 14, ""G#: a null array is read at SmallConstantVarKernels.cs(173,9)"")=__gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__SmallConstantVarKernels__TakeShort((short)255);
+switch(__gsharp_array_at(__gsharp_id_0_input, 8, ""G#: a null array is read at SmallConstantVarKernels.cs(176,17)"")>0)
 {
 case true:
 __gsharp_switch_5_state_1:
 {
-__gsharp_id_1_output[15]=50;
+__gsharp_array_at(__gsharp_id_1_output, 15, ""G#: a null array is read at SmallConstantVarKernels.cs(179,17)"")=50;
 goto __gsharp_switch_5_state_0;
 }
 case false:
 __gsharp_switch_5_state_0:
 {
-__gsharp_id_1_output[16]=__gsharp_add_i32(__gsharp_id_1_output[16],51);
+__gsharp_array_at(__gsharp_id_1_output, 16, ""G#: a null array is read at SmallConstantVarKernels.cs(182,17)"")=__gsharp_add_i32(__gsharp_array_at(__gsharp_id_1_output, 16, ""G#: a null array is read at SmallConstantVarKernels.cs(182,17)""),51);
 break;
 }
 }
-switch((signed char)__gsharp_id_0_input[9])
+switch((signed char)__gsharp_array_at(__gsharp_id_0_input, 9, ""G#: a null array is read at SmallConstantVarKernels.cs(187,42)""))
 {
 case (signed char)-1:
 __gsharp_switch_6_state_m1:
 {
-__gsharp_id_1_output[17]=60;
+__gsharp_array_at(__gsharp_id_1_output, 17, ""G#: a null array is read at SmallConstantVarKernels.cs(190,17)"")=60;
 goto __gsharp_switch_6_state_1;
 }
 case (signed char)1:
 __gsharp_switch_6_state_1:
 {
-__gsharp_id_1_output[18]=__gsharp_add_i32(__gsharp_id_1_output[18],61);
+__gsharp_array_at(__gsharp_id_1_output, 18, ""G#: a null array is read at SmallConstantVarKernels.cs(193,17)"")=__gsharp_add_i32(__gsharp_array_at(__gsharp_id_1_output, 18, ""G#: a null array is read at SmallConstantVarKernels.cs(193,17)""),61);
 break;
 }
 }
@@ -282,6 +282,7 @@ int output_size = output.Length * sizeof(global::System.Int32);
 IntPtr* proxy_output = stackalloc IntPtr[2];
 proxy_output[0] = IntPtr.Zero;
 ((int*)(proxy_output + 1))[0] = output.Length;
+((int*)(proxy_output + 1))[1] = 0;
 if (output_size > 0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_output, (IntPtr)output_size, hStream));
@@ -336,6 +337,7 @@ void** kernelParams = stackalloc void*[1];
 IntPtr* proxy_output = stackalloc IntPtr[2];
 proxy_output[0] = output;
 ((int*)(proxy_output + 1))[0] = 0; // Length is unknown for raw IntPtr
+((int*)(proxy_output + 1))[1] = 0;
 kernelParams[0] = proxy_output;
 CudaException.ThrowIfError(CudaDriverApi.cuLaunchKernel(
 hfunc,
@@ -399,6 +401,7 @@ int output_size = output.Length * sizeof(global::System.Int32);
 IntPtr* proxy_output = stackalloc IntPtr[2];
 proxy_output[0] = IntPtr.Zero;
 ((int*)(proxy_output + 1))[0] = output.Length;
+((int*)(proxy_output + 1))[1] = 0;
 if (output_size > 0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_output, (IntPtr)output_size, hStream));
@@ -453,6 +456,7 @@ void** kernelParams = stackalloc void*[1];
 IntPtr* proxy_output = stackalloc IntPtr[2];
 proxy_output[0] = output;
 ((int*)(proxy_output + 1))[0] = 0; // Length is unknown for raw IntPtr
+((int*)(proxy_output + 1))[1] = 0;
 kernelParams[0] = proxy_output;
 CudaException.ThrowIfError(CudaDriverApi.cuLaunchKernel(
 hfunc,
@@ -515,6 +519,7 @@ int input_size = input.Length * sizeof(global::System.Int32);
 IntPtr* proxy_input = stackalloc IntPtr[2];
 proxy_input[0] = IntPtr.Zero;
 ((int*)(proxy_input + 1))[0] = input.Length;
+((int*)(proxy_input + 1))[1] = 0;
 if (input_size > 0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_input, (IntPtr)input_size, hStream));
@@ -531,6 +536,7 @@ int output_size = output.Length * sizeof(global::System.Int32);
 IntPtr* proxy_output = stackalloc IntPtr[2];
 proxy_output[0] = IntPtr.Zero;
 ((int*)(proxy_output + 1))[0] = output.Length;
+((int*)(proxy_output + 1))[1] = 0;
 if (output_size > 0)
 {
 if (global::System.Object.ReferenceEquals(output, input))
@@ -602,11 +608,13 @@ void** kernelParams = stackalloc void*[2];
 IntPtr* proxy_input = stackalloc IntPtr[2];
 proxy_input[0] = input;
 ((int*)(proxy_input + 1))[0] = 0; // Length is unknown for raw IntPtr
+((int*)(proxy_input + 1))[1] = 0;
 kernelParams[0] = proxy_input;
 // Marshal device array: output
 IntPtr* proxy_output = stackalloc IntPtr[2];
 proxy_output[0] = output;
 ((int*)(proxy_output + 1))[0] = 0; // Length is unknown for raw IntPtr
+((int*)(proxy_output + 1))[1] = 0;
 kernelParams[1] = proxy_output;
 CudaException.ThrowIfError(CudaDriverApi.cuLaunchKernel(
 hfunc,
@@ -665,6 +673,7 @@ int output_size = output.Length * sizeof(global::System.Int32);
 IntPtr* proxy_output = stackalloc IntPtr[2];
 proxy_output[0] = IntPtr.Zero;
 ((int*)(proxy_output + 1))[0] = output.Length;
+((int*)(proxy_output + 1))[1] = 0;
 if (output_size > 0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_output, (IntPtr)output_size, hStream));
@@ -719,6 +728,7 @@ void** kernelParams = stackalloc void*[1];
 IntPtr* proxy_output = stackalloc IntPtr[2];
 proxy_output[0] = output;
 ((int*)(proxy_output + 1))[0] = 0; // Length is unknown for raw IntPtr
+((int*)(proxy_output + 1))[1] = 0;
 kernelParams[0] = proxy_output;
 CudaException.ThrowIfError(CudaDriverApi.cuLaunchKernel(
 hfunc,

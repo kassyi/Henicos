@@ -61,6 +61,13 @@ public static class LoweringAnnotations
     public const string ForEachArraySourceAnnotationKind = "GSharpForEachArraySource";
 
     /// <summary>
+    /// Annotation kind that marks an expression of a lowered tree that the transpiler writes through the null check of a
+    /// C# array read (<c>ArrayNullCheck</c>, #706); its data is the place of the user's expression. Set on the source of
+    /// a lowered <c>foreach</c>, which C# checks once at the loop entry.
+    /// </summary>
+    public const string ArrayNullCheckAnnotationKind = "GSharpArrayNullCheck";
+
+    /// <summary>
     /// Annotation kind that marks a lowered <c>foreach</c> loop index declarator
     /// (<c>__gsharp_foreach_i_&lt;id&gt;</c>) as <see cref="int"/> when hoisted into a context struct.
     /// </summary>

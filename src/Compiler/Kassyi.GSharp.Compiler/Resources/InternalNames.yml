@@ -189,6 +189,11 @@ Prelude:
     # launcher catches around each block
     TrapAbort: { Value: __gsharp_trap_abort, Prelude: ErrorChannel.hpp }
     StepAbort: { Value: __gsharp_step_abort, Prelude: ErrorChannel.hpp }
+    # The array that a C# array read (Length, an element, foreach) goes through: a null array fails with
+    # NullReferenceException (native always, CUDA under GSHARP_CHECKED); declared by ErrorChannel.hpp and the CUDA prelude
+    ArrayRef: { Value: __gsharp_array_ref, Prelude: ErrorChannel.hpp }
+    # An element of such an array, checked after the array and the index are evaluated (C# order)
+    ArrayAt: { Value: __gsharp_array_at, Prelude: ErrorChannel.hpp }
     ConsumeLastError: { Value: __gsharp_consume_last_error, Prelude: ErrorChannel.hpp }
     SetThreadIndex: { Value: __gsharp_set_thread_idx, Prelude: ThreadAndMemory.hpp }
     # Gpu.GridStrideLoop: declared by ThreadAndMemory.hpp for the CPU dialects and by the CUDA prelude

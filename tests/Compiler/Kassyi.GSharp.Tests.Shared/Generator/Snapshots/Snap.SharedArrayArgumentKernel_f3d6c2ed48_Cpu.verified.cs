@@ -662,7 +662,7 @@ fixed (global::System.Int32* p_a = a)
 fixed (global::System.Int32* p_b = b)
 fixed (global::System.Int32* p_lengths = lengths)
 {
-hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, sharedMemBytes, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (IntPtr)p_a, Length = (a?.Length ?? 0) }, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (IntPtr)p_b, Length = (b?.Length ?? 0) }, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (IntPtr)p_lengths, Length = lengths.Length });
+hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, sharedMemBytes, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (IntPtr)p_a, Length = (a?.Length ?? 0), Flags = a is null ? global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy.NullReadsAsEmpty : 0 }, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (IntPtr)p_b, Length = (b?.Length ?? 0), Flags = b is null ? global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy.NullReadsAsEmpty : 0 }, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (IntPtr)p_lengths, Length = lengths.Length });
 global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ThrowIfNativeError(dllPath);
 }
 }
@@ -698,8 +698,8 @@ __gsharp_switch_1_state_0:
 {
 if((int)threadIdx.x==0)
 {
-__gsharp_id_0_h.__gsharp_mb_Data[0]=4;
-__gsharp_id_1_a[1]=__gsharp_add_i32(__gsharp_id_1_a[0],__gsharp_id_0_h.__gsharp_mb_Data[0]);
+__gsharp_array_at(__gsharp_id_0_h.__gsharp_mb_Data, 0, ""G#: a null array is read at SharedArrayArgumentKernels.cs(59,13)"")=4;
+__gsharp_id_1_a[1]=__gsharp_add_i32(__gsharp_id_1_a[0],__gsharp_array_at(__gsharp_id_0_h.__gsharp_mb_Data, 0, ""G#: a null array is read at SharedArrayArgumentKernels.cs(60,27)""));
 }
 __gsharp_state=-1;
 return;
@@ -2005,8 +2005,8 @@ __gsharp_switch_1_state_0:
 {
 if((int)threadIdx.x==0)
 {
-__gsharp_id_0_h.__gsharp_mb_Data[0]=1;
-__gsharp_id_1_a[1]=__gsharp_add_i32(__gsharp_id_0_h.__gsharp_mb_Data[0],1);
+__gsharp_array_at(__gsharp_id_0_h.__gsharp_mb_Data, 0, ""G#: a null array is read at SharedArrayArgumentKernels.cs(113,13)"")=1;
+__gsharp_id_1_a[1]=__gsharp_add_i32(__gsharp_array_at(__gsharp_id_0_h.__gsharp_mb_Data, 0, ""G#: a null array is read at SharedArrayArgumentKernels.cs(114,20)""),1);
 __gsharp_id_1_a[2]=__gsharp_add_i32(__gsharp_add_i32(__gsharp_id_2_b[0],__gsharp_id_2_b[1]),1);
 }
 __gsharp_state=-1;
@@ -4228,8 +4228,8 @@ __gsharp_switch_1_state_0:
 if((int)threadIdx.x==0)
 {
 __gsharp_id_0_input[1]=9;
-__gsharp_id_1_h.__gsharp_mb_Data[0]=4;
-__gsharp_id_1_h.__gsharp_mb_Data[1]=__gsharp_add_i32(__gsharp_id_0_input[0],__gsharp_id_1_h.__gsharp_mb_Data[1]);
+__gsharp_array_at(__gsharp_id_1_h.__gsharp_mb_Data, 0, ""G#: a null array is read at SharedArrayArgumentKernels.cs(209,13)"")=4;
+__gsharp_array_at(__gsharp_id_1_h.__gsharp_mb_Data, 1, ""G#: a null array is read at SharedArrayArgumentKernels.cs(210,13)"")=__gsharp_add_i32(__gsharp_id_0_input[0],__gsharp_array_at(__gsharp_id_1_h.__gsharp_mb_Data, 1, ""G#: a null array is read at SharedArrayArgumentKernels.cs(210,36)""));
 }
 __gsharp_state=-1;
 return;
@@ -4504,8 +4504,8 @@ __gsharp_switch_1_state_0:
 {
 if((int)threadIdx.x==0)
 {
-__gsharp_id_1_bags[0].__gsharp_mb_Data[0]=6;
-__gsharp_id_1_bags[0].__gsharp_mb_Data[1]=__gsharp_add_i32(__gsharp_id_0_input[0],1);
+__gsharp_array_at(__gsharp_id_1_bags[0].__gsharp_mb_Data, 0, ""G#: a null array is read at SharedArrayArgumentKernels.cs(220,13)"")=6;
+__gsharp_array_at(__gsharp_id_1_bags[0].__gsharp_mb_Data, 1, ""G#: a null array is read at SharedArrayArgumentKernels.cs(221,13)"")=__gsharp_add_i32(__gsharp_id_0_input[0],1);
 }
 __gsharp_state=-1;
 return;

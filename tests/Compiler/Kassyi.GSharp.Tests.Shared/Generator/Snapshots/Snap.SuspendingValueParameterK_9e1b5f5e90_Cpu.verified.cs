@@ -367,7 +367,7 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-__gsharp_id_0_values[__gsharp_id_1_index]=__gsharp_add_i32(__gsharp_id_0_values[__gsharp_id_1_index],1000);
+__gsharp_array_at(__gsharp_id_0_values, __gsharp_id_1_index, ""G#: a null array is read at SuspendingValueParameterKernels.cs(102,9)"")=__gsharp_add_i32(__gsharp_array_at(__gsharp_id_0_values, __gsharp_id_1_index, ""G#: a null array is read at SuspendingValueParameterKernels.cs(102,25)""),1000);
 __gsharp_yielded_for_block_barrier=true;
 __gsharp_state=1;
 return false;
@@ -375,7 +375,7 @@ return false;
 case 1:
 __gsharp_switch_1_state_1:
 {
-*__gsharp_result = __gsharp_id_0_values[__gsharp_id_1_index];
+*__gsharp_result = __gsharp_array_at(__gsharp_id_0_values, __gsharp_id_1_index, ""G#: a null array is read at SuspendingValueParameterKernels.cs(104,16)"");
 __gsharp_state = 0;return true;
 __gsharp_state = 0;return true;
 }
