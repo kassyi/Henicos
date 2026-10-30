@@ -27,34 +27,63 @@ namespace Kassyi.GSharp.Compiler.Analysis;
 /// GSH0072 (an iterator local) follows the same liveness: compared with the text order it reports a local used again
 /// on the back edge of a loop, and no longer reports one whose later use is on a branch that the barrier does not reach.
 /// </para>
+/// <para>
+/// A tracked by-value parameter is passed again when the state machine resumes, so it holds its argument after a split
+/// unless it was changed before. It counts only after a split that a change reaches on some path (a forward fixed point)
+/// and where it is live. Assigning it, passing it as an <c>out</c> or <c>ref</c> argument, naming it as an element of a
+/// deconstruction, taking a reference to it or its address, writing one of its fields, calling a method or property
+/// accessor that may change it (not <c>readonly</c>) or rebinding one of its <c>ref</c> fields changes it; a write through
+/// a <c>ref</c> field does not (<see cref="ParameterChanges"/>, GSH0039, #965).
+/// </para>
 /// </remarks>
 internal static class CrossBarrierLiveness
 {
     /// <summary>
     /// For each local of <paramref name="tracked"/>, whether it is live right after a split point of
-    /// <paramref name="graph"/>, whose events <paramref name="recorder"/> recorded.
+    /// <paramref name="graph"/>, whose events <paramref name="recorder"/> recorded; for each by-value parameter of the
+    /// method, whether it is live right after a split point that a change of it reaches.
     /// </summary>
     public static bool[] FindLiveAcrossSplit(SplicedFlowGraph graph, LivenessRecorder recorder,
-        IReadOnlyList<ILocalSymbol> tracked)
+        IReadOnlyList<ISymbol> tracked)
     {
-        var crossing = FindCrossing(graph, recorder);
+        var liveIn = SolveLiveIn(graph, recorder);
+        var crossing = FindCrossing(graph, recorder, liveIn);
         AddCarriedCaptures(recorder, crossing);
         if (recorder.HasPins)
         {
             AddPinnedAcrossSplit(graph, recorder, crossing);
         }
 
+        var changedCrossing = recorder.HasChanges ? FindChangedLiveAcrossSplit(graph, recorder, liveIn) : null;
         var result = new bool[tracked.Count];
         for (var i = 0; i < result.Length; i++)
         {
-            result[i] = recorder.IndexOf(tracked[i]) is var index and >= 0 && IsSet(crossing, index);
+            result[i] = recorder.IndexOf(tracked[i]) is var index and >= 0 &&
+                        (tracked[i] is IParameterSymbol
+                            ? changedCrossing != null && IsSet(changedCrossing, index)
+                            : IsSet(crossing, index));
         }
 
         return result;
     }
 
-    // The backward fixed point of the live locals, then the locals live after each split
-    private static ulong[] FindCrossing(SplicedFlowGraph graph, LivenessRecorder recorder)
+    // The locals live after each split, from the live-in sets
+    private static ulong[] FindCrossing(SplicedFlowGraph graph, LivenessRecorder recorder, ulong[][] liveIn)
+    {
+        var words = (recorder.LocalCount + 63) / 64;
+        var live = new ulong[words];
+        var crossing = new ulong[words];
+        for (var i = 0; i < graph.Nodes.Length; i++)
+        {
+            LiveOut(graph.Nodes[i], liveIn, live);
+            ApplyBackward(recorder.EventsOf(i), live, crossing);
+        }
+
+        return crossing;
+    }
+
+    // The live-in set of each node: the backward fixed point
+    private static ulong[][] SolveLiveIn(SplicedFlowGraph graph, LivenessRecorder recorder)
     {
         var words = (recorder.LocalCount + 63) / 64;
         var count = graph.Nodes.Length;
@@ -81,12 +110,72 @@ internal static class CrossBarrierLiveness
             }
         } while (changed);
 
-        var crossing = new ulong[words];
-        for (var i = 0; i < count; i++)
+        return liveIn;
+    }
+
+    // The variables live right after a split that a change of them reaches: the live set after each split (backward
+    // from the solved live-in sets), then the forward fixed point of the changed variables
+    private static ulong[] FindChangedLiveAcrossSplit(SplicedFlowGraph graph, LivenessRecorder recorder,
+        ulong[][] liveIn)
+    {
+        var words = (recorder.LocalCount + 63) / 64;
+        var liveAfterSplit = new ulong[graph.Nodes.Length][][];
+        var live = new ulong[words];
+        foreach (var node in graph.Nodes)
         {
-            LiveOut(graph.Nodes[i], liveIn, live);
-            ApplyBackward(recorder.EventsOf(i), live, crossing);
+            var events = recorder.EventsOf(node.Index);
+            var atEvent = liveAfterSplit[node.Index] = new ulong[events.Count][];
+            LiveOut(node, liveIn, live);
+            for (var i = events.Count - 1; i >= 0; i--)
+            {
+                if (events[i].Kind == LivenessEventKind.Split)
+                {
+                    atEvent[i] = (ulong[])live.Clone();
+                }
+
+                ApplyEvent(events[i], live);
+            }
         }
+
+        var crossing = new ulong[words];
+        var changedIn = new ulong[graph.Nodes.Length][];
+        for (var i = 0; i < changedIn.Length; i++)
+        {
+            changedIn[i] = new ulong[words];
+        }
+
+        var changed = new ulong[words];
+        bool grew;
+        do
+        {
+            grew = false;
+            foreach (var node in graph.Nodes)
+            {
+                changedIn[node.Index].AsSpan().CopyTo(changed);
+                var events = recorder.EventsOf(node.Index);
+                for (var i = 0; i < events.Count; i++)
+                {
+                    var flowEvent = events[i];
+                    if (flowEvent.Kind == LivenessEventKind.Change)
+                    {
+                        changed[flowEvent.Local / 64] |= 1UL << (flowEvent.Local % 64);
+                    }
+                    else if (flowEvent.Kind == LivenessEventKind.Split)
+                    {
+                        var liveAfter = liveAfterSplit[node.Index][i];
+                        for (var word = 0; word < words; word++)
+                        {
+                            crossing[word] |= changed[word] & liveAfter[word];
+                        }
+                    }
+                }
+
+                foreach (var successor in node.Successors)
+                {
+                    grew |= Or(changedIn[successor], changed);
+                }
+            }
+        } while (grew);
 
         return crossing;
     }
@@ -181,18 +270,26 @@ internal static class CrossBarrierLiveness
         for (var i = events.Count - 1; i >= 0; i--)
         {
             var flowEvent = events[i];
-            switch (flowEvent.Kind)
+            if (flowEvent.Kind == LivenessEventKind.Split && crossing != null)
             {
-                case LivenessEventKind.Read:
-                    live[flowEvent.Local / 64] |= 1UL << (flowEvent.Local % 64);
-                    break;
-                case LivenessEventKind.Write:
-                    live[flowEvent.Local / 64] &= ~(1UL << (flowEvent.Local % 64));
-                    break;
-                case LivenessEventKind.Split when crossing != null:
-                    Or(crossing, live);
-                    break;
+                Or(crossing, live);
             }
+
+            ApplyEvent(flowEvent, live);
+        }
+    }
+
+    // A read makes the variable live before the event, a write ends its liveness
+    private static void ApplyEvent(LivenessEvent flowEvent, ulong[] live)
+    {
+        switch (flowEvent.Kind)
+        {
+            case LivenessEventKind.Read:
+                live[flowEvent.Local / 64] |= 1UL << (flowEvent.Local % 64);
+                break;
+            case LivenessEventKind.Write:
+                live[flowEvent.Local / 64] &= ~(1UL << (flowEvent.Local % 64));
+                break;
         }
     }
 

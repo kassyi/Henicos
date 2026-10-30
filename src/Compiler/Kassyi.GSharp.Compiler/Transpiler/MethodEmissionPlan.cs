@@ -53,12 +53,14 @@ internal readonly struct MethodEmissionPlan
     }
 
     // Shared by the copies of the plan (it is passed by value), so the method is lowered once
+    // The owner is the symbol of the declaration, kernel or device function, whose written parameters live in the frame
     private sealed class DeferredLowering(MethodDeclarationSyntax declaration, SemanticModel semanticModel,
-        IMethodSymbol? deviceFunction)
+        IMethodSymbol owner, bool isDeviceFunction)
     {
         private LoweredStateMachine? _lowered;
 
-        public LoweredStateMachine Value => _lowered ??= AstLoweringPipeline.Lower(declaration, semanticModel, deviceFunction);
+        public LoweredStateMachine Value =>
+            _lowered ??= AstLoweringPipeline.Lower(declaration, semanticModel, owner, isDeviceFunction);
     }
 
     public MethodDeclarationSyntax Declaration { get; }
@@ -159,8 +161,9 @@ internal readonly struct MethodEmissionPlan
 
         if (isKernel)
         {
-            var kernelLowering = isGpuKernelEntry && declaration.HasBody()
-                ? new DeferredLowering(declaration, semanticModel, deviceFunction: null)
+            // A kernel entry always has a symbol; the null test only narrows it
+            var kernelLowering = isGpuKernelEntry && symbol != null && declaration.HasBody()
+                ? new DeferredLowering(declaration, semanticModel, symbol, isDeviceFunction: false)
                 : null;
             return new MethodEmissionPlan(declaration, semanticModel, MethodEmissionKind.Kernel, symbol, kernelLowering,
                 isGpuKernelEntry, hasAutoResult);
@@ -182,6 +185,7 @@ internal readonly struct MethodEmissionPlan
         }
 
         return new MethodEmissionPlan(declaration, semanticModel, MethodEmissionKind.SuspendingDeviceFunction, symbol,
-            new DeferredLowering(declaration, semanticModel, symbol), isGpuKernelEntry, hasAutoResult);
+            new DeferredLowering(declaration, semanticModel, symbol, isDeviceFunction: true), isGpuKernelEntry,
+            hasAutoResult);
     }
 }
