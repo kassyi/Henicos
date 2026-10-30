@@ -132,7 +132,7 @@ public class CopiedParameterTests
             ownerBody.Statements[2]
         ]));
 
-        var lowered = AstLoweringPipeline.Lower(combined, model, ownerSymbol);
+        var lowered = AstLoweringPipeline.Lower(combined, model, ownerSymbol, isDeviceFunction: true);
 
         Assert.Equal(["v"], lowered.CopiedParameters);
         var references = lowered.LoweredBody.DescendantNodes()
@@ -166,7 +166,7 @@ public class CopiedParameterTests
         var unbound = TestSyncAnnotator.Annotate((BlockSyntax)SyntaxFactory.ParseStatement(
             (method.Body ?? throw new InvalidOperationException("FieldAssignment has no block body.")).ToFullString()));
 
-        var lowered = AstLoweringPipeline.Lower(unbound, model, symbol);
+        var lowered = AstLoweringPipeline.Lower(unbound, model, symbol, isDeviceFunction: true);
 
         Assert.Equal(["v"], lowered.CopiedParameters);
     }
@@ -202,7 +202,7 @@ public class CopiedParameterTests
             ownerBody.Statements[2]
         ]));
 
-        var lowered = AstLoweringPipeline.Lower(combined, model, ownerSymbol);
+        var lowered = AstLoweringPipeline.Lower(combined, model, ownerSymbol, isDeviceFunction: true);
 
         Assert.Empty(lowered.CopiedParameters);
     }
@@ -267,7 +267,7 @@ public class CopiedParameterTests
 
         // Without a model the barriers are annotated by spelling (TestSyncAnnotator), as the pipeline does by symbol
         return withModel
-            ? AstLoweringPipeline.Lower(method, model, symbol)
-            : AstLoweringPipeline.Lower(TestSyncAnnotator.Annotate(method), null, symbol);
+            ? AstLoweringPipeline.Lower(method, model, symbol, isDeviceFunction: true)
+            : AstLoweringPipeline.Lower(TestSyncAnnotator.Annotate(method), null, symbol, isDeviceFunction: true);
     }
 }

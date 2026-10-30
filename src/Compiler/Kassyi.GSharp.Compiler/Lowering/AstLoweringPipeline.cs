@@ -6,19 +6,6 @@ public static class AstLoweringPipeline
     /// <summary>Lowers the body of a kernel or device function, block or expression body, into a flat state machine.</summary>
     /// <param name="method">A method that has a body (see <see cref="MethodDeclarationSyntaxExtensions.HasBody"/>).</param>
     /// <param name="semanticModel">A semantic model of the compilation, used to find the calls that split the state machine.</param>
-    /// <param name="deviceFunction">The symbol of <paramref name="method"/> if it is a device function, or <see langword="null"/> for a kernel.</param>
-    /// <remarks>
-    /// A kernel lowered through this overload has no symbol, so it copies none of its parameters; pass the kernel's symbol
-    /// to <see cref="Lower(MethodDeclarationSyntax, SemanticModel?, IMethodSymbol?, bool)"/> to lower it as the
-    /// generator does.
-    /// </remarks>
-    public static LoweredStateMachine Lower(MethodDeclarationSyntax method, SemanticModel? semanticModel,
-        IMethodSymbol? deviceFunction = null) =>
-        Lower(method, semanticModel, deviceFunction, isDeviceFunction: deviceFunction != null);
-
-    /// <summary>Lowers the body of a kernel or device function, block or expression body, into a flat state machine.</summary>
-    /// <param name="method">A method that has a body (see <see cref="MethodDeclarationSyntaxExtensions.HasBody"/>).</param>
-    /// <param name="semanticModel">A semantic model of the compilation, used to find the calls that split the state machine.</param>
     /// <param name="owner">
     /// The symbol of <paramref name="method"/>. The value parameters it writes live in the frame
     /// (<see cref="LoweredStateMachine.CopiedParameters"/>), because a kernel and a device function are both resumed
@@ -40,10 +27,14 @@ public static class AstLoweringPipeline
     /// A semantic model of the compilation, used to find the calls that split the state machine (barriers, warp shuffles,
     /// calls that suspend). Without it, only the calls that already carry a split annotation split the state machine.
     /// </param>
-    /// <param name="deviceFunction">The device function that owns <paramref name="body"/>, or <see langword="null"/> for a kernel.</param>
-    public static LoweredStateMachine Lower(BlockSyntax body, SemanticModel? semanticModel = null,
-        IMethodSymbol? deviceFunction = null) =>
-        Lower(body, returnsValue: false, semanticModel, deviceFunction, isDeviceFunction: deviceFunction != null);
+    /// <param name="owner">
+    /// The kernel or device function that declares <paramref name="body"/>, whose written value parameters live in the
+    /// frame, or <see langword="null"/> when there is none (a body built by a test), which copies no parameter.
+    /// </param>
+    /// <param name="isDeviceFunction">Whether <paramref name="body"/> is the body of a device function rather than a kernel.</param>
+    public static LoweredStateMachine Lower(BlockSyntax body, SemanticModel? semanticModel, IMethodSymbol? owner,
+        bool isDeviceFunction) =>
+        Lower(body, returnsValue: false, semanticModel, owner, isDeviceFunction);
 
     // owner is the method that declares body: the device function, or the kernel when its symbol is known
     private static LoweredStateMachine Lower(CSharpSyntaxNode body, bool returnsValue, SemanticModel? semanticModel,
@@ -150,9 +141,8 @@ public static class AstLoweringPipeline
 
     // [WHY] The caller (the launcher, for a kernel) passes the original arguments again on every resume, so a parameter
     // that the body changes has to live in the frame. A change is a write whose target starts at the parameter itself
-    // (see FindWrittenStorageRoot): an assignment (each element of a deconstructing one), an increment or decrement, a
-    // ref / out argument, or the receiver of a struct instance method that may change it. With a semantic model the root is matched by symbol, so
-    // a lambda parameter of the same name is not taken for it; without one, or when the model cannot bind the root, it
+    // (see FindWrittenStorageRoot) in one of the forms of TryGetWriteTarget. With a semantic model the root is matched by
+    // symbol, so a lambda parameter of the same name is not taken for it; without one, or when the model cannot bind the root, it
     // is matched by name (C# forbids a local that shadows a parameter), which can only copy too much.
     private static ImmutableArray<string> FindAssignedValueParameters(SyntaxNode body, IMethodSymbol method,
         SemanticModel? model)
@@ -171,30 +161,38 @@ public static class AstLoweringPipeline
         var assigned = ImmutableArray.CreateBuilder<string>();
         foreach (var node in body.DescendantNodes())
         {
-            var target = node switch
-            {
-                AssignmentExpressionSyntax assignment => assignment.Left,
-                PrefixUnaryExpressionSyntax prefix when prefix.IsKind(SyntaxKind.PreIncrementExpression) ||
-                                                        prefix.IsKind(SyntaxKind.PreDecrementExpression) => prefix.Operand,
-                PostfixUnaryExpressionSyntax postfix => postfix.Operand,
-                ArgumentSyntax { RefKindKeyword.RawKind: not (int)SyntaxKind.None } argument => argument.Expression,
-                InvocationExpressionSyntax
-                {
-                    Expression: MemberAccessExpressionSyntax
-                    {
-                        RawKind: (int)SyntaxKind.SimpleMemberAccessExpression
-                    } memberAccess
-                } invocation when MayChangeReceiver(invocation, model) => memberAccess.Expression,
-                _ => null
-            };
-
-            if (target != null)
+            if (TryGetWriteTarget(node, model, out var target))
             {
                 MarkWrittenParameters(target, method, model, candidates, assigned);
             }
         }
 
         return assigned.ToImmutable();
+    }
+
+    // The forms that write a variable, and the expression each one writes: an assignment (its left side; each element
+    // of a deconstructing one, see MarkWrittenParameters), an increment or decrement, a ref / out argument, and the
+    // receiver of a struct instance method that may change it. A new form of write goes into this list
+    private static bool TryGetWriteTarget(SyntaxNode node, SemanticModel? model,
+        [NotNullWhen(true)] out ExpressionSyntax? target)
+    {
+        target = node switch
+        {
+            AssignmentExpressionSyntax assignment => assignment.Left,
+            PrefixUnaryExpressionSyntax prefix when prefix.IsKind(SyntaxKind.PreIncrementExpression) ||
+                                                    prefix.IsKind(SyntaxKind.PreDecrementExpression) => prefix.Operand,
+            PostfixUnaryExpressionSyntax postfix => postfix.Operand,
+            ArgumentSyntax { RefKindKeyword.RawKind: not (int)SyntaxKind.None } argument => argument.Expression,
+            InvocationExpressionSyntax
+            {
+                Expression: MemberAccessExpressionSyntax
+                {
+                    RawKind: (int)SyntaxKind.SimpleMemberAccessExpression
+                } memberAccess
+            } invocation when MayChangeReceiver(invocation, model) => memberAccess.Expression,
+            _ => null
+        };
+        return target != null;
     }
 
     // Moves the parameter that a write target starts at from candidates to assigned. A tuple target writes each of its
