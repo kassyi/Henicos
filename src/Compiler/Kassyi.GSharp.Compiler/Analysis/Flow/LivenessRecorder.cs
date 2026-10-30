@@ -23,6 +23,14 @@ namespace Kassyi.GSharp.Compiler.Analysis;
 /// is spliced (a local function call, the body of a <c>Gpu</c> macro or a lambda passed to a StackLinq operator, which
 /// the transpiler expands in place) is not a delegate, unless it makes one.
 /// </para>
+/// <para>
+/// The events of a statement are placed where the lowered code runs them, not where C# evaluates them: the lowering
+/// hoists a call that splits (a barrier, a shuffle, a call that may suspend) into a statement of its own in front of the
+/// rest, and every resume runs a call that may suspend again (<see cref="WarpInstructionRewriter"/>). So a use inside
+/// the call that is evaluated once before it (an argument the lowering spills, the value a shuffle publishes) comes
+/// before its split, any other use inside it (the receiver, an identifier argument) right after its split, and the rest
+/// of the statement after its last split (<c>s[Broadcast(0)]</c> reads <c>s</c> after the split).
+/// </para>
 /// </remarks>
 internal sealed class LivenessRecorder : IFlowRecorder
 {
@@ -34,18 +42,29 @@ internal sealed class LivenessRecorder : IFlowRecorder
     private readonly Dictionary<int, HashSet<int>> _carrierCaptures = new();
     private readonly ImmutableArray<BodyFrame>.Builder _frames = ImmutableArray.CreateBuilder<BodyFrame>();
 
-    // The flow captures of a tracked parameter or of one of its fields, by capture: the index of the parameter, and
-    // whether the capture is the whole parameter
-    private readonly Dictionary<CaptureId, (int Parameter, bool IsWhole)> _parameterCaptures = new();
+    // The flow captures of a tracked parameter, of one of its fields or of one of its properties, by capture: the index of
+    // the parameter, whether the capture is the whole parameter, and the property
+    private readonly Dictionary<CaptureId, (int Parameter, bool IsWhole, IPropertySymbol? Property)> _parameterCaptures =
+        new();
 
     // The delegate body that the assignment being walked stores in a carrier, and the index of the carrier
     private (SyntaxNode Body, int Carrier)? _pendingCarrier;
+
+    // The events of the statement being walked, with the syntax that causes each, until a split places those inside its
+    // call or the statement ends; one list per spliced body being walked
+    private readonly ImmutableArray<ImmutableArray<(LivenessEvent Event, SyntaxNode Syntax)>.Builder>.Builder _statements =
+        ImmutableArray.CreateBuilder<ImmutableArray<(LivenessEvent Event, SyntaxNode Syntax)>.Builder>();
+
+    // The last call that OnCall saw (the one a split of kind Call is at), and the last call that split
+    private IInvocationOperation? _lastCall;
+    private IInvocationOperation? _splitCall;
 
     /// <param name="model">The semantic model of the method.</param>
     /// <param name="method">The syntax of the method, where the carriers are looked for.</param>
     public LivenessRecorder(SemanticModel model, SyntaxNode method)
     {
         _model = model;
+        _statements.Add(ImmutableArray.CreateBuilder<(LivenessEvent, SyntaxNode)>());
         AddCarriers(method);
     }
 
@@ -79,7 +98,8 @@ internal sealed class LivenessRecorder : IFlowRecorder
         parameter.ContainingSymbol is IMethodSymbol { MethodKind: not (MethodKind.AnonymousFunction or MethodKind.LocalFunction) } &&
         !parameter.Type.IsSharedMemoryType();
 
-    public void OnLocalReference(ILocalReferenceOperation reference, int node) => AddRead(reference.Local, node);
+    public void OnLocalReference(ILocalReferenceOperation reference, int node) =>
+        AddRead(reference.Local, reference.Syntax, node);
 
     // A use of a tracked parameter reads it and may change it; assigning it as a whole is left to OnAssignment
     public void OnParameterReference(IParameterReferenceOperation reference, int node)
@@ -89,19 +109,22 @@ internal sealed class LivenessRecorder : IFlowRecorder
             return;
         }
 
-        AddRead(reference.Parameter, node);
+        AddRead(reference.Parameter, reference.Syntax, node);
         if (ParameterChanges.MayChange(reference))
         {
-            AddChange(Index(reference.Parameter), node);
+            AddChange(Index(reference.Parameter), reference.Syntax, node);
         }
     }
 
     // A use of a captured tracked parameter, or of a captured field of one, may change it
     public void OnFlowCaptureReference(IFlowCaptureReferenceOperation reference, int node)
     {
-        if (_parameterCaptures.TryGetValue(reference.Id, out var captured) && ParameterChanges.MayChange(reference))
+        if (_parameterCaptures.TryGetValue(reference.Id, out var captured) &&
+            (captured.Property is { } property
+                ? ParameterChanges.MayChangeThroughCapturedProperty(reference, property)
+                : ParameterChanges.MayChange(reference)))
         {
-            AddChange(captured.Parameter, node);
+            AddChange(captured.Parameter, reference.Syntax, node);
         }
     }
 
@@ -122,10 +145,11 @@ internal sealed class LivenessRecorder : IFlowRecorder
         {
             // Assigning through a ref local uses the reference; declaring or rebinding it replaces it
             case ISimpleAssignmentOperation { Target: ILocalReferenceOperation target } simple:
-                AddAssigned(target.Local, node, replaces: target.IsDeclaration || simple.IsRef || !target.Local.IsRef);
+                AddAssigned(target.Local, target.Syntax, node,
+                    replaces: target.IsDeclaration || simple.IsRef || !target.Local.IsRef);
                 break;
             case ISimpleAssignmentOperation { Target: var target } when IndexOfWholeParameter(target) is var index and >= 0:
-                AddParameterAssigned(index, node);
+                AddParameterAssigned(index, target.Syntax, node);
                 break;
             case IDeconstructionAssignmentOperation deconstruction:
                 AddDeconstructed(deconstruction.Target, node);
@@ -137,13 +161,14 @@ internal sealed class LivenessRecorder : IFlowRecorder
     {
     }
 
-    // A capture of a tracked parameter or of one of its fields: a target that the graph spills before a conditional value
-    // (p = c ? a : b, p.X = c ? a : b); the walk of its value read the parameter
+    // A capture of a tracked parameter, of one of its fields or of one of its properties: a target that the graph spills
+    // before a conditional value (p = c ? a : b, p.X = c ? a : b, p.P = c ? a : b); the walk of its value read the parameter
     public void OnFlowCapture(IFlowCaptureOperation capture, ControlFlowGraph graph, int node)
     {
-        if (ParameterChanges.RootParameter(capture.Value, out var isWhole) is { } parameter && IsTrackedParameter(parameter))
+        if (ParameterChanges.RootParameter(capture.Value, out var isWhole, out var property) is { } parameter &&
+            IsTrackedParameter(parameter))
         {
-            _parameterCaptures[capture.Id] = (Index(parameter), isWhole);
+            _parameterCaptures[capture.Id] = (Index(parameter), isWhole, property);
         }
     }
 
@@ -151,33 +176,46 @@ internal sealed class LivenessRecorder : IFlowRecorder
     {
     }
 
-    public void OnCall(IInvocationOperation invocation, int node)
-    {
-    }
+    public void OnCall(IInvocationOperation invocation, int node) => _lastCall = invocation;
 
-    // A split in an opaque body does not split the method's state machine; a Gpu.SyncGrid(body) splits in its gaps
+    // A split in an opaque body does not split the method's state machine; a Gpu.SyncGrid(body) splits in its gaps. A call
+    // that splits places the events of the statement that lie inside it around its split.
     public void OnSplit(SplitPoint split, int node)
     {
-        if (_frames.Count == 0 && split.Kind != SplitKind.SyncGridCall)
+        if (_frames.Count != 0 || split.Kind == SplitKind.SyncGridCall)
         {
-            _events[node].Add(LivenessEvent.Split);
+            return;
         }
+
+        if (split.Kind == SplitKind.Call && _lastCall is { } call && call.Syntax == split.Syntax)
+        {
+            PlaceAroundSplit(call, node);
+            _splitCall = call;
+            return;
+        }
+
+        _events[node].Add(LivenessEvent.Split);
     }
 
-    // The callee writes an out argument when it returns, after any split
+    // The callee writes an out argument when it returns: a call that splits after its split, any other call where the
+    // statement runs it
     public void OnCallReturned(IInvocationOperation invocation, ControlFlowGraph graph, int node)
     {
+        var syntax = invocation == _splitCall ? null : invocation.Syntax;
         foreach (var argument in invocation.Arguments)
         {
             if (argument is { Parameter.RefKind: RefKind.Out, Value: ILocalReferenceOperation { Local: { IsRef: false } local } })
             {
-                AddAssigned(local, node, replaces: true);
+                AddAssigned(local, syntax, node, replaces: true);
             }
         }
     }
 
+    // The events of the statement before a body stay before it; the body's statements have their own
     public void OnBodyEntered(SplicedBody body, int node)
     {
+        Flush(node);
+        _statements.Add(ImmutableArray.CreateBuilder<(LivenessEvent, SyntaxNode)>());
         if (!body.IsOpaque)
         {
             return;
@@ -203,6 +241,8 @@ internal sealed class LivenessRecorder : IFlowRecorder
     // A body that makes a delegate, or is a delegate that no carrier keeps, pins its captures here
     public void OnBodyExited(SplicedBody body, int node)
     {
+        Flush(node);
+        _statements.RemoveAt(_statements.Count - 1);
         if (!body.IsOpaque)
         {
             return;
@@ -234,12 +274,118 @@ internal sealed class LivenessRecorder : IFlowRecorder
         }
     }
 
-    public void OnTopOperation(IOperation operation, ControlFlowGraph graph, int node)
+    // The rest of the statement runs after its last split
+    public void OnTopOperation(IOperation operation, ControlFlowGraph graph, int node) => Flush(node);
+
+    // The events of the statement that lie inside call: those the lowering evaluates once before the call, the split, then
+    // those that the call runs again on every resume; the others stay with the statement
+    private void PlaceAroundSplit(IInvocationOperation call, int node)
     {
+        var statement = _statements[_statements.Count - 1];
+        var after = ImmutableArray.CreateBuilder<LivenessEvent>();
+        var kept = 0;
+        for (var i = 0; i < statement.Count; i++)
+        {
+            var (flowEvent, syntax) = statement[i];
+            if (syntax.SyntaxTree != call.Syntax.SyntaxTree || !call.Syntax.Span.Contains(syntax.Span))
+            {
+                statement[kept++] = (flowEvent, syntax);
+            }
+            else if (IsEvaluatedBeforeSplit(call, syntax))
+            {
+                _events[node].Add(flowEvent);
+            }
+            else
+            {
+                after.Add(flowEvent);
+            }
+        }
+
+        statement.Count = kept;
+        _events[node].Add(LivenessEvent.Split);
+        _events[node].AddRange(after);
+    }
+
+    // Whether a use at syntax inside call is evaluated once before the call splits: in an argument that the lowering
+    // spills to a temporary (WarpInstructionRewriter.IsSpilledArgument), in the value that a shuffle publishes, or in the
+    // arguments of a barrier
+    private bool IsEvaluatedBeforeSplit(IInvocationOperation call, SyntaxNode syntax)
+    {
+        var intrinsic = SyncIntrinsicClassifier.Classify(call.TargetMethod);
+        if (intrinsic.Kind == SyncIntrinsicKind.WarpShuffle)
+        {
+            return call.Arguments
+                .AsStackEnumerable()
+                .Any(syntax, static (argument, use) =>
+                    argument is { IsImplicit: false, Parameter.Ordinal: ShuffleValueOrdinal } && argument.Syntax.Span.Contains(use.Span)
+                );
+        }
+
+        if (intrinsic.Kind != SyncIntrinsicKind.None || call.Syntax is not InvocationExpressionSyntax invocation)
+        {
+            return true;
+        }
+
+        var arguments = invocation.ArgumentList.Arguments;
+        for (var i = 0; i < arguments.Count; i++)
+        {
+            if (arguments[i].Span.Contains(syntax.Span))
+            {
+                return arguments[i].RefKindKeyword.IsKind(SyntaxKind.None)
+                    ? WarpInstructionRewriter.IsSpilledArgument(arguments, i, _model)
+                    : IsInSpilledIndex(arguments[i].Expression, syntax);
+            }
+        }
+
+        return false;
+    }
+
+    // ref a[i][j]: whether syntax lies in an index that the lowering spills
+    private static bool IsInSpilledIndex(ExpressionSyntax expression, SyntaxNode syntax)
+    {
+        while (expression is ElementAccessExpressionSyntax elementAccess)
+        {
+            foreach (var index in elementAccess.ArgumentList.Arguments)
+            {
+                if (index.Span.Contains(syntax.Span))
+                {
+                    return WarpInstructionRewriter.IsSpilledIndex(index);
+                }
+            }
+
+            expression = elementAccess.Expression;
+        }
+
+        return false;
+    }
+
+    // The events of the statement that no split has placed, where the statement runs them
+    private void Flush(int node)
+    {
+        var statement = _statements[_statements.Count - 1];
+        foreach (var (flowEvent, _) in statement)
+        {
+            _events[node].Add(flowEvent);
+        }
+
+        statement.Clear();
+    }
+
+    // An event of the statement being walked, caused by syntax; in an opaque body, which does not split, or without a
+    // syntax, where it happens
+    private void Add(LivenessEvent flowEvent, SyntaxNode? syntax, int node)
+    {
+        if (_frames.Count == 0 && syntax != null)
+        {
+            _statements[_statements.Count - 1].Add((flowEvent, syntax));
+            return;
+        }
+
+        _events[node].Add(flowEvent);
     }
 
     // A read; in an opaque body only of a local declared outside it, which the body captures
-    private void AddRead(ISymbol local, int node)
+    private void AddRead(ISymbol local, SyntaxNode? syntax, int node)
     {
         if (IsDeclaredInFrame(local))
         {
@@ -247,7 +393,7 @@ internal sealed class LivenessRecorder : IFlowRecorder
         }
 
         var index = Index(local);
-        _events[node].Add(LivenessEvent.Read(index));
+        Add(LivenessEvent.Read(index), syntax, node);
         foreach (var frame in _frames)
         {
             frame.Captures.Add(index);
@@ -256,15 +402,15 @@ internal sealed class LivenessRecorder : IFlowRecorder
 
     // A local that a statement assigns: written, or read when the write goes through it (a ref local); in an opaque body
     // only captured, as the body may not run
-    private void AddAssigned(ISymbol local, int node, bool replaces)
+    private void AddAssigned(ISymbol local, SyntaxNode? syntax, int node, bool replaces)
     {
         if (_frames.Count > 0 || !replaces)
         {
-            AddRead(local, node);
+            AddRead(local, syntax, node);
             return;
         }
 
-        _events[node].Add(LivenessEvent.Write(Index(local)));
+        Add(LivenessEvent.Write(Index(local)), syntax, node);
     }
 
     // (a, span) = <value>: an element that is a local itself is written, any other element was walked as a target
@@ -282,16 +428,16 @@ internal sealed class LivenessRecorder : IFlowRecorder
 
         if (target is ILocalReferenceOperation { Local: { IsRef: false } local })
         {
-            AddAssigned(local, node, replaces: true);
+            AddAssigned(local, target.Syntax, node, replaces: true);
         }
         else if (target is IParameterReferenceOperation { Parameter: var parameter } && IsTrackedParameter(parameter))
         {
-            AddParameterAssigned(Index(parameter), node);
+            AddParameterAssigned(Index(parameter), target.Syntax, node);
         }
     }
 
     // A tracked parameter assigned as a whole: written and changed; in an opaque body only captured
-    private void AddParameterAssigned(int index, int node)
+    private void AddParameterAssigned(int index, SyntaxNode syntax, int node)
     {
         if (_frames.Count > 0)
         {
@@ -299,13 +445,13 @@ internal sealed class LivenessRecorder : IFlowRecorder
             return;
         }
 
-        _events[node].Add(LivenessEvent.Write(index));
-        AddChange(index, node);
+        Add(LivenessEvent.Write(index), syntax, node);
+        AddChange(index, syntax, node);
     }
 
-    private void AddChange(int index, int node)
+    private void AddChange(int index, SyntaxNode syntax, int node)
     {
-        _events[node].Add(LivenessEvent.Change(index));
+        Add(LivenessEvent.Change(index), syntax, node);
         HasChanges = true;
     }
 
@@ -433,6 +579,9 @@ internal sealed class LivenessRecorder : IFlowRecorder
             localFunction,
         _ => null
     };
+
+    // The parameter of a warp shuffle that holds the value it publishes (mask, var, lane, width)
+    private const int ShuffleValueOrdinal = 1;
 
     private enum BodyMode
     {

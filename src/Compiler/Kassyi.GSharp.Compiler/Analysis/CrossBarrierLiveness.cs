@@ -31,8 +31,9 @@ namespace Kassyi.GSharp.Compiler.Analysis;
 /// A tracked by-value parameter is passed again when the state machine resumes, so it holds its argument after a split
 /// unless it was changed before. It counts only after a split that a change reaches on some path (a forward fixed point)
 /// and where it is live. Assigning it, passing it as an <c>out</c> or <c>ref</c> argument, naming it as an element of a
-/// deconstruction, taking a reference to it or its address, writing one of its fields or calling a method that may
-/// change it (not <c>readonly</c>) changes it (GSH0039, #965).
+/// deconstruction, taking a reference to it or its address, writing one of its fields, calling a method or property
+/// accessor that may change it (not <c>readonly</c>) or rebinding one of its <c>ref</c> fields changes it; a write through
+/// a <c>ref</c> field does not (<see cref="ParameterChanges"/>, GSH0039, #965).
 /// </para>
 /// </remarks>
 internal static class CrossBarrierLiveness

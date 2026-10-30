@@ -163,4 +163,168 @@ public static partial class CrossBarrierRefStructParameterKernels
         Gpu.SyncThreads();
         return s[0];
     }
+
+    // --- Reported: the lowering reads the receiver after the call that suspends in its argument ---
+
+    // GSH0039: Broadcast runs first, then the indexer reads the parameter, which is the original span again
+    [GpuDeviceFunction]
+    public static int IndexBySuspendingCall(Span<int> s)
+    {
+        s = s.Slice(1);
+        return s[Broadcast(0)];
+    }
+
+    // GSH0039: the receiver of Slice is read after Broadcast, before the assignment writes the parameter
+    [GpuDeviceFunction]
+    public static int SliceBySuspendingCall(Span<int> s)
+    {
+        s = s.Slice(1);
+        s = s.Slice(Broadcast(0));
+        return s[0];
+    }
+
+    [GpuDeviceFunction]
+    public static int HeadAfterBarrier(Span<int> x)
+    {
+        Gpu.SyncThreads();
+        return x[0];
+    }
+
+    // GSH0039: every resume runs the call again with its identifier arguments, here the original span
+    [GpuDeviceFunction]
+    public static int PassToSuspendingCall(Span<int> s)
+    {
+        s = s.Slice(1);
+        return HeadAfterBarrier(s);
+    }
+
+    // GSH0039: a local span read by the indexer after Broadcast would have to be kept in the frame
+    [GpuDeviceFunction]
+    public static int IndexLocalBySuspendingCall(Span<int> s)
+    {
+        Span<int> tail = s.Slice(1);
+        return tail[Broadcast(0)];
+    }
+
+    // --- Reported: a property changes the parameter ---
+
+    // GSH0039: a property setter
+    [GpuDeviceFunction]
+    public static int SetProperty(PropertyCursor cursor)
+    {
+        cursor.Value = 1;
+        Gpu.SyncThreads();
+        return cursor.Value;
+    }
+
+    // GSH0039: an increment calls the setter
+    [GpuDeviceFunction]
+    public static int IncrementProperty(PropertyCursor cursor)
+    {
+        cursor.Value++;
+        Gpu.SyncThreads();
+        return cursor.Value;
+    }
+
+    // GSH0039: a conditional value is assigned through the setter
+    [GpuDeviceFunction]
+    public static int SetPropertyIf(PropertyCursor cursor, bool skip)
+    {
+        cursor.Value = skip ? 1 : 2;
+        Gpu.SyncThreads();
+        return cursor.Value;
+    }
+
+    // GSH0039: a getter that is not readonly may change the struct
+    [GpuDeviceFunction]
+    public static int ReadAdvancingProperty(PropertyCursor cursor)
+    {
+        int next = cursor.Next;
+        Gpu.SyncThreads();
+        return cursor.Value + next;
+    }
+
+    // GSH0039: rebinding a ref field changes the parameter
+    [GpuDeviceFunction]
+    public static int RebindRefField(RefFieldHolder holder)
+    {
+        holder.Target = ref holder.Other;
+        Gpu.SyncThreads();
+        return holder.Target;
+    }
+
+    // --- Not reported ---
+
+    // The parameter is not changed, so the indexer reads the same span after Broadcast
+    [GpuDeviceFunction]
+    public static int IndexUnchangedBySuspendingCall(Span<int> s) => s[Broadcast(0)];
+
+    // The lowering evaluates the argument s[0] once, before the call suspends
+    [GpuDeviceFunction]
+    public static int BroadcastHead(Span<int> s)
+    {
+        s = s.Slice(1);
+        return Broadcast(s[0]);
+    }
+
+    // The shuffle publishes s[0] before it splits
+    [GpuDeviceFunction]
+    public static int ShuffleHead(Span<int> s)
+    {
+        s = s.Slice(1);
+        return Warp.ShuffleSync(0xFFFFFFFFu, s[0], 0);
+    }
+
+    // A readonly getter does not change the struct
+    [GpuDeviceFunction]
+    public static int ReadProperty(PropertyCursor cursor)
+    {
+        int value = cursor.Value;
+        Gpu.SyncThreads();
+        return cursor.Value + value;
+    }
+
+    // Writing through a ref field changes the referenced variable, not the parameter
+    [GpuDeviceFunction]
+    public static int WriteThroughRefField(RefFieldHolder holder)
+    {
+        holder.Target = 1;
+        Gpu.SyncThreads();
+        return holder.Target;
+    }
+
+    // The same with an increment
+    [GpuDeviceFunction]
+    public static int IncrementThroughRefField(RefFieldHolder holder)
+    {
+        holder.Target++;
+        Gpu.SyncThreads();
+        return holder.Target;
+    }
+
+    // The same with a conditional value
+    [GpuDeviceFunction]
+    public static int WriteThroughRefFieldIf(RefFieldHolder holder, bool skip)
+    {
+        holder.Target = skip ? 1 : 2;
+        Gpu.SyncThreads();
+        return holder.Target;
+    }
+}
+
+/// <summary>A ref struct with a readonly getter and a setter, and a getter that changes it.</summary>
+public ref struct PropertyCursor
+{
+    public int Position;
+
+    public int Value { readonly get => Position; set => Position = value; }
+
+    public int Next => ++Position;
+}
+
+/// <summary>A ref struct whose ref fields refer to variables outside it.</summary>
+public ref struct RefFieldHolder
+{
+    public ref int Target;
+    public ref int Other;
 }
