@@ -64,7 +64,7 @@ public static class AstLoweringPipeline
         var hoistedBody = conditionalRewriter.Rewrite(annotatedBody);
         hoistedBody = warpRewriter.Rewrite(hoistedBody);
         hoistedBody = branchRewriter.Rewrite(hoistedBody);
-        hoistedBody = new ForEachRewriter().Rewrite(hoistedBody);
+        hoistedBody = new ForEachRewriter(bodyModel).Rewrite(hoistedBody);
         hoistedBody = new LoopRewriter().Rewrite(hoistedBody);
         hoistedBody = conditionalRewriter.Rewrite(hoistedBody);
         hoistedBody = warpRewriter.Rewrite(hoistedBody);

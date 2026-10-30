@@ -179,6 +179,7 @@ int intOutput_size = intOutput.Length * sizeof(global::System.Int32);
 IntPtr* proxy_intOutput = stackalloc IntPtr[2];
 proxy_intOutput[0] = IntPtr.Zero;
 ((int*)(proxy_intOutput + 1))[0] = intOutput.Length;
+((int*)(proxy_intOutput + 1))[1] = 0;
 if (intOutput_size > 0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_intOutput, (IntPtr)intOutput_size, hStream));
@@ -195,6 +196,7 @@ int floatOutput_size = floatOutput.Length * sizeof(global::System.Single);
 IntPtr* proxy_floatOutput = stackalloc IntPtr[2];
 proxy_floatOutput[0] = IntPtr.Zero;
 ((int*)(proxy_floatOutput + 1))[0] = floatOutput.Length;
+((int*)(proxy_floatOutput + 1))[1] = 0;
 if (floatOutput_size > 0)
 {
 if (global::System.Object.ReferenceEquals(floatOutput, intOutput))
@@ -218,6 +220,7 @@ int pointOutput_size = pointOutput.Length * sizeof(global::Kassyi.GSharp.Tests.S
 IntPtr* proxy_pointOutput = stackalloc IntPtr[2];
 proxy_pointOutput[0] = IntPtr.Zero;
 ((int*)(proxy_pointOutput + 1))[0] = pointOutput.Length;
+((int*)(proxy_pointOutput + 1))[1] = 0;
 if (pointOutput_size > 0)
 {
 if (global::System.Object.ReferenceEquals(pointOutput, intOutput))
@@ -303,16 +306,19 @@ void** kernelParams = stackalloc void*[3];
 IntPtr* proxy_intOutput = stackalloc IntPtr[2];
 proxy_intOutput[0] = intOutput;
 ((int*)(proxy_intOutput + 1))[0] = 0; // Length is unknown for raw IntPtr
+((int*)(proxy_intOutput + 1))[1] = 0;
 kernelParams[0] = proxy_intOutput;
 // Marshal device array: floatOutput
 IntPtr* proxy_floatOutput = stackalloc IntPtr[2];
 proxy_floatOutput[0] = floatOutput;
 ((int*)(proxy_floatOutput + 1))[0] = 0; // Length is unknown for raw IntPtr
+((int*)(proxy_floatOutput + 1))[1] = 0;
 kernelParams[1] = proxy_floatOutput;
 // Marshal device array: pointOutput
 IntPtr* proxy_pointOutput = stackalloc IntPtr[2];
 proxy_pointOutput[0] = pointOutput;
 ((int*)(proxy_pointOutput + 1))[0] = 0; // Length is unknown for raw IntPtr
+((int*)(proxy_pointOutput + 1))[1] = 0;
 kernelParams[2] = proxy_pointOutput;
 CudaException.ThrowIfError(CudaDriverApi.cuLaunchKernel(
 hfunc,

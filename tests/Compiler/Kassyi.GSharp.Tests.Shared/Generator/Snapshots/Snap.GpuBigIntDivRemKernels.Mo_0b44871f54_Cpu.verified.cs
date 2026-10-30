@@ -36,9 +36,9 @@ inline unsigned int __gsharp_fn_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels
 unsigned int __gsharp_id_2_highWords = 0u;
 for(int __gsharp_id_3_i = 1;__gsharp_id_3_i<__gsharp_id_1_numWords;__gsharp_id_3_i++)
 {
-__gsharp_id_2_highWords|=__gsharp_id_0_modulus[__gsharp_id_3_i];
+__gsharp_id_2_highWords|=__gsharp_array_at(__gsharp_id_0_modulus, __gsharp_id_3_i, ""G#: a null array is read at GpuBigIntDivRemKernels.ModPow.cs(20,26)"");
 }
-return (__gsharp_id_0_modulus[0]==1u&&__gsharp_id_2_highWords==0u?0u:1u);
+return (__gsharp_array_at(__gsharp_id_0_modulus, 0, ""G#: a null array is read at GpuBigIntDivRemKernels.ModPow.cs(23,16)"")==1u&&__gsharp_id_2_highWords==0u?0u:1u);
 }
 
 #ifndef __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Algorithms__NttConvolutionScratchContext__
@@ -655,10 +655,10 @@ for(unsigned int __gsharp_gsl_0 = __gsharp_grid_stride_start(); __gsharp_gsl_0 <
 int __gsharp_id_15_idx = (int)__gsharp_gsl_0;
 {
 int __gsharp_id_16_srcIdx = __gsharp_add_i32(__gsharp_id_15_idx,__gsharp_ctx->__gsharp_id_12_wordShift);
-unsigned int __gsharp_id_17_w0 = ((__gsharp_id_16_srcIdx<__gsharp_add_i32(__gsharp_ctx->__gsharp_id_8_nA,__gsharp_ctx->__gsharp_id_10_targetWords))?__gsharp_ctx->__gsharp_id_11_iterScratch.__gsharp_mb_CurrentProduct[__gsharp_id_16_srcIdx]:0u);
-unsigned int __gsharp_id_18_w1 = ((__gsharp_add_i32(__gsharp_id_16_srcIdx,1)<__gsharp_add_i32(__gsharp_ctx->__gsharp_id_8_nA,__gsharp_ctx->__gsharp_id_10_targetWords))?__gsharp_ctx->__gsharp_id_11_iterScratch.__gsharp_mb_CurrentProduct[__gsharp_add_i32(__gsharp_id_16_srcIdx,1)]:0u);
+unsigned int __gsharp_id_17_w0 = ((__gsharp_id_16_srcIdx<__gsharp_add_i32(__gsharp_ctx->__gsharp_id_8_nA,__gsharp_ctx->__gsharp_id_10_targetWords))?__gsharp_array_at(__gsharp_ctx->__gsharp_id_11_iterScratch.__gsharp_mb_CurrentProduct, __gsharp_id_16_srcIdx, ""G#: a null array is read at GpuBigIntDivRemKernels.ModPow.cs(133,53)""):0u);
+unsigned int __gsharp_id_18_w1 = ((__gsharp_add_i32(__gsharp_id_16_srcIdx,1)<__gsharp_add_i32(__gsharp_ctx->__gsharp_id_8_nA,__gsharp_ctx->__gsharp_id_10_targetWords))?__gsharp_array_at(__gsharp_ctx->__gsharp_id_11_iterScratch.__gsharp_mb_CurrentProduct, __gsharp_add_i32(__gsharp_id_16_srcIdx,1), ""G#: a null array is read at GpuBigIntDivRemKernels.ModPow.cs(134,57)""):0u);
 unsigned int __gsharp_id_19_shiftedValue = (__gsharp_id_17_w0>>(__gsharp_ctx->__gsharp_id_13_bitShift&31))|((__gsharp_ctx->__gsharp_id_13_bitShift==0?0u:(__gsharp_id_18_w1<<(__gsharp_sub_i32(32,__gsharp_ctx->__gsharp_id_13_bitShift)&31))));
-__gsharp_id_6_quotientBuffer[__gsharp_id_15_idx]=__gsharp_id_19_shiftedValue;
+__gsharp_array_at(__gsharp_id_6_quotientBuffer, __gsharp_id_15_idx, ""G#: a null array is read at GpuBigIntDivRemKernels.ModPow.cs(136,13)"")=__gsharp_id_19_shiftedValue;
 }
 }
 }
@@ -694,7 +694,7 @@ for(unsigned int __gsharp_gsl_1 = __gsharp_grid_stride_start(); __gsharp_gsl_1 <
 {
 int __gsharp_id_22_idx = (int)__gsharp_gsl_1;
 {
-__gsharp_ctx->__gsharp_id_11_iterScratch.__gsharp_mb_Diff[__gsharp_id_22_idx]=(__gsharp_id_22_idx<__gsharp_ctx->__gsharp_id_8_nA?__gsharp_id_1_leftOperand[__gsharp_id_22_idx]:0u);
+__gsharp_array_at(__gsharp_ctx->__gsharp_id_11_iterScratch.__gsharp_mb_Diff, __gsharp_id_22_idx, ""G#: a null array is read at GpuBigIntDivRemKernels.ModPow.cs(152,13)"")=(__gsharp_id_22_idx<__gsharp_ctx->__gsharp_id_8_nA?__gsharp_array_at(__gsharp_id_1_leftOperand, __gsharp_id_22_idx, ""G#: a null array is read at GpuBigIntDivRemKernels.ModPow.cs(152,48)""):0u);
 }
 }
 }
@@ -723,7 +723,7 @@ if(!(__gsharp_ctx->__gsharp_id_23_iter<1000))
 {
 goto __gsharp_switch_1_state_16;
 }
-__gsharp_ctx->__gsharp_id_24_topWord=__gsharp_ctx->__gsharp_id_11_iterScratch.__gsharp_mb_Diff[__gsharp_sub_i32(__gsharp_ctx->__gsharp_id_20_evalWords,1)];
+__gsharp_ctx->__gsharp_id_24_topWord=__gsharp_array_at(__gsharp_ctx->__gsharp_id_11_iterScratch.__gsharp_mb_Diff, __gsharp_sub_i32(__gsharp_ctx->__gsharp_id_20_evalWords,1), ""G#: a null array is read at GpuBigIntDivRemKernels.ModPow.cs(162,28)"");
 __gsharp_ctx->__gsharp_id_25_underflow=(__gsharp_ctx->__gsharp_id_24_topWord&0x80000000u)!=0;
 __gsharp_yielded_for_grid_sync=true;
 __gsharp_state=7;
@@ -758,7 +758,7 @@ return false;
 case 10:
 __gsharp_switch_1_state_10:
 {
-__gsharp_ctx->__gsharp_id_26_top2=__gsharp_ctx->__gsharp_id_11_iterScratch.__gsharp_mb_Diff[__gsharp_sub_i32(__gsharp_ctx->__gsharp_id_20_evalWords,1)];
+__gsharp_ctx->__gsharp_id_26_top2=__gsharp_array_at(__gsharp_ctx->__gsharp_id_11_iterScratch.__gsharp_mb_Diff, __gsharp_sub_i32(__gsharp_ctx->__gsharp_id_20_evalWords,1), ""G#: a null array is read at GpuBigIntDivRemKernels.ModPow.cs(181,29)"");
 __gsharp_ctx->__gsharp_id_27_underflow2=(__gsharp_ctx->__gsharp_id_26_top2&0x80000000u)!=0;
 __gsharp_yielded_for_grid_sync=true;
 __gsharp_state=11;
@@ -809,7 +809,7 @@ for(unsigned int __gsharp_gsl_2 = __gsharp_grid_stride_start(); __gsharp_gsl_2 <
 {
 int __gsharp_id_28_idx = (int)__gsharp_gsl_2;
 {
-__gsharp_id_7_remainderBuffer[__gsharp_id_28_idx]=(__gsharp_id_28_idx<__gsharp_ctx->__gsharp_id_9_n?__gsharp_ctx->__gsharp_id_11_iterScratch.__gsharp_mb_Diff[__gsharp_id_28_idx]:0u);
+__gsharp_array_at(__gsharp_id_7_remainderBuffer, __gsharp_id_28_idx, ""G#: a null array is read at GpuBigIntDivRemKernels.ModPow.cs(198,13)"")=(__gsharp_id_28_idx<__gsharp_ctx->__gsharp_id_9_n?__gsharp_array_at(__gsharp_ctx->__gsharp_id_11_iterScratch.__gsharp_mb_Diff, __gsharp_id_28_idx, ""G#: a null array is read at GpuBigIntDivRemKernels.ModPow.cs(198,46)""):0u);
 }
 }
 }
@@ -3028,10 +3028,10 @@ int __gsharp_id_12_idx = (int)__gsharp_gsl_0;
 {
 if(__gsharp_id_12_idx<__gsharp_mul_i32(2,__gsharp_ctx->__gsharp_id_4_n))
 {
-__gsharp_ctx->__gsharp_id_2_iterScratch.__gsharp_mb_AxSquared[__gsharp_id_12_idx]=(__gsharp_id_12_idx==0?__gsharp_ctx->__gsharp_id_11_oneModulo:0u);
-__gsharp_ctx->__gsharp_id_2_iterScratch.__gsharp_mb_XSquared[__gsharp_id_12_idx]=(__gsharp_id_12_idx<__gsharp_ctx->__gsharp_id_4_n?__gsharp_ctx->__gsharp_id_1_core.__gsharp_mb_Operands.__gsharp_mb_TargetOperand[__gsharp_id_12_idx]:0u);
+__gsharp_array_at(__gsharp_ctx->__gsharp_id_2_iterScratch.__gsharp_mb_AxSquared, __gsharp_id_12_idx, ""G#: a null array is read at GpuBigIntDivRemKernels.ModPow.cs(225,21)"")=(__gsharp_id_12_idx==0?__gsharp_ctx->__gsharp_id_11_oneModulo:0u);
+__gsharp_array_at(__gsharp_ctx->__gsharp_id_2_iterScratch.__gsharp_mb_XSquared, __gsharp_id_12_idx, ""G#: a null array is read at GpuBigIntDivRemKernels.ModPow.cs(226,21)"")=(__gsharp_id_12_idx<__gsharp_ctx->__gsharp_id_4_n?__gsharp_array_at(__gsharp_ctx->__gsharp_id_1_core.__gsharp_mb_Operands.__gsharp_mb_TargetOperand, __gsharp_id_12_idx, ""G#: a null array is read at GpuBigIntDivRemKernels.ModPow.cs(226,59)""):0u);
 }
-__gsharp_ctx->__gsharp_id_2_iterScratch.__gsharp_mb_ModulusExpanded[__gsharp_id_12_idx]=(__gsharp_id_12_idx<__gsharp_ctx->__gsharp_id_4_n?__gsharp_ctx->__gsharp_id_1_core.__gsharp_mb_Operands.__gsharp_mb_Constant[__gsharp_id_12_idx]:0u);
+__gsharp_array_at(__gsharp_ctx->__gsharp_id_2_iterScratch.__gsharp_mb_ModulusExpanded, __gsharp_id_12_idx, ""G#: a null array is read at GpuBigIntDivRemKernels.ModPow.cs(229,17)"")=(__gsharp_id_12_idx<__gsharp_ctx->__gsharp_id_4_n?__gsharp_array_at(__gsharp_ctx->__gsharp_id_1_core.__gsharp_mb_Operands.__gsharp_mb_Constant, __gsharp_id_12_idx, ""G#: a null array is read at GpuBigIntDivRemKernels.ModPow.cs(229,62)""):0u);
 }
 }
 }
@@ -3057,7 +3057,7 @@ if(!(__gsharp_ctx->__gsharp_id_13_i<__gsharp_ctx->__gsharp_id_3_expSlice.__gshar
 {
 goto __gsharp_switch_1_state_13;
 }
-__gsharp_ctx->__gsharp_id_14_e=__gsharp_ctx->__gsharp_id_3_expSlice.__gsharp_mb_Words[__gsharp_ctx->__gsharp_id_13_i];
+__gsharp_ctx->__gsharp_id_14_e=__gsharp_array_at(__gsharp_ctx->__gsharp_id_3_expSlice.__gsharp_mb_Words, __gsharp_ctx->__gsharp_id_13_i, ""G#: a null array is read at GpuBigIntDivRemKernels.ModPow.cs(236,22)"");
 if(__gsharp_ctx->__gsharp_id_14_e==0)
 {
 }
@@ -3178,7 +3178,7 @@ for(unsigned int __gsharp_gsl_1 = __gsharp_grid_stride_start(); __gsharp_gsl_1 <
 {
 int __gsharp_id_16_idx = (int)__gsharp_gsl_1;
 {
-__gsharp_ctx->__gsharp_id_1_core.__gsharp_mb_Operands.__gsharp_mb_ResultBuffer[__gsharp_id_16_idx]=__gsharp_ctx->__gsharp_id_2_iterScratch.__gsharp_mb_AxSquared[__gsharp_id_16_idx];
+__gsharp_array_at(__gsharp_ctx->__gsharp_id_1_core.__gsharp_mb_Operands.__gsharp_mb_ResultBuffer, __gsharp_id_16_idx, ""G#: a null array is read at GpuBigIntDivRemKernels.ModPow.cs(270,17)"")=__gsharp_array_at(__gsharp_ctx->__gsharp_id_2_iterScratch.__gsharp_mb_AxSquared, __gsharp_id_16_idx, ""G#: a null array is read at GpuBigIntDivRemKernels.ModPow.cs(270,51)"");
 }
 }
 }

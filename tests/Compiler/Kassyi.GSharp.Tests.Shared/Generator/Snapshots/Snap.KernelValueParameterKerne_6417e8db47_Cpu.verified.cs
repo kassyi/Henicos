@@ -430,7 +430,7 @@ return;
 case 1:
 __gsharp_switch_1_state_1:
 {
-__gsharp_id_2_output[__gsharp_ctx->__gsharp_id_3_tid]=__gsharp_add_i32(__gsharp_mul_i32(__gsharp_ctx->__gsharp_id_0_values.length,1000),__gsharp_ctx->__gsharp_id_0_values[__gsharp_ctx->__gsharp_id_3_tid]);
+__gsharp_id_2_output[__gsharp_ctx->__gsharp_id_3_tid]=__gsharp_add_i32(__gsharp_mul_i32(__gsharp_array_ref(__gsharp_ctx->__gsharp_id_0_values, ""G#: a null array is read at KernelValueParameterKernels.cs(48,23)"").length,1000),__gsharp_array_at(__gsharp_ctx->__gsharp_id_0_values, __gsharp_ctx->__gsharp_id_3_tid, ""G#: a null array is read at KernelValueParameterKernels.cs(48,46)""));
 __gsharp_state=-1;
 return;
 }
@@ -709,7 +709,7 @@ return;
 case 1:
 __gsharp_switch_1_state_1:
 {
-__gsharp_id_2_output[__gsharp_ctx->__gsharp_id_3_tid]=__gsharp_add_i32(__gsharp_mul_i32(__gsharp_ctx->__gsharp_id_0_values.length,1000),__gsharp_ctx->__gsharp_id_0_values[__gsharp_ctx->__gsharp_id_3_tid]);
+__gsharp_id_2_output[__gsharp_ctx->__gsharp_id_3_tid]=__gsharp_add_i32(__gsharp_mul_i32(__gsharp_array_ref(__gsharp_ctx->__gsharp_id_0_values, ""G#: a null array is read at KernelValueParameterKernels.cs(59,23)"").length,1000),__gsharp_array_at(__gsharp_ctx->__gsharp_id_0_values, __gsharp_ctx->__gsharp_id_3_tid, ""G#: a null array is read at KernelValueParameterKernels.cs(59,46)""));
 __gsharp_state=-1;
 return;
 }
@@ -999,7 +999,7 @@ return;
 case 1:
 __gsharp_switch_1_state_1:
 {
-__gsharp_id_2_output[__gsharp_ctx->__gsharp_id_3_tid]=__gsharp_add_i32(__gsharp_mul_i32(__gsharp_ctx->__gsharp_id_1_values.length,1000),__gsharp_ctx->__gsharp_id_1_values[__gsharp_ctx->__gsharp_id_3_tid]);
+__gsharp_id_2_output[__gsharp_ctx->__gsharp_id_3_tid]=__gsharp_add_i32(__gsharp_mul_i32(__gsharp_array_ref(__gsharp_ctx->__gsharp_id_1_values, ""G#: a null array is read at KernelValueParameterKernels.cs(69,23)"").length,1000),__gsharp_array_at(__gsharp_ctx->__gsharp_id_1_values, __gsharp_ctx->__gsharp_id_3_tid, ""G#: a null array is read at KernelValueParameterKernels.cs(69,46)""));
 __gsharp_state=-1;
 return;
 }

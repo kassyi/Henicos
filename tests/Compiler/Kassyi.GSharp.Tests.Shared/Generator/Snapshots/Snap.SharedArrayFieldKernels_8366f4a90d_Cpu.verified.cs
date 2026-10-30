@@ -236,8 +236,8 @@ __gsharp_switch_1_state_0:
 {
 if((int)threadIdx.x==0)
 {
-__gsharp_id_0_p.__gsharp_mb_A[0]=1;
-__gsharp_id_0_p.__gsharp_mb_B[1]=__gsharp_add_i32(__gsharp_id_0_p.__gsharp_mb_A[0],__gsharp_id_0_p.__gsharp_mb_B[0]);
+__gsharp_array_at(__gsharp_id_0_p.__gsharp_mb_A, 0, ""G#: a null array is read at SharedArrayFieldKernels.cs(27,13)"")=1;
+__gsharp_array_at(__gsharp_id_0_p.__gsharp_mb_B, 1, ""G#: a null array is read at SharedArrayFieldKernels.cs(28,13)"")=__gsharp_add_i32(__gsharp_array_at(__gsharp_id_0_p.__gsharp_mb_A, 0, ""G#: a null array is read at SharedArrayFieldKernels.cs(28,22)""),__gsharp_array_at(__gsharp_id_0_p.__gsharp_mb_B, 0, ""G#: a null array is read at SharedArrayFieldKernels.cs(28,31)""));
 }
 __gsharp_state=-1;
 return;
@@ -496,8 +496,8 @@ __gsharp_switch_1_state_0:
 {
 if((int)threadIdx.x==0)
 {
-__gsharp_id_0_first.__gsharp_mb_Data[0]=3;
-__gsharp_id_1_second.__gsharp_mb_Data[1]=__gsharp_add_i32(__gsharp_id_0_first.__gsharp_mb_Data[0],__gsharp_id_1_second.__gsharp_mb_Data[0]);
+__gsharp_array_at(__gsharp_id_0_first.__gsharp_mb_Data, 0, ""G#: a null array is read at SharedArrayFieldKernels.cs(38,13)"")=3;
+__gsharp_array_at(__gsharp_id_1_second.__gsharp_mb_Data, 1, ""G#: a null array is read at SharedArrayFieldKernels.cs(39,13)"")=__gsharp_add_i32(__gsharp_array_at(__gsharp_id_0_first.__gsharp_mb_Data, 0, ""G#: a null array is read at SharedArrayFieldKernels.cs(39,30)""),__gsharp_array_at(__gsharp_id_1_second.__gsharp_mb_Data, 0, ""G#: a null array is read at SharedArrayFieldKernels.cs(39,46)""));
 }
 __gsharp_state=-1;
 return;
@@ -764,8 +764,8 @@ __gsharp_switch_1_state_0:
 {
 if((int)threadIdx.x==0)
 {
-__gsharp_id_0_bags[0].__gsharp_mb_Data[0]=5;
-__gsharp_id_0_bags[1].__gsharp_mb_Data[1]=__gsharp_add_i32(__gsharp_id_0_bags[0].__gsharp_mb_Data[0],__gsharp_id_0_bags[1].__gsharp_mb_Data[0]);
+__gsharp_array_at(__gsharp_id_0_bags[0].__gsharp_mb_Data, 0, ""G#: a null array is read at SharedArrayFieldKernels.cs(49,13)"")=5;
+__gsharp_array_at(__gsharp_id_0_bags[1].__gsharp_mb_Data, 1, ""G#: a null array is read at SharedArrayFieldKernels.cs(50,13)"")=__gsharp_add_i32(__gsharp_array_at(__gsharp_id_0_bags[0].__gsharp_mb_Data, 0, ""G#: a null array is read at SharedArrayFieldKernels.cs(50,31)""),__gsharp_array_at(__gsharp_id_0_bags[1].__gsharp_mb_Data, 0, ""G#: a null array is read at SharedArrayFieldKernels.cs(50,49)""));
 }
 __gsharp_state=-1;
 return;

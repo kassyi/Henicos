@@ -598,6 +598,8 @@ internal static class StructMarshalingEmitter
         }
     }
 
+    private const string ArrayProxy = "global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy";
+
     private static void WriteMarshalArrayMember(SourceWriter writer, string host, string native,
         ITypeSymbol elementType, ITranspilerDialect dialect)
     {
@@ -631,6 +633,16 @@ internal static class StructMarshalingEmitter
                     {
                         WriteDeviceArrayCopy(writer, host, native, elementType);
                     }
+                }
+
+                // [WHY] An empty array is not null (#706): cuMemAlloc rejects zero bytes, so it gets a non-null address
+                // that is never dereferenced, as Rust's NonNull::dangling() for an empty slice. It is not an allocation,
+                // so it never enters the table of the launch (which frees what it holds); Unmarshal_ copies nothing back
+                // for it (size 0)
+                writer.AppendLine("else");
+                using (writer.Scope())
+                {
+                    writer.AppendLine($"{native}.Data = {ArrayProxy}.EmptyArrayData;");
                 }
 
                 writer.AppendLine($"{native}.Length = {host}.Length;");

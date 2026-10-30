@@ -273,7 +273,7 @@ public class GpuBigFloatLinqAndVectorTests : IDisposable
 
         Assert.Equal([1u, 0u, 1u, 1u, 0u], gteHost);
 
-        // Where (> 0) -> [10.0, 20.0, 50.0, 0.0 (padded), 0.0 (padded)], Sum = 80.0
+        // Where (> 0) -> [10.0, 20.0, 50.0] (the count, 3, is known on the device), Sum = 80.0
         using var filteredSum = vec.AsVectorizedEnumerable()
             .Where(vec.AsVectorizedEnumerable().IsGreaterThan(scalarZero))
             .Sum(_context);
