@@ -337,8 +337,8 @@
   {
     "name": "DivergentBarrierProhibited",
     "id": "GSH0037",
-    "title": "Divergent barriers are prohibited",
-    "messageFormat": "Gpu.SyncThreads(), or a call to a device function that reaches it, cannot be placed inside a conditional branch or an operand that only some threads evaluate ('&&', '||', '??', '?:'). This causes undefined behavior on the GPU and deadlocks the CPU emulator.",
+    "title": "Barrier in a lambda or local function that the CPU dialects do not split",
+    "messageFormat": "{0}",
     "category": "GSharpTranspiler",
     "defaultSeverity": "Error",
     "isEnabledByDefault": true
@@ -727,6 +727,24 @@
     "id": "GSH0081",
     "title": "Struct array allocates the array field of each element",
     "messageFormat": "Each element of the array of '{0}' allocates and copies its array field '{1}' separately.",
+    "category": "GSharpTranspiler",
+    "defaultSeverity": "Warning",
+    "isEnabledByDefault": true
+  },
+  {
+    "name": "LaunchDependentDivergentBarrier",
+    "id": "GSH0083",
+    "title": "Barrier that only some threads may reach, depending on the launch or on run-time values",
+    "messageFormat": "'{0}' may be reached by only some threads of the {1}: whether a thread reaches it depends on a branch whose outcome depends on the launch configuration or on run-time values. Move the barrier out of the branch, or make every thread of the {1} take the same side.",
+    "category": "GSharpTranspiler",
+    "defaultSeverity": "Warning",
+    "isEnabledByDefault": true
+  },
+  {
+    "name": "BarrierAfterDivergentExit",
+    "id": "GSH0084",
+    "title": "Barrier after an exit that only some threads take",
+    "messageFormat": "{0} without reaching {1}, which the other threads of the {2} still reach. A barrier that some threads skip because they left is not guaranteed to synchronize the others on the GPU; move the exit after the barrier, or make every thread reach the barrier.",
     "category": "GSharpTranspiler",
     "defaultSeverity": "Warning",
     "isEnabledByDefault": true

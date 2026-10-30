@@ -30,7 +30,9 @@ template <class T> __device__ __host__ inline const T* __gsharp_temp_address(con
 
 template <typename T>
 struct GSharpArray {
-    T* __restrict__ data;
+    // Not __restrict__: in C# two arrays (arguments, struct fields, a ref into one of them) may be one object, and the
+    // launcher then gives them one device region (#552, #707)
+    T* data;
     int length;
 
     __device__ inline GSharpArray() : data(nullptr), length(0) {}
@@ -313,6 +315,27 @@ __device__ __forceinline__ float __gsharp_max_number_f32(float a, float b) { ret
 __device__ __forceinline__ float __gsharp_min_number_f32(float a, float b) { return fminf(a, b); }
 __device__ __forceinline__ double __gsharp_max_number_f64(double a, double b) { return fmax(a, b); }
 __device__ __forceinline__ double __gsharp_min_number_f64(double a, double b) { return fmin(a, b); }
+
+// --- Gpu.GridStrideLoop ---
+// The first index and the step over the linear rank of the whole launch, in the order of cooperative_groups
+// grid::thread_rank() / num_threads() (x fastest, blocks in the same order). Both saturate at 2^31: no int index
+// reaches it, so index + step never wraps around in 32 bits. The block rank is 64-bit before any product: it stays
+// below 2^63 (65535 * 65535 * (2^31 - 1)), as in num_blocks().
+__device__ __forceinline__ unsigned int __gsharp_grid_stride_start() {
+    unsigned long long block = ((unsigned long long)blockIdx.z * gridDim.y + blockIdx.y) * gridDim.x + blockIdx.x;
+    if (block >= 0x80000000ull) { return 0x80000000u; }
+    unsigned long long rank = block * (blockDim.x * blockDim.y * blockDim.z)
+        + (threadIdx.z * blockDim.y + threadIdx.y) * blockDim.x + threadIdx.x;
+    return rank >= 0x80000000ull ? 0x80000000u : (unsigned int)rank;
+}
+__device__ __forceinline__ unsigned int __gsharp_grid_stride_step() {
+    unsigned long long blocks = (unsigned long long)gridDim.x * (gridDim.y * gridDim.z);
+    if (blocks >= 0x80000000ull) { return 0x80000000u; }
+    unsigned long long threads = blocks * (blockDim.x * blockDim.y * blockDim.z);
+    return threads >= 0x80000000ull ? 0x80000000u : (unsigned int)threads;
+}
+// The count of Gpu.GridStrideLoop, evaluated once; a negative count runs no iteration, as i < n does in C#
+__device__ __forceinline__ unsigned int __gsharp_grid_stride_count(int n) { return n < 0 ? 0u : (unsigned int)n; }
 
 // --- Bit Manipulation ---
 __device__ __forceinline__ unsigned int __gsharp_rotl32(unsigned int value, int offset) {

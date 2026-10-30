@@ -63,6 +63,30 @@ namespace DeviceExportCase
             return next;
         }
 
+        // B7: the barrier diverges when the second argument does (DivergentConditionParameters = 0b10)
+        [GpuDeviceFunction]
+        public static void SyncIfEven(int[] buffer, int value)
+        {
+            if (value % 2 == 0)
+            {
+                Gpu.SyncThreads();
+            }
+
+            Gpu.SyncThreads();
+        }
+
+        // B7: some threads may leave before the barrier even with uniform arguments (HasExitOnlyBarrier)
+        [GpuDeviceFunction]
+        public static void SyncWithin(int count)
+        {
+            if (ThreadIndex.X >= count)
+            {
+                return;
+            }
+
+            Gpu.SyncThreads();
+        }
+
         // A ref parameter, and a write to an array: a caller must treat the call as writing memory
         [GpuDeviceFunction]
         public static void WriteThrough(ref int target, int[] data)

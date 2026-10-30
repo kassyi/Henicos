@@ -244,13 +244,18 @@ public static partial class Gpu
     }
 
     /// <summary>
-    /// Generates a standard CUDA Grid-Stride Loop over the specified bound across all threads and blocks.
+    /// Runs <paramref name="body"/> once for each index of <c>[0, maxBounds)</c>, spread over every thread of the launch
+    /// (a grid-stride loop).
     /// </summary>
-    /// <param name="maxBounds">The total element count to process.</param>
+    /// <param name="maxBounds">The total element count to process. It is evaluated once; a negative count runs no
+    /// iteration.</param>
     /// <param name="body">The loop body delegate receiving the current thread stride index.</param>
     /// <remarks>
-    /// Under managed execution the calling thread starts at <c>BlockDim.X * BlockIdx.X + ThreadIdx.X</c> and steps by
-    /// <c>BlockDim.X * GridDim.X</c>, the loop that the G# compiler writes for the kernels it rewrites.
+    /// Each thread starts at its linear rank in the whole launch (x fastest, then y, then z, and the blocks in the same
+    /// order, as cooperative groups <c>grid.thread_rank()</c>) and steps by the number of threads in the launch
+    /// (<c>grid.num_threads()</c>). Every index is therefore visited exactly once for every launch shape, including 2D and
+    /// 3D blocks and grids, and for launches of 2^31 threads or more. To give each row of a 2D launch its own loop, write
+    /// the loop over <c>ThreadIndex.X</c> and <c>BlockIndex.X</c> yourself.
     /// </remarks>
     /// <exception cref="GpuOnlyException">Thrown when evaluated on the host CPU outside managed execution.</exception>
     public static void GridStrideLoop(int maxBounds, Action<int> body)
@@ -260,12 +265,11 @@ public static partial class Gpu
             GpuOnlyException.Throw();
         }
 
-        int step = ManagedGpuContext.BlockDimX * ManagedGpuContext.GridDimX;
-        for (int index = ManagedGpuContext.BlockDimX * ManagedGpuContext.BlockIdxX + ManagedGpuContext.ThreadIdxX;
-             index < maxBounds;
-             index += step)
+        uint count = ManagedGpuContext.GridStrideCount(maxBounds);
+        uint step = ManagedGpuContext.GridStrideStep();
+        for (uint index = ManagedGpuContext.GridStrideStart(); index < count; index += step)
         {
-            body(index);
+            body((int)index);
         }
     }
 
@@ -290,12 +294,11 @@ public static partial class Gpu
             GpuOnlyException.Throw();
         }
 
-        int step = ManagedGpuContext.BlockDimX * ManagedGpuContext.GridDimX;
-        for (int index = ManagedGpuContext.BlockDimX * ManagedGpuContext.BlockIdxX + ManagedGpuContext.ThreadIdxX;
-             index < maxBounds;
-             index += step)
+        uint count = ManagedGpuContext.GridStrideCount(maxBounds);
+        uint step = ManagedGpuContext.GridStrideStep();
+        for (uint index = ManagedGpuContext.GridStrideStart(); index < count; index += step)
         {
-            body(ref ctx, index);
+            body(ref ctx, (int)index);
         }
     }
 

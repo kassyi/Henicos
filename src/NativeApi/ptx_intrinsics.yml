@@ -17,6 +17,7 @@ methods:
 
   - name: AtomicAdd
     nativeName: atomicAdd
+    managed: ManagedAtomics.Add
     summary: Atomically adds a value to the target address and returns the old value.
     typeTemplate:
       placeholder: T
@@ -33,6 +34,7 @@ methods:
 
   - name: AtomicSub
     nativeName: atomicSub
+    managed: ManagedAtomics.Sub
     summary: Atomically subtracts an integer value from the target address and returns the old value.
     typeTemplate:
       placeholder: T
@@ -81,6 +83,7 @@ methods:
 
   - name: AtomicOr
     nativeName: atomicOr
+    managed: ManagedAtomics.Or
     summary: Atomically computes bitwise OR on the target unsigned integer address.
     typeTemplate:
       placeholder: T
@@ -97,6 +100,7 @@ methods:
 
   - name: AtomicMax
     nativeName: atomicMax
+    managed: ManagedAtomics.Max
     summary: Atomically computes the maximum value between the address content and the supplied value.
     typeTemplate:
       placeholder: T
@@ -581,6 +585,7 @@ methods:
   # ===========================================================================
   - name: AtomicExch
     nativeName: atomicExch
+    managed: ManagedAtomics.Exch
     summary: Atomically exchanges the value at address with val.
     typeTemplate:
       placeholder: T
@@ -597,6 +602,7 @@ methods:
 
   - name: AtomicMin
     nativeName: atomicMin
+    managed: ManagedAtomics.Min
     summary: Atomically computes the minimum value between the address content and val.
     typeTemplate:
       placeholder: T
@@ -613,6 +619,7 @@ methods:
 
   - name: AtomicInc
     nativeName: atomicInc
+    managed: ManagedAtomics.Inc
     summary: Atomically increments the value at address up to val (wrapping to 0).
     returnType: uint
     returnDescription: The original value stored at address.
@@ -626,6 +633,7 @@ methods:
 
   - name: AtomicDec
     nativeName: atomicDec
+    managed: ManagedAtomics.Dec
     summary: Atomically decrements the value at address (wrapping to val if <= 0).
     returnType: uint
     returnDescription: The original value stored at address.
@@ -639,6 +647,7 @@ methods:
 
   - name: AtomicCAS
     nativeName: atomicCAS
+    managed: ManagedAtomics.Cas
     summary: Atomically compares the value in memory with compare and, if equal, stores val in memory.
     typeTemplate:
       placeholder: T
@@ -658,6 +667,7 @@ methods:
 
   - name: AtomicAnd
     nativeName: atomicAnd
+    managed: ManagedAtomics.And
     summary: Atomically computes bitwise AND on the target integer address.
     typeTemplate:
       placeholder: T
@@ -674,6 +684,7 @@ methods:
 
   - name: AtomicXor
     nativeName: atomicXor
+    managed: ManagedAtomics.Xor
     summary: Atomically computes bitwise XOR on the target integer address.
     typeTemplate:
       placeholder: T
@@ -904,6 +915,7 @@ methods:
 
   - name: ReductionAdd
     nativeName: atomicAdd
+    managed: ManagedAtomics.Add
     summary: Performs a fire-and-forget reduction addition directly in memory.
     typeTemplate:
       placeholder: T

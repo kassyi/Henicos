@@ -1,6 +1,6 @@
 namespace Kassyi.GSharp.Compiler.Analysis;
 
-/// <summary>The gaps of a Gpu.SyncGrid body, between its flattened statements (SyncGridBody) (<see cref="CrossBarrierLiveness"/>).</summary>
+/// <summary>The gaps of a Gpu.SyncGrid body, between its flattened statements (SyncGridBody) (<see cref="SplicedFlowBuilder"/>).</summary>
 internal sealed class SyncGridGaps(ImmutableArray<SyncGridElement> elements, SemanticModel model)
 {
     // The statement that contains syntax, or the statements that syntax contains (a nested Gpu.SyncGrid(body))
@@ -25,6 +25,9 @@ internal sealed class SyncGridGaps(ImmutableArray<SyncGridElement> elements, Sem
 
         return first < 0 ? null : new SyncGridElementRange(first, last);
     }
+
+    /// <summary>Whether a grid sync follows any statement of the body: the call is a grid barrier.</summary>
+    public bool HasAnyGap => HasGap(0, elements.Length);
 
     // Whether a grid sync follows one of the statements from 'from' up to the one before 'to'
     public bool HasGap(int from, int to)

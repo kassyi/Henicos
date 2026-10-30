@@ -97,7 +97,7 @@ internal readonly struct SyncIntrinsicInfo(
 
 /// <summary>
 /// Classifies the synchronization intrinsics of <c>Kassyi.GSharp.Core</c> (<c>Gpu</c>, <c>Warp</c>, <c>Wmma</c>) by
-/// symbol, so that the analyzers, the thread variance analysis and the lowering share one definition of which calls are
+/// symbol, so that the analyzers, the uniformity analysis and the lowering share one definition of which calls are
 /// barriers, which split the state machine and which return thread-variant values.
 /// </summary>
 /// <remarks>
@@ -145,7 +145,10 @@ internal static class SyncIntrinsicClassifier
         symbol is IPropertySymbol { ContainingType: { Name: TypeConstants.ThreadIndexType, ContainingType: null } type } &&
         type.ContainingNamespace.IsCoreNamespace();
 
-    /// <summary>Whether reading <paramref name="symbol"/> gives a value that may differ between the blocks of a grid (<c>BlockIndex.X</c>, <c>.Y</c>, <c>.Z</c>).</summary>
+    /// <summary>
+    /// Whether reading <paramref name="symbol"/> gives a value that is the same in every thread of a block but may differ
+    /// between the blocks of the grid (<c>BlockIndex.X</c>, <c>.Y</c>, <c>.Z</c>).
+    /// </summary>
     public static bool IsBlockVariantSource(ISymbol symbol) =>
         symbol is IPropertySymbol { ContainingType: { Name: TypeConstants.BlockIndexType, ContainingType: null } type } &&
         type.ContainingNamespace.IsCoreNamespace();

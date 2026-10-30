@@ -387,6 +387,59 @@ public class NativeApiGeneratorTests
         Assert.True(syncIndex < copyIndex, "cuStreamSynchronize(stream) must appear before CopyToHost");
     }
 
+    [Fact]
+    [Scenario(TestScenario.HappyPath)]
+    public void Test_ModuleDefinition_WithSharedMemBytes_PreparesDynamicSharedMemoryBeforeAllocations()
+    {
+        const string Yaml = """
+            namespace: MyApp.Native
+            className: SharedKernels
+            moduleName: ./native/shared.fatbin
+            methods:
+              - name: LaunchShared
+                parameters:
+                  - { name: data, type: "float[]" }
+                  - { name: blockDimX, type: uint }
+                  - { name: sharedMemBytes, type: uint }
+            """;
+
+        var result = RunGenerator(Api("shared.yml", Yaml));
+
+        Assert.Empty(result.Diagnostics);
+        var source = FindSource(result, "SharedKernels");
+        const string Prepare =
+            "global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(kernel, sharedMemBytes, \"SharedKernels.LaunchShared\");";
+        var loadIndex = source.IndexOf("var kernel = GpuKernelLoader.LoadAotKernel(", StringComparison.Ordinal);
+        var prepareIndex = source.IndexOf(Prepare, StringComparison.Ordinal);
+        var allocationIndex = source.IndexOf("new GpuBuffer<float>(", StringComparison.Ordinal);
+
+        Assert.NotEqual(-1, loadIndex);
+        Assert.True(loadIndex < prepareIndex, "Prepare must follow the function lookup");
+        Assert.True(prepareIndex < allocationIndex, "Prepare must precede the device allocations");
+    }
+
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void Test_ModuleDefinition_WithoutSharedMemBytes_DoesNotPrepareDynamicSharedMemory()
+    {
+        const string Yaml = """
+            namespace: MyApp.Native
+            className: NoSharedKernels
+            moduleName: ./native/noshared.fatbin
+            methods:
+              - name: LaunchNoShared
+                parameters:
+                  - { name: data, type: "float[]" }
+            """;
+
+        var result = RunGenerator(Api("noshared.yml", Yaml));
+
+        Assert.Empty(result.Diagnostics);
+        var source = FindSource(result, "NoSharedKernels");
+        Assert.DoesNotContain("DynamicSharedMemoryOptIn", source);
+        Assert.Contains("0, IntPtr.Zero, kernelParams, IntPtr.Zero));", source);
+    }
+
     private sealed record TestFile(string Path, string Text, bool IsGSharpApi);
 
     private static TestFile Api(string path, string text) => new(path, text, IsGSharpApi: true);

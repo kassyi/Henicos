@@ -75,7 +75,22 @@ host = System.Runtime.CompilerServices.Unsafe.As<AotContexts.Tier1CustomStruct, 
 }
 #pragma warning restore CS8500
 }
-public const string AllInOneKernel_Source = @"#ifndef __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__Tier1FixedArray__
+public const string AllInOneKernel_Source = @"#ifndef __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__Tier1CustomStruct__
+#define __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__Tier1CustomStruct__
+struct __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__Tier1CustomStruct
+{
+int __gsharp_mb_IntVal;
+float __gsharp_mb_FloatVal;
+bool __gsharp_mb_BoolVal;
+}
+;
+static_assert(sizeof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__Tier1CustomStruct)==12,""Kassyi.GSharp.Tests.Shared.Syntax.Tier1CustomStruct: size"");
+static_assert(alignof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__Tier1CustomStruct)==4,""Kassyi.GSharp.Tests.Shared.Syntax.Tier1CustomStruct: alignment"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__Tier1CustomStruct,__gsharp_mb_IntVal)==0,""Kassyi.GSharp.Tests.Shared.Syntax.Tier1CustomStruct.IntVal: offset"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__Tier1CustomStruct,__gsharp_mb_FloatVal)==4,""Kassyi.GSharp.Tests.Shared.Syntax.Tier1CustomStruct.FloatVal: offset"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__Tier1CustomStruct,__gsharp_mb_BoolVal)==8,""Kassyi.GSharp.Tests.Shared.Syntax.Tier1CustomStruct.BoolVal: offset"");
+#endif
+#ifndef __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__Tier1FixedArray__
 #define __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__Tier1FixedArray__
 struct __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__Tier1FixedArray
 {
@@ -97,21 +112,6 @@ __device__ inline int size() const { return 4; }
 static_assert(sizeof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__Tier1FixedArray)==16,""Kassyi.GSharp.Tests.Shared.Syntax.Tier1FixedArray: size"");
 static_assert(alignof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__Tier1FixedArray)==4,""Kassyi.GSharp.Tests.Shared.Syntax.Tier1FixedArray: alignment"");
 #endif
-#ifndef __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__Tier1CustomStruct__
-#define __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__Tier1CustomStruct__
-struct __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__Tier1CustomStruct
-{
-int __gsharp_mb_IntVal;
-float __gsharp_mb_FloatVal;
-bool __gsharp_mb_BoolVal;
-}
-;
-static_assert(sizeof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__Tier1CustomStruct)==12,""Kassyi.GSharp.Tests.Shared.Syntax.Tier1CustomStruct: size"");
-static_assert(alignof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__Tier1CustomStruct)==4,""Kassyi.GSharp.Tests.Shared.Syntax.Tier1CustomStruct: alignment"");
-static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__Tier1CustomStruct,__gsharp_mb_IntVal)==0,""Kassyi.GSharp.Tests.Shared.Syntax.Tier1CustomStruct.IntVal: offset"");
-static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__Tier1CustomStruct,__gsharp_mb_FloatVal)==4,""Kassyi.GSharp.Tests.Shared.Syntax.Tier1CustomStruct.FloatVal: offset"");
-static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__Tier1CustomStruct,__gsharp_mb_BoolVal)==8,""Kassyi.GSharp.Tests.Shared.Syntax.Tier1CustomStruct.BoolVal: offset"");
-#endif
 #ifndef __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__Tier1IntegrationKernels__Tier1FixedBufferStruct__
 #define __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__Tier1IntegrationKernels__Tier1FixedBufferStruct__
 struct __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__Tier1IntegrationKernels__Tier1FixedBufferStruct
@@ -130,14 +130,8 @@ uint64_t __gsharp_warp_exchange[2] = {};
 uint32_t __gsharp_warp_shuffle_count = 0;
 bool __gsharp_yielded_for_grid_sync = false;
 bool __gsharp_yielded_for_block_barrier = false;
-bool __gsharp_id_12_ok;
-int __gsharp_id_14_bitwise;
-float __gsharp_id_15_mag;
-__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__Tier1FixedArray __gsharp_id_16_arr;
-float __gsharp_id_17_sum;
-float __gsharp_id_19_foreachSum;
-System_Func<float, float, float> __gsharp_id_27_multiplier;
-Kassyi_GSharp_Core_SharedMemory<float> __gsharp_id_30_dynamicSharedMem;
+int __gsharp_id_30_t;
+Kassyi_GSharp_Core_SharedMemory<float> __gsharp_id_31_dynamicSharedMem;
 };
 extern ""C"" __declspec(dllexport) void __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__Tier1IntegrationKernels__AllInOneKernel(GSharpArray<int> __gsharp_id_0_intInput, GSharpArray<float> __gsharp_id_1_floatInput, GSharpArray<float> __gsharp_id_2_results, __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__Tier1CustomStruct __gsharp_id_3_config, GSharpArray<unsigned long long> __gsharp_id_4_globalCounter, int __gsharp_id_5_count, int __gsharp_id_6_dynamicSharedSize, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__Tier1IntegrationKernels__AllInOneKernel* __gsharp_ctx){
 #define __gsharp_state __gsharp_ctx->__gsharp_state
@@ -149,7 +143,12 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-for(int __gsharp_id_7_tid = blockIdx.x * blockDim.x + threadIdx.x; __gsharp_id_7_tid < __gsharp_id_5_count; __gsharp_id_7_tid += gridDim.x * blockDim.x)
+{
+unsigned int __gsharp_gsl_n_0 = __gsharp_grid_stride_count(__gsharp_id_5_count);
+unsigned int __gsharp_gsl_s_0 = __gsharp_grid_stride_step();
+for(unsigned int __gsharp_gsl_0 = __gsharp_grid_stride_start(); __gsharp_gsl_0 < __gsharp_gsl_n_0; __gsharp_gsl_0 += __gsharp_gsl_s_0)
+{
+int __gsharp_id_7_tid = (int)__gsharp_gsl_0;
 {
 auto __gsharp_id_8_LocalInlineFunc = [&](int __gsharp_id_9_x) {
 return __gsharp_id_9_x+5-5;
@@ -176,13 +175,13 @@ __gsharp_id_10_a = __gsharp_tuple_0;
 __gsharp_id_11_b = __gsharp_tuple_1;
 }());
 int __gsharp_id_13_processed;
-__gsharp_ctx->__gsharp_id_12_ok=__gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__Tier1IntegrationKernels__TryProcess(__gsharp_id_0_intInput[__gsharp_id_7_tid],&__gsharp_id_13_processed);
-__gsharp_ctx->__gsharp_id_14_bitwise=(__gsharp_id_10_a<<1)|(__gsharp_id_11_b>>1)^0xFF;
-__gsharp_ctx->__gsharp_id_14_bitwise&=~1;
-__gsharp_ctx->__gsharp_id_15_mag=__gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__Tier1IntegrationKernels__HelperMath(__gsharp_id_1_floatInput[__gsharp_id_7_tid],(float)__gsharp_id_13_processed);
-__gsharp_ctx->__gsharp_id_15_mag=__gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__Tier1IntegrationKernels__HelperMathAggressive(__gsharp_ctx->__gsharp_id_15_mag);
-__gsharp_ctx->__gsharp_id_15_mag=(float)__gsharp_max_f32(__gsharp_ctx->__gsharp_id_15_mag,__gsharp_id_3_config.__gsharp_mb_FloatVal);
-__gsharp_ctx->__gsharp_id_15_mag+=([&]() {
+bool __gsharp_id_12_ok = __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__Tier1IntegrationKernels__TryProcess(__gsharp_id_0_intInput[__gsharp_id_7_tid],&__gsharp_id_13_processed);
+int __gsharp_id_14_bitwise = (__gsharp_id_10_a<<1)|(__gsharp_id_11_b>>1)^0xFF;
+__gsharp_id_14_bitwise&=~1;
+float __gsharp_id_15_mag = __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__Tier1IntegrationKernels__HelperMath(__gsharp_id_1_floatInput[__gsharp_id_7_tid],(float)__gsharp_id_13_processed);
+__gsharp_id_15_mag=__gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__Tier1IntegrationKernels__HelperMathAggressive(__gsharp_id_15_mag);
+__gsharp_id_15_mag=(float)__gsharp_max_f32(__gsharp_id_15_mag,__gsharp_id_3_config.__gsharp_mb_FloatVal);
+__gsharp_id_15_mag+=([&]() {
 switch((__gsharp_id_7_tid%3))
 {
 case 0: return 1.0f;
@@ -190,102 +189,128 @@ case 1: return 2.0f;
 default: return 3.0f;
 }
 }());
-__gsharp_ctx->__gsharp_id_16_arr=__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__Tier1FixedArray{};
-__gsharp_ctx->__gsharp_id_16_arr[0]=__gsharp_ctx->__gsharp_id_15_mag;
-__gsharp_ctx->__gsharp_id_16_arr[1]=__gsharp_ctx->__gsharp_id_15_mag*2.0f;
-__gsharp_ctx->__gsharp_id_16_arr[2]=__gsharp_ctx->__gsharp_id_15_mag*3.0f;
-__gsharp_ctx->__gsharp_id_16_arr[3]=__gsharp_ctx->__gsharp_id_15_mag*4.0f;
-__gsharp_ctx->__gsharp_id_17_sum=0;
+__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__Tier1FixedArray __gsharp_id_16_arr = __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__Tier1FixedArray{};
+__gsharp_id_16_arr[0]=__gsharp_id_15_mag;
+__gsharp_id_16_arr[1]=__gsharp_id_15_mag*2.0f;
+__gsharp_id_16_arr[2]=__gsharp_id_15_mag*3.0f;
+__gsharp_id_16_arr[3]=__gsharp_id_15_mag*4.0f;
+float __gsharp_id_17_sum = 0;
 // [GpuUnroll] start=0, count=4
 {
 if(0!=1)
 {
-__gsharp_ctx->__gsharp_id_17_sum+=__gsharp_ctx->__gsharp_id_16_arr[0];
+__gsharp_id_17_sum+=__gsharp_id_16_arr[0];
 }
 }
 {
 if(1!=1)
 {
-__gsharp_ctx->__gsharp_id_17_sum+=__gsharp_ctx->__gsharp_id_16_arr[1];
+__gsharp_id_17_sum+=__gsharp_id_16_arr[1];
 }
 }
 {
 if(2!=1)
 {
-__gsharp_ctx->__gsharp_id_17_sum+=__gsharp_ctx->__gsharp_id_16_arr[2];
+__gsharp_id_17_sum+=__gsharp_id_16_arr[2];
 }
 }
 {
 if(3!=1)
 {
-__gsharp_ctx->__gsharp_id_17_sum+=__gsharp_ctx->__gsharp_id_16_arr[3];
+__gsharp_id_17_sum+=__gsharp_id_16_arr[3];
 }
 }
-__gsharp_ctx->__gsharp_id_19_foreachSum=0;
-for(auto __gsharp_id_20_val : __gsharp_ctx->__gsharp_id_16_arr)
+float __gsharp_id_19_foreachSum = 0;
+for(auto __gsharp_id_20_val : __gsharp_id_16_arr)
 {
-__gsharp_ctx->__gsharp_id_19_foreachSum+=__gsharp_id_20_val;
+__gsharp_id_19_foreachSum+=__gsharp_id_20_val;
 }
-__gsharp_ctx->__gsharp_id_17_sum+=__gsharp_ctx->__gsharp_id_19_foreachSum;
+__gsharp_id_17_sum+=__gsharp_id_19_foreachSum;
 const float __gsharp_id_21_coll[4]={ 1.0f, 2.0f, 3.0f, 4.0f };
 float __gsharp_id_22_collSum = 0;
 for(auto __gsharp_id_23_val : __gsharp_id_21_coll)
 {
 __gsharp_id_22_collSum+=__gsharp_id_23_val;
 }
-__gsharp_ctx->__gsharp_id_17_sum+=__gsharp_id_22_collSum+4;
+__gsharp_id_17_sum+=__gsharp_id_22_collSum+4;
 float __gsharp_id_24_stackBuf[4]={ 5.0f, 10.0f, 15.0f, 20.0f };
 float __gsharp_id_25_stackSum = 0;
 for(auto __gsharp_id_26_val : __gsharp_id_24_stackBuf)
 {
 __gsharp_id_25_stackSum+=__gsharp_id_26_val;
 }
-__gsharp_ctx->__gsharp_id_17_sum+=__gsharp_id_25_stackSum+4;
-__gsharp_ctx->__gsharp_id_27_multiplier=[&](float __gsharp_id_28_x, float __gsharp_id_29_m) {
+__gsharp_id_17_sum+=__gsharp_id_25_stackSum+4;
+System_Func<float, float, float> __gsharp_id_27_multiplier = [&](float __gsharp_id_28_x, float __gsharp_id_29_m) {
 return __gsharp_id_28_x*__gsharp_id_29_m;
 }
 ;
-__gsharp_ctx->__gsharp_id_17_sum=__gsharp_ctx->__gsharp_id_27_multiplier(__gsharp_ctx->__gsharp_id_17_sum,2.0f);
-if(__gsharp_ctx->__gsharp_id_12_ok&&__gsharp_id_3_config.__gsharp_mb_BoolVal)
+__gsharp_id_17_sum=__gsharp_id_27_multiplier(__gsharp_id_17_sum,2.0f);
+if(__gsharp_id_12_ok&&__gsharp_id_3_config.__gsharp_mb_BoolVal)
 {
-atomicAdd(&__gsharp_id_4_globalCounter[0],(unsigned long long)__gsharp_ctx->__gsharp_id_14_bitwise);
+atomicAdd(&__gsharp_id_4_globalCounter[0],(unsigned long long)__gsharp_id_14_bitwise);
 }
-__gsharp_ctx->__gsharp_id_30_dynamicSharedMem={ (float*)__gsharp_allocate_smem_dynamic(0xf4a8b89f8fdf4f71ull, (__gsharp_id_6_dynamicSharedSize) * sizeof(float), alignof(float), ""Tier1_IntegrationKernels.cs(154,52)"") };
-__gsharp_ctx->__gsharp_id_30_dynamicSharedMem[threadIdx.x]=__gsharp_ctx->__gsharp_id_17_sum;
-__syncthreads();
-float __gsharp_id_31_finalVal = ((__gsharp_ctx->__gsharp_id_14_bitwise>0)?((__gsharp_ctx->__gsharp_id_30_dynamicSharedMem[threadIdx.x]>10.0f?10.0f:__gsharp_ctx->__gsharp_id_30_dynamicSharedMem[threadIdx.x])):0.0f);
+__gsharp_id_2_results[__gsharp_id_7_tid]=__gsharp_id_17_sum;
+}
+}
+}
+__gsharp_ctx->__gsharp_id_30_t=threadIdx.x;
+__gsharp_ctx->__gsharp_id_31_dynamicSharedMem={ (float*)__gsharp_allocate_smem_dynamic(0xf4a8b89f8fdf4f71ull, (__gsharp_id_6_dynamicSharedSize) * sizeof(float), alignof(float), ""Tier1_IntegrationKernels.cs(163,48)"") };
+if(__gsharp_ctx->__gsharp_id_30_t<__gsharp_id_5_count)
 {
-__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__Tier1IntegrationKernels__Tier1FixedBufferStruct __gsharp_id_32_fbs = __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__Tier1IntegrationKernels__Tier1FixedBufferStruct{};
-__gsharp_id_32_fbs.__gsharp_mb_Data[0]=__gsharp_ctx->__gsharp_id_14_bitwise;
-__gsharp_id_31_finalVal+=__gsharp_id_32_fbs.__gsharp_mb_Data[0];
+__gsharp_ctx->__gsharp_id_31_dynamicSharedMem[__gsharp_ctx->__gsharp_id_30_t]=__gsharp_id_2_results[__gsharp_ctx->__gsharp_id_30_t];
 }
-System_Nullable<int> __gsharp_id_33_maybeVal = {};
-int __gsharp_id_34_actualVal = ([&]() {
-auto __gsharp_coalesce_tmp = __gsharp_id_33_maybeVal;
+__gsharp_yielded_for_block_barrier=true;
+__gsharp_state=1;
+return;
+}
+case 1:
+__gsharp_switch_1_state_1:
+{
+if(__gsharp_ctx->__gsharp_id_30_t<__gsharp_id_5_count)
+{
+int __gsharp_id_32_a;
+int __gsharp_id_33_b;
+([&]() {
+auto __gsharp_tuple_0 = __gsharp_ctx->__gsharp_id_30_t;
+auto __gsharp_tuple_1 = __gsharp_ctx->__gsharp_id_30_t*2;
+__gsharp_id_32_a = __gsharp_tuple_0;
+__gsharp_id_33_b = __gsharp_tuple_1;
+}());
+int __gsharp_id_34_bitwise = (__gsharp_id_32_a<<1)|(__gsharp_id_33_b>>1)^0xFF;
+__gsharp_id_34_bitwise&=~1;
+float __gsharp_id_35_finalVal = ((__gsharp_id_34_bitwise>0)?((__gsharp_ctx->__gsharp_id_31_dynamicSharedMem[__gsharp_ctx->__gsharp_id_30_t]>10.0f?10.0f:__gsharp_ctx->__gsharp_id_31_dynamicSharedMem[__gsharp_ctx->__gsharp_id_30_t])):0.0f);
+{
+__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__Tier1IntegrationKernels__Tier1FixedBufferStruct __gsharp_id_36_fbs = __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__Tier1IntegrationKernels__Tier1FixedBufferStruct{};
+__gsharp_id_36_fbs.__gsharp_mb_Data[0]=__gsharp_id_34_bitwise;
+__gsharp_id_35_finalVal+=__gsharp_id_36_fbs.__gsharp_mb_Data[0];
+}
+System_Nullable<int> __gsharp_id_37_maybeVal = {};
+int __gsharp_id_38_actualVal = ([&]() {
+auto __gsharp_coalesce_tmp = __gsharp_id_37_maybeVal;
 return __gsharp_coalesce_tmp.HasValue ? __gsharp_coalesce_tmp.Value : 5;
 }());
-__gsharp_id_31_finalVal+=__gsharp_id_34_actualVal;
-int __gsharp_id_35_popCount = __popc((unsigned int)((unsigned int)__gsharp_ctx->__gsharp_id_14_bitwise));
-int __gsharp_id_36_leadingZeroes = __gsharp_lzc_32((unsigned int)__gsharp_ctx->__gsharp_id_14_bitwise);
-__gsharp_id_31_finalVal+=__gsharp_id_35_popCount+__gsharp_id_36_leadingZeroes;
-int __gsharp_id_37_loopCounter = 0;
+__gsharp_id_35_finalVal+=__gsharp_id_38_actualVal;
+int __gsharp_id_39_popCount = __popc((unsigned int)((unsigned int)__gsharp_id_34_bitwise));
+int __gsharp_id_40_leadingZeroes = __gsharp_lzc_32((unsigned int)__gsharp_id_34_bitwise);
+__gsharp_id_35_finalVal+=__gsharp_id_39_popCount+__gsharp_id_40_leadingZeroes;
+int __gsharp_id_41_loopCounter = 0;
 do
 {
-if(__gsharp_id_37_loopCounter%2==0)
+if(__gsharp_id_41_loopCounter%2==0)
 {
-if(__gsharp_id_31_finalVal<1000.0f)
+if(__gsharp_id_35_finalVal<1000.0f)
 {
-__gsharp_id_31_finalVal+=1.0f;
+__gsharp_id_35_finalVal+=1.0f;
 }
 }
 else
 {
-__gsharp_id_31_finalVal-=0.5f;
+__gsharp_id_35_finalVal-=0.5f;
 }
-__gsharp_id_37_loopCounter++;
+__gsharp_id_41_loopCounter++;
 }
-while(__gsharp_id_37_loopCounter<3);
-__gsharp_id_2_results[__gsharp_id_7_tid]=__gsharp_id_31_finalVal;
+while(__gsharp_id_41_loopCounter<3);
+__gsharp_id_2_results[__gsharp_ctx->__gsharp_id_30_t]=__gsharp_id_35_finalVal;
 }
 __gsharp_state=-1;
 return;
@@ -371,13 +396,7 @@ public static readonly string AllInOneKernel_FullSource=global::Kassyi.GSharp.Ge
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__Tier1IntegrationKernels__AllInOneKernel {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
-public bool ok;
-public int bitwise;
-public float mag;
-public global::Kassyi.GSharp.Tests.Shared.Syntax.Tier1FixedArray arr;
-public float sum;
-public float foreachSum;
-public global::System.Func<float, float, float> multiplier;
+public int t;
 }
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__Tier1IntegrationKernels__AllInOneKernel(int[] intInput, float[] floatInput, float[] results, global::Kassyi.GSharp.Tests.Shared.Syntax.Tier1CustomStruct config, ulong[] globalCounter, int count, int dynamicSharedSize, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__Tier1IntegrationKernels__AllInOneKernel __gsharp_ctx) {
 global::Kassyi.GSharp.Core.SharedMemory<float> dynamicSharedMem = global::Kassyi.GSharp.Core.SharedMemory<float>.FindDynamic(0xf4a8b89f8fdf4f71UL);
@@ -387,8 +406,12 @@ switch (__gsharp_ctx.__gsharp_state)
 case 0:
 {
 // SYN-94: Macro DSL
-for (int __gsharp_unroll_0 = global::Kassyi.GSharp.Core.ManagedGpuContext.BlockDimX * global::Kassyi.GSharp.Core.ManagedGpuContext.BlockIdxX + global::Kassyi.GSharp.Core.ManagedGpuContext.ThreadIdxX; __gsharp_unroll_0 < (count); __gsharp_unroll_0 += global::Kassyi.GSharp.Core.ManagedGpuContext.BlockDimX * global::Kassyi.GSharp.Core.ManagedGpuContext.GridDimX)
 {
+uint __gsharp_gsl_n_0 = global::Kassyi.GSharp.Core.ManagedGpuContext.GridStrideCount(count);
+uint __gsharp_gsl_s_0 = global::Kassyi.GSharp.Core.ManagedGpuContext.GridStrideStep();
+for (uint __gsharp_gsl_0 = global::Kassyi.GSharp.Core.ManagedGpuContext.GridStrideStart(); __gsharp_gsl_0 < __gsharp_gsl_n_0; __gsharp_gsl_0 += __gsharp_gsl_s_0)
+{
+int __gsharp_unroll_0 = (int)__gsharp_gsl_0;
 // Local function with AggressiveInlining
 [global::System.Runtime.CompilerServices.MethodImpl(global::System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
 int LocalInlineFunc(int x) => x + 5 - 5; // effectively x
@@ -396,40 +419,45 @@ int LocalInlineFunc(int x) => x + 5 - 5; // effectively x
 (int a, int b) = (LocalInlineFunc(__gsharp_unroll_0), __gsharp_unroll_0 * 2);
 (a, b) = (b, a); // Swap
 (a, b) = (b, a); // Swap back
-__gsharp_ctx.ok = global::Kassyi.GSharp.Tests.Shared.Syntax.Tier1IntegrationKernels.TryProcess(intInput[__gsharp_unroll_0], out var processed);
-__gsharp_ctx.bitwise = (a << 1) | (b >> 1) ^ 0xFF;
-__gsharp_ctx.bitwise &= ~1;
-__gsharp_ctx.mag = global::Kassyi.GSharp.Tests.Shared.Syntax.Tier1IntegrationKernels.HelperMath(floatInput[__gsharp_unroll_0], (float)processed);
-__gsharp_ctx.mag = global::Kassyi.GSharp.Tests.Shared.Syntax.Tier1IntegrationKernels.HelperMathAggressive(__gsharp_ctx.mag); // SYN-28
-__gsharp_ctx.mag = (float)global::System.Math.Max(__gsharp_ctx.mag, config.FloatVal);
+bool ok = global::Kassyi.GSharp.Tests.Shared.Syntax.Tier1IntegrationKernels.TryProcess(intInput[__gsharp_unroll_0], out var processed); // var support
+// Bitwise and Shifts
+int bitwise = (a << 1) | (b >> 1) ^ 0xFF;
+bitwise &= ~1;
+// Math & Hardware Math (SYN-68)
+float mag = global::Kassyi.GSharp.Tests.Shared.Syntax.Tier1IntegrationKernels.HelperMath(floatInput[__gsharp_unroll_0], (float)processed);
+mag = global::Kassyi.GSharp.Tests.Shared.Syntax.Tier1IntegrationKernels.HelperMathAggressive(mag); // SYN-28
+mag = (float)global::System.Math.Max(mag, config.FloatVal);
 // SYN-01: Switch expression
-__gsharp_ctx.mag += (__gsharp_unroll_0 % 3) switch
+mag += (__gsharp_unroll_0 % 3) switch
 {
 0 => 1.0f,
 1 => 2.0f,
 _ => 3.0f
 };
-__gsharp_ctx.arr = new global::Kassyi.GSharp.Tests.Shared.Syntax.Tier1FixedArray();
-__gsharp_ctx.arr[0] = __gsharp_ctx.mag;
-__gsharp_ctx.arr[1] = __gsharp_ctx.mag * 2.0f;
-__gsharp_ctx.arr[2] = __gsharp_ctx.mag * 3.0f;
-__gsharp_ctx.arr[3] = __gsharp_ctx.mag * 4.0f;
-__gsharp_ctx.sum = 0;
+// Inline Array (GEN-30)
+global::Kassyi.GSharp.Tests.Shared.Syntax.Tier1FixedArray arr = new global::Kassyi.GSharp.Tests.Shared.Syntax.Tier1FixedArray();
+arr[0] = mag;
+arr[1] = mag * 2.0f;
+arr[2] = mag * 3.0f;
+arr[3] = mag * 4.0f;
+// SYN-94: ForUnroll
+float sum = 0;
 for (int __gsharp_unroll_1 = 0; __gsharp_unroll_1 < unchecked(0 + 4); __gsharp_unroll_1++)
 {
 if (__gsharp_unroll_1 != 1)
 {
-__gsharp_ctx.sum += __gsharp_ctx.arr[__gsharp_unroll_1];
+sum += arr[__gsharp_unroll_1];
 }
 }
 
-__gsharp_ctx.foreachSum = 0;
-foreach (var val in __gsharp_ctx.arr)
+// SYN-70: foreach loop on InlineArray
+float foreachSum = 0;
+foreach (var val in arr)
 {
-__gsharp_ctx.foreachSum += val;
+foreachSum += val;
 }
 
-__gsharp_ctx.sum += __gsharp_ctx.foreachSum;
+sum += foreachSum;
 {
 global::System.ReadOnlySpan<float> coll = [1.0f, 2.0f, 3.0f, 4.0f];
 float collSum = 0;
@@ -438,7 +466,7 @@ foreach (var val in coll)
 collSum += val;
 }
 
-__gsharp_ctx.sum += collSum + coll.Length;
+sum += collSum + coll.Length;
 }
 
 {
@@ -455,27 +483,50 @@ foreach (var val in stackBuf)
 stackSum += val;
 }
 
-__gsharp_ctx.sum += stackSum + stackBuf.Length;
+sum += stackSum + stackBuf.Length;
 }
 
-__gsharp_ctx.multiplier = (float x, float m) => x * m;
-__gsharp_ctx.sum = __gsharp_ctx.multiplier(__gsharp_ctx.sum, 2.0f);
+// SYN-08: Lambda expressions (Expanded to C++ auto lambdas)
+global::System.Func<float, float, float> multiplier = (float x, float m) => x * m;
+sum = multiplier(sum, 2.0f);
 // Atomic Operations (SYN-49)
-if (__gsharp_ctx.ok && config.BoolVal)
+if (ok && config.BoolVal)
 {
-global::Kassyi.GSharp.Core.Gpu.AtomicAdd(ref globalCounter[0], (ulong)__gsharp_ctx.bitwise);
+global::Kassyi.GSharp.Core.Gpu.AtomicAdd(ref globalCounter[0], (ulong)bitwise);
 }
 
-dynamicSharedMem = new global::Kassyi.GSharp.Core.SharedMemory<float>(dynamicSharedSize, 0xf4a8b89f8fdf4f71UL, "Tier1_IntegrationKernels.cs(154,52)");
-dynamicSharedMem[global::Kassyi.GSharp.Core.ThreadIndex.X] = __gsharp_ctx.sum;
-global::Kassyi.GSharp.Core.Gpu.SyncThreads(); // GBI-31
+// The loop leaves its sum in the result; the barrier comes after the loop (GBI-31)
+results[__gsharp_unroll_0] = sum;
+}
+}
+
+__gsharp_ctx.t = global::Kassyi.GSharp.Core.ThreadIndex.X;
+dynamicSharedMem = new global::Kassyi.GSharp.Core.SharedMemory<float>(dynamicSharedSize, 0xf4a8b89f8fdf4f71UL, "Tier1_IntegrationKernels.cs(163,48)");
+if (__gsharp_ctx.t < count)
+{
+dynamicSharedMem[__gsharp_ctx.t] = results[__gsharp_ctx.t];
+}
+
+global::Kassyi.GSharp.Core.ManagedGpuContext.BlockBarrierRequested = true;
+__gsharp_ctx.__gsharp_state = 1;
+return;
+}
+
+case 1:
+{
+if (__gsharp_ctx.t < count)
+{
+// The same bits as in the loop
+(int a, int b) = (__gsharp_ctx.t, __gsharp_ctx.t * 2);
+int bitwise = (a << 1) | (b >> 1) ^ 0xFF;
+bitwise &= ~1;
 // Complex ternary (GSH-01)
-float finalVal = (__gsharp_ctx.bitwise > 0) ? (dynamicSharedMem[global::Kassyi.GSharp.Core.ThreadIndex.X] > 10.0f ? 10.0f : dynamicSharedMem[global::Kassyi.GSharp.Core.ThreadIndex.X]) : 0.0f;
+float finalVal = (bitwise > 0) ? (dynamicSharedMem[__gsharp_ctx.t] > 10.0f ? 10.0f : dynamicSharedMem[__gsharp_ctx.t]) : 0.0f;
 // SYN-14: fixed buffers inside structs
 unsafe
 {
 global::Kassyi.GSharp.Tests.Shared.Syntax.Tier1IntegrationKernels.Tier1FixedBufferStruct fbs = new global::Kassyi.GSharp.Tests.Shared.Syntax.Tier1IntegrationKernels.Tier1FixedBufferStruct();
-fbs.Data[0] = __gsharp_ctx.bitwise;
+fbs.Data[0] = bitwise;
 finalVal += fbs.Data[0];
 }
 
@@ -484,8 +535,8 @@ int? maybeVal = default;
 int actualVal = maybeVal ?? 5; // Should be 5
 finalVal += actualVal;
 // BCL-01 & BCL-02: System.Numerics.BitOperations
-int popCount = global::System.Numerics.BitOperations.PopCount((uint)__gsharp_ctx.bitwise);
-int leadingZeroes = global::System.Numerics.BitOperations.LeadingZeroCount((uint)__gsharp_ctx.bitwise);
+int popCount = global::System.Numerics.BitOperations.PopCount((uint)bitwise);
+int leadingZeroes = global::System.Numerics.BitOperations.LeadingZeroCount((uint)bitwise);
 finalVal += popCount + leadingZeroes;
 // SYN-90: Complex Control Flow
 int loopCounter = 0;
@@ -506,7 +557,7 @@ finalVal -= 0.5f;
 loopCounter++;
 }
 while (loopCounter < 3);
-results[__gsharp_unroll_0] = finalVal;
+results[__gsharp_ctx.t] = finalVal;
 }
 
 __gsharp_ctx.__gsharp_state = -1;

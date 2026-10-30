@@ -114,7 +114,7 @@ public const string DebugName_BoolVal = "global::System.Boolean";
 [System.Runtime.InteropServices.FieldOffset(8)]
 public global::System.Boolean BoolVal;
 }
-public static unsafe void Marshal_Tier1CustomStruct(ref global::Kassyi.GSharp.Tests.Shared.Syntax.Tier1CustomStruct host, ref AotContexts.Tier1CustomStruct native, bool isDevicePtr, System.Collections.Generic.List<IntPtr>? allocatedPtrs, IntPtr hStream = default)
+public static unsafe void Marshal_Tier1CustomStruct(ref global::Kassyi.GSharp.Tests.Shared.Syntax.Tier1CustomStruct host, ref AotContexts.Tier1CustomStruct native, bool isDevicePtr, global::Kassyi.GSharp.Runtime.Interop.DeviceArrayRegions? deviceArrays, IntPtr hStream = default)
 {
 native = System.Runtime.CompilerServices.Unsafe.As<global::Kassyi.GSharp.Tests.Shared.Syntax.Tier1CustomStruct, AotContexts.Tier1CustomStruct>(ref host);
 }
@@ -184,7 +184,12 @@ extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__T
 __gsharp_dsmem_Kassyi__GSharp__Tests__Shared__Syntax__Tier1IntegrationKernels__AllInOneKernel __gsharp_dsmem_storage;
 __gsharp_dsmem_Kassyi__GSharp__Tests__Shared__Syntax__Tier1IntegrationKernels__AllInOneKernel* __gsharp_dsmem = &__gsharp_dsmem_storage;
 __gsharp_dsmem_init(__gsharp_dsmem);
-for(int __gsharp_id_7_tid = blockIdx.x * blockDim.x + threadIdx.x; __gsharp_id_7_tid < __gsharp_id_5_count; __gsharp_id_7_tid += gridDim.x * blockDim.x)
+{
+unsigned int __gsharp_gsl_n_0 = __gsharp_grid_stride_count(__gsharp_id_5_count);
+unsigned int __gsharp_gsl_s_0 = __gsharp_grid_stride_step();
+for(unsigned int __gsharp_gsl_0 = __gsharp_grid_stride_start(); __gsharp_gsl_0 < __gsharp_gsl_n_0; __gsharp_gsl_0 += __gsharp_gsl_s_0)
+{
+int __gsharp_id_7_tid = (int)__gsharp_gsl_0;
 {
 auto __gsharp_id_8_LocalInlineFunc = [&](int __gsharp_id_9_x) {
 return __gsharp_id_9_x+5-5;
@@ -285,42 +290,62 @@ if(__gsharp_id_12_ok&&__gsharp_id_3_config.__gsharp_mb_BoolVal)
 {
 atomicAdd(&__gsharp_id_4_globalCounter[0],(unsigned long long)__gsharp_id_14_bitwise);
 }
-float* __gsharp_id_30_dynamicSharedMem = (float*)__gsharp_dsmem_place<__gsharp_dsmem_Kassyi__GSharp__Tests__Shared__Syntax__Tier1IntegrationKernels__AllInOneKernel::Slot<0xf4a8b89f8fdf4f71ull>>(__gsharp_dsmem, (unsigned long long)(long long)(__gsharp_id_6_dynamicSharedSize) * sizeof(float), __GSHARP_DSMEM_ALIGN(float));
-__gsharp_id_30_dynamicSharedMem[threadIdx.x]=__gsharp_id_17_sum;
-__syncthreads();
-float __gsharp_id_31_finalVal = ((__gsharp_id_14_bitwise>0)?((__gsharp_id_30_dynamicSharedMem[threadIdx.x]>10.0f?10.0f:__gsharp_id_30_dynamicSharedMem[threadIdx.x])):0.0f);
-{
-__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__Tier1IntegrationKernels__Tier1FixedBufferStruct __gsharp_id_32_fbs = __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__Tier1IntegrationKernels__Tier1FixedBufferStruct{};
-__gsharp_id_32_fbs.__gsharp_mb_Data[0]=__gsharp_id_14_bitwise;
-__gsharp_id_31_finalVal+=__gsharp_id_32_fbs.__gsharp_mb_Data[0];
+__gsharp_id_2_results[__gsharp_id_7_tid]=__gsharp_id_17_sum;
 }
-System_Nullable<int> __gsharp_id_33_maybeVal = {};
-int __gsharp_id_34_actualVal = ([&]() {
-auto __gsharp_coalesce_tmp = __gsharp_id_33_maybeVal;
+}
+}
+int __gsharp_id_30_t = threadIdx.x;
+float* __gsharp_id_31_dynamicSharedMem = (float*)__gsharp_dsmem_place<__gsharp_dsmem_Kassyi__GSharp__Tests__Shared__Syntax__Tier1IntegrationKernels__AllInOneKernel::Slot<0xf4a8b89f8fdf4f71ull>>(__gsharp_dsmem, (unsigned long long)(long long)(__gsharp_id_6_dynamicSharedSize) * sizeof(float), __GSHARP_DSMEM_ALIGN(float));
+if(__gsharp_id_30_t<__gsharp_id_5_count)
+{
+__gsharp_id_31_dynamicSharedMem[__gsharp_id_30_t]=__gsharp_id_2_results[__gsharp_id_30_t];
+}
+__syncthreads();
+if(__gsharp_id_30_t<__gsharp_id_5_count)
+{
+int __gsharp_id_32_a;
+int __gsharp_id_33_b;
+([&]() {
+auto __gsharp_tuple_0 = __gsharp_id_30_t;
+auto __gsharp_tuple_1 = __gsharp_id_30_t*2;
+__gsharp_id_32_a = __gsharp_tuple_0;
+__gsharp_id_33_b = __gsharp_tuple_1;
+}());
+int __gsharp_id_34_bitwise = (__gsharp_id_32_a<<1)|(__gsharp_id_33_b>>1)^0xFF;
+__gsharp_id_34_bitwise&=~1;
+float __gsharp_id_35_finalVal = ((__gsharp_id_34_bitwise>0)?((__gsharp_id_31_dynamicSharedMem[__gsharp_id_30_t]>10.0f?10.0f:__gsharp_id_31_dynamicSharedMem[__gsharp_id_30_t])):0.0f);
+{
+__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__Tier1IntegrationKernels__Tier1FixedBufferStruct __gsharp_id_36_fbs = __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__Tier1IntegrationKernels__Tier1FixedBufferStruct{};
+__gsharp_id_36_fbs.__gsharp_mb_Data[0]=__gsharp_id_34_bitwise;
+__gsharp_id_35_finalVal+=__gsharp_id_36_fbs.__gsharp_mb_Data[0];
+}
+System_Nullable<int> __gsharp_id_37_maybeVal = {};
+int __gsharp_id_38_actualVal = ([&]() {
+auto __gsharp_coalesce_tmp = __gsharp_id_37_maybeVal;
 return __gsharp_coalesce_tmp.HasValue ? __gsharp_coalesce_tmp.Value : 5;
 }());
-__gsharp_id_31_finalVal+=__gsharp_id_34_actualVal;
-int __gsharp_id_35_popCount = __popc((unsigned int)((unsigned int)__gsharp_id_14_bitwise));
-int __gsharp_id_36_leadingZeroes = __gsharp_lzc_32((unsigned int)__gsharp_id_14_bitwise);
-__gsharp_id_31_finalVal+=__gsharp_id_35_popCount+__gsharp_id_36_leadingZeroes;
-int __gsharp_id_37_loopCounter = 0;
+__gsharp_id_35_finalVal+=__gsharp_id_38_actualVal;
+int __gsharp_id_39_popCount = __popc((unsigned int)((unsigned int)__gsharp_id_34_bitwise));
+int __gsharp_id_40_leadingZeroes = __gsharp_lzc_32((unsigned int)__gsharp_id_34_bitwise);
+__gsharp_id_35_finalVal+=__gsharp_id_39_popCount+__gsharp_id_40_leadingZeroes;
+int __gsharp_id_41_loopCounter = 0;
 do
 {
-if(__gsharp_id_37_loopCounter%2==0)
+if(__gsharp_id_41_loopCounter%2==0)
 {
-if(__gsharp_id_31_finalVal<1000.0f)
+if(__gsharp_id_35_finalVal<1000.0f)
 {
-__gsharp_id_31_finalVal+=1.0f;
+__gsharp_id_35_finalVal+=1.0f;
 }
 }
 else
 {
-__gsharp_id_31_finalVal-=0.5f;
+__gsharp_id_35_finalVal-=0.5f;
 }
-__gsharp_id_37_loopCounter++;
+__gsharp_id_41_loopCounter++;
 }
-while(__gsharp_id_37_loopCounter<3);
-__gsharp_id_2_results[__gsharp_id_7_tid]=__gsharp_id_31_finalVal;
+while(__gsharp_id_41_loopCounter<3);
+__gsharp_id_2_results[__gsharp_id_30_t]=__gsharp_id_35_finalVal;
 }
 }
 ";

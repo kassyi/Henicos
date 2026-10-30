@@ -108,6 +108,60 @@ public static partial class ManagedGpuContext
     [EditorBrowsable(EditorBrowsableState.Never)]
     public static bool GridSyncRequested;
 
+    // Gpu.GridStrideLoop stops the start and the step here: no int index reaches 2^31, so index + step never wraps
+    // around in 32 bits
+    private const ulong GridStrideLimit = 0x80000000ul;
+
+    /// <summary>
+    /// The first index of the calling thread in <c>Gpu.GridStrideLoop</c>: its linear rank in the launch, in the order of
+    /// cooperative groups <c>grid.thread_rank()</c> (x fastest, blocks in the same order), saturated at 2^31. The same
+    /// computation as <c>__gsharp_grid_stride_start</c> of the C++ preludes. For generated code and the Core
+    /// implementation only.
+    /// </summary>
+    /// <returns>The rank of the thread, or 2^31 when it is 2^31 or more.</returns>
+    [EditorBrowsable(EditorBrowsableState.Never)]
+    public static uint GridStrideStart()
+    {
+        // Below 2^63: 65535 * 65535 * (2^31 - 1), as cooperative groups num_blocks() notes
+        ulong block = ((ulong)(uint)BlockIdxZ * (uint)GridDimY + (uint)BlockIdxY) * (uint)GridDimX + (uint)BlockIdxX;
+        if (block >= GridStrideLimit)
+        {
+            return (uint)GridStrideLimit;
+        }
+
+        ulong rank = block * ((ulong)(uint)BlockDimX * (uint)BlockDimY * (uint)BlockDimZ)
+            + ((ulong)(uint)ThreadIdxZ * (uint)BlockDimY + (uint)ThreadIdxY) * (uint)BlockDimX + (uint)ThreadIdxX;
+        return rank >= GridStrideLimit ? (uint)GridStrideLimit : (uint)rank;
+    }
+
+    /// <summary>
+    /// The step of <c>Gpu.GridStrideLoop</c>: the number of threads in the launch, saturated at 2^31. The same computation
+    /// as <c>__gsharp_grid_stride_step</c> of the C++ preludes. For generated code and the Core implementation only.
+    /// </summary>
+    /// <returns>The number of threads, or 2^31 when it is 2^31 or more.</returns>
+    [EditorBrowsable(EditorBrowsableState.Never)]
+    public static uint GridStrideStep()
+    {
+        ulong blocks = (ulong)(uint)GridDimX * (uint)GridDimY * (uint)GridDimZ;
+        if (blocks >= GridStrideLimit)
+        {
+            return (uint)GridStrideLimit;
+        }
+
+        ulong threads = blocks * ((ulong)(uint)BlockDimX * (uint)BlockDimY * (uint)BlockDimZ);
+        return threads >= GridStrideLimit ? (uint)GridStrideLimit : (uint)threads;
+    }
+
+    /// <summary>
+    /// The count of <c>Gpu.GridStrideLoop</c>, evaluated once: a negative count runs no iteration, as <c>i &lt; n</c> does
+    /// in C#. The same as <c>__gsharp_grid_stride_count</c> of the C++ preludes. For generated code and the Core
+    /// implementation only.
+    /// </summary>
+    /// <param name="count">The count argument of the loop.</param>
+    /// <returns><paramref name="count"/>, or 0 when it is negative.</returns>
+    [EditorBrowsable(EditorBrowsableState.Never)]
+    public static uint GridStrideCount(int count) => count < 0 ? 0u : (uint)count;
+
     /// <summary>
     /// Set by generated code when the GPU thread being stepped stops at <c>Gpu.SyncThreads</c>, in the kernel or in any
     /// device function it calls; the managed launcher clears it before each step and reads it after, like
