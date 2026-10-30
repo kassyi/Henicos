@@ -11,3 +11,8 @@ public enum UIntMode : uint
 {
     First = 5
 }
+
+public enum ByteMode : byte
+{
+    Last = 255
+}

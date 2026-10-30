@@ -314,9 +314,7 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker, IDisposable
         Context.Emitter.Writer.Append("case ");
         Visit(node.Value);
         Context.Emitter.Writer.AppendLine(":");
-        var activeId = Context.Emitter.CurrentSwitchId;
-        Context.Emitter.Writer.Append($"{GSharpInternalNames.Lowering.SwitchStatePrefix}{activeId}_state_");
-        Visit(node.Value);
+        SwitchStateLabel.Append(node.Value, ref Context);
         Context.Emitter.Writer.Append(":");
     }
 
@@ -384,7 +382,7 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker, IDisposable
         {
             case IFieldSymbol { IsConst: true, HasConstantValue: true } field:
 
-                Context.Emitter.Writer.AppendConstantField(field);
+                ConstantAtUse.Append(node, field.Type, field.ConstantValue, ref Context);
 
                 return;
             case IParameterSymbol { RefKind: RefKind.Ref or RefKind.Out } or ILocalSymbol { IsRef: true }:

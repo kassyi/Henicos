@@ -1134,7 +1134,7 @@ __gsharp_id_3_value=__shfl_xor_sync(4294967295U,__gsharp_id_3_value,1,32);
 break;
 }
 case __gsharp_id_4_Next:
-__gsharp_switch_1_state___gsharp_id_4_Next:
+__gsharp_switch_1_state_1:
 {
 __gsharp_id_3_value=__shfl_xor_sync(4294967295U,__gsharp_id_3_value,2,32)+100;
 break;

@@ -328,21 +328,14 @@ internal static class ObjectCreationHelper
     }
 
     // The value itself: an expression built for it (ArgumentMatchingHelper.CreateDefaultArgument) is outside the
-    // compilation, so a member access such as float.NaN would bind to nothing. default is {}; an enum keeps its cast.
+    // compilation, so a member access such as float.NaN would bind to nothing. default is {}; an enum is its base type in
+    // C++, whose literal ConstexprLiteral writes.
     private static void EmitDefaultArgument(IParameterSymbol parameter, ref TranspileContext context)
     {
         if (parameter.ExplicitDefaultValue is not { } value)
         {
             context.Emitter.Writer.Append("{}");
             return;
-        }
-
-        if (parameter.Type.TypeKind == TypeKind.Enum)
-        {
-            using (context.Emitter.Writer.Parentheses())
-            {
-                context.Emitter.Dialect.AppendType(ref context, parameter.Type);
-            }
         }
 
         context.Emitter.Writer.Append(ConstexprLiteral.FormatCppConstant(parameter.Type, value));

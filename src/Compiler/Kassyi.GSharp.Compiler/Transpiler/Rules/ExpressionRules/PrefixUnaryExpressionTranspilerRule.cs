@@ -43,7 +43,7 @@ public sealed class PrefixUnaryExpressionTranspilerRule : SyntaxNodeTranspilerRu
             context.Query.SemanticModel.GetSafeConstantValue(node) is { HasValue: true, Value: { } value } &&
             context.Query.SemanticModel.GetTypeSymbol(node) is { } type)
         {
-            context.Emitter.Writer.Append(ConstexprLiteral.FormatCppConstant(type, value));
+            ConstantAtUse.Append(node, type, value, ref context);
             return;
         }
 
