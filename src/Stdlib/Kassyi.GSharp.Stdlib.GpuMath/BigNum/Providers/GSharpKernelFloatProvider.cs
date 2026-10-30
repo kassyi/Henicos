@@ -44,21 +44,30 @@ public sealed class GSharpKernelFloatProvider(IGpuBigFloatArithmetic fallbackStr
         in GpuFloatOperand value,
         GpuBigIntMemoryHandle resultSig)
     {
-        var valueSig = value.Significand;
         if (context.GpuWorkspace.Provider is not GSharpKernelProvider || GpuKernelLoader.IsCpuFallbackMode)
         {
             return fallbackStrategy.Normalize(ref context, in value, resultSig);
         }
 
-        var valueView = valueSig.AsView(context.GpuWorkspace);
-        var resultView = resultSig.AsView(context.GpuWorkspace);
+        return NormalizeScaled(context.GpuWorkspace, value.Significand, value.Exponent, value.IsNegative, resultSig);
+    }
+
+    // Normalizes significand·2^exponent into resultSig (RZ) and returns the exponent and the sign of the result. The
+    // exponent is computed in long and checked into int at the end (#661 §4.1): an intermediate exponent outside int is
+    // fine when the result fits, and a result exponent outside int throws OverflowException instead of wrapping around.
+    private static GpuFloatResult NormalizeScaled(
+        GpuWorkspace workspace, GpuBigIntMemoryHandle significand, long exponent, bool isNegative,
+        GpuBigIntMemoryHandle resultSig)
+    {
+        var valueView = significand.AsView(workspace);
+        var resultView = resultSig.AsView(workspace);
         var shift = GpuBigIntMath.NormalizeToMsb(valueView, resultView, out var actualBits);
         if (actualBits == 0)
         {
             return new GpuFloatResult(0, false);
         }
 
-        return new GpuFloatResult(value.Exponent - shift, value.IsNegative);
+        return new GpuFloatResult(checked((int)(exponent - shift)), isNegative);
     }
 
     /// <inheritdoc/>
@@ -68,87 +77,108 @@ public sealed class GSharpKernelFloatProvider(IGpuBigFloatArithmetic fallbackStr
         in GpuFloatOperand right,
         GpuBigIntMemoryHandle resultSig)
     {
-        var stream = context.Stream;
-        var leftSig = left.Significand;
-        var rightSig = right.Significand;
-        var expDiff = Math.Abs(left.Exponent - right.Exponent);
-
-        if (context.GpuWorkspace.Provider is GSharpKernelProvider && !GpuKernelLoader.IsCpuFallbackMode)
+        if (context.GpuWorkspace.Provider is not GSharpKernelProvider || GpuKernelLoader.IsCpuFallbackMode)
         {
-            var leftHasLargerExp = left.Exponent > right.Exponent
-                                   || (left.Exponent == right.Exponent && leftSig.NumWords >= rightSig.NumWords);
-            var larger = leftHasLargerExp ? left : right;
-            var smaller = leftHasLargerExp ? right : left;
-            var largerSig = larger.Significand;
-            var smallerSig = smaller.Significand;
-
-            int signScale;
-            bool resultSign;
-            if (larger.IsNegative == smaller.IsNegative)
-            {
-                signScale = 1;
-                resultSign = larger.IsNegative;
-            }
-            else
-            {
-                using var largerUFloat =
-                    new GpuBigUFloat(largerSig.AsBorrowedBigUInt(context.GpuWorkspace), larger.Exponent);
-                using var smallerUFloat =
-                    new GpuBigUFloat(smallerSig.AsBorrowedBigUInt(context.GpuWorkspace), smaller.Exponent);
-                var magCmp = GpuBigNumberAlgorithms.Compare(largerUFloat, smallerUFloat);
-                switch (magCmp)
-                {
-                    case 0:
-                        context.GpuWorkspace.Provider.ClearMemoryAsync(resultSig.DevicePointer, resultSig.NumWords,
-                            stream);
-                        return new GpuFloatResult(0, false);
-                    case > 0:
-                        // (largerSig << expDiff) - smallerSig => valB - valA (sign == -2)
-                        signScale = -2;
-                        resultSign = larger.IsNegative;
-                        break;
-                    default:
-                        // smallerSig - (largerSig << expDiff) => valA - valB (sign == -1)
-                        signScale = -1;
-                        resultSign = smaller.IsNegative;
-                        break;
-                }
-            }
-
-            var rightShift = -expDiff;
-            var wordShift = rightShift / 32;
-            var bitShift = rightShift % 32;
-            if (bitShift < 0)
-            {
-                wordShift--;
-                bitShift += 32;
-            }
-
-            var alignedWords = Math.Max(smallerSig.NumWords, largerSig.NumWords + ((expDiff + 31) / 32)) + 1;
-            using var tempResult = context.GpuWorkspace.RentTemp(alignedWords);
-
-            var blockThreads = (uint)Math.Clamp(((alignedWords + 31) / 32) * 32, 32, 1024);
-            var kernelCtx = new GpuBigFloatKernels.AotContexts.GpuBigFloatAdd
-            {
-                LargerSig = smallerSig.DevicePointer,
-                LargerWords = smallerSig.NumWords,
-                SmallerSig = largerSig.DevicePointer,
-                SmallerWords = largerSig.NumWords,
-                ResultSig = tempResult.DevicePointer,
-                NumWords = alignedWords,
-                WordShift = wordShift,
-                BitShift = bitShift,
-                SignScale = signScale
-            };
-
-            GpuBigFloatKernels.LaunchFloatAddAlignedKernelPtr(
-                kernelCtx, gridDimX: 1, blockDimX: blockThreads, hStream: stream);
-
-            return Normalize(ref context, new GpuFloatOperand(tempResult.Handle, smaller.Exponent, resultSign),
-                resultSig);
+            return fallbackStrategy.Add(ref context, in left, in right, resultSig);
         }
 
-        return fallbackStrategy.Add(ref context, in left, in right, resultSig);
+        var workspace = context.GpuWorkspace;
+        var leftIsHigh = BigFloatAddAlignment.LeftIsHigh(in left, in right);
+        var high = leftIsHigh ? left : right;
+        var low = leftIsHigh ? right : left;
+        if (!BigFloatAddAlignment.LowIsSticky(in high, in low, resultSig.NumWords))
+        {
+            return AddAligned(workspace, in high, in low, resultSig);
+        }
+
+        // L lies below 2^(e_H - p) (#775): a zero operand leaves the other one, and a nonzero L only matters as the
+        // sticky bit 2^(e_H - p - 1).
+        if (low.Significand.AsView(workspace).IsZero())
+        {
+            return NormalizeScaled(workspace, high.Significand, high.Exponent, high.IsNegative, resultSig);
+        }
+
+        if (high.Significand.AsView(workspace).IsZero())
+        {
+            return NormalizeScaled(workspace, low.Significand, low.Exponent, low.IsNegative, resultSig);
+        }
+
+        using var stickyBit = GpuBigUInt.CreatePowerOfTwo(workspace, 1, 0);
+        var sticky = new GpuFloatOperand(
+            stickyBit.Handle,
+            BigFloatAddAlignment.StickyExponent(in high, resultSig.NumWords),
+            low.IsNegative
+        );
+        return AddAligned(workspace, in high, in sticky, resultSig);
+    }
+
+    // RZ_p(high + low) through the exact sum: low is the base of the kernel and high is shifted left onto it by
+    // e_H - e_L bits (a negative right shift); the sum, at exponent e_L, is then normalized. The caller keeps e_H - e_L
+    // within the widths (BigFloatAddAlignment).
+    private static GpuFloatResult AddAligned(
+        GpuWorkspace workspace, in GpuFloatOperand high, in GpuFloatOperand low, GpuBigIntMemoryHandle resultSig)
+    {
+        if (ChooseSign(workspace, in high, in low) is not { } sign)
+        {
+            workspace.Provider.ClearMemoryAsync(resultSig.DevicePointer, resultSig.NumWords, workspace.Stream);
+            return new GpuFloatResult(0, false);
+        }
+
+        var highSig = high.Significand;
+        var lowSig = low.Significand;
+        var shiftBits = BigFloatAddAlignment.ShiftBits(high.Exponent, low.Exponent);
+
+        // A right shift by -shiftBits bits as words and bits, with the bits in [0, 32).
+        var wordShift = -shiftBits / 32;
+        var bitShift = -shiftBits % 32;
+        if (bitShift < 0)
+        {
+            wordShift--;
+            bitShift += 32;
+        }
+
+        var alignedWords = checked((int)(Math.Max(lowSig.NumWords, highSig.NumWords + (shiftBits + 31L) / 32) + 1));
+        using var tempResult = workspace.RentTemp(alignedWords);
+
+        var blockThreads = (uint)Math.Clamp(((alignedWords + 31) / 32) * 32, 32, 1024);
+        var kernelCtx = new GpuBigFloatKernels.AotContexts.GpuBigFloatAdd
+        {
+            BaseSig = lowSig.DevicePointer,
+            BaseWords = lowSig.NumWords,
+            ShiftedSig = highSig.DevicePointer,
+            ShiftedWords = highSig.NumWords,
+            ResultSig = tempResult.DevicePointer,
+            NumWords = alignedWords,
+            WordShift = wordShift,
+            BitShift = bitShift,
+            SignScale = sign.SignScale
+        };
+
+        GpuBigFloatKernels.LaunchFloatAddAlignedKernelPtr(
+            kernelCtx, gridDimX: 1, blockDimX: blockThreads, hStream: workspace.Stream);
+
+        return NormalizeScaled(workspace, tempResult.Handle, low.Exponent, sign.IsNegative, resultSig);
+    }
+
+    // How the kernel combines the significands, and the sign of the sum: SignScale 1 adds them; -2 subtracts the base
+    // (low) from the shifted operand (high), for |high| > |low|; -1 subtracts the shifted operand from the base. Null
+    // when the signs differ and the magnitudes are equal, so the sum is exactly 0.
+    private static (int SignScale, bool IsNegative)? ChooseSign(
+        GpuWorkspace workspace, in GpuFloatOperand high, in GpuFloatOperand low)
+    {
+        if (high.IsNegative == low.IsNegative)
+        {
+            return (1, high.IsNegative);
+        }
+
+        using var highUFloat = new GpuBigUFloat(high.Significand.AsBorrowedBigUInt(workspace), high.Exponent);
+        using var lowUFloat = new GpuBigUFloat(low.Significand.AsBorrowedBigUInt(workspace), low.Exponent);
+        return GpuBigNumberAlgorithms.Compare(highUFloat, lowUFloat) switch
+        {
+            0 => null,
+            > 0 => (-2, high.IsNegative),
+            _ => (-1, low.IsNegative),
+        };
     }
 
     /// <inheritdoc/>
@@ -173,9 +203,8 @@ public sealed class GSharpKernelFloatProvider(IGpuBigFloatArithmetic fallbackStr
 
         GpuBigIntMath.Mul(leftView, rightView, prodBuffer);
 
-        return Normalize(ref context,
-            new GpuFloatOperand(prodBuffer.Handle, left.Exponent + right.Exponent, left.IsNegative != right.IsNegative),
-            resultSig);
+        return NormalizeScaled(context.GpuWorkspace, prodBuffer.Handle, (long)left.Exponent + right.Exponent,
+            left.IsNegative != right.IsNegative, resultSig);
     }
 
     /// <inheritdoc/>
@@ -200,6 +229,12 @@ public sealed class GSharpKernelFloatProvider(IGpuBigFloatArithmetic fallbackStr
             return fallbackStrategy.Divide(ref context, in left, in right, resultSig);
         }
 
+        // A divisor much wider than the result is cut to its top n + 2 words (#661 §4.12), up to the measured width.
+        if (context.GpuWorkspace.WideOperands.CutsDivisor(resultSig.NumWords, rightSig.NumWords))
+        {
+            return DivideByTruncatedDivisor(context.GpuWorkspace, in left, in right, resultSig);
+        }
+
         // 2. G# Kernel / Mega Division Path via GpuBigIntDivRem
         var leftOperand = leftSig.AsView(context.GpuWorkspace);
         if (leftOperand.IsZero())
@@ -208,8 +243,10 @@ public sealed class GSharpKernelFloatProvider(IGpuBigFloatArithmetic fallbackStr
             return new GpuFloatResult(0, false);
         }
 
-        var shiftBits = resultSig.NumWords * 32 * 2;
-        var shiftedWords = leftSig.NumWords + resultSig.NumWords * 2;
+        // floor(L·2^s / R) has at least bits(L) + s - bits(R) >= 1 + 32·(n + Rw) - 32·Rw = p + 1 bits for
+        // s = 32·(n + Rw), whatever the widths of L and R, so the truncation to p bits is RZ (#661).
+        var shiftBits = (resultSig.NumWords + rightSig.NumWords) * 32;
+        var shiftedWords = leftSig.NumWords + resultSig.NumWords + rightSig.NumWords;
         using var shiftedLeft = context.GpuWorkspace.RentTemp(shiftedWords);
         GpuBigIntMath.ShiftAndResize(leftOperand, shiftBits, shiftedLeft);
 
@@ -219,9 +256,9 @@ public sealed class GSharpKernelFloatProvider(IGpuBigFloatArithmetic fallbackStr
         GpuBigIntDivRem.DivRem(shiftedLeft, rightOperand, quotientBuffer, remainderBuffer);
 
         var tempSign = left.IsNegative != right.IsNegative;
-        var tempExp = left.Exponent - right.Exponent - shiftBits;
+        var tempExp = (long)left.Exponent - right.Exponent - shiftBits;
 
-        return Normalize(ref context, new GpuFloatOperand(quotientBuffer.Handle, tempExp, tempSign), resultSig);
+        return NormalizeScaled(context.GpuWorkspace, quotientBuffer.Handle, tempExp, tempSign, resultSig);
     }
 
     /// <inheritdoc/>
@@ -243,19 +280,19 @@ public sealed class GSharpKernelFloatProvider(IGpuBigFloatArithmetic fallbackStr
             throw new DivideByZeroException("GBF Reciprocal of Zero.");
         }
 
-        const int MarginWords = 2;
-        var reciprocalWords = 2 * valueSig.NumWords + MarginWords;
+        // X = floor(2^T / V) in w = v + n + 1 words with T = 32·w - 1: X <= 2^T < 2^(32·w) fits the buffer even for
+        // V = 1, and V < 2^(32·v) gives X >= 2^(T - 32·v), at least p + 32 bits whatever the width v of V, so the
+        // truncation to p bits is RZ (#661).
+        var reciprocalWords = valueSig.NumWords + resultSig.NumWords + 1;
+        var targetBits = reciprocalWords * 32 - 1;
         using var reciprocalResult = context.GpuWorkspace.RentTemp(reciprocalWords);
         context.GpuWorkspace.Provider.ClearMemoryAsync(reciprocalResult.DevicePointer, reciprocalWords, stream);
 
-        var targetBits = reciprocalWords * 32;
-        GpuBigIntDivRem.Reciprocal(valueOperand, reciprocalResult, targetBits, MarginWords);
+        GpuBigIntDivRem.Reciprocal(valueOperand, reciprocalResult, targetBits);
 
-        var shiftBits = reciprocalWords * 32;
-        var tempExp = -value.Exponent - shiftBits;
+        var tempExp = -(long)value.Exponent - targetBits;
 
-        return Normalize(ref context, new GpuFloatOperand(reciprocalResult.Handle, tempExp, value.IsNegative),
-            resultSig);
+        return NormalizeScaled(context.GpuWorkspace, reciprocalResult.Handle, tempExp, value.IsNegative, resultSig);
     }
 
     /// <inheritdoc/>
@@ -274,27 +311,32 @@ public sealed class GSharpKernelFloatProvider(IGpuBigFloatArithmetic fallbackStr
             return fallbackStrategy.Sqrt(ref context, in value, resultSig);
         }
 
-        var stream = context.Stream;
-        var valueOperand = value.Significand.AsView(context.GpuWorkspace);
+        var workspace = context.GpuWorkspace;
+        var valueOperand = value.Significand.AsView(workspace);
 
         var actualBits = valueOperand.GetBitLength();
         if (actualBits == 0)
         {
-            context.GpuWorkspace.Provider.ClearMemoryAsync(resultSig.DevicePointer, resultSig.NumWords, stream);
+            workspace.Provider.ClearMemoryAsync(resultSig.DevicePointer, resultSig.NumWords, context.Stream);
             return new GpuFloatResult(0, false);
         }
 
-        using var invSqrt = ComputeNormalizedInverseSqrt(new InverseSqrtRequest(
-            valueOperand, value.Exponent, actualBits, resultSig.NumWords));
+        // sqrt(S·2^E) = sqrt(S·2^t)·2^((E - t) / 2). With E - t even and S·2^t in [2^(2p-2), 2^(2p)), the integer square
+        // root of A = floor(S·2^t) has exactly p bits and is RZ_p of the root: floor(sqrt(floor(y))) = floor(sqrt(y)), so
+        // a negative t may truncate S (#661).
+        var n = resultSig.NumWords;
+        var shift = 2L * 32 * n - actualBits;
+        if ((value.Exponent - shift) % 2 != 0)
+        {
+            shift--;
+        }
 
-        var prodWords = invSqrt.NormalizedOperand.NumWords + invSqrt.SlicedInverseSqrt.NumWords;
-        using var prodResult = context.GpuWorkspace.RentTemp(prodWords);
-        context.GpuWorkspace.Provider.ClearMemoryAsync(prodResult.DevicePointer, prodWords, stream);
+        using var scaled = workspace.RentTemp(2 * n);
+        GpuBigIntMath.ShiftAndResize(valueOperand, checked((int)shift), scaled);
+        GpuBigIntDivRem.SqrtFloor(scaled, resultSig.AsBorrowedBigUInt(workspace));
 
-        GpuBigIntMath.Mul(invSqrt.NormalizedOperand, invSqrt.SlicedInverseSqrt, prodResult);
-
-        var tempExp = (invSqrt.AdjustedExponent / 2) - invSqrt.EffectiveScaleBits;
-        return Normalize(ref context, new GpuFloatOperand(prodResult.Handle, tempExp), resultSig);
+        // E - t is computed in long and is even; the exponent of the result must fit in int.
+        return new GpuFloatResult(checked((int)((value.Exponent - shift) / 2)), false);
     }
 
     /// <inheritdoc/>
@@ -313,7 +355,8 @@ public sealed class GSharpKernelFloatProvider(IGpuBigFloatArithmetic fallbackStr
             return fallbackStrategy.Rsqrt(ref context, in value, resultSig);
         }
 
-        var valueOperand = value.Significand.AsView(context.GpuWorkspace);
+        var workspace = context.GpuWorkspace;
+        var valueOperand = value.Significand.AsView(workspace);
 
         var actualBits = valueOperand.GetBitLength();
         if (actualBits == 0)
@@ -321,61 +364,135 @@ public sealed class GSharpKernelFloatProvider(IGpuBigFloatArithmetic fallbackStr
             throw new DivideByZeroException("Cannot compute inverse square root of zero.");
         }
 
-        using var invSqrt = ComputeNormalizedInverseSqrt(new InverseSqrtRequest(
-            valueOperand, value.Exponent, actualBits, resultSig.NumWords));
+        // 1/sqrt(S·2^E) = 2^(-(E - t)/2) / sqrt(A) with A = S·2^t of w words, bit length 32w or 32w - 1 (as InverseSqrt
+        // needs) and E - t even. A is never truncated: the inverse root decreases, so a smaller radicand would round the
+        // result up. When S already fills its words and E is odd, A moves one word up instead (#661).
+        var words = value.Significand.NumWords;
+        long shift = 32L * words - actualBits;
+        if ((value.Exponent - shift) % 2 != 0)
+        {
+            if (shift > 0)
+            {
+                shift--;
+            }
+            else
+            {
+                words++;
+                shift = 31;
+            }
+        }
 
-        var tempExp = -(invSqrt.AdjustedExponent / 2) - invSqrt.EffectiveScaleBits;
-        return Normalize(ref context, new GpuFloatOperand(invSqrt.SlicedInverseSqrt.Handle, tempExp), resultSig);
+        using var scaled = workspace.RentTemp(words);
+        GpuBigIntMath.ShiftAndResize(valueOperand, checked((int)shift), scaled);
+
+        // A radicand much wider than the result is cut to its top n + 2 words (#661 §4.12), up to the measured width.
+        if (workspace.WideOperands.CutsRadicand(resultSig.NumWords, words))
+        {
+            return RsqrtOfTruncatedRadicand(workspace, scaled, words, (value.Exponent - shift) / 2, resultSig);
+        }
+
+        // x = floor(2^B / sqrt(A)), B = 32(w + m), has at least B - 16w + 1 >= p + 1 bits for m = max(1, n - floor(w/2)),
+        // so its truncation to p bits is RZ_p of the inverse root.
+        var marginWords = Math.Max(1, resultSig.NumWords - words / 2);
+        using var inverse = workspace.RentTemp(words + marginWords);
+        GpuBigIntDivRem.InverseSqrt(scaled, inverse, marginWords);
+
+        // The exponents are computed in long; the exponent of the result must fit in int.
+        var exponent = -((value.Exponent - shift) / 2) - 32L * (words + marginWords);
+        return NormalizeScaled(workspace, inverse.Handle, exponent, false, resultSig);
     }
 
-    private static NormalizedInverseSqrtScope ComputeNormalizedInverseSqrt(in InverseSqrtRequest request)
+    // Divide by a divisor R of at least n + 2 + g words (#661 §4.12.3). With k = 32(n + 2) and
+    // j = max(0, bits(R) - k), N = floor(L·2^s) has bits(R) + p + 2 bits and
+    // Q_hi = floor(floor(N / 2^j) / floor(R / 2^j)) is Q* = floor(N / R) or Q* + 1, where Q* has p + 2 or p + 3 bits
+    // and Q_hi < 2^(p + 3) as well (N / 2^j < 2^(k + p + 2) over R / 2^j >= 2^(k - 1)). When the low 2 bits of Q_hi are
+    // not both 0, Q_hi rounds to the same p bits as Q*; otherwise Q_hi·R > N (one full-width product) means
+    // Q* = Q_hi - 1. Nothing cut (j = 0) leaves Q_hi = Q*.
+    private static GpuFloatResult DivideByTruncatedDivisor(GpuWorkspace workspace, in GpuFloatOperand left,
+        in GpuFloatOperand right, GpuBigIntMemoryHandle resultSig)
     {
-        var workspace = request.Workspace;
-        var stream = workspace.Stream;
-        var workWords = Math.Max(request.ValueOperand.NumWords, request.TargetResultWords);
-        var lz = workWords * 32 - request.ActualBits;
-        var adjustedExp = request.ValueExp - lz;
-        if (adjustedExp % 2 != 0)
+        var leftOperand = left.Significand.AsView(workspace);
+        var rightOperand = right.Significand.AsView(workspace);
+        var leftBits = leftOperand.GetBitLength();
+        if (leftBits == 0)
         {
-            lz--;
-            adjustedExp = request.ValueExp - lz;
+            workspace.Provider.ClearMemoryAsync(resultSig.DevicePointer, resultSig.NumWords, workspace.Stream);
+            return new GpuFloatResult(0, false);
         }
 
-        var aNorm = workspace.RentTemp(workWords);
-        try
+        workspace.WideOperandCounters.AddTruncation();
+        var n = resultSig.NumWords;
+        var truncatedWords = n + 2;
+        var rightBits = rightOperand.GetBitLength();
+        var truncation = Math.Max(0, rightBits - 32 * truncatedWords);
+        var dividendBits = rightBits + 32 * n + 2;
+        var shift = dividendBits - leftBits;
+
+        // floor(floor(L·2^s) / R) = floor(L·2^s / R) also for s < 0, so N may drop low bits of L.
+        using var dividend = workspace.RentTemp((dividendBits + 31) / 32);
+        GpuBigIntMath.ShiftAndResize(leftOperand, shift, dividend);
+        using var truncatedDividend = workspace.RentTemp((dividendBits - truncation + 31) / 32);
+        GpuBigIntMath.ShiftAndResize(dividend, -truncation, truncatedDividend);
+        using var truncatedDivisor = workspace.RentTemp(truncatedWords);
+        GpuBigIntMath.ShiftAndResize(rightOperand, -truncation, truncatedDivisor);
+
+        // Q_hi < 2^(p + 3) fits n + 1 words.
+        using var quotient = workspace.RentTemp(n + 1);
+        using var remainder = workspace.RentTemp(truncatedWords);
+        GpuBigIntDivRem.DivRem(truncatedDividend, truncatedDivisor, quotient, remainder);
+
+        if (truncation > 0 && (workspace.Provider.ReadWord(quotient.DevicePointer, 0, workspace.Stream) & 3) == 0)
         {
-            GpuBigIntMath.ShiftAndResize(request.ValueOperand, lz, aNorm);
-
-            const int MarginWords = 4;
-            const int DiscardGuardWords = 2;
-            var rsqrtWords = workWords + MarginWords;
-            var rsqrtRaw = workspace.RentTemp(rsqrtWords);
-            try
-            {
-                workspace.Provider.ClearMemoryAsync(rsqrtRaw.DevicePointer, rsqrtWords, stream);
-
-                GpuBigIntDivRem.InverseSqrt(aNorm, rsqrtRaw, MarginWords);
-
-                // Add guard-word rounding offset to absorb Newton-Raphson right-shift truncation before slicing off the lowest 2 guard words
-                GpuBigIntMath.Add(rsqrtRaw, 4u, rsqrtRaw);
-
-                var slicedHandle = rsqrtRaw.Handle.Slice(DiscardGuardWords, rsqrtWords - DiscardGuardWords);
-                var rsqrtSliced = slicedHandle.AsView(workspace);
-                var effectiveScaleBits = (rsqrtWords - DiscardGuardWords) * 32;
-
-                return new NormalizedInverseSqrtScope(aNorm, rsqrtRaw, rsqrtSliced, adjustedExp, effectiveScaleBits);
-            }
-            catch
-            {
-                rsqrtRaw.Dispose();
-                throw;
-            }
+            using var product = workspace.RentTemp(quotient.NumWords + rightOperand.NumWords);
+            GpuBigIntMath.Mul(quotient, rightOperand, product);
+            CorrectTruncatedEstimate(workspace, product, dividend, quotient);
         }
-        catch
+
+        var exponent = (long)left.Exponent - right.Exponent - shift;
+        return NormalizeScaled(workspace, quotient.Handle, exponent, left.IsNegative != right.IsNegative, resultSig);
+    }
+
+    // Rsqrt of a radicand A of w >= n + 2 + g words (#661 §4.12.2): A has bit length 32w or 32w - 1, and the value is
+    // 2^(-h) / sqrt(A). With K = n + 2, j = 32(w - K), m = ceil(n/2) and B = 32(K + m) + j/2, the inverse root x_hi of
+    // the top K words is x* = floor(2^B / sqrt(A)) or x* + 1, of at least p + 33 bits. When its low word is not 0, x_hi
+    // rounds to the same p bits as x*; otherwise x_hi²·A > 2^(2B) (one full-width product) means x* = x_hi - 1.
+    private static GpuFloatResult RsqrtOfTruncatedRadicand(GpuWorkspace workspace, GpuBigUInt radicand, int words,
+        long halfExponent, GpuBigIntMemoryHandle resultSig)
+    {
+        workspace.WideOperandCounters.AddTruncation();
+        var truncatedWords = resultSig.NumWords + 2;
+        var marginWords = (resultSig.NumWords + 1) / 2;
+        var topWords = radicand.Handle.Slice(words - truncatedWords, truncatedWords).AsView(workspace);
+        using var inverse = workspace.RentTemp(truncatedWords + marginWords);
+        GpuBigIntDivRem.InverseSqrt(topWords, inverse, marginWords);
+
+        var exponentBits = 32L * (truncatedWords + marginWords) + 16L * (words - truncatedWords);
+        if (workspace.Provider.ReadWord(inverse.DevicePointer, 0, workspace.Stream) == 0)
         {
-            aNorm.Dispose();
-            throw;
+            using var square = workspace.RentTemp(2 * inverse.NumWords);
+            GpuBigIntMath.Mul(inverse, inverse, square);
+            using var product = workspace.RentTemp(square.NumWords + words);
+            GpuBigIntMath.Mul(square, radicand, product);
+            var boundBit = checked((int)(2 * exponentBits));
+            using var bound = GpuBigUInt.CreatePowerOfTwo(workspace, boundBit / 32 + 1, boundBit);
+            CorrectTruncatedEstimate(workspace, product, bound, inverse);
         }
+
+        // The exponents are computed in long; the exponent of the result must fit in int.
+        return NormalizeScaled(workspace, inverse.Handle, -halfExponent - exponentBits, false, resultSig);
+    }
+
+    // Subtracts 1 from the estimate on the device when product > bound (TruncatedBoundCorrectionKernel, one block),
+    // without a readback.
+    private static void CorrectTruncatedEstimate(GpuWorkspace workspace, GpuBigUInt product, GpuBigUInt bound,
+        GpuBigUInt estimate)
+    {
+        workspace.WideOperandCounters.AddBoundCheck();
+        var words = Math.Max(product.NumWords, bound.NumWords);
+        var blockThreads = (uint)Math.Clamp((words + 31) / 32 * 32, 32, 1024);
+        GpuBigIntDivRemKernels.LaunchTruncatedBoundCorrectionKernelPtr(product.DevicePointer, product.NumWords,
+            bound.DevicePointer, bound.NumWords, estimate.DevicePointer, estimate.NumWords, gridDimX: 1,
+            blockDimX: blockThreads, hStream: workspace.Stream);
     }
 
     /// <inheritdoc/>
@@ -448,57 +565,5 @@ public sealed class GSharpKernelFloatProvider(IGpuBigFloatArithmetic fallbackStr
         }
 
         return fallbackStrategy.DivideByUInt32(ref context, in value, divisor, resultSig);
-    }
-
-    // A ref struct because it carries a borrowed view; a primary constructor cannot capture a ref struct parameter
-    private readonly ref struct InverseSqrtRequest
-    {
-        public InverseSqrtRequest(
-            GpuBigUIntView valueOperand,
-            int valueExp,
-            int actualBits,
-            int targetResultWords)
-        {
-            ValueOperand = valueOperand;
-            ValueExp = valueExp;
-            ActualBits = actualBits;
-            TargetResultWords = targetResultWords;
-        }
-
-        public GpuWorkspace Workspace => ValueOperand.Workspace;
-        public GpuBigUIntView ValueOperand { get; }
-        public int ValueExp { get; }
-        public int ActualBits { get; }
-        public int TargetResultWords { get; }
-    }
-
-    // A ref struct because it carries a borrowed view of rawInverseSqrt, which must not outlive this scope
-    private readonly ref struct NormalizedInverseSqrtScope : IDisposable
-    {
-        public NormalizedInverseSqrtScope(
-            [TakesOwnership] GpuBigUInt normalizedOperand,
-            [TakesOwnership] GpuBigUInt rawInverseSqrt,
-            GpuBigUIntView slicedInverseSqrt,
-            int adjustedExponent,
-            int effectiveScaleBits)
-        {
-            NormalizedOperand = normalizedOperand;
-            RawInverseSqrt = rawInverseSqrt;
-            SlicedInverseSqrt = slicedInverseSqrt;
-            AdjustedExponent = adjustedExponent;
-            EffectiveScaleBits = effectiveScaleBits;
-        }
-
-        public GpuBigUInt NormalizedOperand { get; }
-        public GpuBigUInt RawInverseSqrt { get; }
-        public GpuBigUIntView SlicedInverseSqrt { get; }
-        public int AdjustedExponent { get; }
-        public int EffectiveScaleBits { get; }
-
-        public void Dispose()
-        {
-            NormalizedOperand.Dispose();
-            RawInverseSqrt.Dispose();
-        }
     }
 }

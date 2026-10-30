@@ -57,6 +57,13 @@ public struct Emitter(
     public int SingleThreadBodyCounter;
 
     /// <summary>
+    /// Numbers each <c>Gpu.GridStrideLoop</c> as it is emitted, for its index and count locals
+    /// (<c>__gsharp_gsl_&lt;n&gt;</c>, <c>__gsharp_gsl_n_&lt;n&gt;</c>); a loop emitted again (an unrolled loop) gets a new
+    /// number.
+    /// </summary>
+    public int GridStrideLoopCounter;
+
+    /// <summary>
     /// The label after the <c>Gpu.SingleThread</c> body being emitted, when the body has a <c>return</c>; a
     /// <c>return</c> at <see cref="SingleThreadCallableDepth"/> (not in a lambda or local function of the body) jumps to
     /// it. <see langword="null"/> outside such a body.
@@ -105,10 +112,26 @@ public struct Emitter(
     public int UsingCounter;
 
     /// <summary>
+    /// Numbers the storages <c>__gsharp_stackalloc_&lt;n&gt;</c> that the statement prelude declares for the stack arrays
+    /// outside a declaration (StackAllocEmitter).
+    /// </summary>
+    public int StackAllocCounter;
+
+    /// <summary>The storage number of each node that the statement prelude declared a storage for, read where the node is written.</summary>
+    public Dictionary<SyntaxNode, int> StackAllocStorages { get; } = new();
+
+    /// <summary>
     /// The struct definitions whose <c>Dispose</c> a <c>using</c> of the method calls, in the order of first use; each
     /// definition is emitted after the structs (UsingTranspiler.WriteDisposeDefinitions).
     /// </summary>
     public ImmutableArray<INamedTypeSymbol>.Builder DisposedStructs { get; } = ImmutableArray.CreateBuilder<INamedTypeSymbol>();
+
+    /// <summary>
+    /// The comparison members of user structs (IComparer&lt;T&gt;.Compare, IComparable&lt;T&gt;.CompareTo) that a
+    /// <c>MemoryExtensions.Sort</c> of the method calls, in the order of first use; each definition is emitted after the
+    /// <c>Dispose</c> definitions (SortComparisonMembers.WriteDefinitions).
+    /// </summary>
+    public ImmutableArray<IMethodSymbol>.Builder SortComparisons { get; } = ImmutableArray.CreateBuilder<IMethodSymbol>();
 
     public int CurrentSwitchId => ActiveSwitchIds.Count > 0 ? ActiveSwitchIds.Peek() : 0;
 

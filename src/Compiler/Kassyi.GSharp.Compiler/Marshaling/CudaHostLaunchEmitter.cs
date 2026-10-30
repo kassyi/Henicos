@@ -9,6 +9,7 @@ internal static class CudaHostLaunchEmitter
     public static void WriteKernelMembers(SourceWriter writer, in KernelEmission kernel, string assemblyName)
     {
         writer.AppendLine($"private static IntPtr? s_hfunc_{kernel.MemberKey};");
+        WrapperEmitter.WriteLayoutCheckedField(writer, kernel.Host.CudaLayoutGuards, kernel.MemberKey);
         WriteWarmupFunctionPointerMethod(writer, kernel, assemblyName);
         WriteLaunchMethod(writer, kernel, false);
         WriteLaunchMethod(writer, kernel, true);
@@ -27,7 +28,7 @@ internal static class CudaHostLaunchEmitter
         {
             if (!isDevicePtr)
             {
-                WrapperEmitter.WriteLayoutGuards(writer, kernel.Host);
+                WrapperEmitter.WriteLayoutGuards(writer, kernel.Host.CudaLayoutGuards, kernel.MemberKey);
                 WrapperEmitter.WriteOutParameterDefaults(writer, kernel.Host);
                 WrapperEmitter.WriteArrayArgumentChecks(writer, kernel.Host);
             }
@@ -142,6 +143,11 @@ internal static class CudaHostLaunchEmitter
         var key = kernel.MemberKey;
         writer.AppendLine($"WarmupFunctionPointer{key}();");
         writer.AppendLine($"IntPtr hfunc = s_hfunc_{key}!.Value;");
+
+        // [WHY] sharedMemBytes above 48 KB needs the function's opt-in; a request the device cannot hold is rejected
+        // with the kernel's name instead of the driver's bare CUDA_ERROR_INVALID_VALUE (#545)
+        writer.AppendLine(
+            $"global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, {SymbolDisplay.FormatLiteral(kernel.Host.MessageName, quote: true)});");
         writer.AppendLine();
     }
 

@@ -66,10 +66,16 @@ An optional pre-allocated buffer for the final result magnitude.
 _GpuBigIntExecutableGraph_<br>
 An executable graph instance that can be launched repeatedly with zero CPU-side scheduling overhead.
 
+#### Remarks
+
+The graph takes the expression: until the graph is disposed, evaluating or compiling this expression (or a copy of it) throws `InvalidOperationException`, because every launch reuses the buffers the expression's nodes hold. The graph owns its result buffer (unless `targetResult` is given) and the buffers freed during the capture, and returns them when it is disposed; its `Result` is valid only while the graph is alive. The operands and `targetResult` stay with the caller; a launch after one of them was freed throws `ObjectDisposedException`.
+
+If the capture fails, the capture is ended and every buffer it took is returned before the original exception is rethrown. If that cleanup fails too, both errors are thrown together in an `AggregateException` whose first inner exception is the original one.
+
 #### Exceptions
 
 `InvalidOperationException`<br>
-Thrown if warm-up evaluation fails prior to beginning CUDA Graph capture.
+Thrown if warm-up evaluation fails prior to beginning CUDA Graph capture, or if the expression is already owned by a graph that is alive.
 
 ## Evaluate(GpuBigUInt)
 
@@ -82,7 +88,7 @@ public GpuBigInt Evaluate(GpuBigUInt destination);
 #### Parameters
 
 `destination` _GpuBigUInt_<br>
-The pre-allocated GPU buffer to store the evaluated magnitude.
+The pre-allocated GPU buffer to store the evaluated magnitude. It may be the magnitude of an operand (`(a / b).Evaluate(a.Value)`): the root then computes into a temporary and copies the result.
 
 #### Returns
 
@@ -126,7 +132,7 @@ An optional pre-allocated buffer for the final result magnitude.
 #### Returns
 
 _GpuBigInt_<br>
-A new `GpuBigInt` instance wrapping the evaluated result.
+The result. Without `targetResult` the caller owns it and disposes it; with `targetResult` it is a borrowed value of that buffer. The expression stays usable afterwards: the internal graph holds it only while it runs.
 
 ## EvaluateWithCudaGraphAsync(GpuWorkspace, GpuBigUInt?, CancellationToken)
 

@@ -95,6 +95,32 @@ public static class LoweringIdentity
         return 0;
     }
 
+    /// <summary>
+    /// Whether <paramref name="labeled"/> is a label that lowering added (<c>__gsharp_</c>): GSH0055 rejects <c>__</c> in
+    /// user identifiers, so the prefix tells the two kinds apart.
+    /// </summary>
+    internal static bool IsLoweringLabel(LabeledStatementSyntax labeled) =>
+        labeled.Identifier.ValueText.StartsWith(GSharpInternalNames.Lowering.LabelPrefix, StringComparison.Ordinal);
+
+    /// <summary>
+    /// Counts the labels of each name that <paramref name="body"/> declares, nested ones included, and lowering's own
+    /// labels (<see cref="IsLoweringLabel"/>) only when <paramref name="includeLoweringLabels"/> is set.
+    /// </summary>
+    internal static Dictionary<string, int> CountLabelNames(SyntaxNode body, bool includeLoweringLabels)
+    {
+        var counts = new Dictionary<string, int>(StringComparer.Ordinal);
+        foreach (var node in body.DescendantNodesAndSelf())
+        {
+            if (node is LabeledStatementSyntax labeled && (includeLoweringLabels || !IsLoweringLabel(labeled)))
+            {
+                var name = labeled.Identifier.ValueText;
+                counts[name] = counts.TryGetValue(name, out var count) ? count + 1 : 1;
+            }
+        }
+
+        return counts;
+    }
+
     private static string GetDeclaredName(SyntaxNode declaration) => declaration switch
     {
         ParameterSyntax p => p.Identifier.ValueText,

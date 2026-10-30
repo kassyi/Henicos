@@ -275,8 +275,9 @@ public class GSharpKernelFloatProviderTests : IDisposable
 
         var res = arith.Add(ref context, in left, in right, resSig.Handle);
 
-        // mutant: GSharpKernelFloatProvider.cs:127 `Math.Max` -> `Math.Min`, `NumWords + ...` -> `NumWords - ...`,
-        // `(expDiff + 31) / 32` -> `(expDiff - 31) / 32` (the aligned buffer becomes 2 words and the 65-bit sum is cut)
+        // mutant: GSharpKernelFloatProvider.cs:140 `Math.Max` -> `Math.Min`, `NumWords + ...` -> `NumWords - ...`,
+        // `(shiftBits + 31L) / 32` -> `(shiftBits - 31L) / 32` (the aligned buffer becomes 2 words and the 65-bit sum
+        // is cut)
         var expected = (new BigInteger(0xFFFFFFFFu) << 33) + (rightIsNegative ? -1 : 1);
         AssertExactValue(expected, 1, resSig, res);
     }
@@ -297,7 +298,7 @@ public class GSharpKernelFloatProviderTests : IDisposable
         using var resSig = new GpuBigUInt(workspace, 4);
 
         // Normalize(-0 * 2^5) is +0 * 2^0.
-        // mutant: GSharpKernelFloatProvider.cs:58 `return new GpuFloatResult(0, false);` removed / `false` -> `true`
+        // mutant: GSharpKernelFloatProvider.cs:67 `return new GpuFloatResult(0, false);` removed / `false` -> `true`
         {
             var context = CreateContext(workspace);
             var negZero = new GpuFloatOperand(zeroSig.Handle, 5, true);
@@ -306,7 +307,7 @@ public class GSharpKernelFloatProviderTests : IDisposable
         }
 
         // 0 / 0 is a division by zero, not the early return for a zero dividend.
-        // mutant: GSharpKernelFloatProvider.cs:195 `throw` removed
+        // mutant: GSharpKernelFloatProvider.cs:224 `throw` removed
         Assert.Throws<DivideByZeroException>(() =>
         {
             var context = CreateContext(workspace);
@@ -315,7 +316,7 @@ public class GSharpKernelFloatProviderTests : IDisposable
         });
 
         // 0 / -3 is +0 and clears every word of a result that held garbage.
-        // mutant: GSharpKernelFloatProvider.cs:207 ClearMemoryAsync removed, L208 `false` -> `true`
+        // mutant: GSharpKernelFloatProvider.cs:242 ClearMemoryAsync removed, L243 `false` -> `true`
         {
             using var dirty = new GpuBigUInt(workspace, [0xFFFFFFFFu, 0xFFFFFFFFu, 0xFFFFFFFFu, 0xFFFFFFFFu]);
             var context = CreateContext(workspace);
@@ -327,7 +328,7 @@ public class GSharpKernelFloatProviderTests : IDisposable
         }
 
         // Sqrt(0) is +0 and clears the result.
-        // mutant: GSharpKernelFloatProvider.cs:283 ClearMemoryAsync removed, L284 `false` -> `true`
+        // mutant: GSharpKernelFloatProvider.cs:320 ClearMemoryAsync removed, L321 `false` -> `true`
         {
             using var dirty = new GpuBigUInt(workspace, [0xFFFFFFFFu, 0xFFFFFFFFu, 0xFFFFFFFFu, 0xFFFFFFFFu]);
             var context = CreateContext(workspace);
@@ -347,7 +348,7 @@ public class GSharpKernelFloatProviderTests : IDisposable
         });
 
         // (-2)^3: a negative base is not supported.
-        // mutant: GSharpKernelFloatProvider.cs:426 `throw` removed (GpuBigFloatTranscendentals.Pow ignores the sign of the
+        // mutant: GSharpKernelFloatProvider.cs:540 `throw` removed (GpuBigFloatTranscendentals.Pow ignores the sign of the
         // base and would return 8)
         var powError = Assert.Throws<InvalidOperationException>(() =>
         {
@@ -423,14 +424,16 @@ public class GSharpKernelFloatProviderTests : IDisposable
             $"ln 2: actual {BigFloatReference.Describe(resSig.ToBigInteger(), res.Exponent, false)}");
     }
 
-    // A square root or inverse square root that is exactly representable comes out exact:
-    // the guard-word rounding offset absorbs the truncation of the Newton iteration.
+    // A square root or inverse square root that is exactly representable comes out exact. sqrt(9) = 3 came out
+    // 3 - 2^-126 while Sqrt was a * rsqrt(a) truncated (#661).
     [SkippableTheory]
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Stdlib)]
     [Scenario(TestScenario.Boundary)]
-    // mutant: GSharpKernelFloatProvider.cs:360 `GpuBigIntMath.Add(rsqrtRaw, 4u, rsqrtRaw)` removed (0.4999...)
+    // mutant: GSharpKernelFloatProvider.cs:401 `- 32L * (words + marginWords)` -> `... + 1` (4 and 16, inverse)
+    // mutant: GpuBigIntDivRem.Sqrt.cs:109 `SqrtFloorCorrection(...)` removed (9: the estimate 3 - 2^-126 is kept)
     [InlineData(4u, false, 2, 1)]
+    [InlineData(9u, false, 3, 1)]
     [InlineData(4u, true, 1, 2)]
     [InlineData(16u, true, 1, 4)]
     public void Sqrt_Rsqrt_PerfectSquares_AreExact(uint value, bool inverse, int num, int den)
@@ -456,7 +459,7 @@ public class GSharpKernelFloatProviderTests : IDisposable
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Stdlib)]
     [Scenario(TestScenario.Boundary)]
-    // mutant: GSharpKernelFloatProvider.cs:335 `Math.Max(operand words, result words)` -> `Math.Min` (1-word work buffer)
+    // mutant: GSharpKernelFloatProvider.cs:396 `n - words / 2` -> `n - words` (2 and 3, inverse: 113 bits)
     [InlineData(2u, false)]
     [InlineData(2u, true)]
     [InlineData(3u, false)]

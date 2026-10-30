@@ -43,7 +43,7 @@ internal static class FloatVectorReductionOrchestrator
 
     public static GpuBigFloat Reduce(
         GpuWorkspace workspace,
-        GpuBigFloatArray evaluated,
+        GpuBigFloatArrayView evaluated,
         FloatReductionKind kind)
     {
         var numWords = evaluated.WordsPerElement;

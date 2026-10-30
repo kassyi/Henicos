@@ -2,7 +2,7 @@ using Kassyi.GSharp.Core;
 
 namespace Kassyi.GSharp.Tests.Shared.TestCases.Analyzers.BarrierUsage;
 
-// GSH0037 follows the control flow graph (#447, #446): a value is thread-variant at a point only when some path to it
+// GSH0083 follows the control flow graph (#447, #446): a value is thread-variant at a point only when some path to it
 // assigns a thread-variant value, and a barrier is divergent when a thread-variant branch decides whether a thread
 // reaches it while the threads that skip it reach another split point. A barrier that the skipping threads pass only
 // on their way out of the kernel is reported by a later stage, not here.
@@ -77,7 +77,7 @@ public static partial class FlowSensitiveUniformityKernels
         {
             if (x > 0)
             {
-                Gpu.SyncThreads(); // GSH0037
+                Gpu.SyncThreads(); // GSH0083
             }
 
             x = ThreadIndex.X;
@@ -97,7 +97,7 @@ public static partial class FlowSensitiveUniformityKernels
 
         if (a < 16)
         {
-            Gpu.SyncThreads(); // GSH0037
+            Gpu.SyncThreads(); // GSH0083
         }
 
         Gpu.SyncThreads();
@@ -111,7 +111,7 @@ public static partial class FlowSensitiveUniformityKernels
         int i = ThreadIndex.X;
         while (i < count)
         {
-            Gpu.SyncThreads(); // GSH0037
+            Gpu.SyncThreads(); // GSH0083
             i += BlockDimension.X;
         }
 
@@ -125,7 +125,7 @@ public static partial class FlowSensitiveUniformityKernels
         switch (ThreadIndex.X % 4)
         {
             case 0:
-                Gpu.SyncThreads(); // GSH0037
+                Gpu.SyncThreads(); // GSH0083
                 break;
             default:
                 buffer[0] = 0;
@@ -140,8 +140,8 @@ public static partial class FlowSensitiveUniformityKernels
     [SkipSnapshotConsistency("Analyzer case")]
     public static void ConditionalOperandKernel(int[] buffer)
     {
-        bool done = ThreadIndex.X < 16 && WaitAndConfirm(); // GSH0037
-        bool other = ThreadIndex.X > 16 ? WaitAndConfirm() : false; // GSH0037
+        bool done = ThreadIndex.X < 16 && WaitAndConfirm(); // GSH0083
+        bool other = ThreadIndex.X > 16 ? WaitAndConfirm() : false; // GSH0083
         buffer[ThreadIndex.X] = done || other ? 1 : 0;
         Gpu.SyncThreads();
     }
@@ -158,7 +158,7 @@ public static partial class FlowSensitiveUniformityKernels
                 continue;
             }
 
-            Gpu.SyncThreads(); // GSH0037
+            Gpu.SyncThreads(); // GSH0083
         }
     }
 
@@ -174,7 +174,7 @@ public static partial class FlowSensitiveUniformityKernels
                 break;
             }
 
-            Gpu.SyncThreads(); // GSH0037
+            Gpu.SyncThreads(); // GSH0083
         }
 
         Gpu.SyncThreads();
@@ -194,12 +194,12 @@ public static partial class FlowSensitiveUniformityKernels
         Gpu.SyncThreads();
         if (BlockIndex.X == 0)
         {
-            Gpu.SyncGrid(); // GSH0037
+            Gpu.SyncGrid(); // GSH0083
         }
 
         if (ThreadIndex.X == 0)
         {
-            Gpu.SyncGrid(); // GSH0037
+            Gpu.SyncGrid(); // GSH0083
         }
 
         Gpu.SyncGrid();
@@ -242,7 +242,7 @@ public static partial class FlowSensitiveUniformityKernels
 
         if (flag == 1)
         {
-            Gpu.SyncThreads(); // GSH0037
+            Gpu.SyncThreads(); // GSH0083
         }
 
         Gpu.SyncThreads();

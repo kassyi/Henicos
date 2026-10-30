@@ -144,7 +144,7 @@ internal static class SyncIntrinsicClassifier
     /// Whether reading <paramref name="symbol"/> gives a value that is the same in every thread of a block but may differ
     /// between the blocks of the grid (<c>BlockIndex.X</c>, <c>.Y</c>, <c>.Z</c>).
     /// </summary>
-    public static bool IsGridVariantSource(ISymbol symbol) =>
+    public static bool IsBlockVariantSource(ISymbol symbol) =>
         symbol is IPropertySymbol { ContainingType: { Name: TypeConstants.BlockIndexType, ContainingType: null } type } &&
         type.ContainingNamespace.IsCoreNamespace();
 

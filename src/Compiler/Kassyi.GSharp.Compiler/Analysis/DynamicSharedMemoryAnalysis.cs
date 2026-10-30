@@ -42,10 +42,22 @@ internal static class DynamicSharedMemoryAnalysis
         constantCount = null;
         count = null;
         creation = declarator.Initializer?.Value as BaseObjectCreationExpressionSyntax;
-        if (creation == null ||
-            !InitializationSyntaxExtractor.TryGetObjectCreationFirstArgument(creation, out count) ||
-            count == null)
+        return creation != null && TryGetCount(creation, semanticModel, out count, out constantCount);
+    }
+
+    /// <summary>
+    /// Reads the count of a <c>SharedMemory&lt;T&gt;</c> creation (also one in a lowered tree, such as the assignment
+    /// that a state machine's context gets): its first argument and the argument's constant value, which is
+    /// <see langword="null"/> for a dynamic declaration.
+    /// </summary>
+    /// <returns><see langword="false"/> when the creation has no count.</returns>
+    public static bool TryGetCount(BaseObjectCreationExpressionSyntax creation, SemanticModel semanticModel,
+        [NotNullWhen(true)] out ExpressionSyntax? count, out int? constantCount)
+    {
+        constantCount = null;
+        if (!InitializationSyntaxExtractor.TryGetObjectCreationFirstArgument(creation, out count) || count == null)
         {
+            count = null;
             return false;
         }
 

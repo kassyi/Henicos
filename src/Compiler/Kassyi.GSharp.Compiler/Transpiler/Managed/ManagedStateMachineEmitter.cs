@@ -10,7 +10,6 @@ internal static class ManagedStateMachineEmitter
     internal static string ToSource(SyntaxNode node) => node.NormalizeWhitespace(indentation: "").ToFullString();
 #pragma warning restore RS0030
 
-    /// <summary>Writes the field type: a written type as written, <c>var</c> as the resolved type.</summary>
     // The storage of a local declared again on every resume (ResumeLocals), before the state switch:
     // <type> <name> <initializer>;                                   (a SharedMemory<T>)
     // scoped <type> <name> = default;                                (assigned where it is declared)
@@ -57,6 +56,7 @@ internal static class ManagedStateMachineEmitter
         writer.AppendLine($" {local.Name} = default;");
     }
 
+    /// <summary>Writes the field type: a written type as written, <c>var</c> as the resolved type.</summary>
     public static void AppendFieldType(SourceWriter writer, ManagedContextField field)
     {
         if (field.DeclaredType.IsVar)
@@ -138,7 +138,7 @@ internal static class ManagedStateMachineEmitter
         return writer.ToString();
     }
 
-    // Out parameters become ref: a suspended call returns before it assigns them, which C# rejects for out parameters
+    /// <summary>Writes the state machine method of a device function that may suspend.</summary>
     public static void EmitDeviceStateMachineMethod(
         SourceWriter writer,
         string frameName,
@@ -149,6 +149,27 @@ internal static class ManagedStateMachineEmitter
         string bodySource,
         string accessibility,
         bool isUnsafe)
+    {
+        AppendDeviceStateMachineSignature(writer, frameName, stateMachineName, methodSymbol, copiedParameters,
+            accessibility, isUnsafe);
+        writer.AppendLine(" {");
+        foreach (var localInit in localInits)
+        {
+            AppendResumeLocal(writer, localInit);
+        }
+
+        AppendCopiedParameterInitialization(writer, copiedParameters);
+        writer.AppendLine(bodySource);
+        writer.AppendLine(
+            "throw new global::System.InvalidOperationException(\"The device function state machine reached an unknown state.\");");
+        writer.AppendLine("}");
+        writer.AppendLine();
+    }
+
+    // <accessibility> static [unsafe] bool <state machine>(<parameters>, <frame> __gsharp_ctx[, ref <result> __gsharp_result])
+    // Out parameters become ref: a suspended call returns before it assigns them, which C# rejects for out parameters
+    private static void AppendDeviceStateMachineSignature(SourceWriter writer, string frameName, string stateMachineName,
+        IMethodSymbol methodSymbol, ImmutableArray<IParameterSymbol> copiedParameters, string accessibility, bool isUnsafe)
     {
         writer.Append($"{accessibility} static ");
         writer.AppendIf(isUnsafe, "unsafe ");
@@ -176,30 +197,26 @@ internal static class ManagedStateMachineEmitter
             writer.Append($" {GSharpInternalNames.SuspendingCall.Result}");
         }
 
-        writer.AppendLine(") {");
-        foreach (var localInit in localInits)
+        writer.Append(")");
+    }
+
+    // On the first entry, the parameters the body assigns are copied into the frame; later resumes keep the frame's copy
+    private static void AppendCopiedParameterInitialization(SourceWriter writer,
+        ImmutableArray<IParameterSymbol> copiedParameters)
+    {
+        if (copiedParameters.Length == 0)
         {
-            AppendResumeLocal(writer, localInit);
+            return;
         }
 
-        if (copiedParameters.Length > 0)
+        using (writer.Scope($"if ({GSharpInternalNames.StateMachine.Context}.{GSharpInternalNames.StateMachine.State} == 0) {{"))
         {
-            writer.AppendLine(
-                $"if ({GSharpInternalNames.StateMachine.Context}.{GSharpInternalNames.StateMachine.State} == 0) {{");
             foreach (var parameter in copiedParameters)
             {
                 writer.AppendLine(
                     $"{GSharpInternalNames.StateMachine.Context}.{parameter.Name.ToCSharpIdentifier()} = {GSharpInternalNames.SuspendingCall.CopiedParameterPrefix}{parameter.Name};");
             }
-
-            writer.AppendLine("}");
         }
-
-        writer.AppendLine(bodySource);
-        writer.AppendLine(
-            "throw new global::System.InvalidOperationException(\"The device function state machine reached an unknown state.\");");
-        writer.AppendLine("}");
-        writer.AppendLine();
     }
 
     private static bool IsCopied(ImmutableArray<IParameterSymbol> copiedParameters, IParameterSymbol parameter) =>

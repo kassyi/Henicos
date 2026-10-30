@@ -239,16 +239,17 @@ public class DeviceExportTests
         }
     }
 
-    // m5: a struct record keeps the includes that only its constructor needs
+    // m5: a struct record keeps the includes that only its constructor needs; a sort no longer needs one (#625)
     [Theory]
     [InlineData("Cpu")]
     [InlineData("Cuda")]
     [Scenario(TestScenario.Boundary)]
-    public void Test_StructRecord_KeepsTheIncludesOfItsConstructor(string dialect)
+    public void Test_StructRecord_SortingConstructor_NeedsNoInclude(string dialect)
     {
         var sortedPair = RunStructs(dialect).Single(static r => r.Id == "T:DeviceExportStructsCase.SortedPair");
 
-        Assert.Contains("<thrust/sort.h>", sortedPair.GetArray("CudaIncludes"));
+        // MemoryExtensions.Sort calls the Prelude (#625): the constructor that sorts needs no include
+        Assert.DoesNotContain("<thrust/sort.h>", sortedPair.GetArray("CudaIncludes"));
     }
 
     // Minor 1 (3rd review): a struct that no G# assembly records and that only the Dispose names stays in the text

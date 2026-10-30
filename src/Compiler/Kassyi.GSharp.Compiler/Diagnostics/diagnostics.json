@@ -12,7 +12,7 @@
     "name": "ObjectCreationNotSupported",
     "id": "GSH0001",
     "title": "Object creation not supported in GPU kernels",
-    "messageFormat": "Object creation ('new') is not supported in GPU kernels. Only struct instantiation and SharedMemory<T> are allowed.",
+    "messageFormat": "Object creation ('new') is not supported in GPU kernels. Only struct instantiation, SharedMemory<T> and an array of a constant size that initializes a local variable are allowed; use stackalloc for a temporary array.",
     "category": "GSharpTranspiler",
     "defaultSeverity": "Error",
     "isEnabledByDefault": true
@@ -337,7 +337,7 @@
   {
     "name": "DivergentBarrierProhibited",
     "id": "GSH0037",
-    "title": "Divergent barriers are prohibited",
+    "title": "Barrier in a lambda or local function that the CPU dialects do not split",
     "messageFormat": "{0}",
     "category": "GSharpTranspiler",
     "defaultSeverity": "Error",
@@ -732,15 +732,6 @@
     "isEnabledByDefault": true
   },
   {
-    "name": "StructTransferNotSupportedOnCpu",
-    "id": "GSH0082",
-    "title": "Struct cannot be passed to a CPU kernel yet",
-    "messageFormat": "The struct '{0}' cannot be passed to a kernel on the CPU dialect yet because its host and device layouts differ ({1}). The CPU launcher copies it in the host layout, so the kernel would read garbled values.",
-    "category": "GSharpTranspiler",
-    "defaultSeverity": "Error",
-    "isEnabledByDefault": true
-  },
-  {
     "name": "LaunchDependentDivergentBarrier",
     "id": "GSH0083",
     "title": "Barrier that only some threads may reach, depending on the launch or on run-time values",
@@ -783,6 +774,42 @@
     "messageFormat": "'{0}' of '{1}' and the same path in '{2}' both become the C++ name '{3}'. Rename the namespace or the type in one of them.",
     "category": "GSharpTranspiler",
     "defaultSeverity": "Error",
+    "isEnabledByDefault": true
+  },
+  {
+    "name": "StackArrayEscapes",
+    "id": "GSH0091",
+    "title": "Stack array outlives its scope",
+    "messageFormat": "The stack array '{0}' cannot be {1}: G# keeps it in a C++ array that ends with the innermost block, switch section or statement body around it. Copy the elements instead, or keep the use inside that scope.",
+    "category": "GSharpTranspiler",
+    "defaultSeverity": "Error",
+    "isEnabledByDefault": true
+  },
+  {
+    "name": "WarpShuffleWidthNotPowerOfTwo",
+    "id": "GSH0095",
+    "title": "Warp shuffle width must be 1, 2, 4, 8, 16 or 32",
+    "messageFormat": "The width of Warp.{0} is {1}; it must be 1, 2, 4, 8, 16 or 32. CUDA leaves the result of a shuffle with any other width undefined.",
+    "category": "GSharpTranspiler",
+    "defaultSeverity": "Error",
+    "isEnabledByDefault": true
+  },
+  {
+    "name": "ParallelAggregateRunsSequentially",
+    "id": "GSH0099",
+    "title": "An AsParallel() aggregate runs sequentially in each thread",
+    "messageFormat": "'{0}' runs sequentially in each thread because {1}. Each thread still receives the sum of the whole sequence.",
+    "category": "GSharpTranspiler",
+    "defaultSeverity": "Warning",
+    "isEnabledByDefault": true
+  },
+  {
+    "name": "ParallelAggregateNotCooperative",
+    "id": "GSH0100",
+    "title": "Every block reduces the whole sequence of an AsParallel() aggregate",
+    "messageFormat": "The kernel '{0}' is not cooperative, so every block reduces the whole sequence of '{1}'. Mark it [GpuKernel(Cooperative = true)] to divide the work across the grid.",
+    "category": "GSharpTranspiler",
+    "defaultSeverity": "Warning",
     "isEnabledByDefault": true
   },
   {

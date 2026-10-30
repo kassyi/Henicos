@@ -127,6 +127,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerCharLiteralKernel();
 IntPtr hfunc = s_hfunc_CharLiteralKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "CharLiteralKernels.CharLiteralKernel");
 IntPtr d_output = IntPtr.Zero;
 IntPtr d_text = IntPtr.Zero;
 try
@@ -209,6 +210,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerCharLiteralKernel();
 IntPtr hfunc = s_hfunc_CharLiteralKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "CharLiteralKernels.CharLiteralKernel");
 try
 {
 void** kernelParams = stackalloc void*[2];

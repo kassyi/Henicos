@@ -21,7 +21,7 @@ public static partial class AotContexts
 {
 }
 public const string BadKernel_Source = @"#error ""(11,13): GSH0002: The string type is not supported in GPU kernels""
-#error ""(12,26): GSH0001: Object creation ('new') is not supported in GPU kernels. Only struct instantiation and SharedMemory<T> are allowed.""
+#error ""(12,26): GSH0001: Object creation ('new') is not supported in GPU kernels. Only struct instantiation, SharedMemory<T> and an array of a constant size that initializes a local variable are allowed; use stackalloc for a temporary array.""
 ";
 public static readonly string BadKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +BadKernel_Source;
 private static IntPtr? s_hfunc_BadKernel;
@@ -44,6 +44,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerBadKernel();
 IntPtr hfunc = s_hfunc_BadKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "ErrorSpecKernel.BadKernel");
 IntPtr d___gsharp_auto_result = IntPtr.Zero;
 try
 {
@@ -105,6 +106,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerBadKernel();
 IntPtr hfunc = s_hfunc_BadKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "ErrorSpecKernel.BadKernel");
 IntPtr d___gsharp_auto_result = IntPtr.Zero;
 try
 {

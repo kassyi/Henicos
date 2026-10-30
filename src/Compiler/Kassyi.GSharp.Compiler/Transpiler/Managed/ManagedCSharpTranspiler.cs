@@ -34,12 +34,8 @@ internal static class ManagedCSharpTranspiler
         var (localInits, regularFields, unhoistedLocals, renamedLocals) =
             ManagedContextFields.ProcessContextFields(contextFields, semanticModel, kernelName);
 
-        var unhoistedBody =
-            new ContextLocalRewriter(new HashSet<DeclarationKey>(unhoistedLocals.Keys), renamedLocals, semanticModel,
-                    kernelName, CreateResumeInitialization(unhoistedLocals, methodSymbol.AreLocalsZeroed())).Visit(loweredBody) as
-                BlockSyntax
-            ?? throw new InvalidOperationException(
-                $"Unhoisting ref-struct fields removed the body of kernel '{kernelName}'.");
+        var unhoistedBody = RewriteResumeLocals(loweredBody, unhoistedLocals, renamedLocals, semanticModel, kernelName,
+            methodSymbol.AreLocalsZeroed());
         var bodySource = RewriteAndNormalizeBody(unhoistedBody, semanticModel, isDeviceFunction: false);
 
         using var writer = new SourceWriter();
@@ -51,23 +47,18 @@ internal static class ManagedCSharpTranspiler
         return writer.ToString();
     }
 
-    // The initialization that stays where a resume local is declared: an assignment, or the binding to its stackalloc
-    // storage, zeroed again unless [SkipLocalsInit] applies (ResumeLocals)
-    internal static Func<DeclarationKey, SimpleNameSyntax, ExpressionSyntax, StatementSyntax?> CreateResumeInitialization(
-        Dictionary<DeclarationKey, ManagedContextField> unhoistedLocals, bool zeroFill)
-    {
-        return (key, name, value) =>
-        {
-            var local = unhoistedLocals[key];
-            if (local.Resume is not { } resume)
-            {
-                return null;
-            }
+    /// <summary>
+    /// The lowered body of <paramref name="methodName"/> with the context accesses of its resume locals turned back into
+    /// locals, the hoisted locals that share a name renamed and the labels that share a name renamed
+    /// (<see cref="ContextLocalRewriter"/>).
+    /// </summary>
+    internal static BlockSyntax RewriteResumeLocals(BlockSyntax loweredBody,
+        Dictionary<DeclarationKey, ManagedContextField> unhoistedLocals, Dictionary<DeclarationKey, string> renamedLocals,
+        SemanticModel semanticModel, string methodName, bool zeroFill) =>
+        ContextLocalRewriter.Rewrite(loweredBody, new ManagedResumeLocalSet(unhoistedLocals, zeroFill), renamedLocals,
+            semanticModel, methodName) as BlockSyntax
+        ?? throw new InvalidOperationException($"Unhoisting ref-struct fields removed the body of '{methodName}'.");
 
-            var storage = resume.Kind == ResumeLocalKind.StackAlloc ? SyntaxFactory.IdentifierName(local.StorageName) : null;
-            return ResumeLocals.CreateInitialization(resume, name, value, storage, zeroFill);
-        };
-    }
     /// <summary>
     /// Emits the frame class and the state machine of a device function that may suspend. The state machine returns
     /// whether the call completed; the caller calls it again on every resume until it does.
@@ -97,12 +88,8 @@ internal static class ManagedCSharpTranspiler
             ManagedContextFields.ProcessContextFields(lowered.ContextFields, semanticModel, functionName);
         var copiedParameters = plan.GetCopiedParameters(lowered);
 
-        var unhoistedBody =
-            new ContextLocalRewriter(new HashSet<DeclarationKey>(unhoistedLocals.Keys), renamedLocals, semanticModel,
-                    functionName, CreateResumeInitialization(unhoistedLocals, methodSymbol.AreLocalsZeroed()))
-                .Visit(lowered.LoweredBody) as BlockSyntax
-            ?? throw new InvalidOperationException(
-                $"Unhoisting ref-struct fields removed the body of device function '{functionName}'.");
+        var unhoistedBody = RewriteResumeLocals(lowered.LoweredBody, unhoistedLocals, renamedLocals, semanticModel,
+            functionName, methodSymbol.AreLocalsZeroed());
         var bodySource = RewriteAndNormalizeBody(unhoistedBody, semanticModel, isDeviceFunction: true);
 
         // As visible as the function (a consumer of another assembly calls a public one); the frame's fields are the

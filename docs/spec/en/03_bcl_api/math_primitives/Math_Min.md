@@ -79,6 +79,12 @@ The computed value.
 
 None. Does not throw exceptions.
 
+## Remarks
+
+The result is the .NET result on the GPU, the native CPU build and the managed path (IEEE 754:2019 `minimum`): when either input is NaN, the result is NaN, and `-0.0` is smaller than `+0.0`, so `Math.Min(0.0, -0.0)` is `-0.0`. `float.Min` and `double.Min` are the same operation. Compare a NaN result with `float.IsNaN` / `double.IsNaN`: its payload can differ between the GPU and .NET.
+
+On compute capability 8.0 and newer, the `float` overload is one instruction (PTX `min.NaN.f32`). The `double` overload adds a NaN test. When NaN inputs need no propagation, `float.MinNumber` / `double.MinNumber` ignore a NaN input (the result is NaN only when both are NaN), order the signed zeros in the same way, and are one instruction for both types.
+
 ## Examples
 
 > [!NOTE]

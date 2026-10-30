@@ -15,7 +15,7 @@ namespace Kassyi.GSharp.Stdlib.GpuMath.BigNum;
 internal struct LegacyProviderArithmeticAdapter : IGpuBigIntArithmetic
 {
     // A borrowed view: the handle belongs to the caller's scoped memory, so disposing the wrapper must not free it
-    private static GpuBigUInt Wrap(GpuWorkspace ctx, GpuBigIntMemoryHandle handle) => new(ctx, handle.Borrow(), isTemp: true);
+    private static GpuBigUInt Wrap(GpuWorkspace ctx, GpuBigIntMemoryHandle handle) => new(ctx, handle.Borrow());
 
     /// <inheritdoc/>
     public void Add(ref GpuBigIntExecutionContext context, GpuBigIntMemoryHandle left, GpuBigIntMemoryHandle right,

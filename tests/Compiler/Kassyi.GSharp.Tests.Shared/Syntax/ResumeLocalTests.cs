@@ -103,4 +103,14 @@ public class ResumeLocalTests : TranspilerTestBase
     [Scenario(TestScenario.Boundary)]
     public void Test_ZeroLengthStackAllocSpanBeforeBarrier_Compiles() =>
         ResumeLocalScenarios.ZeroLengthSpanBeforeBarrier(s_runNative);
+
+    [SkippableFact]
+    [Scenario(TestScenario.Boundary)]
+    public void Test_StackAllocPointerCapturedByDelegateRunBeforeBarrier_KeepsItsMemory() =>
+        ResumeLocalScenarios.LambdaBeforeBarrier(s_runNative);
+
+    [SkippableFact]
+    [Scenario(TestScenario.Boundary)]
+    public void Test_StackAllocPointerCapturedByStackLinqLambdaBeforeBarrier_KeepsItsMemory() =>
+        ResumeLocalScenarios.StackLinqBeforeBarrier(s_runNative);
 }

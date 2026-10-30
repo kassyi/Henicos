@@ -1,5 +1,6 @@
 using System;
 using Kassyi.GSharp.Core;
+using Kassyi.ZeroAlloc.Linq;
 
 namespace Kassyi.GSharp.Tests.Shared.TestCases.Analyzers.BarrierUsage;
 
@@ -247,4 +248,168 @@ public static partial class CrossBarrierFlowKernels
 
     [GpuDeviceFunction]
     public static void Fill(int[] b, out Span<int> s) => s = b;
+
+    // GSH0041: the delegate stored before the barrier runs after it and reads the captured pointer (PR #771 item 1)
+    [GpuKernel]
+    public static unsafe void LambdaCapturedStackallocKernel(int[] result)
+    {
+        int tid = ThreadIndex.X;
+        int* p = stackalloc int[4];
+        p[0] = tid + 1;
+        Func<int> f = () => p[0];
+        Gpu.SyncThreads();
+        result[tid] = f();
+    }
+
+    // No diagnostic: the delegate runs only before the barrier, and nothing after it uses the pointer
+    [GpuKernel]
+    public static unsafe void LambdaInvokedBeforeBarrierKernel(int[] result)
+    {
+        int tid = ThreadIndex.X;
+        int* p = stackalloc int[4];
+        p[0] = tid + 1;
+        Func<int> f = () => p[0];
+        result[tid] = f();
+        Gpu.SyncThreads();
+        result[tid] += 10;
+    }
+
+    // GSH0041: the delegate is reassigned after the barrier, but the one stored before it runs first
+    [GpuKernel]
+    public static unsafe void LambdaInvokedBeforeReassignmentKernel(int[] result)
+    {
+        int* p = stackalloc int[4];
+        Func<int> f = () => p[0];
+        Gpu.SyncThreads();
+        result[0] = f();
+        f = () => 2;
+        result[1] = f();
+    }
+
+    // No diagnostic: the delegate is assigned again after the barrier before it runs
+    [GpuKernel]
+    public static unsafe void LambdaReassignedAfterBarrierKernel(int[] result)
+    {
+        int* p = stackalloc int[4];
+        Func<int> f = () => p[0];
+        result[0] = f();
+        Gpu.SyncThreads();
+        f = () => 2;
+        result[1] = f();
+    }
+
+    // GSH0041: the delegate is copied into another local, which runs after the barrier
+    [GpuKernel]
+    public static unsafe void CopiedDelegateKernel(int[] result)
+    {
+        int* p = stackalloc int[4];
+        Func<int> f = () => p[0];
+        Func<int> g = f;
+        Gpu.SyncThreads();
+        result[0] = g();
+    }
+
+    // GSH0041: a local function converted to a delegate before the barrier runs after it
+    [GpuKernel]
+    public static unsafe void LocalFunctionDelegateKernel(int[] result)
+    {
+        int* p = stackalloc int[4];
+        Func<int> f = Read;
+        Gpu.SyncThreads();
+        result[0] = f();
+
+        int Read() => p[0];
+    }
+
+    // GSH0041: the delegate made by a lambda that runs before the barrier is stored and runs after it
+    [GpuKernel]
+    public static unsafe void NestedLambdaKernel(int[] result)
+    {
+        int* p = stackalloc int[4];
+        Func<Func<int>> make = () => () => p[0];
+        Func<int> f = make();
+        Gpu.SyncThreads();
+        result[0] = f();
+    }
+
+    // No diagnostic: the body of Gpu.SingleThread runs where it is called, before the barrier
+    [GpuKernel]
+    public static unsafe void MacroBodyBeforeBarrierKernel(int[] result)
+    {
+        int* p = stackalloc int[4];
+        p[0] = 1;
+        Gpu.SingleThread(() => { result[0] = p[0]; });
+        Gpu.SyncThreads();
+        result[1] = 2;
+    }
+
+    // GSH0041: the delegate runs a local function that reads the pointer through another one
+    [GpuKernel]
+    public static unsafe void SiblingLocalFunctionDelegateKernel(int[] result)
+    {
+        int* p = stackalloc int[4];
+        Func<int> f = Read;
+        Gpu.SyncThreads();
+        result[0] = f();
+
+        int Read() => Inner();
+        int Inner() => p[0];
+    }
+
+    // GSH0041: the lambda calls a local function that makes the delegate that reads the pointer
+    [GpuKernel]
+    public static unsafe void DelegateFromLocalFunctionKernel(int[] result)
+    {
+        int* p = stackalloc int[4];
+        Func<int> f = () => Make()();
+        Gpu.SyncThreads();
+        result[0] = f();
+
+        Func<int> Make() => () => p[0];
+    }
+
+    // GSH0041: the local function called after the barrier reads the pointer through another one
+    [GpuKernel]
+    public static unsafe void NestedLocalFunctionCallKernel(int[] a)
+    {
+        int* p = stackalloc int[4];
+        p[0] = 1;
+        Gpu.SyncThreads();
+        Read();
+
+        void Read() => Inner();
+        void Inner() => a[0] = p[0];
+    }
+
+    // No diagnostic: the StackLinq lambda runs within the query, before the barrier
+    [GpuKernel]
+    public static unsafe void StackLinqLambdaBeforeBarrierKernel(int[] data, int[] result)
+    {
+        int* p = stackalloc int[1];
+        p[0] = ThreadIndex.X;
+        result[ThreadIndex.X] = data.AsStackEnumerable().Where(x => x > p[0]).Sum();
+        Gpu.SyncThreads();
+        result[ThreadIndex.X] += 100;
+    }
+
+    // GSH0041: the StackLinq lambda runs after the barrier and reads the pointer
+    [GpuKernel]
+    public static unsafe void StackLinqLambdaAfterBarrierKernel(int[] data, int[] result)
+    {
+        int* p = stackalloc int[1];
+        p[0] = ThreadIndex.X;
+        Gpu.SyncThreads();
+        result[ThreadIndex.X] = data.AsStackEnumerable().Where(x => x > p[0]).Sum();
+    }
+
+    // No diagnostic: a StackLinq lambda inside the body of Gpu.SingleThread runs within the query, before the barrier
+    [GpuKernel]
+    public static unsafe void StackLinqInMacroBodyKernel(int[] data, int[] result)
+    {
+        int* p = stackalloc int[1];
+        p[0] = 1;
+        Gpu.SingleThread(() => { result[0] = data.AsStackEnumerable().Where(x => x > p[0]).Sum(); });
+        Gpu.SyncThreads();
+        result[1] = 2;
+    }
 }

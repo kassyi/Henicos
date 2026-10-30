@@ -136,6 +136,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerElementAtKernel();
 IntPtr hfunc = s_hfunc_ElementAtKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "CpuDialectLibraryCallKernels.ElementAtKernel");
 IntPtr d_data = IntPtr.Zero;
 IntPtr d_result = IntPtr.Zero;
 try
@@ -218,6 +219,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerElementAtKernel();
 IntPtr hfunc = s_hfunc_ElementAtKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "CpuDialectLibraryCallKernels.ElementAtKernel");
 try
 {
 void** kernelParams = stackalloc void*[2];
@@ -281,6 +283,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerElementAtIndexKernel();
 IntPtr hfunc = s_hfunc_ElementAtIndexKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "CpuDialectLibraryCallKernels.ElementAtIndexKernel");
 IntPtr d_data = IntPtr.Zero;
 IntPtr d_result = IntPtr.Zero;
 try
@@ -365,6 +368,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerElementAtIndexKernel();
 IntPtr hfunc = s_hfunc_ElementAtIndexKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "CpuDialectLibraryCallKernels.ElementAtIndexKernel");
 try
 {
 void** kernelParams = stackalloc void*[3];
@@ -397,7 +401,7 @@ finally
 }
 #pragma warning restore CS8500
 public const string SortKernel_Source = @"extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__CpuDialectLibraryCallKernels__SortKernel(GSharpArray<int> __gsharp_id_0_data){
-thrust::sort(thrust::device, __gsharp_id_0_data.begin(), __gsharp_id_0_data.end());
+__gsharp_sort(__gsharp_id_0_data);
 }
 ";
 public static readonly string SortKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +SortKernel_Source;
@@ -421,6 +425,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerSortKernel();
 IntPtr hfunc = s_hfunc_SortKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "CpuDialectLibraryCallKernels.SortKernel");
 IntPtr d_data = IntPtr.Zero;
 try
 {
@@ -476,6 +481,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerSortKernel();
 IntPtr hfunc = s_hfunc_SortKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "CpuDialectLibraryCallKernels.SortKernel");
 try
 {
 void** kernelParams = stackalloc void*[1];
@@ -540,6 +546,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerSelectAtRepeatedCurrentKernel();
 IntPtr hfunc = s_hfunc_SelectAtRepeatedCurrentKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "CpuDialectLibraryCallKernels.SelectAtRepeatedCurrentKernel");
 IntPtr d_data = IntPtr.Zero;
 IntPtr d_result = IntPtr.Zero;
 try
@@ -622,6 +629,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerSelectAtRepeatedCurrentKernel();
 IntPtr hfunc = s_hfunc_SelectAtRepeatedCurrentKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "CpuDialectLibraryCallKernels.SelectAtRepeatedCurrentKernel");
 try
 {
 void** kernelParams = stackalloc void*[2];
@@ -685,6 +693,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerUnfusedFirstKernel();
 IntPtr hfunc = s_hfunc_UnfusedFirstKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "CpuDialectLibraryCallKernels.UnfusedFirstKernel");
 IntPtr d_data = IntPtr.Zero;
 IntPtr d_result = IntPtr.Zero;
 try
@@ -769,6 +778,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerUnfusedFirstKernel();
 IntPtr hfunc = s_hfunc_UnfusedFirstKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "CpuDialectLibraryCallKernels.UnfusedFirstKernel");
 try
 {
 void** kernelParams = stackalloc void*[3];
@@ -834,6 +844,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerUnfusedLastKernel();
 IntPtr hfunc = s_hfunc_UnfusedLastKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "CpuDialectLibraryCallKernels.UnfusedLastKernel");
 IntPtr d_data = IntPtr.Zero;
 IntPtr d_result = IntPtr.Zero;
 try
@@ -918,6 +929,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerUnfusedLastKernel();
 IntPtr hfunc = s_hfunc_UnfusedLastKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "CpuDialectLibraryCallKernels.UnfusedLastKernel");
 try
 {
 void** kernelParams = stackalloc void*[3];
@@ -983,6 +995,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerUnfusedSingleKernel();
 IntPtr hfunc = s_hfunc_UnfusedSingleKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "CpuDialectLibraryCallKernels.UnfusedSingleKernel");
 IntPtr d_data = IntPtr.Zero;
 IntPtr d_result = IntPtr.Zero;
 try
@@ -1067,6 +1080,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerUnfusedSingleKernel();
 IntPtr hfunc = s_hfunc_UnfusedSingleKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "CpuDialectLibraryCallKernels.UnfusedSingleKernel");
 try
 {
 void** kernelParams = stackalloc void*[3];
@@ -1132,6 +1146,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerUnfusedSingleOrDefaultKernel();
 IntPtr hfunc = s_hfunc_UnfusedSingleOrDefaultKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "CpuDialectLibraryCallKernels.UnfusedSingleOrDefaultKernel");
 IntPtr d_data = IntPtr.Zero;
 IntPtr d_result = IntPtr.Zero;
 try
@@ -1216,6 +1231,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerUnfusedSingleOrDefaultKernel();
 IntPtr hfunc = s_hfunc_UnfusedSingleOrDefaultKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "CpuDialectLibraryCallKernels.UnfusedSingleOrDefaultKernel");
 try
 {
 void** kernelParams = stackalloc void*[3];
@@ -1249,15 +1265,16 @@ finally
 #pragma warning restore CS8500
 public const string FusedFirstKernel_Source = @"extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__CpuDialectLibraryCallKernels__FusedFirstKernel(GSharpArray<int> __gsharp_id_0_data, int __gsharp_id_1_takeCount, GSharpArray<int> __gsharp_id_2_result){
 __gsharp_id_2_result[0]=([&]() -> auto {
-int __gsharp_stage_0_count = 0;
+auto&& __gsharp_fusion_src = __gsharp_id_0_data;
+int __gsharp_stage_0_n = __gsharp_id_1_takeCount;
 int __gsharp_fusion_res = {};
 bool __gsharp_fusion_res_found = false;
-int __gsharp_fusion_length = __gsharp_id_0_data.length;
-for (int __gsharp_i = 0; __gsharp_i < __gsharp_fusion_length; __gsharp_i++)
+int __gsharp_fusion_lo = 0;
+int __gsharp_fusion_hi = __gsharp_fusion_src.length;
+__gsharp_fusion_hi = __gsharp_fusion_lo + __gsharp_clamp_count(__gsharp_stage_0_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
+for (int __gsharp_i = __gsharp_fusion_lo; __gsharp_i < __gsharp_fusion_hi; __gsharp_i++)
 {
-auto __gsharp_val_0 = __gsharp_id_0_data[__gsharp_i];
-if (__gsharp_stage_0_count >= __gsharp_id_1_takeCount) { break; }
-__gsharp_stage_0_count++;
+auto __gsharp_val_0 = __gsharp_fusion_src[__gsharp_i];
 __gsharp_fusion_res = __gsharp_val_0; __gsharp_fusion_res_found = true; break;
 }
 if (!__gsharp_fusion_res_found)
@@ -1296,6 +1313,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerFusedFirstKernel();
 IntPtr hfunc = s_hfunc_FusedFirstKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "CpuDialectLibraryCallKernels.FusedFirstKernel");
 IntPtr d_data = IntPtr.Zero;
 IntPtr d_result = IntPtr.Zero;
 try
@@ -1380,6 +1398,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerFusedFirstKernel();
 IntPtr hfunc = s_hfunc_FusedFirstKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "CpuDialectLibraryCallKernels.FusedFirstKernel");
 try
 {
 void** kernelParams = stackalloc void*[3];
@@ -1413,12 +1432,14 @@ finally
 #pragma warning restore CS8500
 public const string FusedFirstPredicateKernel_Source = @"extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__CpuDialectLibraryCallKernels__FusedFirstPredicateKernel(GSharpArray<int> __gsharp_id_0_data, int __gsharp_id_1_threshold, GSharpArray<int> __gsharp_id_2_result){
 __gsharp_id_2_result[0]=([&]() -> auto {
+auto&& __gsharp_fusion_src = __gsharp_id_0_data;
 int __gsharp_fusion_res = {};
 bool __gsharp_fusion_res_found = false;
-int __gsharp_fusion_length = __gsharp_id_0_data.length;
-for (int __gsharp_i = 0; __gsharp_i < __gsharp_fusion_length; __gsharp_i++)
+int __gsharp_fusion_lo = 0;
+int __gsharp_fusion_hi = __gsharp_fusion_src.length;
+for (int __gsharp_i = __gsharp_fusion_lo; __gsharp_i < __gsharp_fusion_hi; __gsharp_i++)
 {
-auto __gsharp_val_0 = __gsharp_id_0_data[__gsharp_i];
+auto __gsharp_val_0 = __gsharp_fusion_src[__gsharp_i];
 if (([&](auto __gsharp_id_3_x) {
 return __gsharp_id_3_x>__gsharp_id_1_threshold;
 }
@@ -1461,6 +1482,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerFusedFirstPredicateKernel();
 IntPtr hfunc = s_hfunc_FusedFirstPredicateKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "CpuDialectLibraryCallKernels.FusedFirstPredicateKernel");
 IntPtr d_data = IntPtr.Zero;
 IntPtr d_result = IntPtr.Zero;
 try
@@ -1545,6 +1567,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerFusedFirstPredicateKernel();
 IntPtr hfunc = s_hfunc_FusedFirstPredicateKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "CpuDialectLibraryCallKernels.FusedFirstPredicateKernel");
 try
 {
 void** kernelParams = stackalloc void*[3];
@@ -1578,15 +1601,16 @@ finally
 #pragma warning restore CS8500
 public const string FusedLastKernel_Source = @"extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__CpuDialectLibraryCallKernels__FusedLastKernel(GSharpArray<int> __gsharp_id_0_data, int __gsharp_id_1_takeCount, GSharpArray<int> __gsharp_id_2_result){
 __gsharp_id_2_result[0]=([&]() -> auto {
-int __gsharp_stage_0_count = 0;
+auto&& __gsharp_fusion_src = __gsharp_id_0_data;
+int __gsharp_stage_0_n = __gsharp_id_1_takeCount;
 int __gsharp_fusion_res = {};
 bool __gsharp_fusion_res_found = false;
-int __gsharp_fusion_length = __gsharp_id_0_data.length;
-for (int __gsharp_i = 0; __gsharp_i < __gsharp_fusion_length; __gsharp_i++)
+int __gsharp_fusion_lo = 0;
+int __gsharp_fusion_hi = __gsharp_fusion_src.length;
+__gsharp_fusion_hi = __gsharp_fusion_lo + __gsharp_clamp_count(__gsharp_stage_0_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
+for (int __gsharp_i = __gsharp_fusion_lo; __gsharp_i < __gsharp_fusion_hi; __gsharp_i++)
 {
-auto __gsharp_val_0 = __gsharp_id_0_data[__gsharp_i];
-if (__gsharp_stage_0_count >= __gsharp_id_1_takeCount) { break; }
-__gsharp_stage_0_count++;
+auto __gsharp_val_0 = __gsharp_fusion_src[__gsharp_i];
 __gsharp_fusion_res = __gsharp_val_0; __gsharp_fusion_res_found = true;
 }
 if (!__gsharp_fusion_res_found)
@@ -1625,6 +1649,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerFusedLastKernel();
 IntPtr hfunc = s_hfunc_FusedLastKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "CpuDialectLibraryCallKernels.FusedLastKernel");
 IntPtr d_data = IntPtr.Zero;
 IntPtr d_result = IntPtr.Zero;
 try
@@ -1709,6 +1734,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerFusedLastKernel();
 IntPtr hfunc = s_hfunc_FusedLastKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "CpuDialectLibraryCallKernels.FusedLastKernel");
 try
 {
 void** kernelParams = stackalloc void*[3];
@@ -1742,12 +1768,14 @@ finally
 #pragma warning restore CS8500
 public const string FusedLastPredicateKernel_Source = @"extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__CpuDialectLibraryCallKernels__FusedLastPredicateKernel(GSharpArray<int> __gsharp_id_0_data, int __gsharp_id_1_threshold, GSharpArray<int> __gsharp_id_2_result){
 __gsharp_id_2_result[0]=([&]() -> auto {
+auto&& __gsharp_fusion_src = __gsharp_id_0_data;
 int __gsharp_fusion_res = {};
 bool __gsharp_fusion_res_found = false;
-int __gsharp_fusion_length = __gsharp_id_0_data.length;
-for (int __gsharp_i = 0; __gsharp_i < __gsharp_fusion_length; __gsharp_i++)
+int __gsharp_fusion_lo = 0;
+int __gsharp_fusion_hi = __gsharp_fusion_src.length;
+for (int __gsharp_i = __gsharp_fusion_lo; __gsharp_i < __gsharp_fusion_hi; __gsharp_i++)
 {
-auto __gsharp_val_0 = __gsharp_id_0_data[__gsharp_i];
+auto __gsharp_val_0 = __gsharp_fusion_src[__gsharp_i];
 if (([&](int __gsharp_id_3_x) {
 return __gsharp_id_3_x>__gsharp_id_1_threshold;
 }
@@ -1790,6 +1818,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerFusedLastPredicateKernel();
 IntPtr hfunc = s_hfunc_FusedLastPredicateKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "CpuDialectLibraryCallKernels.FusedLastPredicateKernel");
 IntPtr d_data = IntPtr.Zero;
 IntPtr d_result = IntPtr.Zero;
 try
@@ -1874,6 +1903,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerFusedLastPredicateKernel();
 IntPtr hfunc = s_hfunc_FusedLastPredicateKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "CpuDialectLibraryCallKernels.FusedLastPredicateKernel");
 try
 {
 void** kernelParams = stackalloc void*[3];
@@ -1907,15 +1937,16 @@ finally
 #pragma warning restore CS8500
 public const string FusedMaxKernel_Source = @"extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__CpuDialectLibraryCallKernels__FusedMaxKernel(GSharpArray<int> __gsharp_id_0_data, int __gsharp_id_1_takeCount, GSharpArray<int> __gsharp_id_2_result){
 __gsharp_id_2_result[0]=([&]() -> auto {
-int __gsharp_stage_0_count = 0;
+auto&& __gsharp_fusion_src = __gsharp_id_0_data;
+int __gsharp_stage_0_n = __gsharp_id_1_takeCount;
 int __gsharp_fusion_res = {};
 bool __gsharp_fusion_res_init = false;
-int __gsharp_fusion_length = __gsharp_id_0_data.length;
-for (int __gsharp_i = 0; __gsharp_i < __gsharp_fusion_length; __gsharp_i++)
+int __gsharp_fusion_lo = 0;
+int __gsharp_fusion_hi = __gsharp_fusion_src.length;
+__gsharp_fusion_hi = __gsharp_fusion_lo + __gsharp_clamp_count(__gsharp_stage_0_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
+for (int __gsharp_i = __gsharp_fusion_lo; __gsharp_i < __gsharp_fusion_hi; __gsharp_i++)
 {
-auto __gsharp_val_0 = __gsharp_id_0_data[__gsharp_i];
-if (__gsharp_stage_0_count >= __gsharp_id_1_takeCount) { break; }
-__gsharp_stage_0_count++;
+auto __gsharp_val_0 = __gsharp_fusion_src[__gsharp_i];
 if (!__gsharp_fusion_res_init)
 {__gsharp_fusion_res = __gsharp_val_0;
 __gsharp_fusion_res_init = true;
@@ -1959,6 +1990,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerFusedMaxKernel();
 IntPtr hfunc = s_hfunc_FusedMaxKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "CpuDialectLibraryCallKernels.FusedMaxKernel");
 IntPtr d_data = IntPtr.Zero;
 IntPtr d_result = IntPtr.Zero;
 try
@@ -2043,6 +2075,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerFusedMaxKernel();
 IntPtr hfunc = s_hfunc_FusedMaxKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "CpuDialectLibraryCallKernels.FusedMaxKernel");
 try
 {
 void** kernelParams = stackalloc void*[3];
@@ -2076,15 +2109,16 @@ finally
 #pragma warning restore CS8500
 public const string FusedMinKernel_Source = @"extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__CpuDialectLibraryCallKernels__FusedMinKernel(GSharpArray<int> __gsharp_id_0_data, int __gsharp_id_1_takeCount, GSharpArray<int> __gsharp_id_2_result){
 __gsharp_id_2_result[0]=([&]() -> auto {
-int __gsharp_stage_0_count = 0;
+auto&& __gsharp_fusion_src = __gsharp_id_0_data;
+int __gsharp_stage_0_n = __gsharp_id_1_takeCount;
 int __gsharp_fusion_res = {};
 bool __gsharp_fusion_res_init = false;
-int __gsharp_fusion_length = __gsharp_id_0_data.length;
-for (int __gsharp_i = 0; __gsharp_i < __gsharp_fusion_length; __gsharp_i++)
+int __gsharp_fusion_lo = 0;
+int __gsharp_fusion_hi = __gsharp_fusion_src.length;
+__gsharp_fusion_hi = __gsharp_fusion_lo + __gsharp_clamp_count(__gsharp_stage_0_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
+for (int __gsharp_i = __gsharp_fusion_lo; __gsharp_i < __gsharp_fusion_hi; __gsharp_i++)
 {
-auto __gsharp_val_0 = __gsharp_id_0_data[__gsharp_i];
-if (__gsharp_stage_0_count >= __gsharp_id_1_takeCount) { break; }
-__gsharp_stage_0_count++;
+auto __gsharp_val_0 = __gsharp_fusion_src[__gsharp_i];
 if (!__gsharp_fusion_res_init)
 {__gsharp_fusion_res = __gsharp_val_0;
 __gsharp_fusion_res_init = true;
@@ -2128,6 +2162,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerFusedMinKernel();
 IntPtr hfunc = s_hfunc_FusedMinKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "CpuDialectLibraryCallKernels.FusedMinKernel");
 IntPtr d_data = IntPtr.Zero;
 IntPtr d_result = IntPtr.Zero;
 try
@@ -2212,6 +2247,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerFusedMinKernel();
 IntPtr hfunc = s_hfunc_FusedMinKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "CpuDialectLibraryCallKernels.FusedMinKernel");
 try
 {
 void** kernelParams = stackalloc void*[3];
@@ -2245,15 +2281,16 @@ finally
 #pragma warning restore CS8500
 public const string FusedAverageKernel_Source = @"extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__CpuDialectLibraryCallKernels__FusedAverageKernel(GSharpArray<int> __gsharp_id_0_data, int __gsharp_id_1_takeCount, GSharpArray<double> __gsharp_id_2_result){
 __gsharp_id_2_result[0]=([&]() -> auto {
-int __gsharp_stage_0_count = 0;
+auto&& __gsharp_fusion_src = __gsharp_id_0_data;
+int __gsharp_stage_0_n = __gsharp_id_1_takeCount;
 double __gsharp_fusion_res = 0;
 int __gsharp_fusion_res_count = 0;
-int __gsharp_fusion_length = __gsharp_id_0_data.length;
-for (int __gsharp_i = 0; __gsharp_i < __gsharp_fusion_length; __gsharp_i++)
+int __gsharp_fusion_lo = 0;
+int __gsharp_fusion_hi = __gsharp_fusion_src.length;
+__gsharp_fusion_hi = __gsharp_fusion_lo + __gsharp_clamp_count(__gsharp_stage_0_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
+for (int __gsharp_i = __gsharp_fusion_lo; __gsharp_i < __gsharp_fusion_hi; __gsharp_i++)
 {
-auto __gsharp_val_0 = __gsharp_id_0_data[__gsharp_i];
-if (__gsharp_stage_0_count >= __gsharp_id_1_takeCount) { break; }
-__gsharp_stage_0_count++;
+auto __gsharp_val_0 = __gsharp_fusion_src[__gsharp_i];
 __gsharp_fusion_res += __gsharp_val_0;
 __gsharp_fusion_res_count++;
 }
@@ -2295,6 +2332,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerFusedAverageKernel();
 IntPtr hfunc = s_hfunc_FusedAverageKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "CpuDialectLibraryCallKernels.FusedAverageKernel");
 IntPtr d_data = IntPtr.Zero;
 IntPtr d_result = IntPtr.Zero;
 try
@@ -2379,6 +2417,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerFusedAverageKernel();
 IntPtr hfunc = s_hfunc_FusedAverageKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "CpuDialectLibraryCallKernels.FusedAverageKernel");
 try
 {
 void** kernelParams = stackalloc void*[3];
@@ -2412,15 +2451,16 @@ finally
 #pragma warning restore CS8500
 public const string FusedSeedlessAggregateKernel_Source = @"extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__CpuDialectLibraryCallKernels__FusedSeedlessAggregateKernel(GSharpArray<int> __gsharp_id_0_data, int __gsharp_id_1_takeCount, GSharpArray<int> __gsharp_id_2_result){
 __gsharp_id_2_result[0]=([&]() -> auto {
-int __gsharp_stage_0_count = 0;
+auto&& __gsharp_fusion_src = __gsharp_id_0_data;
+int __gsharp_stage_0_n = __gsharp_id_1_takeCount;
 int __gsharp_fusion_res = {};
 bool __gsharp_fusion_res_init = false;
-int __gsharp_fusion_length = __gsharp_id_0_data.length;
-for (int __gsharp_i = 0; __gsharp_i < __gsharp_fusion_length; __gsharp_i++)
+int __gsharp_fusion_lo = 0;
+int __gsharp_fusion_hi = __gsharp_fusion_src.length;
+__gsharp_fusion_hi = __gsharp_fusion_lo + __gsharp_clamp_count(__gsharp_stage_0_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
+for (int __gsharp_i = __gsharp_fusion_lo; __gsharp_i < __gsharp_fusion_hi; __gsharp_i++)
 {
-auto __gsharp_val_0 = __gsharp_id_0_data[__gsharp_i];
-if (__gsharp_stage_0_count >= __gsharp_id_1_takeCount) { break; }
-__gsharp_stage_0_count++;
+auto __gsharp_val_0 = __gsharp_fusion_src[__gsharp_i];
 if (!__gsharp_fusion_res_init)
 {__gsharp_fusion_res = __gsharp_val_0;
 __gsharp_fusion_res_init = true;
@@ -2466,6 +2506,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerFusedSeedlessAggregateKernel();
 IntPtr hfunc = s_hfunc_FusedSeedlessAggregateKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "CpuDialectLibraryCallKernels.FusedSeedlessAggregateKernel");
 IntPtr d_data = IntPtr.Zero;
 IntPtr d_result = IntPtr.Zero;
 try
@@ -2550,6 +2591,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerFusedSeedlessAggregateKernel();
 IntPtr hfunc = s_hfunc_FusedSeedlessAggregateKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "CpuDialectLibraryCallKernels.FusedSeedlessAggregateKernel");
 try
 {
 void** kernelParams = stackalloc void*[3];
@@ -2615,6 +2657,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerUnfusedMaxKernel();
 IntPtr hfunc = s_hfunc_UnfusedMaxKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "CpuDialectLibraryCallKernels.UnfusedMaxKernel");
 IntPtr d_data = IntPtr.Zero;
 IntPtr d_result = IntPtr.Zero;
 try
@@ -2699,6 +2742,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerUnfusedMaxKernel();
 IntPtr hfunc = s_hfunc_UnfusedMaxKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "CpuDialectLibraryCallKernels.UnfusedMaxKernel");
 try
 {
 void** kernelParams = stackalloc void*[3];
@@ -2764,6 +2808,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerUnfusedMinKernel();
 IntPtr hfunc = s_hfunc_UnfusedMinKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "CpuDialectLibraryCallKernels.UnfusedMinKernel");
 IntPtr d_data = IntPtr.Zero;
 IntPtr d_result = IntPtr.Zero;
 try
@@ -2848,6 +2893,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerUnfusedMinKernel();
 IntPtr hfunc = s_hfunc_UnfusedMinKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "CpuDialectLibraryCallKernels.UnfusedMinKernel");
 try
 {
 void** kernelParams = stackalloc void*[3];
@@ -2913,6 +2959,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerUnfusedAverageKernel();
 IntPtr hfunc = s_hfunc_UnfusedAverageKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "CpuDialectLibraryCallKernels.UnfusedAverageKernel");
 IntPtr d_data = IntPtr.Zero;
 IntPtr d_result = IntPtr.Zero;
 try
@@ -2997,6 +3044,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerUnfusedAverageKernel();
 IntPtr hfunc = s_hfunc_UnfusedAverageKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "CpuDialectLibraryCallKernels.UnfusedAverageKernel");
 try
 {
 void** kernelParams = stackalloc void*[3];
@@ -3065,6 +3113,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerUnfusedSeedlessAggregateKernel();
 IntPtr hfunc = s_hfunc_UnfusedSeedlessAggregateKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "CpuDialectLibraryCallKernels.UnfusedSeedlessAggregateKernel");
 IntPtr d_data = IntPtr.Zero;
 IntPtr d_result = IntPtr.Zero;
 try
@@ -3149,6 +3198,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerUnfusedSeedlessAggregateKernel();
 IntPtr hfunc = s_hfunc_UnfusedSeedlessAggregateKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "CpuDialectLibraryCallKernels.UnfusedSeedlessAggregateKernel");
 try
 {
 void** kernelParams = stackalloc void*[3];
@@ -3182,53 +3232,57 @@ finally
 #pragma warning restore CS8500
 public const string EmptySequenceBoundaryKernel_Source = @"extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__CpuDialectLibraryCallKernels__EmptySequenceBoundaryKernel(GSharpArray<int> __gsharp_id_0_data, GSharpArray<int> __gsharp_id_1_results){
 __gsharp_id_1_results[0]=([&]() -> auto {
-int __gsharp_stage_0_count = 0;
+auto&& __gsharp_fusion_src = __gsharp_id_0_data;
+int __gsharp_stage_0_n = 0;
 int __gsharp_fusion_res = 0;
-int __gsharp_fusion_length = __gsharp_id_0_data.length;
-for (int __gsharp_i = 0; __gsharp_i < __gsharp_fusion_length; __gsharp_i++)
+int __gsharp_fusion_lo = 0;
+int __gsharp_fusion_hi = __gsharp_fusion_src.length;
+__gsharp_fusion_hi = __gsharp_fusion_lo + __gsharp_clamp_count(__gsharp_stage_0_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
+for (int __gsharp_i = __gsharp_fusion_lo; __gsharp_i < __gsharp_fusion_hi; __gsharp_i++)
 {
-auto __gsharp_val_0 = __gsharp_id_0_data[__gsharp_i];
-if (__gsharp_stage_0_count >= 0) { break; }
-__gsharp_stage_0_count++;
+auto __gsharp_val_0 = __gsharp_fusion_src[__gsharp_i];
 __gsharp_fusion_res += __gsharp_val_0;
 }
 return __gsharp_fusion_res;
 }());
 __gsharp_id_1_results[1]=([&]() -> auto {
-int __gsharp_stage_0_count = 0;
+auto&& __gsharp_fusion_src = __gsharp_id_0_data;
+int __gsharp_stage_0_n = 0;
 int __gsharp_fusion_res = 0;
-int __gsharp_fusion_length = __gsharp_id_0_data.length;
-for (int __gsharp_i = 0; __gsharp_i < __gsharp_fusion_length; __gsharp_i++)
+int __gsharp_fusion_lo = 0;
+int __gsharp_fusion_hi = __gsharp_fusion_src.length;
+__gsharp_fusion_hi = __gsharp_fusion_lo + __gsharp_clamp_count(__gsharp_stage_0_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
+for (int __gsharp_i = __gsharp_fusion_lo; __gsharp_i < __gsharp_fusion_hi; __gsharp_i++)
 {
-auto __gsharp_val_0 = __gsharp_id_0_data[__gsharp_i];
-if (__gsharp_stage_0_count >= 0) { break; }
-__gsharp_stage_0_count++;
+auto __gsharp_val_0 = __gsharp_fusion_src[__gsharp_i];
 __gsharp_fusion_res++;
 }
 return __gsharp_fusion_res;
 }());
 __gsharp_id_1_results[2]=(([&]() -> auto {
-int __gsharp_stage_0_count = 0;
+auto&& __gsharp_fusion_src = __gsharp_id_0_data;
+int __gsharp_stage_0_n = 0;
 bool __gsharp_fusion_res = false;
-int __gsharp_fusion_length = __gsharp_id_0_data.length;
-for (int __gsharp_i = 0; __gsharp_i < __gsharp_fusion_length; __gsharp_i++)
+int __gsharp_fusion_lo = 0;
+int __gsharp_fusion_hi = __gsharp_fusion_src.length;
+__gsharp_fusion_hi = __gsharp_fusion_lo + __gsharp_clamp_count(__gsharp_stage_0_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
+for (int __gsharp_i = __gsharp_fusion_lo; __gsharp_i < __gsharp_fusion_hi; __gsharp_i++)
 {
-auto __gsharp_val_0 = __gsharp_id_0_data[__gsharp_i];
-if (__gsharp_stage_0_count >= 0) { break; }
-__gsharp_stage_0_count++;
+auto __gsharp_val_0 = __gsharp_fusion_src[__gsharp_i];
 __gsharp_fusion_res = true; break;
 }
 return __gsharp_fusion_res;
 }())?1:0);
 __gsharp_id_1_results[3]=(([&]() -> auto {
-int __gsharp_stage_0_count = 0;
+auto&& __gsharp_fusion_src = __gsharp_id_0_data;
+int __gsharp_stage_0_n = 0;
 bool __gsharp_fusion_res = true;
-int __gsharp_fusion_length = __gsharp_id_0_data.length;
-for (int __gsharp_i = 0; __gsharp_i < __gsharp_fusion_length; __gsharp_i++)
+int __gsharp_fusion_lo = 0;
+int __gsharp_fusion_hi = __gsharp_fusion_src.length;
+__gsharp_fusion_hi = __gsharp_fusion_lo + __gsharp_clamp_count(__gsharp_stage_0_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
+for (int __gsharp_i = __gsharp_fusion_lo; __gsharp_i < __gsharp_fusion_hi; __gsharp_i++)
 {
-auto __gsharp_val_0 = __gsharp_id_0_data[__gsharp_i];
-if (__gsharp_stage_0_count >= 0) { break; }
-__gsharp_stage_0_count++;
+auto __gsharp_val_0 = __gsharp_fusion_src[__gsharp_i];
 if (!(([&](auto __gsharp_id_2_x) {
 return __gsharp_id_2_x>0;
 }
@@ -3238,41 +3292,44 @@ return __gsharp_id_2_x>0;
 return __gsharp_fusion_res;
 }())?1:0);
 __gsharp_id_1_results[4]=(([&]() -> auto {
-int __gsharp_stage_0_count = 0;
+auto&& __gsharp_fusion_src = __gsharp_id_0_data;
+int __gsharp_stage_0_n = 0;
 bool __gsharp_fusion_res = false;
-int __gsharp_fusion_length = __gsharp_id_0_data.length;
-for (int __gsharp_i = 0; __gsharp_i < __gsharp_fusion_length; __gsharp_i++)
+int __gsharp_fusion_lo = 0;
+int __gsharp_fusion_hi = __gsharp_fusion_src.length;
+__gsharp_fusion_hi = __gsharp_fusion_lo + __gsharp_clamp_count(__gsharp_stage_0_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
+for (int __gsharp_i = __gsharp_fusion_lo; __gsharp_i < __gsharp_fusion_hi; __gsharp_i++)
 {
-auto __gsharp_val_0 = __gsharp_id_0_data[__gsharp_i];
-if (__gsharp_stage_0_count >= 0) { break; }
-__gsharp_stage_0_count++;
+auto __gsharp_val_0 = __gsharp_fusion_src[__gsharp_i];
 if (__gsharp_val_0 == (7))
 {__gsharp_fusion_res = true; break;
 }}
 return __gsharp_fusion_res;
 }())?1:0);
 __gsharp_id_1_results[5]=([&]() -> auto {
-int __gsharp_stage_0_count = 0;
+auto&& __gsharp_fusion_src = __gsharp_id_0_data;
+int __gsharp_stage_0_n = 0;
 int __gsharp_fusion_res = {};
-int __gsharp_fusion_length = __gsharp_id_0_data.length;
-for (int __gsharp_i = 0; __gsharp_i < __gsharp_fusion_length; __gsharp_i++)
+int __gsharp_fusion_lo = 0;
+int __gsharp_fusion_hi = __gsharp_fusion_src.length;
+__gsharp_fusion_hi = __gsharp_fusion_lo + __gsharp_clamp_count(__gsharp_stage_0_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
+for (int __gsharp_i = __gsharp_fusion_lo; __gsharp_i < __gsharp_fusion_hi; __gsharp_i++)
 {
-auto __gsharp_val_0 = __gsharp_id_0_data[__gsharp_i];
-if (__gsharp_stage_0_count >= 0) { break; }
-__gsharp_stage_0_count++;
+auto __gsharp_val_0 = __gsharp_fusion_src[__gsharp_i];
 __gsharp_fusion_res = __gsharp_val_0; break;
 }
 return __gsharp_fusion_res;
 }());
 __gsharp_id_1_results[6]=([&]() -> auto {
-int __gsharp_stage_0_count = 0;
+auto&& __gsharp_fusion_src = __gsharp_id_0_data;
+int __gsharp_stage_0_n = 0;
 int __gsharp_fusion_res = {};
-int __gsharp_fusion_length = __gsharp_id_0_data.length;
-for (int __gsharp_i = 0; __gsharp_i < __gsharp_fusion_length; __gsharp_i++)
+int __gsharp_fusion_lo = 0;
+int __gsharp_fusion_hi = __gsharp_fusion_src.length;
+__gsharp_fusion_hi = __gsharp_fusion_lo + __gsharp_clamp_count(__gsharp_stage_0_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
+for (int __gsharp_i = __gsharp_fusion_lo; __gsharp_i < __gsharp_fusion_hi; __gsharp_i++)
 {
-auto __gsharp_val_0 = __gsharp_id_0_data[__gsharp_i];
-if (__gsharp_stage_0_count >= 0) { break; }
-__gsharp_stage_0_count++;
+auto __gsharp_val_0 = __gsharp_fusion_src[__gsharp_i];
 __gsharp_fusion_res = __gsharp_val_0;
 }
 return __gsharp_fusion_res;
@@ -3280,14 +3337,15 @@ return __gsharp_fusion_res;
 __gsharp_id_1_results[7]=Kassyi::ZeroAlloc::Linq::StackLinq::SingleOrDefault(Kassyi::ZeroAlloc::Linq::StackLinq::Take(Kassyi::ZeroAlloc::Linq::StackLinq::AsStackEnumerable(__gsharp_id_0_data),0));
 __gsharp_id_1_results[8]=Kassyi::ZeroAlloc::Linq::StackLinq::ElementAtOrDefault(Kassyi::ZeroAlloc::Linq::StackLinq::Take(Kassyi::ZeroAlloc::Linq::StackLinq::AsStackEnumerable(__gsharp_id_0_data),0),0);
 __gsharp_id_1_results[9]=([&]() -> auto {
-int __gsharp_stage_0_count = 0;
+auto&& __gsharp_fusion_src = __gsharp_id_0_data;
+int __gsharp_stage_0_n = 0;
 int __gsharp_fusion_res = 42;
-int __gsharp_fusion_length = __gsharp_id_0_data.length;
-for (int __gsharp_i = 0; __gsharp_i < __gsharp_fusion_length; __gsharp_i++)
+int __gsharp_fusion_lo = 0;
+int __gsharp_fusion_hi = __gsharp_fusion_src.length;
+__gsharp_fusion_hi = __gsharp_fusion_lo + __gsharp_clamp_count(__gsharp_stage_0_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
+for (int __gsharp_i = __gsharp_fusion_lo; __gsharp_i < __gsharp_fusion_hi; __gsharp_i++)
 {
-auto __gsharp_val_0 = __gsharp_id_0_data[__gsharp_i];
-if (__gsharp_stage_0_count >= 0) { break; }
-__gsharp_stage_0_count++;
+auto __gsharp_val_0 = __gsharp_fusion_src[__gsharp_i];
 __gsharp_fusion_res = ([&](int __gsharp_id_3_acc, int __gsharp_id_4_x) {
 return __gsharp_id_3_acc+__gsharp_id_4_x;
 }
@@ -3332,6 +3390,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerEmptySequenceBoundaryKernel();
 IntPtr hfunc = s_hfunc_EmptySequenceBoundaryKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "CpuDialectLibraryCallKernels.EmptySequenceBoundaryKernel");
 IntPtr d_data = IntPtr.Zero;
 IntPtr d_results = IntPtr.Zero;
 try
@@ -3414,6 +3473,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerEmptySequenceBoundaryKernel();
 IntPtr hfunc = s_hfunc_EmptySequenceBoundaryKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "CpuDialectLibraryCallKernels.EmptySequenceBoundaryKernel");
 try
 {
 void** kernelParams = stackalloc void*[2];

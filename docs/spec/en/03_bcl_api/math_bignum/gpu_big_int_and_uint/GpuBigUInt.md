@@ -82,7 +82,7 @@ Thrown when `hostData` is empty.
 | --- | --- |
 | [DevicePointer](#devicepointer) | Gets the raw 64-bit device memory pointer to the first limb word in GPU global address space. |
 | [Handle](#handle) | Gets the underlying GPU memory handle tracking device buffer allocation and lifetime. |
-| [IsTemp](#istemp) | Gets a value indicating whether this buffer represents an intermediate temporary buffer managed by expression evaluation. |
+| [OwnsBuffer](#ownsbuffer) | Gets a value indicating whether this value owns its device buffer, so that disposing it returns the buffer to the pool. |
 | [NumWords](#numwords) | Gets the number of 32-bit unsigned integer limbs (words) allocated for this big integer. |
 | [Value](#value) | Gets a deferred expression representing this instance, or evaluates and assigns a deferred expression into this instance in-place. |
 | [Workspace](#workspace) | Gets the `GpuWorkspace` associated with this GPU integer instance. |
@@ -108,13 +108,15 @@ Gets the underlying GPU memory handle tracking device buffer allocation and life
 public GpuBigIntMemoryHandle Handle { get; }
 ```
 
-## IsTemp
+## OwnsBuffer
 
-Gets a value indicating whether this buffer represents an intermediate temporary buffer managed by expression evaluation.
+Gets a value indicating whether this value owns its device buffer, so that disposing it returns the buffer to the pool.
 
 ```csharp
-public bool IsTemp { get; }
+public bool OwnsBuffer { get; }
 ```
+
+A value created by a constructor, or returned by an operation or an evaluation that allocates, owns its buffer. A borrowed value (a view of another value or array that the library wraps in a `GpuBigUInt`) does not, and disposing it does nothing.
 
 ## NumWords
 
@@ -126,7 +128,7 @@ public int NumWords { get; }
 
 ## Value
 
-Gets a deferred expression representing this instance, or evaluates and assigns a deferred expression into this instance in-place.
+Gets a deferred expression representing this instance, or evaluates and assigns a deferred expression into this instance in-place. The expression may read this instance (`d.Value = d / b`); the result is the one of a separate buffer.
 
 ```csharp
 public GpuBigUIntExpr Value { get; set; }

@@ -72,3 +72,38 @@ public static class Escapes
         _ = element;
     }
 }
+
+public class HolderOfResult
+{
+    private GpuBigIntArrayView _result;                                 // RS11: a vector result in a field of a class
+
+    public void Keep(
+        Kassyi.GSharp.Stdlib.GpuMath.BigNum.Expressions.IGpuBigIntVectorExpression expression,
+        Kassyi.GSharp.Stdlib.GpuMath.GpuWorkspace workspace)
+    {
+        _result = expression.Evaluate(workspace);
+    }
+}
+
+public static class VectorResultEscapes
+{
+    public static void Captured(
+        Kassyi.GSharp.Stdlib.GpuMath.BigNum.Expressions.IGpuBigIntVectorExpression expression,
+        Kassyi.GSharp.Stdlib.GpuMath.GpuWorkspace workspace)
+    {
+        var result = expression.Evaluate(workspace);
+        System.Func<int> lambda = () => result.Length;                  // RS11: an integer result captured
+        _ = lambda;
+    }
+
+    public static void Boxed(
+        Kassyi.GSharp.Stdlib.GpuMath.BigNum.Expressions.IGpuBigFloatVectorExpression floats,
+        Kassyi.GSharp.Stdlib.GpuMath.BigNum.Expressions.IGpuBoolVectorExpression mask,
+        Kassyi.GSharp.Stdlib.GpuMath.GpuWorkspace workspace)
+    {
+        object floatResult = floats.Evaluate(workspace);                // RS11: a float result boxed
+        object maskResult = mask.Evaluate(workspace);                   // RS11: a mask boxed
+        _ = floatResult;
+        _ = maskResult;
+    }
+}

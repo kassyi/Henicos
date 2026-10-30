@@ -98,6 +98,7 @@ case 0:
 {
 previous = value;
 value += 1;
+global::Kassyi.GSharp.Core.ManagedGpuContext.BlockBarrierRequested = true;
 __gsharp_ctx.__gsharp_state = 1;
 return false;
 }
@@ -131,7 +132,7 @@ return false;
 
 case 1:
 {
-var __gsharp_warp_temp_0 = __gsharp_warp_shuffle_read_sync(__gsharp_ctx, 0xFFFFFFFFu, value, 0);
+var __gsharp_warp_temp_0 = __gsharp_warp_shuffle_read_sync(__gsharp_ctx, 0xFFFFFFFFu, value, 0, 32, "DeviceFunctionRefParameterBarrierKernels.cs(18,47)");
 {
 __gsharp_result = __gsharp_warp_temp_0;
 __gsharp_ctx.__gsharp_state = 0;
@@ -201,6 +202,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerRefParameterKernel();
 IntPtr hfunc = s_hfunc_RefParameterKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "DeviceFunctionRefParameterBarrierKernels.RefParameterKernel");
 IntPtr d_buffer = IntPtr.Zero;
 try
 {
@@ -258,6 +260,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerRefParameterKernel();
 IntPtr hfunc = s_hfunc_RefParameterKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "DeviceFunctionRefParameterBarrierKernels.RefParameterKernel");
 try
 {
 void** kernelParams = stackalloc void*[2];

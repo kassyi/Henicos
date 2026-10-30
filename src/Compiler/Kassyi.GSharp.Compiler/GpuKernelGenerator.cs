@@ -261,7 +261,8 @@ public class GpuKernelGenerator : IIncrementalGenerator
         // The values that the host wrappers need are read here, from this compilation, so that a result taken from the
         // cache never refers to an earlier one (#383)
         var header = HostClassHeader.Create(methodSymbol.ContainingType);
-        var host = KernelHostModel.Create(methodSymbol, StructMarshalingEmitter.RenderStructs(methodSymbol));
+        var host = KernelHostModel.Create(methodSymbol, StructMarshalingEmitter.RenderStructs(methodSymbol),
+            context.SemanticModel);
 
         try
         {

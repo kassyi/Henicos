@@ -10,7 +10,7 @@ public static partial class DivergentBarrierKernels
     {
         if (ThreadIndex.X < 16)
         {
-            // GSH0037: Divergent barrier inside if statement
+            // GSH0083: Divergent barrier inside if statement
             Gpu.SyncThreads();
         }
 
@@ -28,7 +28,7 @@ public static partial class DivergentBarrierKernels
         }
         else
         {
-            // GSH0037: Divergent barrier inside else block
+            // GSH0083: Divergent barrier inside else block
             Gpu.SyncThreads();
         }
 
@@ -43,7 +43,7 @@ public static partial class DivergentBarrierKernels
         switch (ThreadIndex.X % 2)
         {
             case 0:
-                // GSH0037: Divergent barrier inside switch case
+                // GSH0083: Divergent barrier inside switch case
                 Gpu.SyncThreads();
                 break;
             default:

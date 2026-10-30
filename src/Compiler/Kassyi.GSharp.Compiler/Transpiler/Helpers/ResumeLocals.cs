@@ -21,9 +21,10 @@ internal enum ResumeLocalKind
     Unsupported,
 
     /// <summary>
-    /// A managed <c>SharedMemory&lt;T&gt;</c>: kept as it was before resume locals existed (declared with its initializer
-    /// before the state switch, nothing where it is declared): the shared memory emitters own the placement of its
-    /// region, and a C# class cannot hold it as a field.
+    /// A managed <c>SharedMemory&lt;T&gt;</c> (a C# class cannot hold it as a field): declared before the state switch
+    /// with the initializer that <c>SharedMemorySiteKeyAnnotator</c> writes for a redeclaration, which finds its region
+    /// by its site key. Where the region is placed, and what stays where the local is declared, is decided by the shared
+    /// memory emitters, not by <see cref="ResumeLocals.CreateInitialization"/>.
     /// </summary>
     Initialized
 }
@@ -58,9 +59,9 @@ internal readonly record struct ResumeLocal(
 /// </para>
 /// <para>
 /// <c>SharedMemory&lt;T&gt;</c> is excluded here, in one place: the native frame keeps it where the launcher and the
-/// declaration place it (<see cref="IsRedeclared"/> with <c>sharedMemoryInFrame</c>), and the managed path keeps declaring
-/// it with its initializer as before (<see cref="ResumeLocalKind.Initialized"/>), so the order in which regions are
-/// placed stays the one of the shared memory emitters.
+/// declaration place it (<see cref="IsRedeclared"/> with <c>sharedMemoryInFrame</c>), and the managed path declares it
+/// on every resume only to find its region again (<see cref="ResumeLocalKind.Initialized"/>), so where and in which
+/// order regions are placed stays the decision of the shared memory emitters.
 /// </para>
 /// <para>
 /// Only the storage moves before the switch. The initializer stays where the local is declared, as an assignment, so it

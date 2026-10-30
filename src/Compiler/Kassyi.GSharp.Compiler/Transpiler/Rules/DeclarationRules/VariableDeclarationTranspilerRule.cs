@@ -70,31 +70,11 @@ public sealed class VariableDeclarationTranspilerRule : SyntaxNodeTranspilerRule
         ITypeSymbol? typeSymbol, bool isVar, ref TranspileContext context)
     {
         var hasEmittedAny = false;
-        for (var i = 0; i < variables.Count; i++)
+        foreach (var v in variables)
         {
-            var v = variables[i];
-
-            if (typeSymbol != null &&
-                IteratorTypeResolver.IsGenericIEnumerable(typeSymbol, out _) &&
-                v.Initializer != null)
+            if (TryTranspileIteratorLocal(v, typeSymbol, ref hasEmittedAny, ref context))
             {
-                if (IteratorTypeResolver.TryResolveIteratorSource(
-                        v.Initializer.Value,
-                        context.Query.SemanticModel,
-                        out var sourceInvocation,
-                        out var iteratorMethod))
-                {
-                    TranspileIteratorArgumentBackingLocals(v, iteratorMethod, sourceInvocation, ref hasEmittedAny, ref context);
-                    continue;
-                }
-
-                if (IteratorTypeResolver.TryResolveExternalIteratorSource(
-                        v.Initializer.Value,
-                        context.Query.SemanticModel,
-                        out _))
-                {
-                    continue;
-                }
+                continue;
             }
 
             if (hasEmittedAny)
@@ -102,34 +82,111 @@ public sealed class VariableDeclarationTranspilerRule : SyntaxNodeTranspilerRule
                 context.Emitter.Writer.AppendLine(";");
             }
 
+            hasEmittedAny = true;
             if (TryTranspileStackArrayDeclaration(v, typeSymbol, ref context))
             {
-                hasEmittedAny = true;
                 continue;
             }
 
-            if (isVar)
-            {
-                context.Emitter.Writer.Append("auto");
-            }
-            else if (typeSymbol != null &&
-                     context.Query.SemanticModel.GetOriginalNode(v) is ParameterSyntax paramSyntax)
-            {
-                var paramSymbol = context.Query.SemanticModel.GetDeclaredSymbol<IParameterSymbol>(v);
-                MethodSignatureTranspiler.WriteParameterDeclaration(paramSyntax, typeSymbol, paramSymbol, ref context);
-            }
-            else
-            {
-                context.Emitter.Dialect.AppendType(ref context, typeSymbol);
-            }
-
+            // A split declaration has no initializer to deduce auto from, so it names the type
+            var splitInitialization = context.Query.SemanticModel.GetOriginalNode(v) is not ParameterSyntax &&
+                                      IsJumpedOverInitialization(v, typeSymbol);
+            WriteDeclaredType(v, typeSymbol, isVar && !splitInitialization, ref context);
             context.Emitter.Writer.Append(' ');
             CppNameResolver.AppendDeclaredName(v, v.Identifier, ref context);
+            if (splitInitialization)
+            {
+                // <type> <name>;
+                // <name> = <initializer>
+                context.Emitter.Writer.AppendLine(";");
+                CppNameResolver.AppendDeclaredName(v, v.Identifier, ref context);
+            }
 
             DeclarationTranspilerHelper.WriteDeclaratorInitializer(v, ref context);
-            hasEmittedAny = true;
         }
     }
+
+    // An iterator local is inlined where it is enumerated: it declares only the locals that back the arguments of its
+    // source call, and nothing for an iterator of another assembly. Returns false for any other local.
+    private static bool TryTranspileIteratorLocal(VariableDeclaratorSyntax variable, ITypeSymbol? typeSymbol,
+        ref bool hasEmittedAny, ref TranspileContext context)
+    {
+        if (typeSymbol == null ||
+            !IteratorTypeResolver.IsGenericIEnumerable(typeSymbol, out _) ||
+            variable.Initializer == null)
+        {
+            return false;
+        }
+
+        if (IteratorTypeResolver.TryResolveIteratorSource(
+                variable.Initializer.Value,
+                context.Query.SemanticModel,
+                out var sourceInvocation,
+                out var iteratorMethod))
+        {
+            TranspileIteratorArgumentBackingLocals(variable, iteratorMethod, sourceInvocation, ref hasEmittedAny,
+                ref context);
+            return true;
+        }
+
+        return IteratorTypeResolver.TryResolveExternalIteratorSource(
+            variable.Initializer.Value,
+            context.Query.SemanticModel,
+            out _);
+    }
+
+    // auto, the declaration of the parameter that a lowered local stands for, or the type
+    private static void WriteDeclaredType(VariableDeclaratorSyntax variable, ITypeSymbol? typeSymbol, bool isVar,
+        ref TranspileContext context)
+    {
+        if (isVar)
+        {
+            context.Emitter.Writer.Append("auto");
+        }
+        else if (typeSymbol != null &&
+                 context.Query.SemanticModel.GetOriginalNode(variable) is ParameterSyntax paramSyntax)
+        {
+            var paramSymbol = context.Query.SemanticModel.GetDeclaredSymbol<IParameterSymbol>(variable);
+            MethodSignatureTranspiler.WriteParameterDeclaration(paramSyntax, typeSymbol, paramSymbol, ref context);
+        }
+        else
+        {
+            context.Emitter.Dialect.AppendType(ref context, typeSymbol);
+        }
+    }
+
+    // [WHY] A goto may jump past this initialized declaration (GotoJumpAnalysis); C++ forbids that jump, so the
+    // declaration and the initialization become two statements. Only a type that C++ can declare without an initializer
+    // and assign later is split: a primitive, an enum, a pointer or a struct that is not a ref struct. A const local is
+    // emitted as a plain variable, so it is split too. A ref local, a using declaration and a ref struct local (a Span
+    // that is not a stackalloc, which TryWriteFixedSizeArray handles) keep their form: a goto past them stays ill-formed
+    // C++.
+    private static bool IsJumpedOverInitialization(VariableDeclaratorSyntax declarator, ITypeSymbol? typeSymbol) =>
+        declarator.Initializer != null &&
+        IsAssignableAfterDeclaration(typeSymbol) &&
+        IsJumpedOver(declarator);
+
+    // Whether the declarator is in a plain local declaration (not ref, not using) that a goto may jump past
+    private static bool IsJumpedOver(VariableDeclaratorSyntax declarator) =>
+        declarator.Parent is VariableDeclarationSyntax
+        {
+            Type: not RefTypeSyntax,
+            Parent: LocalDeclarationStatementSyntax { UsingKeyword.RawKind: (int)SyntaxKind.None } statement
+        } &&
+        GotoJumpAnalysis.MayBeJumpedOver(statement);
+
+    private static bool IsAssignableAfterDeclaration(ITypeSymbol? typeSymbol) => typeSymbol switch
+    {
+        null or { TypeKind: TypeKind.Error } => false,
+        IPointerTypeSymbol => true,
+        { TypeKind: TypeKind.Enum } => true,
+        { IsRefLikeType: true } => false,
+        { TypeKind: TypeKind.Struct } structType when structType.IsSharedMemoryType() ||
+                                                        structType.IsWmmaFragmentType() ||
+                                                        structType.IsWmmaMarkerType() => false,
+        { TypeKind: TypeKind.Struct } => true,
+        _ => false
+    };
 
     private static void TranspileIteratorArgumentBackingLocals(
         VariableDeclaratorSyntax declarator,
@@ -147,27 +204,30 @@ public sealed class VariableDeclarationTranspilerRule : SyntaxNodeTranspilerRule
             return;
         }
 
-        var parameters = iteratorMethod.Parameters;
-        if (parameters.Length == 0)
+        if (iteratorMethod.Parameters.Length == 0)
         {
             return;
         }
 
-        var localSymbol = context.Query.SemanticModel.GetDeclaredSymbol<ISymbol>(declarator);
-        var localRegion = LoweringIdentity.GetRegion(declarator);
-        var localCppName = CppNameResolver.Resolve(
-            localSymbol,
-            declarator.Identifier.ValueText,
-            context.Emitter.Dialect,
-            localRegion).ToString();
-
+        var localCppName = CppNameResolver.Resolve(declarator, context.Query.SemanticModel, context.Emitter.Dialect).ToString();
         var annotatedParamList = LoweringAnnotations.AnnotateOriginalSpans(
             iteratorDecl.ParameterList,
             context.Query.SemanticModel.Compilation);
 
-        var arguments = sourceInvocation.ArgumentList.Arguments;
-        var provided = new bool[parameters.Length];
+        // [WHY] Two loops: the arguments in the order they are written, which is the C# order of evaluation also for named
+        // arguments, then the defaults of the parameters left out. One loop over the parameters would change the order.
+        var provided = EmitProvidedArguments(localCppName, iteratorMethod.Parameters, annotatedParamList,
+            sourceInvocation.ArgumentList.Arguments, ref hasEmittedAny, ref context);
+        EmitDefaultArguments(localCppName, iteratorMethod.Parameters, annotatedParamList, provided, ref hasEmittedAny,
+            ref context);
+    }
 
+    // The backing local of each written argument; returns which parameters received one
+    private static bool[] EmitProvidedArguments(string localCppName, ImmutableArray<IParameterSymbol> parameters,
+        ParameterListSyntax annotatedParamList, SeparatedSyntaxList<ArgumentSyntax> arguments, ref bool hasEmittedAny,
+        ref TranspileContext context)
+    {
+        var provided = new bool[parameters.Length];
         for (var lexIdx = 0; lexIdx < arguments.Count; lexIdx++)
         {
             var arg = arguments[lexIdx];
@@ -192,6 +252,13 @@ public sealed class VariableDeclarationTranspilerRule : SyntaxNodeTranspilerRule
                 ref context);
         }
 
+        return provided;
+    }
+
+    // The backing local of each parameter left out, with its default value
+    private static void EmitDefaultArguments(string localCppName, ImmutableArray<IParameterSymbol> parameters,
+        ParameterListSyntax annotatedParamList, bool[] provided, ref bool hasEmittedAny, ref TranspileContext context)
+    {
         for (var paramIdx = 0; paramIdx < parameters.Length; paramIdx++)
         {
             if (provided[paramIdx])
@@ -267,10 +334,29 @@ public sealed class VariableDeclarationTranspilerRule : SyntaxNodeTranspilerRule
             return false;
         }
 
+        if (GpuCodeConstraints.GetStackArrayShapeProblem(variable.Initializer.Value, typeSymbol,
+                context.Query.SemanticModel) is { } problem)
+        {
+            context.Reporter.Fail(GSharpDiagnostics.UnsupportedSyntax, variable.Initializer.Value, problem);
+            return true;
+        }
+
         if (!InitializationSyntaxExtractor.TryGetArrayInitialization(variable.Initializer.Value, out var count,
                 out var sizeExpr, out var initializerNode))
         {
             return false;
+        }
+
+        // An empty span (stackalloc T[0], []) has no storage, as in Roslyn (LocalRewriter_StackAlloc), and C++ has no
+        // array of length zero: GSharpArray<T> name{}. An empty array is GSH0003 (GetStackArrayShapeProblem)
+        if (count == 0 ||
+            sizeExpr != null && context.Query.SemanticModel.GetSafeConstantValue(sizeExpr) is { HasValue: true, Value: 0 })
+        {
+            context.Emitter.Dialect.AppendType(ref context, typeSymbol);
+            context.Emitter.Writer.Append(' ');
+            CppNameResolver.AppendDeclaredName(variable, variable.Identifier, ref context);
+            context.Emitter.Writer.Append("{}");
+            return true;
         }
 
         if (initializerNode != null && count.HasValue)
@@ -296,40 +382,11 @@ public sealed class VariableDeclarationTranspilerRule : SyntaxNodeTranspilerRule
             return;
         }
 
-        var symbol = context.Query.SemanticModel.GetDeclaredSymbol<ISymbol>(variable);
-        var name = CppNameResolver.Resolve(symbol, variable.Identifier.ValueText, context.Emitter.Dialect,
-            LoweringIdentity.GetRegion(variable)).ToString();
-        if (length == 0)
-        {
-            context.Emitter.Dialect.AppendType(ref context, pointerType);
-            context.Emitter.Writer.Append($" {name} = nullptr");
-            return;
-        }
-
-        var storage = ResumeLocals.StackStorageName(name);
-        context.Emitter.Dialect.AppendType(ref context, pointerType.PointedAtType);
-        context.Emitter.Writer.Append($" {storage}");
-        using (context.Emitter.Writer.Brackets())
-        {
-            context.Emitter.Writer.Append(length);
-        }
-
-        InitializationSyntaxExtractor.TryGetArrayInitialization(value, out _, out _, out var initializerNode);
-        if (initializerNode != null)
-        {
-            context.Emitter.Writer.Append("=");
-            context.Visitor.Visit(initializerNode);
-        }
-
+        var name = CppNameResolver.Resolve(variable, context.Query.SemanticModel, context.Emitter.Dialect).ToString();
+        InitializationSyntaxExtractor.TryGetArrayInitialization(value, out _, out _, out var elements);
         // As any other stack array (#748): zeroed unless [SkipLocalsInit] applies
-        context.Emitter.Writer.AppendIf(
-            initializerNode == null && context.Query.SemanticModel.AreLocalsZeroedAt(value),
-            "{}"
-        );
-
-        context.Emitter.Writer.AppendLine(";");
-        context.Emitter.Dialect.AppendType(ref context, pointerType);
-        context.Emitter.Writer.Append($" {name} = {storage}");
+        ResumeLocalEmitter.WriteStackAllocPointer(name, pointerType, length, elements,
+            zeroed: context.Query.SemanticModel.AreLocalsZeroedAt(value), bind: true, ref context);
     }
 
     private static void WriteArrayDeclarationHeader(ITypeSymbol elemType, VariableDeclaratorSyntax variable,
@@ -401,12 +458,32 @@ public sealed class VariableDeclarationTranspilerRule : SyntaxNodeTranspilerRule
             }
         }
 
-        context.Emitter.Writer.AppendIf(
-            creation is not StackAllocArrayCreationExpressionSyntax ||
-            isConst ||
-            context.Query.SemanticModel.AreLocalsZeroedAt(creation),
-            "{}"
-        );
+        var zeroed = creation is not StackAllocArrayCreationExpressionSyntax ||
+                     isConst ||
+                     context.Query.SemanticModel.AreLocalsZeroedAt(creation);
+        if (zeroed && !isConst && IsJumpedOver(variable))
+        {
+            // [WHY] A goto may jump past the declaration, and C++ forbids jumping past its {} initialization. The zero
+            // fill becomes a statement at the same place, so the array is zeroed again whenever control passes there,
+            // as in C#. A const array (ReadOnlySpan<T> = stackalloc) needs its initializer and keeps its form.
+            // <type> <name>[<size>];
+            // memset(<name>, 0, sizeof(<name>))
+            context.Emitter.Writer.AppendLine(";");
+            context.Emitter.Writer.Append("memset");
+            using (context.Emitter.Writer.Parentheses())
+            {
+                CppNameResolver.AppendDeclaredName(variable, variable.Identifier, ref context);
+                context.Emitter.Writer.Append(",0,sizeof");
+                using (context.Emitter.Writer.Parentheses())
+                {
+                    CppNameResolver.AppendDeclaredName(variable, variable.Identifier, ref context);
+                }
+            }
+
+            return true;
+        }
+
+        context.Emitter.Writer.AppendIf(zeroed, "{}");
         return true;
     }
 

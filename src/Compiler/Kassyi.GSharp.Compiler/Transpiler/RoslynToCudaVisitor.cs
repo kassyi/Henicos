@@ -354,7 +354,7 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker, IDisposable
             return;
         }
 
-        DeclarationHoistingHelper.HoistDeclarationExpressions(node, ref Context);
+        StatementPrelude.Emit(node, ref Context);
         Visit(node.Expression);
         Context.Emitter.Writer.Append(';');
     }
@@ -480,6 +480,15 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker, IDisposable
             return;
         }
 
+        // A string with a non-ASCII character (a source file name in a CPU error message, a printf format) is written with
+        // octal escapes, so its UTF-8 bytes do not depend on the character sets of the C++ compiler; any other string is
+        // written as it is, its C# escapes being C++ escapes as well
+        if (node.IsKind(SyntaxKind.StringLiteralExpression) && HasNonAscii(node.Token.ValueText))
+        {
+            CppStringLiteral.Append(Context.Emitter.Writer, node.Token.ValueText);
+            return;
+        }
+
         // C++ rejects '_' inside numbers (and "0x'FF"), so digit separators are dropped.
         if (node.IsKind(SyntaxKind.NumericLiteralExpression))
         {
@@ -488,6 +497,19 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker, IDisposable
         }
 
         Context.Emitter.Writer.Append(node.Token.Text);
+    }
+
+    private static bool HasNonAscii(string value)
+    {
+        foreach (var c in value)
+        {
+            if (c > 0x7F)
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private void AppendWithoutSeparators(string text, int end)
@@ -550,8 +572,14 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker, IDisposable
     public override void VisitSingleVariableDesignation(SingleVariableDesignationSyntax node)
         => CppNameResolver.AppendDeclaredName(node, node.Identifier, ref Context);
 
-    public override void VisitCollectionExpression(CollectionExpressionSyntax node) =>
-        VisitBracedSeparatedList(node.Elements);
+    public override void VisitCollectionExpression(CollectionExpressionSyntax node)
+    {
+        // A collection expression converted to a span or an array outside a stack array declaration fills its storage
+        if (!StackAllocEmitter.TryEmit(node, ref Context))
+        {
+            VisitBracedSeparatedList(node.Elements);
+        }
+    }
 
     public override void VisitExpressionElement(ExpressionElementSyntax node) => Visit(node.Expression);
 
@@ -578,18 +606,35 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker, IDisposable
         }
     }
 
-    public override void VisitStackAllocArrayCreationExpression(StackAllocArrayCreationExpressionSyntax node)
+    // A declaration writes its array creation as a stack array (VariableDeclarationTranspilerRule); anywhere else the
+    // array would live on the heap, which device code does not have (GSH0001), or has more than one dimension (GSH0003)
+    public override void VisitArrayCreationExpression(ArrayCreationExpressionSyntax node)
     {
-        if (node.Initializer != null)
+        if (GpuCodeConstraints.GetStackArrayShapeProblem(node, null, Context.Query.SemanticModel) is
+            GpuCodeConstraints.MultidimensionalArray)
         {
-            Visit(node.Initializer);
+            Context.Reporter.Fail(GSharpDiagnostics.UnsupportedSyntax, node, GpuCodeConstraints.MultidimensionalArray);
         }
         else
         {
-            Context.Emitter.Writer.Append("{}");
+            Context.Reporter.Fail(GSharpDiagnostics.ObjectCreationNotSupported, node);
         }
+
+        AppendUnsupportedPlaceholder(node);
     }
 
+    public override void VisitImplicitArrayCreationExpression(ImplicitArrayCreationExpressionSyntax node)
+    {
+        Context.Reporter.Fail(GSharpDiagnostics.ObjectCreationNotSupported, node);
+        AppendUnsupportedPlaceholder(node);
+    }
+
+    // A stackalloc that is not the initializer of a stack array declaration (which writes T name[N] itself) fills the
+    // storage that the statement prelude declared (StackAllocEmitter)
+    public override void VisitStackAllocArrayCreationExpression(StackAllocArrayCreationExpressionSyntax node) =>
+        StackAllocEmitter.TryEmit(node, ref Context);
+
     public override void VisitImplicitStackAllocArrayCreationExpression(
-        ImplicitStackAllocArrayCreationExpressionSyntax node) => Visit(node.Initializer);
+        ImplicitStackAllocArrayCreationExpressionSyntax node) =>
+        StackAllocEmitter.TryEmit(node, ref Context);
 }

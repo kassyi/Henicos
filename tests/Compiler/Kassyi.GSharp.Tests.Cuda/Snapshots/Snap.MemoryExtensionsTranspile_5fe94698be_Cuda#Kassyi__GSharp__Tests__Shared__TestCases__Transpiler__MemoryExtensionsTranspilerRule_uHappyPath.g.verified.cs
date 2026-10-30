@@ -21,8 +21,8 @@ public static partial class AotContexts
 {
 }
 public const string Kernel_Source = @"extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__TestCases__Transpiler__MemoryExtensionsTranspilerRule_uHappyPath__Kernel(GSharpArray<int> __gsharp_id_0_data){
-thrust::sort(thrust::device, __gsharp_id_0_data.begin(), __gsharp_id_0_data.end());
-thrust::sort(thrust::device, __gsharp_id_0_data.begin(), __gsharp_id_0_data.end());
+__gsharp_sort(__gsharp_id_0_data);
+__gsharp_sort(__gsharp_id_0_data);
 }
 ";
 public static readonly string Kernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +Kernel_Source;
@@ -46,6 +46,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerKernel();
 IntPtr hfunc = s_hfunc_Kernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "MemoryExtensionsTranspilerRule_HappyPath.Kernel");
 IntPtr d_data = IntPtr.Zero;
 try
 {
@@ -101,6 +102,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerKernel();
 IntPtr hfunc = s_hfunc_Kernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "MemoryExtensionsTranspilerRule_HappyPath.Kernel");
 try
 {
 void** kernelParams = stackalloc void*[1];

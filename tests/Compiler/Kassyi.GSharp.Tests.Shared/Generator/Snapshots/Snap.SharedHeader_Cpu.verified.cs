@@ -18,6 +18,7 @@ public const string Source = @"#include <cmath>
 #include <cstdio>
 #include <cstdlib>
 #include <limits>
+#include <new>
 
 // NaN and infinity: a C# constant such as float.NaN has no C++ literal (ConstexprLiteral)
 #define __gsharp_nan_f (std::numeric_limits<float>::quiet_NaN())
@@ -96,6 +97,16 @@ int length;
 
 inline GSharpArray() : data(nullptr), length(0) {}
 inline GSharpArray(T* d, int l) : data(d), length(l) {}
+// A stack array (T name[N]) viewed as a span or array argument; T may be const for a ReadOnlySpan. G# reports the
+// uses that would keep the view beyond the array's scope (GSH0091)
+template <int N>
+inline GSharpArray(T (&storage)[N]) : data(storage), length(N) {}
+
+// The span members that C# calls on a span or an array (Span<T>.Slice, Span<T>.Fill, MemoryExtensions.AsSpan)
+inline GSharpArray<T> Slice(int start) const { return GSharpArray<T>(data + start, length - start); }
+inline GSharpArray<T> Slice(int start, int count) const { return GSharpArray<T>(data + start, count); }
+inline void Fill(const T& value) { for (int i = 0; i < length; i++) { data[i] = value; } }
+inline GSharpArray<T> AsSpan() const { return *this; }
 
 // Allows implicit conversion from GSharpArray<U> to GSharpArray<T> if U* is convertible to T* (e.g. T to const T)
 template <typename U>
@@ -110,6 +121,17 @@ inline const T& operator[](int index) const { return data[index]; }
 inline operator T*() { return data; }
 inline operator const T*() const { return data; }
 };
+
+// A stack array (T name[N]) viewed as a span, for a receiver or a template argument that deduces GSharpArray<T>
+template <typename T, int N>
+inline GSharpArray<T> __gsharp_stackalloc_span(T (&storage)[N]) { return GSharpArray<T>(storage, N); }
+// The storage of a stackalloc outside a declaration, declared before the statement: zeroed where the stackalloc is
+// evaluated (every evaluation, as C# allocates a new block each time), then viewed as a span
+template <typename T, int N>
+inline GSharpArray<T> __gsharp_stackalloc_zero(T (&storage)[N]) {
+for (int i = 0; i < N; i++) { storage[i] = T{}; }
+return GSharpArray<T>(storage, N);
+}
 
 template <typename R, typename... Args>
 using System_Func = std::function<R(Args...)>;
@@ -152,9 +174,42 @@ __forceinline__ uint32_t __gsharp_uint_cast(double x) { return (uint32_t)x; }
 // --- Math & Range ---
 template <typename T> T max(T a, T b) { return std::max(a, b); }
 template <typename T> T min(T a, T b) { return std::min(a, b); }
-template <typename T> T __gsharp_clamp(T val, T min_val, T max_val) {
-return std::max(min_val, std::min(val, max_val));
+// Math.Clamp in the .NET order: value < min first, so a NaN value stays NaN, a NaN bound is ignored and the sign of a
+// zero value is kept
+template <typename T> T __gsharp_clamp(T value, T min_val, T max_val) {
+return value < min_val ? min_val : (value > max_val ? max_val : value);
 }
+// Math.Max / Math.Min (IEEE 754:2019 maximum / minimum), written as the .NET implementation: NaN if either input is NaN,
+// +0 > -0. fmax / fmin are not used: C leaves the order of signed zeros to the library.
+// One name per type, as fmaxf / fmax: a call passes its C# arguments unconverted (Math.Max(double, float)), which
+// an overload set would find ambiguous.
+// The __gsharp_ieee_* templates hold the bodies; the per-type wrappers below are the only callers.
+template <typename T> T __gsharp_ieee_max(T a, T b) {
+if (a != b) { return std::isnan(a) ? a : (b < a ? a : b); }
+return std::signbit(b) ? a : b;
+}
+template <typename T> T __gsharp_ieee_min(T a, T b) {
+if (a != b) { return std::isnan(a) ? a : (a < b ? a : b); }
+return std::signbit(a) ? a : b;
+}
+__forceinline__ float __gsharp_max_f32(float a, float b) { return __gsharp_ieee_max(a, b); }
+__forceinline__ double __gsharp_max_f64(double a, double b) { return __gsharp_ieee_max(a, b); }
+__forceinline__ float __gsharp_min_f32(float a, float b) { return __gsharp_ieee_min(a, b); }
+__forceinline__ double __gsharp_min_f64(double a, double b) { return __gsharp_ieee_min(a, b); }
+// float / double MaxNumber / MinNumber (IEEE 754:2019 maximumNumber / minimumNumber), as .NET: NaN only if both are
+// NaN, +0 > -0. The same values as PTX max / min, which the CUDA prelude uses.
+template <typename T> T __gsharp_ieee_max_number(T a, T b) {
+if (a != b) { return std::isnan(b) ? a : (b < a ? a : b); }
+return std::signbit(b) ? a : b;
+}
+template <typename T> T __gsharp_ieee_min_number(T a, T b) {
+if (a != b) { return std::isnan(b) ? a : (a < b ? a : b); }
+return std::signbit(a) ? a : b;
+}
+__forceinline__ float __gsharp_max_number_f32(float a, float b) { return __gsharp_ieee_max_number(a, b); }
+__forceinline__ double __gsharp_max_number_f64(double a, double b) { return __gsharp_ieee_max_number(a, b); }
+__forceinline__ float __gsharp_min_number_f32(float a, float b) { return __gsharp_ieee_min_number(a, b); }
+__forceinline__ double __gsharp_min_number_f64(double a, double b) { return __gsharp_ieee_min_number(a, b); }
 
 // --- Bit Manipulation & Arithmetic ---
 __forceinline__ uint32_t __gsharp_rotr32(uint32_t value, int offset) { return _rotr(value, offset); }
@@ -255,6 +310,132 @@ unsigned int diff = (unsigned int)std::abs((int)va[0] - (int)vb[0])
 return c + diff;
 }
 
+// --- Runtime Error Channel (CPU Dialect) ---
+enum class GSharpErrorCode : int32_t {
+None = 0,
+NotSupported = 1,
+InvalidOperation = 2,
+IndexOutOfRange = 3,
+ArgumentOutOfRange = 4,
+Argument = 5
+};
+
+struct GSharpErrorSlot {
+std::atomic<int32_t> code{0};
+const char* message{nullptr};
+// The first report's message, copied: a message formatted at run time (with the place and the values) does not
+// outlive the function that formats it. Reset keeps the text, so a message just consumed stays readable. The text is
+// UTF-8 (the host reads it so); a longer message is cut before the character that does not fit, never inside one.
+// 512 bytes hold the longest message of the prelude (a missing shuffle lane, with its place and hint)
+char text[512]{};
+
+inline void Reset() noexcept {
+message = nullptr;
+code.store(0, std::memory_order_release);
+}
+
+inline bool HasError() const noexcept {
+return code.load(std::memory_order_acquire) != 0;
+}
+
+inline void Report(GSharpErrorCode errCode, const char* msg) noexcept {
+int32_t expected = 0;
+if (code.compare_exchange_strong(expected, static_cast<int32_t>(errCode),
+std::memory_order_acq_rel,
+std::memory_order_relaxed)) {
+if (msg == nullptr) {
+message = nullptr;
+return;
+}
+size_t length = std::strlen(msg);
+if (length >= sizeof(text)) {
+length = sizeof(text) - 1;
+// msg[length] is the first byte left out; while it continues a UTF-8 character, leave that character out
+while (length > 0 && (static_cast<unsigned char>(msg[length]) & 0xC0u) == 0x80u) {
+--length;
+}
+}
+std::memcpy(text, msg, length);
+text[length] = '\0';
+message = text;
+}
+}
+};
+
+inline thread_local GSharpErrorSlot __gsharp_host_last_error;
+inline thread_local GSharpErrorSlot* __gsharp_active_error_slot = nullptr;
+
+extern ""C"" __declspec(dllexport) int32_t __gsharp_consume_last_error(const char** outMessage) {
+int32_t c = __gsharp_host_last_error.code.load(std::memory_order_acquire);
+if (c != 0) {
+if (outMessage != nullptr) {
+*outMessage = __gsharp_host_last_error.message;
+}
+__gsharp_host_last_error.Reset();
+}
+return c;
+}
+
+// Records a runtime failure for constructs the CPU dialect cannot execute (e.g. Gpu.InlinePtx).
+// First writer wins across OpenMP threads; the managed launch wrapper inspects the slot and throws.
+inline void __gsharp_unsupported(const char* message)
+{
+if (__gsharp_active_error_slot != nullptr) {
+__gsharp_active_error_slot->Report(GSharpErrorCode::NotSupported, message);
+} else {
+__gsharp_host_last_error.Report(GSharpErrorCode::NotSupported, message);
+}
+}
+
+// The depth of the comparisons of MemoryExtensions.Sort that the thread is running (Sort.hpp).
+inline thread_local int __gsharp_sort_compare_depth = 0;
+
+// Records a portable trap failure (e.g. empty sequence or out-of-range index in StackLinq).
+// First writer wins across OpenMP threads; the managed launch wrapper inspects the slot and throws.
+// [WHY] .NET wraps an exception thrown by the comparison of a sort: IndexOutOfRangeException becomes ArgumentException
+// (the comparer is inconsistent) and any other InvalidOperationException (ArraySortHelper.Sort).
+inline void __gsharp_trap(GSharpErrorCode code, const char* message)
+{
+if (__gsharp_sort_compare_depth > 0)
+{
+if (code == GSharpErrorCode::IndexOutOfRange)
+{
+code = GSharpErrorCode::Argument;
+message = ""Unable to sort because the IComparer.Compare() method returns inconsistent results."";
+}
+else
+{
+code = GSharpErrorCode::InvalidOperation;
+message = ""Failed to compare two elements in the array."";
+}
+}
+
+if (__gsharp_active_error_slot != nullptr) {
+__gsharp_active_error_slot->Report(code, message);
+} else {
+__gsharp_host_last_error.Report(code, message);
+}
+}
+
+// Thrown by __gsharp_trap_abort to end the kernel step of the current thread; the launcher catches it around the kernel
+// call, inside its OpenMP loop, and stops the launch through the error slot.
+struct __gsharp_step_abort {};
+
+// Records a failure after which the step cannot go on (a shared memory placement that fails: there is no memory to hand
+// out), then ends the step. The launcher stops the launch, and the host throws the exception of the code.
+[[noreturn]] inline void __gsharp_trap_abort(GSharpErrorCode code, const char* message)
+{
+__gsharp_trap(code, message);
+throw __gsharp_step_abort{};
+}
+
+// Marks the comparison of a sort that the thread is running, while it lives (Sort.hpp)
+struct __gsharp_sort_compare_scope
+{
+inline __gsharp_sort_compare_scope() noexcept { __gsharp_sort_compare_depth++; }
+inline ~__gsharp_sort_compare_scope() { __gsharp_sort_compare_depth--; }
+};
+
 // --- Thread & Block State ---
 thread_local uint3 threadIdx;
 thread_local uint3 blockIdx;
@@ -268,6 +449,27 @@ blockDim.x = dx; blockDim.y = dy; blockDim.z = dz;
 gridDim.x = gx; gridDim.y = gy; gridDim.z = gz;
 }
 
+// --- Gpu.GridStrideLoop ---
+// The first index and the step over the linear rank of the whole launch, in the order of cooperative_groups
+// grid::thread_rank() / num_threads() (x fastest, blocks in the same order). Both saturate at 2^31: no int index
+// reaches it, so index + step never wraps around in 32 bits. The block rank is 64-bit before any product: it stays
+// below 2^63 (65535 * 65535 * (2^31 - 1)), as in num_blocks().
+__forceinline__ unsigned int __gsharp_grid_stride_start() {
+unsigned long long block = ((unsigned long long)blockIdx.z * gridDim.y + blockIdx.y) * gridDim.x + blockIdx.x;
+if (block >= 0x80000000ull) { return 0x80000000u; }
+unsigned long long rank = block * (blockDim.x * blockDim.y * blockDim.z)
++ (threadIdx.z * blockDim.y + threadIdx.y) * blockDim.x + threadIdx.x;
+return rank >= 0x80000000ull ? 0x80000000u : (unsigned int)rank;
+}
+__forceinline__ unsigned int __gsharp_grid_stride_step() {
+unsigned long long blocks = (unsigned long long)gridDim.x * (gridDim.y * gridDim.z);
+if (blocks >= 0x80000000ull) { return 0x80000000u; }
+unsigned long long threads = blocks * (blockDim.x * blockDim.y * blockDim.z);
+return threads >= 0x80000000ull ? 0x80000000u : (unsigned int)threads;
+}
+// The count of Gpu.GridStrideLoop, evaluated once; a negative count runs no iteration, as i < n does in C#
+__forceinline__ unsigned int __gsharp_grid_stride_count(int n) { return n < 0 ? 0u : (unsigned int)n; }
+
 namespace cg {
 struct grid_group {
 void sync() {}
@@ -278,58 +480,228 @@ inline grid_group this_grid() { return grid_group(); }
 inline void __syncthreads() {}
 
 // --- Shared Memory ---
-inline thread_local char __gsharp_dynamic_smem[65536];
 // [WHY] A SharedMemory<T> declaration is one buffer per block, like a CUDA __shared__ variable: every call of a device
 // function, from any call site, gets the same buffer. The compiler identifies each declaration by a site key (a hash of
 // the declaring method and the ordinal of the declaration in it), so buffers do not depend on the order of allocations.
-#define __GSHARP_SMEM_MAX_SITES 64
-inline thread_local unsigned long long __gsharp_smem_keys[__GSHARP_SMEM_MAX_SITES];
-inline thread_local size_t __gsharp_smem_offsets[__GSHARP_SMEM_MAX_SITES];
-inline thread_local size_t __gsharp_smem_sizes[__GSHARP_SMEM_MAX_SITES];
-inline thread_local int __gsharp_smem_site_count;
-inline thread_local size_t __gsharp_smem_current_base;
+// Each OpenMP thread owns one arena and resets it at the start of each block it runs (#544); the launcher of a cooperative
+// kernel instead gives every block an arena of its own, which keeps the block's shared memory across its grid syncs (#664):
+// - A dynamic declaration (a count that is not a C# constant) is a region of the launch's sharedMemBytes, placed with the
+//   arithmetic of __gsharp_dsmem_place in Prelude.cu: aligned to max(alignof(T), 16), a launch that does not give it
+//   enough bytes is an ArgumentOutOfRangeException, and a region that grows after a later region is placed is an
+//   InvalidOperationException.
+// - A static declaration (a constant count) has a buffer of its own, which CUDA does not count in sharedMemBytes either.
+// The CPU has no limit of its own on the bytes or the number of declarations. The contents are not cleared between blocks
+// (CUDA leaves them undefined too). A placement that fails ends the step (__gsharp_trap_abort): there is no memory to
+// hand out, so the thread must not go on.
 
-inline void __gsharp_reset_smem() {
-__gsharp_smem_current_base = 0;
-__gsharp_smem_site_count = 0;
+// Every buffer is aligned to 64 bytes, which covers alignof(T) of every type a kernel can declare
+constexpr size_t __gsharp_smem_alignment = 64;
+
+inline unsigned char* __gsharp_smem_alloc(size_t bytes) {
+return static_cast<unsigned char*>(::operator new(bytes > 0 ? bytes : 1, std::align_val_t(__gsharp_smem_alignment), std::nothrow));
 }
 
-inline void* __gsharp_allocate_smem(unsigned long long siteKey, size_t size, size_t alignment) {
-for (int i = 0; i < __gsharp_smem_site_count; i++) {
-if (__gsharp_smem_keys[i] == siteKey) {
-if (size > __gsharp_smem_sizes[i]) {
-size_t oldOffset = __gsharp_smem_offsets[i];
-size_t oldSize = __gsharp_smem_sizes[i];
-size_t newOffset = (oldOffset + oldSize == __gsharp_smem_current_base)
-? oldOffset
-: ((__gsharp_smem_current_base + alignment - 1) & ~(alignment - 1));
-if (newOffset + size > sizeof(__gsharp_dynamic_smem)) {
-std::fprintf(stderr, ""G#: shared memory of the block exceeds %d declarations or %zu bytes\n"",
-__GSHARP_SMEM_MAX_SITES, sizeof(__gsharp_dynamic_smem));
-std::abort();
+inline void __gsharp_smem_free(unsigned char* data) {
+::operator delete(data, std::align_val_t(__gsharp_smem_alignment));
 }
-if (newOffset != oldOffset) {
-std::memcpy(__gsharp_dynamic_smem + newOffset, __gsharp_dynamic_smem + oldOffset, oldSize);
-__gsharp_smem_offsets[i] = newOffset;
+
+struct __gsharp_smem_region {
+unsigned long long key;
+size_t offset;
+size_t size;
+};
+
+struct __gsharp_smem_static_buffer {
+unsigned long long key;
+size_t size;
+unsigned char* data;
+};
+
+struct __gsharp_block_smem {
+__gsharp_block_smem() = default;
+// The arena owns its buffers
+__gsharp_block_smem(const __gsharp_block_smem&) = delete;
+__gsharp_block_smem& operator=(const __gsharp_block_smem&) = delete;
+
+unsigned char* dynamic_data = nullptr;
+size_t dynamic_capacity = 0;
+size_t dynamic_limit = 0;
+size_t dynamic_cursor = 0;
+std::vector<__gsharp_smem_region> regions;
+// Kept across blocks: a static declaration's buffer is allocated once per arena
+std::vector<__gsharp_smem_static_buffer> static_buffers;
+// The buffers that a static declaration outgrew (another instantiation of a generic device function with a larger T):
+// a thread may still hold a pointer into them, so they live as long as the arena
+std::vector<unsigned char*> outgrown_buffers;
+
+~__gsharp_block_smem() {
+__gsharp_smem_free(dynamic_data);
+for (auto& buffer : static_buffers) {
+__gsharp_smem_free(buffer.data);
 }
-__gsharp_smem_sizes[i] = size;
-__gsharp_smem_current_base = newOffset + size;
-}
-return (void*)(__gsharp_dynamic_smem + __gsharp_smem_offsets[i]);
+for (unsigned char* buffer : outgrown_buffers) {
+__gsharp_smem_free(buffer);
 }
 }
-size_t offset = (__gsharp_smem_current_base + alignment - 1) & ~(alignment - 1);
-if (__gsharp_smem_site_count == __GSHARP_SMEM_MAX_SITES || offset + size > sizeof(__gsharp_dynamic_smem)) {
-std::fprintf(stderr, ""G#: shared memory of the block exceeds %d declarations or %zu bytes\n"",
-__GSHARP_SMEM_MAX_SITES, sizeof(__gsharp_dynamic_smem));
-std::abort();
+
+// Starts a block with sharedMemBytes of dynamic shared memory. The buffer itself is allocated at the first dynamic
+// placement, inside a kernel step, where a failure reaches the error slot of the launch
+void reset(size_t sharedMemBytes) {
+regions.clear();
+dynamic_cursor = 0;
+dynamic_limit = sharedMemBytes;
 }
-__gsharp_smem_keys[__gsharp_smem_site_count] = siteKey;
-__gsharp_smem_offsets[__gsharp_smem_site_count] = offset;
-__gsharp_smem_sizes[__gsharp_smem_site_count] = size;
-__gsharp_smem_site_count++;
-__gsharp_smem_current_base = offset + size;
-return (void*)(__gsharp_dynamic_smem + offset);
+
+// The dynamic buffer of the block, allocated before its first region is placed and never moved while it has regions
+unsigned char* dynamic_buffer() {
+if (dynamic_capacity < dynamic_limit) {
+__gsharp_smem_free(dynamic_data);
+dynamic_data = __gsharp_smem_alloc(dynamic_limit);
+if (dynamic_data == nullptr) {
+dynamic_capacity = 0;
+__gsharp_trap_abort(GSharpErrorCode::ArgumentOutOfRange, ""G#: the dynamic shared memory of a block (sharedMemBytes) could not be allocated"");
+}
+dynamic_capacity = dynamic_limit;
+}
+return dynamic_data;
+}
+};
+
+inline thread_local __gsharp_block_smem __gsharp_thread_smem;
+// The arena of the block that the calling OpenMP thread runs, when it is not the thread's own (a cooperative kernel)
+inline thread_local __gsharp_block_smem* __gsharp_bound_smem = nullptr;
+
+inline __gsharp_block_smem& __gsharp_current_smem() {
+return __gsharp_bound_smem != nullptr ? *__gsharp_bound_smem : __gsharp_thread_smem;
+}
+
+// Starts the block that the calling OpenMP thread runs next, in the thread's own arena
+inline void __gsharp_reset_smem(uint32_t sharedMemBytes) {
+__gsharp_bound_smem = nullptr;
+__gsharp_thread_smem.reset(sharedMemBytes);
+}
+
+// Runs the next step of a block of a cooperative kernel in the block's own arena; nullptr returns to the thread's own
+inline void __gsharp_bind_smem(__gsharp_block_smem* arena) {
+__gsharp_bound_smem = arena;
+}
+
+// A declaration whose count is a C# constant: a buffer of its own, not counted in sharedMemBytes
+inline void* __gsharp_allocate_smem_static(unsigned long long siteKey, size_t bytes, size_t alignment) {
+__gsharp_block_smem& arena = __gsharp_current_smem();
+(void)alignment; // every buffer is aligned to __gsharp_smem_alignment
+for (auto& buffer : arena.static_buffers) {
+if (buffer.key == siteKey) {
+if (bytes > buffer.size) {
+// The same declaration in another instantiation of a generic device function, with a larger T
+unsigned char* grown = __gsharp_smem_alloc(bytes);
+if (grown == nullptr) {
+__gsharp_trap_abort(GSharpErrorCode::InvalidOperation, ""G#: the static shared memory of a declaration could not be allocated"");
+}
+arena.outgrown_buffers.push_back(buffer.data);
+buffer.data = grown;
+buffer.size = bytes;
+}
+return buffer.data;
+}
+}
+unsigned char* data = __gsharp_smem_alloc(bytes);
+if (data == nullptr) {
+__gsharp_trap_abort(GSharpErrorCode::InvalidOperation, ""G#: the static shared memory of a declaration could not be allocated"");
+}
+arena.static_buffers.push_back({siteKey, bytes, data});
+return data;
+}
+
+// A declaration whose count is known at run time: a region of the launch's sharedMemBytes, with the rules of
+// __gsharp_dsmem_place (Prelude.cu). place is the declaration in the C# source, for the message
+inline void* __gsharp_allocate_smem_dynamic(unsigned long long siteKey, unsigned long long bytes, size_t alignment,
+const char* place) {
+__gsharp_block_smem& arena = __gsharp_current_smem();
+size_t align = alignment > 16 ? alignment : 16;
+__gsharp_smem_region* region = nullptr;
+for (auto& candidate : arena.regions) {
+if (candidate.key == siteKey) {
+region = &candidate;
+break;
+}
+}
+if (region == nullptr) {
+size_t offset = (arena.dynamic_cursor + align - 1) & ~(align - 1);
+arena.regions.push_back({siteKey, offset, 0});
+region = &arena.regions.back();
+// An empty region ends at its own offset and stays the last one until another region is placed
+arena.dynamic_cursor = offset;
+} else if (bytes > region->size && region->offset + region->size != arena.dynamic_cursor) {
+char text[512];
+std::snprintf(text, sizeof(text), ""G#: a shared memory declaration grew after a later declaration (%s)"", place);
+__gsharp_trap_abort(GSharpErrorCode::InvalidOperation, text);
+}
+if (bytes > region->size) {
+// [WHY] bytes is checked alone first: a negative count arrives as at least 2^63 bytes, and adding the offset to it
+// would wrap past 2^64 to a small end
+unsigned long long limit = arena.dynamic_limit;
+if (bytes > limit || (unsigned long long)region->offset + bytes > limit) {
+char text[512];
+std::snprintf(text, sizeof(text),
+""G#: dynamic shared memory exceeds sharedMemBytes (%s needs %llu bytes at offset %llu; sharedMemBytes is %llu)"",
+place, bytes, (unsigned long long)region->offset, limit);
+__gsharp_trap_abort(GSharpErrorCode::ArgumentOutOfRange, text);
+}
+region->size = (size_t)bytes;
+arena.dynamic_cursor = region->offset + (size_t)bytes;
+}
+return arena.dynamic_buffer() + region->offset;
+}
+
+// --- Grid syncs of cooperative kernels (#664) ---
+// [WHY] The native launcher of a cooperative kernel runs the grid in phases: in each phase every block runs until all of
+// its threads have reached Gpu.SyncGrid or finished, and the next phase starts when every block has reached the grid
+// sync. The implicit barrier at the end of the OpenMP loop over the blocks is the grid barrier, so the result does not
+// depend on the number of OpenMP threads or their schedule. On the GPU a block that finishes while the other blocks wait,
+// or a block whose thread 0 finishes while its other threads wait, never arrives at the grid sync, which then never
+// completes; the CPU paths report both.
+constexpr uint8_t __gsharp_block_at_grid_sync = 1;
+constexpr uint8_t __gsharp_block_finished = 2;
+
+// Reports thread 0 of a block that finished while the block's other threads wait at a grid sync
+inline void __gsharp_report_representative_finished(GSharpErrorSlot* error, int32_t bx, int32_t by, int32_t bz,
+const char* kernel) {
+char text[512];
+std::snprintf(text, sizeof(text),
+""G#: thread (0,0,0) of block (%d,%d,%d) of %s finished while other threads of its block wait at Gpu.SyncGrid; on the GPU the grid sync never completes"",
+bx, by, bz, kernel);
+error->Report(GSharpErrorCode::InvalidOperation, text);
+}
+
+// Ends a phase of the grid: true when every block waits at a grid sync, so that the next phase starts; false when every
+// block has finished or the launch failed. A phase in which some blocks finished while others wait is reported
+inline bool __gsharp_end_grid_phase(GSharpErrorSlot* error, const uint8_t* status, int32_t totalBlocks,
+uint32_t gridDimX, uint32_t gridDimY, const char* kernel) {
+if (error->HasError()) {
+return false;
+}
+int32_t firstFinished = -1;
+bool anyWaiting = false;
+for (int32_t block = 0; block < totalBlocks; block++) {
+if (status[block] == __gsharp_block_at_grid_sync) {
+anyWaiting = true;
+} else if (firstFinished < 0) {
+firstFinished = block;
+}
+}
+if (anyWaiting && firstFinished >= 0) {
+int32_t x = (int32_t)(firstFinished % gridDimX);
+int32_t y = (int32_t)((firstFinished / gridDimX) % gridDimY);
+int32_t z = (int32_t)(firstFinished / (gridDimX * gridDimY));
+char text[512];
+std::snprintf(text, sizeof(text),
+""G#: block (%d,%d,%d) of %s finished while other blocks wait at Gpu.SyncGrid; on the GPU the grid sync never completes"",
+x, y, z, kernel);
+error->Report(GSharpErrorCode::InvalidOperation, text);
+return false;
+}
+return anyWaiting;
 }
 
 inline void __gsharp_unsupported(const char* message);
@@ -461,7 +833,13 @@ __forceinline__ unsigned int __gsharp_atomicExch(unsigned int* address, unsigned
 __forceinline__ unsigned long long __gsharp_atomicExch(unsigned long long* address, unsigned long long val) { return atomicExch(address, val); }
 
 // --- Warp & Synchronization ---
-inline unsigned __activemask() { return 0xFFFFFFFF; }
+// The lanes of the calling thread's warp that exist in the block: all 32, or fewer in the last warp of a block whose size
+// is not a multiple of 32. A converged warp on the GPU reports the same lanes.
+inline unsigned __activemask() {
+uint32_t tid = threadIdx.z * blockDim.y * blockDim.x + threadIdx.y * blockDim.x + threadIdx.x;
+uint32_t lanes = blockDim.x * blockDim.y * blockDim.z - (tid & ~31u);
+return lanes >= 32u ? 0xFFFFFFFFu : (1u << lanes) - 1u;
+}
 template <typename T> inline T __shfl_sync(unsigned mask, T var, int srcLane, int width=32) { return var; }
 template <typename T> inline T __shfl_up_sync(unsigned mask, T var, unsigned int delta, int width=32) { return var; }
 template <typename T> inline T __shfl_down_sync(unsigned mask, T var, unsigned int delta, int width=32) { return var; }
@@ -479,83 +857,119 @@ std::memcpy(&raw, &val, sizeof(T));
 // The root is the kernel context of the thread, also inside a device function's state machine.
 #define __gsharp_warp_exchange_assign(val) __gsharp_warp_exchange_assign_impl(val, &__gsharp_root->__gsharp_warp_exchange[__gsharp_root->__gsharp_warp_shuffle_count & 1u])
 
-template<typename TContext, typename T>
-inline T __gsharp_warp_shuffle_read_down_sync(TContext* __gsharp_ctx, uint32_t mask, T val, uint32_t delta, int width = 32) {
-uint32_t slot = __gsharp_ctx->__gsharp_warp_shuffle_count++ & 1u;
-uint32_t tid = threadIdx.z * blockDim.y * blockDim.x + threadIdx.y * blockDim.x + threadIdx.x;
-uint32_t laneId = tid % 32;
-uint32_t warpId = tid / 32;
-uint32_t logicalLane = laneId % width;
-uint32_t srcLane = logicalLane + delta;
+// The shuffles that CUDA leaves undefined report an InvalidOperationException with the place of the shuffle in the C#
+// source and return the caller's own value (#666): a width that is not 1, 2, 4, 8, 16 or 32, and a source lane that does
+// not exist in the block (the last warp of a block whose size is not a multiple of 32). A source outside the caller's
+// segment of the warp is defined: up and down return the caller's own value, xor reads an earlier segment and returns
+// the caller's own value for a later one, idx reads lane srcLane % width of the segment (#692). ManagedGpuContext applies
+// the same rules on the managed path.
+inline bool __gsharp_warp_shuffle_check_width(int width, const char* name, const char* location) {
+if (width == 1 || width == 2 || width == 4 || width == 8 || width == 16 || width == 32) {
+return true;
+}
+char text[512];
+std::snprintf(text, sizeof(text),
+""G#: %s at %s has width %d; the width must be 1, 2, 4, 8, 16 or 32 (CUDA leaves the result undefined)"",
+name, location, width);
+__gsharp_trap(GSharpErrorCode::InvalidOperation, text);
+return false;
+}
 
+inline uint32_t __gsharp_warp_linear_tid() {
+return threadIdx.z * blockDim.y * blockDim.x + threadIdx.y * blockDim.x + threadIdx.x;
+}
+
+// Reads the value that lane srcLane of the caller's warp published for this shuffle, after checking that the lane exists
+// in the block
+template<typename TContext, typename T>
+inline T __gsharp_warp_shuffle_read_lane(TContext* __gsharp_ctx, uint32_t slot, T val, uint32_t tid, uint32_t srcLane,
+const char* name, const char* location) {
+uint32_t threads = blockDim.x * blockDim.y * blockDim.z;
+uint32_t warpBase = tid & ~31u;
+uint32_t srcTid = warpBase + srcLane;
+if (srcTid >= threads) {
+char text[512];
+std::snprintf(text, sizeof(text),
+""G#: %s at %s reads lane %u of warp %u, which does not exist in a block of %u threads ""
+""(CUDA leaves the value undefined. Keep the source lane within the block by limiting delta, srcLane or laneMask, or launch a multiple of 32 threads; the mask does not limit which lane is read)"",
+name, location, srcLane, warpBase / 32u, threads);
+__gsharp_trap(GSharpErrorCode::InvalidOperation, text);
+return val;
+}
 T result;
-if (srcLane < (uint32_t)width) {
-uint32_t srcTid = warpId * 32 + (laneId - logicalLane) + srcLane;
 uint64_t raw = __gsharp_ctx->__gsharp_all_contexts[srcTid].__gsharp_warp_exchange[slot];
 std::memcpy(&result, &raw, sizeof(T));
-} else {
-result = val;
-}
 return result;
 }
 
 template<typename TContext, typename T>
-inline T __gsharp_warp_shuffle_read_up_sync(TContext* __gsharp_ctx, uint32_t mask, T val, uint32_t delta, int width = 32) {
+inline T __gsharp_warp_shuffle_read_down_sync(TContext* __gsharp_ctx, uint32_t mask, T val, uint32_t delta, int width,
+const char* location) {
 uint32_t slot = __gsharp_ctx->__gsharp_warp_shuffle_count++ & 1u;
-uint32_t tid = threadIdx.z * blockDim.y * blockDim.x + threadIdx.y * blockDim.x + threadIdx.x;
-uint32_t laneId = tid % 32;
-uint32_t warpId = tid / 32;
-uint32_t logicalLane = laneId % width;
-
-T result;
-if (logicalLane >= delta) {
-uint32_t srcLane = logicalLane - delta;
-uint32_t srcTid = warpId * 32 + (laneId - logicalLane) + srcLane;
-uint64_t raw = __gsharp_ctx->__gsharp_all_contexts[srcTid].__gsharp_warp_exchange[slot];
-std::memcpy(&result, &raw, sizeof(T));
-} else {
-result = val;
+const char* name = ""Warp.ShuffleDownSync"";
+if (!__gsharp_warp_shuffle_check_width(width, name, location)) {
+return val;
 }
-return result;
+uint32_t tid = __gsharp_warp_linear_tid();
+uint32_t laneId = tid % 32u;
+uint32_t logicalLane = laneId % (uint32_t)width;
+uint64_t srcLogicalLane = (uint64_t)logicalLane + delta;
+if (srcLogicalLane >= (uint64_t)width) {
+return val;
+}
+return __gsharp_warp_shuffle_read_lane(__gsharp_ctx, slot, val, tid, laneId - logicalLane + (uint32_t)srcLogicalLane, name, location);
 }
 
 template<typename TContext, typename T>
-inline T __gsharp_warp_shuffle_read_xor_sync(TContext* __gsharp_ctx, uint32_t mask, T val, uint32_t laneMask, int width = 32) {
+inline T __gsharp_warp_shuffle_read_up_sync(TContext* __gsharp_ctx, uint32_t mask, T val, uint32_t delta, int width,
+const char* location) {
 uint32_t slot = __gsharp_ctx->__gsharp_warp_shuffle_count++ & 1u;
-uint32_t tid = threadIdx.z * blockDim.y * blockDim.x + threadIdx.y * blockDim.x + threadIdx.x;
-uint32_t laneId = tid % 32;
-uint32_t warpId = tid / 32;
-uint32_t logicalLane = laneId % width;
-uint32_t srcLane = logicalLane ^ laneMask;
-
-T result;
-if (srcLane < (uint32_t)width) {
-uint32_t srcTid = warpId * 32 + (laneId - logicalLane) + srcLane;
-uint64_t raw = __gsharp_ctx->__gsharp_all_contexts[srcTid].__gsharp_warp_exchange[slot];
-std::memcpy(&result, &raw, sizeof(T));
-} else {
-result = val;
+const char* name = ""Warp.ShuffleUpSync"";
+if (!__gsharp_warp_shuffle_check_width(width, name, location)) {
+return val;
 }
-return result;
+uint32_t tid = __gsharp_warp_linear_tid();
+uint32_t laneId = tid % 32u;
+uint32_t logicalLane = laneId % (uint32_t)width;
+if (logicalLane < delta) {
+return val;
+}
+return __gsharp_warp_shuffle_read_lane(__gsharp_ctx, slot, val, tid, laneId - delta, name, location);
 }
 
 template<typename TContext, typename T>
-inline T __gsharp_warp_shuffle_read_sync(TContext* __gsharp_ctx, uint32_t mask, T val, uint32_t srcLane, int width = 32) {
+inline T __gsharp_warp_shuffle_read_xor_sync(TContext* __gsharp_ctx, uint32_t mask, T val, uint32_t laneMask, int width,
+const char* location) {
 uint32_t slot = __gsharp_ctx->__gsharp_warp_shuffle_count++ & 1u;
-uint32_t tid = threadIdx.z * blockDim.y * blockDim.x + threadIdx.y * blockDim.x + threadIdx.x;
-uint32_t laneId = tid % 32;
-uint32_t warpId = tid / 32;
-uint32_t logicalLane = laneId % width;
-
-T result;
-if (srcLane < (uint32_t)width && (mask & (1u << srcLane))) {
-uint32_t srcTid = warpId * 32 + (laneId - logicalLane) + srcLane;
-uint64_t raw = __gsharp_ctx->__gsharp_all_contexts[srcTid].__gsharp_warp_exchange[slot];
-std::memcpy(&result, &raw, sizeof(T));
-} else {
-result = val;
+const char* name = ""Warp.ShuffleXorSync"";
+if (!__gsharp_warp_shuffle_check_width(width, name, location)) {
+return val;
 }
-return result;
+uint32_t tid = __gsharp_warp_linear_tid();
+uint32_t laneId = tid % 32u;
+// CUDA lets a group of width lanes read its own group and the earlier ones; a later group gives the caller's own value
+// (PTX shfl.bfly reads lane j when j <= maxLane, the last lane of the caller's group)
+uint32_t srcLane = laneId ^ laneMask;
+if (srcLane > (laneId | ((uint32_t)width - 1u))) {
+return val;
+}
+return __gsharp_warp_shuffle_read_lane(__gsharp_ctx, slot, val, tid, srcLane, name, location);
+}
+
+template<typename TContext, typename T>
+inline T __gsharp_warp_shuffle_read_sync(TContext* __gsharp_ctx, uint32_t mask, T val, int32_t srcLane, int width,
+const char* location) {
+uint32_t slot = __gsharp_ctx->__gsharp_warp_shuffle_count++ & 1u;
+const char* name = ""Warp.ShuffleSync"";
+if (!__gsharp_warp_shuffle_check_width(width, name, location)) {
+return val;
+}
+uint32_t tid = __gsharp_warp_linear_tid();
+uint32_t laneId = tid % 32u;
+uint32_t logicalLane = laneId % (uint32_t)width;
+// CUDA reads lane srcLane % width of the caller's segment
+uint32_t srcLogicalLane = (uint32_t)srcLane & (uint32_t)(width - 1);
+return __gsharp_warp_shuffle_read_lane(__gsharp_ctx, slot, val, tid, laneId - logicalLane + srcLogicalLane, name, location);
 }
 
 template<typename T>
@@ -608,75 +1022,405 @@ inline void __gsharp_wmma_mma(FragD*, const FragA*, const FragB*, const FragC*) 
 __gsharp_unsupported(""WMMA is not supported by the StandardCpp dialect."");
 }
 
-// --- Runtime Error Channel (CPU Dialect) ---
-enum class GSharpErrorCode : int32_t {
-None = 0,
-NotSupported = 1,
-InvalidOperation = 2,
-IndexOutOfRange = 3,
-ArgumentOutOfRange = 4
+// --- MemoryExtensions.Sort (CPU and CUDA dialects) ---
+// Licensed to the .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
+// (The sort below is ported from dotnet/runtime; see THIRD-PARTY-NOTICES.txt at the root of the G# repository.)
+//
+// [WHY] A port of the introsort of .NET, so that every dialect puts equal keys (and their items) in the same order as the
+// managed path, which runs .NET itself. The algorithm is the one of dotnet/runtime
+// src/libraries/System.Private.CoreLib/src/System/Collections/Generic/ArraySortHelper.cs at commit
+// e750854de9ad6a2ced72feb9b8008e506f04608f. A comparer struct is copied once and that one copy is used for the whole
+// sort, as .NET 10 does (it boxes the comparer once). The sort runs in the calling thread, in place, and allocates nothing.
+// The recursion of IntroSort on the right part is an explicit stack that keeps the order of .NET: the right part is sorted
+// first, then the left part (depth at most 2 * (log2(int.MaxValue) + 1) = 62 entries).
+
+// The items sorted with the keys: none, or a span that receives every move of the keys.
+struct __gsharp_sort_no_items
+{
+typedef char Value;
+__device__ __forceinline__ __gsharp_sort_no_items offset(int) const { return *this; }
+__device__ __forceinline__ Value get(int) const { return 0; }
+__device__ __forceinline__ void set(int, Value) const {}
+__device__ __forceinline__ void swap(int, int) const {}
 };
 
-struct GSharpErrorSlot {
-std::atomic<int32_t> code{0};
-const char* message{nullptr};
+template <typename TValue>
+struct __gsharp_sort_items
+{
+typedef TValue Value;
+TValue* data;
+__device__ __forceinline__ __gsharp_sort_items offset(int start) const { return __gsharp_sort_items{data + start}; }
+__device__ __forceinline__ Value get(int i) const { return data[i]; }
+__device__ __forceinline__ void set(int i, Value v) const { data[i] = v; }
+__device__ __forceinline__ void swap(int i, int j) const { TValue t = data[i]; data[i] = data[j]; data[j] = t; }
+};
 
-inline void Reset() noexcept {
-message = nullptr;
-code.store(0, std::memory_order_release);
-}
+// The default order of a primitive key (IComparable<T> of a number, char, bool or enum).
+template <typename T>
+struct __gsharp_sort_default_compare
+{
+__device__ __forceinline__ int operator()(const T& a, const T& b) const { return a < b ? -1 : (b < a ? 1 : 0); }
+};
 
-inline bool HasError() const noexcept {
-return code.load(std::memory_order_acquire) != 0;
-}
-
-inline void Report(GSharpErrorCode errCode, const char* msg) noexcept {
-int32_t expected = 0;
-if (code.compare_exchange_strong(expected, static_cast<int32_t>(errCode),
-std::memory_order_acq_rel,
-std::memory_order_relaxed)) {
-message = msg;
-}
+// A comparison written by the user (a comparison, a comparer struct, CompareTo): a trap inside it is recorded as the
+// exception .NET wraps it in (__gsharp_sort_compare_scope, ErrorChannel.hpp on the CPU dialects)
+template <typename TCompare>
+struct __gsharp_sort_user_compare
+{
+TCompare compare;
+template <typename T>
+__device__ __forceinline__ int operator()(T& a, T& b)
+{
+__gsharp_sort_compare_scope scope;
+return compare(a, b);
 }
 };
 
-inline thread_local GSharpErrorSlot __gsharp_host_last_error;
-inline thread_local GSharpErrorSlot* __gsharp_active_error_slot = nullptr;
+template <typename T> __device__ __forceinline__ bool __gsharp_sort_is_nan(const T&) { return false; }
+__device__ __forceinline__ bool __gsharp_sort_is_nan(const float& v) { return v != v; }
+__device__ __forceinline__ bool __gsharp_sort_is_nan(const double& v) { return v != v; }
 
-extern ""C"" __declspec(dllexport) int32_t __gsharp_consume_last_error(const char** outMessage) {
-int32_t c = __gsharp_host_last_error.code.load(std::memory_order_acquire);
-if (c != 0) {
-if (outMessage != nullptr) {
-*outMessage = __gsharp_host_last_error.message;
-}
-__gsharp_host_last_error.Reset();
-}
-return c;
-}
-
-// Records a runtime failure for constructs the CPU dialect cannot execute (e.g. Gpu.InlinePtx).
-// First writer wins across OpenMP threads; the managed launch wrapper inspects the slot and throws.
-inline void __gsharp_unsupported(const char* message)
+__device__ __forceinline__ int __gsharp_sort_log2(unsigned int v)
 {
-if (__gsharp_active_error_slot != nullptr) {
-__gsharp_active_error_slot->Report(GSharpErrorCode::NotSupported, message);
-} else {
-__gsharp_host_last_error.Report(GSharpErrorCode::NotSupported, message);
+int r = 0;
+while (v >>= 1) { r++; }
+return r;
+}
+
+// SortUtils.MoveNansToFront: the number of NaN keys, moved (with their items) to the front in the order of .NET
+template <typename T, typename TItems>
+__device__ int __gsharp_sort_move_nans_to_front(T* keys, TItems items, int length)
+{
+int left = 0;
+for (int i = 0; i < length; i++)
+{
+if (__gsharp_sort_is_nan(keys[i]))
+{
+T temp = keys[left];
+keys[left] = keys[i];
+keys[i] = temp;
+items.swap(left, i);
+left++;
+}
+}
+return left;
+}
+
+template <typename T, typename TItems, typename TCompare>
+__device__ __forceinline__ void __gsharp_sort_swap_if_greater(T* keys, TItems items, TCompare& compare, int i, int j)
+{
+if (compare(keys[i], keys[j]) > 0)
+{
+T key = keys[i];
+keys[i] = keys[j];
+keys[j] = key;
+items.swap(i, j);
 }
 }
 
-// Records a portable trap failure (e.g. empty sequence or out-of-range index in StackLinq).
-// First writer wins across OpenMP threads; the managed launch wrapper inspects the slot and throws.
-inline void __gsharp_trap(GSharpErrorCode code, const char* message)
+template <typename T, typename TItems>
+__device__ __forceinline__ void __gsharp_sort_swap(T* keys, TItems items, int i, int j)
 {
-if (__gsharp_active_error_slot != nullptr) {
-__gsharp_active_error_slot->Report(code, message);
-} else {
-__gsharp_host_last_error.Report(code, message);
+T key = keys[i];
+keys[i] = keys[j];
+keys[j] = key;
+items.swap(i, j);
+}
+
+template <typename T, typename TItems, typename TCompare>
+__device__ void __gsharp_sort_insertion(T* keys, TItems items, int length, TCompare& compare)
+{
+for (int i = 0; i < length - 1; i++)
+{
+T t = keys[i + 1];
+typename TItems::Value tValue = items.get(i + 1);
+int j = i;
+while (j >= 0 && compare(t, keys[j]) < 0)
+{
+keys[j + 1] = keys[j];
+items.set(j + 1, items.get(j));
+j--;
+}
+keys[j + 1] = t;
+items.set(j + 1, tValue);
+}
+}
+
+template <typename T, typename TItems, typename TCompare>
+__device__ void __gsharp_sort_down_heap(T* keys, TItems items, int i, int n, TCompare& compare)
+{
+T d = keys[i - 1];
+typename TItems::Value dValue = items.get(i - 1);
+while (i <= n >> 1)
+{
+int child = 2 * i;
+if (child < n && compare(keys[child - 1], keys[child]) < 0)
+{
+child++;
+}
+if (!(compare(d, keys[child - 1]) < 0))
+{
+break;
+}
+keys[i - 1] = keys[child - 1];
+items.set(i - 1, items.get(child - 1));
+i = child;
+}
+keys[i - 1] = d;
+items.set(i - 1, dValue);
+}
+
+template <typename T, typename TItems, typename TCompare>
+__device__ void __gsharp_sort_heap(T* keys, TItems items, int n, TCompare& compare)
+{
+for (int i = n >> 1; i >= 1; i--)
+{
+__gsharp_sort_down_heap(keys, items, i, n, compare);
+}
+for (int i = n; i > 1; i--)
+{
+__gsharp_sort_swap(keys, items, 0, i - 1);
+__gsharp_sort_down_heap(keys, items, 1, i - 1, compare);
+}
+}
+
+__device__ __forceinline__ void __gsharp_sort_bad_comparer()
+{
+__gsharp_trap(GSharpErrorCode::Argument,
+""Unable to sort because the IComparer.Compare() method returns inconsistent results."");
+}
+
+// How the scans of PickPivotAndPartition stop, which differs between the three .NET helpers:
+// - Guarded: the default order of keys only (GenericArraySortHelper<T>). The scans stop at the ends of the partition and
+//   compare the pivot first on the left (pivot > key).
+// - Default: the default order of keys and items (GenericArraySortHelper<TKey, TValue>). No stop at the ends; the pivot
+//   comes first on the left as well.
+// - Comparer: a comparer or a comparison (ArraySortHelper and ArraySortHelperForTComparer). No stop at the ends; the key
+//   comes first on the left (key < pivot).
+// Without a stop, an inconsistent order runs a scan past the partition, which .NET reports as ArgumentException.
+enum class __gsharp_sort_scan { Guarded, Default, Comparer };
+
+// PickPivotAndPartition; -1 when an inconsistent order ran a scan past the partition.
+template <__gsharp_sort_scan Scan, typename T, typename TItems, typename TCompare>
+__device__ int __gsharp_sort_partition(T* keys, TItems items, int length, TCompare& compare)
+{
+int hi = length - 1;
+int middle = hi >> 1;
+__gsharp_sort_swap_if_greater(keys, items, compare, 0, middle);
+__gsharp_sort_swap_if_greater(keys, items, compare, 0, hi);
+__gsharp_sort_swap_if_greater(keys, items, compare, middle, hi);
+
+T pivot = keys[middle];
+__gsharp_sort_swap(keys, items, middle, hi - 1);
+int left = 0;
+int right = hi - 1;
+while (left < right)
+{
+if (Scan == __gsharp_sort_scan::Guarded)
+{
+while (left < hi - 1 && compare(pivot, keys[++left]) > 0) {}
+while (right > 0 && compare(pivot, keys[--right]) < 0) {}
+}
+else
+{
+for (;;)
+{
+if (++left >= length) { __gsharp_sort_bad_comparer(); return -1; }
+bool before = Scan == __gsharp_sort_scan::Default ? compare(pivot, keys[left]) > 0 : compare(keys[left], pivot) < 0;
+if (!before) { break; }
+}
+for (;;)
+{
+if (--right < 0) { __gsharp_sort_bad_comparer(); return -1; }
+if (!(compare(pivot, keys[right]) < 0)) { break; }
+}
+}
+if (left >= right)
+{
+break;
+}
+__gsharp_sort_swap(keys, items, left, right);
+}
+if (left != hi - 1)
+{
+__gsharp_sort_swap(keys, items, left, hi - 1);
+}
+return left;
+}
+
+// IntrospectiveSort + IntroSort (Array.IntrosortSizeThreshold = 16)
+template <__gsharp_sort_scan Scan, typename T, typename TItems, typename TCompare>
+__device__ void __gsharp_sort_intro(T* keys, TItems items, int length, TCompare& compare)
+{
+if (length <= 1)
+{
+return;
+}
+
+struct Pending { int start; int size; int depth; };
+Pending pending[64];
+int count = 0;
+int start = 0;
+int size = length;
+int depth = 2 * (__gsharp_sort_log2((unsigned int)length) + 1);
+for (;;)
+{
+while (size > 1)
+{
+T* k = keys + start;
+TItems it = items.offset(start);
+if (size <= 16)
+{
+if (size == 2)
+{
+__gsharp_sort_swap_if_greater(k, it, compare, 0, 1);
+}
+else if (size == 3)
+{
+__gsharp_sort_swap_if_greater(k, it, compare, 0, 1);
+__gsharp_sort_swap_if_greater(k, it, compare, 0, 2);
+__gsharp_sort_swap_if_greater(k, it, compare, 1, 2);
+}
+else
+{
+__gsharp_sort_insertion(k, it, size, compare);
+}
+break;
+}
+if (depth == 0)
+{
+__gsharp_sort_heap(k, it, size, compare);
+break;
+}
+depth--;
+int p = __gsharp_sort_partition<Scan>(k, it, size, compare);
+if (p < 0)
+{
+return;
+}
+// The left part [start, start + p) waits until the right part (start + p, start + size) is sorted
+pending[count].start = start;
+pending[count].size = p;
+pending[count].depth = depth;
+count++;
+start += p + 1;
+size -= p + 1;
+}
+if (count == 0)
+{
+return;
+}
+count--;
+start = pending[count].start;
+size = pending[count].size;
+depth = pending[count].depth;
+}
+}
+
+// The default order: NaN keys first (SortUtils.MoveNansToFront), then the rest by the default comparison
+template <__gsharp_sort_scan Scan, typename T, typename TItems>
+__device__ void __gsharp_sort_default(T* keys, TItems items, int length)
+{
+if (length <= 1)
+{
+return;
+}
+int nanLeft = __gsharp_sort_move_nans_to_front(keys, items, length);
+if (nanLeft == length)
+{
+return;
+}
+__gsharp_sort_default_compare<T> compare;
+__gsharp_sort_intro<Scan>(keys + nanLeft, items.offset(nanLeft), length - nanLeft, compare);
+}
+
+// A span argument: a GSharpArray, or the C++ array of a stackalloc span
+template <typename T> __device__ __forceinline__ GSharpArray<T> __gsharp_sort_span(GSharpArray<T> span) { return span; }
+template <typename T, int N> __device__ __forceinline__ GSharpArray<T> __gsharp_sort_span(T (&span)[N]) { return GSharpArray<T>(span, N); }
+
+template <typename TValue>
+__device__ __forceinline__ __gsharp_sort_items<TValue> __gsharp_sort_items_of(GSharpArray<TValue> span) { return __gsharp_sort_items<TValue>{span.data}; }
+
+template <typename TKey, typename TValue>
+__device__ __forceinline__ bool __gsharp_sort_same_length(const GSharpArray<TKey>& keys, const GSharpArray<TValue>& items)
+{
+if (keys.length != items.length)
+{
+__gsharp_trap(GSharpErrorCode::Argument, ""Length of items must be same as length of keys."");
+return false;
+}
+return true;
+}
+
+// span.Sort()
+template <typename TKeys>
+__device__ void __gsharp_sort(TKeys&& keySpan)
+{
+auto keys = __gsharp_sort_span(keySpan);
+__gsharp_sort_default<__gsharp_sort_scan::Guarded>(keys.data, __gsharp_sort_no_items{}, keys.length);
+}
+
+// span.Sort(comparison) or span.Sort(comparer): a lambda, a device function, or a lambda that calls the comparer struct
+template <typename TKeys, typename TCompare>
+__device__ void __gsharp_sort(TKeys&& keySpan, TCompare comparison)
+{
+auto keys = __gsharp_sort_span(keySpan);
+__gsharp_sort_user_compare<TCompare> compare{comparison};
+__gsharp_sort_intro<__gsharp_sort_scan::Comparer>(keys.data, __gsharp_sort_no_items{}, keys.length, compare);
+}
+
+// span.Sort() of a user struct: a lambda that calls its IComparable<T>.CompareTo
+template <typename TKeys, typename TCompare>
+__device__ void __gsharp_sort_comparable(TKeys&& keySpan, TCompare comparison)
+{
+auto keys = __gsharp_sort_span(keySpan);
+__gsharp_sort_user_compare<TCompare> compare{comparison};
+__gsharp_sort_intro<__gsharp_sort_scan::Guarded>(keys.data, __gsharp_sort_no_items{}, keys.length, compare);
+}
+
+// MemoryExtensions.Sort(keys, items)
+template <typename TKeys, typename TItems>
+__device__ void __gsharp_sort_pairs(TKeys&& keySpan, TItems&& itemSpan)
+{
+auto keys = __gsharp_sort_span(keySpan);
+auto items = __gsharp_sort_span(itemSpan);
+if (__gsharp_sort_same_length(keys, items))
+{
+__gsharp_sort_default<__gsharp_sort_scan::Default>(keys.data, __gsharp_sort_items_of(items), keys.length);
+}
+}
+
+// MemoryExtensions.Sort(keys, items, comparison) or Sort(keys, items, comparer)
+template <typename TKeys, typename TItems, typename TCompare>
+__device__ void __gsharp_sort_pairs(TKeys&& keySpan, TItems&& itemSpan, TCompare comparison)
+{
+auto keys = __gsharp_sort_span(keySpan);
+auto items = __gsharp_sort_span(itemSpan);
+if (__gsharp_sort_same_length(keys, items))
+{
+__gsharp_sort_user_compare<TCompare> compare{comparison};
+__gsharp_sort_intro<__gsharp_sort_scan::Comparer>(keys.data, __gsharp_sort_items_of(items), keys.length, compare);
+}
+}
+
+// MemoryExtensions.Sort(keys, items) of user struct keys: a lambda that calls their IComparable<T>.CompareTo
+template <typename TKeys, typename TItems, typename TCompare>
+__device__ void __gsharp_sort_pairs_comparable(TKeys&& keySpan, TItems&& itemSpan, TCompare comparison)
+{
+auto keys = __gsharp_sort_span(keySpan);
+auto items = __gsharp_sort_span(itemSpan);
+if (__gsharp_sort_same_length(keys, items))
+{
+__gsharp_sort_user_compare<TCompare> compare{comparison};
+__gsharp_sort_intro<__gsharp_sort_scan::Default>(keys.data, __gsharp_sort_items_of(items), keys.length, compare);
 }
 }
 
 #pragma once
+
+// The count of a Skip / Take / SkipLast / TakeLast stage clamped to [0, remaining], as C# clamps it (the sum cannot overflow)
+__device__ __forceinline__ int __gsharp_clamp_count(int count, int remaining) { return count < 0 ? 0 : (count > remaining ? remaining : count); }
 
 namespace Kassyi { namespace ZeroAlloc { namespace Linq {
 

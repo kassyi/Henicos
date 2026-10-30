@@ -82,9 +82,9 @@ public class StructLayoutDiagnosticsTests
         Assert.Empty(diagnostics.Ranges(GSharpDiagnostics.StructLayoutNotRepresentable.Id, "Wrapper"));
     }
 
-    // CUDA only: VecHolder[] (line 60) and the inline array of Elem in InlineOuter (line 63), where Vector2 and Float2
-    // move to 8-byte offsets; Bag[] (line 66), AutoPair[] (line 101) and the inline array of WithArray in ArraysHolder
-    // (line 110), whose host layout the runtime may reorder. The CPU dialect reports GSH0082 instead.
+    // VecHolder[] (line 60) and the inline array of Elem in InlineOuter (line 63), where Vector2 and Float2 move to
+    // 8-byte offsets on CUDA only; on both dialects Bag[] (line 66), AutoPair[] (line 101) and the inline array of
+    // WithArray in ArraysHolder (line 110), whose host layout the runtime may reorder
     [Theory]
     [InlineData("Cpu", false)]
     [InlineData("Cuda", true)]
@@ -102,7 +102,12 @@ public class StructLayoutDiagnosticsTests
                 (Analyzer, 101, 44, 101, 54),
                 (Analyzer, 110, 51, 110, 63)
             ]
-            : [];
+            :
+            [
+                (Analyzer, 66, 43, 66, 48),
+                (Analyzer, 101, 44, 101, 54),
+                (Analyzer, 110, 51, 110, 63)
+            ];
         Assert.Equal(expected, diagnostics.Ranges(GSharpDiagnostics.StructArrayConvertedPerElement.Id));
     }
 
@@ -117,6 +122,8 @@ public class StructLayoutDiagnosticsTests
         "field 'V' is at offset 4 on the host and 8 on the device")]
     [InlineData("Cuda", "'StructLayoutDiagnosticsTest.Bag'", "field 'Data' is an array")]
     [InlineData("Cuda", "'StructLayoutDiagnosticsTest.AutoPair'", "LayoutKind.Auto")]
+    [InlineData("Cpu", "'StructLayoutDiagnosticsTest.Bag'", "field 'Data' is an array")]
+    [InlineData("Cpu", "'StructLayoutDiagnosticsTest.AutoPair'", "LayoutKind.Auto")]
     [Scenario(TestScenario.SadPath)]
     public async Task Test_ArrayOfDivergentStruct_StatesTheFirstDifference(string dialect, string structName,
         string difference)
@@ -129,7 +136,7 @@ public class StructLayoutDiagnosticsTests
         Assert.Contains(difference, diagnostic.Message);
     }
 
-    // CUDA only: Bag[] (line 66) allocates the Data of each element
+    // CUDA only: Bag[] (line 66) allocates the Data of each element; the CPU launcher pins the arrays instead
     [Theory]
     [InlineData("Cpu", false)]
     [InlineData("Cuda", true)]
@@ -142,45 +149,6 @@ public class StructLayoutDiagnosticsTests
         Assert.Equal(
             expected,
             diagnostics.Ranges(GSharpDiagnostics.StructArrayFieldAllocatedPerElement.Id, "array field 'Data'"));
-    }
-
-    // CPU only, until the CPU launcher converts structs (L4): Bag[] (line 66), AutoPair[] (line 101), Bag by value
-    // (line 104) and by ref (line 107), and ArraysHolder by ref (line 110)
-    [Theory]
-    [InlineData("Cpu", true)]
-    [InlineData("Cuda", false)]
-    [Scenario(TestScenario.SadPath)]
-    public async Task Test_StructNotIdenticalOnCpu_ReportsGsh0082AtTheType(string dialect, bool isCpu)
-    {
-        var diagnostics = await KernelDiagnostics.RunTestCaseAsync(TestCase, dialect);
-
-        IEnumerable<(DiagnosticOrigin, int, int, int, int)> expected = isCpu
-            ?
-            [
-                (Analyzer, 66, 43, 66, 48),
-                (Analyzer, 101, 44, 101, 54),
-                (Analyzer, 104, 45, 104, 48),
-                (Analyzer, 107, 47, 107, 50),
-                (Analyzer, 110, 51, 110, 63)
-            ]
-            : [];
-        Assert.Equal(expected, diagnostics.Ranges(GSharpDiagnostics.StructTransferNotSupportedOnCpu.Id));
-    }
-
-    [Theory]
-    [InlineData("'StructLayoutDiagnosticsTest.Bag'", "field 'Data' is an array")]
-    [InlineData("'StructLayoutDiagnosticsTest.AutoPair'", "LayoutKind.Auto")]
-    [Scenario(TestScenario.SadPath)]
-    public async Task Test_StructNotIdenticalOnCpu_StatesTheFirstDifference(string structName, string difference)
-    {
-        var diagnostics = await KernelDiagnostics.RunTestCaseAsync(TestCase, "Cpu");
-
-        var messages = diagnostics
-            .Where(d => d.Id == GSharpDiagnostics.StructTransferNotSupportedOnCpu.Id && d.Message.Contains(structName))
-            .Select(static d => d.Message)
-            .ToList();
-        Assert.NotEmpty(messages);
-        Assert.All(messages, message => Assert.Contains(difference, message));
     }
 
     // A union, arrays of a union and of an identical struct, a divergent struct by value (line 69), adjacent explicit
@@ -198,8 +166,7 @@ public class StructLayoutDiagnosticsTests
             GSharpDiagnostics.StructLayoutNotRepresentable.Id,
             GSharpDiagnostics.FieldTypeHasNoDeviceRepresentation.Id,
             GSharpDiagnostics.StructArrayConvertedPerElement.Id,
-            GSharpDiagnostics.StructArrayFieldAllocatedPerElement.Id,
-            GSharpDiagnostics.StructTransferNotSupportedOnCpu.Id
+            GSharpDiagnostics.StructArrayFieldAllocatedPerElement.Id
         ];
         Assert.DoesNotContain(diagnostics, d => d.StartLine is 69 or 95 or 113 && ids.Contains(d.Id));
     }

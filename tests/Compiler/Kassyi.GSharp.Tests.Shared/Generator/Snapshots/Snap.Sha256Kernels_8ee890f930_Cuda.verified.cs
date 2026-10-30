@@ -170,9 +170,16 @@ public static partial class AotContexts
 {
 }
 public const string Sha256Kernel_Source = @"extern ""C"" __global__ void __gsharp_k_Henicos__Benchmarks__ComputeBenchmarks__Sha256Kernels__Sha256Kernel(GSharpArray<unsigned char> __gsharp_id_0_input, GSharpArray<unsigned int> __gsharp_id_1_output, int __gsharp_id_2_numMessages){
-for(int __gsharp_id_3_tid = blockIdx.x * blockDim.x + threadIdx.x; __gsharp_id_3_tid < __gsharp_id_2_numMessages; __gsharp_id_3_tid += gridDim.x * blockDim.x)
+{
+unsigned int __gsharp_gsl_n_0 = __gsharp_grid_stride_count(__gsharp_id_2_numMessages);
+unsigned int __gsharp_gsl_s_0 = __gsharp_grid_stride_step();
+for(unsigned int __gsharp_gsl_0 = __gsharp_grid_stride_start(); __gsharp_gsl_0 < __gsharp_gsl_n_0; __gsharp_gsl_0 += __gsharp_gsl_s_0)
+{
+int __gsharp_id_3_tid = (int)__gsharp_gsl_0;
 {
 __gsharp_fn_Henicos__Benchmarks__ComputeBenchmarks__Sha256Kernels__ComputeBlock(__gsharp_id_3_tid,__gsharp_id_0_input,__gsharp_id_1_output);
+}
+}
 }
 }
 ";
@@ -206,6 +213,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerSha256Kernel();
 IntPtr hfunc = s_hfunc_Sha256Kernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "Sha256Kernels.Sha256Kernel");
 IntPtr d_input = IntPtr.Zero;
 IntPtr d_output = IntPtr.Zero;
 try
@@ -278,6 +286,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerSha256Kernel();
 IntPtr hfunc = s_hfunc_Sha256Kernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "Sha256Kernels.Sha256Kernel");
 try
 {
 void** kernelParams = stackalloc void*[3];

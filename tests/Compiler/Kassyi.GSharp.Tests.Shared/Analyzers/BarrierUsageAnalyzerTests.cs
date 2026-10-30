@@ -19,16 +19,16 @@ public class BarrierUsageAnalyzerTests : TranspilerTestBase
 
     [Fact]
     [Scenario(TestScenario.SadPath)]
-    public async Task Test_DivergentBarrier_ReportsByCertainty()
+    public async Task Test_DivergentBarrier_IsAWarning()
     {
         var actual = await RunAsync("Analyzers/BarrierUsage/DivergentBarrierKernels.cu.cs");
 
-        // tid < 16 and a buffer element depend on the launch or on run-time values (warning); tid % 2 certainly diverges
+        // Every divergent branch is a warning, also tid % 2: whether it diverges depends on the launch (#772 review)
         Assert.Equal(
             [
                 (GSharpDiagnostics.LaunchDependentDivergentBarrier.Id, 14, 13, 14, 30),
                 (GSharpDiagnostics.LaunchDependentDivergentBarrier.Id, 32, 13, 32, 30),
-                (GSharpDiagnostics.DivergentBarrierProhibited.Id, 47, 17, 47, 34)
+                (GSharpDiagnostics.LaunchDependentDivergentBarrier.Id, 47, 17, 47, 34)
             ],
             actual);
     }
@@ -55,6 +55,22 @@ public class BarrierUsageAnalyzerTests : TranspilerTestBase
     {
         await RoslynTestUtility.TestAnalyzer("Analyzers/BarrierUsage/CrossBarrierGotoKernels.cu.cs", s_analyzer)
                                .ReportsErrorsAsync("GSH0040");
+    }
+
+    // The example of the GSH0040 page: the jump crosses a call to a device function that reaches a barrier
+    [Fact]
+    [Scenario(TestScenario.SadPath)]
+    public async Task Test_GotoAcrossSuspendingCall_ReportsGSH0040OnGoto()
+    {
+        var diagnostics = await RoslynTestUtility
+            .TestAnalyzer("Analyzers/BarrierUsage/CrossSuspendingCallGotoKernels.cu.cs", s_analyzer)
+            .GetDiagnosticsAsync();
+
+        var diagnostic = Assert.Single(diagnostics, static d => d.Id == GSharpDiagnostics.CrossBarrierGotoProhibited.Id);
+        Assert.Equal(DiagnosticSeverity.Error, diagnostic.Severity);
+        var span = diagnostic.Location.GetLineSpan();
+        Assert.Equal((20, 12), (span.StartLinePosition.Line, span.StartLinePosition.Character));
+        Assert.Equal((20, 22), (span.EndLinePosition.Line, span.EndLinePosition.Character));
     }
 
     [Fact]
@@ -123,14 +139,14 @@ public class BarrierUsageAnalyzerTests : TranspilerTestBase
 
     [Fact]
     [Scenario(TestScenario.SadPath)]
-    public async Task Test_DivergentCallToBarrierDeviceFunction_ReportsGSH0037()
+    public async Task Test_DivergentCallToBarrierDeviceFunction_ReportsGSH0083()
     {
         var actual = await RunAsync("Analyzers/BarrierUsage/DivergentSuspendingCallKernels.cu.cs");
 
-        // tid == 0 certainly diverges
+        // tid == 0 diverges in any launch with two threads in X, but not in one whose X width is 1: a warning
         Assert.Equal(
             [
-                (GSharpDiagnostics.DivergentBarrierProhibited.Id, 20, 13, 20, 27)
+                (GSharpDiagnostics.LaunchDependentDivergentBarrier.Id, 20, 13, 20, 27)
             ],
             actual);
     }
@@ -187,16 +203,16 @@ public class BarrierUsageAnalyzerTests : TranspilerTestBase
 
     [Fact]
     [Scenario(TestScenario.SadPath)]
-    public async Task Test_ThreadVariantConditions_ReportByCertainty()
+    public async Task Test_ThreadVariantConditions_AreWarnings()
     {
         var actual = await RunAsync("Analyzers/BarrierUsage/ThreadVariantConditionKernels.cu.cs");
 
-        // One report per kernel: a derived local (lane == 0) and a conditionally assigned local certainly diverge; a thread-stride
-        // loop and Gpu.LaneId() < 16 depend on the launch
+        // One warning per kernel: a derived local (lane == 0), a conditionally assigned local, a thread-stride loop and
+        // Gpu.LaneId() < 16
         Assert.Equal(
             [
-                (GSharpDiagnostics.DivergentBarrierProhibited.Id, 16, 13, 16, 30),
-                (GSharpDiagnostics.DivergentBarrierProhibited.Id, 36, 13, 36, 30),
+                (GSharpDiagnostics.LaunchDependentDivergentBarrier.Id, 16, 13, 16, 30),
+                (GSharpDiagnostics.LaunchDependentDivergentBarrier.Id, 36, 13, 36, 30),
                 (GSharpDiagnostics.LaunchDependentDivergentBarrier.Id, 51, 13, 51, 30),
                 (GSharpDiagnostics.LaunchDependentDivergentBarrier.Id, 65, 13, 65, 30)
             ],

@@ -29,11 +29,13 @@ public partial class NamingArchitectureTests
         "GpuOperatorMacroTranspiler.cs:resultParameter.Name",
         "GpuOperatorMacroTranspiler.cs:parameter.Name",
         "GpuOperatorMacroTranspiler.cs:method.Name",
+        "GpuOperatorMacroTranspiler.cs:innerResult.Name",
         "MethodSignatureTranspiler.cs:methodSymbol.ContainingType.Name",
         "MethodSignatureTranspiler.cs:methodSymbol.Name",
         "HoistedFieldTypeResolver.cs:typeParameter.Name",
         "ArgumentMatchingHelper.cs:callee.Name",
         "ArgumentMatchingHelper.cs:parameter.Name",
+        "StateMachineLowerer.cs:labeled.Identifier.ValueText",
         // A kernel whose symbol does not resolve; the C# compilation already fails.
         "MethodSignatureTranspiler.cs:method.Identifier.ValueText",
     };

@@ -56,50 +56,61 @@ internal static class ManagedContextFields
             }
 
             var key = LoweringIdentity.ForDeclaration(field, semanticModel);
-            var name = field.Identifier.ValueText.ToCSharpIdentifier();
-            if (sharedNames.Contains(field.Identifier.ValueText))
-            {
-                if (key.Symbol == null)
-                {
-                    throw new InvalidOperationException(
-                        $"The hoisted local '{field.Identifier.ValueText}' of '{kernelName}' shares its name with another one and does not resolve to a symbol.");
-                }
-
-                name = GetDistinctName(key.Symbol, key.Region);
-                renamedLocals[key] = name;
-            }
-
-            // The field is declared in the generated file, which has none of the user's using directives
-            var contextField = new ManagedContextField(field,
-                ManagedNameQualifier.Qualify(declaration.Type, semanticModel),
-                HoistedFieldTypeResolver.Resolve(field, semanticModel, kernelName), name);
-
-            if (ResumeLocals.IsRedeclared(field, contextField.ResolvedType, sharedMemoryInFrame: false))
-            {
-                // A ref struct or stackalloc pointer local is declared again on every resume (a SharedMemory<T> with its
-                // initializer, which reads only constants and its site key)
-                var resumeLocal = contextField with
-                {
-                    Declarator = ManagedNameQualifier.Qualify(
-                        SharedMemorySiteKeyAnnotator.AddSharedMemorySiteKeys(field, semanticModel),
-                        semanticModel),
-                    Resume = ResumeLocals.Describe(field, contextField.ResolvedType, semanticModel)
-                };
-                if (key.Symbol != null)
-                {
-                    unhoistedLocals[key] = resumeLocal;
-                }
-
-                localInits.Add(resumeLocal);
-            }
-            else
+            var contextField = CreateField(field, declaration, key, sharedNames, renamedLocals, semanticModel, kernelName);
+            if (!ResumeLocals.IsRedeclared(field, contextField.ResolvedType, sharedMemoryInFrame: false))
             {
                 regularFields.Add(contextField);
+                continue;
             }
+
+            var resumeLocal = CreateResumeLocal(contextField, semanticModel);
+            if (key.Symbol != null)
+            {
+                unhoistedLocals[key] = resumeLocal;
+            }
+
+            localInits.Add(resumeLocal);
         }
 
         return (localInits.ToImmutable(), regularFields.ToImmutable(), unhoistedLocals, renamedLocals);
     }
+
+    // The field of a hoisted local: named after the local, or after its C++ field when another hoisted local shares the
+    // name (recorded in renamedLocals)
+    private static ManagedContextField CreateField(VariableDeclaratorSyntax field, VariableDeclarationSyntax declaration,
+        DeclarationKey key, HashSet<string> sharedNames, Dictionary<DeclarationKey, string> renamedLocals,
+        SemanticModel semanticModel, string kernelName)
+    {
+        var name = field.Identifier.ValueText.ToCSharpIdentifier();
+        if (sharedNames.Contains(field.Identifier.ValueText))
+        {
+            if (key.Symbol == null)
+            {
+                throw new InvalidOperationException(
+                    $"The hoisted local '{field.Identifier.ValueText}' of '{kernelName}' shares its name with another one and does not resolve to a symbol.");
+            }
+
+            name = GetDistinctName(key.Symbol, key.Region);
+            renamedLocals[key] = name;
+        }
+
+        // The field is declared in the generated file, which has none of the user's using directives
+        return new ManagedContextField(field,
+            ManagedNameQualifier.Qualify(declaration.Type, semanticModel),
+            HoistedFieldTypeResolver.Resolve(field, semanticModel, kernelName), name);
+    }
+
+    // A ref struct or stackalloc pointer local is declared again on every resume. A SharedMemory<T> keeps its
+    // initializer there, which reads only constants and its site key; a dynamic one only finds its region there, and its
+    // declaration places it (ContextLocalRewriter keeps that assignment)
+    private static ManagedContextField CreateResumeLocal(ManagedContextField field, SemanticModel semanticModel) =>
+        field with
+        {
+            Declarator = ManagedNameQualifier.Qualify(
+                SharedMemorySiteKeyAnnotator.AddSharedMemorySiteKeys(field.Declarator, semanticModel, findOnly: true),
+                semanticModel),
+            Resume = ResumeLocals.Describe(field.Declarator, field.ResolvedType, semanticModel)
+        };
 
     // Names that more than one hoisted local declares; such locals live in sibling scopes of the user's method, or are
     // copies of one declaration that an expansion stamped with different regions

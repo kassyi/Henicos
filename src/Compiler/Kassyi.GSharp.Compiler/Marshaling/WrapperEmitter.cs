@@ -278,14 +278,64 @@ internal static class WrapperEmitter
         }
     }
 
-    internal static void WriteLayoutGuards(SourceWriter writer, in KernelHostModel kernel)
+    // The flag of a kernel whose launch has passed its layout guards once (WriteLayoutGuards)
+    private const string LayoutCheckedPrefix = "s_layoutChecked_";
+
+    // private static bool s_layoutChecked_<key>; for a kernel with layout guards
+    internal static void WriteLayoutCheckedField(SourceWriter writer, EquatableArray<StructLayoutGuard> guards,
+        string memberKey) =>
+        writer.AppendLineIf(guards.Length > 0, $"private static bool {LayoutCheckedPrefix}{memberKey};");
+
+    // if (!s_layoutChecked_<key>) {
+    //   For each block-copied struct:
+    //   if (Unsafe.SizeOf<S>() != <predicted host size>) LayoutGuard.ThrowSizeMismatch(...);
+    //   { S __gsharp_layout_probe = default;
+    //     if (Unsafe.ByteOffset(ref Unsafe.As<S, byte>(ref probe), ref Unsafe.As<F, byte>(ref Unsafe.AsRef(in probe.f)))
+    //         != <predicted offset>) LayoutGuard.ThrowFieldOffsetMismatch(...); ... }
+    //   s_layoutChecked_<key> = true; }
+    // [WHY] The CLR layout of a type does not change within a process, so the checks run until one launch passes them;
+    // a guard that throws leaves the flag unset. Two first launches that race only run the checks twice.
+    internal static void WriteLayoutGuards(SourceWriter writer, EquatableArray<StructLayoutGuard> guards,
+        string memberKey)
     {
-        foreach (var guard in kernel.CudaLayoutGuards)
+        if (guards.Length == 0)
         {
-            writer.AppendLine(
-                $"if (global::System.Runtime.CompilerServices.Unsafe.SizeOf<{guard.FullyQualifiedTypeName}>() != {guard.ExpectedSize}) " +
-                $"global::Kassyi.GSharp.Runtime.Interop.LayoutGuard.ThrowSizeMismatch(\"{guard.DisplayTypeName}\", {guard.ExpectedSize}, " +
-                $"global::System.Runtime.CompilerServices.Unsafe.SizeOf<{guard.FullyQualifiedTypeName}>());");
+            return;
+        }
+
+        const string Unsafe = "global::System.Runtime.CompilerServices.Unsafe";
+        const string Probe = GSharpInternalNames.Launcher.LayoutProbe;
+        writer.AppendLine($"if (!{LayoutCheckedPrefix}{memberKey})");
+        using (writer.Scope())
+        {
+            foreach (var guard in guards)
+            {
+                writer.AppendLine(
+                    $"if ({Unsafe}.SizeOf<{guard.FullyQualifiedTypeName}>() != {guard.ExpectedSize}) " +
+                    $"global::Kassyi.GSharp.Runtime.Interop.LayoutGuard.ThrowSizeMismatch(\"{guard.DisplayTypeName}\", {guard.ExpectedSize}, " +
+                    $"{Unsafe}.SizeOf<{guard.FullyQualifiedTypeName}>());");
+                if (guard.Fields.Length == 0)
+                {
+                    continue;
+                }
+
+                using (writer.Scope())
+                {
+                    writer.AppendLine($"{guard.FullyQualifiedTypeName} {Probe} = default;");
+                    foreach (var field in guard.Fields)
+                    {
+                        var offset =
+                            $"{Unsafe}.ByteOffset(ref {Unsafe}.As<{guard.FullyQualifiedTypeName}, byte>(ref {Probe}), " +
+                            $"ref {Unsafe}.As<{field.FullyQualifiedTypeName}, byte>(ref {Unsafe}.AsRef(in {Probe}.{field.Name})))";
+                        writer.AppendLine(
+                            $"if ({offset} != {field.ExpectedOffset}) " +
+                            $"global::Kassyi.GSharp.Runtime.Interop.LayoutGuard.ThrowFieldOffsetMismatch(\"{guard.DisplayTypeName}\", " +
+                            $"\"{field.Name}\", {field.ExpectedOffset}, (long){offset});");
+                    }
+                }
+            }
+
+            writer.AppendLine($"{LayoutCheckedPrefix}{memberKey} = true;");
         }
     }
 

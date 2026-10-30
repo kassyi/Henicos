@@ -1,6 +1,7 @@
 // ReSharper disable All
 using System;
 using Kassyi.GSharp.Core;
+using Kassyi.ZeroAlloc.Linq;
 
 namespace Kassyi.GSharp.Tests.Shared.Syntax;
 
@@ -229,5 +230,32 @@ public static partial class ResumeLocalKernels
     {
         int* p = stackalloc int[] { 7, 8 };
         a[0] = p[0] + p[1];
+    }
+
+    // A delegate that reads the stackalloc pointer runs only before the barrier (PR #771 item 1); the analyzer reports
+    // the same kernel when the delegate runs after the barrier (GSH0041): result[t] = t + 11
+    [GpuKernel]
+    public static unsafe void LambdaBeforeBarrierKernel(int[] result)
+    {
+        int tid = ThreadIndex.X;
+        int* p = stackalloc int[4];
+        p[0] = tid + 1;
+        Func<int> f = () => p[0];
+        result[tid] = f();
+        Gpu.SyncThreads();
+        result[tid] += 10;
+    }
+
+    // A StackLinq lambda that reads the stackalloc pointer runs within the query, before the barrier: the transpiler
+    // expands it in place, so no delegate outlives the query. With data = {0, 1, 2, 3}: result = {106, 105, 103, 100}
+    [GpuKernel]
+    public static unsafe void StackLinqBeforeBarrierKernel(int[] data, int[] result)
+    {
+        int tid = ThreadIndex.X;
+        int* p = stackalloc int[1];
+        p[0] = tid;
+        result[tid] = data.AsStackEnumerable().Where(x => x > p[0]).Sum();
+        Gpu.SyncThreads();
+        result[tid] += 100;
     }
 }

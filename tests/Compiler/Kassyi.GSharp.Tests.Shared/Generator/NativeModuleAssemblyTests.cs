@@ -25,11 +25,13 @@ public class NativeModuleAssemblyTests
 
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_DeviceFunctionInclude_IsInTheAotSource()
+    public void Test_DeviceFunctionSort_CallsThePreludeWithoutInclude()
     {
         var aotSource = WriteAotSource("Cuda", ".g.cu");
 
-        Assert.Contains("#include <thrust/sort.h>", aotSource);
+        // MemoryExtensions.Sort calls the Prelude (#625), so the device function needs no include of its own any more
+        Assert.Contains("__gsharp_sort(", aotSource);
+        Assert.DoesNotContain("#include <thrust/sort.h>", aotSource);
     }
 
     // A line break in a reason (a message argument) would end the directive and leave the rest as C++ code

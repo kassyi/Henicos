@@ -6,6 +6,9 @@ internal static class KernelLaunchEmitter
     /// <summary>The device copy of the auto result buffer in the generated launcher.</summary>
     private const string DeviceAutoResult = "d_" + GSharpInternalNames.ReturnValue.Buffer;
 
+    // The device scratch of the grid strategy of AsParallel() aggregates (KernelHostModel.GridScratchSlotBytes)
+    private const string DeviceGridScratch = "d_" + GSharpInternalNames.StackLinq.GridScratch;
+
     /// <summary>Emits local variable declarations for device pointers and tracking lists.</summary>
     internal static void WriteVariablesInitialization(SourceWriter writer, in KernelHostModel kernel, bool isDevicePtr)
     {
@@ -38,6 +41,8 @@ internal static class KernelLaunchEmitter
         {
             writer.AppendLine($"IntPtr {DeviceAutoResult} = IntPtr.Zero;");
         }
+
+        writer.AppendLineIf(kernel.GridScratchSlotBytes > 0, $"IntPtr {DeviceGridScratch} = IntPtr.Zero;");
     }
 
     /// <summary>Emits argument marshaling, device memory transfers, kernel launch, and result copyback.</summary>
@@ -46,6 +51,11 @@ internal static class KernelLaunchEmitter
         var kernelParamCount = kernel.Parameters.Length;
 
         if (kernel.ReturnsValue)
+        {
+            kernelParamCount++;
+        }
+
+        if (kernel.GridScratchSlotBytes > 0)
         {
             kernelParamCount++;
         }
@@ -74,6 +84,16 @@ internal static class KernelLaunchEmitter
                     $"out {DeviceAutoResult}, (IntPtr){GSharpInternalNames.ReturnValue.BufferSize}, hStream));");
                 writer.AppendLine("kernelParams[" + paramIndex + $"] = &{DeviceAutoResult};");
             }
+        }
+
+        if (kernel.GridScratchSlotBytes > 0)
+        {
+            // One slot per block for its partial result and one for the total, freed after the launch (WriteCleanup)
+            writer.AppendLine("// Allocate the scratch of the grid strategy of AsParallel() aggregates");
+            writer.AppendLine(
+                "CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(" +
+                $"out {DeviceGridScratch}, (IntPtr)(((long)gridDimX * gridDimY * gridDimZ + 1) * {kernel.GridScratchSlotBytes}), hStream));");
+            writer.AppendLine($"kernelParams[{kernelParamCount - 1}] = &{DeviceGridScratch};");
         }
 
         writer.AppendLine();
@@ -125,6 +145,15 @@ internal static class KernelLaunchEmitter
         foreach (var shape in kernel.Parameters)
         {
             WriteParameterFree(writer, shape, isDevicePtr);
+        }
+
+        if (kernel.GridScratchSlotBytes > 0)
+        {
+            writer.AppendLine($"if ({DeviceGridScratch} != IntPtr.Zero)");
+            using (writer.Scope())
+            {
+                writer.AppendLine($"CudaException.ThrowIfError(CudaDriverApi.cuMemFreeAsync({DeviceGridScratch}, hStream));");
+            }
         }
 
         if (!kernel.ReturnsValue)
@@ -287,7 +316,7 @@ internal static class KernelLaunchEmitter
         var lenExpr = shape.LengthExpression;
 
         writer.AppendLine($"// Marshal array element by element: {shape.Identifier}");
-        writer.AppendLine($"int {name}_size = {lenExpr} * sizeof({GetConvertedElementPath(shape)});");
+        writer.AppendLine($"int {name}_size = {lenExpr} * sizeof({ConvertedArrayEmitter.GetElementShadowPath(shape, shape.Cuda)});");
 
         writer.AppendLine($"IntPtr* proxy_{name} = stackalloc IntPtr[2];");
         writer.AppendLine($"proxy_{name}[0] = IntPtr.Zero;");
@@ -304,29 +333,14 @@ internal static class KernelLaunchEmitter
 
             // [WHY] An [Out] array still needs its elements' array fields on the device: the kernel writes into
             // them, and Unmarshal_ copies them back through the device pointers that Marshal_ stores
-            if (!shape.CopyIn && !shape.ConvertedElementHasArrayFields)
+            if (!shape.CopyIn && !shape.Cuda.ConvertedElementHasArrayFields)
             {
                 writer.AppendLine($"// Skip HtoD copy for [Out] array: {shape.Identifier}");
             }
             else
             {
-                WriteShadowAndHostSpans(writer, shape);
-                WriteElementLoopHeader(writer, name);
-                using (writer.Scope())
-                {
-                    var hostElement = $"{name}_host[{name}_index]";
-                    if (shape.IsReadOnlyContainer)
-                    {
-                        // A read-only container gives no ref to its element; Marshal_ only reads its copy
-                        writer.AppendLine($"var {name}_element = {name}_host[{name}_index];");
-                        hostElement = $"{name}_element";
-                    }
-
-                    writer.AppendLine(
-                        $"{shape.ConvertedElementMarshalMethodName}(ref {hostElement}, " +
-                        $"ref {name}_native[{name}_index], false, {name}_allocatedPtrs, hStream);");
-                }
-
+                ConvertedArrayEmitter.WriteShadowAndHostSpans(writer, shape, shape.Cuda);
+                ConvertedArrayEmitter.WriteElementMarshalLoop(writer, shape, shape.Cuda);
                 writer.AppendLine($"fixed (byte* p_{name} = {name}_shadow)");
                 using (writer.Scope())
                 {
@@ -339,20 +353,6 @@ internal static class KernelLaunchEmitter
         }
 
         writer.AppendLine($"kernelParams[{paramIndex}] = proxy_{name};");
-    }
-
-    // for (int <name>_index = 0; <name>_index < <name>_native.Length; <name>_index++)
-    private static void WriteElementLoopHeader(SourceWriter writer, string name) =>
-        writer.AppendLine($"for (int {name}_index = 0; {name}_index < {name}_native.Length; {name}_index++)");
-
-    // <name>_native spans the rented bytes in the device layout; <name>_host spans the argument
-    private static void WriteShadowAndHostSpans(SourceWriter writer, in KernelParameterShape shape)
-    {
-        writer.AppendLine(
-            $"var {shape.Name}_native = System.Runtime.InteropServices.MemoryMarshal" +
-            $".Cast<byte, {GetConvertedElementPath(shape)}>({shape.Name}_shadow.AsSpan(0, {shape.Name}_size));");
-        var span = shape.IsReadOnlyContainer ? "System.ReadOnlySpan" : "System.Span";
-        writer.AppendLine($"{span}<{GetElementTypeName(shape)}> {shape.Name}_host = {shape.SpanExpression};");
     }
 
     private static void WriteRefOrOutScalarMarshal(SourceWriter writer, in KernelParameterShape shape, int paramIndex)
@@ -520,14 +520,8 @@ internal static class KernelLaunchEmitter
                 writer.AppendLine("CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));");
             }
 
-            WriteShadowAndHostSpans(writer, shape);
-            WriteElementLoopHeader(writer, name);
-            using (writer.Scope())
-            {
-                writer.AppendLine(
-                    $"{shape.ConvertedElementUnmarshalMethodName}(ref {name}_host[{name}_index], " +
-                    $"ref {name}_native[{name}_index], false, hStream);");
-            }
+            ConvertedArrayEmitter.WriteShadowAndHostSpans(writer, shape, shape.Cuda);
+            ConvertedArrayEmitter.WriteElementUnmarshalLoop(writer, shape, shape.Cuda);
         }
     }
 
@@ -578,10 +572,6 @@ internal static class KernelLaunchEmitter
             writer.AppendLine($"if (d_{shape.Name} != IntPtr.Zero) CudaDriverApi.cuMemFreeAsync(d_{shape.Name}, hStream);");
         }
     }
-
-    private static string GetConvertedElementPath(in KernelParameterShape shape) =>
-        shape.ConvertedElementAotStructPath ??
-        throw new InvalidOperationException($"Parameter '{shape.Identifier}' is not a converted array.");
 
     private static string GetElementTypeName(in KernelParameterShape shape) =>
         shape.ElementTypeName ??

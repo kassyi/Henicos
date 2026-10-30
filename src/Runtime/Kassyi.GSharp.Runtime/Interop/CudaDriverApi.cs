@@ -63,7 +63,14 @@ public enum CuFunctionAttribute
     LocalSizeBytes = 3,
     NumRegs = 4,
     PtxVersion = 5,
-    BinaryVersion = 6
+    BinaryVersion = 6,
+
+    /// <summary>
+    /// The largest dynamic shared memory in bytes that a launch of the function may request. It starts at the default
+    /// per-block limit minus the static shared memory and can be raised with <c>cuFuncSetAttribute</c> up to the opt-in
+    /// limit of the device minus the static shared memory.
+    /// </summary>
+    MaxDynamicSharedSizeBytes = 8
 }
 
 /// <summary>Represents the capture status of a CUDA stream.</summary>
@@ -101,9 +108,17 @@ public static partial class CudaDriverApi
 
     public enum CuDeviceAttribute
     {
+        /// <summary>The shared memory per block in bytes that every launch may use without an opt-in (48 KB).</summary>
+        MaxSharedMemoryPerBlock = 8,
         MultiprocessorCount = 16,
         ComputeCapabilityMajor = 75,
         ComputeCapabilityMinor = 76,
+        /// <summary>The shared memory per multiprocessor in bytes.</summary>
+        MaxSharedMemoryPerMultiprocessor = 81,
+        /// <summary>The shared memory per block in bytes that a function may use after it opts in (static plus dynamic).</summary>
+        MaxSharedMemoryPerBlockOptin = 97,
+        /// <summary>The shared memory in bytes that the system reserves for each block on top of the user's.</summary>
+        ReservedSharedMemoryPerBlock = 111,
         CanUse64BitStreamMemOps = 122,
         CanUseStreamWaitValueNor = 123
     }

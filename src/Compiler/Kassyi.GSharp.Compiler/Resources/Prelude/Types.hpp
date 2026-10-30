@@ -30,6 +30,16 @@ struct GSharpArray {
 
     inline GSharpArray() : data(nullptr), length(0) {}
     inline GSharpArray(T* d, int l) : data(d), length(l) {}
+    // A stack array (T name[N]) viewed as a span or array argument; T may be const for a ReadOnlySpan. G# reports the
+    // uses that would keep the view beyond the array's scope (GSH0091)
+    template <int N>
+    inline GSharpArray(T (&storage)[N]) : data(storage), length(N) {}
+
+    // The span members that C# calls on a span or an array (Span<T>.Slice, Span<T>.Fill, MemoryExtensions.AsSpan)
+    inline GSharpArray<T> Slice(int start) const { return GSharpArray<T>(data + start, length - start); }
+    inline GSharpArray<T> Slice(int start, int count) const { return GSharpArray<T>(data + start, count); }
+    inline void Fill(const T& value) { for (int i = 0; i < length; i++) { data[i] = value; } }
+    inline GSharpArray<T> AsSpan() const { return *this; }
     
     // Allows implicit conversion from GSharpArray<U> to GSharpArray<T> if U* is convertible to T* (e.g. T to const T)
     template <typename U>
@@ -44,6 +54,17 @@ struct GSharpArray {
     inline operator T*() { return data; }
     inline operator const T*() const { return data; }
 };
+
+// A stack array (T name[N]) viewed as a span, for a receiver or a template argument that deduces GSharpArray<T>
+template <typename T, int N>
+inline GSharpArray<T> __gsharp_stackalloc_span(T (&storage)[N]) { return GSharpArray<T>(storage, N); }
+// The storage of a stackalloc outside a declaration, declared before the statement: zeroed where the stackalloc is
+// evaluated (every evaluation, as C# allocates a new block each time), then viewed as a span
+template <typename T, int N>
+inline GSharpArray<T> __gsharp_stackalloc_zero(T (&storage)[N]) {
+    for (int i = 0; i < N; i++) { storage[i] = T{}; }
+    return GSharpArray<T>(storage, N);
+}
 
 template <typename R, typename... Args>
 using System_Func = std::function<R(Args...)>;

@@ -146,6 +146,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerChunkAddKernel();
 IntPtr hfunc = s_hfunc_ChunkAddKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "GpuBigIntKernels.ChunkAddKernel");
 IntPtr d_dA = IntPtr.Zero;
 IntPtr d_dB = IntPtr.Zero;
 IntPtr d_dResult = IntPtr.Zero;
@@ -286,6 +287,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerChunkAddKernel();
 IntPtr hfunc = s_hfunc_ChunkAddKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "GpuBigIntKernels.ChunkAddKernel");
 try
 {
 void** kernelParams = stackalloc void*[6];

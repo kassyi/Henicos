@@ -24,7 +24,7 @@
 
         case 3:
         {
-            var __gsharp_warp_temp_0 = __gsharp_warp_shuffle_read_sync(__gsharp_root, FullMask, count, 0);
+            var __gsharp_warp_temp_0 = __gsharp_warp_shuffle_read_sync(__gsharp_root, FullMask, count, 0, 32, "an unknown place");
             if (__gsharp_warp_temp_0 < limit)
                 goto case 1;
             goto case 4;

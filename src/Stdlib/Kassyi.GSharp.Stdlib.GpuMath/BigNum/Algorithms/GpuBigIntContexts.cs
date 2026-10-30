@@ -55,7 +55,7 @@ public struct DimensionContext
     public int NumberOfWordsExtended;
     /// <summary>The exponent value in power/modular operations.</summary>
     public int Exponent;
-    /// <summary>The bit offset for $2^{2^n} + 1$ Fermat reductions.</summary>
+    /// <summary>The bit offset <c>2E + 1</c> of a fold modulo <c>2^(2E+1) - 2^E + 11</c> (no kernel reads it at present).</summary>
     public int BitOffset2E1;
     /// <summary>The margin word size for precision safety.</summary>
     public int MarginWords;

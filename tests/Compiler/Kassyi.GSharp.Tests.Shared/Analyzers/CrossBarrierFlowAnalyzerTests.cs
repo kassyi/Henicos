@@ -29,18 +29,27 @@ public class CrossBarrierFlowAnalyzerTests : TranspilerTestBase
 
         Assert.Equal(
             [
-                (GSharpDiagnostics.CrossBarrierRefStructProhibited.Id, 30, 19, 30, 23),
-                (GSharpDiagnostics.CrossBarrierLocalPointerProhibited.Id, 54, 14, 54, 21),
-                (GSharpDiagnostics.CrossBarrierRefStructProhibited.Id, 82, 19, 82, 23),
-                (GSharpDiagnostics.CrossBarrierRefStructProhibited.Id, 92, 19, 92, 20),
-                (GSharpDiagnostics.CrossBarrierRefStructProhibited.Id, 105, 23, 105, 24),
-                (GSharpDiagnostics.CrossBarrierLocalPointerProhibited.Id, 131, 14, 131, 21),
-                (GSharpDiagnostics.CrossBarrierRefStructProhibited.Id, 142, 17, 142, 22),
-                (GSharpDiagnostics.CrossBarrierLocalPointerProhibited.Id, 151, 14, 151, 15),
-                (GSharpDiagnostics.CrossBarrierLocalPointerProhibited.Id, 161, 14, 161, 15),
-                (GSharpDiagnostics.CrossBarrierLocalPointerProhibited.Id, 174, 14, 174, 15),
-                (GSharpDiagnostics.CrossBarrierLocalPointerProhibited.Id, 188, 14, 188, 15),
-                (GSharpDiagnostics.CrossBarrierRefStructProhibited.Id, 233, 19, 233, 23)
+                (GSharpDiagnostics.CrossBarrierRefStructProhibited.Id, 31, 19, 31, 23),
+                (GSharpDiagnostics.CrossBarrierLocalPointerProhibited.Id, 55, 14, 55, 21),
+                (GSharpDiagnostics.CrossBarrierRefStructProhibited.Id, 83, 19, 83, 23),
+                (GSharpDiagnostics.CrossBarrierRefStructProhibited.Id, 93, 19, 93, 20),
+                (GSharpDiagnostics.CrossBarrierRefStructProhibited.Id, 106, 23, 106, 24),
+                (GSharpDiagnostics.CrossBarrierLocalPointerProhibited.Id, 132, 14, 132, 21),
+                (GSharpDiagnostics.CrossBarrierRefStructProhibited.Id, 143, 17, 143, 22),
+                (GSharpDiagnostics.CrossBarrierLocalPointerProhibited.Id, 152, 14, 152, 15),
+                (GSharpDiagnostics.CrossBarrierLocalPointerProhibited.Id, 162, 14, 162, 15),
+                (GSharpDiagnostics.CrossBarrierLocalPointerProhibited.Id, 175, 14, 175, 15),
+                (GSharpDiagnostics.CrossBarrierLocalPointerProhibited.Id, 189, 14, 189, 15),
+                (GSharpDiagnostics.CrossBarrierRefStructProhibited.Id, 234, 19, 234, 23),
+                (GSharpDiagnostics.CrossBarrierLocalPointerProhibited.Id, 257, 14, 257, 15),
+                (GSharpDiagnostics.CrossBarrierLocalPointerProhibited.Id, 281, 14, 281, 15),
+                (GSharpDiagnostics.CrossBarrierLocalPointerProhibited.Id, 305, 14, 305, 15),
+                (GSharpDiagnostics.CrossBarrierLocalPointerProhibited.Id, 316, 14, 316, 15),
+                (GSharpDiagnostics.CrossBarrierLocalPointerProhibited.Id, 328, 14, 328, 15),
+                (GSharpDiagnostics.CrossBarrierLocalPointerProhibited.Id, 350, 14, 350, 15),
+                (GSharpDiagnostics.CrossBarrierLocalPointerProhibited.Id, 363, 14, 363, 15),
+                (GSharpDiagnostics.CrossBarrierLocalPointerProhibited.Id, 375, 14, 375, 15),
+                (GSharpDiagnostics.CrossBarrierLocalPointerProhibited.Id, 399, 14, 399, 15)
             ],
             actual);
     }

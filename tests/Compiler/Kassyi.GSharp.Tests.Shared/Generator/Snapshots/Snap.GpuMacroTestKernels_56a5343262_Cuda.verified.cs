@@ -83,9 +83,16 @@ public static partial class AotContexts
 {
 }
 public const string Kernel_MacroTest_FillAndSingle_Source = @"extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Stdlib__GpuMath__Tests__Kernels__GpuMacroTestKernels__Kernel_uMacroTest_uFillAndSingle(GSharpArray<unsigned int> __gsharp_id_0_outputBuffer, int __gsharp_id_1_length, unsigned int __gsharp_id_2_fillValue, unsigned int __gsharp_id_3_singleValue){
-for(int __gsharp_id_4_i = blockIdx.x * blockDim.x + threadIdx.x; __gsharp_id_4_i < __gsharp_id_1_length; __gsharp_id_4_i += gridDim.x * blockDim.x)
+{
+unsigned int __gsharp_gsl_n_0 = __gsharp_grid_stride_count(__gsharp_id_1_length);
+unsigned int __gsharp_gsl_s_0 = __gsharp_grid_stride_step();
+for(unsigned int __gsharp_gsl_0 = __gsharp_grid_stride_start(); __gsharp_gsl_0 < __gsharp_gsl_n_0; __gsharp_gsl_0 += __gsharp_gsl_s_0)
+{
+int __gsharp_id_4_i = (int)__gsharp_gsl_0;
 {
 __gsharp_id_0_outputBuffer[__gsharp_id_4_i]=__gsharp_id_2_fillValue;
+}
+}
 }
 cg::this_grid().sync();
 if((threadIdx.x|threadIdx.y|threadIdx.z|blockIdx.x|blockIdx.y|blockIdx.z)==0)
@@ -121,6 +128,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerKernel_MacroTest_FillAndSingle();
 IntPtr hfunc = s_hfunc_Kernel_MacroTest_FillAndSingle!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "GpuMacroTestKernels.Kernel_MacroTest_FillAndSingle");
 IntPtr d_outputBuffer = IntPtr.Zero;
 try
 {
@@ -181,6 +189,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerKernel_MacroTest_FillAndSingle();
 IntPtr hfunc = s_hfunc_Kernel_MacroTest_FillAndSingle!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "GpuMacroTestKernels.Kernel_MacroTest_FillAndSingle");
 try
 {
 void** kernelParams = stackalloc void*[4];

@@ -188,18 +188,8 @@ public class BarrierUsageAnalyzer : DiagnosticAnalyzer
     }
 
     // The body lambda of a Gpu.ForUnroll or Gpu.SyncGrid(body), however the call is spelled (#503)
-    internal static bool IsInlinedMacroBody(SyntaxNode lambda, SemanticModel semanticModel)
-    {
-        if (lambda.Parent is not ArgumentSyntax { Parent: ArgumentListSyntax { Parent: InvocationExpressionSyntax macro } list } argument ||
-            semanticModel.GetSymbol(macro) is not IMethodSymbol symbol)
-        {
-            return false;
-        }
-
-        var call = GpuMacroClassifier.Classify(symbol);
-        return call is { Kind: GpuMacroKind.ForUnroll or GpuMacroKind.SyncGrid, HasBody: true } &&
-               list.Arguments.IndexOf(argument) == call.LambdaArgumentIndex;
-    }
+    internal static bool IsInlinedMacroBody(SyntaxNode lambda, SemanticModel semanticModel) =>
+        GpuMacroClassifier.ClassifyBody(lambda, semanticModel).Kind is GpuMacroKind.ForUnroll or GpuMacroKind.SyncGrid;
 
     private static ArgumentSyntax? FindNonVariableByReferenceArgument(InvocationExpressionSyntax invocation) =>
         invocation.ArgumentList.Arguments

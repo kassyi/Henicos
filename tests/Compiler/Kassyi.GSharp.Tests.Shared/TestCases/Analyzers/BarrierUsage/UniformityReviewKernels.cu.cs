@@ -143,4 +143,86 @@ public static partial class UniformityReviewKernels
 
         Gpu.SyncThreads();
     }
+
+    // ||: a thread with flag true reaches the barrier through the second test; the others skip it and only leave (GSH0084)
+    [GpuKernel]
+    [SkipSnapshotConsistency("Analyzer case")]
+    public static void OrWithFlagKernel(int[] buffer, bool flag)
+    {
+        if (ThreadIndex.X == 0 || flag)
+        {
+            Gpu.SyncThreads(); // OrFlag
+        }
+
+        buffer[ThreadIndex.X] = 1;
+    }
+
+    // The same with a barrier after the if: the threads that skip it reach that one (GSH0083)
+    [GpuKernel]
+    [SkipSnapshotConsistency("Analyzer case")]
+    public static void OrWithFlagThenBarrierKernel(int[] buffer, bool flag)
+    {
+        if (ThreadIndex.X == 0 || flag)
+        {
+            Gpu.SyncThreads(); // OrFlagThen
+        }
+
+        buffer[ThreadIndex.X] = 1;
+        Gpu.SyncThreads();
+    }
+
+    // Every thread takes one side of ||, but the graph does not see that the two tests cover all threads: no error, at
+    // most a warning
+    [GpuKernel]
+    [SkipSnapshotConsistency("Analyzer case")]
+    public static void OrTautologyKernel(int[] buffer)
+    {
+        if (ThreadIndex.X == 0 || ThreadIndex.X != 0)
+        {
+            Gpu.SyncThreads(); // Tautology
+        }
+
+        buffer[ThreadIndex.X] = 1;
+    }
+
+    // The same with a barrier after the if
+    [GpuKernel]
+    [SkipSnapshotConsistency("Analyzer case")]
+    public static void OrTautologyThenBarrierKernel(int[] buffer)
+    {
+        if (ThreadIndex.X == 0 || ThreadIndex.X != 0)
+        {
+            Gpu.SyncThreads(); // TautologyThen
+        }
+
+        buffer[ThreadIndex.X] = 1;
+        Gpu.SyncThreads();
+    }
+
+    // ?: a thread with flag true reaches the barrier through the false side
+    [GpuKernel]
+    [SkipSnapshotConsistency("Analyzer case")]
+    public static void ConditionalWithFlagKernel(int[] buffer, bool flag)
+    {
+        if (ThreadIndex.X == 0 ? true : flag)
+        {
+            Gpu.SyncThreads(); // ConditionalFlag
+        }
+
+        buffer[ThreadIndex.X] = 1;
+    }
+
+    // The same with a barrier after the if
+    [GpuKernel]
+    [SkipSnapshotConsistency("Analyzer case")]
+    public static void ConditionalWithFlagThenBarrierKernel(int[] buffer, bool flag)
+    {
+        if (ThreadIndex.X == 0 ? true : flag)
+        {
+            Gpu.SyncThreads(); // ConditionalFlagThen
+        }
+
+        buffer[ThreadIndex.X] = 1;
+        Gpu.SyncThreads();
+    }
 }
