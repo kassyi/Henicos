@@ -150,14 +150,34 @@ public static partial class Tier1IntegrationKernels
                 Gpu.AtomicAdd(ref globalCounter[0], (ulong)bitwise);
             }
 
-            // SYN-47: Dynamic Shared Memory
-            SharedMemory<float> dynamicSharedMem = new SharedMemory<float>(dynamicSharedSize);
-            dynamicSharedMem[ThreadIndex.X] = sum;
-            Gpu.SyncThreads(); // GBI-31
+            // The loop leaves its sum in the result; the barrier comes after the loop (GBI-31)
+            results[tid] = sum;
+        });
+
+        // GBI-31: a barrier in the body of GridStrideLoop is GSH0037 (the CPU dialects do not split that body), so the
+        // shared memory is written and read around a barrier that every thread of the block reaches. The test launches
+        // one block of count threads, so thread t handled element t in the loop.
+        int t = ThreadIndex.X;
+
+        // SYN-47: Dynamic Shared Memory
+        SharedMemory<float> dynamicSharedMem = new SharedMemory<float>(dynamicSharedSize);
+        if (t < count)
+        {
+            dynamicSharedMem[t] = results[t];
+        }
+
+        Gpu.SyncThreads(); // GBI-31
+
+        if (t < count)
+        {
+            // The same bits as in the loop
+            (int a, int b) = (t, t * 2);
+            int bitwise = (a << 1) | (b >> 1) ^ 0xFF;
+            bitwise &= ~1;
 
             // Complex ternary (GSH-01)
             float finalVal = (bitwise > 0)
-                ? (dynamicSharedMem[ThreadIndex.X] > 10.0f ? 10.0f : dynamicSharedMem[ThreadIndex.X])
+                ? (dynamicSharedMem[t] > 10.0f ? 10.0f : dynamicSharedMem[t])
                 : 0.0f;
 
             // SYN-14: fixed buffers inside structs
@@ -197,7 +217,7 @@ public static partial class Tier1IntegrationKernels
                 loopCounter++;
             } while (loopCounter < 3);
 
-            results[tid] = finalVal;
-        });
+            results[t] = finalVal;
+        }
     }
 }

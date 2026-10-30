@@ -338,6 +338,25 @@ public class CrossAssemblyDiagnosticsTests
             diagnostics.Ranges(GSharpDiagnostics.ParallelDependentCallFromSingleThreadContext.Id));
     }
 
+    // The record of a function of another assembly carries one bit per parameter whose variance makes its barrier
+    // diverge: the call with the thread index (line 11) is GSH0083, the one with a constant (line 12) is not
+    [Theory]
+    [InlineData("Cpu")]
+    [InlineData("Cuda")]
+    [Scenario(TestScenario.SadPath)]
+    public async Task Test_ImportedDivergentParameter_ReportsGsh0083(string dialect)
+    {
+        var library = DeviceLibraryBuilder.Build("XasmLib", s_noExport, s_library,
+            RoslynTestUtility.ReadTestCase(Folder + "HandWrittenDivergentRecord.cs")
+                .Replace("PRELUDE_HASH", DeviceExportRecord.CurrentPreludeHash, StringComparison.Ordinal));
+
+        var diagnostics = await RunAsync(dialect, RoslynTestUtility.ReadTestCase(Folder + "DivergentCallConsumer.cs"),
+            library);
+
+        Assert.Equal([(Analyzer, 11, 23, 11, 51)],
+            diagnostics.Ranges(GSharpDiagnostics.LaunchDependentDivergentBarrier.Id));
+    }
+
     // The consumer without the struct use (the hand-written library records only Twice)
     private static string ConsumerOfTwiceOnly() =>
         s_consumer
