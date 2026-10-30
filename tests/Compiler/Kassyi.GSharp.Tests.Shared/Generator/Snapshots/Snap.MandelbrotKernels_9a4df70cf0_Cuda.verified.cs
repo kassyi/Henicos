@@ -83,8 +83,8 @@ public static partial class AotContexts
 {
 }
 public const string MandelbrotKernel_Source = @"extern ""C"" __global__ void __gsharp_k_Henicos__Benchmarks__ComputeBenchmarks__MandelbrotKernels__MandelbrotKernel(GSharpArray<int> __gsharp_id_0_output, int __gsharp_id_1_width, int __gsharp_id_2_height, int __gsharp_id_3_maxIter, float __gsharp_id_4_xMin, float __gsharp_id_5_xMax, float __gsharp_id_6_yMin, float __gsharp_id_7_yMax){
-auto __gsharp_id_8_col = blockIdx.x*blockDim.x+threadIdx.x;
-auto __gsharp_id_9_row = blockIdx.y*blockDim.y+threadIdx.y;
+auto __gsharp_id_8_col = __gsharp_add_i32(__gsharp_mul_i32((int)blockIdx.x,(int)blockDim.x),(int)threadIdx.x);
+auto __gsharp_id_9_row = __gsharp_add_i32(__gsharp_mul_i32((int)blockIdx.y,(int)blockDim.y),(int)threadIdx.y);
 if(__gsharp_id_8_col<__gsharp_id_1_width&&__gsharp_id_9_row<__gsharp_id_2_height)
 {
 auto __gsharp_id_10_x0 = __gsharp_id_4_xMin+(__gsharp_id_5_xMax-__gsharp_id_4_xMin)*__gsharp_id_8_col/__gsharp_id_1_width;
@@ -97,9 +97,9 @@ while(__gsharp_id_12_x*__gsharp_id_12_x+__gsharp_id_13_y*__gsharp_id_13_y<=4.0f&
 auto __gsharp_id_15_xtemp = __gsharp_id_12_x*__gsharp_id_12_x-__gsharp_id_13_y*__gsharp_id_13_y+__gsharp_id_10_x0;
 __gsharp_id_13_y=2.0f*__gsharp_id_12_x*__gsharp_id_13_y+__gsharp_id_11_y0;
 __gsharp_id_12_x=__gsharp_id_15_xtemp;
-__gsharp_id_14_iter++;
+__gsharp_id_14_iter=__gsharp_add_i32(__gsharp_id_14_iter,1);
 }
-__gsharp_id_0_output[__gsharp_id_9_row*__gsharp_id_1_width+__gsharp_id_8_col]=__gsharp_id_14_iter;
+__gsharp_id_0_output[__gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_9_row,__gsharp_id_1_width),__gsharp_id_8_col)]=__gsharp_id_14_iter;
 }
 }
 ";
@@ -137,11 +137,12 @@ int output_size = output.Length * sizeof(global::System.Int32);
 IntPtr* proxy_output = stackalloc IntPtr[2];
 proxy_output[0] = IntPtr.Zero;
 ((int*)(proxy_output + 1))[0] = output.Length;
+((int*)(proxy_output + 1))[1] = 0;
 if (output_size > 0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_output, (IntPtr)output_size, hStream));
-proxy_output[0] = d_output;
 // Skip HtoD copy for [Out] array: output
+proxy_output[0] = d_output;
 }
 kernelParams[0] = proxy_output;
 // Marshal scalar: width
@@ -201,6 +202,7 @@ void** kernelParams = stackalloc void*[8];
 IntPtr* proxy_output = stackalloc IntPtr[2];
 proxy_output[0] = output;
 ((int*)(proxy_output + 1))[0] = 0; // Length is unknown for raw IntPtr
+((int*)(proxy_output + 1))[1] = 0;
 kernelParams[0] = proxy_output;
 // Marshal scalar: width
 kernelParams[1] = &width;

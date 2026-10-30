@@ -7,9 +7,9 @@ This is the root index and behavioral charter for AI agents working in this repo
 G# (GSharp) is a transpilation engine and runtime that compiles C# directly to CUDA C++/PTX using Roslyn Source Generators and runs natively on NVIDIA GPUs.
 
 ### The 3 Core Tenets
-1. **AST-Driven**: All code analysis, transpilation, and safety enforcement are performed strictly via Roslyn Syntax Nodes and Semantic Models at compile-time (**NEVER use Reflection**).
+1. **AST-Driven**: All code analysis, transpilation, and safety enforcement are performed strictly via Roslyn Syntax Nodes and Semantic Models at compile-time (**NEVER use Reflection**: it slows the compilation down; see [transpiler-emission.md](.agents/rules/transpiler-emission.md) §1).
 2. **Zero-Allocation**: GPU device execution fundamentally enforces zero reference-type heap allocations. Use value types (`struct`) and stack/register memory only.
-3. **Static Determinism**: All kernel logic and types must be fully resolved at compile-time with zero runtime overhead—**NO Reflection, NO `System.Linq` (in-house zero-allocation `StackLinq` / `Kassyi.ZeroAlloc.Linq` is permitted and encouraged), and NO Dynamic Dispatch**.
+3. **Static Determinism**: All kernel logic and types must be fully resolved at compile-time with zero runtime overhead—**NO Reflection (for compile speed, Tenet 1), NO `System.Linq` (in-house zero-allocation `StackLinq` / `Kassyi.ZeroAlloc.Linq` is permitted and encouraged), and NO Dynamic Dispatch**.
 
 ---
 

@@ -31,10 +31,11 @@ internal static class ConvertedArrayEmitter
         writer.AppendLine($"{span}<{element}> {shape.Name}_host = {shape.SpanExpression};");
     }
 
-    // for (...) { Marshal_<E>(ref <name>_host[<name>_index], ref <name>_native[<name>_index], false, <name>_allocatedPtrs,
-    // hStream); }, through the spans of WriteShadowAndHostSpans
+    // for (...) { Marshal_<E>(ref <name>_host[<name>_index], ref <name>_native[<name>_index], false, <allocations>,
+    // hStream); }, through the spans of WriteShadowAndHostSpans. <allocations> records what Marshal_ allocates: the CUDA
+    // launcher's DeviceArrayRegions, or the CPU launcher's list of GCHandles of the parameter.
     internal static void WriteElementMarshalLoop(SourceWriter writer, in KernelParameterShape shape,
-        in ParameterTransfer transfer)
+        in ParameterTransfer transfer, string allocations)
     {
         var name = shape.Name;
         WriteElementLoopHeader(writer, name);
@@ -50,7 +51,7 @@ internal static class ConvertedArrayEmitter
 
             writer.AppendLine(
                 $"{transfer.ConvertedElementMarshalMethodName}(ref {hostElement}, " +
-                $"ref {name}_native[{name}_index], false, {name}_allocatedPtrs, hStream);");
+                $"ref {name}_native[{name}_index], false, {allocations}, hStream);");
         }
     }
 

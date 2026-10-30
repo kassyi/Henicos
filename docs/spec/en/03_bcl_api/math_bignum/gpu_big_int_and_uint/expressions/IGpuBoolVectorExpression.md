@@ -29,7 +29,8 @@ Implements: `IDisposable`
 
 | Name | Description |
 | --- | --- |
-| [Length](#length) | Gets the number of elements in the boolean vector expression. |
+| [Capacity](#capacity) | Gets the upper bound of the number of elements, known before evaluation. |
+| [Length](#length) | Gets the number of elements in the boolean vector expression; throws when it is known only on the device. |
 
 ## Length
 
@@ -39,11 +40,33 @@ Gets the number of elements in the boolean vector expression.
 int Length { get; }
 ```
 
+#### Exceptions
+
+`InvalidOperationException`<br>
+The number is known only on the device (the expression contains a `Where`). Use `Capacity`, `TryGetLength` or `Count()`.
+
+## Capacity
+
+Gets the upper bound of the number of elements, known before evaluation: the `Length` when it is known on the host, otherwise the length of the input of the `Where`.
+
+```csharp
+int Capacity { get; }
+```
+
+## TryGetLength(out Int32)
+
+Gets the number of elements when it is known on the host without evaluating, as `Enumerable.TryGetNonEnumeratedCount` does. Returns `false` (and 0) when the number is known only on the device.
+
+```csharp
+bool TryGetLength(out int length);
+```
+
 ## Methods
 
 | Name | Description |
 | --- | --- |
 | [Evaluate(GpuWorkspace)](#evaluategpuworkspace) | Evaluates the deferred boolean vector expression on the GPU. |
+| [TryGetLength(out Int32)](#trygetlengthout-int32) | Gets the number of elements when it is known on the host. |
 
 ## Evaluate(GpuWorkspace)
 

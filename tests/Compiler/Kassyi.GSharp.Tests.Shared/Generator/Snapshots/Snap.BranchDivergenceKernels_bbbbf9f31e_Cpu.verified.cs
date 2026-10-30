@@ -51,20 +51,20 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-auto __gsharp_id_2_idx = blockIdx.x*blockDim.x+threadIdx.x;
+auto __gsharp_id_2_idx = __gsharp_add_i32(__gsharp_mul_i32((int)blockIdx.x,(int)blockDim.x),(int)threadIdx.x);
 if(__gsharp_id_2_idx<__gsharp_id_1_n)
 {
 auto __gsharp_id_3_val = __gsharp_id_0_data[__gsharp_id_2_idx];
 if(__gsharp_id_2_idx%2==0)
 {
-for(int __gsharp_id_4_i = 0;__gsharp_id_4_i<100;__gsharp_id_4_i++)
+for(int __gsharp_id_4_i = 0;__gsharp_id_4_i<100;__gsharp_id_4_i=__gsharp_add_i32(__gsharp_id_4_i,1))
 {
 __gsharp_id_3_val=__gsharp_id_3_val*1.01f+0.01f;
 }
 }
 else
 {
-for(int __gsharp_id_5_i = 0;__gsharp_id_5_i<100;__gsharp_id_5_i++)
+for(int __gsharp_id_5_i = 0;__gsharp_id_5_i<100;__gsharp_id_5_i=__gsharp_add_i32(__gsharp_id_5_i,1))
 {
 __gsharp_id_3_val=__gsharp_id_3_val*0.99f-0.01f;
 }
@@ -151,10 +151,12 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 }
 ";
 public static readonly string BranchDivergenceKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source +BranchDivergenceKernel_Source;
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_context_Henicos__Benchmarks__ComputeBenchmarks__BranchDivergenceKernels__BranchDivergenceKernel {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
 }
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static unsafe void __gsharp_statemachine_Henicos__Benchmarks__ComputeBenchmarks__BranchDivergenceKernels__BranchDivergenceKernel(float[] data, int n, __gsharp_context_Henicos__Benchmarks__ComputeBenchmarks__BranchDivergenceKernels__BranchDivergenceKernel __gsharp_ctx) {
 {
 switch (__gsharp_ctx.__gsharp_state)

@@ -81,7 +81,7 @@ __gsharp_id_1_arr[3]=40;
 int __gsharp_id_2_total = 0;
 for(auto __gsharp_id_3_val : __gsharp_id_1_arr)
 {
-__gsharp_id_2_total+=__gsharp_id_3_val;
+__gsharp_id_2_total=__gsharp_add_i32(__gsharp_id_2_total,__gsharp_id_3_val);
 }
 __gsharp_id_0_output[0]=__gsharp_id_2_total;
 __gsharp_state=-1;
@@ -164,10 +164,12 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 }
 ";
 public static readonly string ForeachInlineArrayKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source +ForeachInlineArrayKernel_Source;
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__LoopsAndJumpsKernels__ForeachInlineArrayKernel {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
 }
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__LoopsAndJumpsKernels__ForeachInlineArrayKernel(int[] output, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__LoopsAndJumpsKernels__ForeachInlineArrayKernel __gsharp_ctx) {
 {
 switch (__gsharp_ctx.__gsharp_state)
@@ -333,7 +335,7 @@ const int __gsharp_id_1_arr[4]={ 10, 20, 30, 40 };
 int __gsharp_id_2_total = 0;
 for(auto __gsharp_id_3_val : __gsharp_id_1_arr)
 {
-__gsharp_id_2_total+=__gsharp_id_3_val;
+__gsharp_id_2_total=__gsharp_add_i32(__gsharp_id_2_total,__gsharp_id_3_val);
 }
 __gsharp_id_0_output[0]=__gsharp_id_2_total;
 __gsharp_state=-1;
@@ -416,10 +418,12 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 }
 ";
 public static readonly string ForeachCollectionExpressionKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source +ForeachCollectionExpressionKernel_Source;
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__LoopsAndJumpsKernels__ForeachCollectionExpressionKernel {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
 }
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__LoopsAndJumpsKernels__ForeachCollectionExpressionKernel(int[] output, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__LoopsAndJumpsKernels__ForeachCollectionExpressionKernel __gsharp_ctx) {
 {
 switch (__gsharp_ctx.__gsharp_state)
@@ -581,7 +585,7 @@ int __gsharp_id_1_arr[4]={ 10, 20, 30, 40 };
 int __gsharp_id_2_total = 0;
 for(auto __gsharp_id_3_val : __gsharp_id_1_arr)
 {
-__gsharp_id_2_total+=__gsharp_id_3_val;
+__gsharp_id_2_total=__gsharp_add_i32(__gsharp_id_2_total,__gsharp_id_3_val);
 }
 __gsharp_id_0_output[0]=__gsharp_id_2_total;
 __gsharp_state=-1;
@@ -664,10 +668,12 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 }
 ";
 public static readonly string ForeachStackAllocKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source +ForeachStackAllocKernel_Source;
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__LoopsAndJumpsKernels__ForeachStackAllocKernel {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
 }
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__LoopsAndJumpsKernels__ForeachStackAllocKernel(int[] output, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__LoopsAndJumpsKernels__ForeachStackAllocKernel __gsharp_ctx) {
 {
 switch (__gsharp_ctx.__gsharp_state)

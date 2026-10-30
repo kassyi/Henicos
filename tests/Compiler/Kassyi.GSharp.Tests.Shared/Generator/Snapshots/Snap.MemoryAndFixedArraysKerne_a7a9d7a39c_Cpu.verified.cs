@@ -71,10 +71,10 @@ __gsharp_switch_1_state_0:
 __gsharp_ctx->__gsharp_id_3_intSmem={ (int*)__gsharp_allocate_smem_static(0x671c4908e990809cull, (256) * sizeof(int), alignof(int)) };
 __gsharp_ctx->__gsharp_id_4_floatSmem={ (float*)__gsharp_allocate_smem_static(0x671c4a08e990824full, (256) * sizeof(float), alignof(float)) };
 __gsharp_ctx->__gsharp_id_5_pointSmem={ (__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__CustomPoint*)__gsharp_allocate_smem_static(0x671c4b08e9908402ull, (64) * sizeof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__CustomPoint), alignof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__CustomPoint)) };
-__gsharp_ctx->__gsharp_id_6_tid=threadIdx.x;
+__gsharp_ctx->__gsharp_id_6_tid=(int)threadIdx.x;
 if(__gsharp_ctx->__gsharp_id_6_tid<256)
 {
-__gsharp_ctx->__gsharp_id_3_intSmem[__gsharp_ctx->__gsharp_id_6_tid]=__gsharp_ctx->__gsharp_id_6_tid*3;
+__gsharp_ctx->__gsharp_id_3_intSmem[__gsharp_ctx->__gsharp_id_6_tid]=__gsharp_mul_i32(__gsharp_ctx->__gsharp_id_6_tid,3);
 __gsharp_ctx->__gsharp_id_4_floatSmem[__gsharp_ctx->__gsharp_id_6_tid]=__gsharp_ctx->__gsharp_id_6_tid*1.5f;
 }
 if(__gsharp_ctx->__gsharp_id_6_tid<64)
@@ -176,11 +176,13 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 }
 ";
 public static readonly string SharedMemoryStaticKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source +SharedMemoryStaticKernel_Source;
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__MemoryAndFixedArraysKernels__SharedMemoryStaticKernel {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
 public int tid;
 }
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__MemoryAndFixedArraysKernels__SharedMemoryStaticKernel(int[] intOutput, float[] floatOutput, global::Kassyi.GSharp.Tests.Shared.Syntax.CustomPoint[] pointOutput, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__MemoryAndFixedArraysKernels__SharedMemoryStaticKernel __gsharp_ctx) {
 global::Kassyi.GSharp.Core.SharedMemory<int> intSmem = new(256, 0x671c4908e990809cUL);
 global::Kassyi.GSharp.Core.SharedMemory<float> floatSmem = new(256, 0x671c4a08e990824fUL);

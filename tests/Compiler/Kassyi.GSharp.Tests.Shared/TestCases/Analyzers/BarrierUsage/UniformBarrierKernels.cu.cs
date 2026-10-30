@@ -24,19 +24,6 @@ public static partial class UniformBarrierKernels
     }
 
     [GpuKernel]
-    public static void SafeLocalFunctionBarrierKernel(int[] buffer)
-    {
-        void LocalSync()
-        {
-            Gpu.SyncThreads();
-        }
-
-        buffer[0] = 42;
-        LocalSync();
-        buffer[0] = 84;
-    }
-
-    [GpuKernel]
     public unsafe static void ScopedSpanBeforeBarrierKernel(int* buffer)
     {
         {

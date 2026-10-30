@@ -25,7 +25,7 @@ static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__Lifecy
 static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__LifecycleObjectState,__gsharp_mb_Status)==8,""Kassyi.GSharp.Tests.Shared.Syntax.LifecycleObjectState.Status: offset"");
 #endif
 inline __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__LifecycleObjectState __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__ObjectLifecycleKernels__TransformState(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__LifecycleObjectState __gsharp_id_0_state, int __gsharp_id_1_multiplier){
-__gsharp_id_0_state.__gsharp_mb_Value=__gsharp_id_0_state.__gsharp_mb_Value*__gsharp_id_1_multiplier;
+__gsharp_id_0_state.__gsharp_mb_Value=__gsharp_mul_i32(__gsharp_id_0_state.__gsharp_mb_Value,__gsharp_id_1_multiplier);
 __gsharp_id_0_state.__gsharp_mb_Status=(__gsharp_id_0_state.__gsharp_mb_Value>100?1:0);
 return __gsharp_id_0_state;
 }
@@ -90,7 +90,7 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-int __gsharp_id_3_tid = blockIdx.x*blockDim.x+threadIdx.x;
+int __gsharp_id_3_tid = __gsharp_add_i32(__gsharp_mul_i32((int)blockIdx.x,(int)blockDim.x),(int)threadIdx.x);
 if(__gsharp_id_3_tid<__gsharp_id_1_length)
 {
 __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__LifecycleObjectState __gsharp_id_4_s = __gsharp_id_0_states[__gsharp_id_3_tid];
@@ -176,10 +176,12 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 }
 ";
 public static readonly string Kernel_LifecycleUpdate_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source +Kernel_LifecycleUpdate_Source;
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__ObjectLifecycleKernels__Kernel_uLifecycleUpdate {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
 }
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__ObjectLifecycleKernels__Kernel_uLifecycleUpdate(global::Kassyi.GSharp.Tests.Shared.Syntax.LifecycleObjectState[] states, int length, int multiplier, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__ObjectLifecycleKernels__Kernel_uLifecycleUpdate __gsharp_ctx) {
 {
 switch (__gsharp_ctx.__gsharp_state)
@@ -363,11 +365,11 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-int __gsharp_id_3_tid = blockIdx.x*blockDim.x+threadIdx.x;
+int __gsharp_id_3_tid = __gsharp_add_i32(__gsharp_mul_i32((int)blockIdx.x,(int)blockDim.x),(int)threadIdx.x);
 if(__gsharp_id_3_tid<__gsharp_id_2_length)
 {
 __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__LifecycleObjectState __gsharp_id_4_state = {};
-__gsharp_id_4_state.__gsharp_mb_Id=__gsharp_id_3_tid+1;
+__gsharp_id_4_state.__gsharp_mb_Id=__gsharp_add_i32(__gsharp_id_3_tid,1);
 __gsharp_id_4_state.__gsharp_mb_Value=__gsharp_id_0_inputValues[__gsharp_id_3_tid];
 __gsharp_id_4_state.__gsharp_mb_Status=(__gsharp_id_0_inputValues[__gsharp_id_3_tid]<0?(-1):((__gsharp_id_0_inputValues[__gsharp_id_3_tid]==0?0:1)));
 __gsharp_id_1_outputStates[__gsharp_id_3_tid]=__gsharp_id_4_state;
@@ -452,10 +454,12 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 }
 ";
 public static readonly string Kernel_FactoryInitialization_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source +Kernel_FactoryInitialization_Source;
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__ObjectLifecycleKernels__Kernel_uFactoryInitialization {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
 }
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__ObjectLifecycleKernels__Kernel_uFactoryInitialization(int[] inputValues, global::Kassyi.GSharp.Tests.Shared.Syntax.LifecycleObjectState[] outputStates, int length, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__ObjectLifecycleKernels__Kernel_uFactoryInitialization __gsharp_ctx) {
 {
 switch (__gsharp_ctx.__gsharp_state)

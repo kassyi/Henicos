@@ -31,6 +31,24 @@ public static partial class CrossAssemblyKernels
         result[tid] = LibMath.SumPair(pairs[tid]);
     }
 
+    // A library function that expands the library's operator macro (#711)
+    [GpuKernel]
+    public static void AddPairKernel(Pair[] pairs, int[] result, int[] calls)
+    {
+        int tid = ThreadIndex.X;
+        LibCounter counter = default;
+        result[tid] = LibMath.AddPair(ref counter, pairs[tid]);
+        calls[tid] = counter.Calls;
+    }
+
+    // A library function that expands an operator macro whose target is private to the library (#711)
+    [GpuKernel]
+    public static void DifferenceKernel(Pair[] pairs, int[] result)
+    {
+        int tid = ThreadIndex.X;
+        result[tid] = LibMath.Difference(pairs[tid]);
+    }
+
     // A public function that calls an internal one of the library
     [GpuKernel]
     public static void TwiceKernel(int[] values, int[] result)
@@ -91,7 +109,7 @@ public static partial class CrossAssemblyKernels
         result[tid] = new Scaled(values[tid]).V;
     }
 
-    // A library struct with LayoutKind.Explicit by value: the launcher cannot see its layout
+    // A library struct with LayoutKind.Explicit by value: its offsets come from the metadata (#736)
     [GpuKernel]
     public static void SwapPairKernel(SwapPair pair, int[] result)
     {
@@ -105,6 +123,24 @@ public static partial class CrossAssemblyKernels
     {
         result[0] = pair.Tag;
         result[1] = pair.Value;
+    }
+
+    // An array of a library struct with StructLayout.Size = 16: the elements sit 16 bytes apart (#736)
+    [GpuKernel]
+    public static void SizedKernel(Sized[] data, int[] result)
+    {
+        int tid = ThreadIndex.X;
+        result[tid] = data[tid].A;
+        data[tid].A = tid * 10;
+    }
+
+    // An array of a library union: the device reads the float's bits through the int and negates the float (#736)
+    [GpuKernel]
+    public static void IntFloatUnionKernel(IntFloatUnion[] data, int[] result)
+    {
+        int tid = ThreadIndex.X;
+        result[tid] = data[tid].Bits;
+        data[tid].Value = -data[tid].Value;
     }
 
     // Library structs that come after the structs of their fields and constructors

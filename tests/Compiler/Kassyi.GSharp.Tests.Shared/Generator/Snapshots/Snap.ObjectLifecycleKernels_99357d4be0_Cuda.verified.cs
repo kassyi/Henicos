@@ -75,7 +75,7 @@ static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__Lifecy
 static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__LifecycleObjectState,__gsharp_mb_Status)==8,""Kassyi.GSharp.Tests.Shared.Syntax.LifecycleObjectState.Status: offset"");
 #endif
 inline __device__ __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__LifecycleObjectState __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__ObjectLifecycleKernels__TransformState(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__LifecycleObjectState __gsharp_id_0_state, int __gsharp_id_1_multiplier){
-__gsharp_id_0_state.__gsharp_mb_Value=__gsharp_id_0_state.__gsharp_mb_Value*__gsharp_id_1_multiplier;
+__gsharp_id_0_state.__gsharp_mb_Value=__gsharp_mul_i32(__gsharp_id_0_state.__gsharp_mb_Value,__gsharp_id_1_multiplier);
 __gsharp_id_0_state.__gsharp_mb_Status=(__gsharp_id_0_state.__gsharp_mb_Value>100?1:0);
 return __gsharp_id_0_state;
 }
@@ -123,7 +123,7 @@ static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__Lifecy
 static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__LifecycleObjectState,__gsharp_mb_Status)==8,""Kassyi.GSharp.Tests.Shared.Syntax.LifecycleObjectState.Status: offset"");
 #endif
 extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__ObjectLifecycleKernels__Kernel_uLifecycleUpdate(GSharpArray<__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__LifecycleObjectState> __gsharp_id_0_states, int __gsharp_id_1_length, int __gsharp_id_2_multiplier){
-int __gsharp_id_3_tid = blockIdx.x*blockDim.x+threadIdx.x;
+int __gsharp_id_3_tid = __gsharp_add_i32(__gsharp_mul_i32((int)blockIdx.x,(int)blockDim.x),(int)threadIdx.x);
 if(__gsharp_id_3_tid<__gsharp_id_1_length)
 {
 __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__LifecycleObjectState __gsharp_id_4_s = __gsharp_id_0_states[__gsharp_id_3_tid];
@@ -177,15 +177,16 @@ int states_size = states.Length * sizeof(global::Kassyi.GSharp.Tests.Shared.Synt
 IntPtr* proxy_states = stackalloc IntPtr[2];
 proxy_states[0] = IntPtr.Zero;
 ((int*)(proxy_states + 1))[0] = states.Length;
+((int*)(proxy_states + 1))[1] = 0;
 if (states_size > 0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_states, (IntPtr)states_size, hStream));
-proxy_states[0] = d_states;
 fixed (global::Kassyi.GSharp.Tests.Shared.Syntax.LifecycleObjectState* p_states = states)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoDAsync_v2(d_states, (IntPtr)p_states, (IntPtr)states_size, hStream));
 CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
 }
+proxy_states[0] = d_states;
 }
 kernelParams[0] = proxy_states;
 // Marshal scalar: length
@@ -235,6 +236,7 @@ void** kernelParams = stackalloc void*[3];
 IntPtr* proxy_states = stackalloc IntPtr[2];
 proxy_states[0] = states;
 ((int*)(proxy_states + 1))[0] = 0; // Length is unknown for raw IntPtr
+((int*)(proxy_states + 1))[1] = 0;
 kernelParams[0] = proxy_states;
 // Marshal scalar: length
 kernelParams[1] = &length;
@@ -272,11 +274,11 @@ static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__Lifecy
 static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__LifecycleObjectState,__gsharp_mb_Status)==8,""Kassyi.GSharp.Tests.Shared.Syntax.LifecycleObjectState.Status: offset"");
 #endif
 extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__ObjectLifecycleKernels__Kernel_uFactoryInitialization(GSharpArray<int> __gsharp_id_0_inputValues, GSharpArray<__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__LifecycleObjectState> __gsharp_id_1_outputStates, int __gsharp_id_2_length){
-int __gsharp_id_3_tid = blockIdx.x*blockDim.x+threadIdx.x;
+int __gsharp_id_3_tid = __gsharp_add_i32(__gsharp_mul_i32((int)blockIdx.x,(int)blockDim.x),(int)threadIdx.x);
 if(__gsharp_id_3_tid<__gsharp_id_2_length)
 {
 __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__LifecycleObjectState __gsharp_id_4_state = {};
-__gsharp_id_4_state.__gsharp_mb_Id=__gsharp_id_3_tid+1;
+__gsharp_id_4_state.__gsharp_mb_Id=__gsharp_add_i32(__gsharp_id_3_tid,1);
 __gsharp_id_4_state.__gsharp_mb_Value=__gsharp_id_0_inputValues[__gsharp_id_3_tid];
 __gsharp_id_4_state.__gsharp_mb_Status=(__gsharp_id_0_inputValues[__gsharp_id_3_tid]<0?(-1):((__gsharp_id_0_inputValues[__gsharp_id_3_tid]==0?0:1)));
 __gsharp_id_1_outputStates[__gsharp_id_3_tid]=__gsharp_id_4_state;
@@ -336,15 +338,16 @@ int inputValues_size = inputValues.Length * sizeof(global::System.Int32);
 IntPtr* proxy_inputValues = stackalloc IntPtr[2];
 proxy_inputValues[0] = IntPtr.Zero;
 ((int*)(proxy_inputValues + 1))[0] = inputValues.Length;
+((int*)(proxy_inputValues + 1))[1] = 0;
 if (inputValues_size > 0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_inputValues, (IntPtr)inputValues_size, hStream));
-proxy_inputValues[0] = d_inputValues;
 fixed (global::System.Int32* p_inputValues = inputValues)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoDAsync_v2(d_inputValues, (IntPtr)p_inputValues, (IntPtr)inputValues_size, hStream));
 CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
 }
+proxy_inputValues[0] = d_inputValues;
 }
 kernelParams[0] = proxy_inputValues;
 // Marshal array: outputStates
@@ -352,15 +355,23 @@ int outputStates_size = outputStates.Length * sizeof(global::Kassyi.GSharp.Tests
 IntPtr* proxy_outputStates = stackalloc IntPtr[2];
 proxy_outputStates[0] = IntPtr.Zero;
 ((int*)(proxy_outputStates + 1))[0] = outputStates.Length;
+((int*)(proxy_outputStates + 1))[1] = 0;
 if (outputStates_size > 0)
 {
+if (global::System.Object.ReferenceEquals(outputStates, inputValues))
+{
+d_outputStates = d_inputValues;
+}
+else
+{
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_outputStates, (IntPtr)outputStates_size, hStream));
-proxy_outputStates[0] = d_outputStates;
 fixed (global::Kassyi.GSharp.Tests.Shared.Syntax.LifecycleObjectState* p_outputStates = outputStates)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoDAsync_v2(d_outputStates, (IntPtr)p_outputStates, (IntPtr)outputStates_size, hStream));
 CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
 }
+}
+proxy_outputStates[0] = d_outputStates;
 }
 kernelParams[1] = proxy_outputStates;
 // Marshal scalar: length
@@ -384,7 +395,7 @@ CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
 }
 }
 // Copy back array: outputStates
-if (outputStates_size > 0 && d_outputStates != IntPtr.Zero)
+if (outputStates_size > 0 && d_outputStates != IntPtr.Zero && !global::System.Object.ReferenceEquals(outputStates, inputValues))
 {
 fixed (global::Kassyi.GSharp.Tests.Shared.Syntax.LifecycleObjectState* p_outputStates = outputStates)
 {
@@ -396,7 +407,7 @@ CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
 finally
 {
 if (d_inputValues != IntPtr.Zero) CudaDriverApi.cuMemFreeAsync(d_inputValues, hStream);
-if (d_outputStates != IntPtr.Zero) CudaDriverApi.cuMemFreeAsync(d_outputStates, hStream);
+if (d_outputStates != IntPtr.Zero && d_outputStates != d_inputValues) CudaDriverApi.cuMemFreeAsync(d_outputStates, hStream);
 }
 }
 }
@@ -418,11 +429,13 @@ void** kernelParams = stackalloc void*[3];
 IntPtr* proxy_inputValues = stackalloc IntPtr[2];
 proxy_inputValues[0] = inputValues;
 ((int*)(proxy_inputValues + 1))[0] = 0; // Length is unknown for raw IntPtr
+((int*)(proxy_inputValues + 1))[1] = 0;
 kernelParams[0] = proxy_inputValues;
 // Marshal device array: outputStates
 IntPtr* proxy_outputStates = stackalloc IntPtr[2];
 proxy_outputStates[0] = outputStates;
 ((int*)(proxy_outputStates + 1))[0] = 0; // Length is unknown for raw IntPtr
+((int*)(proxy_outputStates + 1))[1] = 0;
 kernelParams[1] = proxy_outputStates;
 // Marshal scalar: length
 kernelParams[2] = &length;

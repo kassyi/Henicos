@@ -102,7 +102,7 @@ public const string DebugName_W = "global::System.Numerics.Vector4";
 [System.Runtime.InteropServices.FieldOffset(32)]
 public fixed byte W[16];
 }
-public static unsafe void Marshal_AutoAllocateReturnArraysKernels_VectorResult(ref global::Kassyi.GSharp.Tests.Shared.Runtime.AutoAllocateReturnArraysKernels.VectorResult host, ref AotContexts.VectorResult native, bool isDevicePtr, System.Collections.Generic.List<IntPtr>? allocatedPtrs, IntPtr hStream = default)
+public static unsafe void Marshal_AutoAllocateReturnArraysKernels_VectorResult(ref global::Kassyi.GSharp.Tests.Shared.Runtime.AutoAllocateReturnArraysKernels.VectorResult host, ref AotContexts.VectorResult native, bool isDevicePtr, global::Kassyi.GSharp.Runtime.Interop.DeviceArrayRegions? deviceArrays, IntPtr hStream = default)
 {
 native = default;
 native.A = host.A;
@@ -142,7 +142,7 @@ public const string DebugName_C = "global::System.Byte";
 [System.Runtime.InteropServices.FieldOffset(16)]
 public global::System.Byte C;
 }
-public static unsafe void Marshal_AutoAllocateReturnArraysKernels_AutoLayoutResult(ref global::Kassyi.GSharp.Tests.Shared.Runtime.AutoAllocateReturnArraysKernels.AutoLayoutResult host, ref AotContexts.AutoLayoutResult native, bool isDevicePtr, System.Collections.Generic.List<IntPtr>? allocatedPtrs, IntPtr hStream = default)
+public static unsafe void Marshal_AutoAllocateReturnArraysKernels_AutoLayoutResult(ref global::Kassyi.GSharp.Tests.Shared.Runtime.AutoAllocateReturnArraysKernels.AutoLayoutResult host, ref AotContexts.AutoLayoutResult native, bool isDevicePtr, global::Kassyi.GSharp.Runtime.Interop.DeviceArrayRegions? deviceArrays, IntPtr hStream = default)
 {
 native = default;
 native.A = host.A;
@@ -455,8 +455,8 @@ static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Runtime__AutoA
 extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Runtime__AutoAllocateReturnArraysKernels__StructReturnKernel(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Runtime__AutoAllocateReturnArraysKernels__TestStruct* __restrict__ __gsharp_auto_result){
 unsigned int __gsharp_global_tid = (blockIdx.z * gridDim.y * gridDim.x + blockIdx.y * gridDim.x + blockIdx.x) * (blockDim.x * blockDim.y * blockDim.z) + threadIdx.z * blockDim.y * blockDim.x + threadIdx.y * blockDim.x + threadIdx.x;
 __gsharp_ty_Kassyi__GSharp__Tests__Shared__Runtime__AutoAllocateReturnArraysKernels__TestStruct __gsharp_id_0_s;
-__gsharp_id_0_s.__gsharp_mb_A=threadIdx.x;
-__gsharp_id_0_s.__gsharp_mb_B=threadIdx.x*1.5f;
+__gsharp_id_0_s.__gsharp_mb_A=(int)threadIdx.x;
+__gsharp_id_0_s.__gsharp_mb_B=(int)threadIdx.x*1.5f;
 __gsharp_auto_result[__gsharp_global_tid] = __gsharp_id_0_s;
 return;
 }
@@ -624,7 +624,7 @@ static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Runtime__AutoA
 #endif
 extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Runtime__AutoAllocateReturnArraysKernels__VectorResultKernel(float __gsharp_id_0_scale, __gsharp_ty_Kassyi__GSharp__Tests__Shared__Runtime__AutoAllocateReturnArraysKernels__VectorResult* __restrict__ __gsharp_auto_result){
 unsigned int __gsharp_global_tid = (blockIdx.z * gridDim.y * gridDim.x + blockIdx.y * gridDim.x + blockIdx.x) * (blockDim.x * blockDim.y * blockDim.z) + threadIdx.z * blockDim.y * blockDim.x + threadIdx.y * blockDim.x + threadIdx.x;
-float __gsharp_id_1_t = threadIdx.x*__gsharp_id_0_scale;
+float __gsharp_id_1_t = (int)threadIdx.x*__gsharp_id_0_scale;
 __gsharp_ty_Kassyi__GSharp__Tests__Shared__Runtime__AutoAllocateReturnArraysKernels__VectorResult __gsharp_id_2_r;
 __gsharp_id_2_r.__gsharp_mb_A=__gsharp_id_1_t+1.0f;
 __gsharp_id_2_r.__gsharp_mb_V=float2{__gsharp_id_1_t+2.0f, __gsharp_id_1_t+3.0f};
@@ -798,11 +798,11 @@ static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Runtime__AutoA
 #endif
 extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Runtime__AutoAllocateReturnArraysKernels__AutoLayoutResultKernel(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Runtime__AutoAllocateReturnArraysKernels__AutoLayoutResult* __restrict__ __gsharp_auto_result){
 unsigned int __gsharp_global_tid = (blockIdx.z * gridDim.y * gridDim.x + blockIdx.y * gridDim.x + blockIdx.x) * (blockDim.x * blockDim.y * blockDim.z) + threadIdx.z * blockDim.y * blockDim.x + threadIdx.y * blockDim.x + threadIdx.x;
-int __gsharp_id_0_i = threadIdx.x;
+int __gsharp_id_0_i = (int)threadIdx.x;
 __gsharp_ty_Kassyi__GSharp__Tests__Shared__Runtime__AutoAllocateReturnArraysKernels__AutoLayoutResult __gsharp_id_1_r;
-__gsharp_id_1_r.__gsharp_mb_A=(unsigned char)(__gsharp_id_0_i+1);
-__gsharp_id_1_r.__gsharp_mb_B=1000ll*__gsharp_id_0_i+7ll;
-__gsharp_id_1_r.__gsharp_mb_C=(unsigned char)(__gsharp_id_0_i+100);
+__gsharp_id_1_r.__gsharp_mb_A=(unsigned char)(__gsharp_add_i32(__gsharp_id_0_i,1));
+__gsharp_id_1_r.__gsharp_mb_B=__gsharp_add_i64(1000ll*__gsharp_id_0_i,7ll);
+__gsharp_id_1_r.__gsharp_mb_C=(unsigned char)(__gsharp_add_i32(__gsharp_id_0_i,100));
 __gsharp_auto_result[__gsharp_global_tid] = __gsharp_id_1_r;
 return;
 }

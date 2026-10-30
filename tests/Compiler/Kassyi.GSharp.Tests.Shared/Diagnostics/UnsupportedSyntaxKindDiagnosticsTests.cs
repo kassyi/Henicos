@@ -21,6 +21,21 @@ public class UnsupportedSyntaxKindDiagnosticsTests
         Assert.Equal([(Analyzer, 13, 9, 16, 10)], diagnostics.Ranges(GSharpDiagnostics.UnsupportedSyntax.Id, "'UncheckedStatement'"));
     }
 
+    // Line 47: unchecked inside a constant expression (unchecked((int)3e10) * 1), which is written as its value and so is
+    // never visited; line 48: the whole constant is unchecked
+    [Theory]
+    [InlineData("Cpu")]
+    [InlineData("Cuda")]
+    [Scenario(TestScenario.SadPath)]
+    public async Task Test_UncheckedInsideAConstant_ReportsGsh0003AtTheNode(string dialect)
+    {
+        var diagnostics = await KernelDiagnostics.RunTestCaseAsync("Diagnostics/UnsupportedSyntaxNodes.cu.cs", dialect);
+
+        Assert.Equal(
+            [(Analyzer, 47, 19, 47, 39), (Analyzer, 48, 19, 48, 46)],
+            diagnostics.Ranges(GSharpDiagnostics.UnsupportedSyntax.Id, "'UncheckedExpression'"));
+    }
+
     [Theory]
     [InlineData("Cpu", "'IndexExpression'", 13, 26, 13, 28)]
     [InlineData("Cuda", "'IndexExpression'", 13, 26, 13, 28)]

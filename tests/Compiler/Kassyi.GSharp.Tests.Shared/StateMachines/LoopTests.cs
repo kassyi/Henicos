@@ -107,4 +107,31 @@ public class LoopTests : StateMachineTestBase
                 Gpu.SyncThreads();
             }
         });
+
+    // The continue inside the user's switch stays a goto to the continue label, which stays in front of its state: a
+    // goto case would bind to the user's switch (#670)
+    [Fact]
+    [Category(TestCategory.Compiler)]
+    [Scenario(TestScenario.Boundary)]
+    public Task Lower_ForStatement_ContinueInSwitch_JumpsToTheLabelOfTheState() =>
+        VerifyPipelineLower(() =>
+        {
+            int sum = 0;
+            for (int i = 0; i < 4; i++)
+            {
+                switch (i)
+                {
+                    case 0:
+                        continue;
+                    case 3:
+                        sum += 100;
+                        break;
+                    default:
+                        break;
+                }
+
+                Gpu.SyncThreads();
+                sum += 1;
+            }
+        });
 }

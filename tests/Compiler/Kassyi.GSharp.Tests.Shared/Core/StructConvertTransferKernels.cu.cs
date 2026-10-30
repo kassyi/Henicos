@@ -111,7 +111,8 @@ public static partial class StructConvertTransferKernels
         if (ThreadIndex.X == 0)
         {
             o[0] = bags[0].N;
-            o[1] = bags[0].Data.Length;
+            // A null field reads as null (-1), not as the freed array of an earlier launch
+            o[1] = bags[0].Data is null ? -1 : bags[0].Data.Length;
             o[2] = bags[1].N;
         }
     }
@@ -122,7 +123,7 @@ public static partial class StructConvertTransferKernels
         if (ThreadIndex.X == 0)
         {
             o[0] = holders[0].Tag;
-            o[1] = holders[0].Bags[1].Data.Length;
+            o[1] = holders[0].Bags[1].Data is null ? -1 : holders[0].Bags[1].Data.Length;
         }
     }
 
@@ -132,7 +133,7 @@ public static partial class StructConvertTransferKernels
         int i = ThreadIndex.X;
         if (i < bags.Length)
         {
-            o[i] = bags[i].Data.Length;
+            o[i] = bags[i].Data is null ? -1 : bags[i].Data.Length;
             bags[i].N = 7;
         }
     }

@@ -1,9 +1,17 @@
 namespace Kassyi.GSharp.Compiler.Lowering;
 
-/// <summary>Lowers control flow branches (if/else) into a flat sequence of statements using conditional goto and labels.</summary>
-public class BranchRewriter : CSharpSyntaxRewriter
+/// <summary>
+/// Lowers control flow branches (if/else, switch) that hold a split point into a flat sequence of statements using
+/// conditional goto and labels.
+/// </summary>
+/// <param name="semanticModel">
+/// Matches a <c>goto case</c> of a flattened switch to its case label by constant value
+/// (<see cref="SwitchStatementFlattener"/>); without it, equivalent case expressions are matched.
+/// </param>
+public class BranchRewriter(SemanticModel? semanticModel = null) : CSharpSyntaxRewriter
 {
     private int _labelCounter;
+    private int _switchCounter;
 
     private static bool ContainsBarrier(SyntaxNode node) =>
         node.DescendantNodesAndSelf()
@@ -42,6 +50,26 @@ public class BranchRewriter : CSharpSyntaxRewriter
         }
 
         return SyntaxFactory.Block(newStatements);
+    }
+
+    // [WHY] A split point inside a switch section must reach the top level of the body, as one inside an if branch does
+    // (#708). The section statements are lowered first, so a nested if or switch is flattened into them.
+    public override SyntaxNode? VisitSwitchStatement(SwitchStatementSyntax node)
+    {
+        if (!ContainsBarrier(node) || !SwitchStatementFlattener.CanFlatten(node))
+        {
+            return base.VisitSwitchStatement(node);
+        }
+
+        var id = _switchCounter++;
+        var expression = (ExpressionSyntax)Visit(node.Expression);
+        var sections = ImmutableArray.CreateBuilder<SyntaxList<StatementSyntax>>(node.Sections.Count);
+        foreach (var section in node.Sections)
+        {
+            sections.Add(((BlockSyntax)VisitBlock(SyntaxFactory.Block(section.Statements))).Statements);
+        }
+
+        return SwitchStatementFlattener.Flatten(node, id, expression, sections.MoveToImmutable(), semanticModel);
     }
 
     public override SyntaxNode? VisitIfStatement(IfStatementSyntax node)

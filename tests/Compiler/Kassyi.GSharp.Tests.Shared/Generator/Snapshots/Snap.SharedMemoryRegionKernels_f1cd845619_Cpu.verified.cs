@@ -24,7 +24,7 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-__gsharp_ctx->__gsharp_id_2_tid=threadIdx.x;
+__gsharp_ctx->__gsharp_id_2_tid=(int)threadIdx.x;
 __gsharp_ctx->__gsharp_id_3_shared={ (int*)__gsharp_allocate_smem_dynamic(0xa8ee59f66f63ce77ull, (__gsharp_id_1_count) * sizeof(int), alignof(int), ""SharedMemoryRegionKernels.cs(46,22)"") };
 if(__gsharp_ctx->__gsharp_id_2_tid<__gsharp_id_1_count)
 {
@@ -37,7 +37,7 @@ return false;
 case 1:
 __gsharp_switch_1_state_1:
 {
-__gsharp_ctx->__gsharp_id_4_rotated=(__gsharp_ctx->__gsharp_id_2_tid<__gsharp_id_1_count?__gsharp_ctx->__gsharp_id_3_shared[(__gsharp_ctx->__gsharp_id_2_tid+1)%__gsharp_id_1_count]:0);
+__gsharp_ctx->__gsharp_id_4_rotated=(__gsharp_ctx->__gsharp_id_2_tid<__gsharp_id_1_count?__gsharp_ctx->__gsharp_id_3_shared[(__gsharp_add_i32(__gsharp_ctx->__gsharp_id_2_tid,1))%__gsharp_id_1_count]:0);
 __gsharp_yielded_for_block_barrier=true;
 __gsharp_state=2;
 return false;
@@ -73,12 +73,14 @@ namespace Kassyi.GSharp.Tests.Shared.Core
 {
 public partial class SharedMemoryRegionKernels
 {
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_frame_Kassyi__GSharp__Tests__Shared__Core__SharedMemoryRegionKernels__RotateThroughDynamicSharedMemory {
 internal int __gsharp_state;
 internal uint __gsharp_warp_exchange;
 internal int tid;
 internal int rotated;
 }
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static bool __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Core__SharedMemoryRegionKernels__RotateThroughDynamicSharedMemory(int value, int count, __gsharp_frame_Kassyi__GSharp__Tests__Shared__Core__SharedMemoryRegionKernels__RotateThroughDynamicSharedMemory __gsharp_ctx, ref int __gsharp_result) {
 global::Kassyi.GSharp.Core.SharedMemory<int> shared = global::Kassyi.GSharp.Core.SharedMemory<int>.FindDynamic(0xa8ee59f66f63ce77UL);
 {
@@ -166,10 +168,10 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-__gsharp_ctx->__gsharp_id_1_tid=threadIdx.x;
+__gsharp_ctx->__gsharp_id_1_tid=(int)threadIdx.x;
 __gsharp_ctx->__gsharp_id_2_a={ (int*)__gsharp_allocate_smem_static(0x68831bf485cf99cdull, (64) * sizeof(int), alignof(int)) };
 __gsharp_ctx->__gsharp_id_3_b={ (int*)__gsharp_allocate_smem_static(0x68831af485cf981aull, (64) * sizeof(int), alignof(int)) };
-__gsharp_ctx->__gsharp_id_2_a[__gsharp_ctx->__gsharp_id_1_tid]=__gsharp_ctx->__gsharp_id_1_tid+1;
+__gsharp_ctx->__gsharp_id_2_a[__gsharp_ctx->__gsharp_id_1_tid]=__gsharp_add_i32(__gsharp_ctx->__gsharp_id_1_tid,1);
 __gsharp_ctx->__gsharp_id_3_b[__gsharp_ctx->__gsharp_id_1_tid]=0;
 __gsharp_yielded_for_block_barrier=true;
 __gsharp_state=1;
@@ -178,7 +180,7 @@ return;
 case 1:
 __gsharp_switch_1_state_1:
 {
-__gsharp_id_0_output[__gsharp_ctx->__gsharp_id_1_tid]=__gsharp_ctx->__gsharp_id_2_a[(__gsharp_ctx->__gsharp_id_1_tid+1)%64];
+__gsharp_id_0_output[__gsharp_ctx->__gsharp_id_1_tid]=__gsharp_ctx->__gsharp_id_2_a[(__gsharp_add_i32(__gsharp_ctx->__gsharp_id_1_tid,1))%64];
 __gsharp_state=-1;
 return;
 }
@@ -259,11 +261,13 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 }
 ";
 public static readonly string StaleSpanKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source +StaleSpanKernel_Source;
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Core__SharedMemoryRegionKernels__StaleSpanKernel {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
 public int tid;
 }
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Core__SharedMemoryRegionKernels__StaleSpanKernel(int[] output, __gsharp_context_Kassyi__GSharp__Tests__Shared__Core__SharedMemoryRegionKernels__StaleSpanKernel __gsharp_ctx) {
 global::Kassyi.GSharp.Core.SharedMemory<int> a = new global::Kassyi.GSharp.Core.SharedMemory<int>(64, 0x68831bf485cf99cdUL);
 global::Kassyi.GSharp.Core.SharedMemory<int> b = new global::Kassyi.GSharp.Core.SharedMemory<int>(64, 0x68831af485cf981aUL);
@@ -430,13 +434,13 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-__gsharp_ctx->__gsharp_id_1_tid=threadIdx.x;
+__gsharp_ctx->__gsharp_id_1_tid=(int)threadIdx.x;
 __gsharp_ctx->__gsharp_id_2_ints={ (int*)__gsharp_allocate_smem_static(0x0db639a49761982eull, (64) * sizeof(int), alignof(int)) };
 __gsharp_ctx->__gsharp_id_3_doubles={ (double*)__gsharp_allocate_smem_static(0x0db63aa4976199e1ull, (64) * sizeof(double), alignof(double)) };
 __gsharp_ctx->__gsharp_id_4_bytes={ (unsigned char*)__gsharp_allocate_smem_static(0x0db637a4976194c8ull, (64) * sizeof(unsigned char), alignof(unsigned char)) };
-__gsharp_ctx->__gsharp_id_2_ints[__gsharp_ctx->__gsharp_id_1_tid]=__gsharp_ctx->__gsharp_id_1_tid+1;
+__gsharp_ctx->__gsharp_id_2_ints[__gsharp_ctx->__gsharp_id_1_tid]=__gsharp_add_i32(__gsharp_ctx->__gsharp_id_1_tid,1);
 __gsharp_ctx->__gsharp_id_3_doubles[__gsharp_ctx->__gsharp_id_1_tid]=__gsharp_ctx->__gsharp_id_1_tid*0.5;
-__gsharp_ctx->__gsharp_id_4_bytes[__gsharp_ctx->__gsharp_id_1_tid]=(unsigned char)(__gsharp_ctx->__gsharp_id_1_tid+2);
+__gsharp_ctx->__gsharp_id_4_bytes[__gsharp_ctx->__gsharp_id_1_tid]=(unsigned char)(__gsharp_add_i32(__gsharp_ctx->__gsharp_id_1_tid,2));
 __gsharp_yielded_for_block_barrier=true;
 __gsharp_state=1;
 return;
@@ -444,8 +448,8 @@ return;
 case 1:
 __gsharp_switch_1_state_1:
 {
-int __gsharp_id_5_next = (__gsharp_ctx->__gsharp_id_1_tid+1)%64;
-__gsharp_id_0_output[__gsharp_ctx->__gsharp_id_1_tid]=__gsharp_ctx->__gsharp_id_2_ints[__gsharp_id_5_next]+(int)(__gsharp_ctx->__gsharp_id_3_doubles[__gsharp_id_5_next]*2.0)+__gsharp_ctx->__gsharp_id_4_bytes[__gsharp_id_5_next];
+int __gsharp_id_5_next = (__gsharp_add_i32(__gsharp_ctx->__gsharp_id_1_tid,1))%64;
+__gsharp_id_0_output[__gsharp_ctx->__gsharp_id_1_tid]=__gsharp_add_i32(__gsharp_add_i32(__gsharp_ctx->__gsharp_id_2_ints[__gsharp_id_5_next],__gsharp_to_i32(__gsharp_ctx->__gsharp_id_3_doubles[__gsharp_id_5_next]*2.0)),__gsharp_ctx->__gsharp_id_4_bytes[__gsharp_id_5_next]);
 __gsharp_state=-1;
 return;
 }
@@ -526,11 +530,13 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 }
 ";
 public static readonly string MixedElementTypesKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source +MixedElementTypesKernel_Source;
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Core__SharedMemoryRegionKernels__MixedElementTypesKernel {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
 public int tid;
 }
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Core__SharedMemoryRegionKernels__MixedElementTypesKernel(int[] output, __gsharp_context_Kassyi__GSharp__Tests__Shared__Core__SharedMemoryRegionKernels__MixedElementTypesKernel __gsharp_ctx) {
 global::Kassyi.GSharp.Core.SharedMemory<int> ints = new global::Kassyi.GSharp.Core.SharedMemory<int>(64, 0x0db639a49761982eUL);
 global::Kassyi.GSharp.Core.SharedMemory<double> doubles = new global::Kassyi.GSharp.Core.SharedMemory<double>(64, 0x0db63aa4976199e1UL);
@@ -704,8 +710,8 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-__gsharp_ctx->__gsharp_id_3_tid=threadIdx.x;
-__gsharp_ctx->__gsharp_arg_temp_0=__gsharp_ctx->__gsharp_id_3_tid+1;
+__gsharp_ctx->__gsharp_id_3_tid=(int)threadIdx.x;
+__gsharp_ctx->__gsharp_arg_temp_0=__gsharp_add_i32(__gsharp_ctx->__gsharp_id_3_tid,1);
 goto __gsharp_switch_1_state_1;
 }
 case 1:
@@ -717,7 +723,7 @@ __gsharp_state=1;
 return;
 }
 __gsharp_ctx->__gsharp_id_4_small=__gsharp_ctx->__gsharp_call_temp_1;
-__gsharp_ctx->__gsharp_arg_temp_2=__gsharp_ctx->__gsharp_id_3_tid+1;
+__gsharp_ctx->__gsharp_arg_temp_2=__gsharp_add_i32(__gsharp_ctx->__gsharp_id_3_tid,1);
 goto __gsharp_switch_1_state_2;
 }
 case 2:
@@ -729,7 +735,7 @@ __gsharp_state=2;
 return;
 }
 int __gsharp_id_5_large = __gsharp_ctx->__gsharp_call_temp_3;
-__gsharp_id_0_output[__gsharp_ctx->__gsharp_id_3_tid]=__gsharp_ctx->__gsharp_id_4_small*100+__gsharp_id_5_large;
+__gsharp_id_0_output[__gsharp_ctx->__gsharp_id_3_tid]=__gsharp_add_i32(__gsharp_mul_i32(__gsharp_ctx->__gsharp_id_4_small,100),__gsharp_id_5_large);
 __gsharp_state=-1;
 return;
 }
@@ -810,6 +816,7 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 }
 ";
 public static readonly string GrowingDeclarationKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source +GrowingDeclarationKernel_Source;
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Core__SharedMemoryRegionKernels__GrowingDeclarationKernel {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
@@ -822,6 +829,7 @@ public int __gsharp_call_temp_3;
 internal global::Kassyi.GSharp.Tests.Shared.Core.SharedMemoryRegionKernels.__gsharp_frame_Kassyi__GSharp__Tests__Shared__Core__SharedMemoryRegionKernels__RotateThroughDynamicSharedMemory __gsharp_call_frame_0 = new();
 internal global::Kassyi.GSharp.Tests.Shared.Core.SharedMemoryRegionKernels.__gsharp_frame_Kassyi__GSharp__Tests__Shared__Core__SharedMemoryRegionKernels__RotateThroughDynamicSharedMemory __gsharp_call_frame_1 = new();
 }
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Core__SharedMemoryRegionKernels__GrowingDeclarationKernel(int[] output, int smallCount, int largeCount, __gsharp_context_Kassyi__GSharp__Tests__Shared__Core__SharedMemoryRegionKernels__GrowingDeclarationKernel __gsharp_ctx) {
 {
 switch (__gsharp_ctx.__gsharp_state)

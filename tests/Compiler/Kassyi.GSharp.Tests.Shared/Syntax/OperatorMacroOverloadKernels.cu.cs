@@ -107,8 +107,8 @@ public readonly ref struct PickRef
 }
 
 /// <summary>
-/// Operator macros whose target method is overloaded (#478). <see cref="OperatorMacroOverloadTests"/> checks the values;
-/// the managed path does not expand operator macros, so these kernels run on the GPU and the native CPU build only.
+/// Operator macros whose target method is overloaded (#478). <see cref="OperatorMacroOverloadTests"/> checks the values
+/// on the GPU and the native CPU build, <see cref="OperatorMacroOverloadManagedTests"/> on the managed fallback.
 /// </summary>
 public static partial class OperatorMacroOverloadKernels
 {
@@ -277,5 +277,50 @@ public static partial class OperatorMacroOverloadKernels
         CtxRef b = right;
         CtxRef c = output;
         c = a + b;
+    }
+}
+
+// The operator's shift is an int, which converts implicitly to long and not to byte, so only Shr(uint[], uint[], long)
+// applies (#478). A call written with the constant 3 would take the byte overload instead (a constant converts to byte,
+// the better conversion target), which comes first and adds 1000: the managed expansion passes the operand as a long
+public static partial class ConstantShrOps
+{
+    [GpuDeviceFunction]
+    public static void Shr(uint[] result, uint[] value, byte shift)
+    {
+        int tid = ThreadIndex.X;
+        result[tid] = value[tid] + 1000u;
+    }
+
+    [GpuDeviceFunction]
+    public static void Shr(uint[] result, uint[] value, long shift)
+    {
+        int tid = ThreadIndex.X;
+        result[tid] = value[tid] >> (int)shift;
+    }
+}
+
+public readonly ref struct ConstantShrRef
+{
+    public readonly uint[] Data;
+
+    public ConstantShrRef(uint[] data) => Data = data;
+
+    [GpuOperatorMacro(typeof(ConstantShrOps), nameof(ConstantShrOps.Shr))]
+    public static ConstantShrRef operator >>(ConstantShrRef value, int shift) => throw new GpuOnlyException();
+
+    public static implicit operator ConstantShrRef(uint[] data) => new(data);
+
+    public static implicit operator uint[](ConstantShrRef value) => value.Data;
+}
+
+public static partial class OperatorMacroOverloadKernels
+{
+    [GpuKernel]
+    public static void ConstantShrKernel(uint[] input, uint[] output)
+    {
+        ConstantShrRef x = input;
+        ConstantShrRef r = output;
+        r = x >> 3;
     }
 }

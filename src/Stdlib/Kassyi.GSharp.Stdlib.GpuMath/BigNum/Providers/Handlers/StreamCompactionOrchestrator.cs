@@ -1,3 +1,5 @@
+using Kassyi.GSharp.Stdlib.GpuMath.BigNum.Expressions;
+
 namespace Kassyi.GSharp.Stdlib.GpuMath.BigNum.Providers.Handlers;
 
 /// <summary>
@@ -17,8 +19,83 @@ public static class StreamCompactionOrchestrator
     /// <param name="elementCount">The number of elements to scan.</param>
     public static void ExecuteExclusiveScan(GpuWorkspace workspace, IntPtr outputPtr, IntPtr inputPtr, int elementCount)
     {
+        using var scratch = new ScanScratch(workspace, elementCount);
+        ExecuteExclusiveScan(workspace, outputPtr, inputPtr, elementCount, scratch,
+            DeviceElementCount.Static(elementCount), IntPtr.Zero, flags: false);
+    }
+
+    /// <summary>
+    /// The block-sum buffers of every level of a multi-block scan, sized once from the capacity, so that a scan
+    /// allocates nothing (a CUDA graph capture cannot allocate). A Where node owns one.
+    /// </summary>
+    internal sealed class ScanScratch : IDisposable
+    {
+        private readonly List<(GpuBigUIntArray BlockSums, GpuBigUIntArray Scanned)> _levels = [];
+
+        public ScanScratch(GpuWorkspace workspace, int capacity)
+        {
+            try
+            {
+                var count = capacity;
+                while (count > MaxElementsPerBlock)
+                {
+                    var numBlocks = (count + MaxElementsPerBlock - 1) / MaxElementsPerBlock;
+                    var blockSums = new GpuBigUIntArray(workspace, numBlocks, 1);
+                    try
+                    {
+                        _levels.Add((blockSums, new GpuBigUIntArray(workspace, numBlocks, 1)));
+                    }
+                    catch
+                    {
+                        blockSums.Dispose();
+                        throw;
+                    }
+
+                    count = numBlocks;
+                }
+            }
+            catch
+            {
+                Dispose();
+                throw;
+            }
+        }
+
+        public (GpuBigUIntArray BlockSums, GpuBigUIntArray Scanned) Level(int index) => _levels[index];
+
+        public void Dispose()
+        {
+            foreach (var (blockSums, scanned) in _levels)
+            {
+                blockSums.Dispose();
+                scanned.Dispose();
+            }
+
+            _levels.Clear();
+        }
+    }
+
+    /// <summary>
+    /// Executes an exclusive prefix sum over the first <paramref name="count"/> elements (the rest count as 0; a count
+    /// on the device is read there, never on the host), with
+    /// the block sums in <paramref name="scratch"/>; writes the sum of all elements into <paramref name="totalPtr"/>
+    /// unless it is zero. The total comes from the single-block scan of the last level, so no kernel is added. With
+    /// <paramref name="flags"/>, the input are predicates and a non-zero value counts as 1.
+    /// </summary>
+    internal static void ExecuteExclusiveScan(GpuWorkspace workspace, IntPtr outputPtr, IntPtr inputPtr,
+        int elementCount, ScanScratch scratch, DeviceElementCount count, IntPtr totalPtr, bool flags) =>
+        ExecuteExclusiveScan(workspace, outputPtr, inputPtr, elementCount, scratch, 0, count, totalPtr, flags);
+
+    private static void ExecuteExclusiveScan(GpuWorkspace workspace, IntPtr outputPtr, IntPtr inputPtr,
+        int elementCount, ScanScratch scratch, int level, DeviceElementCount count, IntPtr totalPtr, bool flags)
+    {
         if (elementCount == 0)
         {
+            if (totalPtr != IntPtr.Zero)
+            {
+                workspace.Provider.ClearMemoryAsync(totalPtr, 1, workspace.Stream);
+            }
+
             return;
         }
 
@@ -32,34 +109,62 @@ public static class StreamCompactionOrchestrator
             {
                 blockDim = 1;
             }
-            
+
             blockDim = BitOperations.RoundUpToPowerOf2(blockDim);
 
             GpuStreamCompactionKernels.LaunchBlockExclusiveScanPtr(
-                outputPtr, inputPtr, elementCount, IntPtr.Zero,
-                gridDimX: 1, blockDimX: blockDim, hStream: workspace.Stream);
+                outputPtr, inputPtr, elementCount, IntPtr.Zero, count.ToScanContext(), totalPtr, flags, gridDimX: 1,
+                blockDimX: blockDim, hStream: workspace.Stream);
             return;
         }
 
-        // Multi-block execution
-        // Allocate temporary buffer for block sums
-        using var blockSumsBuffer = new GpuBigUIntArray(workspace, numBlocks, 1);
-
+        var (blockSums, scannedBlockSums) = scratch.Level(level);
         var fullBlockDim = (uint)(MaxElementsPerBlock / 2);
 
         // 1. Scan each block individually and record block sums
         GpuStreamCompactionKernels.LaunchBlockExclusiveScanPtr(
-            outputPtr, inputPtr, elementCount, blockSumsBuffer.DevicePointer,
+            outputPtr, inputPtr, elementCount, blockSums.DevicePointer, count.ToScanContext(), IntPtr.Zero, flags,
             gridDimX: (uint)numBlocks, blockDimX: fullBlockDim, hStream: workspace.Stream);
 
-        // 2. Recursively scan the block sums
-        using var scannedBlockSumsBuffer = new GpuBigUIntArray(workspace, numBlocks, 1);
-        ExecuteExclusiveScan(workspace, scannedBlockSumsBuffer.DevicePointer, blockSumsBuffer.DevicePointer, numBlocks);
+        // 2. Recursively scan the block sums (all of them are inputs, and they are counts); its last level writes the
+        //    total
+        ExecuteExclusiveScan(workspace, scannedBlockSums.DevicePointer, blockSums.DevicePointer, numBlocks, scratch,
+            level + 1, DeviceElementCount.Static(numBlocks), totalPtr, flags: false);
 
         // 3. Add the scanned block sums back to the output
         GpuStreamCompactionKernels.LaunchAddBlockSumsPtr(
-            outputPtr, scannedBlockSumsBuffer.DevicePointer, elementCount,
+            outputPtr, scannedBlockSums.DevicePointer, elementCount,
             gridDimX: (uint)numBlocks, blockDimX: 1024, hStream: workspace.Stream); // AddBlockSums uses 1 thread per element, up to 1024 per block
+    }
+
+    /// <summary>
+    /// Zero-fills the destination and scatters the selected elements of a vector (all components in one launch); only
+    /// the elements before <paramref name="count"/> are read. <typeparamref name="TKind"/> supplies what differs
+    /// between integer and floating-point vectors.
+    /// </summary>
+    internal static void Compact<TKind, TResult>(GpuWorkspace workspace, TResult output, TResult input,
+        IntPtr predicatesPtr, IntPtr scanPtr, DeviceElementCount count)
+        where TKind : IVectorCompactKind<TResult>
+        where TResult : struct, allows ref struct
+    {
+        var elementCount = TKind.Length(input);
+        if (elementCount == 0)
+        {
+            return;
+        }
+
+        const int threadsPerBlock = 256;
+        for (var c = 0; c < TKind.ComponentCount; c++)
+        {
+            var (pointer, wordsPerElement) = TKind.Component(output, c);
+            var words = elementCount * wordsPerElement;
+            GpuStreamCompactionKernels.LaunchMemsetZeroPtr(
+                pointer, words, gridDimX: (uint)((words + threadsPerBlock - 1) / threadsPerBlock),
+                blockDimX: threadsPerBlock, hStream: workspace.Stream);
+        }
+
+        TKind.LaunchScatter(workspace, output, input, predicatesPtr, scanPtr, count,
+            gridDimX: (uint)((elementCount + threadsPerBlock - 1) / threadsPerBlock), blockDimX: threadsPerBlock);
     }
 
     /// <summary>

@@ -1,9 +1,29 @@
 namespace Kassyi.GSharp.Compiler.Transpiler;
 
+/// <summary>The managed body that <see cref="ManagedExecutionRewriter"/> rewrites.</summary>
+internal enum ManagedBodyKind
+{
+    /// <summary>The lowered body of a kernel's state machine.</summary>
+    Kernel,
+
+    /// <summary>The lowered body of the state machine of a device function that may suspend.</summary>
+    SuspendingDeviceFunction,
+
+    /// <summary>The user's body of a device function that does not suspend, copied into its managed version (#711).</summary>
+    ManagedVersion
+}
+
 /// <summary>
 /// Rewrites lowered device function calls and state machine constructs into managed execution equivalents.
 /// </summary>
-internal sealed partial class ManagedExecutionRewriter(SemanticModel semanticModel, bool isDeviceFunction)
+/// <param name="semanticModel">The model of the user's tree that the body comes from.</param>
+/// <param name="bodyKind">What the body is emitted as.</param>
+/// <param name="accessors">
+/// The stubs through which the body calls an operator macro target it cannot name, and reaches the backing field of an
+/// auto-property that an operator macro passes by reference.
+/// </param>
+internal sealed partial class ManagedExecutionRewriter(SemanticModel semanticModel, ManagedBodyKind bodyKind,
+    ManagedAccessorSet accessors)
     : CSharpSyntaxRewriter
 {
     /// <summary>
@@ -78,6 +98,11 @@ internal sealed partial class ManagedExecutionRewriter(SemanticModel semanticMod
     public override SyntaxNode? VisitMemberAccessExpression(MemberAccessExpressionSyntax node)
     {
         var visited = base.VisitMemberAccessExpression(node);
+        if (TryRouteMemberAccess(node, visited) is { } routed)
+        {
+            return routed;
+        }
+
         if (IsLengthOfOptionalArray(node) && visited is MemberAccessExpressionSyntax lengthAccess)
         {
             // (<array>?.Length ?? 0)
@@ -107,10 +132,13 @@ internal sealed partial class ManagedExecutionRewriter(SemanticModel semanticMod
             memberAccess.Name).WithTriviaFrom(memberAccess);
     }
 
-    // <parameter>.Length where the parameter is an optional array (T[]?)
+    // <parameter>.Length where the parameter is an optional array (T[]?) of the kernel that the kernel never writes
     // [WHY] The device reads a null optional array as one of length 0 (its data pointer is null, as `x is null` sees),
     // and the launchers pass it as null so that `x is null` stays true; the length is the one place that the managed
-    // kernel must read as 0 instead of throwing (#806)
+    // kernel must read as 0 instead of throwing (#806). Once the kernel assigns the parameter it may hold any null
+    // array, whose Length throws on the device too (#706), so the rule is ArrayNullCheck's: an unwritten kernel
+    // parameter only. A device function parameter is not rewritten either (the managed path does not carry where a null
+    // came from, #852)
     private bool IsLengthOfOptionalArray(MemberAccessExpressionSyntax node) =>
         node.IsKind(SyntaxKind.SimpleMemberAccessExpression) &&
         node.Name is IdentifierNameSyntax { Identifier.ValueText: "Length" } &&
@@ -118,7 +146,8 @@ internal sealed partial class ManagedExecutionRewriter(SemanticModel semanticMod
         semanticModel.GetSymbol(node.Expression) is IParameterSymbol
         {
             Type: IArrayTypeSymbol, NullableAnnotation: NullableAnnotation.Annotated
-        };
+        } parameter &&
+        ArrayNullCheck.IsUnwrittenKernelParameter(parameter, semanticModel.Compilation);
 
     public override SyntaxNode? VisitIdentifierName(IdentifierNameSyntax node)
     {
@@ -148,12 +177,12 @@ internal sealed partial class ManagedExecutionRewriter(SemanticModel semanticMod
                     node
                 ).WithTriviaFrom(node),
             // The generated file has none of the user's using directives
-            _ => ManagedNameQualifier.QualifyName(node, base.VisitIdentifierName(node), semanticModel)
+            _ => RouteOrQualify(node, base.VisitIdentifierName(node))
         };
     }
 
     public override SyntaxNode? VisitGenericName(GenericNameSyntax node) =>
-        ManagedNameQualifier.QualifyName(node, base.VisitGenericName(node), semanticModel);
+        RouteOrQualify(node, base.VisitGenericName(node));
 
     public override SyntaxNode? VisitInterpolation(InterpolationSyntax node) =>
         ManagedNameQualifier.ParenthesizeInterpolation(base.VisitInterpolation(node));

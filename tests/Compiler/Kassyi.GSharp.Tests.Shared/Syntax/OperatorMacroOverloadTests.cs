@@ -74,6 +74,17 @@ public class OperatorMacroOverloadTests : TranspilerTestBase
 
     [SkippableFact]
     [Scenario(TestScenario.Boundary)]
+    public void Test_OverloadThatTakesOnlyAConstant_IsNotCalled()
+    {
+        var output = new uint[s_input.Length];
+
+        OperatorMacroOverloadKernels.LaunchConstantShrKernel(s_input, output, blockDimX: (uint)s_input.Length);
+
+        Assert.Equal([0u, 0u, 0x02000000u, 0x1FFFFFFFu], output);
+    }
+
+    [SkippableFact]
+    [Scenario(TestScenario.Boundary)]
     public void Test_ValueParameter_IsBetterThanIn()
     {
         uint[] left = [10u, 20u, 30u, 40u];
