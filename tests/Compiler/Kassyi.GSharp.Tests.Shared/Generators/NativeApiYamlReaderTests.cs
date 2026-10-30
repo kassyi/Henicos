@@ -296,6 +296,8 @@ public class NativeApiYamlReaderTests
     [InlineData("namespace: A..B\nclassName: C\nlibraryName: x\nmethods: []\n", "namespace")]
     [InlineData("namespace: A.B\nclassName: C\nmoduleName: k.fatbin\nmethods:\n  - name: f\n    returnType: int\n", "returnType")]
     [InlineData("namespace: A.B\nclassName: C\nlibraryName: x\nmethods:\n  - name: f\n    isUnsafe: maybe\n", "isUnsafe")]
+    [InlineData("namespace: A.B\nclassName: C\nlibraryName: x\nmethods:\n  - name: f\n    managed: M.F\n", "managed")]
+    [InlineData("namespace: A.B\nclassName: C\nmethods:\n  - name: f\n    managed: M.1F\n", "managed")]
     [InlineData("namespace: A.B\nclassName: C\nlibraryName: x\nmethods: nope\n", "methods")]
     [InlineData("namespace: A.B\nclassName: C\nmethods:\n  - name: f\n    className: C..D\n", "className")]
     [InlineData("namespace: A.B\nclassName: C\nmethods:\n  - name: f\n    className: C.1D\n", "className")]

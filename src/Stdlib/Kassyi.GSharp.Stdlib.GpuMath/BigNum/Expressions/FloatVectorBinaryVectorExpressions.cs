@@ -44,9 +44,9 @@ internal abstract class FloatVectorBinaryVectorExpressionBase(
 
         var evalCount = elementCount ?? (Length - elementOffset);
         // The target is checked before the children run, so that a rejected target evaluates nothing
-        var destination = VectorResultCache.HasTarget(targetResult)
+        var target = VectorResultCache.HasTarget(targetResult)
             ? VectorResultCache.TargetFloat(targetResult, evalCount, WordsPerElement)
-            : _cache.Float(workspace, evalCount, WordsPerElement);
+            : default;
         var leftResult = left.Evaluate(workspace, elementOffset, evalCount);
         var rightResult = right.Evaluate(workspace, elementOffset, evalCount);
 
@@ -55,13 +55,15 @@ internal abstract class FloatVectorBinaryVectorExpressionBase(
             throw new ArgumentException("Vector lengths must match for Zip operations.");
         }
 
-        var operands = new FloatVectorZipOperands(leftResult, rightResult, destination);
+        // A target that shares words with an input is written from the cache after the launch (#864)
+        var output = VectorOutput.Open(_cache, workspace, evalCount, WordsPerElement, target, leftResult, rightResult);
+        var operands = new FloatVectorZipOperands(leftResult, rightResult, output.Destination);
         // An empty vector launches nothing: a grid of 0 blocks is an invalid launch.
         if (evalCount > 0)
         {
             DispatchKernel(workspace, operands, (uint)evalCount);
         }
-        return destination;
+        return output.Close(workspace);
     }
 
     protected static GpuBigIntVectorKernels.AotContexts.VectorFloatBinaryOperation CreateZipFloatOp(FloatVectorZipOperands operands) =>
