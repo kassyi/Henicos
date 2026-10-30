@@ -59,10 +59,12 @@ namespace Kassyi.GSharp.Tests.Shared.Syntax
 {
 public partial class SuspendingCallArgumentKernels
 {
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_frame_Kassyi__GSharp__Tests__Shared__Syntax__SuspendingCallArgumentKernels__PairSum {
 internal int __gsharp_state;
 internal uint __gsharp_warp_exchange;
 }
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static bool __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__SuspendingCallArgumentKernels__PairSum(int value, uint scale, bool negate, global::Kassyi.GSharp.Tests.Shared.Syntax.PacketColor color, __gsharp_frame_Kassyi__GSharp__Tests__Shared__Syntax__SuspendingCallArgumentKernels__PairSum __gsharp_ctx, ref int __gsharp_result) {
 {
 switch (__gsharp_ctx.__gsharp_state)
@@ -231,6 +233,7 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 }
 ";
 public static readonly string OmittedOptionalArgumentsKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source +OmittedOptionalArgumentsKernel_Source;
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__SuspendingCallArgumentKernels__OmittedOptionalArgumentsKernel {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
@@ -239,6 +242,7 @@ public int __gsharp_arg_temp_0;
 public int __gsharp_call_temp_1;
 internal global::Kassyi.GSharp.Tests.Shared.Syntax.SuspendingCallArgumentKernels.__gsharp_frame_Kassyi__GSharp__Tests__Shared__Syntax__SuspendingCallArgumentKernels__PairSum __gsharp_call_frame_0 = new();
 }
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__SuspendingCallArgumentKernels__OmittedOptionalArgumentsKernel(int[] input, int[] output, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__SuspendingCallArgumentKernels__OmittedOptionalArgumentsKernel __gsharp_ctx) {
 {
 switch (__gsharp_ctx.__gsharp_state)
@@ -506,6 +510,7 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 }
 ";
 public static readonly string NamedArgumentKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source +NamedArgumentKernel_Source;
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__SuspendingCallArgumentKernels__NamedArgumentKernel {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
@@ -514,6 +519,7 @@ public int __gsharp_arg_temp_0;
 public int __gsharp_call_temp_1;
 internal global::Kassyi.GSharp.Tests.Shared.Syntax.SuspendingCallArgumentKernels.__gsharp_frame_Kassyi__GSharp__Tests__Shared__Syntax__SuspendingCallArgumentKernels__PairSum __gsharp_call_frame_0 = new();
 }
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__SuspendingCallArgumentKernels__NamedArgumentKernel(int[] input, int[] output, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__SuspendingCallArgumentKernels__NamedArgumentKernel __gsharp_ctx) {
 {
 switch (__gsharp_ctx.__gsharp_state)
@@ -781,6 +787,7 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 }
 ";
 public static readonly string ReorderedNamedArgumentsKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source +ReorderedNamedArgumentsKernel_Source;
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__SuspendingCallArgumentKernels__ReorderedNamedArgumentsKernel {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
@@ -789,6 +796,7 @@ public int __gsharp_arg_temp_0;
 public int __gsharp_call_temp_1;
 internal global::Kassyi.GSharp.Tests.Shared.Syntax.SuspendingCallArgumentKernels.__gsharp_frame_Kassyi__GSharp__Tests__Shared__Syntax__SuspendingCallArgumentKernels__PairSum __gsharp_call_frame_0 = new();
 }
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__SuspendingCallArgumentKernels__ReorderedNamedArgumentsKernel(int[] input, int[] output, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__SuspendingCallArgumentKernels__ReorderedNamedArgumentsKernel __gsharp_ctx) {
 {
 switch (__gsharp_ctx.__gsharp_state)

@@ -56,6 +56,34 @@ public class CrossAssemblyManagedTests : TranspilerTestBase
         Assert.Equal([2, 4, 6, 8], result);
     }
 
+    // The library emits the managed version of AddPair and records it; the managed fallback calls it (#711)
+    [Fact]
+    [Scenario(TestScenario.HappyPath)]
+    public void Test_Managed_AddPair_OperatorMacroOfTheLibrary()
+    {
+        Pair[] pairs = [new() { A = 1, B = 2 }, new() { A = 10, B = 20 }, new() { A = -5, B = 5 }, new() { A = 7, B = 0 }];
+        var result = new int[4];
+        var calls = new int[4];
+
+        ManagedKernelRun.Run(() => CrossAssemblyKernels.LaunchAddPairKernel(pairs, result, calls, blockDimX: 4));
+
+        Assert.Equal([3, 30, 0, 7], result);
+        Assert.Equal([1, 1, 1, 1], calls);
+    }
+
+    // The library's managed version of Difference calls the private target through an [UnsafeAccessor] stub (#711)
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void Test_Managed_Difference_PrivateOperatorMacroTargetOfTheLibrary()
+    {
+        Pair[] pairs = [new() { A = 1, B = 2 }, new() { A = 10, B = 20 }, new() { A = -5, B = 5 }, new() { A = 7, B = 0 }];
+        var result = new int[4];
+
+        ManagedKernelRun.Run(() => CrossAssemblyKernels.LaunchDifferenceKernel(pairs, result, blockDimX: 4));
+
+        Assert.Equal([-1, -10, -10, 7], result);
+    }
+
     [Fact]
     [Scenario(TestScenario.HappyPath)]
     public void Test_Managed_Vec2_ConstructorAndComputedProperty()

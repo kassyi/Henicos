@@ -194,6 +194,7 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 }
 ";
 public static readonly string WarpReduceSumKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source +WarpReduceSumKernel_Source;
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Core__WarpLevelConcurrencyKernels__WarpReduceSumKernel {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
@@ -207,6 +208,7 @@ public int __gsharp_warp_temp_1;
 public int __gsharp_warp_temp_2;
 public int __gsharp_warp_temp_3;
 }
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Core__WarpLevelConcurrencyKernels__WarpReduceSumKernel(int[] input, int[] output, __gsharp_context_Kassyi__GSharp__Tests__Shared__Core__WarpLevelConcurrencyKernels__WarpReduceSumKernel __gsharp_ctx) {
 {
 switch (__gsharp_ctx.__gsharp_state)
@@ -569,6 +571,7 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 }
 ";
 public static readonly string WarpPrimitivesKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source +WarpPrimitivesKernel_Source;
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Core__WarpLevelConcurrencyKernels__WarpPrimitivesKernel {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
@@ -583,6 +586,7 @@ public uint __gsharp_arg_temp_4;
 public uint __gsharp_warp_temp_5;
 public int __gsharp_warp_temp_6;
 }
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Core__WarpLevelConcurrencyKernels__WarpPrimitivesKernel(int[] input, int[] output, __gsharp_context_Kassyi__GSharp__Tests__Shared__Core__WarpLevelConcurrencyKernels__WarpPrimitivesKernel __gsharp_ctx) {
 {
 switch (__gsharp_ctx.__gsharp_state)

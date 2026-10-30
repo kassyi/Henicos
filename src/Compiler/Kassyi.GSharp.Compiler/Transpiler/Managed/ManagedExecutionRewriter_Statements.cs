@@ -16,6 +16,15 @@ internal sealed partial class ManagedExecutionRewriter
                 .WithTriviaFrom(node);
         }
 
+        // c = a + b; with an operator macro becomes the call of its target (#711)
+        if (node.Expression is AssignmentExpressionSyntax assignment &&
+            ManagedRewriteClassifier.TryGetOperatorMacro(assignment, semanticModel, out var macro) &&
+            ManagedOperatorMacroExpander.Expand(assignment, macro, semanticModel, this, SpellDeviceFunction,
+                accessors) is { } expanded)
+        {
+            return expanded.WithTriviaFrom(node);
+        }
+
         if (node.Expression is not InvocationExpressionSyntax invocation ||
             !TryClassifyRewrittenMacro(invocation, out var call))
         {
@@ -326,7 +335,13 @@ internal sealed partial class ManagedExecutionRewriter
                 .WithTriviaFrom(node);
         }
 
-        if (isDeviceFunction && _inLambdaOrLocalFuncCount == 0)
+        // A managed version returns as the user's method does
+        if (bodyKind == ManagedBodyKind.ManagedVersion)
+        {
+            return base.VisitReturnStatement(node);
+        }
+
+        if (bodyKind == ManagedBodyKind.SuspendingDeviceFunction && _inLambdaOrLocalFuncCount == 0)
         {
             return RewriteDeviceFunctionReturn(node);
         }

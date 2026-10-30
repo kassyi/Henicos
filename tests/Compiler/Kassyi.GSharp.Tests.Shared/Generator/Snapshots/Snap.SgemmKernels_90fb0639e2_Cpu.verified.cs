@@ -211,6 +211,7 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 }
 ";
 public static readonly string SgemmKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source +SgemmKernel_Source;
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_context_Henicos__Benchmarks__ComputeBenchmarks__SgemmKernels__SgemmKernel {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
@@ -224,6 +225,7 @@ public float cValue;
 public int m;
 public int k;
 }
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static unsafe void __gsharp_statemachine_Henicos__Benchmarks__ComputeBenchmarks__SgemmKernels__SgemmKernel(float[] a, float[] b, float[] c, int n, __gsharp_context_Henicos__Benchmarks__ComputeBenchmarks__SgemmKernels__SgemmKernel __gsharp_ctx) {
 global::Kassyi.GSharp.Core.SharedMemory<float> As = new(256, 0x73f1e09054a8d88dUL);
 global::Kassyi.GSharp.Core.SharedMemory<float> Bs = new(256, 0x73f1df9054a8d6daUL);
@@ -333,8 +335,19 @@ throw new global::System.ArgumentNullException(nameof(c));
 if (c.Length == 0){
 throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(c));
 }
+var a_source = a;
+if (!global::System.Object.ReferenceEquals(a, c))
+{
 a = (global::System.Single[])a.Clone();
+}
+if (global::System.Object.ReferenceEquals(b, a_source))
+{
+b = a;
+}
+else if (!global::System.Object.ReferenceEquals(b, c))
+{
 b = (global::System.Single[])b.Clone();
+}
 var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
 var dllName = $"Kassyi.GSharp.Kernels_SnapshotTest{archSuffix}.dll";
 var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);

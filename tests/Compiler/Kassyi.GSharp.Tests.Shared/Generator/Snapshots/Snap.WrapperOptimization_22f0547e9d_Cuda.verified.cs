@@ -190,12 +190,12 @@ proxy_arrayVal[0] = IntPtr.Zero;
 if (arrayVal_size > 0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_arrayVal, (IntPtr)arrayVal_size, hStream));
-proxy_arrayVal[0] = d_arrayVal;
 fixed (global::System.Int32* p_arrayVal = arrayVal)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoDAsync_v2(d_arrayVal, (IntPtr)p_arrayVal, (IntPtr)arrayVal_size, hStream));
 CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
 }
+proxy_arrayVal[0] = d_arrayVal;
 }
 kernelParams[2] = proxy_arrayVal;
 AotContexts.MyCustomStruct native_structRef = default;

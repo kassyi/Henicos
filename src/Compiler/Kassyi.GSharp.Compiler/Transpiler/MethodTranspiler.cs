@@ -276,6 +276,13 @@ public static class MethodTranspiler
     internal static string GenerateManagedDeviceFunctionSource(in MethodEmissionPlan plan) =>
         ManagedCSharpTranspiler.GenerateDeviceFunction(in plan);
 
+    /// <summary>
+    /// Transpiles a device function that does not suspend into its managed version (#711): its body rewritten for the
+    /// managed path, under a name of its own.
+    /// </summary>
+    internal static string GenerateManagedVersionSource(in MethodEmissionPlan plan) =>
+        ManagedCSharpTranspiler.GenerateManagedVersion(in plan);
+
     // kernelName is the C# name, used only in internal-error reports. A kernel context also holds the warp exchange of the
     // thread; a device function frame holds its copied parameters instead and reaches the warp exchange through the root.
     private static void WriteContextStruct(string contextName, string kernelName, LoweredStateMachine lowered,

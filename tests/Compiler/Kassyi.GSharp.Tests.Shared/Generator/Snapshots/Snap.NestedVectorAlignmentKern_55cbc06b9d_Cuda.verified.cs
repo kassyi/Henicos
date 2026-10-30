@@ -251,12 +251,12 @@ proxy_offsets[0] = IntPtr.Zero;
 if (offsets_size > 0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_offsets, (IntPtr)offsets_size, hStream));
-proxy_offsets[0] = d_offsets;
 fixed (global::System.Int32* p_offsets = offsets)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoDAsync_v2(d_offsets, (IntPtr)p_offsets, (IntPtr)offsets_size, hStream));
 CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
 }
+proxy_offsets[0] = d_offsets;
 }
 kernelParams[0] = proxy_offsets;
 CudaException.ThrowIfError(CudaDriverApi.cuLaunchKernel(

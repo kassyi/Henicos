@@ -161,6 +161,41 @@ if (host.PutResult != null)
 host.PutResult = (global::System.Single[])host.PutResult.Clone();
 }
 }
+public static bool HoldsArray_BlackScholesKernels_BlackScholesContext(global::Henicos.Benchmarks.ComputeBenchmarks.BlackScholesKernels.BlackScholesContext host, object array)
+{
+if (global::System.Object.ReferenceEquals(host.S, array))
+{
+return true;
+}
+if (global::System.Object.ReferenceEquals(host.X, array))
+{
+return true;
+}
+if (global::System.Object.ReferenceEquals(host.T, array))
+{
+return true;
+}
+if (global::System.Object.ReferenceEquals(host.CallResult, array))
+{
+return true;
+}
+if (global::System.Object.ReferenceEquals(host.PutResult, array))
+{
+return true;
+}
+return false;
+}
+public static bool HoldsArray_BlackScholesKernels_BlackScholesContext(System.ReadOnlySpan<global::Henicos.Benchmarks.ComputeBenchmarks.BlackScholesKernels.BlackScholesContext> items, object array)
+{
+for (int i = 0; i < items.Length; i++)
+{
+if (HoldsArray_BlackScholesKernels_BlackScholesContext(items[i], array))
+{
+return true;
+}
+}
+return false;
+}
 #pragma warning restore CS8500
 }
 public const string BlackScholesKernel_Source = @"#ifndef __GSHARP_STRUCT___gsharp_ty_Henicos__Benchmarks__ComputeBenchmarks__BlackScholesKernels__BlackScholesContext__
@@ -302,10 +337,12 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 }
 ";
 public static readonly string BlackScholesKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source +BlackScholesKernel_Source;
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_context_Henicos__Benchmarks__ComputeBenchmarks__BlackScholesKernels__BlackScholesKernel {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
 }
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static unsafe void __gsharp_statemachine_Henicos__Benchmarks__ComputeBenchmarks__BlackScholesKernels__BlackScholesKernel(global::Henicos.Benchmarks.ComputeBenchmarks.BlackScholesKernels.BlackScholesContext ctx, __gsharp_context_Henicos__Benchmarks__ComputeBenchmarks__BlackScholesKernels__BlackScholesKernel __gsharp_ctx) {
 {
 switch (__gsharp_ctx.__gsharp_state)
