@@ -500,6 +500,9 @@ public class GpuKernelGenerator : IIncrementalGenerator
             siteNames.Add(site.ToString("x16", CultureInfo.InvariantCulture));
         }
 
+        // B7: which parameters make a barrier diverge, for a caller in another assembly
+        var divergence = UniformityAnalysis.GetExportedDivergence(method, compilation);
+
         return new DeviceExportRecord(
             DeviceExportRecord.FunctionKind,
             method.OriginalDefinition.GetDocumentationCommentId() ?? cppName,
@@ -533,7 +536,10 @@ public class GpuKernelGenerator : IIncrementalGenerator
             cpp.Failed,
             // The records and the state machines are emitted together (GSharpExportDeviceCode)
             ManagedStateMachine: hasManagedStateMachine,
-            "");
+            "",
+            divergence.ConditionParameters,
+            divergence.ExitOnlyParameters,
+            divergence.HasExitOnlyBarrier);
     }
 
     // A struct that other assemblies can name, rendered for both dialects (StructTranspiler.IsExportedOnItsOwn), with
