@@ -12,7 +12,7 @@ internal sealed partial class ManagedExecutionRewriter
     private ExpressionSyntax SpellDeviceFunction(IMethodSymbol callee)
     {
         var routed = IsRouted(callee);
-        if (accessors is null || accessors.IsAccessible(callee))
+        if (accessors.IsAccessible(callee))
         {
             return SpellCallee(callee, typeArguments: null, routed);
         }
@@ -91,15 +91,12 @@ internal sealed partial class ManagedExecutionRewriter
         return call.WithExpression(SpellCallee(extension, typeArguments, routed: true));
     }
 
-    // [WHY] A node of a lowered body is bound through its original-span annotation, which a synthesized node may share
-    // with another source node (ManagedNameQualifier.IsSameName); such a node is not routed. A reduced extension method
-    // is routed with its call only
+    // A reduced extension method is routed with its call only (RouteExtensionCall)
     private bool TryGetRoutedMethod(ExpressionSyntax node, [NotNullWhen(true)] out IMethodSymbol? method)
     {
         method = null;
         if (semanticModel.GetSymbol(node) is not IMethodSymbol { ReducedFrom: null } symbol ||
             !symbol.HasAttribute(KnownAttributes.GpuDeviceFunction) ||
-            semanticModel.GetOriginalNode(node)?.RawKind != node.RawKind ||
             !IsRouted(symbol))
         {
             return false;

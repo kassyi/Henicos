@@ -142,6 +142,21 @@ public class ManagedVersionAnalysisTests
             source);
     }
 
+    // A containing class that is not partial gets no managed version, so a managed body calls the user's method (which
+    // runs as written) instead of a version that does not exist (CS0117)
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void Test_HasManagedVersion_OuterClassNotPartial_IsFalseAndNotCalled()
+    {
+        var nested = GetMethod("Outer+Inner", "Nested");
+
+        Assert.True(ManagedVersionAnalysis.Needs(nested, s_compilation));
+        Assert.False(ManagedVersionAnalysis.HasManagedVersion(nested, s_compilation));
+        var caller = GenerateManagedVersion("Callers", "CallsNested");
+        Assert.Contains("global::ManagedVersionCases.Outer.Inner.Nested(ref ctx, a)", caller);
+        Assert.Contains($"global::ManagedVersionCases.Functions.{ManagedName("Functions", "Direct")}(ref ctx, a)", caller);
+    }
+
     private static bool HasDirectRewrite(string name)
     {
         var method = GetMethod("Functions", name);

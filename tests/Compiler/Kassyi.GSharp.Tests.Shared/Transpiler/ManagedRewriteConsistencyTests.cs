@@ -33,7 +33,9 @@ public class ManagedRewriteConsistencyTests
                 continue;
             }
 
-            var rewritten = new ManagedExecutionRewriter(model, ManagedBodyKind.ManagedVersion).Visit(body)?.ToFullString();
+            var rewritten = new ManagedExecutionRewriter(model, ManagedBodyKind.ManagedVersion,
+                    new ManagedAccessorSet(method, compilation))
+                .Visit(body)?.ToFullString();
             var qualified = ManagedNameQualifier.Qualify(body, model).ToFullString();
             if (ManagedVersionAnalysis.Needs(method, compilation))
             {

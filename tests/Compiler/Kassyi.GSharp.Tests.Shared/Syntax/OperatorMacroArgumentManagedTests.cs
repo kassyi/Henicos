@@ -58,5 +58,40 @@ public class OperatorMacroArgumentManagedTests : TranspilerTestBase
 
         Assert.Equal(OperatorMacroArgumentCases.OutResult, result);
     }
+
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void Test_Managed_InOperandReturnedByReferenceBeforeAnInnerWrite_IsReadThroughTheReference()
+    {
+        InValue[] values = [new InValue(3), new InValue(5)];
+        var result = new int[2];
+
+        ManagedKernelRun.Run(() => OperatorMacroArgumentKernels.LaunchRefCallSpillKernel(values, result, blockDimX: 1));
+
+        Assert.Equal(OperatorMacroArgumentCases.InSpill, new[] { result[0], result[1], values[0].V, values[1].V });
+    }
+
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void Test_Managed_SharedMemoryInOperandBeforeAnInnerWrite_IsReadThroughTheElement()
+    {
+        var result = new int[3];
+
+        ManagedKernelRun.Run(() => OperatorMacroArgumentKernels.LaunchSharedRefSpillKernel(result, blockDimX: 1));
+
+        Assert.Equal(OperatorMacroArgumentCases.SharedSpill, result);
+    }
+
+    [Fact]
+    [Scenario(TestScenario.HappyPath)]
+    public void Test_Managed_AutoPropertyTargetAndOperand_AreItsStorage()
+    {
+        var result = new int[5];
+
+        ManagedKernelRun.Run(() => OperatorMacroArgumentKernels.LaunchPropertyTargetKernel(result, blockDimX: 1));
+
+        Assert.Equal(OperatorMacroArgumentCases.PropertyTarget, result);
+    }
+
 }
 #endif

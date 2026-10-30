@@ -102,6 +102,7 @@ internal sealed class UnsupportedConstructRule :
 
         var failure = macro.Failure ??
                       OperatorMacroResolver.GetUnassignedTargetFailure(node, macro, context.SemanticModel) ??
+                      OperatorMacroResolver.GetUnassignedContextFailure(node, macro, context.SemanticModel) ??
                       (context.NeedsManagedStateMachines && context.MethodSymbol.ContainingType is { } within
                           ? GetUnreachableTargetFailure(macro, within, context.SemanticModel.Compilation)
                           : null);

@@ -19,11 +19,11 @@ internal enum ManagedBodyKind
 /// <param name="semanticModel">The model of the user's tree that the body comes from.</param>
 /// <param name="bodyKind">What the body is emitted as.</param>
 /// <param name="accessors">
-/// The stubs through which the body calls an operator macro target it cannot name; <see langword="null"/> to name every
-/// target directly.
+/// The stubs through which the body calls an operator macro target it cannot name, and reaches the backing field of an
+/// auto-property that an operator macro passes by reference.
 /// </param>
 internal sealed partial class ManagedExecutionRewriter(SemanticModel semanticModel, ManagedBodyKind bodyKind,
-    ManagedAccessorSet? accessors = null)
+    ManagedAccessorSet accessors)
     : CSharpSyntaxRewriter
 {
     /// <summary>

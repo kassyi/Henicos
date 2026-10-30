@@ -193,6 +193,11 @@ internal static class OperatorMacroResolver
             macro = new OperatorMacro(operatorCall, null, false,
                 $"The target {name}of operator macro '{macro.TargetName}' does not convert to '{FormatType(resultParameter.Type)}' of parameter '{resultParameter.Name}'");
         }
+        else if (IsPropertyWithoutStorage(assignment.Left, resultParameter, semanticModel))
+        {
+            macro = new OperatorMacro(operatorCall, null, false,
+                $"The target '{assignment.Left}' of operator macro '{macro.TargetName}' is a property without storage: the target writes the result through its '{FormatRefKind(resultParameter.RefKind).TrimEnd()}' parameter '{resultParameter.Name}', which would reach a copy and never the setter; compute into a variable first and assign it, as in 't = a + b; {assignment.Left} = t;'");
+        }
 
         return true;
     }
@@ -222,23 +227,75 @@ internal static class OperatorMacroResolver
             target.Parameters[macro.HasContext ? 1 : 0].RefKind == RefKind.Out ||
             assignment.Parent is not ExpressionStatementSyntax statement ||
             GetTargetVariable(assignment.Left, semanticModel) is not { } symbol ||
-            IsAssignedWhereDeclared(symbol) ||
-            !symbol.ContainingSymbol.IsEqualTo(semanticModel.GetEnclosingSymbol(assignment.SpanStart)))
-        {
-            return null;
-        }
-
-        var flow = semanticModel.AnalyzeDataFlow(statement);
-        if (flow is not { Succeeded: true } ||
-            flow.DefinitelyAssignedOnEntry
-                .AsStackEnumerable()
-                .Any(symbol, static (assigned, s) => assigned.IsEqualTo(s)))
+            !IsUnassignedBefore(statement, symbol, semanticModel))
         {
             return null;
         }
 
         return
             $"The target '{assignment.Left}' of operator macro '{macro.TargetName}' is not assigned before the assignment: the target receives the result in the storage it holds, so assign '{symbol.Name}' first, as in '{symbol.Name} = default;'";
+    }
+
+    /// <summary>
+    /// Why the context variable of <paramref name="assignment"/> (the user's tree), or of an operator macro nested in it,
+    /// cannot be passed to its target, or <see langword="null"/> when it can: a local or <c>out</c> parameter that is not
+    /// definitely assigned before the assignment.
+    /// </summary>
+    /// <remarks>
+    /// [WHY] The expansion passes the variable itself (by reference, or as a copy of its value), which the target may
+    /// read: the C++ code reads an uninitialized value, and the managed expansion does not compile (CS0165). Only what is
+    /// certain is reported, as for the target (<see cref="GetUnassignedTargetFailure"/>).
+    /// </remarks>
+    public static string? GetUnassignedContextFailure(AssignmentExpressionSyntax assignment, OperatorMacro macro,
+        SemanticModel semanticModel)
+    {
+        if (assignment.Parent is not ExpressionStatementSyntax statement)
+        {
+            return null;
+        }
+
+        if (macro is { HasContext: true, TargetMethod: { } target } &&
+            TryFindContextVariable(assignment, target, semanticModel, out var variable, out _) &&
+            variable is ILocalSymbol { IsRef: false } or IParameterSymbol { RefKind: RefKind.Out } &&
+            IsUnassignedBefore(statement, variable, semanticModel))
+        {
+            return
+                $"The context '{variable.Name}' of operator macro '{macro.TargetName}' is not assigned before the assignment: the target receives the context variable itself, so assign '{variable.Name}' first, as in '{variable.Name} = default;'";
+        }
+
+        if (macro.Nested.IsDefaultOrEmpty)
+        {
+            return null;
+        }
+
+        foreach (var nested in macro.Nested)
+        {
+            if (GetUnassignedContextFailure(assignment, nested.Inner, semanticModel) is { } failure)
+            {
+                return failure;
+            }
+        }
+
+        return null;
+    }
+
+    // Whether <symbol> (a local or out parameter of the method that holds <statement>) is certainly not assigned when
+    // <statement> starts. A local declared with a value, and a variable captured from outside the enclosing lambda or
+    // local function, are not
+    private static bool IsUnassignedBefore(ExpressionStatementSyntax statement, ISymbol symbol,
+        SemanticModel semanticModel)
+    {
+        if (IsAssignedWhereDeclared(symbol) ||
+            !symbol.ContainingSymbol.IsEqualTo(semanticModel.GetEnclosingSymbol(statement.SpanStart)))
+        {
+            return false;
+        }
+
+        var flow = semanticModel.AnalyzeDataFlow(statement);
+        return flow is { Succeeded: true } &&
+               !flow.DefinitelyAssignedOnEntry
+                   .AsStackEnumerable()
+                   .Any(symbol, static (assigned, s) => assigned.IsEqualTo(s));
     }
 
     // The local or out parameter whose storage <target> is: the variable itself, or the variable that holds the struct
@@ -535,6 +592,15 @@ internal static class OperatorMacroResolver
 
     // Whether the assignment target passes to the result parameter of the chosen overload. The overload is chosen by the
     // operator's return type (decision V7), so a target of another type is checked here
+    // A property that the target cannot write into by reference: one with accessors of its own (or an indexer) that does
+    // not return by reference; neither has a backing field. An auto-property is a field on the device, and the managed path writes its backing field
+    // (ManagedOperatorMacroExpander)
+    private static bool IsPropertyWithoutStorage(ExpressionSyntax target, IParameterSymbol resultParameter,
+        SemanticModel semanticModel) =>
+        resultParameter.RefKind != RefKind.None &&
+        semanticModel.GetSymbol(target) is IPropertySymbol { RefKind: RefKind.None } property &&
+        !StructAbiMembers.IsAutoProperty(property);
+
     private static bool AcceptsTarget(ExpressionSyntax target, IParameterSymbol resultParameter, SemanticModel semanticModel)
     {
         if (semanticModel.GetTypeSymbol(target) is not { } targetType)

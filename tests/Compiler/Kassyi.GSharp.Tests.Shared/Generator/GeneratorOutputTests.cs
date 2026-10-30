@@ -138,6 +138,28 @@ public class GeneratorOutputTests
         Assert.Empty(output.GetDiagnostics().Where(static d => d.Severity == DiagnosticSeverity.Error));
     }
 
+    // The managed expansion of an operator macro passes each operand that has storage by reference and any other one as a
+    // value (#711): an auto-property through its backing field (an [UnsafeAccessor] field stub), a field of a value and an
+    // auto-property of a value without 'in', an element returned by reference as it is. The generated code compiles
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void Test_ManagedOperatorMacro_PassesEachOperandFormThatCompiles()
+    {
+        var compilation = CreateCompilation(
+            Parse(RoslynTestUtility.ReadTestCase("Generators/ManagedOperatorMacroForms.cs"), "forms.cs"));
+        var driver = CreateDriver("Cpu").RunGeneratorsAndUpdateCompilation(compilation, out var output, out _);
+        var result = driver.GetRunResult().Results.Single();
+        Assert.Null(result.Exception);
+
+        var errors = output.GetDiagnostics()
+            .Where(static d => d.Severity == DiagnosticSeverity.Error)
+            .Select(static d => d.ToString())
+            .ToList();
+        Assert.True(errors.Count == 0, string.Join(Environment.NewLine, errors));
+        var wrapper = GetSource(result, "ManagedOperatorMacroFormKernels.g.cs");
+        Assert.Contains("UnsafeAccessorKind.Field, Name = \"<P>k__BackingField\"", wrapper, StringComparison.Ordinal);
+    }
+
     private static string GetSource(GeneratorRunResult result, string hintNameSuffix) =>
         result.GeneratedSources
             .Single(s => s.HintName.EndsWith(hintNameSuffix, StringComparison.Ordinal))

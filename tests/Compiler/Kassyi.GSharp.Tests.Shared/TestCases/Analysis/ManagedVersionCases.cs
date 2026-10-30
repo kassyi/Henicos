@@ -112,3 +112,21 @@ public static partial class Extensions
     [GpuDeviceFunction]
     public static int Doubled(this ref Ctx ctx, int a) => Functions.Direct(ref ctx, a);
 }
+
+// A class that is not partial around the class of a device function: no managed version is written into it, so
+// nothing calls one (#941)
+public class Outer
+{
+    public static partial class Inner
+    {
+        [GpuDeviceFunction]
+        public static int Nested(ref Ctx ctx, int a) => Functions.Direct(ref ctx, a);
+    }
+}
+
+public static partial class Callers
+{
+    // Needs a managed version through Direct; calls Outer.Inner.Nested as the user wrote it
+    [GpuDeviceFunction]
+    public static int CallsNested(ref Ctx ctx, int a) => Outer.Inner.Nested(ref ctx, a) + Functions.Direct(ref ctx, a);
+}

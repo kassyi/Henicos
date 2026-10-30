@@ -23,6 +23,13 @@ namespace Kassyi.GSharp.Compiler.Transpiler;
 /// interfere with it are evaluated into temporaries first, in the C# order, as the C++ emitter does
 /// (<see cref="EvaluationOrder.LastSpilledOperand"/>).
 /// </para>
+/// <para>
+/// An operand passed by reference is passed as the storage it names, as the C++ emitter passes its address: a variable,
+/// an element or a call that returns by reference, a field of one, and an auto-property, which the device stores as a
+/// field (its backing field, through an <c>[UnsafeAccessor]</c> stub of <see cref="ManagedAccessorSet"/>). An operand
+/// without storage (a field or an auto-property of a value) passes to an <c>in</c> parameter as a value, for which C#
+/// makes a temporary.
+/// </para>
 /// </remarks>
 internal static class ManagedOperatorMacroExpander
 {
@@ -36,11 +43,12 @@ internal static class ManagedOperatorMacroExpander
     /// <param name="semanticModel">The model of the user's tree.</param>
     /// <param name="visitor">The rewriter of the body, which rewrites the operands and the context reference.</param>
     /// <param name="spellCallee">Writes the callee of a call of a device function on the managed path.</param>
+    /// <param name="accessors">The stubs of the body, which reach the backing field of an auto-property.</param>
     public static StatementSyntax? Expand(AssignmentExpressionSyntax assignment, OperatorMacro macro,
         SemanticModel semanticModel, CSharpSyntaxVisitor<SyntaxNode?> visitor,
-        Func<IMethodSymbol, ExpressionSyntax> spellCallee)
+        Func<IMethodSymbol, ExpressionSyntax> spellCallee, ManagedAccessorSet accessors)
     {
-        var expansion = new Expansion(assignment, semanticModel, visitor, spellCallee);
+        var expansion = new Expansion(assignment, semanticModel, visitor, spellCallee, accessors);
         if (expansion.CreateCall(assignment.Left, null, macro) is not { } call)
         {
             return null;
@@ -58,7 +66,8 @@ internal static class ManagedOperatorMacroExpander
     }
 
     private sealed class Expansion(AssignmentExpressionSyntax assignment, SemanticModel semanticModel,
-        CSharpSyntaxVisitor<SyntaxNode?> visitor, Func<IMethodSymbol, ExpressionSyntax> spellCallee)
+        CSharpSyntaxVisitor<SyntaxNode?> visitor, Func<IMethodSymbol, ExpressionSyntax> spellCallee,
+        ManagedAccessorSet accessors)
     {
         private int _nextTemp;
 
@@ -95,38 +104,13 @@ internal static class ManagedOperatorMacroExpander
                     continue;
                 }
 
-                if (call.Operands[i] is not { } operand)
+                var spill = i <= last && effects is not null && !effects[i].IsEmpty;
+                if (CreateOperand(call.Operands[i], parameter, macro, resultTemp, spill) is not { } argument)
                 {
-                    // The temporary of the inner operator macro that this call computes, passed to its ref or out result
-                    arguments.Add(CreateArgument(Temp(resultTemp), parameter, macro.ResultType, isVariable: true));
-                    continue;
+                    return null;
                 }
 
-                if (macro.TryGetNested(operand, out var inner) && inner.ResultType is { } innerType)
-                {
-                    var temp = NextTemp();
-                    // <inner result type> <temp> = default;
-                    Statements.Add(DeclareLocal(innerType, temp, SyntaxFactory.LiteralExpression(
-                        SyntaxKind.DefaultLiteralExpression)));
-                    if (CreateCall(null, temp, inner) is not { } innerCall)
-                    {
-                        return null;
-                    }
-
-                    Statements.Add(SyntaxFactory.ExpressionStatement(innerCall));
-                    arguments.Add(CreateArgument(Temp(temp), parameter, innerType, isVariable: true));
-                    continue;
-                }
-
-                var visited = (visitor.Visit(operand) as ExpressionSyntax ?? operand).WithoutTrivia();
-                var type = semanticModel.GetTypeSymbol(operand);
-                if (i <= last && effects is not null && !effects[i].IsEmpty)
-                {
-                    arguments.Add(Spill(visited, type, parameter, IsVariable(operand)));
-                    continue;
-                }
-
-                arguments.Add(CreateArgument(visited, parameter, type, IsVariable(operand)));
+                arguments.Add(argument);
             }
 
             return SyntaxFactory.InvocationExpression(
@@ -135,11 +119,50 @@ internal static class ManagedOperatorMacroExpander
             );
         }
 
+        // The argument of one operand, as GpuOperatorMacroTranspiler.DeclareOperandTemps and AppendOperand write it:
+        // the temporary <resultTemp> of the inner operator macro that this call computes (the operand is null), the
+        // temporary of an inner operator macro computed first, the operand evaluated into a temporary now (<spill>), or
+        // the operand in place
+        private ArgumentSyntax? CreateOperand(ExpressionSyntax? operand, IParameterSymbol parameter, OperatorMacro macro,
+            string? resultTemp, bool spill)
+        {
+            if (operand is null)
+            {
+                // The temporary of the inner operator macro that this call computes, passed to its ref or out result
+                return CreateArgument(Temp(resultTemp), parameter, isVariable: true, type: null);
+            }
+
+            if (macro.TryGetNested(operand, out var inner) && inner.ResultType is { } innerType)
+            {
+                var temp = NextTemp();
+                // <inner result type> <temp> = default;
+                Statements.Add(DeclareLocal(innerType, temp, SyntaxFactory.LiteralExpression(
+                    SyntaxKind.DefaultLiteralExpression)));
+                if (CreateCall(null, temp, inner) is not { } innerCall)
+                {
+                    return null;
+                }
+
+                Statements.Add(SyntaxFactory.ExpressionStatement(innerCall));
+                return CreateArgument(Temp(temp), parameter, isVariable: true, type: null);
+            }
+
+            var type = semanticModel.GetTypeSymbol(operand);
+            var reference = IsPassedByReference(parameter) && (parameter.RefKind is RefKind.Ref or RefKind.Out ||
+                                                                 type.IsEqualTo(parameter.Type))
+                ? TryCreateReference(operand)
+                : null;
+            var expression = reference ?? Visit(operand);
+            return spill
+                ? Spill(expression, type, parameter, isVariable: reference is not null)
+                : CreateArgument(expression, parameter, isVariable: reference is not null, type);
+        }
+
         // The operand evaluated into a temporary now, in the C# order, as the C++ emitter does (EvaluationOrder.DeclareTemp:
         // auto&& for a parameter passed by reference):
         // ref <type> <temp> = ref <operand>;            a ref or out result, which the call writes through
-        // ref readonly <type> <temp> = ref <operand>;   a variable passed to an 'in' or 'ref readonly' parameter of its
-        //                                               own type: the call reads the variable itself, as in C++
+        // ref readonly <type> <temp> = ref <operand>;   storage passed to an 'in' or 'ref readonly' parameter: the call
+        //                                               reads the storage itself, as in C++
         // <type> <temp> = <operand>;                    any other value
         private ArgumentSyntax Spill(ExpressionSyntax operand, ITypeSymbol? type, IParameterSymbol parameter,
             bool isVariable)
@@ -148,28 +171,22 @@ internal static class ManagedOperatorMacroExpander
             var reference = type is null ? RefKind.None : parameter.RefKind switch
             {
                 RefKind.Ref or RefKind.Out => RefKind.Ref,
-                RefKind.In or RefKind.RefReadOnlyParameter when isVariable && type.IsEqualTo(parameter.Type) =>
-                    RefKind.RefReadOnly,
+                RefKind.In or RefKind.RefReadOnlyParameter when isVariable => RefKind.RefReadOnly,
                 _ => RefKind.None
             };
             Statements.Add(DeclareLocal(type, temp,
                 reference == RefKind.None ? operand : SyntaxFactory.RefExpression(operand), reference));
-            return CreateArgument(Temp(temp), parameter, type, isVariable: true);
+            return CreateArgument(Temp(temp), parameter, isVariable: reference != RefKind.None, type);
         }
 
-        // ref <argument> / out <argument> / in <argument>, or the value cast to the parameter type when its type is not
-        // that type
+        // ref <argument> / out <argument>, in <argument> for storage, or the value cast to the parameter type when its type
+        // is not that type
         private static ArgumentSyntax CreateArgument(ExpressionSyntax expression, IParameterSymbol parameter,
-            ITypeSymbol? type, bool isVariable)
+            bool isVariable, ITypeSymbol? type)
         {
-            switch (parameter.RefKind)
+            if (parameter.RefKind is RefKind.Ref or RefKind.Out || isVariable && IsPassedByReference(parameter))
             {
-                case RefKind.Ref:
-                    return WithModifier(expression, SyntaxKind.RefKeyword);
-                case RefKind.Out:
-                    return WithModifier(expression, SyntaxKind.OutKeyword);
-                case RefKind.In or RefKind.RefReadOnlyParameter when isVariable && type.IsEqualTo(parameter.Type):
-                    return WithModifier(expression, SyntaxKind.InKeyword);
+                return WithModifier(expression, parameter.RefKind);
             }
 
             if (type is null || type.IsEqualTo(parameter.Type))
@@ -193,24 +210,52 @@ internal static class ManagedOperatorMacroExpander
             expression.IsKind(SyntaxKind.NumericLiteralExpression);
 
         // The context variable, as the body spells it: a local that a state machine keeps in its context is read through
-        // the context there (OperatorMacroContext.FindLoweredReference finds a reference of the lowered body);
-        // otherwise, in the user's own tree, its name
+        // the context there (OperatorMacroContext.FindLoweredReference finds a reference of the lowered body); otherwise,
+        // in the user's own tree, its name
         private ArgumentSyntax CreateContextArgument(ISymbol variable, IParameterSymbol parameter)
         {
             ExpressionSyntax reference = FindLoweredReference(assignment, variable, semanticModel) is { } lowered
-                ? (visitor.Visit(lowered) as ExpressionSyntax ?? lowered).WithoutTrivia()
+                ? Visit(lowered)
                 : SyntaxFactory.IdentifierName(SyntaxFactory.Identifier(variable.Name.ToCSharpIdentifier()));
-            return parameter.RefKind switch
-            {
-                RefKind.Ref => WithModifier(reference, SyntaxKind.RefKeyword),
-                RefKind.In or RefKind.RefReadOnlyParameter => WithModifier(reference, SyntaxKind.InKeyword),
-                _ => SyntaxFactory.Argument(reference)
-            };
+            return WithModifier(reference, parameter.RefKind);
         }
 
-        private bool IsVariable(ExpressionSyntax operand) =>
-            semanticModel.GetSafeOperation(operand) is ILocalReferenceOperation or IParameterReferenceOperation
-                or IFieldReferenceOperation or IArrayElementReferenceOperation;
+        // The storage that <operand> names, spelled for a by-reference argument, or null when it names none (a value):
+        // a local, a parameter, an array element, a call or property that returns by reference, a field of a class or
+        // of storage, and an auto-property of storage (its backing field, which the device uses for it)
+        private ExpressionSyntax? TryCreateReference(ExpressionSyntax operand)
+        {
+            switch (semanticModel.GetSafeOperation(operand))
+            {
+                case ILocalReferenceOperation or IParameterReferenceOperation or IArrayElementReferenceOperation
+                    or IInvocationOperation { TargetMethod.RefKind: not RefKind.None }
+                    or IPropertyReferenceOperation { Property.RefKind: not RefKind.None }:
+                case IFieldReferenceOperation { Instance: null or { Type.IsValueType: false } }:
+                    return Visit(operand);
+                case IFieldReferenceOperation { Field: var field }
+                    when operand is MemberAccessExpressionSyntax { Expression: var receiver }:
+                    // <receiver storage>.<field>
+                    return TryCreateReference(receiver) is { } receiverReference
+                        ? SyntaxFactory.MemberAccessExpression(
+                            SyntaxKind.SimpleMemberAccessExpression,
+                            receiverReference,
+                            SyntaxFactory.IdentifierName(field.Name.ToCSharpIdentifier())
+                        )
+                        : null;
+                case IPropertyReferenceOperation { Property: var property, Instance.Type.IsValueType: true }
+                    when StructAbiMembers.IsAutoProperty(property) &&
+                         operand is MemberAccessExpressionSyntax { Expression: var receiver }:
+                    // <accessor>(in <receiver storage>)
+                    return TryCreateReference(receiver) is { } structReference
+                        ? accessors.SpellBackingField(property, structReference)
+                        : null;
+                default:
+                    return null;
+            }
+        }
+
+        private ExpressionSyntax Visit(ExpressionSyntax node) =>
+            (visitor.Visit(node) as ExpressionSyntax ?? node).WithoutTrivia();
 
         private string NextTemp() => GSharpInternalNames.ManagedVersion.MacroTempPrefix +
                                      _nextTemp++.ToString(CultureInfo.InvariantCulture);
@@ -219,8 +264,11 @@ internal static class ManagedOperatorMacroExpander
             SyntaxFactory.IdentifierName(name ?? throw new InvalidOperationException(
                 "An operator macro without a result operand is not an inner operator macro."));
 
-        private static ArgumentSyntax WithModifier(ExpressionSyntax expression, SyntaxKind modifier) =>
-            SyntaxFactory.Argument(expression).WithRefKindKeyword(SyntaxFactory.Token(modifier));
+        // <modifier> <expression>: ref, out or in by the parameter, nothing for a value parameter
+        private static ArgumentSyntax WithModifier(ExpressionSyntax expression, RefKind refKind) =>
+            ManagedRefKinds.ArgumentKeyword(refKind) is var keyword && keyword != SyntaxKind.None
+                ? SyntaxFactory.Argument(expression).WithRefKindKeyword(SyntaxFactory.Token(keyword))
+                : SyntaxFactory.Argument(expression);
 
         // [ref [readonly]] <type> <name> = <value>;   (var when the type is not known)
         private static LocalDeclarationStatementSyntax DeclareLocal(ITypeSymbol? type, string name,

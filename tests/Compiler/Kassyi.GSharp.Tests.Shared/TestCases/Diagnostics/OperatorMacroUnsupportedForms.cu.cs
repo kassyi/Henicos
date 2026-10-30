@@ -211,3 +211,85 @@ public static partial class OperatorMacroTargetAssignmentKernels
         output[0] = h.Other;
     }
 }
+
+public struct FormCtx
+{
+    public uint Calls;
+}
+
+public struct FormCtxValue
+{
+    public uint Value;
+
+    [GpuOperatorMacro(typeof(FormCtxOps), nameof(FormCtxOps.AddCount))]
+    public static FormCtxValue operator +(FormCtxValue left, FormCtxValue right) => throw new InvalidOperationException();
+}
+
+public static partial class FormCtxOps
+{
+    [GpuDeviceFunction]
+    public static void AddCount(ref FormCtx log, ref FormCtxValue result, FormCtxValue left, FormCtxValue right)
+    {
+        log.Calls = 1u;
+        result.Value = left.Value + right.Value + log.Calls;
+    }
+}
+
+public struct FormPropertyHolder
+{
+    private FormValue _stored;
+
+    public FormValue Computed
+    {
+        get => _stored;
+        set => _stored = value;
+    }
+}
+
+public static partial class OperatorMacroContextAssignmentKernels
+{
+    // GSH0003: the context is passed to the target as it is, so it needs a value first (#711: the managed expansion
+    // would not compile)
+    [GpuKernel]
+    [SkipSnapshotConsistency("Diagnostics case")]
+    public static void UnassignedContextKernel(uint[] output)
+    {
+        FormCtx log;
+        FormCtxValue x = default, z = default;
+        z = x + x;
+        output[0] = z.Value;
+    }
+
+    // GSH0003: the same in a device function, with an inner operator macro that takes the context too
+    [GpuDeviceFunction]
+    public static uint UnassignedNestedContext(FormCtxValue x)
+    {
+        FormCtx log;
+        FormCtxValue z = default;
+        z = x + (x + x);
+        return z.Value;
+    }
+
+    // No GSH0003: the context is assigned before
+    [GpuKernel]
+    [SkipSnapshotConsistency("Diagnostics case")]
+    public static void AssignedContextKernel(uint[] output)
+    {
+        FormCtx log;
+        log.Calls = 0u;
+        FormCtxValue x = default, z = default;
+        z = x + x;
+        output[0] = z.Value;
+    }
+
+    // GSH0003: a property with accessors of its own has no storage that the target can write into
+    [GpuKernel]
+    [SkipSnapshotConsistency("Diagnostics case")]
+    public static void ComputedPropertyTargetKernel(uint[] output)
+    {
+        FormValue a = default;
+        FormPropertyHolder h = default;
+        h.Computed = a + a;
+        output[0] = h.Computed.Value;
+    }
+}

@@ -2,8 +2,9 @@ namespace Kassyi.GSharp.Compiler.Transpiler;
 
 /// <summary>
 /// The <c>[UnsafeAccessor]</c> stubs through which one managed body (a kernel or device function state machine, or a
-/// managed version) calls a device function that C# does not let it name: the target of an operator macro that is
-/// private to another type, or internal to another assembly (#711).
+/// managed version) reaches what C# does not let it name (#711): the target of an operator macro that is private to
+/// another type, or internal to another assembly, and the backing field of an auto-property that an operator macro
+/// passes by reference (the device stores the property as a field, and C# has no reference to it).
 /// </summary>
 /// <remarks>
 /// <para>
@@ -18,15 +19,17 @@ namespace Kassyi.GSharp.Compiler.Transpiler;
 /// target's declaring types (the runtime matches them by position, <c>!0</c>, <c>!1</c>, ...), with the extern accessor
 /// and a method <c>Invoke</c> that passes the arguments on:
 /// <c>private static class __gsharp_accessor_&lt;body&gt;_&lt;n&gt;&lt;T&gt; { [UnsafeAccessor(...)] private static extern R Target(object? _, ...); internal static R Invoke(...) =&gt; Target(null, ...); }</c>.
+/// A backing field stub takes the struct by <c>in</c> and returns its field by reference:
+/// <c>[UnsafeAccessor(UnsafeAccessorKind.Field, Name = "&lt;P&gt;k__BackingField")] private static extern ref F Target(ref S _); internal static ref F Invoke(in S p0) =&gt; ref Target(ref Unsafe.AsRef(in p0));</c>.
 /// </para>
 /// </remarks>
 internal sealed class ManagedAccessorSet(IMethodSymbol caller, Compilation compilation)
 {
     private const string AttributeNamespace = "global::System.Runtime.CompilerServices.";
 
-    private readonly Dictionary<IMethodSymbol, string> _holders = new(SymbolEqualityComparer.Default);
-    private readonly ImmutableArray<(IMethodSymbol Target, string TargetName, string Holder)>.Builder _stubs =
-        ImmutableArray.CreateBuilder<(IMethodSymbol, string, string)>();
+    private readonly Dictionary<ISymbol, string> _holders = new(SymbolEqualityComparer.Default);
+    private readonly ImmutableArray<(ISymbol Target, string TargetName, string Holder)>.Builder _stubs =
+        ImmutableArray.CreateBuilder<(ISymbol, string, string)>();
 
     /// <summary>Whether the body may name <paramref name="callee"/> directly.</summary>
     public bool IsAccessible(IMethodSymbol callee) =>
@@ -37,9 +40,39 @@ internal sealed class ManagedAccessorSet(IMethodSymbol caller, Compilation compi
     /// <paramref name="targetName"/> (the function itself or its managed version):
     /// <c>global::&lt;body type&gt;.__gsharp_accessor_&lt;body&gt;_&lt;n&gt;[&lt;type arguments&gt;].Invoke</c>.
     /// </summary>
-    public ExpressionSyntax Spell(IMethodSymbol callee, string targetName)
+    public ExpressionSyntax Spell(IMethodSymbol callee, string targetName) =>
+        SpellInvoke(callee.OriginalDefinition, callee.ContainingType, targetName);
+
+    /// <summary>
+    /// A reference to the backing field of the auto-property <paramref name="property"/> of the struct that
+    /// <paramref name="receiver"/> (storage) names:
+    /// <c>global::&lt;body type&gt;.__gsharp_accessor_&lt;body&gt;_&lt;n&gt;[&lt;type arguments&gt;].Invoke(in &lt;receiver&gt;)</c>,
+    /// which returns it by reference.
+    /// </summary>
+    public ExpressionSyntax SpellBackingField(IPropertySymbol property, ExpressionSyntax receiver)
     {
-        var definition = callee.OriginalDefinition;
+        var definition = property.OriginalDefinition;
+        var field = definition.ContainingType.GetMembers()
+            .AsStackEnumerable()
+            .OfType<IFieldSymbol>()
+            .FirstOrDefault(definition, static (f, p) => f.AssociatedSymbol.IsEqualTo(p))
+            ?? throw new InvalidOperationException($"The auto-property '{property.Name}' has no backing field.");
+        var invoke = SpellInvoke(definition, property.ContainingType, field.Name);
+
+        // <invoke>(in <receiver>)
+        return SyntaxFactory.InvocationExpression(
+            invoke,
+            SyntaxFactory.ArgumentList(
+                SyntaxFactory.SingletonSeparatedList(
+                    SyntaxFactory.Argument(receiver).WithRefKindKeyword(SyntaxFactory.Token(SyntaxKind.InKeyword))
+                )
+            )
+        );
+    }
+
+    // global::<body type>.<holder>[<type arguments>].Invoke, with the stub of <definition> handed out once
+    private ExpressionSyntax SpellInvoke(ISymbol definition, INamedTypeSymbol? declaringType, string targetName)
+    {
         if (!_holders.TryGetValue(definition, out var holder))
         {
             holder = GlobalCppNames.GetKernelDerivedName(GSharpInternalNames.ManagedVersion.AccessorPrefix, caller) +
@@ -51,7 +84,7 @@ internal sealed class ManagedAccessorSet(IMethodSymbol caller, Compilation compi
         using var writer = new SourceWriter();
         writer.AppendFullyQualifiedCsharpName(caller.ContainingType);
         writer.Append($".{holder}");
-        var typeArguments = GetTypeArguments(callee.ContainingType);
+        var typeArguments = GetTypeArguments(declaringType);
         if (typeArguments.Length > 0)
         {
             writer.Append("<");
@@ -68,79 +101,107 @@ internal sealed class ManagedAccessorSet(IMethodSymbol caller, Compilation compi
         return SyntaxFactory.ParseExpression(writer.ToString());
     }
 
-    /// <summary>Writes the stubs that <see cref="Spell"/> handed out, nothing when it handed out none.</summary>
+    /// <summary>
+    /// Writes the stubs that <see cref="Spell"/> and <see cref="SpellBackingField"/> handed out, nothing when they handed
+    /// out none.
+    /// </summary>
     public void WriteTo(SourceWriter writer)
     {
         foreach (var (target, targetName, holder) in _stubs)
         {
-            WriteStub(writer, target, targetName, holder);
-        }
-    }
+            var typeParameters = GetTypeParameters(target.ContainingType);
+            var isUnsafe = target is IMethodSymbol method && NeedsUnsafe(method);
 
-    private static void WriteStub(SourceWriter writer, IMethodSymbol target, string targetName, string holder)
-    {
-        var typeParameters = GetTypeParameters(target.ContainingType);
-        var isUnsafe = target.Parameters
-                           .AsStackEnumerable()
-                           .Any(static p => p.Type is IPointerTypeSymbol or IFunctionPointerTypeSymbol) ||
-                       target.ReturnType is IPointerTypeSymbol or IFunctionPointerTypeSymbol;
-
-        // private static [unsafe] class <holder>[<T...>] [where ...]
-        writer.AppendLine(ManagedStateMachineEmitter.EditorBrowsableNever);
-        writer.Append("private static ");
-        writer.AppendIf(isUnsafe, "unsafe ");
-        writer.Append($"class {holder}");
-        AppendTypeParameterList(writer, typeParameters);
-        writer.AppendLine();
-        AppendConstraints(writer, typeParameters);
-        using (writer.Scope())
-        {
-            // [UnsafeAccessor(UnsafeAccessorKind.StaticMethod, Name = "<target>")]
-            // private static extern <return> Target(<declaring type marker>, <parameters>);
-            writer.AppendLine(
-                $"[{AttributeNamespace}UnsafeAccessor({AttributeNamespace}UnsafeAccessorKind.StaticMethod, Name = \"{targetName}\")]");
-            writer.Append("private static extern ");
-            AppendReturnType(writer, target);
-            writer.Append(" Target");
-            using (writer.Parentheses())
+            // private static [unsafe] class <holder>[<T...>] [where ...]
+            writer.AppendLine(ManagedStateMachineEmitter.EditorBrowsableNever);
+            writer.Append("private static ");
+            writer.AppendIf(isUnsafe, "unsafe ");
+            writer.Append($"class {holder}");
+            AppendTypeParameterList(writer, typeParameters);
+            writer.AppendLine();
+            AppendConstraints(writer, typeParameters);
+            using (writer.Scope())
             {
-                AppendDeclaringTypeMarker(writer, target.ContainingType, typeParameters.Length);
-                AppendParameters(writer, target, withLeadingComma: true);
-            }
-
-            writer.AppendLine(";");
-
-            // internal static <return> Invoke(<parameters>) => Target(default, <arguments>);
-            writer.Append("internal static ");
-            AppendReturnType(writer, target);
-            writer.Append(" Invoke");
-            using (writer.Parentheses())
-            {
-                AppendParameters(writer, target, withLeadingComma: false);
-            }
-
-            writer.Append(" => Target");
-            using (writer.Parentheses())
-            {
-                writer.Append("default");
-                for (var i = 0; i < target.Parameters.Length; i++)
+                if (target is IMethodSymbol callee)
                 {
-                    writer.Append(", ");
-                    writer.Append(target.Parameters[i].RefKind switch
-                    {
-                        RefKind.Ref => "ref ",
-                        RefKind.Out => "out ",
-                        RefKind.In or RefKind.RefReadOnlyParameter => "in ",
-                        _ => ""
-                    });
-                    writer.Append($"p{i.ToString(CultureInfo.InvariantCulture)}");
+                    WriteMethodStub(writer, callee, targetName, typeParameters.Length);
+                }
+                else if (target is IPropertySymbol property)
+                {
+                    WriteFieldStub(writer, property, targetName);
                 }
             }
 
-            writer.AppendLine(";");
+            writer.AppendLine();
+        }
+    }
+
+    private static bool NeedsUnsafe(IMethodSymbol target) =>
+        target.Parameters
+            .AsStackEnumerable()
+            .Any(static p => p.Type is IPointerTypeSymbol or IFunctionPointerTypeSymbol) ||
+        target.ReturnType is IPointerTypeSymbol or IFunctionPointerTypeSymbol;
+
+    // [UnsafeAccessor(UnsafeAccessorKind.StaticMethod, Name = "<target>")]
+    // private static extern <return> Target(<declaring type marker>, <parameters>);
+    // internal static <return> Invoke(<parameters>) => Target(default, <arguments>);
+    private static void WriteMethodStub(SourceWriter writer, IMethodSymbol target, string targetName,
+        int typeParameterCount)
+    {
+        writer.AppendLine(
+            $"[{AttributeNamespace}UnsafeAccessor({AttributeNamespace}UnsafeAccessorKind.StaticMethod, Name = \"{targetName}\")]");
+        writer.Append("private static extern ");
+        AppendReturnType(writer, target);
+        writer.Append(" Target");
+        using (writer.Parentheses())
+        {
+            AppendDeclaringTypeMarker(writer, target.ContainingType, typeParameterCount);
+            AppendParameters(writer, target, withLeadingComma: true);
         }
 
-        writer.AppendLine();
+        writer.AppendLine(";");
+        writer.Append("internal static ");
+        AppendReturnType(writer, target);
+        writer.Append(" Invoke");
+        using (writer.Parentheses())
+        {
+            AppendParameters(writer, target, withLeadingComma: false);
+        }
+
+        writer.Append(" => Target");
+        using (writer.Parentheses())
+        {
+            writer.Append("default");
+            for (var i = 0; i < target.Parameters.Length; i++)
+            {
+                writer.Append(
+                    $", {ManagedRefKinds.ArgumentModifier(target.Parameters[i].RefKind)}p{i.ToString(CultureInfo.InvariantCulture)}");
+            }
+        }
+
+        writer.AppendLine(";");
+    }
+
+    // [UnsafeAccessor(UnsafeAccessorKind.Field, Name = "<backing field>")]
+    // private static extern ref <property type> Target(ref <struct> _);
+    // internal static ref <property type> Invoke(in <struct> p0) => ref Target(ref Unsafe.AsRef(in p0));
+    // [WHY] The struct comes by 'in', so that a readonly variable (an in parameter, a ref readonly local) passes as well;
+    // the caller reads the field through the reference, or writes it when it passes the result by 'ref', as the device
+    // writes the field
+    private static void WriteFieldStub(SourceWriter writer, IPropertySymbol property, string fieldName)
+    {
+        writer.AppendLine(
+            $"[{AttributeNamespace}UnsafeAccessor({AttributeNamespace}UnsafeAccessorKind.Field, Name = \"{fieldName}\")]");
+        writer.Append("private static extern ref ");
+        writer.AppendCsharpTypeName(property.Type);
+        writer.Append(" Target(ref ");
+        writer.AppendCsharpTypeName(property.ContainingType);
+        writer.AppendLine(" _);");
+        writer.Append("internal static ref ");
+        writer.AppendCsharpTypeName(property.Type);
+        writer.Append(" Invoke(in ");
+        writer.AppendCsharpTypeName(property.ContainingType);
+        writer.AppendLine($" p0) => ref Target(ref {AttributeNamespace}Unsafe.AsRef(in p0));");
     }
 
     // The first parameter of a static accessor names the type to look the method up in; its value is not used. A class
@@ -201,14 +262,7 @@ internal sealed class ManagedAccessorSet(IMethodSymbol caller, Compilation compi
         {
             var parameter = target.Parameters[i];
             writer.AppendIf(withLeadingComma || i > 0, ", ");
-            writer.Append(parameter.RefKind switch
-            {
-                RefKind.Ref => "ref ",
-                RefKind.Out => "out ",
-                RefKind.In => "in ",
-                RefKind.RefReadOnlyParameter => "ref readonly ",
-                _ => ""
-            });
+            writer.Append(ManagedRefKinds.ParameterModifier(parameter.RefKind));
             writer.AppendCsharpTypeName(parameter.Type);
             writer.Append($" p{i.ToString(CultureInfo.InvariantCulture)}");
         }

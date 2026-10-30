@@ -19,8 +19,8 @@ internal sealed partial class ManagedExecutionRewriter
         // c = a + b; with an operator macro becomes the call of its target (#711)
         if (node.Expression is AssignmentExpressionSyntax assignment &&
             ManagedRewriteClassifier.TryGetOperatorMacro(assignment, semanticModel, out var macro) &&
-            ManagedOperatorMacroExpander.Expand(assignment, macro, semanticModel, this, SpellDeviceFunction) is
-                { } expanded)
+            ManagedOperatorMacroExpander.Expand(assignment, macro, semanticModel, this, SpellDeviceFunction,
+                accessors) is { } expanded)
         {
             return expanded.WithTriviaFrom(node);
         }

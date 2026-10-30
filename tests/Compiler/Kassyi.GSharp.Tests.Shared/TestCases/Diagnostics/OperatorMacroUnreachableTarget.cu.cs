@@ -39,7 +39,8 @@ public static partial class ReachHolder
 
 public static partial class OperatorMacroUnreachableTargetKernels
 {
-    // GSH0003 on the C++ dialect, whose managed fallback cannot call ReachHolder.Hidden.Add from here; nothing for '-'
+    // GSH0003 on the C++ dialect, whose managed fallback cannot call ReachHolder.Hidden.Add from here, also as an inner
+    // operator macro under '-'; nothing for '-' itself
     [GpuKernel]
     [SkipSnapshotConsistency("Diagnostics case")]
     public static void UnreachableKernel(int[] output)
@@ -49,5 +50,7 @@ public static partial class OperatorMacroUnreachableTargetKernels
         c = a + a;
         c = a - a;
         output[0] = c.V;
+        c = a - (a + a);
+        output[1] = c.V;
     }
 }
