@@ -1,4 +1,5 @@
-using static Kassyi.GSharp.Compiler.Transpiler.Rules.MacroRules.GpuOperatorMacroResolver;
+using static Kassyi.GSharp.Compiler.OperatorMacroContext;
+using static Kassyi.GSharp.Compiler.OperatorMacroResolver;
 
 namespace Kassyi.GSharp.Compiler.Transpiler.Rules.MacroRules;
 
@@ -87,12 +88,12 @@ internal static class GpuOperatorMacroTranspiler
         return true;
     }
 
-    // The call of <macro> (GpuOperatorMacroResolver.TryPrepareCall); a context variable that cannot be found fails the
+    // The call of <macro> (OperatorMacroResolver.TryPrepareCall); a context variable that cannot be found fails the
     // transpilation with the message the analyzer reports as well
     private static bool TryPrepareCall(ExpressionSyntax? result, OperatorMacro macro,
         AssignmentExpressionSyntax assignment, ref TranspileContext context, out MacroCall call)
     {
-        if (GpuOperatorMacroResolver.TryPrepareCall(result, macro, assignment, context.Query.SemanticModel, out call,
+        if (OperatorMacroResolver.TryPrepareCall(result, macro, assignment, context.Query.SemanticModel, out call,
                 out var failure))
         {
             return true;

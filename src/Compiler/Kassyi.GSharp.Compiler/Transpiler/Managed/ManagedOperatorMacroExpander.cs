@@ -1,6 +1,7 @@
 using Microsoft.CodeAnalysis.Operations;
 using Kassyi.GSharp.Compiler.Transpiler.Rules.MacroRules;
-using static Kassyi.GSharp.Compiler.Transpiler.Rules.MacroRules.GpuOperatorMacroResolver;
+using static Kassyi.GSharp.Compiler.OperatorMacroContext;
+using static Kassyi.GSharp.Compiler.OperatorMacroResolver;
 
 namespace Kassyi.GSharp.Compiler.Transpiler;
 
@@ -10,7 +11,7 @@ namespace Kassyi.GSharp.Compiler.Transpiler;
 /// </summary>
 /// <remarks>
 /// <para>
-/// The call is the one the resolver chose (<see cref="GpuOperatorMacroResolver"/>, #478), whatever C# would pick for
+/// The call is the one the resolver chose (<see cref="OperatorMacroResolver"/>, #478), whatever C# would pick for
 /// the arguments as written: a value argument whose type is not the parameter's is cast to it, which applies the
 /// implicit conversion C# would apply and leaves the chosen overload the only one whose parameters all match exactly.
 /// The context is the variable the resolver found (#477), spelled as the body being rewritten spells it: a local that a
@@ -192,7 +193,7 @@ internal static class ManagedOperatorMacroExpander
             expression.IsKind(SyntaxKind.NumericLiteralExpression);
 
         // The context variable, as the body spells it: a local that a state machine keeps in its context is read through
-        // the context there (GpuOperatorMacroResolver.FindLoweredReference finds a reference of the lowered body);
+        // the context there (OperatorMacroContext.FindLoweredReference finds a reference of the lowered body);
         // otherwise, in the user's own tree, its name
         private ArgumentSyntax CreateContextArgument(ISymbol variable, IParameterSymbol parameter)
         {

@@ -1,5 +1,3 @@
-using Kassyi.GSharp.Compiler.Transpiler.Rules.MacroRules;
-
 namespace Kassyi.GSharp.Compiler.Transpiler;
 
 /// <summary>
@@ -30,16 +28,16 @@ internal static class ManagedRewriteClassifier
 
     /// <summary>
     /// The operator macro that the managed path expands at <paramref name="assignment"/>: a simple assignment statement
-    /// whose right side is an operator macro with a target (<see cref="GpuOperatorMacroResolver.TryResolve"/>). A macro
+    /// whose right side is an operator macro with a target (<see cref="OperatorMacroResolver.TryResolve"/>). A macro
     /// that cannot be expanded (GSH0003) is left as written.
     /// </summary>
     public static bool TryGetOperatorMacro(AssignmentExpressionSyntax assignment, SemanticModel semanticModel,
-        out GpuOperatorMacroResolver.OperatorMacro macro)
+        out OperatorMacroResolver.OperatorMacro macro)
     {
         macro = default;
         return assignment.IsKind(SyntaxKind.SimpleAssignmentExpression) &&
                assignment.Parent is ExpressionStatementSyntax &&
-               GpuOperatorMacroResolver.TryResolve(assignment, semanticModel, out macro) &&
+               OperatorMacroResolver.TryResolve(assignment, semanticModel, out macro) &&
                macro.TargetMethod != null;
     }
 }

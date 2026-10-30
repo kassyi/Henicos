@@ -1,5 +1,3 @@
-using Kassyi.GSharp.Compiler.Transpiler.Rules.MacroRules;
-
 namespace Kassyi.GSharp.Compiler.Diagnostics.Kernel.Rules;
 
 /// <summary>
@@ -97,13 +95,13 @@ internal sealed class UnsupportedConstructRule :
     public void Analyze(AssignmentExpressionSyntax node, ref ValidationContext context)
     {
         if (node.Parent is not ExpressionStatementSyntax ||
-            !GpuOperatorMacroResolver.TryResolve(node, context.SemanticModel, out var macro))
+            !OperatorMacroResolver.TryResolve(node, context.SemanticModel, out var macro))
         {
             return;
         }
 
         var failure = macro.Failure ??
-                      GpuOperatorMacroResolver.GetUnassignedTargetFailure(node, macro, context.SemanticModel) ??
+                      OperatorMacroResolver.GetUnassignedTargetFailure(node, macro, context.SemanticModel) ??
                       (context.NeedsManagedStateMachines && context.MethodSymbol.ContainingType is { } within
                           ? GetUnreachableTargetFailure(macro, within, context.SemanticModel.Compilation)
                           : null);
@@ -115,7 +113,7 @@ internal sealed class UnsupportedConstructRule :
 
     // The first target of <macro> or of an operator macro nested in it that the managed expansion cannot call
     // (ManagedAccessorSet.GetUnreachableTargetFailure)
-    private static string? GetUnreachableTargetFailure(GpuOperatorMacroResolver.OperatorMacro macro,
+    private static string? GetUnreachableTargetFailure(OperatorMacroResolver.OperatorMacro macro,
         INamedTypeSymbol within, Compilation compilation)
     {
         if (macro.TargetMethod is { } target &&
