@@ -335,8 +335,12 @@ internal static class StatementTranspilers
     {
         if (node.IsKind(SyntaxKind.GotoCaseStatement))
         {
-            context.Emitter.Writer.Append($"goto {GSharpInternalNames.Lowering.SwitchStatePrefix}{context.Emitter.CurrentSwitchId}_state_");
-            context.Visitor.Visit(node.Expression);
+            context.Emitter.Writer.Append("goto ");
+            if (node.Expression is { } value)
+            {
+                SwitchStateLabel.Append(value, ref context);
+            }
+
             context.Emitter.Writer.AppendLine(";");
             return;
         }

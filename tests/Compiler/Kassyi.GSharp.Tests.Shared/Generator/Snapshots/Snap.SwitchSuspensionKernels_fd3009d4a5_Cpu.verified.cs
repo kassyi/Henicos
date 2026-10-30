@@ -52,7 +52,7 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-__gsharp_ctx->__gsharp_id_4_tid=threadIdx.x;
+__gsharp_ctx->__gsharp_id_4_tid=(int)threadIdx.x;
 auto __gsharp_switch_temp_0 = __gsharp_id_2_k;
 if(__gsharp_switch_temp_0==0)
 {
@@ -64,7 +64,7 @@ goto __gsharp_switch_1_state_1;
 case 1:
 __gsharp_switch_1_state_1:
 {
-__gsharp_id_0_data[__gsharp_ctx->__gsharp_id_4_tid]=__gsharp_ctx->__gsharp_id_4_tid+1;
+__gsharp_id_0_data[__gsharp_ctx->__gsharp_id_4_tid]=__gsharp_add_i32(__gsharp_ctx->__gsharp_id_4_tid,1);
 __gsharp_yielded_for_block_barrier=true;
 __gsharp_state=2;
 return;
@@ -78,7 +78,7 @@ goto __gsharp_switch_1_state_3;
 case 3:
 __gsharp_switch_1_state_3:
 {
-__gsharp_id_0_data[__gsharp_ctx->__gsharp_id_4_tid]=100+__gsharp_ctx->__gsharp_id_4_tid;
+__gsharp_id_0_data[__gsharp_ctx->__gsharp_id_4_tid]=__gsharp_add_i32(100,__gsharp_ctx->__gsharp_id_4_tid);
 __gsharp_yielded_for_block_barrier=true;
 __gsharp_state=4;
 return;
@@ -92,7 +92,7 @@ goto __gsharp_switch_1_state_5;
 case 5:
 __gsharp_switch_1_state_5:
 {
-__gsharp_id_1_output[__gsharp_ctx->__gsharp_id_4_tid]=__gsharp_id_0_data[(__gsharp_ctx->__gsharp_id_4_tid+1)%__gsharp_id_3_count];
+__gsharp_id_1_output[__gsharp_ctx->__gsharp_id_4_tid]=__gsharp_id_0_data[(__gsharp_add_i32(__gsharp_ctx->__gsharp_id_4_tid,1))%__gsharp_id_3_count];
 __gsharp_state=-1;
 return;
 }
@@ -384,8 +384,8 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-__gsharp_ctx->__gsharp_id_2_tid=threadIdx.x;
-__gsharp_ctx->__gsharp_id_3_value=__gsharp_ctx->__gsharp_id_2_tid*10;
+__gsharp_ctx->__gsharp_id_2_tid=(int)threadIdx.x;
+__gsharp_ctx->__gsharp_id_3_value=__gsharp_mul_i32(__gsharp_ctx->__gsharp_id_2_tid,10);
 auto __gsharp_switch_temp_0 = __gsharp_id_1_flag;
 if(__gsharp_switch_temp_0==0)
 {
@@ -429,7 +429,7 @@ __gsharp_switch_1_state_4:
 {
 __gsharp_ctx->__gsharp_warp_temp_1=__gsharp_warp_shuffle_read_down_sync(__gsharp_root,4294967295U,__gsharp_ctx->__gsharp_id_3_value,(unsigned int)__gsharp_id_1_flag,32,""SwitchSuspensionKernels.cs(48,31)"");
 __gsharp_ctx->__gsharp_id_4_shifted=__gsharp_ctx->__gsharp_warp_temp_1;
-__gsharp_ctx->__gsharp_id_3_value=__gsharp_ctx->__gsharp_id_4_shifted+__gsharp_id_1_flag;
+__gsharp_ctx->__gsharp_id_3_value=__gsharp_add_i32(__gsharp_ctx->__gsharp_id_4_shifted,__gsharp_id_1_flag);
 goto __gsharp_switch_1_state_8;
 goto __gsharp_switch_1_state_5;
 }
@@ -452,7 +452,7 @@ case 7:
 __gsharp_switch_1_state_7:
 {
 auto __gsharp_warp_temp_3 = __gsharp_warp_shuffle_read_xor_sync(__gsharp_root,4294967295U,__gsharp_ctx->__gsharp_id_3_value,4,32,""SwitchSuspensionKernels.cs(52,67)"");
-__gsharp_ctx->__gsharp_id_3_value=__gsharp_ctx->__gsharp_warp_temp_2+__gsharp_warp_temp_3;
+__gsharp_ctx->__gsharp_id_3_value=__gsharp_add_i32(__gsharp_ctx->__gsharp_warp_temp_2,__gsharp_warp_temp_3);
 goto __gsharp_switch_1_state_8;
 goto __gsharp_switch_1_state_8;
 }
@@ -777,7 +777,7 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-__gsharp_ctx->__gsharp_id_3_tid=threadIdx.x;
+__gsharp_ctx->__gsharp_id_3_tid=(int)threadIdx.x;
 __gsharp_ctx->__gsharp_id_4_value=__gsharp_ctx->__gsharp_id_3_tid;
 auto __gsharp_switch_temp_0 = __gsharp_id_1_outer;
 if(__gsharp_switch_temp_0==0)
@@ -816,14 +816,14 @@ goto __gsharp_switch_1_state_4;
 case 4:
 __gsharp_switch_1_state_4:
 {
-__gsharp_ctx->__gsharp_id_4_value+=100;
+__gsharp_ctx->__gsharp_id_4_value=__gsharp_add_i32(__gsharp_ctx->__gsharp_id_4_value,100);
 goto __gsharp_switch_1_state_5;
 goto __gsharp_switch_1_state_5;
 }
 case 5:
 __gsharp_switch_1_state_5:
 {
-__gsharp_ctx->__gsharp_id_4_value+=1000;
+__gsharp_ctx->__gsharp_id_4_value=__gsharp_add_i32(__gsharp_ctx->__gsharp_id_4_value,1000);
 goto __gsharp_switch_1_state_8;
 goto __gsharp_switch_1_state_6;
 }
@@ -835,13 +835,13 @@ switch(__gsharp_id_2_inner)
 case 0:
 __gsharp_switch_2_state_0:
 {
-__gsharp_ctx->__gsharp_id_4_value+=5;
+__gsharp_ctx->__gsharp_id_4_value=__gsharp_add_i32(__gsharp_ctx->__gsharp_id_4_value,5);
 break;
 }
 default:
 __gsharp_switch_2_state_default:
 {
-__gsharp_ctx->__gsharp_id_4_value+=7;
+__gsharp_ctx->__gsharp_id_4_value=__gsharp_add_i32(__gsharp_ctx->__gsharp_id_4_value,7);
 break;
 }
 }
@@ -1185,7 +1185,7 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-__gsharp_ctx->__gsharp_id_2_tid=threadIdx.x;
+__gsharp_ctx->__gsharp_id_2_tid=(int)threadIdx.x;
 __gsharp_ctx->__gsharp_id_3_value=__gsharp_ctx->__gsharp_id_2_tid;
 auto __gsharp_switch_temp_0 = __gsharp_id_1_flag;
 if(__gsharp_switch_temp_0==0)
@@ -1221,7 +1221,7 @@ goto __gsharp_switch_1_state_3;
 case 3:
 __gsharp_switch_1_state_3:
 {
-__gsharp_ctx->__gsharp_id_3_value+=50;
+__gsharp_ctx->__gsharp_id_3_value=__gsharp_add_i32(__gsharp_ctx->__gsharp_id_3_value,50);
 goto __gsharp_switch_1_state_6;
 goto __gsharp_switch_1_state_4;
 }
@@ -1236,7 +1236,7 @@ case 5:
 __gsharp_switch_1_state_5:
 {
 __gsharp_ctx->__gsharp_warp_temp_1=__gsharp_warp_shuffle_read_xor_sync(__gsharp_root,4294967295U,__gsharp_ctx->__gsharp_id_3_value,2,32,""SwitchSuspensionKernels.cs(115,31)"");
-__gsharp_ctx->__gsharp_id_4_doubled=__gsharp_ctx->__gsharp_warp_temp_1*2;
+__gsharp_ctx->__gsharp_id_4_doubled=__gsharp_mul_i32(__gsharp_ctx->__gsharp_warp_temp_1,2);
 __gsharp_ctx->__gsharp_id_3_value=__gsharp_ctx->__gsharp_id_4_doubled;
 goto __gsharp_switch_1_state_8;
 goto __gsharp_switch_1_state_6;
@@ -1252,7 +1252,7 @@ case 7:
 __gsharp_switch_1_state_7:
 {
 auto __gsharp_warp_temp_2 = __gsharp_warp_shuffle_read_xor_sync(__gsharp_root,4294967295U,__gsharp_ctx->__gsharp_id_3_value,4,32,""SwitchSuspensionKernels.cs(119,25)"");
-__gsharp_ctx->__gsharp_id_3_value=__gsharp_warp_temp_2+1;
+__gsharp_ctx->__gsharp_id_3_value=__gsharp_add_i32(__gsharp_warp_temp_2,1);
 goto __gsharp_switch_1_state_8;
 goto __gsharp_switch_1_state_8;
 }
@@ -1576,7 +1576,7 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-__gsharp_ctx->__gsharp_id_2_tid=threadIdx.x;
+__gsharp_ctx->__gsharp_id_2_tid=(int)threadIdx.x;
 __gsharp_ctx->__gsharp_id_3_value=__gsharp_ctx->__gsharp_id_2_tid;
 __gsharp_ctx->__gsharp_id_4_i=0;
 goto __gsharp_switch_1_state_1;
@@ -1618,7 +1618,7 @@ goto __gsharp_switch_1_state_4;
 case 4:
 __gsharp_switch_1_state_4:
 {
-__gsharp_ctx->__gsharp_id_3_value+=1;
+__gsharp_ctx->__gsharp_id_3_value=__gsharp_add_i32(__gsharp_ctx->__gsharp_id_3_value,1);
 goto __gsharp_switch_1_state_8;
 goto __gsharp_switch_1_state_5;
 }
@@ -1633,20 +1633,20 @@ case 6:
 __gsharp_switch_1_state_6:
 {
 auto __gsharp_warp_temp_1 = __gsharp_warp_shuffle_read_xor_sync(__gsharp_root,4294967295U,__gsharp_ctx->__gsharp_id_3_value,2,32,""SwitchSuspensionKernels.cs(143,29)"");
-__gsharp_ctx->__gsharp_id_3_value=__gsharp_warp_temp_1*2;
+__gsharp_ctx->__gsharp_id_3_value=__gsharp_mul_i32(__gsharp_warp_temp_1,2);
 goto __gsharp_switch_1_state_7;
 goto __gsharp_switch_1_state_7;
 }
 case 7:
 __gsharp_switch_1_state_7:
 {
-__gsharp_ctx->__gsharp_id_3_value+=10;
+__gsharp_ctx->__gsharp_id_3_value=__gsharp_add_i32(__gsharp_ctx->__gsharp_id_3_value,10);
 goto __gsharp_switch_1_state_8;
 }
 case 8:
 __gsharp_switch_1_state_8:
 {
-__gsharp_ctx->__gsharp_id_4_i++;
+__gsharp_ctx->__gsharp_id_4_i=__gsharp_add_i32(__gsharp_ctx->__gsharp_id_4_i,1);
 goto __gsharp_switch_1_state_1;
 goto __gsharp_switch_1_state_9;
 }
@@ -1972,10 +1972,10 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-__gsharp_ctx->__gsharp_id_2_tid=threadIdx.x;
+__gsharp_ctx->__gsharp_id_2_tid=(int)threadIdx.x;
 __gsharp_ctx->__gsharp_id_3_k=__gsharp_id_1_flag;
 __gsharp_ctx->__gsharp_id_4_value=__gsharp_ctx->__gsharp_id_2_tid;
-auto __gsharp_switch_temp_0 = __gsharp_ctx->__gsharp_id_3_k++;
+auto __gsharp_switch_temp_0 = __gsharp_sub_i32((__gsharp_ctx->__gsharp_id_3_k=__gsharp_add_i32(__gsharp_ctx->__gsharp_id_3_k,1)),1);
 if(__gsharp_switch_temp_0==0)
 {
 goto __gsharp_switch_1_state_1;
@@ -2020,7 +2020,7 @@ goto __gsharp_switch_1_state_5;
 case 5:
 __gsharp_switch_1_state_5:
 {
-__gsharp_id_0_output[__gsharp_ctx->__gsharp_id_2_tid]=__gsharp_ctx->__gsharp_id_4_value*10+__gsharp_ctx->__gsharp_id_3_k;
+__gsharp_id_0_output[__gsharp_ctx->__gsharp_id_2_tid]=__gsharp_add_i32(__gsharp_mul_i32(__gsharp_ctx->__gsharp_id_4_value,10),__gsharp_ctx->__gsharp_id_3_k);
 __gsharp_state=-1;
 return;
 }
@@ -2310,7 +2310,7 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-__gsharp_ctx->__gsharp_id_2_tid=threadIdx.x;
+__gsharp_ctx->__gsharp_id_2_tid=(int)threadIdx.x;
 __gsharp_ctx->__gsharp_id_3_Max=255;
 auto __gsharp_switch_temp_0 = __gsharp_id_1_flag;
 if(__gsharp_switch_temp_0==0)
@@ -2628,7 +2628,7 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-__gsharp_ctx->__gsharp_id_2_tid=threadIdx.x;
+__gsharp_ctx->__gsharp_id_2_tid=(int)threadIdx.x;
 __gsharp_ctx->__gsharp_id_3_value=__gsharp_ctx->__gsharp_id_2_tid;
 __gsharp_ctx->__gsharp_id_4_Next=1;
 auto __gsharp_switch_temp_0 = __gsharp_id_1_flag;
@@ -2669,14 +2669,14 @@ case 4:
 __gsharp_switch_1_state_4:
 {
 auto __gsharp_warp_temp_1 = __gsharp_warp_shuffle_read_xor_sync(__gsharp_root,4294967295U,__gsharp_ctx->__gsharp_id_3_value,2,32,""SwitchSuspensionKernels.cs(211,25)"");
-__gsharp_ctx->__gsharp_id_3_value=__gsharp_warp_temp_1+100;
+__gsharp_ctx->__gsharp_id_3_value=__gsharp_add_i32(__gsharp_warp_temp_1,100);
 goto __gsharp_switch_1_state_6;
 goto __gsharp_switch_1_state_5;
 }
 case 5:
 __gsharp_switch_1_state_5:
 {
-__gsharp_ctx->__gsharp_id_3_value+=1000;
+__gsharp_ctx->__gsharp_id_3_value=__gsharp_add_i32(__gsharp_ctx->__gsharp_id_3_value,1000);
 goto __gsharp_switch_1_state_6;
 goto __gsharp_switch_1_state_6;
 }
@@ -2981,9 +2981,9 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-__gsharp_ctx->__gsharp_id_2_tid=threadIdx.x;
+__gsharp_ctx->__gsharp_id_2_tid=(int)threadIdx.x;
 __gsharp_ctx->__gsharp_id_3_A=3;
-__gsharp_ctx->__gsharp_id_4_B=__gsharp_ctx->__gsharp_id_3_A*2;
+__gsharp_ctx->__gsharp_id_4_B=6;
 auto __gsharp_switch_temp_0 = __gsharp_id_1_flag;
 if(__gsharp_switch_temp_0==0)
 {
@@ -3027,7 +3027,7 @@ goto __gsharp_switch_1_state_5;
 case 5:
 __gsharp_switch_1_state_5:
 {
-__gsharp_id_0_output[__gsharp_ctx->__gsharp_id_2_tid]=__gsharp_ctx->__gsharp_id_3_A+__gsharp_ctx->__gsharp_id_4_B;
+__gsharp_id_0_output[__gsharp_ctx->__gsharp_id_2_tid]=9;
 goto __gsharp_switch_1_state_6;
 goto __gsharp_switch_1_state_6;
 }

@@ -84,13 +84,13 @@ public static partial class AotContexts
 {
 }
 public const string BitIntrinsicsKernel_Source = @"extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__CarryAndBitIntrinsicKernels__BitIntrinsicsKernel(GSharpArray<unsigned int> __gsharp_id_0_input, GSharpArray<unsigned int> __gsharp_id_1_output, int __gsharp_id_2_n){
-int __gsharp_id_3_tid = threadIdx.x;
+int __gsharp_id_3_tid = (int)threadIdx.x;
 unsigned int __gsharp_id_4_value = __gsharp_id_0_input[__gsharp_id_3_tid];
-unsigned int __gsharp_id_5_next = __gsharp_id_0_input[(__gsharp_id_3_tid+1)%__gsharp_id_2_n];
+unsigned int __gsharp_id_5_next = __gsharp_id_0_input[(__gsharp_add_i32(__gsharp_id_3_tid,1))%__gsharp_id_2_n];
 unsigned int __gsharp_id_6_shift = (unsigned int)__gsharp_id_3_tid;
-__gsharp_id_1_output[__gsharp_id_3_tid*3]=__brev(__gsharp_id_4_value);
-__gsharp_id_1_output[__gsharp_id_3_tid*3+1]=__funnelshift_l(__gsharp_id_4_value,__gsharp_id_5_next,__gsharp_id_6_shift);
-__gsharp_id_1_output[__gsharp_id_3_tid*3+2]=__funnelshift_r(__gsharp_id_4_value,__gsharp_id_5_next,__gsharp_id_6_shift);
+__gsharp_id_1_output[__gsharp_mul_i32(__gsharp_id_3_tid,3)]=__brev(__gsharp_id_4_value);
+__gsharp_id_1_output[__gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_3_tid,3),1)]=__funnelshift_l(__gsharp_id_4_value,__gsharp_id_5_next,__gsharp_id_6_shift);
+__gsharp_id_1_output[__gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_3_tid,3),2)]=__funnelshift_r(__gsharp_id_4_value,__gsharp_id_5_next,__gsharp_id_6_shift);
 }
 ";
 public static readonly string BitIntrinsicsKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +BitIntrinsicsKernel_Source;
@@ -241,7 +241,7 @@ finally
 }
 #pragma warning restore CS8500
 public const string CarryChainKernel_Source = @"extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__CarryAndBitIntrinsicKernels__CarryChainKernel(GSharpArray<unsigned int> __gsharp_id_0_a, GSharpArray<unsigned int> __gsharp_id_1_b, GSharpArray<unsigned int> __gsharp_id_2_sum, GSharpArray<unsigned long long> __gsharp_id_3_carryOut, GSharpArray<unsigned int> __gsharp_id_4_difference, GSharpArray<long long> __gsharp_id_5_borrowOut){
-int __gsharp_id_6_tid = threadIdx.x;
+int __gsharp_id_6_tid = (int)threadIdx.x;
 unsigned long long __gsharp_id_7_carry = (unsigned long long)(__gsharp_id_6_tid&1);
 __gsharp_id_2_sum[__gsharp_id_6_tid]=__gsharp_add_cc(__gsharp_id_0_a[__gsharp_id_6_tid],__gsharp_id_1_b[__gsharp_id_6_tid],&__gsharp_id_7_carry);
 __gsharp_id_3_carryOut[__gsharp_id_6_tid]=__gsharp_id_7_carry;

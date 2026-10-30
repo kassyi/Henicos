@@ -67,7 +67,7 @@ template <typename TDsmem> inline __device__ int __gsharp_fn_Kassyi__GSharp__Tes
 int* __gsharp_id_2_s = (int*)__gsharp_dsmem_place<TDsmem::template Slot<0x78590bc00341a113ull>>(__gsharp_dsmem, (unsigned long long)(long long)(__gsharp_id_0_count) * sizeof(int), __GSHARP_DSMEM_ALIGN(int));
 if(__gsharp_id_1_tid<__gsharp_id_0_count)
 {
-__gsharp_id_2_s[__gsharp_id_1_tid]=__gsharp_id_1_tid+1;
+__gsharp_id_2_s[__gsharp_id_1_tid]=__gsharp_add_i32(__gsharp_id_1_tid,1);
 }
 __syncthreads();
 return (__gsharp_id_1_tid<__gsharp_id_0_count?__gsharp_id_2_s[__gsharp_id_1_tid]:0);
@@ -166,14 +166,14 @@ __gsharp_dsmem_Kassyi__GSharp__Tests__Shared__Core__SharedMemoryLimitKernels__Fi
 __gsharp_dsmem_Kassyi__GSharp__Tests__Shared__Core__SharedMemoryLimitKernels__FillKernel* __gsharp_dsmem = &__gsharp_dsmem_storage;
 __gsharp_dsmem_init(__gsharp_dsmem);
 int* __gsharp_id_2_s = (int*)__gsharp_dsmem_place<__gsharp_dsmem_Kassyi__GSharp__Tests__Shared__Core__SharedMemoryLimitKernels__FillKernel::Slot<0xecc626cdde7f7467ull>>(__gsharp_dsmem, (unsigned long long)(long long)(__gsharp_id_1_n) * sizeof(int), __GSHARP_DSMEM_ALIGN(int));
-for(int __gsharp_id_3_i = threadIdx.x;__gsharp_id_3_i<__gsharp_id_1_n;__gsharp_id_3_i+=blockDim.x)
+for(int __gsharp_id_3_i = (int)threadIdx.x;__gsharp_id_3_i<__gsharp_id_1_n;__gsharp_id_3_i=__gsharp_add_i32(__gsharp_id_3_i,(int)blockDim.x))
 {
-__gsharp_id_2_s[__gsharp_id_3_i]=__gsharp_id_3_i+1;
+__gsharp_id_2_s[__gsharp_id_3_i]=__gsharp_add_i32(__gsharp_id_3_i,1);
 }
 __syncthreads();
-for(int __gsharp_id_4_i = threadIdx.x;__gsharp_id_4_i<__gsharp_id_1_n;__gsharp_id_4_i+=blockDim.x)
+for(int __gsharp_id_4_i = (int)threadIdx.x;__gsharp_id_4_i<__gsharp_id_1_n;__gsharp_id_4_i=__gsharp_add_i32(__gsharp_id_4_i,(int)blockDim.x))
 {
-__gsharp_id_0_output[__gsharp_id_4_i]=__gsharp_id_2_s[(__gsharp_id_4_i+1)%__gsharp_id_1_n];
+__gsharp_id_0_output[__gsharp_id_4_i]=__gsharp_id_2_s[(__gsharp_add_i32(__gsharp_id_4_i,1))%__gsharp_id_1_n];
 }
 }
 ";
@@ -299,9 +299,9 @@ __gsharp_dsmem_Kassyi__GSharp__Tests__Shared__Core__SharedMemoryLimitKernels__Fi
 __gsharp_dsmem_Kassyi__GSharp__Tests__Shared__Core__SharedMemoryLimitKernels__FillWithoutBarrierKernel* __gsharp_dsmem = &__gsharp_dsmem_storage;
 __gsharp_dsmem_init(__gsharp_dsmem);
 int* __gsharp_id_2_s = (int*)__gsharp_dsmem_place<__gsharp_dsmem_Kassyi__GSharp__Tests__Shared__Core__SharedMemoryLimitKernels__FillWithoutBarrierKernel::Slot<0x6803bea60603c5b6ull>>(__gsharp_dsmem, (unsigned long long)(long long)(__gsharp_id_1_n) * sizeof(int), __GSHARP_DSMEM_ALIGN(int));
-for(int __gsharp_id_3_i = threadIdx.x;__gsharp_id_3_i<__gsharp_id_1_n;__gsharp_id_3_i+=blockDim.x)
+for(int __gsharp_id_3_i = (int)threadIdx.x;__gsharp_id_3_i<__gsharp_id_1_n;__gsharp_id_3_i=__gsharp_add_i32(__gsharp_id_3_i,(int)blockDim.x))
 {
-__gsharp_id_2_s[__gsharp_id_3_i]=2*__gsharp_id_3_i;
+__gsharp_id_2_s[__gsharp_id_3_i]=__gsharp_mul_i32(2,__gsharp_id_3_i);
 __gsharp_id_0_output[__gsharp_id_3_i]=__gsharp_id_2_s[__gsharp_id_3_i];
 }
 }
@@ -427,19 +427,19 @@ extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Core__Sha
 __gsharp_dsmem_Kassyi__GSharp__Tests__Shared__Core__SharedMemoryLimitKernels__TwoRegionsKernel __gsharp_dsmem_storage;
 __gsharp_dsmem_Kassyi__GSharp__Tests__Shared__Core__SharedMemoryLimitKernels__TwoRegionsKernel* __gsharp_dsmem = &__gsharp_dsmem_storage;
 __gsharp_dsmem_init(__gsharp_dsmem);
-int __gsharp_id_3_tid = threadIdx.x;
+int __gsharp_id_3_tid = (int)threadIdx.x;
 int* __gsharp_id_4_first = (int*)__gsharp_dsmem_place<__gsharp_dsmem_Kassyi__GSharp__Tests__Shared__Core__SharedMemoryLimitKernels__TwoRegionsKernel::Slot<0xc6fa9a003ca4ac1aull>>(__gsharp_dsmem, (unsigned long long)(long long)(__gsharp_id_1_a) * sizeof(int), __GSHARP_DSMEM_ALIGN(int));
 double* __gsharp_id_5_second = (double*)__gsharp_dsmem_place<__gsharp_dsmem_Kassyi__GSharp__Tests__Shared__Core__SharedMemoryLimitKernels__TwoRegionsKernel::Slot<0xc6fa9b003ca4adcdull>>(__gsharp_dsmem, (unsigned long long)(long long)(__gsharp_id_2_b) * sizeof(double), __GSHARP_DSMEM_ALIGN(double));
 if(__gsharp_id_3_tid<__gsharp_id_1_a)
 {
-__gsharp_id_4_first[__gsharp_id_3_tid]=__gsharp_id_3_tid+1;
+__gsharp_id_4_first[__gsharp_id_3_tid]=__gsharp_add_i32(__gsharp_id_3_tid,1);
 }
 if(__gsharp_id_3_tid<__gsharp_id_2_b)
 {
 __gsharp_id_5_second[__gsharp_id_3_tid]=__gsharp_id_3_tid+0.5;
 }
 __syncthreads();
-__gsharp_id_0_output[__gsharp_id_3_tid]=((__gsharp_id_3_tid<__gsharp_id_1_a?__gsharp_id_4_first[__gsharp_id_3_tid]:0))+((__gsharp_id_3_tid<__gsharp_id_2_b?(int)(__gsharp_id_5_second[__gsharp_id_3_tid]*2):0));
+__gsharp_id_0_output[__gsharp_id_3_tid]=__gsharp_add_i32((__gsharp_id_3_tid<__gsharp_id_1_a?__gsharp_id_4_first[__gsharp_id_3_tid]:0),(__gsharp_id_3_tid<__gsharp_id_2_b?__gsharp_to_i32(__gsharp_id_5_second[__gsharp_id_3_tid]*2):0));
 }
 ";
 public static readonly string TwoRegionsKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +TwoRegionsKernel_Source;
@@ -567,15 +567,15 @@ extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Core__Sha
 __gsharp_dsmem_Kassyi__GSharp__Tests__Shared__Core__SharedMemoryLimitKernels__HoistedCountKernel __gsharp_dsmem_storage;
 __gsharp_dsmem_Kassyi__GSharp__Tests__Shared__Core__SharedMemoryLimitKernels__HoistedCountKernel* __gsharp_dsmem = &__gsharp_dsmem_storage;
 __gsharp_dsmem_init(__gsharp_dsmem);
-int __gsharp_id_1_tid = threadIdx.x;
-int __gsharp_id_2_n = 4+4*(blockIdx.x%2);
+int __gsharp_id_1_tid = (int)threadIdx.x;
+int __gsharp_id_2_n = __gsharp_add_i32(4,__gsharp_mul_i32(4,(int)blockIdx.x%2));
 int* __gsharp_id_3_a = (int*)__gsharp_dsmem_place<__gsharp_dsmem_Kassyi__GSharp__Tests__Shared__Core__SharedMemoryLimitKernels__HoistedCountKernel::Slot<0xd90fdd0a7254bddaull>>(__gsharp_dsmem, (unsigned long long)(long long)(__gsharp_id_2_n) * sizeof(int), __GSHARP_DSMEM_ALIGN(int));
 if(__gsharp_id_1_tid<__gsharp_id_2_n)
 {
-__gsharp_id_3_a[__gsharp_id_1_tid]=__gsharp_id_1_tid+1;
+__gsharp_id_3_a[__gsharp_id_1_tid]=__gsharp_add_i32(__gsharp_id_1_tid,1);
 }
 __syncthreads();
-__gsharp_id_0_output[blockIdx.x*blockDim.x+__gsharp_id_1_tid]=(__gsharp_id_1_tid<__gsharp_id_2_n?__gsharp_id_3_a[(__gsharp_id_1_tid+1)%__gsharp_id_2_n]:0);
+__gsharp_id_0_output[__gsharp_add_i32(__gsharp_mul_i32((int)blockIdx.x,(int)blockDim.x),__gsharp_id_1_tid)]=(__gsharp_id_1_tid<__gsharp_id_2_n?__gsharp_id_3_a[(__gsharp_add_i32(__gsharp_id_1_tid,1))%__gsharp_id_2_n]:0);
 }
 ";
 public static readonly string HoistedCountKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +HoistedCountKernel_Source;
@@ -695,7 +695,7 @@ extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Core__Sha
 __gsharp_dsmem_Kassyi__GSharp__Tests__Shared__Core__SharedMemoryLimitKernels__RegionOrderKernel __gsharp_dsmem_storage;
 __gsharp_dsmem_Kassyi__GSharp__Tests__Shared__Core__SharedMemoryLimitKernels__RegionOrderKernel* __gsharp_dsmem = &__gsharp_dsmem_storage;
 __gsharp_dsmem_init(__gsharp_dsmem);
-int __gsharp_id_3_tid = threadIdx.x;
+int __gsharp_id_3_tid = (int)threadIdx.x;
 int __gsharp_id_4_first = __gsharp_fn_Kassyi__GSharp__Tests__Shared__Core__SharedMemoryLimitKernels__FirstRegion(__gsharp_id_1_a,__gsharp_id_3_tid,__gsharp_dsmem);
 double* __gsharp_id_5_second = (double*)__gsharp_dsmem_place<__gsharp_dsmem_Kassyi__GSharp__Tests__Shared__Core__SharedMemoryLimitKernels__RegionOrderKernel::Slot<0x9418ed423d4a4ffbull>>(__gsharp_dsmem, (unsigned long long)(long long)(__gsharp_id_2_b) * sizeof(double), __GSHARP_DSMEM_ALIGN(double));
 if(__gsharp_id_3_tid<__gsharp_id_2_b)
@@ -703,7 +703,7 @@ if(__gsharp_id_3_tid<__gsharp_id_2_b)
 __gsharp_id_5_second[__gsharp_id_3_tid]=__gsharp_id_3_tid+0.5;
 }
 __syncthreads();
-__gsharp_id_0_output[__gsharp_id_3_tid]=__gsharp_id_4_first+((__gsharp_id_3_tid<__gsharp_id_2_b?(int)(__gsharp_id_5_second[__gsharp_id_3_tid]*2):0));
+__gsharp_id_0_output[__gsharp_id_3_tid]=__gsharp_add_i32(__gsharp_id_4_first,(__gsharp_id_3_tid<__gsharp_id_2_b?__gsharp_to_i32(__gsharp_id_5_second[__gsharp_id_3_tid]*2):0));
 }
 ";
 public static readonly string RegionOrderKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +RegionOrderKernel_Source;
@@ -831,7 +831,7 @@ extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Core__Sha
 __gsharp_dsmem_Kassyi__GSharp__Tests__Shared__Core__SharedMemoryLimitKernels__ManyStaticDeclarationsKernel __gsharp_dsmem_storage;
 __gsharp_dsmem_Kassyi__GSharp__Tests__Shared__Core__SharedMemoryLimitKernels__ManyStaticDeclarationsKernel* __gsharp_dsmem = &__gsharp_dsmem_storage;
 __gsharp_dsmem_init(__gsharp_dsmem);
-int __gsharp_id_2_tid = threadIdx.x;
+int __gsharp_id_2_tid = (int)threadIdx.x;
 __shared__ int __gsharp_id_3_s00[4];
 __gsharp_id_3_s00[__gsharp_id_2_tid%4]=0;
 __shared__ int __gsharp_id_4_s01[4];
@@ -974,7 +974,7 @@ __shared__ int __gsharp_id_72_s69[4];
 __gsharp_id_72_s69[__gsharp_id_2_tid%4]=69;
 int* __gsharp_id_73_d = (int*)__gsharp_dsmem_place<__gsharp_dsmem_Kassyi__GSharp__Tests__Shared__Core__SharedMemoryLimitKernels__ManyStaticDeclarationsKernel::Slot<0xc7a7c0ee4805580full>>(__gsharp_dsmem, (unsigned long long)(long long)(__gsharp_id_1_n) * sizeof(int), __GSHARP_DSMEM_ALIGN(int));
 __gsharp_id_73_d[__gsharp_id_2_tid]=__gsharp_id_2_tid;
-__gsharp_id_0_output[__gsharp_id_2_tid]=__gsharp_id_73_d[__gsharp_id_2_tid]+__gsharp_id_3_s00[__gsharp_id_2_tid%4]+__gsharp_id_4_s01[__gsharp_id_2_tid%4]+__gsharp_id_5_s02[__gsharp_id_2_tid%4]+__gsharp_id_6_s03[__gsharp_id_2_tid%4]+__gsharp_id_7_s04[__gsharp_id_2_tid%4]+__gsharp_id_8_s05[__gsharp_id_2_tid%4]+__gsharp_id_9_s06[__gsharp_id_2_tid%4]+__gsharp_id_10_s07[__gsharp_id_2_tid%4]+__gsharp_id_11_s08[__gsharp_id_2_tid%4]+__gsharp_id_12_s09[__gsharp_id_2_tid%4]+__gsharp_id_13_s10[__gsharp_id_2_tid%4]+__gsharp_id_14_s11[__gsharp_id_2_tid%4]+__gsharp_id_15_s12[__gsharp_id_2_tid%4]+__gsharp_id_16_s13[__gsharp_id_2_tid%4]+__gsharp_id_17_s14[__gsharp_id_2_tid%4]+__gsharp_id_18_s15[__gsharp_id_2_tid%4]+__gsharp_id_19_s16[__gsharp_id_2_tid%4]+__gsharp_id_20_s17[__gsharp_id_2_tid%4]+__gsharp_id_21_s18[__gsharp_id_2_tid%4]+__gsharp_id_22_s19[__gsharp_id_2_tid%4]+__gsharp_id_23_s20[__gsharp_id_2_tid%4]+__gsharp_id_24_s21[__gsharp_id_2_tid%4]+__gsharp_id_25_s22[__gsharp_id_2_tid%4]+__gsharp_id_26_s23[__gsharp_id_2_tid%4]+__gsharp_id_27_s24[__gsharp_id_2_tid%4]+__gsharp_id_28_s25[__gsharp_id_2_tid%4]+__gsharp_id_29_s26[__gsharp_id_2_tid%4]+__gsharp_id_30_s27[__gsharp_id_2_tid%4]+__gsharp_id_31_s28[__gsharp_id_2_tid%4]+__gsharp_id_32_s29[__gsharp_id_2_tid%4]+__gsharp_id_33_s30[__gsharp_id_2_tid%4]+__gsharp_id_34_s31[__gsharp_id_2_tid%4]+__gsharp_id_35_s32[__gsharp_id_2_tid%4]+__gsharp_id_36_s33[__gsharp_id_2_tid%4]+__gsharp_id_37_s34[__gsharp_id_2_tid%4]+__gsharp_id_38_s35[__gsharp_id_2_tid%4]+__gsharp_id_39_s36[__gsharp_id_2_tid%4]+__gsharp_id_40_s37[__gsharp_id_2_tid%4]+__gsharp_id_41_s38[__gsharp_id_2_tid%4]+__gsharp_id_42_s39[__gsharp_id_2_tid%4]+__gsharp_id_43_s40[__gsharp_id_2_tid%4]+__gsharp_id_44_s41[__gsharp_id_2_tid%4]+__gsharp_id_45_s42[__gsharp_id_2_tid%4]+__gsharp_id_46_s43[__gsharp_id_2_tid%4]+__gsharp_id_47_s44[__gsharp_id_2_tid%4]+__gsharp_id_48_s45[__gsharp_id_2_tid%4]+__gsharp_id_49_s46[__gsharp_id_2_tid%4]+__gsharp_id_50_s47[__gsharp_id_2_tid%4]+__gsharp_id_51_s48[__gsharp_id_2_tid%4]+__gsharp_id_52_s49[__gsharp_id_2_tid%4]+__gsharp_id_53_s50[__gsharp_id_2_tid%4]+__gsharp_id_54_s51[__gsharp_id_2_tid%4]+__gsharp_id_55_s52[__gsharp_id_2_tid%4]+__gsharp_id_56_s53[__gsharp_id_2_tid%4]+__gsharp_id_57_s54[__gsharp_id_2_tid%4]+__gsharp_id_58_s55[__gsharp_id_2_tid%4]+__gsharp_id_59_s56[__gsharp_id_2_tid%4]+__gsharp_id_60_s57[__gsharp_id_2_tid%4]+__gsharp_id_61_s58[__gsharp_id_2_tid%4]+__gsharp_id_62_s59[__gsharp_id_2_tid%4]+__gsharp_id_63_s60[__gsharp_id_2_tid%4]+__gsharp_id_64_s61[__gsharp_id_2_tid%4]+__gsharp_id_65_s62[__gsharp_id_2_tid%4]+__gsharp_id_66_s63[__gsharp_id_2_tid%4]+__gsharp_id_67_s64[__gsharp_id_2_tid%4]+__gsharp_id_68_s65[__gsharp_id_2_tid%4]+__gsharp_id_69_s66[__gsharp_id_2_tid%4]+__gsharp_id_70_s67[__gsharp_id_2_tid%4]+__gsharp_id_71_s68[__gsharp_id_2_tid%4]+__gsharp_id_72_s69[__gsharp_id_2_tid%4];
+__gsharp_id_0_output[__gsharp_id_2_tid]=__gsharp_add_i32(__gsharp_add_i32(__gsharp_add_i32(__gsharp_add_i32(__gsharp_add_i32(__gsharp_add_i32(__gsharp_add_i32(__gsharp_add_i32(__gsharp_add_i32(__gsharp_add_i32(__gsharp_add_i32(__gsharp_add_i32(__gsharp_add_i32(__gsharp_add_i32(__gsharp_add_i32(__gsharp_add_i32(__gsharp_add_i32(__gsharp_add_i32(__gsharp_add_i32(__gsharp_add_i32(__gsharp_add_i32(__gsharp_add_i32(__gsharp_add_i32(__gsharp_add_i32(__gsharp_add_i32(__gsharp_add_i32(__gsharp_add_i32(__gsharp_add_i32(__gsharp_add_i32(__gsharp_add_i32(__gsharp_add_i32(__gsharp_add_i32(__gsharp_add_i32(__gsharp_add_i32(__gsharp_add_i32(__gsharp_add_i32(__gsharp_add_i32(__gsharp_add_i32(__gsharp_add_i32(__gsharp_add_i32(__gsharp_add_i32(__gsharp_add_i32(__gsharp_add_i32(__gsharp_add_i32(__gsharp_add_i32(__gsharp_add_i32(__gsharp_add_i32(__gsharp_add_i32(__gsharp_add_i32(__gsharp_add_i32(__gsharp_add_i32(__gsharp_add_i32(__gsharp_add_i32(__gsharp_add_i32(__gsharp_add_i32(__gsharp_add_i32(__gsharp_add_i32(__gsharp_add_i32(__gsharp_add_i32(__gsharp_add_i32(__gsharp_add_i32(__gsharp_add_i32(__gsharp_add_i32(__gsharp_add_i32(__gsharp_add_i32(__gsharp_add_i32(__gsharp_add_i32(__gsharp_add_i32(__gsharp_add_i32(__gsharp_add_i32(__gsharp_id_73_d[__gsharp_id_2_tid],__gsharp_id_3_s00[__gsharp_id_2_tid%4]),__gsharp_id_4_s01[__gsharp_id_2_tid%4]),__gsharp_id_5_s02[__gsharp_id_2_tid%4]),__gsharp_id_6_s03[__gsharp_id_2_tid%4]),__gsharp_id_7_s04[__gsharp_id_2_tid%4]),__gsharp_id_8_s05[__gsharp_id_2_tid%4]),__gsharp_id_9_s06[__gsharp_id_2_tid%4]),__gsharp_id_10_s07[__gsharp_id_2_tid%4]),__gsharp_id_11_s08[__gsharp_id_2_tid%4]),__gsharp_id_12_s09[__gsharp_id_2_tid%4]),__gsharp_id_13_s10[__gsharp_id_2_tid%4]),__gsharp_id_14_s11[__gsharp_id_2_tid%4]),__gsharp_id_15_s12[__gsharp_id_2_tid%4]),__gsharp_id_16_s13[__gsharp_id_2_tid%4]),__gsharp_id_17_s14[__gsharp_id_2_tid%4]),__gsharp_id_18_s15[__gsharp_id_2_tid%4]),__gsharp_id_19_s16[__gsharp_id_2_tid%4]),__gsharp_id_20_s17[__gsharp_id_2_tid%4]),__gsharp_id_21_s18[__gsharp_id_2_tid%4]),__gsharp_id_22_s19[__gsharp_id_2_tid%4]),__gsharp_id_23_s20[__gsharp_id_2_tid%4]),__gsharp_id_24_s21[__gsharp_id_2_tid%4]),__gsharp_id_25_s22[__gsharp_id_2_tid%4]),__gsharp_id_26_s23[__gsharp_id_2_tid%4]),__gsharp_id_27_s24[__gsharp_id_2_tid%4]),__gsharp_id_28_s25[__gsharp_id_2_tid%4]),__gsharp_id_29_s26[__gsharp_id_2_tid%4]),__gsharp_id_30_s27[__gsharp_id_2_tid%4]),__gsharp_id_31_s28[__gsharp_id_2_tid%4]),__gsharp_id_32_s29[__gsharp_id_2_tid%4]),__gsharp_id_33_s30[__gsharp_id_2_tid%4]),__gsharp_id_34_s31[__gsharp_id_2_tid%4]),__gsharp_id_35_s32[__gsharp_id_2_tid%4]),__gsharp_id_36_s33[__gsharp_id_2_tid%4]),__gsharp_id_37_s34[__gsharp_id_2_tid%4]),__gsharp_id_38_s35[__gsharp_id_2_tid%4]),__gsharp_id_39_s36[__gsharp_id_2_tid%4]),__gsharp_id_40_s37[__gsharp_id_2_tid%4]),__gsharp_id_41_s38[__gsharp_id_2_tid%4]),__gsharp_id_42_s39[__gsharp_id_2_tid%4]),__gsharp_id_43_s40[__gsharp_id_2_tid%4]),__gsharp_id_44_s41[__gsharp_id_2_tid%4]),__gsharp_id_45_s42[__gsharp_id_2_tid%4]),__gsharp_id_46_s43[__gsharp_id_2_tid%4]),__gsharp_id_47_s44[__gsharp_id_2_tid%4]),__gsharp_id_48_s45[__gsharp_id_2_tid%4]),__gsharp_id_49_s46[__gsharp_id_2_tid%4]),__gsharp_id_50_s47[__gsharp_id_2_tid%4]),__gsharp_id_51_s48[__gsharp_id_2_tid%4]),__gsharp_id_52_s49[__gsharp_id_2_tid%4]),__gsharp_id_53_s50[__gsharp_id_2_tid%4]),__gsharp_id_54_s51[__gsharp_id_2_tid%4]),__gsharp_id_55_s52[__gsharp_id_2_tid%4]),__gsharp_id_56_s53[__gsharp_id_2_tid%4]),__gsharp_id_57_s54[__gsharp_id_2_tid%4]),__gsharp_id_58_s55[__gsharp_id_2_tid%4]),__gsharp_id_59_s56[__gsharp_id_2_tid%4]),__gsharp_id_60_s57[__gsharp_id_2_tid%4]),__gsharp_id_61_s58[__gsharp_id_2_tid%4]),__gsharp_id_62_s59[__gsharp_id_2_tid%4]),__gsharp_id_63_s60[__gsharp_id_2_tid%4]),__gsharp_id_64_s61[__gsharp_id_2_tid%4]),__gsharp_id_65_s62[__gsharp_id_2_tid%4]),__gsharp_id_66_s63[__gsharp_id_2_tid%4]),__gsharp_id_67_s64[__gsharp_id_2_tid%4]),__gsharp_id_68_s65[__gsharp_id_2_tid%4]),__gsharp_id_69_s66[__gsharp_id_2_tid%4]),__gsharp_id_70_s67[__gsharp_id_2_tid%4]),__gsharp_id_71_s68[__gsharp_id_2_tid%4]),__gsharp_id_72_s69[__gsharp_id_2_tid%4]);
 }
 ";
 public static readonly string ManyStaticDeclarationsKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +ManyStaticDeclarationsKernel_Source;
@@ -1098,13 +1098,13 @@ extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Core__Sha
 __gsharp_dsmem_Kassyi__GSharp__Tests__Shared__Core__SharedMemoryLimitKernels__PerBlockCountKernel __gsharp_dsmem_storage;
 __gsharp_dsmem_Kassyi__GSharp__Tests__Shared__Core__SharedMemoryLimitKernels__PerBlockCountKernel* __gsharp_dsmem = &__gsharp_dsmem_storage;
 __gsharp_dsmem_init(__gsharp_dsmem);
-int* __gsharp_id_2_first = (int*)__gsharp_dsmem_place<__gsharp_dsmem_Kassyi__GSharp__Tests__Shared__Core__SharedMemoryLimitKernels__PerBlockCountKernel::Slot<0x59bccf8bd2e6ee5bull>>(__gsharp_dsmem, (unsigned long long)(long long)(__gsharp_id_1_n+blockIdx.x) * sizeof(int), __GSHARP_DSMEM_ALIGN(int));
+int* __gsharp_id_2_first = (int*)__gsharp_dsmem_place<__gsharp_dsmem_Kassyi__GSharp__Tests__Shared__Core__SharedMemoryLimitKernels__PerBlockCountKernel::Slot<0x59bccf8bd2e6ee5bull>>(__gsharp_dsmem, (unsigned long long)(long long)(__gsharp_add_i32(__gsharp_id_1_n,(int)blockIdx.x)) * sizeof(int), __GSHARP_DSMEM_ALIGN(int));
 int* __gsharp_id_3_second = (int*)__gsharp_dsmem_place<__gsharp_dsmem_Kassyi__GSharp__Tests__Shared__Core__SharedMemoryLimitKernels__PerBlockCountKernel::Slot<0x59bcce8bd2e6eca8ull>>(__gsharp_dsmem, (unsigned long long)(long long)(__gsharp_id_1_n) * sizeof(int), __GSHARP_DSMEM_ALIGN(int));
-int __gsharp_id_4_tid = threadIdx.x;
-__gsharp_id_2_first[__gsharp_id_4_tid]=__gsharp_id_4_tid+blockIdx.x;
-__gsharp_id_3_second[__gsharp_id_4_tid]=2*__gsharp_id_4_tid;
+int __gsharp_id_4_tid = (int)threadIdx.x;
+__gsharp_id_2_first[__gsharp_id_4_tid]=__gsharp_add_i32(__gsharp_id_4_tid,(int)blockIdx.x);
+__gsharp_id_3_second[__gsharp_id_4_tid]=__gsharp_mul_i32(2,__gsharp_id_4_tid);
 __syncthreads();
-__gsharp_id_0_output[blockIdx.x*blockDim.x+__gsharp_id_4_tid]=__gsharp_id_2_first[__gsharp_id_4_tid]+__gsharp_id_3_second[(__gsharp_id_4_tid+1)%blockDim.x];
+__gsharp_id_0_output[__gsharp_add_i32(__gsharp_mul_i32((int)blockIdx.x,(int)blockDim.x),__gsharp_id_4_tid)]=__gsharp_add_i32(__gsharp_id_2_first[__gsharp_id_4_tid],__gsharp_id_3_second[(__gsharp_add_i32(__gsharp_id_4_tid,1))%(int)blockDim.x]);
 }
 ";
 public static readonly string PerBlockCountKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +PerBlockCountKernel_Source;

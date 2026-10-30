@@ -550,8 +550,8 @@ case 0:
 __gsharp_switch_1_state_0:
 {
 __gsharp_ty_Kassyi__GSharp__Tests__Shared__Runtime__AutoAllocateReturnArraysKernels__TestStruct __gsharp_id_0_s;
-__gsharp_id_0_s.__gsharp_mb_A=threadIdx.x;
-__gsharp_id_0_s.__gsharp_mb_B=threadIdx.x*1.5f;
+__gsharp_id_0_s.__gsharp_mb_A=(int)threadIdx.x;
+__gsharp_id_0_s.__gsharp_mb_B=(int)threadIdx.x*1.5f;
 __gsharp_auto_result[__gsharp_global_tid] = __gsharp_id_0_s;
 __gsharp_state = -1;return;
 __gsharp_state=-1;

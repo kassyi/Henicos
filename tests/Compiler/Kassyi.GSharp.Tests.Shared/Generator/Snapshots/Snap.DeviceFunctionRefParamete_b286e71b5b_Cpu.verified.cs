@@ -25,7 +25,7 @@ case 0:
 __gsharp_switch_1_state_0:
 {
 (*__gsharp_id_1_previous)=(*__gsharp_id_0_value);
-(*__gsharp_id_0_value)+=1;
+(*__gsharp_id_0_value)=__gsharp_add_i32((*__gsharp_id_0_value),1);
 __gsharp_yielded_for_block_barrier=true;
 __gsharp_state=1;
 return false;
@@ -202,7 +202,7 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-__gsharp_ctx->__gsharp_id_2_value=__gsharp_id_0_buffer[threadIdx.x];
+__gsharp_ctx->__gsharp_id_2_value=__gsharp_id_0_buffer[(int)threadIdx.x];
 goto __gsharp_switch_1_state_1;
 }
 case 1:
@@ -235,7 +235,7 @@ case 3:
 __gsharp_switch_1_state_3:
 {
 bool __gsharp_id_4_broadcast = __gsharp_ctx->__gsharp_cond_temp_0;
-__gsharp_id_0_buffer[threadIdx.x]=(__gsharp_id_4_broadcast?__gsharp_ctx->__gsharp_id_2_value:__gsharp_ctx->__gsharp_id_3_previous);
+__gsharp_id_0_buffer[(int)threadIdx.x]=(__gsharp_id_4_broadcast?__gsharp_ctx->__gsharp_id_2_value:__gsharp_ctx->__gsharp_id_3_previous);
 __gsharp_state=-1;
 return;
 }

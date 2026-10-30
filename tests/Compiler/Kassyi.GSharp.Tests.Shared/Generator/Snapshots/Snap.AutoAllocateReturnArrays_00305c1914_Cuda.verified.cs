@@ -85,7 +85,7 @@ public static partial class AotContexts
 }
 public const string ComputeMag_Source = @"extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__TestCases__AutoAllocateReturnTest__ComputeMag(float* __restrict__ __gsharp_id_0_a, float* __restrict__ __gsharp_auto_result){
 unsigned int __gsharp_global_tid = (blockIdx.z * gridDim.y * gridDim.x + blockIdx.y * gridDim.x + blockIdx.x) * (blockDim.x * blockDim.y * blockDim.z) + threadIdx.z * blockDim.y * blockDim.x + threadIdx.y * blockDim.x + threadIdx.x;
-int __gsharp_id_1_tid = threadIdx.x;
+int __gsharp_id_1_tid = (int)threadIdx.x;
 __gsharp_auto_result[__gsharp_global_tid] = __gsharp_id_0_a[__gsharp_id_1_tid]*2.0f;
 return;
 }
@@ -229,7 +229,7 @@ return __gsharp_auto_result;
 #pragma warning restore CS8500
 public const string ComputeInt_Source = @"extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__TestCases__AutoAllocateReturnTest__ComputeInt(int* __restrict__ __gsharp_id_0_a, int __gsharp_id_1_b, int* __restrict__ __gsharp_auto_result){
 unsigned int __gsharp_global_tid = (blockIdx.z * gridDim.y * gridDim.x + blockIdx.y * gridDim.x + blockIdx.x) * (blockDim.x * blockDim.y * blockDim.z) + threadIdx.z * blockDim.y * blockDim.x + threadIdx.y * blockDim.x + threadIdx.x;
-__gsharp_auto_result[__gsharp_global_tid] = __gsharp_id_0_a[0]+__gsharp_id_1_b;
+__gsharp_auto_result[__gsharp_global_tid] = __gsharp_add_i32(__gsharp_id_0_a[0],__gsharp_id_1_b);
 return;
 }
 ";

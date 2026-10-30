@@ -51,7 +51,7 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-int __gsharp_id_4_tid = threadIdx.x;
+int __gsharp_id_4_tid = (int)threadIdx.x;
 __gsharp_id_1_results[__gsharp_id_4_tid]=sqrt(fabs(__gsharp_id_0_inputs[__gsharp_id_4_tid]))+__gsharp_max_f64(__gsharp_id_0_inputs[__gsharp_id_4_tid],1.0)+__gsharp_min_f64(__gsharp_id_0_inputs[__gsharp_id_4_tid],(-1.0))+3.141592653589793;
 __gsharp_id_3_intResults[__gsharp_id_4_tid]=__gsharp_clamp(__gsharp_id_2_intInputs[__gsharp_id_4_tid],(-5),5);
 __gsharp_state=-1;

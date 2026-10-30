@@ -84,7 +84,7 @@ public static partial class AotContexts
 {
 }
 public const string ConvertedKernel_Source = @"extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__TestCases__Emission__UIntNegationAndConditionalShapeKernels__ConvertedKernel(GSharpArray<unsigned int> __gsharp_id_0_us, GSharpArray<int> __gsharp_id_1_ns, GSharpArray<short> __gsharp_id_2_ss, GSharpArray<unsigned char> __gsharp_id_3_bs, GSharpArray<long long> __gsharp_id_4_longs, GSharpArray<double> __gsharp_id_5_doubles, GSharpArray<short> __gsharp_id_6_shorts){
-int __gsharp_id_7_tid = threadIdx.x;
+int __gsharp_id_7_tid = (int)threadIdx.x;
 unsigned int __gsharp_id_8_u = __gsharp_id_0_us[__gsharp_id_7_tid];
 int __gsharp_id_9_n = __gsharp_id_1_ns[__gsharp_id_7_tid];
 short __gsharp_id_10_s = __gsharp_id_2_ss[__gsharp_id_7_tid];
@@ -439,7 +439,7 @@ unsigned char __gsharp_id_10_b1 = __gsharp_id_3_bs[0];
 unsigned char __gsharp_id_11_b2 = __gsharp_id_3_bs[1];
 long long __gsharp_id_12_l = __gsharp_id_4_longs[0];
 bool __gsharp_id_13_c = __gsharp_id_8_n>0;
-__gsharp_id_6_ints[0]=-__gsharp_id_8_n;
+__gsharp_id_6_ints[0]=__gsharp_neg_i32(__gsharp_id_8_n);
 __gsharp_id_6_ints[1]=-__gsharp_id_9_s;
 __gsharp_id_6_ints[2]=-__gsharp_id_10_b1;
 __gsharp_id_5_values[0]=~__gsharp_id_7_u;

@@ -51,7 +51,7 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-int __gsharp_id_4_tid = threadIdx.x;
+int __gsharp_id_4_tid = (int)threadIdx.x;
 __gsharp_atomicAdd(&__gsharp_id_0_intBuf[0],1);
 __gsharp_atomicAdd((unsigned long long*)(&__gsharp_id_2_longBuf[0]),2ll);
 if(__gsharp_id_4_tid==0)
@@ -361,7 +361,7 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-int __gsharp_id_2_tid = threadIdx.x;
+int __gsharp_id_2_tid = (int)threadIdx.x;
 __gsharp_atomicAdd(&__gsharp_id_0_array[__gsharp_id_2_tid],10);
 __gsharp_atomicAdd(&__gsharp_id_1_structArray[__gsharp_id_2_tid].__gsharp_mb_ValueI,1);
 atomicExch(&__gsharp_id_1_structArray[__gsharp_id_2_tid].__gsharp_mb_ValueU,42u);
@@ -627,7 +627,7 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-int __gsharp_id_4_tid = threadIdx.x;
+int __gsharp_id_4_tid = (int)threadIdx.x;
 double __gsharp_id_5_dVal = __gsharp_id_0_doubleInputs[__gsharp_id_4_tid];
 __gsharp_id_1_doubleOutputs[0]=sin(__gsharp_id_5_dVal);
 __gsharp_id_1_doubleOutputs[1]=cos(__gsharp_id_5_dVal);
@@ -927,7 +927,7 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-int __gsharp_id_4_tid = threadIdx.x;
+int __gsharp_id_4_tid = (int)threadIdx.x;
 float __gsharp_id_5_f = __gsharp_id_0_floatSpecialInputs[__gsharp_id_4_tid];
 __gsharp_id_1_floatSpecialResults[0]=fabsf(__gsharp_id_5_f);
 __gsharp_id_1_floatSpecialResults[1]=__gsharp_max_f32(__gsharp_id_5_f,0.0f);

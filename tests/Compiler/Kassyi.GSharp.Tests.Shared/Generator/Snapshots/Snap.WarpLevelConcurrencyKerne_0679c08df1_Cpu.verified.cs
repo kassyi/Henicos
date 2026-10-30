@@ -60,7 +60,7 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-__gsharp_ctx->__gsharp_id_2_tid=threadIdx.x;
+__gsharp_ctx->__gsharp_id_2_tid=(int)threadIdx.x;
 __gsharp_ctx->__gsharp_id_3_lane=__gsharp_ctx->__gsharp_id_2_tid%32;
 __gsharp_ctx->__gsharp_id_4_warpId=__gsharp_ctx->__gsharp_id_2_tid/32;
 __gsharp_ctx->__gsharp_id_5_val=__gsharp_id_0_input[__gsharp_ctx->__gsharp_id_2_tid];
@@ -73,7 +73,7 @@ case 1:
 __gsharp_switch_1_state_1:
 {
 __gsharp_ctx->__gsharp_warp_temp_0=__gsharp_warp_shuffle_read_down_sync(__gsharp_root,__gsharp_ctx->__gsharp_id_6_mask,__gsharp_ctx->__gsharp_id_5_val,16,32,""WarpLevelConcurrencyKernels.cs(19,16)"");
-__gsharp_ctx->__gsharp_id_5_val+=__gsharp_ctx->__gsharp_warp_temp_0;
+__gsharp_ctx->__gsharp_id_5_val=__gsharp_add_i32(__gsharp_ctx->__gsharp_id_5_val,__gsharp_ctx->__gsharp_warp_temp_0);
 __gsharp_warp_exchange_assign(__gsharp_ctx->__gsharp_id_5_val);
 __gsharp_state=2;
 return;
@@ -82,7 +82,7 @@ case 2:
 __gsharp_switch_1_state_2:
 {
 __gsharp_ctx->__gsharp_warp_temp_1=__gsharp_warp_shuffle_read_down_sync(__gsharp_root,__gsharp_ctx->__gsharp_id_6_mask,__gsharp_ctx->__gsharp_id_5_val,8,32,""WarpLevelConcurrencyKernels.cs(20,16)"");
-__gsharp_ctx->__gsharp_id_5_val+=__gsharp_ctx->__gsharp_warp_temp_1;
+__gsharp_ctx->__gsharp_id_5_val=__gsharp_add_i32(__gsharp_ctx->__gsharp_id_5_val,__gsharp_ctx->__gsharp_warp_temp_1);
 __gsharp_warp_exchange_assign(__gsharp_ctx->__gsharp_id_5_val);
 __gsharp_state=3;
 return;
@@ -91,7 +91,7 @@ case 3:
 __gsharp_switch_1_state_3:
 {
 __gsharp_ctx->__gsharp_warp_temp_2=__gsharp_warp_shuffle_read_down_sync(__gsharp_root,__gsharp_ctx->__gsharp_id_6_mask,__gsharp_ctx->__gsharp_id_5_val,4,32,""WarpLevelConcurrencyKernels.cs(21,16)"");
-__gsharp_ctx->__gsharp_id_5_val+=__gsharp_ctx->__gsharp_warp_temp_2;
+__gsharp_ctx->__gsharp_id_5_val=__gsharp_add_i32(__gsharp_ctx->__gsharp_id_5_val,__gsharp_ctx->__gsharp_warp_temp_2);
 __gsharp_warp_exchange_assign(__gsharp_ctx->__gsharp_id_5_val);
 __gsharp_state=4;
 return;
@@ -100,7 +100,7 @@ case 4:
 __gsharp_switch_1_state_4:
 {
 __gsharp_ctx->__gsharp_warp_temp_3=__gsharp_warp_shuffle_read_down_sync(__gsharp_root,__gsharp_ctx->__gsharp_id_6_mask,__gsharp_ctx->__gsharp_id_5_val,2,32,""WarpLevelConcurrencyKernels.cs(22,16)"");
-__gsharp_ctx->__gsharp_id_5_val+=__gsharp_ctx->__gsharp_warp_temp_3;
+__gsharp_ctx->__gsharp_id_5_val=__gsharp_add_i32(__gsharp_ctx->__gsharp_id_5_val,__gsharp_ctx->__gsharp_warp_temp_3);
 __gsharp_warp_exchange_assign(__gsharp_ctx->__gsharp_id_5_val);
 __gsharp_state=5;
 return;
@@ -109,7 +109,7 @@ case 5:
 __gsharp_switch_1_state_5:
 {
 auto __gsharp_warp_temp_4 = __gsharp_warp_shuffle_read_down_sync(__gsharp_root,__gsharp_ctx->__gsharp_id_6_mask,__gsharp_ctx->__gsharp_id_5_val,1,32,""WarpLevelConcurrencyKernels.cs(23,16)"");
-__gsharp_ctx->__gsharp_id_5_val+=__gsharp_warp_temp_4;
+__gsharp_ctx->__gsharp_id_5_val=__gsharp_add_i32(__gsharp_ctx->__gsharp_id_5_val,__gsharp_warp_temp_4);
 if(__gsharp_ctx->__gsharp_id_3_lane==0)
 {
 __gsharp_id_1_output[__gsharp_ctx->__gsharp_id_4_warpId]=__gsharp_ctx->__gsharp_id_5_val;
@@ -429,7 +429,7 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-__gsharp_ctx->__gsharp_id_2_tid=threadIdx.x;
+__gsharp_ctx->__gsharp_id_2_tid=(int)threadIdx.x;
 __gsharp_ctx->__gsharp_id_3_mask=__activemask();
 __gsharp_ctx->__gsharp_id_4_val=__gsharp_id_0_input[__gsharp_ctx->__gsharp_id_2_tid];
 __gsharp_warp_exchange_assign(__gsharp_ctx->__gsharp_id_4_val);

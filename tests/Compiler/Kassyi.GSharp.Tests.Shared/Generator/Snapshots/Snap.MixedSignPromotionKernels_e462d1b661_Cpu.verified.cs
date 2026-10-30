@@ -17,122 +17,122 @@ inline void __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__MixedSignPromotio
 inline unsigned int __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__MixedSignPromotionKernels__TakeFive(int* __gsharp_id_0_k);
 
 inline void __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__MixedSignPromotionKernels__IntOperators(unsigned int __gsharp_id_0_u, int __gsharp_id_1_n, GSharpArray<long long> __gsharp_id_2_values, GSharpArray<int> __gsharp_id_3_flags, int __gsharp_id_4_pair){
-int __gsharp_id_5_v = __gsharp_id_4_pair*18;
+int __gsharp_id_5_v = __gsharp_mul_i32(__gsharp_id_4_pair,18);
 __gsharp_id_2_values[__gsharp_id_5_v]=(long long)__gsharp_id_0_u+(long long)__gsharp_id_1_n;
-__gsharp_id_2_values[__gsharp_id_5_v+1]=(long long)__gsharp_id_0_u-(long long)__gsharp_id_1_n;
-__gsharp_id_2_values[__gsharp_id_5_v+2]=(long long)__gsharp_id_0_u*(long long)__gsharp_id_1_n;
-__gsharp_id_2_values[__gsharp_id_5_v+3]=(long long)__gsharp_id_0_u/(long long)__gsharp_id_1_n;
-__gsharp_id_2_values[__gsharp_id_5_v+4]=(long long)__gsharp_id_0_u%(long long)__gsharp_id_1_n;
-__gsharp_id_2_values[__gsharp_id_5_v+5]=(long long)__gsharp_id_0_u&(long long)__gsharp_id_1_n;
-__gsharp_id_2_values[__gsharp_id_5_v+6]=(long long)__gsharp_id_0_u|(long long)__gsharp_id_1_n;
-__gsharp_id_2_values[__gsharp_id_5_v+7]=(long long)__gsharp_id_0_u^(long long)__gsharp_id_1_n;
-__gsharp_id_2_values[__gsharp_id_5_v+8]=(long long)__gsharp_id_1_n+(long long)__gsharp_id_0_u;
-__gsharp_id_2_values[__gsharp_id_5_v+9]=(long long)__gsharp_id_1_n-(long long)__gsharp_id_0_u;
-__gsharp_id_2_values[__gsharp_id_5_v+10]=(long long)__gsharp_id_1_n*(long long)__gsharp_id_0_u;
-__gsharp_id_2_values[__gsharp_id_5_v+11]=(__gsharp_id_0_u!=0?(long long)__gsharp_id_1_n/(long long)__gsharp_id_0_u:0);
-__gsharp_id_2_values[__gsharp_id_5_v+12]=(__gsharp_id_0_u!=0?(long long)__gsharp_id_1_n%(long long)__gsharp_id_0_u:0);
-__gsharp_id_2_values[__gsharp_id_5_v+13]=(long long)__gsharp_id_1_n&(long long)__gsharp_id_0_u;
-__gsharp_id_2_values[__gsharp_id_5_v+14]=(long long)__gsharp_id_1_n|(long long)__gsharp_id_0_u;
-__gsharp_id_2_values[__gsharp_id_5_v+15]=(long long)__gsharp_id_1_n^(long long)__gsharp_id_0_u;
+__gsharp_id_2_values[__gsharp_add_i32(__gsharp_id_5_v,1)]=(long long)__gsharp_id_0_u-(long long)__gsharp_id_1_n;
+__gsharp_id_2_values[__gsharp_add_i32(__gsharp_id_5_v,2)]=(long long)__gsharp_id_0_u*(long long)__gsharp_id_1_n;
+__gsharp_id_2_values[__gsharp_add_i32(__gsharp_id_5_v,3)]=(long long)__gsharp_id_0_u/(long long)__gsharp_id_1_n;
+__gsharp_id_2_values[__gsharp_add_i32(__gsharp_id_5_v,4)]=(long long)__gsharp_id_0_u%(long long)__gsharp_id_1_n;
+__gsharp_id_2_values[__gsharp_add_i32(__gsharp_id_5_v,5)]=(long long)__gsharp_id_0_u&(long long)__gsharp_id_1_n;
+__gsharp_id_2_values[__gsharp_add_i32(__gsharp_id_5_v,6)]=(long long)__gsharp_id_0_u|(long long)__gsharp_id_1_n;
+__gsharp_id_2_values[__gsharp_add_i32(__gsharp_id_5_v,7)]=(long long)__gsharp_id_0_u^(long long)__gsharp_id_1_n;
+__gsharp_id_2_values[__gsharp_add_i32(__gsharp_id_5_v,8)]=(long long)__gsharp_id_1_n+(long long)__gsharp_id_0_u;
+__gsharp_id_2_values[__gsharp_add_i32(__gsharp_id_5_v,9)]=(long long)__gsharp_id_1_n-(long long)__gsharp_id_0_u;
+__gsharp_id_2_values[__gsharp_add_i32(__gsharp_id_5_v,10)]=(long long)__gsharp_id_1_n*(long long)__gsharp_id_0_u;
+__gsharp_id_2_values[__gsharp_add_i32(__gsharp_id_5_v,11)]=(__gsharp_id_0_u!=0?(long long)__gsharp_id_1_n/(long long)__gsharp_id_0_u:0);
+__gsharp_id_2_values[__gsharp_add_i32(__gsharp_id_5_v,12)]=(__gsharp_id_0_u!=0?(long long)__gsharp_id_1_n%(long long)__gsharp_id_0_u:0);
+__gsharp_id_2_values[__gsharp_add_i32(__gsharp_id_5_v,13)]=(long long)__gsharp_id_1_n&(long long)__gsharp_id_0_u;
+__gsharp_id_2_values[__gsharp_add_i32(__gsharp_id_5_v,14)]=(long long)__gsharp_id_1_n|(long long)__gsharp_id_0_u;
+__gsharp_id_2_values[__gsharp_add_i32(__gsharp_id_5_v,15)]=(long long)__gsharp_id_1_n^(long long)__gsharp_id_0_u;
 auto __gsharp_id_6_sum = (long long)__gsharp_id_0_u+(long long)__gsharp_id_1_n;
-__gsharp_id_2_values[__gsharp_id_5_v+16]=__gsharp_id_6_sum;
-__gsharp_id_2_values[__gsharp_id_5_v+17]=((long long)__gsharp_id_0_u&(long long)__gsharp_id_1_n)-1;
-int __gsharp_id_7_f = __gsharp_id_4_pair*12;
+__gsharp_id_2_values[__gsharp_add_i32(__gsharp_id_5_v,16)]=__gsharp_id_6_sum;
+__gsharp_id_2_values[__gsharp_add_i32(__gsharp_id_5_v,17)]=__gsharp_sub_i64((long long)__gsharp_id_0_u&(long long)__gsharp_id_1_n,1);
+int __gsharp_id_7_f = __gsharp_mul_i32(__gsharp_id_4_pair,12);
 __gsharp_id_3_flags[__gsharp_id_7_f]=((long long)__gsharp_id_0_u==(long long)__gsharp_id_1_n?1:0);
-__gsharp_id_3_flags[__gsharp_id_7_f+1]=((long long)__gsharp_id_0_u!=(long long)__gsharp_id_1_n?1:0);
-__gsharp_id_3_flags[__gsharp_id_7_f+2]=((long long)__gsharp_id_0_u<(long long)__gsharp_id_1_n?1:0);
-__gsharp_id_3_flags[__gsharp_id_7_f+3]=((long long)__gsharp_id_0_u>(long long)__gsharp_id_1_n?1:0);
-__gsharp_id_3_flags[__gsharp_id_7_f+4]=((long long)__gsharp_id_0_u<=(long long)__gsharp_id_1_n?1:0);
-__gsharp_id_3_flags[__gsharp_id_7_f+5]=((long long)__gsharp_id_0_u>=(long long)__gsharp_id_1_n?1:0);
-__gsharp_id_3_flags[__gsharp_id_7_f+6]=((long long)__gsharp_id_1_n==(long long)__gsharp_id_0_u?1:0);
-__gsharp_id_3_flags[__gsharp_id_7_f+7]=((long long)__gsharp_id_1_n!=(long long)__gsharp_id_0_u?1:0);
-__gsharp_id_3_flags[__gsharp_id_7_f+8]=((long long)__gsharp_id_1_n<(long long)__gsharp_id_0_u?1:0);
-__gsharp_id_3_flags[__gsharp_id_7_f+9]=((long long)__gsharp_id_1_n>(long long)__gsharp_id_0_u?1:0);
-__gsharp_id_3_flags[__gsharp_id_7_f+10]=((long long)__gsharp_id_1_n<=(long long)__gsharp_id_0_u?1:0);
-__gsharp_id_3_flags[__gsharp_id_7_f+11]=((long long)__gsharp_id_1_n>=(long long)__gsharp_id_0_u?1:0);
+__gsharp_id_3_flags[__gsharp_add_i32(__gsharp_id_7_f,1)]=((long long)__gsharp_id_0_u!=(long long)__gsharp_id_1_n?1:0);
+__gsharp_id_3_flags[__gsharp_add_i32(__gsharp_id_7_f,2)]=((long long)__gsharp_id_0_u<(long long)__gsharp_id_1_n?1:0);
+__gsharp_id_3_flags[__gsharp_add_i32(__gsharp_id_7_f,3)]=((long long)__gsharp_id_0_u>(long long)__gsharp_id_1_n?1:0);
+__gsharp_id_3_flags[__gsharp_add_i32(__gsharp_id_7_f,4)]=((long long)__gsharp_id_0_u<=(long long)__gsharp_id_1_n?1:0);
+__gsharp_id_3_flags[__gsharp_add_i32(__gsharp_id_7_f,5)]=((long long)__gsharp_id_0_u>=(long long)__gsharp_id_1_n?1:0);
+__gsharp_id_3_flags[__gsharp_add_i32(__gsharp_id_7_f,6)]=((long long)__gsharp_id_1_n==(long long)__gsharp_id_0_u?1:0);
+__gsharp_id_3_flags[__gsharp_add_i32(__gsharp_id_7_f,7)]=((long long)__gsharp_id_1_n!=(long long)__gsharp_id_0_u?1:0);
+__gsharp_id_3_flags[__gsharp_add_i32(__gsharp_id_7_f,8)]=((long long)__gsharp_id_1_n<(long long)__gsharp_id_0_u?1:0);
+__gsharp_id_3_flags[__gsharp_add_i32(__gsharp_id_7_f,9)]=((long long)__gsharp_id_1_n>(long long)__gsharp_id_0_u?1:0);
+__gsharp_id_3_flags[__gsharp_add_i32(__gsharp_id_7_f,10)]=((long long)__gsharp_id_1_n<=(long long)__gsharp_id_0_u?1:0);
+__gsharp_id_3_flags[__gsharp_add_i32(__gsharp_id_7_f,11)]=((long long)__gsharp_id_1_n>=(long long)__gsharp_id_0_u?1:0);
 }
 
 inline void __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__MixedSignPromotionKernels__ShortOperators(unsigned int __gsharp_id_0_u, short __gsharp_id_1_s, GSharpArray<long long> __gsharp_id_2_values, GSharpArray<int> __gsharp_id_3_flags, int __gsharp_id_4_pair){
-int __gsharp_id_5_v = __gsharp_id_4_pair*18;
+int __gsharp_id_5_v = __gsharp_mul_i32(__gsharp_id_4_pair,18);
 __gsharp_id_2_values[__gsharp_id_5_v]=(long long)__gsharp_id_0_u+(long long)__gsharp_id_1_s;
-__gsharp_id_2_values[__gsharp_id_5_v+1]=(long long)__gsharp_id_0_u-(long long)__gsharp_id_1_s;
-__gsharp_id_2_values[__gsharp_id_5_v+2]=(long long)__gsharp_id_0_u*(long long)__gsharp_id_1_s;
-__gsharp_id_2_values[__gsharp_id_5_v+3]=(long long)__gsharp_id_0_u/(long long)__gsharp_id_1_s;
-__gsharp_id_2_values[__gsharp_id_5_v+4]=(long long)__gsharp_id_0_u%(long long)__gsharp_id_1_s;
-__gsharp_id_2_values[__gsharp_id_5_v+5]=(long long)__gsharp_id_0_u&(long long)__gsharp_id_1_s;
-__gsharp_id_2_values[__gsharp_id_5_v+6]=(long long)__gsharp_id_0_u|(long long)__gsharp_id_1_s;
-__gsharp_id_2_values[__gsharp_id_5_v+7]=(long long)__gsharp_id_0_u^(long long)__gsharp_id_1_s;
-__gsharp_id_2_values[__gsharp_id_5_v+8]=(long long)__gsharp_id_1_s+(long long)__gsharp_id_0_u;
-__gsharp_id_2_values[__gsharp_id_5_v+9]=(long long)__gsharp_id_1_s-(long long)__gsharp_id_0_u;
-__gsharp_id_2_values[__gsharp_id_5_v+10]=(long long)__gsharp_id_1_s*(long long)__gsharp_id_0_u;
-__gsharp_id_2_values[__gsharp_id_5_v+11]=(__gsharp_id_0_u!=0?(long long)__gsharp_id_1_s/(long long)__gsharp_id_0_u:0);
-__gsharp_id_2_values[__gsharp_id_5_v+12]=(__gsharp_id_0_u!=0?(long long)__gsharp_id_1_s%(long long)__gsharp_id_0_u:0);
-__gsharp_id_2_values[__gsharp_id_5_v+13]=(long long)__gsharp_id_1_s&(long long)__gsharp_id_0_u;
-__gsharp_id_2_values[__gsharp_id_5_v+14]=(long long)__gsharp_id_1_s|(long long)__gsharp_id_0_u;
-__gsharp_id_2_values[__gsharp_id_5_v+15]=(long long)__gsharp_id_1_s^(long long)__gsharp_id_0_u;
+__gsharp_id_2_values[__gsharp_add_i32(__gsharp_id_5_v,1)]=(long long)__gsharp_id_0_u-(long long)__gsharp_id_1_s;
+__gsharp_id_2_values[__gsharp_add_i32(__gsharp_id_5_v,2)]=(long long)__gsharp_id_0_u*(long long)__gsharp_id_1_s;
+__gsharp_id_2_values[__gsharp_add_i32(__gsharp_id_5_v,3)]=(long long)__gsharp_id_0_u/(long long)__gsharp_id_1_s;
+__gsharp_id_2_values[__gsharp_add_i32(__gsharp_id_5_v,4)]=(long long)__gsharp_id_0_u%(long long)__gsharp_id_1_s;
+__gsharp_id_2_values[__gsharp_add_i32(__gsharp_id_5_v,5)]=(long long)__gsharp_id_0_u&(long long)__gsharp_id_1_s;
+__gsharp_id_2_values[__gsharp_add_i32(__gsharp_id_5_v,6)]=(long long)__gsharp_id_0_u|(long long)__gsharp_id_1_s;
+__gsharp_id_2_values[__gsharp_add_i32(__gsharp_id_5_v,7)]=(long long)__gsharp_id_0_u^(long long)__gsharp_id_1_s;
+__gsharp_id_2_values[__gsharp_add_i32(__gsharp_id_5_v,8)]=(long long)__gsharp_id_1_s+(long long)__gsharp_id_0_u;
+__gsharp_id_2_values[__gsharp_add_i32(__gsharp_id_5_v,9)]=(long long)__gsharp_id_1_s-(long long)__gsharp_id_0_u;
+__gsharp_id_2_values[__gsharp_add_i32(__gsharp_id_5_v,10)]=(long long)__gsharp_id_1_s*(long long)__gsharp_id_0_u;
+__gsharp_id_2_values[__gsharp_add_i32(__gsharp_id_5_v,11)]=(__gsharp_id_0_u!=0?(long long)__gsharp_id_1_s/(long long)__gsharp_id_0_u:0);
+__gsharp_id_2_values[__gsharp_add_i32(__gsharp_id_5_v,12)]=(__gsharp_id_0_u!=0?(long long)__gsharp_id_1_s%(long long)__gsharp_id_0_u:0);
+__gsharp_id_2_values[__gsharp_add_i32(__gsharp_id_5_v,13)]=(long long)__gsharp_id_1_s&(long long)__gsharp_id_0_u;
+__gsharp_id_2_values[__gsharp_add_i32(__gsharp_id_5_v,14)]=(long long)__gsharp_id_1_s|(long long)__gsharp_id_0_u;
+__gsharp_id_2_values[__gsharp_add_i32(__gsharp_id_5_v,15)]=(long long)__gsharp_id_1_s^(long long)__gsharp_id_0_u;
 auto __gsharp_id_6_sum = (long long)__gsharp_id_0_u+(long long)__gsharp_id_1_s;
-__gsharp_id_2_values[__gsharp_id_5_v+16]=__gsharp_id_6_sum;
-__gsharp_id_2_values[__gsharp_id_5_v+17]=((long long)__gsharp_id_0_u&(long long)__gsharp_id_1_s)-1;
-int __gsharp_id_7_f = __gsharp_id_4_pair*12;
+__gsharp_id_2_values[__gsharp_add_i32(__gsharp_id_5_v,16)]=__gsharp_id_6_sum;
+__gsharp_id_2_values[__gsharp_add_i32(__gsharp_id_5_v,17)]=__gsharp_sub_i64((long long)__gsharp_id_0_u&(long long)__gsharp_id_1_s,1);
+int __gsharp_id_7_f = __gsharp_mul_i32(__gsharp_id_4_pair,12);
 __gsharp_id_3_flags[__gsharp_id_7_f]=((long long)__gsharp_id_0_u==(long long)__gsharp_id_1_s?1:0);
-__gsharp_id_3_flags[__gsharp_id_7_f+1]=((long long)__gsharp_id_0_u!=(long long)__gsharp_id_1_s?1:0);
-__gsharp_id_3_flags[__gsharp_id_7_f+2]=((long long)__gsharp_id_0_u<(long long)__gsharp_id_1_s?1:0);
-__gsharp_id_3_flags[__gsharp_id_7_f+3]=((long long)__gsharp_id_0_u>(long long)__gsharp_id_1_s?1:0);
-__gsharp_id_3_flags[__gsharp_id_7_f+4]=((long long)__gsharp_id_0_u<=(long long)__gsharp_id_1_s?1:0);
-__gsharp_id_3_flags[__gsharp_id_7_f+5]=((long long)__gsharp_id_0_u>=(long long)__gsharp_id_1_s?1:0);
-__gsharp_id_3_flags[__gsharp_id_7_f+6]=((long long)__gsharp_id_1_s==(long long)__gsharp_id_0_u?1:0);
-__gsharp_id_3_flags[__gsharp_id_7_f+7]=((long long)__gsharp_id_1_s!=(long long)__gsharp_id_0_u?1:0);
-__gsharp_id_3_flags[__gsharp_id_7_f+8]=((long long)__gsharp_id_1_s<(long long)__gsharp_id_0_u?1:0);
-__gsharp_id_3_flags[__gsharp_id_7_f+9]=((long long)__gsharp_id_1_s>(long long)__gsharp_id_0_u?1:0);
-__gsharp_id_3_flags[__gsharp_id_7_f+10]=((long long)__gsharp_id_1_s<=(long long)__gsharp_id_0_u?1:0);
-__gsharp_id_3_flags[__gsharp_id_7_f+11]=((long long)__gsharp_id_1_s>=(long long)__gsharp_id_0_u?1:0);
+__gsharp_id_3_flags[__gsharp_add_i32(__gsharp_id_7_f,1)]=((long long)__gsharp_id_0_u!=(long long)__gsharp_id_1_s?1:0);
+__gsharp_id_3_flags[__gsharp_add_i32(__gsharp_id_7_f,2)]=((long long)__gsharp_id_0_u<(long long)__gsharp_id_1_s?1:0);
+__gsharp_id_3_flags[__gsharp_add_i32(__gsharp_id_7_f,3)]=((long long)__gsharp_id_0_u>(long long)__gsharp_id_1_s?1:0);
+__gsharp_id_3_flags[__gsharp_add_i32(__gsharp_id_7_f,4)]=((long long)__gsharp_id_0_u<=(long long)__gsharp_id_1_s?1:0);
+__gsharp_id_3_flags[__gsharp_add_i32(__gsharp_id_7_f,5)]=((long long)__gsharp_id_0_u>=(long long)__gsharp_id_1_s?1:0);
+__gsharp_id_3_flags[__gsharp_add_i32(__gsharp_id_7_f,6)]=((long long)__gsharp_id_1_s==(long long)__gsharp_id_0_u?1:0);
+__gsharp_id_3_flags[__gsharp_add_i32(__gsharp_id_7_f,7)]=((long long)__gsharp_id_1_s!=(long long)__gsharp_id_0_u?1:0);
+__gsharp_id_3_flags[__gsharp_add_i32(__gsharp_id_7_f,8)]=((long long)__gsharp_id_1_s<(long long)__gsharp_id_0_u?1:0);
+__gsharp_id_3_flags[__gsharp_add_i32(__gsharp_id_7_f,9)]=((long long)__gsharp_id_1_s>(long long)__gsharp_id_0_u?1:0);
+__gsharp_id_3_flags[__gsharp_add_i32(__gsharp_id_7_f,10)]=((long long)__gsharp_id_1_s<=(long long)__gsharp_id_0_u?1:0);
+__gsharp_id_3_flags[__gsharp_add_i32(__gsharp_id_7_f,11)]=((long long)__gsharp_id_1_s>=(long long)__gsharp_id_0_u?1:0);
 }
 
 inline void __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__MixedSignPromotionKernels__SByteOperators(unsigned int __gsharp_id_0_u, signed char __gsharp_id_1_b, GSharpArray<long long> __gsharp_id_2_values, GSharpArray<int> __gsharp_id_3_flags, int __gsharp_id_4_pair){
-int __gsharp_id_5_v = __gsharp_id_4_pair*18;
+int __gsharp_id_5_v = __gsharp_mul_i32(__gsharp_id_4_pair,18);
 __gsharp_id_2_values[__gsharp_id_5_v]=(long long)__gsharp_id_0_u+(long long)__gsharp_id_1_b;
-__gsharp_id_2_values[__gsharp_id_5_v+1]=(long long)__gsharp_id_0_u-(long long)__gsharp_id_1_b;
-__gsharp_id_2_values[__gsharp_id_5_v+2]=(long long)__gsharp_id_0_u*(long long)__gsharp_id_1_b;
-__gsharp_id_2_values[__gsharp_id_5_v+3]=(long long)__gsharp_id_0_u/(long long)__gsharp_id_1_b;
-__gsharp_id_2_values[__gsharp_id_5_v+4]=(long long)__gsharp_id_0_u%(long long)__gsharp_id_1_b;
-__gsharp_id_2_values[__gsharp_id_5_v+5]=(long long)__gsharp_id_0_u&(long long)__gsharp_id_1_b;
-__gsharp_id_2_values[__gsharp_id_5_v+6]=(long long)__gsharp_id_0_u|(long long)__gsharp_id_1_b;
-__gsharp_id_2_values[__gsharp_id_5_v+7]=(long long)__gsharp_id_0_u^(long long)__gsharp_id_1_b;
-__gsharp_id_2_values[__gsharp_id_5_v+8]=(long long)__gsharp_id_1_b+(long long)__gsharp_id_0_u;
-__gsharp_id_2_values[__gsharp_id_5_v+9]=(long long)__gsharp_id_1_b-(long long)__gsharp_id_0_u;
-__gsharp_id_2_values[__gsharp_id_5_v+10]=(long long)__gsharp_id_1_b*(long long)__gsharp_id_0_u;
-__gsharp_id_2_values[__gsharp_id_5_v+11]=(__gsharp_id_0_u!=0?(long long)__gsharp_id_1_b/(long long)__gsharp_id_0_u:0);
-__gsharp_id_2_values[__gsharp_id_5_v+12]=(__gsharp_id_0_u!=0?(long long)__gsharp_id_1_b%(long long)__gsharp_id_0_u:0);
-__gsharp_id_2_values[__gsharp_id_5_v+13]=(long long)__gsharp_id_1_b&(long long)__gsharp_id_0_u;
-__gsharp_id_2_values[__gsharp_id_5_v+14]=(long long)__gsharp_id_1_b|(long long)__gsharp_id_0_u;
-__gsharp_id_2_values[__gsharp_id_5_v+15]=(long long)__gsharp_id_1_b^(long long)__gsharp_id_0_u;
+__gsharp_id_2_values[__gsharp_add_i32(__gsharp_id_5_v,1)]=(long long)__gsharp_id_0_u-(long long)__gsharp_id_1_b;
+__gsharp_id_2_values[__gsharp_add_i32(__gsharp_id_5_v,2)]=(long long)__gsharp_id_0_u*(long long)__gsharp_id_1_b;
+__gsharp_id_2_values[__gsharp_add_i32(__gsharp_id_5_v,3)]=(long long)__gsharp_id_0_u/(long long)__gsharp_id_1_b;
+__gsharp_id_2_values[__gsharp_add_i32(__gsharp_id_5_v,4)]=(long long)__gsharp_id_0_u%(long long)__gsharp_id_1_b;
+__gsharp_id_2_values[__gsharp_add_i32(__gsharp_id_5_v,5)]=(long long)__gsharp_id_0_u&(long long)__gsharp_id_1_b;
+__gsharp_id_2_values[__gsharp_add_i32(__gsharp_id_5_v,6)]=(long long)__gsharp_id_0_u|(long long)__gsharp_id_1_b;
+__gsharp_id_2_values[__gsharp_add_i32(__gsharp_id_5_v,7)]=(long long)__gsharp_id_0_u^(long long)__gsharp_id_1_b;
+__gsharp_id_2_values[__gsharp_add_i32(__gsharp_id_5_v,8)]=(long long)__gsharp_id_1_b+(long long)__gsharp_id_0_u;
+__gsharp_id_2_values[__gsharp_add_i32(__gsharp_id_5_v,9)]=(long long)__gsharp_id_1_b-(long long)__gsharp_id_0_u;
+__gsharp_id_2_values[__gsharp_add_i32(__gsharp_id_5_v,10)]=(long long)__gsharp_id_1_b*(long long)__gsharp_id_0_u;
+__gsharp_id_2_values[__gsharp_add_i32(__gsharp_id_5_v,11)]=(__gsharp_id_0_u!=0?(long long)__gsharp_id_1_b/(long long)__gsharp_id_0_u:0);
+__gsharp_id_2_values[__gsharp_add_i32(__gsharp_id_5_v,12)]=(__gsharp_id_0_u!=0?(long long)__gsharp_id_1_b%(long long)__gsharp_id_0_u:0);
+__gsharp_id_2_values[__gsharp_add_i32(__gsharp_id_5_v,13)]=(long long)__gsharp_id_1_b&(long long)__gsharp_id_0_u;
+__gsharp_id_2_values[__gsharp_add_i32(__gsharp_id_5_v,14)]=(long long)__gsharp_id_1_b|(long long)__gsharp_id_0_u;
+__gsharp_id_2_values[__gsharp_add_i32(__gsharp_id_5_v,15)]=(long long)__gsharp_id_1_b^(long long)__gsharp_id_0_u;
 auto __gsharp_id_6_sum = (long long)__gsharp_id_0_u+(long long)__gsharp_id_1_b;
-__gsharp_id_2_values[__gsharp_id_5_v+16]=__gsharp_id_6_sum;
-__gsharp_id_2_values[__gsharp_id_5_v+17]=((long long)__gsharp_id_0_u&(long long)__gsharp_id_1_b)-1;
-int __gsharp_id_7_f = __gsharp_id_4_pair*12;
+__gsharp_id_2_values[__gsharp_add_i32(__gsharp_id_5_v,16)]=__gsharp_id_6_sum;
+__gsharp_id_2_values[__gsharp_add_i32(__gsharp_id_5_v,17)]=__gsharp_sub_i64((long long)__gsharp_id_0_u&(long long)__gsharp_id_1_b,1);
+int __gsharp_id_7_f = __gsharp_mul_i32(__gsharp_id_4_pair,12);
 __gsharp_id_3_flags[__gsharp_id_7_f]=((long long)__gsharp_id_0_u==(long long)__gsharp_id_1_b?1:0);
-__gsharp_id_3_flags[__gsharp_id_7_f+1]=((long long)__gsharp_id_0_u!=(long long)__gsharp_id_1_b?1:0);
-__gsharp_id_3_flags[__gsharp_id_7_f+2]=((long long)__gsharp_id_0_u<(long long)__gsharp_id_1_b?1:0);
-__gsharp_id_3_flags[__gsharp_id_7_f+3]=((long long)__gsharp_id_0_u>(long long)__gsharp_id_1_b?1:0);
-__gsharp_id_3_flags[__gsharp_id_7_f+4]=((long long)__gsharp_id_0_u<=(long long)__gsharp_id_1_b?1:0);
-__gsharp_id_3_flags[__gsharp_id_7_f+5]=((long long)__gsharp_id_0_u>=(long long)__gsharp_id_1_b?1:0);
-__gsharp_id_3_flags[__gsharp_id_7_f+6]=((long long)__gsharp_id_1_b==(long long)__gsharp_id_0_u?1:0);
-__gsharp_id_3_flags[__gsharp_id_7_f+7]=((long long)__gsharp_id_1_b!=(long long)__gsharp_id_0_u?1:0);
-__gsharp_id_3_flags[__gsharp_id_7_f+8]=((long long)__gsharp_id_1_b<(long long)__gsharp_id_0_u?1:0);
-__gsharp_id_3_flags[__gsharp_id_7_f+9]=((long long)__gsharp_id_1_b>(long long)__gsharp_id_0_u?1:0);
-__gsharp_id_3_flags[__gsharp_id_7_f+10]=((long long)__gsharp_id_1_b<=(long long)__gsharp_id_0_u?1:0);
-__gsharp_id_3_flags[__gsharp_id_7_f+11]=((long long)__gsharp_id_1_b>=(long long)__gsharp_id_0_u?1:0);
+__gsharp_id_3_flags[__gsharp_add_i32(__gsharp_id_7_f,1)]=((long long)__gsharp_id_0_u!=(long long)__gsharp_id_1_b?1:0);
+__gsharp_id_3_flags[__gsharp_add_i32(__gsharp_id_7_f,2)]=((long long)__gsharp_id_0_u<(long long)__gsharp_id_1_b?1:0);
+__gsharp_id_3_flags[__gsharp_add_i32(__gsharp_id_7_f,3)]=((long long)__gsharp_id_0_u>(long long)__gsharp_id_1_b?1:0);
+__gsharp_id_3_flags[__gsharp_add_i32(__gsharp_id_7_f,4)]=((long long)__gsharp_id_0_u<=(long long)__gsharp_id_1_b?1:0);
+__gsharp_id_3_flags[__gsharp_add_i32(__gsharp_id_7_f,5)]=((long long)__gsharp_id_0_u>=(long long)__gsharp_id_1_b?1:0);
+__gsharp_id_3_flags[__gsharp_add_i32(__gsharp_id_7_f,6)]=((long long)__gsharp_id_1_b==(long long)__gsharp_id_0_u?1:0);
+__gsharp_id_3_flags[__gsharp_add_i32(__gsharp_id_7_f,7)]=((long long)__gsharp_id_1_b!=(long long)__gsharp_id_0_u?1:0);
+__gsharp_id_3_flags[__gsharp_add_i32(__gsharp_id_7_f,8)]=((long long)__gsharp_id_1_b<(long long)__gsharp_id_0_u?1:0);
+__gsharp_id_3_flags[__gsharp_add_i32(__gsharp_id_7_f,9)]=((long long)__gsharp_id_1_b>(long long)__gsharp_id_0_u?1:0);
+__gsharp_id_3_flags[__gsharp_add_i32(__gsharp_id_7_f,10)]=((long long)__gsharp_id_1_b<=(long long)__gsharp_id_0_u?1:0);
+__gsharp_id_3_flags[__gsharp_add_i32(__gsharp_id_7_f,11)]=((long long)__gsharp_id_1_b>=(long long)__gsharp_id_0_u?1:0);
 }
 
 inline void __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__MixedSignPromotionKernels__ConstantOperators(unsigned int __gsharp_id_0_u, GSharpArray<long long> __gsharp_id_1_values, GSharpArray<int> __gsharp_id_2_flags, int __gsharp_id_3_index){
-__gsharp_id_1_values[__gsharp_id_3_index*3]=__gsharp_id_0_u-8;
-__gsharp_id_1_values[__gsharp_id_3_index*3+1]=(long long)__gsharp_id_0_u+(-8LL);
-__gsharp_id_1_values[__gsharp_id_3_index*3+2]=__gsharp_id_0_u+8u;
+__gsharp_id_1_values[__gsharp_mul_i32(__gsharp_id_3_index,3)]=__gsharp_id_0_u-8;
+__gsharp_id_1_values[__gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_3_index,3),1)]=(long long)__gsharp_id_0_u+(-8LL);
+__gsharp_id_1_values[__gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_3_index,3),2)]=__gsharp_id_0_u+8u;
 __gsharp_id_2_flags[__gsharp_id_3_index]=((long long)__gsharp_id_0_u==(-1LL)?1:0);
 }
 
 inline unsigned int __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__MixedSignPromotionKernels__TakeFive(int* __gsharp_id_0_k){
-(*__gsharp_id_0_k)-=5;
+(*__gsharp_id_0_k)=__gsharp_sub_i32((*__gsharp_id_0_k),5);
 return 3u;
 }
 
@@ -181,7 +181,7 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-int __gsharp_id_4_pair = threadIdx.x;
+int __gsharp_id_4_pair = (int)threadIdx.x;
 __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__MixedSignPromotionKernels__IntOperators(__gsharp_id_0_us[__gsharp_id_4_pair/__gsharp_id_1_ns.length],__gsharp_id_1_ns[__gsharp_id_4_pair%__gsharp_id_1_ns.length],__gsharp_id_2_values,__gsharp_id_3_flags,__gsharp_id_4_pair);
 __gsharp_state=-1;
 return;
@@ -441,7 +441,7 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-int __gsharp_id_4_pair = threadIdx.x;
+int __gsharp_id_4_pair = (int)threadIdx.x;
 __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__MixedSignPromotionKernels__ShortOperators(__gsharp_id_0_us[__gsharp_id_4_pair/__gsharp_id_1_ss.length],__gsharp_id_1_ss[__gsharp_id_4_pair%__gsharp_id_1_ss.length],__gsharp_id_2_values,__gsharp_id_3_flags,__gsharp_id_4_pair);
 __gsharp_state=-1;
 return;
@@ -701,7 +701,7 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-int __gsharp_id_4_pair = threadIdx.x;
+int __gsharp_id_4_pair = (int)threadIdx.x;
 __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__MixedSignPromotionKernels__SByteOperators(__gsharp_id_0_us[__gsharp_id_4_pair/__gsharp_id_1_bs.length],__gsharp_id_1_bs[__gsharp_id_4_pair%__gsharp_id_1_bs.length],__gsharp_id_2_values,__gsharp_id_3_flags,__gsharp_id_4_pair);
 __gsharp_state=-1;
 return;
@@ -961,7 +961,7 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-int __gsharp_id_3_tid = threadIdx.x;
+int __gsharp_id_3_tid = (int)threadIdx.x;
 __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__MixedSignPromotionKernels__ConstantOperators(__gsharp_id_0_us[__gsharp_id_3_tid],__gsharp_id_1_values,__gsharp_id_2_flags,__gsharp_id_3_tid);
 __gsharp_state=-1;
 return;
@@ -1218,7 +1218,7 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-__gsharp_ctx->__gsharp_id_4_tid=threadIdx.x;
+__gsharp_ctx->__gsharp_id_4_tid=(int)threadIdx.x;
 __gsharp_ctx->__gsharp_id_5_u=__gsharp_id_0_us[__gsharp_ctx->__gsharp_id_4_tid];
 __gsharp_ctx->__gsharp_id_6_n=__gsharp_id_1_ns[__gsharp_ctx->__gsharp_id_4_tid];
 __gsharp_yielded_for_block_barrier=true;
@@ -1236,10 +1236,10 @@ return;
 case 2:
 __gsharp_switch_1_state_2:
 {
-__gsharp_id_2_values[__gsharp_ctx->__gsharp_id_4_tid*2]=__gsharp_ctx->__gsharp_id_7_sum;
+__gsharp_id_2_values[__gsharp_mul_i32(__gsharp_ctx->__gsharp_id_4_tid,2)]=__gsharp_ctx->__gsharp_id_7_sum;
 __gsharp_id_3_flags[__gsharp_ctx->__gsharp_id_4_tid]=((long long)__gsharp_ctx->__gsharp_id_5_u<(long long)__gsharp_ctx->__gsharp_id_6_n?1:0);
 int __gsharp_id_8_k = __gsharp_ctx->__gsharp_id_4_tid;
-__gsharp_id_2_values[__gsharp_ctx->__gsharp_id_4_tid*2+1]=([&]() {
+__gsharp_id_2_values[__gsharp_add_i32(__gsharp_mul_i32(__gsharp_ctx->__gsharp_id_4_tid,2),1)]=([&]() {
 auto __gsharp_seq_0 = __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__MixedSignPromotionKernels__TakeFive(&__gsharp_id_8_k);
 auto __gsharp_seq_1 = __gsharp_id_8_k;
 return (long long)__gsharp_seq_0+(long long)__gsharp_seq_1;

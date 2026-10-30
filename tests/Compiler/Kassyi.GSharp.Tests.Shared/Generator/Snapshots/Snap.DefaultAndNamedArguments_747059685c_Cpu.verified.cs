@@ -9,7 +9,7 @@ internal static class GSharpSharedCpuDeviceCode
 public const string Source = @"inline int __gsharp_fn_Kassyi__GSharp__Tests__Shared__TestCases__DefaultAndNamedArgumentsTestCase__ComputeStep(int __gsharp_id_0_input, int __gsharp_id_1_offset, int __gsharp_id_2_scale);
 
 inline int __gsharp_fn_Kassyi__GSharp__Tests__Shared__TestCases__DefaultAndNamedArgumentsTestCase__ComputeStep(int __gsharp_id_0_input, int __gsharp_id_1_offset, int __gsharp_id_2_scale){
-return (__gsharp_id_0_input+__gsharp_id_1_offset)*__gsharp_id_2_scale;
+return __gsharp_mul_i32(__gsharp_add_i32(__gsharp_id_0_input,__gsharp_id_1_offset),__gsharp_id_2_scale);
 }
 
 ";
@@ -57,11 +57,11 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-int __gsharp_id_1_tid = threadIdx.x;
+int __gsharp_id_1_tid = (int)threadIdx.x;
 int __gsharp_id_2_r1 = __gsharp_fn_Kassyi__GSharp__Tests__Shared__TestCases__DefaultAndNamedArgumentsTestCase__ComputeStep(__gsharp_id_0_data[__gsharp_id_1_tid],0,1);
 int __gsharp_id_3_r2 = __gsharp_fn_Kassyi__GSharp__Tests__Shared__TestCases__DefaultAndNamedArgumentsTestCase__ComputeStep(__gsharp_id_0_data[__gsharp_id_1_tid],5,2);
 int __gsharp_id_4_r3 = __gsharp_fn_Kassyi__GSharp__Tests__Shared__TestCases__DefaultAndNamedArgumentsTestCase__ComputeStep(__gsharp_id_0_data[__gsharp_id_1_tid],0,4);
-__gsharp_id_0_data[__gsharp_id_1_tid]=__gsharp_id_2_r1+__gsharp_id_3_r2+__gsharp_id_4_r3;
+__gsharp_id_0_data[__gsharp_id_1_tid]=__gsharp_add_i32(__gsharp_add_i32(__gsharp_id_2_r1,__gsharp_id_3_r2),__gsharp_id_4_r3);
 __gsharp_state=-1;
 return;
 }

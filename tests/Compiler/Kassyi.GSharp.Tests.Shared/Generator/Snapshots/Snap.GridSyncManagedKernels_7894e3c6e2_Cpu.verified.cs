@@ -55,9 +55,9 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-__gsharp_ctx->__gsharp_id_1_tid=blockIdx.x*blockDim.x+threadIdx.x;
-__gsharp_ctx->__gsharp_id_2_totalThreads=gridDim.x*blockDim.x;
-__gsharp_id_0_buffer[__gsharp_ctx->__gsharp_id_1_tid]=__gsharp_ctx->__gsharp_id_1_tid+1;
+__gsharp_ctx->__gsharp_id_1_tid=__gsharp_add_i32(__gsharp_mul_i32((int)blockIdx.x,(int)blockDim.x),(int)threadIdx.x);
+__gsharp_ctx->__gsharp_id_2_totalThreads=__gsharp_mul_i32((int)gridDim.x,(int)blockDim.x);
+__gsharp_id_0_buffer[__gsharp_ctx->__gsharp_id_1_tid]=__gsharp_add_i32(__gsharp_ctx->__gsharp_id_1_tid,1);
 __gsharp_yielded_for_grid_sync=true;
 __gsharp_state=1;
 return;
@@ -65,7 +65,7 @@ return;
 case 1:
 __gsharp_switch_1_state_1:
 {
-__gsharp_ctx->__gsharp_id_3_nextId=(__gsharp_ctx->__gsharp_id_1_tid+1)%__gsharp_ctx->__gsharp_id_2_totalThreads;
+__gsharp_ctx->__gsharp_id_3_nextId=(__gsharp_add_i32(__gsharp_ctx->__gsharp_id_1_tid,1))%__gsharp_ctx->__gsharp_id_2_totalThreads;
 __gsharp_ctx->__gsharp_id_4_nextVal=__gsharp_id_0_buffer[__gsharp_ctx->__gsharp_id_3_nextId];
 __gsharp_yielded_for_grid_sync=true;
 __gsharp_state=2;
@@ -401,10 +401,10 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-__gsharp_ctx->__gsharp_id_3_tid=blockIdx.x*blockDim.x+threadIdx.x;
+__gsharp_ctx->__gsharp_id_3_tid=__gsharp_add_i32(__gsharp_mul_i32((int)blockIdx.x,(int)blockDim.x),(int)threadIdx.x);
 __gsharp_ctx->__gsharp_id_4_myVal=__gsharp_id_0_input[__gsharp_ctx->__gsharp_id_3_tid];
 __gsharp_ctx->__gsharp_id_5_shared={ (int*)__gsharp_allocate_smem_static(0x7b4c93522e9874b8ull, (256) * sizeof(int), alignof(int)) };
-__gsharp_ctx->__gsharp_id_6_localTid=threadIdx.x;
+__gsharp_ctx->__gsharp_id_6_localTid=(int)threadIdx.x;
 __gsharp_ctx->__gsharp_id_5_shared[__gsharp_ctx->__gsharp_id_6_localTid]=__gsharp_ctx->__gsharp_id_4_myVal;
 __gsharp_yielded_for_block_barrier=true;
 __gsharp_state=1;
@@ -413,7 +413,7 @@ return;
 case 1:
 __gsharp_switch_1_state_1:
 {
-__gsharp_ctx->__gsharp_id_7_stride=blockDim.x/2;
+__gsharp_ctx->__gsharp_id_7_stride=(int)blockDim.x/2;
 goto __gsharp_switch_1_state_2;
 }
 case 2:
@@ -425,7 +425,7 @@ goto __gsharp_switch_1_state_5;
 }
 if(__gsharp_ctx->__gsharp_id_6_localTid<__gsharp_ctx->__gsharp_id_7_stride)
 {
-__gsharp_ctx->__gsharp_id_5_shared[__gsharp_ctx->__gsharp_id_6_localTid]+=__gsharp_ctx->__gsharp_id_5_shared[__gsharp_ctx->__gsharp_id_6_localTid+__gsharp_ctx->__gsharp_id_7_stride];
+__gsharp_ctx->__gsharp_id_5_shared[__gsharp_ctx->__gsharp_id_6_localTid]=__gsharp_add_i32(__gsharp_ctx->__gsharp_id_5_shared[__gsharp_ctx->__gsharp_id_6_localTid],__gsharp_ctx->__gsharp_id_5_shared[__gsharp_add_i32(__gsharp_ctx->__gsharp_id_6_localTid,__gsharp_ctx->__gsharp_id_7_stride)]);
 }
 __gsharp_yielded_for_block_barrier=true;
 __gsharp_state=3;
@@ -448,7 +448,7 @@ __gsharp_switch_1_state_5:
 {
 if(__gsharp_ctx->__gsharp_id_6_localTid==0)
 {
-__gsharp_id_1_blockSums[blockIdx.x]=__gsharp_ctx->__gsharp_id_5_shared[0];
+__gsharp_id_1_blockSums[(int)blockIdx.x]=__gsharp_ctx->__gsharp_id_5_shared[0];
 }
 __gsharp_yielded_for_grid_sync=true;
 __gsharp_state=6;
@@ -457,12 +457,12 @@ return;
 case 6:
 __gsharp_switch_1_state_6:
 {
-if(blockIdx.x==0&&__gsharp_ctx->__gsharp_id_6_localTid==0)
+if((int)blockIdx.x==0&&__gsharp_ctx->__gsharp_id_6_localTid==0)
 {
 int __gsharp_id_8_sum = 0;
-for(int __gsharp_id_9_i = 0;__gsharp_id_9_i<gridDim.x;__gsharp_id_9_i++)
+for(int __gsharp_id_9_i = 0;__gsharp_id_9_i<(int)gridDim.x;__gsharp_id_9_i=__gsharp_add_i32(__gsharp_id_9_i,1))
 {
-__gsharp_id_8_sum+=__gsharp_id_1_blockSums[__gsharp_id_9_i];
+__gsharp_id_8_sum=__gsharp_add_i32(__gsharp_id_8_sum,__gsharp_id_1_blockSums[__gsharp_id_9_i]);
 }
 __gsharp_id_2_totalSum[0]=__gsharp_id_8_sum;
 }

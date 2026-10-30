@@ -29,7 +29,7 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-__gsharp_ctx->__gsharp_id_2_tid=threadIdx.x;
+__gsharp_ctx->__gsharp_id_2_tid=(int)threadIdx.x;
 __gsharp_ctx->__gsharp_id_3_shared={ (int*)__gsharp_allocate_smem_static(0x03b69bc16ee586d8ull, (256) * sizeof(int), alignof(int)) };
 __gsharp_ctx->__gsharp_id_3_shared[__gsharp_ctx->__gsharp_id_2_tid]=__gsharp_id_0_value;
 __gsharp_yielded_for_block_barrier=true;
@@ -39,7 +39,7 @@ return false;
 case 1:
 __gsharp_switch_1_state_1:
 {
-*__gsharp_result = __gsharp_ctx->__gsharp_id_3_shared[__gsharp_id_1_length-1-__gsharp_ctx->__gsharp_id_2_tid];
+*__gsharp_result = __gsharp_ctx->__gsharp_id_3_shared[__gsharp_sub_i32(__gsharp_sub_i32(__gsharp_id_1_length,1),__gsharp_ctx->__gsharp_id_2_tid)];
 __gsharp_state = 0;return true;
 __gsharp_state = 0;return true;
 }
@@ -112,7 +112,7 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-__gsharp_ctx->__gsharp_id_1_lane=threadIdx.x&31;
+__gsharp_ctx->__gsharp_id_1_lane=(int)threadIdx.x&31;
 __gsharp_warp_exchange_assign(__gsharp_id_0_data[__gsharp_ctx->__gsharp_id_1_lane]);
 __gsharp_state=1;
 return false;
@@ -120,7 +120,7 @@ return false;
 case 1:
 __gsharp_switch_1_state_1:
 {
-auto __gsharp_warp_temp_0 = __gsharp_warp_shuffle_read_sync(__gsharp_root,0xFFFFFFFFu,__gsharp_id_0_data[__gsharp_ctx->__gsharp_id_1_lane],31-__gsharp_ctx->__gsharp_id_1_lane,32,""NonRecursiveDeviceFunctionBarrierKernels.cs(30,22)"");
+auto __gsharp_warp_temp_0 = __gsharp_warp_shuffle_read_sync(__gsharp_root,0xFFFFFFFFu,__gsharp_id_0_data[__gsharp_ctx->__gsharp_id_1_lane],__gsharp_sub_i32(31,__gsharp_ctx->__gsharp_id_1_lane),32,""NonRecursiveDeviceFunctionBarrierKernels.cs(30,22)"");
 __gsharp_id_0_data[__gsharp_ctx->__gsharp_id_1_lane]=__gsharp_warp_temp_0;
 __gsharp_state = 0;return true;
 }
@@ -315,7 +315,7 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-__gsharp_ctx->__gsharp_id_4_tid=threadIdx.x;
+__gsharp_ctx->__gsharp_id_4_tid=(int)threadIdx.x;
 __gsharp_ctx->__gsharp_arg_temp_0=__gsharp_id_0_input[__gsharp_ctx->__gsharp_id_4_tid];
 goto __gsharp_switch_1_state_1;
 }

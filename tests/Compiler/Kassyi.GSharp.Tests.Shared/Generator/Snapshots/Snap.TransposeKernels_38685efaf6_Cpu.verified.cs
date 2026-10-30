@@ -51,11 +51,11 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-auto __gsharp_id_4_col = blockIdx.x*blockDim.x+threadIdx.x;
-auto __gsharp_id_5_row = blockIdx.y*blockDim.y+threadIdx.y;
+auto __gsharp_id_4_col = __gsharp_add_i32(__gsharp_mul_i32((int)blockIdx.x,(int)blockDim.x),(int)threadIdx.x);
+auto __gsharp_id_5_row = __gsharp_add_i32(__gsharp_mul_i32((int)blockIdx.y,(int)blockDim.y),(int)threadIdx.y);
 if(__gsharp_id_4_col<__gsharp_id_2_width&&__gsharp_id_5_row<__gsharp_id_3_height)
 {
-__gsharp_id_1_output[__gsharp_id_4_col*__gsharp_id_3_height+__gsharp_id_5_row]=__gsharp_id_0_input[__gsharp_id_5_row*__gsharp_id_2_width+__gsharp_id_4_col];
+__gsharp_id_1_output[__gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_4_col,__gsharp_id_3_height),__gsharp_id_5_row)]=__gsharp_id_0_input[__gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_5_row,__gsharp_id_2_width),__gsharp_id_4_col)];
 }
 __gsharp_state=-1;
 return;

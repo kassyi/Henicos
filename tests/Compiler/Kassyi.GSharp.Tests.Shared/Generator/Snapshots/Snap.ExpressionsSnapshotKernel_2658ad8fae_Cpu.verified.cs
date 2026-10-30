@@ -9,8 +9,8 @@ internal static class GSharpSharedCpuDeviceCode
 public const string Source = @"inline void __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__ExpressionsSnapshotKernels__HelperMethod(int* __gsharp_id_0_x, int* __gsharp_id_1_y);
 
 inline void __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__ExpressionsSnapshotKernels__HelperMethod(int* __gsharp_id_0_x, int* __gsharp_id_1_y){
-(*__gsharp_id_1_y)=(*__gsharp_id_0_x)*2;
-(*__gsharp_id_0_x)+=1;
+(*__gsharp_id_1_y)=__gsharp_mul_i32((*__gsharp_id_0_x),2);
+(*__gsharp_id_0_x)=__gsharp_add_i32((*__gsharp_id_0_x),1);
 }
 
 ";
@@ -58,14 +58,14 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-int __gsharp_id_3_a = (int)(__gsharp_id_1_fVal+(float)__gsharp_id_2_dVal);
-int __gsharp_id_4_b = __gsharp_id_3_a<<2;
+int __gsharp_id_3_a = __gsharp_to_i32(__gsharp_id_1_fVal+(float)__gsharp_id_2_dVal);
+int __gsharp_id_4_b = __gsharp_shl_i32(__gsharp_id_3_a,2);
 int __gsharp_id_5_c = __gsharp_id_4_b^0xFF;
 int __gsharp_id_6_refArg = __gsharp_id_5_c;
 int __gsharp_id_7_outArg;
 __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__ExpressionsSnapshotKernels__HelperMethod(&__gsharp_id_6_refArg,&__gsharp_id_7_outArg);
-int __gsharp_id_8_tidX = threadIdx.x;
-__gsharp_id_0_output[__gsharp_id_8_tidX]=__gsharp_id_6_refArg+__gsharp_id_7_outArg;
+int __gsharp_id_8_tidX = (int)threadIdx.x;
+__gsharp_id_0_output[__gsharp_id_8_tidX]=__gsharp_add_i32(__gsharp_id_6_refArg,__gsharp_id_7_outArg);
 __gsharp_state=-1;
 return;
 }

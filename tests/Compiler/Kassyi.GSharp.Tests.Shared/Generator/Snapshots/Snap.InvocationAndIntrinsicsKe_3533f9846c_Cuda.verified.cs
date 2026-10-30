@@ -86,7 +86,7 @@ public static partial class AotContexts
 {
 }
 public const string InterlockedKernel_Source = @"extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__InvocationAndIntrinsicsKernels__InterlockedKernel(GSharpArray<int> __gsharp_id_0_intBuf, GSharpArray<unsigned int> __gsharp_id_1_uintBuf, GSharpArray<long long> __gsharp_id_2_longBuf, GSharpArray<unsigned long long> __gsharp_id_3_ulongBuf){
-int __gsharp_id_4_tid = threadIdx.x;
+int __gsharp_id_4_tid = (int)threadIdx.x;
 __gsharp_atomicAdd(&__gsharp_id_0_intBuf[0],1);
 __gsharp_atomicAdd((unsigned long long*)(&__gsharp_id_2_longBuf[0]),2ll);
 if(__gsharp_id_4_tid==0)
@@ -340,7 +340,7 @@ static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__Atomic
 static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__AtomicTestStruct,__gsharp_mb_ValueL)==8,""Kassyi.GSharp.Tests.Shared.Syntax.AtomicTestStruct.ValueL: offset"");
 #endif
 extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__InvocationAndIntrinsicsKernels__InterlockedEdgeCasesKernel(GSharpArray<int> __gsharp_id_0_array, GSharpArray<__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__AtomicTestStruct> __gsharp_id_1_structArray){
-int __gsharp_id_2_tid = threadIdx.x;
+int __gsharp_id_2_tid = (int)threadIdx.x;
 __gsharp_atomicAdd(&__gsharp_id_0_array[__gsharp_id_2_tid],10);
 __gsharp_atomicAdd(&__gsharp_id_1_structArray[__gsharp_id_2_tid].__gsharp_mb_ValueI,1);
 atomicExch(&__gsharp_id_1_structArray[__gsharp_id_2_tid].__gsharp_mb_ValueU,42u);
@@ -503,7 +503,7 @@ finally
 }
 #pragma warning restore CS8500
 public const string MathKernel_Source = @"extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__InvocationAndIntrinsicsKernels__MathKernel(GSharpArray<double> __gsharp_id_0_doubleInputs, GSharpArray<double> __gsharp_id_1_doubleOutputs, GSharpArray<float> __gsharp_id_2_floatInputs, GSharpArray<float> __gsharp_id_3_floatOutputs){
-int __gsharp_id_4_tid = threadIdx.x;
+int __gsharp_id_4_tid = (int)threadIdx.x;
 double __gsharp_id_5_dVal = __gsharp_id_0_doubleInputs[__gsharp_id_4_tid];
 __gsharp_id_1_doubleOutputs[0]=sin(__gsharp_id_5_dVal);
 __gsharp_id_1_doubleOutputs[1]=cos(__gsharp_id_5_dVal);
@@ -746,7 +746,7 @@ finally
 }
 #pragma warning restore CS8500
 public const string MathEdgeCasesKernel_Source = @"extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__InvocationAndIntrinsicsKernels__MathEdgeCasesKernel(GSharpArray<float> __gsharp_id_0_floatSpecialInputs, GSharpArray<float> __gsharp_id_1_floatSpecialResults, GSharpArray<double> __gsharp_id_2_doubleSpecialInputs, GSharpArray<double> __gsharp_id_3_doubleSpecialResults){
-int __gsharp_id_4_tid = threadIdx.x;
+int __gsharp_id_4_tid = (int)threadIdx.x;
 float __gsharp_id_5_f = __gsharp_id_0_floatSpecialInputs[__gsharp_id_4_tid];
 __gsharp_id_1_floatSpecialResults[0]=fabsf(__gsharp_id_5_f);
 __gsharp_id_1_floatSpecialResults[1]=__gsharp_max_f32(__gsharp_id_5_f,0.0f);

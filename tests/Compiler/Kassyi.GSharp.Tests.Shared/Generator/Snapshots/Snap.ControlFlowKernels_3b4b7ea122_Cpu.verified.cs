@@ -51,7 +51,7 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-int __gsharp_id_3_tid = threadIdx.x;
+int __gsharp_id_3_tid = (int)threadIdx.x;
 __gsharp_id_2_result[__gsharp_id_3_tid]=(__gsharp_id_0_a[__gsharp_id_3_tid]>__gsharp_id_1_b[__gsharp_id_3_tid]?__gsharp_id_0_a[__gsharp_id_3_tid]:__gsharp_id_1_b[__gsharp_id_3_tid]*1.5);
 __gsharp_state=-1;
 return;
@@ -305,7 +305,7 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-int __gsharp_id_4_tid = threadIdx.x;
+int __gsharp_id_4_tid = (int)threadIdx.x;
 int __gsharp_id_5_x = __gsharp_id_0_a[__gsharp_id_4_tid];
 int __gsharp_id_6_y = __gsharp_id_1_b[__gsharp_id_4_tid];
 int __gsharp_id_7_z = __gsharp_id_2_c[__gsharp_id_4_tid];
@@ -571,7 +571,7 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-int __gsharp_id_2_tid = threadIdx.x;
+int __gsharp_id_2_tid = (int)threadIdx.x;
 int __gsharp_id_3_val = __gsharp_id_0_input[__gsharp_id_2_tid];
 __gsharp_id_1_output[__gsharp_id_2_tid]=([&]() {
 switch(__gsharp_id_3_val)
@@ -833,7 +833,7 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-int __gsharp_id_4_tid = threadIdx.x;
+int __gsharp_id_4_tid = (int)threadIdx.x;
 if(__gsharp_id_2_selectors[__gsharp_id_4_tid]==1)
 {
 __gsharp_id_0_a[__gsharp_id_4_tid]=__gsharp_id_3_valuesToAssign[__gsharp_id_4_tid];
@@ -1108,7 +1108,7 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-int __gsharp_id_3_tid = threadIdx.x;
+int __gsharp_id_3_tid = (int)threadIdx.x;
 System_Nullable<int> __gsharp_id_4_input = __gsharp_id_0_nullableInputs[__gsharp_id_3_tid];
 __gsharp_id_2_results[__gsharp_id_3_tid]=([&]() {
 auto __gsharp_coalesce_tmp = __gsharp_id_4_input;
@@ -1366,9 +1366,9 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-int __gsharp_id_3_tid = threadIdx.x;
+int __gsharp_id_3_tid = (int)threadIdx.x;
 int __gsharp_id_4_idx = __gsharp_id_1_sideEffectTracker[__gsharp_id_3_tid];
-__gsharp_id_1_sideEffectTracker[__gsharp_id_3_tid]=__gsharp_id_4_idx+1;
+__gsharp_id_1_sideEffectTracker[__gsharp_id_3_tid]=__gsharp_add_i32(__gsharp_id_4_idx,1);
 ([&]() -> decltype(auto) {
 auto& __gsharp_coalesce_target = __gsharp_id_0_targetArray[__gsharp_id_4_idx];
 return !__gsharp_coalesce_target.HasValue ? (__gsharp_coalesce_target = __gsharp_id_2_values[__gsharp_id_3_tid]) : __gsharp_coalesce_target.Value;

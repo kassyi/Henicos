@@ -51,7 +51,7 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-__gsharp_id_2_c[0]=__gsharp_id_0_a[0]+__gsharp_id_1_b[0];
+__gsharp_id_2_c[0]=__gsharp_add_i32(__gsharp_id_0_a[0],__gsharp_id_1_b[0]);
 __gsharp_state=-1;
 return;
 }

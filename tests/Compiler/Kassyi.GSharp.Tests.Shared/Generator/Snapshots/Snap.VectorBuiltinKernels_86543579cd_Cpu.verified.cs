@@ -51,7 +51,7 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-auto __gsharp_id_4_tid = threadIdx.x+blockIdx.x*blockDim.x;
+auto __gsharp_id_4_tid = __gsharp_add_i32((int)threadIdx.x,__gsharp_mul_i32((int)blockIdx.x,(int)blockDim.x));
 if(__gsharp_id_4_tid<__gsharp_id_3_length)
 {
 auto __gsharp_id_5_va = __gsharp_id_0_a[__gsharp_id_4_tid];
@@ -315,7 +315,7 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-auto __gsharp_id_4_tid = threadIdx.x+blockIdx.x*blockDim.x;
+auto __gsharp_id_4_tid = __gsharp_add_i32((int)threadIdx.x,__gsharp_mul_i32((int)blockIdx.x,(int)blockDim.x));
 if(__gsharp_id_4_tid<__gsharp_id_3_length)
 {
 auto __gsharp_id_5_va = __gsharp_id_0_a[__gsharp_id_4_tid];
@@ -579,7 +579,7 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-auto __gsharp_id_4_tid = threadIdx.x+blockIdx.x*blockDim.x;
+auto __gsharp_id_4_tid = __gsharp_add_i32((int)threadIdx.x,__gsharp_mul_i32((int)blockIdx.x,(int)blockDim.x));
 if(__gsharp_id_4_tid<__gsharp_id_3_length)
 {
 auto __gsharp_id_5_va = __gsharp_id_0_a[__gsharp_id_4_tid];

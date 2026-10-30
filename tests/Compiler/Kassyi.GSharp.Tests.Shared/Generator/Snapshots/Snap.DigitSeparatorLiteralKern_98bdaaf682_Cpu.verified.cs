@@ -51,7 +51,7 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-int __gsharp_id_6_i = threadIdx.x;
+int __gsharp_id_6_i = (int)threadIdx.x;
 __gsharp_id_0_ints[__gsharp_id_6_i]=1000000;
 __gsharp_id_1_uints[__gsharp_id_6_i]=0xFFFF0000u;
 __gsharp_id_2_longs[__gsharp_id_6_i]=10000000000ll;

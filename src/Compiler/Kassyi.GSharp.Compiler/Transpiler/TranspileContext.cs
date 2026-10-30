@@ -121,6 +121,15 @@ public struct Emitter(
     public Dictionary<SyntaxNode, int> StackAllocStorages { get; } = new();
 
     /// <summary>
+    /// The temporary (<c>__gsharp_seq_&lt;n&gt;</c>) that a part of the target of a step or compound assignment was
+    /// evaluated into, written in place of the part while the target is written (IntegerSemanticsEmitter).
+    /// </summary>
+    public Dictionary<SyntaxNode, int> SpilledExpressions { get; } = new();
+
+    /// <summary>Whether each for loop step that BoundedLoopStep analyzed cannot overflow (it then stays <c>i++</c>).</summary>
+    public Dictionary<SyntaxNode, bool> BoundedLoopSteps { get; } = new();
+
+    /// <summary>
     /// The struct definitions whose <c>Dispose</c> a <c>using</c> of the method calls, in the order of first use; each
     /// definition is emitted after the structs (UsingTranspiler.WriteDisposeDefinitions).
     /// </summary>

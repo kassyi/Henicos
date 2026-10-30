@@ -83,7 +83,7 @@ public static partial class AotContexts
 {
 }
 public const string ReverseArrayWithSharedMemoryKernel_Source = @"extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Core__SharedMemoryKernels__ReverseArrayWithSharedMemoryKernel(GSharpArray<int> __gsharp_id_0_input, GSharpArray<int> __gsharp_id_1_output, int __gsharp_id_2_length){
-int __gsharp_id_3_tid = threadIdx.x;
+int __gsharp_id_3_tid = (int)threadIdx.x;
 __shared__ int __gsharp_id_4_shared[256];
 if(__gsharp_id_3_tid<__gsharp_id_2_length)
 {
@@ -92,7 +92,7 @@ __gsharp_id_4_shared[__gsharp_id_3_tid]=__gsharp_id_0_input[__gsharp_id_3_tid];
 __syncthreads();
 if(__gsharp_id_3_tid<__gsharp_id_2_length)
 {
-int __gsharp_id_5_reversedIndex = __gsharp_id_2_length-1-__gsharp_id_3_tid;
+int __gsharp_id_5_reversedIndex = __gsharp_sub_i32(__gsharp_sub_i32(__gsharp_id_2_length,1),__gsharp_id_3_tid);
 __gsharp_id_1_output[__gsharp_id_3_tid]=__gsharp_id_4_shared[__gsharp_id_5_reversedIndex];
 }
 }

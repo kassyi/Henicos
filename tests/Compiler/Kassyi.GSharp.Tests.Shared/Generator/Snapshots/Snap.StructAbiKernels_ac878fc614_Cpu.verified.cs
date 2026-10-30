@@ -511,7 +511,7 @@ case 0:
 __gsharp_switch_1_state_0:
 {
 (*__gsharp_id_0_data).__gsharp_mb_A=(unsigned char)((*__gsharp_id_0_data).__gsharp_mb_A+1);
-(*__gsharp_id_0_data).__gsharp_mb_C=(*__gsharp_id_0_data).__gsharp_mb_C+1;
+(*__gsharp_id_0_data).__gsharp_mb_C=__gsharp_add_i32((*__gsharp_id_0_data).__gsharp_mb_C,1);
 __gsharp_state=-1;
 return;
 }
@@ -1079,7 +1079,7 @@ case 0:
 __gsharp_switch_1_state_0:
 {
 (*__gsharp_id_0_data).__gsharp_mb_A=(unsigned char)((*__gsharp_id_0_data).__gsharp_mb_A+1);
-(*__gsharp_id_0_data).__gsharp_mb_C=(*__gsharp_id_0_data).__gsharp_mb_C+1;
+(*__gsharp_id_0_data).__gsharp_mb_C=__gsharp_add_i32((*__gsharp_id_0_data).__gsharp_mb_C,1);
 __gsharp_state=-1;
 return;
 }
@@ -1634,7 +1634,7 @@ case 0:
 __gsharp_switch_1_state_0:
 {
 (*__gsharp_id_0_data).__gsharp_mb_A=(unsigned char)((*__gsharp_id_0_data).__gsharp_mb_A+1);
-(*__gsharp_id_0_data).__gsharp_mb_C=(*__gsharp_id_0_data).__gsharp_mb_C+1;
+(*__gsharp_id_0_data).__gsharp_mb_C=__gsharp_add_i32((*__gsharp_id_0_data).__gsharp_mb_C,1);
 __gsharp_state=-1;
 return;
 }
@@ -2202,7 +2202,7 @@ case 0:
 __gsharp_switch_1_state_0:
 {
 (*__gsharp_id_0_data).__gsharp_mb_A=(unsigned char)((*__gsharp_id_0_data).__gsharp_mb_A+1);
-(*__gsharp_id_0_data).__gsharp_mb_C=(*__gsharp_id_0_data).__gsharp_mb_C+1;
+(*__gsharp_id_0_data).__gsharp_mb_C=__gsharp_add_i32((*__gsharp_id_0_data).__gsharp_mb_C,1);
 __gsharp_state=-1;
 return;
 }
@@ -2727,7 +2727,7 @@ case 0:
 __gsharp_switch_1_state_0:
 {
 (*__gsharp_id_0_data).__gsharp_mb_A=(unsigned char)((*__gsharp_id_0_data).__gsharp_mb_A+1);
-(*__gsharp_id_0_data).__gsharp_mb_C=(*__gsharp_id_0_data).__gsharp_mb_C+1;
+(*__gsharp_id_0_data).__gsharp_mb_C=__gsharp_add_i32((*__gsharp_id_0_data).__gsharp_mb_C,1);
 __gsharp_state=-1;
 return;
 }
@@ -3251,7 +3251,7 @@ __gsharp_switch_1_state_0:
 {
 (*__gsharp_id_0_data).__gsharp_mb_A=(unsigned char)((*__gsharp_id_0_data).__gsharp_mb_A+1);
 (*__gsharp_id_0_data).__gsharp_mb_B=(*__gsharp_id_0_data).__gsharp_mb_B+1.0;
-(*__gsharp_id_0_data).__gsharp_mb_C=(*__gsharp_id_0_data).__gsharp_mb_C+1;
+(*__gsharp_id_0_data).__gsharp_mb_C=__gsharp_add_i32((*__gsharp_id_0_data).__gsharp_mb_C,1);
 __gsharp_state=-1;
 return;
 }
@@ -3487,13 +3487,13 @@ __device__ inline int __gsharp_mb_Sum() const {
 return __gsharp_mb_A+1;
 }
 __device__ inline int __gsharp_mb_Twice() const {
-return __gsharp_mb_Sum()*2;
+return __gsharp_mul_i32(__gsharp_mb_Sum(),2);
 }
 __device__ inline int __gsharp_mb_Product() const {
-return __gsharp_mb_A*__gsharp_mb_C;
+return __gsharp_mul_i32(__gsharp_mb_A,__gsharp_mb_C);
 }
 __device__ inline int __gsharp_mb_Difference() const {
-return (*this).__gsharp_mb_C-(*this).__gsharp_mb_Sum();
+return __gsharp_sub_i32((*this).__gsharp_mb_C,(*this).__gsharp_mb_Sum());
 }
 }
 ;
@@ -3761,13 +3761,13 @@ __device__ inline int __gsharp_mb_Sum() const {
 return __gsharp_mb_A+1;
 }
 __device__ inline int __gsharp_mb_Twice() const {
-return __gsharp_mb_Sum()*2;
+return __gsharp_mul_i32(__gsharp_mb_Sum(),2);
 }
 __device__ inline int __gsharp_mb_Product() const {
-return __gsharp_mb_A*__gsharp_mb_C;
+return __gsharp_mul_i32(__gsharp_mb_A,__gsharp_mb_C);
 }
 __device__ inline int __gsharp_mb_Difference() const {
-return (*this).__gsharp_mb_C-(*this).__gsharp_mb_Sum();
+return __gsharp_sub_i32((*this).__gsharp_mb_C,(*this).__gsharp_mb_Sum());
 }
 }
 ;
@@ -3794,7 +3794,7 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-(*__gsharp_id_0_data).__gsharp_mb_C=(*__gsharp_id_0_data).__gsharp_mb_C+1;
+(*__gsharp_id_0_data).__gsharp_mb_C=__gsharp_add_i32((*__gsharp_id_0_data).__gsharp_mb_C,1);
 __gsharp_state=-1;
 return;
 }
@@ -4028,13 +4028,13 @@ __device__ inline int __gsharp_mb_Sum() const {
 return __gsharp_mb_A+1;
 }
 __device__ inline int __gsharp_mb_Twice() const {
-return __gsharp_mb_Sum()*2;
+return __gsharp_mul_i32(__gsharp_mb_Sum(),2);
 }
 __device__ inline int __gsharp_mb_Product() const {
-return __gsharp_mb_A*__gsharp_mb_C;
+return __gsharp_mul_i32(__gsharp_mb_A,__gsharp_mb_C);
 }
 __device__ inline int __gsharp_mb_Difference() const {
-return (*this).__gsharp_mb_C-(*this).__gsharp_mb_Sum();
+return __gsharp_sub_i32((*this).__gsharp_mb_C,(*this).__gsharp_mb_Sum());
 }
 }
 ;
@@ -4302,13 +4302,13 @@ __device__ inline int __gsharp_mb_Sum() const {
 return __gsharp_mb_A+1;
 }
 __device__ inline int __gsharp_mb_Twice() const {
-return __gsharp_mb_Sum()*2;
+return __gsharp_mul_i32(__gsharp_mb_Sum(),2);
 }
 __device__ inline int __gsharp_mb_Product() const {
-return __gsharp_mb_A*__gsharp_mb_C;
+return __gsharp_mul_i32(__gsharp_mb_A,__gsharp_mb_C);
 }
 __device__ inline int __gsharp_mb_Difference() const {
-return (*this).__gsharp_mb_C-(*this).__gsharp_mb_Sum();
+return __gsharp_sub_i32((*this).__gsharp_mb_C,(*this).__gsharp_mb_Sum());
 }
 }
 ;

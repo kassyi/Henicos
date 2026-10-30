@@ -86,9 +86,9 @@ public static partial class AotContexts
 }
 public const string HoistedVarKernel_Source = @"extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__HoistedFieldTypeKernels__HoistedVarKernel(GSharpArray<int> __gsharp_id_0_data){
 auto __gsharp_id_1_sum = 0u;
-__gsharp_id_1_sum+=(unsigned int)__gsharp_id_0_data[threadIdx.x];
+__gsharp_id_1_sum+=(unsigned int)__gsharp_id_0_data[(int)threadIdx.x];
 __syncthreads();
-__gsharp_id_0_data[threadIdx.x]=(int)__gsharp_id_1_sum;
+__gsharp_id_0_data[(int)threadIdx.x]=(int)__gsharp_id_1_sum;
 }
 ";
 public static readonly string HoistedVarKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +HoistedVarKernel_Source;
@@ -197,7 +197,7 @@ finally
 }
 #pragma warning restore CS8500
 public const string FloatWarpReductionKernel_Source = @"extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__HoistedFieldTypeKernels__FloatWarpReductionKernel(GSharpArray<float> __gsharp_id_0_input, GSharpArray<float> __gsharp_id_1_output){
-int __gsharp_id_2_tid = threadIdx.x;
+int __gsharp_id_2_tid = (int)threadIdx.x;
 int __gsharp_id_3_lane = __gsharp_id_2_tid%32;
 int __gsharp_id_4_warpId = __gsharp_id_2_tid/32;
 float __gsharp_id_5_val = __gsharp_id_0_input[__gsharp_id_2_tid];
@@ -369,7 +369,7 @@ static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__Hoiste
 static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__HoistedPoint,__gsharp_mb_Y)==4,""Kassyi.GSharp.Tests.Shared.Syntax.HoistedPoint.Y: offset"");
 #endif
 extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__HoistedFieldTypeKernels__StructVarKernel(GSharpArray<__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__HoistedPoint> __gsharp_id_0_items, GSharpArray<float> __gsharp_id_1_output){
-int __gsharp_id_2_tid = threadIdx.x;
+int __gsharp_id_2_tid = (int)threadIdx.x;
 auto __gsharp_id_3_p = __gsharp_id_0_items[__gsharp_id_2_tid];
 __syncthreads();
 __gsharp_id_1_output[__gsharp_id_2_tid]=__gsharp_id_3_p.__gsharp_mb_X+__gsharp_id_3_p.__gsharp_mb_Y;

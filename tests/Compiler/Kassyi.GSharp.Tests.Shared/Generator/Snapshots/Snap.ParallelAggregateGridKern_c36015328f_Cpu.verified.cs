@@ -51,10 +51,10 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-int __gsharp_id_2_rank = threadIdx.x+blockDim.x*(threadIdx.y+blockDim.y*threadIdx.z);
-int __gsharp_id_3_size = blockDim.x*blockDim.y*blockDim.z;
-int __gsharp_id_4_block = blockIdx.x+gridDim.x*(blockIdx.y+gridDim.y*blockIdx.z);
-__gsharp_id_1_result[__gsharp_id_4_block*__gsharp_id_3_size+__gsharp_id_2_rank]=([&]() -> auto {
+int __gsharp_id_2_rank = __gsharp_add_i32((int)threadIdx.x,__gsharp_mul_i32((int)blockDim.x,__gsharp_add_i32((int)threadIdx.y,__gsharp_mul_i32((int)blockDim.y,(int)threadIdx.z))));
+int __gsharp_id_3_size = __gsharp_mul_i32(__gsharp_mul_i32((int)blockDim.x,(int)blockDim.y),(int)blockDim.z);
+int __gsharp_id_4_block = __gsharp_add_i32((int)blockIdx.x,__gsharp_mul_i32((int)gridDim.x,__gsharp_add_i32((int)blockIdx.y,__gsharp_mul_i32((int)gridDim.y,(int)blockIdx.z))));
+__gsharp_id_1_result[__gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_4_block,__gsharp_id_3_size),__gsharp_id_2_rank)]=([&]() -> auto {
 auto&& __gsharp_fusion_src = __gsharp_id_0_data;
 int __gsharp_fusion_res = 0;
 int __gsharp_fusion_lo = 0;
@@ -68,7 +68,7 @@ return __gsharp_id_5_x%3!=0;
 )(__gsharp_val_0))
 {
 auto __gsharp_val_1 = ([&](auto __gsharp_id_6_x) {
-return __gsharp_id_6_x*2;
+return __gsharp_mul_i32(__gsharp_id_6_x,2);
 }
 )(__gsharp_val_0);
 __gsharp_fusion_res += __gsharp_val_1;
@@ -381,7 +381,7 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-__gsharp_id_1_result[blockIdx.x*blockDim.x+threadIdx.x]=([&]() -> auto {
+__gsharp_id_1_result[__gsharp_add_i32(__gsharp_mul_i32((int)blockIdx.x,(int)blockDim.x),(int)threadIdx.x)]=([&]() -> auto {
 auto&& __gsharp_fusion_src = __gsharp_id_0_data;
 long long __gsharp_fusion_res = 0;
 int __gsharp_fusion_lo = 0;
@@ -696,9 +696,9 @@ case 0:
 __gsharp_switch_1_state_0:
 {
 int __gsharp_id_3_total = 0;
-for(int __gsharp_id_4_k = 0;__gsharp_id_4_k<3;__gsharp_id_4_k++)
+for(int __gsharp_id_4_k = 0;__gsharp_id_4_k<3;__gsharp_id_4_k=__gsharp_add_i32(__gsharp_id_4_k,1))
 {
-__gsharp_id_3_total=__gsharp_id_3_total*7+([&]() -> auto {
+__gsharp_id_3_total=__gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_3_total,7),([&]() -> auto {
 auto&& __gsharp_fusion_src = __gsharp_id_0_a;
 int __gsharp_fusion_res = 0;
 int __gsharp_fusion_lo = 0;
@@ -709,8 +709,8 @@ auto __gsharp_val_0 = __gsharp_fusion_src[__gsharp_i];
 __gsharp_fusion_res += __gsharp_val_0;
 }
 return __gsharp_fusion_res;
-}());
-__gsharp_id_3_total=__gsharp_id_3_total*7+([&]() -> auto {
+}()));
+__gsharp_id_3_total=__gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_3_total,7),([&]() -> auto {
 auto&& __gsharp_fusion_src = __gsharp_id_1_b;
 int __gsharp_fusion_res = 0;
 int __gsharp_fusion_lo = 0;
@@ -719,15 +719,15 @@ for (int __gsharp_i = __gsharp_fusion_lo; __gsharp_i < __gsharp_fusion_hi; __gsh
 {
 auto __gsharp_val_0 = __gsharp_fusion_src[__gsharp_i];
 auto __gsharp_val_1 = ([&](auto __gsharp_id_5_x) {
-return __gsharp_id_5_x+__gsharp_id_4_k;
+return __gsharp_add_i32(__gsharp_id_5_x,__gsharp_id_4_k);
 }
 )(__gsharp_val_0);
 __gsharp_fusion_res += __gsharp_val_1;
 }
 return __gsharp_fusion_res;
-}());
+}()));
 }
-__gsharp_id_2_result[blockIdx.x*blockDim.x+threadIdx.x]=__gsharp_id_3_total;
+__gsharp_id_2_result[__gsharp_add_i32(__gsharp_mul_i32((int)blockIdx.x,(int)blockDim.x),(int)threadIdx.x)]=__gsharp_id_3_total;
 __gsharp_state=-1;
 return;
 }
@@ -1044,9 +1044,9 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-__gsharp_id_2_result[blockIdx.x*blockDim.x+threadIdx.x]=([&]() -> auto {
+__gsharp_id_2_result[__gsharp_add_i32(__gsharp_mul_i32((int)blockIdx.x,(int)blockDim.x),(int)threadIdx.x)]=([&]() -> auto {
 auto&& __gsharp_fusion_src = __gsharp_id_0_data;
-int __gsharp_stage_0_n = blockIdx.x*__gsharp_id_1_m;
+int __gsharp_stage_0_n = __gsharp_mul_i32((int)blockIdx.x,__gsharp_id_1_m);
 int __gsharp_stage_1_n = __gsharp_id_1_m;
 int __gsharp_fusion_res = 0;
 int __gsharp_fusion_lo = 0;
@@ -1362,7 +1362,7 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-__gsharp_id_1_result[blockIdx.x*blockDim.x+threadIdx.x]=([&]() -> auto {
+__gsharp_id_1_result[__gsharp_add_i32(__gsharp_mul_i32((int)blockIdx.x,(int)blockDim.x),(int)threadIdx.x)]=([&]() -> auto {
 auto&& __gsharp_fusion_src = __gsharp_id_0_data;
 int __gsharp_fusion_res = 0;
 int __gsharp_fusion_lo = 0;
@@ -1371,7 +1371,7 @@ for (int __gsharp_i = __gsharp_fusion_lo; __gsharp_i < __gsharp_fusion_hi; __gsh
 {
 auto __gsharp_val_0 = __gsharp_fusion_src[__gsharp_i];
 auto __gsharp_val_1 = ([&](auto __gsharp_id_2_x) {
-return __gsharp_id_2_x+blockIdx.x;
+return __gsharp_add_i32(__gsharp_id_2_x,(int)blockIdx.x);
 }
 )(__gsharp_val_0);
 __gsharp_fusion_res += __gsharp_val_1;

@@ -71,10 +71,10 @@ __gsharp_switch_1_state_0:
 __gsharp_ctx->__gsharp_id_3_intSmem={ (int*)__gsharp_allocate_smem_static(0x671c4908e990809cull, (256) * sizeof(int), alignof(int)) };
 __gsharp_ctx->__gsharp_id_4_floatSmem={ (float*)__gsharp_allocate_smem_static(0x671c4a08e990824full, (256) * sizeof(float), alignof(float)) };
 __gsharp_ctx->__gsharp_id_5_pointSmem={ (__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__CustomPoint*)__gsharp_allocate_smem_static(0x671c4b08e9908402ull, (64) * sizeof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__CustomPoint), alignof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__CustomPoint)) };
-__gsharp_ctx->__gsharp_id_6_tid=threadIdx.x;
+__gsharp_ctx->__gsharp_id_6_tid=(int)threadIdx.x;
 if(__gsharp_ctx->__gsharp_id_6_tid<256)
 {
-__gsharp_ctx->__gsharp_id_3_intSmem[__gsharp_ctx->__gsharp_id_6_tid]=__gsharp_ctx->__gsharp_id_6_tid*3;
+__gsharp_ctx->__gsharp_id_3_intSmem[__gsharp_ctx->__gsharp_id_6_tid]=__gsharp_mul_i32(__gsharp_ctx->__gsharp_id_6_tid,3);
 __gsharp_ctx->__gsharp_id_4_floatSmem[__gsharp_ctx->__gsharp_id_6_tid]=__gsharp_ctx->__gsharp_id_6_tid*1.5f;
 }
 if(__gsharp_ctx->__gsharp_id_6_tid<64)

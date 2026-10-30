@@ -1329,7 +1329,7 @@ static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__VcScal
 static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__VcScaled,__gsharp_mb_Scale)==4,""Kassyi.GSharp.Tests.Shared.Syntax.VcScaled.Scale: offset"");
 __device__ inline __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__VcScaled __gsharp_ctor_Kassyi__GSharp__Tests__Shared__Syntax__VcScaled(int __gsharp_id_0_a, int __gsharp_id_1_b) {
 __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__VcScaled __gsharp_self{};
-__gsharp_self.__gsharp_mb_Sum=__gsharp_id_0_a*10+__gsharp_id_1_b;
+__gsharp_self.__gsharp_mb_Sum=__gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_0_a,10),__gsharp_id_1_b);
 __gsharp_self.__gsharp_mb_Scale=2;
 return __gsharp_self;
 }
@@ -1352,9 +1352,9 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-int __gsharp_id_1_tid = threadIdx.x;
+int __gsharp_id_1_tid = (int)threadIdx.x;
 __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__VcScaled __gsharp_id_2_s = __gsharp_ctor_Kassyi__GSharp__Tests__Shared__Syntax__VcScaled(__gsharp_id_1_tid, 5);
-__gsharp_id_0_output[__gsharp_id_1_tid]=__gsharp_id_2_s.__gsharp_mb_Sum*100+__gsharp_id_2_s.__gsharp_mb_Scale;
+__gsharp_id_0_output[__gsharp_id_1_tid]=__gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_2_s.__gsharp_mb_Sum,100),__gsharp_id_2_s.__gsharp_mb_Scale);
 __gsharp_state=-1;
 return;
 }
@@ -1604,7 +1604,7 @@ static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__VcScal
 static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__VcScaled,__gsharp_mb_Scale)==4,""Kassyi.GSharp.Tests.Shared.Syntax.VcScaled.Scale: offset"");
 __device__ inline __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__VcScaled __gsharp_ctor_Kassyi__GSharp__Tests__Shared__Syntax__VcScaled(int __gsharp_id_0_a, int __gsharp_id_1_b) {
 __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__VcScaled __gsharp_self{};
-__gsharp_self.__gsharp_mb_Sum=__gsharp_id_0_a*10+__gsharp_id_1_b;
+__gsharp_self.__gsharp_mb_Sum=__gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_0_a,10),__gsharp_id_1_b);
 __gsharp_self.__gsharp_mb_Scale=2;
 return __gsharp_self;
 }
@@ -1917,9 +1917,9 @@ __gsharp_switch_1_state_0:
 {
 int __gsharp_id_2_i = 0;
 auto __gsharp_id_3_v = ([&]() {
-float __gsharp_seq_0 = __gsharp_id_0_buffer[__gsharp_id_2_i++];
-float __gsharp_seq_1 = __gsharp_id_0_buffer[__gsharp_id_2_i++];
-float __gsharp_seq_2 = __gsharp_id_0_buffer[__gsharp_id_2_i++];
+float __gsharp_seq_0 = __gsharp_id_0_buffer[__gsharp_sub_i32((__gsharp_id_2_i=__gsharp_add_i32(__gsharp_id_2_i,1)),1)];
+float __gsharp_seq_1 = __gsharp_id_0_buffer[__gsharp_sub_i32((__gsharp_id_2_i=__gsharp_add_i32(__gsharp_id_2_i,1)),1)];
+float __gsharp_seq_2 = __gsharp_id_0_buffer[__gsharp_sub_i32((__gsharp_id_2_i=__gsharp_add_i32(__gsharp_id_2_i,1)),1)];
 return float3{__gsharp_seq_1, __gsharp_seq_2, __gsharp_seq_0};
 }());
 __gsharp_id_1_output[0]=__gsharp_id_3_v.x;
@@ -2448,7 +2448,7 @@ static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__VcScal
 static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__VcScaled,__gsharp_mb_Scale)==4,""Kassyi.GSharp.Tests.Shared.Syntax.VcScaled.Scale: offset"");
 __device__ inline __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__VcScaled __gsharp_ctor_Kassyi__GSharp__Tests__Shared__Syntax__VcScaled(int __gsharp_id_0_a, int __gsharp_id_1_b) {
 __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__VcScaled __gsharp_self{};
-__gsharp_self.__gsharp_mb_Sum=__gsharp_id_0_a*10+__gsharp_id_1_b;
+__gsharp_self.__gsharp_mb_Sum=__gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_0_a,10),__gsharp_id_1_b);
 __gsharp_self.__gsharp_mb_Scale=2;
 return __gsharp_self;
 }
@@ -2473,13 +2473,13 @@ __gsharp_switch_1_state_0:
 {
 int __gsharp_id_2_i = 0;
 auto __gsharp_id_3_scaled = ([&]() {
-int __gsharp_seq_0 = (int)__gsharp_id_0_buffer[__gsharp_id_2_i++];
-int __gsharp_seq_1 = (int)__gsharp_id_0_buffer[__gsharp_id_2_i++];
+int __gsharp_seq_0 = __gsharp_to_i32(__gsharp_id_0_buffer[__gsharp_sub_i32((__gsharp_id_2_i=__gsharp_add_i32(__gsharp_id_2_i,1)),1)]);
+int __gsharp_seq_1 = __gsharp_to_i32(__gsharp_id_0_buffer[__gsharp_sub_i32((__gsharp_id_2_i=__gsharp_add_i32(__gsharp_id_2_i,1)),1)]);
 return __gsharp_ctor_Kassyi__GSharp__Tests__Shared__Syntax__VcScaled(__gsharp_seq_1, __gsharp_seq_0);
 }());
 auto __gsharp_id_4_v4 = ([&]() {
-float __gsharp_seq_2 = __gsharp_id_0_buffer[__gsharp_id_2_i++];
-float3 __gsharp_seq_3 = __gsharp_vector3_create(__gsharp_id_0_buffer[__gsharp_id_2_i++]);
+float __gsharp_seq_2 = __gsharp_id_0_buffer[__gsharp_sub_i32((__gsharp_id_2_i=__gsharp_add_i32(__gsharp_id_2_i,1)),1)];
+float3 __gsharp_seq_3 = __gsharp_vector3_create(__gsharp_id_0_buffer[__gsharp_sub_i32((__gsharp_id_2_i=__gsharp_add_i32(__gsharp_id_2_i,1)),1)]);
 return __gsharp_vector4_create(__gsharp_seq_3, __gsharp_seq_2);
 }());
 __gsharp_id_1_output[0]=__gsharp_id_3_scaled.__gsharp_mb_Sum;

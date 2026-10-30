@@ -45,8 +45,8 @@ return __gsharp_self;
 }
 #endif
 inline void __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__HiddenValue__Add(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__AccessCtx* __gsharp_id_0_ctx, __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__HiddenValue* __gsharp_id_1_result, __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__HiddenValue __gsharp_id_2_left, __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__HiddenValue __gsharp_id_3_right){
-(*__gsharp_id_1_result).__gsharp_mb_V=__gsharp_id_2_left.__gsharp_mb_V+__gsharp_id_3_right.__gsharp_mb_V;
-(*__gsharp_id_0_ctx).__gsharp_mb_Calls=(*__gsharp_id_0_ctx).__gsharp_mb_Calls+1;
+(*__gsharp_id_1_result).__gsharp_mb_V=__gsharp_add_i32(__gsharp_id_2_left.__gsharp_mb_V,__gsharp_id_3_right.__gsharp_mb_V);
+(*__gsharp_id_0_ctx).__gsharp_mb_Calls=__gsharp_add_i32((*__gsharp_id_0_ctx).__gsharp_mb_Calls,1);
 }
 
 #ifndef __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__AccessCtx__
@@ -77,8 +77,8 @@ return __gsharp_self;
 }
 #endif
 inline void __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__HiddenOps__Multiply(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__AccessCtx* __gsharp_id_0_ctx, __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__HiddenOpsValue* __gsharp_id_1_result, __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__HiddenOpsValue __gsharp_id_2_left, __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__HiddenOpsValue __gsharp_id_3_right){
-(*__gsharp_id_1_result).__gsharp_mb_V=__gsharp_id_2_left.__gsharp_mb_V*__gsharp_id_3_right.__gsharp_mb_V;
-(*__gsharp_id_0_ctx).__gsharp_mb_Calls=(*__gsharp_id_0_ctx).__gsharp_mb_Calls+1;
+(*__gsharp_id_1_result).__gsharp_mb_V=__gsharp_mul_i32(__gsharp_id_2_left.__gsharp_mb_V,__gsharp_id_3_right.__gsharp_mb_V);
+(*__gsharp_id_0_ctx).__gsharp_mb_Calls=__gsharp_add_i32((*__gsharp_id_0_ctx).__gsharp_mb_Calls,1);
 }
 
 #ifndef __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__AccessCtx__

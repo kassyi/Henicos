@@ -61,7 +61,7 @@ inline __device__ int __gsharp_fn_Kassyi__GSharp__Tests__Shared__TestCases__Anal
 
 inline __device__ void __gsharp_fn_Kassyi__GSharp__Tests__Shared__TestCases__Analyzers__BarrierUsage__DeviceFunctionRefParameterBarrierKernels__IncrementAcrossBarrier(int* __gsharp_id_0_value, int* __gsharp_id_1_previous){
 (*__gsharp_id_1_previous)=(*__gsharp_id_0_value);
-(*__gsharp_id_0_value)+=1;
+(*__gsharp_id_0_value)=__gsharp_add_i32((*__gsharp_id_0_value),1);
 __syncthreads();
 }
 
@@ -175,11 +175,11 @@ public static partial class AotContexts
 {
 }
 public const string RefParameterKernel_Source = @"extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__TestCases__Analyzers__BarrierUsage__DeviceFunctionRefParameterBarrierKernels__RefParameterKernel(GSharpArray<int> __gsharp_id_0_buffer, int __gsharp_id_1_usePrimary){
-int __gsharp_id_2_value = __gsharp_id_0_buffer[threadIdx.x];
+int __gsharp_id_2_value = __gsharp_id_0_buffer[(int)threadIdx.x];
 int __gsharp_id_3_previous;
 __gsharp_fn_Kassyi__GSharp__Tests__Shared__TestCases__Analyzers__BarrierUsage__DeviceFunctionRefParameterBarrierKernels__IncrementAcrossBarrier(&__gsharp_id_2_value,&__gsharp_id_3_previous);
 bool __gsharp_id_4_broadcast = __gsharp_id_1_usePrimary!=0&&__gsharp_fn_Kassyi__GSharp__Tests__Shared__TestCases__Analyzers__BarrierUsage__DeviceFunctionRefParameterBarrierKernels__Broadcast(__gsharp_id_2_value)>__gsharp_id_3_previous;
-__gsharp_id_0_buffer[threadIdx.x]=(__gsharp_id_4_broadcast?__gsharp_id_2_value:__gsharp_id_3_previous);
+__gsharp_id_0_buffer[(int)threadIdx.x]=(__gsharp_id_4_broadcast?__gsharp_id_2_value:__gsharp_id_3_previous);
 }
 ";
 public static readonly string RefParameterKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +RefParameterKernel_Source;

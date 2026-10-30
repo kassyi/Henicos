@@ -300,7 +300,7 @@ unsigned int* __gsharp_id_3_pDest = &__gsharp_id_1_dest[0];
 {
 unsigned int* __gsharp_id_4_ptrS = __gsharp_id_2_pSrc;
 unsigned int* __gsharp_id_5_ptrD = __gsharp_id_3_pDest;
-for(int __gsharp_id_6_i = 0;__gsharp_id_6_i<3;__gsharp_id_6_i++)
+for(int __gsharp_id_6_i = 0;__gsharp_id_6_i<3;__gsharp_id_6_i=__gsharp_add_i32(__gsharp_id_6_i,1))
 {
 *__gsharp_id_5_ptrD++=*__gsharp_id_4_ptrS++;
 }
@@ -562,7 +562,7 @@ unsigned int* __gsharp_id_3_pDest = &__gsharp_id_1_dest[0];
 {
 unsigned int* __gsharp_id_4_ptrS = __gsharp_id_2_pSrc+2;
 unsigned int* __gsharp_id_5_ptrD = __gsharp_id_3_pDest+2;
-for(int __gsharp_id_6_i = 0;__gsharp_id_6_i<3;__gsharp_id_6_i++)
+for(int __gsharp_id_6_i = 0;__gsharp_id_6_i<3;__gsharp_id_6_i=__gsharp_add_i32(__gsharp_id_6_i,1))
 {
 *__gsharp_id_5_ptrD--=*__gsharp_id_4_ptrS--;
 }
@@ -824,7 +824,7 @@ unsigned int* __gsharp_id_4_pVal = &__gsharp_id_1_val[0];
 {
 unsigned int* __gsharp_id_5_ptrI = __gsharp_id_3_pIdx;
 unsigned int* __gsharp_id_6_ptrV = __gsharp_id_4_pVal;
-for(int __gsharp_id_7_i = 0;__gsharp_id_7_i<3;__gsharp_id_7_i++)
+for(int __gsharp_id_7_i = 0;__gsharp_id_7_i<3;__gsharp_id_7_i=__gsharp_add_i32(__gsharp_id_7_i,1))
 {
 __gsharp_id_2_dest[*__gsharp_id_5_ptrI++]=*__gsharp_id_6_ptrV+++10u;
 }
