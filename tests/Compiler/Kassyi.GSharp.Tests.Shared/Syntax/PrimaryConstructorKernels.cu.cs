@@ -129,6 +129,59 @@ public struct PcNoParameters()
     public int Y;
 }
 
+// new T() in a generic struct calls the parameterless constructor of the type argument: PcNoParameters runs X = 5,
+// PcExplicitNoParameters runs its body, PcPlain (no parameterless constructor declared) is zero (#609)
+public struct PcGenericHolder<T>() where T : struct
+{
+    public T Value = new T();
+
+    // default(T) runs no constructor
+    public T Defaulted = default(T);
+}
+
+// The initializer runs before the body: X = 3, then X = 3 * 10 + 1 = 31
+public struct PcInitializerAndBody
+{
+    public int X = 3;
+
+    public PcInitializerAndBody()
+    {
+        X = X * 10 + 1;
+    }
+}
+
+// : this(4) runs the initializer X = 1 and Y = 4 * 10 + X = 41 in the chained constructor, then the body Y += 2: 43
+public struct PcChainedNoParameters
+{
+    public int X = 1;
+    public int Y;
+
+    public PcChainedNoParameters() : this(4)
+    {
+        Y += 2;
+    }
+
+    public PcChainedNoParameters(int y)
+    {
+        Y = y * 10 + X;
+    }
+}
+
+public struct PcExplicitNoParameters
+{
+    public int X;
+
+    public PcExplicitNoParameters()
+    {
+        X = 7;
+    }
+}
+
+public struct PcPlain
+{
+    public int X;
+}
+
 public static partial class PrimaryConstructorKernels
 {
     [GpuKernel]
@@ -267,5 +320,26 @@ public static partial class PrimaryConstructorKernels
         var created = new PcNoParameters();
         PcNoParameters defaulted = default;
         output[tid] = created.X * 100 + created.Y * 10 + defaulted.X;
+    }
+
+    [GpuKernel]
+    public static void GenericNewKernel(int[] output)
+    {
+        int tid = ThreadIndex.X;
+        var primary = new PcGenericHolder<PcNoParameters>();
+        var explicitBody = new PcGenericHolder<PcExplicitNoParameters>();
+        var plain = new PcGenericHolder<PcPlain>();
+        output[tid] = primary.Value.X * 100 + explicitBody.Value.X * 10 + plain.Value.X;
+    }
+
+    [GpuKernel]
+    public static void GenericNewOrderKernel(int[] output)
+    {
+        int tid = ThreadIndex.X;
+        var initializerAndBody = new PcGenericHolder<PcInitializerAndBody>();
+        var chained = new PcGenericHolder<PcChainedNoParameters>();
+        output[tid * 3] = initializerAndBody.Value.X;
+        output[tid * 3 + 1] = chained.Value.X * 100 + chained.Value.Y;
+        output[tid * 3 + 2] = initializerAndBody.Defaulted.X * 100 + chained.Defaulted.X * 10 + chained.Defaulted.Y;
     }
 }
