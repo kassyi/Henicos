@@ -32,6 +32,46 @@ public class NativeApiIntrinsicsEmitterTests
             source.ReplaceLineEndings("\n"));
     }
 
+    // The managed path runs the atomics through ManagedAtomics instead of throwing (#728)
+    [Fact]
+    [Scenario(TestScenario.HappyPath)]
+    public void Test_PtxIntrinsics_Atomics_ForwardToManagedAtomics()
+    {
+        var source = EmitPtxIntrinsics().ReplaceLineEndings("\n");
+
+        Assert.Contains(
+            "public static int AtomicAdd(ref int address, int val) => Kassyi.GSharp.Core.ManagedAtomics.Add(ref address, val);",
+            source);
+        Assert.Contains(
+            "public static ulong AtomicCAS(ref ulong address, ulong compare, ulong val) => " +
+            "Kassyi.GSharp.Core.ManagedAtomics.Cas(ref address, compare, val);",
+            source);
+        Assert.Contains(
+            "public static void ReductionAdd(ref float address, float val) => " +
+            "Kassyi.GSharp.Core.ManagedAtomics.Add(ref address, val);",
+            source);
+        // An intrinsic without a managed member still throws
+        Assert.Contains(
+            "public static uint BitReverse(uint val) => Kassyi.GSharp.Core.GpuOnlyException.Throw<uint>();",
+            source);
+    }
+
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void Test_ManagedKey_PassesEachArgumentWithTheModifierOfItsParameter()
+    {
+        var source = Emit(
+            "namespace: A\nclassName: Gpu\nmethods:\n  - name: F\n    managed: Managed.F\n    returnType: int\n" +
+            "    parameters:\n      - { name: a, type: ref int }\n      - { name: b, type: in int }\n" +
+            "      - { name: c, type: ref readonly int }\n      - { name: d, type: out int }\n      - { name: e, type: int }\n"
+        ).ReplaceLineEndings("\n");
+
+        Assert.Contains(
+            "public static int F(ref int a, in int b, ref readonly int c, out int d, int e) => " +
+            "Kassyi.GSharp.Core.Managed.F(ref a, in b, in c, out d, e);",
+            source);
+    }
+
     [Fact]
     [Scenario(TestScenario.HappyPath)]
     public Task Test_DeviceHeapIntrinsics_EmitGpuUnsafe()
