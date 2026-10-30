@@ -12,6 +12,9 @@ public static partial class DivergentBarrierInDeviceFunctionKernels
             // GSH0037: divergent barrier inside a device function
             Gpu.SyncThreads();
         }
+
+        // The threads that skip the barrier above meet the others here
+        Gpu.SyncThreads();
     }
 
     [GpuKernel]

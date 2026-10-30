@@ -111,13 +111,26 @@ internal static class KernelConstructChecks
         if (isSyncThreads)
         {
             scan.Barriers.Add(invocation);
-            BarrierDivergenceChecks.InspectBarrierAncestors(scan, invocation, isBlockBarrier: true);
+            scan.SyncPoints.Add((invocation, SyncScope.Block, IsCall: false));
+            BarrierDivergenceChecks.InspectBarrierAncestors(scan, invocation);
         }
         else if (suspendingCallee != null)
         {
             scan.Barriers.Add(invocation);
-            BarrierDivergenceChecks.InspectBarrierAncestors(scan, invocation,
-                SuspensionAnalysis.ReachesBlockBarrier(suspendingCallee, scan.SemanticModel.Compilation));
+            var compilation = scan.SemanticModel.Compilation;
+            if (SuspensionAnalysis.ReachesBlockBarrier(suspendingCallee, compilation))
+            {
+                scan.SyncPoints.Add(
+                    (invocation, SuspensionAnalysis.GetBarrierScope(suspendingCallee, compilation), IsCall: true)
+                );
+            }
+
+            BarrierDivergenceChecks.InspectBarrierAncestors(scan, invocation);
+        }
+        else if (intrinsic.Kind == SyncIntrinsicKind.GridBarrier)
+        {
+            // B2: a grid barrier written directly in a branch
+            scan.SyncPoints.Add((invocation, SyncScope.Grid, IsCall: false));
         }
     }
 
