@@ -87,22 +87,42 @@ internal static class CrossBarrierChecks
     /// Validates that ref structs, local pointers, and iterator locals are not live across a point where the state machine
     /// splits (GSH0039, GSH0041, GSH0072): some path from the split uses them before assigning them again
     /// (<see cref="CrossBarrierLiveness"/>). The state machine cannot keep such a local in the thread's frame.
+    /// A by-value ref struct parameter cannot be kept there either; it is passed again on resume, so it is reported
+    /// only when it is changed before a split and used after it (GSH0039, #965).
     /// </summary>
     internal static void ValidateCrossBarrierLocals(KernelBarrierScan scan)
     {
-        if (scan.TrackedLocals.Count == 0 || !scan.HasSplitPoint || !TryCreateControlFlowGraph(scan, out var graph))
+        if (!scan.HasSplitPoint)
         {
             return;
         }
 
-        var locals = new ILocalSymbol[scan.TrackedLocals.Count];
-        for (var i = 0; i < locals.Length; i++)
+        // The tracked locals, then the by-value ref struct parameters
+        var variables = ImmutableArray.CreateBuilder<ISymbol>(scan.TrackedLocals.Count);
+        foreach (var local in scan.TrackedLocals)
         {
-            locals[i] = scan.TrackedLocals[i].Symbol;
+            variables.Add(local.Symbol);
         }
 
-        var liveAcrossSplit = CrossBarrierLiveness.FindLiveAcrossSplit(graph, locals, scan.SemanticModel);
-        for (var i = 0; i < locals.Length; i++)
+        AddRefStructValueParameters(scan, variables);
+        if (variables.Count == 0 || !TryCreateControlFlowGraph(scan, out var graph))
+        {
+            return;
+        }
+
+        var liveAcrossSplit = CrossBarrierLiveness.FindLiveAcrossSplit(graph, variables, scan.SemanticModel);
+        for (var i = scan.TrackedLocals.Count; i < variables.Count; i++)
+        {
+            if (liveAcrossSplit[i])
+            {
+                scan.Context.ReportDiagnostic(
+                    GSharpDiagnostics.CrossBarrierRefStructProhibited,
+                    variables[i].Locations[0],
+                    variables[i].Name);
+            }
+        }
+
+        for (var i = 0; i < scan.TrackedLocals.Count; i++)
         {
             if (!liveAcrossSplit[i])
             {
@@ -131,6 +151,22 @@ internal static class CrossBarrierChecks
                     tracked.IdentifierText);
             }
         }
+    }
+
+    // The by-value parameters of a ref struct type (Span<T>, ReadOnlySpan<T>, a user ref struct; not SharedMemory<T>,
+    // which the CPU dialects keep per declaration); the location of each is its identifier
+    private static void AddRefStructValueParameters(KernelBarrierScan scan, ImmutableArray<ISymbol>.Builder variables)
+    {
+        if (scan.SemanticModel.GetDeclaredSymbol<IMethodSymbol>(scan.Method) is not { } method)
+        {
+            return;
+        }
+
+        method.Parameters
+            .AsStackEnumerable()
+            .Where(static p => p is { RefKind: RefKind.None, Type.IsRefLikeType: true } && !p.Type.IsSharedMemoryType())
+            .Select(static ISymbol (p) => p)
+            .AddTo(variables);
     }
 
     // The control flow graph of the body; none while the body does not bind (being edited), so nothing is reported then

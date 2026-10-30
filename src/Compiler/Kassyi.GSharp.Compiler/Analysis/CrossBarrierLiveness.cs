@@ -44,19 +44,32 @@ namespace Kassyi.GSharp.Compiler.Analysis;
 /// GSH0072 (an iterator local) follows the same liveness: compared with the text order it reports a local used again
 /// on the back edge of a loop, and no longer reports one whose later use is on a branch that the barrier does not reach.
 /// </para>
+/// <para>
+/// A tracked by-value parameter is passed again when the state machine resumes, so it holds its argument after a split
+/// unless it was changed before. It counts only after a split that a change reaches on some path (a forward fixed point)
+/// and where it is live. Assigning it, passing it as an <c>out</c> or <c>ref</c> argument, naming it as an element of a
+/// deconstruction, taking a reference to it or its address, writing one of its fields or calling a method that may
+/// change it (not <c>readonly</c>) changes it (GSH0039, #965).
+/// </para>
 /// </remarks>
 internal sealed class CrossBarrierLiveness
 {
     private readonly SemanticModel _model;
 
-    // The locals that the liveness follows: the tracked locals first, then the carriers (delegate locals)
-    private readonly ImmutableArray<ILocalSymbol> _locals;
+    // The variables that the liveness follows: the tracked locals and parameters first, then the carriers (delegate
+    // locals)
+    private readonly ImmutableArray<ISymbol> _locals;
     private readonly int _trackedCount;
 
     // For each carrier, the tracked locals that the delegates assigned to it capture
     private readonly ulong[][] _carrierCaptures;
     private readonly ImmutableArray<LivenessNode>.Builder _nodes = ImmutableArray.CreateBuilder<LivenessNode>();
     private bool _hasPins;
+    private bool _hasChanges;
+
+    // The flow captures of a tracked parameter or of one of its fields (a target that the graph spills before a
+    // conditional value), by capture: the parameter, and whether the capture is the whole parameter
+    private readonly Dictionary<CaptureId, (int Parameter, bool IsWhole)> _parameterCaptures = new();
 
     // The state of the graph being built: the node that receives the next events, the gaps of the Gpu.SyncGrid body
     // being built (null outside one), the element range of the last top-level operation and of the current one
@@ -65,11 +78,11 @@ internal sealed class CrossBarrierLiveness
     private SyncGridElementRange? _lastRange;
     private SyncGridElementRange? _topRange;
 
-    private CrossBarrierLiveness(SemanticModel model, IReadOnlyList<ILocalSymbol> tracked, SyntaxNode body)
+    private CrossBarrierLiveness(SemanticModel model, IReadOnlyList<ISymbol> tracked, SyntaxNode body)
     {
         _model = model;
         _trackedCount = tracked.Count;
-        var locals = ImmutableArray.CreateBuilder<ILocalSymbol>(tracked.Count);
+        var locals = ImmutableArray.CreateBuilder<ISymbol>(tracked.Count);
         locals.AddRange(tracked);
         AddCarriers(body, locals);
         _locals = locals.ToImmutable();
@@ -86,9 +99,10 @@ internal sealed class CrossBarrierLiveness
 
     /// <summary>
     /// For each local of <paramref name="tracked"/>, whether it is live right after a split point of
-    /// <paramref name="graph"/>, the control flow graph of a method body bound by <paramref name="model"/>.
+    /// <paramref name="graph"/>, the control flow graph of a method body bound by <paramref name="model"/>; for each
+    /// by-value parameter of the method, whether it is live right after a split point that a change of it reaches.
     /// </summary>
-    public static bool[] FindLiveAcrossSplit(ControlFlowGraph graph, IReadOnlyList<ILocalSymbol> tracked,
+    public static bool[] FindLiveAcrossSplit(ControlFlowGraph graph, IReadOnlyList<ISymbol> tracked,
         SemanticModel model)
     {
         var liveness = new CrossBarrierLiveness(model, tracked, graph.OriginalOperation.Syntax);
@@ -98,7 +112,7 @@ internal sealed class CrossBarrierLiveness
 
     // The carriers of body: the delegate locals that are only run (f(), f.Invoke()) or assigned (f = <value>), and not
     // named inside a lambda or local function other than a macro body
-    private void AddCarriers(SyntaxNode body, ImmutableArray<ILocalSymbol>.Builder locals)
+    private void AddCarriers(SyntaxNode body, ImmutableArray<ISymbol>.Builder locals)
     {
         var candidates = ImmutableArray.CreateBuilder<ILocalSymbol>();
         var rejected = new HashSet<ILocalSymbol>(SymbolEqualityComparer.Default);
@@ -343,8 +357,33 @@ internal sealed class CrossBarrierLiveness
                     ? LivenessEvent.Write(index)
                     : LivenessEvent.Read(index));
                 return;
+            case ISimpleAssignmentOperation { Target: IParameterReferenceOperation or IFlowCaptureReferenceOperation } assignment
+                when IndexOfWholeParameter(assignment.Target) is var index and >= 0:
+                Walk(assignment.Value, graph);
+                _current.Events.Add(LivenessEvent.Write(index));
+                AddChange(index);
+                return;
+            case IFlowCaptureOperation capture when IndexOfRootParameter(capture.Value, out var isWhole) is var index and >= 0:
+                _parameterCaptures[capture.Id] = (index, isWhole);
+                _current.Events.Add(LivenessEvent.Read(index));
+                return;
+            case IFlowCaptureReferenceOperation reference when _parameterCaptures.TryGetValue(reference.Id, out var captured):
+                if (MayChange(reference))
+                {
+                    AddChange(captured.Parameter);
+                }
+
+                return;
             case ILocalReferenceOperation reference when IndexOf(reference.Local) is var index and >= 0:
                 _current.Events.Add(LivenessEvent.Read(index));
+                return;
+            case IParameterReferenceOperation reference when IndexOf(reference.Parameter) is var index and >= 0:
+                _current.Events.Add(LivenessEvent.Read(index));
+                if (MayChange(reference))
+                {
+                    AddChange(index);
+                }
+
                 return;
             case IDeconstructionAssignmentOperation deconstruction:
                 Walk(deconstruction.Value, graph);
@@ -392,7 +431,83 @@ internal sealed class CrossBarrierLiveness
             return;
         }
 
+        if (target is IParameterReferenceOperation parameter && IndexOf(parameter.Parameter) is var parameterIndex and >= 0)
+        {
+            _current.Events.Add(LivenessEvent.Write(parameterIndex));
+            AddChange(parameterIndex);
+            return;
+        }
+
         Walk(target, graph);
+    }
+
+    private void AddChange(int index)
+    {
+        _current.Events.Add(LivenessEvent.Change(index));
+        _hasChanges = true;
+    }
+
+    // The tracked parameter that reference names as a whole, directly or through a flow capture; -1 for any other
+    // operation
+    private int IndexOfWholeParameter(IOperation reference) => reference switch
+    {
+        IParameterReferenceOperation parameter => IndexOf(parameter.Parameter),
+        IFlowCaptureReferenceOperation capture
+            when _parameterCaptures.TryGetValue(capture.Id, out var captured) && captured.IsWhole => captured.Parameter,
+        _ => -1
+    };
+
+    // The tracked parameter that value is or is a field of (p, p.X, p.X.Y); -1 for any other operation
+    private int IndexOfRootParameter(IOperation value, out bool isWhole)
+    {
+        isWhole = true;
+        while (value is IFieldReferenceOperation { Instance: { } instance })
+        {
+            value = instance;
+            isWhole = false;
+        }
+
+        return value is IParameterReferenceOperation parameter ? IndexOf(parameter.Parameter) : -1;
+    }
+
+    // Whether the use of a tracked parameter (or of its flow capture) may change it: as the target of an assignment or an
+    // increment (also of one of its fields), as a ref or out argument, as the receiver of a method that is not readonly,
+    // as an element of a deconstruction, or where a reference to it or its address is taken. A plain assignment of the
+    // parameter itself is written by the walk.
+    private static bool MayChange(IOperation reference)
+    {
+        var use = reference;
+        while (use.Parent is IFieldReferenceOperation field && field.Instance == use)
+        {
+            use = field;
+        }
+
+        return use.Parent switch
+        {
+            IAssignmentOperation assignment => assignment.Target == use || assignment is ISimpleAssignmentOperation { IsRef: true },
+            IIncrementOrDecrementOperation increment => increment.Target == use,
+            IArgumentOperation argument => argument.Parameter?.RefKind is RefKind.Ref or RefKind.Out,
+            IInvocationOperation invocation => invocation.Instance == use && MayChangeReceiver(invocation.TargetMethod),
+            IAddressOfOperation => true,
+            ITupleOperation tuple => IsDeconstructionTarget(tuple),
+            _ => false
+        };
+    }
+
+    // A method that may change the struct it is called on
+    private static bool MayChangeReceiver(IMethodSymbol method) =>
+        !method.IsStatic && !method.IsReadOnly && method.ContainingType is { IsValueType: true, IsReadOnly: false };
+
+    // An element of the left side of a deconstruction, ((a, b), c) = <value>
+    private static bool IsDeconstructionTarget(ITupleOperation tuple)
+    {
+        IOperation current = tuple;
+        while (current.Parent is ITupleOperation outer)
+        {
+            current = outer;
+        }
+
+        return current.Parent is IDeconstructionAssignmentOperation deconstruction && deconstruction.Target == current;
     }
 
     private void WalkInvocation(IInvocationOperation invocation, ControlFlowGraph graph)
@@ -593,7 +708,7 @@ internal sealed class CrossBarrierLiveness
                 reference.SyntaxTree == scope.SyntaxTree && scope.Span.Contains(reference.Span)
             );
 
-    private int IndexOf(ILocalSymbol local) =>
+    private int IndexOf(ISymbol local) =>
         _locals
             .AsStackEnumerable()
             .IndexOf(local, static (tracked, target) => tracked.IsEqualTo(target));
@@ -655,13 +770,80 @@ internal sealed class CrossBarrierLiveness
             AddPinnedAcrossSplit(crossing);
         }
 
+        var changedCrossing = _hasChanges ? FindChangedLiveAcrossSplit(liveIn) : new ulong[words];
         var result = new bool[_trackedCount];
         for (var local = 0; local < result.Length; local++)
         {
-            result[local] = IsSet(crossing, local);
+            result[local] = _locals[local] is IParameterSymbol
+                ? IsSet(changedCrossing, local)
+                : IsSet(crossing, local);
         }
 
         return result;
+    }
+
+    // The variables live right after a split that a change of them reaches: the live set after each split (backward
+    // from the solved live-in sets), then the forward fixed point of the changed variables
+    private ulong[] FindChangedLiveAcrossSplit(ulong[][] liveIn)
+    {
+        var words = WordCount;
+        var liveAfterSplit = new ulong[_nodes.Count][][];
+        var live = new ulong[words];
+        foreach (var node in _nodes)
+        {
+            var atEvent = liveAfterSplit[node.Index] = new ulong[node.Events.Count][];
+            LiveOut(node, liveIn, live);
+            for (var i = node.Events.Count - 1; i >= 0; i--)
+            {
+                if (node.Events[i].Kind == LivenessEventKind.Split)
+                {
+                    atEvent[i] = (ulong[])live.Clone();
+                }
+
+                ApplyBackward(node.Events[i], live);
+            }
+        }
+
+        var crossing = new ulong[words];
+        var changedIn = new ulong[_nodes.Count][];
+        for (var i = 0; i < changedIn.Length; i++)
+        {
+            changedIn[i] = new ulong[words];
+        }
+
+        var changed = new ulong[words];
+        bool grew;
+        do
+        {
+            grew = false;
+            foreach (var node in _nodes)
+            {
+                changedIn[node.Index].AsSpan().CopyTo(changed);
+                for (var i = 0; i < node.Events.Count; i++)
+                {
+                    var flowEvent = node.Events[i];
+                    if (flowEvent.Kind == LivenessEventKind.Change)
+                    {
+                        changed[flowEvent.Local / 64] |= 1UL << (flowEvent.Local % 64);
+                    }
+                    else if (flowEvent.Kind == LivenessEventKind.Split)
+                    {
+                        var liveAfter = liveAfterSplit[node.Index][i];
+                        for (var word = 0; word < words; word++)
+                        {
+                            crossing[word] |= changed[word] & liveAfter[word];
+                        }
+                    }
+                }
+
+                foreach (var successor in node.Successors)
+                {
+                    grew |= Or(changedIn[successor], changed);
+                }
+            }
+        } while (grew);
+
+        return crossing;
     }
 
     // The forward fixed point of the pinned locals: a local pinned on some path to a split is added to crossing
@@ -736,22 +918,29 @@ internal sealed class CrossBarrierLiveness
         for (var i = node.Events.Count - 1; i >= 0; i--)
         {
             var flowEvent = node.Events[i];
-            switch (flowEvent.Kind)
+            if (flowEvent.Kind == LivenessEventKind.Split && crossing != null)
             {
-                case LivenessEventKind.Read:
-                    live[flowEvent.Local / 64] |= 1UL << (flowEvent.Local % 64);
-                    break;
-                case LivenessEventKind.Write:
-                    live[flowEvent.Local / 64] &= ~(1UL << (flowEvent.Local % 64));
-                    break;
-                case LivenessEventKind.Split when crossing != null:
-                    for (var word = 0; word < live.Length; word++)
-                    {
-                        crossing[word] |= live[word];
-                    }
-
-                    break;
+                for (var word = 0; word < live.Length; word++)
+                {
+                    crossing[word] |= live[word];
+                }
             }
+
+            ApplyBackward(flowEvent, live);
+        }
+    }
+
+    // A read makes the variable live before the event, a write ends its liveness
+    private static void ApplyBackward(LivenessEvent flowEvent, ulong[] live)
+    {
+        switch (flowEvent.Kind)
+        {
+            case LivenessEventKind.Read:
+                live[flowEvent.Local / 64] |= 1UL << (flowEvent.Local % 64);
+                break;
+            case LivenessEventKind.Write:
+                live[flowEvent.Local / 64] &= ~(1UL << (flowEvent.Local % 64));
+                break;
         }
     }
 
