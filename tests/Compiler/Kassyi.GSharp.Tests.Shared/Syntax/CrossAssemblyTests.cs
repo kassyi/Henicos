@@ -160,50 +160,61 @@ public class CrossAssemblyTests : TranspilerTestBase
         Assert.Equal([301, 602, 903, 0], result);
     }
 
-    // The layout of a struct from metadata is predicted as sequential; the launch guard compares the field offsets with
-    // the runtime's and stops instead of passing A and B swapped (#511 review)
+    // The offsets of a LayoutKind.Explicit struct from metadata come from its FieldLayout table, so A and B reach the
+    // kernel in place, and the launch guard (which compares them with the runtime's) passes (#736)
     [Fact]
-    [Scenario(TestScenario.SadPath)]
-    public void Test_SwapPair_ExplicitLayoutOfTheLibrary_StopsAtTheOffsetGuard()
+    [Scenario(TestScenario.HappyPath)]
+    public void Test_SwapPair_ExplicitLayoutOfTheLibrary()
     {
         var result = new int[] { -1, -1 };
 
-        var exception = Assert.Throws<InvalidOperationException>(
-            () => CrossAssemblyKernels.LaunchSwapPairKernel(new SwapPair { A = 11, B = 22 }, result));
+        CrossAssemblyKernels.LaunchSwapPairKernel(new SwapPair { A = 11, B = 22 }, result);
+        CrossAssemblyKernels.LaunchSwapPairKernel(new SwapPair { A = 33, B = 44 }, result);
 
-        Assert.Contains("'Kassyi.GSharp.Tests.DeviceLibrary.SwapPair'", exception.Message);
-        Assert.Contains("field 'A'", exception.Message);
-        Assert.Equal([-1, -1], result);
+        Assert.Equal([33, 44], result);
     }
 
-    // The launch runs the layout checks until one launch passes them: a check that throws leaves them armed, so the
-    // second launch stops as well
+    // Pack = 1 from the ClassLayout table: 5 bytes, the int right after the byte (#736)
     [Fact]
-    [Scenario(TestScenario.SadPath)]
-    public void Test_SwapPair_SecondLaunch_StillStopsAtTheOffsetGuard()
+    [Scenario(TestScenario.HappyPath)]
+    public void Test_PackedPair_PackedLayoutOfTheLibrary()
     {
         var result = new int[] { -1, -1 };
-        Assert.Throws<InvalidOperationException>(
-            () => CrossAssemblyKernels.LaunchSwapPairKernel(new SwapPair { A = 11, B = 22 }, result));
 
-        var exception = Assert.Throws<InvalidOperationException>(
-            () => CrossAssemblyKernels.LaunchSwapPairKernel(new SwapPair { A = 11, B = 22 }, result));
+        CrossAssemblyKernels.LaunchPackedPairKernel(new PackedPair { Tag = 7, Value = 0x01020304 }, result);
 
-        Assert.Contains("field 'A'", exception.Message);
-        Assert.Equal([-1, -1], result);
+        Assert.Equal([7, 0x01020304], result);
     }
 
+    // StructLayout.Size = 16 from the ClassLayout table: each element is read and written at a 16-byte stride, so the
+    // device neither reads the neighbours' padding nor writes into it (#736)
     [Fact]
-    [Scenario(TestScenario.SadPath)]
-    public void Test_PackedPair_PackedLayoutOfTheLibrary_StopsAtTheSizeGuard()
+    [Scenario(TestScenario.HappyPath)]
+    public void Test_Sized_ArrayOfASizedStructOfTheLibrary()
     {
-        var result = new int[] { -1, -1 };
+        Sized[] data = [new() { A = 5 }, new() { A = -6 }, new() { A = 7 }, new() { A = int.MaxValue }];
+        var result = new int[4];
 
-        var exception = Assert.Throws<InvalidOperationException>(
-            () => CrossAssemblyKernels.LaunchPackedPairKernel(new PackedPair { Tag = 7, Value = 0x01020304 }, result));
+        CrossAssemblyKernels.LaunchSizedKernel(data, result, blockDimX: 4);
 
-        Assert.Contains("'Kassyi.GSharp.Tests.DeviceLibrary.PackedPair'", exception.Message);
-        Assert.Contains("expected 8 bytes", exception.Message);
-        Assert.Equal([-1, -1], result);
+        Assert.Equal([5, -6, 7, int.MaxValue], result);
+        Assert.Equal([0, 10, 20, 30], data.Select(static d => d.A));
+    }
+
+    // Bits and Value share offset 0 and Tag sits at 4: the device reads the float's bits and negates the float, which
+    // flips only the sign bit and leaves the tag (#736)
+    [Fact]
+    [Scenario(TestScenario.HappyPath)]
+    public void Test_IntFloatUnion_ArrayOfAnExplicitUnionOfTheLibrary()
+    {
+        float[] values = [1f, -2.5f, 0f, float.MaxValue];
+        var data = values.Select(static (v, i) => new IntFloatUnion { Value = v, Tag = 100 + i }).ToArray();
+        var result = new int[4];
+
+        CrossAssemblyKernels.LaunchIntFloatUnionKernel(data, result, blockDimX: 4);
+
+        Assert.Equal(values.Select(BitConverter.SingleToInt32Bits), result);
+        Assert.Equal(values.Select(static v => BitConverter.SingleToInt32Bits(-v)), data.Select(static d => d.Bits));
+        Assert.Equal([100, 101, 102, 103], data.Select(static d => d.Tag));
     }
 }

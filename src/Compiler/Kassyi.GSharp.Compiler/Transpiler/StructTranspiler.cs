@@ -196,7 +196,7 @@ internal static class StructTranspiler
 
         try
         {
-            var hasPack = structSym.TryGetStructLayoutPack(out var packValue);
+            var hasPack = StructLayoutReader.TryGetPack(structSym, out var packValue);
             if (hasPack)
             {
                 context.Emitter.Writer.AppendLine($"#pragma pack(push, {packValue})");

@@ -111,6 +111,9 @@ public class StructAbiMembersTests
         Assert.Equal(StructAbiMemberKind.EventBackingField, members[1].Kind);
         Assert.Equal("System.Action", members[1].Type.ToDisplayString());
         Assert.IsAssignableFrom<IEventSymbol>(members[1].Symbol);
+        // Roslyn does not list the event's field, so the member has no storage field to hand over
+        Assert.IsAssignableFrom<IFieldSymbol>(members[0].StorageField);
+        Assert.Null(members[1].StorageField);
 
         Assert.Equal(["A"], GetMembers("WithAccessorEvent").Select(static m => m.Name));
         Assert.Equal(["A"], GetMembers("WithStaticEvent").Select(static m => m.Name));

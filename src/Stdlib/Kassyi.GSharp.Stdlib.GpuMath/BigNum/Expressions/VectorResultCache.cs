@@ -19,7 +19,7 @@ namespace Kassyi.GSharp.Stdlib.GpuMath.BigNum.Expressions;
 /// <para>
 /// A target that shares words with an input of the node (in place, or shifted by some elements) is not written by the
 /// node's kernel or host loop: an element would be written before another element read its input. The node computes
-/// into its cache and <see cref="Deliver(GpuWorkspace, GpuBigIntArrayView, GpuBigUIntArrayView)"/> copies the result
+/// into its cache and <see cref="Deliver(GpuWorkspace, GpuBigIntArrayView, GpuBigUIntArrayView, DeviceElementCount)"/> copies the result
 /// into the target (#864), as the scalar roots do (#636).
 /// </para>
 /// </remarks>
@@ -91,16 +91,35 @@ internal sealed class VectorResultCache : IDisposable
     }
 
     /// <summary>
-    /// Copies the values of a result that a node computed in its cache, because the target shares words with one of its
-    /// inputs (#864), into the target; returns the result with the target's values and the cache's signs.
+    /// Copies the values of the first <paramref name="written"/> elements of a result that a node computed in its cache,
+    /// because the target shares words with one of its inputs (#864), into the target; returns the result with the
+    /// target's values and the cache's signs. The target's other elements keep their values.
     /// </summary>
     public static GpuBigIntArrayView Deliver(
         GpuWorkspace workspace,
         GpuBigIntArrayView computed,
-        GpuBigUIntArrayView checkedTarget)
+        GpuBigUIntArrayView checkedTarget,
+        DeviceElementCount written)
     {
-        CopyValues(workspace, checkedTarget, computed.Values);
+        CopyCounted(workspace, checkedTarget, computed.Values, written);
         return new GpuBigIntArrayView(checkedTarget, computed.Signs);
+    }
+
+    /// <summary>
+    /// The floating-point form of
+    /// <see cref="Deliver(GpuWorkspace, GpuBigIntArrayView, GpuBigUIntArrayView, DeviceElementCount)"/>: the three
+    /// components of the first <paramref name="written"/> elements; returns the target.
+    /// </summary>
+    public static GpuBigFloatArrayView Deliver(
+        GpuWorkspace workspace,
+        GpuBigFloatArrayView computed,
+        GpuBigFloatArrayView checkedTarget,
+        DeviceElementCount written)
+    {
+        CopyCounted(workspace, checkedTarget.Significands, computed.Significands, written);
+        CopyCounted(workspace, checkedTarget.Exponents, computed.Exponents, written);
+        CopyCounted(workspace, checkedTarget.Signs, computed.Signs, written);
+        return checkedTarget;
     }
 
     /// <summary>
@@ -116,6 +135,45 @@ internal sealed class VectorResultCache : IDisposable
         CopyValues(workspace, checkedTarget.Exponents, computed.Exponents);
         CopyValues(workspace, checkedTarget.Signs, computed.Signs);
         return checkedTarget;
+    }
+
+    /// <summary>
+    /// Copies the first <paramref name="count"/> elements of <paramref name="source"/> into
+    /// <paramref name="destination"/> (the same width; a node's cache into a target, which never share words). A count
+    /// on the device is read by the copy kernel, so the host neither waits for it nor reads it, and a graph capture
+    /// records the copy.
+    /// </summary>
+    private static void CopyCounted(
+        GpuWorkspace workspace,
+        GpuBigUIntArrayView destination,
+        GpuBigUIntArrayView source,
+        DeviceElementCount count)
+    {
+        if (count.IsStatic)
+        {
+            var elements = Math.Min(count.Limit, destination.Length);
+            CopyValues(workspace, destination.Slice(0, elements), source.Slice(0, elements));
+            return;
+        }
+
+        var words = destination.TotalWords;
+        if (words == 0)
+        {
+            return;
+        }
+
+        // A grid-stride loop over the capacity's words; the threads past the count's words copy nothing
+        const int threadsPerBlock = 256;
+        var gridDimX = (uint)Math.Min((words + threadsPerBlock - 1) / threadsPerBlock, 4096);
+        var ctx = new GpuBigIntVectorKernels.AotContexts.CountedCopy
+        {
+            Destination = destination.DevicePointer,
+            Source = source.DevicePointer,
+            WordsPerElement = destination.WordsPerElement,
+            Count = count.ToContext()
+        };
+        GpuBigIntVectorKernels.LaunchCopyCountedElementsKernelPtr(
+            ctx, gridDimX, 1, 1, threadsPerBlock, 1, 1, 0, workspace.Stream);
     }
 
     /// <summary>

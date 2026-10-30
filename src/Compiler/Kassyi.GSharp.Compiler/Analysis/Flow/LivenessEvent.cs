@@ -14,4 +14,6 @@ internal readonly struct LivenessEvent(LivenessEventKind kind, int local)
     public static LivenessEvent Write(int local) => new(LivenessEventKind.Write, local);
 
     public static LivenessEvent Pin(int local) => new(LivenessEventKind.Pin, local);
+
+    public static LivenessEvent Change(int local) => new(LivenessEventKind.Change, local);
 }

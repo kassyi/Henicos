@@ -27,5 +27,8 @@ public enum TestCategory
     Alignment,
 
     /// <summary>Standard library mathematical functions, algorithms, and big number operations.</summary>
-    Stdlib
+    Stdlib,
+
+    /// <summary>Differential tests: one kernel on every execution path, compared with a sequential C# oracle.</summary>
+    Differential
 }

@@ -35,16 +35,18 @@ internal interface IVectorResultKind<TResult, TTarget>
         int wordsPerElement,
         TTarget target);
 
-    /// <summary>Copies a result computed in the cache into a target.</summary>
+    /// <summary>Copies the elements a node computed in its cache into a target.</summary>
     /// <param name="workspace">The workspace whose stream orders the copy.</param>
     /// <param name="computed">The result in the node's cache.</param>
     /// <param name="target">The checked target.</param>
+    /// <param name="written">The elements the node wrote; the target keeps its other elements.</param>
     /// <returns>What the node hands up: the result in the target.</returns>
-    static abstract TResult Deliver(GpuWorkspace workspace, TResult computed, TTarget target);
+    static abstract TResult Deliver(GpuWorkspace workspace, TResult computed, TTarget target, DeviceElementCount written);
 }
 
 /// <summary>An integer result: the target holds the values, the signs stay in the node's cache.</summary>
-internal readonly struct IntVectorResultKind : IVectorResultKind<GpuBigIntArrayView, GpuBigUIntArrayView>
+internal readonly struct IntVectorResultKind
+    : IVectorResultKind<GpuBigIntArrayView, GpuBigUIntArrayView>, IVectorCompactKind<GpuBigIntArrayView>
 {
     public static bool Overlaps(GpuBigUIntArrayView target, GpuBigIntArrayView input) =>
         DeviceRanges.Overlaps(target, input);
@@ -63,12 +65,55 @@ internal readonly struct IntVectorResultKind : IVectorResultKind<GpuBigIntArrayV
     public static GpuBigIntArrayView Deliver(
         GpuWorkspace workspace,
         GpuBigIntArrayView computed,
-        GpuBigUIntArrayView target) =>
-        VectorResultCache.Deliver(workspace, computed, target);
+        GpuBigUIntArrayView target,
+        DeviceElementCount written) =>
+        VectorResultCache.Deliver(workspace, computed, target, written);
+
+    public static int ComponentCount => 2;
+
+    public static GpuBigIntArrayView Selected(
+        VectorResultCache cache,
+        GpuWorkspace workspace,
+        int count,
+        int wordsPerElement) =>
+        Destination(cache, workspace, count, wordsPerElement, default);
+
+    public static int Length(GpuBigIntArrayView view) => view.Length;
+
+    public static GpuBigIntArrayView Slice(GpuBigIntArrayView view, int elementOffset, int elementCount) =>
+        view.Slice(elementOffset, elementCount);
+
+    public static (IntPtr Pointer, int WordsPerElement) Component(GpuBigIntArrayView view, int index) =>
+        index == 0 ? (view.Values.DevicePointer, view.WordsPerElement) : (view.Signs.DevicePointer, 1);
+
+    public static void LaunchScatter(
+        GpuWorkspace workspace,
+        GpuBigIntArrayView output,
+        GpuBigIntArrayView input,
+        IntPtr predicates,
+        IntPtr scan,
+        DeviceElementCount count,
+        uint gridDimX,
+        uint blockDimX) =>
+        GpuStreamCompactionKernels.LaunchCompactSignedVectorPtr(
+            output.Values.DevicePointer,
+            output.Signs.DevicePointer,
+            input.Values.DevicePointer,
+            input.Signs.DevicePointer,
+            predicates,
+            scan,
+            input.Length,
+            input.WordsPerElement,
+            count.ToScanContext(),
+            gridDimX: gridDimX,
+            blockDimX: blockDimX,
+            hStream: workspace.Stream
+        );
 }
 
 /// <summary>A floating-point result: the target holds all three components.</summary>
-internal readonly struct FloatVectorResultKind : IVectorResultKind<GpuBigFloatArrayView, GpuBigFloatArrayView>
+internal readonly struct FloatVectorResultKind
+    : IVectorResultKind<GpuBigFloatArrayView, GpuBigFloatArrayView>, IVectorCompactKind<GpuBigFloatArrayView>
 {
     public static bool Overlaps(GpuBigFloatArrayView target, GpuBigFloatArrayView input) =>
         DeviceRanges.Overlaps(target, input);
@@ -87,18 +132,67 @@ internal readonly struct FloatVectorResultKind : IVectorResultKind<GpuBigFloatAr
     public static GpuBigFloatArrayView Deliver(
         GpuWorkspace workspace,
         GpuBigFloatArrayView computed,
-        GpuBigFloatArrayView target) =>
-        VectorResultCache.Deliver(workspace, computed, target);
+        GpuBigFloatArrayView target,
+        DeviceElementCount written) =>
+        VectorResultCache.Deliver(workspace, computed, target, written);
+
+    public static int ComponentCount => 3;
+
+    public static GpuBigFloatArrayView Selected(
+        VectorResultCache cache,
+        GpuWorkspace workspace,
+        int count,
+        int wordsPerElement) =>
+        Destination(cache, workspace, count, wordsPerElement, default);
+
+    public static int Length(GpuBigFloatArrayView view) => view.Length;
+
+    public static GpuBigFloatArrayView Slice(GpuBigFloatArrayView view, int elementOffset, int elementCount) =>
+        view.Slice(elementOffset, elementCount);
+
+    public static (IntPtr Pointer, int WordsPerElement) Component(GpuBigFloatArrayView view, int index) =>
+        index switch
+        {
+            0 => (view.Significands.DevicePointer, view.WordsPerElement),
+            1 => (view.Exponents.DevicePointer, 1),
+            _ => (view.Signs.DevicePointer, 1)
+        };
+
+    public static void LaunchScatter(
+        GpuWorkspace workspace,
+        GpuBigFloatArrayView output,
+        GpuBigFloatArrayView input,
+        IntPtr predicates,
+        IntPtr scan,
+        DeviceElementCount count,
+        uint gridDimX,
+        uint blockDimX) =>
+        GpuStreamCompactionKernels.LaunchCompactFloatVectorPtr(
+            output.Significands.DevicePointer,
+            output.Exponents.DevicePointer,
+            output.Signs.DevicePointer,
+            input.Significands.DevicePointer,
+            input.Exponents.DevicePointer,
+            input.Signs.DevicePointer,
+            predicates,
+            scan,
+            input.Length,
+            input.WordsPerElement,
+            count.ToScanContext(),
+            gridDimX: gridDimX,
+            blockDimX: blockDimX,
+            hStream: workspace.Stream
+        );
 }
 
 /// <summary>
 /// Where a vector node writes its result: the caller's target, or its cache when the target shares words with an input
 /// (#864). <see cref="Open"/> picks the destination after the children are evaluated, the node launches into
-/// <see cref="Destination"/>, and <see cref="Close"/> returns the result.
+/// <see cref="Destination"/>, and <c>Close</c> returns the result.
 /// </summary>
 /// <remarks>
 /// A target that overlaps an input is not written by the node's kernel or host loop: an element would be written before
-/// another element read its input. The node computes into its cache and <see cref="Close"/> copies the result into the
+/// another element read its input. The node computes into its cache and <c>Close</c> copies the result into the
 /// target, as the scalar roots do (#636). A disjoint target is written directly, with no cache and no copy.
 /// </remarks>
 internal readonly ref struct VectorOutput<TKind, TResult, TTarget>
@@ -107,12 +201,14 @@ internal readonly ref struct VectorOutput<TKind, TResult, TTarget>
     where TTarget : struct, allows ref struct
 {
     private readonly TTarget _target;
+    private readonly int _count;
     private readonly bool _staged;
 
-    private VectorOutput(TResult destination, TTarget target, bool staged)
+    private VectorOutput(TResult destination, TTarget target, int count, bool staged)
     {
         Destination = destination;
         _target = target;
+        _count = count;
         _staged = staged;
     }
 
@@ -137,14 +233,22 @@ internal readonly ref struct VectorOutput<TKind, TResult, TTarget>
             TKind.Overlaps(checkedTarget, other) ||
             TKind.Overlaps(checkedTarget, scalar);
         var destination = TKind.Destination(cache, workspace, count, wordsPerElement, staged ? default : checkedTarget);
-        return new VectorOutput<TKind, TResult, TTarget>(destination, checkedTarget, staged);
+        return new VectorOutput<TKind, TResult, TTarget>(destination, checkedTarget, count, staged);
     }
 
     /// <summary>
-    /// Returns the result: the target after a staged run (copied from the cache), the destination otherwise.
+    /// Returns the result of a node that wrote every element of the destination (a kernel): the target after a staged
+    /// run (copied from the cache), the destination otherwise.
     /// </summary>
-    public TResult Close(GpuWorkspace workspace) =>
-        _staged ? TKind.Deliver(workspace, Destination, _target) : Destination;
+    public TResult Close(GpuWorkspace workspace) => Close(workspace, DeviceElementCount.Static(_count));
+
+    /// <summary>
+    /// Returns the result of a node that wrote only the first <paramref name="written"/> elements (a host loop over a
+    /// device count): a staged run copies only those, on the device, so that the target keeps its other elements as a
+    /// target written directly does.
+    /// </summary>
+    public TResult Close(GpuWorkspace workspace, DeviceElementCount written) =>
+        _staged ? TKind.Deliver(workspace, Destination, _target, written) : Destination;
 }
 
 /// <summary>

@@ -131,7 +131,7 @@ internal static class FloatVectorElementwiseHelper
 }
 
 internal abstract class FloatVectorUnaryExpressionBase(
-    [TakesOwnership] IGpuBigFloatVectorExpression vector) : IGpuBigFloatVectorExpression
+    [TakesOwnership] IGpuBigFloatVectorExpression vector) : IGpuBigFloatVectorExpression, IDeviceCountedFloatVector
 {
     public int Length => vector.Length;
     public int WordsPerElement => vector.WordsPerElement;
@@ -139,26 +139,35 @@ internal abstract class FloatVectorUnaryExpressionBase(
     // The result buffers, lent until the next evaluation or Dispose; a caller's target is never kept (design 4.6)
     private readonly VectorResultCache _cache = new();
 
-    public GpuBigFloatArrayView Evaluate(
+    public int Capacity => vector.Capacity;
+
+    public bool TryGetLength(out int length) => vector.TryGetLength(out length);
+
+    // Evaluates the window of the capacity; the elements are the first Count of them (design D3 4.3)
+    public FloatVectorEvaluation EvaluateCore(
         GpuWorkspace workspace,
-        int elementOffset = 0,
-        int? elementCount = null,
-        GpuBigFloatArrayView targetResult = default)
+        int elementOffset,
+        int? elementCount,
+        GpuBigFloatArrayView targetResult)
     {
         ValidateBeforeEvaluate();
 
-        var evalCount = elementCount ?? (Length - elementOffset);
+        var evalCount = elementCount ?? (Capacity - elementOffset);
         // The target is checked before the child runs, so that a rejected target evaluates nothing
         var target = VectorResultCache.HasTarget(targetResult)
             ? VectorResultCache.TargetFloat(targetResult, evalCount, WordsPerElement)
             : default;
-        var vecResult = vector.Evaluate(workspace, elementOffset, evalCount);
+        var vecResult = DeviceCounted.Evaluate(vector, workspace, elementOffset, evalCount);
 
         // A target that shares words with the input is written from the cache after the loop: the loop writes element i
         // before it reads element i + 1 (#864)
-        var output = VectorOutput.Open(_cache, workspace, evalCount, WordsPerElement, target, vecResult);
-        FloatVectorElementwiseHelper.ExecuteUnary(workspace, vecResult, output.Destination, evalCount, EvaluateElement);
-        return output.Close(workspace);
+        var output = VectorOutput.Open(_cache, workspace, evalCount, WordsPerElement, target, vecResult.Storage);
+
+        // The host loop runs over the elements only: a value after the count (the zero padding of a Where) could make
+        // an element operation throw (Log(0))
+        FloatVectorElementwiseHelper.ExecuteUnary(workspace, vecResult.Storage, output.Destination,
+            vecResult.Elements(workspace), EvaluateElement);
+        return new FloatVectorEvaluation(output.Close(workspace, vecResult.Count), vecResult.Count);
     }
 
     protected virtual void ValidateBeforeEvaluate()

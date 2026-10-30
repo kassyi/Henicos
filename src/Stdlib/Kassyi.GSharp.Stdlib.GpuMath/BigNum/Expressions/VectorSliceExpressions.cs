@@ -1,25 +1,36 @@
 namespace Kassyi.GSharp.Stdlib.GpuMath.BigNum.Expressions;
 
 internal class VectorTakeExpression([TakesOwnership] IGpuBigIntVectorExpression source, int count)
-    : IGpuBigIntVectorExpression
+    : IGpuBigIntVectorExpression, IDeviceCountedVector
 {
-    public int Length => Math.Min(source.Length, count);
+    public int Length => DeviceCounted.KnownLength(this);
+
+    public int Capacity => Math.Min(source.Capacity, count);
+
     public int WordsPerElement => source.WordsPerElement;
 
-    public GpuBigIntArrayView Evaluate(GpuWorkspace workspace, int elementOffset = 0, int? elementCount = null,
-        GpuBigUIntArrayView targetResult = default)
+    public bool TryGetLength(out int length)
     {
-        var evalCount = elementCount ?? (Length - elementOffset);
+        var known = source.TryGetLength(out var sourceLength);
+        length = known ? Math.Min(sourceLength, count) : 0;
+        return known;
+    }
 
-        // Ensure we do not evaluate beyond the Take boundary
-        var effectiveCount = Math.Min(evalCount, Length - elementOffset);
+    public VectorEvaluation EvaluateCore(GpuWorkspace workspace, int elementOffset, int? elementCount,
+        GpuBigUIntArrayView targetResult)
+    {
+        var evalCount = elementCount ?? (Capacity - elementOffset);
+
+        // Ensure we do not evaluate beyond the Take boundary; a device count below it is cut by the source's TakeFirst
+        var effectiveCount = Math.Min(evalCount, Capacity - elementOffset);
 
         if (effectiveCount <= 0)
         {
-            return VectorSlice.Empty(workspace, WordsPerElement, targetResult);
+            return new VectorEvaluation(
+                VectorSlice.Empty(workspace, WordsPerElement, targetResult), DeviceElementCount.Static(0));
         }
 
-        return source.Evaluate(workspace, elementOffset, effectiveCount, targetResult);
+        return DeviceCounted.Evaluate(source, workspace, elementOffset, effectiveCount, targetResult);
     }
 
     public void Dispose() => source.Dispose();
@@ -40,25 +51,37 @@ internal static class VectorSlice
 }
 
 internal class VectorSkipExpression([TakesOwnership] IGpuBigIntVectorExpression source, int count)
-    : IGpuBigIntVectorExpression
+    : IGpuBigIntVectorExpression, IDeviceCountedVector
 {
-    private readonly int _skipCount = Math.Min(count, source.Length);
+    // Skipping past the capacity skips everything; a device count below the skip gives 0 through SkipFirst
+    private readonly int _skipCount = Math.Min(count, source.Capacity);
 
-    public int Length => source.Length - _skipCount;
+    public int Length => DeviceCounted.KnownLength(this);
+
+    public int Capacity => source.Capacity - _skipCount;
+
     public int WordsPerElement => source.WordsPerElement;
 
-    public GpuBigIntArrayView Evaluate(GpuWorkspace workspace, int elementOffset = 0, int? elementCount = null,
-        GpuBigUIntArrayView targetResult = default)
+    public bool TryGetLength(out int length)
     {
-        var evalCount = elementCount ?? (Length - elementOffset);
+        var known = source.TryGetLength(out var sourceLength);
+        length = known ? sourceLength - _skipCount : 0;
+        return known;
+    }
+
+    public VectorEvaluation EvaluateCore(GpuWorkspace workspace, int elementOffset, int? elementCount,
+        GpuBigUIntArrayView targetResult)
+    {
+        var evalCount = elementCount ?? (Capacity - elementOffset);
 
         if (evalCount <= 0)
         {
-            return VectorSlice.Empty(workspace, WordsPerElement, targetResult);
+            return new VectorEvaluation(
+                VectorSlice.Empty(workspace, WordsPerElement, targetResult), DeviceElementCount.Static(0));
         }
 
         // Pass the requested element slice but shifted by the Skip count
-        return source.Evaluate(workspace, elementOffset + _skipCount, evalCount, targetResult);
+        return DeviceCounted.Evaluate(source, workspace, elementOffset + _skipCount, evalCount, targetResult);
     }
 
     public void Dispose() => source.Dispose();

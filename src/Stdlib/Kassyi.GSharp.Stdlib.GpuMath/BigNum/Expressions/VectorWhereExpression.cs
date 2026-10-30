@@ -1,86 +1,64 @@
-
 namespace Kassyi.GSharp.Stdlib.GpuMath.BigNum.Expressions;
 
+/// <summary>
+/// Keeps the elements whose predicate is true (design D3 4.4). The number of selected elements is computed on the
+/// device into a word this node owns, so neither the selection nor its consumers (Count, Sum, Skip, ...) synchronize
+/// with the host; only the public <c>Evaluate</c> reads it, to return exactly the selected elements.
+/// </summary>
 internal class VectorWhereExpression(
     [TakesOwnership] IGpuBigIntVectorExpression source,
-    [TakesOwnership] IGpuBoolVectorExpression predicate) : IGpuBigIntVectorExpression
+    [TakesOwnership] IGpuBoolVectorExpression predicate) : IGpuBigIntVectorExpression, IDeviceCountedVector
 {
-    public int Length => source.Length;
+    public int Length => DeviceCounted.KnownLength(this);
+
+    public int Capacity => source.Capacity;
+
     public int WordsPerElement => source.WordsPerElement;
 
-    private GpuBigUIntArray _compactedValues;
-    private GpuBigUIntArray _compactedSigns;
-    private GpuBigUIntArray _scanResult;
-    private bool _allocated;
+    // The selected elements, the scan of the predicates, the count word and the block sums of the scan: owned here and
+    // reused, so that an evaluation allocates nothing after the first
+    private readonly WhereDeviceState _state = new();
 
-    public GpuBigIntArrayView Evaluate(GpuWorkspace workspace, int elementOffset = 0, int? elementCount = null,
-        GpuBigUIntArrayView targetResult = default)
+    public bool TryGetLength(out int length)
     {
-        if (VectorResultCache.HasTarget(targetResult))
+        length = 0;
+        return false;
+    }
+
+    public VectorEvaluation EvaluateCore(GpuWorkspace workspace, int elementOffset, int? elementCount,
+        GpuBigUIntArrayView targetResult)
+    {
+        var capacity = Capacity;
+        WhereDeviceState.ThrowIfCannotSelect(VectorResultCache.HasTarget(targetResult), capacity, predicate);
+        if (capacity == 0)
         {
-            throw new NotSupportedException(
-                "Where expression does not support targetResult because its size is dynamic.");
+            return new VectorEvaluation(VectorResultCache.EmptySigned(workspace, WordsPerElement),
+                DeviceElementCount.Static(0));
         }
 
-        var evaluatedSource = source.Evaluate(workspace);
-        var evaluatedPredicates = predicate.Evaluate(workspace);
-
-        var originalCount = evaluatedSource.Length;
-        if (originalCount == 0)
-        {
-            return VectorResultCache.EmptySigned(workspace, WordsPerElement);
-        }
-
-        if (!_allocated)
-        {
-            _scanResult = new GpuBigUIntArray(workspace, originalCount, 1);
-            _compactedValues = new GpuBigUIntArray(workspace, originalCount, WordsPerElement);
-            _compactedSigns = new GpuBigUIntArray(workspace, originalCount, 1);
-            _allocated = true;
-        }
-
-        // 1. Exclusive Scan on Predicates
-        StreamCompactionOrchestrator.ExecuteExclusiveScan(
-            workspace, _scanResult.DevicePointer, evaluatedPredicates.DevicePointer, originalCount);
-
-        // 2. Scatter (Compact) Data
-        StreamCompactionOrchestrator.CompactArray(
-            workspace,
-            new StreamCompactionOrchestrator.StreamCompactionRequest(
-                _compactedValues.DevicePointer,
-                evaluatedSource.Values.DevicePointer,
-                evaluatedPredicates.DevicePointer,
-                _scanResult.DevicePointer,
-                originalCount,
-                WordsPerElement));
-
-        StreamCompactionOrchestrator.CompactArray(
-            workspace,
-            new StreamCompactionOrchestrator.StreamCompactionRequest(
-                _compactedSigns.DevicePointer,
-                evaluatedSource.Signs.DevicePointer,
-                evaluatedPredicates.DevicePointer,
-                _scanResult.DevicePointer,
-                originalCount,
-                1));
-
-        var finalCount = elementCount ?? (originalCount - elementOffset);
-        return new GpuBigIntArray(
-            _compactedValues.BorrowSlice(elementOffset, finalCount),
-            _compactedSigns.BorrowSlice(elementOffset, finalCount));
+        var evaluatedSource = DeviceCounted.Evaluate(source, workspace);
+        var selected = _state.Select<IntVectorResultKind, GpuBigIntArrayView>(workspace, evaluatedSource.Storage,
+            evaluatedSource.Count, predicate, capacity, WordsPerElement, elementOffset, elementCount, out var count);
+        return new VectorEvaluation(selected, count);
     }
 
     public void Dispose()
     {
-        source.Dispose();
-        predicate.Dispose();
-        if (!_allocated)
+        // A release that throws does not skip the others
+        try
         {
-            return;
+            _state.Dispose();
         }
-
-        _scanResult.Dispose();
-        _compactedValues.Dispose();
-        _compactedSigns.Dispose();
+        finally
+        {
+            try
+            {
+                source.Dispose();
+            }
+            finally
+            {
+                predicate.Dispose();
+            }
+        }
     }
 }
