@@ -1,8 +1,8 @@
 namespace Kassyi.GSharp.Compiler.Transpiler;
 
 /// <summary>
-/// The C# modifiers of a <see cref="RefKind"/> in the code the managed path writes: on an argument (<c>ref</c>,
-/// <c>out</c>, <c>in</c>) and on a parameter (<c>ref</c>, <c>out</c>, <c>in</c>, <c>ref readonly</c>).
+/// The C# modifier of an argument passed to a parameter of a <see cref="RefKind"/> in the code the managed path writes
+/// (<c>ref</c>, <c>out</c>, <c>in</c>). The modifier of a parameter is <c>SymbolExtensions.FormatRefKind</c>.
 /// </summary>
 internal static class ManagedRefKinds
 {
@@ -24,16 +24,6 @@ internal static class ManagedRefKinds
         SyntaxKind.RefKeyword => "ref ",
         SyntaxKind.OutKeyword => "out ",
         SyntaxKind.InKeyword => "in ",
-        _ => string.Empty
-    };
-
-    /// <summary>The modifier of a parameter of <paramref name="refKind"/> with a space after it, or empty.</summary>
-    public static string ParameterModifier(RefKind refKind) => refKind switch
-    {
-        RefKind.Ref => "ref ",
-        RefKind.Out => "out ",
-        RefKind.In => "in ",
-        RefKind.RefReadOnlyParameter => "ref readonly ",
         _ => string.Empty
     };
 }

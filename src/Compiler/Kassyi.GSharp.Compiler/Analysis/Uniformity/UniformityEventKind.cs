@@ -13,5 +13,14 @@ internal enum UniformityEventKind
     Observe,
 
     /// <summary>A call that reaches a barrier; only read while recording the variance of its arguments.</summary>
-    Site
+    Site,
+
+    /// <summary>An element of memory the threads share is written (<see cref="MemoryUniformity"/>).</summary>
+    MemoryWrite,
+
+    /// <summary>A barrier: the memory written before it is no more variant than the variance of the event.</summary>
+    MemorySync,
+
+    /// <summary>A call: the barrier its callee passes on every path, then the memory it writes.</summary>
+    MemoryCall
 }

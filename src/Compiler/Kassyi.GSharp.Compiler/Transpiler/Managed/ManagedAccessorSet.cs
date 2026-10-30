@@ -262,7 +262,7 @@ internal sealed class ManagedAccessorSet(IMethodSymbol caller, Compilation compi
         {
             var parameter = target.Parameters[i];
             writer.AppendIf(withLeadingComma || i > 0, ", ");
-            writer.Append(ManagedRefKinds.ParameterModifier(parameter.RefKind));
+            writer.Append(parameter.RefKind.FormatRefKind());
             writer.AppendCsharpTypeName(parameter.Type);
             writer.Append($" p{i.ToString(CultureInfo.InvariantCulture)}");
         }

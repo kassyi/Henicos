@@ -21,6 +21,7 @@ public partial class NamingArchitectureTests
         "GpuMacroTranspilerRule.cs:identifier.Identifier.ValueText",
         // Diagnostic and error-comment text, not C++ identifiers.
         "TranspilationSession.cs:methodSymbol.Name",
+        "IteratorTypeResolver.cs:method.Name",
         "ManagedAccessorSet.cs:declaringType.Name",
         "ManagedAccessorSet.cs:target.Name",
         "MethodSignatureTranspiler.cs:methodSymbol.ContainingType.Name",
