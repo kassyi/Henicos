@@ -277,6 +277,7 @@ int input_size = input.Length * sizeof(global::System.UInt32);
 IntPtr* proxy_input = stackalloc IntPtr[2];
 proxy_input[0] = IntPtr.Zero;
 ((int*)(proxy_input + 1))[0] = input.Length;
+((int*)(proxy_input + 1))[1] = 0;
 if (input_size > 0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_input, (IntPtr)input_size, hStream));
@@ -293,6 +294,7 @@ int shiftedLeft_size = shiftedLeft.Length * sizeof(global::System.UInt32);
 IntPtr* proxy_shiftedLeft = stackalloc IntPtr[2];
 proxy_shiftedLeft[0] = IntPtr.Zero;
 ((int*)(proxy_shiftedLeft + 1))[0] = shiftedLeft.Length;
+((int*)(proxy_shiftedLeft + 1))[1] = 0;
 if (shiftedLeft_size > 0)
 {
 if (global::System.Object.ReferenceEquals(shiftedLeft, input))
@@ -316,6 +318,7 @@ int shiftedRight_size = shiftedRight.Length * sizeof(global::System.UInt32);
 IntPtr* proxy_shiftedRight = stackalloc IntPtr[2];
 proxy_shiftedRight[0] = IntPtr.Zero;
 ((int*)(proxy_shiftedRight + 1))[0] = shiftedRight.Length;
+((int*)(proxy_shiftedRight + 1))[1] = 0;
 if (shiftedRight_size > 0)
 {
 if (global::System.Object.ReferenceEquals(shiftedRight, input))

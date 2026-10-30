@@ -333,6 +333,7 @@ int ints_size = ints.Length * sizeof(global::System.Int32);
 IntPtr* proxy_ints = stackalloc IntPtr[2];
 proxy_ints[0] = IntPtr.Zero;
 ((int*)(proxy_ints + 1))[0] = ints.Length;
+((int*)(proxy_ints + 1))[1] = 0;
 if (ints_size > 0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_ints, (IntPtr)ints_size, hStream));
@@ -349,6 +350,7 @@ int shifts_size = shifts.Length * sizeof(global::System.Int32);
 IntPtr* proxy_shifts = stackalloc IntPtr[2];
 proxy_shifts[0] = IntPtr.Zero;
 ((int*)(proxy_shifts + 1))[0] = shifts.Length;
+((int*)(proxy_shifts + 1))[1] = 0;
 if (shifts_size > 0)
 {
 if (global::System.Object.ReferenceEquals(shifts, ints))
@@ -372,6 +374,7 @@ int o_size = o.Length * sizeof(global::System.Int32);
 IntPtr* proxy_o = stackalloc IntPtr[2];
 proxy_o[0] = IntPtr.Zero;
 ((int*)(proxy_o + 1))[0] = o.Length;
+((int*)(proxy_o + 1))[1] = 0;
 if (o_size > 0)
 {
 if (global::System.Object.ReferenceEquals(o, ints))
@@ -540,6 +543,7 @@ int longs_size = longs.Length * sizeof(global::System.Int64);
 IntPtr* proxy_longs = stackalloc IntPtr[2];
 proxy_longs[0] = IntPtr.Zero;
 ((int*)(proxy_longs + 1))[0] = longs.Length;
+((int*)(proxy_longs + 1))[1] = 0;
 if (longs_size > 0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_longs, (IntPtr)longs_size, hStream));
@@ -556,6 +560,7 @@ int shifts_size = shifts.Length * sizeof(global::System.Int32);
 IntPtr* proxy_shifts = stackalloc IntPtr[2];
 proxy_shifts[0] = IntPtr.Zero;
 ((int*)(proxy_shifts + 1))[0] = shifts.Length;
+((int*)(proxy_shifts + 1))[1] = 0;
 if (shifts_size > 0)
 {
 if (global::System.Object.ReferenceEquals(shifts, longs))
@@ -579,6 +584,7 @@ int o_size = o.Length * sizeof(global::System.Int64);
 IntPtr* proxy_o = stackalloc IntPtr[2];
 proxy_o[0] = IntPtr.Zero;
 ((int*)(proxy_o + 1))[0] = o.Length;
+((int*)(proxy_o + 1))[1] = 0;
 if (o_size > 0)
 {
 if (global::System.Object.ReferenceEquals(o, longs))
@@ -747,6 +753,7 @@ int fs_size = fs.Length * sizeof(global::System.Single);
 IntPtr* proxy_fs = stackalloc IntPtr[2];
 proxy_fs[0] = IntPtr.Zero;
 ((int*)(proxy_fs + 1))[0] = fs.Length;
+((int*)(proxy_fs + 1))[1] = 0;
 if (fs_size > 0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_fs, (IntPtr)fs_size, hStream));
@@ -763,6 +770,7 @@ int ds_size = ds.Length * sizeof(global::System.Double);
 IntPtr* proxy_ds = stackalloc IntPtr[2];
 proxy_ds[0] = IntPtr.Zero;
 ((int*)(proxy_ds + 1))[0] = ds.Length;
+((int*)(proxy_ds + 1))[1] = 0;
 if (ds_size > 0)
 {
 if (global::System.Object.ReferenceEquals(ds, fs))
@@ -786,6 +794,7 @@ int o_size = o.Length * sizeof(global::System.Int64);
 IntPtr* proxy_o = stackalloc IntPtr[2];
 proxy_o[0] = IntPtr.Zero;
 ((int*)(proxy_o + 1))[0] = o.Length;
+((int*)(proxy_o + 1))[1] = 0;
 if (o_size > 0)
 {
 if (global::System.Object.ReferenceEquals(o, fs))
@@ -960,6 +969,7 @@ int negative_size = negative.Length * sizeof(global::System.Int32);
 IntPtr* proxy_negative = stackalloc IntPtr[2];
 proxy_negative[0] = IntPtr.Zero;
 ((int*)(proxy_negative + 1))[0] = negative.Length;
+((int*)(proxy_negative + 1))[1] = 0;
 if (negative_size > 0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_negative, (IntPtr)negative_size, hStream));
@@ -976,6 +986,7 @@ int wide_size = wide.Length * sizeof(global::System.Int64);
 IntPtr* proxy_wide = stackalloc IntPtr[2];
 proxy_wide[0] = IntPtr.Zero;
 ((int*)(proxy_wide + 1))[0] = wide.Length;
+((int*)(proxy_wide + 1))[1] = 0;
 if (wide_size > 0)
 {
 if (global::System.Object.ReferenceEquals(wide, negative))
@@ -1148,6 +1159,7 @@ int starts_size = starts.Length * sizeof(global::System.Int32);
 IntPtr* proxy_starts = stackalloc IntPtr[2];
 proxy_starts[0] = IntPtr.Zero;
 ((int*)(proxy_starts + 1))[0] = starts.Length;
+((int*)(proxy_starts + 1))[1] = 0;
 if (starts_size > 0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_starts, (IntPtr)starts_size, hStream));
@@ -1164,6 +1176,7 @@ int ends_size = ends.Length * sizeof(global::System.Int32);
 IntPtr* proxy_ends = stackalloc IntPtr[2];
 proxy_ends[0] = IntPtr.Zero;
 ((int*)(proxy_ends + 1))[0] = ends.Length;
+((int*)(proxy_ends + 1))[1] = 0;
 if (ends_size > 0)
 {
 if (global::System.Object.ReferenceEquals(ends, starts))
@@ -1187,6 +1200,7 @@ int counts_size = counts.Length * sizeof(global::System.Int32);
 IntPtr* proxy_counts = stackalloc IntPtr[2];
 proxy_counts[0] = IntPtr.Zero;
 ((int*)(proxy_counts + 1))[0] = counts.Length;
+((int*)(proxy_counts + 1))[1] = 0;
 if (counts_size > 0)
 {
 if (global::System.Object.ReferenceEquals(counts, starts))
@@ -1376,6 +1390,7 @@ int data_size = data.Length * sizeof(global::Kassyi.GSharp.Tests.Shared.Syntax.P
 IntPtr* proxy_data = stackalloc IntPtr[2];
 proxy_data[0] = IntPtr.Zero;
 ((int*)(proxy_data + 1))[0] = data.Length;
+((int*)(proxy_data + 1))[1] = 0;
 if (data_size > 0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_data, (IntPtr)data_size, hStream));
@@ -1392,6 +1407,7 @@ int old_size = old.Length * sizeof(global::System.Int32);
 IntPtr* proxy_old = stackalloc IntPtr[2];
 proxy_old[0] = IntPtr.Zero;
 ((int*)(proxy_old + 1))[0] = old.Length;
+((int*)(proxy_old + 1))[1] = 0;
 if (old_size > 0)
 {
 if (global::System.Object.ReferenceEquals(old, data))
@@ -1548,6 +1564,7 @@ int a_size = a.Length * sizeof(global::System.Int32);
 IntPtr* proxy_a = stackalloc IntPtr[2];
 proxy_a[0] = IntPtr.Zero;
 ((int*)(proxy_a + 1))[0] = a.Length;
+((int*)(proxy_a + 1))[1] = 0;
 if (a_size > 0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_a, (IntPtr)a_size, hStream));
@@ -1564,6 +1581,7 @@ int s_size = s.Length * sizeof(global::System.Int32);
 IntPtr* proxy_s = stackalloc IntPtr[2];
 proxy_s[0] = IntPtr.Zero;
 ((int*)(proxy_s + 1))[0] = s.Length;
+((int*)(proxy_s + 1))[1] = 0;
 if (s_size > 0)
 {
 if (global::System.Object.ReferenceEquals(s, a))
@@ -1587,6 +1605,7 @@ int o_size = o.Length * sizeof(global::System.Int32);
 IntPtr* proxy_o = stackalloc IntPtr[2];
 proxy_o[0] = IntPtr.Zero;
 ((int*)(proxy_o + 1))[0] = o.Length;
+((int*)(proxy_o + 1))[1] = 0;
 if (o_size > 0)
 {
 if (global::System.Object.ReferenceEquals(o, a))

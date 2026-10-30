@@ -122,6 +122,7 @@ int values_size = values.Length * sizeof(global::System.Single);
 IntPtr* proxy_values = stackalloc IntPtr[2];
 proxy_values[0] = IntPtr.Zero;
 ((int*)(proxy_values + 1))[0] = values.Length;
+((int*)(proxy_values + 1))[1] = 0;
 if (values_size > 0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_values, (IntPtr)values_size, hStream));
@@ -233,6 +234,7 @@ int values_size = values.Length * sizeof(global::System.Double);
 IntPtr* proxy_values = stackalloc IntPtr[2];
 proxy_values[0] = IntPtr.Zero;
 ((int*)(proxy_values + 1))[0] = values.Length;
+((int*)(proxy_values + 1))[1] = 0;
 if (values_size > 0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_values, (IntPtr)values_size, hStream));

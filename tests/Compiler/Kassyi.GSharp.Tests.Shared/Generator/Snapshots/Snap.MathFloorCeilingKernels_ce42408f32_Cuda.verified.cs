@@ -161,6 +161,7 @@ int doubleInputs_size = doubleInputs.Length * sizeof(global::System.Double);
 IntPtr* proxy_doubleInputs = stackalloc IntPtr[2];
 proxy_doubleInputs[0] = IntPtr.Zero;
 ((int*)(proxy_doubleInputs + 1))[0] = doubleInputs.Length;
+((int*)(proxy_doubleInputs + 1))[1] = 0;
 if (doubleInputs_size > 0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_doubleInputs, (IntPtr)doubleInputs_size, hStream));
@@ -177,6 +178,7 @@ int doubleFloor_size = doubleFloor.Length * sizeof(global::System.Double);
 IntPtr* proxy_doubleFloor = stackalloc IntPtr[2];
 proxy_doubleFloor[0] = IntPtr.Zero;
 ((int*)(proxy_doubleFloor + 1))[0] = doubleFloor.Length;
+((int*)(proxy_doubleFloor + 1))[1] = 0;
 if (doubleFloor_size > 0)
 {
 if (global::System.Object.ReferenceEquals(doubleFloor, doubleInputs))
@@ -200,6 +202,7 @@ int doubleCeiling_size = doubleCeiling.Length * sizeof(global::System.Double);
 IntPtr* proxy_doubleCeiling = stackalloc IntPtr[2];
 proxy_doubleCeiling[0] = IntPtr.Zero;
 ((int*)(proxy_doubleCeiling + 1))[0] = doubleCeiling.Length;
+((int*)(proxy_doubleCeiling + 1))[1] = 0;
 if (doubleCeiling_size > 0)
 {
 if (global::System.Object.ReferenceEquals(doubleCeiling, doubleInputs))
@@ -227,6 +230,7 @@ int floatInputs_size = floatInputs.Length * sizeof(global::System.Single);
 IntPtr* proxy_floatInputs = stackalloc IntPtr[2];
 proxy_floatInputs[0] = IntPtr.Zero;
 ((int*)(proxy_floatInputs + 1))[0] = floatInputs.Length;
+((int*)(proxy_floatInputs + 1))[1] = 0;
 if (floatInputs_size > 0)
 {
 if (global::System.Object.ReferenceEquals(floatInputs, doubleInputs))
@@ -258,6 +262,7 @@ int floatFloor_size = floatFloor.Length * sizeof(global::System.Single);
 IntPtr* proxy_floatFloor = stackalloc IntPtr[2];
 proxy_floatFloor[0] = IntPtr.Zero;
 ((int*)(proxy_floatFloor + 1))[0] = floatFloor.Length;
+((int*)(proxy_floatFloor + 1))[1] = 0;
 if (floatFloor_size > 0)
 {
 if (global::System.Object.ReferenceEquals(floatFloor, doubleInputs))
@@ -293,6 +298,7 @@ int floatCeiling_size = floatCeiling.Length * sizeof(global::System.Single);
 IntPtr* proxy_floatCeiling = stackalloc IntPtr[2];
 proxy_floatCeiling[0] = IntPtr.Zero;
 ((int*)(proxy_floatCeiling + 1))[0] = floatCeiling.Length;
+((int*)(proxy_floatCeiling + 1))[1] = 0;
 if (floatCeiling_size > 0)
 {
 if (global::System.Object.ReferenceEquals(floatCeiling, doubleInputs))
@@ -543,6 +549,7 @@ int doubleBases_size = doubleBases.Length * sizeof(global::System.Double);
 IntPtr* proxy_doubleBases = stackalloc IntPtr[2];
 proxy_doubleBases[0] = IntPtr.Zero;
 ((int*)(proxy_doubleBases + 1))[0] = doubleBases.Length;
+((int*)(proxy_doubleBases + 1))[1] = 0;
 if (doubleBases_size > 0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_doubleBases, (IntPtr)doubleBases_size, hStream));
@@ -559,6 +566,7 @@ int doubleExponents_size = doubleExponents.Length * sizeof(global::System.Double
 IntPtr* proxy_doubleExponents = stackalloc IntPtr[2];
 proxy_doubleExponents[0] = IntPtr.Zero;
 ((int*)(proxy_doubleExponents + 1))[0] = doubleExponents.Length;
+((int*)(proxy_doubleExponents + 1))[1] = 0;
 if (doubleExponents_size > 0)
 {
 if (global::System.Object.ReferenceEquals(doubleExponents, doubleBases))
@@ -582,6 +590,7 @@ int doubleResults_size = doubleResults.Length * sizeof(global::System.Double);
 IntPtr* proxy_doubleResults = stackalloc IntPtr[2];
 proxy_doubleResults[0] = IntPtr.Zero;
 ((int*)(proxy_doubleResults + 1))[0] = doubleResults.Length;
+((int*)(proxy_doubleResults + 1))[1] = 0;
 if (doubleResults_size > 0)
 {
 if (global::System.Object.ReferenceEquals(doubleResults, doubleBases))
@@ -609,6 +618,7 @@ int floatBases_size = floatBases.Length * sizeof(global::System.Single);
 IntPtr* proxy_floatBases = stackalloc IntPtr[2];
 proxy_floatBases[0] = IntPtr.Zero;
 ((int*)(proxy_floatBases + 1))[0] = floatBases.Length;
+((int*)(proxy_floatBases + 1))[1] = 0;
 if (floatBases_size > 0)
 {
 if (global::System.Object.ReferenceEquals(floatBases, doubleBases))
@@ -640,6 +650,7 @@ int floatExponents_size = floatExponents.Length * sizeof(global::System.Single);
 IntPtr* proxy_floatExponents = stackalloc IntPtr[2];
 proxy_floatExponents[0] = IntPtr.Zero;
 ((int*)(proxy_floatExponents + 1))[0] = floatExponents.Length;
+((int*)(proxy_floatExponents + 1))[1] = 0;
 if (floatExponents_size > 0)
 {
 if (global::System.Object.ReferenceEquals(floatExponents, doubleBases))
@@ -675,6 +686,7 @@ int floatResults_size = floatResults.Length * sizeof(global::System.Single);
 IntPtr* proxy_floatResults = stackalloc IntPtr[2];
 proxy_floatResults[0] = IntPtr.Zero;
 ((int*)(proxy_floatResults + 1))[0] = floatResults.Length;
+((int*)(proxy_floatResults + 1))[1] = 0;
 if (floatResults_size > 0)
 {
 if (global::System.Object.ReferenceEquals(floatResults, doubleBases))
@@ -911,6 +923,7 @@ int doubleInputs_size = doubleInputs.Length * sizeof(global::System.Double);
 IntPtr* proxy_doubleInputs = stackalloc IntPtr[2];
 proxy_doubleInputs[0] = IntPtr.Zero;
 ((int*)(proxy_doubleInputs + 1))[0] = doubleInputs.Length;
+((int*)(proxy_doubleInputs + 1))[1] = 0;
 if (doubleInputs_size > 0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_doubleInputs, (IntPtr)doubleInputs_size, hStream));
@@ -927,6 +940,7 @@ int doubleResults_size = doubleResults.Length * sizeof(global::System.Double);
 IntPtr* proxy_doubleResults = stackalloc IntPtr[2];
 proxy_doubleResults[0] = IntPtr.Zero;
 ((int*)(proxy_doubleResults + 1))[0] = doubleResults.Length;
+((int*)(proxy_doubleResults + 1))[1] = 0;
 if (doubleResults_size > 0)
 {
 if (global::System.Object.ReferenceEquals(doubleResults, doubleInputs))
@@ -950,6 +964,7 @@ int floatInputs_size = floatInputs.Length * sizeof(global::System.Single);
 IntPtr* proxy_floatInputs = stackalloc IntPtr[2];
 proxy_floatInputs[0] = IntPtr.Zero;
 ((int*)(proxy_floatInputs + 1))[0] = floatInputs.Length;
+((int*)(proxy_floatInputs + 1))[1] = 0;
 if (floatInputs_size > 0)
 {
 if (global::System.Object.ReferenceEquals(floatInputs, doubleInputs))
@@ -977,6 +992,7 @@ int floatResults_size = floatResults.Length * sizeof(global::System.Single);
 IntPtr* proxy_floatResults = stackalloc IntPtr[2];
 proxy_floatResults[0] = IntPtr.Zero;
 ((int*)(proxy_floatResults + 1))[0] = floatResults.Length;
+((int*)(proxy_floatResults + 1))[1] = 0;
 if (floatResults_size > 0)
 {
 if (global::System.Object.ReferenceEquals(floatResults, doubleInputs))

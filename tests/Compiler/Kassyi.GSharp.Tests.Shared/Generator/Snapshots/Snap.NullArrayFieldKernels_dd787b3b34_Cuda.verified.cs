@@ -387,6 +387,7 @@ int o_size = o.Length * sizeof(global::System.Int32);
 IntPtr* proxy_o = stackalloc IntPtr[2];
 proxy_o[0] = IntPtr.Zero;
 ((int*)(proxy_o + 1))[0] = o.Length;
+((int*)(proxy_o + 1))[1] = 0;
 if (o_size > 0)
 {
 if (!__gsharp_device_arrays.TryGetRegion(o, out d_o))
@@ -522,6 +523,7 @@ int o_size = o.Length * sizeof(global::System.Int32);
 IntPtr* proxy_o = stackalloc IntPtr[2];
 proxy_o[0] = IntPtr.Zero;
 ((int*)(proxy_o + 1))[0] = o.Length;
+((int*)(proxy_o + 1))[1] = 0;
 if (o_size > 0)
 {
 if (!__gsharp_device_arrays.TryGetRegion(o, out d_o))
@@ -658,6 +660,7 @@ int o_size = o.Length * sizeof(global::System.Int32);
 IntPtr* proxy_o = stackalloc IntPtr[2];
 proxy_o[0] = IntPtr.Zero;
 ((int*)(proxy_o + 1))[0] = o.Length;
+((int*)(proxy_o + 1))[1] = 0;
 if (o_size > 0)
 {
 if (!__gsharp_device_arrays.TryGetRegion(o, out d_o))
@@ -796,6 +799,7 @@ int o_size = o.Length * sizeof(global::System.Int32);
 IntPtr* proxy_o = stackalloc IntPtr[2];
 proxy_o[0] = IntPtr.Zero;
 ((int*)(proxy_o + 1))[0] = o.Length;
+((int*)(proxy_o + 1))[1] = 0;
 if (o_size > 0)
 {
 if (!__gsharp_device_arrays.TryGetRegion(o, out d_o))
@@ -932,6 +936,7 @@ int o_size = o.Length * sizeof(global::System.Int32);
 IntPtr* proxy_o = stackalloc IntPtr[2];
 proxy_o[0] = IntPtr.Zero;
 ((int*)(proxy_o + 1))[0] = o.Length;
+((int*)(proxy_o + 1))[1] = 0;
 if (o_size > 0)
 {
 if (!__gsharp_device_arrays.TryGetRegion(o, out d_o))
@@ -1063,6 +1068,7 @@ int o_size = o.Length * sizeof(global::System.Int32);
 IntPtr* proxy_o = stackalloc IntPtr[2];
 proxy_o[0] = IntPtr.Zero;
 ((int*)(proxy_o + 1))[0] = o.Length;
+((int*)(proxy_o + 1))[1] = 0;
 if (o_size > 0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_o, (IntPtr)o_size, hStream));
@@ -1192,6 +1198,7 @@ int o_size = o.Length * sizeof(global::System.Int32);
 IntPtr* proxy_o = stackalloc IntPtr[2];
 proxy_o[0] = IntPtr.Zero;
 ((int*)(proxy_o + 1))[0] = o.Length;
+((int*)(proxy_o + 1))[1] = 0;
 if (o_size > 0)
 {
 if (!__gsharp_device_arrays.TryGetRegion(o, out d_o))
@@ -1328,6 +1335,7 @@ int o_size = o.Length * sizeof(global::System.Int32);
 IntPtr* proxy_o = stackalloc IntPtr[2];
 proxy_o[0] = IntPtr.Zero;
 ((int*)(proxy_o + 1))[0] = o.Length;
+((int*)(proxy_o + 1))[1] = 0;
 if (o_size > 0)
 {
 if (!__gsharp_device_arrays.TryGetRegion(o, out d_o))
@@ -1468,6 +1476,7 @@ int o_size = o.Length * sizeof(global::System.Int32);
 IntPtr* proxy_o = stackalloc IntPtr[2];
 proxy_o[0] = IntPtr.Zero;
 ((int*)(proxy_o + 1))[0] = o.Length;
+((int*)(proxy_o + 1))[1] = 0;
 if (o_size > 0)
 {
 if (!__gsharp_device_arrays.TryGetRegion(o, out d_o))
@@ -1589,6 +1598,7 @@ int o_size = o.Length * sizeof(global::System.Int32);
 IntPtr* proxy_o = stackalloc IntPtr[2];
 proxy_o[0] = IntPtr.Zero;
 ((int*)(proxy_o + 1))[0] = o.Length;
+((int*)(proxy_o + 1))[1] = 0;
 if (o_size > 0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_o, (IntPtr)o_size, hStream));
@@ -1762,6 +1772,7 @@ int holders_size = holders.Length * sizeof(AotContexts.NullArrayHolder);
 IntPtr* proxy_holders = stackalloc IntPtr[2];
 proxy_holders[0] = IntPtr.Zero;
 ((int*)(proxy_holders + 1))[0] = holders.Length;
+((int*)(proxy_holders + 1))[1] = 0;
 if (holders_size > 0)
 {
 if (!__gsharp_device_arrays.TryGetRegion(holders, out d_holders))
@@ -1793,6 +1804,7 @@ int o_size = o.Length * sizeof(global::System.Int32);
 IntPtr* proxy_o = stackalloc IntPtr[2];
 proxy_o[0] = IntPtr.Zero;
 ((int*)(proxy_o + 1))[0] = o.Length;
+((int*)(proxy_o + 1))[1] = 0;
 if (o_size > 0)
 {
 if (!__gsharp_device_arrays.TryGetRegion(o, out d_o))
@@ -1949,6 +1961,7 @@ int o_size = o.Length * sizeof(global::System.Int32);
 IntPtr* proxy_o = stackalloc IntPtr[2];
 proxy_o[0] = IntPtr.Zero;
 ((int*)(proxy_o + 1))[0] = o.Length;
+((int*)(proxy_o + 1))[1] = 0;
 if (o_size > 0)
 {
 if (!__gsharp_device_arrays.TryGetRegion(o, out d_o))
@@ -2088,6 +2101,7 @@ int o_size = o.Length * sizeof(global::System.Int32);
 IntPtr* proxy_o = stackalloc IntPtr[2];
 proxy_o[0] = IntPtr.Zero;
 ((int*)(proxy_o + 1))[0] = o.Length;
+((int*)(proxy_o + 1))[1] = 0;
 if (o_size > 0)
 {
 if (!__gsharp_device_arrays.TryGetRegion(o, out d_o))
@@ -2223,6 +2237,7 @@ int o_size = o.Length * sizeof(global::System.Int32);
 IntPtr* proxy_o = stackalloc IntPtr[2];
 proxy_o[0] = IntPtr.Zero;
 ((int*)(proxy_o + 1))[0] = o.Length;
+((int*)(proxy_o + 1))[1] = 0;
 if (o_size > 0)
 {
 if (!__gsharp_device_arrays.TryGetRegion(o, out d_o))
@@ -2358,6 +2373,7 @@ int o_size = o.Length * sizeof(global::System.Int32);
 IntPtr* proxy_o = stackalloc IntPtr[2];
 proxy_o[0] = IntPtr.Zero;
 ((int*)(proxy_o + 1))[0] = o.Length;
+((int*)(proxy_o + 1))[1] = 0;
 if (o_size > 0)
 {
 if (!__gsharp_device_arrays.TryGetRegion(o, out d_o))
@@ -2502,6 +2518,7 @@ int values_size = values.Length * sizeof(global::System.Int32);
 IntPtr* proxy_values = stackalloc IntPtr[2];
 proxy_values[0] = IntPtr.Zero;
 ((int*)(proxy_values + 1))[0] = values.Length;
+((int*)(proxy_values + 1))[1] = 0;
 if (values_size > 0)
 {
 if (!__gsharp_device_arrays.TryGetRegion(values, out d_values))
@@ -2522,6 +2539,7 @@ int o_size = o.Length * sizeof(global::System.Int32);
 IntPtr* proxy_o = stackalloc IntPtr[2];
 proxy_o[0] = IntPtr.Zero;
 ((int*)(proxy_o + 1))[0] = o.Length;
+((int*)(proxy_o + 1))[1] = 0;
 if (o_size > 0)
 {
 if (!__gsharp_device_arrays.TryGetRegion(o, out d_o))
@@ -2677,6 +2695,7 @@ int o_size = o.Length * sizeof(global::System.Int32);
 IntPtr* proxy_o = stackalloc IntPtr[2];
 proxy_o[0] = IntPtr.Zero;
 ((int*)(proxy_o + 1))[0] = o.Length;
+((int*)(proxy_o + 1))[1] = 0;
 if (o_size > 0)
 {
 if (!__gsharp_device_arrays.TryGetRegion(o, out d_o))
@@ -2835,6 +2854,7 @@ int o_size = o.Length * sizeof(global::System.Int32);
 IntPtr* proxy_o = stackalloc IntPtr[2];
 proxy_o[0] = IntPtr.Zero;
 ((int*)(proxy_o + 1))[0] = o.Length;
+((int*)(proxy_o + 1))[1] = 0;
 if (o_size > 0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_o, (IntPtr)o_size, hStream));
@@ -3011,6 +3031,7 @@ int o_size = o.Length * sizeof(global::System.Int32);
 IntPtr* proxy_o = stackalloc IntPtr[2];
 proxy_o[0] = IntPtr.Zero;
 ((int*)(proxy_o + 1))[0] = o.Length;
+((int*)(proxy_o + 1))[1] = 0;
 if (o_size > 0)
 {
 if (!__gsharp_device_arrays.TryGetRegion(o, out d_o))

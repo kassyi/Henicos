@@ -159,6 +159,7 @@ int dA_size = dA.Length * sizeof(global::System.UInt32);
 IntPtr* proxy_dA = stackalloc IntPtr[2];
 proxy_dA[0] = IntPtr.Zero;
 ((int*)(proxy_dA + 1))[0] = dA.Length;
+((int*)(proxy_dA + 1))[1] = 0;
 if (dA_size > 0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_dA, (IntPtr)dA_size, hStream));
@@ -175,6 +176,7 @@ int dB_size = dB.Length * sizeof(global::System.UInt32);
 IntPtr* proxy_dB = stackalloc IntPtr[2];
 proxy_dB[0] = IntPtr.Zero;
 ((int*)(proxy_dB + 1))[0] = dB.Length;
+((int*)(proxy_dB + 1))[1] = 0;
 if (dB_size > 0)
 {
 if (global::System.Object.ReferenceEquals(dB, dA))
@@ -198,6 +200,7 @@ int dResult_size = dResult.Length * sizeof(global::System.UInt32);
 IntPtr* proxy_dResult = stackalloc IntPtr[2];
 proxy_dResult[0] = IntPtr.Zero;
 ((int*)(proxy_dResult + 1))[0] = dResult.Length;
+((int*)(proxy_dResult + 1))[1] = 0;
 if (dResult_size > 0)
 {
 if (global::System.Object.ReferenceEquals(dResult, dA))
@@ -225,6 +228,7 @@ int carryBuffer_size = carryBuffer.Length * sizeof(global::System.Int64);
 IntPtr* proxy_carryBuffer = stackalloc IntPtr[2];
 proxy_carryBuffer[0] = IntPtr.Zero;
 ((int*)(proxy_carryBuffer + 1))[0] = carryBuffer.Length;
+((int*)(proxy_carryBuffer + 1))[1] = 0;
 if (carryBuffer_size > 0)
 {
 if (global::System.Object.ReferenceEquals(carryBuffer, dA))

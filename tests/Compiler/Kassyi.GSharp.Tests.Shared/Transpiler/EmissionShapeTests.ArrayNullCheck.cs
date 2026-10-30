@@ -53,6 +53,27 @@ public partial class EmissionShapeTests
         Assert.Contains(ArrayRef + "__gsharp_id_5_fnWritten, ", kernel, StringComparison.Ordinal);
     }
 
+    // The array launcher writes the flags word of every array argument, as the Ptr launcher does: 0 for a non-optional
+    // array, whose stackalloc'd proxy would otherwise hold garbage under [SkipLocalsInit], and the null test for an
+    // optional one
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void ArrayNullCheck_ArrayLauncher_WritesTheFlagsWordOfEveryArray()
+    {
+        var generated = Generate("ArrayNullCheckShapeKernels", "Cuda");
+        var start = generated.IndexOf("public static unsafe void LaunchElidedKernel(global::", StringComparison.Ordinal);
+        Assert.True(start >= 0, "The array launcher of ElidedKernel is not generated.");
+        var launcher = generated[start..generated.IndexOf("#pragma warning restore CS8500", start, StringComparison.Ordinal)];
+
+        Assert.Contains("((int*)(proxy_values + 1))[1] = 0;", launcher, StringComparison.Ordinal);
+        Assert.Contains("((int*)(proxy_o + 1))[1] = 0;", launcher, StringComparison.Ordinal);
+        Assert.Contains(
+            "((int*)(proxy_bias + 1))[1] = bias is null ? global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy.NullReadsAsEmpty : 0;",
+            launcher,
+            StringComparison.Ordinal
+        );
+    }
+
     // A device function parameter may be null: the foreach over it checks its source once, at the loop entry
     [Theory]
     [Scenario(TestScenario.HappyPath)]

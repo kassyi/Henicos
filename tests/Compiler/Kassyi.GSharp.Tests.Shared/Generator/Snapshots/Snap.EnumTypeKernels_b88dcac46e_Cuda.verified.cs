@@ -171,6 +171,7 @@ int items_size = items.Length * sizeof(global::Kassyi.GSharp.Tests.Shared.Syntax
 IntPtr* proxy_items = stackalloc IntPtr[2];
 proxy_items[0] = IntPtr.Zero;
 ((int*)(proxy_items + 1))[0] = items.Length;
+((int*)(proxy_items + 1))[1] = 0;
 if (items_size > 0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_items, (IntPtr)items_size, hStream));
@@ -189,6 +190,7 @@ int output_size = output.Length * sizeof(global::System.Int32);
 IntPtr* proxy_output = stackalloc IntPtr[2];
 proxy_output[0] = IntPtr.Zero;
 ((int*)(proxy_output + 1))[0] = output.Length;
+((int*)(proxy_output + 1))[1] = 0;
 if (output_size > 0)
 {
 if (global::System.Object.ReferenceEquals(output, items))

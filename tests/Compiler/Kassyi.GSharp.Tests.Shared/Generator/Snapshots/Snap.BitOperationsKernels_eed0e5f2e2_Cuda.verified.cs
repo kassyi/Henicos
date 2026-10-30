@@ -144,6 +144,7 @@ int val_size = val.Length * sizeof(global::System.UInt32);
 IntPtr* proxy_val = stackalloc IntPtr[2];
 proxy_val[0] = IntPtr.Zero;
 ((int*)(proxy_val + 1))[0] = val.Length;
+((int*)(proxy_val + 1))[1] = 0;
 if (val_size > 0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_val, (IntPtr)val_size, hStream));
@@ -160,6 +161,7 @@ int shift_size = shift.Length * sizeof(global::System.Int32);
 IntPtr* proxy_shift = stackalloc IntPtr[2];
 proxy_shift[0] = IntPtr.Zero;
 ((int*)(proxy_shift + 1))[0] = shift.Length;
+((int*)(proxy_shift + 1))[1] = 0;
 if (shift_size > 0)
 {
 if (global::System.Object.ReferenceEquals(shift, val))
@@ -183,6 +185,7 @@ int rotLeftRes_size = rotLeftRes.Length * sizeof(global::System.UInt32);
 IntPtr* proxy_rotLeftRes = stackalloc IntPtr[2];
 proxy_rotLeftRes[0] = IntPtr.Zero;
 ((int*)(proxy_rotLeftRes + 1))[0] = rotLeftRes.Length;
+((int*)(proxy_rotLeftRes + 1))[1] = 0;
 if (rotLeftRes_size > 0)
 {
 if (global::System.Object.ReferenceEquals(rotLeftRes, val))
@@ -210,6 +213,7 @@ int rotRightRes_size = rotRightRes.Length * sizeof(global::System.UInt32);
 IntPtr* proxy_rotRightRes = stackalloc IntPtr[2];
 proxy_rotRightRes[0] = IntPtr.Zero;
 ((int*)(proxy_rotRightRes + 1))[0] = rotRightRes.Length;
+((int*)(proxy_rotRightRes + 1))[1] = 0;
 if (rotRightRes_size > 0)
 {
 if (global::System.Object.ReferenceEquals(rotRightRes, val))
@@ -406,6 +410,7 @@ int val_size = val.Length * sizeof(global::System.UInt64);
 IntPtr* proxy_val = stackalloc IntPtr[2];
 proxy_val[0] = IntPtr.Zero;
 ((int*)(proxy_val + 1))[0] = val.Length;
+((int*)(proxy_val + 1))[1] = 0;
 if (val_size > 0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_val, (IntPtr)val_size, hStream));
@@ -422,6 +427,7 @@ int shift_size = shift.Length * sizeof(global::System.Int32);
 IntPtr* proxy_shift = stackalloc IntPtr[2];
 proxy_shift[0] = IntPtr.Zero;
 ((int*)(proxy_shift + 1))[0] = shift.Length;
+((int*)(proxy_shift + 1))[1] = 0;
 if (shift_size > 0)
 {
 if (global::System.Object.ReferenceEquals(shift, val))
@@ -445,6 +451,7 @@ int rotLeftRes_size = rotLeftRes.Length * sizeof(global::System.UInt64);
 IntPtr* proxy_rotLeftRes = stackalloc IntPtr[2];
 proxy_rotLeftRes[0] = IntPtr.Zero;
 ((int*)(proxy_rotLeftRes + 1))[0] = rotLeftRes.Length;
+((int*)(proxy_rotLeftRes + 1))[1] = 0;
 if (rotLeftRes_size > 0)
 {
 if (global::System.Object.ReferenceEquals(rotLeftRes, val))
@@ -472,6 +479,7 @@ int rotRightRes_size = rotRightRes.Length * sizeof(global::System.UInt64);
 IntPtr* proxy_rotRightRes = stackalloc IntPtr[2];
 proxy_rotRightRes[0] = IntPtr.Zero;
 ((int*)(proxy_rotRightRes + 1))[0] = rotRightRes.Length;
+((int*)(proxy_rotRightRes + 1))[1] = 0;
 if (rotRightRes_size > 0)
 {
 if (global::System.Object.ReferenceEquals(rotRightRes, val))

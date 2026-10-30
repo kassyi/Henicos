@@ -241,16 +241,8 @@ internal static class KernelLaunchEmitter
                 writer.AppendLine($"IntPtr* proxy_{shape.Name} = stackalloc IntPtr[2];");
                 writer.AppendLine($"proxy_{shape.Name}[0] = {shape.Identifier};");
                 writer.AppendLine($"((int*)(proxy_{shape.Name} + 1))[0] = 0; // Length is unknown for raw IntPtr");
-                // The caller's pointer may be IntPtr.Zero for any array, so the flags word is always written: 0 for
-                // a non-optional array, whose null then reads as null (#706)
-                if (shape.IsNullableReference)
-                {
-                    WriteNullReadsAsEmptyFlag(writer, shape, $"{shape.Identifier} == IntPtr.Zero");
-                }
-                else
-                {
-                    writer.AppendLine($"((int*)(proxy_{shape.Name} + 1))[1] = 0;");
-                }
+                // The caller's pointer may be IntPtr.Zero for any array: a non-optional one then reads as null (#706)
+                WriteNullReadsAsEmptyFlag(writer, shape, $"{shape.Identifier} == IntPtr.Zero");
                 writer.AppendLine($"kernelParams[{paramIndex}] = proxy_{shape.Name};");
             }
             else
@@ -352,15 +344,17 @@ internal static class KernelLaunchEmitter
         writer.AppendLine($"kernelParams[{paramIndex}] = proxy_{shape.Name};");
     }
 
-    // ((int*)(proxy_<name> + 1))[1] = <null test> ? GSharpArrayProxy.NullReadsAsEmpty : 0;   (an optional T[] only)
+    // ((int*)(proxy_<name> + 1))[1] = <null test> ? GSharpArrayProxy.NullReadsAsEmpty : 0;          (an optional T[])
+    // ((int*)(proxy_<name> + 1))[1] = 0;                                                         (any other array)
     // [WHY] The device reads a null optional array argument as an empty one (#838), also through a local or a device
     // function, while reading any other null array throws (#706); the flags word of GSharpArray tells them apart. It is
-    // written explicitly because stackalloc is not zeroed under [SkipLocalsInit]. A non-optional array is never null on
-    // the device, so its flags word is never read.
+    // written for every array because stackalloc is not zeroed under [SkipLocalsInit], and the device copies flags into
+    // every local and field that takes the array, so it is always defined.
     private static void WriteNullReadsAsEmptyFlag(SourceWriter writer, in KernelParameterShape shape, string nullTest)
     {
         if (!shape.IsNullableReference)
         {
+            writer.AppendLine($"((int*)(proxy_{shape.Name} + 1))[1] = 0;");
             return;
         }
 

@@ -140,6 +140,7 @@ int visits_size = visits.Length * sizeof(global::System.Int32);
 IntPtr* proxy_visits = stackalloc IntPtr[2];
 proxy_visits[0] = IntPtr.Zero;
 ((int*)(proxy_visits + 1))[0] = visits.Length;
+((int*)(proxy_visits + 1))[1] = 0;
 if (visits_size > 0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_visits, (IntPtr)visits_size, hStream));
@@ -265,6 +266,7 @@ int visits_size = visits.Length * sizeof(global::System.Int32);
 IntPtr* proxy_visits = stackalloc IntPtr[2];
 proxy_visits[0] = IntPtr.Zero;
 ((int*)(proxy_visits + 1))[0] = visits.Length;
+((int*)(proxy_visits + 1))[1] = 0;
 if (visits_size > 0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_visits, (IntPtr)visits_size, hStream));
@@ -400,6 +402,7 @@ int length_size = length.Length * sizeof(global::System.Int32);
 IntPtr* proxy_length = stackalloc IntPtr[2];
 proxy_length[0] = IntPtr.Zero;
 ((int*)(proxy_length + 1))[0] = length.Length;
+((int*)(proxy_length + 1))[1] = 0;
 if (length_size > 0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_length, (IntPtr)length_size, hStream));
@@ -416,6 +419,7 @@ int output_size = output.Length * sizeof(global::System.Int32);
 IntPtr* proxy_output = stackalloc IntPtr[2];
 proxy_output[0] = IntPtr.Zero;
 ((int*)(proxy_output + 1))[0] = output.Length;
+((int*)(proxy_output + 1))[1] = 0;
 if (output_size > 0)
 {
 if (global::System.Object.ReferenceEquals(output, length))
@@ -566,6 +570,7 @@ int calls_size = calls.Length * sizeof(global::System.Int32);
 IntPtr* proxy_calls = stackalloc IntPtr[2];
 proxy_calls[0] = IntPtr.Zero;
 ((int*)(proxy_calls + 1))[0] = calls.Length;
+((int*)(proxy_calls + 1))[1] = 0;
 if (calls_size > 0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_calls, (IntPtr)calls_size, hStream));
@@ -582,6 +587,7 @@ int visits_size = visits.Length * sizeof(global::System.Int32);
 IntPtr* proxy_visits = stackalloc IntPtr[2];
 proxy_visits[0] = IntPtr.Zero;
 ((int*)(proxy_visits + 1))[0] = visits.Length;
+((int*)(proxy_visits + 1))[1] = 0;
 if (visits_size > 0)
 {
 if (global::System.Object.ReferenceEquals(visits, calls))

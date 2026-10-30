@@ -187,6 +187,7 @@ int arrayVal_size = arrayVal.Length * sizeof(global::System.Int32);
 IntPtr* proxy_arrayVal = stackalloc IntPtr[2];
 proxy_arrayVal[0] = IntPtr.Zero;
 ((int*)(proxy_arrayVal + 1))[0] = arrayVal.Length;
+((int*)(proxy_arrayVal + 1))[1] = 0;
 if (arrayVal_size > 0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_arrayVal, (IntPtr)arrayVal_size, hStream));

@@ -143,6 +143,7 @@ int inputs_size = inputs.Length * sizeof(global::System.Double);
 IntPtr* proxy_inputs = stackalloc IntPtr[2];
 proxy_inputs[0] = IntPtr.Zero;
 ((int*)(proxy_inputs + 1))[0] = inputs.Length;
+((int*)(proxy_inputs + 1))[1] = 0;
 if (inputs_size > 0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_inputs, (IntPtr)inputs_size, hStream));
@@ -159,6 +160,7 @@ int results_size = results.Length * sizeof(global::System.Double);
 IntPtr* proxy_results = stackalloc IntPtr[2];
 proxy_results[0] = IntPtr.Zero;
 ((int*)(proxy_results + 1))[0] = results.Length;
+((int*)(proxy_results + 1))[1] = 0;
 if (results_size > 0)
 {
 if (global::System.Object.ReferenceEquals(results, inputs))
@@ -182,6 +184,7 @@ int intInputs_size = intInputs.Length * sizeof(global::System.Int32);
 IntPtr* proxy_intInputs = stackalloc IntPtr[2];
 proxy_intInputs[0] = IntPtr.Zero;
 ((int*)(proxy_intInputs + 1))[0] = intInputs.Length;
+((int*)(proxy_intInputs + 1))[1] = 0;
 if (intInputs_size > 0)
 {
 if (global::System.Object.ReferenceEquals(intInputs, inputs))
@@ -209,6 +212,7 @@ int intResults_size = intResults.Length * sizeof(global::System.Int32);
 IntPtr* proxy_intResults = stackalloc IntPtr[2];
 proxy_intResults[0] = IntPtr.Zero;
 ((int*)(proxy_intResults + 1))[0] = intResults.Length;
+((int*)(proxy_intResults + 1))[1] = 0;
 if (intResults_size > 0)
 {
 if (global::System.Object.ReferenceEquals(intResults, inputs))

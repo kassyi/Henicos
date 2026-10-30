@@ -143,6 +143,7 @@ int data_size = data.Length * sizeof(global::System.Int32);
 IntPtr* proxy_data = stackalloc IntPtr[2];
 proxy_data[0] = IntPtr.Zero;
 ((int*)(proxy_data + 1))[0] = data.Length;
+((int*)(proxy_data + 1))[1] = 0;
 if (data_size > 0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_data, (IntPtr)data_size, hStream));
@@ -267,6 +268,7 @@ int data_size = data.Length * sizeof(global::System.Int32);
 IntPtr* proxy_data = stackalloc IntPtr[2];
 proxy_data[0] = IntPtr.Zero;
 ((int*)(proxy_data + 1))[0] = data.Length;
+((int*)(proxy_data + 1))[1] = 0;
 if (data_size > 0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_data, (IntPtr)data_size, hStream));
@@ -390,6 +392,7 @@ int data_size = data.Length * sizeof(global::System.Int32);
 IntPtr* proxy_data = stackalloc IntPtr[2];
 proxy_data[0] = IntPtr.Zero;
 ((int*)(proxy_data + 1))[0] = data.Length;
+((int*)(proxy_data + 1))[1] = 0;
 if (data_size > 0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_data, (IntPtr)data_size, hStream));
@@ -500,6 +503,7 @@ int globalSum_size = globalSum.Length * sizeof(global::System.Int32);
 IntPtr* proxy_globalSum = stackalloc IntPtr[2];
 proxy_globalSum[0] = IntPtr.Zero;
 ((int*)(proxy_globalSum + 1))[0] = globalSum.Length;
+((int*)(proxy_globalSum + 1))[1] = 0;
 if (globalSum_size > 0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_globalSum, (IntPtr)globalSum_size, hStream));
@@ -615,6 +619,7 @@ int globalState_size = globalState.Length * sizeof(global::System.UInt32);
 IntPtr* proxy_globalState = stackalloc IntPtr[2];
 proxy_globalState[0] = IntPtr.Zero;
 ((int*)(proxy_globalState + 1))[0] = globalState.Length;
+((int*)(proxy_globalState + 1))[1] = 0;
 if (globalState_size > 0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_globalState, (IntPtr)globalState_size, hStream));

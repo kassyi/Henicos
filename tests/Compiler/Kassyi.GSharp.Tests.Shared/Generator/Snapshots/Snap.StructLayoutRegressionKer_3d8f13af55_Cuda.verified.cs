@@ -968,6 +968,7 @@ int h_size = h.Length * sizeof(AotContexts.LayoutReproVecHolder);
 IntPtr* proxy_h = stackalloc IntPtr[2];
 proxy_h[0] = IntPtr.Zero;
 ((int*)(proxy_h + 1))[0] = h.Length;
+((int*)(proxy_h + 1))[1] = 0;
 if (h_size > 0)
 {
 h_shadow = System.Buffers.ArrayPool<byte>.Shared.Rent(h_size);
@@ -991,6 +992,7 @@ int o_size = o.Length * sizeof(global::System.Single);
 IntPtr* proxy_o = stackalloc IntPtr[2];
 proxy_o[0] = IntPtr.Zero;
 ((int*)(proxy_o + 1))[0] = o.Length;
+((int*)(proxy_o + 1))[1] = 0;
 if (o_size > 0)
 {
 if (global::System.Object.ReferenceEquals(o, h))
@@ -1194,6 +1196,7 @@ int h_size = h.Length * sizeof(AotContexts.LayoutReproCoreHolder);
 IntPtr* proxy_h = stackalloc IntPtr[2];
 proxy_h[0] = IntPtr.Zero;
 ((int*)(proxy_h + 1))[0] = h.Length;
+((int*)(proxy_h + 1))[1] = 0;
 if (h_size > 0)
 {
 h_shadow = System.Buffers.ArrayPool<byte>.Shared.Rent(h_size);
@@ -1217,6 +1220,7 @@ int o_size = o.Length * sizeof(global::System.Single);
 IntPtr* proxy_o = stackalloc IntPtr[2];
 proxy_o[0] = IntPtr.Zero;
 ((int*)(proxy_o + 1))[0] = o.Length;
+((int*)(proxy_o + 1))[1] = 0;
 if (o_size > 0)
 {
 if (global::System.Object.ReferenceEquals(o, h))
@@ -1440,6 +1444,7 @@ int o_size = o.Length * sizeof(global::System.Single);
 IntPtr* proxy_o = stackalloc IntPtr[2];
 proxy_o[0] = IntPtr.Zero;
 ((int*)(proxy_o + 1))[0] = o.Length;
+((int*)(proxy_o + 1))[1] = 0;
 if (o_size > 0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_o, (IntPtr)o_size, hStream));
@@ -1577,6 +1582,7 @@ int o_size = o.Length * sizeof(global::System.Int32);
 IntPtr* proxy_o = stackalloc IntPtr[2];
 proxy_o[0] = IntPtr.Zero;
 ((int*)(proxy_o + 1))[0] = o.Length;
+((int*)(proxy_o + 1))[1] = 0;
 if (o_size > 0)
 {
 if (!__gsharp_device_arrays.TryGetRegion(o, out d_o))
@@ -1722,6 +1728,7 @@ int o_size = o.Length * sizeof(global::System.Int32);
 IntPtr* proxy_o = stackalloc IntPtr[2];
 proxy_o[0] = IntPtr.Zero;
 ((int*)(proxy_o + 1))[0] = o.Length;
+((int*)(proxy_o + 1))[1] = 0;
 if (o_size > 0)
 {
 if (!__gsharp_device_arrays.TryGetRegion(o, out d_o))
@@ -1862,6 +1869,7 @@ int o_size = o.Length * sizeof(global::System.Int32);
 IntPtr* proxy_o = stackalloc IntPtr[2];
 proxy_o[0] = IntPtr.Zero;
 ((int*)(proxy_o + 1))[0] = o.Length;
+((int*)(proxy_o + 1))[1] = 0;
 if (o_size > 0)
 {
 if (!__gsharp_device_arrays.TryGetRegion(o, out d_o))
@@ -2116,6 +2124,7 @@ int hs_size = hs.Length * sizeof(AotContexts.LayoutReproElemHolder);
 IntPtr* proxy_hs = stackalloc IntPtr[2];
 proxy_hs[0] = IntPtr.Zero;
 ((int*)(proxy_hs + 1))[0] = hs.Length;
+((int*)(proxy_hs + 1))[1] = 0;
 if (hs_size > 0)
 {
 if (!__gsharp_device_arrays.TryGetRegion(hs, out d_hs))
@@ -2268,6 +2277,7 @@ int o_size = o.Length * sizeof(global::System.Int32);
 IntPtr* proxy_o = stackalloc IntPtr[2];
 proxy_o[0] = IntPtr.Zero;
 ((int*)(proxy_o + 1))[0] = o.Length;
+((int*)(proxy_o + 1))[1] = 0;
 if (o_size > 0)
 {
 if (!__gsharp_device_arrays.TryGetRegion(o, out d_o))
@@ -2503,6 +2513,7 @@ int b_size = b.Length * sizeof(AotContexts.LayoutReproBag);
 IntPtr* proxy_b = stackalloc IntPtr[2];
 proxy_b[0] = IntPtr.Zero;
 ((int*)(proxy_b + 1))[0] = b.Length;
+((int*)(proxy_b + 1))[1] = 0;
 if (b_size > 0)
 {
 if (!__gsharp_device_arrays.TryGetRegion(b, out d_b))
@@ -2534,6 +2545,7 @@ int o_size = o.Length * sizeof(global::System.Int32);
 IntPtr* proxy_o = stackalloc IntPtr[2];
 proxy_o[0] = IntPtr.Zero;
 ((int*)(proxy_o + 1))[0] = o.Length;
+((int*)(proxy_o + 1))[1] = 0;
 if (o_size > 0)
 {
 if (!__gsharp_device_arrays.TryGetRegion(o, out d_o))
@@ -2701,6 +2713,7 @@ int o_size = o.Length * sizeof(global::System.Int32);
 IntPtr* proxy_o = stackalloc IntPtr[2];
 proxy_o[0] = IntPtr.Zero;
 ((int*)(proxy_o + 1))[0] = o.Length;
+((int*)(proxy_o + 1))[1] = 0;
 if (o_size > 0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_o, (IntPtr)o_size, hStream));
@@ -2840,6 +2853,7 @@ int o_size = o.Length * sizeof(global::System.Int32);
 IntPtr* proxy_o = stackalloc IntPtr[2];
 proxy_o[0] = IntPtr.Zero;
 ((int*)(proxy_o + 1))[0] = o.Length;
+((int*)(proxy_o + 1))[1] = 0;
 if (o_size > 0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_o, (IntPtr)o_size, hStream));
@@ -2979,6 +2993,7 @@ int o_size = o.Length * sizeof(global::System.Double);
 IntPtr* proxy_o = stackalloc IntPtr[2];
 proxy_o[0] = IntPtr.Zero;
 ((int*)(proxy_o + 1))[0] = o.Length;
+((int*)(proxy_o + 1))[1] = 0;
 if (o_size > 0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_o, (IntPtr)o_size, hStream));
@@ -3121,6 +3136,7 @@ int o_size = o.Length * sizeof(global::System.Int32);
 IntPtr* proxy_o = stackalloc IntPtr[2];
 proxy_o[0] = IntPtr.Zero;
 ((int*)(proxy_o + 1))[0] = o.Length;
+((int*)(proxy_o + 1))[1] = 0;
 if (o_size > 0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_o, (IntPtr)o_size, hStream));
@@ -3264,6 +3280,7 @@ int o_size = o.Length * sizeof(global::System.Int32);
 IntPtr* proxy_o = stackalloc IntPtr[2];
 proxy_o[0] = IntPtr.Zero;
 ((int*)(proxy_o + 1))[0] = o.Length;
+((int*)(proxy_o + 1))[1] = 0;
 if (o_size > 0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_o, (IntPtr)o_size, hStream));
@@ -3407,6 +3424,7 @@ int o_size = o.Length * sizeof(global::System.Int32);
 IntPtr* proxy_o = stackalloc IntPtr[2];
 proxy_o[0] = IntPtr.Zero;
 ((int*)(proxy_o + 1))[0] = o.Length;
+((int*)(proxy_o + 1))[1] = 0;
 if (o_size > 0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_o, (IntPtr)o_size, hStream));
@@ -3550,6 +3568,7 @@ int o_size = o.Length * sizeof(global::System.Int32);
 IntPtr* proxy_o = stackalloc IntPtr[2];
 proxy_o[0] = IntPtr.Zero;
 ((int*)(proxy_o + 1))[0] = o.Length;
+((int*)(proxy_o + 1))[1] = 0;
 if (o_size > 0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_o, (IntPtr)o_size, hStream));
@@ -3695,6 +3714,7 @@ int o_size = o.Length * sizeof(global::System.Int32);
 IntPtr* proxy_o = stackalloc IntPtr[2];
 proxy_o[0] = IntPtr.Zero;
 ((int*)(proxy_o + 1))[0] = o.Length;
+((int*)(proxy_o + 1))[1] = 0;
 if (o_size > 0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_o, (IntPtr)o_size, hStream));
@@ -3861,6 +3881,7 @@ int o_size = o.Length * sizeof(global::System.Int32);
 IntPtr* proxy_o = stackalloc IntPtr[2];
 proxy_o[0] = IntPtr.Zero;
 ((int*)(proxy_o + 1))[0] = o.Length;
+((int*)(proxy_o + 1))[1] = 0;
 if (o_size > 0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_o, (IntPtr)o_size, hStream));
@@ -4007,6 +4028,7 @@ int o_size = o.Length * sizeof(global::System.Int32);
 IntPtr* proxy_o = stackalloc IntPtr[2];
 proxy_o[0] = IntPtr.Zero;
 ((int*)(proxy_o + 1))[0] = o.Length;
+((int*)(proxy_o + 1))[1] = 0;
 if (o_size > 0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_o, (IntPtr)o_size, hStream));
@@ -4153,6 +4175,7 @@ int u_size = u.Length * sizeof(global::Kassyi.GSharp.Tests.Shared.Core.LayoutRep
 IntPtr* proxy_u = stackalloc IntPtr[2];
 proxy_u[0] = IntPtr.Zero;
 ((int*)(proxy_u + 1))[0] = u.Length;
+((int*)(proxy_u + 1))[1] = 0;
 if (u_size > 0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_u, (IntPtr)u_size, hStream));
@@ -4169,6 +4192,7 @@ int o_size = o.Length * sizeof(global::System.Int32);
 IntPtr* proxy_o = stackalloc IntPtr[2];
 proxy_o[0] = IntPtr.Zero;
 ((int*)(proxy_o + 1))[0] = o.Length;
+((int*)(proxy_o + 1))[1] = 0;
 if (o_size > 0)
 {
 if (global::System.Object.ReferenceEquals(o, u))
@@ -4328,6 +4352,7 @@ int a_size = a.Length * sizeof(AotContexts.LayoutReproAutoLayout);
 IntPtr* proxy_a = stackalloc IntPtr[2];
 proxy_a[0] = IntPtr.Zero;
 ((int*)(proxy_a + 1))[0] = a.Length;
+((int*)(proxy_a + 1))[1] = 0;
 if (a_size > 0)
 {
 a_shadow = System.Buffers.ArrayPool<byte>.Shared.Rent(a_size);
@@ -4351,6 +4376,7 @@ int o_size = o.Length * sizeof(global::System.Int32);
 IntPtr* proxy_o = stackalloc IntPtr[2];
 proxy_o[0] = IntPtr.Zero;
 ((int*)(proxy_o + 1))[0] = o.Length;
+((int*)(proxy_o + 1))[1] = 0;
 if (o_size > 0)
 {
 if (global::System.Object.ReferenceEquals(o, a))
@@ -4507,6 +4533,7 @@ int a_size = a.Length * sizeof(AotContexts.LayoutReproAutoLayout);
 IntPtr* proxy_a = stackalloc IntPtr[2];
 proxy_a[0] = IntPtr.Zero;
 ((int*)(proxy_a + 1))[0] = a.Length;
+((int*)(proxy_a + 1))[1] = 0;
 if (a_size > 0)
 {
 a_shadow = System.Buffers.ArrayPool<byte>.Shared.Rent(a_size);
@@ -4676,6 +4703,7 @@ int o_size = o.Length * sizeof(global::System.Int32);
 IntPtr* proxy_o = stackalloc IntPtr[2];
 proxy_o[0] = IntPtr.Zero;
 ((int*)(proxy_o + 1))[0] = o.Length;
+((int*)(proxy_o + 1))[1] = 0;
 if (o_size > 0)
 {
 if (!__gsharp_device_arrays.TryGetRegion(o, out d_o))

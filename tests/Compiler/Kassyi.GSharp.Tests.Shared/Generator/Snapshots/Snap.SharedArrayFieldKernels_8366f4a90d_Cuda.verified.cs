@@ -604,6 +604,7 @@ int bags_size = bags.Length * sizeof(AotContexts.ConvertBag);
 IntPtr* proxy_bags = stackalloc IntPtr[2];
 proxy_bags[0] = IntPtr.Zero;
 ((int*)(proxy_bags + 1))[0] = bags.Length;
+((int*)(proxy_bags + 1))[1] = 0;
 if (bags_size > 0)
 {
 if (!__gsharp_device_arrays.TryGetRegion(bags, out d_bags))

@@ -202,6 +202,7 @@ int log_size = log.Length * sizeof(global::System.Int32);
 IntPtr* proxy_log = stackalloc IntPtr[2];
 proxy_log[0] = IntPtr.Zero;
 ((int*)(proxy_log + 1))[0] = log.Length;
+((int*)(proxy_log + 1))[1] = 0;
 if (log_size > 0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_log, (IntPtr)log_size, hStream));
@@ -345,6 +346,7 @@ int log_size = log.Length * sizeof(global::System.Int32);
 IntPtr* proxy_log = stackalloc IntPtr[2];
 proxy_log[0] = IntPtr.Zero;
 ((int*)(proxy_log + 1))[0] = log.Length;
+((int*)(proxy_log + 1))[1] = 0;
 if (log_size > 0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_log, (IntPtr)log_size, hStream));
@@ -498,6 +500,7 @@ int log_size = log.Length * sizeof(global::System.Int32);
 IntPtr* proxy_log = stackalloc IntPtr[2];
 proxy_log[0] = IntPtr.Zero;
 ((int*)(proxy_log + 1))[0] = log.Length;
+((int*)(proxy_log + 1))[1] = 0;
 if (log_size > 0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_log, (IntPtr)log_size, hStream));
@@ -651,6 +654,7 @@ int log_size = log.Length * sizeof(global::System.Int32);
 IntPtr* proxy_log = stackalloc IntPtr[2];
 proxy_log[0] = IntPtr.Zero;
 ((int*)(proxy_log + 1))[0] = log.Length;
+((int*)(proxy_log + 1))[1] = 0;
 if (log_size > 0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_log, (IntPtr)log_size, hStream));
@@ -798,6 +802,7 @@ int log_size = log.Length * sizeof(global::System.Int32);
 IntPtr* proxy_log = stackalloc IntPtr[2];
 proxy_log[0] = IntPtr.Zero;
 ((int*)(proxy_log + 1))[0] = log.Length;
+((int*)(proxy_log + 1))[1] = 0;
 if (log_size > 0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_log, (IntPtr)log_size, hStream));
@@ -944,6 +949,7 @@ int log_size = log.Length * sizeof(global::System.Int32);
 IntPtr* proxy_log = stackalloc IntPtr[2];
 proxy_log[0] = IntPtr.Zero;
 ((int*)(proxy_log + 1))[0] = log.Length;
+((int*)(proxy_log + 1))[1] = 0;
 if (log_size > 0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_log, (IntPtr)log_size, hStream));
@@ -1093,6 +1099,7 @@ int log_size = log.Length * sizeof(global::System.Int32);
 IntPtr* proxy_log = stackalloc IntPtr[2];
 proxy_log[0] = IntPtr.Zero;
 ((int*)(proxy_log + 1))[0] = log.Length;
+((int*)(proxy_log + 1))[1] = 0;
 if (log_size > 0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_log, (IntPtr)log_size, hStream));
@@ -1231,6 +1238,7 @@ int log_size = log.Length * sizeof(global::System.Int32);
 IntPtr* proxy_log = stackalloc IntPtr[2];
 proxy_log[0] = IntPtr.Zero;
 ((int*)(proxy_log + 1))[0] = log.Length;
+((int*)(proxy_log + 1))[1] = 0;
 if (log_size > 0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_log, (IntPtr)log_size, hStream));
@@ -1342,6 +1350,7 @@ int log_size = log.Length * sizeof(global::System.Int32);
 IntPtr* proxy_log = stackalloc IntPtr[2];
 proxy_log[0] = IntPtr.Zero;
 ((int*)(proxy_log + 1))[0] = log.Length;
+((int*)(proxy_log + 1))[1] = 0;
 if (log_size > 0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_log, (IntPtr)log_size, hStream));
@@ -1481,6 +1490,7 @@ int log_size = log.Length * sizeof(global::System.Int32);
 IntPtr* proxy_log = stackalloc IntPtr[2];
 proxy_log[0] = IntPtr.Zero;
 ((int*)(proxy_log + 1))[0] = log.Length;
+((int*)(proxy_log + 1))[1] = 0;
 if (log_size > 0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_log, (IntPtr)log_size, hStream));
