@@ -33,7 +33,7 @@ internal static class CudaHostLaunchEmitter
                 WrapperEmitter.WriteArrayArgumentChecks(writer, kernel.Host);
             }
 
-            WrapperEmitter.WriteAutoResultAllocation(writer, kernel.Host);
+            AutoResultEmitter.WriteAllocation(writer, kernel.Host);
 
             writer.AppendLine(
                 $"using (var {GSharpInternalNames.Launcher.CudaContextScope} = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())");
@@ -56,7 +56,7 @@ internal static class CudaHostLaunchEmitter
                 }
             }
 
-            WrapperEmitter.WriteAutoResultReturn(writer, kernel.Host);
+            AutoResultEmitter.WriteReturn(writer, kernel.Host);
         }
 
         writer.AppendLine("#pragma warning restore CS8500");

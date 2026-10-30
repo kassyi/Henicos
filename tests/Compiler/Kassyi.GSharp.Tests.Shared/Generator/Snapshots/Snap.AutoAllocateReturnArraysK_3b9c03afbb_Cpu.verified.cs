@@ -6,7 +6,13 @@ namespace Kassyi.GSharp.Generated
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 internal static class GSharpSharedCpuDeviceCode
 {
-public const string Source = @"";
+public const string Source = @"inline int __gsharp_fn_Kassyi__GSharp__Tests__Shared__Runtime__AutoAllocateReturnArraysKernels__LinearThreadIndex();
+
+inline int __gsharp_fn_Kassyi__GSharp__Tests__Shared__Runtime__AutoAllocateReturnArraysKernels__LinearThreadIndex(){
+return __gsharp_add_i32(__gsharp_add_i32(__gsharp_mul_i32(__gsharp_add_i32(__gsharp_mul_i32(__gsharp_add_i32(__gsharp_mul_i32((int)blockIdx.z,(int)gridDim.y),(int)blockIdx.y),(int)gridDim.x),(int)blockIdx.x),__gsharp_mul_i32(__gsharp_mul_i32((int)blockDim.x,(int)blockDim.y),(int)blockDim.z)),__gsharp_mul_i32(__gsharp_add_i32(__gsharp_mul_i32((int)threadIdx.z,(int)blockDim.y),(int)threadIdx.y),(int)blockDim.x)),(int)threadIdx.x);
+}
+
+";
 }
 }
 
@@ -853,7 +859,7 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-float __gsharp_id_1_t = (int)threadIdx.x*__gsharp_id_0_scale;
+float __gsharp_id_1_t = __gsharp_fn_Kassyi__GSharp__Tests__Shared__Runtime__AutoAllocateReturnArraysKernels__LinearThreadIndex()*__gsharp_id_0_scale;
 __gsharp_ty_Kassyi__GSharp__Tests__Shared__Runtime__AutoAllocateReturnArraysKernels__VectorResult __gsharp_id_2_r;
 __gsharp_id_2_r.__gsharp_mb_A=__gsharp_id_1_t+1.0f;
 __gsharp_id_2_r.__gsharp_mb_V=float2{__gsharp_id_1_t+2.0f, __gsharp_id_1_t+3.0f};
@@ -953,7 +959,7 @@ switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-float t = global::Kassyi.GSharp.Core.ThreadIndex.X * scale;
+float t = global::Kassyi.GSharp.Tests.Shared.Runtime.AutoAllocateReturnArraysKernels.LinearThreadIndex() * scale;
 global::Kassyi.GSharp.Tests.Shared.Runtime.AutoAllocateReturnArraysKernels.VectorResult r;
 r.A = t + 1f;
 r.V = new global::System.Numerics.Vector2(t + 2f, t + 3f);
@@ -1135,7 +1141,7 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-int __gsharp_id_0_i = (int)threadIdx.x;
+int __gsharp_id_0_i = __gsharp_fn_Kassyi__GSharp__Tests__Shared__Runtime__AutoAllocateReturnArraysKernels__LinearThreadIndex();
 __gsharp_ty_Kassyi__GSharp__Tests__Shared__Runtime__AutoAllocateReturnArraysKernels__AutoLayoutResult __gsharp_id_1_r;
 __gsharp_id_1_r.__gsharp_mb_A=(unsigned char)(__gsharp_add_i32(__gsharp_id_0_i,1));
 __gsharp_id_1_r.__gsharp_mb_B=__gsharp_add_i64(1000ll*__gsharp_id_0_i,7ll);
@@ -1234,7 +1240,7 @@ switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-int i = global::Kassyi.GSharp.Core.ThreadIndex.X;
+int i = global::Kassyi.GSharp.Tests.Shared.Runtime.AutoAllocateReturnArraysKernels.LinearThreadIndex();
 global::Kassyi.GSharp.Tests.Shared.Runtime.AutoAllocateReturnArraysKernels.AutoLayoutResult r;
 r.A = (byte)(i + 1);
 r.B = 1000L * i + 7L;

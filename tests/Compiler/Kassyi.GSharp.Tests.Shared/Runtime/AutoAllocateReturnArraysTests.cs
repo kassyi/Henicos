@@ -2,10 +2,12 @@ using System;
 using System.Linq;
 using Xunit;
 using Kassyi.GSharp.Core;
+using Kassyi.GSharp.Runtime.Aot;
 
 namespace Kassyi.GSharp.Tests.Shared.Runtime;
 
-public class AutoAllocateReturnArraysTests
+[Collection(TestCollections.GlobalStateSequential)]
+public class AutoAllocateReturnArraysTests : TranspilerTestBase
 {
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
@@ -44,15 +46,19 @@ public class AutoAllocateReturnArraysTests
         }
     }
 
-    // #704: the device writes the returned elements in its layout; the launcher reads them back through it
-    [SkippableFact]
+    // #704: the device writes the returned elements in its layout; the launcher reads them back through it. Three
+    // blocks of 4x2 threads, so that each element is the one of its global thread index, on every path (#889 review)
+    [SkippableTheory]
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Scenario(TestScenario.HappyPath)]
-    public void VectorResultKernel_LayoutsDiffer_ReturnsTheFieldsAtTheirPlaces()
+    [InlineData(false)]
+    [InlineData(true)]
+    public void VectorResultKernel_LayoutsDiffer_ReturnsTheFieldsAtTheirPlaces(bool forceManaged)
     {
-        var result = AutoAllocateReturnArraysKernels.LaunchVectorResultKernel(10f, blockDimX: 4);
+        var result = Run(forceManaged, () =>
+            AutoAllocateReturnArraysKernels.LaunchVectorResultKernel(10f, gridDimX: 3, blockDimX: 4, blockDimY: 2));
 
-        Assert.Equal(4, result.Length);
+        Assert.Equal(24, result.Length);
         for (int i = 0; i < result.Length; i++)
         {
             float t = i * 10f;
@@ -63,14 +69,17 @@ public class AutoAllocateReturnArraysTests
         }
     }
 
-    [SkippableFact]
+    [SkippableTheory]
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Scenario(TestScenario.HappyPath)]
-    public void AutoLayoutResultKernel_HostLayoutUnknown_ReturnsTheFieldsAtTheirPlaces()
+    [InlineData(false)]
+    [InlineData(true)]
+    public void AutoLayoutResultKernel_HostLayoutUnknown_ReturnsTheFieldsAtTheirPlaces(bool forceManaged)
     {
-        var result = AutoAllocateReturnArraysKernels.LaunchAutoLayoutResultKernel(blockDimX: 3);
+        var result = Run(forceManaged, () =>
+            AutoAllocateReturnArraysKernels.LaunchAutoLayoutResultKernel(gridDimX: 3, blockDimX: 4, blockDimY: 2));
 
-        Assert.Equal(3, result.Length);
+        Assert.Equal(24, result.Length);
         for (int i = 0; i < result.Length; i++)
         {
             Assert.Equal(((byte)(i + 1), 1000L * i + 7L, (byte)(i + 100)), (result[i].A, result[i].B, result[i].C));
@@ -91,5 +100,21 @@ public class AutoAllocateReturnArraysTests
     {
         Assert.Throws<OverflowException>(() => 
             AutoAllocateReturnArraysKernels.LaunchNormalReturnKernel(10, blockDimX: int.MaxValue, blockDimY: 2));
+    }
+
+    private T Run<T>(bool forceManaged, Func<T> launch)
+    {
+        Skip.If(forceManaged && IsCudaDialect, "The managed execution path exists only on the CPU dialects.");
+
+        var previous = CpuKernelLoader.ForceManagedExecution;
+        CpuKernelLoader.ForceManagedExecution = forceManaged;
+        try
+        {
+            return launch();
+        }
+        finally
+        {
+            CpuKernelLoader.ForceManagedExecution = previous;
+        }
     }
 }

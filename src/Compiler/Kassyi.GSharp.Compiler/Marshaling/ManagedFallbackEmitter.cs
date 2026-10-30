@@ -29,7 +29,7 @@ internal static class ManagedFallbackEmitter
         {
             WriteManagedContextAllocation(writer, kernel);
             WriteManagedGridLoop(writer, kernel);
-            WrapperEmitter.WriteAutoResultReturn(writer, kernel);
+            AutoResultEmitter.WriteReturn(writer, kernel);
             if (!kernel.ReturnsValue)
             {
                 writer.AppendLine("return;");

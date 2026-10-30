@@ -710,15 +710,16 @@ internal static class StructMarshalingEmitter
 
     /// <summary>
     /// Emits <c>var handle = GCHandle.Alloc(&lt;pinned&gt;, Pinned); try { &lt;copy&gt; } finally { handle.Free(); }</c>,
-    /// where the copy moves <c>size</c> bytes between the pinned host array and <paramref name="device"/>.
+    /// where the copy moves <paramref name="size"/> bytes between the pinned host array and <paramref name="device"/>.
     /// </summary>
     /// <param name="writer">The writer of the generated launcher or <c>Marshal_</c> / <c>Unmarshal_</c> method.</param>
     /// <param name="pinned">The host array, or the shadow array of its converted elements.</param>
     /// <param name="device">The device pointer expression (<c>native.Data</c>, <c>d_&lt;name&gt;</c>).</param>
     /// <param name="toDevice"><c>cuMemcpyHtoDAsync_v2</c> when true, <c>cuMemcpyDtoHAsync_v2</c> otherwise.</param>
     /// <param name="synchronize">Whether the stream is synchronized inside the <c>try</c>, before the handle is freed.</param>
+    /// <param name="size">The local that holds the byte count of the copy.</param>
     internal static void WritePinnedCopy(SourceWriter writer, string pinned, string device, bool toDevice,
-        bool synchronize = false)
+        bool synchronize = false, string size = "size")
     {
         writer.AppendLine(
             $"var handle = System.Runtime.InteropServices.GCHandle.Alloc({pinned}, " +
@@ -728,9 +729,9 @@ internal static class StructMarshalingEmitter
         {
             writer.AppendLine(toDevice
                 ? "CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoDAsync_v2(" +
-                $"{device}, handle.AddrOfPinnedObject(), (IntPtr)size, hStream));"
+                $"{device}, handle.AddrOfPinnedObject(), (IntPtr){size}, hStream));"
                 : "CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoHAsync_v2(" +
-                $"handle.AddrOfPinnedObject(), {device}, (IntPtr)size, hStream));");
+                $"handle.AddrOfPinnedObject(), {device}, (IntPtr){size}, hStream));");
             writer.AppendLineIf(synchronize, "CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));");
         }
 

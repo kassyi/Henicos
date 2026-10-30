@@ -3,9 +3,6 @@ namespace Kassyi.GSharp.Compiler.Marshaling;
 /// <summary>Emits P/Invoke wrapper logic for launching CUDA kernels, including memory allocation, marshaling, and stream synchronization.</summary>
 internal static class KernelLaunchEmitter
 {
-    /// <summary>The device copy of the auto result buffer in the generated launcher.</summary>
-    private const string DeviceAutoResult = "d_" + GSharpInternalNames.ReturnValue.Buffer;
-
     // The device scratch of the grid strategy of AsParallel() aggregates (KernelHostModel.GridScratchSlotBytes)
     private const string DeviceGridScratch = "d_" + GSharpInternalNames.StackLinq.GridScratch;
 
@@ -40,10 +37,7 @@ internal static class KernelLaunchEmitter
             }
         }
 
-        if (kernel.ReturnsValue)
-        {
-            writer.AppendLine($"IntPtr {DeviceAutoResult} = IntPtr.Zero;");
-        }
+        AutoResultEmitter.WriteCudaDeclaration(writer, kernel);
 
         writer.AppendLineIf(kernel.GridScratchSlotBytes > 0, $"IntPtr {DeviceGridScratch} = IntPtr.Zero;");
     }
@@ -54,7 +48,7 @@ internal static class KernelLaunchEmitter
     {
         var kernelParamCount = WriteKernelParamsDeclaration(writer, kernel);
         WriteParameterMarshals(writer, plan, isDevicePtr);
-        WriteAutoResultMarshal(writer, kernel);
+        AutoResultEmitter.WriteCudaMarshal(writer, kernel, kernel.Parameters.Length);
         WriteGridScratchAllocation(writer, kernel, kernelParamCount);
         writer.AppendLine();
 
@@ -65,7 +59,7 @@ internal static class KernelLaunchEmitter
             WriteParameterUnmarshal(writer, plan, i, isDevicePtr);
         }
 
-        WriteAutoResultCopyBack(writer, kernel);
+        AutoResultEmitter.WriteCudaCopyBack(writer, kernel);
     }
 
     // void** kernelParams = stackalloc void*[<parameters>[ + auto result][ + grid scratch]];
@@ -112,34 +106,6 @@ internal static class KernelLaunchEmitter
         }
     }
 
-    // int __gsharp_auto_result_size = <buffer>.Length * sizeof(<result>);
-    // if (<size> > 0) { cuMemAllocAsync(out d___gsharp_auto_result, <size>); kernelParams[<parameters>] = &d_...; }
-    private static void WriteAutoResultMarshal(SourceWriter writer, in KernelHostModel kernel)
-    {
-        if (kernel.ReturnTypeName is not { } returnType)
-        {
-            return;
-        }
-
-        // [WHY] The device writes the returned elements in its own layout, which a converted struct does not share;
-        // the size is checked, as in the CPU launcher, since a large grid of a large struct would wrap
-        var elementType = kernel.IsCudaConvertedReturn
-            ? ConvertedArrayEmitter.GetReturnShadowPath(kernel.CudaReturn)
-            : returnType;
-        writer.AppendLine("// Marshal auto result array");
-        writer.AppendLine(
-            $"int {GSharpInternalNames.ReturnValue.BufferSize} = checked({GSharpInternalNames.ReturnValue.Buffer}.Length * sizeof({elementType}));");
-
-        writer.AppendLine($"if ({GSharpInternalNames.ReturnValue.BufferSize} > 0)");
-        using (writer.Scope())
-        {
-            writer.AppendLine(
-                "CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(" +
-                $"out {DeviceAutoResult}, (IntPtr){GSharpInternalNames.ReturnValue.BufferSize}, hStream));");
-            writer.AppendLine("kernelParams[" + kernel.Parameters.Length + $"] = &{DeviceAutoResult};");
-        }
-    }
-
     // One slot per block for its partial result and one for the total, freed after the launch (WriteCleanup)
     private static void WriteGridScratchAllocation(SourceWriter writer, in KernelHostModel kernel, int kernelParamCount)
     {
@@ -153,79 +119,6 @@ internal static class KernelLaunchEmitter
             "CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(" +
             $"out {DeviceGridScratch}, (IntPtr)(((long)gridDimX * gridDimY * gridDimZ + 1) * {kernel.GridScratchSlotBytes}), hStream));");
         writer.AppendLine($"kernelParams[{kernelParamCount - 1}] = &{DeviceGridScratch};");
-    }
-
-    // if (<buffer> != null && d___gsharp_auto_result != IntPtr.Zero) { int size = ...; if (size > 0) { <pinned copy back> } }
-    private static void WriteAutoResultCopyBack(SourceWriter writer, in KernelHostModel kernel)
-    {
-        if (kernel.ReturnTypeName is not { } resultType)
-        {
-            return;
-        }
-
-        if (kernel.IsCudaConvertedReturn)
-        {
-            WriteConvertedAutoResultCopyBack(writer, kernel.CudaReturn);
-            return;
-        }
-
-        writer.AppendLine($"if ({GSharpInternalNames.ReturnValue.Buffer} != null && {DeviceAutoResult} != IntPtr.Zero)");
-        using (writer.Scope())
-        {
-            writer.AppendLine($"int size = {GSharpInternalNames.ReturnValue.Buffer}.Length * sizeof({resultType});");
-
-            writer.AppendLine("if (size > 0)");
-            using (writer.Scope())
-            {
-                StructMarshalingEmitter.WritePinnedCopy(
-                    writer,
-                    GSharpInternalNames.ReturnValue.Buffer,
-                    DeviceAutoResult,
-                    toDevice: false,
-                    synchronize: true
-                );
-            }
-        }
-    }
-
-    // if (__gsharp_auto_result_size > 0 && d___gsharp_auto_result != IntPtr.Zero) {
-    //   var __gsharp_auto_result_shadow = ArrayPool<byte>.Shared.Rent(__gsharp_auto_result_size);
-    //   try { fixed (byte* p = shadow) { <copy to host>; <synchronize> } <shadow span>; <Unmarshal_ loop> }
-    //   finally { ArrayPool<byte>.Shared.Return(__gsharp_auto_result_shadow); }
-    // }
-    // [WHY] The device wrote the returned structs in its layout: they are read into a shadow array of that layout and
-    // converted element by element, as an [Out] array of such structs is (#704)
-    private static void WriteConvertedAutoResultCopyBack(SourceWriter writer, in ParameterTransfer transfer)
-    {
-        const string Shadow = GSharpInternalNames.ReturnValue.BufferShadow;
-        const string Size = GSharpInternalNames.ReturnValue.BufferSize;
-        writer.AppendLine("// Copy back the auto result array element by element");
-        writer.AppendLine($"if ({Size} > 0 && {DeviceAutoResult} != IntPtr.Zero)");
-        using (writer.Scope())
-        {
-            writer.AppendLine($"var {Shadow} = System.Buffers.ArrayPool<byte>.Shared.Rent({Size});");
-            writer.AppendLine("try");
-            using (writer.Scope())
-            {
-                writer.AppendLine($"fixed (byte* p_{Shadow} = {Shadow})");
-                using (writer.Scope())
-                {
-                    writer.AppendLine(
-                        "CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoHAsync_v2(" +
-                        $"(IntPtr)p_{Shadow}, {DeviceAutoResult}, (IntPtr){Size}, hStream));");
-                    writer.AppendLine("CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));");
-                }
-
-                ConvertedArrayEmitter.WriteReturnShadowSpan(writer, transfer);
-                ConvertedArrayEmitter.WriteReturnUnmarshalLoop(writer, transfer);
-            }
-
-            writer.AppendLine("finally");
-            using (writer.Scope())
-            {
-                writer.AppendLine($"System.Buffers.ArrayPool<byte>.Shared.Return({Shadow});");
-            }
-        }
     }
 
     /// <summary>Emits cleanup code to asynchronously free allocated device memory buffers.</summary>
@@ -248,17 +141,7 @@ internal static class KernelLaunchEmitter
             }
         }
 
-        if (!kernel.ReturnsValue)
-        {
-            return;
-        }
-
-        writer.AppendLine($"if ({DeviceAutoResult} != IntPtr.Zero)");
-        using (writer.Scope())
-        {
-            writer.AppendLine(
-                $"CudaException.ThrowIfError(CudaDriverApi.cuMemFreeAsync({DeviceAutoResult}, hStream));");
-        }
+        AutoResultEmitter.WriteCudaFree(writer, kernel);
     }
 
     // The table that a parameter's Marshal_ calls record their arrays in, null when they copy none

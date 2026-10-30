@@ -102,6 +102,9 @@ public class StructLayoutDiagnosticsTests
             ? [(Analyzer, 29, 23, 29, 32), (Analyzer, 32, 23, 32, 31)]
             : [(Analyzer, 32, 23, 32, 31)];
         Assert.Equal(converted, diagnostics.Ranges(GSharpDiagnostics.StructArrayConvertedPerElement.Id));
+        // The user wrote no array: the message names the values of the struct, as for an array parameter (#889 review)
+        Assert.Equal(converted, diagnostics.Ranges(GSharpDiagnostics.StructArrayConvertedPerElement.Id, "The values of '"));
+        Assert.Empty(diagnostics.Ranges(GSharpDiagnostics.StructArrayConvertedPerElement.Id, "The array of"));
     }
 
     // VecHolder[] (line 60) and the inline array of Elem in InlineOuter (line 63), where Vector2 and Float2 move to
