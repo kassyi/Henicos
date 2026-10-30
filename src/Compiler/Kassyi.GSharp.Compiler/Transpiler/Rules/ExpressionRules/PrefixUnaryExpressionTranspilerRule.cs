@@ -43,7 +43,7 @@ public sealed class PrefixUnaryExpressionTranspilerRule : SyntaxNodeTranspilerRu
             context.Query.SemanticModel.GetSafeConstantValue(node) is { HasValue: true, Value: { } value } &&
             context.Query.SemanticModel.GetTypeSymbol(node) is { } type)
         {
-            context.Emitter.Writer.Append(ConstexprLiteral.FormatCppConstant(type, value));
+            ConstantAtUse.Append(node, type, value, ref context);
             return;
         }
 
@@ -52,7 +52,7 @@ public sealed class PrefixUnaryExpressionTranspilerRule : SyntaxNodeTranspilerRu
         if (operation?.Syntax.RawKind == node.RawKind)
         {
             // An integer constant is written as its value, as the binary operators write theirs
-            if (IntegerSemanticsEmitter.TryAppendConstant(operation, ref context))
+            if (IntegerSemanticsEmitter.TryAppendConstant(operation, node, ref context))
             {
                 return;
             }

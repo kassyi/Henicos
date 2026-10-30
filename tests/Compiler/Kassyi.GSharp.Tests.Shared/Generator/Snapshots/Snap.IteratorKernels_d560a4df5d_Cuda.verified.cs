@@ -2486,7 +2486,7 @@ public const string WideningElementTypeKernel_Source = @"extern ""C"" __global__
 long long __gsharp_id_1_sum = 0;
 {
 {
-long long __gsharp_il_2_2_x = 2147483647;
+long long __gsharp_il_2_2_x = 2147483647LL;
 {
 __gsharp_id_1_sum=__gsharp_add_i64(__gsharp_id_1_sum,__gsharp_add_i64(__gsharp_il_2_2_x,1));
 }

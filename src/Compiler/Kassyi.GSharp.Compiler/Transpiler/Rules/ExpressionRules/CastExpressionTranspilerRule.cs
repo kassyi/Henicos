@@ -26,7 +26,7 @@ public sealed class CastExpressionTranspilerRule : SyntaxNodeTranspilerRuleBase<
                         bound.Syntax.RawKind == node.RawKind
             ? bound
             : null;
-        if (IntegerSemanticsEmitter.TryAppendConstant(operation, ref context))
+        if (IntegerSemanticsEmitter.TryAppendConstant(operation, node, ref context))
         {
             return;
         }

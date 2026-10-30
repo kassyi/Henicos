@@ -4,8 +4,10 @@ namespace Kassyi.GSharp.Compiler.Lowering;
 /// <remarks>
 /// [WHY] A state machine state is a <c>case</c> block of a <c>switch</c>, and C# / C++ cannot jump into another block with
 /// <c>goto</c>, so a label that a <c>goto</c> in another state reaches has to start a state of its own (the
-/// <c>goto</c> becomes <c>goto case</c>). Any other label stays a C# / C++ label inside its state, so the locals declared
-/// before it stay in scope after it, as in Roslyn's async lowering, where only the suspension points start states.
+/// <c>goto</c> becomes <c>goto case</c>, or, inside a <c>switch</c> of the user, a <c>goto</c> to the label that
+/// <see cref="StateMachineLowerer"/> keeps at the start of that state). Any other label stays a C# / C++ label inside
+/// its state, so the locals declared before it stay in scope after it, as in Roslyn's async lowering, where only the
+/// suspension points start states.
 /// <list type="bullet">
 ///   <item><description>A label that lowering adds (<c>__gsharp_</c>) always starts a state.</description></item>
 ///   <item><description>A label of the user starts one when a <c>goto</c> to it is in another state.</description></item>

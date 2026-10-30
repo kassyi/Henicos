@@ -51,7 +51,7 @@ public sealed class BinaryExpressionTranspilerRule : SyntaxNodeTranspilerRuleBas
         // An integer constant is written as its value: C# folds a constant shift with the masked count (3 << 33 is 6),
         // which C++ leaves undefined (#722)
         var operation = GetOperation(node, ref context);
-        if (IntegerSemanticsEmitter.TryAppendConstant(operation, ref context))
+        if (IntegerSemanticsEmitter.TryAppendConstant(operation, node, ref context))
         {
             return;
         }

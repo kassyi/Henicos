@@ -129,14 +129,14 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-__gsharp_id_0_output[0]=(char16_t)48;
-__gsharp_id_0_output[1]=(char16_t)65;
-__gsharp_id_0_output[2]=(char16_t)10;
-__gsharp_id_0_output[3]=(char16_t)233;
-__gsharp_id_0_output[4]=(char16_t)0;
-__gsharp_id_0_output[5]=(char16_t)92;
-__gsharp_id_0_output[6]=(char16_t)39;
-__gsharp_id_0_output[7]=(char16_t)65535;
+__gsharp_id_0_output[0]=48;
+__gsharp_id_0_output[1]=65;
+__gsharp_id_0_output[2]=10;
+__gsharp_id_0_output[3]=233;
+__gsharp_id_0_output[4]=0;
+__gsharp_id_0_output[5]=92;
+__gsharp_id_0_output[6]=39;
+__gsharp_id_0_output[7]=65535;
 __gsharp_id_1_text[0]=(char16_t)65;
 __gsharp_id_1_text[1]=(char16_t)65535;
 __gsharp_state=-1;
@@ -390,11 +390,11 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-__gsharp_id_0_signed[0]=(-2147483647-1);
+__gsharp_id_0_signed[0]=(-2147483648LL);
 __gsharp_id_0_signed[1]=(-9223372036854775807LL-1);
-__gsharp_id_0_signed[2]=2147483647;
+__gsharp_id_0_signed[2]=2147483647LL;
 __gsharp_id_0_signed[3]=9223372036854775807LL;
-__gsharp_id_1_unsigned[0]=4294967295U;
+__gsharp_id_1_unsigned[0]=4294967295ULL;
 __gsharp_id_1_unsigned[1]=18446744073709551615ULL;
 __gsharp_id_2_narrow[0]=(-2147483647-1);
 __gsharp_id_2_narrow[1]=(-1073741824);
@@ -2466,9 +2466,9 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-__gsharp_id_0_longs[0]=(-2147483647-1);
+__gsharp_id_0_longs[0]=(-2147483648LL);
 __gsharp_id_0_longs[1]=(-9223372036854775807LL-1);
-__gsharp_id_0_longs[2]=(-5);
+__gsharp_id_0_longs[2]=(-5LL);
 __gsharp_id_1_doubles[0]=(double)(-2147483647-1);
 __gsharp_id_1_doubles[1]=(-0.0);
 __gsharp_id_1_doubles[2]=(-1.5);

@@ -67,11 +67,11 @@ public class AotContextCoverageTests
                 }
 
                 var isDevicePtr = false;
-                var allocatedPtrs = new List<IntPtr>();
+                var regions = new DeviceArrayRegions();
                 IntPtr hStream = IntPtr.Zero;
 
                 object[] args = parameters.Length == 5
-                    ? [hostObj, nativeObj, isDevicePtr, allocatedPtrs, hStream]
+                    ? [hostObj, nativeObj, isDevicePtr, regions, hStream]
                     : [hostObj, nativeObj, isDevicePtr, hStream];
 
                 try
@@ -81,13 +81,7 @@ public class AotContextCoverageTests
                 }
                 finally
                 {
-                    foreach (var ptr in allocatedPtrs)
-                    {
-                        if (ptr != IntPtr.Zero)
-                        {
-                            CudaDriverApi.cuMemFree_v2(ptr);
-                        }
-                    }
+                    regions.Free(hStream);
                 }
             }
         }

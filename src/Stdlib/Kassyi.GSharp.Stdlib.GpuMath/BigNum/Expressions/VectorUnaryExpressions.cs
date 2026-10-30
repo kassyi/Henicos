@@ -24,13 +24,15 @@ internal abstract class VectorUnaryExpressionBase(
             : default;
 
         var vecResult = vector.Evaluate(workspace, elementOffset, evalCount);
-        var destination = _cache.Signed(workspace, evalCount, WordsPerElement, targetValues);
+        // A target that shares words with the input is written from the cache after the loop: the loop writes element i
+        // before it reads element i + 1 (#864)
+        var output = VectorOutput.Open(_cache, workspace, evalCount, WordsPerElement, targetValues, vecResult);
         if (evalCount > 0)
         {
-            EvaluateElements(workspace, vecResult, destination, evalCount);
+            EvaluateElements(workspace, vecResult, output.Destination, evalCount);
         }
 
-        return destination;
+        return output.Close(workspace);
     }
 
     protected virtual void ValidateBeforeEvaluate()

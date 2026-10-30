@@ -362,7 +362,7 @@ public const string DebugName_DoubleValue = "global::System.Double";
 [System.Runtime.InteropServices.FieldOffset(40)]
 public global::System.Double DoubleValue;
 }
-public static unsafe void Marshal_SpecTypes(ref global::DebugReduc.SpecTypes host, ref AotContexts.SpecTypes native, bool isDevicePtr, System.Collections.Generic.List<IntPtr>? allocatedPtrs, IntPtr hStream = default)
+public static unsafe void Marshal_SpecTypes(ref global::DebugReduc.SpecTypes host, ref AotContexts.SpecTypes native, bool isDevicePtr, global::Kassyi.GSharp.Runtime.Interop.DeviceArrayRegions? deviceArrays, IntPtr hStream = default)
 {
 native = System.Runtime.CompilerServices.Unsafe.As<global::DebugReduc.SpecTypes, AotContexts.SpecTypes>(ref host);
 }

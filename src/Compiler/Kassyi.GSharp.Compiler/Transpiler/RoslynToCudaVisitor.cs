@@ -263,6 +263,7 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker, IDisposable
 
     public override void VisitBlock(BlockSyntax node)
     {
+        JumpedOverDeclarations.WriteDeclarations(node.Statements, ref Context);
         foreach (var statement in node.Statements)
         {
             // [WHY] A nested block is emitted without braces, since lowering wraps statements of one scope in blocks; a
@@ -321,9 +322,7 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker, IDisposable
         Context.Emitter.Writer.Append("case ");
         Visit(node.Value);
         Context.Emitter.Writer.AppendLine(":");
-        var activeId = Context.Emitter.CurrentSwitchId;
-        Context.Emitter.Writer.Append($"{GSharpInternalNames.Lowering.SwitchStatePrefix}{activeId}_state_");
-        Visit(node.Value);
+        SwitchStateLabel.Append(node.Value, ref Context);
         Context.Emitter.Writer.Append(":");
     }
 
@@ -377,10 +376,11 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker, IDisposable
 
         var symbol = Context.Query.SemanticModel.GetSymbol(node);
 
-        // A Core intrinsic named without its type (using static Kassyi.GSharp.Core.Gpu) maps as Gpu.<name> does (#565)
+        // A Core intrinsic named without its type (using static Kassyi.GSharp.Core.Gpu) maps as Gpu.<name> does (#565);
+        // so does a Math or MathF member (using static System.Math), which ProhibitedApiRule allows when it is mapped (#899)
         if (symbol is IMethodSymbol or IPropertySymbol or IFieldSymbol &&
             symbol is { IsStatic: true, ContainingType: { } owner } &&
-            owner.ContainingNamespace.IsCoreNamespace() &&
+            (owner.ContainingNamespace.IsCoreNamespace() || owner.IsSystemMathType()) &&
             MemberAccessExpressionTranspilerRule.TryTranspileIntrinsic(symbol, ref Context))
         {
             return;
@@ -390,7 +390,7 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker, IDisposable
         {
             case IFieldSymbol { IsConst: true, HasConstantValue: true } field:
 
-                Context.Emitter.Writer.AppendConstantField(field);
+                ConstantAtUse.Append(node, field.Type, field.ConstantValue, ref Context);
 
                 return;
             case IParameterSymbol { RefKind: RefKind.Ref or RefKind.Out } or ILocalSymbol { IsRef: true }:

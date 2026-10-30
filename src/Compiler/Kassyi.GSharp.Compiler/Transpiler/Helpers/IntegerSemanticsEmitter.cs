@@ -9,17 +9,18 @@ namespace Kassyi.GSharp.Compiler.Transpiler.Helpers;
 internal static class IntegerSemanticsEmitter
 {
     /// <summary>
-    /// Writes <paramref name="operation"/> as its value when <see cref="IntegerSemantics.GetConstant"/> gives one
-    /// (<c>3 &lt;&lt; 33</c> is <c>6</c>, a negative value parenthesized); returns whether it did.
+    /// Writes <paramref name="operation"/> (of <paramref name="node"/>) as its value when
+    /// <see cref="IntegerSemantics.GetConstant"/> gives one (<c>3 &lt;&lt; 33</c> is <c>6</c>, a negative value
+    /// parenthesized), with the type C# gives it where it is used (<see cref="ConstantAtUse"/>); returns whether it did.
     /// </summary>
-    public static bool TryAppendConstant(IOperation? operation, ref TranspileContext context)
+    public static bool TryAppendConstant(IOperation? operation, ExpressionSyntax node, ref TranspileContext context)
     {
         if (IntegerSemantics.GetConstant(operation) is not var (type, value))
         {
             return false;
         }
 
-        context.Emitter.Writer.Append(ConstexprLiteral.FormatCppConstant(type, value));
+        ConstantAtUse.Append(node, type, value, ref context);
         return true;
     }
 

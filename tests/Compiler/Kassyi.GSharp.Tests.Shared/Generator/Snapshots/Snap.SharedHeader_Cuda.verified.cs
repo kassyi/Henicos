@@ -116,7 +116,9 @@ __forceinline__ unsigned long long __gsharp_to_u64(float x) { return __gsharp_to
 
 template <typename T>
 struct GSharpArray {
-T* __restrict__ data;
+// Not __restrict__: in C# two arrays (arguments, struct fields, a ref into one of them) may be one object, and the
+// launcher then gives them one device region (#552, #707)
+T* data;
 int length;
 
 __device__ inline GSharpArray() : data(nullptr), length(0) {}

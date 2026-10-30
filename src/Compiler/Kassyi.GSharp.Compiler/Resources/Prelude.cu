@@ -32,7 +32,9 @@ template <class T> __device__ __host__ inline const T* __gsharp_temp_address(con
 
 template <typename T>
 struct GSharpArray {
-    T* __restrict__ data;
+    // Not __restrict__: in C# two arrays (arguments, struct fields, a ref into one of them) may be one object, and the
+    // launcher then gives them one device region (#552, #707)
+    T* data;
     int length;
 
     __device__ inline GSharpArray() : data(nullptr), length(0) {}
