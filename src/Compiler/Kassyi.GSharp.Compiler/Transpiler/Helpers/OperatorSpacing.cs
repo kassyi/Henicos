@@ -19,13 +19,14 @@ internal static class OperatorSpacing
     }
 
     // Whether the C++ of <expression> begins with <sign>: the leftmost operand, down to a prefix operator. A negated
-    // numeric literal is written as a parenthesized constant ((-5)), and an operator written as a Prelude call
-    // (__gsharp_neg_i32(x), IntegerSemantics) begins with its name, so neither begins with a sign.
+    // numeric literal or an integer constant is written as its value, parenthesized when negative ((-5)), and an operator
+    // written as a Prelude call (__gsharp_neg_i32(x), IntegerSemantics) begins with its name, so neither begins with a
+    // sign.
     public static bool StartsWithSign(ExpressionSyntax expression, char sign, SemanticModel model)
     {
         while (true)
         {
-            if (IntegerSemantics.IsWrittenAsCall(expression, model))
+            if (IntegerSemantics.IsWrittenAsCallOrConstant(expression, model))
             {
                 return false;
             }

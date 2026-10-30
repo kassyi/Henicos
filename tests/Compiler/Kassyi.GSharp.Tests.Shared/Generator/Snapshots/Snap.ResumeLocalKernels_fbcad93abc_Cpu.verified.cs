@@ -1219,8 +1219,8 @@ for(auto __gsharp_resume_fill = 0;__gsharp_resume_fill<4;__gsharp_resume_fill++)
 {
 __gsharp_id_2_s[__gsharp_resume_fill]={};
 }
-__gsharp_id_2_s[__gsharp_ctx->__gsharp_id_1_Size-1]=1;
-__gsharp_id_0_a[0]=__gsharp_id_2_s[__gsharp_ctx->__gsharp_id_1_Size-1];
+__gsharp_id_2_s[3]=1;
+__gsharp_id_0_a[0]=__gsharp_id_2_s[3];
 __gsharp_yielded_for_block_barrier=true;
 __gsharp_state=1;
 return;

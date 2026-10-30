@@ -59,6 +59,10 @@ internal static class IntegerSemanticsScenarios
         // a = -8, s = 31 (t = 2 * 11 + 3): -8 >>> 31 = 1
         Assert.Equal(1, expected[(2 * s_ints.Length + 3) * IntegerSemanticsKernels.IntValuesPerTriple + 6]);
 
+        // Constant shifts (any triple): 3 << 33, 1 << 32, -8 >> 33, (int)(3L << 65), 5 << 33 use the masked counts;
+        // -8 >>> 1 shifts in a zero; int.MinValue % -1 is 0
+        Assert.Equal([6, 1, -4, 6, 10, 2147483644, 0], expected.AsSpan(36, 7).ToArray());
+
         Assert.Equal(expected, o);
     }
 
@@ -83,6 +87,10 @@ internal static class IntegerSemanticsScenarios
 
         // a = 3, s = 64 (t = 6 * 10 + 2): 3L << 64 = 3
         Assert.Equal(3L, expected[(6 * s_longs.Length + 2) * IntegerSemanticsKernels.LongValuesPerTriple + 4]);
+
+        // Constant shifts (any triple): 3L << 65, -64L >> 67, 1L << 64, (long)5 << 64 use the masked counts;
+        // -8L >>> 1 shifts in a zero; long.MinValue % -1L is 0
+        Assert.Equal([6L, -8L, 1L, 5L, long.MaxValue - 3, 0L], expected.AsSpan(29, 6).ToArray());
 
         Assert.Equal(expected, o);
     }

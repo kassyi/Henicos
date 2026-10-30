@@ -101,7 +101,7 @@ public sealed class AssignmentExpressionTranspilerRule : SyntaxNodeTranspilerRul
 
         if (compound != null && helper != null)
         {
-            IntegerSemantics.AppendCompound(compound, node, helper, ref context);
+            IntegerSemanticsEmitter.AppendCompound(compound, node, helper, ref context);
             return;
         }
 
@@ -110,7 +110,7 @@ public sealed class AssignmentExpressionTranspilerRule : SyntaxNodeTranspilerRul
         {
             // x >>>= n of an unsigned type is x >>= n
             context.Emitter.Writer.Append(node.IsKind(SyntaxKind.LeftShiftAssignmentExpression) ? "<<=" : ">>=");
-            IntegerSemantics.AppendShiftCount(compound?.Value, node.Right, shiftMask, ref context);
+            IntegerSemanticsEmitter.AppendShiftCount(compound?.Value, node.Right, shiftMask, ref context);
             return;
         }
 

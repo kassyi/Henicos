@@ -948,7 +948,7 @@ case 0:
 __gsharp_switch_1_state_0:
 {
 __gsharp_ctx->__gsharp_id_2_tid=(int)threadIdx.x;
-__gsharp_ctx->__gsharp_id_3_shared={ (int*)__gsharp_allocate_smem_static(0x58bc117134a7632dull, (4+5) * sizeof(int), alignof(int)) };
+__gsharp_ctx->__gsharp_id_3_shared={ (int*)__gsharp_allocate_smem_static(0x58bc117134a7632dull, (9) * sizeof(int), alignof(int)) };
 __gsharp_ctx->__gsharp_id_3_shared[__gsharp_ctx->__gsharp_id_2_tid]=__gsharp_id_0_values[__gsharp_ctx->__gsharp_id_2_tid];
 __gsharp_yielded_for_block_barrier=true;
 __gsharp_state=1;

@@ -7,6 +7,7 @@ namespace Kassyi.GSharp.Compiler.Transpiler.Helpers;
 /// <summary>
 /// Where the C++ of an integer operator or a float-to-integer conversion would leave undefined what C# defines, and the
 /// Prelude function (<c>IntegerSemantics.hpp</c>) that gives the C# result instead (#722, #724).
+/// <see cref="IntegerSemanticsEmitter"/> writes the forms, <see cref="BoundedLoopStep"/> proves a loop counter bounded.
 /// </summary>
 /// <remarks>
 /// <para>
@@ -18,15 +19,30 @@ namespace Kassyi.GSharp.Compiler.Transpiler.Helpers;
 /// and later convert it; C++ leaves an out-of-range conversion undefined.
 /// </para>
 /// <para>
-/// The operator stays as it is where the result is known not to overflow: a constant (C# rejects an overflowing constant
-/// outside <c>unchecked</c>), operands whose types or constant values bound the result, and the step of a for loop counter
-/// that the loop condition bounds (<see cref="IsBoundedLoopStep"/>). The rest costs no instruction on the GPU: the
-/// unsigned operation is the same instruction without the no-overflow assumption, and the masked shift is one funnel
-/// shift (<c>tmp/handoff/issue-722-design.md</c>).
+/// An operator or conversion with a constant result is written as its value (<see cref="GetConstant"/>), as Roslyn
+/// folds it: <c>3 &lt;&lt; 33</c> is <c>6</c>. The operator stays as it is where the result is known not to overflow:
+/// operands whose types or constant values bound the result, and the step of a for loop counter that the loop condition
+/// bounds (<see cref="BoundedLoopStep"/>). The rest costs no instruction on the GPU: the unsigned operation is the same
+/// instruction without the no-overflow assumption, and the masked shift is one funnel shift. Which definition wins:
+/// <c>docs/spec/en/01_language/06_semantics.md</c>.
 /// </para>
 /// </remarks>
 internal static class IntegerSemantics
 {
+    /// <summary>
+    /// The type and value of <paramref name="operation"/> when it is an int, uint, long or ulong operator or conversion
+    /// with a constant result, which is written as its value; null otherwise.
+    /// </summary>
+    /// <remarks>
+    /// [WHY] C# folds a constant shift with the masked count and never reports it (<c>3 &lt;&lt; 33</c> is 6), while
+    /// the C++ of the expression as written is undefined (nvcc and MSVC give 0). Every other integer constant is folded
+    /// as well, so that no constant expression depends on what C++ does with it.
+    /// </remarks>
+    public static (ITypeSymbol Type, object Value)? GetConstant(IOperation? operation) =>
+        operation is { ConstantValue: { HasValue: true, Value: { } value }, Type: { } type } && GetWidth(type) != 0
+            ? (type, value)
+            : null;
+
     /// <summary>
     /// The Prelude function that <paramref name="operation"/> is written as (<c>__gsharp_add_i32(a,b)</c>), or
     /// <see langword="null"/> for an operator that C++ gives the C# result (then <see cref="GetShiftMask"/> tells whether
@@ -34,70 +50,25 @@ internal static class IntegerSemantics
     /// </summary>
     public static string? GetBinaryHelper(IBinaryOperation operation)
     {
-        if (!IsIntrinsicIntegerOperation(operation) || GetWidth(operation.Type) is not (var width and not 0) ||
-            !IsSigned(operation.Type))
+        if (!IsIntrinsicIntegerOperation(operation) || operation.Type is not { } type)
         {
             return null;
         }
 
-        return operation.OperatorKind switch
-        {
-            BinaryOperatorKind.Add when !FitsWithoutWrap(operation) => Pick(width, Names.AddInt32, Names.AddInt64),
-            BinaryOperatorKind.Subtract when !FitsWithoutWrap(operation) =>
-                Pick(width, Names.SubtractInt32, Names.SubtractInt64),
-            BinaryOperatorKind.Multiply when !FitsWithoutWrap(operation) =>
-                Pick(width, Names.MultiplyInt32, Names.MultiplyInt64),
-            BinaryOperatorKind.LeftShift => Pick(width, Names.ShiftLeftInt32, Names.ShiftLeftInt64),
-            BinaryOperatorKind.UnsignedRightShift =>
-                Pick(width, Names.UnsignedShiftRightInt32, Names.UnsignedShiftRightInt64),
-            _ => null
-        };
+        var (helper, _) = Lookup(operation.OperatorKind, type.SpecialType);
+        var arithmetic = operation.OperatorKind is BinaryOperatorKind.Add or BinaryOperatorKind.Subtract or
+            BinaryOperatorKind.Multiply;
+        return arithmetic && FitsWithoutWrap(operation) ? null : helper;
     }
 
     /// <summary>
     /// The mask of the count of a shift that stays a C++ operator (<c>&lt;&lt;</c> of uint and ulong, <c>&gt;&gt;</c>,
     /// <c>&gt;&gt;&gt;</c> of uint and ulong): 31 or 63; 0 for any other operation.
     /// </summary>
-    public static int GetShiftMask(IBinaryOperation operation)
-    {
-        if (!IsIntrinsicIntegerOperation(operation) || GetWidth(operation.Type) is not (var width and not 0))
-        {
-            return 0;
-        }
-
-        var staysOperator = operation.OperatorKind switch
-        {
-            BinaryOperatorKind.RightShift => true,
-            BinaryOperatorKind.LeftShift or BinaryOperatorKind.UnsignedRightShift => !IsSigned(operation.Type),
-            _ => false
-        };
-        return staysOperator ? Mask(width) : 0;
-    }
-
-    /// <summary>
-    /// Writes the count of a shift whose mask is <paramref name="mask"/>: a constant in range as written, any other
-    /// constant masked (<c>33</c> is <c>1</c>), and anything else as <c>(&lt;count&gt;&amp;31)</c>.
-    /// </summary>
-    public static void AppendShiftCount(IOperation? count, ExpressionSyntax syntax, int mask, ref TranspileContext context)
-    {
-        if (count?.ConstantValue is { HasValue: true, Value: int constant })
-        {
-            if ((constant & mask) == constant)
-            {
-                context.Visitor.Visit(syntax);
-                return;
-            }
-
-            context.Emitter.Writer.Append(constant & mask);
-            return;
-        }
-
-        using (context.Emitter.Writer.Parentheses())
-        {
-            AppendOperand(Unparenthesize(syntax), ref context);
-            context.Emitter.Writer.Append($"&{mask}");
-        }
-    }
+    public static int GetShiftMask(IBinaryOperation operation) =>
+        IsIntrinsicIntegerOperation(operation) && operation.Type is { } type
+            ? Lookup(operation.OperatorKind, type.SpecialType).ShiftMask
+            : 0;
 
     /// <summary>The Prelude function that writes unary minus <paramref name="operation"/> (<c>__gsharp_neg_i32</c>), or null.</summary>
     public static string? GetNegationHelper(IUnaryOperation operation)
@@ -121,7 +92,7 @@ internal static class IntegerSemantics
     /// <summary>
     /// The Prelude function of the step of the increment or decrement <paramref name="operation"/> of an int or long
     /// (<paramref name="node"/>): <c>__gsharp_add_i32</c> for <c>++</c>, <c>__gsharp_sub_i32</c> for <c>--</c>; null when
-    /// the C++ operator cannot overflow there (<see cref="AppendStep"/> writes the step).
+    /// the C++ operator cannot overflow there (<see cref="IntegerSemanticsEmitter.AppendStep"/> writes the step).
     /// </summary>
     /// <remarks>
     /// The analysis of a for loop step runs once per step: its result is kept in
@@ -130,7 +101,7 @@ internal static class IntegerSemantics
     public static string? GetIncrementHelper(IIncrementOrDecrementOperation operation, ExpressionSyntax node,
         ref TranspileContext context)
     {
-        if (GetStepHelper(operation) is not { } helper)
+        if (GetStepHelper(operation, undo: false) is not { } helper)
         {
             return null;
         }
@@ -138,73 +109,85 @@ internal static class IntegerSemantics
         var steps = context.Emitter.BoundedLoopSteps;
         if (!steps.TryGetValue(node, out var bounded))
         {
-            bounded = IsBoundedLoopStep(operation, node, context.Query.SemanticModel);
+            bounded = BoundedLoopStep.IsBounded(operation, node, context.Query.SemanticModel);
             steps[node] = bounded;
         }
 
         return bounded ? null : helper;
     }
 
-    // __gsharp_add_i32 / __gsharp_sub_i32 for a predefined int or long ++ / --, before the loop counter analysis
-    private static string? GetStepHelper(IIncrementOrDecrementOperation operation)
+    /// <summary>
+    /// The Prelude function that steps the value of the increment or decrement <paramref name="operation"/> back
+    /// (<c>__gsharp_sub_i32</c> for <c>++</c>), which gives the old value of a postfix step that wraps.
+    /// </summary>
+    public static string? GetStepUndoHelper(IIncrementOrDecrementOperation operation) =>
+        GetStepHelper(operation, undo: true);
+
+    // __gsharp_add_i32 / __gsharp_sub_i32 for a predefined int or long ++ / -- (the other one for <undo>), before the
+    // loop counter analysis
+    private static string? GetStepHelper(IIncrementOrDecrementOperation operation, bool undo)
     {
-        if (operation.OperatorMethod != null || operation.IsLifted || GetWidth(operation.Type) is not (var width and not 0) ||
-            !IsSigned(operation.Type))
+        if (operation.OperatorMethod != null || operation.IsLifted || operation.Type is not { } type)
         {
             return null;
         }
 
-        return operation.Kind == OperationKind.Increment
-            ? Pick(width, Names.AddInt32, Names.AddInt64)
-            : Pick(width, Names.SubtractInt32, Names.SubtractInt64);
+        var add = (operation.Kind == OperationKind.Increment) != undo;
+        return Lookup(add ? BinaryOperatorKind.Add : BinaryOperatorKind.Subtract, type.SpecialType).Helper;
     }
 
     /// <summary>
     /// The Prelude function of the operator of the compound assignment <paramref name="operation"/>
-    /// (<c>__gsharp_add_i32</c> for an int <c>+=</c>), which <see cref="AppendCompound"/> and the form that evaluates the
-    /// operands into temporaries call; null for an assignment that C++ gives the C# result (see
+    /// (<c>__gsharp_add_i32</c> for an int <c>+=</c>), which <see cref="IntegerSemanticsEmitter.AppendCompound"/> and the
+    /// form that evaluates the operands into temporaries call; null for an assignment that C++ gives the C# result (see
     /// <see cref="GetCompoundShiftMask"/>).
     /// </summary>
-    public static string? GetCompoundHelper(ICompoundAssignmentOperation operation)
-    {
-        var type = GetCompoundOperatorType(operation);
-        if (operation.OperatorMethod != null || operation.IsLifted || GetWidth(type) is not (var width and not 0) ||
-            !IsSigned(type))
-        {
-            return null;
-        }
-
-        return operation.OperatorKind switch
-        {
-            BinaryOperatorKind.Add => Pick(width, Names.AddInt32, Names.AddInt64),
-            BinaryOperatorKind.Subtract => Pick(width, Names.SubtractInt32, Names.SubtractInt64),
-            BinaryOperatorKind.Multiply => Pick(width, Names.MultiplyInt32, Names.MultiplyInt64),
-            BinaryOperatorKind.LeftShift => Pick(width, Names.ShiftLeftInt32, Names.ShiftLeftInt64),
-            BinaryOperatorKind.UnsignedRightShift =>
-                Pick(width, Names.UnsignedShiftRightInt32, Names.UnsignedShiftRightInt64),
-            _ => null
-        };
-    }
+    public static string? GetCompoundHelper(ICompoundAssignmentOperation operation) =>
+        operation.OperatorMethod == null && !operation.IsLifted
+            ? Lookup(operation.OperatorKind, GetCompoundOperatorType(operation)).Helper
+            : null;
 
     /// <summary>
     /// The mask of the count of a compound shift that stays a C++ operator (<c>&gt;&gt;=</c>, and <c>&lt;&lt;=</c> and
     /// <c>&gt;&gt;&gt;=</c> of uint and ulong): 31 or 63; 0 for any other assignment.
     /// </summary>
-    public static int GetCompoundShiftMask(ICompoundAssignmentOperation operation)
+    public static int GetCompoundShiftMask(ICompoundAssignmentOperation operation) =>
+        operation.OperatorMethod == null && !operation.IsLifted
+            ? Lookup(operation.OperatorKind, GetCompoundOperatorType(operation)).ShiftMask
+            : 0;
+
+    /// <summary>
+    /// The type that the result of the operator of the compound assignment <paramref name="operation"/> is cast back to,
+    /// when the target is narrower than the operator (<c>short += 1</c> computes in int); null when it is not.
+    /// </summary>
+    public static ITypeSymbol? GetCompoundNarrowing(ICompoundAssignmentOperation operation) =>
+        operation.Target.Type is { } target && target.SpecialType != GetCompoundOperatorType(operation)
+            ? target
+            : null;
+
+    // The one table of the integer operators, keyed by the operator kind (a compound assignment has the kind of its
+    // binary operator) and the type of the operator: the Prelude function of a signed int or long operator that C++
+    // leaves undefined, or the mask of the count of a shift that stays a C++ operator. Neither for any other operator.
+    private static (string? Helper, int ShiftMask) Lookup(BinaryOperatorKind kind, SpecialType type)
     {
-        var type = GetCompoundOperatorType(operation);
-        if (operation.OperatorMethod != null || operation.IsLifted || GetWidth(type) is not (var width and not 0))
+        if (GetWidth(type) is not (var width and not 0))
         {
-            return 0;
+            return (null, 0);
         }
 
-        var staysOperator = operation.OperatorKind switch
+        var signed = IsSigned(type);
+        return kind switch
         {
-            BinaryOperatorKind.RightShift => true,
-            BinaryOperatorKind.LeftShift or BinaryOperatorKind.UnsignedRightShift => !IsSigned(type),
-            _ => false
+            BinaryOperatorKind.Add when signed => (Pick(width, Names.AddInt32, Names.AddInt64), 0),
+            BinaryOperatorKind.Subtract when signed => (Pick(width, Names.SubtractInt32, Names.SubtractInt64), 0),
+            BinaryOperatorKind.Multiply when signed => (Pick(width, Names.MultiplyInt32, Names.MultiplyInt64), 0),
+            BinaryOperatorKind.LeftShift when signed => (Pick(width, Names.ShiftLeftInt32, Names.ShiftLeftInt64), 0),
+            BinaryOperatorKind.UnsignedRightShift when signed =>
+                (Pick(width, Names.UnsignedShiftRightInt32, Names.UnsignedShiftRightInt64), 0),
+            BinaryOperatorKind.LeftShift or BinaryOperatorKind.RightShift or BinaryOperatorKind.UnsignedRightShift =>
+                (null, Mask(width)),
+            _ => (null, 0)
         };
-        return staysOperator ? Mask(width) : 0;
     }
 
     /// <summary>
@@ -250,13 +233,14 @@ internal static class IntegerSemantics
     }
 
     /// <summary>
-    /// Whether the C++ of <paramref name="expression"/> is a Prelude call that stands for its operator, and so begins
-    /// with a name rather than with the operator or the left operand (<see cref="OperatorSpacing"/>).
+    /// Whether the C++ of <paramref name="expression"/> begins with a name or a digit rather than with its operator or
+    /// left operand (<see cref="OperatorSpacing"/>): a Prelude call that stands for its operator, or a constant written
+    /// as its value (a negative one is parenthesized).
     /// </summary>
-    public static bool IsWrittenAsCall(ExpressionSyntax expression, SemanticModel model)
+    public static bool IsWrittenAsCallOrConstant(ExpressionSyntax expression, SemanticModel model)
     {
         if (expression is not (BinaryExpressionSyntax or PrefixUnaryExpressionSyntax or PostfixUnaryExpressionSyntax or
-                AssignmentExpressionSyntax) ||
+                AssignmentExpressionSyntax or CastExpressionSyntax) ||
             model.GetSafeOperation(expression) is not { } operation || operation.Syntax.RawKind != expression.RawKind)
         {
             return false;
@@ -264,274 +248,18 @@ internal static class IntegerSemantics
 
         return operation switch
         {
+            _ when GetConstant(operation) != null => true,
             IBinaryOperation binary => GetBinaryHelper(binary) != null,
             IUnaryOperation unary => GetNegationHelper(unary) != null,
             // The step of a for loop, the only one the counter analysis keeps as an operator, is never an operand
-            IIncrementOrDecrementOperation step => GetStepHelper(step) != null,
+            IIncrementOrDecrementOperation step => GetStepHelper(step, undo: false) != null,
             ICompoundAssignmentOperation compound => GetCompoundHelper(compound) != null,
             _ => false
         };
     }
 
-    /// <summary>
-    /// Writes the increment or decrement <paramref name="operation"/> (<paramref name="node"/>, of
-    /// <paramref name="operand"/>), for which <see cref="GetIncrementHelper"/> gave <paramref name="step"/>:
-    /// <c>x=__gsharp_add_i32(x,1)</c> for a statement or a prefix step (parenthesized where its value is used), and
-    /// <c>__gsharp_sub_i32((x=__gsharp_add_i32(x,1)),1)</c> for a postfix step whose value is used (the old value, as
-    /// the step wraps). The target is written twice; the parts of it whose evaluation writes something are evaluated
-    /// into temporaries first (<see cref="AppendWithSpilledTarget"/>).
-    /// </summary>
-    /// <remarks>
-    /// [WHY] The target stays an expression: a <c>T&amp;</c> bound to a member of a packed struct
-    /// (<c>#pragma pack(1)</c>) is read as aligned (CUDA error 716).
-    /// </remarks>
-    public static void AppendStep(IIncrementOrDecrementOperation operation, ExpressionSyntax node,
-        ExpressionSyntax operand, string step, ref TranspileContext context)
-    {
-        var form = !IsValueUsed(node, context.Query.SemanticModel)
-            ? StepForm.Statement
-            : operation.IsPostfix
-                ? StepForm.OldValue
-                : StepForm.NewValue;
-        var width = GetWidth(operation.Type);
-        var undo = operation.Kind == OperationKind.Increment
-            ? Pick(width, Names.SubtractInt32, Names.SubtractInt64)
-            : Pick(width, Names.AddInt32, Names.AddInt64);
-        AppendWithSpilledTarget(operand, step, value: null, cast: null, form, undo, ref context);
-    }
-
-    /// <summary>
-    /// Writes the compound assignment <paramref name="operation"/> (<paramref name="node"/>), for which
-    /// <see cref="GetCompoundHelper"/> gave <paramref name="binaryHelper"/>, as <c>x=(T)__gsharp_add_i32(x,y)</c>
-    /// (parenthesized where its value is used; the cast narrows to a target narrower than the operator), with the parts
-    /// of the target whose evaluation writes something in temporaries (see <see cref="AppendStep"/>).
-    /// </summary>
-    public static void AppendCompound(ICompoundAssignmentOperation operation, AssignmentExpressionSyntax node,
-        string binaryHelper, ref TranspileContext context)
-    {
-        var cast = operation.Target.Type is { } target && target.SpecialType != GetCompoundOperatorType(operation)
-            ? target
-            : null;
-        var form = IsValueUsed(node, context.Query.SemanticModel) ? StepForm.NewValue : StepForm.Statement;
-        AppendWithSpilledTarget(node.Left, binaryHelper, node.Right, cast, form, undo: null, ref context);
-    }
-
-    // How the value of a step or a compound assignment is used: not at all, the new value, or the old value of a
-    // postfix step
-    private enum StepForm
-    {
-        Statement,
-        NewValue,
-        OldValue
-    }
-
-    // <target>=(<cast>)<helper>(<target>,<value or 1>) in the form <form>. When finding the target writes something
-    // (data[k++].B += 3), those parts are evaluated into temporaries first, in the C# order, and the target is written
-    // with them (C# spec §12.21.4: the location is found once):
-    // ([&]() { int __gsharp_seq_0 = <k++>; return data[__gsharp_seq_0].B=__gsharp_add_i32(data[__gsharp_seq_0].B,3); }())
-    private static void AppendWithSpilledTarget(ExpressionSyntax target, string helper, ExpressionSyntax? value,
-        ITypeSymbol? cast, StepForm form, string? undo, ref TranspileContext context)
-    {
-        var spills = ImmutableArray.CreateBuilder<(ExpressionSyntax Expression, bool Reference)>();
-        CollectSpills(target, context.Query.SemanticModel, spills);
-        if (spills.Count == 0)
-        {
-            AppendStepForm(target, helper, value, cast, form, undo, inSequence: false, ref context);
-            return;
-        }
-
-        var spilled = context.Emitter.SpilledExpressions;
-        try
-        {
-            using var sequence = EvaluationOrder.BeginSequence(context.Emitter.Writer);
-            foreach (var (expression, reference) in spills)
-            {
-                spilled[expression] = EvaluationOrder.DeclareTemp(ref context, expression, reference);
-            }
-
-            sequence.Return();
-            AppendStepForm(target, helper, value, cast, form, undo, inSequence: true, ref context);
-        }
-        finally
-        {
-            foreach (var (expression, _) in spills)
-            {
-                spilled.Remove(expression);
-            }
-        }
-    }
-
-    // The parts of a target whose evaluation writes something, in the C# order: an index or a pointer (spilled as its
-    // value), or any other part that is not the receiver of an element or member access (spilled as a reference to the
-    // location it names, auto&&, as the sequenced compound assignment does)
-    private static void CollectSpills(ExpressionSyntax target, SemanticModel model,
-        ImmutableArray<(ExpressionSyntax Expression, bool Reference)>.Builder spills)
-    {
-        switch (target)
-        {
-            case ParenthesizedExpressionSyntax parenthesized:
-                CollectSpills(parenthesized.Expression, model, spills);
-                return;
-            case ElementAccessExpressionSyntax element:
-                CollectSpills(element.Expression, model, spills);
-                foreach (var argument in element.ArgumentList.Arguments)
-                {
-                    if (Writes(argument.Expression, model))
-                    {
-                        spills.Add((argument.Expression, false));
-                    }
-                }
-
-                return;
-            case MemberAccessExpressionSyntax member:
-                CollectSpills(member.Expression, model, spills);
-                return;
-            case PrefixUnaryExpressionSyntax { RawKind: (int)SyntaxKind.PointerIndirectionExpression } indirection:
-                if (Writes(indirection.Operand, model))
-                {
-                    spills.Add((indirection.Operand, false));
-                    return;
-                }
-
-                CollectSpills(indirection.Operand, model, spills);
-                return;
-            default:
-                if (Writes(target, model))
-                {
-                    spills.Add((target, true));
-                }
-
-                return;
-        }
-    }
-
-    private static bool Writes(ExpressionSyntax expression, SemanticModel model) =>
-        !ExpressionEffects.Of(expression, model).Writes.IsEmpty;
-
-    // The step itself; its value is parenthesized where it is a part of an expression (not the value a sequence returns)
-    private static void AppendStepForm(ExpressionSyntax target, string helper, ExpressionSyntax? value,
-        ITypeSymbol? cast, StepForm form, string? undo, bool inSequence, ref TranspileContext context)
-    {
-        var writer = context.Emitter.Writer;
-        if (form == StepForm.Statement || (form == StepForm.NewValue && inSequence))
-        {
-            AppendRepeatedAssignment(target, helper, value, cast, ref context);
-            return;
-        }
-
-        if (form == StepForm.NewValue)
-        {
-            using (writer.Parentheses())
-            {
-                AppendRepeatedAssignment(target, helper, value, cast, ref context);
-            }
-
-            return;
-        }
-
-        // The value before the step: the new value stepped back, which wraps back as well
-        writer.Append(undo ?? helper);
-        using (writer.Parentheses())
-        {
-            using (writer.Parentheses())
-            {
-                AppendRepeatedAssignment(target, helper, value, cast, ref context);
-            }
-
-            writer.Append(",1");
-        }
-    }
-
-    // <target>=(<cast>)<helper>(<target>,<value or 1>)
-    private static void AppendRepeatedAssignment(ExpressionSyntax target, string helper, ExpressionSyntax? value,
-        ITypeSymbol? cast, ref TranspileContext context)
-    {
-        var writer = context.Emitter.Writer;
-        context.Visitor.Visit(target);
-        writer.Append('=');
-        if (cast != null)
-        {
-            using (writer.Parentheses())
-            {
-                context.Emitter.Dialect.AppendType(ref context, cast);
-            }
-        }
-
-        writer.Append(helper);
-        using (writer.Parentheses())
-        {
-            context.Visitor.Visit(Unparenthesize(target));
-            writer.Append(',');
-            if (value == null)
-            {
-                writer.Append('1');
-            }
-            else
-            {
-                context.Visitor.Visit(Unparenthesize(value));
-            }
-        }
-    }
-
-    /// <summary>Writes <c>&lt;helper&gt;(&lt;left&gt;,&lt;right&gt;)</c>.</summary>
-    public static void AppendCall(string helper, ExpressionSyntax left, ExpressionSyntax right,
-        ref TranspileContext context)
-    {
-        context.Emitter.Writer.Append(helper);
-        using (context.Emitter.Writer.Parentheses())
-        {
-            context.Visitor.Visit(Unparenthesize(left));
-            context.Emitter.Writer.Append(',');
-            context.Visitor.Visit(Unparenthesize(right));
-        }
-    }
-
-    /// <summary>Writes <c>&lt;helper&gt;(&lt;operand&gt;)</c> (a negation).</summary>
-    public static void AppendUnaryCall(string helper, ExpressionSyntax operand, ref TranspileContext context)
-    {
-        context.Emitter.Writer.Append(helper);
-        using (context.Emitter.Writer.Parentheses())
-        {
-            context.Visitor.Visit(Unparenthesize(operand));
-        }
-    }
-
-    // An argument of a call needs no parentheses of its own: (i+1)*2 is __gsharp_mul_i32(__gsharp_add_i32(i,1),2)
-    private static ExpressionSyntax Unparenthesize(ExpressionSyntax syntax)
-    {
-        while (syntax is ParenthesizedExpressionSyntax parenthesized)
-        {
-            syntax = parenthesized.Expression;
-        }
-
-        return syntax;
-    }
-
-    /// <summary>
-    /// Writes <paramref name="syntax"/> as the left operand of <c>&amp;</c>, parenthesized when its C++ binds more
-    /// loosely (an assignment, <c>|</c>, <c>^</c>, <c>&amp;&amp;</c>, <c>||</c>, <c>??</c>); <c>?:</c> is written in
-    /// parentheses of its own (ConditionalExpressionTranspilerRule).
-    /// </summary>
-    private static void AppendOperand(ExpressionSyntax syntax, ref TranspileContext context)
-    {
-        var loose = syntax is AssignmentExpressionSyntax or
-            BinaryExpressionSyntax { RawKind: (int)SyntaxKind.BitwiseOrExpression or (int)SyntaxKind.ExclusiveOrExpression or
-                (int)SyntaxKind.LogicalAndExpression or (int)SyntaxKind.LogicalOrExpression or
-                (int)SyntaxKind.CoalesceExpression };
-        if (!loose)
-        {
-            context.Visitor.Visit(syntax);
-            return;
-        }
-
-        using (context.Emitter.Writer.Parentheses())
-        {
-            context.Visitor.Visit(syntax);
-        }
-    }
-
-    // A predefined, non-lifted operator on integers without a constant result: a constant cannot have overflowed
-    // (CS0220). The left operand has the type of the operator (converted to it), which a pointer difference
+    // A predefined, non-lifted operator on integers whose result is not a constant (a constant is written as its value,
+    // GetConstant). The left operand has the type of the operator (converted to it), which a pointer difference
     // (byte* - byte* is long) does not
     private static bool IsIntrinsicIntegerOperation(IBinaryOperation operation) =>
         operation.OperatorMethod == null && !operation.IsLifted && !operation.ConstantValue.HasValue &&
@@ -658,7 +386,8 @@ internal static class IntegerSemantics
         return min <= max;
     }
 
-    private static bool TryGetInteger(object value, out BigInteger integer)
+    /// <summary>The value of an integer constant of any integer type (char included).</summary>
+    internal static bool TryGetInteger(object value, out BigInteger integer)
     {
         switch (value)
         {
@@ -675,169 +404,8 @@ internal static class IntegerSemantics
         }
     }
 
-    /// <summary>
-    /// Whether <paramref name="node"/> is the step <c>i++</c> / <c>++i</c> (<c>i--</c> / <c>--i</c>) of a for loop whose
-    /// condition is <c>i &lt; e</c> (<c>i &gt; e</c>) compared in the type of <c>i</c>, or <c>i &lt;= c</c>
-    /// (<c>i &gt;= c</c>) with a constant short of the end of the type, and where nothing else writes <c>i</c>: the
-    /// condition held for the value that the step adds 1 to, so that value is below the maximum and the step cannot
-    /// overflow. Kept as the C++ operator, it keeps nvcc's induction variable widening (naive SGEMM: 202 SASS
-    /// instructions with it, 70 without; 11.97 ms against 12.95 ms).
-    /// </summary>
-    /// <remarks>
-    /// "Nothing else writes i": not the body, the condition or another step (Roslyn data flow), no lambda or local
-    /// function of the method writes it, and no ref, out or address of it is taken anywhere in the method (a ref local
-    /// could write it in the body). A lowered tree (a CPU state machine) is not analyzed, and its steps wrap.
-    /// </remarks>
-    private static bool IsBoundedLoopStep(IIncrementOrDecrementOperation operation, ExpressionSyntax node,
-        SemanticModel model)
-    {
-        if (node.Parent is not ForStatementSyntax { Condition: { } condition } loop || model.SyntaxTree != node.SyntaxTree ||
-            GetCounter(operation.Target) is not { } counter ||
-            model.GetOperation(condition) is not IBinaryOperation { OperatorMethod: null, IsLifted: false } comparison ||
-            !IsBoundingComparison(comparison, counter, operation.Kind == OperationKind.Increment))
-        {
-            return false;
-        }
-
-        if (WritesCounter(model.AnalyzeDataFlow(loop.Statement), counter) ||
-            WritesCounter(model.AnalyzeDataFlow(condition), counter))
-        {
-            return false;
-        }
-
-        foreach (var incrementor in loop.Incrementors)
-        {
-            if (incrementor != node && WritesCounter(model.AnalyzeDataFlow(incrementor), counter))
-            {
-                return false;
-            }
-        }
-
-        return GetMethodBody(loop) is { } body &&
-               !body.DescendantNodes()
-                   .AsStackEnumerable()
-                   .Any((model, counter), static (n, state) => TakesReference(n, state.model, state.counter) ||
-                                                               WritesCaptured(n, state.model, state.counter));
-    }
-
-    private static ISymbol? GetCounter(IOperation target) => target switch
-    {
-        ILocalReferenceOperation { Local: { RefKind: RefKind.None } local } => local,
-        IParameterReferenceOperation { Parameter: { RefKind: RefKind.None } parameter } => parameter,
-        _ => null
-    };
-
-    // i < e (or e > i) for a step up, i > e (or e < i) for a step down, compared in the type of i; <= and >= only
-    // against a constant short of the end of the type
-    private static bool IsBoundingComparison(IBinaryOperation comparison, ISymbol counter, bool increment)
-    {
-        BinaryOperatorKind kind;
-        IOperation bound;
-        if (IsCounter(comparison.LeftOperand, counter))
-        {
-            (kind, bound) = (comparison.OperatorKind, comparison.RightOperand);
-        }
-        else if (IsCounter(comparison.RightOperand, counter))
-        {
-            (kind, bound) = (Flip(comparison.OperatorKind), comparison.LeftOperand);
-        }
-        else
-        {
-            return false;
-        }
-
-        var type = comparison.LeftOperand.Type;
-        if (type is null || GetWidth(type) is not (var width and not 0) || !IsSigned(type) ||
-            !SymbolEqualityComparer.Default.Equals(type, comparison.RightOperand.Type))
-        {
-            return false;
-        }
-
-        var constant = bound.ConstantValue is { HasValue: true, Value: { } value } && TryGetInteger(value, out var c)
-            ? c
-            : (BigInteger?)null;
-        return (kind, increment) switch
-        {
-            (BinaryOperatorKind.LessThan, true) => true,
-            (BinaryOperatorKind.LessThanOrEqual, true) => constant < MaxValue(width),
-            (BinaryOperatorKind.GreaterThan, false) => true,
-            (BinaryOperatorKind.GreaterThanOrEqual, false) => constant > MinValue(width),
-            _ => false
-        };
-    }
-
-    private static bool IsCounter(IOperation operand, ISymbol counter) =>
-        GetCounter(operand) is { } symbol && SymbolEqualityComparer.Default.Equals(symbol, counter);
-
-    private static BinaryOperatorKind Flip(BinaryOperatorKind kind) => kind switch
-    {
-        BinaryOperatorKind.LessThan => BinaryOperatorKind.GreaterThan,
-        BinaryOperatorKind.LessThanOrEqual => BinaryOperatorKind.GreaterThanOrEqual,
-        BinaryOperatorKind.GreaterThan => BinaryOperatorKind.LessThan,
-        BinaryOperatorKind.GreaterThanOrEqual => BinaryOperatorKind.LessThanOrEqual,
-        _ => kind
-    };
-
-    private static bool WritesCounter(DataFlowAnalysis? flow, ISymbol counter) =>
-        flow is not { Succeeded: true } || flow.WrittenInside.Contains(counter) ||
-        flow.UnsafeAddressTaken.Contains(counter);
-
-    // The body of the method that holds the loop, through the lambdas and local functions around it: a delegate made
-    // anywhere in the method may write a counter it captures
-    private static SyntaxNode? GetMethodBody(SyntaxNode node)
-    {
-        for (var current = node.Parent; current != null; current = current.Parent)
-        {
-            if (current is BaseMethodDeclarationSyntax method)
-            {
-                return (SyntaxNode?)method.Body ?? method.ExpressionBody?.Expression;
-            }
-        }
-
-        return null;
-    }
-
-    // A lambda or local function that writes i (it may run in the loop body); one that only reads it does not matter
-    private static bool WritesCaptured(SyntaxNode node, SemanticModel model, ISymbol counter)
-    {
-        var body = node switch
-        {
-            AnonymousFunctionExpressionSyntax lambda => lambda.Body,
-            LocalFunctionStatementSyntax { Body: { } block } => block,
-            LocalFunctionStatementSyntax { ExpressionBody.Expression: { } expression } => expression,
-            _ => null
-        };
-        return body != null && WritesCounter(model.AnalyzeDataFlow(body), counter);
-    }
-
-    // ref i, out i, ref i as a ref local initializer, &i
-    private static bool TakesReference(SyntaxNode node, SemanticModel model, ISymbol counter)
-    {
-        var expression = node switch
-        {
-            ArgumentSyntax { RefKindKeyword.RawKind: (int)SyntaxKind.RefKeyword or (int)SyntaxKind.OutKeyword } argument =>
-                argument.Expression,
-            RefExpressionSyntax reference => reference.Expression,
-            PrefixUnaryExpressionSyntax { RawKind: (int)SyntaxKind.AddressOfExpression } address => address.Operand,
-            _ => null
-        };
-        // ref (i) and &(i) name the counter as well
-        return expression != null && Unparenthesize(expression) is IdentifierNameSyntax identifier &&
-               SymbolEqualityComparer.Default.Equals(model.GetSymbolInfo(identifier).Symbol, counter);
-    }
-
-    // Whether the value of an increment or assignment is read: not when it is a statement, a part of a for loop or the
-    // body of a lambda that returns nothing (the body of Gpu.ForUnroll(0, 4, i => sum += i))
-    private static bool IsValueUsed(ExpressionSyntax node, SemanticModel model) => node.Parent switch
-    {
-        ExpressionStatementSyntax or ForStatementSyntax => false,
-        AnonymousFunctionExpressionSyntax lambda =>
-            model.GetSymbol(lambda) is not IMethodSymbol { ReturnsVoid: true },
-        _ => true
-    };
-
-    // 32 or 64 for int, uint, long and ulong; 0 for any other type
-    private static int GetWidth(ITypeSymbol? type) => GetWidth(type?.SpecialType ?? SpecialType.None);
+    /// <summary>32 or 64 for int, uint, long and ulong; 0 for any other type.</summary>
+    internal static int GetWidth(ITypeSymbol? type) => GetWidth(type?.SpecialType ?? SpecialType.None);
 
     private static int GetWidth(SpecialType type) => type switch
     {
@@ -846,7 +414,8 @@ internal static class IntegerSemantics
         _ => 0
     };
 
-    private static bool IsSigned(ITypeSymbol? type) => IsSigned(type?.SpecialType ?? SpecialType.None);
+    /// <summary>Whether the type is int or long.</summary>
+    internal static bool IsSigned(ITypeSymbol? type) => IsSigned(type?.SpecialType ?? SpecialType.None);
 
     private static bool IsSigned(SpecialType type) => type is SpecialType.System_Int32 or SpecialType.System_Int64;
 
@@ -854,7 +423,9 @@ internal static class IntegerSemantics
 
     private static string Pick(int width, string int32, string int64) => width == 32 ? int32 : int64;
 
-    private static BigInteger MinValue(int width) => width == 32 ? int.MinValue : long.MinValue;
+    /// <summary>The minimum of the signed type of the width (32 or 64).</summary>
+    internal static BigInteger MinValue(int width) => width == 32 ? int.MinValue : long.MinValue;
 
-    private static BigInteger MaxValue(int width) => width == 32 ? int.MaxValue : long.MaxValue;
+    /// <summary>The maximum of the signed type of the width (32 or 64).</summary>
+    internal static BigInteger MaxValue(int width) => width == 32 ? int.MaxValue : long.MaxValue;
 }

@@ -21,11 +21,20 @@ public sealed class CastExpressionTranspilerRule : SyntaxNodeTranspilerRuleBase<
     /// <inheritdoc />
     public override void Transpile(CastExpressionSyntax node, ref TranspileContext context)
     {
+        // An integer constant is written as its value, as the binary operators write theirs: (int)(3L << 65) is 6 (#722)
+        var operation = context.Query.SemanticModel.GetSafeOperation(node) is { } bound &&
+                        bound.Syntax.RawKind == node.RawKind
+            ? bound
+            : null;
+        if (IntegerSemanticsEmitter.TryAppendConstant(operation, ref context))
+        {
+            return;
+        }
+
         // A float or double converted to an integer saturates and NaN gives 0, as .NET converts it; C++ leaves an
         // out-of-range conversion undefined (#724). A type narrower than int is the int result truncated:
         // (unsigned char)__gsharp_to_i32(x)
-        if (context.Query.SemanticModel.GetSafeOperation(node) is IConversionOperation conversion &&
-            conversion.Syntax.RawKind == node.RawKind &&
+        if (operation is IConversionOperation conversion &&
             IntegerSemantics.GetConversionHelper(conversion, out var needsCast) is { } helper)
         {
             if (needsCast)
@@ -36,7 +45,7 @@ public sealed class CastExpressionTranspilerRule : SyntaxNodeTranspilerRuleBase<
                 }
             }
 
-            IntegerSemantics.AppendUnaryCall(helper, node.Expression, ref context);
+            IntegerSemanticsEmitter.AppendUnaryCall(helper, node.Expression, ref context);
             return;
         }
 

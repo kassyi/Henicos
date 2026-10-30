@@ -16,7 +16,7 @@ struct __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__PackedCounter;
 inline void __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__IntegerSemanticsKernels__PackedTargetSteps(GSharpArray<__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__PackedCounter> __gsharp_id_0_data, GSharpArray<int> __gsharp_id_1_old, int __gsharp_id_2_t);
 
 inline void __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__IntegerSemanticsKernels__IntOperators(int __gsharp_id_0_a, int __gsharp_id_1_b, int __gsharp_id_2_s, GSharpArray<int> __gsharp_id_3_o, int __gsharp_id_4_index){
-int __gsharp_id_5_v = __gsharp_mul_i32(__gsharp_id_4_index,38);
+int __gsharp_id_5_v = __gsharp_mul_i32(__gsharp_id_4_index,45);
 __gsharp_id_3_o[__gsharp_id_5_v]=__gsharp_add_i32(__gsharp_id_0_a,__gsharp_id_1_b);
 __gsharp_id_3_o[__gsharp_add_i32(__gsharp_id_5_v,1)]=__gsharp_sub_i32(__gsharp_id_0_a,__gsharp_id_1_b);
 __gsharp_id_3_o[__gsharp_add_i32(__gsharp_id_5_v,2)]=__gsharp_mul_i32(__gsharp_id_0_a,__gsharp_id_1_b);
@@ -69,7 +69,14 @@ __gsharp_id_3_o[__gsharp_add_i32(__gsharp_id_5_v,32)]=(int)__gsharp_id_11_u;
 __gsharp_id_3_o[__gsharp_add_i32(__gsharp_id_5_v,33)]=(int)((long long)(unsigned int)__gsharp_id_1_b*(long long)__gsharp_id_0_a);
 __gsharp_id_3_o[__gsharp_add_i32(__gsharp_id_5_v,34)]=__gsharp_neg_i32(__gsharp_mul_i32(__gsharp_id_0_a,__gsharp_id_1_b));
 __gsharp_id_3_o[__gsharp_add_i32(__gsharp_id_5_v,35)]=__gsharp_mul_i32(__gsharp_add_i32(__gsharp_id_0_a,__gsharp_id_1_b),__gsharp_sub_i32(__gsharp_id_0_a,__gsharp_id_1_b));
-int __gsharp_id_12_k = __gsharp_add_i32(__gsharp_id_5_v,36);
+__gsharp_id_3_o[__gsharp_add_i32(__gsharp_id_5_v,36)]=6;
+__gsharp_id_3_o[__gsharp_add_i32(__gsharp_id_5_v,37)]=1;
+__gsharp_id_3_o[__gsharp_add_i32(__gsharp_id_5_v,38)]=(-4);
+__gsharp_id_3_o[__gsharp_add_i32(__gsharp_id_5_v,39)]=6;
+__gsharp_id_3_o[__gsharp_add_i32(__gsharp_id_5_v,40)]=10;
+__gsharp_id_3_o[__gsharp_add_i32(__gsharp_id_5_v,41)]=2147483644;
+__gsharp_id_3_o[__gsharp_add_i32(__gsharp_id_5_v,42)]=0;
+int __gsharp_id_12_k = __gsharp_add_i32(__gsharp_id_5_v,43);
 ([&]() {
 auto __gsharp_seq_0 = __gsharp_sub_i32((__gsharp_id_12_k=__gsharp_add_i32(__gsharp_id_12_k,1)),1);
 return __gsharp_id_3_o[__gsharp_seq_0]=__gsharp_add_i32(__gsharp_id_3_o[__gsharp_seq_0],__gsharp_id_0_a);
@@ -81,7 +88,7 @@ return __gsharp_id_3_o[__gsharp_seq_1]=__gsharp_sub_i32(__gsharp_id_3_o[__gsharp
 }
 
 inline void __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__IntegerSemanticsKernels__LongOperators(long long __gsharp_id_0_a, long long __gsharp_id_1_b, int __gsharp_id_2_s, GSharpArray<long long> __gsharp_id_3_o, int __gsharp_id_4_index){
-int __gsharp_id_5_v = __gsharp_mul_i32(__gsharp_id_4_index,29);
+int __gsharp_id_5_v = __gsharp_mul_i32(__gsharp_id_4_index,35);
 __gsharp_id_3_o[__gsharp_id_5_v]=__gsharp_add_i64(__gsharp_id_0_a,__gsharp_id_1_b);
 __gsharp_id_3_o[__gsharp_add_i32(__gsharp_id_5_v,1)]=__gsharp_sub_i64(__gsharp_id_0_a,__gsharp_id_1_b);
 __gsharp_id_3_o[__gsharp_add_i32(__gsharp_id_5_v,2)]=__gsharp_mul_i64(__gsharp_id_0_a,__gsharp_id_1_b);
@@ -123,6 +130,12 @@ __gsharp_id_10_z=__gsharp_mul_i64(__gsharp_id_10_z,__gsharp_id_9_n);
 __gsharp_id_3_o[__gsharp_add_i32(__gsharp_id_5_v,27)]=__gsharp_id_10_z;
 __gsharp_id_10_z=__gsharp_sub_i64(__gsharp_id_10_z,__gsharp_id_9_n);
 __gsharp_id_3_o[__gsharp_add_i32(__gsharp_id_5_v,28)]=__gsharp_id_10_z;
+__gsharp_id_3_o[__gsharp_add_i32(__gsharp_id_5_v,29)]=6LL;
+__gsharp_id_3_o[__gsharp_add_i32(__gsharp_id_5_v,30)]=(-8LL);
+__gsharp_id_3_o[__gsharp_add_i32(__gsharp_id_5_v,31)]=1LL;
+__gsharp_id_3_o[__gsharp_add_i32(__gsharp_id_5_v,32)]=5LL;
+__gsharp_id_3_o[__gsharp_add_i32(__gsharp_id_5_v,33)]=9223372036854775804LL;
+__gsharp_id_3_o[__gsharp_add_i32(__gsharp_id_5_v,34)]=0LL;
 }
 
 inline void __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__IntegerSemanticsKernels__ConvertOperators(float __gsharp_id_0_f, double __gsharp_id_1_d, GSharpArray<long long> __gsharp_id_2_o, int __gsharp_id_3_index){

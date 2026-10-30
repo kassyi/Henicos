@@ -48,9 +48,16 @@ public sealed class BinaryExpressionTranspilerRule : SyntaxNodeTranspilerRuleBas
             }
         }
 
+        // An integer constant is written as its value: C# folds a constant shift with the masked count (3 << 33 is 6),
+        // which C++ leaves undefined (#722)
+        var operation = GetOperation(node, ref context);
+        if (IntegerSemanticsEmitter.TryAppendConstant(operation, ref context))
+        {
+            return;
+        }
+
         // int and long arithmetic that C++ leaves undefined goes through the Prelude (#722); a call leaves the order of its
         // arguments unspecified, so interfering operands go through temporaries
-        var operation = GetOperation(node, ref context);
         if (operation != null && IntegerSemantics.GetBinaryHelper(operation) is { } helper)
         {
             if (OperandsInterfere(node, ref context))
@@ -59,7 +66,7 @@ public sealed class BinaryExpressionTranspilerRule : SyntaxNodeTranspilerRuleBas
                 return;
             }
 
-            IntegerSemantics.AppendCall(helper, node.Left, node.Right, ref context);
+            IntegerSemanticsEmitter.AppendCall(helper, node.Left, node.Right, ref context);
             return;
         }
 
@@ -68,7 +75,7 @@ public sealed class BinaryExpressionTranspilerRule : SyntaxNodeTranspilerRuleBas
         {
             context.Visitor.Visit(node.Left);
             context.Emitter.Writer.Append(node.IsKind(SyntaxKind.LeftShiftExpression) ? "<<" : ">>");
-            IntegerSemantics.AppendShiftCount(operation.RightOperand, node.Right, mask, ref context);
+            IntegerSemanticsEmitter.AppendShiftCount(operation.RightOperand, node.Right, mask, ref context);
             return;
         }
 

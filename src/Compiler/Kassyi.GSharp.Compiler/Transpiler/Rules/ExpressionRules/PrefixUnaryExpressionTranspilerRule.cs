@@ -51,16 +51,22 @@ public sealed class PrefixUnaryExpressionTranspilerRule : SyntaxNodeTranspilerRu
         var operation = context.Query.SemanticModel.GetSafeOperation(node);
         if (operation?.Syntax.RawKind == node.RawKind)
         {
+            // An integer constant is written as its value, as the binary operators write theirs
+            if (IntegerSemanticsEmitter.TryAppendConstant(operation, ref context))
+            {
+                return;
+            }
+
             if (operation is IUnaryOperation negation && IntegerSemantics.GetNegationHelper(negation) is { } helper)
             {
-                IntegerSemantics.AppendUnaryCall(helper, node.Operand, ref context);
+                IntegerSemanticsEmitter.AppendUnaryCall(helper, node.Operand, ref context);
                 return;
             }
 
             if (operation is IIncrementOrDecrementOperation step &&
                 IntegerSemantics.GetIncrementHelper(step, node, ref context) is { } stepHelper)
             {
-                IntegerSemantics.AppendStep(step, node, node.Operand, stepHelper, ref context);
+                IntegerSemanticsEmitter.AppendStep(step, node, node.Operand, stepHelper, ref context);
                 return;
             }
         }

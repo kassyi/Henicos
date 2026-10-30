@@ -637,7 +637,7 @@ finally
 #pragma warning restore CS8500
 public const string RefStructInitializerKernel_Source = @"extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Core__ManagedQualificationKernels__RefStructInitializerKernel(GSharpArray<int> __gsharp_id_0_values, GSharpArray<int> __gsharp_id_1_result){
 int __gsharp_id_2_tid = (int)threadIdx.x;
-__shared__ int __gsharp_id_3_shared[4+5];
+__shared__ int __gsharp_id_3_shared[9];
 __gsharp_id_3_shared[__gsharp_id_2_tid]=__gsharp_id_0_values[__gsharp_id_2_tid];
 __syncthreads();
 __gsharp_id_1_result[__gsharp_id_2_tid]=__gsharp_add_i32(__gsharp_id_3_shared[(__gsharp_add_i32(__gsharp_id_2_tid,1))%4],5);

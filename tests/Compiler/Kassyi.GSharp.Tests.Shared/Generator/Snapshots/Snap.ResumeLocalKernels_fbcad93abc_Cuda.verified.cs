@@ -648,8 +648,8 @@ finally
 public const string ConstSizeKernel_Source = @"extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__ResumeLocalKernels__ConstSizeKernel(GSharpArray<int> __gsharp_id_0_a){
 int __gsharp_id_1_Size = 4;
 int __gsharp_id_2_s[4]{};
-__gsharp_id_2_s[__gsharp_id_1_Size-1]=1;
-__gsharp_id_0_a[0]=__gsharp_id_2_s[__gsharp_id_1_Size-1];
+__gsharp_id_2_s[3]=1;
+__gsharp_id_0_a[0]=__gsharp_id_2_s[3];
 __syncthreads();
 __gsharp_id_0_a[1]=2;
 }

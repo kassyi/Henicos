@@ -13,13 +13,16 @@ namespace Kassyi.GSharp.Tests.Shared.Syntax;
 public static partial class IntegerSemanticsKernels
 {
     /// <summary>The results that one (a, b, s) triple writes in <see cref="IntOperators"/>.</summary>
-    public const int IntValuesPerTriple = 38;
+    public const int IntValuesPerTriple = 45;
 
     /// <summary>The results that one (a, b, s) triple writes in <see cref="LongOperators"/>.</summary>
-    public const int LongValuesPerTriple = 29;
+    public const int LongValuesPerTriple = 35;
 
     /// <summary>The results that one input writes in <see cref="ConvertOperators"/>.</summary>
     public const int ConversionsPerInput = 18;
+
+    // A const field shifted by a constant takes the path of a constant shift
+    private const int ShiftedConstant = 5;
 
     [GpuDeviceFunction]
     public static void IntOperators(int a, int b, int s, int[] o, int index)
@@ -87,8 +90,19 @@ public static partial class IntegerSemanticsKernels
         o[v + 34] = -(a * b);
         o[v + 35] = (a + b) * (a - b);
 
+        // Constant shifts: Roslyn masks the count and folds the value, which C++ leaves undefined for these counts
+        o[v + 36] = 3 << 33;
+        o[v + 37] = 1 << 32;
+        o[v + 38] = -8 >> 33;
+        o[v + 39] = (int)(3L << 65);
+        o[v + 40] = ShiftedConstant << 33;
+        o[v + 41] = -8 >>> 1;
+
+        // Roslyn folds int.MinValue % -1 to 0; C++ leaves it undefined (x86 traps)
+        o[v + 42] = int.MinValue % -1;
+
         // A target whose evaluation writes something (k++) is evaluated once
-        int k = v + 36;
+        int k = v + 43;
         o[k++] += a;
         o[k++]--;
     }
@@ -145,6 +159,14 @@ public static partial class IntegerSemanticsKernels
         o[v + 27] = z;
         z -= n;
         o[v + 28] = z;
+
+        // Constant shifts with counts of 64 and more
+        o[v + 29] = 3L << 65;
+        o[v + 30] = -64L >> 67;
+        o[v + 31] = 1L << 64;
+        o[v + 32] = (long)ShiftedConstant << 64;
+        o[v + 33] = -8L >>> 1;
+        o[v + 34] = long.MinValue % -1L;
     }
 
     [GpuDeviceFunction]

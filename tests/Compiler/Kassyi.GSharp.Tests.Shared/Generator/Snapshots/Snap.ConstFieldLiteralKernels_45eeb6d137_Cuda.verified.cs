@@ -337,7 +337,7 @@ __gsharp_id_0_signed[3]=9223372036854775807LL;
 __gsharp_id_1_unsigned[0]=4294967295U;
 __gsharp_id_1_unsigned[1]=18446744073709551615ULL;
 __gsharp_id_2_narrow[0]=(-2147483647-1);
-__gsharp_id_2_narrow[1]=(-2147483647-1)/2;
+__gsharp_id_2_narrow[1]=(-1073741824);
 }
 ";
 public static readonly string IntegerLimitConstKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +IntegerLimitConstKernel_Source;
@@ -522,11 +522,11 @@ finally
 }
 #pragma warning restore CS8500
 public const string EnumConstKernel_Source = @"extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__ConstFieldLiteralKernels__EnumConstKernel(GSharpArray<unsigned long long> __gsharp_id_0_wide, GSharpArray<int> __gsharp_id_1_signed){
-__gsharp_id_0_wide[0]=(unsigned long long)1ULL;
-__gsharp_id_0_wide[1]=(unsigned long long)1099511627776ULL;
-__gsharp_id_1_signed[0]=(int)(-2147483647-1);
-__gsharp_id_1_signed[1]=(int)(-5);
-__gsharp_id_1_signed[2]=(int)2147483647;
+__gsharp_id_0_wide[0]=1ULL;
+__gsharp_id_0_wide[1]=1099511627776ULL;
+__gsharp_id_1_signed[0]=(-2147483647-1);
+__gsharp_id_1_signed[1]=(-5);
+__gsharp_id_1_signed[2]=2147483647;
 }
 ";
 public static readonly string EnumConstKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +EnumConstKernel_Source;

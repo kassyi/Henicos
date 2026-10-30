@@ -218,7 +218,7 @@ __gsharp_id_11_b = __gsharp_tuple_1;
 int __gsharp_id_13_processed;
 bool __gsharp_id_12_ok = __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__Tier1IntegrationKernels__TryProcess(__gsharp_id_0_intInput[__gsharp_id_7_tid],&__gsharp_id_13_processed);
 int __gsharp_id_14_bitwise = (__gsharp_shl_i32(__gsharp_id_10_a,1))|(__gsharp_id_11_b>>1)^0xFF;
-__gsharp_id_14_bitwise&=~1;
+__gsharp_id_14_bitwise&=(-2);
 float __gsharp_id_15_mag = __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__Tier1IntegrationKernels__HelperMath(__gsharp_id_1_floatInput[__gsharp_id_7_tid],(float)__gsharp_id_13_processed);
 __gsharp_id_15_mag=__gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__Tier1IntegrationKernels__HelperMathAggressive(__gsharp_id_15_mag);
 __gsharp_id_15_mag=(float)__gsharp_max_f32(__gsharp_id_15_mag,__gsharp_id_3_config.__gsharp_mb_FloatVal);

@@ -9,7 +9,7 @@ internal static class GSharpSharedCpuDeviceCode
 public const string Source = @"__forceinline__ int __gsharp_fn_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuStreamCompactionKernels__GetConflictFreeOffset(int __gsharp_id_0_n);
 
 __forceinline__ int __gsharp_fn_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuStreamCompactionKernels__GetConflictFreeOffset(int __gsharp_id_0_n){
-return __gsharp_add_i32(__gsharp_id_0_n>>5,__gsharp_id_0_n>>(2*5));
+return __gsharp_add_i32(__gsharp_id_0_n>>5,__gsharp_id_0_n>>(10));
 }
 
 ";
@@ -72,7 +72,7 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-__gsharp_ctx->__gsharp_id_4_sharedMem={ (unsigned int*)__gsharp_allocate_smem_static(0x2d815af68769c2cdull, (2048+128) * sizeof(unsigned int), alignof(unsigned int)) };
+__gsharp_ctx->__gsharp_id_4_sharedMem={ (unsigned int*)__gsharp_allocate_smem_static(0x2d815af68769c2cdull, (2176) * sizeof(unsigned int), alignof(unsigned int)) };
 __gsharp_ctx->__gsharp_id_5_tid=(int)threadIdx.x;
 __gsharp_ctx->__gsharp_id_6_bIdx=(int)blockIdx.x;
 __gsharp_ctx->__gsharp_id_7_elementsPerBlock=__gsharp_mul_i32((int)blockDim.x,2);

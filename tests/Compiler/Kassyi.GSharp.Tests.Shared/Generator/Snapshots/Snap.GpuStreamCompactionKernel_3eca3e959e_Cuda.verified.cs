@@ -61,7 +61,7 @@ internal static class GSharpSharedCudaDeviceCode
 public const string Source = @"__forceinline__ __device__ int __gsharp_fn_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuStreamCompactionKernels__GetConflictFreeOffset(int __gsharp_id_0_n);
 
 __forceinline__ __device__ int __gsharp_fn_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuStreamCompactionKernels__GetConflictFreeOffset(int __gsharp_id_0_n){
-return __gsharp_add_i32(__gsharp_id_0_n>>5,__gsharp_id_0_n>>(2*5));
+return __gsharp_add_i32(__gsharp_id_0_n>>5,__gsharp_id_0_n>>(10));
 }
 
 ";
@@ -92,7 +92,7 @@ public static partial class AotContexts
 {
 }
 public const string BlockExclusiveScan_Source = @"extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuStreamCompactionKernels__BlockExclusiveScan(GSharpArray<unsigned int> __gsharp_id_0_output, GSharpArray<unsigned int> __gsharp_id_1_input, int __gsharp_id_2_elementCount, GSharpArray<unsigned int> __gsharp_id_3_blockSums){
-__shared__ unsigned int __gsharp_id_4_sharedMem[2048+128];
+__shared__ unsigned int __gsharp_id_4_sharedMem[2176];
 int __gsharp_id_5_tid = (int)threadIdx.x;
 int __gsharp_id_6_bIdx = (int)blockIdx.x;
 int __gsharp_id_7_elementsPerBlock = __gsharp_mul_i32((int)blockDim.x,2);

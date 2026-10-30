@@ -329,7 +329,7 @@ bool __gsharp_id_38_condition2 = __gsharp_ctx->__gsharp_id_8_ty==0;
 if(__gsharp_id_37_condition1&&__gsharp_id_38_condition2)
 {
 int __gsharp_id_39_bitwise = (__gsharp_shl_i32(__gsharp_ctx->__gsharp_id_7_tx,2))|(__gsharp_ctx->__gsharp_id_8_ty>>1)^0xFF;
-__gsharp_id_39_bitwise&=~1;
+__gsharp_id_39_bitwise&=(-2);
 }
 else
 {

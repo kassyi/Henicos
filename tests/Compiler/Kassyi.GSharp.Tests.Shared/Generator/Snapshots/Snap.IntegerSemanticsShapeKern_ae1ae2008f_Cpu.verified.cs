@@ -216,7 +216,7 @@ short h = (short)x;
 h += 1;
 h <<= 1;
 a[10] = h;
-// A target whose evaluation writes something is passed by reference, so that it is evaluated once
+// The part of a target that writes (k++) goes into a temporary once; the target is written as an expression
 int k = t;
 a[k++] += x;
 a[k++]--;
@@ -393,7 +393,7 @@ __gsharp_id_3_l[1]=__gsharp_id_2_a[__gsharp_id_5_t]+1ll;
 __gsharp_id_4_u[0]=__gsharp_id_4_u[__gsharp_id_5_t]*3u+1u;
 __gsharp_id_2_a[3]=__gsharp_id_2_a[__gsharp_id_5_t]&0xFF|__gsharp_id_2_a[__gsharp_id_5_t]^1;
 __gsharp_id_2_a[4]=__gsharp_id_2_a[__gsharp_id_5_t]/3%2;
-__gsharp_id_2_a[5]=1<<4;
+__gsharp_id_2_a[5]=16;
 __gsharp_id_4_u[1]=__gsharp_id_4_u[__gsharp_id_5_t]<<4;
 short __gsharp_id_6_s = __gsharp_id_0_h[__gsharp_id_5_t];
 __gsharp_id_6_s++;
@@ -995,7 +995,7 @@ __gsharp_id_4_l[__gsharp_id_8_t]=__gsharp_to_i64(__gsharp_id_0_f[__gsharp_id_8_t
 __gsharp_id_5_ul[__gsharp_id_8_t]=__gsharp_to_u64(__gsharp_id_1_d[__gsharp_id_8_t]);
 __gsharp_id_6_b[__gsharp_id_8_t]=(unsigned char)__gsharp_to_i32(__gsharp_id_0_f[__gsharp_id_8_t]);
 __gsharp_id_7_s[__gsharp_id_8_t]=(short)__gsharp_to_i32(__gsharp_id_1_d[__gsharp_id_8_t]*2.0);
-__gsharp_id_2_i[0]=(int)3.7f;
+__gsharp_id_2_i[0]=3;
 __gsharp_id_0_f[__gsharp_id_8_t]=(float)__gsharp_id_1_d[__gsharp_id_8_t];
 __gsharp_id_2_i[1]=(int)__gsharp_id_4_l[__gsharp_id_8_t];
 __gsharp_state=-1;

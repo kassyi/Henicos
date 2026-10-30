@@ -35,7 +35,7 @@ public sealed class PostfixUnaryExpressionTranspilerRule : SyntaxNodeTranspilerR
             step.Syntax.RawKind == node.RawKind &&
             IntegerSemantics.GetIncrementHelper(step, node, ref context) is { } helper)
         {
-            IntegerSemantics.AppendStep(step, node, node.Operand, helper, ref context);
+            IntegerSemanticsEmitter.AppendStep(step, node, node.Operand, helper, ref context);
             return;
         }
 

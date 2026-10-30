@@ -122,11 +122,11 @@ public struct Emitter(
 
     /// <summary>
     /// The temporary (<c>__gsharp_seq_&lt;n&gt;</c>) that a part of the target of a step or compound assignment was
-    /// evaluated into, written in place of the part while the target is written (IntegerSemantics).
+    /// evaluated into, written in place of the part while the target is written (IntegerSemanticsEmitter).
     /// </summary>
     public Dictionary<SyntaxNode, int> SpilledExpressions { get; } = new();
 
-    /// <summary>Whether each for loop step that IntegerSemantics analyzed cannot overflow (it then stays <c>i++</c>).</summary>
+    /// <summary>Whether each for loop step that BoundedLoopStep analyzed cannot overflow (it then stays <c>i++</c>).</summary>
     public Dictionary<SyntaxNode, bool> BoundedLoopSteps { get; } = new();
 
     /// <summary>

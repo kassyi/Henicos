@@ -41,7 +41,7 @@ public static partial class IntegerSemanticsShapeKernels
         h <<= 1;
         a[10] = h;
 
-        // A target whose evaluation writes something is passed by reference, so that it is evaluated once
+        // The part of a target that writes (k++) goes into a temporary once; the target is written as an expression
         int k = t;
         a[k++] += x;
         a[k++]--;
