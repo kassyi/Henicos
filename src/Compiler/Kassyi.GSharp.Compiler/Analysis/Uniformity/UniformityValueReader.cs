@@ -20,6 +20,9 @@ internal sealed class UniformityValueReader(UniformityState state)
         var recorder = state.Recorder;
         var variance = operation switch
         {
+            ILocalReferenceOperation { Local.IsRef: true } refLocal =>
+                (recorder.TryGetValue(refLocal.Local, out var refIndex) ? current[refIndex] : ThreadVariance.Uniform) |
+                recorder.Memory.Read(refLocal, current),
             ILocalReferenceOperation local =>
                 recorder.TryGetValue(local.Local, out var index) ? current[index] : ThreadVariance.Uniform,
             IParameterReferenceOperation parameter => ReadParameter(parameter.Parameter, current),
@@ -29,8 +32,12 @@ internal sealed class UniformityValueReader(UniformityState state)
                 when SyncIntrinsicClassifier.IsThreadVariantSource(property) => ThreadVariance.Block,
             IPropertyReferenceOperation { Property: var property }
                 when SyncIntrinsicClassifier.IsBlockVariantSource(property) => ThreadVariance.Grid,
+            IInvocationOperation { TargetMethod.ReturnsByRef: true } refCall =>
+                EvaluateCall(refCall, graph, current) | recorder.Memory.Read(refCall, current),
             IInvocationOperation invocation => EvaluateCall(invocation, graph, current),
             IFlowAnonymousFunctionOperation => ThreadVariance.Uniform,
+            IArrayElementReferenceOperation or IPropertyReferenceOperation { Property.IsIndexer: true } =>
+                EvaluateOperands(operation, graph, current) | recorder.Memory.Read(operation, current),
             ISimpleAssignmentOperation assignment => Evaluate(assignment.Value, graph, current),
             ICompoundAssignmentOperation compound =>
                 Evaluate(compound.Target, graph, current) | Evaluate(compound.Value, graph, current),
@@ -168,7 +175,10 @@ internal sealed class UniformityValueReader(UniformityState state)
             }
         }
 
-        return new CalleeVariance(returned, byReference, state.Barriers.SummarizeBarriers());
+        var (memory, fieldMemory, barrierOnEveryPath) =
+            state.Recorder.Memory.Summarize(state.Method, state.In[state.Graph.Exit]);
+        return new CalleeVariance(returned, byReference, state.Barriers.SummarizeBarriers(), memory, fieldMemory,
+            barrierOnEveryPath);
     }
 
     // A parameter of the analyzed method has a value from the start; one of a lambda or local function that is not
