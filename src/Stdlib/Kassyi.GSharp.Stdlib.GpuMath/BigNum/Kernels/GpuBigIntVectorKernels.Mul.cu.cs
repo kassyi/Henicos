@@ -141,11 +141,11 @@ public static partial class GpuBigIntVectorKernels
                     {
                         op.Result.Limbs[offsetResult + pos] = (uint)sum + carryIn;
 
-                        // The carry out of the low pass's top word is word i + leftWords, which no earlier row reached
-                        // (row i - 1 ends at word i - 1 + leftWords). The thread computes it itself: the block carry
-                        // out is the carry of thread bDim - 1, and in a single chunk bDim = leftWords + rightWords >
-                        // leftWords, so that thread holds no word (g = p = 0) and its carry out is 0. The high pass
-                        // carries nothing out: after row i the partial product is below
+                        // The carry out of the low pass's top word goes to word i + leftWords, which no earlier row
+                        // reached (row i - 1 ends at word i - 1 + leftWords), so it is assigned, not added. The top
+                        // thread computes it itself instead of reading the block carry-out: that is the carry of thread
+                        // bDim - 1, which usually holds no word, and is undefined when the last warp is partial (#887).
+                        // The high pass carries nothing out: after row i the partial product is below
                         // 2^(32 * (i + 1 + leftWords)).
                         if (half == 0 && j == leftWords - 1 && pos + 1 < resultWords)
                         {

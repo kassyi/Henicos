@@ -5,9 +5,10 @@ namespace Kassyi.GSharp.Stdlib.GpuMath.Tests.BigNum.Expressions;
 /// </summary>
 /// <remarks>
 /// The result of a vector multiplication is <c>left + right</c> words wide, so every product fits; the property is that
-/// it is exact. The widths reach the kernel's boundaries: one word, a warp boundary of the left operand (33 words, the
-/// block has more than one warp), and a left operand longer than the 1024 threads of a block (1025 words, two passes of
-/// the row loop with the carry handed from the first chunk to the second).
+/// it is exact. The widths reach the kernel's boundaries: one word, both sides of a warp boundary of the left operand
+/// (32 and 33 words; at 33 the block has more than one warp), a left operand that exactly fills a block (1024 words: the
+/// top thread is lane 31 of the last warp and thread <c>bDim - 1</c> at once), and a left operand longer than the 1024
+/// threads of a block (1025 words, two passes of the row loop with the carry handed from the first chunk to the second).
 /// </remarks>
 public partial class GpuBigIntVectorLinqExtensionsTests
 {
@@ -17,10 +18,12 @@ public partial class GpuBigIntVectorLinqExtensionsTests
         { 2, 2, 12 },
         { 16, 8, 13 },
         { 16, 16, 14 },
+        { 32, 1, 20 },
         { 33, 1, 15 },
         { 33, 33, 16 },
         { 64, 1, 17 },
         { 64, 64, 18 },
+        { 1024, 1, 21 },
         { 1025, 2, 19 }
     };
 
@@ -120,13 +123,15 @@ public partial class GpuBigIntVectorLinqExtensionsTests
     [Category(TestCategory.Unit)]
     [Scenario(TestScenario.Boundary)]
     [InlineData(4)]
-    [InlineData(33)]
-    [InlineData(1025)]
+    [InlineData(34)]
+    [InlineData(1026)]
     public void ZipMultiply_PropagateChain_IsExact(int leftWords)
     {
         // left = [0xFFFFFFFF, 1, ..., 1, 0xFFFFFFFF] (low word first) times 0xFFFFFFFF: the low pass leaves words
-        // 1 .. leftWords - 2 at 0xFFFFFFFF, and the high pass adds 0xFFFFFFFE to word 1 and 0 to the words after it, so
-        // its carry runs through every middle word (propagate, not generate), across warps and, for 1025 words, chunks.
+        // 1 .. leftWords - 2 at 0xFFFFFFFF and word leftWords - 1 at 1. The high pass adds 0xFFFFFFFE to word 1, which
+        // carries, and 0 to words 2 .. leftWords - 2, which propagate the carry (propagate, not generate); thread
+        // leftWords - 2 adds 0 to word leftWords - 1 = 1, which ends the run. So the run reaches thread leftWords - 2:
+        // for 34 words thread 32 (across the warp boundary), for 1026 words thread 1024 (across the chunk boundary).
         var leftValue = PropagateChainOperand(leftWords);
         var rightValue = new BigInteger(uint.MaxValue);
 
@@ -138,6 +143,12 @@ public partial class GpuBigIntVectorLinqExtensionsTests
         // The product is exact; the carry crosses the run of 0xFFFFFFFF words.
         // mutant: GpuBigIntVectorKernels.Mul.cu.cs, `p = (uint)sum == 0xFFFFFFFFu ? 1u : 0u` -> `p = 0u`
         // input: every case (the random full-width cases do not reach a propagate chain)
+        // mutant: GpuBigIntVectorKernels.cu.cs PropagateBlockCarry, `if (warpId > 0)` -> `if (warpId > 1000)` (no carry
+        // between warps)
+        // input: 34 and 1026 (33 words would end the run at thread 31, inside warp 0)
+        // mutant: GpuBigIntVectorKernels.Mul.cu.cs, `PropagateBlockCarry(g, p, blockCarryIn, ...)` ->
+        // `PropagateBlockCarry(g, p, 0u, ...)` (no carry between chunks)
+        // input: 1026 (1025 words would end the run at thread 1023, inside chunk 0)
         Assert.Equal(leftValue * rightValue, actual[0]);
         Assert.Equal(-(leftValue * rightValue), actual[1]);
     }
