@@ -22,6 +22,21 @@ internal static class SuspensionAnalysis
 
     private static readonly ConditionalWeakTable<Compilation, ConcurrentDictionary<IMethodSymbol, bool>> s_blockBarrier = new();
 
+    private static readonly ConditionalWeakTable<Compilation, ConcurrentDictionary<IMethodSymbol, bool>> s_gridBarrier = new();
+
+    // Which barriers a query looks for
+    private enum BarrierSet
+    {
+        // Any intrinsic that splits the state machine, also a warp shuffle
+        Splitting,
+
+        // Gpu.SyncThreads() and Gpu.SyncGrid(), which every thread of the block must reach
+        Block,
+
+        // Gpu.SyncGrid(), which every thread of the grid must reach
+        Grid
+    }
+
     /// <summary>Whether <paramref name="method"/> is a device function that reaches a phase barrier.</summary>
     public static bool IsSuspendingFunction(IMethodSymbol method, Compilation compilation)
     {
@@ -34,7 +49,7 @@ internal static class SuspensionAnalysis
         var cache = s_suspending.GetValue(compilation,
             static _ => new ConcurrentDictionary<IMethodSymbol, bool>(SymbolEqualityComparer.Default));
         return cache.GetOrAdd(definition,
-            m => ReachesBarrier(m, blockBarrier: false, compilation,
+            m => ReachesBarrier(m, BarrierSet.Splitting, compilation,
                 new HashSet<IMethodSymbol>(SymbolEqualityComparer.Default)));
     }
 
@@ -58,9 +73,40 @@ internal static class SuspensionAnalysis
         var cache = s_blockBarrier.GetValue(compilation,
             static _ => new ConcurrentDictionary<IMethodSymbol, bool>(SymbolEqualityComparer.Default));
         return cache.GetOrAdd(definition,
-            m => ReachesBarrier(m, blockBarrier: true, compilation,
+            m => ReachesBarrier(m, BarrierSet.Block, compilation,
                 new HashSet<IMethodSymbol>(SymbolEqualityComparer.Default)));
     }
+
+    /// <summary>
+    /// Whether <paramref name="method"/> is a device function that reaches a grid barrier (<c>Gpu.SyncGrid()</c>),
+    /// directly or through other device functions.
+    /// </summary>
+    /// <remarks>
+    /// [WHY] Every thread of the grid must reach a grid barrier, so a call to such a function diverges also on a branch
+    /// that varies only between blocks (GSH0083). The export record of a device function of another assembly does not
+    /// say which barrier it reaches; such a call is taken as reaching a block barrier only.
+    /// </remarks>
+    public static bool ReachesGridBarrier(IMethodSymbol method, Compilation compilation)
+    {
+        var definition = method.OriginalDefinition;
+        if (!TryGetDeviceFunctionBody(definition, compilation, out _))
+        {
+            return false;
+        }
+
+        var cache = s_gridBarrier.GetValue(compilation,
+            static _ => new ConcurrentDictionary<IMethodSymbol, bool>(SymbolEqualityComparer.Default));
+        return cache.GetOrAdd(definition,
+            m => ReachesBarrier(m, BarrierSet.Grid, compilation,
+                new HashSet<IMethodSymbol>(SymbolEqualityComparer.Default)));
+    }
+
+    /// <summary>
+    /// The barrier scope of a call to <paramref name="method"/>, a device function that reaches a block barrier: the grid
+    /// when it also reaches a grid barrier.
+    /// </summary>
+    public static SyncScope GetBarrierScope(IMethodSymbol method, Compilation compilation) =>
+        ReachesGridBarrier(method, compilation) ? SyncScope.Grid : SyncScope.Block;
 
     /// <summary>Whether <paramref name="invocation"/>, a node of the tree of <paramref name="semanticModel"/>, calls a
     /// device function that reaches a phase barrier.</summary>
@@ -102,7 +148,7 @@ internal static class SuspensionAnalysis
         return callees.ToImmutable();
     }
 
-    private static bool ReachesBarrier(IMethodSymbol method, bool blockBarrier, Compilation compilation,
+    private static bool ReachesBarrier(IMethodSymbol method, BarrierSet barriers, Compilation compilation,
         HashSet<IMethodSymbol> visited)
     {
         if (!visited.Add(method))
@@ -114,16 +160,21 @@ internal static class SuspensionAnalysis
         {
             // A device function of another assembly: what its assembly recorded
             return DeviceExportTable.TryFindFunction(method, compilation, out var imported) &&
-                   (blockBarrier ? imported.Record.ReachesBlockBarrier : imported.Record.Suspends);
+                   barriers switch
+                   {
+                       BarrierSet.Splitting => imported.Record.Suspends,
+                       BarrierSet.Block => imported.Record.ReachesBlockBarrier,
+                       _ => false
+                   };
         }
 
         var semanticModel = compilation.GetCachedSemanticModel(declaration.SyntaxTree);
         var callsBarrier = declaration.DescendantNodes()
             .AsStackEnumerable()
-            .Any((semanticModel, blockBarrier), static (node, state) =>
+            .Any((semanticModel, barriers), static (node, state) =>
                 node is InvocationExpressionSyntax invocation &&
                 state.semanticModel.GetSymbol(invocation) is IMethodSymbol callee &&
-                IsBarrier(SyncIntrinsicClassifier.Classify(callee), state.blockBarrier)
+                IsBarrier(SyncIntrinsicClassifier.Classify(callee), state.barriers)
             );
         if (callsBarrier)
         {
@@ -132,7 +183,7 @@ internal static class SuspensionAnalysis
 
         foreach (var callee in GetDeviceFunctionCallees(declaration, compilation))
         {
-            if (ReachesBarrier(callee, blockBarrier, compilation, visited))
+            if (ReachesBarrier(callee, barriers, compilation, visited))
             {
                 return true;
             }
@@ -141,12 +192,16 @@ internal static class SuspensionAnalysis
         return false;
     }
 
-    // A block barrier is one that every thread of the block must reach (SyncThreads, SyncGrid); any other barrier is one
-    // that splits the state machine (also a warp shuffle)
-    private static bool IsBarrier(SyncIntrinsicInfo intrinsic, bool blockBarrier) =>
-        blockBarrier
-            ? intrinsic.Kind is SyncIntrinsicKind.BlockBarrier or SyncIntrinsicKind.GridBarrier
-            : intrinsic.SplitsStateMachine;
+    // A block barrier is one that every thread of the block must reach (SyncThreads, SyncGrid), a grid barrier one that
+    // every thread of the grid must reach (SyncGrid); any other barrier is one that splits the state machine (also a warp
+    // shuffle)
+    private static bool IsBarrier(SyncIntrinsicInfo intrinsic, BarrierSet barriers) =>
+        barriers switch
+        {
+            BarrierSet.Block => intrinsic.Kind is SyncIntrinsicKind.BlockBarrier or SyncIntrinsicKind.GridBarrier,
+            BarrierSet.Grid => intrinsic.Kind == SyncIntrinsicKind.GridBarrier,
+            _ => intrinsic.SplitsStateMachine
+        };
 
     private static bool CallsReach(IMethodSymbol method, IMethodSymbol target, Compilation compilation,
         HashSet<IMethodSymbol> visited)

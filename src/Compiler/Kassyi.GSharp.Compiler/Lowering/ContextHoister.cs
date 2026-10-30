@@ -11,8 +11,8 @@ namespace Kassyi.GSharp.Compiler.Lowering;
 /// rewritten to the frame copies of <paramref name="copiedParameters"/>.
 /// </param>
 /// <remarks>
-/// A local used after a label of the user that starts a state (<see cref="StateLabelPlanner"/>), in another state than
-/// its declaration, lives in the context like a local that crosses a barrier.
+/// A local used after a label that starts a state (<see cref="StateLabelPlanner"/>), in another state than its
+/// declaration, lives in the context like a local that crosses a barrier.
 /// </remarks>
 public class ContextHoister(
     IReadOnlyCollection<string>? copiedParameters = null,
@@ -68,7 +68,7 @@ public class ContextHoister(
             barrierStarts[i] = analyzer.BarrierSpans[i].Start;
         }
 
-        var splitLabelStarts = FindSplitUserLabelStarts(block);
+        var splitLabelStarts = FindSplitLabelStarts(block);
         var lastReferenceStarts = splitLabelStarts.Length > 0
             ? FindLastReferenceStarts(block)
             : null;
@@ -134,19 +134,17 @@ public class ContextHoister(
         return (rewrittenBlock, hoistedDecls);
     }
 
-    // [WHY] A label of the user that starts a state ends the case block of its declaration, as a barrier does. Only a
-    // local that is used after such a label moves into the context (as pocl saves only the values used outside their
-    // region); the others stay locals. Lowering's own labels need no check: they appear only around barriers, which the
-    // barrier rule covers.
-    private int[] FindSplitUserLabelStarts(BlockSyntax block)
+    // [WHY] A label that starts a state ends the case block of its declaration, as a barrier does. Only a local that is
+    // used after such a label moves into the context (as pocl saves only the values used outside their region); the
+    // others stay locals. Lowering's own labels count too: a flattened switch starts a state at every section, and C#
+    // lets a section use a local that an earlier section declares after its last barrier (#708, #795).
+    private int[] FindSplitLabelStarts(BlockSyntax block)
     {
         var plan = _plan ?? StateLabelPlanner.Plan(block, semanticModel);
         var starts = ImmutableArray.CreateBuilder<int>();
         foreach (var statement in block.Statements)
         {
-            if (statement is LabeledStatementSyntax labeled &&
-                !LoweringIdentity.IsLoweringLabel(labeled) &&
-                plan.StartsState(labeled))
+            if (statement is LabeledStatementSyntax labeled && plan.StartsState(labeled))
             {
                 starts.Add(labeled.SpanStart);
             }

@@ -60,7 +60,7 @@ public static class AstLoweringPipeline
         // pass keeps one instance across both rounds so that temporaries and labels stay unique.
         var conditionalRewriter = new ConditionalEvaluationRewriter();
         var warpRewriter = new WarpInstructionRewriter(bodyModel);
-        var branchRewriter = new BranchRewriter();
+        var branchRewriter = new BranchRewriter(bodyModel);
         var hoistedBody = conditionalRewriter.Rewrite(annotatedBody);
         hoistedBody = warpRewriter.Rewrite(hoistedBody);
         hoistedBody = branchRewriter.Rewrite(hoistedBody);

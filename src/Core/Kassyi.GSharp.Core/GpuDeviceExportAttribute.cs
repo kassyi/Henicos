@@ -145,4 +145,23 @@ public sealed class GpuDeviceExportAttribute : Attribute
 
     /// <summary>Gets or sets whether the assembly holds the managed state machine of a suspending function.</summary>
     public bool ManagedStateMachine { get; set; }
+
+    /// <summary>
+    /// Gets or sets the parameters, one bit per ordinal (past the 32nd sharing the last bit), whose thread-variant
+    /// argument makes only some threads reach a barrier of the device function, where uniform arguments do not (GSH0083
+    /// at the call site).
+    /// </summary>
+    public int DivergentConditionParameters { get; set; }
+
+    /// <summary>
+    /// Gets or sets the parameters, one bit per ordinal, whose thread-variant argument makes some threads leave the
+    /// device function early before a barrier, where uniform arguments do not.
+    /// </summary>
+    public int DivergentExitOnlyParameters { get; set; }
+
+    /// <summary>
+    /// Gets or sets whether some threads may leave the device function early before a barrier even with uniform
+    /// arguments; a barrier of the caller after the call then diverges.
+    /// </summary>
+    public bool HasExitOnlyBarrier { get; set; }
 }

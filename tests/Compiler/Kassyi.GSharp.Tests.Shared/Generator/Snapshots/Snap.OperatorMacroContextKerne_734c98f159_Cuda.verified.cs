@@ -183,7 +183,7 @@ public const string DebugName_Calls = "global::System.UInt32";
 [System.Runtime.InteropServices.FieldOffset(4)]
 public global::System.UInt32 Calls;
 }
-public static unsafe void Marshal_OperatorMacroContextState(ref global::Kassyi.GSharp.Tests.Shared.Syntax.OperatorMacroContextState host, ref AotContexts.OperatorMacroContextState native, bool isDevicePtr, System.Collections.Generic.List<IntPtr>? allocatedPtrs, IntPtr hStream = default)
+public static unsafe void Marshal_OperatorMacroContextState(ref global::Kassyi.GSharp.Tests.Shared.Syntax.OperatorMacroContextState host, ref AotContexts.OperatorMacroContextState native, bool isDevicePtr, global::Kassyi.GSharp.Runtime.Interop.DeviceArrayRegions? deviceArrays, IntPtr hStream = default)
 {
 native = System.Runtime.CompilerServices.Unsafe.As<global::Kassyi.GSharp.Tests.Shared.Syntax.OperatorMacroContextState, AotContexts.OperatorMacroContextState>(ref host);
 }

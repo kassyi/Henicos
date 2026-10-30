@@ -276,7 +276,7 @@ Violations are either statically blocked by Roslyn Analyzers at compile-time or 
 | :--- | :---: | :--- |
 | **Uniform `SyncThreads()`** | **Fully Supported** | Standard patterns like tiling and reductions work identically to the GPU. |
 | **`SyncThreads()` inside Loops** | **Supported (AST Lowering)** | `for`/`while` loops containing barriers are automatically lowered into flat `goto` structures by the G# Source Generator. |
-| **Divergent Barriers** | **Strictly Prohibited** | `SyncThreads()` inside thread-dependent conditional branches (e.g., `if (threadIdx.X < 16)`) will trigger a Roslyn compile-time error ([GSH0037](../diagnostics/GSH0037.md)). |
+| **Divergent Barriers** | **Avoid** | `SyncThreads()` inside thread-dependent conditional branches (e.g., `if (threadIdx.X < 16)`) triggers the warning [GSH0083](../diagnostics/GSH0083.md); a barrier inside the body of `Gpu.GridStrideLoop`, `Gpu.SingleThread` or a local function is the error [GSH0037](../diagnostics/GSH0037.md). |
 | **Exception Handling** | **Strictly Prohibited** | `try-catch-finally` blocks inside kernels cannot cross barrier bounds and trigger a Roslyn compile-time error ([GSH0038](../diagnostics/GSH0038.md)). |
 | **Cross-Barrier `ref struct`** | **Strictly Prohibited** | `ref` variables or `ref struct`s (e.g., `Span<T>`) cannot be held across barriers. Triggers a Roslyn compile-time error ([GSH0039](../diagnostics/GSH0039.md)). |
 | **Cross-Barrier `goto`** | **Strictly Prohibited** | `goto` statements cannot jump across barrier bounds. Triggers a Roslyn compile-time error ([GSH0040](../diagnostics/GSH0040.md)). |

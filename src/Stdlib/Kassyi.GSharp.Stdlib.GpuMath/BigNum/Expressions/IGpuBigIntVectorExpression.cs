@@ -25,7 +25,8 @@ public interface IGpuBigIntVectorExpression : IDisposable
     /// An optional destination for the evaluated values, with the expression's <see cref="WordsPerElement"/> and at least
     /// <paramref name="elementCount"/> elements; only the first <paramref name="elementCount"/> are written. The default
     /// view means none (an array of 0 elements is a target); a <see cref="GpuBigUIntArray"/> converts to a view implicitly. The expression borrows it
-    /// and never frees it.
+    /// and never frees it. It may share memory with an input (the input array itself, or a shifted view of it): the node
+    /// then computes into its own result buffers and copies the result into the target.
     /// </param>
     /// <returns>
     /// A borrowed view of exactly the evaluated length: the node's own result buffers (with the target's values if one

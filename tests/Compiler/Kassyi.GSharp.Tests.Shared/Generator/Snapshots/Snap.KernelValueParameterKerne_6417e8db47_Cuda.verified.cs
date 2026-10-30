@@ -134,7 +134,7 @@ public const string DebugName_Data = "global::System.Int32[]";
 [System.Runtime.InteropServices.FieldOffset(0)]
 public global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy Data;
 }
-public static unsafe void Marshal_KernelParameterHolder(ref global::Kassyi.GSharp.Tests.Shared.Syntax.KernelParameterHolder host, ref AotContexts.KernelParameterHolder native, bool isDevicePtr, System.Collections.Generic.List<IntPtr>? allocatedPtrs, IntPtr hStream = default)
+public static unsafe void Marshal_KernelParameterHolder(ref global::Kassyi.GSharp.Tests.Shared.Syntax.KernelParameterHolder host, ref AotContexts.KernelParameterHolder native, bool isDevicePtr, global::Kassyi.GSharp.Runtime.Interop.DeviceArrayRegions? deviceArrays, IntPtr hStream = default)
 {
 native = default;
 if (host.Data != null)
@@ -148,8 +148,14 @@ else
 int size = host.Data.Length * sizeof(global::System.Int32);
 if (size > 0)
 {
+if (deviceArrays != null && deviceArrays.TryGetRegion(host.Data, out var region))
+{
+native.Data.Data = region;
+}
+else
+{
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out native.Data.Data, (IntPtr)size, hStream));
-allocatedPtrs?.Add(native.Data.Data);
+deviceArrays?.Add(host.Data, native.Data.Data);
 var handle = System.Runtime.InteropServices.GCHandle.Alloc(host.Data, System.Runtime.InteropServices.GCHandleType.Pinned);
 try
 {
@@ -158,6 +164,7 @@ CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoDAsync_v2(native.Data.Data, 
 finally
 {
 handle.Free();
+}
 }
 }
 native.Data.Length = host.Data.Length;
@@ -193,7 +200,7 @@ public const string DebugName_Y = "global::System.Int32";
 [System.Runtime.InteropServices.FieldOffset(4)]
 public global::System.Int32 Y;
 }
-public static unsafe void Marshal_KernelParameterPoint(ref global::Kassyi.GSharp.Tests.Shared.Syntax.KernelParameterPoint host, ref AotContexts.KernelParameterPoint native, bool isDevicePtr, System.Collections.Generic.List<IntPtr>? allocatedPtrs, IntPtr hStream = default)
+public static unsafe void Marshal_KernelParameterPoint(ref global::Kassyi.GSharp.Tests.Shared.Syntax.KernelParameterPoint host, ref AotContexts.KernelParameterPoint native, bool isDevicePtr, global::Kassyi.GSharp.Runtime.Interop.DeviceArrayRegions? deviceArrays, IntPtr hStream = default)
 {
 native = System.Runtime.CompilerServices.Unsafe.As<global::Kassyi.GSharp.Tests.Shared.Syntax.KernelParameterPoint, AotContexts.KernelParameterPoint>(ref host);
 }
@@ -744,14 +751,14 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 WarmupFunctionPointerArrayFromStructFieldKernel();
 IntPtr hfunc = s_hfunc_ArrayFromStructFieldKernel!.Value;
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "KernelValueParameterKernels.ArrayFromStructFieldKernel");
-System.Collections.Generic.List<IntPtr> holder_allocatedPtrs = new System.Collections.Generic.List<IntPtr>();
+var __gsharp_device_arrays = new global::Kassyi.GSharp.Runtime.Interop.DeviceArrayRegions();
 IntPtr d_values = IntPtr.Zero;
 IntPtr d_output = IntPtr.Zero;
 try
 {
 void** kernelParams = stackalloc void*[3];
 AotContexts.KernelParameterHolder native_holder = default;
-AotContexts.Marshal_KernelParameterHolder(ref holder, ref native_holder, false, holder_allocatedPtrs, hStream);
+AotContexts.Marshal_KernelParameterHolder(ref holder, ref native_holder, false, __gsharp_device_arrays, hStream);
 // Marshal scalar struct: holder
 kernelParams[0] = &native_holder;
 // Marshal array: values
@@ -817,9 +824,9 @@ CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
 }
 finally
 {
-foreach (var ptr in holder_allocatedPtrs) CudaDriverApi.cuMemFreeAsync(ptr, hStream);
 if (d_values != IntPtr.Zero) CudaDriverApi.cuMemFreeAsync(d_values, hStream);
 if (d_output != IntPtr.Zero) CudaDriverApi.cuMemFreeAsync(d_output, hStream);
+__gsharp_device_arrays.Free(hStream);
 }
 }
 }
