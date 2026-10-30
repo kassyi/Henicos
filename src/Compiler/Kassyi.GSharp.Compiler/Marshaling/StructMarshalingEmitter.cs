@@ -522,54 +522,50 @@ internal static class StructMarshalingEmitter
             $"out {native}.Data, (IntPtr)size, hStream));");
         writer.AppendLine($"{CudaArraysParameter}?.Add({host}, {native}.Data);");
 
-        if (TypeLayoutCalculator.IsUserStruct(elementType))
+        if (!TypeLayoutCalculator.IsUserStruct(elementType))
         {
-            writer.Append("var tempArray = new ");
-            writer.AppendAotStructPath(elementType);
-            writer.AppendLine($"[{host}.Length];");
-
-            writer.AppendLine($"for (int i = 0; i < {host}.Length; i++)");
-            using (writer.Scope())
-            {
-                writer.AppendMarshalMethodName(elementType);
-                writer.AppendLine(
-                    $"(ref {host}[i], ref tempArray[i], false, {CudaArraysParameter}, hStream);");
-            }
-
-            writer.AppendLine(
-                "var handle = System.Runtime.InteropServices.GCHandle.Alloc(tempArray, System.Runtime.InteropServices.GCHandleType.Pinned);");
-            writer.AppendLine("try");
-            using (writer.Scope())
-            {
-                writer.AppendLine(
-                    "CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoDAsync_v2(" +
-                    $"{native}.Data, handle.AddrOfPinnedObject(), (IntPtr)size, hStream));");
-            }
-
-            writer.AppendLine("finally");
-            using (writer.Scope())
-            {
-                writer.AppendLine("handle.Free();");
-            }
+            WritePinnedCopy(writer, host, native, toDevice: true);
+            return;
         }
-        else
-        {
-            writer.AppendLine(
-                $"var handle = System.Runtime.InteropServices.GCHandle.Alloc({host}, " +
-                "System.Runtime.InteropServices.GCHandleType.Pinned);");
-            writer.AppendLine("try");
-            using (writer.Scope())
-            {
-                writer.AppendLine(
-                    "CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoDAsync_v2(" +
-                    $"{native}.Data, handle.AddrOfPinnedObject(), (IntPtr)size, hStream));");
-            }
 
-            writer.AppendLine("finally");
-            using (writer.Scope())
-            {
-                writer.AppendLine("handle.Free();");
-            }
+        writer.Append("var tempArray = new ");
+        writer.AppendAotStructPath(elementType);
+        writer.AppendLine($"[{host}.Length];");
+
+        writer.AppendLine($"for (int i = 0; i < {host}.Length; i++)");
+        using (writer.Scope())
+        {
+            writer.AppendMarshalMethodName(elementType);
+            writer.AppendLine(
+                $"(ref {host}[i], ref tempArray[i], false, {CudaArraysParameter}, hStream);");
+        }
+
+        WritePinnedCopy(writer, "tempArray", native, toDevice: true);
+    }
+
+    // var handle = GCHandle.Alloc(<pinned>, GCHandleType.Pinned);
+    // try { cuMemcpyHtoDAsync_v2(<native>.Data, handle.AddrOfPinnedObject(), size); } finally { handle.Free(); }
+    // or cuMemcpyDtoHAsync_v2(handle.AddrOfPinnedObject(), <native>.Data, size) when !toDevice. <pinned> is the host
+    // array, or the shadow array of its converted elements
+    private static void WritePinnedCopy(SourceWriter writer, string pinned, string native, bool toDevice)
+    {
+        writer.AppendLine(
+            $"var handle = System.Runtime.InteropServices.GCHandle.Alloc({pinned}, " +
+            "System.Runtime.InteropServices.GCHandleType.Pinned);");
+        writer.AppendLine("try");
+        using (writer.Scope())
+        {
+            writer.AppendLine(toDevice
+                ? "CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoDAsync_v2(" +
+                $"{native}.Data, handle.AddrOfPinnedObject(), (IntPtr)size, hStream));"
+                : "CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoHAsync_v2(" +
+                $"handle.AddrOfPinnedObject(), {native}.Data, (IntPtr)size, hStream));");
+        }
+
+        writer.AppendLine("finally");
+        using (writer.Scope())
+        {
+            writer.AppendLine("handle.Free();");
         }
     }
 
@@ -678,21 +674,7 @@ internal static class StructMarshalingEmitter
                     writer.AppendAotStructPath(elementType);
                     writer.AppendLine($"[{host}.Length];");
 
-                    writer.AppendLine(
-                        "var handle = System.Runtime.InteropServices.GCHandle.Alloc(tempArray, System.Runtime.InteropServices.GCHandleType.Pinned);");
-                    writer.AppendLine("try");
-                    using (writer.Scope())
-                    {
-                        writer.AppendLine(
-                            "CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoHAsync_v2(" +
-                                $"handle.AddrOfPinnedObject(), {native}.Data, (IntPtr)size, hStream));");
-                    }
-
-                    writer.AppendLine("finally");
-                    using (writer.Scope())
-                    {
-                        writer.AppendLine("handle.Free();");
-                    }
+                    WritePinnedCopy(writer, "tempArray", native, toDevice: false);
 
                     writer.AppendLine($"for (int i = 0; i < {host}.Length; i++)");
                     using (writer.Scope())
@@ -703,22 +685,7 @@ internal static class StructMarshalingEmitter
                 }
                 else
                 {
-                    writer.AppendLine(
-                        $"var handle = System.Runtime.InteropServices.GCHandle.Alloc({host}, " +
-                            "System.Runtime.InteropServices.GCHandleType.Pinned);");
-                    writer.AppendLine("try");
-                    using (writer.Scope())
-                    {
-                        writer.AppendLine(
-                            "CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoHAsync_v2(" +
-                                $"handle.AddrOfPinnedObject(), {native}.Data, (IntPtr)size, hStream));");
-                    }
-
-                    writer.AppendLine("finally");
-                    using (writer.Scope())
-                    {
-                        writer.AppendLine("handle.Free();");
-                    }
+                    WritePinnedCopy(writer, host, native, toDevice: false);
                 }
             }
         }
