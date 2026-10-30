@@ -179,6 +179,35 @@ public class RefArgumentOrderTests : TranspilerTestBase
         Assert.Equal(Enumerable.Range(0, Threads).Select(static t => (long)(t * 3 + 1)), result);
     }
 
+    [SkippableTheory]
+    [Scenario(TestScenario.Boundary)]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void Test_NestedSuspendingCall_WritesIndexAfterTheElementIsFixed(bool forceManaged)
+    {
+        var data = new int[Threads * 2];
+
+        Run(forceManaged, () =>
+            RefArgumentOrderKernels.LaunchNestedCallWritesIndexKernel(data, blockDimX: Threads));
+
+        // Thread t adds 2t + 1000 to data[2t]
+        Assert.Equal(Enumerable.Range(0, Threads * 2).Select(static k => k % 2 == 0 ? k + 1000 : 0), data);
+    }
+
+    [SkippableTheory]
+    [Scenario(TestScenario.Boundary)]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void Test_NestedSuspendingCall_WritesEarlierValueArgument(bool forceManaged)
+    {
+        var result = new int[Threads];
+
+        Run(forceManaged, () =>
+            RefArgumentOrderKernels.LaunchNestedCallWritesEarlierValueKernel(result, blockDimX: Threads));
+
+        Assert.All(result, static v => Assert.Equal(71, v));
+    }
+
     private void Run(bool forceManaged, Action launch)
     {
         Skip.If(forceManaged && IsCudaDialect, "The managed execution path exists only on the CPU dialects.");

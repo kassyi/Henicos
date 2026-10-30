@@ -247,6 +247,23 @@ public class BarrierUsageAnalyzerTests : TranspilerTestBase
                                .ReportsErrorsAsync("GSH0062");
     }
 
+    // A reference into the result of a call cannot be kept across a resume, also through a member access, parentheses or
+    // an in parameter without the keyword (#788 review); variables stay allowed
+    [Fact]
+    [Scenario(TestScenario.SadPath)]
+    public async Task Test_RefReturnMemberArgument_ReportsGSH0062AtTheArgument()
+    {
+        var actual = await RunAsync("Analyzers/BarrierUsage/RefReturnMemberArgumentKernels.cu.cs");
+
+        Assert.Equal(
+            [
+                (GSharpDiagnostics.SuspendingCallInUnsupportedContext.Id, 38, 25, 38, 51),
+                (GSharpDiagnostics.SuspendingCallInUnsupportedContext.Id, 39, 25, 39, 53),
+                (GSharpDiagnostics.SuspendingCallInUnsupportedContext.Id, 41, 28, 41, 45)
+            ],
+            actual);
+    }
+
     [Fact]
     [Scenario(TestScenario.SadPath)]
     public async Task Test_AsyncYieldInKernel_ReportsGSH0046()

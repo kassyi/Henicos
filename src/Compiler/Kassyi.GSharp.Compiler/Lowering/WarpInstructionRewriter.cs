@@ -116,22 +116,31 @@ public class WarpInstructionRewriter(SemanticModel? semanticModel = null) : CSha
 
         public override SyntaxNode? VisitInvocationExpression(InvocationExpressionSyntax node)
         {
-            // First, visit children to handle nested warp instructions (e.g., WarpShuffle(WarpShuffle(x)))
-            var visited = base.VisitInvocationExpression(node);
-            if (visited is not InvocationExpressionSyntax visitedNode)
+            InvocationExpressionSyntax visitedNode;
+            if (IsWarpPrimitive(node) && HasNestedWarpPrimitiveArgument(node))
             {
-                return visited;
+                visitedNode = VisitArgumentsInOrder(node);
+            }
+            else
+            {
+                // First, visit children to handle nested warp instructions (e.g., WarpShuffle(WarpShuffle(x)))
+                var visited = base.VisitInvocationExpression(node);
+                if (visited is not InvocationExpressionSyntax visitedInvocation)
+                {
+                    return visited;
+                }
+
+                if (!IsWarpPrimitive(visitedInvocation))
+                {
+                    return visitedInvocation;
+                }
+
+                // [WHY] A shuffle is split as well: its value is published before the state boundary and read again
+                // after it, together with the other arguments in parameter order (#788)
+                visitedNode = SpillArguments(visitedInvocation);
             }
 
-            if (!IsWarpPrimitive(visitedNode))
-            {
-                return visitedNode;
-            }
-
-            // [WHY] A shuffle is split as well: its value is published before the state boundary and read again after
-            // it, together with the other arguments in parameter order (#788)
             var isSuspendingCall = BarrierHelper.IsSuspendingCall(visitedNode);
-            visitedNode = SpillArguments(visitedNode);
 
             switch (node.Parent)
             {
@@ -153,6 +162,34 @@ public class WarpInstructionRewriter(SemanticModel? semanticModel = null) : CSha
             hoistedAssignments.Add(CreateTempDeclaration(tempName, visitedNode));
 
             return SyntaxFactory.IdentifierName(tempName).WithTriviaFrom(visitedNode);
+        }
+
+        private static bool HasNestedWarpPrimitiveArgument(InvocationExpressionSyntax call) =>
+            call.ArgumentList.Arguments
+                .AsStackEnumerable()
+                .Any(static argument => ContainsWarpPrimitive(argument));
+
+        // [WHY] C# evaluates the arguments in the order written, so an argument that holds a suspending call or a shuffle
+        // runs after the arguments before it and before the ones after it. Hoisting the nested call first (the children
+        // before the call) would run it before the earlier arguments are evaluated, which then see what it wrote. Each
+        // argument is hoisted and evaluated once in turn instead, so the nested call lands between them (#788 review).
+        // <invocation>(<spilled argument 0>, <nested call temp>, ...)
+        private InvocationExpressionSyntax VisitArgumentsInOrder(InvocationExpressionSyntax call)
+        {
+            var expression = Visit(call.Expression) as ExpressionSyntax
+                             ?? throw new InvalidOperationException("Warp instruction hoisting removed a callee.");
+            var arguments = call.ArgumentList.Arguments;
+            for (var i = 0; i < arguments.Count; i++)
+            {
+                var visited = Visit(arguments[i]) as ArgumentSyntax
+                              ?? throw new InvalidOperationException("Warp instruction hoisting removed an argument.");
+                arguments = arguments.Replace(arguments[i], visited);
+                arguments = arguments.Replace(arguments[i], SpillArgument(arguments, i));
+            }
+
+            return call
+                .WithExpression(expression)
+                .WithArgumentList(call.ArgumentList.WithArguments(arguments));
         }
 
         // [WHY] A suspended call is executed again on every resume, and a warp shuffle reads its arguments on both sides of

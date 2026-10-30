@@ -1,3 +1,5 @@
+using Microsoft.CodeAnalysis.Operations;
+
 namespace Kassyi.GSharp.Compiler.Diagnostics.Kernel;
 
 /// <summary>
@@ -127,7 +129,7 @@ public class BarrierUsageAnalyzer : DiagnosticAnalyzer
         InvocationExpressionSyntax invocation)
     {
         var unsupportedContext = FindUnsupportedContext(invocation, context.SemanticModel);
-        var byReferenceArgument = FindNonVariableByReferenceArgument(invocation);
+        var byReferenceArgument = FindNonVariableByReferenceArgument(invocation, context.SemanticModel);
         if (unsupportedContext == null && byReferenceArgument == null)
         {
             return;
@@ -191,14 +193,38 @@ public class BarrierUsageAnalyzer : DiagnosticAnalyzer
     internal static bool IsInlinedMacroBody(SyntaxNode lambda, SemanticModel semanticModel) =>
         GpuMacroClassifier.ClassifyBody(lambda, semanticModel).Kind is GpuMacroKind.ForUnroll or GpuMacroKind.SyncGrid;
 
-    private static ArgumentSyntax? FindNonVariableByReferenceArgument(InvocationExpressionSyntax invocation) =>
+    // [WHY] A suspending call is called again on every resume, and the lowering keeps a by-reference argument as the
+    // location it names, evaluating only its array and indices once. A reference into the result of a call (a ref
+    // return, also through a member access or parentheses) cannot be kept that way, so it is reported. An argument of an
+    // in parameter without the keyword is passed by reference too when C# passes the variable itself (#788 review).
+    private static ArgumentSyntax? FindNonVariableByReferenceArgument(InvocationExpressionSyntax invocation,
+        SemanticModel semanticModel) =>
         invocation.ArgumentList.Arguments
             .AsStackEnumerable()
-            .FirstOrDefault(static argument =>
-                !argument.RefKindKeyword.IsKind(SyntaxKind.None) &&
-                argument.Expression is not (IdentifierNameSyntax or MemberAccessExpressionSyntax
-                    or ElementAccessExpressionSyntax or DeclarationExpressionSyntax)
+            .FirstOrDefault(semanticModel, static (argument, model) =>
+                IsPassedByReference(argument, model) && !IsVariable(argument.Expression)
             );
+
+    // (the operation of the expression is the argument's value only when no conversion sits between them, and a value
+    // that is not a variable is copied into a temporary)
+    private static bool IsPassedByReference(ArgumentSyntax argument, SemanticModel semanticModel) =>
+        !argument.RefKindKeyword.IsKind(SyntaxKind.None) ||
+        semanticModel.GetSafeOperation(argument.Expression) is
+            (ILocalReferenceOperation or IParameterReferenceOperation or IFieldReferenceOperation
+            or IArrayElementReferenceOperation or IPropertyReferenceOperation { Property.RefKind: not RefKind.None }
+            or IInvocationOperation { TargetMethod.RefKind: not RefKind.None }) and
+            {
+                Parent: IArgumentOperation { Parameter.RefKind: RefKind.In or RefKind.RefReadOnlyParameter }
+            };
+
+    // A local, parameter, field or array element, also as a field of one of them
+    private static bool IsVariable(ExpressionSyntax expression) => expression switch
+    {
+        IdentifierNameSyntax or ElementAccessExpressionSyntax or DeclarationExpressionSyntax => true,
+        MemberAccessExpressionSyntax member => IsVariable(member.Expression),
+        ParenthesizedExpressionSyntax parenthesized => IsVariable(parenthesized.Expression),
+        _ => false
+    };
 
     private static bool IsInGpuMethod(ISymbol? symbol)
     {

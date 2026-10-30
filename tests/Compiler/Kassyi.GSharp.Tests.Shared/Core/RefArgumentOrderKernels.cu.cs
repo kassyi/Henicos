@@ -109,6 +109,44 @@ public static partial class RefArgumentOrderKernels
         result[ThreadIndex.X] = WaitAndReturn(i * 3 + 1);
     }
 
+    // A later argument that is itself a suspending call: C# fixes data[i] before WaitAndReturnInt(i++) runs
+    [GpuKernel]
+    public static void NestedCallWritesIndexKernel(int[] data)
+    {
+        int i = ThreadIndex.X * 2;
+        AddAfterBarrier(ref data[i], WaitAndReturnInt(i++));
+    }
+
+    // A later suspending call writes the variable an earlier argument passed by value (C#: 70 + 1)
+    [GpuKernel]
+    public static void NestedCallWritesEarlierValueKernel(int[] result)
+    {
+        int x = 70;
+        SumAfterBarrier(x, SetThenReturnOne(ref x), result);
+    }
+
+    [GpuDeviceFunction]
+    private static int WaitAndReturnInt(int value)
+    {
+        Gpu.SyncThreads();
+        return value;
+    }
+
+    [GpuDeviceFunction]
+    private static int SetThenReturnOne(ref int x)
+    {
+        x = 1000;
+        Gpu.SyncThreads();
+        return 1;
+    }
+
+    [GpuDeviceFunction]
+    private static void SumAfterBarrier(int a, int b, int[] result)
+    {
+        Gpu.SyncThreads();
+        result[ThreadIndex.X] = a + b;
+    }
+
     [GpuDeviceFunction]
     private static void AddAfterBarrier(ref int target, int value)
     {
