@@ -56,6 +56,9 @@ internal sealed class UniformitySolver(UniformityState state)
                     when state.SiteMasks != null:
                     state.Barriers.RecordSiteMasks(call, callGraph, current);
                     break;
+                case { Kind: UniformityEventKind.MemoryWrite or UniformityEventKind.MemorySync or UniformityEventKind.MemoryCall }:
+                    state.Recorder.Memory.Apply(flowEvent, current, state.Reader, state.Model.Compilation);
+                    break;
             }
         }
     }

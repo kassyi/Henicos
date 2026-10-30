@@ -24,6 +24,8 @@ internal sealed class UniformityRecorder(IMethodSymbol method, ArgumentMasks mas
     // The bodies of the lambdas and local functions being built that may run at any time
     private readonly ImmutableArray<SyntaxNode>.Builder _opaque = ImmutableArray.CreateBuilder<SyntaxNode>();
 
+    private MemoryUniformity? _memory;
+
     public ImmutableArray<UniformityNode>.Builder Nodes { get; } = ImmutableArray.CreateBuilder<UniformityNode>();
 
     /// <summary>The nodes where a call or object creation is evaluated.</summary>
@@ -35,8 +37,11 @@ internal sealed class UniformityRecorder(IMethodSymbol method, ArgumentMasks mas
     /// <summary>The barriers and barrier-reaching calls of the graph.</summary>
     public Dictionary<SyntaxNode, BarrierSite> Sites { get; } = new();
 
-    /// <summary>The number of values: locals, parameters and flow captures.</summary>
-    public int ValueCount => _symbols.Count + _captures.Count;
+    /// <summary>The memory that the threads share, whose values follow the locals, parameters and flow captures.</summary>
+    public MemoryUniformity Memory => _memory ??= new MemoryUniformity(this);
+
+    /// <summary>The number of values: locals, parameters, flow captures and memory.</summary>
+    public int ValueCount => _symbols.Count + _captures.Count + Memory.Count;
 
     /// <summary>The value index of a local or parameter, when the graph writes it.</summary>
     public bool TryGetValue(ISymbol symbol, out int index) => _symbols.TryGetValue(symbol, out index);
@@ -50,7 +55,7 @@ internal sealed class UniformityRecorder(IMethodSymbol method, ArgumentMasks mas
     {
         if (!_captures.TryGetValue((graph, id), out var index))
         {
-            index = _symbols.Count + _captures.Count;
+            index = ValueCount;
             _captures.Add((graph, id), index);
         }
 
@@ -66,6 +71,7 @@ internal sealed class UniformityRecorder(IMethodSymbol method, ArgumentMasks mas
             return;
         }
 
+        Memory.OnStart(method, node);
         foreach (var parameter in method.Parameters)
         {
             var bit = ArgumentMasks.Bit(parameter.Ordinal);
@@ -83,11 +89,17 @@ internal sealed class UniformityRecorder(IMethodSymbol method, ArgumentMasks mas
     {
     }
 
-    public void OnAssignment(IAssignmentOperation assignment, ControlFlowGraph graph, int node) =>
+    public void OnAssignment(IAssignmentOperation assignment, ControlFlowGraph graph, int node)
+    {
         AddWrite(assignment, graph, node);
+        Memory.AddAssignment(assignment, node);
+    }
 
-    public void OnIncrement(IIncrementOrDecrementOperation increment, ControlFlowGraph graph, int node) =>
+    public void OnIncrement(IIncrementOrDecrementOperation increment, ControlFlowGraph graph, int node)
+    {
         AddWrite(increment, graph, node);
+        Memory.AddWrite(increment.Target, node);
+    }
 
     public void OnFlowCapture(IFlowCaptureOperation capture, ControlFlowGraph graph, int node)
     {
@@ -97,13 +109,24 @@ internal sealed class UniformityRecorder(IMethodSymbol method, ArgumentMasks mas
 
     public void OnObjectCreation(IObjectCreationOperation creation, int node) => RecordNode(NodesOf, creation.Syntax, node);
 
-    public void OnCall(IInvocationOperation invocation, int node) => RecordNode(NodesOf, invocation.Syntax, node);
+    public void OnCall(IInvocationOperation invocation, int node)
+    {
+        RecordNode(NodesOf, invocation.Syntax, node);
+        Memory.AddCall(invocation, node);
+    }
 
     // A call that splits the state machine; a barrier, or a call that reaches one, is also a site of GSH0037. The gaps
-    // inside a Gpu.SyncGrid(body) are not split points here: the call is (a grid barrier).
+    // inside a Gpu.SyncGrid(body) are not split points here: the call is (a grid barrier). The memory, though, is synced
+    // in each gap, where the expansion places the grid sync, and not where the body starts.
     public void OnSplit(SplitPoint split, int node)
     {
-        if (split is not { Kind: not SplitKind.Gap, Syntax: { } call, Graph: { } graph })
+        if (split.Kind == SplitKind.Gap)
+        {
+            Memory.AddSync(SyncScope.Grid, node);
+            return;
+        }
+
+        if (split is not { Syntax: { } call, Graph: { } graph })
         {
             return;
         }
@@ -120,6 +143,11 @@ internal sealed class UniformityRecorder(IMethodSymbol method, ArgumentMasks mas
         if (split.BarrierCall is { } invocation)
         {
             Nodes[node].Events.Add(new UniformityEvent(UniformityEventKind.Site, invocation, graph, Opaque));
+        }
+        else if (split.Kind == SplitKind.Call)
+        {
+            // A barrier; the callee of a barrier-reaching call lowers the memory through its summary (AddCall)
+            Memory.AddSync(scope, node);
         }
     }
 
@@ -237,7 +265,7 @@ internal sealed class UniformityRecorder(IMethodSymbol method, ArgumentMasks mas
     {
         if (!_symbols.TryGetValue(symbol, out var index))
         {
-            index = _symbols.Count + _captures.Count;
+            index = ValueCount;
             _symbols.Add(symbol, index);
         }
 
