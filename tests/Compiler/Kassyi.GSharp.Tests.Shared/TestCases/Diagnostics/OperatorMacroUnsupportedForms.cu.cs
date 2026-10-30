@@ -100,4 +100,196 @@ public static partial class OperatorMacroUnsupportedFormKernels
         FormRef c = output;
         c = a * b;
     }
+
+    // GSH0003: c has no storage for the target to write into (#711: the managed expansion would not compile)
+    [GpuKernel]
+    [SkipSnapshotConsistency("Diagnostics case")]
+    public static void UnassignedTargetKernel(uint[] left, uint[] right)
+    {
+        FormRef a = left;
+        FormRef b = right;
+        FormRef c;
+        c = a + b;
+    }
+
+    // GSH0003: an out parameter is not assigned before its first assignment either
+    [GpuDeviceFunction]
+    public static void AddInto(out FormValue result, FormValue left, FormValue right)
+    {
+        result = left + right;
+    }
+}
+
+public struct FormOutValue
+{
+    public uint Value;
+
+    [GpuOperatorMacro(typeof(FormOutOps), nameof(FormOutOps.Add))]
+    public static FormOutValue operator +(FormOutValue left, FormOutValue right) => throw new InvalidOperationException();
+}
+
+public static partial class FormOutOps
+{
+    [GpuDeviceFunction]
+    public static void Add(out FormOutValue result, FormOutValue left, FormOutValue right)
+    {
+        result.Value = left.Value + right.Value;
+    }
+}
+
+public struct FormHolder
+{
+    public FormValue Inner;
+    public uint Other;
+}
+
+public static partial class OperatorMacroTargetAssignmentKernels
+{
+    // No GSH0003: the target method assigns its out result
+    [GpuKernel]
+    [SkipSnapshotConsistency("Diagnostics case")]
+    public static void OutResultKernel(uint[] output)
+    {
+        FormOutValue a = default;
+        FormOutValue c;
+        c = a + a;
+        output[0] = c.Value;
+    }
+
+    // No GSH0003: an out parameter that the target method assigns
+    [GpuDeviceFunction]
+    public static void SumInto(out FormOutValue result, FormOutValue left)
+    {
+        result = left + left;
+    }
+
+    // No GSH0003: the local function assigns a local that the method assigned (not where declared) before calling it
+    [GpuKernel]
+    [SkipSnapshotConsistency("Diagnostics case")]
+    public static void LocalFunctionKernel(uint[] output)
+    {
+        FormValue a = default, c;
+        c = default;
+        void Add()
+        {
+            c = a + a;
+        }
+
+        Add();
+        output[0] = c.Value;
+    }
+
+    // No GSH0003: both branches assign the target
+    [GpuKernel]
+    [SkipSnapshotConsistency("Diagnostics case")]
+    public static void BranchesKernel(uint[] input, uint[] output)
+    {
+        FormValue a = default;
+        FormValue c;
+        if (input[0] > 0u)
+        {
+            c = a;
+        }
+        else
+        {
+            c = default;
+        }
+
+        c = a + a;
+        output[0] = c.Value;
+    }
+
+    // GSH0003: a field of a struct local that is not fully assigned has no storage either
+    [GpuKernel]
+    [SkipSnapshotConsistency("Diagnostics case")]
+    public static void PartlyAssignedStructKernel(uint[] output)
+    {
+        FormValue a = default;
+        FormHolder h;
+        h.Other = 0u;
+        h.Inner = a + a;
+        output[0] = h.Other;
+    }
+}
+
+public struct FormCtx
+{
+    public uint Calls;
+}
+
+public struct FormCtxValue
+{
+    public uint Value;
+
+    [GpuOperatorMacro(typeof(FormCtxOps), nameof(FormCtxOps.AddCount))]
+    public static FormCtxValue operator +(FormCtxValue left, FormCtxValue right) => throw new InvalidOperationException();
+}
+
+public static partial class FormCtxOps
+{
+    [GpuDeviceFunction]
+    public static void AddCount(ref FormCtx log, ref FormCtxValue result, FormCtxValue left, FormCtxValue right)
+    {
+        log.Calls = 1u;
+        result.Value = left.Value + right.Value + log.Calls;
+    }
+}
+
+public struct FormPropertyHolder
+{
+    private FormValue _stored;
+
+    public FormValue Computed
+    {
+        get => _stored;
+        set => _stored = value;
+    }
+}
+
+public static partial class OperatorMacroContextAssignmentKernels
+{
+    // GSH0003: the context is passed to the target as it is, so it needs a value first (#711: the managed expansion
+    // would not compile)
+    [GpuKernel]
+    [SkipSnapshotConsistency("Diagnostics case")]
+    public static void UnassignedContextKernel(uint[] output)
+    {
+        FormCtx log;
+        FormCtxValue x = default, z = default;
+        z = x + x;
+        output[0] = z.Value;
+    }
+
+    // GSH0003: the same in a device function, with an inner operator macro that takes the context too
+    [GpuDeviceFunction]
+    public static uint UnassignedNestedContext(FormCtxValue x)
+    {
+        FormCtx log;
+        FormCtxValue z = default;
+        z = x + (x + x);
+        return z.Value;
+    }
+
+    // No GSH0003: the context is assigned before
+    [GpuKernel]
+    [SkipSnapshotConsistency("Diagnostics case")]
+    public static void AssignedContextKernel(uint[] output)
+    {
+        FormCtx log;
+        log.Calls = 0u;
+        FormCtxValue x = default, z = default;
+        z = x + x;
+        output[0] = z.Value;
+    }
+
+    // GSH0003: a property with accessors of its own has no storage that the target can write into
+    [GpuKernel]
+    [SkipSnapshotConsistency("Diagnostics case")]
+    public static void ComputedPropertyTargetKernel(uint[] output)
+    {
+        FormValue a = default;
+        FormPropertyHolder h = default;
+        h.Computed = a + a;
+        output[0] = h.Computed.Value;
+    }
 }

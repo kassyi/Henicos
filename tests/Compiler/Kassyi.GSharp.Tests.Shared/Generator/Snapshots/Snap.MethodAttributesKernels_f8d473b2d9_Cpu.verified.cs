@@ -11,11 +11,11 @@ public const string Source = @"__forceinline__ int __gsharp_fn_Kassyi__GSharp__T
 __forceinline__ int __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__MethodAttributesKernels__MultiAttributeMultiply(int __gsharp_id_0_a, int __gsharp_id_1_b);
 
 __forceinline__ int __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__MethodAttributesKernels__InlinedAdd(int __gsharp_id_0_a, int __gsharp_id_1_b){
-return __gsharp_id_0_a+__gsharp_id_1_b;
+return __gsharp_add_i32(__gsharp_id_0_a,__gsharp_id_1_b);
 }
 
 __forceinline__ int __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__MethodAttributesKernels__MultiAttributeMultiply(int __gsharp_id_0_a, int __gsharp_id_1_b){
-return __gsharp_id_0_a*__gsharp_id_1_b;
+return __gsharp_mul_i32(__gsharp_id_0_a,__gsharp_id_1_b);
 }
 
 ";
@@ -63,7 +63,7 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-int __gsharp_id_2_tid = threadIdx.x;
+int __gsharp_id_2_tid = (int)threadIdx.x;
 int __gsharp_id_3_sum = __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__MethodAttributesKernels__InlinedAdd(__gsharp_id_0_input[__gsharp_id_2_tid],100);
 __gsharp_id_1_result[__gsharp_id_2_tid]=__gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__MethodAttributesKernels__MultiAttributeMultiply(__gsharp_id_3_sum,2);
 __gsharp_state=-1;
@@ -146,10 +146,12 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 }
 ";
 public static readonly string MethodAttributesKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source +MethodAttributesKernel_Source;
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__MethodAttributesKernels__MethodAttributesKernel {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
 }
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__MethodAttributesKernels__MethodAttributesKernel(int[] input, int[] result, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__MethodAttributesKernels__MethodAttributesKernel __gsharp_ctx) {
 {
 switch (__gsharp_ctx.__gsharp_state)

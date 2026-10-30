@@ -22,6 +22,8 @@ This section details the inner workings of the transpilation engine, binary veri
   A complete walkthrough from C# source code to generated CUDA `.cu`, native `.fatbin`/`.dll`, and host invocation.
 - **[2.4 Bignum Transpiler Internals](04_bignum_internals.md)**
   Architecture and compilation strategy for arbitrary-precision arithmetic (`GpuBigInt`, `GpuBigFloat`) and lazy expression evaluation.
+- **[2.5 Barrier Uniformity Analysis](05_uniformity_analysis.md)**
+  How the analyzer decides which values, branches and memory may differ between threads, and which barriers only some threads reach.
 
 ## See also
 

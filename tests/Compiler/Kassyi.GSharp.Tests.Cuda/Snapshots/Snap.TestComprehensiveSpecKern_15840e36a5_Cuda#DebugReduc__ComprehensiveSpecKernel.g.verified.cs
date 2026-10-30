@@ -57,7 +57,7 @@ public const string DebugName_DoubleValue = "global::System.Double";
 [System.Runtime.InteropServices.FieldOffset(40)]
 public global::System.Double DoubleValue;
 }
-public static unsafe void Marshal_SpecTypes(ref global::DebugReduc.SpecTypes host, ref AotContexts.SpecTypes native, bool isDevicePtr, System.Collections.Generic.List<IntPtr>? allocatedPtrs, IntPtr hStream = default)
+public static unsafe void Marshal_SpecTypes(ref global::DebugReduc.SpecTypes host, ref AotContexts.SpecTypes native, bool isDevicePtr, global::Kassyi.GSharp.Runtime.Interop.DeviceArrayRegions? deviceArrays, IntPtr hStream = default)
 {
 native = System.Runtime.CompilerServices.Unsafe.As<global::DebugReduc.SpecTypes, AotContexts.SpecTypes>(ref host);
 }
@@ -196,19 +196,19 @@ __gsharp_dsmem_DebugReduc__ComprehensiveSpecKernel__ProcessPhysics* __gsharp_dsm
 __gsharp_dsmem_init(__gsharp_dsmem);
 (*__gsharp_id_2_successFlag)=false;
 float __gsharp_id_6_Gravity = 9.8f;
-int __gsharp_id_7_tx = threadIdx.x;
-int __gsharp_id_8_ty = threadIdx.y;
-int __gsharp_id_9_tz = threadIdx.z;
-int __gsharp_id_10_bx = blockIdx.x;
-int __gsharp_id_11_by = blockIdx.y;
-int __gsharp_id_12_bz = blockIdx.z;
-int __gsharp_id_13_bdimX = blockDim.x;
-int __gsharp_id_14_bdimY = blockDim.y;
-int __gsharp_id_15_bdimZ = blockDim.z;
-int __gsharp_id_16_gdimX = gridDim.x;
-int __gsharp_id_17_gdimY = gridDim.y;
-int __gsharp_id_18_gdimZ = gridDim.z;
-int __gsharp_id_19_tid = __gsharp_id_7_tx+__gsharp_id_10_bx*__gsharp_id_13_bdimX;
+int __gsharp_id_7_tx = (int)threadIdx.x;
+int __gsharp_id_8_ty = (int)threadIdx.y;
+int __gsharp_id_9_tz = (int)threadIdx.z;
+int __gsharp_id_10_bx = (int)blockIdx.x;
+int __gsharp_id_11_by = (int)blockIdx.y;
+int __gsharp_id_12_bz = (int)blockIdx.z;
+int __gsharp_id_13_bdimX = (int)blockDim.x;
+int __gsharp_id_14_bdimY = (int)blockDim.y;
+int __gsharp_id_15_bdimZ = (int)blockDim.z;
+int __gsharp_id_16_gdimX = (int)gridDim.x;
+int __gsharp_id_17_gdimY = (int)gridDim.y;
+int __gsharp_id_18_gdimZ = (int)gridDim.z;
+int __gsharp_id_19_tid = __gsharp_add_i32(__gsharp_id_7_tx,__gsharp_mul_i32(__gsharp_id_10_bx,__gsharp_id_13_bdimX));
 __shared__ int __gsharp_id_20_staticCache[10000];
 float* __gsharp_id_21_dynamicCache = (float*)__gsharp_dsmem_place<__gsharp_dsmem_DebugReduc__ComprehensiveSpecKernel__ProcessPhysics::Slot<0xe20e18017ad9544dull>>(__gsharp_dsmem, (unsigned long long)(long long)(__gsharp_id_4_particleCount) * sizeof(float), __GSHARP_DSMEM_ALIGN(float));
 __shared__ int __gsharp_id_22_targetTypedCache[256];
@@ -239,11 +239,11 @@ int __gsharp_id_30_counter = 0;
 while(__gsharp_id_30_counter<2)
 {
 __gsharp_id_28_mag=(float)__gsharp_min_f32(__gsharp_id_28_mag,__gsharp_id_28_mag+1);
-__gsharp_id_30_counter++;
+__gsharp_id_30_counter=__gsharp_add_i32(__gsharp_id_30_counter,1);
 }
 do
 {
-__gsharp_id_30_counter--;
+__gsharp_id_30_counter=__gsharp_sub_i32(__gsharp_id_30_counter,1);
 }
 while(__gsharp_id_30_counter>0);
 switch(__gsharp_id_7_tx)
@@ -289,8 +289,8 @@ bool __gsharp_id_37_condition1 = __gsharp_id_7_tx>0;
 bool __gsharp_id_38_condition2 = __gsharp_id_8_ty==0;
 if(__gsharp_id_37_condition1&&__gsharp_id_38_condition2)
 {
-int __gsharp_id_39_bitwise = (__gsharp_id_7_tx<<2)|(__gsharp_id_8_ty>>1)^0xFF;
-__gsharp_id_39_bitwise&=~1;
+int __gsharp_id_39_bitwise = (__gsharp_shl_i32(__gsharp_id_7_tx,2))|(__gsharp_id_8_ty>>1)^0xFF;
+__gsharp_id_39_bitwise&=(-2);
 }
 else
 {
@@ -372,15 +372,16 @@ int particles_size = particles.Length * sizeof(global::DebugReduc.PhysicsVector)
 IntPtr* proxy_particles = stackalloc IntPtr[2];
 proxy_particles[0] = IntPtr.Zero;
 ((int*)(proxy_particles + 1))[0] = particles.Length;
+((int*)(proxy_particles + 1))[1] = 0;
 if (particles_size > 0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_particles, (IntPtr)particles_size, hStream));
-proxy_particles[0] = d_particles;
 fixed (global::DebugReduc.PhysicsVector* p_particles = particles)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoDAsync_v2(d_particles, (IntPtr)p_particles, (IntPtr)particles_size, hStream));
 CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
 }
+proxy_particles[0] = d_particles;
 }
 kernelParams[0] = proxy_particles;
 // Marshal ref/out scalar: totalMagnitude
@@ -461,6 +462,7 @@ void** kernelParams = stackalloc void*[6];
 IntPtr* proxy_particles = stackalloc IntPtr[2];
 proxy_particles[0] = particles;
 ((int*)(proxy_particles + 1))[0] = 0; // Length is unknown for raw IntPtr
+((int*)(proxy_particles + 1))[1] = 0;
 kernelParams[0] = proxy_particles;
 // Marshal device scalar: totalMagnitude
 kernelParams[1] = &totalMagnitude;
@@ -489,7 +491,7 @@ finally
 }
 #pragma warning restore CS8500
 public const string CooperativePhysicsProcess_Source = @"extern ""C"" __global__ void __gsharp_k_DebugReduc__ComprehensiveSpecKernel__CooperativePhysicsProcess(GSharpArray<int> __gsharp_id_0_data){
-int __gsharp_id_1_tid = threadIdx.x;
+int __gsharp_id_1_tid = (int)threadIdx.x;
 __gsharp_id_0_data[__gsharp_id_1_tid]=__gsharp_id_1_tid;
 cg::this_grid().sync();
 }
@@ -528,15 +530,16 @@ int data_size = data.Length * sizeof(global::System.Int32);
 IntPtr* proxy_data = stackalloc IntPtr[2];
 proxy_data[0] = IntPtr.Zero;
 ((int*)(proxy_data + 1))[0] = data.Length;
+((int*)(proxy_data + 1))[1] = 0;
 if (data_size > 0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_data, (IntPtr)data_size, hStream));
-proxy_data[0] = d_data;
 fixed (global::System.Int32* p_data = data)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoDAsync_v2(d_data, (IntPtr)p_data, (IntPtr)data_size, hStream));
 CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
 }
+proxy_data[0] = d_data;
 }
 kernelParams[0] = proxy_data;
 CudaException.ThrowIfError(CudaDriverApi.cuLaunchCooperativeKernel(
@@ -581,6 +584,7 @@ void** kernelParams = stackalloc void*[1];
 IntPtr* proxy_data = stackalloc IntPtr[2];
 proxy_data[0] = data;
 ((int*)(proxy_data + 1))[0] = 0; // Length is unknown for raw IntPtr
+((int*)(proxy_data + 1))[1] = 0;
 kernelParams[0] = proxy_data;
 CudaException.ThrowIfError(CudaDriverApi.cuLaunchCooperativeKernel(
 hfunc,

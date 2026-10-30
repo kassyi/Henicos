@@ -102,7 +102,7 @@ public const string DebugName_Field5_Double2 = "global::Kassyi.GSharp.Core.Doubl
 [System.Runtime.InteropServices.FieldOffset(48)]
 public fixed byte Field5_Double2[16];
 }
-public static unsafe void Marshal_GEN56_AlignmentTestStruct(ref global::Kassyi.GSharp.Tests.Runtime.GEN56_AlignmentTestStruct host, ref AotContexts.GEN56_AlignmentTestStruct native, bool isDevicePtr, System.Collections.Generic.List<IntPtr>? allocatedPtrs, IntPtr hStream = default)
+public static unsafe void Marshal_GEN56_AlignmentTestStruct(ref global::Kassyi.GSharp.Tests.Runtime.GEN56_AlignmentTestStruct host, ref AotContexts.GEN56_AlignmentTestStruct native, bool isDevicePtr, global::Kassyi.GSharp.Runtime.Interop.DeviceArrayRegions? deviceArrays, IntPtr hStream = default)
 {
 native = default;
 native.Field1_Byte = host.Field1_Byte;
@@ -248,15 +248,16 @@ int offsets_size = offsets.Length * sizeof(global::System.Int32);
 IntPtr* proxy_offsets = stackalloc IntPtr[2];
 proxy_offsets[0] = IntPtr.Zero;
 ((int*)(proxy_offsets + 1))[0] = offsets.Length;
+((int*)(proxy_offsets + 1))[1] = 0;
 if (offsets_size > 0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_offsets, (IntPtr)offsets_size, hStream));
-proxy_offsets[0] = d_offsets;
 fixed (global::System.Int32* p_offsets = offsets)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoDAsync_v2(d_offsets, (IntPtr)p_offsets, (IntPtr)offsets_size, hStream));
 CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
 }
+proxy_offsets[0] = d_offsets;
 }
 kernelParams[0] = proxy_offsets;
 CudaException.ThrowIfError(CudaDriverApi.cuLaunchKernel(
@@ -302,6 +303,7 @@ void** kernelParams = stackalloc void*[1];
 IntPtr* proxy_offsets = stackalloc IntPtr[2];
 proxy_offsets[0] = offsets;
 ((int*)(proxy_offsets + 1))[0] = 0; // Length is unknown for raw IntPtr
+((int*)(proxy_offsets + 1))[1] = 0;
 kernelParams[0] = proxy_offsets;
 CudaException.ThrowIfError(CudaDriverApi.cuLaunchKernel(
 hfunc,
@@ -382,8 +384,8 @@ static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Runtime__GEN56_uAlignm
 static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Runtime__GEN56_uAlignmentTestStruct,__gsharp_mb_Field5_Double2)==48,""Kassyi.GSharp.Tests.Runtime.GEN56_AlignmentTestStruct.Field5_Double2: offset"");
 #endif
 extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Runtime__NestedVectorAlignmentKernels__RoundtripKernel(__gsharp_ty_Kassyi__GSharp__Tests__Runtime__GEN56_uAlignmentTestStruct* __gsharp_id_0_data){
-(*__gsharp_id_0_data).__gsharp_mb_Field1_Byte=(unsigned char)((*__gsharp_id_0_data).__gsharp_mb_Field1_Byte+1-1);
-(*__gsharp_id_0_data).__gsharp_mb_Field4_Short=(short)((*__gsharp_id_0_data).__gsharp_mb_Field4_Short+1-1);
+(*__gsharp_id_0_data).__gsharp_mb_Field1_Byte=(unsigned char)(__gsharp_sub_i32((*__gsharp_id_0_data).__gsharp_mb_Field1_Byte+1,1));
+(*__gsharp_id_0_data).__gsharp_mb_Field4_Short=(short)(__gsharp_sub_i32((*__gsharp_id_0_data).__gsharp_mb_Field4_Short+1,1));
 }
 ";
 public static readonly string RoundtripKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +RoundtripKernel_Source;
@@ -405,13 +407,12 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 WarmupFunctionPointerRoundtripKernel();
 IntPtr hfunc = s_hfunc_RoundtripKernel!.Value;
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "NestedVectorAlignmentKernels.RoundtripKernel");
-System.Collections.Generic.List<IntPtr> data_allocatedPtrs = new System.Collections.Generic.List<IntPtr>();
 IntPtr d_data = IntPtr.Zero;
 try
 {
 void** kernelParams = stackalloc void*[1];
 AotContexts.GEN56_AlignmentTestStruct native_data = default;
-AotContexts.Marshal_GEN56_AlignmentTestStruct(ref data, ref native_data, false, data_allocatedPtrs, hStream);
+AotContexts.Marshal_GEN56_AlignmentTestStruct(ref data, ref native_data, false, null, hStream);
 // Marshal ref/out struct: data
 int data_size = sizeof(AotContexts.GEN56_AlignmentTestStruct);
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_data, (IntPtr)data_size, hStream));
@@ -435,7 +436,6 @@ AotContexts.Unmarshal_GEN56_AlignmentTestStruct(ref data, ref native_data, false
 }
 finally
 {
-foreach (var ptr in data_allocatedPtrs) CudaDriverApi.cuMemFreeAsync(ptr, hStream);
 if (d_data != IntPtr.Zero) CudaDriverApi.cuMemFreeAsync(d_data, hStream);
 }
 }

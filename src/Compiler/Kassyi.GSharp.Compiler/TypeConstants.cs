@@ -29,6 +29,7 @@ internal static class TypeConstants
     public const string ThreadIndexType = "ThreadIndex";
     public const string BlockIndexType = "BlockIndex";
     public const string SyncThreadsMethod = "SyncThreads";
+    public const string ActiveMaskMethod = "ActiveMask";
 
     /// <summary>WMMA fragment, shape marker, layout marker, and method names in <c>Kassyi.GSharp.Core</c>.</summary>
     public static class WmmaTypes

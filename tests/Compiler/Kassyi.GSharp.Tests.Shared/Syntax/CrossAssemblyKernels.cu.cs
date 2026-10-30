@@ -31,6 +31,24 @@ public static partial class CrossAssemblyKernels
         result[tid] = LibMath.SumPair(pairs[tid]);
     }
 
+    // A library function that expands the library's operator macro (#711)
+    [GpuKernel]
+    public static void AddPairKernel(Pair[] pairs, int[] result, int[] calls)
+    {
+        int tid = ThreadIndex.X;
+        LibCounter counter = default;
+        result[tid] = LibMath.AddPair(ref counter, pairs[tid]);
+        calls[tid] = counter.Calls;
+    }
+
+    // A library function that expands an operator macro whose target is private to the library (#711)
+    [GpuKernel]
+    public static void DifferenceKernel(Pair[] pairs, int[] result)
+    {
+        int tid = ThreadIndex.X;
+        result[tid] = LibMath.Difference(pairs[tid]);
+    }
+
     // A public function that calls an internal one of the library
     [GpuKernel]
     public static void TwiceKernel(int[] values, int[] result)
