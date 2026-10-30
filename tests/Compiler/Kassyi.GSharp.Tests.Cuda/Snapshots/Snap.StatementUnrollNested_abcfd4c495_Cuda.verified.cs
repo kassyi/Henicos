@@ -5,7 +5,7 @@ for(int __gsharp_id_2_i = 0;__gsharp_id_2_i<2;__gsharp_id_2_i++)
 #pragma unroll
 for(int __gsharp_id_3_j = 0;__gsharp_id_3_j<3;__gsharp_id_3_j++)
 {
-__gsharp_id_1_sum+=(__gsharp_id_2_i+1)*(__gsharp_id_3_j+1);
+__gsharp_id_1_sum=__gsharp_add_i32(__gsharp_id_1_sum,__gsharp_mul_i32(__gsharp_add_i32(__gsharp_id_2_i,1),__gsharp_add_i32(__gsharp_id_3_j,1)));
 }
 }
 __gsharp_id_0_data[0]=__gsharp_id_1_sum;

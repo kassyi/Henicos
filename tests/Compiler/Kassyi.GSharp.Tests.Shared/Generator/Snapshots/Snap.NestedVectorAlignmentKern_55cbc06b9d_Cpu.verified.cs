@@ -467,8 +467,8 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-(*__gsharp_id_0_data).__gsharp_mb_Field1_Byte=(unsigned char)((*__gsharp_id_0_data).__gsharp_mb_Field1_Byte+1-1);
-(*__gsharp_id_0_data).__gsharp_mb_Field4_Short=(short)((*__gsharp_id_0_data).__gsharp_mb_Field4_Short+1-1);
+(*__gsharp_id_0_data).__gsharp_mb_Field1_Byte=(unsigned char)(__gsharp_sub_i32((*__gsharp_id_0_data).__gsharp_mb_Field1_Byte+1,1));
+(*__gsharp_id_0_data).__gsharp_mb_Field4_Short=(short)(__gsharp_sub_i32((*__gsharp_id_0_data).__gsharp_mb_Field4_Short+1,1));
 __gsharp_state=-1;
 return;
 }

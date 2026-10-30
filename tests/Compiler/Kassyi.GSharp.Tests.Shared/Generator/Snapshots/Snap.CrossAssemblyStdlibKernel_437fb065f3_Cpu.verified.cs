@@ -40,7 +40,7 @@ for(int __gsharp_id_2_i = 0;__gsharp_id_2_i<5;__gsharp_id_2_i++)
 {
 __gsharp_id_1_inv*=2u-__gsharp_id_0_n0*__gsharp_id_1_inv;
 }
-return (unsigned int)-(int)__gsharp_id_1_inv;
+return (unsigned int)__gsharp_neg_i32((int)__gsharp_id_1_inv);
 }
 
 __forceinline__ unsigned int __gsharp_fn_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuBigIntKernels__PackCarryState(__gsharp_ty_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuBigIntKernels__CarryState __gsharp_id_0_state){
@@ -105,7 +105,7 @@ goto __gsharp_switch_1_state_4;
 case 4:
 __gsharp_switch_1_state_4:
 {
-__gsharp_ctx->__gsharp_id_4_i*=2;
+__gsharp_ctx->__gsharp_id_4_i=__gsharp_mul_i32(__gsharp_ctx->__gsharp_id_4_i,2);
 goto __gsharp_switch_1_state_1;
 goto __gsharp_switch_1_state_5;
 }
@@ -168,7 +168,7 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-int __gsharp_id_2_tid = threadIdx.x;
+int __gsharp_id_2_tid = (int)threadIdx.x;
 __gsharp_id_1_result[__gsharp_id_2_tid]=__gsharp_fn_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__CooperativeMath__ComputeMontgomeryMu(__gsharp_id_0_moduli[__gsharp_id_2_tid]);
 __gsharp_state=-1;
 return;
@@ -429,7 +429,7 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-__gsharp_ctx->__gsharp_id_3_lane=threadIdx.x;
+__gsharp_ctx->__gsharp_id_3_lane=(int)threadIdx.x;
 __gsharp_ctx->__gsharp_arg_temp_0=__gsharp_ctor_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuBigIntKernels__CarryState(__gsharp_id_0_generate[__gsharp_ctx->__gsharp_id_3_lane], __gsharp_id_1_propagate[__gsharp_ctx->__gsharp_id_3_lane]);
 goto __gsharp_switch_1_state_1;
 }

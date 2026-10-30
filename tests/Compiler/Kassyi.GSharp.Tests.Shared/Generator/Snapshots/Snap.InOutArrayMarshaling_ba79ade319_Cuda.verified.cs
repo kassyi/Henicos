@@ -83,7 +83,7 @@ public static partial class AotContexts
 {
 }
 public const string InOutKernel_Source = @"extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__TestCases__GEN_u57_uInOutArrayMarshaling__InOutKernel(GSharpArray<float> __gsharp_id_0_data, int __gsharp_id_1_n){
-int __gsharp_id_2_idx = threadIdx.x+blockIdx.x*blockDim.x;
+int __gsharp_id_2_idx = __gsharp_add_i32((int)threadIdx.x,__gsharp_mul_i32((int)blockIdx.x,(int)blockDim.x));
 if(__gsharp_id_2_idx<__gsharp_id_1_n)
 {
 __gsharp_id_0_data[__gsharp_id_2_idx]*=2.0f;

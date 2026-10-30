@@ -85,7 +85,7 @@ public static partial class AotContexts
 {
 }
 public const string SimpleConstantSwitchKernel_Source = @"extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__SwitchExpressionKernels__SimpleConstantSwitchKernel(GSharpArray<int> __gsharp_id_0_input, GSharpArray<int> __gsharp_id_1_output){
-int __gsharp_id_2_tid = threadIdx.x;
+int __gsharp_id_2_tid = (int)threadIdx.x;
 int __gsharp_id_3_val = __gsharp_id_0_input[__gsharp_id_2_tid];
 __gsharp_id_1_output[__gsharp_id_2_tid]=([&]() {
 switch(__gsharp_id_3_val)
@@ -242,7 +242,7 @@ finally
 }
 #pragma warning restore CS8500
 public const string FloatingPointReturnSwitchKernel_Source = @"extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__SwitchExpressionKernels__FloatingPointReturnSwitchKernel(GSharpArray<int> __gsharp_id_0_input, GSharpArray<float> __gsharp_id_1_output){
-int __gsharp_id_2_tid = threadIdx.x;
+int __gsharp_id_2_tid = (int)threadIdx.x;
 int __gsharp_id_3_mode = __gsharp_id_0_input[__gsharp_id_2_tid];
 __gsharp_id_1_output[__gsharp_id_2_tid]=([&]() {
 switch(__gsharp_id_3_mode)
@@ -399,7 +399,7 @@ finally
 }
 #pragma warning restore CS8500
 public const string MultipleArmsBoundarySwitchKernel_Source = @"extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__SwitchExpressionKernels__MultipleArmsBoundarySwitchKernel(GSharpArray<int> __gsharp_id_0_input, GSharpArray<int> __gsharp_id_1_output){
-int __gsharp_id_2_tid = threadIdx.x;
+int __gsharp_id_2_tid = (int)threadIdx.x;
 int __gsharp_id_3_val = __gsharp_id_0_input[__gsharp_id_2_tid];
 __gsharp_id_1_output[__gsharp_id_2_tid]=([&]() {
 switch(__gsharp_id_3_val)

@@ -158,7 +158,7 @@ goto __gsharp_switch_5_state_0;
 case false:
 __gsharp_switch_5_state_0:
 {
-__gsharp_id_1_output[16]+=51;
+__gsharp_id_1_output[16]=__gsharp_add_i32(__gsharp_id_1_output[16],51);
 break;
 }
 }
@@ -173,7 +173,7 @@ goto __gsharp_switch_6_state_1;
 case (signed char)1:
 __gsharp_switch_6_state_1:
 {
-__gsharp_id_1_output[18]+=61;
+__gsharp_id_1_output[18]=__gsharp_add_i32(__gsharp_id_1_output[18],61);
 break;
 }
 }
@@ -185,11 +185,11 @@ return __gsharp_id_0_value;
 }
 
 inline __device__ int __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__SmallConstantVarKernels__TakeInt(int __gsharp_id_0_value){
-return __gsharp_id_0_value+1;
+return __gsharp_add_i32(__gsharp_id_0_value,1);
 }
 
 inline __device__ int __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__SmallConstantVarKernels__TakeShort(short __gsharp_id_0_value){
-__gsharp_id_0_value+=32512;
+__gsharp_id_0_value=(short)__gsharp_add_i32(__gsharp_id_0_value,32512);
 __gsharp_id_0_value++;
 return __gsharp_id_0_value;
 }
@@ -244,7 +244,7 @@ auto __gsharp_id_7_usZero = (unsigned short)0;
 __gsharp_id_7_usZero--;
 __gsharp_id_0_output[6]=__gsharp_id_7_usZero;
 auto __gsharp_id_8_compound = (unsigned char)255;
-__gsharp_id_8_compound+=2;
+__gsharp_id_8_compound=(unsigned char)__gsharp_add_i32(__gsharp_id_8_compound,2);
 __gsharp_id_0_output[7]=__gsharp_id_8_compound;
 }
 ";

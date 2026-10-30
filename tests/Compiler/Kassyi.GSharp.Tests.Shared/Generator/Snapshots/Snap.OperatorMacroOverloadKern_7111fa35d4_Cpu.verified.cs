@@ -65,8 +65,8 @@ static_assert(alignof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ShiftCt
 static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ShiftCtx,__gsharp_mb_Bias)==0,""Kassyi.GSharp.Tests.Shared.Syntax.ShiftCtx.Bias: offset"");
 #endif
 inline void __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__ShiftOps__Shift_o1(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ShiftCtx* __gsharp_id_0_ctx, GSharpArray<unsigned int> __gsharp_id_1_result, GSharpArray<unsigned int> __gsharp_id_2_value, int __gsharp_id_3_shift){
-int __gsharp_id_4_tid = threadIdx.x;
-__gsharp_id_1_result[__gsharp_id_4_tid]=(__gsharp_id_2_value[__gsharp_id_4_tid]<<__gsharp_id_3_shift)+(unsigned int)(*__gsharp_id_0_ctx).__gsharp_mb_Bias;
+int __gsharp_id_4_tid = (int)threadIdx.x;
+__gsharp_id_1_result[__gsharp_id_4_tid]=(__gsharp_id_2_value[__gsharp_id_4_tid]<<(__gsharp_id_3_shift&31))+(unsigned int)(*__gsharp_id_0_ctx).__gsharp_mb_Bias;
 }
 
 #ifndef __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ShiftCtx__
@@ -81,8 +81,8 @@ static_assert(alignof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ShiftCt
 static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ShiftCtx,__gsharp_mb_Bias)==0,""Kassyi.GSharp.Tests.Shared.Syntax.ShiftCtx.Bias: offset"");
 #endif
 inline void __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__ReversedShiftOps__Shift_o0(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ShiftCtx* __gsharp_id_0_ctx, GSharpArray<unsigned int> __gsharp_id_1_result, GSharpArray<unsigned int> __gsharp_id_2_value, int __gsharp_id_3_shift){
-int __gsharp_id_4_tid = threadIdx.x;
-__gsharp_id_1_result[__gsharp_id_4_tid]=(__gsharp_id_2_value[__gsharp_id_4_tid]<<__gsharp_id_3_shift)+(unsigned int)(*__gsharp_id_0_ctx).__gsharp_mb_Bias;
+int __gsharp_id_4_tid = (int)threadIdx.x;
+__gsharp_id_1_result[__gsharp_id_4_tid]=(__gsharp_id_2_value[__gsharp_id_4_tid]<<(__gsharp_id_3_shift&31))+(unsigned int)(*__gsharp_id_0_ctx).__gsharp_mb_Bias;
 }
 
 #ifndef __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ShiftCtx__
@@ -100,7 +100,7 @@ inline void __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__ReversedShiftOps_
 }
 
 inline void __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__PickOps__Add_o0(GSharpArray<unsigned int> __gsharp_id_0_result, GSharpArray<unsigned int> __gsharp_id_1_left, GSharpArray<unsigned int> __gsharp_id_2_right){
-int __gsharp_id_3_tid = threadIdx.x;
+int __gsharp_id_3_tid = (int)threadIdx.x;
 __gsharp_id_0_result[__gsharp_id_3_tid]=__gsharp_id_1_left[__gsharp_id_3_tid]+__gsharp_id_2_right[__gsharp_id_3_tid]+0U;
 }
 
@@ -128,18 +128,18 @@ return __gsharp_self;
 }
 #endif
 inline void __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__PickOps__Add_o1(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__PickRef __gsharp_id_0_result, __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__PickRef __gsharp_id_1_left, __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__PickRef __gsharp_id_2_right){
-int __gsharp_id_3_tid = threadIdx.x;
+int __gsharp_id_3_tid = (int)threadIdx.x;
 __gsharp_id_0_result.__gsharp_mb_Data[__gsharp_id_3_tid]=__gsharp_id_1_left.__gsharp_mb_Data[__gsharp_id_3_tid]+__gsharp_id_2_right.__gsharp_mb_Data[__gsharp_id_3_tid]+1000U;
 }
 
 inline void __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__ShrOps__Shr_o0(GSharpArray<unsigned int> __gsharp_id_0_result, GSharpArray<unsigned int> __gsharp_id_1_value, float __gsharp_id_2_shift){
-int __gsharp_id_3_tid = threadIdx.x;
+int __gsharp_id_3_tid = (int)threadIdx.x;
 __gsharp_id_0_result[__gsharp_id_3_tid]=__gsharp_id_1_value[__gsharp_id_3_tid]+1000u;
 }
 
 inline void __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__ShrOps__Shr_o1(GSharpArray<unsigned int> __gsharp_id_0_result, GSharpArray<unsigned int> __gsharp_id_1_value, long long __gsharp_id_2_shift){
-int __gsharp_id_3_tid = threadIdx.x;
-__gsharp_id_0_result[__gsharp_id_3_tid]=__gsharp_id_1_value[__gsharp_id_3_tid]>>(int)__gsharp_id_2_shift;
+int __gsharp_id_3_tid = (int)threadIdx.x;
+__gsharp_id_0_result[__gsharp_id_3_tid]=__gsharp_id_1_value[__gsharp_id_3_tid]>>((int)__gsharp_id_2_shift&31);
 }
 
 #ifndef __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__SubRef__
@@ -163,7 +163,7 @@ return __gsharp_self;
 }
 #endif
 inline void __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__SubOps__Sub_o0(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__SubRef __gsharp_id_0_result, const __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__SubRef* __gsharp_id_1_left, __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__SubRef __gsharp_id_2_right){
-int __gsharp_id_3_tid = threadIdx.x;
+int __gsharp_id_3_tid = (int)threadIdx.x;
 __gsharp_id_0_result.__gsharp_mb_Data[__gsharp_id_3_tid]=(*__gsharp_id_1_left).__gsharp_mb_Data[__gsharp_id_3_tid]-__gsharp_id_2_right.__gsharp_mb_Data[__gsharp_id_3_tid]+1000u;
 }
 
@@ -188,12 +188,12 @@ return __gsharp_self;
 }
 #endif
 inline void __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__SubOps__Sub_o1(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__SubRef __gsharp_id_0_result, __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__SubRef __gsharp_id_1_left, __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__SubRef __gsharp_id_2_right){
-int __gsharp_id_3_tid = threadIdx.x;
+int __gsharp_id_3_tid = (int)threadIdx.x;
 __gsharp_id_0_result.__gsharp_mb_Data[__gsharp_id_3_tid]=__gsharp_id_1_left.__gsharp_mb_Data[__gsharp_id_3_tid]-__gsharp_id_2_right.__gsharp_mb_Data[__gsharp_id_3_tid];
 }
 
 inline void __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__CtxOps__Add_o0(GSharpArray<unsigned int> __gsharp_id_0_result, GSharpArray<unsigned int> __gsharp_id_1_left, GSharpArray<unsigned int> __gsharp_id_2_right){
-int __gsharp_id_3_tid = threadIdx.x;
+int __gsharp_id_3_tid = (int)threadIdx.x;
 __gsharp_id_0_result[__gsharp_id_3_tid]=__gsharp_id_1_left[__gsharp_id_3_tid]+__gsharp_id_2_right[__gsharp_id_3_tid];
 }
 
@@ -232,7 +232,7 @@ return __gsharp_self;
 }
 #endif
 inline void __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__CtxOps__Add_o1(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ShiftCtx* __gsharp_id_0_ctx, __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__CtxRef __gsharp_id_1_result, __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__CtxRef __gsharp_id_2_left, __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__CtxRef __gsharp_id_3_right){
-int __gsharp_id_4_tid = threadIdx.x;
+int __gsharp_id_4_tid = (int)threadIdx.x;
 __gsharp_id_1_result.__gsharp_mb_Data[__gsharp_id_4_tid]=__gsharp_id_2_left.__gsharp_mb_Data[__gsharp_id_4_tid]+__gsharp_id_3_right.__gsharp_mb_Data[__gsharp_id_4_tid]+(unsigned int)(*__gsharp_id_0_ctx).__gsharp_mb_Bias;
 }
 

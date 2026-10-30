@@ -768,7 +768,7 @@ case 0:
 __gsharp_switch_1_state_0:
 {
 __gsharp_id_1_result[0]=Kassyi::ZeroAlloc::Linq::StackLinq::ElementAt(Kassyi::ZeroAlloc::Linq::StackLinq::Where(Kassyi::ZeroAlloc::Linq::StackLinq::SelectAt(Kassyi::ZeroAlloc::Linq::StackLinq::AsStackEnumerable(__gsharp_id_0_data),[&](auto __gsharp_id_2_x, auto __gsharp_id_3_i) {
-return __gsharp_id_2_x*10+__gsharp_id_3_i;
+return __gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_2_x,10),__gsharp_id_3_i);
 }
 ),[&](auto __gsharp_id_4_v) {
 return __gsharp_id_4_v>=20;
@@ -3822,7 +3822,7 @@ if (!__gsharp_fusion_res_init)
 __gsharp_fusion_res_init = true;
 }else
 {__gsharp_fusion_res = ([&](int __gsharp_id_3_acc, int __gsharp_id_4_x) {
-return __gsharp_id_3_acc+__gsharp_id_4_x;
+return __gsharp_add_i32(__gsharp_id_3_acc,__gsharp_id_4_x);
 }
 )(__gsharp_fusion_res, __gsharp_val_0);
 }}
@@ -4798,7 +4798,7 @@ case 0:
 __gsharp_switch_1_state_0:
 {
 __gsharp_id_2_result[0]=Kassyi::ZeroAlloc::Linq::StackLinq::Aggregate((Kassyi::ZeroAlloc::Linq::StackLinq::Take(Kassyi::ZeroAlloc::Linq::StackLinq::AsStackEnumerable(__gsharp_id_0_data),__gsharp_id_1_takeCount)),[&](int __gsharp_id_3_acc, int __gsharp_id_4_x) {
-return __gsharp_id_3_acc+__gsharp_id_4_x;
+return __gsharp_add_i32(__gsharp_id_3_acc,__gsharp_id_4_x);
 }
 );
 __gsharp_state=-1;
@@ -5158,7 +5158,7 @@ for (int __gsharp_i = __gsharp_fusion_lo; __gsharp_i < __gsharp_fusion_hi; __gsh
 {
 auto __gsharp_val_0 = __gsharp_fusion_src[__gsharp_i];
 __gsharp_fusion_res = ([&](int __gsharp_id_3_acc, int __gsharp_id_4_x) {
-return __gsharp_id_3_acc+__gsharp_id_4_x;
+return __gsharp_add_i32(__gsharp_id_3_acc,__gsharp_id_4_x);
 }
 )(__gsharp_fusion_res, __gsharp_val_0);
 }
@@ -5166,7 +5166,7 @@ return __gsharp_fusion_res;
 }());
 __gsharp_id_1_results[10]=Kassyi::ZeroAlloc::Linq::StackLinq::Sum((Kassyi::ZeroAlloc::Linq::StackLinq::Take(Kassyi::ZeroAlloc::Linq::StackLinq::AsStackEnumerable(__gsharp_id_0_data),0)));
 __gsharp_id_1_results[11]=Kassyi::ZeroAlloc::Linq::StackLinq::Aggregate((Kassyi::ZeroAlloc::Linq::StackLinq::Take(Kassyi::ZeroAlloc::Linq::StackLinq::AsStackEnumerable(__gsharp_id_0_data),0)),42,[&](int __gsharp_id_5_acc, int __gsharp_id_6_x) {
-return __gsharp_id_5_acc+__gsharp_id_6_x;
+return __gsharp_add_i32(__gsharp_id_5_acc,__gsharp_id_6_x);
 }
 );
 __gsharp_state=-1;

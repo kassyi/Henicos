@@ -85,13 +85,13 @@ public static partial class AotContexts
 {
 }
 public const string CopyAsyncIntKernel_Source = @"extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Core__CopyAsyncKernels__CopyAsyncIntKernel(GSharpArray<int> __gsharp_id_0_input, GSharpArray<int> __gsharp_id_1_output){
-int __gsharp_id_2_tid = threadIdx.x;
+int __gsharp_id_2_tid = (int)threadIdx.x;
 __shared__ int __gsharp_id_3_smem[32];
 __gsharp_cp_async(&__gsharp_id_3_smem[__gsharp_id_2_tid],&__gsharp_id_0_input[__gsharp_id_2_tid]);
 __gsharp_cp_async_commit_group();
 __gsharp_cp_async_wait_group(0);
 __syncthreads();
-__gsharp_id_1_output[__gsharp_id_2_tid]=__gsharp_id_3_smem[31-__gsharp_id_2_tid];
+__gsharp_id_1_output[__gsharp_id_2_tid]=__gsharp_id_3_smem[__gsharp_sub_i32(31,__gsharp_id_2_tid)];
 }
 ";
 public static readonly string CopyAsyncIntKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +CopyAsyncIntKernel_Source;
@@ -238,13 +238,13 @@ finally
 }
 #pragma warning restore CS8500
 public const string CopyAsyncVector4Kernel_Source = @"extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Core__CopyAsyncKernels__CopyAsyncVector4Kernel(GSharpArray<float4> __gsharp_id_0_input, GSharpArray<float4> __gsharp_id_1_output){
-int __gsharp_id_2_tid = threadIdx.x;
+int __gsharp_id_2_tid = (int)threadIdx.x;
 __shared__ float4 __gsharp_id_3_smem[32];
 __gsharp_cp_async(&__gsharp_id_3_smem[__gsharp_id_2_tid],&__gsharp_id_0_input[__gsharp_id_2_tid]);
 __gsharp_cp_async_commit_group();
 __gsharp_cp_async_wait_group(0);
 __syncthreads();
-__gsharp_id_1_output[__gsharp_id_2_tid]=__gsharp_id_3_smem[(__gsharp_id_2_tid+1)%32];
+__gsharp_id_1_output[__gsharp_id_2_tid]=__gsharp_id_3_smem[(__gsharp_add_i32(__gsharp_id_2_tid,1))%32];
 }
 ";
 public static readonly string CopyAsyncVector4Kernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +CopyAsyncVector4Kernel_Source;
@@ -391,7 +391,7 @@ finally
 }
 #pragma warning restore CS8500
 public const string CopyAsyncTwoGroupsKernel_Source = @"extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Core__CopyAsyncKernels__CopyAsyncTwoGroupsKernel(GSharpArray<int> __gsharp_id_0_input, GSharpArray<int> __gsharp_id_1_output){
-int __gsharp_id_2_tid = threadIdx.x;
+int __gsharp_id_2_tid = (int)threadIdx.x;
 __shared__ int __gsharp_id_3_smem[32];
 if(__gsharp_id_2_tid<16)
 {
@@ -400,20 +400,20 @@ __gsharp_cp_async(&__gsharp_id_3_smem[__gsharp_id_2_tid],&__gsharp_id_0_input[__
 __gsharp_cp_async_commit_group();
 if(__gsharp_id_2_tid<16)
 {
-__gsharp_cp_async(&__gsharp_id_3_smem[__gsharp_id_2_tid+16],&__gsharp_id_0_input[__gsharp_id_2_tid+16]);
+__gsharp_cp_async(&__gsharp_id_3_smem[__gsharp_add_i32(__gsharp_id_2_tid,16)],&__gsharp_id_0_input[__gsharp_add_i32(__gsharp_id_2_tid,16)]);
 }
 __gsharp_cp_async_commit_group();
 __gsharp_cp_async_wait_group(1);
 __syncthreads();
 if(__gsharp_id_2_tid<16)
 {
-__gsharp_id_1_output[__gsharp_id_2_tid]=__gsharp_id_3_smem[15-__gsharp_id_2_tid];
+__gsharp_id_1_output[__gsharp_id_2_tid]=__gsharp_id_3_smem[__gsharp_sub_i32(15,__gsharp_id_2_tid)];
 }
 __gsharp_cp_async_wait_all();
 __syncthreads();
 if(__gsharp_id_2_tid>=16)
 {
-__gsharp_id_1_output[__gsharp_id_2_tid]=__gsharp_id_3_smem[47-__gsharp_id_2_tid];
+__gsharp_id_1_output[__gsharp_id_2_tid]=__gsharp_id_3_smem[__gsharp_sub_i32(47,__gsharp_id_2_tid)];
 }
 }
 ";

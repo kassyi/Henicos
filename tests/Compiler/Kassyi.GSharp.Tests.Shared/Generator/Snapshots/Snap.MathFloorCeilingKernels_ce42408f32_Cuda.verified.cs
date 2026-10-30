@@ -85,7 +85,7 @@ public static partial class AotContexts
 {
 }
 public const string FloorCeilingKernel_Source = @"extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__MathFloorCeilingKernels__FloorCeilingKernel(GSharpArray<double> __gsharp_id_0_doubleInputs, GSharpArray<double> __gsharp_id_1_doubleFloor, GSharpArray<double> __gsharp_id_2_doubleCeiling, GSharpArray<float> __gsharp_id_3_floatInputs, GSharpArray<float> __gsharp_id_4_floatFloor, GSharpArray<float> __gsharp_id_5_floatCeiling){
-int __gsharp_id_6_tid = threadIdx.x;
+int __gsharp_id_6_tid = (int)threadIdx.x;
 __gsharp_id_1_doubleFloor[__gsharp_id_6_tid]=floor(__gsharp_id_0_doubleInputs[__gsharp_id_6_tid]);
 __gsharp_id_2_doubleCeiling[__gsharp_id_6_tid]=ceil(__gsharp_id_0_doubleInputs[__gsharp_id_6_tid]);
 __gsharp_id_4_floatFloor[__gsharp_id_6_tid]=floorf(__gsharp_id_3_floatInputs[__gsharp_id_6_tid]);
@@ -388,7 +388,7 @@ finally
 }
 #pragma warning restore CS8500
 public const string PowKernel_Source = @"extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__MathFloorCeilingKernels__PowKernel(GSharpArray<double> __gsharp_id_0_doubleBases, GSharpArray<double> __gsharp_id_1_doubleExponents, GSharpArray<double> __gsharp_id_2_doubleResults, GSharpArray<float> __gsharp_id_3_floatBases, GSharpArray<float> __gsharp_id_4_floatExponents, GSharpArray<float> __gsharp_id_5_floatResults){
-int __gsharp_id_6_tid = threadIdx.x;
+int __gsharp_id_6_tid = (int)threadIdx.x;
 __gsharp_id_2_doubleResults[__gsharp_id_6_tid]=pow(__gsharp_id_0_doubleBases[__gsharp_id_6_tid],__gsharp_id_1_doubleExponents[__gsharp_id_6_tid]);
 __gsharp_id_5_floatResults[__gsharp_id_6_tid]=powf(__gsharp_id_3_floatBases[__gsharp_id_6_tid],__gsharp_id_4_floatExponents[__gsharp_id_6_tid]);
 }
@@ -689,7 +689,7 @@ finally
 }
 #pragma warning restore CS8500
 public const string RoundKernel_Source = @"extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__MathFloorCeilingKernels__RoundKernel(GSharpArray<double> __gsharp_id_0_doubleInputs, GSharpArray<double> __gsharp_id_1_doubleResults, GSharpArray<float> __gsharp_id_2_floatInputs, GSharpArray<float> __gsharp_id_3_floatResults){
-int __gsharp_id_4_tid = threadIdx.x;
+int __gsharp_id_4_tid = (int)threadIdx.x;
 __gsharp_id_1_doubleResults[__gsharp_id_4_tid]=rint(__gsharp_id_0_doubleInputs[__gsharp_id_4_tid]);
 __gsharp_id_3_floatResults[__gsharp_id_4_tid]=rintf(__gsharp_id_2_floatInputs[__gsharp_id_4_tid]);
 }

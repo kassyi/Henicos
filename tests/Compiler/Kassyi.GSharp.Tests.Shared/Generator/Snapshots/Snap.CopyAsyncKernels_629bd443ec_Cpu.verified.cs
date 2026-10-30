@@ -53,7 +53,7 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-__gsharp_ctx->__gsharp_id_2_tid=threadIdx.x;
+__gsharp_ctx->__gsharp_id_2_tid=(int)threadIdx.x;
 __gsharp_ctx->__gsharp_id_3_smem={ (int*)__gsharp_allocate_smem_static(0x39a63ba5ba61bc86ull, (32) * sizeof(int), alignof(int)) };
 __gsharp_cp_async(&__gsharp_ctx->__gsharp_id_3_smem[__gsharp_ctx->__gsharp_id_2_tid],&__gsharp_id_0_input[__gsharp_ctx->__gsharp_id_2_tid]);
 __gsharp_cp_async_commit_group();
@@ -65,7 +65,7 @@ return;
 case 1:
 __gsharp_switch_1_state_1:
 {
-__gsharp_id_1_output[__gsharp_ctx->__gsharp_id_2_tid]=__gsharp_ctx->__gsharp_id_3_smem[31-__gsharp_ctx->__gsharp_id_2_tid];
+__gsharp_id_1_output[__gsharp_ctx->__gsharp_id_2_tid]=__gsharp_ctx->__gsharp_id_3_smem[__gsharp_sub_i32(31,__gsharp_ctx->__gsharp_id_2_tid)];
 __gsharp_state=-1;
 return;
 }
@@ -322,7 +322,7 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-__gsharp_ctx->__gsharp_id_2_tid=threadIdx.x;
+__gsharp_ctx->__gsharp_id_2_tid=(int)threadIdx.x;
 __gsharp_ctx->__gsharp_id_3_smem={ (float4*)__gsharp_allocate_smem_static(0xd6cc35b95389e938ull, (32) * sizeof(float4), alignof(float4)) };
 __gsharp_cp_async(&__gsharp_ctx->__gsharp_id_3_smem[__gsharp_ctx->__gsharp_id_2_tid],&__gsharp_id_0_input[__gsharp_ctx->__gsharp_id_2_tid]);
 __gsharp_cp_async_commit_group();
@@ -334,7 +334,7 @@ return;
 case 1:
 __gsharp_switch_1_state_1:
 {
-__gsharp_id_1_output[__gsharp_ctx->__gsharp_id_2_tid]=__gsharp_ctx->__gsharp_id_3_smem[(__gsharp_ctx->__gsharp_id_2_tid+1)%32];
+__gsharp_id_1_output[__gsharp_ctx->__gsharp_id_2_tid]=__gsharp_ctx->__gsharp_id_3_smem[(__gsharp_add_i32(__gsharp_ctx->__gsharp_id_2_tid,1))%32];
 __gsharp_state=-1;
 return;
 }
@@ -591,7 +591,7 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-__gsharp_ctx->__gsharp_id_2_tid=threadIdx.x;
+__gsharp_ctx->__gsharp_id_2_tid=(int)threadIdx.x;
 __gsharp_ctx->__gsharp_id_3_smem={ (int*)__gsharp_allocate_smem_static(0x8c84be897736d55full, (32) * sizeof(int), alignof(int)) };
 if(__gsharp_ctx->__gsharp_id_2_tid<16)
 {
@@ -600,7 +600,7 @@ __gsharp_cp_async(&__gsharp_ctx->__gsharp_id_3_smem[__gsharp_ctx->__gsharp_id_2_
 __gsharp_cp_async_commit_group();
 if(__gsharp_ctx->__gsharp_id_2_tid<16)
 {
-__gsharp_cp_async(&__gsharp_ctx->__gsharp_id_3_smem[__gsharp_ctx->__gsharp_id_2_tid+16],&__gsharp_id_0_input[__gsharp_ctx->__gsharp_id_2_tid+16]);
+__gsharp_cp_async(&__gsharp_ctx->__gsharp_id_3_smem[__gsharp_add_i32(__gsharp_ctx->__gsharp_id_2_tid,16)],&__gsharp_id_0_input[__gsharp_add_i32(__gsharp_ctx->__gsharp_id_2_tid,16)]);
 }
 __gsharp_cp_async_commit_group();
 __gsharp_cp_async_wait_group(1);
@@ -613,7 +613,7 @@ __gsharp_switch_1_state_1:
 {
 if(__gsharp_ctx->__gsharp_id_2_tid<16)
 {
-__gsharp_id_1_output[__gsharp_ctx->__gsharp_id_2_tid]=__gsharp_ctx->__gsharp_id_3_smem[15-__gsharp_ctx->__gsharp_id_2_tid];
+__gsharp_id_1_output[__gsharp_ctx->__gsharp_id_2_tid]=__gsharp_ctx->__gsharp_id_3_smem[__gsharp_sub_i32(15,__gsharp_ctx->__gsharp_id_2_tid)];
 }
 __gsharp_cp_async_wait_all();
 __gsharp_yielded_for_block_barrier=true;
@@ -625,7 +625,7 @@ __gsharp_switch_1_state_2:
 {
 if(__gsharp_ctx->__gsharp_id_2_tid>=16)
 {
-__gsharp_id_1_output[__gsharp_ctx->__gsharp_id_2_tid]=__gsharp_ctx->__gsharp_id_3_smem[47-__gsharp_ctx->__gsharp_id_2_tid];
+__gsharp_id_1_output[__gsharp_ctx->__gsharp_id_2_tid]=__gsharp_ctx->__gsharp_id_3_smem[__gsharp_sub_i32(47,__gsharp_ctx->__gsharp_id_2_tid)];
 }
 __gsharp_state=-1;
 return;

@@ -346,10 +346,10 @@ static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Core__SharedAr
 static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Core__SharedArrayPair,__gsharp_mb_B)==16,""Kassyi.GSharp.Tests.Shared.Core.SharedArrayPair.B: offset"");
 #endif
 extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Core__SharedArrayFieldKernels__TwoFieldsKernel(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Core__SharedArrayPair __gsharp_id_0_p){
-if(threadIdx.x==0)
+if((int)threadIdx.x==0)
 {
 __gsharp_id_0_p.__gsharp_mb_A[0]=1;
-__gsharp_id_0_p.__gsharp_mb_B[1]=__gsharp_id_0_p.__gsharp_mb_A[0]+__gsharp_id_0_p.__gsharp_mb_B[0];
+__gsharp_id_0_p.__gsharp_mb_B[1]=__gsharp_add_i32(__gsharp_id_0_p.__gsharp_mb_A[0],__gsharp_id_0_p.__gsharp_mb_B[0]);
 }
 }
 ";
@@ -441,10 +441,10 @@ static_assert(alignof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Core__SharedArr
 static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Core__SharedArrayHolder,__gsharp_mb_Data)==0,""Kassyi.GSharp.Tests.Shared.Core.SharedArrayHolder.Data: offset"");
 #endif
 extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Core__SharedArrayFieldKernels__TwoStructsKernel(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Core__SharedArrayHolder __gsharp_id_0_first, __gsharp_ty_Kassyi__GSharp__Tests__Shared__Core__SharedArrayHolder __gsharp_id_1_second){
-if(threadIdx.x==0)
+if((int)threadIdx.x==0)
 {
 __gsharp_id_0_first.__gsharp_mb_Data[0]=3;
-__gsharp_id_1_second.__gsharp_mb_Data[1]=__gsharp_id_0_first.__gsharp_mb_Data[0]+__gsharp_id_1_second.__gsharp_mb_Data[0];
+__gsharp_id_1_second.__gsharp_mb_Data[1]=__gsharp_add_i32(__gsharp_id_0_first.__gsharp_mb_Data[0],__gsharp_id_1_second.__gsharp_mb_Data[0]);
 }
 }
 ";
@@ -545,10 +545,10 @@ static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Core__ConvertB
 static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Core__ConvertBag,__gsharp_mb_Data)==8,""Kassyi.GSharp.Tests.Shared.Core.ConvertBag.Data: offset"");
 #endif
 extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Core__SharedArrayFieldKernels__ElementFieldsKernel(GSharpArray<__gsharp_ty_Kassyi__GSharp__Tests__Shared__Core__ConvertBag> __gsharp_id_0_bags){
-if(threadIdx.x==0)
+if((int)threadIdx.x==0)
 {
 __gsharp_id_0_bags[0].__gsharp_mb_Data[0]=5;
-__gsharp_id_0_bags[1].__gsharp_mb_Data[1]=__gsharp_id_0_bags[0].__gsharp_mb_Data[0]+__gsharp_id_0_bags[1].__gsharp_mb_Data[0];
+__gsharp_id_0_bags[1].__gsharp_mb_Data[1]=__gsharp_add_i32(__gsharp_id_0_bags[0].__gsharp_mb_Data[0],__gsharp_id_0_bags[1].__gsharp_mb_Data[0]);
 }
 }
 ";
