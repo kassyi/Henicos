@@ -1,5 +1,7 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
+using System.Numerics;
 using Xunit;
 
 namespace Kassyi.GSharp.Tests.Shared.Syntax;
@@ -10,9 +12,10 @@ namespace Kassyi.GSharp.Tests.Shared.Syntax;
 /// properties.
 /// </summary>
 /// <remarks>
-/// The GPU runs the atomics of one address one at a time in an order it does not define. Every path must give a final
-/// value and old values that some order of the operations explains: the checks rebuild that order from the old values
-/// (<see cref="AssertOneOrder{T}"/>) instead of assuming the order in which the CPU paths step the threads.
+/// The GPU runs the atomics of one address one at a time in an order it does not define. The checks of the old values
+/// hold for any order of the operations (<see cref="AssertSameStep{T}"/> and the others) instead of assuming the order in
+/// which the CPU paths step the threads, and fail for an operation that returns the new value, loses an update, skips a
+/// wrap or compares unsigned values as signed.
 /// </remarks>
 internal static class AtomicIntrinsicsScenarios
 {
@@ -88,67 +91,70 @@ internal static class AtomicIntrinsicsScenarios
     // Each slot starts where its operation wraps or saturates within the 32 operations (Add / Sub across the end of the
     // range, Inc / Dec across the limit 9), so a path that computes in a wider type or skips the wrap gives other values.
     // The unsigned Min / Max values cross the top bit (t << 27, t << 59), so a path that compares them as signed
-    // integers gives other values too
+    // integers gives other values too. Slots left out start at 0
     public static void OldValues(Action<Action> run)
     {
-        const int n = WarpSizedBlock;
-        int[] ints = [int.MaxValue - 15, int.MinValue + 15, 0, 0, int.MaxValue, -1, 0, 0];
-        uint[] uints = [uint.MaxValue - 15u, 15u, 0u, 0u, uint.MaxValue, 0u, uint.MaxValue, 0u, 0u, 0u, 0u, 0u];
-        ulong[] ulongs = [ulong.MaxValue - 15ul, 0ul, 0ul, ulong.MaxValue, 0ul, ulong.MaxValue, 0ul, 0ul, 0ul];
-        float[] floats = [0f, 0f, 0f];
-        int[] initialInts = (int[])ints.Clone();
-        uint[] initialUints = (uint[])uints.Clone();
-        ulong[] initialUlongs = (ulong[])ulongs.Clone();
-        float[] initialFloats = (float[])floats.Clone();
-        var intOld = new int[ints.Length * n];
-        var uintOld = new uint[uints.Length * n];
-        var ulongOld = new ulong[ulongs.Length * n];
-        var floatOld = new float[floats.Length * n];
+        var ints = new Slots<int>(IntSlot.Count)
+        {
+            [IntSlot.Add] = int.MaxValue - 15,
+            [IntSlot.Sub] = int.MinValue + 15,
+            [IntSlot.Min] = int.MaxValue,
+            [IntSlot.And] = -1,
+        };
+        var uints = new Slots<uint>(UintSlot.Count)
+        {
+            [UintSlot.Add] = uint.MaxValue - 15u,
+            [UintSlot.Sub] = 15u,
+            [UintSlot.Min] = uint.MaxValue,
+            [UintSlot.And] = uint.MaxValue,
+        };
+        var ulongs = new Slots<ulong>(UlongSlot.Count)
+        {
+            [UlongSlot.Add] = ulong.MaxValue - 15ul,
+            [UlongSlot.Min] = ulong.MaxValue,
+            [UlongSlot.And] = ulong.MaxValue,
+        };
+        var floats = new Slots<float>(FloatSlot.Count);
 
-        run(() => AtomicIntrinsicsKernels.LaunchAtomicOldValueKernel(
-            ints, intOld, uints, uintOld, ulongs, ulongOld, floats, floatOld, blockDimX: n));
+        run(() => AtomicIntrinsicsKernels.LaunchAtomicOldValueKernel(ints.Values, ints.Olds, uints.Values, uints.Olds,
+            ulongs.Values, ulongs.Olds, floats.Values, floats.Olds, blockDimX: WarpSizedBlock));
 
-        AssertOneOrder("int Add", initialInts[0], ints[0], intOld, 0, static (s, _) => unchecked(s + 1));
-        AssertOneOrder("int Sub", initialInts[1], ints[1], intOld, 1, static (s, _) => unchecked(s - 1));
-        AssertOneOrder("int Exch", initialInts[2], ints[2], intOld, 2, static (_, t) => t + 1);
-        AssertOneOrder("int CAS", initialInts[3], ints[3], intOld, 3, static (s, t) => s == 0 ? t + 1 : s);
-        AssertOneOrder("int Min", initialInts[4], ints[4], intOld, 4, static (s, t) => Math.Min(s, 16 - t));
-        AssertOneOrder("int And", initialInts[5], ints[5], intOld, 5, static (s, t) => s & ~(1 << t));
-        AssertOneOrder("int Xor", initialInts[6], ints[6], intOld, 6, static (s, t) => s ^ (1 << t));
-        Assert.Equal(n * (n + 1) / 2, ints[7]);
+        AssertSameStep(ints, IntSlot.Add, static s => unchecked(s + 1));
+        AssertSameStep(ints, IntSlot.Sub, static s => unchecked(s - 1));
+        AssertExchange(ints, IntSlot.Exch, static t => t + 1);
+        AssertCompareExchange(ints, IntSlot.Cas, static t => t + 1);
+        AssertMin(ints, IntSlot.Min, static t => 16 - t);
+        AssertBits(ints, IntSlot.And, static t => 1 << t);
+        AssertBits(ints, IntSlot.Xor, static t => 1 << t);
+        Assert.Equal(WarpSizedBlock * (WarpSizedBlock + 1) / 2, ints.Final(IntSlot.Reduction));
 
-        AssertOneOrder("uint Add", initialUints[0], uints[0], uintOld, 0, static (s, _) => unchecked(s + 1u));
-        AssertOneOrder("uint Sub", initialUints[1], uints[1], uintOld, 1, static (s, _) => unchecked(s - 1u));
-        AssertOneOrder("uint Exch", initialUints[2], uints[2], uintOld, 2, static (_, t) => (uint)t + 1u);
-        AssertOneOrder("uint CAS", initialUints[3], uints[3], uintOld, 3, static (s, t) => s == 0u ? (uint)t + 1u : s);
-        AssertOneOrder("uint Min", initialUints[4], uints[4], uintOld, 4,
-            static (s, t) => Math.Min(s, (uint)(31 - t) << 27));
-        AssertOneOrder("uint Max", initialUints[5], uints[5], uintOld, 5, static (s, t) => Math.Max(s, (uint)t << 27));
-        AssertOneOrder("uint And", initialUints[6], uints[6], uintOld, 6, static (s, t) => s & ~(1u << t));
-        AssertOneOrder("uint Or", initialUints[7], uints[7], uintOld, 7, static (s, t) => s | (1u << t));
-        AssertOneOrder("uint Xor", initialUints[8], uints[8], uintOld, 8, static (s, t) => s ^ (1u << t));
-        AssertOneOrder("uint Inc", initialUints[9], uints[9], uintOld, 9, static (s, _) => Inc(s, 9u));
-        AssertOneOrder("uint Dec", initialUints[10], uints[10], uintOld, 10, static (s, _) => Dec(s, 9u));
-        Assert.Equal((uint)(n * (n + 1) / 2), uints[11]);
+        AssertSameStep(uints, UintSlot.Add, static s => unchecked(s + 1u));
+        AssertSameStep(uints, UintSlot.Sub, static s => unchecked(s - 1u));
+        AssertExchange(uints, UintSlot.Exch, static t => (uint)t + 1u);
+        AssertCompareExchange(uints, UintSlot.Cas, static t => (uint)t + 1u);
+        AssertMin(uints, UintSlot.Min, static t => (uint)(31 - t) << 27);
+        AssertMax(uints, UintSlot.Max, static t => (uint)t << 27);
+        AssertBits(uints, UintSlot.And, static t => 1u << t);
+        AssertBits(uints, UintSlot.Or, static t => 1u << t);
+        AssertBits(uints, UintSlot.Xor, static t => 1u << t);
+        AssertSameStep(uints, UintSlot.Inc, static s => Inc(s, 9u));
+        AssertSameStep(uints, UintSlot.Dec, static s => Dec(s, 9u));
+        Assert.Equal((uint)(WarpSizedBlock * (WarpSizedBlock + 1) / 2), uints.Final(UintSlot.Reduction));
 
-        AssertOneOrder("ulong Add", initialUlongs[0], ulongs[0], ulongOld, 0, static (s, _) => unchecked(s + 1ul));
-        AssertOneOrder("ulong Exch", initialUlongs[1], ulongs[1], ulongOld, 1, static (_, t) => (ulong)t + 1ul);
-        AssertOneOrder("ulong CAS", initialUlongs[2], ulongs[2], ulongOld, 2,
-            static (s, t) => s == 0ul ? (ulong)t + 1ul : s);
-        AssertOneOrder("ulong Min", initialUlongs[3], ulongs[3], ulongOld, 3,
-            static (s, t) => Math.Min(s, (ulong)(31 - t) << 59));
-        AssertOneOrder("ulong Max", initialUlongs[4], ulongs[4], ulongOld, 4,
-            static (s, t) => Math.Max(s, (ulong)t << 59));
-        AssertOneOrder("ulong And", initialUlongs[5], ulongs[5], ulongOld, 5,
-            static (s, t) => s & ~(1ul << (t + 32)));
-        AssertOneOrder("ulong Or", initialUlongs[6], ulongs[6], ulongOld, 6, static (s, t) => s | (1ul << (t + 32)));
-        AssertOneOrder("ulong Xor", initialUlongs[7], ulongs[7], ulongOld, 7, static (s, t) => s ^ (1ul << (t + 32)));
-        Assert.Equal((ulong)(n * (n + 1) / 2), ulongs[8]);
+        AssertSameStep(ulongs, UlongSlot.Add, static s => unchecked(s + 1ul));
+        AssertExchange(ulongs, UlongSlot.Exch, static t => (ulong)t + 1ul);
+        AssertCompareExchange(ulongs, UlongSlot.Cas, static t => (ulong)t + 1ul);
+        AssertMin(ulongs, UlongSlot.Min, static t => (ulong)(31 - t) << 59);
+        AssertMax(ulongs, UlongSlot.Max, static t => (ulong)t << 59);
+        AssertBits(ulongs, UlongSlot.And, static t => 1ul << (t + 32));
+        AssertBits(ulongs, UlongSlot.Or, static t => 1ul << (t + 32));
+        AssertBits(ulongs, UlongSlot.Xor, static t => 1ul << (t + 32));
+        Assert.Equal((ulong)(WarpSizedBlock * (WarpSizedBlock + 1) / 2), ulongs.Final(UlongSlot.Reduction));
 
         // Every partial sum of ones is exact in float, so any order gives the same values
-        AssertOneOrder("float Add", initialFloats[0], floats[0], floatOld, 0, static (s, _) => s + 1f);
-        AssertOneOrder("float Exch", initialFloats[1], floats[1], floatOld, 1, static (_, t) => (float)(t + 1));
-        Assert.Equal(n * 0.5f, floats[2]);
+        AssertSameStep(floats, FloatSlot.Add, static s => s + 1f);
+        AssertExchange(floats, FloatSlot.Exch, static t => (float)(t + 1));
+        Assert.Equal(WarpSizedBlock * 0.5f, floats.Final(FloatSlot.Reduction));
     }
 
     // CUDA atomicInc / atomicDec: inc wraps to 0 once old >= limit; dec wraps to limit when old == 0 or old > limit
@@ -156,73 +162,101 @@ internal static class AtomicIntrinsicsScenarios
 
     private static uint Dec(uint old, uint limit) => old == 0u || old > limit ? limit : old - 1u;
 
-    /// <summary>
-    /// Asserts that one order of the operations of slot <paramref name="slot"/> gives each thread the old value it
-    /// recorded and leaves <paramref name="final"/>: thread t applies <c>apply(state, t)</c> to the state it saw.
-    /// </summary>
-    /// <remarks>
-    /// The order is rebuilt one step at a time. Among the threads that recorded the current state, those whose operation
-    /// leaves the state as it is can run first in any order. At most one of the others can be next, because once it
-    /// changes the state no other thread can have seen it, unless the state comes back (Inc / Dec, which every thread
-    /// applies alike, so any of them will do). A path that returns the new value instead of the old one, or that loses
-    /// an update, leaves no thread for some state and fails.
-    /// <para>
-    /// The premise: a state comes back to an earlier value only in a slot where every thread applies the same operation
-    /// (Add / Sub of one unit, Inc / Dec). A new slot must keep that, by giving each thread its own operand (t + 1,
-    /// bit t) where the state could come back, or the check may reject a correct order.
-    /// </para>
-    /// </remarks>
-    private static void AssertOneOrder<T>(string name, T initial, T final, T[] olds, int slot, Func<T, int, T> apply)
-        where T : IEquatable<T>
+    // Every thread applies the same step: the old values are the first 32 states in some order, the final value the 33rd
+    private static void AssertSameStep<T>(Slots<T> slots, int slot, Func<T, T> step)
     {
-        const int n = WarpSizedBlock;
-        var done = new bool[n];
-        var state = initial;
-        for (var remaining = n; remaining > 0;)
+        var states = new T[WarpSizedBlock + 1];
+        states[0] = slots.Initial(slot);
+        for (var i = 1; i <= WarpSizedBlock; i++)
         {
-            var progressed = false;
-            for (var t = 0; t < n; t++)
-            {
-                if (!done[t] && olds[slot * n + t].Equals(state) && apply(state, t).Equals(state))
-                {
-                    done[t] = true;
-                    remaining--;
-                    progressed = true;
-                }
-            }
-
-            int next = -1;
-            for (var t = 0; t < n && next < 0; t++)
-            {
-                if (!done[t] && olds[slot * n + t].Equals(state))
-                {
-                    next = t;
-                }
-            }
-
-            if (next >= 0)
-            {
-                state = apply(state, next);
-                done[next] = true;
-                remaining--;
-            }
-            else if (!progressed && remaining > 0)
-            {
-                Assert.Fail($"{name}: no thread saw the state {state}; old values: {Describe(olds, slot)}");
-            }
+            states[i] = step(states[i - 1]);
         }
 
-        Assert.True(final.Equals(state), $"{name}: final value {final}, expected {state} after the rebuilt order");
+        Assert.Equal(states[..^1].Order(), slots.SeenBy(slot).Order());
+        Assert.Equal(states[^1], slots.Final(slot));
     }
 
-    private static string Describe<T>(T[] olds, int slot)
+    // Each operand is stored once: the old values and the final value are the initial value and the operands
+    private static void AssertExchange<T>(Slots<T> slots, int slot, Func<int, T> operand) =>
+        Assert.Equal(
+            Operands(operand).Append(slots.Initial(slot)).Order(),
+            slots.SeenBy(slot).Append(slots.Final(slot)).Order()
+        );
+
+    // From 0 to the operand: exactly one thread saw 0 and stored its operand, which every other thread saw
+    private static void AssertCompareExchange<T>(Slots<T> slots, int slot, Func<int, T> operand)
+        where T : INumberBase<T>
     {
-        var values = new List<string>(WarpSizedBlock);
+        var seen = slots.SeenBy(slot);
+        Assert.True(T.IsZero(slots.Initial(slot)));
+        var first = Assert.Single(Enumerable.Range(0, WarpSizedBlock), t => T.IsZero(seen[t]));
+        Assert.Equal(operand(first), slots.Final(slot));
+        Assert.All(
+            Enumerable.Range(0, WarpSizedBlock).Where(t => t != first),
+            t => Assert.Equal(slots.Final(slot), seen[t])
+        );
+    }
+
+    // Distinct operands: the final value is the least (the greatest) of the initial value and the operands, and no thread
+    // saw its own operand (only that thread stores it), unless it is the initial value
+    private static void AssertMin<T>(Slots<T> slots, int slot, Func<int, T> operand) where T : INumber<T> =>
+        AssertExtreme(slots, slot, operand, Enumerable.Min);
+
+    private static void AssertMax<T>(Slots<T> slots, int slot, Func<int, T> operand) where T : INumber<T> =>
+        AssertExtreme(slots, slot, operand, Enumerable.Max);
+
+    private static void AssertExtreme<T>(Slots<T> slots, int slot, Func<int, T> operand,
+        Func<IEnumerable<T>, T> extreme) where T : INumber<T>
+    {
+        var initial = slots.Initial(slot);
+        var seen = slots.SeenBy(slot);
+        Assert.Equal(extreme(Operands(operand).Append(initial)), slots.Final(slot));
+        Assert.All(
+            Enumerable.Range(0, WarpSizedBlock).Where(t => operand(t) != initial),
+            t => Assert.NotEqual(operand(t), seen[t])
+        );
+    }
+
+    // Thread t changes only bit t: it saw that bit as it was initially, and the final value has every bit changed
+    private static void AssertBits<T>(Slots<T> slots, int slot, Func<int, T> bit) where T : IBinaryInteger<T>
+    {
+        var initial = slots.Initial(slot);
+        var seen = slots.SeenBy(slot);
+        var all = T.Zero;
         for (var t = 0; t < WarpSizedBlock; t++)
         {
-            values.Add($"{t}:{olds[slot * WarpSizedBlock + t]}");
+            Assert.Equal(initial & bit(t), seen[t] & bit(t));
+            all |= bit(t);
         }
 
-        return string.Join(", ", values);
+        Assert.Equal(initial ^ all, slots.Final(slot));
+    }
+
+    private static IEnumerable<T> Operands<T>(Func<int, T> operand) =>
+        Enumerable.Range(0, WarpSizedBlock).Select(operand);
+
+    // One element type of AtomicOldValueKernel: one address per slot, and the old value each thread got there
+    private sealed class Slots<T>(int count)
+    {
+        private readonly T[] _initial = new T[count];
+
+        public T[] Values { get; } = new T[count];
+
+        public T[] Olds { get; } = new T[count * WarpSizedBlock];
+
+        public T this[int slot]
+        {
+            set
+            {
+                _initial[slot] = value;
+                Values[slot] = value;
+            }
+        }
+
+        public T Initial(int slot) => _initial[slot];
+
+        public T Final(int slot) => Values[slot];
+
+        public T[] SeenBy(int slot) => Olds[(slot * WarpSizedBlock)..((slot + 1) * WarpSizedBlock)];
     }
 }

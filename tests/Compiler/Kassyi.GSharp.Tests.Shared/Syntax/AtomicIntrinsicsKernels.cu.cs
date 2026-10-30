@@ -59,8 +59,8 @@ public static partial class AtomicIntrinsicsKernels
     }
 
     // Every overload of every atomic, one slot per operation (#728). Each thread records the old value it got at
-    // old[slot * BlockDimension.X + tid]. Thread t adds one unit or passes t + 1, 16 - t, bit t or t shifted into the top
-    // bits, so the host can rebuild the order in which the operations ran from the old values alone.
+    // old[slot * BlockDimension.X + tid]. Thread t adds one unit, or passes t + 1, 16 - t, bit t or t shifted into the top
+    // bits, so that the checks of AtomicIntrinsicsScenarios hold for any order of the operations and fail for a wrong one.
     [GpuKernel]
     public static void AtomicOldValueKernel(int[] ints, int[] intOld, uint[] uints, uint[] uintOld, ulong[] ulongs,
         ulong[] ulongOld, float[] floats, float[] floatOld)
@@ -68,40 +68,62 @@ public static partial class AtomicIntrinsicsKernels
         int tid = ThreadIndex.X;
         int n = BlockDimension.X;
 
-        intOld[0 * n + tid] = Gpu.AtomicAdd(ref ints[0], 1);
-        intOld[1 * n + tid] = Gpu.AtomicSub(ref ints[1], 1);
-        intOld[2 * n + tid] = Gpu.AtomicExch(ref ints[2], tid + 1);
-        intOld[3 * n + tid] = Gpu.AtomicCAS(ref ints[3], 0, tid + 1);
-        intOld[4 * n + tid] = Gpu.AtomicMin(ref ints[4], 16 - tid);
-        intOld[5 * n + tid] = Gpu.AtomicAnd(ref ints[5], ~(1 << tid));
-        intOld[6 * n + tid] = Gpu.AtomicXor(ref ints[6], 1 << tid);
-        Gpu.ReductionAdd(ref ints[7], tid + 1);
+        intOld[IntSlot.Add * n + tid] = Gpu.AtomicAdd(ref ints[IntSlot.Add], 1);
+        intOld[IntSlot.Sub * n + tid] = Gpu.AtomicSub(ref ints[IntSlot.Sub], 1);
+        intOld[IntSlot.Exch * n + tid] = Gpu.AtomicExch(ref ints[IntSlot.Exch], tid + 1);
+        intOld[IntSlot.Cas * n + tid] = Gpu.AtomicCAS(ref ints[IntSlot.Cas], 0, tid + 1);
+        intOld[IntSlot.Min * n + tid] = Gpu.AtomicMin(ref ints[IntSlot.Min], 16 - tid);
+        intOld[IntSlot.And * n + tid] = Gpu.AtomicAnd(ref ints[IntSlot.And], ~(1 << tid));
+        intOld[IntSlot.Xor * n + tid] = Gpu.AtomicXor(ref ints[IntSlot.Xor], 1 << tid);
+        Gpu.ReductionAdd(ref ints[IntSlot.Reduction], tid + 1);
 
-        uintOld[0 * n + tid] = Gpu.AtomicAdd(ref uints[0], 1u);
-        uintOld[1 * n + tid] = Gpu.AtomicSub(ref uints[1], 1u);
-        uintOld[2 * n + tid] = Gpu.AtomicExch(ref uints[2], (uint)tid + 1u);
-        uintOld[3 * n + tid] = Gpu.AtomicCAS(ref uints[3], 0u, (uint)tid + 1u);
-        uintOld[4 * n + tid] = Gpu.AtomicMin(ref uints[4], (uint)(31 - tid) << 27);
-        uintOld[5 * n + tid] = Gpu.AtomicMax(ref uints[5], (uint)tid << 27);
-        uintOld[6 * n + tid] = Gpu.AtomicAnd(ref uints[6], ~(1u << tid));
-        uintOld[7 * n + tid] = Gpu.AtomicOr(ref uints[7], 1u << tid);
-        uintOld[8 * n + tid] = Gpu.AtomicXor(ref uints[8], 1u << tid);
-        uintOld[9 * n + tid] = Gpu.AtomicInc(ref uints[9], 9u);
-        uintOld[10 * n + tid] = Gpu.AtomicDec(ref uints[10], 9u);
-        Gpu.ReductionAdd(ref uints[11], (uint)tid + 1u);
+        uintOld[UintSlot.Add * n + tid] = Gpu.AtomicAdd(ref uints[UintSlot.Add], 1u);
+        uintOld[UintSlot.Sub * n + tid] = Gpu.AtomicSub(ref uints[UintSlot.Sub], 1u);
+        uintOld[UintSlot.Exch * n + tid] = Gpu.AtomicExch(ref uints[UintSlot.Exch], (uint)tid + 1u);
+        uintOld[UintSlot.Cas * n + tid] = Gpu.AtomicCAS(ref uints[UintSlot.Cas], 0u, (uint)tid + 1u);
+        uintOld[UintSlot.Min * n + tid] = Gpu.AtomicMin(ref uints[UintSlot.Min], (uint)(31 - tid) << 27);
+        uintOld[UintSlot.Max * n + tid] = Gpu.AtomicMax(ref uints[UintSlot.Max], (uint)tid << 27);
+        uintOld[UintSlot.And * n + tid] = Gpu.AtomicAnd(ref uints[UintSlot.And], ~(1u << tid));
+        uintOld[UintSlot.Or * n + tid] = Gpu.AtomicOr(ref uints[UintSlot.Or], 1u << tid);
+        uintOld[UintSlot.Xor * n + tid] = Gpu.AtomicXor(ref uints[UintSlot.Xor], 1u << tid);
+        uintOld[UintSlot.Inc * n + tid] = Gpu.AtomicInc(ref uints[UintSlot.Inc], 9u);
+        uintOld[UintSlot.Dec * n + tid] = Gpu.AtomicDec(ref uints[UintSlot.Dec], 9u);
+        Gpu.ReductionAdd(ref uints[UintSlot.Reduction], (uint)tid + 1u);
 
-        ulongOld[0 * n + tid] = Gpu.AtomicAdd(ref ulongs[0], 1ul);
-        ulongOld[1 * n + tid] = Gpu.AtomicExch(ref ulongs[1], (ulong)tid + 1ul);
-        ulongOld[2 * n + tid] = Gpu.AtomicCAS(ref ulongs[2], 0ul, (ulong)tid + 1ul);
-        ulongOld[3 * n + tid] = Gpu.AtomicMin(ref ulongs[3], (ulong)(31 - tid) << 59);
-        ulongOld[4 * n + tid] = Gpu.AtomicMax(ref ulongs[4], (ulong)tid << 59);
-        ulongOld[5 * n + tid] = Gpu.AtomicAnd(ref ulongs[5], ~(1ul << (tid + 32)));
-        ulongOld[6 * n + tid] = Gpu.AtomicOr(ref ulongs[6], 1ul << (tid + 32));
-        ulongOld[7 * n + tid] = Gpu.AtomicXor(ref ulongs[7], 1ul << (tid + 32));
-        Gpu.ReductionAdd(ref ulongs[8], (ulong)tid + 1ul);
+        ulongOld[UlongSlot.Add * n + tid] = Gpu.AtomicAdd(ref ulongs[UlongSlot.Add], 1ul);
+        ulongOld[UlongSlot.Exch * n + tid] = Gpu.AtomicExch(ref ulongs[UlongSlot.Exch], (ulong)tid + 1ul);
+        ulongOld[UlongSlot.Cas * n + tid] = Gpu.AtomicCAS(ref ulongs[UlongSlot.Cas], 0ul, (ulong)tid + 1ul);
+        ulongOld[UlongSlot.Min * n + tid] = Gpu.AtomicMin(ref ulongs[UlongSlot.Min], (ulong)(31 - tid) << 59);
+        ulongOld[UlongSlot.Max * n + tid] = Gpu.AtomicMax(ref ulongs[UlongSlot.Max], (ulong)tid << 59);
+        ulongOld[UlongSlot.And * n + tid] = Gpu.AtomicAnd(ref ulongs[UlongSlot.And], ~(1ul << (tid + 32)));
+        ulongOld[UlongSlot.Or * n + tid] = Gpu.AtomicOr(ref ulongs[UlongSlot.Or], 1ul << (tid + 32));
+        ulongOld[UlongSlot.Xor * n + tid] = Gpu.AtomicXor(ref ulongs[UlongSlot.Xor], 1ul << (tid + 32));
+        Gpu.ReductionAdd(ref ulongs[UlongSlot.Reduction], (ulong)tid + 1ul);
 
-        floatOld[0 * n + tid] = Gpu.AtomicAdd(ref floats[0], 1f);
-        floatOld[1 * n + tid] = Gpu.AtomicExch(ref floats[1], (float)(tid + 1));
-        Gpu.ReductionAdd(ref floats[2], 0.5f);
+        floatOld[FloatSlot.Add * n + tid] = Gpu.AtomicAdd(ref floats[FloatSlot.Add], 1f);
+        floatOld[FloatSlot.Exch * n + tid] = Gpu.AtomicExch(ref floats[FloatSlot.Exch], (float)(tid + 1));
+        Gpu.ReductionAdd(ref floats[FloatSlot.Reduction], 0.5f);
     }
+}
+
+// The slots of AtomicOldValueKernel, one address per operation, shared by the kernel and the checks
+internal static class IntSlot
+{
+    public const int Add = 0, Sub = 1, Exch = 2, Cas = 3, Min = 4, And = 5, Xor = 6, Reduction = 7, Count = 8;
+}
+
+internal static class UintSlot
+{
+    public const int Add = 0, Sub = 1, Exch = 2, Cas = 3, Min = 4, Max = 5, And = 6, Or = 7, Xor = 8, Inc = 9, Dec = 10,
+        Reduction = 11, Count = 12;
+}
+
+internal static class UlongSlot
+{
+    public const int Add = 0, Exch = 1, Cas = 2, Min = 3, Max = 4, And = 5, Or = 6, Xor = 7, Reduction = 8, Count = 9;
+}
+
+internal static class FloatSlot
+{
+    public const int Add = 0, Exch = 1, Reduction = 2, Count = 3;
 }
