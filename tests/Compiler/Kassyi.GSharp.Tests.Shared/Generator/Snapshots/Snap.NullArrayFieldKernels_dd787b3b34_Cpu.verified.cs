@@ -4225,12 +4225,16 @@ uint64_t __gsharp_warp_exchange[2] = {};
 uint32_t __gsharp_warp_shuffle_count = 0;
 bool __gsharp_yielded_for_grid_sync = false;
 bool __gsharp_yielded_for_block_barrier = false;
+GSharpArray<int> __gsharp_id_1_values;
 };
-extern ""C"" __declspec(dllexport) void __gsharp_k_Kassyi__GSharp__Tests__Shared__Core__NullArrayFieldKernels__WrittenParameterWithBarrierKernel(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Core__NullArrayHolder __gsharp_id_0_h, GSharpArray<int> __gsharp_id_1_values, GSharpArray<int> __gsharp_id_2_o, __gsharp_context_Kassyi__GSharp__Tests__Shared__Core__NullArrayFieldKernels__WrittenParameterWithBarrierKernel* __gsharp_ctx){
+extern ""C"" __declspec(dllexport) void __gsharp_k_Kassyi__GSharp__Tests__Shared__Core__NullArrayFieldKernels__WrittenParameterWithBarrierKernel(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Core__NullArrayHolder __gsharp_id_0_h, GSharpArray<int> __gsharp_in___gsharp_id_1_values, GSharpArray<int> __gsharp_id_2_o, __gsharp_context_Kassyi__GSharp__Tests__Shared__Core__NullArrayFieldKernels__WrittenParameterWithBarrierKernel* __gsharp_ctx){
 #define __gsharp_state __gsharp_ctx->__gsharp_state
 #define __gsharp_yielded_for_grid_sync __gsharp_ctx->__gsharp_yielded_for_grid_sync
 #define __gsharp_yielded_for_block_barrier __gsharp_ctx->__gsharp_yielded_for_block_barrier
 auto* __gsharp_root = __gsharp_ctx;
+if(__gsharp_state==0){
+__gsharp_ctx->__gsharp_id_1_values=__gsharp_in___gsharp_id_1_values;
+}
 switch(__gsharp_state)
 {
 case 0:
@@ -4243,8 +4247,8 @@ return;
 case 1:
 __gsharp_switch_1_state_1:
 {
-__gsharp_id_1_values=__gsharp_id_0_h.__gsharp_mb_Data;
-__gsharp_id_2_o[0]=__gsharp_array_ref(__gsharp_id_1_values, ""G#: a null array is read at NullArrayFieldKernels.cs(156,16)"").length;
+__gsharp_ctx->__gsharp_id_1_values=__gsharp_id_0_h.__gsharp_mb_Data;
+__gsharp_id_2_o[0]=__gsharp_array_ref(__gsharp_ctx->__gsharp_id_1_values, ""G#: a null array is read at NullArrayFieldKernels.cs(156,16)"").length;
 __gsharp_state=-1;
 return;
 }
@@ -4330,9 +4334,13 @@ public static readonly string WrittenParameterWithBarrierKernel_FullSource=globa
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Core__NullArrayFieldKernels__WrittenParameterWithBarrierKernel {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
+public int[] values;
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Core__NullArrayFieldKernels__WrittenParameterWithBarrierKernel(global::Kassyi.GSharp.Tests.Shared.Core.NullArrayHolder h, int[] values, int[] o, __gsharp_context_Kassyi__GSharp__Tests__Shared__Core__NullArrayFieldKernels__WrittenParameterWithBarrierKernel __gsharp_ctx) {
+public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Core__NullArrayFieldKernels__WrittenParameterWithBarrierKernel(global::Kassyi.GSharp.Tests.Shared.Core.NullArrayHolder h, int[] __gsharp_in_values, int[] o, __gsharp_context_Kassyi__GSharp__Tests__Shared__Core__NullArrayFieldKernels__WrittenParameterWithBarrierKernel __gsharp_ctx) {
+if (__gsharp_ctx.__gsharp_state == 0) {
+__gsharp_ctx.values = __gsharp_in_values;
+}
 {
 switch (__gsharp_ctx.__gsharp_state)
 {
@@ -4345,8 +4353,8 @@ return;
 
 case 1:
 {
-values = h.Data;
-o[0] = values.Length;
+__gsharp_ctx.values = h.Data;
+o[0] = __gsharp_ctx.values.Length;
 __gsharp_ctx.__gsharp_state = -1;
 return;
 }

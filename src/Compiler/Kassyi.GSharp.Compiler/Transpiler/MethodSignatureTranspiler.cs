@@ -11,7 +11,15 @@ internal static class MethodSignatureTranspiler
     /// A CUDA device function that reaches a dynamic <c>SharedMemory&lt;T&gt;</c> declaration is a template over the
     /// table type of its kernel and takes the table as the last parameter (<see cref="DynamicSharedMemoryEmitter"/>).
     /// </summary>
-    public static void WriteMethodSignature(in MethodEmissionPlan plan, bool hasContext, ref TranspileContext context)
+    /// <param name="plan">The method.</param>
+    /// <param name="hasContext">Whether the kernel runs as a state machine with a per-thread context.</param>
+    /// <param name="context">The transpile context.</param>
+    /// <param name="copiedParameters">
+    /// The parameters of a kernel with a state machine that the body reads from its context; their incoming value gets the
+    /// <c>__gsharp_in_</c> prefix.
+    /// </param>
+    public static void WriteMethodSignature(in MethodEmissionPlan plan, bool hasContext, ref TranspileContext context,
+        IReadOnlyCollection<string>? copiedParameters = null)
     {
         var method = plan.Declaration;
         var methodSymbol = plan.Symbol;
@@ -63,7 +71,8 @@ internal static class MethodSignatureTranspiler
         context.Emitter.Writer.Append($" {methodName}");
         using (context.Emitter.Writer.Parentheses())
         {
-            WriteParameters(method.ParameterList.Parameters, isDevice, ref context);
+            WriteParameters(method.ParameterList.Parameters, isDevice, ref context,
+                contextName != null ? copiedParameters : null);
 
             if (takesTable)
             {
@@ -242,7 +251,7 @@ internal static class MethodSignatureTranspiler
         context.Emitter.Writer.Append(' ');
         if (copiedParameters != null && Contains(copiedParameters, p.Identifier.ValueText))
         {
-            context.Emitter.Writer.Append(GSharpInternalNames.SuspendingCall.CopiedParameterPrefix);
+            context.Emitter.Writer.Append(GSharpInternalNames.StateMachine.CopiedParameterPrefix);
         }
 
         context.Emitter.Writer.AppendCppName(

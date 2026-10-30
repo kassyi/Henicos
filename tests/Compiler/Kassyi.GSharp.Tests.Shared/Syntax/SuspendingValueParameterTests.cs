@@ -23,6 +23,10 @@ public class SuspendingValueParameterTests : TranspilerTestBase
 
     [SkippableFact]
     [Scenario(TestScenario.Boundary)]
+    public void Test_RefExtensionReceiverWrite_SurvivesBarrier() => AssertRefExtensionWrite();
+
+    [SkippableFact]
+    [Scenario(TestScenario.Boundary)]
     public void Test_InlineArrayElementWrite_SurvivesBarrier() => AssertInlineArrayElementWrite();
 
     [SkippableFact]
@@ -75,6 +79,16 @@ public class SuspendingValueParameterTests : TranspilerTestBase
         {
             Assert.Equal(t + 1.0f, fieldOut[t]);
             Assert.Equal(t + 1, scalarOut[t]);
+        }
+    }
+
+    internal static void AssertRefExtensionWrite()
+    {
+        var output = new float[BlockSize];
+        SuspendingValueParameterKernels.LaunchRefExtensionWriteKernel(output, blockDimX: BlockSize);
+        for (int t = 0; t < BlockSize; t++)
+        {
+            Assert.Equal(t + 1.0f, output[t]);
         }
     }
 

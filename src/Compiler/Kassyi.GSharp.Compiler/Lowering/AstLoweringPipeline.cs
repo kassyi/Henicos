@@ -6,14 +6,19 @@ public static class AstLoweringPipeline
     /// <summary>Lowers the body of a kernel or device function, block or expression body, into a flat state machine.</summary>
     /// <param name="method">A method that has a body (see <see cref="MethodDeclarationSyntaxExtensions.HasBody"/>).</param>
     /// <param name="semanticModel">A semantic model of the compilation, used to find the calls that split the state machine.</param>
-    /// <param name="deviceFunction">The symbol of <paramref name="method"/> if it is a device function, or <see langword="null"/> for a kernel.</param>
+    /// <param name="owner">
+    /// The symbol of <paramref name="method"/>. The value parameters it writes live in the frame
+    /// (<see cref="LoweredStateMachine.CopiedParameters"/>), because a kernel and a device function are both resumed
+    /// with their original arguments.
+    /// </param>
+    /// <param name="isDeviceFunction">Whether <paramref name="method"/> is a device function rather than a kernel.</param>
     public static LoweredStateMachine Lower(MethodDeclarationSyntax method, SemanticModel? semanticModel,
-        IMethodSymbol? deviceFunction = null)
+        IMethodSymbol? owner, bool isDeviceFunction)
     {
         var body = method.GetBodyNode()
                    ?? throw new InvalidOperationException("A method without a body cannot be lowered into a state machine.");
         var returnsValue = method.ReturnType is not PredefinedTypeSyntax { Keyword.RawKind: (int)SyntaxKind.VoidKeyword };
-        return Lower(body, returnsValue, semanticModel, deviceFunction);
+        return Lower(body, returnsValue, semanticModel, owner, isDeviceFunction);
     }
 
     /// <summary>Lowers a kernel block into a flat state machine block and extracts hoisted context fields.</summary>
@@ -22,13 +27,18 @@ public static class AstLoweringPipeline
     /// A semantic model of the compilation, used to find the calls that split the state machine (barriers, warp shuffles,
     /// calls that suspend). Without it, only the calls that already carry a split annotation split the state machine.
     /// </param>
-    /// <param name="deviceFunction">The device function that owns <paramref name="body"/>, or <see langword="null"/> for a kernel.</param>
-    public static LoweredStateMachine Lower(BlockSyntax body, SemanticModel? semanticModel = null,
-        IMethodSymbol? deviceFunction = null) =>
-        Lower(body, returnsValue: false, semanticModel, deviceFunction);
+    /// <param name="owner">
+    /// The kernel or device function that declares <paramref name="body"/>, whose written value parameters live in the
+    /// frame, or <see langword="null"/> when there is none (a body built by a test), which copies no parameter.
+    /// </param>
+    /// <param name="isDeviceFunction">Whether <paramref name="body"/> is the body of a device function rather than a kernel.</param>
+    public static LoweredStateMachine Lower(BlockSyntax body, SemanticModel? semanticModel, IMethodSymbol? owner,
+        bool isDeviceFunction) =>
+        Lower(body, returnsValue: false, semanticModel, owner, isDeviceFunction);
 
+    // owner is the method that declares body: the device function, or the kernel when its symbol is known
     private static LoweredStateMachine Lower(CSharpSyntaxNode body, bool returnsValue, SemanticModel? semanticModel,
-        IMethodSymbol? deviceFunction)
+        IMethodSymbol? owner, bool isDeviceFunction)
     {
         var bodyModel = ResolveBodyModel(body, semanticModel);
 
@@ -40,8 +50,9 @@ public static class AstLoweringPipeline
         annotatedBody = PreLoweringExpander.Expand(annotatedBody, bodyModel);
         annotatedBody = LabeledStatementSplitter.Split(annotatedBody);
 
-        var copiedParameters = deviceFunction != null
-            ? FindAssignedValueParameters(body, deviceFunction, bodyModel)
+        // [WHY] A kernel is resumed with its original arguments, as a device function is (#879)
+        var copiedParameters = owner != null
+            ? FindAssignedValueParameters(body, owner, bodyModel)
             : ImmutableArray<string>.Empty;
 
         // [WHY] A loop header is evaluated at its own place in every iteration. The first round leaves headers alone;
@@ -61,10 +72,15 @@ public static class AstLoweringPipeline
 
         // [WHY] Found once, before ContextHoister rewrites declarations, and given to both passes so that they agree
         var statePlan = StateLabelPlanner.Plan(hoistedBody, bodyModel);
-        var (contextHoistedBody, contextFields) =
-            new ContextHoister(copiedParameters, bodyModel, deviceFunction, statePlan)
-                .Hoist(hoistedBody);
-        var lowerer = new StateMachineLowerer(isDeviceFunction: deviceFunction != null, bodyModel, statePlan);
+        var hoister = new ContextHoister(copiedParameters, bodyModel, owner, statePlan);
+        var (contextHoistedBody, contextFields) = hoister.Hoist(hoistedBody);
+        if (!hoister.HasSplitPoint)
+        {
+            // [WHY] A body without a split point runs once and reads its parameters where they are
+            copiedParameters = ImmutableArray<string>.Empty;
+        }
+
+        var lowerer = new StateMachineLowerer(isDeviceFunction, bodyModel, statePlan);
         var stateMachineBody = lowerer.Lower(contextHoistedBody);
 
         return new LoweredStateMachine(stateMachineBody, contextFields, lowerer.CallSites, copiedParameters);
@@ -123,17 +139,16 @@ public static class AstLoweringPipeline
         return splitPoints;
     }
 
-    // [WHY] The caller passes the original arguments again on every resume, so a parameter that the body changes has to
-    // live in the frame. A change is a write whose target starts at the parameter itself (see FindWrittenStorageRoot):
-    // an assignment (each element of a deconstructing one), an increment or decrement, a ref / out argument, or the
-    // receiver of a struct instance method that may change it. With a semantic model the root is matched by symbol, so
-    // a lambda parameter of the same name is not taken for it; without one, or when the model cannot bind the root, it
+    // [WHY] The caller (the launcher, for a kernel) passes the original arguments again on every resume, so a parameter
+    // that the body changes has to live in the frame. A change is a write whose target starts at the parameter itself
+    // (see FindWrittenStorageRoot) in one of the forms of TryGetWriteTarget. With a semantic model the root is matched by
+    // symbol, so a lambda parameter of the same name is not taken for it; without one, or when the model cannot bind the root, it
     // is matched by name (C# forbids a local that shadows a parameter), which can only copy too much.
-    private static ImmutableArray<string> FindAssignedValueParameters(SyntaxNode body, IMethodSymbol deviceFunction,
+    private static ImmutableArray<string> FindAssignedValueParameters(SyntaxNode body, IMethodSymbol method,
         SemanticModel? model)
     {
         var candidates = new HashSet<string>(StringComparer.Ordinal);
-        deviceFunction.Parameters
+        method.Parameters
             .AsStackEnumerable()
             .Where(static parameter => parameter.RefKind == RefKind.None && !parameter.Type.IsRefLikeType)
             .Select(static parameter => parameter.Name)
@@ -146,42 +161,50 @@ public static class AstLoweringPipeline
         var assigned = ImmutableArray.CreateBuilder<string>();
         foreach (var node in body.DescendantNodes())
         {
-            var target = node switch
+            if (TryGetWriteTarget(node, model, out var target))
             {
-                AssignmentExpressionSyntax assignment => assignment.Left,
-                PrefixUnaryExpressionSyntax prefix when prefix.IsKind(SyntaxKind.PreIncrementExpression) ||
-                                                        prefix.IsKind(SyntaxKind.PreDecrementExpression) => prefix.Operand,
-                PostfixUnaryExpressionSyntax postfix => postfix.Operand,
-                ArgumentSyntax { RefKindKeyword.RawKind: not (int)SyntaxKind.None } argument => argument.Expression,
-                InvocationExpressionSyntax
-                {
-                    Expression: MemberAccessExpressionSyntax
-                    {
-                        RawKind: (int)SyntaxKind.SimpleMemberAccessExpression
-                    } memberAccess
-                } invocation when MayChangeReceiver(invocation, model) => memberAccess.Expression,
-                _ => null
-            };
-
-            if (target != null)
-            {
-                MarkWrittenParameters(target, deviceFunction, model, candidates, assigned);
+                MarkWrittenParameters(target, method, model, candidates, assigned);
             }
         }
 
         return assigned.ToImmutable();
     }
 
+    // The forms that write a variable, and the expression each one writes: an assignment (its left side; each element
+    // of a deconstructing one, see MarkWrittenParameters), an increment or decrement, a ref / out argument, and the
+    // receiver of a struct instance method that may change it. A new form of write goes into this list
+    private static bool TryGetWriteTarget(SyntaxNode node, SemanticModel? model,
+        [NotNullWhen(true)] out ExpressionSyntax? target)
+    {
+        target = node switch
+        {
+            AssignmentExpressionSyntax assignment => assignment.Left,
+            PrefixUnaryExpressionSyntax prefix when prefix.IsKind(SyntaxKind.PreIncrementExpression) ||
+                                                    prefix.IsKind(SyntaxKind.PreDecrementExpression) => prefix.Operand,
+            PostfixUnaryExpressionSyntax postfix => postfix.Operand,
+            ArgumentSyntax { RefKindKeyword.RawKind: not (int)SyntaxKind.None } argument => argument.Expression,
+            InvocationExpressionSyntax
+            {
+                Expression: MemberAccessExpressionSyntax
+                {
+                    RawKind: (int)SyntaxKind.SimpleMemberAccessExpression
+                } memberAccess
+            } invocation when MayChangeReceiver(invocation, model) => memberAccess.Expression,
+            _ => null
+        };
+        return target != null;
+    }
+
     // Moves the parameter that a write target starts at from candidates to assigned. A tuple target writes each of its
     // elements: (a, (v.X, b)) = ...
-    private static void MarkWrittenParameters(ExpressionSyntax target, IMethodSymbol deviceFunction,
+    private static void MarkWrittenParameters(ExpressionSyntax target, IMethodSymbol method,
         SemanticModel? model, HashSet<string> candidates, ImmutableArray<string>.Builder assigned)
     {
         if (target is TupleExpressionSyntax tuple)
         {
             foreach (var element in tuple.Arguments)
             {
-                MarkWrittenParameters(element.Expression, deviceFunction, model, candidates, assigned);
+                MarkWrittenParameters(element.Expression, method, model, candidates, assigned);
             }
 
             return;
@@ -196,7 +219,7 @@ public static class AstLoweringPipeline
         {
             null => true,
             IParameterSymbol parameter =>
-                parameter.ContainingSymbol.OriginalDefinition.IsEqualTo(deviceFunction.OriginalDefinition),
+                parameter.ContainingSymbol.OriginalDefinition.IsEqualTo(method.OriginalDefinition),
             _ => false
         };
         var name = root.Identifier.ValueText;
@@ -206,15 +229,22 @@ public static class AstLoweringPipeline
         }
     }
 
-    // [WHY] A struct instance method that is not readonly receives its receiver by reference and may change it. Without
-    // a semantic model every receiver counts as changed.
+    // [WHY] A struct instance method that is not readonly receives its receiver by reference and may change it, and so
+    // does an extension method whose `this` parameter is `ref` (`static void Bump(this ref Pt p)`, called as
+    // `point.Bump()`); an `in` or `ref readonly` one cannot. Without a semantic model every receiver counts as changed.
     private static bool MayChangeReceiver(InvocationExpressionSyntax invocation, SemanticModel? model) =>
         model == null ||
-        model.GetSymbol(invocation) is IMethodSymbol
+        model.GetSymbol(invocation) switch
         {
-            IsStatic: false,
-            IsReadOnly: false,
-            ContainingType: { IsValueType: true, IsReadOnly: false }
+            IMethodSymbol { MethodKind: MethodKind.ReducedExtension, ReducedFrom: { } extension } =>
+                extension.Parameters is [{ RefKind: RefKind.Ref }, ..],
+            IMethodSymbol
+            {
+                IsStatic: false,
+                IsReadOnly: false,
+                ContainingType: { IsValueType: true, IsReadOnly: false }
+            } => true,
+            _ => false
         };
 
     // [WHY] A write changes the storage of the variable its target starts at when every step from that variable reaches

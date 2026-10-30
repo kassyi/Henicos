@@ -77,9 +77,12 @@ public class PreciseHoistingTests
             .OfType<MethodDeclarationSyntax>()
             .Single();
 
+        var symbol = model.GetDeclaredSymbol<IMethodSymbol>(method);
+
         // Without a model the barriers are annotated by spelling (TestSyncAnnotator), as the pipeline does by symbol
         return withModel
-            ? (AstLoweringPipeline.Lower(method, model), model, method)
-            : (AstLoweringPipeline.Lower(TestSyncAnnotator.Annotate(method), null), model, method);
+            ? (AstLoweringPipeline.Lower(method, model, symbol, isDeviceFunction: false), model, method)
+            : (AstLoweringPipeline.Lower(TestSyncAnnotator.Annotate(method), null, symbol, isDeviceFunction: false),
+                model, method);
     }
 }

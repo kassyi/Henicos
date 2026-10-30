@@ -70,6 +70,25 @@ public struct WriteNestedCounter
     public WriteCounter Inner;
 }
 
+// The receiver of an extension method is written only through a `this ref` parameter
+public static class WriteVectorExtensions
+{
+    [GpuDeviceFunction]
+    public static void AddX(this ref WriteVector v, float d)
+    {
+        v.X += d;
+    }
+
+    [GpuDeviceFunction]
+    public static float SumIn(this in WriteVector v) => v.X + v.Y;
+
+    [GpuDeviceFunction]
+    public static float SumRefReadOnly(this ref readonly WriteVector v) => v.X + v.Y;
+
+    [GpuDeviceFunction]
+    public static float SumByValue(this WriteVector v) => v.X + v.Y;
+}
+
 public static class ValueParameterWrites
 {
     [GpuDeviceFunction]
@@ -218,6 +237,22 @@ public static class ValueParameterWrites
         v.Inner.Bump();
         Gpu.SyncThreads();
         return v.Inner.Count;
+    }
+
+    [GpuDeviceFunction]
+    public static float RefExtensionCall(WriteVector v)
+    {
+        v.AddX(1.0f);
+        Gpu.SyncThreads();
+        return v.X;
+    }
+
+    [GpuDeviceFunction]
+    public static float NonRefExtensionCalls(WriteVector v)
+    {
+        float sum = v.SumIn() + v.SumRefReadOnly() + v.SumByValue();
+        Gpu.SyncThreads();
+        return sum + v.X;
     }
 
     [GpuDeviceFunction]
