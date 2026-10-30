@@ -8,8 +8,9 @@ namespace Kassyi.GSharp.Compiler.Lowering;
 /// <c>__gsharp_call_frame_{i}</c>.
 /// </param>
 /// <param name="CopiedParameters">
-/// By-value parameters of a device function that the body assigns. They are copied into the frame on the first entry,
-/// because the caller passes the original value again on every resume.
+/// By-value parameters of a kernel or device function that the body assigns. They are copied into the frame on the first
+/// entry, because the caller (the launcher, for a kernel) passes the original value again on every resume. Empty when
+/// the body has no split point, since it then runs once.
 /// </param>
 /// <param name="RegionCount">
 /// The highest region number assigned by pre-lowering expansions so that subsequent inline expansions can continue from
