@@ -4,28 +4,15 @@ namespace Kassyi.GSharp.Compiler.Diagnostics.Kernel;
 internal static class BarrierDivergenceChecks
 {
     /// <summary>
-    /// Validates immediate syntactic ancestors of a barrier invocation (GSH0037, GSH0043, GSH0045, and GSH0003 for a
-    /// barrier in the scope of a <c>using</c>).
+    /// Validates the syntactic ancestors of a barrier invocation (GSH0043, GSH0045, and GSH0003 for a barrier in the
+    /// scope of a <c>using</c>): rules about where the barrier is written, not about the control flow.
     /// </summary>
     /// <param name="scan">The state of the run.</param>
     /// <param name="barrier">A block barrier, or a call to a device function that reaches a barrier.</param>
-    /// <param name="isBlockBarrier">Whether every thread of the block has to reach <paramref name="barrier"/> (GSH0037).</param>
-    internal static void InspectBarrierAncestors(KernelBarrierScan scan, InvocationExpressionSyntax barrier, bool isBlockBarrier)
+    internal static void InspectBarrierAncestors(KernelBarrierScan scan, InvocationExpressionSyntax barrier)
     {
-        SyntaxNode previous = barrier;
         for (var ancestor = barrier.Parent; ancestor != null && ancestor != scan.Method; ancestor = ancestor.Parent)
         {
-            var child = previous;
-            previous = ancestor;
-
-            // GSH0037: only the threads for which a thread-variant condition holds reach the barrier
-            if (isBlockBarrier && GetDivergingCondition(ancestor, child) is { } condition && scan.Variance.IsThreadVariant(condition))
-            {
-                scan.Context.ReportDiagnostic(
-                    GSharpDiagnostics.DivergentBarrierProhibited,
-                    barrier.GetLocation());
-            }
-
             switch (ancestor)
             {
                 // GSH0043: fixed block barrier prohibited
@@ -57,24 +44,140 @@ internal static class BarrierDivergenceChecks
     }
 
     /// <summary>
-    /// The condition that decides whether <paramref name="child"/> of <paramref name="ancestor"/> runs: a branch, the
-    /// body of a loop, or an operand that is evaluated only for some values of another operand. GSH0077 decides with
-    /// it which dynamic <c>SharedMemory&lt;T&gt;</c> declarations only some threads reach.
+    /// Reports a barrier, or a call that reaches one, that a thread-variant branch lets only some threads reach while
+    /// the others reach another split point (<see cref="BarrierDivergence.Condition"/>): the branch may be in this
+    /// method, or in the callee, depending on the arguments or leaving it early (§3.2.4). It is GSH0083, a warning: which
+    /// threads take the branch depends on the launch (a block of one thread, or an X width of 1) and on run-time values,
+    /// which the compiler does not know, so no divergent branch is certain (semantics charter §3); the barriers that do
+    /// diverge are caught at run time. A barrier that the others skip only on their way out of the method
+    /// (<see cref="BarrierDivergence.ExitOnly"/>) is not reported here.
+    /// A barrier written in a body that the CPU dialects do not split (a lambda other than the bodies of
+    /// <c>Gpu.ForUnroll</c> and <c>Gpu.SyncGrid(body)</c>, or a local function) fails in every launch: GSH0037.
     /// </summary>
-    internal static ExpressionSyntax? GetDivergingCondition(SyntaxNode ancestor, SyntaxNode child) => ancestor switch
+    internal static void ValidateDivergentBarriers(KernelBarrierScan scan)
     {
-        IfStatementSyntax ifStatement when child != ifStatement.Condition => ifStatement.Condition,
-        SwitchStatementSyntax switchStatement when child != switchStatement.Expression => switchStatement.Expression,
-        WhileStatementSyntax whileStatement when child != whileStatement.Condition => whileStatement.Condition,
-        DoStatementSyntax doStatement when child != doStatement.Condition => doStatement.Condition,
-        ForStatementSyntax { Condition: { } condition } forStatement when child == forStatement.Statement => condition,
-        ForEachStatementSyntax forEach when child == forEach.Statement => forEach.Expression,
-        ConditionalExpressionSyntax conditional when child != conditional.Condition => conditional.Condition,
-        BinaryExpressionSyntax binary when child == binary.Right &&
-                                           binary.IsKind(SyntaxKind.LogicalAndExpression, SyntaxKind.LogicalOrExpression,
-                                               SyntaxKind.CoalesceExpression) => binary.Left,
-        _ => null
-    };
+        if (scan.SyncPoints.Count == 0)
+        {
+            return;
+        }
+
+        UniformityAnalysis? uniformity = null;
+
+        // GSH0084 in a kernel: each condition that sends threads out before a barrier, with the first barrier it skips
+        var exits = new Dictionary<SyntaxNode, (InvocationExpressionSyntax Barrier, SyncScope Scope)>();
+        foreach (var (barrier, scope, isCall) in scan.SyncPoints)
+        {
+            if (!isCall && IsInUnsplitBody(scan, barrier))
+            {
+                ReportUnsplitBarrier(scan, barrier);
+                continue;
+            }
+
+            if (uniformity == null && !scan.Flow.TryGetUniformity(out uniformity))
+            {
+                return;
+            }
+
+            if (GetDivergence(uniformity, barrier, scope, isCall) == BarrierDivergence.Condition)
+            {
+                ReportDivergentBarrier(scan, barrier, scope);
+            }
+            else if (scan.IsKernel)
+            {
+                CollectExits(scan, uniformity, barrier, scope, isCall, exits);
+            }
+        }
+
+        ReportExits(scan, exits);
+    }
+
+    // The divergence of a barrier in this method; for a call, the call site's when it diverges there, or when the
+    // method itself says nothing
+    private static BarrierDivergence GetDivergence(UniformityAnalysis uniformity, InvocationExpressionSyntax barrier,
+        SyncScope scope, bool isCall)
+    {
+        var divergence = uniformity.GetBarrierDivergence(barrier, scope);
+        if (!isCall || divergence == BarrierDivergence.Condition)
+        {
+            return divergence;
+        }
+
+        var callSite = uniformity.GetCallSiteDivergence(barrier);
+        return callSite == BarrierDivergence.Condition || divergence == BarrierDivergence.None ? callSite : divergence;
+    }
+
+    // GSH0083: whether the branch diverges depends on the launch or on run-time values
+    private static void ReportDivergentBarrier(KernelBarrierScan scan, InvocationExpressionSyntax barrier,
+        SyncScope scope) =>
+        scan.Context.ReportDiagnostic(GSharpDiagnostics.LaunchDependentDivergentBarrier, barrier.GetLocation(),
+            scan.SemanticModel.GetSymbol(barrier)?.Name ?? "", scope == SyncScope.Grid ? "grid" : "block");
+
+    // GSH0037 for a barrier in a lambda or local function that the state machine does not split
+    private static void ReportUnsplitBarrier(KernelBarrierScan scan, InvocationExpressionSyntax barrier) =>
+        scan.Context.ReportDiagnostic(GSharpDiagnostics.DivergentBarrierProhibited, barrier.GetLocation(),
+            $"'{scan.SemanticModel.GetSymbol(barrier)?.Name}' cannot be called in a lambda or local function other " +
+            "than the body of Gpu.ForUnroll or Gpu.SyncGrid(body): the CPU dialects resume a kernel only in " +
+            "the statements of its body and of those macro bodies, so the barrier would not wait for the " +
+            "other threads there.");
+
+    // An exit-only barrier of a kernel: its exit conditions, or the call whose callee the threads leave early
+    private static void CollectExits(KernelBarrierScan scan, UniformityAnalysis uniformity,
+        InvocationExpressionSyntax barrier, SyncScope scope, bool isCall,
+        Dictionary<SyntaxNode, (InvocationExpressionSyntax Barrier, SyncScope Scope)> exits)
+    {
+        foreach (var branch in uniformity.GetExitBranches(barrier, scope))
+        {
+            // A case of a switch statement compares with the case value; the switch expression is what diverges
+            var condition = branch.FirstAncestorOrSelf<SwitchLabelSyntax>() is
+                { Parent: SwitchSectionSyntax { Parent: SwitchStatementSyntax switchStatement } }
+                ? switchStatement.Expression
+                : branch;
+            if (!exits.TryGetValue(condition, out var first) || barrier.SpanStart < first.Barrier.SpanStart)
+            {
+                exits[condition] = (barrier, scope);
+            }
+        }
+
+        if (isCall && uniformity.IsExitOnlyCall(barrier))
+        {
+            var callee = scan.SemanticModel.GetSymbol(barrier)?.Name ?? "";
+            scan.Context.ReportDiagnostic(GSharpDiagnostics.BarrierAfterDivergentExit, barrier.GetLocation(),
+                $"Some threads leave '{callee}' early", $"a barrier inside '{callee}'", "block");
+        }
+    }
+
+    // GSH0084 at each exit condition, with the first barrier it skips as the additional location
+    private static void ReportExits(KernelBarrierScan scan,
+        Dictionary<SyntaxNode, (InvocationExpressionSyntax Barrier, SyncScope Scope)> exits)
+    {
+        foreach (var pair in exits)
+        {
+            var (barrier, scope) = pair.Value;
+            scan.Context.ReportDiagnostic(Diagnostic.Create(GSharpDiagnostics.BarrierAfterDivergentExit,
+                pair.Key.GetLocation(),
+                [barrier.GetLocation()],
+                "Where this condition holds, a thread leaves the kernel",
+                $"'{scan.SemanticModel.GetSymbol(barrier)?.Name}'",
+                scope == SyncScope.Grid ? "grid" : "block"));
+        }
+    }
+
+    // [WHY] The state machine of the CPU dialects splits only the statements of the method and the inlined macro
+    // bodies; a barrier in any other lambda or in a local function cannot be resumed (decision 1.5)
+    private static bool IsInUnsplitBody(KernelBarrierScan scan, InvocationExpressionSyntax barrier)
+    {
+        for (var ancestor = barrier.Parent; ancestor != null && ancestor != scan.Method; ancestor = ancestor.Parent)
+        {
+            if (ancestor is LocalFunctionStatementSyntax ||
+                (ancestor is AnonymousFunctionExpressionSyntax &&
+                 !BarrierUsageAnalyzer.IsInlinedMacroBody(ancestor, scan.SemanticModel)))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
 
     /// <summary>
     /// Whether <paramref name="barrier"/> in <paramref name="block"/> is in the scope of a <c>using</c> declaration of the
