@@ -133,7 +133,7 @@ public const string DebugName_Limit = "global::System.Int32";
 [System.Runtime.InteropServices.FieldOffset(20)]
 public global::System.Int32 Limit;
 }
-public static unsafe void Marshal_GpuBigIntVectorKernels_ElementCountContext(ref global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Kernels.GpuBigIntVectorKernels.ElementCountContext host, ref AotContexts.ElementCount native, bool isDevicePtr, System.Collections.Generic.List<IntPtr>? allocatedPtrs, IntPtr hStream = default)
+public static unsafe void Marshal_GpuBigIntVectorKernels_ElementCountContext(ref global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Kernels.GpuBigIntVectorKernels.ElementCountContext host, ref AotContexts.ElementCount native, bool isDevicePtr, global::Kassyi.GSharp.Runtime.Interop.DeviceArrayRegions? deviceArrays, IntPtr hStream = default)
 {
 native = default;
 if (host.Base != null)
@@ -147,8 +147,14 @@ else
 int size = host.Base.Length * sizeof(global::System.UInt32);
 if (size > 0)
 {
+if (deviceArrays != null && deviceArrays.TryGetRegion(host.Base, out var region))
+{
+native.Base.Data = region;
+}
+else
+{
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out native.Base.Data, (IntPtr)size, hStream));
-allocatedPtrs?.Add(native.Base.Data);
+deviceArrays?.Add(host.Base, native.Base.Data);
 var handle = System.Runtime.InteropServices.GCHandle.Alloc(host.Base, System.Runtime.InteropServices.GCHandleType.Pinned);
 try
 {
@@ -157,6 +163,7 @@ CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoDAsync_v2(native.Base.Data, 
 finally
 {
 handle.Free();
+}
 }
 }
 native.Base.Length = host.Base.Length;
@@ -312,10 +319,10 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 WarmupFunctionPointerBlockExclusiveScan();
 IntPtr hfunc = s_hfunc_BlockExclusiveScan!.Value;
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "GpuStreamCompactionKernels.BlockExclusiveScan");
+var __gsharp_device_arrays = new global::Kassyi.GSharp.Runtime.Interop.DeviceArrayRegions();
 IntPtr d_output = IntPtr.Zero;
 IntPtr d_input = IntPtr.Zero;
 IntPtr d_blockSums = IntPtr.Zero;
-System.Collections.Generic.List<IntPtr> count_allocatedPtrs = new System.Collections.Generic.List<IntPtr>();
 IntPtr d_total = IntPtr.Zero;
 try
 {
@@ -371,7 +378,7 @@ CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
 }
 kernelParams[3] = proxy_blockSums;
 AotContexts.ElementCount native_count = default;
-AotContexts.Marshal_GpuBigIntVectorKernels_ElementCountContext(ref count, ref native_count, false, count_allocatedPtrs, hStream);
+AotContexts.Marshal_GpuBigIntVectorKernels_ElementCountContext(ref count, ref native_count, false, __gsharp_device_arrays, hStream);
 // Marshal scalar struct: count
 kernelParams[4] = &native_count;
 // Marshal array: total
@@ -444,8 +451,8 @@ finally
 if (d_output != IntPtr.Zero) CudaDriverApi.cuMemFreeAsync(d_output, hStream);
 if (d_input != IntPtr.Zero) CudaDriverApi.cuMemFreeAsync(d_input, hStream);
 if (d_blockSums != IntPtr.Zero) CudaDriverApi.cuMemFreeAsync(d_blockSums, hStream);
-foreach (var ptr in count_allocatedPtrs) CudaDriverApi.cuMemFreeAsync(ptr, hStream);
 if (d_total != IntPtr.Zero) CudaDriverApi.cuMemFreeAsync(d_total, hStream);
+__gsharp_device_arrays.Free(hStream);
 }
 }
 }
@@ -1003,13 +1010,13 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 WarmupFunctionPointerCompactSignedVector();
 IntPtr hfunc = s_hfunc_CompactSignedVector!.Value;
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "GpuStreamCompactionKernels.CompactSignedVector");
+var __gsharp_device_arrays = new global::Kassyi.GSharp.Runtime.Interop.DeviceArrayRegions();
 IntPtr d_outputValues = IntPtr.Zero;
 IntPtr d_outputSigns = IntPtr.Zero;
 IntPtr d_inputValues = IntPtr.Zero;
 IntPtr d_inputSigns = IntPtr.Zero;
 IntPtr d_predicates = IntPtr.Zero;
 IntPtr d_scanResult = IntPtr.Zero;
-System.Collections.Generic.List<IntPtr> count_allocatedPtrs = new System.Collections.Generic.List<IntPtr>();
 try
 {
 void** kernelParams = stackalloc void*[9];
@@ -1114,7 +1121,7 @@ kernelParams[6] = &elementCount;
 // Marshal scalar: wordsPerElement
 kernelParams[7] = &wordsPerElement;
 AotContexts.ElementCount native_count = default;
-AotContexts.Marshal_GpuBigIntVectorKernels_ElementCountContext(ref count, ref native_count, false, count_allocatedPtrs, hStream);
+AotContexts.Marshal_GpuBigIntVectorKernels_ElementCountContext(ref count, ref native_count, false, __gsharp_device_arrays, hStream);
 // Marshal scalar struct: count
 kernelParams[8] = &native_count;
 CudaException.ThrowIfError(CudaDriverApi.cuLaunchKernel(
@@ -1190,7 +1197,7 @@ if (d_inputValues != IntPtr.Zero) CudaDriverApi.cuMemFreeAsync(d_inputValues, hS
 if (d_inputSigns != IntPtr.Zero) CudaDriverApi.cuMemFreeAsync(d_inputSigns, hStream);
 if (d_predicates != IntPtr.Zero) CudaDriverApi.cuMemFreeAsync(d_predicates, hStream);
 if (d_scanResult != IntPtr.Zero) CudaDriverApi.cuMemFreeAsync(d_scanResult, hStream);
-foreach (var ptr in count_allocatedPtrs) CudaDriverApi.cuMemFreeAsync(ptr, hStream);
+__gsharp_device_arrays.Free(hStream);
 }
 }
 }
@@ -1360,6 +1367,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 WarmupFunctionPointerCompactFloatVector();
 IntPtr hfunc = s_hfunc_CompactFloatVector!.Value;
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "GpuStreamCompactionKernels.CompactFloatVector");
+var __gsharp_device_arrays = new global::Kassyi.GSharp.Runtime.Interop.DeviceArrayRegions();
 IntPtr d_outputSignificands = IntPtr.Zero;
 IntPtr d_outputExponents = IntPtr.Zero;
 IntPtr d_outputSigns = IntPtr.Zero;
@@ -1368,7 +1376,6 @@ IntPtr d_inputExponents = IntPtr.Zero;
 IntPtr d_inputSigns = IntPtr.Zero;
 IntPtr d_predicates = IntPtr.Zero;
 IntPtr d_scanResult = IntPtr.Zero;
-System.Collections.Generic.List<IntPtr> count_allocatedPtrs = new System.Collections.Generic.List<IntPtr>();
 try
 {
 void** kernelParams = stackalloc void*[11];
@@ -1505,7 +1512,7 @@ kernelParams[8] = &elementCount;
 // Marshal scalar: wordsPerElement
 kernelParams[9] = &wordsPerElement;
 AotContexts.ElementCount native_count = default;
-AotContexts.Marshal_GpuBigIntVectorKernels_ElementCountContext(ref count, ref native_count, false, count_allocatedPtrs, hStream);
+AotContexts.Marshal_GpuBigIntVectorKernels_ElementCountContext(ref count, ref native_count, false, __gsharp_device_arrays, hStream);
 // Marshal scalar struct: count
 kernelParams[10] = &native_count;
 CudaException.ThrowIfError(CudaDriverApi.cuLaunchKernel(
@@ -1601,7 +1608,7 @@ if (d_inputExponents != IntPtr.Zero) CudaDriverApi.cuMemFreeAsync(d_inputExponen
 if (d_inputSigns != IntPtr.Zero) CudaDriverApi.cuMemFreeAsync(d_inputSigns, hStream);
 if (d_predicates != IntPtr.Zero) CudaDriverApi.cuMemFreeAsync(d_predicates, hStream);
 if (d_scanResult != IntPtr.Zero) CudaDriverApi.cuMemFreeAsync(d_scanResult, hStream);
-foreach (var ptr in count_allocatedPtrs) CudaDriverApi.cuMemFreeAsync(ptr, hStream);
+__gsharp_device_arrays.Free(hStream);
 }
 }
 }
