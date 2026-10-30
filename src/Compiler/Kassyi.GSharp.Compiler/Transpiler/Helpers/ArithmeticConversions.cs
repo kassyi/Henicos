@@ -131,7 +131,7 @@ internal static class ArithmeticConversions
 
         if (operand.ConstantValue is { HasValue: true, Value: { } value })
         {
-            context.Emitter.Writer.Append(ConstexprLiteral.FormatCppConstant(type, value));
+            ConstantAtUse.Append(syntax, type, value, ref context);
             return;
         }
 

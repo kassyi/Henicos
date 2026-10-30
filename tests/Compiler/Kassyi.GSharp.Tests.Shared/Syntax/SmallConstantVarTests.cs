@@ -27,4 +27,9 @@ public class SmallConstantVarTests : TranspilerTestBase
     [Scenario(TestScenario.HappyPath)]
     public void Test_VarOfSmallConstLocal_WrapsAtLocalType_Execution() =>
         SmallConstantVarScenarios.LocalConst(s_runNative);
+
+    [SkippableFact]
+    [Scenario(TestScenario.Boundary)]
+    public void Test_NarrowConstantInSwitchMathConditionalAndArguments_Execution() =>
+        SmallConstantVarScenarios.NarrowUses(s_runNative);
 }

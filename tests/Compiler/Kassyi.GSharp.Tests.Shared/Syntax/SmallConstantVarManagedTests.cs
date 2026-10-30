@@ -1,6 +1,6 @@
 #if GSHARP_CPU
 using System;
-using Kassyi.GSharp.Runtime.Aot;
+using Kassyi.GSharp.Tests.Shared.Helpers;
 using Xunit;
 
 namespace Kassyi.GSharp.Tests.Shared.Syntax;
@@ -8,10 +8,9 @@ namespace Kassyi.GSharp.Tests.Shared.Syntax;
 /// <summary>The managed C# fallback keeps the type of a small <c>const</c> field read through <c>var</c> (#859).</summary>
 [TestTarget(ExecutionTarget.CpuExecution)]
 [Category(TestCategory.Syntax)]
-[Collection(TestCollections.GlobalStateSequential)]
 public class SmallConstantVarManagedTests : TranspilerTestBase
 {
-    private static readonly Action<Action> s_runManaged = RunManaged;
+    private static readonly Action<Action> s_runManaged = ManagedKernelRun.Run;
 
     [Fact]
     [Scenario(TestScenario.Boundary)]
@@ -28,18 +27,9 @@ public class SmallConstantVarManagedTests : TranspilerTestBase
     public void Test_Managed_VarOfSmallConstLocal_WrapsAtLocalType() =>
         SmallConstantVarScenarios.LocalConst(s_runManaged);
 
-    private static void RunManaged(Action launch)
-    {
-        bool previousState = CpuKernelLoader.ForceManagedExecution;
-        CpuKernelLoader.ForceManagedExecution = true;
-        try
-        {
-            launch();
-        }
-        finally
-        {
-            CpuKernelLoader.ForceManagedExecution = previousState;
-        }
-    }
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void Test_Managed_NarrowConstantInSwitchMathConditionalAndArguments() =>
+        SmallConstantVarScenarios.NarrowUses(s_runManaged);
 }
 #endif

@@ -18,7 +18,7 @@ public sealed class MemberAccessExpressionTranspilerRule : SyntaxNodeTranspilerR
 
         if (symbol is IFieldSymbol { IsConst: true, HasConstantValue: true } field)
         {
-            context.Emitter.Writer.AppendConstantField(field);
+            ConstantAtUse.Append(node, field.Type, field.ConstantValue, ref context);
             return;
         }
 
