@@ -200,6 +200,8 @@ public static class GpuBigFloatVectorLinqExtensions
         /// Gets the number of elements in the vectorized expression.
         /// </summary>
         /// <returns>The element count.</returns>
+        /// <exception cref="InvalidOperationException">The number is known only on the device (the expression contains a
+        /// <c>Where</c>); use <see cref="Count(IGpuBigFloatVectorExpression, GpuWorkspace)"/>.</exception>
         public int Count()
         {
             ArgumentNullException.ThrowIfNull(source);
@@ -207,11 +209,39 @@ public static class GpuBigFloatVectorLinqExtensions
         }
 
         /// <summary>
+        /// Gets the number of elements in the vectorized expression; after a <c>Where</c>, evaluates the expression and
+        /// reads the number from the device (one synchronization).
+        /// </summary>
+        /// <param name="workspace">The GPU workspace used for evaluation.</param>
+        /// <returns>The element count.</returns>
+        public int Count(GpuWorkspace workspace)
+        {
+            ArgumentNullException.ThrowIfNull(source);
+            ArgumentNullException.ThrowIfNull(workspace);
+            return source.TryGetLength(out var length)
+                ? length
+                : DeviceCounted.Evaluate(source, workspace).Elements(workspace);
+        }
+
+        /// <summary>
         /// Filters a vectorized sequence of floating-point values based on a predicate.
         /// Executes a Stream Compaction (Where) operation on the GPU.
         /// </summary>
-        /// <param name="predicate">A vectorized boolean expression to test each element.</param>
+        /// <param name="predicate">A vectorized boolean expression to test each element; it must have the length (the
+        /// capacity) of the source.</param>
         /// <returns>A new vectorized expression representing the filtered array.</returns>
+        /// <remarks>
+        /// <para>The number of selected elements is computed on the device, and the host does not wait for it:
+        /// <c>Count</c>, <c>Sum</c>, <c>Max</c>, <c>Min</c>, <c>Average</c>, <c>Skip</c>, <c>Take</c> and the element-wise
+        /// operations after a <c>Where</c> use only the selected elements. <c>Length</c> of the result throws
+        /// <see cref="InvalidOperationException"/>; <c>Capacity</c> is the length of the source, and <c>Evaluate</c>
+        /// reads the count (one synchronization) and returns exactly the selected elements.</para>
+        /// <para>Two separately built <c>Where</c> results cannot be combined element-wise (their counts are known only
+        /// on the device; <see cref="NotSupportedException"/>): write <c>v.Where(p.And(q))</c> instead of combining
+        /// <c>v.Where(p)</c> with <c>w.Where(q)</c>. <c>v.Where(p).Where(m)</c> works when <c>m</c> has the capacity's
+        /// length.</para>
+        /// </remarks>
+        /// <exception cref="ArgumentException">At evaluation: <paramref name="predicate"/> has another length.</exception>
         public IGpuBigFloatVectorExpression Where(IGpuBoolVectorExpression predicate)
         {
             ArgumentNullException.ThrowIfNull(source);
@@ -382,15 +412,17 @@ public static class GpuBigFloatVectorLinqExtensions
             ArgumentNullException.ThrowIfNull(source);
             ArgumentNullException.ThrowIfNull(workspace);
 
-            // The sum of nothing is 0; stop before dividing it by a count of 0.
-            if (source.Length == 0)
+            // One evaluation gives the sum and the number of elements (after a Where, known only on the device). The
+            // sum of nothing is 0; stop before dividing it by a count of 0.
+            using var sum = FloatVectorReductionOrchestrator.ReduceWithCount(workspace, source, FloatReductionKind.Sum,
+                out var count);
+            if (count == 0)
             {
                 throw new InvalidOperationException("Sequence contains no elements");
             }
 
-            using var sum = source.Sum(workspace);
             var countWords = new uint[source.WordsPerElement];
-            countWords[0] = (uint)source.Length;
+            countWords[0] = (uint)count;
             using var countSig = new GpuBigUInt(workspace, countWords);
             var countFloat = new GpuBigFloat(countSig, 0, false);
 
@@ -402,19 +434,30 @@ public static class GpuBigFloatVectorLinqExtensions
         /// </summary>
         /// <param name="workspace">The GPU workspace used for evaluation.</param>
         /// <param name="destination">The pre-allocated destination array.</param>
+        /// <exception cref="InvalidOperationException">The expression contains a <c>Where</c>, whose length is known only
+        /// on the device; use <c>Evaluate</c>. The destination is not written.</exception>
         public void EvaluateTo(GpuWorkspace workspace,
             GpuBigFloatArray destination)
         {
             ArgumentNullException.ThrowIfNull(source);
             ArgumentNullException.ThrowIfNull(workspace);
 
-            if (destination.Length < source.Length)
+            // EvaluateTo returns no count, so a vector whose length is known only on the device (after Where) has no
+            // place to say how much of the destination it wrote (design D3 4.1.3)
+            if (!source.TryGetLength(out var length))
+            {
+                throw new InvalidOperationException(
+                    "The length of a filtered vector is known only on the device. Use Evaluate, which returns exactly " +
+                    "the selected elements, or Count(workspace).");
+            }
+
+            if (destination.Length < length)
             {
                 throw new ArgumentException("Destination array is smaller than the source expression length.",
                     nameof(destination));
             }
 
-            source.Evaluate(workspace, 0, source.Length, destination);
+            source.Evaluate(workspace, 0, length, destination);
         }
     }
 

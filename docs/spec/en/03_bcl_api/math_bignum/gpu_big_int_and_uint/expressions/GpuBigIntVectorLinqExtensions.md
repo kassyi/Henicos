@@ -73,6 +73,10 @@ public static IGpuBigIntVectorExpression Where(
     IGpuBoolVectorExpression predicate);
 ```
 
+The number of selected elements is computed on the device, and the host does not wait for it: `Count`, `Sum`, `Max`, `Min`, `Any`, `All`, `Skip`, `Take` and the element-wise operations after a `Where` use only the selected elements, as `System.Linq` does. `Length` of the result throws `InvalidOperationException`; `Capacity` is the length of `source`, and `Evaluate` reads the count (one synchronization) and returns exactly the selected elements. `predicate` must have the length of `source` (`ArgumentException`).
+
+Two separately built `Where` results cannot be combined element-wise, because their counts are known only on the device (`NotSupportedException`): write `v.Where(p.And(q))`. `v.Where(p).Where(m)` works when `m` has the capacity's length.
+
 ## SelectAdd / SelectSubtract / SelectMultiply
 
 Applies a scalar addition, subtraction, or multiplication to each element of a vectorized expression using a grid-stride parallel kernel.
@@ -161,12 +165,11 @@ public static IGpuBoolExpr All(this IGpuBoolVectorExpression source);
 
 Unlike standard LINQ or scalar expression trees that evaluate element-by-element, `GpuBigIntVectorLinqExtensions` constructs execution plans that operate directly over contiguous arrays. Reduction operations (`Sum`, `Max`, `Min`, `Count`) automatically partition the workload into multi-pass chunk kernels, scaling efficiently up to millions of elements.
 
-Because `Sum`, `Max`, `Min`, and `Count` return a [GpuBigIntExpr](GpuBigIntExpr.md), the entire vector reduction pipeline is meant to be compiled directly into a native CUDA Graph:
+`Count` returns a [GpuBigIntExpr](GpuBigIntExpr.md) that can be compiled into a native CUDA Graph; after a `Where`, every launch counts the selected elements again on the device:
 - **One-Liner Evaluation:** Chain `.EvaluateWithCudaGraph(workspace)` to capture, instantiate, execute, and destroy a CUDA Graph in a single statement.
 - **Precompiled Reusable Execution:** Chain `.CompileToGraph(workspace)` to produce a reusable [GpuBigIntExecutableGraph](GpuBigIntExecutableGraph.md) that can be dispatched repeatedly via `.Execute()` or `.ExecuteAsync()` with zero CPU launch latency.
 
-> [!NOTE]
-> TODO (#633): evaluating `Sum`, `Max` or `Min` reads the result header back from the device, which a stream that is capturing a CUDA Graph cannot do, so the graph statements above and the graph examples below describe the planned behavior. Capturing a reduction is not expected to work yet (not confirmed on a device); the implementation before #632 also read the result back during capture. The vector redesign of #633 makes a reduction at the root of the expression capturable.
+`Sum`, `Max` and `Min` read their sign, emptiness and overflow back from the device, which a capture cannot record: evaluating them while the stream is capturing throws `NotSupportedException`. Evaluate them directly (`Evaluate`).
 
 ## Examples
 
@@ -221,10 +224,10 @@ using var array = new GpuBigIntArray(workspace, length: 256, wordsPerElement: 4)
 using var scalarUint = GpuBigUInt.FromBigInteger(workspace, new BigInteger(7), minWords: 4);
 var scalar = new GpuBigInt(scalarUint, isNegative: false);
 
-// Evaluate vector pipeline using a one-liner CUDA Graph execution
+// Count the elements above the scalar with a one-liner CUDA Graph execution
 using var graphResult = array.AsVectorizedEnumerable()
-    .SelectMultiply(scalar)
-    .Sum()
+    .Where(array.AsVectorizedEnumerable().IsGreaterThan(scalar))
+    .Count()
     .EvaluateWithCudaGraph(workspace);
 
 Console.WriteLine($"Graph result: {graphResult.Value.ToBigInteger(graphResult.IsNegative)}");
@@ -249,11 +252,11 @@ var scalar = new GpuBigInt(scalarUint, isNegative: false);
 
 // Compile the vector pipeline AST into a reusable CUDA Graph
 using var precompiledGraph = array.AsVectorizedEnumerable()
-    .SelectMultiply(scalar)
-    .Sum()
+    .Where(array.AsVectorizedEnumerable().IsGreaterThan(scalar))
+    .Count()
     .CompileToGraph(workspace);
 
-// Execute the graph repeatedly with minimal driver launch latency
+// Execute the graph repeatedly with minimal driver launch latency; each launch counts again
 for (int i = 0; i < 10; i++)
 {
     precompiledGraph.Execute();
