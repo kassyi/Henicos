@@ -356,3 +356,63 @@ public struct SizedGeneric<T> where T : unmanaged
 {
     public T V;
 }
+
+// Converted on CUDA (Vector2 moves to offset 8), copied as a block on the CPU
+public struct ConvertInner
+{
+    public byte Tag;
+    public Vector2 V;
+}
+
+// The same struct type twice: each member gets its own plan
+public struct ConvertPair
+{
+    public ConvertInner A;
+    public ConvertInner B;
+}
+
+// An array of its own type: the inner occurrence refers back to the enclosing plan
+public struct TreeNode
+{
+    public int Value;
+    public TreeNode[] Children;
+}
+
+// Which fields a launcher can name for its offset check: public and internal fields, not private ones, pointers or
+// auto-properties
+public unsafe struct AccessMix
+{
+    public int A;
+    internal int B;
+#pragma warning disable CS0169 // Only the layout is read
+    private int _c;
+#pragma warning restore CS0169
+    public int* P;
+    public int D { get; set; }
+}
+
+// Launch signatures for comparing the plans' layout checks with the ones KernelHostModel collects
+public static class TransferPlanProbes
+{
+    public static void Sequential(SimpleSequential a, BoolAndCharSequential b, EnumAndPointerSequential c,
+        NestedOuterStruct d, StructWithInlineFourInts e, FixedBufferStruct f)
+    {
+    }
+
+    public static void Vectors(SystemNumericsVectorsStruct a, CoreVectorsFloatIntUIntStruct b,
+        CoreVectors64BitStruct c, WideVectorsFirst d, SystemVectorFirst e, InlineThreeFloat2 f,
+        StructWithDivergentInlineArray g)
+    {
+    }
+
+    public static void Arrays(DirectArrayFieldStruct[] a, NestedArrayFieldStruct b,
+        OuterWithInlineArrayOfArrayElement c, TreeNode d, ConvertPair[] e, Span<ConvertInner> f)
+    {
+    }
+
+    public static void Others(GenericBoxHolder a, NullableFieldsStruct b, AccessMix c, AccessMix[] d,
+        ExplicitAutoPropertyStruct e, SizedNestedOuter f, SizedVector4 g, SizedGeneric<double> h, IntLongUnion? i,
+        ExplicitUnionStruct j, AutoLayoutCase k)
+    {
+    }
+}
