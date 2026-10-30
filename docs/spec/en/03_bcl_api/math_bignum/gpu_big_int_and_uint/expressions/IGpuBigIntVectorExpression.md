@@ -95,7 +95,7 @@ The starting element index to evaluate. Defaults to `0`.
 The number of elements to evaluate. If `null`, evaluates to the end of the vector length.
 
 `targetResult` _[GpuBigUIntArrayView](../GpuBigUIntArrayView.md)_<br>
-An optional destination for the evaluated values, with the expression's `WordsPerElement` and at least `elementCount` elements; only the first `elementCount` are written. The default view means none (an array of 0 elements is a target); a `GpuBigUIntArray` converts to a view implicitly. The expression borrows it and never frees it.
+An optional destination for the evaluated values, with the expression's `WordsPerElement` and at least `elementCount` elements; only the first `elementCount` are written. The default view means none (an array of 0 elements is a target); a `GpuBigUIntArray` converts to a view implicitly. The expression borrows it and never frees it. It may share memory with an input (the input array itself, or a shifted view of it): the node then computes into its own result buffers and copies the result into the target.
 
 #### Returns
 

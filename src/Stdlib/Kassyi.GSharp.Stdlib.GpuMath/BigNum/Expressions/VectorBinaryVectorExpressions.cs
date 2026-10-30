@@ -68,15 +68,17 @@ internal abstract class VectorBinaryVectorExpressionBase(
         }
 
         var count = DeviceCounted.Combine(leftResult.Count, rightResult.Count);
-        var destination = _cache.Signed(workspace, evalCount, WordsPerElement, targetValues);
-        var operands = new VectorZipOperands(leftResult.Storage, rightResult.Storage, destination);
+        // A target that shares words with an input is written from the cache after the launch (#864)
+        var output = VectorOutput.Open(_cache, workspace, evalCount, WordsPerElement, targetValues, leftResult.Storage,
+            rightResult.Storage);
+        var operands = new VectorZipOperands(leftResult.Storage, rightResult.Storage, output.Destination);
         // An empty vector launches nothing: a grid of 0 blocks is an invalid launch.
         if (evalCount > 0)
         {
             DispatchKernel(workspace, operands, (uint)evalCount);
         }
 
-        return new VectorEvaluation(destination, count);
+        return new VectorEvaluation(output.Close(workspace), count);
     }
 
     protected GpuBigIntVectorKernels.AotContexts.VectorBinaryOperation CreateZipOp(VectorZipOperands operands) =>

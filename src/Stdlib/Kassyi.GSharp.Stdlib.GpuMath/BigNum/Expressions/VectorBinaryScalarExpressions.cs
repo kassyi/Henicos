@@ -57,15 +57,17 @@ internal abstract class VectorBinaryScalarExpressionBase(
         var scalarResult = scalar.Evaluate(workspace);
         try
         {
-            var destination = _cache.Signed(workspace, evalCount, WordsPerElement, targetValues);
-            var operands = new VectorScalarOperands(vecResult.Storage, scalarResult, destination);
+            // A target that shares words with an input is written from the cache after the launch (#864)
+            var output = VectorOutput.Open(_cache, workspace, evalCount, WordsPerElement, targetValues, vecResult.Storage,
+                scalar: scalarResult.Value.Handle);
+            var operands = new VectorScalarOperands(vecResult.Storage, scalarResult, output.Destination);
             // An empty vector launches nothing: a grid of 0 blocks is an invalid launch.
             if (evalCount > 0)
             {
                 DispatchKernel(workspace, operands, (uint)evalCount);
             }
 
-            return new VectorEvaluation(destination, vecResult.Count);
+            return new VectorEvaluation(output.Close(workspace), vecResult.Count);
         }
         finally
         {

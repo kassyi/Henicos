@@ -161,16 +161,20 @@ internal abstract class FloatVectorUnaryExpressionBase(
 
         var evalCount = elementCount ?? (Capacity - elementOffset);
         // The target is checked before the child runs, so that a rejected target evaluates nothing
-        var destination = VectorResultCache.HasTarget(targetResult)
+        var target = VectorResultCache.HasTarget(targetResult)
             ? VectorResultCache.TargetFloat(targetResult, evalCount, WordsPerElement)
-            : _cache.Float(workspace, evalCount, WordsPerElement);
+            : default;
         var vecResult = DeviceCounted.Evaluate(vector, workspace, elementOffset, evalCount);
+
+        // A target that shares words with the input is written from the cache after the loop: the loop writes element i
+        // before it reads element i + 1 (#864)
+        var output = VectorOutput.Open(_cache, workspace, evalCount, WordsPerElement, target, vecResult.Storage);
 
         // The host loop runs over the elements only: a value after the count (the zero padding of a Where) could make
         // an element operation throw (Log(0))
-        FloatVectorElementwiseHelper.ExecuteUnary(workspace, vecResult.Storage, destination,
+        FloatVectorElementwiseHelper.ExecuteUnary(workspace, vecResult.Storage, output.Destination,
             vecResult.Elements(workspace), EvaluateElement);
-        return new FloatVectorEvaluation(destination, vecResult.Count);
+        return new FloatVectorEvaluation(output.Close(workspace), vecResult.Count);
     }
 
     protected virtual void ValidateBeforeEvaluate()

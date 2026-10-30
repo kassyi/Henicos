@@ -36,17 +36,19 @@ internal abstract class VectorUnaryExpressionBase(
             : default;
 
         var vecResult = DeviceCounted.Evaluate(vector, workspace, elementOffset, evalCount);
-        var destination = _cache.Signed(workspace, evalCount, WordsPerElement, targetValues);
+        // A target that shares words with the input is written from the cache after the loop: the loop writes element i
+        // before it reads element i + 1 (#864)
+        var output = VectorOutput.Open(_cache, workspace, evalCount, WordsPerElement, targetValues, vecResult.Storage);
 
         // The elements run on the host one by one: only the elements, not the rest of the capacity, so that a value
         // after the count cannot throw (a negative square root). A device count costs one synchronization here.
         var elements = vecResult.Count.IsStatic ? evalCount : vecResult.Count.Read(workspace);
         if (elements > 0)
         {
-            EvaluateElements(workspace, vecResult.Storage, destination, elements);
+            EvaluateElements(workspace, vecResult.Storage, output.Destination, elements);
         }
 
-        return new VectorEvaluation(destination, vecResult.Count);
+        return new VectorEvaluation(output.Close(workspace), vecResult.Count);
     }
 
     protected virtual void ValidateBeforeEvaluate()

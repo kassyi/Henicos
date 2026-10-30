@@ -51,12 +51,15 @@ internal abstract class FloatVectorBinaryScalarExpressionBase(
     {
         var evalCount = elementCount ?? (Capacity - elementOffset);
         // The target is checked before the child runs, so that a rejected target evaluates nothing
-        var destination = VectorResultCache.HasTarget(targetResult)
+        var target = VectorResultCache.HasTarget(targetResult)
             ? VectorResultCache.TargetFloat(targetResult, evalCount, WordsPerElement)
-            : _cache.Float(workspace, evalCount, WordsPerElement);
+            : default;
         var vecResult = DeviceCounted.Evaluate(vector, workspace, elementOffset, evalCount);
 
-        var operands = new FloatVectorScalarOperands(vecResult.Storage, scalar, destination);
+        // A target that shares words with an input is written from the cache after the launch (#864)
+        var output = VectorOutput.Open(_cache, workspace, evalCount, WordsPerElement, target, vecResult.Storage,
+            scalar: scalar.Significand);
+        var operands = new FloatVectorScalarOperands(vecResult.Storage, scalar, output.Destination);
         var elements = RunsOnHost ? vecResult.Elements(workspace) : evalCount;
         // An empty vector launches nothing: a grid of 0 blocks is an invalid launch.
         if (elements > 0)
@@ -64,7 +67,7 @@ internal abstract class FloatVectorBinaryScalarExpressionBase(
             DispatchKernel(workspace, operands, (uint)elements);
         }
 
-        return new FloatVectorEvaluation(destination, vecResult.Count);
+        return new FloatVectorEvaluation(output.Close(workspace), vecResult.Count);
     }
 
     /// <summary>

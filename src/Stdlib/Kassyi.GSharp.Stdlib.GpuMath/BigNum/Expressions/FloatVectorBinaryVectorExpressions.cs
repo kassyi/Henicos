@@ -56,9 +56,9 @@ internal abstract class FloatVectorBinaryVectorExpressionBase(
 
         var evalCount = elementCount ?? (Capacity - elementOffset);
         // The target is checked before the children run, so that a rejected target evaluates nothing
-        var destination = VectorResultCache.HasTarget(targetResult)
+        var target = VectorResultCache.HasTarget(targetResult)
             ? VectorResultCache.TargetFloat(targetResult, evalCount, WordsPerElement)
-            : _cache.Float(workspace, evalCount, WordsPerElement);
+            : default;
         var leftResult = DeviceCounted.Evaluate(left, workspace, elementOffset, evalCount);
         var rightResult = DeviceCounted.Evaluate(right, workspace, elementOffset, evalCount);
 
@@ -68,7 +68,10 @@ internal abstract class FloatVectorBinaryVectorExpressionBase(
         }
 
         var count = DeviceCounted.Combine(leftResult.Count, rightResult.Count);
-        var operands = new FloatVectorZipOperands(leftResult.Storage, rightResult.Storage, destination);
+        // A target that shares words with an input is written from the cache after the launch (#864)
+        var output = VectorOutput.Open(_cache, workspace, evalCount, WordsPerElement, target, leftResult.Storage,
+            rightResult.Storage);
+        var operands = new FloatVectorZipOperands(leftResult.Storage, rightResult.Storage, output.Destination);
         var elements = RunsOnHost && !count.IsStatic ? count.Read(workspace) : evalCount;
         // An empty vector launches nothing: a grid of 0 blocks is an invalid launch.
         if (elements > 0)
@@ -76,7 +79,7 @@ internal abstract class FloatVectorBinaryVectorExpressionBase(
             DispatchKernel(workspace, operands, (uint)elements);
         }
 
-        return new FloatVectorEvaluation(destination, count);
+        return new FloatVectorEvaluation(output.Close(workspace), count);
     }
 
     /// <summary>

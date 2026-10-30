@@ -77,9 +77,29 @@ public sealed class VariableDeclarationTranspilerRule : SyntaxNodeTranspilerRule
                 continue;
             }
 
+            // A local that another switch section uses is declared in a block around the switch (SwitchSectionLocals),
+            // a const with its value; a struct with a C++ constructor that a goto jumps past is declared at the start of
+            // its statement list (JumpedOverDeclarations)
+            var declaredAhead =
+                SwitchSectionLocals.IsDeclaredBeforeSwitch(v, context.Query.SemanticModel) ||
+                JumpedOverDeclarations.IsDeclaredAtListStart(v, context.Query.SemanticModel);
+            if (declaredAhead && (v.Initializer == null || IsConst(v)))
+            {
+                continue;
+            }
+
             if (hasEmittedAny)
             {
                 context.Emitter.Writer.AppendLine(";");
+            }
+
+            if (declaredAhead)
+            {
+                // <name> = <initializer>
+                CppNameResolver.AppendDeclaredName(v, v.Identifier, ref context);
+                DeclarationTranspilerHelper.WriteDeclaratorInitializer(v, ref context);
+                hasEmittedAny = true;
+                continue;
             }
 
             hasEmittedAny = true;
@@ -155,9 +175,13 @@ public sealed class VariableDeclarationTranspilerRule : SyntaxNodeTranspilerRule
         }
     }
 
+    private static bool IsConst(VariableDeclaratorSyntax declarator) =>
+        declarator.Parent?.Parent is LocalDeclarationStatementSyntax { IsConst: true };
+
     // [WHY] A goto may jump past this initialized declaration (GotoJumpAnalysis); C++ forbids that jump, so the
     // declaration and the initialization become two statements. Only a type that C++ can declare without an initializer
-    // and assign later is split: a primitive, an enum, a pointer or a struct that is not a ref struct. A const local is
+    // and assign later is split: a primitive, an enum, a pointer or a struct that is not a ref struct (a struct with a
+    // C++ default constructor is declared at the start of its list instead, JumpedOverDeclarations). A const local is
     // emitted as a plain variable, so it is split too. A ref local, a using declaration and a ref struct local (a Span
     // that is not a stackalloc, which TryWriteFixedSizeArray handles) keep their form: a goto past them stays ill-formed
     // C++.
