@@ -114,7 +114,8 @@ function readTrx(file) {
         const methodTag = /<TestMethod\s([^>]*?)\/?>/.exec(match[2]);
         const method = methodTag ? attributes(methodTag[1]) : {};
         definitions.set(unitTest.id, {
-            assembly: path.basename(unitTest.storage || method.codeBase || 'unknown'),
+            // path.win32.basename splits on both separators, so a trx written on Windows reads the same on Linux
+            assembly: path.win32.basename(unitTest.storage || method.codeBase || 'unknown'),
             className: method.className || '(unknown class)',
         });
     }
@@ -140,21 +141,49 @@ function readTrx(file) {
     return { file, results, wallSeconds };
 }
 
-function shortClassName(className) {
-    const parts = className.split(/[.+]/);
-    return parts[parts.length - 1];
+// Looks up the collection of a test class by the full name the trx gives (Namespace.Class, or Namespace.Outer+Inner for
+// a nested class, which the sources know as Namespace.Inner).
+function collectionOf(collections, className) {
+    const exact = collections.get(className);
+    if (exact !== undefined) {
+        return exact;
+    }
+    const nested = className.indexOf('+');
+    if (nested < 0) {
+        return undefined;
+    }
+    const outer = className.slice(0, nested);
+    const namespace = outer.slice(0, Math.max(outer.lastIndexOf('.'), 0));
+    const inner = className.slice(className.lastIndexOf('+') + 1);
+    return collections.get(namespace === '' ? inner : `${namespace}.${inner}`);
 }
 
-// Maps a test class name (without namespace) to the collection named by its [Collection(...)] attribute. Attributes
-// and preprocessor lines may stand between the attribute and the class; an attribute under #if counts in every build.
+// The namespace in force at an offset of a C# file: the last file-scoped or block namespace declared before it
+// (nested block namespaces are not combined; the test sources declare one namespace per file).
+function namespaceAt(namespaces, offset) {
+    let current = '';
+    for (const declaration of namespaces) {
+        if (declaration.index > offset) {
+            break;
+        }
+        current = declaration.name;
+    }
+    return current;
+}
+
+// Maps a test class, by its full name (Namespace.Class), to the collection named by its [Collection(...)] attribute.
+// Attributes and preprocessor lines may stand between the attribute and the class; an attribute under #if counts in
+// every build.
 function readCollections(sourceDir) {
     const collections = new Map();
     const pattern = /\[[^\]]*?\bCollection\(\s*([^)]+?)\s*\)[^\]]*\]((?:\s*(?:\[[^\]]*\]|#[^\n]*))*)\s*(?:(?:public|internal|private|protected|sealed|abstract|static|partial|file)\s+)*class\s+(\w+)/g;
     for (const file of findFiles(sourceDir, '.cs', [])) {
         const text = fs.readFileSync(file, 'utf8');
+        const namespaces = [...text.matchAll(/^\s*namespace\s+([\w.]+)/gm)].map((m) => ({ index: m.index, name: m[1] }));
         for (const match of text.matchAll(pattern)) {
-            const collection = match[1].replace(/^TestCollections\./, '');
-            const className = match[3];
+            const collection = match[1].replace(/^TestCollections\./, '').replace(/^"(.*)"$/, '$1');
+            const namespace = namespaceAt(namespaces, match.index);
+            const className = namespace === '' ? match[3] : `${namespace}.${match[3]}`;
             const previous = collections.get(className);
             collections.set(className, previous !== undefined && previous !== collection ? '(ambiguous)' : collection);
         }
@@ -162,12 +191,17 @@ function readCollections(sourceDir) {
     return collections;
 }
 
+// Rounds before splitting off the minutes, so 59.96 prints 1m00.0s rather than 60.0s.
 function formatSeconds(seconds) {
-    if (seconds >= 60) {
-        const minutes = Math.floor(seconds / 60);
-        return `${minutes}m${(seconds - minutes * 60).toFixed(1).padStart(4, '0')}s`;
+    const tenths = Math.round(seconds * 10);
+    if (tenths >= 600) {
+        const minutes = Math.floor(tenths / 600);
+        return `${minutes}m${((tenths - minutes * 600) / 10).toFixed(1).padStart(4, '0')}s`;
     }
-    return `${seconds.toFixed(seconds >= 10 ? 1 : 3)}s`;
+    if (seconds >= 9.9995) {
+        return `${(tenths / 10).toFixed(1)}s`;
+    }
+    return `${seconds.toFixed(3)}s`;
 }
 
 function addTo(groups, key, seconds, extra) {
@@ -232,7 +266,7 @@ function main() {
             addTo(byClass, `${result.className}|${result.assembly}`, result.seconds, { failed });
             if (collections !== null) {
                 // A collection belongs to one test assembly; the same name in two assemblies is two collections
-                const collection = collections.get(shortClassName(result.className)) || '(own collection per class)';
+                const collection = collectionOf(collections, result.className) || '(own collection per class)';
                 addTo(byCollection, `${collection} (${result.assembly})`, result.seconds, { className: result.className, failed });
             }
             tests.push(result);
@@ -264,9 +298,8 @@ function main() {
         ['test time', 'tests', 'class (assembly)'],
         [...byClass.values()].sort(descending).slice(0, options.top).map((g) => {
             const [className, assembly] = g.key.split('|');
-            const collection = collections !== null && collections.has(shortClassName(className))
-                ? ` [${collections.get(shortClassName(className))}]`
-                : '';
+            const known = collections !== null ? collectionOf(collections, className) : undefined;
+            const collection = known !== undefined ? ` [${known}]` : '';
             return [formatSeconds(g.seconds), g.tests, `${className} (${assembly})${collection}`];
         })
     );
@@ -278,4 +311,8 @@ function main() {
     );
 }
 
-main();
+if (require.main === module) {
+    main();
+} else {
+    module.exports = { formatSeconds, readCollections, collectionOf };
+}
