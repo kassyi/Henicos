@@ -688,6 +688,7 @@ namespace Kassyi.GSharp.Stdlib.GpuMath.BigNum.Kernels
 {
 public partial class GpuBigIntDivRemKernels
 {
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 internal class __gsharp_frame_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuBigIntDivRemKernels__ExecuteNttMultiplyMacroModPow {
 internal int __gsharp_state;
 internal uint __gsharp_warp_exchange;
@@ -702,6 +703,7 @@ internal global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.DualNtt inverseA
 internal int chunkSize;
 internal int numBlocks;
 }
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 internal static bool __gsharp_statemachine_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuBigIntDivRemKernels__ExecuteNttMultiplyMacroModPow(global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.NewtonRaphsonContext core, uint[] opA, uint[] opB, uint[] resultDest, int numWordsA, int numWordsB, int numWordsResult, __gsharp_frame_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuBigIntDivRemKernels__ExecuteNttMultiplyMacroModPow __gsharp_ctx) {
 {
 switch (__gsharp_ctx.__gsharp_state)
@@ -802,6 +804,7 @@ return true;
 throw new global::System.InvalidOperationException("The device function state machine reached an unknown state.");
 }
 
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 internal class __gsharp_frame_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuBigIntDivRemKernels__ExecuteBarrettReductionMacro {
 internal int __gsharp_state;
 internal uint __gsharp_warp_exchange;
@@ -826,6 +829,7 @@ internal bool underflow2;
 internal global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Kernels.GpuBigIntDivRemKernels.__gsharp_frame_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuBigIntDivRemKernels__ExecuteNttMultiplyMacroModPow __gsharp_call_frame_0 = new();
 internal global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Kernels.GpuBigIntDivRemKernels.__gsharp_frame_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuBigIntDivRemKernels__ExecuteNttMultiplyMacroModPow __gsharp_call_frame_1 = new();
 }
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 internal static bool __gsharp_statemachine_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuBigIntDivRemKernels__ExecuteBarrettReductionMacro(global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.NewtonRaphsonContext core, uint[] leftOperand, uint[] rightOperand, uint[] reciprocalOfB, int targetBits, int aActualWords, uint[] quotientBuffer, uint[] remainderBuffer, __gsharp_frame_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuBigIntDivRemKernels__ExecuteBarrettReductionMacro __gsharp_ctx) {
 {
 switch (__gsharp_ctx.__gsharp_state)
@@ -3514,12 +3518,12 @@ proxy_result[0] = IntPtr.Zero;
 if (result_size > 0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_result, (IntPtr)result_size, hStream));
-proxy_result[0] = d_result;
 fixed (global::System.UInt32* p_result = result)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoDAsync_v2(d_result, (IntPtr)p_result, (IntPtr)result_size, hStream));
 CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
 }
+proxy_result[0] = d_result;
 }
 kernelParams[0] = proxy_result;
 // Marshal array: modulus
@@ -3529,13 +3533,20 @@ proxy_modulus[0] = IntPtr.Zero;
 ((int*)(proxy_modulus + 1))[0] = modulus.Length;
 if (modulus_size > 0)
 {
+if (global::System.Object.ReferenceEquals(modulus, result))
+{
+d_modulus = d_result;
+}
+else
+{
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_modulus, (IntPtr)modulus_size, hStream));
-proxy_modulus[0] = d_modulus;
 fixed (global::System.UInt32* p_modulus = modulus)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoDAsync_v2(d_modulus, (IntPtr)p_modulus, (IntPtr)modulus_size, hStream));
 CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
 }
+}
+proxy_modulus[0] = d_modulus;
 }
 kernelParams[1] = proxy_modulus;
 // Marshal scalar: numWords
@@ -3559,7 +3570,7 @@ CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
 }
 }
 // Copy back array: modulus
-if (modulus_size > 0 && d_modulus != IntPtr.Zero)
+if (modulus_size > 0 && d_modulus != IntPtr.Zero && !global::System.Object.ReferenceEquals(modulus, result))
 {
 fixed (global::System.UInt32* p_modulus = modulus)
 {
@@ -3571,7 +3582,7 @@ CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
 finally
 {
 if (d_result != IntPtr.Zero) CudaDriverApi.cuMemFreeAsync(d_result, hStream);
-if (d_modulus != IntPtr.Zero) CudaDriverApi.cuMemFreeAsync(d_modulus, hStream);
+if (d_modulus != IntPtr.Zero && d_modulus != d_result) CudaDriverApi.cuMemFreeAsync(d_modulus, hStream);
 }
 }
 }

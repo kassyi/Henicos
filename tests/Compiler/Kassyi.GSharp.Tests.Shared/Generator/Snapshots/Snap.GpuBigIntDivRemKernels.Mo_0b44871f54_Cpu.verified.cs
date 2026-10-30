@@ -846,6 +846,7 @@ namespace Kassyi.GSharp.Stdlib.GpuMath.BigNum.Kernels
 {
 public partial class GpuBigIntDivRemKernels
 {
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 internal class __gsharp_frame_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuBigIntDivRemKernels__ExecuteNttMultiplyMacroModPow {
 internal int __gsharp_state;
 internal uint __gsharp_warp_exchange;
@@ -860,6 +861,7 @@ internal global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.DualNtt inverseA
 internal int chunkSize;
 internal int numBlocks;
 }
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 internal static bool __gsharp_statemachine_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuBigIntDivRemKernels__ExecuteNttMultiplyMacroModPow(global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.NewtonRaphsonContext core, uint[] opA, uint[] opB, uint[] resultDest, int numWordsA, int numWordsB, int numWordsResult, __gsharp_frame_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuBigIntDivRemKernels__ExecuteNttMultiplyMacroModPow __gsharp_ctx) {
 {
 switch (__gsharp_ctx.__gsharp_state)
@@ -960,6 +962,7 @@ return true;
 throw new global::System.InvalidOperationException("The device function state machine reached an unknown state.");
 }
 
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 internal class __gsharp_frame_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuBigIntDivRemKernels__ExecuteBarrettReductionMacro {
 internal int __gsharp_state;
 internal uint __gsharp_warp_exchange;
@@ -984,6 +987,7 @@ internal bool underflow2;
 internal global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Kernels.GpuBigIntDivRemKernels.__gsharp_frame_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuBigIntDivRemKernels__ExecuteNttMultiplyMacroModPow __gsharp_call_frame_0 = new();
 internal global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Kernels.GpuBigIntDivRemKernels.__gsharp_frame_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuBigIntDivRemKernels__ExecuteNttMultiplyMacroModPow __gsharp_call_frame_1 = new();
 }
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 internal static bool __gsharp_statemachine_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuBigIntDivRemKernels__ExecuteBarrettReductionMacro(global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.NewtonRaphsonContext core, uint[] leftOperand, uint[] rightOperand, uint[] reciprocalOfB, int targetBits, int aActualWords, uint[] quotientBuffer, uint[] remainderBuffer, __gsharp_frame_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuBigIntDivRemKernels__ExecuteBarrettReductionMacro __gsharp_ctx) {
 {
 switch (__gsharp_ctx.__gsharp_state)
@@ -1254,6 +1258,33 @@ host.ReciprocalMod = (global::System.UInt32[])host.ReciprocalMod.Clone();
 }
 CopyArrays_ExponentSliceContext(ref host.Exponent);
 }
+public static bool HoldsArray_ModPowNttContext(global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.ModPowNttContext host, object array)
+{
+if (HoldsArray_NewtonRaphsonContext(host.Core, array))
+{
+return true;
+}
+if (global::System.Object.ReferenceEquals(host.ReciprocalMod, array))
+{
+return true;
+}
+if (HoldsArray_ExponentSliceContext(host.Exponent, array))
+{
+return true;
+}
+return false;
+}
+public static bool HoldsArray_ModPowNttContext(System.ReadOnlySpan<global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.ModPowNttContext> items, object array)
+{
+for (int i = 0; i < items.Length; i++)
+{
+if (HoldsArray_ModPowNttContext(items[i], array))
+{
+return true;
+}
+}
+return false;
+}
 [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Explicit, Size = 688)]
 public unsafe partial struct NewtonRaphson
 {
@@ -1320,6 +1351,41 @@ if (host.CorrectionStatus != null)
 {
 host.CorrectionStatus = (global::System.UInt32[])host.CorrectionStatus.Clone();
 }
+}
+public static bool HoldsArray_NewtonRaphsonContext(global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.NewtonRaphsonContext host, object array)
+{
+if (HoldsArray_OperandContext(host.Operands, array))
+{
+return true;
+}
+if (HoldsArray_Ntt(host.Ntt, array))
+{
+return true;
+}
+if (HoldsArray_WorkspaceStateContext(host.Workspace, array))
+{
+return true;
+}
+if (global::System.Object.ReferenceEquals(host.CarryBuffer, array))
+{
+return true;
+}
+if (global::System.Object.ReferenceEquals(host.CorrectionStatus, array))
+{
+return true;
+}
+return false;
+}
+public static bool HoldsArray_NewtonRaphsonContext(System.ReadOnlySpan<global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.NewtonRaphsonContext> items, object array)
+{
+for (int i = 0; i < items.Length; i++)
+{
+if (HoldsArray_NewtonRaphsonContext(items[i], array))
+{
+return true;
+}
+}
+return false;
 }
 [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Explicit, Size = 112)]
 public unsafe partial struct Operand
@@ -1440,6 +1506,49 @@ if (host.CarryBuffer != null)
 host.CarryBuffer = (global::System.Int64[])host.CarryBuffer.Clone();
 }
 }
+public static bool HoldsArray_OperandContext(global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.OperandContext host, object array)
+{
+if (global::System.Object.ReferenceEquals(host.LeftOperand, array))
+{
+return true;
+}
+if (global::System.Object.ReferenceEquals(host.RightOperand, array))
+{
+return true;
+}
+if (global::System.Object.ReferenceEquals(host.TargetOperand, array))
+{
+return true;
+}
+if (global::System.Object.ReferenceEquals(host.ResultBuffer, array))
+{
+return true;
+}
+if (global::System.Object.ReferenceEquals(host.Constant, array))
+{
+return true;
+}
+if (global::System.Object.ReferenceEquals(host.Constant3, array))
+{
+return true;
+}
+if (global::System.Object.ReferenceEquals(host.CarryBuffer, array))
+{
+return true;
+}
+return false;
+}
+public static bool HoldsArray_OperandContext(System.ReadOnlySpan<global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.OperandContext> items, object array)
+{
+for (int i = 0; i < items.Length; i++)
+{
+if (HoldsArray_OperandContext(items[i], array))
+{
+return true;
+}
+}
+return false;
+}
 [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Explicit, Size = 40)]
 public unsafe partial struct Dimension
 {
@@ -1512,6 +1621,29 @@ public static void CopyArrays_Ntt(ref global::Kassyi.GSharp.Stdlib.GpuMath.BigNu
 {
 CopyArrays_BufferContext(ref host.Buffers);
 CopyArrays_TwiddleFactorContext(ref host.TwiddleFactors);
+}
+public static bool HoldsArray_Ntt(global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.Ntt host, object array)
+{
+if (HoldsArray_BufferContext(host.Buffers, array))
+{
+return true;
+}
+if (HoldsArray_TwiddleFactorContext(host.TwiddleFactors, array))
+{
+return true;
+}
+return false;
+}
+public static bool HoldsArray_Ntt(System.ReadOnlySpan<global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.Ntt> items, object array)
+{
+for (int i = 0; i < items.Length; i++)
+{
+if (HoldsArray_Ntt(items[i], array))
+{
+return true;
+}
+}
+return false;
 }
 [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Explicit, Size = 144)]
 public unsafe partial struct Buffer
@@ -1662,6 +1794,57 @@ if (host.CarryBuffer != null)
 host.CarryBuffer = (global::System.Int64[])host.CarryBuffer.Clone();
 }
 }
+public static bool HoldsArray_BufferContext(global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.BufferContext host, object array)
+{
+if (global::System.Object.ReferenceEquals(host.Buffer1, array))
+{
+return true;
+}
+if (global::System.Object.ReferenceEquals(host.Buffer2, array))
+{
+return true;
+}
+if (global::System.Object.ReferenceEquals(host.Buffer3, array))
+{
+return true;
+}
+if (global::System.Object.ReferenceEquals(host.ValueT, array))
+{
+return true;
+}
+if (global::System.Object.ReferenceEquals(host.Quotient, array))
+{
+return true;
+}
+if (global::System.Object.ReferenceEquals(host.Remainder, array))
+{
+return true;
+}
+if (global::System.Object.ReferenceEquals(host.RemainderMask, array))
+{
+return true;
+}
+if (global::System.Object.ReferenceEquals(host.TemporaryBuffer, array))
+{
+return true;
+}
+if (global::System.Object.ReferenceEquals(host.CarryBuffer, array))
+{
+return true;
+}
+return false;
+}
+public static bool HoldsArray_BufferContext(System.ReadOnlySpan<global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.BufferContext> items, object array)
+{
+for (int i = 0; i < items.Length; i++)
+{
+if (HoldsArray_BufferContext(items[i], array))
+{
+return true;
+}
+}
+return false;
+}
 [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Explicit, Size = 96)]
 public unsafe partial struct TwiddleFactor
 {
@@ -1766,6 +1949,45 @@ if (host.Inverse3 != null)
 host.Inverse3 = (global::System.UInt32[])host.Inverse3.Clone();
 }
 }
+public static bool HoldsArray_TwiddleFactorContext(global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.TwiddleFactorContext host, object array)
+{
+if (global::System.Object.ReferenceEquals(host.Forward1, array))
+{
+return true;
+}
+if (global::System.Object.ReferenceEquals(host.Forward2, array))
+{
+return true;
+}
+if (global::System.Object.ReferenceEquals(host.Forward3, array))
+{
+return true;
+}
+if (global::System.Object.ReferenceEquals(host.Inverse1, array))
+{
+return true;
+}
+if (global::System.Object.ReferenceEquals(host.Inverse2, array))
+{
+return true;
+}
+if (global::System.Object.ReferenceEquals(host.Inverse3, array))
+{
+return true;
+}
+return false;
+}
+public static bool HoldsArray_TwiddleFactorContext(System.ReadOnlySpan<global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.TwiddleFactorContext> items, object array)
+{
+for (int i = 0; i < items.Length; i++)
+{
+if (HoldsArray_TwiddleFactorContext(items[i], array))
+{
+return true;
+}
+}
+return false;
+}
 [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Explicit, Size = 256)]
 public unsafe partial struct WorkspaceState
 {
@@ -1791,6 +2013,29 @@ public static void CopyArrays_WorkspaceStateContext(ref global::Kassyi.GSharp.St
 {
 CopyArrays_IterationScratchContext(ref host.Iteration);
 CopyArrays_NttConvolutionScratchContext(ref host.NttScratch);
+}
+public static bool HoldsArray_WorkspaceStateContext(global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.WorkspaceStateContext host, object array)
+{
+if (HoldsArray_IterationScratchContext(host.Iteration, array))
+{
+return true;
+}
+if (HoldsArray_NttConvolutionScratchContext(host.NttScratch, array))
+{
+return true;
+}
+return false;
+}
+public static bool HoldsArray_WorkspaceStateContext(System.ReadOnlySpan<global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.WorkspaceStateContext> items, object array)
+{
+for (int i = 0; i < items.Length; i++)
+{
+if (HoldsArray_WorkspaceStateContext(items[i], array))
+{
+return true;
+}
+}
+return false;
 }
 [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Explicit, Size = 128)]
 public unsafe partial struct IterationScratch
@@ -1926,6 +2171,53 @@ if (host.ModulusExpanded != null)
 host.ModulusExpanded = (global::System.UInt32[])host.ModulusExpanded.Clone();
 }
 }
+public static bool HoldsArray_IterationScratchContext(global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.IterationScratchContext host, object array)
+{
+if (global::System.Object.ReferenceEquals(host.XSquared, array))
+{
+return true;
+}
+if (global::System.Object.ReferenceEquals(host.AxSquared, array))
+{
+return true;
+}
+if (global::System.Object.ReferenceEquals(host.CurrentProduct, array))
+{
+return true;
+}
+if (global::System.Object.ReferenceEquals(host.Diff, array))
+{
+return true;
+}
+if (global::System.Object.ReferenceEquals(host.NextXUnshifted, array))
+{
+return true;
+}
+if (global::System.Object.ReferenceEquals(host.NextXShifted, array))
+{
+return true;
+}
+if (global::System.Object.ReferenceEquals(host.NextIter, array))
+{
+return true;
+}
+if (global::System.Object.ReferenceEquals(host.ModulusExpanded, array))
+{
+return true;
+}
+return false;
+}
+public static bool HoldsArray_IterationScratchContext(System.ReadOnlySpan<global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.IterationScratchContext> items, object array)
+{
+for (int i = 0; i < items.Length; i++)
+{
+if (HoldsArray_IterationScratchContext(items[i], array))
+{
+return true;
+}
+}
+return false;
+}
 [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Explicit, Size = 128)]
 public unsafe partial struct NttConvolutionScratch
 {
@@ -2060,6 +2352,53 @@ if (host.BlockCarries != null)
 host.BlockCarries = (global::System.UInt32[])host.BlockCarries.Clone();
 }
 }
+public static bool HoldsArray_NttConvolutionScratchContext(global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.NttConvolutionScratchContext host, object array)
+{
+if (global::System.Object.ReferenceEquals(host.NttBuf1A, array))
+{
+return true;
+}
+if (global::System.Object.ReferenceEquals(host.NttBuf2A, array))
+{
+return true;
+}
+if (global::System.Object.ReferenceEquals(host.NttBuf1B, array))
+{
+return true;
+}
+if (global::System.Object.ReferenceEquals(host.NttBuf2B, array))
+{
+return true;
+}
+if (global::System.Object.ReferenceEquals(host.TmpBuf, array))
+{
+return true;
+}
+if (global::System.Object.ReferenceEquals(host.UncarriedLow, array))
+{
+return true;
+}
+if (global::System.Object.ReferenceEquals(host.UncarriedHigh, array))
+{
+return true;
+}
+if (global::System.Object.ReferenceEquals(host.BlockCarries, array))
+{
+return true;
+}
+return false;
+}
+public static bool HoldsArray_NttConvolutionScratchContext(System.ReadOnlySpan<global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.NttConvolutionScratchContext> items, object array)
+{
+for (int i = 0; i < items.Length; i++)
+{
+if (HoldsArray_NttConvolutionScratchContext(items[i], array))
+{
+return true;
+}
+}
+return false;
+}
 [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Explicit, Size = 32)]
 public unsafe partial struct ExponentSlice
 {
@@ -2103,6 +2442,25 @@ if (host.Words != null)
 {
 host.Words = (global::System.UInt32[])host.Words.Clone();
 }
+}
+public static bool HoldsArray_ExponentSliceContext(global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.ExponentSliceContext host, object array)
+{
+if (global::System.Object.ReferenceEquals(host.Words, array))
+{
+return true;
+}
+return false;
+}
+public static bool HoldsArray_ExponentSliceContext(System.ReadOnlySpan<global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.ExponentSliceContext> items, object array)
+{
+for (int i = 0; i < items.Length; i++)
+{
+if (HoldsArray_ExponentSliceContext(items[i], array))
+{
+return true;
+}
+}
+return false;
 }
 #pragma warning restore CS8500
 }
@@ -2208,10 +2566,12 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 }
 ";
 public static readonly string InitializeOneModuloKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source +InitializeOneModuloKernel_Source;
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_context_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuBigIntDivRemKernels__InitializeOneModuloKernel {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
 }
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuBigIntDivRemKernels__InitializeOneModuloKernel(uint[] result, uint[] modulus, int numWords, __gsharp_context_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuBigIntDivRemKernels__InitializeOneModuloKernel __gsharp_ctx) {
 {
 switch (__gsharp_ctx.__gsharp_state)
@@ -2952,6 +3312,7 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 }
 ";
 public static readonly string ModPowNttMegaKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source +ModPowNttMegaKernel_Source;
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_context_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuBigIntDivRemKernels__ModPowNttMegaKernel {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
@@ -2996,6 +3357,7 @@ internal global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Kernels.GpuBigIntDivRemKern
 internal global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Kernels.GpuBigIntDivRemKernels.__gsharp_frame_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuBigIntDivRemKernels__ExecuteNttMultiplyMacroModPow __gsharp_call_frame_2 = new();
 internal global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Kernels.GpuBigIntDivRemKernels.__gsharp_frame_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuBigIntDivRemKernels__ExecuteBarrettReductionMacro __gsharp_call_frame_3 = new();
 }
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuBigIntDivRemKernels__ModPowNttMegaKernel(global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.ModPowNttContext ctx, __gsharp_context_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuBigIntDivRemKernels__ModPowNttMegaKernel __gsharp_ctx) {
 {
 switch (__gsharp_ctx.__gsharp_state)

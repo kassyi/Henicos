@@ -145,10 +145,12 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 }
 ";
 public static readonly string WmmaInt8RowMajorKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source +WmmaInt8RowMajorKernel_Source;
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Core__WmmaKernels__WmmaInt8RowMajorKernel {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
 }
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Core__WmmaKernels__WmmaInt8RowMajorKernel(sbyte[] a, sbyte[] b, int[] c, int[] d, __gsharp_context_Kassyi__GSharp__Tests__Shared__Core__WmmaKernels__WmmaInt8RowMajorKernel __gsharp_ctx) {
 {
 switch (__gsharp_ctx.__gsharp_state)
@@ -415,10 +417,12 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 }
 ";
 public static readonly string WmmaInt8ColMajorBKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source +WmmaInt8ColMajorBKernel_Source;
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Core__WmmaKernels__WmmaInt8ColMajorBKernel {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
 }
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Core__WmmaKernels__WmmaInt8ColMajorBKernel(sbyte[] a, sbyte[] bColMajor, int[] c, int[] d, __gsharp_context_Kassyi__GSharp__Tests__Shared__Core__WmmaKernels__WmmaInt8ColMajorBKernel __gsharp_ctx) {
 {
 switch (__gsharp_ctx.__gsharp_state)
@@ -685,10 +689,12 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 }
 ";
 public static readonly string WmmaInt8ColMajorStoreKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source +WmmaInt8ColMajorStoreKernel_Source;
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Core__WmmaKernels__WmmaInt8ColMajorStoreKernel {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
 }
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Core__WmmaKernels__WmmaInt8ColMajorStoreKernel(sbyte[] a, sbyte[] b, int[] dColMajor, __gsharp_context_Kassyi__GSharp__Tests__Shared__Core__WmmaKernels__WmmaInt8ColMajorStoreKernel __gsharp_ctx) {
 {
 switch (__gsharp_ctx.__gsharp_state)
@@ -948,10 +954,12 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 }
 ";
 public static readonly string WmmaDoubleM8N8K4Kernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source +WmmaDoubleM8N8K4Kernel_Source;
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Core__WmmaKernels__WmmaDoubleM8N8K4Kernel {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
 }
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Core__WmmaKernels__WmmaDoubleM8N8K4Kernel(double[] a, double[] b, double[] d, __gsharp_context_Kassyi__GSharp__Tests__Shared__Core__WmmaKernels__WmmaDoubleM8N8K4Kernel __gsharp_ctx) {
 {
 switch (__gsharp_ctx.__gsharp_state)

@@ -40,6 +40,21 @@ SuspendingCall:
     # Marks a call to a device function that may suspend: __gsharp_resume(call, frameIndex[, result]).
     ResumeCall: __gsharp_resume
 
+ManagedVersion:
+  Summary: >-
+    The managed C# of operator macros (#711). A device function that expands one, directly or through a device function
+    it calls, gets a managed version in its partial class, which the managed bodies G# emits call instead of it.
+  Names:
+    # Followed by the body of the function's name (GlobalCppNames.GetKernelDerivedName).
+    MethodPrefix: __gsharp_managed_
+    # The temporaries of one expanded operator macro: the result of an inner operator macro, or an operand evaluated
+    # before it in the C# order (__gsharp_macro_tmp_<n>).
+    MacroTempPrefix: __gsharp_macro_tmp_
+    # The nested class that holds the [UnsafeAccessor] stub through which a managed body calls an operator macro target it
+    # cannot name (ManagedAccessorSet): followed by the body of the body's function name and a counter
+    # (__gsharp_accessor_<path>_<n>).
+    AccessorPrefix: __gsharp_accessor_
+
 DynamicSharedMemory:
   Summary: >-
     The placement of dynamic SharedMemory<T> declarations (CUDA). A kernel that reaches one owns a per-thread table of

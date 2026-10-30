@@ -229,10 +229,12 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 }
 ";
 public static readonly string Sha256Kernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source +Sha256Kernel_Source;
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_context_Henicos__Benchmarks__ComputeBenchmarks__Sha256Kernels__Sha256Kernel {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
 }
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static unsafe void __gsharp_statemachine_Henicos__Benchmarks__ComputeBenchmarks__Sha256Kernels__Sha256Kernel(byte[] input, uint[] output, int numMessages, __gsharp_context_Henicos__Benchmarks__ComputeBenchmarks__Sha256Kernels__Sha256Kernel __gsharp_ctx) {
 {
 switch (__gsharp_ctx.__gsharp_state)
@@ -275,7 +277,10 @@ throw new global::System.ArgumentNullException(nameof(output));
 if (output.Length == 0){
 throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(output));
 }
+if (!global::System.Object.ReferenceEquals(input, output))
+{
 input = (global::System.Byte[])input.Clone();
+}
 var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
 var dllName = $"Kassyi.GSharp.Kernels_SnapshotTest{archSuffix}.dll";
 var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);

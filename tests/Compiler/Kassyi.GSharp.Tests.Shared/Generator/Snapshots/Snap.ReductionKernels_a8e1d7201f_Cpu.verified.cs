@@ -275,6 +275,7 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 }
 ";
 public static readonly string ReductionKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source +ReductionKernel_Source;
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_context_Henicos__Benchmarks__ComputeBenchmarks__ReductionKernels__ReductionKernel {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
@@ -292,6 +293,7 @@ public float val;
 public float __gsharp_warp_temp_5;
 public float __gsharp_warp_temp_6;
 }
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static unsafe void __gsharp_statemachine_Henicos__Benchmarks__ComputeBenchmarks__ReductionKernels__ReductionKernel(global::Kassyi.GSharp.Core.Float4[] input, float[] output, int n, __gsharp_context_Henicos__Benchmarks__ComputeBenchmarks__ReductionKernels__ReductionKernel __gsharp_ctx) {
 global::Kassyi.GSharp.Core.SharedMemory<float> sdata = new(8, 0x80cb9df64cf94963UL);
 {
@@ -439,7 +441,10 @@ throw new global::System.ArgumentNullException(nameof(output));
 if (output.Length == 0){
 throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(output));
 }
+if (!global::System.Object.ReferenceEquals(input, output))
+{
 input = (global::Kassyi.GSharp.Core.Float4[])input.Clone();
+}
 var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
 var dllName = $"Kassyi.GSharp.Kernels_SnapshotTest{archSuffix}.dll";
 var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);

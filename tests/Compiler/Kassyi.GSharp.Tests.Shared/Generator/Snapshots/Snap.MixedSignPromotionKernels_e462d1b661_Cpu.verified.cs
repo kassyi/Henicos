@@ -263,10 +263,12 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 }
 ";
 public static readonly string IntPairsKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source +IntPairsKernel_Source;
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__MixedSignPromotionKernels__IntPairsKernel {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
 }
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__MixedSignPromotionKernels__IntPairsKernel(uint[] us, int[] ns, long[] values, int[] flags, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__MixedSignPromotionKernels__IntPairsKernel __gsharp_ctx) {
 {
 switch (__gsharp_ctx.__gsharp_state)
@@ -521,10 +523,12 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 }
 ";
 public static readonly string ShortPairsKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source +ShortPairsKernel_Source;
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__MixedSignPromotionKernels__ShortPairsKernel {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
 }
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__MixedSignPromotionKernels__ShortPairsKernel(uint[] us, short[] ss, long[] values, int[] flags, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__MixedSignPromotionKernels__ShortPairsKernel __gsharp_ctx) {
 {
 switch (__gsharp_ctx.__gsharp_state)
@@ -779,10 +783,12 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 }
 ";
 public static readonly string SBytePairsKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source +SBytePairsKernel_Source;
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__MixedSignPromotionKernels__SBytePairsKernel {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
 }
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__MixedSignPromotionKernels__SBytePairsKernel(uint[] us, sbyte[] bs, long[] values, int[] flags, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__MixedSignPromotionKernels__SBytePairsKernel __gsharp_ctx) {
 {
 switch (__gsharp_ctx.__gsharp_state)
@@ -1037,10 +1043,12 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 }
 ";
 public static readonly string ConstantOperandsKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source +ConstantOperandsKernel_Source;
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__MixedSignPromotionKernels__ConstantOperandsKernel {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
 }
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__MixedSignPromotionKernels__ConstantOperandsKernel(uint[] us, long[] values, int[] flags, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__MixedSignPromotionKernels__ConstantOperandsKernel __gsharp_ctx) {
 {
 switch (__gsharp_ctx.__gsharp_state)
@@ -1316,6 +1324,7 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 }
 ";
 public static readonly string AcrossBarrierKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source +AcrossBarrierKernel_Source;
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__MixedSignPromotionKernels__AcrossBarrierKernel {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
@@ -1324,6 +1333,7 @@ public uint u;
 public int n;
 public long sum;
 }
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__MixedSignPromotionKernels__AcrossBarrierKernel(uint[] us, int[] ns, long[] values, int[] flags, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__MixedSignPromotionKernels__AcrossBarrierKernel __gsharp_ctx) {
 {
 switch (__gsharp_ctx.__gsharp_state)

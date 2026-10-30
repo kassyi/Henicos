@@ -77,6 +77,29 @@ if (host.B != null)
 host.B = (global::System.Int32[])host.B.Clone();
 }
 }
+public static bool HoldsArray_SharedArrayPair(global::Kassyi.GSharp.Tests.Shared.Core.SharedArrayPair host, object array)
+{
+if (global::System.Object.ReferenceEquals(host.A, array))
+{
+return true;
+}
+if (global::System.Object.ReferenceEquals(host.B, array))
+{
+return true;
+}
+return false;
+}
+public static bool HoldsArray_SharedArrayPair(System.ReadOnlySpan<global::Kassyi.GSharp.Tests.Shared.Core.SharedArrayPair> items, object array)
+{
+for (int i = 0; i < items.Length; i++)
+{
+if (HoldsArray_SharedArrayPair(items[i], array))
+{
+return true;
+}
+}
+return false;
+}
 [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Explicit, Size = 16)]
 public unsafe partial struct SharedArrayHolder
 {
@@ -105,6 +128,25 @@ if (host.Data != null)
 {
 host.Data = (global::System.Int32[])host.Data.Clone();
 }
+}
+public static bool HoldsArray_SharedArrayHolder(global::Kassyi.GSharp.Tests.Shared.Core.SharedArrayHolder host, object array)
+{
+if (global::System.Object.ReferenceEquals(host.Data, array))
+{
+return true;
+}
+return false;
+}
+public static bool HoldsArray_SharedArrayHolder(System.ReadOnlySpan<global::Kassyi.GSharp.Tests.Shared.Core.SharedArrayHolder> items, object array)
+{
+for (int i = 0; i < items.Length; i++)
+{
+if (HoldsArray_SharedArrayHolder(items[i], array))
+{
+return true;
+}
+}
+return false;
 }
 [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Explicit, Size = 24)]
 public unsafe partial struct ConvertBag
@@ -139,6 +181,25 @@ if (host.Data != null)
 {
 host.Data = (global::System.Int32[])host.Data.Clone();
 }
+}
+public static bool HoldsArray_ConvertBag(global::Kassyi.GSharp.Tests.Shared.Core.ConvertBag host, object array)
+{
+if (global::System.Object.ReferenceEquals(host.Data, array))
+{
+return true;
+}
+return false;
+}
+public static bool HoldsArray_ConvertBag(System.ReadOnlySpan<global::Kassyi.GSharp.Tests.Shared.Core.ConvertBag> items, object array)
+{
+for (int i = 0; i < items.Length; i++)
+{
+if (HoldsArray_ConvertBag(items[i], array))
+{
+return true;
+}
+}
+return false;
 }
 #pragma warning restore CS8500
 }
@@ -259,10 +320,12 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 }
 ";
 public static readonly string TwoFieldsKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source +TwoFieldsKernel_Source;
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Core__SharedArrayFieldKernels__TwoFieldsKernel {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
 }
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Core__SharedArrayFieldKernels__TwoFieldsKernel(global::Kassyi.GSharp.Tests.Shared.Core.SharedArrayPair p, __gsharp_context_Kassyi__GSharp__Tests__Shared__Core__SharedArrayFieldKernels__TwoFieldsKernel __gsharp_ctx) {
 {
 switch (__gsharp_ctx.__gsharp_state)
@@ -518,10 +581,12 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 }
 ";
 public static readonly string TwoStructsKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source +TwoStructsKernel_Source;
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Core__SharedArrayFieldKernels__TwoStructsKernel {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
 }
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Core__SharedArrayFieldKernels__TwoStructsKernel(global::Kassyi.GSharp.Tests.Shared.Core.SharedArrayHolder first, global::Kassyi.GSharp.Tests.Shared.Core.SharedArrayHolder second, __gsharp_context_Kassyi__GSharp__Tests__Shared__Core__SharedArrayFieldKernels__TwoStructsKernel __gsharp_ctx) {
 {
 switch (__gsharp_ctx.__gsharp_state)
@@ -782,10 +847,12 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 }
 ";
 public static readonly string ElementFieldsKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source +ElementFieldsKernel_Source;
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Core__SharedArrayFieldKernels__ElementFieldsKernel {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
 }
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Core__SharedArrayFieldKernels__ElementFieldsKernel(global::Kassyi.GSharp.Tests.Shared.Core.ConvertBag[] bags, __gsharp_context_Kassyi__GSharp__Tests__Shared__Core__SharedArrayFieldKernels__ElementFieldsKernel __gsharp_ctx) {
 {
 switch (__gsharp_ctx.__gsharp_state)

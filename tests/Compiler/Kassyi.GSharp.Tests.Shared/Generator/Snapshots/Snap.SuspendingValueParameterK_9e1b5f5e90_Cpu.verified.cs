@@ -570,11 +570,13 @@ namespace Kassyi.GSharp.Tests.Shared.Syntax
 {
 public partial class SuspendingValueParameterKernels
 {
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_frame_Kassyi__GSharp__Tests__Shared__Syntax__SuspendingValueParameterKernels__MutateFieldThenSync {
 internal int __gsharp_state;
 internal uint __gsharp_warp_exchange;
 internal global::Kassyi.GSharp.Tests.Shared.Syntax.SuspendVector2 v;
 }
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static bool __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__SuspendingValueParameterKernels__MutateFieldThenSync(global::Kassyi.GSharp.Tests.Shared.Syntax.SuspendVector2 __gsharp_in_v, __gsharp_frame_Kassyi__GSharp__Tests__Shared__Syntax__SuspendingValueParameterKernels__MutateFieldThenSync __gsharp_ctx, ref float __gsharp_result) {
 if (__gsharp_ctx.__gsharp_state == 0) {
 __gsharp_ctx.v = __gsharp_in_v;
@@ -603,11 +605,13 @@ return true;
 throw new global::System.InvalidOperationException("The device function state machine reached an unknown state.");
 }
 
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_frame_Kassyi__GSharp__Tests__Shared__Syntax__SuspendingValueParameterKernels__MutateScalarThenSync {
 internal int __gsharp_state;
 internal uint __gsharp_warp_exchange;
 internal int value;
 }
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static bool __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__SuspendingValueParameterKernels__MutateScalarThenSync(int __gsharp_in_value, __gsharp_frame_Kassyi__GSharp__Tests__Shared__Syntax__SuspendingValueParameterKernels__MutateScalarThenSync __gsharp_ctx, ref int __gsharp_result) {
 if (__gsharp_ctx.__gsharp_state == 0) {
 __gsharp_ctx.value = __gsharp_in_value;
@@ -636,11 +640,13 @@ return true;
 throw new global::System.InvalidOperationException("The device function state machine reached an unknown state.");
 }
 
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_frame_Kassyi__GSharp__Tests__Shared__Syntax__SuspendingValueParameterKernels__MutateNestedFieldThenSync {
 internal int __gsharp_state;
 internal uint __gsharp_warp_exchange;
 internal global::Kassyi.GSharp.Tests.Shared.Syntax.SuspendNested v;
 }
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static bool __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__SuspendingValueParameterKernels__MutateNestedFieldThenSync(global::Kassyi.GSharp.Tests.Shared.Syntax.SuspendNested __gsharp_in_v, __gsharp_frame_Kassyi__GSharp__Tests__Shared__Syntax__SuspendingValueParameterKernels__MutateNestedFieldThenSync __gsharp_ctx, ref int __gsharp_result) {
 if (__gsharp_ctx.__gsharp_state == 0) {
 __gsharp_ctx.v = __gsharp_in_v;
@@ -669,11 +675,13 @@ return true;
 throw new global::System.InvalidOperationException("The device function state machine reached an unknown state.");
 }
 
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_frame_Kassyi__GSharp__Tests__Shared__Syntax__SuspendingValueParameterKernels__MutateInlineArrayElementThenSync {
 internal int __gsharp_state;
 internal uint __gsharp_warp_exchange;
 internal global::Kassyi.GSharp.Tests.Shared.Syntax.SuspendWithBuffer v;
 }
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static bool __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__SuspendingValueParameterKernels__MutateInlineArrayElementThenSync(global::Kassyi.GSharp.Tests.Shared.Syntax.SuspendWithBuffer __gsharp_in_v, int index, __gsharp_frame_Kassyi__GSharp__Tests__Shared__Syntax__SuspendingValueParameterKernels__MutateInlineArrayElementThenSync __gsharp_ctx, ref int __gsharp_result) {
 if (__gsharp_ctx.__gsharp_state == 0) {
 __gsharp_ctx.v = __gsharp_in_v;
@@ -702,11 +710,13 @@ return true;
 throw new global::System.InvalidOperationException("The device function state machine reached an unknown state.");
 }
 
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_frame_Kassyi__GSharp__Tests__Shared__Syntax__SuspendingValueParameterKernels__RefExtensionThenSync {
 internal int __gsharp_state;
 internal uint __gsharp_warp_exchange;
 internal global::Kassyi.GSharp.Tests.Shared.Syntax.SuspendVector2 v;
 }
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static bool __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__SuspendingValueParameterKernels__RefExtensionThenSync(global::Kassyi.GSharp.Tests.Shared.Syntax.SuspendVector2 __gsharp_in_v, __gsharp_frame_Kassyi__GSharp__Tests__Shared__Syntax__SuspendingValueParameterKernels__RefExtensionThenSync __gsharp_ctx, ref float __gsharp_result) {
 if (__gsharp_ctx.__gsharp_state == 0) {
 __gsharp_ctx.v = __gsharp_in_v;
@@ -735,11 +745,13 @@ return true;
 throw new global::System.InvalidOperationException("The device function state machine reached an unknown state.");
 }
 
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_frame_Kassyi__GSharp__Tests__Shared__Syntax__SuspendingValueParameterKernels__IncrementFieldThenSync {
 internal int __gsharp_state;
 internal uint __gsharp_warp_exchange;
 internal global::Kassyi.GSharp.Tests.Shared.Syntax.SuspendVector2 v;
 }
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static bool __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__SuspendingValueParameterKernels__IncrementFieldThenSync(global::Kassyi.GSharp.Tests.Shared.Syntax.SuspendVector2 __gsharp_in_v, __gsharp_frame_Kassyi__GSharp__Tests__Shared__Syntax__SuspendingValueParameterKernels__IncrementFieldThenSync __gsharp_ctx, ref float __gsharp_result) {
 if (__gsharp_ctx.__gsharp_state == 0) {
 __gsharp_ctx.v = __gsharp_in_v;
@@ -768,11 +780,13 @@ return true;
 throw new global::System.InvalidOperationException("The device function state machine reached an unknown state.");
 }
 
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_frame_Kassyi__GSharp__Tests__Shared__Syntax__SuspendingValueParameterKernels__PassFieldByRefThenSync {
 internal int __gsharp_state;
 internal uint __gsharp_warp_exchange;
 internal global::Kassyi.GSharp.Tests.Shared.Syntax.SuspendVector2 v;
 }
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static bool __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__SuspendingValueParameterKernels__PassFieldByRefThenSync(global::Kassyi.GSharp.Tests.Shared.Syntax.SuspendVector2 __gsharp_in_v, __gsharp_frame_Kassyi__GSharp__Tests__Shared__Syntax__SuspendingValueParameterKernels__PassFieldByRefThenSync __gsharp_ctx, ref float __gsharp_result) {
 if (__gsharp_ctx.__gsharp_state == 0) {
 __gsharp_ctx.v = __gsharp_in_v;
@@ -801,10 +815,12 @@ return true;
 throw new global::System.InvalidOperationException("The device function state machine reached an unknown state.");
 }
 
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_frame_Kassyi__GSharp__Tests__Shared__Syntax__SuspendingValueParameterKernels__MutateArrayElementThenSync {
 internal int __gsharp_state;
 internal uint __gsharp_warp_exchange;
 }
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static bool __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__SuspendingValueParameterKernels__MutateArrayElementThenSync(int[] values, int index, __gsharp_frame_Kassyi__GSharp__Tests__Shared__Syntax__SuspendingValueParameterKernels__MutateArrayElementThenSync __gsharp_ctx, ref int __gsharp_result) {
 {
 switch (__gsharp_ctx.__gsharp_state)
@@ -830,11 +846,13 @@ return true;
 throw new global::System.InvalidOperationException("The device function state machine reached an unknown state.");
 }
 
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_frame_Kassyi__GSharp__Tests__Shared__Syntax__SuspendingValueParameterKernels__TupleSwapFieldsThenSync {
 internal int __gsharp_state;
 internal uint __gsharp_warp_exchange;
 internal global::Kassyi.GSharp.Tests.Shared.Syntax.SuspendVector2 v;
 }
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static bool __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__SuspendingValueParameterKernels__TupleSwapFieldsThenSync(global::Kassyi.GSharp.Tests.Shared.Syntax.SuspendVector2 __gsharp_in_v, __gsharp_frame_Kassyi__GSharp__Tests__Shared__Syntax__SuspendingValueParameterKernels__TupleSwapFieldsThenSync __gsharp_ctx, ref float __gsharp_result) {
 if (__gsharp_ctx.__gsharp_state == 0) {
 __gsharp_ctx.v = __gsharp_in_v;
@@ -863,12 +881,14 @@ return true;
 throw new global::System.InvalidOperationException("The device function state machine reached an unknown state.");
 }
 
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_frame_Kassyi__GSharp__Tests__Shared__Syntax__SuspendingValueParameterKernels__TupleSwapScalarsThenSync {
 internal int __gsharp_state;
 internal uint __gsharp_warp_exchange;
 internal int a;
 internal int b;
 }
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static bool __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__SuspendingValueParameterKernels__TupleSwapScalarsThenSync(int __gsharp_in_a, int __gsharp_in_b, __gsharp_frame_Kassyi__GSharp__Tests__Shared__Syntax__SuspendingValueParameterKernels__TupleSwapScalarsThenSync __gsharp_ctx, ref int __gsharp_result) {
 if (__gsharp_ctx.__gsharp_state == 0) {
 __gsharp_ctx.a = __gsharp_in_a;
@@ -1066,6 +1086,7 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 }
 ";
 public static readonly string StructFieldWriteKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source +StructFieldWriteKernel_Source;
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__SuspendingValueParameterKernels__StructFieldWriteKernel {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
@@ -1076,6 +1097,7 @@ public int __gsharp_call_temp_1;
 internal global::Kassyi.GSharp.Tests.Shared.Syntax.SuspendingValueParameterKernels.__gsharp_frame_Kassyi__GSharp__Tests__Shared__Syntax__SuspendingValueParameterKernels__MutateFieldThenSync __gsharp_call_frame_0 = new();
 internal global::Kassyi.GSharp.Tests.Shared.Syntax.SuspendingValueParameterKernels.__gsharp_frame_Kassyi__GSharp__Tests__Shared__Syntax__SuspendingValueParameterKernels__MutateScalarThenSync __gsharp_call_frame_1 = new();
 }
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__SuspendingValueParameterKernels__StructFieldWriteKernel(float[] fieldOut, int[] scalarOut, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__SuspendingValueParameterKernels__StructFieldWriteKernel __gsharp_ctx) {
 {
 switch (__gsharp_ctx.__gsharp_state)
@@ -1370,6 +1392,7 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 }
 ";
 public static readonly string RefExtensionWriteKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source +RefExtensionWriteKernel_Source;
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__SuspendingValueParameterKernels__RefExtensionWriteKernel {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
@@ -1378,6 +1401,7 @@ public global::Kassyi.GSharp.Tests.Shared.Syntax.SuspendVector2 v;
 public float __gsharp_call_temp_0;
 internal global::Kassyi.GSharp.Tests.Shared.Syntax.SuspendingValueParameterKernels.__gsharp_frame_Kassyi__GSharp__Tests__Shared__Syntax__SuspendingValueParameterKernels__RefExtensionThenSync __gsharp_call_frame_0 = new();
 }
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__SuspendingValueParameterKernels__RefExtensionWriteKernel(float[] output, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__SuspendingValueParameterKernels__RefExtensionWriteKernel __gsharp_ctx) {
 {
 switch (__gsharp_ctx.__gsharp_state)
@@ -1665,6 +1689,7 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 }
 ";
 public static readonly string NestedFieldWriteKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source +NestedFieldWriteKernel_Source;
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__SuspendingValueParameterKernels__NestedFieldWriteKernel {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
@@ -1673,6 +1698,7 @@ public global::Kassyi.GSharp.Tests.Shared.Syntax.SuspendNested v;
 public int __gsharp_call_temp_0;
 internal global::Kassyi.GSharp.Tests.Shared.Syntax.SuspendingValueParameterKernels.__gsharp_frame_Kassyi__GSharp__Tests__Shared__Syntax__SuspendingValueParameterKernels__MutateNestedFieldThenSync __gsharp_call_frame_0 = new();
 }
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__SuspendingValueParameterKernels__NestedFieldWriteKernel(int[] output, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__SuspendingValueParameterKernels__NestedFieldWriteKernel __gsharp_ctx) {
 {
 switch (__gsharp_ctx.__gsharp_state)
@@ -1974,6 +2000,7 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 }
 ";
 public static readonly string InlineArrayElementWriteKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source +InlineArrayElementWriteKernel_Source;
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__SuspendingValueParameterKernels__InlineArrayElementWriteKernel {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
@@ -1983,6 +2010,7 @@ public int index;
 public int __gsharp_call_temp_0;
 internal global::Kassyi.GSharp.Tests.Shared.Syntax.SuspendingValueParameterKernels.__gsharp_frame_Kassyi__GSharp__Tests__Shared__Syntax__SuspendingValueParameterKernels__MutateInlineArrayElementThenSync __gsharp_call_frame_0 = new();
 }
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__SuspendingValueParameterKernels__InlineArrayElementWriteKernel(int[] output, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__SuspendingValueParameterKernels__InlineArrayElementWriteKernel __gsharp_ctx) {
 {
 switch (__gsharp_ctx.__gsharp_state)
@@ -2260,6 +2288,7 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 }
 ";
 public static readonly string PrefixIncrementFieldKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source +PrefixIncrementFieldKernel_Source;
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__SuspendingValueParameterKernels__PrefixIncrementFieldKernel {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
@@ -2268,6 +2297,7 @@ public global::Kassyi.GSharp.Tests.Shared.Syntax.SuspendVector2 v;
 public float __gsharp_call_temp_0;
 internal global::Kassyi.GSharp.Tests.Shared.Syntax.SuspendingValueParameterKernels.__gsharp_frame_Kassyi__GSharp__Tests__Shared__Syntax__SuspendingValueParameterKernels__IncrementFieldThenSync __gsharp_call_frame_0 = new();
 }
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__SuspendingValueParameterKernels__PrefixIncrementFieldKernel(float[] output, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__SuspendingValueParameterKernels__PrefixIncrementFieldKernel __gsharp_ctx) {
 {
 switch (__gsharp_ctx.__gsharp_state)
@@ -2543,6 +2573,7 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 }
 ";
 public static readonly string RefFieldArgumentKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source +RefFieldArgumentKernel_Source;
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__SuspendingValueParameterKernels__RefFieldArgumentKernel {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
@@ -2551,6 +2582,7 @@ public global::Kassyi.GSharp.Tests.Shared.Syntax.SuspendVector2 v;
 public float __gsharp_call_temp_0;
 internal global::Kassyi.GSharp.Tests.Shared.Syntax.SuspendingValueParameterKernels.__gsharp_frame_Kassyi__GSharp__Tests__Shared__Syntax__SuspendingValueParameterKernels__PassFieldByRefThenSync __gsharp_call_frame_0 = new();
 }
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__SuspendingValueParameterKernels__RefFieldArgumentKernel(float[] output, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__SuspendingValueParameterKernels__RefFieldArgumentKernel __gsharp_ctx) {
 {
 switch (__gsharp_ctx.__gsharp_state)
@@ -2810,6 +2842,7 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 }
 ";
 public static readonly string ArrayElementWriteKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source +ArrayElementWriteKernel_Source;
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__SuspendingValueParameterKernels__ArrayElementWriteKernel {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
@@ -2817,6 +2850,7 @@ public int tid;
 public int __gsharp_call_temp_0;
 internal global::Kassyi.GSharp.Tests.Shared.Syntax.SuspendingValueParameterKernels.__gsharp_frame_Kassyi__GSharp__Tests__Shared__Syntax__SuspendingValueParameterKernels__MutateArrayElementThenSync __gsharp_call_frame_0 = new();
 }
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__SuspendingValueParameterKernels__ArrayElementWriteKernel(int[] values, int[] output, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__SuspendingValueParameterKernels__ArrayElementWriteKernel __gsharp_ctx) {
 {
 switch (__gsharp_ctx.__gsharp_state)
@@ -3098,6 +3132,7 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 }
 ";
 public static readonly string TupleSwapFieldsKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source +TupleSwapFieldsKernel_Source;
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__SuspendingValueParameterKernels__TupleSwapFieldsKernel {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
@@ -3106,6 +3141,7 @@ public global::Kassyi.GSharp.Tests.Shared.Syntax.SuspendVector2 v;
 public float __gsharp_call_temp_0;
 internal global::Kassyi.GSharp.Tests.Shared.Syntax.SuspendingValueParameterKernels.__gsharp_frame_Kassyi__GSharp__Tests__Shared__Syntax__SuspendingValueParameterKernels__TupleSwapFieldsThenSync __gsharp_call_frame_0 = new();
 }
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__SuspendingValueParameterKernels__TupleSwapFieldsKernel(float[] output, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__SuspendingValueParameterKernels__TupleSwapFieldsKernel __gsharp_ctx) {
 {
 switch (__gsharp_ctx.__gsharp_state)
@@ -3366,6 +3402,7 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 }
 ";
 public static readonly string TupleSwapScalarsKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source +TupleSwapScalarsKernel_Source;
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__SuspendingValueParameterKernels__TupleSwapScalarsKernel {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
@@ -3373,6 +3410,7 @@ public int tid;
 public int __gsharp_call_temp_0;
 internal global::Kassyi.GSharp.Tests.Shared.Syntax.SuspendingValueParameterKernels.__gsharp_frame_Kassyi__GSharp__Tests__Shared__Syntax__SuspendingValueParameterKernels__TupleSwapScalarsThenSync __gsharp_call_frame_0 = new();
 }
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__SuspendingValueParameterKernels__TupleSwapScalarsKernel(int[] output, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__SuspendingValueParameterKernels__TupleSwapScalarsKernel __gsharp_ctx) {
 {
 switch (__gsharp_ctx.__gsharp_state)

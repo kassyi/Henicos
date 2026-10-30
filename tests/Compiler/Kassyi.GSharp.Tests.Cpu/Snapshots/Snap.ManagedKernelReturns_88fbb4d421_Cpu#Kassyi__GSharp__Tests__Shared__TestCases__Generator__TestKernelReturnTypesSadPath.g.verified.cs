@@ -23,10 +23,12 @@ public static partial class AotContexts
 public const string ArrayKernel_Source = @"#error ""(10,27): GSH0004: Method 'ArrayKernel' is marked with [GpuKernel] but returns unsupported type 'float[]'. GpuKernel methods must return void or an unmanaged blittable type.""
 ";
 public static readonly string ArrayKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source +ArrayKernel_Source;
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__TestCases__Generator__TestKernelReturnTypesSadPath__ArrayKernel {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
 }
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__TestCases__Generator__TestKernelReturnTypesSadPath__ArrayKernel(__gsharp_context_Kassyi__GSharp__Tests__Shared__TestCases__Generator__TestKernelReturnTypesSadPath__ArrayKernel __gsharp_ctx, ref float[] __gsharp_auto_result) {
 {
 switch (__gsharp_ctx.__gsharp_state)
@@ -165,10 +167,12 @@ return __gsharp_auto_result;
 public const string StringKernel_Source = @"#error ""(14,26): GSH0004: Method 'StringKernel' is marked with [GpuKernel] but returns unsupported type 'string'. GpuKernel methods must return void or an unmanaged blittable type.""
 ";
 public static readonly string StringKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source +StringKernel_Source;
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__TestCases__Generator__TestKernelReturnTypesSadPath__StringKernel {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
 }
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__TestCases__Generator__TestKernelReturnTypesSadPath__StringKernel(__gsharp_context_Kassyi__GSharp__Tests__Shared__TestCases__Generator__TestKernelReturnTypesSadPath__StringKernel __gsharp_ctx, ref string __gsharp_auto_result) {
 {
 switch (__gsharp_ctx.__gsharp_state)
@@ -405,10 +409,12 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 }
 ";
 public static readonly string PointerKernel2_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source +PointerKernel2_Source;
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__TestCases__Generator__TestKernelReturnTypesSadPath__PointerKernel2 {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
 }
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__TestCases__Generator__TestKernelReturnTypesSadPath__PointerKernel2(__gsharp_context_Kassyi__GSharp__Tests__Shared__TestCases__Generator__TestKernelReturnTypesSadPath__PointerKernel2 __gsharp_ctx, ref float* __gsharp_auto_result) {
 {
 switch (__gsharp_ctx.__gsharp_state)
@@ -547,10 +553,12 @@ return __gsharp_auto_result;
 public const string ManagedStructKernel_Source = @"#error ""(30,33): GSH0004: Method 'ManagedStructKernel' is marked with [GpuKernel] but returns unsupported type 'Kassyi.GSharp.Tests.Shared.TestCases.Generator.TestKernelReturnTypesSadPath.ManagedStruct'. GpuKernel methods must return void or an unmanaged blittable type.""
 ";
 public static readonly string ManagedStructKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source +ManagedStructKernel_Source;
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__TestCases__Generator__TestKernelReturnTypesSadPath__ManagedStructKernel {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
 }
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__TestCases__Generator__TestKernelReturnTypesSadPath__ManagedStructKernel(__gsharp_context_Kassyi__GSharp__Tests__Shared__TestCases__Generator__TestKernelReturnTypesSadPath__ManagedStructKernel __gsharp_ctx, ref global::Kassyi.GSharp.Tests.Shared.TestCases.Generator.TestKernelReturnTypesSadPath.ManagedStruct __gsharp_auto_result) {
 {
 switch (__gsharp_ctx.__gsharp_state)
@@ -689,10 +697,12 @@ return __gsharp_auto_result;
 public const string SpanKernel_Source = @"#error ""(34,39): GSH0004: Method 'SpanKernel' is marked with [GpuKernel] but returns unsupported type 'System.ReadOnlySpan<float>'. GpuKernel methods must return void or an unmanaged blittable type.""
 ";
 public static readonly string SpanKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source +SpanKernel_Source;
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__TestCases__Generator__TestKernelReturnTypesSadPath__SpanKernel {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
 }
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__TestCases__Generator__TestKernelReturnTypesSadPath__SpanKernel(__gsharp_context_Kassyi__GSharp__Tests__Shared__TestCases__Generator__TestKernelReturnTypesSadPath__SpanKernel __gsharp_ctx, ref global::System.ReadOnlySpan<float> __gsharp_auto_result) {
 {
 switch (__gsharp_ctx.__gsharp_state)

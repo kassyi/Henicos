@@ -329,11 +329,13 @@ namespace Kassyi.GSharp.Tests.Shared.Syntax
 {
 public partial class SuspendingValueParameterKernels
 {
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_frame_Kassyi__GSharp__Tests__Shared__Syntax__SuspendingValueParameterKernels__MutateFieldThenSync {
 internal int __gsharp_state;
 internal uint __gsharp_warp_exchange;
 internal global::Kassyi.GSharp.Tests.Shared.Syntax.SuspendVector2 v;
 }
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static bool __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__SuspendingValueParameterKernels__MutateFieldThenSync(global::Kassyi.GSharp.Tests.Shared.Syntax.SuspendVector2 __gsharp_in_v, __gsharp_frame_Kassyi__GSharp__Tests__Shared__Syntax__SuspendingValueParameterKernels__MutateFieldThenSync __gsharp_ctx, ref float __gsharp_result) {
 if (__gsharp_ctx.__gsharp_state == 0) {
 __gsharp_ctx.v = __gsharp_in_v;
@@ -362,11 +364,13 @@ return true;
 throw new global::System.InvalidOperationException("The device function state machine reached an unknown state.");
 }
 
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_frame_Kassyi__GSharp__Tests__Shared__Syntax__SuspendingValueParameterKernels__MutateScalarThenSync {
 internal int __gsharp_state;
 internal uint __gsharp_warp_exchange;
 internal int value;
 }
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static bool __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__SuspendingValueParameterKernels__MutateScalarThenSync(int __gsharp_in_value, __gsharp_frame_Kassyi__GSharp__Tests__Shared__Syntax__SuspendingValueParameterKernels__MutateScalarThenSync __gsharp_ctx, ref int __gsharp_result) {
 if (__gsharp_ctx.__gsharp_state == 0) {
 __gsharp_ctx.value = __gsharp_in_value;
@@ -395,11 +399,13 @@ return true;
 throw new global::System.InvalidOperationException("The device function state machine reached an unknown state.");
 }
 
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_frame_Kassyi__GSharp__Tests__Shared__Syntax__SuspendingValueParameterKernels__MutateNestedFieldThenSync {
 internal int __gsharp_state;
 internal uint __gsharp_warp_exchange;
 internal global::Kassyi.GSharp.Tests.Shared.Syntax.SuspendNested v;
 }
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static bool __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__SuspendingValueParameterKernels__MutateNestedFieldThenSync(global::Kassyi.GSharp.Tests.Shared.Syntax.SuspendNested __gsharp_in_v, __gsharp_frame_Kassyi__GSharp__Tests__Shared__Syntax__SuspendingValueParameterKernels__MutateNestedFieldThenSync __gsharp_ctx, ref int __gsharp_result) {
 if (__gsharp_ctx.__gsharp_state == 0) {
 __gsharp_ctx.v = __gsharp_in_v;
@@ -428,11 +434,13 @@ return true;
 throw new global::System.InvalidOperationException("The device function state machine reached an unknown state.");
 }
 
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_frame_Kassyi__GSharp__Tests__Shared__Syntax__SuspendingValueParameterKernels__MutateInlineArrayElementThenSync {
 internal int __gsharp_state;
 internal uint __gsharp_warp_exchange;
 internal global::Kassyi.GSharp.Tests.Shared.Syntax.SuspendWithBuffer v;
 }
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static bool __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__SuspendingValueParameterKernels__MutateInlineArrayElementThenSync(global::Kassyi.GSharp.Tests.Shared.Syntax.SuspendWithBuffer __gsharp_in_v, int index, __gsharp_frame_Kassyi__GSharp__Tests__Shared__Syntax__SuspendingValueParameterKernels__MutateInlineArrayElementThenSync __gsharp_ctx, ref int __gsharp_result) {
 if (__gsharp_ctx.__gsharp_state == 0) {
 __gsharp_ctx.v = __gsharp_in_v;
@@ -461,11 +469,13 @@ return true;
 throw new global::System.InvalidOperationException("The device function state machine reached an unknown state.");
 }
 
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_frame_Kassyi__GSharp__Tests__Shared__Syntax__SuspendingValueParameterKernels__RefExtensionThenSync {
 internal int __gsharp_state;
 internal uint __gsharp_warp_exchange;
 internal global::Kassyi.GSharp.Tests.Shared.Syntax.SuspendVector2 v;
 }
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static bool __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__SuspendingValueParameterKernels__RefExtensionThenSync(global::Kassyi.GSharp.Tests.Shared.Syntax.SuspendVector2 __gsharp_in_v, __gsharp_frame_Kassyi__GSharp__Tests__Shared__Syntax__SuspendingValueParameterKernels__RefExtensionThenSync __gsharp_ctx, ref float __gsharp_result) {
 if (__gsharp_ctx.__gsharp_state == 0) {
 __gsharp_ctx.v = __gsharp_in_v;
@@ -494,11 +504,13 @@ return true;
 throw new global::System.InvalidOperationException("The device function state machine reached an unknown state.");
 }
 
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_frame_Kassyi__GSharp__Tests__Shared__Syntax__SuspendingValueParameterKernels__IncrementFieldThenSync {
 internal int __gsharp_state;
 internal uint __gsharp_warp_exchange;
 internal global::Kassyi.GSharp.Tests.Shared.Syntax.SuspendVector2 v;
 }
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static bool __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__SuspendingValueParameterKernels__IncrementFieldThenSync(global::Kassyi.GSharp.Tests.Shared.Syntax.SuspendVector2 __gsharp_in_v, __gsharp_frame_Kassyi__GSharp__Tests__Shared__Syntax__SuspendingValueParameterKernels__IncrementFieldThenSync __gsharp_ctx, ref float __gsharp_result) {
 if (__gsharp_ctx.__gsharp_state == 0) {
 __gsharp_ctx.v = __gsharp_in_v;
@@ -527,11 +539,13 @@ return true;
 throw new global::System.InvalidOperationException("The device function state machine reached an unknown state.");
 }
 
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_frame_Kassyi__GSharp__Tests__Shared__Syntax__SuspendingValueParameterKernels__PassFieldByRefThenSync {
 internal int __gsharp_state;
 internal uint __gsharp_warp_exchange;
 internal global::Kassyi.GSharp.Tests.Shared.Syntax.SuspendVector2 v;
 }
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static bool __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__SuspendingValueParameterKernels__PassFieldByRefThenSync(global::Kassyi.GSharp.Tests.Shared.Syntax.SuspendVector2 __gsharp_in_v, __gsharp_frame_Kassyi__GSharp__Tests__Shared__Syntax__SuspendingValueParameterKernels__PassFieldByRefThenSync __gsharp_ctx, ref float __gsharp_result) {
 if (__gsharp_ctx.__gsharp_state == 0) {
 __gsharp_ctx.v = __gsharp_in_v;
@@ -560,10 +574,12 @@ return true;
 throw new global::System.InvalidOperationException("The device function state machine reached an unknown state.");
 }
 
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_frame_Kassyi__GSharp__Tests__Shared__Syntax__SuspendingValueParameterKernels__MutateArrayElementThenSync {
 internal int __gsharp_state;
 internal uint __gsharp_warp_exchange;
 }
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static bool __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__SuspendingValueParameterKernels__MutateArrayElementThenSync(int[] values, int index, __gsharp_frame_Kassyi__GSharp__Tests__Shared__Syntax__SuspendingValueParameterKernels__MutateArrayElementThenSync __gsharp_ctx, ref int __gsharp_result) {
 {
 switch (__gsharp_ctx.__gsharp_state)
@@ -589,11 +605,13 @@ return true;
 throw new global::System.InvalidOperationException("The device function state machine reached an unknown state.");
 }
 
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_frame_Kassyi__GSharp__Tests__Shared__Syntax__SuspendingValueParameterKernels__TupleSwapFieldsThenSync {
 internal int __gsharp_state;
 internal uint __gsharp_warp_exchange;
 internal global::Kassyi.GSharp.Tests.Shared.Syntax.SuspendVector2 v;
 }
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static bool __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__SuspendingValueParameterKernels__TupleSwapFieldsThenSync(global::Kassyi.GSharp.Tests.Shared.Syntax.SuspendVector2 __gsharp_in_v, __gsharp_frame_Kassyi__GSharp__Tests__Shared__Syntax__SuspendingValueParameterKernels__TupleSwapFieldsThenSync __gsharp_ctx, ref float __gsharp_result) {
 if (__gsharp_ctx.__gsharp_state == 0) {
 __gsharp_ctx.v = __gsharp_in_v;
@@ -622,12 +640,14 @@ return true;
 throw new global::System.InvalidOperationException("The device function state machine reached an unknown state.");
 }
 
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_frame_Kassyi__GSharp__Tests__Shared__Syntax__SuspendingValueParameterKernels__TupleSwapScalarsThenSync {
 internal int __gsharp_state;
 internal uint __gsharp_warp_exchange;
 internal int a;
 internal int b;
 }
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static bool __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__SuspendingValueParameterKernels__TupleSwapScalarsThenSync(int __gsharp_in_a, int __gsharp_in_b, __gsharp_frame_Kassyi__GSharp__Tests__Shared__Syntax__SuspendingValueParameterKernels__TupleSwapScalarsThenSync __gsharp_ctx, ref int __gsharp_result) {
 if (__gsharp_ctx.__gsharp_state == 0) {
 __gsharp_ctx.a = __gsharp_in_a;
@@ -748,12 +768,12 @@ proxy_fieldOut[0] = IntPtr.Zero;
 if (fieldOut_size > 0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_fieldOut, (IntPtr)fieldOut_size, hStream));
-proxy_fieldOut[0] = d_fieldOut;
 fixed (global::System.Single* p_fieldOut = fieldOut)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoDAsync_v2(d_fieldOut, (IntPtr)p_fieldOut, (IntPtr)fieldOut_size, hStream));
 CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
 }
+proxy_fieldOut[0] = d_fieldOut;
 }
 kernelParams[0] = proxy_fieldOut;
 // Marshal array: scalarOut
@@ -763,13 +783,20 @@ proxy_scalarOut[0] = IntPtr.Zero;
 ((int*)(proxy_scalarOut + 1))[0] = scalarOut.Length;
 if (scalarOut_size > 0)
 {
+if (global::System.Object.ReferenceEquals(scalarOut, fieldOut))
+{
+d_scalarOut = d_fieldOut;
+}
+else
+{
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_scalarOut, (IntPtr)scalarOut_size, hStream));
-proxy_scalarOut[0] = d_scalarOut;
 fixed (global::System.Int32* p_scalarOut = scalarOut)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoDAsync_v2(d_scalarOut, (IntPtr)p_scalarOut, (IntPtr)scalarOut_size, hStream));
 CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
 }
+}
+proxy_scalarOut[0] = d_scalarOut;
 }
 kernelParams[1] = proxy_scalarOut;
 CudaException.ThrowIfError(CudaDriverApi.cuLaunchKernel(
@@ -791,7 +818,7 @@ CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
 }
 }
 // Copy back array: scalarOut
-if (scalarOut_size > 0 && d_scalarOut != IntPtr.Zero)
+if (scalarOut_size > 0 && d_scalarOut != IntPtr.Zero && !global::System.Object.ReferenceEquals(scalarOut, fieldOut))
 {
 fixed (global::System.Int32* p_scalarOut = scalarOut)
 {
@@ -803,7 +830,7 @@ CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
 finally
 {
 if (d_fieldOut != IntPtr.Zero) CudaDriverApi.cuMemFreeAsync(d_fieldOut, hStream);
-if (d_scalarOut != IntPtr.Zero) CudaDriverApi.cuMemFreeAsync(d_scalarOut, hStream);
+if (d_scalarOut != IntPtr.Zero && d_scalarOut != d_fieldOut) CudaDriverApi.cuMemFreeAsync(d_scalarOut, hStream);
 }
 }
 }
@@ -904,12 +931,12 @@ proxy_output[0] = IntPtr.Zero;
 if (output_size > 0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_output, (IntPtr)output_size, hStream));
-proxy_output[0] = d_output;
 fixed (global::System.Single* p_output = output)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoDAsync_v2(d_output, (IntPtr)p_output, (IntPtr)output_size, hStream));
 CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
 }
+proxy_output[0] = d_output;
 }
 kernelParams[0] = proxy_output;
 CudaException.ThrowIfError(CudaDriverApi.cuLaunchKernel(
@@ -1041,12 +1068,12 @@ proxy_output[0] = IntPtr.Zero;
 if (output_size > 0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_output, (IntPtr)output_size, hStream));
-proxy_output[0] = d_output;
 fixed (global::System.Int32* p_output = output)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoDAsync_v2(d_output, (IntPtr)p_output, (IntPtr)output_size, hStream));
 CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
 }
+proxy_output[0] = d_output;
 }
 kernelParams[0] = proxy_output;
 CudaException.ThrowIfError(CudaDriverApi.cuLaunchKernel(
@@ -1190,12 +1217,12 @@ proxy_output[0] = IntPtr.Zero;
 if (output_size > 0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_output, (IntPtr)output_size, hStream));
-proxy_output[0] = d_output;
 fixed (global::System.Int32* p_output = output)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoDAsync_v2(d_output, (IntPtr)p_output, (IntPtr)output_size, hStream));
 CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
 }
+proxy_output[0] = d_output;
 }
 kernelParams[0] = proxy_output;
 CudaException.ThrowIfError(CudaDriverApi.cuLaunchKernel(
@@ -1315,12 +1342,12 @@ proxy_output[0] = IntPtr.Zero;
 if (output_size > 0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_output, (IntPtr)output_size, hStream));
-proxy_output[0] = d_output;
 fixed (global::System.Single* p_output = output)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoDAsync_v2(d_output, (IntPtr)p_output, (IntPtr)output_size, hStream));
 CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
 }
+proxy_output[0] = d_output;
 }
 kernelParams[0] = proxy_output;
 CudaException.ThrowIfError(CudaDriverApi.cuLaunchKernel(
@@ -1440,12 +1467,12 @@ proxy_output[0] = IntPtr.Zero;
 if (output_size > 0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_output, (IntPtr)output_size, hStream));
-proxy_output[0] = d_output;
 fixed (global::System.Single* p_output = output)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoDAsync_v2(d_output, (IntPtr)p_output, (IntPtr)output_size, hStream));
 CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
 }
+proxy_output[0] = d_output;
 }
 kernelParams[0] = proxy_output;
 CudaException.ThrowIfError(CudaDriverApi.cuLaunchKernel(
@@ -1557,12 +1584,12 @@ proxy_values[0] = IntPtr.Zero;
 if (values_size > 0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_values, (IntPtr)values_size, hStream));
-proxy_values[0] = d_values;
 fixed (global::System.Int32* p_values = values)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoDAsync_v2(d_values, (IntPtr)p_values, (IntPtr)values_size, hStream));
 CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
 }
+proxy_values[0] = d_values;
 }
 kernelParams[0] = proxy_values;
 // Marshal array: output
@@ -1572,13 +1599,20 @@ proxy_output[0] = IntPtr.Zero;
 ((int*)(proxy_output + 1))[0] = output.Length;
 if (output_size > 0)
 {
+if (global::System.Object.ReferenceEquals(output, values))
+{
+d_output = d_values;
+}
+else
+{
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_output, (IntPtr)output_size, hStream));
-proxy_output[0] = d_output;
 fixed (global::System.Int32* p_output = output)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoDAsync_v2(d_output, (IntPtr)p_output, (IntPtr)output_size, hStream));
 CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
 }
+}
+proxy_output[0] = d_output;
 }
 kernelParams[1] = proxy_output;
 CudaException.ThrowIfError(CudaDriverApi.cuLaunchKernel(
@@ -1600,7 +1634,7 @@ CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
 }
 }
 // Copy back array: output
-if (output_size > 0 && d_output != IntPtr.Zero)
+if (output_size > 0 && d_output != IntPtr.Zero && !global::System.Object.ReferenceEquals(output, values))
 {
 fixed (global::System.Int32* p_output = output)
 {
@@ -1612,7 +1646,7 @@ CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
 finally
 {
 if (d_values != IntPtr.Zero) CudaDriverApi.cuMemFreeAsync(d_values, hStream);
-if (d_output != IntPtr.Zero) CudaDriverApi.cuMemFreeAsync(d_output, hStream);
+if (d_output != IntPtr.Zero && d_output != d_values) CudaDriverApi.cuMemFreeAsync(d_output, hStream);
 }
 }
 }
@@ -1714,12 +1748,12 @@ proxy_output[0] = IntPtr.Zero;
 if (output_size > 0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_output, (IntPtr)output_size, hStream));
-proxy_output[0] = d_output;
 fixed (global::System.Single* p_output = output)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoDAsync_v2(d_output, (IntPtr)p_output, (IntPtr)output_size, hStream));
 CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
 }
+proxy_output[0] = d_output;
 }
 kernelParams[0] = proxy_output;
 CudaException.ThrowIfError(CudaDriverApi.cuLaunchKernel(
@@ -1824,12 +1858,12 @@ proxy_output[0] = IntPtr.Zero;
 if (output_size > 0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_output, (IntPtr)output_size, hStream));
-proxy_output[0] = d_output;
 fixed (global::System.Int32* p_output = output)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoDAsync_v2(d_output, (IntPtr)p_output, (IntPtr)output_size, hStream));
 CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
 }
+proxy_output[0] = d_output;
 }
 kernelParams[0] = proxy_output;
 CudaException.ThrowIfError(CudaDriverApi.cuLaunchKernel(
