@@ -130,7 +130,8 @@ public class CoreIntrinsicsTests
         var expected = new SortedSet<string>(StringComparer.Ordinal);
         foreach (var method in definition.Methods)
         {
-            if (method.ManagedName is null)
+            // Warp.ActiveMask forwards to ManagedGpuContext; its host invocation is checked with the other warp intrinsics
+            if (method.ManagedName is null || !method.ManagedName.StartsWith("ManagedAtomics.", StringComparison.Ordinal))
             {
                 continue;
             }

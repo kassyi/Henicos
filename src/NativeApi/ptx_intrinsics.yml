@@ -184,9 +184,10 @@ methods:
   - name: ActiveMask
     className: Warp
     nativeName: __activemask
+    managed: ManagedGpuContext.ActiveMask
     summary: Returns a 32-bit mask of all currently active threads in the calling warp.
     returnType: uint
-    returnDescription: A 32-bit bitmask where bit i corresponds to active lane i.
+    returnDescription: A 32-bit bitmask where bit i corresponds to active lane i. The CPU paths return every lane of the warp that exists in the block, which is the GPU result where every lane reaches the call; GSH0101 reports a call under a thread-dependent condition on the CPU dialects.
 
   - name: ShuffleSync
     className: Warp
