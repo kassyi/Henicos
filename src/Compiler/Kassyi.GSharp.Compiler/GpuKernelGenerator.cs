@@ -371,10 +371,19 @@ public class GpuKernelGenerator : IIncrementalGenerator
                     managedCSharpSource = MethodTranspiler.GenerateManagedDeviceFunctionSource(in plan);
                 }
             }
+            else if (plan.HasManagedVersion)
+            {
+                // A function that does not suspend and expands an operator macro (or calls one that does) runs from its
+                // managed version on the managed path (#711)
+                managedCSharpSource = MethodTranspiler.GenerateManagedVersionSource(in plan);
+            }
 
             var frames = new EquatableArray<string>(frameDependencies.ToImmutable());
             var compilation = context.SemanticModel.Compilation;
-            var hasManagedStateMachine = managedCSharpSource.Length > 0;
+            var hasManagedStateMachine = plan.Kind == MethodEmissionKind.SuspendingDeviceFunction &&
+                                         managedCSharpSource.Length > 0;
+            var hasManagedVersion = plan.Kind != MethodEmissionKind.SuspendingDeviceFunction &&
+                                    managedCSharpSource.Length > 0;
             DeviceExportRecord export = default;
             var structExports = default(EquatableArray<DeviceExportRecord>);
             // [WHY] The records are built apart from the transpilation: an exception there fails the records (with the
@@ -389,7 +398,7 @@ public class GpuKernelGenerator : IIncrementalGenerator
                             ToIncludes(requiredIncludesCuda), compilation, isCuda: true),
                         ExportedText(cppSignature, cppSource, cppStructs, cppFailures.HasFailures,
                             ToIncludes(requiredIncludesCpp), compilation, isCuda: false),
-                        frameName, frames, hasManagedStateMachine);
+                        frameName, frames, hasManagedStateMachine, hasManagedVersion);
                 structExports = DeviceExportEmitter.CreateStructRecords(compilation, cudaStructs, cppStructs);
             }
             catch (Exception exception) when (exception is not OperationCanceledException)
@@ -490,7 +499,7 @@ public class GpuKernelGenerator : IIncrementalGenerator
 
     private static DeviceExportRecord CreateFunctionRecord(IMethodSymbol method, Compilation compilation,
         ExportedFunctionText cuda, ExportedFunctionText cpp, string frameName, EquatableArray<string> frameDependencies,
-        bool hasManagedStateMachine)
+        bool hasManagedStateMachine, bool hasManagedVersion)
     {
         var cppName = GlobalCppNames.GetFunctionName(method);
         var sites = DynamicSharedMemoryAnalysis.GetReachableSites(method, compilation);
@@ -536,6 +545,7 @@ public class GpuKernelGenerator : IIncrementalGenerator
             cpp.Failed,
             // The records and the state machines are emitted together (GSharpExportDeviceCode)
             ManagedStateMachine: hasManagedStateMachine,
+            ManagedVersion: hasManagedVersion,
             "",
             divergence.ConditionParameters,
             divergence.ExitOnlyParameters,
@@ -713,10 +723,11 @@ public class GpuKernelGenerator : IIncrementalGenerator
         context.AddSource(model.Class.HintName, SourceText.From(wrapperSource, Encoding.UTF8));
     }
 
-    // The managed fallback runs the state machines of the device functions that may suspend; they are emitted into the
-    // partial class that declares each function. [WHY] An assembly that exports its device code emits them whatever its
-    // dialect and whether it has kernels: the managed fallback of a consumer on the CPU dialect calls them
-    // (DeviceExportRecord.ManagedStateMachine, cross-assembly-device-code.md §3.7)
+    // The managed fallback runs the state machines of the device functions that may suspend and the managed versions of
+    // those that expand an operator macro (#711); they are emitted into the partial class that declares each function.
+    // [WHY] An assembly that exports its device code emits them whatever its dialect and whether it has kernels: the
+    // managed fallback of a consumer on the CPU dialect calls them (DeviceExportRecord.ManagedStateMachine and
+    // ManagedVersion, cross-assembly-device-code.md §3.7)
     private static void EmitDeviceStateMachines(SourceProductionContext context, DeviceStateMachineGroup group,
         GeneratorConfig config, bool hasKernels, bool referencesStackLinq)
     {

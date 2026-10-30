@@ -34,6 +34,7 @@ internal readonly record struct DeviceExportRecord(
     bool CudaFailed,
     bool CppFailed,
     bool ManagedStateMachine,
+    bool ManagedVersion,
     string InternalError,
     int DivergentConditionParameters = 0,
     int DivergentExitOnlyParameters = 0,

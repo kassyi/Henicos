@@ -372,6 +372,42 @@ public class DeviceExportTests
 
     private static readonly string s_structs = RoslynTestUtility.ReadTestCase("Generators/DeviceExportStructs.cs");
 
+    private static readonly string s_managedVersions =
+        RoslynTestUtility.ReadTestCase("Generators/DeviceExportManagedVersionLibrary.cs");
+
+    // #711: a library emits the managed versions of its functions that expand an operator macro on every dialect, with
+    // the function's own accessibility, and records which functions have one; a consumer's managed code calls them
+    [Theory]
+    [InlineData("Cpu")]
+    [InlineData("Cuda")]
+    [Scenario(TestScenario.HappyPath)]
+    public void Test_Library_RecordsAndEmitsManagedVersions(string dialect)
+    {
+        var records = Run(dialect, out var result, out var output, s_managedVersions);
+
+        Assert.Null(result.Exception);
+        Assert.Empty(output.GetDiagnostics().Where(static d => d.Severity == DiagnosticSeverity.Error));
+        bool HasManagedVersion(string name) =>
+            records.Single(r => r.Id.StartsWith($"M:DeviceExportManagedVersionCase.Ops.{name}(", StringComparison.Ordinal))
+                .GetBool("ManagedVersion");
+        Assert.True(HasManagedVersion("Twice"));
+        Assert.True(HasManagedVersion("AddTwice"));
+        Assert.False(HasManagedVersion("Add"));
+        Assert.False(HasManagedVersion("Plain"));
+        Assert.All(records, static r => Assert.False(r.GetBool("ManagedStateMachine"), r.Id));
+
+        var versions = Assert.Single(result.GeneratedSources,
+            static s => s.HintName == "DeviceExportManagedVersionCase__Ops.DeviceStateMachines.g.cs").SourceText.ToString();
+        Assert.Contains(
+            "internal static int __gsharp_managed_DeviceExportManagedVersionCase__Ops__Twice(ref global::DeviceExportManagedVersionCase.Counter counter, int a)",
+            versions, StringComparison.Ordinal);
+        Assert.Contains(
+            "public static int __gsharp_managed_DeviceExportManagedVersionCase__Ops__AddTwice(ref global::DeviceExportManagedVersionCase.Counter counter, int a)",
+            versions, StringComparison.Ordinal);
+        Assert.DoesNotContain("__gsharp_managed_DeviceExportManagedVersionCase__Ops__Plain", versions,
+            StringComparison.Ordinal);
+    }
+
     private static List<ExportedRecord> RunStructs(string dialect)
     {
         var records = Run(dialect, out var result, out var output, s_structs);

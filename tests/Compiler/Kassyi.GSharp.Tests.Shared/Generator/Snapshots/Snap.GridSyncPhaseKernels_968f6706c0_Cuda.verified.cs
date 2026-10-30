@@ -82,10 +82,12 @@ namespace Kassyi.GSharp.Tests.Shared.Core
 {
 public partial class GridSyncPhaseKernels
 {
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_frame_Kassyi__GSharp__Tests__Shared__Core__GridSyncPhaseKernels__WaitForGrid {
 internal int __gsharp_state;
 internal uint __gsharp_warp_exchange;
 }
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static bool __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Core__GridSyncPhaseKernels__WaitForGrid(__gsharp_frame_Kassyi__GSharp__Tests__Shared__Core__GridSyncPhaseKernels__WaitForGrid __gsharp_ctx) {
 {
 switch (__gsharp_ctx.__gsharp_state)
