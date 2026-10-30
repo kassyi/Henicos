@@ -85,6 +85,12 @@ internal sealed class GpuKernelValidationWalker : PooledWalker<GpuKernelValidati
     private static readonly ImmutableArray<ISyntaxValidationRule<DestructorDeclarationSyntax>> s_destructorRules =
         DiagnosticRuleRegistry.Rules.OfType<ISyntaxValidationRule<DestructorDeclarationSyntax>>().ToImmutableArray();
 
+    private static readonly ImmutableArray<ISyntaxValidationRule<CheckedExpressionSyntax>> s_checkedExpressionRules =
+        DiagnosticRuleRegistry.Rules.OfType<ISyntaxValidationRule<CheckedExpressionSyntax>>().ToImmutableArray();
+
+    private static readonly ImmutableArray<ISyntaxValidationRule<CheckedStatementSyntax>> s_checkedStatementRules =
+        DiagnosticRuleRegistry.Rules.OfType<ISyntaxValidationRule<CheckedStatementSyntax>>().ToImmutableArray();
+
     public override void VisitMethodDeclaration(MethodDeclarationSyntax node)
     {
         foreach (var rule in s_methodRules)
@@ -292,6 +298,26 @@ internal sealed class GpuKernelValidationWalker : PooledWalker<GpuKernelValidati
         }
 
         base.VisitImplicitObjectCreationExpression(node);
+    }
+
+    public override void VisitCheckedExpression(CheckedExpressionSyntax node)
+    {
+        foreach (var rule in s_checkedExpressionRules)
+        {
+            rule.Analyze(node, ref _context);
+        }
+
+        base.VisitCheckedExpression(node);
+    }
+
+    public override void VisitCheckedStatement(CheckedStatementSyntax node)
+    {
+        foreach (var rule in s_checkedStatementRules)
+        {
+            rule.Analyze(node, ref _context);
+        }
+
+        base.VisitCheckedStatement(node);
     }
 
     public override void VisitSwitchExpressionArm(SwitchExpressionArmSyntax node)

@@ -94,7 +94,7 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-__gsharp_id_0_data[threadIdx.x]=__gsharp_id_1_pair.__gsharp_mb_A;
+__gsharp_id_0_data[(int)threadIdx.x]=__gsharp_id_1_pair.__gsharp_mb_A;
 __gsharp_state=-1;
 return;
 }
@@ -351,7 +351,7 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-__gsharp_id_0_data[threadIdx.x]=__gsharp_id_1_pair.__gsharp_mb_A+1;
+__gsharp_id_0_data[(int)threadIdx.x]=__gsharp_add_i32(__gsharp_id_1_pair.__gsharp_mb_A,1);
 __gsharp_state=-1;
 return;
 }
@@ -608,7 +608,7 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-__gsharp_id_0_data[threadIdx.x]=__gsharp_id_1_box.__gsharp_mb_Value;
+__gsharp_id_0_data[(int)threadIdx.x]=__gsharp_id_1_box.__gsharp_mb_Value;
 __gsharp_state=-1;
 return;
 }

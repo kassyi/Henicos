@@ -104,13 +104,13 @@ static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__Packet
 static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__PacketItem,__gsharp_mb_Payload)==8,""Kassyi.GSharp.Tests.Shared.Syntax.PacketItem.Payload: offset"");
 #endif
 extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__EnumTypeKernels__EvaluatePacketsKernel(GSharpArray<__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__PacketItem> __gsharp_id_0_items, int __gsharp_id_1_bonusColor, GSharpArray<int> __gsharp_id_2_output){
-int __gsharp_id_3_tid = threadIdx.x;
+int __gsharp_id_3_tid = (int)threadIdx.x;
 __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__PacketItem __gsharp_id_4_item = __gsharp_id_0_items[__gsharp_id_3_tid];
 int __gsharp_id_5_localColor = __gsharp_id_4_item.__gsharp_mb_Color;
 unsigned int __gsharp_id_6_localFlags = __gsharp_id_4_item.__gsharp_mb_Flags;
 if((__gsharp_id_6_localFlags&1U)!=0U)
 {
-__gsharp_id_2_output[__gsharp_id_3_tid]=__gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__EnumTypeKernels__ScoreColor(__gsharp_id_5_localColor)+((__gsharp_id_5_localColor==__gsharp_id_1_bonusColor?100:0))+__gsharp_id_4_item.__gsharp_mb_Payload;
+__gsharp_id_2_output[__gsharp_id_3_tid]=__gsharp_add_i32(__gsharp_add_i32(__gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__EnumTypeKernels__ScoreColor(__gsharp_id_5_localColor),(__gsharp_id_5_localColor==__gsharp_id_1_bonusColor?100:0)),__gsharp_id_4_item.__gsharp_mb_Payload);
 }
 else
 {

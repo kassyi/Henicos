@@ -58,8 +58,8 @@ internal static class GSharpSharedCudaDeviceCode
 public const string Source = @"inline __device__ void __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__ExpressionsSnapshotKernels__HelperMethod(int* __gsharp_id_0_x, int* __gsharp_id_1_y);
 
 inline __device__ void __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__ExpressionsSnapshotKernels__HelperMethod(int* __gsharp_id_0_x, int* __gsharp_id_1_y){
-(*__gsharp_id_1_y)=(*__gsharp_id_0_x)*2;
-(*__gsharp_id_0_x)+=1;
+(*__gsharp_id_1_y)=__gsharp_mul_i32((*__gsharp_id_0_x),2);
+(*__gsharp_id_0_x)=__gsharp_add_i32((*__gsharp_id_0_x),1);
 }
 
 ";
@@ -90,14 +90,14 @@ public static partial class AotContexts
 {
 }
 public const string BasicExpressionsKernel_Source = @"extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__ExpressionsSnapshotKernels__BasicExpressionsKernel(GSharpArray<int> __gsharp_id_0_output, float __gsharp_id_1_fVal, double __gsharp_id_2_dVal){
-int __gsharp_id_3_a = (int)(__gsharp_id_1_fVal+(float)__gsharp_id_2_dVal);
-int __gsharp_id_4_b = __gsharp_id_3_a<<2;
+int __gsharp_id_3_a = __gsharp_to_i32(__gsharp_id_1_fVal+(float)__gsharp_id_2_dVal);
+int __gsharp_id_4_b = __gsharp_shl_i32(__gsharp_id_3_a,2);
 int __gsharp_id_5_c = __gsharp_id_4_b^0xFF;
 int __gsharp_id_6_refArg = __gsharp_id_5_c;
 int __gsharp_id_7_outArg;
 __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__ExpressionsSnapshotKernels__HelperMethod(&__gsharp_id_6_refArg,&__gsharp_id_7_outArg);
-int __gsharp_id_8_tidX = threadIdx.x;
-__gsharp_id_0_output[__gsharp_id_8_tidX]=__gsharp_id_6_refArg+__gsharp_id_7_outArg;
+int __gsharp_id_8_tidX = (int)threadIdx.x;
+__gsharp_id_0_output[__gsharp_id_8_tidX]=__gsharp_add_i32(__gsharp_id_6_refArg,__gsharp_id_7_outArg);
 }
 ";
 public static readonly string BasicExpressionsKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +BasicExpressionsKernel_Source;

@@ -253,10 +253,10 @@ host.B = native.B;
 #pragma warning restore CS8500
 }
 public const string TwoArgumentsKernel_Source = @"extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Core__SharedArrayArgumentKernels__TwoArgumentsKernel(GSharpArray<int> __gsharp_id_0_a, GSharpArray<int> __gsharp_id_1_b){
-if(threadIdx.x==0)
+if((int)threadIdx.x==0)
 {
 __gsharp_id_0_a[0]=5;
-__gsharp_id_1_b[1]=__gsharp_id_1_b[0]+__gsharp_id_0_a[0];
+__gsharp_id_1_b[1]=__gsharp_add_i32(__gsharp_id_1_b[0],__gsharp_id_0_a[0]);
 }
 }
 ";
@@ -411,7 +411,7 @@ finally
 }
 #pragma warning restore CS8500
 public const string OptionalArgumentsKernel_Source = @"extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Core__SharedArrayArgumentKernels__OptionalArgumentsKernel(GSharpArray<int> __gsharp_id_0_a, GSharpArray<int> __gsharp_id_1_b, GSharpArray<int> __gsharp_id_2_lengths){
-if(threadIdx.x==0)
+if((int)threadIdx.x==0)
 {
 __gsharp_id_2_lengths[0]=__gsharp_id_0_a.length;
 __gsharp_id_2_lengths[1]=__gsharp_id_1_b.length;
@@ -623,10 +623,10 @@ static_assert(alignof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Core__SharedArr
 static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Core__SharedArrayHolder,__gsharp_mb_Data)==0,""Kassyi.GSharp.Tests.Shared.Core.SharedArrayHolder.Data: offset"");
 #endif
 extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Core__SharedArrayArgumentKernels__FieldAndArgumentKernel(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Core__SharedArrayHolder __gsharp_id_0_h, GSharpArray<int> __gsharp_id_1_a){
-if(threadIdx.x==0)
+if((int)threadIdx.x==0)
 {
 __gsharp_id_0_h.__gsharp_mb_Data[0]=4;
-__gsharp_id_1_a[1]=__gsharp_id_1_a[0]+__gsharp_id_0_h.__gsharp_mb_Data[0];
+__gsharp_id_1_a[1]=__gsharp_add_i32(__gsharp_id_1_a[0],__gsharp_id_0_h.__gsharp_mb_Data[0]);
 }
 }
 ";
@@ -748,10 +748,10 @@ finally
 }
 #pragma warning restore CS8500
 public const string ReadOnlyAndWritableKernel_Source = @"extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Core__SharedArrayArgumentKernels__ReadOnlyAndWritableKernel(GSharpArray<const int> __gsharp_id_0_r, GSharpArray<int> __gsharp_id_1_w){
-if(threadIdx.x==0)
+if((int)threadIdx.x==0)
 {
 __gsharp_id_1_w[0]=6;
-__gsharp_id_1_w[1]=__gsharp_id_0_r[0]+1;
+__gsharp_id_1_w[1]=__gsharp_add_i32(__gsharp_id_0_r[0],1);
 }
 }
 ";
@@ -906,10 +906,10 @@ finally
 }
 #pragma warning restore CS8500
 public const string InAndWritableKernel_Source = @"extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Core__SharedArrayArgumentKernels__InAndWritableKernel(GSharpArray<int> __gsharp_id_0_input, GSharpArray<int> __gsharp_id_1_output){
-if(threadIdx.x==0)
+if((int)threadIdx.x==0)
 {
 __gsharp_id_1_output[0]=2;
-__gsharp_id_1_output[1]=__gsharp_id_0_input[0]+1;
+__gsharp_id_1_output[1]=__gsharp_add_i32(__gsharp_id_0_input[0],1);
 }
 }
 ";
@@ -1056,9 +1056,9 @@ finally
 }
 #pragma warning restore CS8500
 public const string OutBeforeInKernel_Source = @"extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Core__SharedArrayArgumentKernels__OutBeforeInKernel(GSharpArray<int> __gsharp_id_0_output, GSharpArray<int> __gsharp_id_1_input){
-if(threadIdx.x==0)
+if((int)threadIdx.x==0)
 {
-__gsharp_id_0_output[1]=__gsharp_id_1_input[0]+1;
+__gsharp_id_0_output[1]=__gsharp_add_i32(__gsharp_id_1_input[0],1);
 }
 }
 ";
@@ -1201,7 +1201,7 @@ finally
 }
 #pragma warning restore CS8500
 public const string TwoInKernel_Source = @"extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Core__SharedArrayArgumentKernels__TwoInKernel(GSharpArray<int> __gsharp_id_0_first, GSharpArray<int> __gsharp_id_1_second, GSharpArray<int> __gsharp_id_2_result){
-if(threadIdx.x==0)
+if((int)threadIdx.x==0)
 {
 __gsharp_id_0_first[0]=9;
 __gsharp_id_2_result[0]=__gsharp_id_1_second[0];
@@ -1403,11 +1403,11 @@ static_assert(alignof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Core__SharedArr
 static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Core__SharedArrayHolder,__gsharp_mb_Data)==0,""Kassyi.GSharp.Tests.Shared.Core.SharedArrayHolder.Data: offset"");
 #endif
 extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Core__SharedArrayArgumentKernels__ThreeHoldersKernel(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Core__SharedArrayHolder __gsharp_id_0_h, GSharpArray<int> __gsharp_id_1_a, GSharpArray<int> __gsharp_id_2_b){
-if(threadIdx.x==0)
+if((int)threadIdx.x==0)
 {
 __gsharp_id_0_h.__gsharp_mb_Data[0]=1;
-__gsharp_id_1_a[1]=__gsharp_id_0_h.__gsharp_mb_Data[0]+1;
-__gsharp_id_1_a[2]=__gsharp_id_2_b[0]+__gsharp_id_2_b[1]+1;
+__gsharp_id_1_a[1]=__gsharp_add_i32(__gsharp_id_0_h.__gsharp_mb_Data[0],1);
+__gsharp_id_1_a[2]=__gsharp_add_i32(__gsharp_add_i32(__gsharp_id_2_b[0],__gsharp_id_2_b[1]),1);
 }
 }
 ";
@@ -1575,10 +1575,10 @@ static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Core__ConvertB
 static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Core__ConvertBag,__gsharp_mb_Data)==8,""Kassyi.GSharp.Tests.Shared.Core.ConvertBag.Data: offset"");
 #endif
 extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Core__SharedArrayArgumentKernels__ConvertedArgumentsKernel(GSharpArray<__gsharp_ty_Kassyi__GSharp__Tests__Shared__Core__ConvertBag> __gsharp_id_0_first, GSharpArray<__gsharp_ty_Kassyi__GSharp__Tests__Shared__Core__ConvertBag> __gsharp_id_1_second){
-if(threadIdx.x==0)
+if((int)threadIdx.x==0)
 {
 __gsharp_id_0_first[0].__gsharp_mb_N=7;
-__gsharp_id_1_second[1].__gsharp_mb_N=__gsharp_id_1_second[0].__gsharp_mb_N+__gsharp_id_0_first[0].__gsharp_mb_N;
+__gsharp_id_1_second[1].__gsharp_mb_N=__gsharp_add_i32(__gsharp_id_1_second[0].__gsharp_mb_N,__gsharp_id_0_first[0].__gsharp_mb_N);
 }
 }
 ";
@@ -1785,10 +1785,10 @@ static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Core__SharedAr
 static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Core__SharedArrayAutoElement,__gsharp_mb_B)==8,""Kassyi.GSharp.Tests.Shared.Core.SharedArrayAutoElement.B: offset"");
 #endif
 extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Core__SharedArrayArgumentKernels__ConvertedNoArrayArgumentsKernel(GSharpArray<__gsharp_ty_Kassyi__GSharp__Tests__Shared__Core__SharedArrayAutoElement> __gsharp_id_0_first, GSharpArray<__gsharp_ty_Kassyi__GSharp__Tests__Shared__Core__SharedArrayAutoElement> __gsharp_id_1_second){
-if(threadIdx.x==0)
+if((int)threadIdx.x==0)
 {
 __gsharp_id_0_first[0].__gsharp_mb_B=7;
-__gsharp_id_1_second[1].__gsharp_mb_B=__gsharp_id_1_second[0].__gsharp_mb_B+__gsharp_id_0_first[0].__gsharp_mb_B;
+__gsharp_id_1_second[1].__gsharp_mb_B=__gsharp_add_i64(__gsharp_id_1_second[0].__gsharp_mb_B,__gsharp_id_0_first[0].__gsharp_mb_B);
 }
 }
 ";
@@ -1973,7 +1973,7 @@ finally
 }
 #pragma warning restore CS8500
 public const string InIntAndWritableUIntKernel_Source = @"extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Core__SharedArrayArgumentKernels__InIntAndWritableUIntKernel(GSharpArray<int> __gsharp_id_0_input, GSharpArray<unsigned int> __gsharp_id_1_output){
-if(threadIdx.x==0)
+if((int)threadIdx.x==0)
 {
 __gsharp_id_1_output[0]=5;
 __gsharp_id_1_output[1]=(unsigned int)__gsharp_id_0_input[0]/5u;
@@ -2123,10 +2123,10 @@ finally
 }
 #pragma warning restore CS8500
 public const string InEnumAndWritableIntKernel_Source = @"extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Core__SharedArrayArgumentKernels__InEnumAndWritableIntKernel(GSharpArray<int> __gsharp_id_0_tags, GSharpArray<int> __gsharp_id_1_values){
-if(threadIdx.x==0)
+if((int)threadIdx.x==0)
 {
 __gsharp_id_1_values[0]=3;
-__gsharp_id_1_values[1]=(int)__gsharp_id_0_tags[0]+1;
+__gsharp_id_1_values[1]=__gsharp_add_i32((int)__gsharp_id_0_tags[0],1);
 }
 }
 ";
@@ -2273,11 +2273,11 @@ finally
 }
 #pragma warning restore CS8500
 public const string ThreeArgumentsPartialKernel_Source = @"extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Core__SharedArrayArgumentKernels__ThreeArgumentsPartialKernel(GSharpArray<int> __gsharp_id_0_a, GSharpArray<int> __gsharp_id_1_b, GSharpArray<int> __gsharp_id_2_w){
-if(threadIdx.x==0)
+if((int)threadIdx.x==0)
 {
 __gsharp_id_1_b[1]=9;
 __gsharp_id_2_w[0]=5;
-__gsharp_id_2_w[1]=__gsharp_id_0_a[0]+__gsharp_id_1_b[0];
+__gsharp_id_2_w[1]=__gsharp_add_i32(__gsharp_id_0_a[0],__gsharp_id_1_b[0]);
 }
 }
 ";
@@ -2465,9 +2465,9 @@ finally
 }
 #pragma warning restore CS8500
 public const string OutAmongThreeKernel_Source = @"extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Core__SharedArrayArgumentKernels__OutAmongThreeKernel(GSharpArray<int> __gsharp_id_0_a, GSharpArray<int> __gsharp_id_1_o, GSharpArray<int> __gsharp_id_2_c){
-if(threadIdx.x==0)
+if((int)threadIdx.x==0)
 {
-__gsharp_id_1_o[1]=__gsharp_id_0_a[0]+__gsharp_id_2_c[0];
+__gsharp_id_1_o[1]=__gsharp_add_i32(__gsharp_id_0_a[0],__gsharp_id_2_c[0]);
 __gsharp_id_2_c[1]=__gsharp_id_1_o[1];
 }
 }
@@ -2668,7 +2668,7 @@ finally
 }
 #pragma warning restore CS8500
 public const string TwoInDifferentTypesKernel_Source = @"extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Core__SharedArrayArgumentKernels__TwoInDifferentTypesKernel(GSharpArray<int> __gsharp_id_0_first, GSharpArray<unsigned int> __gsharp_id_1_second, GSharpArray<unsigned int> __gsharp_id_2_result){
-if(threadIdx.x==0)
+if((int)threadIdx.x==0)
 {
 __gsharp_id_0_first[0]=9;
 __gsharp_id_2_result[0]=__gsharp_id_1_second[0];
@@ -2870,11 +2870,11 @@ static_assert(alignof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Core__SharedArr
 static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Core__SharedArrayHolder,__gsharp_mb_Data)==0,""Kassyi.GSharp.Tests.Shared.Core.SharedArrayHolder.Data: offset"");
 #endif
 extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Core__SharedArrayArgumentKernels__InAndFieldKernel(GSharpArray<int> __gsharp_id_0_input, __gsharp_ty_Kassyi__GSharp__Tests__Shared__Core__SharedArrayHolder __gsharp_id_1_h){
-if(threadIdx.x==0)
+if((int)threadIdx.x==0)
 {
 __gsharp_id_0_input[1]=9;
 __gsharp_id_1_h.__gsharp_mb_Data[0]=4;
-__gsharp_id_1_h.__gsharp_mb_Data[1]=__gsharp_id_0_input[0]+__gsharp_id_1_h.__gsharp_mb_Data[1];
+__gsharp_id_1_h.__gsharp_mb_Data[1]=__gsharp_add_i32(__gsharp_id_0_input[0],__gsharp_id_1_h.__gsharp_mb_Data[1]);
 }
 }
 ";
@@ -3001,10 +3001,10 @@ static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Core__ConvertB
 static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Core__ConvertBag,__gsharp_mb_Data)==8,""Kassyi.GSharp.Tests.Shared.Core.ConvertBag.Data: offset"");
 #endif
 extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Core__SharedArrayArgumentKernels__InAndElementFieldKernel(GSharpArray<int> __gsharp_id_0_input, GSharpArray<__gsharp_ty_Kassyi__GSharp__Tests__Shared__Core__ConvertBag> __gsharp_id_1_bags){
-if(threadIdx.x==0)
+if((int)threadIdx.x==0)
 {
 __gsharp_id_1_bags[0].__gsharp_mb_Data[0]=6;
-__gsharp_id_1_bags[0].__gsharp_mb_Data[1]=__gsharp_id_0_input[0]+1;
+__gsharp_id_1_bags[0].__gsharp_mb_Data[1]=__gsharp_add_i32(__gsharp_id_0_input[0],1);
 }
 }
 ";

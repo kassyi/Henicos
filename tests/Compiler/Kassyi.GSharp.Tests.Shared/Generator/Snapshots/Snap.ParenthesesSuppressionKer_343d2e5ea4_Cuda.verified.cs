@@ -95,7 +95,7 @@ if((__gsharp_id_1_a&__gsharp_id_2_b)==__gsharp_id_3_c)
 {
 __gsharp_id_0_output[1]=10;
 }
-__gsharp_id_0_output[2]=__gsharp_id_1_a*(__gsharp_id_2_b+__gsharp_id_3_c);
+__gsharp_id_0_output[2]=__gsharp_mul_i32(__gsharp_id_1_a,__gsharp_add_i32(__gsharp_id_2_b,__gsharp_id_3_c));
 }
 ";
 public static readonly string ParenthesesKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +ParenthesesKernel_Source;

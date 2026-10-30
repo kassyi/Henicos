@@ -51,7 +51,7 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-auto __gsharp_id_3_idx = blockIdx.x*blockDim.x+threadIdx.x;
+auto __gsharp_id_3_idx = __gsharp_add_i32(__gsharp_mul_i32((int)blockIdx.x,(int)blockDim.x),(int)threadIdx.x);
 if(__gsharp_id_3_idx<__gsharp_id_2_n)
 {
 __gsharp_id_1_dst[__gsharp_id_3_idx]=__gsharp_id_0_src[__gsharp_id_3_idx];

@@ -234,10 +234,10 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-if(threadIdx.x==0)
+if((int)threadIdx.x==0)
 {
 __gsharp_id_0_p.__gsharp_mb_A[0]=1;
-__gsharp_id_0_p.__gsharp_mb_B[1]=__gsharp_id_0_p.__gsharp_mb_A[0]+__gsharp_id_0_p.__gsharp_mb_B[0];
+__gsharp_id_0_p.__gsharp_mb_B[1]=__gsharp_add_i32(__gsharp_id_0_p.__gsharp_mb_A[0],__gsharp_id_0_p.__gsharp_mb_B[0]);
 }
 __gsharp_state=-1;
 return;
@@ -492,10 +492,10 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-if(threadIdx.x==0)
+if((int)threadIdx.x==0)
 {
 __gsharp_id_0_first.__gsharp_mb_Data[0]=3;
-__gsharp_id_1_second.__gsharp_mb_Data[1]=__gsharp_id_0_first.__gsharp_mb_Data[0]+__gsharp_id_1_second.__gsharp_mb_Data[0];
+__gsharp_id_1_second.__gsharp_mb_Data[1]=__gsharp_add_i32(__gsharp_id_0_first.__gsharp_mb_Data[0],__gsharp_id_1_second.__gsharp_mb_Data[0]);
 }
 __gsharp_state=-1;
 return;
@@ -758,10 +758,10 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-if(threadIdx.x==0)
+if((int)threadIdx.x==0)
 {
 __gsharp_id_0_bags[0].__gsharp_mb_Data[0]=5;
-__gsharp_id_0_bags[1].__gsharp_mb_Data[1]=__gsharp_id_0_bags[0].__gsharp_mb_Data[0]+__gsharp_id_0_bags[1].__gsharp_mb_Data[0];
+__gsharp_id_0_bags[1].__gsharp_mb_Data[1]=__gsharp_add_i32(__gsharp_id_0_bags[0].__gsharp_mb_Data[0],__gsharp_id_0_bags[1].__gsharp_mb_Data[0]);
 }
 __gsharp_state=-1;
 return;

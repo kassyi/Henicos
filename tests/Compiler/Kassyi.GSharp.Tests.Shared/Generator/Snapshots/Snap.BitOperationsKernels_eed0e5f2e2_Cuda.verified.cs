@@ -84,7 +84,7 @@ public static partial class AotContexts
 {
 }
 public const string Rotate32Kernel_Source = @"extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__BitOperationsKernels__Rotate32Kernel(GSharpArray<unsigned int> __gsharp_id_0_val, GSharpArray<int> __gsharp_id_1_shift, GSharpArray<unsigned int> __gsharp_id_2_rotLeftRes, GSharpArray<unsigned int> __gsharp_id_3_rotRightRes){
-int __gsharp_id_4_tid = threadIdx.x;
+int __gsharp_id_4_tid = (int)threadIdx.x;
 __gsharp_id_2_rotLeftRes[__gsharp_id_4_tid]=__gsharp_rotl32(__gsharp_id_0_val[__gsharp_id_4_tid],__gsharp_id_1_shift[__gsharp_id_4_tid]);
 __gsharp_id_3_rotRightRes[__gsharp_id_4_tid]=__gsharp_rotr32(__gsharp_id_0_val[__gsharp_id_4_tid],__gsharp_id_1_shift[__gsharp_id_4_tid]);
 }
@@ -342,7 +342,7 @@ finally
 }
 #pragma warning restore CS8500
 public const string Rotate64Kernel_Source = @"extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__BitOperationsKernels__Rotate64Kernel(GSharpArray<unsigned long long> __gsharp_id_0_val, GSharpArray<int> __gsharp_id_1_shift, GSharpArray<unsigned long long> __gsharp_id_2_rotLeftRes, GSharpArray<unsigned long long> __gsharp_id_3_rotRightRes){
-int __gsharp_id_4_tid = threadIdx.x;
+int __gsharp_id_4_tid = (int)threadIdx.x;
 __gsharp_id_2_rotLeftRes[__gsharp_id_4_tid]=__gsharp_rotl64(__gsharp_id_0_val[__gsharp_id_4_tid],__gsharp_id_1_shift[__gsharp_id_4_tid]);
 __gsharp_id_3_rotRightRes[__gsharp_id_4_tid]=__gsharp_rotr64(__gsharp_id_0_val[__gsharp_id_4_tid],__gsharp_id_1_shift[__gsharp_id_4_tid]);
 }

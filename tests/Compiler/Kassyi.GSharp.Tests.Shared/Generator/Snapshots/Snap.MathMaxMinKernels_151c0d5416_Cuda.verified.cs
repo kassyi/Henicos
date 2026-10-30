@@ -87,16 +87,16 @@ public static partial class AotContexts
 {
 }
 public const string SingleMaxMinKernel_Source = @"extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__MathMaxMinKernels__SingleMaxMinKernel(GSharpArray<float> __gsharp_id_0_left, GSharpArray<float> __gsharp_id_1_right, GSharpArray<float> __gsharp_id_2_result){
-int __gsharp_id_3_i = threadIdx.x;
-int __gsharp_id_4_row = __gsharp_id_3_i*8;
+int __gsharp_id_3_i = (int)threadIdx.x;
+int __gsharp_id_4_row = __gsharp_mul_i32(__gsharp_id_3_i,8);
 __gsharp_id_2_result[__gsharp_id_4_row]=__gsharp_max_f32(__gsharp_id_0_left[__gsharp_id_3_i],__gsharp_id_1_right[__gsharp_id_3_i]);
-__gsharp_id_2_result[__gsharp_id_4_row+1]=__gsharp_min_f32(__gsharp_id_0_left[__gsharp_id_3_i],__gsharp_id_1_right[__gsharp_id_3_i]);
-__gsharp_id_2_result[__gsharp_id_4_row+2]=__gsharp_max_f32(__gsharp_id_0_left[__gsharp_id_3_i],__gsharp_id_1_right[__gsharp_id_3_i]);
-__gsharp_id_2_result[__gsharp_id_4_row+3]=__gsharp_min_f32(__gsharp_id_0_left[__gsharp_id_3_i],__gsharp_id_1_right[__gsharp_id_3_i]);
-__gsharp_id_2_result[__gsharp_id_4_row+4]=__gsharp_max_f32(__gsharp_id_0_left[__gsharp_id_3_i],__gsharp_id_1_right[__gsharp_id_3_i]);
-__gsharp_id_2_result[__gsharp_id_4_row+5]=__gsharp_min_f32(__gsharp_id_0_left[__gsharp_id_3_i],__gsharp_id_1_right[__gsharp_id_3_i]);
-__gsharp_id_2_result[__gsharp_id_4_row+6]=__gsharp_max_number_f32(__gsharp_id_0_left[__gsharp_id_3_i],__gsharp_id_1_right[__gsharp_id_3_i]);
-__gsharp_id_2_result[__gsharp_id_4_row+7]=__gsharp_min_number_f32(__gsharp_id_0_left[__gsharp_id_3_i],__gsharp_id_1_right[__gsharp_id_3_i]);
+__gsharp_id_2_result[__gsharp_add_i32(__gsharp_id_4_row,1)]=__gsharp_min_f32(__gsharp_id_0_left[__gsharp_id_3_i],__gsharp_id_1_right[__gsharp_id_3_i]);
+__gsharp_id_2_result[__gsharp_add_i32(__gsharp_id_4_row,2)]=__gsharp_max_f32(__gsharp_id_0_left[__gsharp_id_3_i],__gsharp_id_1_right[__gsharp_id_3_i]);
+__gsharp_id_2_result[__gsharp_add_i32(__gsharp_id_4_row,3)]=__gsharp_min_f32(__gsharp_id_0_left[__gsharp_id_3_i],__gsharp_id_1_right[__gsharp_id_3_i]);
+__gsharp_id_2_result[__gsharp_add_i32(__gsharp_id_4_row,4)]=__gsharp_max_f32(__gsharp_id_0_left[__gsharp_id_3_i],__gsharp_id_1_right[__gsharp_id_3_i]);
+__gsharp_id_2_result[__gsharp_add_i32(__gsharp_id_4_row,5)]=__gsharp_min_f32(__gsharp_id_0_left[__gsharp_id_3_i],__gsharp_id_1_right[__gsharp_id_3_i]);
+__gsharp_id_2_result[__gsharp_add_i32(__gsharp_id_4_row,6)]=__gsharp_max_number_f32(__gsharp_id_0_left[__gsharp_id_3_i],__gsharp_id_1_right[__gsharp_id_3_i]);
+__gsharp_id_2_result[__gsharp_add_i32(__gsharp_id_4_row,7)]=__gsharp_min_number_f32(__gsharp_id_0_left[__gsharp_id_3_i],__gsharp_id_1_right[__gsharp_id_3_i]);
 }
 ";
 public static readonly string SingleMaxMinKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +SingleMaxMinKernel_Source;
@@ -299,14 +299,14 @@ finally
 }
 #pragma warning restore CS8500
 public const string DoubleMaxMinKernel_Source = @"extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__MathMaxMinKernels__DoubleMaxMinKernel(GSharpArray<double> __gsharp_id_0_left, GSharpArray<double> __gsharp_id_1_right, GSharpArray<double> __gsharp_id_2_result){
-int __gsharp_id_3_i = threadIdx.x;
-int __gsharp_id_4_row = __gsharp_id_3_i*6;
+int __gsharp_id_3_i = (int)threadIdx.x;
+int __gsharp_id_4_row = __gsharp_mul_i32(__gsharp_id_3_i,6);
 __gsharp_id_2_result[__gsharp_id_4_row]=__gsharp_max_f64(__gsharp_id_0_left[__gsharp_id_3_i],__gsharp_id_1_right[__gsharp_id_3_i]);
-__gsharp_id_2_result[__gsharp_id_4_row+1]=__gsharp_min_f64(__gsharp_id_0_left[__gsharp_id_3_i],__gsharp_id_1_right[__gsharp_id_3_i]);
-__gsharp_id_2_result[__gsharp_id_4_row+2]=__gsharp_max_f64(__gsharp_id_0_left[__gsharp_id_3_i],__gsharp_id_1_right[__gsharp_id_3_i]);
-__gsharp_id_2_result[__gsharp_id_4_row+3]=__gsharp_min_f64(__gsharp_id_0_left[__gsharp_id_3_i],__gsharp_id_1_right[__gsharp_id_3_i]);
-__gsharp_id_2_result[__gsharp_id_4_row+4]=__gsharp_max_number_f64(__gsharp_id_0_left[__gsharp_id_3_i],__gsharp_id_1_right[__gsharp_id_3_i]);
-__gsharp_id_2_result[__gsharp_id_4_row+5]=__gsharp_min_number_f64(__gsharp_id_0_left[__gsharp_id_3_i],__gsharp_id_1_right[__gsharp_id_3_i]);
+__gsharp_id_2_result[__gsharp_add_i32(__gsharp_id_4_row,1)]=__gsharp_min_f64(__gsharp_id_0_left[__gsharp_id_3_i],__gsharp_id_1_right[__gsharp_id_3_i]);
+__gsharp_id_2_result[__gsharp_add_i32(__gsharp_id_4_row,2)]=__gsharp_max_f64(__gsharp_id_0_left[__gsharp_id_3_i],__gsharp_id_1_right[__gsharp_id_3_i]);
+__gsharp_id_2_result[__gsharp_add_i32(__gsharp_id_4_row,3)]=__gsharp_min_f64(__gsharp_id_0_left[__gsharp_id_3_i],__gsharp_id_1_right[__gsharp_id_3_i]);
+__gsharp_id_2_result[__gsharp_add_i32(__gsharp_id_4_row,4)]=__gsharp_max_number_f64(__gsharp_id_0_left[__gsharp_id_3_i],__gsharp_id_1_right[__gsharp_id_3_i]);
+__gsharp_id_2_result[__gsharp_add_i32(__gsharp_id_4_row,5)]=__gsharp_min_number_f64(__gsharp_id_0_left[__gsharp_id_3_i],__gsharp_id_1_right[__gsharp_id_3_i]);
 }
 ";
 public static readonly string DoubleMaxMinKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +DoubleMaxMinKernel_Source;
@@ -509,7 +509,7 @@ finally
 }
 #pragma warning restore CS8500
 public const string SingleClampKernel_Source = @"extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__MathMaxMinKernels__SingleClampKernel(GSharpArray<float> __gsharp_id_0_value, GSharpArray<float> __gsharp_id_1_min, GSharpArray<float> __gsharp_id_2_max, GSharpArray<float> __gsharp_id_3_result){
-int __gsharp_id_4_i = threadIdx.x;
+int __gsharp_id_4_i = (int)threadIdx.x;
 __gsharp_id_3_result[__gsharp_id_4_i]=__gsharp_clamp(__gsharp_id_0_value[__gsharp_id_4_i],__gsharp_id_1_min[__gsharp_id_4_i],__gsharp_id_2_max[__gsharp_id_4_i]);
 }
 ";
@@ -766,7 +766,7 @@ finally
 }
 #pragma warning restore CS8500
 public const string DoubleClampKernel_Source = @"extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__MathMaxMinKernels__DoubleClampKernel(GSharpArray<double> __gsharp_id_0_value, GSharpArray<double> __gsharp_id_1_min, GSharpArray<double> __gsharp_id_2_max, GSharpArray<double> __gsharp_id_3_result){
-int __gsharp_id_4_i = threadIdx.x;
+int __gsharp_id_4_i = (int)threadIdx.x;
 __gsharp_id_3_result[__gsharp_id_4_i]=__gsharp_clamp(__gsharp_id_0_value[__gsharp_id_4_i],__gsharp_id_1_min[__gsharp_id_4_i],__gsharp_id_2_max[__gsharp_id_4_i]);
 }
 ";

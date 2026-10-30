@@ -99,7 +99,7 @@ static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__Operat
 static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroContextState,__gsharp_mb_Calls)==4,""Kassyi.GSharp.Tests.Shared.Syntax.OperatorMacroContextState.Calls: offset"");
 #endif
 inline __device__ void __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroContextOps__ShiftWithOffset(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroContextState __gsharp_id_0_ctx, GSharpArray<unsigned int> __gsharp_id_1_result, GSharpArray<unsigned int> __gsharp_id_2_operand, int __gsharp_id_3_shift){
-__gsharp_id_1_result[0]=(__gsharp_id_2_operand[0]<<__gsharp_id_3_shift)+__gsharp_id_0_ctx.__gsharp_mb_Offset;
+__gsharp_id_1_result[0]=(__gsharp_id_2_operand[0]<<(__gsharp_id_3_shift&31))+__gsharp_id_0_ctx.__gsharp_mb_Offset;
 }
 
 #ifndef __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroContextState__

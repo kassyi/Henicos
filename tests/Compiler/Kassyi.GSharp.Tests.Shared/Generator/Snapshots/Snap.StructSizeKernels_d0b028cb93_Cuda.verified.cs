@@ -132,7 +132,7 @@ static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Core__StructSi
 #endif
 extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Core__StructSizeKernels__ReadSecondPaddedKernel(GSharpArray<__gsharp_ty_Kassyi__GSharp__Tests__Shared__Core__StructSizePaddedInt> __gsharp_id_0_data, GSharpArray<int> __gsharp_id_1_o){
 __gsharp_id_1_o[0]=__gsharp_id_0_data[1].__gsharp_mb_A;
-__gsharp_id_0_data[0].__gsharp_mb_A=__gsharp_id_0_data[1].__gsharp_mb_A+1;
+__gsharp_id_0_data[0].__gsharp_mb_A=__gsharp_add_i32(__gsharp_id_0_data[1].__gsharp_mb_A,1);
 {
 __gsharp_ty_Kassyi__GSharp__Tests__Shared__Core__StructSizePaddedInt __gsharp_id_2_s = {};
 __gsharp_ty_Kassyi__GSharp__Tests__Shared__Core__StructSizePaddedInt* __gsharp_id_3_p = &__gsharp_id_2_s;
@@ -314,7 +314,7 @@ static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Core__StructSi
 #endif
 extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Core__StructSizeKernels__ReadSecondOddKernel(GSharpArray<__gsharp_ty_Kassyi__GSharp__Tests__Shared__Core__StructSizeOddInt> __gsharp_id_0_data, GSharpArray<int> __gsharp_id_1_o){
 __gsharp_id_1_o[0]=__gsharp_id_0_data[1].__gsharp_mb_A;
-__gsharp_id_0_data[0].__gsharp_mb_A=__gsharp_id_0_data[1].__gsharp_mb_A+1;
+__gsharp_id_0_data[0].__gsharp_mb_A=__gsharp_add_i32(__gsharp_id_0_data[1].__gsharp_mb_A,1);
 {
 __gsharp_ty_Kassyi__GSharp__Tests__Shared__Core__StructSizeOddInt __gsharp_id_2_s = {};
 __gsharp_ty_Kassyi__GSharp__Tests__Shared__Core__StructSizeOddInt* __gsharp_id_3_p = &__gsharp_id_2_s;
@@ -505,7 +505,7 @@ static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Core__StructSi
 #pragma pack(pop)
 extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Core__StructSizeKernels__ReadSecondPackedKernel(GSharpArray<__gsharp_ty_Kassyi__GSharp__Tests__Shared__Core__StructSizePacked> __gsharp_id_0_data, GSharpArray<int> __gsharp_id_1_o){
 __gsharp_id_1_o[0]=__gsharp_id_0_data[1].__gsharp_mb_I;
-__gsharp_id_0_data[0].__gsharp_mb_I=__gsharp_id_0_data[1].__gsharp_mb_I+1;
+__gsharp_id_0_data[0].__gsharp_mb_I=__gsharp_add_i32(__gsharp_id_0_data[1].__gsharp_mb_I,1);
 {
 __gsharp_ty_Kassyi__GSharp__Tests__Shared__Core__StructSizePacked __gsharp_id_2_s = {};
 __gsharp_ty_Kassyi__GSharp__Tests__Shared__Core__StructSizePacked* __gsharp_id_3_p = &__gsharp_id_2_s;

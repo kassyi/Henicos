@@ -107,7 +107,7 @@ public const string AllocationTestKernel_Source = @"extern ""C"" __global__ void
 if((long long)(*__gsharp_id_0_ioVal)>(long long)__gsharp_id_3_constantVal)
 {
 (*__gsharp_id_1_outVal)=__gsharp_id_2_arrayVal[0];
-(*__gsharp_id_0_ioVal)=(int)(*__gsharp_id_1_outVal)+1;
+(*__gsharp_id_0_ioVal)=__gsharp_add_i32(__gsharp_to_i32((*__gsharp_id_1_outVal)),1);
 }
 else
 {
@@ -261,9 +261,9 @@ finally
 }
 #pragma warning restore CS8500
 public const string SingleArrayKernel_Source = @"extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__WrapperAllocationKernels__SingleArrayKernel(GSharpArray<int> __gsharp_id_0_a){
-if(threadIdx.x==0)
+if((int)threadIdx.x==0)
 {
-__gsharp_id_0_a[0]+=1;
+__gsharp_id_0_a[0]=__gsharp_add_i32(__gsharp_id_0_a[0],1);
 }
 }
 ";
@@ -373,10 +373,10 @@ finally
 }
 #pragma warning restore CS8500
 public const string TwoArraysKernel_Source = @"extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__WrapperAllocationKernels__TwoArraysKernel(GSharpArray<int> __gsharp_id_0_a, GSharpArray<int> __gsharp_id_1_b){
-if(threadIdx.x==0)
+if((int)threadIdx.x==0)
 {
-__gsharp_id_0_a[0]+=1;
-__gsharp_id_1_b[0]+=1;
+__gsharp_id_0_a[0]=__gsharp_add_i32(__gsharp_id_0_a[0],1);
+__gsharp_id_1_b[0]=__gsharp_add_i32(__gsharp_id_1_b[0],1);
 }
 }
 ";
@@ -542,11 +542,11 @@ static_assert(alignof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ArrayFr
 static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ArrayFreeCounter,__gsharp_mb_Value)==0,""Kassyi.GSharp.Tests.Shared.Syntax.ArrayFreeCounter.Value: offset"");
 #endif
 extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__WrapperAllocationKernels__StructAndTwoArraysKernel(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ArrayFreeCounter* __gsharp_id_0_counter, GSharpArray<int> __gsharp_id_1_a, GSharpArray<int> __gsharp_id_2_b){
-if(threadIdx.x==0)
+if((int)threadIdx.x==0)
 {
-(*__gsharp_id_0_counter).__gsharp_mb_Value+=1;
-__gsharp_id_1_a[0]+=1;
-__gsharp_id_2_b[0]+=1;
+(*__gsharp_id_0_counter).__gsharp_mb_Value=__gsharp_add_i32((*__gsharp_id_0_counter).__gsharp_mb_Value,1);
+__gsharp_id_1_a[0]=__gsharp_add_i32(__gsharp_id_1_a[0],1);
+__gsharp_id_2_b[0]=__gsharp_add_i32(__gsharp_id_2_b[0],1);
 }
 }
 ";
@@ -739,9 +739,9 @@ static_assert(alignof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ArrayFr
 static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ArrayFreeCounter,__gsharp_mb_Value)==0,""Kassyi.GSharp.Tests.Shared.Syntax.ArrayFreeCounter.Value: offset"");
 #endif
 extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__WrapperAllocationKernels__ArrayFreeStructKernel(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ArrayFreeCounter* __gsharp_id_0_counter){
-if(threadIdx.x==0)
+if((int)threadIdx.x==0)
 {
-(*__gsharp_id_0_counter).__gsharp_mb_Value+=1;
+(*__gsharp_id_0_counter).__gsharp_mb_Value=__gsharp_add_i32((*__gsharp_id_0_counter).__gsharp_mb_Value,1);
 }
 }
 ";

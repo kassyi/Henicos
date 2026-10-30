@@ -83,7 +83,7 @@ public static partial class AotContexts
 {
 }
 public const string MathFmaKernel_Source = @"extern ""C"" __global__ void __gsharp_k_Henicos__Benchmarks__ComputeBenchmarks__MathFmaKernels__MathFmaKernel(GSharpArray<float> __gsharp_id_0_data, int __gsharp_id_1_n, int __gsharp_id_2_iterations){
-auto __gsharp_id_3_idx = blockIdx.x*blockDim.x+threadIdx.x;
+auto __gsharp_id_3_idx = __gsharp_add_i32(__gsharp_mul_i32((int)blockIdx.x,(int)blockDim.x),(int)threadIdx.x);
 if(__gsharp_id_3_idx<__gsharp_id_1_n)
 {
 auto __gsharp_id_4_a = __gsharp_id_0_data[__gsharp_id_3_idx];

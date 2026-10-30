@@ -52,7 +52,7 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-int __gsharp_id_1_tid = threadIdx.x;
+int __gsharp_id_1_tid = (int)threadIdx.x;
 __gsharp_auto_result[__gsharp_global_tid] = __gsharp_id_0_a[__gsharp_id_1_tid]*2.0f;
 __gsharp_state = -1;return;
 __gsharp_state=-1;
@@ -294,7 +294,7 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-__gsharp_auto_result[__gsharp_global_tid] = __gsharp_id_0_a[0]+__gsharp_id_1_b;
+__gsharp_auto_result[__gsharp_global_tid] = __gsharp_add_i32(__gsharp_id_0_a[0],__gsharp_id_1_b);
 __gsharp_state = -1;return;
 __gsharp_state=-1;
 return;

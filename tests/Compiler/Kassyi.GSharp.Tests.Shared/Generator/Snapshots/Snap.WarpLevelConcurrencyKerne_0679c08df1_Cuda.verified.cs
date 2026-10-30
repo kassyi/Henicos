@@ -84,16 +84,16 @@ public static partial class AotContexts
 {
 }
 public const string WarpReduceSumKernel_Source = @"extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Core__WarpLevelConcurrencyKernels__WarpReduceSumKernel(GSharpArray<int> __gsharp_id_0_input, GSharpArray<int> __gsharp_id_1_output){
-int __gsharp_id_2_tid = threadIdx.x;
+int __gsharp_id_2_tid = (int)threadIdx.x;
 int __gsharp_id_3_lane = __gsharp_id_2_tid%32;
 int __gsharp_id_4_warpId = __gsharp_id_2_tid/32;
 int __gsharp_id_5_val = __gsharp_id_0_input[__gsharp_id_2_tid];
 unsigned int __gsharp_id_6_mask = 0xffffffff;
-__gsharp_id_5_val+=__shfl_down_sync(__gsharp_id_6_mask,__gsharp_id_5_val,16,32);
-__gsharp_id_5_val+=__shfl_down_sync(__gsharp_id_6_mask,__gsharp_id_5_val,8,32);
-__gsharp_id_5_val+=__shfl_down_sync(__gsharp_id_6_mask,__gsharp_id_5_val,4,32);
-__gsharp_id_5_val+=__shfl_down_sync(__gsharp_id_6_mask,__gsharp_id_5_val,2,32);
-__gsharp_id_5_val+=__shfl_down_sync(__gsharp_id_6_mask,__gsharp_id_5_val,1,32);
+__gsharp_id_5_val=__gsharp_add_i32(__gsharp_id_5_val,__shfl_down_sync(__gsharp_id_6_mask,__gsharp_id_5_val,16,32));
+__gsharp_id_5_val=__gsharp_add_i32(__gsharp_id_5_val,__shfl_down_sync(__gsharp_id_6_mask,__gsharp_id_5_val,8,32));
+__gsharp_id_5_val=__gsharp_add_i32(__gsharp_id_5_val,__shfl_down_sync(__gsharp_id_6_mask,__gsharp_id_5_val,4,32));
+__gsharp_id_5_val=__gsharp_add_i32(__gsharp_id_5_val,__shfl_down_sync(__gsharp_id_6_mask,__gsharp_id_5_val,2,32));
+__gsharp_id_5_val=__gsharp_add_i32(__gsharp_id_5_val,__shfl_down_sync(__gsharp_id_6_mask,__gsharp_id_5_val,1,32));
 if(__gsharp_id_3_lane==0)
 {
 __gsharp_id_1_output[__gsharp_id_4_warpId]=__gsharp_id_5_val;
@@ -251,7 +251,7 @@ finally
 }
 #pragma warning restore CS8500
 public const string WarpPrimitivesKernel_Source = @"extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Core__WarpLevelConcurrencyKernels__WarpPrimitivesKernel(GSharpArray<int> __gsharp_id_0_input, GSharpArray<int> __gsharp_id_1_output){
-int __gsharp_id_2_tid = threadIdx.x;
+int __gsharp_id_2_tid = (int)threadIdx.x;
 unsigned int __gsharp_id_3_mask = __activemask();
 int __gsharp_id_4_val = __gsharp_id_0_input[__gsharp_id_2_tid];
 __gsharp_id_4_val=__shfl_sync(__gsharp_id_3_mask,__gsharp_id_4_val,0,32);

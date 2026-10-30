@@ -59,7 +59,7 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-if((threadIdx.x|threadIdx.y|threadIdx.z|blockIdx.x|blockIdx.y|blockIdx.z)==0)
+if(((int)threadIdx.x|(int)threadIdx.y|(int)threadIdx.z|(int)blockIdx.x|(int)blockIdx.y|(int)blockIdx.z)==0)
 {
 __gsharp_sort(__gsharp_id_0_data);
 }
@@ -298,7 +298,7 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-if((threadIdx.x|threadIdx.y|threadIdx.z|blockIdx.x|blockIdx.y|blockIdx.z)==0)
+if(((int)threadIdx.x|(int)threadIdx.y|(int)threadIdx.z|(int)blockIdx.x|(int)blockIdx.y|(int)blockIdx.z)==0)
 {
 __gsharp_sort(__gsharp_id_0_data);
 }
@@ -537,7 +537,7 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-if((threadIdx.x|threadIdx.y|threadIdx.z|blockIdx.x|blockIdx.y|blockIdx.z)==0)
+if(((int)threadIdx.x|(int)threadIdx.y|(int)threadIdx.z|(int)blockIdx.x|(int)blockIdx.y|(int)blockIdx.z)==0)
 {
 __gsharp_sort(__gsharp_id_0_data);
 }
@@ -776,7 +776,7 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-if((threadIdx.x|threadIdx.y|threadIdx.z|blockIdx.x|blockIdx.y|blockIdx.z)==0)
+if(((int)threadIdx.x|(int)threadIdx.y|(int)threadIdx.z|(int)blockIdx.x|(int)blockIdx.y|(int)blockIdx.z)==0)
 {
 __gsharp_sort(__gsharp_id_0_data);
 }
@@ -1015,7 +1015,7 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-if((threadIdx.x|threadIdx.y|threadIdx.z|blockIdx.x|blockIdx.y|blockIdx.z)==0)
+if(((int)threadIdx.x|(int)threadIdx.y|(int)threadIdx.z|(int)blockIdx.x|(int)blockIdx.y|(int)blockIdx.z)==0)
 {
 __gsharp_sort(__gsharp_id_0_data);
 }
@@ -1254,7 +1254,7 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-if((threadIdx.x|threadIdx.y|threadIdx.z|blockIdx.x|blockIdx.y|blockIdx.z)==0)
+if(((int)threadIdx.x|(int)threadIdx.y|(int)threadIdx.z|(int)blockIdx.x|(int)blockIdx.y|(int)blockIdx.z)==0)
 {
 __gsharp_sort(__gsharp_id_0_data);
 }
@@ -1493,7 +1493,7 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-if((threadIdx.x|threadIdx.y|threadIdx.z|blockIdx.x|blockIdx.y|blockIdx.z)==0)
+if(((int)threadIdx.x|(int)threadIdx.y|(int)threadIdx.z|(int)blockIdx.x|(int)blockIdx.y|(int)blockIdx.z)==0)
 {
 __gsharp_sort(__gsharp_id_0_data);
 }
@@ -1732,16 +1732,16 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-int __gsharp_id_1_segment = blockIdx.x*blockDim.x+threadIdx.x;
+int __gsharp_id_1_segment = __gsharp_add_i32(__gsharp_mul_i32((int)blockIdx.x,(int)blockDim.x),(int)threadIdx.x);
 int __gsharp_id_2_buffer[33]{};
-for(int __gsharp_id_3_i = 0;__gsharp_id_3_i<33;__gsharp_id_3_i++)
+for(int __gsharp_id_3_i = 0;__gsharp_id_3_i<33;__gsharp_id_3_i=__gsharp_add_i32(__gsharp_id_3_i,1))
 {
-__gsharp_id_2_buffer[__gsharp_id_3_i]=__gsharp_id_0_data[__gsharp_id_1_segment*33+__gsharp_id_3_i];
+__gsharp_id_2_buffer[__gsharp_id_3_i]=__gsharp_id_0_data[__gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_1_segment,33),__gsharp_id_3_i)];
 }
 __gsharp_sort(__gsharp_id_2_buffer);
-for(int __gsharp_id_4_i = 0;__gsharp_id_4_i<33;__gsharp_id_4_i++)
+for(int __gsharp_id_4_i = 0;__gsharp_id_4_i<33;__gsharp_id_4_i=__gsharp_add_i32(__gsharp_id_4_i,1))
 {
-__gsharp_id_0_data[__gsharp_id_1_segment*33+__gsharp_id_4_i]=__gsharp_id_2_buffer[__gsharp_id_4_i];
+__gsharp_id_0_data[__gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_1_segment,33),__gsharp_id_4_i)]=__gsharp_id_2_buffer[__gsharp_id_4_i];
 }
 __gsharp_state=-1;
 return;
@@ -2009,7 +2009,7 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-if((threadIdx.x|threadIdx.y|threadIdx.z|blockIdx.x|blockIdx.y|blockIdx.z)==0)
+if(((int)threadIdx.x|(int)threadIdx.y|(int)threadIdx.z|(int)blockIdx.x|(int)blockIdx.y|(int)blockIdx.z)==0)
 {
 __gsharp_sort(__gsharp_id_0_data,[__gsharp_comparer = ([&]() {
 __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__MaskedComparer __gsharp_tmp{}; __gsharp_tmp.__gsharp_mb_Mask = __gsharp_id_1_mask; return __gsharp_tmp; }
@@ -2267,7 +2267,7 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-if((threadIdx.x|threadIdx.y|threadIdx.z|blockIdx.x|blockIdx.y|blockIdx.z)==0)
+if(((int)threadIdx.x|(int)threadIdx.y|(int)threadIdx.z|(int)blockIdx.x|(int)blockIdx.y|(int)blockIdx.z)==0)
 {
 __gsharp_sort(__gsharp_id_0_data,[__gsharp_comparer = __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__DescendingComparer{}](auto& __gsharp_left, auto& __gsharp_right) mutable {return __gsharp_comparer.__gsharp_compare(__gsharp_left, __gsharp_right);});
 }
@@ -2506,7 +2506,7 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-if((threadIdx.x|threadIdx.y|threadIdx.z|blockIdx.x|blockIdx.y|blockIdx.z)==0)
+if(((int)threadIdx.x|(int)threadIdx.y|(int)threadIdx.z|(int)blockIdx.x|(int)blockIdx.y|(int)blockIdx.z)==0)
 {
 __gsharp_sort(__gsharp_id_0_data,[&](auto __gsharp_id_2_a, auto __gsharp_id_3_b) {
 return ((__gsharp_id_2_a&__gsharp_id_1_mask)<(__gsharp_id_3_b&__gsharp_id_1_mask)?(-1):(((__gsharp_id_2_a&__gsharp_id_1_mask)>(__gsharp_id_3_b&__gsharp_id_1_mask)?1:0)));
@@ -2748,7 +2748,7 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-if((threadIdx.x|threadIdx.y|threadIdx.z|blockIdx.x|blockIdx.y|blockIdx.z)==0)
+if(((int)threadIdx.x|(int)threadIdx.y|(int)threadIdx.z|(int)blockIdx.x|(int)blockIdx.y|(int)blockIdx.z)==0)
 {
 __gsharp_sort(__gsharp_id_0_data,__gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__SpanSortKernels__CompareLowNibble);
 }
@@ -2987,7 +2987,7 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-if((threadIdx.x|threadIdx.y|threadIdx.z|blockIdx.x|blockIdx.y|blockIdx.z)==0)
+if(((int)threadIdx.x|(int)threadIdx.y|(int)threadIdx.z|(int)blockIdx.x|(int)blockIdx.y|(int)blockIdx.z)==0)
 {
 __gsharp_sort(__gsharp_id_0_data);
 }
@@ -3246,7 +3246,7 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-if((threadIdx.x|threadIdx.y|threadIdx.z|blockIdx.x|blockIdx.y|blockIdx.z)==0)
+if(((int)threadIdx.x|(int)threadIdx.y|(int)threadIdx.z|(int)blockIdx.x|(int)blockIdx.y|(int)blockIdx.z)==0)
 {
 __gsharp_sort_comparable(__gsharp_id_0_data,[](auto& __gsharp_left, auto& __gsharp_right) {return __gsharp_left.__gsharp_compare_to(__gsharp_right);});
 }
@@ -3496,7 +3496,7 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-if((threadIdx.x|threadIdx.y|threadIdx.z|blockIdx.x|blockIdx.y|blockIdx.z)==0)
+if(((int)threadIdx.x|(int)threadIdx.y|(int)threadIdx.z|(int)blockIdx.x|(int)blockIdx.y|(int)blockIdx.z)==0)
 {
 __gsharp_sort_pairs(__gsharp_id_0_keys,__gsharp_id_1_items);
 }
@@ -3739,7 +3739,7 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-if((threadIdx.x|threadIdx.y|threadIdx.z|blockIdx.x|blockIdx.y|blockIdx.z)==0)
+if(((int)threadIdx.x|(int)threadIdx.y|(int)threadIdx.z|(int)blockIdx.x|(int)blockIdx.y|(int)blockIdx.z)==0)
 {
 __gsharp_sort_pairs(__gsharp_id_0_keys,__gsharp_id_1_items);
 }
@@ -4002,7 +4002,7 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-if((threadIdx.x|threadIdx.y|threadIdx.z|blockIdx.x|blockIdx.y|blockIdx.z)==0)
+if(((int)threadIdx.x|(int)threadIdx.y|(int)threadIdx.z|(int)blockIdx.x|(int)blockIdx.y|(int)blockIdx.z)==0)
 {
 __gsharp_sort_pairs(__gsharp_id_0_keys,__gsharp_id_1_items,[__gsharp_comparer = ([&]() {
 __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__MaskedComparer __gsharp_tmp{}; __gsharp_tmp.__gsharp_mb_Mask = __gsharp_id_2_mask; return __gsharp_tmp; }
@@ -4247,7 +4247,7 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-if((threadIdx.x|threadIdx.y|threadIdx.z|blockIdx.x|blockIdx.y|blockIdx.z)==0)
+if(((int)threadIdx.x|(int)threadIdx.y|(int)threadIdx.z|(int)blockIdx.x|(int)blockIdx.y|(int)blockIdx.z)==0)
 {
 __gsharp_sort_pairs(__gsharp_id_0_keys,__gsharp_id_1_items,[&](auto __gsharp_id_3_a, auto __gsharp_id_4_b) {
 return ((__gsharp_id_3_a&__gsharp_id_2_mask)<(__gsharp_id_4_b&__gsharp_id_2_mask)?(-1):(((__gsharp_id_3_a&__gsharp_id_2_mask)>(__gsharp_id_4_b&__gsharp_id_2_mask)?1:0)));
@@ -4513,7 +4513,7 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-if((threadIdx.x|threadIdx.y|threadIdx.z|blockIdx.x|blockIdx.y|blockIdx.z)==0)
+if(((int)threadIdx.x|(int)threadIdx.y|(int)threadIdx.z|(int)blockIdx.x|(int)blockIdx.y|(int)blockIdx.z)==0)
 {
 __gsharp_sort_pairs_comparable(__gsharp_id_0_keys,__gsharp_id_1_items,[](auto& __gsharp_left, auto& __gsharp_right) {return __gsharp_left.__gsharp_compare_to(__gsharp_right);});
 }
@@ -4784,7 +4784,7 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-if((threadIdx.x|threadIdx.y|threadIdx.z|blockIdx.x|blockIdx.y|blockIdx.z)==0)
+if(((int)threadIdx.x|(int)threadIdx.y|(int)threadIdx.z|(int)blockIdx.x|(int)blockIdx.y|(int)blockIdx.z)==0)
 {
 __gsharp_sort(__gsharp_id_0_data,[__gsharp_comparer = __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__AlwaysLessComparer{}](auto& __gsharp_left, auto& __gsharp_right) mutable {return __gsharp_comparer.__gsharp_compare(__gsharp_left, __gsharp_right);});
 }
@@ -5041,7 +5041,7 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-if((threadIdx.x|threadIdx.y|threadIdx.z|blockIdx.x|blockIdx.y|blockIdx.z)==0)
+if(((int)threadIdx.x|(int)threadIdx.y|(int)threadIdx.z|(int)blockIdx.x|(int)blockIdx.y|(int)blockIdx.z)==0)
 {
 __gsharp_sort_pairs_comparable(__gsharp_id_0_keys,__gsharp_id_1_items,[](auto& __gsharp_left, auto& __gsharp_right) {return __gsharp_left.__gsharp_compare_to(__gsharp_right);});
 }
@@ -5294,7 +5294,7 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-if((threadIdx.x|threadIdx.y|threadIdx.z|blockIdx.x|blockIdx.y|blockIdx.z)==0)
+if(((int)threadIdx.x|(int)threadIdx.y|(int)threadIdx.z|(int)blockIdx.x|(int)blockIdx.y|(int)blockIdx.z)==0)
 {
 __gsharp_sort(__gsharp_id_0_data,[&](auto __gsharp_id_2_a, auto __gsharp_id_3_b) {
 return (([&]() {

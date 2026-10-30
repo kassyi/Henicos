@@ -80,12 +80,12 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-int __gsharp_id_1_tid = threadIdx.x;
+int __gsharp_id_1_tid = (int)threadIdx.x;
 __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__NestedChildStruct __gsharp_id_2_c1 = __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__NestedChildStruct{};
-__gsharp_id_2_c1.__gsharp_mb_Value=__gsharp_id_1_tid+100;
+__gsharp_id_2_c1.__gsharp_mb_Value=__gsharp_add_i32(__gsharp_id_1_tid,100);
 __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__NestedChildStruct __gsharp_id_3_c2 = __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__TargetTypedNewKernels__CreateChild(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__NestedChildStruct{});
-__gsharp_id_3_c2.__gsharp_mb_Value=__gsharp_id_1_tid+200;
-__gsharp_id_0_output[__gsharp_id_1_tid]=__gsharp_id_2_c1.__gsharp_mb_Value+__gsharp_id_3_c2.__gsharp_mb_Value;
+__gsharp_id_3_c2.__gsharp_mb_Value=__gsharp_add_i32(__gsharp_id_1_tid,200);
+__gsharp_id_0_output[__gsharp_id_1_tid]=__gsharp_add_i32(__gsharp_id_2_c1.__gsharp_mb_Value,__gsharp_id_3_c2.__gsharp_mb_Value);
 __gsharp_state=-1;
 return;
 }
@@ -349,12 +349,12 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-int __gsharp_id_1_tid = threadIdx.x;
+int __gsharp_id_1_tid = (int)threadIdx.x;
 __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__NestedParentStruct __gsharp_id_2_p = ([&]() {
 __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__NestedParentStruct __gsharp_tmp{}; __gsharp_tmp.__gsharp_mb_Id = __gsharp_id_1_tid; __gsharp_tmp.__gsharp_mb_Child = __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__NestedChildStruct{}; return __gsharp_tmp; }
 ());
-__gsharp_id_2_p.__gsharp_mb_Child.__gsharp_mb_Value=__gsharp_id_1_tid*5;
-__gsharp_id_0_output[__gsharp_id_1_tid]=__gsharp_id_2_p.__gsharp_mb_Id+__gsharp_id_2_p.__gsharp_mb_Child.__gsharp_mb_Value;
+__gsharp_id_2_p.__gsharp_mb_Child.__gsharp_mb_Value=__gsharp_mul_i32(__gsharp_id_1_tid,5);
+__gsharp_id_0_output[__gsharp_id_1_tid]=__gsharp_add_i32(__gsharp_id_2_p.__gsharp_mb_Id,__gsharp_id_2_p.__gsharp_mb_Child.__gsharp_mb_Value);
 __gsharp_state=-1;
 return;
 }

@@ -174,14 +174,14 @@ public static partial class AotContexts
 {
 }
 public const string CharConstKernel_Source = @"extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__ConstFieldLiteralKernels__CharConstKernel(GSharpArray<int> __gsharp_id_0_output, GSharpArray<char16_t> __gsharp_id_1_text){
-__gsharp_id_0_output[0]=(char16_t)48;
-__gsharp_id_0_output[1]=(char16_t)65;
-__gsharp_id_0_output[2]=(char16_t)10;
-__gsharp_id_0_output[3]=(char16_t)233;
-__gsharp_id_0_output[4]=(char16_t)0;
-__gsharp_id_0_output[5]=(char16_t)92;
-__gsharp_id_0_output[6]=(char16_t)39;
-__gsharp_id_0_output[7]=(char16_t)65535;
+__gsharp_id_0_output[0]=48;
+__gsharp_id_0_output[1]=65;
+__gsharp_id_0_output[2]=10;
+__gsharp_id_0_output[3]=233;
+__gsharp_id_0_output[4]=0;
+__gsharp_id_0_output[5]=92;
+__gsharp_id_0_output[6]=39;
+__gsharp_id_0_output[7]=65535;
 __gsharp_id_1_text[0]=(char16_t)65;
 __gsharp_id_1_text[1]=(char16_t)65535;
 }
@@ -337,14 +337,14 @@ finally
 }
 #pragma warning restore CS8500
 public const string IntegerLimitConstKernel_Source = @"extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__ConstFieldLiteralKernels__IntegerLimitConstKernel(GSharpArray<long long> __gsharp_id_0_signed, GSharpArray<unsigned long long> __gsharp_id_1_unsigned, GSharpArray<int> __gsharp_id_2_narrow){
-__gsharp_id_0_signed[0]=(-2147483647-1);
+__gsharp_id_0_signed[0]=(-2147483648LL);
 __gsharp_id_0_signed[1]=(-9223372036854775807LL-1);
-__gsharp_id_0_signed[2]=2147483647;
+__gsharp_id_0_signed[2]=2147483647LL;
 __gsharp_id_0_signed[3]=9223372036854775807LL;
-__gsharp_id_1_unsigned[0]=4294967295U;
+__gsharp_id_1_unsigned[0]=4294967295ULL;
 __gsharp_id_1_unsigned[1]=18446744073709551615ULL;
 __gsharp_id_2_narrow[0]=(-2147483647-1);
-__gsharp_id_2_narrow[1]=(-2147483647-1)/2;
+__gsharp_id_2_narrow[1]=(-1073741824);
 }
 ";
 public static readonly string IntegerLimitConstKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +IntegerLimitConstKernel_Source;
@@ -547,11 +547,11 @@ finally
 }
 #pragma warning restore CS8500
 public const string EnumConstKernel_Source = @"extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__ConstFieldLiteralKernels__EnumConstKernel(GSharpArray<unsigned long long> __gsharp_id_0_wide, GSharpArray<int> __gsharp_id_1_signed){
-__gsharp_id_0_wide[0]=(unsigned long long)1ULL;
-__gsharp_id_0_wide[1]=(unsigned long long)1099511627776ULL;
-__gsharp_id_1_signed[0]=(int)(-2147483647-1);
-__gsharp_id_1_signed[1]=(int)(-5);
-__gsharp_id_1_signed[2]=(int)2147483647;
+__gsharp_id_0_wide[0]=1ULL;
+__gsharp_id_0_wide[1]=1099511627776ULL;
+__gsharp_id_1_signed[0]=(-2147483647-1);
+__gsharp_id_1_signed[1]=(-5);
+__gsharp_id_1_signed[2]=2147483647;
 }
 ";
 public static readonly string EnumConstKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +EnumConstKernel_Source;
@@ -1653,12 +1653,12 @@ finally
 #pragma warning restore CS8500
 public const string NegativeOperandKernel_Source = @"extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__ConstFieldLiteralKernels__NegativeOperandKernel(GSharpArray<int> __gsharp_id_0_ints, GSharpArray<long long> __gsharp_id_1_longs, GSharpArray<float> __gsharp_id_2_singles, GSharpArray<int> __gsharp_id_3_values){
 int __gsharp_id_4_x = __gsharp_id_3_values[0];
-__gsharp_id_0_ints[0]=__gsharp_id_4_x-(-5);
-__gsharp_id_0_ints[1]=__gsharp_id_4_x-(-5);
-__gsharp_id_0_ints[2]=- -__gsharp_id_4_x;
-__gsharp_id_0_ints[3]=__gsharp_id_4_x+ +__gsharp_id_4_x;
-__gsharp_id_0_ints[4]=__gsharp_id_4_x- -__gsharp_id_4_x*2;
-__gsharp_id_0_ints[5]=__gsharp_id_4_x- - -__gsharp_id_4_x;
+__gsharp_id_0_ints[0]=__gsharp_sub_i32(__gsharp_id_4_x,(-5));
+__gsharp_id_0_ints[1]=__gsharp_sub_i32(__gsharp_id_4_x,(-5));
+__gsharp_id_0_ints[2]=__gsharp_neg_i32(__gsharp_neg_i32(__gsharp_id_4_x));
+__gsharp_id_0_ints[3]=__gsharp_add_i32(__gsharp_id_4_x,+__gsharp_id_4_x);
+__gsharp_id_0_ints[4]=__gsharp_sub_i32(__gsharp_id_4_x,__gsharp_mul_i32(__gsharp_neg_i32(__gsharp_id_4_x),2));
+__gsharp_id_0_ints[5]=__gsharp_sub_i32(__gsharp_id_4_x,__gsharp_neg_i32(__gsharp_neg_i32(__gsharp_id_4_x)));
 __gsharp_id_1_longs[0]=__gsharp_id_4_x-(-7LL);
 __gsharp_id_2_singles[0]=-(-0.0f);
 __gsharp_id_2_singles[1]=1.0f- -(-0.0f);
@@ -1917,9 +1917,9 @@ finally
 }
 #pragma warning restore CS8500
 public const string NegativeLiteralKernel_Source = @"extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__ConstFieldLiteralKernels__NegativeLiteralKernel(GSharpArray<long long> __gsharp_id_0_longs, GSharpArray<double> __gsharp_id_1_doubles){
-__gsharp_id_0_longs[0]=(-2147483647-1);
+__gsharp_id_0_longs[0]=(-2147483648LL);
 __gsharp_id_0_longs[1]=(-9223372036854775807LL-1);
-__gsharp_id_0_longs[2]=(-5);
+__gsharp_id_0_longs[2]=(-5LL);
 __gsharp_id_1_doubles[0]=(double)(-2147483647-1);
 __gsharp_id_1_doubles[1]=(-0.0);
 __gsharp_id_1_doubles[2]=(-1.5);
@@ -2077,8 +2077,8 @@ finally
 #pragma warning restore CS8500
 public const string SuffixKernel_Source = @"extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__ConstFieldLiteralKernels__SuffixKernel(GSharpArray<unsigned long long> __gsharp_id_0_output, unsigned int __gsharp_id_1_factor, int __gsharp_id_2_shift){
 __gsharp_id_0_output[0]=4294967295U*__gsharp_id_1_factor;
-__gsharp_id_0_output[1]=(unsigned long long)(1LL<<__gsharp_id_2_shift);
-__gsharp_id_0_output[2]=1ULL<<(__gsharp_id_2_shift+23);
+__gsharp_id_0_output[1]=(unsigned long long)(__gsharp_shl_i64(1LL,__gsharp_id_2_shift));
+__gsharp_id_0_output[2]=1ULL<<(__gsharp_add_i32(__gsharp_id_2_shift,23)&63);
 auto __gsharp_id_3_seven = 7U;
 __gsharp_id_0_output[3]=__gsharp_id_3_seven-8;
 }
@@ -2391,7 +2391,7 @@ long long __gsharp_il_1_1_wide = (-9223372036854775807LL-1);
 long long __gsharp_il_2_5_value = __gsharp_il_1_0_narrow;
 {
 __gsharp_id_0_longs[__gsharp_id_4_k]=__gsharp_il_2_5_value;
-__gsharp_id_4_k++;
+__gsharp_id_4_k=__gsharp_add_i32(__gsharp_id_4_k,1);
 }
 __gsharp_iter_next_1_0:;
 }
@@ -2399,7 +2399,7 @@ __gsharp_iter_next_1_0:;
 long long __gsharp_il_3_5_value = __gsharp_il_1_1_wide;
 {
 __gsharp_id_0_longs[__gsharp_id_4_k]=__gsharp_il_3_5_value;
-__gsharp_id_4_k++;
+__gsharp_id_4_k=__gsharp_add_i32(__gsharp_id_4_k,1);
 }
 __gsharp_iter_next_1_1:;
 }
@@ -2412,7 +2412,7 @@ long long __gsharp_il_4_1_wide = (-9223372036854775807LL-1);
 long long __gsharp_il_5_6_value = __gsharp_il_4_0_narrow;
 {
 __gsharp_id_0_longs[__gsharp_id_4_k]=__gsharp_il_5_6_value;
-__gsharp_id_4_k++;
+__gsharp_id_4_k=__gsharp_add_i32(__gsharp_id_4_k,1);
 }
 __gsharp_iter_next_4_0:;
 }
@@ -2420,7 +2420,7 @@ __gsharp_iter_next_4_0:;
 long long __gsharp_il_6_6_value = __gsharp_il_4_1_wide;
 {
 __gsharp_id_0_longs[__gsharp_id_4_k]=__gsharp_il_6_6_value;
-__gsharp_id_4_k++;
+__gsharp_id_4_k=__gsharp_add_i32(__gsharp_id_4_k,1);
 }
 __gsharp_iter_next_4_1:;
 }
@@ -2437,7 +2437,7 @@ double __gsharp_il_7_4_zero = {};
 double __gsharp_il_8_8_value = __gsharp_il_7_0_nan;
 {
 __gsharp_id_2_doubles[__gsharp_id_7_d]=__gsharp_il_8_8_value;
-__gsharp_id_7_d++;
+__gsharp_id_7_d=__gsharp_add_i32(__gsharp_id_7_d,1);
 }
 __gsharp_iter_next_7_0:;
 }
@@ -2445,7 +2445,7 @@ __gsharp_iter_next_7_0:;
 double __gsharp_il_9_8_value = __gsharp_il_7_1_infinity;
 {
 __gsharp_id_2_doubles[__gsharp_id_7_d]=__gsharp_il_9_8_value;
-__gsharp_id_7_d++;
+__gsharp_id_7_d=__gsharp_add_i32(__gsharp_id_7_d,1);
 }
 __gsharp_iter_next_7_1:;
 }
@@ -2453,7 +2453,7 @@ __gsharp_iter_next_7_1:;
 double __gsharp_il_10_8_value = __gsharp_il_7_2_doubleNaN;
 {
 __gsharp_id_2_doubles[__gsharp_id_7_d]=__gsharp_il_10_8_value;
-__gsharp_id_7_d++;
+__gsharp_id_7_d=__gsharp_add_i32(__gsharp_id_7_d,1);
 }
 __gsharp_iter_next_7_2:;
 }
@@ -2461,7 +2461,7 @@ __gsharp_iter_next_7_2:;
 double __gsharp_il_11_8_value = __gsharp_il_7_3_negativeInfinity;
 {
 __gsharp_id_2_doubles[__gsharp_id_7_d]=__gsharp_il_11_8_value;
-__gsharp_id_7_d++;
+__gsharp_id_7_d=__gsharp_add_i32(__gsharp_id_7_d,1);
 }
 __gsharp_iter_next_7_3:;
 }
@@ -2469,7 +2469,7 @@ __gsharp_iter_next_7_3:;
 double __gsharp_il_12_8_value = __gsharp_il_7_4_zero;
 {
 __gsharp_id_2_doubles[__gsharp_id_7_d]=__gsharp_il_12_8_value;
-__gsharp_id_7_d++;
+__gsharp_id_7_d=__gsharp_add_i32(__gsharp_id_7_d,1);
 }
 __gsharp_iter_next_7_4:;
 }
@@ -2684,7 +2684,7 @@ if((-2)==0)
 {
 goto __gsharp_id_4_skip_Unroll_m2;
 }
-__gsharp_id_0_output[(-2)+2]=__gsharp_id_2_x-(-2);
+__gsharp_id_0_output[__gsharp_add_i32((-2),2)]=__gsharp_sub_i32(__gsharp_id_2_x,(-2));
 __gsharp_id_4_skip_Unroll_m2:;
 }
 {
@@ -2692,7 +2692,7 @@ if((-1)==0)
 {
 goto __gsharp_id_4_skip_Unroll_m1;
 }
-__gsharp_id_0_output[(-1)+2]=__gsharp_id_2_x-(-1);
+__gsharp_id_0_output[__gsharp_add_i32((-1),2)]=__gsharp_sub_i32(__gsharp_id_2_x,(-1));
 __gsharp_id_4_skip_Unroll_m1:;
 }
 {
@@ -2700,7 +2700,7 @@ if(0==0)
 {
 goto __gsharp_id_4_skip_Unroll_0;
 }
-__gsharp_id_0_output[0+2]=__gsharp_id_2_x-0;
+__gsharp_id_0_output[__gsharp_add_i32(0,2)]=__gsharp_sub_i32(__gsharp_id_2_x,0);
 __gsharp_id_4_skip_Unroll_0:;
 }
 {
@@ -2708,7 +2708,7 @@ if(1==0)
 {
 goto __gsharp_id_4_skip_Unroll_1;
 }
-__gsharp_id_0_output[1+2]=__gsharp_id_2_x-1;
+__gsharp_id_0_output[__gsharp_add_i32(1,2)]=__gsharp_sub_i32(__gsharp_id_2_x,1);
 __gsharp_id_4_skip_Unroll_1:;
 }
 }

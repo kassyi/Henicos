@@ -128,7 +128,7 @@ static_assert(alignof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Generator__AotC
 static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Generator__AotContextName__Pair,__gsharp_mb_A)==0,""Kassyi.GSharp.Tests.Shared.Generator.AotContextName.Pair.A: offset"");
 #endif
 extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Generator__AotContextName__AotContextNameKernels__First(GSharpArray<int> __gsharp_id_0_data, __gsharp_ty_Kassyi__GSharp__Tests__Shared__Generator__AotContextName__Pair __gsharp_id_1_pair){
-__gsharp_id_0_data[threadIdx.x]=__gsharp_id_1_pair.__gsharp_mb_A;
+__gsharp_id_0_data[(int)threadIdx.x]=__gsharp_id_1_pair.__gsharp_mb_A;
 }
 ";
 public static readonly string First_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +First_Source;
@@ -262,7 +262,7 @@ static_assert(alignof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Generator__AotC
 static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Generator__AotContextName__Pair,__gsharp_mb_A)==0,""Kassyi.GSharp.Tests.Shared.Generator.AotContextName.Pair.A: offset"");
 #endif
 extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Generator__AotContextName__AotContextNameKernels__Second(GSharpArray<int> __gsharp_id_0_data, __gsharp_ty_Kassyi__GSharp__Tests__Shared__Generator__AotContextName__Pair __gsharp_id_1_pair){
-__gsharp_id_0_data[threadIdx.x]=__gsharp_id_1_pair.__gsharp_mb_A+1;
+__gsharp_id_0_data[(int)threadIdx.x]=__gsharp_add_i32(__gsharp_id_1_pair.__gsharp_mb_A,1);
 }
 ";
 public static readonly string Second_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +Second_Source;
@@ -396,7 +396,7 @@ static_assert(alignof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Generator__AotC
 static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Generator__AotContextName__Box_g1_bSystem__Int32_e,__gsharp_mb_Value)==0,""Kassyi.GSharp.Tests.Shared.Generator.AotContextName.Box<System.Int32>.Value: offset"");
 #endif
 extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Generator__AotContextName__AotContextNameKernels__Third(GSharpArray<int> __gsharp_id_0_data, __gsharp_ty_Kassyi__GSharp__Tests__Shared__Generator__AotContextName__Box_g1_bSystem__Int32_e __gsharp_id_1_box){
-__gsharp_id_0_data[threadIdx.x]=__gsharp_id_1_box.__gsharp_mb_Value;
+__gsharp_id_0_data[(int)threadIdx.x]=__gsharp_id_1_box.__gsharp_mb_Value;
 }
 ";
 public static readonly string Third_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +Third_Source;

@@ -86,15 +86,15 @@ public static partial class AotContexts
 }
 public const string ShuffleInLaterWarpKernel_Source = @"extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Core__BlockBarrierStepKernels__ShuffleInLaterWarpKernel(GSharpArray<int> __gsharp_id_0_output){
 __shared__ int __gsharp_id_1_s[64];
-int __gsharp_id_2_tid = threadIdx.x;
+int __gsharp_id_2_tid = (int)threadIdx.x;
 int __gsharp_id_3_v = __gsharp_id_2_tid;
 if(__gsharp_id_2_tid>=32)
 {
 __gsharp_id_3_v=__shfl_down_sync(0xFFFFFFFFu,__gsharp_id_3_v,0,32);
 }
-__gsharp_id_1_s[__gsharp_id_2_tid]=__gsharp_id_3_v+1;
+__gsharp_id_1_s[__gsharp_id_2_tid]=__gsharp_add_i32(__gsharp_id_3_v,1);
 __syncthreads();
-__gsharp_id_0_output[blockIdx.x*64+__gsharp_id_2_tid]=__gsharp_id_1_s[(__gsharp_id_2_tid+32)%64];
+__gsharp_id_0_output[__gsharp_add_i32(__gsharp_mul_i32((int)blockIdx.x,64),__gsharp_id_2_tid)]=__gsharp_id_1_s[(__gsharp_add_i32(__gsharp_id_2_tid,32))%64];
 }
 ";
 public static readonly string ShuffleInLaterWarpKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +ShuffleInLaterWarpKernel_Source;
@@ -204,24 +204,24 @@ finally
 #pragma warning restore CS8500
 public const string ShuffleCountsAcrossBarriersKernel_Source = @"extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Core__BlockBarrierStepKernels__ShuffleCountsAcrossBarriersKernel(GSharpArray<int> __gsharp_id_0_output){
 __shared__ int __gsharp_id_1_s[64];
-int __gsharp_id_2_tid = threadIdx.x;
+int __gsharp_id_2_tid = (int)threadIdx.x;
 int __gsharp_id_3_warp = __gsharp_id_2_tid/32;
 int __gsharp_id_4_v = __gsharp_id_2_tid;
-for(int __gsharp_id_5_i = 0;__gsharp_id_5_i<=__gsharp_id_3_warp;__gsharp_id_5_i++)
+for(int __gsharp_id_5_i = 0;__gsharp_id_5_i<=__gsharp_id_3_warp;__gsharp_id_5_i=__gsharp_add_i32(__gsharp_id_5_i,1))
 {
-__gsharp_id_4_v=__shfl_xor_sync(0xFFFFFFFFu,__gsharp_id_4_v,0,32)+1;
+__gsharp_id_4_v=__gsharp_add_i32(__shfl_xor_sync(0xFFFFFFFFu,__gsharp_id_4_v,0,32),1);
 }
 __gsharp_id_1_s[__gsharp_id_2_tid]=__gsharp_id_4_v;
 __syncthreads();
-int __gsharp_id_6_other = __gsharp_id_1_s[(__gsharp_id_2_tid+32)%64];
+int __gsharp_id_6_other = __gsharp_id_1_s[(__gsharp_add_i32(__gsharp_id_2_tid,32))%64];
 __syncthreads();
-for(int __gsharp_id_7_i = 0;__gsharp_id_7_i<2-__gsharp_id_3_warp;__gsharp_id_7_i++)
+for(int __gsharp_id_7_i = 0;__gsharp_id_7_i<__gsharp_sub_i32(2,__gsharp_id_3_warp);__gsharp_id_7_i++)
 {
-__gsharp_id_6_other=__shfl_xor_sync(0xFFFFFFFFu,__gsharp_id_6_other,0,32)+10;
+__gsharp_id_6_other=__gsharp_add_i32(__shfl_xor_sync(0xFFFFFFFFu,__gsharp_id_6_other,0,32),10);
 }
 __gsharp_id_1_s[__gsharp_id_2_tid]=__gsharp_id_6_other;
 __syncthreads();
-__gsharp_id_0_output[blockIdx.x*64+__gsharp_id_2_tid]=__gsharp_id_1_s[(__gsharp_id_2_tid+32)%64];
+__gsharp_id_0_output[__gsharp_add_i32(__gsharp_mul_i32((int)blockIdx.x,64),__gsharp_id_2_tid)]=__gsharp_id_1_s[(__gsharp_add_i32(__gsharp_id_2_tid,32))%64];
 }
 ";
 public static readonly string ShuffleCountsAcrossBarriersKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +ShuffleCountsAcrossBarriersKernel_Source;
@@ -331,24 +331,24 @@ finally
 #pragma warning restore CS8500
 public const string ShuffleBarrierAndGridSyncKernel_Source = @"extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Core__BlockBarrierStepKernels__ShuffleBarrierAndGridSyncKernel(GSharpArray<int> __gsharp_id_0_data, GSharpArray<int> __gsharp_id_1_output){
 __shared__ int __gsharp_id_2_s[64];
-int __gsharp_id_3_tid = threadIdx.x;
-int __gsharp_id_4_gid = blockIdx.x*64+__gsharp_id_3_tid;
-int __gsharp_id_5_total = gridDim.x*64;
+int __gsharp_id_3_tid = (int)threadIdx.x;
+int __gsharp_id_4_gid = __gsharp_add_i32(__gsharp_mul_i32((int)blockIdx.x,64),__gsharp_id_3_tid);
+int __gsharp_id_5_total = __gsharp_mul_i32((int)gridDim.x,64);
 int __gsharp_id_6_v = __gsharp_id_4_gid;
 if(__gsharp_id_3_tid>=32)
 {
 __gsharp_id_6_v=__shfl_down_sync(0xFFFFFFFFu,__gsharp_id_6_v,0,32);
 }
-__gsharp_id_2_s[__gsharp_id_3_tid]=__gsharp_id_6_v+1;
+__gsharp_id_2_s[__gsharp_id_3_tid]=__gsharp_add_i32(__gsharp_id_6_v,1);
 __syncthreads();
-int __gsharp_id_7_w = __gsharp_id_2_s[(__gsharp_id_3_tid+32)%64];
+int __gsharp_id_7_w = __gsharp_id_2_s[(__gsharp_add_i32(__gsharp_id_3_tid,32))%64];
 if(__gsharp_id_3_tid<32)
 {
 __gsharp_id_7_w=__shfl_down_sync(0xFFFFFFFFu,__gsharp_id_7_w,0,32);
 }
 __gsharp_id_0_data[__gsharp_id_4_gid]=__gsharp_id_7_w;
 cg::this_grid().sync();
-__gsharp_id_1_output[__gsharp_id_4_gid]=__gsharp_id_0_data[(__gsharp_id_4_gid+64)%__gsharp_id_5_total];
+__gsharp_id_1_output[__gsharp_id_4_gid]=__gsharp_id_0_data[(__gsharp_add_i32(__gsharp_id_4_gid,64))%__gsharp_id_5_total];
 }
 ";
 public static readonly string ShuffleBarrierAndGridSyncKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +ShuffleBarrierAndGridSyncKernel_Source;

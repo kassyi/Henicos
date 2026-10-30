@@ -99,10 +99,10 @@ extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__M
 __shared__ int __gsharp_id_3_intSmem[256];
 __shared__ float __gsharp_id_4_floatSmem[256];
 __shared__ __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__CustomPoint __gsharp_id_5_pointSmem[64];
-int __gsharp_id_6_tid = threadIdx.x;
+int __gsharp_id_6_tid = (int)threadIdx.x;
 if(__gsharp_id_6_tid<256)
 {
-__gsharp_id_3_intSmem[__gsharp_id_6_tid]=__gsharp_id_6_tid*3;
+__gsharp_id_3_intSmem[__gsharp_id_6_tid]=__gsharp_mul_i32(__gsharp_id_6_tid,3);
 __gsharp_id_4_floatSmem[__gsharp_id_6_tid]=__gsharp_id_6_tid*1.5f;
 }
 if(__gsharp_id_6_tid<64)

@@ -52,15 +52,15 @@ struct __gsharp_frame_Kassyi__GSharp__Tests__Shared__Syntax__EvaluationOrderKern
 template <typename TRoot> inline bool __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__EvaluationOrderKernels__CombineAcrossBarrier(int __gsharp_id_0_a, int __gsharp_id_1_b, __gsharp_frame_Kassyi__GSharp__Tests__Shared__Syntax__EvaluationOrderKernels__CombineAcrossBarrier* __gsharp_ctx, TRoot* __gsharp_root, int* __gsharp_result);
 
 inline int __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__EvaluationOrderKernels__Next(int* __gsharp_id_0_counter){
-return (*__gsharp_id_0_counter)++;
+return __gsharp_sub_i32(((*__gsharp_id_0_counter)=__gsharp_add_i32((*__gsharp_id_0_counter),1)),1);
 }
 
 inline int __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__EvaluationOrderKernels__Sub(int __gsharp_id_0_a, int __gsharp_id_1_b){
-return __gsharp_id_0_a-__gsharp_id_1_b;
+return __gsharp_sub_i32(__gsharp_id_0_a,__gsharp_id_1_b);
 }
 
 inline int __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__EvaluationOrderKernels__Combine(int __gsharp_id_0_a, int __gsharp_id_1_b){
-return __gsharp_id_0_a*10+__gsharp_id_1_b;
+return __gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_0_a,10),__gsharp_id_1_b);
 }
 
 inline int __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__EvaluationOrderKernels__Store(GSharpArray<int> __gsharp_id_0_data, int __gsharp_id_1_value){
@@ -69,34 +69,34 @@ return __gsharp_id_1_value;
 }
 
 inline int __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__EvaluationOrderKernels__Bump(GSharpArray<int> __gsharp_id_0_data){
-__gsharp_id_0_data[0]+=100;
+__gsharp_id_0_data[0]=__gsharp_add_i32(__gsharp_id_0_data[0],100);
 return 0;
 }
 
 inline int __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__EvaluationOrderKernels__Record(GSharpArray<int> __gsharp_id_0_log, int __gsharp_id_1_index){
-__gsharp_id_0_log[__gsharp_id_1_index]+=1;
-return __gsharp_id_1_index*2;
+__gsharp_id_0_log[__gsharp_id_1_index]=__gsharp_add_i32(__gsharp_id_0_log[__gsharp_id_1_index],1);
+return __gsharp_mul_i32(__gsharp_id_1_index,2);
 }
 
 inline int __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__EvaluationOrderKernels__Pure(int __gsharp_id_0_x){
-return __gsharp_id_0_x*3+1;
+return __gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_0_x,3),1);
 }
 
 inline unsigned int __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__EvaluationOrderKernels__RotR(unsigned int __gsharp_id_0_x, int __gsharp_id_1_n){
-return (__gsharp_id_0_x>>__gsharp_id_1_n)|(__gsharp_id_0_x<<(32-__gsharp_id_1_n));
+return (__gsharp_id_0_x>>(__gsharp_id_1_n&31))|(__gsharp_id_0_x<<(__gsharp_sub_i32(32,__gsharp_id_1_n)&31));
 }
 
 inline int __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__EvaluationOrderKernels__ReadIn(const int* __gsharp_id_0_a, int __gsharp_id_1_b){
-return (*__gsharp_id_0_a)*10+__gsharp_id_1_b;
+return __gsharp_add_i32(__gsharp_mul_i32((*__gsharp_id_0_a),10),__gsharp_id_1_b);
 }
 
 inline int __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__EvaluationOrderKernels__SplitOut(int* __gsharp_id_0_product, int __gsharp_id_1_a, int __gsharp_id_2_b){
-(*__gsharp_id_0_product)=__gsharp_id_1_a*__gsharp_id_2_b;
-return __gsharp_id_1_a*10+__gsharp_id_2_b;
+(*__gsharp_id_0_product)=__gsharp_mul_i32(__gsharp_id_1_a,__gsharp_id_2_b);
+return __gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_1_a,10),__gsharp_id_2_b);
 }
 
 inline int __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__EvaluationOrderKernels__Accumulate(int* __gsharp_id_0_total){
-(*__gsharp_id_0_total)+=10;
+(*__gsharp_id_0_total)=__gsharp_add_i32((*__gsharp_id_0_total),10);
 return 1;
 }
 
@@ -112,7 +112,7 @@ static_assert(alignof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__EoScala
 static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__EoScalar,__gsharp_mb_Value)==0,""Kassyi.GSharp.Tests.Shared.Syntax.EoScalar.Value: offset"");
 #endif
 inline void __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__EvaluationOrderKernels__CombineInto(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__EoScalar* __gsharp_id_0_result, __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__EoScalar __gsharp_id_1_left, __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__EoScalar __gsharp_id_2_right){
-(*__gsharp_id_0_result).__gsharp_mb_Value=__gsharp_id_1_left.__gsharp_mb_Value*10+__gsharp_id_2_right.__gsharp_mb_Value;
+(*__gsharp_id_0_result).__gsharp_mb_Value=__gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_1_left.__gsharp_mb_Value,10),__gsharp_id_2_right.__gsharp_mb_Value);
 }
 
 #ifndef __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__EoScalar__
@@ -128,7 +128,7 @@ static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__EoScal
 #endif
 inline __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__EoScalar __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__EvaluationOrderKernels__Take(int* __gsharp_id_0_counter){
 return ([&]() {
-__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__EoScalar __gsharp_tmp{}; __gsharp_tmp.__gsharp_mb_Value = (*__gsharp_id_0_counter)++; return __gsharp_tmp; }
+__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__EoScalar __gsharp_tmp{}; __gsharp_tmp.__gsharp_mb_Value = __gsharp_sub_i32(((*__gsharp_id_0_counter)=__gsharp_add_i32((*__gsharp_id_0_counter),1)),1); return __gsharp_tmp; }
 ());
 }
 
@@ -142,16 +142,16 @@ return 0;
 }
 
 inline long long __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__EvaluationOrderKernels__ReadInLong(const long long* __gsharp_id_0_a, int __gsharp_id_1_b){
-return (*__gsharp_id_0_a)*10+__gsharp_id_1_b;
+return __gsharp_add_i64(__gsharp_mul_i64((*__gsharp_id_0_a),10),__gsharp_id_1_b);
 }
 
 inline int __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__EvaluationOrderKernels__BumpShort(short* __gsharp_id_0_value){
-(*__gsharp_id_0_value)+=5;
+(*__gsharp_id_0_value)=(short)__gsharp_add_i32((*__gsharp_id_0_value),5);
 return 0;
 }
 
 inline int& __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__EvaluationOrderKernels__Pick(GSharpArray<int> __gsharp_id_0_a, int __gsharp_id_1_i, int __gsharp_id_2_j){
-return __gsharp_id_0_a[__gsharp_id_1_i+__gsharp_id_2_j];
+return __gsharp_id_0_a[__gsharp_add_i32(__gsharp_id_1_i,__gsharp_id_2_j)];
 }
 
 inline int& __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__EvaluationOrderKernels__Choose(int* __gsharp_id_0_a, int* __gsharp_id_1_b, bool __gsharp_id_2_first){
@@ -186,7 +186,7 @@ return false;
 case 1:
 __gsharp_switch_1_state_1:
 {
-*__gsharp_result = __gsharp_id_0_a*10+__gsharp_id_1_b;
+*__gsharp_result = __gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_0_a,10),__gsharp_id_1_b);
 __gsharp_state = 0;return true;
 __gsharp_state = 0;return true;
 }
@@ -313,8 +313,8 @@ return __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__EvaluationOrderKernels
 }());
 int __gsharp_id_4_j = 0;
 auto __gsharp_id_5_pair = ([&]() {
-int __gsharp_seq_2 = __gsharp_id_0_buffer[__gsharp_id_4_j++];
-int __gsharp_seq_3 = __gsharp_id_0_buffer[__gsharp_id_4_j++];
+int __gsharp_seq_2 = __gsharp_id_0_buffer[__gsharp_sub_i32((__gsharp_id_4_j=__gsharp_add_i32(__gsharp_id_4_j,1)),1)];
+int __gsharp_seq_3 = __gsharp_id_0_buffer[__gsharp_sub_i32((__gsharp_id_4_j=__gsharp_add_i32(__gsharp_id_4_j,1)),1)];
 return __gsharp_ctor_Kassyi__GSharp__Tests__Shared__Syntax__EoPair(__gsharp_seq_2, __gsharp_seq_3);
 }());
 __gsharp_id_2_result[1]=__gsharp_id_5_pair.__gsharp_mb_X;
@@ -341,8 +341,8 @@ return __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__EvaluationOrderKernels
 __gsharp_id_2_result[6]=__gsharp_id_8_product;
 int __gsharp_id_9_m = 0;
 __gsharp_id_2_result[7]=([&]() {
-auto&& __gsharp_seq_10 = __gsharp_id_0_buffer[__gsharp_id_9_m++];
-int __gsharp_seq_11 = __gsharp_id_0_buffer[__gsharp_id_9_m++];
+auto&& __gsharp_seq_10 = __gsharp_id_0_buffer[__gsharp_sub_i32((__gsharp_id_9_m=__gsharp_add_i32(__gsharp_id_9_m,1)),1)];
+int __gsharp_seq_11 = __gsharp_id_0_buffer[__gsharp_sub_i32((__gsharp_id_9_m=__gsharp_add_i32(__gsharp_id_9_m,1)),1)];
 return __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__EvaluationOrderKernels__ReadIn(&__gsharp_seq_10,__gsharp_seq_11);
 }());
 __gsharp_state=-1;
@@ -612,14 +612,14 @@ case 0:
 __gsharp_switch_1_state_0:
 {
 int __gsharp_id_2_i = 0;
-auto __gsharp_id_3_v = float3{__gsharp_id_0_buffer[__gsharp_id_2_i++], __gsharp_id_0_buffer[__gsharp_id_2_i++], __gsharp_id_0_buffer[__gsharp_id_2_i++]};
+auto __gsharp_id_3_v = float3{__gsharp_id_0_buffer[__gsharp_sub_i32((__gsharp_id_2_i=__gsharp_add_i32(__gsharp_id_2_i,1)),1)], __gsharp_id_0_buffer[__gsharp_sub_i32((__gsharp_id_2_i=__gsharp_add_i32(__gsharp_id_2_i,1)),1)], __gsharp_id_0_buffer[__gsharp_sub_i32((__gsharp_id_2_i=__gsharp_add_i32(__gsharp_id_2_i,1)),1)]};
 __gsharp_id_1_result[0]=__gsharp_id_3_v.x;
 __gsharp_id_1_result[1]=__gsharp_id_3_v.y;
 __gsharp_id_1_result[2]=__gsharp_id_3_v.z;
 int __gsharp_id_4_j = 0;
 auto __gsharp_id_5_w = ([&]() {
-float2 __gsharp_seq_0 = float2{__gsharp_id_0_buffer[__gsharp_id_4_j++], __gsharp_id_0_buffer[__gsharp_id_4_j++]};
-float __gsharp_seq_1 = __gsharp_id_0_buffer[__gsharp_id_4_j++];
+float2 __gsharp_seq_0 = float2{__gsharp_id_0_buffer[__gsharp_sub_i32((__gsharp_id_4_j=__gsharp_add_i32(__gsharp_id_4_j,1)),1)], __gsharp_id_0_buffer[__gsharp_sub_i32((__gsharp_id_4_j=__gsharp_add_i32(__gsharp_id_4_j,1)),1)]};
+float __gsharp_seq_1 = __gsharp_id_0_buffer[__gsharp_sub_i32((__gsharp_id_4_j=__gsharp_add_i32(__gsharp_id_4_j,1)),1)];
 return __gsharp_vector3_create(__gsharp_seq_0, __gsharp_seq_1);
 }());
 __gsharp_id_1_result[3]=__gsharp_id_5_w.x;
@@ -877,7 +877,7 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-int __gsharp_id_3_tid = threadIdx.x;
+int __gsharp_id_3_tid = (int)threadIdx.x;
 int __gsharp_id_4_x = __gsharp_id_0_a[__gsharp_id_3_tid];
 __gsharp_id_2_result[0]=__gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__EvaluationOrderKernels__Combine(__gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__EvaluationOrderKernels__Pure(__gsharp_id_4_x),__gsharp_id_0_a[__gsharp_id_3_tid]);
 __gsharp_id_2_result[1]=__gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__EvaluationOrderKernels__Combine(__gsharp_id_0_a[__gsharp_id_3_tid],__gsharp_id_1_b[__gsharp_id_3_tid]);
@@ -1971,8 +1971,8 @@ return __gsharp_seq_0 = __gsharp_seq_1;
 int __gsharp_id_4_j = 0;
 ([&]() {
 auto&& __gsharp_seq_2 = __gsharp_id_1_bytes[__gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__EvaluationOrderKernels__Next(&__gsharp_id_4_j)];
-auto __gsharp_seq_3 = (unsigned char)(__gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__EvaluationOrderKernels__Next(&__gsharp_id_4_j)+250);
-return __gsharp_seq_2 = (unsigned char)(__gsharp_seq_2+__gsharp_seq_3);
+auto __gsharp_seq_3 = (unsigned char)(__gsharp_add_i32(__gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__EvaluationOrderKernels__Next(&__gsharp_id_4_j),250));
+return __gsharp_seq_2 = (unsigned char)__gsharp_add_i32(__gsharp_seq_2,__gsharp_seq_3);
 }());
 int __gsharp_id_5_flags = 1;
 ([&]() {
@@ -3025,13 +3025,13 @@ return __gsharp_seq_0 = __gsharp_seq_1;
 }());
 int __gsharp_id_4_c = 0;
 ([&]() {
-auto&& __gsharp_seq_2 = __gsharp_id_1_b[__gsharp_id_4_c++];
+auto&& __gsharp_seq_2 = __gsharp_id_1_b[__gsharp_sub_i32((__gsharp_id_4_c=__gsharp_add_i32(__gsharp_id_4_c,1)),1)];
 int __gsharp_seq_3 = __gsharp_id_4_c;
 return __gsharp_seq_2 = __gsharp_seq_3;
 }());
 int __gsharp_id_5_n = 0;
 ([&]() {
-auto&& __gsharp_seq_4 = __gsharp_id_2_e[++__gsharp_id_5_n];
+auto&& __gsharp_seq_4 = __gsharp_id_2_e[(__gsharp_id_5_n=__gsharp_add_i32(__gsharp_id_5_n,1))];
 int __gsharp_seq_5 = __gsharp_id_5_n;
 return __gsharp_seq_4 = __gsharp_seq_5;
 }());
@@ -3292,14 +3292,14 @@ int __gsharp_id_2_i = 0;
 ([&]() {
 auto&& __gsharp_seq_0 = __gsharp_id_0_d[__gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__EvaluationOrderKernels__Next(&__gsharp_id_2_i)];
 auto __gsharp_seq_1 = __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__EvaluationOrderKernels__Next(&__gsharp_id_2_i);
-return __gsharp_seq_0 = (int)(__gsharp_seq_0+__gsharp_seq_1);
+return __gsharp_seq_0 = (int)__gsharp_add_i32(__gsharp_seq_0,__gsharp_seq_1);
 }());
 int __gsharp_id_3_sum = 5;
 ([&]() {
 auto&& __gsharp_seq_2 = __gsharp_id_3_sum;
 auto __gsharp_seq_3 = __gsharp_seq_2;
 auto __gsharp_seq_4 = __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__EvaluationOrderKernels__Accumulate(&__gsharp_id_3_sum);
-return __gsharp_seq_2 = (int)(__gsharp_seq_3+__gsharp_seq_4);
+return __gsharp_seq_2 = (int)__gsharp_add_i32(__gsharp_seq_3,__gsharp_seq_4);
 }());
 __gsharp_id_1_result[0]=__gsharp_id_3_sum;
 __gsharp_state=-1;
@@ -3547,12 +3547,12 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-int __gsharp_id_3_tid = threadIdx.x;
+int __gsharp_id_3_tid = (int)threadIdx.x;
 __gsharp_id_0_output[__gsharp_id_3_tid]=__gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__EvaluationOrderKernels__Record(__gsharp_id_1_log,__gsharp_id_3_tid);
 int __gsharp_id_4_sum = 0;
-for(int __gsharp_id_5_t = 0;__gsharp_id_5_t<4;__gsharp_id_5_t++)
+for(int __gsharp_id_5_t = 0;__gsharp_id_5_t<4;__gsharp_id_5_t=__gsharp_add_i32(__gsharp_id_5_t,1))
 {
-__gsharp_id_4_sum+=__gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__EvaluationOrderKernels__Record(__gsharp_id_1_log,__gsharp_id_5_t);
+__gsharp_id_4_sum=__gsharp_add_i32(__gsharp_id_4_sum,__gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__EvaluationOrderKernels__Record(__gsharp_id_1_log,__gsharp_id_5_t));
 }
 __gsharp_id_2_result[0]=__gsharp_id_4_sum;
 __gsharp_state=-1;
@@ -3815,23 +3815,23 @@ int __gsharp_id_2_i = 0;
 __gsharp_id_1_result[0]=([&]() {
 auto __gsharp_seq_0 = __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__EvaluationOrderKernels__Next(&__gsharp_id_2_i);
 auto __gsharp_seq_1 = __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__EvaluationOrderKernels__Next(&__gsharp_id_2_i);
-return __gsharp_seq_0-__gsharp_seq_1;
+return __gsharp_sub_i32(__gsharp_seq_0,__gsharp_seq_1);
 }());
 int __gsharp_id_3_j = 0;
 __gsharp_id_1_result[1]=([&]() {
-auto __gsharp_seq_2 = __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__EvaluationOrderKernels__Next(&__gsharp_id_3_j)*10;
+auto __gsharp_seq_2 = __gsharp_mul_i32(__gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__EvaluationOrderKernels__Next(&__gsharp_id_3_j),10);
 auto __gsharp_seq_3 = __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__EvaluationOrderKernels__Next(&__gsharp_id_3_j);
-return __gsharp_seq_2+__gsharp_seq_3;
+return __gsharp_add_i32(__gsharp_seq_2,__gsharp_seq_3);
 }());
 __gsharp_id_0_data[0]=7;
 __gsharp_id_1_result[2]=([&]() {
 auto __gsharp_seq_4 = __gsharp_id_0_data[0];
 auto __gsharp_seq_5 = __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__EvaluationOrderKernels__Bump(__gsharp_id_0_data);
-return __gsharp_seq_4+__gsharp_seq_5;
+return __gsharp_add_i32(__gsharp_seq_4,__gsharp_seq_5);
 }());
 int __gsharp_id_4_k = 0;
 __gsharp_id_1_result[3]=([&]() {
-auto __gsharp_seq_6 = (__gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__EvaluationOrderKernels__Next(&__gsharp_id_4_k)<<4);
+auto __gsharp_seq_6 = (__gsharp_shl_i32(__gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__EvaluationOrderKernels__Next(&__gsharp_id_4_k),4));
 auto __gsharp_seq_7 = __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__EvaluationOrderKernels__Next(&__gsharp_id_4_k);
 return __gsharp_seq_6|__gsharp_seq_7;
 }());
@@ -4093,10 +4093,10 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-int __gsharp_id_5_tid = threadIdx.x;
+int __gsharp_id_5_tid = (int)threadIdx.x;
 unsigned int __gsharp_id_6_x = __gsharp_id_0_input[__gsharp_id_5_tid];
 __gsharp_id_3_rotated[__gsharp_id_5_tid]=__gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__EvaluationOrderKernels__RotR(__gsharp_id_6_x,2)^__gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__EvaluationOrderKernels__RotR(__gsharp_id_6_x,13);
-__gsharp_id_4_sums[__gsharp_id_5_tid]=__gsharp_id_1_a[__gsharp_id_5_tid]+__gsharp_id_2_b[__gsharp_id_5_tid];
+__gsharp_id_4_sums[__gsharp_id_5_tid]=__gsharp_add_i32(__gsharp_id_1_a[__gsharp_id_5_tid],__gsharp_id_2_b[__gsharp_id_5_tid]);
 __gsharp_state=-1;
 return;
 }

@@ -94,6 +94,7 @@ internal sealed class TranspilerRuleRegistry
             SyntaxKind.OrAssignmentExpression,
             SyntaxKind.LeftShiftAssignmentExpression,
             SyntaxKind.RightShiftAssignmentExpression,
+            SyntaxKind.UnsignedRightShiftAssignmentExpression,
             SyntaxKind.CoalesceAssignmentExpression
         ], new AssignmentExpressionTranspilerRule());
         registry.Register([
@@ -104,6 +105,7 @@ internal sealed class TranspilerRuleRegistry
             SyntaxKind.ModuloExpression,
             SyntaxKind.LeftShiftExpression,
             SyntaxKind.RightShiftExpression,
+            SyntaxKind.UnsignedRightShiftExpression,
             SyntaxKind.LogicalOrExpression,
             SyntaxKind.LogicalAndExpression,
             SyntaxKind.BitwiseOrExpression,

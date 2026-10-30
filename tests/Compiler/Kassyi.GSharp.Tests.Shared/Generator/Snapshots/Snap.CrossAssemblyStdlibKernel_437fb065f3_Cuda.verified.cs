@@ -89,7 +89,7 @@ for(int __gsharp_id_2_i = 0;__gsharp_id_2_i<5;__gsharp_id_2_i++)
 {
 __gsharp_id_1_inv*=2u-__gsharp_id_0_n0*__gsharp_id_1_inv;
 }
-return (unsigned int)-(int)__gsharp_id_1_inv;
+return (unsigned int)__gsharp_neg_i32((int)__gsharp_id_1_inv);
 }
 
 __forceinline__ __device__ unsigned int __gsharp_fn_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuBigIntKernels__PackCarryState(__gsharp_ty_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuBigIntKernels__CarryState __gsharp_id_0_state){
@@ -99,7 +99,7 @@ return (__gsharp_id_0_state.__gsharp_mb_Propagate<<1)|__gsharp_id_0_state.__gsha
 __forceinline__ __device__ __gsharp_ty_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuBigIntKernels__CarryState __gsharp_fn_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuBigIntKernels__WarpScanGp(__gsharp_ty_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuBigIntKernels__CarryState __gsharp_id_0_state, int __gsharp_id_1_laneId){
 auto __gsharp_id_2_g = __gsharp_id_0_state.__gsharp_mb_Generate;
 auto __gsharp_id_3_p = __gsharp_id_0_state.__gsharp_mb_Propagate;
-for(int __gsharp_id_4_i = 1;__gsharp_id_4_i<32;__gsharp_id_4_i*=2)
+for(int __gsharp_id_4_i = 1;__gsharp_id_4_i<32;__gsharp_id_4_i=__gsharp_mul_i32(__gsharp_id_4_i,2))
 {
 auto __gsharp_id_5_prevG = __shfl_up_sync(0xFFFFFFFFu,__gsharp_id_2_g,(unsigned int)__gsharp_id_4_i,32);
 auto __gsharp_id_6_prevP = __shfl_up_sync(0xFFFFFFFFu,__gsharp_id_3_p,(unsigned int)__gsharp_id_4_i,32);
@@ -141,7 +141,7 @@ public static partial class AotContexts
 {
 }
 public const string MontgomeryMuKernel_Source = @"extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Stdlib__CrossAssemblyStdlibKernels__MontgomeryMuKernel(GSharpArray<unsigned int> __gsharp_id_0_moduli, GSharpArray<unsigned int> __gsharp_id_1_result){
-int __gsharp_id_2_tid = threadIdx.x;
+int __gsharp_id_2_tid = (int)threadIdx.x;
 __gsharp_id_1_result[__gsharp_id_2_tid]=__gsharp_fn_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__CooperativeMath__ComputeMontgomeryMu(__gsharp_id_0_moduli[__gsharp_id_2_tid]);
 }
 ";
@@ -309,7 +309,7 @@ static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kern
 static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuBigIntKernels__CarryState,__gsharp_mb_Propagate)==4,""Kassyi.GSharp.Stdlib.GpuMath.BigNum.Kernels.GpuBigIntKernels.CarryState.Propagate: offset"");
 #endif
 extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Stdlib__CrossAssemblyStdlibKernels__WarpScanKernel(GSharpArray<unsigned int> __gsharp_id_0_generate, GSharpArray<unsigned int> __gsharp_id_1_propagate, GSharpArray<unsigned int> __gsharp_id_2_result){
-int __gsharp_id_3_lane = threadIdx.x;
+int __gsharp_id_3_lane = (int)threadIdx.x;
 auto __gsharp_id_4_scanned = __gsharp_fn_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuBigIntKernels__WarpScanGp(__gsharp_ctor_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuBigIntKernels__CarryState(__gsharp_id_0_generate[__gsharp_id_3_lane], __gsharp_id_1_propagate[__gsharp_id_3_lane]),__gsharp_id_3_lane);
 __gsharp_id_2_result[__gsharp_id_3_lane]=__gsharp_fn_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuBigIntKernels__PackCarryState(__gsharp_id_4_scanned);
 }

@@ -103,6 +103,14 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker, IDisposable
             return;
         }
 
+        // A part of a target that a step or compound assignment evaluated into a temporary (IntegerSemantics)
+        if (Context.Emitter.SpilledExpressions.Count > 0 &&
+            Context.Emitter.SpilledExpressions.TryGetValue(node, out var spilled))
+        {
+            EvaluationOrder.AppendTempName(Context.Emitter.Writer, spilled);
+            return;
+        }
+
         var previousNode = Context.Emitter.CurrentNode;
         Context.Emitter.CurrentNode = node;
 
@@ -314,9 +322,7 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker, IDisposable
         Context.Emitter.Writer.Append("case ");
         Visit(node.Value);
         Context.Emitter.Writer.AppendLine(":");
-        var activeId = Context.Emitter.CurrentSwitchId;
-        Context.Emitter.Writer.Append($"{GSharpInternalNames.Lowering.SwitchStatePrefix}{activeId}_state_");
-        Visit(node.Value);
+        SwitchStateLabel.Append(node.Value, ref Context);
         Context.Emitter.Writer.Append(":");
     }
 
@@ -384,7 +390,7 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker, IDisposable
         {
             case IFieldSymbol { IsConst: true, HasConstantValue: true } field:
 
-                Context.Emitter.Writer.AppendConstantField(field);
+                ConstantAtUse.Append(node, field.Type, field.ConstantValue, ref Context);
 
                 return;
             case IParameterSymbol { RefKind: RefKind.Ref or RefKind.Out } or ILocalSymbol { IsRef: true }:

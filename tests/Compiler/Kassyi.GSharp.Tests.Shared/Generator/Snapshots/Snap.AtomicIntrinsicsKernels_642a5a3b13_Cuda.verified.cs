@@ -93,16 +93,16 @@ public static partial class AotContexts
 {
 }
 public const string AtomicArithmeticKernel_Source = @"extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__AtomicIntrinsicsKernels__AtomicArithmeticKernel(GSharpArray<int> __gsharp_id_0_intState, GSharpArray<unsigned int> __gsharp_id_1_uintState, GSharpArray<unsigned long long> __gsharp_id_2_ulongState, GSharpArray<float> __gsharp_id_3_floatState){
-int __gsharp_id_4_tid = threadIdx.x;
+int __gsharp_id_4_tid = (int)threadIdx.x;
 atomicSub(&__gsharp_id_0_intState[0],1);
-atomicMin(&__gsharp_id_0_intState[1],__gsharp_id_4_tid-5);
-atomicAnd(&__gsharp_id_1_uintState[0],~(1u<<__gsharp_id_4_tid));
-atomicXor(&__gsharp_id_1_uintState[1],1u<<__gsharp_id_4_tid);
+atomicMin(&__gsharp_id_0_intState[1],__gsharp_sub_i32(__gsharp_id_4_tid,5));
+atomicAnd(&__gsharp_id_1_uintState[0],~(1u<<(__gsharp_id_4_tid&31)));
+atomicXor(&__gsharp_id_1_uintState[1],1u<<(__gsharp_id_4_tid&31));
 atomicMin(&__gsharp_id_1_uintState[2],(unsigned int)__gsharp_id_4_tid);
 atomicMax(&__gsharp_id_1_uintState[3],(__gsharp_id_4_tid==31?4294967295U:(unsigned int)__gsharp_id_4_tid));
-atomicXor(&__gsharp_id_2_ulongState[0],1ull<<(__gsharp_id_4_tid+32));
+atomicXor(&__gsharp_id_2_ulongState[0],1ull<<(__gsharp_add_i32(__gsharp_id_4_tid,32)&63));
 atomicMin(&__gsharp_id_2_ulongState[1],(unsigned long long)__gsharp_id_4_tid);
-atomicAnd(&__gsharp_id_2_ulongState[2],~(1ull<<__gsharp_id_4_tid));
+atomicAnd(&__gsharp_id_2_ulongState[2],~(1ull<<(__gsharp_id_4_tid&63)));
 atomicAdd(&__gsharp_id_3_floatState[0],0.5f);
 if(__gsharp_id_4_tid==0)
 {
@@ -586,7 +586,7 @@ finally
 }
 #pragma warning restore CS8500
 public const string AtomicRefParameterKernel_Source = @"extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__AtomicIntrinsicsKernels__AtomicRefParameterKernel(GSharpArray<int> __gsharp_id_0_counter){
-__gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__AtomicIntrinsicsKernels__AccumulateThroughRef(&__gsharp_id_0_counter[0],threadIdx.x+1);
+__gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__AtomicIntrinsicsKernels__AccumulateThroughRef(&__gsharp_id_0_counter[0],__gsharp_add_i32((int)threadIdx.x,1));
 }
 ";
 public static readonly string AtomicRefParameterKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +AtomicRefParameterKernel_Source;
@@ -695,39 +695,39 @@ finally
 }
 #pragma warning restore CS8500
 public const string AtomicOldValueKernel_Source = @"extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__AtomicIntrinsicsKernels__AtomicOldValueKernel(GSharpArray<int> __gsharp_id_0_ints, GSharpArray<int> __gsharp_id_1_intOld, GSharpArray<unsigned int> __gsharp_id_2_uints, GSharpArray<unsigned int> __gsharp_id_3_uintOld, GSharpArray<unsigned long long> __gsharp_id_4_ulongs, GSharpArray<unsigned long long> __gsharp_id_5_ulongOld, GSharpArray<float> __gsharp_id_6_floats, GSharpArray<float> __gsharp_id_7_floatOld){
-int __gsharp_id_8_tid = threadIdx.x;
-int __gsharp_id_9_n = blockDim.x;
-__gsharp_id_1_intOld[0*__gsharp_id_9_n+__gsharp_id_8_tid]=atomicAdd(&__gsharp_id_0_ints[0],1);
-__gsharp_id_1_intOld[1*__gsharp_id_9_n+__gsharp_id_8_tid]=atomicSub(&__gsharp_id_0_ints[1],1);
-__gsharp_id_1_intOld[2*__gsharp_id_9_n+__gsharp_id_8_tid]=atomicExch(&__gsharp_id_0_ints[2],__gsharp_id_8_tid+1);
-__gsharp_id_1_intOld[3*__gsharp_id_9_n+__gsharp_id_8_tid]=atomicCAS(&__gsharp_id_0_ints[3],0,__gsharp_id_8_tid+1);
-__gsharp_id_1_intOld[4*__gsharp_id_9_n+__gsharp_id_8_tid]=atomicMin(&__gsharp_id_0_ints[4],16-__gsharp_id_8_tid);
-__gsharp_id_1_intOld[5*__gsharp_id_9_n+__gsharp_id_8_tid]=atomicAnd(&__gsharp_id_0_ints[5],~(1<<__gsharp_id_8_tid));
-__gsharp_id_1_intOld[6*__gsharp_id_9_n+__gsharp_id_8_tid]=atomicXor(&__gsharp_id_0_ints[6],1<<__gsharp_id_8_tid);
-atomicAdd(&__gsharp_id_0_ints[7],__gsharp_id_8_tid+1);
-__gsharp_id_3_uintOld[0*__gsharp_id_9_n+__gsharp_id_8_tid]=atomicAdd(&__gsharp_id_2_uints[0],1u);
-__gsharp_id_3_uintOld[1*__gsharp_id_9_n+__gsharp_id_8_tid]=atomicSub(&__gsharp_id_2_uints[1],1u);
-__gsharp_id_3_uintOld[2*__gsharp_id_9_n+__gsharp_id_8_tid]=atomicExch(&__gsharp_id_2_uints[2],(unsigned int)__gsharp_id_8_tid+1u);
-__gsharp_id_3_uintOld[3*__gsharp_id_9_n+__gsharp_id_8_tid]=atomicCAS(&__gsharp_id_2_uints[3],0u,(unsigned int)__gsharp_id_8_tid+1u);
-__gsharp_id_3_uintOld[4*__gsharp_id_9_n+__gsharp_id_8_tid]=atomicMin(&__gsharp_id_2_uints[4],(unsigned int)(31-__gsharp_id_8_tid)<<27);
-__gsharp_id_3_uintOld[5*__gsharp_id_9_n+__gsharp_id_8_tid]=atomicMax(&__gsharp_id_2_uints[5],(unsigned int)__gsharp_id_8_tid<<27);
-__gsharp_id_3_uintOld[6*__gsharp_id_9_n+__gsharp_id_8_tid]=atomicAnd(&__gsharp_id_2_uints[6],~(1u<<__gsharp_id_8_tid));
-__gsharp_id_3_uintOld[7*__gsharp_id_9_n+__gsharp_id_8_tid]=atomicOr(&__gsharp_id_2_uints[7],1u<<__gsharp_id_8_tid);
-__gsharp_id_3_uintOld[8*__gsharp_id_9_n+__gsharp_id_8_tid]=atomicXor(&__gsharp_id_2_uints[8],1u<<__gsharp_id_8_tid);
-__gsharp_id_3_uintOld[9*__gsharp_id_9_n+__gsharp_id_8_tid]=atomicInc(&__gsharp_id_2_uints[9],9u);
-__gsharp_id_3_uintOld[10*__gsharp_id_9_n+__gsharp_id_8_tid]=atomicDec(&__gsharp_id_2_uints[10],9u);
+int __gsharp_id_8_tid = (int)threadIdx.x;
+int __gsharp_id_9_n = (int)blockDim.x;
+__gsharp_id_1_intOld[__gsharp_add_i32(0*__gsharp_id_9_n,__gsharp_id_8_tid)]=atomicAdd(&__gsharp_id_0_ints[0],1);
+__gsharp_id_1_intOld[__gsharp_add_i32(1*__gsharp_id_9_n,__gsharp_id_8_tid)]=atomicSub(&__gsharp_id_0_ints[1],1);
+__gsharp_id_1_intOld[__gsharp_add_i32(__gsharp_mul_i32(2,__gsharp_id_9_n),__gsharp_id_8_tid)]=atomicExch(&__gsharp_id_0_ints[2],__gsharp_add_i32(__gsharp_id_8_tid,1));
+__gsharp_id_1_intOld[__gsharp_add_i32(__gsharp_mul_i32(3,__gsharp_id_9_n),__gsharp_id_8_tid)]=atomicCAS(&__gsharp_id_0_ints[3],0,__gsharp_add_i32(__gsharp_id_8_tid,1));
+__gsharp_id_1_intOld[__gsharp_add_i32(__gsharp_mul_i32(4,__gsharp_id_9_n),__gsharp_id_8_tid)]=atomicMin(&__gsharp_id_0_ints[4],__gsharp_sub_i32(16,__gsharp_id_8_tid));
+__gsharp_id_1_intOld[__gsharp_add_i32(__gsharp_mul_i32(5,__gsharp_id_9_n),__gsharp_id_8_tid)]=atomicAnd(&__gsharp_id_0_ints[5],~(__gsharp_shl_i32(1,__gsharp_id_8_tid)));
+__gsharp_id_1_intOld[__gsharp_add_i32(__gsharp_mul_i32(6,__gsharp_id_9_n),__gsharp_id_8_tid)]=atomicXor(&__gsharp_id_0_ints[6],__gsharp_shl_i32(1,__gsharp_id_8_tid));
+atomicAdd(&__gsharp_id_0_ints[7],__gsharp_add_i32(__gsharp_id_8_tid,1));
+__gsharp_id_3_uintOld[__gsharp_add_i32(0*__gsharp_id_9_n,__gsharp_id_8_tid)]=atomicAdd(&__gsharp_id_2_uints[0],1u);
+__gsharp_id_3_uintOld[__gsharp_add_i32(1*__gsharp_id_9_n,__gsharp_id_8_tid)]=atomicSub(&__gsharp_id_2_uints[1],1u);
+__gsharp_id_3_uintOld[__gsharp_add_i32(__gsharp_mul_i32(2,__gsharp_id_9_n),__gsharp_id_8_tid)]=atomicExch(&__gsharp_id_2_uints[2],(unsigned int)__gsharp_id_8_tid+1u);
+__gsharp_id_3_uintOld[__gsharp_add_i32(__gsharp_mul_i32(3,__gsharp_id_9_n),__gsharp_id_8_tid)]=atomicCAS(&__gsharp_id_2_uints[3],0u,(unsigned int)__gsharp_id_8_tid+1u);
+__gsharp_id_3_uintOld[__gsharp_add_i32(__gsharp_mul_i32(4,__gsharp_id_9_n),__gsharp_id_8_tid)]=atomicMin(&__gsharp_id_2_uints[4],(unsigned int)(__gsharp_sub_i32(31,__gsharp_id_8_tid))<<27);
+__gsharp_id_3_uintOld[__gsharp_add_i32(__gsharp_mul_i32(5,__gsharp_id_9_n),__gsharp_id_8_tid)]=atomicMax(&__gsharp_id_2_uints[5],(unsigned int)__gsharp_id_8_tid<<27);
+__gsharp_id_3_uintOld[__gsharp_add_i32(__gsharp_mul_i32(6,__gsharp_id_9_n),__gsharp_id_8_tid)]=atomicAnd(&__gsharp_id_2_uints[6],~(1u<<(__gsharp_id_8_tid&31)));
+__gsharp_id_3_uintOld[__gsharp_add_i32(__gsharp_mul_i32(7,__gsharp_id_9_n),__gsharp_id_8_tid)]=atomicOr(&__gsharp_id_2_uints[7],1u<<(__gsharp_id_8_tid&31));
+__gsharp_id_3_uintOld[__gsharp_add_i32(__gsharp_mul_i32(8,__gsharp_id_9_n),__gsharp_id_8_tid)]=atomicXor(&__gsharp_id_2_uints[8],1u<<(__gsharp_id_8_tid&31));
+__gsharp_id_3_uintOld[__gsharp_add_i32(__gsharp_mul_i32(9,__gsharp_id_9_n),__gsharp_id_8_tid)]=atomicInc(&__gsharp_id_2_uints[9],9u);
+__gsharp_id_3_uintOld[__gsharp_add_i32(__gsharp_mul_i32(10,__gsharp_id_9_n),__gsharp_id_8_tid)]=atomicDec(&__gsharp_id_2_uints[10],9u);
 atomicAdd(&__gsharp_id_2_uints[11],(unsigned int)__gsharp_id_8_tid+1u);
-__gsharp_id_5_ulongOld[0*__gsharp_id_9_n+__gsharp_id_8_tid]=atomicAdd(&__gsharp_id_4_ulongs[0],1ull);
-__gsharp_id_5_ulongOld[1*__gsharp_id_9_n+__gsharp_id_8_tid]=atomicExch(&__gsharp_id_4_ulongs[1],(unsigned long long)__gsharp_id_8_tid+1ull);
-__gsharp_id_5_ulongOld[2*__gsharp_id_9_n+__gsharp_id_8_tid]=atomicCAS(&__gsharp_id_4_ulongs[2],0ull,(unsigned long long)__gsharp_id_8_tid+1ull);
-__gsharp_id_5_ulongOld[3*__gsharp_id_9_n+__gsharp_id_8_tid]=atomicMin(&__gsharp_id_4_ulongs[3],(unsigned long long)(31-__gsharp_id_8_tid)<<59);
-__gsharp_id_5_ulongOld[4*__gsharp_id_9_n+__gsharp_id_8_tid]=atomicMax(&__gsharp_id_4_ulongs[4],(unsigned long long)__gsharp_id_8_tid<<59);
-__gsharp_id_5_ulongOld[5*__gsharp_id_9_n+__gsharp_id_8_tid]=atomicAnd(&__gsharp_id_4_ulongs[5],~(1ull<<(__gsharp_id_8_tid+32)));
-__gsharp_id_5_ulongOld[6*__gsharp_id_9_n+__gsharp_id_8_tid]=atomicOr(&__gsharp_id_4_ulongs[6],1ull<<(__gsharp_id_8_tid+32));
-__gsharp_id_5_ulongOld[7*__gsharp_id_9_n+__gsharp_id_8_tid]=atomicXor(&__gsharp_id_4_ulongs[7],1ull<<(__gsharp_id_8_tid+32));
+__gsharp_id_5_ulongOld[__gsharp_add_i32(0*__gsharp_id_9_n,__gsharp_id_8_tid)]=atomicAdd(&__gsharp_id_4_ulongs[0],1ull);
+__gsharp_id_5_ulongOld[__gsharp_add_i32(1*__gsharp_id_9_n,__gsharp_id_8_tid)]=atomicExch(&__gsharp_id_4_ulongs[1],(unsigned long long)__gsharp_id_8_tid+1ull);
+__gsharp_id_5_ulongOld[__gsharp_add_i32(__gsharp_mul_i32(2,__gsharp_id_9_n),__gsharp_id_8_tid)]=atomicCAS(&__gsharp_id_4_ulongs[2],0ull,(unsigned long long)__gsharp_id_8_tid+1ull);
+__gsharp_id_5_ulongOld[__gsharp_add_i32(__gsharp_mul_i32(3,__gsharp_id_9_n),__gsharp_id_8_tid)]=atomicMin(&__gsharp_id_4_ulongs[3],(unsigned long long)(__gsharp_sub_i32(31,__gsharp_id_8_tid))<<59);
+__gsharp_id_5_ulongOld[__gsharp_add_i32(__gsharp_mul_i32(4,__gsharp_id_9_n),__gsharp_id_8_tid)]=atomicMax(&__gsharp_id_4_ulongs[4],(unsigned long long)__gsharp_id_8_tid<<59);
+__gsharp_id_5_ulongOld[__gsharp_add_i32(__gsharp_mul_i32(5,__gsharp_id_9_n),__gsharp_id_8_tid)]=atomicAnd(&__gsharp_id_4_ulongs[5],~(1ull<<(__gsharp_add_i32(__gsharp_id_8_tid,32)&63)));
+__gsharp_id_5_ulongOld[__gsharp_add_i32(__gsharp_mul_i32(6,__gsharp_id_9_n),__gsharp_id_8_tid)]=atomicOr(&__gsharp_id_4_ulongs[6],1ull<<(__gsharp_add_i32(__gsharp_id_8_tid,32)&63));
+__gsharp_id_5_ulongOld[__gsharp_add_i32(__gsharp_mul_i32(7,__gsharp_id_9_n),__gsharp_id_8_tid)]=atomicXor(&__gsharp_id_4_ulongs[7],1ull<<(__gsharp_add_i32(__gsharp_id_8_tid,32)&63));
 atomicAdd(&__gsharp_id_4_ulongs[8],(unsigned long long)__gsharp_id_8_tid+1ull);
-__gsharp_id_7_floatOld[0*__gsharp_id_9_n+__gsharp_id_8_tid]=atomicAdd(&__gsharp_id_6_floats[0],1.0f);
-__gsharp_id_7_floatOld[1*__gsharp_id_9_n+__gsharp_id_8_tid]=atomicExch(&__gsharp_id_6_floats[1],(float)(__gsharp_id_8_tid+1));
+__gsharp_id_7_floatOld[__gsharp_add_i32(0*__gsharp_id_9_n,__gsharp_id_8_tid)]=atomicAdd(&__gsharp_id_6_floats[0],1.0f);
+__gsharp_id_7_floatOld[__gsharp_add_i32(1*__gsharp_id_9_n,__gsharp_id_8_tid)]=atomicExch(&__gsharp_id_6_floats[1],(float)(__gsharp_add_i32(__gsharp_id_8_tid,1)));
 atomicAdd(&__gsharp_id_6_floats[2],0.5f);
 }
 ";

@@ -119,7 +119,7 @@ extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__TestCases
 (*__gsharp_id_1_scalarOut)=0;
 if((long long)(*__gsharp_id_0_scalarRef)>(long long)__gsharp_id_4_constantVal)
 {
-(*__gsharp_id_1_scalarOut)=__gsharp_id_2_arrayVal[0]+(*__gsharp_id_3_structRef).__gsharp_mb_A;
+(*__gsharp_id_1_scalarOut)=__gsharp_add_i32(__gsharp_id_2_arrayVal[0],(*__gsharp_id_3_structRef).__gsharp_mb_A);
 (*__gsharp_id_3_structRef).__gsharp_mb_B=(*__gsharp_id_1_scalarOut);
 }
 }

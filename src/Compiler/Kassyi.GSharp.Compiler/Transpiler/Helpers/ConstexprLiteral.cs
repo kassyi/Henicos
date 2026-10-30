@@ -39,7 +39,8 @@ internal static class ConstexprLiteral
     /// from the Prelude (<see cref="GSharpInternalNames.Prelude.NaNSingle"/> and its siblings, which are not
     /// <c>constexpr</c> on CUDA), C# from <c>float.NaN</c> and the like. A <c>Nullable&lt;T&gt;</c> is formatted as
     /// <c>T</c>. A negative C++ value is parenthesized (<c>(-5)</c>), so that it cannot merge with a <c>-</c> or <c>+</c>
-    /// written before it into <c>--</c> or <c>++</c>.
+    /// written before it into <c>--</c> or <c>++</c>. A C++ value of a type narrower than <c>int</c> (also the base of an
+    /// enum) is cast to it (<c>(unsigned char)255</c>), so that <c>auto</c> takes the C# type.
     /// </summary>
     /// <returns><see langword="false"/> when <paramref name="type"/> has no literal on the device (<c>decimal</c>, <c>string</c>).</returns>
     public static bool TryFormatConstant(ITypeSymbol type, object value, out (string Cpp, string CSharp) literal)
@@ -123,86 +124,79 @@ internal static class ConstexprLiteral
         return FormatPrimitive(type.SpecialType, value);
     }
 
-    private static (string Cpp, string CSharp) FormatPrimitive(SpecialType specialType, object value)
+    // One line per type: the format of each is a method of its own
+    private static (string Cpp, string CSharp) FormatPrimitive(SpecialType specialType, object value) => specialType switch
     {
-        switch (specialType)
+        SpecialType.System_Boolean => FormatBoolean(value),
+        SpecialType.System_Char => FormatChar(value),
+        SpecialType.System_SByte or SpecialType.System_Byte or SpecialType.System_Int16 or SpecialType.System_UInt16 =>
+            FormatNarrow(specialType, value),
+        SpecialType.System_Int32 => FormatInt32(value),
+        SpecialType.System_UInt32 => FormatUInt32(value),
+        SpecialType.System_Int64 => FormatInt64(value),
+        SpecialType.System_UInt64 => FormatUInt64(value),
+        SpecialType.System_Single => FormatSingle(Convert.ToSingle(value, CultureInfo.InvariantCulture)),
+        SpecialType.System_Double => FormatDouble(Convert.ToDouble(value, CultureInfo.InvariantCulture)),
+        _ => throw new ArgumentOutOfRangeException(
+            nameof(specialType),
+            specialType,
+            $"Type '{specialType}' is not a supported [GpuConstexpr] parameter type."
+        )
+    };
+
+    private static (string Cpp, string CSharp) FormatBoolean(object value)
+    {
+        var text = Convert.ToBoolean(value, CultureInfo.InvariantCulture) ? "true" : "false";
+        return (text, text);
+    }
+
+    private static (string Cpp, string CSharp) FormatChar(object value)
+    {
+        var character = Convert.ToChar(value, CultureInfo.InvariantCulture);
+        return (FormatCppChar(character), SymbolDisplay.FormatLiteral(character, true));
+    }
+
+    // (<C++ type>)<digits>: C++ has no literal narrower than int, so a bare literal would give auto, a template argument
+    // or an overload int where C# keeps the narrow type (#859). A cast binds as a unary operator, and nothing the
+    // emitter writes after a constant binds tighter, so it needs no parentheses of its own (as (char16_t)97)
+    private static (string Cpp, string CSharp) FormatNarrow(SpecialType specialType, object value)
+    {
+        var cppType = specialType switch
         {
-            case SpecialType.System_Boolean:
-                {
-                    var text = Convert.ToBoolean(value, CultureInfo.InvariantCulture) ? "true" : "false";
-                    return (text, text);
-                }
+            SpecialType.System_SByte => "signed char",
+            SpecialType.System_Byte => "unsigned char",
+            SpecialType.System_Int16 => "short",
+            SpecialType.System_UInt16 => "unsigned short",
+            _ => throw new ArgumentOutOfRangeException(nameof(specialType), specialType, "Not a type narrower than int.")
+        };
+        var digits = Convert.ToInt32(value, CultureInfo.InvariantCulture).ToString(CultureInfo.InvariantCulture);
+        return ("(" + cppType + ")" + digits, digits);
+    }
 
-            case SpecialType.System_Char:
-                {
-                    var character = Convert.ToChar(value, CultureInfo.InvariantCulture);
-                    return (FormatCppChar(character), SymbolDisplay.FormatLiteral(character, true));
-                }
+    private static (string Cpp, string CSharp) FormatInt32(object value)
+    {
+        var intValue = Convert.ToInt32(value, CultureInfo.InvariantCulture);
+        var csharp = intValue.ToString(CultureInfo.InvariantCulture);
+        return (intValue == int.MinValue ? CppIntMinValue : csharp, csharp);
+    }
 
-            case SpecialType.System_SByte:
-                {
-                    var text = Convert.ToSByte(value, CultureInfo.InvariantCulture).ToString(CultureInfo.InvariantCulture);
-                    return (text, text);
-                }
+    private static (string Cpp, string CSharp) FormatUInt32(object value)
+    {
+        var text = Convert.ToUInt32(value, CultureInfo.InvariantCulture).ToString(CultureInfo.InvariantCulture) + "U";
+        return (text, text);
+    }
 
-            case SpecialType.System_Int16:
-                {
-                    var text = Convert.ToInt16(value, CultureInfo.InvariantCulture).ToString(CultureInfo.InvariantCulture);
-                    return (text, text);
-                }
+    private static (string Cpp, string CSharp) FormatInt64(object value)
+    {
+        var longValue = Convert.ToInt64(value, CultureInfo.InvariantCulture);
+        var digits = longValue.ToString(CultureInfo.InvariantCulture);
+        return (longValue == long.MinValue ? CppLongMinValue : digits + "LL", digits + "L");
+    }
 
-            case SpecialType.System_Int32:
-                {
-                    var intValue = Convert.ToInt32(value, CultureInfo.InvariantCulture);
-                    var csharp = intValue.ToString(CultureInfo.InvariantCulture);
-                    var cpp = intValue == int.MinValue ? CppIntMinValue : csharp;
-                    return (cpp, csharp);
-                }
-
-            case SpecialType.System_Byte:
-                {
-                    var text = Convert.ToByte(value, CultureInfo.InvariantCulture).ToString(CultureInfo.InvariantCulture);
-                    return (text, text);
-                }
-
-            case SpecialType.System_UInt16:
-                {
-                    var text = Convert.ToUInt16(value, CultureInfo.InvariantCulture).ToString(CultureInfo.InvariantCulture);
-                    return (text, text);
-                }
-
-            case SpecialType.System_UInt32:
-                {
-                    var text = Convert.ToUInt32(value, CultureInfo.InvariantCulture).ToString(CultureInfo.InvariantCulture) + "U";
-                    return (text, text);
-                }
-
-            case SpecialType.System_Int64:
-                {
-                    var longValue = Convert.ToInt64(value, CultureInfo.InvariantCulture);
-                    var digits = longValue.ToString(CultureInfo.InvariantCulture);
-                    var cpp = longValue == long.MinValue ? CppLongMinValue : digits + "LL";
-                    return (cpp, digits + "L");
-                }
-
-            case SpecialType.System_UInt64:
-                {
-                    var digits = Convert.ToUInt64(value, CultureInfo.InvariantCulture).ToString(CultureInfo.InvariantCulture);
-                    return (digits + "ULL", digits + "UL");
-                }
-
-            case SpecialType.System_Single:
-                return FormatSingle(Convert.ToSingle(value, CultureInfo.InvariantCulture));
-
-            case SpecialType.System_Double:
-                return FormatDouble(Convert.ToDouble(value, CultureInfo.InvariantCulture));
-
-            default:
-                throw new ArgumentOutOfRangeException(
-                    nameof(specialType),
-                    specialType,
-                    $"Type '{specialType}' is not a supported [GpuConstexpr] parameter type.");
-        }
+    private static (string Cpp, string CSharp) FormatUInt64(object value)
+    {
+        var digits = Convert.ToUInt64(value, CultureInfo.InvariantCulture).ToString(CultureInfo.InvariantCulture);
+        return (digits + "ULL", digits + "UL");
     }
 
     private static (string Cpp, string CSharp) FormatSingle(float value)

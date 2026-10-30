@@ -83,7 +83,7 @@ public static partial class AotContexts
 {
 }
 public const string DigitSeparatorKernel_Source = @"extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__DigitSeparatorLiteralKernels__DigitSeparatorKernel(GSharpArray<int> __gsharp_id_0_ints, GSharpArray<unsigned int> __gsharp_id_1_uints, GSharpArray<long long> __gsharp_id_2_longs, GSharpArray<unsigned long long> __gsharp_id_3_ulongs, GSharpArray<float> __gsharp_id_4_floats, GSharpArray<double> __gsharp_id_5_doubles){
-int __gsharp_id_6_i = threadIdx.x;
+int __gsharp_id_6_i = (int)threadIdx.x;
 __gsharp_id_0_ints[__gsharp_id_6_i]=1000000;
 __gsharp_id_1_uints[__gsharp_id_6_i]=0xFFFF0000u;
 __gsharp_id_2_longs[__gsharp_id_6_i]=10000000000ll;

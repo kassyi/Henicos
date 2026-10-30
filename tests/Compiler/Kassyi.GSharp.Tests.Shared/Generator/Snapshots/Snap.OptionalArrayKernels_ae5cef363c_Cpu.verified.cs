@@ -51,7 +51,7 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-int __gsharp_id_2_i = threadIdx.x;
+int __gsharp_id_2_i = (int)threadIdx.x;
 __gsharp_id_0_x[__gsharp_id_2_i]=((__gsharp_id_1_bias.data == nullptr)?__gsharp_id_0_x[__gsharp_id_2_i]:__gsharp_id_0_x[__gsharp_id_2_i]+__gsharp_id_1_bias[__gsharp_id_2_i]);
 __gsharp_state=-1;
 return;
@@ -292,7 +292,7 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-int __gsharp_id_2_i = threadIdx.x;
+int __gsharp_id_2_i = (int)threadIdx.x;
 __gsharp_id_0_x[__gsharp_id_2_i]=((__gsharp_id_1_bias.data == nullptr)?(-1.0f):(((__gsharp_id_1_bias.data != nullptr)?__gsharp_id_1_bias[__gsharp_id_2_i]:(-2.0f))));
 __gsharp_state=-1;
 return;
@@ -533,7 +533,7 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-if(threadIdx.x==0)
+if((int)threadIdx.x==0)
 {
 __gsharp_id_0_o[0]=__gsharp_id_1_bias.length;
 }
@@ -782,7 +782,7 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-if(threadIdx.x==0)
+if((int)threadIdx.x==0)
 {
 __gsharp_id_1_o[0]=((__gsharp_id_0_bias.data == nullptr)?0:1);
 if((__gsharp_id_0_bias.data != nullptr))
@@ -1036,9 +1036,9 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-if(threadIdx.x==0)
+if((int)threadIdx.x==0)
 {
-__gsharp_id_1_o[0]=((__gsharp_id_0_bias.data == nullptr)?0:(int)__gsharp_id_0_bias[0]);
+__gsharp_id_1_o[0]=((__gsharp_id_0_bias.data == nullptr)?0:__gsharp_to_i32(__gsharp_id_0_bias[0]));
 if((__gsharp_id_0_bias.data != nullptr))
 {
 __gsharp_id_0_bias[0]=__gsharp_id_0_bias[0]+1.0f;
@@ -1290,7 +1290,7 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-int __gsharp_id_2_i = threadIdx.x;
+int __gsharp_id_2_i = (int)threadIdx.x;
 __gsharp_id_0_x[__gsharp_id_2_i]=__gsharp_id_0_x[__gsharp_id_2_i]+__gsharp_id_1_y[__gsharp_id_2_i];
 __gsharp_state=-1;
 return;
@@ -1528,7 +1528,7 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-int __gsharp_id_1_i = threadIdx.x;
+int __gsharp_id_1_i = (int)threadIdx.x;
 __gsharp_id_0_segment[__gsharp_id_1_i]=__gsharp_id_0_segment[__gsharp_id_1_i]*2.0f+__gsharp_id_0_segment.length;
 __gsharp_state=-1;
 return;
@@ -1762,7 +1762,7 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-int __gsharp_id_2_i = threadIdx.x;
+int __gsharp_id_2_i = (int)threadIdx.x;
 __gsharp_id_0_x[__gsharp_id_2_i]=__gsharp_id_0_x[__gsharp_id_2_i]+__gsharp_id_1_y[__gsharp_id_2_i];
 __gsharp_state=-1;
 return;
@@ -2006,7 +2006,7 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-int __gsharp_id_2_i = threadIdx.x;
+int __gsharp_id_2_i = (int)threadIdx.x;
 if((__gsharp_id_1_bias.data != nullptr))
 {
 __gsharp_id_0_x[__gsharp_id_2_i]=__gsharp_id_0_x[__gsharp_id_2_i]+__gsharp_id_1_bias[__gsharp_id_2_i];
@@ -2254,7 +2254,7 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-int __gsharp_id_2_i = threadIdx.x;
+int __gsharp_id_2_i = (int)threadIdx.x;
 if((__gsharp_id_1_bias.data != nullptr))
 {
 __gsharp_id_0_x[__gsharp_id_2_i]=__gsharp_id_0_x[__gsharp_id_2_i]+__gsharp_id_1_bias[__gsharp_id_2_i];
@@ -2503,7 +2503,7 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-__gsharp_auto_result[__gsharp_global_tid] = __gsharp_id_0_values[threadIdx.x]*2.0f;
+__gsharp_auto_result[__gsharp_global_tid] = __gsharp_id_0_values[(int)threadIdx.x]*2.0f;
 __gsharp_state = -1;return;
 __gsharp_state=-1;
 return;

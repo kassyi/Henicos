@@ -83,7 +83,7 @@ public static partial class AotContexts
 {
 }
 public const string ReverseWithElseBarrierKernel_Source = @"extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__ElseBarrierKernels__ReverseWithElseBarrierKernel(GSharpArray<int> __gsharp_id_0_input, GSharpArray<int> __gsharp_id_1_output, int __gsharp_id_2_length){
-int __gsharp_id_3_tid = threadIdx.x;
+int __gsharp_id_3_tid = (int)threadIdx.x;
 __shared__ int __gsharp_id_4_shared[256];
 __gsharp_id_4_shared[__gsharp_id_3_tid]=__gsharp_id_0_input[__gsharp_id_3_tid];
 if(__gsharp_id_2_length<0)
@@ -94,7 +94,7 @@ else
 {
 __syncthreads();
 }
-__gsharp_id_1_output[__gsharp_id_3_tid]=__gsharp_id_4_shared[__gsharp_id_2_length-1-__gsharp_id_3_tid];
+__gsharp_id_1_output[__gsharp_id_3_tid]=__gsharp_id_4_shared[__gsharp_sub_i32(__gsharp_sub_i32(__gsharp_id_2_length,1),__gsharp_id_3_tid)];
 }
 ";
 public static readonly string ReverseWithElseBarrierKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +ReverseWithElseBarrierKernel_Source;

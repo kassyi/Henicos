@@ -83,7 +83,7 @@ public static partial class AotContexts
 {
 }
 public const string MyTestKernel_Source = @"extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Generator__SourceGeneratorTestKernels__MyTestKernel(GSharpArray<int> __gsharp_id_0_a, GSharpArray<int> __gsharp_id_1_b, GSharpArray<int> __gsharp_id_2_c){
-__gsharp_id_2_c[0]=__gsharp_id_0_a[0]+__gsharp_id_1_b[0];
+__gsharp_id_2_c[0]=__gsharp_add_i32(__gsharp_id_0_a[0],__gsharp_id_1_b[0]);
 }
 ";
 public static readonly string MyTestKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +MyTestKernel_Source;

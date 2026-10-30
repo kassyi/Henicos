@@ -86,7 +86,7 @@ public static partial class AotContexts
 {
 }
 public const string Kernel_COR01_FastMath_Exp_Source = @"extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Core__FastMathBoundaryKernels__Kernel_uCOR01_uFastMath_uExp(GSharpArray<float> __gsharp_id_0_input, GSharpArray<float> __gsharp_id_1_output){
-int __gsharp_id_2_tid = threadIdx.x;
+int __gsharp_id_2_tid = (int)threadIdx.x;
 __gsharp_id_1_output[__gsharp_id_2_tid]=__expf(__gsharp_id_0_input[__gsharp_id_2_tid]);
 }
 ";
@@ -241,7 +241,7 @@ finally
 }
 #pragma warning restore CS8500
 public const string Kernel_COR01_FastMath_Log_Source = @"extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Core__FastMathBoundaryKernels__Kernel_uCOR01_uFastMath_uLog(GSharpArray<float> __gsharp_id_0_input, GSharpArray<float> __gsharp_id_1_output){
-int __gsharp_id_2_tid = threadIdx.x;
+int __gsharp_id_2_tid = (int)threadIdx.x;
 __gsharp_id_1_output[__gsharp_id_2_tid]=__logf(__gsharp_id_0_input[__gsharp_id_2_tid]);
 }
 ";
@@ -396,7 +396,7 @@ finally
 }
 #pragma warning restore CS8500
 public const string Kernel_COR01_FastMath_Sqrt_Source = @"extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Core__FastMathBoundaryKernels__Kernel_uCOR01_uFastMath_uSqrt(GSharpArray<float> __gsharp_id_0_input, GSharpArray<float> __gsharp_id_1_output){
-int __gsharp_id_2_tid = threadIdx.x;
+int __gsharp_id_2_tid = (int)threadIdx.x;
 __gsharp_id_1_output[__gsharp_id_2_tid]=__fsqrt_rn(__gsharp_id_0_input[__gsharp_id_2_tid]);
 }
 ";
@@ -551,7 +551,7 @@ finally
 }
 #pragma warning restore CS8500
 public const string Kernel_COR01_FastMath_Abs_Source = @"extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Core__FastMathBoundaryKernels__Kernel_uCOR01_uFastMath_uAbs(GSharpArray<float> __gsharp_id_0_input, GSharpArray<float> __gsharp_id_1_output){
-int __gsharp_id_2_tid = threadIdx.x;
+int __gsharp_id_2_tid = (int)threadIdx.x;
 __gsharp_id_1_output[__gsharp_id_2_tid]=fabsf(__gsharp_id_0_input[__gsharp_id_2_tid]);
 }
 ";

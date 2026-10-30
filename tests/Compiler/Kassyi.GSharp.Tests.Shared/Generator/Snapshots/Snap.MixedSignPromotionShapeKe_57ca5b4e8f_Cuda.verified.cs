@@ -84,7 +84,7 @@ public static partial class AotContexts
 {
 }
 public const string ConvertedKernel_Source = @"extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__TestCases__Emission__MixedSignPromotionShapeKernels__ConvertedKernel(GSharpArray<unsigned int> __gsharp_id_0_us, GSharpArray<int> __gsharp_id_1_ns, GSharpArray<short> __gsharp_id_2_ss, GSharpArray<long long> __gsharp_id_3_values, GSharpArray<int> __gsharp_id_4_flags){
-int __gsharp_id_5_tid = threadIdx.x;
+int __gsharp_id_5_tid = (int)threadIdx.x;
 unsigned int __gsharp_id_6_u = __gsharp_id_0_us[__gsharp_id_5_tid];
 int __gsharp_id_7_n = __gsharp_id_1_ns[__gsharp_id_5_tid];
 short __gsharp_id_8_s = __gsharp_id_2_ss[__gsharp_id_5_tid];
@@ -422,8 +422,8 @@ __gsharp_id_5_u+=8;
 __gsharp_id_4_values[2]=__gsharp_id_5_u;
 __gsharp_id_4_values[3]=__gsharp_id_5_u<<3;
 __gsharp_id_4_values[4]=(unsigned int)(__gsharp_id_7_b1+__gsharp_id_8_b2);
-__gsharp_id_3_longs[1]=__gsharp_id_6_n+__gsharp_id_9_l;
-__gsharp_id_3_longs[2]=__gsharp_id_5_u+__gsharp_id_9_l;
+__gsharp_id_3_longs[1]=__gsharp_add_i64(__gsharp_id_6_n,__gsharp_id_9_l);
+__gsharp_id_3_longs[2]=__gsharp_add_i64(__gsharp_id_5_u,__gsharp_id_9_l);
 __gsharp_id_4_values[5]=__gsharp_id_5_u+(unsigned int)__gsharp_id_6_n;
 __gsharp_id_4_values[6]=__gsharp_id_5_u+__gsharp_id_7_b1;
 }

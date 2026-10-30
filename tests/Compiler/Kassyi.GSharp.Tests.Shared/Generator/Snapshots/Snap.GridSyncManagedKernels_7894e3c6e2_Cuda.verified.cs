@@ -84,11 +84,11 @@ public static partial class AotContexts
 {
 }
 public const string GlobalBarrierKernel_Source = @"extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Core__GridSyncManagedKernels__GlobalBarrierKernel(GSharpArray<int> __gsharp_id_0_buffer){
-int __gsharp_id_1_tid = blockIdx.x*blockDim.x+threadIdx.x;
-int __gsharp_id_2_totalThreads = gridDim.x*blockDim.x;
-__gsharp_id_0_buffer[__gsharp_id_1_tid]=__gsharp_id_1_tid+1;
+int __gsharp_id_1_tid = __gsharp_add_i32(__gsharp_mul_i32((int)blockIdx.x,(int)blockDim.x),(int)threadIdx.x);
+int __gsharp_id_2_totalThreads = __gsharp_mul_i32((int)gridDim.x,(int)blockDim.x);
+__gsharp_id_0_buffer[__gsharp_id_1_tid]=__gsharp_add_i32(__gsharp_id_1_tid,1);
 cg::this_grid().sync();
-int __gsharp_id_3_nextId = (__gsharp_id_1_tid+1)%__gsharp_id_2_totalThreads;
+int __gsharp_id_3_nextId = (__gsharp_add_i32(__gsharp_id_1_tid,1))%__gsharp_id_2_totalThreads;
 int __gsharp_id_4_nextVal = __gsharp_id_0_buffer[__gsharp_id_3_nextId];
 cg::this_grid().sync();
 __gsharp_id_0_buffer[__gsharp_id_1_tid]=__gsharp_id_4_nextVal;
@@ -198,31 +198,31 @@ finally
 }
 #pragma warning restore CS8500
 public const string GlobalReductionKernel_Source = @"extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Core__GridSyncManagedKernels__GlobalReductionKernel(GSharpArray<int> __gsharp_id_0_input, GSharpArray<int> __gsharp_id_1_blockSums, GSharpArray<int> __gsharp_id_2_totalSum){
-int __gsharp_id_3_tid = blockIdx.x*blockDim.x+threadIdx.x;
+int __gsharp_id_3_tid = __gsharp_add_i32(__gsharp_mul_i32((int)blockIdx.x,(int)blockDim.x),(int)threadIdx.x);
 int __gsharp_id_4_myVal = __gsharp_id_0_input[__gsharp_id_3_tid];
 __shared__ int __gsharp_id_5_shared[256];
-int __gsharp_id_6_localTid = threadIdx.x;
+int __gsharp_id_6_localTid = (int)threadIdx.x;
 __gsharp_id_5_shared[__gsharp_id_6_localTid]=__gsharp_id_4_myVal;
 __syncthreads();
-for(int __gsharp_id_7_stride = blockDim.x/2;__gsharp_id_7_stride>0;__gsharp_id_7_stride>>=1)
+for(int __gsharp_id_7_stride = (int)blockDim.x/2;__gsharp_id_7_stride>0;__gsharp_id_7_stride>>=1)
 {
 if(__gsharp_id_6_localTid<__gsharp_id_7_stride)
 {
-__gsharp_id_5_shared[__gsharp_id_6_localTid]+=__gsharp_id_5_shared[__gsharp_id_6_localTid+__gsharp_id_7_stride];
+__gsharp_id_5_shared[__gsharp_id_6_localTid]=__gsharp_add_i32(__gsharp_id_5_shared[__gsharp_id_6_localTid],__gsharp_id_5_shared[__gsharp_add_i32(__gsharp_id_6_localTid,__gsharp_id_7_stride)]);
 }
 __syncthreads();
 }
 if(__gsharp_id_6_localTid==0)
 {
-__gsharp_id_1_blockSums[blockIdx.x]=__gsharp_id_5_shared[0];
+__gsharp_id_1_blockSums[(int)blockIdx.x]=__gsharp_id_5_shared[0];
 }
 cg::this_grid().sync();
-if(blockIdx.x==0&&__gsharp_id_6_localTid==0)
+if((int)blockIdx.x==0&&__gsharp_id_6_localTid==0)
 {
 int __gsharp_id_8_sum = 0;
-for(int __gsharp_id_9_i = 0;__gsharp_id_9_i<gridDim.x;__gsharp_id_9_i++)
+for(int __gsharp_id_9_i = 0;__gsharp_id_9_i<(int)gridDim.x;__gsharp_id_9_i++)
 {
-__gsharp_id_8_sum+=__gsharp_id_1_blockSums[__gsharp_id_9_i];
+__gsharp_id_8_sum=__gsharp_add_i32(__gsharp_id_8_sum,__gsharp_id_1_blockSums[__gsharp_id_9_i]);
 }
 __gsharp_id_2_totalSum[0]=__gsharp_id_8_sum;
 }
