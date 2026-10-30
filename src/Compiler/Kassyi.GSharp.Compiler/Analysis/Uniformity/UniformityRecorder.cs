@@ -92,7 +92,7 @@ internal sealed class UniformityRecorder(IMethodSymbol method, ArgumentMasks mas
     public void OnAssignment(IAssignmentOperation assignment, ControlFlowGraph graph, int node)
     {
         AddWrite(assignment, graph, node);
-        Memory.AddWrite(assignment.Target, node);
+        Memory.AddAssignment(assignment, node);
     }
 
     public void OnIncrement(IIncrementOrDecrementOperation increment, ControlFlowGraph graph, int node)
@@ -116,10 +116,17 @@ internal sealed class UniformityRecorder(IMethodSymbol method, ArgumentMasks mas
     }
 
     // A call that splits the state machine; a barrier, or a call that reaches one, is also a site of GSH0037. The gaps
-    // inside a Gpu.SyncGrid(body) are not split points here: the call is (a grid barrier).
+    // inside a Gpu.SyncGrid(body) are not split points here: the call is (a grid barrier). The memory, though, is synced
+    // in each gap, where the expansion places the grid sync, and not where the body starts.
     public void OnSplit(SplitPoint split, int node)
     {
-        if (split is not { Kind: not SplitKind.Gap, Syntax: { } call, Graph: { } graph })
+        if (split.Kind == SplitKind.Gap)
+        {
+            Memory.AddSync(SyncScope.Grid, node);
+            return;
+        }
+
+        if (split is not { Syntax: { } call, Graph: { } graph })
         {
             return;
         }
@@ -137,7 +144,7 @@ internal sealed class UniformityRecorder(IMethodSymbol method, ArgumentMasks mas
         {
             Nodes[node].Events.Add(new UniformityEvent(UniformityEventKind.Site, invocation, graph, Opaque));
         }
-        else
+        else if (split.Kind == SplitKind.Call)
         {
             // A barrier; the callee of a barrier-reaching call lowers the memory through its summary (AddCall)
             Memory.AddSync(scope, node);

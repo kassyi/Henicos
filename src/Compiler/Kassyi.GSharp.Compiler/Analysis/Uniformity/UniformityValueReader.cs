@@ -20,6 +20,9 @@ internal sealed class UniformityValueReader(UniformityState state)
         var recorder = state.Recorder;
         var variance = operation switch
         {
+            ILocalReferenceOperation { Local.IsRef: true } refLocal =>
+                (recorder.TryGetValue(refLocal.Local, out var refIndex) ? current[refIndex] : ThreadVariance.Uniform) |
+                recorder.Memory.Read(refLocal, current),
             ILocalReferenceOperation local =>
                 recorder.TryGetValue(local.Local, out var index) ? current[index] : ThreadVariance.Uniform,
             IParameterReferenceOperation parameter => ReadParameter(parameter.Parameter, current),
@@ -29,6 +32,8 @@ internal sealed class UniformityValueReader(UniformityState state)
                 when SyncIntrinsicClassifier.IsThreadVariantSource(property) => ThreadVariance.Block,
             IPropertyReferenceOperation { Property: var property }
                 when SyncIntrinsicClassifier.IsBlockVariantSource(property) => ThreadVariance.Grid,
+            IInvocationOperation { TargetMethod.ReturnsByRef: true } refCall =>
+                EvaluateCall(refCall, graph, current) | recorder.Memory.Read(refCall, current),
             IInvocationOperation invocation => EvaluateCall(invocation, graph, current),
             IFlowAnonymousFunctionOperation => ThreadVariance.Uniform,
             IArrayElementReferenceOperation or IPropertyReferenceOperation { Property.IsIndexer: true } =>

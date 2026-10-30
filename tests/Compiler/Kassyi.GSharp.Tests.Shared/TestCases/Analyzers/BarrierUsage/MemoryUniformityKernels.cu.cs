@@ -251,4 +251,344 @@ public static partial class MemoryUniformityKernels
 
         Gpu.SyncThreads();
     }
+
+    // A write through a ref local to an element writes that memory
+    [GpuKernel]
+    [SkipSnapshotConsistency("Analyzer case")]
+    public static void RefLocalWriteKernel(int[] buffer)
+    {
+        Gpu.SyncThreads();
+        ref int first = ref buffer[0];
+        first = ThreadIndex.X;
+        if (buffer[0] > 0)
+        {
+            Gpu.SyncThreads(); // Ref local write
+        }
+
+        Gpu.SyncThreads();
+    }
+
+    // A read through a ref local to an element reads that memory
+    [GpuKernel]
+    [SkipSnapshotConsistency("Analyzer case")]
+    public static void RefLocalReadKernel(int[] buffer)
+    {
+        ref int first = ref buffer[0];
+        buffer[ThreadIndex.X] = 1;
+        if (first > 0)
+        {
+            Gpu.SyncThreads(); // Ref local read
+        }
+
+        Gpu.SyncThreads();
+    }
+
+    // A local that holds the array is the same memory, written or read through either name
+    [GpuKernel]
+    [SkipSnapshotConsistency("Analyzer case")]
+    public static void AliasWriteKernel(int[] buffer)
+    {
+        int[] alias = buffer;
+        alias[ThreadIndex.X] = 1;
+        if (buffer[0] > 0)
+        {
+            Gpu.SyncThreads(); // Alias write
+        }
+
+        Gpu.SyncThreads();
+    }
+
+    [GpuKernel]
+    [SkipSnapshotConsistency("Analyzer case")]
+    public static void AliasReadKernel(int[] buffer)
+    {
+        int[] alias = buffer;
+        alias[ThreadIndex.X] = 1;
+        if (alias[0] > 0)
+        {
+            Gpu.SyncThreads(); // Alias read
+        }
+
+        Gpu.SyncThreads();
+    }
+
+    [GpuKernel]
+    [SkipSnapshotConsistency("Analyzer case")]
+    public static void SpanAliasKernel(int[] buffer)
+    {
+        buffer[ThreadIndex.X] = 1;
+        System.ReadOnlySpan<int> view = buffer;
+        if (view[0] > 0)
+        {
+            Gpu.SyncThreads(); // Span alias
+        }
+
+        Gpu.SyncThreads();
+    }
+
+    [GpuKernel]
+    [SkipSnapshotConsistency("Analyzer case")]
+    public static void SharedAliasKernel(int[] buffer)
+    {
+        var a = new SharedMemory<int>(32);
+        var b = a;
+        b[ThreadIndex.X] = 1;
+        if (a[0] > 0)
+        {
+            Gpu.SyncThreads(); // Shared alias
+        }
+
+        Gpu.SyncThreads();
+    }
+
+    // Gpu.SyncGrid(body) syncs the grid between the statements of the body, not before the first one
+    [GpuKernel(Cooperative = true)]
+    [SkipSnapshotConsistency("Analyzer case")]
+    public static void SyncGridFirstStatementKernel(int[] buffer, int[] other)
+    {
+        buffer[ThreadIndex.X] = 1;
+        Gpu.SyncGrid(() =>
+        {
+            if (buffer[0] > 0)
+            {
+                Gpu.SyncThreads(); // SyncGrid first statement
+            }
+
+            Gpu.SyncThreads();
+            other[ThreadIndex.X] = 2;
+        });
+    }
+
+    [GpuKernel(Cooperative = true)]
+    [SkipSnapshotConsistency("Analyzer case")]
+    public static void SyncGridGapKernel(int[] buffer)
+    {
+        Gpu.SyncGrid(() =>
+        {
+            buffer[ThreadIndex.X] = 1;
+            if (buffer[0] > 0)
+            {
+                Gpu.SyncThreads();
+            }
+        });
+    }
+
+    // A struct member writes the array of its receiver
+    [GpuKernel]
+    [SkipSnapshotConsistency("Analyzer case")]
+    public static void ReceiverKernel(MemoryPutSlots slots)
+    {
+        Gpu.SyncThreads();
+        slots.Put(ThreadIndex.X);
+        if (slots.Values[0] > 0)
+        {
+            Gpu.SyncThreads(); // Struct receiver
+        }
+
+        Gpu.SyncThreads();
+    }
+
+    // A callee writes the array that a span receiver of a BCL call reaches
+    [GpuDeviceFunction]
+    public static void FillAll(System.Span<int> data)
+    {
+        data.Fill(ThreadIndex.X);
+    }
+
+    [GpuKernel]
+    [SkipSnapshotConsistency("Analyzer case")]
+    public static void SpanReceiverKernel(int[] buffer)
+    {
+        Gpu.SyncThreads();
+        FillAll(buffer);
+        if (buffer[0] > 0)
+        {
+            Gpu.SyncThreads(); // Span receiver
+        }
+
+        Gpu.SyncThreads();
+    }
+
+    // An array auto-property of a struct is memory too
+    [GpuKernel]
+    [SkipSnapshotConsistency("Analyzer case")]
+    public static void AutoPropertyKernel(MemoryPropertySlots slots)
+    {
+        Gpu.SyncThreads();
+        slots.Values[ThreadIndex.X] = 1;
+        if (slots.Values[0] > 0)
+        {
+            Gpu.SyncThreads(); // Auto-property
+        }
+
+        Gpu.SyncThreads();
+    }
+
+    [GpuDeviceFunction]
+    public static void FillProperty(MemoryPropertySlots slots)
+    {
+        slots.Values[ThreadIndex.X] = 1;
+    }
+
+    [GpuKernel]
+    [SkipSnapshotConsistency("Analyzer case")]
+    public static void AutoPropertyThroughCallKernel(MemoryPropertySlots slots)
+    {
+        Gpu.SyncThreads();
+        FillProperty(slots);
+        if (slots.Values[0] > 0)
+        {
+            Gpu.SyncThreads(); // Auto-property through call
+        }
+
+        Gpu.SyncThreads();
+    }
+
+    // A write through a device function that returns a reference to an element
+    [GpuDeviceFunction]
+    public static ref int At(int[] data, int index) => ref data[index];
+
+    [GpuKernel]
+    [SkipSnapshotConsistency("Analyzer case")]
+    public static void RefReturnWriteKernel(int[] buffer)
+    {
+        Gpu.SyncThreads();
+        At(buffer, ThreadIndex.X) = 1;
+        if (buffer[0] > 0)
+        {
+            Gpu.SyncThreads(); // Ref return write
+        }
+
+        Gpu.SyncThreads();
+    }
+
+    // The callee writes its ref parameter and then waits: the element is the same within the block afterwards
+    [GpuDeviceFunction]
+    public static void IncrementAndSync(ref int value)
+    {
+        value++;
+        Gpu.SyncThreads();
+    }
+
+    [GpuKernel]
+    [SkipSnapshotConsistency("Analyzer case")]
+    public static void RefWriteThenSyncKernel(int[] buffer)
+    {
+        IncrementAndSync(ref buffer[0]);
+        if (buffer[0] > 0)
+        {
+            Gpu.SyncThreads();
+        }
+
+        Gpu.SyncThreads();
+    }
+
+    // The callee waits first and then writes its ref parameter: the element is written after the barrier
+    [GpuDeviceFunction]
+    public static void SyncAndIncrement(ref int value)
+    {
+        Gpu.SyncThreads();
+        value++;
+    }
+
+    [GpuKernel]
+    [SkipSnapshotConsistency("Analyzer case")]
+    public static void SyncThenRefWriteKernel(int[] buffer)
+    {
+        SyncAndIncrement(ref buffer[0]);
+        if (buffer[0] > 0)
+        {
+            Gpu.SyncThreads(); // Ref write after the callee's barrier
+        }
+
+        Gpu.SyncThreads();
+    }
+
+    // A callee that only waits at a block barrier leaves the memory differing between blocks: a grid barrier still
+    // diverges on it
+    [GpuKernel(Cooperative = true)]
+    [SkipSnapshotConsistency("Analyzer case")]
+    public static void BlockHelperThenGridKernel(int[] buffer)
+    {
+        buffer[ThreadIndex.X] = 1;
+        WaitForBlock();
+        if (buffer[0] > 0)
+        {
+            Gpu.SyncGrid(); // Grid after block helper
+        }
+
+        Gpu.SyncGrid();
+    }
+
+    // A callee writes the array of a struct nested in its struct parameter
+    [GpuDeviceFunction]
+    public static void FillNested(MemoryOuterSlots outer)
+    {
+        outer.Inner.Values[ThreadIndex.X] = 1;
+    }
+
+    [GpuKernel]
+    [SkipSnapshotConsistency("Analyzer case")]
+    public static void NestedFieldThroughCallKernel(MemoryOuterSlots outer)
+    {
+        Gpu.SyncThreads();
+        FillNested(outer);
+        if (outer.Inner.Values[0] > 0)
+        {
+            Gpu.SyncThreads(); // Nested field through call
+        }
+
+        Gpu.SyncThreads();
+    }
+
+    // An increment of an element writes it
+    [GpuKernel]
+    [SkipSnapshotConsistency("Analyzer case")]
+    public static void IncrementKernel(int[] buffer)
+    {
+        Gpu.SyncThreads();
+        buffer[ThreadIndex.X % 2]++;
+        if (buffer[0] > 0)
+        {
+            Gpu.SyncThreads(); // Increment
+        }
+
+        Gpu.SyncThreads();
+    }
+
+    // A deconstruction into an element writes it
+    [GpuKernel]
+    [SkipSnapshotConsistency("Analyzer case")]
+    public static void DeconstructionKernel(int[] buffer)
+    {
+        Gpu.SyncThreads();
+        int other;
+        (buffer[0], other) = (ThreadIndex.X, 1);
+        if (buffer[0] > other)
+        {
+            Gpu.SyncThreads(); // Deconstruction
+        }
+
+        Gpu.SyncThreads();
+    }
+}
+
+public struct MemoryPutSlots
+{
+    public int[] Values;
+
+    public void Put(int value)
+    {
+        Values[ThreadIndex.X] = value;
+    }
+}
+
+public struct MemoryPropertySlots
+{
+    public int[] Values { get; set; }
+}
+
+public struct MemoryOuterSlots
+{
+    public MemorySlots Inner;
 }
