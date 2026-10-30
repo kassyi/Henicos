@@ -83,16 +83,16 @@ public static partial class AotContexts
 {
 }
 public const string MatrixMultiplyStressKernel_Source = @"extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Runtime__HeavyGpuStressKernels__MatrixMultiplyStressKernel(GSharpArray<float> __gsharp_id_0_a, GSharpArray<float> __gsharp_id_1_b, GSharpArray<float> __gsharp_id_2_c, int __gsharp_id_3_n){
-int __gsharp_id_4_row = blockIdx.y*blockDim.y+threadIdx.y;
-int __gsharp_id_5_col = blockIdx.x*blockDim.x+threadIdx.x;
+int __gsharp_id_4_row = __gsharp_add_i32(__gsharp_mul_i32((int)blockIdx.y,(int)blockDim.y),(int)threadIdx.y);
+int __gsharp_id_5_col = __gsharp_add_i32(__gsharp_mul_i32((int)blockIdx.x,(int)blockDim.x),(int)threadIdx.x);
 if(__gsharp_id_4_row<__gsharp_id_3_n&&__gsharp_id_5_col<__gsharp_id_3_n)
 {
 float __gsharp_id_6_sum = 0;
 for(int __gsharp_id_7_k = 0;__gsharp_id_7_k<__gsharp_id_3_n;__gsharp_id_7_k++)
 {
-__gsharp_id_6_sum+=__gsharp_id_0_a[__gsharp_id_4_row*__gsharp_id_3_n+__gsharp_id_7_k]*__gsharp_id_1_b[__gsharp_id_7_k*__gsharp_id_3_n+__gsharp_id_5_col];
+__gsharp_id_6_sum+=__gsharp_id_0_a[__gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_4_row,__gsharp_id_3_n),__gsharp_id_7_k)]*__gsharp_id_1_b[__gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_7_k,__gsharp_id_3_n),__gsharp_id_5_col)];
 }
-__gsharp_id_2_c[__gsharp_id_4_row*__gsharp_id_3_n+__gsharp_id_5_col]=__gsharp_id_6_sum;
+__gsharp_id_2_c[__gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_4_row,__gsharp_id_3_n),__gsharp_id_5_col)]=__gsharp_id_6_sum;
 }
 }
 ";

@@ -81,7 +81,7 @@ __gsharp_id_1_arr[3]=40;
 int __gsharp_id_2_total = 0;
 for(auto __gsharp_id_3_val : __gsharp_id_1_arr)
 {
-__gsharp_id_2_total+=__gsharp_id_3_val;
+__gsharp_id_2_total=__gsharp_add_i32(__gsharp_id_2_total,__gsharp_id_3_val);
 }
 __gsharp_id_0_output[0]=__gsharp_id_2_total;
 __gsharp_state=-1;
@@ -333,7 +333,7 @@ const int __gsharp_id_1_arr[4]={ 10, 20, 30, 40 };
 int __gsharp_id_2_total = 0;
 for(auto __gsharp_id_3_val : __gsharp_id_1_arr)
 {
-__gsharp_id_2_total+=__gsharp_id_3_val;
+__gsharp_id_2_total=__gsharp_add_i32(__gsharp_id_2_total,__gsharp_id_3_val);
 }
 __gsharp_id_0_output[0]=__gsharp_id_2_total;
 __gsharp_state=-1;
@@ -581,7 +581,7 @@ int __gsharp_id_1_arr[4]={ 10, 20, 30, 40 };
 int __gsharp_id_2_total = 0;
 for(auto __gsharp_id_3_val : __gsharp_id_1_arr)
 {
-__gsharp_id_2_total+=__gsharp_id_3_val;
+__gsharp_id_2_total=__gsharp_add_i32(__gsharp_id_2_total,__gsharp_id_3_val);
 }
 __gsharp_id_0_output[0]=__gsharp_id_2_total;
 __gsharp_state=-1;

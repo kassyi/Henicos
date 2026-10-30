@@ -51,9 +51,9 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-int __gsharp_id_1_tid = threadIdx.x;
+int __gsharp_id_1_tid = (int)threadIdx.x;
 auto __gsharp_id_2_MultiplyByTwo = [&]() {
-__gsharp_id_0_data[__gsharp_id_1_tid]=__gsharp_id_0_data[__gsharp_id_1_tid]*2;
+__gsharp_id_0_data[__gsharp_id_1_tid]=__gsharp_mul_i32(__gsharp_id_0_data[__gsharp_id_1_tid],2);
 }
 ;
 __gsharp_id_2_MultiplyByTwo();
@@ -297,9 +297,9 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-int __gsharp_id_2_tid = threadIdx.x;
+int __gsharp_id_2_tid = (int)threadIdx.x;
 auto __gsharp_id_3_ComputeTotal = [&](int __gsharp_id_4_val) {
-return __gsharp_id_4_val*3+__gsharp_id_1_bonus;
+return __gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_4_val,3),__gsharp_id_1_bonus);
 }
 ;
 __gsharp_id_0_data[__gsharp_id_2_tid]=__gsharp_id_3_ComputeTotal(__gsharp_id_0_data[__gsharp_id_2_tid]);
@@ -543,9 +543,9 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-int __gsharp_id_1_tid = threadIdx.x;
+int __gsharp_id_1_tid = (int)threadIdx.x;
 auto __gsharp_id_2_Square = [&](int __gsharp_id_3_x) {
-return __gsharp_id_3_x*__gsharp_id_3_x;
+return __gsharp_mul_i32(__gsharp_id_3_x,__gsharp_id_3_x);
 }
 ;
 __gsharp_id_0_data[__gsharp_id_1_tid]=__gsharp_id_2_Square(__gsharp_id_0_data[__gsharp_id_1_tid]);
@@ -785,13 +785,13 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-int __gsharp_id_1_tid = threadIdx.x;
+int __gsharp_id_1_tid = (int)threadIdx.x;
 auto __gsharp_id_2_InnerAdd = [&](int __gsharp_id_3_a, int __gsharp_id_4_b) {
-return __gsharp_id_3_a+__gsharp_id_4_b;
+return __gsharp_add_i32(__gsharp_id_3_a,__gsharp_id_4_b);
 }
 ;
 auto __gsharp_id_5_OuterMultiplyAndAdd = [&](int __gsharp_id_6_x) {
-int __gsharp_id_7_doubled = __gsharp_id_6_x*2;
+int __gsharp_id_7_doubled = __gsharp_mul_i32(__gsharp_id_6_x,2);
 return __gsharp_id_2_InnerAdd(__gsharp_id_7_doubled,10);
 }
 ;
@@ -1038,9 +1038,9 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-int __gsharp_id_3_tid = threadIdx.x;
+int __gsharp_id_3_tid = (int)threadIdx.x;
 auto __gsharp_id_4_ClampAdd = [&](int __gsharp_id_5_val1, int __gsharp_id_6_val2, int __gsharp_id_7_minVal, int __gsharp_id_8_maxVal) {
-int __gsharp_id_9_sum = __gsharp_id_5_val1+__gsharp_id_6_val2;
+int __gsharp_id_9_sum = __gsharp_add_i32(__gsharp_id_5_val1,__gsharp_id_6_val2);
 if(__gsharp_id_9_sum<__gsharp_id_7_minVal)
 {
 return __gsharp_id_7_minVal;

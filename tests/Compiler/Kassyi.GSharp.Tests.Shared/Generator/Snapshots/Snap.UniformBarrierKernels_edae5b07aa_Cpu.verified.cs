@@ -59,7 +59,7 @@ return;
 case 1:
 __gsharp_switch_1_state_1:
 {
-__gsharp_id_0_buffer[0]+=2;
+__gsharp_id_0_buffer[0]=__gsharp_add_i32(__gsharp_id_0_buffer[0],2);
 __gsharp_state=-1;
 return;
 }
@@ -326,7 +326,7 @@ goto __gsharp_switch_1_state_3;
 case 3:
 __gsharp_switch_1_state_3:
 {
-__gsharp_ctx->__gsharp_id_2_i++;
+__gsharp_ctx->__gsharp_id_2_i=__gsharp_add_i32(__gsharp_ctx->__gsharp_id_2_i,1);
 goto __gsharp_switch_1_state_1;
 goto __gsharp_switch_1_state_4;
 }
@@ -605,7 +605,7 @@ case 1:
 __gsharp_switch_1_state_1:
 {
 GSharpArray<int> __gsharp_id_2_localSpan = GSharpArray<int>{__gsharp_id_0_buffer, 10};
-__gsharp_id_2_localSpan[0]+=200;
+__gsharp_id_2_localSpan[0]=__gsharp_add_i32(__gsharp_id_2_localSpan[0],200);
 __gsharp_state=-1;
 return;
 }

@@ -51,9 +51,9 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-int __gsharp_id_3_tid = threadIdx.x;
+int __gsharp_id_3_tid = (int)threadIdx.x;
 auto __gsharp_id_4_Lookup = [&](GSharpArray<const int> __gsharp_id_5_values, const int __gsharp_id_6_factor, int __gsharp_id_7_index) {
-return __gsharp_id_5_values[__gsharp_id_7_index]*__gsharp_id_6_factor;
+return __gsharp_mul_i32(__gsharp_id_5_values[__gsharp_id_7_index],__gsharp_id_6_factor);
 }
 ;
 __gsharp_id_0_output[__gsharp_id_3_tid]=__gsharp_id_4_Lookup(__gsharp_id_1_table,__gsharp_id_2_scale,__gsharp_id_3_tid);

@@ -28,6 +28,8 @@ struct __gsharp_using_scope {
 
 template <class T> __device__ __host__ inline const T* __gsharp_temp_address(const T& v) { return &v; }
 
+#include "Prelude/IntegerSemantics.hpp"
+
 template <typename T>
 struct GSharpArray {
     // Not __restrict__: in C# two arrays (arguments, struct fields, a ref into one of them) may be one object, and the

@@ -51,13 +51,13 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-auto __gsharp_id_3_idx = blockIdx.x*blockDim.x+threadIdx.x;
+auto __gsharp_id_3_idx = __gsharp_add_i32(__gsharp_mul_i32((int)blockIdx.x,(int)blockDim.x),(int)threadIdx.x);
 if(__gsharp_id_3_idx<__gsharp_id_1_n)
 {
 auto __gsharp_id_4_a = __gsharp_id_0_data[__gsharp_id_3_idx];
 auto __gsharp_id_5_b = 1.00001f;
 auto __gsharp_id_6_c = 0.00001f;
-for(int __gsharp_id_7_i = 0;__gsharp_id_7_i<__gsharp_id_2_iterations;__gsharp_id_7_i++)
+for(int __gsharp_id_7_i = 0;__gsharp_id_7_i<__gsharp_id_2_iterations;__gsharp_id_7_i=__gsharp_add_i32(__gsharp_id_7_i,1))
 {
 __gsharp_id_4_a=__gsharp_id_4_a*__gsharp_id_5_b+__gsharp_id_6_c;
 }

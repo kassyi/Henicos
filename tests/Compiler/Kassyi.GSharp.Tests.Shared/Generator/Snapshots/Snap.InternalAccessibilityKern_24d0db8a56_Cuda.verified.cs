@@ -84,8 +84,8 @@ public static partial class AotContexts
 {
 }
 public const string DoubleKernel_Source = @"extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__InternalAccessibilityKernels__DoubleKernel(GSharpArray<int> __gsharp_id_0_input, GSharpArray<int> __gsharp_id_1_output){
-int __gsharp_id_2_tid = threadIdx.x;
-__gsharp_id_1_output[__gsharp_id_2_tid]=__gsharp_id_0_input[__gsharp_id_2_tid]*2;
+int __gsharp_id_2_tid = (int)threadIdx.x;
+__gsharp_id_1_output[__gsharp_id_2_tid]=__gsharp_mul_i32(__gsharp_id_0_input[__gsharp_id_2_tid],2);
 }
 ";
 public static readonly string DoubleKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +DoubleKernel_Source;

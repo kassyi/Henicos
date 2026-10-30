@@ -65,7 +65,7 @@ public const string Source = @"inline __device__ int __gsharp_fn_Kassyi__GSharp_
 inline __device__ int __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__ForUnrollBarrierKernels__Neighbor(GSharpArray<int> __gsharp_id_0_buffer, int __gsharp_id_1_tid, int __gsharp_id_2_value){
 __gsharp_id_0_buffer[__gsharp_id_1_tid]=__gsharp_id_2_value;
 __syncthreads();
-int __gsharp_id_3_r = __gsharp_id_0_buffer[(__gsharp_id_1_tid+1)%4];
+int __gsharp_id_3_r = __gsharp_id_0_buffer[(__gsharp_add_i32(__gsharp_id_1_tid,1))%4];
 __syncthreads();
 return __gsharp_id_3_r;
 }
@@ -152,25 +152,25 @@ public static partial class AotContexts
 {
 }
 public const string ExchangeKernel_Source = @"extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__ForUnrollBarrierKernels__ExchangeKernel(GSharpArray<int> __gsharp_id_0_buffer, GSharpArray<int> __gsharp_id_1_output){
-int __gsharp_id_2_tid = threadIdx.x;
+int __gsharp_id_2_tid = (int)threadIdx.x;
 int __gsharp_id_3_sum = 0;
 // [GpuUnroll] start=0, count=3
 {
-__gsharp_id_0_buffer[__gsharp_id_2_tid]=__gsharp_id_2_tid+10*0;
+__gsharp_id_0_buffer[__gsharp_id_2_tid]=__gsharp_add_i32(__gsharp_id_2_tid,__gsharp_mul_i32(10,0));
 __syncthreads();
-__gsharp_id_3_sum+=__gsharp_id_0_buffer[(__gsharp_id_2_tid+1)%4];
-__syncthreads();
-}
-{
-__gsharp_id_0_buffer[__gsharp_id_2_tid]=__gsharp_id_2_tid+10*1;
-__syncthreads();
-__gsharp_id_3_sum+=__gsharp_id_0_buffer[(__gsharp_id_2_tid+1)%4];
+__gsharp_id_3_sum=__gsharp_add_i32(__gsharp_id_3_sum,__gsharp_id_0_buffer[(__gsharp_add_i32(__gsharp_id_2_tid,1))%4]);
 __syncthreads();
 }
 {
-__gsharp_id_0_buffer[__gsharp_id_2_tid]=__gsharp_id_2_tid+10*2;
+__gsharp_id_0_buffer[__gsharp_id_2_tid]=__gsharp_add_i32(__gsharp_id_2_tid,__gsharp_mul_i32(10,1));
 __syncthreads();
-__gsharp_id_3_sum+=__gsharp_id_0_buffer[(__gsharp_id_2_tid+1)%4];
+__gsharp_id_3_sum=__gsharp_add_i32(__gsharp_id_3_sum,__gsharp_id_0_buffer[(__gsharp_add_i32(__gsharp_id_2_tid,1))%4]);
+__syncthreads();
+}
+{
+__gsharp_id_0_buffer[__gsharp_id_2_tid]=__gsharp_add_i32(__gsharp_id_2_tid,__gsharp_mul_i32(10,2));
+__syncthreads();
+__gsharp_id_3_sum=__gsharp_add_i32(__gsharp_id_3_sum,__gsharp_id_0_buffer[(__gsharp_add_i32(__gsharp_id_2_tid,1))%4]);
 __syncthreads();
 }
 __gsharp_id_1_output[__gsharp_id_2_tid]=__gsharp_id_3_sum;
@@ -320,17 +320,17 @@ finally
 }
 #pragma warning restore CS8500
 public const string SuspendingCallKernel_Source = @"extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__ForUnrollBarrierKernels__SuspendingCallKernel(GSharpArray<int> __gsharp_id_0_buffer, GSharpArray<int> __gsharp_id_1_output){
-int __gsharp_id_2_tid = threadIdx.x;
+int __gsharp_id_2_tid = (int)threadIdx.x;
 int __gsharp_id_3_sum = 0;
 // [GpuUnroll] start=0, count=3
 {
-__gsharp_id_3_sum+=__gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__ForUnrollBarrierKernels__Neighbor(__gsharp_id_0_buffer,__gsharp_id_2_tid,__gsharp_id_2_tid*0);
+__gsharp_id_3_sum=__gsharp_add_i32(__gsharp_id_3_sum,__gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__ForUnrollBarrierKernels__Neighbor(__gsharp_id_0_buffer,__gsharp_id_2_tid,__gsharp_mul_i32(__gsharp_id_2_tid,0)));
 }
 {
-__gsharp_id_3_sum+=__gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__ForUnrollBarrierKernels__Neighbor(__gsharp_id_0_buffer,__gsharp_id_2_tid,__gsharp_id_2_tid*1);
+__gsharp_id_3_sum=__gsharp_add_i32(__gsharp_id_3_sum,__gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__ForUnrollBarrierKernels__Neighbor(__gsharp_id_0_buffer,__gsharp_id_2_tid,__gsharp_mul_i32(__gsharp_id_2_tid,1)));
 }
 {
-__gsharp_id_3_sum+=__gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__ForUnrollBarrierKernels__Neighbor(__gsharp_id_0_buffer,__gsharp_id_2_tid,__gsharp_id_2_tid*2);
+__gsharp_id_3_sum=__gsharp_add_i32(__gsharp_id_3_sum,__gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__ForUnrollBarrierKernels__Neighbor(__gsharp_id_0_buffer,__gsharp_id_2_tid,__gsharp_mul_i32(__gsharp_id_2_tid,2)));
 }
 __gsharp_id_1_output[__gsharp_id_2_tid]=__gsharp_id_3_sum;
 }
@@ -490,25 +490,25 @@ static_assert(alignof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ForUnro
 static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ForUnrollAccumulator,__gsharp_mb_Total)==0,""Kassyi.GSharp.Tests.Shared.Syntax.ForUnrollAccumulator.Total: offset"");
 #endif
 extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__ForUnrollBarrierKernels__RefContextKernel(GSharpArray<int> __gsharp_id_0_buffer, GSharpArray<int> __gsharp_id_1_output){
-int __gsharp_id_2_tid = threadIdx.x;
+int __gsharp_id_2_tid = (int)threadIdx.x;
 __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ForUnrollAccumulator __gsharp_id_3_acc = {};
 // [GpuUnroll] start=1, count=3
 {
-__gsharp_id_0_buffer[__gsharp_id_2_tid]=1*__gsharp_id_2_tid;
+__gsharp_id_0_buffer[__gsharp_id_2_tid]=__gsharp_mul_i32(1,__gsharp_id_2_tid);
 __syncthreads();
-__gsharp_id_3_acc.__gsharp_mb_Total+=__gsharp_id_0_buffer[(__gsharp_id_2_tid+1)%4];
-__syncthreads();
-}
-{
-__gsharp_id_0_buffer[__gsharp_id_2_tid]=2*__gsharp_id_2_tid;
-__syncthreads();
-__gsharp_id_3_acc.__gsharp_mb_Total+=__gsharp_id_0_buffer[(__gsharp_id_2_tid+1)%4];
+__gsharp_id_3_acc.__gsharp_mb_Total=__gsharp_add_i32(__gsharp_id_3_acc.__gsharp_mb_Total,__gsharp_id_0_buffer[(__gsharp_add_i32(__gsharp_id_2_tid,1))%4]);
 __syncthreads();
 }
 {
-__gsharp_id_0_buffer[__gsharp_id_2_tid]=3*__gsharp_id_2_tid;
+__gsharp_id_0_buffer[__gsharp_id_2_tid]=__gsharp_mul_i32(2,__gsharp_id_2_tid);
 __syncthreads();
-__gsharp_id_3_acc.__gsharp_mb_Total+=__gsharp_id_0_buffer[(__gsharp_id_2_tid+1)%4];
+__gsharp_id_3_acc.__gsharp_mb_Total=__gsharp_add_i32(__gsharp_id_3_acc.__gsharp_mb_Total,__gsharp_id_0_buffer[(__gsharp_add_i32(__gsharp_id_2_tid,1))%4]);
+__syncthreads();
+}
+{
+__gsharp_id_0_buffer[__gsharp_id_2_tid]=__gsharp_mul_i32(3,__gsharp_id_2_tid);
+__syncthreads();
+__gsharp_id_3_acc.__gsharp_mb_Total=__gsharp_add_i32(__gsharp_id_3_acc.__gsharp_mb_Total,__gsharp_id_0_buffer[(__gsharp_add_i32(__gsharp_id_2_tid,1))%4]);
 __syncthreads();
 }
 __gsharp_id_1_output[__gsharp_id_2_tid]=__gsharp_id_3_acc.__gsharp_mb_Total;
@@ -658,7 +658,7 @@ finally
 }
 #pragma warning restore CS8500
 public const string ZeroCountKernel_Source = @"extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__ForUnrollBarrierKernels__ZeroCountKernel(GSharpArray<int> __gsharp_id_0_buffer, GSharpArray<int> __gsharp_id_1_output){
-int __gsharp_id_2_tid = threadIdx.x;
+int __gsharp_id_2_tid = (int)threadIdx.x;
 // [GpuUnroll] start=0, count=0
 }
 ";
@@ -806,38 +806,38 @@ finally
 }
 #pragma warning restore CS8500
 public const string NestedForUnrollKernel_Source = @"extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__ForUnrollBarrierKernels__NestedForUnrollKernel(GSharpArray<int> __gsharp_id_0_buffer, GSharpArray<int> __gsharp_id_1_output){
-int __gsharp_id_2_tid = threadIdx.x;
+int __gsharp_id_2_tid = (int)threadIdx.x;
 int __gsharp_id_3_sum = 0;
 // [GpuUnroll] start=0, count=2
 {
-__gsharp_id_0_buffer[__gsharp_id_2_tid]=__gsharp_id_2_tid+10*0;
+__gsharp_id_0_buffer[__gsharp_id_2_tid]=__gsharp_add_i32(__gsharp_id_2_tid,__gsharp_mul_i32(10,0));
 __syncthreads();
-__gsharp_id_3_sum+=__gsharp_id_0_buffer[(__gsharp_id_2_tid+1)%4];
+__gsharp_id_3_sum=__gsharp_add_i32(__gsharp_id_3_sum,__gsharp_id_0_buffer[(__gsharp_add_i32(__gsharp_id_2_tid,1))%4]);
 // [GpuUnroll] start=0, count=3
 {
-__gsharp_id_3_sum+=0*10+0;
+__gsharp_id_3_sum=__gsharp_add_i32(__gsharp_id_3_sum,__gsharp_add_i32(__gsharp_mul_i32(0,10),0));
 }
 {
-__gsharp_id_3_sum+=0*10+1;
+__gsharp_id_3_sum=__gsharp_add_i32(__gsharp_id_3_sum,__gsharp_add_i32(__gsharp_mul_i32(0,10),1));
 }
 {
-__gsharp_id_3_sum+=0*10+2;
+__gsharp_id_3_sum=__gsharp_add_i32(__gsharp_id_3_sum,__gsharp_add_i32(__gsharp_mul_i32(0,10),2));
 }
 __syncthreads();
 }
 {
-__gsharp_id_0_buffer[__gsharp_id_2_tid]=__gsharp_id_2_tid+10*1;
+__gsharp_id_0_buffer[__gsharp_id_2_tid]=__gsharp_add_i32(__gsharp_id_2_tid,__gsharp_mul_i32(10,1));
 __syncthreads();
-__gsharp_id_3_sum+=__gsharp_id_0_buffer[(__gsharp_id_2_tid+1)%4];
+__gsharp_id_3_sum=__gsharp_add_i32(__gsharp_id_3_sum,__gsharp_id_0_buffer[(__gsharp_add_i32(__gsharp_id_2_tid,1))%4]);
 // [GpuUnroll] start=0, count=3
 {
-__gsharp_id_3_sum+=1*10+0;
+__gsharp_id_3_sum=__gsharp_add_i32(__gsharp_id_3_sum,__gsharp_add_i32(__gsharp_mul_i32(1,10),0));
 }
 {
-__gsharp_id_3_sum+=1*10+1;
+__gsharp_id_3_sum=__gsharp_add_i32(__gsharp_id_3_sum,__gsharp_add_i32(__gsharp_mul_i32(1,10),1));
 }
 {
-__gsharp_id_3_sum+=1*10+2;
+__gsharp_id_3_sum=__gsharp_add_i32(__gsharp_id_3_sum,__gsharp_add_i32(__gsharp_mul_i32(1,10),2));
 }
 __syncthreads();
 }
@@ -998,7 +998,7 @@ for(unsigned int __gsharp_gsl_0 = __gsharp_grid_stride_start(); __gsharp_gsl_0 <
 {
 int __gsharp_id_6_i = (int)__gsharp_gsl_0;
 {
-__gsharp_id_1_scratch[__gsharp_id_6_i]=__gsharp_id_5_src[(__gsharp_id_6_i+1)%__gsharp_id_3_n]+1;
+__gsharp_id_1_scratch[__gsharp_id_6_i]=__gsharp_add_i32(__gsharp_id_5_src[(__gsharp_add_i32(__gsharp_id_6_i,1))%__gsharp_id_3_n],1);
 }
 }
 }
@@ -1025,7 +1025,7 @@ for(unsigned int __gsharp_gsl_2 = __gsharp_grid_stride_start(); __gsharp_gsl_2 <
 {
 int __gsharp_id_6_i = (int)__gsharp_gsl_2;
 {
-__gsharp_id_1_scratch[__gsharp_id_6_i]=__gsharp_id_5_src[(__gsharp_id_6_i+1)%__gsharp_id_3_n]+1;
+__gsharp_id_1_scratch[__gsharp_id_6_i]=__gsharp_add_i32(__gsharp_id_5_src[(__gsharp_add_i32(__gsharp_id_6_i,1))%__gsharp_id_3_n],1);
 }
 }
 }
@@ -1052,7 +1052,7 @@ for(unsigned int __gsharp_gsl_4 = __gsharp_grid_stride_start(); __gsharp_gsl_4 <
 {
 int __gsharp_id_6_i = (int)__gsharp_gsl_4;
 {
-__gsharp_id_1_scratch[__gsharp_id_6_i]=__gsharp_id_5_src[(__gsharp_id_6_i+1)%__gsharp_id_3_n]+1;
+__gsharp_id_1_scratch[__gsharp_id_6_i]=__gsharp_add_i32(__gsharp_id_5_src[(__gsharp_add_i32(__gsharp_id_6_i,1))%__gsharp_id_3_n],1);
 }
 }
 }

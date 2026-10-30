@@ -83,7 +83,7 @@ public static partial class AotContexts
 {
 }
 public const string UsingStaticMathKernel_Source = @"extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__UsingStaticMathKernels__UsingStaticMathKernel(GSharpArray<double> __gsharp_id_0_inputs, GSharpArray<double> __gsharp_id_1_results, GSharpArray<int> __gsharp_id_2_intInputs, GSharpArray<int> __gsharp_id_3_intResults){
-int __gsharp_id_4_tid = threadIdx.x;
+int __gsharp_id_4_tid = (int)threadIdx.x;
 __gsharp_id_1_results[__gsharp_id_4_tid]=sqrt(fabs(__gsharp_id_0_inputs[__gsharp_id_4_tid]))+__gsharp_max_f64(__gsharp_id_0_inputs[__gsharp_id_4_tid],1.0)+__gsharp_min_f64(__gsharp_id_0_inputs[__gsharp_id_4_tid],(-1.0))+3.141592653589793;
 __gsharp_id_3_intResults[__gsharp_id_4_tid]=__gsharp_clamp(__gsharp_id_2_intInputs[__gsharp_id_4_tid],(-5),5);
 }

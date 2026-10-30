@@ -86,7 +86,7 @@ public static partial class AotContexts
 {
 }
 public const string ContinueInSwitchKernel_Source = @"extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Transpiler__SwitchInBarrierLoopKernels__ContinueInSwitchKernel(GSharpArray<int> __gsharp_id_0_a, GSharpArray<int> __gsharp_id_1_mode){
-int __gsharp_id_2_tid = threadIdx.x;
+int __gsharp_id_2_tid = (int)threadIdx.x;
 for(int __gsharp_id_3_i = 0;__gsharp_id_3_i<3;__gsharp_id_3_i++)
 {
 __syncthreads();
@@ -100,25 +100,25 @@ continue;
 case 1:
 __gsharp_switch_1_state_1:
 {
-__gsharp_id_0_a[__gsharp_id_2_tid]+=10;
+__gsharp_id_0_a[__gsharp_id_2_tid]=__gsharp_add_i32(__gsharp_id_0_a[__gsharp_id_2_tid],10);
 break;
 }
 case 2:
 __gsharp_switch_1_state_2:
 {
-__gsharp_id_0_a[__gsharp_id_2_tid]+=20;
+__gsharp_id_0_a[__gsharp_id_2_tid]=__gsharp_add_i32(__gsharp_id_0_a[__gsharp_id_2_tid],20);
 break;
 }
 case 3:
 __gsharp_switch_1_state_3:
 {
-__gsharp_id_0_a[__gsharp_id_2_tid]+=100;
+__gsharp_id_0_a[__gsharp_id_2_tid]=__gsharp_add_i32(__gsharp_id_0_a[__gsharp_id_2_tid],100);
 break;
 }
 case 4:
 __gsharp_switch_1_state_4:
 {
-__gsharp_id_0_a[__gsharp_id_2_tid]+=1000;
+__gsharp_id_0_a[__gsharp_id_2_tid]=__gsharp_add_i32(__gsharp_id_0_a[__gsharp_id_2_tid],1000);
 break;
 }
 default:
@@ -127,7 +127,7 @@ __gsharp_switch_1_state_default:
 break;
 }
 }
-__gsharp_id_0_a[__gsharp_id_2_tid]+=1;
+__gsharp_id_0_a[__gsharp_id_2_tid]=__gsharp_add_i32(__gsharp_id_0_a[__gsharp_id_2_tid],1);
 }
 }
 ";
@@ -275,7 +275,7 @@ finally
 }
 #pragma warning restore CS8500
 public const string ContinueInSwitchWithoutCaseKernel_Source = @"extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Transpiler__SwitchInBarrierLoopKernels__ContinueInSwitchWithoutCaseKernel(GSharpArray<int> __gsharp_id_0_a, GSharpArray<int> __gsharp_id_1_mode){
-int __gsharp_id_2_tid = threadIdx.x;
+int __gsharp_id_2_tid = (int)threadIdx.x;
 for(int __gsharp_id_3_i = 0;__gsharp_id_3_i<3;__gsharp_id_3_i++)
 {
 __syncthreads();
@@ -292,7 +292,7 @@ __gsharp_switch_1_state_default:
 break;
 }
 }
-__gsharp_id_0_a[__gsharp_id_2_tid]+=1;
+__gsharp_id_0_a[__gsharp_id_2_tid]=__gsharp_add_i32(__gsharp_id_0_a[__gsharp_id_2_tid],1);
 }
 }
 ";
@@ -440,7 +440,7 @@ finally
 }
 #pragma warning restore CS8500
 public const string GotoOutOfSwitchKernel_Source = @"extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Transpiler__SwitchInBarrierLoopKernels__GotoOutOfSwitchKernel(GSharpArray<int> __gsharp_id_0_a, GSharpArray<int> __gsharp_id_1_mode){
-int __gsharp_id_2_tid = threadIdx.x;
+int __gsharp_id_2_tid = (int)threadIdx.x;
 for(int __gsharp_id_3_i = 0;__gsharp_id_3_i<3;__gsharp_id_3_i++)
 {
 __syncthreads();
@@ -458,25 +458,25 @@ break;
 case 1:
 __gsharp_switch_1_state_1:
 {
-__gsharp_id_0_a[__gsharp_id_2_tid]+=10;
+__gsharp_id_0_a[__gsharp_id_2_tid]=__gsharp_add_i32(__gsharp_id_0_a[__gsharp_id_2_tid],10);
 break;
 }
 case 2:
 __gsharp_switch_1_state_2:
 {
-__gsharp_id_0_a[__gsharp_id_2_tid]+=20;
+__gsharp_id_0_a[__gsharp_id_2_tid]=__gsharp_add_i32(__gsharp_id_0_a[__gsharp_id_2_tid],20);
 break;
 }
 case 3:
 __gsharp_switch_1_state_3:
 {
-__gsharp_id_0_a[__gsharp_id_2_tid]+=100;
+__gsharp_id_0_a[__gsharp_id_2_tid]=__gsharp_add_i32(__gsharp_id_0_a[__gsharp_id_2_tid],100);
 break;
 }
 case 4:
 __gsharp_switch_1_state_4:
 {
-__gsharp_id_0_a[__gsharp_id_2_tid]+=1000;
+__gsharp_id_0_a[__gsharp_id_2_tid]=__gsharp_add_i32(__gsharp_id_0_a[__gsharp_id_2_tid],1000);
 break;
 }
 default:
@@ -485,11 +485,11 @@ __gsharp_switch_1_state_default:
 break;
 }
 }
-__gsharp_id_0_a[__gsharp_id_2_tid]+=1;
+__gsharp_id_0_a[__gsharp_id_2_tid]=__gsharp_add_i32(__gsharp_id_0_a[__gsharp_id_2_tid],1);
 }
-__gsharp_id_0_a[__gsharp_id_2_tid]+=5;
+__gsharp_id_0_a[__gsharp_id_2_tid]=__gsharp_add_i32(__gsharp_id_0_a[__gsharp_id_2_tid],5);
 __gsharp_id_4_done:
-__gsharp_id_0_a[__gsharp_id_2_tid]+=7;
+__gsharp_id_0_a[__gsharp_id_2_tid]=__gsharp_add_i32(__gsharp_id_0_a[__gsharp_id_2_tid],7);
 }
 ";
 public static readonly string GotoOutOfSwitchKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +GotoOutOfSwitchKernel_Source;
@@ -636,11 +636,11 @@ finally
 }
 #pragma warning restore CS8500
 public const string ContinueInNestedSwitchKernel_Source = @"extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Transpiler__SwitchInBarrierLoopKernels__ContinueInNestedSwitchKernel(GSharpArray<int> __gsharp_id_0_a, GSharpArray<int> __gsharp_id_1_mode){
-int __gsharp_id_2_tid = threadIdx.x;
+int __gsharp_id_2_tid = (int)threadIdx.x;
 int __gsharp_id_3_i = 0;
 do
 {
-__gsharp_id_3_i++;
+__gsharp_id_3_i=__gsharp_add_i32(__gsharp_id_3_i,1);
 __syncthreads();
 switch(__gsharp_id_1_mode[__gsharp_id_2_tid]&1)
 {
@@ -657,7 +657,7 @@ continue;
 case 1:
 __gsharp_switch_2_state_1:
 {
-__gsharp_id_0_a[__gsharp_id_2_tid]+=100;
+__gsharp_id_0_a[__gsharp_id_2_tid]=__gsharp_add_i32(__gsharp_id_0_a[__gsharp_id_2_tid],100);
 break;
 }
 default:
@@ -671,7 +671,7 @@ break;
 case 1:
 __gsharp_switch_1_state_1:
 {
-__gsharp_id_0_a[__gsharp_id_2_tid]+=10;
+__gsharp_id_0_a[__gsharp_id_2_tid]=__gsharp_add_i32(__gsharp_id_0_a[__gsharp_id_2_tid],10);
 break;
 }
 default:
@@ -680,7 +680,7 @@ __gsharp_switch_1_state_default:
 break;
 }
 }
-__gsharp_id_0_a[__gsharp_id_2_tid]+=1;
+__gsharp_id_0_a[__gsharp_id_2_tid]=__gsharp_add_i32(__gsharp_id_0_a[__gsharp_id_2_tid],1);
 }
 while(__gsharp_id_3_i<3);
 }

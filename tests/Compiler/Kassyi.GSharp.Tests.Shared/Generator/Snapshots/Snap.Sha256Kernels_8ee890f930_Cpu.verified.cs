@@ -23,7 +23,7 @@ inline unsigned int __gsharp_fn_Henicos__Benchmarks__ComputeBenchmarks__Sha256Ke
 inline void __gsharp_fn_Henicos__Benchmarks__ComputeBenchmarks__Sha256Kernels__ComputeBlock(int __gsharp_id_0_tid, GSharpArray<unsigned char> __gsharp_id_1_input, GSharpArray<unsigned int> __gsharp_id_2_output);
 
 inline unsigned int __gsharp_fn_Henicos__Benchmarks__ComputeBenchmarks__Sha256Kernels__RotR(unsigned int __gsharp_id_0_x, int __gsharp_id_1_n){
-return (__gsharp_id_0_x>>__gsharp_id_1_n)|(__gsharp_id_0_x<<(32-__gsharp_id_1_n));
+return (__gsharp_id_0_x>>(__gsharp_id_1_n&31))|(__gsharp_id_0_x<<(__gsharp_sub_i32(32,__gsharp_id_1_n)&31));
 }
 
 inline unsigned int __gsharp_fn_Henicos__Benchmarks__ComputeBenchmarks__Sha256Kernels__Ch(unsigned int __gsharp_id_0_x, unsigned int __gsharp_id_1_y, unsigned int __gsharp_id_2_z){
@@ -53,14 +53,14 @@ return __gsharp_fn_Henicos__Benchmarks__ComputeBenchmarks__Sha256Kernels__RotR(_
 inline void __gsharp_fn_Henicos__Benchmarks__ComputeBenchmarks__Sha256Kernels__ComputeBlock(int __gsharp_id_0_tid, GSharpArray<unsigned char> __gsharp_id_1_input, GSharpArray<unsigned int> __gsharp_id_2_output){
 const unsigned int __gsharp_id_3_k[64]={ 0x428a2f98, 0x71374491, 0xb5c0fbcf, 0xe9b5dba5, 0x3956c25b, 0x59f111f1, 0x923f82a4, 0xab1c5ed5, 0xd807aa98, 0x12835b01, 0x243185be, 0x550c7dc3, 0x72be5d74, 0x80deb1fe, 0x9bdc06a7, 0xc19bf174, 0xe49b69c1, 0xefbe4786, 0x0fc19dc6, 0x240ca1cc, 0x2de92c6f, 0x4a7484aa, 0x5cb0a9dc, 0x76f988da, 0x983e5152, 0xa831c66d, 0xb00327c8, 0xbf597fc7, 0xc6e00bf3, 0xd5a79147, 0x06ca6351, 0x14292967, 0x27b70a85, 0x2e1b2138, 0x4d2c6dfc, 0x53380d13, 0x650a7354, 0x766a0abb, 0x81c2c92e, 0x92722c85, 0xa2bfe8a1, 0xa81a664b, 0xc24b8b70, 0xc76c51a3, 0xd192e819, 0xd6990624, 0xf40e3585, 0x106aa070, 0x19a4c116, 0x1e376c08, 0x2748774c, 0x34b0bcb5, 0x391c0cb3, 0x4ed8aa4a, 0x5b9cca4f, 0x682e6ff3, 0x748f82ee, 0x78a5636f, 0x84c87814, 0x8cc70208, 0x90befffa, 0xa4506ceb, 0xbef9a3f7, 0xc67178f2 };
 unsigned int __gsharp_id_4_w[64]{};
-int __gsharp_id_5_offset = __gsharp_id_0_tid*64;
+int __gsharp_id_5_offset = __gsharp_mul_i32(__gsharp_id_0_tid,64);
 for(int __gsharp_id_6_i = 0;__gsharp_id_6_i<16;__gsharp_id_6_i++)
 {
-__gsharp_id_4_w[__gsharp_id_6_i]=(unsigned int)(__gsharp_id_1_input[__gsharp_id_5_offset+__gsharp_id_6_i*4]<<24)|(unsigned int)(__gsharp_id_1_input[__gsharp_id_5_offset+__gsharp_id_6_i*4+1]<<16)|(unsigned int)(__gsharp_id_1_input[__gsharp_id_5_offset+__gsharp_id_6_i*4+2]<<8)|__gsharp_id_1_input[__gsharp_id_5_offset+__gsharp_id_6_i*4+3];
+__gsharp_id_4_w[__gsharp_id_6_i]=(unsigned int)(__gsharp_shl_i32(__gsharp_id_1_input[__gsharp_add_i32(__gsharp_id_5_offset,__gsharp_mul_i32(__gsharp_id_6_i,4))],24))|(unsigned int)(__gsharp_shl_i32(__gsharp_id_1_input[__gsharp_add_i32(__gsharp_add_i32(__gsharp_id_5_offset,__gsharp_mul_i32(__gsharp_id_6_i,4)),1)],16))|(unsigned int)(__gsharp_shl_i32(__gsharp_id_1_input[__gsharp_add_i32(__gsharp_add_i32(__gsharp_id_5_offset,__gsharp_mul_i32(__gsharp_id_6_i,4)),2)],8))|__gsharp_id_1_input[__gsharp_add_i32(__gsharp_add_i32(__gsharp_id_5_offset,__gsharp_mul_i32(__gsharp_id_6_i,4)),3)];
 }
 for(int __gsharp_id_7_i = 16;__gsharp_id_7_i<64;__gsharp_id_7_i++)
 {
-__gsharp_id_4_w[__gsharp_id_7_i]=__gsharp_fn_Henicos__Benchmarks__ComputeBenchmarks__Sha256Kernels__MessageSigma1(__gsharp_id_4_w[__gsharp_id_7_i-2])+__gsharp_id_4_w[__gsharp_id_7_i-7]+__gsharp_fn_Henicos__Benchmarks__ComputeBenchmarks__Sha256Kernels__MessageSigma0(__gsharp_id_4_w[__gsharp_id_7_i-15])+__gsharp_id_4_w[__gsharp_id_7_i-16];
+__gsharp_id_4_w[__gsharp_id_7_i]=__gsharp_fn_Henicos__Benchmarks__ComputeBenchmarks__Sha256Kernels__MessageSigma1(__gsharp_id_4_w[__gsharp_sub_i32(__gsharp_id_7_i,2)])+__gsharp_id_4_w[__gsharp_sub_i32(__gsharp_id_7_i,7)]+__gsharp_fn_Henicos__Benchmarks__ComputeBenchmarks__Sha256Kernels__MessageSigma0(__gsharp_id_4_w[__gsharp_sub_i32(__gsharp_id_7_i,15)])+__gsharp_id_4_w[__gsharp_sub_i32(__gsharp_id_7_i,16)];
 }
 unsigned int __gsharp_id_8_a = 0x6a09e667;
 unsigned int __gsharp_id_9_b = 0xbb67ae85;
@@ -83,14 +83,14 @@ __gsharp_id_10_c=__gsharp_id_9_b;
 __gsharp_id_9_b=__gsharp_id_8_a;
 __gsharp_id_8_a=__gsharp_id_17_t1+__gsharp_id_18_t2;
 }
-__gsharp_id_2_output[__gsharp_id_0_tid*8+0]=__gsharp_id_8_a+0x6a09e667;
-__gsharp_id_2_output[__gsharp_id_0_tid*8+1]=__gsharp_id_9_b+0xbb67ae85;
-__gsharp_id_2_output[__gsharp_id_0_tid*8+2]=__gsharp_id_10_c+0x3c6ef372;
-__gsharp_id_2_output[__gsharp_id_0_tid*8+3]=__gsharp_id_11_d+0xa54ff53a;
-__gsharp_id_2_output[__gsharp_id_0_tid*8+4]=__gsharp_id_12_e+0x510e527f;
-__gsharp_id_2_output[__gsharp_id_0_tid*8+5]=__gsharp_id_13_f+0x9b05688c;
-__gsharp_id_2_output[__gsharp_id_0_tid*8+6]=__gsharp_id_14_g+0x1f83d9ab;
-__gsharp_id_2_output[__gsharp_id_0_tid*8+7]=__gsharp_id_15_h+0x5be0cd19;
+__gsharp_id_2_output[__gsharp_mul_i32(__gsharp_id_0_tid,8)+0]=__gsharp_id_8_a+0x6a09e667;
+__gsharp_id_2_output[__gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_0_tid,8),1)]=__gsharp_id_9_b+0xbb67ae85;
+__gsharp_id_2_output[__gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_0_tid,8),2)]=__gsharp_id_10_c+0x3c6ef372;
+__gsharp_id_2_output[__gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_0_tid,8),3)]=__gsharp_id_11_d+0xa54ff53a;
+__gsharp_id_2_output[__gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_0_tid,8),4)]=__gsharp_id_12_e+0x510e527f;
+__gsharp_id_2_output[__gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_0_tid,8),5)]=__gsharp_id_13_f+0x9b05688c;
+__gsharp_id_2_output[__gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_0_tid,8),6)]=__gsharp_id_14_g+0x1f83d9ab;
+__gsharp_id_2_output[__gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_0_tid,8),7)]=__gsharp_id_15_h+0x5be0cd19;
 }
 
 ";

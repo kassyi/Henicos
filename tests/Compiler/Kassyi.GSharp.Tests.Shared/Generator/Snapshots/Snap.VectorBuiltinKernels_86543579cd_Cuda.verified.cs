@@ -85,7 +85,7 @@ public static partial class AotContexts
 {
 }
 public const string Vector2AddKernel_Source = @"extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__VectorBuiltinKernels__Vector2AddKernel(GSharpArray<float2> __gsharp_id_0_a, GSharpArray<float2> __gsharp_id_1_b, GSharpArray<float2> __gsharp_id_2_result, int __gsharp_id_3_length){
-auto __gsharp_id_4_tid = threadIdx.x+blockIdx.x*blockDim.x;
+auto __gsharp_id_4_tid = __gsharp_add_i32((int)threadIdx.x,__gsharp_mul_i32((int)blockIdx.x,(int)blockDim.x));
 if(__gsharp_id_4_tid<__gsharp_id_3_length)
 {
 auto __gsharp_id_5_va = __gsharp_id_0_a[__gsharp_id_4_tid];
@@ -280,7 +280,7 @@ finally
 }
 #pragma warning restore CS8500
 public const string Vector3AddKernel_Source = @"extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__VectorBuiltinKernels__Vector3AddKernel(GSharpArray<float3> __gsharp_id_0_a, GSharpArray<float3> __gsharp_id_1_b, GSharpArray<float3> __gsharp_id_2_result, int __gsharp_id_3_length){
-auto __gsharp_id_4_tid = threadIdx.x+blockIdx.x*blockDim.x;
+auto __gsharp_id_4_tid = __gsharp_add_i32((int)threadIdx.x,__gsharp_mul_i32((int)blockIdx.x,(int)blockDim.x));
 if(__gsharp_id_4_tid<__gsharp_id_3_length)
 {
 auto __gsharp_id_5_va = __gsharp_id_0_a[__gsharp_id_4_tid];
@@ -475,7 +475,7 @@ finally
 }
 #pragma warning restore CS8500
 public const string Vector4AddKernel_Source = @"extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__VectorBuiltinKernels__Vector4AddKernel(GSharpArray<float4> __gsharp_id_0_a, GSharpArray<float4> __gsharp_id_1_b, GSharpArray<float4> __gsharp_id_2_result, int __gsharp_id_3_length){
-auto __gsharp_id_4_tid = threadIdx.x+blockIdx.x*blockDim.x;
+auto __gsharp_id_4_tid = __gsharp_add_i32((int)threadIdx.x,__gsharp_mul_i32((int)blockIdx.x,(int)blockDim.x));
 if(__gsharp_id_4_tid<__gsharp_id_3_length)
 {
 auto __gsharp_id_5_va = __gsharp_id_0_a[__gsharp_id_4_tid];
