@@ -1,9 +1,29 @@
 namespace Kassyi.GSharp.Compiler.Transpiler;
 
+/// <summary>The managed body that <see cref="ManagedExecutionRewriter"/> rewrites.</summary>
+internal enum ManagedBodyKind
+{
+    /// <summary>The lowered body of a kernel's state machine.</summary>
+    Kernel,
+
+    /// <summary>The lowered body of the state machine of a device function that may suspend.</summary>
+    SuspendingDeviceFunction,
+
+    /// <summary>The user's body of a device function that does not suspend, copied into its managed version (#711).</summary>
+    ManagedVersion
+}
+
 /// <summary>
 /// Rewrites lowered device function calls and state machine constructs into managed execution equivalents.
 /// </summary>
-internal sealed partial class ManagedExecutionRewriter(SemanticModel semanticModel, bool isDeviceFunction)
+/// <param name="semanticModel">The model of the user's tree that the body comes from.</param>
+/// <param name="bodyKind">What the body is emitted as.</param>
+/// <param name="accessors">
+/// The stubs through which the body calls an operator macro target it cannot name, and reaches the backing field of an
+/// auto-property that an operator macro passes by reference.
+/// </param>
+internal sealed partial class ManagedExecutionRewriter(SemanticModel semanticModel, ManagedBodyKind bodyKind,
+    ManagedAccessorSet accessors)
     : CSharpSyntaxRewriter
 {
     /// <summary>
@@ -78,6 +98,11 @@ internal sealed partial class ManagedExecutionRewriter(SemanticModel semanticMod
     public override SyntaxNode? VisitMemberAccessExpression(MemberAccessExpressionSyntax node)
     {
         var visited = base.VisitMemberAccessExpression(node);
+        if (TryRouteMemberAccess(node, visited) is { } routed)
+        {
+            return routed;
+        }
+
         if (IsLengthOfOptionalArray(node) && visited is MemberAccessExpressionSyntax lengthAccess)
         {
             // (<array>?.Length ?? 0)
@@ -148,12 +173,12 @@ internal sealed partial class ManagedExecutionRewriter(SemanticModel semanticMod
                     node
                 ).WithTriviaFrom(node),
             // The generated file has none of the user's using directives
-            _ => ManagedNameQualifier.QualifyName(node, base.VisitIdentifierName(node), semanticModel)
+            _ => RouteOrQualify(node, base.VisitIdentifierName(node))
         };
     }
 
     public override SyntaxNode? VisitGenericName(GenericNameSyntax node) =>
-        ManagedNameQualifier.QualifyName(node, base.VisitGenericName(node), semanticModel);
+        RouteOrQualify(node, base.VisitGenericName(node));
 
     public override SyntaxNode? VisitInterpolation(InterpolationSyntax node) =>
         ManagedNameQualifier.ParenthesizeInterpolation(base.VisitInterpolation(node));

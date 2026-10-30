@@ -137,8 +137,11 @@ internal static class ManagedStateMachineAvailability
         return true;
     }
 
-    // The state machine is written into a partial declaration of each type that contains the function
-    private static bool AreContainingTypesPartial(IMethodSymbol method)
+    /// <summary>
+    /// Whether every type that contains <paramref name="method"/> is declared <c>partial</c>: the state machines and the
+    /// managed versions are written into a partial declaration of each one.
+    /// </summary>
+    internal static bool AreContainingTypesPartial(IMethodSymbol method)
     {
         for (var type = method.ContainingType; type != null; type = type.ContainingType)
         {

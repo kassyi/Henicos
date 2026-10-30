@@ -1,5 +1,3 @@
-using Kassyi.GSharp.Compiler.Transpiler.Rules.MacroRules;
-
 namespace Kassyi.GSharp.Compiler.Diagnostics.Kernel.Rules;
 
 /// <summary>
@@ -110,12 +108,49 @@ internal sealed class UnsupportedConstructRule :
     // An operator macro is expanded only as an assignment statement (MacroTranspiler)
     public void Analyze(AssignmentExpressionSyntax node, ref ValidationContext context)
     {
-        if (node.Parent is ExpressionStatementSyntax &&
-            GpuOperatorMacroTranspiler.TryResolve(node, context.SemanticModel, out var macro) &&
-            macro.Failure is { } failure)
+        if (node.Parent is not ExpressionStatementSyntax ||
+            !OperatorMacroResolver.TryResolve(node, context.SemanticModel, out var macro))
+        {
+            return;
+        }
+
+        var failure = macro.Failure ??
+                      OperatorMacroResolver.GetUnassignedTargetFailure(node, macro, context.SemanticModel) ??
+                      OperatorMacroResolver.GetUnassignedContextFailure(node, macro, context.SemanticModel) ??
+                      (context.NeedsManagedStateMachines && context.MethodSymbol.ContainingType is { } within
+                          ? GetUnreachableTargetFailure(macro, within, context.SemanticModel.Compilation)
+                          : null);
+        if (failure is not null)
         {
             context.ReportDiagnostic(GSharpDiagnostics.UnsupportedSyntax, node, failure);
         }
+    }
+
+    // The first target of <macro> or of an operator macro nested in it that the managed expansion cannot call
+    // (ManagedAccessorSet.GetUnreachableTargetFailure)
+    private static string? GetUnreachableTargetFailure(OperatorMacroResolver.OperatorMacro macro,
+        INamedTypeSymbol within, Compilation compilation)
+    {
+        if (macro.TargetMethod is { } target &&
+            ManagedAccessorSet.GetUnreachableTargetFailure(target, within, compilation) is { } failure)
+        {
+            return failure;
+        }
+
+        if (macro.Nested.IsDefaultOrEmpty)
+        {
+            return null;
+        }
+
+        foreach (var nested in macro.Nested)
+        {
+            if (GetUnreachableTargetFailure(nested.Inner, within, compilation) is { } innerFailure)
+            {
+                return innerFailure;
+            }
+        }
+
+        return null;
     }
 
     private static bool IsInSignature(SyntaxNode node)
