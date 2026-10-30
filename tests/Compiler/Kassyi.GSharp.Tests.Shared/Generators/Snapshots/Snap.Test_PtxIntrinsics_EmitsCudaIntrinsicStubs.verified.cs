@@ -735,9 +735,9 @@ public static partial class Warp
 #pragma warning disable IDE0051 // Remove unused private members
 // ReSharper disable UnusedMember.Global
 /// <summary>Returns a 32-bit mask of all currently active threads in the calling warp.</summary>
-/// <returns>A 32-bit bitmask where bit i corresponds to active lane i.</returns>
+/// <returns>A 32-bit bitmask where bit i corresponds to active lane i. The CPU paths return every lane of the warp that exists in the block, which is the GPU result where every lane reaches the call; GSH0101 reports a call under a thread-dependent condition on the CPU dialects.</returns>
 [Kassyi.GSharp.Core.CudaIntrinsic("__activemask")]
-public static uint ActiveMask() => Kassyi.GSharp.Core.GpuOnlyException.Throw<uint>();
+public static uint ActiveMask() => Kassyi.GSharp.Core.ManagedGpuContext.ActiveMask();
 /// <summary>Exchanges a variable between threads within a warp.</summary>
 /// <param name="mask">The 32-bit thread participation bitmask.</param>
 /// <param name="var">The source value to broadcast from the source lane.</param>

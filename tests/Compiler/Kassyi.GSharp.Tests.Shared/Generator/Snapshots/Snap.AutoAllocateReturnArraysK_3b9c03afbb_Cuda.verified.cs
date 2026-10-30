@@ -382,8 +382,8 @@ static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Runtime__AutoA
 extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Runtime__AutoAllocateReturnArraysKernels__StructReturnKernel(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Runtime__AutoAllocateReturnArraysKernels__TestStruct* __restrict__ __gsharp_auto_result){
 unsigned int __gsharp_global_tid = (blockIdx.z * gridDim.y * gridDim.x + blockIdx.y * gridDim.x + blockIdx.x) * (blockDim.x * blockDim.y * blockDim.z) + threadIdx.z * blockDim.y * blockDim.x + threadIdx.y * blockDim.x + threadIdx.x;
 __gsharp_ty_Kassyi__GSharp__Tests__Shared__Runtime__AutoAllocateReturnArraysKernels__TestStruct __gsharp_id_0_s;
-__gsharp_id_0_s.__gsharp_mb_A=threadIdx.x;
-__gsharp_id_0_s.__gsharp_mb_B=threadIdx.x*1.5f;
+__gsharp_id_0_s.__gsharp_mb_A=(int)threadIdx.x;
+__gsharp_id_0_s.__gsharp_mb_B=(int)threadIdx.x*1.5f;
 __gsharp_auto_result[__gsharp_global_tid] = __gsharp_id_0_s;
 return;
 }

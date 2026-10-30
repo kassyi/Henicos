@@ -97,7 +97,7 @@ case 0:
 __gsharp_switch_1_state_0:
 {
 __gsharp_id_1_o[0]=__gsharp_id_0_data[1].__gsharp_mb_A;
-__gsharp_id_0_data[0].__gsharp_mb_A=__gsharp_id_0_data[1].__gsharp_mb_A+1;
+__gsharp_id_0_data[0].__gsharp_mb_A=__gsharp_add_i32(__gsharp_id_0_data[1].__gsharp_mb_A,1);
 {
 __gsharp_ty_Kassyi__GSharp__Tests__Shared__Core__StructSizePaddedInt __gsharp_id_2_s = {};
 __gsharp_ty_Kassyi__GSharp__Tests__Shared__Core__StructSizePaddedInt* __gsharp_id_3_p = &__gsharp_id_2_s;
@@ -375,7 +375,7 @@ case 0:
 __gsharp_switch_1_state_0:
 {
 __gsharp_id_1_o[0]=__gsharp_id_0_data[1].__gsharp_mb_A;
-__gsharp_id_0_data[0].__gsharp_mb_A=__gsharp_id_0_data[1].__gsharp_mb_A+1;
+__gsharp_id_0_data[0].__gsharp_mb_A=__gsharp_add_i32(__gsharp_id_0_data[1].__gsharp_mb_A,1);
 {
 __gsharp_ty_Kassyi__GSharp__Tests__Shared__Core__StructSizeOddInt __gsharp_id_2_s = {};
 __gsharp_ty_Kassyi__GSharp__Tests__Shared__Core__StructSizeOddInt* __gsharp_id_3_p = &__gsharp_id_2_s;
@@ -669,7 +669,7 @@ case 0:
 __gsharp_switch_1_state_0:
 {
 __gsharp_id_1_o[0]=__gsharp_id_0_data[1].__gsharp_mb_I;
-__gsharp_id_0_data[0].__gsharp_mb_I=__gsharp_id_0_data[1].__gsharp_mb_I+1;
+__gsharp_id_0_data[0].__gsharp_mb_I=__gsharp_add_i32(__gsharp_id_0_data[1].__gsharp_mb_I,1);
 {
 __gsharp_ty_Kassyi__GSharp__Tests__Shared__Core__StructSizePacked __gsharp_id_2_s = {};
 __gsharp_ty_Kassyi__GSharp__Tests__Shared__Core__StructSizePacked* __gsharp_id_3_p = &__gsharp_id_2_s;

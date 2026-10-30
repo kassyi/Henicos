@@ -122,12 +122,6 @@ internal static class SwitchSectionLocalScenarios
 
     public static void ShuffleBeforeDeclaration(Action<Action> run, int flag)
     {
-#if GSHARP_CPU
-        // The CPU state machine does not split at a warp shuffle inside a switch section yet (#708): the native path
-        // reads a wrong value and the managed path calls the GPU-only intrinsic. The kernel still checks that the build
-        // keeps the shared local (#795).
-        Skip.If(flag == 0, "#708: a warp shuffle inside a switch section does not suspend the CPU state machine");
-#endif
         var output = new int[WarpSize];
 
         run(() => SwitchSectionLocalKernels.LaunchShuffleBeforeDeclarationKernel(output, flag, blockDimX: WarpSize));

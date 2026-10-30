@@ -12,7 +12,7 @@ struct __gsharp_ty_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuBigIntVe
 __forceinline__ int __gsharp_fn_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuStreamCompactionKernels__ResolveCount(__gsharp_ty_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuBigIntVectorKernels__ElementCountContext __gsharp_id_0_count);
 
 __forceinline__ int __gsharp_fn_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuStreamCompactionKernels__GetConflictFreeOffset(int __gsharp_id_0_n){
-return (__gsharp_id_0_n>>5)+(__gsharp_id_0_n>>(2*5));
+return __gsharp_add_i32(__gsharp_id_0_n>>5,__gsharp_id_0_n>>(10));
 }
 
 #ifndef __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuBigIntVectorKernels__ElementCountContext__
@@ -35,7 +35,7 @@ if((__gsharp_id_0_count.__gsharp_mb_Base.data == nullptr))
 {
 return __gsharp_id_0_count.__gsharp_mb_Limit;
 }
-int __gsharp_id_1_n = (int)__gsharp_id_0_count.__gsharp_mb_Base[0]-__gsharp_id_0_count.__gsharp_mb_Skip;
+int __gsharp_id_1_n = __gsharp_sub_i32((int)__gsharp_id_0_count.__gsharp_mb_Base[0],__gsharp_id_0_count.__gsharp_mb_Skip);
 return (__gsharp_id_1_n<0?0:((__gsharp_id_1_n>__gsharp_id_0_count.__gsharp_mb_Limit?__gsharp_id_0_count.__gsharp_mb_Limit:__gsharp_id_1_n)));
 }
 
@@ -105,6 +105,25 @@ if (host.Base != null)
 host.Base = (global::System.UInt32[])host.Base.Clone();
 }
 }
+public static bool HoldsArray_GpuBigIntVectorKernels_ElementCountContext(global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Kernels.GpuBigIntVectorKernels.ElementCountContext host, object array)
+{
+if (global::System.Object.ReferenceEquals(host.Base, array))
+{
+return true;
+}
+return false;
+}
+public static bool HoldsArray_GpuBigIntVectorKernels_ElementCountContext(System.ReadOnlySpan<global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Kernels.GpuBigIntVectorKernels.ElementCountContext> items, object array)
+{
+for (int i = 0; i < items.Length; i++)
+{
+if (HoldsArray_GpuBigIntVectorKernels_ElementCountContext(items[i], array))
+{
+return true;
+}
+}
+return false;
+}
 #pragma warning restore CS8500
 }
 public const string BlockExclusiveScan_Source = @"#ifndef __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuBigIntVectorKernels__ElementCountContext__
@@ -158,24 +177,24 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-__gsharp_ctx->__gsharp_id_7_sharedMem={ (unsigned int*)__gsharp_allocate_smem_static(0x50a36458aec438a9ull, (2048+128) * sizeof(unsigned int), alignof(unsigned int)) };
-__gsharp_ctx->__gsharp_id_8_tid=threadIdx.x;
-__gsharp_ctx->__gsharp_id_9_bIdx=blockIdx.x;
-__gsharp_ctx->__gsharp_id_10_elementsPerBlock=blockDim.x*2;
-__gsharp_ctx->__gsharp_id_11_globalOffset=__gsharp_ctx->__gsharp_id_9_bIdx*__gsharp_ctx->__gsharp_id_10_elementsPerBlock;
+__gsharp_ctx->__gsharp_id_7_sharedMem={ (unsigned int*)__gsharp_allocate_smem_static(0x50a36458aec438a9ull, (2176) * sizeof(unsigned int), alignof(unsigned int)) };
+__gsharp_ctx->__gsharp_id_8_tid=(int)threadIdx.x;
+__gsharp_ctx->__gsharp_id_9_bIdx=(int)blockIdx.x;
+__gsharp_ctx->__gsharp_id_10_elementsPerBlock=__gsharp_mul_i32((int)blockDim.x,2);
+__gsharp_ctx->__gsharp_id_11_globalOffset=__gsharp_mul_i32(__gsharp_ctx->__gsharp_id_9_bIdx,__gsharp_ctx->__gsharp_id_10_elementsPerBlock);
 __gsharp_ctx->__gsharp_id_12_treeSize=__gsharp_ctx->__gsharp_id_10_elementsPerBlock;
 __gsharp_ctx->__gsharp_id_13_stride=1;
 __gsharp_ctx->__gsharp_id_14_indexA=__gsharp_ctx->__gsharp_id_8_tid;
-__gsharp_ctx->__gsharp_id_15_indexB=__gsharp_ctx->__gsharp_id_8_tid+(__gsharp_ctx->__gsharp_id_12_treeSize/2);
+__gsharp_ctx->__gsharp_id_15_indexB=__gsharp_add_i32(__gsharp_ctx->__gsharp_id_8_tid,__gsharp_ctx->__gsharp_id_12_treeSize/2);
 __gsharp_ctx->__gsharp_id_16_offsetA=__gsharp_fn_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuStreamCompactionKernels__GetConflictFreeOffset(__gsharp_ctx->__gsharp_id_14_indexA);
 __gsharp_ctx->__gsharp_id_17_offsetB=__gsharp_fn_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuStreamCompactionKernels__GetConflictFreeOffset(__gsharp_ctx->__gsharp_id_15_indexB);
-__gsharp_ctx->__gsharp_id_18_globalA=__gsharp_ctx->__gsharp_id_11_globalOffset+__gsharp_ctx->__gsharp_id_14_indexA;
-__gsharp_ctx->__gsharp_id_19_globalB=__gsharp_ctx->__gsharp_id_11_globalOffset+__gsharp_ctx->__gsharp_id_15_indexB;
+__gsharp_ctx->__gsharp_id_18_globalA=__gsharp_add_i32(__gsharp_ctx->__gsharp_id_11_globalOffset,__gsharp_ctx->__gsharp_id_14_indexA);
+__gsharp_ctx->__gsharp_id_19_globalB=__gsharp_add_i32(__gsharp_ctx->__gsharp_id_11_globalOffset,__gsharp_ctx->__gsharp_id_15_indexB);
 __gsharp_ctx->__gsharp_id_20_n=__gsharp_fn_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuStreamCompactionKernels__ResolveCount(__gsharp_id_4_count);
 __gsharp_ctx->__gsharp_id_21_valueA=((__gsharp_ctx->__gsharp_id_18_globalA<__gsharp_id_2_elementCount&&__gsharp_ctx->__gsharp_id_18_globalA<__gsharp_ctx->__gsharp_id_20_n)?__gsharp_id_1_input[__gsharp_ctx->__gsharp_id_18_globalA]:0u);
 __gsharp_ctx->__gsharp_id_22_valueB=((__gsharp_ctx->__gsharp_id_19_globalB<__gsharp_id_2_elementCount&&__gsharp_ctx->__gsharp_id_19_globalB<__gsharp_ctx->__gsharp_id_20_n)?__gsharp_id_1_input[__gsharp_ctx->__gsharp_id_19_globalB]:0u);
-__gsharp_ctx->__gsharp_id_7_sharedMem[__gsharp_ctx->__gsharp_id_14_indexA+__gsharp_ctx->__gsharp_id_16_offsetA]=(__gsharp_id_6_flags?((__gsharp_ctx->__gsharp_id_21_valueA!=0u?1u:0u)):__gsharp_ctx->__gsharp_id_21_valueA);
-__gsharp_ctx->__gsharp_id_7_sharedMem[__gsharp_ctx->__gsharp_id_15_indexB+__gsharp_ctx->__gsharp_id_17_offsetB]=(__gsharp_id_6_flags?((__gsharp_ctx->__gsharp_id_22_valueB!=0u?1u:0u)):__gsharp_ctx->__gsharp_id_22_valueB);
+__gsharp_ctx->__gsharp_id_7_sharedMem[__gsharp_add_i32(__gsharp_ctx->__gsharp_id_14_indexA,__gsharp_ctx->__gsharp_id_16_offsetA)]=(__gsharp_id_6_flags?((__gsharp_ctx->__gsharp_id_21_valueA!=0u?1u:0u)):__gsharp_ctx->__gsharp_id_21_valueA);
+__gsharp_ctx->__gsharp_id_7_sharedMem[__gsharp_add_i32(__gsharp_ctx->__gsharp_id_15_indexB,__gsharp_ctx->__gsharp_id_17_offsetB)]=(__gsharp_id_6_flags?((__gsharp_ctx->__gsharp_id_22_valueB!=0u?1u:0u)):__gsharp_ctx->__gsharp_id_22_valueB);
 __gsharp_ctx->__gsharp_id_23_d=__gsharp_ctx->__gsharp_id_12_treeSize>>1;
 goto __gsharp_switch_1_state_1;
 }
@@ -195,13 +214,13 @@ __gsharp_switch_1_state_2:
 {
 if(__gsharp_ctx->__gsharp_id_8_tid<__gsharp_ctx->__gsharp_id_23_d)
 {
-int __gsharp_id_24_ai = __gsharp_ctx->__gsharp_id_13_stride*(2*__gsharp_ctx->__gsharp_id_8_tid+1)-1;
-int __gsharp_id_25_bi = __gsharp_ctx->__gsharp_id_13_stride*(2*__gsharp_ctx->__gsharp_id_8_tid+2)-1;
-__gsharp_id_24_ai+=__gsharp_fn_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuStreamCompactionKernels__GetConflictFreeOffset(__gsharp_id_24_ai);
-__gsharp_id_25_bi+=__gsharp_fn_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuStreamCompactionKernels__GetConflictFreeOffset(__gsharp_id_25_bi);
+int __gsharp_id_24_ai = __gsharp_sub_i32(__gsharp_mul_i32(__gsharp_ctx->__gsharp_id_13_stride,__gsharp_add_i32(__gsharp_mul_i32(2,__gsharp_ctx->__gsharp_id_8_tid),1)),1);
+int __gsharp_id_25_bi = __gsharp_sub_i32(__gsharp_mul_i32(__gsharp_ctx->__gsharp_id_13_stride,__gsharp_add_i32(__gsharp_mul_i32(2,__gsharp_ctx->__gsharp_id_8_tid),2)),1);
+__gsharp_id_24_ai=__gsharp_add_i32(__gsharp_id_24_ai,__gsharp_fn_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuStreamCompactionKernels__GetConflictFreeOffset(__gsharp_id_24_ai));
+__gsharp_id_25_bi=__gsharp_add_i32(__gsharp_id_25_bi,__gsharp_fn_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuStreamCompactionKernels__GetConflictFreeOffset(__gsharp_id_25_bi));
 __gsharp_ctx->__gsharp_id_7_sharedMem[__gsharp_id_25_bi]+=__gsharp_ctx->__gsharp_id_7_sharedMem[__gsharp_id_24_ai];
 }
-__gsharp_ctx->__gsharp_id_13_stride*=2;
+__gsharp_ctx->__gsharp_id_13_stride=__gsharp_mul_i32(__gsharp_ctx->__gsharp_id_13_stride,2);
 goto __gsharp_switch_1_state_3;
 }
 case 3:
@@ -216,17 +235,17 @@ __gsharp_switch_1_state_4:
 {
 if(__gsharp_ctx->__gsharp_id_8_tid==0)
 {
-int __gsharp_id_26_lastIndex = __gsharp_ctx->__gsharp_id_12_treeSize-1;
+int __gsharp_id_26_lastIndex = __gsharp_sub_i32(__gsharp_ctx->__gsharp_id_12_treeSize,1);
 int __gsharp_id_27_lastOffset = __gsharp_fn_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuStreamCompactionKernels__GetConflictFreeOffset(__gsharp_id_26_lastIndex);
 if((__gsharp_id_3_blockSums.data != nullptr))
 {
-__gsharp_id_3_blockSums[__gsharp_ctx->__gsharp_id_9_bIdx]=__gsharp_ctx->__gsharp_id_7_sharedMem[__gsharp_id_26_lastIndex+__gsharp_id_27_lastOffset];
+__gsharp_id_3_blockSums[__gsharp_ctx->__gsharp_id_9_bIdx]=__gsharp_ctx->__gsharp_id_7_sharedMem[__gsharp_add_i32(__gsharp_id_26_lastIndex,__gsharp_id_27_lastOffset)];
 }
-if((__gsharp_id_5_total.data != nullptr)&&gridDim.x==1)
+if((__gsharp_id_5_total.data != nullptr)&&(int)gridDim.x==1)
 {
-__gsharp_id_5_total[0]=__gsharp_ctx->__gsharp_id_7_sharedMem[__gsharp_id_26_lastIndex+__gsharp_id_27_lastOffset];
+__gsharp_id_5_total[0]=__gsharp_ctx->__gsharp_id_7_sharedMem[__gsharp_add_i32(__gsharp_id_26_lastIndex,__gsharp_id_27_lastOffset)];
 }
-__gsharp_ctx->__gsharp_id_7_sharedMem[__gsharp_id_26_lastIndex+__gsharp_id_27_lastOffset]=0u;
+__gsharp_ctx->__gsharp_id_7_sharedMem[__gsharp_add_i32(__gsharp_id_26_lastIndex,__gsharp_id_27_lastOffset)]=0u;
 }
 __gsharp_ctx->__gsharp_id_28_d=1;
 goto __gsharp_switch_1_state_5;
@@ -248,10 +267,10 @@ __gsharp_switch_1_state_6:
 {
 if(__gsharp_ctx->__gsharp_id_8_tid<__gsharp_ctx->__gsharp_id_28_d)
 {
-int __gsharp_id_29_ai = __gsharp_ctx->__gsharp_id_13_stride*(2*__gsharp_ctx->__gsharp_id_8_tid+1)-1;
-int __gsharp_id_30_bi = __gsharp_ctx->__gsharp_id_13_stride*(2*__gsharp_ctx->__gsharp_id_8_tid+2)-1;
-__gsharp_id_29_ai+=__gsharp_fn_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuStreamCompactionKernels__GetConflictFreeOffset(__gsharp_id_29_ai);
-__gsharp_id_30_bi+=__gsharp_fn_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuStreamCompactionKernels__GetConflictFreeOffset(__gsharp_id_30_bi);
+int __gsharp_id_29_ai = __gsharp_sub_i32(__gsharp_mul_i32(__gsharp_ctx->__gsharp_id_13_stride,__gsharp_add_i32(__gsharp_mul_i32(2,__gsharp_ctx->__gsharp_id_8_tid),1)),1);
+int __gsharp_id_30_bi = __gsharp_sub_i32(__gsharp_mul_i32(__gsharp_ctx->__gsharp_id_13_stride,__gsharp_add_i32(__gsharp_mul_i32(2,__gsharp_ctx->__gsharp_id_8_tid),2)),1);
+__gsharp_id_29_ai=__gsharp_add_i32(__gsharp_id_29_ai,__gsharp_fn_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuStreamCompactionKernels__GetConflictFreeOffset(__gsharp_id_29_ai));
+__gsharp_id_30_bi=__gsharp_add_i32(__gsharp_id_30_bi,__gsharp_fn_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuStreamCompactionKernels__GetConflictFreeOffset(__gsharp_id_30_bi));
 unsigned int __gsharp_id_31_temp = __gsharp_ctx->__gsharp_id_7_sharedMem[__gsharp_id_29_ai];
 __gsharp_ctx->__gsharp_id_7_sharedMem[__gsharp_id_29_ai]=__gsharp_ctx->__gsharp_id_7_sharedMem[__gsharp_id_30_bi];
 __gsharp_ctx->__gsharp_id_7_sharedMem[__gsharp_id_30_bi]+=__gsharp_id_31_temp;
@@ -261,7 +280,7 @@ goto __gsharp_switch_1_state_7;
 case 7:
 __gsharp_switch_1_state_7:
 {
-__gsharp_ctx->__gsharp_id_28_d*=2;
+__gsharp_ctx->__gsharp_id_28_d=__gsharp_mul_i32(__gsharp_ctx->__gsharp_id_28_d,2);
 goto __gsharp_switch_1_state_5;
 goto __gsharp_switch_1_state_8;
 }
@@ -277,11 +296,11 @@ __gsharp_switch_1_state_9:
 {
 if(__gsharp_ctx->__gsharp_id_18_globalA<__gsharp_id_2_elementCount)
 {
-__gsharp_id_0_output[__gsharp_ctx->__gsharp_id_18_globalA]=__gsharp_ctx->__gsharp_id_7_sharedMem[__gsharp_ctx->__gsharp_id_14_indexA+__gsharp_ctx->__gsharp_id_16_offsetA];
+__gsharp_id_0_output[__gsharp_ctx->__gsharp_id_18_globalA]=__gsharp_ctx->__gsharp_id_7_sharedMem[__gsharp_add_i32(__gsharp_ctx->__gsharp_id_14_indexA,__gsharp_ctx->__gsharp_id_16_offsetA)];
 }
 if(__gsharp_ctx->__gsharp_id_19_globalB<__gsharp_id_2_elementCount)
 {
-__gsharp_id_0_output[__gsharp_ctx->__gsharp_id_19_globalB]=__gsharp_ctx->__gsharp_id_7_sharedMem[__gsharp_ctx->__gsharp_id_15_indexB+__gsharp_ctx->__gsharp_id_17_offsetB];
+__gsharp_id_0_output[__gsharp_ctx->__gsharp_id_19_globalB]=__gsharp_ctx->__gsharp_id_7_sharedMem[__gsharp_add_i32(__gsharp_ctx->__gsharp_id_15_indexB,__gsharp_ctx->__gsharp_id_17_offsetB)];
 }
 __gsharp_state=-1;
 return;
@@ -689,12 +708,12 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-int __gsharp_id_3_tid = threadIdx.x;
-int __gsharp_id_4_bIdx = blockIdx.x;
-int __gsharp_id_5_elementsPerBlock = blockDim.x*2;
-int __gsharp_id_6_globalOffset = __gsharp_id_4_bIdx*__gsharp_id_5_elementsPerBlock;
-int __gsharp_id_7_globalA = __gsharp_id_6_globalOffset+__gsharp_id_3_tid;
-int __gsharp_id_8_globalB = __gsharp_id_6_globalOffset+__gsharp_id_3_tid+(__gsharp_id_5_elementsPerBlock/2);
+int __gsharp_id_3_tid = (int)threadIdx.x;
+int __gsharp_id_4_bIdx = (int)blockIdx.x;
+int __gsharp_id_5_elementsPerBlock = __gsharp_mul_i32((int)blockDim.x,2);
+int __gsharp_id_6_globalOffset = __gsharp_mul_i32(__gsharp_id_4_bIdx,__gsharp_id_5_elementsPerBlock);
+int __gsharp_id_7_globalA = __gsharp_add_i32(__gsharp_id_6_globalOffset,__gsharp_id_3_tid);
+int __gsharp_id_8_globalB = __gsharp_add_i32(__gsharp_add_i32(__gsharp_id_6_globalOffset,__gsharp_id_3_tid),__gsharp_id_5_elementsPerBlock/2);
 unsigned int __gsharp_id_9_sum = __gsharp_id_1_blockSums[__gsharp_id_4_bIdx];
 if(__gsharp_id_7_globalA<__gsharp_id_2_elementCount)
 {
@@ -961,7 +980,7 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-int __gsharp_id_6_globalTid = blockIdx.x*blockDim.x+threadIdx.x;
+int __gsharp_id_6_globalTid = __gsharp_add_i32(__gsharp_mul_i32((int)blockIdx.x,(int)blockDim.x),(int)threadIdx.x);
 if(__gsharp_id_6_globalTid>=__gsharp_id_4_elementCount)
 {
 __gsharp_state = -1;return;
@@ -971,11 +990,11 @@ if(__gsharp_id_2_predicates[__gsharp_id_6_globalTid]==0)
 __gsharp_state = -1;return;
 }
 int __gsharp_id_7_destinationIndex = (int)__gsharp_id_3_scanResult[__gsharp_id_6_globalTid];
-int __gsharp_id_8_srcOffset = __gsharp_id_6_globalTid*__gsharp_id_5_wordsPerElement;
-int __gsharp_id_9_dstOffset = __gsharp_id_7_destinationIndex*__gsharp_id_5_wordsPerElement;
-for(int __gsharp_id_10_i = 0;__gsharp_id_10_i<__gsharp_id_5_wordsPerElement;__gsharp_id_10_i++)
+int __gsharp_id_8_srcOffset = __gsharp_mul_i32(__gsharp_id_6_globalTid,__gsharp_id_5_wordsPerElement);
+int __gsharp_id_9_dstOffset = __gsharp_mul_i32(__gsharp_id_7_destinationIndex,__gsharp_id_5_wordsPerElement);
+for(int __gsharp_id_10_i = 0;__gsharp_id_10_i<__gsharp_id_5_wordsPerElement;__gsharp_id_10_i=__gsharp_add_i32(__gsharp_id_10_i,1))
 {
-__gsharp_id_0_output[__gsharp_id_9_dstOffset+__gsharp_id_10_i]=__gsharp_id_1_input[__gsharp_id_8_srcOffset+__gsharp_id_10_i];
+__gsharp_id_0_output[__gsharp_add_i32(__gsharp_id_9_dstOffset,__gsharp_id_10_i)]=__gsharp_id_1_input[__gsharp_add_i32(__gsharp_id_8_srcOffset,__gsharp_id_10_i)];
 }
 __gsharp_state=-1;
 return;
@@ -1271,18 +1290,18 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-int __gsharp_id_9_globalTid = blockIdx.x*blockDim.x+threadIdx.x;
+int __gsharp_id_9_globalTid = __gsharp_add_i32(__gsharp_mul_i32((int)blockIdx.x,(int)blockDim.x),(int)threadIdx.x);
 int __gsharp_id_10_n = __gsharp_fn_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuStreamCompactionKernels__ResolveCount(__gsharp_id_8_count);
 if(__gsharp_id_9_globalTid>=__gsharp_id_6_elementCount||__gsharp_id_9_globalTid>=__gsharp_id_10_n||__gsharp_id_4_predicates[__gsharp_id_9_globalTid]==0)
 {
 __gsharp_state = -1;return;
 }
 int __gsharp_id_11_destinationIndex = (int)__gsharp_id_5_scanResult[__gsharp_id_9_globalTid];
-int __gsharp_id_12_srcOffset = __gsharp_id_9_globalTid*__gsharp_id_7_wordsPerElement;
-int __gsharp_id_13_dstOffset = __gsharp_id_11_destinationIndex*__gsharp_id_7_wordsPerElement;
-for(int __gsharp_id_14_i = 0;__gsharp_id_14_i<__gsharp_id_7_wordsPerElement;__gsharp_id_14_i++)
+int __gsharp_id_12_srcOffset = __gsharp_mul_i32(__gsharp_id_9_globalTid,__gsharp_id_7_wordsPerElement);
+int __gsharp_id_13_dstOffset = __gsharp_mul_i32(__gsharp_id_11_destinationIndex,__gsharp_id_7_wordsPerElement);
+for(int __gsharp_id_14_i = 0;__gsharp_id_14_i<__gsharp_id_7_wordsPerElement;__gsharp_id_14_i=__gsharp_add_i32(__gsharp_id_14_i,1))
 {
-__gsharp_id_0_outputValues[__gsharp_id_13_dstOffset+__gsharp_id_14_i]=__gsharp_id_2_inputValues[__gsharp_id_12_srcOffset+__gsharp_id_14_i];
+__gsharp_id_0_outputValues[__gsharp_add_i32(__gsharp_id_13_dstOffset,__gsharp_id_14_i)]=__gsharp_id_2_inputValues[__gsharp_add_i32(__gsharp_id_12_srcOffset,__gsharp_id_14_i)];
 }
 __gsharp_id_1_outputSigns[__gsharp_id_11_destinationIndex]=__gsharp_id_3_inputSigns[__gsharp_id_9_globalTid];
 __gsharp_state=-1;
@@ -1599,18 +1618,18 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-int __gsharp_id_11_globalTid = blockIdx.x*blockDim.x+threadIdx.x;
+int __gsharp_id_11_globalTid = __gsharp_add_i32(__gsharp_mul_i32((int)blockIdx.x,(int)blockDim.x),(int)threadIdx.x);
 int __gsharp_id_12_n = __gsharp_fn_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuStreamCompactionKernels__ResolveCount(__gsharp_id_10_count);
 if(__gsharp_id_11_globalTid>=__gsharp_id_8_elementCount||__gsharp_id_11_globalTid>=__gsharp_id_12_n||__gsharp_id_6_predicates[__gsharp_id_11_globalTid]==0)
 {
 __gsharp_state = -1;return;
 }
 int __gsharp_id_13_destinationIndex = (int)__gsharp_id_7_scanResult[__gsharp_id_11_globalTid];
-int __gsharp_id_14_srcOffset = __gsharp_id_11_globalTid*__gsharp_id_9_wordsPerElement;
-int __gsharp_id_15_dstOffset = __gsharp_id_13_destinationIndex*__gsharp_id_9_wordsPerElement;
-for(int __gsharp_id_16_i = 0;__gsharp_id_16_i<__gsharp_id_9_wordsPerElement;__gsharp_id_16_i++)
+int __gsharp_id_14_srcOffset = __gsharp_mul_i32(__gsharp_id_11_globalTid,__gsharp_id_9_wordsPerElement);
+int __gsharp_id_15_dstOffset = __gsharp_mul_i32(__gsharp_id_13_destinationIndex,__gsharp_id_9_wordsPerElement);
+for(int __gsharp_id_16_i = 0;__gsharp_id_16_i<__gsharp_id_9_wordsPerElement;__gsharp_id_16_i=__gsharp_add_i32(__gsharp_id_16_i,1))
 {
-__gsharp_id_0_outputSignificands[__gsharp_id_15_dstOffset+__gsharp_id_16_i]=__gsharp_id_3_inputSignificands[__gsharp_id_14_srcOffset+__gsharp_id_16_i];
+__gsharp_id_0_outputSignificands[__gsharp_add_i32(__gsharp_id_15_dstOffset,__gsharp_id_16_i)]=__gsharp_id_3_inputSignificands[__gsharp_add_i32(__gsharp_id_14_srcOffset,__gsharp_id_16_i)];
 }
 __gsharp_id_1_outputExponents[__gsharp_id_13_destinationIndex]=__gsharp_id_4_inputExponents[__gsharp_id_11_globalTid];
 __gsharp_id_2_outputSigns[__gsharp_id_13_destinationIndex]=__gsharp_id_5_inputSigns[__gsharp_id_11_globalTid];
@@ -1928,7 +1947,7 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-int __gsharp_id_2_globalTid = blockIdx.x*blockDim.x+threadIdx.x;
+int __gsharp_id_2_globalTid = __gsharp_add_i32(__gsharp_mul_i32((int)blockIdx.x,(int)blockDim.x),(int)threadIdx.x);
 if(__gsharp_id_2_globalTid<__gsharp_id_1_totalWords)
 {
 __gsharp_id_0_output[__gsharp_id_2_globalTid]=0;

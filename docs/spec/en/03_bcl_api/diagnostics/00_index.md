@@ -97,6 +97,7 @@ The G# compiler and Roslyn analyzers enforce GPU safety and memory management ru
 | [GSH0095](GSH0095.md) | Error | Warp shuffle width must be 1, 2, 4, 8, 16 or 32 |
 | [GSH0099](GSH0099.md) | Warning | An AsParallel() aggregate runs sequentially in each thread |
 | [GSH0100](GSH0100.md) | Warning | Every block reduces the whole sequence of an AsParallel() aggregate |
+| [GSH0101](GSH0101.md) | Warning | Warp.ActiveMask() under a thread-dependent condition differs on the CPU |
 | [SLQ0001](SLQ0001.md) | Warning | Excessive StackLinq chain depth |
 | [RS0030](RS0030.md) | Error | GPU intrinsic invoked from host code or banned API used in kernel |
 

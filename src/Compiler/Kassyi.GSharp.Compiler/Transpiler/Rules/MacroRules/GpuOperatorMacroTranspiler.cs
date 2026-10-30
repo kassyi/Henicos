@@ -908,29 +908,9 @@ internal static class GpuOperatorMacroTranspiler
     }
 
     // Shift(ref OverloadCtx, uint[], uint[], int)
-    private static string FormatSignature(IMethodSymbol method)
-    {
-        var text = new StringBuilder();
-        text.Append(method.Name).Append('(');
-        for (var i = 0; i < method.Parameters.Length; i++)
-        {
-            var parameter = method.Parameters[i];
-            text.Append(i > 0 ? ", " : string.Empty)
-                .Append(FormatRefKind(parameter.RefKind))
-                .Append(FormatType(parameter.Type));
-        }
+    private static string FormatSignature(IMethodSymbol method) => method.FormatSignature();
 
-        return text.Append(')').ToString();
-    }
-
-    private static string FormatRefKind(RefKind refKind) => refKind switch
-    {
-        RefKind.Ref => "ref ",
-        RefKind.Out => "out ",
-        RefKind.In => "in ",
-        RefKind.RefReadOnlyParameter => "ref readonly ",
-        _ => string.Empty
-    };
+    private static string FormatRefKind(RefKind refKind) => refKind.FormatRefKind();
 
     // uint[], OverloadCtx: the short C# spelling of a type in a message
     private static string FormatType(ITypeSymbol type) => IteratorTypeResolver.FormatType(type);

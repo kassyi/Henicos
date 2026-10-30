@@ -7,8 +7,13 @@ namespace Kassyi.GSharp.Compiler.Analysis;
 /// <param name="Operation">The operation (none for <see cref="UniformityEventKind.Define"/>).</param>
 /// <param name="Graph">The Roslyn graph of <paramref name="Operation"/>.</param>
 /// <param name="Opaque">The body of the lambda or local function that the operation is in, when it may run at any time.</param>
-/// <param name="Value">The value that <see cref="UniformityEventKind.Define"/> defines.</param>
-/// <param name="Variance">The variance it defines it with.</param>
+/// <param name="Value">
+/// The value that <see cref="UniformityEventKind.Define"/> defines, or the memory that
+/// <see cref="UniformityEventKind.MemoryWrite"/> writes.
+/// </param>
+/// <param name="Variance">
+/// The variance it defines it with; for <see cref="UniformityEventKind.MemorySync"/>, the variance the barrier leaves.
+/// </param>
 internal readonly record struct UniformityEvent(
     UniformityEventKind Kind,
     IOperation? Operation,

@@ -89,47 +89,119 @@ public class WrapperAllocationTests : TranspilerTestBase
         }
     }
 
-    // The array launcher of a kernel whose only struct argument holds no array allocates no table of shared device
-    // regions (#707): an empty DeviceArrayRegions per launch would exceed the bound over 100 launches
+    // The array launcher of a kernel with a single T[] argument allocates no table of shared device regions (#721):
+    // the 360 bytes of a DeviceArrayRegions per launch would exceed the bound by far over 100 launches
+    [SkippableFact]
+    [Scenario(TestScenario.Boundary)]
+    public void Test_LaunchSingleArray_ShouldNotAllocateRegionTable()
+    {
+        using var _ctx = new GpuKernelLoader.CudaContextScope();
+        int[] array = [0];
+
+        var allocated = MeasureLaunchBatch(() =>
+        {
+            for (int i = 0; i < 100; i++)
+            {
+                WrapperAllocationKernels.LaunchSingleArrayKernel(array, gridDimX: 1, blockDimX: 1);
+            }
+        });
+
+        AssertWithinLaunchBound(allocated);
+        Assert.Equal(LaunchBatchCount * 100, array[0]);
+    }
+
+    // The same for two T[] arguments: whether they hold one array is tested pairwise, with no table (#721)
+    [SkippableFact]
+    [Scenario(TestScenario.Boundary)]
+    public void Test_LaunchTwoArrays_ShouldNotAllocateRegionTable()
+    {
+        using var _ctx = new GpuKernelLoader.CudaContextScope();
+        int[] a = [0];
+        int[] b = [0];
+
+        var allocated = MeasureLaunchBatch(() =>
+        {
+            for (int i = 0; i < 100; i++)
+            {
+                WrapperAllocationKernels.LaunchTwoArraysKernel(a, b, gridDimX: 1, blockDimX: 1);
+            }
+        });
+
+        AssertWithinLaunchBound(allocated);
+        Assert.Equal(LaunchBatchCount * 100, a[0]);
+        Assert.Equal(LaunchBatchCount * 100, b[0]);
+    }
+
+    // A struct argument that holds no array needs no table (#707), also next to two T[] arguments
     [SkippableFact]
     [Scenario(TestScenario.Boundary)]
     public void Test_LaunchArrayFreeStruct_ShouldNotAllocateRegionTable()
     {
         using var _ctx = new GpuKernelLoader.CudaContextScope();
-        var counter = new ArrayFreeCounter();
-        WrapperAllocationKernels.LaunchArrayFreeStructKernel(ref counter);
+        var counter = new ArrayFreeCounter[1];
 
+        var allocated = MeasureLaunchBatch(() =>
+        {
+            for (int i = 0; i < 100; i++)
+            {
+                WrapperAllocationKernels.LaunchArrayFreeStructKernel(ref counter[0], gridDimX: 1, blockDimX: 1);
+            }
+        });
+
+        AssertWithinLaunchBound(allocated);
+        Assert.Equal(LaunchBatchCount * 100, counter[0].Value);
+    }
+
+    [SkippableFact]
+    [Scenario(TestScenario.Boundary)]
+    public void Test_LaunchStructAndTwoArrays_ShouldNotAllocateRegionTable()
+    {
+        using var _ctx = new GpuKernelLoader.CudaContextScope();
+        var counter = new ArrayFreeCounter[1];
+        int[] a = [0];
+        int[] b = [0];
+
+        var allocated = MeasureLaunchBatch(() =>
+        {
+            for (int i = 0; i < 100; i++)
+            {
+                WrapperAllocationKernels.LaunchStructAndTwoArraysKernel(ref counter[0], a, b, gridDimX: 1, blockDimX: 1);
+            }
+        });
+
+        AssertWithinLaunchBound(allocated);
+        Assert.Equal(LaunchBatchCount * 100, counter[0].Value);
+        Assert.Equal(LaunchBatchCount * 100, a[0]);
+    }
+
+    // The batches that MeasureLaunchBatch runs: five to warm up (Tier-0 -> OSR -> Tier-1 of the batch and its callees)
+    // and three measured
+    private const int LaunchBatchCount = 8;
+
+    // The fewest bytes that one batch allocated on this thread: an allocation per launch occurs in every batch, while
+    // one-shot runtime telemetry affects a single batch. The batch delegate is created before the measurement.
+    private static long MeasureLaunchBatch(Action batch)
+    {
         for (int warmup = 0; warmup < 5; warmup++)
         {
-            RunArrayFreeStructBatch(ref counter);
+            batch();
         }
 
         long allocated = long.MaxValue;
         for (int attempt = 0; attempt < 3; attempt++)
         {
             long bytesBefore = GC.GetAllocatedBytesForCurrentThread();
-            RunArrayFreeStructBatch(ref counter);
+            batch();
             long bytesAfter = GC.GetAllocatedBytesForCurrentThread();
             allocated = Math.Min(allocated, bytesAfter - bytesBefore);
-            if (allocated == 0)
-            {
-                break;
-            }
         }
 
-        // The same bound as the Ptr launcher: 56 bytes of driver overhead per call and 48 bytes of noise
+        return allocated;
+    }
+
+    // The same bound as the Ptr launcher: 56 bytes of driver overhead per call and 48 bytes of noise
+    private static void AssertWithinLaunchBound(long allocated) =>
         Assert.True(allocated <= 5648 + 48, $"Allocated {allocated} bytes, expected <= 5696 bytes");
-        Assert.True(counter.Value >= 601, $"The kernel ran {counter.Value} times, expected at least 601");
-    }
-
-    [MethodImpl(MethodImplOptions.NoInlining)]
-    private static void RunArrayFreeStructBatch(ref ArrayFreeCounter counter)
-    {
-        for (int i = 0; i < 100; i++)
-        {
-            WrapperAllocationKernels.LaunchArrayFreeStructKernel(ref counter, gridDimX: 1, blockDimX: 1);
-        }
-    }
 
     [MethodImpl(MethodImplOptions.NoInlining)]
     private static void RunHotPathBatch(IntPtr d_ioVal, IntPtr d_outVal, IntPtr d_arrayVal, uint constantVal)

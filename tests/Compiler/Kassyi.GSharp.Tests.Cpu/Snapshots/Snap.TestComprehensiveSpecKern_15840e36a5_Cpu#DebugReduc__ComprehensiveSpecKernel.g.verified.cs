@@ -227,19 +227,19 @@ __gsharp_switch_1_state_0:
 {
 (*__gsharp_id_2_successFlag)=false;
 __gsharp_ctx->__gsharp_id_6_Gravity=9.8f;
-__gsharp_ctx->__gsharp_id_7_tx=threadIdx.x;
-__gsharp_ctx->__gsharp_id_8_ty=threadIdx.y;
-__gsharp_ctx->__gsharp_id_9_tz=threadIdx.z;
-__gsharp_ctx->__gsharp_id_10_bx=blockIdx.x;
-__gsharp_ctx->__gsharp_id_11_by=blockIdx.y;
-__gsharp_ctx->__gsharp_id_12_bz=blockIdx.z;
-__gsharp_ctx->__gsharp_id_13_bdimX=blockDim.x;
-__gsharp_ctx->__gsharp_id_14_bdimY=blockDim.y;
-__gsharp_ctx->__gsharp_id_15_bdimZ=blockDim.z;
-__gsharp_ctx->__gsharp_id_16_gdimX=gridDim.x;
-__gsharp_ctx->__gsharp_id_17_gdimY=gridDim.y;
-__gsharp_ctx->__gsharp_id_18_gdimZ=gridDim.z;
-__gsharp_ctx->__gsharp_id_19_tid=__gsharp_ctx->__gsharp_id_7_tx+__gsharp_ctx->__gsharp_id_10_bx*__gsharp_ctx->__gsharp_id_13_bdimX;
+__gsharp_ctx->__gsharp_id_7_tx=(int)threadIdx.x;
+__gsharp_ctx->__gsharp_id_8_ty=(int)threadIdx.y;
+__gsharp_ctx->__gsharp_id_9_tz=(int)threadIdx.z;
+__gsharp_ctx->__gsharp_id_10_bx=(int)blockIdx.x;
+__gsharp_ctx->__gsharp_id_11_by=(int)blockIdx.y;
+__gsharp_ctx->__gsharp_id_12_bz=(int)blockIdx.z;
+__gsharp_ctx->__gsharp_id_13_bdimX=(int)blockDim.x;
+__gsharp_ctx->__gsharp_id_14_bdimY=(int)blockDim.y;
+__gsharp_ctx->__gsharp_id_15_bdimZ=(int)blockDim.z;
+__gsharp_ctx->__gsharp_id_16_gdimX=(int)gridDim.x;
+__gsharp_ctx->__gsharp_id_17_gdimY=(int)gridDim.y;
+__gsharp_ctx->__gsharp_id_18_gdimZ=(int)gridDim.z;
+__gsharp_ctx->__gsharp_id_19_tid=__gsharp_add_i32(__gsharp_ctx->__gsharp_id_7_tx,__gsharp_mul_i32(__gsharp_ctx->__gsharp_id_10_bx,__gsharp_ctx->__gsharp_id_13_bdimX));
 __gsharp_ctx->__gsharp_id_20_staticCache={ (int*)__gsharp_allocate_smem_static(0xe20e17017ad9529aull, (10000) * sizeof(int), alignof(int)) };
 __gsharp_ctx->__gsharp_id_21_dynamicCache={ (float*)__gsharp_allocate_smem_dynamic(0xe20e18017ad9544dull, (__gsharp_id_4_particleCount) * sizeof(float), alignof(float), ""an unknown place"") };
 __gsharp_ctx->__gsharp_id_22_targetTypedCache={ (int*)__gsharp_allocate_smem_static(0xe20e15017ad94f34ull, (256) * sizeof(int), alignof(int)) };
@@ -256,7 +256,7 @@ __gsharp_ty_DebugReduc__NestedPhysicsState __gsharp_tmp{}; __gsharp_tmp.__gsharp
 ());
 __gsharp_ctx->__gsharp_id_28_mag=__gsharp_fn_DebugReduc__ComprehensiveSpecKernel__ComputeMagnitude(__gsharp_ctx->__gsharp_id_23_p);
 __gsharp_ctx->__gsharp_id_28_mag=(float)fabsf(__gsharp_ctx->__gsharp_id_28_mag);
-for(__gsharp_ctx->__gsharp_id_29_i=0;__gsharp_ctx->__gsharp_id_29_i<__gsharp_id_5_unrollFactor;__gsharp_ctx->__gsharp_id_29_i++)
+for(__gsharp_ctx->__gsharp_id_29_i=0;__gsharp_ctx->__gsharp_id_29_i<__gsharp_id_5_unrollFactor;__gsharp_ctx->__gsharp_id_29_i=__gsharp_add_i32(__gsharp_ctx->__gsharp_id_29_i,1))
 {
 if(__gsharp_ctx->__gsharp_id_29_i==1)
 {
@@ -272,11 +272,11 @@ __gsharp_ctx->__gsharp_id_30_counter=0;
 while(__gsharp_ctx->__gsharp_id_30_counter<2)
 {
 __gsharp_ctx->__gsharp_id_28_mag=(float)__gsharp_min_f32(__gsharp_ctx->__gsharp_id_28_mag,__gsharp_ctx->__gsharp_id_28_mag+1);
-__gsharp_ctx->__gsharp_id_30_counter++;
+__gsharp_ctx->__gsharp_id_30_counter=__gsharp_add_i32(__gsharp_ctx->__gsharp_id_30_counter,1);
 }
 do
 {
-__gsharp_ctx->__gsharp_id_30_counter--;
+__gsharp_ctx->__gsharp_id_30_counter=__gsharp_sub_i32(__gsharp_ctx->__gsharp_id_30_counter,1);
 }
 while(__gsharp_ctx->__gsharp_id_30_counter>0);
 switch(__gsharp_ctx->__gsharp_id_7_tx)
@@ -328,8 +328,8 @@ bool __gsharp_id_37_condition1 = __gsharp_ctx->__gsharp_id_7_tx>0;
 bool __gsharp_id_38_condition2 = __gsharp_ctx->__gsharp_id_8_ty==0;
 if(__gsharp_id_37_condition1&&__gsharp_id_38_condition2)
 {
-int __gsharp_id_39_bitwise = (__gsharp_ctx->__gsharp_id_7_tx<<2)|(__gsharp_ctx->__gsharp_id_8_ty>>1)^0xFF;
-__gsharp_id_39_bitwise&=~1;
+int __gsharp_id_39_bitwise = (__gsharp_shl_i32(__gsharp_ctx->__gsharp_id_7_tx,2))|(__gsharp_ctx->__gsharp_id_8_ty>>1)^0xFF;
+__gsharp_id_39_bitwise&=(-2);
 }
 else
 {
@@ -772,7 +772,7 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-__gsharp_ctx->__gsharp_id_1_tid=threadIdx.x;
+__gsharp_ctx->__gsharp_id_1_tid=(int)threadIdx.x;
 __gsharp_id_0_data[__gsharp_ctx->__gsharp_id_1_tid]=__gsharp_ctx->__gsharp_id_1_tid;
 __gsharp_yielded_for_grid_sync=true;
 __gsharp_state=1;

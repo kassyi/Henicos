@@ -84,7 +84,8 @@ public class ContractsAndPtxTests : TranspilerTestBase
             nameof(ContractsAndPtxTarget.ConstexprPropagation), dialect: CurrentDialect);
 
         Assert.Empty(diagnostics);
-        Assert.Contains("32*2", cudaSource);
+        // TileSize * 2 is a constant, written as its value (#722)
+        Assert.Contains("[0]=64;", cudaSource);
     }
 
     [Fact]

@@ -63,7 +63,7 @@ internal static class GSharpSharedCudaDeviceCode
 public const string Source = @"inline __device__ int __gsharp_fn_Kassyi__GSharp__Tests__Shared__Runtime__StackLinqRangeKernels__CountedThree(GSharpArray<int> __gsharp_id_0_counter);
 
 inline __device__ int __gsharp_fn_Kassyi__GSharp__Tests__Shared__Runtime__StackLinqRangeKernels__CountedThree(GSharpArray<int> __gsharp_id_0_counter){
-__gsharp_id_0_counter[0]=__gsharp_id_0_counter[0]+1;
+__gsharp_id_0_counter[0]=__gsharp_add_i32(__gsharp_id_0_counter[0],1);
 return 3;
 }
 
@@ -95,7 +95,7 @@ public static partial class AotContexts
 {
 }
 public const string TwoStageRangeKernel_Source = @"extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Runtime__StackLinqRangeKernels__TwoStageRangeKernel(GSharpArray<int> __gsharp_id_0_data, int __gsharp_id_1_combo, int __gsharp_id_2_a, int __gsharp_id_3_b, GSharpArray<int> __gsharp_id_4_result){
-int __gsharp_id_5_gtid = blockIdx.x*blockDim.x+threadIdx.x;
+int __gsharp_id_5_gtid = __gsharp_add_i32(__gsharp_mul_i32((int)blockIdx.x,(int)blockDim.x),(int)threadIdx.x);
 int __gsharp_id_6_sequential = (-1);
 int __gsharp_id_7_parallel = (-1);
 if(__gsharp_id_1_combo==0)
@@ -551,8 +551,8 @@ return __gsharp_block_reduce(__gsharp_fusion_res, __gsharp_plus{});
 }
 }
 }
-__gsharp_id_4_result[__gsharp_id_5_gtid*2]=__gsharp_id_6_sequential;
-__gsharp_id_4_result[__gsharp_id_5_gtid*2+1]=__gsharp_id_7_parallel;
+__gsharp_id_4_result[__gsharp_mul_i32(__gsharp_id_5_gtid,2)]=__gsharp_id_6_sequential;
+__gsharp_id_4_result[__gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_5_gtid,2),1)]=__gsharp_id_7_parallel;
 }
 ";
 public static readonly string TwoStageRangeKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +TwoStageRangeKernel_Source;
@@ -599,12 +599,12 @@ proxy_data[0] = IntPtr.Zero;
 if (data_size > 0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_data, (IntPtr)data_size, hStream));
-proxy_data[0] = d_data;
 fixed (global::System.Int32* p_data = data)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoDAsync_v2(d_data, (IntPtr)p_data, (IntPtr)data_size, hStream));
 CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
 }
+proxy_data[0] = d_data;
 }
 kernelParams[0] = proxy_data;
 // Marshal scalar: combo
@@ -620,13 +620,20 @@ proxy_result[0] = IntPtr.Zero;
 ((int*)(proxy_result + 1))[0] = result.Length;
 if (result_size > 0)
 {
+if (global::System.Object.ReferenceEquals(result, data))
+{
+d_result = d_data;
+}
+else
+{
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_result, (IntPtr)result_size, hStream));
-proxy_result[0] = d_result;
 fixed (global::System.Int32* p_result = result)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoDAsync_v2(d_result, (IntPtr)p_result, (IntPtr)result_size, hStream));
 CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
 }
+}
+proxy_result[0] = d_result;
 }
 kernelParams[4] = proxy_result;
 CudaException.ThrowIfError(CudaDriverApi.cuLaunchKernel(
@@ -648,7 +655,7 @@ CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
 }
 }
 // Copy back array: result
-if (result_size > 0 && d_result != IntPtr.Zero)
+if (result_size > 0 && d_result != IntPtr.Zero && !global::System.Object.ReferenceEquals(result, data))
 {
 fixed (global::System.Int32* p_result = result)
 {
@@ -660,7 +667,7 @@ CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
 finally
 {
 if (d_data != IntPtr.Zero) CudaDriverApi.cuMemFreeAsync(d_data, hStream);
-if (d_result != IntPtr.Zero) CudaDriverApi.cuMemFreeAsync(d_result, hStream);
+if (d_result != IntPtr.Zero && d_result != d_data) CudaDriverApi.cuMemFreeAsync(d_result, hStream);
 }
 }
 }
@@ -711,7 +718,7 @@ finally
 }
 #pragma warning restore CS8500
 public const string FilteredTakeKernel_Source = @"extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Runtime__StackLinqRangeKernels__FilteredTakeKernel(GSharpArray<int> __gsharp_id_0_data, GSharpArray<int> __gsharp_id_1_counter, GSharpArray<int> __gsharp_id_2_result){
-if((threadIdx.x|threadIdx.y|threadIdx.z|blockIdx.x|blockIdx.y|blockIdx.z)==0)
+if(((int)threadIdx.x|(int)threadIdx.y|(int)threadIdx.z|(int)blockIdx.x|(int)blockIdx.y|(int)blockIdx.z)==0)
 {
 __gsharp_id_2_result[0]=([&]() -> auto {
 auto&& __gsharp_fusion_src = __gsharp_id_0_data;
@@ -746,7 +753,7 @@ for (int __gsharp_i = __gsharp_fusion_lo; __gsharp_i < __gsharp_fusion_hi; __gsh
 {
 auto __gsharp_val_0 = __gsharp_fusion_src[__gsharp_i];
 auto __gsharp_val_1 = ([&](auto __gsharp_id_4_x) {
-return __gsharp_id_4_x*10;
+return __gsharp_mul_i32(__gsharp_id_4_x,10);
 }
 )(__gsharp_val_0);
 __gsharp_fusion_res += __gsharp_val_1;
@@ -807,12 +814,12 @@ proxy_data[0] = IntPtr.Zero;
 if (data_size > 0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_data, (IntPtr)data_size, hStream));
-proxy_data[0] = d_data;
 fixed (global::System.Int32* p_data = data)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoDAsync_v2(d_data, (IntPtr)p_data, (IntPtr)data_size, hStream));
 CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
 }
+proxy_data[0] = d_data;
 }
 kernelParams[0] = proxy_data;
 // Marshal array: counter
@@ -822,13 +829,20 @@ proxy_counter[0] = IntPtr.Zero;
 ((int*)(proxy_counter + 1))[0] = counter.Length;
 if (counter_size > 0)
 {
+if (global::System.Object.ReferenceEquals(counter, data))
+{
+d_counter = d_data;
+}
+else
+{
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_counter, (IntPtr)counter_size, hStream));
-proxy_counter[0] = d_counter;
 fixed (global::System.Int32* p_counter = counter)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoDAsync_v2(d_counter, (IntPtr)p_counter, (IntPtr)counter_size, hStream));
 CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
 }
+}
+proxy_counter[0] = d_counter;
 }
 kernelParams[1] = proxy_counter;
 // Marshal array: result
@@ -838,13 +852,24 @@ proxy_result[0] = IntPtr.Zero;
 ((int*)(proxy_result + 1))[0] = result.Length;
 if (result_size > 0)
 {
+if (global::System.Object.ReferenceEquals(result, data))
+{
+d_result = d_data;
+}
+else if (global::System.Object.ReferenceEquals(result, counter))
+{
+d_result = d_counter;
+}
+else
+{
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_result, (IntPtr)result_size, hStream));
-proxy_result[0] = d_result;
 fixed (global::System.Int32* p_result = result)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoDAsync_v2(d_result, (IntPtr)p_result, (IntPtr)result_size, hStream));
 CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
 }
+}
+proxy_result[0] = d_result;
 }
 kernelParams[2] = proxy_result;
 CudaException.ThrowIfError(CudaDriverApi.cuLaunchKernel(
@@ -866,7 +891,7 @@ CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
 }
 }
 // Copy back array: counter
-if (counter_size > 0 && d_counter != IntPtr.Zero)
+if (counter_size > 0 && d_counter != IntPtr.Zero && !global::System.Object.ReferenceEquals(counter, data))
 {
 fixed (global::System.Int32* p_counter = counter)
 {
@@ -875,7 +900,7 @@ CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
 }
 }
 // Copy back array: result
-if (result_size > 0 && d_result != IntPtr.Zero)
+if (result_size > 0 && d_result != IntPtr.Zero && !global::System.Object.ReferenceEquals(result, data) && !global::System.Object.ReferenceEquals(result, counter))
 {
 fixed (global::System.Int32* p_result = result)
 {
@@ -887,8 +912,8 @@ CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
 finally
 {
 if (d_data != IntPtr.Zero) CudaDriverApi.cuMemFreeAsync(d_data, hStream);
-if (d_counter != IntPtr.Zero) CudaDriverApi.cuMemFreeAsync(d_counter, hStream);
-if (d_result != IntPtr.Zero) CudaDriverApi.cuMemFreeAsync(d_result, hStream);
+if (d_counter != IntPtr.Zero && d_counter != d_data) CudaDriverApi.cuMemFreeAsync(d_counter, hStream);
+if (d_result != IntPtr.Zero && d_result != d_data && d_result != d_counter) CudaDriverApi.cuMemFreeAsync(d_result, hStream);
 }
 }
 }
@@ -938,7 +963,7 @@ finally
 }
 #pragma warning restore CS8500
 public const string SelectSkipCountKernel_Source = @"extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Runtime__StackLinqRangeKernels__SelectSkipCountKernel(GSharpArray<int> __gsharp_id_0_data, GSharpArray<int> __gsharp_id_1_counter, GSharpArray<int> __gsharp_id_2_result){
-if((threadIdx.x|threadIdx.y|threadIdx.z|blockIdx.x|blockIdx.y|blockIdx.z)==0)
+if(((int)threadIdx.x|(int)threadIdx.y|(int)threadIdx.z|(int)blockIdx.x|(int)blockIdx.y|(int)blockIdx.z)==0)
 {
 __gsharp_id_2_result[0]=([&]() -> auto {
 auto&& __gsharp_fusion_src = __gsharp_id_0_data;
@@ -951,7 +976,7 @@ for (int __gsharp_i = __gsharp_fusion_lo; __gsharp_i < __gsharp_fusion_hi; __gsh
 {
 auto __gsharp_val_0 = __gsharp_fusion_src[__gsharp_i];
 auto __gsharp_val_1 = ([&](auto __gsharp_id_3_x) {
-return __gsharp_atomicAdd(&__gsharp_id_1_counter[0],1)*0+__gsharp_id_3_x;
+return __gsharp_add_i32(__gsharp_atomicAdd(&__gsharp_id_1_counter[0],1)*0,__gsharp_id_3_x);
 }
 )(__gsharp_val_0);
 if (__gsharp_stage_1_count < __gsharp_stage_1_n)
@@ -1015,12 +1040,12 @@ proxy_data[0] = IntPtr.Zero;
 if (data_size > 0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_data, (IntPtr)data_size, hStream));
-proxy_data[0] = d_data;
 fixed (global::System.Int32* p_data = data)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoDAsync_v2(d_data, (IntPtr)p_data, (IntPtr)data_size, hStream));
 CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
 }
+proxy_data[0] = d_data;
 }
 kernelParams[0] = proxy_data;
 // Marshal array: counter
@@ -1030,13 +1055,20 @@ proxy_counter[0] = IntPtr.Zero;
 ((int*)(proxy_counter + 1))[0] = counter.Length;
 if (counter_size > 0)
 {
+if (global::System.Object.ReferenceEquals(counter, data))
+{
+d_counter = d_data;
+}
+else
+{
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_counter, (IntPtr)counter_size, hStream));
-proxy_counter[0] = d_counter;
 fixed (global::System.Int32* p_counter = counter)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoDAsync_v2(d_counter, (IntPtr)p_counter, (IntPtr)counter_size, hStream));
 CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
 }
+}
+proxy_counter[0] = d_counter;
 }
 kernelParams[1] = proxy_counter;
 // Marshal array: result
@@ -1046,13 +1078,24 @@ proxy_result[0] = IntPtr.Zero;
 ((int*)(proxy_result + 1))[0] = result.Length;
 if (result_size > 0)
 {
+if (global::System.Object.ReferenceEquals(result, data))
+{
+d_result = d_data;
+}
+else if (global::System.Object.ReferenceEquals(result, counter))
+{
+d_result = d_counter;
+}
+else
+{
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_result, (IntPtr)result_size, hStream));
-proxy_result[0] = d_result;
 fixed (global::System.Int32* p_result = result)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoDAsync_v2(d_result, (IntPtr)p_result, (IntPtr)result_size, hStream));
 CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
 }
+}
+proxy_result[0] = d_result;
 }
 kernelParams[2] = proxy_result;
 CudaException.ThrowIfError(CudaDriverApi.cuLaunchKernel(
@@ -1074,7 +1117,7 @@ CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
 }
 }
 // Copy back array: counter
-if (counter_size > 0 && d_counter != IntPtr.Zero)
+if (counter_size > 0 && d_counter != IntPtr.Zero && !global::System.Object.ReferenceEquals(counter, data))
 {
 fixed (global::System.Int32* p_counter = counter)
 {
@@ -1083,7 +1126,7 @@ CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
 }
 }
 // Copy back array: result
-if (result_size > 0 && d_result != IntPtr.Zero)
+if (result_size > 0 && d_result != IntPtr.Zero && !global::System.Object.ReferenceEquals(result, data) && !global::System.Object.ReferenceEquals(result, counter))
 {
 fixed (global::System.Int32* p_result = result)
 {
@@ -1095,8 +1138,8 @@ CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
 finally
 {
 if (d_data != IntPtr.Zero) CudaDriverApi.cuMemFreeAsync(d_data, hStream);
-if (d_counter != IntPtr.Zero) CudaDriverApi.cuMemFreeAsync(d_counter, hStream);
-if (d_result != IntPtr.Zero) CudaDriverApi.cuMemFreeAsync(d_result, hStream);
+if (d_counter != IntPtr.Zero && d_counter != d_data) CudaDriverApi.cuMemFreeAsync(d_counter, hStream);
+if (d_result != IntPtr.Zero && d_result != d_data && d_result != d_counter) CudaDriverApi.cuMemFreeAsync(d_result, hStream);
 }
 }
 }
@@ -1146,7 +1189,7 @@ finally
 }
 #pragma warning restore CS8500
 public const string TakeCountKernel_Source = @"extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Runtime__StackLinqRangeKernels__TakeCountKernel(GSharpArray<int> __gsharp_id_0_data, GSharpArray<int> __gsharp_id_1_counter, int __gsharp_id_2_take, GSharpArray<int> __gsharp_id_3_result){
-if((threadIdx.x|threadIdx.y|threadIdx.z|blockIdx.x|blockIdx.y|blockIdx.z)==0)
+if(((int)threadIdx.x|(int)threadIdx.y|(int)threadIdx.z|(int)blockIdx.x|(int)blockIdx.y|(int)blockIdx.z)==0)
 {
 __gsharp_id_3_result[0]=([&]() -> auto {
 auto&& __gsharp_fusion_src = __gsharp_id_0_data;
@@ -1160,7 +1203,7 @@ for (int __gsharp_i = __gsharp_fusion_lo; __gsharp_i < __gsharp_fusion_hi; __gsh
 if (__gsharp_stage_1_count >= __gsharp_stage_1_n) { break; }
 auto __gsharp_val_0 = __gsharp_fusion_src[__gsharp_i];
 auto __gsharp_val_1 = ([&](auto __gsharp_id_4_x) {
-return __gsharp_atomicAdd(&__gsharp_id_1_counter[0],1)*0+__gsharp_id_4_x;
+return __gsharp_add_i32(__gsharp_atomicAdd(&__gsharp_id_1_counter[0],1)*0,__gsharp_id_4_x);
 }
 )(__gsharp_val_0);
 __gsharp_stage_1_count++;
@@ -1244,12 +1287,12 @@ proxy_data[0] = IntPtr.Zero;
 if (data_size > 0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_data, (IntPtr)data_size, hStream));
-proxy_data[0] = d_data;
 fixed (global::System.Int32* p_data = data)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoDAsync_v2(d_data, (IntPtr)p_data, (IntPtr)data_size, hStream));
 CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
 }
+proxy_data[0] = d_data;
 }
 kernelParams[0] = proxy_data;
 // Marshal array: counter
@@ -1259,13 +1302,20 @@ proxy_counter[0] = IntPtr.Zero;
 ((int*)(proxy_counter + 1))[0] = counter.Length;
 if (counter_size > 0)
 {
+if (global::System.Object.ReferenceEquals(counter, data))
+{
+d_counter = d_data;
+}
+else
+{
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_counter, (IntPtr)counter_size, hStream));
-proxy_counter[0] = d_counter;
 fixed (global::System.Int32* p_counter = counter)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoDAsync_v2(d_counter, (IntPtr)p_counter, (IntPtr)counter_size, hStream));
 CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
 }
+}
+proxy_counter[0] = d_counter;
 }
 kernelParams[1] = proxy_counter;
 // Marshal scalar: take
@@ -1277,13 +1327,24 @@ proxy_result[0] = IntPtr.Zero;
 ((int*)(proxy_result + 1))[0] = result.Length;
 if (result_size > 0)
 {
+if (global::System.Object.ReferenceEquals(result, data))
+{
+d_result = d_data;
+}
+else if (global::System.Object.ReferenceEquals(result, counter))
+{
+d_result = d_counter;
+}
+else
+{
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_result, (IntPtr)result_size, hStream));
-proxy_result[0] = d_result;
 fixed (global::System.Int32* p_result = result)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoDAsync_v2(d_result, (IntPtr)p_result, (IntPtr)result_size, hStream));
 CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
 }
+}
+proxy_result[0] = d_result;
 }
 kernelParams[3] = proxy_result;
 CudaException.ThrowIfError(CudaDriverApi.cuLaunchKernel(
@@ -1305,7 +1366,7 @@ CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
 }
 }
 // Copy back array: counter
-if (counter_size > 0 && d_counter != IntPtr.Zero)
+if (counter_size > 0 && d_counter != IntPtr.Zero && !global::System.Object.ReferenceEquals(counter, data))
 {
 fixed (global::System.Int32* p_counter = counter)
 {
@@ -1314,7 +1375,7 @@ CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
 }
 }
 // Copy back array: result
-if (result_size > 0 && d_result != IntPtr.Zero)
+if (result_size > 0 && d_result != IntPtr.Zero && !global::System.Object.ReferenceEquals(result, data) && !global::System.Object.ReferenceEquals(result, counter))
 {
 fixed (global::System.Int32* p_result = result)
 {
@@ -1326,8 +1387,8 @@ CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
 finally
 {
 if (d_data != IntPtr.Zero) CudaDriverApi.cuMemFreeAsync(d_data, hStream);
-if (d_counter != IntPtr.Zero) CudaDriverApi.cuMemFreeAsync(d_counter, hStream);
-if (d_result != IntPtr.Zero) CudaDriverApi.cuMemFreeAsync(d_result, hStream);
+if (d_counter != IntPtr.Zero && d_counter != d_data) CudaDriverApi.cuMemFreeAsync(d_counter, hStream);
+if (d_result != IntPtr.Zero && d_result != d_data && d_result != d_counter) CudaDriverApi.cuMemFreeAsync(d_result, hStream);
 }
 }
 }
@@ -1379,7 +1440,7 @@ finally
 }
 #pragma warning restore CS8500
 public const string TakeSkipCountKernel_Source = @"extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Runtime__StackLinqRangeKernels__TakeSkipCountKernel(GSharpArray<int> __gsharp_id_0_data, GSharpArray<int> __gsharp_id_1_counter, int __gsharp_id_2_take, int __gsharp_id_3_skip, GSharpArray<int> __gsharp_id_4_result){
-if((threadIdx.x|threadIdx.y|threadIdx.z|blockIdx.x|blockIdx.y|blockIdx.z)==0)
+if(((int)threadIdx.x|(int)threadIdx.y|(int)threadIdx.z|(int)blockIdx.x|(int)blockIdx.y|(int)blockIdx.z)==0)
 {
 __gsharp_id_4_result[0]=([&]() -> auto {
 auto&& __gsharp_fusion_src = __gsharp_id_0_data;
@@ -1395,7 +1456,7 @@ for (int __gsharp_i = __gsharp_fusion_lo; __gsharp_i < __gsharp_fusion_hi; __gsh
 if (__gsharp_stage_1_count >= __gsharp_stage_1_n) { break; }
 auto __gsharp_val_0 = __gsharp_fusion_src[__gsharp_i];
 auto __gsharp_val_1 = ([&](auto __gsharp_id_5_x) {
-return __gsharp_atomicAdd(&__gsharp_id_1_counter[0],1)*0+__gsharp_id_5_x;
+return __gsharp_add_i32(__gsharp_atomicAdd(&__gsharp_id_1_counter[0],1)*0,__gsharp_id_5_x);
 }
 )(__gsharp_val_0);
 __gsharp_stage_1_count++;
@@ -1446,7 +1507,7 @@ for (int __gsharp_i = __gsharp_fusion_lo; __gsharp_i < __gsharp_fusion_hi; __gsh
 if (__gsharp_stage_1_count >= __gsharp_stage_1_n) { break; }
 auto __gsharp_val_0 = __gsharp_fusion_src[__gsharp_i];
 auto __gsharp_val_1 = ([&](auto __gsharp_id_7_x) {
-return __gsharp_atomicAdd(&__gsharp_id_1_counter[2],1)*0+__gsharp_id_7_x;
+return __gsharp_add_i32(__gsharp_atomicAdd(&__gsharp_id_1_counter[2],1)*0,__gsharp_id_7_x);
 }
 )(__gsharp_val_0);
 __gsharp_stage_1_count++;
@@ -1515,12 +1576,12 @@ proxy_data[0] = IntPtr.Zero;
 if (data_size > 0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_data, (IntPtr)data_size, hStream));
-proxy_data[0] = d_data;
 fixed (global::System.Int32* p_data = data)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoDAsync_v2(d_data, (IntPtr)p_data, (IntPtr)data_size, hStream));
 CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
 }
+proxy_data[0] = d_data;
 }
 kernelParams[0] = proxy_data;
 // Marshal array: counter
@@ -1530,13 +1591,20 @@ proxy_counter[0] = IntPtr.Zero;
 ((int*)(proxy_counter + 1))[0] = counter.Length;
 if (counter_size > 0)
 {
+if (global::System.Object.ReferenceEquals(counter, data))
+{
+d_counter = d_data;
+}
+else
+{
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_counter, (IntPtr)counter_size, hStream));
-proxy_counter[0] = d_counter;
 fixed (global::System.Int32* p_counter = counter)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoDAsync_v2(d_counter, (IntPtr)p_counter, (IntPtr)counter_size, hStream));
 CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
 }
+}
+proxy_counter[0] = d_counter;
 }
 kernelParams[1] = proxy_counter;
 // Marshal scalar: take
@@ -1550,13 +1618,24 @@ proxy_result[0] = IntPtr.Zero;
 ((int*)(proxy_result + 1))[0] = result.Length;
 if (result_size > 0)
 {
+if (global::System.Object.ReferenceEquals(result, data))
+{
+d_result = d_data;
+}
+else if (global::System.Object.ReferenceEquals(result, counter))
+{
+d_result = d_counter;
+}
+else
+{
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_result, (IntPtr)result_size, hStream));
-proxy_result[0] = d_result;
 fixed (global::System.Int32* p_result = result)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoDAsync_v2(d_result, (IntPtr)p_result, (IntPtr)result_size, hStream));
 CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
 }
+}
+proxy_result[0] = d_result;
 }
 kernelParams[4] = proxy_result;
 CudaException.ThrowIfError(CudaDriverApi.cuLaunchKernel(
@@ -1578,7 +1657,7 @@ CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
 }
 }
 // Copy back array: counter
-if (counter_size > 0 && d_counter != IntPtr.Zero)
+if (counter_size > 0 && d_counter != IntPtr.Zero && !global::System.Object.ReferenceEquals(counter, data))
 {
 fixed (global::System.Int32* p_counter = counter)
 {
@@ -1587,7 +1666,7 @@ CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
 }
 }
 // Copy back array: result
-if (result_size > 0 && d_result != IntPtr.Zero)
+if (result_size > 0 && d_result != IntPtr.Zero && !global::System.Object.ReferenceEquals(result, data) && !global::System.Object.ReferenceEquals(result, counter))
 {
 fixed (global::System.Int32* p_result = result)
 {
@@ -1599,8 +1678,8 @@ CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
 finally
 {
 if (d_data != IntPtr.Zero) CudaDriverApi.cuMemFreeAsync(d_data, hStream);
-if (d_counter != IntPtr.Zero) CudaDriverApi.cuMemFreeAsync(d_counter, hStream);
-if (d_result != IntPtr.Zero) CudaDriverApi.cuMemFreeAsync(d_result, hStream);
+if (d_counter != IntPtr.Zero && d_counter != d_data) CudaDriverApi.cuMemFreeAsync(d_counter, hStream);
+if (d_result != IntPtr.Zero && d_result != d_data && d_result != d_counter) CudaDriverApi.cuMemFreeAsync(d_result, hStream);
 }
 }
 }
@@ -1654,8 +1733,8 @@ finally
 }
 #pragma warning restore CS8500
 public const string ThreeStageSweepKernel_Source = @"extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Runtime__StackLinqRangeKernels__ThreeStageSweepKernel(GSharpArray<int> __gsharp_id_0_data, int __gsharp_id_1_a, int __gsharp_id_2_b, int __gsharp_id_3_c, GSharpArray<int> __gsharp_id_4_result){
-int __gsharp_id_5_g = blockIdx.x*blockDim.x+threadIdx.x;
-__gsharp_id_4_result[__gsharp_id_5_g*64+0]=([&]() -> auto {
+int __gsharp_id_5_g = __gsharp_add_i32(__gsharp_mul_i32((int)blockIdx.x,(int)blockDim.x),(int)threadIdx.x);
+__gsharp_id_4_result[__gsharp_mul_i32(__gsharp_id_5_g,64)+0]=([&]() -> auto {
 auto&& __gsharp_fusion_src = __gsharp_id_0_data;
 int __gsharp_stage_0_n = __gsharp_id_1_a;
 int __gsharp_stage_1_n = __gsharp_id_2_b;
@@ -1673,7 +1752,7 @@ __gsharp_fusion_res += __gsharp_val_0;
 }
 return __gsharp_fusion_res;
 }());
-__gsharp_id_4_result[__gsharp_id_5_g*64+1]=([&]() -> auto {
+__gsharp_id_4_result[__gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_5_g,64),1)]=([&]() -> auto {
 auto&& __gsharp_fusion_src = __gsharp_id_0_data;
 int __gsharp_stage_0_n = __gsharp_id_1_a;
 int __gsharp_stage_1_n = __gsharp_id_2_b;
@@ -1691,7 +1770,7 @@ __gsharp_fusion_res += __gsharp_val_0;
 }
 return __gsharp_block_reduce(__gsharp_fusion_res, __gsharp_plus{});
 }());
-__gsharp_id_4_result[__gsharp_id_5_g*64+2]=([&]() -> auto {
+__gsharp_id_4_result[__gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_5_g,64),2)]=([&]() -> auto {
 auto&& __gsharp_fusion_src = __gsharp_id_0_data;
 int __gsharp_stage_0_n = __gsharp_id_1_a;
 int __gsharp_stage_1_n = __gsharp_id_2_b;
@@ -1709,7 +1788,7 @@ __gsharp_fusion_res += __gsharp_val_0;
 }
 return __gsharp_fusion_res;
 }());
-__gsharp_id_4_result[__gsharp_id_5_g*64+3]=([&]() -> auto {
+__gsharp_id_4_result[__gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_5_g,64),3)]=([&]() -> auto {
 auto&& __gsharp_fusion_src = __gsharp_id_0_data;
 int __gsharp_stage_0_n = __gsharp_id_1_a;
 int __gsharp_stage_1_n = __gsharp_id_2_b;
@@ -1727,7 +1806,7 @@ __gsharp_fusion_res += __gsharp_val_0;
 }
 return __gsharp_block_reduce(__gsharp_fusion_res, __gsharp_plus{});
 }());
-__gsharp_id_4_result[__gsharp_id_5_g*64+4]=([&]() -> auto {
+__gsharp_id_4_result[__gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_5_g,64),4)]=([&]() -> auto {
 auto&& __gsharp_fusion_src = __gsharp_id_0_data;
 int __gsharp_stage_0_n = __gsharp_id_1_a;
 int __gsharp_stage_1_n = __gsharp_id_2_b;
@@ -1745,7 +1824,7 @@ __gsharp_fusion_res += __gsharp_val_0;
 }
 return __gsharp_fusion_res;
 }());
-__gsharp_id_4_result[__gsharp_id_5_g*64+5]=([&]() -> auto {
+__gsharp_id_4_result[__gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_5_g,64),5)]=([&]() -> auto {
 auto&& __gsharp_fusion_src = __gsharp_id_0_data;
 int __gsharp_stage_0_n = __gsharp_id_1_a;
 int __gsharp_stage_1_n = __gsharp_id_2_b;
@@ -1763,7 +1842,7 @@ __gsharp_fusion_res += __gsharp_val_0;
 }
 return __gsharp_block_reduce(__gsharp_fusion_res, __gsharp_plus{});
 }());
-__gsharp_id_4_result[__gsharp_id_5_g*64+6]=([&]() -> auto {
+__gsharp_id_4_result[__gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_5_g,64),6)]=([&]() -> auto {
 auto&& __gsharp_fusion_src = __gsharp_id_0_data;
 int __gsharp_stage_0_n = __gsharp_id_1_a;
 int __gsharp_stage_1_n = __gsharp_id_2_b;
@@ -1781,7 +1860,7 @@ __gsharp_fusion_res += __gsharp_val_0;
 }
 return __gsharp_fusion_res;
 }());
-__gsharp_id_4_result[__gsharp_id_5_g*64+7]=([&]() -> auto {
+__gsharp_id_4_result[__gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_5_g,64),7)]=([&]() -> auto {
 auto&& __gsharp_fusion_src = __gsharp_id_0_data;
 int __gsharp_stage_0_n = __gsharp_id_1_a;
 int __gsharp_stage_1_n = __gsharp_id_2_b;
@@ -1799,7 +1878,7 @@ __gsharp_fusion_res += __gsharp_val_0;
 }
 return __gsharp_block_reduce(__gsharp_fusion_res, __gsharp_plus{});
 }());
-__gsharp_id_4_result[__gsharp_id_5_g*64+8]=([&]() -> auto {
+__gsharp_id_4_result[__gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_5_g,64),8)]=([&]() -> auto {
 auto&& __gsharp_fusion_src = __gsharp_id_0_data;
 int __gsharp_stage_0_n = __gsharp_id_1_a;
 int __gsharp_stage_1_n = __gsharp_id_2_b;
@@ -1817,7 +1896,7 @@ __gsharp_fusion_res += __gsharp_val_0;
 }
 return __gsharp_fusion_res;
 }());
-__gsharp_id_4_result[__gsharp_id_5_g*64+9]=([&]() -> auto {
+__gsharp_id_4_result[__gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_5_g,64),9)]=([&]() -> auto {
 auto&& __gsharp_fusion_src = __gsharp_id_0_data;
 int __gsharp_stage_0_n = __gsharp_id_1_a;
 int __gsharp_stage_1_n = __gsharp_id_2_b;
@@ -1835,7 +1914,7 @@ __gsharp_fusion_res += __gsharp_val_0;
 }
 return __gsharp_block_reduce(__gsharp_fusion_res, __gsharp_plus{});
 }());
-__gsharp_id_4_result[__gsharp_id_5_g*64+10]=([&]() -> auto {
+__gsharp_id_4_result[__gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_5_g,64),10)]=([&]() -> auto {
 auto&& __gsharp_fusion_src = __gsharp_id_0_data;
 int __gsharp_stage_0_n = __gsharp_id_1_a;
 int __gsharp_stage_1_n = __gsharp_id_2_b;
@@ -1853,7 +1932,7 @@ __gsharp_fusion_res += __gsharp_val_0;
 }
 return __gsharp_fusion_res;
 }());
-__gsharp_id_4_result[__gsharp_id_5_g*64+11]=([&]() -> auto {
+__gsharp_id_4_result[__gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_5_g,64),11)]=([&]() -> auto {
 auto&& __gsharp_fusion_src = __gsharp_id_0_data;
 int __gsharp_stage_0_n = __gsharp_id_1_a;
 int __gsharp_stage_1_n = __gsharp_id_2_b;
@@ -1871,7 +1950,7 @@ __gsharp_fusion_res += __gsharp_val_0;
 }
 return __gsharp_block_reduce(__gsharp_fusion_res, __gsharp_plus{});
 }());
-__gsharp_id_4_result[__gsharp_id_5_g*64+12]=([&]() -> auto {
+__gsharp_id_4_result[__gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_5_g,64),12)]=([&]() -> auto {
 auto&& __gsharp_fusion_src = __gsharp_id_0_data;
 int __gsharp_stage_0_n = __gsharp_id_1_a;
 int __gsharp_stage_1_n = __gsharp_id_2_b;
@@ -1889,7 +1968,7 @@ __gsharp_fusion_res += __gsharp_val_0;
 }
 return __gsharp_fusion_res;
 }());
-__gsharp_id_4_result[__gsharp_id_5_g*64+13]=([&]() -> auto {
+__gsharp_id_4_result[__gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_5_g,64),13)]=([&]() -> auto {
 auto&& __gsharp_fusion_src = __gsharp_id_0_data;
 int __gsharp_stage_0_n = __gsharp_id_1_a;
 int __gsharp_stage_1_n = __gsharp_id_2_b;
@@ -1907,7 +1986,7 @@ __gsharp_fusion_res += __gsharp_val_0;
 }
 return __gsharp_block_reduce(__gsharp_fusion_res, __gsharp_plus{});
 }());
-__gsharp_id_4_result[__gsharp_id_5_g*64+14]=([&]() -> auto {
+__gsharp_id_4_result[__gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_5_g,64),14)]=([&]() -> auto {
 auto&& __gsharp_fusion_src = __gsharp_id_0_data;
 int __gsharp_stage_0_n = __gsharp_id_1_a;
 int __gsharp_stage_1_n = __gsharp_id_2_b;
@@ -1925,7 +2004,7 @@ __gsharp_fusion_res += __gsharp_val_0;
 }
 return __gsharp_fusion_res;
 }());
-__gsharp_id_4_result[__gsharp_id_5_g*64+15]=([&]() -> auto {
+__gsharp_id_4_result[__gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_5_g,64),15)]=([&]() -> auto {
 auto&& __gsharp_fusion_src = __gsharp_id_0_data;
 int __gsharp_stage_0_n = __gsharp_id_1_a;
 int __gsharp_stage_1_n = __gsharp_id_2_b;
@@ -1943,7 +2022,7 @@ __gsharp_fusion_res += __gsharp_val_0;
 }
 return __gsharp_block_reduce(__gsharp_fusion_res, __gsharp_plus{});
 }());
-__gsharp_id_4_result[__gsharp_id_5_g*64+16]=([&]() -> auto {
+__gsharp_id_4_result[__gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_5_g,64),16)]=([&]() -> auto {
 auto&& __gsharp_fusion_src = __gsharp_id_0_data;
 int __gsharp_stage_0_n = __gsharp_id_1_a;
 int __gsharp_stage_1_n = __gsharp_id_2_b;
@@ -1961,7 +2040,7 @@ __gsharp_fusion_res += __gsharp_val_0;
 }
 return __gsharp_fusion_res;
 }());
-__gsharp_id_4_result[__gsharp_id_5_g*64+17]=([&]() -> auto {
+__gsharp_id_4_result[__gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_5_g,64),17)]=([&]() -> auto {
 auto&& __gsharp_fusion_src = __gsharp_id_0_data;
 int __gsharp_stage_0_n = __gsharp_id_1_a;
 int __gsharp_stage_1_n = __gsharp_id_2_b;
@@ -1979,7 +2058,7 @@ __gsharp_fusion_res += __gsharp_val_0;
 }
 return __gsharp_block_reduce(__gsharp_fusion_res, __gsharp_plus{});
 }());
-__gsharp_id_4_result[__gsharp_id_5_g*64+18]=([&]() -> auto {
+__gsharp_id_4_result[__gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_5_g,64),18)]=([&]() -> auto {
 auto&& __gsharp_fusion_src = __gsharp_id_0_data;
 int __gsharp_stage_0_n = __gsharp_id_1_a;
 int __gsharp_stage_1_n = __gsharp_id_2_b;
@@ -1997,7 +2076,7 @@ __gsharp_fusion_res += __gsharp_val_0;
 }
 return __gsharp_fusion_res;
 }());
-__gsharp_id_4_result[__gsharp_id_5_g*64+19]=([&]() -> auto {
+__gsharp_id_4_result[__gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_5_g,64),19)]=([&]() -> auto {
 auto&& __gsharp_fusion_src = __gsharp_id_0_data;
 int __gsharp_stage_0_n = __gsharp_id_1_a;
 int __gsharp_stage_1_n = __gsharp_id_2_b;
@@ -2015,7 +2094,7 @@ __gsharp_fusion_res += __gsharp_val_0;
 }
 return __gsharp_block_reduce(__gsharp_fusion_res, __gsharp_plus{});
 }());
-__gsharp_id_4_result[__gsharp_id_5_g*64+20]=([&]() -> auto {
+__gsharp_id_4_result[__gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_5_g,64),20)]=([&]() -> auto {
 auto&& __gsharp_fusion_src = __gsharp_id_0_data;
 int __gsharp_stage_0_n = __gsharp_id_1_a;
 int __gsharp_stage_1_n = __gsharp_id_2_b;
@@ -2033,7 +2112,7 @@ __gsharp_fusion_res += __gsharp_val_0;
 }
 return __gsharp_fusion_res;
 }());
-__gsharp_id_4_result[__gsharp_id_5_g*64+21]=([&]() -> auto {
+__gsharp_id_4_result[__gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_5_g,64),21)]=([&]() -> auto {
 auto&& __gsharp_fusion_src = __gsharp_id_0_data;
 int __gsharp_stage_0_n = __gsharp_id_1_a;
 int __gsharp_stage_1_n = __gsharp_id_2_b;
@@ -2051,7 +2130,7 @@ __gsharp_fusion_res += __gsharp_val_0;
 }
 return __gsharp_block_reduce(__gsharp_fusion_res, __gsharp_plus{});
 }());
-__gsharp_id_4_result[__gsharp_id_5_g*64+22]=([&]() -> auto {
+__gsharp_id_4_result[__gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_5_g,64),22)]=([&]() -> auto {
 auto&& __gsharp_fusion_src = __gsharp_id_0_data;
 int __gsharp_stage_0_n = __gsharp_id_1_a;
 int __gsharp_stage_1_n = __gsharp_id_2_b;
@@ -2069,7 +2148,7 @@ __gsharp_fusion_res += __gsharp_val_0;
 }
 return __gsharp_fusion_res;
 }());
-__gsharp_id_4_result[__gsharp_id_5_g*64+23]=([&]() -> auto {
+__gsharp_id_4_result[__gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_5_g,64),23)]=([&]() -> auto {
 auto&& __gsharp_fusion_src = __gsharp_id_0_data;
 int __gsharp_stage_0_n = __gsharp_id_1_a;
 int __gsharp_stage_1_n = __gsharp_id_2_b;
@@ -2087,7 +2166,7 @@ __gsharp_fusion_res += __gsharp_val_0;
 }
 return __gsharp_block_reduce(__gsharp_fusion_res, __gsharp_plus{});
 }());
-__gsharp_id_4_result[__gsharp_id_5_g*64+24]=([&]() -> auto {
+__gsharp_id_4_result[__gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_5_g,64),24)]=([&]() -> auto {
 auto&& __gsharp_fusion_src = __gsharp_id_0_data;
 int __gsharp_stage_0_n = __gsharp_id_1_a;
 int __gsharp_stage_1_n = __gsharp_id_2_b;
@@ -2105,7 +2184,7 @@ __gsharp_fusion_res += __gsharp_val_0;
 }
 return __gsharp_fusion_res;
 }());
-__gsharp_id_4_result[__gsharp_id_5_g*64+25]=([&]() -> auto {
+__gsharp_id_4_result[__gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_5_g,64),25)]=([&]() -> auto {
 auto&& __gsharp_fusion_src = __gsharp_id_0_data;
 int __gsharp_stage_0_n = __gsharp_id_1_a;
 int __gsharp_stage_1_n = __gsharp_id_2_b;
@@ -2123,7 +2202,7 @@ __gsharp_fusion_res += __gsharp_val_0;
 }
 return __gsharp_block_reduce(__gsharp_fusion_res, __gsharp_plus{});
 }());
-__gsharp_id_4_result[__gsharp_id_5_g*64+26]=([&]() -> auto {
+__gsharp_id_4_result[__gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_5_g,64),26)]=([&]() -> auto {
 auto&& __gsharp_fusion_src = __gsharp_id_0_data;
 int __gsharp_stage_0_n = __gsharp_id_1_a;
 int __gsharp_stage_1_n = __gsharp_id_2_b;
@@ -2141,7 +2220,7 @@ __gsharp_fusion_res += __gsharp_val_0;
 }
 return __gsharp_fusion_res;
 }());
-__gsharp_id_4_result[__gsharp_id_5_g*64+27]=([&]() -> auto {
+__gsharp_id_4_result[__gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_5_g,64),27)]=([&]() -> auto {
 auto&& __gsharp_fusion_src = __gsharp_id_0_data;
 int __gsharp_stage_0_n = __gsharp_id_1_a;
 int __gsharp_stage_1_n = __gsharp_id_2_b;
@@ -2159,25 +2238,7 @@ __gsharp_fusion_res += __gsharp_val_0;
 }
 return __gsharp_block_reduce(__gsharp_fusion_res, __gsharp_plus{});
 }());
-__gsharp_id_4_result[__gsharp_id_5_g*64+28]=([&]() -> auto {
-auto&& __gsharp_fusion_src = __gsharp_id_0_data;
-int __gsharp_stage_0_n = __gsharp_id_1_a;
-int __gsharp_stage_1_n = __gsharp_id_2_b;
-int __gsharp_stage_2_n = __gsharp_id_3_c;
-int __gsharp_fusion_res = 0;
-int __gsharp_fusion_lo = 0;
-int __gsharp_fusion_hi = __gsharp_fusion_src.length;
-__gsharp_fusion_hi -= __gsharp_clamp_count(__gsharp_stage_0_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
-__gsharp_fusion_hi -= __gsharp_clamp_count(__gsharp_stage_1_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
-__gsharp_fusion_hi -= __gsharp_clamp_count(__gsharp_stage_2_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
-for (int __gsharp_i = __gsharp_fusion_lo; __gsharp_i < __gsharp_fusion_hi; __gsharp_i++)
-{
-auto __gsharp_val_0 = __gsharp_fusion_src[__gsharp_i];
-__gsharp_fusion_res += __gsharp_val_0;
-}
-return __gsharp_fusion_res;
-}());
-__gsharp_id_4_result[__gsharp_id_5_g*64+29]=([&]() -> auto {
+__gsharp_id_4_result[__gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_5_g,64),28)]=([&]() -> auto {
 auto&& __gsharp_fusion_src = __gsharp_id_0_data;
 int __gsharp_stage_0_n = __gsharp_id_1_a;
 int __gsharp_stage_1_n = __gsharp_id_2_b;
@@ -2188,6 +2249,24 @@ int __gsharp_fusion_hi = __gsharp_fusion_src.length;
 __gsharp_fusion_hi -= __gsharp_clamp_count(__gsharp_stage_0_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
 __gsharp_fusion_hi -= __gsharp_clamp_count(__gsharp_stage_1_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
 __gsharp_fusion_hi -= __gsharp_clamp_count(__gsharp_stage_2_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
+for (int __gsharp_i = __gsharp_fusion_lo; __gsharp_i < __gsharp_fusion_hi; __gsharp_i++)
+{
+auto __gsharp_val_0 = __gsharp_fusion_src[__gsharp_i];
+__gsharp_fusion_res += __gsharp_val_0;
+}
+return __gsharp_fusion_res;
+}());
+__gsharp_id_4_result[__gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_5_g,64),29)]=([&]() -> auto {
+auto&& __gsharp_fusion_src = __gsharp_id_0_data;
+int __gsharp_stage_0_n = __gsharp_id_1_a;
+int __gsharp_stage_1_n = __gsharp_id_2_b;
+int __gsharp_stage_2_n = __gsharp_id_3_c;
+int __gsharp_fusion_res = 0;
+int __gsharp_fusion_lo = 0;
+int __gsharp_fusion_hi = __gsharp_fusion_src.length;
+__gsharp_fusion_hi -= __gsharp_clamp_count(__gsharp_stage_0_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
+__gsharp_fusion_hi -= __gsharp_clamp_count(__gsharp_stage_1_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
+__gsharp_fusion_hi -= __gsharp_clamp_count(__gsharp_stage_2_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
 for (long long __gsharp_i = __gsharp_fusion_lo + (long long)__gsharp_block_rank(); __gsharp_i < __gsharp_fusion_hi; __gsharp_i += __gsharp_block_size())
 {
 auto __gsharp_val_0 = __gsharp_fusion_src[(int)__gsharp_i];
@@ -2195,7 +2274,7 @@ __gsharp_fusion_res += __gsharp_val_0;
 }
 return __gsharp_block_reduce(__gsharp_fusion_res, __gsharp_plus{});
 }());
-__gsharp_id_4_result[__gsharp_id_5_g*64+30]=([&]() -> auto {
+__gsharp_id_4_result[__gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_5_g,64),30)]=([&]() -> auto {
 auto&& __gsharp_fusion_src = __gsharp_id_0_data;
 int __gsharp_stage_0_n = __gsharp_id_1_a;
 int __gsharp_stage_1_n = __gsharp_id_2_b;
@@ -2213,7 +2292,7 @@ __gsharp_fusion_res += __gsharp_val_0;
 }
 return __gsharp_fusion_res;
 }());
-__gsharp_id_4_result[__gsharp_id_5_g*64+31]=([&]() -> auto {
+__gsharp_id_4_result[__gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_5_g,64),31)]=([&]() -> auto {
 auto&& __gsharp_fusion_src = __gsharp_id_0_data;
 int __gsharp_stage_0_n = __gsharp_id_1_a;
 int __gsharp_stage_1_n = __gsharp_id_2_b;
@@ -2231,7 +2310,7 @@ __gsharp_fusion_res += __gsharp_val_0;
 }
 return __gsharp_block_reduce(__gsharp_fusion_res, __gsharp_plus{});
 }());
-__gsharp_id_4_result[__gsharp_id_5_g*64+32]=([&]() -> auto {
+__gsharp_id_4_result[__gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_5_g,64),32)]=([&]() -> auto {
 auto&& __gsharp_fusion_src = __gsharp_id_0_data;
 int __gsharp_stage_0_n = __gsharp_id_1_a;
 int __gsharp_stage_1_n = __gsharp_id_2_b;
@@ -2249,7 +2328,7 @@ __gsharp_fusion_res += __gsharp_val_0;
 }
 return __gsharp_fusion_res;
 }());
-__gsharp_id_4_result[__gsharp_id_5_g*64+33]=([&]() -> auto {
+__gsharp_id_4_result[__gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_5_g,64),33)]=([&]() -> auto {
 auto&& __gsharp_fusion_src = __gsharp_id_0_data;
 int __gsharp_stage_0_n = __gsharp_id_1_a;
 int __gsharp_stage_1_n = __gsharp_id_2_b;
@@ -2267,7 +2346,7 @@ __gsharp_fusion_res += __gsharp_val_0;
 }
 return __gsharp_block_reduce(__gsharp_fusion_res, __gsharp_plus{});
 }());
-__gsharp_id_4_result[__gsharp_id_5_g*64+34]=([&]() -> auto {
+__gsharp_id_4_result[__gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_5_g,64),34)]=([&]() -> auto {
 auto&& __gsharp_fusion_src = __gsharp_id_0_data;
 int __gsharp_stage_0_n = __gsharp_id_1_a;
 int __gsharp_stage_1_n = __gsharp_id_2_b;
@@ -2285,7 +2364,7 @@ __gsharp_fusion_res += __gsharp_val_0;
 }
 return __gsharp_fusion_res;
 }());
-__gsharp_id_4_result[__gsharp_id_5_g*64+35]=([&]() -> auto {
+__gsharp_id_4_result[__gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_5_g,64),35)]=([&]() -> auto {
 auto&& __gsharp_fusion_src = __gsharp_id_0_data;
 int __gsharp_stage_0_n = __gsharp_id_1_a;
 int __gsharp_stage_1_n = __gsharp_id_2_b;
@@ -2303,7 +2382,7 @@ __gsharp_fusion_res += __gsharp_val_0;
 }
 return __gsharp_block_reduce(__gsharp_fusion_res, __gsharp_plus{});
 }());
-__gsharp_id_4_result[__gsharp_id_5_g*64+36]=([&]() -> auto {
+__gsharp_id_4_result[__gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_5_g,64),36)]=([&]() -> auto {
 auto&& __gsharp_fusion_src = __gsharp_id_0_data;
 int __gsharp_stage_0_n = __gsharp_id_1_a;
 int __gsharp_stage_1_n = __gsharp_id_2_b;
@@ -2321,7 +2400,7 @@ __gsharp_fusion_res += __gsharp_val_0;
 }
 return __gsharp_fusion_res;
 }());
-__gsharp_id_4_result[__gsharp_id_5_g*64+37]=([&]() -> auto {
+__gsharp_id_4_result[__gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_5_g,64),37)]=([&]() -> auto {
 auto&& __gsharp_fusion_src = __gsharp_id_0_data;
 int __gsharp_stage_0_n = __gsharp_id_1_a;
 int __gsharp_stage_1_n = __gsharp_id_2_b;
@@ -2339,7 +2418,7 @@ __gsharp_fusion_res += __gsharp_val_0;
 }
 return __gsharp_block_reduce(__gsharp_fusion_res, __gsharp_plus{});
 }());
-__gsharp_id_4_result[__gsharp_id_5_g*64+38]=([&]() -> auto {
+__gsharp_id_4_result[__gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_5_g,64),38)]=([&]() -> auto {
 auto&& __gsharp_fusion_src = __gsharp_id_0_data;
 int __gsharp_stage_0_n = __gsharp_id_1_a;
 int __gsharp_stage_1_n = __gsharp_id_2_b;
@@ -2357,7 +2436,7 @@ __gsharp_fusion_res += __gsharp_val_0;
 }
 return __gsharp_fusion_res;
 }());
-__gsharp_id_4_result[__gsharp_id_5_g*64+39]=([&]() -> auto {
+__gsharp_id_4_result[__gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_5_g,64),39)]=([&]() -> auto {
 auto&& __gsharp_fusion_src = __gsharp_id_0_data;
 int __gsharp_stage_0_n = __gsharp_id_1_a;
 int __gsharp_stage_1_n = __gsharp_id_2_b;
@@ -2375,7 +2454,7 @@ __gsharp_fusion_res += __gsharp_val_0;
 }
 return __gsharp_block_reduce(__gsharp_fusion_res, __gsharp_plus{});
 }());
-__gsharp_id_4_result[__gsharp_id_5_g*64+40]=([&]() -> auto {
+__gsharp_id_4_result[__gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_5_g,64),40)]=([&]() -> auto {
 auto&& __gsharp_fusion_src = __gsharp_id_0_data;
 int __gsharp_stage_0_n = __gsharp_id_1_a;
 int __gsharp_stage_1_n = __gsharp_id_2_b;
@@ -2393,7 +2472,7 @@ __gsharp_fusion_res += __gsharp_val_0;
 }
 return __gsharp_fusion_res;
 }());
-__gsharp_id_4_result[__gsharp_id_5_g*64+41]=([&]() -> auto {
+__gsharp_id_4_result[__gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_5_g,64),41)]=([&]() -> auto {
 auto&& __gsharp_fusion_src = __gsharp_id_0_data;
 int __gsharp_stage_0_n = __gsharp_id_1_a;
 int __gsharp_stage_1_n = __gsharp_id_2_b;
@@ -2411,7 +2490,7 @@ __gsharp_fusion_res += __gsharp_val_0;
 }
 return __gsharp_block_reduce(__gsharp_fusion_res, __gsharp_plus{});
 }());
-__gsharp_id_4_result[__gsharp_id_5_g*64+42]=([&]() -> auto {
+__gsharp_id_4_result[__gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_5_g,64),42)]=([&]() -> auto {
 auto&& __gsharp_fusion_src = __gsharp_id_0_data;
 int __gsharp_stage_0_n = __gsharp_id_1_a;
 int __gsharp_stage_1_n = __gsharp_id_2_b;
@@ -2429,7 +2508,7 @@ __gsharp_fusion_res += __gsharp_val_0;
 }
 return __gsharp_fusion_res;
 }());
-__gsharp_id_4_result[__gsharp_id_5_g*64+43]=([&]() -> auto {
+__gsharp_id_4_result[__gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_5_g,64),43)]=([&]() -> auto {
 auto&& __gsharp_fusion_src = __gsharp_id_0_data;
 int __gsharp_stage_0_n = __gsharp_id_1_a;
 int __gsharp_stage_1_n = __gsharp_id_2_b;
@@ -2447,7 +2526,7 @@ __gsharp_fusion_res += __gsharp_val_0;
 }
 return __gsharp_block_reduce(__gsharp_fusion_res, __gsharp_plus{});
 }());
-__gsharp_id_4_result[__gsharp_id_5_g*64+44]=([&]() -> auto {
+__gsharp_id_4_result[__gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_5_g,64),44)]=([&]() -> auto {
 auto&& __gsharp_fusion_src = __gsharp_id_0_data;
 int __gsharp_stage_0_n = __gsharp_id_1_a;
 int __gsharp_stage_1_n = __gsharp_id_2_b;
@@ -2465,7 +2544,7 @@ __gsharp_fusion_res += __gsharp_val_0;
 }
 return __gsharp_fusion_res;
 }());
-__gsharp_id_4_result[__gsharp_id_5_g*64+45]=([&]() -> auto {
+__gsharp_id_4_result[__gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_5_g,64),45)]=([&]() -> auto {
 auto&& __gsharp_fusion_src = __gsharp_id_0_data;
 int __gsharp_stage_0_n = __gsharp_id_1_a;
 int __gsharp_stage_1_n = __gsharp_id_2_b;
@@ -2483,7 +2562,7 @@ __gsharp_fusion_res += __gsharp_val_0;
 }
 return __gsharp_block_reduce(__gsharp_fusion_res, __gsharp_plus{});
 }());
-__gsharp_id_4_result[__gsharp_id_5_g*64+46]=([&]() -> auto {
+__gsharp_id_4_result[__gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_5_g,64),46)]=([&]() -> auto {
 auto&& __gsharp_fusion_src = __gsharp_id_0_data;
 int __gsharp_stage_0_n = __gsharp_id_1_a;
 int __gsharp_stage_1_n = __gsharp_id_2_b;
@@ -2501,7 +2580,7 @@ __gsharp_fusion_res += __gsharp_val_0;
 }
 return __gsharp_fusion_res;
 }());
-__gsharp_id_4_result[__gsharp_id_5_g*64+47]=([&]() -> auto {
+__gsharp_id_4_result[__gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_5_g,64),47)]=([&]() -> auto {
 auto&& __gsharp_fusion_src = __gsharp_id_0_data;
 int __gsharp_stage_0_n = __gsharp_id_1_a;
 int __gsharp_stage_1_n = __gsharp_id_2_b;
@@ -2519,7 +2598,7 @@ __gsharp_fusion_res += __gsharp_val_0;
 }
 return __gsharp_block_reduce(__gsharp_fusion_res, __gsharp_plus{});
 }());
-__gsharp_id_4_result[__gsharp_id_5_g*64+48]=([&]() -> auto {
+__gsharp_id_4_result[__gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_5_g,64),48)]=([&]() -> auto {
 auto&& __gsharp_fusion_src = __gsharp_id_0_data;
 int __gsharp_stage_0_n = __gsharp_id_1_a;
 int __gsharp_stage_1_n = __gsharp_id_2_b;
@@ -2537,7 +2616,7 @@ __gsharp_fusion_res += __gsharp_val_0;
 }
 return __gsharp_fusion_res;
 }());
-__gsharp_id_4_result[__gsharp_id_5_g*64+49]=([&]() -> auto {
+__gsharp_id_4_result[__gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_5_g,64),49)]=([&]() -> auto {
 auto&& __gsharp_fusion_src = __gsharp_id_0_data;
 int __gsharp_stage_0_n = __gsharp_id_1_a;
 int __gsharp_stage_1_n = __gsharp_id_2_b;
@@ -2555,7 +2634,7 @@ __gsharp_fusion_res += __gsharp_val_0;
 }
 return __gsharp_block_reduce(__gsharp_fusion_res, __gsharp_plus{});
 }());
-__gsharp_id_4_result[__gsharp_id_5_g*64+50]=([&]() -> auto {
+__gsharp_id_4_result[__gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_5_g,64),50)]=([&]() -> auto {
 auto&& __gsharp_fusion_src = __gsharp_id_0_data;
 int __gsharp_stage_0_n = __gsharp_id_1_a;
 int __gsharp_stage_1_n = __gsharp_id_2_b;
@@ -2573,7 +2652,7 @@ __gsharp_fusion_res += __gsharp_val_0;
 }
 return __gsharp_fusion_res;
 }());
-__gsharp_id_4_result[__gsharp_id_5_g*64+51]=([&]() -> auto {
+__gsharp_id_4_result[__gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_5_g,64),51)]=([&]() -> auto {
 auto&& __gsharp_fusion_src = __gsharp_id_0_data;
 int __gsharp_stage_0_n = __gsharp_id_1_a;
 int __gsharp_stage_1_n = __gsharp_id_2_b;
@@ -2591,7 +2670,7 @@ __gsharp_fusion_res += __gsharp_val_0;
 }
 return __gsharp_block_reduce(__gsharp_fusion_res, __gsharp_plus{});
 }());
-__gsharp_id_4_result[__gsharp_id_5_g*64+52]=([&]() -> auto {
+__gsharp_id_4_result[__gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_5_g,64),52)]=([&]() -> auto {
 auto&& __gsharp_fusion_src = __gsharp_id_0_data;
 int __gsharp_stage_0_n = __gsharp_id_1_a;
 int __gsharp_stage_1_n = __gsharp_id_2_b;
@@ -2609,7 +2688,7 @@ __gsharp_fusion_res += __gsharp_val_0;
 }
 return __gsharp_fusion_res;
 }());
-__gsharp_id_4_result[__gsharp_id_5_g*64+53]=([&]() -> auto {
+__gsharp_id_4_result[__gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_5_g,64),53)]=([&]() -> auto {
 auto&& __gsharp_fusion_src = __gsharp_id_0_data;
 int __gsharp_stage_0_n = __gsharp_id_1_a;
 int __gsharp_stage_1_n = __gsharp_id_2_b;
@@ -2627,7 +2706,7 @@ __gsharp_fusion_res += __gsharp_val_0;
 }
 return __gsharp_block_reduce(__gsharp_fusion_res, __gsharp_plus{});
 }());
-__gsharp_id_4_result[__gsharp_id_5_g*64+54]=([&]() -> auto {
+__gsharp_id_4_result[__gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_5_g,64),54)]=([&]() -> auto {
 auto&& __gsharp_fusion_src = __gsharp_id_0_data;
 int __gsharp_stage_0_n = __gsharp_id_1_a;
 int __gsharp_stage_1_n = __gsharp_id_2_b;
@@ -2645,7 +2724,7 @@ __gsharp_fusion_res += __gsharp_val_0;
 }
 return __gsharp_fusion_res;
 }());
-__gsharp_id_4_result[__gsharp_id_5_g*64+55]=([&]() -> auto {
+__gsharp_id_4_result[__gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_5_g,64),55)]=([&]() -> auto {
 auto&& __gsharp_fusion_src = __gsharp_id_0_data;
 int __gsharp_stage_0_n = __gsharp_id_1_a;
 int __gsharp_stage_1_n = __gsharp_id_2_b;
@@ -2663,7 +2742,7 @@ __gsharp_fusion_res += __gsharp_val_0;
 }
 return __gsharp_block_reduce(__gsharp_fusion_res, __gsharp_plus{});
 }());
-__gsharp_id_4_result[__gsharp_id_5_g*64+56]=([&]() -> auto {
+__gsharp_id_4_result[__gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_5_g,64),56)]=([&]() -> auto {
 auto&& __gsharp_fusion_src = __gsharp_id_0_data;
 int __gsharp_stage_0_n = __gsharp_id_1_a;
 int __gsharp_stage_1_n = __gsharp_id_2_b;
@@ -2681,7 +2760,7 @@ __gsharp_fusion_res += __gsharp_val_0;
 }
 return __gsharp_fusion_res;
 }());
-__gsharp_id_4_result[__gsharp_id_5_g*64+57]=([&]() -> auto {
+__gsharp_id_4_result[__gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_5_g,64),57)]=([&]() -> auto {
 auto&& __gsharp_fusion_src = __gsharp_id_0_data;
 int __gsharp_stage_0_n = __gsharp_id_1_a;
 int __gsharp_stage_1_n = __gsharp_id_2_b;
@@ -2699,7 +2778,7 @@ __gsharp_fusion_res += __gsharp_val_0;
 }
 return __gsharp_block_reduce(__gsharp_fusion_res, __gsharp_plus{});
 }());
-__gsharp_id_4_result[__gsharp_id_5_g*64+58]=([&]() -> auto {
+__gsharp_id_4_result[__gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_5_g,64),58)]=([&]() -> auto {
 auto&& __gsharp_fusion_src = __gsharp_id_0_data;
 int __gsharp_stage_0_n = __gsharp_id_1_a;
 int __gsharp_stage_1_n = __gsharp_id_2_b;
@@ -2717,7 +2796,7 @@ __gsharp_fusion_res += __gsharp_val_0;
 }
 return __gsharp_fusion_res;
 }());
-__gsharp_id_4_result[__gsharp_id_5_g*64+59]=([&]() -> auto {
+__gsharp_id_4_result[__gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_5_g,64),59)]=([&]() -> auto {
 auto&& __gsharp_fusion_src = __gsharp_id_0_data;
 int __gsharp_stage_0_n = __gsharp_id_1_a;
 int __gsharp_stage_1_n = __gsharp_id_2_b;
@@ -2735,7 +2814,7 @@ __gsharp_fusion_res += __gsharp_val_0;
 }
 return __gsharp_block_reduce(__gsharp_fusion_res, __gsharp_plus{});
 }());
-__gsharp_id_4_result[__gsharp_id_5_g*64+60]=([&]() -> auto {
+__gsharp_id_4_result[__gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_5_g,64),60)]=([&]() -> auto {
 auto&& __gsharp_fusion_src = __gsharp_id_0_data;
 int __gsharp_stage_0_n = __gsharp_id_1_a;
 int __gsharp_stage_1_n = __gsharp_id_2_b;
@@ -2753,7 +2832,7 @@ __gsharp_fusion_res += __gsharp_val_0;
 }
 return __gsharp_fusion_res;
 }());
-__gsharp_id_4_result[__gsharp_id_5_g*64+61]=([&]() -> auto {
+__gsharp_id_4_result[__gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_5_g,64),61)]=([&]() -> auto {
 auto&& __gsharp_fusion_src = __gsharp_id_0_data;
 int __gsharp_stage_0_n = __gsharp_id_1_a;
 int __gsharp_stage_1_n = __gsharp_id_2_b;
@@ -2771,7 +2850,7 @@ __gsharp_fusion_res += __gsharp_val_0;
 }
 return __gsharp_block_reduce(__gsharp_fusion_res, __gsharp_plus{});
 }());
-__gsharp_id_4_result[__gsharp_id_5_g*64+62]=([&]() -> auto {
+__gsharp_id_4_result[__gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_5_g,64),62)]=([&]() -> auto {
 auto&& __gsharp_fusion_src = __gsharp_id_0_data;
 int __gsharp_stage_0_n = __gsharp_id_1_a;
 int __gsharp_stage_1_n = __gsharp_id_2_b;
@@ -2789,7 +2868,7 @@ __gsharp_fusion_res += __gsharp_val_0;
 }
 return __gsharp_fusion_res;
 }());
-__gsharp_id_4_result[__gsharp_id_5_g*64+63]=([&]() -> auto {
+__gsharp_id_4_result[__gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_5_g,64),63)]=([&]() -> auto {
 auto&& __gsharp_fusion_src = __gsharp_id_0_data;
 int __gsharp_stage_0_n = __gsharp_id_1_a;
 int __gsharp_stage_1_n = __gsharp_id_2_b;
@@ -2853,12 +2932,12 @@ proxy_data[0] = IntPtr.Zero;
 if (data_size > 0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_data, (IntPtr)data_size, hStream));
-proxy_data[0] = d_data;
 fixed (global::System.Int32* p_data = data)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoDAsync_v2(d_data, (IntPtr)p_data, (IntPtr)data_size, hStream));
 CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
 }
+proxy_data[0] = d_data;
 }
 kernelParams[0] = proxy_data;
 // Marshal scalar: a
@@ -2874,13 +2953,20 @@ proxy_result[0] = IntPtr.Zero;
 ((int*)(proxy_result + 1))[0] = result.Length;
 if (result_size > 0)
 {
+if (global::System.Object.ReferenceEquals(result, data))
+{
+d_result = d_data;
+}
+else
+{
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_result, (IntPtr)result_size, hStream));
-proxy_result[0] = d_result;
 fixed (global::System.Int32* p_result = result)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoDAsync_v2(d_result, (IntPtr)p_result, (IntPtr)result_size, hStream));
 CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
 }
+}
+proxy_result[0] = d_result;
 }
 kernelParams[4] = proxy_result;
 CudaException.ThrowIfError(CudaDriverApi.cuLaunchKernel(
@@ -2902,7 +2988,7 @@ CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
 }
 }
 // Copy back array: result
-if (result_size > 0 && d_result != IntPtr.Zero)
+if (result_size > 0 && d_result != IntPtr.Zero && !global::System.Object.ReferenceEquals(result, data))
 {
 fixed (global::System.Int32* p_result = result)
 {
@@ -2914,7 +3000,7 @@ CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
 finally
 {
 if (d_data != IntPtr.Zero) CudaDriverApi.cuMemFreeAsync(d_data, hStream);
-if (d_result != IntPtr.Zero) CudaDriverApi.cuMemFreeAsync(d_result, hStream);
+if (d_result != IntPtr.Zero && d_result != d_data) CudaDriverApi.cuMemFreeAsync(d_result, hStream);
 }
 }
 }

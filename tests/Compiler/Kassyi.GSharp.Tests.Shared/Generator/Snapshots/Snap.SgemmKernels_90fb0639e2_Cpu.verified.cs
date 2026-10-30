@@ -64,12 +64,12 @@ __gsharp_switch_1_state_0:
 {
 __gsharp_ctx->__gsharp_id_4_As={ (float*)__gsharp_allocate_smem_static(0x73f1e09054a8d88dull, (256) * sizeof(float), alignof(float)) };
 __gsharp_ctx->__gsharp_id_5_Bs={ (float*)__gsharp_allocate_smem_static(0x73f1df9054a8d6daull, (256) * sizeof(float), alignof(float)) };
-__gsharp_ctx->__gsharp_id_6_bx=blockIdx.x;
-__gsharp_ctx->__gsharp_id_7_by=blockIdx.y;
-__gsharp_ctx->__gsharp_id_8_tx=threadIdx.x;
-__gsharp_ctx->__gsharp_id_9_ty=threadIdx.y;
-__gsharp_ctx->__gsharp_id_10_row=__gsharp_ctx->__gsharp_id_7_by*16+__gsharp_ctx->__gsharp_id_9_ty;
-__gsharp_ctx->__gsharp_id_11_col=__gsharp_ctx->__gsharp_id_6_bx*16+__gsharp_ctx->__gsharp_id_8_tx;
+__gsharp_ctx->__gsharp_id_6_bx=(int)blockIdx.x;
+__gsharp_ctx->__gsharp_id_7_by=(int)blockIdx.y;
+__gsharp_ctx->__gsharp_id_8_tx=(int)threadIdx.x;
+__gsharp_ctx->__gsharp_id_9_ty=(int)threadIdx.y;
+__gsharp_ctx->__gsharp_id_10_row=__gsharp_add_i32(__gsharp_mul_i32(__gsharp_ctx->__gsharp_id_7_by,16),__gsharp_ctx->__gsharp_id_9_ty);
+__gsharp_ctx->__gsharp_id_11_col=__gsharp_add_i32(__gsharp_mul_i32(__gsharp_ctx->__gsharp_id_6_bx,16),__gsharp_ctx->__gsharp_id_8_tx);
 __gsharp_ctx->__gsharp_id_12_cValue=0.0f;
 __gsharp_ctx->__gsharp_id_13_m=0;
 goto __gsharp_switch_1_state_1;
@@ -77,25 +77,25 @@ goto __gsharp_switch_1_state_1;
 case 1:
 __gsharp_switch_1_state_1:
 {
-if(!(__gsharp_ctx->__gsharp_id_13_m<(__gsharp_id_3_n+15)/16))
+if(!(__gsharp_ctx->__gsharp_id_13_m<(__gsharp_add_i32(__gsharp_id_3_n,15))/16))
 {
 goto __gsharp_switch_1_state_5;
 }
-if(__gsharp_ctx->__gsharp_id_10_row<__gsharp_id_3_n&&__gsharp_ctx->__gsharp_id_13_m*16+__gsharp_ctx->__gsharp_id_8_tx<__gsharp_id_3_n)
+if(__gsharp_ctx->__gsharp_id_10_row<__gsharp_id_3_n&&__gsharp_add_i32(__gsharp_mul_i32(__gsharp_ctx->__gsharp_id_13_m,16),__gsharp_ctx->__gsharp_id_8_tx)<__gsharp_id_3_n)
 {
-__gsharp_ctx->__gsharp_id_4_As[__gsharp_ctx->__gsharp_id_9_ty*16+__gsharp_ctx->__gsharp_id_8_tx]=__gsharp_id_0_a[__gsharp_ctx->__gsharp_id_10_row*__gsharp_id_3_n+__gsharp_ctx->__gsharp_id_13_m*16+__gsharp_ctx->__gsharp_id_8_tx];
+__gsharp_ctx->__gsharp_id_4_As[__gsharp_add_i32(__gsharp_mul_i32(__gsharp_ctx->__gsharp_id_9_ty,16),__gsharp_ctx->__gsharp_id_8_tx)]=__gsharp_id_0_a[__gsharp_add_i32(__gsharp_add_i32(__gsharp_mul_i32(__gsharp_ctx->__gsharp_id_10_row,__gsharp_id_3_n),__gsharp_mul_i32(__gsharp_ctx->__gsharp_id_13_m,16)),__gsharp_ctx->__gsharp_id_8_tx)];
 }
 else
 {
-__gsharp_ctx->__gsharp_id_4_As[__gsharp_ctx->__gsharp_id_9_ty*16+__gsharp_ctx->__gsharp_id_8_tx]=0.0f;
+__gsharp_ctx->__gsharp_id_4_As[__gsharp_add_i32(__gsharp_mul_i32(__gsharp_ctx->__gsharp_id_9_ty,16),__gsharp_ctx->__gsharp_id_8_tx)]=0.0f;
 }
-if(__gsharp_ctx->__gsharp_id_13_m*16+__gsharp_ctx->__gsharp_id_9_ty<__gsharp_id_3_n&&__gsharp_ctx->__gsharp_id_11_col<__gsharp_id_3_n)
+if(__gsharp_add_i32(__gsharp_mul_i32(__gsharp_ctx->__gsharp_id_13_m,16),__gsharp_ctx->__gsharp_id_9_ty)<__gsharp_id_3_n&&__gsharp_ctx->__gsharp_id_11_col<__gsharp_id_3_n)
 {
-__gsharp_ctx->__gsharp_id_5_Bs[__gsharp_ctx->__gsharp_id_9_ty*16+__gsharp_ctx->__gsharp_id_8_tx]=__gsharp_id_1_b[(__gsharp_ctx->__gsharp_id_13_m*16+__gsharp_ctx->__gsharp_id_9_ty)*__gsharp_id_3_n+__gsharp_ctx->__gsharp_id_11_col];
+__gsharp_ctx->__gsharp_id_5_Bs[__gsharp_add_i32(__gsharp_mul_i32(__gsharp_ctx->__gsharp_id_9_ty,16),__gsharp_ctx->__gsharp_id_8_tx)]=__gsharp_id_1_b[__gsharp_add_i32(__gsharp_mul_i32(__gsharp_add_i32(__gsharp_mul_i32(__gsharp_ctx->__gsharp_id_13_m,16),__gsharp_ctx->__gsharp_id_9_ty),__gsharp_id_3_n),__gsharp_ctx->__gsharp_id_11_col)];
 }
 else
 {
-__gsharp_ctx->__gsharp_id_5_Bs[__gsharp_ctx->__gsharp_id_9_ty*16+__gsharp_ctx->__gsharp_id_8_tx]=0.0f;
+__gsharp_ctx->__gsharp_id_5_Bs[__gsharp_add_i32(__gsharp_mul_i32(__gsharp_ctx->__gsharp_id_9_ty,16),__gsharp_ctx->__gsharp_id_8_tx)]=0.0f;
 }
 __gsharp_yielded_for_block_barrier=true;
 __gsharp_state=2;
@@ -104,9 +104,9 @@ return;
 case 2:
 __gsharp_switch_1_state_2:
 {
-for(__gsharp_ctx->__gsharp_id_14_k=0;__gsharp_ctx->__gsharp_id_14_k<16;++__gsharp_ctx->__gsharp_id_14_k)
+for(__gsharp_ctx->__gsharp_id_14_k=0;__gsharp_ctx->__gsharp_id_14_k<16;__gsharp_ctx->__gsharp_id_14_k=__gsharp_add_i32(__gsharp_ctx->__gsharp_id_14_k,1))
 {
-__gsharp_ctx->__gsharp_id_12_cValue+=__gsharp_ctx->__gsharp_id_4_As[__gsharp_ctx->__gsharp_id_9_ty*16+__gsharp_ctx->__gsharp_id_14_k]*__gsharp_ctx->__gsharp_id_5_Bs[__gsharp_ctx->__gsharp_id_14_k*16+__gsharp_ctx->__gsharp_id_8_tx];
+__gsharp_ctx->__gsharp_id_12_cValue+=__gsharp_ctx->__gsharp_id_4_As[__gsharp_add_i32(__gsharp_mul_i32(__gsharp_ctx->__gsharp_id_9_ty,16),__gsharp_ctx->__gsharp_id_14_k)]*__gsharp_ctx->__gsharp_id_5_Bs[__gsharp_add_i32(__gsharp_mul_i32(__gsharp_ctx->__gsharp_id_14_k,16),__gsharp_ctx->__gsharp_id_8_tx)];
 }
 __gsharp_yielded_for_block_barrier=true;
 __gsharp_state=3;
@@ -120,7 +120,7 @@ goto __gsharp_switch_1_state_4;
 case 4:
 __gsharp_switch_1_state_4:
 {
-__gsharp_ctx->__gsharp_id_13_m++;
+__gsharp_ctx->__gsharp_id_13_m=__gsharp_add_i32(__gsharp_ctx->__gsharp_id_13_m,1);
 goto __gsharp_switch_1_state_1;
 goto __gsharp_switch_1_state_5;
 }
@@ -129,7 +129,7 @@ __gsharp_switch_1_state_5:
 {
 if(__gsharp_ctx->__gsharp_id_10_row<__gsharp_id_3_n&&__gsharp_ctx->__gsharp_id_11_col<__gsharp_id_3_n)
 {
-__gsharp_id_2_c[__gsharp_ctx->__gsharp_id_10_row*__gsharp_id_3_n+__gsharp_ctx->__gsharp_id_11_col]=__gsharp_ctx->__gsharp_id_12_cValue;
+__gsharp_id_2_c[__gsharp_add_i32(__gsharp_mul_i32(__gsharp_ctx->__gsharp_id_10_row,__gsharp_id_3_n),__gsharp_ctx->__gsharp_id_11_col)]=__gsharp_ctx->__gsharp_id_12_cValue;
 }
 __gsharp_state=-1;
 return;
@@ -333,8 +333,19 @@ throw new global::System.ArgumentNullException(nameof(c));
 if (c.Length == 0){
 throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(c));
 }
+var a_source = a;
+if (!global::System.Object.ReferenceEquals(a, c))
+{
 a = (global::System.Single[])a.Clone();
+}
+if (global::System.Object.ReferenceEquals(b, a_source))
+{
+b = a;
+}
+else if (!global::System.Object.ReferenceEquals(b, c))
+{
 b = (global::System.Single[])b.Clone();
+}
 var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
 var dllName = $"Kassyi.GSharp.Kernels_SnapshotTest{archSuffix}.dll";
 var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);

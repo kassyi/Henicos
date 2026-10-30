@@ -31,7 +31,8 @@ namespace Kassyi.GSharp.Compiler.Analysis;
 /// points are solved together until none grows (<see cref="UniformitySolver"/>).
 /// </para>
 /// <para>
-/// Barriers: <see cref="BarrierClassifier"/>.
+/// Barriers: <see cref="BarrierClassifier"/>. Memory written since the last barrier, which makes an element read
+/// thread-variant: <see cref="MemoryUniformity"/>.
 /// </para>
 /// <para>
 /// The graph is the spliced flow graph of the method (<see cref="SplicedFlowBuilder"/>), on which
@@ -40,8 +41,9 @@ namespace Kassyi.GSharp.Compiler.Analysis;
 /// </para>
 /// <para>
 /// [WHY] Two assumptions keep the analysis within one method, and both may miss a divergent branch: a parameter of a
-/// kernel or device function is uniform unless the caller's argument mask says otherwise, and an element read with a
-/// uniform index is uniform (memory is not followed). Fields and array elements are not values of the analysis.
+/// kernel or device function is uniform unless the caller's argument mask says otherwise, and the memory is unwritten
+/// where a device function starts. Fields and array elements are not values of the analysis themselves; an element
+/// read is as variant as its memory.
 /// </para>
 /// </remarks>
 internal sealed class UniformityAnalysis

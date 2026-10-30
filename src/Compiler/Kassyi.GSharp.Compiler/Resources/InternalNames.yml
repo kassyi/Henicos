@@ -61,6 +61,9 @@ Lowering:
     # the C# order of evaluation, so they share the group
     SequenceTempPrefix: __gsharp_seq_
     ConditionTempPrefix: __gsharp_cond_temp_
+    # The governing value of a switch statement that lowering flattens because a section holds a split point
+    # (SwitchStatementFlattener); its labels are __gsharp_SwitchSection_<id>_<section> and __gsharp_SwitchEnd_<id>
+    SwitchTempPrefix: __gsharp_switch_temp_
     AggregateTemp: __gsharp_tmp
     TupleTempPrefix: __gsharp_tuple_
     CoalesceTarget: __gsharp_coalesce_target
@@ -271,3 +274,25 @@ Struct:
   Summary: Members that the device definition of an explicit layout struct adds to fill the gaps between its fields.
   Names:
     PaddingPrefix: __gsharp_pad_
+
+IntegerSemantics:
+  Summary: >-
+    The C# integer operators and float-to-integer conversions whose result C++ leaves undefined (signed overflow,
+    shift counts, >>>, out-of-range conversions), declared for both dialects by IntegerSemantics.hpp (#722, #724).
+  Names:
+    AddInt32: { Value: __gsharp_add_i32, Prelude: IntegerSemantics.hpp }
+    AddInt64: { Value: __gsharp_add_i64, Prelude: IntegerSemantics.hpp }
+    SubtractInt32: { Value: __gsharp_sub_i32, Prelude: IntegerSemantics.hpp }
+    SubtractInt64: { Value: __gsharp_sub_i64, Prelude: IntegerSemantics.hpp }
+    MultiplyInt32: { Value: __gsharp_mul_i32, Prelude: IntegerSemantics.hpp }
+    MultiplyInt64: { Value: __gsharp_mul_i64, Prelude: IntegerSemantics.hpp }
+    NegateInt32: { Value: __gsharp_neg_i32, Prelude: IntegerSemantics.hpp }
+    NegateInt64: { Value: __gsharp_neg_i64, Prelude: IntegerSemantics.hpp }
+    ShiftLeftInt32: { Value: __gsharp_shl_i32, Prelude: IntegerSemantics.hpp }
+    ShiftLeftInt64: { Value: __gsharp_shl_i64, Prelude: IntegerSemantics.hpp }
+    UnsignedShiftRightInt32: { Value: __gsharp_ushr_i32, Prelude: IntegerSemantics.hpp }
+    UnsignedShiftRightInt64: { Value: __gsharp_ushr_i64, Prelude: IntegerSemantics.hpp }
+    ConvertToInt32: { Value: __gsharp_to_i32, Prelude: IntegerSemantics.hpp }
+    ConvertToUInt32: { Value: __gsharp_to_u32, Prelude: IntegerSemantics.hpp }
+    ConvertToInt64: { Value: __gsharp_to_i64, Prelude: IntegerSemantics.hpp }
+    ConvertToUInt64: { Value: __gsharp_to_u64, Prelude: IntegerSemantics.hpp }

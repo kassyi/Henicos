@@ -70,7 +70,8 @@ internal static class ObjectCreationHelper
             return;
         }
 
-        var constructor = context.Query.SemanticModel.GetSymbol(node) as IMethodSymbol;
+        var constructor = context.Query.SemanticModel.GetSymbol(node) as IMethodSymbol ??
+                          FindSubstitutedParameterlessConstructor(node, typeSymbol, ref context);
         if (constructor != null && typeSymbol is INamedTypeSymbol { IsGenericType: true } constructedStruct &&
             !constructedStruct.IsEqualTo(constructor.ContainingType))
         {
@@ -94,6 +95,24 @@ internal static class ObjectCreationHelper
         {
             AppendStructCreation(node, typeSymbol, constructor, argumentList, ref context);
         }
+    }
+
+    // [WHY] new T() on a type parameter binds to no constructor (Roslyn's ITypeParameterObjectCreationOperation), and C#
+    // calls the parameterless constructor of the type argument at run time (Activator.CreateInstance<T>), which runs the
+    // field initializers and the body of a declared one. Inside a generic struct the type parameter is replaced by the
+    // type argument of the construction being emitted, whose parameterless constructor is classified as if written.
+    private static IMethodSymbol? FindSubstitutedParameterlessConstructor(BaseObjectCreationExpressionSyntax node,
+        ITypeSymbol? typeSymbol, ref TranspileContext context)
+    {
+        if (typeSymbol is not INamedTypeSymbol { TypeKind: TypeKind.Struct } structType ||
+            context.Query.SemanticModel.GetTypeSymbol(node) is not ITypeParameterSymbol)
+        {
+            return null;
+        }
+
+        return structType.InstanceConstructors
+            .AsStackEnumerable()
+            .FirstOrDefault(static c => c.Parameters.Length == 0);
     }
 
     // How `new T(args)` reaches the device
@@ -122,7 +141,8 @@ internal static class ObjectCreationHelper
             return StructCreationKind.Factory;
         }
 
-        if (constructor is null or { Parameters.Length: 0 })
+        // The implicit parameterless constructor is default(T): no initializer or body runs
+        if (constructor is null or { Parameters.Length: 0, IsImplicitlyDeclared: true })
         {
             return StructCreationKind.Braces;
         }
@@ -132,6 +152,8 @@ internal static class ObjectCreationHelper
             return StructCreationKind.Mapped;
         }
 
+        // A declared parameterless constructor whose body is not here (another assembly without a record) is not
+        // positional, so it is Unsupported: T{} would skip the body and the field initializers (#609)
         return IsPositionalConstructor(typeSymbol, constructor)
             ? StructCreationKind.Braces
             : StructCreationKind.Unsupported;
@@ -306,21 +328,14 @@ internal static class ObjectCreationHelper
     }
 
     // The value itself: an expression built for it (ArgumentMatchingHelper.CreateDefaultArgument) is outside the
-    // compilation, so a member access such as float.NaN would bind to nothing. default is {}; an enum keeps its cast.
+    // compilation, so a member access such as float.NaN would bind to nothing. default is {}; an enum is its base type in
+    // C++, whose literal ConstexprLiteral writes.
     private static void EmitDefaultArgument(IParameterSymbol parameter, ref TranspileContext context)
     {
         if (parameter.ExplicitDefaultValue is not { } value)
         {
             context.Emitter.Writer.Append("{}");
             return;
-        }
-
-        if (parameter.Type.TypeKind == TypeKind.Enum)
-        {
-            using (context.Emitter.Writer.Parentheses())
-            {
-                context.Emitter.Dialect.AppendType(ref context, parameter.Type);
-            }
         }
 
         context.Emitter.Writer.Append(ConstexprLiteral.FormatCppConstant(parameter.Type, value));

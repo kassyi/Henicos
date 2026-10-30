@@ -251,12 +251,12 @@ proxy_offsets[0] = IntPtr.Zero;
 if (offsets_size > 0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_offsets, (IntPtr)offsets_size, hStream));
-proxy_offsets[0] = d_offsets;
 fixed (global::System.Int32* p_offsets = offsets)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoDAsync_v2(d_offsets, (IntPtr)p_offsets, (IntPtr)offsets_size, hStream));
 CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
 }
+proxy_offsets[0] = d_offsets;
 }
 kernelParams[0] = proxy_offsets;
 CudaException.ThrowIfError(CudaDriverApi.cuLaunchKernel(
@@ -382,8 +382,8 @@ static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Runtime__GEN56_uAlignm
 static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Runtime__GEN56_uAlignmentTestStruct,__gsharp_mb_Field5_Double2)==48,""Kassyi.GSharp.Tests.Runtime.GEN56_AlignmentTestStruct.Field5_Double2: offset"");
 #endif
 extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Runtime__NestedVectorAlignmentKernels__RoundtripKernel(__gsharp_ty_Kassyi__GSharp__Tests__Runtime__GEN56_uAlignmentTestStruct* __gsharp_id_0_data){
-(*__gsharp_id_0_data).__gsharp_mb_Field1_Byte=(unsigned char)((*__gsharp_id_0_data).__gsharp_mb_Field1_Byte+1-1);
-(*__gsharp_id_0_data).__gsharp_mb_Field4_Short=(short)((*__gsharp_id_0_data).__gsharp_mb_Field4_Short+1-1);
+(*__gsharp_id_0_data).__gsharp_mb_Field1_Byte=(unsigned char)(__gsharp_sub_i32((*__gsharp_id_0_data).__gsharp_mb_Field1_Byte+1,1));
+(*__gsharp_id_0_data).__gsharp_mb_Field4_Short=(short)(__gsharp_sub_i32((*__gsharp_id_0_data).__gsharp_mb_Field4_Short+1,1));
 }
 ";
 public static readonly string RoundtripKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +RoundtripKernel_Source;
