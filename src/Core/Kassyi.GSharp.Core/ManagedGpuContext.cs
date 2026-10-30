@@ -318,6 +318,27 @@ public static partial class ManagedGpuContext
 
     private static int LinearThreadId => ThreadIdxZ * BlockDimY * BlockDimX + ThreadIdxY * BlockDimX + ThreadIdxX;
 
+    /// <summary>
+    /// The managed form of <c>Warp.ActiveMask()</c>, to which its stub forwards (the <c>managed</c> key of
+    /// ptx_intrinsics.yml): the lanes of the calling thread's warp that exist in the block, as the native CPU prelude
+    /// (WarpAndHints.hpp) computes them (#789). Outside a managed launch it throws <see cref="GpuOnlyException"/>.
+    /// </summary>
+    /// <returns>All 32 lanes, or fewer in the last warp of a block whose size is not a multiple of 32.</returns>
+    /// <remarks>
+    /// A converged warp on the GPU reports the same lanes. Under a condition that depends on the thread, the GPU reports
+    /// only the lanes that reach the call together; the analyzer reports such a call as GSH0101 on the CPU dialects.
+    /// </remarks>
+    internal static uint ActiveMask()
+    {
+        if (!IsActive)
+        {
+            return GpuOnlyException.Throw<uint>();
+        }
+
+        var lanes = BlockDimX * BlockDimY * BlockDimZ - (LinearThreadId & ~31);
+        return lanes >= 32 ? 0xFFFFFFFFu : (1u << lanes) - 1u;
+    }
+
     // Reads the value that lane srcLane of the caller's warp published in the given plane, after checking that the lane
     // exists in the block
     private static T ReadShuffleLane<T>(int plane, int linearTid, int srcLane, string name, string location)

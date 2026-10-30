@@ -55,14 +55,16 @@ internal abstract class VectorBinaryVectorExpressionBase(
             throw new ArgumentException("Vector lengths must match for Zip operations.");
         }
 
-        var destination = _cache.Signed(workspace, evalCount, WordsPerElement, targetValues);
-        var operands = new VectorZipOperands(leftResult, rightResult, destination);
+        // A target that shares words with an input is written from the cache after the launch (#864)
+        var output = VectorOutput.Open(_cache, workspace, evalCount, WordsPerElement, targetValues, leftResult,
+            rightResult);
+        var operands = new VectorZipOperands(leftResult, rightResult, output.Destination);
         // An empty vector launches nothing: a grid of 0 blocks is an invalid launch.
         if (evalCount > 0)
         {
             DispatchKernel(workspace, operands, (uint)evalCount);
         }
-        return destination;
+        return output.Close(workspace);
     }
 
     protected GpuBigIntVectorKernels.AotContexts.VectorBinaryOperation CreateZipOp(VectorZipOperands operands) =>
