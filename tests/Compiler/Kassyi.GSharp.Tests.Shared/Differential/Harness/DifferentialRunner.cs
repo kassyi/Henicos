@@ -23,7 +23,8 @@ public static class DifferentialRunner
         CudaCapability.EnsureGpuAvailable();
 #endif
         string? testSeed = seeds is null ? DifferentialSeeds.TestSeed : null;
-        var report = Evaluate(testCase, seeds ?? DifferentialSeeds.For(testSeed), DiffPaths.Available, KnownDivergences.All, testSeed);
+        // Explicit seeds reproduce a failure: the entries' triggering inputs may be in the seeds left out, so none is stale
+        var report = Evaluate(testCase, seeds ?? DifferentialSeeds.For(testSeed), DiffPaths.Available, KnownDivergences.All, testSeed, checkStale: seeds is null);
         if (report.HasFailures)
         {
             Assert.Fail(report.ToString());
@@ -36,13 +37,15 @@ public static class DifferentialRunner
     /// <param name="paths">The paths to compare with the oracle.</param>
     /// <param name="known">The known divergences; entries of other cases are ignored.</param>
     /// <param name="testSeed">The <c>TEST_SEED</c> the seeds came from, for the report.</param>
+    /// <param name="checkStale">Whether to report known divergences that no longer reproduce; false when <paramref name="seeds"/> are only some of the seeds that run by default.</param>
     /// <exception cref="DifferentialHarnessException">The case is malformed, or the oracle threw or depends on the thread order.</exception>
     public static DifferentialReport Evaluate(
         DifferentialCase testCase,
         IReadOnlyList<int> seeds,
         IReadOnlyList<DiffPathRunner> paths,
         IReadOnlyList<KnownDivergence> known,
-        string? testSeed = null
+        string? testSeed = null,
+        bool checkStale = true
     )
     {
         if ((testCase.Oracle is null) == (testCase.Reference is null))
@@ -86,7 +89,11 @@ public static class DifferentialRunner
             Compare(testCase, seed, initial, expected, actuals, entries, report);
         }
 
-        AddStaleEntries(paths, entries, report);
+        if (checkStale)
+        {
+            AddStaleEntries(paths, entries, report);
+        }
+
         return report;
     }
 
@@ -206,14 +213,15 @@ public static class DifferentialRunner
             .Select(b => $"{b.Name}={b.FormatCell(row)}")
         );
 
-    // An entry must still differ on each listed path that ran, for at least one seed
+    // An entry must still differ on each listed path that ran, for at least one seed. A path that threw on a seed did not
+    // complete, so it says nothing about the entry
     private static void AddStaleEntries(IReadOnlyList<DiffPathRunner> paths, List<KnownDivergence> entries, DifferentialReport report)
     {
         foreach (var entry in entries)
         {
             foreach (var path in paths)
             {
-                if ((entry.Paths & path.Path) == 0)
+                if ((entry.Paths & path.Path) == 0 || report.Failures.Any(f => f.Path == path.Path))
                 {
                     continue;
                 }

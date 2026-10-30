@@ -475,6 +475,37 @@ public class HarnessTests
         }
     }
 
+    [Fact]
+    [TestTarget(ExecutionTarget.CpuExecution)]
+    [Category(TestCategory.Unit)]
+    [Scenario(TestScenario.SadPath)]
+    public void Test_KnownDivergence_OnAPathThatThrew_IsNotStale()
+    {
+        // A path that threw produced no output, so it cannot show that the entry no longer differs: only the failure is reported
+        // mutant: DifferentialRunner.cs AddStaleEntries `|| report.Failures.Any(f => f.Path == path.Path)` removed
+        KnownDivergence[] entries = [new(FakeCaseName, "sum", DiffPath.Native, Issue: 999)];
+        var report = FakeCase(DiffPath.Native, static _ => throw new InvalidOperationException("probe")).Evaluate([0], entries);
+
+        Assert.Single(report.Failures);
+        Assert.Empty(report.StaleDivergences);
+    }
+
+    [Fact]
+    [TestTarget(ExecutionTarget.CpuExecution)]
+    [Category(TestCategory.Unit)]
+    [Scenario(TestScenario.Boundary)]
+    public void Test_Runner_StaleCheck_CanBeSkippedForReproducedSeeds()
+    {
+        // A reproduced single seed may lack the input that shows the entry, so the stale check is off for explicit seeds
+        // mutant: DifferentialRunner.cs Evaluate `if (checkStale)` -> `if (true)`
+        KnownDivergence[] entries = [new(FakeCaseName, "sum", DiffPath.Native, Issue: 999)];
+        var fake = FakeCase();
+
+        Assert.Single(fake.Evaluate([0], entries).StaleDivergences);
+        var skipped = DifferentialRunner.Evaluate(fake.Case, [0], fake.Paths, entries, checkStale: false);
+        Assert.Empty(skipped.StaleDivergences);
+    }
+
     // ---- Seeds ----
 
     [Fact]
