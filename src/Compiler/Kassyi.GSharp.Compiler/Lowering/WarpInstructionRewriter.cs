@@ -1,3 +1,5 @@
+using Microsoft.CodeAnalysis.Operations;
+
 namespace Kassyi.GSharp.Compiler.Lowering;
 
 /// <summary>
@@ -5,8 +7,9 @@ namespace Kassyi.GSharp.Compiler.Lowering;
 /// the state machine can split on them.
 /// </summary>
 /// <param name="semanticModel">
-/// A semantic model of the compilation, which tells whether a later argument of a suspending call writes the variable
-/// that an earlier one reads (<see cref="ExpressionEffects"/>). Without it, the arguments are compared by name.
+/// A semantic model of the compilation, which tells whether a later argument of a suspending call or a warp shuffle
+/// writes the variable that an earlier one reads (<see cref="ExpressionEffects"/>) and which arguments are constant.
+/// Without it, the arguments are compared by name and only literals count as constant.
 /// </param>
 public class WarpInstructionRewriter(SemanticModel? semanticModel = null) : CSharpSyntaxRewriter
 {
@@ -63,84 +66,6 @@ public class WarpInstructionRewriter(SemanticModel? semanticModel = null) : CSha
 
     private string GetNextArgumentTempName() => $"{GSharpInternalNames.Lowering.ArgumentTempPrefix}{_tempCounter++}";
 
-    /// <summary>
-    /// Whether the lowering evaluates the argument at <paramref name="index"/> of a call that may suspend into a temporary
-    /// before the call, so that it is read once before the state machine splits; any other argument is read by the call,
-    /// which every resume runs again (the liveness of the cross-barrier rules follows the same rule, GSH0039).
-    /// </summary>
-    /// <remarks>
-    /// A by-value argument is spilled unless it is a literal, or an identifier whose variable no later argument writes; a
-    /// <c>ref</c> or <c>out</c> argument is not (only the indices that select its element are, <see cref="IsSpilledIndex"/>).
-    /// </remarks>
-    internal static bool IsSpilledArgument(SeparatedSyntaxList<ArgumentSyntax> arguments, int index, SemanticModel? model)
-    {
-        var argument = arguments[index];
-        return argument.Expression is not DeclarationExpressionSyntax &&
-               argument.RefKindKeyword.IsKind(SyntaxKind.None) &&
-               argument.Expression is not LiteralExpressionSyntax &&
-               (argument.Expression is not IdentifierNameSyntax || IsWrittenByLaterArgument(arguments, index, model));
-    }
-
-    /// <summary>
-    /// Whether the lowering evaluates an index of the element that a <c>ref</c> or <c>out</c> argument of a call that may
-    /// suspend selects into a temporary before the call: any index but an identifier or a literal.
-    /// </summary>
-    internal static bool IsSpilledIndex(ArgumentSyntax index) =>
-        index.Expression is not (IdentifierNameSyntax or LiteralExpressionSyntax);
-
-    // [WHY] C# reads an argument before it evaluates the next one, but an identifier argument that is not spilled is
-    // read at the call, after the spilled later arguments: one whose variable a later argument writes
-    // ('S(a, Next(ref a))') is spilled as well, so that it keeps the value C# reads (#608).
-    private static bool IsWrittenByLaterArgument(SeparatedSyntaxList<ArgumentSyntax> arguments, int index,
-        SemanticModel? model)
-    {
-        var argument = arguments[index];
-        if (argument.Expression is not IdentifierNameSyntax identifier ||
-            !argument.RefKindKeyword.IsKind(SyntaxKind.None))
-        {
-            return false;
-        }
-
-        if (model == null)
-        {
-            return arguments
-                .AsStackEnumerable()
-                .Skip(index + 1)
-                .Any(identifier.Identifier.ValueText, static (later, name) => WritesByName(later, name));
-        }
-
-        var read = ExpressionEffects.Of(identifier, model);
-        return arguments
-            .AsStackEnumerable()
-            .Skip(index + 1)
-            .Any((Read: read, Model: model), static (later, s) => s.Read.InterferesWith(
-                later.RefKindKeyword.IsKind(SyntaxKind.None)
-                    ? ExpressionEffects.Of(later.Expression, s.Model)
-                    : ExpressionEffects.OfLocation(later.Expression, s.Model)
-            ));
-    }
-
-    // Without a semantic model: whether argument holds a ref / out argument, an assignment or an increment of the
-    // variable named name
-    private static bool WritesByName(ArgumentSyntax argument, string name) =>
-        argument
-            .DescendantNodes()
-            .AsStackEnumerable()
-            .Any(name, static (node, n) => node switch
-            {
-                ArgumentSyntax { RefKindKeyword.RawKind: not (int)SyntaxKind.None } byRef =>
-                    IsNamed(byRef.Expression, n),
-                AssignmentExpressionSyntax assignment => IsNamed(assignment.Left, n),
-                PrefixUnaryExpressionSyntax prefix when prefix.IsKind(SyntaxKind.PreIncrementExpression,
-                    SyntaxKind.PreDecrementExpression) => IsNamed(prefix.Operand, n),
-                PostfixUnaryExpressionSyntax postfix when postfix.IsKind(SyntaxKind.PostIncrementExpression,
-                    SyntaxKind.PostDecrementExpression) => IsNamed(postfix.Operand, n),
-                _ => false
-            });
-
-    private static bool IsNamed(ExpressionSyntax expression, string name) =>
-        expression is IdentifierNameSyntax identifier && identifier.Identifier.ValueText == name;
-
     private static bool IsWarpPrimitive(InvocationExpressionSyntax inv) =>
         BarrierHelper.IsWarpShuffle(inv) || BarrierHelper.IsSuspendingCall(inv);
 
@@ -191,23 +116,31 @@ public class WarpInstructionRewriter(SemanticModel? semanticModel = null) : CSha
 
         public override SyntaxNode? VisitInvocationExpression(InvocationExpressionSyntax node)
         {
-            // First, visit children to handle nested warp instructions (e.g., WarpShuffle(WarpShuffle(x)))
-            var visited = base.VisitInvocationExpression(node);
-            if (visited is not InvocationExpressionSyntax visitedNode)
+            InvocationExpressionSyntax visitedNode;
+            if (IsWarpPrimitive(node) && HasNestedWarpPrimitiveArgument(node))
             {
-                return visited;
+                visitedNode = VisitArgumentsInOrder(node);
             }
-
-            if (!IsWarpPrimitive(visitedNode))
+            else
             {
-                return visitedNode;
+                // First, visit children to handle nested warp instructions (e.g., WarpShuffle(WarpShuffle(x)))
+                var visited = base.VisitInvocationExpression(node);
+                if (visited is not InvocationExpressionSyntax visitedInvocation)
+                {
+                    return visited;
+                }
+
+                if (!IsWarpPrimitive(visitedInvocation))
+                {
+                    return visitedInvocation;
+                }
+
+                // [WHY] A shuffle is split as well: its value is published before the state boundary and read again
+                // after it, together with the other arguments in parameter order (#788)
+                visitedNode = SpillArguments(visitedInvocation);
             }
 
             var isSuspendingCall = BarrierHelper.IsSuspendingCall(visitedNode);
-            if (isSuspendingCall)
-            {
-                visitedNode = SpillArguments(visitedNode);
-            }
 
             switch (node.Parent)
             {
@@ -231,8 +164,41 @@ public class WarpInstructionRewriter(SemanticModel? semanticModel = null) : CSha
             return SyntaxFactory.IdentifierName(tempName).WithTriviaFrom(visitedNode);
         }
 
-        // [WHY] A suspended call is executed again on every resume, so each argument must evaluate to the same value: an
-        // argument with side effects or one that reads memory other threads change is evaluated once, before the call.
+        private static bool HasNestedWarpPrimitiveArgument(InvocationExpressionSyntax call) =>
+            call.ArgumentList.Arguments
+                .AsStackEnumerable()
+                .Any(static argument => ContainsWarpPrimitive(argument));
+
+        // [WHY] C# evaluates the arguments in the order written, so an argument that holds a suspending call or a shuffle
+        // runs after the arguments before it and before the ones after it. Hoisting the nested call first (the children
+        // before the call) would run it before the earlier arguments are evaluated, which then see what it wrote. Each
+        // argument is hoisted and evaluated once in turn instead, so the nested call lands between them (#788 review).
+        // <invocation>(<spilled argument 0>, <nested call temp>, ...)
+        private InvocationExpressionSyntax VisitArgumentsInOrder(InvocationExpressionSyntax call)
+        {
+            var expression = Visit(call.Expression) as ExpressionSyntax
+                             ?? throw new InvalidOperationException("Warp instruction hoisting removed a callee.");
+            // [WHY] Whether an argument stays in place is decided on the arguments as written, as the liveness of the
+            // cross-barrier rules decides it (SpilledArguments): an earlier argument already replaced by its temporary
+            // would no longer show what it writes
+            var written = call.ArgumentList.Arguments;
+            var arguments = written;
+            for (var i = 0; i < arguments.Count; i++)
+            {
+                var visited = Visit(arguments[i]) as ArgumentSyntax
+                              ?? throw new InvalidOperationException("Warp instruction hoisting removed an argument.");
+                arguments = arguments.Replace(arguments[i], SpillArgument(written, i, visited));
+            }
+
+            return call
+                .WithExpression(expression)
+                .WithArgumentList(call.ArgumentList.WithArguments(arguments));
+        }
+
+        // [WHY] A suspended call is executed again on every resume, and a warp shuffle reads its arguments on both sides of
+        // its state boundary, so each argument must evaluate to the same value: an argument with side effects or one that
+        // reads memory other threads change is evaluated once, before the call, in the order written (named arguments
+        // too, whatever their parameter order).
         private InvocationExpressionSyntax SpillArguments(InvocationExpressionSyntax call)
         {
             var arguments = call.ArgumentList.Arguments;
@@ -241,7 +207,7 @@ public class WarpInstructionRewriter(SemanticModel? semanticModel = null) : CSha
             for (var i = 0; i < arguments.Count; i++)
             {
                 var argument = arguments[i];
-                var spilled = SpillArgument(argument, IsSpilledArgument(arguments, i, parent._semanticModel));
+                var spilled = SpillArgument(arguments, i, argument);
                 changed |= spilled != argument;
                 spilledArguments.Add(spilled);
             }
@@ -252,7 +218,10 @@ public class WarpInstructionRewriter(SemanticModel? semanticModel = null) : CSha
                 : call;
         }
 
-        private ArgumentSyntax SpillArgument(ArgumentSyntax argument, bool isSpilled)
+        // arguments are the arguments as written, which decide what stays in place (SpilledArguments); argument is the one
+        // at index with its nested calls already hoisted
+        private ArgumentSyntax SpillArgument(SeparatedSyntaxList<ArgumentSyntax> arguments, int index,
+            ArgumentSyntax argument)
         {
             if (argument.Expression is DeclarationExpressionSyntax
                 {
@@ -281,49 +250,88 @@ public class WarpInstructionRewriter(SemanticModel? semanticModel = null) : CSha
                     .WithTriviaFrom(declarationExpression));
             }
 
-            if (!argument.RefKindKeyword.IsKind(SyntaxKind.None))
+            var model = parent._semanticModel;
+            if (SpilledArguments.IsPassedByReference(argument, model))
             {
-                // The reference itself must stay a variable, so only the indices that select it are evaluated once
-                return argument.Expression is ElementAccessExpressionSyntax elementAccess
-                    ? argument.WithExpression(SpillIndices(elementAccess))
-                    : argument;
+                // The reference itself must stay a variable, so only what selects it is evaluated once
+                return argument.WithExpression(SpillLocation(argument.Expression, arguments, index));
             }
 
-            return isSpilled ? argument.WithExpression(Spill(argument.Expression)) : argument;
+            // [WHY] A constant expression stays in place like a literal: it keeps its implicit constant conversion
+            // ('Half / 2' to a uint parameter), which a variable lacks
+            return SpilledArguments.CanStayInPlace(argument.Expression, arguments, index, model)
+                ? argument
+                : argument.WithExpression(Spill(argument.Expression));
         }
 
-        private ElementAccessExpressionSyntax SpillIndices(ElementAccessExpressionSyntax elementAccess)
+        // [WHY] A ref, out or in argument names a storage location, and C# fixes which one when it evaluates the
+        // argument: the array of an element and its indices are evaluated once (in the order written: the array, then
+        // each index, outer accesses first), and a member access selects within its receiver. The location itself is not
+        // copied, so that the callee writes and reads the variable (#788). index is the position of the argument.
+        private ExpressionSyntax SpillLocation(ExpressionSyntax location, SeparatedSyntaxList<ArgumentSyntax> arguments,
+            int index)
         {
-            // Outer indices of a jagged access are evaluated before inner ones, so the receiver is spilled first
-            var receiver = elementAccess.Expression is ElementAccessExpressionSyntax inner
-                ? SpillIndices(inner)
-                : elementAccess.Expression;
-
-            var indices = elementAccess.ArgumentList.Arguments;
-            var spilledIndices = ImmutableArray.CreateBuilder<ArgumentSyntax>(indices.Count);
-            foreach (var index in indices)
+            switch (location)
             {
-                spilledIndices.Add(IsSpilledIndex(index) ? index.WithExpression(Spill(index.Expression)) : index);
+                case ParenthesizedExpressionSyntax parenthesized:
+                    return parenthesized.WithExpression(SpillLocation(parenthesized.Expression, arguments, index));
+                case MemberAccessExpressionSyntax { RawKind: (int)SyntaxKind.SimpleMemberAccessExpression } member:
+                    return member.WithExpression(SpillLocation(member.Expression, arguments, index));
+                case ElementAccessExpressionSyntax elementAccess:
+                    var receiver = SpillReceiver(elementAccess.Expression, arguments, index);
+                    var indices = elementAccess.ArgumentList.Arguments;
+                    var spilledIndices = ImmutableArray.CreateBuilder<ArgumentSyntax>(indices.Count);
+                    foreach (var elementIndex in indices)
+                    {
+                        spilledIndices.Add(
+                            SpilledArguments.CanStayInPlace(elementIndex.Expression, arguments, index,
+                                parent._semanticModel)
+                            ? elementIndex
+                            : elementIndex.WithExpression(Spill(elementIndex.Expression)));
+                    }
+
+                    return elementAccess
+                        .WithExpression(receiver)
+                        .WithArgumentList(elementAccess.ArgumentList.WithArguments(
+                            SyntaxFactory.SeparatedList(spilledIndices, indices.GetSeparators())));
+                default:
+                    return location;
+            }
+        }
+
+        // The receiver of an element access in a location: an array that cannot stay in place is evaluated once
+        // (SpilledArguments.IsSpilledReceiver); any other receiver is a location of its own
+        private ExpressionSyntax SpillReceiver(ExpressionSyntax receiver, SeparatedSyntaxList<ArgumentSyntax> arguments,
+            int index)
+        {
+            var model = parent._semanticModel;
+            if (SpilledArguments.IsSpilledReceiver(receiver, arguments, index, model))
+            {
+                return Spill(receiver);
             }
 
-            return elementAccess
-                .WithExpression(receiver)
-                .WithArgumentList(elementAccess.ArgumentList.WithArguments(
-                    SyntaxFactory.SeparatedList(spilledIndices, indices.GetSeparators())));
+            return model != null &&
+                   model.GetTypeSymbol(receiver) is IArrayTypeSymbol &&
+                   !StackArrayLocals.IsStackArrayReference(receiver, model)
+                ? receiver
+                : SpillLocation(receiver, arguments, index);
         }
 
         private IdentifierNameSyntax Spill(ExpressionSyntax expression)
         {
             var tempName = parent.GetNextArgumentTempName();
-            hoistedAssignments.Add(CreateTempDeclaration(tempName, expression.WithoutTrivia()));
+            hoistedAssignments.Add(CreateTempDeclaration(tempName, expression.WithoutTrivia(),
+                new SyntaxAnnotation(LoweringAnnotations.ArgumentTempAnnotationKind)));
             return SyntaxFactory.IdentifierName(tempName).WithTriviaFrom(expression);
         }
 
         // var <tempName> = <value>;
-        internal static LocalDeclarationStatementSyntax CreateTempDeclaration(string tempName, ExpressionSyntax value)
+        internal static LocalDeclarationStatementSyntax CreateTempDeclaration(string tempName, ExpressionSyntax value,
+            params SyntaxAnnotation[] declaratorAnnotations)
         {
             var declarator = SyntaxFactory.VariableDeclarator(SyntaxFactory.Identifier(tempName))
-                .WithInitializer(SyntaxFactory.EqualsValueClause(value));
+                .WithInitializer(SyntaxFactory.EqualsValueClause(value))
+                .WithAdditionalAnnotations(declaratorAnnotations);
             return SyntaxFactory.LocalDeclarationStatement(
                 SyntaxFactory.VariableDeclaration(
                     SyntaxFactory.IdentifierName("var"),

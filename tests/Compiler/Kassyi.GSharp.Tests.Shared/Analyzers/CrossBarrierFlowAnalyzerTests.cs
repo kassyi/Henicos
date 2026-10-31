@@ -54,6 +54,24 @@ public class CrossBarrierFlowAnalyzerTests : TranspilerTestBase
             actual);
     }
 
+    // The liveness follows the rule the lowering spills arguments by (SpilledArguments, #850): a span that an earlier
+    // argument changes stays in place, so the call reads it again when it resumes
+    [Fact]
+    [Scenario(TestScenario.SadPath)]
+    public async Task Test_CrossBarrierSpilledArgument_SpanChangedByAnEarlierArgumentIsReported()
+    {
+        var diagnostics = await RoslynTestUtility
+            .TestAnalyzer("Analyzers/BarrierUsage/CrossBarrierSpilledArgumentKernels.cu.cs", s_analyzer)
+            .GetDiagnosticsAsync();
+
+        var actual = diagnostics
+            .Select(static d => ReportedDiagnostic.From(DiagnosticOrigin.Analyzer, d))
+            .Select(static d => (d.Id, d.StartLine, d.StartColumn, d.EndLine, d.EndColumn))
+            .ToList();
+
+        Assert.Equal([(GSharpDiagnostics.CrossBarrierRefStructProhibited.Id, 27, 59, 27, 60)], actual);
+    }
+
     // A by-value ref struct parameter cannot be kept in the frame either: the CPU dialects pass the original argument
     // again when the state machine resumes, so a change made before a split point is lost (#965)
     [Fact]

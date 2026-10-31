@@ -247,6 +247,34 @@ public class BarrierUsageAnalyzerTests : TranspilerTestBase
                                .ReportsErrorsAsync("GSH0062");
     }
 
+    // A reference into the result of a call cannot be kept across a resume, also through a member access, parentheses or
+    // an in parameter without the keyword (#788 review); variables stay allowed
+    [Fact]
+    [Scenario(TestScenario.SadPath)]
+    public async Task Test_RefReturnMemberArgument_ReportsGSH0062AtTheArgument()
+    {
+        var actual = await RunAsync("Analyzers/BarrierUsage/RefReturnMemberArgumentKernels.cu.cs");
+
+        Assert.Equal(
+            [
+                (GSharpDiagnostics.SuspendingCallInUnsupportedContext.Id, 38, 25, 38, 51),
+                (GSharpDiagnostics.SuspendingCallInUnsupportedContext.Id, 39, 25, 39, 53),
+                (GSharpDiagnostics.SuspendingCallInUnsupportedContext.Id, 41, 28, 41, 45)
+            ],
+            actual);
+    }
+
+    // A field of a value passed to an in parameter without the keyword is a copy, and ref this.F names a field of the
+    // struct itself; neither is a by-reference argument that GSH0062 reports (#850 review)
+    [Fact]
+    [Scenario(TestScenario.HappyPath)]
+    public async Task Test_ValueFieldOrOwnFieldArgument_DoesNotReportGSH0062()
+    {
+        var actual = await RunAsync("Analyzers/BarrierUsage/ValueFieldInArgumentKernels.cu.cs");
+
+        Assert.DoesNotContain(actual, static d => d.Id == GSharpDiagnostics.SuspendingCallInUnsupportedContext.Id);
+    }
+
     [Fact]
     [Scenario(TestScenario.SadPath)]
     public async Task Test_AsyncYieldInKernel_ReportsGSH0046()

@@ -14,9 +14,9 @@ using Xunit;
 namespace Kassyi.GSharp.Tests.Generators.StateMachines;
 
 /// <summary>
-/// Tier 2 tests for the arguments of a suspending call that lowering evaluates into temporaries
+/// Tier 2 tests for the arguments of a suspending call or a warp shuffle that lowering evaluates into temporaries
 /// (<see cref="WarpInstructionRewriter"/>): an identifier argument whose variable a later argument writes is evaluated
-/// first as well, as C# reads it (#608).
+/// first as well, as C# reads it (#608), and the arguments of a shuffle are evaluated once, in the order written (#788).
 /// </summary>
 [Category(TestCategory.Compiler)]
 public class SuspendingCallArgumentOrderTests
@@ -70,6 +70,37 @@ public class SuspendingCallArgumentOrderTests
         var first = call0.ArgumentList.Arguments[0].Expression.ToString();
         Assert.Equal(spillsFirstArgument, first.StartsWith(GSharpInternalNames.Lowering.ArgumentTempPrefix,
             StringComparison.Ordinal));
+    }
+
+    // A shuffle publishes its value before its state boundary and reads its arguments again after it, so its arguments
+    // are evaluated once into temporaries, in the order written, though named out of parameter order (#788)
+    [Fact]
+    [Scenario(TestScenario.HappyPath)]
+    public void Rewrite_WarpShuffle_SpillsNamedArgumentsInTheOrderWritten()
+    {
+        var block = (BlockSyntax)SyntaxFactory.ParseStatement(
+            "{ x = Warp.ShuffleSync(var: v++, width: W(), mask: M(), srcLane: L()); }");
+        var invocation = block.DescendantNodes().OfType<InvocationExpressionSyntax>().First();
+        block = block.ReplaceNode(invocation, invocation.WithAdditionalAnnotations(
+            new SyntaxAnnotation(LoweringAnnotations.SyncIntrinsicAnnotationKind,
+                LoweringAnnotations.ShuffleSyncAnnotationData)));
+
+        var rewritten = new WarpInstructionRewriter().Rewrite(block);
+
+        var temps = rewritten.Statements
+            .OfType<LocalDeclarationStatementSyntax>()
+            .Select(static s => s.Declaration.Variables[0])
+            .Where(static v => v.Identifier.ValueText.StartsWith(GSharpInternalNames.Lowering.ArgumentTempPrefix,
+                StringComparison.Ordinal))
+            .ToArray();
+        Assert.Equal(["v++", "W()", "M()", "L()"], temps.Select(static t => t.Initializer?.Value.ToString()).ToArray());
+        var shuffle = rewritten.DescendantNodes()
+            .OfType<InvocationExpressionSyntax>()
+            .Single(static i => i.Expression.ToString() == "Warp.ShuffleSync");
+        Assert.Equal(
+            temps.Select(static t => t.Identifier.ValueText).ToArray(),
+            shuffle.ArgumentList.Arguments.Select(static a => a.Expression.ToString()).ToArray()
+        );
     }
 
     // <frame>__gsharp_arg_temp_<n> = <value>; in statement order (the frame access stripped)

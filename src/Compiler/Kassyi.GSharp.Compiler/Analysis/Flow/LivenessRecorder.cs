@@ -306,9 +306,9 @@ internal sealed class LivenessRecorder : IFlowRecorder
         _events[node].AddRange(after);
     }
 
-    // Whether a use at syntax inside call is evaluated once before the call splits: in an argument that the lowering
-    // spills to a temporary (WarpInstructionRewriter.IsSpilledArgument), in the value that a shuffle publishes, or in the
-    // arguments of a barrier
+    // Whether a use at syntax inside call is evaluated once before the call splits: in an argument or a part of a
+    // by-reference argument that the lowering spills to a temporary (SpilledArguments, the rule the lowering spills by),
+    // in the value that a shuffle publishes, or in the arguments of a barrier
     private bool IsEvaluatedBeforeSplit(IInvocationOperation call, SyntaxNode syntax)
     {
         var intrinsic = SyncIntrinsicClassifier.Classify(call.TargetMethod);
@@ -331,29 +331,10 @@ internal sealed class LivenessRecorder : IFlowRecorder
         {
             if (arguments[i].Span.Contains(syntax.Span))
             {
-                return arguments[i].RefKindKeyword.IsKind(SyntaxKind.None)
-                    ? WarpInstructionRewriter.IsSpilledArgument(arguments, i, _model)
-                    : IsInSpilledIndex(arguments[i].Expression, syntax);
+                return SpilledArguments.IsPassedByReference(arguments[i], _model)
+                    ? SpilledArguments.IsInSpilledLocationPart(arguments[i].Expression, syntax, arguments, i, _model)
+                    : SpilledArguments.IsSpilledArgument(arguments, i, _model);
             }
-        }
-
-        return false;
-    }
-
-    // ref a[i][j]: whether syntax lies in an index that the lowering spills
-    private static bool IsInSpilledIndex(ExpressionSyntax expression, SyntaxNode syntax)
-    {
-        while (expression is ElementAccessExpressionSyntax elementAccess)
-        {
-            foreach (var index in elementAccess.ArgumentList.Arguments)
-            {
-                if (index.Span.Contains(syntax.Span))
-                {
-                    return WarpInstructionRewriter.IsSpilledIndex(index);
-                }
-            }
-
-            expression = elementAccess.Expression;
         }
 
         return false;

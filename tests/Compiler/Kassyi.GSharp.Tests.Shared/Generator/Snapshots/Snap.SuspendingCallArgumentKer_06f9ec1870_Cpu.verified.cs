@@ -681,8 +681,7 @@ bool __gsharp_yielded_for_grid_sync = false;
 bool __gsharp_yielded_for_block_barrier = false;
 int __gsharp_id_2_tid;
 int __gsharp_arg_temp_0;
-int __gsharp_arg_temp_1;
-int __gsharp_call_temp_2;
+int __gsharp_call_temp_1;
 __gsharp_frame_Kassyi__GSharp__Tests__Shared__Syntax__SuspendingCallArgumentKernels__PairSum __gsharp_call_frame_0;
 };
 extern ""C"" __declspec(dllexport) void __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__SuspendingCallArgumentKernels__ReorderedNamedArgumentsKernel(GSharpArray<int> __gsharp_id_0_input, GSharpArray<int> __gsharp_id_1_output, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__SuspendingCallArgumentKernels__ReorderedNamedArgumentsKernel* __gsharp_ctx){
@@ -696,19 +695,18 @@ case 0:
 __gsharp_switch_1_state_0:
 {
 __gsharp_ctx->__gsharp_id_2_tid=(int)threadIdx.x;
-__gsharp_ctx->__gsharp_arg_temp_0=1;
-__gsharp_ctx->__gsharp_arg_temp_1=__gsharp_add_i32(__gsharp_id_0_input[__gsharp_ctx->__gsharp_id_2_tid],1);
+__gsharp_ctx->__gsharp_arg_temp_0=__gsharp_add_i32(__gsharp_id_0_input[__gsharp_ctx->__gsharp_id_2_tid],1);
 goto __gsharp_switch_1_state_1;
 }
 case 1:
 __gsharp_switch_1_state_1:
 {
-if(!__gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__SuspendingCallArgumentKernels__PairSum(__gsharp_ctx->__gsharp_arg_temp_1,2u,false,__gsharp_ctx->__gsharp_arg_temp_0,&__gsharp_ctx->__gsharp_call_frame_0,__gsharp_root,&(__gsharp_ctx->__gsharp_call_temp_2)))
+if(!__gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__SuspendingCallArgumentKernels__PairSum(__gsharp_ctx->__gsharp_arg_temp_0,2u,false,1,&__gsharp_ctx->__gsharp_call_frame_0,__gsharp_root,&(__gsharp_ctx->__gsharp_call_temp_1)))
 {
 __gsharp_state=1;
 return;
 }
-__gsharp_id_1_output[__gsharp_ctx->__gsharp_id_2_tid]=__gsharp_ctx->__gsharp_call_temp_2;
+__gsharp_id_1_output[__gsharp_ctx->__gsharp_id_2_tid]=__gsharp_ctx->__gsharp_call_temp_1;
 __gsharp_state=-1;
 return;
 }
@@ -794,9 +792,8 @@ public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__SuspendingC
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
 public int tid;
-public global::Kassyi.GSharp.Tests.Shared.Syntax.PacketColor __gsharp_arg_temp_0;
-public int __gsharp_arg_temp_1;
-public int __gsharp_call_temp_2;
+public int __gsharp_arg_temp_0;
+public int __gsharp_call_temp_1;
 internal global::Kassyi.GSharp.Tests.Shared.Syntax.SuspendingCallArgumentKernels.__gsharp_frame_Kassyi__GSharp__Tests__Shared__Syntax__SuspendingCallArgumentKernels__PairSum __gsharp_call_frame_0 = new();
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
@@ -807,20 +804,19 @@ switch (__gsharp_ctx.__gsharp_state)
 case 0:
 {
 __gsharp_ctx.tid = global::Kassyi.GSharp.Core.ThreadIndex.X;
-__gsharp_ctx.__gsharp_arg_temp_0 = global::Kassyi.GSharp.Tests.Shared.Syntax.PacketColor.Green;
-__gsharp_ctx.__gsharp_arg_temp_1 = input[__gsharp_ctx.tid] + 1;
+__gsharp_ctx.__gsharp_arg_temp_0 = input[__gsharp_ctx.tid] + 1;
 goto case 1;
 }
 
 case 1:
 {
-if (!global::Kassyi.GSharp.Tests.Shared.Syntax.SuspendingCallArgumentKernels.__gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__SuspendingCallArgumentKernels__PairSum(__gsharp_ctx.__gsharp_arg_temp_1, 2u, false, __gsharp_ctx.__gsharp_arg_temp_0, __gsharp_ctx.__gsharp_call_frame_0, ref __gsharp_ctx.__gsharp_call_temp_2))
+if (!global::Kassyi.GSharp.Tests.Shared.Syntax.SuspendingCallArgumentKernels.__gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__SuspendingCallArgumentKernels__PairSum(__gsharp_ctx.__gsharp_arg_temp_0, 2u, false, global::Kassyi.GSharp.Tests.Shared.Syntax.PacketColor.Green, __gsharp_ctx.__gsharp_call_frame_0, ref __gsharp_ctx.__gsharp_call_temp_1))
 {
 __gsharp_ctx.__gsharp_state = 1;
 return;
 }
 
-output[__gsharp_ctx.tid] = __gsharp_ctx.__gsharp_call_temp_2;
+output[__gsharp_ctx.tid] = __gsharp_ctx.__gsharp_call_temp_1;
 __gsharp_ctx.__gsharp_state = -1;
 return;
 }
