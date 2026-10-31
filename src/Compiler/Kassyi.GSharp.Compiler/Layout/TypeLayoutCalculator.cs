@@ -5,8 +5,6 @@ namespace Kassyi.GSharp.Compiler.Layout;
 /// </summary>
 internal static class TypeLayoutCalculator
 {
-    private static readonly ITranspilerDialect s_hostDialect = new StandardCppDialect();
-
     /// <summary>Determines whether the type requires custom native struct generation on the host.</summary>
     /// <remarks>
     /// This is the host marshaling classification (native shadow structs), not the device one: unlike
@@ -191,7 +189,7 @@ internal static class TypeLayoutCalculator
                 }
 
                 if (member.Type is INamedTypeSymbol { TypeKind: TypeKind.Struct } nested &&
-                    !TryGetHostElementLayout(nested, out _))
+                    !TryGetHostLayout(nested, out _))
                 {
                     return $"field '{member.Name}' of type '{FormatTypeName(nested)}': " +
                            DescribeLayoutDifference(nested, dialect);
@@ -405,7 +403,7 @@ internal static class TypeLayoutCalculator
 
         foreach (var member in StructAbiMembers.Get(structType))
         {
-            if (!TryGetHostElementLayout(member.Type, out var elemHost))
+            if (!TryGetHostLayout(member.Type, out var elemHost))
             {
                 return new HostLayout(false, 0, 0, ImmutableArray<FieldLayout>.Empty);
             }
@@ -438,7 +436,16 @@ internal static class TypeLayoutCalculator
         return new HostLayout(true, hostSize, hostMaxAlign, hostFieldsBuilder.ToImmutable());
     }
 
-    private static bool TryGetHostElementLayout(ITypeSymbol type, out TypeLayout layout)
+    /// <summary>
+    /// The size and alignment of <paramref name="type"/> in host CLR memory; false when the CLR decides it at run time
+    /// (a reference, an array, or a struct with one of them or with <c>LayoutKind.Auto</c>).
+    /// </summary>
+    /// <remarks>
+    /// A struct is laid out from the fields Roslyn shows. A BCL struct read from a reference assembly shows none of its
+    /// private fields, so the answer is wrong for it (<c>decimal</c> and <c>DateTime</c> come out as 1 byte); such a
+    /// struct has no device representation, so a layout that holds one is reported before this size is used.
+    /// </remarks>
+    public static bool TryGetHostLayout(ITypeSymbol type, out TypeLayout layout)
     {
         if (type.IsReferenceType || type.IsArrayLikeType() || type.IsNullableArrayLike())
         {
@@ -449,16 +456,16 @@ internal static class TypeLayoutCalculator
         if (type is IPointerTypeSymbol or IFunctionPointerTypeSymbol ||
             type.SpecialType is SpecialType.System_IntPtr or SpecialType.System_UIntPtr)
         {
-            layout = s_hostDialect.PointerLayout;
+            layout = HostLeafLayouts.Pointer;
             return true;
         }
 
         if (type is INamedTypeSymbol { TypeKind: TypeKind.Enum, EnumUnderlyingType: { } enumUnderlyingType })
         {
-            return TryGetHostElementLayout(enumUnderlyingType, out layout);
+            return TryGetHostLayout(enumUnderlyingType, out layout);
         }
 
-        if (s_hostDialect.TryGetTypeLayout(type, out layout))
+        if (HostLeafLayouts.TryGet(type, out layout))
         {
             return true;
         }
@@ -468,7 +475,7 @@ internal static class TypeLayoutCalculator
                 OriginalDefinition.SpecialType: SpecialType.System_Nullable_T, TypeArguments.Length: 1
             } nullableType)
         {
-            if (!TryGetHostElementLayout(nullableType.TypeArguments[0], out var valLayout))
+            if (!TryGetHostLayout(nullableType.TypeArguments[0], out var valLayout))
             {
                 layout = default;
                 return false;
@@ -542,7 +549,7 @@ internal static class TypeLayoutCalculator
             } nullableType)
         {
             var elemD = GetDeviceLayout(nullableType.TypeArguments[0], dialect);
-            if (!TryGetHostElementLayout(nullableType.TypeArguments[0], out var elemH) || elemD.Size != elemH.Size)
+            if (!TryGetHostLayout(nullableType.TypeArguments[0], out var elemH) || elemD.Size != elemH.Size)
             {
                 return false;
             }
@@ -552,7 +559,7 @@ internal static class TypeLayoutCalculator
 
         if (dialect.TryGetTypeLayout(memberType, out var mappedD))
         {
-            return TryGetHostElementLayout(memberType, out var mappedH) && mappedD.Size == mappedH.Size;
+            return TryGetHostLayout(memberType, out var mappedH) && mappedD.Size == mappedH.Size;
         }
 
         if (memberType is INamedTypeSymbol { TypeKind: TypeKind.Struct } nestedStruct)

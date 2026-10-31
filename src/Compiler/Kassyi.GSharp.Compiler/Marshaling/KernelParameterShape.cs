@@ -79,8 +79,21 @@ internal readonly record struct ParameterTransfer(
                 null);
         }
 
-        if (!marshaledType.TryGetArrayLikeElementType(out var element) ||
-            !KernelParameterShape.IsConverted(element, dialect))
+        return marshaledType.TryGetArrayLikeElementType(out var element) ? CreateForElement(element, dialect) : default;
+    }
+
+    /// <summary>
+    /// The transfer of the auto result array of a kernel returning <paramref name="returnType"/> under
+    /// <paramref name="dialect"/>: converted element by element when <see cref="KernelParameterShape.IsConvertedReturn"/>,
+    /// otherwise <see langword="default"/>.
+    /// </summary>
+    public static ParameterTransfer CreateForReturn(ITypeSymbol returnType, ITranspilerDialect dialect) =>
+        KernelParameterShape.IsConvertedReturn(returnType, dialect) ? CreateForElement(returnType, dialect) : default;
+
+    // The transfer of the elements of an array of <element>: converted through a shadow array when IsConverted
+    private static ParameterTransfer CreateForElement(ITypeSymbol element, ITranspilerDialect dialect)
+    {
+        if (!KernelParameterShape.IsConverted(element, dialect))
         {
             return default;
         }
@@ -367,6 +380,14 @@ internal readonly record struct KernelParameterShape
         element is INamedTypeSymbol named &&
         TypeLayoutCalculator.IsUserStruct(named) &&
         TypeLayoutCalculator.GetStructLayout(named, dialect).Transfer != TransferClass.Identical;
+
+    /// <summary>
+    /// Whether the auto result array of a kernel returning <paramref name="returnType"/> is read back element by element
+    /// under <paramref name="dialect"/> (#704): an unmanaged user struct that <see cref="IsConverted"/>. A managed return
+    /// type is GSH0004 and gets no conversion.
+    /// </summary>
+    public static bool IsConvertedReturn(ITypeSymbol returnType, ITranspilerDialect dialect) =>
+        returnType.IsUnmanagedType && IsConverted(returnType, dialect);
 
     // A user struct lives on the device in its native shadow layout, which the wrapper class declares as AotContexts.*
     private static string? GetBufferElementTypeName(ITypeSymbol element) =>

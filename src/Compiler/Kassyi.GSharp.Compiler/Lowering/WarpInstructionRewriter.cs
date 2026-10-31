@@ -178,13 +178,16 @@ public class WarpInstructionRewriter(SemanticModel? semanticModel = null) : CSha
         {
             var expression = Visit(call.Expression) as ExpressionSyntax
                              ?? throw new InvalidOperationException("Warp instruction hoisting removed a callee.");
-            var arguments = call.ArgumentList.Arguments;
+            // [WHY] Whether an argument stays in place is decided on the arguments as written, as the liveness of the
+            // cross-barrier rules decides it (SpilledArguments): an earlier argument already replaced by its temporary
+            // would no longer show what it writes
+            var written = call.ArgumentList.Arguments;
+            var arguments = written;
             for (var i = 0; i < arguments.Count; i++)
             {
                 var visited = Visit(arguments[i]) as ArgumentSyntax
                               ?? throw new InvalidOperationException("Warp instruction hoisting removed an argument.");
-                arguments = arguments.Replace(arguments[i], visited);
-                arguments = arguments.Replace(arguments[i], SpillArgument(arguments, i));
+                arguments = arguments.Replace(arguments[i], SpillArgument(written, i, visited));
             }
 
             return call
@@ -204,7 +207,7 @@ public class WarpInstructionRewriter(SemanticModel? semanticModel = null) : CSha
             for (var i = 0; i < arguments.Count; i++)
             {
                 var argument = arguments[i];
-                var spilled = SpillArgument(arguments, i);
+                var spilled = SpillArgument(arguments, i, argument);
                 changed |= spilled != argument;
                 spilledArguments.Add(spilled);
             }
@@ -215,105 +218,11 @@ public class WarpInstructionRewriter(SemanticModel? semanticModel = null) : CSha
                 : call;
         }
 
-        // [WHY] What C# evaluates once, when it evaluates the argument, must not be evaluated again at the call: the
-        // spilled arguments run before it, and a suspended call evaluates what stays in place again on every resume,
-        // after the callee may have written through its ref / out arguments. An argument, an index or the array of a
-        // by-reference argument stays in place only when it is a literal, a constant, or a local or by-value parameter
-        // that no other name reaches (no ref local, ref parameter or taken address) and that no other argument of the
-        // call writes, before or after it, also by passing it by ref / out (#788). This is the one rule for all three.
-        private bool CanStayInPlace(ExpressionSyntax expression, SeparatedSyntaxList<ArgumentSyntax> arguments,
-            int index) =>
-            expression is LiteralExpressionSyntax ||
-            IsConstant(expression) ||
-            (expression is IdentifierNameSyntax identifier &&
-             IsUnaliasedVariable(identifier) &&
-             !IsWrittenByOtherArgument(identifier, arguments, index));
-
-        // A local or by-value parameter that has no other name. A name without a symbol is a temporary of lowering.
-        private bool IsUnaliasedVariable(IdentifierNameSyntax identifier)
+        // arguments are the arguments as written, which decide what stays in place (SpilledArguments); argument is the one
+        // at index with its nested calls already hoisted
+        private ArgumentSyntax SpillArgument(SeparatedSyntaxList<ArgumentSyntax> arguments, int index,
+            ArgumentSyntax argument)
         {
-            if (parent._semanticModel is not { } model)
-            {
-                return true;
-            }
-
-            return model.GetSymbol(identifier) switch
-            {
-                null => true,
-                ILocalSymbol { IsRef: false } local => !AliasedVariables.Contains(local, model.Compilation),
-                IParameterSymbol { RefKind: RefKind.None } parameter =>
-                    !AliasedVariables.Contains(parameter, model.Compilation),
-                _ => false
-            };
-        }
-
-        // [WHY] C# reads an argument before it evaluates the next one, but an identifier that is not spilled is read at
-        // the call, after the spilled arguments, and again on every resume: one whose variable another argument writes
-        // ('S(a, Next(ref a))', 'S(ref a[i], i++)', 'S(ref x, x)' with a callee that writes x) is spilled as well, so
-        // that it keeps the value C# reads (#608). An argument passed by ref / out writes its variable.
-        private bool IsWrittenByOtherArgument(IdentifierNameSyntax identifier,
-            SeparatedSyntaxList<ArgumentSyntax> arguments, int index)
-        {
-            var model = parent._semanticModel;
-            if (model == null)
-            {
-                return arguments
-                    .AsStackEnumerable()
-                    .Skip(index + 1)
-                    .Any(identifier.Identifier.ValueText, static (later, name) => WritesByName(later, name));
-            }
-
-            var read = ExpressionEffects.Of(identifier, model);
-            for (var i = 0; i < arguments.Count; i++)
-            {
-                if (i != index && read.InterferesWith(GetArgumentEffects(arguments[i], model)))
-                {
-                    return true;
-                }
-            }
-
-            return false;
-        }
-
-        // What evaluating an argument and passing it reads and writes: a ref / out argument also writes its variable,
-        // which the callee may change before it suspends
-        private static ExpressionEffects GetArgumentEffects(ArgumentSyntax argument, SemanticModel model)
-        {
-            if (argument.RefKindKeyword.IsKind(SyntaxKind.None) || argument.RefKindKeyword.IsKind(SyntaxKind.InKeyword))
-            {
-                return argument.RefKindKeyword.IsKind(SyntaxKind.None)
-                    ? ExpressionEffects.Of(argument.Expression, model)
-                    : ExpressionEffects.OfLocation(argument.Expression, model);
-            }
-
-            return ExpressionEffects.OfLocation(argument.Expression, model)
-                .Union(new ExpressionEffects(default, ExpressionEffects.RootOf(argument.Expression, model)));
-        }
-
-        // Without a semantic model: whether argument holds a ref / out argument, an assignment or an increment of the
-        // variable named name
-        private static bool WritesByName(ArgumentSyntax argument, string name) =>
-            argument
-                .DescendantNodes()
-                .AsStackEnumerable()
-                .Any(name, static (node, n) => node switch
-                {
-                    ArgumentSyntax { RefKindKeyword.RawKind: not (int)SyntaxKind.None } byRef =>
-                        IsNamed(byRef.Expression, n),
-                    AssignmentExpressionSyntax assignment => IsNamed(assignment.Left, n),
-                    PrefixUnaryExpressionSyntax prefix when prefix.IsKind(SyntaxKind.PreIncrementExpression,
-                        SyntaxKind.PreDecrementExpression) => IsNamed(prefix.Operand, n),
-                    PostfixUnaryExpressionSyntax postfix when postfix.IsKind(SyntaxKind.PostIncrementExpression,
-                        SyntaxKind.PostDecrementExpression) => IsNamed(postfix.Operand, n),
-                    _ => false
-                });
-
-        private static bool IsNamed(ExpressionSyntax expression, string name) =>
-            expression is IdentifierNameSyntax identifier && identifier.Identifier.ValueText == name;
-
-        private ArgumentSyntax SpillArgument(SeparatedSyntaxList<ArgumentSyntax> arguments, int index)
-        {
-            var argument = arguments[index];
             if (argument.Expression is DeclarationExpressionSyntax
                 {
                     Designation: SingleVariableDesignationSyntax designation
@@ -341,21 +250,19 @@ public class WarpInstructionRewriter(SemanticModel? semanticModel = null) : CSha
                     .WithTriviaFrom(declarationExpression));
             }
 
-            if (IsPassedByReference(argument))
+            var model = parent._semanticModel;
+            if (SpilledArguments.IsPassedByReference(argument, model))
             {
                 // The reference itself must stay a variable, so only what selects it is evaluated once
                 return argument.WithExpression(SpillLocation(argument.Expression, arguments, index));
             }
 
-            return CanStayInPlace(argument.Expression, arguments, index)
+            // [WHY] A constant expression stays in place like a literal: it keeps its implicit constant conversion
+            // ('Half / 2' to a uint parameter), which a variable lacks
+            return SpilledArguments.CanStayInPlace(argument.Expression, arguments, index, model)
                 ? argument
                 : argument.WithExpression(Spill(argument.Expression));
         }
-
-        // [WHY] A constant expression has no side effect and the same value on every evaluation, like a literal. Left in
-        // place, it also keeps its implicit constant conversion ('Half / 2' to a uint parameter), which a variable lacks.
-        private bool IsConstant(ExpressionSyntax expression) =>
-            parent._semanticModel is { } model && model.GetSafeConstantValue(expression).HasValue;
 
         // [WHY] A ref, out or in argument names a storage location, and C# fixes which one when it evaluates the
         // argument: the array of an element and its indices are evaluated once (in the order written: the array, then
@@ -376,7 +283,9 @@ public class WarpInstructionRewriter(SemanticModel? semanticModel = null) : CSha
                     var spilledIndices = ImmutableArray.CreateBuilder<ArgumentSyntax>(indices.Count);
                     foreach (var elementIndex in indices)
                     {
-                        spilledIndices.Add(CanStayInPlace(elementIndex.Expression, arguments, index)
+                        spilledIndices.Add(
+                            SpilledArguments.CanStayInPlace(elementIndex.Expression, arguments, index,
+                                parent._semanticModel)
                             ? elementIndex
                             : elementIndex.WithExpression(Spill(elementIndex.Expression)));
                     }
@@ -390,35 +299,23 @@ public class WarpInstructionRewriter(SemanticModel? semanticModel = null) : CSha
             }
         }
 
-        // The receiver of an element access in a location: an array (a reference) is evaluated once like an index; a
-        // stack array, a span or a struct that holds the elements is itself a location. Without a semantic model only
-        // the indices of a nested access are evaluated once.
+        // The receiver of an element access in a location: an array that cannot stay in place is evaluated once
+        // (SpilledArguments.IsSpilledReceiver); any other receiver is a location of its own
         private ExpressionSyntax SpillReceiver(ExpressionSyntax receiver, SeparatedSyntaxList<ArgumentSyntax> arguments,
             int index)
         {
-            if (parent._semanticModel is not { } model ||
-                model.GetTypeSymbol(receiver) is not IArrayTypeSymbol ||
-                StackArrayLocals.IsStackArrayReference(receiver, model))
+            var model = parent._semanticModel;
+            if (SpilledArguments.IsSpilledReceiver(receiver, arguments, index, model))
             {
-                return SpillLocation(receiver, arguments, index);
+                return Spill(receiver);
             }
 
-            return CanStayInPlace(receiver, arguments, index) ? receiver : Spill(receiver);
+            return model != null &&
+                   model.GetTypeSymbol(receiver) is IArrayTypeSymbol &&
+                   !StackArrayLocals.IsStackArrayReference(receiver, model)
+                ? receiver
+                : SpillLocation(receiver, arguments, index);
         }
-
-        // A ref, out or in argument, or an argument of an in / ref readonly parameter that names a variable, which C#
-        // passes by reference too (an argument that needs a conversion or is not a variable is passed as a copy)
-        // (the operation of the expression is the argument's value only when no conversion sits between them; a field of
-        // a value is a value, which is copied)
-        private bool IsPassedByReference(ArgumentSyntax argument) =>
-            !argument.RefKindKeyword.IsKind(SyntaxKind.None) ||
-            (parent._semanticModel?.GetSafeOperation(argument.Expression) is
-                (ILocalReferenceOperation or IParameterReferenceOperation or IArrayElementReferenceOperation
-                or IFieldReferenceOperation) and
-                {
-                    Parent: IArgumentOperation { Parameter.RefKind: RefKind.In or RefKind.RefReadOnlyParameter }
-                } operation &&
-             operation.IsVariable());
 
         private IdentifierNameSyntax Spill(ExpressionSyntax expression)
         {
