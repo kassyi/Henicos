@@ -27,7 +27,7 @@ static_assert(offsetof(__gsharp_ty_DebugReduc__PhysicsVector,__gsharp_mb_Y)==4,"
 static_assert(offsetof(__gsharp_ty_DebugReduc__PhysicsVector,__gsharp_mb_Z)==8,""DebugReduc.PhysicsVector.Z: offset"");
 #endif
 __forceinline__ float __gsharp_fn_DebugReduc__ComprehensiveSpecKernel__ComputeMagnitude(__gsharp_ty_DebugReduc__PhysicsVector __gsharp_id_0_v){
-return (float)sqrt(__gsharp_id_0_v.__gsharp_mb_X*__gsharp_id_0_v.__gsharp_mb_X+__gsharp_id_0_v.__gsharp_mb_Y*__gsharp_id_0_v.__gsharp_mb_Y+__gsharp_id_0_v.__gsharp_mb_Z*__gsharp_id_0_v.__gsharp_mb_Z);
+return (float)sqrt((double)(__gsharp_id_0_v.__gsharp_mb_X*__gsharp_id_0_v.__gsharp_mb_X+__gsharp_id_0_v.__gsharp_mb_Y*__gsharp_id_0_v.__gsharp_mb_Y+__gsharp_id_0_v.__gsharp_mb_Z*__gsharp_id_0_v.__gsharp_mb_Z));
 }
 
 __noinline__ bool __gsharp_fn_DebugReduc__ComprehensiveSpecKernel__IsPositive(float __gsharp_id_0_value){

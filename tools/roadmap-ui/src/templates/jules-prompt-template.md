@@ -40,8 +40,9 @@ Assume the following existing helpers and attributes when designing.
 - **Compilation Optimization via `MegaCompilationCache.cs`**
   A caching infrastructure that minimizes Roslyn's reference assembly resolution overhead. Using lazy initialization, it generates and caches a mega-compilation with all metadata loaded only once per process. Assume a differential addition design where individual test cases pass through `RoslynTestUtility.CreateCompilation()` and perform `AddSyntaxTrees()` against the cache.
 - **Requirement Tracking and Filtering Attributes**
-    - `[Trait("Category", "GpuExecution")]`: Used to classify execution-based tests (tests requiring real hardware like a GPU).
-    - `[Trait("Category", "HappyPath")]`, `[Trait("Category", "SadPath")]`: Used to classify test scenarios. Do NOT attach `FeatureId` traits directly to C# test code.
+    - `[TestTarget(ExecutionTarget.GpuExecution)]`, `[TestTarget(ExecutionTarget.CpuExecution)]`: Used to classify execution-based tests.
+    - `[Category(TestCategory.Compiler)]`, `[Category(TestCategory.Runtime)]`, `[Category(TestCategory.Syntax)]`, `[Category(TestCategory.Stdlib)]`: Used to classify feature domains.
+    - `[Scenario(TestScenario.HappyPath)]`, `[Scenario(TestScenario.SadPath)]`, `[Scenario(TestScenario.Boundary)]`: Used to classify test scenarios. Do NOT attach `FeatureId`, `IssueId`, or `DiagnosticId` traits directly to C# test code.
 
 ### Execution Steps & Output Format
 
@@ -102,7 +103,7 @@ However, do not write the target code inline. Always isolate it (Source Separati
 
 1. **No Reflection**: Parse exclusively using Roslyn's syntax tree (`CSharpSyntaxWalker`) and `SemanticModel`.
 2. **Zero Allocation**: Utilize `SourceWriter`, `ref struct`, and `Span<T>` to avoid heap allocation.
-3. **Natural Language Naming**: Use clear, descriptive names for tests without prefixing them with task IDs. Use `[Trait("Category", "HappyPath")]` / `[Trait("Category", "SadPath")]` instead of `FeatureId`.
+3. **Natural Language Naming**: Use clear, descriptive names for tests without prefixing them with task IDs. Use `[Category(TestCategory.X)]`, `[TestTarget(ExecutionTarget.X)]`, and `[Scenario(TestScenario.X)]` instead of `[Trait]`.
 4. Thoroughly read guidelines (`AGENTS.md`, `qa-testing-guidelines`, etc.) to understand the architecture.
 
 ### Instructions

@@ -276,14 +276,14 @@ __forceinline__ uint32_t __gsharp_rotr32(uint32_t value, int offset) { return _r
 __forceinline__ uint64_t __gsharp_rotr64(uint64_t value, int offset) { return _rotr64(value, offset); }
 __forceinline__ uint32_t __gsharp_rotl32(uint32_t value, int offset) { return _rotl(value, offset); }
 __forceinline__ uint64_t __gsharp_rotl64(uint64_t value, int offset) { return _rotl64(value, offset); }
-__forceinline__ uint32_t __popc(uint32_t value) { return __popcnt(value); }
-__forceinline__ uint64_t __popcll(uint64_t value) { return __popcnt64(value); }
-__forceinline__ uint32_t __gsharp_lzc_32(uint32_t value) { unsigned long index; return _BitScanReverse(&index, value) ? 31 - index : 32; }
-__forceinline__ uint64_t __gsharp_lzc_64(uint64_t value) { unsigned long index; return _BitScanReverse64(&index, value) ? 63 - index : 64; }
-__forceinline__ uint32_t __gsharp_tzc_32(uint32_t value) { unsigned long index; return _BitScanForward(&index, value) ? index : 32; }
-__forceinline__ uint64_t __gsharp_tzc_64(uint64_t value) { unsigned long index; return _BitScanForward64(&index, value) ? index : 64; }
-__forceinline__ uint32_t __gsharp_log2_32(uint32_t value) { unsigned long index; return _BitScanReverse(&index, value) ? index : 0; }
-__forceinline__ uint64_t __gsharp_log2_64(uint64_t value) { unsigned long index; return _BitScanReverse64(&index, value) ? index : 0; }
+__forceinline__ int __popc(uint32_t value) { return (int)__popcnt(value); }
+__forceinline__ int __popcll(uint64_t value) { return (int)__popcnt64(value); }
+__forceinline__ int __gsharp_lzc_32(uint32_t value) { unsigned long index; return _BitScanReverse(&index, value) ? (int)(31 - index) : 32; }
+__forceinline__ int __gsharp_lzc_64(uint64_t value) { unsigned long index; return _BitScanReverse64(&index, value) ? (int)(63 - index) : 64; }
+__forceinline__ int __gsharp_tzc_32(uint32_t value) { unsigned long index; return _BitScanForward(&index, value) ? (int)index : 32; }
+__forceinline__ int __gsharp_tzc_64(uint64_t value) { unsigned long index; return _BitScanForward64(&index, value) ? (int)index : 64; }
+__forceinline__ int __gsharp_log2_32(uint32_t value) { unsigned long index; return _BitScanReverse(&index, value) ? (int)index : 0; }
+__forceinline__ int __gsharp_log2_64(uint64_t value) { unsigned long index; return _BitScanReverse64(&index, value) ? (int)index : 0; }
 __forceinline__ unsigned int __gsharp_bfe(unsigned int a, int pos, int len) {
 if (len <= 0) return 0;
 if (len >= 32) return a >> pos;
