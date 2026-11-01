@@ -60,11 +60,9 @@ public class ForEachRewriter(SemanticModel? semanticModel = null) : CSharpSyntax
     }
 
     private bool NeedsElementCast(ForEachStatementSyntax node) =>
-        !node.Type.IsVar &&
         semanticModel != null &&
-        (semanticModel.GetDeclaredSymbol<ILocalSymbol>(node)?.Type ?? semanticModel.GetTypeSymbol(node.Type)) is { } targetType &&
         semanticModel.GetTypeSymbol(node.Expression).TryGetArrayLikeElementType(out var elementType) &&
-        !targetType.IsEqualTo(elementType);
+        ForEachElementConversion.GetTarget(node, elementType, semanticModel) != null;
 
     // [WHY] foreach over a null array throws NullReferenceException at the loop entry in C# (#706). The source is
     // checked once, where the lowered local is initialized; the decision and the place of the source expression travel

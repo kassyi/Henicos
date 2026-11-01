@@ -154,11 +154,8 @@ internal static class IteratorInliner
         }
 
         var endLabel = $"{GSharpInternalNames.Iterator.EndLabelPrefix}{iteratorRegion}";
-        var needsElementCast = !annotatedForEach.Type.IsVar &&
-                               IteratorTypeResolver.IsGenericIEnumerable(iteratorMethod.ReturnType, out var iteratorElementType) &&
-                               (semanticModel.GetDeclaredSymbol<ILocalSymbol>(annotatedForEach)?.Type ??
-                                semanticModel.GetTypeSymbol(annotatedForEach.Type)) is { } targetType &&
-                               !targetType.IsEqualTo(iteratorElementType);
+        var needsElementCast = IteratorTypeResolver.IsGenericIEnumerable(iteratorMethod.ReturnType, out var iteratorElementType) &&
+                               ForEachElementConversion.GetTarget(annotatedForEach, iteratorElementType, semanticModel) != null;
         var yieldRewriter = new YieldRewriter(
             annotatedForEach,
             loopVariableType,
