@@ -48,6 +48,58 @@ public static partial class GpuBigIntFermatKernels
         public uint ConstantTerm;
     }
 
+    /// <summary>
+    /// The buffers and sizes of one multi-block parallel fold pass (<see cref="QuadraticFoldPassBlockedKernel"/>).
+    /// </summary>
+    public struct QuadraticFoldBlockedPassContext
+    {
+        /// <summary>The input words of this fold pass, <see cref="SourceWords"/> words.</summary>
+        /// <remarks>Not <c>[GpuReadOnly]</c>: passed to <see cref="GetQuotientWord"/>.</remarks>
+        public uint[] Source;
+
+        /// <summary>Receives the folded output modulo <c>2^(32 * ResultWords)</c>, <see cref="ResultWords"/> words.</summary>
+        public uint[] Result;
+
+        /// <summary>Receives one outgoing carry (<c>0..4</c>) per chunk of <see cref="Result"/>.</summary>
+        public uint[] BlockCarries;
+
+        /// <summary>The word count of <see cref="Source"/>.</summary>
+        public int SourceWords;
+
+        /// <summary>The word count of <see cref="Result"/>.</summary>
+        public int ResultWords;
+
+        /// <summary>The fold position <c>m = 2E + 1</c>.</summary>
+        public int ModulusBits;
+
+        /// <summary>The exponent <c>E</c>.</summary>
+        public int Exponent;
+
+        /// <summary>The constant term <c>t</c> of <c>c = 2^E - t</c> (11).</summary>
+        public uint ConstantTerm;
+    }
+
+    /// <summary>
+    /// The buffers and sizes of the cross-chunk carry application pass (<see cref="QuadraticFoldPassApplyKernel"/>).
+    /// </summary>
+    public struct QuadraticFoldBlockedApplyContext
+    {
+        /// <summary>The folded output buffer whose chunk heads receive outgoing carries, <see cref="ResultWords"/> words.</summary>
+        public uint[] Result;
+
+        /// <summary>The per-chunk carries written by <see cref="QuadraticFoldPassBlockedKernel"/>.</summary>
+        public uint[] BlockCarries;
+
+        /// <summary>The word count of <see cref="Result"/>.</summary>
+        public int ResultWords;
+
+        /// <summary>The word count of one chunk (the block size of <see cref="QuadraticFoldPassBlockedKernel"/>).</summary>
+        public int ChunkSize;
+
+        /// <summary>The number of chunks resolved by <see cref="QuadraticFoldPassBlockedKernel"/>.</summary>
+        public int NumBlocks;
+    }
+
     [GpuDeviceFunction]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static void DeviceUnpack16([GpuReadOnly] uint[] dSrc, uint[] dDst1, uint[] dDst2, int n, int numWords,
@@ -55,19 +107,12 @@ public static partial class GpuBigIntFermatKernels
     {
         Gpu.GridStrideLoop(n, i =>
         {
-            uint val = 0;
-            var wordIdx = i / 2;
+            uint val = 0u;
+            int wordIdx = i >> 1;
             if (wordIdx < numWords)
             {
-                var w = dSrc[wordIdx];
-                if (i % 2 == 0)
-                {
-                    val = w & 0xFFFF;
-                }
-                else
-                {
-                    val = w >> 16;
-                }
+                uint w = dSrc[wordIdx];
+                val = (i & 1) == 0 ? (w & 0xFFFFu) : (w >> 16);
             }
 
             dDst1[i] = val;
@@ -85,24 +130,27 @@ public static partial class GpuBigIntFermatKernels
     public static void DeviceUnpack16Transposed([GpuReadOnly] uint[] dSrc, uint[] dDst1, uint[] dDst2, int n,
         int numWords, int n1, int n2, bool syncThreads = true)
     {
+        int log2N2 = 0;
+        if (n > 512)
+        {
+            while ((1 << log2N2) < n2)
+            {
+                log2N2++;
+            }
+        }
+
+        int n2Mask = n2 - 1;
         Gpu.GridStrideLoop(n, i =>
         {
-            uint val = 0;
-            var wordIdx = i / 2;
+            uint val = 0u;
+            int wordIdx = i >> 1;
             if (wordIdx < numWords)
             {
-                var w = dSrc[wordIdx];
-                if (i % 2 == 0)
-                {
-                    val = w & 0xFFFF;
-                }
-                else
-                {
-                    val = w >> 16;
-                }
+                uint w = dSrc[wordIdx];
+                val = (i & 1) == 0 ? (w & 0xFFFFu) : (w >> 16);
             }
 
-            var dstIdx = n > 512 ? (i % n2) * n1 + (i / n2) : i;
+            int dstIdx = n > 512 ? ((i & n2Mask) * n1 + (i >> log2N2)) : i;
             dDst1[dstIdx] = val;
             dDst2[dstIdx] = val;
         });
@@ -245,6 +293,42 @@ public static partial class GpuBigIntFermatKernels
         return (w0 >> foldBit) | (w1 << (32 - foldBit));
     }
 
+    [GpuDeviceFunction]
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static ulong ComputeQuadraticFoldLocalSum(
+        uint[] source,
+        int sourceWords,
+        int idx,
+        int foldWord,
+        int foldBit,
+        int shiftWord,
+        int shiftBit,
+        uint constantTerm)
+    {
+        // r_i: the bits of source below m.
+        uint word = idx < sourceWords ? source[idx] : 0u;
+        uint remainder = idx < foldWord ? word : (idx == foldWord ? word & ((1u << foldBit) - 1u) : 0u);
+
+        // q_j is word j of source >> m (0 for j < 0). (q << E)_i comes from q_(i - E/32) and q_(i - E/32 - 1);
+        // a shift by 32 would be undefined, so E % 32 == 0 takes the word as it is.
+        uint quotientHigh = GetQuotientWord(source, sourceWords, idx - shiftWord, foldWord, foldBit);
+        uint quotientLow = GetQuotientWord(source, sourceWords, idx - shiftWord - 1, foldWord, foldBit);
+        uint shiftedQuotient = shiftBit == 0
+            ? quotientHigh
+            : (quotientHigh << shiftBit) | (quotientLow >> (32 - shiftBit));
+
+        // A_i = low(t * q_i), B_i = high(t * q_(i-1)).
+        uint quotientHere = GetQuotientWord(source, sourceWords, idx, foldWord, foldBit);
+        uint quotientBelow = GetQuotientWord(source, sourceWords, idx - 1, foldWord, foldBit);
+        ulong termHere = (ulong)quotientHere * constantTerm;
+        ulong termBelow = (ulong)quotientBelow * constantTerm;
+
+        return (ulong)remainder
+               + shiftedQuotient
+               + (~(uint)termHere)
+               + (~(uint)(termBelow >> 32));
+    }
+
     /// <summary>
     /// One fold of a value modulo <c>N = 2^m - c</c> with <c>c = 2^E - t</c>, run by one block:
     /// <c>result = r + q * 2^E - t * q</c> with <c>r = source mod 2^m</c> and <c>q = floor(source / 2^m)</c>, modulo
@@ -296,32 +380,10 @@ public static partial class GpuBigIntFermatKernels
             var idx = offset + tid;
             var valid = idx < resultWords;
 
-            ulong localSum = 0UL;
-            if (valid)
-            {
-                // r_i: the bits of source below m.
-                uint word = idx < sourceWords ? source[idx] : 0u;
-                uint remainder = idx < foldWord ? word : (idx == foldWord ? word & ((1u << foldBit) - 1u) : 0u);
-
-                // q_j is word j of source >> m (0 for j < 0). (q << E)_i comes from q_(i - E/32) and q_(i - E/32 - 1);
-                // a shift by 32 would be undefined, so E % 32 == 0 takes the word as it is.
-                uint quotientHigh = GetQuotientWord(source, sourceWords, idx - shiftWord, foldWord, foldBit);
-                uint quotientLow = GetQuotientWord(source, sourceWords, idx - shiftWord - 1, foldWord, foldBit);
-                uint shiftedQuotient = shiftBit == 0
-                    ? quotientHigh
-                    : (quotientHigh << shiftBit) | (quotientLow >> (32 - shiftBit));
-
-                // A_i = low(t * q_i), B_i = high(t * q_(i-1)).
-                uint quotientHere = GetQuotientWord(source, sourceWords, idx, foldWord, foldBit);
-                uint quotientBelow = GetQuotientWord(source, sourceWords, idx - 1, foldWord, foldBit);
-                ulong termHere = (ulong)quotientHere * constantTerm;
-                ulong termBelow = (ulong)quotientBelow * constantTerm;
-
-                localSum = (ulong)remainder
-                           + shiftedQuotient
-                           + (~(uint)termHere)
-                           + (~(uint)(termBelow >> 32));
-            }
+            ulong localSum = valid
+                ? ComputeQuadraticFoldLocalSum(source, sourceWords, idx, foldWord, foldBit, shiftWord, shiftBit,
+                    constantTerm)
+                : 0UL;
 
             uint lowWord = (uint)(localSum & 0xFFFFFFFFUL);
             uint highWord = (uint)(localSum >> 32);
@@ -431,6 +493,134 @@ public static partial class GpuBigIntFermatKernels
             ctx.Exponent, ctx.ConstantTerm);
         QuadraticFoldPass(ctx.SecondFold, ctx.SecondFoldWords, ctx.Residue, ctx.ResidueWords, ctx.ModulusBits,
             ctx.Exponent, ctx.ConstantTerm);
+    }
+
+    /// <summary>
+    /// Evaluates one fold pass <c>result = r + q * 2^E - t * q</c> in parallel chunks of one launch block across all SMs,
+    /// writing the outgoing carry (<c>0..4</c>) of each chunk <c>b</c> to <see cref="QuadraticFoldBlockedPassContext.BlockCarries"/>.
+    /// </summary>
+    [GpuDeviceFunction]
+    public static void ExecuteQuadraticFoldPassBlocked(QuadraticFoldBlockedPassContext ctx)
+    {
+        int tid = ThreadIndex.X;
+        int bDim = BlockDimension.X;
+        int laneId = tid & 31;
+        int warpId = tid >> 5;
+        int numWarps = (bDim + 31) >> 5;
+        int numBlocks = (ctx.ResultWords + bDim - 1) / bDim;
+
+        var sharedCarry = new SharedMemory<uint>(32);
+        var sharedOverlapH = new SharedMemory<uint>(32);
+
+        int foldWord = ctx.ModulusBits / 32;
+        int foldBit = ctx.ModulusBits % 32;
+        int shiftWord = ctx.Exponent / 32;
+        int shiftBit = ctx.Exponent % 32;
+
+        for (int bIdx = BlockIndex.X; bIdx < numBlocks; bIdx += GridDimension.X)
+        {
+            int idx = bIdx * bDim + tid;
+            bool valid = idx < ctx.ResultWords;
+
+            ulong localSum = valid
+                ? ComputeQuadraticFoldLocalSum(ctx.Source, ctx.SourceWords, idx, foldWord, foldBit, shiftWord,
+                    shiftBit, ctx.ConstantTerm)
+                : 0UL;
+
+            uint lowWord = (uint)(localSum & 0xFFFFFFFFUL);
+            uint highWord = (uint)(localSum >> 32);
+
+            uint prevH = Warp.ShuffleUpSync(0xFFFFFFFFu, highWord, 1u);
+            if (laneId == 31)
+            {
+                sharedOverlapH[warpId] = highWord;
+            }
+
+            Gpu.SyncThreads();
+
+            if (laneId == 0)
+            {
+                prevH = warpId == 0 ? (bIdx == 0 ? 2u : 0u) : sharedOverlapH[warpId - 1];
+            }
+
+            ulong sum = (ulong)lowWord + prevH;
+            uint g = valid ? (uint)(sum >> 32) : 0u;
+            uint p = valid ? ((uint)sum == 0xFFFFFFFFu ? 1u : 0u) : 1u;
+
+            var warpScan = GpuBigIntKernels.WarpScanGp(new GpuBigIntKernels.CarryState(g, p), laneId);
+            if (laneId == 31)
+            {
+                sharedCarry[warpId] = GpuBigIntKernels.PackCarryState(warpScan);
+            }
+
+            Gpu.SyncThreads();
+
+            if (warpId == 0)
+            {
+                var valState = laneId < numWarps
+                    ? GpuBigIntKernels.UnpackCarryState(sharedCarry[laneId])
+                    : new GpuBigIntKernels.CarryState(0u, 1u);
+                var blockScan = GpuBigIntKernels.WarpScanGp(valState, laneId);
+                if (laneId < numWarps)
+                {
+                    sharedCarry[laneId] = GpuBigIntKernels.PackCarryState(blockScan);
+                }
+            }
+
+            Gpu.SyncThreads();
+
+            uint carryIn = 0u;
+            if (warpId > 0)
+            {
+                carryIn = GpuBigIntKernels.ApplyCarry(
+                    GpuBigIntKernels.UnpackCarryState(sharedCarry[warpId - 1]),
+                    0u);
+            }
+
+            uint prevScanG = Warp.ShuffleUpSync(0xFFFFFFFFu, warpScan.Generate, 1u);
+            uint prevScanP = Warp.ShuffleUpSync(0xFFFFFFFFu, warpScan.Propagate, 1u);
+            if (laneId > 0)
+            {
+                carryIn = prevScanG | (prevScanP & carryIn);
+            }
+
+            if (valid)
+            {
+                ctx.Result[idx] = (uint)sum + carryIn;
+            }
+
+            if (tid == 0)
+            {
+                uint lastH = sharedOverlapH[numWarps - 1];
+                uint waveCarry = GpuBigIntKernels.ApplyCarry(
+                    GpuBigIntKernels.UnpackCarryState(sharedCarry[numWarps - 1]),
+                    0u);
+                ctx.BlockCarries[bIdx] = lastH + waveCarry;
+            }
+
+            Gpu.SyncThreads();
+        }
+    }
+
+    /// <summary>
+    /// Multi-block parallel kernel for one trinomial fold pass. Follow with <see cref="QuadraticFoldPassApplyKernel"/>
+    /// when <see cref="QuadraticFoldBlockedPassContext.ResultWords"/> spans more than one block.
+    /// </summary>
+    [GpuKernel]
+    public static void QuadraticFoldPassBlockedKernel(QuadraticFoldBlockedPassContext ctx)
+    {
+        ExecuteQuadraticFoldPassBlocked(ctx);
+    }
+
+    /// <summary>
+    /// Applies the per-chunk carries written by <see cref="QuadraticFoldPassBlockedKernel"/> into the head of each
+    /// following chunk modulo <c>2^(32 * ResultWords)</c>.
+    /// </summary>
+    [GpuKernel]
+    public static void QuadraticFoldPassApplyKernel(QuadraticFoldBlockedApplyContext ctx)
+    {
+        GpuBigIntNttKernels.ExecuteResolveNttCarriesApply(
+            ctx.Result, ctx.BlockCarries, ctx.ResultWords, ctx.ChunkSize, ctx.NumBlocks);
     }
 }
 
