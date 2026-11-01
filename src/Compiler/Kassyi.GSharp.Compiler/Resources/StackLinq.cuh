@@ -4,7 +4,17 @@
 __device__ __forceinline__ int __gsharp_clamp_count(int count, int remaining) { return count < 0 ? 0 : (count > remaining ? remaining : count); }
 
 namespace Kassyi { namespace ZeroAlloc { namespace Linq {
-    
+
+    template <typename T> struct RemoveCvRef { using Type = T; };
+    template <typename T> struct RemoveCvRef<const T> { using Type = T; };
+    template <typename T> struct RemoveCvRef<volatile T> { using Type = T; };
+    template <typename T> struct RemoveCvRef<const volatile T> { using Type = T; };
+    template <typename T> struct RemoveCvRef<T&> : RemoveCvRef<T> {};
+    template <typename T> struct RemoveCvRef<T&&> : RemoveCvRef<T> {};
+
+    template <typename T> struct AverageResult { using Type = double; };
+    template <> struct AverageResult<float> { using Type = float; };
+
     template <typename T>
     struct ArrayEnumerator {
         GSharpArray<T> source;
@@ -42,13 +52,22 @@ namespace Kassyi { namespace ZeroAlloc { namespace Linq {
 
     template <typename TSource, typename TSelector>
     struct SelectEnumerator {
+        static TSource& DeclSource();
+        static TSelector& DeclSelector();
+        using TResult = typename RemoveCvRef<decltype(DeclSelector()(DeclSource().Current()))>::Type;
+
         TSource source;
         TSelector selector;
+        TResult current{};
         
         __device__ inline SelectEnumerator(TSource src, TSelector sel) : source(src), selector(sel) {}
         
-        __device__ inline bool MoveNext() { return source.MoveNext(); }
-        __device__ inline auto Current() const { return selector(source.Current()); }
+        __device__ inline bool MoveNext() {
+            if (!source.MoveNext()) return false;
+            current = selector(source.Current());
+            return true;
+        }
+        __device__ inline TResult Current() const { return current; }
     };
 
     template <typename TSource, typename TPredicate>
@@ -72,20 +91,26 @@ namespace Kassyi { namespace ZeroAlloc { namespace Linq {
 
     template <typename TSource, typename TSelector>
     struct SelectAtEnumerator {
+        static TSource& DeclSource();
+        static TSelector& DeclSelector();
+        using TResult = typename RemoveCvRef<decltype(DeclSelector()(DeclSource().Current(), 0))>::Type;
+
         TSource source;
         TSelector selector;
         int index;
+        TResult current{};
         
         __device__ inline SelectAtEnumerator(TSource src, TSelector sel) : source(src), selector(sel), index(-1) {}
         
         __device__ inline bool MoveNext() {
             if (source.MoveNext()) {
                 index++;
+                current = selector(source.Current(), index);
                 return true;
             }
             return false;
         }
-        __device__ inline auto Current() const { return selector(source.Current(), index); }
+        __device__ inline TResult Current() const { return current; }
     };
 
     template <typename TSource>
@@ -204,6 +229,11 @@ namespace Kassyi { namespace ZeroAlloc { namespace Linq {
 
     struct StackLinq {
         template <typename T>
+        __device__ static __forceinline__ bool Equals(const T& a, const T& b) { return a == b; }
+        __device__ static __forceinline__ bool Equals(float a, float b) { return a == b || (a != a && b != b); }
+        __device__ static __forceinline__ bool Equals(double a, double b) { return a == b || (a != a && b != b); }
+
+        template <typename T>
         __device__ static inline auto AsStackEnumerable(GSharpArray<T> source) {
             return ArrayEnumerator<T>(source);
         }
@@ -307,8 +337,10 @@ namespace Kassyi { namespace ZeroAlloc { namespace Linq {
 
         template <typename TSource, typename TValue>
         __device__ static inline bool Contains(TSource source, TValue value) {
+            using TElement = typename RemoveCvRef<decltype(source.Current())>::Type;
+            TElement target = static_cast<TElement>(value);
             while (source.MoveNext()) {
-                if (source.Current() == value) return true;
+                if (Equals(static_cast<TElement>(source.Current()), target)) return true;
             }
             return false;
         }
@@ -488,7 +520,8 @@ namespace Kassyi { namespace ZeroAlloc { namespace Linq {
             }
             auto max_val = source.Current();
             while (source.MoveNext()) {
-                if (source.Current() > max_val) max_val = source.Current();
+                auto val = source.Current();
+                if (val > max_val) max_val = val;
             }
             return max_val;
         }
@@ -501,13 +534,16 @@ namespace Kassyi { namespace ZeroAlloc { namespace Linq {
             }
             auto min_val = source.Current();
             while (source.MoveNext()) {
-                if (source.Current() < min_val) min_val = source.Current();
+                auto val = source.Current();
+                if (val < min_val) min_val = val;
             }
             return min_val;
         }
 
         template <typename TSource>
         __device__ static inline auto Average(TSource source) {
+            using TElement = typename RemoveCvRef<decltype(source.Current())>::Type;
+            using TResult = typename AverageResult<TElement>::Type;
             double sum = 0;
             int count = 0;
             while (source.MoveNext()) {
@@ -516,9 +552,9 @@ namespace Kassyi { namespace ZeroAlloc { namespace Linq {
             }
             if (count == 0) {
                 __gsharp_trap(GSharpErrorCode::InvalidOperation, "Sequence contains no elements");
-                return 0.0;
+                return (TResult)0;
             }
-            return sum / count;
+            return (TResult)(sum / count);
         }
     };
 }}}

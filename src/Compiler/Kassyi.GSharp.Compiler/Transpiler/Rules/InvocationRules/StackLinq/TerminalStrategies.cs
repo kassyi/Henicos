@@ -175,15 +175,20 @@ internal sealed class ExtremaStrategy(string comparisonOperator) : IStackLinqTer
 
 internal sealed class ContainsStrategy : IStackLinqTerminalStrategy
 {
-    public void EmitInitialValue(ref TranspileContext context, string resultVar, in LinqStage stage) =>
+    public void EmitInitialValue(ref TranspileContext context, string resultVar, in LinqStage stage)
+    {
         context.Emitter.Writer.AppendLine($"bool {resultVar} = false;");
+        context.Emitter.Dialect.AppendType(ref context, stage.Symbol.Parameters[^1].Type);
+        context.Emitter.Writer.Append($" {resultVar}_target = ");
+        var arg = StackLinqHelper.GetLambdaArgument(stage.Invocation, stage.Symbol);
+        context.Visitor.Visit(arg.Expression);
+        context.Emitter.Writer.AppendLine(";");
+    }
 
     public void Emit(ref TranspileContext context, in LinqStage stage, string resultVar, int valIndex)
     {
-        var arg = stage.Invocation.ArgumentList.Arguments[0].Expression;
-        context.Emitter.Writer.Append($"if ({StackLinqHelper.ValuePrefix}{valIndex} == (");
-        context.Visitor.Visit(arg);
-        context.Emitter.Writer.AppendLine("))");
+        context.Emitter.Writer.AppendLine(
+            $"if (Kassyi::ZeroAlloc::Linq::StackLinq::Equals({StackLinqHelper.ValuePrefix}{valIndex}, {resultVar}_target))");
         using (context.Emitter.Writer.Braces())
         {
             context.Emitter.Writer.AppendLine($"{resultVar} = true; break;");
@@ -199,12 +204,13 @@ internal sealed class AverageStrategy : IStackLinqTerminalStrategy
     {
         context.Emitter.Dialect.AppendType(ref context, stage.Symbol.ReturnType);
         context.Emitter.Writer.AppendLine($" {resultVar} = 0;");
+        context.Emitter.Writer.AppendLine($"double {resultVar}_sum = 0;");
         context.Emitter.Writer.AppendLine($"int {resultVar}_count = 0;");
     }
 
     public void Emit(ref TranspileContext context, in LinqStage stage, string resultVar, int valIndex)
     {
-        StackLinqHelper.EmitAccumulateElement(ref context, in stage, resultVar, valIndex);
+        context.Emitter.Writer.AppendLine($"{resultVar}_sum += (double){StackLinqHelper.ValuePrefix}{valIndex};");
         context.Emitter.Writer.AppendLine($"{resultVar}_count++;");
     }
 
@@ -218,9 +224,9 @@ internal sealed class AverageStrategy : IStackLinqTerminalStrategy
         context.Emitter.Writer.AppendLine("else");
         using (context.Emitter.Writer.Braces())
         {
-            context.Emitter.Writer.Append($"{resultVar} = {resultVar} / (");
+            context.Emitter.Writer.Append($"{resultVar} = (");
             context.Emitter.Dialect.AppendType(ref context, stage.Symbol.ReturnType);
-            context.Emitter.Writer.AppendLine($")({resultVar}_count);");
+            context.Emitter.Writer.AppendLine($")({resultVar}_sum / (double){resultVar}_count);");
         }
     }
 }
