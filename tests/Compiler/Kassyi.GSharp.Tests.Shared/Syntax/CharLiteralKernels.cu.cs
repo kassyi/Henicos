@@ -24,4 +24,22 @@ public static partial class CharLiteralKernels
         text[0] = 'é';
         text[1] = '\uFFFF';
     }
+
+    [GpuKernel]
+    public static void CharArgumentKernel(
+        int[] codes,
+        char[] text,
+        char value,
+        in char inValue,
+        ref char refValue,
+        out char outValue)
+    {
+        codes[0] = value;
+        codes[1] = inValue;
+        codes[2] = refValue;
+        text[0] = value;
+        text[1] = inValue;
+        refValue = value;
+        outValue = inValue;
+    }
 }

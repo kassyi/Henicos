@@ -42,9 +42,17 @@ internal static class CpuHostLaunchEmitter
 
     private static void WriteCpuDelegateDeclaration(SourceWriter writer, in KernelEmission kernel)
     {
+        // [WHY] UnmanagedFunctionPointer defaults to CharSet.Ansi, which converts a char value parameter to 1-byte
+        // ANSI instead of the 2-byte UTF-16 char16_t that the native CPU launcher takes (#971).
+        var hasCharParameter = kernel.Host.Parameters
+            .AsStackEnumerable()
+            .Any(static p => !p.IsByRef && p.TypeName == "global::System.Char");
+
         // Generate Delegate
-        writer.AppendLine(
-            "[System.Runtime.InteropServices.UnmanagedFunctionPointer(System.Runtime.InteropServices.CallingConvention.Cdecl)]");
+        writer.Append(
+            "[System.Runtime.InteropServices.UnmanagedFunctionPointer(System.Runtime.InteropServices.CallingConvention.Cdecl");
+        writer.AppendIf(hasCharParameter, ", CharSet = System.Runtime.InteropServices.CharSet.Unicode");
+        writer.AppendLine(")]");
         writer.Append("private unsafe delegate void ");
         writer.Append(kernel.MemberKey);
         writer.Append("_Delegate");

@@ -44,6 +44,7 @@ public static void Warmup()
 // Force load the module first
 GetOrLoadModule();
 global::Kassyi.GSharp.Tests.Shared.Syntax.CharLiteralKernels.WarmupFunctionPointerCharLiteralKernel();
+global::Kassyi.GSharp.Tests.Shared.Syntax.CharLiteralKernels.WarmupFunctionPointerCharArgumentKernel();
 }}}
 
 
@@ -235,6 +236,214 @@ proxy_text[0] = text;
 ((int*)(proxy_text + 1))[0] = 0; // Length is unknown for raw IntPtr
 ((int*)(proxy_text + 1))[1] = 0;
 kernelParams[1] = proxy_text;
+CudaException.ThrowIfError(CudaDriverApi.cuLaunchKernel(
+hfunc,
+gridDimX, gridDimY, gridDimZ, // Grid dim
+blockDimX, blockDimY, blockDimZ, // Block dim
+sharedMemBytes, // Shared mem
+hStream, // Stream
+kernelParams,
+IntPtr.Zero // Extra
+));
+}
+finally
+{
+}
+}
+}
+#pragma warning restore CS8500
+public const string CharArgumentKernel_Source = @"extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__CharLiteralKernels__CharArgumentKernel(GSharpArray<int> __gsharp_id_0_codes, GSharpArray<char16_t> __gsharp_id_1_text, char16_t __gsharp_id_2_value, char16_t __gsharp_id_3_inValue, char16_t* __gsharp_id_4_refValue, char16_t* __gsharp_id_5_outValue){
+__gsharp_id_0_codes[0]=__gsharp_id_2_value;
+__gsharp_id_0_codes[1]=__gsharp_id_3_inValue;
+__gsharp_id_0_codes[2]=(*__gsharp_id_4_refValue);
+__gsharp_id_1_text[0]=__gsharp_id_2_value;
+__gsharp_id_1_text[1]=__gsharp_id_3_inValue;
+(*__gsharp_id_4_refValue)=__gsharp_id_2_value;
+(*__gsharp_id_5_outValue)=__gsharp_id_3_inValue;
+}
+";
+public static readonly string CharArgumentKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +CharArgumentKernel_Source;
+private static IntPtr? s_hfunc_CharArgumentKernel;
+/// <summary>Preloads the CUDA module and resolves the function pointer for this kernel.</summary>
+public static void WarmupFunctionPointerCharArgumentKernel()
+{
+if (s_hfunc_CharArgumentKernel.HasValue) return;
+IntPtr hModule = global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetOrLoadModule();
+s_hfunc_CharArgumentKernel = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.GetFunction(hModule, "__gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__CharLiteralKernels__CharArgumentKernel");
+}
+#pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
+[global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
+[global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
+public static unsafe void LaunchCharArgumentKernel(global::System.Int32[] codes, global::System.Char[] text, global::System.Char value, global::System.Char inValue, ref global::System.Char refValue, out global::System.Char outValue, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, IntPtr hStream = default, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
+{
+outValue = default;
+if (codes is null){
+throw new global::System.ArgumentNullException(nameof(codes));
+}
+if (codes.Length == 0){
+throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(codes));
+}
+if (text is null){
+throw new global::System.ArgumentNullException(nameof(text));
+}
+if (text.Length == 0){
+throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(text));
+}
+using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
+{
+WarmupFunctionPointerCharArgumentKernel();
+IntPtr hfunc = s_hfunc_CharArgumentKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "CharLiteralKernels.CharArgumentKernel");
+IntPtr d_codes = IntPtr.Zero;
+IntPtr d_text = IntPtr.Zero;
+IntPtr d_refValue = IntPtr.Zero;
+IntPtr d_outValue = IntPtr.Zero;
+try
+{
+void** kernelParams = stackalloc void*[6];
+// Marshal array: codes
+int codes_size = codes.Length * sizeof(global::System.Int32);
+IntPtr* proxy_codes = stackalloc IntPtr[2];
+proxy_codes[0] = IntPtr.Zero;
+((int*)(proxy_codes + 1))[0] = codes.Length;
+((int*)(proxy_codes + 1))[1] = 0;
+if (codes_size > 0)
+{
+CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_codes, (IntPtr)codes_size, hStream));
+fixed (global::System.Int32* p_codes = codes)
+{
+CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoDAsync_v2(d_codes, (IntPtr)p_codes, (IntPtr)codes_size, hStream));
+CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
+}
+proxy_codes[0] = d_codes;
+}
+kernelParams[0] = proxy_codes;
+// Marshal array: text
+int text_size = text.Length * sizeof(global::System.Char);
+IntPtr* proxy_text = stackalloc IntPtr[2];
+proxy_text[0] = IntPtr.Zero;
+((int*)(proxy_text + 1))[0] = text.Length;
+((int*)(proxy_text + 1))[1] = 0;
+if (text_size > 0)
+{
+if (global::System.Object.ReferenceEquals(text, codes))
+{
+d_text = d_codes;
+}
+else
+{
+CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_text, (IntPtr)text_size, hStream));
+fixed (global::System.Char* p_text = text)
+{
+CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoDAsync_v2(d_text, (IntPtr)p_text, (IntPtr)text_size, hStream));
+CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
+}
+}
+proxy_text[0] = d_text;
+}
+kernelParams[1] = proxy_text;
+// Marshal scalar: value
+kernelParams[2] = &value;
+// Marshal scalar: inValue
+kernelParams[3] = &inValue;
+// Marshal ref/out scalar: refValue
+int refValue_size = sizeof(global::System.Char);
+CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_refValue, (IntPtr)refValue_size, hStream));
+// Fast zero-allocation copy to device
+fixed (global::System.Char* p_refValue_temp = &refValue)
+{
+CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoDAsync_v2(d_refValue, (IntPtr)p_refValue_temp, (IntPtr)refValue_size, hStream));
+CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
+}
+kernelParams[4] = &d_refValue;
+// Marshal ref/out scalar: outValue
+int outValue_size = sizeof(global::System.Char);
+CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_outValue, (IntPtr)outValue_size, hStream));
+kernelParams[5] = &d_outValue;
+CudaException.ThrowIfError(CudaDriverApi.cuLaunchKernel(
+hfunc,
+gridDimX, gridDimY, gridDimZ, // Grid dim
+blockDimX, blockDimY, blockDimZ, // Block dim
+sharedMemBytes, // Shared mem
+hStream, // Stream
+kernelParams,
+IntPtr.Zero // Extra
+));
+// Copy back array: codes
+if (codes_size > 0 && d_codes != IntPtr.Zero)
+{
+fixed (global::System.Int32* p_codes = codes)
+{
+CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoHAsync_v2((IntPtr)p_codes, d_codes, (IntPtr)codes_size, hStream));
+CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
+}
+}
+// Copy back array: text
+if (text_size > 0 && d_text != IntPtr.Zero && !global::System.Object.ReferenceEquals(text, codes))
+{
+fixed (global::System.Char* p_text = text)
+{
+CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoHAsync_v2((IntPtr)p_text, d_text, (IntPtr)text_size, hStream));
+CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
+}
+}
+// Fast zero-allocation copy from device for scalar: refValue
+fixed (global::System.Char* ptr_refValue = &refValue)
+{
+CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoHAsync_v2((IntPtr)ptr_refValue, d_refValue, (IntPtr)refValue_size, hStream));
+CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
+}
+outValue = default;
+// Fast zero-allocation copy from device for scalar: outValue
+fixed (global::System.Char* ptr_outValue = &outValue)
+{
+CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoHAsync_v2((IntPtr)ptr_outValue, d_outValue, (IntPtr)outValue_size, hStream));
+CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
+}
+}
+finally
+{
+if (d_codes != IntPtr.Zero) CudaDriverApi.cuMemFreeAsync(d_codes, hStream);
+if (d_text != IntPtr.Zero && d_text != d_codes) CudaDriverApi.cuMemFreeAsync(d_text, hStream);
+if (d_refValue != IntPtr.Zero) CudaDriverApi.cuMemFreeAsync(d_refValue, hStream);
+if (d_outValue != IntPtr.Zero) CudaDriverApi.cuMemFreeAsync(d_outValue, hStream);
+}
+}
+}
+#pragma warning restore CS8500
+#pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
+[global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
+[global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
+public static unsafe void LaunchCharArgumentKernelPtr(IntPtr codes, IntPtr text, global::System.Char value, global::System.Char inValue, IntPtr refValue, IntPtr outValue, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, IntPtr hStream = default, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
+{
+using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
+{
+WarmupFunctionPointerCharArgumentKernel();
+IntPtr hfunc = s_hfunc_CharArgumentKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "CharLiteralKernels.CharArgumentKernel");
+try
+{
+void** kernelParams = stackalloc void*[6];
+// Marshal device array: codes
+IntPtr* proxy_codes = stackalloc IntPtr[2];
+proxy_codes[0] = codes;
+((int*)(proxy_codes + 1))[0] = 0; // Length is unknown for raw IntPtr
+((int*)(proxy_codes + 1))[1] = 0;
+kernelParams[0] = proxy_codes;
+// Marshal device array: text
+IntPtr* proxy_text = stackalloc IntPtr[2];
+proxy_text[0] = text;
+((int*)(proxy_text + 1))[0] = 0; // Length is unknown for raw IntPtr
+((int*)(proxy_text + 1))[1] = 0;
+kernelParams[1] = proxy_text;
+// Marshal scalar: value
+kernelParams[2] = &value;
+// Marshal scalar: inValue
+kernelParams[3] = &inValue;
+// Marshal device scalar: refValue
+kernelParams[4] = &refValue;
+// Marshal device scalar: outValue
+kernelParams[5] = &outValue;
 CudaException.ThrowIfError(CudaDriverApi.cuLaunchKernel(
 hfunc,
 gridDimX, gridDimY, gridDimZ, // Grid dim
