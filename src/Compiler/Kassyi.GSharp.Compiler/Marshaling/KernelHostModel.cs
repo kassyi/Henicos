@@ -44,6 +44,9 @@ internal readonly record struct KernelHostModel
     /// <summary>A <c>[GpuKernel(Cooperative = true)]</c> kernel.</summary>
     public bool IsCooperative { get; init; }
 
+    /// <summary>Whether the kernel or any device function it calls reaches a warp shuffle or warp match (#1001).</summary>
+    public bool ReachesWarpShuffle { get; init; }
+
     /// <summary>The kernel in a run-time error of the managed path (<see cref="KernelHostNames.GetMessageName"/>).</summary>
     public string MessageName { get; init; }
 
@@ -111,6 +114,7 @@ internal readonly record struct KernelHostModel
             CudaReturn = ParameterTransfer.CreateForReturn(kernel.ReturnType, HostDialects.Cuda),
             CpuReturn = ParameterTransfer.CreateForReturn(kernel.ReturnType, HostDialects.Cpu),
             IsCooperative = kernel.IsCooperativeKernel(),
+            ReachesWarpShuffle = model != null && SuspensionAnalysis.ReachesWarpShuffle(kernel, model.Compilation),
             MessageName = KernelHostNames.GetMessageName(kernel),
             GridScratchSlotBytes = model != null && kernel.IsCooperativeKernel() &&
                                    kernel.TryGetDeclaringSyntax<MethodDeclarationSyntax>(out var declaration) &&

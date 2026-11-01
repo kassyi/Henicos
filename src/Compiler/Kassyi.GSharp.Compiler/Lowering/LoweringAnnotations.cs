@@ -47,6 +47,12 @@ public static class LoweringAnnotations
     /// <summary>Data of a <see cref="SyncIntrinsicAnnotationKind"/> annotation on <c>Warp.ShuffleXorSync</c>.</summary>
     public const string ShuffleXorAnnotationData = "Shuffle:Xor";
 
+    /// <summary>Data of a <see cref="SyncIntrinsicAnnotationKind"/> annotation on <c>Gpu.MatchAnySync</c>.</summary>
+    public const string MatchAnyAnnotationData = "Shuffle:MatchAny";
+
+    /// <summary>Data of a <see cref="SyncIntrinsicAnnotationKind"/> annotation on <c>Gpu.MatchAllSync</c>.</summary>
+    public const string MatchAllAnnotationData = "Shuffle:MatchAll";
+
     /// <summary>
     /// Annotation kind that marks a <c>return</c> the state machine inserts to suspend (after storing the next state), as
     /// opposed to a <c>return</c> of the user's code. Emitters leave it as a plain suspension instead of finishing the
@@ -107,6 +113,8 @@ public static class LoweringAnnotations
                 WarpShuffleKind.Down => ShuffleDownAnnotationData,
                 WarpShuffleKind.Up => ShuffleUpAnnotationData,
                 WarpShuffleKind.Xor => ShuffleXorAnnotationData,
+                WarpShuffleKind.MatchAny => MatchAnyAnnotationData,
+                WarpShuffleKind.MatchAll => MatchAllAnnotationData,
                 _ => null
             },
             _ => null

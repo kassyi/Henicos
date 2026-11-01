@@ -47,6 +47,7 @@ internal static class HostLauncherTranspiler
             hasContext,
             plan.HasAutoResult,
             hasContext && methodSymbol.IsCooperativeKernel(),
+            hasContext && SuspensionAnalysis.ReachesWarpShuffle(methodSymbol, context.Query.SemanticModel.Compilation),
             KernelHostNames.GetMessageName(methodSymbol)
         );
         WriteLauncherBody(GlobalCppNames.GetKernelDerivedName(ContextPrefix, methodSymbol), step, structArguments,
@@ -354,6 +355,11 @@ internal static class HostLauncherTranspiler
                 $"int32_t {ThreadsPerBlock} = (int32_t)({BlockDimX} * {BlockDimY} * {BlockDimZ});");
         }
 
+        if (step.ReachesWarpShuffle)
+        {
+            context.Emitter.Writer.AppendLine($"int32_t {WarpMinState} = INT32_MAX;");
+        }
+
         // [WHY] The threads of a block run one after another on the OpenMP thread that runs the block: the shared memory
         // arena and the warp exchange of the block belong to that thread, so a nested parallel loop must not spread them
         context.Emitter.Writer.AppendLine(
@@ -361,6 +367,11 @@ internal static class HostLauncherTranspiler
         using (context.Emitter.Writer.Scope())
         {
             context.Emitter.Writer.AppendLine($"if ({Error}.HasError()) continue;");
+            if (step.ReachesWarpShuffle)
+            {
+                WriteWarpMinState(ref context);
+            }
+
             context.Emitter.Writer.AppendLine($"{ActiveErrorSlot} = &{Error};");
             context.Emitter.Writer.AppendLine($"int32_t {ThreadX} = {ThreadLoopIndex} % {BlockDimX};");
             context.Emitter.Writer.AppendLine(
@@ -377,12 +388,24 @@ internal static class HostLauncherTranspiler
 
             using (step.HasContext ? context.Emitter.Writer.Scope() : default)
             {
-                context.Emitter.Writer.AppendLine(
-                    $"{SetThreadIndex}({ThreadX}, {ThreadY}, {ThreadZ}, {BlockX}, {BlockY}, {BlockZ}, {BlockDimX}, {BlockDimY}, {BlockDimZ}, {GridDimX}, {GridDimY}, {GridDimZ});");
-                WriteKernelCall(step, ref context);
+                if (step.ReachesWarpShuffle)
+                {
+                    context.Emitter.Writer.AppendLine($"if ({Contexts}[{ContextThreadIndex}].{State} == {WarpMinState})");
+                }
+
+                using (step.ReachesWarpShuffle ? context.Emitter.Writer.Scope() : default)
+                {
+                    context.Emitter.Writer.AppendLine(
+                        $"{SetThreadIndex}({ThreadX}, {ThreadY}, {ThreadZ}, {BlockX}, {BlockY}, {BlockZ}, {BlockDimX}, {BlockDimY}, {BlockDimZ}, {GridDimX}, {GridDimY}, {GridDimZ});");
+                    WriteKernelCall(step, ref context);
+                    if (step.HasContext)
+                    {
+                        WriteGridSyncCheck(step, ref context);
+                    }
+                }
+
                 if (step.HasContext)
                 {
-                    WriteGridSyncCheck(step, ref context);
                     // The next round runs while a thread can go on: one that stopped at a shuffle runs again, one at a
                     // barrier waits
                     context.Emitter.Writer.AppendLine($"if ({RunnableCondition})");
@@ -403,6 +426,33 @@ internal static class HostLauncherTranspiler
     // <thread>.__gsharp_state != -1 && !<thread>.__gsharp_yielded_for_block_barrier && !<thread>.__gsharp_yielded_for_grid_sync
     private const string RunnableCondition =
         $"{Contexts}[{ContextThreadIndex}].{State} != -1 && !{Contexts}[{ContextThreadIndex}].{YieldedForBlockBarrier} && !{Contexts}[{ContextThreadIndex}].{YieldedForGridSync}";
+
+    private const string WarpRunnableCondition =
+        $"{Contexts}[{WarpThreadIndex}].{State} != -1 && !{Contexts}[{WarpThreadIndex}].{YieldedForBlockBarrier} && !{Contexts}[{WarpThreadIndex}].{YieldedForGridSync}";
+
+    // In a kernel that reaches a warp shuffle, only the runnable lanes at the warp's lowest state step in each round,
+    // so lanes that skip a sub-warp shuffle reconverge with the lanes that took it before the next full-warp shuffle (#1001)
+    private static void WriteWarpMinState(ref TranspileContext context)
+    {
+        context.Emitter.Writer.AppendLine($"if (({ThreadLoopIndex} & 31) == 0)");
+        using (context.Emitter.Writer.Scope())
+        {
+            context.Emitter.Writer.AppendLine($"{WarpMinState} = INT32_MAX;");
+            context.Emitter.Writer.AppendLine(
+                $"int32_t {WarpEnd} = {ThreadLoopIndex} + 32 < {ThreadsPerBlock} ? {ThreadLoopIndex} + 32 : {ThreadsPerBlock};");
+            context.Emitter.Writer.AppendLine(
+                $"for (int32_t {WarpThreadIndex} = {ThreadLoopIndex}; {WarpThreadIndex} < {WarpEnd}; {WarpThreadIndex}++)");
+            using (context.Emitter.Writer.Scope())
+            {
+                context.Emitter.Writer.AppendLine(
+                    $"if ({WarpRunnableCondition} && {Contexts}[{WarpThreadIndex}].{State} < {WarpMinState})");
+                using (context.Emitter.Writer.Scope())
+                {
+                    context.Emitter.Writer.AppendLine($"{WarpMinState} = {Contexts}[{WarpThreadIndex}].{State};");
+                }
+            }
+        }
+    }
 
     // [WHY] A thread that stopped at Gpu.SyncThreads waits there until no thread of the block can run any more, that is,
     // until every thread that has not finished waits at a barrier: only then does the block barrier let them all pass,
@@ -518,6 +568,7 @@ internal static class HostLauncherTranspiler
         bool hasContext,
         bool hasAutoResult,
         bool isCooperative,
+        bool reachesWarpShuffle,
         string messageName)
     {
         public MethodDeclarationSyntax Method { get; } = method;
@@ -530,6 +581,8 @@ internal static class HostLauncherTranspiler
 
         // A cooperative kernel with a state machine: it runs in grid phases
         public bool IsCooperative { get; } = isCooperative;
+
+        public bool ReachesWarpShuffle { get; } = reachesWarpShuffle;
 
         public string MessageName { get; } = messageName;
     }

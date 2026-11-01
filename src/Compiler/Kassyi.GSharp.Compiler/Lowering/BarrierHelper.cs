@@ -66,6 +66,8 @@ internal static class BarrierHelper
                 LoweringAnnotations.ShuffleDownAnnotationData => GSharpInternalNames.Prelude.WarpShuffleReadDownSync,
                 LoweringAnnotations.ShuffleUpAnnotationData => GSharpInternalNames.Prelude.WarpShuffleReadUpSync,
                 LoweringAnnotations.ShuffleXorAnnotationData => GSharpInternalNames.Prelude.WarpShuffleReadXorSync,
+                LoweringAnnotations.MatchAnyAnnotationData => GSharpInternalNames.Prelude.WarpMatchAnyRead,
+                LoweringAnnotations.MatchAllAnnotationData => GSharpInternalNames.Prelude.WarpMatchAllRead,
                 _ => null
             }
             : null;
