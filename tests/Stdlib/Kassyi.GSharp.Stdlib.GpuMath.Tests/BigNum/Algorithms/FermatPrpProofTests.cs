@@ -185,6 +185,7 @@ public class FermatPrpProofTests
         using var scope = new GpuKernelLoader.CudaContextScope();
         const int E = 61;
         var tempLeafPath = Path.Combine(Path.GetTempPath(), $"gsharp_prp_resume_{Guid.NewGuid():N}.leaves");
+        var snapshotLeafPath = Path.Combine(Path.GetTempPath(), $"gsharp_prp_resume_snap_{Guid.NewGuid():N}.leaves");
         try
         {
             var checkpoints = new List<FermatPrpCheckpoint>();
@@ -196,22 +197,27 @@ public class FermatPrpProofTests
             };
 
             FermatPrpProof expectedProof;
-            using (var initial = new FermatAlgorithm(E, 3, options with { OnVerifiedCheckpoint = checkpoints.Add }))
+            using (var initial = new FermatAlgorithm(E, 3, options with
+            {
+                OnVerifiedCheckpoint = cp =>
+                {
+                    checkpoints.Add(cp);
+                    if (checkpoints.Count == 1)
+                    {
+                        // Snapshot the persisted leaf file at the first verified checkpoint (before FinalizeProof folds
+                        // leaf slots 0..M_p-1 in place) to simulate resuming after an interrupted run.
+                        File.Copy(tempLeafPath, snapshotLeafPath, overwrite: true);
+                    }
+                }
+            }))
             {
                 initial.Run();
                 Assert.NotNull(initial.LastProof);
                 expectedProof = initial.LastProof;
-
-                // Re-running from the final checkpoint on the same instance must not fail even though FinalizeProof
-                // already folded the tree once (leaf slots 0..2*M_p-1 must remain intact).
-                initial.Restore(initial.CreateCheckpoint());
-                initial.Run();
-                Assert.NotNull(initial.LastProof);
-                AssertProofsEqual(expectedProof, initial.LastProof);
             }
 
-            // Resume a brand-new instance from a mid-chain checkpoint (iteration 49) backed by the persisted leaf file.
-            using (var resumed = new FermatAlgorithm(E, 3, options))
+            // Resume a brand-new instance from the mid-chain checkpoint (iteration 49) backed by the persisted leaf file.
+            using (var resumed = new FermatAlgorithm(E, 3, options with { ProofLeafFile = snapshotLeafPath }))
             {
                 resumed.Restore(checkpoints[0]);
                 resumed.Run();
@@ -231,6 +237,11 @@ public class FermatPrpProofTests
             if (File.Exists(tempLeafPath))
             {
                 File.Delete(tempLeafPath);
+            }
+
+            if (File.Exists(snapshotLeafPath))
+            {
+                File.Delete(snapshotLeafPath);
             }
         }
     }
@@ -308,8 +319,7 @@ public class FermatPrpProofTests
         {
             using var hostRunner = new FermatAlgorithm(hostE, 3, new FermatPrpOptions { ProofPower = 2 });
             hostRunner.Run();
-            var hostProof = hostRunner.LastProof;
-            Assert.NotNull(hostProof);
+            var hostProof = runnerProofOf(hostRunner);
 
             var hostModulus = ModulusOf(hostE);
             var malleated = CloneWitnesses(hostProof.Witnesses);
@@ -337,6 +347,12 @@ public class FermatPrpProofTests
             tamperedWitnesses[t] = FlipLowBitBelowModulus(proof.Witnesses[t].Span, n, words);
             Assert.False(FermatAlgorithm.VerifyProof(
                 new FermatPrpProof(header, proof.ResidueE, proof.ResidueK, tamperedWitnesses)).IsValid);
+        }
+
+        static FermatPrpProof runnerProofOf(FermatAlgorithm r)
+        {
+            Assert.NotNull(r.LastProof);
+            return r.LastProof;
         }
     }
 

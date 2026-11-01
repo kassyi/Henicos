@@ -5,7 +5,7 @@ namespace Kassyi.GSharp.Stdlib.GpuMath.Tests.BigNum.Providers;
 
 /// <summary>
 /// Property tests for the 3-prime 35-bit NTT convolution, fused middle-pass shared-memory squaring, and fused
-/// division-free Garner CRT3 + 96-bit slice carry resolution in <see cref="KernelAdvancedMathHandler"/>.
+/// division-free Garner CRT3 + 96-bit slice carry resolution in <see cref="Ntt35ConvolutionLauncher"/>.
 /// </summary>
 [Collection(TestCollections.GlobalStateSequential)]
 [TestTarget(ExecutionTarget.GpuExecution)]
@@ -24,17 +24,17 @@ public class Ntt35FusedConvolutionPropertyTests
     [Scenario(TestScenario.Boundary)]
     public void TransformLengthFor35_ReducesTargetExponentTo8MillionPointsAndGuardsLimit()
     {
-        Assert.Equal(2, KernelAdvancedMathHandler.TransformLengthFor35(1));
-        Assert.Equal(512, KernelAdvancedMathHandler.TransformLengthFor35(560));
-        Assert.Equal(1024, KernelAdvancedMathHandler.TransformLengthFor35(561));
+        Assert.Equal(2, Ntt35ConvolutionLauncher.TransformLengthFor35(1));
+        Assert.Equal(512, Ntt35ConvolutionLauncher.TransformLengthFor35(560));
+        Assert.Equal(1024, Ntt35ConvolutionLauncher.TransformLengthFor35(561));
 
         // E = 71,428,571 -> ProductWords = 8,928,572 -> TransformLength shrinks 4x from 2^25 to 2^23 (8,388,608).
         var targetModulus = new QuadraticFoldModulus(71_428_571);
-        Assert.Equal(1 << 23, KernelAdvancedMathHandler.TransformLengthFor35(targetModulus.ProductWords));
+        Assert.Equal(1 << 23, Ntt35ConvolutionLauncher.TransformLengthFor35(targetModulus.ProductWords));
 
         // MaxExponent = 134,217,727 -> ProductWords = 2^24 -> TransformLength = 2^24.
-        Assert.Equal(1 << 24, KernelAdvancedMathHandler.TransformLengthFor35(1 << 24));
-        Assert.Throws<ArgumentException>(() => KernelAdvancedMathHandler.TransformLengthFor35((1 << 24) + 1));
+        Assert.Equal(1 << 24, Ntt35ConvolutionLauncher.TransformLengthFor35(1 << 24));
+        Assert.Throws<ArgumentException>(() => Ntt35ConvolutionLauncher.TransformLengthFor35((1 << 24) + 1));
     }
 
     [SkippableFact]
@@ -50,7 +50,7 @@ public class Ntt35FusedConvolutionPropertyTests
         {
             using var workspace = new GpuWorkspace(2 * words);
             var handler = GSharpKernelProvider.Instance.KernelAdvancedMath;
-            using var scratch = KernelAdvancedMathHandler.NttMultiplyScratch.Allocate(workspace, handler, 2 * words);
+            using var scratch = Ntt35ConvolutionLauncher.NttMultiplyScratch.Allocate(workspace, 2 * words);
             using var result = new GpuBigUInt(workspace, 2 * words);
 
             // Limb j = 10 starts at bit 350 (word 10, bitOffset = 30) and ends at bit 384 (word 12, bit 0 = w2 bit 0).
@@ -70,7 +70,7 @@ public class Ntt35FusedConvolutionPropertyTests
                 handler.Square(workspace, operand, result, scratch);
 
                 // P-3word-window: bits residing in the third 32-bit word w2 at bitOffset in {30, 31} survive unpack and convolution.
-                // mutant: ExecuteUnpack35Transposed `| (w2 << (64 - bitOffset))` removed (drops bit 34 at bitOffset=30 and bits 33..34 at bitOffset=31)
+                // mutant: Ntt35CarryKernels.cu.cs ExtractLimb35 `| (w2 << (64 - bitOffset))` removed (drops bit 34 at bitOffset=30 and bits 33..34 at bitOffset=31)
                 Assert.Equal(value * value, FromWords(result.ToHostWords(workspace)));
             }
         }
@@ -87,7 +87,7 @@ public class Ntt35FusedConvolutionPropertyTests
         const int Words = 300;
         using var workspace = new GpuWorkspace(2 * Words);
         var handler = GSharpKernelProvider.Instance.KernelAdvancedMath;
-        using var scratch = KernelAdvancedMathHandler.NttMultiplyScratch.Allocate(workspace, handler, 2 * Words);
+        using var scratch = Ntt35ConvolutionLauncher.NttMultiplyScratch.Allocate(workspace, 2 * Words);
         using var result = new GpuBigUInt(workspace, 2 * Words);
 
         // 2^35 - 1 = 31 * 1,108,307,721. Setting limbs j = 1..100 of A to 1,108,307,721, limb j = 0 to 2,000,000,000,
@@ -108,7 +108,7 @@ public class Ntt35FusedConvolutionPropertyTests
         handler.Multiply(workspace, a, b, result, scratch);
 
         // P-carry35-ripple: 1-bit ripple carry propagates across all 32 lanes of a warp, across 35-word tile boundaries, and across N2-limb segment boundaries.
-        // mutant: ResolveNtt35CarriesTiled32x32 omits WarpScanGp or omits BlockCarries[tileIdx] cross-tile carry application
+        // mutant: Ntt35CarryKernels.cu.cs ResolveTileDigits omits WarpScanGp or omits BlockCarries[tileLinearIdx] cross-tile carry application
         Assert.Equal(aVal * bVal, FromWords(result.ToHostWords(workspace)));
     }
 
@@ -121,7 +121,7 @@ public class Ntt35FusedConvolutionPropertyTests
         using var scope = new GpuKernelLoader.CudaContextScope();
         using var workspace = new GpuWorkspace(2 * words);
         var handler = GSharpKernelProvider.Instance.KernelAdvancedMath;
-        using var scratch = KernelAdvancedMathHandler.NttMultiplyScratch.Allocate(workspace, handler, 2 * words);
+        using var scratch = Ntt35ConvolutionLauncher.NttMultiplyScratch.Allocate(workspace, 2 * words);
         using var squareResult = new GpuBigUInt(workspace, 2 * words);
         using var multiplyResult = new GpuBigUInt(workspace, 2 * words);
         var random = new Random(701 * 100_000 + words);
@@ -149,8 +149,8 @@ public class Ntt35FusedConvolutionPropertyTests
             var expectedSquare = xVal * xVal;
 
             // P-fused-square-exact: fused middle-pass Square agrees with unfused Multiply(x, x) and BigInteger x^2.
-            // mutant: ExecuteNttFusedMiddleSquareRow in-shared bit-reversal or ApplyTwiddleAfter skipped
-            // mutant: ExecuteResolveNtt35CarriesBlocked `| ((ulong)cHi << (64 - rightShift))` removed
+            // mutant: Ntt35TablelessKernels.cu.cs ExecuteNttFusedMiddleSquareRow in-shared bit-reversal or ApplyTwiddleAfter skipped
+            // mutant: Ntt35CarryKernels.cu.cs SumCoefficientSlices `| ((ulong)cHi << (64 - rightShift))` removed
             Assert.True(expectedSquare == actualSquare, $"Square mismatch: words={words} case={idx}");
             Assert.True(expectedSquare == actualMultiply, $"Multiply(x,x) mismatch: words={words} case={idx}");
         }
@@ -162,6 +162,31 @@ public class Ntt35FusedConvolutionPropertyTests
         var expectedProduct = FromWords(randomA) * FromWords(randomB);
         Assert.True(expectedProduct == FromWords(multiplyResult.ToHostWords(workspace)),
             $"Multiply(A,B) mismatch: words={words}");
+    }
+
+    [SkippableFact]
+    [Scenario(TestScenario.Boundary)]
+    public void Square_MillionPointTransform_MatchesBigInteger()
+    {
+        CudaCapability.EnsureGpuAvailable();
+        using var scope = new GpuKernelLoader.CudaContextScope();
+
+        // 286,721 words -> ProductWords = 573,442 -> ceil(573,442 * 32 / 35) = 524,290 > 2^19 -> m = 2^20 (1,048,576, N1 = 1024, N2 = 1024).
+        const int Words = 286_721;
+        using var workspace = new GpuWorkspace(2 * Words);
+        var handler = GSharpKernelProvider.Instance.KernelAdvancedMath;
+        using var scratch = Ntt35ConvolutionLauncher.NttSquareScratch.Allocate(workspace, Words);
+        Assert.Equal(1 << 20, scratch.TransformLength);
+
+        var operandWords = RandomWords(new Random(702_000_000 + Words), Words);
+        using var operand = new GpuBigUInt(workspace, operandWords);
+        using var result = new GpuBigUInt(workspace, 2 * Words);
+
+        handler.Square(workspace, operand, result, scratch);
+
+        var expected = FromWords(operandWords);
+        Assert.True(expected * expected == FromWords(result.ToHostWords(workspace)),
+            $"Million-point Square mismatch at words={Words} (m={scratch.TransformLength})");
     }
 
     private static uint[] RandomWords(Random random, int words)
