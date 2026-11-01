@@ -54,6 +54,9 @@ ManagedVersion:
     # cannot name (ManagedAccessorSet): followed by the body of the body's function name and a counter
     # (__gsharp_accessor_<path>_<n>).
     AccessorPrefix: __gsharp_accessor_
+    # Binds the receiver of a reduced extension method group to its managed version at the time the delegate is created
+    # (__gsharp_bind(receiver, global::Type.__gsharp_managed_F), #940).
+    Bind: { Value: __gsharp_bind, Managed: ManagedGpuContext.Bind.cs }
 
 DynamicSharedMemory:
   Summary: >-
