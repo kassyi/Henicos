@@ -19,7 +19,8 @@ namespace Kassyi.GSharp.Compiler.Transpiler;
 internal static class SharedMemorySiteKey
 {
     /// <summary>Computes the key of a <c>SharedMemory&lt;T&gt;</c> creation, which may be a node of a lowered body.</summary>
-    public static ulong Compute(SemanticModel semanticModel, BaseObjectCreationExpressionSyntax creation)
+    public static ulong Compute(SemanticModel semanticModel, BaseObjectCreationExpressionSyntax creation,
+        INamedTypeSymbol? constructedStructType = null)
     {
         var original = semanticModel.GetOriginalNode(creation) as BaseObjectCreationExpressionSyntax
                        ?? throw new InvalidOperationException("A shared memory creation is not mapped to its source declaration.");
@@ -33,7 +34,10 @@ internal static class SharedMemorySiteKey
         {
             if (node == original)
             {
-                return HashHelper.ComputeFnv1A64($"{methodId}#{ordinal}");
+                return constructedStructType is { IsGenericType: true }
+                    ? HashHelper.ComputeFnv1A64(
+                        $"{methodId}@{constructedStructType.GetFullyQualifiedCsharpName()}#{ordinal}")
+                    : HashHelper.ComputeFnv1A64($"{methodId}#{ordinal}");
             }
 
             if (node is BaseObjectCreationExpressionSyntax other && semanticModel.GetTypeInfo(other).Type.IsSharedMemoryType())
@@ -66,7 +70,7 @@ internal static class SharedMemorySiteKey
         ref TranspileContext context)
     {
         var model = context.Query.SemanticModel;
-        var siteKey = ToCppLiteral(Compute(model, creation));
+        var siteKey = ToCppLiteral(Compute(model, creation, context.Emitter.StructConstructorType));
         var isDynamic = DynamicSharedMemoryAnalysis.TryGetCount(creation, model, out var count, out var constantCount) &&
                         constantCount == null;
 

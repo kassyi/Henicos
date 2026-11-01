@@ -48,7 +48,9 @@ public readonly ref struct SharedMemory<T> where T : unmanaged
     [EditorBrowsable(EditorBrowsableState.Never)]
     public SharedMemory(int size, ulong siteKey)
     {
-        _span = ManagedGpuContext.IsActive ? ManagedGpuContext.AllocateSharedMemory<T>(siteKey, size) : default;
+        _span = ManagedGpuContext.IsActive
+            ? ManagedGpuContext.AllocateSharedMemory<T>(siteKey ^ ManagedGpuContext.CurrentTypeKeySalt, size)
+            : default;
     }
 
     /// <summary>
@@ -65,7 +67,8 @@ public readonly ref struct SharedMemory<T> where T : unmanaged
     public SharedMemory(int size, ulong siteKey, string dynamicPlace)
     {
         _span = ManagedGpuContext.IsActive
-            ? ManagedGpuContext.AllocateDynamicSharedMemory<T>(siteKey, size, dynamicPlace)
+            ? ManagedGpuContext.AllocateDynamicSharedMemory<T>(
+                siteKey ^ ManagedGpuContext.CurrentTypeKeySalt, size, dynamicPlace)
             : default;
     }
 
@@ -84,7 +87,9 @@ public readonly ref struct SharedMemory<T> where T : unmanaged
     /// <returns>The declaration's region, or an empty one.</returns>
     [EditorBrowsable(EditorBrowsableState.Never)]
     public static SharedMemory<T> FindDynamic(ulong siteKey) =>
-        new(ManagedGpuContext.IsActive ? ManagedGpuContext.FindDynamicSharedMemory<T>(siteKey) : default);
+        new(ManagedGpuContext.IsActive
+            ? ManagedGpuContext.FindDynamicSharedMemory<T>(siteKey ^ ManagedGpuContext.CurrentTypeKeySalt)
+            : default);
 
     /// <summary>
     /// Gets a reference to the element at the specified zero-based index in shared memory.

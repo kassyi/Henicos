@@ -25,104 +25,112 @@ public static partial class GpuBigIntRnsMontgomeryKernels
         RnsConstantsContext ctx, RnsBigInt result)
     {
         var tid = ThreadIndex.X;
-        if (tid >= ctx.KSize)
-        {
-            return;
-        }
-
-        var m1 = ctx.Base1.Moduli[tid];
-        var m2 = ctx.Base2.Moduli[tid];
+        var inBounds = tid < ctx.KSize;
 
         // Shared memory arrays for intermediate xi (Maximum supported K is 128)
         var xiQShared = new SharedMemory<uint>(128);
         var xiRShared = new SharedMemory<uint>(128);
 
-        // ========================================================
-        // 1. q = a * b * (-N^{-1}) mod Base 1
-        // ========================================================
-        ulong abB1 = (ulong)a.B1[tid] * b.B1[tid];
-        ulong qTemp = (abB1 % m1) * montCtx.NegNInvB1[tid];
-        uint qB1 = (uint)(qTemp % m1);
+        uint m1 = 0;
+        uint m2 = 0;
+        if (inBounds)
+        {
+            m1 = ctx.Base1.Moduli[tid];
+            m2 = ctx.Base2.Moduli[tid];
 
-        // xi for Approximate Base Extension
-        xiQShared[tid] = (uint)(((ulong)qB1 * ctx.Base1.Gamma[tid]) % m1);
+            // ========================================================
+            // 1. q = a * b * (-N^{-1}) mod Base 1
+            // ========================================================
+            ulong abB1 = (ulong)a.B1[tid] * b.B1[tid];
+            ulong qTemp = (abB1 % m1) * montCtx.NegNInvB1[tid];
+            uint qB1 = (uint)(qTemp % m1);
+
+            // xi for Approximate Base Extension
+            xiQShared[tid] = (uint)(((ulong)qB1 * ctx.Base1.Gamma[tid]) % m1);
+        }
 
         Gpu.SyncThreads();
 
-        // ========================================================
-        // 2. Approximate Base Extension: q from Base 1 to Base 2
-        // ========================================================
-        ulong qB2 = 0;
-        for (int i = 0; i < ctx.KSize; i++)
+        if (inBounds)
         {
-            ulong term = (ulong)xiQShared[i] * ctx.Base1.MOverMiModOther[i * ctx.KSize + tid];
-            qB2 = (qB2 + term) % m2;
+            // ========================================================
+            // 2. Approximate Base Extension: q from Base 1 to Base 2
+            // ========================================================
+            ulong qB2 = 0;
+            for (int i = 0; i < ctx.KSize; i++)
+            {
+                ulong term = (ulong)xiQShared[i] * ctx.Base1.MOverMiModOther[i * ctx.KSize + tid];
+                qB2 = (qB2 + term) % m2;
+            }
+
+            // ========================================================
+            // 3. r = (a * b + q * N) * R^{-1} mod Base 2
+            // ========================================================
+            ulong abB2 = (ulong)a.B2[tid] * b.B2[tid];
+            ulong qnB2 = qB2 * montCtx.NRnsB2[tid];
+            ulong rTempB2 = ((abB2 % m2) + (qnB2 % m2)) % m2;
+            uint rB2 = (uint)((rTempB2 * montCtx.RInvB2[tid]) % m2);
+
+            // xi for Shenoy-Kumaresan Base Extension (B2 -> B1)
+            xiRShared[tid] = (uint)(((ulong)rB2 * ctx.Base2.Gamma[tid]) % m2);
+
+            // Output Base 2 result
+            result.B2[tid] = rB2;
         }
-
-        // ========================================================
-        // 3. r = (a * b + q * N) * R^{-1} mod Base 2
-        // ========================================================
-        ulong abB2 = (ulong)a.B2[tid] * b.B2[tid];
-        ulong qnB2 = qB2 * montCtx.NRnsB2[tid];
-        ulong rTempB2 = ((abB2 % m2) + (qnB2 % m2)) % m2;
-        uint rB2 = (uint)((rTempB2 * montCtx.RInvB2[tid]) % m2);
-
-        // xi for Shenoy-Kumaresan Base Extension (B2 -> B1)
-        xiRShared[tid] = (uint)(((ulong)rB2 * ctx.Base2.Gamma[tid]) % m2);
-
-        // Output Base 2 result
-        result.B2[tid] = rB2;
 
         Gpu.SyncThreads();
 
-        // ========================================================
-        // 4. Shenoy-Kumaresan Base Extension: r from Base 2 to Base 1
-        // ========================================================
-
-        // Calculate q_sk and sumSkR redundantly in all threads to avoid extra shared memory
-        ulong qSkSum = 0;
-        ulong sumSkR = 0;
-        for (int i = 0; i < ctx.KSize; i++)
+        if (inBounds)
         {
-            ulong termQ = (ulong)xiQShared[i] * ctx.Base1.MOverMiModMsk[i];
-            qSkSum = (qSkSum + termQ) % ctx.ModSk;
+            // ========================================================
+            // 4. Shenoy-Kumaresan Base Extension: r from Base 2 to Base 1
+            // ========================================================
 
-            ulong termR = (ulong)xiRShared[i] * ctx.Base2.MOverMiModMsk[i];
-            sumSkR = (sumSkR + termR) % ctx.ModSk;
+            // Calculate q_sk and sumSkR redundantly in all threads to avoid extra shared memory
+            ulong qSkSum = 0;
+            ulong sumSkR = 0;
+            for (int i = 0; i < ctx.KSize; i++)
+            {
+                ulong termQ = (ulong)xiQShared[i] * ctx.Base1.MOverMiModMsk[i];
+                qSkSum = (qSkSum + termQ) % ctx.ModSk;
+
+                ulong termR = (ulong)xiRShared[i] * ctx.Base2.MOverMiModMsk[i];
+                sumSkR = (sumSkR + termR) % ctx.ModSk;
+            }
+
+            // Calculate r_sk
+            ulong abSk = (ulong)a.Sk * b.Sk;
+            ulong qnSk = qSkSum * montCtx.NSk;
+            ulong rTempSk = ((abSk % ctx.ModSk) + (qnSk % ctx.ModSk)) % ctx.ModSk;
+            uint rSk = (uint)((rTempSk * ctx.Base1.MInvModMsk) % ctx.ModSk);
+
+            // Calculate alpha for B2 -> B1
+            long alphaTempR = (long)sumSkR - rSk;
+            if (alphaTempR < 0)
+            {
+                alphaTempR += ctx.ModSk;
+            }
+
+            ulong alphaR = ((ulong)alphaTempR * ctx.Base2.MInvModMsk) % ctx.ModSk;
+
+            // Calculate r in Base 1
+            ulong sumB1 = 0;
+            for (int j = 0; j < ctx.KSize; j++)
+            {
+                ulong term = (ulong)xiRShared[j] * ctx.Base2.MOverMiModOther[j * ctx.KSize + tid];
+                sumB1 = (sumB1 + term) % m1;
+            }
+
+            ulong alphaTermR = (alphaR * ctx.Base2.MModOther[tid]) % m1;
+
+            long resultTempR = (long)sumB1 - (long)alphaTermR;
+            if (resultTempR < 0)
+            {
+                resultTempR += m1;
+            }
+
+            result.B1[tid] = (uint)resultTempR;
         }
-
-        // Calculate r_sk
-        ulong abSk = (ulong)a.Sk * b.Sk;
-        ulong qnSk = qSkSum * montCtx.NSk;
-        ulong rTempSk = ((abSk % ctx.ModSk) + (qnSk % ctx.ModSk)) % ctx.ModSk;
-        uint rSk = (uint)((rTempSk * ctx.Base1.MInvModMsk) % ctx.ModSk);
-
-        // Calculate alpha for B2 -> B1
-        long alphaTempR = (long)sumSkR - rSk;
-        if (alphaTempR < 0)
-        {
-            alphaTempR += ctx.ModSk;
-        }
-
-        ulong alphaR = ((ulong)alphaTempR * ctx.Base2.MInvModMsk) % ctx.ModSk;
-
-        // Calculate r in Base 1
-        ulong sumB1 = 0;
-        for (int j = 0; j < ctx.KSize; j++)
-        {
-            ulong term = (ulong)xiRShared[j] * ctx.Base2.MOverMiModOther[j * ctx.KSize + tid];
-            sumB1 = (sumB1 + term) % m1;
-        }
-
-        ulong alphaTermR = (alphaR * ctx.Base2.MModOther[tid]) % m1;
-
-        long resultTempR = (long)sumB1 - (long)alphaTermR;
-        if (resultTempR < 0)
-        {
-            resultTempR += m1;
-        }
-
-        result.B1[tid] = (uint)resultTempR;
     }
 
 
@@ -143,22 +151,22 @@ public static partial class GpuBigIntRnsMontgomeryKernels
         RnsBigInt temp)    // Workspace 2
     {
         var tid = ThreadIndex.X;
-        if (tid >= ctx.KSize)
-        {
-            return;
-        }
+        var inBounds = tid < ctx.KSize;
 
         // Initialization
-        result.B1[tid] = oneRns.B1[tid];
-        result.B2[tid] = oneRns.B2[tid];
-
-        x.B1[tid] = baseRns.B1[tid];
-        x.B2[tid] = baseRns.B2[tid];
-
-        if (tid == 0)
+        if (inBounds)
         {
-            result.Sk = oneRns.Sk;
-            x.Sk = baseRns.Sk;
+            result.B1[tid] = oneRns.B1[tid];
+            result.B2[tid] = oneRns.B2[tid];
+
+            x.B1[tid] = baseRns.B1[tid];
+            x.B2[tid] = baseRns.B2[tid];
+
+            if (tid == 0)
+            {
+                result.Sk = oneRns.Sk;
+                x.Sk = baseRns.Sk;
+            }
         }
 
         Gpu.SyncThreads();
@@ -176,7 +184,7 @@ public static partial class GpuBigIntRnsMontgomeryKernels
                 ExecuteRnsMontgomeryMultiply(result, x, montCtx, ctx, temp);
                 Gpu.SyncThreads();
 
-                if (bitSet)
+                if (bitSet && inBounds)
                 {
                     // If bit is 1, keep the multiplied result
                     result.B1[tid] = temp.B1[tid];
@@ -192,12 +200,15 @@ public static partial class GpuBigIntRnsMontgomeryKernels
                 ExecuteRnsMontgomeryMultiply(x, x, montCtx, ctx, temp);
                 Gpu.SyncThreads();
 
-                // x = temp
-                x.B1[tid] = temp.B1[tid];
-                x.B2[tid] = temp.B2[tid];
-                if (tid == 0)
+                if (inBounds)
                 {
-                    x.Sk = temp.Sk;
+                    // x = temp
+                    x.B1[tid] = temp.B1[tid];
+                    x.B2[tid] = temp.B2[tid];
+                    if (tid == 0)
+                    {
+                        x.Sk = temp.Sk;
+                    }
                 }
 
                 Gpu.SyncThreads();
@@ -206,11 +217,14 @@ public static partial class GpuBigIntRnsMontgomeryKernels
 
         // Final Montgomery Reduction to exit Montgomery Space
         // Multiply by 1 in normal RNS space
-        temp.B1[tid] = 1;
-        temp.B2[tid] = 1;
-        if (tid == 0)
+        if (inBounds)
         {
-            temp.Sk = 1;
+            temp.B1[tid] = 1;
+            temp.B2[tid] = 1;
+            if (tid == 0)
+            {
+                temp.Sk = 1;
+            }
         }
 
         Gpu.SyncThreads();
@@ -220,11 +234,14 @@ public static partial class GpuBigIntRnsMontgomeryKernels
         Gpu.SyncThreads();
 
         // Copy final result back to result buffer
-        result.B1[tid] = x.B1[tid];
-        result.B2[tid] = x.B2[tid];
-        if (tid == 0)
+        if (inBounds)
         {
-            result.Sk = x.Sk;
+            result.B1[tid] = x.B1[tid];
+            result.B2[tid] = x.B2[tid];
+            if (tid == 0)
+            {
+                result.Sk = x.Sk;
+            }
         }
     }
 }
