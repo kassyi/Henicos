@@ -14,7 +14,7 @@ namespace Kassyi.GSharp.Compiler.Analysis;
 /// </para>
 /// <para>
 /// A device function of another assembly has no body in the compilation; its assembly recorded whether it emitted a
-/// managed version (<see cref="DeviceExportRecord.ManagedVersion"/>).
+/// managed version (<see cref="Models.DeviceExportRecord.ManagedVersion"/>).
 /// </para>
 /// </remarks>
 internal static class ManagedVersionAnalysis

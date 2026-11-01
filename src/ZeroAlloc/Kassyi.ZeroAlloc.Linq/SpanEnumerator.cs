@@ -33,7 +33,7 @@ public ref struct SpanEnumerator<T> : IStackEnumerator<T>
     /// <see langword="true"/> if the enumerator successfully advanced to the next element;
     /// <see langword="false"/> if the end of the span was reached.
     /// </returns>
-    public bool TryGetNext(out T current)
+    public bool TryGetNext([MaybeNullWhen(false)] out T current)
     {
         if ((uint)_index < (uint)_source.Length)
         {
@@ -42,7 +42,7 @@ public ref struct SpanEnumerator<T> : IStackEnumerator<T>
         }
 
         // Safe fallback: default value when enumeration has reached the end
-        current = default!;
+        current = default;
         return false;
     }
 

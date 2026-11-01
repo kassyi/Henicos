@@ -73,7 +73,13 @@ internal static class ModuleKernelLaunchEmitter
     /// <summary>
     /// Emits the statements of a launcher body (without the enclosing braces).
     /// </summary>
+    /// <param name="writer">The destination source writer.</param>
+    /// <param name="moduleName">The native module name used to look up the embedded fatbin field.</param>
+    /// <param name="entryPoint">The mangled native kernel entry-point symbol.</param>
+    /// <param name="methodName">The C# launcher method name.</param>
     /// <param name="launcherName">The launcher as <c>Type.Method</c>, named by the shared memory limit error.</param>
+    /// <param name="parameters">The marshaled kernel parameters.</param>
+    /// <param name="packContext">Whether struct parameters are packed into a generated launch context struct.</param>
     public static void EmitLaunchBody(
         SourceWriter writer,
         string moduleName,

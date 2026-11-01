@@ -40,7 +40,7 @@ public ref struct SkipWhileAtEnumerator<TEnumerator, TSource> : IStackEnumerator
     /// <see langword="true"/> if the enumerator was successfully advanced to the next element;
     /// <see langword="false"/> if the end of the sequence was reached.
     /// </returns>
-    public bool TryGetNext(out TSource current)
+    public bool TryGetNext([MaybeNullWhen(false)] out TSource current)
     {
         while (_source.TryGetNext(out current))
         {
@@ -53,7 +53,7 @@ public ref struct SkipWhileAtEnumerator<TEnumerator, TSource> : IStackEnumerator
             return true;
         }
 
-        current = default!;
+        current = default;
         return false;
     }
 }

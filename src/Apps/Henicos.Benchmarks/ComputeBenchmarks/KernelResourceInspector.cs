@@ -1,4 +1,7 @@
 
+using System.ComponentModel;
+using Kassyi.GSharp.Runtime.Interop;
+
 namespace Henicos.Benchmarks.ComputeBenchmarks;
 
 /// <summary>
@@ -22,7 +25,7 @@ public static class KernelResourceInspector
         {
             return GpuKernelLoader.GetKernelAttributes(hfunc);
         }
-        catch
+        catch (Exception ex) when (ex is CudaException or InvalidOperationException or DllNotFoundException or EntryPointNotFoundException)
         {
             return null;
         }
@@ -87,6 +90,7 @@ public static class KernelResourceInspector
             Array.Copy(bytes, payload, payload.Length);
 
             var tempPath = Path.Combine(Path.GetTempPath(), $"henicos_inspect_{Guid.NewGuid():N}.gfatbin");
+            string output;
             try
             {
                 File.WriteAllBytes(tempPath, payload);
@@ -104,10 +108,8 @@ public static class KernelResourceInspector
                     return;
                 }
 
-                var output = proc.StandardOutput.ReadToEnd();
+                output = proc.StandardOutput.ReadToEnd();
                 proc.WaitForExit();
-
-                ParseSassOutput(output);
             }
             finally
             {
@@ -117,14 +119,16 @@ public static class KernelResourceInspector
                     {
                         File.Delete(tempPath);
                     }
-                    catch
+                    catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
                     {
                         /* best effort cleanup */
                     }
                 }
             }
+
+            ParseSassOutput(output);
         }
-        catch
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or Win32Exception or InvalidOperationException)
         {
             // Best effort; if cuobjdump is unavailable, instruction count will be -1
         }

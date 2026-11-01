@@ -36,7 +36,7 @@ public ref struct OfTypeEnumerator<TEnumerator, TSource, TResult> : IStackEnumer
     /// <see langword="true"/> if an element of type <typeparamref name="TResult"/> is found;
     /// <see langword="false"/> if the end of the sequence was reached without finding another one.
     /// </returns>
-    public bool TryGetNext(out TResult current)
+    public bool TryGetNext([MaybeNullWhen(false)] out TResult current)
     {
         while (_source.TryGetNext(out var value))
         {
@@ -48,7 +48,7 @@ public ref struct OfTypeEnumerator<TEnumerator, TSource, TResult> : IStackEnumer
         }
 
         // Safe fallback: default value when enumeration has reached the end
-        current = default!;
+        current = default;
         return false;
     }
 }

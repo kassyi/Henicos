@@ -4,8 +4,8 @@ namespace Henicos.Benchmarks;
 [MemoryDiagnoser]
 public class StackLinqGpuBenchmark
 {
-    private int[] _data = null!;
-    private int[] _results = null!;
+    private int[] _data = [];
+    private int[] _results = [];
     private int _endMarker;
 
     [Params(10_000, 100_000)]

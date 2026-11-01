@@ -358,7 +358,7 @@ public class DisposableOwnershipAnalyzer : DiagnosticAnalyzer
             );
 
         var helpers = GetHelpers(invocation, member, type);
-        if (helpers.Count == 0)
+        if (helpers.Length == 0)
         {
             // nameof(<name>) only names it; a method the analysis cannot see (another type, a base type, a delegate)
             // may release what it is given
@@ -397,10 +397,9 @@ public class DisposableOwnershipAnalyzer : DiagnosticAnalyzer
     // The bodies of the helpers that <invocation> may call, the member bodies that declare them and their parameters:
     // the methods of <type> with its name (every overload, since the syntax alone cannot pick one) and the local
     // functions of <member>, the body of the method the call is written in (a local function may call another one)
-    private static List<(SyntaxNode Body, SyntaxNode Member, ParameterListSyntax Parameters)> GetHelpers(
+    private static ImmutableArray<(SyntaxNode Body, SyntaxNode Member, ParameterListSyntax Parameters)> GetHelpers(
         InvocationExpressionSyntax invocation, SyntaxNode member, INamedTypeSymbol type)
     {
-        var helpers = new List<(SyntaxNode Body, SyntaxNode Member, ParameterListSyntax Parameters)>();
         var name = invocation.Expression switch
         {
             IdentifierNameSyntax identifier => identifier.Identifier.Text,
@@ -410,9 +409,10 @@ public class DisposableOwnershipAnalyzer : DiagnosticAnalyzer
         };
         if (name == null)
         {
-            return helpers;
+            return ImmutableArray<(SyntaxNode Body, SyntaxNode Member, ParameterListSyntax Parameters)>.Empty;
         }
 
+        var helpers = ImmutableArray.CreateBuilder<(SyntaxNode Body, SyntaxNode Member, ParameterListSyntax Parameters)>();
         foreach (var candidate in type.GetMembers(name))
         {
             if (candidate is not IMethodSymbol { MethodKind: MethodKind.Ordinary } method)
@@ -442,7 +442,7 @@ public class DisposableOwnershipAnalyzer : DiagnosticAnalyzer
                 .AddTo(helpers);
         }
 
-        return helpers;
+        return helpers.ToImmutable();
     }
 
     // The body of a local function; an extern one has none, so its declaration (which holds no call) stands for it

@@ -49,7 +49,7 @@ public ref struct SelectManyEnumerator<TEnumerator, TSource, TInnerEnumerator, T
     /// <see langword="true"/> if an element was produced;
     /// <see langword="false"/> if the source and the last inner sequence are exhausted.
     /// </returns>
-    public bool TryGetNext(out TResult current)
+    public bool TryGetNext([MaybeNullWhen(false)] out TResult current)
     {
         while (true)
         {
@@ -63,7 +63,7 @@ public ref struct SelectManyEnumerator<TEnumerator, TSource, TInnerEnumerator, T
                 _hasInner = false;
 
                 // Safe fallback: default value when enumeration has reached the end
-                current = default!;
+                current = default;
                 return false;
             }
 
