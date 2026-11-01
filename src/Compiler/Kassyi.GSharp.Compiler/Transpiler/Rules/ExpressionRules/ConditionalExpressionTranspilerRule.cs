@@ -50,7 +50,48 @@ public sealed class ConditionalExpressionTranspilerRule : SyntaxNodeTranspilerRu
             return;
         }
 
+        if (context.Query.SemanticModel.GetSafeOperation(node) is
+                IConditionalOperation { WhenFalse: { } falseBranch, Type: { } branchTargetType } conditional &&
+            conditional.Syntax.RawKind == node.RawKind &&
+            (IsUserDefinedConversion(conditional.WhenTrue) || IsUserDefinedConversion(falseBranch)))
+        {
+            using (context.Emitter.Writer.Parentheses())
+            {
+                context.Visitor.Visit(node.Condition);
+                context.Emitter.Writer.Append('?');
+                TranspileBranchWithUserConversion(conditional.WhenTrue, node.WhenTrue, branchTargetType, ref context);
+                context.Emitter.Writer.Append(':');
+                TranspileBranchWithUserConversion(falseBranch, node.WhenFalse, branchTargetType, ref context);
+            }
+
+            return;
+        }
+
         TranspileBranches(node, ref context);
+    }
+
+    private static bool IsUserDefinedConversion(IOperation branch) =>
+        branch is IConversionOperation { Conversion.IsUserDefined: true };
+
+    private static void TranspileBranchWithUserConversion(IOperation branch, ExpressionSyntax syntax,
+        ITypeSymbol targetType, ref TranspileContext context)
+    {
+        if (IsUserDefinedConversion(branch))
+        {
+            using (context.Emitter.Writer.Parentheses())
+            {
+                context.Emitter.Dialect.AppendType(ref context, targetType);
+            }
+
+            using (context.Emitter.Writer.Parentheses())
+            {
+                context.Visitor.Visit(syntax);
+            }
+
+            return;
+        }
+
+        context.Visitor.Visit(syntax);
     }
 
     private static void TranspileBranches(ConditionalExpressionSyntax node, ref TranspileContext context)

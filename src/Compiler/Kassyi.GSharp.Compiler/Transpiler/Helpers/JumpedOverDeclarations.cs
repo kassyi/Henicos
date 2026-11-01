@@ -78,7 +78,7 @@ internal static class JumpedOverDeclarations
             .AsStackEnumerable()
             .Any(named, static (member, self) => member switch
             {
-                IMethodSymbol { MethodKind: MethodKind.Conversion, Name: "op_Implicit" } conversion =>
+                IMethodSymbol { MethodKind: MethodKind.Conversion, Name: "op_Implicit" or "op_Explicit" } conversion =>
                     conversion.ReturnType.IsEqualTo(self),
                 IFieldSymbol { IsStatic: false, IsConst: false } field =>
                     field.Type.IsArrayLikeType() || HasCppDefaultConstructor(field.Type),

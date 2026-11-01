@@ -110,6 +110,23 @@ internal static class StructTranspiler
         {
             RegisterUsedStructIfApplicable(member.Type, ref context);
         }
+
+        if (!namedStruct.IsRefLikeType)
+        {
+            foreach (var member in namedStruct.GetMembers())
+            {
+                if (member is IMethodSymbol
+                    {
+                        MethodKind: MethodKind.Conversion,
+                        Name: "op_Implicit" or "op_Explicit",
+                        Parameters: [var parameter]
+                    } conversion)
+                {
+                    RegisterUsedStructIfApplicable(parameter.Type, ref context);
+                    RegisterUsedStructIfApplicable(conversion.ReturnType, ref context);
+                }
+            }
+        }
     }
 
     /// <summary>
@@ -163,6 +180,30 @@ internal static class StructTranspiler
                 if (TryGetUserStruct(member.Type, out var dep) && structSet.Contains(dep))
                 {
                     visit(dep);
+                }
+            }
+
+            if (!s.IsRefLikeType)
+            {
+                foreach (var member in s.GetMembers())
+                {
+                    if (member is IMethodSymbol
+                        {
+                            MethodKind: MethodKind.Conversion,
+                            Name: "op_Implicit" or "op_Explicit",
+                            Parameters: [var parameter]
+                        } conversion)
+                    {
+                        if (TryGetUserStruct(parameter.Type, out var paramDep) && structSet.Contains(paramDep))
+                        {
+                            visit(paramDep);
+                        }
+
+                        if (TryGetUserStruct(conversion.ReturnType, out var returnDep) && structSet.Contains(returnDep))
+                        {
+                            visit(returnDep);
+                        }
+                    }
                 }
             }
 
@@ -307,6 +348,10 @@ internal static class StructTranspiler
 
     private static void WriteStandardStructDefinition(INamedTypeSymbol structSym, ref TranspileContext context)
     {
+        var compilation = context.Query.SemanticModel.Compilation;
+        var conversions = ImmutableArray.CreateBuilder<(IMethodSymbol Conversion, ConversionOperatorDeclarationSyntax Declaration)>();
+        var hasConversionToStruct = false;
+
         WriteStructHeader(ref context, structSym);
 
         using (context.Emitter.Writer.Scope())
@@ -334,9 +379,31 @@ internal static class StructTranspiler
 
             foreach (var member in structSym.GetMembers())
             {
-                if (member is IMethodSymbol { MethodKind: MethodKind.Conversion, Name: "op_Implicit" } conv)
+                if (member is IMethodSymbol
+                    {
+                        MethodKind: MethodKind.Conversion,
+                        Name: "op_Implicit" or "op_Explicit",
+                        Parameters.Length: 1
+                    } conv)
                 {
-                    WriteImplicitConversionOperator(structSym, ref context, conv);
+                    if (!structSym.IsRefLikeType && TryGetConversionDeclaration(conv, compilation, out var declaration))
+                    {
+                        var toStruct = IsConversionToStruct(conv, structSym, compilation);
+                        if (toStruct && !hasConversionToStruct)
+                        {
+                            hasConversionToStruct = true;
+                            context.Emitter.Writer.Append("__device__ inline ")
+                                .AppendFullyQualifiedCppName(structSym)
+                                .AppendLine("() = default;");
+                        }
+
+                        WriteConversionDeclaration(structSym, conv, toStruct, ref context);
+                        conversions.Add((conv, declaration));
+                    }
+                    else if (conv.Name == "op_Implicit")
+                    {
+                        WriteImplicitConversionOperator(structSym, ref context, conv);
+                    }
                 }
                 else if (member is IPropertySymbol property && StructAbiMembers.IsComputedProperty(property))
                 {
@@ -347,7 +414,7 @@ internal static class StructTranspiler
 
             // [WHY] Declared in every definition, defined only by the methods that dispose the struct (UsingTranspiler):
             // the include guard keeps the first definition of the struct that any method writes.
-            if (UsingTranspiler.FindDisposeMethod(structSym, context.Query.SemanticModel.Compilation) != null)
+            if (UsingTranspiler.FindDisposeMethod(structSym, compilation) != null)
             {
                 context.Emitter.Writer.AppendLine($"__device__ void {GSharpInternalNames.Using.Dispose}();");
             }
@@ -359,6 +426,11 @@ internal static class StructTranspiler
         context.Emitter.Writer.AppendLine(";");
         WriteStructStaticAsserts(structSym, isInlineArray: false, ref context);
         WriteStructConstructors(structSym, ref context);
+        foreach (var (conversion, declaration) in conversions)
+        {
+            WriteConversionDefinition(structSym, conversion, declaration, ref context);
+        }
+
         context.Emitter.Writer
             .AppendLine("#endif")
             .AppendLine();
@@ -782,6 +854,176 @@ internal static class StructTranspiler
         context.Emitter.Writer
             .AppendLine("#endif")
             .AppendLine();
+    }
+
+    private static bool IsConversionToStruct(IMethodSymbol conversion, INamedTypeSymbol structSym,
+        Compilation compilation) =>
+        SubstituteTypeParameters(conversion.ReturnType, structSym, compilation).IsEqualTo(structSym);
+
+    private static bool TryGetConversionDeclaration(IMethodSymbol conversion, Compilation compilation,
+        [NotNullWhen(true)] out ConversionOperatorDeclarationSyntax? declaration)
+    {
+        if (conversion.TryGetDeclaringSyntax<ConversionOperatorDeclarationSyntax>(out declaration) &&
+            compilation.ContainsSyntaxTree(declaration.SyntaxTree))
+        {
+            return declaration.Body != null || declaration.ExpressionBody != null;
+        }
+
+        declaration = null;
+        return false;
+    }
+
+    // Declared inside the struct and defined after WriteStructConstructors so the body can call __gsharp_ctor_...
+    private static void WriteConversionDeclaration(INamedTypeSymbol structSym, IMethodSymbol conv, bool toStruct,
+        ref TranspileContext context)
+    {
+        var isExplicit = conv.Name == "op_Explicit";
+        if (toStruct)
+        {
+            context.Emitter.Writer.Append("__device__ ")
+                .AppendIf(isExplicit, "explicit ")
+                .Append("inline ")
+                .AppendFullyQualifiedCppName(structSym);
+            using (context.Emitter.Writer.Parentheses())
+            {
+                context.Emitter.Dialect.AppendType(ref context, conv.Parameters[0].Type);
+                context.Emitter.Writer.Append(" v");
+            }
+
+            context.Emitter.Writer.AppendLine(";");
+        }
+        else
+        {
+            context.Emitter.Writer.Append("__device__ ")
+                .AppendIf(isExplicit, "explicit ")
+                .Append("inline operator ");
+            context.Emitter.Dialect.AppendType(ref context, conv.ReturnType);
+            context.Emitter.Writer.AppendLine("() const;");
+        }
+    }
+
+    private static void WriteConversionDefinition(INamedTypeSymbol structSym, IMethodSymbol conv,
+        ConversionOperatorDeclarationSyntax declaration, ref TranspileContext context)
+    {
+        var query = context.Query;
+        var reporter = context.Reporter;
+        var compilation = query.SemanticModel.Compilation;
+        var model = compilation.GetSemanticModel(declaration.SyntaxTree);
+        context.Query = new Query(model, query.BclIntrinsicMap, query.UsedStructs);
+        context.Reporter = reporter.WithSemanticModel(model);
+        var previousCtorType = context.Emitter.StructConstructorType;
+        var previousCallableDepth = context.Emitter.CallableDepth;
+        context.Emitter.StructConstructorType = null;
+        context.Emitter.CallableDepth = 1;
+
+        try
+        {
+            var parameter = conv.Parameters[0];
+            var isReadOnlyRef = parameter.RefKind is RefKind.In or RefKind.RefReadOnlyParameter;
+            if (IsConversionToStruct(conv, structSym, compilation))
+            {
+                context.Emitter.Writer.Append("__device__ inline ")
+                    .AppendFullyQualifiedCppName(structSym)
+                    .Append("::")
+                    .AppendFullyQualifiedCppName(structSym);
+                using (context.Emitter.Writer.Parentheses())
+                {
+                    context.Emitter.Dialect.AppendType(ref context, parameter.Type);
+                    context.Emitter.Writer.Append(' ');
+                    if (isReadOnlyRef)
+                    {
+                        context.Emitter.Writer.Append('v');
+                    }
+                    else
+                    {
+                        CppNameResolver.AppendSymbolName(parameter, ref context);
+                    }
+                }
+
+                context.Emitter.Writer.Append(' ');
+                using (context.Emitter.Writer.Scope())
+                {
+                    if (isReadOnlyRef)
+                    {
+                        context.Emitter.Writer.Append("const ");
+                        context.Emitter.Dialect.AppendType(ref context, parameter.Type);
+                        context.Emitter.Writer.Append("* ");
+                        CppNameResolver.AppendSymbolName(parameter, ref context);
+                        context.Emitter.Writer.AppendLine(" = &v;");
+                    }
+
+                    if (declaration.ExpressionBody is { Expression: var expression })
+                    {
+                        StatementPrelude.Emit(expression, ref context);
+                        context.Emitter.Writer.Append("*this = ");
+                        context.Visitor.Visit(expression);
+                        context.Emitter.Writer.AppendLine(";");
+                    }
+                    else if (declaration.Body is { } block)
+                    {
+                        context.Emitter.Writer.Append("*this = ");
+                        using (context.Emitter.Writer.Parentheses())
+                        {
+                            context.Emitter.Writer.Append("[&]() -> ")
+                                .AppendFullyQualifiedCppName(structSym)
+                                .Append(' ');
+                            using (context.Emitter.Writer.Scope())
+                            {
+                                context.Visitor.VisitBlock(block);
+                            }
+
+                            context.Emitter.Writer.Append("()");
+                        }
+
+                        context.Emitter.Writer.AppendLine(";");
+                    }
+                }
+            }
+            else
+            {
+                context.Emitter.Writer.Append("__device__ inline ")
+                    .AppendFullyQualifiedCppName(structSym)
+                    .Append("::operator ");
+                context.Emitter.Dialect.AppendType(ref context, conv.ReturnType);
+                context.Emitter.Writer.Append("() const ");
+                using (context.Emitter.Writer.Scope())
+                {
+                    if (isReadOnlyRef)
+                    {
+                        context.Emitter.Writer.Append("const ")
+                            .AppendFullyQualifiedCppName(structSym)
+                            .Append("* ");
+                        CppNameResolver.AppendSymbolName(parameter, ref context);
+                        context.Emitter.Writer.AppendLine(" = this;");
+                    }
+                    else
+                    {
+                        context.Emitter.Writer.AppendFullyQualifiedCppName(structSym).Append(' ');
+                        CppNameResolver.AppendSymbolName(parameter, ref context);
+                        context.Emitter.Writer.AppendLine(" = *this;");
+                    }
+
+                    if (declaration.ExpressionBody is { Expression: var expression })
+                    {
+                        StatementPrelude.Emit(expression, ref context);
+                        context.Emitter.Writer.Append("return ");
+                        context.Visitor.Visit(expression);
+                        context.Emitter.Writer.AppendLine(";");
+                    }
+                    else if (declaration.Body is { } block)
+                    {
+                        context.Visitor.VisitBlock(block);
+                    }
+                }
+            }
+        }
+        finally
+        {
+            context.Emitter.StructConstructorType = previousCtorType;
+            context.Emitter.CallableDepth = previousCallableDepth;
+            context.Query = query;
+            context.Reporter = reporter;
+        }
     }
 
     private static void WriteImplicitConversionOperator(INamedTypeSymbol structSym, ref TranspileContext context,

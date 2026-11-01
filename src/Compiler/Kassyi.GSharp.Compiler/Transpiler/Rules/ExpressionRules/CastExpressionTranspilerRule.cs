@@ -59,6 +59,35 @@ public sealed class CastExpressionTranspilerRule : SyntaxNodeTranspilerRuleBase<
             context.Emitter.Dialect.AppendType(ref context, targetType);
         }
 
+        if (operation is IConversionOperation
+            {
+                Conversion: { IsUserDefined: true, MethodSymbol: { Parameters: [var parameter] } method }
+            } userConversion)
+        {
+            if (targetType != null && !method.ReturnType.IsEqualTo(targetType))
+            {
+                using (context.Emitter.Writer.Parentheses())
+                {
+                    context.Emitter.Dialect.AppendType(ref context, method.ReturnType);
+                }
+            }
+
+            if (userConversion.Operand.Type is { } operandType && !parameter.Type.IsEqualTo(operandType))
+            {
+                using (context.Emitter.Writer.Parentheses())
+                {
+                    context.Emitter.Dialect.AppendType(ref context, parameter.Type);
+                }
+
+                using (context.Emitter.Writer.Parentheses())
+                {
+                    context.Visitor.Visit(node.Expression);
+                }
+
+                return;
+            }
+        }
+
         context.Visitor.Visit(node.Expression);
     }
 

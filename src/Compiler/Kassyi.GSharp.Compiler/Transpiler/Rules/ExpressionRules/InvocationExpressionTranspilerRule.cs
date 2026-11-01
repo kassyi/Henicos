@@ -223,6 +223,10 @@ public sealed class InvocationExpressionTranspilerRule : SyntaxNodeTranspilerRul
         for (var i = 0; i < parameters.Length; i++)
         {
             var parameter = parameters[i];
+            if (!context.Emitter.Dialect.IsMappedType(parameter.Type))
+            {
+                StructTranspiler.RegisterUsedStructIfApplicable(parameter.Type, ref context);
+            }
             var providedArg = FindNamedArgument(arguments, parameter.Name);
 
             if (providedArg == null && positionalArgIndex < arguments.Count &&
