@@ -21,6 +21,7 @@
     <CompilerVisibleProperty Include="GSharpTargetDialect" />
     <Compile Remove="..\Kassyi.GSharp.Tests.Shared\TestCases\**\*.cs" />
     <Compile Include="..\Kassyi.GSharp.Tests.Shared\TestCases\Layout\HostLayoutCases.cs" />
+    <Compile Include="..\Kassyi.GSharp.Tests.Shared\TestCases\Transpiler\Emission\IteratorDepthKernels.cu.cs" />
   </ItemGroup>
 
   <ItemGroup>
