@@ -3,8 +3,8 @@ using Kassyi.GSharp.Compiler.Extensions;
 namespace Kassyi.GSharp.Tests.Shared.Analysis;
 
 /// <summary>
-/// Verifies which device functions get a managed version (<see cref="ManagedVersionAnalysis"/>, #711) and that the
-/// managed versions call the managed versions of the functions they name.
+/// Verifies which device functions get a managed version (<see cref="ManagedVersionAnalysis"/>, #711, #730) and that
+/// the managed versions call the managed versions of the functions they name.
 /// </summary>
 [Category(TestCategory.Compiler)]
 public class ManagedVersionAnalysisTests
@@ -20,8 +20,15 @@ public class ManagedVersionAnalysisTests
     [InlineData("Functions", "TwoLevels")]
     [InlineData("Functions", "AddAt")]
     [InlineData("Functions", "PassesMethodGroup")]
+    [InlineData("Functions", "PassesExtensionMethodGroup")]
+    [InlineData("Functions", "PassesGenericExtensionMethodGroup")]
     [InlineData("Functions", "CallsExtension")]
+    [InlineData("Functions", "FloatSumDirect")]
+    [InlineData("Functions", "DoubleSumSelector")]
+    [InlineData("Functions", "CallsFloatSum")]
     [InlineData("Extensions", "Doubled")]
+    [InlineData("Extensions", "AddToIndex")]
+    [InlineData("Extensions", "AddGeneric")]
     public void Test_Needs_ReachesAnOperatorMacro_IsTrue(string type, string name)
     {
         Assert.True(ManagedVersionAnalysis.Needs(GetMethod(type, name), s_compilation));
@@ -33,6 +40,7 @@ public class ManagedVersionAnalysisTests
     [InlineData("Plain")]
     [InlineData("CallsPlain")]
     [InlineData("Add")]
+    [InlineData("IntSumPlain")]
     public void Test_Needs_ReachesNoOperatorMacro_IsFalse(string name)
     {
         Assert.False(ManagedVersionAnalysis.Needs(GetMethod("Functions", name), s_compilation));
@@ -80,8 +88,12 @@ public class ManagedVersionAnalysisTests
     {
         Assert.True(HasDirectRewrite("Direct"));
         Assert.True(HasDirectRewrite("Suspends"));
+        Assert.True(HasDirectRewrite("FloatSumDirect"));
+        Assert.True(HasDirectRewrite("DoubleSumSelector"));
         Assert.False(HasDirectRewrite("Transitive"));
+        Assert.False(HasDirectRewrite("CallsFloatSum"));
         Assert.False(HasDirectRewrite("Plain"));
+        Assert.False(HasDirectRewrite("IntSumPlain"));
     }
 
     [Fact]
@@ -106,6 +118,29 @@ public class ManagedVersionAnalysisTests
     }
 
     [Fact]
+    [Scenario(TestScenario.HappyPath)]
+    public void Test_ManagedVersion_RewritesFloatAndDoubleSumToSumSequential()
+    {
+        var floatSource = GenerateManagedVersion("Functions", "FloatSumDirect");
+        var doubleSource = GenerateManagedVersion("Functions", "DoubleSumSelector");
+        var callerSource = GenerateManagedVersion("Functions", "CallsFloatSum");
+
+        Assert.Contains(
+            "global::Kassyi.ZeroAlloc.Linq.StackLinqExtensions.SumSequential(global::Kassyi.ZeroAlloc.Linq.StackLinqExtensions.AsStackEnumerable(data))",
+            floatSource);
+        Assert.DoesNotContain(".Sum(", floatSource);
+
+        Assert.Contains(
+            "global::Kassyi.ZeroAlloc.Linq.StackLinqExtensions.SumSequential(global::Kassyi.ZeroAlloc.Linq.StackLinqExtensions.AsStackEnumerable(data), x => x * 2.0)",
+            doubleSource);
+        Assert.DoesNotContain(".Sum(", doubleSource);
+
+        Assert.Contains(
+            $"global::ManagedVersionCases.Functions.{ManagedName("Functions", "FloatSumDirect")}(data) + 1f",
+            callerSource);
+    }
+
+    [Fact]
     [Scenario(TestScenario.Boundary)]
     public void Test_ManagedVersion_PassesTheVersionOfAMethodGroup()
     {
@@ -113,6 +148,28 @@ public class ManagedVersionAnalysisTests
 
         Assert.Contains(
             $"global::Kassyi.GSharp.Core.Gpu.ForUnroll(0, 2, global::ManagedVersionCases.Functions.{ManagedName("Functions", "AddAt")});",
+            source);
+    }
+
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void Test_ManagedVersion_BindsTheVersionOfAReducedExtensionMethodGroup()
+    {
+        var source = GenerateManagedVersion("Functions", "PassesExtensionMethodGroup");
+
+        Assert.Contains(
+            $"global::Kassyi.GSharp.Core.Gpu.ForUnroll(0, 2, global::Kassyi.GSharp.Core.ManagedGpuContext.__gsharp_bind<int[], int>(x, global::ManagedVersionCases.Extensions.{ManagedName("Extensions", "AddToIndex")}));",
+            source);
+    }
+
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void Test_ManagedVersion_BindsTheVersionOfAGenericReducedExtensionMethodGroupWithSubstitutedReceiverType()
+    {
+        var source = GenerateManagedVersion("Functions", "PassesGenericExtensionMethodGroup");
+
+        Assert.Contains(
+            $"global::Kassyi.GSharp.Core.Gpu.ForUnroll(0, 2, global::Kassyi.GSharp.Core.ManagedGpuContext.__gsharp_bind<int[], int>(x, global::ManagedVersionCases.Extensions.{ManagedName("Extensions", "AddGeneric")}));",
             source);
     }
 

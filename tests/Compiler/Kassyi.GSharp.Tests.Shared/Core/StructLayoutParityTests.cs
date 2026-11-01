@@ -9,7 +9,7 @@ using Xunit;
 namespace Kassyi.GSharp.Tests.Shared.Core;
 
 [TestTarget(ExecutionTarget.GpuExecution)]
-[Trait("Category", "GpuExecution")]
+[Category(TestCategory.Alignment)]
 public class StructLayoutParityTests
 {
     private static Type GetShadowType(string structName)

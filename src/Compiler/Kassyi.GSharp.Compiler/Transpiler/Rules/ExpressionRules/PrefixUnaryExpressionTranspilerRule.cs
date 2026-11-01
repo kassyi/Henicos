@@ -69,6 +69,18 @@ public sealed class PrefixUnaryExpressionTranspilerRule : SyntaxNodeTranspilerRu
                 IntegerSemanticsEmitter.AppendStep(step, node, node.Operand, stepHelper, ref context);
                 return;
             }
+
+            if (IntegerSemantics.TryGetNarrowEnumResultType(operation, out var narrowType))
+            {
+                ArithmeticConversions.AppendConversion(narrowType, ref context);
+                using (context.Emitter.Writer.Parentheses())
+                {
+                    OperatorSpacing.AppendOperator(node.OperatorToken.Text, node.Operand, ref context);
+                    context.Visitor.Visit(node.Operand);
+                }
+
+                return;
+            }
         }
 
         // -u negates a long in C#, an unsigned int in C++ (#671). The converted operand begins with '(' or is a literal,
