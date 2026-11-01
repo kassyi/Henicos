@@ -78,7 +78,8 @@ function changedFiles(worktree, base) {
     return output
         .split('\n')
         .map((line) => line.trim())
-        .filter((line) => line !== '')
+        // Snapshots are generated output, not code to review
+        .filter((line) => line !== '' && !/\.(verified|received)\.cs$/.test(line))
         .map((line) => path.join(worktree, line));
 }
 
@@ -208,8 +209,9 @@ function lineOf(starts, index) {
 }
 
 const modifiers = 'public|internal|private|protected|static|override|virtual|async|sealed|new|partial|abstract|extern|unsafe|readonly|file';
-// A member header: modifiers, a return type (or none for a constructor), the name and the opening parenthesis.
-const headerPattern = new RegExp(`^[ \\t]*(?:\\[[^\\]\\n]*\\][ \\t]*)*(?:(?:${modifiers})[ \\t]+)+[^=;(){}\\n]*?(\\b(?:operator\\s*\\S+|\\w+))\\s*(?:<[^()\\n]*>)?\\s*\\(`, 'gm');
+// A member header: modifiers, a return type (or none for a constructor; a tuple type in parentheses), the name and the
+// opening parenthesis.
+const headerPattern = new RegExp(`^[ \\t]*(?:\\[[^\\]\\n]*\\][ \\t]*)*(?:(?:${modifiers})[ \\t]+)+(?:\\([^()\\n]*\\)|[^=;(){}\\n])*?(\\b(?:operator\\s*\\S+|\\w+))\\s*(?:<[^()\\n]*>)?\\s*\\(`, 'gm');
 
 // Methods, constructors and operators with a block or expression body.
 function methods(code, starts) {
