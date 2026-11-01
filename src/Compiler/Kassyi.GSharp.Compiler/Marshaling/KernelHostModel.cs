@@ -44,6 +44,12 @@ internal readonly record struct KernelHostModel
     /// <summary>A <c>[GpuKernel(Cooperative = true)]</c> kernel.</summary>
     public bool IsCooperative { get; init; }
 
+    /// <summary>The <c>global::</c>-qualified name of the class that declares the kernel, for qualifying sibling members.</summary>
+    public string ClassQualifiedName { get; init; }
+
+    /// <summary>Whether any parameter uses a reserved launch option parameter name (GSH0106), so the wrapper is left out.</summary>
+    public bool HasReservedLaunchParameterName { get; init; }
+
     /// <summary>The kernel in a run-time error of the managed path (<see cref="KernelHostNames.GetMessageName"/>).</summary>
     public string MessageName { get; init; }
 
@@ -64,7 +70,7 @@ internal readonly record struct KernelHostModel
 
     public EquatableArray<KernelParameterShape> Parameters { get; init; }
 
-    /// <summary>The user structs that the parameters marshal, one per <c>AotContexts</c> name, in first-use order.</summary>
+    /// <summary>The user structs that the parameters and return type marshal, one per <c>AotContexts</c> name, in first-use order.</summary>
     public EquatableArray<StructHostSource> Structs { get; init; }
 
     /// <summary>The user structs with <see cref="TransferClass.Identical"/> on CUDA that the launcher block-copies.</summary>
@@ -86,7 +92,7 @@ internal readonly record struct KernelHostModel
 
     /// <summary>Reads the host launch ABI of <paramref name="kernel"/>.</summary>
     /// <param name="kernel">The kernel.</param>
-    /// <param name="structs">The rendered structs of the parameters; the analyzer, which needs none, passes <see langword="default"/>.</param>
+    /// <param name="structs">The rendered structs of the parameters and return type; the analyzer, which needs none, passes <see langword="default"/>.</param>
     public static KernelHostModel Create(IMethodSymbol kernel, EquatableArray<StructHostSource> structs,
         SemanticModel? model = null)
     {
@@ -108,9 +114,13 @@ internal readonly record struct KernelHostModel
             ReturnTypeName = kernel.ReturnType.SpecialType == SpecialType.System_Void
                 ? null
                 : kernel.ReturnType.GetFullyQualifiedCsharpName(),
-            CudaReturn = ParameterTransfer.CreateForReturn(kernel.ReturnType, HostDialects.Cuda),
-            CpuReturn = ParameterTransfer.CreateForReturn(kernel.ReturnType, HostDialects.Cpu),
+            CudaReturn = ParameterTransfer.CreateForReturn(kernel.ReturnType, HostDialects.Cuda, kernel.ContainingType),
+            CpuReturn = ParameterTransfer.CreateForReturn(kernel.ReturnType, HostDialects.Cpu, kernel.ContainingType),
             IsCooperative = kernel.IsCooperativeKernel(),
+            ClassQualifiedName = AotHostNames.GetHostClassQualifiedName(kernel.ContainingType),
+            HasReservedLaunchParameterName = kernel.Parameters
+                .AsStackEnumerable()
+                .Any(static p => KernelHostNames.IsReservedLaunchParameterName(p.Name)),
             MessageName = KernelHostNames.GetMessageName(kernel),
             GridScratchSlotBytes = model != null && kernel.IsCooperativeKernel() &&
                                    kernel.TryGetDeclaringSyntax<MethodDeclarationSyntax>(out var declaration) &&
@@ -473,7 +483,7 @@ internal readonly record struct KernelModuleModel(
             positions.TryGetValue(hintName, out var position);
             positions[hintName] = position + 1;
             var emission = classModels[classIndices[hintName]].Kernels[position];
-            if (!emission.IsIndistinguishable)
+            if (!emission.IsIndistinguishable && !emission.Host.HasReservedLaunchParameterName)
             {
                 warmups.Add(new KernelWarmup(kernel.Class, emission.MemberKey));
             }

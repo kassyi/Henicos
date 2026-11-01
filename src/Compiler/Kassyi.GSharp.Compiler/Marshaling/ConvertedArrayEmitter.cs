@@ -2,7 +2,7 @@ namespace Kassyi.GSharp.Compiler.Marshaling;
 
 /// <summary>
 /// Emits the element-by-element conversion of an array-like parameter whose element lays out differently on the device,
-/// and of the auto result array of a kernel that returns such a struct, for the CUDA launcher (<see cref="KernelLaunchEmitter"/>) and the CPU launcher (<see cref="CpuHostLaunchEmitter"/>).
+/// for the CUDA launcher (<see cref="KernelLaunchEmitter"/>) and the CPU launcher (<see cref="CpuHostLaunchEmitter"/>).
 /// </summary>
 /// <remarks>
 /// Both launchers convert the elements into a shadow array of the device layout, rented from <c>ArrayPool</c>. They differ
@@ -12,61 +12,74 @@ namespace Kassyi.GSharp.Compiler.Marshaling;
 /// </remarks>
 internal static class ConvertedArrayEmitter
 {
-    // for (int <name>_index = 0; <name>_index < <name>_native.Length; <name>_index++)
-    private static void WriteElementLoopHeader(SourceWriter writer, string name) =>
-        writer.AppendLine($"for (int {name}_index = 0; {name}_index < {name}_native.Length; {name}_index++)");
+    // for (int __gsharp_index_<ord> = 0; __gsharp_index_<ord> < __gsharp_native_<ord>.Length; __gsharp_index_<ord>++)
+    private static void WriteElementLoopHeader(SourceWriter writer, in KernelParameterShape shape)
+    {
+        var index = KernelHostNames.GetElementIndexLocal(shape);
+        var native = KernelHostNames.GetNativeLocal(shape);
+        writer.AppendLine($"for (int {index} = 0; {index} < {native}.Length; {index}++)");
+    }
 
-    // var <name>_native = MemoryMarshal.Cast<byte, <element shadow>>(<name>_shadow.AsSpan(0, <name>_size));
-    // Span<<element>> <name>_host = <argument span>;                     (ReadOnlySpan for a read-only container)
-    // <name>_native spans the rented bytes in the device layout; <name>_host spans the argument
+    // var __gsharp_native_<ord> = MemoryMarshal.Cast<byte, <element shadow>>(__gsharp_shadow_<ord>.AsSpan(0, __gsharp_size_<ord>));
+    // Span<<element>> __gsharp_host_<ord> = <argument span>;                     (ReadOnlySpan for a read-only container)
+    // __gsharp_native_<ord> spans the rented bytes in the device layout; __gsharp_host_<ord> spans the argument
     internal static void WriteShadowAndHostSpans(SourceWriter writer, in KernelParameterShape shape,
         in ParameterTransfer transfer)
     {
+        var native = KernelHostNames.GetNativeLocal(shape);
+        var shadow = KernelHostNames.GetShadowLocal(shape);
+        var size = KernelHostNames.GetSizeLocal(shape);
+        var host = KernelHostNames.GetHostSpanLocal(shape);
         writer.AppendLine(
-            $"var {shape.Name}_native = System.Runtime.InteropServices.MemoryMarshal" +
-            $".Cast<byte, {GetElementShadowPath(shape, transfer)}>({shape.Name}_shadow.AsSpan(0, {shape.Name}_size));");
-        var span = shape.IsReadOnlyContainer ? "System.ReadOnlySpan" : "System.Span";
+            $"var {native} = global::System.Runtime.InteropServices.MemoryMarshal" +
+            $".Cast<byte, {GetElementShadowPath(shape, transfer)}>({shadow}.AsSpan(0, {size}));");
+        var span = shape.IsReadOnlyContainer ? "global::System.ReadOnlySpan" : "global::System.Span";
         var element = shape.ElementTypeName ??
             throw new InvalidOperationException($"Parameter '{shape.Identifier}' is not an array-like type.");
-        writer.AppendLine($"{span}<{element}> {shape.Name}_host = {shape.SpanExpression};");
+        writer.AppendLine($"{span}<{element}> {host} = {shape.SpanExpression};");
     }
 
-    // for (...) { Marshal_<E>(ref <name>_host[<name>_index], ref <name>_native[<name>_index], false, <allocations>,
+    // for (...) { Marshal_<E>(ref __gsharp_host_<ord>[__gsharp_index_<ord>], ref __gsharp_native_<ord>[__gsharp_index_<ord>], false, <allocations>,
     // hStream); }, through the spans of WriteShadowAndHostSpans. <allocations> records what Marshal_ allocates: the CUDA
     // launcher's DeviceArrayRegions, or the CPU launcher's list of GCHandles of the parameter.
     internal static void WriteElementMarshalLoop(SourceWriter writer, in KernelParameterShape shape,
         in ParameterTransfer transfer, string allocations)
     {
-        var name = shape.Name;
-        WriteElementLoopHeader(writer, name);
+        var index = KernelHostNames.GetElementIndexLocal(shape);
+        var host = KernelHostNames.GetHostSpanLocal(shape);
+        var native = KernelHostNames.GetNativeLocal(shape);
+        WriteElementLoopHeader(writer, shape);
         using (writer.Scope())
         {
-            var hostElement = $"{name}_host[{name}_index]";
+            var hostElement = $"{host}[{index}]";
             if (shape.IsReadOnlyContainer)
             {
                 // A read-only container gives no ref to its element; Marshal_ only reads its copy
-                writer.AppendLine($"var {name}_element = {name}_host[{name}_index];");
-                hostElement = $"{name}_element";
+                var elementLocal = KernelHostNames.GetElementLocal(shape);
+                writer.AppendLine($"var {elementLocal} = {host}[{index}];");
+                hostElement = elementLocal;
             }
 
             writer.AppendLine(
                 $"{transfer.ConvertedElementMarshalMethodName}(ref {hostElement}, " +
-                $"ref {name}_native[{name}_index], false, {allocations}, hStream);");
+                $"ref {native}[{index}], false, {allocations}, hStream);");
         }
     }
 
-    // for (...) { Unmarshal_<E>(ref <name>_host[<name>_index], ref <name>_native[<name>_index], false, hStream); },
+    // for (...) { Unmarshal_<E>(ref __gsharp_host_<ord>[__gsharp_index_<ord>], ref __gsharp_native_<ord>[__gsharp_index_<ord>], false, hStream); },
     // through the spans of WriteShadowAndHostSpans
     internal static void WriteElementUnmarshalLoop(SourceWriter writer, in KernelParameterShape shape,
         in ParameterTransfer transfer)
     {
-        var name = shape.Name;
-        WriteElementLoopHeader(writer, name);
+        var index = KernelHostNames.GetElementIndexLocal(shape);
+        var host = KernelHostNames.GetHostSpanLocal(shape);
+        var native = KernelHostNames.GetNativeLocal(shape);
+        WriteElementLoopHeader(writer, shape);
         using (writer.Scope())
         {
             writer.AppendLine(
-                $"{transfer.ConvertedElementUnmarshalMethodName}(ref {name}_host[{name}_index], " +
-                $"ref {name}_native[{name}_index], false, hStream);");
+                $"{transfer.ConvertedElementUnmarshalMethodName}(ref {host}[{index}], " +
+                $"ref {native}[{index}], false, hStream);");
         }
     }
 

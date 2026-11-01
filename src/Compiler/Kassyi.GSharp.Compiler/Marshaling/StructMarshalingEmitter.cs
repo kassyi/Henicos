@@ -33,7 +33,7 @@ internal static class StructMarshalingEmitter
 
     /// <summary>
     /// Renders the native shadow struct and the marshaling methods of each custom struct of <paramref name="kernel"/>'s
-    /// parameters, one per <c>AotContexts</c> name (<see cref="CollectUniqueStructs"/>).
+    /// parameters and return type, one per <c>AotContexts</c> name (<see cref="CollectUniqueStructs"/>).
     /// </summary>
     /// <remarks>
     /// The element of an array has CPU text only when the CPU launcher converts it; an Identical element is passed as
@@ -168,8 +168,8 @@ internal static class StructMarshalingEmitter
             writer.AppendAotStructPath(s);
             // CUDA records one device region per host array (DeviceArrayRegions, #707); the CPU records GCHandles
             writer.Append(dialect.IsCuda
-                ? $" native, bool isDevicePtr, {DeviceArrayRegionsType}? {CudaArraysParameter}, IntPtr hStream = default"
-                : $" native, bool isDevicePtr, System.Collections.Generic.List<IntPtr>? {CpuArraysParameter}, IntPtr hStream = default");
+                ? $" native, bool isDevicePtr, {DeviceArrayRegionsType}? {CudaArraysParameter}, global::System.IntPtr hStream = default"
+                : $" native, bool isDevicePtr, global::System.Collections.Generic.List<global::System.IntPtr>? {CpuArraysParameter}, global::System.IntPtr hStream = default");
         }
 
         writer.AppendLine();
@@ -177,7 +177,7 @@ internal static class StructMarshalingEmitter
         {
             if (structLayout.Transfer == TransferClass.Identical)
             {
-                writer.Append("native = System.Runtime.CompilerServices.Unsafe.As<");
+                writer.Append("native = global::System.Runtime.CompilerServices.Unsafe.As<");
                 writer.AppendFullyQualifiedCsharpName(s);
                 writer.Append(", ");
                 writer.AppendAotStructPath(s);
@@ -189,9 +189,13 @@ internal static class StructMarshalingEmitter
                 // field) must read as empty, not as a device pointer that an earlier launch freed
                 writer.AppendLine("native = default;");
                 WriteHostMirrorBinding(writer, s, hasMirror);
+                var memberIndex = 0;
                 foreach (var member in StructAbiMembers.Get(s))
                 {
-                    WriteMarshalMember(writer, member, dialect);
+                    if (ShouldCopyMember(structLayout, memberIndex++))
+                    {
+                        WriteMarshalMember(writer, member, dialect);
+                    }
                 }
             }
         }
@@ -341,7 +345,7 @@ internal static class StructMarshalingEmitter
         writer.AppendHoldsArrayMethodName(s);
         using (writer.Parentheses())
         {
-            writer.Append("System.ReadOnlySpan<");
+            writer.Append("global::System.ReadOnlySpan<");
             writer.AppendFullyQualifiedCsharpName(s);
             writer.Append("> items, object array");
         }
@@ -452,16 +456,16 @@ internal static class StructMarshalingEmitter
             return;
         }
 
-        writer.Append("if (System.Runtime.CompilerServices.Unsafe.SizeOf<");
+        writer.Append("if (global::System.Runtime.CompilerServices.Unsafe.SizeOf<");
         writer.AppendFullyQualifiedCsharpName(s);
-        writer.Append(">() != System.Runtime.CompilerServices.Unsafe.SizeOf<");
+        writer.Append(">() != global::System.Runtime.CompilerServices.Unsafe.SizeOf<");
         writer.AppendAotStructPath(s);
         writer.Append($".{NativeStructEmitter.HostMirrorName}>()) ");
         writer.Append("global::Kassyi.GSharp.Runtime.Interop.LayoutGuard.ThrowSizeMismatch(\"");
         writer.Append(TypeLayoutCalculator.FormatTypeName(s));
-        writer.Append("\", System.Runtime.CompilerServices.Unsafe.SizeOf<");
+        writer.Append("\", global::System.Runtime.CompilerServices.Unsafe.SizeOf<");
         writer.AppendAotStructPath(s);
-        writer.Append($".{NativeStructEmitter.HostMirrorName}>(), System.Runtime.CompilerServices.Unsafe.SizeOf<");
+        writer.Append($".{NativeStructEmitter.HostMirrorName}>(), global::System.Runtime.CompilerServices.Unsafe.SizeOf<");
         writer.AppendFullyQualifiedCsharpName(s);
         writer.AppendLine(">());");
         writer.Append("if (!");
@@ -470,7 +474,7 @@ internal static class StructMarshalingEmitter
         writer.Append("global::Kassyi.GSharp.Runtime.Interop.LayoutGuard.ThrowFieldOffsetMismatch(\"");
         writer.Append(TypeLayoutCalculator.FormatTypeName(s));
         writer.AppendLine("\");");
-        writer.Append("ref var host = ref System.Runtime.CompilerServices.Unsafe.As<");
+        writer.Append("ref var host = ref global::System.Runtime.CompilerServices.Unsafe.As<");
         writer.AppendFullyQualifiedCsharpName(s);
         writer.Append(", ");
         writer.AppendAotStructPath(s);
@@ -499,8 +503,8 @@ internal static class StructMarshalingEmitter
                     else
                     {
                         writer.AppendLine(toNative
-                            ? "System.Runtime.CompilerServices.Unsafe.Copy(pField, ref host);"
-                            : "System.Runtime.CompilerServices.Unsafe.Copy(ref host, pField);");
+                            ? "global::System.Runtime.CompilerServices.Unsafe.Copy(pField, ref host);"
+                            : "global::System.Runtime.CompilerServices.Unsafe.Copy(ref host, pField);");
                     }
                 }
 
@@ -515,7 +519,7 @@ internal static class StructMarshalingEmitter
                     writer.AppendLine($"fixed ({element}* pHost = host.{name})");
                     using (writer.Scope())
                     {
-                        writer.AppendLine($"System.Buffer.MemoryCopy({(toNative ? "pHost, pField" : "pField, pHost")}, {byteCount}, {byteCount});");
+                        writer.AppendLine($"global::System.Buffer.MemoryCopy({(toNative ? "pHost, pField" : "pField, pHost")}, {byteCount}, {byteCount});");
                     }
                 }
 
@@ -630,7 +634,7 @@ internal static class StructMarshalingEmitter
             using (writer.Scope())
             {
                 writer.AppendLine(
-                    "throw new System.NotSupportedException(\"Passing a struct with arrays is not supported when isDevicePtr is true.\");");
+                    "throw new global::System.NotSupportedException(\"Passing a struct with arrays is not supported when isDevicePtr is true.\");");
             }
 
             writer.AppendLine("else");
@@ -683,8 +687,8 @@ internal static class StructMarshalingEmitter
     private static void WriteDeviceArrayCopy(SourceWriter writer, string host, string native, ITypeSymbol elementType)
     {
         writer.AppendLine(
-            "CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(" +
-            $"out {native}.Data, (IntPtr)size, hStream));");
+            $"global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemAllocAsync(" +
+            $"out {native}.Data, (global::System.IntPtr)size, hStream));");
         writer.AppendLine($"{CudaArraysParameter}?.Add({host}, {native}.Data);");
 
         if (!TypeLayoutCalculator.IsUserStruct(elementType))
@@ -710,29 +714,25 @@ internal static class StructMarshalingEmitter
 
     /// <summary>
     /// Emits <c>var handle = GCHandle.Alloc(&lt;pinned&gt;, Pinned); try { &lt;copy&gt; } finally { handle.Free(); }</c>,
-    /// where the copy moves <paramref name="size"/> bytes between the pinned host array and <paramref name="device"/>.
+    /// where the copy moves <c>size</c> bytes between the pinned host array and <paramref name="device"/>.
     /// </summary>
-    /// <param name="writer">The writer of the generated launcher or <c>Marshal_</c> / <c>Unmarshal_</c> method.</param>
+    /// <param name="writer">The writer of the generated <c>Marshal_</c> / <c>Unmarshal_</c> method.</param>
     /// <param name="pinned">The host array, or the shadow array of its converted elements.</param>
-    /// <param name="device">The device pointer expression (<c>native.Data</c>, <c>d_&lt;name&gt;</c>).</param>
+    /// <param name="device">The device pointer expression (<c>native.Data</c>).</param>
     /// <param name="toDevice"><c>cuMemcpyHtoDAsync_v2</c> when true, <c>cuMemcpyDtoHAsync_v2</c> otherwise.</param>
-    /// <param name="synchronize">Whether the stream is synchronized inside the <c>try</c>, before the handle is freed.</param>
-    /// <param name="size">The local that holds the byte count of the copy.</param>
-    internal static void WritePinnedCopy(SourceWriter writer, string pinned, string device, bool toDevice,
-        bool synchronize = false, string size = "size")
+    internal static void WritePinnedCopy(SourceWriter writer, string pinned, string device, bool toDevice)
     {
         writer.AppendLine(
-            $"var handle = System.Runtime.InteropServices.GCHandle.Alloc({pinned}, " +
-            "System.Runtime.InteropServices.GCHandleType.Pinned);");
+            $"var handle = global::System.Runtime.InteropServices.GCHandle.Alloc({pinned}, " +
+            $"global::System.Runtime.InteropServices.GCHandleType.Pinned);");
         writer.AppendLine("try");
         using (writer.Scope())
         {
             writer.AppendLine(toDevice
-                ? "CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoDAsync_v2(" +
-                $"{device}, handle.AddrOfPinnedObject(), (IntPtr){size}, hStream));"
-                : "CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoHAsync_v2(" +
-                $"handle.AddrOfPinnedObject(), {device}, (IntPtr){size}, hStream));");
-            writer.AppendLineIf(synchronize, "CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));");
+                ? $"global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemcpyHtoDAsync_v2(" +
+                $"{device}, handle.AddrOfPinnedObject(), (global::System.IntPtr)size, hStream));"
+                : $"global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemcpyDtoHAsync_v2(" +
+                $"handle.AddrOfPinnedObject(), {device}, (global::System.IntPtr)size, hStream));");
         }
 
         writer.AppendLine("finally");
@@ -754,7 +754,7 @@ internal static class StructMarshalingEmitter
             writer.AppendFullyQualifiedCsharpName(s);
             writer.Append(hasMirror ? $" {MirroredHostParameter}, ref " : " host, ref ");
             writer.AppendAotStructPath(s);
-            writer.Append(" native, bool isDevicePtr, IntPtr hStream = default");
+            writer.Append(" native, bool isDevicePtr, global::System.IntPtr hStream = default");
         }
 
         writer.AppendLine();
@@ -762,7 +762,7 @@ internal static class StructMarshalingEmitter
         {
             if (structLayout.Transfer == TransferClass.Identical)
             {
-                writer.Append("host = System.Runtime.CompilerServices.Unsafe.As<");
+                writer.Append("host = global::System.Runtime.CompilerServices.Unsafe.As<");
                 writer.AppendAotStructPath(s);
                 writer.Append(", ");
                 writer.AppendFullyQualifiedCsharpName(s);
@@ -771,15 +771,56 @@ internal static class StructMarshalingEmitter
             else
             {
                 WriteHostMirrorBinding(writer, s, hasMirror);
+                var memberIndex = 0;
                 foreach (var member in StructAbiMembers.Get(s))
                 {
-                    WriteUnmarshalMember(writer, member, dialect);
+                    if (ShouldCopyMember(structLayout, memberIndex++))
+                    {
+                        WriteUnmarshalMember(writer, member, dialect);
+                    }
                 }
             }
         }
 
         writer.AppendLine();
     }
+
+    // For an explicit-layout struct, fields that share a [FieldOffset] form a union: only the largest member at each
+    // offset is copied so that a narrower or second union arm does not overwrite the bytes of the wider arm (#1006).
+    private static bool ShouldCopyMember(StructLayoutInfo structLayout, int index)
+    {
+        var fields = structLayout.DeviceFields;
+        if (structLayout.Kind != TypeLayoutKind.Explicit || fields.Length <= 1 || index >= fields.Length)
+        {
+            return true;
+        }
+
+        var offset = fields[index].Offset;
+        var best = index;
+        for (var j = 0; j < fields.Length; j++)
+        {
+            var candidate = fields[j];
+            if (candidate.Offset != offset)
+            {
+                continue;
+            }
+
+            var currentBest = fields[best];
+            var bestIsFloat = IsFloatingPoint(currentBest.Member.Type);
+            var candIsFloat = IsFloatingPoint(candidate.Member.Type);
+            if (candidate.Layout.Size > currentBest.Layout.Size ||
+                (candidate.Layout.Size == currentBest.Layout.Size &&
+                 ((bestIsFloat && !candIsFloat) || (bestIsFloat == candIsFloat && j < best))))
+            {
+                best = j;
+            }
+        }
+
+        return best == index;
+    }
+
+    private static bool IsFloatingPoint(ITypeSymbol type) =>
+        type.SpecialType is SpecialType.System_Single or SpecialType.System_Double;
 
     private static void WriteUnmarshalMember(SourceWriter writer, StructAbiMember member, ITranspilerDialect dialect)
     {
@@ -833,7 +874,7 @@ internal static class StructMarshalingEmitter
         }
 
         writer.AppendLine(
-            $"if ({host} != null && !isDevicePtr && {native}.Data != IntPtr.Zero)");
+            $"if ({host} != null && !isDevicePtr && {native}.Data != global::System.IntPtr.Zero)");
         using (writer.Scope())
         {
             WriteArrayElementSize(writer, host, elementType);
@@ -876,12 +917,12 @@ internal static class StructMarshalingEmitter
     private static void WriteCpuMarshalArrayMember(SourceWriter writer, string host, string native,
         ITypeSymbol elementType, ITranspilerDialect dialect)
     {
-        const string GcHandle = "System.Runtime.InteropServices.GCHandle";
+        const string GcHandle = "global::System.Runtime.InteropServices.GCHandle";
         writer.AppendLine($"if ({host} != null)");
         using (writer.Scope())
         {
             writer.AppendLine(
-                $"var pinnedHandles = {CpuArraysParameter} ?? throw new System.ArgumentNullException(nameof({CpuArraysParameter}));");
+                $"var pinnedHandles = {CpuArraysParameter} ?? throw new global::System.ArgumentNullException(nameof({CpuArraysParameter}));");
             var pinned = host;
             if (KernelParameterShape.IsConverted(elementType, dialect))
             {
@@ -899,7 +940,7 @@ internal static class StructMarshalingEmitter
             }
 
             writer.AppendLine(
-                $"var handle = {GcHandle}.Alloc({pinned}, System.Runtime.InteropServices.GCHandleType.Pinned);");
+                $"var handle = {GcHandle}.Alloc({pinned}, global::System.Runtime.InteropServices.GCHandleType.Pinned);");
             writer.AppendLine($"pinnedHandles.Add({GcHandle}.ToIntPtr(handle));");
             writer.AppendLine($"{native}.Data = handle.AddrOfPinnedObject();");
             writer.AppendLine($"{native}.Length = {host}.Length;");
@@ -918,7 +959,7 @@ internal static class StructMarshalingEmitter
             return;
         }
 
-        writer.AppendLine($"if ({host} != null && {native}.Data != IntPtr.Zero)");
+        writer.AppendLine($"if ({host} != null && {native}.Data != global::System.IntPtr.Zero)");
         using (writer.Scope())
         {
             writer.Append("var shadow = (");
@@ -935,7 +976,7 @@ internal static class StructMarshalingEmitter
 
     private static void WriteArrayElementSize(SourceWriter writer, string host, ITypeSymbol elementType)
     {
-        writer.Append($"int size = {host}.Length * sizeof(");
+        writer.Append($"int size = checked({host}.Length * sizeof(");
         if (TypeLayoutCalculator.IsUserStruct(elementType))
         {
             writer.AppendAotStructPath(elementType);
@@ -945,6 +986,6 @@ internal static class StructMarshalingEmitter
             writer.AppendFullyQualifiedCsharpName(elementType);
         }
 
-        writer.AppendLine(");");
+        writer.AppendLine("));");
     }
 }

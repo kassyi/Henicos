@@ -19,7 +19,7 @@ internal static class NativeStructEmitter
         }
 
         writer.AppendLine(
-            $"[System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Explicit, Size = {structLayout.Device.Size})]");
+            $"[global::System.Runtime.InteropServices.StructLayout(global::System.Runtime.InteropServices.LayoutKind.Explicit, Size = {structLayout.Device.Size})]");
         writer.Append($"public unsafe partial struct {AotHostNames.GetNativeStructName(s)}");
         writer.AppendLine();
 
@@ -37,7 +37,7 @@ internal static class NativeStructEmitter
                 writer.Append($"public const string DebugName_{field.Name} = \"");
                 writer.AppendFullyQualifiedCsharpName(field.Type);
                 writer.AppendLine("\";");
-                writer.AppendLine($"[System.Runtime.InteropServices.FieldOffset({offset})]");
+                writer.AppendLine($"[global::System.Runtime.InteropServices.FieldOffset({offset})]");
 
                 MapToNativeField(writer, field, fieldLayout.Size);
             }
@@ -98,7 +98,7 @@ internal static class NativeStructEmitter
     {
         // [WHY] LayoutKind.Explicit cannot hold a captured parameter: its hidden field has no [FieldOffset] (CS0625)
         var kind = structLayout.Kind == TypeLayoutKind.Auto ? "Auto" : "Sequential";
-        writer.Append($"[System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.{kind}");
+        writer.Append($"[global::System.Runtime.InteropServices.StructLayout(global::System.Runtime.InteropServices.LayoutKind.{kind}");
         writer.AppendIf(structLayout.Pack > 0, $", Pack = {structLayout.Pack}");
         if (StructLayoutReader.TryGetSize(s, out var size))
         {
@@ -138,7 +138,7 @@ internal static class NativeStructEmitter
     // The result is computed once, when the mirror is first used.
     private static void WriteFieldOffsetCheck(SourceWriter writer, INamedTypeSymbol s)
     {
-        const string Unsafe = "System.Runtime.CompilerServices.Unsafe";
+        const string Unsafe = "global::System.Runtime.CompilerServices.Unsafe";
         writer.AppendLine($"public static readonly bool {HostMirrorOffsetsMatch} = CheckFieldOffsets();");
         writer.AppendLine("private static bool CheckFieldOffsets()");
         using (writer.Scope())

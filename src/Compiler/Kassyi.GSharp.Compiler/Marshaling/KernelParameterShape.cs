@@ -65,7 +65,8 @@ internal readonly record struct ParameterTransfer(
     /// The transfer of <paramref name="marshaledType"/> (a user struct or an array-like type) under
     /// <paramref name="dialect"/>.
     /// </summary>
-    public static ParameterTransfer Create(ITypeSymbol marshaledType, ITranspilerDialect dialect)
+    public static ParameterTransfer Create(ITypeSymbol marshaledType, ITranspilerDialect dialect,
+        INamedTypeSymbol? kernelClass = null)
     {
         if (TypeLayoutCalculator.IsUserStruct(marshaledType))
         {
@@ -79,7 +80,9 @@ internal readonly record struct ParameterTransfer(
                 null);
         }
 
-        return marshaledType.TryGetArrayLikeElementType(out var element) ? CreateForElement(element, dialect) : default;
+        return marshaledType.TryGetArrayLikeElementType(out var element)
+            ? CreateForElement(element, dialect, kernelClass)
+            : default;
     }
 
     /// <summary>
@@ -87,11 +90,15 @@ internal readonly record struct ParameterTransfer(
     /// <paramref name="dialect"/>: converted element by element when <see cref="KernelParameterShape.IsConvertedReturn"/>,
     /// otherwise <see langword="default"/>.
     /// </summary>
-    public static ParameterTransfer CreateForReturn(ITypeSymbol returnType, ITranspilerDialect dialect) =>
-        KernelParameterShape.IsConvertedReturn(returnType, dialect) ? CreateForElement(returnType, dialect) : default;
+    public static ParameterTransfer CreateForReturn(ITypeSymbol returnType, ITranspilerDialect dialect,
+        INamedTypeSymbol? kernelClass = null) =>
+        KernelParameterShape.IsConvertedReturn(returnType, dialect)
+            ? CreateForElement(returnType, dialect, kernelClass)
+            : default;
 
     // The transfer of the elements of an array of <element>: converted through a shadow array when IsConverted
-    private static ParameterTransfer CreateForElement(ITypeSymbol element, ITranspilerDialect dialect)
+    private static ParameterTransfer CreateForElement(ITypeSymbol element, ITranspilerDialect dialect,
+        INamedTypeSymbol? kernelClass)
     {
         if (!KernelParameterShape.IsConverted(element, dialect))
         {
@@ -102,11 +109,11 @@ internal readonly record struct ParameterTransfer(
             TypeLayoutCalculator.TryFindArrayField(namedElement, out _);
         return new ParameterTransfer(
             false,
-            AotHostNames.GetAotStructPath(element),
-            AotHostNames.GetQualifiedMarshalMethodName(element),
-            AotHostNames.GetQualifiedUnmarshalMethodName(element),
+            AotHostNames.GetAotStructPath(element, kernelClass),
+            AotHostNames.GetQualifiedMarshalMethodName(element, kernelClass),
+            AotHostNames.GetQualifiedUnmarshalMethodName(element, kernelClass),
             hasArrayFields,
-            hasArrayFields && !dialect.IsCuda ? AotHostNames.GetQualifiedCopyArraysMethodName(element) : null);
+            hasArrayFields && !dialect.IsCuda ? AotHostNames.GetQualifiedCopyArraysMethodName(element, kernelClass) : null);
     }
 }
 
@@ -122,8 +129,8 @@ internal readonly record struct KernelParameterShape
 {
     private const string GpuBufferType = "global::Kassyi.GSharp.Runtime.GpuBuffer";
 
-    /// <summary>The parameter name as declared, which the launcher's locals (<c>d_</c>, <c>p_</c>, <c>proxy_</c>, ...) build on.</summary>
-    public string Name { get; init; }
+    /// <summary>The zero-based position of the parameter in the kernel's parameter list, which the launcher's locals (<c>__gsharp_d_0</c>, ...) build on.</summary>
+    public int Ordinal { get; init; }
 
     /// <summary>The parameter name as a C# identifier, which every reference to the argument uses.</summary>
     public string Identifier { get; init; }
@@ -303,11 +310,12 @@ internal readonly record struct KernelParameterShape
     /// <summary>Classifies <paramref name="parameter"/>.</summary>
     public static KernelParameterShape Classify(IParameterSymbol parameter)
     {
+        var kernelClass = parameter.ContainingSymbol?.ContainingType;
         var marshaledType = parameter.Type.UnwrapNullableArrayLike() ?? parameter.Type;
         var (copyIn, copyOut) = ArrayCopyDirection.Get(parameter);
         var shape = new KernelParameterShape
         {
-            Name = parameter.Name,
+            Ordinal = parameter.Ordinal,
             Identifier = parameter.Name.ToCSharpIdentifier(),
             RefKind = parameter.RefKind,
             Kind = parameter.RefKind is RefKind.Ref or RefKind.Out
@@ -335,35 +343,39 @@ internal readonly record struct KernelParameterShape
             return shape with
             {
                 Kind = KernelParameterKind.CustomStruct,
-                AotStructPath = AotHostNames.GetAotStructPath(marshaledType),
-                MarshalMethodName = AotHostNames.GetQualifiedMarshalMethodName(marshaledType),
-                UnmarshalMethodName = AotHostNames.GetQualifiedUnmarshalMethodName(marshaledType),
-                BufferElementTypeName = shape.IsByRef ? GetBufferElementTypeName(parameter.Type) : null,
+                AotStructPath = AotHostNames.GetAotStructPath(marshaledType, kernelClass),
+                MarshalMethodName = AotHostNames.GetQualifiedMarshalMethodName(marshaledType, kernelClass),
+                UnmarshalMethodName = AotHostNames.GetQualifiedUnmarshalMethodName(marshaledType, kernelClass),
+                BufferElementTypeName = shape.IsByRef ? GetBufferElementTypeName(parameter.Type, kernelClass) : null,
                 HasArrayFields = hasArrayFields,
-                CpuHoldsArrayMethodName = hasArrayFields ? AotHostNames.GetQualifiedHoldsArrayMethodName(marshaledType) : null,
-                Cuda = ParameterTransfer.Create(marshaledType, HostDialects.Cuda),
-                Cpu = ParameterTransfer.Create(marshaledType, HostDialects.Cpu)
+                CpuHoldsArrayMethodName = hasArrayFields
+                    ? AotHostNames.GetQualifiedHoldsArrayMethodName(marshaledType, kernelClass)
+                    : null,
+                Cuda = ParameterTransfer.Create(marshaledType, HostDialects.Cuda, kernelClass),
+                Cpu = ParameterTransfer.Create(marshaledType, HostDialects.Cpu, kernelClass)
             };
         }
 
         if (marshaledType.TryGetArrayLikeElementType(out var elementType))
         {
-            var cpu = ParameterTransfer.Create(marshaledType, HostDialects.Cpu);
+            var cpu = ParameterTransfer.Create(marshaledType, HostDialects.Cpu, kernelClass);
             return shape with
             {
                 Kind = KernelParameterKind.Array,
                 Container = GetContainer(marshaledType),
                 ElementTypeName = elementType.GetFullyQualifiedCsharpName(),
-                BufferElementTypeName = GetBufferElementTypeName(elementType),
+                BufferElementTypeName = GetBufferElementTypeName(elementType, kernelClass),
                 CpuHoldsArrayMethodName = cpu.ConvertedElementHasArrayFields
-                    ? AotHostNames.GetQualifiedHoldsArrayMethodName(elementType)
+                    ? AotHostNames.GetQualifiedHoldsArrayMethodName(elementType, kernelClass)
                     : null,
-                Cuda = ParameterTransfer.Create(marshaledType, HostDialects.Cuda),
+                Cuda = ParameterTransfer.Create(marshaledType, HostDialects.Cuda, kernelClass),
                 Cpu = cpu
             };
         }
 
-        return shape.IsByRef ? shape with { BufferElementTypeName = GetBufferElementTypeName(parameter.Type) } : shape;
+        return shape.IsByRef
+            ? shape with { BufferElementTypeName = GetBufferElementTypeName(parameter.Type, kernelClass) }
+            : shape;
     }
 
     /// <summary>
@@ -390,9 +402,9 @@ internal readonly record struct KernelParameterShape
         returnType.IsUnmanagedType && IsConverted(returnType, dialect);
 
     // A user struct lives on the device in its native shadow layout, which the wrapper class declares as AotContexts.*
-    private static string? GetBufferElementTypeName(ITypeSymbol element) =>
+    private static string? GetBufferElementTypeName(ITypeSymbol element, INamedTypeSymbol? kernelClass) =>
         !element.IsUnmanagedType ? null
-        : TypeLayoutCalculator.IsUserStruct(element) ? AotHostNames.GetAotStructPath(element)
+        : TypeLayoutCalculator.IsUserStruct(element) ? AotHostNames.GetAotStructPath(element, kernelClass)
         : element.GetFullyQualifiedCsharpName();
 
     // The default as C# in the launcher's signature, whatever the build host's culture

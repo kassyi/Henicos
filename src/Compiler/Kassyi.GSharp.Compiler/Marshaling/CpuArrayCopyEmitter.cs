@@ -30,8 +30,8 @@ internal static class CpuArrayCopyEmitter
 
             var shape = plan.Parameters[i];
 
-            // var <name>_source = <name>;                     (an [In] T[] that a later [In] T[] may hold as well)
-            writer.AppendLineIf(plan.KeepsSource(i), $"var {shape.Name}_source = {shape.Identifier};");
+            // var __gsharp_source_<ord> = <name>;             (an [In] T[] that a later [In] T[] may hold as well)
+            writer.AppendLineIf(plan.KeepsSource(i), $"var {KernelHostNames.GetCopySourceLocal(shape)} = {shape.Identifier};");
 
             if (shape.IsOptional)
             {
@@ -93,7 +93,7 @@ internal static class CpuArrayCopyEmitter
 
             var earlier = plan.Parameters[k];
             writer.AppendLine(
-                $"{(hasCondition ? "else if" : "if")} ({ReferenceEqualsMethod}({shape.Identifier}, {earlier.Name}_source))");
+                $"{(hasCondition ? "else if" : "if")} ({ReferenceEqualsMethod}({shape.Identifier}, {KernelHostNames.GetCopySourceLocal(earlier)}))");
             using (writer.Scope())
             {
                 writer.AppendLine(shape.TypeName == earlier.TypeName
@@ -165,19 +165,20 @@ internal static class CpuArrayCopyEmitter
             return;
         }
 
-        var name = shape.Name;
-        writer.Append($"var {name}_copy = ");
+        var copy = KernelHostNames.GetCopyBufferLocal(shape);
+        var copyIndex = KernelHostNames.GetCopyIndexLocal(shape);
+        writer.Append($"var {copy} = ");
         WriteElementsCopy(writer, shape);
         writer.AppendLine(";");
-        writer.AppendLine($"for (int {name}_copyIndex = 0; {name}_copyIndex < {name}_copy.Length; {name}_copyIndex++)");
+        writer.AppendLine($"for (int {copyIndex} = 0; {copyIndex} < {copy}.Length; {copyIndex}++)");
         using (writer.Scope())
         {
-            writer.AppendLine($"{copyArrays}(ref {name}_copy[{name}_copyIndex]);");
+            writer.AppendLine($"{copyArrays}(ref {copy}[{copyIndex}]);");
         }
 
         writer.AppendLine(shape.Container == ArrayContainerKind.ImmutableArray
-            ? $"{shape.Identifier} = global::System.Collections.Immutable.ImmutableArray.Create({name}_copy);"
-            : $"{shape.Identifier} = {name}_copy;");
+            ? $"{shape.Identifier} = global::System.Collections.Immutable.ImmutableArray.Create({copy});"
+            : $"{shape.Identifier} = {copy};");
     }
 
     // (<array type>)<name>.Clone(), or <span>.ToArray() for the other containers: a new array of the elements
