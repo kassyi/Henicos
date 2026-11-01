@@ -70,6 +70,11 @@ internal static class StackLinqChainExtractor
 
         while (true)
         {
+            if (StackLinqHelper.HasInterferingReorderedArguments(current, currentSymbol, semanticModel))
+            {
+                return false;
+            }
+
             if (currentSymbol.Name == "AsStackEnumerable")
             {
                 break;
@@ -88,39 +93,22 @@ internal static class StackLinqChainExtractor
                 return false;
             }
 
-            if (current.Expression is MemberAccessExpressionSyntax
-                {
-                    Expression: InvocationExpressionSyntax nextInvocation
-                })
-            {
-                if (semanticModel.GetSymbol(nextInvocation) is IMethodSymbol nextSymbol &&
-                    StackLinqHelper.IsStackLinqMethod(nextSymbol))
-                {
-                    current = nextInvocation;
-                    currentSymbol = nextSymbol;
-                    continue;
-                }
-            }
-
-            if (current.ArgumentList.Arguments.Count <= 0 ||
-                current.ArgumentList.Arguments[0].Expression is not InvocationExpressionSyntax argInvocation)
+            if (!StackLinqHelper.TryGetSourceExpression(current, currentSymbol, out var sourceExpr) ||
+                sourceExpr is not InvocationExpressionSyntax nextInvocation ||
+                semanticModel.GetSymbol(nextInvocation) is not IMethodSymbol nextSymbol ||
+                !StackLinqHelper.IsStackLinqMethod(nextSymbol))
             {
                 return false;
             }
 
-            if (semanticModel.GetSymbol(argInvocation) is not IMethodSymbol next ||
-                !StackLinqHelper.IsStackLinqMethod(next))
-            {
-                return false;
-            }
-
-            current = argInvocation;
-            currentSymbol = next;
+            current = nextInvocation;
+            currentSymbol = nextSymbol;
         }
 
-        var sourceArrayExpr = current.Expression is MemberAccessExpressionSyntax rootMemberAccess
-            ? rootMemberAccess.Expression
-            : current.ArgumentList.Arguments[0].Expression;
+        if (!StackLinqHelper.TryGetSourceExpression(current, currentSymbol, out var sourceArrayExpr))
+        {
+            return false;
+        }
 
         chainBuilder.Reverse();
         chain = new StackLinqChain(sourceArrayExpr, chainBuilder.ToImmutable(), terminal, isParallel);

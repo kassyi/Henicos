@@ -175,15 +175,23 @@ internal sealed class ExtremaStrategy(string comparisonOperator) : IStackLinqTer
 
 internal sealed class ContainsStrategy : IStackLinqTerminalStrategy
 {
-    public void EmitInitialValue(ref TranspileContext context, string resultVar, in LinqStage stage) =>
+    public void EmitInitialValue(ref TranspileContext context, string resultVar, in LinqStage stage)
+    {
         context.Emitter.Writer.AppendLine($"bool {resultVar} = false;");
+        if (StackLinqHelper.TryGetStageArgument(stage.Invocation, stage.Symbol, 0, out var targetArg))
+        {
+            var targetType = stage.Symbol.Parameters[^1].Type;
+            context.Emitter.Dialect.AppendType(ref context, targetType);
+            context.Emitter.Writer.Append($" {resultVar}_target = ");
+            context.Visitor.Visit(targetArg.Expression);
+            context.Emitter.Writer.AppendLine(";");
+        }
+    }
 
     public void Emit(ref TranspileContext context, in LinqStage stage, string resultVar, int valIndex)
     {
-        var arg = stage.Invocation.ArgumentList.Arguments[0].Expression;
-        context.Emitter.Writer.Append($"if ({StackLinqHelper.ValuePrefix}{valIndex} == (");
-        context.Visitor.Visit(arg);
-        context.Emitter.Writer.AppendLine("))");
+        context.Emitter.Writer.AppendLine(
+            $"if ({GSharpInternalNames.StackLinq.LinqEquals}({StackLinqHelper.ValuePrefix}{valIndex}, {resultVar}_target))");
         using (context.Emitter.Writer.Braces())
         {
             context.Emitter.Writer.AppendLine($"{resultVar} = true; break;");
@@ -197,8 +205,7 @@ internal sealed class AverageStrategy : IStackLinqTerminalStrategy
 {
     public void EmitInitialValue(ref TranspileContext context, string resultVar, in LinqStage stage)
     {
-        context.Emitter.Dialect.AppendType(ref context, stage.Symbol.ReturnType);
-        context.Emitter.Writer.AppendLine($" {resultVar} = 0;");
+        context.Emitter.Writer.AppendLine($"double {resultVar} = 0;");
         context.Emitter.Writer.AppendLine($"int {resultVar}_count = 0;");
     }
 
@@ -218,9 +225,7 @@ internal sealed class AverageStrategy : IStackLinqTerminalStrategy
         context.Emitter.Writer.AppendLine("else");
         using (context.Emitter.Writer.Braces())
         {
-            context.Emitter.Writer.Append($"{resultVar} = {resultVar} / (");
-            context.Emitter.Dialect.AppendType(ref context, stage.Symbol.ReturnType);
-            context.Emitter.Writer.AppendLine($")({resultVar}_count);");
+            context.Emitter.Writer.AppendLine($"{resultVar} = {resultVar} / (double)({resultVar}_count);");
         }
     }
 }
@@ -230,10 +235,11 @@ internal sealed class AggregateStrategy : IStackLinqTerminalStrategy
     public void EmitInitialValue(ref TranspileContext context, string resultVar, in LinqStage stage)
     {
         context.Emitter.Dialect.AppendType(ref context, stage.Symbol.ReturnType);
-        if (stage.Invocation.ArgumentList.Arguments.Count >= 2)
+        if (StackLinqHelper.GetStageArgumentCount(stage.Symbol) >= 2 &&
+            StackLinqHelper.TryGetStageArgument(stage.Invocation, stage.Symbol, 0, out var seedArg))
         {
             context.Emitter.Writer.Append($" {resultVar} = ");
-            context.Visitor.Visit(stage.Invocation.ArgumentList.Arguments[0].Expression);
+            context.Visitor.Visit(seedArg.Expression);
             context.Emitter.Writer.AppendLine(";");
         }
         else
@@ -245,11 +251,16 @@ internal sealed class AggregateStrategy : IStackLinqTerminalStrategy
 
     public void Emit(ref TranspileContext context, in LinqStage stage, string resultVar, int valIndex)
     {
-        var funcArg = stage.Invocation.ArgumentList.Arguments.Count >= 2
-            ? stage.Invocation.ArgumentList.Arguments[1].Expression
-            : stage.Invocation.ArgumentList.Arguments[0].Expression;
+        var hasSeed = StackLinqHelper.GetStageArgumentCount(stage.Symbol) >= 2;
+        var funcOrdinal = hasSeed ? 1 : 0;
+        if (!StackLinqHelper.TryGetStageArgument(stage.Invocation, stage.Symbol, funcOrdinal, out var funcArgSyntax))
+        {
+            return;
+        }
 
-        if (stage.Invocation.ArgumentList.Arguments.Count < 2)
+        var funcArg = funcArgSyntax.Expression;
+
+        if (!hasSeed)
         {
             context.Emitter.Writer.AppendLine($"if (!{resultVar}_init)");
             using (context.Emitter.Writer.Braces())
@@ -275,7 +286,7 @@ internal sealed class AggregateStrategy : IStackLinqTerminalStrategy
 
     public void EmitPostLoop(ref TranspileContext context, in LinqStage stage, string resultVar)
     {
-        if (stage.Invocation.ArgumentList.Arguments.Count < 2)
+        if (StackLinqHelper.GetStageArgumentCount(stage.Symbol) < 2)
         {
             TerminalNames.EmitEmptySequenceTrap(ref context, $"!{resultVar}_init");
         }

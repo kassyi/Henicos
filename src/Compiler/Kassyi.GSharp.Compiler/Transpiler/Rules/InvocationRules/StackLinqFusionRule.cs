@@ -166,6 +166,11 @@ public sealed class StackLinqFusionRule : IInvocationTranspilerRule
                 writer.Append(
                     $"return {GSharpInternalNames.StackLinq.BlockReduce}({ResultVar}, {GSharpInternalNames.StackLinq.Plus}{{}});");
             }
+            else if (chain.Terminal == StackLinqOperator.Average &&
+                     terminalStage.Symbol.ReturnType.SpecialType == SpecialType.System_Single)
+            {
+                writer.Append($"return (float){ResultVar};");
+            }
             else
             {
                 writer.Append($"return {ResultVar};");

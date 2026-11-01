@@ -43,25 +43,106 @@ internal static class StackLinqHelper
              .AsStackEnumerable()
              .Any(static p => p.Name == "state"));
 
-    public static ArgumentSyntax GetLambdaArgument(InvocationExpressionSyntax invocation, IMethodSymbol symbol)
+    public static bool TryGetSourceExpression(
+        InvocationExpressionSyntax invocation,
+        IMethodSymbol symbol,
+        [NotNullWhen(true)] out ExpressionSyntax? sourceExpression)
     {
-        if (symbol.IsExtensionMethod && invocation.Expression is MemberAccessExpressionSyntax)
+        if (symbol.ReducedFrom is not null)
         {
-            return invocation.ArgumentList.Arguments[0];
+            if (invocation.Expression is MemberAccessExpressionSyntax memberAccess)
+            {
+                sourceExpression = memberAccess.Expression;
+                return true;
+            }
+
+            sourceExpression = null;
+            return false;
         }
 
-        return invocation.ArgumentList.Arguments[1];
-    }
-
-    public static bool HasPredicateOrSelector(InvocationExpressionSyntax invocation, IMethodSymbol symbol)
-    {
-        if (symbol.IsExtensionMethod && invocation.Expression is MemberAccessExpressionSyntax)
+        var args = invocation.ArgumentList.Arguments;
+        for (var i = 0; i < args.Count; i++)
         {
-            return invocation.ArgumentList.Arguments.Count > 0;
+            var param = symbol.FindParameter(args, i);
+            if (param is { Ordinal: 0 })
+            {
+                sourceExpression = args[i].Expression;
+                return true;
+            }
         }
 
-        return invocation.ArgumentList.Arguments.Count > 1;
+        sourceExpression = null;
+        return false;
     }
+
+    public static int GetStageArgumentCount(IMethodSymbol symbol) =>
+        symbol.ReducedFrom is not null ? symbol.Parameters.Length : symbol.Parameters.Length - 1;
+
+    public static bool TryGetStageArgument(
+        InvocationExpressionSyntax invocation,
+        IMethodSymbol symbol,
+        int stageArgOrdinal,
+        [NotNullWhen(true)] out ArgumentSyntax? argument)
+    {
+        var targetOrdinal = (symbol.ReducedFrom is not null ? 0 : 1) + stageArgOrdinal;
+        if (targetOrdinal < 0 || targetOrdinal >= symbol.Parameters.Length)
+        {
+            argument = null;
+            return false;
+        }
+
+        var args = invocation.ArgumentList.Arguments;
+        for (var i = 0; i < args.Count; i++)
+        {
+            var param = symbol.FindParameter(args, i);
+            if (param is not null && param.Ordinal == targetOrdinal)
+            {
+                argument = args[i];
+                return true;
+            }
+        }
+
+        argument = null;
+        return false;
+    }
+
+    public static bool HasInterferingReorderedArguments(
+        InvocationExpressionSyntax invocation,
+        IMethodSymbol symbol,
+        SemanticModel semanticModel)
+    {
+        var args = invocation.ArgumentList.Arguments;
+        for (var i = 0; i < args.Count; i++)
+        {
+            var paramI = symbol.FindParameter(args, i);
+            if (paramI is null)
+            {
+                continue;
+            }
+
+            for (var j = i + 1; j < args.Count; j++)
+            {
+                var paramJ = symbol.FindParameter(args, j);
+                if (paramJ is not null &&
+                    paramI.Ordinal > paramJ.Ordinal &&
+                    ExpressionEffects.Of(args[i].Expression, semanticModel)
+                        .InterferesWith(ExpressionEffects.Of(args[j].Expression, semanticModel)))
+                {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
+    public static ArgumentSyntax GetLambdaArgument(InvocationExpressionSyntax invocation, IMethodSymbol symbol) =>
+        TryGetStageArgument(invocation, symbol, 0, out var arg)
+            ? arg
+            : invocation.ArgumentList.Arguments[0];
+
+    public static bool HasPredicateOrSelector(InvocationExpressionSyntax invocation, IMethodSymbol symbol) =>
+        GetStageArgumentCount(symbol) > 0;
 
     public static void EmitAccumulateElement(
         ref TranspileContext context,

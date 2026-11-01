@@ -5,11 +5,20 @@ namespace Kassyi.GSharp.Compiler.Transpiler.Rules.InvocationRules;
 /// </summary>
 public sealed class StackLinqTranspilerRule : IInvocationTranspilerRule
 {
+    public const string ReorderedArguments =
+        "StackLinq call with reordered named arguments whose evaluations interfere";
+
     public bool TryTranspile(InvocationExpressionSyntax node, ref TranspileContext context, IMethodSymbol symbol)
     {
         if (!StackLinqHelper.IsStackLinqMethod(symbol))
         {
             return false;
+        }
+
+        if (StackLinqHelper.HasInterferingReorderedArguments(node, symbol, context.Query.SemanticModel))
+        {
+            context.Reporter.Fail(GSharpDiagnostics.UnsupportedSyntax, node, ReorderedArguments);
+            return true;
         }
 
         var methodName = symbol.Name;
@@ -30,41 +39,28 @@ public sealed class StackLinqTranspilerRule : IInvocationTranspilerRule
 
         using (context.Emitter.Writer.Parentheses())
         {
-            var arguments = node.ArgumentList.Arguments;
-            switch (symbol.IsExtensionMethod)
+            if (StackLinqHelper.TryGetSourceExpression(node, symbol, out var sourceExpr))
             {
-                // If this is an extension method call via instance.Method(), the instance is the first argument
-                case true when node.Expression is MemberAccessExpressionSyntax memberAccess:
-                {
-                    // The source template deduces GSharpArray<T>, which a stack array does not convert to
-                    StackArrayLocals.AppendView(memberAccess.Expression, ref context);
-
-                    if (arguments.Count > 0)
-                    {
-                        context.Emitter.Writer.Append(',');
-                    }
-
-                    break;
-                }
-                case true:
-                    // Called as a normal static method, first arg is the instance, which is handled normally below
-                    break;
+                // The source template deduces GSharpArray<T>, which a stack array does not convert to
+                StackArrayLocals.AppendView(sourceExpr, ref context);
             }
 
-            for (var i = 0; i < arguments.Count; i++)
+            var stageArgCount = StackLinqHelper.GetStageArgumentCount(symbol);
+            for (var i = 0; i < stageArgCount; i++)
             {
-                if (StackArrayLocals.IsStackArrayReference(arguments[i].Expression, context.Query.SemanticModel))
+                if (!StackLinqHelper.TryGetStageArgument(node, symbol, i, out var stageArg))
                 {
-                    StackArrayLocals.AppendView(arguments[i].Expression, ref context);
+                    continue;
+                }
+
+                context.Emitter.Writer.Append(',');
+                if (StackArrayLocals.IsStackArrayReference(stageArg.Expression, context.Query.SemanticModel))
+                {
+                    StackArrayLocals.AppendView(stageArg.Expression, ref context);
                 }
                 else
                 {
-                    context.Visitor.Visit(arguments[i]);
-                }
-
-                if (i < arguments.Count - 1)
-                {
-                    context.Emitter.Writer.Append(',');
+                    context.Visitor.Visit(stageArg);
                 }
             }
         }
