@@ -328,8 +328,8 @@
   {
     "name": "KernelClassMustBePartial",
     "id": "GSH0036",
-    "title": "Kernel class must be partial",
-    "messageFormat": "The class '{0}' containing [GpuKernel] methods must be declared as partial to support source generation of contexts and launch methods.",
+    "title": "GPU code type must be partial",
+    "messageFormat": "The type '{0}' that contains or encloses GPU code must be declared partial to support source generation of contexts and launch methods.",
     "category": "GSharpTranspiler",
     "defaultSeverity": "Error",
     "isEnabledByDefault": true

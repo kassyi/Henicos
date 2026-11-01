@@ -19,6 +19,16 @@ public sealed class ElementAccessExpressionTranspilerRule : SyntaxNodeTranspiler
     /// <inheritdoc />
     public override void Transpile(ElementAccessExpressionSyntax node, ref TranspileContext context)
     {
+        if (node.ArgumentList.Arguments.Count > 1)
+        {
+            // C++17 reads a comma inside [] as the comma operator (#613)
+            var reason = context.Query.SemanticModel.GetTypeSymbol(node.Expression) is IArrayTypeSymbol { Rank: > 1 }
+                ? GpuCodeConstraints.MultidimensionalArray
+                : GpuCodeConstraints.MultiArgumentIndexer;
+            context.Reporter.Fail(GSharpDiagnostics.UnsupportedSyntax, node, reason);
+            return;
+        }
+
         // An element of a null array throws NullReferenceException in C# (#706), after the index is evaluated
         if (ArrayNullCheck.TryAppendCheckedElement(node, ref context))
         {
@@ -28,13 +38,9 @@ public sealed class ElementAccessExpressionTranspilerRule : SyntaxNodeTranspiler
         context.Visitor.Visit(node.Expression);
         using (context.Emitter.Writer.Brackets())
         {
-            for (var i = 0; i < node.ArgumentList.Arguments.Count; i++)
+            if (node.ArgumentList.Arguments.Count > 0)
             {
-                context.Visitor.Visit(node.ArgumentList.Arguments[i].Expression);
-                if (i < node.ArgumentList.Arguments.Count - 1)
-                {
-                    context.Emitter.Writer.Append(',');
-                }
+                context.Visitor.Visit(node.ArgumentList.Arguments[0].Expression);
             }
         }
     }

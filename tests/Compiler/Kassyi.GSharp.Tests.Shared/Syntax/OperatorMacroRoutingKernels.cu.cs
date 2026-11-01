@@ -1,4 +1,5 @@
 // ReSharper disable All
+using System;
 using Kassyi.GSharp.Core;
 using Kassyi.ZeroAlloc.Linq;
 
@@ -41,6 +42,22 @@ public static partial class RouteExtensions
         RouteValue z = new RouteValue(0);
         z = x + y;
         return z.Value;
+    }
+}
+
+// Internal so GeneratorSnapshotTests (which compiles this file in a second assembly referencing the test assembly)
+// does not see two public extension methods on int[] (#940)
+internal static partial class RouteGroupExtensions
+{
+    [GpuDeviceFunction]
+    public static int AddElement(this int[] x, int a)
+    {
+        RouteCtx ctx = default;
+        RouteValue vx = new RouteValue(x[0]);
+        RouteValue vy = new RouteValue(a);
+        RouteValue vz = new RouteValue(0);
+        vz = vx + vy;
+        return vz.Value;
     }
 }
 
@@ -128,5 +145,42 @@ public static partial class OperatorMacroRoutingKernels
     public static void LambdaKernel(int[] values, int[] result)
     {
         result[0] = values.AsStackEnumerable().Select(v => AddOne(v)).Sum();
+    }
+
+    // A reduced extension method group passed to StackLinq and stored in a delegate before reassigning its receiver (#940)
+    [GpuKernel]
+    public static void ExtensionMethodGroupKernel(int[] values, int[] ten, int[] ninetyNine, int[] result)
+    {
+        int[] x = ten;
+        result[0] = values.AsStackEnumerable().Select(x.AddElement).Sum();
+
+        Func<int, int> addTen = x.AddElement;
+        x = ninetyNine;
+        result[1] = values.AsStackEnumerable().Select(addTen).Sum();
+    }
+}
+
+// A kernel class nested in a partial outer class (#941)
+public static partial class RouteOuter
+{
+    public static partial class NestedRoutingKernels
+    {
+        [GpuDeviceFunction]
+        public static int AddNested(ref RouteCtx ctx, int a, int b)
+        {
+            RouteValue x = new RouteValue(a);
+            RouteValue y = new RouteValue(b);
+            RouteValue z = new RouteValue(0);
+            z = x + y;
+            return z.Value;
+        }
+
+        [GpuKernel]
+        public static void NestedKernel(int[] values, int[] result)
+        {
+            RouteCtx ctx = default;
+            result[0] = AddNested(ref ctx, values[0], values[1]);
+            result[1] = ctx.Calls;
+        }
     }
 }

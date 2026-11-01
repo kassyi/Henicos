@@ -683,7 +683,7 @@
     "details": {
       "current_behavior": "Mandatory addition of snapshots for new tests.",
       "strategy": "Enforced snapshot consistency and extracted shared headers (preludes) to prevent brittle snapshot drift.",
-      "csharp_example": "[Fact]\n[Trait(\"FeatureId\", \"GEN-09\")]\npublic async Task Generator_ProducesStableSnapshots()\n{\n    // Consistency check prevents brittle snapshot drift by enforcing shared preludes\n    var driver = await TestGenerator(\"GEN-09_Target.cs\").GetDriverAsync();\n    await Verify(driver);\n}",
+      "csharp_example": "[Fact]\n[Category(TestCategory.Compiler)]\n[Scenario(TestScenario.HappyPath)]\npublic async Task Generator_ProducesStableSnapshots()\n{\n    // Consistency check prevents brittle snapshot drift by enforcing shared preludes\n    var driver = await TestGenerator(\"GEN-09_Target.cs\").GetDriverAsync();\n    await Verify(driver);\n}",
       "cpp_example": "/* Automated Test Output:\n * Result: Passed\n * Snapshot consistency verified. All shared headers (preludes) match exactly,\n * ensuring stable and deterministic transpiler outputs across tests.\n */"
     },
     "score": 16,
