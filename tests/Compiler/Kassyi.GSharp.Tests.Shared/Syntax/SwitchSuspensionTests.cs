@@ -83,6 +83,20 @@ public class SwitchSuspensionTests : TranspilerTestBase
     public void Test_SectionConstantChain_LaterConstReadsEarlierOne(int flag) =>
         SwitchSuspensionScenarios.SectionConstantChain(s_runNative, flag);
 
+    [SkippableTheory]
+    [Scenario(TestScenario.Boundary)]
+    [InlineData(0)]
+    [InlineData(1)]
+    public void Test_GotoCaseChar_MatchesCaseByValue(int flag) =>
+        SwitchSuspensionScenarios.GotoCaseChar(s_runNative, flag);
+
+    [SkippableTheory]
+    [Scenario(TestScenario.Boundary)]
+    [InlineData(0)]
+    [InlineData(1)]
+    public void Test_GotoCaseEnum_MatchesCaseByValue(int flag) =>
+        SwitchSuspensionScenarios.GotoCaseEnum(s_runNative, flag);
+
 #if GSHARP_CPU
     [SkippableTheory]
     [Scenario(TestScenario.Boundary)]
