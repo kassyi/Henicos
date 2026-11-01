@@ -116,7 +116,8 @@ public class CoreIntrinsicsTests
     [MemberData(nameof(ForwardedAtomicStubs))]
     public void Test_ForwardedAtomicStub_HostInvocation_ThrowsGpuOnlyExceptionAndLeavesTheValue(string stub)
     {
-        s_forwardedAtomicStubs[stub]();
+        Assert.True(s_forwardedAtomicStubs.TryGetValue(stub, out var invoke));
+        invoke();
     }
 
     // The table above lists every overload that ptx_intrinsics.yml forwards to a managed member, and nothing else

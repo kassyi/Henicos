@@ -21,7 +21,7 @@ public class ArtifactHelperTests
             {
                 MSBuildLocator.RegisterDefaults();
             }
-            catch
+            catch (InvalidOperationException)
             {
                 // Ignore if already registered
             }

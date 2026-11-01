@@ -34,7 +34,7 @@ public sealed class VectorResultCacheTests
     [Scenario(TestScenario.HappyPath)]
     public void ThrowIfReleaseFailed_WithoutErrors_DoesNothing()
     {
-        VectorResultCache.ThrowIfReleaseFailed(null);
+        Assert.Null(Record.Exception(() => VectorResultCache.ThrowIfReleaseFailed(null)));
     }
 
     [Fact]

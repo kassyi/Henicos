@@ -152,6 +152,7 @@ public class GpuBigIntMatrix2x2Tests : IDisposable
     {
         CudaCapability.EnsureGpuAvailable();
 
+        // [WHY] Intentionally pass null workspace to verify ArgumentNullException guard.
         Assert.Throws<ArgumentNullException>(() => new GpuBigIntMatrix2x2(null!, 4, false));
         Assert.Throws<ArgumentOutOfRangeException>(() => new GpuBigIntMatrix2x2(_context, 0, false));
         Assert.Throws<ArgumentOutOfRangeException>(() => new GpuBigIntMatrix2x2(_context, -1, false));

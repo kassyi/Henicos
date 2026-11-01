@@ -14,7 +14,7 @@ public class ComputeBenchmarkTests
         bench.RunReferenceCpu();
         bench.RunNativeCuda();
         bench.RunGSharp();
-        bench.Verify();
+        Assert.Null(Record.Exception(bench.Verify));
     }
 
     [SkippableFact]
@@ -27,7 +27,7 @@ public class ComputeBenchmarkTests
         bench.RunReferenceCpu();
         bench.RunNativeCuda();
         bench.RunGSharp();
-        bench.Verify();
+        Assert.Null(Record.Exception(bench.Verify));
     }
 
     [SkippableFact]
@@ -40,7 +40,7 @@ public class ComputeBenchmarkTests
         bench.RunReferenceCpu();
         bench.RunNativeCuda();
         bench.RunGSharp();
-        bench.Verify();
+        Assert.Null(Record.Exception(bench.Verify));
     }
 
     [SkippableFact]
@@ -53,7 +53,7 @@ public class ComputeBenchmarkTests
         bench.RunReferenceCpu();
         bench.RunNativeCuda();
         bench.RunGSharp();
-        bench.Verify();
+        Assert.Null(Record.Exception(bench.Verify));
     }
 
     [SkippableFact]

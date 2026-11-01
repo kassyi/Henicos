@@ -23,7 +23,7 @@ public class CompileTasksTests
             {
                 MSBuildLocator.RegisterDefaults();
             }
-            catch
+            catch (InvalidOperationException)
             {
                 // Best-effort: ignore if already initialized or assemblies were pre-loaded
             }
@@ -458,10 +458,10 @@ public class CompileTasksTests
     {
         var task = new TestCompileKernelTask();
         // [WHY] Intentionally pass null element to verify defensive guard against null file paths in SafeDeleteFiles.
-        task.SafeDeleteFiles(null!, "");
+        Assert.Null(Record.Exception(() => task.SafeDeleteFiles(null!, "")));
 
         // Invalid path that throws an exception inside File.Exists or File.Delete
-        task.SafeDeleteFiles("||invalid_path<>?*");
+        Assert.Null(Record.Exception(() => task.SafeDeleteFiles("||invalid_path<>?*")));
     }
 
     [Fact]
@@ -979,6 +979,48 @@ public class CompileTasksTests
         var nvcc = Assert.Single(ctx.Runner.Invocations, i => i.FileName.Contains("nvcc") && i.Arguments.Contains("--fatbin"));
         Assert.Contains("-gencode arch=compute_86,code=sm_86 ", nvcc.Arguments);
         Assert.Contains("-gencode arch=compute_86,code=compute_86 ", nvcc.Arguments);
+    }
+
+    [Fact]
+    [Category(TestCategory.Compiler)]
+    [Scenario(TestScenario.SadPath)]
+    public void Test_CompileCudaToFatbin_ExitCodeZeroWithWarnings_LogsMsBuildWarnings()
+    {
+        using var ctx = new CompileTaskTestContext();
+        CreateOldSource(ctx);
+        ctx.Runner.NextStandardOutput = @"C:\temp\kernel1.cu(102): warning #550-D: variable ""dummy"" was set but never used";
+
+        var task = ctx.CreateCudaTask(["kernel1.cu"], combinedName: "");
+        Assert.True(task.Execute());
+        Assert.Contains(ctx.BuildEngine.LoggedWarnings, w => w.Contains("dummy") && w.Contains("550"));
+    }
+
+    [Fact]
+    [Category(TestCategory.Compiler)]
+    [Scenario(TestScenario.SadPath)]
+    public void Test_MsvcToolchain_ExitCodeZeroWithC4068_LogsMsBuildWarning()
+    {
+        using var ctx = new CompileTaskTestContext();
+        ctx.CreateDummySource("kernel.cpp", "// source");
+        ctx.Runner.NextStandardOutput = @"C:\temp\kernel.cpp(42): warning C4068: unknown pragma 'unroll'";
+
+        var task = ctx.CreateCppTask(["kernel.cpp"], ctx.CreateMsvcToolchain());
+        Assert.True(task.Execute());
+        Assert.Contains(ctx.BuildEngine.LoggedWarnings, w => w.Contains("unknown pragma 'unroll'"));
+    }
+
+    [Fact]
+    [Category(TestCategory.Compiler)]
+    [Scenario(TestScenario.SadPath)]
+    public void Test_GccClangToolchain_ExitCodeZeroWithWarning_LogsMsBuildWarning()
+    {
+        using var ctx = new CompileTaskTestContext();
+        ctx.CreateDummySource("kernel.cpp", "// source");
+        ctx.Runner.NextStandardError = "kernel.cpp:42:5: warning: label 'unused' defined but not used [-Wunused-label]";
+
+        var task = ctx.CreateCppTask(["kernel.cpp"], ctx.CreateGccClangToolchain("g++"));
+        Assert.True(task.Execute());
+        Assert.Contains(ctx.BuildEngine.LoggedWarnings, w => w.Contains("-Wunused-label"));
     }
 
     private static void CreateOldSource(CompileTaskTestContext ctx, string fileName = "kernel1.cu")

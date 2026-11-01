@@ -1,3 +1,4 @@
+#nullable enable
 #if GSHARP_CPU
 using System;
 using Kassyi.GSharp.Core;
