@@ -42,7 +42,7 @@ public class FloatAtomicAddDifferentialTests
         Shape = LaunchShape.ForRows(s_boundaries.Length * s_boundaries.Length, blockX: FloatAtomicAddMatrixKernels.StaticSharedCount),
         Inputs = static (rng, rows) =>
         {
-            var (left, right) = Pairs(rng, rows);
+            var (left, right) = DiffValues.Pairs(rng, rows, s_boundaries, NextValue);
             return new DiffBuffers()
                 .In("left", left, OutputPolicy.Exact)
                 .In("right", right, OutputPolicy.Exact)
@@ -99,38 +99,11 @@ public class FloatAtomicAddDifferentialTests
         DifferentialRunner.Run(s_floatAtomicAdd);
     }
 
-    private static (float[] Left, float[] Right) Pairs(DiffRandom rng, int rows)
-    {
-        var left = new float[rows];
-        var right = new float[rows];
-        int n = s_boundaries.Length;
-        for (int r = 0; r < rows; r++)
-        {
-            if (rng.IsBoundarySeed)
-            {
-                left[r] = s_boundaries[r / n % n];
-                right[r] = s_boundaries[r % n];
-            }
-            else
-            {
-                left[r] = NextValue(rng);
-                right[r] = NextValue(rng);
-            }
-        }
-
-        return (left, right);
-    }
-
     private static float NextValue(DiffRandom rng) =>
         rng.NextBool() ? s_boundaries[rng.NextBelow(s_boundaries.Length)] : DiffValues.NextSingle(rng);
 
     private static float ReferenceGlobalAdd(float old, float val)
     {
-        if (float.IsNaN(old) || float.IsNaN(val))
-        {
-            return BitConverter.UInt32BitsToSingle(CanonicalNaNBits);
-        }
-
         float sum = FlushSubnormal(old) + FlushSubnormal(val);
         return float.IsNaN(sum)
             ? BitConverter.UInt32BitsToSingle(CanonicalNaNBits)

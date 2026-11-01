@@ -77,7 +77,15 @@ public static class DiffValues
         return BitConverter.UInt32BitsToSingle(sign | (exponent << 23) | mantissa);
     }
 
-    private static T[] Values<T>(DiffRandom rng, int count, T[] boundaries, Func<DiffRandom, T> next)
+    /// <summary>
+    /// Returns <paramref name="count"/> inputs: seed 0 repeats <paramref name="boundaries"/> in order; any other seed calls
+    /// <paramref name="next"/>, which decides itself whether to draw a boundary.
+    /// </summary>
+    /// <param name="rng">The generator.</param>
+    /// <param name="count">The number of values.</param>
+    /// <param name="boundaries">The boundary table.</param>
+    /// <param name="next">Draws one value on a seed other than 0.</param>
+    public static T[] Values<T>(DiffRandom rng, int count, T[] boundaries, Func<DiffRandom, T> next)
     {
         var values = new T[count];
         for (int i = 0; i < count; i++)
@@ -88,7 +96,15 @@ public static class DiffValues
         return values;
     }
 
-    private static (T[] Left, T[] Right) Pairs<T>(DiffRandom rng, int rows, T[] boundaries, Func<DiffRandom, T> next)
+    /// <summary>
+    /// Returns <paramref name="rows"/> pairs: seed 0 gives the cross product of <paramref name="boundaries"/> row by row
+    /// (row <c>r</c> is <c>(B[r / n % n], B[r % n])</c>); any other seed calls <paramref name="next"/> for each side.
+    /// </summary>
+    /// <param name="rng">The generator.</param>
+    /// <param name="rows">The number of pairs.</param>
+    /// <param name="boundaries">The boundary table.</param>
+    /// <param name="next">Draws one value on a seed other than 0.</param>
+    public static (T[] Left, T[] Right) Pairs<T>(DiffRandom rng, int rows, T[] boundaries, Func<DiffRandom, T> next)
     {
         var left = new T[rows];
         var right = new T[rows];
