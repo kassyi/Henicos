@@ -61,17 +61,67 @@ internal sealed partial class ManagedExecutionRewriter
         return ManagedNameQualifier.QualifyName(node, visited, semanticModel);
     }
 
-    // T.F or T.F<int> that calls or names a device function with a managed version; null otherwise. A reduced extension
-    // call x.F(a) is routed with the static call it becomes (RouteExtensionCall)
+    // T.F or T.F<int> that calls or names a device function with a managed version; a reduced extension method group
+    // x.F or x.F<int> that names one (__gsharp_bind(x, global::T.__gsharp_managed_F), #940); null otherwise. A reduced
+    // extension call x.F(a) is routed with the static call it becomes (RouteExtensionCall)
     private ExpressionSyntax? TryRouteMemberAccess(MemberAccessExpressionSyntax node, SyntaxNode? visited)
     {
-        if (!node.IsKind(SyntaxKind.SimpleMemberAccessExpression) || !TryGetRoutedMethod(node, out var method))
+        if (!node.IsKind(SyntaxKind.SimpleMemberAccessExpression))
         {
             return null;
         }
 
         var name = (visited as MemberAccessExpressionSyntax)?.Name ?? node.Name;
-        return SpellCallee(method, (name as GenericNameSyntax)?.TypeArgumentList, routed: true).WithTriviaFrom(node);
+        var typeArguments = (name as GenericNameSyntax)?.TypeArgumentList;
+        if (TryGetRoutedMethod(node, out var method))
+        {
+            return SpellCallee(method, typeArguments, routed: true).WithTriviaFrom(node);
+        }
+
+        if ((node.Parent is not InvocationExpressionSyntax parentInvocation || parentInvocation.Expression != node) &&
+            semanticModel.GetSymbol(node) is IMethodSymbol { ReducedFrom: { } extension } reduced &&
+            extension.HasAttribute(KnownAttributes.GpuDeviceFunction) &&
+            IsRouted(extension))
+        {
+            var receiver = (visited as MemberAccessExpressionSyntax)?.Expression ?? node.Expression;
+            return SpellBindCall(receiver, reduced, extension, typeArguments).WithTriviaFrom(node);
+        }
+
+        return null;
+    }
+
+    // global::Kassyi.GSharp.Core.ManagedGpuContext.__gsharp_bind<<receiver type>, <parameter types>[, <return type>]>(<receiver>, <callee>)
+    private static ExpressionSyntax SpellBindCall(
+        ExpressionSyntax receiver,
+        IMethodSymbol reduced,
+        IMethodSymbol extension,
+        TypeArgumentListSyntax? typeArguments)
+    {
+        using var writer = new SourceWriter();
+        writer.Append("global::Kassyi.GSharp.Core.ManagedGpuContext.")
+            .Append(GSharpInternalNames.ManagedVersion.Bind)
+            .Append('<');
+        writer.AppendCsharpTypeName(reduced.ReceiverType ?? extension.Parameters[0].Type);
+        for (var i = 0; i < reduced.Parameters.Length; i++)
+        {
+            writer.Append(", ");
+            writer.AppendCsharpTypeName(reduced.Parameters[i].Type);
+        }
+
+        if (!reduced.ReturnsVoid)
+        {
+            writer.Append(", ");
+            writer.AppendCsharpTypeName(reduced.ReturnType);
+        }
+
+        writer.Append('>');
+        var callee = SpellCallee(extension, typeArguments, routed: true);
+        var arguments = SyntaxFactory.SeparatedList<ArgumentSyntax>()
+            .Add(SyntaxFactory.Argument(receiver.WithoutTrivia()))
+            .Add(SyntaxFactory.Argument(callee));
+        return SyntaxFactory.InvocationExpression(
+            SyntaxFactory.ParseExpression(writer.ToString()),
+            SyntaxFactory.ArgumentList(arguments));
     }
 
     // The static call global::N.C.F(x, a) that ManagedNameQualifier made of the reduced extension call x.F(a), with the

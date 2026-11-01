@@ -114,6 +114,9 @@ public struct Emitter(
     /// </summary>
     public int SequenceTempCounter;
 
+    /// <summary>Numbers the <c>__gsharp_foreach_e_&lt;n&gt;</c> raw elements of converting range-for loops in the method.</summary>
+    public int ForEachElementCounter;
+
     /// <summary>Numbers the guards and the resource temporaries of the <c>using</c>s of the method (UsingTranspiler).</summary>
     public int UsingCounter;
 

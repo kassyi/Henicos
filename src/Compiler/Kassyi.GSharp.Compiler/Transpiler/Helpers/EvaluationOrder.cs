@@ -324,7 +324,8 @@ internal static class EvaluationOrder
         /// Writes <paramref name="argument"/> as the argument of <paramref name="parameter"/>: its temporary (by
         /// address when it is passed by reference to a call), or the argument itself as the call rules write it.
         /// </summary>
-        public void AppendArgument(ArgumentSyntax argument, IParameterSymbol? parameter, ref TranspileContext context)
+        public void AppendArgument(ArgumentSyntax argument, IParameterSymbol? parameter, ref TranspileContext context,
+            bool convertToParameter = false)
         {
             var byReference = IsByReference(argument, parameter);
             if (TryGetTemp(argument, out var temp))
@@ -342,6 +343,12 @@ internal static class EvaluationOrder
                 // [WHY] An in or ref readonly parameter is a pointer in C++, as a ref parameter is, and C# accepts its
                 // argument with in, ref or no modifier; the C++ argument is the address whichever was written.
                 RefSyntaxHelper.TranspileAsByRefArgument(ref context, argument.Expression);
+                return;
+            }
+
+            if (convertToParameter && !_isBraces && !byReference && parameter?.Type is { } parameterType)
+            {
+                ArithmeticConversions.AppendArgument(argument, parameterType, ref context);
                 return;
             }
 

@@ -91,9 +91,23 @@ public sealed class BinaryExpressionTranspilerRule : SyntaxNodeTranspilerRuleBas
         // The operators that C++ leaves unsequenced are also the ones whose operands C# promotes together
         var unsequenced = IsUnsequencedInCpp(node);
         var promotion = unsequenced ? GetPromotion(operation) : null;
+        var narrowEnumType = IntegerSemantics.TryGetNarrowEnumResultType(operation, out var narrowType) ? narrowType : null;
         if (unsequenced && OperandsInterfere(node, ref context))
         {
-            TranspileSequenced(node, promotion, ref context);
+            TranspileSequenced(node, promotion, narrowEnumType, ref context);
+            return;
+        }
+
+        if (narrowEnumType != null)
+        {
+            ArithmeticConversions.AppendConversion(narrowEnumType, ref context);
+            using (context.Emitter.Writer.Parentheses())
+            {
+                context.Visitor.Visit(node.Left);
+                AppendOperator(node, node.Right, ref context);
+                context.Visitor.Visit(node.Right);
+            }
+
             return;
         }
 
@@ -168,13 +182,26 @@ public sealed class BinaryExpressionTranspilerRule : SyntaxNodeTranspilerRuleBas
     // auto keeps the C++ type of each operand, so the operator promotes them as it would in place. Where C# promotes
     // them to another type (#671), the temporaries are converted where they are used: (long long)__gsharp_seq_0
     private static void TranspileSequenced(BinaryExpressionSyntax node,
-        (IBinaryOperation Operation, ITypeSymbol Type)? promotion, ref TranspileContext context)
+        (IBinaryOperation Operation, ITypeSymbol Type)? promotion, ITypeSymbol? narrowEnumType, ref TranspileContext context)
     {
         var writer = context.Emitter.Writer;
         using var sequence = EvaluationOrder.BeginSequence(writer);
         var left = EvaluationOrder.DeclareTemp(ref context, node.Left, reference: false);
         var right = EvaluationOrder.DeclareTemp(ref context, node.Right, reference: false);
         sequence.Return();
+        if (narrowEnumType != null)
+        {
+            ArithmeticConversions.AppendConversion(narrowEnumType, ref context);
+            using (writer.Parentheses())
+            {
+                EvaluationOrder.AppendTempName(writer, left);
+                AppendOperator(node, right: null, ref context);
+                EvaluationOrder.AppendTempName(writer, right);
+            }
+
+            return;
+        }
+
         if (promotion is var (operation, type))
         {
             AppendTemp(left, operation.LeftOperand, type, ref context);
