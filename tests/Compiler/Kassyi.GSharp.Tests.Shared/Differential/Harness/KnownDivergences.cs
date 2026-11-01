@@ -170,10 +170,10 @@ public static class KnownDivergences
         new("M1DiffSwitchKernels.RefTernaryParameterWriteAcrossBarrierReproKernel", "ref_ternary_param_compound", DiffPath.Managed | DiffPath.Native, Issue: 1000),
         new("M1DiffSwitchKernels.RefTernaryParameterWriteAcrossBarrierReproKernel", "ref_ternary_param_inc", DiffPath.Managed | DiffPath.Native, Issue: 1000),
 
-        // F19: Warp.ShuffleXor after sub-warp conditional ShuffleDown on CPU emulator (#1001)
-        new("M1DiffWarpKernels.SubWarpConditionalShuffleKernel", "reconvergedFullWarpXor16", DiffPath.Managed | DiffPath.Native, Issue: 1001),
 
-        // F20: generic struct static method SharedMemory.Allocate<T> collides across type arguments (#543)
-        new("M1DiffWarpKernels.GenericStructStaticSharedMemoryKernel", "SharedSlot<int>", DiffPath.Managed | DiffPath.Native, Issue: 543),
+
+
+
+
     ];
 }

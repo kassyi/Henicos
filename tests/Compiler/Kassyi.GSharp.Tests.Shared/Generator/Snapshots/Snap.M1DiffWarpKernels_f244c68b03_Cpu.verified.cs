@@ -899,9 +899,22 @@ while (__gsharp_any_active && !__gsharp_launch_error.HasError())
 {
 __gsharp_any_active = false;
 int32_t __gsharp_threads_per_block = (int32_t)(__gsharp_block_dim_x * __gsharp_block_dim_y * __gsharp_block_dim_z);
+int32_t __gsharp_warp_min_state = INT32_MAX;
 for (int32_t __gsharp_thread_index = 0; __gsharp_thread_index < __gsharp_threads_per_block; __gsharp_thread_index++)
 {
 if (__gsharp_launch_error.HasError()) continue;
+if ((__gsharp_thread_index & 31) == 0)
+{
+__gsharp_warp_min_state = INT32_MAX;
+int32_t __gsharp_warp_end = __gsharp_thread_index + 32 < __gsharp_threads_per_block ? __gsharp_thread_index + 32 : __gsharp_threads_per_block;
+for (int32_t __gsharp_w = __gsharp_thread_index; __gsharp_w < __gsharp_warp_end; __gsharp_w++)
+{
+if (__gsharp_contexts[__gsharp_w].__gsharp_state != -1 && !__gsharp_contexts[__gsharp_w].__gsharp_yielded_for_block_barrier && !__gsharp_contexts[__gsharp_w].__gsharp_yielded_for_grid_sync && __gsharp_contexts[__gsharp_w].__gsharp_state < __gsharp_warp_min_state)
+{
+__gsharp_warp_min_state = __gsharp_contexts[__gsharp_w].__gsharp_state;
+}
+}
+}
 __gsharp_active_error_slot = &__gsharp_launch_error;
 int32_t __gsharp_tx = __gsharp_thread_index % __gsharp_block_dim_x;
 int32_t __gsharp_ty = (__gsharp_thread_index / __gsharp_block_dim_x) % __gsharp_block_dim_y;
@@ -909,11 +922,14 @@ int32_t __gsharp_tz = __gsharp_thread_index / (__gsharp_block_dim_x * __gsharp_b
 uint32_t __gsharp_ctx_tid = __gsharp_tz * __gsharp_block_dim_y * __gsharp_block_dim_x + __gsharp_ty * __gsharp_block_dim_x + __gsharp_tx;
 if (__gsharp_contexts[__gsharp_ctx_tid].__gsharp_state != -1 && !__gsharp_contexts[__gsharp_ctx_tid].__gsharp_yielded_for_block_barrier && !__gsharp_contexts[__gsharp_ctx_tid].__gsharp_yielded_for_grid_sync)
 {
+if (__gsharp_contexts[__gsharp_ctx_tid].__gsharp_state == __gsharp_warp_min_state)
+{
 __gsharp_set_thread_idx(__gsharp_tx, __gsharp_ty, __gsharp_tz, __gsharp_bx, __gsharp_by, __gsharp_bz, __gsharp_block_dim_x, __gsharp_block_dim_y, __gsharp_block_dim_z, __gsharp_grid_dim_x, __gsharp_grid_dim_y, __gsharp_grid_dim_z);
 __gsharp_k_Kassyi__GSharp__Tests__Shared__Differential__M1DiffWarpKernels__WarpShuffleFullWidthKernel(__gsharp_id_0_input, __gsharp_id_1_output, &__gsharp_contexts[__gsharp_ctx_tid]);
 if (__gsharp_contexts[__gsharp_ctx_tid].__gsharp_yielded_for_grid_sync)
 {
 __gsharp_trap(GSharpErrorCode::InvalidOperation, ""G#: Gpu.SyncGrid reached in M1DiffWarpKernels.WarpShuffleFullWidthKernel, which is not [GpuKernel(Cooperative = true)]"");
+}
 }
 if (__gsharp_contexts[__gsharp_ctx_tid].__gsharp_state != -1 && !__gsharp_contexts[__gsharp_ctx_tid].__gsharp_yielded_for_block_barrier && !__gsharp_contexts[__gsharp_ctx_tid].__gsharp_yielded_for_grid_sync)
 {
@@ -1293,8 +1309,21 @@ bool anyBlockActive = true;
 while (anyBlockActive)
 {
 anyBlockActive = false;
+int __gsharp_warp_min_state = int.MaxValue;
 for (int __gsharp_thread_index = 0; __gsharp_thread_index < __gsharp_threads_per_block; __gsharp_thread_index++)
 {
+if ((__gsharp_thread_index & 31) == 0)
+{
+__gsharp_warp_min_state = int.MaxValue;
+int __gsharp_warp_end = __gsharp_thread_index + 32 < __gsharp_threads_per_block ? __gsharp_thread_index + 32 : __gsharp_threads_per_block;
+for (int __gsharp_w = __gsharp_block_index * __gsharp_threads_per_block + __gsharp_thread_index; __gsharp_w < __gsharp_block_index * __gsharp_threads_per_block + __gsharp_warp_end; __gsharp_w++)
+{
+if (__gsharp_contexts[__gsharp_w].__gsharp_state != -1 && !threadAtBlockBarrier[__gsharp_w] && __gsharp_contexts[__gsharp_w].__gsharp_state < __gsharp_warp_min_state)
+{
+__gsharp_warp_min_state = __gsharp_contexts[__gsharp_w].__gsharp_state;
+}
+}
+}
 int __gsharp_tx = __gsharp_thread_index % (int)blockDimX;
 int __gsharp_ty = (__gsharp_thread_index / (int)blockDimX) % (int)blockDimY;
 int __gsharp_tz = __gsharp_thread_index / (int)(blockDimX * blockDimY);
@@ -1305,6 +1334,8 @@ int __gsharp_linear_tid = __gsharp_block_index * __gsharp_threads_per_block + __
 if (__gsharp_contexts[__gsharp_linear_tid].__gsharp_state != -1 && !threadAtBlockBarrier[__gsharp_linear_tid])
 {
 anyGridActive = true;
+if (__gsharp_contexts[__gsharp_linear_tid].__gsharp_state == __gsharp_warp_min_state)
+{
 global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested = false;
 global::Kassyi.GSharp.Core.ManagedGpuContext.BlockBarrierRequested = false;
 __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Differential__M1DiffWarpKernels__WarpShuffleFullWidthKernel(input, output, __gsharp_contexts[__gsharp_linear_tid]);
@@ -1315,6 +1346,7 @@ throw global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncInKernelThatIsNotCoop
 if (global::Kassyi.GSharp.Core.ManagedGpuContext.BlockBarrierRequested)
 {
 threadAtBlockBarrier[__gsharp_linear_tid] = true;
+}
 }
 if (__gsharp_contexts[__gsharp_linear_tid].__gsharp_state != -1 && !threadAtBlockBarrier[__gsharp_linear_tid])
 {
@@ -1538,9 +1570,22 @@ while (__gsharp_any_active && !__gsharp_launch_error.HasError())
 {
 __gsharp_any_active = false;
 int32_t __gsharp_threads_per_block = (int32_t)(__gsharp_block_dim_x * __gsharp_block_dim_y * __gsharp_block_dim_z);
+int32_t __gsharp_warp_min_state = INT32_MAX;
 for (int32_t __gsharp_thread_index = 0; __gsharp_thread_index < __gsharp_threads_per_block; __gsharp_thread_index++)
 {
 if (__gsharp_launch_error.HasError()) continue;
+if ((__gsharp_thread_index & 31) == 0)
+{
+__gsharp_warp_min_state = INT32_MAX;
+int32_t __gsharp_warp_end = __gsharp_thread_index + 32 < __gsharp_threads_per_block ? __gsharp_thread_index + 32 : __gsharp_threads_per_block;
+for (int32_t __gsharp_w = __gsharp_thread_index; __gsharp_w < __gsharp_warp_end; __gsharp_w++)
+{
+if (__gsharp_contexts[__gsharp_w].__gsharp_state != -1 && !__gsharp_contexts[__gsharp_w].__gsharp_yielded_for_block_barrier && !__gsharp_contexts[__gsharp_w].__gsharp_yielded_for_grid_sync && __gsharp_contexts[__gsharp_w].__gsharp_state < __gsharp_warp_min_state)
+{
+__gsharp_warp_min_state = __gsharp_contexts[__gsharp_w].__gsharp_state;
+}
+}
+}
 __gsharp_active_error_slot = &__gsharp_launch_error;
 int32_t __gsharp_tx = __gsharp_thread_index % __gsharp_block_dim_x;
 int32_t __gsharp_ty = (__gsharp_thread_index / __gsharp_block_dim_x) % __gsharp_block_dim_y;
@@ -1548,11 +1593,14 @@ int32_t __gsharp_tz = __gsharp_thread_index / (__gsharp_block_dim_x * __gsharp_b
 uint32_t __gsharp_ctx_tid = __gsharp_tz * __gsharp_block_dim_y * __gsharp_block_dim_x + __gsharp_ty * __gsharp_block_dim_x + __gsharp_tx;
 if (__gsharp_contexts[__gsharp_ctx_tid].__gsharp_state != -1 && !__gsharp_contexts[__gsharp_ctx_tid].__gsharp_yielded_for_block_barrier && !__gsharp_contexts[__gsharp_ctx_tid].__gsharp_yielded_for_grid_sync)
 {
+if (__gsharp_contexts[__gsharp_ctx_tid].__gsharp_state == __gsharp_warp_min_state)
+{
 __gsharp_set_thread_idx(__gsharp_tx, __gsharp_ty, __gsharp_tz, __gsharp_bx, __gsharp_by, __gsharp_bz, __gsharp_block_dim_x, __gsharp_block_dim_y, __gsharp_block_dim_z, __gsharp_grid_dim_x, __gsharp_grid_dim_y, __gsharp_grid_dim_z);
 __gsharp_k_Kassyi__GSharp__Tests__Shared__Differential__M1DiffWarpKernels__WarpShuffleSubWarpWidthsKernel(__gsharp_id_0_input, __gsharp_id_1_output, &__gsharp_contexts[__gsharp_ctx_tid]);
 if (__gsharp_contexts[__gsharp_ctx_tid].__gsharp_yielded_for_grid_sync)
 {
 __gsharp_trap(GSharpErrorCode::InvalidOperation, ""G#: Gpu.SyncGrid reached in M1DiffWarpKernels.WarpShuffleSubWarpWidthsKernel, which is not [GpuKernel(Cooperative = true)]"");
+}
 }
 if (__gsharp_contexts[__gsharp_ctx_tid].__gsharp_state != -1 && !__gsharp_contexts[__gsharp_ctx_tid].__gsharp_yielded_for_block_barrier && !__gsharp_contexts[__gsharp_ctx_tid].__gsharp_yielded_for_grid_sync)
 {
@@ -1796,8 +1844,21 @@ bool anyBlockActive = true;
 while (anyBlockActive)
 {
 anyBlockActive = false;
+int __gsharp_warp_min_state = int.MaxValue;
 for (int __gsharp_thread_index = 0; __gsharp_thread_index < __gsharp_threads_per_block; __gsharp_thread_index++)
 {
+if ((__gsharp_thread_index & 31) == 0)
+{
+__gsharp_warp_min_state = int.MaxValue;
+int __gsharp_warp_end = __gsharp_thread_index + 32 < __gsharp_threads_per_block ? __gsharp_thread_index + 32 : __gsharp_threads_per_block;
+for (int __gsharp_w = __gsharp_block_index * __gsharp_threads_per_block + __gsharp_thread_index; __gsharp_w < __gsharp_block_index * __gsharp_threads_per_block + __gsharp_warp_end; __gsharp_w++)
+{
+if (__gsharp_contexts[__gsharp_w].__gsharp_state != -1 && !threadAtBlockBarrier[__gsharp_w] && __gsharp_contexts[__gsharp_w].__gsharp_state < __gsharp_warp_min_state)
+{
+__gsharp_warp_min_state = __gsharp_contexts[__gsharp_w].__gsharp_state;
+}
+}
+}
 int __gsharp_tx = __gsharp_thread_index % (int)blockDimX;
 int __gsharp_ty = (__gsharp_thread_index / (int)blockDimX) % (int)blockDimY;
 int __gsharp_tz = __gsharp_thread_index / (int)(blockDimX * blockDimY);
@@ -1808,6 +1869,8 @@ int __gsharp_linear_tid = __gsharp_block_index * __gsharp_threads_per_block + __
 if (__gsharp_contexts[__gsharp_linear_tid].__gsharp_state != -1 && !threadAtBlockBarrier[__gsharp_linear_tid])
 {
 anyGridActive = true;
+if (__gsharp_contexts[__gsharp_linear_tid].__gsharp_state == __gsharp_warp_min_state)
+{
 global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested = false;
 global::Kassyi.GSharp.Core.ManagedGpuContext.BlockBarrierRequested = false;
 __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Differential__M1DiffWarpKernels__WarpShuffleSubWarpWidthsKernel(input, output, __gsharp_contexts[__gsharp_linear_tid]);
@@ -1818,6 +1881,7 @@ throw global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncInKernelThatIsNotCoop
 if (global::Kassyi.GSharp.Core.ManagedGpuContext.BlockBarrierRequested)
 {
 threadAtBlockBarrier[__gsharp_linear_tid] = true;
+}
 }
 if (__gsharp_contexts[__gsharp_linear_tid].__gsharp_state != -1 && !threadAtBlockBarrier[__gsharp_linear_tid])
 {
@@ -2034,9 +2098,22 @@ while (__gsharp_any_active && !__gsharp_launch_error.HasError())
 {
 __gsharp_any_active = false;
 int32_t __gsharp_threads_per_block = (int32_t)(__gsharp_block_dim_x * __gsharp_block_dim_y * __gsharp_block_dim_z);
+int32_t __gsharp_warp_min_state = INT32_MAX;
 for (int32_t __gsharp_thread_index = 0; __gsharp_thread_index < __gsharp_threads_per_block; __gsharp_thread_index++)
 {
 if (__gsharp_launch_error.HasError()) continue;
+if ((__gsharp_thread_index & 31) == 0)
+{
+__gsharp_warp_min_state = INT32_MAX;
+int32_t __gsharp_warp_end = __gsharp_thread_index + 32 < __gsharp_threads_per_block ? __gsharp_thread_index + 32 : __gsharp_threads_per_block;
+for (int32_t __gsharp_w = __gsharp_thread_index; __gsharp_w < __gsharp_warp_end; __gsharp_w++)
+{
+if (__gsharp_contexts[__gsharp_w].__gsharp_state != -1 && !__gsharp_contexts[__gsharp_w].__gsharp_yielded_for_block_barrier && !__gsharp_contexts[__gsharp_w].__gsharp_yielded_for_grid_sync && __gsharp_contexts[__gsharp_w].__gsharp_state < __gsharp_warp_min_state)
+{
+__gsharp_warp_min_state = __gsharp_contexts[__gsharp_w].__gsharp_state;
+}
+}
+}
 __gsharp_active_error_slot = &__gsharp_launch_error;
 int32_t __gsharp_tx = __gsharp_thread_index % __gsharp_block_dim_x;
 int32_t __gsharp_ty = (__gsharp_thread_index / __gsharp_block_dim_x) % __gsharp_block_dim_y;
@@ -2044,11 +2121,14 @@ int32_t __gsharp_tz = __gsharp_thread_index / (__gsharp_block_dim_x * __gsharp_b
 uint32_t __gsharp_ctx_tid = __gsharp_tz * __gsharp_block_dim_y * __gsharp_block_dim_x + __gsharp_ty * __gsharp_block_dim_x + __gsharp_tx;
 if (__gsharp_contexts[__gsharp_ctx_tid].__gsharp_state != -1 && !__gsharp_contexts[__gsharp_ctx_tid].__gsharp_yielded_for_block_barrier && !__gsharp_contexts[__gsharp_ctx_tid].__gsharp_yielded_for_grid_sync)
 {
+if (__gsharp_contexts[__gsharp_ctx_tid].__gsharp_state == __gsharp_warp_min_state)
+{
 __gsharp_set_thread_idx(__gsharp_tx, __gsharp_ty, __gsharp_tz, __gsharp_bx, __gsharp_by, __gsharp_bz, __gsharp_block_dim_x, __gsharp_block_dim_y, __gsharp_block_dim_z, __gsharp_grid_dim_x, __gsharp_grid_dim_y, __gsharp_grid_dim_z);
 __gsharp_k_Kassyi__GSharp__Tests__Shared__Differential__M1DiffWarpKernels__HybridWarpAndSharedMemoryBlockReduceKernel(__gsharp_id_0_input, __gsharp_id_1_output, __gsharp_id_2_floatOutput, &__gsharp_contexts[__gsharp_ctx_tid]);
 if (__gsharp_contexts[__gsharp_ctx_tid].__gsharp_yielded_for_grid_sync)
 {
 __gsharp_trap(GSharpErrorCode::InvalidOperation, ""G#: Gpu.SyncGrid reached in M1DiffWarpKernels.HybridWarpAndSharedMemoryBlockReduceKernel, which is not [GpuKernel(Cooperative = true)]"");
+}
 }
 if (__gsharp_contexts[__gsharp_ctx_tid].__gsharp_state != -1 && !__gsharp_contexts[__gsharp_ctx_tid].__gsharp_yielded_for_block_barrier && !__gsharp_contexts[__gsharp_ctx_tid].__gsharp_yielded_for_grid_sync)
 {
@@ -2291,8 +2371,21 @@ bool anyBlockActive = true;
 while (anyBlockActive)
 {
 anyBlockActive = false;
+int __gsharp_warp_min_state = int.MaxValue;
 for (int __gsharp_thread_index = 0; __gsharp_thread_index < __gsharp_threads_per_block; __gsharp_thread_index++)
 {
+if ((__gsharp_thread_index & 31) == 0)
+{
+__gsharp_warp_min_state = int.MaxValue;
+int __gsharp_warp_end = __gsharp_thread_index + 32 < __gsharp_threads_per_block ? __gsharp_thread_index + 32 : __gsharp_threads_per_block;
+for (int __gsharp_w = __gsharp_block_index * __gsharp_threads_per_block + __gsharp_thread_index; __gsharp_w < __gsharp_block_index * __gsharp_threads_per_block + __gsharp_warp_end; __gsharp_w++)
+{
+if (__gsharp_contexts[__gsharp_w].__gsharp_state != -1 && !threadAtBlockBarrier[__gsharp_w] && __gsharp_contexts[__gsharp_w].__gsharp_state < __gsharp_warp_min_state)
+{
+__gsharp_warp_min_state = __gsharp_contexts[__gsharp_w].__gsharp_state;
+}
+}
+}
 int __gsharp_tx = __gsharp_thread_index % (int)blockDimX;
 int __gsharp_ty = (__gsharp_thread_index / (int)blockDimX) % (int)blockDimY;
 int __gsharp_tz = __gsharp_thread_index / (int)(blockDimX * blockDimY);
@@ -2303,6 +2396,8 @@ int __gsharp_linear_tid = __gsharp_block_index * __gsharp_threads_per_block + __
 if (__gsharp_contexts[__gsharp_linear_tid].__gsharp_state != -1 && !threadAtBlockBarrier[__gsharp_linear_tid])
 {
 anyGridActive = true;
+if (__gsharp_contexts[__gsharp_linear_tid].__gsharp_state == __gsharp_warp_min_state)
+{
 global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested = false;
 global::Kassyi.GSharp.Core.ManagedGpuContext.BlockBarrierRequested = false;
 __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Differential__M1DiffWarpKernels__HybridWarpAndSharedMemoryBlockReduceKernel(input, output, floatOutput, __gsharp_contexts[__gsharp_linear_tid]);
@@ -2313,6 +2408,7 @@ throw global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncInKernelThatIsNotCoop
 if (global::Kassyi.GSharp.Core.ManagedGpuContext.BlockBarrierRequested)
 {
 threadAtBlockBarrier[__gsharp_linear_tid] = true;
+}
 }
 if (__gsharp_contexts[__gsharp_linear_tid].__gsharp_state != -1 && !threadAtBlockBarrier[__gsharp_linear_tid])
 {
@@ -2457,9 +2553,22 @@ while (__gsharp_any_active && !__gsharp_launch_error.HasError())
 {
 __gsharp_any_active = false;
 int32_t __gsharp_threads_per_block = (int32_t)(__gsharp_block_dim_x * __gsharp_block_dim_y * __gsharp_block_dim_z);
+int32_t __gsharp_warp_min_state = INT32_MAX;
 for (int32_t __gsharp_thread_index = 0; __gsharp_thread_index < __gsharp_threads_per_block; __gsharp_thread_index++)
 {
 if (__gsharp_launch_error.HasError()) continue;
+if ((__gsharp_thread_index & 31) == 0)
+{
+__gsharp_warp_min_state = INT32_MAX;
+int32_t __gsharp_warp_end = __gsharp_thread_index + 32 < __gsharp_threads_per_block ? __gsharp_thread_index + 32 : __gsharp_threads_per_block;
+for (int32_t __gsharp_w = __gsharp_thread_index; __gsharp_w < __gsharp_warp_end; __gsharp_w++)
+{
+if (__gsharp_contexts[__gsharp_w].__gsharp_state != -1 && !__gsharp_contexts[__gsharp_w].__gsharp_yielded_for_block_barrier && !__gsharp_contexts[__gsharp_w].__gsharp_yielded_for_grid_sync && __gsharp_contexts[__gsharp_w].__gsharp_state < __gsharp_warp_min_state)
+{
+__gsharp_warp_min_state = __gsharp_contexts[__gsharp_w].__gsharp_state;
+}
+}
+}
 __gsharp_active_error_slot = &__gsharp_launch_error;
 int32_t __gsharp_tx = __gsharp_thread_index % __gsharp_block_dim_x;
 int32_t __gsharp_ty = (__gsharp_thread_index / __gsharp_block_dim_x) % __gsharp_block_dim_y;
@@ -2467,11 +2576,14 @@ int32_t __gsharp_tz = __gsharp_thread_index / (__gsharp_block_dim_x * __gsharp_b
 uint32_t __gsharp_ctx_tid = __gsharp_tz * __gsharp_block_dim_y * __gsharp_block_dim_x + __gsharp_ty * __gsharp_block_dim_x + __gsharp_tx;
 if (__gsharp_contexts[__gsharp_ctx_tid].__gsharp_state != -1 && !__gsharp_contexts[__gsharp_ctx_tid].__gsharp_yielded_for_block_barrier && !__gsharp_contexts[__gsharp_ctx_tid].__gsharp_yielded_for_grid_sync)
 {
+if (__gsharp_contexts[__gsharp_ctx_tid].__gsharp_state == __gsharp_warp_min_state)
+{
 __gsharp_set_thread_idx(__gsharp_tx, __gsharp_ty, __gsharp_tz, __gsharp_bx, __gsharp_by, __gsharp_bz, __gsharp_block_dim_x, __gsharp_block_dim_y, __gsharp_block_dim_z, __gsharp_grid_dim_x, __gsharp_grid_dim_y, __gsharp_grid_dim_z);
 __gsharp_k_Kassyi__GSharp__Tests__Shared__Differential__M1DiffWarpKernels__SubWarpConditionalShuffleKernel(__gsharp_id_0_input, __gsharp_id_1_output, &__gsharp_contexts[__gsharp_ctx_tid]);
 if (__gsharp_contexts[__gsharp_ctx_tid].__gsharp_yielded_for_grid_sync)
 {
 __gsharp_trap(GSharpErrorCode::InvalidOperation, ""G#: Gpu.SyncGrid reached in M1DiffWarpKernels.SubWarpConditionalShuffleKernel, which is not [GpuKernel(Cooperative = true)]"");
+}
 }
 if (__gsharp_contexts[__gsharp_ctx_tid].__gsharp_state != -1 && !__gsharp_contexts[__gsharp_ctx_tid].__gsharp_yielded_for_block_barrier && !__gsharp_contexts[__gsharp_ctx_tid].__gsharp_yielded_for_grid_sync)
 {
@@ -2633,8 +2745,21 @@ bool anyBlockActive = true;
 while (anyBlockActive)
 {
 anyBlockActive = false;
+int __gsharp_warp_min_state = int.MaxValue;
 for (int __gsharp_thread_index = 0; __gsharp_thread_index < __gsharp_threads_per_block; __gsharp_thread_index++)
 {
+if ((__gsharp_thread_index & 31) == 0)
+{
+__gsharp_warp_min_state = int.MaxValue;
+int __gsharp_warp_end = __gsharp_thread_index + 32 < __gsharp_threads_per_block ? __gsharp_thread_index + 32 : __gsharp_threads_per_block;
+for (int __gsharp_w = __gsharp_block_index * __gsharp_threads_per_block + __gsharp_thread_index; __gsharp_w < __gsharp_block_index * __gsharp_threads_per_block + __gsharp_warp_end; __gsharp_w++)
+{
+if (__gsharp_contexts[__gsharp_w].__gsharp_state != -1 && !threadAtBlockBarrier[__gsharp_w] && __gsharp_contexts[__gsharp_w].__gsharp_state < __gsharp_warp_min_state)
+{
+__gsharp_warp_min_state = __gsharp_contexts[__gsharp_w].__gsharp_state;
+}
+}
+}
 int __gsharp_tx = __gsharp_thread_index % (int)blockDimX;
 int __gsharp_ty = (__gsharp_thread_index / (int)blockDimX) % (int)blockDimY;
 int __gsharp_tz = __gsharp_thread_index / (int)(blockDimX * blockDimY);
@@ -2645,6 +2770,8 @@ int __gsharp_linear_tid = __gsharp_block_index * __gsharp_threads_per_block + __
 if (__gsharp_contexts[__gsharp_linear_tid].__gsharp_state != -1 && !threadAtBlockBarrier[__gsharp_linear_tid])
 {
 anyGridActive = true;
+if (__gsharp_contexts[__gsharp_linear_tid].__gsharp_state == __gsharp_warp_min_state)
+{
 global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested = false;
 global::Kassyi.GSharp.Core.ManagedGpuContext.BlockBarrierRequested = false;
 __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Differential__M1DiffWarpKernels__SubWarpConditionalShuffleKernel(input, output, __gsharp_contexts[__gsharp_linear_tid]);
@@ -2655,6 +2782,7 @@ throw global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncInKernelThatIsNotCoop
 if (global::Kassyi.GSharp.Core.ManagedGpuContext.BlockBarrierRequested)
 {
 threadAtBlockBarrier[__gsharp_linear_tid] = true;
+}
 }
 if (__gsharp_contexts[__gsharp_linear_tid].__gsharp_state != -1 && !threadAtBlockBarrier[__gsharp_linear_tid])
 {
@@ -2709,7 +2837,7 @@ static_assert(alignof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__S
 static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__SharedSlot_g1_bSystem__Int32_e,__gsharp_mb_Value)==0,""Kassyi.GSharp.Tests.Shared.Differential.SharedSlot<System.Int32>.Value: offset"");
 __device__ inline __gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__SharedSlot_g1_bSystem__Int32_e __gsharp_ctor_Kassyi__GSharp__Tests__Shared__Differential__SharedSlot_g1_bSystem__Int32_e(bool __gsharp_id_0_write, int __gsharp_id_1_lane, int __gsharp_id_2_inputValue) {
 __gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__SharedSlot_g1_bSystem__Int32_e __gsharp_self{};
-int* __gsharp_id_3_smem = (int*)__gsharp_allocate_smem_static(0x9186ce5c7b255af4ull, (32) * sizeof(int), alignof(int));
+int* __gsharp_id_3_smem = (int*)__gsharp_allocate_smem_static(0xcadb9d958737725cull, (32) * sizeof(int), alignof(int));
 if(__gsharp_id_0_write)
 {
 __gsharp_id_3_smem[__gsharp_id_1_lane]=__gsharp_id_2_inputValue;
@@ -2734,7 +2862,7 @@ static_assert(alignof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__S
 static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__SharedSlot_g1_bSystem__UInt32_e,__gsharp_mb_Value)==0,""Kassyi.GSharp.Tests.Shared.Differential.SharedSlot<System.UInt32>.Value: offset"");
 __device__ inline __gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__SharedSlot_g1_bSystem__UInt32_e __gsharp_ctor_Kassyi__GSharp__Tests__Shared__Differential__SharedSlot_g1_bSystem__UInt32_e(bool __gsharp_id_0_write, int __gsharp_id_1_lane, int __gsharp_id_2_inputValue) {
 __gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__SharedSlot_g1_bSystem__UInt32_e __gsharp_self{};
-int* __gsharp_id_3_smem = (int*)__gsharp_allocate_smem_static(0x9186ce5c7b255af4ull, (32) * sizeof(int), alignof(int));
+int* __gsharp_id_3_smem = (int*)__gsharp_allocate_smem_static(0xdd38639da8f103f9ull, (32) * sizeof(int), alignof(int));
 if(__gsharp_id_0_write)
 {
 __gsharp_id_3_smem[__gsharp_id_1_lane]=__gsharp_id_2_inputValue;
@@ -2906,8 +3034,8 @@ __gsharp_ctx.n = input.Length;
 __gsharp_ctx.v = __gsharp_ctx.tid < __gsharp_ctx.n ? (input[__gsharp_ctx.tid] & 0xFF) + 1 : 1;
 __gsharp_ctx.valInt = __gsharp_ctx.v * 10 + __gsharp_ctx.lane;
 __gsharp_ctx.valUint = __gsharp_ctx.v * 1000 + __gsharp_ctx.lane;
-__gsharp_ctx.writeInt = new global::Kassyi.GSharp.Tests.Shared.Differential.SharedSlot<int>(true, __gsharp_ctx.lane, __gsharp_ctx.valInt);
-__gsharp_ctx.writeUint = new global::Kassyi.GSharp.Tests.Shared.Differential.SharedSlot<uint>(true, __gsharp_ctx.lane, __gsharp_ctx.valUint);
+__gsharp_ctx.writeInt = global::Kassyi.GSharp.Core.ManagedGpuContext.EndTypeKeyScope(global::Kassyi.GSharp.Core.ManagedGpuContext.BeginTypeKeyScope<global::Kassyi.GSharp.Tests.Shared.Differential.SharedSlot<global::System.Int32>>(), new global::Kassyi.GSharp.Tests.Shared.Differential.SharedSlot<int>(true, __gsharp_ctx.lane, __gsharp_ctx.valInt));
+__gsharp_ctx.writeUint = global::Kassyi.GSharp.Core.ManagedGpuContext.EndTypeKeyScope(global::Kassyi.GSharp.Core.ManagedGpuContext.BeginTypeKeyScope<global::Kassyi.GSharp.Tests.Shared.Differential.SharedSlot<global::System.UInt32>>(), new global::Kassyi.GSharp.Tests.Shared.Differential.SharedSlot<uint>(true, __gsharp_ctx.lane, __gsharp_ctx.valUint));
 __gsharp_ctx.writeZeros = __gsharp_ctx.writeInt.Value + __gsharp_ctx.writeUint.Value;
 global::Kassyi.GSharp.Core.ManagedGpuContext.BlockBarrierRequested = true;
 __gsharp_ctx.__gsharp_state = 1;
@@ -2917,8 +3045,8 @@ return;
 case 1:
 {
 int mirrorLane = 31 - __gsharp_ctx.lane;
-var readInt = new global::Kassyi.GSharp.Tests.Shared.Differential.SharedSlot<int>(false, mirrorLane, 0);
-var readUint = new global::Kassyi.GSharp.Tests.Shared.Differential.SharedSlot<uint>(false, mirrorLane, 0);
+var readInt = global::Kassyi.GSharp.Core.ManagedGpuContext.EndTypeKeyScope(global::Kassyi.GSharp.Core.ManagedGpuContext.BeginTypeKeyScope<global::Kassyi.GSharp.Tests.Shared.Differential.SharedSlot<global::System.Int32>>(), new global::Kassyi.GSharp.Tests.Shared.Differential.SharedSlot<int>(false, mirrorLane, 0));
+var readUint = global::Kassyi.GSharp.Core.ManagedGpuContext.EndTypeKeyScope(global::Kassyi.GSharp.Core.ManagedGpuContext.BeginTypeKeyScope<global::Kassyi.GSharp.Tests.Shared.Differential.SharedSlot<global::System.UInt32>>(), new global::Kassyi.GSharp.Tests.Shared.Differential.SharedSlot<uint>(false, mirrorLane, 0));
 if (__gsharp_ctx.tid < __gsharp_ctx.n)
 {
 int o = __gsharp_ctx.tid * 2;

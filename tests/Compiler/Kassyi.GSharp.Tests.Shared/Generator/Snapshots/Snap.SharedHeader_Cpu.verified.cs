@@ -963,8 +963,9 @@ std::memcpy(&raw, &val, sizeof(T));
 *exchange = raw;
 }
 
-// Shuffle k publishes into slot k % 2. Lanes of a converged warp run the same shuffle sequence and a source lane is at
-// most one shuffle ahead, so it never overwrites the slot a slower lane still has to read.
+// Shuffle k of a lane publishes into slot k % 2 of that lane, and the read of a shuffle reads the slot that the source lane
+// published for its current shuffle (#1001). A source lane is at most one shuffle ahead, so it never overwrites the slot a
+// slower lane still has to read.
 // The root is the kernel context of the thread, also inside a device function's state machine.
 #define __gsharp_warp_exchange_assign(val) __gsharp_warp_exchange_assign_impl(val, &__gsharp_root->__gsharp_warp_exchange[__gsharp_root->__gsharp_warp_shuffle_count & 1u])
 
@@ -993,7 +994,7 @@ return threadIdx.z * blockDim.y * blockDim.x + threadIdx.y * blockDim.x + thread
 // Reads the value that lane srcLane of the caller's warp published for this shuffle, after checking that the lane exists
 // in the block
 template<typename TContext, typename T>
-inline T __gsharp_warp_shuffle_read_lane(TContext* __gsharp_ctx, uint32_t slot, T val, uint32_t tid, uint32_t srcLane,
+inline T __gsharp_warp_shuffle_read_lane(TContext* __gsharp_ctx, T val, uint32_t tid, uint32_t srcLane,
 const char* name, const char* location) {
 uint32_t threads = blockDim.x * blockDim.y * blockDim.z;
 uint32_t warpBase = tid & ~31u;
@@ -1007,6 +1008,7 @@ name, location, srcLane, warpBase / 32u, threads);
 __gsharp_trap(GSharpErrorCode::InvalidOperation, text);
 return val;
 }
+uint32_t slot = (__gsharp_ctx->__gsharp_all_contexts[srcTid].__gsharp_warp_shuffle_count - (srcLane <= (tid & 31u) ? 1u : 0u)) & 1u;
 T result;
 uint64_t raw = __gsharp_ctx->__gsharp_all_contexts[srcTid].__gsharp_warp_exchange[slot];
 std::memcpy(&result, &raw, sizeof(T));
@@ -1016,7 +1018,7 @@ return result;
 template<typename TContext, typename T>
 inline T __gsharp_warp_shuffle_read_down_sync(TContext* __gsharp_ctx, uint32_t mask, T val, uint32_t delta, int width,
 const char* location) {
-uint32_t slot = __gsharp_ctx->__gsharp_warp_shuffle_count++ & 1u;
+__gsharp_ctx->__gsharp_warp_shuffle_count++;
 const char* name = ""Warp.ShuffleDownSync"";
 if (!__gsharp_warp_shuffle_check_width(width, name, location)) {
 return val;
@@ -1028,13 +1030,13 @@ uint64_t srcLogicalLane = (uint64_t)logicalLane + delta;
 if (srcLogicalLane >= (uint64_t)width) {
 return val;
 }
-return __gsharp_warp_shuffle_read_lane(__gsharp_ctx, slot, val, tid, laneId - logicalLane + (uint32_t)srcLogicalLane, name, location);
+return __gsharp_warp_shuffle_read_lane(__gsharp_ctx, val, tid, laneId - logicalLane + (uint32_t)srcLogicalLane, name, location);
 }
 
 template<typename TContext, typename T>
 inline T __gsharp_warp_shuffle_read_up_sync(TContext* __gsharp_ctx, uint32_t mask, T val, uint32_t delta, int width,
 const char* location) {
-uint32_t slot = __gsharp_ctx->__gsharp_warp_shuffle_count++ & 1u;
+__gsharp_ctx->__gsharp_warp_shuffle_count++;
 const char* name = ""Warp.ShuffleUpSync"";
 if (!__gsharp_warp_shuffle_check_width(width, name, location)) {
 return val;
@@ -1045,13 +1047,13 @@ uint32_t logicalLane = laneId % (uint32_t)width;
 if (logicalLane < delta) {
 return val;
 }
-return __gsharp_warp_shuffle_read_lane(__gsharp_ctx, slot, val, tid, laneId - delta, name, location);
+return __gsharp_warp_shuffle_read_lane(__gsharp_ctx, val, tid, laneId - delta, name, location);
 }
 
 template<typename TContext, typename T>
 inline T __gsharp_warp_shuffle_read_xor_sync(TContext* __gsharp_ctx, uint32_t mask, T val, uint32_t laneMask, int width,
 const char* location) {
-uint32_t slot = __gsharp_ctx->__gsharp_warp_shuffle_count++ & 1u;
+__gsharp_ctx->__gsharp_warp_shuffle_count++;
 const char* name = ""Warp.ShuffleXorSync"";
 if (!__gsharp_warp_shuffle_check_width(width, name, location)) {
 return val;
@@ -1064,13 +1066,13 @@ uint32_t srcLane = laneId ^ laneMask;
 if (srcLane > (laneId | ((uint32_t)width - 1u))) {
 return val;
 }
-return __gsharp_warp_shuffle_read_lane(__gsharp_ctx, slot, val, tid, srcLane, name, location);
+return __gsharp_warp_shuffle_read_lane(__gsharp_ctx, val, tid, srcLane, name, location);
 }
 
 template<typename TContext, typename T>
 inline T __gsharp_warp_shuffle_read_sync(TContext* __gsharp_ctx, uint32_t mask, T val, int32_t srcLane, int width,
 const char* location) {
-uint32_t slot = __gsharp_ctx->__gsharp_warp_shuffle_count++ & 1u;
+__gsharp_ctx->__gsharp_warp_shuffle_count++;
 const char* name = ""Warp.ShuffleSync"";
 if (!__gsharp_warp_shuffle_check_width(width, name, location)) {
 return val;
@@ -1080,7 +1082,53 @@ uint32_t laneId = tid % 32u;
 uint32_t logicalLane = laneId % (uint32_t)width;
 // CUDA reads lane srcLane % width of the caller's segment
 uint32_t srcLogicalLane = (uint32_t)srcLane & (uint32_t)(width - 1);
-return __gsharp_warp_shuffle_read_lane(__gsharp_ctx, slot, val, tid, laneId - logicalLane + srcLogicalLane, name, location);
+return __gsharp_warp_shuffle_read_lane(__gsharp_ctx, val, tid, laneId - logicalLane + srcLogicalLane, name, location);
+}
+
+template<typename TContext, typename T>
+inline uint32_t __gsharp_warp_match_any_read_sync(TContext* __gsharp_ctx, uint32_t mask, T val, const char* location) {
+__gsharp_ctx->__gsharp_warp_shuffle_count++;
+uint32_t tid = __gsharp_warp_linear_tid();
+uint32_t laneId = tid & 31u;
+if ((mask & (1u << laneId)) == 0u) {
+return 0u;
+}
+uint32_t active = __activemask() & mask;
+uint32_t result = 0u;
+for (uint32_t srcLane = 0u; srcLane < 32u; srcLane++) {
+if ((active & (1u << srcLane)) != 0u) {
+T laneVal = __gsharp_warp_shuffle_read_lane(__gsharp_ctx, val, tid, srcLane, ""Gpu.MatchAnySync"", location);
+if (laneVal == val) {
+result |= (1u << srcLane);
+}
+}
+}
+return result;
+}
+
+template<typename TContext, typename T>
+inline uint32_t __gsharp_warp_match_all_read_sync(TContext* __gsharp_ctx, uint32_t mask, T val, int* pred,
+const char* location) {
+__gsharp_ctx->__gsharp_warp_shuffle_count++;
+uint32_t tid = __gsharp_warp_linear_tid();
+uint32_t laneId = tid & 31u;
+if ((mask & (1u << laneId)) == 0u) {
+if (pred) *pred = 0;
+return 0u;
+}
+uint32_t active = __activemask() & mask;
+bool allEqual = true;
+for (uint32_t srcLane = 0u; srcLane < 32u; srcLane++) {
+if ((active & (1u << srcLane)) != 0u) {
+T laneVal = __gsharp_warp_shuffle_read_lane(__gsharp_ctx, val, tid, srcLane, ""Gpu.MatchAllSync"", location);
+if (!(laneVal == val)) {
+allEqual = false;
+break;
+}
+}
+}
+if (pred) *pred = allEqual ? 1 : 0;
+return allEqual ? active : 0u;
 }
 
 template<typename T>

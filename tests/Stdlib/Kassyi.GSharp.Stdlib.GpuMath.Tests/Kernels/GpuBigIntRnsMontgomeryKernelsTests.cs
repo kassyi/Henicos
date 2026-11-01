@@ -248,6 +248,104 @@ public class GpuBigIntRnsMontgomeryKernelsTests
         Assert.Equal(expected, R_reconstructed % N);
     }
 
+    [Fact]
+    [Trait("Category", "GpuExecution")]
+    public void TestExecuteModPowRns_BlockLargerThanKSize_CompletesWithoutBarrierDivergence()
+    {
+        const int k = 8;
+        var b1 = RnsConstantsData.ModuliB1.AsSpan(0, k).ToArray();
+        var b2 = RnsConstantsData.ModuliB2.AsSpan(0, k).ToArray();
+        var msk = RnsConstantsData.ModulusSK;
+
+        BigInteger M1 = b1.AsStackEnumerable().Aggregate(BigInteger.One, (acc, m) => acc * m);
+        BigInteger M2 = b2.AsStackEnumerable().Aggregate(BigInteger.One, (acc, m) => acc * m);
+
+        BigInteger N = M2 / (k + 2);
+        if (N % 2 == 0)
+        {
+            N -= 1;
+        }
+
+        BigInteger oneMont = M1 % N;
+        var oneB1 = new uint[k];
+        var oneB2 = new uint[k];
+        var nB2 = new uint[k];
+        var negNInvB1 = new uint[k];
+        var rInvB2 = new uint[k];
+
+        for (int i = 0; i < k; i++)
+        {
+            oneB1[i] = (uint)(oneMont % b1[i]);
+            oneB2[i] = (uint)(oneMont % b2[i]);
+            nB2[i] = (uint)(N % b2[i]);
+
+            BigInteger nInv = ModInverse(N, b1[i]);
+            long negNInv = -(long)nInv;
+            if (negNInv < 0)
+            {
+                negNInv += b1[i];
+            }
+
+            negNInvB1[i] = (uint)negNInv;
+            rInvB2[i] = (uint)ModInverse(M1, b2[i]);
+        }
+
+        uint oneSk = (uint)(oneMont % msk);
+        var oneRns = new RnsBigInt { B1 = oneB1, B2 = oneB2, Sk = oneSk };
+        var baseRns = new RnsBigInt { B1 = (uint[])oneB1.Clone(), B2 = (uint[])oneB2.Clone(), Sk = oneSk };
+        var resultRns = new RnsBigInt { B1 = new uint[k], B2 = new uint[k], Sk = oneSk };
+        var xRns = new RnsBigInt { B1 = new uint[k], B2 = new uint[k], Sk = oneSk };
+        var tempRns = new RnsBigInt { B1 = new uint[k], B2 = new uint[k], Sk = 1 };
+
+        var montCtx = new RnsMontgomeryContext
+        {
+            NRnsB2 = nB2,
+            NSk = (uint)(N % msk),
+            NegNInvB1 = negNInvB1,
+            RInvB2 = rInvB2,
+        };
+
+        var ctx = new RnsConstantsContext
+        {
+            Base1 = new RnsBaseConstantsContext
+            {
+                Moduli = b1,
+                Gamma = RnsConstantsData.GammaB1_8,
+                MOverMiModMsk = RnsConstantsData.M1OverMiModMsk_8,
+                MInvModMsk = RnsConstantsData.M1InvModMsk_8,
+                MOverMiModOther = RnsConstantsData.M1OverMiModMj_8,
+                MModOther = RnsConstantsData.M1ModMj_8,
+            },
+            Base2 = new RnsBaseConstantsContext
+            {
+                Moduli = b2,
+                Gamma = RnsConstantsData.GammaB2_8,
+                MOverMiModMsk = RnsConstantsData.M2OverMjModMsk_8,
+                MInvModMsk = RnsConstantsData.M2InvModMsk_8,
+                MOverMiModOther = RnsConstantsData.M2OverMjModMi_8,
+                MModOther = RnsConstantsData.M2ModMi_8,
+            },
+            ModSk = msk,
+            KSize = k,
+        };
+
+        // Launch with blockDimX = 32 (> KSize = 8) to exercise threads tid >= KSize across all SyncThreads barriers.
+        GpuBigIntRnsMontgomeryKernels.LaunchExecuteModPowRns(baseRns, oneRns, new uint[] { 0u }, 1, montCtx, ctx, resultRns, xRns, tempRns, gridDimX: 1, blockDimX: 32);
+
+        BigInteger reconstructed = 0;
+        for (int i = 0; i < k; i++)
+        {
+            BigInteger m1_i = b1[i];
+            BigInteger M1_over_i = M1 / m1_i;
+            BigInteger gamma_i = ModInverse(M1_over_i, m1_i);
+            BigInteger term = (resultRns.B1[i] * gamma_i) % m1_i;
+            reconstructed += term * M1_over_i;
+        }
+
+        reconstructed %= M1;
+        Assert.Equal(BigInteger.One, reconstructed % N);
+    }
+
     private BigInteger ModInverse(BigInteger a, BigInteger m)
     {
         BigInteger m0 = m, t, q;
