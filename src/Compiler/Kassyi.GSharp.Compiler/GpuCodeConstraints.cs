@@ -119,7 +119,16 @@ internal static class GpuCodeConstraints
     public const string DynamicArraySize = "dynamic array size";
 
     /// <summary>The GSH0003 text for an array of more than one dimension, which has no stack array form.</summary>
-    public const string MultidimensionalArray = "multidimensional array";
+    public const string MultidimensionalArray =
+        "multidimensional array (GPU memory is flat and linear; C# multi-dimensional arrays have heap headers and cannot be passed to device code. Use a 1D array 'T[]' and calculate the index as 'y * width + x')";
+
+    /// <summary>
+    /// The GSH0003 text for an element access with more than one argument on a type that is not a multi-dimensional array
+    /// (a user-defined indexer such as <c>this[int i, int j]</c>): C++17 reads the comma inside <c>[]</c> as the comma
+    /// operator, so the access would use only the last argument.
+    /// </summary>
+    public const string MultiArgumentIndexer =
+        "indexer with more than one argument (C++ reads the comma inside [] as the comma operator and would use only the last argument; pass the arguments to a [GpuDeviceFunction] method instead)";
 
     /// <summary>
     /// The GSH0003 text for an array of length zero: C# gives a non-null empty array, which the G# representation of a

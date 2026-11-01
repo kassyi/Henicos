@@ -12,6 +12,8 @@ public class StackArrayDiagnosticsTests
 {
     private const string Escapes = "Analyzers/StackArrays/StackArrayEscapes.cu.cs";
     private const string Shapes = "Analyzers/StackArrays/StackArrayShapes.cu.cs";
+    private const string MultidimensionalParameters = "Analyzers/MultidimensionalArrayParameters.cu.cs";
+    private const string MultiArgumentIndexerCase = "Analyzers/MultiArgumentIndexer.cu.cs";
 
     [Theory]
     [InlineData("Cpu")]
@@ -101,8 +103,11 @@ public class StackArrayDiagnosticsTests
         var diagnostics = await KernelDiagnostics.RunTestCaseAsync(Shapes, dialect);
 
         Assert.Equal(
-            [(Analyzer, 17, 20, 17, 33)],
-            diagnostics.Ranges(GSharpDiagnostics.UnsupportedSyntax.Id, "'multidimensional array'"));
+            [
+                (Analyzer, 17, 20, 17, 33),
+                (Analyzer, 18, 21, 18, 28)
+            ],
+            diagnostics.Ranges(GSharpDiagnostics.UnsupportedSyntax.Id, "multidimensional array"));
     }
 
     [Theory]
@@ -148,5 +153,67 @@ public class StackArrayDiagnosticsTests
             diagnostics.Ranges(GSharpDiagnostics.ObjectCreationNotSupported.Id));
         // The transpiler used to report GSH0003 'ArrayCreationExpression' here
         Assert.Empty(diagnostics.Ranges(GSharpDiagnostics.UnsupportedSyntax.Id, "ArrayCreationExpression"));
+    }
+
+    [Theory]
+    [InlineData("Cpu")]
+    [InlineData("Cuda")]
+    [Scenario(TestScenario.SadPath)]
+    public async Task Test_MultidimensionalArrayParameterAndField_ReportsGsh0003(string dialect)
+    {
+        var diagnostics = await KernelDiagnostics.RunTestCaseAsync(MultidimensionalParameters, dialect);
+
+        Assert.Equal(
+            [
+                (Analyzer, 19, 34, 19, 41),
+                (Analyzer, 21, 16, 21, 31),
+                (Analyzer, 25, 36, 25, 47),
+                (Analyzer, 27, 16, 27, 32),
+                (Analyzer, 31, 37, 31, 43),
+                (Analyzer, 31, 50, 31, 61),
+                (Analyzer, 31, 67, 31, 84),
+                (Analyzer, 33, 9, 33, 20),
+                (Analyzer, 34, 21, 34, 31),
+                (Analyzer, 34, 39, 34, 55),
+                (Analyzer, 34, 63, 34, 88),
+                (Analyzer, 34, 96, 34, 114)
+            ],
+            diagnostics.Ranges(
+                GSharpDiagnostics.UnsupportedSyntax.Id,
+                "multidimensional array (GPU memory is flat and linear; C# multi-dimensional arrays have heap headers and cannot be passed to device code. Use a 1D array 'T[]' and calculate the index as 'y * width + x')"));
+    }
+
+    [Theory]
+    [InlineData("Cpu")]
+    [InlineData("Cuda")]
+    [Scenario(TestScenario.SadPath)]
+    public void Test_MultidimensionalElementAccess_FailsInsteadOfEmittingCommaOperator(string dialect)
+    {
+        var (_, output, _) = RoslynTestUtility.RunGenerator(
+            RoslynTestUtility.ReadTestCase(MultidimensionalParameters),
+            dialect);
+
+        var generatedSources = string.Join("\n", output.SyntaxTrees.Select(static tree => tree.ToString()));
+        Assert.DoesNotContain("[1,0]", generatedSources, StringComparison.Ordinal);
+        Assert.DoesNotContain("[1,2,3]", generatedSources, StringComparison.Ordinal);
+        Assert.DoesNotContain("[0,1]", generatedSources, StringComparison.Ordinal);
+        Assert.Contains("(21,16): GSH0003:", generatedSources, StringComparison.Ordinal);
+        Assert.Contains("(34,21): GSH0003:", generatedSources, StringComparison.Ordinal);
+    }
+
+    [Theory]
+    [InlineData("Cpu")]
+    [InlineData("Cuda")]
+    [Scenario(TestScenario.SadPath)]
+    public async Task Test_MultiArgumentIndexer_IsReportedAsAnIndexerNotAnArray(string dialect)
+    {
+        // A user-defined indexer with two arguments would also become the C++ comma operator; the message names the
+        // indexer, not a multi-dimensional array
+        var diagnostics = await KernelDiagnostics.RunTestCaseAsync(MultiArgumentIndexerCase, dialect);
+
+        Assert.Equal(
+            [(Analyzer, 18, 21, 18, 31)],
+            diagnostics.Ranges(GSharpDiagnostics.UnsupportedSyntax.Id, "indexer with more than one argument"));
+        Assert.Empty(diagnostics.Ranges(GSharpDiagnostics.UnsupportedSyntax.Id, "multidimensional array"));
     }
 }

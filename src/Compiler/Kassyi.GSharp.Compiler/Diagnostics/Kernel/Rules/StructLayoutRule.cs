@@ -18,6 +18,7 @@ internal sealed class StructLayoutRule :
     public static readonly StructLayoutRule Instance = new();
 
     public ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(
+        GSharpDiagnostics.UnsupportedSyntax,
         GSharpDiagnostics.StructLayoutNotRepresentable,
         GSharpDiagnostics.FieldTypeHasNoDeviceRepresentation,
         GSharpDiagnostics.StructArrayConvertedPerElement,
@@ -94,7 +95,7 @@ internal sealed class StructLayoutRule :
     }
 
     // The user struct of a parameter or local: the type itself, or the element of an array-like type
-    private static bool TryGetUserStruct(ITypeSymbol type, [NotNullWhen(true)] out INamedTypeSymbol? structType,
+    internal static bool TryGetUserStruct(ITypeSymbol type, [NotNullWhen(true)] out INamedTypeSymbol? structType,
         out bool isArray)
     {
         var marshaledType = type.UnwrapNullableArrayLike() ?? type;
@@ -103,10 +104,40 @@ internal sealed class StructLayoutRule :
         return structType is not null && TypeLayoutCalculator.IsUserStruct(structType);
     }
 
+    internal static bool TryFindMultidimensionalArrayField(INamedTypeSymbol structType)
+    {
+        foreach (var member in StructAbiMembers.Get(structType))
+        {
+            var memberType = member.Type.UnwrapNullableArrayLike() ?? member.Type;
+            if (memberType is IArrayTypeSymbol { Rank: > 1 })
+            {
+                return true;
+            }
+
+            if (memberType is INamedTypeSymbol { TypeKind: TypeKind.Struct } nested &&
+                TypeLayoutCalculator.IsUserStruct(nested) &&
+                TryFindMultidimensionalArrayField(nested))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     // GSH0079 when a member type has no device representation, GSH0078 for any other reason
     private static bool ReportUnsupported(INamedTypeSymbol structType, SyntaxNode typeSyntax,
         ref ValidationContext context)
     {
+        if (TryFindMultidimensionalArrayField(structType))
+        {
+            context.ReportDiagnostic(
+                GSharpDiagnostics.UnsupportedSyntax,
+                typeSyntax,
+                GpuCodeConstraints.MultidimensionalArray);
+            return true;
+        }
+
         if (TypeLayoutCalculator.GetStructLayout(structType, context.Dialect).Unsupported is not { } unsupported)
         {
             return false;

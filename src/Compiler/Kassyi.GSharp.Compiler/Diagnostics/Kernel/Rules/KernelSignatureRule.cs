@@ -51,11 +51,28 @@ internal sealed class KernelSignatureRule : ISyntaxValidationRule<MethodDeclarat
 
         foreach (var parameter in method.Parameters)
         {
-            if (GpuCodeConstraints.IsFunctionPointer(parameter.Type) &&
-                parameter.TryGetDeclaringSyntax<ParameterSyntax>(out var parameterSyntax) &&
+            if (parameter.TryGetDeclaringSyntax<ParameterSyntax>(out var parameterSyntax) &&
                 parameterSyntax.Type is { } typeSyntax)
             {
-                context.ReportDiagnostic(GSharpDiagnostics.UnsupportedSyntax, typeSyntax, typeSyntax.Kind().ToString());
+                var parameterType = parameter.Type.UnwrapNullableArrayLike() ?? parameter.Type;
+                if (parameterType is IArrayTypeSymbol { Rank: > 1 } ||
+                    (parameterType.TryGetArrayLikeElementType(out var elementType) &&
+                     elementType is IArrayTypeSymbol { Rank: > 1 }) ||
+                    (StructLayoutRule.TryGetUserStruct(parameter.Type, out var structType, out _) &&
+                     StructLayoutRule.TryFindMultidimensionalArrayField(structType)))
+                {
+                    context.ReportDiagnostic(
+                        GSharpDiagnostics.UnsupportedSyntax,
+                        typeSyntax,
+                        GpuCodeConstraints.MultidimensionalArray);
+                }
+                else if (GpuCodeConstraints.IsFunctionPointer(parameter.Type))
+                {
+                    context.ReportDiagnostic(
+                        GSharpDiagnostics.UnsupportedSyntax,
+                        typeSyntax,
+                        typeSyntax.Kind().ToString());
+                }
             }
         }
 
