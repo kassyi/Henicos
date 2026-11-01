@@ -122,7 +122,8 @@ internal interface IDeviceCountedVector : IGpuBigIntVectorExpression
 
     GpuBigIntArrayView IGpuBigIntVectorExpression.Evaluate(GpuWorkspace workspace, int elementOffset,
         int? elementCount, GpuBigUIntArrayView targetResult) =>
-        DeviceCounted.Materialize(workspace, EvaluateCore(workspace, elementOffset, elementCount, targetResult));
+        DeviceCounted.Materialize(workspace,
+            DeviceCounted.Evaluate(this, workspace, elementOffset, elementCount, targetResult));
 }
 
 /// <summary>Implemented by the GpuMath floating-point vector nodes, as <see cref="IDeviceCountedVector"/>.</summary>
@@ -133,7 +134,8 @@ internal interface IDeviceCountedFloatVector : IGpuBigFloatVectorExpression
 
     GpuBigFloatArrayView IGpuBigFloatVectorExpression.Evaluate(GpuWorkspace workspace, int elementOffset,
         int? elementCount, GpuBigFloatArrayView targetResult) =>
-        DeviceCounted.Materialize(workspace, EvaluateCore(workspace, elementOffset, elementCount, targetResult));
+        DeviceCounted.Materialize(workspace,
+            DeviceCounted.Evaluate(this, workspace, elementOffset, elementCount, targetResult));
 }
 
 /// <summary>Implemented by the GpuMath flag vector nodes, as <see cref="IDeviceCountedVector"/>.</summary>
@@ -142,7 +144,7 @@ internal interface IDeviceCountedBoolVector : IGpuBoolVectorExpression
     BoolVectorEvaluation EvaluateCore(GpuWorkspace workspace);
 
     GpuBigUIntArrayView IGpuBoolVectorExpression.Evaluate(GpuWorkspace workspace) =>
-        DeviceCounted.Materialize(workspace, EvaluateCore(workspace));
+        DeviceCounted.Materialize(workspace, DeviceCounted.Evaluate(this, workspace));
 }
 
 /// <summary>Evaluation of vector nodes with a device count, and the public view of the result.</summary>
@@ -164,11 +166,25 @@ internal static class DeviceCounted
         node.TryGetLength(out var length) ? length : throw new InvalidOperationException(LengthUnknown);
 
     /// <summary>
+    /// Throws when the workspace runs under the CPU fallback, where vectorized CUDA kernels cannot execute on host memory.
+    /// </summary>
+    /// <exception cref="NotSupportedException">The workspace uses the CPU fallback provider.</exception>
+    public static void ThrowIfCpuFallback(GpuWorkspace workspace)
+    {
+        if (workspace.Provider is not GSharpKernelProvider || GpuKernelLoader.IsCpuFallbackMode)
+        {
+            throw new NotSupportedException(
+                "Vectorized GpuMath expressions require a GPU workspace and are not supported under the CPU fallback.");
+        }
+    }
+
+    /// <summary>
     /// Evaluates <paramref name="node"/> for another node; a node outside GpuMath has a host count (its length).
     /// </summary>
     public static VectorEvaluation Evaluate(IGpuBigIntVectorExpression node, GpuWorkspace workspace,
         int elementOffset = 0, int? elementCount = null, GpuBigUIntArrayView targetResult = default)
     {
+        ThrowIfCpuFallback(workspace);
         if (node is IDeviceCountedVector counted)
         {
             return counted.EvaluateCore(workspace, elementOffset, elementCount, targetResult);
@@ -182,6 +198,7 @@ internal static class DeviceCounted
     public static FloatVectorEvaluation Evaluate(IGpuBigFloatVectorExpression node, GpuWorkspace workspace,
         int elementOffset = 0, int? elementCount = null, GpuBigFloatArrayView targetResult = default)
     {
+        ThrowIfCpuFallback(workspace);
         if (node is IDeviceCountedFloatVector counted)
         {
             return counted.EvaluateCore(workspace, elementOffset, elementCount, targetResult);
@@ -194,6 +211,7 @@ internal static class DeviceCounted
     /// <inheritdoc cref="Evaluate(IGpuBigIntVectorExpression, GpuWorkspace, int, int?, GpuBigUIntArrayView)"/>
     public static BoolVectorEvaluation Evaluate(IGpuBoolVectorExpression node, GpuWorkspace workspace)
     {
+        ThrowIfCpuFallback(workspace);
         if (node is IDeviceCountedBoolVector counted)
         {
             return counted.EvaluateCore(workspace);
