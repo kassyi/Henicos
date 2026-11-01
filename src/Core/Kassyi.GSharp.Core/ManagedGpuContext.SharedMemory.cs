@@ -235,7 +235,7 @@ public static partial class ManagedGpuContext
         var created = regions[regionCount] ??= new SharedRegion();
         if (created.Bytes.Length < byteCount)
         {
-            created.Bytes = new byte[byteCount];
+            created.Bytes = GC.AllocateArray<byte>(byteCount, pinned: true);
         }
 
         created.SiteKey = siteKey;
@@ -283,7 +283,7 @@ public static partial class ManagedGpuContext
             if (block.RegionCount == 0 && block.Bytes.Length < s_sharedMemBytes)
             {
                 // The first region of the block in this grid: the array is allocated before any span into it is handed out
-                block.Bytes = new byte[s_sharedMemBytes];
+                block.Bytes = GC.AllocateArray<byte>((int)s_sharedMemBytes, pinned: true);
             }
 
             if (block.RegionCount == block.Regions.Length)
@@ -351,6 +351,54 @@ public static partial class ManagedGpuContext
         return MemoryMarshal.Cast<byte, T>(block.Bytes.AsSpan((int)region.Offset, (int)region.Size));
     }
 
+    /// <summary>
+    /// Returns whether <paramref name="address"/> lies in a static or dynamic <see cref="SharedMemory{T}"/> buffer of the
+    /// current block (#868). Used by <see cref="ManagedAtomics.Add(ref float, float)"/> to distinguish shared memory
+    /// (subnormals preserved) from global memory (subnormals flushed to sign-preserving zero), as PTX <c>atom.add.f32</c>
+    /// does.
+    /// </summary>
+    internal static unsafe bool IsSharedMemoryAddress<T>(ref T address) where T : unmanaged
+    {
+        var addr = (nuint)Unsafe.AsPointer(ref address);
+        var blockId = LinearBlockId;
+        if (s_perBlockRegions is { } blockRegions &&
+            s_perBlockRegionCount is { } regionCounts &&
+            (uint)blockId < (uint)blockRegions.Length &&
+            (uint)blockId < (uint)regionCounts.Length &&
+            blockRegions[blockId] is { } regions)
+        {
+            var count = regionCounts[blockId];
+            for (var i = 0; i < count; i++)
+            {
+                if (regions[i] is { ByteLength: > 0, Bytes: { Length: > 0 } bytes } region)
+                {
+                    var start = (nuint)Unsafe.AsPointer(ref MemoryMarshal.GetArrayDataReference(bytes));
+                    if (addr >= start && addr - start < (nuint)region.ByteLength)
+                    {
+                        return true;
+                    }
+                }
+            }
+        }
+
+        if (s_perBlockDynamic is { Length: > 0 } dynamicBlocks)
+        {
+            var dynIndex = s_blocksRunInPhases ? blockId : 0;
+            if ((s_blocksRunInPhases || s_dynamicOwner == blockId) &&
+                (uint)dynIndex < (uint)dynamicBlocks.Length &&
+                dynamicBlocks[dynIndex] is { RegionCount: > 0, Bytes: { Length: > 0 } dynBytes })
+            {
+                var start = (nuint)Unsafe.AsPointer(ref MemoryMarshal.GetArrayDataReference(dynBytes));
+                if (addr >= start && addr - start < (nuint)s_sharedMemBytes)
+                {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
     private static int FindDynamicRegion(DynamicSharedMemory block, ulong siteKey)
     {
         for (var i = 0; i < block.RegionCount; i++)
@@ -371,7 +419,7 @@ public static partial class ManagedGpuContext
     {
         if (region.Bytes.Length < byteCount)
         {
-            var grown = new byte[byteCount];
+            var grown = GC.AllocateArray<byte>(byteCount, pinned: true);
             region.Bytes.AsSpan(0, region.ByteLength).CopyTo(grown);
             region.Bytes = grown;
         }

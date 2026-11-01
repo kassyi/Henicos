@@ -120,16 +120,42 @@ internal static class ManagedAtomics
         }
     }
 
+    private const int CanonicalNaNBits = 0x7FFFFFFF;
+    private const uint AbsMask = 0x7FFFFFFFu;
+    private const uint SignMask = 0x80000000u;
+    private const uint MinNormalBits = 0x00800000u;
+    private const uint PositiveInfinityBits = 0x7F800000u;
+
     // A float add through the bits of the address, so that the loop ends also for a NaN or a signed zero, which a float
-    // comparison would not tell from the value it read
+    // comparison would not tell from the value it read. Matches PTX atom.add.f32 / red.add.f32 (#868): on global memory,
+    // subnormal inputs and results flush to sign-preserving zero; on shared memory, subnormals are preserved; on both, a
+    // NaN result stores canonical NaN (0x7FFFFFFF), and the returned old value keeps the original un-flushed bits.
     private static float UpdateSingle(ref float address, float val)
     {
+        var isShared = ManagedGpuContext.IsSharedMemoryAddress(ref address);
+        var rhs = isShared ? val : FlushSubnormal(val);
         ref var bits = ref Unsafe.As<float, int>(ref address);
         var old = Volatile.Read(ref bits);
         while (true)
         {
-            var sum = BitConverter.SingleToInt32Bits(BitConverter.Int32BitsToSingle(old) + val);
-            var seen = Interlocked.CompareExchange(ref bits, sum, old);
+            var lhs = isShared ? BitConverter.Int32BitsToSingle(old) : FlushSubnormalBits((uint)old);
+            var sum = lhs + rhs;
+            var sumBits = BitConverter.SingleToUInt32Bits(sum);
+            int nextBits;
+            if ((sumBits & AbsMask) > PositiveInfinityBits)
+            {
+                nextBits = CanonicalNaNBits;
+            }
+            else if (!isShared && (sumBits & AbsMask) != 0u && (sumBits & AbsMask) < MinNormalBits)
+            {
+                nextBits = unchecked((int)(sumBits & SignMask));
+            }
+            else
+            {
+                nextBits = unchecked((int)sumBits);
+            }
+
+            var seen = Interlocked.CompareExchange(ref bits, nextBits, old);
             if (seen == old)
             {
                 return BitConverter.Int32BitsToSingle(old);
@@ -137,5 +163,15 @@ internal static class ManagedAtomics
 
             old = seen;
         }
+    }
+
+    private static float FlushSubnormal(float value) => FlushSubnormalBits(BitConverter.SingleToUInt32Bits(value));
+
+    private static float FlushSubnormalBits(uint bits)
+    {
+        var abs = bits & AbsMask;
+        return abs != 0u && abs < MinNormalBits
+            ? BitConverter.UInt32BitsToSingle(bits & SignMask)
+            : BitConverter.UInt32BitsToSingle(bits);
     }
 }
