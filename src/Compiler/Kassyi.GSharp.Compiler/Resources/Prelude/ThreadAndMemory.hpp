@@ -128,6 +128,14 @@ struct __gsharp_block_smem {
         return dynamic_data;
     }
 
+    static bool in_range(uintptr_t addr, const unsigned char* data, size_t bytes) {
+        if (data == nullptr || bytes == 0) {
+            return false;
+        }
+        uintptr_t start = reinterpret_cast<uintptr_t>(data);
+        return addr >= start && addr - start < bytes;
+    }
+
     // Whether an address lies in a shared memory buffer (dynamic or static, including outgrown static buffers) of this
     // arena (#868). Used by atomicAdd(float*, float) to distinguish shared memory (subnormals preserved) from global
     // memory (subnormals flushed to sign-preserving zero), as PTX atom.add.f32 does.
@@ -136,28 +144,17 @@ struct __gsharp_block_smem {
             return false;
         }
         uintptr_t addr = reinterpret_cast<uintptr_t>(address);
-        if (dynamic_data != nullptr && dynamic_limit > 0) {
-            uintptr_t start = reinterpret_cast<uintptr_t>(dynamic_data);
-            if (addr >= start && addr - start < dynamic_limit) {
+        if (in_range(addr, dynamic_data, dynamic_cursor)) {
+            return true;
+        }
+        for (const auto& buffer : static_buffers) {
+            if (in_range(addr, buffer.data, buffer.size > 0 ? buffer.size : 1)) {
                 return true;
             }
         }
-        for (const auto& buffer : static_buffers) {
-            if (buffer.data != nullptr) {
-                uintptr_t start = reinterpret_cast<uintptr_t>(buffer.data);
-                size_t span = buffer.size > 0 ? buffer.size : 1;
-                if (addr >= start && addr - start < span) {
-                    return true;
-                }
-            }
-        }
         for (const auto& buffer : outgrown_buffers) {
-            if (buffer.first != nullptr) {
-                uintptr_t start = reinterpret_cast<uintptr_t>(buffer.first);
-                size_t span = buffer.second > 0 ? buffer.second : 1;
-                if (addr >= start && addr - start < span) {
-                    return true;
-                }
+            if (in_range(addr, buffer.first, buffer.second > 0 ? buffer.second : 1)) {
+                return true;
             }
         }
         return false;

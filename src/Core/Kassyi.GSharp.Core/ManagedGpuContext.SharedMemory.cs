@@ -370,13 +370,10 @@ public static partial class ManagedGpuContext
             var count = regionCounts[blockId];
             for (var i = 0; i < count; i++)
             {
-                if (regions[i] is { ByteLength: > 0, Bytes: { Length: > 0 } bytes } region)
+                if (regions[i] is { } region &&
+                    ContainsAddress(region.Bytes, (nuint)region.ByteLength, addr))
                 {
-                    var start = (nuint)Unsafe.AsPointer(ref MemoryMarshal.GetArrayDataReference(bytes));
-                    if (addr >= start && addr - start < (nuint)region.ByteLength)
-                    {
-                        return true;
-                    }
+                    return true;
                 }
             }
         }
@@ -386,17 +383,25 @@ public static partial class ManagedGpuContext
             var dynIndex = s_blocksRunInPhases ? blockId : 0;
             if ((s_blocksRunInPhases || s_dynamicOwner == blockId) &&
                 (uint)dynIndex < (uint)dynamicBlocks.Length &&
-                dynamicBlocks[dynIndex] is { RegionCount: > 0, Bytes: { Length: > 0 } dynBytes })
+                dynamicBlocks[dynIndex] is { RegionCount: > 0 } dyn &&
+                ContainsAddress(dyn.Bytes, (nuint)dyn.Cursor, addr))
             {
-                var start = (nuint)Unsafe.AsPointer(ref MemoryMarshal.GetArrayDataReference(dynBytes));
-                if (addr >= start && addr - start < (nuint)s_sharedMemBytes)
-                {
-                    return true;
-                }
+                return true;
             }
         }
 
         return false;
+    }
+
+    private static unsafe bool ContainsAddress(byte[] bytes, nuint length, nuint addr)
+    {
+        if (length == 0 || (nuint)bytes.Length < length)
+        {
+            return false;
+        }
+
+        var start = (nuint)Unsafe.AsPointer(ref MemoryMarshal.GetArrayDataReference(bytes));
+        return addr >= start && addr - start < length;
     }
 
     private static int FindDynamicRegion(DynamicSharedMemory block, ulong siteKey)
