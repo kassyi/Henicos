@@ -74,12 +74,12 @@ internal sealed class DeviceExportTable
     /// </summary>
     public static bool TryFind(ISymbol symbol, out ImportedDeviceRecord imported)
     {
-        if (symbol is IMethodSymbol { MethodKind: MethodKind.Constructor, ContainingType: { } structType } constructor)
+        if (symbol is IMethodSymbol { MethodKind: MethodKind.Constructor or MethodKind.Conversion, ContainingType: { } structType } structMethod)
         {
             return TryFind(structType, out imported) &&
                    imported.Record.DefinedIds
                        .AsStackEnumerable()
-                       .Any(constructor.OriginalDefinition.GetDocumentationCommentId(),
+                       .Any(structMethod.OriginalDefinition.GetDocumentationCommentId(),
                            static (id, own) => string.Equals(id, own, StringComparison.Ordinal));
         }
 
@@ -124,9 +124,9 @@ internal sealed class DeviceExportTable
             return false;
         }
 
-        if (symbol is IMethodSymbol { MethodKind: MethodKind.Constructor } constructor)
+        if (symbol is IMethodSymbol { MethodKind: MethodKind.Constructor or MethodKind.Conversion } structMethod)
         {
-            var id = constructor.OriginalDefinition.GetDocumentationCommentId();
+            var id = structMethod.OriginalDefinition.GetDocumentationCommentId();
             for (var i = 0; i < imported.Record.DefinedIds.Length && i < imported.Record.DefinedNames.Length; i++)
             {
                 if (string.Equals(imported.Record.DefinedIds[i], id, StringComparison.Ordinal))

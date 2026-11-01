@@ -31,6 +31,20 @@ public sealed class CastExpressionTranspilerRule : SyntaxNodeTranspilerRuleBase<
             return;
         }
 
+        var targetType = context.Query.SemanticModel.GetTypeSymbol(node.Type);
+        var conversionMethod = operation is IConversionOperation
+        {
+            Conversion: { IsUserDefined: true, MethodSymbol: { } opMethod }
+        }
+            ? opMethod
+            : context.Query.SemanticModel.GetSymbol(node) as IMethodSymbol;
+        if (StructTranspiler.IsEmittedStructConversion(conversionMethod, context.Query.SemanticModel.Compilation) &&
+            conversionMethod != null)
+        {
+            UserDefinedConversionHelper.AppendConversionCall(conversionMethod, node.Expression, targetType, ref context);
+            return;
+        }
+
         // A float or double converted to an integer saturates and NaN gives 0, as .NET converts it; C++ leaves an
         // out-of-range conversion undefined (#724). A type narrower than int is the int result truncated:
         // (unsigned char)__gsharp_to_i32(x)

@@ -93,8 +93,19 @@ internal static class GlobalCppNames
     /// which differs from C# (an <c>int</c> argument is ambiguous between <c>long</c> and <c>double</c>), never applies.
     /// </remarks>
     public static string GetFunctionName(IMethodSymbol method) =>
-        s_functionNames.GetValue(GetDefinition(method), static definition =>
-            Shorten(GSharpNameEncoding.FunctionPrefix, GetFunctionPathBody((IMethodSymbol)definition)));
+        s_functionNames.GetValue(
+            method.MethodKind == MethodKind.Conversion ? method : GetDefinition(method),
+            static symbol =>
+            {
+                var m = (IMethodSymbol)symbol;
+                if (m.MethodKind == MethodKind.Conversion &&
+                    DeviceExportTable.TryGetRecordedName(m, out var recorded))
+                {
+                    return recorded;
+                }
+
+                return Shorten(GSharpNameEncoding.FunctionPrefix, GetFunctionPathBody(m));
+            });
 
     /// <summary>
     /// Returns <c>__gsharp_k_{type path}__{name}</c>, the exported entry point of a kernel, with <c>_o{n}</c> when its
@@ -118,11 +129,16 @@ internal static class GlobalCppNames
     // [WHY] A function of metadata has no declaration order (_o{n}); the body of its name comes from the name its
     // assembly recorded (the full one when it was shortened), so every name derived from it matches that assembly
     private static string GetFunctionPathBody(IMethodSymbol method) =>
-        s_functionPathBodies.GetValue(GetDefinition(method), static definition =>
-            definition.DeclaringSyntaxReferences.IsEmpty && DeviceExportTable.TryFind(definition, out var imported) &&
-            imported.Record.Kind == DeviceExportRecord.FunctionKind
-                ? GetRecordedBody(imported.Record)
-                : GSharpNameEncoding.Encode(GetFunctionPath((IMethodSymbol)definition)));
+        s_functionPathBodies.GetValue(
+            method.MethodKind == MethodKind.Conversion ? method : GetDefinition(method),
+            static symbol =>
+            {
+                var m = (IMethodSymbol)symbol;
+                return m.DeclaringSyntaxReferences.IsEmpty && DeviceExportTable.TryFind(m, out var imported) &&
+                       imported.Record.Kind == DeviceExportRecord.FunctionKind
+                    ? GetRecordedBody(imported.Record)
+                    : GSharpNameEncoding.Encode(GetFunctionPath(m));
+            });
 
     private static string GetRecordedBody(DeviceExportRecord record)
     {
@@ -136,7 +152,10 @@ internal static class GlobalCppNames
     public static GlobalNamePath GetFunctionPath(IMethodSymbol method)
     {
         var definition = GetDefinition(method);
-        var typePath = GetTypePath(definition.ContainingType);
+        var containingType = method.MethodKind == MethodKind.Conversion
+            ? method.ContainingType
+            : definition.ContainingType;
+        var typePath = GetTypePath(containingType);
         var segments = ImmutableArray.CreateBuilder<GlobalNameSegment>(typePath.Segments.Count + 1);
         foreach (var segment in typePath.Segments)
         {
@@ -201,7 +220,7 @@ internal static class GlobalCppNames
         var count = 0;
         foreach (var member in members)
         {
-            if (member is IMethodSymbol { MethodKind: MethodKind.Ordinary })
+            if (member is IMethodSymbol { MethodKind: MethodKind.Ordinary or MethodKind.Conversion })
             {
                 candidates[count++] = member;
             }
