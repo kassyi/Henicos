@@ -326,9 +326,28 @@ internal static class TypeLayoutCalculator
                 for (var j = 0; j < i; j++)
                 {
                     var earlier = deviceFields[j];
-                    if (earlier.Offset != field.Offset &&
-                        earlier.Offset < field.Offset + field.Layout.Size &&
-                        field.Offset < earlier.Offset + earlier.Layout.Size)
+                    if (earlier.Offset == field.Offset)
+                    {
+                        if (!IsFieldTransferIdentical(earlier, dialect))
+                        {
+                            return new UnsupportedLayout(
+                                $"field '{earlier.Member.Name}' at offset {earlier.Offset} shares a union with " +
+                                $"field '{field.Member.Name}' and has different host and device layouts",
+                                null,
+                                null);
+                        }
+
+                        if (!IsFieldTransferIdentical(field, dialect))
+                        {
+                            return new UnsupportedLayout(
+                                $"field '{field.Member.Name}' at offset {field.Offset} shares a union with " +
+                                $"field '{earlier.Member.Name}' and has different host and device layouts",
+                                null,
+                                null);
+                        }
+                    }
+                    else if (earlier.Offset < field.Offset + field.Layout.Size &&
+                             field.Offset < earlier.Offset + earlier.Layout.Size)
                     {
                         return new UnsupportedLayout(
                             $"field '{field.Member.Name}' at offset {field.Offset} partially overlaps " +
@@ -387,6 +406,34 @@ internal static class TypeLayoutCalculator
         }
 
         return null;
+    }
+
+    // Whether a union arm in an explicit-layout struct has the same representation and size on host and device.
+    // A field that is itself unsupported (reference type, decimal, or a nested unsupported struct) returns true here so
+    // the member loop below reports that primary reason (#1006).
+    private static bool IsFieldTransferIdentical(FieldLayout deviceField, ITranspilerDialect dialect)
+    {
+        var type = deviceField.Member.Type.UnwrapNullableArrayLike() ?? deviceField.Member.Type;
+        if (type.IsArrayLikeType())
+        {
+            return false;
+        }
+
+        if (type.IsReferenceType || !HasDeviceRepresentation(type, dialect))
+        {
+            return true;
+        }
+
+        if (type is INamedTypeSymbol { TypeKind: TypeKind.Struct } nested &&
+            IsUserStruct(nested) &&
+            GetStructLayout(nested, dialect).Unsupported is not null)
+        {
+            return true;
+        }
+
+        return TryGetHostLayout(deviceField.Member.Type, out var elemHost) &&
+               elemHost.Size * deviceField.Member.ElementCount == deviceField.Layout.Size &&
+               IsMemberTransferIdentical(deviceField.Member.Type, dialect);
     }
 
     private static HostLayout ComputeStructHostLayout(INamedTypeSymbol structType, TypeLayoutKind kind, int pack,

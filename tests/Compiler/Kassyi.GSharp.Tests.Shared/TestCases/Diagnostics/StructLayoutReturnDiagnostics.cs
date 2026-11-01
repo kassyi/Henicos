@@ -33,5 +33,20 @@ namespace StructLayoutReturnDiagnosticsTest
 
         [GpuKernel]
         public static Plain PlainKernel() => default;
+
+        [GpuKernel]
+        public static BrokenUnionResult BrokenUnionKernel() => default;
+    }
+
+    [StructLayout(LayoutKind.Sequential, Size = 6)]
+    public struct OddHead { public int A; }
+
+    public struct ShiftedFields { public OddHead Head; public byte Tail; }
+
+    [StructLayout(LayoutKind.Explicit)]
+    public struct BrokenUnionResult
+    {
+        [FieldOffset(0)] public ShiftedFields Converted;
+        [FieldOffset(0)] public long RawBits;
     }
 }

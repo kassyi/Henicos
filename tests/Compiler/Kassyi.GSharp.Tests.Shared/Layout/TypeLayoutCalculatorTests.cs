@@ -350,6 +350,78 @@ public class TypeLayoutCalculatorTests
 
     [Fact]
     [Category(TestCategory.Compiler)]
+    [Scenario(TestScenario.SadPath)]
+    public void ExplicitUnionWithConvertedArm_IsUnsupportedInBothOrdersAndDialectSpecificForVectors()
+    {
+        const string Source = """
+            using System.Numerics;
+            using System.Runtime.InteropServices;
+
+            [StructLayout(LayoutKind.Sequential, Size = 6)]
+            public struct OddHead { public int A; }
+
+            public struct ShiftedFields { public OddHead Head; public byte Tail; }
+
+            public struct VecArm { public float Tag; public Vector2 Vec; }
+
+            [StructLayout(LayoutKind.Explicit)]
+            public struct ConvertedFirstUnion
+            {
+                [FieldOffset(0)] public ShiftedFields Converted;
+                [FieldOffset(0)] public long RawBits;
+            }
+
+            [StructLayout(LayoutKind.Explicit)]
+            public struct ConvertedSecondUnion
+            {
+                [FieldOffset(0)] public long RawBits;
+                [FieldOffset(0)] public ShiftedFields Converted;
+            }
+
+            [StructLayout(LayoutKind.Explicit)]
+            public struct VectorArmUnion
+            {
+                [FieldOffset(0)] public Vector4 Raw;
+                [FieldOffset(0)] public VecArm Vec;
+            }
+            """;
+        var compilation = RoslynTestUtility.CreateCompilation(Source);
+        var first = compilation.GetTypeByMetadataName("ConvertedFirstUnion")
+            ?? throw new InvalidOperationException("ConvertedFirstUnion not found");
+        var second = compilation.GetTypeByMetadataName("ConvertedSecondUnion")
+            ?? throw new InvalidOperationException("ConvertedSecondUnion not found");
+        var vecUnion = compilation.GetTypeByMetadataName("VectorArmUnion")
+            ?? throw new InvalidOperationException("VectorArmUnion not found");
+
+        foreach (var dialect in new[] { s_cudaDialect, s_cpuDialect })
+        {
+            var firstLayout = TypeLayoutCalculator.GetStructLayout(first, dialect);
+            Assert.Equal(TransferClass.Unsupported, firstLayout.Transfer);
+            Assert.Contains(
+                "field 'Converted' at offset 0 shares a union with field 'RawBits'",
+                firstLayout.Unsupported?.Reason);
+
+            var secondLayout = TypeLayoutCalculator.GetStructLayout(second, dialect);
+            Assert.Equal(TransferClass.Unsupported, secondLayout.Transfer);
+            Assert.Contains(
+                "field 'Converted' at offset 0 shares a union with field 'RawBits'",
+                secondLayout.Unsupported?.Reason);
+        }
+
+        // VecArm is TransferClass.Identical on CPU (12 bytes) and TransferClass.Convert on CUDA (16 bytes)
+        var vecCpu = TypeLayoutCalculator.GetStructLayout(vecUnion, s_cpuDialect);
+        Assert.Equal(TransferClass.Identical, vecCpu.Transfer);
+        Assert.Null(vecCpu.Unsupported);
+
+        var vecCuda = TypeLayoutCalculator.GetStructLayout(vecUnion, s_cudaDialect);
+        Assert.Equal(TransferClass.Unsupported, vecCuda.Transfer);
+        Assert.Contains(
+            "field 'Vec' at offset 0 shares a union with field 'Raw'",
+            vecCuda.Unsupported?.Reason);
+    }
+
+    [Fact]
+    [Category(TestCategory.Compiler)]
     [Scenario(TestScenario.Boundary)]
     public void HostLayout_ExplicitAutoProperties_ReadTheBackingFieldOffsets()
     {

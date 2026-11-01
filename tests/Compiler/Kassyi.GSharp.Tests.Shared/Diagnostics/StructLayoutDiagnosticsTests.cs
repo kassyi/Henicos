@@ -94,8 +94,12 @@ public class StructLayoutDiagnosticsTests
         var diagnostics = await KernelDiagnostics.RunTestCaseAsync("Diagnostics/StructLayoutReturnDiagnostics.cs",
             dialect);
 
-        Assert.Equal([(Analyzer, 23, 23, 23, 30)],
+        Assert.Equal(
+            [(Analyzer, 23, 23, 23, 30), (Analyzer, 38, 23, 38, 40)],
             diagnostics.Ranges(GSharpDiagnostics.StructLayoutNotRepresentable.Id));
+        Assert.Equal(
+            [(Analyzer, 38, 23, 38, 40)],
+            diagnostics.Ranges(GSharpDiagnostics.StructLayoutNotRepresentable.Id, "field 'Converted' at offset 0"));
         Assert.Equal([(Analyzer, 26, 23, 26, 29)],
             diagnostics.Ranges(GSharpDiagnostics.FieldTypeHasNoDeviceRepresentation.Id, "'decimal' of field 'Price'"));
         IEnumerable<(DiagnosticOrigin, int, int, int, int)> converted = isCuda

@@ -412,7 +412,20 @@ public static class TransferPlanProbes
 
     public static void Others(GenericBoxHolder a, NullableFieldsStruct b, AccessMix c, AccessMix[] d,
         ExplicitAutoPropertyStruct e, SizedNestedOuter f, SizedVector4 g, SizedGeneric<double> h, IntLongUnion? i,
-        ExplicitUnionStruct j, AutoLayoutCase k)
+        ExplicitUnionStruct j, AutoLayoutCase k, ExplicitUnionWithConvertedField l)
     {
     }
+}
+
+[StructLayout(LayoutKind.Explicit)]
+public struct ExplicitUnionWithConvertedField
+{
+    [FieldOffset(0)]
+    public long Raw;
+
+    [FieldOffset(0)]
+    public int Low;
+
+    [FieldOffset(8)]
+    public SizedNestedOuter Converted;
 }

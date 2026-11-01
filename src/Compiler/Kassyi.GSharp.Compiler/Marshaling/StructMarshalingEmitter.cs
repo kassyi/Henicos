@@ -189,9 +189,13 @@ internal static class StructMarshalingEmitter
                 // field) must read as empty, not as a device pointer that an earlier launch freed
                 writer.AppendLine("native = default;");
                 WriteHostMirrorBinding(writer, s, hasMirror);
-                foreach (var member in StructAbiMembers.Get(s))
+                for (var i = 0; i < structLayout.DeviceFields.Length; i++)
                 {
-                    WriteMarshalMember(writer, member, dialect);
+                    if (structLayout.Kind != TypeLayoutKind.Explicit ||
+                        IsWidestInOffsetGroup(structLayout.DeviceFields, i))
+                    {
+                        WriteMarshalMember(writer, structLayout.DeviceFields[i].Member, dialect);
+                    }
                 }
             }
         }
@@ -771,14 +775,48 @@ internal static class StructMarshalingEmitter
             else
             {
                 WriteHostMirrorBinding(writer, s, hasMirror);
-                foreach (var member in StructAbiMembers.Get(s))
+                for (var i = 0; i < structLayout.DeviceFields.Length; i++)
                 {
-                    WriteUnmarshalMember(writer, member, dialect);
+                    if (structLayout.Kind != TypeLayoutKind.Explicit ||
+                        IsWidestInOffsetGroup(structLayout.DeviceFields, i))
+                    {
+                        WriteUnmarshalMember(writer, structLayout.DeviceFields[i].Member, dialect);
+                    }
                 }
             }
         }
 
         writer.AppendLine();
+    }
+
+    // In an explicit-layout struct, all representable members at one [FieldOffset] share the same bytes (any union arm
+    // with a converted layout is rejected as GSH0078). Copying only the widest member of each offset group once avoids
+    // overwriting high bytes with a narrower arm or re-copying through a float arm (#1006).
+    private static bool IsWidestInOffsetGroup(ImmutableArray<FieldLayout> fields, int index)
+    {
+        var field = fields[index];
+        if (NativeStructEmitter.IsUnrepresentableReference(field.Member))
+        {
+            return false;
+        }
+
+        for (var j = 0; j < fields.Length; j++)
+        {
+            if (j == index ||
+                fields[j].Offset != field.Offset ||
+                NativeStructEmitter.IsUnrepresentableReference(fields[j].Member))
+            {
+                continue;
+            }
+
+            if (fields[j].Layout.Size > field.Layout.Size ||
+                (j < index && fields[j].Layout.Size == field.Layout.Size))
+            {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     private static void WriteUnmarshalMember(SourceWriter writer, StructAbiMember member, ITranspilerDialect dialect)

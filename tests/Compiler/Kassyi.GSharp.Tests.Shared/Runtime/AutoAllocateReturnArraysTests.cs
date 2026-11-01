@@ -86,6 +86,28 @@ public class AutoAllocateReturnArraysTests : TranspilerTestBase
         }
     }
 
+    [SkippableTheory]
+    [TestTarget(ExecutionTarget.GpuExecution)]
+    [Scenario(TestScenario.HappyPath)]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void ExplicitUnionWithConvertedResultKernel_WidestUnionArmPreservesAllEightBytes(bool forceManaged)
+    {
+        var result = Run(forceManaged, () =>
+            AutoAllocateReturnArraysKernels.LaunchExplicitUnionWithConvertedResultKernel(
+                gridDimX: 3, blockDimX: 4, blockDimY: 2));
+
+        Assert.Equal(24, result.Length);
+        for (int i = 0; i < result.Length; i++)
+        {
+            long expectedRaw = 0x01020304_05060708L + i;
+            Assert.Equal(expectedRaw, result[i].Raw);
+            Assert.Equal( unchecked((int)expectedRaw), result[i].Low);
+            Assert.Equal(100 + i, result[i].Converted.Head.A);
+            Assert.Equal((byte)(i + 1), result[i].Converted.Tail);
+        }
+    }
+
     [Fact]
     [Scenario(TestScenario.SadPath)]
     public void KernelLaunchZeroDimension_ThrowsArgumentOutOfRangeException()

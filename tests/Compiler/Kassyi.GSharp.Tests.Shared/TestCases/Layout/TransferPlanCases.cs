@@ -11,6 +11,14 @@ namespace TransferPlanCasesTest
     [StructLayout(LayoutKind.Explicit)]
     public struct Misaligned { [FieldOffset(0)] public byte A; [FieldOffset(1)] public int B; }
 
+    [StructLayout(LayoutKind.Sequential, Size = 6)]
+    public struct OddHead { public int A; }
+
+    public struct ShiftedFields { public OddHead Head; public byte Tail; }
+
+    [StructLayout(LayoutKind.Explicit)]
+    public struct BrokenUnion { [FieldOffset(0)] public ShiftedFields Converted; [FieldOffset(0)] public long RawBits; }
+
     public struct Bag { public int N; public int[] Data; }
 
     [StructLayout(LayoutKind.Auto)]

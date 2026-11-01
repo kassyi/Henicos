@@ -75,6 +75,45 @@ public unsafe partial class AutoAllocateReturnArraysKernels
         return r;
     }
 
+    // #1006: An explicit-layout struct with an identical union group at offset 0 (where the narrower int arm is
+    // declared after the wider long arm) and a converted field at offset 8 must copy only the widest union member once
+    // during Marshal_ and Unmarshal_ so all 8 bytes of Raw are preserved.
+    [StructLayout(LayoutKind.Sequential, Size = 6)]
+    public struct OddHead
+    {
+        public int A;
+    }
+
+    public struct OddSizedField
+    {
+        public OddHead Head;
+        public byte Tail;
+    }
+
+    [StructLayout(LayoutKind.Explicit)]
+    public struct ExplicitUnionWithConvertedResult
+    {
+        [FieldOffset(0)]
+        public long Raw;
+
+        [FieldOffset(0)]
+        public int Low;
+
+        [FieldOffset(8)]
+        public OddSizedField Converted;
+    }
+
+    [GpuKernel]
+    public static ExplicitUnionWithConvertedResult ExplicitUnionWithConvertedResultKernel()
+    {
+        int i = LinearThreadIndex();
+        ExplicitUnionWithConvertedResult r = default;
+        r.Raw = 0x01020304_05060708L + i;
+        r.Converted.Head.A = 100 + i;
+        r.Converted.Tail = (byte)(i + 1);
+        return r;
+    }
+
     // The index of the thread's element in the returned array: blocks in order, threads of a block in x, y, z order
     [GpuDeviceFunction]
     private static int LinearThreadIndex() =>
