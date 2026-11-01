@@ -70,7 +70,6 @@ public sealed class MemberAccessExpressionTranspilerRule : SyntaxNodeTranspilerR
         TranspileMemberAccess(node, symbol, ref context);
     }
 
-    // [<receiver param> = (<receiver>)](<parameters>) { return <extension>(<receiver param>, <parameters>); }
     // [WHY] A reduced extension method group (x.M) evaluates and binds its receiver when the delegate is formed, so
     // assigning a new value to x afterwards does not change the receiver that the delegate passes to M (#940).
     private static bool TryTranspileReducedExtensionMethodGroup(
@@ -90,15 +89,21 @@ public sealed class MemberAccessExpressionTranspilerRule : SyntaxNodeTranspilerR
         }
 
         DynamicSharedMemoryEmitter.FailIfReferencedWithoutCall(node, extension, ref context);
-        if (SuspensionAnalysis.IsSuspendingFunction(extension, context.Query.SemanticModel.Compilation))
+        if (!InvocationExpressionTranspilerRule.FailIfSuspendingExtension(node, extension, ref context))
         {
-            context.Reporter.Fail(
-                GSharpDiagnostics.UnsupportedSyntax,
-                node,
-                InvocationExpressionTranspilerRule.SuspendingExtensionCall);
-            return true;
+            WriteBoundExtensionLambda(node.Expression, method, extension, ref context);
         }
 
+        return true;
+    }
+
+    // [<receiver param> = (<receiver>)](<parameters>) { return <extension>(<receiver param>, <parameters>); }
+    private static void WriteBoundExtensionLambda(
+        ExpressionSyntax receiver,
+        IMethodSymbol method,
+        IMethodSymbol extension,
+        ref TranspileContext context)
+    {
         StructTranspiler.RegisterUsedStructIfApplicable(method.ReturnType, ref context);
         using (context.Emitter.Writer.Brackets())
         {
@@ -106,7 +111,7 @@ public sealed class MemberAccessExpressionTranspilerRule : SyntaxNodeTranspilerR
             context.Emitter.Writer.Append(" = ");
             using (context.Emitter.Writer.Parentheses())
             {
-                StackArrayLocals.AppendView(node.Expression, ref context);
+                StackArrayLocals.AppendView(receiver, ref context);
             }
         }
 
@@ -142,8 +147,6 @@ public sealed class MemberAccessExpressionTranspilerRule : SyntaxNodeTranspilerR
 
             context.Emitter.Writer.Append(';');
         }
-
-        return true;
     }
 
     private static bool TryTranspileSpecialArrayMembers(MemberAccessExpressionSyntax node, ref TranspileContext context)
