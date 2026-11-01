@@ -65,12 +65,15 @@ public sealed class InvocationExpressionTranspilerRule : SyntaxNodeTranspilerRul
         }
 
         StructTranspiler.RegisterUsedStructIfApplicable(symbol.ReturnType, ref context);
+        var convertArguments = context.Emitter.Dialect.TryMapIntrinsic(symbol, out _) &&
+                               !symbol.HasAttribute(KnownAttributes.CudaIntrinsic) &&
+                               symbol.ContainingType?.HasAttribute(KnownAttributes.CudaIntrinsicPattern) != true;
         using var sequence = EvaluationOrder.BeginCall(ref context, node.ArgumentList.Arguments, symbol,
             GetReceiver(node, symbol), spillAll: false);
         context.Visitor.Visit(node.Expression);
         using (context.Emitter.Writer.Parentheses())
         {
-            TranspileArguments(symbol.Parameters, node.ArgumentList.Arguments, in sequence, ref context);
+            TranspileArguments(symbol.Parameters, node.ArgumentList.Arguments, in sequence, ref context, convertArguments);
             DynamicSharedMemoryEmitter.AppendTableArgument(node, symbol, ref context);
         }
     }
@@ -189,7 +192,8 @@ public sealed class InvocationExpressionTranspilerRule : SyntaxNodeTranspilerRul
         ImmutableArray<IParameterSymbol> parameters,
         SeparatedSyntaxList<ArgumentSyntax> arguments,
         in EvaluationOrder.CallSequence sequence,
-        ref TranspileContext context)
+        ref TranspileContext context,
+        bool convertArguments = false)
     {
         var positionalArgIndex = 0;
 
@@ -208,14 +212,14 @@ public sealed class InvocationExpressionTranspilerRule : SyntaxNodeTranspilerRul
             if (providedArg != null)
             {
                 // The argument itself, or the temporary it was evaluated into (an in or ref readonly parameter by address)
-                sequence.AppendArgument(providedArg, parameter, ref context);
+                sequence.AppendArgument(providedArg, parameter, ref context, convertArguments);
 
                 if (parameter.IsParams && positionalArgIndex < arguments.Count)
                 {
                     while (positionalArgIndex < arguments.Count && arguments[positionalArgIndex].NameColon == null)
                     {
                         context.Emitter.Writer.Append(',');
-                        sequence.AppendArgument(arguments[positionalArgIndex], parameter, ref context);
+                        sequence.AppendArgument(arguments[positionalArgIndex], parameter, ref context, convertArguments);
                         positionalArgIndex++;
                     }
                 }

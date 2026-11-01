@@ -1105,10 +1105,10 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-__gsharp_id_3_singleResult[0]=__gsharp_max_f32(__gsharp_id_0_single[0],__gsharp_id_2_whole[0]);
-__gsharp_id_3_singleResult[1]=__gsharp_min_f32(__gsharp_id_0_single[0],2);
-__gsharp_id_4_wideResult[0]=__gsharp_max_f64(__gsharp_id_1_wide[0],__gsharp_id_0_single[0]);
-__gsharp_id_4_wideResult[1]=__gsharp_min_f64(__gsharp_id_1_wide[0],__gsharp_id_2_whole[0]);
+__gsharp_id_3_singleResult[0]=__gsharp_max_f32(__gsharp_id_0_single[0],(float)__gsharp_id_2_whole[0]);
+__gsharp_id_3_singleResult[1]=__gsharp_min_f32(__gsharp_id_0_single[0],2.0f);
+__gsharp_id_4_wideResult[0]=__gsharp_max_f64(__gsharp_id_1_wide[0],(double)__gsharp_id_0_single[0]);
+__gsharp_id_4_wideResult[1]=__gsharp_min_f64(__gsharp_id_1_wide[0],(double)__gsharp_id_2_whole[0]);
 __gsharp_state=-1;
 return;
 }

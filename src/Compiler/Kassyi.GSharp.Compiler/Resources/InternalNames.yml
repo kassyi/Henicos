@@ -89,6 +89,9 @@ Lowering:
     ConstructorSelf: __gsharp_self
     ForEachSourcePrefix: __gsharp_foreach_src_
     ForEachIndexPrefix: __gsharp_foreach_i_
+    # The raw element of a C++ range-for whose loop variable converts it with a .NET conversion helper (#995):
+    # for (auto __gsharp_foreach_e_<n> : <source>) { int x = __gsharp_to_i32(__gsharp_foreach_e_<n>); ... }
+    ForEachElementPrefix: __gsharp_foreach_e_
     UnrollIndexPrefix: __gsharp_unroll_
     # The unsigned index of a Gpu.GridStrideLoop and its count and step, each read once before the loop (__gsharp_gsl_<n>,
     # __gsharp_gsl_n_<n>, __gsharp_gsl_s_<n>); the C++ emitter and the managed rewrite both spell them
