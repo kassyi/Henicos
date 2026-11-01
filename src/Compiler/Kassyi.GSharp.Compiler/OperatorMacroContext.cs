@@ -96,8 +96,44 @@ internal static class OperatorMacroContext
                 )
             );
 
-        return reference?.Parent is MemberAccessExpressionSyntax access && access.Name == reference
-            ? access
-            : reference;
+        if (reference != null)
+        {
+            return reference.Parent is MemberAccessExpressionSyntax access && access.Name == reference
+                ? access
+                : reference;
+        }
+
+        // A non-ref-struct by-value parameter of a split state machine lives in __gsharp_ctx even when the body only
+        // passes it implicitly to operator macros and never spells its name (#944).
+        if (variable is IParameterSymbol { RefKind: RefKind.None, Type.IsRefLikeType: false } parameter &&
+            parameter.TryGetDeclaringSyntax<ParameterSyntax>(out var paramSyntax) &&
+            HasSplitStateCases(assignment.SyntaxTree.GetRoot()))
+        {
+            var treeOrdinal = SemanticModelExtensions.GetSyntaxTreeOrdinal(
+                semanticModel.Compilation,
+                paramSyntax.SyntaxTree);
+            var spanAnnotation = new SyntaxAnnotation(
+                LoweringAnnotations.OriginalSpanAnnotationKind,
+                LoweringAnnotations.FormatOriginalSpanData(paramSyntax, treeOrdinal));
+            return SyntaxFactory.MemberAccessExpression(
+                SyntaxKind.PointerMemberAccessExpression,
+                SyntaxFactory.IdentifierName(GSharpInternalNames.StateMachine.Context),
+                SyntaxFactory.IdentifierName(paramSyntax.Identifier.WithoutTrivia())
+                    .WithAdditionalAnnotations(spanAnnotation)
+            ).WithAdditionalAnnotations(spanAnnotation);
+        }
+
+        return null;
     }
+
+    private static bool HasSplitStateCases(SyntaxNode root) =>
+        root is BlockSyntax { Statements: [SwitchStatementSyntax stateSwitch] } &&
+        stateSwitch.Sections
+            .AsStackEnumerable()
+            .Any(static section => section.Labels
+                .AsStackEnumerable()
+                .Any(static label => label is CaseSwitchLabelSyntax
+                {
+                    Value: LiteralExpressionSyntax { Token.ValueText: "1" }
+                }));
 }

@@ -147,7 +147,13 @@ internal readonly struct ExpressionEffects(VariableSet reads, VariableSet writes
         {
             reads.Add(variable);
         }
-        else
+
+        if (root.SecondVariable is { } secondVariable)
+        {
+            reads.Add(secondVariable);
+        }
+
+        if (root.IsMemory)
         {
             reads.Memory = true;
         }
@@ -176,12 +182,14 @@ internal readonly struct ExpressionEffects(VariableSet reads, VariableSet writes
     public bool InterferesWith(in ExpressionEffects later) =>
         Writes.Overlaps(later.Reads) || Writes.Overlaps(later.Writes) || Reads.Overlaps(later.Writes);
 
-    // The variable that a location belongs to: a symbol or name, or memory
-    private readonly struct Root(object? variable)
+    // The variable (or two variables, for a ref conditional) that a location belongs to: a symbol or name, or memory
+    private readonly struct Root(object? variable, bool isMemory = false, object? secondVariable = null)
     {
         public object? Variable { get; } = variable;
 
-        public bool IsMemory => Variable == null;
+        public object? SecondVariable { get; } = secondVariable;
+
+        public bool IsMemory { get; } = isMemory || (variable == null && secondVariable == null);
     }
 
     private struct Walker(SemanticModel model)
@@ -195,7 +203,13 @@ internal readonly struct ExpressionEffects(VariableSet reads, VariableSet writes
             {
                 Reads.Add(variable);
             }
-            else
+
+            if (root.SecondVariable is { } secondVariable)
+            {
+                Reads.Add(secondVariable);
+            }
+
+            if (root.IsMemory)
             {
                 Reads.Memory = true;
             }
@@ -207,7 +221,13 @@ internal readonly struct ExpressionEffects(VariableSet reads, VariableSet writes
             {
                 Writes.Add(variable);
             }
-            else
+
+            if (root.SecondVariable is { } secondVariable)
+            {
+                Writes.Add(secondVariable);
+            }
+
+            if (root.IsMemory)
             {
                 Writes.Memory = true;
             }
@@ -274,7 +294,21 @@ internal readonly struct ExpressionEffects(VariableSet reads, VariableSet writes
                     AddMemberAccess(access);
                     return;
                 case ElementAccessExpressionSyntax element:
-                    AddValue(element.Expression);
+                    if (model.GetSymbol(element) is IPropertySymbol indexer && MayMutateValueTypeReceiver(indexer))
+                    {
+                        var receiver = AddLocation(element.Expression);
+                        AddRead(receiver);
+                        AddWrite(receiver);
+                        if (StructAbiMembers.IsComputedProperty(indexer))
+                        {
+                            Writes.Memory = true;
+                        }
+                    }
+                    else
+                    {
+                        AddValue(element.Expression);
+                    }
+
                     AddArgumentValues(element.ArgumentList.Arguments);
                     Reads.Memory = true;
                     return;
@@ -424,11 +458,25 @@ internal readonly struct ExpressionEffects(VariableSet reads, VariableSet writes
 
                     return;
                 case IPropertySymbol property:
-                    AddValue(access.Expression);
+                    if (MayMutateValueTypeReceiver(property))
+                    {
+                        var receiver = AddLocation(access.Expression);
+                        AddRead(receiver);
+                        AddWrite(receiver);
+                    }
+                    else
+                    {
+                        AddValue(access.Expression);
+                    }
+
                     if (StructAbiMembers.IsComputedProperty(property))
                     {
-                        // The getter may read anything
+                        // The getter may read anything, and a non-readonly getter may write anything
                         Reads.Memory = true;
+                        if (property.GetMethod is { IsReadOnly: false })
+                        {
+                            Writes.Memory = true;
+                        }
                     }
 
                     return;
@@ -453,6 +501,12 @@ internal readonly struct ExpressionEffects(VariableSet reads, VariableSet writes
         private static bool IsIntrinsicProperty(IPropertySymbol property) =>
             property.HasAttribute(KnownAttributes.CudaIntrinsic) ||
             property.ContainingType?.HasAttribute(KnownAttributes.CudaIntrinsicPattern) == true;
+
+        // A non-readonly getter of a non-readonly struct receives its receiver by reference and may mutate it (#992)
+        private static bool MayMutateValueTypeReceiver(IPropertySymbol property) =>
+            !property.IsStatic &&
+            property.ContainingType is { IsValueType: true, IsReadOnly: false } &&
+            property.GetMethod is { IsReadOnly: false };
 
         private void AddAssignment(AssignmentExpressionSyntax assignment)
         {
@@ -493,6 +547,18 @@ internal readonly struct ExpressionEffects(VariableSet reads, VariableSet writes
             {
                 case ParenthesizedExpressionSyntax parenthesized:
                     return AddLocation(parenthesized.Expression);
+                case RefExpressionSyntax refExpression:
+                    return AddLocation(refExpression.Expression);
+                case ConditionalExpressionSyntax conditional:
+                {
+                    AddValue(conditional.Condition);
+                    var whenTrue = AddLocation(conditional.WhenTrue);
+                    var whenFalse = AddLocation(conditional.WhenFalse);
+                    return new Root(
+                        whenTrue.Variable ?? whenFalse.Variable,
+                        whenTrue.IsMemory || whenFalse.IsMemory,
+                        whenTrue.Variable != null ? whenFalse.Variable : null);
+                }
                 case MemberAccessExpressionSyntax frame when IsFrameAccess(frame):
                     // A local of the state machine that lives in its frame: the local itself
                     return AddLocation(frame.Name);
@@ -523,6 +589,14 @@ internal readonly struct ExpressionEffects(VariableSet reads, VariableSet writes
                     return new Root(null);
                 }
                 case ElementAccessExpressionSyntax element:
+                    if (model.GetTypeSymbol(element.Expression) is { IsValueType: true, IsRefLikeType: false } and not IPointerTypeSymbol &&
+                        element.Expression is not ThisExpressionSyntax)
+                    {
+                        var receiver = AddLocation(element.Expression);
+                        AddArgumentValues(element.ArgumentList.Arguments);
+                        return receiver;
+                    }
+
                     AddValue(element.Expression);
                     AddArgumentValues(element.ArgumentList.Arguments);
                     return new Root(null);

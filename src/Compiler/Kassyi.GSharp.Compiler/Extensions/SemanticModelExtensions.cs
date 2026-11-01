@@ -49,16 +49,29 @@ internal static class SemanticModelExtensions
         SemanticModel semanticModel,
         SyntaxNode node,
         out SemanticModel targetModel,
+        [NotNullWhen(true)] out SyntaxNode? originalNode) =>
+        TryFindAnnotatedNode(
+            semanticModel,
+            node,
+            LoweringAnnotations.OriginalSpanAnnotationKind,
+            out targetModel,
+            out originalNode);
+
+    private static bool TryFindAnnotatedNode(
+        SemanticModel semanticModel,
+        SyntaxNode node,
+        string annotationKind,
+        out SemanticModel targetModel,
         [NotNullWhen(true)] out SyntaxNode? originalNode)
     {
         targetModel = semanticModel;
         originalNode = null;
-        if (!node.HasAnnotations(LoweringAnnotations.OriginalSpanAnnotationKind))
+        if (!node.HasAnnotations(annotationKind))
         {
             return false;
         }
 
-        foreach (var ann in node.GetAnnotations(LoweringAnnotations.OriginalSpanAnnotationKind))
+        foreach (var ann in node.GetAnnotations(annotationKind))
         {
             if (!LoweringAnnotations.TryParseOriginalSpanData(
                     ann.Data,
@@ -201,12 +214,21 @@ internal static class SemanticModelExtensions
     {
         if (IsInSameTree(semanticModel, node))
         {
-            return semanticModel.GetSymbolInfo(node, cancellationToken).Symbol;
+            return ResolveSymbolOrDeclared(semanticModel, node, cancellationToken);
         }
 
         return TryFindOriginalNode(semanticModel, node, out var targetModel, out var original)
-            ? targetModel.GetSymbolInfo(original, cancellationToken).Symbol
+            ? ResolveSymbolOrDeclared(targetModel, original, cancellationToken)
             : null;
+
+        static ISymbol? ResolveSymbolOrDeclared(
+            SemanticModel model,
+            SyntaxNode target,
+            CancellationToken ct) =>
+            model.GetSymbolInfo(target, ct).Symbol ??
+            (target is SingleVariableDesignationSyntax or VariableDeclaratorSyntax
+                ? model.GetDeclaredSymbol(target, ct)
+                : null);
     }
 
     /// <summary>
@@ -220,9 +242,23 @@ internal static class SemanticModelExtensions
             return semanticModel.GetTypeInfo(node, cancellationToken).Type;
         }
 
-        return TryFindOriginalNode(semanticModel, node, out var targetModel, out var original)
-            ? targetModel.GetTypeInfo(original, cancellationToken).Type
-            : null;
+        if (TryFindOriginalNode(semanticModel, node, out var targetModel, out var original))
+        {
+            return targetModel.GetTypeInfo(original, cancellationToken).Type;
+        }
+
+        if (TryFindAnnotatedNode(
+                semanticModel,
+                node,
+                LoweringAnnotations.SpilledTypeSpanAnnotationKind,
+                out targetModel,
+                out var spilledOriginal))
+        {
+            var typeInfo = targetModel.GetTypeInfo(spilledOriginal, cancellationToken);
+            return typeInfo.Type ?? typeInfo.ConvertedType;
+        }
+
+        return null;
     }
 
     /// <summary>
@@ -237,9 +273,23 @@ internal static class SemanticModelExtensions
             return semanticModel.GetTypeInfo(node, cancellationToken).ConvertedType;
         }
 
-        return TryFindOriginalNode(semanticModel, node, out var targetModel, out var original)
-            ? targetModel.GetTypeInfo(original, cancellationToken).ConvertedType
-            : null;
+        if (TryFindOriginalNode(semanticModel, node, out var targetModel, out var original))
+        {
+            return targetModel.GetTypeInfo(original, cancellationToken).ConvertedType;
+        }
+
+        if (TryFindAnnotatedNode(
+                semanticModel,
+                node,
+                LoweringAnnotations.SpilledTypeSpanAnnotationKind,
+                out targetModel,
+                out var spilledOriginal))
+        {
+            var typeInfo = targetModel.GetTypeInfo(spilledOriginal, cancellationToken);
+            return typeInfo.ConvertedType ?? typeInfo.Type;
+        }
+
+        return null;
     }
 
     /// <summary>

@@ -142,7 +142,7 @@ internal sealed partial class ManagedExecutionRewriter(SemanticModel semanticMod
     private bool IsLengthOfOptionalArray(MemberAccessExpressionSyntax node) =>
         node.IsKind(SyntaxKind.SimpleMemberAccessExpression) &&
         node.Name is IdentifierNameSyntax { Identifier.ValueText: "Length" } &&
-        node.Expression is IdentifierNameSyntax &&
+        (node.Expression is IdentifierNameSyntax || ContextLocalRewriter.IsContextPointerAccess(node.Expression)) &&
         semanticModel.GetSymbol(node.Expression) is IParameterSymbol
         {
             Type: IArrayTypeSymbol, NullableAnnotation: NullableAnnotation.Annotated

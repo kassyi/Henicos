@@ -361,12 +361,15 @@ public class ContextHoister(
     private static MemberAccessExpressionSyntax CreateContextAccess(SyntaxToken identifier, SyntaxNode original)
     {
         var spanAnnotations = original.GetAnnotations(LoweringAnnotations.OriginalSpanAnnotationKind);
+        var spilledTypeAnnotations = original.GetAnnotations(LoweringAnnotations.SpilledTypeSpanAnnotationKind);
         return SyntaxFactory.MemberAccessExpression(
             SyntaxKind.PointerMemberAccessExpression,
             SyntaxFactory.IdentifierName(GSharpInternalNames.StateMachine.Context),
             SyntaxFactory.IdentifierName(identifier.WithoutTrivia())
                 .WithAdditionalAnnotations(spanAnnotations)
+                .WithAdditionalAnnotations(spilledTypeAnnotations)
         ).WithAdditionalAnnotations(spanAnnotations)
+         .WithAdditionalAnnotations(spilledTypeAnnotations)
          .WithAdditionalAnnotations(original.GetAnnotations(LoweringAnnotations.ForEachArraySourceAnnotationKind));
     }
 

@@ -52,6 +52,13 @@ public class BranchRewriter(SemanticModel? semanticModel = null) : CSharpSyntaxR
         return SyntaxFactory.Block(newStatements);
     }
 
+    // [WHY] A split point inside an unsafe block must reach the top level of the body, as one inside an if branch does;
+    // the generated C++ and managed state machines are already emitted in an unsafe context.
+    public override SyntaxNode? VisitUnsafeStatement(UnsafeStatementSyntax node) =>
+        ContainsBarrier(node)
+            ? VisitBlock(node.Block)
+            : base.VisitUnsafeStatement(node);
+
     // [WHY] A split point inside a switch section must reach the top level of the body, as one inside an if branch does
     // (#708). The section statements are lowered first, so a nested if or switch is flattened into them.
     public override SyntaxNode? VisitSwitchStatement(SwitchStatementSyntax node)
