@@ -13,7 +13,7 @@ description: "Context parameter structs for BigInt GPU kernels, Newton-Raphson m
 **Namespace:** `Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms`  
 **Assembly:** `Kassyi.GSharp.Stdlib.GpuMath.dll`
 
-Context parameter structures for basic `GpuBigInt` GPU kernels, `MacroTranspiler` expansions, Newton-Raphson mega-kernels (`SqrtNewtonRaphson`, `ReciprocalNewtonRaphson`, `ModPowNttContext`), and Residue Number System (RNS) modular reductions.
+Context parameter structures for basic `GpuBigInt` GPU kernels, `MacroTranspiler` expansions, Newton-Raphson mega-kernels (`NewtonRaphsonContext`, `ModPowNttContext`), and Residue Number System (RNS) modular reductions.
 
 > [!NOTE]
 > `BigIntKernelContext` was streamlined to `GpuBigIntContext` (with top-level `OperandContext`, `BufferContext`, `DimensionContext`, `TwiddleFactorContext`, and `WorkspaceStateContext` structs in `Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms`).
@@ -25,8 +25,7 @@ public struct BufferContext
 public struct TwiddleFactorContext
 public struct DimensionContext
 public struct WorkspaceStateContext
-public struct SqrtNewtonRaphson
-public struct ReciprocalNewtonRaphson
+public struct NewtonRaphsonContext
 public struct ModPowNttContext
 public struct RnsConstantsContext
 public struct RnsBigInt
@@ -43,8 +42,7 @@ public struct RnsMontgomeryContext
 | [TwiddleFactorContext](#twiddlefactorcontext-struct) | Encapsulates precomputed forward and inverse NTT twiddle factors for multi-prime moduli. |
 | [DimensionContext](#dimensioncontext-struct) | Encapsulates multi-precision word sizes, bit widths, and iteration counts for big integer algorithms. |
 | [WorkspaceStateContext](#workspacestatecontext-struct) | Encapsulates the complete workspace scratch memory state for Newton-Raphson mega-kernels. |
-| [SqrtNewtonRaphson](#sqrtnewtonraphson-struct) | Context parameters for the Newton-Raphson Sqrt MegaKernel. |
-| [ReciprocalNewtonRaphson](#reciprocalnewtonraphson-struct) | Context parameters for the Newton-Raphson Reciprocal (`DivRem`) MegaKernel. |
+| [NewtonRaphsonContext](#newtonraphsoncontext-struct) | Context parameters for the Newton-Raphson Sqrt and Reciprocal (`DivRem`) MegaKernels. |
 | [ModPowNttContext](#modpownttcontext-struct) | Encapsulates parameters and scratch state for NTT-based modular exponentiation. |
 | [RnsConstantsContext](#rnsconstantscontext-struct) | Precomputed constants for RNS (Residue Number System) operations. |
 | [RnsBigInt](#rnsbigint-struct) | Represents a multi-precision integer decomposed into Residue Number System spaces. |
@@ -141,52 +139,24 @@ Encapsulates the complete workspace scratch memory state for Newton-Raphson mega
 ```csharp
 public struct WorkspaceStateContext
 {
-    public uint[] XSquared;
-    public uint[] AxSquared;
-    public uint[] CurrentProduct;
-    public uint[] Diff;
-    public uint[] NextXUnshifted;
-    public uint[] NextXShifted;
-    public uint[] NextIter;
-    public uint[] NttBuf1A;
-    public uint[] NttBuf2A;
-    public uint[] NttBuf1B;
-    public uint[] NttBuf2B;
-    public uint[] TmpBuf;
-    public uint[] UncarriedLow;
-    public uint[] UncarriedHigh;
-    public uint[] BlockCarries;
-    public uint[] ModulusExpanded;
+    public IterationScratchContext Iteration;
+    public NttConvolutionScratchContext NttScratch;
 }
 ```
 
-## SqrtNewtonRaphson Struct
+## NewtonRaphsonContext Struct
 
-Context parameters for the Newton-Raphson Sqrt MegaKernel.
+Context parameters for the Newton-Raphson Sqrt and Reciprocal (`DivRem`) MegaKernels.
 
 ```csharp
-public struct SqrtNewtonRaphson
+public struct NewtonRaphsonContext
 {
     public OperandContext Operands;
     public DimensionContext Dimensions;
     public Ntt Ntt;
     public WorkspaceStateContext Workspace;
     public long[] CarryBuffer;
-}
-```
-
-## ReciprocalNewtonRaphson Struct
-
-Context parameters for the Newton-Raphson Reciprocal (`DivRem`) MegaKernel.
-
-```csharp
-public struct ReciprocalNewtonRaphson
-{
-    public OperandContext Operands;
-    public DimensionContext Dimensions;
-    public Ntt Ntt;
-    public WorkspaceStateContext Workspace;
-    public long[] CarryBuffer;
+    public uint[] CorrectionStatus;
 }
 ```
 
@@ -197,16 +167,9 @@ Encapsulates parameters and scratch state for NTT-based modular exponentiation.
 ```csharp
 public struct ModPowNttContext
 {
-    public OperandContext Operands;
-    public uint[] ReciprocalMod;
-    public uint[] Exponent;
-    public int ExponentWords;
-    public int ExponentStartWord;
-    public int ExponentEndWord;
-    public DimensionContext Dimensions;
-    public Ntt Ntt;
-    public WorkspaceStateContext Workspace;
-    public long[] CarryBuffer;
+    public NewtonRaphsonContext Core;
+    [GpuReadOnly] public uint[] ReciprocalMod;
+    public ExponentSliceContext Exponent;
 }
 ```
 

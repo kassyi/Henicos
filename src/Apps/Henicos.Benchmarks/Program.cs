@@ -42,6 +42,7 @@ internal class Program
             "cpu-pi" => RunCpuPi(args[1..]),
             "tf" => RunTrialFactoring(args[1..]),
             "prp" => RunFermatPrp(args[1..]),
+            "prp-verify" => RunFermatPrpVerify(args[1..]),
             "bbp" => RunBbp(args[1..]),
             "compute-bench" => RunComputeBench(args[1..]),
             "gpu-metrics" => RunGpuMetricsBench(args[1..]),
@@ -70,6 +71,11 @@ internal class Program
               cpu-pi [digits]            CPU Chudnovsky Pi baseline computation (default: 10,000)
               tf [exponent] [maxP]       Mersenne trial factoring benchmark (default: 71428571, 4000000000)
               prp [exponent] [base]      Fermat PRP test with verified checkpoints (default: 71428571, 3)
+                                         Options:
+                                           --proof <path>      Emit a binary Pietrzak PRP proof to <path>
+                                           --proof-power <k>   Halving tree depth k (default: 8)
+                                           --bench [steps]     Measure steady-state throughput (default: 512 steps)
+              prp-verify <proof-path>    Verify a binary Pietrzak PRP proof file
               bbp [offset] [count]       Extract hexadecimal Pi digits via BBP (default: offset 0, count 16)
               compute-bench [suite]      Run compute performance benchmark (sgemm, sha256, bs, reduce, mandelbrot,
                                          empty, fma, branch, memcopy, transpose, micro, all) (default: all)
@@ -361,19 +367,60 @@ internal class Program
     {
         var exponent = 71428571;
         var @base = 3u;
+        string? proofPath = null;
+        var proofPower = 0;
 
-        if (args.Length > 0 && int.TryParse(args[0], out var e))
+        if (args.Length > 0 && !args[0].StartsWith('-') && int.TryParse(args[0], out var e))
         {
             exponent = e;
         }
 
-        if (args.Length > 1 && uint.TryParse(args[1], out var a))
+        if (args.Length > 1 && !args[1].StartsWith('-') && uint.TryParse(args[1], out var a))
         {
             @base = a;
         }
 
-        FermatPrpBenchmark.RunFermatTest(exponent, @base);
+        for (var i = 0; i < args.Length; i++)
+        {
+            if (args[i].Equals("--bench", StringComparison.OrdinalIgnoreCase))
+            {
+                var benchIterations = 512;
+                if (i + 1 < args.Length && int.TryParse(args[i + 1], out var parsedIters) && parsedIters > 0)
+                {
+                    benchIterations = parsedIters;
+                }
+
+                FermatPrpBenchmark.RunThroughputBenchmark(exponent, @base, benchIterations);
+                return 0;
+            }
+
+            if (args[i].Equals("--proof", StringComparison.OrdinalIgnoreCase) && i + 1 < args.Length)
+            {
+                proofPath = args[++i];
+            }
+            else if (args[i].Equals("--proof-power", StringComparison.OrdinalIgnoreCase) && i + 1 < args.Length)
+            {
+                if (!int.TryParse(args[++i], out proofPower) || proofPower < 1 || proofPower > FermatPrpProof.MaxProofPower)
+                {
+                    Logger<Program>.Error($"Error: --proof-power must be between 1 and {FermatPrpProof.MaxProofPower}.");
+                    return 1;
+                }
+            }
+        }
+
+        FermatPrpBenchmark.RunFermatTest(exponent, @base, proofPath, proofPower);
         return 0;
+    }
+
+    private static int RunFermatPrpVerify(string[] args)
+    {
+        if (args.Length == 0 || string.IsNullOrWhiteSpace(args[0]))
+        {
+            Logger<Program>.Error("Usage: prp-verify <proof-path>");
+            return 1;
+        }
+
+        return FermatPrpBenchmark.VerifyProofFile(args[0]) ? 0 : 1;
     }
 
     private static int RunBbp(string[] args)

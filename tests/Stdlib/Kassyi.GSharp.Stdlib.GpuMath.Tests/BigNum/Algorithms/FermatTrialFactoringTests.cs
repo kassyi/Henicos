@@ -93,7 +93,7 @@ public class FermatTrialFactoringTests
     [Scenario(TestScenario.HappyPath)]
     public void GoldilocksArithmetic_Reduce128AndModularOps_MatchBigIntegerReference()
     {
-        BigInteger p = new BigInteger(GpuBigIntNttKernels.GoldilocksPrime);
+        BigInteger p = new BigInteger(GoldilocksArithmetic.GoldilocksPrime);
         ulong[] testValues =
         [
             0UL,
@@ -101,9 +101,9 @@ public class FermatTrialFactoringTests
             2UL,
             0xFFFFFFFFUL,
             0x100000000UL,
-            GpuBigIntNttKernels.GoldilocksTwoAdicRoot,
-            GpuBigIntNttKernels.GoldilocksPrime - 2UL,
-            GpuBigIntNttKernels.GoldilocksPrime - 1UL
+            GoldilocksArithmetic.GoldilocksTwoAdicRoot,
+            GoldilocksArithmetic.GoldilocksPrime - 2UL,
+            GoldilocksArithmetic.GoldilocksPrime - 1UL
         ];
 
         foreach (ulong a in testValues)
@@ -114,9 +114,9 @@ public class FermatTrialFactoringTests
                 ulong expectedSub = (ulong)(((new BigInteger(a) - new BigInteger(b)) % p + p) % p);
                 ulong expectedMul = (ulong)((new BigInteger(a) * new BigInteger(b)) % p);
 
-                Assert.Equal(expectedAdd, GpuBigIntNttKernels.GoldilocksAdd(a, b));
-                Assert.Equal(expectedSub, GpuBigIntNttKernels.GoldilocksSub(a, b));
-                Assert.Equal(expectedMul, GpuBigIntNttKernels.GoldilocksMul(a, b));
+                Assert.Equal(expectedAdd, GoldilocksArithmetic.GoldilocksAdd(a, b));
+                Assert.Equal(expectedSub, GoldilocksArithmetic.GoldilocksSub(a, b));
+                Assert.Equal(expectedMul, GoldilocksArithmetic.GoldilocksMul(a, b));
             }
         }
     }

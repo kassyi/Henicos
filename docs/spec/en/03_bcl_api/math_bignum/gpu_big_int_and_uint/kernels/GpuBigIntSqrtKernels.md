@@ -25,21 +25,21 @@ public static partial class GpuBigIntSqrtKernels
 
 | Name | Description |
 | --- | --- |
-| [InverseSqrtNewtonRaphsonMegaKernel(SqrtNewtonRaphson)](#inversesqrtnewtonraphsonmegakernelsqrtnewtonraphson) | A cooperative GPU kernel (`[GpuKernel(Cooperative = true)]`) that executes the Newton-Raphson inverse square root iteration loop on the GPU. |
+| [InverseSqrtNewtonRaphsonMegaKernel(NewtonRaphsonContext)](#inversesqrtnewtonraphsonmegakernelnewtonraphsoncontext) | A cooperative GPU kernel (`[GpuKernel(Cooperative = true)]`) that executes the Newton-Raphson inverse square root iteration loop on the GPU. |
 
-## InverseSqrtNewtonRaphsonMegaKernel(SqrtNewtonRaphson)
+## InverseSqrtNewtonRaphsonMegaKernel(NewtonRaphsonContext)
 
 A cooperative GPU kernel (`[GpuKernel(Cooperative = true)]`) that executes the Newton-Raphson inverse square root iteration loop entirely on the GPU using grid-wide synchronization (`Gpu.SyncGrid`).
 
 ```csharp
 [GpuKernel(Cooperative = true)]
-public static void InverseSqrtNewtonRaphsonMegaKernel(SqrtNewtonRaphson ctx);
+public static void InverseSqrtNewtonRaphsonMegaKernel(NewtonRaphsonContext core);
 ```
 
 #### Parameters
 
-`ctx` _SqrtNewtonRaphson_<br>
-The Newton-Raphson square root context structure containing operand buffers (`TargetOperand`, `ResultBuffer`, `Constant3`), precision dimensions (`NumberOfWords`, `MarginWords`, `MarginBits`, `Iterations`), NTT twiddle factors, and intermediate workspace buffers.
+`core` _NewtonRaphsonContext_<br>
+The Newton-Raphson context structure containing operand buffers (`TargetOperand`, `ResultBuffer`, `Constant3`), precision dimensions (`NumberOfWords`, `MarginWords`, `MarginBits`, `Iterations`), NTT twiddle factors, and intermediate workspace buffers.
 
 ## Examples
 
@@ -54,7 +54,7 @@ using Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms;
 using Kassyi.GSharp.Stdlib.GpuMath.BigNum.Kernels;
 
 // Execution Context: G# Cooperative Kernel (GPU)
-var ctx = new SqrtNewtonRaphson
+var ctx = new NewtonRaphsonContext
 {
     Dimensions = new DimensionContext { NumberOfWords = 256, Iterations = 8 }
 };

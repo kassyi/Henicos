@@ -346,7 +346,7 @@ public class GpuBigIntCoreTests
     {
         CudaCapability.EnsureGpuAvailable();
         var expected = (uint)(((ulong)a + b) % p);
-        var actual = GpuBigIntNttKernels.ModAdd(a, b, p);
+        var actual = NttPrimeArithmetic.ModAdd(a, b, p);
         Assert.Equal(expected, actual);
     }
 
@@ -1273,7 +1273,7 @@ public class GpuBigIntCoreTests
     public void Test_ModAdd_OverflowSafe(uint a, uint b, uint prime, uint expected)
     {
         CudaCapability.EnsureGpuAvailable();
-        var actual = GpuBigIntNttKernels.ModAdd(a, b, prime);
+        var actual = NttPrimeArithmetic.ModAdd(a, b, prime);
         Assert.Equal(expected, actual);
     }
 

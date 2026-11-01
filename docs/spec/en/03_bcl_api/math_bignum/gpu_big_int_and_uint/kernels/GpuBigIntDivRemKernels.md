@@ -26,7 +26,7 @@ public static partial class GpuBigIntDivRemKernels
 | --- | --- |
 | [BarrettCorrectionKernel(uint[], uint[], int)](#barrettcorrectionkerneluint-uint-int) | A GPU kernel (`[GpuKernel]`) that iteratively corrects the remainder after approximate Barrett quotient subtraction. |
 | [ModPowNttMegaKernel(ModPowNttContext)](#modpownttmegakernelmodpownttcontext) | A cooperative GPU mega-kernel (`[GpuKernel(Cooperative = true)]`) that executes multi-bit binary exponentiation with dual-prime NTT multiplication and Barrett reduction on the GPU. |
-| [ReciprocalNewtonRaphsonMegaKernel(ReciprocalNewtonRaphson)](#reciprocalnewtonraphsonmegakernelreciprocalnewtonraphson) | A cooperative GPU mega-kernel (`[GpuKernel(Cooperative = true)]`) that executes iterative Newton-Raphson reciprocal refinement using grid-wide synchronization and NTT multiplication. |
+| [ReciprocalNewtonRaphsonMegaKernel(NewtonRaphsonContext)](#reciprocalnewtonraphsonmegakernelnewtonraphsoncontext) | A cooperative GPU mega-kernel (`[GpuKernel(Cooperative = true)]`) that executes iterative Newton-Raphson reciprocal refinement using grid-wide synchronization and NTT multiplication. |
 
 ## BarrettCorrectionKernel(uint[], uint[], int)
 
@@ -62,18 +62,18 @@ public static void ModPowNttMegaKernel(ModPowNttContext ctx);
 `ctx` _ModPowNttContext_<br>
 The context struct containing NTT buffers, precomputed modulus reciprocal, exponent words, and workspace buffers.
 
-## ReciprocalNewtonRaphsonMegaKernel(ReciprocalNewtonRaphson)
+## ReciprocalNewtonRaphsonMegaKernel(NewtonRaphsonContext)
 
 A cooperative GPU mega-kernel (`[GpuKernel(Cooperative = true)]`) that executes iterative Newton-Raphson reciprocal refinement ($X_{k+1} = X_k (2 - D \cdot X_k)$) using grid-wide synchronization and dual-prime NTT multiplication.
 
 ```csharp
 [GpuKernel(Cooperative = true)]
-public static void ReciprocalNewtonRaphsonMegaKernel(ReciprocalNewtonRaphson ctx);
+public static void ReciprocalNewtonRaphsonMegaKernel(NewtonRaphsonContext core);
 ```
 
 #### Parameters
 
-`ctx` _ReciprocalNewtonRaphson_<br>
+`core` _NewtonRaphsonContext_<br>
 The context struct containing NTT twiddle factors, operand buffers, and iteration parameters.
 
 ## Examples

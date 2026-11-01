@@ -4,7 +4,7 @@ using static Kassyi.GSharp.Stdlib.GpuMath.Tests.BigNum.Algorithms.FermatTestMath
 namespace Kassyi.GSharp.Stdlib.GpuMath.Tests.BigNum.Providers;
 
 /// <summary>
-/// <see cref="KernelAdvancedMathHandler.Square"/> with a caller-owned <see cref="KernelAdvancedMathHandler.NttSquareScratch"/>,
+/// <see cref="KernelAdvancedMathHandler.Square"/> with a caller-owned <see cref="Ntt35ConvolutionLauncher.NttSquareScratch"/>,
 /// and the squaring path of <see cref="KernelAdvancedMathHandler.Mul(GpuWorkspace, GpuBigUInt, GpuBigUInt, GpuBigUInt)"/>
 /// that now runs through it. Expected squares come from <see cref="BigInteger"/>.
 /// </summary>
@@ -26,14 +26,14 @@ public class KernelAdvancedMathSquareTests
         using var scope = new GpuKernelLoader.CudaContextScope();
         using var workspace = new GpuWorkspace(2 * words);
         var handler = GSharpKernelProvider.Instance.KernelAdvancedMath;
-        using var scratch = KernelAdvancedMathHandler.NttSquareScratch.Allocate(workspace, handler, words);
+        using var scratch = Ntt35ConvolutionLauncher.NttSquareScratch.Allocate(workspace, words);
         using var result = new GpuBigUInt(workspace, 2 * words);
         var random = new Random(647 * 10_000 + words);
 
         // Three squares through the same scratch: a random value, all-ones words (a carry through every word of the
         // product) and another random value, so state left in the scratch by one square would corrupt the next.
-        // mutant: KernelAdvancedMathHandler.cs Square `LaunchMultiplyNttPointwiseSquareKernelPtr(...)` removed
-        // mutant: KernelAdvancedMathHandler.cs Square `2 * operand.NumWords` -> `operand.NumWords` (high half not written)
+        // mutant: Ntt35ConvolutionLauncher.cs Square `LaunchFusedSquareNttHost(...)` removed
+        // mutant: Ntt35ConvolutionLauncher.cs Square `2 * operand.NumWords` -> `operand.NumWords` (high half not written)
         for (var round = 0; round < 3; round++)
         {
             var operandWords = round == 1 ? AllOnes(words) : RandomWords(random, words);
@@ -60,8 +60,7 @@ public class KernelAdvancedMathSquareTests
         using var result = new GpuBigUInt(workspace, 2 * words);
 
         // GpuBigIntMath.Mul with one buffer as both operands takes the squaring path (behavior unchanged).
-        // mutant: KernelAdvancedMathHandler.cs Mul `Square(workspace, leftOperand, resultBuffer, scratch);` removed (returns
-        // without a product)
+        // mutant: KernelAdvancedMathHandler.cs Mul `Ntt35ConvolutionLauncher.Square(workspace, leftOperand, resultBuffer, scratch);` removed
         GpuBigIntMath.Mul(operand, operand, result);
 
         var expected = FromWords(operandWords);
@@ -77,12 +76,12 @@ public class KernelAdvancedMathSquareTests
         using var scope = new GpuKernelLoader.CudaContextScope();
         using var workspace = new GpuWorkspace(2 * words);
         var handler = GSharpKernelProvider.Instance.KernelAdvancedMath;
-        using var scratch = KernelAdvancedMathHandler.NttMultiplyScratch.Allocate(workspace, handler, 2 * words);
+        using var scratch = Ntt35ConvolutionLauncher.NttMultiplyScratch.Allocate(workspace, 2 * words);
         using var result = new GpuBigUInt(workspace, 2 * words);
         var random = new Random(649 * 10_000 + words);
 
         // Three products through the same scratch, the second of two all-ones values (a carry through every word).
-        // mutant: KernelAdvancedMathHandler.cs Multiply `LaunchMultiplyNttPointwiseMultiplyKernelPtr(...)` removed
+        // mutant: Ntt35ConvolutionLauncher.cs Multiply `LaunchMultiplyNtt35PointwiseMultiplyKernelPtr(...)` removed
         for (var round = 0; round < 3; round++)
         {
             var leftWords = round == 1 ? AllOnes(words) : RandomWords(random, words);
@@ -95,6 +94,31 @@ public class KernelAdvancedMathSquareTests
             Assert.True(FromWords(leftWords) * FromWords(rightWords) == FromWords(result.ToHostWords(workspace)),
                 $"words={words} round={round} seed={649 * 10_000 + words}");
         }
+    }
+
+    [SkippableTheory]
+    [Scenario(TestScenario.HappyPath)]
+    [MemberData(nameof(OperandWords))]
+    public void Square_SharedMultiplyScratch_MatchesBigIntegerAcrossInterleavedMultiplyAndSquare(int words)
+    {
+        CudaCapability.EnsureGpuAvailable();
+        using var scope = new GpuKernelLoader.CudaContextScope();
+        using var workspace = new GpuWorkspace(2 * words);
+        var handler = GSharpKernelProvider.Instance.KernelAdvancedMath;
+        using var scratch = Ntt35ConvolutionLauncher.NttMultiplyScratch.Allocate(workspace, 2 * words);
+        using var result = new GpuBigUInt(workspace, 2 * words);
+        var random = new Random(651 * 10_000 + words);
+
+        var leftWords = RandomWords(random, words);
+        var rightWords = AllOnes(words);
+        using var left = new GpuBigUInt(workspace, leftWords);
+        using var right = new GpuBigUInt(workspace, rightWords);
+
+        handler.Multiply(workspace, left, right, result, scratch);
+        Assert.Equal(FromWords(leftWords) * FromWords(rightWords), FromWords(result.ToHostWords(workspace)));
+
+        handler.Square(workspace, left, result, scratch);
+        Assert.Equal(FromWords(leftWords) * FromWords(leftWords), FromWords(result.ToHostWords(workspace)));
     }
 
     [SkippableFact]
@@ -112,7 +136,7 @@ public class KernelAdvancedMathSquareTests
         using var result = new GpuBigUInt(workspace, 1100);
 
         // Operands of different lengths: the scratch is sized by the product (behavior unchanged).
-        // mutant: KernelAdvancedMathHandler.cs Mul `Multiply(workspace, leftOperand, rightOperand, resultBuffer, productScratch);` removed
+        // mutant: KernelAdvancedMathHandler.cs Mul `Ntt35ConvolutionLauncher.Multiply(...)` removed
         GpuBigIntMath.Mul(left, right, result);
 
         Assert.Equal(FromWords(leftWords) * FromWords(rightWords), FromWords(result.ToHostWords(workspace)));
@@ -126,7 +150,7 @@ public class KernelAdvancedMathSquareTests
         using var scope = new GpuKernelLoader.CudaContextScope();
         using var workspace = new GpuWorkspace(64);
         var handler = GSharpKernelProvider.Instance.KernelAdvancedMath;
-        using var scratch = KernelAdvancedMathHandler.NttMultiplyScratch.Allocate(workspace, handler, 32);
+        using var scratch = Ntt35ConvolutionLauncher.NttMultiplyScratch.Allocate(workspace, 32);
         using var left = new GpuBigUInt(workspace, 16);
         using var right = new GpuBigUInt(workspace, 17);
         using var result = new GpuBigUInt(workspace, 33);
@@ -143,7 +167,7 @@ public class KernelAdvancedMathSquareTests
         using var scope = new GpuKernelLoader.CudaContextScope();
         using var workspace = new GpuWorkspace(64);
         var handler = GSharpKernelProvider.Instance.KernelAdvancedMath;
-        using var scratch = KernelAdvancedMathHandler.NttSquareScratch.Allocate(workspace, handler, 16);
+        using var scratch = Ntt35ConvolutionLauncher.NttSquareScratch.Allocate(workspace, 16);
         using var operand = new GpuBigUInt(workspace, 17);
         using var result = new GpuBigUInt(workspace, 34);
 
@@ -159,11 +183,10 @@ public class KernelAdvancedMathSquareTests
         CudaCapability.EnsureGpuAvailable();
         using var scope = new GpuKernelLoader.CudaContextScope();
         using var workspace = new GpuWorkspace(64);
-        var handler = GSharpKernelProvider.Instance.KernelAdvancedMath;
 
         // 2^23 + 1 words square to more than 2^24 words, past the 2^25-coefficient transform; rejected before allocating.
         Assert.Throws<ArgumentException>(() =>
-            KernelAdvancedMathHandler.NttSquareScratch.Allocate(workspace, handler, (1 << 23) + 1));
+            Ntt35ConvolutionLauncher.NttSquareScratch.Allocate(workspace, (1 << 23) + 1));
     }
 
     private static uint[] RandomWords(Random random, int words)
