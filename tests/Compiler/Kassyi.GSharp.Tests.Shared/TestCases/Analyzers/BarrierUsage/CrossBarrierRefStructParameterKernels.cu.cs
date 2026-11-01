@@ -310,6 +310,87 @@ public static partial class CrossBarrierRefStructParameterKernels
         Gpu.SyncThreads();
         return holder.Target;
     }
+
+    // --- Reported: conditional flow captures, suspending ref/receiver mutations, conditional ref field rebinding (#1004) ---
+
+    // GSH0039: the receiver s is captured before the conditional split and read by the indexer after it (#1004 F5)
+    [GpuDeviceFunction]
+    public static int IndexByConditionalSuspendingCall(Span<int> s, bool c)
+    {
+        s = s.Slice(1);
+        return s[c ? 0 : Broadcast(0)];
+    }
+
+    // GSH0039: the receiver s of Slice is captured before the conditional split and read after it, before s is written (#1004 F5)
+    [GpuDeviceFunction]
+    public static int SliceByConditionalSuspendingCall(Span<int> s, bool c)
+    {
+        s = s.Slice(1);
+        s = s.Slice(c ? 0 : Broadcast(0));
+        return s[0];
+    }
+
+    // GSH0039: the element location s[0] is evaluated after the conditional split (#1004 F5)
+    [GpuDeviceFunction]
+    public static void WriteElementByConditionalSuspendingCall(Span<int> s, bool c)
+    {
+        s = s.Slice(1);
+        s[0] = c ? 1 : Broadcast(99);
+    }
+
+    // GSH0039: a local span captured before a conditional split is read after it (#1004 F5)
+    [GpuDeviceFunction]
+    public static int IndexLocalByConditionalSuspendingCall(Span<int> s, bool c)
+    {
+        Span<int> tail = s.Slice(1);
+        return tail[c ? 0 : Broadcast(0)];
+    }
+
+    [GpuDeviceFunction]
+    public static void AdvanceAndSync(ref Span<int> s)
+    {
+        s = s.Slice(1);
+        Gpu.SyncThreads();
+    }
+
+    // GSH0039: a suspending callee that takes ref s may change s before its barrier and receives the reset parameter on resume (#1004 F6)
+    [GpuDeviceFunction]
+    public static int PassRefToSuspendingCallee(Span<int> s)
+    {
+        AdvanceAndSync(ref s);
+        return s[0];
+    }
+
+    // GSH0039: a mutating suspending instance method changes the struct before its barrier and is called again on resume (#1004 F6)
+    [GpuDeviceFunction]
+    public static int CallMutatingSuspendingMethod(SuspendingCursor cursor)
+    {
+        cursor.AdvanceAndSync();
+        return cursor.Position;
+    }
+
+    // GSH0039: conditional rebinding of a ref field changes the parameter (#1004 F9)
+    [GpuDeviceFunction]
+    public static int RebindRefFieldIf(RefFieldHolder holder, bool skip)
+    {
+        holder.Target = ref (skip ? ref holder.Other : ref holder.Target);
+        Gpu.SyncThreads();
+        return holder.Target;
+    }
+
+    // --- Not reported (#1004 controls) ---
+
+    // A non-suspending call that mutates ref s without any subsequent barrier
+    [GpuDeviceFunction]
+    public static int AdvanceWithoutBarrier(Span<int> s)
+    {
+        Advance(ref s);
+        return s[0];
+    }
+
+    // A readonly suspending instance method does not mutate the parameter
+    [GpuDeviceFunction]
+    public static int CallReadOnlySuspendingMethod(SuspendingCursor cursor) => cursor.ReadAndSync();
 }
 
 /// <summary>A ref struct with a readonly getter and a setter, and a getter that changes it.</summary>
@@ -327,4 +408,24 @@ public ref struct RefFieldHolder
 {
     public ref int Target;
     public ref int Other;
+}
+
+/// <summary>A ref struct with a mutating suspending method and a readonly suspending method.</summary>
+public ref struct SuspendingCursor
+{
+    public int Position;
+
+    [GpuDeviceFunction]
+    public void AdvanceAndSync()
+    {
+        Position++;
+        Gpu.SyncThreads();
+    }
+
+    [GpuDeviceFunction]
+    public readonly int ReadAndSync()
+    {
+        Gpu.SyncThreads();
+        return Position;
+    }
 }
