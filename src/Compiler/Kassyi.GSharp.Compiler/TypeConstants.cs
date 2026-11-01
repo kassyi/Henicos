@@ -24,6 +24,8 @@ internal static class TypeConstants
 
     public const string SpanType = nameof(Span<byte>);
     public const string ReadOnlySpanType = nameof(ReadOnlySpan<byte>);
+    public const string MemoryExtensionsType = nameof(MemoryExtensions);
+    public const string SystemArrayType = nameof(Array);
     public const string WarpType = "Warp";
     public const string WmmaType = "Wmma";
     public const string ThreadIndexType = "ThreadIndex";

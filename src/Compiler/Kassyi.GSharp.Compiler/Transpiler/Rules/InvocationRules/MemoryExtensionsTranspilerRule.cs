@@ -52,9 +52,9 @@ public sealed class MemoryExtensionsTranspilerRule : IInvocationTranspilerRule
     public bool TryTranspile(InvocationExpressionSyntax node, ref TranspileContext context, IMethodSymbol symbol)
     {
         var method = symbol.GetConstructedReducedFrom() ?? symbol;
-        if (method.ContainingType.Name != "MemoryExtensions" ||
-            method.Name != "Sort" ||
-            !method.ContainingNamespace.IsSystemNamespace())
+        if (SpanWriteClassifier.ClassifyMethod(symbol) != SpanMemberKind.Sort)
+
+
         {
             return false;
         }
@@ -84,7 +84,7 @@ public sealed class MemoryExtensionsTranspilerRule : IInvocationTranspilerRule
 
         var arguments = node.ArgumentList.Arguments;
         var definition = method.OriginalDefinition;
-        var hasItems = definition.Parameters.Length >= 2 && IsSpan(definition.Parameters[1].Type);
+        var hasItems = definition.Parameters.Length >= 2 && (IsSpan(definition.Parameters[1].Type) || definition.Parameters[1].Type is IArrayTypeSymbol);
         var comparerArgument = definition.Parameters.Length == (hasItems ? 3 : 2)
             ? arguments[arguments.Count - 1]
             : null;

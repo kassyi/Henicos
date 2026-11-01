@@ -116,6 +116,32 @@ Everything else is reported as `GSH0003` at the argument that causes it: a compa
 
 The span, the items and the comparer are evaluated once each, in the C# order. As in .NET, keys and items of different lengths throw `ArgumentException`, and so does a comparer whose results are inconsistent when the partition scan runs past the span. A failure inside the comparison is wrapped as .NET wraps it: an index out of range becomes `ArgumentException`, anything else `InvalidOperationException`. On the CPU paths these are the .NET exceptions; on CUDA the kernel stops with a trap.
 
+---
+
+## 10.5 `System.Span<T>`, `System.ReadOnlySpan<T>`, `System.MemoryExtensions`, and `System.Array`
+
+In addition to `MemoryExtensions.Sort`, G# maps the following slice, view, and in-place mutation members of `Span<T>`, `ReadOnlySpan<T>`, `MemoryExtensions`, and `System.Array` on both the CUDA and CPU dialects. As with `Sort`, each write call executes sequentially in the calling thread; to mutate a shared buffer once, guard the call so only one thread runs it or assign each thread a disjoint slice (for example `data.AsSpan(gtid * k, k)`).
+
+| Member / Overload | Supported Receiver / Arguments | Behavior |
+| :--- | :--- | :--- |
+| `Span<T>.Length`, `ReadOnlySpan<T>.Length`, `Array.Length` | `Span<T>`, `ReadOnlySpan<T>`, `T[]` | Element count (`int`). |
+| `Span<T>.IsEmpty`, `ReadOnlySpan<T>.IsEmpty` | `Span<T>`, `ReadOnlySpan<T>` | `true` when `Length == 0`. |
+| `Span<T>.Empty`, `ReadOnlySpan<T>.Empty` | Static property | An empty span (`Length == 0`). |
+| `Span<T>.Slice(int)`, `Slice(int, int)` | `Span<T>`, `ReadOnlySpan<T>` | Returns a sub-span view without copying. |
+| `MemoryExtensions.AsSpan<T>(T[])`, `AsSpan<T>(T[], int)`, `AsSpan<T>(T[], int, int)` | `T[]` | Views the array or a sub-range as a `Span<T>`. |
+| `Span<T>.Fill(T)` | `Span<T>` | Sets every element of the span to the value. |
+| `Span<T>.Clear()` | `Span<T>` | Resets every element of the span to `default(T)`. |
+| `Span<T>.CopyTo(Span<T>)`, `ReadOnlySpan<T>.CopyTo(Span<T>)`, `MemoryExtensions.CopyTo<T>(T[], Span<T>)` | `Span<T>`, `ReadOnlySpan<T>`, `T[]` source; `Span<T>` destination | Copies all source elements to the destination with `memmove` overlap semantics. If `destination.Length < source.Length`, throws `ArgumentException` on CPU or traps on CUDA without modifying the destination. |
+| `Span<T>.TryCopyTo(Span<T>)`, `ReadOnlySpan<T>.TryCopyTo(Span<T>)` | `Span<T>`, `ReadOnlySpan<T>` source; `Span<T>` destination | Copies all source elements and returns `true` when `destination.Length >= source.Length`; otherwise leaves the destination unchanged and returns `false`. |
+| `MemoryExtensions.Reverse<T>(Span<T>)`, `MemoryExtensions.Reverse<T>(T[])` | `Span<T>`, `T[]` | Reverses the elements of the span or array in place. |
+| `Array.Fill<T>(T[], T)`, `Array.Fill<T>(T[], T, int, int)` | `T[]` | Fills the whole array or the `(startIndex, count)` slice. |
+| `Array.Clear(Array)`, `Array.Clear(Array, int, int)` | `T[]` | Clears the whole array or the `(index, length)` slice. |
+| `Array.Reverse(Array)`, `Array.Reverse<T>(T[])`, `Array.Reverse(Array, int, int)`, `Array.Reverse<T>(T[], int, int)` | `T[]` | Reverses the whole array or the `(index, length)` slice in place. |
+| `Array.Copy(Array, Array, int)`, `Array.Copy(Array, int, Array, int, int)` | `T[]` source and destination (`int` indices/length) | Copies `length` elements from source to destination with `memmove` overlap semantics. |
+| `Array.Sort<T>(T[])`, `Array.Sort<TKey, TValue>(TKey[], TValue[])` | `T[]` | Sorts the 1D array in place using the same introsort rules as `MemoryExtensions.Sort` (§10.4). |
+
+All other members and overloads of `Span<T>`, `ReadOnlySpan<T>`, `MemoryExtensions`, and `System.Array`—including search and comparison helpers (`IndexOf`, `Contains`, `SequenceEqual`, `StartsWith`, `EndsWith`, `BinarySearch`), `Replace` overloads, `ToArray`, `AsSpan` overloads taking `Index` or `Range`, `GetPinnableReference`, non-generic or range/comparer `Array.Sort` overloads, and uninvoked method groups—are rejected at compile time with `GSH0003`.
+
 ## See also
 
 

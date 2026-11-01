@@ -22,6 +22,10 @@ internal sealed class ProhibitedApiRule :
     public void Analyze(MemberAccessExpressionSyntax node, ref ValidationContext context)
     {
         var symbol = context.SemanticModel.GetSymbol(node);
+        if (symbol is IMethodSymbol spanMethod && SpanWriteClassifier.ClassifyMethod(spanMethod) != SpanMemberKind.None)
+        {
+            return;
+        }
 
         if (symbol == null && node.Parent is InvocationExpressionSyntax invocation && invocation.Expression == node)
         {
@@ -39,6 +43,10 @@ internal sealed class ProhibitedApiRule :
         }
 
         var symbol = context.SemanticModel.GetSymbol(node);
+        if (symbol is IMethodSymbol spanMethod && SpanWriteClassifier.ClassifyMethod(spanMethod) != SpanMemberKind.None)
+        {
+            return;
+        }
         AnalyzeSymbol(symbol, node, ref context);
     }
 
