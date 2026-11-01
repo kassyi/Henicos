@@ -4105,10 +4105,10 @@ return;
 
 var slice = global::System.MemoryExtensions.AsSpan(xs).Slice(baseIdx, global::Kassyi.GSharp.Tests.Shared.Differential.StackLinqDifferentialKernels.SliceLength);
 int o = t * 3;
-r[o] = global::Kassyi.ZeroAlloc.Linq.StackLinqExtensions.Sum(global::Kassyi.ZeroAlloc.Linq.StackLinqExtensions.AsStackEnumerable(slice));
-r[o + 1] = global::Kassyi.ZeroAlloc.Linq.StackLinqExtensions.Sum(global::Kassyi.ZeroAlloc.Linq.StackLinqExtensions.Select(global::Kassyi.ZeroAlloc.Linq.StackLinqExtensions.Where(global::Kassyi.ZeroAlloc.Linq.StackLinqExtensions.AsStackEnumerable(slice), x => true), x => x));
+r[o] = global::Kassyi.ZeroAlloc.Linq.StackLinqExtensions.SumSequential(global::Kassyi.ZeroAlloc.Linq.StackLinqExtensions.AsStackEnumerable(slice));
+r[o + 1] = global::Kassyi.ZeroAlloc.Linq.StackLinqExtensions.SumSequential(global::Kassyi.ZeroAlloc.Linq.StackLinqExtensions.Select(global::Kassyi.ZeroAlloc.Linq.StackLinqExtensions.Where(global::Kassyi.ZeroAlloc.Linq.StackLinqExtensions.AsStackEnumerable(slice), x => true), x => x));
 var unfused = global::Kassyi.ZeroAlloc.Linq.StackLinqExtensions.AsStackEnumerable(slice);
-r[o + 2] = global::Kassyi.ZeroAlloc.Linq.StackLinqExtensions.Sum(unfused);
+r[o + 2] = global::Kassyi.ZeroAlloc.Linq.StackLinqExtensions.SumSequential(unfused);
 __gsharp_ctx.__gsharp_state = -1;
 return;
 }
