@@ -161,10 +161,6 @@ public static class KnownDivergences
         new("M1DiffNarrowIntKernels.BitOpsReturnSignMatrixKernel", "PopCount(u)/-1", DiffPath.Native, Issue: 876),
         new("M1DiffNarrowIntKernels.BitOpsReturnSignMatrixKernel", "LeadingZeroCount(ul)/-1", DiffPath.Native, Issue: 876),
 
-        // F17: char scalar kernel argument truncated to 1 byte in CPU Native Launch (#971)
-        new("M1DiffConversionKernels.CharScalarArgKernel", "(int)cArg", DiffPath.Native, Issue: 971),
-        new("M1DiffConversionKernels.CharScalarArgKernel", "cArg==0x1234", DiffPath.Native, Issue: 971),
-
         // F18: ref ternary targeting scalar kernel parameter across barrier (#1000)
         new("M1DiffSwitchKernels.RefTernaryParameterWriteAcrossBarrierReproKernel", "ref_ternary_param_assign", DiffPath.Managed | DiffPath.Native, Issue: 1000),
         new("M1DiffSwitchKernels.RefTernaryParameterWriteAcrossBarrierReproKernel", "ref_ternary_param_compound", DiffPath.Managed | DiffPath.Native, Issue: 1000),

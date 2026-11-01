@@ -3,43 +3,53 @@ using System.Linq;
 using Xunit;
 using Kassyi.GSharp.Core;
 using Kassyi.GSharp.Runtime.Aot;
+using Kassyi.GSharp.Tests.Shared.Differential;
 
 namespace Kassyi.GSharp.Tests.Shared.Runtime;
 
 [Collection(TestCollections.GlobalStateSequential)]
 public class AutoAllocateReturnArraysTests : TranspilerTestBase
 {
-    [SkippableFact]
+    [SkippableTheory]
     [TestTarget(ExecutionTarget.GpuExecution)]
-    public void NormalReturnKernel_MultiThread_ReturnsExpectedArray()
+    [InlineData(false)]
+    [InlineData(true)]
+    public void NormalReturnKernel_MultiThread_ReturnsExpectedArray(bool forceManaged)
     {
-        var result = AutoAllocateReturnArraysKernels.LaunchNormalReturnKernel(10, blockDimX: 5, blockDimY: 2);
-        
+        var result = Run(forceManaged, () =>
+            AutoAllocateReturnArraysKernels.LaunchNormalReturnKernel(10, blockDimX: 5, blockDimY: 2));
+
         Assert.NotNull(result);
         Assert.Equal(10, result.Length);
         Assert.All(result, x => Assert.Equal(20.0f, x));
     }
 
-    [SkippableFact]
+    [SkippableTheory]
     [TestTarget(ExecutionTarget.GpuExecution)]
-    public void OneThreadKernel_OneThread_ReturnsSingleElementArray()
+    [InlineData(false)]
+    [InlineData(true)]
+    public void OneThreadKernel_OneThread_ReturnsSingleElementArray(bool forceManaged)
     {
-        var result = AutoAllocateReturnArraysKernels.LaunchOneThreadKernel(blockDimX: 1, blockDimY: 1, blockDimZ: 1);
-        
+        var result = Run(forceManaged, () =>
+            AutoAllocateReturnArraysKernels.LaunchOneThreadKernel(blockDimX: 1, blockDimY: 1, blockDimZ: 1));
+
         Assert.NotNull(result);
         Assert.Single(result);
         Assert.Equal(42, result[0]);
     }
 
-    [SkippableFact]
+    [SkippableTheory]
     [TestTarget(ExecutionTarget.GpuExecution)]
-    public void StructReturnKernel_BlittableStruct_ReturnsExpectedStructArray()
+    [InlineData(false)]
+    [InlineData(true)]
+    public void StructReturnKernel_BlittableStruct_ReturnsExpectedStructArray(bool forceManaged)
     {
-        var result = AutoAllocateReturnArraysKernels.LaunchStructReturnKernel(blockDimX: 100);
-        
+        var result = Run(forceManaged, () =>
+            AutoAllocateReturnArraysKernels.LaunchStructReturnKernel(blockDimX: 100));
+
         Assert.NotNull(result);
         Assert.Equal(100, result.Length);
-        for(int i = 0; i < 100; i++)
+        for (int i = 0; i < 100; i++)
         {
             Assert.Equal(i, result[i].A);
             Assert.Equal(i * 1.5f, result[i].B);
@@ -110,6 +120,13 @@ public class AutoAllocateReturnArraysTests : TranspilerTestBase
         CpuKernelLoader.ForceManagedExecution = forceManaged;
         try
         {
+            if (!forceManaged && IsCpuDialect)
+            {
+                var dllPath = DiffPaths.NativeLibraryPath(typeof(AutoAllocateReturnArraysKernels).Assembly);
+                DiffPaths.EnsureNativeLibrary(dllPath);
+                Assert.False(CpuKernelLoader.ShouldUseManagedExecution(dllPath));
+            }
+
             return launch();
         }
         finally

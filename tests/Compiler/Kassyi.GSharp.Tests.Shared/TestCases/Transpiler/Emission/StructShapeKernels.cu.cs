@@ -28,6 +28,26 @@ public struct OverlapExplicit
     public int After;
 }
 
+[StructLayout(LayoutKind.Sequential, Size = 5)]
+public struct SizedFive
+{
+    public int A;
+    public byte B;
+}
+
+[StructLayout(LayoutKind.Explicit)]
+public struct ConvertedTailExplicit
+{
+    [FieldOffset(0)]
+    public int I;
+
+    [FieldOffset(0)]
+    public long L;
+
+    [FieldOffset(8)]
+    public SizedFive Tail;
+}
+
 public struct ChainToDefault
 {
     public int A;
@@ -71,9 +91,9 @@ public struct ReadOnlyMembers
 public static partial class StructShapeKernels
 {
     [GpuKernel]
-    public static void ExplicitLayoutKernel(GappedExplicit gapped, OverlapExplicit overlap, long[] output)
+    public static void ExplicitLayoutKernel(GappedExplicit gapped, OverlapExplicit overlap, ConvertedTailExplicit tail, long[] output)
     {
-        output[0] = gapped.A + gapped.B + overlap.L + overlap.After;
+        output[0] = gapped.A + gapped.B + overlap.L + overlap.After + tail.L + tail.Tail.A;
     }
 
     [GpuKernel]
@@ -85,8 +105,8 @@ public static partial class StructShapeKernels
     }
 
     [GpuKernel]
-    public static void ReadOnlyMemberKernel(ReadOnlyMembers members, int[] output)
+    public static void ReadOnlyMemberKernel(ReadOnlyMembers members, ReadOnlyMembers[] pairs, int[] output)
     {
-        output[0] = members.Limit + members.Table[0] + members.Plain;
+        output[0] = members.Limit + members.Table[0] + members.Plain + pairs[0].Plain;
     }
 }
