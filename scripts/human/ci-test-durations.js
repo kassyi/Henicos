@@ -176,7 +176,7 @@ function namespaceAt(namespaces, offset) {
 // every build.
 function readCollections(sourceDir) {
     const collections = new Map();
-    const pattern = /\[[^\]]*?\bCollection\(\s*([^)]+?)\s*\)[^\]]*\]((?:\s*(?:\[[^\]]*\]|#[^\n]*))*)\s*(?:(?:public|internal|private|protected|sealed|abstract|static|partial|file)\s+)*class\s+(\w+)/g;
+    const pattern = /\[[^\]]*?\bCollection\(\s*([^)]+?)\s*\)[^\]]*\]((?:(?:[ \t]*\[[^\]]*\][ \t]*\r?\n)|(?:[ \t]*#[^\r\n]*[ \t]*\r?\n)|(?:[ \t]*\r?\n))*)\s*(?:(?:public|internal|private|protected|sealed|abstract|static|partial|file)\s+)*class\s+(\w+)/g;
     for (const file of findFiles(sourceDir, '.cs', [])) {
         const text = fs.readFileSync(file, 'utf8');
         const namespaces = [...text.matchAll(/^\s*namespace\s+([\w.]+)/gm)].map((m) => ({ index: m.index, name: m[1] }));
