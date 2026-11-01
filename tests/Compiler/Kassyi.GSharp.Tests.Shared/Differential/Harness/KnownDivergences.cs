@@ -55,14 +55,6 @@ public static class KnownDivergences
         $"{nameof(NullableDifferentialKernels)}.{nameof(NullableDifferentialKernels.CoalesceWiderNullableWithNarrowerNullable)}";
     private const string NarrowNullableCoalesceVarPromotion =
         $"{nameof(NullableDifferentialKernels)}.{nameof(NullableDifferentialKernels.NarrowNullableCoalesceVarPromotionReproKernel)}";
-    private const string AutoPropertyPassedToInParameterDefensiveCopy =
-        $"{nameof(StructDifferentialKernels)}.{nameof(StructDifferentialKernels.AutoPropertyPassedToInParameterDefensiveCopy)}";
-    private const string StructUserDefinedImplicitConversion =
-        $"{nameof(StructDifferentialKernels)}.{nameof(StructDifferentialKernels.StructUserDefinedImplicitConversion)}";
-    private const string CharScalarArg =
-        $"{nameof(ConversionDifferentialKernels)}.{nameof(ConversionDifferentialKernels.CharScalarArgKernel)}";
-    private const string RefTernaryParameterWriteAcrossBarrier =
-        $"{nameof(BarrierAndWarpDifferentialKernels)}.{nameof(BarrierAndWarpDifferentialKernels.RefTernaryParameterWriteAcrossBarrierReproKernel)}";
     private const string SubWarpConditionalShuffle =
         $"{nameof(BarrierAndWarpDifferentialKernels)}.{nameof(BarrierAndWarpDifferentialKernels.SubWarpConditionalShuffleKernel)}";
     private const string GenericStructStaticSharedMemory =
@@ -120,22 +112,6 @@ public static class KnownDivergences
         new(NarrowNullableCoalesceVarPromotion, "byte_nullable_coalesce_inc", DiffPath.Native | DiffPath.Cuda, Issue: 998),
         new(NarrowNullableCoalesceVarPromotion, "ushort_nullable_coalesce_inc", DiffPath.Native | DiffPath.Cuda, Issue: 998),
         new(NarrowNullableCoalesceVarPromotion, "byte_nullable_ushort_coalesce_inc", DiffPath.Native | DiffPath.Cuda, Issue: 998),
-
-        // struct auto-property passed to in parameter without defensive copy (#999)
-        new(AutoPropertyPassedToInParameterDefensiveCopy, "in_snapshot_after_holder_mutated", DiffPath.Native | DiffPath.Cuda, Issue: 999),
-
-        // struct user-defined implicit operator ignored (#963)
-        new(StructUserDefinedImplicitConversion, "scaled_field_val", DiffPath.Native | DiffPath.Cuda, Issue: 963),
-        new(StructUserDefinedImplicitConversion, "converted_back_int", DiffPath.Native | DiffPath.Cuda, Issue: 963),
-
-        // char scalar kernel argument truncated to 1 byte in CPU Native Launch (#971)
-        new(CharScalarArg, "(int)cArg", DiffPath.Native, Issue: 971),
-        new(CharScalarArg, "cArg==0x1234", DiffPath.Native, Issue: 971),
-
-        // ref ternary targeting scalar kernel parameter across barrier (#1000)
-        new(RefTernaryParameterWriteAcrossBarrier, "ref_ternary_param_assign", DiffPath.Managed | DiffPath.Native, Issue: 1000),
-        new(RefTernaryParameterWriteAcrossBarrier, "ref_ternary_param_compound", DiffPath.Managed | DiffPath.Native, Issue: 1000),
-        new(RefTernaryParameterWriteAcrossBarrier, "ref_ternary_param_inc", DiffPath.Managed | DiffPath.Native, Issue: 1000),
 
         // Warp.ShuffleXor after sub-warp conditional ShuffleDown on CPU emulator (#1001)
         new(SubWarpConditionalShuffle, "reconvergedFullWarpXor16", DiffPath.Managed | DiffPath.Native, Issue: 1001),

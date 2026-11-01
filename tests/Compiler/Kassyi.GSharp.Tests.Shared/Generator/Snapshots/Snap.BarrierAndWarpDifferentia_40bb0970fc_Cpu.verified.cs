@@ -3065,15 +3065,23 @@ uint64_t __gsharp_warp_exchange[2] = {};
 uint32_t __gsharp_warp_shuffle_count = 0;
 bool __gsharp_yielded_for_grid_sync = false;
 bool __gsharp_yielded_for_block_barrier = false;
+int __gsharp_id_2_paramAssign;
+int __gsharp_id_3_paramCompound;
+int __gsharp_id_4_paramInc;
 int __gsharp_id_6_t;
 int __gsharp_id_7_c;
 int __gsharp_id_8_localFallback;
 };
-extern ""C"" __declspec(dllexport) void __gsharp_k_Kassyi__GSharp__Tests__Shared__Differential__BarrierAndWarpDifferentialKernels__RefTernaryParameterWriteAcrossBarrierReproKernel(GSharpArray<int> __gsharp_id_0_conds, GSharpArray<int> __gsharp_id_1_dst, int __gsharp_id_2_paramAssign, int __gsharp_id_3_paramCompound, int __gsharp_id_4_paramInc, int __gsharp_id_5_n, __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__BarrierAndWarpDifferentialKernels__RefTernaryParameterWriteAcrossBarrierReproKernel* __gsharp_ctx){
+extern ""C"" __declspec(dllexport) void __gsharp_k_Kassyi__GSharp__Tests__Shared__Differential__BarrierAndWarpDifferentialKernels__RefTernaryParameterWriteAcrossBarrierReproKernel(GSharpArray<int> __gsharp_id_0_conds, GSharpArray<int> __gsharp_id_1_dst, int __gsharp_in___gsharp_id_2_paramAssign, int __gsharp_in___gsharp_id_3_paramCompound, int __gsharp_in___gsharp_id_4_paramInc, int __gsharp_id_5_n, __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__BarrierAndWarpDifferentialKernels__RefTernaryParameterWriteAcrossBarrierReproKernel* __gsharp_ctx){
 #define __gsharp_state __gsharp_ctx->__gsharp_state
 #define __gsharp_yielded_for_grid_sync __gsharp_ctx->__gsharp_yielded_for_grid_sync
 #define __gsharp_yielded_for_block_barrier __gsharp_ctx->__gsharp_yielded_for_block_barrier
 auto* __gsharp_root = __gsharp_ctx;
+if(__gsharp_state==0){
+__gsharp_ctx->__gsharp_id_2_paramAssign=__gsharp_in___gsharp_id_2_paramAssign;
+__gsharp_ctx->__gsharp_id_3_paramCompound=__gsharp_in___gsharp_id_3_paramCompound;
+__gsharp_ctx->__gsharp_id_4_paramInc=__gsharp_in___gsharp_id_4_paramInc;
+}
 switch(__gsharp_state)
 {
 case 0:
@@ -3086,9 +3094,9 @@ __gsharp_state = -1;return;
 }
 __gsharp_ctx->__gsharp_id_7_c=__gsharp_id_0_conds[__gsharp_ctx->__gsharp_id_6_t];
 __gsharp_ctx->__gsharp_id_8_localFallback=10;
-((*((__gsharp_ctx->__gsharp_id_7_c&1)==0?&__gsharp_id_2_paramAssign:&__gsharp_ctx->__gsharp_id_8_localFallback)))=777;
-((*((__gsharp_ctx->__gsharp_id_7_c&2)==0?&__gsharp_id_3_paramCompound:&__gsharp_ctx->__gsharp_id_8_localFallback)))=__gsharp_add_i32((*((__gsharp_ctx->__gsharp_id_7_c&2)==0?&__gsharp_id_3_paramCompound:&__gsharp_ctx->__gsharp_id_8_localFallback)),100);
-((*((__gsharp_ctx->__gsharp_id_7_c&4)==0?&__gsharp_id_4_paramInc:&__gsharp_ctx->__gsharp_id_8_localFallback)))=__gsharp_add_i32((*((__gsharp_ctx->__gsharp_id_7_c&4)==0?&__gsharp_id_4_paramInc:&__gsharp_ctx->__gsharp_id_8_localFallback)),1);
+((*((__gsharp_ctx->__gsharp_id_7_c&1)==0?&__gsharp_ctx->__gsharp_id_2_paramAssign:&__gsharp_ctx->__gsharp_id_8_localFallback)))=777;
+((*((__gsharp_ctx->__gsharp_id_7_c&2)==0?&__gsharp_ctx->__gsharp_id_3_paramCompound:&__gsharp_ctx->__gsharp_id_8_localFallback)))=__gsharp_add_i32((*((__gsharp_ctx->__gsharp_id_7_c&2)==0?&__gsharp_ctx->__gsharp_id_3_paramCompound:&__gsharp_ctx->__gsharp_id_8_localFallback)),100);
+((*((__gsharp_ctx->__gsharp_id_7_c&4)==0?&__gsharp_ctx->__gsharp_id_4_paramInc:&__gsharp_ctx->__gsharp_id_8_localFallback)))=__gsharp_add_i32((*((__gsharp_ctx->__gsharp_id_7_c&4)==0?&__gsharp_ctx->__gsharp_id_4_paramInc:&__gsharp_ctx->__gsharp_id_8_localFallback)),1);
 __gsharp_yielded_for_block_barrier=true;
 __gsharp_state=1;
 return;
@@ -3097,9 +3105,9 @@ case 1:
 __gsharp_switch_1_state_1:
 {
 int __gsharp_id_9_col = __gsharp_mul_i32(__gsharp_ctx->__gsharp_id_6_t,4);
-__gsharp_id_1_dst[__gsharp_id_9_col+0]=__gsharp_id_2_paramAssign;
-__gsharp_id_1_dst[__gsharp_add_i32(__gsharp_id_9_col,1)]=__gsharp_id_3_paramCompound;
-__gsharp_id_1_dst[__gsharp_add_i32(__gsharp_id_9_col,2)]=__gsharp_id_4_paramInc;
+__gsharp_id_1_dst[__gsharp_id_9_col+0]=__gsharp_ctx->__gsharp_id_2_paramAssign;
+__gsharp_id_1_dst[__gsharp_add_i32(__gsharp_id_9_col,1)]=__gsharp_ctx->__gsharp_id_3_paramCompound;
+__gsharp_id_1_dst[__gsharp_add_i32(__gsharp_id_9_col,2)]=__gsharp_ctx->__gsharp_id_4_paramInc;
 __gsharp_id_1_dst[__gsharp_add_i32(__gsharp_id_9_col,3)]=__gsharp_ctx->__gsharp_id_8_localFallback;
 __gsharp_state=-1;
 return;
@@ -3185,12 +3193,20 @@ public static readonly string RefTernaryParameterWriteAcrossBarrierReproKernel_F
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__BarrierAndWarpDifferentialKernels__RefTernaryParameterWriteAcrossBarrierReproKernel {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
+public int paramAssign;
+public int paramCompound;
+public int paramInc;
 public int t;
 public int c;
 public int localFallback;
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Differential__BarrierAndWarpDifferentialKernels__RefTernaryParameterWriteAcrossBarrierReproKernel(int[] conds, int[] dst, int paramAssign, int paramCompound, int paramInc, int n, __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__BarrierAndWarpDifferentialKernels__RefTernaryParameterWriteAcrossBarrierReproKernel __gsharp_ctx) {
+public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Differential__BarrierAndWarpDifferentialKernels__RefTernaryParameterWriteAcrossBarrierReproKernel(int[] conds, int[] dst, int __gsharp_in_paramAssign, int __gsharp_in_paramCompound, int __gsharp_in_paramInc, int n, __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__BarrierAndWarpDifferentialKernels__RefTernaryParameterWriteAcrossBarrierReproKernel __gsharp_ctx) {
+if (__gsharp_ctx.__gsharp_state == 0) {
+__gsharp_ctx.paramAssign = __gsharp_in_paramAssign;
+__gsharp_ctx.paramCompound = __gsharp_in_paramCompound;
+__gsharp_ctx.paramInc = __gsharp_in_paramInc;
+}
 {
 switch (__gsharp_ctx.__gsharp_state)
 {
@@ -3207,9 +3223,9 @@ return;
 
 __gsharp_ctx.c = conds[__gsharp_ctx.t];
 __gsharp_ctx.localFallback = 10;
-((__gsharp_ctx.c & 1) == 0 ? ref paramAssign : ref __gsharp_ctx.localFallback) = 777;
-((__gsharp_ctx.c & 2) == 0 ? ref paramCompound : ref __gsharp_ctx.localFallback) += 100;
-++((__gsharp_ctx.c & 4) == 0 ? ref paramInc : ref __gsharp_ctx.localFallback);
+((__gsharp_ctx.c & 1) == 0 ? ref __gsharp_ctx.paramAssign : ref __gsharp_ctx.localFallback) = 777;
+((__gsharp_ctx.c & 2) == 0 ? ref __gsharp_ctx.paramCompound : ref __gsharp_ctx.localFallback) += 100;
+++((__gsharp_ctx.c & 4) == 0 ? ref __gsharp_ctx.paramInc : ref __gsharp_ctx.localFallback);
 global::Kassyi.GSharp.Core.ManagedGpuContext.BlockBarrierRequested = true;
 __gsharp_ctx.__gsharp_state = 1;
 return;
@@ -3218,9 +3234,9 @@ return;
 case 1:
 {
 int col = __gsharp_ctx.t * 4;
-dst[col + 0] = paramAssign;
-dst[col + 1] = paramCompound;
-dst[col + 2] = paramInc;
+dst[col + 0] = __gsharp_ctx.paramAssign;
+dst[col + 1] = __gsharp_ctx.paramCompound;
+dst[col + 2] = __gsharp_ctx.paramInc;
 dst[col + 3] = __gsharp_ctx.localFallback;
 __gsharp_ctx.__gsharp_state = -1;
 return;

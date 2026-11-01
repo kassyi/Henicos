@@ -1520,7 +1520,7 @@ return;
 }
 }
 
-[System.Runtime.InteropServices.UnmanagedFunctionPointer(System.Runtime.InteropServices.CallingConvention.Cdecl)]
+[System.Runtime.InteropServices.UnmanagedFunctionPointer(System.Runtime.InteropServices.CallingConvention.Cdecl, CharSet = System.Runtime.InteropServices.CharSet.Unicode)]
 private unsafe delegate void CharScalarArgKernel_Delegate(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ, uint sharedMemBytes, global::System.Char cArg, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy cArr, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy r);
 #pragma warning disable CS8500
 [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]

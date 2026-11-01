@@ -1235,7 +1235,7 @@ __gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffStructCounter __gsh
 ()); return __gsharp_tmp; }
 ());
 int __gsharp_id_5_o = __gsharp_mul_i32(__gsharp_id_3_tid,2);
-__gsharp_id_2_r[__gsharp_id_5_o+0]=__gsharp_fn_Kassyi__GSharp__Tests__Shared__Differential__StructDifferentialKernels__ReadInAfterMutatingPropHolder(&__gsharp_id_4_holder.__gsharp_mb_AutoProp,&__gsharp_id_4_holder,__gsharp_id_1_mutatedValues[__gsharp_id_3_tid]);
+__gsharp_id_2_r[__gsharp_id_5_o+0]=__gsharp_fn_Kassyi__GSharp__Tests__Shared__Differential__StructDifferentialKernels__ReadInAfterMutatingPropHolder(__gsharp_temp_address<__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffStructCounter>(([&]() { return __gsharp_id_4_holder.__gsharp_mb_AutoProp; }())),&__gsharp_id_4_holder,__gsharp_id_1_mutatedValues[__gsharp_id_3_tid]);
 __gsharp_id_2_r[__gsharp_add_i32(__gsharp_id_5_o,1)]=__gsharp_id_4_holder.__gsharp_mb_AutoProp.__gsharp_mb_Value;
 }
 ";
@@ -1449,18 +1449,23 @@ public const string StructUserDefinedImplicitConversion_Source = @"#ifndef __GSH
 struct __gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffScaledInt
 {
 int __gsharp_mb_Value;
-__device__ inline __gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffScaledInt() {}
-__device__ inline __gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffScaledInt(int v) {
-this->__gsharp_mb_Value = v;
-}
-__device__ inline operator int() const {
-return this->__gsharp_mb_Value;
-}
+__device__ inline __gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffScaledInt() = default;
+__device__ inline __gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffScaledInt(int v);
+__device__ inline operator int() const;
 }
 ;
 static_assert(sizeof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffScaledInt)==4,""Kassyi.GSharp.Tests.Shared.Differential.DiffScaledInt: size"");
 static_assert(alignof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffScaledInt)==4,""Kassyi.GSharp.Tests.Shared.Differential.DiffScaledInt: alignment"");
 static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffScaledInt,__gsharp_mb_Value)==0,""Kassyi.GSharp.Tests.Shared.Differential.DiffScaledInt.Value: offset"");
+__device__ inline __gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffScaledInt::__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffScaledInt(int __gsharp_id_0_v) {
+*this = ([&]() {
+__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffScaledInt __gsharp_tmp{}; __gsharp_tmp.__gsharp_mb_Value = __gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_0_v,4),3); return __gsharp_tmp; }
+());
+}
+__device__ inline __gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffScaledInt::operator int() const {
+__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffScaledInt __gsharp_id_0_s = *this;
+return __gsharp_add_i32(__gsharp_id_0_s.__gsharp_mb_Value,100);
+}
 #endif
 extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Differential__StructDifferentialKernels__StructUserDefinedImplicitConversion(GSharpArray<int> __gsharp_id_0_inputs, GSharpArray<int> __gsharp_id_1_r){
 int __gsharp_id_2_tid = __gsharp_add_i32(__gsharp_mul_i32((int)blockIdx.x,(int)blockDim.x),(int)threadIdx.x);
