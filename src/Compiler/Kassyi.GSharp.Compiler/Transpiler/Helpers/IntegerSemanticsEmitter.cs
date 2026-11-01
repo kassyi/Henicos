@@ -1,3 +1,4 @@
+using System.Buffers;
 using Microsoft.CodeAnalysis.Operations;
 
 namespace Kassyi.GSharp.Compiler.Transpiler.Helpers;
@@ -170,50 +171,90 @@ internal static class IntegerSemanticsEmitter
         }
     }
 
-    // The parts of a target whose evaluation writes something, in the C# order: an index or a pointer (spilled as its
-    // value), or any other part that is not the receiver of an element or member access (spilled as a reference to the
-    // location it names, auto&&, as the sequenced compound assignment does)
+    // The parts of a target whose evaluation writes something, or that interfere with a later part that writes
+    // something (#996), in the C# order: an index or a pointer (spilled as its value), or any other part that is not
+    // the receiver of an element or member access (spilled as a reference to the location it names, auto&&, as the
+    // sequenced compound assignment does)
     private static void CollectSpills(ExpressionSyntax target, SemanticModel model,
         ImmutableArray<(ExpressionSyntax Expression, bool Reference)>.Builder spills)
+    {
+        var candidates = ImmutableArray.CreateBuilder<(ExpressionSyntax Expression, bool Reference)>();
+        CollectCandidates(target, candidates);
+        var count = candidates.Count;
+        if (count == 0)
+        {
+            return;
+        }
+
+        var effects = ArrayPool<ExpressionEffects>.Shared.Rent(count);
+        try
+        {
+            var anyWrites = false;
+            for (var i = 0; i < count; i++)
+            {
+                effects[i] = ExpressionEffects.Of(candidates[i].Expression, model);
+                anyWrites |= !effects[i].Writes.IsEmpty;
+            }
+
+            if (!anyWrites)
+            {
+                return;
+            }
+
+            for (var i = 0; i < count; i++)
+            {
+                if (!effects[i].Writes.IsEmpty || InterferesWithLaterWrite(effects, i, count))
+                {
+                    spills.Add(candidates[i]);
+                }
+            }
+        }
+        finally
+        {
+            ArrayPool<ExpressionEffects>.Shared.Return(effects, clearArray: true);
+        }
+    }
+
+    private static bool InterferesWithLaterWrite(ExpressionEffects[] effects, int index, int count)
+    {
+        for (var j = index + 1; j < count; j++)
+        {
+            if (!effects[j].Writes.IsEmpty && effects[index].InterferesWith(effects[j]))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private static void CollectCandidates(ExpressionSyntax target,
+        ImmutableArray<(ExpressionSyntax Expression, bool Reference)>.Builder candidates)
     {
         switch (target)
         {
             case ParenthesizedExpressionSyntax parenthesized:
-                CollectSpills(parenthesized.Expression, model, spills);
+                CollectCandidates(parenthesized.Expression, candidates);
                 return;
             case ElementAccessExpressionSyntax element:
-                CollectSpills(element.Expression, model, spills);
-                element.ArgumentList.Arguments
-                    .AsStackEnumerable()
-                    .Where(model, static (argument, m) => Writes(argument.Expression, m))
-                    .Select(static argument => (argument.Expression, false))
-                    .AddTo(spills);
+                CollectCandidates(element.Expression, candidates);
+                foreach (var argument in element.ArgumentList.Arguments)
+                {
+                    candidates.Add((argument.Expression, false));
+                }
 
                 return;
             case MemberAccessExpressionSyntax member:
-                CollectSpills(member.Expression, model, spills);
+                CollectCandidates(member.Expression, candidates);
                 return;
             case PrefixUnaryExpressionSyntax { RawKind: (int)SyntaxKind.PointerIndirectionExpression } indirection:
-                if (Writes(indirection.Operand, model))
-                {
-                    spills.Add((indirection.Operand, false));
-                    return;
-                }
-
-                CollectSpills(indirection.Operand, model, spills);
+                candidates.Add((indirection.Operand, false));
                 return;
             default:
-                if (Writes(target, model))
-                {
-                    spills.Add((target, true));
-                }
-
+                candidates.Add((target, true));
                 return;
         }
     }
-
-    private static bool Writes(ExpressionSyntax expression, SemanticModel model) =>
-        !ExpressionEffects.Of(expression, model).Writes.IsEmpty;
 
     // The step itself; its value is parenthesized where it is a part of an expression (not the value a sequence returns)
     private static void AppendStepForm(ExpressionSyntax target, string helper, ExpressionSyntax? value,

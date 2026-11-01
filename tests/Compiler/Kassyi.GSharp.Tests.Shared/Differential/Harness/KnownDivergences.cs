@@ -37,14 +37,6 @@ public sealed record KnownDivergence(string Case, string Column, DiffPath Paths,
 public static class KnownDivergences
 {
     // The cases of the entries below, named through nameof so that a renamed kernel cannot leave an entry behind
-    private const string MathOfSingle =
-        $"{nameof(MathDifferentialKernels)}.{nameof(MathDifferentialKernels.MathOfSingleMatrixKernel)}";
-    private const string ForeachFloatToInt =
-        $"{nameof(ConversionDifferentialKernels)}.{nameof(ConversionDifferentialKernels.ForeachFloatToIntMatrixKernel)}";
-    private const string NarrowEnumAndSignedEnum =
-        $"{nameof(NarrowIntegerDifferentialKernels)}.{nameof(NarrowIntegerDifferentialKernels.NarrowEnumAndSignedEnumMatrixKernel)}";
-    private const string TargetEvaluationOrder =
-        $"{nameof(NarrowIntegerDifferentialKernels)}.{nameof(NarrowIntegerDifferentialKernels.TargetEvaluationOrderMatrixKernel)}";
     private const string SingleFusedAverage =
         $"{nameof(StackLinqDifferentialKernels)}.{nameof(StackLinqDifferentialKernels.SingleFusedAverageKernel)}";
     private const string SingleUnfusedAverage =
@@ -67,8 +59,6 @@ public static class KnownDivergences
         $"{nameof(StructDifferentialKernels)}.{nameof(StructDifferentialKernels.AutoPropertyPassedToInParameterDefensiveCopy)}";
     private const string StructUserDefinedImplicitConversion =
         $"{nameof(StructDifferentialKernels)}.{nameof(StructDifferentialKernels.StructUserDefinedImplicitConversion)}";
-    private const string BitOpsReturnSign =
-        $"{nameof(NarrowIntegerDifferentialKernels)}.{nameof(NarrowIntegerDifferentialKernels.BitOpsReturnSignMatrixKernel)}";
     private const string CharScalarArg =
         $"{nameof(ConversionDifferentialKernels)}.{nameof(ConversionDifferentialKernels.CharScalarArgKernel)}";
     private const string RefTernaryParameterWriteAcrossBarrier =
@@ -82,59 +72,6 @@ public static class KnownDivergences
     public static IReadOnlyList<KnownDivergence> All { get; } =
     [
         // new("IntegerMatrixKernels.Int32ArithmeticMatrixKernel", "a>>>b", DiffPath.Native | DiffPath.Cuda, Issue: 722),
-
-        // Math.Sqrt(float) / Math.Floor|Ceiling|Round(float) return double in C# (#828); on native only MSVC picks the float overload
-        new(MathOfSingle, "Math.Sqrt(f)", DiffPath.Cuda, Issue: 828),
-        new(MathOfSingle, "Math.Sqrt(f)", DiffPath.Native, Issue: 828, Hosts: DiffHost.Windows),
-        new(MathOfSingle, "Math.Sqrt(f)*3.0", DiffPath.Cuda, Issue: 828),
-        new(MathOfSingle, "Math.Sqrt(f)*3.0", DiffPath.Native, Issue: 828, Hosts: DiffHost.Windows),
-        new(MathOfSingle, "Math.Floor(f)/3", DiffPath.Cuda, Issue: 828),
-        new(MathOfSingle, "Math.Floor(f)/3", DiffPath.Native, Issue: 828, Hosts: DiffHost.Windows),
-        new(MathOfSingle, "Math.Ceiling(f)/3", DiffPath.Cuda, Issue: 828),
-        new(MathOfSingle, "Math.Ceiling(f)/3", DiffPath.Native, Issue: 828, Hosts: DiffHost.Windows),
-        new(MathOfSingle, "Math.Round(f)/3", DiffPath.Cuda, Issue: 828),
-        new(MathOfSingle, "Math.Round(f)/3", DiffPath.Native, Issue: 828, Hosts: DiffHost.Windows),
-
-        // foreach explicit element conversion from float/double to integer/enum (#995)
-        new(ForeachFloatToInt, "foreach(int in float)", DiffPath.Native, Issue: 995),
-        new(ForeachFloatToInt, "foreach(uint in float)", DiffPath.Native, Issue: 995),
-        new(ForeachFloatToInt, "foreach(long in float)", DiffPath.Native | DiffPath.Cuda, Issue: 995),
-        new(ForeachFloatToInt, "foreach(ulong in float)", DiffPath.Native | DiffPath.Cuda, Issue: 995),
-        new(ForeachFloatToInt, "foreach(short in float)", DiffPath.Native, Issue: 995),
-        new(ForeachFloatToInt, "foreach(ushort in float)", DiffPath.Native | DiffPath.Cuda, Issue: 995),
-        new(ForeachFloatToInt, "foreach(byte in float)", DiffPath.Native | DiffPath.Cuda, Issue: 995),
-        new(ForeachFloatToInt, "foreach(sbyte in float)", DiffPath.Native, Issue: 995),
-        new(ForeachFloatToInt, "foreach(char in float)", DiffPath.Native | DiffPath.Cuda, Issue: 995),
-        new(ForeachFloatToInt, "foreach(IntEnum in float)", DiffPath.Native, Issue: 995),
-        new(ForeachFloatToInt, "foreach(ByteEnum in float)", DiffPath.Native | DiffPath.Cuda, Issue: 995),
-        new(ForeachFloatToInt, "foreach(int in double)", DiffPath.Native | DiffPath.Cuda, Issue: 995),
-        new(ForeachFloatToInt, "foreach(long in double)", DiffPath.Native | DiffPath.Cuda, Issue: 995),
-        new(ForeachFloatToInt, "foreach(byte in double)", DiffPath.Native | DiffPath.Cuda, Issue: 995),
-        new(ForeachFloatToInt, "foreach(int in yield float)", DiffPath.Native, Issue: 995),
-
-        // narrow enum ~ / +/- and signed enum wraparound (#995); GCC and Clang fold the signed overflow on native, MSVC wraps
-        new(NarrowEnumAndSignedEnum, "(int)~byteEnum", DiffPath.Native | DiffPath.Cuda, Issue: 995),
-        new(NarrowEnumAndSignedEnum, "(int)~ushortEnum", DiffPath.Native | DiffPath.Cuda, Issue: 995),
-        new(NarrowEnumAndSignedEnum, "~ByteEnum.Zero>ByteEnum.Zero", DiffPath.Native | DiffPath.Cuda, Issue: 995),
-        new(NarrowEnumAndSignedEnum, "(int)(byteEnum+b)", DiffPath.Native | DiffPath.Cuda, Issue: 995),
-        new(NarrowEnumAndSignedEnum, "(int)(byteEnum-b)", DiffPath.Native | DiffPath.Cuda, Issue: 995),
-        new(NarrowEnumAndSignedEnum, "(int)(byteEnum-byteEnum2)", DiffPath.Native | DiffPath.Cuda, Issue: 995),
-        new(NarrowEnumAndSignedEnum, "(int)(ushortEnum+us)", DiffPath.Native | DiffPath.Cuda, Issue: 995),
-        new(NarrowEnumAndSignedEnum, "(int)(ushortEnum-ushortEnum2)", DiffPath.Native | DiffPath.Cuda, Issue: 995),
-        new(NarrowEnumAndSignedEnum, "(int)(shortEnum+s)", DiffPath.Native | DiffPath.Cuda, Issue: 995),
-        new(NarrowEnumAndSignedEnum, "(int)(sbyteEnum-sb)", DiffPath.Native | DiffPath.Cuda, Issue: 995),
-        new(NarrowEnumAndSignedEnum, "intEnum+1<intEnum", DiffPath.Cuda, Issue: 995),
-        new(NarrowEnumAndSignedEnum, "intEnum+1<intEnum", DiffPath.Native, Issue: 995, Hosts: DiffHost.Unix),
-        new(NarrowEnumAndSignedEnum, "intEnum-1>intEnum", DiffPath.Cuda, Issue: 995),
-        new(NarrowEnumAndSignedEnum, "intEnum-1>intEnum", DiffPath.Native, Issue: 995, Hosts: DiffHost.Unix),
-
-        // compound assignment / increment receiver evaluation order & tuple deconstruction LHS order (#996)
-        new(TargetEvaluationOrder, "(i==0?s:alt)[++i]+=v s[1]", DiffPath.Native | DiffPath.Cuda, Issue: 996),
-        new(TargetEvaluationOrder, "(i==0?s:alt)[++i]+=v alt[1]", DiffPath.Native | DiffPath.Cuda, Issue: 996),
-        new(TargetEvaluationOrder, "(i==0?s:alt)[++i]++ s[1]", DiffPath.Native | DiffPath.Cuda, Issue: 996),
-        new(TargetEvaluationOrder, "(i==0?s:alt)[++i]++ alt[1]", DiffPath.Native | DiffPath.Cuda, Issue: 996),
-        new(TargetEvaluationOrder, "(i,s[i])=(1,v) [0]", DiffPath.Native | DiffPath.Cuda, Issue: 996),
-        new(TargetEvaluationOrder, "(i,s[i])=(1,v) [1]", DiffPath.Native | DiffPath.Cuda, Issue: 996),
 
         // StackLinq fused Average(float) return type (#997)
         new(SingleFusedAverage, "FusedAvgAsFloat", DiffPath.Native | DiffPath.Cuda, Issue: 997),
@@ -190,18 +127,6 @@ public static class KnownDivergences
         // struct user-defined implicit operator ignored (#963)
         new(StructUserDefinedImplicitConversion, "scaled_field_val", DiffPath.Native | DiffPath.Cuda, Issue: 963),
         new(StructUserDefinedImplicitConversion, "converted_back_int", DiffPath.Native | DiffPath.Cuda, Issue: 963),
-
-        // BitOperations.PopCount/LeadingZeroCount/TrailingZeroCount/Log2 unsigned return in CPU Native C++ (#876)
-        new(BitOpsReturnSign, "PopCount(u)<-1", DiffPath.Native, Issue: 876),
-        new(BitOpsReturnSign, "LeadingZeroCount(u)<-1", DiffPath.Native, Issue: 876),
-        new(BitOpsReturnSign, "TrailingZeroCount(u)<-1", DiffPath.Native, Issue: 876),
-        new(BitOpsReturnSign, "Log2(u)<-1", DiffPath.Native, Issue: 876),
-        new(BitOpsReturnSign, "PopCount(ul)<-1", DiffPath.Native, Issue: 876),
-        new(BitOpsReturnSign, "LeadingZeroCount(ul)<-1", DiffPath.Native, Issue: 876),
-        new(BitOpsReturnSign, "TrailingZeroCount(ul)<-1", DiffPath.Native, Issue: 876),
-        new(BitOpsReturnSign, "Log2(ul)<-1", DiffPath.Native, Issue: 876),
-        new(BitOpsReturnSign, "PopCount(u)/-1", DiffPath.Native, Issue: 876),
-        new(BitOpsReturnSign, "LeadingZeroCount(ul)/-1", DiffPath.Native, Issue: 876),
 
         // char scalar kernel argument truncated to 1 byte in CPU Native Launch (#971)
         new(CharScalarArg, "(int)cArg", DiffPath.Native, Issue: 971),
