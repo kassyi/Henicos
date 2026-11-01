@@ -17,7 +17,8 @@ internal sealed class KernelSignatureRule : ISyntaxValidationRule<MethodDeclarat
         GSharpDiagnostics.KernelReturnMustBeVoidOrBlittable,
         GSharpDiagnostics.InstanceDeviceFunctionNotSupported,
         GSharpDiagnostics.UnsupportedSyntax,
-        GSharpDiagnostics.KernelParameterSpaceExceeded);
+        GSharpDiagnostics.KernelParameterSpaceExceeded,
+        GSharpDiagnostics.KernelParameterConflictsWithLaunchParameter);
 
     private KernelSignatureRule()
     {
@@ -31,7 +32,7 @@ internal sealed class KernelSignatureRule : ISyntaxValidationRule<MethodDeclarat
             !method.HasAttribute(KnownAttributes.GpuKernel) &&
             IteratorTypeResolver.ContainsDirectYield(node.Body);
 
-        if (!isDeviceIteratorCandidate && !GpuCodeConstraints.HasSupportedReturnType(method))
+        if (!isDeviceIteratorCandidate && !GpuCodeConstraints.HasSupportedReturnType(method, context.Dialect))
         {
             context.ReportDiagnostic(
                 GSharpDiagnostics.KernelReturnMustBeVoidOrBlittable,
@@ -61,7 +62,25 @@ internal sealed class KernelSignatureRule : ISyntaxValidationRule<MethodDeclarat
 
         if (method.HasAttribute(KnownAttributes.GpuKernel))
         {
+            CheckReservedLaunchParameterNames(method, ref context);
             CheckKernelParameterSpace(node, method, ref context);
+        }
+    }
+
+    private static void CheckReservedLaunchParameterNames(IMethodSymbol kernel, ref ValidationContext context)
+    {
+        foreach (var parameter in kernel.Parameters)
+        {
+            if (KernelHostNames.IsReservedLaunchParameterName(parameter.Name) &&
+                parameter.TryGetDeclaringSyntax<ParameterSyntax>(out var parameterSyntax))
+            {
+                context.ReportDiagnostic(
+                    GSharpDiagnostics.KernelParameterConflictsWithLaunchParameter,
+                    parameterSyntax.Identifier.GetLocation(),
+                    parameter.Name,
+                    $"{kernel.ContainingType.Name}.{kernel.Name}",
+                    KernelHostNames.ReservedLaunchParameterList);
+            }
         }
     }
 

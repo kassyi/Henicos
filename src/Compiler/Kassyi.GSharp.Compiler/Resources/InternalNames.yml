@@ -171,6 +171,41 @@ Launcher:
     GridSyncReached: __gsharp_grid_sync_reached
     StructArgumentPrefix: __gsharp_arg_
     LayoutProbe: __gsharp_layout_probe
+    # Managed host launch wrappers (#406): fixed locals, per-kernel member prefixes, and per-parameter local prefixes
+    KernelParams: __gsharp_kernel_params
+    FunctionHandle: __gsharp_hfunc
+    ModuleHandle: __gsharp_hmodule
+    ArchSuffix: __gsharp_arch_suffix
+    DllName: __gsharp_dll_name
+    DllPath: __gsharp_dll_path
+    PinnedHandle: __gsharp_handle
+    ContextIndex: __gsharp_context_index
+    ThreadAtBlockBarrier: __gsharp_thread_at_block_barrier
+    ThreadAtGridSync: __gsharp_thread_at_grid_sync
+    AnyGridActive: __gsharp_any_grid_active
+    FirstFinishedBlock: __gsharp_first_finished_block
+    AnyBlockAtGridSync: __gsharp_any_block_at_grid_sync
+    BlockAtGridSyncFlag: __gsharp_block_at_grid_sync_flag
+    AnyBlockActive: __gsharp_any_block_active
+    FunctionPointerFieldPrefix: __gsharp_hfunc_
+    LayoutCheckedFieldPrefix: __gsharp_layout_checked_
+    DelegateTypePrefix: __gsharp_delegate_
+    DevicePointerPrefix: __gsharp_d_
+    ProxyPrefix: __gsharp_proxy_
+    NativePrefix: __gsharp_native_
+    PinnedPrefix: __gsharp_p_
+    PinnedTempPrefix: __gsharp_p_temp_
+    ScalarPointerPrefix: __gsharp_ptr_
+    SizePrefix: __gsharp_size_
+    ShadowPrefix: __gsharp_shadow_
+    SharedShadowPrefix: __gsharp_shared_shadow_
+    AllocatedPointersPrefix: __gsharp_allocated_ptrs_
+    ElementIndexPrefix: __gsharp_index_
+    HostSpanPrefix: __gsharp_host_
+    ElementPrefix: __gsharp_element_
+    CopySourcePrefix: __gsharp_source_
+    CopyBufferPrefix: __gsharp_copy_
+    CopyIndexPrefix: __gsharp_copy_index_
 
 ReturnValue:
   Summary: The buffer that a kernel returning a value writes into, the device-side locals that fill it, and the launcher locals that convert a returned struct whose layouts differ.
@@ -181,6 +216,7 @@ ReturnValue:
     BufferNative: __gsharp_auto_result_native
     BufferIndex: __gsharp_auto_result_index
     GlobalThreadIndex: __gsharp_global_tid
+    TotalThreads: __gsharp_total_threads
 
 Prelude:
   Summary: Functions and globals that the Prelude declares, used by the emitters or by the runtime loader.
