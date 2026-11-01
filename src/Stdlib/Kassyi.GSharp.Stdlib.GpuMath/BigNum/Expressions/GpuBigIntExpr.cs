@@ -12,7 +12,7 @@ namespace Kassyi.GSharp.Stdlib.GpuMath.BigNum.Expressions;
 /// <b>Zero-Allocation:</b> As a readonly struct wrapping an immutable AST node, chaining operators creates lightweight expression trees without allocating device buffers until evaluated.
 /// </para>
 /// </remarks>
-public readonly struct GpuBigIntExpr
+public readonly struct GpuBigIntExpr : IDisposable
 {
     /// <summary>
     /// Gets the root AST node of this signed expression tree.
@@ -28,8 +28,10 @@ public readonly struct GpuBigIntExpr
     /// Implicitly wraps a <see cref="GpuBigInt"/> as a signed expression leaf node.
     /// </summary>
     /// <param name="b">The signed big integer instance.</param>
+#pragma warning disable GSH0024 // A leaf expression borrows its operand and allocates no disposable GPU resources.
     public static implicit operator GpuBigIntExpr(GpuBigInt b)
         => new(new GpuBigIntLeafExpression(b));
+#pragma warning restore GSH0024
 
     /// <summary>
     /// Constructs a lazy multiplication expression between two signed big integer expressions.
@@ -407,6 +409,25 @@ public readonly struct GpuBigIntExpr
 
         errors.Insert(0, original);
         throw new AggregateException(message, errors);
+    }
+
+    /// <summary>
+    /// Releases any device buffers cached by the underlying expression nodes (such as vector reductions).
+    /// </summary>
+    /// <remarks>
+    /// Idempotent across value-type copies and shared sub-expressions. Disposing an expression while a
+    /// <see cref="GpuBigIntExecutableGraph"/> compiled from it is still alive throws <see cref="InvalidOperationException"/>.
+    /// </remarks>
+    /// <exception cref="InvalidOperationException">The expression is currently owned by a live CUDA graph.</exception>
+    public void Dispose()
+    {
+        if (Node is null)
+        {
+            return;
+        }
+
+        GraphOwnership.ThrowIfOwned(Node);
+        (Node as IDisposable)?.Dispose();
     }
 }
 
