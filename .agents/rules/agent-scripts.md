@@ -52,6 +52,7 @@ but follow the same language and convention rules (§1, §3).
 | `node scripts/agent/update_usings.js` | Promotes `using` directives used in 3+ files to `GlobalUsings.cs` |
 | `node scripts/agent/gpu-lock.js [--poll-seconds <n>] [--timeout-minutes <n>] -- "<command>"` | Runs the command while holding the shared GPU lock `<main checkout>/tmp/gpu-test-lock` (the same for every worktree); waits while another run holds it, shows the owner on a timeout, takes over a lock whose owner (same host and platform) and the command it started have both exited, releases only a lock it created, also on Ctrl+C; `--lock-path <dir>` is for tests of the script only |
 | `node .agents/skills/gsharp-transpiler-guidelines/scripts/check-helpers.js` | Checks that the helper catalog names only existing members |
+| `node .agents/skills/pr-review-pairing/scripts/hot-spots.js --changed <base> [--worktree <dir>]` / `<file.cs>...` | Lists the longest methods and the switches with many cases of the changed C# files, for the structural hot spots of a PR review |
 | `dotnet run --project src/Compiler/Kassyi.GSharp.Compiler.Generators -- demangle <log> [symbols]` | Turns `__gsharp_*` names in a log back into C# names (`just gsharp-demangle`) |
 | `dotnet run tools/collect-env/collect-env.cs [--json] [--output <file>]` | Prints the bug-report environment (OS, GPU, CUDA, host C++, .NET, checkout) with no user name, host name, serial or profile path (`just env-info`). `/issue.prompt` Step 2 runs it for bug reports |
 

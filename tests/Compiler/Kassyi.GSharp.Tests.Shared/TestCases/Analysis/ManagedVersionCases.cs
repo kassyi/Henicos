@@ -120,12 +120,46 @@ public static partial class Functions
     // Integer StackLinq Sum is associative in 32-bit two's-complement arithmetic, so it needs no managed version
     [GpuDeviceFunction]
     public static int IntSumPlain(int[] data) => data.AsStackEnumerable().Sum();
+
+    // A reduced extension method group passed as a delegate (#940)
+    [GpuDeviceFunction]
+    public static void PassesExtensionMethodGroup(int[] x)
+    {
+        Gpu.ForUnroll(0, 2, x.AddToIndex);
+    }
+
+    // A generic reduced extension method group whose receiver type depends on the inferred type argument (#940)
+    [GpuDeviceFunction]
+    public static void PassesGenericExtensionMethodGroup(int[] x)
+    {
+        Gpu.ForUnroll(0, 2, x.AddGeneric);
+    }
 }
 
 public static partial class Extensions
 {
     [GpuDeviceFunction]
     public static int Doubled(this ref Ctx ctx, int a) => Functions.Direct(ref ctx, a);
+
+    [GpuDeviceFunction]
+    public static void AddToIndex(this int[] x, int i)
+    {
+        Ctx ctx = default;
+        Value vx = new Value(x[0]);
+        Value vy = new Value(i);
+        Value z = new Value(0);
+        z = vx + vy;
+    }
+
+    [GpuDeviceFunction]
+    public static void AddGeneric<T>(this T[] x, int i) where T : unmanaged
+    {
+        Ctx ctx = default;
+        Value vx = new Value(x.Length);
+        Value vy = new Value(i);
+        Value z = new Value(0);
+        z = vx + vy;
+    }
 }
 
 // A class that is not partial around the class of a device function: no managed version is written into it, so
