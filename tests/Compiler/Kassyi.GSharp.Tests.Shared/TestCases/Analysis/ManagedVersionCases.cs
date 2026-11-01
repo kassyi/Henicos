@@ -1,4 +1,5 @@
 using Kassyi.GSharp.Core;
+using Kassyi.ZeroAlloc.Linq;
 
 namespace ManagedVersionCases;
 
@@ -20,7 +21,7 @@ public struct Value
     public static Value operator -(Value left, Value right) => new Value(left.V - right.V);
 }
 
-// The inputs of ManagedVersionAnalysisTests (#711)
+// The inputs of ManagedVersionAnalysisTests (#711, #730)
 public static partial class Functions
 {
     [GpuDeviceFunction]
@@ -105,6 +106,20 @@ public static partial class Functions
     // An extension method that expands the operator macro, and a function that calls it in the reduced form
     [GpuDeviceFunction]
     public static int CallsExtension(ref Ctx ctx, int a) => ctx.Doubled(a);
+
+    // StackLinq float and double Sum calls require a managed version that rewrites Sum to SumSequential (#730)
+    [GpuDeviceFunction]
+    public static float FloatSumDirect(float[] data) => data.AsStackEnumerable().Sum();
+
+    [GpuDeviceFunction]
+    public static double DoubleSumSelector(double[] data) => data.AsStackEnumerable().Sum(x => x * 2.0);
+
+    [GpuDeviceFunction]
+    public static float CallsFloatSum(float[] data) => FloatSumDirect(data) + 1f;
+
+    // Integer StackLinq Sum is associative in 32-bit two's-complement arithmetic, so it needs no managed version
+    [GpuDeviceFunction]
+    public static int IntSumPlain(int[] data) => data.AsStackEnumerable().Sum();
 }
 
 public static partial class Extensions
