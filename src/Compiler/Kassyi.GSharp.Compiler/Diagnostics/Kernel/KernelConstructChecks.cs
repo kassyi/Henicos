@@ -143,20 +143,104 @@ internal static class KernelConstructChecks
         }
 
         var isRefLikeOrRef = (localSym.Type.IsRefLikeType && !localSym.Type.IsSharedMemoryType()) || localSym.IsRef;
-        var isLocalPointer = localSym.Type is IPointerTypeSymbol &&
-            varDecl.Initializer != null &&
-            varDecl.Initializer.DescendantNodes()
-                .AsStackEnumerable()
-                .Any(static initChild =>
-                    initChild is StackAllocArrayCreationExpressionSyntax
-                        or ImplicitStackAllocArrayCreationExpressionSyntax ||
-                    initChild.IsKind(SyntaxKind.AddressOfExpression)
-                );
         var isIteratorLocal = IteratorTypeResolver.IsGenericIEnumerable(localSym.Type, out _);
 
-        if (isRefLikeOrRef || isLocalPointer || isIteratorLocal)
+        if (isRefLikeOrRef || isIteratorLocal)
         {
-            scan.TrackedLocals.Add(new TrackedLocalInfo(varDecl, localSym, isRefLikeOrRef, isLocalPointer, isIteratorLocal));
+            scan.TrackedLocals.Add(new TrackedLocalInfo(varDecl, localSym, isRefLikeOrRef, isLocalPointer: false, isIteratorLocal));
+        }
+        else if (localSym.Type is IPointerTypeSymbol)
+        {
+            scan.PointerLocals.Add((varDecl, localSym));
         }
     }
+
+    /// <summary>
+    /// Propagates stack pointer provenance across local initializers and simple assignments to a fixed point, and adds
+    /// all pointer locals that may point to stack memory (<c>stackalloc</c>, <c>&amp;</c>, or derived pointer arithmetic)
+    /// to <see cref="KernelBarrierScan.TrackedLocals"/> (#1004 F11).
+    /// </summary>
+    internal static void CollectStackPointerLocals(KernelBarrierScan scan)
+    {
+        if (scan.PointerLocals.Count == 0)
+        {
+            return;
+        }
+
+        var pointerAssignments = ImmutableArray.CreateBuilder<(ILocalSymbol Target, ExpressionSyntax Value)>();
+        foreach (var (declarator, symbol) in scan.PointerLocals)
+        {
+            if (declarator.Initializer is { } initializer)
+            {
+                pointerAssignments.Add((symbol, initializer.Value));
+            }
+        }
+
+        foreach (var node in scan.Method.DescendantNodes())
+        {
+            if (node is AssignmentExpressionSyntax assignment &&
+                assignment.IsKind(SyntaxKind.SimpleAssignmentExpression) &&
+                scan.SemanticModel.GetSymbol(assignment.Left) is ILocalSymbol { Type: IPointerTypeSymbol } target)
+            {
+                pointerAssignments.Add((target, assignment.Right));
+            }
+        }
+
+        var stackPointers = new HashSet<ILocalSymbol>(SymbolEqualityComparer.Default);
+        bool added;
+        do
+        {
+            added = false;
+            foreach (var (target, value) in pointerAssignments)
+            {
+                if (!stackPointers.Contains(target) &&
+                    IsStackPointerSource(value, scan.SemanticModel, stackPointers))
+                {
+                    stackPointers.Add(target);
+                    added = true;
+                }
+            }
+        } while (added);
+
+        foreach (var (declarator, symbol) in scan.PointerLocals)
+        {
+            if (stackPointers.Contains(symbol))
+            {
+                scan.TrackedLocals.Add(
+                    new TrackedLocalInfo(
+                        declarator,
+                        symbol,
+                        isRefLikeOrRef: false,
+                        isLocalPointer: true,
+                        isIteratorLocal: false
+                    )
+                );
+            }
+        }
+    }
+
+    // Whether expression evaluates to a stack pointer: directly via stackalloc or &, or derived from a local in
+    // stackPointers through pointer arithmetic (+, -), casts, parentheses or a conditional expression
+    private static bool IsStackPointerSource(
+        ExpressionSyntax expression,
+        SemanticModel model,
+        HashSet<ILocalSymbol> stackPointers) =>
+        expression switch
+        {
+            StackAllocArrayCreationExpressionSyntax or ImplicitStackAllocArrayCreationExpressionSyntax => true,
+            PrefixUnaryExpressionSyntax prefix when prefix.IsKind(SyntaxKind.AddressOfExpression) => true,
+            IdentifierNameSyntax identifier =>
+                model.GetSymbol(identifier) is ILocalSymbol local && stackPointers.Contains(local),
+            ParenthesizedExpressionSyntax parenthesized =>
+                IsStackPointerSource(parenthesized.Expression, model, stackPointers),
+            CastExpressionSyntax cast =>
+                IsStackPointerSource(cast.Expression, model, stackPointers),
+            BinaryExpressionSyntax binary when binary.IsKind(SyntaxKind.AddExpression, SyntaxKind.SubtractExpression) =>
+                IsStackPointerSource(binary.Left, model, stackPointers) ||
+                IsStackPointerSource(binary.Right, model, stackPointers),
+            ConditionalExpressionSyntax conditional =>
+                IsStackPointerSource(conditional.WhenTrue, model, stackPointers) ||
+                IsStackPointerSource(conditional.WhenFalse, model, stackPointers),
+            _ => false
+        };
 }
