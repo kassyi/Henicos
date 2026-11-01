@@ -2,12 +2,12 @@ using Kassyi.GSharp.Compiler.Diagnostics;
 
 namespace Kassyi.GSharp.Tests.Shared.Analyzers;
 
+[Category(TestCategory.Compiler)]
 public class GpuKernelDirectInvocationAnalyzerTests : TranspilerTestBase
 {
     private static readonly GpuKernelDirectInvocationAnalyzer s_analyzer = new();
 
     [Fact]
-    [Trait("DiagnosticId", "GSH0031")]
     [Scenario(TestScenario.SadPath)]
     public async Task Test_GpuKernelDirectInvocation_ReportsGSH0031()
     {
@@ -16,7 +16,6 @@ public class GpuKernelDirectInvocationAnalyzerTests : TranspilerTestBase
     }
 
     [Fact]
-    [Trait("DiagnosticId", "GSH0031")]
     [Scenario(TestScenario.Boundary)]
     public async Task Test_GpuKernelDirectInvocation_NestedCalls_FollowTheEnclosingFunction()
     {

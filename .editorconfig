@@ -238,6 +238,7 @@ dotnet_diagnostic.HNT0004.severity = warning
 dotnet_diagnostic.HNT0005.severity = warning
 dotnet_diagnostic.HNT0006.severity = warning
 dotnet_diagnostic.HNT0007.severity = warning
+dotnet_diagnostic.HNT0008.severity = error
 
 # ==============================================================================
 # G# Kernels (*.cu.cs) Constraints

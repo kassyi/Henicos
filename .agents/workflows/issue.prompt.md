@@ -55,13 +55,13 @@ graph TD
      - Primary Label: `bug`
    - **Feature / Syntax Request** (`.github/ISSUE_TEMPLATE/feature_request.yml`)
      - Title format: `[Feature]: <Concise description>`
-     - Primary Label: `feature` (or `enhancement`)
+     - Primary Label: `feature`
    - **Performance / Optimization** (`.github/ISSUE_TEMPLATE/performance.yml`)
      - Title format: `[Perf]: <Concise description>`
      - Primary Label: `performance`
 
    - **Multi-Topic Classification (1–2 Labels Maximum)**:
-     - Select **1 to 2 labels** from the existing repository labels fetched above (e.g., `feature`, `refactor`, `bug`, `performance`, `test`, `documentation`, `chore`, `enhancement`).
+     - Select **1 to 2 labels** from the existing repository labels fetched above (e.g., `feature`, `refactor`, `bug`, `performance`, `test`, `documentation`, `chore`).
      - If the issue spans two distinct topics (e.g., a new feature combined with refactoring -> `feature,refactor`), attach both labels.
      - **Strict Cap**: Assign **at most 2 labels** (`1 <= count <= 2`) so that label classification remains focused and meaningful.
 

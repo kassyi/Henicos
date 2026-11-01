@@ -1,4 +1,4 @@
-
+#nullable enable
 using System.Collections.Immutable;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
@@ -20,14 +20,22 @@ public class TestArchitectureAnalyzer : DiagnosticAnalyzer
     public static readonly DiagnosticDescriptor TestMethodMustHaveCategoryTrait = new(
         id: "HNT0002",
         title: "Test methods must have a Category trait",
-        messageFormat: "Test method '{0}' has no category. Add [Category(TestCategory.X)], [TestTarget(ExecutionTarget.X)], [Scenario(TestScenario.X)] or [Trait(\"Category\", \"...\")] to the method or its class.",
+        messageFormat: "Test method '{0}' has no category. Add [Category(TestCategory.X)], [TestTarget(ExecutionTarget.X)] or [Scenario(TestScenario.X)] to the method or its class.",
+        category: "GSharpTestArchitecture",
+        defaultSeverity: DiagnosticSeverity.Error,
+        isEnabledByDefault: true);
+
+    public static readonly DiagnosticDescriptor RawTraitAttributeNotAllowed = new(
+        id: "HNT0008",
+        title: "Raw [Trait] attribute in a test assembly",
+        messageFormat: "[Trait] on '{0}' is not allowed. Use [Category(TestCategory.X)], [TestTarget(ExecutionTarget.X)] or [Scenario(TestScenario.X)] instead.",
         category: "GSharpTestArchitecture",
         defaultSeverity: DiagnosticSeverity.Error,
         isEnabledByDefault: true);
 #pragma warning restore RS2008
 
     public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics { get; } =
-        ImmutableArray.Create(TestMethodMustHaveCategoryTrait);
+        ImmutableArray.Create(TestMethodMustHaveCategoryTrait, RawTraitAttributeNotAllowed);
 
     public override void Initialize(AnalysisContext context)
     {
@@ -44,18 +52,46 @@ public class TestArchitectureAnalyzer : DiagnosticAnalyzer
                 return;
             }
 
+            var traitAttribute = compilation.GetTypeByMetadataName("Xunit.TraitAttribute");
+
             compilationContext.RegisterSyntaxNodeAction(
-                context => AnalyzeMethod(context, factAttribute),
+                context => AnalyzeClass(context, traitAttribute),
+                SyntaxKind.ClassDeclaration
+            );
+            compilationContext.RegisterSyntaxNodeAction(
+                context => AnalyzeMethod(context, factAttribute, traitAttribute),
                 SyntaxKind.MethodDeclaration
             );
         });
     }
 
-    private static void AnalyzeMethod(SyntaxNodeAnalysisContext context, INamedTypeSymbol factAttribute)
+    private static void AnalyzeClass(SyntaxNodeAnalysisContext context, INamedTypeSymbol? traitAttribute)
+    {
+        var classDeclaration = (ClassDeclarationSyntax)context.Node;
+        var classSymbol = context.SemanticModel.GetDeclaredSymbol(classDeclaration, context.CancellationToken);
+        if (classSymbol == null)
+        {
+            return;
+        }
+
+        ReportRawTraits(context, classSymbol, traitAttribute);
+    }
+
+    private static void AnalyzeMethod(
+        SyntaxNodeAnalysisContext context,
+        INamedTypeSymbol factAttribute,
+        INamedTypeSymbol? traitAttribute)
     {
         var methodDeclaration = (MethodDeclarationSyntax)context.Node;
         var methodSymbol = context.SemanticModel.GetDeclaredSymbol(methodDeclaration, context.CancellationToken);
-        if (methodSymbol == null || !TestSymbols.IsTestMethod(methodSymbol, factAttribute))
+        if (methodSymbol == null)
+        {
+            return;
+        }
+
+        ReportRawTraits(context, methodSymbol, traitAttribute);
+
+        if (!TestSymbols.IsTestMethod(methodSymbol, factAttribute))
         {
             return;
         }
@@ -82,6 +118,32 @@ public class TestArchitectureAnalyzer : DiagnosticAnalyzer
         }
     }
 
+    private static void ReportRawTraits(
+        SyntaxNodeAnalysisContext context,
+        ISymbol symbol,
+        INamedTypeSymbol? traitAttribute)
+    {
+        if (traitAttribute == null)
+        {
+            return;
+        }
+
+        foreach (var attribute in symbol.GetAttributes())
+        {
+            if (!SymbolEqualityComparer.Default.Equals(attribute.AttributeClass, traitAttribute))
+            {
+                continue;
+            }
+
+            var location = attribute.ApplicationSyntaxReference?.GetSyntax(context.CancellationToken).GetLocation()
+                ?? (symbol.Locations.Length > 0 ? symbol.Locations[0] : Location.None);
+            context.ReportDiagnostic(Diagnostic.Create(
+                RawTraitAttributeNotAllowed,
+                location,
+                symbol.Name));
+        }
+    }
+
     private static bool IsAttribute(AttributeData attribute, string shortName)
     {
         var name = attribute.AttributeClass?.Name;
@@ -96,22 +158,6 @@ public class TestArchitectureAnalyzer : DiagnosticAnalyzer
                 IsAttribute(attribute, "TestCategory") ||
                 IsAttribute(attribute, "TestTarget") ||
                 IsAttribute(attribute, "Scenario"))
-            {
-                return true;
-            }
-
-            if (!IsAttribute(attribute, "Trait"))
-            {
-                continue;
-            }
-
-            if (attribute.ConstructorArguments.Length < 1)
-            {
-                continue;
-            }
-
-            var firstArg = attribute.ConstructorArguments[0];
-            if (firstArg.Value is "Category")
             {
                 return true;
             }
