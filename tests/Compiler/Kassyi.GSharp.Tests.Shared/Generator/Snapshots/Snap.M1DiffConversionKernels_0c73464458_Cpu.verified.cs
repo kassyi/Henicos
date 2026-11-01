@@ -61,66 +61,80 @@ __gsharp_state = -1;return;
 int __gsharp_id_4_o = __gsharp_mul_i32(__gsharp_id_3_t,15);
 GSharpArray<float> __gsharp_id_5_sf = __gsharp_id_0_f.AsSpan().Slice(__gsharp_id_3_t,1);
 GSharpArray<double> __gsharp_id_6_sd = __gsharp_id_1_d.AsSpan().Slice(__gsharp_id_3_t,1);
-for(int __gsharp_id_7_x : __gsharp_id_5_sf)
+for(auto __gsharp_seq_0 : __gsharp_id_5_sf)
 {
+int __gsharp_id_7_x = __gsharp_to_i32(__gsharp_seq_0);
 __gsharp_id_2_r[__gsharp_id_4_o]=__gsharp_id_7_x;
 }
-for(unsigned int __gsharp_id_8_x : __gsharp_id_5_sf)
+for(auto __gsharp_seq_1 : __gsharp_id_5_sf)
 {
+unsigned int __gsharp_id_8_x = __gsharp_to_u32(__gsharp_seq_1);
 __gsharp_id_2_r[__gsharp_add_i32(__gsharp_id_4_o,1)]=__gsharp_id_8_x;
 }
-for(long long __gsharp_id_9_x : __gsharp_id_5_sf)
+for(auto __gsharp_seq_2 : __gsharp_id_5_sf)
 {
+long long __gsharp_id_9_x = __gsharp_to_i64(__gsharp_seq_2);
 __gsharp_id_2_r[__gsharp_add_i32(__gsharp_id_4_o,2)]=__gsharp_id_9_x;
 }
-for(unsigned long long __gsharp_id_10_x : __gsharp_id_5_sf)
+for(auto __gsharp_seq_3 : __gsharp_id_5_sf)
 {
+unsigned long long __gsharp_id_10_x = __gsharp_to_u64(__gsharp_seq_3);
 __gsharp_id_2_r[__gsharp_add_i32(__gsharp_id_4_o,3)]=(long long)__gsharp_id_10_x;
 }
-for(short __gsharp_id_11_x : __gsharp_id_5_sf)
+for(auto __gsharp_seq_4 : __gsharp_id_5_sf)
 {
+short __gsharp_id_11_x = (short)__gsharp_to_i32(__gsharp_seq_4);
 __gsharp_id_2_r[__gsharp_add_i32(__gsharp_id_4_o,4)]=__gsharp_id_11_x;
 }
-for(unsigned short __gsharp_id_12_x : __gsharp_id_5_sf)
+for(auto __gsharp_seq_5 : __gsharp_id_5_sf)
 {
+unsigned short __gsharp_id_12_x = (unsigned short)__gsharp_to_i32(__gsharp_seq_5);
 __gsharp_id_2_r[__gsharp_add_i32(__gsharp_id_4_o,5)]=__gsharp_id_12_x;
 }
-for(signed char __gsharp_id_13_x : __gsharp_id_5_sf)
+for(auto __gsharp_seq_6 : __gsharp_id_5_sf)
 {
+signed char __gsharp_id_13_x = (signed char)__gsharp_to_i32(__gsharp_seq_6);
 __gsharp_id_2_r[__gsharp_add_i32(__gsharp_id_4_o,6)]=__gsharp_id_13_x;
 }
-for(unsigned char __gsharp_id_14_x : __gsharp_id_5_sf)
+for(auto __gsharp_seq_7 : __gsharp_id_5_sf)
 {
+unsigned char __gsharp_id_14_x = (unsigned char)__gsharp_to_i32(__gsharp_seq_7);
 __gsharp_id_2_r[__gsharp_add_i32(__gsharp_id_4_o,7)]=__gsharp_id_14_x;
 }
-for(char16_t __gsharp_id_15_x : __gsharp_id_5_sf)
+for(auto __gsharp_seq_8 : __gsharp_id_5_sf)
 {
+char16_t __gsharp_id_15_x = (char16_t)__gsharp_to_i32(__gsharp_seq_8);
 __gsharp_id_2_r[__gsharp_add_i32(__gsharp_id_4_o,8)]=__gsharp_id_15_x;
 }
-for(int __gsharp_id_16_x : __gsharp_id_5_sf)
+for(auto __gsharp_seq_9 : __gsharp_id_5_sf)
 {
+int __gsharp_id_16_x = (int)__gsharp_to_i32(__gsharp_seq_9);
 __gsharp_id_2_r[__gsharp_add_i32(__gsharp_id_4_o,9)]=(int)__gsharp_id_16_x;
 }
-for(unsigned char __gsharp_id_17_x : __gsharp_id_5_sf)
+for(auto __gsharp_seq_10 : __gsharp_id_5_sf)
 {
+unsigned char __gsharp_id_17_x = (unsigned char)__gsharp_to_i32(__gsharp_seq_10);
 __gsharp_id_2_r[__gsharp_add_i32(__gsharp_id_4_o,10)]=(int)__gsharp_id_17_x;
 }
-for(int __gsharp_id_18_x : __gsharp_id_6_sd)
+for(auto __gsharp_seq_11 : __gsharp_id_6_sd)
 {
+int __gsharp_id_18_x = __gsharp_to_i32(__gsharp_seq_11);
 __gsharp_id_2_r[__gsharp_add_i32(__gsharp_id_4_o,11)]=__gsharp_id_18_x;
 }
-for(long long __gsharp_id_19_x : __gsharp_id_6_sd)
+for(auto __gsharp_seq_12 : __gsharp_id_6_sd)
 {
+long long __gsharp_id_19_x = __gsharp_to_i64(__gsharp_seq_12);
 __gsharp_id_2_r[__gsharp_add_i32(__gsharp_id_4_o,12)]=__gsharp_id_19_x;
 }
-for(unsigned char __gsharp_id_20_x : __gsharp_id_6_sd)
+for(auto __gsharp_seq_13 : __gsharp_id_6_sd)
 {
+unsigned char __gsharp_id_20_x = (unsigned char)__gsharp_to_i32(__gsharp_seq_13);
 __gsharp_id_2_r[__gsharp_add_i32(__gsharp_id_4_o,13)]=__gsharp_id_20_x;
 }
 {
 float __gsharp_il_1_0_v = __gsharp_id_0_f[__gsharp_id_3_t];
 {
-int __gsharp_il_2_21_x = __gsharp_il_1_0_v;
+int __gsharp_il_2_21_x = __gsharp_to_i32(__gsharp_il_1_0_v);
 {
 __gsharp_id_2_r[__gsharp_add_i32(__gsharp_id_4_o,14)]=__gsharp_il_2_21_x;
 }

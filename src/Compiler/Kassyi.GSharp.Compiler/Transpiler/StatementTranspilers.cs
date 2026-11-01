@@ -145,6 +145,61 @@ internal static class StatementTranspilers
 
         StatementPrelude.Emit(node.Expression, ref context);
 
+        var model = context.Query.SemanticModel;
+        var targetType = node.Type.IsVar
+            ? null
+            : model.GetDeclaredSymbol<ILocalSymbol>(node)?.Type ?? model.GetTypeSymbol(node.Type);
+        var sourceElementType = model.GetTypeSymbol(node.Expression).TryGetArrayLikeElementType(out var elemType)
+            ? elemType
+            : null;
+        if (IntegerSemantics.GetConversionHelper(sourceElementType, targetType, out var needsCast) is { } conversionHelper)
+        {
+            var rawElement = context.Emitter.SequenceTempCounter++;
+            context.Emitter.Writer.Append("for");
+            using (context.Emitter.Writer.Parentheses())
+            {
+                context.Emitter.Writer.Append("auto ");
+                EvaluationOrder.AppendTempName(context.Emitter.Writer, rawElement);
+                context.Emitter.Writer.Append(" : ");
+                ArrayNullCheck.AppendReceiver(node.Expression, ref context);
+            }
+
+            context.Emitter.Writer.AppendLine();
+            using (context.Emitter.Writer.Scope())
+            {
+                context.Emitter.Dialect.AppendType(ref context, targetType);
+                context.Emitter.Writer.Append(' ');
+                CppNameResolver.AppendDeclaredName(node, node.Identifier, ref context);
+                context.Emitter.Writer.Append(" = ");
+                if (needsCast)
+                {
+                    using (context.Emitter.Writer.Parentheses())
+                    {
+                        context.Emitter.Dialect.AppendType(ref context, targetType);
+                    }
+                }
+
+                context.Emitter.Writer.Append(conversionHelper);
+                using (context.Emitter.Writer.Parentheses())
+                {
+                    EvaluationOrder.AppendTempName(context.Emitter.Writer, rawElement);
+                }
+
+                context.Emitter.Writer.AppendLine(";");
+                if (node.Statement is BlockSyntax block)
+                {
+                    context.Visitor.VisitBlock(block);
+                }
+                else
+                {
+                    context.Visitor.Visit(node.Statement);
+                    context.Emitter.Writer.AppendLine();
+                }
+            }
+
+            return;
+        }
+
         context.Emitter.Writer.Append("for");
         using (context.Emitter.Writer.Parentheses())
         {

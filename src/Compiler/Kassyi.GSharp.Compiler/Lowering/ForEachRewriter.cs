@@ -56,8 +56,15 @@ public class ForEachRewriter(SemanticModel? semanticModel = null) : CSharpSyntax
         var expr = ((ExpressionSyntax)Visit(node.Expression)).WithoutTrivia();
         var body = (StatementSyntax)Visit(node.Statement);
 
-        return LowerArrayForEach(node, expr, body, id, GetNullCheckPlace(node.Expression));
+        return LowerArrayForEach(node, expr, body, id, GetNullCheckPlace(node.Expression), NeedsElementCast(node));
     }
+
+    private bool NeedsElementCast(ForEachStatementSyntax node) =>
+        !node.Type.IsVar &&
+        semanticModel != null &&
+        (semanticModel.GetDeclaredSymbol<ILocalSymbol>(node)?.Type ?? semanticModel.GetTypeSymbol(node.Type)) is { } targetType &&
+        semanticModel.GetTypeSymbol(node.Expression).TryGetArrayLikeElementType(out var elementType) &&
+        !targetType.IsEqualTo(elementType);
 
     // [WHY] foreach over a null array throws NullReferenceException at the loop entry in C# (#706). The source is
     // checked once, where the lowered local is initialized; the decision and the place of the source expression travel
@@ -82,7 +89,8 @@ public class ForEachRewriter(SemanticModel? semanticModel = null) : CSharpSyntax
         ExpressionSyntax expr,
         StatementSyntax body,
         int id,
-        string? nullCheckPlace = null)
+        string? nullCheckPlace = null,
+        bool castElement = false)
     {
         var annotations = ImmutableArray.CreateRange(
             node.GetAnnotations(LoweringAnnotations.OriginalSpanAnnotationKind)
@@ -133,7 +141,7 @@ public class ForEachRewriter(SemanticModel? semanticModel = null) : CSharpSyntax
             SyntaxFactory.IdentifierName(indexName)
         ).WithAdditionalAnnotations(annotations);
 
-        var elementAccess = SyntaxFactory.ElementAccessExpression(
+        ExpressionSyntax elementAccess = SyntaxFactory.ElementAccessExpression(
             SyntaxFactory.IdentifierName(srcName),
             SyntaxFactory.BracketedArgumentList(
                 SyntaxFactory.SingletonSeparatedList(
@@ -141,6 +149,11 @@ public class ForEachRewriter(SemanticModel? semanticModel = null) : CSharpSyntax
                 )
             )
         ).WithAdditionalAnnotations(annotations);
+        if (castElement)
+        {
+            elementAccess = SyntaxFactory.CastExpression(node.Type.WithoutTrivia(), elementAccess)
+                .WithAdditionalAnnotations(annotations);
+        }
 
         var itemDeclarator = SyntaxFactory.VariableDeclarator(node.Identifier.WithoutTrivia())
             .WithInitializer(SyntaxFactory.EqualsValueClause(elementAccess))
