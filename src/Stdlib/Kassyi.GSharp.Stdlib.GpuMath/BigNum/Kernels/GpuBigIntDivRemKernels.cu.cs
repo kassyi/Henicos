@@ -100,9 +100,8 @@ public static partial class GpuBigIntDivRemKernels
     }
 
     [GpuKernel(Cooperative = true)]
-    public static void ReciprocalNewtonRaphsonMegaKernel(ReciprocalNewtonRaphson ctx)
+    public static void ReciprocalNewtonRaphsonMegaKernel(NewtonRaphsonContext core)
     {
-        var core = ctx.Core;
         var dims = core.Dimensions;
         var ops = core.Operands;
         var iterScratch = core.Workspace.Iteration;
