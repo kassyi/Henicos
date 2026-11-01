@@ -910,12 +910,10 @@ public static partial class M1DiffSwitchKernels
         dst[col + 1] = iRes;
     }
 
-    // =========================================================================
-    // REPRODUCTION KERNELS FOR NEWLY DISCOVERED M1 DIVERGENCES (U4-F1 .. U4-F4)
-    // =========================================================================
+    // Reproductions of known divergences (registered in KnownDivergences with their issues)
 
     // -------------------------------------------------------------------------
-    // U4-F1 Repro: Empty stack-allocated span local (stackalloc int[0] and []) compared to null
+    // #998: Empty stack-allocated span local (stackalloc int[0] and []) compared to null
     // In C#, stackalloc int[0] and [] produce an empty Span<int> where (s == null) is true and (s != null) is false.
     // G#'s NullRepresentation.AppendArrayNullTest checks StackArrayLocals.IsStackArrayReference without checking
     // length == 0, emitting the constant 'false' for (s == null) and 'true' for (s != null).
@@ -941,7 +939,7 @@ public static partial class M1DiffSwitchKernels
     }
 
     // -------------------------------------------------------------------------
-    // U4-F2 Repro: Nullable array-like struct (Memory<int>?, ArraySegment<int>?) wrapping default(T)
+    // #998: Nullable array-like struct (Memory<int>?, ArraySegment<int>?) wrapping default(T)
     // In C#, converting default(Memory<int>) or default(ArraySegment<int>) to Memory<int>? / ArraySegment<int>?
     // constructs a Nullable<T> with HasValue == true, so `is null` and `== null` are false, while `is not null`,
     // `!= null`, and `.HasValue` are true.
@@ -971,7 +969,7 @@ public static partial class M1DiffSwitchKernels
     }
 
     // -------------------------------------------------------------------------
-    // U4-F3 Repro: Ref ternary writing a value parameter across a synchronization barrier
+    // #1000: Ref ternary writing a value parameter across a synchronization barrier
     // AstLoweringPipeline.FindWrittenStorageRoot only unwraps IdentifierNameSyntax, ParenthesizedExpressionSyntax,
     // MemberAccessExpressionSyntax, and ElementAccessExpressionSyntax, returning null for ConditionalExpressionSyntax
     // (and RefExpressionSyntax). Consequently, a kernel or device-function value parameter mutated via a ref ternary
@@ -1011,7 +1009,7 @@ public static partial class M1DiffSwitchKernels
     }
 
     // -------------------------------------------------------------------------
-    // U4-F4 Repro: Null-coalescing (??) on narrow Nullable<T> (byte?, ushort?, sbyte?) under var
+    // #998: Null-coalescing (??) on narrow Nullable<T> (byte?, ushort?, sbyte?) under var
     // In C#, `mb ?? 0` (where mb is byte? and 0 is a constant in 0..255) has type byte, `mus ?? 0` has type ushort,
     // and `mb ?? usv` (byte? ?? ushort) has type ushort.
     // NullRepresentation.AppendCoalesce emits `return tmp.HasValue ? tmp.Value : right;` in an untyped lambda, where
