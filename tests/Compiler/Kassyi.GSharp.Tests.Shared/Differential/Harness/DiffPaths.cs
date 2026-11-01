@@ -23,6 +23,23 @@ public enum DiffPath
     Cuda = 4,
 }
 
+/// <summary>
+/// The host operating systems a <see cref="KnownDivergence"/> appears on. The native path is built by the host C++
+/// compiler (MSVC on Windows, GCC or Clang elsewhere), so undefined behavior and overload choices can differ between them.
+/// </summary>
+[Flags]
+public enum DiffHost
+{
+    /// <summary>Windows (MSVC).</summary>
+    Windows = 1,
+
+    /// <summary>Every other host (GCC or Clang).</summary>
+    Unix = 2,
+
+    /// <summary>Every host.</summary>
+    Any = Windows | Unix,
+}
+
 /// <summary>Runs a launch on one path.</summary>
 /// <param name="Path">The path, as the report and <see cref="KnownDivergence"/> name it.</param>
 /// <param name="Run">Runs the launch it is given on the path.</param>

@@ -479,6 +479,31 @@ public class HarnessTests
     [TestTarget(ExecutionTarget.CpuExecution)]
     [Category(TestCategory.Unit)]
     [Scenario(TestScenario.SadPath)]
+    public void Test_KnownDivergence_ForAnotherHost_IsIgnored()
+    {
+        // The native path is built by MSVC on Windows and GCC or Clang elsewhere, so an entry can apply to one host only.
+        // On the other host it neither excuses a divergence nor is reported stale
+        // mutant: DifferentialRunner.cs Evaluate `&& k.AppliesToThisHost` removed
+        var otherHost = OperatingSystem.IsWindows() ? DiffHost.Unix : DiffHost.Windows;
+        KnownDivergence[] entries = [new(FakeCaseName, "sum", DiffPath.Native, Issue: 999, Hosts: otherHost)];
+
+        var diverging = FakeCase(DiffPath.Native, CorruptSums).Evaluate([0], entries);
+        Assert.Equal(5, diverging.UnexpectedMismatches.Count);
+
+        var matching = FakeCase().Evaluate([0, 1], entries);
+        Assert.False(matching.HasFailures, matching.ToString());
+        Assert.Empty(matching.StaleDivergences);
+
+        // The same entry for this host still excuses the divergence
+        // mutant: KnownDivergences.cs AppliesToThisHost `!= 0` -> `== 0`
+        KnownDivergence[] thisHost = [entries[0] with { Hosts = otherHost ^ DiffHost.Any }];
+        Assert.False(FakeCase(DiffPath.Native, CorruptSums).Evaluate([0], thisHost).HasFailures);
+    }
+
+    [Fact]
+    [TestTarget(ExecutionTarget.CpuExecution)]
+    [Category(TestCategory.Unit)]
+    [Scenario(TestScenario.SadPath)]
     public void Test_KnownDivergence_OnAPathThatThrew_IsNotStale()
     {
         // A path that threw produced no output, so it cannot show that the entry no longer differs: only the failure is reported

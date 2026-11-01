@@ -64,7 +64,7 @@ public static class DifferentialRunner
             path.Preflight?.Invoke();
         }
 
-        var entries = known.Where(k => k.Case == testCase.Name).ToList();
+        var entries = known.Where(k => k.Case == testCase.Name && k.AppliesToThisHost).ToList();
         var report = new DifferentialReport(testCase, paths, seeds, testSeed);
         foreach (int seed in seeds)
         {
