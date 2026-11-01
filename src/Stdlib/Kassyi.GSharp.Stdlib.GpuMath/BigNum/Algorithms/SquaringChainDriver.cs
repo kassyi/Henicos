@@ -101,6 +101,9 @@ internal sealed class SquaringChainDriver
     /// <remarks>Shows that the Gerbicz-Li check detects an error and that the rollback recovers from it.</remarks>
     internal Func<long, bool>? FaultInjection { get; set; }
 
+    /// <summary>Gets or sets the optional Pietrzak prover session recording scheduled leaf states.</summary>
+    internal IChainLeafRecorder? ProofSession { get; set; }
+
     /// <summary>Returns the starting point <c>k = 0</c>: <c>u_0</c> and <c>d = u_0</c>.</summary>
     public static ChainPoint StartPoint(uint[] start) => new(0, start, start, [], [], 0, 0);
 
@@ -153,6 +156,8 @@ internal sealed class SquaringChainDriver
         // The checks passed and the rollbacks always equal those of the last verified point, so they live in it.
         var verified = start;
         var k = start.Iteration;
+        ProofSession?.RecordIfLeaf(k, _modulus);
+
         var consecutiveFailures = 0;
         long iterations = 0;
 
@@ -174,6 +179,7 @@ internal sealed class SquaringChainDriver
             {
                 verified = RollBack(verified, ++consecutiveFailures, k);
                 k = verified.Iteration;
+                ProofSession?.RecordIfLeaf(k, _modulus);
             }
 
             onBlock?.Invoke(k, verified.ChecksPassed, verified.Rollbacks);
@@ -207,6 +213,12 @@ internal sealed class SquaringChainDriver
                 stop = Math.Min(stop, ChainLength);
             }
 
+            var proofSession = ProofSession;
+            if (proofSession != null)
+            {
+                stop = Math.Min(stop, proofSession.NextStopAfter(k));
+            }
+
             var faultInjection = FaultInjection;
             if (faultInjection != null)
             {
@@ -230,6 +242,8 @@ internal sealed class SquaringChainDriver
             {
                 CorruptState();
             }
+
+            proofSession?.RecordIfLeaf(k, _modulus);
         }
 
         return boundary;

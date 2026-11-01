@@ -27,6 +27,20 @@ public sealed record FermatPrpOptions
     /// It runs on the thread that runs the chain, between blocks.
     /// </summary>
     public Action<FermatPrpCheckpoint>? OnVerifiedCheckpoint { get; init; }
+
+    /// <summary>
+    /// Gets the Pietrzak halving tree depth <c>k</c> (<c>2^k</c> leaves per segment). 0 (the default) disables proof
+    /// generation; a positive value (<c>1</c> to <see cref="FermatPrpProof.MaxProofPower"/>, with <c>2^k &lt;= E</c>)
+    /// records intermediate chain leaves and stores the finalized proof in <see cref="FermatAlgorithm.LastProof"/>.
+    /// </summary>
+    public int ProofPower { get; init; }
+
+    /// <summary>
+    /// Gets an optional file path where intermediate Pietrzak leaves are stored during the run instead of host memory,
+    /// keeping RAM usage bounded for multi-million-digit exponents and persisting leaves across checkpoint restarts.
+    /// Ignored when <see cref="ProofPower"/> is 0.
+    /// </summary>
+    public string? ProofLeafFile { get; init; }
 }
 
 /// <summary>The verdict and the residues of <see cref="FermatAlgorithm.Run"/>.</summary>

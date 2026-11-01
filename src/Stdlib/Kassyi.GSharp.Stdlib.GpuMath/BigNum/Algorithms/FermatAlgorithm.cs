@@ -50,6 +50,7 @@ public sealed class FermatAlgorithm : IDisposable
     private readonly long _endIteration;
     private ISquaringModulus? _modulus;
     private SquaringChainDriver? _driver;
+    private PietrzakProverSession? _proofSession;
     private readonly FermatPrpOptions _options;
     private readonly uint? _smallDivisor;
     private readonly uint[] _startWords = [];
@@ -80,7 +81,7 @@ public sealed class FermatAlgorithm : IDisposable
         }
 
         _options = options ?? new FermatPrpOptions();
-        ThrowIfInvalid(_options, 2L * e + 1);
+        ThrowIfInvalid(_options, e, 2L * e + 1);
 
         E = e;
         Base = @base;
@@ -128,6 +129,23 @@ public sealed class FermatAlgorithm : IDisposable
 
     /// <summary>Gets the Gerbicz-Li block size in use (the option, or the automatic choice).</summary>
     public int BlockSize => _blockSize;
+
+    /// <summary>
+    /// Gets the dual-segment batched Pietrzak proof finalized by the last completed <see cref="Run"/> or
+    /// <see cref="RunAsync"/> when <see cref="FermatPrpOptions.ProofPower"/> is positive and <c>gcd(a, N) == 1</c>;
+    /// otherwise <see langword="null"/>.
+    /// </summary>
+    public FermatPrpProof? LastProof { get; private set; }
+
+    /// <summary>
+    /// Verifies a dual-segment batched Pietrzak proof modulo <c>N(E) = 2^(2E+1) - 2^E + 11</c> in
+    /// <c>2 * (E mod 2^k) + 1 + floor(E / 2^k) + 254 * (k + 1)</c> modular squarings.
+    /// </summary>
+    /// <param name="proof">The Pietrzak proof to verify.</param>
+    /// <returns>The proof validity, probable-prime verdict, 64-bit residues and modular squaring count.</returns>
+    /// <exception cref="ArgumentNullException"><paramref name="proof"/> is <see langword="null"/>.</exception>
+    public static FermatPrpVerificationResult VerifyProof(FermatPrpProof proof) =>
+        PietrzakProofVerifier.Verify(proof);
 
     /// <summary>
     /// Gets the squarings done on the state: the position of the last <see cref="Run"/> (or of a
@@ -347,6 +365,11 @@ public sealed class FermatAlgorithm : IDisposable
         try
         {
             // Written out (not '?.') so that the ownership analyzer (GSH0022) sees the call.
+            if (_proofSession != null)
+            {
+                _proofSession.Dispose();
+            }
+
             if (_modulus != null)
             {
                 _modulus.Dispose();
@@ -365,6 +388,7 @@ public sealed class FermatAlgorithm : IDisposable
     {
         cancellationToken.ThrowIfCancellationRequested();
         var stopwatch = Stopwatch.StartNew();
+        LastProof = null;
         if (_smallDivisor is { } divisor)
         {
             return new FermatPrpResult(false, divisor, 0, 0, 0, 0, 0, stopwatch.Elapsed);
@@ -372,6 +396,8 @@ public sealed class FermatAlgorithm : IDisposable
 
         EnsureChain();
         var start = _pendingRestore ?? SquaringChainDriver.StartPoint(_startWords);
+        _proofSession?.PrepareRun(start.Iteration);
+
         if (_pendingRestore is null)
         {
             // A run that does not resume starts again from u_0: until its first check passes, u_0 is its last verified
@@ -402,6 +428,12 @@ public sealed class FermatAlgorithm : IDisposable
         _modulus.Multiply(SquaringRegister.Verdict, SquaringRegister.Final, SquaringRegister.Constant);
         var residue = _modulus.ReadCanonical(SquaringRegister.Verdict);
         var check = _modulus.ReadCanonical(SquaringRegister.Snapshot);
+        if (_proofSession != null)
+        {
+            var finalResidue = _modulus.ReadCanonical(SquaringRegister.Final);
+            LastProof = _proofSession.FinalizeProof(_modulus, new PietrzakClaim(check, finalResidue));
+        }
+
         _iteration = _endIteration;
 
         return new FermatPrpResult(
@@ -418,6 +450,7 @@ public sealed class FermatAlgorithm : IDisposable
     private void OnVerified(ChainPoint point)
     {
         _lastVerified = point;
+        _proofSession?.Flush();
         _options.OnVerifiedCheckpoint?.Invoke(ToCheckpoint(point));
     }
 
@@ -453,28 +486,55 @@ public sealed class FermatAlgorithm : IDisposable
         }
 
         var modulus = CreateModulus(E, _cpuFallbackAtCreation);
+        PietrzakProverSession? proofSession = null;
         try
         {
+            if (_options.ProofPower > 0)
+            {
+                var header = new FermatPrpProofHeader(E, Base, _options.ProofPower, ResidueWords);
+                proofSession = new PietrzakProverSession(header, _options.ProofLeafFile);
+            }
+
             modulus.Write(SquaringRegister.Start, _startWords);
             modulus.Write(SquaringRegister.State, _startWords);
-            modulus.Write(SquaringRegister.Constant,
-                ToWords(BigInteger.ModPow(Base, 10, modulus.GetModulus()), ResidueWords));
+            modulus.Write(SquaringRegister.Constant, ConstantWords(E, Base, modulus, ResidueWords));
             _driver = new SquaringChainDriver(modulus, ChainLength, E, _blockSize, _checkIntervalBlocks,
-                _options.MaxConsecutiveRollbacks);
+                _options.MaxConsecutiveRollbacks)
+            {
+                ProofSession = proofSession,
+            };
+            _proofSession = proofSession;
             _modulus = modulus;
         }
         catch
         {
+            if (proofSession != null)
+            {
+                proofSession.Dispose();
+            }
+
             modulus.Dispose();
             throw;
         }
     }
 
     /// <summary>
+    /// Returns <c>a^10 mod N</c> in <paramref name="words"/> words without building <c>N</c> for large exponents:
+    /// when <c>E &gt;= 161</c>, <c>N &gt; 2^322 &gt; (2^32 - 1)^10 &gt;= a^10</c>.
+    /// </summary>
+    internal static uint[] ConstantWords(int e, uint @base, ISquaringModulus modulus, int words)
+    {
+        var power10 = e >= 161
+            ? BigInteger.Pow(@base, 10)
+            : BigInteger.ModPow(@base, 10, modulus.GetModulus());
+        return ToWords(power10, words);
+    }
+
+    /// <summary>
     /// Returns <c>u_0 = a mod N</c> in <paramref name="words"/> words without building <c>N</c>: for <c>E &gt;= 32</c>,
     /// <c>N &gt; 2^64 &gt; a</c>.
     /// </summary>
-    private static uint[] StartWords(int e, uint @base, int words)
+    internal static uint[] StartWords(int e, uint @base, int words)
     {
         var start = new uint[words];
         ulong value = @base;
@@ -492,12 +552,12 @@ public sealed class FermatAlgorithm : IDisposable
         return start;
     }
 
-    private static ISquaringModulus CreateModulus(int e, bool isCpuFallback) =>
+    internal static ISquaringModulus CreateModulus(int e, bool isCpuFallback) =>
         e <= QuadraticHostModulus.MaxExponent
             ? new QuadraticHostModulus(e)
             : new QuadraticDeviceModulus(new QuadraticFoldModulus(e), isCpuFallback);
 
-    private static void ThrowIfInvalid(FermatPrpOptions options, long chainLength)
+    private static void ThrowIfInvalid(FermatPrpOptions options, int e, long chainLength)
     {
         if (options.BlockSize < 0 || options.BlockSize > chainLength)
         {
@@ -516,22 +576,45 @@ public sealed class FermatAlgorithm : IDisposable
             throw new ArgumentOutOfRangeException(nameof(options), options.MaxConsecutiveRollbacks,
                 "MaxConsecutiveRollbacks must be at least 1.");
         }
+
+        if (options.ProofPower < 0 || options.ProofPower > FermatPrpProof.MaxProofPower)
+        {
+            throw new ArgumentOutOfRangeException(nameof(options), options.ProofPower,
+                $"ProofPower must be from 0 (disabled) to {FermatPrpProof.MaxProofPower}.");
+        }
+
+        if (options.ProofPower > 0 && (1L << options.ProofPower) > e)
+        {
+            throw new ArgumentOutOfRangeException(nameof(options), options.ProofPower,
+                $"2^ProofPower ({1L << options.ProofPower}) must not exceed E = {e}.");
+        }
+
+        if (options.ProofPower > 0 && options.ProofLeafFile != null && string.IsNullOrWhiteSpace(options.ProofLeafFile))
+        {
+            throw new ArgumentException("ProofLeafFile must not be empty or whitespace when specified.",
+                nameof(options));
+        }
     }
 
     /// <summary>Rejects a base that is 0, 1 or <c>N - 1</c> modulo <c>N</c>, which only a small <c>N</c> allows.</summary>
     private static void ThrowIfTrivialBase(int e, uint @base)
     {
-        var n = (1UL << (2 * e + 1)) - (1UL << e) + QuadraticFoldModulus.ConstantTerm;
-        var reduced = @base % n;
-        if (reduced == 0 || reduced == 1 || reduced == n - 1)
+        if (IsTrivialBase(e, @base, out var n, out var reduced))
         {
             throw new ArgumentOutOfRangeException(nameof(@base), @base,
                 $"The base is {reduced} modulo N = {n}; a base of 0, 1 or N - 1 says nothing about N.");
         }
     }
 
+    internal static bool IsTrivialBase(int e, uint @base, out ulong modulus, out ulong reduced)
+    {
+        modulus = (1UL << (2 * e + 1)) - (1UL << e) + QuadraticFoldModulus.ConstantTerm;
+        reduced = @base % modulus;
+        return reduced == 0 || reduced == 1 || reduced == modulus - 1;
+    }
+
     /// <summary>Returns <c>gcd(a, N)</c> when it is not 1, from <c>N mod a = 2x^2 - x + 11 mod a</c> with <c>x = 2^E mod a</c>.</summary>
-    private static uint? SmallDivisor(int e, uint @base)
+    internal static uint? SmallDivisor(int e, uint @base)
     {
         ulong x = 1;
         ulong power = 2 % @base;
@@ -554,12 +637,12 @@ public sealed class FermatAlgorithm : IDisposable
     private static uint[] ToWords(BigInteger value, int words)
     {
         var result = new uint[words];
-        value.TryWriteBytes(System.Runtime.InteropServices.MemoryMarshal.AsBytes(result.AsSpan()), out _,
+        value.TryWriteBytes(MemoryMarshal.AsBytes(result.AsSpan()), out _,
             isUnsigned: true);
         return result;
     }
 
-    private static ulong Low64(ReadOnlySpan<uint> words) =>
+    internal static ulong Low64(ReadOnlySpan<uint> words) =>
         words.Length > 1 ? words[0] | ((ulong)words[1] << 32) : words[0];
 
     private void ThrowIfUnusable()
