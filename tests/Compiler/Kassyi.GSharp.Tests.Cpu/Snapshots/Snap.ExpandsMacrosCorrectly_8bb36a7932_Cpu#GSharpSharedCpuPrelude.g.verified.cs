@@ -954,32 +954,28 @@ __forceinline__ float atomicExch(float* address, float val) { return __gsharp_at
 // PTX atom.add.f32 / red.add.f32 (#868): on global memory, subnormal inputs and results flush to sign-preserving zero;
 // on shared memory, subnormals are preserved; on both, a NaN result stores canonical NaN (0x7FFFFFFF), and the returned
 // old value keeps the original un-flushed bits stored at address.
+// The bits of a float, with a subnormal turned into the zero of its sign when flush is set
+__forceinline__ uint32_t __gsharp_flush_subnormal(uint32_t bits, bool flush) {
+uint32_t magnitude = bits & 0x7FFFFFFFu;
+return flush && magnitude != 0u && magnitude < 0x00800000u ? bits & 0x80000000u : bits;
+}
 __forceinline__ float atomicAdd(float* address, float val) {
-bool isShared = __gsharp_current_smem().contains(address);
+bool flush = !__gsharp_current_smem().contains(address);
 uint32_t valBits;
 std::memcpy(&valBits, &val, sizeof(float));
-if (!isShared && (valBits & 0x7FFFFFFFu) != 0u && (valBits & 0x7FFFFFFFu) < 0x00800000u) {
-valBits &= 0x80000000u;
-}
+valBits = __gsharp_flush_subnormal(valBits, flush);
 float rhs;
 std::memcpy(&rhs, &valBits, sizeof(float));
 volatile std::atomic<uint32_t>* atom = reinterpret_cast<volatile std::atomic<uint32_t>*>(address);
 uint32_t oldBits = atom->load(std::memory_order_relaxed);
 while (true) {
-uint32_t lhsBits = oldBits;
-if (!isShared && (lhsBits & 0x7FFFFFFFu) != 0u && (lhsBits & 0x7FFFFFFFu) < 0x00800000u) {
-lhsBits &= 0x80000000u;
-}
+uint32_t lhsBits = __gsharp_flush_subnormal(oldBits, flush);
 float lhs;
 std::memcpy(&lhs, &lhsBits, sizeof(float));
 float sum = lhs + rhs;
 uint32_t sumBits;
 std::memcpy(&sumBits, &sum, sizeof(float));
-if ((sumBits & 0x7FFFFFFFu) > 0x7F800000u) {
-sumBits = 0x7FFFFFFFu;
-} else if (!isShared && (sumBits & 0x7FFFFFFFu) != 0u && (sumBits & 0x7FFFFFFFu) < 0x00800000u) {
-sumBits &= 0x80000000u;
-}
+sumBits = (sumBits & 0x7FFFFFFFu) > 0x7F800000u ? 0x7FFFFFFFu : __gsharp_flush_subnormal(sumBits, flush);
 if (atom->compare_exchange_weak(oldBits, sumBits, std::memory_order_relaxed)) {
 float oldVal;
 std::memcpy(&oldVal, &oldBits, sizeof(float));
