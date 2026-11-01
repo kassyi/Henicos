@@ -12,8 +12,12 @@ namespace Kassyi.GSharp.Tests.Shared.Differential;
 /// <param name="Column">The column name (<see cref="DiffBuffer.ColumnNameOf"/>), e.g. <c>a&gt;&gt;&gt;b</c>.</param>
 /// <param name="Paths">The paths on which the column differs; one or more flags.</param>
 /// <param name="Issue">The issue that tracks the divergence.</param>
-public sealed record KnownDivergence(string Case, string Column, DiffPath Paths, int Issue)
+/// <param name="Hosts">The hosts on which the column differs; an entry for other hosts is ignored, also by the stale check.</param>
+public sealed record KnownDivergence(string Case, string Column, DiffPath Paths, int Issue, DiffHost Hosts = DiffHost.Any)
 {
+    /// <summary>Gets whether the entry applies to the host this process runs on.</summary>
+    public bool AppliesToThisHost => (Hosts & (OperatingSystem.IsWindows() ? DiffHost.Windows : DiffHost.Unix)) != 0;
+
     /// <summary>Returns whether the entry covers a cell of <paramref name="column"/> in <paramref name="caseName"/> on <paramref name="path"/>.</summary>
     /// <param name="caseName">The case.</param>
     /// <param name="column">The column name.</param>
@@ -37,12 +41,17 @@ public static class KnownDivergences
     [
         // new("IntegerMatrixKernels.Int32ArithmeticMatrixKernel", "a>>>b", DiffPath.Native | DiffPath.Cuda, Issue: 722),
 
-        // F1, F2: Math.Sqrt(float) / Math.Floor|Ceiling|Round(float) return double in C# (#828)
-        new("M1DiffMathKernels.MathOfSingleMatrixKernel", "Math.Sqrt(f)", DiffPath.Native | DiffPath.Cuda, Issue: 828),
-        new("M1DiffMathKernels.MathOfSingleMatrixKernel", "Math.Sqrt(f)*3.0", DiffPath.Native | DiffPath.Cuda, Issue: 828),
-        new("M1DiffMathKernels.MathOfSingleMatrixKernel", "Math.Floor(f)/3", DiffPath.Native | DiffPath.Cuda, Issue: 828),
-        new("M1DiffMathKernels.MathOfSingleMatrixKernel", "Math.Ceiling(f)/3", DiffPath.Native | DiffPath.Cuda, Issue: 828),
-        new("M1DiffMathKernels.MathOfSingleMatrixKernel", "Math.Round(f)/3", DiffPath.Native | DiffPath.Cuda, Issue: 828),
+        // F1, F2: Math.Sqrt(float) / Math.Floor|Ceiling|Round(float) return double in C# (#828); on native only MSVC picks the float overload
+        new("M1DiffMathKernels.MathOfSingleMatrixKernel", "Math.Sqrt(f)", DiffPath.Cuda, Issue: 828),
+        new("M1DiffMathKernels.MathOfSingleMatrixKernel", "Math.Sqrt(f)", DiffPath.Native, Issue: 828, Hosts: DiffHost.Windows),
+        new("M1DiffMathKernels.MathOfSingleMatrixKernel", "Math.Sqrt(f)*3.0", DiffPath.Cuda, Issue: 828),
+        new("M1DiffMathKernels.MathOfSingleMatrixKernel", "Math.Sqrt(f)*3.0", DiffPath.Native, Issue: 828, Hosts: DiffHost.Windows),
+        new("M1DiffMathKernels.MathOfSingleMatrixKernel", "Math.Floor(f)/3", DiffPath.Cuda, Issue: 828),
+        new("M1DiffMathKernels.MathOfSingleMatrixKernel", "Math.Floor(f)/3", DiffPath.Native, Issue: 828, Hosts: DiffHost.Windows),
+        new("M1DiffMathKernels.MathOfSingleMatrixKernel", "Math.Ceiling(f)/3", DiffPath.Cuda, Issue: 828),
+        new("M1DiffMathKernels.MathOfSingleMatrixKernel", "Math.Ceiling(f)/3", DiffPath.Native, Issue: 828, Hosts: DiffHost.Windows),
+        new("M1DiffMathKernels.MathOfSingleMatrixKernel", "Math.Round(f)/3", DiffPath.Cuda, Issue: 828),
+        new("M1DiffMathKernels.MathOfSingleMatrixKernel", "Math.Round(f)/3", DiffPath.Native, Issue: 828, Hosts: DiffHost.Windows),
 
         // F3: foreach explicit element conversion from float/double to integer/enum (#995)
         new("M1DiffConversionKernels.ForeachFloatToIntMatrixKernel", "foreach(int in float)", DiffPath.Native, Issue: 995),
@@ -61,7 +70,7 @@ public static class KnownDivergences
         new("M1DiffConversionKernels.ForeachFloatToIntMatrixKernel", "foreach(byte in double)", DiffPath.Native | DiffPath.Cuda, Issue: 995),
         new("M1DiffConversionKernels.ForeachFloatToIntMatrixKernel", "foreach(int in yield float)", DiffPath.Native, Issue: 995),
 
-        // F4: narrow enum ~ / +/- and signed enum wraparound (#995)
+        // F4: narrow enum ~ / +/- and signed enum wraparound (#995); GCC and Clang fold the signed overflow on native, MSVC wraps
         new("M1DiffNarrowIntKernels.NarrowEnumAndSignedEnumMatrixKernel", "(int)~byteEnum", DiffPath.Native | DiffPath.Cuda, Issue: 995),
         new("M1DiffNarrowIntKernels.NarrowEnumAndSignedEnumMatrixKernel", "(int)~ushortEnum", DiffPath.Native | DiffPath.Cuda, Issue: 995),
         new("M1DiffNarrowIntKernels.NarrowEnumAndSignedEnumMatrixKernel", "~ByteEnum.Zero>ByteEnum.Zero", DiffPath.Native | DiffPath.Cuda, Issue: 995),
@@ -73,7 +82,9 @@ public static class KnownDivergences
         new("M1DiffNarrowIntKernels.NarrowEnumAndSignedEnumMatrixKernel", "(int)(shortEnum+s)", DiffPath.Native | DiffPath.Cuda, Issue: 995),
         new("M1DiffNarrowIntKernels.NarrowEnumAndSignedEnumMatrixKernel", "(int)(sbyteEnum-sb)", DiffPath.Native | DiffPath.Cuda, Issue: 995),
         new("M1DiffNarrowIntKernels.NarrowEnumAndSignedEnumMatrixKernel", "intEnum+1<intEnum", DiffPath.Cuda, Issue: 995),
+        new("M1DiffNarrowIntKernels.NarrowEnumAndSignedEnumMatrixKernel", "intEnum+1<intEnum", DiffPath.Native, Issue: 995, Hosts: DiffHost.Unix),
         new("M1DiffNarrowIntKernels.NarrowEnumAndSignedEnumMatrixKernel", "intEnum-1>intEnum", DiffPath.Cuda, Issue: 995),
+        new("M1DiffNarrowIntKernels.NarrowEnumAndSignedEnumMatrixKernel", "intEnum-1>intEnum", DiffPath.Native, Issue: 995, Hosts: DiffHost.Unix),
 
         // F5: compound assignment / increment receiver evaluation order & tuple deconstruction LHS order (#996)
         new("M1DiffNarrowIntKernels.TargetEvaluationOrderMatrixKernel", "(i==0?s:alt)[++i]+=v s[1]", DiffPath.Native | DiffPath.Cuda, Issue: 996),
