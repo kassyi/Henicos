@@ -52,6 +52,11 @@ public sealed class MemberAccessExpressionTranspilerRule : SyntaxNodeTranspilerR
             return;
         }
 
+        if (TryTranspileReducedExtensionMethodGroup(node, symbol, ref context))
+        {
+            return;
+        }
+
         if (TryTranspileStackArrayLength(node, ref context))
         {
             return;
@@ -63,6 +68,82 @@ public sealed class MemberAccessExpressionTranspilerRule : SyntaxNodeTranspilerR
         }
 
         TranspileMemberAccess(node, symbol, ref context);
+    }
+
+    // [<receiver param> = (<receiver>)](<parameters>) { return <extension>(<receiver param>, <parameters>); }
+    // [WHY] A reduced extension method group (x.M) evaluates and binds its receiver when the delegate is formed, so
+    // assigning a new value to x afterwards does not change the receiver that the delegate passes to M (#940).
+    private static bool TryTranspileReducedExtensionMethodGroup(
+        MemberAccessExpressionSyntax node,
+        ISymbol? symbol,
+        ref TranspileContext context)
+    {
+        if (node.Parent is InvocationExpressionSyntax parentInvocation && parentInvocation.Expression == node)
+        {
+            return false;
+        }
+
+        if ((symbol ?? context.Query.SemanticModel.GetSymbol(node.Name)) is not IMethodSymbol { ReducedFrom: { } extension } method ||
+            !CppNameResolver.IsEmittedDeviceFunction(extension, context.Emitter.Dialect))
+        {
+            return false;
+        }
+
+        DynamicSharedMemoryEmitter.FailIfReferencedWithoutCall(node, extension, ref context);
+        if (SuspensionAnalysis.IsSuspendingFunction(extension, context.Query.SemanticModel.Compilation))
+        {
+            context.Reporter.Fail(
+                GSharpDiagnostics.UnsupportedSyntax,
+                node,
+                InvocationExpressionTranspilerRule.SuspendingExtensionCall);
+            return true;
+        }
+
+        StructTranspiler.RegisterUsedStructIfApplicable(method.ReturnType, ref context);
+        using (context.Emitter.Writer.Brackets())
+        {
+            CppNameResolver.AppendSymbolName(extension.Parameters[0], ref context);
+            context.Emitter.Writer.Append(" = ");
+            using (context.Emitter.Writer.Parentheses())
+            {
+                StackArrayLocals.AppendView(node.Expression, ref context);
+            }
+        }
+
+        using (context.Emitter.Writer.Parentheses())
+        {
+            for (var i = 0; i < method.Parameters.Length; i++)
+            {
+                context.Emitter.Writer.AppendIf(i > 0, ", ");
+                var parameter = method.Parameters[i];
+                var parameterType = parameter.Type.UnwrapNullableArrayLike();
+                StructTranspiler.RegisterUsedStructIfApplicable(parameterType, ref context);
+                context.Emitter.Dialect.AppendType(ref context, parameterType);
+                context.Emitter.Writer.AppendIf(parameter.RefKind != RefKind.None, "*");
+                context.Emitter.Writer.Append(' ');
+                CppNameResolver.AppendSymbolName(parameter, ref context);
+            }
+        }
+
+        context.Emitter.Writer.Append(' ');
+        using (context.Emitter.Writer.InlineScope("{ ", " }"))
+        {
+            context.Emitter.Writer.AppendIf(!extension.ReturnsVoid, "return ");
+            CppNameResolver.AppendSymbolName(extension, ref context);
+            using (context.Emitter.Writer.Parentheses())
+            {
+                CppNameResolver.AppendSymbolName(extension.Parameters[0], ref context);
+                for (var i = 0; i < method.Parameters.Length; i++)
+                {
+                    context.Emitter.Writer.Append(", ");
+                    CppNameResolver.AppendSymbolName(method.Parameters[i], ref context);
+                }
+            }
+
+            context.Emitter.Writer.Append(';');
+        }
+
+        return true;
     }
 
     private static bool TryTranspileSpecialArrayMembers(MemberAccessExpressionSyntax node, ref TranspileContext context)

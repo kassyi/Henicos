@@ -62,4 +62,49 @@ public class GpuKernelAnalyzerTests
         Assert.DoesNotContain(diagnostics, d => d.Id == GSharpDiagnostics.UnrollFactorMustBeNonNegativeConstant.Id);
         Assert.DoesNotContain(diagnostics, d => d.Id == GSharpDiagnostics.UnrollHintMustPrecedeLoop.Id);
     }
+
+    [Fact]
+    [Scenario(TestScenario.SadPath)]
+    public async Task Test_EnclosingTypesMustBePartial_ReportsGsh0036AtIdentifierSpan()
+    {
+        var diagnostics = await RoslynTestUtility.TestAnalyzer("Analyzers/EnclosingTypeMustBePartial_SadPath.cs", s_analyzer)
+                                                 .GetDiagnosticsAsync();
+        var gsh0036Diags = diagnostics.Where(d => d.Id == GSharpDiagnostics.KernelClassMustBePartial.Id)
+            .OrderBy(d => d.Location.GetLineSpan().StartLinePosition.Line).ToList();
+
+        // DeviceOnlyStruct is not reported, and OuterOfTwoClasses only once
+        Assert.Equal(4, gsh0036Diags.Count);
+
+        var d0 = gsh0036Diags[0];
+        var lineSpan0 = d0.Location.GetLineSpan();
+        Assert.Equal(4, lineSpan0.StartLinePosition.Line);
+        Assert.Equal(13, lineSpan0.StartLinePosition.Character);
+        Assert.Equal(4, lineSpan0.EndLinePosition.Line);
+        Assert.Equal(33, lineSpan0.EndLinePosition.Character);
+        Assert.Equal("The type 'OuterNonPartialClass' that contains or encloses GPU code must be declared partial to support source generation of contexts and launch methods.", d0.GetMessage());
+
+        var d1 = gsh0036Diags[1];
+        var lineSpan1 = d1.Location.GetLineSpan();
+        Assert.Equal(6, lineSpan1.StartLinePosition.Line);
+        Assert.Equal(18, lineSpan1.StartLinePosition.Character);
+        Assert.Equal(6, lineSpan1.EndLinePosition.Line);
+        Assert.Equal(39, lineSpan1.EndLinePosition.Character);
+        Assert.Equal("The type 'OuterNonPartialStruct' that contains or encloses GPU code must be declared partial to support source generation of contexts and launch methods.", d1.GetMessage());
+
+        var d2 = gsh0036Diags[2];
+        var lineSpan2 = d2.Location.GetLineSpan();
+        Assert.Equal(18, lineSpan2.StartLinePosition.Line);
+        Assert.Equal(14, lineSpan2.StartLinePosition.Character);
+        Assert.Equal(18, lineSpan2.EndLinePosition.Line);
+        Assert.Equal(35, lineSpan2.EndLinePosition.Character);
+        Assert.Equal("The type 'OuterNonPartialRecord' that contains or encloses GPU code must be declared partial to support source generation of contexts and launch methods.", d2.GetMessage());
+
+        var lineSpan3 = gsh0036Diags[3].Location.GetLineSpan();
+        Assert.Equal((35, 13, 35, 30), (
+            lineSpan3.StartLinePosition.Line,
+            lineSpan3.StartLinePosition.Character,
+            lineSpan3.EndLinePosition.Line,
+            lineSpan3.EndLinePosition.Character));
+        Assert.Contains("'OuterOfTwoClasses'", gsh0036Diags[3].GetMessage(), StringComparison.Ordinal);
+    }
 }

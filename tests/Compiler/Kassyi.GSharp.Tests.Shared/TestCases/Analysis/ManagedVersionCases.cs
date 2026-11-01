@@ -105,12 +105,29 @@ public static partial class Functions
     // An extension method that expands the operator macro, and a function that calls it in the reduced form
     [GpuDeviceFunction]
     public static int CallsExtension(ref Ctx ctx, int a) => ctx.Doubled(a);
+
+    // A reduced extension method group passed as a delegate (#940)
+    [GpuDeviceFunction]
+    public static void PassesExtensionMethodGroup(int[] x)
+    {
+        Gpu.ForUnroll(0, 2, x.AddToIndex);
+    }
 }
 
 public static partial class Extensions
 {
     [GpuDeviceFunction]
     public static int Doubled(this ref Ctx ctx, int a) => Functions.Direct(ref ctx, a);
+
+    [GpuDeviceFunction]
+    public static void AddToIndex(this int[] x, int i)
+    {
+        Ctx ctx = default;
+        Value vx = new Value(x[0]);
+        Value vy = new Value(i);
+        Value z = new Value(0);
+        z = vx + vy;
+    }
 }
 
 // A class that is not partial around the class of a device function: no managed version is written into it, so

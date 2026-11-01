@@ -208,13 +208,7 @@ internal static class CudaHostLaunchEmitter
 
         foreach (var warmup in warmups)
         {
-            writer.Append("global::");
-            if (!warmup.Class.IsGlobalNamespace)
-            {
-                writer.Append($"{warmup.Class.Namespace}.");
-            }
-
-            writer.AppendLine($"{warmup.Class.Name}.WarmupFunctionPointer{warmup.MemberKey}();");
+            writer.AppendLine($"{warmup.Class.FullyQualifiedName}.WarmupFunctionPointer{warmup.MemberKey}();");
         }
 
         writer.AppendLine("}}}");
