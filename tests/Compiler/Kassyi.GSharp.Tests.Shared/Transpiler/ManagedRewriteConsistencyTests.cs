@@ -143,10 +143,13 @@ public class ManagedRewriteConsistencyTests
         var declaration = tree.GetRoot().DescendantNodes().OfType<MethodDeclarationSyntax>().Single();
         var method = Assert.IsAssignableFrom<IMethodSymbol>(model.GetDeclaredSymbol(declaration));
 
-        var rewritten = new ManagedExecutionRewriter(model, ManagedBodyKind.ManagedVersion,
+        var body = declaration.GetBodyNode();
+        Assert.NotNull(body);
+        var visited = new ManagedExecutionRewriter(model, ManagedBodyKind.ManagedVersion,
                 new ManagedAccessorSet(method, compilation))
-            .Visit(declaration.GetBodyNode()!)!
-            .ToFullString();
+            .Visit(body);
+        Assert.NotNull(visited);
+        var rewritten = visited.ToFullString();
 
         // All 11 float/double StackEnumerable Sum calls (f0..f5, d0..d4) become SumSequential
         Assert.Equal(11, CountOccurrences(rewritten, ".SumSequential"));

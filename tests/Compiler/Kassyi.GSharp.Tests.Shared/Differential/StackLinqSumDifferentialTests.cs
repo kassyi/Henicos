@@ -1,4 +1,6 @@
 #nullable enable
+using System.Numerics;
+
 namespace Kassyi.GSharp.Tests.Shared.Differential;
 
 /// <summary>
@@ -10,47 +12,19 @@ public class StackLinqSumDifferentialTests
 {
     private const int Rows = 4;
 
-    private static readonly float[] s_floatIllConditioned =
-    [
-        1e8f, 1f, -1e8f, 1f, 1e8f, 1f, -1e8f, 1f,
-        1e8f, 1f, -1e8f, 1f, 1e8f, 1f, -1e8f, 1f
-    ];
-
-    private static readonly double[] s_doubleIllConditioned =
-    [
-        1e16, 1.0, -1e16, 1.0, 1e16, 1.0, -1e16, 1.0,
-        1e16, 1.0, -1e16, 1.0, 1e16, 1.0, -1e16, 1.0
-    ];
-
     private static readonly DifferentialCase s_floatSum = new("StackLinqSumDifferentialKernels.FloatSumMatrixKernel")
     {
         Shape = LaunchShape.ForRows(Rows, blockX: 4),
         Inputs = static (rng, rows) => new DiffBuffers()
             .In("data", BuildFloatInput(rng))
-            .Out<float>("r", rows, StackLinqSumDifferentialKernels.FloatColumns, OutputPolicy.Bitwise),
+            .Out<float>("r", rows, StackLinqSumDifferentialKernels.Columns, OutputPolicy.Bitwise),
         Launch = static (b, s) => StackLinqSumDifferentialKernels.LaunchFloatSumMatrixKernel(
             b.Get<float>("data"),
             b.Get<float>("r"),
             gridDimX: s.GridX,
             blockDimX: s.BlockX
         ),
-        Reference = static b =>
-        {
-            var data = b.Get<float>("data");
-            var r = b.Get<float>("r");
-            float sum = SequentialSum(data);
-            for (int t = 0; t < Rows; t++)
-            {
-                int o = t * 7;
-                r[o + 0] = sum;
-                r[o + 1] = sum;
-                r[o + 2] = sum;
-                r[o + 3] = sum;
-                r[o + 4] = sum;
-                r[o + 5] = sum;
-                r[o + 6] = sum + sum;
-            }
-        },
+        Reference = FillReference<float>,
     };
 
     private static readonly DifferentialCase s_doubleSum = new("StackLinqSumDifferentialKernels.DoubleSumMatrixKernel")
@@ -58,30 +32,14 @@ public class StackLinqSumDifferentialTests
         Shape = LaunchShape.ForRows(Rows, blockX: 4),
         Inputs = static (rng, rows) => new DiffBuffers()
             .In("data", BuildDoubleInput(rng))
-            .Out<double>("r", rows, StackLinqSumDifferentialKernels.DoubleColumns, OutputPolicy.Bitwise),
+            .Out<double>("r", rows, StackLinqSumDifferentialKernels.Columns, OutputPolicy.Bitwise),
         Launch = static (b, s) => StackLinqSumDifferentialKernels.LaunchDoubleSumMatrixKernel(
             b.Get<double>("data"),
             b.Get<double>("r"),
             gridDimX: s.GridX,
             blockDimX: s.BlockX
         ),
-        Reference = static b =>
-        {
-            var data = b.Get<double>("data");
-            var r = b.Get<double>("r");
-            double sum = SequentialSum(data);
-            for (int t = 0; t < Rows; t++)
-            {
-                int o = t * 7;
-                r[o + 0] = sum;
-                r[o + 1] = sum;
-                r[o + 2] = sum;
-                r[o + 3] = sum;
-                r[o + 4] = sum;
-                r[o + 5] = sum;
-                r[o + 6] = sum + sum;
-            }
-        },
+        Reference = FillReference<double>,
     };
 
     [SkippableFact]
@@ -111,19 +69,31 @@ public class StackLinqSumDifferentialTests
         DifferentialRunner.Run(s_doubleSum);
     }
 
-    private static float[] BuildFloatInput(DiffRandom rng)
+    private static void FillReference<T>(DiffBuffers b) where T : unmanaged, INumberBase<T>
     {
-        if (rng.IsBoundarySeed)
+        var data = b.Get<T>("data");
+        var r = b.Get<T>("r");
+        T sum = T.Zero;
+        foreach (T v in data)
         {
-            return (float[])s_floatIllConditioned.Clone();
+            sum += v;
         }
 
-        float scale = (1 + rng.NextBelow(4)) * 1e8f;
-        float small = 1 + rng.NextBelow(7);
-        var values = new float[16];
+        int cols = StackLinqSumDifferentialKernels.Columns.Length;
+        for (int t = 0; t < Rows; t++)
+        {
+            int o = t * cols;
+            r.AsSpan(o, cols - 1).Fill(sum);
+            r[o + cols - 1] = sum + sum;
+        }
+    }
+
+    private static T[] Alternating<T>(T scale, T small) where T : INumberBase<T>
+    {
+        var values = new T[16];
         for (int i = 0; i < values.Length; i += 4)
         {
-            values[i + 0] = scale;
+            values[i] = scale;
             values[i + 1] = small;
             values[i + 2] = -scale;
             values[i + 3] = small;
@@ -132,46 +102,13 @@ public class StackLinqSumDifferentialTests
         return values;
     }
 
-    private static double[] BuildDoubleInput(DiffRandom rng)
-    {
-        if (rng.IsBoundarySeed)
-        {
-            return (double[])s_doubleIllConditioned.Clone();
-        }
+    private static float[] BuildFloatInput(DiffRandom rng) =>
+        rng.IsBoundarySeed
+            ? Alternating(1e8f, 1f)
+            : Alternating((1 + rng.NextBelow(4)) * 1e8f, (float)(1 + rng.NextBelow(7)));
 
-        double scale = (1 + rng.NextBelow(4)) * 1e16;
-        double small = 1 + rng.NextBelow(7);
-        var values = new double[16];
-        for (int i = 0; i < values.Length; i += 4)
-        {
-            values[i + 0] = scale;
-            values[i + 1] = small;
-            values[i + 2] = -scale;
-            values[i + 3] = small;
-        }
-
-        return values;
-    }
-
-    private static float SequentialSum(float[] values)
-    {
-        float sum = 0f;
-        foreach (float v in values)
-        {
-            sum += v;
-        }
-
-        return sum;
-    }
-
-    private static double SequentialSum(double[] values)
-    {
-        double sum = 0.0;
-        foreach (double v in values)
-        {
-            sum += v;
-        }
-
-        return sum;
-    }
+    private static double[] BuildDoubleInput(DiffRandom rng) =>
+        rng.IsBoundarySeed
+            ? Alternating(1e16, 1.0)
+            : Alternating((1 + rng.NextBelow(4)) * 1e16, (double)(1 + rng.NextBelow(7)));
 }

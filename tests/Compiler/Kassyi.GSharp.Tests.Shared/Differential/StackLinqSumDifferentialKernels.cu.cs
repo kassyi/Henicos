@@ -12,20 +12,8 @@ namespace Kassyi.GSharp.Tests.Shared.Differential;
 /// </summary>
 public static partial class StackLinqSumDifferentialKernels
 {
-    /// <summary>The columns of <see cref="FloatSumMatrixKernel"/>.</summary>
-    public static readonly string[] FloatColumns =
-    [
-        "direct",
-        "selector",
-        "select",
-        "where",
-        "take",
-        "device_direct",
-        "device_transitive"
-    ];
-
-    /// <summary>The columns of <see cref="DoubleSumMatrixKernel"/>.</summary>
-    public static readonly string[] DoubleColumns =
+    /// <summary>The columns of <see cref="FloatSumMatrixKernel"/> and <see cref="DoubleSumMatrixKernel"/>.</summary>
+    public static readonly string[] Columns =
     [
         "direct",
         "selector",
