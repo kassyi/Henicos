@@ -260,6 +260,24 @@ public class TransferPlannerTests
         }
     }
 
+    // An explicit-layout union with a layout-converted arm is rejected with GSH0078 (#1006)
+    [Fact]
+    [Category(TestCategory.Compiler)]
+    [Scenario(TestScenario.SadPath)]
+    public void Plan_ExplicitUnionWithLayoutConvertedArm_IsGsh0078()
+    {
+        var (compilation, _, _) = GetContext(Path.Combine("Diagnostics", "StructLayoutReturnDiagnostics.cs"));
+        var brokenUnion = Assert.IsAssignableFrom<INamedTypeSymbol>(
+            compilation.GetTypeByMetadataName("StructLayoutReturnDiagnosticsTest.BrokenUnionResult"));
+        foreach (var dialect in s_dialects)
+        {
+            var plan = Assert.IsType<TransferPlan.Unsupported>(TransferPlanner.Plan(brokenUnion, dialect));
+            Assert.Equal("GSH0078", plan.DiagnosticId);
+            Assert.Contains("field 'Shifted' at offset 0 overlaps field", plan.Reason, StringComparison.Ordinal);
+            Assert.Contains("Shifted", plan.Reason, StringComparison.Ordinal);
+        }
+    }
+
     // A struct outside the user structs that has no device representation is GSH0078 with no field to name
     [Fact]
     [Category(TestCategory.Compiler)]

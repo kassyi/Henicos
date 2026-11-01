@@ -11,13 +11,25 @@ namespace Kassyi.GSharp.Compiler;
 internal static class GpuCodeConstraints
 {
     /// <summary>
-    /// Whether a GPU function returns <see langword="void"/>, an unmanaged type, or is a valid device iterator
-    /// (GSH0004).
+    /// Whether a GPU function returns <see langword="void"/>, an unmanaged type with a device representation, or is a
+    /// valid device iterator (GSH0004).
     /// </summary>
-    public static bool HasSupportedReturnType(IMethodSymbol method) =>
+    public static bool HasSupportedReturnType(IMethodSymbol method, ITranspilerDialect dialect) =>
         method.ReturnType.SpecialType == SpecialType.System_Void ||
-        method.ReturnType.IsUnmanagedType ||
-        IteratorTypeResolver.IsDeviceIteratorMethod(method);
+        IteratorTypeResolver.IsDeviceIteratorMethod(method) ||
+        (method.ReturnType.IsUnmanagedType && HasReturnDeviceRepresentation(method.ReturnType, dialect));
+
+    private static bool HasReturnDeviceRepresentation(ITypeSymbol type, ITranspilerDialect dialect)
+    {
+        if (type.SpecialType == SpecialType.System_Decimal ||
+            GetRuntimeOnlyTypeName(type) is not null ||
+            type is IPointerTypeSymbol or IFunctionPointerTypeSymbol)
+        {
+            return true;
+        }
+
+        return TypeLayoutCalculator.HasDeviceRepresentation(type, dialect);
+    }
 
     /// <summary>The return type of <paramref name="method"/> as the GSH0004 message names it.</summary>
     public static string FormatReturnType(IMethodSymbol method) =>

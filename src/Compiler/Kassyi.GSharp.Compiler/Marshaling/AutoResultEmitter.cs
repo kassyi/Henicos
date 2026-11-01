@@ -18,12 +18,16 @@ internal static class AutoResultEmitter
     private const string Size = GSharpInternalNames.ReturnValue.BufferSize;
     private const string Shadow = GSharpInternalNames.ReturnValue.BufferShadow;
     private const string Native = GSharpInternalNames.ReturnValue.BufferNative;
-    private const string TotalThreads = "__gsharp_total_threads";
+    private const string TotalThreads = GSharpInternalNames.ReturnValue.TotalThreads;
+    private const string KernelParams = GSharpInternalNames.Launcher.KernelParams;
+    private const string CudaDriverApiType = "global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi";
+    private const string CudaExceptionType = "global::Kassyi.GSharp.Runtime.Interop.CudaException";
+    private const string IntPtrType = "global::System.IntPtr";
 
     /// <summary>The device copy of the auto result buffer in the generated CUDA launcher.</summary>
     private const string DeviceAutoResult = "d_" + Buffer;
 
-    /// <summary>The pinned auto result (or its shadow) that the CPU launcher passes to the native kernel.</summary>
+    /// <summary>The pinned auto result (or its shadow) that the launchers pass to the native kernel or <c>cuMemcpyDtoHAsync_v2</c>.</summary>
     internal const string PinnedAutoResult = "p_" + Buffer;
 
     // if (<a launch dimension is 0>) throw ...; uint __gsharp_total_threads; checked { ... }
@@ -50,7 +54,7 @@ internal static class AutoResultEmitter
 
     /// <summary>CUDA: emits <c>IntPtr d___gsharp_auto_result = IntPtr.Zero;</c> for a value-returning kernel.</summary>
     internal static void WriteCudaDeclaration(SourceWriter writer, in KernelHostModel kernel) =>
-        writer.AppendLineIf(kernel.ReturnsValue, $"IntPtr {DeviceAutoResult} = IntPtr.Zero;");
+        writer.AppendLineIf(kernel.ReturnsValue, $"{IntPtrType} {DeviceAutoResult} = {IntPtrType}.Zero;");
 
     // int __gsharp_auto_result_size = checked(__gsharp_auto_result.Length * sizeof(<result or shadow>));
     // if (<size> > 0) { cuMemAllocAsync(out d___gsharp_auto_result, <size>); kernelParams[<slot>] = &d_...; }
@@ -72,9 +76,9 @@ internal static class AutoResultEmitter
         using (writer.Scope())
         {
             writer.AppendLine(
-                "CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(" +
-                $"out {DeviceAutoResult}, (IntPtr){Size}, hStream));");
-            writer.AppendLine($"kernelParams[{slot}] = &{DeviceAutoResult};");
+                $"{CudaExceptionType}.ThrowIfError({CudaDriverApiType}.cuMemAllocAsync(" +
+                $"out {DeviceAutoResult}, ({IntPtrType}){Size}, hStream));");
+            writer.AppendLine($"{KernelParams}[{slot}] = &{DeviceAutoResult};");
         }
     }
 
@@ -84,7 +88,7 @@ internal static class AutoResultEmitter
     /// </summary>
     internal static void WriteCudaCopyBack(SourceWriter writer, in KernelHostModel kernel)
     {
-        if (!kernel.ReturnsValue)
+        if (kernel.ReturnTypeName is not { } returnType)
         {
             return;
         }
@@ -97,17 +101,17 @@ internal static class AutoResultEmitter
 
         // if (__gsharp_auto_result_size > 0 && d___gsharp_auto_result != IntPtr.Zero) { <pinned copy back> }
         // The size is the one checked at the allocation (WriteCudaMarshal)
-        writer.AppendLine($"if ({Size} > 0 && {DeviceAutoResult} != IntPtr.Zero)");
+        writer.AppendLine($"if ({Size} > 0 && {DeviceAutoResult} != {IntPtrType}.Zero)");
         using (writer.Scope())
         {
-            StructMarshalingEmitter.WritePinnedCopy(
-                writer,
-                Buffer,
-                DeviceAutoResult,
-                toDevice: false,
-                synchronize: true,
-                size: Size
-            );
+            writer.AppendLine($"fixed ({returnType}* {PinnedAutoResult} = {Buffer})");
+            using (writer.Scope())
+            {
+                writer.AppendLine(
+                    $"{CudaExceptionType}.ThrowIfError({CudaDriverApiType}.cuMemcpyDtoHAsync_v2(" +
+                    $"({IntPtrType}){PinnedAutoResult}, {DeviceAutoResult}, ({IntPtrType}){Size}, hStream));");
+                writer.AppendLine($"{CudaExceptionType}.ThrowIfError({CudaDriverApiType}.cuStreamSynchronize(hStream));");
+            }
         }
     }
 
@@ -121,10 +125,10 @@ internal static class AutoResultEmitter
     private static void WriteCudaConvertedCopyBack(SourceWriter writer, in ParameterTransfer transfer)
     {
         writer.AppendLine("// Copy back the auto result array element by element");
-        writer.AppendLine($"if ({Size} > 0 && {DeviceAutoResult} != IntPtr.Zero)");
+        writer.AppendLine($"if ({Size} > 0 && {DeviceAutoResult} != {IntPtrType}.Zero)");
         using (writer.Scope())
         {
-            writer.AppendLine($"var {Shadow} = System.Buffers.ArrayPool<byte>.Shared.Rent({Size});");
+            writer.AppendLine($"var {Shadow} = global::System.Buffers.ArrayPool<byte>.Shared.Rent({Size});");
             writer.AppendLine("try");
             using (writer.Scope())
             {
@@ -132,9 +136,9 @@ internal static class AutoResultEmitter
                 using (writer.Scope())
                 {
                     writer.AppendLine(
-                        "CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoHAsync_v2(" +
-                        $"(IntPtr)p_{Shadow}, {DeviceAutoResult}, (IntPtr){Size}, hStream));");
-                    writer.AppendLine("CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));");
+                        $"{CudaExceptionType}.ThrowIfError({CudaDriverApiType}.cuMemcpyDtoHAsync_v2(" +
+                        $"({IntPtrType})p_{Shadow}, {DeviceAutoResult}, ({IntPtrType}){Size}, hStream));");
+                    writer.AppendLine($"{CudaExceptionType}.ThrowIfError({CudaDriverApiType}.cuStreamSynchronize(hStream));");
                 }
 
                 WriteShadowSpan(writer, transfer);
@@ -144,7 +148,7 @@ internal static class AutoResultEmitter
             writer.AppendLine("finally");
             using (writer.Scope())
             {
-                writer.AppendLine($"System.Buffers.ArrayPool<byte>.Shared.Return({Shadow});");
+                writer.AppendLine($"global::System.Buffers.ArrayPool<byte>.Shared.Return({Shadow});");
             }
         }
     }
@@ -157,11 +161,7 @@ internal static class AutoResultEmitter
             return;
         }
 
-        writer.AppendLine($"if ({DeviceAutoResult} != IntPtr.Zero)");
-        using (writer.Scope())
-        {
-            writer.AppendLine($"CudaException.ThrowIfError(CudaDriverApi.cuMemFreeAsync({DeviceAutoResult}, hStream));");
-        }
+        writer.AppendLine($"if ({DeviceAutoResult} != {IntPtrType}.Zero) {CudaDriverApiType}.cuMemFreeAsync({DeviceAutoResult}, hStream);");
     }
 
     // , <result or shadow>* __gsharp_auto_result
@@ -208,7 +208,7 @@ internal static class AutoResultEmitter
             return;
         }
 
-        writer.AppendLine($"{Shadow} = System.Buffers.ArrayPool<byte>.Shared.Rent({Size});");
+        writer.AppendLine($"{Shadow} = global::System.Buffers.ArrayPool<byte>.Shared.Rent({Size});");
         WriteShadowSpan(writer, kernel.CpuReturn);
         writer.AppendLine($"{Native}.Clear();");
     }
@@ -244,14 +244,14 @@ internal static class AutoResultEmitter
     /// <summary>CPU: emits the return of the rented shadow of a converted returned struct, in the <c>finally</c> block.</summary>
     internal static void WriteCpuConvertedRelease(SourceWriter writer, in KernelHostModel kernel) =>
         writer.AppendLineIf(kernel.IsCpuConvertedReturn,
-            $"if ({Shadow} != null) System.Buffers.ArrayPool<byte>.Shared.Return({Shadow});");
+            $"if ({Shadow} != null) global::System.Buffers.ArrayPool<byte>.Shared.Return({Shadow});");
 
     // var __gsharp_auto_result_native = MemoryMarshal.Cast<byte, <element shadow>>(
     //     __gsharp_auto_result_shadow.AsSpan(0, __gsharp_auto_result_size));
     // The auto result array of a kernel that returns a converted struct, in the device layout (#704)
     private static void WriteShadowSpan(SourceWriter writer, in ParameterTransfer transfer) =>
         writer.AppendLine(
-            $"var {Native} = System.Runtime.InteropServices.MemoryMarshal" +
+            $"var {Native} = global::System.Runtime.InteropServices.MemoryMarshal" +
             $".Cast<byte, {GetShadowPath(transfer)}>({Shadow}.AsSpan(0, {Size}));");
 
     // for (int __gsharp_auto_result_index = 0; ...; __gsharp_auto_result_index++)

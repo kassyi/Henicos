@@ -386,6 +386,28 @@ internal static class TypeLayoutCalculator
             }
         }
 
+        if (kind == TypeLayoutKind.Explicit)
+        {
+            for (var i = 0; i < deviceFields.Length; i++)
+            {
+                var field = deviceFields[i];
+                for (var j = 0; j < i; j++)
+                {
+                    var earlier = deviceFields[j];
+                    if (earlier.Offset == field.Offset &&
+                        (!IsUnionArmBlittable(earlier, dialect) || !IsUnionArmBlittable(field, dialect)))
+                    {
+                        var badMember = !IsUnionArmBlittable(field, dialect) ? field.Member : earlier.Member;
+                        return new UnsupportedLayout(
+                            $"field '{field.Member.Name}' at offset {field.Offset} overlaps field '{earlier.Member.Name}', " +
+                            $"and '{badMember.Name}' has different host and device layouts",
+                            null,
+                            null);
+                    }
+                }
+            }
+        }
+
         return null;
     }
 
@@ -569,4 +591,11 @@ internal static class TypeLayoutCalculator
 
         return true;
     }
+
+    private static bool IsUnionArmBlittable(FieldLayout field, ITranspilerDialect dialect) =>
+        !field.Member.Type.IsArrayLikeType() &&
+        !field.Member.Type.IsNullableArrayLike() &&
+        TryGetHostLayout(field.Member.Type, out var elemHost) &&
+        elemHost.Size * field.Member.ElementCount == field.Layout.Size &&
+        IsMemberTransferIdentical(field.Member.Type, dialect);
 }

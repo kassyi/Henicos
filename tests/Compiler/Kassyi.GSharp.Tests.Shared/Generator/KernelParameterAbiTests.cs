@@ -69,11 +69,11 @@ public class KernelParameterAbiTests
         var wrapper = GetWrapper(s_defaultValueKernels, "Cuda", "DefaultKernels");
 
         // The IntPtr wrapper defaults a device pointer to IntPtr.Zero, and the typed wrapper takes an optional buffer
-        Assert.Contains("IntPtr data, global::System.Boolean enabled = true, ", wrapper, StringComparison.Ordinal);
-        Assert.Contains("IntPtr extra = default, ", wrapper, StringComparison.Ordinal);
+        Assert.Contains("global::System.IntPtr data, global::System.Boolean enabled = true, ", wrapper, StringComparison.Ordinal);
+        Assert.Contains("global::System.IntPtr extra = default, ", wrapper, StringComparison.Ordinal);
         Assert.Contains("global::Kassyi.GSharp.Runtime.GpuBuffer<global::System.Int32>? extra = null, ", wrapper,
             StringComparison.Ordinal);
-        Assert.Contains("extra?.DevicePointer ?? IntPtr.Zero, ", wrapper, StringComparison.Ordinal);
+        Assert.Contains("extra?.DevicePointer ?? global::System.IntPtr.Zero, ", wrapper, StringComparison.Ordinal);
     }
 
     [Theory]

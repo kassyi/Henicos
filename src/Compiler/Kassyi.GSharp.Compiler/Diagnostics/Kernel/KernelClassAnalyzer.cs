@@ -2,7 +2,7 @@ namespace Kassyi.GSharp.Compiler.Diagnostics.Kernel;
 
 /// <summary>
 /// Checks the kernels of a class together: overloads whose launch wrappers cannot be told apart (GSH0059), and
-/// parameter structs that map to the same <c>AotContexts</c> name (GSH0058).
+/// parameter and return structs that map to the same <c>AotContexts</c> name (GSH0058).
 /// </summary>
 /// <remarks>
 /// The generator leaves the reported overload and struct out of the generated code with the same helpers

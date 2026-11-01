@@ -33,5 +33,22 @@ namespace StructLayoutReturnDiagnosticsTest
 
         [GpuKernel]
         public static Plain PlainKernel() => default;
+
+        [GpuKernel]
+        public static BrokenUnionResult BrokenUnionKernel() => default;
+
+        [GpuKernel]
+        public static System.DateTime DateTimeKernel() => default;
+
+        [GpuDeviceFunction]
+        public static (int, System.Guid) GuidTupleDeviceFunction() => default;
     }
+
+    [StructLayout(LayoutKind.Sequential, Size = 5)]
+    public struct Size5 { public int A; public byte B; }
+
+    public struct ShiftedFields { public Size5 First; public byte Second; }
+
+    [StructLayout(LayoutKind.Explicit)]
+    public struct BrokenUnionResult { [FieldOffset(0)] public long RawBits; [FieldOffset(0)] public ShiftedFields Shifted; }
 }

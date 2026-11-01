@@ -77,4 +77,21 @@ public class KernelSignatureDiagnosticsTests
             ],
             diagnostics.Ranges(GSharpDiagnostics.KernelParameterSpaceExceeded.Id));
     }
+
+    [Theory]
+    [InlineData("Cpu")]
+    [InlineData("Cuda")]
+    [Scenario(TestScenario.SadPath)]
+    public async Task Test_ReservedLaunchParameterNames_ReportGsh0106AtTheParameterAndSkipWrappers(string dialect)
+    {
+        var diagnostics = await KernelDiagnostics.RunTestCaseAsync("Analyzers/KernelReservedLaunchParameter_SadPath.cs", dialect);
+
+        Assert.Equal(
+            [
+                (Analyzer, 8, 43, 8, 51),
+                (Analyzer, 18, 58, 18, 65),
+                (Analyzer, 18, 71, 18, 85)
+            ],
+            diagnostics.Ranges(GSharpDiagnostics.KernelParameterConflictsWithLaunchParameter.Id));
+    }
 }
