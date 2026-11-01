@@ -197,7 +197,7 @@ internal static class GpuOperatorMacroTranspiler
 
         if (IsPassedByReference(parameter))
         {
-            RefSyntaxHelper.TranspileAsByRefArgument(ref context, operand);
+            RefSyntaxHelper.TranspileAsByRefArgument(ref context, operand, allowAutoPropertyStorage: true);
             return;
         }
 

@@ -67,8 +67,6 @@ internal static class TypeLayoutCalculator
     /// <summary>Calculates the device size and alignment requirements for <paramref name="type"/> under <paramref name="dialect"/>.</summary>
     public static TypeLayout GetDeviceLayout(ITypeSymbol type, ITranspilerDialect dialect)
     {
-        type = type.UnwrapNullableArrayLike() ?? type;
-
         if (type.IsArrayLikeType())
         {
             return dialect.ArrayViewLayout;

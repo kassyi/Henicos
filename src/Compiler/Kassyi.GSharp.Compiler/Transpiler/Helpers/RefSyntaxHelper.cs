@@ -21,7 +21,8 @@ internal static class RefSyntaxHelper
     /// Transpiles the given expression as a reference/pointer argument, automatically appending the address-of operator if needed,
     /// or wrapping a temporary rvalue in <c>__gsharp_temp_address</c>.
     /// </summary>
-    public static void TranspileAsByRefArgument(ref TranspileContext context, ExpressionSyntax expression)
+    public static void TranspileAsByRefArgument(ref TranspileContext context, ExpressionSyntax expression,
+        bool allowAutoPropertyStorage = false)
     {
         var semanticModel = context.Query.SemanticModel;
         if (!NeedsAddressOf(expression, semanticModel))
@@ -30,23 +31,42 @@ internal static class RefSyntaxHelper
             return;
         }
 
-        if (HasExplicitRefSyntax(expression) || IsCppLValue(expression, semanticModel))
+        if (HasExplicitRefSyntax(expression) || IsCppLValue(expression, semanticModel, allowAutoPropertyStorage))
         {
             context.Emitter.Writer.Append("&");
             context.Visitor.Visit(expression);
             return;
         }
 
+        // An auto-property is emitted as its backing field (a C++ lvalue of the target type), so binding const T&
+        // directly in __gsharp_temp_address<T> would alias the field instead of copying the getter's return value (#999).
+        var forceValueCopy = !allowAutoPropertyStorage &&
+                             IsAutoPropertyOrMemberOfAutoProperty(expression, semanticModel);
         context.Emitter.Writer.Append(GSharpInternalNames.Prelude.TempAddress);
         AppendTempAddressTypeArgument(ref context, expression, semanticModel);
         using (context.Emitter.Writer.Parentheses())
         {
-            context.Visitor.Visit(expression);
+            if (forceValueCopy)
+            {
+                context.Emitter.Writer.Append("static_cast");
+                AppendTempAddressTypeArgument(ref context, expression, semanticModel);
+                using (context.Emitter.Writer.Parentheses())
+                {
+                    context.Visitor.Visit(expression);
+                }
+            }
+            else
+            {
+                context.Visitor.Visit(expression);
+            }
         }
     }
 
     private static bool HasExplicitRefSyntax(ExpressionSyntax expression) =>
-        expression.Parent is ArgumentSyntax { RefKindKeyword.RawKind: not (int)SyntaxKind.None } or RefExpressionSyntax;
+        expression.Parent is ArgumentSyntax
+        {
+            RefKindKeyword.RawKind: (int)SyntaxKind.RefKeyword or (int)SyntaxKind.OutKeyword
+        } or RefExpressionSyntax;
 
     private static TypeInfo GetSafeTypeInfo(ExpressionSyntax expression, SemanticModel semanticModel) =>
         semanticModel.GetOriginalNode(expression) is { } original
@@ -78,7 +98,8 @@ internal static class RefSyntaxHelper
 
     // Whether the C++ expression that RoslynToCudaVisitor emits for an un-modified argument is an lvalue of the target
     // parameter type whose address '&' can take directly
-    public static bool IsCppLValue(ExpressionSyntax expression, SemanticModel semanticModel)
+    public static bool IsCppLValue(ExpressionSyntax expression, SemanticModel semanticModel,
+        bool allowAutoPropertyStorage = false)
     {
         var typeInfo = GetSafeTypeInfo(expression, semanticModel);
         if (typeInfo.Type != null &&
@@ -101,7 +122,7 @@ internal static class RefSyntaxHelper
             {
                 var symbol = semanticModel.GetSymbol(expression) ??
                              semanticModel.GetDeclaredSymbol<ISymbol>(expression);
-                return IsLValueSymbol(symbol);
+                return IsLValueSymbol(symbol, allowAutoPropertyStorage);
             }
             case MemberAccessExpressionSyntax memberAccess:
             {
@@ -113,7 +134,14 @@ internal static class RefSyntaxHelper
                 var symbol = semanticModel.GetSymbol(memberAccess) ??
                              semanticModel.GetSymbol(memberAccess.Name) ??
                              semanticModel.GetDeclaredSymbol<ISymbol>(memberAccess.Name);
-                return IsLValueSymbol(symbol);
+                if (!IsLValueSymbol(symbol, allowAutoPropertyStorage))
+                {
+                    return false;
+                }
+
+                return memberAccess.Expression is ThisExpressionSyntax ||
+                       semanticModel.GetTypeSymbol(memberAccess.Expression) is not { IsValueType: true } ||
+                       IsCppLValue(memberAccess.Expression, semanticModel, allowAutoPropertyStorage);
             }
             case ElementAccessExpressionSyntax:
             {
@@ -138,13 +166,21 @@ internal static class RefSyntaxHelper
         }
     }
 
-    private static bool IsLValueSymbol(ISymbol? symbol) =>
+    /// <summary>
+    /// Whether <paramref name="expression"/> is an auto-property (or a field/property chain on an auto-property) that G#
+    /// emits as a C++ lvalue backing field, even though in C# it is a value returned by the property getter (#999).
+    /// </summary>
+    public static bool IsAutoPropertyOrMemberOfAutoProperty(ExpressionSyntax expression, SemanticModel semanticModel) =>
+        !IsCppLValue(expression, semanticModel, allowAutoPropertyStorage: false) &&
+        IsCppLValue(expression, semanticModel, allowAutoPropertyStorage: true);
+
+    private static bool IsLValueSymbol(ISymbol? symbol, bool allowAutoPropertyStorage) =>
         symbol switch
         {
             ILocalSymbol or IParameterSymbol => true,
             IFieldSymbol { IsConst: false, IsStatic: false } => true,
             IPropertySymbol { RefKind: RefKind.Ref or RefKind.RefReadOnly } => true,
-            IPropertySymbol { ContainingType: INamedTypeSymbol containingType } property =>
+            IPropertySymbol { ContainingType: INamedTypeSymbol containingType } property when allowAutoPropertyStorage =>
                 GlobalCppNames.IsEmittedUserType(containingType) &&
                 !StructAbiMembers.IsComputedProperty(property),
             _ => false

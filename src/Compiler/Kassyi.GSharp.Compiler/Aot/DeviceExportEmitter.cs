@@ -281,6 +281,18 @@ internal static class DeviceExportEmitter
             }
         }
 
+        foreach (var member in type.GetMembers())
+        {
+            if (member is IMethodSymbol conversion &&
+                StructTranspiler.IsEmittedStructConversion(conversion, compilation))
+            {
+                var name = GlobalCppNames.GetFunctionName(conversion);
+                constructors.Add(name);
+                constructorIds.Add(conversion.OriginalDefinition.GetDocumentationCommentId() ?? "");
+                constructorFullNames.Add(GlobalCppNames.TryGetFullName(name, out var full) ? full : "");
+            }
+        }
+
         var definedNames = constructors.ToImmutable().AsEquatableArray();
         return new DeviceExportRecord(
             DeviceExportRecord.StructKind,

@@ -137,9 +137,8 @@ internal static class EvaluationOrder
         {
             for (var i = 0; i < count; i++)
             {
-                // A converted rvalue passed to an in parameter is a value, copied when it is evaluated
-                effects[i] = IsByReference(arguments[i], callee?.FindParameter(arguments, i)) &&
-                             !NeedsConversion(arguments[i].Expression, model)
+                // A converted rvalue or non-ref property passed to an in parameter is a value, copied when it is evaluated
+                effects[i] = IsPassedAsLocation(arguments[i], callee?.FindParameter(arguments, i), model)
                     ? ExpressionEffects.OfLocation(arguments[i].Expression, model)
                     : ExpressionEffects.Of(arguments[i].Expression, model);
             }
@@ -195,7 +194,7 @@ internal static class EvaluationOrder
     {
         var writer = context.Emitter.Writer;
         var byReference = IsByReference(argument, parameter);
-        if (byReference && !(isCall && NeedsConversion(argument.Expression, context.Query.SemanticModel)))
+        if (byReference && (!isCall || IsPassedAsLocation(argument, parameter, context.Query.SemanticModel)))
         {
             writer.Append("auto&&");
         }
@@ -227,6 +226,11 @@ internal static class EvaluationOrder
     private static bool IsByReference(ArgumentSyntax argument, IParameterSymbol? parameter) =>
         argument.RefKindKeyword.IsKind(SyntaxKind.RefKeyword, SyntaxKind.OutKeyword, SyntaxKind.InKeyword) ||
         parameter?.RefKind is RefKind.In or RefKind.RefReadOnlyParameter;
+
+    private static bool IsPassedAsLocation(ArgumentSyntax argument, IParameterSymbol? parameter, SemanticModel model) =>
+        IsByReference(argument, parameter) &&
+        !NeedsConversion(argument.Expression, model) &&
+        !RefSyntaxHelper.IsAutoPropertyOrMemberOfAutoProperty(argument.Expression, model);
 
     private static bool NeedsConversion(ExpressionSyntax expression, SemanticModel model)
     {
