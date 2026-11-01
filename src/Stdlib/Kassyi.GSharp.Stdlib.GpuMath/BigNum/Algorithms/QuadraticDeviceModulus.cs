@@ -2,13 +2,12 @@ namespace Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms;
 
 /// <summary>
 /// The device stage of <see cref="FermatAlgorithm"/>, <c>E &gt;= 32</c>: residues of <c>L</c> words in buffers this
-/// instance owns. On the GPU, a square goes through <see cref="KernelAdvancedMathHandler.Square"/> with an owned
-/// <see cref="KernelAdvancedMathHandler.NttSquareScratch"/>, a product of two registers through
-/// <see cref="KernelAdvancedMathHandler.Multiply"/> with an owned
-/// <see cref="KernelAdvancedMathHandler.NttMultiplyScratch"/>, and both are reduced by
-/// <c>GpuBigIntFermatKernels.QuadraticFoldReduceKernel</c>, written back into the target register. In CPU fallback mode,
-/// products come from <see cref="System.Numerics.BigInteger"/> and are reduced by
-/// <see cref="QuadraticFoldModulus.FoldReference"/>.
+/// instance owns. On the GPU, both squaring and multiplication run through
+/// <see cref="Ntt35ConvolutionLauncher.Square"/> / <see cref="Ntt35ConvolutionLauncher.Multiply"/> with an owned
+/// <see cref="Ntt35ConvolutionLauncher.NttMultiplyScratch"/>, and the product is reduced by the multi-block parallel fold
+/// (<c>GpuBigIntFermatKernels.QuadraticFoldPassBlockedKernel</c> + <c>QuadraticFoldPassApplyKernel</c>), written back
+/// into the target register. In CPU fallback mode, products come from <see cref="System.Numerics.BigInteger"/> and are
+/// reduced by <see cref="QuadraticFoldModulus.FoldReference"/>.
 /// </summary>
 /// <remarks>
 /// <para>
@@ -37,7 +36,7 @@ internal sealed class QuadraticDeviceModulus : ISquaringModulus
     private readonly GpuBigUInt _firstFold;
     private readonly GpuBigUInt _secondFold;
     private readonly GpuBigUInt _foldBlockCarries;
-    private readonly KernelAdvancedMathHandler.NttMultiplyScratch? _multiplyScratch;
+    private readonly Ntt35ConvolutionLauncher.NttMultiplyScratch? _multiplyScratch;
     private readonly Dictionary<int, (IntPtr Graph, IntPtr GraphExec)> _graphs = [];
     private readonly IGpuGraphProvider _graphProvider;
     private bool _warmedUp;
@@ -75,9 +74,8 @@ internal sealed class QuadraticDeviceModulus : ISquaringModulus
                 var maxFoldWords = Math.Max(modulus.FirstFoldWords, Math.Max(modulus.SecondFoldWords, modulus.Words));
                 var foldBlockCarryWords = Math.Max(1, (maxFoldWords + (int)FoldBlockSize - 1) / (int)FoldBlockSize);
                 _foldBlockCarries = new GpuBigUInt(_workspace, foldBlockCarryWords);
-                var handler = GSharpKernelProvider.Instance.KernelAdvancedMath;
                 _multiplyScratch =
-                    KernelAdvancedMathHandler.NttMultiplyScratch.Allocate(_workspace, handler, modulus.ProductWords);
+                    Ntt35ConvolutionLauncher.NttMultiplyScratch.Allocate(_workspace, modulus.ProductWords);
             }
         }
         catch
@@ -201,7 +199,7 @@ internal sealed class QuadraticDeviceModulus : ISquaringModulus
         else
         {
             // Not GpuBigIntMath.Mul: its scratch comes from the workspace pool on every call.
-            GSharpKernelProvider.Instance.KernelAdvancedMath.Multiply(_workspace, leftBuffer, rightBuffer, _product,
+            Ntt35ConvolutionLauncher.Multiply(_workspace, leftBuffer, rightBuffer, _product,
                 Required(_multiplyScratch));
         }
 
@@ -343,8 +341,7 @@ internal sealed class QuadraticDeviceModulus : ISquaringModulus
     private void SquareOnce(SquaringRegister register) => Multiply(register, register, register);
 
     private void SquareOnDevice(GpuBigUInt source) =>
-        GSharpKernelProvider.Instance.KernelAdvancedMath.Square(_workspace, source, _product,
-            Required(_multiplyScratch));
+        Ntt35ConvolutionLauncher.Square(_workspace, source, _product, Required(_multiplyScratch));
 
     private static T Required<T>(T? scratch) where T : class =>
         scratch ?? throw new InvalidOperationException("The GPU scratch is not allocated in CPU fallback mode.");
