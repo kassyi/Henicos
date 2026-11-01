@@ -412,4 +412,82 @@ public static partial class CrossBarrierFlowKernels
         Gpu.SyncThreads();
         result[1] = 2;
     }
+
+    [GpuDeviceFunction]
+    public static int Broadcast(int value) => Warp.ShuffleSync(0xFFFFFFFFu, value, 0);
+
+    [GpuDeviceFunction]
+    public static unsafe int* BroadcastPtr(int* ptr)
+    {
+        Gpu.SyncThreads();
+        return ptr;
+    }
+
+    // GSH0041: a stackalloc pointer captured as a receiver before a conditional split is read after it (#1004 F5)
+    [GpuDeviceFunction]
+    public static unsafe int PointerIndexedByConditionalSuspendingCall(bool c)
+    {
+        int* p = stackalloc int[4];
+        p[0] = 42;
+        return p[c ? 0 : Broadcast(0)];
+    }
+
+    // GSH0041: a stackalloc pointer element target captured before a conditional split is written through after it (#1004 F5)
+    [GpuDeviceFunction]
+    public static unsafe void PointerWrittenByConditionalSuspendingCall(bool c)
+    {
+        int* p = stackalloc int[4];
+        p[0] = c ? 1 : Broadcast(99);
+    }
+
+    // No diagnostic: the pointer variable itself is overwritten as a whole by the conditional assignment (#1004 F5 control)
+    [GpuDeviceFunction]
+    public static unsafe int PointerReassignedByConditionalSuspendingCall(int* globalA, int* globalB, bool c)
+    {
+        int* p = stackalloc int[4];
+        p = c ? globalA : BroadcastPtr(globalB);
+        return p[0];
+    }
+
+    // GSH0041: a pointer derived via pointer arithmetic from a stackalloc pointer points to stack memory across the barrier (#1004 F11)
+    [GpuKernel]
+    public static unsafe void DerivedStackPointerArithmeticKernel(int[] outData)
+    {
+        int* p = stackalloc int[4];
+        p[1] = 7;
+        int* q = p + 1;
+        Gpu.SyncThreads();
+        outData[0] = *q;
+    }
+
+    // GSH0041: a pointer assigned stackalloc after its declaration points to stack memory across the barrier (#1004 F11)
+    [GpuKernel]
+    public static unsafe void AssignedAfterDeclarationStackPointerKernel(int[] outData)
+    {
+        int* p;
+        p = stackalloc int[4];
+        p[0] = 3;
+        Gpu.SyncThreads();
+        outData[0] = *p;
+    }
+
+    // GSH0041: a pointer conditionally derived from a stackalloc pointer may point to stack memory across the barrier (#1004 F11)
+    [GpuKernel]
+    public static unsafe void ConditionalDerivedStackPointerKernel(int* globalPtr, int[] outData, bool cond)
+    {
+        int* p = stackalloc int[4];
+        p[0] = 5;
+        int* r = cond ? p : globalPtr;
+        Gpu.SyncThreads();
+        outData[0] = *r;
+    }
+
+    // No diagnostic: a pointer derived from a global pointer parameter does not point to stack memory (#1004 F11 control)
+    [GpuKernel]
+    public static unsafe void GlobalPointerArithmeticKernel(int* globalPtr, int[] outData)
+    {
+        int* q = globalPtr + 1;
+        Gpu.SyncThreads();
+        outData[0] = *q;
+    }
 }

@@ -50,13 +50,25 @@ internal static class ParameterChanges
         MayChangeThroughAccessors(reference, property);
 
     /// <summary>
-    /// The parameter that <paramref name="value"/> is, is a field of (<c>p</c>, <c>p.X</c>, <c>p.X.Y</c>) or is the
-    /// receiver of <paramref name="property"/> of (<c>p.P</c>, <c>p.X.P</c>); none for the variable that a <c>ref</c>
-    /// field refers to (<c>p.Ref</c>), which is not part of the parameter.
+    /// Whether the use of the flow capture of a <c>ref</c> field of a parameter (<c>p.Ref</c>) may change the parameter:
+    /// only when the field itself is rebound (<c>p.Ref = ref v</c>), not when a value is written through it (#1004 F9).
     /// </summary>
-    public static IParameterSymbol? RootParameter(IOperation value, out bool isWhole, out IPropertySymbol? property)
+    public static bool MayChangeCapturedRefField(IFlowCaptureReferenceOperation reference) =>
+        reference.Parent is ISimpleAssignmentOperation { IsRef: true } assignment && assignment.Target == reference;
+
+    /// <summary>
+    /// The parameter that <paramref name="value"/> is, is a field of (<c>p</c>, <c>p.X</c>, <c>p.X.Y</c>), is a direct
+    /// <c>ref</c> field of (<c>p.Ref</c>, <c>p.X.Ref</c>) or is the receiver of <paramref name="property"/> of
+    /// (<c>p.P</c>, <c>p.X.P</c>); none for a member accessed through a <c>ref</c> field (<c>p.Ref.Y</c>).
+    /// </summary>
+    public static IParameterSymbol? RootParameter(
+        IOperation value,
+        out bool isWhole,
+        out bool isRefField,
+        out IPropertySymbol? property)
     {
         property = null;
+        isRefField = false;
         if (value is IPropertyReferenceOperation { Instance: { } receiver } propertyReference)
         {
             property = propertyReference.Property;
@@ -68,7 +80,12 @@ internal static class ParameterChanges
         {
             if (field.Field.RefKind != RefKind.None)
             {
-                return null;
+                if (!isWhole)
+                {
+                    return null;
+                }
+
+                isRefField = true;
             }
 
             value = instance;

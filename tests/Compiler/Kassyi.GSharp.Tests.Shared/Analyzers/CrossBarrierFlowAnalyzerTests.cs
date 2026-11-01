@@ -49,7 +49,12 @@ public class CrossBarrierFlowAnalyzerTests : TranspilerTestBase
                 (GSharpDiagnostics.CrossBarrierLocalPointerProhibited.Id, 350, 14, 350, 15),
                 (GSharpDiagnostics.CrossBarrierLocalPointerProhibited.Id, 363, 14, 363, 15),
                 (GSharpDiagnostics.CrossBarrierLocalPointerProhibited.Id, 375, 14, 375, 15),
-                (GSharpDiagnostics.CrossBarrierLocalPointerProhibited.Id, 399, 14, 399, 15)
+                (GSharpDiagnostics.CrossBarrierLocalPointerProhibited.Id, 399, 14, 399, 15),
+                (GSharpDiagnostics.CrossBarrierLocalPointerProhibited.Id, 430, 14, 430, 15),
+                (GSharpDiagnostics.CrossBarrierLocalPointerProhibited.Id, 439, 14, 439, 15),
+                (GSharpDiagnostics.CrossBarrierLocalPointerProhibited.Id, 458, 14, 458, 15),
+                (GSharpDiagnostics.CrossBarrierLocalPointerProhibited.Id, 467, 14, 467, 15),
+                (GSharpDiagnostics.CrossBarrierLocalPointerProhibited.Id, 480, 14, 480, 15)
             ],
             actual);
     }
@@ -67,9 +72,17 @@ public class CrossBarrierFlowAnalyzerTests : TranspilerTestBase
         var actual = diagnostics
             .Select(static d => ReportedDiagnostic.From(DiagnosticOrigin.Analyzer, d))
             .Select(static d => (d.Id, d.StartLine, d.StartColumn, d.EndLine, d.EndColumn))
+            .OrderBy(static d => d.StartLine)
+            .ThenBy(static d => d.StartColumn)
             .ToList();
 
-        Assert.Equal([(GSharpDiagnostics.CrossBarrierRefStructProhibited.Id, 27, 59, 27, 60)], actual);
+        Assert.Equal(
+            [
+                (GSharpDiagnostics.CrossBarrierRefStructProhibited.Id, 27, 59, 27, 60),
+                (GSharpDiagnostics.CrossBarrierRefStructProhibited.Id, 32, 63, 32, 64),
+                (GSharpDiagnostics.CrossBarrierRefStructProhibited.Id, 41, 67, 41, 68)
+            ],
+            actual);
     }
 
     // A by-value ref struct parameter cannot be kept in the frame either: the CPU dialects pass the original argument
@@ -112,7 +125,14 @@ public class CrossBarrierFlowAnalyzerTests : TranspilerTestBase
                 (GSharpDiagnostics.CrossBarrierRefStructProhibited.Id, 222, 56, 222, 62),
                 (GSharpDiagnostics.CrossBarrierRefStructProhibited.Id, 231, 52, 231, 58),
                 (GSharpDiagnostics.CrossBarrierRefStructProhibited.Id, 240, 60, 240, 66),
-                (GSharpDiagnostics.CrossBarrierRefStructProhibited.Id, 249, 53, 249, 59)
+                (GSharpDiagnostics.CrossBarrierRefStructProhibited.Id, 249, 53, 249, 59),
+                (GSharpDiagnostics.CrossBarrierRefStructProhibited.Id, 318, 66, 318, 67),
+                (GSharpDiagnostics.CrossBarrierRefStructProhibited.Id, 326, 66, 326, 67),
+                (GSharpDiagnostics.CrossBarrierRefStructProhibited.Id, 335, 74, 335, 75),
+                (GSharpDiagnostics.CrossBarrierRefStructProhibited.Id, 345, 19, 345, 23),
+                (GSharpDiagnostics.CrossBarrierRefStructProhibited.Id, 358, 59, 358, 60),
+                (GSharpDiagnostics.CrossBarrierRefStructProhibited.Id, 366, 69, 366, 75),
+                (GSharpDiagnostics.CrossBarrierRefStructProhibited.Id, 374, 55, 374, 61)
             ],
             actual);
     }

@@ -27,9 +27,9 @@ namespace Kassyi.GSharp.Compiler.Analysis;
 /// The events of a statement are placed where the lowered code runs them, not where C# evaluates them: the lowering
 /// hoists a call that splits (a barrier, a shuffle, a call that may suspend) into a statement of its own in front of the
 /// rest, and every resume runs a call that may suspend again (<see cref="WarpInstructionRewriter"/>). So a use inside
-/// the call that is evaluated once before it (an argument the lowering spills, the value a shuffle publishes) comes
-/// before its split, any other use inside it (the receiver, an identifier argument) right after its split, and the rest
-/// of the statement after its last split (<c>s[Broadcast(0)]</c> reads <c>s</c> after the split).
+/// the call that is evaluated once before it (an argument the lowering spills) comes before its split, any other use
+/// inside it (the receiver, an unspilled argument) right after its split, and the rest of the statement after its last
+/// split (<c>s[Broadcast(0)]</c> reads <c>s</c> after the split).
 /// </para>
 /// </remarks>
 internal sealed class LivenessRecorder : IFlowRecorder
@@ -43,9 +43,13 @@ internal sealed class LivenessRecorder : IFlowRecorder
     private readonly ImmutableArray<BodyFrame>.Builder _frames = ImmutableArray.CreateBuilder<BodyFrame>();
 
     // The flow captures of a tracked parameter, of one of its fields or of one of its properties, by capture: the index of
-    // the parameter, whether the capture is the whole parameter, and the property
-    private readonly Dictionary<CaptureId, (int Parameter, bool IsWhole, IPropertySymbol? Property)> _parameterCaptures =
+    // the parameter, whether the capture is the whole parameter, whether it is a ref field, and the property
+    private readonly Dictionary<CaptureId, (int Parameter, bool IsWhole, bool IsRefField, IPropertySymbol? Property)> _parameterCaptures =
         new();
+
+    // The symbols read by a captured target or receiver when its flow capture is referenced after a conditional split, and
+    // the whole local or parameter it names when used as the target of a simple assignment (#1004 F5)
+    private readonly Dictionary<CaptureId, CapturedFlowTarget> _flowCaptures = new();
 
     // The delegate body that the assignment being walked stores in a carrier, and the index of the carrier
     private (SyntaxNode Body, int Carrier)? _pendingCarrier;
@@ -98,8 +102,15 @@ internal sealed class LivenessRecorder : IFlowRecorder
         parameter.ContainingSymbol is IMethodSymbol { MethodKind: not (MethodKind.AnonymousFunction or MethodKind.LocalFunction) } &&
         !parameter.Type.IsSharedMemoryType();
 
-    public void OnLocalReference(ILocalReferenceOperation reference, int node) =>
+    public void OnLocalReference(ILocalReferenceOperation reference, int node)
+    {
+        if (!reference.Local.IsRef && IsCapturedSimpleAssignmentLeft(reference))
+        {
+            return;
+        }
+
         AddRead(reference.Local, reference.Syntax, node);
+    }
 
     // A use of a tracked parameter reads it and may change it; assigning it as a whole is left to OnAssignment
     public void OnParameterReference(IParameterReferenceOperation reference, int node)
@@ -116,13 +127,25 @@ internal sealed class LivenessRecorder : IFlowRecorder
         }
     }
 
-    // A use of a captured tracked parameter, or of a captured field of one, may change it
+    // A use of a captured receiver, element location or tracked parameter in the join block after a conditional split
+    // reads the captured variables there unless it overwrites a captured whole variable, and may change a tracked parameter
     public void OnFlowCaptureReference(IFlowCaptureReferenceOperation reference, int node)
     {
+        if (_flowCaptures.TryGetValue(reference.Id, out var flowCapture) &&
+            !IsWholeVariableOverwrite(reference, flowCapture.WholeSymbol))
+        {
+            foreach (var symbol in flowCapture.Reads)
+            {
+                AddRead(symbol, reference.Syntax, node);
+            }
+        }
+
         if (_parameterCaptures.TryGetValue(reference.Id, out var captured) &&
             (captured.Property is { } property
                 ? ParameterChanges.MayChangeThroughCapturedProperty(reference, property)
-                : ParameterChanges.MayChange(reference)))
+                : captured.IsRefField
+                    ? ParameterChanges.MayChangeCapturedRefField(reference)
+                    : ParameterChanges.MayChange(reference)))
         {
             AddChange(captured.Parameter, reference.Syntax, node);
         }
@@ -148,6 +171,10 @@ internal sealed class LivenessRecorder : IFlowRecorder
                 AddAssigned(target.Local, target.Syntax, node,
                     replaces: target.IsDeclaration || simple.IsRef || !target.Local.IsRef);
                 break;
+            case ISimpleAssignmentOperation { Target: var target } simple
+                when CapturedWholeLocal(target) is { } local:
+                AddAssigned(local, target.Syntax, node, replaces: simple.IsRef || !local.IsRef);
+                break;
             case ISimpleAssignmentOperation { Target: var target } when IndexOfWholeParameter(target) is var index and >= 0:
                 AddParameterAssigned(index, target.Syntax, node);
                 break;
@@ -161,14 +188,40 @@ internal sealed class LivenessRecorder : IFlowRecorder
     {
     }
 
-    // A capture of a tracked parameter, of one of its fields or of one of its properties: a target that the graph spills
-    // before a conditional value (p = c ? a : b, p.X = c ? a : b, p.P = c ? a : b); the walk of its value read the parameter
+    // A capture of a receiver, element location or variable before a conditional value (s[c ? 0 : Broadcast(0)],
+    // s = s.Slice(c ? 0 : Broadcast(0)), s[0] = c ? 1 : Broadcast(99), p = c ? a : b, p.X = c ? a : b, p.P = c ? a : b)
     public void OnFlowCapture(IFlowCaptureOperation capture, ControlFlowGraph graph, int node)
     {
-        if (ParameterChanges.RootParameter(capture.Value, out var isWhole, out var property) is { } parameter &&
+        if (ParameterChanges.RootParameter(capture.Value, out var isWhole, out var isRefField, out var property) is { } parameter &&
             IsTrackedParameter(parameter))
         {
-            _parameterCaptures[capture.Id] = (Index(parameter), isWhole, property);
+            _parameterCaptures[capture.Id] = (Index(parameter), isWhole, isRefField, property);
+        }
+
+        if (!_flowCaptures.TryGetValue(capture.Id, out var flowCapture))
+        {
+            var wholeSymbol = capture.Value switch
+            {
+                ILocalReferenceOperation { Local: var local } when !IsDeclaredInFrame(local) => (ISymbol)local,
+                IParameterReferenceOperation { Parameter: var param } when IsTrackedParameter(param) => param,
+                _ => null
+            };
+            flowCapture = new CapturedFlowTarget(wholeSymbol);
+            CollectCapturedReads(capture.Value, flowCapture.Reads);
+            _flowCaptures.Add(capture.Id, flowCapture);
+            return;
+        }
+
+        // A capture ID written in more than one branch is the merged value of a conditional operator (?:, ??, &&, ||),
+        // which ConditionalEvaluationRewriter stores in a temporary inside each branch
+        flowCapture.WholeSymbol = null;
+        if (capture.Value.Type is IPointerTypeSymbol or { IsRefLikeType: true })
+        {
+            CollectCapturedReads(capture.Value, flowCapture.Reads);
+        }
+        else
+        {
+            flowCapture.Reads.Clear();
         }
     }
 
@@ -277,8 +330,9 @@ internal sealed class LivenessRecorder : IFlowRecorder
     // The rest of the statement runs after its last split
     public void OnTopOperation(IOperation operation, ControlFlowGraph graph, int node) => Flush(node);
 
-    // The events of the statement that lie inside call: those the lowering evaluates once before the call, the split, then
-    // those that the call runs again on every resume; the others stay with the statement
+    // The events of the statement that lie inside call: those the lowering evaluates once before the call and any change
+    // the call makes before suspending (#1004 F6), the split, then those that the call runs again on every resume; the
+    // others stay with the statement
     private void PlaceAroundSplit(IInvocationOperation call, int node)
     {
         var statement = _statements[_statements.Count - 1];
@@ -291,7 +345,7 @@ internal sealed class LivenessRecorder : IFlowRecorder
             {
                 statement[kept++] = (flowEvent, syntax);
             }
-            else if (IsEvaluatedBeforeSplit(call, syntax))
+            else if (flowEvent.Kind == LivenessEventKind.Change || IsEvaluatedBeforeSplit(call, syntax))
             {
                 _events[node].Add(flowEvent);
             }
@@ -307,21 +361,11 @@ internal sealed class LivenessRecorder : IFlowRecorder
     }
 
     // Whether a use at syntax inside call is evaluated once before the call splits: in an argument or a part of a
-    // by-reference argument that the lowering spills to a temporary (SpilledArguments, the rule the lowering spills by),
-    // in the value that a shuffle publishes, or in the arguments of a barrier
+    // by-reference argument that the lowering spills to a temporary (SpilledArguments, the rule the lowering spills by for
+    // both suspending calls and warp shuffles, #788 / #1004 F3)
     private bool IsEvaluatedBeforeSplit(IInvocationOperation call, SyntaxNode syntax)
     {
-        var intrinsic = SyncIntrinsicClassifier.Classify(call.TargetMethod);
-        if (intrinsic.Kind == SyncIntrinsicKind.WarpShuffle)
-        {
-            return call.Arguments
-                .AsStackEnumerable()
-                .Any(syntax, static (argument, use) =>
-                    argument is { IsImplicit: false, Parameter.Ordinal: ShuffleValueOrdinal } && argument.Syntax.Span.Contains(use.Span)
-                );
-        }
-
-        if (intrinsic.Kind != SyncIntrinsicKind.None || call.Syntax is not InvocationExpressionSyntax invocation)
+        if (call.Syntax is not InvocationExpressionSyntax invocation)
         {
             return true;
         }
@@ -411,9 +455,13 @@ internal sealed class LivenessRecorder : IFlowRecorder
         {
             AddAssigned(local, target.Syntax, node, replaces: true);
         }
-        else if (target is IParameterReferenceOperation { Parameter: var parameter } && IsTrackedParameter(parameter))
+        else if (CapturedWholeLocal(target) is { IsRef: false } capturedLocal)
         {
-            AddParameterAssigned(Index(parameter), target.Syntax, node);
+            AddAssigned(capturedLocal, target.Syntax, node, replaces: true);
+        }
+        else if (IndexOfWholeParameter(target) is var index and >= 0)
+        {
+            AddParameterAssigned(index, target.Syntax, node);
         }
     }
 
@@ -446,13 +494,67 @@ internal sealed class LivenessRecorder : IFlowRecorder
         _ => -1
     };
 
+    // The local that a flow capture reference names as a whole, or null for any other operation
+    private ILocalSymbol? CapturedWholeLocal(IOperation reference) =>
+        reference is IFlowCaptureReferenceOperation capture &&
+        _flowCaptures.TryGetValue(capture.Id, out var flowCapture)
+            ? flowCapture.WholeSymbol as ILocalSymbol
+            : null;
+
+    // Whether reference overwrites wholeSymbol as a whole in a simple assignment or deconstruction
+    private static bool IsWholeVariableOverwrite(IFlowCaptureReferenceOperation reference, ISymbol? wholeSymbol) =>
+        wholeSymbol switch
+        {
+            ILocalSymbol local =>
+                (reference.Parent is ISimpleAssignmentOperation assignment &&
+                 assignment.Target == reference &&
+                 (assignment.IsRef || !local.IsRef)) ||
+                (!local.IsRef &&
+                 reference.Parent is ITupleOperation tuple &&
+                 ParameterChanges.IsDeconstructionTarget(tuple)),
+            IParameterSymbol =>
+                (reference.Parent is ISimpleAssignmentOperation assignment && assignment.Target == reference) ||
+                (reference.Parent is ITupleOperation tuple && ParameterChanges.IsDeconstructionTarget(tuple)),
+            _ => false
+        };
+
+    // Collects the locals and tracked parameters read inside a captured expression
+    private void CollectCapturedReads(IOperation operation, HashSet<ISymbol> reads)
+    {
+        switch (operation)
+        {
+            case IFlowAnonymousFunctionOperation:
+                return;
+            case ILocalReferenceOperation { Local: var local } when !IsDeclaredInFrame(local):
+                reads.Add(local);
+                return;
+            case IParameterReferenceOperation { Parameter: var parameter } when IsTrackedParameter(parameter):
+                reads.Add(parameter);
+                return;
+        }
+
+        foreach (var child in operation.ChildOperations)
+        {
+            CollectCapturedReads(child, reads);
+        }
+    }
+
     // p = <value>, (p, x) = <value>: the parameter itself is the target, which OnAssignment writes
     private static bool IsWrittenWhole(IParameterReferenceOperation reference) => reference.Parent switch
     {
         ISimpleAssignmentOperation assignment => assignment.Target == reference,
         ITupleOperation tuple => ParameterChanges.IsDeconstructionTarget(tuple),
-        _ => false
+        _ => IsCapturedSimpleAssignmentLeft(reference)
     };
+
+    // A whole variable captured before a conditional right-hand side on the left of a simple assignment (x = c ? a : b)
+    private static bool IsCapturedSimpleAssignmentLeft(IOperation reference) =>
+        reference.Parent is IFlowCaptureOperation &&
+        reference.Syntax.Parent is AssignmentExpressionSyntax
+        {
+            RawKind: (int)SyntaxKind.SimpleAssignmentExpression
+        } assignment &&
+        assignment.Left == reference.Syntax;
 
     private bool IsDeclaredInFrame(ISymbol local)
     {
@@ -561,9 +663,6 @@ internal sealed class LivenessRecorder : IFlowRecorder
         _ => null
     };
 
-    // The parameter of a warp shuffle that holds the value it publishes (mask, var, lane, width)
-    private const int ShuffleValueOrdinal = 1;
-
     private enum BodyMode
     {
         // Runs where it is spliced
@@ -574,6 +673,14 @@ internal sealed class LivenessRecorder : IFlowRecorder
 
         // A delegate that may run after any later split
         Delegate
+    }
+
+    // A flow capture of a receiver, element location or whole variable
+    private sealed class CapturedFlowTarget(ISymbol? wholeSymbol)
+    {
+        public ISymbol? WholeSymbol { get; set; } = wholeSymbol;
+
+        public HashSet<ISymbol> Reads { get; } = new(SymbolEqualityComparer.Default);
     }
 
     // An opaque body being spliced: the locals of the method it captures, and whether it makes a delegate
