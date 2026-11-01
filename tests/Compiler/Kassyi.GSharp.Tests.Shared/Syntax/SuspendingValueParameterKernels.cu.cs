@@ -138,6 +138,17 @@ public static partial class SuspendingValueParameterKernels
         return a * 1000 + b;
     }
 
+    [GpuDeviceFunction]
+    public static int RefTernaryParameterThenSync(int c, int paramAssign, int paramCompound, int paramInc)
+    {
+        int localFallback = -999;
+        ((c & 1) == 0 ? ref paramAssign : ref localFallback) = 777;
+        ((c & 2) == 0 ? ref paramCompound : ref localFallback) += 100;
+        ++((c & 4) == 0 ? ref paramInc : ref localFallback);
+        Gpu.SyncThreads();
+        return paramAssign * 10000 + paramCompound * 10 + paramInc;
+    }
+
     [GpuKernel]
     public static void StructFieldWriteKernel(float[] fieldOut, int[] scalarOut)
     {
@@ -218,5 +229,12 @@ public static partial class SuspendingValueParameterKernels
     {
         int tid = ThreadIndex.X;
         output[tid] = TupleSwapScalarsThenSync(tid, 7);
+    }
+
+    [GpuKernel]
+    public static void RefTernaryParameterWriteKernel(int[] output)
+    {
+        int tid = ThreadIndex.X;
+        output[tid] = RefTernaryParameterThenSync(tid, 10, 20, 3);
     }
 }

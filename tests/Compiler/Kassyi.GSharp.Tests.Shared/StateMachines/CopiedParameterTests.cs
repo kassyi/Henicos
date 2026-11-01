@@ -37,6 +37,14 @@ public class CopiedParameterTests
     [InlineData("MutatingMethodCall", "v")]
     [InlineData("NestedFieldMutatingMethodCall", "v")]
     [InlineData("RefExtensionCall", "v")]
+    [InlineData("RefTernaryScalarAssignment", "a")]
+    [InlineData("RefTernaryBothBranchesParameters", "a", "b")]
+    [InlineData("RefTernaryIncrement", "a")]
+    [InlineData("RefTernaryFieldAssignment", "v")]
+    [InlineData("RefTernaryMutatingMethodCall", "v")]
+    [InlineData("RefTernaryRefArgument", "v")]
+    [InlineData("OperatorMacroRefContextParameter", "ctx")]
+    [InlineData("OperatorMacroNestedRefContextParameter", "ctx")]
     public void Lower_WriteThroughValueParameter_CopiesParameter(string methodName, params string[] expected)
     {
         var lowered = LowerDeviceFunction("ValueParameterWrites.cs", methodName, withModel: true);
@@ -58,6 +66,8 @@ public class CopiedParameterTests
     [InlineData("ReadOnlyStructMethodCall")]
     [InlineData("NonRefExtensionCalls")]
     [InlineData("FieldReadOnly")]
+    [InlineData("OperatorMacroValueContextParameter")]
+    [InlineData("OperatorMacroInContextParameter")]
     public void Lower_NoWriteIntoValueStorage_CopiesNothing(string methodName)
     {
         var lowered = LowerDeviceFunction("ValueParameterWrites.cs", methodName, withModel: true);
@@ -76,6 +86,9 @@ public class CopiedParameterTests
     [InlineData("TupleSwapFields")]
     [InlineData("MutatingMethodCall")]
     [InlineData("ReadOnlyMethodCall")]
+    [InlineData("RefTernaryFieldAssignment")]
+    [InlineData("RefTernaryMutatingMethodCall")]
+    [InlineData("RefTernaryRefArgument")]
     public void Lower_WriteThroughValueParameterWithoutModel_CopiesParameter(string methodName)
     {
         var lowered = LowerDeviceFunction("ValueParameterWrites.cs", methodName, withModel: false);

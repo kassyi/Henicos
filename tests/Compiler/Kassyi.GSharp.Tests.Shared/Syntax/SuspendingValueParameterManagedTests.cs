@@ -68,5 +68,10 @@ public class SuspendingValueParameterManagedTests : IDisposable
     [Scenario(TestScenario.Boundary)]
     public void Test_Managed_DeconstructingSwapOfScalars_SurvivesBarrier() =>
         SuspendingValueParameterTests.AssertTupleSwapScalars();
+
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void Test_Managed_RefTernaryParameterWrite_SurvivesBarrier() =>
+        SuspendingValueParameterTests.AssertRefTernaryParameterWrite();
 }
 #endif

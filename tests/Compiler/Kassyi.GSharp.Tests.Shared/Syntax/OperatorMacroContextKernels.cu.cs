@@ -105,4 +105,42 @@ public static partial class OperatorMacroContextKernels
         Gpu.SyncThreads();
         calls[0] = local.Calls;
     }
+
+    // The context is a value parameter of a suspending device function or a kernel that an operator macro changes
+    // before a barrier (#944)
+    [GpuDeviceFunction]
+    public static uint AddAcrossBarrierWithValueContext(OperatorMacroContextState state, uint[] left, uint[] right,
+        uint[] result)
+    {
+        OperatorMacroContextValue a = left;
+        OperatorMacroContextValue b = right;
+        OperatorMacroContextValue c = result;
+
+        c = a + b;
+        Gpu.SyncThreads();
+
+        OperatorMacroContextValue bAfter = right;
+        OperatorMacroContextValue cAfter = result;
+        cAfter = cAfter + bAfter;
+        return state.Calls;
+    }
+
+    [GpuKernel]
+    public static void ValueParameterContextAcrossBarrierKernel(OperatorMacroContextState bigCtx, uint[] left,
+        uint[] right, uint[] result, uint[] deviceCalls, uint[] kernelCalls)
+    {
+        deviceCalls[0] = AddAcrossBarrierWithValueContext(bigCtx, left, right, result);
+
+        OperatorMacroContextValue a = result;
+        OperatorMacroContextValue b = right;
+        OperatorMacroContextValue c = result;
+
+        c = a + b;
+        Gpu.SyncThreads();
+
+        OperatorMacroContextValue bAfter = right;
+        OperatorMacroContextValue cAfter = result;
+        cAfter = cAfter + bAfter;
+        kernelCalls[0] = bigCtx.Calls;
+    }
 }

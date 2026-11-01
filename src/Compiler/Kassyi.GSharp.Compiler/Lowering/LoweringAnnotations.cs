@@ -87,6 +87,14 @@ public static class LoweringAnnotations
     public const string ArgumentTempAnnotationKind = "GSharpArgumentTemp";
 
     /// <summary>
+    /// Annotation kind that records on a lowered state machine body the name of a value parameter that lives in its
+    /// frame (<see cref="LoweredStateMachine.CopiedParameters"/>), so an implicit reference (such as an operator macro
+    /// context argument, #944) resolves to <c>__gsharp_ctx-&gt;&lt;name&gt;</c> even when the body never spells the
+    /// parameter explicitly.
+    /// </summary>
+    public const string CopiedParameterAnnotationKind = "GSharpCopiedParameter";
+
+    /// <summary>
     /// The <see cref="SyncIntrinsicAnnotationKind"/> annotation for a call to <paramref name="intrinsic"/>, or
     /// <see langword="null"/> when the intrinsic does not split the state machine.
     /// </summary>

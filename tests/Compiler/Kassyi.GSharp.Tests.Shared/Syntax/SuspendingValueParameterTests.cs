@@ -49,6 +49,10 @@ public class SuspendingValueParameterTests : TranspilerTestBase
     [Scenario(TestScenario.Boundary)]
     public void Test_DeconstructingSwapOfScalars_SurvivesBarrier() => AssertTupleSwapScalars();
 
+    [SkippableFact]
+    [Scenario(TestScenario.Boundary)]
+    public void Test_RefTernaryParameterWrite_SurvivesBarrier() => AssertRefTernaryParameterWrite();
+
     internal static void AssertTupleSwapFields()
     {
         var output = new float[BlockSize];
@@ -67,6 +71,19 @@ public class SuspendingValueParameterTests : TranspilerTestBase
         for (int t = 0; t < BlockSize; t++)
         {
             Assert.Equal(7 * 1000 + t, output[t]);
+        }
+    }
+
+    internal static void AssertRefTernaryParameterWrite()
+    {
+        var output = new int[BlockSize];
+        SuspendingValueParameterKernels.LaunchRefTernaryParameterWriteKernel(output, blockDimX: BlockSize);
+        for (int t = 0; t < BlockSize; t++)
+        {
+            int expectedAssign = (t & 1) == 0 ? 777 : 10;
+            int expectedCompound = (t & 2) == 0 ? 120 : 20;
+            int expectedInc = (t & 4) == 0 ? 4 : 3;
+            Assert.Equal(expectedAssign * 10000 + expectedCompound * 10 + expectedInc, output[t]);
         }
     }
 

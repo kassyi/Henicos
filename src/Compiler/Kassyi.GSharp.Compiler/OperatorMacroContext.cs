@@ -96,8 +96,37 @@ internal static class OperatorMacroContext
                 )
             );
 
-        return reference?.Parent is MemberAccessExpressionSyntax access && access.Name == reference
-            ? access
-            : reference;
+        if (reference != null)
+        {
+            return reference.Parent is MemberAccessExpressionSyntax access && access.Name == reference
+                ? access
+                : reference;
+        }
+
+        if (variable is IParameterSymbol parameter)
+        {
+            foreach (var annotation in assignment.SyntaxTree.GetRoot()
+                         .GetAnnotations(LoweringAnnotations.CopiedParameterAnnotationKind))
+            {
+                if (annotation.Data != parameter.Name)
+                {
+                    continue;
+                }
+
+                var identifier = SyntaxFactory.Identifier(parameter.Name.ToCSharpIdentifier());
+                if (parameter.TryGetDeclaringSyntax<ParameterSyntax>(out var syntax))
+                {
+                    var treeOrdinal = SemanticModelExtensions.GetSyntaxTreeOrdinal(semanticModel.Compilation, syntax.SyntaxTree);
+                    var annotated = syntax.WithAdditionalAnnotations(new SyntaxAnnotation(
+                        LoweringAnnotations.OriginalSpanAnnotationKind,
+                        LoweringAnnotations.FormatOriginalSpanData(syntax, treeOrdinal)));
+                    return ContextHoister.CreateContextAccess(identifier, annotated);
+                }
+
+                return ContextHoister.CreateContextAccess(identifier, assignment);
+            }
+        }
+
+        return null;
     }
 }

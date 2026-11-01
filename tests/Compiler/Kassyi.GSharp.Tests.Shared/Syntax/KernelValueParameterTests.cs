@@ -69,6 +69,10 @@ public class KernelValueParameterTests : TranspilerTestBase
     [Scenario(TestScenario.Boundary)]
     public void Test_ParameterWrittenWithoutBarrier_KeepsWrite() => AssertWithoutBarrier();
 
+    [SkippableFact]
+    [Scenario(TestScenario.Boundary)]
+    public void Test_RefTernaryParameterWrite_SurvivesBarrier() => AssertRefTernaryParameter();
+
     internal static void AssertScalarParameter()
     {
         var output = new int[BlockSize];
@@ -219,6 +223,19 @@ public class KernelValueParameterTests : TranspilerTestBase
         for (int t = 0; t < BlockSize; t++)
         {
             Assert.Equal(11 + t, output[t]);
+        }
+    }
+
+    internal static void AssertRefTernaryParameter()
+    {
+        var output = new int[BlockSize];
+        KernelValueParameterKernels.LaunchRefTernaryParameterKernel(10, 20, 3, output, blockDimX: BlockSize);
+        for (int t = 0; t < BlockSize; t++)
+        {
+            int expectedAssign = (t & 1) == 0 ? 777 : 10;
+            int expectedCompound = (t & 2) == 0 ? 120 : 20;
+            int expectedInc = (t & 4) == 0 ? 4 : 3;
+            Assert.Equal(expectedAssign * 10000 + expectedCompound * 10 + expectedInc, output[t]);
         }
     }
 

@@ -187,4 +187,17 @@ public static partial class KernelValueParameterKernels
         value = value + tid;
         output[tid] = value;
     }
+
+    // A write through a conditional ref expression before a barrier (#1000)
+    [GpuKernel]
+    public static void RefTernaryParameterKernel(int paramAssign, int paramCompound, int paramInc, int[] output)
+    {
+        int tid = ThreadIndex.X;
+        int localFallback = -999;
+        ((tid & 1) == 0 ? ref paramAssign : ref localFallback) = 777;
+        ((tid & 2) == 0 ? ref paramCompound : ref localFallback) += 100;
+        ++((tid & 4) == 0 ? ref paramInc : ref localFallback);
+        Gpu.SyncThreads();
+        output[tid] = paramAssign * 10000 + paramCompound * 10 + paramInc;
+    }
 }

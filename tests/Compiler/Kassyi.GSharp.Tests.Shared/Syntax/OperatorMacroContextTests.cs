@@ -70,4 +70,28 @@ public class OperatorMacroContextTests
         Assert.Equal(31u, result[0]);
         Assert.Equal(1u, calls[0]);
     }
+
+    [SkippableFact]
+    [TestTarget(ExecutionTarget.GpuExecution)]
+    [Scenario(TestScenario.Boundary)]
+    public void Test_ValueParameterContext_AcrossBarrier_PreservesMacroMutations()
+    {
+        uint[] result = [0];
+        uint[] deviceCalls = [0];
+        uint[] kernelCalls = [0];
+
+        OperatorMacroContextKernels.LaunchValueParameterContextAcrossBarrierKernel(
+            new OperatorMacroContextState { Offset = 10 },
+            [1],
+            [2],
+            result,
+            deviceCalls,
+            kernelCalls
+        );
+
+        // Device: (1 + 2 + 10) + 2 + 10 = 25; Kernel: (25 + 2 + 10) + 2 + 10 = 49
+        Assert.Equal(49u, result[0]);
+        Assert.Equal(2u, deviceCalls[0]);
+        Assert.Equal(2u, kernelCalls[0]);
+    }
 }

@@ -93,5 +93,10 @@ public class KernelValueParameterManagedTests : IDisposable
     [Scenario(TestScenario.Boundary)]
     public void Test_Managed_ParameterWrittenWithoutBarrier_KeepsWrite() =>
         KernelValueParameterTests.AssertWithoutBarrier();
+
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void Test_Managed_RefTernaryParameterWrite_SurvivesBarrier() =>
+        KernelValueParameterTests.AssertRefTernaryParameter();
 }
 #endif

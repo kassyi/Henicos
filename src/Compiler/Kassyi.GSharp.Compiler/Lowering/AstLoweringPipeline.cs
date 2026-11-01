@@ -1,3 +1,5 @@
+using Kassyi.GSharp.Compiler.Transpiler.Rules.MacroRules;
+
 namespace Kassyi.GSharp.Compiler.Lowering;
 
 /// <summary>Connects all AST lowering passes into a pipeline that transforms standard C# kernel bodies into a flat state machine.</summary>
@@ -82,6 +84,11 @@ public static class AstLoweringPipeline
 
         var lowerer = new StateMachineLowerer(isDeviceFunction, bodyModel, statePlan);
         var stateMachineBody = lowerer.Lower(contextHoistedBody);
+        foreach (var copiedParameter in copiedParameters)
+        {
+            stateMachineBody = stateMachineBody.WithAdditionalAnnotations(
+                new SyntaxAnnotation(LoweringAnnotations.CopiedParameterAnnotationKind, copiedParameter));
+        }
 
         return new LoweredStateMachine(stateMachineBody, contextFields, lowerer.CallSites, copiedParameters);
     }
@@ -141,9 +148,10 @@ public static class AstLoweringPipeline
 
     // [WHY] The caller (the launcher, for a kernel) passes the original arguments again on every resume, so a parameter
     // that the body changes has to live in the frame. A change is a write whose target starts at the parameter itself
-    // (see FindWrittenStorageRoot) in one of the forms of TryGetWriteTarget. With a semantic model the root is matched by
-    // symbol, so a lambda parameter of the same name is not taken for it; without one, or when the model cannot bind the root, it
-    // is matched by name (C# forbids a local that shadows a parameter), which can only copy too much.
+    // (see MarkWrittenParameters) in one of the forms of TryGetWriteTarget, or an operator macro whose target takes the
+    // parameter as its ref or out context (#944). With a semantic model the root is matched by symbol, so a lambda
+    // parameter of the same name is not taken for it; without one, or when the model cannot bind the root, it is matched
+    // by name (C# forbids a local that shadows a parameter), which can only copy too much.
     private static ImmutableArray<string> FindAssignedValueParameters(SyntaxNode body, IMethodSymbol method,
         SemanticModel? model)
     {
@@ -165,9 +173,41 @@ public static class AstLoweringPipeline
             {
                 MarkWrittenParameters(target, method, model, candidates, assigned);
             }
+
+            if (model != null &&
+                node is AssignmentExpressionSyntax assignment &&
+                OperatorMacroResolver.TryResolve(assignment, model, out var macro))
+            {
+                MarkWrittenContextParameters(macro, assignment, method, model, candidates, assigned);
+            }
         }
 
         return assigned.ToImmutable();
+    }
+
+    // An operator macro whose target takes its context parameter by ref or out changes the context variable (#944)
+    private static void MarkWrittenContextParameters(OperatorMacroResolver.OperatorMacro macro, AssignmentExpressionSyntax assignment,
+        IMethodSymbol method, SemanticModel model, HashSet<string> candidates, ImmutableArray<string>.Builder assigned)
+    {
+        if (macro is { HasContext: true, TargetMethod: { } targetMethod } &&
+            targetMethod.Parameters[0].RefKind is RefKind.Ref or RefKind.Out &&
+            OperatorMacroContext.TryFindContextVariable(assignment, targetMethod, model, out var variable, out _) &&
+            variable is IParameterSymbol parameter &&
+            parameter.ContainingSymbol.OriginalDefinition.IsEqualTo(method.OriginalDefinition) &&
+            candidates.Remove(parameter.Name))
+        {
+            assigned.Add(parameter.Name);
+        }
+
+        if (macro.Nested.IsDefaultOrEmpty)
+        {
+            return;
+        }
+
+        foreach (var nested in macro.Nested)
+        {
+            MarkWrittenContextParameters(nested.Inner, assignment, method, model, candidates, assigned);
+        }
     }
 
     // The forms that write a variable, and the expression each one writes: an assignment (its left side; each element
@@ -195,37 +235,57 @@ public static class AstLoweringPipeline
         return target != null;
     }
 
-    // Moves the parameter that a write target starts at from candidates to assigned. A tuple target writes each of its
-    // elements: (a, (v.X, b)) = ...
+    // [WHY] Moves every parameter that a write target may start at from candidates to assigned. A write changes the
+    // storage of the variable its target starts at when every step from that variable reaches a part the variable holds
+    // by value: a field (`v.X`, `v.A.B`) or an element of an [InlineArray] or fixed buffer (`v.Buffer[i]`). An array
+    // element, or memory behind a pointer or a Span<T>, is not part of the variable, and a resume sees it again, so the
+    // walk stops there. A tuple target writes each of its elements: (a, (v.X, b)) = ...; a conditional ref expression
+    // may write either branch (#1000). Without a semantic model the walk follows the syntax only.
     private static void MarkWrittenParameters(ExpressionSyntax target, IMethodSymbol method,
         SemanticModel? model, HashSet<string> candidates, ImmutableArray<string>.Builder assigned)
     {
-        if (target is TupleExpressionSyntax tuple)
+        switch (target)
         {
-            foreach (var element in tuple.Arguments)
-            {
-                MarkWrittenParameters(element.Expression, method, model, candidates, assigned);
-            }
+            case TupleExpressionSyntax tuple:
+                foreach (var element in tuple.Arguments)
+                {
+                    MarkWrittenParameters(element.Expression, method, model, candidates, assigned);
+                }
 
-            return;
-        }
+                return;
+            case ParenthesizedExpressionSyntax parenthesized:
+                MarkWrittenParameters(parenthesized.Expression, method, model, candidates, assigned);
+                return;
+            case RefExpressionSyntax refExpression:
+                MarkWrittenParameters(refExpression.Expression, method, model, candidates, assigned);
+                return;
+            case ConditionalExpressionSyntax conditional:
+                MarkWrittenParameters(conditional.WhenTrue, method, model, candidates, assigned);
+                MarkWrittenParameters(conditional.WhenFalse, method, model, candidates, assigned);
+                return;
+            case MemberAccessExpressionSyntax { RawKind: (int)SyntaxKind.SimpleMemberAccessExpression } memberAccess
+                when HoldsPartsByValue(memberAccess.Expression, model):
+                MarkWrittenParameters(memberAccess.Expression, method, model, candidates, assigned);
+                return;
+            case ElementAccessExpressionSyntax elementAccess
+                when HoldsPartsByValue(elementAccess.Expression, model):
+                MarkWrittenParameters(elementAccess.Expression, method, model, candidates, assigned);
+                return;
+            case IdentifierNameSyntax root:
+                var isParameter = model?.GetSymbol(root) switch
+                {
+                    null => true,
+                    IParameterSymbol parameter =>
+                        parameter.ContainingSymbol.OriginalDefinition.IsEqualTo(method.OriginalDefinition),
+                    _ => false
+                };
+                var name = root.Identifier.ValueText;
+                if (isParameter && candidates.Remove(name))
+                {
+                    assigned.Add(name);
+                }
 
-        if (FindWrittenStorageRoot(target, model) is not { } root)
-        {
-            return;
-        }
-
-        var isParameter = model?.GetSymbol(root) switch
-        {
-            null => true,
-            IParameterSymbol parameter =>
-                parameter.ContainingSymbol.OriginalDefinition.IsEqualTo(method.OriginalDefinition),
-            _ => false
-        };
-        var name = root.Identifier.ValueText;
-        if (isParameter && candidates.Remove(name))
-        {
-            assigned.Add(name);
+                return;
         }
     }
 
@@ -246,36 +306,6 @@ public static class AstLoweringPipeline
             } => true,
             _ => false
         };
-
-    // [WHY] A write changes the storage of the variable its target starts at when every step from that variable reaches
-    // a part the variable holds by value: a field (`v.X`, `v.A.B`) or an element of an [InlineArray] or fixed buffer
-    // (`v.Buffer[i]`). An array element, or memory behind a pointer or a Span<T>, is not part of the variable, and a
-    // resume sees it again, so the walk stops there. Without a semantic model the walk follows the syntax only.
-    private static IdentifierNameSyntax? FindWrittenStorageRoot(ExpressionSyntax target, SemanticModel? model)
-    {
-        var current = target;
-        while (true)
-        {
-            switch (current)
-            {
-                case IdentifierNameSyntax identifier:
-                    return identifier;
-                case ParenthesizedExpressionSyntax parenthesized:
-                    current = parenthesized.Expression;
-                    break;
-                case MemberAccessExpressionSyntax { RawKind: (int)SyntaxKind.SimpleMemberAccessExpression } memberAccess
-                    when HoldsPartsByValue(memberAccess.Expression, model):
-                    current = memberAccess.Expression;
-                    break;
-                case ElementAccessExpressionSyntax elementAccess
-                    when HoldsPartsByValue(elementAccess.Expression, model):
-                    current = elementAccess.Expression;
-                    break;
-                default:
-                    return null;
-            }
-        }
-    }
 
     // [WHY] A fixed buffer field has a pointer type but lies inside its struct. Any other pointer refers to memory
     // outside the variable; Roslyn reports a pointer type as a value type, so pointers are excluded before that test.

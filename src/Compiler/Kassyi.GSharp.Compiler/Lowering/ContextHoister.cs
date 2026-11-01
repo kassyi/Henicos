@@ -358,7 +358,7 @@ public class ContextHoister(
     // `node.Expression.HasAnnotations(...)` on an enclosing member access (`(__gsharp_ctx->arr).Length`) continue to see
     // the hoisted variable's original expression.
     // The original token keeps a verbatim '@' for the managed C# fallback.
-    private static MemberAccessExpressionSyntax CreateContextAccess(SyntaxToken identifier, SyntaxNode original)
+    internal static MemberAccessExpressionSyntax CreateContextAccess(SyntaxToken identifier, SyntaxNode original)
     {
         var spanAnnotations = original.GetAnnotations(LoweringAnnotations.OriginalSpanAnnotationKind);
         return SyntaxFactory.MemberAccessExpression(
