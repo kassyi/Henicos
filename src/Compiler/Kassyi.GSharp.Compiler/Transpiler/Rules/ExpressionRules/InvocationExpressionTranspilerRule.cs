@@ -10,10 +10,6 @@ namespace Kassyi.GSharp.Compiler.Transpiler.Rules.ExpressionRules;
 /// </remarks>
 public sealed class InvocationExpressionTranspilerRule : SyntaxNodeTranspilerRuleBase<InvocationExpressionSyntax>
 {
-    /// <summary>The GSH0003 text for an extension method call whose receiver and arguments interfere.</summary>
-    public const string ExtensionReceiverInterferes =
-        "extension method call whose arguments write what its receiver reads, or read what it writes";
-
     /// <summary>The GSH0003 text for an extension method call of a device function that suspends at a barrier.</summary>
     public const string SuspendingExtensionCall = "extension method call of a device function that reaches a barrier";
 
@@ -99,8 +95,7 @@ public sealed class InvocationExpressionTranspilerRule : SyntaxNodeTranspilerRul
     }
 
     // <function>(<receiver>, <arguments>): the reduced call x.M(a) of a [GpuDeviceFunction] extension method is the
-    // static call M(x, a). [WHY] C++ leaves the order of the arguments unspecified and the temporaries of BeginCall are
-    // evaluated before the receiver, so a receiver that interferes with an argument is reported instead of reordered.
+    // static call M(x, a). When the receiver and arguments interfere, BeginExtensionCall sequences them in C# order.
     private static void TranspileExtensionCall(InvocationExpressionSyntax node, ExpressionSyntax receiver,
         IMethodSymbol symbol, IMethodSymbol extension, ref TranspileContext context)
     {
@@ -111,32 +106,14 @@ public sealed class InvocationExpressionTranspilerRule : SyntaxNodeTranspilerRul
 
         var model = context.Query.SemanticModel;
         var byReference = extension.Parameters[0].RefKind != RefKind.None;
-        var receiverEffects = byReference ? ExpressionEffects.OfLocation(receiver, model) : ExpressionEffects.Of(receiver, model);
-        var interferes = node.ArgumentList.Arguments
-            .AsStackEnumerable()
-            .Any((Receiver: receiverEffects, Model: model), static (argument, s) =>
-                ExpressionEffects.Of(argument.Expression, s.Model) is var effects &&
-                (s.Receiver.InterferesWith(effects) || effects.InterferesWith(s.Receiver)));
-        if (interferes)
-        {
-            context.Reporter.Fail(GSharpDiagnostics.UnsupportedSyntax, node, ExtensionReceiverInterferes);
-            return;
-        }
 
         StructTranspiler.RegisterUsedStructIfApplicable(symbol.ReturnType, ref context);
-        using var sequence = EvaluationOrder.BeginCall(ref context, node.ArgumentList.Arguments, symbol, receiver: null,
-            spillAll: false);
+        using var sequence = EvaluationOrder.BeginExtensionCall(ref context, receiver, extension.Parameters[0],
+            node.ArgumentList.Arguments, symbol);
         CppNameResolver.AppendSymbolName(extension, ref context);
         using (context.Emitter.Writer.Parentheses())
         {
-            if (byReference)
-            {
-                RefSyntaxHelper.TranspileAsByRefArgument(ref context, receiver);
-            }
-            else
-            {
-                context.Visitor.Visit(receiver);
-            }
+            sequence.AppendReceiver(receiver, byReference, ref context);
 
             context.Emitter.Writer.AppendIf(symbol.Parameters.Length > 0, ",");
             TranspileArguments(symbol.Parameters, node.ArgumentList.Arguments, in sequence, ref context);

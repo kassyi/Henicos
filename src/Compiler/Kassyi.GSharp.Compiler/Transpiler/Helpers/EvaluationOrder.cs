@@ -151,8 +151,8 @@ internal static class EvaluationOrder
             }
 
             // CallSequence.Dispose closes the lambda and returns the temporaries to the pool
-            var temps = ArrayPool<int>.Shared.Rent(count);
-            temps.AsSpan(0, count).Fill(-1);
+            var temps = ArrayPool<int>.Shared.Rent(count + 1);
+            temps.AsSpan(0, count + 1).Fill(-1);
             var sequence = new CallSequence(context.Emitter.Writer, arguments, temps, isCall, GetReturnType(callee));
             for (var i = 0; i <= last; i++)
             {
@@ -169,6 +169,108 @@ internal static class EvaluationOrder
         {
             ArrayPool<ExpressionEffects>.Shared.Return(effects, clearArray: true);
         }
+    }
+
+    /// <summary>
+    /// Starts a call in reduced extension form (<c>receiver.M(arguments)</c>) that C++ emits as a static call
+    /// (<c>M(receiver, arguments)</c>): when the receiver and arguments (or two arguments) interfere, writes the lambda
+    /// and the temporaries in the C# evaluation order (receiver first, then arguments left-to-right) and <c>return </c>.
+    /// The caller then writes the call, emitting the receiver with <see cref="CallSequence.AppendReceiver"/> and each
+    /// argument with <see cref="CallSequence.AppendArgument"/>.
+    /// </summary>
+    public static CallSequence BeginExtensionCall(
+        ref TranspileContext context,
+        ExpressionSyntax? receiver,
+        IParameterSymbol? receiverParameter,
+        SeparatedSyntaxList<ArgumentSyntax> arguments,
+        IMethodSymbol? callee)
+    {
+        if (receiver == null)
+        {
+            return BeginCall(ref context, arguments, callee, receiver: null, spillAll: false);
+        }
+
+        var count = arguments.Count;
+        if (count == 0)
+        {
+            return default;
+        }
+
+        var model = context.Query.SemanticModel;
+        var total = count + 1;
+        var effects = ArrayPool<ExpressionEffects>.Shared.Rent(total);
+        try
+        {
+            var byReference = receiverParameter is { RefKind: not RefKind.None };
+            effects[0] = byReference && !NeedsConversion(receiver, model)
+                ? ExpressionEffects.OfLocation(receiver, model)
+                : ExpressionEffects.Of(receiver, model);
+
+            for (var i = 0; i < count; i++)
+            {
+                effects[i + 1] = IsByReference(arguments[i], callee?.FindParameter(arguments, i)) &&
+                                 !NeedsConversion(arguments[i].Expression, model)
+                    ? ExpressionEffects.OfLocation(arguments[i].Expression, model)
+                    : ExpressionEffects.Of(arguments[i].Expression, model);
+            }
+
+            var last = LastSpilledOperand(effects.AsSpan(0, total));
+            if (last < 0)
+            {
+                return default;
+            }
+
+            var temps = ArrayPool<int>.Shared.Rent(total);
+            temps.AsSpan(0, total).Fill(-1);
+            var sequence = new CallSequence(context.Emitter.Writer, arguments, temps, isCall: true, GetReturnType(callee));
+            if (!effects[0].IsEmpty)
+            {
+                temps[count] = DeclareReceiver(ref context, receiver, receiverParameter, byReference);
+            }
+
+            for (var i = 0; i < last; i++)
+            {
+                if (!effects[i + 1].IsEmpty)
+                {
+                    temps[i] = DeclareArgument(ref context, arguments[i], callee?.FindParameter(arguments, i), isCall: true);
+                }
+            }
+
+            context.Emitter.Writer.Append("return ");
+            return sequence;
+        }
+        finally
+        {
+            ArrayPool<ExpressionEffects>.Shared.Return(effects, clearArray: true);
+        }
+    }
+
+    private static int DeclareReceiver(
+        ref TranspileContext context,
+        ExpressionSyntax receiver,
+        IParameterSymbol? receiverParameter,
+        bool byReference)
+    {
+        var writer = context.Emitter.Writer;
+        var model = context.Query.SemanticModel;
+        if ((byReference && !NeedsConversion(receiver, model)) || StackArrayLocals.IsStackArrayReference(receiver, model))
+        {
+            writer.Append("auto&&");
+        }
+        else if (receiverParameter == null || receiverParameter.Type is IPointerTypeSymbol ||
+                 IsOrContainsTypeParameter(receiverParameter.Type))
+        {
+            writer.Append("auto");
+        }
+        else
+        {
+            context.Emitter.Dialect.AppendType(ref context, receiverParameter.Type);
+        }
+
+        var temp = AppendDeclaredName(ref context);
+        context.Visitor.Visit(receiver);
+        writer.AppendLine(";");
+        return temp;
     }
 
     // Whether an argument up to last interferes with the receiver, which the lambda would evaluate after it
@@ -315,6 +417,31 @@ internal static class EvaluationOrder
 
         /// <summary>Whether the call is emitted inside a lambda with temporaries.</summary>
         public bool IsSequenced => _temps != null;
+
+        /// <summary>
+        /// Writes <paramref name="receiver"/> as the first argument of the static C++ function for an extension call:
+        /// its temporary (by address when <paramref name="byReference"/> is <see langword="true"/>), or the receiver
+        /// itself as written.
+        /// </summary>
+        public void AppendReceiver(ExpressionSyntax receiver, bool byReference, ref TranspileContext context)
+        {
+            if (_temps != null && _temps[_arguments.Count] is var temp and >= 0)
+            {
+                context.Emitter.Writer.AppendIf(
+                    byReference && RefSyntaxHelper.NeedsAddressOf(receiver, context.Query.SemanticModel),
+                    "&");
+                AppendTempName(context.Emitter.Writer, temp);
+                return;
+            }
+
+            if (byReference)
+            {
+                RefSyntaxHelper.TranspileAsByRefArgument(ref context, receiver);
+                return;
+            }
+
+            context.Visitor.Visit(receiver);
+        }
 
         /// <summary>
         /// Writes <paramref name="argument"/> as the argument of <paramref name="parameter"/>: its temporary (by

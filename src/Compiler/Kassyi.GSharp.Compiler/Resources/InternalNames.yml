@@ -278,6 +278,7 @@ StackLinq:
   Summary: Fused StackLinq chains in device code (StackLinqFusionRule).
   Names:
     ClampCount: { Value: __gsharp_clamp_count, Prelude: ../StackLinq.cuh }
+    LinqEquals: { Value: __gsharp_linq_equals, Prelude: ../StackLinq.cuh }
     # The Block strategy of AsParallel() aggregates (CUDA only)
     BlockRank: { Value: __gsharp_block_rank, Prelude: ../Prelude.cu }
     BlockSize: { Value: __gsharp_block_size, Prelude: ../Prelude.cu }
