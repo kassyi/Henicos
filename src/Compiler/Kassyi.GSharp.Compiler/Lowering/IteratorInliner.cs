@@ -154,9 +154,12 @@ internal static class IteratorInliner
         }
 
         var endLabel = $"{GSharpInternalNames.Iterator.EndLabelPrefix}{iteratorRegion}";
+        var needsElementCast = IteratorTypeResolver.IsGenericIEnumerable(iteratorMethod.ReturnType, out var iteratorElementType) &&
+                               ForEachElementConversion.GetTarget(annotatedForEach, iteratorElementType, semanticModel) != null;
         var yieldRewriter = new YieldRewriter(
             annotatedForEach,
             loopVariableType,
+            needsElementCast,
             iteratorRegion,
             endLabel,
             semanticModel);
@@ -361,6 +364,7 @@ internal static class IteratorInliner
     private sealed class YieldRewriter(
         ForEachStatementSyntax annotatedForEach,
         TypeSyntax loopVariableType,
+        bool needsElementCast,
         int iteratorRegion,
         string endLabel,
         SemanticModel semanticModel) : CSharpSyntaxRewriter
@@ -393,6 +397,12 @@ internal static class IteratorInliner
             var nextLabel = $"{GSharpInternalNames.Iterator.NextLabelPrefix}{iteratorRegion}_{yieldIndex}";
             var yieldedExpression = Visit(node.Expression) as ExpressionSyntax
                                     ?? SyntaxFactory.LiteralExpression(SyntaxKind.DefaultLiteralExpression);
+            if (needsElementCast)
+            {
+                yieldedExpression = SyntaxFactory.CastExpression(
+                    loopVariableType.WithoutTrivia(),
+                    SyntaxFactory.ParenthesizedExpression(yieldedExpression.WithoutTrivia()));
+            }
 
             // Stamp consumerRegion onto the uninitialized loop variable declaration and consumer body together so that
             // references to the foreach loop variable and consumer-local declarations receive consumerRegion without
