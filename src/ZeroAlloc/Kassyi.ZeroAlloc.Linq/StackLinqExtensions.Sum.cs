@@ -183,6 +183,76 @@ public static partial class StackLinqExtensions
         where TEnumerator : struct, IStackEnumerator<TSource>, allows ref struct =>
         source.Select(selector).Sum();
 
+    /// <summary>
+    /// Computes the sum of a sequence of <see cref="float"/> values in sequential element order without SIMD reassociation.
+    /// </summary>
+    /// <typeparam name="TEnumerator">The type of the source enumerator.</typeparam>
+    /// <param name="source">A sequence of <see cref="float"/> values to calculate the sum of.</param>
+    /// <returns>The sequential sum of the values in the sequence.</returns>
+    public static float SumSequential<TEnumerator>(
+        this StackEnumerable<TEnumerator, float> source)
+        where TEnumerator : struct, IStackEnumerator<float>, allows ref struct
+    {
+        var enumerator = source.Enumerator;
+        float sum = 0;
+        while (enumerator.TryGetNext(out var value))
+        {
+            sum += value;
+        }
+
+        return sum;
+    }
+
+    /// <summary>
+    /// Computes the sum of the sequence of <see cref="float"/> values obtained by invoking a transform function on each element of the input sequence, in sequential element order without SIMD reassociation.
+    /// </summary>
+    /// <typeparam name="TEnumerator">The type of the source enumerator.</typeparam>
+    /// <typeparam name="TSource">The type of the elements in the source sequence.</typeparam>
+    /// <param name="source">A sequence of values that are used to calculate a sum.</param>
+    /// <param name="selector">A transform function to apply to each element.</param>
+    /// <returns>The sequential sum of the projected values.</returns>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="selector"/> is <see langword="null"/>.</exception>
+    public static float SumSequential<TEnumerator, TSource>(
+        this StackEnumerable<TEnumerator, TSource> source,
+        Func<TSource, float> selector)
+        where TEnumerator : struct, IStackEnumerator<TSource>, allows ref struct =>
+        source.Select(selector).SumSequential();
+
+    /// <summary>
+    /// Computes the sum of a sequence of <see cref="double"/> values in sequential element order without SIMD reassociation.
+    /// </summary>
+    /// <typeparam name="TEnumerator">The type of the source enumerator.</typeparam>
+    /// <param name="source">A sequence of <see cref="double"/> values to calculate the sum of.</param>
+    /// <returns>The sequential sum of the values in the sequence.</returns>
+    public static double SumSequential<TEnumerator>(
+        this StackEnumerable<TEnumerator, double> source)
+        where TEnumerator : struct, IStackEnumerator<double>, allows ref struct
+    {
+        var enumerator = source.Enumerator;
+        double sum = 0;
+        while (enumerator.TryGetNext(out var value))
+        {
+            sum += value;
+        }
+
+        return sum;
+    }
+
+    /// <summary>
+    /// Computes the sum of the sequence of <see cref="double"/> values obtained by invoking a transform function on each element of the input sequence, in sequential element order without SIMD reassociation.
+    /// </summary>
+    /// <typeparam name="TEnumerator">The type of the source enumerator.</typeparam>
+    /// <typeparam name="TSource">The type of the elements in the source sequence.</typeparam>
+    /// <param name="source">A sequence of values that are used to calculate a sum.</param>
+    /// <param name="selector">A transform function to apply to each element.</param>
+    /// <returns>The sequential sum of the projected values.</returns>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="selector"/> is <see langword="null"/>.</exception>
+    public static double SumSequential<TEnumerator, TSource>(
+        this StackEnumerable<TEnumerator, TSource> source,
+        Func<TSource, double> selector)
+        where TEnumerator : struct, IStackEnumerator<TSource>, allows ref struct =>
+        source.Select(selector).SumSequential();
+
     // The SIMD path of the int, float and double sums: whole vectors first, then the elements left over
     private static T SumVectorized<T>(ReadOnlySpan<T> span)
         where T : struct, IAdditionOperators<T, T, T>, IAdditiveIdentity<T, T>

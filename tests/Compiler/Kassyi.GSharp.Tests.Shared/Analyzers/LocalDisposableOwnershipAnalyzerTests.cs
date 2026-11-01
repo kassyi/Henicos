@@ -3,12 +3,12 @@ using Kassyi.GSharp.Tests.Shared.Helpers;
 
 namespace Kassyi.GSharp.Tests.Shared.Analyzers;
 
+[Category(TestCategory.Compiler)]
 public class LocalDisposableOwnershipAnalyzerTests : TranspilerTestBase
 {
     private static readonly LocalDisposableOwnershipAnalyzer s_analyzer = new();
 
     [Fact]
-    [Trait("DiagnosticId", "GSH0067")]
     [Scenario(TestScenario.SadPath)]
     public async Task Test_DiscardedAllocation_ReportsGSH0067AtTheStatement()
     {
@@ -22,7 +22,6 @@ public class LocalDisposableOwnershipAnalyzerTests : TranspilerTestBase
     }
 
     [Fact]
-    [Trait("DiagnosticId", "GSH0068")]
     [Scenario(TestScenario.SadPath)]
     public async Task Test_UndisposedLocal_ReportsGSH0068AtTheDeclarator()
     {
@@ -39,7 +38,6 @@ public class LocalDisposableOwnershipAnalyzerTests : TranspilerTestBase
     }
 
     [Fact]
-    [Trait("DiagnosticId", "GSH0068")]
     [Scenario(TestScenario.HappyPath)]
     public async Task Test_DisposedOrMovedLocals_HaveNoDiagnostics()
     {

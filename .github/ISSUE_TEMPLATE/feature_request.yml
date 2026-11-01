@@ -1,7 +1,7 @@
 name: "Feature / Syntax Request"
 description: "Suggest a new feature, C# syntax support, or GPU capability for G#"
 title: "[Feature]: "
-labels: ["enhancement"]
+labels: ["feature"]
 body:
   - type: markdown
     attributes:

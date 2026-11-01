@@ -128,28 +128,79 @@ internal static class StatementTranspilers
 
         StatementPrelude.Emit(node.Expression, ref context);
 
+        // A loop variable that converts each element with a .NET conversion helper (#995) takes the raw element first:
+        // for (auto __gsharp_foreach_e_<n> : <source>) { int x = __gsharp_to_i32(__gsharp_foreach_e_<n>); <body> }
+        var model = context.Query.SemanticModel;
+        var sourceElementType = model.GetTypeSymbol(node.Expression).TryGetArrayLikeElementType(out var element) ? element : null;
+        var targetType = ForEachElementConversion.GetTarget(node, sourceElementType, model);
+        var conversionHelper = IntegerSemantics.GetConversionHelper(sourceElementType, targetType, out var needsCast);
+        var rawElement = conversionHelper != null ? context.Emitter.ForEachElementCounter++ : -1;
+
         context.Emitter.Writer.Append("for");
         using (context.Emitter.Writer.Parentheses())
         {
-            if (node.Type.IsVar)
+            if (conversionHelper != null)
             {
-                context.Emitter.Writer.Append("auto ");
+                context.Emitter.Writer.Append($"auto {GSharpInternalNames.Lowering.ForEachElementPrefix}{rawElement}");
             }
             else
             {
-                var typeSymbol = context.Query.SemanticModel.GetTypeSymbol(node.Type);
-                context.Emitter.Dialect.AppendType(ref context, typeSymbol);
-                context.Emitter.Writer.Append(' ');
+                if (node.Type.IsVar)
+                {
+                    context.Emitter.Writer.Append("auto ");
+                }
+                else
+                {
+                    context.Emitter.Dialect.AppendType(ref context, model.GetTypeSymbol(node.Type));
+                    context.Emitter.Writer.Append(' ');
+                }
+
+                CppNameResolver.AppendDeclaredName(node, node.Identifier, ref context);
             }
 
-            CppNameResolver.AppendDeclaredName(node, node.Identifier, ref context);
             context.Emitter.Writer.Append(" : ");
             // foreach over a null array throws NullReferenceException at the loop entry in C# (#706)
             ArrayNullCheck.AppendReceiver(node.Expression, ref context);
         }
 
         context.Emitter.Writer.AppendLine();
-        context.Visitor.VisitStatementOrBlock(node.Statement);
+        if (conversionHelper == null)
+        {
+            context.Visitor.VisitStatementOrBlock(node.Statement);
+            return;
+        }
+
+        using (context.Emitter.Writer.Scope())
+        {
+            context.Emitter.Dialect.AppendType(ref context, targetType);
+            context.Emitter.Writer.Append(' ');
+            CppNameResolver.AppendDeclaredName(node, node.Identifier, ref context);
+            context.Emitter.Writer.Append(" = ");
+            if (needsCast)
+            {
+                using (context.Emitter.Writer.Parentheses())
+                {
+                    context.Emitter.Dialect.AppendType(ref context, targetType);
+                }
+            }
+
+            context.Emitter.Writer.Append(conversionHelper);
+            using (context.Emitter.Writer.Parentheses())
+            {
+                context.Emitter.Writer.Append($"{GSharpInternalNames.Lowering.ForEachElementPrefix}{rawElement}");
+            }
+
+            context.Emitter.Writer.AppendLine(";");
+            if (node.Statement is BlockSyntax block)
+            {
+                context.Visitor.VisitBlock(block);
+            }
+            else
+            {
+                context.Visitor.Visit(node.Statement);
+                context.Emitter.Writer.AppendLine();
+            }
+        }
     }
 
     private static void TranspileForInitializers(ForStatementSyntax node, ref TranspileContext context)
