@@ -10,24 +10,30 @@ namespace Kassyi.GSharp.Compiler.Transpiler;
 /// </summary>
 internal sealed class ContextLocalRewriter : CSharpSyntaxRewriter
 {
+    private const string PinVariablePrefix = "__gsharp_pin_";
+
     private readonly IResumeLocalSet _resumeLocals;
     private readonly Dictionary<DeclarationKey, string> _renamedLocals;
     private readonly Dictionary<DeclarationKey, string> _labelRenames;
     private readonly SemanticModel _semanticModel;
     private readonly string _kernelName;
+    private readonly bool _pinContextAddressOf;
+    private int _pinCounter;
 
     private ContextLocalRewriter(
         IResumeLocalSet resumeLocals,
         Dictionary<DeclarationKey, string> renamedLocals,
         Dictionary<DeclarationKey, string> labelRenames,
         SemanticModel semanticModel,
-        string kernelName)
+        string kernelName,
+        bool pinContextAddressOf)
     {
         _resumeLocals = resumeLocals;
         _renamedLocals = renamedLocals;
         _labelRenames = labelRenames;
         _semanticModel = semanticModel;
         _kernelName = kernelName;
+        _pinContextAddressOf = pinContextAddressOf;
     }
 
     /// <summary>Rewrites the lowered <paramref name="body"/> of a kernel or device function for the managed output.</summary>
@@ -39,7 +45,7 @@ internal sealed class ContextLocalRewriter : CSharpSyntaxRewriter
     public static SyntaxNode? Rewrite(SyntaxNode body, IResumeLocalSet resumeLocals,
         Dictionary<DeclarationKey, string> renamedLocals, SemanticModel semanticModel, string kernelName) =>
         new ContextLocalRewriter(resumeLocals, renamedLocals, CreateLabelRenames(body, semanticModel), semanticModel,
-            kernelName).Visit(body);
+            kernelName, pinContextAddressOf: true).Visit(body);
 
     /// <summary>
     /// Turns the context accesses of the resume locals of a native state machine back into locals; its labels stay as
@@ -48,7 +54,7 @@ internal sealed class ContextLocalRewriter : CSharpSyntaxRewriter
     public static SyntaxNode? RewriteResumeLocals(SyntaxNode body, IResumeLocalSet resumeLocals,
         SemanticModel semanticModel, string kernelName) =>
         new ContextLocalRewriter(resumeLocals, new Dictionary<DeclarationKey, string>(),
-            new Dictionary<DeclarationKey, string>(), semanticModel, kernelName).Visit(body);
+            new Dictionary<DeclarationKey, string>(), semanticModel, kernelName, pinContextAddressOf: false).Visit(body);
 
     // [WHY] StateMachineLowerer keeps a label that no goto in another state reaches in its state, and lowering flattens
     // sibling scopes, so two labels of one name can end up in one block (CS0140) or one inside the other's block
@@ -160,6 +166,172 @@ internal sealed class ContextLocalRewriter : CSharpSyntaxRewriter
         }
 
         return base.VisitExpressionStatement(node);
+    }
+
+    public override SyntaxNode? VisitBlock(BlockSyntax node)
+    {
+        var visited = (BlockSyntax?)base.VisitBlock(node) ?? node;
+        return _pinContextAddressOf ? WrapBlockContextAddressOf(visited) : visited;
+    }
+
+    // [WHY] Taking `&` of a hoisted variable or copied parameter in the managed state machine takes the address of a
+    // field of the heap-allocated context class (`&__gsharp_ctx.x`), which C# rejects with CS0212 outside a `fixed`
+    // initializer (#958). Wrapping from the statement that takes `&__gsharp_ctx->...` up to the next label or the end of
+    // the block pins the field for the rest of the state while keeping any local declared by the statement in scope.
+    private BlockSyntax WrapBlockContextAddressOf(BlockSyntax block)
+    {
+        var statements = block.Statements;
+        for (var i = 0; i < statements.Count; i++)
+        {
+            var pins = CollectUnfixedContextAddressOf(statements[i]);
+            if (pins.IsEmpty)
+            {
+                continue;
+            }
+
+            var rewrittenStmt = ReplaceAddressOfWithPins(statements[i], pins);
+            var endExclusive = i + 1;
+            while (endExclusive < statements.Count && statements[endExclusive] is not LabeledStatementSyntax)
+            {
+                endExclusive++;
+            }
+
+            var innerStatements = ImmutableArray.CreateBuilder<StatementSyntax>(endExclusive - i);
+            innerStatements.Add(rewrittenStmt);
+            for (var j = i + 1; j < endExclusive; j++)
+            {
+                innerStatements.Add(statements[j]);
+            }
+
+            var wrappedTail = WrapBlockContextAddressOf(SyntaxFactory.Block(innerStatements.ToImmutable()));
+            StatementSyntax current = wrappedTail;
+            for (var p = pins.Length - 1; p >= 0; p--)
+            {
+                var (addressOf, pointerType, pinName) = pins[p];
+                var declaration = SyntaxFactory.VariableDeclaration(
+                    pointerType,
+                    SyntaxFactory.SingletonSeparatedList(
+                        SyntaxFactory.VariableDeclarator(SyntaxFactory.Identifier(pinName))
+                            .WithInitializer(SyntaxFactory.EqualsValueClause(addressOf.WithoutTrivia()))
+                    )
+                );
+                current = SyntaxFactory.FixedStatement(
+                    declaration,
+                    current is BlockSyntax currentBlock ? currentBlock : SyntaxFactory.Block(current));
+            }
+
+            var outerStatements = ImmutableArray.CreateBuilder<StatementSyntax>(i + 1 + (statements.Count - endExclusive));
+            for (var j = 0; j < i; j++)
+            {
+                outerStatements.Add(statements[j]);
+            }
+
+            outerStatements.Add(current);
+            for (var j = endExclusive; j < statements.Count; j++)
+            {
+                outerStatements.Add(statements[j]);
+            }
+
+            return WrapBlockContextAddressOf(block.WithStatements(SyntaxFactory.List(outerStatements.ToImmutable())));
+        }
+
+        return block;
+    }
+
+    private ImmutableArray<(PrefixUnaryExpressionSyntax AddressOf, TypeSyntax PointerType, string PinName)>
+        CollectUnfixedContextAddressOf(StatementSyntax statement)
+    {
+        var builder = ImmutableArray.CreateBuilder<(PrefixUnaryExpressionSyntax, TypeSyntax, string)>();
+        foreach (var node in statement.DescendantNodes(static n =>
+                     n is not (BlockSyntax or AnonymousFunctionExpressionSyntax or LocalFunctionStatementSyntax)))
+        {
+            if (node is not PrefixUnaryExpressionSyntax addressOf ||
+                !addressOf.IsKind(SyntaxKind.AddressOfExpression) ||
+                IsFixedInitializer(addressOf) ||
+                !IsContextFieldLValue(addressOf.Operand) ||
+                TryResolvePointedAtType(addressOf.Operand, _semanticModel) is not { } elementType)
+            {
+                continue;
+            }
+
+            using var writer = new SourceWriter();
+            writer.AppendCsharpTypeName(elementType);
+            writer.Append("*");
+            var pointerType = SyntaxFactory.ParseTypeName(writer.ToString());
+            var pinName = $"{PinVariablePrefix}{_pinCounter++}";
+            builder.Add((addressOf, pointerType, pinName));
+        }
+
+        return builder.ToImmutable();
+    }
+
+    private static StatementSyntax ReplaceAddressOfWithPins(
+        StatementSyntax statement,
+        ImmutableArray<(PrefixUnaryExpressionSyntax AddressOf, TypeSyntax PointerType, string PinName)> pins) =>
+        statement.ReplaceNodes(
+            pins.AsStackEnumerable().Select(static p => p.AddressOf).ToArray(),
+            (original, _) =>
+            {
+                foreach (var (addressOf, _, pinName) in pins)
+                {
+                    if (addressOf == original)
+                    {
+                        return SyntaxFactory.IdentifierName(pinName).WithTriviaFrom(original);
+                    }
+                }
+
+                return original;
+            });
+
+    private static bool IsFixedInitializer(PrefixUnaryExpressionSyntax addressOf) =>
+        addressOf.Parent is EqualsValueClauseSyntax
+        {
+            Parent: VariableDeclaratorSyntax
+            {
+                Parent: VariableDeclarationSyntax
+                {
+                    Parent: FixedStatementSyntax
+                }
+            }
+        };
+
+    private static bool IsContextFieldLValue(ExpressionSyntax expression)
+    {
+        while (true)
+        {
+            switch (expression)
+            {
+                case ParenthesizedExpressionSyntax parenthesized:
+                    expression = parenthesized.Expression;
+                    continue;
+                case MemberAccessExpressionSyntax access when IsContextPointerAccess(access):
+                    return true;
+                case MemberAccessExpressionSyntax access when access.IsKind(SyntaxKind.SimpleMemberAccessExpression):
+                    expression = access.Expression;
+                    continue;
+                default:
+                    return false;
+            }
+        }
+    }
+
+    private static ITypeSymbol? TryResolvePointedAtType(ExpressionSyntax operand, SemanticModel semanticModel)
+    {
+        if (semanticModel.GetTypeSymbol(operand) is { TypeKind: not TypeKind.Error } type)
+        {
+            return type;
+        }
+
+        var target = operand is MemberAccessExpressionSyntax access && IsContextPointerAccess(access)
+            ? access.Name
+            : operand;
+        return (semanticModel.GetSymbol(target) ?? semanticModel.GetDeclaredSymbol<ISymbol>(target)) switch
+        {
+            ILocalSymbol local => local.Type,
+            IParameterSymbol parameter => parameter.Type,
+            IFieldSymbol field => field.Type,
+            _ => null
+        };
     }
 
     // The initialization of a dynamic SharedMemory<T> stays where it is, as an assignment to the local that each resume
