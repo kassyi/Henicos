@@ -31,13 +31,16 @@ public sealed record FermatPrpOptions
     /// <summary>
     /// Gets the Pietrzak halving tree depth <c>k</c> (<c>2^k</c> leaves per segment). 0 (the default) disables proof
     /// generation; a positive value (<c>1</c> to <see cref="FermatPrpProof.MaxProofPower"/>, with <c>2^k &lt;= E</c>)
-    /// records intermediate chain leaves and stores the finalized proof in <see cref="FermatAlgorithm.LastProof"/>.
+    /// records <c>2 * 2^k</c> intermediate chain leaves of <c>ceil((2E + 1) / 32)</c> words each (about 18 GB at
+    /// <c>E = 71,428,571</c>, <c>k = 8</c>, held in RAM unless <see cref="ProofLeafFile"/> is set) and stores the
+    /// finalized proof in <see cref="FermatAlgorithm.LastProof"/>.
     /// </summary>
     public int ProofPower { get; init; }
 
     /// <summary>
-    /// Gets an optional file path where intermediate Pietrzak leaves are stored during the run instead of host memory,
-    /// keeping RAM usage bounded for multi-million-digit exponents and persisting leaves across checkpoint restarts.
+    /// Gets an optional file path where the <c>2 * 2^k</c> intermediate Pietrzak leaves (<c>ceil((2E + 1) / 32)</c>
+    /// words each, about 18 GB at <c>E = 71,428,571</c>, <c>k = 8</c>) are stored on disk instead of host RAM,
+    /// keeping RAM usage bounded to <c>O(ResidueWords)</c> and persisting leaves across checkpoint restarts.
     /// Ignored when <see cref="ProofPower"/> is 0.
     /// </summary>
     public string? ProofLeafFile { get; init; }

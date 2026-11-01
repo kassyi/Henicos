@@ -17,13 +17,11 @@ internal sealed class FilePietrzakLeafStore : IPietrzakLeafStore
     private readonly byte[] _bitmap;
     private readonly int _headerBytes;
     private readonly long _slotBytes;
-    private readonly int _totalStorageSlots;
 
     public FilePietrzakLeafStore(string path, PietrzakSchedule schedule)
     {
         TotalLeafSlots = schedule.TotalLeafSlots;
         ResidueWords = schedule.ResidueWords;
-        _totalStorageSlots = schedule.TotalStorageSlots;
         _bitmap = new byte[(TotalLeafSlots + 7) / 8];
         _headerBytes = FixedHeaderBytes + _bitmap.Length;
         _slotBytes = (long)ResidueWords * sizeof(uint);
@@ -62,7 +60,7 @@ internal sealed class FilePietrzakLeafStore : IPietrzakLeafStore
 
     public void WriteSlot(int slot, ReadOnlySpan<uint> words)
     {
-        if ((uint)slot >= (uint)_totalStorageSlots)
+        if ((uint)slot >= (uint)TotalLeafSlots)
         {
             throw new ArgumentOutOfRangeException(nameof(slot));
         }
@@ -75,22 +73,19 @@ internal sealed class FilePietrzakLeafStore : IPietrzakLeafStore
         _stream.Seek(_headerBytes + slot * _slotBytes, SeekOrigin.Begin);
         _stream.Write(MemoryMarshal.AsBytes(words));
 
-        if (slot < TotalLeafSlots)
+        var byteIndex = slot >> 3;
+        var mask = (byte)(1 << (slot & 7));
+        if ((_bitmap[byteIndex] & mask) == 0)
         {
-            var byteIndex = slot >> 3;
-            var mask = (byte)(1 << (slot & 7));
-            if ((_bitmap[byteIndex] & mask) == 0)
-            {
-                _bitmap[byteIndex] |= mask;
-                _stream.Seek(FixedHeaderBytes + byteIndex, SeekOrigin.Begin);
-                _stream.WriteByte(_bitmap[byteIndex]);
-            }
+            _bitmap[byteIndex] |= mask;
+            _stream.Seek(FixedHeaderBytes + byteIndex, SeekOrigin.Begin);
+            _stream.WriteByte(_bitmap[byteIndex]);
         }
     }
 
     public void ReadSlot(int slot, Span<uint> destination)
     {
-        if ((uint)slot >= (uint)_totalStorageSlots)
+        if ((uint)slot >= (uint)TotalLeafSlots)
         {
             throw new ArgumentOutOfRangeException(nameof(slot));
         }
@@ -104,7 +99,7 @@ internal sealed class FilePietrzakLeafStore : IPietrzakLeafStore
         _stream.ReadExactly(MemoryMarshal.AsBytes(destination));
     }
 
-    public void Flush() => _stream.Flush();
+    public void Flush() => _stream.Flush(flushToDisk: true);
 
     public void Dispose()
     {
@@ -129,7 +124,7 @@ internal sealed class FilePietrzakLeafStore : IPietrzakLeafStore
             _stream.Seek(0, SeekOrigin.Begin);
             _stream.Write(buffer);
             _stream.Write(_bitmap);
-            _stream.Flush();
+            _stream.Flush(flushToDisk: true);
             return;
         }
 
@@ -164,4 +159,3 @@ internal sealed class FilePietrzakLeafStore : IPietrzakLeafStore
         _stream.Write(_bitmap);
     }
 }
-

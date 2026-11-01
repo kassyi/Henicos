@@ -147,7 +147,7 @@ public sealed class FermatPrpProof
 
             sha.GetHashAndReset(digest);
             stream.Write(digest);
-            stream.Flush();
+            stream.Flush(flushToDisk: true);
         }
 
         File.Move(tempPath, fullPath, overwrite: true);

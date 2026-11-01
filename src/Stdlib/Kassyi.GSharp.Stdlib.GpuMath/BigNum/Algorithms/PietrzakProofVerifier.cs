@@ -14,7 +14,7 @@ internal static class PietrzakProofVerifier
             return FermatPrpVerificationResult.Invalid(0, stopwatch.Elapsed, metadataError);
         }
 
-        using var modulus = FermatAlgorithm.CreateModulus(header.E, GpuKernelLoader.IsCpuFallbackMode);
+        using var modulus = FermatModulusHelper.CreateModulus(header.E, GpuKernelLoader.IsCpuFallbackMode);
         if (ValidateResidues(proof, modulus) is { } residueError)
         {
             return FermatPrpVerificationResult.Invalid(0, stopwatch.Elapsed, residueError);
@@ -25,7 +25,7 @@ internal static class PietrzakProofVerifier
         var uE = proof.ResidueE.Span;
         var uK = proof.ResidueK.Span;
 
-        var startWords = FermatAlgorithm.StartWords(header.E, header.Base, header.ResidueWords);
+        var startWords = FermatModulusHelper.StartWords(header.E, header.Base, header.ResidueWords);
         var a0 = math.SquareFrom(startWords, schedule.Remainder);
         var b0 = math.SquareFrom(uE, 1 + schedule.Remainder);
 
@@ -83,12 +83,12 @@ internal static class PietrzakProofVerifier
             return $"Expected {header.ProofPower} witnesses, got {proof.Witnesses.Count}.";
         }
 
-        if (header.E <= QuadraticHostModulus.MaxExponent && FermatAlgorithm.IsTrivialBase(header.E, header.Base, out _, out _))
+        if (header.E <= QuadraticHostModulus.MaxExponent && FermatModulusHelper.IsTrivialBase(header.E, header.Base, out _, out _))
         {
             return $"Base {header.Base} is trivial modulo N({header.E}).";
         }
 
-        if (FermatAlgorithm.SmallDivisor(header.E, header.Base) is { } divisor)
+        if (FermatModulusHelper.SmallDivisor(header.E, header.Base) is { } divisor)
         {
             return $"Base {header.Base} shares divisor {divisor} with N({header.E}).";
         }
@@ -136,4 +136,3 @@ internal static class PietrzakProofVerifier
         return true;
     }
 }
-

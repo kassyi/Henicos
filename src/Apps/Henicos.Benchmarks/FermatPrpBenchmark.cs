@@ -71,8 +71,15 @@ public class FermatPrpBenchmark
         if (proofPath != null && finalizedProof != null)
         {
             finalizedProof.Save(proofPath);
+            var verification = FermatAlgorithm.VerifyProof(finalizedProof);
+            if (!verification.IsValid)
+            {
+                throw new InvalidOperationException(
+                    $"Saved Pietrzak proof '{proofPath}' failed self-verification: {verification.FailureReason}");
+            }
+
             Logger<FermatPrpBenchmark>.Info(
-                $"Saved Pietrzak proof to {proofPath} (ProofPower = {finalizedProof.ProofPower}, Witnesses = {finalizedProof.Witnesses.Count}).");
+                $"Saved and verified Pietrzak proof at {proofPath} (ProofPower = {finalizedProof.ProofPower}, Witnesses = {finalizedProof.Witnesses.Count}, Squarings = {verification.Squarings:N0}).");
             if (leafFilePath != null && File.Exists(leafFilePath))
             {
                 File.Delete(leafFilePath);

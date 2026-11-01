@@ -1,8 +1,5 @@
 namespace Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms;
 
-/// <summary>Holds the Fermat probable-prime congruence outcome computed on verified endpoints.</summary>
-internal readonly record struct PietrzakEndpointVerdict(bool IsProbablePrime, ulong Residue64, ulong CheckResidue64);
-
 /// <summary>
 /// Wraps an <see cref="ISquaringModulus"/> for Pietrzak tree folding and verification while counting modular squarings
 /// and preserving <see cref="SquaringRegister.State"/> during prover finalization.
@@ -60,13 +57,12 @@ internal struct PietrzakArithmetic(ISquaringModulus modulus)
         var uE = proof.ResidueE.Span;
         var uK = proof.ResidueK.Span;
         modulus.Write(SquaringRegister.Final, uK);
-        modulus.Write(SquaringRegister.Constant, FermatAlgorithm.ConstantWords(proof.E, proof.Base, modulus, proof.ResidueWords));
+        modulus.Write(SquaringRegister.Constant, FermatModulusHelper.ConstantWords(proof.E, proof.Base, modulus, proof.ResidueWords));
         modulus.Multiply(SquaringRegister.Verdict, SquaringRegister.Final, SquaringRegister.Constant);
         var verdictResidue = modulus.ReadCanonical(SquaringRegister.Verdict);
         return new PietrzakEndpointVerdict(
             verdictResidue.AsSpan().SequenceEqual(uE),
-            FermatAlgorithm.Low64(verdictResidue),
-            FermatAlgorithm.Low64(uE));
+            FermatModulusHelper.Low64(verdictResidue),
+            FermatModulusHelper.Low64(uE));
     }
 }
-

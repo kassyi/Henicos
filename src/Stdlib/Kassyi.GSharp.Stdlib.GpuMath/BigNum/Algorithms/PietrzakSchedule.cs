@@ -3,9 +3,6 @@ using System.Security.Cryptography;
 
 namespace Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms;
 
-/// <summary>Pairs the start/left and end/right residues of a Pietrzak claim (<c>(X, Y)</c> or <c>(u_E, u_K)</c>).</summary>
-internal readonly record struct PietrzakClaim(uint[] X, uint[] Y);
-
 /// <summary>
 /// Encapsulates the proof header, leaf positions, step lengths and domain-separated Fiat-Shamir challenge derivation
 /// for the dual-segment Pietrzak tree over <c>[r_0, E]</c> and <c>[E + 1 + r_0, 2E + 1]</c>.
@@ -38,8 +35,6 @@ internal readonly struct PietrzakSchedule
     public int SegmentLeafCount { get; }
 
     public int TotalLeafSlots => SegmentLeafCount * 2;
-
-    public int TotalStorageSlots => SegmentLeafCount * 3;
 
     public int StepSize { get; }
 
@@ -151,4 +146,3 @@ internal readonly struct PietrzakSchedule
     private static UInt128 ForceMsbAndOdd(UInt128 raw) =>
         raw | (UInt128.One << 127) | UInt128.One;
 }
-

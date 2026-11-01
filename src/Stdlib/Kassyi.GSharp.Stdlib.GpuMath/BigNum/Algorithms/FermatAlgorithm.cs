@@ -1,4 +1,3 @@
-
 namespace Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms;
 
 /// <summary>
@@ -26,7 +25,8 @@ namespace Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms;
 /// </para>
 /// <para>
 /// <b>Stages.</b> <c>E &lt;= 31</c> (<c>N &lt; 2^64</c>) runs on the host with <see cref="UInt128"/>. Larger exponents keep
-/// the residues on the GPU: NTT squaring and a dedicated fold (<c>GpuBigIntFermatKernels.QuadraticFoldReduceKernel</c>,
+/// the residues on the GPU: NTT squaring and a dedicated parallel fold
+/// (<c>GpuBigIntFermatKernels.QuadraticFoldPassBlockedKernel</c> + <c>QuadraticFoldPassApplyKernel</c>,
 /// three passes of <c>r + q * (2^E - 11)</c>), replayed as CUDA Graphs. An instance created in CPU fallback mode
 /// multiplies with <see cref="BigInteger"/> and folds on the host, with the same results. The largest exponent is
 /// <see cref="MaxExponent"/>, set by the NTT length limit.
@@ -92,7 +92,7 @@ public sealed class FermatAlgorithm : IDisposable
             ThrowIfTrivialBase(e, @base);
         }
 
-        _smallDivisor = SmallDivisor(e, @base);
+        _smallDivisor = FermatModulusHelper.SmallDivisor(e, @base);
         _pinsFallbackMode = e > QuadraticHostModulus.MaxExponent;
         _cpuFallbackAtCreation = _pinsFallbackMode && GpuKernelLoader.IsCpuFallbackMode;
         ResidueWords = QuadraticFoldModulus.WordsOf(e);
@@ -101,7 +101,7 @@ public sealed class FermatAlgorithm : IDisposable
             : (int)Math.Clamp((long)Math.Sqrt(ChainLength), 2, 1000);
         _checkIntervalBlocks = _options.CheckIntervalBlocks != 0 ? _options.CheckIntervalBlocks : _blockSize;
         _endIteration = SquaringChainDriver.EndIterationOf(ChainLength, _blockSize);
-        _startWords = StartWords(e, @base, ResidueWords);
+        _startWords = FermatModulusHelper.StartWords(e, @base, ResidueWords);
         _lastVerified = SquaringChainDriver.StartPoint(_startWords);
 
         // A small divisor decides the test without any squaring: the registers, the NTT scratch and the fold buffers
@@ -439,8 +439,8 @@ public sealed class FermatAlgorithm : IDisposable
         return new FermatPrpResult(
             residue.AsSpan().SequenceEqual(check),
             null,
-            Low64(residue),
-            Low64(check),
+            FermatModulusHelper.Low64(residue),
+            FermatModulusHelper.Low64(check),
             outcome.Iterations,
             outcome.EndPoint.ChecksPassed,
             outcome.EndPoint.Rollbacks,
@@ -485,7 +485,7 @@ public sealed class FermatAlgorithm : IDisposable
             return;
         }
 
-        var modulus = CreateModulus(E, _cpuFallbackAtCreation);
+        var modulus = FermatModulusHelper.CreateModulus(E, _cpuFallbackAtCreation);
         PietrzakProverSession? proofSession = null;
         try
         {
@@ -497,7 +497,7 @@ public sealed class FermatAlgorithm : IDisposable
 
             modulus.Write(SquaringRegister.Start, _startWords);
             modulus.Write(SquaringRegister.State, _startWords);
-            modulus.Write(SquaringRegister.Constant, ConstantWords(E, Base, modulus, ResidueWords));
+            modulus.Write(SquaringRegister.Constant, FermatModulusHelper.ConstantWords(E, Base, modulus, ResidueWords));
             _driver = new SquaringChainDriver(modulus, ChainLength, E, _blockSize, _checkIntervalBlocks,
                 _options.MaxConsecutiveRollbacks)
             {
@@ -517,45 +517,6 @@ public sealed class FermatAlgorithm : IDisposable
             throw;
         }
     }
-
-    /// <summary>
-    /// Returns <c>a^10 mod N</c> in <paramref name="words"/> words without building <c>N</c> for large exponents:
-    /// when <c>E &gt;= 161</c>, <c>N &gt; 2^322 &gt; (2^32 - 1)^10 &gt;= a^10</c>.
-    /// </summary>
-    internal static uint[] ConstantWords(int e, uint @base, ISquaringModulus modulus, int words)
-    {
-        var power10 = e >= 161
-            ? BigInteger.Pow(@base, 10)
-            : BigInteger.ModPow(@base, 10, modulus.GetModulus());
-        return ToWords(power10, words);
-    }
-
-    /// <summary>
-    /// Returns <c>u_0 = a mod N</c> in <paramref name="words"/> words without building <c>N</c>: for <c>E &gt;= 32</c>,
-    /// <c>N &gt; 2^64 &gt; a</c>.
-    /// </summary>
-    internal static uint[] StartWords(int e, uint @base, int words)
-    {
-        var start = new uint[words];
-        ulong value = @base;
-        if (e <= QuadraticHostModulus.MaxExponent)
-        {
-            value %= (1UL << (2 * e + 1)) - (1UL << e) + QuadraticFoldModulus.ConstantTerm;
-        }
-
-        start[0] = (uint)value;
-        if (words > 1)
-        {
-            start[1] = (uint)(value >> 32);
-        }
-
-        return start;
-    }
-
-    internal static ISquaringModulus CreateModulus(int e, bool isCpuFallback) =>
-        e <= QuadraticHostModulus.MaxExponent
-            ? new QuadraticHostModulus(e)
-            : new QuadraticDeviceModulus(new QuadraticFoldModulus(e), isCpuFallback);
 
     private static void ThrowIfInvalid(FermatPrpOptions options, int e, long chainLength)
     {
@@ -599,51 +560,12 @@ public sealed class FermatAlgorithm : IDisposable
     /// <summary>Rejects a base that is 0, 1 or <c>N - 1</c> modulo <c>N</c>, which only a small <c>N</c> allows.</summary>
     private static void ThrowIfTrivialBase(int e, uint @base)
     {
-        if (IsTrivialBase(e, @base, out var n, out var reduced))
+        if (FermatModulusHelper.IsTrivialBase(e, @base, out var n, out var reduced))
         {
             throw new ArgumentOutOfRangeException(nameof(@base), @base,
                 $"The base is {reduced} modulo N = {n}; a base of 0, 1 or N - 1 says nothing about N.");
         }
     }
-
-    internal static bool IsTrivialBase(int e, uint @base, out ulong modulus, out ulong reduced)
-    {
-        modulus = (1UL << (2 * e + 1)) - (1UL << e) + QuadraticFoldModulus.ConstantTerm;
-        reduced = @base % modulus;
-        return reduced == 0 || reduced == 1 || reduced == modulus - 1;
-    }
-
-    /// <summary>Returns <c>gcd(a, N)</c> when it is not 1, from <c>N mod a = 2x^2 - x + 11 mod a</c> with <c>x = 2^E mod a</c>.</summary>
-    internal static uint? SmallDivisor(int e, uint @base)
-    {
-        ulong x = 1;
-        ulong power = 2 % @base;
-        for (var bits = e; bits > 0; bits >>= 1)
-        {
-            if ((bits & 1) != 0)
-            {
-                x = x * power % @base;
-            }
-
-            power = power * power % @base;
-        }
-
-        // 2x^2 + 11 + (a - x) is non-negative because x < a.
-        var nModBase = (ulong)(((UInt128)2 * x * x + QuadraticFoldModulus.ConstantTerm + (@base - x)) % @base);
-        var gcd = (ulong)BigInteger.GreatestCommonDivisor(@base, nModBase);
-        return gcd == 1 ? null : (uint)gcd;
-    }
-
-    private static uint[] ToWords(BigInteger value, int words)
-    {
-        var result = new uint[words];
-        value.TryWriteBytes(MemoryMarshal.AsBytes(result.AsSpan()), out _,
-            isUnsigned: true);
-        return result;
-    }
-
-    internal static ulong Low64(ReadOnlySpan<uint> words) =>
-        words.Length > 1 ? words[0] | ((ulong)words[1] << 32) : words[0];
 
     private void ThrowIfUnusable()
     {

@@ -10,7 +10,7 @@ internal sealed class MemoryPietrzakLeafStore : IPietrzakLeafStore
     {
         TotalLeafSlots = schedule.TotalLeafSlots;
         ResidueWords = schedule.ResidueWords;
-        _slots = new uint[schedule.TotalStorageSlots][];
+        _slots = new uint[TotalLeafSlots][];
         _present = new bool[TotalLeafSlots];
     }
 
@@ -60,4 +60,3 @@ internal sealed class MemoryPietrzakLeafStore : IPietrzakLeafStore
         // Managed buffers only.
     }
 }
-
