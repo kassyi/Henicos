@@ -38,9 +38,7 @@ internal static class AotHostNames
     /// <paramref name="kernelClass"/> (<c>global::&lt;namespace&gt;.&lt;name&gt;</c>).
     /// </summary>
     public static string GetHostClassQualifiedName(INamedTypeSymbol kernelClass) =>
-        kernelClass.ContainingNamespace.IsGlobalNamespace
-            ? $"global::{kernelClass.Name}"
-            : $"global::{kernelClass.ContainingNamespace.GetFullNamespaceName()}.{kernelClass.Name}";
+        kernelClass.GetFullyQualifiedCsharpName();
 
     /// <summary>
     /// Appends the C# path of the native shadow struct of <paramref name="symbol"/>:

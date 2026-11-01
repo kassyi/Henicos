@@ -39,9 +39,35 @@ internal static class IntegerSemantics
     /// as well, so that no constant expression depends on what C++ does with it.
     /// </remarks>
     public static (ITypeSymbol Type, object Value)? GetConstant(IOperation? operation) =>
-        operation is { ConstantValue: { HasValue: true, Value: { } value }, Type: { } type } && GetWidth(type) != 0
+        operation is { ConstantValue: { HasValue: true, Value: { } value }, Type: { } type } &&
+        (GetWidth(type) != 0 || TryGetNarrowEnumResultType(operation, out _))
             ? (type, value)
             : null;
+
+    /// <summary>
+    /// The narrow underlying type (<see langword="byte"/>, <see langword="sbyte"/>, <see langword="short"/> or
+    /// <see langword="ushort"/>) of an enum unary <c>~</c> or binary <c>+ - &amp; | ^</c> operation, which C++ promotes to
+    /// <c>int</c> and must be cast back (#995); <see langword="false"/> for any other operation.
+    /// </summary>
+    public static bool TryGetNarrowEnumResultType(IOperation? operation, [NotNullWhen(true)] out ITypeSymbol? resultType)
+    {
+        resultType = operation switch
+        {
+            IUnaryOperation { OperatorKind: UnaryOperatorKind.BitwiseNegation, OperatorMethod: null, IsLifted: false, Type: { } t } =>
+                UnderlyingOrSelf(t),
+            IBinaryOperation
+            {
+                OperatorKind: BinaryOperatorKind.Add or BinaryOperatorKind.Subtract or BinaryOperatorKind.And or
+                BinaryOperatorKind.Or or BinaryOperatorKind.ExclusiveOr,
+                OperatorMethod: null,
+                IsLifted: false,
+                Type: { } t
+            } => UnderlyingOrSelf(t),
+            _ => null
+        };
+        return resultType?.SpecialType is SpecialType.System_Byte or SpecialType.System_SByte or
+            SpecialType.System_Int16 or SpecialType.System_UInt16;
+    }
 
     /// <summary>
     /// The Prelude function that <paramref name="operation"/> is written as (<c>__gsharp_add_i32(a,b)</c>), or
@@ -50,7 +76,7 @@ internal static class IntegerSemantics
     /// </summary>
     public static string? GetBinaryHelper(IBinaryOperation operation)
     {
-        if (!IsIntrinsicIntegerOperation(operation) || operation.Type is not { } type)
+        if (!IsIntrinsicIntegerOperation(operation) || UnderlyingOrSelf(operation.Type) is not { } type)
         {
             return null;
         }
@@ -66,7 +92,7 @@ internal static class IntegerSemantics
     /// <c>&gt;&gt;&gt;</c> of uint and ulong): 31 or 63; 0 for any other operation.
     /// </summary>
     public static int GetShiftMask(IBinaryOperation operation) =>
-        IsIntrinsicIntegerOperation(operation) && operation.Type is { } type
+        IsIntrinsicIntegerOperation(operation) && UnderlyingOrSelf(operation.Type) is { } type
             ? Lookup(operation.OperatorKind, type.SpecialType).ShiftMask
             : 0;
 
@@ -127,7 +153,7 @@ internal static class IntegerSemantics
     // loop counter analysis
     private static string? GetStepHelper(IIncrementOrDecrementOperation operation, bool undo)
     {
-        if (operation.OperatorMethod != null || operation.IsLifted || operation.Type is not { } type)
+        if (operation.OperatorMethod != null || operation.IsLifted || UnderlyingOrSelf(operation.Type) is not { } type)
         {
             return null;
         }
@@ -138,7 +164,7 @@ internal static class IntegerSemantics
 
     /// <summary>
     /// The Prelude function of the operator of the compound assignment <paramref name="operation"/>
-    /// (<c>__gsharp_add_i32</c> for an int <c>+=</c>), which <see cref="IntegerSemanticsEmitter.AppendCompound"/> and the
+    /// (<c>__gsharp_add_i32</c> for an int <c>+=</c>), which <see cref="IntegerSemanticsEmitter.AppendStep"/> and the
     /// form that evaluates the operands into temporaries call; null for an assignment that C++ gives the C# result (see
     /// <see cref="GetCompoundShiftMask"/>).
     /// </summary>
@@ -161,7 +187,7 @@ internal static class IntegerSemantics
     /// when the target is narrower than the operator (<c>short += 1</c> computes in int); null when it is not.
     /// </summary>
     public static ITypeSymbol? GetCompoundNarrowing(ICompoundAssignmentOperation operation) =>
-        operation.Target.Type is { } target && target.SpecialType != GetCompoundOperatorType(operation)
+        UnderlyingOrSelf(operation.Target.Type) is { } target && target.SpecialType != GetCompoundOperatorType(operation)
             ? target
             : null;
 
@@ -199,16 +225,30 @@ internal static class IntegerSemantics
     public static string? GetConversionHelper(IConversionOperation operation, out bool needsCast)
     {
         needsCast = false;
-        if (operation.OperatorMethod != null || operation.IsTryCast || operation.ConstantValue.HasValue ||
-            operation.Operand.Type?.SpecialType is not (SpecialType.System_Single or SpecialType.System_Double) ||
-            operation.Type is not { } target)
+        if (operation.OperatorMethod != null || operation.IsTryCast || operation.ConstantValue.HasValue)
         {
             return null;
         }
 
-        var integral = target is INamedTypeSymbol { TypeKind: TypeKind.Enum, EnumUnderlyingType: { } underlying }
-            ? underlying
-            : target;
+        return GetConversionHelper(operation.Operand.Type, operation.Type, out needsCast);
+    }
+
+    /// <summary>
+    /// The Prelude function that converts a <see langword="float"/> or <see langword="double"/> value of
+    /// <paramref name="sourceType"/> to <paramref name="targetType"/> (<c>__gsharp_to_i32</c>), and in
+    /// <paramref name="needsCast"/> whether its result is then cast to the target type (#724, #995); null for any other
+    /// conversion.
+    /// </summary>
+    public static string? GetConversionHelper(ITypeSymbol? sourceType, ITypeSymbol? targetType, out bool needsCast)
+    {
+        needsCast = false;
+        if (sourceType?.SpecialType is not (SpecialType.System_Single or SpecialType.System_Double) ||
+            targetType is not { } target)
+        {
+            return null;
+        }
+
+        var integral = UnderlyingOrSelf(target) ?? target;
         string? helper = integral.SpecialType switch
         {
             SpecialType.System_Int32 => Names.ConvertToInt32,
@@ -263,12 +303,13 @@ internal static class IntegerSemantics
     // (byte* - byte* is long) does not
     private static bool IsIntrinsicIntegerOperation(IBinaryOperation operation) =>
         operation.OperatorMethod == null && !operation.IsLifted && !operation.ConstantValue.HasValue &&
-        operation.Type is { } type && operation.LeftOperand.Type?.SpecialType == type.SpecialType;
+        UnderlyingOrSelf(operation.Type) is { } type &&
+        UnderlyingOrSelf(operation.LeftOperand.Type)?.SpecialType == type.SpecialType;
 
     // The type of the operator of a compound assignment of an integer target: the binary numeric promotion of the target
     // and the value (C# spec §12.4.7.3, §12.21.4), which does not depend on whether the bound value already carries the
-    // conversion to it; for a shift, the promoted type of the target (§12.11). Null for a pointer (p += n), an enum
-    // (e += n) or a floating-point value, which have operators of their own.
+    // conversion to it; for a shift, the promoted type of the target (§12.11). Null for a pointer (p += n) or a
+    // floating-point value, which have operators of their own.
     private static SpecialType GetCompoundOperatorType(ICompoundAssignmentOperation operation)
     {
         var target = Promote(operation.Target.Type);
@@ -299,7 +340,7 @@ internal static class IntegerSemantics
     }
 
     // The integral promotions: an integer type narrower than int is int; None for any type that is not an integer
-    private static SpecialType Promote(ITypeSymbol? type) => type?.SpecialType switch
+    private static SpecialType Promote(ITypeSymbol? type) => UnderlyingOrSelf(type)?.SpecialType switch
     {
         SpecialType.System_SByte or SpecialType.System_Byte or SpecialType.System_Int16 or SpecialType.System_UInt16 or
             SpecialType.System_Char or SpecialType.System_Int32 => SpecialType.System_Int32,
@@ -371,7 +412,7 @@ internal static class IntegerSemantics
 
     private static bool TryGetTypeRange(ITypeSymbol? type, out BigInteger min, out BigInteger max)
     {
-        (min, max) = type?.SpecialType switch
+        (min, max) = UnderlyingOrSelf(type)?.SpecialType switch
         {
             SpecialType.System_SByte => (sbyte.MinValue, sbyte.MaxValue),
             SpecialType.System_Byte => (byte.MinValue, byte.MaxValue),
@@ -405,7 +446,7 @@ internal static class IntegerSemantics
     }
 
     /// <summary>32 or 64 for int, uint, long and ulong; 0 for any other type.</summary>
-    internal static int GetWidth(ITypeSymbol? type) => GetWidth(type?.SpecialType ?? SpecialType.None);
+    internal static int GetWidth(ITypeSymbol? type) => GetWidth(UnderlyingOrSelf(type)?.SpecialType ?? SpecialType.None);
 
     private static int GetWidth(SpecialType type) => type switch
     {
@@ -415,9 +456,12 @@ internal static class IntegerSemantics
     };
 
     /// <summary>Whether the type is int or long.</summary>
-    internal static bool IsSigned(ITypeSymbol? type) => IsSigned(type?.SpecialType ?? SpecialType.None);
+    internal static bool IsSigned(ITypeSymbol? type) => IsSigned(UnderlyingOrSelf(type)?.SpecialType ?? SpecialType.None);
 
     private static bool IsSigned(SpecialType type) => type is SpecialType.System_Int32 or SpecialType.System_Int64;
+
+    private static ITypeSymbol? UnderlyingOrSelf(ITypeSymbol? type) =>
+        type is INamedTypeSymbol { TypeKind: TypeKind.Enum, EnumUnderlyingType: { } underlying } ? underlying : type;
 
     private static int Mask(int width) => width - 1;
 

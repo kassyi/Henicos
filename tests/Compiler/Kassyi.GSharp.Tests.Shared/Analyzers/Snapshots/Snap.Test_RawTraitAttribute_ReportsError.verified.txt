@@ -1,0 +1,4 @@
+﻿HNT0008 at (6,1)-(6,24): [Trait] on 'ClassWithRawTraitTests' is not allowed. Use [Category(TestCategory.X)], [TestTarget(ExecutionTarget.X)] or [Scenario(TestScenario.X)] instead.
+HNT0008 at (11,5)-(11,37): [Trait] on 'MethodWithDiagnosticTrait' is not allowed. Use [Category(TestCategory.X)], [TestTarget(ExecutionTarget.X)] or [Scenario(TestScenario.X)] instead.
+HNT0008 at (29,1)-(29,34): [Trait] on 'LegacyCategoryTraitOnlyTests' is not allowed. Use [Category(TestCategory.X)], [TestTarget(ExecutionTarget.X)] or [Scenario(TestScenario.X)] instead.
+HNT0002 at (33,16)-(33,50): Test method 'MethodRelyingOnLegacyCategoryTrait' has no category. Add [Category(TestCategory.X)], [TestTarget(ExecutionTarget.X)] or [Scenario(TestScenario.X)] to the method or its class.
