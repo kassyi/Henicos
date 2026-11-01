@@ -21,7 +21,8 @@ internal static class RefSyntaxHelper
     /// Transpiles the given expression as a reference/pointer argument, automatically appending the address-of operator if needed,
     /// or wrapping a temporary rvalue in <c>__gsharp_temp_address</c>.
     /// </summary>
-    public static void TranspileAsByRefArgument(ref TranspileContext context, ExpressionSyntax expression)
+    public static void TranspileAsByRefArgument(ref TranspileContext context, ExpressionSyntax expression,
+        bool allowAutoProperty = false)
     {
         var semanticModel = context.Query.SemanticModel;
         if (!NeedsAddressOf(expression, semanticModel))
@@ -30,18 +31,32 @@ internal static class RefSyntaxHelper
             return;
         }
 
-        if (HasExplicitRefSyntax(expression) || IsCppLValue(expression, semanticModel))
+        if (HasExplicitRefSyntax(expression) || IsCppLValue(expression, semanticModel, allowAutoProperty))
         {
             context.Emitter.Writer.Append("&");
             context.Visitor.Visit(expression);
             return;
         }
 
+        var needsValueCopy = IsCppLValue(expression, semanticModel, allowAutoProperty: true);
         context.Emitter.Writer.Append(GSharpInternalNames.Prelude.TempAddress);
         AppendTempAddressTypeArgument(ref context, expression, semanticModel);
         using (context.Emitter.Writer.Parentheses())
         {
-            context.Visitor.Visit(expression);
+            if (needsValueCopy)
+            {
+                // [WHY] A struct auto-property is emitted as its C++ backing field (an lvalue), and MSVC folds a scalar
+                // static_cast<T>(lvalue) back to the lvalue when binding const T& in __gsharp_temp_address; returning by
+                // value from an immediately invoked lambda forces a distinct prvalue temporary copy.
+                using (context.Emitter.Writer.InlineScope("([&]() { return ", "; }())"))
+                {
+                    context.Visitor.Visit(expression);
+                }
+            }
+            else
+            {
+                context.Visitor.Visit(expression);
+            }
         }
     }
 
@@ -78,7 +93,8 @@ internal static class RefSyntaxHelper
 
     // Whether the C++ expression that RoslynToCudaVisitor emits for an un-modified argument is an lvalue of the target
     // parameter type whose address '&' can take directly
-    public static bool IsCppLValue(ExpressionSyntax expression, SemanticModel semanticModel)
+    public static bool IsCppLValue(ExpressionSyntax expression, SemanticModel semanticModel,
+        bool allowAutoProperty = false)
     {
         var typeInfo = GetSafeTypeInfo(expression, semanticModel);
         if (typeInfo.Type != null &&
@@ -101,7 +117,7 @@ internal static class RefSyntaxHelper
             {
                 var symbol = semanticModel.GetSymbol(expression) ??
                              semanticModel.GetDeclaredSymbol<ISymbol>(expression);
-                return IsLValueSymbol(symbol);
+                return IsLValueSymbol(symbol, allowAutoProperty);
             }
             case MemberAccessExpressionSyntax memberAccess:
             {
@@ -113,7 +129,8 @@ internal static class RefSyntaxHelper
                 var symbol = semanticModel.GetSymbol(memberAccess) ??
                              semanticModel.GetSymbol(memberAccess.Name) ??
                              semanticModel.GetDeclaredSymbol<ISymbol>(memberAccess.Name);
-                return IsLValueSymbol(symbol);
+                return IsLValueSymbol(symbol, allowAutoProperty) &&
+                       IsReceiverLValue(memberAccess.Expression, symbol, semanticModel, allowAutoProperty);
             }
             case ElementAccessExpressionSyntax:
             {
@@ -138,13 +155,31 @@ internal static class RefSyntaxHelper
         }
     }
 
-    private static bool IsLValueSymbol(ISymbol? symbol) =>
+    // C# (§12.8.7) classifies E.M of a struct as a variable only when E is a variable (a field of an auto-property is a value)
+    private static bool IsReceiverLValue(ExpressionSyntax receiver, ISymbol? memberSymbol,
+        SemanticModel semanticModel, bool allowAutoProperty)
+    {
+        if (memberSymbol is null or { IsStatic: true } ||
+            receiver is ThisExpressionSyntax or BaseExpressionSyntax)
+        {
+            return true;
+        }
+
+        if (semanticModel.GetTypeSymbol(receiver) is not { IsValueType: true })
+        {
+            return true;
+        }
+
+        return IsCppLValue(receiver, semanticModel, allowAutoProperty);
+    }
+
+    private static bool IsLValueSymbol(ISymbol? symbol, bool allowAutoProperty) =>
         symbol switch
         {
             ILocalSymbol or IParameterSymbol => true,
             IFieldSymbol { IsConst: false, IsStatic: false } => true,
             IPropertySymbol { RefKind: RefKind.Ref or RefKind.RefReadOnly } => true,
-            IPropertySymbol { ContainingType: INamedTypeSymbol containingType } property =>
+            IPropertySymbol { ContainingType: INamedTypeSymbol containingType } property when allowAutoProperty =>
                 GlobalCppNames.IsEmittedUserType(containingType) &&
                 !StructAbiMembers.IsComputedProperty(property),
             _ => false

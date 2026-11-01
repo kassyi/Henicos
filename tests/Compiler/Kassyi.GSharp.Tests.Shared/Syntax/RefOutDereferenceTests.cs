@@ -145,4 +145,41 @@ public partial class RefOutDereferenceTests
             Assert.Equal((3 * 10 + 8) * 1000 + (3 * 100 + 8), output[i * 3 + 2]);
         }
     }
+
+    [SkippableFact]
+    [TestTarget(ExecutionTarget.GpuExecution)]
+    [Category(TestCategory.Syntax)]
+    [Scenario(TestScenario.Boundary)]
+    public void Test_AutoPropertyPassedToInParameter_CopiesValueInsteadOfAliasingBackingField()
+    {
+        const int count = 4;
+        int[] input = [7, 12, -3, 0];
+        var output = new int[count * 4];
+
+        RefOutDereferenceKernels.LaunchAutoPropertyInParameterSnapshotKernel(input, output, blockDimX: count);
+
+        for (int i = 0; i < count; i++)
+        {
+            int x = input[i];
+            Assert.Equal(x, output[i * 4]);
+            Assert.Equal(99, output[i * 4 + 1]);
+            Assert.Equal(x * 10 + 4, output[i * 4 + 2]);
+            Assert.Equal(88, output[i * 4 + 3]);
+        }
+
+#if GSHARP_CPU
+        var managedOutput = new int[count * 4];
+        ManagedKernelRun.Run(() =>
+            RefOutDereferenceKernels.LaunchAutoPropertyInParameterSnapshotKernel(input, managedOutput, blockDimX: count));
+
+        for (int i = 0; i < count; i++)
+        {
+            int x = input[i];
+            Assert.Equal(x, managedOutput[i * 4]);
+            Assert.Equal(99, managedOutput[i * 4 + 1]);
+            Assert.Equal(x * 10 + 4, managedOutput[i * 4 + 2]);
+            Assert.Equal(88, managedOutput[i * 4 + 3]);
+        }
+#endif
+    }
 }

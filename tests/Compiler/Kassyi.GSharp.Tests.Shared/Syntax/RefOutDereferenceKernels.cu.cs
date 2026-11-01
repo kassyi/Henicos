@@ -20,6 +20,12 @@ public struct RefTestStruct
     public int PassComputedToIn => RefOutDereferenceKernels.ReadInInt(ComputedSum);
 }
 
+public struct AutoPropHolder
+{
+    public int AutoProp { get; set; }
+    public RefTestStruct NestedProp { get; set; }
+}
+
 public static partial class RefOutDereferenceKernels
 {
     private const int ConstVal = 15;
@@ -96,6 +102,20 @@ public static partial class RefOutDereferenceKernels
         return ReadRefReadOnlyStruct(in a) + ReadInStruct(in b) + ReadInStruct(a) + ReadRefReadOnlyStruct(in b);
     }
 
+    [GpuDeviceFunction]
+    public static int MutateHolderAndReadInSnapshot(ref AutoPropHolder h, in int snap)
+    {
+        h.AutoProp = 99;
+        return snap;
+    }
+
+    [GpuDeviceFunction]
+    public static int MutateHolderAndReadInStructSnapshot(ref AutoPropHolder h, in RefTestStruct snap)
+    {
+        h.NestedProp = new RefTestStruct { Field = 8, Value = 8 };
+        return snap.Field * 10 + snap.Value;
+    }
+
     [GpuKernel]
     public static void RefOutTestKernel(int[] data)
     {
@@ -160,5 +180,20 @@ public static partial class RefOutDereferenceKernels
         output[tid * 3] = scalar + s.Field * 100 + s.Value;
         output[tid * 3 + 1] = ReadInInt(in scalar) * 1000 + ReadRefReadOnlyInt(in scalar);
         output[tid * 3 + 2] = ReadInStruct(in s) * 1000 + ReadRefReadOnlyStruct(in s);
+    }
+
+    [GpuKernel]
+    public static void AutoPropertyInParameterSnapshotKernel(int[] input, int[] output)
+    {
+        int tid = ThreadIndex.X;
+        int x = input[tid];
+        AutoPropHolder h1 = new AutoPropHolder { AutoProp = x };
+        AutoPropHolder h2 = new AutoPropHolder { NestedProp = new RefTestStruct { Field = x, Value = 4 } };
+        int scalarSnap = MutateHolderAndReadInSnapshot(ref h1, h1.AutoProp);
+        int structSnap = MutateHolderAndReadInStructSnapshot(ref h2, h2.NestedProp);
+        output[tid * 4] = scalarSnap;
+        output[tid * 4 + 1] = h1.AutoProp;
+        output[tid * 4 + 2] = structSnap;
+        output[tid * 4 + 3] = h2.NestedProp.Field * 10 + h2.NestedProp.Value;
     }
 }
