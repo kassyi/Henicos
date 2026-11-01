@@ -98,8 +98,12 @@ function stripProjectReferenceGroups(text) {
  * path (so "Core" also matches "Kassyi.GSharp.Core"). Hidden, bin, obj and node_modules
  * directories are skipped. Returns the first match in sorted order, or null.
  */
+function escapeRegExp(value) {
+  return String(value).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
 function findProject(asm) {
-  const pattern = new RegExp(asm + '.csproj$');
+  const pattern = new RegExp(escapeRegExp(asm) + '\\.csproj$');
   const skip = new Set(['bin', 'obj', 'node_modules']);
   const walk = (dir) => {
     let entries;
