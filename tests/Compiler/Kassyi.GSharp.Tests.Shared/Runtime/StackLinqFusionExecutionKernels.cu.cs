@@ -179,7 +179,28 @@ public partial class StackLinqFusionExecutionKernels
     {
         if (ThreadIndex.X == 0) result[0] = data.AsStackEnumerable().SkipLast(3).Sum();
     }
+
+    [GpuKernel]
+    public static void TestUnfusedSelectAtAndMinEvaluationCount(int[] data, int[] result)
+    {
+        if (ThreadIndex.X == 0)
+        {
+            int count0 = 0;
+            int val0 = data.AsStackEnumerable()
+                .Select((x, idx) => x + idx + (++count0))
+                .Where(y => true)
+                .ElementAtOrDefault(0);
+
+            int count1 = 0;
+            var unfused = data.AsStackEnumerable();
+            int val1 = unfused
+                .Select(x => x + (++count1))
+                .Min();
+
+            result[0] = val0;
+            result[1] = count0;
+            result[2] = val1;
+            result[3] = count1;
+        }
+    }
 }
-
-
-

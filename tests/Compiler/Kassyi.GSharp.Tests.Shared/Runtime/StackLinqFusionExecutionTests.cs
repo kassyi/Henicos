@@ -270,6 +270,19 @@ public class StackLinqFusionExecutionTests
         StackLinqFusionExecutionKernels.LaunchTestSkipLast(data, result, blockDimX: 1);
         Assert.Equal(data.SkipLast(3).Sum(), result[0]);
     }
+
+    [SkippableFact]
+    [Category(TestCategory.Runtime)]
+    [TestTarget(ExecutionTarget.GpuExecution)]
+    [Scenario(TestScenario.Boundary)]
+    public void TestUnfusedSelectAtAndMinEvaluationCount()
+    {
+        int[] data = [10, 20, 30, 40];
+        int[] result = new int[4];
+        StackLinqFusionExecutionKernels.LaunchTestUnfusedSelectAtAndMinEvaluationCount(data, result, blockDimX: 1);
+        Assert.Equal(11, result[0]);
+        Assert.Equal(1, result[1]);
+        Assert.Equal(11, result[2]);
+        Assert.Equal(4, result[3]);
+    }
 }
-
-
