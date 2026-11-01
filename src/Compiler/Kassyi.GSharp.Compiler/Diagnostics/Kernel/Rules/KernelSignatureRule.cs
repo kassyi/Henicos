@@ -54,12 +54,7 @@ internal sealed class KernelSignatureRule : ISyntaxValidationRule<MethodDeclarat
             if (parameter.TryGetDeclaringSyntax<ParameterSyntax>(out var parameterSyntax) &&
                 parameterSyntax.Type is { } typeSyntax)
             {
-                var parameterType = parameter.Type.UnwrapNullableArrayLike() ?? parameter.Type;
-                if (parameterType is IArrayTypeSymbol { Rank: > 1 } ||
-                    (parameterType.TryGetArrayLikeElementType(out var elementType) &&
-                     elementType is IArrayTypeSymbol { Rank: > 1 }) ||
-                    (StructLayoutRule.TryGetUserStruct(parameter.Type, out var structType, out _) &&
-                     StructLayoutRule.TryFindMultidimensionalArrayField(structType)))
+                if (GpuCodeConstraints.ContainsMultidimensionalArray(parameter.Type))
                 {
                     context.ReportDiagnostic(
                         GSharpDiagnostics.UnsupportedSyntax,

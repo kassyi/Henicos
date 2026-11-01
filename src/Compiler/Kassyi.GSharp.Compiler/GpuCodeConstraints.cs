@@ -137,6 +137,44 @@ internal static class GpuCodeConstraints
     public const string ZeroLengthArray = "zero-length array";
 
     /// <summary>
+    /// Whether <paramref name="type"/> is, wraps, or holds (directly or in a nested user struct) a multidimensional array
+    /// (<c>T[,]</c>, <c>T[,,]</c>, ...), which device code cannot represent (GSH0003, #613).
+    /// </summary>
+    public static bool ContainsMultidimensionalArray(ITypeSymbol type, int depth = 0)
+    {
+        const int MaxDepth = 16;
+        if (depth > MaxDepth)
+        {
+            return false;
+        }
+
+        var unwrapped = type.UnwrapNullableArrayLike() ?? type;
+        if (unwrapped is IArrayTypeSymbol { Rank: > 1 })
+        {
+            return true;
+        }
+
+        if (unwrapped.TryGetArrayLikeElementType(out var elementType))
+        {
+            return ContainsMultidimensionalArray(elementType, depth + 1);
+        }
+
+        if (unwrapped is INamedTypeSymbol { TypeKind: TypeKind.Struct } structType &&
+            TypeLayoutCalculator.IsUserStruct(structType))
+        {
+            foreach (var member in StructAbiMembers.Get(structType))
+            {
+                if (ContainsMultidimensionalArray(member.Type, depth + 1))
+                {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
+    /// <summary>
     /// The GSH0003 text (<see cref="MultidimensionalArray"/>, <see cref="ZeroLengthArray"/>) for the array that
     /// <paramref name="value"/> creates as the initializer of a local of <paramref name="declaredType"/>, or
     /// <see langword="null"/> when it can be a stack array. A span over an empty <c>stackalloc</c> or collection
