@@ -37,10 +37,22 @@ internal class GpuBigIntLeafExpression(GpuBigInt value) : IGpuBigIntExpression
 }
 
 internal abstract class SignedBinaryExpression(IGpuBigIntExpression left, IGpuBigIntExpression right)
-    : IGpuBigIntExpression
+    : IGpuBigIntExpression, IDisposable
 {
     protected IGpuBigIntExpression Left { get; } = left ?? throw new ArgumentNullException(nameof(left));
     protected IGpuBigIntExpression Right { get; } = right ?? throw new ArgumentNullException(nameof(right));
+
+    public void Dispose()
+    {
+        try
+        {
+            (Left as IDisposable)?.Dispose();
+        }
+        finally
+        {
+            (Right as IDisposable)?.Dispose();
+        }
+    }
 
     public virtual int NumWords
     {
@@ -225,10 +237,12 @@ internal class SignedModExpression(IGpuBigIntExpression left, IGpuBigIntExpressi
     }
 }
 
-internal class SignedNegateExpression(IGpuBigIntExpression target) : IGpuBigIntExpression
+internal class SignedNegateExpression(IGpuBigIntExpression target) : IGpuBigIntExpression, IDisposable
 {
     private IGpuBigIntExpression Target { get; } = target ?? throw new ArgumentNullException(nameof(target));
     public int NumWords => Target.NumWords;
+
+    public void Dispose() => (Target as IDisposable)?.Dispose();
 
     public GpuBigInt Evaluate(GpuWorkspace workspace, GpuBigUInt? targetResult = null)
     {
@@ -237,10 +251,12 @@ internal class SignedNegateExpression(IGpuBigIntExpression target) : IGpuBigIntE
     }
 }
 
-internal abstract class SignedUnaryExpression(IGpuBigIntExpression target) : IGpuBigIntExpression
+internal abstract class SignedUnaryExpression(IGpuBigIntExpression target) : IGpuBigIntExpression, IDisposable
 {
     protected IGpuBigIntExpression Target { get; } = target ?? throw new ArgumentNullException(nameof(target));
     public virtual int NumWords => Target.NumWords;
+
+    public void Dispose() => (Target as IDisposable)?.Dispose();
 
     public GpuBigInt Evaluate(GpuWorkspace workspace, GpuBigUInt? targetResult = null)
     {
