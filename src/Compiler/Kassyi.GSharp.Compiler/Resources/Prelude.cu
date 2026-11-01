@@ -100,7 +100,7 @@ __device__ __forceinline__ unsigned int __gsharp_add_cc(unsigned int a, unsigned
 
 __device__ __forceinline__ unsigned int __gsharp_sub_cc(unsigned int a, unsigned int b, long long* borrow) {
     unsigned int res;
-    unsigned int dummy;
+    [[maybe_unused]] unsigned int dummy;
     unsigned int b_in = (unsigned int)*borrow;
     unsigned int b_out;
     asm volatile(
@@ -110,6 +110,7 @@ __device__ __forceinline__ unsigned int __gsharp_sub_cc(unsigned int a, unsigned
         : "=r"(res), "=r"(dummy), "=r"(b_out)
         : "r"(b_in), "r"(a), "r"(b)
     );
+    (void)dummy;
     *borrow = b_out & 1;
     return res;
 }
@@ -152,7 +153,7 @@ __device__ __forceinline__ void __gsharp_mbarrier_init(unsigned long long* barri
 
 __device__ __forceinline__ void __gsharp_mbarrier_arrive(unsigned long long* barrier) {
     unsigned int addr = (unsigned int)__cvta_generic_to_shared(barrier);
-    unsigned long long state;
+    [[maybe_unused]] unsigned long long state;
     asm volatile("mbarrier.arrive.shared.b64 %0, [%1];" : "=l"(state) : "r"(addr) : "memory");
     (void)state;
 }

@@ -174,7 +174,7 @@ public abstract class CompileKernelTaskBase : Microsoft.Build.Utilities.Task, IC
                     File.Delete(path);
                 }
             }
-            catch
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or ArgumentException or NotSupportedException)
             {
                 // Ignore cleanup errors on best-effort basis
             }

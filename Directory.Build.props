@@ -10,6 +10,8 @@
     <BaseIntermediateOutputPath>obj\$(GSharpHostOs)\</BaseIntermediateOutputPath>
     <DefaultItemExcludes>$(DefaultItemExcludes);bin\**;obj\**</DefaultItemExcludes>
 
+    <SolutionDir Condition="'$(SolutionDir)' == '' or '$(SolutionDir)' == '*Undefined*'">$(MSBuildThisFileDirectory)</SolutionDir>
+    <SolutionName Condition="'$(SolutionName)' == '' or '$(SolutionName)' == '*Undefined*'">Henicos</SolutionName>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <SuppressTfmSupportBuildWarnings>true</SuppressTfmSupportBuildWarnings>
     <!-- 自動生成コード(Source Generator)等の未使用プライベートフィールド警告を抑制 -->
