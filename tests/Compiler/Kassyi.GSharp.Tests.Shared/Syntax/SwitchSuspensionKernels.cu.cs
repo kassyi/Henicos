@@ -241,4 +241,62 @@ public static partial class SwitchSuspensionKernels
                 break;
         }
     }
+
+    // A char switch flattened for its shuffles (#708, #939): goto case 66 names case 'B' by value (C# converts the int
+    // constant to the char, warning CS0469), so the flattened goto reaches the section of 'B'
+    [GpuKernel]
+    public static void GotoCaseCharKernel(int[] output, int flag)
+    {
+        int tid = ThreadIndex.X;
+        int value = tid;
+        char letter = flag == 0 ? 'A' : 'C';
+        switch (letter)
+        {
+            case 'A':
+                value = Warp.ShuffleXorSync(FullMask, value, 1);
+#pragma warning disable CS0469
+                goto case 66;
+#pragma warning restore CS0469
+            case 'B':
+                value = Warp.ShuffleXorSync(FullMask, value, 2) + 100;
+                break;
+            default:
+                value += 1000;
+                break;
+        }
+
+        output[tid] = value;
+    }
+
+    // An enum switch flattened for its shuffles (#708, #939): goto case (SwitchGotoCaseMode)2 names case Third by value,
+    // so the flattened goto reaches the section of Third
+    [GpuKernel]
+    public static void GotoCaseEnumKernel(int[] output, int flag)
+    {
+        int tid = ThreadIndex.X;
+        int value = tid;
+        SwitchGotoCaseMode mode = flag == 0 ? SwitchGotoCaseMode.First : SwitchGotoCaseMode.Second;
+        switch (mode)
+        {
+            case SwitchGotoCaseMode.First:
+                value = Warp.ShuffleXorSync(FullMask, value, 1);
+                goto case (SwitchGotoCaseMode)2;
+            case SwitchGotoCaseMode.Second:
+                value += 1000;
+                break;
+            case SwitchGotoCaseMode.Third:
+                value = Warp.ShuffleXorSync(FullMask, value, 2) + 100;
+                break;
+        }
+
+        output[tid] = value;
+    }
+}
+
+/// <summary>Modes of <see cref="SwitchSuspensionKernels.GotoCaseEnumKernel"/> (#708, #939).</summary>
+public enum SwitchGotoCaseMode
+{
+    First,
+    Second,
+    Third
 }

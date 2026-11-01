@@ -88,6 +88,20 @@ public class SwitchSuspensionManagedTests : TranspilerTestBase
 
     [Theory]
     [Scenario(TestScenario.Boundary)]
+    [InlineData(0)]
+    [InlineData(1)]
+    public void Test_Managed_GotoCaseChar_MatchesCaseByValue(int flag) =>
+        SwitchSuspensionScenarios.GotoCaseChar(s_runManaged, flag);
+
+    [Theory]
+    [Scenario(TestScenario.Boundary)]
+    [InlineData(0)]
+    [InlineData(1)]
+    public void Test_Managed_GotoCaseEnum_MatchesCaseByValue(int flag) =>
+        SwitchSuspensionScenarios.GotoCaseEnum(s_runManaged, flag);
+
+    [Theory]
+    [Scenario(TestScenario.Boundary)]
     [InlineData(float.NaN)]
     [InlineData(1f)]
     [InlineData(2f)]
