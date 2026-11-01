@@ -123,32 +123,6 @@ public static class KnownDivergences
         new("M1DiffStackLinqKernels.UnfusedSelectEvaluationKernel", "SelectWhereElementAtCount", DiffPath.Native | DiffPath.Cuda, Issue: 997),
         new("M1DiffStackLinqKernels.UnfusedSelectEvaluationKernel", "UnfusedSelectMaxCount", DiffPath.Native | DiffPath.Cuda, Issue: 997),
 
-        // F11: empty stackalloc Span<T> / collection expression == null (#998)
-        new("M1DiffSwitchKernels.EmptyStackSpanNullComparisonReproKernel", "stackalloc_zero_eq_null", DiffPath.Native | DiffPath.Cuda, Issue: 998),
-        new("M1DiffSwitchKernels.EmptyStackSpanNullComparisonReproKernel", "stackalloc_zero_ne_null", DiffPath.Native | DiffPath.Cuda, Issue: 998),
-        new("M1DiffSwitchKernels.EmptyStackSpanNullComparisonReproKernel", "collection_empty_eq_null", DiffPath.Native | DiffPath.Cuda, Issue: 998),
-        new("M1DiffSwitchKernels.EmptyStackSpanNullComparisonReproKernel", "combined_null_flags", DiffPath.Native | DiffPath.Cuda, Issue: 998),
-
-        // F12: Nullable<Memory<T>> / Nullable<ArraySegment<T>> null pattern (#998)
-        new("M1DiffSwitchKernels.NullableArrayLikeDefaultValueNullCheckReproKernel", "mem_is_null", DiffPath.Native | DiffPath.Cuda, Issue: 998),
-        new("M1DiffSwitchKernels.NullableArrayLikeDefaultValueNullCheckReproKernel", "mem_is_not_null", DiffPath.Native | DiffPath.Cuda, Issue: 998),
-        new("M1DiffSwitchKernels.NullableArrayLikeDefaultValueNullCheckReproKernel", "mem_eq_ne_hasvalue", DiffPath.Native | DiffPath.Cuda, Issue: 998),
-        new("M1DiffSwitchKernels.NullableArrayLikeDefaultValueNullCheckReproKernel", "seg_is_null_hasvalue", DiffPath.Native | DiffPath.Cuda, Issue: 998),
-
-        // F13: Nullable<T> ?? conversion & narrow Nullable<T> ?? side effect (#998)
-        new("M1DiffNullableKernels.CoalesceWiderNullableWithNarrowerNullable", "int_coalesce_short_val", DiffPath.Native | DiffPath.Cuda, Issue: 998),
-        new("M1DiffNullableKernels.CoalesceWiderNullableWithNarrowerNullable", "int_coalesce_ushort_val", DiffPath.Native | DiffPath.Cuda, Issue: 998),
-        new("M1DiffSwitchKernels.NarrowNullableCoalesceVarPromotionReproKernel", "byte_nullable_coalesce_inc", DiffPath.Native | DiffPath.Cuda, Issue: 998),
-        new("M1DiffSwitchKernels.NarrowNullableCoalesceVarPromotionReproKernel", "ushort_nullable_coalesce_inc", DiffPath.Native | DiffPath.Cuda, Issue: 998),
-        new("M1DiffSwitchKernels.NarrowNullableCoalesceVarPromotionReproKernel", "byte_nullable_ushort_coalesce_inc", DiffPath.Native | DiffPath.Cuda, Issue: 998),
-
-        // F14: struct auto-property passed to in parameter without defensive copy (#999)
-        new("M1DiffStructKernels.AutoPropertyPassedToInParameterDefensiveCopy", "in_snapshot_after_holder_mutated", DiffPath.Native | DiffPath.Cuda, Issue: 999),
-
-        // F15: struct user-defined implicit operator ignored (#963)
-        new("M1DiffStructKernels.StructUserDefinedImplicitConversion", "scaled_field_val", DiffPath.Native | DiffPath.Cuda, Issue: 963),
-        new("M1DiffStructKernels.StructUserDefinedImplicitConversion", "converted_back_int", DiffPath.Native | DiffPath.Cuda, Issue: 963),
-
         // F16: BitOperations.PopCount/LeadingZeroCount/TrailingZeroCount/Log2 unsigned return in CPU Native C++ (#876)
         new("M1DiffNarrowIntKernels.BitOpsReturnSignMatrixKernel", "PopCount(u)<-1", DiffPath.Native, Issue: 876),
         new("M1DiffNarrowIntKernels.BitOpsReturnSignMatrixKernel", "LeadingZeroCount(u)<-1", DiffPath.Native, Issue: 876),

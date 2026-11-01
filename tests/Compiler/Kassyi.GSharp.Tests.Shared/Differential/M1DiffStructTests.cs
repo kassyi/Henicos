@@ -140,6 +140,27 @@ public class M1DiffStructTests
             b.Get<int>("r")),
     };
 
+    private static readonly DifferentialCase s_userDefinedExplicitConv = new(
+        $"{nameof(M1DiffStructKernels)}.{nameof(M1DiffStructKernels.StructUserDefinedExplicitConversion)}")
+    {
+        Shape = LaunchShape.ForRows(Rows, blockX: 64),
+        Inputs = static (rng, rows) =>
+        {
+            var inputs = DiffValues.Int32(rng, rows);
+            return new DiffBuffers()
+                .In("inputs", inputs)
+                .Out<int>("r", rows, M1DiffStructKernels.UserDefinedExplicitConvColumns, OutputPolicy.Exact);
+        },
+        Launch = static (b, s) => M1DiffStructKernels.LaunchStructUserDefinedExplicitConversion(
+            b.Get<int>("inputs"),
+            b.Get<int>("r"),
+            gridDimX: s.GridX,
+            blockDimX: s.BlockX),
+        Oracle = static b => M1DiffStructKernels.StructUserDefinedExplicitConversion(
+            b.Get<int>("inputs"),
+            b.Get<int>("r")),
+    };
+
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Differential)]
@@ -174,4 +195,11 @@ public class M1DiffStructTests
     [Scenario(TestScenario.Boundary)]
     public void Test_StructUserDefinedImplicitConversion_MatchesTheOracleOnEveryPath() =>
         DifferentialRunner.Run(s_userDefinedImplicitConv);
+
+    [SkippableFact]
+    [TestTarget(ExecutionTarget.GpuExecution)]
+    [Category(TestCategory.Differential)]
+    [Scenario(TestScenario.Boundary)]
+    public void Test_StructUserDefinedExplicitConversion_MatchesTheOracleOnEveryPath() =>
+        DifferentialRunner.Run(s_userDefinedExplicitConv);
 }

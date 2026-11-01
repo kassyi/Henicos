@@ -3848,10 +3848,10 @@ GSharpArray<int> __gsharp_id_4_sZero{};
 GSharpArray<int> __gsharp_id_5_sCol{};
 GSharpArray<int> __gsharp_id_6_sDef = {};
 int __gsharp_id_7_col = __gsharp_mul_i32(__gsharp_id_3_t,4);
-__gsharp_id_1_dst[__gsharp_id_7_col+0]=(false?1:0);
-__gsharp_id_1_dst[__gsharp_add_i32(__gsharp_id_7_col,1)]=(true?1:0);
-__gsharp_id_1_dst[__gsharp_add_i32(__gsharp_id_7_col,2)]=(false?1:0);
-__gsharp_id_1_dst[__gsharp_add_i32(__gsharp_id_7_col,3)]=__gsharp_add_i32(__gsharp_add_i32((true?10:0),((__gsharp_id_6_sDef.data == nullptr)?1:0)),__gsharp_id_0_a[__gsharp_id_3_t]&0);
+__gsharp_id_1_dst[__gsharp_id_7_col+0]=((__gsharp_id_4_sZero.data == nullptr)?1:0);
+__gsharp_id_1_dst[__gsharp_add_i32(__gsharp_id_7_col,1)]=((__gsharp_id_4_sZero.data != nullptr)?1:0);
+__gsharp_id_1_dst[__gsharp_add_i32(__gsharp_id_7_col,2)]=((__gsharp_id_5_sCol.data == nullptr)?1:0);
+__gsharp_id_1_dst[__gsharp_add_i32(__gsharp_id_7_col,3)]=__gsharp_add_i32(__gsharp_add_i32(((__gsharp_id_5_sCol.data != nullptr)?10:0),((__gsharp_id_6_sDef.data == nullptr)?1:0)),__gsharp_id_0_a[__gsharp_id_3_t]&0);
 }
 ";
 public static readonly string EmptyStackSpanNullComparisonReproKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +EmptyStackSpanNullComparisonReproKernel_Source;
@@ -4019,14 +4019,14 @@ if(__gsharp_id_3_t>=__gsharp_id_2_n)
 return;
 }
 GSharpArray<int> __gsharp_id_4_emptyMem = {};
-GSharpArray<int> __gsharp_id_5_nonNullEmptyMem = __gsharp_id_4_emptyMem;
+System_Nullable<GSharpArray<int>> __gsharp_id_5_nonNullEmptyMem = __gsharp_id_4_emptyMem;
 GSharpArray<int> __gsharp_id_6_emptySeg = {};
-GSharpArray<int> __gsharp_id_7_nonNullEmptySeg = __gsharp_id_6_emptySeg;
+System_Nullable<GSharpArray<int>> __gsharp_id_7_nonNullEmptySeg = __gsharp_id_6_emptySeg;
 int __gsharp_id_8_col = __gsharp_mul_i32(__gsharp_id_3_t,4);
-__gsharp_id_1_dst[__gsharp_id_8_col+0]=((__gsharp_id_5_nonNullEmptyMem.data == nullptr)?1:0);
-__gsharp_id_1_dst[__gsharp_add_i32(__gsharp_id_8_col,1)]=((__gsharp_id_5_nonNullEmptyMem.data != nullptr)?1:0);
-__gsharp_id_1_dst[__gsharp_add_i32(__gsharp_id_8_col,2)]=__gsharp_add_i32(__gsharp_add_i32(((__gsharp_id_5_nonNullEmptyMem.data == nullptr)?1:0),((__gsharp_id_5_nonNullEmptyMem.data != nullptr)?10:0)),((__gsharp_id_5_nonNullEmptyMem.data != nullptr)?100:0));
-__gsharp_id_1_dst[__gsharp_add_i32(__gsharp_id_8_col,3)]=__gsharp_add_i32(__gsharp_add_i32(__gsharp_add_i32(((__gsharp_id_7_nonNullEmptySeg.data == nullptr)?1:0),((__gsharp_id_7_nonNullEmptySeg.data != nullptr)?10:0)),((__gsharp_id_7_nonNullEmptySeg.data != nullptr)?100:0)),__gsharp_id_0_a[__gsharp_id_3_t]&0);
+__gsharp_id_1_dst[__gsharp_id_8_col+0]=((!__gsharp_id_5_nonNullEmptyMem.HasValue)?1:0);
+__gsharp_id_1_dst[__gsharp_add_i32(__gsharp_id_8_col,1)]=((__gsharp_id_5_nonNullEmptyMem.HasValue)?1:0);
+__gsharp_id_1_dst[__gsharp_add_i32(__gsharp_id_8_col,2)]=__gsharp_add_i32(__gsharp_add_i32(((!__gsharp_id_5_nonNullEmptyMem.HasValue)?1:0),((__gsharp_id_5_nonNullEmptyMem.HasValue)?10:0)),(__gsharp_id_5_nonNullEmptyMem.HasValue?100:0));
+__gsharp_id_1_dst[__gsharp_add_i32(__gsharp_id_8_col,3)]=__gsharp_add_i32(__gsharp_add_i32(__gsharp_add_i32(((!__gsharp_id_7_nonNullEmptySeg.HasValue)?1:0),((__gsharp_id_7_nonNullEmptySeg.HasValue)?10:0)),(__gsharp_id_7_nonNullEmptySeg.HasValue?100:0)),__gsharp_id_0_a[__gsharp_id_3_t]&0);
 }
 ";
 public static readonly string NullableArrayLikeDefaultValueNullCheckReproKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +NullableArrayLikeDefaultValueNullCheckReproKernel_Source;
@@ -4386,20 +4386,20 @@ int __gsharp_id_6_c = __gsharp_id_0_conds[__gsharp_id_5_t];
 System_Nullable<unsigned char> __gsharp_id_7_mb = ((__gsharp_id_6_c&1)==0?System_Nullable<unsigned char>{255}:System_Nullable<unsigned char>{__gsharp_id_1_ba[__gsharp_id_5_t]});
 auto __gsharp_id_8_x = ([&]() {
 auto __gsharp_coalesce_tmp = __gsharp_id_7_mb;
-return __gsharp_coalesce_tmp.HasValue ? __gsharp_coalesce_tmp.Value : 0;
+return __gsharp_coalesce_tmp.HasValue ? static_cast<unsigned char>(__gsharp_coalesce_tmp.Value) : static_cast<unsigned char>(0);
 }());
 __gsharp_id_8_x++;
 System_Nullable<unsigned short> __gsharp_id_9_mus = ((__gsharp_id_6_c&2)==0?System_Nullable<unsigned short>{65535}:System_Nullable<unsigned short>{__gsharp_id_2_usa[__gsharp_id_5_t]});
 auto __gsharp_id_10_y = ([&]() {
 auto __gsharp_coalesce_tmp = __gsharp_id_9_mus;
-return __gsharp_coalesce_tmp.HasValue ? __gsharp_coalesce_tmp.Value : 0;
+return __gsharp_coalesce_tmp.HasValue ? static_cast<unsigned short>(__gsharp_coalesce_tmp.Value) : static_cast<unsigned short>(0);
 }());
 __gsharp_id_10_y++;
 System_Nullable<unsigned char> __gsharp_id_11_mbNullForMax = ((__gsharp_id_6_c&4)==0?System_Nullable<unsigned char>{}:System_Nullable<unsigned char>{255});
 unsigned short __gsharp_id_12_usMax = 65535;
 auto __gsharp_id_13_z = ([&]() {
 auto __gsharp_coalesce_tmp = __gsharp_id_11_mbNullForMax;
-return __gsharp_coalesce_tmp.HasValue ? __gsharp_coalesce_tmp.Value : __gsharp_id_12_usMax;
+return __gsharp_coalesce_tmp.HasValue ? static_cast<unsigned short>(__gsharp_coalesce_tmp.Value) : static_cast<unsigned short>(__gsharp_id_12_usMax);
 }());
 __gsharp_id_13_z++;
 int __gsharp_id_14_col = __gsharp_mul_i32(__gsharp_id_5_t,3);

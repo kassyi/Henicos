@@ -1177,14 +1177,14 @@ int __gsharp_id_10_o = __gsharp_mul_i32(__gsharp_id_6_tid,2);
 __gsharp_id_5_r[__gsharp_id_10_o+0]=([&]() {
 auto __gsharp_coalesce_tmp = (([&]() {
 auto __gsharp_coalesce_tmp = __gsharp_id_7_a;
-return __gsharp_coalesce_tmp.HasValue ? __gsharp_coalesce_tmp.Value : __gsharp_id_8_b;
+return __gsharp_coalesce_tmp.HasValue ? static_cast<System_Nullable<int>>(__gsharp_coalesce_tmp.Value) : static_cast<System_Nullable<int>>(__gsharp_id_8_b);
 }()));
 return __gsharp_coalesce_tmp.HasValue ? __gsharp_coalesce_tmp.Value : (-1);
 }());
 __gsharp_id_5_r[__gsharp_add_i32(__gsharp_id_10_o,1)]=([&]() {
 auto __gsharp_coalesce_tmp = (([&]() {
 auto __gsharp_coalesce_tmp = __gsharp_id_7_a;
-return __gsharp_coalesce_tmp.HasValue ? __gsharp_coalesce_tmp.Value : __gsharp_id_9_ub;
+return __gsharp_coalesce_tmp.HasValue ? static_cast<System_Nullable<int>>(__gsharp_coalesce_tmp.Value) : static_cast<System_Nullable<int>>(__gsharp_id_9_ub);
 }()));
 return __gsharp_coalesce_tmp.HasValue ? __gsharp_coalesce_tmp.Value : (-1);
 }());
