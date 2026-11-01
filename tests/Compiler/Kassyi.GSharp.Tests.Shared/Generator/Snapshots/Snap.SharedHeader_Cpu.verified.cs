@@ -1533,6 +1533,11 @@ __gsharp_sort_intro<__gsharp_sort_scan::Default>(keys.data, __gsharp_sort_items_
 // The count of a Skip / Take / SkipLast / TakeLast stage clamped to [0, remaining], as C# clamps it (the sum cannot overflow)
 __device__ __forceinline__ int __gsharp_clamp_count(int count, int remaining) { return count < 0 ? 0 : (count > remaining ? remaining : count); }
 
+template <typename T>
+__device__ __forceinline__ bool __gsharp_linq_equals(const T& a, const T& b) { return a == b; }
+__device__ __forceinline__ bool __gsharp_linq_equals(float a, float b) { return a == b || (a != a && b != b); }
+__device__ __forceinline__ bool __gsharp_linq_equals(double a, double b) { return a == b || (a != a && b != b); }
+
 namespace Kassyi { namespace ZeroAlloc { namespace Linq {
 
 template <typename T>
@@ -1574,11 +1579,18 @@ template <typename TSource, typename TSelector>
 struct SelectEnumerator {
 TSource source;
 TSelector selector;
+decltype(selector(source.Current())) current{};
 
-__device__ inline SelectEnumerator(TSource src, TSelector sel) : source(src), selector(sel) {}
+__device__ inline SelectEnumerator(TSource src, TSelector sel) : source(src), selector(sel), current{} {}
 
-__device__ inline bool MoveNext() { return source.MoveNext(); }
-__device__ inline auto Current() const { return selector(source.Current()); }
+__device__ inline bool MoveNext() {
+if (source.MoveNext()) {
+current = selector(source.Current());
+return true;
+}
+return false;
+}
+__device__ inline auto Current() const { return current; }
 };
 
 template <typename TSource, typename TPredicate>
@@ -1605,17 +1617,19 @@ struct SelectAtEnumerator {
 TSource source;
 TSelector selector;
 int index;
+decltype(selector(source.Current(), 0)) current{};
 
-__device__ inline SelectAtEnumerator(TSource src, TSelector sel) : source(src), selector(sel), index(-1) {}
+__device__ inline SelectAtEnumerator(TSource src, TSelector sel) : source(src), selector(sel), index(-1), current{} {}
 
 __device__ inline bool MoveNext() {
 if (source.MoveNext()) {
 index++;
+current = selector(source.Current(), index);
 return true;
 }
 return false;
 }
-__device__ inline auto Current() const { return selector(source.Current(), index); }
+__device__ inline auto Current() const { return current; }
 };
 
 template <typename TSource>
@@ -1838,7 +1852,7 @@ return true;
 template <typename TSource, typename TValue>
 __device__ static inline bool Contains(TSource source, TValue value) {
 while (source.MoveNext()) {
-if (source.Current() == value) return true;
+if (__gsharp_linq_equals(source.Current(), value)) return true;
 }
 return false;
 }
@@ -1876,7 +1890,8 @@ return decltype(source.Current())();
 template <typename TSource, typename TPredicate>
 __device__ static inline auto First(TSource source, TPredicate predicate) {
 while (source.MoveNext()) {
-if (predicate(source.Current())) return source.Current();
+auto val = source.Current();
+if (predicate(val)) return val;
 }
 __gsharp_trap(GSharpErrorCode::InvalidOperation, ""Sequence contains no matching element"");
 return decltype(source.Current())();
@@ -1891,7 +1906,8 @@ return decltype(source.Current())();
 template <typename TSource, typename TPredicate>
 __device__ static inline auto FirstOrDefault(TSource source, TPredicate predicate) {
 while (source.MoveNext()) {
-if (predicate(source.Current())) return source.Current();
+auto val = source.Current();
+if (predicate(val)) return val;
 }
 return decltype(source.Current())();
 }
@@ -1914,12 +1930,13 @@ __device__ static inline auto Single(TSource source, TPredicate predicate) {
 auto result = decltype(source.Current())();
 bool found = false;
 while (source.MoveNext()) {
-if (predicate(source.Current())) {
+auto val = source.Current();
+if (predicate(val)) {
 if (found) {
 __gsharp_trap(GSharpErrorCode::InvalidOperation, ""Sequence contains more than one matching element"");
 return result;
 }
-result = source.Current();
+result = val;
 found = true;
 }
 }
@@ -1944,12 +1961,13 @@ __device__ static inline auto SingleOrDefault(TSource source, TPredicate predica
 auto result = decltype(source.Current())();
 bool found = false;
 while (source.MoveNext()) {
-if (predicate(source.Current())) {
+auto val = source.Current();
+if (predicate(val)) {
 if (found) {
 __gsharp_trap(GSharpErrorCode::InvalidOperation, ""Sequence contains more than one matching element"");
 return result;
 }
-result = source.Current();
+result = val;
 found = true;
 }
 }
@@ -2018,7 +2036,8 @@ return decltype(source.Current())();
 }
 auto max_val = source.Current();
 while (source.MoveNext()) {
-if (source.Current() > max_val) max_val = source.Current();
+auto val = source.Current();
+if (val > max_val) max_val = val;
 }
 return max_val;
 }
@@ -2031,13 +2050,21 @@ return decltype(source.Current())();
 }
 auto min_val = source.Current();
 while (source.MoveNext()) {
-if (source.Current() < min_val) min_val = source.Current();
+auto val = source.Current();
+if (val < min_val) min_val = val;
 }
 return min_val;
 }
 
+private:
+template <typename T>
+__device__ static inline double avg_cast(T, double val) { return val; }
+__device__ static inline float avg_cast(float, double val) { return (float)val; }
+
+public:
 template <typename TSource>
 __device__ static inline auto Average(TSource source) {
+using TElement = decltype(source.Current());
 double sum = 0;
 int count = 0;
 while (source.MoveNext()) {
@@ -2046,9 +2073,9 @@ count++;
 }
 if (count == 0) {
 __gsharp_trap(GSharpErrorCode::InvalidOperation, ""Sequence contains no elements"");
-return 0.0;
+return avg_cast(TElement{}, 0.0);
 }
-return sum / count;
+return avg_cast(TElement{}, sum / count);
 }
 };
 }}}

@@ -1,4 +1,5 @@
 using Kassyi.GSharp.Core;
+using Kassyi.ZeroAlloc.Linq;
 
 namespace Kassyi.GSharp.Tests.TestCases.Diagnostics.ExtensionCalls
 {
@@ -15,9 +16,24 @@ namespace Kassyi.GSharp.Tests.TestCases.Diagnostics.ExtensionCalls
         }
     }
 
-    // GSH0003 for an extension call whose receiver (read by value) an argument writes, and for one of a device function that suspends
+    // GSH0003 for an extension call of a device function that suspends, and for a StackLinq call with reordered interfering arguments
     public static partial class ExtensionCallKernels
     {
+        [GpuKernel]
+        public static void SuspendingExtensionKernel(int[] data)
+        {
+            data[ThreadIndex.X] = data[ThreadIndex.X].AfterBarrier();
+        }
+
+        [GpuKernel]
+        public static void ReorderedStackLinqKernel(int[] data, int step)
+        {
+            data[ThreadIndex.X] = StackLinqExtensions.Take(
+                    count: step++,
+                    source: StackLinqExtensions.Skip(data.AsStackEnumerable(), step))
+                .Sum();
+        }
+
         [GpuKernel]
         public static void InterferingReceiverKernel(int[] data)
         {
@@ -26,16 +42,11 @@ namespace Kassyi.GSharp.Tests.TestCases.Diagnostics.ExtensionCalls
         }
 
         [GpuKernel]
-        public static void SuspendingExtensionKernel(int[] data)
-        {
-            data[ThreadIndex.X] = data[ThreadIndex.X].AfterBarrier();
-        }
-
-        [GpuKernel]
         public static void IndependentReceiverKernel(int[] data, int step)
         {
             int value = data[ThreadIndex.X];
-            data[ThreadIndex.X] = value.Plus(step);
+            data[ThreadIndex.X] = value.Plus(step) +
+                StackLinqExtensions.Take(count: step, source: StackLinqExtensions.Skip(data.AsStackEnumerable(), 1)).Sum();
         }
     }
 }

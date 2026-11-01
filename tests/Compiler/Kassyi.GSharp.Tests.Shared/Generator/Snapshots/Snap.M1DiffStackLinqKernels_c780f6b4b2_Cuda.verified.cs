@@ -341,12 +341,13 @@ return __gsharp_fusion_res;
 __gsharp_id_1_r[__gsharp_add_i32(__gsharp_id_6_o,16)]=(([&]() -> auto {
 auto&& __gsharp_fusion_src = __gsharp_id_4_slice;
 bool __gsharp_fusion_res = false;
+int __gsharp_fusion_res_target = __gsharp_id_5_x0;
 int __gsharp_fusion_lo = 0;
 int __gsharp_fusion_hi = __gsharp_fusion_src.length;
 for (int __gsharp_i = __gsharp_fusion_lo; __gsharp_i < __gsharp_fusion_hi; __gsharp_i++)
 {
 auto __gsharp_val_0 = __gsharp_fusion_src[__gsharp_i];
-if (__gsharp_val_0 == (__gsharp_id_5_x0))
+if (__gsharp_linq_equals(__gsharp_val_0, __gsharp_fusion_res_target))
 {__gsharp_fusion_res = true; break;
 }}
 return __gsharp_fusion_res;
@@ -1220,7 +1221,7 @@ auto __gsharp_id_4_slice = __gsharp_id_0_xs.AsSpan().Slice(__gsharp_id_3_baseIdx
 int __gsharp_id_5_o = __gsharp_mul_i32(__gsharp_id_2_t,4);
 __gsharp_id_1_r[__gsharp_id_5_o]=([&]() -> auto {
 auto&& __gsharp_fusion_src = __gsharp_id_4_slice;
-float __gsharp_fusion_res = 0;
+double __gsharp_fusion_res = 0;
 int __gsharp_fusion_res_count = 0;
 int __gsharp_fusion_lo = 0;
 int __gsharp_fusion_hi = __gsharp_fusion_src.length;
@@ -1233,12 +1234,12 @@ __gsharp_fusion_res_count++;
 if (__gsharp_fusion_res_count == 0)
 {__gsharp_trap(GSharpErrorCode::InvalidOperation, ""Sequence contains no elements"");
 }else
-{__gsharp_fusion_res = __gsharp_fusion_res / (float)(__gsharp_fusion_res_count);
-}return __gsharp_fusion_res;
+{__gsharp_fusion_res = __gsharp_fusion_res / (double)(__gsharp_fusion_res_count);
+}return (float)__gsharp_fusion_res;
 }());
 __gsharp_id_1_r[__gsharp_add_i32(__gsharp_id_5_o,1)]=(double)([&]() -> auto {
 auto&& __gsharp_fusion_src = __gsharp_id_4_slice;
-float __gsharp_fusion_res = 0;
+double __gsharp_fusion_res = 0;
 int __gsharp_fusion_res_count = 0;
 int __gsharp_fusion_lo = 0;
 int __gsharp_fusion_hi = __gsharp_fusion_src.length;
@@ -1251,12 +1252,12 @@ __gsharp_fusion_res_count++;
 if (__gsharp_fusion_res_count == 0)
 {__gsharp_trap(GSharpErrorCode::InvalidOperation, ""Sequence contains no elements"");
 }else
-{__gsharp_fusion_res = __gsharp_fusion_res / (float)(__gsharp_fusion_res_count);
-}return __gsharp_fusion_res;
+{__gsharp_fusion_res = __gsharp_fusion_res / (double)(__gsharp_fusion_res_count);
+}return (float)__gsharp_fusion_res;
 }());
 __gsharp_id_1_r[__gsharp_add_i32(__gsharp_id_5_o,2)]=([&]() -> auto {
 auto&& __gsharp_fusion_src = __gsharp_id_4_slice;
-float __gsharp_fusion_res = 0;
+double __gsharp_fusion_res = 0;
 int __gsharp_fusion_res_count = 0;
 int __gsharp_fusion_lo = 0;
 int __gsharp_fusion_hi = __gsharp_fusion_src.length;
@@ -1269,12 +1270,12 @@ __gsharp_fusion_res_count++;
 if (__gsharp_fusion_res_count == 0)
 {__gsharp_trap(GSharpErrorCode::InvalidOperation, ""Sequence contains no elements"");
 }else
-{__gsharp_fusion_res = __gsharp_fusion_res / (float)(__gsharp_fusion_res_count);
-}return __gsharp_fusion_res;
+{__gsharp_fusion_res = __gsharp_fusion_res / (double)(__gsharp_fusion_res_count);
+}return (float)__gsharp_fusion_res;
 }())+0.1;
 __gsharp_id_1_r[__gsharp_add_i32(__gsharp_id_5_o,3)]=([&]() -> auto {
 auto&& __gsharp_fusion_src = __gsharp_id_4_slice;
-float __gsharp_fusion_res = 0;
+double __gsharp_fusion_res = 0;
 int __gsharp_fusion_res_count = 0;
 int __gsharp_fusion_lo = 0;
 int __gsharp_fusion_hi = __gsharp_fusion_src.length;
@@ -1293,8 +1294,8 @@ __gsharp_fusion_res_count++;
 if (__gsharp_fusion_res_count == 0)
 {__gsharp_trap(GSharpErrorCode::InvalidOperation, ""Sequence contains no elements"");
 }else
-{__gsharp_fusion_res = __gsharp_fusion_res / (float)(__gsharp_fusion_res_count);
-}return __gsharp_fusion_res;
+{__gsharp_fusion_res = __gsharp_fusion_res / (double)(__gsharp_fusion_res_count);
+}return (float)__gsharp_fusion_res;
 }());
 }
 ";
@@ -1750,12 +1751,13 @@ __gsharp_id_2_r[__gsharp_add_i32(__gsharp_id_9_o,3)]=Kassyi::ZeroAlloc::Linq::St
 __gsharp_id_2_r[__gsharp_add_i32(__gsharp_id_9_o,4)]=(([&]() -> auto {
 auto&& __gsharp_fusion_src = __gsharp_id_5_fSlice;
 bool __gsharp_fusion_res = false;
+float __gsharp_fusion_res_target = (-0.0f);
 int __gsharp_fusion_lo = 0;
 int __gsharp_fusion_hi = __gsharp_fusion_src.length;
 for (int __gsharp_i = __gsharp_fusion_lo; __gsharp_i < __gsharp_fusion_hi; __gsharp_i++)
 {
 auto __gsharp_val_0 = __gsharp_fusion_src[__gsharp_i];
-if (__gsharp_val_0 == ((-0.0f)))
+if (__gsharp_linq_equals(__gsharp_val_0, __gsharp_fusion_res_target))
 {__gsharp_fusion_res = true; break;
 }}
 return __gsharp_fusion_res;
@@ -1824,12 +1826,13 @@ __gsharp_id_2_r[__gsharp_add_i32(__gsharp_id_9_o,10)]=Kassyi::ZeroAlloc::Linq::S
 __gsharp_id_2_r[__gsharp_add_i32(__gsharp_id_9_o,11)]=(([&]() -> auto {
 auto&& __gsharp_fusion_src = __gsharp_id_6_dSlice;
 bool __gsharp_fusion_res = false;
+double __gsharp_fusion_res_target = (-0.0);
 int __gsharp_fusion_lo = 0;
 int __gsharp_fusion_hi = __gsharp_fusion_src.length;
 for (int __gsharp_i = __gsharp_fusion_lo; __gsharp_i < __gsharp_fusion_hi; __gsharp_i++)
 {
 auto __gsharp_val_0 = __gsharp_fusion_src[__gsharp_i];
-if (__gsharp_val_0 == ((-0.0)))
+if (__gsharp_linq_equals(__gsharp_val_0, __gsharp_fusion_res_target))
 {__gsharp_fusion_res = true; break;
 }}
 return __gsharp_fusion_res;
@@ -2104,12 +2107,13 @@ int __gsharp_id_9_o = __gsharp_mul_i32(__gsharp_id_3_t,4);
 __gsharp_id_2_r[__gsharp_id_9_o]=(([&]() -> auto {
 auto&& __gsharp_fusion_src = __gsharp_id_5_fSlice;
 bool __gsharp_fusion_res = false;
+float __gsharp_fusion_res_target = __gsharp_nan_f;
 int __gsharp_fusion_lo = 0;
 int __gsharp_fusion_hi = __gsharp_fusion_src.length;
 for (int __gsharp_i = __gsharp_fusion_lo; __gsharp_i < __gsharp_fusion_hi; __gsharp_i++)
 {
 auto __gsharp_val_0 = __gsharp_fusion_src[__gsharp_i];
-if (__gsharp_val_0 == (__gsharp_nan_f))
+if (__gsharp_linq_equals(__gsharp_val_0, __gsharp_fusion_res_target))
 {__gsharp_fusion_res = true; break;
 }}
 return __gsharp_fusion_res;
@@ -2118,12 +2122,13 @@ __gsharp_id_2_r[__gsharp_add_i32(__gsharp_id_9_o,1)]=(Kassyi::ZeroAlloc::Linq::S
 __gsharp_id_2_r[__gsharp_add_i32(__gsharp_id_9_o,2)]=(([&]() -> auto {
 auto&& __gsharp_fusion_src = __gsharp_id_6_dSlice;
 bool __gsharp_fusion_res = false;
+double __gsharp_fusion_res_target = __gsharp_nan_d;
 int __gsharp_fusion_lo = 0;
 int __gsharp_fusion_hi = __gsharp_fusion_src.length;
 for (int __gsharp_i = __gsharp_fusion_lo; __gsharp_i < __gsharp_fusion_hi; __gsharp_i++)
 {
 auto __gsharp_val_0 = __gsharp_fusion_src[__gsharp_i];
-if (__gsharp_val_0 == (__gsharp_nan_d))
+if (__gsharp_linq_equals(__gsharp_val_0, __gsharp_fusion_res_target))
 {__gsharp_fusion_res = true; break;
 }}
 return __gsharp_fusion_res;
@@ -2350,12 +2355,13 @@ int __gsharp_id_7_k0 = 0;
 bool __gsharp_id_8_c0 = ([&]() -> auto {
 auto&& __gsharp_fusion_src = __gsharp_id_4_slice;
 bool __gsharp_fusion_res = false;
+int __gsharp_fusion_res_target = (__gsharp_id_7_k0=__gsharp_add_i32(__gsharp_id_7_k0,1));
 int __gsharp_fusion_lo = 0;
 int __gsharp_fusion_hi = __gsharp_fusion_src.length;
 for (int __gsharp_i = __gsharp_fusion_lo; __gsharp_i < __gsharp_fusion_hi; __gsharp_i++)
 {
 auto __gsharp_val_0 = __gsharp_fusion_src[__gsharp_i];
-if (__gsharp_val_0 == ((__gsharp_id_7_k0=__gsharp_add_i32(__gsharp_id_7_k0,1))))
+if (__gsharp_linq_equals(__gsharp_val_0, __gsharp_fusion_res_target))
 {__gsharp_fusion_res = true; break;
 }}
 return __gsharp_fusion_res;
@@ -2366,13 +2372,14 @@ bool __gsharp_id_10_c1 = ([&]() -> auto {
 auto&& __gsharp_fusion_src = __gsharp_id_4_slice;
 int __gsharp_stage_0_n = 0;
 bool __gsharp_fusion_res = false;
+int __gsharp_fusion_res_target = (__gsharp_id_9_k1=__gsharp_add_i32(__gsharp_id_9_k1,1));
 int __gsharp_fusion_lo = 0;
 int __gsharp_fusion_hi = __gsharp_fusion_src.length;
 __gsharp_fusion_hi = __gsharp_fusion_lo + __gsharp_clamp_count(__gsharp_stage_0_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
 for (int __gsharp_i = __gsharp_fusion_lo; __gsharp_i < __gsharp_fusion_hi; __gsharp_i++)
 {
 auto __gsharp_val_0 = __gsharp_fusion_src[__gsharp_i];
-if (__gsharp_val_0 == ((__gsharp_id_9_k1=__gsharp_add_i32(__gsharp_id_9_k1,1))))
+if (__gsharp_linq_equals(__gsharp_val_0, __gsharp_fusion_res_target))
 {__gsharp_fusion_res = true; break;
 }}
 return __gsharp_fusion_res;
@@ -2382,6 +2389,7 @@ int __gsharp_id_11_k2 = __gsharp_id_5_x0;
 bool __gsharp_id_12_c2 = ([&]() -> auto {
 auto&& __gsharp_fusion_src = __gsharp_id_4_slice;
 bool __gsharp_fusion_res = false;
+int __gsharp_fusion_res_target = __gsharp_id_11_k2;
 int __gsharp_fusion_lo = 0;
 int __gsharp_fusion_hi = __gsharp_fusion_src.length;
 for (int __gsharp_i = __gsharp_fusion_lo; __gsharp_i < __gsharp_fusion_hi; __gsharp_i++)
@@ -2391,7 +2399,7 @@ auto __gsharp_val_1 = ([&](auto __gsharp_id_13_x) {
 return __gsharp_add_i32(__gsharp_id_13_x,((__gsharp_id_11_k2=__gsharp_add_i32(__gsharp_id_11_k2,1)))*0);
 }
 )(__gsharp_val_0);
-if (__gsharp_val_1 == (__gsharp_id_11_k2))
+if (__gsharp_linq_equals(__gsharp_val_1, __gsharp_fusion_res_target))
 {__gsharp_fusion_res = true; break;
 }}
 return __gsharp_fusion_res;
@@ -2855,12 +2863,13 @@ return __gsharp_fusion_res;
 __gsharp_id_3_r[__gsharp_add_i32(__gsharp_id_9_o,5)]=(([&]() -> auto {
 auto&& __gsharp_fusion_src = __gsharp_id_8_lSlice;
 bool __gsharp_fusion_res = false;
+long long __gsharp_fusion_res_target = __gsharp_id_8_lSlice[1];
 int __gsharp_fusion_lo = 0;
 int __gsharp_fusion_hi = __gsharp_fusion_src.length;
 for (int __gsharp_i = __gsharp_fusion_lo; __gsharp_i < __gsharp_fusion_hi; __gsharp_i++)
 {
 auto __gsharp_val_0 = __gsharp_fusion_src[__gsharp_i];
-if (__gsharp_val_0 == (__gsharp_id_8_lSlice[1]))
+if (__gsharp_linq_equals(__gsharp_val_0, __gsharp_fusion_res_target))
 {__gsharp_fusion_res = true; break;
 }}
 return __gsharp_fusion_res;

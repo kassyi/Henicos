@@ -94,35 +94,6 @@ public static class KnownDivergences
         new("M1DiffNarrowIntKernels.TargetEvaluationOrderMatrixKernel", "(i,s[i])=(1,v) [0]", DiffPath.Native | DiffPath.Cuda, Issue: 996),
         new("M1DiffNarrowIntKernels.TargetEvaluationOrderMatrixKernel", "(i,s[i])=(1,v) [1]", DiffPath.Native | DiffPath.Cuda, Issue: 996),
 
-        // F6: StackLinq fused Average(float) return type (#997)
-        new("M1DiffStackLinqKernels.SingleFusedAverageKernel", "FusedAvgAsFloat", DiffPath.Native | DiffPath.Cuda, Issue: 997),
-        new("M1DiffStackLinqKernels.SingleFusedAverageKernel", "FusedAvgAsDouble", DiffPath.Native | DiffPath.Cuda, Issue: 997),
-        new("M1DiffStackLinqKernels.SingleFusedAverageKernel", "FusedAvgPlus0.1", DiffPath.Native | DiffPath.Cuda, Issue: 997),
-        new("M1DiffStackLinqKernels.SingleFusedAverageKernel", "WhereFusedAvg", DiffPath.Native | DiffPath.Cuda, Issue: 997),
-
-        // F7: StackLinq unfused Average(float) return type (#997)
-        new("M1DiffStackLinqKernels.SingleUnfusedAverageKernel", "UnfusedAvgAsFloat", DiffPath.Native | DiffPath.Cuda, Issue: 997),
-        new("M1DiffStackLinqKernels.SingleUnfusedAverageKernel", "UnfusedAvgAsDouble", DiffPath.Native | DiffPath.Cuda, Issue: 997),
-        new("M1DiffStackLinqKernels.SingleUnfusedAverageKernel", "UnfusedAvgPlus0.1", DiffPath.Native | DiffPath.Cuda, Issue: 997),
-
-        // F8: StackLinq Contains(NaN) (#997)
-        new("M1DiffStackLinqKernels.ContainsNaNKernel", "FusedContainsFloatNaN", DiffPath.Native | DiffPath.Cuda, Issue: 997),
-        new("M1DiffStackLinqKernels.ContainsNaNKernel", "UnfusedContainsFloatNaN", DiffPath.Native | DiffPath.Cuda, Issue: 997),
-        new("M1DiffStackLinqKernels.ContainsNaNKernel", "FusedContainsDoubleNaN", DiffPath.Native | DiffPath.Cuda, Issue: 997),
-        new("M1DiffStackLinqKernels.ContainsNaNKernel", "UnfusedContainsDoubleNaN", DiffPath.Native | DiffPath.Cuda, Issue: 997),
-
-        // F9: StackLinq fused Contains argument evaluation timing (#997)
-        new("M1DiffStackLinqKernels.ContainsEvaluationOrderKernel", "FusedContainsSideEffectCount", DiffPath.Native | DiffPath.Cuda, Issue: 997),
-        new("M1DiffStackLinqKernels.ContainsEvaluationOrderKernel", "FusedEmptyContainsSideEffectCount", DiffPath.Native | DiffPath.Cuda, Issue: 997),
-        new("M1DiffStackLinqKernels.ContainsEvaluationOrderKernel", "FusedSelectMutatesContainsArg", DiffPath.Native | DiffPath.Cuda, Issue: 997),
-
-        // F10: StackLinq unfused Select + Skip / Where / Max (#997)
-        new("M1DiffStackLinqKernels.UnfusedSelectEvaluationKernel", "SelectSkipElementAtVal", DiffPath.Native | DiffPath.Cuda, Issue: 997),
-        new("M1DiffStackLinqKernels.UnfusedSelectEvaluationKernel", "SelectSkipElementAtCount", DiffPath.Native | DiffPath.Cuda, Issue: 997),
-        new("M1DiffStackLinqKernels.UnfusedSelectEvaluationKernel", "SelectWhereElementAtVal", DiffPath.Native | DiffPath.Cuda, Issue: 997),
-        new("M1DiffStackLinqKernels.UnfusedSelectEvaluationKernel", "SelectWhereElementAtCount", DiffPath.Native | DiffPath.Cuda, Issue: 997),
-        new("M1DiffStackLinqKernels.UnfusedSelectEvaluationKernel", "UnfusedSelectMaxCount", DiffPath.Native | DiffPath.Cuda, Issue: 997),
-
         // F11: empty stackalloc Span<T> / collection expression == null (#998)
         new("M1DiffSwitchKernels.EmptyStackSpanNullComparisonReproKernel", "stackalloc_zero_eq_null", DiffPath.Native | DiffPath.Cuda, Issue: 998),
         new("M1DiffSwitchKernels.EmptyStackSpanNullComparisonReproKernel", "stackalloc_zero_ne_null", DiffPath.Native | DiffPath.Cuda, Issue: 998),
