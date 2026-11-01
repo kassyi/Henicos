@@ -20,7 +20,7 @@ __forceinline__ unsigned int __gsharp_grid_stride_start() {
     unsigned long long block = ((unsigned long long)blockIdx.z * gridDim.y + blockIdx.y) * gridDim.x + blockIdx.x;
     if (block >= 0x80000000ull) { return 0x80000000u; }
     unsigned long long rank = block * (blockDim.x * blockDim.y * blockDim.z)
-        + (threadIdx.z * blockDim.y + threadIdx.y) * blockDim.x + threadIdx.x;
+        + (((unsigned long long)threadIdx.z * blockDim.y + threadIdx.y) * blockDim.x) + threadIdx.x;
     return rank >= 0x80000000ull ? 0x80000000u : (unsigned int)rank;
 }
 __forceinline__ unsigned int __gsharp_grid_stride_step() {
