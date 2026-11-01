@@ -14,6 +14,8 @@ public class StackArrayDiagnosticsTests
     private const string Shapes = "Analyzers/StackArrays/StackArrayShapes.cu.cs";
     private const string MultidimensionalParameters = "Analyzers/MultidimensionalArrayParameters.cu.cs";
     private const string MultiArgumentIndexerCase = "Analyzers/MultiArgumentIndexer.cu.cs";
+    private const string ArrayLikeMultidimensionalField = "Analyzers/ArrayLikeMultidimensionalField.cu.cs";
+    private const string CyclicStructParameter = "Analyzers/CyclicStructParameter.cu.cs";
 
     [Theory]
     [InlineData("Cpu")]
@@ -181,6 +183,34 @@ public class StackArrayDiagnosticsTests
             diagnostics.Ranges(
                 GSharpDiagnostics.UnsupportedSyntax.Id,
                 "multidimensional array (GPU memory is flat and linear; C# multi-dimensional arrays have heap headers and cannot be passed to device code. Use a 1D array 'T[]' and calculate the index as 'y * width + x')"));
+    }
+
+    [Theory]
+    [InlineData("Cpu")]
+    [InlineData("Cuda")]
+    [Scenario(TestScenario.SadPath)]
+    public async Task Test_MultidimensionalArrayInsideArrayLikeStructMember_ReportsGsh0003(string dialect)
+    {
+        var diagnostics = await KernelDiagnostics.RunTestCaseAsync(ArrayLikeMultidimensionalField, dialect);
+
+        Assert.Equal(
+            [
+                (Analyzer, 21, 37, 21, 50),
+                (Analyzer, 21, 60, 21, 75)
+            ],
+            diagnostics.Ranges(GSharpDiagnostics.UnsupportedSyntax.Id, GpuCodeConstraints.MultidimensionalArray));
+    }
+
+    // Only the check itself: the whole analyzer run on this case still overflows in TypeLayoutCalculator (#1039)
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void Test_ContainsMultidimensionalArray_StopsOnACyclicStruct()
+    {
+        var compilation = RoslynTestUtility.CreateCompilation(RoslynTestUtility.ReadTestCase(CyclicStructParameter));
+        var cyc = compilation.GetTypeByMetadataName("Kassyi.GSharp.Tests.TestCases.Analyzers.CyclicStructParameter+Cyc");
+        Assert.NotNull(cyc);
+
+        Assert.False(GpuCodeConstraints.ContainsMultidimensionalArray(cyc));
     }
 
     [Theory]
