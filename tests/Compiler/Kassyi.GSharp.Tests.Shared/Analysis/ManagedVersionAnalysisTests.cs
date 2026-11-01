@@ -21,9 +21,11 @@ public class ManagedVersionAnalysisTests
     [InlineData("Functions", "AddAt")]
     [InlineData("Functions", "PassesMethodGroup")]
     [InlineData("Functions", "PassesExtensionMethodGroup")]
+    [InlineData("Functions", "PassesGenericExtensionMethodGroup")]
     [InlineData("Functions", "CallsExtension")]
     [InlineData("Extensions", "Doubled")]
     [InlineData("Extensions", "AddToIndex")]
+    [InlineData("Extensions", "AddGeneric")]
     public void Test_Needs_ReachesAnOperatorMacro_IsTrue(string type, string name)
     {
         Assert.True(ManagedVersionAnalysis.Needs(GetMethod(type, name), s_compilation));
@@ -126,6 +128,17 @@ public class ManagedVersionAnalysisTests
 
         Assert.Contains(
             $"global::Kassyi.GSharp.Core.Gpu.ForUnroll(0, 2, global::Kassyi.GSharp.Core.ManagedGpuContext.__gsharp_bind<int[], int>(x, global::ManagedVersionCases.Extensions.{ManagedName("Extensions", "AddToIndex")}));",
+            source);
+    }
+
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void Test_ManagedVersion_BindsTheVersionOfAGenericReducedExtensionMethodGroupWithSubstitutedReceiverType()
+    {
+        var source = GenerateManagedVersion("Functions", "PassesGenericExtensionMethodGroup");
+
+        Assert.Contains(
+            $"global::Kassyi.GSharp.Core.Gpu.ForUnroll(0, 2, global::Kassyi.GSharp.Core.ManagedGpuContext.__gsharp_bind<int[], int>(x, global::ManagedVersionCases.Extensions.{ManagedName("Extensions", "AddGeneric")}));",
             source);
     }
 

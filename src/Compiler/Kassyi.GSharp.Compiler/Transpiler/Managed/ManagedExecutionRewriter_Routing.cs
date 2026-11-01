@@ -101,7 +101,7 @@ internal sealed partial class ManagedExecutionRewriter
         writer.Append("global::Kassyi.GSharp.Core.ManagedGpuContext.")
             .Append(GSharpInternalNames.ManagedVersion.Bind)
             .Append('<');
-        writer.AppendCsharpTypeName(extension.Parameters[0].Type);
+        writer.AppendCsharpTypeName(reduced.ReceiverType ?? extension.Parameters[0].Type);
         for (var i = 0; i < reduced.Parameters.Length; i++)
         {
             writer.Append(", ");

@@ -112,6 +112,13 @@ public static partial class Functions
     {
         Gpu.ForUnroll(0, 2, x.AddToIndex);
     }
+
+    // A generic reduced extension method group whose receiver type depends on the inferred type argument (#940)
+    [GpuDeviceFunction]
+    public static void PassesGenericExtensionMethodGroup(int[] x)
+    {
+        Gpu.ForUnroll(0, 2, x.AddGeneric);
+    }
 }
 
 public static partial class Extensions
@@ -124,6 +131,16 @@ public static partial class Extensions
     {
         Ctx ctx = default;
         Value vx = new Value(x[0]);
+        Value vy = new Value(i);
+        Value z = new Value(0);
+        z = vx + vy;
+    }
+
+    [GpuDeviceFunction]
+    public static void AddGeneric<T>(this T[] x, int i) where T : unmanaged
+    {
+        Ctx ctx = default;
+        Value vx = new Value(x.Length);
         Value vy = new Value(i);
         Value z = new Value(0);
         z = vx + vy;
