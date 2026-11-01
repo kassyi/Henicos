@@ -1470,7 +1470,11 @@ static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__PcConv
 static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__PcConvertedOuter,__gsharp_mb_Inner)==8,""Kassyi.GSharp.Tests.Shared.Syntax.PcConvertedOuter.Inner: offset"");
 #endif
 extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__PrimaryConstructorKernels__RoundtripConvertedOuterKernel(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__PcConvertedOuter* __gsharp_id_0_data, GSharpArray<float> __gsharp_id_1_output){
-__gsharp_id_1_output[0]=(*__gsharp_id_0_data).__gsharp_mb_Inner.__gsharp_mb_Read()+(*__gsharp_id_0_data).__gsharp_mb_Before;
+__gsharp_id_1_output[0]=([&]() {
+auto __gsharp_seq_0 = (*__gsharp_id_0_data).__gsharp_mb_Inner.__gsharp_mb_Read();
+auto __gsharp_seq_1 = (*__gsharp_id_0_data).__gsharp_mb_Before;
+return __gsharp_seq_0+__gsharp_seq_1;
+}());
 (*__gsharp_id_0_data).__gsharp_mb_Before=(short)((*__gsharp_id_0_data).__gsharp_mb_Before+1);
 (*__gsharp_id_0_data).__gsharp_mb_Inner.__gsharp_mb_A((unsigned char)((*__gsharp_id_0_data).__gsharp_mb_Inner.__gsharp_mb_A()+2));
 (*__gsharp_id_0_data).__gsharp_mb_Inner.__gsharp_mb_Flag=!(*__gsharp_id_0_data).__gsharp_mb_Inner.__gsharp_mb_Flag;
@@ -1875,7 +1879,11 @@ static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__PcConv
 extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__PrimaryConstructorKernels__RoundtripConvertedPairKernel(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__PcConvertedPairHolder* __gsharp_id_0_data, GSharpArray<float> __gsharp_id_1_output){
 __gsharp_id_1_output[0]=(*__gsharp_id_0_data).__gsharp_mb_Items[0].__gsharp_mb_Read();
 __gsharp_id_1_output[1]=(*__gsharp_id_0_data).__gsharp_mb_Items[1].__gsharp_mb_Read();
-(*__gsharp_id_0_data).__gsharp_mb_Items[1].__gsharp_mb_A((unsigned char)(__gsharp_add_i32((*__gsharp_id_0_data).__gsharp_mb_Items[1].__gsharp_mb_A(),(*__gsharp_id_0_data).__gsharp_mb_Tag)));
+(*__gsharp_id_0_data).__gsharp_mb_Items[1].__gsharp_mb_A((unsigned char)(([&]() {
+auto __gsharp_seq_0 = (*__gsharp_id_0_data).__gsharp_mb_Items[1].__gsharp_mb_A();
+auto __gsharp_seq_1 = (*__gsharp_id_0_data).__gsharp_mb_Tag;
+return __gsharp_add_i32(__gsharp_seq_0,__gsharp_seq_1);
+}())));
 }
 ";
 public static readonly string RoundtripConvertedPairKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +RoundtripConvertedPairKernel_Source;

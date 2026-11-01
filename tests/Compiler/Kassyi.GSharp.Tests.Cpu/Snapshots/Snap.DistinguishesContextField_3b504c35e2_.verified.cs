@@ -23,7 +23,7 @@
                 goto __gsharp_label_1_done;
             }
 
-            output[__gsharp_ctx->tid] = __gsharp_ctx->__gsharp_il_1_2_s;
+            __gsharp_ctx->output[__gsharp_ctx->tid] = __gsharp_ctx->__gsharp_il_1_2_s;
             __gsharp_label_1_done:
                 ;
             __gsharp_ctx->__gsharp_il_2_2_s = __gsharp_ctx->tid * 2;
@@ -39,7 +39,7 @@
                 goto __gsharp_label_2_done;
             }
 
-            output[__gsharp_ctx->tid] = __gsharp_ctx->__gsharp_il_2_2_s;
+            __gsharp_ctx->output[__gsharp_ctx->tid] = __gsharp_ctx->__gsharp_il_2_2_s;
             __gsharp_label_2_done:
                 ;
             __gsharp_state = -1;

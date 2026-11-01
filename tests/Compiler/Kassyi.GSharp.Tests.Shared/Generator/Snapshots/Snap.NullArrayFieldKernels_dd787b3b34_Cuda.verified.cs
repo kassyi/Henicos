@@ -2813,7 +2813,11 @@ finally
 #pragma warning restore CS8500
 public const string OptionalWithBarrierKernel_Source = @"extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Core__NullArrayFieldKernels__OptionalWithBarrierKernel(GSharpArray<int> __gsharp_id_0_o, GSharpArray<int> __gsharp_id_1_bias){
 __syncthreads();
-__gsharp_id_0_o[0]=__gsharp_add_i32(__gsharp_fn_Kassyi__GSharp__Tests__Shared__Core__NullArrayFieldKernels__Len(__gsharp_id_1_bias),__gsharp_id_1_bias.length);
+__gsharp_id_0_o[0]=([&]() {
+auto __gsharp_seq_0 = __gsharp_fn_Kassyi__GSharp__Tests__Shared__Core__NullArrayFieldKernels__Len(__gsharp_id_1_bias);
+auto __gsharp_seq_1 = __gsharp_id_1_bias.length;
+return __gsharp_add_i32(__gsharp_seq_0,__gsharp_seq_1);
+}());
 }
 ";
 public static readonly string OptionalWithBarrierKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +OptionalWithBarrierKernel_Source;

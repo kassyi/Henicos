@@ -152,16 +152,28 @@ public partial class SyncGridBodyKernels
 public class __gsharp_frame_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__Step {
 internal int __gsharp_state;
 internal uint __gsharp_warp_exchange;
+internal int[] a;
+internal int[] b;
+internal int[] c;
+internal int tid;
+internal int n;
 internal global::Kassyi.GSharp.Tests.Shared.Transpiler.SyncGridBodyKernels.__gsharp_frame_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__ShiftInBlock __gsharp_call_frame_0 = new();
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-public static bool __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__Step(int[] a, int[] b, int[] c, int tid, int n, __gsharp_frame_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__Step __gsharp_ctx) {
+public static bool __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__Step(int[] __gsharp_in_a, int[] __gsharp_in_b, int[] __gsharp_in_c, int __gsharp_in_tid, int __gsharp_in_n, __gsharp_frame_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__Step __gsharp_ctx) {
+if (__gsharp_ctx.__gsharp_state == 0) {
+__gsharp_ctx.a = __gsharp_in_a;
+__gsharp_ctx.b = __gsharp_in_b;
+__gsharp_ctx.c = __gsharp_in_c;
+__gsharp_ctx.tid = __gsharp_in_tid;
+__gsharp_ctx.n = __gsharp_in_n;
+}
 {
 switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-a[tid] = tid + 1;
+__gsharp_ctx.a[__gsharp_ctx.tid] = __gsharp_ctx.tid + 1;
 global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested = true;
 __gsharp_ctx.__gsharp_state = 1;
 return false;
@@ -174,7 +186,7 @@ goto case 2;
 
 case 2:
 {
-if (!global::Kassyi.GSharp.Tests.Shared.Transpiler.SyncGridBodyKernels.__gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__ShiftInBlock(c, tid, __gsharp_ctx.__gsharp_call_frame_0))
+if (!global::Kassyi.GSharp.Tests.Shared.Transpiler.SyncGridBodyKernels.__gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__ShiftInBlock(__gsharp_ctx.c, __gsharp_ctx.tid, __gsharp_ctx.__gsharp_call_frame_0))
 {
 __gsharp_ctx.__gsharp_state = 2;
 return false;
@@ -187,7 +199,7 @@ return false;
 
 case 3:
 {
-b[tid] = a[(tid + 1) % n];
+__gsharp_ctx.b[__gsharp_ctx.tid] = __gsharp_ctx.a[(__gsharp_ctx.tid + 1) % __gsharp_ctx.n];
 {
 __gsharp_ctx.__gsharp_state = 0;
 return true;
@@ -202,18 +214,24 @@ throw new global::System.InvalidOperationException("The device function state ma
 public class __gsharp_frame_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__ShiftInBlock {
 internal int __gsharp_state;
 internal uint __gsharp_warp_exchange;
+internal int[] c;
+internal int tid;
 internal int lane;
 internal int next;
 internal int value;
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-public static bool __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__ShiftInBlock(int[] c, int tid, __gsharp_frame_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__ShiftInBlock __gsharp_ctx) {
+public static bool __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__ShiftInBlock(int[] __gsharp_in_c, int __gsharp_in_tid, __gsharp_frame_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__ShiftInBlock __gsharp_ctx) {
+if (__gsharp_ctx.__gsharp_state == 0) {
+__gsharp_ctx.c = __gsharp_in_c;
+__gsharp_ctx.tid = __gsharp_in_tid;
+}
 {
 switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-c[tid] = tid;
+__gsharp_ctx.c[__gsharp_ctx.tid] = __gsharp_ctx.tid;
 global::Kassyi.GSharp.Core.ManagedGpuContext.BlockBarrierRequested = true;
 __gsharp_ctx.__gsharp_state = 1;
 return false;
@@ -221,9 +239,9 @@ return false;
 
 case 1:
 {
-__gsharp_ctx.lane = tid % global::Kassyi.GSharp.Core.BlockDimension.X;
-__gsharp_ctx.next = tid - __gsharp_ctx.lane + (__gsharp_ctx.lane + 1) % global::Kassyi.GSharp.Core.BlockDimension.X;
-__gsharp_ctx.value = c[__gsharp_ctx.next];
+__gsharp_ctx.lane = __gsharp_ctx.tid % global::Kassyi.GSharp.Core.BlockDimension.X;
+__gsharp_ctx.next = __gsharp_ctx.tid - __gsharp_ctx.lane + (__gsharp_ctx.lane + 1) % global::Kassyi.GSharp.Core.BlockDimension.X;
+__gsharp_ctx.value = __gsharp_ctx.c[__gsharp_ctx.next];
 global::Kassyi.GSharp.Core.ManagedGpuContext.BlockBarrierRequested = true;
 __gsharp_ctx.__gsharp_state = 2;
 return false;
@@ -231,7 +249,7 @@ return false;
 
 case 2:
 {
-c[tid] = __gsharp_ctx.value;
+__gsharp_ctx.c[__gsharp_ctx.tid] = __gsharp_ctx.value;
 {
 __gsharp_ctx.__gsharp_state = 0;
 return true;
@@ -246,15 +264,25 @@ throw new global::System.InvalidOperationException("The device function state ma
 public class __gsharp_frame_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__WriteSyncRead {
 internal int __gsharp_state;
 internal uint __gsharp_warp_exchange;
+internal int[] a;
+internal int[] b;
+internal int tid;
+internal int n;
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-public static bool __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__WriteSyncRead(int[] a, int[] b, int tid, int n, __gsharp_frame_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__WriteSyncRead __gsharp_ctx) {
+public static bool __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__WriteSyncRead(int[] __gsharp_in_a, int[] __gsharp_in_b, int __gsharp_in_tid, int __gsharp_in_n, __gsharp_frame_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__WriteSyncRead __gsharp_ctx) {
+if (__gsharp_ctx.__gsharp_state == 0) {
+__gsharp_ctx.a = __gsharp_in_a;
+__gsharp_ctx.b = __gsharp_in_b;
+__gsharp_ctx.tid = __gsharp_in_tid;
+__gsharp_ctx.n = __gsharp_in_n;
+}
 {
 switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-a[tid] = tid + 1;
+__gsharp_ctx.a[__gsharp_ctx.tid] = __gsharp_ctx.tid + 1;
 global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested = true;
 __gsharp_ctx.__gsharp_state = 1;
 return false;
@@ -262,7 +290,7 @@ return false;
 
 case 1:
 {
-b[tid] = a[(tid + 1) % n];
+__gsharp_ctx.b[__gsharp_ctx.tid] = __gsharp_ctx.a[(__gsharp_ctx.tid + 1) % __gsharp_ctx.n];
 {
 __gsharp_ctx.__gsharp_state = 0;
 return true;
@@ -277,10 +305,20 @@ throw new global::System.InvalidOperationException("The device function state ma
 public class __gsharp_frame_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__CallWriteSyncRead {
 internal int __gsharp_state;
 internal uint __gsharp_warp_exchange;
+internal int[] a;
+internal int[] b;
+internal int tid;
+internal int n;
 internal global::Kassyi.GSharp.Tests.Shared.Transpiler.SyncGridBodyKernels.__gsharp_frame_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__WriteSyncRead __gsharp_call_frame_0 = new();
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-public static bool __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__CallWriteSyncRead(int[] a, int[] b, int tid, int n, __gsharp_frame_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__CallWriteSyncRead __gsharp_ctx) {
+public static bool __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__CallWriteSyncRead(int[] __gsharp_in_a, int[] __gsharp_in_b, int __gsharp_in_tid, int __gsharp_in_n, __gsharp_frame_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__CallWriteSyncRead __gsharp_ctx) {
+if (__gsharp_ctx.__gsharp_state == 0) {
+__gsharp_ctx.a = __gsharp_in_a;
+__gsharp_ctx.b = __gsharp_in_b;
+__gsharp_ctx.tid = __gsharp_in_tid;
+__gsharp_ctx.n = __gsharp_in_n;
+}
 {
 switch (__gsharp_ctx.__gsharp_state)
 {
@@ -291,7 +329,7 @@ goto case 1;
 
 case 1:
 {
-if (!global::Kassyi.GSharp.Tests.Shared.Transpiler.SyncGridBodyKernels.__gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__WriteSyncRead(a, b, tid, n, __gsharp_ctx.__gsharp_call_frame_0))
+if (!global::Kassyi.GSharp.Tests.Shared.Transpiler.SyncGridBodyKernels.__gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__WriteSyncRead(__gsharp_ctx.a, __gsharp_ctx.b, __gsharp_ctx.tid, __gsharp_ctx.n, __gsharp_ctx.__gsharp_call_frame_0))
 {
 __gsharp_ctx.__gsharp_state = 1;
 return false;

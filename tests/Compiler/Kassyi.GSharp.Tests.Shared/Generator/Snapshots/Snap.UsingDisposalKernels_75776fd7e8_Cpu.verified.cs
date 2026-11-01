@@ -2669,12 +2669,16 @@ uint64_t __gsharp_warp_exchange[2] = {};
 uint32_t __gsharp_warp_shuffle_count = 0;
 bool __gsharp_yielded_for_grid_sync = false;
 bool __gsharp_yielded_for_block_barrier = false;
+GSharpArray<int> __gsharp_id_0_log;
 };
-extern ""C"" __declspec(dllexport) void __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__UsingDisposalKernels__UsingBeforeBarrierKernel(GSharpArray<int> __gsharp_id_0_log, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__UsingDisposalKernels__UsingBeforeBarrierKernel* __gsharp_ctx){
+extern ""C"" __declspec(dllexport) void __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__UsingDisposalKernels__UsingBeforeBarrierKernel(GSharpArray<int> __gsharp_in___gsharp_id_0_log, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__UsingDisposalKernels__UsingBeforeBarrierKernel* __gsharp_ctx){
 #define __gsharp_state __gsharp_ctx->__gsharp_state
 #define __gsharp_yielded_for_grid_sync __gsharp_ctx->__gsharp_yielded_for_grid_sync
 #define __gsharp_yielded_for_block_barrier __gsharp_ctx->__gsharp_yielded_for_block_barrier
 auto* __gsharp_root = __gsharp_ctx;
+if(__gsharp_state==0){
+__gsharp_ctx->__gsharp_id_0_log=__gsharp_in___gsharp_id_0_log;
+}
 switch(__gsharp_state)
 {
 case 0:
@@ -2682,10 +2686,10 @@ __gsharp_switch_1_state_0:
 {
 {
 auto __gsharp_id_1_resource = ([&]() {
-__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__UsingRecorder __gsharp_tmp{}; __gsharp_tmp.__gsharp_mb_Log = __gsharp_id_0_log; __gsharp_tmp.__gsharp_mb_Id = 1; return __gsharp_tmp; }
+__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__UsingRecorder __gsharp_tmp{}; __gsharp_tmp.__gsharp_mb_Log = __gsharp_ctx->__gsharp_id_0_log; __gsharp_tmp.__gsharp_mb_Id = 1; return __gsharp_tmp; }
 ());
 __gsharp_using_scope<__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__UsingRecorder> __gsharp_using_guard_0{__gsharp_id_1_resource};
-__gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__UsingDisposalKernels__Note(__gsharp_id_0_log,10);
+__gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__UsingDisposalKernels__Note(__gsharp_ctx->__gsharp_id_0_log,10);
 }
 __gsharp_yielded_for_block_barrier=true;
 __gsharp_state=1;
@@ -2694,7 +2698,7 @@ return;
 case 1:
 __gsharp_switch_1_state_1:
 {
-__gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__UsingDisposalKernels__Note(__gsharp_id_0_log,20);
+__gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__UsingDisposalKernels__Note(__gsharp_ctx->__gsharp_id_0_log,20);
 __gsharp_state=-1;
 return;
 }
@@ -2779,9 +2783,13 @@ public static readonly string UsingBeforeBarrierKernel_FullSource=global::Kassyi
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__UsingDisposalKernels__UsingBeforeBarrierKernel {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
+public int[] log;
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__UsingDisposalKernels__UsingBeforeBarrierKernel(int[] log, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__UsingDisposalKernels__UsingBeforeBarrierKernel __gsharp_ctx) {
+public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__UsingDisposalKernels__UsingBeforeBarrierKernel(int[] __gsharp_in_log, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__UsingDisposalKernels__UsingBeforeBarrierKernel __gsharp_ctx) {
+if (__gsharp_ctx.__gsharp_state == 0) {
+__gsharp_ctx.log = __gsharp_in_log;
+}
 {
 switch (__gsharp_ctx.__gsharp_state)
 {
@@ -2789,13 +2797,13 @@ case 0:
 {
 using (var resource = new global::Kassyi.GSharp.Tests.Shared.Syntax.UsingRecorder
 {
-Log = log,
+Log = __gsharp_ctx.log,
 Id = 1
 }
 
 )
 {
-global::Kassyi.GSharp.Tests.Shared.Syntax.UsingDisposalKernels.Note(log, 10);
+global::Kassyi.GSharp.Tests.Shared.Syntax.UsingDisposalKernels.Note(__gsharp_ctx.log, 10);
 }
 
 global::Kassyi.GSharp.Core.ManagedGpuContext.BlockBarrierRequested = true;
@@ -2805,7 +2813,7 @@ return;
 
 case 1:
 {
-global::Kassyi.GSharp.Tests.Shared.Syntax.UsingDisposalKernels.Note(log, 20);
+global::Kassyi.GSharp.Tests.Shared.Syntax.UsingDisposalKernels.Note(__gsharp_ctx.log, 20);
 __gsharp_ctx.__gsharp_state = -1;
 return;
 }

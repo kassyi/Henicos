@@ -165,11 +165,6 @@ public static class KnownDivergences
         new("M1DiffConversionKernels.CharScalarArgKernel", "(int)cArg", DiffPath.Native, Issue: 971),
         new("M1DiffConversionKernels.CharScalarArgKernel", "cArg==0x1234", DiffPath.Native, Issue: 971),
 
-        // F18: ref ternary targeting scalar kernel parameter across barrier (#1000)
-        new("M1DiffSwitchKernels.RefTernaryParameterWriteAcrossBarrierReproKernel", "ref_ternary_param_assign", DiffPath.Managed | DiffPath.Native, Issue: 1000),
-        new("M1DiffSwitchKernels.RefTernaryParameterWriteAcrossBarrierReproKernel", "ref_ternary_param_compound", DiffPath.Managed | DiffPath.Native, Issue: 1000),
-        new("M1DiffSwitchKernels.RefTernaryParameterWriteAcrossBarrierReproKernel", "ref_ternary_param_inc", DiffPath.Managed | DiffPath.Native, Issue: 1000),
-
         // F19: Warp.ShuffleXor after sub-warp conditional ShuffleDown on CPU emulator (#1001)
         new("M1DiffWarpKernels.SubWarpConditionalShuffleKernel", "reconvergedFullWarpXor16", DiffPath.Managed | DiffPath.Native, Issue: 1001),
 

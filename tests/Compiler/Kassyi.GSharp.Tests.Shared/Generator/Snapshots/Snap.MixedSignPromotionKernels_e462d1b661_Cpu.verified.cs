@@ -182,7 +182,11 @@ case 0:
 __gsharp_switch_1_state_0:
 {
 int __gsharp_id_4_pair = (int)threadIdx.x;
-__gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__MixedSignPromotionKernels__IntOperators(__gsharp_id_0_us[__gsharp_id_4_pair/__gsharp_id_1_ns.length],__gsharp_id_1_ns[__gsharp_id_4_pair%__gsharp_id_1_ns.length],__gsharp_id_2_values,__gsharp_id_3_flags,__gsharp_id_4_pair);
+([&]() {
+unsigned int __gsharp_seq_0 = __gsharp_id_0_us[__gsharp_id_4_pair/__gsharp_id_1_ns.length];
+int __gsharp_seq_1 = __gsharp_id_1_ns[__gsharp_id_4_pair%__gsharp_id_1_ns.length];
+return __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__MixedSignPromotionKernels__IntOperators(__gsharp_seq_0,__gsharp_seq_1,__gsharp_id_2_values,__gsharp_id_3_flags,__gsharp_id_4_pair);
+}());
 __gsharp_state=-1;
 return;
 }
@@ -442,7 +446,11 @@ case 0:
 __gsharp_switch_1_state_0:
 {
 int __gsharp_id_4_pair = (int)threadIdx.x;
-__gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__MixedSignPromotionKernels__ShortOperators(__gsharp_id_0_us[__gsharp_id_4_pair/__gsharp_id_1_ss.length],__gsharp_id_1_ss[__gsharp_id_4_pair%__gsharp_id_1_ss.length],__gsharp_id_2_values,__gsharp_id_3_flags,__gsharp_id_4_pair);
+([&]() {
+unsigned int __gsharp_seq_0 = __gsharp_id_0_us[__gsharp_id_4_pair/__gsharp_id_1_ss.length];
+short __gsharp_seq_1 = __gsharp_id_1_ss[__gsharp_id_4_pair%__gsharp_id_1_ss.length];
+return __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__MixedSignPromotionKernels__ShortOperators(__gsharp_seq_0,__gsharp_seq_1,__gsharp_id_2_values,__gsharp_id_3_flags,__gsharp_id_4_pair);
+}());
 __gsharp_state=-1;
 return;
 }
@@ -702,7 +710,11 @@ case 0:
 __gsharp_switch_1_state_0:
 {
 int __gsharp_id_4_pair = (int)threadIdx.x;
-__gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__MixedSignPromotionKernels__SByteOperators(__gsharp_id_0_us[__gsharp_id_4_pair/__gsharp_id_1_bs.length],__gsharp_id_1_bs[__gsharp_id_4_pair%__gsharp_id_1_bs.length],__gsharp_id_2_values,__gsharp_id_3_flags,__gsharp_id_4_pair);
+([&]() {
+unsigned int __gsharp_seq_0 = __gsharp_id_0_us[__gsharp_id_4_pair/__gsharp_id_1_bs.length];
+signed char __gsharp_seq_1 = __gsharp_id_1_bs[__gsharp_id_4_pair%__gsharp_id_1_bs.length];
+return __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__MixedSignPromotionKernels__SByteOperators(__gsharp_seq_0,__gsharp_seq_1,__gsharp_id_2_values,__gsharp_id_3_flags,__gsharp_id_4_pair);
+}());
 __gsharp_state=-1;
 return;
 }
@@ -1203,24 +1215,34 @@ uint64_t __gsharp_warp_exchange[2] = {};
 uint32_t __gsharp_warp_shuffle_count = 0;
 bool __gsharp_yielded_for_grid_sync = false;
 bool __gsharp_yielded_for_block_barrier = false;
+GSharpArray<unsigned int> __gsharp_id_0_us;
+GSharpArray<int> __gsharp_id_1_ns;
+GSharpArray<long long> __gsharp_id_2_values;
+GSharpArray<int> __gsharp_id_3_flags;
 int __gsharp_id_4_tid;
 unsigned int __gsharp_id_5_u;
 int __gsharp_id_6_n;
 long long __gsharp_id_7_sum;
 };
-extern ""C"" __declspec(dllexport) void __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__MixedSignPromotionKernels__AcrossBarrierKernel(GSharpArray<unsigned int> __gsharp_id_0_us, GSharpArray<int> __gsharp_id_1_ns, GSharpArray<long long> __gsharp_id_2_values, GSharpArray<int> __gsharp_id_3_flags, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__MixedSignPromotionKernels__AcrossBarrierKernel* __gsharp_ctx){
+extern ""C"" __declspec(dllexport) void __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__MixedSignPromotionKernels__AcrossBarrierKernel(GSharpArray<unsigned int> __gsharp_in___gsharp_id_0_us, GSharpArray<int> __gsharp_in___gsharp_id_1_ns, GSharpArray<long long> __gsharp_in___gsharp_id_2_values, GSharpArray<int> __gsharp_in___gsharp_id_3_flags, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__MixedSignPromotionKernels__AcrossBarrierKernel* __gsharp_ctx){
 #define __gsharp_state __gsharp_ctx->__gsharp_state
 #define __gsharp_yielded_for_grid_sync __gsharp_ctx->__gsharp_yielded_for_grid_sync
 #define __gsharp_yielded_for_block_barrier __gsharp_ctx->__gsharp_yielded_for_block_barrier
 auto* __gsharp_root = __gsharp_ctx;
+if(__gsharp_state==0){
+__gsharp_ctx->__gsharp_id_0_us=__gsharp_in___gsharp_id_0_us;
+__gsharp_ctx->__gsharp_id_1_ns=__gsharp_in___gsharp_id_1_ns;
+__gsharp_ctx->__gsharp_id_2_values=__gsharp_in___gsharp_id_2_values;
+__gsharp_ctx->__gsharp_id_3_flags=__gsharp_in___gsharp_id_3_flags;
+}
 switch(__gsharp_state)
 {
 case 0:
 __gsharp_switch_1_state_0:
 {
 __gsharp_ctx->__gsharp_id_4_tid=(int)threadIdx.x;
-__gsharp_ctx->__gsharp_id_5_u=__gsharp_id_0_us[__gsharp_ctx->__gsharp_id_4_tid];
-__gsharp_ctx->__gsharp_id_6_n=__gsharp_id_1_ns[__gsharp_ctx->__gsharp_id_4_tid];
+__gsharp_ctx->__gsharp_id_5_u=__gsharp_ctx->__gsharp_id_0_us[__gsharp_ctx->__gsharp_id_4_tid];
+__gsharp_ctx->__gsharp_id_6_n=__gsharp_ctx->__gsharp_id_1_ns[__gsharp_ctx->__gsharp_id_4_tid];
 __gsharp_yielded_for_block_barrier=true;
 __gsharp_state=1;
 return;
@@ -1236,10 +1258,10 @@ return;
 case 2:
 __gsharp_switch_1_state_2:
 {
-__gsharp_id_2_values[__gsharp_mul_i32(__gsharp_ctx->__gsharp_id_4_tid,2)]=__gsharp_ctx->__gsharp_id_7_sum;
-__gsharp_id_3_flags[__gsharp_ctx->__gsharp_id_4_tid]=((long long)__gsharp_ctx->__gsharp_id_5_u<(long long)__gsharp_ctx->__gsharp_id_6_n?1:0);
+__gsharp_ctx->__gsharp_id_2_values[__gsharp_mul_i32(__gsharp_ctx->__gsharp_id_4_tid,2)]=__gsharp_ctx->__gsharp_id_7_sum;
+__gsharp_ctx->__gsharp_id_3_flags[__gsharp_ctx->__gsharp_id_4_tid]=((long long)__gsharp_ctx->__gsharp_id_5_u<(long long)__gsharp_ctx->__gsharp_id_6_n?1:0);
 int __gsharp_id_8_k = __gsharp_ctx->__gsharp_id_4_tid;
-__gsharp_id_2_values[__gsharp_add_i32(__gsharp_mul_i32(__gsharp_ctx->__gsharp_id_4_tid,2),1)]=([&]() {
+__gsharp_ctx->__gsharp_id_2_values[__gsharp_add_i32(__gsharp_mul_i32(__gsharp_ctx->__gsharp_id_4_tid,2),1)]=([&]() {
 auto __gsharp_seq_0 = __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__MixedSignPromotionKernels__TakeFive(&__gsharp_id_8_k);
 auto __gsharp_seq_1 = __gsharp_id_8_k;
 return (long long)__gsharp_seq_0+(long long)__gsharp_seq_1;
@@ -1328,21 +1350,31 @@ public static readonly string AcrossBarrierKernel_FullSource=global::Kassyi.GSha
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__MixedSignPromotionKernels__AcrossBarrierKernel {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
+public uint[] us;
+public int[] ns;
+public long[] values;
+public int[] flags;
 public int tid;
 public uint u;
 public int n;
 public long sum;
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__MixedSignPromotionKernels__AcrossBarrierKernel(uint[] us, int[] ns, long[] values, int[] flags, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__MixedSignPromotionKernels__AcrossBarrierKernel __gsharp_ctx) {
+public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__MixedSignPromotionKernels__AcrossBarrierKernel(uint[] __gsharp_in_us, int[] __gsharp_in_ns, long[] __gsharp_in_values, int[] __gsharp_in_flags, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__MixedSignPromotionKernels__AcrossBarrierKernel __gsharp_ctx) {
+if (__gsharp_ctx.__gsharp_state == 0) {
+__gsharp_ctx.us = __gsharp_in_us;
+__gsharp_ctx.ns = __gsharp_in_ns;
+__gsharp_ctx.values = __gsharp_in_values;
+__gsharp_ctx.flags = __gsharp_in_flags;
+}
 {
 switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
 __gsharp_ctx.tid = global::Kassyi.GSharp.Core.ThreadIndex.X;
-__gsharp_ctx.u = us[__gsharp_ctx.tid];
-__gsharp_ctx.n = ns[__gsharp_ctx.tid];
+__gsharp_ctx.u = __gsharp_ctx.us[__gsharp_ctx.tid];
+__gsharp_ctx.n = __gsharp_ctx.ns[__gsharp_ctx.tid];
 global::Kassyi.GSharp.Core.ManagedGpuContext.BlockBarrierRequested = true;
 __gsharp_ctx.__gsharp_state = 1;
 return;
@@ -1358,10 +1390,10 @@ return;
 
 case 2:
 {
-values[__gsharp_ctx.tid * 2] = __gsharp_ctx.sum;
-flags[__gsharp_ctx.tid] = __gsharp_ctx.u < __gsharp_ctx.n ? 1 : 0;
+__gsharp_ctx.values[__gsharp_ctx.tid * 2] = __gsharp_ctx.sum;
+__gsharp_ctx.flags[__gsharp_ctx.tid] = __gsharp_ctx.u < __gsharp_ctx.n ? 1 : 0;
 int k = __gsharp_ctx.tid;
-values[__gsharp_ctx.tid * 2 + 1] = global::Kassyi.GSharp.Tests.Shared.Syntax.MixedSignPromotionKernels.TakeFive(ref k) + k;
+__gsharp_ctx.values[__gsharp_ctx.tid * 2 + 1] = global::Kassyi.GSharp.Tests.Shared.Syntax.MixedSignPromotionKernels.TakeFive(ref k) + k;
 __gsharp_ctx.__gsharp_state = -1;
 return;
 }

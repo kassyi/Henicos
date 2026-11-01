@@ -3493,7 +3493,11 @@ __device__ inline int __gsharp_mb_Product() const {
 return __gsharp_mul_i32(__gsharp_mb_A,__gsharp_mb_C);
 }
 __device__ inline int __gsharp_mb_Difference() const {
-return __gsharp_sub_i32((*this).__gsharp_mb_C,(*this).__gsharp_mb_Sum());
+return ([&]() {
+auto __gsharp_seq_0 = (*this).__gsharp_mb_C;
+auto __gsharp_seq_1 = (*this).__gsharp_mb_Sum();
+return __gsharp_sub_i32(__gsharp_seq_0,__gsharp_seq_1);
+}());
 }
 }
 ;
@@ -3767,7 +3771,11 @@ __device__ inline int __gsharp_mb_Product() const {
 return __gsharp_mul_i32(__gsharp_mb_A,__gsharp_mb_C);
 }
 __device__ inline int __gsharp_mb_Difference() const {
-return __gsharp_sub_i32((*this).__gsharp_mb_C,(*this).__gsharp_mb_Sum());
+return ([&]() {
+auto __gsharp_seq_0 = (*this).__gsharp_mb_C;
+auto __gsharp_seq_1 = (*this).__gsharp_mb_Sum();
+return __gsharp_sub_i32(__gsharp_seq_0,__gsharp_seq_1);
+}());
 }
 }
 ;
@@ -4034,7 +4042,11 @@ __device__ inline int __gsharp_mb_Product() const {
 return __gsharp_mul_i32(__gsharp_mb_A,__gsharp_mb_C);
 }
 __device__ inline int __gsharp_mb_Difference() const {
-return __gsharp_sub_i32((*this).__gsharp_mb_C,(*this).__gsharp_mb_Sum());
+return ([&]() {
+auto __gsharp_seq_0 = (*this).__gsharp_mb_C;
+auto __gsharp_seq_1 = (*this).__gsharp_mb_Sum();
+return __gsharp_sub_i32(__gsharp_seq_0,__gsharp_seq_1);
+}());
 }
 }
 ;
@@ -4308,7 +4320,11 @@ __device__ inline int __gsharp_mb_Product() const {
 return __gsharp_mul_i32(__gsharp_mb_A,__gsharp_mb_C);
 }
 __device__ inline int __gsharp_mb_Difference() const {
-return __gsharp_sub_i32((*this).__gsharp_mb_C,(*this).__gsharp_mb_Sum());
+return ([&]() {
+auto __gsharp_seq_0 = (*this).__gsharp_mb_C;
+auto __gsharp_seq_1 = (*this).__gsharp_mb_Sum();
+return __gsharp_sub_i32(__gsharp_seq_0,__gsharp_seq_1);
+}());
 }
 }
 ;

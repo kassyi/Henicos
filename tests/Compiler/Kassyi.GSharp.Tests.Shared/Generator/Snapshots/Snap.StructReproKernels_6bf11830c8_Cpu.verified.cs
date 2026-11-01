@@ -1795,14 +1795,18 @@ uint64_t __gsharp_warp_exchange[2] = {};
 uint32_t __gsharp_warp_shuffle_count = 0;
 bool __gsharp_yielded_for_grid_sync = false;
 bool __gsharp_yielded_for_block_barrier = false;
+GSharpArray<int> __gsharp_id_0_output;
 int __gsharp_id_1_tid;
 int __gsharp_id_2_W;
 };
-extern ""C"" __declspec(dllexport) void __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__StructReproKernels__BarrierLocalDifferentNameKernel(GSharpArray<int> __gsharp_id_0_output, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__StructReproKernels__BarrierLocalDifferentNameKernel* __gsharp_ctx){
+extern ""C"" __declspec(dllexport) void __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__StructReproKernels__BarrierLocalDifferentNameKernel(GSharpArray<int> __gsharp_in___gsharp_id_0_output, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__StructReproKernels__BarrierLocalDifferentNameKernel* __gsharp_ctx){
 #define __gsharp_state __gsharp_ctx->__gsharp_state
 #define __gsharp_yielded_for_grid_sync __gsharp_ctx->__gsharp_yielded_for_grid_sync
 #define __gsharp_yielded_for_block_barrier __gsharp_ctx->__gsharp_yielded_for_block_barrier
 auto* __gsharp_root = __gsharp_ctx;
+if(__gsharp_state==0){
+__gsharp_ctx->__gsharp_id_0_output=__gsharp_in___gsharp_id_0_output;
+}
 switch(__gsharp_state)
 {
 case 0:
@@ -1825,7 +1829,7 @@ __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ReproPt __gsharp_tmp = __gsha
 __gsharp_tmp.__gsharp_mb_X = 3;
 return __gsharp_tmp;
 }());
-__gsharp_id_0_output[__gsharp_ctx->__gsharp_id_1_tid]=__gsharp_add_i32(__gsharp_add_i32(__gsharp_mul_i32(__gsharp_ctx->__gsharp_id_2_W,100),__gsharp_mul_i32(__gsharp_id_4_q.__gsharp_mb_X,10)),__gsharp_id_3_p.__gsharp_mb_X);
+__gsharp_ctx->__gsharp_id_0_output[__gsharp_ctx->__gsharp_id_1_tid]=__gsharp_add_i32(__gsharp_add_i32(__gsharp_mul_i32(__gsharp_ctx->__gsharp_id_2_W,100),__gsharp_mul_i32(__gsharp_id_4_q.__gsharp_mb_X,10)),__gsharp_id_3_p.__gsharp_mb_X);
 __gsharp_state=-1;
 return;
 }
@@ -1910,11 +1914,15 @@ public static readonly string BarrierLocalDifferentNameKernel_FullSource=global:
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__StructReproKernels__BarrierLocalDifferentNameKernel {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
+public int[] output;
 public int tid;
 public int W;
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__StructReproKernels__BarrierLocalDifferentNameKernel(int[] output, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__StructReproKernels__BarrierLocalDifferentNameKernel __gsharp_ctx) {
+public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__StructReproKernels__BarrierLocalDifferentNameKernel(int[] __gsharp_in_output, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__StructReproKernels__BarrierLocalDifferentNameKernel __gsharp_ctx) {
+if (__gsharp_ctx.__gsharp_state == 0) {
+__gsharp_ctx.output = __gsharp_in_output;
+}
 {
 switch (__gsharp_ctx.__gsharp_state)
 {
@@ -1938,7 +1946,7 @@ var q = p with
 {
 X = 3
 };
-output[__gsharp_ctx.tid] = __gsharp_ctx.W * 100 + q.X * 10 + p.X;
+__gsharp_ctx.output[__gsharp_ctx.tid] = __gsharp_ctx.W * 100 + q.X * 10 + p.X;
 __gsharp_ctx.__gsharp_state = -1;
 return;
 }
@@ -2400,9 +2408,21 @@ __gsharp_tmp.__gsharp_mb_Value(8);
 return __gsharp_tmp;
 }());
 __gsharp_id_3_e.__gsharp_mb_Scaled(5);
-__gsharp_id_0_output[0]=__gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_1_c.__gsharp_mb_Value(),100),__gsharp_id_1_c.__gsharp_mb_Scaled());
-__gsharp_id_0_output[1]=__gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_2_d.__gsharp_mb_Value(),100),__gsharp_id_2_d.__gsharp_mb_Scaled());
-__gsharp_id_0_output[2]=__gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_3_e.__gsharp_mb_Value(),100),__gsharp_id_3_e.__gsharp_mb_Scaled());
+__gsharp_id_0_output[0]=([&]() {
+auto __gsharp_seq_0 = __gsharp_mul_i32(__gsharp_id_1_c.__gsharp_mb_Value(),100);
+auto __gsharp_seq_1 = __gsharp_id_1_c.__gsharp_mb_Scaled();
+return __gsharp_add_i32(__gsharp_seq_0,__gsharp_seq_1);
+}());
+__gsharp_id_0_output[1]=([&]() {
+auto __gsharp_seq_2 = __gsharp_mul_i32(__gsharp_id_2_d.__gsharp_mb_Value(),100);
+auto __gsharp_seq_3 = __gsharp_id_2_d.__gsharp_mb_Scaled();
+return __gsharp_add_i32(__gsharp_seq_2,__gsharp_seq_3);
+}());
+__gsharp_id_0_output[2]=([&]() {
+auto __gsharp_seq_4 = __gsharp_mul_i32(__gsharp_id_3_e.__gsharp_mb_Value(),100);
+auto __gsharp_seq_5 = __gsharp_id_3_e.__gsharp_mb_Scaled();
+return __gsharp_add_i32(__gsharp_seq_4,__gsharp_seq_5);
+}());
 __gsharp_state=-1;
 return;
 }

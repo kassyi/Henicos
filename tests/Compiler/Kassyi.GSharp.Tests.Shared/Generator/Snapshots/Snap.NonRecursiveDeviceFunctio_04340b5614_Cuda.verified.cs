@@ -100,18 +100,24 @@ public partial class NonRecursiveDeviceFunctionBarrierKernels
 public class __gsharp_frame_Kassyi__GSharp__Tests__Shared__TestCases__Analyzers__BarrierUsage__NonRecursiveDeviceFunctionBarrierKernels__Exchange {
 internal int __gsharp_state;
 internal uint __gsharp_warp_exchange;
+internal int value;
+internal int length;
 internal int tid;
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-public static bool __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__TestCases__Analyzers__BarrierUsage__NonRecursiveDeviceFunctionBarrierKernels__Exchange(int value, int length, __gsharp_frame_Kassyi__GSharp__Tests__Shared__TestCases__Analyzers__BarrierUsage__NonRecursiveDeviceFunctionBarrierKernels__Exchange __gsharp_ctx, ref int __gsharp_result) {
+public static bool __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__TestCases__Analyzers__BarrierUsage__NonRecursiveDeviceFunctionBarrierKernels__Exchange(int __gsharp_in_value, int __gsharp_in_length, __gsharp_frame_Kassyi__GSharp__Tests__Shared__TestCases__Analyzers__BarrierUsage__NonRecursiveDeviceFunctionBarrierKernels__Exchange __gsharp_ctx, ref int __gsharp_result) {
 global::Kassyi.GSharp.Core.SharedMemory<int> shared = new(256, 0x03b69bc16ee586d8UL);
+if (__gsharp_ctx.__gsharp_state == 0) {
+__gsharp_ctx.value = __gsharp_in_value;
+__gsharp_ctx.length = __gsharp_in_length;
+}
 {
 switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
 __gsharp_ctx.tid = global::Kassyi.GSharp.Core.ThreadIndex.X;
-shared[__gsharp_ctx.tid] = value;
+shared[__gsharp_ctx.tid] = __gsharp_ctx.value;
 global::Kassyi.GSharp.Core.ManagedGpuContext.BlockBarrierRequested = true;
 __gsharp_ctx.__gsharp_state = 1;
 return false;
@@ -120,7 +126,7 @@ return false;
 case 1:
 {
 {
-__gsharp_result = shared[length - 1 - __gsharp_ctx.tid];
+__gsharp_result = shared[__gsharp_ctx.length - 1 - __gsharp_ctx.tid];
 __gsharp_ctx.__gsharp_state = 0;
 return true;
 }
@@ -134,6 +140,8 @@ throw new global::System.InvalidOperationException("The device function state ma
 public class __gsharp_frame_Kassyi__GSharp__Tests__Shared__TestCases__Analyzers__BarrierUsage__NonRecursiveDeviceFunctionBarrierKernels__ExchangeTwice {
 internal int __gsharp_state;
 internal uint __gsharp_warp_exchange;
+internal int value;
+internal int length;
 internal int __gsharp_call_temp_0;
 internal int once;
 internal int __gsharp_call_temp_1;
@@ -141,7 +149,11 @@ internal global::Kassyi.GSharp.Tests.Shared.TestCases.Analyzers.BarrierUsage.Non
 internal global::Kassyi.GSharp.Tests.Shared.TestCases.Analyzers.BarrierUsage.NonRecursiveDeviceFunctionBarrierKernels.__gsharp_frame_Kassyi__GSharp__Tests__Shared__TestCases__Analyzers__BarrierUsage__NonRecursiveDeviceFunctionBarrierKernels__Exchange __gsharp_call_frame_1 = new();
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-public static bool __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__TestCases__Analyzers__BarrierUsage__NonRecursiveDeviceFunctionBarrierKernels__ExchangeTwice(int value, int length, __gsharp_frame_Kassyi__GSharp__Tests__Shared__TestCases__Analyzers__BarrierUsage__NonRecursiveDeviceFunctionBarrierKernels__ExchangeTwice __gsharp_ctx, ref int __gsharp_result) {
+public static bool __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__TestCases__Analyzers__BarrierUsage__NonRecursiveDeviceFunctionBarrierKernels__ExchangeTwice(int __gsharp_in_value, int __gsharp_in_length, __gsharp_frame_Kassyi__GSharp__Tests__Shared__TestCases__Analyzers__BarrierUsage__NonRecursiveDeviceFunctionBarrierKernels__ExchangeTwice __gsharp_ctx, ref int __gsharp_result) {
+if (__gsharp_ctx.__gsharp_state == 0) {
+__gsharp_ctx.value = __gsharp_in_value;
+__gsharp_ctx.length = __gsharp_in_length;
+}
 {
 switch (__gsharp_ctx.__gsharp_state)
 {
@@ -152,7 +164,7 @@ goto case 1;
 
 case 1:
 {
-if (!global::Kassyi.GSharp.Tests.Shared.TestCases.Analyzers.BarrierUsage.NonRecursiveDeviceFunctionBarrierKernels.__gsharp_statemachine_Kassyi__GSharp__Tests__Shared__TestCases__Analyzers__BarrierUsage__NonRecursiveDeviceFunctionBarrierKernels__Exchange(value, length, __gsharp_ctx.__gsharp_call_frame_0, ref __gsharp_ctx.__gsharp_call_temp_0))
+if (!global::Kassyi.GSharp.Tests.Shared.TestCases.Analyzers.BarrierUsage.NonRecursiveDeviceFunctionBarrierKernels.__gsharp_statemachine_Kassyi__GSharp__Tests__Shared__TestCases__Analyzers__BarrierUsage__NonRecursiveDeviceFunctionBarrierKernels__Exchange(__gsharp_ctx.value, __gsharp_ctx.length, __gsharp_ctx.__gsharp_call_frame_0, ref __gsharp_ctx.__gsharp_call_temp_0))
 {
 __gsharp_ctx.__gsharp_state = 1;
 return false;
@@ -164,7 +176,7 @@ goto case 2;
 
 case 2:
 {
-if (!global::Kassyi.GSharp.Tests.Shared.TestCases.Analyzers.BarrierUsage.NonRecursiveDeviceFunctionBarrierKernels.__gsharp_statemachine_Kassyi__GSharp__Tests__Shared__TestCases__Analyzers__BarrierUsage__NonRecursiveDeviceFunctionBarrierKernels__Exchange(__gsharp_ctx.once, length, __gsharp_ctx.__gsharp_call_frame_1, ref __gsharp_ctx.__gsharp_call_temp_1))
+if (!global::Kassyi.GSharp.Tests.Shared.TestCases.Analyzers.BarrierUsage.NonRecursiveDeviceFunctionBarrierKernels.__gsharp_statemachine_Kassyi__GSharp__Tests__Shared__TestCases__Analyzers__BarrierUsage__NonRecursiveDeviceFunctionBarrierKernels__Exchange(__gsharp_ctx.once, __gsharp_ctx.length, __gsharp_ctx.__gsharp_call_frame_1, ref __gsharp_ctx.__gsharp_call_temp_1))
 {
 __gsharp_ctx.__gsharp_state = 2;
 return false;

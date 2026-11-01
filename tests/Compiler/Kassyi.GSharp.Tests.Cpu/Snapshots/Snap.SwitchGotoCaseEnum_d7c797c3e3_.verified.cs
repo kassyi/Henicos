@@ -12,7 +12,7 @@
         {
             __gsharp_ctx->tid = ThreadIndex.X;
             __gsharp_ctx->value = __gsharp_ctx->tid;
-            __gsharp_ctx->mode = flag == 0 ? SwitchGotoCaseMode.First : SwitchGotoCaseMode.Second;
+            __gsharp_ctx->mode = __gsharp_ctx->flag == 0 ? SwitchGotoCaseMode.First : SwitchGotoCaseMode.Second;
             {
                 var __gsharp_switch_temp_0 = __gsharp_ctx->mode;
                 if (__gsharp_switch_temp_0 == SwitchGotoCaseMode.First)
@@ -66,7 +66,7 @@
 
         case 6:
         {
-            output[__gsharp_ctx->tid] = __gsharp_ctx->value;
+            __gsharp_ctx->output[__gsharp_ctx->tid] = __gsharp_ctx->value;
             __gsharp_state = -1;
             return;
         }

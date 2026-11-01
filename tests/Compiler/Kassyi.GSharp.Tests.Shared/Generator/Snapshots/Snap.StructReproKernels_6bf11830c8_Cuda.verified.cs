@@ -1496,9 +1496,21 @@ __gsharp_tmp.__gsharp_mb_Value(8);
 return __gsharp_tmp;
 }());
 __gsharp_id_3_e.__gsharp_mb_Scaled(5);
-__gsharp_id_0_output[0]=__gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_1_c.__gsharp_mb_Value(),100),__gsharp_id_1_c.__gsharp_mb_Scaled());
-__gsharp_id_0_output[1]=__gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_2_d.__gsharp_mb_Value(),100),__gsharp_id_2_d.__gsharp_mb_Scaled());
-__gsharp_id_0_output[2]=__gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_3_e.__gsharp_mb_Value(),100),__gsharp_id_3_e.__gsharp_mb_Scaled());
+__gsharp_id_0_output[0]=([&]() {
+auto __gsharp_seq_0 = __gsharp_mul_i32(__gsharp_id_1_c.__gsharp_mb_Value(),100);
+auto __gsharp_seq_1 = __gsharp_id_1_c.__gsharp_mb_Scaled();
+return __gsharp_add_i32(__gsharp_seq_0,__gsharp_seq_1);
+}());
+__gsharp_id_0_output[1]=([&]() {
+auto __gsharp_seq_2 = __gsharp_mul_i32(__gsharp_id_2_d.__gsharp_mb_Value(),100);
+auto __gsharp_seq_3 = __gsharp_id_2_d.__gsharp_mb_Scaled();
+return __gsharp_add_i32(__gsharp_seq_2,__gsharp_seq_3);
+}());
+__gsharp_id_0_output[2]=([&]() {
+auto __gsharp_seq_4 = __gsharp_mul_i32(__gsharp_id_3_e.__gsharp_mb_Value(),100);
+auto __gsharp_seq_5 = __gsharp_id_3_e.__gsharp_mb_Scaled();
+return __gsharp_add_i32(__gsharp_seq_4,__gsharp_seq_5);
+}());
 }
 ";
 public static readonly string SetAndWithAccessorBodyKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +SetAndWithAccessorBodyKernel_Source;

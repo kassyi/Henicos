@@ -1414,11 +1414,19 @@ public partial class QualifyMath
 public class __gsharp_frame_Kassyi__GSharp__Tests__Shared__Core__Qualification__QualifyMath__ExchangeWithNext {
 internal int __gsharp_state;
 internal uint __gsharp_warp_exchange;
+internal int[] buffer;
+internal int tid;
+internal int value;
 internal global::Kassyi.GSharp.Tests.Shared.Core.Qualification.QualifyPair pair;
 internal int next;
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-public static bool __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Core__Qualification__QualifyMath__ExchangeWithNext(int[] buffer, int tid, int value, __gsharp_frame_Kassyi__GSharp__Tests__Shared__Core__Qualification__QualifyMath__ExchangeWithNext __gsharp_ctx, ref int __gsharp_result) {
+public static bool __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Core__Qualification__QualifyMath__ExchangeWithNext(int[] __gsharp_in_buffer, int __gsharp_in_tid, int __gsharp_in_value, __gsharp_frame_Kassyi__GSharp__Tests__Shared__Core__Qualification__QualifyMath__ExchangeWithNext __gsharp_ctx, ref int __gsharp_result) {
+if (__gsharp_ctx.__gsharp_state == 0) {
+__gsharp_ctx.buffer = __gsharp_in_buffer;
+__gsharp_ctx.tid = __gsharp_in_tid;
+__gsharp_ctx.value = __gsharp_in_value;
+}
 {
 switch (__gsharp_ctx.__gsharp_state)
 {
@@ -1426,10 +1434,10 @@ case 0:
 {
 __gsharp_ctx.pair = new global::Kassyi.GSharp.Tests.Shared.Core.Qualification.QualifyPair
 {
-A = value,
-B = global::Kassyi.GSharp.Tests.Shared.Core.Qualification.QualifyMath.Twice(value)
+A = __gsharp_ctx.value,
+B = global::Kassyi.GSharp.Tests.Shared.Core.Qualification.QualifyMath.Twice(__gsharp_ctx.value)
 };
-buffer[tid] = __gsharp_ctx.pair.A + __gsharp_ctx.pair.B;
+__gsharp_ctx.buffer[__gsharp_ctx.tid] = __gsharp_ctx.pair.A + __gsharp_ctx.pair.B;
 global::Kassyi.GSharp.Core.ManagedGpuContext.BlockBarrierRequested = true;
 __gsharp_ctx.__gsharp_state = 1;
 return false;
@@ -1437,7 +1445,7 @@ return false;
 
 case 1:
 {
-__gsharp_ctx.next = buffer[(tid + 1) % global::Kassyi.GSharp.Tests.Shared.Core.Qualification.QualifyConstants.Count];
+__gsharp_ctx.next = __gsharp_ctx.buffer[(__gsharp_ctx.tid + 1) % global::Kassyi.GSharp.Tests.Shared.Core.Qualification.QualifyConstants.Count];
 global::Kassyi.GSharp.Core.ManagedGpuContext.BlockBarrierRequested = true;
 __gsharp_ctx.__gsharp_state = 2;
 return false;

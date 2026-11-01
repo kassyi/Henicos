@@ -121,22 +121,26 @@ throw new global::System.InvalidOperationException("The device function state ma
 public class __gsharp_frame_Kassyi__GSharp__Tests__Shared__TestCases__Analyzers__BarrierUsage__DeviceFunctionRefParameterBarrierKernels__Broadcast {
 internal int __gsharp_state;
 internal uint __gsharp_warp_exchange;
+internal int value;
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-public static bool __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__TestCases__Analyzers__BarrierUsage__DeviceFunctionRefParameterBarrierKernels__Broadcast(int value, __gsharp_frame_Kassyi__GSharp__Tests__Shared__TestCases__Analyzers__BarrierUsage__DeviceFunctionRefParameterBarrierKernels__Broadcast __gsharp_ctx, ref int __gsharp_result) {
+public static bool __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__TestCases__Analyzers__BarrierUsage__DeviceFunctionRefParameterBarrierKernels__Broadcast(int __gsharp_in_value, __gsharp_frame_Kassyi__GSharp__Tests__Shared__TestCases__Analyzers__BarrierUsage__DeviceFunctionRefParameterBarrierKernels__Broadcast __gsharp_ctx, ref int __gsharp_result) {
+if (__gsharp_ctx.__gsharp_state == 0) {
+__gsharp_ctx.value = __gsharp_in_value;
+}
 {
 switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-__gsharp_warp_exchange_assign(value);
+__gsharp_warp_exchange_assign(__gsharp_ctx.value);
 __gsharp_ctx.__gsharp_state = 1;
 return false;
 }
 
 case 1:
 {
-var __gsharp_warp_temp_0 = __gsharp_warp_shuffle_read_sync(__gsharp_ctx, 0xFFFFFFFFu, value, 0, 32, "DeviceFunctionRefParameterBarrierKernels.cs(18,47)");
+var __gsharp_warp_temp_0 = __gsharp_warp_shuffle_read_sync(__gsharp_ctx, 0xFFFFFFFFu, __gsharp_ctx.value, 0, 32, "DeviceFunctionRefParameterBarrierKernels.cs(18,47)");
 {
 __gsharp_result = __gsharp_warp_temp_0;
 __gsharp_ctx.__gsharp_state = 0;

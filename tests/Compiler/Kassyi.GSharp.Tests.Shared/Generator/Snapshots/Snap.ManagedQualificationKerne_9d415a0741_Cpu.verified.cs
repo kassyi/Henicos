@@ -43,22 +43,30 @@ static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Core__Qualific
 #endif
 struct __gsharp_frame_Kassyi__GSharp__Tests__Shared__Core__Qualification__QualifyMath__ExchangeWithNext {
 int __gsharp_state = 0;
+GSharpArray<int> __gsharp_id_0_buffer;
+int __gsharp_id_1_tid;
+int __gsharp_id_2_value;
 __gsharp_ty_Kassyi__GSharp__Tests__Shared__Core__Qualification__QualifyPair __gsharp_id_3_pair;
 int __gsharp_id_4_next;
 };
-template <typename TRoot> inline bool __gsharp_fn_Kassyi__GSharp__Tests__Shared__Core__Qualification__QualifyMath__ExchangeWithNext(GSharpArray<int> __gsharp_id_0_buffer, int __gsharp_id_1_tid, int __gsharp_id_2_value, __gsharp_frame_Kassyi__GSharp__Tests__Shared__Core__Qualification__QualifyMath__ExchangeWithNext* __gsharp_ctx, TRoot* __gsharp_root, int* __gsharp_result){
+template <typename TRoot> inline bool __gsharp_fn_Kassyi__GSharp__Tests__Shared__Core__Qualification__QualifyMath__ExchangeWithNext(GSharpArray<int> __gsharp_in___gsharp_id_0_buffer, int __gsharp_in___gsharp_id_1_tid, int __gsharp_in___gsharp_id_2_value, __gsharp_frame_Kassyi__GSharp__Tests__Shared__Core__Qualification__QualifyMath__ExchangeWithNext* __gsharp_ctx, TRoot* __gsharp_root, int* __gsharp_result){
 #define __gsharp_state __gsharp_ctx->__gsharp_state
 #define __gsharp_yielded_for_grid_sync __gsharp_root->__gsharp_yielded_for_grid_sync
 #define __gsharp_yielded_for_block_barrier __gsharp_root->__gsharp_yielded_for_block_barrier
+if(__gsharp_state==0){
+__gsharp_ctx->__gsharp_id_0_buffer=__gsharp_in___gsharp_id_0_buffer;
+__gsharp_ctx->__gsharp_id_1_tid=__gsharp_in___gsharp_id_1_tid;
+__gsharp_ctx->__gsharp_id_2_value=__gsharp_in___gsharp_id_2_value;
+}
 switch(__gsharp_state)
 {
 case 0:
 __gsharp_switch_1_state_0:
 {
 __gsharp_ctx->__gsharp_id_3_pair=([&]() {
-__gsharp_ty_Kassyi__GSharp__Tests__Shared__Core__Qualification__QualifyPair __gsharp_tmp{}; __gsharp_tmp.__gsharp_mb_A = __gsharp_id_2_value; __gsharp_tmp.__gsharp_mb_B = __gsharp_fn_Kassyi__GSharp__Tests__Shared__Core__Qualification__QualifyMath__Twice(__gsharp_id_2_value); return __gsharp_tmp; }
+__gsharp_ty_Kassyi__GSharp__Tests__Shared__Core__Qualification__QualifyPair __gsharp_tmp{}; __gsharp_tmp.__gsharp_mb_A = __gsharp_ctx->__gsharp_id_2_value; __gsharp_tmp.__gsharp_mb_B = __gsharp_fn_Kassyi__GSharp__Tests__Shared__Core__Qualification__QualifyMath__Twice(__gsharp_ctx->__gsharp_id_2_value); return __gsharp_tmp; }
 ());
-__gsharp_array_at(__gsharp_id_0_buffer, __gsharp_id_1_tid, ""G#: a null array is read at ManagedQualificationKernels.cs(52,13)"")=__gsharp_add_i32(__gsharp_ctx->__gsharp_id_3_pair.__gsharp_mb_A,__gsharp_ctx->__gsharp_id_3_pair.__gsharp_mb_B);
+__gsharp_array_at(__gsharp_ctx->__gsharp_id_0_buffer, __gsharp_ctx->__gsharp_id_1_tid, ""G#: a null array is read at ManagedQualificationKernels.cs(52,13)"")=__gsharp_add_i32(__gsharp_ctx->__gsharp_id_3_pair.__gsharp_mb_A,__gsharp_ctx->__gsharp_id_3_pair.__gsharp_mb_B);
 __gsharp_yielded_for_block_barrier=true;
 __gsharp_state=1;
 return false;
@@ -66,7 +74,7 @@ return false;
 case 1:
 __gsharp_switch_1_state_1:
 {
-__gsharp_ctx->__gsharp_id_4_next=__gsharp_array_at(__gsharp_id_0_buffer, (__gsharp_add_i32(__gsharp_id_1_tid,1))%4, ""G#: a null array is read at ManagedQualificationKernels.cs(54,24)"");
+__gsharp_ctx->__gsharp_id_4_next=__gsharp_array_at(__gsharp_ctx->__gsharp_id_0_buffer, (__gsharp_add_i32(__gsharp_ctx->__gsharp_id_1_tid,1))%4, ""G#: a null array is read at ManagedQualificationKernels.cs(54,24)"");
 __gsharp_yielded_for_block_barrier=true;
 __gsharp_state=2;
 return false;
@@ -668,14 +676,20 @@ uint64_t __gsharp_warp_exchange[2] = {};
 uint32_t __gsharp_warp_shuffle_count = 0;
 bool __gsharp_yielded_for_grid_sync = false;
 bool __gsharp_yielded_for_block_barrier = false;
+GSharpArray<int> __gsharp_id_0_values;
+GSharpArray<int> __gsharp_id_1_result;
 int __gsharp_id_2_tid;
 __gsharp_ty_Kassyi__GSharp__Tests__Shared__Core__Qualification__QualifyPair __gsharp_id_3_pair;
 };
-extern ""C"" __declspec(dllexport) void __gsharp_k_Kassyi__GSharp__Tests__Shared__Core__ManagedQualificationKernels__HoistedLocalKernel(GSharpArray<int> __gsharp_id_0_values, GSharpArray<int> __gsharp_id_1_result, __gsharp_context_Kassyi__GSharp__Tests__Shared__Core__ManagedQualificationKernels__HoistedLocalKernel* __gsharp_ctx){
+extern ""C"" __declspec(dllexport) void __gsharp_k_Kassyi__GSharp__Tests__Shared__Core__ManagedQualificationKernels__HoistedLocalKernel(GSharpArray<int> __gsharp_in___gsharp_id_0_values, GSharpArray<int> __gsharp_in___gsharp_id_1_result, __gsharp_context_Kassyi__GSharp__Tests__Shared__Core__ManagedQualificationKernels__HoistedLocalKernel* __gsharp_ctx){
 #define __gsharp_state __gsharp_ctx->__gsharp_state
 #define __gsharp_yielded_for_grid_sync __gsharp_ctx->__gsharp_yielded_for_grid_sync
 #define __gsharp_yielded_for_block_barrier __gsharp_ctx->__gsharp_yielded_for_block_barrier
 auto* __gsharp_root = __gsharp_ctx;
+if(__gsharp_state==0){
+__gsharp_ctx->__gsharp_id_0_values=__gsharp_in___gsharp_id_0_values;
+__gsharp_ctx->__gsharp_id_1_result=__gsharp_in___gsharp_id_1_result;
+}
 switch(__gsharp_state)
 {
 case 0:
@@ -683,7 +697,7 @@ __gsharp_switch_1_state_0:
 {
 __gsharp_ctx->__gsharp_id_2_tid=(int)threadIdx.x;
 __gsharp_ctx->__gsharp_id_3_pair=([&]() {
-__gsharp_ty_Kassyi__GSharp__Tests__Shared__Core__Qualification__QualifyPair __gsharp_tmp{}; __gsharp_tmp.__gsharp_mb_A = __gsharp_id_0_values[__gsharp_ctx->__gsharp_id_2_tid]; __gsharp_tmp.__gsharp_mb_B = __gsharp_fn_Kassyi__GSharp__Tests__Shared__Core__Qualification__QualifyMath__Twice(__gsharp_id_0_values[__gsharp_ctx->__gsharp_id_2_tid]); return __gsharp_tmp; }
+__gsharp_ty_Kassyi__GSharp__Tests__Shared__Core__Qualification__QualifyPair __gsharp_tmp{}; __gsharp_tmp.__gsharp_mb_A = __gsharp_ctx->__gsharp_id_0_values[__gsharp_ctx->__gsharp_id_2_tid]; __gsharp_tmp.__gsharp_mb_B = __gsharp_fn_Kassyi__GSharp__Tests__Shared__Core__Qualification__QualifyMath__Twice(__gsharp_ctx->__gsharp_id_0_values[__gsharp_ctx->__gsharp_id_2_tid]); return __gsharp_tmp; }
 ());
 __gsharp_yielded_for_block_barrier=true;
 __gsharp_state=1;
@@ -692,7 +706,7 @@ return;
 case 1:
 __gsharp_switch_1_state_1:
 {
-__gsharp_id_1_result[__gsharp_ctx->__gsharp_id_2_tid]=__gsharp_add_i32(__gsharp_mul_i32(__gsharp_ctx->__gsharp_id_3_pair.__gsharp_mb_A,10),__gsharp_ctx->__gsharp_id_3_pair.__gsharp_mb_B);
+__gsharp_ctx->__gsharp_id_1_result[__gsharp_ctx->__gsharp_id_2_tid]=__gsharp_add_i32(__gsharp_mul_i32(__gsharp_ctx->__gsharp_id_3_pair.__gsharp_mb_A,10),__gsharp_ctx->__gsharp_id_3_pair.__gsharp_mb_B);
 __gsharp_state=-1;
 return;
 }
@@ -777,11 +791,17 @@ public static readonly string HoistedLocalKernel_FullSource=global::Kassyi.GShar
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Core__ManagedQualificationKernels__HoistedLocalKernel {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
+public int[] values;
+public int[] result;
 public int tid;
 public global::Kassyi.GSharp.Tests.Shared.Core.Qualification.QualifyPair pair;
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Core__ManagedQualificationKernels__HoistedLocalKernel(int[] values, int[] result, __gsharp_context_Kassyi__GSharp__Tests__Shared__Core__ManagedQualificationKernels__HoistedLocalKernel __gsharp_ctx) {
+public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Core__ManagedQualificationKernels__HoistedLocalKernel(int[] __gsharp_in_values, int[] __gsharp_in_result, __gsharp_context_Kassyi__GSharp__Tests__Shared__Core__ManagedQualificationKernels__HoistedLocalKernel __gsharp_ctx) {
+if (__gsharp_ctx.__gsharp_state == 0) {
+__gsharp_ctx.values = __gsharp_in_values;
+__gsharp_ctx.result = __gsharp_in_result;
+}
 {
 switch (__gsharp_ctx.__gsharp_state)
 {
@@ -790,8 +810,8 @@ case 0:
 __gsharp_ctx.tid = global::Kassyi.GSharp.Core.ThreadIndex.X;
 __gsharp_ctx.pair = new global::Kassyi.GSharp.Tests.Shared.Core.Qualification.QualifyPair
 {
-A = values[__gsharp_ctx.tid],
-B = global::Kassyi.GSharp.Tests.Shared.Core.Qualification.QualifyMath.Twice(values[__gsharp_ctx.tid])
+A = __gsharp_ctx.values[__gsharp_ctx.tid],
+B = global::Kassyi.GSharp.Tests.Shared.Core.Qualification.QualifyMath.Twice(__gsharp_ctx.values[__gsharp_ctx.tid])
 };
 global::Kassyi.GSharp.Core.ManagedGpuContext.BlockBarrierRequested = true;
 __gsharp_ctx.__gsharp_state = 1;
@@ -800,7 +820,7 @@ return;
 
 case 1:
 {
-result[__gsharp_ctx.tid] = __gsharp_ctx.pair.A * 10 + __gsharp_ctx.pair.B;
+__gsharp_ctx.result[__gsharp_ctx.tid] = __gsharp_ctx.pair.A * 10 + __gsharp_ctx.pair.B;
 __gsharp_ctx.__gsharp_state = -1;
 return;
 }
@@ -940,14 +960,20 @@ uint64_t __gsharp_warp_exchange[2] = {};
 uint32_t __gsharp_warp_shuffle_count = 0;
 bool __gsharp_yielded_for_grid_sync = false;
 bool __gsharp_yielded_for_block_barrier = false;
+GSharpArray<int> __gsharp_id_0_values;
+GSharpArray<int> __gsharp_id_1_result;
 int __gsharp_id_2_tid;
 Kassyi_GSharp_Core_SharedMemory<int> __gsharp_id_3_shared;
 };
-extern ""C"" __declspec(dllexport) void __gsharp_k_Kassyi__GSharp__Tests__Shared__Core__ManagedQualificationKernels__RefStructInitializerKernel(GSharpArray<int> __gsharp_id_0_values, GSharpArray<int> __gsharp_id_1_result, __gsharp_context_Kassyi__GSharp__Tests__Shared__Core__ManagedQualificationKernels__RefStructInitializerKernel* __gsharp_ctx){
+extern ""C"" __declspec(dllexport) void __gsharp_k_Kassyi__GSharp__Tests__Shared__Core__ManagedQualificationKernels__RefStructInitializerKernel(GSharpArray<int> __gsharp_in___gsharp_id_0_values, GSharpArray<int> __gsharp_in___gsharp_id_1_result, __gsharp_context_Kassyi__GSharp__Tests__Shared__Core__ManagedQualificationKernels__RefStructInitializerKernel* __gsharp_ctx){
 #define __gsharp_state __gsharp_ctx->__gsharp_state
 #define __gsharp_yielded_for_grid_sync __gsharp_ctx->__gsharp_yielded_for_grid_sync
 #define __gsharp_yielded_for_block_barrier __gsharp_ctx->__gsharp_yielded_for_block_barrier
 auto* __gsharp_root = __gsharp_ctx;
+if(__gsharp_state==0){
+__gsharp_ctx->__gsharp_id_0_values=__gsharp_in___gsharp_id_0_values;
+__gsharp_ctx->__gsharp_id_1_result=__gsharp_in___gsharp_id_1_result;
+}
 switch(__gsharp_state)
 {
 case 0:
@@ -955,7 +981,7 @@ __gsharp_switch_1_state_0:
 {
 __gsharp_ctx->__gsharp_id_2_tid=(int)threadIdx.x;
 __gsharp_ctx->__gsharp_id_3_shared={ (int*)__gsharp_allocate_smem_static(0x58bc117134a7632dull, (9) * sizeof(int), alignof(int)) };
-__gsharp_ctx->__gsharp_id_3_shared[__gsharp_ctx->__gsharp_id_2_tid]=__gsharp_id_0_values[__gsharp_ctx->__gsharp_id_2_tid];
+__gsharp_ctx->__gsharp_id_3_shared[__gsharp_ctx->__gsharp_id_2_tid]=__gsharp_ctx->__gsharp_id_0_values[__gsharp_ctx->__gsharp_id_2_tid];
 __gsharp_yielded_for_block_barrier=true;
 __gsharp_state=1;
 return;
@@ -963,7 +989,7 @@ return;
 case 1:
 __gsharp_switch_1_state_1:
 {
-__gsharp_id_1_result[__gsharp_ctx->__gsharp_id_2_tid]=__gsharp_add_i32(__gsharp_ctx->__gsharp_id_3_shared[(__gsharp_add_i32(__gsharp_ctx->__gsharp_id_2_tid,1))%4],5);
+__gsharp_ctx->__gsharp_id_1_result[__gsharp_ctx->__gsharp_id_2_tid]=__gsharp_add_i32(__gsharp_ctx->__gsharp_id_3_shared[(__gsharp_add_i32(__gsharp_ctx->__gsharp_id_2_tid,1))%4],5);
 __gsharp_state=-1;
 return;
 }
@@ -1048,18 +1074,24 @@ public static readonly string RefStructInitializerKernel_FullSource=global::Kass
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Core__ManagedQualificationKernels__RefStructInitializerKernel {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
+public int[] values;
+public int[] result;
 public int tid;
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Core__ManagedQualificationKernels__RefStructInitializerKernel(int[] values, int[] result, __gsharp_context_Kassyi__GSharp__Tests__Shared__Core__ManagedQualificationKernels__RefStructInitializerKernel __gsharp_ctx) {
+public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Core__ManagedQualificationKernels__RefStructInitializerKernel(int[] __gsharp_in_values, int[] __gsharp_in_result, __gsharp_context_Kassyi__GSharp__Tests__Shared__Core__ManagedQualificationKernels__RefStructInitializerKernel __gsharp_ctx) {
 global::Kassyi.GSharp.Core.SharedMemory<int> shared = new global::Kassyi.GSharp.Core.SharedMemory<int>(global::Kassyi.GSharp.Tests.Shared.Core.Qualification.QualifyConstants.Count + global::Kassyi.GSharp.Tests.Shared.Core.Qualification.QualifyConstants.Offset, 0x58bc117134a7632dUL);
+if (__gsharp_ctx.__gsharp_state == 0) {
+__gsharp_ctx.values = __gsharp_in_values;
+__gsharp_ctx.result = __gsharp_in_result;
+}
 {
 switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
 __gsharp_ctx.tid = global::Kassyi.GSharp.Core.ThreadIndex.X;
-shared[__gsharp_ctx.tid] = values[__gsharp_ctx.tid];
+shared[__gsharp_ctx.tid] = __gsharp_ctx.values[__gsharp_ctx.tid];
 global::Kassyi.GSharp.Core.ManagedGpuContext.BlockBarrierRequested = true;
 __gsharp_ctx.__gsharp_state = 1;
 return;
@@ -1067,7 +1099,7 @@ return;
 
 case 1:
 {
-result[__gsharp_ctx.tid] = shared[(__gsharp_ctx.tid + 1) % global::Kassyi.GSharp.Tests.Shared.Core.Qualification.QualifyConstants.Count] + global::Kassyi.GSharp.Tests.Shared.Core.Qualification.QualifyConstants.Offset;
+__gsharp_ctx.result[__gsharp_ctx.tid] = shared[(__gsharp_ctx.tid + 1) % global::Kassyi.GSharp.Tests.Shared.Core.Qualification.QualifyConstants.Count] + global::Kassyi.GSharp.Tests.Shared.Core.Qualification.QualifyConstants.Offset;
 __gsharp_ctx.__gsharp_state = -1;
 return;
 }
@@ -1816,16 +1848,22 @@ uint64_t __gsharp_warp_exchange[2] = {};
 uint32_t __gsharp_warp_shuffle_count = 0;
 bool __gsharp_yielded_for_grid_sync = false;
 bool __gsharp_yielded_for_block_barrier = false;
+GSharpArray<int> __gsharp_id_0_buffer;
+GSharpArray<int> __gsharp_id_1_result;
 int __gsharp_id_2_tid;
 int __gsharp_arg_temp_0;
 int __gsharp_call_temp_1;
 __gsharp_frame_Kassyi__GSharp__Tests__Shared__Core__Qualification__QualifyMath__ExchangeWithNext __gsharp_call_frame_0;
 };
-extern ""C"" __declspec(dllexport) void __gsharp_k_Kassyi__GSharp__Tests__Shared__Core__ManagedQualificationKernels__SuspendingCalleeKernel(GSharpArray<int> __gsharp_id_0_buffer, GSharpArray<int> __gsharp_id_1_result, __gsharp_context_Kassyi__GSharp__Tests__Shared__Core__ManagedQualificationKernels__SuspendingCalleeKernel* __gsharp_ctx){
+extern ""C"" __declspec(dllexport) void __gsharp_k_Kassyi__GSharp__Tests__Shared__Core__ManagedQualificationKernels__SuspendingCalleeKernel(GSharpArray<int> __gsharp_in___gsharp_id_0_buffer, GSharpArray<int> __gsharp_in___gsharp_id_1_result, __gsharp_context_Kassyi__GSharp__Tests__Shared__Core__ManagedQualificationKernels__SuspendingCalleeKernel* __gsharp_ctx){
 #define __gsharp_state __gsharp_ctx->__gsharp_state
 #define __gsharp_yielded_for_grid_sync __gsharp_ctx->__gsharp_yielded_for_grid_sync
 #define __gsharp_yielded_for_block_barrier __gsharp_ctx->__gsharp_yielded_for_block_barrier
 auto* __gsharp_root = __gsharp_ctx;
+if(__gsharp_state==0){
+__gsharp_ctx->__gsharp_id_0_buffer=__gsharp_in___gsharp_id_0_buffer;
+__gsharp_ctx->__gsharp_id_1_result=__gsharp_in___gsharp_id_1_result;
+}
 switch(__gsharp_state)
 {
 case 0:
@@ -1838,12 +1876,12 @@ goto __gsharp_switch_1_state_1;
 case 1:
 __gsharp_switch_1_state_1:
 {
-if(!__gsharp_fn_Kassyi__GSharp__Tests__Shared__Core__Qualification__QualifyMath__ExchangeWithNext(__gsharp_id_0_buffer,__gsharp_ctx->__gsharp_id_2_tid,__gsharp_ctx->__gsharp_arg_temp_0,&__gsharp_ctx->__gsharp_call_frame_0,__gsharp_root,&(__gsharp_ctx->__gsharp_call_temp_1)))
+if(!__gsharp_fn_Kassyi__GSharp__Tests__Shared__Core__Qualification__QualifyMath__ExchangeWithNext(__gsharp_ctx->__gsharp_id_0_buffer,__gsharp_ctx->__gsharp_id_2_tid,__gsharp_ctx->__gsharp_arg_temp_0,&__gsharp_ctx->__gsharp_call_frame_0,__gsharp_root,&(__gsharp_ctx->__gsharp_call_temp_1)))
 {
 __gsharp_state=1;
 return;
 }
-__gsharp_id_1_result[__gsharp_ctx->__gsharp_id_2_tid]=__gsharp_ctx->__gsharp_call_temp_1;
+__gsharp_ctx->__gsharp_id_1_result[__gsharp_ctx->__gsharp_id_2_tid]=__gsharp_ctx->__gsharp_call_temp_1;
 __gsharp_state=-1;
 return;
 }
@@ -1928,13 +1966,19 @@ public static readonly string SuspendingCalleeKernel_FullSource=global::Kassyi.G
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Core__ManagedQualificationKernels__SuspendingCalleeKernel {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
+public int[] buffer;
+public int[] result;
 public int tid;
 public int __gsharp_arg_temp_0;
 public int __gsharp_call_temp_1;
 internal global::Kassyi.GSharp.Tests.Shared.Core.Qualification.QualifyMath.__gsharp_frame_Kassyi__GSharp__Tests__Shared__Core__Qualification__QualifyMath__ExchangeWithNext __gsharp_call_frame_0 = new();
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Core__ManagedQualificationKernels__SuspendingCalleeKernel(int[] buffer, int[] result, __gsharp_context_Kassyi__GSharp__Tests__Shared__Core__ManagedQualificationKernels__SuspendingCalleeKernel __gsharp_ctx) {
+public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Core__ManagedQualificationKernels__SuspendingCalleeKernel(int[] __gsharp_in_buffer, int[] __gsharp_in_result, __gsharp_context_Kassyi__GSharp__Tests__Shared__Core__ManagedQualificationKernels__SuspendingCalleeKernel __gsharp_ctx) {
+if (__gsharp_ctx.__gsharp_state == 0) {
+__gsharp_ctx.buffer = __gsharp_in_buffer;
+__gsharp_ctx.result = __gsharp_in_result;
+}
 {
 switch (__gsharp_ctx.__gsharp_state)
 {
@@ -1947,13 +1991,13 @@ goto case 1;
 
 case 1:
 {
-if (!global::Kassyi.GSharp.Tests.Shared.Core.Qualification.QualifyMath.__gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Core__Qualification__QualifyMath__ExchangeWithNext(buffer, __gsharp_ctx.tid, __gsharp_ctx.__gsharp_arg_temp_0, __gsharp_ctx.__gsharp_call_frame_0, ref __gsharp_ctx.__gsharp_call_temp_1))
+if (!global::Kassyi.GSharp.Tests.Shared.Core.Qualification.QualifyMath.__gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Core__Qualification__QualifyMath__ExchangeWithNext(__gsharp_ctx.buffer, __gsharp_ctx.tid, __gsharp_ctx.__gsharp_arg_temp_0, __gsharp_ctx.__gsharp_call_frame_0, ref __gsharp_ctx.__gsharp_call_temp_1))
 {
 __gsharp_ctx.__gsharp_state = 1;
 return;
 }
 
-result[__gsharp_ctx.tid] = __gsharp_ctx.__gsharp_call_temp_1;
+__gsharp_ctx.result[__gsharp_ctx.tid] = __gsharp_ctx.__gsharp_call_temp_1;
 __gsharp_ctx.__gsharp_state = -1;
 return;
 }
@@ -2106,11 +2150,19 @@ public partial class QualifyMath
 public class __gsharp_frame_Kassyi__GSharp__Tests__Shared__Core__Qualification__QualifyMath__ExchangeWithNext {
 internal int __gsharp_state;
 internal uint __gsharp_warp_exchange;
+internal int[] buffer;
+internal int tid;
+internal int value;
 internal global::Kassyi.GSharp.Tests.Shared.Core.Qualification.QualifyPair pair;
 internal int next;
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-public static bool __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Core__Qualification__QualifyMath__ExchangeWithNext(int[] buffer, int tid, int value, __gsharp_frame_Kassyi__GSharp__Tests__Shared__Core__Qualification__QualifyMath__ExchangeWithNext __gsharp_ctx, ref int __gsharp_result) {
+public static bool __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Core__Qualification__QualifyMath__ExchangeWithNext(int[] __gsharp_in_buffer, int __gsharp_in_tid, int __gsharp_in_value, __gsharp_frame_Kassyi__GSharp__Tests__Shared__Core__Qualification__QualifyMath__ExchangeWithNext __gsharp_ctx, ref int __gsharp_result) {
+if (__gsharp_ctx.__gsharp_state == 0) {
+__gsharp_ctx.buffer = __gsharp_in_buffer;
+__gsharp_ctx.tid = __gsharp_in_tid;
+__gsharp_ctx.value = __gsharp_in_value;
+}
 {
 switch (__gsharp_ctx.__gsharp_state)
 {
@@ -2118,10 +2170,10 @@ case 0:
 {
 __gsharp_ctx.pair = new global::Kassyi.GSharp.Tests.Shared.Core.Qualification.QualifyPair
 {
-A = value,
-B = global::Kassyi.GSharp.Tests.Shared.Core.Qualification.QualifyMath.Twice(value)
+A = __gsharp_ctx.value,
+B = global::Kassyi.GSharp.Tests.Shared.Core.Qualification.QualifyMath.Twice(__gsharp_ctx.value)
 };
-buffer[tid] = __gsharp_ctx.pair.A + __gsharp_ctx.pair.B;
+__gsharp_ctx.buffer[__gsharp_ctx.tid] = __gsharp_ctx.pair.A + __gsharp_ctx.pair.B;
 global::Kassyi.GSharp.Core.ManagedGpuContext.BlockBarrierRequested = true;
 __gsharp_ctx.__gsharp_state = 1;
 return false;
@@ -2129,7 +2181,7 @@ return false;
 
 case 1:
 {
-__gsharp_ctx.next = buffer[(tid + 1) % global::Kassyi.GSharp.Tests.Shared.Core.Qualification.QualifyConstants.Count];
+__gsharp_ctx.next = __gsharp_ctx.buffer[(__gsharp_ctx.tid + 1) % global::Kassyi.GSharp.Tests.Shared.Core.Qualification.QualifyConstants.Count];
 global::Kassyi.GSharp.Core.ManagedGpuContext.BlockBarrierRequested = true;
 __gsharp_ctx.__gsharp_state = 2;
 return false;

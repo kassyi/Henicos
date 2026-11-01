@@ -3203,7 +3203,11 @@ static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__DeviceLibrary__Alpha,_
 extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__CrossAssemblyKernels__AlphaKernel(GSharpArray<int> __gsharp_id_0_values, GSharpArray<int> __gsharp_id_1_result){
 int __gsharp_id_2_tid = (int)threadIdx.x;
 auto __gsharp_id_3_a = __gsharp_ctor_Kassyi__GSharp__Tests__DeviceLibrary__Alpha(__gsharp_id_0_values[__gsharp_id_2_tid]);
-__gsharp_id_1_result[__gsharp_id_2_tid]=__gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_3_a.__gsharp_mb_Probe(),100),__gsharp_id_3_a.__gsharp_mb_Inner.__gsharp_mb_V);
+__gsharp_id_1_result[__gsharp_id_2_tid]=([&]() {
+auto __gsharp_seq_0 = __gsharp_mul_i32(__gsharp_id_3_a.__gsharp_mb_Probe(),100);
+auto __gsharp_seq_1 = __gsharp_id_3_a.__gsharp_mb_Inner.__gsharp_mb_V;
+return __gsharp_add_i32(__gsharp_seq_0,__gsharp_seq_1);
+}());
 }
 ";
 public static readonly string AlphaKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +AlphaKernel_Source;

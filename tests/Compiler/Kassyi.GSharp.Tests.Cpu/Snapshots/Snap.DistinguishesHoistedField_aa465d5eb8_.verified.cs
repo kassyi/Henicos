@@ -23,7 +23,7 @@
                 goto done;
             }
 
-            output[__gsharp_ctx->tid] = __gsharp_ctx->s;
+            __gsharp_ctx->output[__gsharp_ctx->tid] = __gsharp_ctx->s;
             done:
                 ;
             __gsharp_ctx->s = __gsharp_ctx->tid * 2;
@@ -39,7 +39,7 @@
                 goto done;
             }
 
-            output[__gsharp_ctx->tid] = __gsharp_ctx->s;
+            __gsharp_ctx->output[__gsharp_ctx->tid] = __gsharp_ctx->s;
             done:
                 ;
             __gsharp_state = -1;

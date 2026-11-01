@@ -282,7 +282,12 @@ public static partial class AotContexts
 }
 public const string IntTriplesKernel_Source = @"extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__IntegerSemanticsKernels__IntTriplesKernel(GSharpArray<int> __gsharp_id_0_ints, GSharpArray<int> __gsharp_id_1_shifts, GSharpArray<int> __gsharp_id_2_o){
 int __gsharp_id_3_t = (int)threadIdx.x;
-__gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__IntegerSemanticsKernels__IntOperators(__gsharp_id_0_ints[__gsharp_id_3_t/__gsharp_id_0_ints.length],__gsharp_id_0_ints[__gsharp_id_3_t%__gsharp_id_0_ints.length],__gsharp_id_1_shifts[__gsharp_id_3_t%__gsharp_id_1_shifts.length],__gsharp_id_2_o,__gsharp_id_3_t);
+([&]() {
+int __gsharp_seq_0 = __gsharp_id_0_ints[__gsharp_id_3_t/__gsharp_id_0_ints.length];
+int __gsharp_seq_1 = __gsharp_id_0_ints[__gsharp_id_3_t%__gsharp_id_0_ints.length];
+int __gsharp_seq_2 = __gsharp_id_1_shifts[__gsharp_id_3_t%__gsharp_id_1_shifts.length];
+return __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__IntegerSemanticsKernels__IntOperators(__gsharp_seq_0,__gsharp_seq_1,__gsharp_seq_2,__gsharp_id_2_o,__gsharp_id_3_t);
+}());
 }
 ";
 public static readonly string IntTriplesKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +IntTriplesKernel_Source;
@@ -492,7 +497,12 @@ finally
 #pragma warning restore CS8500
 public const string LongTriplesKernel_Source = @"extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__IntegerSemanticsKernels__LongTriplesKernel(GSharpArray<long long> __gsharp_id_0_longs, GSharpArray<int> __gsharp_id_1_shifts, GSharpArray<long long> __gsharp_id_2_o){
 int __gsharp_id_3_t = (int)threadIdx.x;
-__gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__IntegerSemanticsKernels__LongOperators(__gsharp_id_0_longs[__gsharp_id_3_t/__gsharp_id_0_longs.length],__gsharp_id_0_longs[__gsharp_id_3_t%__gsharp_id_0_longs.length],__gsharp_id_1_shifts[__gsharp_id_3_t%__gsharp_id_1_shifts.length],__gsharp_id_2_o,__gsharp_id_3_t);
+([&]() {
+long long __gsharp_seq_0 = __gsharp_id_0_longs[__gsharp_id_3_t/__gsharp_id_0_longs.length];
+long long __gsharp_seq_1 = __gsharp_id_0_longs[__gsharp_id_3_t%__gsharp_id_0_longs.length];
+int __gsharp_seq_2 = __gsharp_id_1_shifts[__gsharp_id_3_t%__gsharp_id_1_shifts.length];
+return __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__IntegerSemanticsKernels__LongOperators(__gsharp_seq_0,__gsharp_seq_1,__gsharp_seq_2,__gsharp_id_2_o,__gsharp_id_3_t);
+}());
 }
 ";
 public static readonly string LongTriplesKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +LongTriplesKernel_Source;

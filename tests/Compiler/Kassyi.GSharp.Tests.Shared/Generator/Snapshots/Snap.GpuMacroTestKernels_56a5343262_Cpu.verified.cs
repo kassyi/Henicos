@@ -40,25 +40,35 @@ uint64_t __gsharp_warp_exchange[2] = {};
 uint32_t __gsharp_warp_shuffle_count = 0;
 bool __gsharp_yielded_for_grid_sync = false;
 bool __gsharp_yielded_for_block_barrier = false;
+GSharpArray<unsigned int> __gsharp_id_0_outputBuffer;
+int __gsharp_id_1_length;
+unsigned int __gsharp_id_2_fillValue;
+unsigned int __gsharp_id_3_singleValue;
 };
-extern ""C"" __declspec(dllexport) void __gsharp_k_Kassyi__GSharp__Stdlib__GpuMath__Tests__Kernels__GpuMacroTestKernels__Kernel_uMacroTest_uFillAndSingle(GSharpArray<unsigned int> __gsharp_id_0_outputBuffer, int __gsharp_id_1_length, unsigned int __gsharp_id_2_fillValue, unsigned int __gsharp_id_3_singleValue, __gsharp_context_Kassyi__GSharp__Stdlib__GpuMath__Tests__Kernels__GpuMacroTestKernels__Kernel_uMacroTest_uFillAndSingle* __gsharp_ctx){
+extern ""C"" __declspec(dllexport) void __gsharp_k_Kassyi__GSharp__Stdlib__GpuMath__Tests__Kernels__GpuMacroTestKernels__Kernel_uMacroTest_uFillAndSingle(GSharpArray<unsigned int> __gsharp_in___gsharp_id_0_outputBuffer, int __gsharp_in___gsharp_id_1_length, unsigned int __gsharp_in___gsharp_id_2_fillValue, unsigned int __gsharp_in___gsharp_id_3_singleValue, __gsharp_context_Kassyi__GSharp__Stdlib__GpuMath__Tests__Kernels__GpuMacroTestKernels__Kernel_uMacroTest_uFillAndSingle* __gsharp_ctx){
 #define __gsharp_state __gsharp_ctx->__gsharp_state
 #define __gsharp_yielded_for_grid_sync __gsharp_ctx->__gsharp_yielded_for_grid_sync
 #define __gsharp_yielded_for_block_barrier __gsharp_ctx->__gsharp_yielded_for_block_barrier
 auto* __gsharp_root = __gsharp_ctx;
+if(__gsharp_state==0){
+__gsharp_ctx->__gsharp_id_0_outputBuffer=__gsharp_in___gsharp_id_0_outputBuffer;
+__gsharp_ctx->__gsharp_id_1_length=__gsharp_in___gsharp_id_1_length;
+__gsharp_ctx->__gsharp_id_2_fillValue=__gsharp_in___gsharp_id_2_fillValue;
+__gsharp_ctx->__gsharp_id_3_singleValue=__gsharp_in___gsharp_id_3_singleValue;
+}
 switch(__gsharp_state)
 {
 case 0:
 __gsharp_switch_1_state_0:
 {
 {
-unsigned int __gsharp_gsl_n_0 = __gsharp_grid_stride_count(__gsharp_id_1_length);
+unsigned int __gsharp_gsl_n_0 = __gsharp_grid_stride_count(__gsharp_ctx->__gsharp_id_1_length);
 unsigned int __gsharp_gsl_s_0 = __gsharp_grid_stride_step();
 for(unsigned int __gsharp_gsl_0 = __gsharp_grid_stride_start(); __gsharp_gsl_0 < __gsharp_gsl_n_0; __gsharp_gsl_0 += __gsharp_gsl_s_0)
 {
 int __gsharp_id_4_i = (int)__gsharp_gsl_0;
 {
-__gsharp_id_0_outputBuffer[__gsharp_id_4_i]=__gsharp_id_2_fillValue;
+__gsharp_ctx->__gsharp_id_0_outputBuffer[__gsharp_id_4_i]=__gsharp_ctx->__gsharp_id_2_fillValue;
 }
 }
 }
@@ -71,9 +81,9 @@ __gsharp_switch_1_state_1:
 {
 if((threadIdx.x|threadIdx.y|threadIdx.z|blockIdx.x|blockIdx.y|blockIdx.z)==0)
 {
-if(__gsharp_id_1_length>0)
+if(__gsharp_ctx->__gsharp_id_1_length>0)
 {
-__gsharp_id_0_outputBuffer[0]=__gsharp_id_3_singleValue;
+__gsharp_ctx->__gsharp_id_0_outputBuffer[0]=__gsharp_ctx->__gsharp_id_3_singleValue;
 }
 }
 __gsharp_state=-1;
@@ -197,9 +207,19 @@ public static readonly string Kernel_MacroTest_FillAndSingle_FullSource=global::
 public class __gsharp_context_Kassyi__GSharp__Stdlib__GpuMath__Tests__Kernels__GpuMacroTestKernels__Kernel_uMacroTest_uFillAndSingle {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
+public uint[] outputBuffer;
+public int length;
+public uint fillValue;
+public uint singleValue;
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Stdlib__GpuMath__Tests__Kernels__GpuMacroTestKernels__Kernel_uMacroTest_uFillAndSingle(uint[] outputBuffer, int length, uint fillValue, uint singleValue, __gsharp_context_Kassyi__GSharp__Stdlib__GpuMath__Tests__Kernels__GpuMacroTestKernels__Kernel_uMacroTest_uFillAndSingle __gsharp_ctx) {
+public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Stdlib__GpuMath__Tests__Kernels__GpuMacroTestKernels__Kernel_uMacroTest_uFillAndSingle(uint[] __gsharp_in_outputBuffer, int __gsharp_in_length, uint __gsharp_in_fillValue, uint __gsharp_in_singleValue, __gsharp_context_Kassyi__GSharp__Stdlib__GpuMath__Tests__Kernels__GpuMacroTestKernels__Kernel_uMacroTest_uFillAndSingle __gsharp_ctx) {
+if (__gsharp_ctx.__gsharp_state == 0) {
+__gsharp_ctx.outputBuffer = __gsharp_in_outputBuffer;
+__gsharp_ctx.length = __gsharp_in_length;
+__gsharp_ctx.fillValue = __gsharp_in_fillValue;
+__gsharp_ctx.singleValue = __gsharp_in_singleValue;
+}
 {
 switch (__gsharp_ctx.__gsharp_state)
 {
@@ -207,12 +227,12 @@ case 0:
 {
 // GridStrideLoop to fill the array with fillValue
 {
-uint __gsharp_gsl_n_0 = global::Kassyi.GSharp.Core.ManagedGpuContext.GridStrideCount(length);
+uint __gsharp_gsl_n_0 = global::Kassyi.GSharp.Core.ManagedGpuContext.GridStrideCount(__gsharp_ctx.length);
 uint __gsharp_gsl_s_0 = global::Kassyi.GSharp.Core.ManagedGpuContext.GridStrideStep();
 for (uint __gsharp_gsl_0 = global::Kassyi.GSharp.Core.ManagedGpuContext.GridStrideStart(); __gsharp_gsl_0 < __gsharp_gsl_n_0; __gsharp_gsl_0 += __gsharp_gsl_s_0)
 {
 int __gsharp_unroll_0 = (int)__gsharp_gsl_0;
-outputBuffer[__gsharp_unroll_0] = fillValue;
+__gsharp_ctx.outputBuffer[__gsharp_unroll_0] = __gsharp_ctx.fillValue;
 }
 }
 
@@ -226,9 +246,9 @@ case 1:
 // SingleThread to overwrite the first element
 if ((global::Kassyi.GSharp.Core.ManagedGpuContext.ThreadIdxX | global::Kassyi.GSharp.Core.ManagedGpuContext.ThreadIdxY | global::Kassyi.GSharp.Core.ManagedGpuContext.ThreadIdxZ | global::Kassyi.GSharp.Core.ManagedGpuContext.BlockIdxX | global::Kassyi.GSharp.Core.ManagedGpuContext.BlockIdxY | global::Kassyi.GSharp.Core.ManagedGpuContext.BlockIdxZ) == 0)
 {
-if (length > 0)
+if (__gsharp_ctx.length > 0)
 {
-outputBuffer[0] = singleValue;
+__gsharp_ctx.outputBuffer[0] = __gsharp_ctx.singleValue;
 }
 }
 
