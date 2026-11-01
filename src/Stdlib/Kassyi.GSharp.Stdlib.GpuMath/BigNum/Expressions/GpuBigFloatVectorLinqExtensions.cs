@@ -441,6 +441,7 @@ public static class GpuBigFloatVectorLinqExtensions
         {
             ArgumentNullException.ThrowIfNull(source);
             ArgumentNullException.ThrowIfNull(workspace);
+            DeviceCounted.ThrowIfCpuFallback(workspace);
 
             // EvaluateTo returns no count, so a vector whose length is known only on the device (after Where) has no
             // place to say how much of the destination it wrote (design D3 4.1.3)

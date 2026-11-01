@@ -81,6 +81,7 @@ internal abstract class VectorReductionExpressionBase : IGpuBigIntExpression, ID
     // Max / Min of a static empty vector, which has no passes and no value to return
     private void ThrowIfCannotEvaluate(GpuWorkspace workspace, GpuBigUInt? targetResult)
     {
+        DeviceCounted.ThrowIfCpuFallback(workspace);
         if (targetResult is { } target && target.NumWords != NumWords)
         {
             throw new ArgumentException($"Destination buffer must have {NumWords} words.", nameof(targetResult));
