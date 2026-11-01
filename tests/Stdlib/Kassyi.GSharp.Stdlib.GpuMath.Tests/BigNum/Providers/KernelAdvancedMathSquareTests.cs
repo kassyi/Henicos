@@ -97,6 +97,31 @@ public class KernelAdvancedMathSquareTests
         }
     }
 
+    [SkippableTheory]
+    [Scenario(TestScenario.HappyPath)]
+    [MemberData(nameof(OperandWords))]
+    public void Square_SharedMultiplyScratch_MatchesBigIntegerAcrossInterleavedMultiplyAndSquare(int words)
+    {
+        CudaCapability.EnsureGpuAvailable();
+        using var scope = new GpuKernelLoader.CudaContextScope();
+        using var workspace = new GpuWorkspace(2 * words);
+        var handler = GSharpKernelProvider.Instance.KernelAdvancedMath;
+        using var scratch = KernelAdvancedMathHandler.NttMultiplyScratch.Allocate(workspace, handler, 2 * words);
+        using var result = new GpuBigUInt(workspace, 2 * words);
+        var random = new Random(651 * 10_000 + words);
+
+        var leftWords = RandomWords(random, words);
+        var rightWords = AllOnes(words);
+        using var left = new GpuBigUInt(workspace, leftWords);
+        using var right = new GpuBigUInt(workspace, rightWords);
+
+        handler.Multiply(workspace, left, right, result, scratch);
+        Assert.Equal(FromWords(leftWords) * FromWords(rightWords), FromWords(result.ToHostWords(workspace)));
+
+        handler.Square(workspace, left, result, scratch);
+        Assert.Equal(FromWords(leftWords) * FromWords(leftWords), FromWords(result.ToHostWords(workspace)));
+    }
+
     [SkippableFact]
     [Scenario(TestScenario.HappyPath)]
     public void Mul_DifferentOperands_StillMultipliesThroughRentedScratch()

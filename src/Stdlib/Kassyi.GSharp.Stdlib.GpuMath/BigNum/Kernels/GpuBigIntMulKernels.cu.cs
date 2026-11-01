@@ -67,6 +67,214 @@ public static partial class GpuBigIntMulKernels
     }
 
     [GpuKernel]
+    public static void MultiplyNttTablelessSharedRowKernel(GpuBigIntNttKernels.NttTablelessRowContext args)
+    {
+        GpuBigIntNttKernels.ExecuteNttTablelessSharedRow(args);
+    }
+
+    [GpuKernel]
+    public static void MultiplyNttFusedMiddleSquareRowKernel(GpuBigIntNttKernels.NttFusedMiddleSquareContext args)
+    {
+        GpuBigIntNttKernels.ExecuteNttFusedMiddleSquareRow(args);
+    }
+
+    public struct Ntt35UnpackOperandContext
+    {
+        [GpuReadOnly]
+        public uint[] Source;
+
+        public uint[] NttBuf1;
+        public uint[] NttBuf2;
+        public uint[] NttBuf3;
+        public int NumWords;
+    }
+
+    public struct Ntt35UnpackContext
+    {
+        public Ntt35UnpackOperandContext OperandA;
+        public Ntt35UnpackOperandContext OperandB;
+        public NttGridContext Grid;
+    }
+
+    public struct Ntt35UnpackSingleContext
+    {
+        public Ntt35UnpackOperandContext Operand;
+        public NttGridContext Grid;
+    }
+
+    public struct Ntt35PointwiseMultiplyContext
+    {
+        public uint[] Buf1A;
+        public uint[] Buf2A;
+        public uint[] Buf3A;
+
+        [GpuReadOnly]
+        public uint[] Buf1B;
+
+        [GpuReadOnly]
+        public uint[] Buf2B;
+
+        [GpuReadOnly]
+        public uint[] Buf3B;
+
+        public int TransformLength;
+    }
+
+    [GpuDeviceFunction]
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static ulong ExtractLimb35([GpuReadOnly] uint[] source, int numWords, int j)
+    {
+        ulong bitPos = (ulong)(uint)j * 35UL;
+        int wordIdx = (int)(bitPos >> 5);
+        if (wordIdx >= numWords)
+        {
+            return 0UL;
+        }
+
+        int bitOffset = (int)(bitPos & 31UL);
+        ulong w0 = source[wordIdx];
+        ulong w1 = wordIdx + 1 < numWords ? source[wordIdx + 1] : 0UL;
+        if (bitOffset == 0)
+        {
+            return w0 | ((w1 & 0x7UL) << 32);
+        }
+
+        ulong w2 = (bitOffset > 29 && wordIdx + 2 < numWords) ? source[wordIdx + 2] : 0UL;
+        return ((w0 >> bitOffset) | (w1 << (32 - bitOffset)) | (w2 << (64 - bitOffset))) & 0x7FFFFFFFFUL;
+    }
+
+    [GpuDeviceFunction]
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static void ExecuteUnpack35Small(Ntt35UnpackOperandContext operand, int m)
+    {
+        int numWords = operand.NumWords;
+        int stride = GridDimension.X * BlockDimension.X;
+        for (int j = BlockIndex.X * BlockDimension.X + ThreadIndex.X; j < m; j += stride)
+        {
+            ulong val = ExtractLimb35(operand.Source, numWords, j);
+            operand.NttBuf1[j] = val == 0UL
+                ? 0u
+                : GpuBigIntNttKernels.ModReduce64Barrett(val, GpuBigIntNttKernels.Prime1,
+                    GpuBigIntNttKernels.BarrettMagic1);
+            operand.NttBuf2[j] = val == 0UL
+                ? 0u
+                : GpuBigIntNttKernels.ModReduce64Barrett(val, GpuBigIntNttKernels.Prime2,
+                    GpuBigIntNttKernels.BarrettMagic2);
+            operand.NttBuf3[j] = val == 0UL
+                ? 0u
+                : GpuBigIntNttKernels.ModReduce64Barrett(val, GpuBigIntNttKernels.Prime3,
+                    GpuBigIntNttKernels.BarrettMagic3);
+        }
+    }
+
+    [GpuDeviceFunction]
+    public static void ExecuteUnpack35Tiled32x32(Ntt35UnpackOperandContext operand, NttGridContext grid)
+    {
+        int tid = ThreadIndex.X;
+        int tx = tid & 31;
+        int ty = tid >> 5;
+        int n1 = grid.N1;
+        int n2 = grid.N2;
+        int numWords = operand.NumWords;
+
+        int tilesX = n2 >> 5;
+        int tilesY = n1 >> 5;
+        int totalTiles = tilesX * tilesY;
+        int tilesXMask = tilesX - 1;
+        int log2TilesX = 31 - (int)Gpu.CountLeadingZeros((uint)tilesX);
+        int log2N2 = log2TilesX + 5;
+
+        // 32 x 33 padded shared tile for 35-bit limbs (split into 32-bit low + 3-bit high = 8.25 KB, zero bank conflicts).
+        var sTileLo = new SharedMemory<uint>(1056);
+        var sTileHi = new SharedMemory<uint>(1056);
+
+        for (int tileIdx = BlockIndex.X; tileIdx < totalTiles; tileIdx += GridDimension.X)
+        {
+            int bx = tileIdx & tilesXMask;
+            int by = tileIdx >> log2TilesX;
+            int r0 = bx << 5;
+            int c0 = by << 5;
+
+            // Phase 1: Coalesced read (tx contiguous -> jIn contiguous -> wordIdx spans <= 35 contiguous words).
+            int rIn = r0 + tx;
+            int cIn = c0 + ty;
+            int jIn = (cIn << log2N2) + rIn;
+            ulong valIn = ExtractLimb35(operand.Source, numWords, jIn);
+
+            int inSlot = ty * 33 + tx;
+            sTileLo[inSlot] = (uint)(valIn & 0xFFFFFFFFUL);
+            sTileHi[inSlot] = (uint)(valIn >> 32);
+
+            Gpu.SyncThreads();
+
+            // Phase 2: Transposed read + coalesced write (tx contiguous -> cOut contiguous -> dstIdx contiguous).
+            int rOut = r0 + ty;
+            int cOut = c0 + tx;
+            int dstIdx = rOut * n1 + cOut;
+            int outSlot = tx * 33 + ty;
+            ulong val = sTileLo[outSlot] | ((ulong)sTileHi[outSlot] << 32);
+
+            uint r1 = 0u;
+            uint r2 = 0u;
+            uint r3 = 0u;
+            if (val != 0UL)
+            {
+                r1 = GpuBigIntNttKernels.ModReduce64Barrett(val, GpuBigIntNttKernels.Prime1,
+                    GpuBigIntNttKernels.BarrettMagic1);
+                r2 = GpuBigIntNttKernels.ModReduce64Barrett(val, GpuBigIntNttKernels.Prime2,
+                    GpuBigIntNttKernels.BarrettMagic2);
+                r3 = GpuBigIntNttKernels.ModReduce64Barrett(val, GpuBigIntNttKernels.Prime3,
+                    GpuBigIntNttKernels.BarrettMagic3);
+            }
+
+            operand.NttBuf1[dstIdx] = r1;
+            operand.NttBuf2[dstIdx] = r2;
+            operand.NttBuf3[dstIdx] = r3;
+
+            Gpu.SyncThreads();
+        }
+    }
+
+    [GpuKernel]
+    public static void MultiplyNtt35UnpackSmallKernel(Ntt35UnpackContext ctx)
+    {
+        ExecuteUnpack35Small(ctx.OperandA, ctx.Grid.M);
+        ExecuteUnpack35Small(ctx.OperandB, ctx.Grid.M);
+    }
+
+    [GpuKernel]
+    public static void MultiplyNtt35UnpackSingleSmallKernel(Ntt35UnpackSingleContext ctx)
+    {
+        ExecuteUnpack35Small(ctx.Operand, ctx.Grid.M);
+    }
+
+    [GpuKernel]
+    public static void MultiplyNtt35UnpackTiledKernel(Ntt35UnpackContext ctx)
+    {
+        ExecuteUnpack35Tiled32x32(ctx.OperandA, ctx.Grid);
+        ExecuteUnpack35Tiled32x32(ctx.OperandB, ctx.Grid);
+    }
+
+    [GpuKernel]
+    public static void MultiplyNtt35UnpackSingleTiledKernel(Ntt35UnpackSingleContext ctx)
+    {
+        ExecuteUnpack35Tiled32x32(ctx.Operand, ctx.Grid);
+    }
+
+    [GpuKernel]
+    public static void MultiplyNtt35PointwiseMultiplyKernel(Ntt35PointwiseMultiplyContext ctx)
+    {
+        int m = ctx.TransformLength;
+        int stride = GridDimension.X * BlockDimension.X;
+        for (int index = BlockIndex.X * BlockDimension.X + ThreadIndex.X; index < m; index += stride)
+        {
+            ctx.Buf1A[index] = GpuBigIntNttKernels.ModMul1(ctx.Buf1A[index], ctx.Buf1B[index]);
+            ctx.Buf2A[index] = GpuBigIntNttKernels.ModMul2(ctx.Buf2A[index], ctx.Buf2B[index]);
+            ctx.Buf3A[index] = GpuBigIntNttKernels.ModMul3(ctx.Buf3A[index], ctx.Buf3B[index]);
+        }
+    }
+
+    [GpuKernel]
     public static void MultiplyNttTransposeKernel(uint[] input, uint[] output, int width, int height)
     {
         GpuBigIntFermatKernels.DeviceTranspose32X32(input, output, width, height, true);

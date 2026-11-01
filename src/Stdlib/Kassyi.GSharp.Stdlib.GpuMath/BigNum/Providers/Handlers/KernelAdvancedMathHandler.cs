@@ -25,8 +25,10 @@ public sealed class KernelAdvancedMathHandler : IGpuAdvancedMathProvider
     {
         public IntPtr Forward1;
         public IntPtr Forward2;
+        public IntPtr Forward3;
         public IntPtr Inverse1;
         public IntPtr Inverse2;
+        public IntPtr Inverse3;
     }
 
     /// <inheritdoc />
@@ -513,153 +515,379 @@ public sealed class KernelAdvancedMathHandler : IGpuAdvancedMathProvider
                 nameof(scratch));
         }
 
-        var twiddle = scratch.Twiddle;
+        var (p1, p2, p3) = PrimeModulusSpec.All;
         var shape = NttLaunchShape.For(scratch.TransformLength);
-        var (m, n1, n2) = (shape.TransformLength, shape.N1, shape.N2);
+        var m = shape.TransformLength;
 
-        // 1. Unpack both operands (fuses initial 2D transpose when m > 512)
-        GpuBigIntMulKernels.LaunchMultiplyNttUnpackKernelPtr(
-            new GpuBigIntMulKernels.AotContexts.NttUnpack
+        // 1. Fully coalesced unpack of both operands into 35-bit limbs reduced mod (P1, P2, P3)
+        var unpackCtx = new GpuBigIntMulKernels.AotContexts.Ntt35Unpack
+        {
+            OperandA = new GpuBigIntMulKernels.AotContexts.Ntt35UnpackOperand
             {
-                OperandA = new GpuBigIntMulKernels.AotContexts.NttUnpackOperand
-                {
-                    Source = leftOperand.DevicePointer,
-                    NttBuf1 = scratch.Buf1.DevicePointer,
-                    NttBuf2 = scratch.Buf2.DevicePointer,
-                    NumWords = leftOperand.NumWords
-                },
-                OperandB = new GpuBigIntMulKernels.AotContexts.NttUnpackOperand
-                {
-                    Source = rightOperand.DevicePointer,
-                    NttBuf1 = scratch.Buf1B.DevicePointer,
-                    NttBuf2 = scratch.Buf2B.DevicePointer,
-                    NumWords = rightOperand.NumWords
-                },
-                Grid = shape.Grid
+                Source = leftOperand.DevicePointer,
+                NttBuf1 = scratch.Buf1.DevicePointer,
+                NttBuf2 = scratch.Buf2.DevicePointer,
+                NttBuf3 = scratch.Buf3.DevicePointer,
+                NumWords = leftOperand.NumWords
+            },
+            OperandB = new GpuBigIntMulKernels.AotContexts.Ntt35UnpackOperand
+            {
+                Source = rightOperand.DevicePointer,
+                NttBuf1 = scratch.Buf1B.DevicePointer,
+                NttBuf2 = scratch.Buf2B.DevicePointer,
+                NttBuf3 = scratch.Buf3B.DevicePointer,
+                NumWords = rightOperand.NumWords
+            },
+            Grid = shape.Grid
+        };
+        if (m <= 512)
+        {
+            GpuBigIntMulKernels.LaunchMultiplyNtt35UnpackSmallKernelPtr(
+                unpackCtx, gridDimX: shape.GridDim, blockDimX: shape.BlockDim, hStream: workspace.Stream);
+        }
+        else
+        {
+            var totalTiles = (uint)((shape.N1 >> 5) * (shape.N2 >> 5));
+            GpuBigIntMulKernels.LaunchMultiplyNtt35UnpackTiledKernelPtr(
+                unpackCtx, gridDimX: Math.Min(384u, totalTiles), blockDimX: 1024, hStream: workspace.Stream);
+        }
+
+        // 2. Tableless Forward NTTs across the 3 primes
+        LaunchTablelessNttHost(workspace, scratch.Buf1, scratch.TmpBuf, shape, p1, isInverse: false);
+        LaunchTablelessNttHost(workspace, scratch.Buf2, scratch.TmpBuf, shape, p2, isInverse: false);
+        LaunchTablelessNttHost(workspace, scratch.Buf3, scratch.TmpBuf, shape, p3, isInverse: false);
+        LaunchTablelessNttHost(workspace, scratch.Buf1B, scratch.TmpBuf, shape, p1, isInverse: false);
+        LaunchTablelessNttHost(workspace, scratch.Buf2B, scratch.TmpBuf, shape, p2, isInverse: false);
+        LaunchTablelessNttHost(workspace, scratch.Buf3B, scratch.TmpBuf, shape, p3, isInverse: false);
+
+        // 3. Pointwise Multiply
+        GpuBigIntMulKernels.LaunchMultiplyNtt35PointwiseMultiplyKernelPtr(
+            new GpuBigIntMulKernels.AotContexts.Ntt35PointwiseMultiply
+            {
+                Buf1A = scratch.Buf1.DevicePointer,
+                Buf2A = scratch.Buf2.DevicePointer,
+                Buf3A = scratch.Buf3.DevicePointer,
+                Buf1B = scratch.Buf1B.DevicePointer,
+                Buf2B = scratch.Buf2B.DevicePointer,
+                Buf3B = scratch.Buf3B.DevicePointer,
+                TransformLength = m
             },
             gridDimX: shape.GridDim, blockDimX: shape.BlockDim,
             hStream: workspace.Stream);
 
-        // 2. Forward NTTs
-        LaunchNttHost(workspace, scratch.Buf1.DevicePointer, scratch.TmpBuf.DevicePointer, twiddle.Forward1, m, n1,
-            n2, GpuBigIntNttKernels.Prime1, GpuBigIntNttKernels.BarrettMagic1, false);
-        LaunchNttHost(workspace, scratch.Buf2.DevicePointer, scratch.TmpBuf.DevicePointer, twiddle.Forward2, m, n1,
-            n2, GpuBigIntNttKernels.Prime2, GpuBigIntNttKernels.BarrettMagic2, false);
-        LaunchNttHost(workspace, scratch.Buf1B.DevicePointer, scratch.TmpBuf.DevicePointer, twiddle.Forward1, m, n1,
-            n2, GpuBigIntNttKernels.Prime1, GpuBigIntNttKernels.BarrettMagic1, false);
-        LaunchNttHost(workspace, scratch.Buf2B.DevicePointer, scratch.TmpBuf.DevicePointer, twiddle.Forward2, m, n1,
-            n2, GpuBigIntNttKernels.Prime2, GpuBigIntNttKernels.BarrettMagic2, false);
+        // 4. Tableless Inverse NTTs across the 3 primes
+        LaunchTablelessNttHost(workspace, scratch.Buf1, scratch.TmpBuf, shape, p1, isInverse: true);
+        LaunchTablelessNttHost(workspace, scratch.Buf2, scratch.TmpBuf, shape, p2, isInverse: true);
+        LaunchTablelessNttHost(workspace, scratch.Buf3, scratch.TmpBuf, shape, p3, isInverse: true);
 
-        // 3. Pointwise Multiply
-        GpuBigIntMulKernels.LaunchMultiplyNttPointwiseMultiplyKernelPtr(
-            scratch.Buf1.DevicePointer, scratch.Buf2.DevicePointer, scratch.Buf1B.DevicePointer,
-            scratch.Buf2B.DevicePointer, m,
-            gridDimX: shape.GridDim, blockDimX: shape.BlockDim,
-            hStream: workspace.Stream);
-
-        InverseNttAndResolveCarries(workspace, shape, twiddle,
-            new NttResultBuffers(scratch.Buf1, scratch.Buf2, scratch.TmpBuf, scratch.UncarriedLow,
-                scratch.UncarriedHigh, scratch.BlockCarries, MulCarryChunkSize, scratch.NumBlocks),
+        // 5. Fully coalesced 32x32 tiled Garner CRT3 + carry resolution
+        ResolveNtt35Carries(workspace, shape,
+            new Ntt35ResultBuffers(scratch.Buf1, scratch.Buf2, scratch.Buf3, scratch.BlockCarries, MulCarryChunkSize),
             outWords, resultBuffer);
     }
 
     /// <summary>
-    /// Squares <paramref name="operand"/> into <paramref name="resultBuffer"/> by NTT, using only the buffers of
-    /// <paramref name="scratch"/>: the call allocates nothing, so it can run in a loop or inside a CUDA Graph capture.
+    /// Squares <paramref name="operand"/> into <paramref name="resultBuffer"/> by tableless 3-prime 35-bit NTT with
+    /// fused shared-memory middle passes and coalesced tiled Garner CRT3 carry resolution, allocating nothing.
     /// </summary>
     /// <param name="workspace">The workspace whose stream runs the kernels.</param>
-    /// <param name="operand">The value to square, <see cref="NttSquareScratch.OperandWords"/> words. It is read in full by
-    /// the first kernel, so <paramref name="resultBuffer"/> may follow it in the same stream without a copy.</param>
+    /// <param name="operand">The value to square (<c>2 * operand.NumWords == scratch.ProductWords</c>).</param>
     /// <param name="resultBuffer">Receives the low <c>min(2 * operand.NumWords, resultBuffer.NumWords)</c> words of the square.</param>
-    /// <param name="scratch">The NTT buffers for squares of <paramref name="operand"/>'s length.</param>
-    /// <exception cref="ArgumentException"><paramref name="operand"/> does not have the length the scratch was made for.</exception>
-    internal void Square(GpuWorkspace workspace, GpuBigUInt operand, GpuBigUInt resultBuffer, NttSquareScratch scratch)
+    /// <param name="scratch">The NTT buffers for products of <c>2 * operand.NumWords</c> words.</param>
+    /// <exception cref="ArgumentException"><paramref name="operand"/> does not match <paramref name="scratch"/>.</exception>
+    internal void Square(GpuWorkspace workspace, GpuBigUInt operand, GpuBigUInt resultBuffer, NttProductScratch scratch)
     {
-        if (operand.NumWords != scratch.OperandWords)
+        if (2 * operand.NumWords != scratch.ProductWords)
         {
             throw new ArgumentException(
-                $"The scratch squares {scratch.OperandWords}-word operands; the operand has {operand.NumWords} words.",
+                $"The scratch holds {scratch.ProductWords}-word products; the operand has {operand.NumWords} words.",
                 nameof(operand));
         }
 
-        var twiddle = scratch.Twiddle;
+        var (p1, p2, p3) = PrimeModulusSpec.All;
         var shape = NttLaunchShape.For(scratch.TransformLength);
-        var (m, n1, n2) = (shape.TransformLength, shape.N1, shape.N2);
 
-        // 1. Unpack single operand (fuses initial 2D transpose when m > 512)
-        GpuBigIntMulKernels.LaunchMultiplyNttUnpackSingleKernelPtr(
-            new GpuBigIntMulKernels.AotContexts.NttUnpackSingle
+        // 1. Fully coalesced unpack of single operand into 35-bit limbs reduced mod (P1, P2, P3)
+        var unpackSingleCtx = new GpuBigIntMulKernels.AotContexts.Ntt35UnpackSingle
+        {
+            Operand = new GpuBigIntMulKernels.AotContexts.Ntt35UnpackOperand
             {
-                Operand = new GpuBigIntMulKernels.AotContexts.NttUnpackOperand
-                {
-                    Source = operand.DevicePointer,
-                    NttBuf1 = scratch.Buf1.DevicePointer,
-                    NttBuf2 = scratch.Buf2.DevicePointer,
-                    NumWords = operand.NumWords
-                },
-                Grid = shape.Grid
+                Source = operand.DevicePointer,
+                NttBuf1 = scratch.Buf1.DevicePointer,
+                NttBuf2 = scratch.Buf2.DevicePointer,
+                NttBuf3 = scratch.Buf3.DevicePointer,
+                NumWords = operand.NumWords
             },
-            gridDimX: shape.GridDim, blockDimX: shape.BlockDim,
-            hStream: workspace.Stream);
+            Grid = shape.Grid
+        };
+        if (shape.TransformLength <= 512)
+        {
+            GpuBigIntMulKernels.LaunchMultiplyNtt35UnpackSingleSmallKernelPtr(
+                unpackSingleCtx, gridDimX: shape.GridDim, blockDimX: shape.BlockDim, hStream: workspace.Stream);
+        }
+        else
+        {
+            var totalTiles = (uint)((shape.N1 >> 5) * (shape.N2 >> 5));
+            GpuBigIntMulKernels.LaunchMultiplyNtt35UnpackSingleTiledKernelPtr(
+                unpackSingleCtx, gridDimX: Math.Min(384u, totalTiles), blockDimX: 1024, hStream: workspace.Stream);
+        }
 
-        // 2. Forward NTTs (only 2 passes instead of 4)
-        LaunchNttHost(workspace, scratch.Buf1.DevicePointer, scratch.TmpBuf.DevicePointer, twiddle.Forward1, m, n1,
-            n2, GpuBigIntNttKernels.Prime1, GpuBigIntNttKernels.BarrettMagic1, false);
-        LaunchNttHost(workspace, scratch.Buf2.DevicePointer, scratch.TmpBuf.DevicePointer, twiddle.Forward2, m, n1,
-            n2, GpuBigIntNttKernels.Prime2, GpuBigIntNttKernels.BarrettMagic2, false);
+        // 2. Tableless Fused Forward NTT + Pointwise Square + Inverse NTT across the 3 primes
+        LaunchFusedSquareNttHost(workspace, scratch.Buf1, scratch.TmpBuf, shape, p1);
+        LaunchFusedSquareNttHost(workspace, scratch.Buf2, scratch.TmpBuf, shape, p2);
+        LaunchFusedSquareNttHost(workspace, scratch.Buf3, scratch.TmpBuf, shape, p3);
 
-        // 3. Pointwise Square
-        GpuBigIntMulKernels.LaunchMultiplyNttPointwiseSquareKernelPtr(
-            scratch.Buf1.DevicePointer, scratch.Buf2.DevicePointer, m,
-            gridDimX: shape.GridDim, blockDimX: shape.BlockDim,
-            hStream: workspace.Stream);
-
-        InverseNttAndResolveCarries(workspace, shape, twiddle,
-            new NttResultBuffers(scratch.Buf1, scratch.Buf2, scratch.TmpBuf, scratch.UncarriedLow,
-                scratch.UncarriedHigh, scratch.BlockCarries, MulCarryChunkSize, scratch.NumBlocks),
+        // 3. Fully coalesced 32x32 tiled Garner CRT3 + carry resolution
+        ResolveNtt35Carries(workspace, shape,
+            new Ntt35ResultBuffers(scratch.Buf1, scratch.Buf2, scratch.Buf3, scratch.BlockCarries, MulCarryChunkSize),
             2 * operand.NumWords, resultBuffer);
     }
 
-    /// <summary>Steps 4 to 6 of an NTT product: inverse transforms, CRT and carry resolution into the result.</summary>
-    private void InverseNttAndResolveCarries(GpuWorkspace workspace, NttLaunchShape shape, TwiddleCache twiddle,
-        NttResultBuffers buffers, int outWords, GpuBigUInt resultBuffer)
+    private void LaunchTablelessNttHost(GpuWorkspace workspace, GpuBigUInt buffer, GpuBigUInt tempBuffer,
+        NttLaunchShape shape, PrimeModulusSpec spec, bool isInverse)
     {
         var (m, n1, n2) = (shape.TransformLength, shape.N1, shape.N2);
+        if (m <= 512)
+        {
+            var blockDim = (uint)Math.Max(32, m / 2);
+            var padLen = m + (m >> 5);
+            GpuBigIntMulKernels.LaunchMultiplyNttTablelessSharedRowKernelPtr(
+                new GpuBigIntMulKernels.AotContexts.NttTablelessRow
+                {
+                    InputBuffer = buffer.DevicePointer,
+                    OutputBuffer = buffer.DevicePointer,
+                    RowRoot = spec.RootForLength(m, isInverse),
+                    RootM = 1u,
+                    P = spec.Prime,
+                    Pm = spec.BarrettMagic,
+                    ApplyTwiddleAfter = false,
+                    MaxBlocks = 1,
+                    CurrentL = m
+                },
+                gridDimX: 1, blockDimX: blockDim,
+                sharedMemBytes: (uint)((padLen + m) * 4),
+                hStream: workspace.Stream);
+            return;
+        }
 
-        // 4. Inverse NTTs
-        LaunchNttHost(workspace, buffers.Buf1.DevicePointer, buffers.TmpBuf.DevicePointer, twiddle.Inverse1, m, n1, n2,
-            GpuBigIntNttKernels.Prime1, GpuBigIntNttKernels.BarrettMagic1, true);
-        LaunchNttHost(workspace, buffers.Buf2.DevicePointer, buffers.TmpBuf.DevicePointer, twiddle.Inverse2, m, n1, n2,
-            GpuBigIntNttKernels.Prime2, GpuBigIntNttKernels.BarrettMagic2, true);
+        var firstMaxBlocks = isInverse ? n1 : n2;
+        var firstL = isInverse ? n2 : n1;
+        var secondMaxBlocks = isInverse ? n2 : n1;
+        var secondL = isInverse ? n1 : n2;
+        var rootM = spec.RootForLength(m, isInverse);
 
-        // 5. CRT Coefficients (fuses final 2D transpose read when m > 512)
-        GpuBigIntMulKernels.LaunchMultiplyNttComputeCrtKernelPtr(
-            buffers.Buf1.DevicePointer, buffers.Buf2.DevicePointer, buffers.UncarriedLow.DevicePointer,
-            buffers.UncarriedHigh.DevicePointer, m, n1, n2,
-            gridDimX: shape.GridDim, blockDimX: shape.BlockDim,
+        LaunchTablelessSharedRow(workspace, buffer, buffer, spec, firstMaxBlocks, firstL,
+            isInverse, applyTwiddleAfter: true, rootM);
+        LaunchTranspose(workspace, buffer.DevicePointer, tempBuffer.DevicePointer, width: firstL,
+            height: firstMaxBlocks);
+        LaunchTablelessSharedRow(workspace, tempBuffer, buffer, spec, secondMaxBlocks, secondL,
+            isInverse, applyTwiddleAfter: false, 1u);
+    }
+
+    private static void LaunchTablelessSharedRow(GpuWorkspace workspace, GpuBigUInt input, GpuBigUInt output,
+        PrimeModulusSpec spec, int maxBlocks, int currentL, bool isInverse, bool applyTwiddleAfter, uint rootM)
+    {
+        var threadsNeeded = currentL / 2;
+        var blockDim = (uint)Math.Min(512, Math.Max(256, threadsNeeded));
+        var persistentBlocks = currentL <= 2048 ? 288 : 144;
+        var gridDim = (uint)Math.Min(persistentBlocks, maxBlocks);
+        var padLen = currentL + (currentL >> 5);
+
+        GpuBigIntMulKernels.LaunchMultiplyNttTablelessSharedRowKernelPtr(
+            new GpuBigIntMulKernels.AotContexts.NttTablelessRow
+            {
+                InputBuffer = input.DevicePointer,
+                OutputBuffer = output.DevicePointer,
+                RowRoot = spec.RootForLength(currentL, isInverse),
+                RootM = rootM,
+                P = spec.Prime,
+                Pm = spec.BarrettMagic,
+                ApplyTwiddleAfter = applyTwiddleAfter,
+                MaxBlocks = maxBlocks,
+                CurrentL = currentL
+            },
+            gridDimX: gridDim, blockDimX: blockDim,
+            sharedMemBytes: (uint)((padLen + currentL) * 4),
+            hStream: workspace.Stream);
+    }
+
+    private void LaunchFusedSquareNttHost(GpuWorkspace workspace, GpuBigUInt buffer, GpuBigUInt tempBuffer,
+        NttLaunchShape shape, PrimeModulusSpec spec)
+    {
+        var (m, n1, n2) = (shape.TransformLength, shape.N1, shape.N2);
+        if (m <= 512)
+        {
+            var blockDim = (uint)Math.Max(32, m / 2);
+            var padLen = m + (m >> 5);
+            GpuBigIntMulKernels.LaunchMultiplyNttFusedMiddleSquareRowKernelPtr(
+                new GpuBigIntMulKernels.AotContexts.NttFusedMiddleSquare
+                {
+                    InputBuffer = buffer.DevicePointer,
+                    OutputBuffer = buffer.DevicePointer,
+                    RowForwardRoot = spec.RootForLength(m, isInverse: false),
+                    InverseRootM = 1u,
+                    P = spec.Prime,
+                    Pm = spec.BarrettMagic,
+                    ApplyTwiddleAfter = false,
+                    MaxBlocks = 1,
+                    CurrentL = m
+                },
+                gridDimX: 1, blockDimX: blockDim,
+                sharedMemBytes: (uint)((padLen + m) * 4),
+                hStream: workspace.Stream);
+            return;
+        }
+
+        // Forward Pass 1: n2 rows of length n1 on buffer, with twiddle after
+        LaunchTablelessSharedRow(workspace, buffer, buffer, spec, maxBlocks: n2, currentL: n1,
+            isInverse: false, applyTwiddleAfter: true, rootM: spec.RootForLength(m, isInverse: false));
+
+        // Forward Transpose: (n2 x n1) buffer -> (n1 x n2) tempBuffer
+        LaunchTranspose(workspace, buffer.DevicePointer, tempBuffer.DevicePointer, width: n1, height: n2);
+
+        // Fused Middle Pass: Forward Pass 2 + Pointwise Square + In-Shared Bit-Reverse + Inverse Pass 1 (with twiddle after)
+        var threadsNeeded = n2 / 2;
+        var midBlockDim = (uint)Math.Min(512, Math.Max(256, threadsNeeded));
+        var persistentMidBlocks = n2 <= 2048 ? 288 : 144;
+        var midGridDim = (uint)Math.Min(persistentMidBlocks, n1);
+        var midPadLen = n2 + (n2 >> 5);
+        GpuBigIntMulKernels.LaunchMultiplyNttFusedMiddleSquareRowKernelPtr(
+            new GpuBigIntMulKernels.AotContexts.NttFusedMiddleSquare
+            {
+                InputBuffer = tempBuffer.DevicePointer,
+                OutputBuffer = buffer.DevicePointer,
+                RowForwardRoot = spec.RootForLength(n2, isInverse: false),
+                InverseRootM = spec.RootForLength(m, isInverse: true),
+                P = spec.Prime,
+                Pm = spec.BarrettMagic,
+                ApplyTwiddleAfter = true,
+                MaxBlocks = n1,
+                CurrentL = n2
+            },
+            gridDimX: midGridDim, blockDimX: midBlockDim,
+            sharedMemBytes: (uint)((midPadLen + n2) * 4),
             hStream: workspace.Stream);
 
-        // 6. Resolve Carries (Cooperative Block)
-        var numBlocks = buffers.NumBlocks;
+        // Inverse Transpose: (n1 x n2) buffer -> (n2 x n1) tempBuffer
+        LaunchTranspose(workspace, buffer.DevicePointer, tempBuffer.DevicePointer, width: n2, height: n1);
+
+        // Inverse Pass 2: n2 rows of length n1 from tempBuffer into transposed buffer
+        LaunchTablelessSharedRow(workspace, tempBuffer, buffer, spec, maxBlocks: n2, currentL: n1,
+            isInverse: true, applyTwiddleAfter: false, rootM: 1u);
+    }
+
+    private static void ResolveNtt35Carries(GpuWorkspace workspace, NttLaunchShape shape,
+        in Ntt35ResultBuffers buffers, int outWords, GpuBigUInt resultBuffer)
+    {
         var writeWords = Math.Min(outWords, resultBuffer.NumWords);
-        GpuBigIntNttKernels.LaunchResolveNttCarriesBlockedKernelPtr(
-            uncarriedLow: buffers.UncarriedLow.DevicePointer,
-            uncarriedHigh: buffers.UncarriedHigh.DevicePointer,
-            outputBuffer: resultBuffer.DevicePointer,
-            blockCarries: buffers.BlockCarries.DevicePointer,
-            transformLength: m,
-            maxWordCount: writeWords,
-            chunkSize: buffers.ChunkSize,
-            gridDimX: (uint)numBlocks, blockDimX: (uint)buffers.ChunkSize,
-            sharedMemBytes: (uint)(buffers.ChunkSize * 8), hStream: workspace.Stream);
+        var (p1, p2, p3) = PrimeModulusSpec.All;
+        var ctx = new GpuBigIntNttKernels.AotContexts.Ntt35ResolveCarries
+        {
+            Result1 = buffers.Buf1.DevicePointer,
+            Result2 = buffers.Buf2.DevicePointer,
+            Result3 = buffers.Buf3.DevicePointer,
+            OutputBuffer = resultBuffer.DevicePointer,
+            BlockCarries = buffers.BlockCarries.DevicePointer,
+            Grid = new GpuBigIntNttKernels.AotContexts.NttGrid
+            {
+                M = shape.TransformLength,
+                N1 = shape.N1,
+                N2 = shape.N2
+            },
+            MaxWordCount = writeWords,
+            ChunkSize = buffers.ChunkSize,
+            InvM1 = p1.InverseOfLength(shape.TransformLength),
+            InvM2 = p2.InverseOfLength(shape.TransformLength),
+            InvM3 = p3.InverseOfLength(shape.TransformLength)
+        };
 
-        var applyBlockDim = (uint)Math.Min(1024, Math.Max(256, numBlocks));
-        var applyGridDim = (uint)((numBlocks + applyBlockDim - 1) / applyBlockDim);
+        if (shape.TransformLength <= 512)
+        {
+            ThrowIfBlockCarriesTooSmall(buffers.BlockCarries.NumWords, writeWords, buffers.ChunkSize);
+            var numBlocks = (writeWords + buffers.ChunkSize - 1) / buffers.ChunkSize;
+            GpuBigIntNttKernels.LaunchResolveNtt35CarriesBlockedKernelPtr(
+                ctx,
+                gridDimX: (uint)Math.Min(65535, Math.Max(1, numBlocks)),
+                blockDimX: (uint)buffers.ChunkSize,
+                hStream: workspace.Stream);
 
-        GpuBigIntNttKernels.LaunchResolveNttCarriesApplyKernelPtr(
-            resultBuffer.DevicePointer, buffers.BlockCarries.DevicePointer, writeWords, buffers.ChunkSize, numBlocks,
-            gridDimX: applyGridDim, blockDimX: applyBlockDim,
+            if (numBlocks > 1)
+            {
+                var applyBlockDim = (uint)Math.Min(1024, Math.Max(256, numBlocks));
+                var applyGridDim = (uint)((numBlocks + applyBlockDim - 1) / applyBlockDim);
+                GpuBigIntNttKernels.LaunchResolveNttCarriesApplyKernelPtr(
+                    resultBuffer.DevicePointer, buffers.BlockCarries.DevicePointer, writeWords, buffers.ChunkSize,
+                    numBlocks,
+                    gridDimX: applyGridDim, blockDimX: applyBlockDim,
+                    hStream: workspace.Stream);
+            }
+
+            return;
+        }
+
+        // Coalesced 32x32 tiled Garner CRT3 + 35-word tile carry resolution (zero extra transpose passes).
+        const int TileOutputWords = 35;
+        var numTiles = shape.TransformLength >> 5;
+        if (buffers.BlockCarries.NumWords < numTiles)
+        {
+            throw new InvalidOperationException(
+                $"The NTT block-carry buffer holds {buffers.BlockCarries.NumWords} words, but {numTiles} 35-word tiles require {numTiles} carries.");
+        }
+
+        var totalTileBlocks = (uint)((shape.N1 >> 5) * (shape.N2 >> 5));
+        GpuBigIntNttKernels.LaunchResolveNtt35CarriesTiled32x32KernelPtr(
+            ctx,
+            gridDimX: Math.Min(384u, totalTileBlocks),
+            blockDimX: 1024,
             hStream: workspace.Stream);
+
+        if (numTiles > 1)
+        {
+            var applyBlockDim = (uint)Math.Min(1024, Math.Max(256, numTiles));
+            var applyGridDim = (uint)((numTiles + applyBlockDim - 1) / applyBlockDim);
+            GpuBigIntNttKernels.LaunchResolveNttCarriesApplyKernelPtr(
+                resultBuffer.DevicePointer, buffers.BlockCarries.DevicePointer, writeWords, TileOutputWords,
+                numTiles,
+                gridDimX: applyGridDim, blockDimX: applyBlockDim,
+                hStream: workspace.Stream);
+        }
+    }
+
+    private readonly record struct PrimeModulusSpec(uint Prime, uint PrimitiveRoot, ulong BarrettMagic)
+    {
+        public static (PrimeModulusSpec P1, PrimeModulusSpec P2, PrimeModulusSpec P3) All =>
+            (new PrimeModulusSpec(GpuBigIntNttKernels.Prime1, GpuBigIntNttKernels.NttG1,
+                GpuBigIntNttKernels.BarrettMagic1),
+             new PrimeModulusSpec(GpuBigIntNttKernels.Prime2, GpuBigIntNttKernels.NttG2,
+                GpuBigIntNttKernels.BarrettMagic2),
+             new PrimeModulusSpec(GpuBigIntNttKernels.Prime3, GpuBigIntNttKernels.NttG3,
+                GpuBigIntNttKernels.BarrettMagic3));
+
+        public uint RootForLength(int length, bool isInverse)
+        {
+            var forwardRoot = ModPowScalar(PrimitiveRoot, (Prime - 1u) / (uint)length, Prime);
+            return isInverse ? ModPowScalar(forwardRoot, Prime - 2u, Prime) : forwardRoot;
+        }
+
+        public uint InverseOfLength(int length) => ModPowScalar((uint)length, Prime - 2u, Prime);
+
+        private static uint ModPowScalar(ulong baseVal, ulong exp, uint p)
+        {
+            ulong res = 1;
+            baseVal %= p;
+            while (exp > 0)
+            {
+                if ((exp & 1) != 0)
+                {
+                    res = (res * baseVal) % p;
+                }
+
+                baseVal = (baseVal * baseVal) % p;
+                exp >>= 1;
+            }
+
+            return (uint)res;
+        }
     }
 
     /// <summary>The 2D split <c>m = N1 * N2</c> of a transform length and the launch size of the per-element kernels.</summary>
@@ -677,7 +905,7 @@ public sealed class KernelAdvancedMathHandler : IGpuAdvancedMathProvider
 
             var n1 = m / n2;
             var maxL = m <= 512 ? m : Math.Max(n1, n2);
-            var threadsNeeded = maxL / 2;
+            var threadsNeeded = Math.Max(1, maxL / 2);
 
             var blockDim = (uint)Math.Min(1024, Math.Max(256, threadsNeeded));
             var gridDim = (uint)((m + blockDim - 1) / blockDim);
@@ -685,54 +913,44 @@ public sealed class KernelAdvancedMathHandler : IGpuAdvancedMathProvider
         }
     }
 
-    /// <summary>The buffers that steps 4 to 6 of an NTT product read and write.</summary>
-    private readonly record struct NttResultBuffers(
+    /// <summary>The buffers that the fused 3-prime Garner CRT3 carry resolution reads and writes.</summary>
+    private readonly record struct Ntt35ResultBuffers(
         GpuBigUInt Buf1,
         GpuBigUInt Buf2,
-        GpuBigUInt TmpBuf,
-        GpuBigUInt UncarriedLow,
-        GpuBigUInt UncarriedHigh,
+        GpuBigUInt Buf3,
         GpuBigUInt BlockCarries,
-        int ChunkSize,
-        int NumBlocks);
+        int ChunkSize);
 
     /// <summary>
-    /// The NTT buffers of products of <see cref="ProductWords"/> words for <see cref="Square"/> or <see cref="Multiply"/>:
-    /// the transform buffers of the operands, the scratch of the transform and of the carries, and the twiddle factors.
+    /// The 3-prime 35-bit NTT buffers of products of <see cref="ProductWords"/> words for <see cref="Square"/> or
+    /// <see cref="Multiply"/>.
     /// </summary>
-    /// <remarks>
-    /// <c>Allocate</c> makes buffers the scratch owns (<c>new GpuBigUInt</c>, not the workspace's temporary pool) and
-    /// releases on <see cref="Dispose"/>, for a caller that multiplies many times (a squaring chain, a CUDA Graph).
-    /// <c>Rent</c> takes them from the workspace pool for one call, as
-    /// <see cref="Mul(GpuWorkspace, GpuBigUInt, GpuBigUInt, GpuBigUInt)"/> does. The twiddle factors are created here, so
-    /// that <see cref="Square"/> and <see cref="Multiply"/> neither allocate nor synchronize.
-    /// </remarks>
     internal abstract class NttProductScratch : IDisposable
     {
         private protected NttProductScratch(GpuWorkspace workspace, KernelAdvancedMathHandler handler,
             int productWords, bool secondOperand, bool rent)
         {
             ArgumentOutOfRangeException.ThrowIfNegativeOrZero(productWords);
+            _ = handler;
             ProductWords = productWords;
-            TransformLength = TransformLengthFor(productWords);
-            Twiddle = handler.GetOrCreateTwiddleFactors(workspace, TransformLength);
+            TransformLength = TransformLengthFor35(productWords);
             NumBlocks = (productWords + MulCarryChunkSize - 1) / MulCarryChunkSize;
+            var carryWords = Math.Max(NumBlocks * 2, Math.Max(2, TransformLength >> 5));
 
             try
             {
-                // The order of Mul's pooled path: operand A, operand B, then the shared scratch.
                 Buf1 = Take(workspace, TransformLength, rent);
                 Buf2 = Take(workspace, TransformLength, rent);
+                Buf3 = Take(workspace, TransformLength, rent);
                 if (secondOperand)
                 {
                     Buf1B = Take(workspace, TransformLength, rent);
                     Buf2B = Take(workspace, TransformLength, rent);
+                    Buf3B = Take(workspace, TransformLength, rent);
                 }
 
                 TmpBuf = Take(workspace, TransformLength, rent);
-                UncarriedLow = Take(workspace, TransformLength, rent);
-                UncarriedHigh = Take(workspace, TransformLength, rent);
-                BlockCarries = Take(workspace, NumBlocks * 2, rent);
+                BlockCarries = Take(workspace, carryWords, rent);
             }
             catch
             {
@@ -745,21 +963,19 @@ public sealed class KernelAdvancedMathHandler : IGpuAdvancedMathProvider
         /// <summary>Gets the word count of the products this scratch computes.</summary>
         public int ProductWords { get; }
 
-        /// <summary>Gets the NTT transform length (16-bit coefficients) of a product.</summary>
+        /// <summary>Gets the NTT transform length (35-bit limbs) of a product.</summary>
         public int TransformLength { get; }
 
         /// <summary>Gets the number of carry chunks of a product.</summary>
         public int NumBlocks { get; }
 
-        internal TwiddleCache Twiddle { get; }
-
         internal GpuBigUInt Buf1 { get; }
         internal GpuBigUInt Buf2 { get; }
+        internal GpuBigUInt Buf3 { get; }
         internal GpuBigUInt Buf1B { get; }
         internal GpuBigUInt Buf2B { get; }
+        internal GpuBigUInt Buf3B { get; }
         internal GpuBigUInt TmpBuf { get; }
-        internal GpuBigUInt UncarriedLow { get; }
-        internal GpuBigUInt UncarriedHigh { get; }
         internal GpuBigUInt BlockCarries { get; }
 
         /// <inheritdoc />
@@ -767,11 +983,11 @@ public sealed class KernelAdvancedMathHandler : IGpuAdvancedMathProvider
         {
             Buf1.Dispose();
             Buf2.Dispose();
+            Buf3.Dispose();
             Buf1B.Dispose();
             Buf2B.Dispose();
+            Buf3B.Dispose();
             TmpBuf.Dispose();
-            UncarriedLow.Dispose();
-            UncarriedHigh.Dispose();
             BlockCarries.Dispose();
         }
 
@@ -790,25 +1006,15 @@ public sealed class KernelAdvancedMathHandler : IGpuAdvancedMathProvider
         public int OperandWords { get; }
 
         /// <summary>Creates a scratch whose buffers it owns until <see cref="NttProductScratch.Dispose"/>.</summary>
-        /// <param name="workspace">The workspace that allocates the buffers.</param>
-        /// <param name="handler">The handler whose twiddle-factor cache supplies the transform.</param>
-        /// <param name="operandWords">The word count of the operands to square.</param>
-        /// <returns>The new scratch.</returns>
-        /// <exception cref="ArgumentException">The square exceeds the NTT transform length limit.</exception>
         public static NttSquareScratch Allocate(GpuWorkspace workspace, KernelAdvancedMathHandler handler,
             int operandWords) => new(workspace, handler, operandWords, rent: false);
 
         /// <summary>Creates a scratch from the workspace's temporary buffers, for a single square.</summary>
-        /// <param name="workspace">The workspace whose temporary buffers are rented.</param>
-        /// <param name="handler">The handler whose twiddle-factor cache supplies the transform.</param>
-        /// <param name="operandWords">The word count of the operands to square.</param>
-        /// <returns>The new scratch.</returns>
-        /// <exception cref="ArgumentException">The square exceeds the NTT transform length limit.</exception>
         public static NttSquareScratch Rent(GpuWorkspace workspace, KernelAdvancedMathHandler handler,
             int operandWords) => new(workspace, handler, operandWords, rent: true);
     }
 
-    /// <summary>The NTT buffers for products of two operands with <see cref="Multiply"/>.</summary>
+    /// <summary>The NTT buffers for products of two operands with <see cref="Multiply"/> (and shared <see cref="Square"/>).</summary>
     internal sealed class NttMultiplyScratch : NttProductScratch
     {
         private NttMultiplyScratch(GpuWorkspace workspace, KernelAdvancedMathHandler handler, int productWords,
@@ -818,27 +1024,42 @@ public sealed class KernelAdvancedMathHandler : IGpuAdvancedMathProvider
         }
 
         /// <summary>Creates a scratch whose buffers it owns until <see cref="NttProductScratch.Dispose"/>.</summary>
-        /// <param name="workspace">The workspace that allocates the buffers.</param>
-        /// <param name="handler">The handler whose twiddle-factor cache supplies the transform.</param>
-        /// <param name="productWords">The word count of the products: the sum of the factors' word counts.</param>
-        /// <returns>The new scratch.</returns>
-        /// <exception cref="ArgumentException">The product exceeds the NTT transform length limit.</exception>
         public static NttMultiplyScratch Allocate(GpuWorkspace workspace, KernelAdvancedMathHandler handler,
             int productWords) => new(workspace, handler, productWords, rent: false);
 
         /// <summary>Creates a scratch from the workspace's temporary buffers, for a single product.</summary>
-        /// <param name="workspace">The workspace whose temporary buffers are rented.</param>
-        /// <param name="handler">The handler whose twiddle-factor cache supplies the transform.</param>
-        /// <param name="productWords">The word count of the product: the sum of the factors' word counts.</param>
-        /// <returns>The new scratch.</returns>
-        /// <exception cref="ArgumentException">The product exceeds the NTT transform length limit.</exception>
         public static NttMultiplyScratch Rent(GpuWorkspace workspace, KernelAdvancedMathHandler handler,
             int productWords) => new(workspace, handler, productWords, rent: true);
     }
 
     /// <summary>
+    /// The transform length for a product of <paramref name="requiredLen"/> 32-bit words packed into 35-bit limbs:
+    /// the power of two (at least 2) that holds <c>ceil(32 * requiredLen / 35)</c> coefficients.
+    /// </summary>
+    /// <exception cref="ArgumentException">The product exceeds <c>2^24</c> words.</exception>
+    internal static int TransformLengthFor35(int requiredLen)
+    {
+        const int MaxProductWords = 1 << 24;
+        if (requiredLen > MaxProductWords)
+        {
+            throw new ArgumentException(
+                $"NTT product length exceeds the maximum supported limit of 2^24 ({MaxProductWords} words, up to 2^23 words per operand) bounded by the 2-adicity limit (25) of the NTT primes. Required product words: {requiredLen}.",
+                nameof(requiredLen));
+        }
+
+        var requiredCoeffs = (int)(((ulong)(uint)requiredLen * 32UL + 34UL) / 35UL);
+        var m = 2;
+        while (m < requiredCoeffs)
+        {
+            m *= 2;
+        }
+
+        return m;
+    }
+
+    /// <summary>
     /// The transform length for a product of <paramref name="requiredLen"/> words: the power of two that holds its
-    /// <c>2 * requiredLen</c> 16-bit coefficients.
+    /// <c>2 * requiredLen</c> 16-bit coefficients (used by cooperative 2-prime MegaKernels).
     /// </summary>
     /// <exception cref="ArgumentException">The product needs more than <c>2^25</c> coefficients.</exception>
     private static int TransformLengthFor(int requiredLen)
@@ -866,22 +1087,29 @@ public sealed class KernelAdvancedMathHandler : IGpuAdvancedMathProvider
         {
             var p1 = GpuBigIntNttKernels.Prime1;
             var p2 = GpuBigIntNttKernels.Prime2;
+            var p3 = GpuBigIntNttKernels.Prime3;
             var g1 = GpuBigIntNttKernels.NttG1;
             var g2 = GpuBigIntNttKernels.NttG2;
+            var g3 = GpuBigIntNttKernels.NttG3;
 
             var w1 = CpuModPow(g1, (p1 - 1) / (uint)key, p1);
             var w2 = CpuModPow(g2, (p2 - 1) / (uint)key, p2);
+            var w3 = CpuModPow(g3, (p3 - 1) / (uint)key, p3);
 
             var iw1 = CpuModPow(w1, p1 - 2, p1);
             var iw2 = CpuModPow(w2, p2 - 2, p2);
+            var iw3 = CpuModPow(w3, p3 - 2, p3);
 
             ulong currentWeight1 = 1, currentInverseWeight1 = 1;
             ulong currentWeight2 = 1, currentInverseWeight2 = 1;
+            ulong currentWeight3 = 1, currentInverseWeight3 = 1;
 
             var f1 = new uint[key];
             var f2 = new uint[key];
+            var f3 = new uint[key];
             var i1 = new uint[key];
             var i2 = new uint[key];
+            var i3 = new uint[key];
 
             for (var i = 0; i < key; i++)
             {
@@ -889,22 +1117,30 @@ public sealed class KernelAdvancedMathHandler : IGpuAdvancedMathProvider
                 i1[i] = (uint)currentInverseWeight1;
                 f2[i] = (uint)currentWeight2;
                 i2[i] = (uint)currentInverseWeight2;
+                f3[i] = (uint)currentWeight3;
+                i3[i] = (uint)currentInverseWeight3;
 
                 currentWeight1 = (currentWeight1 * w1) % p1;
                 currentInverseWeight1 = (currentInverseWeight1 * iw1) % p1;
                 currentWeight2 = (currentWeight2 * w2) % p2;
                 currentInverseWeight2 = (currentInverseWeight2 * iw2) % p2;
+                currentWeight3 = (currentWeight3 * w3) % p3;
+                currentInverseWeight3 = (currentInverseWeight3 * iw3) % p3;
             }
 
             var dF1 = workspace.Provider.AllocateMemory(key);
             var dF2 = workspace.Provider.AllocateMemory(key);
+            var dF3 = workspace.Provider.AllocateMemory(key);
             var dI1 = workspace.Provider.AllocateMemory(key);
             var dI2 = workspace.Provider.AllocateMemory(key);
+            var dI3 = workspace.Provider.AllocateMemory(key);
 
             workspace.Provider.CopyHostToDevice(dF1, f1, key, workspace.Stream);
             workspace.Provider.CopyHostToDevice(dF2, f2, key, workspace.Stream);
+            workspace.Provider.CopyHostToDevice(dF3, f3, key, workspace.Stream);
             workspace.Provider.CopyHostToDevice(dI1, i1, key, workspace.Stream);
             workspace.Provider.CopyHostToDevice(dI2, i2, key, workspace.Stream);
+            workspace.Provider.CopyHostToDevice(dI3, i3, key, workspace.Stream);
 
             workspace.Provider.SynchronizeStream(workspace.Stream);
 
@@ -912,8 +1148,10 @@ public sealed class KernelAdvancedMathHandler : IGpuAdvancedMathProvider
             {
                 Forward1 = dF1,
                 Forward2 = dF2,
+                Forward3 = dF3,
                 Inverse1 = dI1,
-                Inverse2 = dI2
+                Inverse2 = dI2,
+                Inverse3 = dI3
             };
         })).Value;
     }
