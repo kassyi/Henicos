@@ -202,11 +202,12 @@ public class LoggerAndEnvironmentTests
         try
         {
             Logger.WriteToConsole = false;
-            Parallel.For(0, 500, i =>
+            var result = Parallel.For(0, 500, i =>
             {
                 Logger.Info("CONCURRENCY", $"Log entry {i} from thread {Environment.CurrentManagedThreadId}");
                 TestLoggerConsumer.InvokeAddInterval($"Task_{i % 10}", i);
             });
+            Assert.True(result.IsCompleted);
         }
         finally
         {

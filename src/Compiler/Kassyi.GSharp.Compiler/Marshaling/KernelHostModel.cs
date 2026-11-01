@@ -87,6 +87,7 @@ internal readonly record struct KernelHostModel
     /// <summary>Reads the host launch ABI of <paramref name="kernel"/>.</summary>
     /// <param name="kernel">The kernel.</param>
     /// <param name="structs">The rendered structs of the parameters; the analyzer, which needs none, passes <see langword="default"/>.</param>
+    /// <param name="model">The semantic model of the kernel's syntax tree, or <see langword="null"/> when grid scratch analysis is not needed.</param>
     public static KernelHostModel Create(IMethodSymbol kernel, EquatableArray<StructHostSource> structs,
         SemanticModel? model = null)
     {

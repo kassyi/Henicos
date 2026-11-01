@@ -220,25 +220,25 @@ public static partial class StackLinqExtensions
     {
         ArgumentNullException.ThrowIfNull(predicate);
         var enumerator = source.Enumerator;
-        TSource result = default!;
-        var found = false;
         while (enumerator.TryGetNext(out var current))
         {
-            if (predicate(current))
+            if (!predicate(current))
             {
-                if (found)
+                continue;
+            }
+
+            while (enumerator.TryGetNext(out var next))
+            {
+                if (predicate(next))
                 {
                     throw new InvalidOperationException("Sequence contains more than one matching element");
                 }
-                result = current;
-                found = true;
             }
+
+            return current;
         }
-        if (!found)
-        {
-            throw new InvalidOperationException("Sequence contains no matching element");
-        }
-        return result;
+
+        throw new InvalidOperationException("Sequence contains no matching element");
     }
 
     /// <summary>
@@ -282,7 +282,7 @@ public static partial class StackLinqExtensions
     {
         ArgumentNullException.ThrowIfNull(predicate);
         var enumerator = source.Enumerator;
-        TSource result = default!;
+        TSource? result = default;
         var found = false;
         while (enumerator.TryGetNext(out var current))
         {
@@ -344,16 +344,13 @@ public static partial class StackLinqExtensions
             throw new InvalidOperationException("Sequence contains no elements");
         }
 
-        var found = false;
-        TSource result = default!;
+        if (!enumerator.TryGetNext(out var result))
+        {
+            throw new InvalidOperationException("Sequence contains no elements");
+        }
         while (enumerator.TryGetNext(out var current))
         {
             result = current;
-            found = true;
-        }
-        if (!found)
-        {
-            throw new InvalidOperationException("Sequence contains no elements");
         }
         return result;
     }
@@ -397,16 +394,10 @@ public static partial class StackLinqExtensions
             return default;
         }
 
-        var found = false;
-        TSource result = default!;
+        TSource? result = default;
         while (enumerator.TryGetNext(out var current))
         {
             result = current;
-            found = true;
-        }
-        if (!found)
-        {
-            return default;
         }
         return result;
     }

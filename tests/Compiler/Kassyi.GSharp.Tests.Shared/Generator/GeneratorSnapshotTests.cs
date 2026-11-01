@@ -344,6 +344,68 @@ public partial class GeneratorSnapshotTests : Kassyi.GSharp.Tests.Shared.Helpers
         Assert.Empty(missingSnapshots);
     }
 
+    [Fact]
+    [Scenario(TestScenario.HappyPath)]
+    public void Test_GeneratedWrappersAndStateMachines_CompileWithZeroCSharpWarnings()
+    {
+        var parseOptions = new CSharpParseOptions(LanguageVersion.Preview);
+        const string src = """
+            #nullable enable
+            using Kassyi.GSharp.Core;
+            namespace TestNs;
+            public partial class WarningCheckKernels
+            {
+                [GpuDeviceFunction]
+                public static int SyncHelper(int x)
+                {
+                    Gpu.SyncThreads();
+                    if (false)
+                    {
+                        return -1;
+                    }
+                    return x + 1;
+                }
+
+                [GpuKernel]
+                public static void TestKernel(int[]? values, int[] output)
+                {
+                    int unused = 0;
+                    var f = float.NaN;
+                    if (f != f && values != null)
+                    {
+                        output[0] = SyncHelper(values[0]);
+                    }
+                }
+            }
+            """;
+        var syntaxTree = CSharpSyntaxTree.ParseText(src, options: parseOptions, path: "WarningCheckKernels.cu.cs");
+        var compilation = CSharpCompilation.Create("WarningCheckCompilation")
+            .WithOptions(new CSharpCompilationOptions(
+                OutputKind.DynamicallyLinkedLibrary,
+                allowUnsafe: true,
+                nullableContextOptions: NullableContextOptions.Enable))
+            .AddReferences(Kassyi.GSharp.Tests.Shared.Helpers.MegaCompilationCache.BaseCompilation.References)
+            .AddSyntaxTrees(syntaxTree);
+
+        var generator = new GpuKernelGenerator();
+        GeneratorDriver driver = CSharpGeneratorDriver.Create(
+            generators: [generator.AsSourceGenerator()],
+            additionalTexts: null,
+            parseOptions: parseOptions,
+            optionsProvider: new Kassyi.GSharp.Tests.Shared.Helpers.TestAnalyzerConfigOptionsProvider(DialectName));
+
+        driver.RunGeneratorsAndUpdateCompilation(compilation, out var outputCompilation, out var generatorDiagnostics);
+        Assert.Empty(generatorDiagnostics.Where(d => d.Severity >= DiagnosticSeverity.Warning));
+
+        var generatedFileWarnings = outputCompilation.GetDiagnostics()
+            .Where(d => d.Severity == DiagnosticSeverity.Warning &&
+                        d.Location.SourceTree != null &&
+                        d.Location.SourceTree != syntaxTree)
+            .ToArray();
+
+        Assert.Empty(generatedFileWarnings);
+    }
+
     [GeneratedRegex(@"^[A-Z]{3}-\d{2}(_\d{2})?_")]
     private static partial Regex PureNameRegex();
 }

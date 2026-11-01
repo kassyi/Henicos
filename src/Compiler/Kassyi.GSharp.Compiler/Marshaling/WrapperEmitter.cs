@@ -73,10 +73,11 @@ internal static class WrapperEmitter
         }
     }
 
-    // A context or frame field that a kernel never assigns is reported (CS0649) unless the field is visible outside the
-    // assembly, which it is only in a public class.
-    private static void WriteUnassignedFieldSuppression(SourceWriter writer, in HostClassHeader header) =>
-        writer.AppendLineIf(!header.IsPublic, "#pragma warning disable CS0649");
+    // Generated lowered code (state machines, frames, and CPU/CUDA host wrappers) may contain synthesized labels,
+    // unreachable branches after lowering, unused locals, unassigned internal frame/context fields, self-comparisons
+    // (x != x for NaN), and unused local functions.
+    private const string GeneratedCSharpWarningSuppressions =
+        "#pragma warning disable CS0162, CS0164, CS0219, CS0649, CS1718, CS8321";
 
     // namespace <namespace> { <outer partial declarations> <accessibility> partial class <name>, without the namespace
     // for the global namespace. The generated part must declare the accessibility of the user's part, or the compiler
@@ -137,9 +138,7 @@ internal static class WrapperEmitter
             using static global::Kassyi.GSharp.Core.ManagedGpuContext;
             """);
         writer.AppendLineIf(referencesStackLinq, "using global::Kassyi.ZeroAlloc.Linq;");
-        // The frames' fields are internal (as WriteUnassignedFieldSuppression does for the fields of a class that is not
-        // public): the fields of the warp exchange and the grid sync are read by the code but written only by the runtime
-        writer.AppendLine("#pragma warning disable CS0649");
+        writer.AppendLine(GeneratedCSharpWarningSuppressions);
         writer.AppendLine();
 
         WriteClassDeclaration(writer, header);
@@ -162,7 +161,8 @@ internal static class WrapperEmitter
     public static string GenerateKernelExtensions(in KernelClassModel model, GeneratorConfig config, string assemblyName)
     {
         var writer = new SourceWriter();
-        writer.AppendGeneratedFileHeader();
+        writer.AppendGeneratedFileHeader(enableNullable: false);
+        writer.AppendLine("#nullable enable annotations");
         writer.AppendLine("""
             using System;
             #pragma warning disable RS1035 // Do not use APIs banned for analyzers
@@ -175,7 +175,7 @@ internal static class WrapperEmitter
             using static global::Kassyi.GSharp.Core.ManagedGpuContext;
             using global::Kassyi.ZeroAlloc.Linq;
             """);
-        WriteUnassignedFieldSuppression(writer, model.Class);
+        writer.AppendLine(GeneratedCSharpWarningSuppressions);
 
         writer.AppendLine();
 

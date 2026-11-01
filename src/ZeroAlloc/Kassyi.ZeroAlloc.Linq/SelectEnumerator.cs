@@ -39,7 +39,7 @@ public ref struct SelectEnumerator<TEnumerator, TSource, TResult> : IStackEnumer
     /// <see langword="true"/> if the enumerator successfully advanced to the next element;
     /// <see langword="false"/> if the end of the sequence was reached.
     /// </returns>
-    public bool TryGetNext(out TResult current)
+    public bool TryGetNext([MaybeNullWhen(false)] out TResult current)
     {
         if (_source.TryGetNext(out var value))
         {
@@ -48,7 +48,7 @@ public ref struct SelectEnumerator<TEnumerator, TSource, TResult> : IStackEnumer
         }
 
         // Safe fallback: default value when enumeration has reached the end
-        current = default!;
+        current = default;
         return false;
     }
 }

@@ -394,8 +394,11 @@ public class CudaStreamGateTests
         using var scope = new GpuKernelLoader.CudaContextScope();
         using var stream = new CudaStream();
 
-        stream.WaitFor(stream);
-        stream.Synchronize();
+        Assert.Null(Record.Exception(() =>
+        {
+            stream.WaitFor(stream);
+            stream.Synchronize();
+        }));
     }
 
     [Fact]

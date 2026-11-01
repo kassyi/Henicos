@@ -86,13 +86,14 @@ public class GpuBigIntContextTests
     public void Test_ParallelContextDisposal_ShouldNotCorruptCaches()
     {
         CudaCapability.EnsureGpuAvailable();
-        Parallel.For(0, 8, i =>
+        var result = Parallel.For(0, 8, i =>
         {
             using var scope = new GpuKernelLoader.CudaContextScope();
             using var ctx = new GpuWorkspace(256, GpuExecutionEngine.GSharpAot);
             using var temp1 = ctx.RentTemp(16);
             using var temp2 = ctx.RentTemp(32);
         });
+        Assert.True(result.IsCompleted);
     }
 
     [SkippableFact]

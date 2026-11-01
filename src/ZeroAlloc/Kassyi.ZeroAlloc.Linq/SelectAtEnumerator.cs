@@ -26,7 +26,7 @@ public ref struct SelectAtEnumerator<TEnumerator, TSource, TResult> : IStackEnum
     }
 
     /// <inheritdoc/>
-    public bool TryGetNext(out TResult current)
+    public bool TryGetNext([MaybeNullWhen(false)] out TResult current)
     {
         if (_source.TryGetNext(out var value))
         {
@@ -34,7 +34,7 @@ public ref struct SelectAtEnumerator<TEnumerator, TSource, TResult> : IStackEnum
             return true;
         }
 
-        current = default!;
+        current = default;
         return false;
     }
 }

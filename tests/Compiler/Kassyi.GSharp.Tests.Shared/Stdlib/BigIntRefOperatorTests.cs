@@ -4,7 +4,7 @@ namespace Kassyi.GSharp.Tests.Shared.Stdlib;
 
 /// <summary>
 /// The operators of <c>GpuBigIntRef</c> on the native target (CPU or CUDA). The managed fallback runs the same kernel in
-/// <see cref="BigIntRefOperatorManagedTests"/>.
+/// <c>BigIntRefOperatorManagedTests</c>.
 /// </summary>
 [TestTarget(ExecutionTarget.GpuExecution)]
 [Category(TestCategory.Stdlib)]

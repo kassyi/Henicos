@@ -65,7 +65,7 @@ return 0;
 static CompilationUnitSyntax addImplicitUsings(CompilationUnitSyntax root)
 {
     var usings = root.Usings;
-    foreach (var name in (string[])["System", "System.Collections.Generic"])
+    foreach (var name in (string[])["System", "System.Collections.Generic", "System.Diagnostics.CodeAnalysis"])
     {
         var present = false;
         foreach (var existing in usings)
@@ -206,21 +206,20 @@ internal sealed class NetStandardRewriter() : CSharpSyntaxRewriter(visitIntoStru
 
         // Every struct left holds enumerators and delegates only (span holders are dropped above), so all of them become
         // plain structs: StackEnumerable too, which SelectMany's selector returns through Func<T, TResult>
-        var visited = (StructDeclarationSyntax)base.VisitStructDeclaration(node)!;
-        return visited.WithModifiers(Remove(MakeInternal(visited.Modifiers), SyntaxKind.RefKeyword));
+        return base.VisitStructDeclaration(node) is StructDeclarationSyntax visited
+            ? visited.WithModifiers(Remove(MakeInternal(visited.Modifiers), SyntaxKind.RefKeyword))
+            : null;
     }
 
-    public override SyntaxNode VisitClassDeclaration(ClassDeclarationSyntax node)
-    {
-        var visited = (ClassDeclarationSyntax)base.VisitClassDeclaration(node)!;
-        return visited.WithModifiers(MakeInternal(visited.Modifiers));
-    }
+    public override SyntaxNode? VisitClassDeclaration(ClassDeclarationSyntax node) =>
+        base.VisitClassDeclaration(node) is ClassDeclarationSyntax visited
+            ? visited.WithModifiers(MakeInternal(visited.Modifiers))
+            : null;
 
-    public override SyntaxNode VisitInterfaceDeclaration(InterfaceDeclarationSyntax node)
-    {
-        var visited = (InterfaceDeclarationSyntax)base.VisitInterfaceDeclaration(node)!;
-        return visited.WithModifiers(MakeInternal(visited.Modifiers));
-    }
+    public override SyntaxNode? VisitInterfaceDeclaration(InterfaceDeclarationSyntax node) =>
+        base.VisitInterfaceDeclaration(node) is InterfaceDeclarationSyntax visited
+            ? visited.WithModifiers(MakeInternal(visited.Modifiers))
+            : null;
 
     public override SyntaxNode? VisitMethodDeclaration(MethodDeclarationSyntax node) =>
         KeepIfBuildable(base.VisitMethodDeclaration(node));

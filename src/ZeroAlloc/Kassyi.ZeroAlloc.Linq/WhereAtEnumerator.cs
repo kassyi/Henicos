@@ -25,7 +25,7 @@ public ref struct WhereAtEnumerator<TEnumerator, TSource> : IStackEnumerator<TSo
     }
 
     /// <inheritdoc/>
-    public bool TryGetNext(out TSource current)
+    public bool TryGetNext([MaybeNullWhen(false)] out TSource current)
     {
         while (_source.TryGetNext(out var value))
         {
@@ -38,7 +38,7 @@ public ref struct WhereAtEnumerator<TEnumerator, TSource> : IStackEnumerator<TSo
             return true;
         }
 
-        current = default!;
+        current = default;
         return false;
     }
 }

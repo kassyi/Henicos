@@ -36,7 +36,7 @@ public ref struct TakeEnumerator<TEnumerator, TSource> : IStackEnumerator<TSourc
     /// <see langword="true"/> if the enumerator was successfully advanced to the next element;
     /// <see langword="false"/> if the end of the sequence or the maximum count was reached.
     /// </returns>
-    public bool TryGetNext(out TSource value)
+    public bool TryGetNext([MaybeNullWhen(false)] out TSource value)
     {
         if (_remaining > 0 && _source.TryGetNext(out value))
         {
@@ -44,7 +44,7 @@ public ref struct TakeEnumerator<TEnumerator, TSource> : IStackEnumerator<TSourc
             return true;
         }
 
-        value = default!;
+        value = default;
         return false;
     }
 }

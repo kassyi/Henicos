@@ -54,6 +54,6 @@ internal static class SwitchStateLabel
                 Convert.ToString(constant, CultureInfo.InvariantCulture),
             _ => null
         };
-        return digits != null && digits.StartsWith("-", StringComparison.Ordinal) ? "m" + digits.Substring(1) : digits;
+        return digits != null && digits.StartsWith("-", StringComparison.Ordinal) ? "m" + digits[1..] : digits;
     }
 }

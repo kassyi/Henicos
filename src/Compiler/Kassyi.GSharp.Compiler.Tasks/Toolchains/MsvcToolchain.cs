@@ -171,6 +171,8 @@ public sealed class MsvcToolchain : INativeToolchain
 
             if (result.ExitCode == 0 && File.Exists(outputPath))
             {
+                NvccOutputParser.LogCompilerWarnings(log, sourcePath, result.StandardOutput, result.StandardError);
+
                 // MSVC produces .obj, .lib, .exp. Clean them up to avoid clutter.
                 var libPath = Path.Combine(baseDir, baseName + ".lib");
                 var expPath = Path.Combine(baseDir, baseName + ".exp");
@@ -223,9 +225,9 @@ public sealed class MsvcToolchain : INativeToolchain
     {
         // The vswhere query below is repeated by tools/collect-env/collect-env.cs (Msvc); keep both in sync.
         string vswhere;
-        if (!string.IsNullOrEmpty(_vswherePathOverride))
+        if (_vswherePathOverride is { Length: > 0 })
         {
-            vswhere = _vswherePathOverride!;
+            vswhere = _vswherePathOverride;
         }
         else
         {

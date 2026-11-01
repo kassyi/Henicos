@@ -6,7 +6,7 @@ namespace Kassyi.GSharp.Tests.Shared.Syntax;
 /// <summary>
 /// The kernels of <see cref="CrossAssemblyKernels"/> on the native target (CPU or CUDA): they call the device functions
 /// and structs of another assembly, whose recorded text the native module imports (#433). The managed fallback runs the
-/// same kernels in <see cref="CrossAssemblyManagedTests"/>.
+/// same kernels in <c>CrossAssemblyManagedTests</c>.
 /// </summary>
 [TestTarget(ExecutionTarget.GpuExecution)]
 [Category(TestCategory.Compiler)]
