@@ -26,7 +26,8 @@ public sealed class BinaryExpressionTranspilerRule : SyntaxNodeTranspilerRuleBas
     {
         if (node.IsKind(SyntaxKind.CoalesceExpression))
         {
-            NullRepresentation.AppendCoalesce(node.Left, node.Right, ref context);
+            NullRepresentation.AppendCoalesce(node.Left, node.Right, ref context,
+                context.Query.SemanticModel.GetTypeSymbol(node));
             return;
         }
 

@@ -83,7 +83,8 @@ public sealed class MemberAccessExpressionTranspilerRule : SyntaxNodeTranspilerR
             return true;
         }
 
-        if (operandType.IsNullableArrayLike())
+        if (operandType.IsNullableArrayLike() &&
+            NullRepresentation.IsUnwrappedNullableArrayParameter(node.Expression, context.Query.SemanticModel))
         {
             if (memberName == "Value")
             {

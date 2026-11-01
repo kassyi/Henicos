@@ -69,19 +69,12 @@ internal static class JumpedOverDeclarations
         }
     }
 
-    // A struct whose C++ form has a default constructor: it holds an array (GSharpArray<T>) or such a struct, or it has
-    // an implicit conversion to itself, for which StructTranspiler writes T() {}
+    // A struct whose C++ form has a default constructor: it holds an array (GSharpArray<T>) or such a struct
     private static bool HasCppDefaultConstructor(ITypeSymbol? type) =>
         type is INamedTypeSymbol { TypeKind: TypeKind.Struct, IsRefLikeType: false, SpecialType: SpecialType.None } named &&
         named
             .GetMembers()
             .AsStackEnumerable()
-            .Any(named, static (member, self) => member switch
-            {
-                IMethodSymbol { MethodKind: MethodKind.Conversion, Name: "op_Implicit" } conversion =>
-                    conversion.ReturnType.IsEqualTo(self),
-                IFieldSymbol { IsStatic: false, IsConst: false } field =>
-                    field.Type.IsArrayLikeType() || HasCppDefaultConstructor(field.Type),
-                _ => false
-            });
+            .Any(static member => member is IFieldSymbol { IsStatic: false, IsConst: false } field &&
+                                  (field.Type.IsArrayLikeType() || HasCppDefaultConstructor(field.Type)));
 }
