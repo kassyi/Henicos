@@ -5,7 +5,6 @@ namespace Kassyi.GSharp.Tests.Shared.Analyzers;
 /// write / slice members (#731): supported members produce no diagnostics, while unmapped members report <c>GSH0003</c>.
 /// </summary>
 [Category(TestCategory.Compiler)]
-[Trait("Issue", "731")]
 public class SpanWriteAnalyzerTests : TranspilerTestBase
 {
     private static readonly GpuKernelAnalyzer s_analyzer = new();

@@ -8,7 +8,6 @@ namespace Kassyi.GSharp.Tests.Shared.Syntax;
 /// directly against .NET's BCL implementations.
 /// </summary>
 [Collection(TestCollections.GlobalStateSequential)]
-[Trait("Issue", "731")]
 public class SpanWriteTests : TranspilerTestBase
 {
     private const uint GridDimX = 1;
