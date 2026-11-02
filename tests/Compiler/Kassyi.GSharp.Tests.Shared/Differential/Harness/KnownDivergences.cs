@@ -95,6 +95,8 @@ public static class KnownDivergences
         $"{nameof(BarrierAndWarpDifferentialKernels)}.{nameof(BarrierAndWarpDifferentialKernels.SubWarpConditionalShuffleKernel)}";
     private const string GenericStructStaticSharedMemory =
         $"{nameof(BarrierAndWarpDifferentialKernels)}.{nameof(BarrierAndWarpDifferentialKernels.GenericStructStaticSharedMemoryKernel)}";
+    private const string BitOperationsMatrix =
+        $"{nameof(MathDifferentialKernels)}.{nameof(MathDifferentialKernels.BitOperationsMatrixKernel)}";
 
     /// <summary>Gets every registered entry.</summary>
     public static IReadOnlyList<KnownDivergence> All { get; } =
@@ -170,5 +172,8 @@ public static class KnownDivergences
 
         // generic struct static method SharedMemory.Allocate<T> collides across type arguments (#543)
         new(GenericStructStaticSharedMemory, "SharedSlot<int>", DiffPath.Managed | DiffPath.Native, Issue: 543),
+
+        // BclIntrinsicTranspilerRule emits named arguments in source syntax order instead of parameter order (S46)
+        new(BitOperationsMatrix, "BitOperations.RotateLeft(offset:s,value:u32)", DiffPath.Native | DiffPath.Cuda, Issue: 1059), // S46: BclIntrinsicTranspilerRule ignores named argument order
     ];
 }

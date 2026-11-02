@@ -1,12 +1,14 @@
 // ReSharper disable All
 using System;
+using System.Numerics;
 using Kassyi.GSharp.Core;
 
 namespace Kassyi.GSharp.Tests.Shared.Differential;
 
 /// <summary>
-/// Differential kernels for <see cref="Math"/>, <see cref="MathF"/>, <see cref="float"/> and <see cref="double"/>
-/// intrinsics mapped in <c>StandardCpp.yml</c> and <c>GSharpCuda.yml</c>.
+/// Differential kernels for <see cref="Math"/>, <see cref="MathF"/>, <see cref="FastMath"/>,
+/// <see cref="BitOperations"/>, <see cref="float"/> and <see cref="double"/> intrinsics mapped in
+/// <c>StandardCpp.yml</c>, <c>GSharpCuda.yml</c>, and <c>BclMappings.cs</c>.
 /// </summary>
 public static partial class MathDifferentialKernels
 {
@@ -114,6 +116,134 @@ public static partial class MathDifferentialKernels
         "MathF.Round(v)",
         "MathF.Max(v,min)",
         "MathF.Min(v,max)",
+    ];
+
+    /// <summary>The <see cref="float"/> columns of <see cref="SubnormalIeeeExactMatrixKernel"/> (Case N01).</summary>
+    public static readonly string[] SubnormalIeeeSingleColumns =
+    [
+        "x+y",
+        "x-y",
+        "x*y",
+        "x/y",
+        "MathF.Sqrt(|x|)",
+        "FastMath.Sqrt(|x|)",
+    ];
+
+    /// <summary>The <see cref="double"/> columns of <see cref="SubnormalIeeeExactMatrixKernel"/> (Case N01).</summary>
+    public static readonly string[] SubnormalIeeeDoubleColumns =
+    [
+        "u+v",
+        "u-v",
+        "u*v",
+        "u/v",
+        "Math.Sqrt(|u|)",
+    ];
+
+    /// <summary>The <see cref="float"/> columns of <see cref="TranscendentalSpecialValuesKernel"/> (Case N02).</summary>
+    public static readonly string[] TranscendentalSpecialSingleColumns =
+    [
+        "MathF.Sin(fx)",
+        "MathF.Cos(fx)",
+        "MathF.Tan(fx)",
+        "MathF.Exp(fx)",
+        "MathF.Log(logF)",
+        "MathF.Pow(powBaseF,powExpF)",
+        "Math.Clamp(fx,-1,1)",
+    ];
+
+    /// <summary>The <see cref="double"/> columns of <see cref="TranscendentalSpecialValuesKernel"/> (Case N02).</summary>
+    public static readonly string[] TranscendentalSpecialDoubleColumns =
+    [
+        "Math.Sin(dx)",
+        "Math.Cos(dx)",
+        "Math.Tan(dx)",
+        "Math.Exp(dx)",
+        "Math.Log(logD)",
+        "Math.Pow(powBaseD,powExpD)",
+    ];
+
+    /// <summary>The columns of <see cref="BitOperationsMatrixKernel"/> (Case N03).</summary>
+    public static readonly string[] BitOperationsColumns =
+    [
+        "BitOperations.LeadingZeroCount(u32)",
+        "BitOperations.LeadingZeroCount(u64)",
+        "BitOperations.TrailingZeroCount(u32)",
+        "BitOperations.TrailingZeroCount(u64)",
+        "BitOperations.PopCount(u32)",
+        "BitOperations.PopCount(u64)",
+        "BitOperations.Log2(u32)",
+        "BitOperations.Log2(u64)",
+        "BitOperations.RotateLeft(u32,s)",
+        "BitOperations.RotateLeft(u64,s)",
+        "BitOperations.RotateRight(u32,s)",
+        "BitOperations.RotateRight(u64,s)",
+        "BitOperations.RotateLeft(offset:s,value:u32)",
+    ];
+
+    /// <summary>The comparison columns of <see cref="FloatComparisonAndLargeTieMatrixKernel"/> (Case N05).</summary>
+    public static readonly string[] FloatComparisonColumns =
+    [
+        "x==y",
+        "x!=y",
+        "x<y",
+        "x<=y",
+        "x>y",
+        "x>=y",
+        "!(x<y)",
+        "u==v",
+        "u!=v",
+        "u<v",
+        "u<=v",
+        "u>v",
+        "u>=v",
+        "!(u<v)",
+        "x<iv",
+        "u==iv",
+    ];
+
+    /// <summary>The rounding columns of <see cref="FloatComparisonAndLargeTieMatrixKernel"/> (Case N05).</summary>
+    public static readonly string[] LargeTieRoundColumns =
+    [
+        "MathF.Round(x)",
+        "Math.Round(u)",
+    ];
+
+    /// <summary>The columns of <see cref="SingleTranscendentalMatrixKernel"/> (Case N07).</summary>
+    public static readonly string[] SingleTranscendentalColumns =
+    [
+        "MathF.Sin(x)",
+        "MathF.Cos(x)",
+        "MathF.Tan(x)",
+        "MathF.Exp(x)",
+        "MathF.Log(x)",
+        "MathF.Pow(x,y)",
+    ];
+
+    /// <summary>The columns of <see cref="DoubleAndPromotedSingleTranscendentalMatrixKernel"/> (Case N08).</summary>
+    public static readonly string[] DoubleAndPromotedSingleTranscendentalColumns =
+    [
+        "Math.Sin(d)",
+        "Math.Cos(d)",
+        "Math.Tan(d)",
+        "Math.Exp(d)",
+        "Math.Log(d)",
+        "Math.Pow(d1,d2)",
+        "Math.Sin(f)",
+        "Math.Cos(f)",
+        "Math.Tan(f)",
+        "Math.Exp(f)",
+        "Math.Log(|f|+0.25f)",
+        "Math.Pow(|f|+0.25f,fExp)",
+    ];
+
+    /// <summary>The columns of <see cref="FastMathMatrixKernel"/> (Case N09).</summary>
+    public static readonly string[] FastMathColumns =
+    [
+        "FastMath.Sqrt(|x|)",
+        "FastMath.Abs(x)",
+        "FastMath.Exp(expX)",
+        "FastMath.Log(logUnitX)",
+        "FastMath.Log(logWideX)",
     ];
 
     // System.Math (double) methods called with a float argument: C# widens f to double and calls the double overload,
@@ -276,5 +406,228 @@ public static partial class MathDifferentialKernels
         rf[o + 1] = MathF.Round(v[t]);
         rf[o + 2] = MathF.Max(v[t], min[t]);
         rf[o + 3] = MathF.Min(v[t], max[t]);
+    }
+
+    // Case N01: Subnormal IEEE 754 0-ulp arithmetic and Sqrt without FTZ
+    [GpuKernel]
+    public static void SubnormalIeeeExactMatrixKernel(
+        float[] fa, float[] fb, double[] da, double[] db, float[] rf, double[] rd)
+    {
+        int t = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
+        if (t >= fa.Length)
+        {
+            return;
+        }
+
+        int of = t * 6;
+        float x = fa[t];
+        float y = fb[t];
+        rf[of] = x + y;
+        rf[of + 1] = x - y;
+        rf[of + 2] = x * y;
+        rf[of + 3] = x / y;
+        rf[of + 4] = MathF.Sqrt(MathF.Abs(x));
+        rf[of + 5] = FastMath.Sqrt(MathF.Abs(x));
+
+        int od = t * 5;
+        double u = da[t];
+        double v = db[t];
+        rd[od] = u + v;
+        rd[od + 1] = u - v;
+        rd[od + 2] = u * v;
+        rd[od + 3] = u / v;
+        rd[od + 4] = Math.Sqrt(Math.Abs(u));
+    }
+
+    // Case N02: Transcendental and Pow special values / fixed points (Bitwise)
+    [GpuKernel]
+    public static void TranscendentalSpecialValuesKernel(
+        float[] fx,
+        float[] logF,
+        float[] powBaseF,
+        float[] powExpF,
+        double[] dx,
+        double[] logD,
+        double[] powBaseD,
+        double[] powExpD,
+        float[] rf,
+        double[] rd
+    )
+    {
+        int t = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
+        if (t >= fx.Length)
+        {
+            return;
+        }
+
+        int of = t * 7;
+        rf[of] = MathF.Sin(fx[t]);
+        rf[of + 1] = MathF.Cos(fx[t]);
+        rf[of + 2] = MathF.Tan(fx[t]);
+        rf[of + 3] = MathF.Exp(fx[t]);
+        rf[of + 4] = MathF.Log(logF[t]);
+        rf[of + 5] = MathF.Pow(powBaseF[t], powExpF[t]);
+        rf[of + 6] = Math.Clamp(fx[t], -1.0f, 1.0f);
+
+        int od = t * 6;
+        rd[od] = Math.Sin(dx[t]);
+        rd[od + 1] = Math.Cos(dx[t]);
+        rd[od + 2] = Math.Tan(dx[t]);
+        rd[od + 3] = Math.Exp(dx[t]);
+        rd[od + 4] = Math.Log(logD[t]);
+        rd[od + 5] = Math.Pow(powBaseD[t], powExpD[t]);
+    }
+
+    // Case N03: System.Numerics.BitOperations uint/ulong mapped overloads + shift count masking + named arguments
+    // (nuint overloads emit undeclared System_UIntPtr in C++ [ND7-01] and are verified via in-memory generator test)
+    [GpuKernel]
+    public static void BitOperationsMatrixKernel(uint[] u32, ulong[] u64, int[] offsets, ulong[] r)
+    {
+        int t = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
+        if (t >= u32.Length)
+        {
+            return;
+        }
+
+        uint v32 = u32[t];
+        ulong v64 = u64[t];
+        int s = offsets[t];
+        int o = t * 13;
+
+        r[o] = (ulong)BitOperations.LeadingZeroCount(v32);
+        r[o + 1] = (ulong)BitOperations.LeadingZeroCount(v64);
+        r[o + 2] = (ulong)BitOperations.TrailingZeroCount(v32);
+        r[o + 3] = (ulong)BitOperations.TrailingZeroCount(v64);
+        r[o + 4] = (ulong)BitOperations.PopCount(v32);
+        r[o + 5] = (ulong)BitOperations.PopCount(v64);
+        r[o + 6] = (ulong)BitOperations.Log2(v32);
+        r[o + 7] = (ulong)BitOperations.Log2(v64);
+        r[o + 8] = BitOperations.RotateLeft(v32, s);
+        r[o + 9] = BitOperations.RotateLeft(v64, s);
+        r[o + 10] = BitOperations.RotateRight(v32, s);
+        r[o + 11] = BitOperations.RotateRight(v64, s);
+        r[o + 12] = BitOperations.RotateLeft(offset: s, value: v32);
+    }
+
+    // Case N05: IEEE 754 unordered comparisons (NaN, signed zeros, subnormals, int promotion) and large-exponent Round ties
+    [GpuKernel]
+    public static void FloatComparisonAndLargeTieMatrixKernel(
+        float[] fa, float[] fb, double[] da, double[] db, int[] ia, byte[] rCmp, double[] rRound)
+    {
+        int t = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
+        if (t >= fa.Length)
+        {
+            return;
+        }
+
+        float x = fa[t];
+        float y = fb[t];
+        double u = da[t];
+        double v = db[t];
+        int iv = ia[t];
+        int oc = t * 16;
+
+        rCmp[oc] = (byte)(x == y ? 1 : 0);
+        rCmp[oc + 1] = (byte)(x != y ? 1 : 0);
+        rCmp[oc + 2] = (byte)(x < y ? 1 : 0);
+        rCmp[oc + 3] = (byte)(x <= y ? 1 : 0);
+        rCmp[oc + 4] = (byte)(x > y ? 1 : 0);
+        rCmp[oc + 5] = (byte)(x >= y ? 1 : 0);
+        rCmp[oc + 6] = (byte)(!(x < y) ? 1 : 0);
+        rCmp[oc + 7] = (byte)(u == v ? 1 : 0);
+        rCmp[oc + 8] = (byte)(u != v ? 1 : 0);
+        rCmp[oc + 9] = (byte)(u < v ? 1 : 0);
+        rCmp[oc + 10] = (byte)(u <= v ? 1 : 0);
+        rCmp[oc + 11] = (byte)(u > v ? 1 : 0);
+        rCmp[oc + 12] = (byte)(u >= v ? 1 : 0);
+        rCmp[oc + 13] = (byte)(!(u < v) ? 1 : 0);
+        rCmp[oc + 14] = (byte)(x < iv ? 1 : 0);
+        rCmp[oc + 15] = (byte)(u == iv ? 1 : 0);
+
+        int or = t * 2;
+        rRound[or] = MathF.Round(x);
+        rRound[or + 1] = Math.Round(u);
+    }
+
+    // Case N06: Mul-Add exact inputs (Bitwise) and FMA contraction witness (Verify)
+    [GpuKernel]
+    public static void MulAddExactAndContractionKernel(
+        float[] fa, float[] fb, float[] fc, float[] rExact, float[] rContract)
+    {
+        int t = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
+        if (t >= fa.Length)
+        {
+            return;
+        }
+
+        rExact[t] = fa[t] * fb[t] + fc[t];
+        float k = fa[t];
+        rContract[t] = k * k - (1.0f + 2.0f * 0.000244140625f);
+    }
+
+    // Case N07: MathF single-precision transcendentals (per-column CUDA ULP + Verify mathematical identities)
+    [GpuKernel]
+    public static void SingleTranscendentalMatrixKernel(
+        float[] trigX, float[] expX, float[] logX, float[] powBase, float[] powExp, float[] r)
+    {
+        int t = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
+        if (t >= trigX.Length)
+        {
+            return;
+        }
+
+        int o = t * 6;
+        r[o] = MathF.Sin(trigX[t]);
+        r[o + 1] = MathF.Cos(trigX[t]);
+        r[o + 2] = MathF.Tan(trigX[t]);
+        r[o + 3] = MathF.Exp(expX[t]);
+        r[o + 4] = MathF.Log(logX[t]);
+        r[o + 5] = MathF.Pow(powBase[t], powExp[t]);
+    }
+
+    // Case N08: System.Math double-precision transcendentals + float argument widening (#876)
+    [GpuKernel]
+    public static void DoubleAndPromotedSingleTranscendentalMatrixKernel(
+        double[] trigD, double[] expD, double[] logD, double[] powBaseD, double[] powExpD,
+        float[] fArg, float[] fExp, double[] r)
+    {
+        int t = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
+        if (t >= trigD.Length)
+        {
+            return;
+        }
+
+        int o = t * 12;
+        r[o] = Math.Sin(trigD[t]);
+        r[o + 1] = Math.Cos(trigD[t]);
+        r[o + 2] = Math.Tan(trigD[t]);
+        r[o + 3] = Math.Exp(expD[t]);
+        r[o + 4] = Math.Log(logD[t]);
+        r[o + 5] = Math.Pow(powBaseD[t], powExpD[t]);
+        r[o + 6] = Math.Sin(fArg[t]);
+        r[o + 7] = Math.Cos(fArg[t]);
+        r[o + 8] = Math.Tan(fArg[t]);
+        r[o + 9] = Math.Exp(fArg[t]);
+        r[o + 10] = Math.Log(MathF.Abs(fArg[t]) + 0.25f);
+        r[o + 11] = Math.Pow(MathF.Abs(fArg[t]) + 0.25f, fExp[t]);
+    }
+
+    // Case N09: FastMath (Sqrt, Abs, Exp, Log)
+    [GpuKernel]
+    public static void FastMathMatrixKernel(
+        float[] x, float[] expX, float[] logUnitX, float[] logWideX, float[] r)
+    {
+        int t = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
+        if (t >= x.Length)
+        {
+            return;
+        }
+
+        int o = t * 5;
+        r[o] = FastMath.Sqrt(MathF.Abs(x[t]));
+        r[o + 1] = FastMath.Abs(x[t]);
+        r[o + 2] = FastMath.Exp(expX[t]);
+        r[o + 3] = FastMath.Log(logUnitX[t]);
+        r[o + 4] = FastMath.Log(logWideX[t]);
     }
 }

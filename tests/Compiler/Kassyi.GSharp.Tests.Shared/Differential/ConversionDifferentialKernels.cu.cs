@@ -147,6 +147,86 @@ public static partial class ConversionDifferentialKernels
         "cArg==0x1234",
     ];
 
+    /// <summary>The signed integer columns of <see cref="DirectFloatDoubleCastMatrixKernel"/> (Case N04).</summary>
+    public static readonly string[] DirectSignedCastColumns =
+    [
+        "(sbyte)f",
+        "(short)f",
+        "(int)f",
+        "(long)f",
+        "(sbyte)d",
+        "(short)d",
+        "(int)d",
+        "(long)d",
+        "(long)(float)i64",
+        "(long)(double)i64",
+    ];
+
+    /// <summary>The unsigned integer columns of <see cref="DirectFloatDoubleCastMatrixKernel"/> (Case N04).</summary>
+    public static readonly string[] DirectUnsignedCastColumns =
+    [
+        "(byte)f",
+        "(ushort)f",
+        "(char)f",
+        "(uint)f",
+        "(ulong)f",
+        "(byte)d",
+        "(ushort)d",
+        "(char)d",
+        "(uint)d",
+        "(ulong)d",
+    ];
+
+    /// <summary>The <see cref="float"/> columns of <see cref="DirectFloatDoubleCastMatrixKernel"/> (Case N04).</summary>
+    public static readonly string[] DirectFloatCastColumns =
+    [
+        "(float)d",
+        "(float)i64",
+        "(float)u64",
+    ];
+
+    /// <summary>The <see cref="double"/> columns of <see cref="DirectFloatDoubleCastMatrixKernel"/> (Case N04).</summary>
+    public static readonly string[] DirectDoubleCastColumns =
+    [
+        "(double)f",
+        "(double)i64",
+        "(double)u64",
+    ];
+
+    /// <summary>The signed columns of <see cref="IntegerCastAndShiftMaskMatrixKernel"/>.</summary>
+    public static readonly string[] IntegerSignedCastShiftColumns =
+    [
+        "(long)sb",
+        "(long)sh16",
+        "(long)iv",
+        "(sbyte)lv",
+        "(short)ulv",
+        "(int)ulv",
+        "iv<<s",
+        "iv>>s",
+        "iv>>>s",
+        "lv<<s",
+        "lv>>s",
+        "lv>>>s",
+        "-sb+(-sh16)+(-b)",
+        "compI>>=s",
+    ];
+
+    /// <summary>The unsigned columns of <see cref="IntegerCastAndShiftMaskMatrixKernel"/>.</summary>
+    public static readonly string[] IntegerUnsignedCastShiftColumns =
+    [
+        "(ulong)b",
+        "(ulong)ush16",
+        "(ulong)ch",
+        "(ulong)uv",
+        "(ulong)sb",
+        "(ulong)sh16",
+        "(ulong)iv",
+        "uv<<s",
+        "uv>>s",
+        "(ulv<<s)^(ulv>>s)",
+    ];
+
     [GpuDeviceFunction]
     public static IEnumerable<float> YieldSingle(float v)
     {
@@ -344,5 +424,110 @@ public static partial class ConversionDifferentialKernels
         r[o] = cArg;
         r[o + 1] = cArr[t];
         r[o + 2] = cArg == '\u1234' ? 1 : 0;
+    }
+
+    // Case N04: Direct casts between float/double and all 9 integer types (#724, #890), 64-bit integer rounding ties, and double <-> float
+    [GpuKernel]
+    public static void DirectFloatDoubleCastMatrixKernel(
+        float[] f, double[] d, long[] i64, ulong[] u64,
+        long[] rSigned, ulong[] rUnsigned, float[] rFloat, double[] rDouble)
+    {
+        int t = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
+        if (t >= f.Length)
+        {
+            return;
+        }
+
+        float fv = f[t];
+        double dv = d[t];
+
+        int os = t * 10;
+        rSigned[os] = (sbyte)fv;
+        rSigned[os + 1] = (short)fv;
+        rSigned[os + 2] = (int)fv;
+        rSigned[os + 3] = (long)fv;
+        rSigned[os + 4] = (sbyte)dv;
+        rSigned[os + 5] = (short)dv;
+        rSigned[os + 6] = (int)dv;
+        rSigned[os + 7] = (long)dv;
+        rSigned[os + 8] = (long)(float)i64[t];
+        rSigned[os + 9] = (long)(double)i64[t];
+
+        int ou = t * 10;
+        rUnsigned[ou] = (byte)fv;
+        rUnsigned[ou + 1] = (ushort)fv;
+        rUnsigned[ou + 2] = (char)fv;
+        rUnsigned[ou + 3] = (uint)fv;
+        rUnsigned[ou + 4] = (ulong)fv;
+        rUnsigned[ou + 5] = (byte)dv;
+        rUnsigned[ou + 6] = (ushort)dv;
+        rUnsigned[ou + 7] = (char)dv;
+        rUnsigned[ou + 8] = (uint)dv;
+        rUnsigned[ou + 9] = (ulong)dv;
+
+        int of = t * 3;
+        rFloat[of] = (float)dv;
+        rFloat[of + 1] = (float)i64[t];
+        rFloat[of + 2] = (float)u64[t];
+
+        int od = t * 3;
+        rDouble[od] = (double)fv;
+        rDouble[od + 1] = (double)i64[t];
+        rDouble[od + 2] = (double)u64[t];
+    }
+
+    // Integer-to-integer widening/narrowing casts, shift count masks (s & 31 / s & 63), sign extension, and unary minus promotion
+    [GpuKernel]
+    public static void IntegerCastAndShiftMaskMatrixKernel(
+        int[] i32, uint[] u32, long[] i64, ulong[] u64, int[] sh,
+        long[] rSigned, ulong[] rUnsigned)
+    {
+        int t = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
+        if (t >= i32.Length)
+        {
+            return;
+        }
+
+        int iv = i32[t];
+        uint uv = u32[t];
+        long lv = i64[t];
+        ulong ulv = u64[t];
+        int s = sh[t];
+
+        sbyte sb = (sbyte)iv;
+        byte b = (byte)uv;
+        short sh16 = (short)iv;
+        ushort ush16 = (ushort)uv;
+        char ch = (char)uv;
+
+        int os = t * 14;
+        rSigned[os] = (long)sb;
+        rSigned[os + 1] = (long)sh16;
+        rSigned[os + 2] = (long)iv;
+        rSigned[os + 3] = (sbyte)lv;
+        rSigned[os + 4] = (short)ulv;
+        rSigned[os + 5] = (int)ulv;
+        rSigned[os + 6] = iv << s;
+        rSigned[os + 7] = iv >> s;
+        rSigned[os + 8] = iv >>> s;
+        rSigned[os + 9] = lv << s;
+        rSigned[os + 10] = lv >> s;
+        rSigned[os + 11] = lv >>> s;
+        rSigned[os + 12] = -sb + (-sh16) + (-b);
+        int compI = iv;
+        compI >>= s;
+        rSigned[os + 13] = compI;
+
+        int ou = t * 10;
+        rUnsigned[ou] = (ulong)b;
+        rUnsigned[ou + 1] = (ulong)ush16;
+        rUnsigned[ou + 2] = (ulong)ch;
+        rUnsigned[ou + 3] = (ulong)uv;
+        rUnsigned[ou + 4] = (ulong)sb;
+        rUnsigned[ou + 5] = (ulong)sh16;
+        rUnsigned[ou + 6] = (ulong)iv;
+        rUnsigned[ou + 7] = uv << s;
+        rUnsigned[ou + 8] = uv >> s;
+        rUnsigned[ou + 9] = (ulv << s) ^ (ulv >> s);
     }
 }
