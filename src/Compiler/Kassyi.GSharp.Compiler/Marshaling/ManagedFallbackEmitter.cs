@@ -174,6 +174,11 @@ internal static class ManagedFallbackEmitter
         using (writer.Scope())
         {
             writer.AppendLine("anyBlockActive = false;");
+            if (kernel.ReachesWarpShuffle)
+            {
+                writer.AppendLine($"int {WarpMinState} = int.MaxValue;");
+            }
+
             writer.AppendLine($"for (int {ThreadLoopIndex} = 0; {ThreadLoopIndex} < {ThreadsPerBlock}; {ThreadLoopIndex}++)");
             using (writer.Scope())
             {
@@ -232,6 +237,11 @@ internal static class ManagedFallbackEmitter
     // One step of one thread: from where it stopped to its next barrier, grid sync or end
     private static void WriteManagedThreadStep(SourceWriter writer, in KernelHostModel kernel)
     {
+        if (kernel.ReachesWarpShuffle)
+        {
+            WriteManagedWarpMinState(writer, kernel);
+        }
+
         writer.AppendLine($"int {ThreadX} = {ThreadLoopIndex} % (int)blockDimX;");
         writer.AppendLine($"int {ThreadY} = ({ThreadLoopIndex} / (int)blockDimX) % (int)blockDimY;");
         writer.AppendLine($"int {ThreadZ} = {ThreadLoopIndex} / (int)(blockDimX * blockDimY);");
@@ -246,12 +256,20 @@ internal static class ManagedFallbackEmitter
         using (writer.Scope())
         {
             writer.AppendLine("anyGridActive = true;");
-            // The state machines of the kernel and of the device functions it calls request a grid sync (#665) and report
-            // a block barrier through thread-static flags; the launcher steps one GPU thread at a time on this host thread
-            writer.AppendLine($"{ManagedExecutionRewriter.ManagedGridSyncRequested} = false;");
-            writer.AppendLine($"{ManagedExecutionRewriter.ManagedBlockBarrierRequested} = false;");
-            WriteStateMachineCall(writer, kernel);
-            WriteManagedWaits(writer, kernel);
+            if (kernel.ReachesWarpShuffle)
+            {
+                writer.AppendLine($"if ({LinearContext}.{GSharpInternalNames.StateMachine.State} == {WarpMinState})");
+            }
+
+            using (kernel.ReachesWarpShuffle ? writer.Scope() : default)
+            {
+                // The state machines of the kernel and of the device functions it calls request a grid sync (#665) and report
+                // a block barrier through thread-static flags; the launcher steps one GPU thread at a time on this host thread
+                writer.AppendLine($"{ManagedExecutionRewriter.ManagedGridSyncRequested} = false;");
+                writer.AppendLine($"{ManagedExecutionRewriter.ManagedBlockBarrierRequested} = false;");
+                WriteStateMachineCall(writer, kernel);
+                WriteManagedWaits(writer, kernel);
+            }
 
             // The next round runs while a thread can go on: one that stopped at a shuffle runs again, one at a barrier
             // waits
@@ -269,6 +287,40 @@ internal static class ManagedFallbackEmitter
 
     // ... && !threadAtGridSync[<thread>]
     private const string CooperativeRunnableCondition = $"{RunnableCondition} && !threadAtGridSync[{LinearThreadIndex}]";
+
+    private const string WarpContext =
+        $"{GSharpInternalNames.Launcher.Contexts}[{GSharpInternalNames.Launcher.WarpThreadIndex}]";
+
+    private const string WarpRunnableCondition =
+        $"{WarpContext}.{GSharpInternalNames.StateMachine.State} != -1 && !threadAtBlockBarrier[{WarpThreadIndex}]";
+
+    private const string CooperativeWarpRunnableCondition =
+        $"{WarpRunnableCondition} && !threadAtGridSync[{WarpThreadIndex}]";
+
+    // In a kernel that reaches a warp shuffle, only the runnable lanes at the warp's lowest state step in each round,
+    // so lanes that skip a sub-warp shuffle reconverge with the lanes that took it before the next full-warp shuffle (#1001)
+    private static void WriteManagedWarpMinState(SourceWriter writer, in KernelHostModel kernel)
+    {
+        var warpRunnable = kernel.IsCooperative ? CooperativeWarpRunnableCondition : WarpRunnableCondition;
+        writer.AppendLine($"if (({ThreadLoopIndex} & 31) == 0)");
+        using (writer.Scope())
+        {
+            writer.AppendLine($"{WarpMinState} = int.MaxValue;");
+            writer.AppendLine(
+                $"int {WarpEnd} = {ThreadLoopIndex} + 32 < {ThreadsPerBlock} ? {ThreadLoopIndex} + 32 : {ThreadsPerBlock};");
+            writer.AppendLine(
+                $"for (int {WarpThreadIndex} = {BlockLoopIndex} * {ThreadsPerBlock} + {ThreadLoopIndex}; {WarpThreadIndex} < {BlockLoopIndex} * {ThreadsPerBlock} + {WarpEnd}; {WarpThreadIndex}++)");
+            using (writer.Scope())
+            {
+                writer.AppendLine(
+                    $"if ({warpRunnable} && {WarpContext}.{GSharpInternalNames.StateMachine.State} < {WarpMinState})");
+                using (writer.Scope())
+                {
+                    writer.AppendLine($"{WarpMinState} = {WarpContext}.{GSharpInternalNames.StateMachine.State};");
+                }
+            }
+        }
+    }
 
     // <state machine>(<arguments>, __gsharp_contexts[<thread>][, ref __gsharp_auto_result[<thread>]]);
     private static void WriteStateMachineCall(SourceWriter writer, in KernelHostModel kernel)

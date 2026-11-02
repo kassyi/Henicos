@@ -177,6 +177,10 @@ Launcher:
     GridSyncReached: __gsharp_grid_sync_reached
     StructArgumentPrefix: __gsharp_arg_
     LayoutProbe: __gsharp_layout_probe
+    # The minimum runnable state of a warp in a round of a kernel that reaches a warp shuffle (#1001)
+    WarpMinState: __gsharp_warp_min_state
+    WarpEnd: __gsharp_warp_end
+    WarpThreadIndex: __gsharp_w
 
 ReturnValue:
   Summary: The buffer that a kernel returning a value writes into, the device-side locals that fill it, and the launcher locals that convert a returned struct whose layouts differ.
@@ -235,6 +239,8 @@ Prelude:
     WarpShuffleReadDownSync: { Value: __gsharp_warp_shuffle_read_down_sync, Prelude: WarpAndHints.hpp, Managed: ManagedGpuContext.cs }
     WarpShuffleReadUpSync: { Value: __gsharp_warp_shuffle_read_up_sync, Prelude: WarpAndHints.hpp, Managed: ManagedGpuContext.cs }
     WarpShuffleReadXorSync: { Value: __gsharp_warp_shuffle_read_xor_sync, Prelude: WarpAndHints.hpp, Managed: ManagedGpuContext.cs }
+    WarpMatchAnyRead: { Value: __gsharp_warp_match_any_read_sync, Prelude: WarpAndHints.hpp, Managed: ManagedGpuContext.cs }
+    WarpMatchAllRead: { Value: __gsharp_warp_match_all_read_sync, Prelude: WarpAndHints.hpp, Managed: ManagedGpuContext.cs }
     Log2For32: { Value: __gsharp_log2_32, Prelude: MathAndBitOps.hpp }
     Log2For64: { Value: __gsharp_log2_64, Prelude: MathAndBitOps.hpp }
     RotateLeftFor32: { Value: __gsharp_rotl32, Prelude: MathAndBitOps.hpp }

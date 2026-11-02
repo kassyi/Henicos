@@ -24,6 +24,8 @@ internal static class SuspensionAnalysis
 
     private static readonly ConditionalWeakTable<Compilation, ConcurrentDictionary<IMethodSymbol, bool>> s_gridBarrier = new();
 
+    private static readonly ConditionalWeakTable<Compilation, ConcurrentDictionary<IMethodSymbol, bool>> s_warpShuffle = new();
+
     // Which barriers a query looks for
     private enum BarrierSet
     {
@@ -34,7 +36,10 @@ internal static class SuspensionAnalysis
         Block,
 
         // Gpu.SyncGrid(), which every thread of the grid must reach
-        Grid
+        Grid,
+
+        // Warp.Shuffle*Sync and Gpu.Match*Sync
+        WarpShuffle
     }
 
     /// <summary>Whether <paramref name="method"/> is a device function that reaches a phase barrier.</summary>
@@ -108,6 +113,26 @@ internal static class SuspensionAnalysis
     public static SyncScope GetBarrierScope(IMethodSymbol method, Compilation compilation) =>
         ReachesGridBarrier(method, compilation) ? SyncScope.Grid : SyncScope.Block;
 
+    /// <summary>
+    /// Whether <paramref name="method"/> (a kernel or a device function) reaches a warp shuffle or warp match
+    /// (<see cref="SyncIntrinsicKind.WarpShuffle"/>), directly or through device functions it calls.
+    /// </summary>
+    public static bool ReachesWarpShuffle(IMethodSymbol method, Compilation compilation)
+    {
+        var definition = method.OriginalDefinition;
+        if (!TryGetMethodBody(definition, compilation, out _))
+        {
+            return DeviceExportTable.TryFindFunction(definition, compilation, out var imported) &&
+                   imported.Record.Suspends;
+        }
+
+        var cache = s_warpShuffle.GetValue(compilation,
+            static _ => new ConcurrentDictionary<IMethodSymbol, bool>(SymbolEqualityComparer.Default));
+        return cache.GetOrAdd(definition,
+            m => ReachesBarrier(m, BarrierSet.WarpShuffle, compilation,
+                new HashSet<IMethodSymbol>(SymbolEqualityComparer.Default)));
+    }
+
     /// <summary>Whether <paramref name="invocation"/>, a node of the tree of <paramref name="semanticModel"/>, calls a
     /// device function that reaches a phase barrier.</summary>
     public static bool IsSuspendingCall(InvocationExpressionSyntax invocation, SemanticModel semanticModel) =>
@@ -156,13 +181,13 @@ internal static class SuspensionAnalysis
             return false;
         }
 
-        if (!TryGetDeviceFunctionBody(method, compilation, out var declaration))
+        if (!TryGetMethodBody(method, compilation, out var declaration))
         {
             // A device function of another assembly: what its assembly recorded
             return DeviceExportTable.TryFindFunction(method, compilation, out var imported) &&
                    barriers switch
                    {
-                       BarrierSet.Splitting => imported.Record.Suspends,
+                       BarrierSet.Splitting or BarrierSet.WarpShuffle => imported.Record.Suspends,
                        BarrierSet.Block => imported.Record.ReachesBlockBarrier,
                        _ => false
                    };
@@ -200,6 +225,7 @@ internal static class SuspensionAnalysis
         {
             BarrierSet.Block => intrinsic.Kind is SyncIntrinsicKind.BlockBarrier or SyncIntrinsicKind.GridBarrier,
             BarrierSet.Grid => intrinsic.Kind == SyncIntrinsicKind.GridBarrier,
+            BarrierSet.WarpShuffle => intrinsic.Kind == SyncIntrinsicKind.WarpShuffle,
             _ => intrinsic.SplitsStateMachine
         };
 
@@ -249,6 +275,21 @@ internal static class SuspensionAnalysis
     /// <paramref name="compilation"/>. A function of another assembly has no body here, also when an IDE gives its
     /// declaration through a referenced compilation.
     /// </summary>
+    private static bool TryGetMethodBody(IMethodSymbol method, Compilation compilation,
+        [NotNullWhen(true)] out MethodDeclarationSyntax? declaration)
+    {
+        if ((method.HasAttribute(KnownAttributes.GpuDeviceFunction) || method.HasAttribute(KnownAttributes.GpuKernel)) &&
+            method.TryGetDeclaringSyntax(out declaration) &&
+            compilation.ContainsSyntaxTree(declaration.SyntaxTree) &&
+            (declaration.Body != null || declaration.ExpressionBody != null))
+        {
+            return true;
+        }
+
+        declaration = null;
+        return false;
+    }
+
     internal static bool TryGetDeviceFunctionBody(IMethodSymbol method, Compilation compilation,
         [NotNullWhen(true)] out MethodDeclarationSyntax? declaration)
     {

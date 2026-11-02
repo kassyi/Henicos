@@ -89,11 +89,60 @@ internal sealed partial class ManagedExecutionRewriter(SemanticModel semanticMod
         VisitImplicitObjectCreationExpression(ImplicitObjectCreationExpressionSyntax node) =>
         VisitCreation(node, base.VisitImplicitObjectCreationExpression(node));
 
-    private SyntaxNode? VisitCreation(BaseObjectCreationExpressionSyntax node, SyntaxNode? visited) =>
-        visited is BaseObjectCreationExpressionSyntax rewritten &&
-        semanticModel.GetTypeSymbol(node).IsSharedMemoryType()
-            ? SharedMemorySiteKeyAnnotator.AddSharedMemorySiteKey(node, rewritten, semanticModel)
-            : visited;
+    private SyntaxNode? VisitCreation(BaseObjectCreationExpressionSyntax node, SyntaxNode? visited)
+    {
+        if (visited is BaseObjectCreationExpressionSyntax rewritten &&
+            semanticModel.GetTypeSymbol(node).IsSharedMemoryType())
+        {
+            return SharedMemorySiteKeyAnnotator.AddSharedMemorySiteKey(node, rewritten, semanticModel);
+        }
+
+        // A generic struct constructor is monomorphized per closed struct type on CUDA and on the native CPU path (#543),
+        // so the managed path wraps the creation in a type-key scope that salts any SharedMemory<T> it allocates.
+        if (visited is ExpressionSyntax rewrittenExpr &&
+            semanticModel.GetTypeSymbol(node) is INamedTypeSymbol { TypeKind: TypeKind.Struct, IsGenericType: true } structType &&
+            semanticModel.GetSymbol(node) is IMethodSymbol ctor &&
+            StructTranspiler.IsEmittedStructConstructor(ctor, semanticModel.Compilation) &&
+            DeclaresSharedMemoryInStruct(structType) &&
+            (node.ArgumentList is not { } argList ||
+             !argList.Arguments.AsStackEnumerable().Any(static arg => !arg.RefKindKeyword.IsKind(SyntaxKind.None))))
+        {
+            var typeName = structType.GetFullyQualifiedCsharpName();
+            var beginCall = SyntaxFactory.ParseExpression(
+                $"global::Kassyi.GSharp.Core.ManagedGpuContext.BeginTypeKeyScope<{typeName}>()");
+            return SyntaxFactory.InvocationExpression(
+                SyntaxFactory.ParseExpression("global::Kassyi.GSharp.Core.ManagedGpuContext.EndTypeKeyScope"),
+                SyntaxFactory.ArgumentList(
+                    SyntaxFactory.SeparatedList<ArgumentSyntax>(
+                    [
+                        SyntaxFactory.Argument(beginCall),
+                        SyntaxFactory.Argument(rewrittenExpr.WithoutTrivia())
+                    ])
+                )
+            ).WithTriviaFrom(rewrittenExpr);
+        }
+
+        return visited;
+    }
+
+    private static bool DeclaresSharedMemoryInStruct(INamedTypeSymbol structType)
+    {
+        foreach (var syntaxRef in structType.OriginalDefinition.DeclaringSyntaxReferences)
+        {
+            if (syntaxRef.GetSyntax() is TypeDeclarationSyntax typeDecl)
+            {
+                foreach (var node in typeDecl.DescendantNodes())
+                {
+                    if (node is GenericNameSyntax { Identifier.ValueText: "SharedMemory" })
+                    {
+                        return true;
+                    }
+                }
+            }
+        }
+
+        return false;
+    }
 
     public override SyntaxNode? VisitMemberAccessExpression(MemberAccessExpressionSyntax node)
     {

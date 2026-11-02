@@ -377,15 +377,24 @@ public class StateMachineLowerer(bool isDeviceFunction = false, SemanticModel? s
             SyntaxFactory.Argument(SyntaxFactory.IdentifierName(GSharpInternalNames.SuspendingCall.Root)));
         newArgs = newArgs.Add(GetShuffleArgument(barrierInv, ShuffleMaskPosition));
         newArgs = newArgs.Add(GetShuffleArgument(barrierInv, ShuffleValuePosition)); // pass val for type inference
-        newArgs = newArgs.Add(GetShuffleArgument(barrierInv, ShuffleLanePosition));
-        // The width is always passed, so that the place of the shuffle can follow it; 32 is the default of every shuffle
-        newArgs = newArgs.Add(
-            TryGetShuffleArgument(barrierInv, ShuffleWidthPosition, out var width)
-                ? width
-                : SyntaxFactory.Argument(
-                    SyntaxFactory.LiteralExpression(SyntaxKind.NumericLiteralExpression, SyntaxFactory.Literal(32))
-                )
-        );
+        if (readFunction != GSharpInternalNames.Prelude.WarpMatchAnyRead)
+        {
+            newArgs = newArgs.Add(GetShuffleArgument(barrierInv, ShuffleLanePosition));
+        }
+
+        if (readFunction != GSharpInternalNames.Prelude.WarpMatchAnyRead &&
+            readFunction != GSharpInternalNames.Prelude.WarpMatchAllRead)
+        {
+            // The width is always passed, so that the place of the shuffle can follow it; 32 is the default of every shuffle
+            newArgs = newArgs.Add(
+                TryGetShuffleArgument(barrierInv, ShuffleWidthPosition, out var width)
+                    ? width
+                    : SyntaxFactory.Argument(
+                        SyntaxFactory.LiteralExpression(SyntaxKind.NumericLiteralExpression, SyntaxFactory.Literal(32))
+                    )
+            );
+        }
+
         newArgs = newArgs.Add(
             SyntaxFactory.Argument(
                 SyntaxFactory.LiteralExpression(
@@ -412,6 +421,7 @@ public class StateMachineLowerer(bool isDeviceFunction = false, SemanticModel? s
     private const int ShuffleWidthPosition = 3;
     private const string ShuffleMaskParameter = "mask";
     private const string ShuffleValueParameter = "var";
+    private const string MatchValueParameter = "value";
     private const string ShuffleWidthParameter = "width";
 
     // The argument of a shuffle for the parameter at position, which the call compiled with (so it is there)
@@ -434,7 +444,7 @@ public class StateMachineLowerer(bool isDeviceFunction = false, SemanticModel? s
             {
                 null => i,
                 ShuffleMaskParameter => ShuffleMaskPosition,
-                ShuffleValueParameter => ShuffleValuePosition,
+                ShuffleValueParameter or MatchValueParameter => ShuffleValuePosition,
                 ShuffleWidthParameter => ShuffleWidthPosition,
                 _ => ShuffleLanePosition
             };

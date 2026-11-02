@@ -60,7 +60,13 @@ internal enum WarpShuffleKind
     Up,
 
     /// <summary><c>Warp.ShuffleXorSync</c>.</summary>
-    Xor
+    Xor,
+
+    /// <summary><c>Gpu.MatchAnySync</c>.</summary>
+    MatchAny,
+
+    /// <summary><c>Gpu.MatchAllSync</c>.</summary>
+    MatchAll
 }
 
 /// <summary>How the analyzers and the lowering treat a call to an intrinsic of <c>Kassyi.GSharp.Core</c>.</summary>
@@ -164,7 +170,8 @@ internal static class SyncIntrinsicClassifier
         "SyncWarp" =>
             new SyncIntrinsicInfo(SyncIntrinsicKind.WarpBarrier, SyncScope.Warp, splitsStateMachine: false,
                 resultIsThreadVariant: false),
-        "MatchAnySync" or "MatchAllSync" => s_warpCollective,
+        "MatchAnySync" => Shuffle(WarpShuffleKind.MatchAny),
+        "MatchAllSync" => Shuffle(WarpShuffleKind.MatchAll),
         "ThreadFence" or "ThreadFenceBlock" or "ThreadFenceSystem" =>
             new SyncIntrinsicInfo(SyncIntrinsicKind.MemoryFence, SyncScope.None, splitsStateMachine: false,
                 resultIsThreadVariant: false),

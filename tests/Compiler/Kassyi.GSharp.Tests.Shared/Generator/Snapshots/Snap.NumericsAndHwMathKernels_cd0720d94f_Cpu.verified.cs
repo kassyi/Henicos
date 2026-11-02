@@ -310,6 +310,10 @@ uint64_t __gsharp_warp_exchange[2] = {};
 uint32_t __gsharp_warp_shuffle_count = 0;
 bool __gsharp_yielded_for_grid_sync = false;
 bool __gsharp_yielded_for_block_barrier = false;
+unsigned int __gsharp_id_3_u32Val;
+unsigned long long __gsharp_id_4_u64Val;
+unsigned int __gsharp_warp_temp_0;
+int __gsharp_id_5_matchPred;
 };
 extern ""C"" __declspec(dllexport) void __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__NumericsAndHwMathKernels__PtxIntrinsicsExpansionKernel(GSharpArray<unsigned int> __gsharp_id_0_u32Out, GSharpArray<unsigned long long> __gsharp_id_1_u64Out, GSharpArray<int> __gsharp_id_2_i32Out, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__NumericsAndHwMathKernels__PtxIntrinsicsExpansionKernel* __gsharp_ctx){
 #define __gsharp_state __gsharp_ctx->__gsharp_state
@@ -321,22 +325,38 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-unsigned int __gsharp_id_3_u32Val = 0x12345678u;
-unsigned long long __gsharp_id_4_u64Val = 0x0123456789ABCDEFull;
-__gsharp_id_0_u32Out[0]=__gsharp_bfe(__gsharp_id_3_u32Val,4,8);
-__gsharp_id_1_u64Out[0]=__gsharp_bfe64(__gsharp_id_4_u64Val,8,16);
-__gsharp_id_0_u32Out[1]=__gsharp_bfi(0xFFu,__gsharp_id_3_u32Val,4,8);
-__gsharp_id_1_u64Out[1]=__gsharp_bfi64(0xFFFFull,__gsharp_id_4_u64Val,8,16);
-__gsharp_id_0_u32Out[2]=__gsharp_lop3(__gsharp_id_3_u32Val,0x0F0F0F0Fu,0xAAAAAAAAu,0x54);
-__gsharp_id_0_u32Out[3]=__gsharp_tzc_32(__gsharp_id_3_u32Val);
-__gsharp_id_1_u64Out[2]=__gsharp_tzc_64(__gsharp_id_4_u64Val);
-__gsharp_id_1_u64Out[3]=__brevll(__gsharp_id_4_u64Val);
+__gsharp_ctx->__gsharp_id_3_u32Val=0x12345678u;
+__gsharp_ctx->__gsharp_id_4_u64Val=0x0123456789ABCDEFull;
+__gsharp_id_0_u32Out[0]=__gsharp_bfe(__gsharp_ctx->__gsharp_id_3_u32Val,4,8);
+__gsharp_id_1_u64Out[0]=__gsharp_bfe64(__gsharp_ctx->__gsharp_id_4_u64Val,8,16);
+__gsharp_id_0_u32Out[1]=__gsharp_bfi(0xFFu,__gsharp_ctx->__gsharp_id_3_u32Val,4,8);
+__gsharp_id_1_u64Out[1]=__gsharp_bfi64(0xFFFFull,__gsharp_ctx->__gsharp_id_4_u64Val,8,16);
+__gsharp_id_0_u32Out[2]=__gsharp_lop3(__gsharp_ctx->__gsharp_id_3_u32Val,0x0F0F0F0Fu,0xAAAAAAAAu,0x54);
+__gsharp_id_0_u32Out[3]=__gsharp_tzc_32(__gsharp_ctx->__gsharp_id_3_u32Val);
+__gsharp_id_1_u64Out[2]=__gsharp_tzc_64(__gsharp_ctx->__gsharp_id_4_u64Val);
+__gsharp_id_1_u64Out[3]=__brevll(__gsharp_ctx->__gsharp_id_4_u64Val);
 __gsharp_id_2_i32Out[0]=__dp4a(0x01020304,0x05060708,10);
 __gsharp_id_0_u32Out[4]=__dp4a(0x01020304u,0x05060708u,10u);
 __gsharp_id_0_u32Out[5]=__gsharp_vabsdiff4(0x10203040u,0x01020304u,5u);
-__gsharp_id_0_u32Out[6]=__match_any_sync(0xFFFFFFFFu,__gsharp_id_3_u32Val);
-int __gsharp_id_5_matchPred = 0;
-__gsharp_id_0_u32Out[7]=__match_all_sync(0xFFFFFFFFu,__gsharp_id_3_u32Val,&__gsharp_id_5_matchPred);
+__gsharp_warp_exchange_assign(__gsharp_ctx->__gsharp_id_3_u32Val);
+__gsharp_state=1;
+return;
+}
+case 1:
+__gsharp_switch_1_state_1:
+{
+__gsharp_ctx->__gsharp_warp_temp_0=__gsharp_warp_match_any_read_sync(__gsharp_root,0xFFFFFFFFu,__gsharp_ctx->__gsharp_id_3_u32Val,""NumericsAndHwMathKernels.cs(56,21)"");
+__gsharp_id_0_u32Out[6]=__gsharp_ctx->__gsharp_warp_temp_0;
+__gsharp_ctx->__gsharp_id_5_matchPred=0;
+__gsharp_warp_exchange_assign(__gsharp_ctx->__gsharp_id_3_u32Val);
+__gsharp_state=2;
+return;
+}
+case 2:
+__gsharp_switch_1_state_2:
+{
+auto __gsharp_warp_temp_1 = __gsharp_warp_match_all_read_sync(__gsharp_root,0xFFFFFFFFu,__gsharp_ctx->__gsharp_id_3_u32Val,&__gsharp_ctx->__gsharp_id_5_matchPred,""NumericsAndHwMathKernels.cs(59,21)"");
+__gsharp_id_0_u32Out[7]=__gsharp_warp_temp_1;
 __nanosleep(10);
 __syncwarp(4294967295U);
 atomicAdd(&__gsharp_id_0_u32Out[8],42u);
@@ -373,9 +393,22 @@ while (__gsharp_any_active && !__gsharp_launch_error.HasError())
 {
 __gsharp_any_active = false;
 int32_t __gsharp_threads_per_block = (int32_t)(__gsharp_block_dim_x * __gsharp_block_dim_y * __gsharp_block_dim_z);
+int32_t __gsharp_warp_min_state = INT32_MAX;
 for (int32_t __gsharp_thread_index = 0; __gsharp_thread_index < __gsharp_threads_per_block; __gsharp_thread_index++)
 {
 if (__gsharp_launch_error.HasError()) continue;
+if ((__gsharp_thread_index & 31) == 0)
+{
+__gsharp_warp_min_state = INT32_MAX;
+int32_t __gsharp_warp_end = __gsharp_thread_index + 32 < __gsharp_threads_per_block ? __gsharp_thread_index + 32 : __gsharp_threads_per_block;
+for (int32_t __gsharp_w = __gsharp_thread_index; __gsharp_w < __gsharp_warp_end; __gsharp_w++)
+{
+if (__gsharp_contexts[__gsharp_w].__gsharp_state != -1 && !__gsharp_contexts[__gsharp_w].__gsharp_yielded_for_block_barrier && !__gsharp_contexts[__gsharp_w].__gsharp_yielded_for_grid_sync && __gsharp_contexts[__gsharp_w].__gsharp_state < __gsharp_warp_min_state)
+{
+__gsharp_warp_min_state = __gsharp_contexts[__gsharp_w].__gsharp_state;
+}
+}
+}
 __gsharp_active_error_slot = &__gsharp_launch_error;
 int32_t __gsharp_tx = __gsharp_thread_index % __gsharp_block_dim_x;
 int32_t __gsharp_ty = (__gsharp_thread_index / __gsharp_block_dim_x) % __gsharp_block_dim_y;
@@ -383,11 +416,14 @@ int32_t __gsharp_tz = __gsharp_thread_index / (__gsharp_block_dim_x * __gsharp_b
 uint32_t __gsharp_ctx_tid = __gsharp_tz * __gsharp_block_dim_y * __gsharp_block_dim_x + __gsharp_ty * __gsharp_block_dim_x + __gsharp_tx;
 if (__gsharp_contexts[__gsharp_ctx_tid].__gsharp_state != -1 && !__gsharp_contexts[__gsharp_ctx_tid].__gsharp_yielded_for_block_barrier && !__gsharp_contexts[__gsharp_ctx_tid].__gsharp_yielded_for_grid_sync)
 {
+if (__gsharp_contexts[__gsharp_ctx_tid].__gsharp_state == __gsharp_warp_min_state)
+{
 __gsharp_set_thread_idx(__gsharp_tx, __gsharp_ty, __gsharp_tz, __gsharp_bx, __gsharp_by, __gsharp_bz, __gsharp_block_dim_x, __gsharp_block_dim_y, __gsharp_block_dim_z, __gsharp_grid_dim_x, __gsharp_grid_dim_y, __gsharp_grid_dim_z);
 __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__NumericsAndHwMathKernels__PtxIntrinsicsExpansionKernel(__gsharp_id_0_u32Out, __gsharp_id_1_u64Out, __gsharp_id_2_i32Out, &__gsharp_contexts[__gsharp_ctx_tid]);
 if (__gsharp_contexts[__gsharp_ctx_tid].__gsharp_yielded_for_grid_sync)
 {
 __gsharp_trap(GSharpErrorCode::InvalidOperation, ""G#: Gpu.SyncGrid reached in NumericsAndHwMathKernels.PtxIntrinsicsExpansionKernel, which is not [GpuKernel(Cooperative = true)]"");
+}
 }
 if (__gsharp_contexts[__gsharp_ctx_tid].__gsharp_state != -1 && !__gsharp_contexts[__gsharp_ctx_tid].__gsharp_yielded_for_block_barrier && !__gsharp_contexts[__gsharp_ctx_tid].__gsharp_yielded_for_grid_sync)
 {
@@ -424,6 +460,10 @@ public static readonly string PtxIntrinsicsExpansionKernel_FullSource=global::Ka
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__NumericsAndHwMathKernels__PtxIntrinsicsExpansionKernel {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
+public uint u32Val;
+public ulong u64Val;
+public uint __gsharp_warp_temp_0;
+public int matchPred;
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__NumericsAndHwMathKernels__PtxIntrinsicsExpansionKernel(uint[] u32Out, ulong[] u64Out, int[] i32Out, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__NumericsAndHwMathKernels__PtxIntrinsicsExpansionKernel __gsharp_ctx) {
@@ -432,22 +472,38 @@ switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-uint u32Val = 0x12345678u;
-ulong u64Val = 0x0123456789ABCDEFul;
-u32Out[0] = global::Kassyi.GSharp.Core.Gpu.BitFieldExtract(u32Val, 4, 8);
-u64Out[0] = global::Kassyi.GSharp.Core.Gpu.BitFieldExtract(u64Val, 8, 16);
-u32Out[1] = global::Kassyi.GSharp.Core.Gpu.BitFieldInsert(0xFFu, u32Val, 4, 8);
-u64Out[1] = global::Kassyi.GSharp.Core.Gpu.BitFieldInsert(0xFFFFul, u64Val, 8, 16);
-u32Out[2] = global::Kassyi.GSharp.Core.Gpu.Lop3(u32Val, 0x0F0F0F0Fu, 0xAAAAAAAAu, 0x54);
-u32Out[3] = global::Kassyi.GSharp.Core.Gpu.CountTrailingZeros(u32Val);
-u64Out[2] = global::Kassyi.GSharp.Core.Gpu.CountTrailingZeros(u64Val);
-u64Out[3] = global::Kassyi.GSharp.Core.Gpu.BitReverse64(u64Val);
+__gsharp_ctx.u32Val = 0x12345678u;
+__gsharp_ctx.u64Val = 0x0123456789ABCDEFul;
+u32Out[0] = global::Kassyi.GSharp.Core.Gpu.BitFieldExtract(__gsharp_ctx.u32Val, 4, 8);
+u64Out[0] = global::Kassyi.GSharp.Core.Gpu.BitFieldExtract(__gsharp_ctx.u64Val, 8, 16);
+u32Out[1] = global::Kassyi.GSharp.Core.Gpu.BitFieldInsert(0xFFu, __gsharp_ctx.u32Val, 4, 8);
+u64Out[1] = global::Kassyi.GSharp.Core.Gpu.BitFieldInsert(0xFFFFul, __gsharp_ctx.u64Val, 8, 16);
+u32Out[2] = global::Kassyi.GSharp.Core.Gpu.Lop3(__gsharp_ctx.u32Val, 0x0F0F0F0Fu, 0xAAAAAAAAu, 0x54);
+u32Out[3] = global::Kassyi.GSharp.Core.Gpu.CountTrailingZeros(__gsharp_ctx.u32Val);
+u64Out[2] = global::Kassyi.GSharp.Core.Gpu.CountTrailingZeros(__gsharp_ctx.u64Val);
+u64Out[3] = global::Kassyi.GSharp.Core.Gpu.BitReverse64(__gsharp_ctx.u64Val);
 i32Out[0] = global::Kassyi.GSharp.Core.Gpu.DotProduct4(0x01020304, 0x05060708, 10);
 u32Out[4] = global::Kassyi.GSharp.Core.Gpu.DotProduct4(0x01020304u, 0x05060708u, 10u);
 u32Out[5] = global::Kassyi.GSharp.Core.Gpu.Sad4(0x10203040u, 0x01020304u, 5u);
-u32Out[6] = global::Kassyi.GSharp.Core.Gpu.MatchAnySync(0xFFFFFFFFu, u32Val);
-int matchPred = 0;
-u32Out[7] = global::Kassyi.GSharp.Core.Gpu.MatchAllSync(0xFFFFFFFFu, u32Val, ref matchPred);
+__gsharp_warp_exchange_assign(__gsharp_ctx.u32Val);
+__gsharp_ctx.__gsharp_state = 1;
+return;
+}
+
+case 1:
+{
+__gsharp_ctx.__gsharp_warp_temp_0 = __gsharp_warp_match_any_read_sync(__gsharp_ctx, 0xFFFFFFFFu, __gsharp_ctx.u32Val, "NumericsAndHwMathKernels.cs(56,21)");
+u32Out[6] = __gsharp_ctx.__gsharp_warp_temp_0;
+__gsharp_ctx.matchPred = 0;
+__gsharp_warp_exchange_assign(__gsharp_ctx.u32Val);
+__gsharp_ctx.__gsharp_state = 2;
+return;
+}
+
+case 2:
+{
+var __gsharp_warp_temp_1 = __gsharp_warp_match_all_read_sync(__gsharp_ctx, 0xFFFFFFFFu, __gsharp_ctx.u32Val, ref __gsharp_ctx.matchPred, "NumericsAndHwMathKernels.cs(59,21)");
+u32Out[7] = __gsharp_warp_temp_1;
 global::Kassyi.GSharp.Core.Gpu.NanoSleep(10);
 global::Kassyi.GSharp.Core.Gpu.SyncWarp();
 global::Kassyi.GSharp.Core.Gpu.ReductionAdd(ref u32Out[8], 42u);
@@ -525,8 +581,21 @@ bool anyBlockActive = true;
 while (anyBlockActive)
 {
 anyBlockActive = false;
+int __gsharp_warp_min_state = int.MaxValue;
 for (int __gsharp_thread_index = 0; __gsharp_thread_index < __gsharp_threads_per_block; __gsharp_thread_index++)
 {
+if ((__gsharp_thread_index & 31) == 0)
+{
+__gsharp_warp_min_state = int.MaxValue;
+int __gsharp_warp_end = __gsharp_thread_index + 32 < __gsharp_threads_per_block ? __gsharp_thread_index + 32 : __gsharp_threads_per_block;
+for (int __gsharp_w = __gsharp_block_index * __gsharp_threads_per_block + __gsharp_thread_index; __gsharp_w < __gsharp_block_index * __gsharp_threads_per_block + __gsharp_warp_end; __gsharp_w++)
+{
+if (__gsharp_contexts[__gsharp_w].__gsharp_state != -1 && !threadAtBlockBarrier[__gsharp_w] && __gsharp_contexts[__gsharp_w].__gsharp_state < __gsharp_warp_min_state)
+{
+__gsharp_warp_min_state = __gsharp_contexts[__gsharp_w].__gsharp_state;
+}
+}
+}
 int __gsharp_tx = __gsharp_thread_index % (int)blockDimX;
 int __gsharp_ty = (__gsharp_thread_index / (int)blockDimX) % (int)blockDimY;
 int __gsharp_tz = __gsharp_thread_index / (int)(blockDimX * blockDimY);
@@ -537,6 +606,8 @@ int __gsharp_linear_tid = __gsharp_block_index * __gsharp_threads_per_block + __
 if (__gsharp_contexts[__gsharp_linear_tid].__gsharp_state != -1 && !threadAtBlockBarrier[__gsharp_linear_tid])
 {
 anyGridActive = true;
+if (__gsharp_contexts[__gsharp_linear_tid].__gsharp_state == __gsharp_warp_min_state)
+{
 global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested = false;
 global::Kassyi.GSharp.Core.ManagedGpuContext.BlockBarrierRequested = false;
 __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__NumericsAndHwMathKernels__PtxIntrinsicsExpansionKernel(u32Out, u64Out, i32Out, __gsharp_contexts[__gsharp_linear_tid]);
@@ -547,6 +618,7 @@ throw global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncInKernelThatIsNotCoop
 if (global::Kassyi.GSharp.Core.ManagedGpuContext.BlockBarrierRequested)
 {
 threadAtBlockBarrier[__gsharp_linear_tid] = true;
+}
 }
 if (__gsharp_contexts[__gsharp_linear_tid].__gsharp_state != -1 && !threadAtBlockBarrier[__gsharp_linear_tid])
 {
