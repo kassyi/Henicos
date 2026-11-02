@@ -17,7 +17,7 @@ public sealed class SwitchDifferentialTests
     private static readonly DifferentialCase s_switchIntStatement = new(
         $"{nameof(SwitchDifferentialKernels)}.{nameof(SwitchDifferentialKernels.SwitchIntStatementKernel)}")
     {
-        Shape = s_shape,
+        Shapes = LaunchShapes.OneDimensionalMatrix(Rows),
         Inputs = static (rng, rows) =>
         {
             var a = DiffValues.Int32(rng, rows);
@@ -46,7 +46,7 @@ public sealed class SwitchDifferentialTests
     private static readonly DifferentialCase s_switchWideInt64Statement = new(
         $"{nameof(SwitchDifferentialKernels)}.{nameof(SwitchDifferentialKernels.SwitchWideInt64StatementKernel)}")
     {
-        Shape = s_shape,
+        Shapes = LaunchShapes.OneDimensionalMatrix(Rows),
         Inputs = static (rng, rows) =>
         {
             var a = DiffValues.Random(rng, rows, static r => unchecked((long)r.NextUInt64()));
@@ -80,7 +80,7 @@ public sealed class SwitchDifferentialTests
     private static readonly DifferentialCase s_switchNarrowCharEnumStatement = new(
         $"{nameof(SwitchDifferentialKernels)}.{nameof(SwitchDifferentialKernels.SwitchNarrowCharEnumStatementKernel)}")
     {
-        Shape = s_shape,
+        Shapes = LaunchShapes.OneDimensionalMatrix(Rows),
         Inputs = static (rng, rows) => new DiffBuffers()
             .In("ba", DiffValues.Byte(rng, rows))
             .In("sba", DiffValues.SByte(rng, rows))
@@ -97,7 +97,7 @@ public sealed class SwitchDifferentialTests
     private static readonly DifferentialCase s_switchGotoAndSharedLocals = new(
         $"{nameof(SwitchDifferentialKernels)}.{nameof(SwitchDifferentialKernels.SwitchGotoAndSharedLocalsKernel)}")
     {
-        Shape = s_shape,
+        Shapes = LaunchShapes.OneDimensionalMatrix(Rows),
         Inputs = static (rng, rows) => new DiffBuffers()
             .In("a", DiffValues.Int32(rng, rows))
             .In("b", DiffValues.Int32(rng, rows))
@@ -112,7 +112,7 @@ public sealed class SwitchDifferentialTests
     private static readonly DifferentialCase s_switchExpressionIntAndLong = new(
         $"{nameof(SwitchDifferentialKernels)}.{nameof(SwitchDifferentialKernels.SwitchExpressionIntAndLongKernel)}")
     {
-        Shape = s_shape,
+        Shapes = LaunchShapes.OneDimensionalMatrix(Rows),
         Inputs = static (rng, rows) =>
         {
             var la = DiffValues.Random(rng, rows, static r => unchecked((long)r.NextUInt64()));
@@ -137,7 +137,7 @@ public sealed class SwitchDifferentialTests
     private static readonly DifferentialCase s_switchExpressionFloatSpecial = new(
         $"{nameof(SwitchDifferentialKernels)}.{nameof(SwitchDifferentialKernels.SwitchExpressionFloatSpecialKernel)}")
     {
-        Shape = s_shape,
+        Shapes = LaunchShapes.OneDimensionalMatrix(Rows),
         Inputs = static (rng, rows) => new DiffBuffers()
             .In("sel", DiffValues.Int32(rng, rows))
             .In("fa", DiffValues.Single(rng, rows))
@@ -152,7 +152,7 @@ public sealed class SwitchDifferentialTests
     private static readonly DifferentialCase s_ternaryNestedAndRef = new(
         $"{nameof(SwitchDifferentialKernels)}.{nameof(SwitchDifferentialKernels.TernaryNestedAndRefKernel)}")
     {
-        Shape = s_shape,
+        Shapes = LaunchShapes.OneDimensionalMatrix(Rows),
         Inputs = static (rng, rows) => new DiffBuffers()
             .In("a", DiffValues.Int32(rng, rows))
             .In("b", DiffValues.Int32(rng, rows))
@@ -168,7 +168,7 @@ public sealed class SwitchDifferentialTests
     private static readonly DifferentialCase s_ternaryTargetTypedAndNarrow = new(
         $"{nameof(SwitchDifferentialKernels)}.{nameof(SwitchDifferentialKernels.TernaryTargetTypedAndNarrowKernel)}")
     {
-        Shape = s_shape,
+        Shapes = LaunchShapes.OneDimensionalMatrix(Rows),
         Inputs = static (rng, rows) => new DiffBuffers()
             .In("conds", DiffValues.Int32(rng, rows))
             .In("ua", DiffValues.Random(rng, rows, static r => unchecked((uint)DiffValues.NextInt32(r))))
@@ -193,7 +193,7 @@ public sealed class SwitchDifferentialTests
     private static readonly DifferentialCase s_nullCoalesceAndNullCheckMatching = new(
         $"{nameof(SwitchDifferentialKernels)}.{nameof(SwitchDifferentialKernels.NullCoalesceAndNullCheckMatchingKernel)}")
     {
-        Shape = s_shape,
+        Shapes = LaunchShapes.OneDimensionalMatrix(Rows),
         Inputs = static (rng, rows) => new DiffBuffers()
             .In("a", DiffValues.Int32(rng, rows))
             .In("b", DiffValues.Int32(rng, rows))
@@ -207,6 +207,7 @@ public sealed class SwitchDifferentialTests
 
     // The kernel calls Gpu.SyncThreads() inside a switch section, which the sequential oracle cannot run; the reference
     // is the same computation without the barriers
+    // Q05 = a: Fixed to an exact multiple of Rows because early `if (t >= n) return;` precedes `Gpu.SyncThreads()`.
     private static readonly DifferentialCase s_switchFlattenedFloatAndGoto = new(
         $"{nameof(SwitchDifferentialKernels)}.{nameof(SwitchDifferentialKernels.SwitchFlattenedFloatAndGotoKernel)}")
     {

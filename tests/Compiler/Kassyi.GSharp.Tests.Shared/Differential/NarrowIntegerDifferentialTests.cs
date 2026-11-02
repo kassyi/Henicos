@@ -90,7 +90,7 @@ public class NarrowIntegerDifferentialTests
 
     private static readonly DifferentialCase s_narrowCompoundAndStep = new($"{nameof(NarrowIntegerDifferentialKernels)}.{nameof(NarrowIntegerDifferentialKernels.NarrowCompoundAndStepMatrixKernel)}")
     {
-        Shape = LaunchShape.ForRows(64, blockX: 32),
+        Shapes = LaunchShapes.OneDimensionalMatrix(64),
         Inputs = static (rng, rows) =>
         {
             var a = NarrowIntValues(rng, rows);
@@ -120,7 +120,7 @@ public class NarrowIntegerDifferentialTests
 
     private static readonly DifferentialCase s_narrowEnumAndSignedEnum = new($"{nameof(NarrowIntegerDifferentialKernels)}.{nameof(NarrowIntegerDifferentialKernels.NarrowEnumAndSignedEnumMatrixKernel)}")
     {
-        Shape = LaunchShape.ForRows(64, blockX: 32),
+        Shapes = LaunchShapes.OneDimensionalMatrix(64),
         Inputs = static (rng, rows) => new DiffBuffers()
             .In("a", NarrowIntValues(rng, rows))
             .In("b", NarrowIntValues(rng, rows))
@@ -141,7 +141,7 @@ public class NarrowIntegerDifferentialTests
 
     private static readonly DifferentialCase s_mixedSignDivRem = new($"{nameof(NarrowIntegerDifferentialKernels)}.{nameof(NarrowIntegerDifferentialKernels.MixedSignDivRemMatrixKernel)}")
     {
-        Shape = LaunchShape.ForRows(64, blockX: 32),
+        Shapes = LaunchShapes.OneDimensionalMatrix(64),
         Inputs = static (rng, rows) =>
         {
             var l = Int64Values(rng, rows);
@@ -175,7 +175,7 @@ public class NarrowIntegerDifferentialTests
 
     private static readonly DifferentialCase s_bitOpsReturnSign = new($"{nameof(NarrowIntegerDifferentialKernels)}.{nameof(NarrowIntegerDifferentialKernels.BitOpsReturnSignMatrixKernel)}")
     {
-        Shape = LaunchShape.ForRows(32, blockX: 32),
+        Shapes = LaunchShapes.OneDimensionalMatrix(32),
         Inputs = static (rng, rows) =>
         {
             var u = Array.ConvertAll(DiffValues.Int32(rng, rows), static v => unchecked((uint)v));
@@ -201,7 +201,7 @@ public class NarrowIntegerDifferentialTests
 
     private static readonly DifferentialCase s_targetEvaluationOrder = new($"{nameof(NarrowIntegerDifferentialKernels)}.{nameof(NarrowIntegerDifferentialKernels.TargetEvaluationOrderMatrixKernel)}")
     {
-        Shape = LaunchShape.ForRows(16, blockX: 16),
+        Shapes = LaunchShapes.OneDimensionalMatrix(16),
         Inputs = static (rng, rows) => new DiffBuffers()
             .In("a", DiffValues.Int32(rng, rows))
             .Out<int>("r", rows, NarrowIntegerDifferentialKernels.TargetEvaluationOrderColumns, OutputPolicy.Exact),

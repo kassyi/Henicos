@@ -14,7 +14,7 @@ public class StructDifferentialTests
     private static readonly DifferentialCase s_mutationAndCopy = new(
         $"{nameof(StructDifferentialKernels)}.{nameof(StructDifferentialKernels.StructMutationAndCopySemantics)}")
     {
-        Shape = LaunchShape.ForRows(Rows, blockX: 64),
+        Shapes = LaunchShapes.OneDimensionalMatrix(Rows),
         Inputs = static (rng, rows) =>
         {
             var (inputs, deltas) = DiffValues.Int32Pairs(rng, rows);
@@ -38,7 +38,7 @@ public class StructDifferentialTests
     private static readonly DifferentialCase s_defaultVsNew = new(
         $"{nameof(StructDifferentialKernels)}.{nameof(StructDifferentialKernels.StructDefaultVsNewAndFieldInitializers)}")
     {
-        Shape = LaunchShape.ForRows(Rows, blockX: 64),
+        Shapes = LaunchShapes.OneDimensionalMatrix(Rows),
         Inputs = static (rng, rows) =>
         {
             var (inputs, flags) = DiffValues.Int32Pairs(rng, rows);
@@ -62,7 +62,7 @@ public class StructDifferentialTests
     private static readonly DifferentialCase s_recordWith = new(
         $"{nameof(StructDifferentialKernels)}.{nameof(StructDifferentialKernels.RecordStructWithExpressions)}")
     {
-        Shape = LaunchShape.ForRows(Rows, blockX: 64),
+        Shapes = LaunchShapes.OneDimensionalMatrix(Rows),
         Inputs = static (rng, rows) =>
         {
             var (xs, ys) = DiffValues.Int32Pairs(rng, rows);
@@ -90,7 +90,7 @@ public class StructDifferentialTests
     private static readonly DifferentialCase s_autoPropInDefensiveCopy = new(
         $"{nameof(StructDifferentialKernels)}.{nameof(StructDifferentialKernels.AutoPropertyPassedToInParameterDefensiveCopy)}")
     {
-        Shape = LaunchShape.ForRows(Rows, blockX: 64),
+        Shapes = LaunchShapes.OneDimensionalMatrix(Rows),
         Inputs = static (rng, rows) =>
         {
             var (initialValues, mutatedValues) = DiffValues.Int32Pairs(rng, rows);
@@ -122,7 +122,7 @@ public class StructDifferentialTests
     private static readonly DifferentialCase s_userDefinedImplicitConv = new(
         $"{nameof(StructDifferentialKernels)}.{nameof(StructDifferentialKernels.StructUserDefinedImplicitConversion)}")
     {
-        Shape = LaunchShape.ForRows(Rows, blockX: 64),
+        Shapes = LaunchShapes.OneDimensionalMatrix(Rows),
         Inputs = static (rng, rows) =>
         {
             var inputs = DiffValues.Int32(rng, rows);

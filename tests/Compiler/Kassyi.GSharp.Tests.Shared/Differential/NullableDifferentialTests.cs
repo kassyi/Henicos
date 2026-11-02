@@ -15,7 +15,7 @@ public class NullableDifferentialTests
     private static readonly DifferentialCase s_coalesceAndSideEffects = new(
         $"{nameof(NullableDifferentialKernels)}.{nameof(NullableDifferentialKernels.NullableCoalesceAndSideEffects)}")
     {
-        Shape = LaunchShape.ForRows(Rows, blockX: 64),
+        Shapes = LaunchShapes.OneDimensionalMatrix(Rows),
         Inputs = static (rng, rows) =>
         {
             var (valsA, valsB) = DiffValues.Int32Pairs(rng, rows);
@@ -57,7 +57,7 @@ public class NullableDifferentialTests
     private static readonly DifferentialCase s_deviceFunctionsAndKleene = new(
         $"{nameof(NullableDifferentialKernels)}.{nameof(NullableDifferentialKernels.NullableDeviceFunctionsAndKleeneLogic)}")
     {
-        Shape = LaunchShape.ForRows(Rows, blockX: 64),
+        Shapes = LaunchShapes.OneDimensionalMatrix(Rows),
         Inputs = static (rng, rows) =>
         {
             var (valsA, valsB) = DiffValues.Int32Pairs(rng, rows);
@@ -96,7 +96,7 @@ public class NullableDifferentialTests
     private static readonly DifferentialCase s_floatCoalesceWithNaN = new(
         $"{nameof(NullableDifferentialKernels)}.{nameof(NullableDifferentialKernels.NullableFloatCoalesceWithNaN)}")
     {
-        Shape = LaunchShape.ForRows(Rows, blockX: 64),
+        Shapes = LaunchShapes.OneDimensionalMatrix(Rows),
         Inputs = static (rng, rows) =>
         {
             var valsA = DiffValues.Single(rng, rows);
@@ -130,7 +130,7 @@ public class NullableDifferentialTests
     private static readonly DifferentialCase s_coalesceWiderWithNarrower = new(
         $"{nameof(NullableDifferentialKernels)}.{nameof(NullableDifferentialKernels.CoalesceWiderNullableWithNarrowerNullable)}")
     {
-        Shape = LaunchShape.ForRows(Rows, blockX: 64),
+        Shapes = LaunchShapes.OneDimensionalMatrix(Rows),
         Inputs = static (rng, rows) =>
         {
             var (valsA, rawB) = DiffValues.Int32Pairs(rng, rows);
@@ -172,12 +172,12 @@ public class NullableDifferentialTests
 
     // The reproductions of #998 run 64 rows in blocks of 32
     private const int ReproRows = 64;
-    private static readonly LaunchShape s_reproShape = LaunchShape.ForRows(ReproRows, blockX: 32);
+
 
     private static readonly DifferentialCase s_emptyStackSpanNullComparison = new(
         $"{nameof(NullableDifferentialKernels)}.{nameof(NullableDifferentialKernels.EmptyStackSpanNullComparisonReproKernel)}")
     {
-        Shape = s_reproShape,
+        Shapes = LaunchShapes.OneDimensionalMatrix(ReproRows),
         Inputs = static (rng, rows) => new DiffBuffers()
             .In("a", DiffValues.Int32(rng, rows))
             .Out<int>("dst", rows, ["stackalloc_zero_eq_null", "stackalloc_zero_ne_null", "collection_empty_eq_null", "combined_null_flags"], OutputPolicy.Bitwise),
@@ -191,7 +191,7 @@ public class NullableDifferentialTests
     private static readonly DifferentialCase s_nullableArrayLikeDefaultValueNullCheck = new(
         $"{nameof(NullableDifferentialKernels)}.{nameof(NullableDifferentialKernels.NullableArrayLikeDefaultValueNullCheckReproKernel)}")
     {
-        Shape = s_reproShape,
+        Shapes = LaunchShapes.OneDimensionalMatrix(ReproRows),
         Inputs = static (rng, rows) => new DiffBuffers()
             .In("a", DiffValues.Int32(rng, rows))
             .Out<int>("dst", rows, ["mem_is_null", "mem_is_not_null", "mem_eq_ne_hasvalue", "seg_is_null_hasvalue"], OutputPolicy.Bitwise),
@@ -205,7 +205,7 @@ public class NullableDifferentialTests
     private static readonly DifferentialCase s_narrowNullableCoalesceVarPromotion = new(
         $"{nameof(NullableDifferentialKernels)}.{nameof(NullableDifferentialKernels.NarrowNullableCoalesceVarPromotionReproKernel)}")
     {
-        Shape = s_reproShape,
+        Shapes = LaunchShapes.OneDimensionalMatrix(ReproRows),
         Inputs = static (rng, rows) => new DiffBuffers()
             .In("conds", DiffValues.Int32(rng, rows))
             .In("ba", DiffValues.Byte(rng, rows))
