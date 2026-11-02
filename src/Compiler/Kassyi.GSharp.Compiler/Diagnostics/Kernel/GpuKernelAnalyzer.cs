@@ -6,7 +6,8 @@ public class GpuKernelAnalyzer : DiagnosticAnalyzer
 {
     public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics =>
         DiagnosticRuleRegistry.AllSupportedDiagnostics
-            .Add(GSharpDiagnostics.KernelClassMustBePartial);
+            .Add(GSharpDiagnostics.KernelClassMustBePartial)
+            .Add(GSharpDiagnostics.IteratorShapeNotSupported);
 
     public override void Initialize(AnalysisContext context)
     {
