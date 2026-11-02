@@ -214,7 +214,7 @@ public static partial class LanguageConversionsAndMacrosDifferentialKernels
         DiffIdentityWrap idWrap = x;
         int idRoundtrip = idWrap;
         int idFnArg = AcceptIdentityWrap(y);
-        DiffIdentityWrap idTernary = (x & 1) == 0 ? idWrap : y;
+        DiffIdentityWrap idTernary = (x & 1) == 0 ? x : y;
 
         // 2. Non-trivial implicit operator (#963): scales/offsets in C#, raw first-field copy in C++
         var explicitMeter = new DiffLinearMeter { Units = (x * 3) + 5 };

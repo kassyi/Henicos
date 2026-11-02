@@ -513,7 +513,7 @@ int __gsharp_id_6_o = __gsharp_mul_i32(__gsharp_id_3_tid,8);
 __gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffIdentityWrap __gsharp_id_7_idWrap = __gsharp_id_4_x;
 int __gsharp_id_8_idRoundtrip = __gsharp_id_7_idWrap;
 int __gsharp_id_9_idFnArg = __gsharp_fn_Kassyi__GSharp__Tests__Shared__Differential__LanguageConversionsAndMacrosDifferentialKernels__AcceptIdentityWrap(__gsharp_id_5_y);
-__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffIdentityWrap __gsharp_id_10_idTernary = ((__gsharp_id_4_x&1)==0?__gsharp_id_7_idWrap:__gsharp_id_5_y);
+__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffIdentityWrap __gsharp_id_10_idTernary = ((__gsharp_id_4_x&1)==0?__gsharp_id_4_x:__gsharp_id_5_y);
 auto __gsharp_id_11_explicitMeter = ([&]() {
 __gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffLinearMeter __gsharp_tmp{}; __gsharp_tmp.__gsharp_mb_Units = __gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_4_x,3),5); return __gsharp_tmp; }
 ());
@@ -636,7 +636,7 @@ int o = tid * 8;
 global::Kassyi.GSharp.Tests.Shared.Differential.DiffIdentityWrap idWrap = x;
 int idRoundtrip = idWrap;
 int idFnArg = global::Kassyi.GSharp.Tests.Shared.Differential.LanguageConversionsAndMacrosDifferentialKernels.AcceptIdentityWrap(y);
-global::Kassyi.GSharp.Tests.Shared.Differential.DiffIdentityWrap idTernary = (x & 1) == 0 ? idWrap : y;
+global::Kassyi.GSharp.Tests.Shared.Differential.DiffIdentityWrap idTernary = (x & 1) == 0 ? x : y;
 // 2. Non-trivial implicit operator (#963): scales/offsets in C#, raw first-field copy in C++
 var explicitMeter = new global::Kassyi.GSharp.Tests.Shared.Differential.DiffLinearMeter
 {
