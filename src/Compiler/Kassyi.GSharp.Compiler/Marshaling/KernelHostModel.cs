@@ -241,13 +241,15 @@ internal readonly record struct FieldOffsetGuard(string Name, string FullyQualif
 /// The partial declarations of the types that contain the class, outermost first (<c>partial class Outer</c>), so
 /// that a part of a nested class is written inside them.
 /// </param>
+/// <param name="FullyQualifiedName">The <c>global::</c>-qualified C# type name, including any enclosing types.</param>
 internal readonly record struct HostClassHeader(
     string HintName,
     string Namespace,
     string Name,
     string Accessibility,
     bool IsPublic,
-    EquatableArray<string> OuterDeclarations)
+    EquatableArray<string> OuterDeclarations,
+    string FullyQualifiedName)
 {
     public bool IsGlobalNamespace => Namespace.Length == 0;
 
@@ -257,7 +259,8 @@ internal readonly record struct HostClassHeader(
         type.Name,
         SyntaxFacts.GetText(type.DeclaredAccessibility),
         type.DeclaredAccessibility == Microsoft.CodeAnalysis.Accessibility.Public,
-        CreateOuterDeclarations(type));
+        CreateOuterDeclarations(type),
+        type.GetFullyQualifiedCsharpName());
 
     private static EquatableArray<string> CreateOuterDeclarations(INamedTypeSymbol type)
     {

@@ -3,7 +3,8 @@ using Kassyi.GSharp.Stdlib.GpuMath.BigNum.Providers.Handlers;
 
 namespace Kassyi.GSharp.Stdlib.GpuMath.Tests;
 
-[Trait("Category", "GpuExecution")]
+[TestTarget(ExecutionTarget.GpuExecution)]
+[Category(TestCategory.Stdlib)]
 public class GpuStreamCompactionTests : IDisposable
 {
     private readonly GpuKernelLoader.CudaContextScope _scope;

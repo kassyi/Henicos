@@ -78,8 +78,9 @@ internal static class WrapperEmitter
     private static void WriteUnassignedFieldSuppression(SourceWriter writer, in HostClassHeader header) =>
         writer.AppendLineIf(!header.IsPublic, "#pragma warning disable CS0649");
 
-    // namespace <namespace> { <accessibility> partial class <name>, without the namespace for the global namespace. The
-    // generated part must declare the accessibility of the user's part, or the compiler reports CS0262.
+    // namespace <namespace> { <outer partial declarations> <accessibility> partial class <name>, without the namespace
+    // for the global namespace. The generated part must declare the accessibility of the user's part, or the compiler
+    // reports CS0262.
     private static void WriteClassDeclaration(SourceWriter writer, in HostClassHeader header)
     {
         if (!header.IsGlobalNamespace)
@@ -88,7 +89,24 @@ internal static class WrapperEmitter
             writer.AppendLine("{");
         }
 
+        // A nested class is written inside partial declarations of the types that contain it
+        foreach (var outer in header.OuterDeclarations)
+        {
+            writer.AppendLine(outer);
+            writer.AppendLine("{");
+        }
+
         writer.AppendLine($"{header.Accessibility} partial class {header.Name}");
+    }
+
+    private static void CloseClassDeclaration(SourceWriter writer, in HostClassHeader header)
+    {
+        for (var i = 0; i < header.OuterDeclarations.Length; i++)
+        {
+            writer.AppendLine("}");
+        }
+
+        writer.AppendLineIf(!header.IsGlobalNamespace, "}");
     }
 
     /// <summary>The assembly of StackLinq, whose namespace the generated managed code imports when it is referenced.</summary>
@@ -124,20 +142,7 @@ internal static class WrapperEmitter
         writer.AppendLine("#pragma warning disable CS0649");
         writer.AppendLine();
 
-        if (!header.IsGlobalNamespace)
-        {
-            writer.AppendLine($"namespace {header.Namespace}");
-            writer.AppendLine("{");
-        }
-
-        // A nested class is written inside partial declarations of the types that contain it
-        foreach (var outer in header.OuterDeclarations)
-        {
-            writer.AppendLine(outer);
-            writer.AppendLine("{");
-        }
-
-        writer.AppendLine($"{header.Accessibility} partial class {header.Name}");
+        WriteClassDeclaration(writer, header);
         using (writer.Scope())
         {
             foreach (var source in sources)
@@ -146,12 +151,7 @@ internal static class WrapperEmitter
             }
         }
 
-        for (var i = 0; i < header.OuterDeclarations.Length; i++)
-        {
-            writer.AppendLine("}");
-        }
-
-        writer.AppendLineIf(!header.IsGlobalNamespace, "}");
+        CloseClassDeclaration(writer, header);
         return writer.ToString();
     }
 
@@ -210,7 +210,7 @@ internal static class WrapperEmitter
             }
         }
 
-        writer.AppendLineIf(!model.Class.IsGlobalNamespace, "}");
+        CloseClassDeclaration(writer, model.Class);
         return writer.ToString();
     }
 

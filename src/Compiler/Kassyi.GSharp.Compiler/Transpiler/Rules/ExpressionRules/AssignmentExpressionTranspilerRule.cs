@@ -1,3 +1,4 @@
+using System.Buffers;
 using Microsoft.CodeAnalysis.Operations;
 
 namespace Kassyi.GSharp.Compiler.Transpiler.Rules.ExpressionRules;
@@ -24,25 +25,7 @@ public sealed class AssignmentExpressionTranspilerRule : SyntaxNodeTranspilerRul
     {
         if (node is { Left: TupleExpressionSyntax leftTuple, Right: TupleExpressionSyntax rightTuple })
         {
-            // [WHY] Emits an immediately invoked C++ lambda to evaluate RHS tuple elements before assigning to LHS, preventing variable swap clobbering.
-            using (context.Emitter.Writer.ImmediatelyInvokedLambda())
-            {
-                for (var i = 0; i < rightTuple.Arguments.Count; i++)
-                {
-                    context.Emitter.Writer.Append($"auto {GSharpInternalNames.Lowering.TupleTempPrefix}{i} = ");
-                    context.Visitor.Visit(rightTuple.Arguments[i].Expression);
-                    context.Emitter.Writer.AppendLine(";");
-                }
-
-                for (var i = 0; i < leftTuple.Arguments.Count; i++)
-                {
-                    context.Visitor.Visit(leftTuple.Arguments[i].Expression);
-                    context.Emitter.Writer
-                        .Append($" = {GSharpInternalNames.Lowering.TupleTempPrefix}{i}")
-                        .AppendLine(";");
-                }
-            }
-
+            TranspileTupleDeconstruction(leftTuple, rightTuple, ref context);
             return;
         }
 
@@ -116,6 +99,120 @@ public sealed class AssignmentExpressionTranspilerRule : SyntaxNodeTranspilerRul
 
         context.Emitter.Writer.Append(node.OperatorToken.Text);
         context.Visitor.Visit(node.Right);
+    }
+
+    // [WHY] Emits an immediately invoked C++ lambda to evaluate RHS tuple elements before assigning to LHS, preventing
+    // variable swap clobbering. Any LHS target whose location evaluation writes something, reads a variable written by
+    // an earlier LHS target, or interferes with another LHS location or RHS element is bound to a reference first in
+    // left-to-right order (C# spec §12.23.2, #996).
+    private static void TranspileTupleDeconstruction(TupleExpressionSyntax leftTuple, TupleExpressionSyntax rightTuple,
+        ref TranspileContext context)
+    {
+        var model = context.Query.SemanticModel;
+        var leftCount = leftTuple.Arguments.Count;
+        var rightCount = rightTuple.Arguments.Count;
+        var locEffects = ArrayPool<ExpressionEffects>.Shared.Rent(leftCount);
+        var writeRoots = ArrayPool<VariableSet>.Shared.Rent(leftCount);
+        var rhsEffects = ArrayPool<ExpressionEffects>.Shared.Rent(rightCount);
+        var lhsTemps = ArrayPool<int>.Shared.Rent(leftCount);
+        try
+        {
+            for (var i = 0; i < leftCount; i++)
+            {
+                var expr = leftTuple.Arguments[i].Expression;
+                locEffects[i] = ExpressionEffects.OfLocation(expr, model);
+                writeRoots[i] = ExpressionEffects.RootOf(expr, model);
+                lhsTemps[i] = -1;
+            }
+
+            for (var j = 0; j < rightCount; j++)
+            {
+                rhsEffects[j] = ExpressionEffects.Of(rightTuple.Arguments[j].Expression, model);
+            }
+
+            using (context.Emitter.Writer.ImmediatelyInvokedLambda())
+            {
+                for (var i = 0; i < leftCount; i++)
+                {
+                    if (NeedsTupleTargetPreBind(i, leftCount, rightCount, locEffects, writeRoots, rhsEffects))
+                    {
+                        lhsTemps[i] = EvaluationOrder.DeclareTemp(ref context, leftTuple.Arguments[i].Expression,
+                            reference: true);
+                    }
+                }
+
+                for (var j = 0; j < rightCount; j++)
+                {
+                    context.Emitter.Writer.Append($"auto {GSharpInternalNames.Lowering.TupleTempPrefix}{j} = ");
+                    context.Visitor.Visit(rightTuple.Arguments[j].Expression);
+                    context.Emitter.Writer.AppendLine(";");
+                }
+
+                for (var i = 0; i < leftCount; i++)
+                {
+                    if (lhsTemps[i] >= 0)
+                    {
+                        EvaluationOrder.AppendTempName(context.Emitter.Writer, lhsTemps[i]);
+                    }
+                    else
+                    {
+                        context.Visitor.Visit(leftTuple.Arguments[i].Expression);
+                    }
+
+                    context.Emitter.Writer
+                        .Append($" = {GSharpInternalNames.Lowering.TupleTempPrefix}{i}")
+                        .AppendLine(";");
+                }
+            }
+        }
+        finally
+        {
+            ArrayPool<ExpressionEffects>.Shared.Return(locEffects, clearArray: true);
+            ArrayPool<VariableSet>.Shared.Return(writeRoots, clearArray: true);
+            ArrayPool<ExpressionEffects>.Shared.Return(rhsEffects, clearArray: true);
+            ArrayPool<int>.Shared.Return(lhsTemps);
+        }
+    }
+
+    private static bool NeedsTupleTargetPreBind(int index, int leftCount, int rightCount,
+        ExpressionEffects[] locEffects, VariableSet[] writeRoots, ExpressionEffects[] rhsEffects)
+    {
+        var current = locEffects[index];
+        if (current.IsEmpty)
+        {
+            return false;
+        }
+
+        if (!current.Writes.IsEmpty)
+        {
+            return true;
+        }
+
+        for (var j = 0; j < index; j++)
+        {
+            if (current.Reads.Overlaps(writeRoots[j]))
+            {
+                return true;
+            }
+        }
+
+        for (var j = 0; j < leftCount; j++)
+        {
+            if (j != index && current.InterferesWith(locEffects[j]))
+            {
+                return true;
+            }
+        }
+
+        for (var j = 0; j < rightCount; j++)
+        {
+            if (current.InterferesWith(rhsEffects[j]))
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     // The operator of a compound assignment as the sequenced form writes it: <op>, a Prelude call (__gsharp_add_i32),

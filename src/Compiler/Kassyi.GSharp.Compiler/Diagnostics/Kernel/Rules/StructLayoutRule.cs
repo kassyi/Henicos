@@ -18,6 +18,7 @@ internal sealed class StructLayoutRule :
     public static readonly StructLayoutRule Instance = new();
 
     public ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(
+        GSharpDiagnostics.UnsupportedSyntax,
         GSharpDiagnostics.StructLayoutNotRepresentable,
         GSharpDiagnostics.FieldTypeHasNoDeviceRepresentation,
         GSharpDiagnostics.StructArrayConvertedPerElement,
@@ -107,6 +108,15 @@ internal sealed class StructLayoutRule :
     private static bool ReportUnsupported(INamedTypeSymbol structType, SyntaxNode typeSyntax,
         ref ValidationContext context)
     {
+        if (GpuCodeConstraints.ContainsMultidimensionalArray(structType))
+        {
+            context.ReportDiagnostic(
+                GSharpDiagnostics.UnsupportedSyntax,
+                typeSyntax,
+                GpuCodeConstraints.MultidimensionalArray);
+            return true;
+        }
+
         if (TypeLayoutCalculator.GetStructLayout(structType, context.Dialect).Unsupported is not { } unsupported)
         {
             return false;

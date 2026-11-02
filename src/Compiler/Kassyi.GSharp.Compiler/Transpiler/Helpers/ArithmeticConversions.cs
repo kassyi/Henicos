@@ -149,6 +149,56 @@ internal static class ArithmeticConversions
         context.Visitor.Visit(syntax);
     }
 
+    /// <summary>
+    /// Writes <paramref name="argument"/> as a value argument of <paramref name="parameterType"/>, emitting the cast when
+    /// C# implicitly converts the argument from another primitive value type (#828).
+    /// </summary>
+    public static void AppendArgument(ArgumentSyntax argument, ITypeSymbol parameterType, ref TranspileContext context)
+    {
+        if (!parameterType.SpecialType.IsPrimitiveValue())
+        {
+            context.Visitor.Visit(argument);
+            return;
+        }
+
+        var model = context.Query.SemanticModel;
+        if (model.GetSafeOperation(argument) is IArgumentOperation { Value: { } value })
+        {
+            if (GetSourceType(value) is { } source && source.SpecialType.IsPrimitiveValue())
+            {
+                AppendOperand(value, argument.Expression, parameterType, ref context);
+                return;
+            }
+
+            context.Visitor.Visit(argument);
+            return;
+        }
+
+        if (model.GetTypeSymbol(argument.Expression) is { } exprType &&
+            exprType.SpecialType.IsPrimitiveValue() &&
+            exprType.SpecialType != parameterType.SpecialType)
+        {
+            if (model.GetSafeConstantValue(argument.Expression) is { HasValue: true, Value: { } constant })
+            {
+                ConstantAtUse.Append(argument.Expression, parameterType, constant, ref context);
+                return;
+            }
+
+            AppendConversion(parameterType, ref context);
+            if (!BindsTighterThanCast(argument.Expression))
+            {
+                using (context.Emitter.Writer.Parentheses())
+                {
+                    context.Visitor.Visit(argument.Expression);
+                }
+
+                return;
+            }
+        }
+
+        context.Visitor.Visit(argument);
+    }
+
     /// <summary>Writes the cast to <paramref name="type"/>: <c>(long long)</c>.</summary>
     public static void AppendConversion(ITypeSymbol type, ref TranspileContext context)
     {
