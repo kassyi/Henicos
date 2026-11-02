@@ -11,9 +11,8 @@ namespace Kassyi.GSharp.Tests.Shared.Transpiler;
 /// <remarks>
 /// A function that needs no managed version runs as the user's method on the managed path. Rewriting its body must then
 /// give the body with its names qualified and nothing else, apart from the rewrites whose result the user's method
-/// already gives: the body macros with a lambda (Kassyi.GSharp.Core runs them), <c>Gpu.InlinePtx</c> (unsupported
-/// either way), the site key of a <c>SharedMemory&lt;T&gt;</c> (its caller-info constructor computes the same key) and
-/// the length of an optional array.
+/// already gives: the body macros with a lambda (Kassyi.GSharp.Core runs them), the site key of a
+/// <c>SharedMemory&lt;T&gt;</c> (its caller-info constructor computes the same key) and the length of an optional array.
 /// </remarks>
 [Category(TestCategory.Compiler)]
 [Scenario(TestScenario.HappyPath)]
@@ -92,9 +91,12 @@ public class ManagedRewriteConsistencyTests
                 }
                 else
                 {
-                    sequentialSums++;
                     var invocation = Assert.IsType<InvocationExpressionSyntax>(node);
-                    Assert.True(ManagedRewriteClassifier.IsSequentialSum(invocation, model));
+                    if (!ManagedRewriteClassifier.IsInlinePtx(invocation, model))
+                    {
+                        sequentialSums++;
+                        Assert.True(ManagedRewriteClassifier.IsSequentialSum(invocation, model));
+                    }
                 }
             }
         }
@@ -194,7 +196,7 @@ public class ManagedRewriteConsistencyTests
         {
             InvocationExpressionSyntax invocation =>
                 model.GetSymbolInfo(invocation).Symbol is IMethodSymbol { ContainingType.Name: "Gpu" } callee &&
-                callee.Name is "ForUnroll" or "GridStrideLoop" or "SingleThread" or "InlinePtx",
+                callee.Name is "ForUnroll" or "GridStrideLoop" or "SingleThread",
             BaseObjectCreationExpressionSyntax creation =>
                 model.GetTypeInfo(creation).Type is { Name: "SharedMemory" },
             MemberAccessExpressionSyntax { Name.Identifier.ValueText: "Length" } access =>

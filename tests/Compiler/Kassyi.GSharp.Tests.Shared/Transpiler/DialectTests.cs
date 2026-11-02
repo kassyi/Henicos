@@ -17,6 +17,10 @@ public class DialectTests
             Assert.Equal("StandardCppDialect", dialect.Name);
             Assert.False(dialect.IsCuda);
             Assert.True(dialect.EmulatesThreadsWithStateMachine());
+            Assert.False(DialectCallSupport.SupportsInlinePtx(dialect));
+            Assert.Equal(
+                "Gpu.InlinePtx is not supported by the StandardCppDialect dialect",
+                DialectCallSupport.GetInlinePtxUnsupportedMessage(dialect.Name));
         }
 
         [Fact]
@@ -29,5 +33,6 @@ public class DialectTests
             Assert.Equal("GSharpCudaDialect", dialect.Name);
             Assert.True(dialect.IsCuda);
             Assert.False(dialect.EmulatesThreadsWithStateMachine());
+            Assert.True(DialectCallSupport.SupportsInlinePtx(dialect));
         }
     }

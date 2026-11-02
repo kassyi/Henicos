@@ -6,13 +6,11 @@ internal sealed partial class ManagedExecutionRewriter
 {
     public override SyntaxNode? VisitExpressionStatement(ExpressionStatementSyntax node)
     {
-        if (node.Expression is InvocationExpressionSyntax
-            {
-                Expression: MemberAccessExpressionSyntax { Name.Identifier.Text: TypeConstants.GpuMacros.InlinePtx }
-            })
+        if (node.Expression is InvocationExpressionSyntax inlinePtx &&
+            DialectCallSupport.IsUnsupportedInlinePtxCall(inlinePtx, semanticModel))
         {
             return SyntaxFactory.ParseStatement(
-                    "throw new global::System.NotSupportedException(\"Gpu.InlinePtx is not supported by the StandardCppDialect dialect\");")
+                    $"throw new global::System.NotSupportedException(\"{DialectCallSupport.GetInlinePtxUnsupportedMessage(HostDialects.Cpu.Name)}\");")
                 .WithTriviaFrom(node);
         }
 
