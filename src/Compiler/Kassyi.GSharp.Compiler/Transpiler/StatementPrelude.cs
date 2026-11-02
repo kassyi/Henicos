@@ -19,16 +19,7 @@ internal static class StatementPrelude
         {
             if (desc is DeclarationExpressionSyntax { Designation: SingleVariableDesignationSyntax singleVar } declExpr)
             {
-                var typeSymbol = context.Query.SemanticModel.GetTypeSymbol(declExpr);
-                if (typeSymbol != null)
-                {
-                    context.Emitter.Dialect.AppendType(ref context, typeSymbol);
-                }
-                else
-                {
-                    context.Emitter.Writer.Append("auto");
-                }
-
+                context.Emitter.Dialect.AppendType(ref context, context.Query.SemanticModel.GetTypeSymbol(declExpr));
                 context.Emitter.Writer.Append(' ');
                 CppNameResolver.AppendDeclaredName(singleVar, singleVar.Identifier, ref context);
                 context.Emitter.Writer.AppendLine(";");
