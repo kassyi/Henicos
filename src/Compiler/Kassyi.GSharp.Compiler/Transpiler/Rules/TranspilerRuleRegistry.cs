@@ -26,6 +26,7 @@ internal sealed class TranspilerRuleRegistry
             new BclIntrinsicTranspilerRule(),
             new GpuMacroTranspilerRule(),
             new MemoryExtensionsTranspilerRule(),
+        new SpanMemberTranspilerRule(),
             new StackLinqFusionRule(),
             new StackLinqTranspilerRule()
         );

@@ -30,6 +30,18 @@ template <class T> __device__ __host__ inline const T* __gsharp_temp_address(con
 
 #include "Prelude/IntegerSemantics.hpp"
 
+// --- Runtime Error / Trap ---
+enum class GSharpErrorCode : int {
+    None = 0,
+    NotSupported = 1,
+    InvalidOperation = 2,
+    IndexOutOfRange = 3,
+    ArgumentOutOfRange = 4,
+    Argument = 5,
+    NullReference = 6
+};
+__device__ __forceinline__ void __gsharp_trap(GSharpErrorCode, const char*) { asm("trap;"); }
+
 // A C# array or span: data is nullptr for a null array (and the default span), and never nullptr for an array that
 // exists, also an empty one (#706). flags uses the padding after length (16 bytes as before): bit 0
 // (__gsharp_array_null_reads_empty) marks a null optional kernel argument, which reads as an empty array
@@ -51,8 +63,54 @@ struct GSharpArray {
     // The span members that C# calls on a span or an array (Span<T>.Slice, Span<T>.Fill, MemoryExtensions.AsSpan)
     __device__ inline GSharpArray<T> Slice(int start) const { return GSharpArray<T>(data + start, length - start); }
     __device__ inline GSharpArray<T> Slice(int start, int count) const { return GSharpArray<T>(data + start, count); }
-    __device__ inline void Fill(const T& value) { for (int i = 0; i < length; i++) { data[i] = value; } }
+    __device__ inline void Fill(const T& value) const { for (int i = 0; i < length; i++) { data[i] = value; } }
+    __device__ inline void Clear() const { for (int i = 0; i < length; i++) { data[i] = T{}; } }
+    // Ported from dotnet/runtime src/libraries/System.Private.CoreLib/src/System/MemoryExtensions.cs
+    // (MIT License, commit e750854de9ad6a2ced72feb9b8008e506f04608f): in-place two-pointer swap for Span<T>.Reverse.
+    __device__ inline void Reverse() const {
+        for (int i = 0, j = length - 1; i < j; i++, j--) {
+            T tmp = data[i];
+            data[i] = data[j];
+            data[j] = tmp;
+        }
+    }
+    // Ported from dotnet/runtime src/libraries/System.Private.CoreLib/src/System/Span.Fast.cs and Buffer.cs
+    // (MIT License, commit e750854de9ad6a2ced72feb9b8008e506f04608f):
+    // CopyTo / TryCopyTo check (uint)length <= (uint)destination.length and copy with memmove overlap semantics.
+    template <typename U>
+    __device__ inline bool TryCopyTo(GSharpArray<U> destination) const {
+        if (static_cast<unsigned int>(length) > static_cast<unsigned int>(destination.length)) {
+            return false;
+        }
+        const U* src = data;
+        U* dst = destination.data;
+        if (dst == src || length <= 0) {
+            return true;
+        }
+        unsigned long long srcAddr = reinterpret_cast<unsigned long long>(src);
+        unsigned long long dstAddr = reinterpret_cast<unsigned long long>(dst);
+        unsigned long long byteCount = static_cast<unsigned long long>(length) * sizeof(U);
+        if (dstAddr - srcAddr < byteCount) {
+            for (int i = length - 1; i >= 0; i--) {
+                dst[i] = src[i];
+            }
+        } else {
+            for (int i = 0; i < length; i++) {
+                dst[i] = src[i];
+            }
+        }
+        return true;
+    }
+    template <typename U>
+    __device__ inline void CopyTo(GSharpArray<U> destination) const {
+        if (!TryCopyTo(destination)) {
+            __gsharp_trap(GSharpErrorCode::Argument, "Destination is too short.");
+        }
+    }
     __device__ inline GSharpArray<T> AsSpan() const { return *this; }
+    __device__ inline GSharpArray<T> AsSpan(int start) const { return Slice(start); }
+    __device__ inline GSharpArray<T> AsSpan(int start, int count) const { return Slice(start, count); }
+    __device__ inline bool IsEmpty() const { return length <= 0; }
     
     // Allows implicit conversion from GSharpArray<U> to GSharpArray<T> if U* is convertible to T* (e.g. T to const T)
     template <typename U>
@@ -428,16 +486,7 @@ __forceinline__ __device__ unsigned int __gsharp_atomicAdd(unsigned int* address
 __forceinline__ __device__ unsigned long long __gsharp_atomicAdd(unsigned long long* address, unsigned long long val) { return atomicAdd(address, val) + val; }
 
 // --- Runtime Error / Trap ---
-enum class GSharpErrorCode : int {
-    None = 0,
-    NotSupported = 1,
-    InvalidOperation = 2,
-    IndexOutOfRange = 3,
-    ArgumentOutOfRange = 4,
-    Argument = 5,
-    NullReference = 6
-};
-__device__ __forceinline__ void __gsharp_trap(GSharpErrorCode, const char*) { asm("trap;"); }
+// GSharpErrorCode and __gsharp_trap are defined above GSharpArray<T>.
 
 // GSharpArray::flags bit 0: a null optional kernel argument, which reads as an empty array (#838)
 #define __gsharp_array_null_reads_empty 1

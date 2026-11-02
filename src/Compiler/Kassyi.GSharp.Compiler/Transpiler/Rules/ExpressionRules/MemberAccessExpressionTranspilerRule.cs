@@ -11,6 +11,40 @@ public sealed class MemberAccessExpressionTranspilerRule : SyntaxNodeTranspilerR
             symbol = context.Query.SemanticModel.GetSymbol(invocation);
         }
 
+        if ((node.Parent is not InvocationExpressionSyntax parentInvocation || parentInvocation.Expression != node) &&
+            SpanWriteClassifier.TryGetMethodSymbol(node, context.Query.SemanticModel) is { } uninvokedMethod &&
+            SpanWriteClassifier.ClassifyMethod(uninvokedMethod) != SpanMemberKind.None)
+        {
+            context.Reporter.Fail(
+                GSharpDiagnostics.UnsupportedSyntax,
+                node,
+                SpanWriteClassifier.FormatUnsupportedMethod(uninvokedMethod));
+            context.Visitor.AppendUnsupportedPlaceholder(node);
+            return;
+        }
+
+        if (symbol is IPropertySymbol spanProperty)
+        {
+            switch (SpanWriteClassifier.ClassifyProperty(spanProperty))
+            {
+                case SpanPropertyKind.Empty:
+                    context.Emitter.Dialect.AppendType(ref context, spanProperty.Type);
+                    context.Emitter.Writer.Append("{}");
+                    return;
+                case SpanPropertyKind.IsEmpty:
+                    StackArrayLocals.AppendView(node.Expression, ref context);
+                    context.Emitter.Writer.Append(".IsEmpty()");
+                    return;
+                case SpanPropertyKind.Unsupported:
+                    context.Reporter.Fail(
+                        GSharpDiagnostics.UnsupportedSyntax,
+                        node,
+                        SpanWriteClassifier.FormatUnsupportedProperty(spanProperty));
+                    context.Visitor.AppendUnsupportedPlaceholder(node);
+                    return;
+            }
+        }
+
         if (symbol != null && TryTranspileIntrinsic(symbol, ref context))
         {
             return;

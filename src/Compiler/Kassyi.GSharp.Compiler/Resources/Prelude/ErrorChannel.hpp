@@ -1,13 +1,5 @@
 // --- Runtime Error Channel (CPU Dialect) ---
-enum class GSharpErrorCode : int32_t {
-    None = 0,
-    NotSupported = 1,
-    InvalidOperation = 2,
-    IndexOutOfRange = 3,
-    ArgumentOutOfRange = 4,
-    Argument = 5,
-    NullReference = 6
-};
+// GSharpErrorCode and __gsharp_trap are declared in Types.hpp so GSharpArray<T>::CopyTo can report Argument errors.
 
 struct GSharpErrorSlot {
     std::atomic<int32_t> code{0};

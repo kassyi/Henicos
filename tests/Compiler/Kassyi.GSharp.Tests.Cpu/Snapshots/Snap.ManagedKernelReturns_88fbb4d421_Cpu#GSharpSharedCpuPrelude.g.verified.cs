@@ -91,6 +91,17 @@ inline ~__gsharp_using_scope() { resource.__gsharp_dispose(); }
 
 template <class T> inline const T* __gsharp_temp_address(const T& v) { return &v; }
 
+enum class GSharpErrorCode : int32_t {
+None = 0,
+NotSupported = 1,
+InvalidOperation = 2,
+IndexOutOfRange = 3,
+ArgumentOutOfRange = 4,
+Argument = 5,
+NullReference = 6
+};
+inline void __gsharp_trap(GSharpErrorCode code, const char* message);
+
 // A C# array or span: data is nullptr for a null array (and the default span), and never nullptr for an array that
 // exists, also an empty one (#706). flags uses the padding after length (16 bytes as before): bit 0
 // (__gsharp_array_null_reads_empty) marks a null optional kernel argument, which reads as an empty array
@@ -110,8 +121,54 @@ inline GSharpArray(T (&storage)[N]) : data(storage), length(N), flags(0) {}
 // The span members that C# calls on a span or an array (Span<T>.Slice, Span<T>.Fill, MemoryExtensions.AsSpan)
 inline GSharpArray<T> Slice(int start) const { return GSharpArray<T>(data + start, length - start); }
 inline GSharpArray<T> Slice(int start, int count) const { return GSharpArray<T>(data + start, count); }
-inline void Fill(const T& value) { for (int i = 0; i < length; i++) { data[i] = value; } }
+inline void Fill(const T& value) const { for (int i = 0; i < length; i++) { data[i] = value; } }
+inline void Clear() const { for (int i = 0; i < length; i++) { data[i] = T{}; } }
+// Ported from dotnet/runtime src/libraries/System.Private.CoreLib/src/System/MemoryExtensions.cs
+// (MIT License, commit e750854de9ad6a2ced72feb9b8008e506f04608f): in-place two-pointer swap for Span<T>.Reverse.
+inline void Reverse() const {
+for (int i = 0, j = length - 1; i < j; i++, j--) {
+T tmp = data[i];
+data[i] = data[j];
+data[j] = tmp;
+}
+}
+// Ported from dotnet/runtime src/libraries/System.Private.CoreLib/src/System/Span.Fast.cs and Buffer.cs
+// (MIT License, commit e750854de9ad6a2ced72feb9b8008e506f04608f):
+// CopyTo / TryCopyTo check (uint)length <= (uint)destination.length and copy with memmove overlap semantics.
+template <typename U>
+inline bool TryCopyTo(GSharpArray<U> destination) const {
+if (static_cast<unsigned int>(length) > static_cast<unsigned int>(destination.length)) {
+return false;
+}
+const U* src = data;
+U* dst = destination.data;
+if (dst == src || length <= 0) {
+return true;
+}
+unsigned long long srcAddr = reinterpret_cast<unsigned long long>(src);
+unsigned long long dstAddr = reinterpret_cast<unsigned long long>(dst);
+unsigned long long byteCount = static_cast<unsigned long long>(length) * sizeof(U);
+if (dstAddr - srcAddr < byteCount) {
+for (int i = length - 1; i >= 0; i--) {
+dst[i] = src[i];
+}
+} else {
+for (int i = 0; i < length; i++) {
+dst[i] = src[i];
+}
+}
+return true;
+}
+template <typename U>
+inline void CopyTo(GSharpArray<U> destination) const {
+if (!TryCopyTo(destination)) {
+__gsharp_trap(GSharpErrorCode::Argument, ""Destination is too short."");
+}
+}
 inline GSharpArray<T> AsSpan() const { return *this; }
+inline GSharpArray<T> AsSpan(int start) const { return Slice(start); }
+inline GSharpArray<T> AsSpan(int start, int count) const { return Slice(start, count); }
+inline bool IsEmpty() const { return length <= 0; }
 
 // Allows implicit conversion from GSharpArray<U> to GSharpArray<T> if U* is convertible to T* (e.g. T to const T)
 template <typename U>
@@ -152,8 +209,6 @@ inline const T& operator[](int index) const { return data[index]; }
 inline operator T*() { return data; }
 inline operator const T*() const { return data; }
 };
-
-
 
 // --- System.Numerics.Vector2/3/4 constructors (both dialects) ---
 // The constructors whose parameters are not the components in order (#499): a splat sets every component, and the
@@ -394,15 +449,7 @@ __forceinline__ unsigned long long __gsharp_to_u64(float x) { return __gsharp_to
 #endif
 
 // --- Runtime Error Channel (CPU Dialect) ---
-enum class GSharpErrorCode : int32_t {
-None = 0,
-NotSupported = 1,
-InvalidOperation = 2,
-IndexOutOfRange = 3,
-ArgumentOutOfRange = 4,
-Argument = 5,
-NullReference = 6
-};
+// GSharpErrorCode and __gsharp_trap are declared in Types.hpp so GSharpArray<T>::CopyTo can report Argument errors.
 
 struct GSharpErrorSlot {
 std::atomic<int32_t> code{0};

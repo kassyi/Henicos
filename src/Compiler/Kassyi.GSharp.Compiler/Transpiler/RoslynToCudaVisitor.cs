@@ -430,6 +430,18 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker, IDisposable
                     DynamicSharedMemoryEmitter.FailIfReferencedWithoutCall(node, method, ref Context);
                 }
 
+                if ((node.Parent is not InvocationExpressionSyntax parentInvocation || parentInvocation.Expression != node) &&
+                    SpanWriteClassifier.TryGetMethodSymbol(node, Context.Query.SemanticModel) is { } uninvokedSpanMethod &&
+                    SpanWriteClassifier.ClassifyMethod(uninvokedSpanMethod) != SpanMemberKind.None)
+                {
+                    Context.Reporter.Fail(
+                        GSharpDiagnostics.UnsupportedSyntax,
+                        node,
+                        SpanWriteClassifier.FormatUnsupportedMethod(uninvokedSpanMethod));
+                    AppendUnsupportedPlaceholder(node);
+                    return;
+                }
+
                 // A member function reads a captured primary constructor parameter from its hidden field (#495)
                 if (symbol is IParameterSymbol parameter &&
                     CppNameResolver.IsCapturedParameterReference(parameter, ref Context))
