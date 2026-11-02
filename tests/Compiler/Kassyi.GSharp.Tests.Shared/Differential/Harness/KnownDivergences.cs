@@ -95,6 +95,24 @@ public static class KnownDivergences
         $"{nameof(BarrierAndWarpDifferentialKernels)}.{nameof(BarrierAndWarpDifferentialKernels.SubWarpConditionalShuffleKernel)}";
     private const string GenericStructStaticSharedMemory =
         $"{nameof(BarrierAndWarpDifferentialKernels)}.{nameof(BarrierAndWarpDifferentialKernels.GenericStructStaticSharedMemoryKernel)}";
+    private const string D3CharAllPositions =
+        $"{nameof(MarshalingBoundaryDifferentialKernels)}.{nameof(MarshalingBoundaryDifferentialKernels.CharAllPositionsKernel)}";
+    private const string D3NullableBlitScalarArg =
+        $"{nameof(MarshalingBoundaryDifferentialKernels)}.{nameof(MarshalingBoundaryDifferentialKernels.NullableBlitScalarArgKernel)}";
+    private const string D3NullableConvertPositions =
+        $"{nameof(MarshalingBoundaryDifferentialKernels)}.{nameof(MarshalingBoundaryDifferentialKernels.NullableConvertPositionsKernel)}";
+    private const string D3ExplicitUnionWithConvertArm =
+        $"{nameof(MarshalingBoundaryDifferentialKernels)}.{nameof(MarshalingBoundaryDifferentialKernels.ExplicitUnionWithConvertArmKernel)}";
+    private const string D3InlineArrayNullableVec2 =
+        $"{nameof(MarshalingBoundaryDifferentialKernels)}.{nameof(MarshalingBoundaryDifferentialKernels.InlineArrayNullableVec2Kernel)}";
+    private const string D3OverlappingSpanSlice =
+        $"{nameof(MarshalingAliasingDifferentialKernels)}.{nameof(MarshalingAliasingDifferentialKernels.OverlappingSpanSliceKernel)}";
+    private const string D3AliasedRefScalars =
+        $"{nameof(MarshalingAliasingDifferentialKernels)}.{nameof(MarshalingAliasingDifferentialKernels.AliasedRefScalarsKernel)}";
+    private const string D3CrossAliasInDeepArrayAndRwArray =
+        $"{nameof(MarshalingAliasingDifferentialKernels)}.{nameof(MarshalingAliasingDifferentialKernels.CrossAliasInDeepArrayAndRwArrayKernel)}";
+    private const string D3PtrLengthGuardedScale =
+        $"{nameof(MarshalingAliasingDifferentialKernels)}.{nameof(MarshalingAliasingDifferentialKernels.PtrLengthGuardedScaleKernel)}";
 
     /// <summary>Gets every registered entry.</summary>
     public static IReadOnlyList<KnownDivergence> All { get; } =
@@ -170,5 +188,52 @@ public static class KnownDivergences
 
         // generic struct static method SharedMemory.Allocate<T> collides across type arguments (#543)
         new(GenericStructStaticSharedMemory, "SharedSlot<int>", DiffPath.Managed | DiffPath.Native, Issue: 543),
+
+        // D3-M2: char by-value / in kernel arguments truncated in CPU Native Launch (#971)
+        new(D3CharAllPositions, "char_val", DiffPath.Native, Issue: 971),
+        new(D3CharAllPositions, "char_in", DiffPath.Native, Issue: 971),
+        new(D3CharAllPositions, "ov", DiffPath.Native, Issue: 971),
+        new(D3CharAllPositions, "__result", DiffPath.Native, Issue: 971),
+
+        // D3-M3a: Nullable<T> by-value kernel argument throws MarshalDirectiveException in CPU Native Launch (#972 / S19-3a)
+        new(D3NullableBlitScalarArg, "v_has", DiffPath.Native, Issue: 972),
+        new(D3NullableBlitScalarArg, "v_val", DiffPath.Native, Issue: 972),
+        new(D3NullableBlitScalarArg, "rb_has", DiffPath.Native, Issue: 972),
+        new(D3NullableBlitScalarArg, "rb_val", DiffPath.Native, Issue: 972),
+        new(D3NullableBlitScalarArg, "rb", DiffPath.Native, Issue: 972),
+        new(D3NullableBlitScalarArg, "oc", DiffPath.Native, Issue: 972),
+
+        // D3-M3b: Nullable<Vector2> host 12B vs CUDA 16B layout mismatch (#961 / S19-3b)
+        new(D3NullableConvertPositions, "v_x", DiffPath.Cuda, Issue: 961),
+        new(D3NullableConvertPositions, "v_y", DiffPath.Cuda, Issue: 961),
+        new(D3NullableConvertPositions, "rv_x", DiffPath.Cuda, Issue: 961),
+        new(D3NullableConvertPositions, "rv_y", DiffPath.Cuda, Issue: 961),
+        new(D3NullableConvertPositions, "h", DiffPath.Cuda, Issue: 961),
+
+        // D3-M4b: LayoutKind.Explicit union with Convert arm overwritten by subsequent union arm during CUDA unmarshal (#1006)
+        new(D3ExplicitUnionWithConvertArm, "u", DiffPath.Cuda, Issue: 1006),
+
+        // D3-M6b: [InlineArray(2)] of Nullable<Vector2> block-copied without per-element conversion on CUDA (#961 / S19-3c)
+        new(D3InlineArrayNullableVec2, "item0_x", DiffPath.Cuda, Issue: 961),
+        new(D3InlineArrayNullableVec2, "item0_y", DiffPath.Cuda, Issue: 961),
+        new(D3InlineArrayNullableVec2, "item1_has", DiffPath.Cuda, Issue: 961),
+        new(D3InlineArrayNullableVec2, "item1_x", DiffPath.Cuda, Issue: 961),
+        new(D3InlineArrayNullableVec2, "item1_y", DiffPath.Cuda, Issue: 961),
+        new(D3InlineArrayNullableVec2, "h", DiffPath.Cuda, Issue: 961),
+
+        // D3-A1: Partially overlapping Span<T> slices from same array do not share device memory on CUDA (#857)
+        new(D3OverlappingSpanSlice, "backing", DiffPath.Cuda, Issue: 857),
+        new(D3OverlappingSpanSlice, "observed", DiffPath.Cuda, Issue: 857),
+
+        // D3-A1: Aliased ref scalar parameters allocate separate device buffers and overwrite on DtoH copyback on CUDA
+        new(D3AliasedRefScalars, "sharedRef", DiffPath.Cuda, Issue: 1061), // ND3-1: CUDA ref scalar parameters do not deduplicate aliased host references
+        new(D3AliasedRefScalars, "observed", DiffPath.Cuda, Issue: 1061), // ND3-1: CUDA ref scalar parameters do not deduplicate aliased host references
+
+        // D3-A4: [In] DeepStruct[] element array field cloned unconditionally on CPU even when aliasing writable int[] (#985 / S18)
+        new(D3CrossAliasInDeepArrayAndRwArray, "observed", DiffPath.Managed | DiffPath.Native, Issue: 985),
+
+        // D3-P1: Launch{Kernel}Ptr with raw IntPtr passes Length = 0 in GSharpArrayProxy (#720)
+        new(D3PtrLengthGuardedScale, "data", DiffPath.Cuda, Issue: 720),
+        new(D3PtrLengthGuardedScale, "outLen", DiffPath.Cuda, Issue: 720),
     ];
 }
