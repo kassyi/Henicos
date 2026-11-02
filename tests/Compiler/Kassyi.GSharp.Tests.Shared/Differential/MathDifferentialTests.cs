@@ -59,7 +59,7 @@ public class MathDifferentialTests
             gridDimX: s.GridX,
             blockDimX: s.BlockX
         ),
-        Oracle = static b => MathDifferentialKernels.MathOfSingleMatrixKernel(b.Get<float>("f"), b.Get<double>("r")),
+        Oracle = static (b, _) => MathDifferentialKernels.MathOfSingleMatrixKernel(b.Get<float>("f"), b.Get<double>("r")),
     };
 
     private static readonly DifferentialCase s_singleRoundingAndUnary = new($"{nameof(MathDifferentialKernels)}.{nameof(MathDifferentialKernels.SingleRoundingAndUnaryMatrixKernel)}")
@@ -74,7 +74,7 @@ public class MathDifferentialTests
             gridDimX: s.GridX,
             blockDimX: s.BlockX
         ),
-        Oracle = static b => MathDifferentialKernels.SingleRoundingAndUnaryMatrixKernel(b.Get<float>("f"), b.Get<float>("r")),
+        Oracle = static (b, _) => MathDifferentialKernels.SingleRoundingAndUnaryMatrixKernel(b.Get<float>("f"), b.Get<float>("r")),
     };
 
     private static readonly DifferentialCase s_doubleRoundingAndUnary = new($"{nameof(MathDifferentialKernels)}.{nameof(MathDifferentialKernels.DoubleRoundingAndUnaryMatrixKernel)}")
@@ -89,7 +89,7 @@ public class MathDifferentialTests
             gridDimX: s.GridX,
             blockDimX: s.BlockX
         ),
-        Oracle = static b => MathDifferentialKernels.DoubleRoundingAndUnaryMatrixKernel(b.Get<double>("d"), b.Get<double>("r")),
+        Oracle = static (b, _) => MathDifferentialKernels.DoubleRoundingAndUnaryMatrixKernel(b.Get<double>("d"), b.Get<double>("r")),
     };
 
     private static readonly DifferentialCase s_singleMaxMinClamp = new($"{nameof(MathDifferentialKernels)}.{nameof(MathDifferentialKernels.SingleMaxMinClampMatrixKernel)}")
@@ -115,7 +115,7 @@ public class MathDifferentialTests
             gridDimX: s.GridX,
             blockDimX: s.BlockX
         ),
-        Oracle = static b => MathDifferentialKernels.SingleMaxMinClampMatrixKernel(
+        Oracle = static (b, _) => MathDifferentialKernels.SingleMaxMinClampMatrixKernel(
             b.Get<float>("a"),
             b.Get<float>("b"),
             b.Get<float>("min"),
@@ -147,7 +147,7 @@ public class MathDifferentialTests
             gridDimX: s.GridX,
             blockDimX: s.BlockX
         ),
-        Oracle = static b => MathDifferentialKernels.DoubleMaxMinClampMatrixKernel(
+        Oracle = static (b, _) => MathDifferentialKernels.DoubleMaxMinClampMatrixKernel(
             b.Get<double>("a"),
             b.Get<double>("b"),
             b.Get<double>("min"),
@@ -179,7 +179,7 @@ public class MathDifferentialTests
             gridDimX: s.GridX,
             blockDimX: s.BlockX
         ),
-        Oracle = static b => MathDifferentialKernels.MixedFloatMaxMinMatrixKernel(
+        Oracle = static (b, _) => MathDifferentialKernels.MixedFloatMaxMinMatrixKernel(
             b.Get<float>("f"),
             b.Get<double>("d"),
             b.Get<int>("i"),
@@ -217,7 +217,7 @@ public class MathDifferentialTests
             gridDimX: s.GridX,
             blockDimX: s.BlockX
         ),
-        Oracle = static b => MathDifferentialKernels.Int32MathMatrixKernel(
+        Oracle = static (b, _) => MathDifferentialKernels.Int32MathMatrixKernel(
             b.Get<int>("a"),
             b.Get<int>("b"),
             b.Get<short>("s"),
@@ -249,7 +249,7 @@ public class MathDifferentialTests
             gridDimX: s.GridX,
             blockDimX: s.BlockX
         ),
-        Oracle = static b => MathDifferentialKernels.MathFIntArgumentMatrixKernel(
+        Oracle = static (b, _) => MathDifferentialKernels.MathFIntArgumentMatrixKernel(
             b.Get<int>("v"),
             b.Get<int>("min"),
             b.Get<int>("max"),

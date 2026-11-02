@@ -1,4 +1,7 @@
 #nullable enable
+using System;
+using System.Collections.Generic;
+
 namespace Kassyi.GSharp.Tests.Shared.Differential;
 
 /// <summary>
@@ -13,8 +16,22 @@ namespace Kassyi.GSharp.Tests.Shared.Differential;
 /// <param name="Paths">The paths on which the column differs; one or more flags.</param>
 /// <param name="Issue">The issue that tracks the divergence.</param>
 /// <param name="Hosts">The hosts on which the column differs; an entry for other hosts is ignored, also by the stale check.</param>
-public sealed record KnownDivergence(string Case, string Column, DiffPath Paths, int Issue, DiffHost Hosts = DiffHost.Any)
+/// <param name="ShapePredicate">Optional predicate restricting the divergence to specific launch shapes.</param>
+public sealed record KnownDivergence(
+    string Case,
+    string Column,
+    DiffPath Paths,
+    int Issue,
+    DiffHost Hosts = DiffHost.Any,
+    Predicate<LaunchShape>? ShapePredicate = null
+)
 {
+    /// <summary>
+    /// Reserved <see cref="Column"/> token matching an <see cref="ExceptionPolicy"/> mismatch
+    /// (for example, Managed threw <see cref="IndexOutOfRangeException"/> while Native returned normally).
+    /// </summary>
+    public const string ExceptionColumn = "$exception";
+
     /// <summary>Gets whether the entry applies to the host this process runs on.</summary>
     public bool AppliesToThisHost => (Hosts & (OperatingSystem.IsWindows() ? DiffHost.Windows : DiffHost.Unix)) != 0;
 
@@ -23,10 +40,21 @@ public sealed record KnownDivergence(string Case, string Column, DiffPath Paths,
     /// <param name="column">The column name.</param>
     /// <param name="path">The path.</param>
     public bool Covers(string caseName, string column, DiffPath path) =>
-        Case == caseName && Column == column && (Paths & path) != 0;
+        Case == caseName && Column == column && (Paths & path) != 0 && ShapePredicate is null;
+
+    /// <summary>Returns whether the entry covers a cell of <paramref name="column"/> in <paramref name="caseName"/> on <paramref name="path"/> for <paramref name="shape"/>.</summary>
+    /// <param name="caseName">The case.</param>
+    /// <param name="column">The column name.</param>
+    /// <param name="path">The path.</param>
+    /// <param name="shape">The launch shape.</param>
+    public bool Covers(string caseName, string column, DiffPath path, LaunchShape shape) =>
+        Case == caseName &&
+        Column == column &&
+        (Paths & path) != 0 &&
+        (ShapePredicate is null || ShapePredicate(shape));
 
     /// <inheritdoc/>
-    public override string ToString() => $"\"{Column}\" on {Paths.ToString().ToLowerInvariant()} (#{Issue})";
+    public override string ToString() => $"\"{Column}\" on {DiffPaths.Format(Paths)} (#{Issue})";
 }
 
 /// <summary>
