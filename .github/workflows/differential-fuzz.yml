@@ -1,0 +1,86 @@
+name: Differential Kernel Fuzzer
+
+# Manual differential kernel fuzzing on GitHub-hosted runners (Profile C: C# oracle vs managed + native CPU).
+# Triggered via workflow_dispatch only (no schedule trigger until enabled after review).
+on:
+  workflow_dispatch:
+    inputs:
+      minutes:
+        description: "Fuzzing duration in minutes per OS"
+        required: false
+        default: "30"
+        type: string
+      fuzz_seed:
+        description: "Optional starting 64-bit fuzz seed (decimal or 0x hex)"
+        required: false
+        default: ""
+        type: string
+      batch_size:
+        description: "Number of kernels per batch"
+        required: false
+        default: "64"
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  fuzz-cpu:
+    name: Differential Fuzz Profile C (${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    env:
+      GSHARP_TEST_NO_CUDA: "1"
+      DiffEngine_Disabled: "true"
+      CI: "true"
+
+    steps:
+      - name: Enable long paths in Git (Windows)
+        if: runner.os == 'Windows'
+        run: git config --system core.longpaths true
+
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
+        with:
+          dotnet-version: "10.0.x"
+
+      - name: Cache NuGet packages
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.nuget/packages
+          key: nuget-${{ runner.os }}-fuzz-${{ hashFiles('**/*.csproj', '**/Directory.Build.props', '**/Directory.Build.targets', '**/Directory.Packages.props', '**/global.json', '**/nuget.config', '**/NuGet.Config') }}
+          restore-keys: nuget-${{ runner.os }}-fuzz-
+
+      - name: Run Differential Fuzzer (Profile C)
+        shell: bash
+        run: |
+          SEED_ARG=()
+          if [ -n "${{ inputs.fuzz_seed }}" ]; then
+            SEED_ARG=(--fuzz-seed "${{ inputs.fuzz_seed }}")
+          fi
+          node scripts/human/fuzz-differential.js \
+            --profile cpu \
+            --minutes "${{ inputs.minutes || '30' }}" \
+            --batch-size "${{ inputs.batch_size || '64' }}" \
+            "${SEED_ARG[@]}"
+
+      - name: Upload differential fuzz findings and summary
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: differential-fuzz-findings-${{ matrix.os }}
+          path: |
+            tmp/differential-fuzz/summary.json
+            tmp/differential-fuzz/findings/
+          if-no-files-found: ignore
+          retention-days: 14

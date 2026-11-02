@@ -1,0 +1,14 @@
+<Project>
+  <!-- Stops repository-root props so tools/fuzz-diff builds without restoring analyzer packages or linking compiler pre-build targets. -->
+  <PropertyGroup>
+    <GSharpHostOs Condition="$([MSBuild]::IsOSPlatform('Windows'))">win</GSharpHostOs>
+    <GSharpHostOs Condition="'$(GSharpHostOs)' == '' and $([MSBuild]::IsOSPlatform('Linux'))">linux</GSharpHostOs>
+    <GSharpHostOs Condition="'$(GSharpHostOs)' == '' and $([MSBuild]::IsOSPlatform('OSX'))">osx</GSharpHostOs>
+    <GSharpHostOs Condition="'$(GSharpHostOs)' == ''">unix</GSharpHostOs>
+
+    <BaseOutputPath>bin\$(GSharpHostOs)\</BaseOutputPath>
+    <BaseIntermediateOutputPath>obj\$(GSharpHostOs)\</BaseIntermediateOutputPath>
+    <DefaultItemExcludes>$(DefaultItemExcludes);bin\**;obj\**</DefaultItemExcludes>
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
+  </PropertyGroup>
+</Project>
