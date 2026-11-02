@@ -58,8 +58,8 @@ public sealed record KnownDivergence(
 }
 
 /// <summary>
-/// The registry of <see cref="KnownDivergence"/> entries that <see cref="DifferentialRunner.Run"/> applies to every case
-/// (design §5, D2). A matrix test that finds a new divergence files an issue (M1 or M2) and adds a line here; the PR that
+/// The registry of <see cref="KnownDivergence"/> entries that <see cref="DifferentialRunner.Run"/> applies to every case.
+/// A matrix test that finds a new divergence files an issue (M1 or M2) and adds a line here; the PR that
 /// fixes it removes the line, since the entry then fails.
 /// </summary>
 public static class KnownDivergences
@@ -95,6 +95,14 @@ public static class KnownDivergences
         $"{nameof(BarrierAndWarpDifferentialKernels)}.{nameof(BarrierAndWarpDifferentialKernels.SubWarpConditionalShuffleKernel)}";
     private const string GenericStructStaticSharedMemory =
         $"{nameof(BarrierAndWarpDifferentialKernels)}.{nameof(BarrierAndWarpDifferentialKernels.GenericStructStaticSharedMemoryKernel)}";
+    private const string HelperDynamicSharedMemoryZeroBytes =
+        $"{nameof(PendingBugsDifferentialKernels)}.{nameof(PendingBugsDifferentialKernels.HelperDynamicSharedMemoryZeroBytesKernel)}";
+    private const string HelperDynamicSharedMemoryGrowthAfterLaterDecl =
+        $"{nameof(PendingBugsDifferentialKernels)}.{nameof(PendingBugsDifferentialKernels.HelperDynamicSharedMemoryGrowthAfterLaterDeclKernel)}";
+    private const string HelperDynamicSharedMemoryNegativeCount =
+        $"{nameof(PendingBugsDifferentialKernels)}.{nameof(PendingBugsDifferentialKernels.HelperDynamicSharedMemoryNegativeCountKernel)}";
+    private const string GridStrideLoopUniformWarpShuffle =
+        $"{nameof(PendingBugsDifferentialKernels)}.{nameof(PendingBugsDifferentialKernels.GridStrideLoopUniformWarpShuffleKernel)}";
 
     /// <summary>Gets every registered entry.</summary>
     public static IReadOnlyList<KnownDivergence> All { get; } =
@@ -170,5 +178,14 @@ public static class KnownDivergences
 
         // generic struct static method SharedMemory.Allocate<T> collides across type arguments (#543)
         new(GenericStructStaticSharedMemory, "SharedSlot<int>", DiffPath.Managed | DiffPath.Native, Issue: 543),
+
+        // dynamic SharedMemory<T>(count) inside non-suspending [GpuDeviceFunction] is not rewritten on Managed (#904)
+        new(HelperDynamicSharedMemoryZeroBytes, KnownDivergence.ExceptionColumn, DiffPath.Managed, Issue: 904),
+        new(HelperDynamicSharedMemoryGrowthAfterLaterDecl, KnownDivergence.ExceptionColumn, DiffPath.Managed, Issue: 904),
+        new(HelperDynamicSharedMemoryNegativeCount, KnownDivergence.ExceptionColumn, DiffPath.Managed, Issue: 904),
+
+        // Warp.ShuffleDownSync directly inside Gpu.GridStrideLoop lambda is not split by StateMachineLowerer (#1091)
+        new(GridStrideLoopUniformWarpShuffle, "iter0_down1", DiffPath.Native, Issue: 1091),
+        new(GridStrideLoopUniformWarpShuffle, "iter1_down1", DiffPath.Native, Issue: 1091),
     ];
 }
