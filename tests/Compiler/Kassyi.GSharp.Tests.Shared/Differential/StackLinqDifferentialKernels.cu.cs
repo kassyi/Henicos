@@ -448,4 +448,136 @@ public static partial class StackLinqDifferentialKernels
         var unfused = slice.AsStackEnumerable();
         r[o + 2] = unfused.Sum();
     }
+
+    /// <summary>The columns of <see cref="DoubleSequentialSumKernel"/>.</summary>
+    public static readonly string[] DoubleSequentialSumColumns =
+    [
+        "FusedSum",
+        "WhereSelectSum",
+        "UnfusedSum",
+        "SelectorSum",
+    ];
+
+    // Uses Reference model because host StackLinq.Sum(double) uses Vector<double> SIMD for SpanEnumerator (#730).
+    [GpuKernel]
+    public static void DoubleSequentialSumKernel(double[] xs, double[] r)
+    {
+        int t = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
+        int baseIdx = t * SliceLength;
+        if (baseIdx + SliceLength > xs.Length)
+        {
+            return;
+        }
+
+        var slice = xs.AsSpan().Slice(baseIdx, SliceLength);
+        int o = t * 4;
+
+        r[o] = slice.AsStackEnumerable().Sum();
+        r[o + 1] = slice.AsStackEnumerable().Where(x => true).Select(x => x).Sum();
+        var unfused = slice.AsStackEnumerable();
+        r[o + 2] = unfused.Sum();
+        r[o + 3] = slice.AsStackEnumerable().Sum(x => x * 2.0);
+    }
+
+    /// <summary>The columns of <see cref="SingleElementAtAndWhileSideEffectsKernel"/>.</summary>
+    public static readonly string[] SingleElementAtAndWhileSideEffectsColumns =
+    [
+        "FusedFirst",
+        "FusedFirstPred",
+        "FusedLast",
+        "FusedLastPred",
+        "SingleOneElem",
+        "SinglePredUnique",
+        "SingleOrDefaultEmpty",
+        "SingleOrDefaultOneElem",
+        "SingleOrDefaultPredNone",
+        "ElementAt0",
+        "ElementAt2",
+        "TakeWhileSideEffectCount",
+        "SkipWhileSideEffectCount",
+    ];
+
+    [GpuKernel]
+    public static void SingleElementAtAndWhileSideEffectsKernel(int[] xs, long[] r)
+    {
+        int t = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
+        int baseIdx = t * SliceLength;
+        if (baseIdx + SliceLength > xs.Length)
+        {
+            return;
+        }
+
+        var slice = xs.AsSpan().Slice(baseIdx, SliceLength);
+        var oneElemSlice = slice.Slice(1, 1);
+        var emptySlice = slice.Slice(0, 0);
+        int s1 = slice[1];
+        int s2 = slice[2];
+        int o = t * 13;
+
+        r[o + 0] = slice.AsStackEnumerable().First();
+        r[o + 1] = slice.AsStackEnumerable().First(x => x == s2);
+        r[o + 2] = slice.AsStackEnumerable().Last();
+        r[o + 3] = slice.AsStackEnumerable().Last(x => x == s1);
+        r[o + 4] = oneElemSlice.AsStackEnumerable().Single();
+        r[o + 5] = oneElemSlice.AsStackEnumerable().Single(x => true);
+        r[o + 6] = emptySlice.AsStackEnumerable().SingleOrDefault();
+        r[o + 7] = oneElemSlice.AsStackEnumerable().SingleOrDefault();
+        r[o + 8] = slice.AsStackEnumerable().SingleOrDefault(x => x > 0 && x < 0);
+        r[o + 9] = slice.AsStackEnumerable().ElementAt(0);
+        r[o + 10] = slice.AsStackEnumerable().ElementAt(2);
+
+        int twCalls = 0;
+        int twSum = slice.AsStackEnumerable().TakeWhile(x => ++twCalls <= 2).Sum();
+        r[o + 11] = twCalls + (twSum & 0);
+
+        int swCalls = 0;
+        int swSum = slice.AsStackEnumerable().SkipWhile(x => ++swCalls <= 2).Sum();
+        r[o + 12] = swCalls + (swSum & 0);
+    }
+
+    [GpuKernel]
+    public static void ParallelSumStackLinqKernel(int[] xs, int[] r)
+    {
+        int tid = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
+        int blockSum = xs.AsStackEnumerable().AsParallel().Sum();
+        int filteredSum = xs.AsStackEnumerable().Where(x => (x & 1) == 0).Select(x => x * 2).AsParallel().Sum();
+        if (tid < r.Length / 2)
+        {
+            r[tid * 2] = blockSum;
+            r[tid * 2 + 1] = filteredSum;
+        }
+    }
+
+    [GpuKernel]
+    public static void EmptyFirstFaultKernel(int[] xs, int[] r)
+    {
+        int tid = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
+        if (tid == 0)
+        {
+            var empty = xs.AsSpan().Slice(0, 0);
+            r[0] = empty.AsStackEnumerable().First();
+        }
+    }
+
+    [GpuKernel]
+    public static void MultipleElementsSingleFaultKernel(int[] xs, int[] r)
+    {
+        int tid = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
+        if (tid == 0)
+        {
+            var twoElems = xs.AsSpan().Slice(0, 2);
+            r[0] = twoElems.AsStackEnumerable().Single();
+        }
+    }
+
+    [GpuKernel]
+    public static void OutOfRangeElementAtFaultKernel(int[] xs, int[] r)
+    {
+        int tid = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
+        if (tid == 0)
+        {
+            var slice = xs.AsSpan().Slice(0, SliceLength);
+            r[0] = slice.AsStackEnumerable().ElementAt(SliceLength + 5);
+        }
+    }
 }

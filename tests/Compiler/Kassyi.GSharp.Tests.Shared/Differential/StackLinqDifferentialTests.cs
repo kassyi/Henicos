@@ -261,6 +261,158 @@ public class StackLinqDifferentialTests
         },
     };
 
+    private static readonly DifferentialCase s_doubleSequentialSum = new($"{nameof(StackLinqDifferentialKernels)}.{nameof(StackLinqDifferentialKernels.DoubleSequentialSumKernel)}")
+    {
+        Shape = LaunchShape.ForRows(64, blockX: 32),
+        Inputs = static (rng, rows) => new DiffBuffers()
+            .In("xs", BuildDoubleSlices(rng, rows), OutputPolicy.Bitwise)
+            .Out<double>("r", rows, StackLinqDifferentialKernels.DoubleSequentialSumColumns, OutputPolicy.Bitwise),
+        Launch = static (b, s) => StackLinqDifferentialKernels.LaunchDoubleSequentialSumKernel(
+            b.Get<double>("xs"),
+            b.Get<double>("r"),
+            gridDimX: s.GridX,
+            blockDimX: s.BlockX
+        ),
+        Reference = static (b, _) =>
+        {
+            var xs = b.Get<double>("xs");
+            var r = b.Get<double>("r");
+            int rows = xs.Length / SliceLen;
+            for (int t = 0; t < rows; t++)
+            {
+                double sum = 0.0;
+                double selSum = 0.0;
+                for (int i = 0; i < SliceLen; i++)
+                {
+                    double val = xs[t * SliceLen + i];
+                    sum += val;
+                    selSum += val * 2.0;
+                }
+
+                int o = t * 4;
+                r[o + 0] = sum;
+                r[o + 1] = sum;
+                r[o + 2] = sum;
+                r[o + 3] = selSum;
+            }
+        },
+    };
+
+    private static readonly DifferentialCase s_singleElementAtAndWhileSideEffects = new(
+        $"{nameof(StackLinqDifferentialKernels)}.{nameof(StackLinqDifferentialKernels.SingleElementAtAndWhileSideEffectsKernel)}")
+    {
+        Shape = LaunchShape.ForRows(64, blockX: 32),
+        Inputs = static (rng, rows) => new DiffBuffers()
+            .In("xs", BuildInt32Slices(rng, rows), OutputPolicy.Exact)
+            .Out<long>("r", rows, StackLinqDifferentialKernels.SingleElementAtAndWhileSideEffectsColumns, OutputPolicy.Exact),
+        Launch = static (b, s) => StackLinqDifferentialKernels.LaunchSingleElementAtAndWhileSideEffectsKernel(
+            b.Get<int>("xs"),
+            b.Get<long>("r"),
+            gridDimX: s.GridX,
+            blockDimX: s.BlockX
+        ),
+        Oracle = static (b, _) => StackLinqDifferentialKernels.SingleElementAtAndWhileSideEffectsKernel(
+            b.Get<int>("xs"),
+            b.Get<long>("r")
+        ),
+    };
+
+    private static readonly DifferentialCase s_parallelSum = new(
+        $"{nameof(StackLinqDifferentialKernels)}.{nameof(StackLinqDifferentialKernels.ParallelSumStackLinqKernel)}")
+    {
+        Shape = LaunchShapes.Grid1D(gridX: 1, blockX: 64, rows: 64),
+        Inputs = static (rng, shape) =>
+        {
+            var xs = DiffValues.Int32(rng, shape.Rows);
+            for (int i = 0; i < xs.Length; i++)
+            {
+                xs[i] &= 0xFFFF;
+            }
+
+            return new DiffBuffers()
+                .In("xs", xs, OutputPolicy.Exact)
+                .Out<int>("r", shape.Rows, ["BlockParallelSum", "WhereSelectParallelSum"], OutputPolicy.Exact);
+        },
+        Launch = static (b, s) => StackLinqDifferentialKernels.LaunchParallelSumStackLinqKernel(
+            b.Get<int>("xs"),
+            b.Get<int>("r"),
+            gridDimX: s.GridX,
+            blockDimX: s.BlockX
+        ),
+        Reference = static (b, s) =>
+        {
+            var xs = b.Get<int>("xs");
+            var r = b.Get<int>("r");
+            int blockSum = 0;
+            int filteredSum = 0;
+            for (int i = 0; i < xs.Length; i++)
+            {
+                blockSum += xs[i];
+                if ((xs[i] & 1) == 0)
+                {
+                    filteredSum += xs[i] * 2;
+                }
+            }
+
+            for (int t = 0; t < s.Rows; t++)
+            {
+                r[t * 2] = blockSum;
+                r[t * 2 + 1] = filteredSum;
+            }
+        },
+    };
+
+    private static readonly DifferentialCase s_emptyFirstFault = new(
+        $"{nameof(StackLinqDifferentialKernels)}.{nameof(StackLinqDifferentialKernels.EmptyFirstFaultKernel)}")
+    {
+        Shape = LaunchShapes.SingleThread(),
+        Seeds = [0],
+        ExceptionPolicy = ExceptionPolicy.For<InvalidOperationException>(DiffPath.Managed | DiffPath.Native),
+        Inputs = static (_, _) => new DiffBuffers()
+            .In("xs", [10, 20, 30, 40])
+            .Out<int>("r", 1, OutputPolicy.Ignore),
+        Launch = static (b, s) => StackLinqDifferentialKernels.LaunchEmptyFirstFaultKernel(
+            b.Get<int>("xs"),
+            b.Get<int>("r"),
+            gridDimX: s.GridX,
+            blockDimX: s.BlockX
+        ),
+    };
+
+    private static readonly DifferentialCase s_multipleElementsSingleFault = new(
+        $"{nameof(StackLinqDifferentialKernels)}.{nameof(StackLinqDifferentialKernels.MultipleElementsSingleFaultKernel)}")
+    {
+        Shape = LaunchShapes.SingleThread(),
+        Seeds = [0],
+        ExceptionPolicy = ExceptionPolicy.For<InvalidOperationException>(DiffPath.Managed | DiffPath.Native),
+        Inputs = static (_, _) => new DiffBuffers()
+            .In("xs", [10, 20, 30, 40])
+            .Out<int>("r", 1, OutputPolicy.Ignore),
+        Launch = static (b, s) => StackLinqDifferentialKernels.LaunchMultipleElementsSingleFaultKernel(
+            b.Get<int>("xs"),
+            b.Get<int>("r"),
+            gridDimX: s.GridX,
+            blockDimX: s.BlockX
+        ),
+    };
+
+    private static readonly DifferentialCase s_outOfRangeElementAtFault = new(
+        $"{nameof(StackLinqDifferentialKernels)}.{nameof(StackLinqDifferentialKernels.OutOfRangeElementAtFaultKernel)}")
+    {
+        Shape = LaunchShapes.SingleThread(),
+        Seeds = [0],
+        ExceptionPolicy = ExceptionPolicy.For<ArgumentOutOfRangeException>(DiffPath.Managed | DiffPath.Native),
+        Inputs = static (_, _) => new DiffBuffers()
+            .In("xs", [10, 20, 30, 40])
+            .Out<int>("r", 1, OutputPolicy.Ignore),
+        Launch = static (b, s) => StackLinqDifferentialKernels.LaunchOutOfRangeElementAtFaultKernel(
+            b.Get<int>("xs"),
+            b.Get<int>("r"),
+            gridDimX: s.GridX,
+            blockDimX: s.BlockX
+        ),
+    };
+
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Differential)]
@@ -320,6 +472,47 @@ public class StackLinqDifferentialTests
     [Category(TestCategory.Differential)]
     [Scenario(TestScenario.Boundary)]
     public void Test_FloatSequentialSum_MatchesTheReferenceOnEveryPath() => DifferentialRunner.Run(s_floatSequentialSum);
+
+    [SkippableFact]
+    [TestTarget(ExecutionTarget.GpuExecution)]
+    [Category(TestCategory.Differential)]
+    [Scenario(TestScenario.Boundary)]
+    public void Test_DoubleSequentialSum_MatchesTheReferenceOnEveryPath() => DifferentialRunner.Run(s_doubleSequentialSum);
+
+    [SkippableFact]
+    [TestTarget(ExecutionTarget.GpuExecution)]
+    [Category(TestCategory.Differential)]
+    [Scenario(TestScenario.Boundary)]
+    public void Test_SingleElementAtAndWhileSideEffects_MatchesTheOracleOnEveryPath() =>
+        DifferentialRunner.Run(s_singleElementAtAndWhileSideEffects);
+
+    [SkippableFact]
+    [TestTarget(ExecutionTarget.GpuExecution)]
+    [Category(TestCategory.Differential)]
+    [Scenario(TestScenario.Boundary)]
+    public void Test_ParallelSumStackLinq_MatchesTheReferenceOnEveryPath() =>
+        DifferentialRunner.Run(s_parallelSum);
+
+    [SkippableFact]
+    [TestTarget(ExecutionTarget.GpuExecution)]
+    [Category(TestCategory.Differential)]
+    [Scenario(TestScenario.SadPath)]
+    public void Test_EmptyFirstFault_ThrowsInvalidOperationException() =>
+        DifferentialRunner.Run(s_emptyFirstFault);
+
+    [SkippableFact]
+    [TestTarget(ExecutionTarget.GpuExecution)]
+    [Category(TestCategory.Differential)]
+    [Scenario(TestScenario.SadPath)]
+    public void Test_MultipleElementsSingleFault_ThrowsInvalidOperationException() =>
+        DifferentialRunner.Run(s_multipleElementsSingleFault);
+
+    [SkippableFact]
+    [TestTarget(ExecutionTarget.GpuExecution)]
+    [Category(TestCategory.Differential)]
+    [Scenario(TestScenario.SadPath)]
+    public void Test_OutOfRangeElementAtFault_ThrowsArgumentOutOfRangeException() =>
+        DifferentialRunner.Run(s_outOfRangeElementAtFault);
 
     private static int[] BuildInt32Slices(DiffRandom rng, int rows)
     {

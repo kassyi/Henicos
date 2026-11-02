@@ -95,6 +95,8 @@ public static class KnownDivergences
         $"{nameof(BarrierAndWarpDifferentialKernels)}.{nameof(BarrierAndWarpDifferentialKernels.SubWarpConditionalShuffleKernel)}";
     private const string GenericStructStaticSharedMemory =
         $"{nameof(BarrierAndWarpDifferentialKernels)}.{nameof(BarrierAndWarpDifferentialKernels.GenericStructStaticSharedMemoryKernel)}";
+    private const string UserDefinedImplicitConversions =
+        $"{nameof(LanguageConversionsAndMacrosDifferentialKernels)}.{nameof(LanguageConversionsAndMacrosDifferentialKernels.UserDefinedImplicitConversionsKernel)}";
 
     /// <summary>Gets every registered entry.</summary>
     public static IReadOnlyList<KnownDivergence> All { get; } =
@@ -170,5 +172,10 @@ public static class KnownDivergences
 
         // generic struct static method SharedMemory.Allocate<T> collides across type arguments (#543)
         new(GenericStructStaticSharedMemory, "SharedSlot<int>", DiffPath.Managed | DiffPath.Native, Issue: 543),
+
+        // user-defined implicit conversion operator body ignored by WriteImplicitConversionOperator (#963)
+        new(UserDefinedImplicitConversions, "linear_meter_from_int", DiffPath.Native | DiffPath.Cuda, Issue: 963),
+        new(UserDefinedImplicitConversions, "int_from_linear_meter", DiffPath.Native | DiffPath.Cuda, Issue: 963),
+        new(UserDefinedImplicitConversions, "fn_arg_implicit_linear_meter", DiffPath.Native | DiffPath.Cuda, Issue: 963),
     ];
 }
