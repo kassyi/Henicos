@@ -23,6 +23,7 @@
  *   --input-seed <int>                 Optional explicit runtime data input seed (default: DifferentialSeeds.Fixed 0..8).
  *   --work-dir <dir>                   Temporary project directory (default: tmp/differential-fuzz).
  *   --out-dir <dir>                    Directory for generated .cu.cs / .cs files (default: <work-dir>/Generated).
+ *   --no-reduce                        Skip automatic 2-stage reduction and deduplication when a finding is detected.
  *   --no-gpu-lock                      Do not wrap CUDA execution in scripts/agent/gpu-lock.js (when caller holds lock).
  *   --help, -h                         Show this help text.
  */
@@ -45,6 +46,7 @@ const helpText = [
   '  --input-seed <int>                 Optional explicit runtime data input seed (default: 0..8).',
   '  --work-dir <dir>                   Workspace directory for temporary projects (default: tmp/differential-fuzz).',
   '  --out-dir <dir>                    Output directory for generated sources (default: <work-dir>/Generated).',
+  '  --no-reduce                        Skip automatic 2-stage reduction and fingerprint deduplication on failure.',
   '  --no-gpu-lock                      Skip acquiring scripts/agent/gpu-lock.js (use when already holding the lock).',
   '  --help, -h                         Show this help.',
 ].join('\n');
@@ -95,6 +97,7 @@ function parseArgs(argv) {
     inputSeed: null,
     workDir: path.join(repoRoot, 'tmp', 'differential-fuzz'),
     outDir: null,
+    noReduce: false,
     noGpuLock: false,
   };
 
@@ -175,6 +178,8 @@ function parseArgs(argv) {
       options.outDir = path.resolve(repoRoot, rawDir);
     } else if (arg.startsWith('--out-dir=')) {
       options.outDir = path.resolve(repoRoot, arg.slice('--out-dir='.length));
+    } else if (arg === '--no-reduce') {
+      options.noReduce = true;
     } else if (arg === '--no-gpu-lock') {
       options.noGpuLock = true;
     } else {
@@ -295,15 +300,116 @@ function ensurePrereqsBuilt(fuzzToolProj) {
   }
 }
 
-function recordFinding(findingsDir, batchSeedHex, stage, details, kernelsSource, casesSource) {
+function recordFinding(findingsDir, batchSeedHex, stage, details, kernelsSource, casesSource, options, fuzzToolDll, reducedKernelSeeds) {
   fs.mkdirSync(findingsDir, { recursive: true });
-  const findingDir = path.join(findingsDir, `${batchSeedHex}_${stage}`);
+  let findingDir = path.join(findingsDir, `${batchSeedHex}_${stage}`);
+  let reductionMs = 0;
+
+  // Avoid reducing the same (batchSeedHex, kernel) twice when Profile G runs both CPU and CUDA on the same batch.
+  const kernelDedupKey = details && details.kernel ? `${batchSeedHex}:${details.kernel}` : null;
+  const shouldReduce = options && !options.noReduce && fuzzToolDll && details && details.kernel &&
+    (!reducedKernelSeeds || !reducedKernelSeeds.has(kernelDedupKey));
+
+  // When a specific kernel failed and reduction is enabled, run 2-stage reduction, compute normalized AST fingerprint,
+  // and emit the deduplicated repro into <findingsDir>/<fingerprint>/Repro_<seed>.cu.cs.
+  if (shouldReduce) {
+    if (reducedKernelSeeds && kernelDedupKey) {
+      reducedKernelSeeds.add(kernelDedupKey);
+    }
+    const redStartMs = Date.now();
+    const tmpSourcePath = path.join(findingsDir, `_tmp_${batchSeedHex}_${details.kernel}.cu.cs`);
+    const tmpReducedPath = path.join(findingsDir, `_tmp_${batchSeedHex}_${details.kernel}.reduced.cu.cs`);
+    try {
+      fs.writeFileSync(tmpSourcePath, kernelsSource, 'utf8');
+      const failingPathsStr = Array.isArray(details.failingPaths) && details.failingPaths.length > 0
+        ? details.failingPaths.join(',')
+        : (details.dialect || 'Native,Cuda');
+      const failureKindStr = details.failureKind || details.status || 'CellMismatch';
+      const inputSeedVal = details.inputSeed !== undefined ? String(details.inputSeed) : '0';
+      const reduceProfile = stage.startsWith('cuda_') ? 'G' : options.profile;
+
+      const reduceWorkDir = path.join(options.workDir, '_reduce');
+      const reduceArgs = [
+        'exec',
+        fuzzToolDll,
+        'reduce',
+        '--source',
+        tmpSourcePath,
+        '--fuzz-seed',
+        batchSeedHex,
+        '--kernel',
+        String(details.kernel),
+        '--input-seed',
+        inputSeedVal,
+        '--profile',
+        reduceProfile,
+        '--work-dir',
+        reduceWorkDir,
+        '--repo-root',
+        repoRoot,
+        '--failing-paths',
+        failingPathsStr,
+        '--failure-kind',
+        failureKindStr,
+        '--out',
+        tmpReducedPath,
+      ];
+      if (options.noGpuLock || isAlreadyInsideGpuLock()) {
+        reduceArgs.push('--no-gpu-lock');
+      }
+
+      const redRes = runCommand('dotnet', reduceArgs);
+      if (redRes.status === 0 && fs.existsSync(tmpReducedPath)) {
+        const redEvents = parseBatchJsonl(redRes.stdout);
+        const redInfo = redEvents.find((e) => e.status === 'reduced') || {};
+        details.fingerprint = redInfo.fingerprint || null;
+        details.originalStatements = redInfo.originalStatements;
+        details.reducedStatements = redInfo.reducedStatements;
+
+        const promoteArgs = [
+          'exec',
+          fuzzToolDll,
+          'promote',
+          '--source',
+          tmpReducedPath,
+          '--fuzz-seed',
+          batchSeedHex,
+          '--input-seed',
+          inputSeedVal,
+          '--failing-paths',
+          failingPathsStr,
+          '--failure-kind',
+          failureKindStr,
+          '--findings-dir',
+          findingsDir,
+        ];
+        const promRes = runCommand('dotnet', promoteArgs);
+        const promEvents = parseBatchJsonl(promRes.stdout);
+        const promInfo = promEvents.find((e) => e.status === 'promoted');
+        if (promInfo && promInfo.reproKernelPath) {
+          findingDir = path.dirname(promInfo.reproKernelPath);
+          details.fingerprint = promInfo.fingerprint || details.fingerprint;
+          details.reproKernelPath = promInfo.reproKernelPath;
+        }
+      }
+    } finally {
+      if (fs.existsSync(tmpSourcePath)) {
+        fs.unlinkSync(tmpSourcePath);
+      }
+      if (fs.existsSync(tmpReducedPath)) {
+        fs.unlinkSync(tmpReducedPath);
+      }
+      reductionMs = Date.now() - redStartMs;
+    }
+  }
+
   fs.mkdirSync(findingDir, { recursive: true });
   fs.writeFileSync(path.join(findingDir, 'FuzzBatchKernels.cu.cs'), kernelsSource, 'utf8');
   fs.writeFileSync(path.join(findingDir, 'FuzzBatchCases.cs'), casesSource, 'utf8');
   fs.writeFileSync(path.join(findingDir, 'finding.json'), JSON.stringify(details, null, 2) + '\n', 'utf8');
   const occurrencesPath = path.join(findingsDir, 'occurrences.jsonl');
   fs.appendFileSync(occurrencesPath, JSON.stringify(details) + '\n', 'utf8');
+  return reductionMs;
 }
 
 function parseBatchJsonl(stdout) {
@@ -342,6 +448,8 @@ function main() {
   let batchIndex = 0;
   let totalKernels = 0;
   let totalFailures = 0;
+  let totalReductionMs = 0;
+  const reducedKernelSeeds = new Set();
   let firstBatch = true;
 
   while (true) {
@@ -439,7 +547,7 @@ function main() {
       for (const ev of events) {
         if (ev.status === 'failed' || ev.status === 'harness_error') {
           totalFailures++;
-          recordFinding(findingsDir, seedHex, `cpu_${ev.kernel || 'batch'}`, ev, kernelsSource, casesSource);
+          totalReductionMs += recordFinding(findingsDir, seedHex, `cpu_${ev.kernel || 'batch'}`, ev, kernelsSource, casesSource, options, fuzzToolDll, reducedKernelSeeds);
         }
       }
       if (cpuRun.status !== 0 && events.length === 0) {
@@ -517,7 +625,7 @@ function main() {
         for (const ev of events) {
           if (ev.status === 'failed' || ev.status === 'harness_error') {
             totalFailures++;
-            recordFinding(findingsDir, seedHex, `cuda_${ev.kernel || 'batch'}`, ev, kernelsSource, casesSource);
+            totalReductionMs += recordFinding(findingsDir, seedHex, `cuda_${ev.kernel || 'batch'}`, ev, kernelsSource, casesSource, options, fuzzToolDll, reducedKernelSeeds);
           }
         }
         if (cudaRun.status !== 0 && events.length === 0) {
@@ -547,25 +655,31 @@ function main() {
 
     const batchSec = ((Date.now() - batchStartMs) / 1000).toFixed(2);
     const totalSec = (Date.now() - startMs) / 1000;
+    const pureEvalSec = Math.max((Date.now() - startMs - totalReductionMs) / 1000, 0.001);
     const kernelsPerHour = Math.round((totalKernels / Math.max(totalSec, 0.001)) * 3600);
+    const pureKernelsPerHour = Math.round((totalKernels / pureEvalSec) * 3600);
     process.stdout.write(
-      `[fuzz-diff] Batch #${batchIndex} (seed=${seedHex}, profile=${options.profile}, size=${options.batchSize}) finished in ${batchSec}s | total=${totalKernels} kernels (${kernelsPerHour} kernels/hr), findings=${totalFailures}\n`
+      `[fuzz-diff] Batch #${batchIndex} (seed=${seedHex}, profile=${options.profile}, size=${options.batchSize}) finished in ${batchSec}s | total=${totalKernels} kernels (${kernelsPerHour} kernels/hr overall, ${pureKernelsPerHour} kernels/hr eval), findings=${totalFailures}\n`
     );
   }
 
   const elapsedSec = ((Date.now() - startMs) / 1000).toFixed(2);
+  const pureEvalTotalSec = Math.max((Date.now() - startMs - totalReductionMs) / 1000, 0.001);
   const finalKernelsPerHour = Math.round((totalKernels / Math.max((Date.now() - startMs) / 1000, 0.001)) * 3600);
+  const finalPureKernelsPerHour = Math.round((totalKernels / pureEvalTotalSec) * 3600);
   const summary = {
     profile: options.profile,
     batches: batchIndex,
     batchSize: options.batchSize,
     totalKernels,
     elapsedSeconds: Number(elapsedSec),
+    reductionSeconds: Number((totalReductionMs / 1000).toFixed(2)),
     kernelsPerHour: finalKernelsPerHour,
+    pureEvalKernelsPerHour: finalPureKernelsPerHour,
     findingsCount: totalFailures,
   };
   fs.writeFileSync(path.join(options.workDir, 'summary.json'), JSON.stringify(summary, null, 2) + '\n', 'utf8');
-  process.stdout.write(`[fuzz-diff] Completed ${batchIndex} batches (${totalKernels} kernels) in ${elapsedSec}s (${finalKernelsPerHour} kernels/hr). Findings: ${totalFailures}.\n`);
+  process.stdout.write(`[fuzz-diff] Completed ${batchIndex} batches (${totalKernels} kernels) in ${elapsedSec}s (${finalKernelsPerHour} kernels/hr overall, ${finalPureKernelsPerHour} kernels/hr eval). Findings: ${totalFailures}.\n`);
 }
 
 main();
