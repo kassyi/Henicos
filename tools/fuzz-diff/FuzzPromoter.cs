@@ -24,7 +24,6 @@ public sealed record PromotedDifferentialArtifacts(
 public static class FuzzPromoter
 {
     private static readonly UTF8Encoding s_utf8NoBom = new(encoderShouldEmitUTF8Identifier: false);
-    private static readonly CSharpParseOptions s_parseOptions = new(LanguageVersion.Preview);
 
     /// <summary>
     /// Formats a reduced kernel source, fuzz seed, input seed, failing paths, and fingerprint into a clean
@@ -46,8 +45,8 @@ public static class FuzzPromoter
         string seedHex = FuzzRandom.FormatSeed(fuzzSeed);
         string shortSeedHex = string.Create(CultureInfo.InvariantCulture, $"{fuzzSeed:X8}");
 
-        var root = (CompilationUnitSyntax)CSharpSyntaxTree.ParseText(reducedKernelSource, s_parseOptions).GetRoot();
-        var kernelMethods = FuzzReducer.GetKernelMethods(root);
+        var root = FuzzSyntaxHelpers.ParseRoot(reducedKernelSource);
+        var kernelMethods = FuzzSyntaxHelpers.GetKernelMethods(root);
         var selectedMethod = (!string.IsNullOrWhiteSpace(targetKernelName)
                 ? kernelMethods.FirstOrDefault(m => string.Equals(m.Identifier.ValueText, targetKernelName, StringComparison.Ordinal))
                 : null)
@@ -63,76 +62,15 @@ public static class FuzzPromoter
             CultureInfo.InvariantCulture,
             $"// Found by the differential fuzzer: fuzz-seed {seedHex}, input-seed {inputSeed}, fingerprint {fingerprint} (paths: {fpResult.FailingPathsMask}, kind: {fpResult.FailureKindTag})");
 
-        var kernelFileSb = new StringBuilder();
-        kernelFileSb.AppendLine(headerLine);
-        kernelFileSb.AppendLine("#nullable enable");
-        kernelFileSb.AppendLine("#pragma warning disable CS0162, CS0219, CS1717, CS1718");
-        kernelFileSb.AppendLine("using System;");
-        kernelFileSb.AppendLine("using Kassyi.GSharp.Core;");
-        kernelFileSb.AppendLine();
-        kernelFileSb.AppendLine("namespace Kassyi.GSharp.Tests.Shared.Differential;");
-        kernelFileSb.AppendLine();
-
-        // Include any referenced custom enums so the file is self-contained.
-        string methodText = renamedMethod.ToFullString().TrimEnd();
-        if (methodText.Contains("FuzzEnum", StringComparison.Ordinal))
-        {
-            ScalarFuzzGenerator.AppendEnumDeclarations(kernelFileSb);
-            kernelFileSb.AppendLine();
-        }
-
-        kernelFileSb.AppendLine($"public static partial class {reproClassName}");
-        kernelFileSb.AppendLine("{");
-
-        foreach (var helper in FuzzReducer.GetDeviceFunctionMethods(root))
-        {
-            if (methodText.Contains(helper.Identifier.ValueText, StringComparison.Ordinal))
-            {
-                kernelFileSb.AppendLine(IndentMethod(helper.ToFullString().Trim()));
-                kernelFileSb.AppendLine();
-            }
-        }
-
-        kernelFileSb.AppendLine(IndentMethod(methodText.Trim()));
-        kernelFileSb.AppendLine("}");
-
-        var caseSb = new StringBuilder();
-        caseSb.AppendLine(headerLine);
-        caseSb.AppendLine($"public static DifferentialCase {reproMethodName}_Case {{ get; }} = new(\"{reproClassName}.{reproMethodName}\")");
-        caseSb.AppendLine("{");
-        caseSb.AppendLine("    Shape = LaunchShapes.PartialWarp(),");
-        caseSb.AppendLine(string.Create(CultureInfo.InvariantCulture, $"    Seeds = [{inputSeed}],"));
-        caseSb.AppendLine("    Inputs = static (rng, shape) =>");
-        caseSb.AppendLine("    {");
-        caseSb.AppendLine("        int rows = shape.Rows;");
-        caseSb.AppendLine("        var (inA, inB) = DiffValues.Int32Pairs(rng, rows);");
-        caseSb.AppendLine("        var inC = DiffValues.Values(rng, rows, DiffValues.ShiftCounts, DiffValues.NextInt32);");
-        caseSb.AppendLine("        return new DiffBuffers()");
-        caseSb.AppendLine("            .In(\"inA\", inA)");
-        caseSb.AppendLine("            .In(\"inB\", inB)");
-        caseSb.AppendLine("            .In(\"inC\", inC)");
-        caseSb.AppendLine("            .Out<ulong>(\"checksum\", rows, [\"hash\"], OutputPolicy.Exact);");
-        caseSb.AppendLine("    },");
-        caseSb.AppendLine($"    Launch = static (b, s) => {reproClassName}.Launch{reproMethodName}(");
-        caseSb.AppendLine("        b.Get<int>(\"inA\"),");
-        caseSb.AppendLine("        b.Get<int>(\"inB\"),");
-        caseSb.AppendLine("        b.Get<int>(\"inC\"),");
-        caseSb.AppendLine("        b.Get<ulong>(\"checksum\"),");
-        caseSb.AppendLine("        gridDimX: s.GridX,");
-        caseSb.AppendLine("        blockDimX: s.BlockX),");
-        caseSb.AppendLine($"    Oracle = static (b, _) => {reproClassName}.{reproMethodName}(");
-        caseSb.AppendLine("        b.Get<int>(\"inA\"),");
-        caseSb.AppendLine("        b.Get<int>(\"inB\"),");
-        caseSb.AppendLine("        b.Get<int>(\"inC\"),");
-        caseSb.AppendLine("        b.Get<ulong>(\"checksum\")),");
-        caseSb.AppendLine("};");
+        string kernelFileContent = BuildReproKernelFile(root, renamedMethod, reproClassName, headerLine);
+        string caseSnippetContent = BuildReproCaseSnippet(reproClassName, reproMethodName, inputSeed, headerLine);
 
         return new PromotedDifferentialArtifacts(
             fingerprint,
             reproClassName,
             reproMethodName,
-            kernelFileSb.ToString(),
-            caseSb.ToString());
+            kernelFileContent,
+            caseSnippetContent);
     }
 
     /// <summary>
@@ -163,33 +101,122 @@ public static class FuzzPromoter
     public static string SanitizeDirectoryName(string fingerprint) =>
         fingerprint.Replace(':', '_').Replace('/', '_').Replace('\\', '_');
 
-    private static string IndentMethod(string methodText)
+    private static string BuildReproKernelFile(
+        CompilationUnitSyntax root,
+        MethodDeclarationSyntax renamedMethod,
+        string reproClassName,
+        string headerLine)
     {
-        var lines = methodText.Split(["\r\n", "\n"], StringSplitOptions.None);
-        var sb = new StringBuilder();
-        for (int i = 0; i < lines.Length; i++)
+        using var writer = new SourceWriter();
+        writer.AppendLine(headerLine);
+        writer.AppendLine("#nullable enable");
+        writer.AppendLine("#pragma warning disable CS0162, CS0219, CS1717, CS1718");
+        writer.AppendLine("using System;");
+        writer.AppendLine("using Kassyi.GSharp.Core;");
+        writer.AppendLine();
+        writer.AppendLine("namespace Kassyi.GSharp.Tests.Shared.Differential;");
+        writer.AppendLine();
+
+        string methodText = renamedMethod.ToFullString().TrimEnd();
+        var helperDecls = FuzzSyntaxHelpers.GetDeviceFunctionMethods(root);
+        var allHelperText = new StringBuilder();
+        foreach (var helper in helperDecls)
         {
-            if (i > 0)
+            allHelperText.AppendLine(helper.ToFullString());
+        }
+
+        string combinedText = methodText + "\n" + allHelperText;
+        if (combinedText.Contains("FuzzEnum", StringComparison.Ordinal))
+        {
+            ScalarFuzzGenerator.AppendEnumDeclarations(writer);
+            writer.AppendLine();
+        }
+
+        if (combinedText.Contains("FuzzStruct", StringComparison.Ordinal) ||
+            combinedText.Contains("FuzzWrapInt", StringComparison.Ordinal) ||
+            combinedText.Contains("FuzzPackedStruct", StringComparison.Ordinal) ||
+            combinedText.Contains("FuzzNullableBag", StringComparison.Ordinal))
+        {
+            FuzzCompositeModel.AppendCompositeStructDeclarations(writer);
+            writer.AppendLine();
+        }
+
+        using (writer.Scope($"public static partial class {reproClassName}"))
+        {
+            bool anyHelperUsed = helperDecls.Any(h => methodText.Contains(h.Identifier.ValueText, StringComparison.Ordinal));
+            if (anyHelperUsed)
             {
-                sb.AppendLine();
+                foreach (var helper in helperDecls)
+                {
+                    string hText = LeftAlignLines(
+                        helper.ToFullString().Trim().Replace("FuzzBatchKernels.", $"{reproClassName}.", StringComparison.Ordinal));
+                    writer.AppendLine(hText);
+                    writer.AppendLine();
+                }
             }
 
-            string line = lines[i];
-            if (string.IsNullOrWhiteSpace(line))
+            string finalMethodText = LeftAlignLines(
+                methodText.Trim().Replace("FuzzBatchKernels.", $"{reproClassName}.", StringComparison.Ordinal));
+            writer.AppendLine(finalMethodText);
+        }
+
+        return writer.ToString();
+    }
+
+    private static string BuildReproCaseSnippet(
+        string reproClassName,
+        string reproMethodName,
+        int inputSeed,
+        string headerLine)
+    {
+        using var writer = new SourceWriter();
+        writer.AppendLine(headerLine);
+        using (writer.Scope($"public static DifferentialCase {reproMethodName}_Case {{ get; }} = new(\"{reproClassName}.{reproMethodName}\")", "};"))
+        {
+            writer.AppendLine("Shape = LaunchShapes.PartialWarp(),");
+            writer.AppendLine(string.Create(CultureInfo.InvariantCulture, $"Seeds = [{inputSeed}],"));
+            using (writer.Scope("Inputs = static (rng, shape) =>", "},"))
             {
-                continue;
+                writer.AppendLine("int rows = shape.Rows;");
+                writer.AppendLine("var (inA, inB) = DiffValues.Int32Pairs(rng, rows);");
+                writer.AppendLine("var inC = DiffValues.Values(rng, rows, DiffValues.ShiftCounts, DiffValues.NextInt32);");
+                writer.AppendLine("return new DiffBuffers()");
+                writer.AppendLine(".In(\"inA\", inA)");
+                writer.AppendLine(".In(\"inB\", inB)");
+                writer.AppendLine(".In(\"inC\", inC)");
+                writer.AppendLine(".Out<ulong>(\"checksum\", rows, [\"hash\"], OutputPolicy.Exact);");
             }
 
-            if (line.StartsWith("    ", StringComparison.Ordinal))
+            writer.AppendLine($"Launch = static (b, s) => {reproClassName}.Launch{reproMethodName}(");
+            writer.AppendLine("b.Get<int>(\"inA\"),");
+            writer.AppendLine("b.Get<int>(\"inB\"),");
+            writer.AppendLine("b.Get<int>(\"inC\"),");
+            writer.AppendLine("b.Get<ulong>(\"checksum\"),");
+            writer.AppendLine("gridDimX: s.GridX,");
+            writer.AppendLine("blockDimX: s.BlockX),");
+            writer.AppendLine($"Oracle = static (b, _) => {reproClassName}.{reproMethodName}(");
+            writer.AppendLine("b.Get<int>(\"inA\"),");
+            writer.AppendLine("b.Get<int>(\"inB\"),");
+            writer.AppendLine("b.Get<int>(\"inC\"),");
+            writer.AppendLine("b.Get<ulong>(\"checksum\")),");
+        }
+
+        return writer.ToString();
+    }
+
+    private static string LeftAlignLines(string text)
+    {
+        var lines = text.Split(["\r\n", "\n"], StringSplitOptions.None);
+        using var writer = new SourceWriter();
+        foreach (string line in lines)
+        {
+            string trimmed = line.TrimStart();
+            if (!string.IsNullOrEmpty(trimmed))
             {
-                sb.Append(line);
-            }
-            else
-            {
-                sb.Append("    ").Append(line);
+                writer.AppendLine(trimmed);
             }
         }
 
-        return sb.ToString();
+        return writer.ToString().TrimEnd();
     }
 }

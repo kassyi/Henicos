@@ -6,7 +6,7 @@
  *
  * Purpose:
  *   Batch differential kernel fuzzer orchestrator for G#.
- *   Generates batches of scalar/device kernels via tools/fuzz-diff into tmp/differential-fuzz/,
+ *   Generates batches of scalar and composite device kernels via tools/fuzz-diff into tmp/differential-fuzz/,
  *   compiles and runs them in batch mode across Profile M (Managed only), Profile C (Managed + Native CPU),
  *   or Profile G (Managed + Native CPU + CUDA), logs throughput, and writes any findings to
  *   <work-dir>/findings/.
@@ -21,6 +21,8 @@
  *   --batch-size <n>                   Number of kernels per batch (1..256, default: 64).
  *   --fuzz-seed <seed>                 Starting 64-bit fuzz seed in decimal or 0x hex (default: 1).
  *   --input-seed <int>                 Optional explicit runtime data input seed (default: DifferentialSeeds.Fixed 0..8).
+ *   --allow-issue <n>                  Re-enable generation of shapes avoided for known issue #<n> (repeatable).
+ *   --swarm-focus <mode>               Optional Swarm focus mode (default, coalesce-assign-value, tuple-deconstruct-complex).
  *   --work-dir <dir>                   Temporary project directory (default: tmp/differential-fuzz).
  *   --out-dir <dir>                    Directory for generated .cu.cs / .cs files (default: <work-dir>/Generated).
  *   --no-reduce                        Skip automatic 2-stage reduction and deduplication when a finding is detected.
@@ -44,6 +46,8 @@ const helpText = [
   '  --batch-size <n>                   Kernels generated and compiled per batch (default: 64).',
   '  --fuzz-seed <seed>                 Initial 64-bit fuzz seed in decimal or 0x hex (default: 1).',
   '  --input-seed <int>                 Optional explicit runtime data input seed (default: 0..8).',
+  '  --allow-issue <n>                  Re-enable generation of shapes avoided for known issue #<n> (repeatable).',
+  '  --swarm-focus <mode>               Optional Swarm focus mode (default, coalesce-assign-value, tuple-deconstruct-complex).',
   '  --work-dir <dir>                   Workspace directory for temporary projects (default: tmp/differential-fuzz).',
   '  --out-dir <dir>                    Output directory for generated sources (default: <work-dir>/Generated).',
   '  --no-reduce                        Skip automatic 2-stage reduction and fingerprint deduplication on failure.',
@@ -95,6 +99,8 @@ function parseArgs(argv) {
     batchSize: 64,
     fuzzSeed: 1n,
     inputSeed: null,
+    allowedIssues: [],
+    swarmFocus: null,
     workDir: path.join(repoRoot, 'tmp', 'differential-fuzz'),
     outDir: null,
     noReduce: false,
@@ -162,6 +168,32 @@ function parseArgs(argv) {
         fail('--input-seed requires an integer.', 2);
       }
       options.inputSeed = v;
+    } else if (arg === '--allow-issue') {
+      const rawIssue = String(argv[++i] ?? '').replace(/^#/, '');
+      const v = Number(rawIssue);
+      if (!Number.isInteger(v) || v <= 0) {
+        fail('--allow-issue requires a positive integer issue number.', 2);
+      }
+      if (!options.allowedIssues.includes(v)) {
+        options.allowedIssues.push(v);
+      }
+    } else if (arg.startsWith('--allow-issue=')) {
+      const rawIssue = arg.slice('--allow-issue='.length).replace(/^#/, '');
+      const v = Number(rawIssue);
+      if (!Number.isInteger(v) || v <= 0) {
+        fail('--allow-issue requires a positive integer issue number.', 2);
+      }
+      if (!options.allowedIssues.includes(v)) {
+        options.allowedIssues.push(v);
+      }
+    } else if (arg === '--swarm-focus') {
+      const focusVal = argv[++i];
+      if (!focusVal) {
+        fail('--swarm-focus requires a focus mode.', 2);
+      }
+      options.swarmFocus = focusVal;
+    } else if (arg.startsWith('--swarm-focus=')) {
+      options.swarmFocus = arg.slice('--swarm-focus='.length);
     } else if (arg === '--work-dir') {
       const rawDir = argv[++i];
       if (!rawDir) {
@@ -192,6 +224,27 @@ function parseArgs(argv) {
   }
 
   return options;
+}
+
+function loadActiveKnownIssues(profile, allowedIssues) {
+  const jsonPath = path.join(repoRoot, 'tools', 'fuzz-diff', 'known-issues.json');
+  const allowedSet = new Set(allowedIssues || []);
+  try {
+    if (!fs.existsSync(jsonPath)) {
+      return [];
+    }
+    const parsed = JSON.parse(fs.readFileSync(jsonPath, 'utf8'));
+    const issues = Array.isArray(parsed.issues) ? parsed.issues : [];
+    return issues
+      .filter((entry) => !allowedSet.has(entry.issue) && Array.isArray(entry.profiles) && entry.profiles.includes(profile))
+      .map((entry) => ({
+        issue: entry.issue,
+        summary: entry.summary,
+        paths: entry.paths,
+      }));
+  } catch {
+    return [];
+  }
 }
 
 function runCommand(command, args, extraEnv = {}) {
@@ -300,18 +353,30 @@ function ensurePrereqsBuilt(fuzzToolProj) {
   }
 }
 
+function classifySuspectedIssue(details) {
+  if (!details || details.status === 'compile_error') {
+    return false;
+  }
+  const paths = Array.isArray(details.failingPaths) ? details.failingPaths : [];
+  if (paths.length === 1 && String(paths[0]).toLowerCase() === 'native') {
+    details.suspectedIssue = 1078;
+    details.suspectedIssueNote = '#1078 の疑い (Native only)';
+    return true;
+  }
+  return false;
+}
+
 function recordFinding(findingsDir, batchSeedHex, stage, details, kernelsSource, casesSource, options, fuzzToolDll, reducedKernelSeeds) {
   fs.mkdirSync(findingsDir, { recursive: true });
+  classifySuspectedIssue(details);
+
   let findingDir = path.join(findingsDir, `${batchSeedHex}_${stage}`);
   let reductionMs = 0;
 
-  // Avoid reducing the same (batchSeedHex, kernel) twice when Profile G runs both CPU and CUDA on the same batch.
   const kernelDedupKey = details && details.kernel ? `${batchSeedHex}:${details.kernel}` : null;
   const shouldReduce = options && !options.noReduce && fuzzToolDll && details && details.kernel &&
     (!reducedKernelSeeds || !reducedKernelSeeds.has(kernelDedupKey));
 
-  // When a specific kernel failed and reduction is enabled, run 2-stage reduction, compute normalized AST fingerprint,
-  // and emit the deduplicated repro into <findingsDir>/<fingerprint>/Repro_<seed>.cu.cs.
   if (shouldReduce) {
     if (reducedKernelSeeds && kernelDedupKey) {
       reducedKernelSeeds.add(kernelDedupKey);
@@ -326,7 +391,8 @@ function recordFinding(findingsDir, batchSeedHex, stage, details, kernelsSource,
         : (details.dialect || 'Native,Cuda');
       const failureKindStr = details.failureKind || details.status || 'CellMismatch';
       const inputSeedVal = details.inputSeed !== undefined ? String(details.inputSeed) : '0';
-      const reduceProfile = stage.startsWith('cuda_') ? 'G' : options.profile;
+      const hasCudaFailure = Array.isArray(details.failingPaths) && details.failingPaths.some((p) => String(p).toLowerCase() === 'cuda');
+      const reduceProfile = (stage.startsWith('cuda_') || hasCudaFailure) ? 'G' : 'C';
 
       const reduceWorkDir = path.join(options.workDir, '_reduce');
       const reduceArgs = [
@@ -427,6 +493,45 @@ function parseBatchJsonl(stdout) {
   return events;
 }
 
+function mergeKernelFailureEvents(cpuEvents, cudaEvents) {
+  const byKernel = new Map();
+  const nonKernelEvents = [];
+
+  function ingest(ev, stagePrefix) {
+    if (!ev || (ev.status !== 'failed' && ev.status !== 'harness_error')) {
+      return;
+    }
+    if (!ev.kernel) {
+      nonKernelEvents.push({ stage: `${stagePrefix}_batch`, event: ev });
+      return;
+    }
+    const existing = byKernel.get(ev.kernel);
+    if (!existing) {
+      const copy = { ...ev, failingPaths: Array.isArray(ev.failingPaths) ? [...ev.failingPaths] : [] };
+      byKernel.set(ev.kernel, { stage: `${stagePrefix}_${ev.kernel}`, event: copy });
+    } else {
+      const mergedPaths = new Set(existing.event.failingPaths || []);
+      for (const p of (ev.failingPaths || [])) {
+        mergedPaths.add(p);
+      }
+      const order = { managed: 0, native: 1, cuda: 2 };
+      existing.event.failingPaths = Array.from(mergedPaths).sort((a, b) => (order[String(a).toLowerCase()] ?? 9) - (order[String(b).toLowerCase()] ?? 9));
+      if (stagePrefix === 'cuda') {
+        existing.stage = `cuda_${ev.kernel}`;
+      }
+    }
+  }
+
+  for (const ev of cpuEvents) {
+    ingest(ev, 'cpu');
+  }
+  for (const ev of cudaEvents) {
+    ingest(ev, 'cuda');
+  }
+
+  return [...nonKernelEvents, ...byKernel.values()];
+}
+
 function main() {
   const options = parseArgs(process.argv.slice(2));
   const fuzzToolProj = path.join(repoRoot, 'tools', 'fuzz-diff', 'Kassyi.GSharp.Tools.FuzzDiff.csproj');
@@ -439,6 +544,12 @@ function main() {
     process.stdout.write(`[fuzz-diff] Detected host CUDA architecture: ${cudaArch}\n`);
   }
 
+  const activeKnownIssues = loadActiveKnownIssues(options.profile, options.allowedIssues);
+  if (activeKnownIssues.length > 0) {
+    const issueList = activeKnownIssues.map((x) => `#${x.issue}`).join(', ');
+    process.stdout.write(`[fuzz-diff] Active known-issue avoidance switches on profile ${options.profile}: ${issueList}\n`);
+  }
+
   const findingsDir = path.join(options.workDir, 'findings');
   fs.mkdirSync(options.workDir, { recursive: true });
   fs.mkdirSync(options.outDir, { recursive: true });
@@ -448,9 +559,10 @@ function main() {
   let batchIndex = 0;
   let totalKernels = 0;
   let totalFailures = 0;
+  let suspected1078Count = 0;
+  let otherFindingsCount = 0;
   let totalReductionMs = 0;
   const reducedKernelSeeds = new Set();
-  let firstBatch = true;
 
   while (true) {
     if (options.batches !== null) {
@@ -474,6 +586,8 @@ function main() {
       seedHex,
       '--batch-size',
       String(options.batchSize),
+      '--profile',
+      options.profile,
       '--out-dir',
       options.outDir,
       '--repo-root',
@@ -481,6 +595,12 @@ function main() {
     ];
     if (options.inputSeed !== null) {
       genArgs.push('--input-seed', String(options.inputSeed));
+    }
+    for (const allowedIssue of options.allowedIssues) {
+      genArgs.push('--allow-issue', String(allowedIssue));
+    }
+    if (options.swarmFocus) {
+      genArgs.push('--swarm-focus', options.swarmFocus);
     }
     if (cudaArch) {
       genArgs.push('--cuda-arch', cudaArch);
@@ -497,6 +617,9 @@ function main() {
 
     const cpuProj = path.join(options.workDir, 'FuzzBatch.Cpu.csproj');
     const cpuDll = path.join(options.workDir, 'bin', hostOs, 'FuzzBatch.Cpu', 'Debug', 'net10.0', 'FuzzBatch.Cpu.dll');
+
+    let cpuEvents = [];
+    let cudaEvents = [];
 
     // 2. Build & run CPU project (Profile M skips C++ compile; Profile C and G run full CPU C++ compile)
     const skipCpuCpp = options.profile === 'M' ? 'true' : 'false';
@@ -518,6 +641,7 @@ function main() {
     const cpuBuild = runCommand('dotnet', cpuBuildArgs);
     if (cpuBuild.status !== 0) {
       totalFailures++;
+      otherFindingsCount++;
       recordFinding(
         findingsDir,
         seedHex,
@@ -525,6 +649,7 @@ function main() {
         {
           status: 'compile_error',
           dialect: 'Cpu',
+          failingPaths: ['Native'],
           batchFuzzSeed: seedHex,
           stdout: cpuBuild.stdout,
           stderr: cpuBuild.stderr,
@@ -543,15 +668,10 @@ function main() {
       }
 
       const cpuRun = runCommand('dotnet', cpuRunArgs);
-      const events = parseBatchJsonl(cpuRun.stdout);
-      for (const ev of events) {
-        if (ev.status === 'failed' || ev.status === 'harness_error') {
-          totalFailures++;
-          totalReductionMs += recordFinding(findingsDir, seedHex, `cpu_${ev.kernel || 'batch'}`, ev, kernelsSource, casesSource, options, fuzzToolDll, reducedKernelSeeds);
-        }
-      }
-      if (cpuRun.status !== 0 && events.length === 0) {
+      cpuEvents = parseBatchJsonl(cpuRun.stdout);
+      if (cpuRun.status !== 0 && cpuEvents.length === 0) {
         totalFailures++;
+        otherFindingsCount++;
         recordFinding(
           findingsDir,
           seedHex,
@@ -559,6 +679,7 @@ function main() {
           {
             status: 'crash',
             dialect: 'Cpu',
+            failingPaths: ['Native'],
             batchFuzzSeed: seedHex,
             exitCode: cpuRun.status,
             stdout: cpuRun.stdout,
@@ -591,6 +712,7 @@ function main() {
       const cudaBuild = runCommand('dotnet', cudaBuildArgs);
       if (cudaBuild.status !== 0) {
         totalFailures++;
+        otherFindingsCount++;
         recordFinding(
           findingsDir,
           seedHex,
@@ -598,6 +720,7 @@ function main() {
           {
             status: 'compile_error',
             dialect: 'Cuda',
+            failingPaths: ['Cuda'],
             batchFuzzSeed: seedHex,
             stdout: cudaBuild.stdout,
             stderr: cudaBuild.stderr,
@@ -621,15 +744,10 @@ function main() {
           cudaRun = runCommand('dotnet', runArgs);
         }
 
-        const events = parseBatchJsonl(cudaRun.stdout);
-        for (const ev of events) {
-          if (ev.status === 'failed' || ev.status === 'harness_error') {
-            totalFailures++;
-            totalReductionMs += recordFinding(findingsDir, seedHex, `cuda_${ev.kernel || 'batch'}`, ev, kernelsSource, casesSource, options, fuzzToolDll, reducedKernelSeeds);
-          }
-        }
-        if (cudaRun.status !== 0 && events.length === 0) {
+        cudaEvents = parseBatchJsonl(cudaRun.stdout);
+        if (cudaRun.status !== 0 && cudaEvents.length === 0) {
           totalFailures++;
+          otherFindingsCount++;
           recordFinding(
             findingsDir,
             seedHex,
@@ -637,6 +755,7 @@ function main() {
             {
               status: 'crash',
               dialect: 'Cuda',
+              failingPaths: ['Cuda'],
               batchFuzzSeed: seedHex,
               exitCode: cudaRun.status,
               stdout: cudaRun.stdout,
@@ -649,7 +768,28 @@ function main() {
       }
     }
 
-    firstBatch = false;
+    // 4. Merge CPU & CUDA failure events per kernel so failingPaths reflects the true union across Managed, Native, and Cuda
+    const mergedFailures = mergeKernelFailureEvents(cpuEvents, cudaEvents);
+    for (const item of mergedFailures) {
+      totalFailures++;
+      totalReductionMs += recordFinding(
+        findingsDir,
+        seedHex,
+        item.stage,
+        item.event,
+        kernelsSource,
+        casesSource,
+        options,
+        fuzzToolDll,
+        reducedKernelSeeds
+      );
+      if (item.event.suspectedIssue === 1078) {
+        suspected1078Count++;
+      } else {
+        otherFindingsCount++;
+      }
+    }
+
     batchIndex++;
     totalKernels += options.batchSize;
 
@@ -659,7 +799,7 @@ function main() {
     const kernelsPerHour = Math.round((totalKernels / Math.max(totalSec, 0.001)) * 3600);
     const pureKernelsPerHour = Math.round((totalKernels / pureEvalSec) * 3600);
     process.stdout.write(
-      `[fuzz-diff] Batch #${batchIndex} (seed=${seedHex}, profile=${options.profile}, size=${options.batchSize}) finished in ${batchSec}s | total=${totalKernels} kernels (${kernelsPerHour} kernels/hr overall, ${pureKernelsPerHour} kernels/hr eval), findings=${totalFailures}\n`
+      `[fuzz-diff] Batch #${batchIndex} (seed=${seedHex}, profile=${options.profile}, size=${options.batchSize}) finished in ${batchSec}s | total=${totalKernels} kernels (${kernelsPerHour} kernels/hr overall, ${pureKernelsPerHour} kernels/hr eval), findings=${totalFailures} (#1078=${suspected1078Count}, other=${otherFindingsCount})\n`
     );
   }
 
@@ -669,6 +809,9 @@ function main() {
   const finalPureKernelsPerHour = Math.round((totalKernels / pureEvalTotalSec) * 3600);
   const summary = {
     profile: options.profile,
+    allowedIssues: options.allowedIssues,
+    swarmFocus: options.swarmFocus || 'default',
+    activeKnownIssues,
     batches: batchIndex,
     batchSize: options.batchSize,
     totalKernels,
@@ -677,9 +820,13 @@ function main() {
     kernelsPerHour: finalKernelsPerHour,
     pureEvalKernelsPerHour: finalPureKernelsPerHour,
     findingsCount: totalFailures,
+    suspected1078Count,
+    otherFindingsCount,
   };
   fs.writeFileSync(path.join(options.workDir, 'summary.json'), JSON.stringify(summary, null, 2) + '\n', 'utf8');
-  process.stdout.write(`[fuzz-diff] Completed ${batchIndex} batches (${totalKernels} kernels) in ${elapsedSec}s (${finalKernelsPerHour} kernels/hr overall, ${finalPureKernelsPerHour} kernels/hr eval). Findings: ${totalFailures}.\n`);
+  process.stdout.write(
+    `[fuzz-diff] Completed ${batchIndex} batches (${totalKernels} kernels) in ${elapsedSec}s (${finalKernelsPerHour} kernels/hr overall, ${finalPureKernelsPerHour} kernels/hr eval). Findings: ${totalFailures} (#1078 suspected: ${suspected1078Count}, other: ${otherFindingsCount}).\n`
+  );
 }
 
 main();

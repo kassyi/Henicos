@@ -1,0 +1,41 @@
+{
+  "version": 1,
+  "issues": [
+    {
+      "issue": 1079,
+      "summary": "8/16-bit integer and char increment/decrement expression value returns widened int or post-increment value",
+      "profiles": ["M", "C", "G"],
+      "paths": ["Native", "Cuda"],
+      "avoidedShape": "Pre/post increment or decrement (++ / --) on sbyte, byte, short, ushort, or char in value-consuming expression contexts; only statement-level increment/decrement is emitted when avoided."
+    },
+    {
+      "issue": 998,
+      "summary": "Null-coalescing operator (??) between Nullable<T> of different widths or narrow Nullable<T> implicit promotion",
+      "profiles": ["M", "C", "G"],
+      "paths": ["Native", "Cuda"],
+      "avoidedShape": "Null-coalescing operator (??) where left and right operands have different underlying types or widths, or where a narrow Nullable<T> is implicitly promoted."
+    },
+    {
+      "issue": 984,
+      "summary": "Nullable<T> local variable declarations fail C++ / CUDA transpilation or runtime lowering",
+      "profiles": ["C", "G"],
+      "paths": ["Native", "Cuda"],
+      "avoidedShape": "Local variable declarations of type Nullable<T> (T?); Nullable<T> is instead exercised via struct fields on profiles C and G."
+    },
+    {
+      "issue": 877,
+      "summary": "Binding a C++ reference to a misaligned field of a Pack = 1 struct triggers CUDA misaligned address fault",
+      "profiles": ["G"],
+      "paths": ["Cuda"],
+      "avoidedShape": "Passing a misaligned field of a [StructLayout(LayoutKind.Sequential, Pack = 1)] struct to ref/out/in parameters, ref ternary, tuple deconstruction target, compound assignment, or ??= target."
+    },
+    {
+      "issue": 645,
+      "summary": "Instance methods of plain structs called from device code are not emitted or diagnosed",
+      "profiles": ["C", "G"],
+      "paths": ["Native", "Cuda"],
+      "avoidedShape": "Calling plain struct instance methods directly from kernels; computed readonly properties and [GpuDeviceFunction] helpers are used when avoided."
+    }
+  ]
+}
+
