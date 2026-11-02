@@ -72,5 +72,49 @@ public class BitOperationsTests : TranspilerTestBase
         Assert.Contains("__gsharp_rotl32", cudaSource);
         Assert.Contains("__gsharp_rotr32", cudaSource);
     }
+
+    [SkippableFact]
+    [TestTarget(ExecutionTarget.GpuExecution)]
+    [Scenario(TestScenario.HappyPath)]
+    public void Test_BclIntrinsic_ReorderedNamedArguments_PassToMatchingParametersAndPreserveEvaluationOrder()
+    {
+        int[] intTargets = [10, 20, 30, 40, 10];
+        long[] longTargets = [100L, 200L, 300L];
+        uint[] u32Values = [0x12345678u];
+        ulong[] u64Values = [0x123456789ABCDEF0ul];
+        int[] intResults = new int[5];
+        long[] longResults = new long[3];
+        uint[] u32Results = new uint[3];
+        ulong[] u64Results = new ulong[2];
+
+        BitOperationsKernels.LaunchReorderedNamedArgsKernel(
+            intTargets,
+            longTargets,
+            u32Values,
+            u64Values,
+            intResults,
+            longResults,
+            u32Results,
+            u64Results,
+            blockDimX: 1);
+
+        Assert.Equal([99, 77, 35, 42, 110], intTargets);
+        Assert.Equal([10, 20, 35, 40, 10], intResults);
+        Assert.Equal([999L, 250L, 420L], longTargets);
+        Assert.Equal([100L, 250L, 300L], longResults);
+        Assert.Equal(
+            [
+                BitOperations.RotateLeft(0x12345678u, 4),
+                BitOperations.RotateRight(0x12345678u, 4),
+                BitOperations.RotateLeft(5u, 4)
+            ],
+            u32Results);
+        Assert.Equal(
+            [
+                BitOperations.RotateLeft(0x123456789ABCDEF0ul, 8),
+                BitOperations.RotateRight(0x123456789ABCDEF0ul, 8)
+            ],
+            u64Results);
+    }
 }
 
