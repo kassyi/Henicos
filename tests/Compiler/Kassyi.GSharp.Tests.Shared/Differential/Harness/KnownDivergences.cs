@@ -95,6 +95,24 @@ public static class KnownDivergences
         $"{nameof(BarrierAndWarpDifferentialKernels)}.{nameof(BarrierAndWarpDifferentialKernels.SubWarpConditionalShuffleKernel)}";
     private const string GenericStructStaticSharedMemory =
         $"{nameof(BarrierAndWarpDifferentialKernels)}.{nameof(BarrierAndWarpDifferentialKernels.GenericStructStaticSharedMemoryKernel)}";
+    private const string SpanCanaryIndexBounds =
+        $"{nameof(BoundsAndMemoryDifferentialKernels)}.{nameof(BoundsAndMemoryDifferentialKernels.SpanCanaryIndexBoundsKernel)}";
+    private const string SpanSliceBoundsAndOverflow =
+        $"{nameof(BoundsAndMemoryDifferentialKernels)}.{nameof(BoundsAndMemoryDifferentialKernels.SpanSliceBoundsAndOverflowKernel)}";
+    private const string ArraySegmentAndMemoryBounds =
+        $"{nameof(BoundsAndMemoryDifferentialKernels)}.{nameof(BoundsAndMemoryDifferentialKernels.ArraySegmentAndMemoryBoundsKernel)}";
+    private const string InlineArrayBounds =
+        $"{nameof(BoundsAndMemoryDifferentialKernels)}.{nameof(BoundsAndMemoryDifferentialKernels.InlineArrayBoundsKernel)}";
+    private const string BoundsCheckEliminationWitness =
+        $"{nameof(BoundsAndMemoryDifferentialKernels)}.{nameof(BoundsAndMemoryDifferentialKernels.BoundsCheckEliminationWitnessKernel)}";
+    private const string MathAbsMinValue =
+        $"{nameof(IntegerTrapAndCheckedDifferentialKernels)}.{nameof(IntegerTrapAndCheckedDifferentialKernels.MathAbsMinValueKernel)}";
+    private const string NullableValueAccess =
+        $"{nameof(BclExceptionDifferentialKernels)}.{nameof(BclExceptionDifferentialKernels.NullableValueAccessKernel)}";
+    private const string MathClampBoundsAndNaN =
+        $"{nameof(BclExceptionDifferentialKernels)}.{nameof(BclExceptionDifferentialKernels.MathClampBoundsAndNaNKernel)}";
+    private const string ElementAtOrDefaultNegativeIndexSideEffect =
+        $"{nameof(BclExceptionDifferentialKernels)}.{nameof(BclExceptionDifferentialKernels.ElementAtOrDefaultNegativeIndexSideEffectReproKernel)}";
 
     /// <summary>Gets every registered entry.</summary>
     public static IReadOnlyList<KnownDivergence> All { get; } =
@@ -170,5 +188,21 @@ public static class KnownDivergences
 
         // generic struct static method SharedMemory.Allocate<T> collides across type arguments (#543)
         new(GenericStructStaticSharedMemory, "SharedSlot<int>", DiffPath.Managed | DiffPath.Native, Issue: 543),
+
+        // D5 Stage 1–3: Span/Slice/ArraySegment/Memory/InlineArray bounds, Nullable<T>.Value, and Math.Clamp traps (#718)
+        new(SpanCanaryIndexBounds, KnownDivergence.ExceptionColumn, DiffPath.Native, Issue: 718),
+        new(SpanSliceBoundsAndOverflow, KnownDivergence.ExceptionColumn, DiffPath.Native, Issue: 718),
+        new(ArraySegmentAndMemoryBounds, KnownDivergence.ExceptionColumn, DiffPath.Native, Issue: 718),
+        new(InlineArrayBounds, KnownDivergence.ExceptionColumn, DiffPath.Native, Issue: 718),
+        new(BoundsCheckEliminationWitness, KnownDivergence.ExceptionColumn, DiffPath.Native, Issue: 718),
+        new(NullableValueAccess, KnownDivergence.ExceptionColumn, DiffPath.Native, Issue: 718),
+        new(MathClampBoundsAndNaN, KnownDivergence.ExceptionColumn, DiffPath.Native, Issue: 718),
+
+        // D5 Stage 2: Math.Abs(int.MinValue) overflow trap (#947)
+        new(MathAbsMinValue, KnownDivergence.ExceptionColumn, DiffPath.Native, Issue: 947),
+
+        // D5 Stage 3: StackLinq ElementAtOrDefault(-1) enumerates non-Span sequence instead of early-returning default (S31)
+        new(ElementAtOrDefaultNegativeIndexSideEffect, "select_neg_eval_count", DiffPath.Managed, Issue: 1060), // S31: C# StackSelectEnumerable.MoveNext evaluates selector eagerly on ElementAtOrDefault(-1)
+        new(ElementAtOrDefaultNegativeIndexSideEffect, "where_neg_eval_count", DiffPath.Managed | DiffPath.Native | DiffPath.Cuda, Issue: 1060), // S31: StackLinq ElementAtOrDefault(-1) enumerates non-Span Where sequence
     ];
 }
