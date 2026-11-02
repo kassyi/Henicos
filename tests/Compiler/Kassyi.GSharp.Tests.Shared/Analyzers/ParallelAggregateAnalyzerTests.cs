@@ -18,9 +18,9 @@ public class ParallelAggregateAnalyzerTests : TranspilerTestBase
             .GetDiagnosticsAsync();
 
         // (line, start column, end column) of the terminal call, 0-based, and the reason; SharedKernel (line 12), the
-        // cooperative kernel, the block-dependent ones (lines 89 and 117) and DeviceFunctionSelectorKernel (the last one: a
+        // cooperative kernel, the block-dependent ones (lines 89, 117 and 220) and DeviceFunctionSelectorKernel (a
         // selector that passes its element to a device function) have none
-        // mutant: ThreadVarianceAnalysis.GetCallVariance without the uniform symbols (the lambda parameter counts as variant)
+        // mutant: UniformitySolver.EvaluateWithUniformParameters without the uniform parameters (the lambda parameter counts as variant)
         // mutant: ParallelAggregatePlanner.Plan without the divergence check (DivergentKernel is not reported)
         (int Line, int Start, int End, ParallelAggregateFallback Reason)[] expected =
         [
@@ -39,13 +39,16 @@ public class ParallelAggregateAnalyzerTests : TranspilerTestBase
             (101, 100, 105, ParallelAggregateFallback.ThreadVariantInput),
             (110, 93, 98, ParallelAggregateFallback.ThreadVariantInput),
             // A switch arm and a for incrementor that only some threads reach (B2)
-            // mutant: ParallelAggregatePlanner.IsDivergent with KernelBarrierValidator.GetDivergingCondition only
+            // mutant: ParallelAggregatePlanner.IsUnderVariantCondition with KernelBarrierValidator.GetDivergingCondition only
             (124, 98, 103, ParallelAggregateFallback.DivergentCall),
             (131, 98, 103, ParallelAggregateFallback.DivergentCall),
             // A variant break / continue whose loop holds the call, and a variant return after the call in a loop (M2)
             (145, 55, 60, ParallelAggregateFallback.EarlyExit),
             (166, 55, 60, ParallelAggregateFallback.EarlyExit),
             (177, 75, 80, ParallelAggregateFallback.EarlyExit),
+            // #847: struct field deconstruction from ThreadIndex, and reduced extension device function call
+            (206, 89, 94, ParallelAggregateFallback.ThreadVariantInput),
+            (230, 99, 104, ParallelAggregateFallback.ThreadVariantInput),
         ];
         var actual = diagnostics
             .Where(static d => d.Id == GSharpDiagnostics.ParallelAggregateRunsSequentially.Id)

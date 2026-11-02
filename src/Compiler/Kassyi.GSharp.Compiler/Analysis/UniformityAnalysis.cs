@@ -79,18 +79,26 @@ internal sealed class UniformityAnalysis
             .AsStackEnumerable()
             .Any(_state.Region, static (index, region) => region[index] == ThreadVariance.Block);
 
-    /// <summary>Whether <paramref name="expression"/> may evaluate to different values in different threads of a block.</summary>
-    public bool IsThreadVariant(SyntaxNode expression)
-    {
-        if (_state.Observed == null)
-        {
-            _state.Solver.Observe();
-        }
+    /// <summary>Whether only some threads of the grid reach the call or object creation <paramref name="node"/>.</summary>
+    public bool IsReachedByPartOfGrid(SyntaxNode node) =>
+        _state.Recorder.NodesOf.TryGetValue(node, out var nodes) &&
+        nodes
+            .AsStackEnumerable()
+            .Any(_state.Region, static (index, region) => region[index] != ThreadVariance.Uniform);
 
-        return _state.Observed != null &&
-               _state.Observed.TryGetValue(expression, out var variance) &&
-               variance == ThreadVariance.Block;
-    }
+    /// <summary>The variance of <paramref name="expression"/>.</summary>
+    public ThreadVariance GetVariance(SyntaxNode expression) => _state.Solver.GetObservedVariance(expression);
+
+    /// <summary>
+    /// The variance of <paramref name="expression"/> when <paramref name="uniformParameters"/> are taken as uniform.
+    /// </summary>
+    public ThreadVariance GetVariance(SyntaxNode expression, ImmutableArray<IParameterSymbol> uniformParameters) =>
+        uniformParameters.IsDefaultOrEmpty
+            ? GetVariance(expression)
+            : _state.Solver.EvaluateWithUniformParameters(expression, uniformParameters);
+
+    /// <summary>Whether <paramref name="expression"/> may evaluate to different values in different threads of a block.</summary>
+    public bool IsThreadVariant(SyntaxNode expression) => GetVariance(expression) == ThreadVariance.Block;
 
     /// <inheritdoc cref="BarrierClassifier.GetBarrierDivergence"/>
     public BarrierDivergence GetBarrierDivergence(SyntaxNode barrier, SyncScope scope) =>

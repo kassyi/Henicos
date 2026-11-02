@@ -192,4 +192,42 @@ public static partial class ParallelAggregateWarnings
     {
         result[ThreadIndex.X] = data.AsStackEnumerable().Select(x => Square(x)).AsParallel().Sum();
     }
+
+    public struct OffsetHolder
+    {
+        public int Value;
+    }
+
+    // #847: a struct local whose field is written by deconstruction from ThreadIndex is thread-variant
+    [GpuKernel]
+    public static void StructFieldVariantInputKernel(int[] data, int[] result)
+    {
+        OffsetHolder holder = default;
+        (holder.Value, _) = (ThreadIndex.X, 0);
+        result[ThreadIndex.X] = data.AsStackEnumerable().Skip(holder.Value).AsParallel().Sum();
+    }
+
+    // #847: SharedMemory<T> after a block barrier is uniform within a block, but varies between blocks (no GSH0100)
+    [GpuKernel]
+    public static void SharedMemoryBlockInputKernel(int[] data, int[] result)
+    {
+        var shared = new SharedMemory<int>(1);
+        if (ThreadIndex.X == 0)
+        {
+            shared[0] = 1;
+        }
+
+        Gpu.SyncThreads();
+        result[ThreadIndex.X] = data.AsStackEnumerable().Skip(shared[0]).AsParallel().Sum();
+    }
+
+    // #847: a device function called as an extension method that returns ThreadIndex is thread-variant
+    [GpuDeviceFunction]
+    public static int TidPlus(this int offset) => ThreadIndex.X + offset;
+
+    [GpuKernel]
+    public static void ExtensionDeviceCallKernel(int[] data, int[] result)
+    {
+        result[ThreadIndex.X] = data.AsStackEnumerable().Select(x => x + 0.TidPlus()).AsParallel().Sum();
+    }
 }
