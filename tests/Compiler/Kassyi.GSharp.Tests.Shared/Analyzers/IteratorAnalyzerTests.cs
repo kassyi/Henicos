@@ -50,6 +50,9 @@ public class IteratorAnalyzerTests : TranspilerTestBase
     [Scenario(TestScenario.SadPath)]
     public async Task Test_IteratorShape_SadPath_ReportsGSH0070WithExactSpans()
     {
+        var diagnostics = await GetDiagnosticsAsync("Analyzers/IteratorShape_SadPath.cs");
+        Assert.DoesNotContain(diagnostics, static d => d.Id == "AD0001");
+
         var actual = await RunAnalyzersAsync("Analyzers/IteratorShape_SadPath.cs");
 
         Assert.Equal(
@@ -59,7 +62,10 @@ public class IteratorAnalyzerTests : TranspilerTestBase
                 (GSharpDiagnostics.IteratorShapeNotSupported.Id, 35, 31, 35, 57),
                 (GSharpDiagnostics.IteratorShapeNotSupported.Id, 44, 29, 44, 45),
                 (GSharpDiagnostics.IteratorShapeNotSupported.Id, 53, 42, 53, 61),
-                (GSharpDiagnostics.IteratorShapeNotSupported.Id, 62, 34, 62, 45)
+                (GSharpDiagnostics.IteratorShapeNotSupported.Id, 62, 34, 62, 45),
+                (GSharpDiagnostics.IteratorShapeNotSupported.Id, 69, 36, 69, 45),
+                (GSharpDiagnostics.IteratorShapeNotSupported.Id, 73, 13, 76, 14),
+                (GSharpDiagnostics.StringNotSupported.Id, 79, 9, 79, 12)
             ],
             actual);
     }
