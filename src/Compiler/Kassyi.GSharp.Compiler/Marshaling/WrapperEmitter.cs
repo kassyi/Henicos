@@ -201,7 +201,7 @@ internal static class WrapperEmitter
 
                 if (config.IsCuda)
                 {
-                    CudaHostLaunchEmitter.WriteKernelMembers(writer, kernel, assemblyName);
+                    CudaHostLaunchEmitter.WriteKernelMembers(writer, kernel, assemblyName, config.IsCheckedBuild);
                 }
                 else
                 {

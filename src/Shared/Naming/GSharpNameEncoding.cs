@@ -107,7 +107,20 @@ internal static class GSharpNameEncoding
     /// <summary>
     /// Builds the symbol file content for sourceBodyWithoutHeader.
     /// </summary>
-    public static string BuildSymbolFileContent(string sourceBodyWithoutHeader, string dialect, Func<string, string?>? resolveShortened = null)
+    /// <summary>Represents an error site entry stored in a <c>.gsym.json</c> symbol file.</summary>
+    public readonly record struct SymbolErrorSiteRecord(
+        uint SiteId,
+        string File,
+        int Line,
+        int Column,
+        string Member,
+        string Message);
+
+    public static string BuildSymbolFileContent(
+        string sourceBodyWithoutHeader,
+        string dialect,
+        Func<string, string?>? resolveShortened = null,
+        IReadOnlyList<SymbolErrorSiteRecord>? errorSites = null)
     {
         var hash = ComputeSourceHash(sourceBodyWithoutHeader);
         var builder = new StringBuilder();
@@ -182,7 +195,95 @@ internal static class GSharpNameEncoding
                 .Append("\"}\n");
         }
 
+        if (errorSites is not null)
+        {
+            for (var i = 0; i < errorSites.Count; i++)
+            {
+                var site = errorSites[i];
+                builder.Append("{\"error_site\":\"")
+                    .Append(site.SiteId.ToString(CultureInfo.InvariantCulture))
+                    .Append("\",\"file\":\"")
+                    .Append(EscapeJsonString(site.File))
+                    .Append("\",\"line\":\"")
+                    .Append(site.Line.ToString(CultureInfo.InvariantCulture))
+                    .Append("\",\"column\":\"")
+                    .Append(site.Column.ToString(CultureInfo.InvariantCulture))
+                    .Append("\",\"member\":\"")
+                    .Append(EscapeJsonString(site.Member))
+                    .Append("\",\"message\":\"")
+                    .Append(EscapeJsonString(site.Message))
+                    .Append("\",\"symbols\":\"")
+                    .Append(hash)
+                    .Append("\",\"dialect\":\"")
+                    .Append(dialect)
+                    .Append("\"}\n");
+            }
+        }
+
         return builder.ToString();
+    }
+
+    /// <summary>
+    /// Reads error site entries from <paramref name="gsymContent"/> and returns siteId -&gt; <see cref="SymbolErrorSiteRecord"/> mappings.
+    /// </summary>
+    public static IReadOnlyDictionary<uint, SymbolErrorSiteRecord> ParseErrorSitesFromSymbolFile(string gsymContent, string? expectedHash = null)
+    {
+        var result = new Dictionary<uint, SymbolErrorSiteRecord>();
+        if (string.IsNullOrEmpty(gsymContent))
+        {
+            return result;
+        }
+
+        string? headerHash = null;
+        var pos = 0;
+        while (pos < gsymContent.Length)
+        {
+            var eol = gsymContent.IndexOf("\n", pos, StringComparison.Ordinal);
+            var lineEnd = eol >= 0 ? eol : gsymContent.Length;
+            var lineStart = pos;
+            pos = eol >= 0 ? eol + 1 : gsymContent.Length;
+
+            while (lineStart < lineEnd && char.IsWhiteSpace(gsymContent[lineStart]))
+            {
+                lineStart++;
+            }
+
+            while (lineEnd > lineStart && char.IsWhiteSpace(gsymContent[lineEnd - 1]))
+            {
+                lineEnd--;
+            }
+
+            if (lineEnd <= lineStart)
+            {
+                continue;
+            }
+
+            if (headerHash is null && TryExtractJsonKeyValue(gsymContent, lineStart, lineEnd, "gsharp_symbols", out var fileHash))
+            {
+                headerHash = fileHash;
+                if (expectedHash is not null && !string.Equals(headerHash, expectedHash, StringComparison.Ordinal))
+                {
+                    throw new InvalidOperationException($"Symbol file hash ({headerHash}) does not match source hash ({expectedHash}).");
+                }
+
+                continue;
+            }
+
+            if (TryExtractJsonKeyValue(gsymContent, lineStart, lineEnd, "error_site", out var siteIdStr) &&
+                uint.TryParse(siteIdStr, NumberStyles.Integer, CultureInfo.InvariantCulture, out var siteId) &&
+                TryExtractJsonKeyValue(gsymContent, lineStart, lineEnd, "file", out var file) &&
+                TryExtractJsonKeyValue(gsymContent, lineStart, lineEnd, "line", out var lineStr) &&
+                int.TryParse(lineStr, NumberStyles.Integer, CultureInfo.InvariantCulture, out var line) &&
+                TryExtractJsonKeyValue(gsymContent, lineStart, lineEnd, "column", out var colStr) &&
+                int.TryParse(colStr, NumberStyles.Integer, CultureInfo.InvariantCulture, out var column) &&
+                TryExtractJsonKeyValue(gsymContent, lineStart, lineEnd, "member", out var member) &&
+                TryExtractJsonKeyValue(gsymContent, lineStart, lineEnd, "message", out var message))
+            {
+                result[siteId] = new SymbolErrorSiteRecord(siteId, file, line, column, member, message);
+            }
+        }
+
+        return result;
     }
 
     /// <summary>

@@ -44,7 +44,7 @@ internal static class KernelLaunchEmitter
 
     /// <summary>Emits argument marshaling, device memory transfers, kernel launch, and result copyback.</summary>
     internal static void WriteMarshalAndLaunchKernel(SourceWriter writer, in KernelHostModel kernel,
-        in ArraySharingPlan plan, bool isDevicePtr)
+        in ArraySharingPlan plan, bool isDevicePtr, bool isCheckedBuild = false)
     {
         var kernelParamCount = WriteKernelParamsDeclaration(writer, kernel);
         WriteParameterMarshals(writer, plan, isDevicePtr);
@@ -60,6 +60,8 @@ internal static class KernelLaunchEmitter
         }
 
         AutoResultEmitter.WriteCudaCopyBack(writer, kernel);
+        writer.AppendLineIf(isCheckedBuild,
+            "CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));");
     }
 
     // void** kernelParams = stackalloc void*[<parameters>[ + auto result][ + grid scratch]];

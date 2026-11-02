@@ -199,6 +199,11 @@ Prelude:
     # An element of such an array, checked after the array and the index are evaluated (C# order)
     ArrayAt: { Value: __gsharp_array_at, Prelude: ErrorChannel.hpp }
     ConsumeLastError: { Value: __gsharp_consume_last_error, Prelude: ErrorChannel.hpp }
+    ConsumeLastErrorDetails: { Value: __gsharp_consume_last_error_details, Prelude: ErrorChannel.hpp }
+    TrapSite: { Value: __gsharp_trap_site, Prelude: ErrorChannel.hpp }
+    ErrorSlot: { Value: __gsharp_error_slot, Prelude: ../Prelude.cu }
+    ErrorModuleId: { Value: __gsharp_error_module_id, Prelude: ../Prelude.cu }
+    BuiltinMessageId: { Value: __gsharp_builtin_message_id, Prelude: ../Prelude.cu }
     SetThreadIndex: { Value: __gsharp_set_thread_idx, Prelude: ThreadAndMemory.hpp }
     # Gpu.GridStrideLoop: declared by ThreadAndMemory.hpp for the CPU dialects and by the CUDA prelude
     GridStrideStart: { Value: __gsharp_grid_stride_start, Prelude: ThreadAndMemory.hpp }

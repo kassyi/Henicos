@@ -435,9 +435,76 @@ enum class GSharpErrorCode : int {
     IndexOutOfRange = 3,
     ArgumentOutOfRange = 4,
     Argument = 5,
-    NullReference = 6
+    NullReference = 6,
+    DivideByZero = 7,
+    Overflow = 8,
+    DataRace = 9
 };
-__device__ __forceinline__ void __gsharp_trap(GSharpErrorCode, const char*) { asm("trap;"); }
+
+struct GSharpDeviceErrorSlot {
+    unsigned int code;
+    unsigned int site_id;
+    unsigned int thread_linear;
+    unsigned int block_linear;
+};
+
+__device__ GSharpDeviceErrorSlot* __gsharp_error_slot = nullptr;
+__device__ unsigned int __gsharp_error_module_id = 0u;
+
+__device__ __host__ constexpr unsigned int __gsharp_builtin_message_id(const char* message) {
+    if (message == nullptr) { return 0x80000000u; }
+    unsigned int hash = 2166136261u;
+    for (const char* p = message; *p != 0; ++p) {
+        hash ^= static_cast<unsigned char>(*p);
+        hash *= 16777619u;
+    }
+    unsigned int low = hash & 0x7FFFFFFFu;
+    return 0x80000000u | (low == 0u ? 1u : low);
+}
+
+__device__ __noinline__ void __gsharp_trap_site(GSharpErrorCode code, unsigned int site_id) {
+    GSharpDeviceErrorSlot* slot = __gsharp_error_slot;
+    if (slot != nullptr) {
+        unsigned int active = __activemask();
+        unsigned int lane;
+        asm volatile("mov.u32 %0, %%laneid;" : "=r"(lane));
+        unsigned int leader = __ffs(active) - 1u;
+        if (lane == leader) {
+            unsigned int c = static_cast<unsigned int>(code) & 0xFFFFu;
+            if (atomicCAS(&slot->code, 0u, c) == 0u) {
+                unsigned int full_site = (site_id & 0x80000000u) != 0u
+                    ? site_id
+                    : ((__gsharp_error_module_id << 20) | (site_id & 0xFFFFFu));
+                slot->site_id = full_site;
+                slot->thread_linear = (threadIdx.x & 0x3FFu)
+                    | ((threadIdx.y & 0x3FFu) << 10)
+                    | ((threadIdx.z & 0x3FFu) << 20);
+                slot->block_linear = (blockIdx.z * gridDim.y + blockIdx.y) * gridDim.x + blockIdx.x;
+                unsigned int gpack = (gridDim.x < 64u && gridDim.y < 64u)
+                    ? (((gridDim.x & 0x3Fu) << 20) | ((gridDim.y & 0x3Fu) << 26))
+                    : 0u;
+                __threadfence_system();
+                atomicExch(&slot->code, c | 0x10000u | gpack);
+                __threadfence_system();
+            } else {
+                for (int spin = 0; spin < 100000; ++spin) {
+                    if ((*(volatile unsigned int*)&slot->code & 0x10000u) != 0u) { break; }
+                    __nanosleep(64);
+                }
+            }
+        }
+        __syncwarp(active);
+    }
+    asm volatile("trap;");
+}
+
+__device__ __forceinline__ void __gsharp_trap(GSharpErrorCode code, const char* message) {
+    __gsharp_trap_site(code, __gsharp_builtin_message_id(message));
+}
+
+__device__ __forceinline__ void __gsharp_trap(GSharpErrorCode code, unsigned int site_id) {
+    __gsharp_trap_site(code, site_id);
+}
 
 // GSharpArray::flags bit 0: a null optional kernel argument, which reads as an empty array (#838)
 #define __gsharp_array_null_reads_empty 1

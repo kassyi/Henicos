@@ -137,10 +137,13 @@ public class DeviceDynamicSharedMemoryTests : TranspilerTestBase
         EnsureCapability(DialectCapabilities.SharedMemory);
         var output = new int[DeviceDynamicSharedMemoryScenarios.Length];
 
-        Assert.Throws<Kassyi.GSharp.Runtime.Interop.CudaException>(() =>
+        var ex = Assert.Throws<ArgumentOutOfRangeException>(() =>
             DeviceDynamicSharedMemoryKernels.LaunchNegativeCountKernel(output, DeviceDynamicSharedMemoryScenarios.Length,
                 negative, blockDimX: DeviceDynamicSharedMemoryScenarios.Length,
                 sharedMemBytes: 3 * DeviceDynamicSharedMemoryScenarios.Length * sizeof(int)));
+        Assert.Contains("G#: dynamic shared memory exceeds sharedMemBytes", ex.Message);
+        var cudaEx = Assert.IsType<Kassyi.GSharp.Runtime.Interop.CudaException>(ex.InnerException);
+        Assert.True(cudaEx.Result is Kassyi.GSharp.Runtime.Interop.CUresult.CudaErrorIllegalInstruction or Kassyi.GSharp.Runtime.Interop.CUresult.CudaErrorLaunchFailed);
     }
 #endif
 }

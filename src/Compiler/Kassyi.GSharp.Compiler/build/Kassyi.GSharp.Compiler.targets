@@ -8,13 +8,14 @@
 
   <!-- Register the tasks out-of-process to avoid MSBuild node locking (MSB3026/MSB3027) -->
   <UsingTask TaskName="Kassyi.GSharp.Compiler.Tasks.CompileCudaToFatbinTask" AssemblyFile="$(GSharpCompilerTaskAssembly)" TaskFactory="TaskHostFactory" />
-  <UsingTask TaskName="Kassyi.GSharp.Compiler.Tasks.CompileCppToNativeTask" AssemblyFile="$(GSharpCompilerTaskAssembly)" TaskFactory="TaskHostFactory" />
+  <UsingTask TaskName="Kassyi.GSharp.Compiler.Tasks.CompileCppToNativeTask" AssemblyFile="$(GSharpCompilerTaskAssembly)" />
 
   <ItemGroup>
     <CompilerVisibleProperty Include="GSharpTargetDialect" />
     <CompilerVisibleProperty Include="GSharpAotEnabled" />
     <CompilerVisibleProperty Include="GSharpEmitSource" />
     <CompilerVisibleProperty Include="GSharpExportDeviceCode" />
+    <CompilerVisibleProperty Include="GSharpCheckedBuild" />
     <CompilerVisibleProperty Include="GSharpAotEncryptionKey" />
     <CompilerVisibleProperty Include="IntermediateOutputPath" />
     <CompilerVisibleProperty Include="ProjectDir" />
