@@ -195,17 +195,23 @@ public partial class DeviceDynamicSharedMemoryKernels
 public class __gsharp_frame_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__SuspendingHelper {
 internal int __gsharp_state;
 internal uint __gsharp_warp_exchange;
+internal int n;
+internal int val;
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-public static bool __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__SuspendingHelper(int n, int val, __gsharp_frame_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__SuspendingHelper __gsharp_ctx, ref int __gsharp_result) {
+public static bool __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__SuspendingHelper(int __gsharp_in_n, int __gsharp_in_val, __gsharp_frame_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__SuspendingHelper __gsharp_ctx, ref int __gsharp_result) {
 global::Kassyi.GSharp.Core.SharedMemory<int> inner = global::Kassyi.GSharp.Core.SharedMemory<int>.FindDynamic(0x84b31862e77be173UL);
+if (__gsharp_ctx.__gsharp_state == 0) {
+__gsharp_ctx.n = __gsharp_in_n;
+__gsharp_ctx.val = __gsharp_in_val;
+}
 {
 switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-inner = new global::Kassyi.GSharp.Core.SharedMemory<int>(n, 0x84b31862e77be173UL, "DeviceDynamicSharedMemoryKernels.cs(16,21)");
-inner[global::Kassyi.GSharp.Core.ThreadIndex.X] = val * 2;
+inner = new global::Kassyi.GSharp.Core.SharedMemory<int>(__gsharp_ctx.n, 0x84b31862e77be173UL, "DeviceDynamicSharedMemoryKernels.cs(16,21)");
+inner[global::Kassyi.GSharp.Core.ThreadIndex.X] = __gsharp_ctx.val * 2;
 global::Kassyi.GSharp.Core.ManagedGpuContext.BlockBarrierRequested = true;
 __gsharp_ctx.__gsharp_state = 1;
 return false;
@@ -228,17 +234,23 @@ throw new global::System.InvalidOperationException("The device function state ma
 public class __gsharp_frame_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__TwoKernelHelper {
 internal int __gsharp_state;
 internal uint __gsharp_warp_exchange;
+internal int n;
+internal int val;
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-public static bool __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__TwoKernelHelper(int n, int val, __gsharp_frame_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__TwoKernelHelper __gsharp_ctx, ref int __gsharp_result) {
+public static bool __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__TwoKernelHelper(int __gsharp_in_n, int __gsharp_in_val, __gsharp_frame_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__TwoKernelHelper __gsharp_ctx, ref int __gsharp_result) {
 global::Kassyi.GSharp.Core.SharedMemory<int> inner = global::Kassyi.GSharp.Core.SharedMemory<int>.FindDynamic(0x5e40b7025ff4f720UL);
+if (__gsharp_ctx.__gsharp_state == 0) {
+__gsharp_ctx.n = __gsharp_in_n;
+__gsharp_ctx.val = __gsharp_in_val;
+}
 {
 switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-inner = new global::Kassyi.GSharp.Core.SharedMemory<int>(n, 0x5e40b7025ff4f720UL, "DeviceDynamicSharedMemoryKernels.cs(38,21)");
-inner[global::Kassyi.GSharp.Core.ThreadIndex.X] = val * 2;
+inner = new global::Kassyi.GSharp.Core.SharedMemory<int>(__gsharp_ctx.n, 0x5e40b7025ff4f720UL, "DeviceDynamicSharedMemoryKernels.cs(38,21)");
+inner[global::Kassyi.GSharp.Core.ThreadIndex.X] = __gsharp_ctx.val * 2;
 global::Kassyi.GSharp.Core.ManagedGpuContext.BlockBarrierRequested = true;
 __gsharp_ctx.__gsharp_state = 1;
 return false;
@@ -261,19 +273,27 @@ throw new global::System.InvalidOperationException("The device function state ma
 public class __gsharp_frame_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__SuspendingPersistHelper {
 internal int __gsharp_state;
 internal uint __gsharp_warp_exchange;
+internal int n;
+internal int val;
+internal bool write;
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-public static bool __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__SuspendingPersistHelper(int n, int val, bool write, __gsharp_frame_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__SuspendingPersistHelper __gsharp_ctx, ref int __gsharp_result) {
+public static bool __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__SuspendingPersistHelper(int __gsharp_in_n, int __gsharp_in_val, bool __gsharp_in_write, __gsharp_frame_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__SuspendingPersistHelper __gsharp_ctx, ref int __gsharp_result) {
 global::Kassyi.GSharp.Core.SharedMemory<int> s = global::Kassyi.GSharp.Core.SharedMemory<int>.FindDynamic(0x8e9b2cbfc1a4ab1eUL);
+if (__gsharp_ctx.__gsharp_state == 0) {
+__gsharp_ctx.n = __gsharp_in_n;
+__gsharp_ctx.val = __gsharp_in_val;
+__gsharp_ctx.write = __gsharp_in_write;
+}
 {
 switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-s = new global::Kassyi.GSharp.Core.SharedMemory<int>(n, 0x8e9b2cbfc1a4ab1eUL, "DeviceDynamicSharedMemoryKernels.cs(88,17)");
-if (write)
+s = new global::Kassyi.GSharp.Core.SharedMemory<int>(__gsharp_ctx.n, 0x8e9b2cbfc1a4ab1eUL, "DeviceDynamicSharedMemoryKernels.cs(88,17)");
+if (__gsharp_ctx.write)
 {
-s[global::Kassyi.GSharp.Core.ThreadIndex.X] = val;
+s[global::Kassyi.GSharp.Core.ThreadIndex.X] = __gsharp_ctx.val;
 }
 
 global::Kassyi.GSharp.Core.ManagedGpuContext.BlockBarrierRequested = true;
@@ -284,7 +304,7 @@ return false;
 case 1:
 {
 {
-__gsharp_result = s[(global::Kassyi.GSharp.Core.ThreadIndex.X + 1) % n];
+__gsharp_result = s[(global::Kassyi.GSharp.Core.ThreadIndex.X + 1) % __gsharp_ctx.n];
 __gsharp_ctx.__gsharp_state = 0;
 return true;
 }
@@ -298,22 +318,30 @@ throw new global::System.InvalidOperationException("The device function state ma
 public class __gsharp_frame_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__GrowHelper {
 internal int __gsharp_state;
 internal uint __gsharp_warp_exchange;
+internal int count;
+internal int writeStart;
+internal int val;
 internal int tid;
 internal int r;
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-public static bool __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__GrowHelper(int count, int writeStart, int val, __gsharp_frame_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__GrowHelper __gsharp_ctx, ref int __gsharp_result) {
+public static bool __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__GrowHelper(int __gsharp_in_count, int __gsharp_in_writeStart, int __gsharp_in_val, __gsharp_frame_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__GrowHelper __gsharp_ctx, ref int __gsharp_result) {
 global::Kassyi.GSharp.Core.SharedMemory<int> s = global::Kassyi.GSharp.Core.SharedMemory<int>.FindDynamic(0xa9215b4dd44568e3UL);
+if (__gsharp_ctx.__gsharp_state == 0) {
+__gsharp_ctx.count = __gsharp_in_count;
+__gsharp_ctx.writeStart = __gsharp_in_writeStart;
+__gsharp_ctx.val = __gsharp_in_val;
+}
 {
 switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
 __gsharp_ctx.tid = global::Kassyi.GSharp.Core.ThreadIndex.X;
-s = new global::Kassyi.GSharp.Core.SharedMemory<int>(count, 0xa9215b4dd44568e3UL, "DeviceDynamicSharedMemoryKernels.cs(157,17)");
-if (__gsharp_ctx.tid >= writeStart && __gsharp_ctx.tid < count)
+s = new global::Kassyi.GSharp.Core.SharedMemory<int>(__gsharp_ctx.count, 0xa9215b4dd44568e3UL, "DeviceDynamicSharedMemoryKernels.cs(157,17)");
+if (__gsharp_ctx.tid >= __gsharp_ctx.writeStart && __gsharp_ctx.tid < __gsharp_ctx.count)
 {
-s[__gsharp_ctx.tid] = val * 2;
+s[__gsharp_ctx.tid] = __gsharp_ctx.val * 2;
 }
 
 global::Kassyi.GSharp.Core.ManagedGpuContext.BlockBarrierRequested = true;
@@ -323,7 +351,7 @@ return false;
 
 case 1:
 {
-__gsharp_ctx.r = __gsharp_ctx.tid < count ? s[__gsharp_ctx.tid] : 0;
+__gsharp_ctx.r = __gsharp_ctx.tid < __gsharp_ctx.count ? s[__gsharp_ctx.tid] : 0;
 global::Kassyi.GSharp.Core.ManagedGpuContext.BlockBarrierRequested = true;
 __gsharp_ctx.__gsharp_state = 2;
 return false;

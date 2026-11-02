@@ -9,8 +9,8 @@
         case 0:
         {
             __gsharp_ctx->tid = ThreadIndex.X;
-            __gsharp_ctx->value = data[__gsharp_ctx->tid];
-            if (!(flag != 0))
+            __gsharp_ctx->value = __gsharp_ctx->data[__gsharp_ctx->tid];
+            if (!(__gsharp_ctx->flag != 0))
                 goto case 2;
             __gsharp_yielded_for_block_barrier = true;
             __gsharp_state = 1;
@@ -32,7 +32,7 @@
 
         case 3:
         {
-            data[__gsharp_ctx->tid] = __gsharp_ctx->value * 2;
+            __gsharp_ctx->data[__gsharp_ctx->tid] = __gsharp_ctx->value * 2;
             __gsharp_state = -1;
             return;
         }

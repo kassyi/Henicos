@@ -87,6 +87,53 @@ public static class LoweringAnnotations
     public const string ArgumentTempAnnotationKind = "GSharpArgumentTemp";
 
     /// <summary>
+    /// Annotation kind that records the span of the original expression that a lowering temporary
+    /// (<c>__gsharp_arg_temp_&lt;n&gt;</c>, <c>__gsharp_warp_temp_&lt;n&gt;</c>, <c>__gsharp_call_temp_&lt;n&gt;</c>) was
+    /// spilled from, so that <see cref="SemanticModelExtensions.GetTypeSymbol"/> and
+    /// <see cref="SemanticModelExtensions.GetConvertedTypeSymbol"/> can resolve the temporary's type without colliding with
+    /// <see cref="OriginalSpanAnnotationKind"/> symbol identity.
+    /// </summary>
+    public const string SpilledTypeSpanAnnotationKind = "GSharp.SpilledTypeSpan";
+
+    /// <summary>
+    /// Attaches a <see cref="SpilledTypeSpanAnnotationKind"/> annotation to <paramref name="node"/> carrying the original
+    /// span of <paramref name="original"/> (from its existing <see cref="SpilledTypeSpanAnnotationKind"/>, its
+    /// <see cref="OriginalSpanAnnotationKind"/>, or its current syntax span).
+    /// </summary>
+    public static TNode WithSpilledTypeSpanFrom<TNode>(
+        this TNode node,
+        SyntaxNode original,
+        Compilation? compilation = null) where TNode : SyntaxNode
+    {
+        if (node.HasAnnotations(SpilledTypeSpanAnnotationKind))
+        {
+            return node;
+        }
+
+        foreach (var existingSpilled in original.GetAnnotations(SpilledTypeSpanAnnotationKind))
+        {
+            return node.WithAdditionalAnnotations(existingSpilled);
+        }
+
+        foreach (var existingOriginal in original.GetAnnotations(OriginalSpanAnnotationKind))
+        {
+            if (existingOriginal.Data is { Length: > 0 } existingData)
+            {
+                return node.WithAdditionalAnnotations(new SyntaxAnnotation(SpilledTypeSpanAnnotationKind, existingData));
+            }
+        }
+
+        if (original.Span.Length > 0)
+        {
+            var treeOrdinal = SemanticModelExtensions.GetSyntaxTreeOrdinal(compilation, original.SyntaxTree);
+            return node.WithAdditionalAnnotations(
+                new SyntaxAnnotation(SpilledTypeSpanAnnotationKind, FormatOriginalSpanData(original, treeOrdinal)));
+        }
+
+        return node;
+    }
+
+    /// <summary>
     /// The <see cref="SyncIntrinsicAnnotationKind"/> annotation for a call to <paramref name="intrinsic"/>, or
     /// <see langword="null"/> when the intrinsic does not split the state machine.
     /// </summary>

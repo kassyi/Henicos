@@ -81,7 +81,11 @@ static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__
 inline int __gsharp_fn_Kassyi__GSharp__Tests__Shared__Differential__StructDifferentialKernels__ReadInCopyMutatedLocally(const __gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffStructCounter* __gsharp_id_0_inCounter, int __gsharp_id_1_delta){
 __gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffStructCounter __gsharp_id_2_localCopy = (*__gsharp_id_0_inCounter);
 __gsharp_id_2_localCopy.__gsharp_mb_Addend(__gsharp_id_1_delta);
-return __gsharp_add_i32(__gsharp_add_i32(__gsharp_id_2_localCopy.__gsharp_mb_Value,(*__gsharp_id_0_inCounter).__gsharp_mb_Value),(*__gsharp_id_0_inCounter).__gsharp_mb_ComputedDoubled());
+return ([&]() {
+auto __gsharp_seq_0 = __gsharp_add_i32(__gsharp_id_2_localCopy.__gsharp_mb_Value,(*__gsharp_id_0_inCounter).__gsharp_mb_Value);
+auto __gsharp_seq_1 = (*__gsharp_id_0_inCounter).__gsharp_mb_ComputedDoubled();
+return __gsharp_add_i32(__gsharp_seq_0,__gsharp_seq_1);
+}());
 }
 
 #ifndef __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffStructCounter__

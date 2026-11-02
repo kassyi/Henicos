@@ -20,24 +20,28 @@ template <typename TRoot> inline bool __gsharp_fn_Kassyi__GSharp__Tests__Shared_
 
 struct __gsharp_frame_Kassyi__GSharp__Tests__Shared__Core__WarpShuffleArgumentOrderKernels__ShuffleDownByHalfOfHalf {
 int __gsharp_state = 0;
+int __gsharp_id_0_v;
 };
-template <typename TRoot> inline bool __gsharp_fn_Kassyi__GSharp__Tests__Shared__Core__WarpShuffleArgumentOrderKernels__ShuffleDownByHalfOfHalf(int __gsharp_id_0_v, __gsharp_frame_Kassyi__GSharp__Tests__Shared__Core__WarpShuffleArgumentOrderKernels__ShuffleDownByHalfOfHalf* __gsharp_ctx, TRoot* __gsharp_root, int* __gsharp_result){
+template <typename TRoot> inline bool __gsharp_fn_Kassyi__GSharp__Tests__Shared__Core__WarpShuffleArgumentOrderKernels__ShuffleDownByHalfOfHalf(int __gsharp_in___gsharp_id_0_v, __gsharp_frame_Kassyi__GSharp__Tests__Shared__Core__WarpShuffleArgumentOrderKernels__ShuffleDownByHalfOfHalf* __gsharp_ctx, TRoot* __gsharp_root, int* __gsharp_result){
 #define __gsharp_state __gsharp_ctx->__gsharp_state
 #define __gsharp_yielded_for_grid_sync __gsharp_root->__gsharp_yielded_for_grid_sync
 #define __gsharp_yielded_for_block_barrier __gsharp_root->__gsharp_yielded_for_block_barrier
+if(__gsharp_state==0){
+__gsharp_ctx->__gsharp_id_0_v=__gsharp_in___gsharp_id_0_v;
+}
 switch(__gsharp_state)
 {
 case 0:
 __gsharp_switch_1_state_0:
 {
-__gsharp_warp_exchange_assign(__gsharp_id_0_v);
+__gsharp_warp_exchange_assign(__gsharp_ctx->__gsharp_id_0_v);
 __gsharp_state=1;
 return false;
 }
 case 1:
 __gsharp_switch_1_state_1:
 {
-auto __gsharp_warp_temp_0 = __gsharp_warp_shuffle_read_down_sync(__gsharp_root,0xFFFFFFFFu,__gsharp_id_0_v,2U,32,""WarpShuffleArgumentOrderKernels.cs(64,16)"");
+auto __gsharp_warp_temp_0 = __gsharp_warp_shuffle_read_down_sync(__gsharp_root,0xFFFFFFFFu,__gsharp_ctx->__gsharp_id_0_v,2U,32,""WarpShuffleArgumentOrderKernels.cs(64,16)"");
 *__gsharp_result = __gsharp_warp_temp_0;
 __gsharp_state = 0;return true;
 __gsharp_state = 0;return true;
@@ -51,24 +55,30 @@ return false;
 
 struct __gsharp_frame_Kassyi__GSharp__Tests__Shared__Core__WarpShuffleArgumentOrderKernels__ShuffleDownBy {
 int __gsharp_state = 0;
+int __gsharp_id_0_v;
+unsigned int __gsharp_id_1_delta;
 };
-template <typename TRoot> inline bool __gsharp_fn_Kassyi__GSharp__Tests__Shared__Core__WarpShuffleArgumentOrderKernels__ShuffleDownBy(int __gsharp_id_0_v, unsigned int __gsharp_id_1_delta, __gsharp_frame_Kassyi__GSharp__Tests__Shared__Core__WarpShuffleArgumentOrderKernels__ShuffleDownBy* __gsharp_ctx, TRoot* __gsharp_root, int* __gsharp_result){
+template <typename TRoot> inline bool __gsharp_fn_Kassyi__GSharp__Tests__Shared__Core__WarpShuffleArgumentOrderKernels__ShuffleDownBy(int __gsharp_in___gsharp_id_0_v, unsigned int __gsharp_in___gsharp_id_1_delta, __gsharp_frame_Kassyi__GSharp__Tests__Shared__Core__WarpShuffleArgumentOrderKernels__ShuffleDownBy* __gsharp_ctx, TRoot* __gsharp_root, int* __gsharp_result){
 #define __gsharp_state __gsharp_ctx->__gsharp_state
 #define __gsharp_yielded_for_grid_sync __gsharp_root->__gsharp_yielded_for_grid_sync
 #define __gsharp_yielded_for_block_barrier __gsharp_root->__gsharp_yielded_for_block_barrier
+if(__gsharp_state==0){
+__gsharp_ctx->__gsharp_id_0_v=__gsharp_in___gsharp_id_0_v;
+__gsharp_ctx->__gsharp_id_1_delta=__gsharp_in___gsharp_id_1_delta;
+}
 switch(__gsharp_state)
 {
 case 0:
 __gsharp_switch_1_state_0:
 {
-__gsharp_warp_exchange_assign(__gsharp_id_0_v);
+__gsharp_warp_exchange_assign(__gsharp_ctx->__gsharp_id_0_v);
 __gsharp_state=1;
 return false;
 }
 case 1:
 __gsharp_switch_1_state_1:
 {
-auto __gsharp_warp_temp_0 = __gsharp_warp_shuffle_read_down_sync(__gsharp_root,0xFFFFFFFFu,__gsharp_id_0_v,__gsharp_id_1_delta,32,""WarpShuffleArgumentOrderKernels.cs(77,16)"");
+auto __gsharp_warp_temp_0 = __gsharp_warp_shuffle_read_down_sync(__gsharp_root,0xFFFFFFFFu,__gsharp_ctx->__gsharp_id_0_v,__gsharp_ctx->__gsharp_id_1_delta,32,""WarpShuffleArgumentOrderKernels.cs(77,16)"");
 *__gsharp_result = __gsharp_warp_temp_0;
 __gsharp_state = 0;return true;
 __gsharp_state = 0;return true;
@@ -82,11 +92,15 @@ return false;
 
 struct __gsharp_frame_Kassyi__GSharp__Tests__Shared__Core__WarpShuffleArgumentOrderKernels__WaitAndReturn {
 int __gsharp_state = 0;
+long long __gsharp_id_0_x;
 };
-template <typename TRoot> inline bool __gsharp_fn_Kassyi__GSharp__Tests__Shared__Core__WarpShuffleArgumentOrderKernels__WaitAndReturn(long long __gsharp_id_0_x, __gsharp_frame_Kassyi__GSharp__Tests__Shared__Core__WarpShuffleArgumentOrderKernels__WaitAndReturn* __gsharp_ctx, TRoot* __gsharp_root, long long* __gsharp_result){
+template <typename TRoot> inline bool __gsharp_fn_Kassyi__GSharp__Tests__Shared__Core__WarpShuffleArgumentOrderKernels__WaitAndReturn(long long __gsharp_in___gsharp_id_0_x, __gsharp_frame_Kassyi__GSharp__Tests__Shared__Core__WarpShuffleArgumentOrderKernels__WaitAndReturn* __gsharp_ctx, TRoot* __gsharp_root, long long* __gsharp_result){
 #define __gsharp_state __gsharp_ctx->__gsharp_state
 #define __gsharp_yielded_for_grid_sync __gsharp_root->__gsharp_yielded_for_grid_sync
 #define __gsharp_yielded_for_block_barrier __gsharp_root->__gsharp_yielded_for_block_barrier
+if(__gsharp_state==0){
+__gsharp_ctx->__gsharp_id_0_x=__gsharp_in___gsharp_id_0_x;
+}
 switch(__gsharp_state)
 {
 case 0:
@@ -99,7 +113,7 @@ return false;
 case 1:
 __gsharp_switch_1_state_1:
 {
-*__gsharp_result = __gsharp_id_0_x;
+*__gsharp_result = __gsharp_ctx->__gsharp_id_0_x;
 __gsharp_state = 0;return true;
 __gsharp_state = 0;return true;
 }
@@ -112,11 +126,15 @@ return false;
 
 struct __gsharp_frame_Kassyi__GSharp__Tests__Shared__Core__WarpShuffleArgumentOrderKernels__AddAfterBarrier {
 int __gsharp_state = 0;
+int __gsharp_id_1_value;
 };
-template <typename TRoot> inline bool __gsharp_fn_Kassyi__GSharp__Tests__Shared__Core__WarpShuffleArgumentOrderKernels__AddAfterBarrier(int* __gsharp_id_0_target, int __gsharp_id_1_value, __gsharp_frame_Kassyi__GSharp__Tests__Shared__Core__WarpShuffleArgumentOrderKernels__AddAfterBarrier* __gsharp_ctx, TRoot* __gsharp_root){
+template <typename TRoot> inline bool __gsharp_fn_Kassyi__GSharp__Tests__Shared__Core__WarpShuffleArgumentOrderKernels__AddAfterBarrier(int* __gsharp_id_0_target, int __gsharp_in___gsharp_id_1_value, __gsharp_frame_Kassyi__GSharp__Tests__Shared__Core__WarpShuffleArgumentOrderKernels__AddAfterBarrier* __gsharp_ctx, TRoot* __gsharp_root){
 #define __gsharp_state __gsharp_ctx->__gsharp_state
 #define __gsharp_yielded_for_grid_sync __gsharp_root->__gsharp_yielded_for_grid_sync
 #define __gsharp_yielded_for_block_barrier __gsharp_root->__gsharp_yielded_for_block_barrier
+if(__gsharp_state==0){
+__gsharp_ctx->__gsharp_id_1_value=__gsharp_in___gsharp_id_1_value;
+}
 switch(__gsharp_state)
 {
 case 0:
@@ -129,7 +147,7 @@ return false;
 case 1:
 __gsharp_switch_1_state_1:
 {
-(*__gsharp_id_0_target)=__gsharp_add_i32((*__gsharp_id_0_target),__gsharp_add_i32(__gsharp_id_1_value,1000));
+(*__gsharp_id_0_target)=__gsharp_add_i32((*__gsharp_id_0_target),__gsharp_add_i32(__gsharp_ctx->__gsharp_id_1_value,1000));
 __gsharp_state = 0;return true;
 }
 }
@@ -160,22 +178,26 @@ public partial class WarpShuffleArgumentOrderKernels
 internal class __gsharp_frame_Kassyi__GSharp__Tests__Shared__Core__WarpShuffleArgumentOrderKernels__ShuffleDownByHalfOfHalf {
 internal int __gsharp_state;
 internal uint __gsharp_warp_exchange;
+internal int v;
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-internal static bool __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Core__WarpShuffleArgumentOrderKernels__ShuffleDownByHalfOfHalf(int v, __gsharp_frame_Kassyi__GSharp__Tests__Shared__Core__WarpShuffleArgumentOrderKernels__ShuffleDownByHalfOfHalf __gsharp_ctx, ref int __gsharp_result) {
+internal static bool __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Core__WarpShuffleArgumentOrderKernels__ShuffleDownByHalfOfHalf(int __gsharp_in_v, __gsharp_frame_Kassyi__GSharp__Tests__Shared__Core__WarpShuffleArgumentOrderKernels__ShuffleDownByHalfOfHalf __gsharp_ctx, ref int __gsharp_result) {
+if (__gsharp_ctx.__gsharp_state == 0) {
+__gsharp_ctx.v = __gsharp_in_v;
+}
 {
 switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-__gsharp_warp_exchange_assign(v);
+__gsharp_warp_exchange_assign(__gsharp_ctx.v);
 __gsharp_ctx.__gsharp_state = 1;
 return false;
 }
 
 case 1:
 {
-var __gsharp_warp_temp_0 = __gsharp_warp_shuffle_read_down_sync(__gsharp_ctx, 0xFFFFFFFFu, v, global::Kassyi.GSharp.Tests.Shared.Core.WarpShuffleArgumentOrderKernels.Half / 2, 32, "WarpShuffleArgumentOrderKernels.cs(64,16)");
+var __gsharp_warp_temp_0 = __gsharp_warp_shuffle_read_down_sync(__gsharp_ctx, 0xFFFFFFFFu, __gsharp_ctx.v, global::Kassyi.GSharp.Tests.Shared.Core.WarpShuffleArgumentOrderKernels.Half / 2, 32, "WarpShuffleArgumentOrderKernels.cs(64,16)");
 {
 __gsharp_result = __gsharp_warp_temp_0;
 __gsharp_ctx.__gsharp_state = 0;
@@ -191,22 +213,28 @@ throw new global::System.InvalidOperationException("The device function state ma
 internal class __gsharp_frame_Kassyi__GSharp__Tests__Shared__Core__WarpShuffleArgumentOrderKernels__ShuffleDownBy {
 internal int __gsharp_state;
 internal uint __gsharp_warp_exchange;
+internal int v;
+internal uint delta;
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-internal static bool __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Core__WarpShuffleArgumentOrderKernels__ShuffleDownBy(int v, uint delta, __gsharp_frame_Kassyi__GSharp__Tests__Shared__Core__WarpShuffleArgumentOrderKernels__ShuffleDownBy __gsharp_ctx, ref int __gsharp_result) {
+internal static bool __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Core__WarpShuffleArgumentOrderKernels__ShuffleDownBy(int __gsharp_in_v, uint __gsharp_in_delta, __gsharp_frame_Kassyi__GSharp__Tests__Shared__Core__WarpShuffleArgumentOrderKernels__ShuffleDownBy __gsharp_ctx, ref int __gsharp_result) {
+if (__gsharp_ctx.__gsharp_state == 0) {
+__gsharp_ctx.v = __gsharp_in_v;
+__gsharp_ctx.delta = __gsharp_in_delta;
+}
 {
 switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-__gsharp_warp_exchange_assign(v);
+__gsharp_warp_exchange_assign(__gsharp_ctx.v);
 __gsharp_ctx.__gsharp_state = 1;
 return false;
 }
 
 case 1:
 {
-var __gsharp_warp_temp_0 = __gsharp_warp_shuffle_read_down_sync(__gsharp_ctx, 0xFFFFFFFFu, v, delta, 32, "WarpShuffleArgumentOrderKernels.cs(77,16)");
+var __gsharp_warp_temp_0 = __gsharp_warp_shuffle_read_down_sync(__gsharp_ctx, 0xFFFFFFFFu, __gsharp_ctx.v, __gsharp_ctx.delta, 32, "WarpShuffleArgumentOrderKernels.cs(77,16)");
 {
 __gsharp_result = __gsharp_warp_temp_0;
 __gsharp_ctx.__gsharp_state = 0;
@@ -222,9 +250,13 @@ throw new global::System.InvalidOperationException("The device function state ma
 internal class __gsharp_frame_Kassyi__GSharp__Tests__Shared__Core__WarpShuffleArgumentOrderKernels__WaitAndReturn {
 internal int __gsharp_state;
 internal uint __gsharp_warp_exchange;
+internal long x;
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-internal static bool __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Core__WarpShuffleArgumentOrderKernels__WaitAndReturn(long x, __gsharp_frame_Kassyi__GSharp__Tests__Shared__Core__WarpShuffleArgumentOrderKernels__WaitAndReturn __gsharp_ctx, ref long __gsharp_result) {
+internal static bool __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Core__WarpShuffleArgumentOrderKernels__WaitAndReturn(long __gsharp_in_x, __gsharp_frame_Kassyi__GSharp__Tests__Shared__Core__WarpShuffleArgumentOrderKernels__WaitAndReturn __gsharp_ctx, ref long __gsharp_result) {
+if (__gsharp_ctx.__gsharp_state == 0) {
+__gsharp_ctx.x = __gsharp_in_x;
+}
 {
 switch (__gsharp_ctx.__gsharp_state)
 {
@@ -238,7 +270,7 @@ return false;
 case 1:
 {
 {
-__gsharp_result = x;
+__gsharp_result = __gsharp_ctx.x;
 __gsharp_ctx.__gsharp_state = 0;
 return true;
 }
@@ -252,9 +284,13 @@ throw new global::System.InvalidOperationException("The device function state ma
 internal class __gsharp_frame_Kassyi__GSharp__Tests__Shared__Core__WarpShuffleArgumentOrderKernels__AddAfterBarrier {
 internal int __gsharp_state;
 internal uint __gsharp_warp_exchange;
+internal int value;
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-internal static bool __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Core__WarpShuffleArgumentOrderKernels__AddAfterBarrier(ref int target, int value, __gsharp_frame_Kassyi__GSharp__Tests__Shared__Core__WarpShuffleArgumentOrderKernels__AddAfterBarrier __gsharp_ctx) {
+internal static bool __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Core__WarpShuffleArgumentOrderKernels__AddAfterBarrier(ref int target, int __gsharp_in_value, __gsharp_frame_Kassyi__GSharp__Tests__Shared__Core__WarpShuffleArgumentOrderKernels__AddAfterBarrier __gsharp_ctx) {
+if (__gsharp_ctx.__gsharp_state == 0) {
+__gsharp_ctx.value = __gsharp_in_value;
+}
 {
 switch (__gsharp_ctx.__gsharp_state)
 {
@@ -267,7 +303,7 @@ return false;
 
 case 1:
 {
-target += value + 1000;
+target += __gsharp_ctx.value + 1000;
 {
 __gsharp_ctx.__gsharp_state = 0;
 return true;
@@ -311,14 +347,20 @@ uint64_t __gsharp_warp_exchange[2] = {};
 uint32_t __gsharp_warp_shuffle_count = 0;
 bool __gsharp_yielded_for_grid_sync = false;
 bool __gsharp_yielded_for_block_barrier = false;
+GSharpArray<int> __gsharp_id_0_result;
+GSharpArray<int> __gsharp_id_1_afterV;
 int __gsharp_id_2_v;
 int __gsharp_arg_temp_0;
 };
-extern ""C"" __declspec(dllexport) void __gsharp_k_Kassyi__GSharp__Tests__Shared__Core__WarpShuffleArgumentOrderKernels__ShuffleDownPostIncrementKernel(GSharpArray<int> __gsharp_id_0_result, GSharpArray<int> __gsharp_id_1_afterV, __gsharp_context_Kassyi__GSharp__Tests__Shared__Core__WarpShuffleArgumentOrderKernels__ShuffleDownPostIncrementKernel* __gsharp_ctx){
+extern ""C"" __declspec(dllexport) void __gsharp_k_Kassyi__GSharp__Tests__Shared__Core__WarpShuffleArgumentOrderKernels__ShuffleDownPostIncrementKernel(GSharpArray<int> __gsharp_in___gsharp_id_0_result, GSharpArray<int> __gsharp_in___gsharp_id_1_afterV, __gsharp_context_Kassyi__GSharp__Tests__Shared__Core__WarpShuffleArgumentOrderKernels__ShuffleDownPostIncrementKernel* __gsharp_ctx){
 #define __gsharp_state __gsharp_ctx->__gsharp_state
 #define __gsharp_yielded_for_grid_sync __gsharp_ctx->__gsharp_yielded_for_grid_sync
 #define __gsharp_yielded_for_block_barrier __gsharp_ctx->__gsharp_yielded_for_block_barrier
 auto* __gsharp_root = __gsharp_ctx;
+if(__gsharp_state==0){
+__gsharp_ctx->__gsharp_id_0_result=__gsharp_in___gsharp_id_0_result;
+__gsharp_ctx->__gsharp_id_1_afterV=__gsharp_in___gsharp_id_1_afterV;
+}
 switch(__gsharp_state)
 {
 case 0:
@@ -335,8 +377,8 @@ __gsharp_switch_1_state_1:
 {
 auto __gsharp_warp_temp_1 = __gsharp_warp_shuffle_read_down_sync(__gsharp_root,0xFFFFFFFFu,__gsharp_ctx->__gsharp_arg_temp_0,1u,32,""WarpShuffleArgumentOrderKernels.cs(17,17)"");
 int __gsharp_id_3_r = __gsharp_warp_temp_1;
-__gsharp_id_0_result[(int)threadIdx.x]=__gsharp_id_3_r;
-__gsharp_id_1_afterV[(int)threadIdx.x]=__gsharp_ctx->__gsharp_id_2_v;
+__gsharp_ctx->__gsharp_id_0_result[(int)threadIdx.x]=__gsharp_id_3_r;
+__gsharp_ctx->__gsharp_id_1_afterV[(int)threadIdx.x]=__gsharp_ctx->__gsharp_id_2_v;
 __gsharp_state=-1;
 return;
 }
@@ -421,11 +463,17 @@ public static readonly string ShuffleDownPostIncrementKernel_FullSource=global::
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Core__WarpShuffleArgumentOrderKernels__ShuffleDownPostIncrementKernel {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
+public int[] result;
+public int[] afterV;
 public int v;
 public int __gsharp_arg_temp_0;
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Core__WarpShuffleArgumentOrderKernels__ShuffleDownPostIncrementKernel(int[] result, int[] afterV, __gsharp_context_Kassyi__GSharp__Tests__Shared__Core__WarpShuffleArgumentOrderKernels__ShuffleDownPostIncrementKernel __gsharp_ctx) {
+public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Core__WarpShuffleArgumentOrderKernels__ShuffleDownPostIncrementKernel(int[] __gsharp_in_result, int[] __gsharp_in_afterV, __gsharp_context_Kassyi__GSharp__Tests__Shared__Core__WarpShuffleArgumentOrderKernels__ShuffleDownPostIncrementKernel __gsharp_ctx) {
+if (__gsharp_ctx.__gsharp_state == 0) {
+__gsharp_ctx.result = __gsharp_in_result;
+__gsharp_ctx.afterV = __gsharp_in_afterV;
+}
 {
 switch (__gsharp_ctx.__gsharp_state)
 {
@@ -442,8 +490,8 @@ case 1:
 {
 var __gsharp_warp_temp_1 = __gsharp_warp_shuffle_read_down_sync(__gsharp_ctx, 0xFFFFFFFFu, __gsharp_ctx.__gsharp_arg_temp_0, 1u, 32, "WarpShuffleArgumentOrderKernels.cs(17,17)");
 int r = __gsharp_warp_temp_1;
-result[global::Kassyi.GSharp.Core.ThreadIndex.X] = r;
-afterV[global::Kassyi.GSharp.Core.ThreadIndex.X] = __gsharp_ctx.v;
+__gsharp_ctx.result[global::Kassyi.GSharp.Core.ThreadIndex.X] = r;
+__gsharp_ctx.afterV[global::Kassyi.GSharp.Core.ThreadIndex.X] = __gsharp_ctx.v;
 __gsharp_ctx.__gsharp_state = -1;
 return;
 }
@@ -583,6 +631,8 @@ uint64_t __gsharp_warp_exchange[2] = {};
 uint32_t __gsharp_warp_shuffle_count = 0;
 bool __gsharp_yielded_for_grid_sync = false;
 bool __gsharp_yielded_for_block_barrier = false;
+GSharpArray<int> __gsharp_id_0_result;
+GSharpArray<int> __gsharp_id_1_orderOut;
 int __gsharp_id_2_step;
 int __gsharp_id_3_vOrder;
 int __gsharp_id_4_wOrder;
@@ -593,11 +643,15 @@ int __gsharp_arg_temp_1;
 unsigned int __gsharp_arg_temp_2;
 int __gsharp_arg_temp_3;
 };
-extern ""C"" __declspec(dllexport) void __gsharp_k_Kassyi__GSharp__Tests__Shared__Core__WarpShuffleArgumentOrderKernels__ShuffleNamedArgSideEffectOrderKernel(GSharpArray<int> __gsharp_id_0_result, GSharpArray<int> __gsharp_id_1_orderOut, __gsharp_context_Kassyi__GSharp__Tests__Shared__Core__WarpShuffleArgumentOrderKernels__ShuffleNamedArgSideEffectOrderKernel* __gsharp_ctx){
+extern ""C"" __declspec(dllexport) void __gsharp_k_Kassyi__GSharp__Tests__Shared__Core__WarpShuffleArgumentOrderKernels__ShuffleNamedArgSideEffectOrderKernel(GSharpArray<int> __gsharp_in___gsharp_id_0_result, GSharpArray<int> __gsharp_in___gsharp_id_1_orderOut, __gsharp_context_Kassyi__GSharp__Tests__Shared__Core__WarpShuffleArgumentOrderKernels__ShuffleNamedArgSideEffectOrderKernel* __gsharp_ctx){
 #define __gsharp_state __gsharp_ctx->__gsharp_state
 #define __gsharp_yielded_for_grid_sync __gsharp_ctx->__gsharp_yielded_for_grid_sync
 #define __gsharp_yielded_for_block_barrier __gsharp_ctx->__gsharp_yielded_for_block_barrier
 auto* __gsharp_root = __gsharp_ctx;
+if(__gsharp_state==0){
+__gsharp_ctx->__gsharp_id_0_result=__gsharp_in___gsharp_id_0_result;
+__gsharp_ctx->__gsharp_id_1_orderOut=__gsharp_in___gsharp_id_1_orderOut;
+}
 switch(__gsharp_state)
 {
 case 0:
@@ -621,14 +675,14 @@ __gsharp_switch_1_state_1:
 {
 auto __gsharp_warp_temp_4 = __gsharp_warp_shuffle_read_sync(__gsharp_root,__gsharp_ctx->__gsharp_arg_temp_2,__gsharp_ctx->__gsharp_arg_temp_0,__gsharp_ctx->__gsharp_arg_temp_3,__gsharp_ctx->__gsharp_arg_temp_1,""WarpShuffleArgumentOrderKernels.cs(28,17)"");
 int __gsharp_id_7_r = __gsharp_warp_temp_4;
-__gsharp_id_0_result[(int)threadIdx.x]=__gsharp_id_7_r;
+__gsharp_ctx->__gsharp_id_0_result[(int)threadIdx.x]=__gsharp_id_7_r;
 if((int)threadIdx.x==0)
 {
-__gsharp_id_1_orderOut[0]=__gsharp_ctx->__gsharp_id_3_vOrder;
-__gsharp_id_1_orderOut[1]=__gsharp_ctx->__gsharp_id_4_wOrder;
-__gsharp_id_1_orderOut[2]=__gsharp_ctx->__gsharp_id_5_mOrder;
-__gsharp_id_1_orderOut[3]=__gsharp_ctx->__gsharp_id_6_lOrder;
-__gsharp_id_1_orderOut[4]=__gsharp_ctx->__gsharp_id_2_step;
+__gsharp_ctx->__gsharp_id_1_orderOut[0]=__gsharp_ctx->__gsharp_id_3_vOrder;
+__gsharp_ctx->__gsharp_id_1_orderOut[1]=__gsharp_ctx->__gsharp_id_4_wOrder;
+__gsharp_ctx->__gsharp_id_1_orderOut[2]=__gsharp_ctx->__gsharp_id_5_mOrder;
+__gsharp_ctx->__gsharp_id_1_orderOut[3]=__gsharp_ctx->__gsharp_id_6_lOrder;
+__gsharp_ctx->__gsharp_id_1_orderOut[4]=__gsharp_ctx->__gsharp_id_2_step;
 }
 __gsharp_state=-1;
 return;
@@ -714,6 +768,8 @@ public static readonly string ShuffleNamedArgSideEffectOrderKernel_FullSource=gl
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Core__WarpShuffleArgumentOrderKernels__ShuffleNamedArgSideEffectOrderKernel {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
+public int[] result;
+public int[] orderOut;
 public int step;
 public int vOrder;
 public int wOrder;
@@ -725,7 +781,11 @@ public uint __gsharp_arg_temp_2;
 public int __gsharp_arg_temp_3;
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Core__WarpShuffleArgumentOrderKernels__ShuffleNamedArgSideEffectOrderKernel(int[] result, int[] orderOut, __gsharp_context_Kassyi__GSharp__Tests__Shared__Core__WarpShuffleArgumentOrderKernels__ShuffleNamedArgSideEffectOrderKernel __gsharp_ctx) {
+public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Core__WarpShuffleArgumentOrderKernels__ShuffleNamedArgSideEffectOrderKernel(int[] __gsharp_in_result, int[] __gsharp_in_orderOut, __gsharp_context_Kassyi__GSharp__Tests__Shared__Core__WarpShuffleArgumentOrderKernels__ShuffleNamedArgSideEffectOrderKernel __gsharp_ctx) {
+if (__gsharp_ctx.__gsharp_state == 0) {
+__gsharp_ctx.result = __gsharp_in_result;
+__gsharp_ctx.orderOut = __gsharp_in_orderOut;
+}
 {
 switch (__gsharp_ctx.__gsharp_state)
 {
@@ -752,14 +812,14 @@ case 1:
 {
 var __gsharp_warp_temp_4 = __gsharp_warp_shuffle_read_sync(__gsharp_ctx, __gsharp_ctx.__gsharp_arg_temp_2, __gsharp_ctx.__gsharp_arg_temp_0, __gsharp_ctx.__gsharp_arg_temp_3, __gsharp_ctx.__gsharp_arg_temp_1, "WarpShuffleArgumentOrderKernels.cs(28,17)");
 int r = __gsharp_warp_temp_4;
-result[global::Kassyi.GSharp.Core.ThreadIndex.X] = r;
+__gsharp_ctx.result[global::Kassyi.GSharp.Core.ThreadIndex.X] = r;
 if (global::Kassyi.GSharp.Core.ThreadIndex.X == 0)
 {
-orderOut[0] = __gsharp_ctx.vOrder;
-orderOut[1] = __gsharp_ctx.wOrder;
-orderOut[2] = __gsharp_ctx.mOrder;
-orderOut[3] = __gsharp_ctx.lOrder;
-orderOut[4] = __gsharp_ctx.step;
+__gsharp_ctx.orderOut[0] = __gsharp_ctx.vOrder;
+__gsharp_ctx.orderOut[1] = __gsharp_ctx.wOrder;
+__gsharp_ctx.orderOut[2] = __gsharp_ctx.mOrder;
+__gsharp_ctx.orderOut[3] = __gsharp_ctx.lOrder;
+__gsharp_ctx.orderOut[4] = __gsharp_ctx.step;
 }
 
 __gsharp_ctx.__gsharp_state = -1;
@@ -901,13 +961,17 @@ uint64_t __gsharp_warp_exchange[2] = {};
 uint32_t __gsharp_warp_shuffle_count = 0;
 bool __gsharp_yielded_for_grid_sync = false;
 bool __gsharp_yielded_for_block_barrier = false;
+GSharpArray<int> __gsharp_id_0_result;
 int __gsharp_id_1_v;
 };
-extern ""C"" __declspec(dllexport) void __gsharp_k_Kassyi__GSharp__Tests__Shared__Core__WarpShuffleArgumentOrderKernels__ShuffleDownConstantDeltaKernel(GSharpArray<int> __gsharp_id_0_result, __gsharp_context_Kassyi__GSharp__Tests__Shared__Core__WarpShuffleArgumentOrderKernels__ShuffleDownConstantDeltaKernel* __gsharp_ctx){
+extern ""C"" __declspec(dllexport) void __gsharp_k_Kassyi__GSharp__Tests__Shared__Core__WarpShuffleArgumentOrderKernels__ShuffleDownConstantDeltaKernel(GSharpArray<int> __gsharp_in___gsharp_id_0_result, __gsharp_context_Kassyi__GSharp__Tests__Shared__Core__WarpShuffleArgumentOrderKernels__ShuffleDownConstantDeltaKernel* __gsharp_ctx){
 #define __gsharp_state __gsharp_ctx->__gsharp_state
 #define __gsharp_yielded_for_grid_sync __gsharp_ctx->__gsharp_yielded_for_grid_sync
 #define __gsharp_yielded_for_block_barrier __gsharp_ctx->__gsharp_yielded_for_block_barrier
 auto* __gsharp_root = __gsharp_ctx;
+if(__gsharp_state==0){
+__gsharp_ctx->__gsharp_id_0_result=__gsharp_in___gsharp_id_0_result;
+}
 switch(__gsharp_state)
 {
 case 0:
@@ -922,7 +986,7 @@ case 1:
 __gsharp_switch_1_state_1:
 {
 auto __gsharp_warp_temp_0 = __gsharp_warp_shuffle_read_down_sync(__gsharp_root,0xFFFFFFFFu,__gsharp_ctx->__gsharp_id_1_v,2U,32,""WarpShuffleArgumentOrderKernels.cs(51,33)"");
-__gsharp_id_0_result[(int)threadIdx.x]=__gsharp_warp_temp_0;
+__gsharp_ctx->__gsharp_id_0_result[(int)threadIdx.x]=__gsharp_warp_temp_0;
 __gsharp_state=-1;
 return;
 }
@@ -1007,10 +1071,14 @@ public static readonly string ShuffleDownConstantDeltaKernel_FullSource=global::
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Core__WarpShuffleArgumentOrderKernels__ShuffleDownConstantDeltaKernel {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
+public int[] result;
 public int v;
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Core__WarpShuffleArgumentOrderKernels__ShuffleDownConstantDeltaKernel(int[] result, __gsharp_context_Kassyi__GSharp__Tests__Shared__Core__WarpShuffleArgumentOrderKernels__ShuffleDownConstantDeltaKernel __gsharp_ctx) {
+public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Core__WarpShuffleArgumentOrderKernels__ShuffleDownConstantDeltaKernel(int[] __gsharp_in_result, __gsharp_context_Kassyi__GSharp__Tests__Shared__Core__WarpShuffleArgumentOrderKernels__ShuffleDownConstantDeltaKernel __gsharp_ctx) {
+if (__gsharp_ctx.__gsharp_state == 0) {
+__gsharp_ctx.result = __gsharp_in_result;
+}
 {
 switch (__gsharp_ctx.__gsharp_state)
 {
@@ -1025,7 +1093,7 @@ return;
 case 1:
 {
 var __gsharp_warp_temp_0 = __gsharp_warp_shuffle_read_down_sync(__gsharp_ctx, 0xFFFFFFFFu, __gsharp_ctx.v, global::Kassyi.GSharp.Tests.Shared.Core.WarpShuffleArgumentOrderKernels.Half / 2, 32, "WarpShuffleArgumentOrderKernels.cs(51,33)");
-result[global::Kassyi.GSharp.Core.ThreadIndex.X] = __gsharp_warp_temp_0;
+__gsharp_ctx.result[global::Kassyi.GSharp.Core.ThreadIndex.X] = __gsharp_warp_temp_0;
 __gsharp_ctx.__gsharp_state = -1;
 return;
 }
@@ -1158,15 +1226,19 @@ uint64_t __gsharp_warp_exchange[2] = {};
 uint32_t __gsharp_warp_shuffle_count = 0;
 bool __gsharp_yielded_for_grid_sync = false;
 bool __gsharp_yielded_for_block_barrier = false;
+GSharpArray<int> __gsharp_id_0_result;
 int __gsharp_arg_temp_0;
 int __gsharp_call_temp_1;
 __gsharp_frame_Kassyi__GSharp__Tests__Shared__Core__WarpShuffleArgumentOrderKernels__ShuffleDownByHalfOfHalf __gsharp_call_frame_0;
 };
-extern ""C"" __declspec(dllexport) void __gsharp_k_Kassyi__GSharp__Tests__Shared__Core__WarpShuffleArgumentOrderKernels__DeviceFunctionShuffleConstantDeltaKernel(GSharpArray<int> __gsharp_id_0_result, __gsharp_context_Kassyi__GSharp__Tests__Shared__Core__WarpShuffleArgumentOrderKernels__DeviceFunctionShuffleConstantDeltaKernel* __gsharp_ctx){
+extern ""C"" __declspec(dllexport) void __gsharp_k_Kassyi__GSharp__Tests__Shared__Core__WarpShuffleArgumentOrderKernels__DeviceFunctionShuffleConstantDeltaKernel(GSharpArray<int> __gsharp_in___gsharp_id_0_result, __gsharp_context_Kassyi__GSharp__Tests__Shared__Core__WarpShuffleArgumentOrderKernels__DeviceFunctionShuffleConstantDeltaKernel* __gsharp_ctx){
 #define __gsharp_state __gsharp_ctx->__gsharp_state
 #define __gsharp_yielded_for_grid_sync __gsharp_ctx->__gsharp_yielded_for_grid_sync
 #define __gsharp_yielded_for_block_barrier __gsharp_ctx->__gsharp_yielded_for_block_barrier
 auto* __gsharp_root = __gsharp_ctx;
+if(__gsharp_state==0){
+__gsharp_ctx->__gsharp_id_0_result=__gsharp_in___gsharp_id_0_result;
+}
 switch(__gsharp_state)
 {
 case 0:
@@ -1183,7 +1255,7 @@ if(!__gsharp_fn_Kassyi__GSharp__Tests__Shared__Core__WarpShuffleArgumentOrderKer
 __gsharp_state=1;
 return;
 }
-__gsharp_id_0_result[(int)threadIdx.x]=__gsharp_ctx->__gsharp_call_temp_1;
+__gsharp_ctx->__gsharp_id_0_result[(int)threadIdx.x]=__gsharp_ctx->__gsharp_call_temp_1;
 __gsharp_state=-1;
 return;
 }
@@ -1268,12 +1340,16 @@ public static readonly string DeviceFunctionShuffleConstantDeltaKernel_FullSourc
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Core__WarpShuffleArgumentOrderKernels__DeviceFunctionShuffleConstantDeltaKernel {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
+public int[] result;
 public int __gsharp_arg_temp_0;
 public int __gsharp_call_temp_1;
 internal global::Kassyi.GSharp.Tests.Shared.Core.WarpShuffleArgumentOrderKernels.__gsharp_frame_Kassyi__GSharp__Tests__Shared__Core__WarpShuffleArgumentOrderKernels__ShuffleDownByHalfOfHalf __gsharp_call_frame_0 = new();
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Core__WarpShuffleArgumentOrderKernels__DeviceFunctionShuffleConstantDeltaKernel(int[] result, __gsharp_context_Kassyi__GSharp__Tests__Shared__Core__WarpShuffleArgumentOrderKernels__DeviceFunctionShuffleConstantDeltaKernel __gsharp_ctx) {
+public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Core__WarpShuffleArgumentOrderKernels__DeviceFunctionShuffleConstantDeltaKernel(int[] __gsharp_in_result, __gsharp_context_Kassyi__GSharp__Tests__Shared__Core__WarpShuffleArgumentOrderKernels__DeviceFunctionShuffleConstantDeltaKernel __gsharp_ctx) {
+if (__gsharp_ctx.__gsharp_state == 0) {
+__gsharp_ctx.result = __gsharp_in_result;
+}
 {
 switch (__gsharp_ctx.__gsharp_state)
 {
@@ -1291,7 +1367,7 @@ __gsharp_ctx.__gsharp_state = 1;
 return;
 }
 
-result[global::Kassyi.GSharp.Core.ThreadIndex.X] = __gsharp_ctx.__gsharp_call_temp_1;
+__gsharp_ctx.result[global::Kassyi.GSharp.Core.ThreadIndex.X] = __gsharp_ctx.__gsharp_call_temp_1;
 __gsharp_ctx.__gsharp_state = -1;
 return;
 }
@@ -1424,15 +1500,19 @@ uint64_t __gsharp_warp_exchange[2] = {};
 uint32_t __gsharp_warp_shuffle_count = 0;
 bool __gsharp_yielded_for_grid_sync = false;
 bool __gsharp_yielded_for_block_barrier = false;
+GSharpArray<int> __gsharp_id_0_result;
 int __gsharp_arg_temp_0;
 int __gsharp_call_temp_1;
 __gsharp_frame_Kassyi__GSharp__Tests__Shared__Core__WarpShuffleArgumentOrderKernels__ShuffleDownBy __gsharp_call_frame_0;
 };
-extern ""C"" __declspec(dllexport) void __gsharp_k_Kassyi__GSharp__Tests__Shared__Core__WarpShuffleArgumentOrderKernels__SuspendingCallConstantArgumentKernel(GSharpArray<int> __gsharp_id_0_result, __gsharp_context_Kassyi__GSharp__Tests__Shared__Core__WarpShuffleArgumentOrderKernels__SuspendingCallConstantArgumentKernel* __gsharp_ctx){
+extern ""C"" __declspec(dllexport) void __gsharp_k_Kassyi__GSharp__Tests__Shared__Core__WarpShuffleArgumentOrderKernels__SuspendingCallConstantArgumentKernel(GSharpArray<int> __gsharp_in___gsharp_id_0_result, __gsharp_context_Kassyi__GSharp__Tests__Shared__Core__WarpShuffleArgumentOrderKernels__SuspendingCallConstantArgumentKernel* __gsharp_ctx){
 #define __gsharp_state __gsharp_ctx->__gsharp_state
 #define __gsharp_yielded_for_grid_sync __gsharp_ctx->__gsharp_yielded_for_grid_sync
 #define __gsharp_yielded_for_block_barrier __gsharp_ctx->__gsharp_yielded_for_block_barrier
 auto* __gsharp_root = __gsharp_ctx;
+if(__gsharp_state==0){
+__gsharp_ctx->__gsharp_id_0_result=__gsharp_in___gsharp_id_0_result;
+}
 switch(__gsharp_state)
 {
 case 0:
@@ -1449,7 +1529,7 @@ if(!__gsharp_fn_Kassyi__GSharp__Tests__Shared__Core__WarpShuffleArgumentOrderKer
 __gsharp_state=1;
 return;
 }
-__gsharp_id_0_result[(int)threadIdx.x]=__gsharp_ctx->__gsharp_call_temp_1;
+__gsharp_ctx->__gsharp_id_0_result[(int)threadIdx.x]=__gsharp_ctx->__gsharp_call_temp_1;
 __gsharp_state=-1;
 return;
 }
@@ -1534,12 +1614,16 @@ public static readonly string SuspendingCallConstantArgumentKernel_FullSource=gl
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Core__WarpShuffleArgumentOrderKernels__SuspendingCallConstantArgumentKernel {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
+public int[] result;
 public int __gsharp_arg_temp_0;
 public int __gsharp_call_temp_1;
 internal global::Kassyi.GSharp.Tests.Shared.Core.WarpShuffleArgumentOrderKernels.__gsharp_frame_Kassyi__GSharp__Tests__Shared__Core__WarpShuffleArgumentOrderKernels__ShuffleDownBy __gsharp_call_frame_0 = new();
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Core__WarpShuffleArgumentOrderKernels__SuspendingCallConstantArgumentKernel(int[] result, __gsharp_context_Kassyi__GSharp__Tests__Shared__Core__WarpShuffleArgumentOrderKernels__SuspendingCallConstantArgumentKernel __gsharp_ctx) {
+public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Core__WarpShuffleArgumentOrderKernels__SuspendingCallConstantArgumentKernel(int[] __gsharp_in_result, __gsharp_context_Kassyi__GSharp__Tests__Shared__Core__WarpShuffleArgumentOrderKernels__SuspendingCallConstantArgumentKernel __gsharp_ctx) {
+if (__gsharp_ctx.__gsharp_state == 0) {
+__gsharp_ctx.result = __gsharp_in_result;
+}
 {
 switch (__gsharp_ctx.__gsharp_state)
 {
@@ -1557,7 +1641,7 @@ __gsharp_ctx.__gsharp_state = 1;
 return;
 }
 
-result[global::Kassyi.GSharp.Core.ThreadIndex.X] = __gsharp_ctx.__gsharp_call_temp_1;
+__gsharp_ctx.result[global::Kassyi.GSharp.Core.ThreadIndex.X] = __gsharp_ctx.__gsharp_call_temp_1;
 __gsharp_ctx.__gsharp_state = -1;
 return;
 }
@@ -1690,15 +1774,21 @@ uint64_t __gsharp_warp_exchange[2] = {};
 uint32_t __gsharp_warp_shuffle_count = 0;
 bool __gsharp_yielded_for_grid_sync = false;
 bool __gsharp_yielded_for_block_barrier = false;
+GSharpArray<int> __gsharp_id_0_rounds;
+GSharpArray<int> __gsharp_id_1_afterV;
 int __gsharp_id_2_v;
 int __gsharp_id_3_n;
 int __gsharp_arg_temp_0;
 };
-extern ""C"" __declspec(dllexport) void __gsharp_k_Kassyi__GSharp__Tests__Shared__Core__WarpShuffleArgumentOrderKernels__ShuffleInWhileConditionKernel(GSharpArray<int> __gsharp_id_0_rounds, GSharpArray<int> __gsharp_id_1_afterV, __gsharp_context_Kassyi__GSharp__Tests__Shared__Core__WarpShuffleArgumentOrderKernels__ShuffleInWhileConditionKernel* __gsharp_ctx){
+extern ""C"" __declspec(dllexport) void __gsharp_k_Kassyi__GSharp__Tests__Shared__Core__WarpShuffleArgumentOrderKernels__ShuffleInWhileConditionKernel(GSharpArray<int> __gsharp_in___gsharp_id_0_rounds, GSharpArray<int> __gsharp_in___gsharp_id_1_afterV, __gsharp_context_Kassyi__GSharp__Tests__Shared__Core__WarpShuffleArgumentOrderKernels__ShuffleInWhileConditionKernel* __gsharp_ctx){
 #define __gsharp_state __gsharp_ctx->__gsharp_state
 #define __gsharp_yielded_for_grid_sync __gsharp_ctx->__gsharp_yielded_for_grid_sync
 #define __gsharp_yielded_for_block_barrier __gsharp_ctx->__gsharp_yielded_for_block_barrier
 auto* __gsharp_root = __gsharp_ctx;
+if(__gsharp_state==0){
+__gsharp_ctx->__gsharp_id_0_rounds=__gsharp_in___gsharp_id_0_rounds;
+__gsharp_ctx->__gsharp_id_1_afterV=__gsharp_in___gsharp_id_1_afterV;
+}
 switch(__gsharp_state)
 {
 case 0:
@@ -1736,8 +1826,8 @@ goto __gsharp_switch_1_state_4;
 case 4:
 __gsharp_switch_1_state_4:
 {
-__gsharp_id_0_rounds[(int)threadIdx.x]=__gsharp_ctx->__gsharp_id_3_n;
-__gsharp_id_1_afterV[(int)threadIdx.x]=__gsharp_ctx->__gsharp_id_2_v;
+__gsharp_ctx->__gsharp_id_0_rounds[(int)threadIdx.x]=__gsharp_ctx->__gsharp_id_3_n;
+__gsharp_ctx->__gsharp_id_1_afterV[(int)threadIdx.x]=__gsharp_ctx->__gsharp_id_2_v;
 __gsharp_state=-1;
 return;
 }
@@ -1822,12 +1912,18 @@ public static readonly string ShuffleInWhileConditionKernel_FullSource=global::K
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Core__WarpShuffleArgumentOrderKernels__ShuffleInWhileConditionKernel {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
+public int[] rounds;
+public int[] afterV;
 public int v;
 public int n;
 public int __gsharp_arg_temp_0;
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Core__WarpShuffleArgumentOrderKernels__ShuffleInWhileConditionKernel(int[] rounds, int[] afterV, __gsharp_context_Kassyi__GSharp__Tests__Shared__Core__WarpShuffleArgumentOrderKernels__ShuffleInWhileConditionKernel __gsharp_ctx) {
+public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Core__WarpShuffleArgumentOrderKernels__ShuffleInWhileConditionKernel(int[] __gsharp_in_rounds, int[] __gsharp_in_afterV, __gsharp_context_Kassyi__GSharp__Tests__Shared__Core__WarpShuffleArgumentOrderKernels__ShuffleInWhileConditionKernel __gsharp_ctx) {
+if (__gsharp_ctx.__gsharp_state == 0) {
+__gsharp_ctx.rounds = __gsharp_in_rounds;
+__gsharp_ctx.afterV = __gsharp_in_afterV;
+}
 {
 switch (__gsharp_ctx.__gsharp_state)
 {
@@ -1863,8 +1959,8 @@ goto case 4;
 
 case 4:
 {
-rounds[global::Kassyi.GSharp.Core.ThreadIndex.X] = __gsharp_ctx.n;
-afterV[global::Kassyi.GSharp.Core.ThreadIndex.X] = __gsharp_ctx.v;
+__gsharp_ctx.rounds[global::Kassyi.GSharp.Core.ThreadIndex.X] = __gsharp_ctx.n;
+__gsharp_ctx.afterV[global::Kassyi.GSharp.Core.ThreadIndex.X] = __gsharp_ctx.v;
 __gsharp_ctx.__gsharp_state = -1;
 return;
 }
@@ -2004,6 +2100,9 @@ uint64_t __gsharp_warp_exchange[2] = {};
 uint32_t __gsharp_warp_shuffle_count = 0;
 bool __gsharp_yielded_for_grid_sync = false;
 bool __gsharp_yielded_for_block_barrier = false;
+GSharpArray<long long> __gsharp_id_0_viaCall;
+GSharpArray<float> __gsharp_id_1_viaShuffle;
+int __gsharp_id_2_flag;
 int __gsharp_id_3_i;
 unsigned int __gsharp_id_4_u;
 long long __gsharp_arg_temp_0;
@@ -2011,11 +2110,16 @@ long long __gsharp_call_temp_1;
 float __gsharp_arg_temp_2;
 __gsharp_frame_Kassyi__GSharp__Tests__Shared__Core__WarpShuffleArgumentOrderKernels__WaitAndReturn __gsharp_call_frame_0;
 };
-extern ""C"" __declspec(dllexport) void __gsharp_k_Kassyi__GSharp__Tests__Shared__Core__WarpShuffleArgumentOrderKernels__TargetTypedArgumentKernel(GSharpArray<long long> __gsharp_id_0_viaCall, GSharpArray<float> __gsharp_id_1_viaShuffle, int __gsharp_id_2_flag, __gsharp_context_Kassyi__GSharp__Tests__Shared__Core__WarpShuffleArgumentOrderKernels__TargetTypedArgumentKernel* __gsharp_ctx){
+extern ""C"" __declspec(dllexport) void __gsharp_k_Kassyi__GSharp__Tests__Shared__Core__WarpShuffleArgumentOrderKernels__TargetTypedArgumentKernel(GSharpArray<long long> __gsharp_in___gsharp_id_0_viaCall, GSharpArray<float> __gsharp_in___gsharp_id_1_viaShuffle, int __gsharp_in___gsharp_id_2_flag, __gsharp_context_Kassyi__GSharp__Tests__Shared__Core__WarpShuffleArgumentOrderKernels__TargetTypedArgumentKernel* __gsharp_ctx){
 #define __gsharp_state __gsharp_ctx->__gsharp_state
 #define __gsharp_yielded_for_grid_sync __gsharp_ctx->__gsharp_yielded_for_grid_sync
 #define __gsharp_yielded_for_block_barrier __gsharp_ctx->__gsharp_yielded_for_block_barrier
 auto* __gsharp_root = __gsharp_ctx;
+if(__gsharp_state==0){
+__gsharp_ctx->__gsharp_id_0_viaCall=__gsharp_in___gsharp_id_0_viaCall;
+__gsharp_ctx->__gsharp_id_1_viaShuffle=__gsharp_in___gsharp_id_1_viaShuffle;
+__gsharp_ctx->__gsharp_id_2_flag=__gsharp_in___gsharp_id_2_flag;
+}
 switch(__gsharp_state)
 {
 case 0:
@@ -2023,7 +2127,7 @@ __gsharp_switch_1_state_0:
 {
 __gsharp_ctx->__gsharp_id_3_i=__gsharp_add_i32((int)threadIdx.x,1);
 __gsharp_ctx->__gsharp_id_4_u=(unsigned int)(int)threadIdx.x+100u;
-__gsharp_ctx->__gsharp_arg_temp_0=(__gsharp_id_2_flag!=0?(long long)__gsharp_ctx->__gsharp_id_3_i:(long long)__gsharp_ctx->__gsharp_id_4_u);
+__gsharp_ctx->__gsharp_arg_temp_0=(__gsharp_ctx->__gsharp_id_2_flag!=0?(long long)__gsharp_ctx->__gsharp_id_3_i:(long long)__gsharp_ctx->__gsharp_id_4_u);
 goto __gsharp_switch_1_state_1;
 }
 case 1:
@@ -2034,8 +2138,8 @@ if(!__gsharp_fn_Kassyi__GSharp__Tests__Shared__Core__WarpShuffleArgumentOrderKer
 __gsharp_state=1;
 return;
 }
-__gsharp_id_0_viaCall[(int)threadIdx.x]=__gsharp_ctx->__gsharp_call_temp_1;
-__gsharp_ctx->__gsharp_arg_temp_2=(__gsharp_id_2_flag!=0?(float)__gsharp_ctx->__gsharp_id_3_i:(float)__gsharp_ctx->__gsharp_id_4_u);
+__gsharp_ctx->__gsharp_id_0_viaCall[(int)threadIdx.x]=__gsharp_ctx->__gsharp_call_temp_1;
+__gsharp_ctx->__gsharp_arg_temp_2=(__gsharp_ctx->__gsharp_id_2_flag!=0?(float)__gsharp_ctx->__gsharp_id_3_i:(float)__gsharp_ctx->__gsharp_id_4_u);
 __gsharp_warp_exchange_assign(__gsharp_ctx->__gsharp_arg_temp_2);
 __gsharp_state=2;
 return;
@@ -2044,7 +2148,7 @@ case 2:
 __gsharp_switch_1_state_2:
 {
 auto __gsharp_warp_temp_3 = __gsharp_warp_shuffle_read_sync(__gsharp_root,0xFFFFFFFFu,__gsharp_ctx->__gsharp_arg_temp_2,1,32,""WarpShuffleArgumentOrderKernels.cs(104,37)"");
-__gsharp_id_1_viaShuffle[(int)threadIdx.x]=__gsharp_warp_temp_3;
+__gsharp_ctx->__gsharp_id_1_viaShuffle[(int)threadIdx.x]=__gsharp_warp_temp_3;
 __gsharp_state=-1;
 return;
 }
@@ -2129,6 +2233,9 @@ public static readonly string TargetTypedArgumentKernel_FullSource=global::Kassy
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Core__WarpShuffleArgumentOrderKernels__TargetTypedArgumentKernel {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
+public long[] viaCall;
+public float[] viaShuffle;
+public int flag;
 public int i;
 public uint u;
 public long __gsharp_arg_temp_0;
@@ -2137,7 +2244,12 @@ public float __gsharp_arg_temp_2;
 internal global::Kassyi.GSharp.Tests.Shared.Core.WarpShuffleArgumentOrderKernels.__gsharp_frame_Kassyi__GSharp__Tests__Shared__Core__WarpShuffleArgumentOrderKernels__WaitAndReturn __gsharp_call_frame_0 = new();
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Core__WarpShuffleArgumentOrderKernels__TargetTypedArgumentKernel(long[] viaCall, float[] viaShuffle, int flag, __gsharp_context_Kassyi__GSharp__Tests__Shared__Core__WarpShuffleArgumentOrderKernels__TargetTypedArgumentKernel __gsharp_ctx) {
+public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Core__WarpShuffleArgumentOrderKernels__TargetTypedArgumentKernel(long[] __gsharp_in_viaCall, float[] __gsharp_in_viaShuffle, int __gsharp_in_flag, __gsharp_context_Kassyi__GSharp__Tests__Shared__Core__WarpShuffleArgumentOrderKernels__TargetTypedArgumentKernel __gsharp_ctx) {
+if (__gsharp_ctx.__gsharp_state == 0) {
+__gsharp_ctx.viaCall = __gsharp_in_viaCall;
+__gsharp_ctx.viaShuffle = __gsharp_in_viaShuffle;
+__gsharp_ctx.flag = __gsharp_in_flag;
+}
 {
 switch (__gsharp_ctx.__gsharp_state)
 {
@@ -2145,7 +2257,7 @@ case 0:
 {
 __gsharp_ctx.i = global::Kassyi.GSharp.Core.ThreadIndex.X + 1;
 __gsharp_ctx.u = (uint)global::Kassyi.GSharp.Core.ThreadIndex.X + 100u;
-__gsharp_ctx.__gsharp_arg_temp_0 = flag != 0 ? __gsharp_ctx.i : __gsharp_ctx.u;
+__gsharp_ctx.__gsharp_arg_temp_0 = __gsharp_ctx.flag != 0 ? __gsharp_ctx.i : __gsharp_ctx.u;
 goto case 1;
 }
 
@@ -2157,8 +2269,8 @@ __gsharp_ctx.__gsharp_state = 1;
 return;
 }
 
-viaCall[global::Kassyi.GSharp.Core.ThreadIndex.X] = __gsharp_ctx.__gsharp_call_temp_1;
-__gsharp_ctx.__gsharp_arg_temp_2 = flag != 0 ? __gsharp_ctx.i : __gsharp_ctx.u;
+__gsharp_ctx.viaCall[global::Kassyi.GSharp.Core.ThreadIndex.X] = __gsharp_ctx.__gsharp_call_temp_1;
+__gsharp_ctx.__gsharp_arg_temp_2 = __gsharp_ctx.flag != 0 ? __gsharp_ctx.i : __gsharp_ctx.u;
 __gsharp_warp_exchange_assign(__gsharp_ctx.__gsharp_arg_temp_2);
 __gsharp_ctx.__gsharp_state = 2;
 return;
@@ -2167,7 +2279,7 @@ return;
 case 2:
 {
 var __gsharp_warp_temp_3 = __gsharp_warp_shuffle_read_sync(__gsharp_ctx, 0xFFFFFFFFu, __gsharp_ctx.__gsharp_arg_temp_2, 1, 32, "WarpShuffleArgumentOrderKernels.cs(104,37)");
-viaShuffle[global::Kassyi.GSharp.Core.ThreadIndex.X] = __gsharp_warp_temp_3;
+__gsharp_ctx.viaShuffle[global::Kassyi.GSharp.Core.ThreadIndex.X] = __gsharp_warp_temp_3;
 __gsharp_ctx.__gsharp_state = -1;
 return;
 }
@@ -2307,16 +2419,22 @@ uint64_t __gsharp_warp_exchange[2] = {};
 uint32_t __gsharp_warp_shuffle_count = 0;
 bool __gsharp_yielded_for_grid_sync = false;
 bool __gsharp_yielded_for_block_barrier = false;
+GSharpArray<int> __gsharp_id_0_data;
+GSharpArray<int> __gsharp_id_1_afterI;
 int __gsharp_id_2_i;
 int __gsharp_arg_temp_0;
 int __gsharp_arg_temp_1;
 __gsharp_frame_Kassyi__GSharp__Tests__Shared__Core__WarpShuffleArgumentOrderKernels__AddAfterBarrier __gsharp_call_frame_0;
 };
-extern ""C"" __declspec(dllexport) void __gsharp_k_Kassyi__GSharp__Tests__Shared__Core__WarpShuffleArgumentOrderKernels__RefElementIndexWrittenLaterKernel(GSharpArray<int> __gsharp_id_0_data, GSharpArray<int> __gsharp_id_1_afterI, __gsharp_context_Kassyi__GSharp__Tests__Shared__Core__WarpShuffleArgumentOrderKernels__RefElementIndexWrittenLaterKernel* __gsharp_ctx){
+extern ""C"" __declspec(dllexport) void __gsharp_k_Kassyi__GSharp__Tests__Shared__Core__WarpShuffleArgumentOrderKernels__RefElementIndexWrittenLaterKernel(GSharpArray<int> __gsharp_in___gsharp_id_0_data, GSharpArray<int> __gsharp_in___gsharp_id_1_afterI, __gsharp_context_Kassyi__GSharp__Tests__Shared__Core__WarpShuffleArgumentOrderKernels__RefElementIndexWrittenLaterKernel* __gsharp_ctx){
 #define __gsharp_state __gsharp_ctx->__gsharp_state
 #define __gsharp_yielded_for_grid_sync __gsharp_ctx->__gsharp_yielded_for_grid_sync
 #define __gsharp_yielded_for_block_barrier __gsharp_ctx->__gsharp_yielded_for_block_barrier
 auto* __gsharp_root = __gsharp_ctx;
+if(__gsharp_state==0){
+__gsharp_ctx->__gsharp_id_0_data=__gsharp_in___gsharp_id_0_data;
+__gsharp_ctx->__gsharp_id_1_afterI=__gsharp_in___gsharp_id_1_afterI;
+}
 switch(__gsharp_state)
 {
 case 0:
@@ -2330,12 +2448,12 @@ goto __gsharp_switch_1_state_1;
 case 1:
 __gsharp_switch_1_state_1:
 {
-if(!__gsharp_fn_Kassyi__GSharp__Tests__Shared__Core__WarpShuffleArgumentOrderKernels__AddAfterBarrier(&__gsharp_id_0_data[__gsharp_ctx->__gsharp_arg_temp_0],__gsharp_ctx->__gsharp_arg_temp_1,&__gsharp_ctx->__gsharp_call_frame_0,__gsharp_root))
+if(!__gsharp_fn_Kassyi__GSharp__Tests__Shared__Core__WarpShuffleArgumentOrderKernels__AddAfterBarrier(&__gsharp_ctx->__gsharp_id_0_data[__gsharp_ctx->__gsharp_arg_temp_0],__gsharp_ctx->__gsharp_arg_temp_1,&__gsharp_ctx->__gsharp_call_frame_0,__gsharp_root))
 {
 __gsharp_state=1;
 return;
 }
-__gsharp_id_1_afterI[(int)threadIdx.x]=__gsharp_ctx->__gsharp_id_2_i;
+__gsharp_ctx->__gsharp_id_1_afterI[(int)threadIdx.x]=__gsharp_ctx->__gsharp_id_2_i;
 __gsharp_state=-1;
 return;
 }
@@ -2420,13 +2538,19 @@ public static readonly string RefElementIndexWrittenLaterKernel_FullSource=globa
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Core__WarpShuffleArgumentOrderKernels__RefElementIndexWrittenLaterKernel {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
+public int[] data;
+public int[] afterI;
 public int i;
 public int __gsharp_arg_temp_0;
 public int __gsharp_arg_temp_1;
 internal global::Kassyi.GSharp.Tests.Shared.Core.WarpShuffleArgumentOrderKernels.__gsharp_frame_Kassyi__GSharp__Tests__Shared__Core__WarpShuffleArgumentOrderKernels__AddAfterBarrier __gsharp_call_frame_0 = new();
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Core__WarpShuffleArgumentOrderKernels__RefElementIndexWrittenLaterKernel(int[] data, int[] afterI, __gsharp_context_Kassyi__GSharp__Tests__Shared__Core__WarpShuffleArgumentOrderKernels__RefElementIndexWrittenLaterKernel __gsharp_ctx) {
+public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Core__WarpShuffleArgumentOrderKernels__RefElementIndexWrittenLaterKernel(int[] __gsharp_in_data, int[] __gsharp_in_afterI, __gsharp_context_Kassyi__GSharp__Tests__Shared__Core__WarpShuffleArgumentOrderKernels__RefElementIndexWrittenLaterKernel __gsharp_ctx) {
+if (__gsharp_ctx.__gsharp_state == 0) {
+__gsharp_ctx.data = __gsharp_in_data;
+__gsharp_ctx.afterI = __gsharp_in_afterI;
+}
 {
 switch (__gsharp_ctx.__gsharp_state)
 {
@@ -2440,13 +2564,13 @@ goto case 1;
 
 case 1:
 {
-if (!global::Kassyi.GSharp.Tests.Shared.Core.WarpShuffleArgumentOrderKernels.__gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Core__WarpShuffleArgumentOrderKernels__AddAfterBarrier(ref data[__gsharp_ctx.__gsharp_arg_temp_0], __gsharp_ctx.__gsharp_arg_temp_1, __gsharp_ctx.__gsharp_call_frame_0))
+if (!global::Kassyi.GSharp.Tests.Shared.Core.WarpShuffleArgumentOrderKernels.__gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Core__WarpShuffleArgumentOrderKernels__AddAfterBarrier(ref __gsharp_ctx.data[__gsharp_ctx.__gsharp_arg_temp_0], __gsharp_ctx.__gsharp_arg_temp_1, __gsharp_ctx.__gsharp_call_frame_0))
 {
 __gsharp_ctx.__gsharp_state = 1;
 return;
 }
 
-afterI[global::Kassyi.GSharp.Core.ThreadIndex.X] = __gsharp_ctx.i;
+__gsharp_ctx.afterI[global::Kassyi.GSharp.Core.ThreadIndex.X] = __gsharp_ctx.i;
 __gsharp_ctx.__gsharp_state = -1;
 return;
 }

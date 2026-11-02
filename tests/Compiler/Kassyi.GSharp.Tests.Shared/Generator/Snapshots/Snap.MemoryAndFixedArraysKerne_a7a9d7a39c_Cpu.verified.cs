@@ -53,16 +53,24 @@ uint64_t __gsharp_warp_exchange[2] = {};
 uint32_t __gsharp_warp_shuffle_count = 0;
 bool __gsharp_yielded_for_grid_sync = false;
 bool __gsharp_yielded_for_block_barrier = false;
+GSharpArray<int> __gsharp_id_0_intOutput;
+GSharpArray<float> __gsharp_id_1_floatOutput;
+GSharpArray<__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__CustomPoint> __gsharp_id_2_pointOutput;
 Kassyi_GSharp_Core_SharedMemory<int> __gsharp_id_3_intSmem;
 Kassyi_GSharp_Core_SharedMemory<float> __gsharp_id_4_floatSmem;
 Kassyi_GSharp_Core_SharedMemory<__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__CustomPoint> __gsharp_id_5_pointSmem;
 int __gsharp_id_6_tid;
 };
-extern ""C"" __declspec(dllexport) void __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__MemoryAndFixedArraysKernels__SharedMemoryStaticKernel(GSharpArray<int> __gsharp_id_0_intOutput, GSharpArray<float> __gsharp_id_1_floatOutput, GSharpArray<__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__CustomPoint> __gsharp_id_2_pointOutput, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__MemoryAndFixedArraysKernels__SharedMemoryStaticKernel* __gsharp_ctx){
+extern ""C"" __declspec(dllexport) void __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__MemoryAndFixedArraysKernels__SharedMemoryStaticKernel(GSharpArray<int> __gsharp_in___gsharp_id_0_intOutput, GSharpArray<float> __gsharp_in___gsharp_id_1_floatOutput, GSharpArray<__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__CustomPoint> __gsharp_in___gsharp_id_2_pointOutput, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__MemoryAndFixedArraysKernels__SharedMemoryStaticKernel* __gsharp_ctx){
 #define __gsharp_state __gsharp_ctx->__gsharp_state
 #define __gsharp_yielded_for_grid_sync __gsharp_ctx->__gsharp_yielded_for_grid_sync
 #define __gsharp_yielded_for_block_barrier __gsharp_ctx->__gsharp_yielded_for_block_barrier
 auto* __gsharp_root = __gsharp_ctx;
+if(__gsharp_state==0){
+__gsharp_ctx->__gsharp_id_0_intOutput=__gsharp_in___gsharp_id_0_intOutput;
+__gsharp_ctx->__gsharp_id_1_floatOutput=__gsharp_in___gsharp_id_1_floatOutput;
+__gsharp_ctx->__gsharp_id_2_pointOutput=__gsharp_in___gsharp_id_2_pointOutput;
+}
 switch(__gsharp_state)
 {
 case 0:
@@ -92,9 +100,9 @@ __gsharp_switch_1_state_1:
 {
 if(__gsharp_ctx->__gsharp_id_6_tid==0)
 {
-__gsharp_id_0_intOutput[0]=__gsharp_ctx->__gsharp_id_3_intSmem[10];
-__gsharp_id_1_floatOutput[0]=__gsharp_ctx->__gsharp_id_4_floatSmem[10];
-__gsharp_id_2_pointOutput[0]=__gsharp_ctx->__gsharp_id_5_pointSmem[5];
+__gsharp_ctx->__gsharp_id_0_intOutput[0]=__gsharp_ctx->__gsharp_id_3_intSmem[10];
+__gsharp_ctx->__gsharp_id_1_floatOutput[0]=__gsharp_ctx->__gsharp_id_4_floatSmem[10];
+__gsharp_ctx->__gsharp_id_2_pointOutput[0]=__gsharp_ctx->__gsharp_id_5_pointSmem[5];
 }
 __gsharp_state=-1;
 return;
@@ -180,13 +188,21 @@ public static readonly string SharedMemoryStaticKernel_FullSource=global::Kassyi
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__MemoryAndFixedArraysKernels__SharedMemoryStaticKernel {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
+public int[] intOutput;
+public float[] floatOutput;
+public global::Kassyi.GSharp.Tests.Shared.Syntax.CustomPoint[] pointOutput;
 public int tid;
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__MemoryAndFixedArraysKernels__SharedMemoryStaticKernel(int[] intOutput, float[] floatOutput, global::Kassyi.GSharp.Tests.Shared.Syntax.CustomPoint[] pointOutput, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__MemoryAndFixedArraysKernels__SharedMemoryStaticKernel __gsharp_ctx) {
+public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__MemoryAndFixedArraysKernels__SharedMemoryStaticKernel(int[] __gsharp_in_intOutput, float[] __gsharp_in_floatOutput, global::Kassyi.GSharp.Tests.Shared.Syntax.CustomPoint[] __gsharp_in_pointOutput, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__MemoryAndFixedArraysKernels__SharedMemoryStaticKernel __gsharp_ctx) {
 global::Kassyi.GSharp.Core.SharedMemory<int> intSmem = new(256, 0x671c4908e990809cUL);
 global::Kassyi.GSharp.Core.SharedMemory<float> floatSmem = new(256, 0x671c4a08e990824fUL);
 global::Kassyi.GSharp.Core.SharedMemory<global::Kassyi.GSharp.Tests.Shared.Syntax.CustomPoint> pointSmem = new(64, 0x671c4b08e9908402UL);
+if (__gsharp_ctx.__gsharp_state == 0) {
+__gsharp_ctx.intOutput = __gsharp_in_intOutput;
+__gsharp_ctx.floatOutput = __gsharp_in_floatOutput;
+__gsharp_ctx.pointOutput = __gsharp_in_pointOutput;
+}
 {
 switch (__gsharp_ctx.__gsharp_state)
 {
@@ -217,9 +233,9 @@ case 1:
 {
 if (__gsharp_ctx.tid == 0)
 {
-intOutput[0] = intSmem[10];
-floatOutput[0] = floatSmem[10];
-pointOutput[0] = pointSmem[5];
+__gsharp_ctx.intOutput[0] = intSmem[10];
+__gsharp_ctx.floatOutput[0] = floatSmem[10];
+__gsharp_ctx.pointOutput[0] = pointSmem[5];
 }
 
 __gsharp_ctx.__gsharp_state = -1;

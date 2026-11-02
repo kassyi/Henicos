@@ -336,7 +336,11 @@ public const string ArrayParameterKernel_Source = @"extern ""C"" __global__ void
 int __gsharp_id_3_tid = (int)threadIdx.x;
 __gsharp_id_0_values=__gsharp_id_1_replacement;
 __syncthreads();
-__gsharp_id_2_output[__gsharp_id_3_tid]=__gsharp_add_i32(__gsharp_mul_i32(__gsharp_array_ref(__gsharp_id_0_values, ""G#: a null array is read at KernelValueParameterKernels.cs(48,23)"").length,1000),__gsharp_array_at(__gsharp_id_0_values, __gsharp_id_3_tid, ""G#: a null array is read at KernelValueParameterKernels.cs(48,46)""));
+__gsharp_id_2_output[__gsharp_id_3_tid]=([&]() {
+auto __gsharp_seq_0 = __gsharp_mul_i32(__gsharp_array_ref(__gsharp_id_0_values, ""G#: a null array is read at KernelValueParameterKernels.cs(48,23)"").length,1000);
+auto __gsharp_seq_1 = __gsharp_array_at(__gsharp_id_0_values, __gsharp_id_3_tid, ""G#: a null array is read at KernelValueParameterKernels.cs(48,46)"");
+return __gsharp_add_i32(__gsharp_seq_0,__gsharp_seq_1);
+}());
 }
 ";
 public static readonly string ArrayParameterKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +ArrayParameterKernel_Source;
@@ -548,7 +552,11 @@ public const string ReadOnlyArrayParameterKernel_Source = @"extern ""C"" __globa
 int __gsharp_id_3_tid = (int)threadIdx.x;
 __gsharp_id_0_values=__gsharp_id_1_replacement;
 __syncthreads();
-__gsharp_id_2_output[__gsharp_id_3_tid]=__gsharp_add_i32(__gsharp_mul_i32(__gsharp_array_ref(__gsharp_id_0_values, ""G#: a null array is read at KernelValueParameterKernels.cs(59,23)"").length,1000),__gsharp_array_at(__gsharp_id_0_values, __gsharp_id_3_tid, ""G#: a null array is read at KernelValueParameterKernels.cs(59,46)""));
+__gsharp_id_2_output[__gsharp_id_3_tid]=([&]() {
+auto __gsharp_seq_0 = __gsharp_mul_i32(__gsharp_array_ref(__gsharp_id_0_values, ""G#: a null array is read at KernelValueParameterKernels.cs(59,23)"").length,1000);
+auto __gsharp_seq_1 = __gsharp_array_at(__gsharp_id_0_values, __gsharp_id_3_tid, ""G#: a null array is read at KernelValueParameterKernels.cs(59,46)"");
+return __gsharp_add_i32(__gsharp_seq_0,__gsharp_seq_1);
+}());
 }
 ";
 public static readonly string ReadOnlyArrayParameterKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +ReadOnlyArrayParameterKernel_Source;
@@ -771,7 +779,11 @@ extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__K
 int __gsharp_id_3_tid = (int)threadIdx.x;
 __gsharp_id_1_values=__gsharp_id_0_holder.__gsharp_mb_Data;
 __syncthreads();
-__gsharp_id_2_output[__gsharp_id_3_tid]=__gsharp_add_i32(__gsharp_mul_i32(__gsharp_array_ref(__gsharp_id_1_values, ""G#: a null array is read at KernelValueParameterKernels.cs(69,23)"").length,1000),__gsharp_array_at(__gsharp_id_1_values, __gsharp_id_3_tid, ""G#: a null array is read at KernelValueParameterKernels.cs(69,46)""));
+__gsharp_id_2_output[__gsharp_id_3_tid]=([&]() {
+auto __gsharp_seq_0 = __gsharp_mul_i32(__gsharp_array_ref(__gsharp_id_1_values, ""G#: a null array is read at KernelValueParameterKernels.cs(69,23)"").length,1000);
+auto __gsharp_seq_1 = __gsharp_array_at(__gsharp_id_1_values, __gsharp_id_3_tid, ""G#: a null array is read at KernelValueParameterKernels.cs(69,46)"");
+return __gsharp_add_i32(__gsharp_seq_0,__gsharp_seq_1);
+}());
 }
 ";
 public static readonly string ArrayFromStructFieldKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +ArrayFromStructFieldKernel_Source;

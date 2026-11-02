@@ -56,7 +56,11 @@ public class WarpInstructionRewriter(SemanticModel? semanticModel = null) : CSha
     private StatementSyntax StoreDiscardedResult(StatementSyntax statement) =>
         statement is ExpressionStatementSyntax { Expression: InvocationExpressionSyntax call } &&
         BarrierHelper.IsValueReturningSuspendingCall(call)
-            ? StatementRewriter.CreateTempDeclaration(GetNextCallTempName(), call.WithoutTrivia())
+            ? StatementRewriter.CreateTempDeclaration(
+                    GetNextCallTempName(),
+                    call.WithoutTrivia().WithSpilledTypeSpanFrom(call, _semanticModel?.Compilation),
+                    call,
+                    _semanticModel?.Compilation)
                 .WithTriviaFrom(statement)
             : statement;
 
@@ -157,11 +161,18 @@ public class WarpInstructionRewriter(SemanticModel? semanticModel = null) : CSha
             }
 
             var tempName = isSuspendingCall ? parent.GetNextCallTempName() : parent.GetNextTempName();
+            var compilation = parent._semanticModel?.Compilation;
 
             // Create: var <temp> = <invocation>;
-            hoistedAssignments.Add(CreateTempDeclaration(tempName, visitedNode));
+            hoistedAssignments.Add(CreateTempDeclaration(
+                tempName,
+                visitedNode.WithSpilledTypeSpanFrom(node, compilation),
+                node,
+                compilation));
 
-            return SyntaxFactory.IdentifierName(tempName).WithTriviaFrom(visitedNode);
+            return SyntaxFactory.IdentifierName(tempName)
+                .WithSpilledTypeSpanFrom(node, compilation)
+                .WithTriviaFrom(visitedNode);
         }
 
         private static bool HasNestedWarpPrimitiveArgument(InvocationExpressionSyntax call) =>
@@ -320,18 +331,34 @@ public class WarpInstructionRewriter(SemanticModel? semanticModel = null) : CSha
         private IdentifierNameSyntax Spill(ExpressionSyntax expression)
         {
             var tempName = parent.GetNextArgumentTempName();
-            hoistedAssignments.Add(CreateTempDeclaration(tempName, expression.WithoutTrivia(),
+            var compilation = parent._semanticModel?.Compilation;
+            hoistedAssignments.Add(CreateTempDeclaration(
+                tempName,
+                expression.WithoutTrivia().WithSpilledTypeSpanFrom(expression, compilation),
+                expression,
+                compilation,
                 new SyntaxAnnotation(LoweringAnnotations.ArgumentTempAnnotationKind)));
-            return SyntaxFactory.IdentifierName(tempName).WithTriviaFrom(expression);
+            return SyntaxFactory.IdentifierName(tempName)
+                .WithSpilledTypeSpanFrom(expression, compilation)
+                .WithTriviaFrom(expression);
         }
 
         // var <tempName> = <value>;
-        internal static LocalDeclarationStatementSyntax CreateTempDeclaration(string tempName, ExpressionSyntax value,
+        internal static LocalDeclarationStatementSyntax CreateTempDeclaration(
+            string tempName,
+            ExpressionSyntax value,
+            SyntaxNode? spilledSource = null,
+            Compilation? compilation = null,
             params SyntaxAnnotation[] declaratorAnnotations)
         {
             var declarator = SyntaxFactory.VariableDeclarator(SyntaxFactory.Identifier(tempName))
                 .WithInitializer(SyntaxFactory.EqualsValueClause(value))
                 .WithAdditionalAnnotations(declaratorAnnotations);
+            if (spilledSource != null)
+            {
+                declarator = declarator.WithSpilledTypeSpanFrom(spilledSource, compilation);
+            }
+
             return SyntaxFactory.LocalDeclarationStatement(
                 SyntaxFactory.VariableDeclaration(
                     SyntaxFactory.IdentifierName("var"),

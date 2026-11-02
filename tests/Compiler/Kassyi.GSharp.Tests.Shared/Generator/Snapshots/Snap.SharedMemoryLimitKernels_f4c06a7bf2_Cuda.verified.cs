@@ -94,19 +94,25 @@ public partial class SharedMemoryLimitKernels
 public class __gsharp_frame_Kassyi__GSharp__Tests__Shared__Core__SharedMemoryLimitKernels__FirstRegion {
 internal int __gsharp_state;
 internal uint __gsharp_warp_exchange;
+internal int count;
+internal int tid;
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-public static bool __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Core__SharedMemoryLimitKernels__FirstRegion(int count, int tid, __gsharp_frame_Kassyi__GSharp__Tests__Shared__Core__SharedMemoryLimitKernels__FirstRegion __gsharp_ctx, ref int __gsharp_result) {
+public static bool __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Core__SharedMemoryLimitKernels__FirstRegion(int __gsharp_in_count, int __gsharp_in_tid, __gsharp_frame_Kassyi__GSharp__Tests__Shared__Core__SharedMemoryLimitKernels__FirstRegion __gsharp_ctx, ref int __gsharp_result) {
 global::Kassyi.GSharp.Core.SharedMemory<int> s = global::Kassyi.GSharp.Core.SharedMemory<int>.FindDynamic(0x78590bc00341a113UL);
+if (__gsharp_ctx.__gsharp_state == 0) {
+__gsharp_ctx.count = __gsharp_in_count;
+__gsharp_ctx.tid = __gsharp_in_tid;
+}
 {
 switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-s = new global::Kassyi.GSharp.Core.SharedMemory<int>(count, 0x78590bc00341a113UL, "SharedMemoryLimitKernels.cs(87,17)");
-if (tid < count)
+s = new global::Kassyi.GSharp.Core.SharedMemory<int>(__gsharp_ctx.count, 0x78590bc00341a113UL, "SharedMemoryLimitKernels.cs(87,17)");
+if (__gsharp_ctx.tid < __gsharp_ctx.count)
 {
-s[tid] = tid + 1;
+s[__gsharp_ctx.tid] = __gsharp_ctx.tid + 1;
 }
 
 global::Kassyi.GSharp.Core.ManagedGpuContext.BlockBarrierRequested = true;
@@ -117,7 +123,7 @@ return false;
 case 1:
 {
 {
-__gsharp_result = tid < count ? s[tid] : 0;
+__gsharp_result = __gsharp_ctx.tid < __gsharp_ctx.count ? s[__gsharp_ctx.tid] : 0;
 __gsharp_ctx.__gsharp_state = 0;
 return true;
 }

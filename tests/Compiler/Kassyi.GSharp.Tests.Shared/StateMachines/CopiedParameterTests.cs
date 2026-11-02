@@ -25,15 +25,15 @@ public class CopiedParameterTests
     [InlineData("FieldAssignment", "v")]
     [InlineData("FieldCompoundAssignment", "v")]
     [InlineData("NestedFieldAssignment", "v")]
-    [InlineData("InlineArrayElementAssignment", "v")]
-    [InlineData("FixedBufferElementAssignment", "v")]
+    [InlineData("InlineArrayElementAssignment", "v", "index")]
+    [InlineData("FixedBufferElementAssignment", "v", "index")]
     [InlineData("FieldPrefixIncrement", "v")]
     [InlineData("FieldPostfixDecrement", "v")]
     [InlineData("FieldRefArgument", "v")]
     [InlineData("FieldOutArgument", "v")]
     [InlineData("TupleSwapFields", "v")]
     [InlineData("TupleSwapScalars", "a", "b")]
-    [InlineData("NestedTupleAssignment", "v", "a")]
+    [InlineData("NestedTupleAssignment", "v", "a", "unused")]
     [InlineData("MutatingMethodCall", "v")]
     [InlineData("NestedFieldMutatingMethodCall", "v")]
     [InlineData("RefExtensionCall", "v")]
@@ -44,43 +44,41 @@ public class CopiedParameterTests
         Assert.Equal(expected, lowered.CopiedParameters);
     }
 
-    // An array or a pointer refers to memory that the resumed call sees again, a Span<T> cannot live in the frame, and a
-    // readonly method (or a method of a readonly struct) or an extension method whose `this` is `in`, `ref readonly` or
-    // by value does not change its receiver
+    // In a split function, every non-ref-struct by-value parameter lives in the frame (L1-D1 = a); a Span<T> (ref struct)
+    // parameter cannot live in the frame and is excluded.
     [Theory]
     [Scenario(TestScenario.Boundary)]
-    [InlineData("ArrayElementAssignment")]
-    [InlineData("ArrayFieldElementAssignment")]
-    [InlineData("SpanElementAssignment")]
-    [InlineData("PointerElementAssignment")]
-    [InlineData("PointerFieldElementAssignment")]
-    [InlineData("ReadOnlyMethodCall")]
-    [InlineData("ReadOnlyStructMethodCall")]
-    [InlineData("NonRefExtensionCalls")]
-    [InlineData("FieldReadOnly")]
-    public void Lower_NoWriteIntoValueStorage_CopiesNothing(string methodName)
+    [InlineData("ArrayElementAssignment", "values", "index")]
+    [InlineData("ArrayFieldElementAssignment", "v", "index")]
+    [InlineData("SpanElementAssignment", "index")]
+    [InlineData("PointerElementAssignment", "values", "index")]
+    [InlineData("PointerFieldElementAssignment", "v", "index")]
+    [InlineData("ReadOnlyMethodCall", "v")]
+    [InlineData("ReadOnlyStructMethodCall", "v")]
+    [InlineData("NonRefExtensionCalls", "v")]
+    [InlineData("FieldReadOnly", "v")]
+    public void Lower_NonRefStructValueParametersInSplitFunction_CopiesAllNonRefStructValueParameters(
+        string methodName, params string[] expected)
     {
         var lowered = LowerDeviceFunction("ValueParameterWrites.cs", methodName, withModel: true);
 
-        Assert.Empty(lowered.CopiedParameters);
+        Assert.Equal(expected, lowered.CopiedParameters);
     }
 
-    // Without a semantic model the leftmost identifier of the target is taken from the syntax, and every receiver of an
-    // instance method call counts as written (a readonly method is copied too, which is safe)
     [Theory]
     [Scenario(TestScenario.Boundary)]
-    [InlineData("FieldAssignment")]
-    [InlineData("NestedFieldAssignment")]
-    [InlineData("InlineArrayElementAssignment")]
-    [InlineData("FieldRefArgument")]
-    [InlineData("TupleSwapFields")]
-    [InlineData("MutatingMethodCall")]
-    [InlineData("ReadOnlyMethodCall")]
-    public void Lower_WriteThroughValueParameterWithoutModel_CopiesParameter(string methodName)
+    [InlineData("FieldAssignment", "v")]
+    [InlineData("NestedFieldAssignment", "v")]
+    [InlineData("InlineArrayElementAssignment", "v", "index")]
+    [InlineData("FieldRefArgument", "v")]
+    [InlineData("TupleSwapFields", "v")]
+    [InlineData("MutatingMethodCall", "v")]
+    [InlineData("ReadOnlyMethodCall", "v")]
+    public void Lower_WriteThroughValueParameterWithoutModel_CopiesParameter(string methodName, params string[] expected)
     {
         var lowered = LowerDeviceFunction("ValueParameterWrites.cs", methodName, withModel: false);
 
-        Assert.Equal(["v"], lowered.CopiedParameters);
+        Assert.Equal(expected, lowered.CopiedParameters);
     }
 
     [Fact]
@@ -171,10 +169,11 @@ public class CopiedParameterTests
         Assert.Equal(["v"], lowered.CopiedParameters);
     }
 
-    // The lowered method only reads its 'v'; the body copied in from another method writes that method's own 'v'
+    // The lowered method copies its own 'v' into the frame; the body copied in from another method still leaves that
+    // other method's 'v' as a plain reference
     [Fact]
     [Scenario(TestScenario.Boundary)]
-    public void Lower_OnlyOtherMethodWritesParameterWithSameName_CopiesNothing()
+    public void Lower_OnlyOtherMethodWritesParameterWithSameName_RewritesOnlyOwnerParameter()
     {
         var (compilation, tree, model) = RoslynTestUtility.GetTestCaseContext(
             Path.Combine("StateMachines", "ForeignParameterDemo.cs"));
@@ -186,6 +185,9 @@ public class CopiedParameterTests
         var other = methods.Single(static m => m.Identifier.ValueText == "OtherWriter");
         var ownerSymbol = model.GetDeclaredSymbol<IMethodSymbol>(owner)
                           ?? throw new InvalidOperationException("ReadingOwner has no symbol.");
+        var ownerParameter = ownerSymbol.Parameters.Single();
+        var otherParameter = (model.GetDeclaredSymbol<IMethodSymbol>(other)
+                              ?? throw new InvalidOperationException("OtherWriter has no symbol.")).Parameters.Single();
 
         var ownerBody = LoweringAnnotations.AnnotateOriginalSpans(
             owner.Body ?? throw new InvalidOperationException("ReadingOwner has no block body."),
@@ -204,7 +206,18 @@ public class CopiedParameterTests
 
         var lowered = AstLoweringPipeline.Lower(combined, model, ownerSymbol, isDeviceFunction: true);
 
-        Assert.Empty(lowered.CopiedParameters);
+        Assert.Equal(["v"], lowered.CopiedParameters);
+        var references = lowered.LoweredBody.DescendantNodes()
+            .OfType<IdentifierNameSyntax>()
+            .Where(static name => name.Identifier.ValueText == "v")
+            .ToArray();
+        var contextReferences = references.Where(IsContextMemberName).ToArray();
+        var plainReferences = references.Where(static name => !IsContextMemberName(name)).ToArray();
+
+        Assert.Equal(2, contextReferences.Length);
+        Assert.All(contextReferences, name => Assert.True(model.GetSymbol(name).IsEqualTo(ownerParameter)));
+        Assert.Equal(2, plainReferences.Length);
+        Assert.All(plainReferences, name => Assert.True(model.GetSymbol(name).IsEqualTo(otherParameter)));
     }
 
     // A kernel is lowered with its own symbol as the owner of the copied parameters, as MethodEmissionPlan does (#879)
@@ -214,13 +227,13 @@ public class CopiedParameterTests
     {
         var lowered = LowerKernel("WrittenBeforeBarrierKernel");
 
-        Assert.Equal(["value", "values"], lowered.CopiedParameters);
+        Assert.Equal(["value", "values", "replacement", "read", "output"], lowered.CopiedParameters);
         var references = lowered.LoweredBody.DescendantNodes()
             .OfType<IdentifierNameSyntax>()
             .Where(static name => name.Identifier.ValueText is "value" or "values" or "read")
             .ToArray();
         Assert.Equal(6, references.Length);
-        Assert.All(references, static name => Assert.Equal(name.Identifier.ValueText != "read", IsContextMemberName(name)));
+        Assert.All(references, static name => Assert.True(IsContextMemberName(name)));
     }
 
     // Without a split point the kernel runs once, so its parameters stay where they are

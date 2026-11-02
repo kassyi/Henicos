@@ -86,26 +86,36 @@ public partial class SuspendingCallArgumentKernels
 public class __gsharp_frame_Kassyi__GSharp__Tests__Shared__Syntax__SuspendingCallArgumentKernels__PairSum {
 internal int __gsharp_state;
 internal uint __gsharp_warp_exchange;
+internal int value;
+internal uint scale;
+internal bool negate;
+internal global::Kassyi.GSharp.Tests.Shared.Syntax.PacketColor color;
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-public static bool __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__SuspendingCallArgumentKernels__PairSum(int value, uint scale, bool negate, global::Kassyi.GSharp.Tests.Shared.Syntax.PacketColor color, __gsharp_frame_Kassyi__GSharp__Tests__Shared__Syntax__SuspendingCallArgumentKernels__PairSum __gsharp_ctx, ref int __gsharp_result) {
+public static bool __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__SuspendingCallArgumentKernels__PairSum(int __gsharp_in_value, uint __gsharp_in_scale, bool __gsharp_in_negate, global::Kassyi.GSharp.Tests.Shared.Syntax.PacketColor __gsharp_in_color, __gsharp_frame_Kassyi__GSharp__Tests__Shared__Syntax__SuspendingCallArgumentKernels__PairSum __gsharp_ctx, ref int __gsharp_result) {
+if (__gsharp_ctx.__gsharp_state == 0) {
+__gsharp_ctx.value = __gsharp_in_value;
+__gsharp_ctx.scale = __gsharp_in_scale;
+__gsharp_ctx.negate = __gsharp_in_negate;
+__gsharp_ctx.color = __gsharp_in_color;
+}
 {
 switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-__gsharp_warp_exchange_assign(value);
+__gsharp_warp_exchange_assign(__gsharp_ctx.value);
 __gsharp_ctx.__gsharp_state = 1;
 return false;
 }
 
 case 1:
 {
-var __gsharp_warp_temp_0 = __gsharp_warp_shuffle_read_xor_sync(__gsharp_ctx, global::Kassyi.GSharp.Tests.Shared.Syntax.SuspendingCallArgumentKernels.FullMask, value, 1, 32, "SuspendingCallArgumentKernels.cs(17,24)");
+var __gsharp_warp_temp_0 = __gsharp_warp_shuffle_read_xor_sync(__gsharp_ctx, global::Kassyi.GSharp.Tests.Shared.Syntax.SuspendingCallArgumentKernels.FullMask, __gsharp_ctx.value, 1, 32, "SuspendingCallArgumentKernels.cs(17,24)");
 int neighbor = __gsharp_warp_temp_0;
-int result = (value + neighbor) * (int)scale + (int)color;
+int result = (__gsharp_ctx.value + neighbor) * (int)__gsharp_ctx.scale + (int)__gsharp_ctx.color;
 {
-__gsharp_result = negate ? -result : result;
+__gsharp_result = __gsharp_ctx.negate ? -result : result;
 __gsharp_ctx.__gsharp_state = 0;
 return true;
 }

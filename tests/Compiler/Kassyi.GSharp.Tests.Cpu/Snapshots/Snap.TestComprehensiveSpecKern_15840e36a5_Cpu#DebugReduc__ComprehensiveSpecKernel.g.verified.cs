@@ -189,6 +189,10 @@ uint64_t __gsharp_warp_exchange[2] = {};
 uint32_t __gsharp_warp_shuffle_count = 0;
 bool __gsharp_yielded_for_grid_sync = false;
 bool __gsharp_yielded_for_block_barrier = false;
+GSharpArray<__gsharp_ty_DebugReduc__PhysicsVector> __gsharp_id_0_particles;
+__gsharp_ty_DebugReduc__SpecTypes __gsharp_id_3_largeStructVal;
+int __gsharp_id_4_particleCount;
+int __gsharp_id_5_unrollFactor;
 float __gsharp_id_6_Gravity;
 int __gsharp_id_7_tx;
 int __gsharp_id_8_ty;
@@ -215,11 +219,17 @@ float __gsharp_id_28_mag;
 int __gsharp_id_29_i;
 int __gsharp_id_30_counter;
 };
-extern ""C"" __declspec(dllexport) void __gsharp_k_DebugReduc__ComprehensiveSpecKernel__ProcessPhysics(GSharpArray<__gsharp_ty_DebugReduc__PhysicsVector> __gsharp_id_0_particles, float* __gsharp_id_1_totalMagnitude, bool* __gsharp_id_2_successFlag, __gsharp_ty_DebugReduc__SpecTypes __gsharp_id_3_largeStructVal, int __gsharp_id_4_particleCount, int __gsharp_id_5_unrollFactor, __gsharp_context_DebugReduc__ComprehensiveSpecKernel__ProcessPhysics* __gsharp_ctx){
+extern ""C"" __declspec(dllexport) void __gsharp_k_DebugReduc__ComprehensiveSpecKernel__ProcessPhysics(GSharpArray<__gsharp_ty_DebugReduc__PhysicsVector> __gsharp_in___gsharp_id_0_particles, float* __gsharp_id_1_totalMagnitude, bool* __gsharp_id_2_successFlag, __gsharp_ty_DebugReduc__SpecTypes __gsharp_in___gsharp_id_3_largeStructVal, int __gsharp_in___gsharp_id_4_particleCount, int __gsharp_in___gsharp_id_5_unrollFactor, __gsharp_context_DebugReduc__ComprehensiveSpecKernel__ProcessPhysics* __gsharp_ctx){
 #define __gsharp_state __gsharp_ctx->__gsharp_state
 #define __gsharp_yielded_for_grid_sync __gsharp_ctx->__gsharp_yielded_for_grid_sync
 #define __gsharp_yielded_for_block_barrier __gsharp_ctx->__gsharp_yielded_for_block_barrier
 auto* __gsharp_root = __gsharp_ctx;
+if(__gsharp_state==0){
+__gsharp_ctx->__gsharp_id_0_particles=__gsharp_in___gsharp_id_0_particles;
+__gsharp_ctx->__gsharp_id_3_largeStructVal=__gsharp_in___gsharp_id_3_largeStructVal;
+__gsharp_ctx->__gsharp_id_4_particleCount=__gsharp_in___gsharp_id_4_particleCount;
+__gsharp_ctx->__gsharp_id_5_unrollFactor=__gsharp_in___gsharp_id_5_unrollFactor;
+}
 switch(__gsharp_state)
 {
 case 0:
@@ -241,14 +251,14 @@ __gsharp_ctx->__gsharp_id_17_gdimY=(int)gridDim.y;
 __gsharp_ctx->__gsharp_id_18_gdimZ=(int)gridDim.z;
 __gsharp_ctx->__gsharp_id_19_tid=__gsharp_add_i32(__gsharp_ctx->__gsharp_id_7_tx,__gsharp_mul_i32(__gsharp_ctx->__gsharp_id_10_bx,__gsharp_ctx->__gsharp_id_13_bdimX));
 __gsharp_ctx->__gsharp_id_20_staticCache={ (int*)__gsharp_allocate_smem_static(0xe20e17017ad9529aull, (10000) * sizeof(int), alignof(int)) };
-__gsharp_ctx->__gsharp_id_21_dynamicCache={ (float*)__gsharp_allocate_smem_dynamic(0xe20e18017ad9544dull, (__gsharp_id_4_particleCount) * sizeof(float), alignof(float), ""an unknown place"") };
+__gsharp_ctx->__gsharp_id_21_dynamicCache={ (float*)__gsharp_allocate_smem_dynamic(0xe20e18017ad9544dull, (__gsharp_ctx->__gsharp_id_4_particleCount) * sizeof(float), alignof(float), ""an unknown place"") };
 __gsharp_ctx->__gsharp_id_22_targetTypedCache={ (int*)__gsharp_allocate_smem_static(0xe20e15017ad94f34ull, (256) * sizeof(int), alignof(int)) };
-if(!(__gsharp_ctx->__gsharp_id_19_tid<__gsharp_id_4_particleCount))
+if(!(__gsharp_ctx->__gsharp_id_19_tid<__gsharp_ctx->__gsharp_id_4_particleCount))
 {
 goto __gsharp_switch_1_state_2;
 }
-__gsharp_ctx->__gsharp_id_23_p=__gsharp_id_0_particles[__gsharp_ctx->__gsharp_id_19_tid];
-__gsharp_ctx->__gsharp_id_24_types=__gsharp_id_3_largeStructVal;
+__gsharp_ctx->__gsharp_id_23_p=__gsharp_ctx->__gsharp_id_0_particles[__gsharp_ctx->__gsharp_id_19_tid];
+__gsharp_ctx->__gsharp_id_24_types=__gsharp_ctx->__gsharp_id_3_largeStructVal;
 __gsharp_ctx->__gsharp_id_25_origin=__gsharp_ctor_DebugReduc__Point(0, 0);
 __gsharp_ctx->__gsharp_id_26_distance=__gsharp_ctx->__gsharp_id_25_origin.__gsharp_mb_X+__gsharp_ctx->__gsharp_id_23_p.__gsharp_mb_X;
 __gsharp_ctx->__gsharp_id_27_nested=([&]() {
@@ -256,7 +266,7 @@ __gsharp_ty_DebugReduc__NestedPhysicsState __gsharp_tmp{}; __gsharp_tmp.__gsharp
 ());
 __gsharp_ctx->__gsharp_id_28_mag=__gsharp_fn_DebugReduc__ComprehensiveSpecKernel__ComputeMagnitude(__gsharp_ctx->__gsharp_id_23_p);
 __gsharp_ctx->__gsharp_id_28_mag=(float)fabsf(__gsharp_ctx->__gsharp_id_28_mag);
-for(__gsharp_ctx->__gsharp_id_29_i=0;__gsharp_ctx->__gsharp_id_29_i<__gsharp_id_5_unrollFactor;__gsharp_ctx->__gsharp_id_29_i=__gsharp_add_i32(__gsharp_ctx->__gsharp_id_29_i,1))
+for(__gsharp_ctx->__gsharp_id_29_i=0;__gsharp_ctx->__gsharp_id_29_i<__gsharp_ctx->__gsharp_id_5_unrollFactor;__gsharp_ctx->__gsharp_id_29_i=__gsharp_add_i32(__gsharp_ctx->__gsharp_id_29_i,1))
 {
 if(__gsharp_ctx->__gsharp_id_29_i==1)
 {
@@ -436,6 +446,10 @@ public static readonly string ProcessPhysics_FullSource=global::Kassyi.GSharp.Ge
 public class __gsharp_context_DebugReduc__ComprehensiveSpecKernel__ProcessPhysics {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
+public global::DebugReduc.PhysicsVector[] particles;
+public global::DebugReduc.SpecTypes largeStructVal;
+public int particleCount;
+public int unrollFactor;
 public float Gravity;
 public int tx;
 public int ty;
@@ -460,10 +474,16 @@ public int i;
 public int counter;
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-public static unsafe void __gsharp_statemachine_DebugReduc__ComprehensiveSpecKernel__ProcessPhysics(global::DebugReduc.PhysicsVector[] particles, ref float totalMagnitude, ref bool successFlag, global::DebugReduc.SpecTypes largeStructVal, int particleCount, int unrollFactor, __gsharp_context_DebugReduc__ComprehensiveSpecKernel__ProcessPhysics __gsharp_ctx) {
+public static unsafe void __gsharp_statemachine_DebugReduc__ComprehensiveSpecKernel__ProcessPhysics(global::DebugReduc.PhysicsVector[] __gsharp_in_particles, ref float totalMagnitude, ref bool successFlag, global::DebugReduc.SpecTypes __gsharp_in_largeStructVal, int __gsharp_in_particleCount, int __gsharp_in_unrollFactor, __gsharp_context_DebugReduc__ComprehensiveSpecKernel__ProcessPhysics __gsharp_ctx) {
 global::Kassyi.GSharp.Core.SharedMemory<int> staticCache = new global::Kassyi.GSharp.Core.SharedMemory<int>(10000, 0xe20e17017ad9529aUL);
 global::Kassyi.GSharp.Core.SharedMemory<float> dynamicCache = global::Kassyi.GSharp.Core.SharedMemory<float>.FindDynamic(0xe20e18017ad9544dUL);
 global::Kassyi.GSharp.Core.SharedMemory<int> targetTypedCache = new(256, 0xe20e15017ad94f34UL);
+if (__gsharp_ctx.__gsharp_state == 0) {
+__gsharp_ctx.particles = __gsharp_in_particles;
+__gsharp_ctx.largeStructVal = __gsharp_in_largeStructVal;
+__gsharp_ctx.particleCount = __gsharp_in_particleCount;
+__gsharp_ctx.unrollFactor = __gsharp_in_unrollFactor;
+}
 {
 switch (__gsharp_ctx.__gsharp_state)
 {
@@ -484,11 +504,11 @@ __gsharp_ctx.gdimX = global::Kassyi.GSharp.Core.GridDimension.X;
 __gsharp_ctx.gdimY = global::Kassyi.GSharp.Core.GridDimension.Y;
 __gsharp_ctx.gdimZ = global::Kassyi.GSharp.Core.GridDimension.Z;
 __gsharp_ctx.tid = __gsharp_ctx.tx + __gsharp_ctx.bx * __gsharp_ctx.bdimX;
-dynamicCache = new global::Kassyi.GSharp.Core.SharedMemory<float>(particleCount, 0xe20e18017ad9544dUL, "an unknown place");
-if (!(__gsharp_ctx.tid < particleCount))
+dynamicCache = new global::Kassyi.GSharp.Core.SharedMemory<float>(__gsharp_ctx.particleCount, 0xe20e18017ad9544dUL, "an unknown place");
+if (!(__gsharp_ctx.tid < __gsharp_ctx.particleCount))
 goto case 2;
-__gsharp_ctx.p = particles[__gsharp_ctx.tid];
-__gsharp_ctx.types = largeStructVal;
+__gsharp_ctx.p = __gsharp_ctx.particles[__gsharp_ctx.tid];
+__gsharp_ctx.types = __gsharp_ctx.largeStructVal;
 __gsharp_ctx.origin = new global::DebugReduc.Point(0, 0);
 __gsharp_ctx.distance = __gsharp_ctx.origin.X + __gsharp_ctx.p.X;
 __gsharp_ctx.nested = new global::DebugReduc.NestedPhysicsState
@@ -500,7 +520,7 @@ StatusFlag = 1
 __gsharp_ctx.mag = global::DebugReduc.ComprehensiveSpecKernel.ComputeMagnitude(__gsharp_ctx.p);
 __gsharp_ctx.mag = (float)global::System.Math.Abs(__gsharp_ctx.mag);
 // 5. Automatic Loop Unrolling via Constant (for)
-for (__gsharp_ctx.i = 0; __gsharp_ctx.i < unrollFactor; __gsharp_ctx.i++)
+for (__gsharp_ctx.i = 0; __gsharp_ctx.i < __gsharp_ctx.unrollFactor; __gsharp_ctx.i++)
 {
 if (__gsharp_ctx.i == 1)
 continue;
@@ -762,20 +782,24 @@ uint64_t __gsharp_warp_exchange[2] = {};
 uint32_t __gsharp_warp_shuffle_count = 0;
 bool __gsharp_yielded_for_grid_sync = false;
 bool __gsharp_yielded_for_block_barrier = false;
+GSharpArray<int> __gsharp_id_0_data;
 int __gsharp_id_1_tid;
 };
-extern ""C"" __declspec(dllexport) void __gsharp_k_DebugReduc__ComprehensiveSpecKernel__CooperativePhysicsProcess(GSharpArray<int> __gsharp_id_0_data, __gsharp_context_DebugReduc__ComprehensiveSpecKernel__CooperativePhysicsProcess* __gsharp_ctx){
+extern ""C"" __declspec(dllexport) void __gsharp_k_DebugReduc__ComprehensiveSpecKernel__CooperativePhysicsProcess(GSharpArray<int> __gsharp_in___gsharp_id_0_data, __gsharp_context_DebugReduc__ComprehensiveSpecKernel__CooperativePhysicsProcess* __gsharp_ctx){
 #define __gsharp_state __gsharp_ctx->__gsharp_state
 #define __gsharp_yielded_for_grid_sync __gsharp_ctx->__gsharp_yielded_for_grid_sync
 #define __gsharp_yielded_for_block_barrier __gsharp_ctx->__gsharp_yielded_for_block_barrier
 auto* __gsharp_root = __gsharp_ctx;
+if(__gsharp_state==0){
+__gsharp_ctx->__gsharp_id_0_data=__gsharp_in___gsharp_id_0_data;
+}
 switch(__gsharp_state)
 {
 case 0:
 __gsharp_switch_1_state_0:
 {
 __gsharp_ctx->__gsharp_id_1_tid=(int)threadIdx.x;
-__gsharp_id_0_data[__gsharp_ctx->__gsharp_id_1_tid]=__gsharp_ctx->__gsharp_id_1_tid;
+__gsharp_ctx->__gsharp_id_0_data[__gsharp_ctx->__gsharp_id_1_tid]=__gsharp_ctx->__gsharp_id_1_tid;
 __gsharp_yielded_for_grid_sync=true;
 __gsharp_state=1;
 return;
@@ -904,17 +928,21 @@ public static readonly string CooperativePhysicsProcess_FullSource=global::Kassy
 public class __gsharp_context_DebugReduc__ComprehensiveSpecKernel__CooperativePhysicsProcess {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
+public int[] data;
 public int tid;
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-public static unsafe void __gsharp_statemachine_DebugReduc__ComprehensiveSpecKernel__CooperativePhysicsProcess(int[] data, __gsharp_context_DebugReduc__ComprehensiveSpecKernel__CooperativePhysicsProcess __gsharp_ctx) {
+public static unsafe void __gsharp_statemachine_DebugReduc__ComprehensiveSpecKernel__CooperativePhysicsProcess(int[] __gsharp_in_data, __gsharp_context_DebugReduc__ComprehensiveSpecKernel__CooperativePhysicsProcess __gsharp_ctx) {
+if (__gsharp_ctx.__gsharp_state == 0) {
+__gsharp_ctx.data = __gsharp_in_data;
+}
 {
 switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
 __gsharp_ctx.tid = global::Kassyi.GSharp.Core.ThreadIndex.X;
-data[__gsharp_ctx.tid] = __gsharp_ctx.tid;
+__gsharp_ctx.data[__gsharp_ctx.tid] = __gsharp_ctx.tid;
 global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested = true;
 __gsharp_ctx.__gsharp_state = 1;
 return;

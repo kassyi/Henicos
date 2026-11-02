@@ -40,6 +40,10 @@ uint64_t __gsharp_warp_exchange[2] = {};
 uint32_t __gsharp_warp_shuffle_count = 0;
 bool __gsharp_yielded_for_grid_sync = false;
 bool __gsharp_yielded_for_block_barrier = false;
+GSharpArray<float> __gsharp_id_0_a;
+GSharpArray<float> __gsharp_id_1_b;
+GSharpArray<float> __gsharp_id_2_c;
+int __gsharp_id_3_n;
 Kassyi_GSharp_Core_SharedMemory<float> __gsharp_id_4_As;
 Kassyi_GSharp_Core_SharedMemory<float> __gsharp_id_5_Bs;
 int __gsharp_id_6_bx;
@@ -52,11 +56,17 @@ float __gsharp_id_12_cValue;
 int __gsharp_id_13_m;
 int __gsharp_id_14_k;
 };
-extern ""C"" __declspec(dllexport) void __gsharp_k_Henicos__Benchmarks__ComputeBenchmarks__SgemmKernels__SgemmKernel(GSharpArray<float> __gsharp_id_0_a, GSharpArray<float> __gsharp_id_1_b, GSharpArray<float> __gsharp_id_2_c, int __gsharp_id_3_n, __gsharp_context_Henicos__Benchmarks__ComputeBenchmarks__SgemmKernels__SgemmKernel* __gsharp_ctx){
+extern ""C"" __declspec(dllexport) void __gsharp_k_Henicos__Benchmarks__ComputeBenchmarks__SgemmKernels__SgemmKernel(GSharpArray<float> __gsharp_in___gsharp_id_0_a, GSharpArray<float> __gsharp_in___gsharp_id_1_b, GSharpArray<float> __gsharp_in___gsharp_id_2_c, int __gsharp_in___gsharp_id_3_n, __gsharp_context_Henicos__Benchmarks__ComputeBenchmarks__SgemmKernels__SgemmKernel* __gsharp_ctx){
 #define __gsharp_state __gsharp_ctx->__gsharp_state
 #define __gsharp_yielded_for_grid_sync __gsharp_ctx->__gsharp_yielded_for_grid_sync
 #define __gsharp_yielded_for_block_barrier __gsharp_ctx->__gsharp_yielded_for_block_barrier
 auto* __gsharp_root = __gsharp_ctx;
+if(__gsharp_state==0){
+__gsharp_ctx->__gsharp_id_0_a=__gsharp_in___gsharp_id_0_a;
+__gsharp_ctx->__gsharp_id_1_b=__gsharp_in___gsharp_id_1_b;
+__gsharp_ctx->__gsharp_id_2_c=__gsharp_in___gsharp_id_2_c;
+__gsharp_ctx->__gsharp_id_3_n=__gsharp_in___gsharp_id_3_n;
+}
 switch(__gsharp_state)
 {
 case 0:
@@ -77,21 +87,21 @@ goto __gsharp_switch_1_state_1;
 case 1:
 __gsharp_switch_1_state_1:
 {
-if(!(__gsharp_ctx->__gsharp_id_13_m<(__gsharp_add_i32(__gsharp_id_3_n,15))/16))
+if(!(__gsharp_ctx->__gsharp_id_13_m<(__gsharp_add_i32(__gsharp_ctx->__gsharp_id_3_n,15))/16))
 {
 goto __gsharp_switch_1_state_5;
 }
-if(__gsharp_ctx->__gsharp_id_10_row<__gsharp_id_3_n&&__gsharp_add_i32(__gsharp_mul_i32(__gsharp_ctx->__gsharp_id_13_m,16),__gsharp_ctx->__gsharp_id_8_tx)<__gsharp_id_3_n)
+if(__gsharp_ctx->__gsharp_id_10_row<__gsharp_ctx->__gsharp_id_3_n&&__gsharp_add_i32(__gsharp_mul_i32(__gsharp_ctx->__gsharp_id_13_m,16),__gsharp_ctx->__gsharp_id_8_tx)<__gsharp_ctx->__gsharp_id_3_n)
 {
-__gsharp_ctx->__gsharp_id_4_As[__gsharp_add_i32(__gsharp_mul_i32(__gsharp_ctx->__gsharp_id_9_ty,16),__gsharp_ctx->__gsharp_id_8_tx)]=__gsharp_id_0_a[__gsharp_add_i32(__gsharp_add_i32(__gsharp_mul_i32(__gsharp_ctx->__gsharp_id_10_row,__gsharp_id_3_n),__gsharp_mul_i32(__gsharp_ctx->__gsharp_id_13_m,16)),__gsharp_ctx->__gsharp_id_8_tx)];
+__gsharp_ctx->__gsharp_id_4_As[__gsharp_add_i32(__gsharp_mul_i32(__gsharp_ctx->__gsharp_id_9_ty,16),__gsharp_ctx->__gsharp_id_8_tx)]=__gsharp_ctx->__gsharp_id_0_a[__gsharp_add_i32(__gsharp_add_i32(__gsharp_mul_i32(__gsharp_ctx->__gsharp_id_10_row,__gsharp_ctx->__gsharp_id_3_n),__gsharp_mul_i32(__gsharp_ctx->__gsharp_id_13_m,16)),__gsharp_ctx->__gsharp_id_8_tx)];
 }
 else
 {
 __gsharp_ctx->__gsharp_id_4_As[__gsharp_add_i32(__gsharp_mul_i32(__gsharp_ctx->__gsharp_id_9_ty,16),__gsharp_ctx->__gsharp_id_8_tx)]=0.0f;
 }
-if(__gsharp_add_i32(__gsharp_mul_i32(__gsharp_ctx->__gsharp_id_13_m,16),__gsharp_ctx->__gsharp_id_9_ty)<__gsharp_id_3_n&&__gsharp_ctx->__gsharp_id_11_col<__gsharp_id_3_n)
+if(__gsharp_add_i32(__gsharp_mul_i32(__gsharp_ctx->__gsharp_id_13_m,16),__gsharp_ctx->__gsharp_id_9_ty)<__gsharp_ctx->__gsharp_id_3_n&&__gsharp_ctx->__gsharp_id_11_col<__gsharp_ctx->__gsharp_id_3_n)
 {
-__gsharp_ctx->__gsharp_id_5_Bs[__gsharp_add_i32(__gsharp_mul_i32(__gsharp_ctx->__gsharp_id_9_ty,16),__gsharp_ctx->__gsharp_id_8_tx)]=__gsharp_id_1_b[__gsharp_add_i32(__gsharp_mul_i32(__gsharp_add_i32(__gsharp_mul_i32(__gsharp_ctx->__gsharp_id_13_m,16),__gsharp_ctx->__gsharp_id_9_ty),__gsharp_id_3_n),__gsharp_ctx->__gsharp_id_11_col)];
+__gsharp_ctx->__gsharp_id_5_Bs[__gsharp_add_i32(__gsharp_mul_i32(__gsharp_ctx->__gsharp_id_9_ty,16),__gsharp_ctx->__gsharp_id_8_tx)]=__gsharp_ctx->__gsharp_id_1_b[__gsharp_add_i32(__gsharp_mul_i32(__gsharp_add_i32(__gsharp_mul_i32(__gsharp_ctx->__gsharp_id_13_m,16),__gsharp_ctx->__gsharp_id_9_ty),__gsharp_ctx->__gsharp_id_3_n),__gsharp_ctx->__gsharp_id_11_col)];
 }
 else
 {
@@ -127,9 +137,9 @@ goto __gsharp_switch_1_state_5;
 case 5:
 __gsharp_switch_1_state_5:
 {
-if(__gsharp_ctx->__gsharp_id_10_row<__gsharp_id_3_n&&__gsharp_ctx->__gsharp_id_11_col<__gsharp_id_3_n)
+if(__gsharp_ctx->__gsharp_id_10_row<__gsharp_ctx->__gsharp_id_3_n&&__gsharp_ctx->__gsharp_id_11_col<__gsharp_ctx->__gsharp_id_3_n)
 {
-__gsharp_id_2_c[__gsharp_add_i32(__gsharp_mul_i32(__gsharp_ctx->__gsharp_id_10_row,__gsharp_id_3_n),__gsharp_ctx->__gsharp_id_11_col)]=__gsharp_ctx->__gsharp_id_12_cValue;
+__gsharp_ctx->__gsharp_id_2_c[__gsharp_add_i32(__gsharp_mul_i32(__gsharp_ctx->__gsharp_id_10_row,__gsharp_ctx->__gsharp_id_3_n),__gsharp_ctx->__gsharp_id_11_col)]=__gsharp_ctx->__gsharp_id_12_cValue;
 }
 __gsharp_state=-1;
 return;
@@ -215,6 +225,10 @@ public static readonly string SgemmKernel_FullSource=global::Kassyi.GSharp.Gener
 public class __gsharp_context_Henicos__Benchmarks__ComputeBenchmarks__SgemmKernels__SgemmKernel {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
+public float[] a;
+public float[] b;
+public float[] c;
+public int n;
 public int bx;
 public int by;
 public int tx;
@@ -226,9 +240,15 @@ public int m;
 public int k;
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-public static unsafe void __gsharp_statemachine_Henicos__Benchmarks__ComputeBenchmarks__SgemmKernels__SgemmKernel(float[] a, float[] b, float[] c, int n, __gsharp_context_Henicos__Benchmarks__ComputeBenchmarks__SgemmKernels__SgemmKernel __gsharp_ctx) {
+public static unsafe void __gsharp_statemachine_Henicos__Benchmarks__ComputeBenchmarks__SgemmKernels__SgemmKernel(float[] __gsharp_in_a, float[] __gsharp_in_b, float[] __gsharp_in_c, int __gsharp_in_n, __gsharp_context_Henicos__Benchmarks__ComputeBenchmarks__SgemmKernels__SgemmKernel __gsharp_ctx) {
 global::Kassyi.GSharp.Core.SharedMemory<float> As = new(256, 0x73f1e09054a8d88dUL);
 global::Kassyi.GSharp.Core.SharedMemory<float> Bs = new(256, 0x73f1df9054a8d6daUL);
+if (__gsharp_ctx.__gsharp_state == 0) {
+__gsharp_ctx.a = __gsharp_in_a;
+__gsharp_ctx.b = __gsharp_in_b;
+__gsharp_ctx.c = __gsharp_in_c;
+__gsharp_ctx.n = __gsharp_in_n;
+}
 {
 switch (__gsharp_ctx.__gsharp_state)
 {
@@ -247,20 +267,20 @@ goto case 1;
 
 case 1:
 {
-if (!(__gsharp_ctx.m < (n + 15) / 16))
+if (!(__gsharp_ctx.m < (__gsharp_ctx.n + 15) / 16))
 goto case 5;
-if (__gsharp_ctx.row < n && __gsharp_ctx.m * 16 + __gsharp_ctx.tx < n)
+if (__gsharp_ctx.row < __gsharp_ctx.n && __gsharp_ctx.m * 16 + __gsharp_ctx.tx < __gsharp_ctx.n)
 {
-As[__gsharp_ctx.ty * 16 + __gsharp_ctx.tx] = a[__gsharp_ctx.row * n + __gsharp_ctx.m * 16 + __gsharp_ctx.tx];
+As[__gsharp_ctx.ty * 16 + __gsharp_ctx.tx] = __gsharp_ctx.a[__gsharp_ctx.row * __gsharp_ctx.n + __gsharp_ctx.m * 16 + __gsharp_ctx.tx];
 }
 else
 {
 As[__gsharp_ctx.ty * 16 + __gsharp_ctx.tx] = 0.0f;
 }
 
-if (__gsharp_ctx.m * 16 + __gsharp_ctx.ty < n && __gsharp_ctx.col < n)
+if (__gsharp_ctx.m * 16 + __gsharp_ctx.ty < __gsharp_ctx.n && __gsharp_ctx.col < __gsharp_ctx.n)
 {
-Bs[__gsharp_ctx.ty * 16 + __gsharp_ctx.tx] = b[(__gsharp_ctx.m * 16 + __gsharp_ctx.ty) * n + __gsharp_ctx.col];
+Bs[__gsharp_ctx.ty * 16 + __gsharp_ctx.tx] = __gsharp_ctx.b[(__gsharp_ctx.m * 16 + __gsharp_ctx.ty) * __gsharp_ctx.n + __gsharp_ctx.col];
 }
 else
 {
@@ -298,9 +318,9 @@ goto case 5;
 
 case 5:
 {
-if (__gsharp_ctx.row < n && __gsharp_ctx.col < n)
+if (__gsharp_ctx.row < __gsharp_ctx.n && __gsharp_ctx.col < __gsharp_ctx.n)
 {
-c[__gsharp_ctx.row * n + __gsharp_ctx.col] = __gsharp_ctx.cValue;
+__gsharp_ctx.c[__gsharp_ctx.row * __gsharp_ctx.n + __gsharp_ctx.col] = __gsharp_ctx.cValue;
 }
 
 __gsharp_ctx.__gsharp_state = -1;

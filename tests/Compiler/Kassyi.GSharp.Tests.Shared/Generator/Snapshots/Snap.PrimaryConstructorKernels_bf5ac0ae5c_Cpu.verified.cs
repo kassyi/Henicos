@@ -2208,7 +2208,11 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-__gsharp_id_1_output[0]=(*__gsharp_id_0_data).__gsharp_mb_Inner.__gsharp_mb_Read()+(*__gsharp_id_0_data).__gsharp_mb_Before;
+__gsharp_id_1_output[0]=([&]() {
+auto __gsharp_seq_0 = (*__gsharp_id_0_data).__gsharp_mb_Inner.__gsharp_mb_Read();
+auto __gsharp_seq_1 = (*__gsharp_id_0_data).__gsharp_mb_Before;
+return __gsharp_seq_0+__gsharp_seq_1;
+}());
 (*__gsharp_id_0_data).__gsharp_mb_Before=(short)((*__gsharp_id_0_data).__gsharp_mb_Before+1);
 (*__gsharp_id_0_data).__gsharp_mb_Inner.__gsharp_mb_A((unsigned char)((*__gsharp_id_0_data).__gsharp_mb_Inner.__gsharp_mb_A()+2));
 (*__gsharp_id_0_data).__gsharp_mb_Inner.__gsharp_mb_Flag=!(*__gsharp_id_0_data).__gsharp_mb_Inner.__gsharp_mb_Flag;
@@ -2832,7 +2836,11 @@ __gsharp_switch_1_state_0:
 {
 __gsharp_id_1_output[0]=(*__gsharp_id_0_data).__gsharp_mb_Items[0].__gsharp_mb_Read();
 __gsharp_id_1_output[1]=(*__gsharp_id_0_data).__gsharp_mb_Items[1].__gsharp_mb_Read();
-(*__gsharp_id_0_data).__gsharp_mb_Items[1].__gsharp_mb_A((unsigned char)(__gsharp_add_i32((*__gsharp_id_0_data).__gsharp_mb_Items[1].__gsharp_mb_A(),(*__gsharp_id_0_data).__gsharp_mb_Tag)));
+(*__gsharp_id_0_data).__gsharp_mb_Items[1].__gsharp_mb_A((unsigned char)(([&]() {
+auto __gsharp_seq_0 = (*__gsharp_id_0_data).__gsharp_mb_Items[1].__gsharp_mb_A();
+auto __gsharp_seq_1 = (*__gsharp_id_0_data).__gsharp_mb_Tag;
+return __gsharp_add_i32(__gsharp_seq_0,__gsharp_seq_1);
+}())));
 __gsharp_state=-1;
 return;
 }

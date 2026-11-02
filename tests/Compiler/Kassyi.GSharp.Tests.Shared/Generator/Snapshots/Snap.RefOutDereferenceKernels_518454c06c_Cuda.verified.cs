@@ -668,7 +668,15 @@ __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__RefTestStruct __gsharp_tmp{};
 ())));
 __gsharp_id_1_output[__gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_2_tid,6),2)]=__gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__RefOutDereferenceKernels__ForwardInInt(__gsharp_temp_address<int>(__gsharp_add_i32(__gsharp_id_3_x,2)));
 __gsharp_id_1_output[__gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_2_tid,6),3)]=__gsharp_add_i32(__gsharp_add_i32(__gsharp_mul_i32(__gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__RefOutDereferenceKernels__ReadInInt(__gsharp_temp_address<int>((int)threadIdx.x)),10000),__gsharp_mul_i32(__gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__RefOutDereferenceKernels__ReadInInt(__gsharp_temp_address<int>((int)blockDim.x)),100)),__gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__RefOutDereferenceKernels__ReadInInt(__gsharp_temp_address<int>(__gsharp_id_0_input.length)));
-__gsharp_id_1_output[__gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_2_tid,6),4)]=__gsharp_add_i32(__gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_5_s.__gsharp_mb_PassComputedToIn(),10000),__gsharp_mul_i32(__gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__RefOutDereferenceKernels__ReadInInt(__gsharp_temp_address<int>(__gsharp_id_5_s.__gsharp_mb_ComputedSum())),100)),__gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__RefOutDereferenceKernels__ReadInInt(__gsharp_temp_address<int>(15)));
+__gsharp_id_1_output[__gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_2_tid,6),4)]=([&]() {
+auto __gsharp_seq_0 = ([&]() {
+auto __gsharp_seq_1 = __gsharp_mul_i32(__gsharp_id_5_s.__gsharp_mb_PassComputedToIn(),10000);
+auto __gsharp_seq_2 = __gsharp_mul_i32(__gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__RefOutDereferenceKernels__ReadInInt(__gsharp_temp_address<int>(__gsharp_id_5_s.__gsharp_mb_ComputedSum())),100);
+return __gsharp_add_i32(__gsharp_seq_1,__gsharp_seq_2);
+}());
+auto __gsharp_seq_3 = __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__RefOutDereferenceKernels__ReadInInt(__gsharp_temp_address<int>(15));
+return __gsharp_add_i32(__gsharp_seq_0,__gsharp_seq_3);
+}());
 __gsharp_id_1_output[__gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_2_tid,6),5)]=__gsharp_add_i32(__gsharp_add_i32(__gsharp_add_i32(__gsharp_add_i32(__gsharp_mul_i32(__gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__RefOutDereferenceKernels__ReadInLong(__gsharp_temp_address<long long>(__gsharp_id_3_x)),1000000),__gsharp_mul_i32(__gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__RefOutDereferenceKernels__ReadInLong(__gsharp_temp_address<long long>(__gsharp_add_i32(__gsharp_id_3_x,1))),10000)),__gsharp_mul_i32(__gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__RefOutDereferenceKernels__ReadInDouble(__gsharp_temp_address<double>(__gsharp_id_4_f)),100)),__gsharp_mul_i32(__gsharp_id_6_sCtor.__gsharp_mb_Field,10)),__gsharp_id_6_sCtor.__gsharp_mb_Value);
 }
 ";

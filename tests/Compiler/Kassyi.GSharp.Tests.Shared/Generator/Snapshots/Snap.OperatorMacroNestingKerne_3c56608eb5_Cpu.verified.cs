@@ -344,23 +344,29 @@ uint64_t __gsharp_warp_exchange[2] = {};
 uint32_t __gsharp_warp_shuffle_count = 0;
 bool __gsharp_yielded_for_grid_sync = false;
 bool __gsharp_yielded_for_block_barrier = false;
+GSharpArray<int> __gsharp_id_0_values;
+GSharpArray<int> __gsharp_id_1_result;
 __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__NestValue __gsharp_id_2_a;
 __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__NestValue __gsharp_id_3_b;
 __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__NestValue __gsharp_id_4_c;
 };
-extern ""C"" __declspec(dllexport) void __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroNestingKernels__NestedKernel(GSharpArray<int> __gsharp_id_0_values, GSharpArray<int> __gsharp_id_1_result, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroNestingKernels__NestedKernel* __gsharp_ctx){
+extern ""C"" __declspec(dllexport) void __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroNestingKernels__NestedKernel(GSharpArray<int> __gsharp_in___gsharp_id_0_values, GSharpArray<int> __gsharp_in___gsharp_id_1_result, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroNestingKernels__NestedKernel* __gsharp_ctx){
 #define __gsharp_state __gsharp_ctx->__gsharp_state
 #define __gsharp_yielded_for_grid_sync __gsharp_ctx->__gsharp_yielded_for_grid_sync
 #define __gsharp_yielded_for_block_barrier __gsharp_ctx->__gsharp_yielded_for_block_barrier
 auto* __gsharp_root = __gsharp_ctx;
+if(__gsharp_state==0){
+__gsharp_ctx->__gsharp_id_0_values=__gsharp_in___gsharp_id_0_values;
+__gsharp_ctx->__gsharp_id_1_result=__gsharp_in___gsharp_id_1_result;
+}
 switch(__gsharp_state)
 {
 case 0:
 __gsharp_switch_1_state_0:
 {
-__gsharp_ctx->__gsharp_id_2_a=__gsharp_ctor_Kassyi__GSharp__Tests__Shared__Syntax__NestValue(__gsharp_id_0_values[0]);
-__gsharp_ctx->__gsharp_id_3_b=__gsharp_ctor_Kassyi__GSharp__Tests__Shared__Syntax__NestValue(__gsharp_id_0_values[1]);
-__gsharp_ctx->__gsharp_id_4_c=__gsharp_ctor_Kassyi__GSharp__Tests__Shared__Syntax__NestValue(__gsharp_id_0_values[2]);
+__gsharp_ctx->__gsharp_id_2_a=__gsharp_ctor_Kassyi__GSharp__Tests__Shared__Syntax__NestValue(__gsharp_ctx->__gsharp_id_0_values[0]);
+__gsharp_ctx->__gsharp_id_3_b=__gsharp_ctor_Kassyi__GSharp__Tests__Shared__Syntax__NestValue(__gsharp_ctx->__gsharp_id_0_values[1]);
+__gsharp_ctx->__gsharp_id_4_c=__gsharp_ctor_Kassyi__GSharp__Tests__Shared__Syntax__NestValue(__gsharp_ctx->__gsharp_id_0_values[2]);
 {
 __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__NestValue __gsharp_seq_0{};
 __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroNestingKernels__Combine(&__gsharp_seq_0,__gsharp_ctx->__gsharp_id_2_a,__gsharp_ctx->__gsharp_id_3_b);
@@ -373,7 +379,7 @@ return;
 case 1:
 __gsharp_switch_1_state_1:
 {
-__gsharp_id_1_result[0]=__gsharp_ctx->__gsharp_id_4_c.__gsharp_mb_Value;
+__gsharp_ctx->__gsharp_id_1_result[0]=__gsharp_ctx->__gsharp_id_4_c.__gsharp_mb_Value;
 __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__NestValue __gsharp_id_5_d = __gsharp_ctor_Kassyi__GSharp__Tests__Shared__Syntax__NestValue(0);
 {
 __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__NestValue __gsharp_seq_1{};
@@ -384,7 +390,7 @@ __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroNestingKernels__
 __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroNestingKernels__Combine(&__gsharp_seq_2,__gsharp_ctx->__gsharp_id_3_b,__gsharp_seq_3);
 __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroNestingKernels__Combine(&__gsharp_id_5_d,__gsharp_seq_1,__gsharp_seq_2);
 }
-__gsharp_id_1_result[1]=__gsharp_id_5_d.__gsharp_mb_Value;
+__gsharp_ctx->__gsharp_id_1_result[1]=__gsharp_id_5_d.__gsharp_mb_Value;
 __gsharp_state=-1;
 return;
 }
@@ -469,20 +475,26 @@ public static readonly string NestedKernel_FullSource=global::Kassyi.GSharp.Gene
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroNestingKernels__NestedKernel {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
+public int[] values;
+public int[] result;
 public global::Kassyi.GSharp.Tests.Shared.Syntax.NestValue a;
 public global::Kassyi.GSharp.Tests.Shared.Syntax.NestValue b;
 public global::Kassyi.GSharp.Tests.Shared.Syntax.NestValue c;
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroNestingKernels__NestedKernel(int[] values, int[] result, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroNestingKernels__NestedKernel __gsharp_ctx) {
+public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroNestingKernels__NestedKernel(int[] __gsharp_in_values, int[] __gsharp_in_result, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroNestingKernels__NestedKernel __gsharp_ctx) {
+if (__gsharp_ctx.__gsharp_state == 0) {
+__gsharp_ctx.values = __gsharp_in_values;
+__gsharp_ctx.result = __gsharp_in_result;
+}
 {
 switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-__gsharp_ctx.a = new global::Kassyi.GSharp.Tests.Shared.Syntax.NestValue(values[0]);
-__gsharp_ctx.b = new global::Kassyi.GSharp.Tests.Shared.Syntax.NestValue(values[1]);
-__gsharp_ctx.c = new global::Kassyi.GSharp.Tests.Shared.Syntax.NestValue(values[2]);
+__gsharp_ctx.a = new global::Kassyi.GSharp.Tests.Shared.Syntax.NestValue(__gsharp_ctx.values[0]);
+__gsharp_ctx.b = new global::Kassyi.GSharp.Tests.Shared.Syntax.NestValue(__gsharp_ctx.values[1]);
+__gsharp_ctx.c = new global::Kassyi.GSharp.Tests.Shared.Syntax.NestValue(__gsharp_ctx.values[2]);
 {
 global::Kassyi.GSharp.Tests.Shared.Syntax.NestValue __gsharp_macro_tmp_0 = default;
 global::Kassyi.GSharp.Tests.Shared.Syntax.OperatorMacroNestingKernels.Combine(ref __gsharp_macro_tmp_0, __gsharp_ctx.a, __gsharp_ctx.b);
@@ -496,7 +508,7 @@ return;
 
 case 1:
 {
-result[0] = __gsharp_ctx.c.Value;
+__gsharp_ctx.result[0] = __gsharp_ctx.c.Value;
 // Both operands nested, and nested twice
 global::Kassyi.GSharp.Tests.Shared.Syntax.NestValue d = new global::Kassyi.GSharp.Tests.Shared.Syntax.NestValue(0);
 {
@@ -509,7 +521,7 @@ global::Kassyi.GSharp.Tests.Shared.Syntax.OperatorMacroNestingKernels.Combine(re
 global::Kassyi.GSharp.Tests.Shared.Syntax.OperatorMacroNestingKernels.Combine(ref d, __gsharp_macro_tmp_0, __gsharp_macro_tmp_1);
 }
 
-result[1] = d.Value;
+__gsharp_ctx.result[1] = d.Value;
 __gsharp_ctx.__gsharp_state = -1;
 return;
 }

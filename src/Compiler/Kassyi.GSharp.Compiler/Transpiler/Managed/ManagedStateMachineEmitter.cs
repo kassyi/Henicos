@@ -99,8 +99,9 @@ internal static class ManagedStateMachineEmitter
         string accessibility = "public",
         string memberAccessibility = "public")
     {
+        var unsafeKeyword = HasPointerField(regularFields, copiedParameters) ? "unsafe " : "";
         writer.AppendLine(EditorBrowsableNever);
-        using (writer.Scope($"{accessibility} class {contextName} {{"))
+        using (writer.Scope($"{accessibility} {unsafeKeyword}class {contextName} {{"))
         {
             writer.AppendLine($"{memberAccessibility} int {GSharpInternalNames.StateMachine.State};");
             writer.AppendLine($"{memberAccessibility} uint {GSharpInternalNames.StateMachine.WarpExchange};");
@@ -244,6 +245,19 @@ internal static class ManagedStateMachineEmitter
         copiedParameters
             .AsStackEnumerable()
             .Any(parameter, static (copied, target) => copied.IsEqualTo(target));
+
+    private static bool HasPointerField(
+        ImmutableArray<ManagedContextField> regularFields,
+        ImmutableArray<IParameterSymbol> copiedParameters) =>
+        copiedParameters
+            .AsStackEnumerable()
+            .Any(static p => p.Type is IPointerTypeSymbol or IFunctionPointerTypeSymbol) ||
+        regularFields
+            .AsStackEnumerable()
+            .Any(static f => f.ResolvedType is IPointerTypeSymbol or IFunctionPointerTypeSymbol ||
+                             f.DeclaredType.DescendantNodesAndSelf()
+                                 .AsStackEnumerable()
+                                 .Any(static n => n is PointerTypeSyntax or FunctionPointerTypeSyntax));
 
     public static void EmitStateMachineMethod(
         SourceWriter writer,

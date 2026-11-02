@@ -61,8 +61,6 @@ public static class KnownDivergences
         $"{nameof(StructDifferentialKernels)}.{nameof(StructDifferentialKernels.StructUserDefinedImplicitConversion)}";
     private const string CharScalarArg =
         $"{nameof(ConversionDifferentialKernels)}.{nameof(ConversionDifferentialKernels.CharScalarArgKernel)}";
-    private const string RefTernaryParameterWriteAcrossBarrier =
-        $"{nameof(BarrierAndWarpDifferentialKernels)}.{nameof(BarrierAndWarpDifferentialKernels.RefTernaryParameterWriteAcrossBarrierReproKernel)}";
     private const string SubWarpConditionalShuffle =
         $"{nameof(BarrierAndWarpDifferentialKernels)}.{nameof(BarrierAndWarpDifferentialKernels.SubWarpConditionalShuffleKernel)}";
     private const string GenericStructStaticSharedMemory =
@@ -132,10 +130,6 @@ public static class KnownDivergences
         new(CharScalarArg, "(int)cArg", DiffPath.Native, Issue: 971),
         new(CharScalarArg, "cArg==0x1234", DiffPath.Native, Issue: 971),
 
-        // ref ternary targeting scalar kernel parameter across barrier (#1000)
-        new(RefTernaryParameterWriteAcrossBarrier, "ref_ternary_param_assign", DiffPath.Managed | DiffPath.Native, Issue: 1000),
-        new(RefTernaryParameterWriteAcrossBarrier, "ref_ternary_param_compound", DiffPath.Managed | DiffPath.Native, Issue: 1000),
-        new(RefTernaryParameterWriteAcrossBarrier, "ref_ternary_param_inc", DiffPath.Managed | DiffPath.Native, Issue: 1000),
 
         // Warp.ShuffleXor after sub-warp conditional ShuffleDown on CPU emulator (#1001)
         new(SubWarpConditionalShuffle, "reconvergedFullWarpXor16", DiffPath.Managed | DiffPath.Native, Issue: 1001),

@@ -44,24 +44,28 @@ return false;
 
 struct __gsharp_frame_Kassyi__GSharp__Tests__Shared__TestCases__Analyzers__BarrierUsage__DeviceFunctionRefParameterBarrierKernels__Broadcast {
 int __gsharp_state = 0;
+int __gsharp_id_0_value;
 };
-template <typename TRoot> inline bool __gsharp_fn_Kassyi__GSharp__Tests__Shared__TestCases__Analyzers__BarrierUsage__DeviceFunctionRefParameterBarrierKernels__Broadcast(int __gsharp_id_0_value, __gsharp_frame_Kassyi__GSharp__Tests__Shared__TestCases__Analyzers__BarrierUsage__DeviceFunctionRefParameterBarrierKernels__Broadcast* __gsharp_ctx, TRoot* __gsharp_root, int* __gsharp_result){
+template <typename TRoot> inline bool __gsharp_fn_Kassyi__GSharp__Tests__Shared__TestCases__Analyzers__BarrierUsage__DeviceFunctionRefParameterBarrierKernels__Broadcast(int __gsharp_in___gsharp_id_0_value, __gsharp_frame_Kassyi__GSharp__Tests__Shared__TestCases__Analyzers__BarrierUsage__DeviceFunctionRefParameterBarrierKernels__Broadcast* __gsharp_ctx, TRoot* __gsharp_root, int* __gsharp_result){
 #define __gsharp_state __gsharp_ctx->__gsharp_state
 #define __gsharp_yielded_for_grid_sync __gsharp_root->__gsharp_yielded_for_grid_sync
 #define __gsharp_yielded_for_block_barrier __gsharp_root->__gsharp_yielded_for_block_barrier
+if(__gsharp_state==0){
+__gsharp_ctx->__gsharp_id_0_value=__gsharp_in___gsharp_id_0_value;
+}
 switch(__gsharp_state)
 {
 case 0:
 __gsharp_switch_1_state_0:
 {
-__gsharp_warp_exchange_assign(__gsharp_id_0_value);
+__gsharp_warp_exchange_assign(__gsharp_ctx->__gsharp_id_0_value);
 __gsharp_state=1;
 return false;
 }
 case 1:
 __gsharp_switch_1_state_1:
 {
-auto __gsharp_warp_temp_0 = __gsharp_warp_shuffle_read_sync(__gsharp_root,0xFFFFFFFFu,__gsharp_id_0_value,0,32,""DeviceFunctionRefParameterBarrierKernels.cs(18,47)"");
+auto __gsharp_warp_temp_0 = __gsharp_warp_shuffle_read_sync(__gsharp_root,0xFFFFFFFFu,__gsharp_ctx->__gsharp_id_0_value,0,32,""DeviceFunctionRefParameterBarrierKernels.cs(18,47)"");
 *__gsharp_result = __gsharp_warp_temp_0;
 __gsharp_state = 0;return true;
 __gsharp_state = 0;return true;
@@ -125,22 +129,26 @@ throw new global::System.InvalidOperationException("The device function state ma
 public class __gsharp_frame_Kassyi__GSharp__Tests__Shared__TestCases__Analyzers__BarrierUsage__DeviceFunctionRefParameterBarrierKernels__Broadcast {
 internal int __gsharp_state;
 internal uint __gsharp_warp_exchange;
+internal int value;
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-public static bool __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__TestCases__Analyzers__BarrierUsage__DeviceFunctionRefParameterBarrierKernels__Broadcast(int value, __gsharp_frame_Kassyi__GSharp__Tests__Shared__TestCases__Analyzers__BarrierUsage__DeviceFunctionRefParameterBarrierKernels__Broadcast __gsharp_ctx, ref int __gsharp_result) {
+public static bool __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__TestCases__Analyzers__BarrierUsage__DeviceFunctionRefParameterBarrierKernels__Broadcast(int __gsharp_in_value, __gsharp_frame_Kassyi__GSharp__Tests__Shared__TestCases__Analyzers__BarrierUsage__DeviceFunctionRefParameterBarrierKernels__Broadcast __gsharp_ctx, ref int __gsharp_result) {
+if (__gsharp_ctx.__gsharp_state == 0) {
+__gsharp_ctx.value = __gsharp_in_value;
+}
 {
 switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-__gsharp_warp_exchange_assign(value);
+__gsharp_warp_exchange_assign(__gsharp_ctx.value);
 __gsharp_ctx.__gsharp_state = 1;
 return false;
 }
 
 case 1:
 {
-var __gsharp_warp_temp_0 = __gsharp_warp_shuffle_read_sync(__gsharp_ctx, 0xFFFFFFFFu, value, 0, 32, "DeviceFunctionRefParameterBarrierKernels.cs(18,47)");
+var __gsharp_warp_temp_0 = __gsharp_warp_shuffle_read_sync(__gsharp_ctx, 0xFFFFFFFFu, __gsharp_ctx.value, 0, 32, "DeviceFunctionRefParameterBarrierKernels.cs(18,47)");
 {
 __gsharp_result = __gsharp_warp_temp_0;
 __gsharp_ctx.__gsharp_state = 0;
@@ -185,6 +193,8 @@ uint64_t __gsharp_warp_exchange[2] = {};
 uint32_t __gsharp_warp_shuffle_count = 0;
 bool __gsharp_yielded_for_grid_sync = false;
 bool __gsharp_yielded_for_block_barrier = false;
+GSharpArray<int> __gsharp_id_0_buffer;
+int __gsharp_id_1_usePrimary;
 int __gsharp_id_2_value;
 int __gsharp_id_3_previous;
 bool __gsharp_cond_temp_0;
@@ -192,17 +202,21 @@ int __gsharp_call_temp_0;
 __gsharp_frame_Kassyi__GSharp__Tests__Shared__TestCases__Analyzers__BarrierUsage__DeviceFunctionRefParameterBarrierKernels__IncrementAcrossBarrier __gsharp_call_frame_0;
 __gsharp_frame_Kassyi__GSharp__Tests__Shared__TestCases__Analyzers__BarrierUsage__DeviceFunctionRefParameterBarrierKernels__Broadcast __gsharp_call_frame_1;
 };
-extern ""C"" __declspec(dllexport) void __gsharp_k_Kassyi__GSharp__Tests__Shared__TestCases__Analyzers__BarrierUsage__DeviceFunctionRefParameterBarrierKernels__RefParameterKernel(GSharpArray<int> __gsharp_id_0_buffer, int __gsharp_id_1_usePrimary, __gsharp_context_Kassyi__GSharp__Tests__Shared__TestCases__Analyzers__BarrierUsage__DeviceFunctionRefParameterBarrierKernels__RefParameterKernel* __gsharp_ctx){
+extern ""C"" __declspec(dllexport) void __gsharp_k_Kassyi__GSharp__Tests__Shared__TestCases__Analyzers__BarrierUsage__DeviceFunctionRefParameterBarrierKernels__RefParameterKernel(GSharpArray<int> __gsharp_in___gsharp_id_0_buffer, int __gsharp_in___gsharp_id_1_usePrimary, __gsharp_context_Kassyi__GSharp__Tests__Shared__TestCases__Analyzers__BarrierUsage__DeviceFunctionRefParameterBarrierKernels__RefParameterKernel* __gsharp_ctx){
 #define __gsharp_state __gsharp_ctx->__gsharp_state
 #define __gsharp_yielded_for_grid_sync __gsharp_ctx->__gsharp_yielded_for_grid_sync
 #define __gsharp_yielded_for_block_barrier __gsharp_ctx->__gsharp_yielded_for_block_barrier
 auto* __gsharp_root = __gsharp_ctx;
+if(__gsharp_state==0){
+__gsharp_ctx->__gsharp_id_0_buffer=__gsharp_in___gsharp_id_0_buffer;
+__gsharp_ctx->__gsharp_id_1_usePrimary=__gsharp_in___gsharp_id_1_usePrimary;
+}
 switch(__gsharp_state)
 {
 case 0:
 __gsharp_switch_1_state_0:
 {
-__gsharp_ctx->__gsharp_id_2_value=__gsharp_id_0_buffer[(int)threadIdx.x];
+__gsharp_ctx->__gsharp_id_2_value=__gsharp_ctx->__gsharp_id_0_buffer[(int)threadIdx.x];
 goto __gsharp_switch_1_state_1;
 }
 case 1:
@@ -213,7 +227,7 @@ if(!__gsharp_fn_Kassyi__GSharp__Tests__Shared__TestCases__Analyzers__BarrierUsag
 __gsharp_state=1;
 return;
 }
-__gsharp_ctx->__gsharp_cond_temp_0=__gsharp_id_1_usePrimary!=0;
+__gsharp_ctx->__gsharp_cond_temp_0=__gsharp_ctx->__gsharp_id_1_usePrimary!=0;
 if(!(__gsharp_ctx->__gsharp_cond_temp_0))
 {
 goto __gsharp_switch_1_state_3;
@@ -235,7 +249,7 @@ case 3:
 __gsharp_switch_1_state_3:
 {
 bool __gsharp_id_4_broadcast = __gsharp_ctx->__gsharp_cond_temp_0;
-__gsharp_id_0_buffer[(int)threadIdx.x]=(__gsharp_id_4_broadcast?__gsharp_ctx->__gsharp_id_2_value:__gsharp_ctx->__gsharp_id_3_previous);
+__gsharp_ctx->__gsharp_id_0_buffer[(int)threadIdx.x]=(__gsharp_id_4_broadcast?__gsharp_ctx->__gsharp_id_2_value:__gsharp_ctx->__gsharp_id_3_previous);
 __gsharp_state=-1;
 return;
 }
@@ -320,6 +334,8 @@ public static readonly string RefParameterKernel_FullSource=global::Kassyi.GShar
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__TestCases__Analyzers__BarrierUsage__DeviceFunctionRefParameterBarrierKernels__RefParameterKernel {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
+public int[] buffer;
+public int usePrimary;
 public int value;
 public int previous;
 public bool __gsharp_cond_temp_0;
@@ -328,13 +344,17 @@ internal global::Kassyi.GSharp.Tests.Shared.TestCases.Analyzers.BarrierUsage.Dev
 internal global::Kassyi.GSharp.Tests.Shared.TestCases.Analyzers.BarrierUsage.DeviceFunctionRefParameterBarrierKernels.__gsharp_frame_Kassyi__GSharp__Tests__Shared__TestCases__Analyzers__BarrierUsage__DeviceFunctionRefParameterBarrierKernels__Broadcast __gsharp_call_frame_1 = new();
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__TestCases__Analyzers__BarrierUsage__DeviceFunctionRefParameterBarrierKernels__RefParameterKernel(int[] buffer, int usePrimary, __gsharp_context_Kassyi__GSharp__Tests__Shared__TestCases__Analyzers__BarrierUsage__DeviceFunctionRefParameterBarrierKernels__RefParameterKernel __gsharp_ctx) {
+public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__TestCases__Analyzers__BarrierUsage__DeviceFunctionRefParameterBarrierKernels__RefParameterKernel(int[] __gsharp_in_buffer, int __gsharp_in_usePrimary, __gsharp_context_Kassyi__GSharp__Tests__Shared__TestCases__Analyzers__BarrierUsage__DeviceFunctionRefParameterBarrierKernels__RefParameterKernel __gsharp_ctx) {
+if (__gsharp_ctx.__gsharp_state == 0) {
+__gsharp_ctx.buffer = __gsharp_in_buffer;
+__gsharp_ctx.usePrimary = __gsharp_in_usePrimary;
+}
 {
 switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-__gsharp_ctx.value = buffer[global::Kassyi.GSharp.Core.ThreadIndex.X];
+__gsharp_ctx.value = __gsharp_ctx.buffer[global::Kassyi.GSharp.Core.ThreadIndex.X];
 goto case 1;
 }
 
@@ -346,7 +366,7 @@ __gsharp_ctx.__gsharp_state = 1;
 return;
 }
 
-__gsharp_ctx.__gsharp_cond_temp_0 = usePrimary != 0;
+__gsharp_ctx.__gsharp_cond_temp_0 = __gsharp_ctx.usePrimary != 0;
 if (!(__gsharp_ctx.__gsharp_cond_temp_0))
 goto case 3;
 goto case 2;
@@ -367,7 +387,7 @@ goto case 3;
 case 3:
 {
 bool broadcast = __gsharp_ctx.__gsharp_cond_temp_0;
-buffer[global::Kassyi.GSharp.Core.ThreadIndex.X] = broadcast ? __gsharp_ctx.value : __gsharp_ctx.previous;
+__gsharp_ctx.buffer[global::Kassyi.GSharp.Core.ThreadIndex.X] = broadcast ? __gsharp_ctx.value : __gsharp_ctx.previous;
 __gsharp_ctx.__gsharp_state = -1;
 return;
 }

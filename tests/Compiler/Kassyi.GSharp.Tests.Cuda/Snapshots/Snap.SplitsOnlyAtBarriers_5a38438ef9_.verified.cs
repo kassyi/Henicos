@@ -46,7 +46,7 @@
 
         case 2:
         {
-            output[__gsharp_ctx->t] = __gsharp_ctx->acc;
+            __gsharp_ctx->output[__gsharp_ctx->t] = __gsharp_ctx->acc;
             __gsharp_state = -1;
             return;
         }
