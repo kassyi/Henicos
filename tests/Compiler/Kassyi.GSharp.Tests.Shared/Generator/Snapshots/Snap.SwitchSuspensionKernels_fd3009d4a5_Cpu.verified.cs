@@ -2335,7 +2335,7 @@ case 2:
 __gsharp_switch_1_state_2:
 {
 auto __gsharp_id_4_x = __gsharp_ctx->__gsharp_id_3_Max;
-__gsharp_id_4_x++;
+__gsharp_id_4_x=(unsigned char)__gsharp_add_i32(__gsharp_id_4_x,1);
 __gsharp_id_0_output[__gsharp_ctx->__gsharp_id_2_tid]=__gsharp_id_4_x;
 goto __gsharp_switch_1_state_4;
 goto __gsharp_switch_1_state_3;
@@ -2344,7 +2344,7 @@ case 3:
 __gsharp_switch_1_state_3:
 {
 auto __gsharp_id_5_y = __gsharp_ctx->__gsharp_id_3_Max;
-__gsharp_id_5_y++;
+__gsharp_id_5_y=(unsigned char)__gsharp_add_i32(__gsharp_id_5_y,1);
 __gsharp_id_0_output[__gsharp_ctx->__gsharp_id_2_tid]=__gsharp_id_5_y+__gsharp_ctx->__gsharp_id_3_Max;
 goto __gsharp_switch_1_state_4;
 goto __gsharp_switch_1_state_4;
