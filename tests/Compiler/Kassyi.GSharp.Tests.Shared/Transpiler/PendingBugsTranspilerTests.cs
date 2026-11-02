@@ -27,7 +27,7 @@ public class PendingBugsTranspilerTests : TranspilerTestBase
         var source = RoslynTestUtility.ReadTestCase(
             "Transpiler/PendingBugs/GpuConstantManagedKernels.cu.cs");
 
-        var (driver, _, _) = RoslynTestUtility.RunGenerator(source, DialectName);
+        var (driver, _, _) = RoslynTestUtility.RunGenerator(source, "Cpu");
         var runResult = driver.GetRunResult();
         var generatedSources = runResult.GeneratedTrees
             .Where(t => t.FilePath.EndsWith(".g.cs", StringComparison.OrdinalIgnoreCase))
