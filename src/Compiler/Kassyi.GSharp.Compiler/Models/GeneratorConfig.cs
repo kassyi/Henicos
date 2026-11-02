@@ -6,11 +6,15 @@ namespace Kassyi.GSharp.Compiler.Models;
 /// <param name="ExportDeviceCode">
 /// Whether the assembly records its device code for other assemblies (<c>GSharpExportDeviceCode</c>, default true).
 /// </param>
+/// <param name="IsCheckedBuild">
+/// Whether <c>GSharpCheckedBuild</c> enables checked device assertions and post-launch stream synchronization (#729).
+/// </param>
 internal record struct GeneratorConfig(
     string TargetDialect,
     bool EmitSource,
     string? IntermediateOutputPath,
-    bool ExportDeviceCode = true)
+    bool ExportDeviceCode = true,
+    bool IsCheckedBuild = false)
 {
     /// <summary>Whether <c>GSharpTargetDialect</c> selects the CUDA dialect; any other value selects the C++ dialect.</summary>
     public readonly bool IsCuda => TranspilerDialects.IsCuda(TargetDialect);

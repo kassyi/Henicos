@@ -269,6 +269,25 @@ methods:
         type: string
         description: Name of the function.
 
+  - name: cuModuleGetGlobal_v2
+    returnType: CUresult
+    summary: Returns a global pointer from a module.
+    returnDescription: CudaSuccess on success; otherwise, an error code.
+    stringMarshalling: Utf8
+    parameters:
+      - name: dptr
+        type: out IntPtr
+        description: Returned global device pointer.
+      - name: bytes
+        type: out nuint
+        description: Returned global size in bytes.
+      - name: hmod
+        type: IntPtr
+        description: Module to retrieve global from.
+      - name: name
+        type: string
+        description: Name of the global variable.
+
   - name: cuModuleUnload
     returnType: CUresult
     summary: Unloads a module.

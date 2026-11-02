@@ -6,20 +6,20 @@ namespace Kassyi.GSharp.Compiler.Marshaling;
 internal static class CudaHostLaunchEmitter
 {
     /// <summary>Emits the function pointer field, warmup method and launch wrappers of one kernel.</summary>
-    public static void WriteKernelMembers(SourceWriter writer, in KernelEmission kernel, string assemblyName)
+    public static void WriteKernelMembers(SourceWriter writer, in KernelEmission kernel, string assemblyName, bool isCheckedBuild = false)
     {
         writer.AppendLine($"private static IntPtr? s_hfunc_{kernel.MemberKey};");
         WrapperEmitter.WriteLayoutCheckedField(writer, kernel.Host.CudaLayoutGuards, kernel.MemberKey);
         WriteWarmupFunctionPointerMethod(writer, kernel, assemblyName);
-        WriteLaunchMethod(writer, kernel, false);
-        WriteLaunchMethod(writer, kernel, true);
+        WriteLaunchMethod(writer, kernel, false, isCheckedBuild);
+        WriteLaunchMethod(writer, kernel, true, isCheckedBuild);
         if (kernel.IsOverloaded)
         {
             WriteTypedPointerLaunchMethod(writer, kernel);
         }
     }
 
-    private static void WriteLaunchMethod(SourceWriter writer, in KernelEmission kernel, bool isDevicePtr)
+    private static void WriteLaunchMethod(SourceWriter writer, in KernelEmission kernel, bool isDevicePtr, bool isCheckedBuild)
     {
         writer.AppendLine(
             "#pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type");
@@ -46,7 +46,7 @@ internal static class CudaHostLaunchEmitter
                 writer.AppendLine("try");
                 using (writer.Scope())
                 {
-                    KernelLaunchEmitter.WriteMarshalAndLaunchKernel(writer, kernel.Host, sharing, isDevicePtr);
+                    KernelLaunchEmitter.WriteMarshalAndLaunchKernel(writer, kernel.Host, sharing, isDevicePtr, isCheckedBuild);
                 }
 
                 writer.AppendLine("finally");

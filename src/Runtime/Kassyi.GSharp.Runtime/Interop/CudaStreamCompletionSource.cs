@@ -351,7 +351,7 @@ internal sealed class CudaStreamCompletionSource : IValueTaskSource, IDisposable
                 return;
             }
 
-            TryComplete(version, new CudaException(status, $"CUDA stream faulted while awaiting completion: {status}"));
+            TryComplete(version, GpuKernelLoader.CreateExceptionForDriverError(status, $"CUDA stream faulted while awaiting completion: {status}"));
         }
     }
 

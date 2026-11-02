@@ -38,10 +38,13 @@ public enum CUresult
     CudaErrorInvalidHandle = 400,
     CudaErrorNotFound = 500,
     CudaErrorNotReady = 600,
-    CudaErrorLaunchFailed = 700,
+    CudaErrorIllegalAddress = 700,
     CudaErrorLaunchOutOfResources = 701,
     CudaErrorLaunchTimeout = 702,
     CudaErrorLaunchIncompatibleTexturing = 703,
+    CudaErrorAssert = 710,
+    CudaErrorIllegalInstruction = 715,
+    CudaErrorLaunchFailed = 719,
     CudaErrorNotSupported = 801,
     CudaErrorStreamCaptureUnsupported = 900,
     CudaErrorStreamCaptureInvalidated = 901,
@@ -82,7 +85,8 @@ public enum CUstreamCaptureStatus
 }
 
 /// <summary>Exception thrown when a CUDA Driver API call returns a non-success status code.</summary>
-public class CudaException(CUresult result, string? message = null) : Exception(message ?? $"CUDA Error: {result}")
+public class CudaException(CUresult result, string? message = null, Exception? innerException = null)
+    : Exception(message ?? $"CUDA Error: {result}", innerException)
 {
     public CUresult Result { get; } = result;
 
@@ -90,7 +94,7 @@ public class CudaException(CUresult result, string? message = null) : Exception(
     {
         if (result != CUresult.CudaSuccess)
         {
-            throw new CudaException(result);
+            throw GpuKernelLoader.CreateExceptionForDriverError(result);
         }
     }
 }
@@ -105,6 +109,12 @@ public static partial class CudaDriverApi
     // To add or modify Driver API methods, declare them in the YAML file instead.
 
     private const string DllName = "nvcuda.dll";
+
+    /// <summary>Flag for <c>cuMemHostAlloc</c>: memory is portable across all CUDA contexts.</summary>
+    public const uint MemHostAllocPortable = 0x01;
+
+    /// <summary>Flag for <c>cuMemHostAlloc</c>: memory is mapped into the CUDA address space (<c>cuMemHostGetDevicePointer</c>).</summary>
+    public const uint MemHostAllocDeviceMap = 0x02;
 
     public enum CuDeviceAttribute
     {

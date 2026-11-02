@@ -136,7 +136,10 @@ public class GpuKernelGenerator : IIncrementalGenerator
                 options.GlobalOptions.TryGetValue("build_property.GSharpExportDeviceCode", out var exportStr);
                 var exportDeviceCode = !string.Equals(exportStr, "false", StringComparison.OrdinalIgnoreCase);
 
-                return new GeneratorConfig(dialect, emitSource, intermediatePath, exportDeviceCode);
+                options.GlobalOptions.TryGetValue("build_property.GSharpCheckedBuild", out var checkedStr);
+                var isCheckedBuild = string.Equals(checkedStr, "true", StringComparison.OrdinalIgnoreCase);
+
+                return new GeneratorConfig(dialect, emitSource, intermediatePath, exportDeviceCode, isCheckedBuild);
             });
 
         // The wrappers take only the assembly names from the compilation, so this value compares equal across edits and
@@ -801,6 +804,10 @@ public class GpuKernelGenerator : IIncrementalGenerator
         var distinctDeviceMethods = GetDistinctDeviceMethods(deviceMethods);
         var commonDeviceSource = imports.Source + NativeModuleAssembler.AssembleDeviceSource(distinctDeviceMethods, isCuda);
         var preludeSource = NativeModuleAssembler.GetPreludeSource(config.CreateDialect());
+        if (isCuda && config.IsCheckedBuild)
+        {
+            preludeSource = "#define GSHARP_CHECKED 1\n" + preludeSource;
+        }
 
         var allKernelsSource = new StringBuilder();
         foreach (var method in kernelMethods)

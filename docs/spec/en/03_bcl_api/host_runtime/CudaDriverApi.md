@@ -62,7 +62,7 @@ public static partial class CudaDriverApi
 Exception thrown when a CUDA Driver API call returns a non-success status code.
 
 ```csharp
-public class CudaException(CUresult result, string? message = null) : Exception
+public class CudaException(CUresult result, string? message = null, Exception? innerException = null) : Exception
 {
     public CUresult Result { get; }
     public static void ThrowIfError(CUresult result);
@@ -98,6 +98,7 @@ public enum CUresult
     CudaErrorEccUncorrectable = 214,
     CudaErrorUnsupportedLimit = 215,
     CudaErrorContextAlreadyInUse = 216,
+    CudaErrorUnsupportedPtxVersion = 222,
     CudaErrorInvalidSource = 300,
     CudaErrorFileNotFound = 301,
     CudaErrorSharedObjectSymbolNotFound = 302,
@@ -106,10 +107,14 @@ public enum CUresult
     CudaErrorInvalidHandle = 400,
     CudaErrorNotFound = 500,
     CudaErrorNotReady = 600,
-    CudaErrorLaunchFailed = 700,
+    CudaErrorIllegalAddress = 700,
     CudaErrorLaunchOutOfResources = 701,
     CudaErrorLaunchTimeout = 702,
     CudaErrorLaunchIncompatibleTexturing = 703,
+    CudaErrorAssert = 710,
+    CudaErrorIllegalInstruction = 715,
+    CudaErrorLaunchFailed = 719,
+    CudaErrorNotSupported = 801,
     CudaErrorStreamCaptureUnsupported = 900,
     CudaErrorStreamCaptureInvalidated = 901,
     CudaErrorStreamCaptureMerge = 902,
