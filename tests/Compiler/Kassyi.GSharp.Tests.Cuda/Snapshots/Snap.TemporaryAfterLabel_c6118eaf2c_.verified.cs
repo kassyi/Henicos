@@ -11,7 +11,7 @@
         case 0:
         {
             __gsharp_ctx->tid = ThreadIndex.X;
-            __gsharp_ctx->v = data[__gsharp_ctx->tid];
+            __gsharp_ctx->v = __gsharp_ctx->data[__gsharp_ctx->tid];
             __gsharp_ctx->acc = 0;
             __gsharp_ctx->k = 0;
             goto case 1;
@@ -34,7 +34,7 @@
                 goto case 1;
             }
 
-            data[__gsharp_ctx->tid] = __gsharp_ctx->acc;
+            __gsharp_ctx->data[__gsharp_ctx->tid] = __gsharp_ctx->acc;
             __gsharp_state = -1;
             return;
         }
