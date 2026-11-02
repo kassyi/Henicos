@@ -63,9 +63,9 @@ public class IteratorAnalyzerTests : TranspilerTestBase
                 (GSharpDiagnostics.IteratorShapeNotSupported.Id, 44, 29, 44, 45),
                 (GSharpDiagnostics.IteratorShapeNotSupported.Id, 53, 42, 53, 61),
                 (GSharpDiagnostics.IteratorShapeNotSupported.Id, 62, 34, 62, 45),
-                (GSharpDiagnostics.IteratorShapeNotSupported.Id, 69, 36, 69, 45),
-                (GSharpDiagnostics.IteratorShapeNotSupported.Id, 73, 13, 76, 14),
-                (GSharpDiagnostics.StringNotSupported.Id, 79, 9, 79, 12)
+                (GSharpDiagnostics.IteratorShapeNotSupported.Id, 68, 36, 68, 45),
+                (GSharpDiagnostics.IteratorShapeNotSupported.Id, 72, 13, 75, 14),
+                (GSharpDiagnostics.StringNotSupported.Id, 78, 9, 78, 12)
             ],
             actual);
     }
