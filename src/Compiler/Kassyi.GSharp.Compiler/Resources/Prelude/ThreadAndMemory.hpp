@@ -94,15 +94,15 @@ struct __gsharp_block_smem {
     std::vector<__gsharp_smem_static_buffer> static_buffers;
     // The buffers that a static declaration outgrew (another instantiation of a generic device function with a larger T):
     // a thread may still hold a pointer into them, so they live as long as the arena
-    std::vector<unsigned char*> outgrown_buffers;
+    std::vector<std::pair<unsigned char*, size_t>> outgrown_buffers;
 
     ~__gsharp_block_smem() {
         __gsharp_smem_free(dynamic_data);
         for (auto& buffer : static_buffers) {
             __gsharp_smem_free(buffer.data);
         }
-        for (unsigned char* buffer : outgrown_buffers) {
-            __gsharp_smem_free(buffer);
+        for (const auto& buffer : outgrown_buffers) {
+            __gsharp_smem_free(buffer.first);
         }
     }
 
@@ -126,6 +126,38 @@ struct __gsharp_block_smem {
             dynamic_capacity = dynamic_limit;
         }
         return dynamic_data;
+    }
+
+    static bool in_range(uintptr_t addr, const unsigned char* data, size_t bytes) {
+        if (data == nullptr || bytes == 0) {
+            return false;
+        }
+        uintptr_t start = reinterpret_cast<uintptr_t>(data);
+        return addr >= start && addr - start < bytes;
+    }
+
+    // Whether an address lies in a shared memory buffer (dynamic or static, including outgrown static buffers) of this
+    // arena (#868). Used by atomicAdd(float*, float) to distinguish shared memory (subnormals preserved) from global
+    // memory (subnormals flushed to sign-preserving zero), as PTX atom.add.f32 does.
+    bool contains(const void* address) const {
+        if (address == nullptr) {
+            return false;
+        }
+        uintptr_t addr = reinterpret_cast<uintptr_t>(address);
+        if (in_range(addr, dynamic_data, dynamic_cursor)) {
+            return true;
+        }
+        for (const auto& buffer : static_buffers) {
+            if (in_range(addr, buffer.data, buffer.size > 0 ? buffer.size : 1)) {
+                return true;
+            }
+        }
+        for (const auto& buffer : outgrown_buffers) {
+            if (in_range(addr, buffer.first, buffer.second > 0 ? buffer.second : 1)) {
+                return true;
+            }
+        }
+        return false;
     }
 };
 
@@ -160,7 +192,7 @@ inline void* __gsharp_allocate_smem_static(unsigned long long siteKey, size_t by
                 if (grown == nullptr) {
                     __gsharp_trap_abort(GSharpErrorCode::InvalidOperation, "G#: the static shared memory of a declaration could not be allocated");
                 }
-                arena.outgrown_buffers.push_back(buffer.data);
+                arena.outgrown_buffers.push_back({buffer.data, buffer.size});
                 buffer.data = grown;
                 buffer.size = bytes;
             }

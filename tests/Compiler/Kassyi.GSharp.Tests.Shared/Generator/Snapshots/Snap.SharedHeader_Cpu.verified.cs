@@ -643,15 +643,15 @@ std::vector<__gsharp_smem_region> regions;
 std::vector<__gsharp_smem_static_buffer> static_buffers;
 // The buffers that a static declaration outgrew (another instantiation of a generic device function with a larger T):
 // a thread may still hold a pointer into them, so they live as long as the arena
-std::vector<unsigned char*> outgrown_buffers;
+std::vector<std::pair<unsigned char*, size_t>> outgrown_buffers;
 
 ~__gsharp_block_smem() {
 __gsharp_smem_free(dynamic_data);
 for (auto& buffer : static_buffers) {
 __gsharp_smem_free(buffer.data);
 }
-for (unsigned char* buffer : outgrown_buffers) {
-__gsharp_smem_free(buffer);
+for (const auto& buffer : outgrown_buffers) {
+__gsharp_smem_free(buffer.first);
 }
 }
 
@@ -675,6 +675,38 @@ __gsharp_trap_abort(GSharpErrorCode::ArgumentOutOfRange, ""G#: the dynamic share
 dynamic_capacity = dynamic_limit;
 }
 return dynamic_data;
+}
+
+static bool in_range(uintptr_t addr, const unsigned char* data, size_t bytes) {
+if (data == nullptr || bytes == 0) {
+return false;
+}
+uintptr_t start = reinterpret_cast<uintptr_t>(data);
+return addr >= start && addr - start < bytes;
+}
+
+// Whether an address lies in a shared memory buffer (dynamic or static, including outgrown static buffers) of this
+// arena (#868). Used by atomicAdd(float*, float) to distinguish shared memory (subnormals preserved) from global
+// memory (subnormals flushed to sign-preserving zero), as PTX atom.add.f32 does.
+bool contains(const void* address) const {
+if (address == nullptr) {
+return false;
+}
+uintptr_t addr = reinterpret_cast<uintptr_t>(address);
+if (in_range(addr, dynamic_data, dynamic_cursor)) {
+return true;
+}
+for (const auto& buffer : static_buffers) {
+if (in_range(addr, buffer.data, buffer.size > 0 ? buffer.size : 1)) {
+return true;
+}
+}
+for (const auto& buffer : outgrown_buffers) {
+if (in_range(addr, buffer.first, buffer.second > 0 ? buffer.second : 1)) {
+return true;
+}
+}
+return false;
 }
 };
 
@@ -709,7 +741,7 @@ unsigned char* grown = __gsharp_smem_alloc(bytes);
 if (grown == nullptr) {
 __gsharp_trap_abort(GSharpErrorCode::InvalidOperation, ""G#: the static shared memory of a declaration could not be allocated"");
 }
-arena.outgrown_buffers.push_back(buffer.data);
+arena.outgrown_buffers.push_back({buffer.data, buffer.size});
 buffer.data = grown;
 buffer.size = bytes;
 }
@@ -915,7 +947,38 @@ __forceinline__ int atomicExch(int* address, int val) { return __gsharp_atomic_e
 __forceinline__ unsigned int atomicExch(unsigned int* address, unsigned int val) { return __gsharp_atomic_exch(address, val); }
 __forceinline__ unsigned long long atomicExch(unsigned long long* address, unsigned long long val) { return __gsharp_atomic_exch(address, val); }
 __forceinline__ float atomicExch(float* address, float val) { return __gsharp_atomic_exch(address, val); }
-__forceinline__ float atomicAdd(float* address, float val) { return __gsharp_atomic_update(address, [val](float old) { return old + val; }); }
+// PTX atom.add.f32 / red.add.f32 (#868): on global memory, subnormal inputs and results flush to sign-preserving zero;
+// on shared memory, subnormals are preserved; on both, a NaN result stores canonical NaN (0x7FFFFFFF), and the returned
+// old value keeps the original un-flushed bits stored at address.
+// The bits of a float, with a subnormal turned into the zero of its sign when flush is set
+__forceinline__ uint32_t __gsharp_flush_subnormal(uint32_t bits, bool flush) {
+uint32_t magnitude = bits & 0x7FFFFFFFu;
+return flush && magnitude != 0u && magnitude < 0x00800000u ? bits & 0x80000000u : bits;
+}
+__forceinline__ float atomicAdd(float* address, float val) {
+bool flush = !__gsharp_current_smem().contains(address);
+uint32_t valBits;
+std::memcpy(&valBits, &val, sizeof(float));
+valBits = __gsharp_flush_subnormal(valBits, flush);
+float rhs;
+std::memcpy(&rhs, &valBits, sizeof(float));
+volatile std::atomic<uint32_t>* atom = reinterpret_cast<volatile std::atomic<uint32_t>*>(address);
+uint32_t oldBits = atom->load(std::memory_order_relaxed);
+while (true) {
+uint32_t lhsBits = __gsharp_flush_subnormal(oldBits, flush);
+float lhs;
+std::memcpy(&lhs, &lhsBits, sizeof(float));
+float sum = lhs + rhs;
+uint32_t sumBits;
+std::memcpy(&sumBits, &sum, sizeof(float));
+sumBits = (sumBits & 0x7FFFFFFFu) > 0x7F800000u ? 0x7FFFFFFFu : __gsharp_flush_subnormal(sumBits, flush);
+if (atom->compare_exchange_weak(oldBits, sumBits, std::memory_order_relaxed)) {
+float oldVal;
+std::memcpy(&oldVal, &oldBits, sizeof(float));
+return oldVal;
+}
+}
+}
 __forceinline__ int atomicSub(int* address, int val) { return __gsharp_atomic_fetch_sub(address, val); }
 __forceinline__ unsigned int atomicSub(unsigned int* address, unsigned int val) { return __gsharp_atomic_fetch_sub(address, val); }
 __forceinline__ int atomicMin(int* address, int val) { return __gsharp_atomic_min(address, val); }

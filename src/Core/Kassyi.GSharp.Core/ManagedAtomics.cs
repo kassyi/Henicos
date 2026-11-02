@@ -120,16 +120,29 @@ internal static class ManagedAtomics
         }
     }
 
+    private const uint CanonicalNaNBits = 0x7FFFFFFFu;
+    private const uint AbsMask = 0x7FFFFFFFu;
+    private const uint SignMask = 0x80000000u;
+    private const uint MinNormalBits = 0x00800000u;
+    private const uint PositiveInfinityBits = 0x7F800000u;
+
     // A float add through the bits of the address, so that the loop ends also for a NaN or a signed zero, which a float
-    // comparison would not tell from the value it read
+    // comparison would not tell from the value it read. Matches PTX atom.add.f32 / red.add.f32 (#868): on global memory,
+    // subnormal inputs and results flush to sign-preserving zero; on shared memory, subnormals are preserved; on both, a
+    // NaN result stores canonical NaN (0x7FFFFFFF), and the returned old value keeps the original un-flushed bits.
     private static float UpdateSingle(ref float address, float val)
     {
+        var flush = !ManagedGpuContext.IsSharedMemoryAddress(ref address);
+        var rhs = BitConverter.UInt32BitsToSingle(FlushSubnormal(BitConverter.SingleToUInt32Bits(val), flush));
         ref var bits = ref Unsafe.As<float, int>(ref address);
         var old = Volatile.Read(ref bits);
         while (true)
         {
-            var sum = BitConverter.SingleToInt32Bits(BitConverter.Int32BitsToSingle(old) + val);
-            var seen = Interlocked.CompareExchange(ref bits, sum, old);
+            var lhs = BitConverter.UInt32BitsToSingle(FlushSubnormal((uint)old, flush));
+            var sumBits = BitConverter.SingleToUInt32Bits(lhs + rhs);
+            var nextBits = (sumBits & AbsMask) > PositiveInfinityBits ? CanonicalNaNBits : FlushSubnormal(sumBits, flush);
+
+            var seen = Interlocked.CompareExchange(ref bits, unchecked((int)nextBits), old);
             if (seen == old)
             {
                 return BitConverter.Int32BitsToSingle(old);
@@ -137,5 +150,12 @@ internal static class ManagedAtomics
 
             old = seen;
         }
+    }
+
+    // The bits of a float, with a subnormal turned into the zero of its sign when flush is set
+    private static uint FlushSubnormal(uint bits, bool flush)
+    {
+        var magnitude = bits & AbsMask;
+        return flush && magnitude != 0u && magnitude < MinNormalBits ? bits & SignMask : bits;
     }
 }
