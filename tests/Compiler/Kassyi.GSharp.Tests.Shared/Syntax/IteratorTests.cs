@@ -1,4 +1,5 @@
 using Kassyi.GSharp.Tests.Shared.Helpers;
+using Kassyi.GSharp.Tests.TestCases.Emission;
 using Xunit;
 #if GSHARP_CPU
 using System;
@@ -218,6 +219,27 @@ public class IteratorTests : TranspilerTestBase
         }
     }
 
+    [SkippableFact]
+    [Scenario(TestScenario.Boundary)]
+    public void Test_SeventeenLevels_NestedIteratorChainMatchesExpectedValues()
+    {
+        const int threads = 8;
+        var sixteenOut = new int[threads];
+        var seventeenOut = new int[threads];
+        var siblingsOut = new int[threads];
+
+        IteratorDepthKernels.LaunchSixteenLevelsKernel(sixteenOut, blockDimX: threads);
+        IteratorDepthKernels.LaunchSeventeenLevelsKernel(seventeenOut, blockDimX: threads);
+        IteratorDepthKernels.LaunchSiblingsKernel(siblingsOut, blockDimX: threads);
+
+        for (int tid = 0; tid < threads; tid++)
+        {
+            Assert.Equal(tid + 16, sixteenOut[tid]);
+            Assert.Equal(tid + 17, seventeenOut[tid]);
+            Assert.Equal(17 * (tid + 1), siblingsOut[tid]);
+        }
+    }
+
     [Fact]
     [Scenario(TestScenario.SadPath)]
     public async Task Test_ExternalAssemblyIterator_ReportsUnsupportedSyntax()
@@ -343,6 +365,10 @@ public class IteratorTests : TranspilerTestBase
             var inlineArrOut = new int[4];
             IteratorKernels.LaunchInlineArrayForEachKernel(3, inlineArrOut, blockDimX: 4);
             Assert.Equal([30, 42, 54, 66], inlineArrOut);
+
+            var seventeenOut = new int[4];
+            IteratorDepthKernels.LaunchSeventeenLevelsKernel(seventeenOut, blockDimX: 4);
+            Assert.Equal([17, 18, 19, 20], seventeenOut);
         }
         finally
         {

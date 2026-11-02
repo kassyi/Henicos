@@ -248,8 +248,7 @@ public partial class EmissionShapeTests
         }
     }
 
-    // The expansion depth is counted along one chain of nested expansions (16 allowed), not across siblings; one more
-    // level fails with GSH0070 at the foreach that would expand it
+    // Deeply nested iterator chains (16 and 17 levels) and sibling expansions all inline without a fixed depth limit
     [Theory]
     [Scenario(TestScenario.Boundary)]
     [InlineData("Cpu")]
@@ -259,13 +258,8 @@ public partial class EmissionShapeTests
         var source = Generate("IteratorDepthKernels", dialect);
 
         Assert.Equal(16, Regex.Matches(KernelSource(source, "SixteenLevelsKernel"), @"__gsharp_iter_end_\d+:;").Count);
+        Assert.Equal(17, Regex.Matches(KernelSource(source, "SeventeenLevelsKernel"), @"__gsharp_iter_end_\d+:;").Count);
         Assert.Equal(17, Regex.Matches(KernelSource(source, "SiblingsKernel"), @"__gsharp_iter_end_\d+:;").Count);
-
-        var overflow = GenerateAllowingFailures("IteratorDepthOverflowKernels", dialect);
-        Assert.Contains(
-            "SeventeenLevelsKernel_Source = @\"#error \"\"(148,9): GSH0070: Iterator method 'L17' is not supported on the GPU: inline expansion depth exceeds the maximum of 16.\"\"",
-            overflow,
-            StringComparison.Ordinal);
     }
 
     // What the transpiler cannot emit is stated as #error in the generated source, once per failure, at the place the
@@ -426,15 +420,6 @@ public partial class EmissionShapeTests
     {
         var expected = string.Join("\n", lines);
         Assert.True(source.Contains(expected, StringComparison.Ordinal), "Missing lines:\n" + expected);
-    }
-
-    private static string GenerateAllowingFailures(string testCase, string dialect)
-    {
-        var compilation = RoslynTestUtility.CreateCompilation(
-            RoslynTestUtility.ReadTestCase($"Transpiler/Emission/{testCase}.cu.cs"));
-        var (driver, _, _) = RoslynTestUtility.RunGenerator(compilation, dialect);
-        return string.Join("\n", driver.GetRunResult().GeneratedTrees.Select(static t => t.GetText().ToString()))
-            .Replace("\r\n", "\n", StringComparison.Ordinal);
     }
 
     // Not cached across tests: a mutation test run activates one compiler mutant after another in the same process

@@ -105,15 +105,7 @@ internal static class StatementTranspilers
                 out var sourceInvocation,
                 out var iteratorMethod))
         {
-            if (context.Emitter.IteratorInlineDepth >= IteratorInliner.MaxInlineDepth)
-            {
-                context.Reporter.Fail(
-                    GSharpDiagnostics.IteratorShapeNotSupported,
-                    node,
-                    iteratorMethod.Name,
-                    $"inline expansion depth exceeds the maximum of {IteratorInliner.MaxInlineDepth}");
-                return;
-            }
+            RuntimeHelpers.EnsureSufficientExecutionStack();
 
             if (IteratorTypeResolver.IsGenericIEnumerable(iteratorMethod.ReturnType, out var elementType))
             {
@@ -130,16 +122,7 @@ internal static class StatementTranspilers
                 context.Emitter.Dialect,
                 context.Reporter);
 
-            context.Emitter.IteratorInlineDepth++;
-            try
-            {
-                context.Visitor.VisitBlock(expandedBlock);
-            }
-            finally
-            {
-                context.Emitter.IteratorInlineDepth--;
-            }
-
+            context.Visitor.VisitBlock(expandedBlock);
             return;
         }
 
