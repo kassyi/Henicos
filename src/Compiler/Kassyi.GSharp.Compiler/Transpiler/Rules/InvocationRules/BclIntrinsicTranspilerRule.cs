@@ -11,12 +11,19 @@ internal sealed class BclIntrinsicTranspilerRule : IInvocationTranspilerRule
         }
 
         var arguments = node.ArgumentList.Arguments;
-        using var sequence = EvaluationOrder.BeginCall(ref context, arguments, symbol, receiver: null, spillAll: false);
+        var matched = ArgumentMatchingHelper.MatchArgumentsToParameters(arguments, symbol);
+        using var sequence = EvaluationOrder.BeginCall(ref context, arguments, symbol, receiver: null,
+            spillAll: !IsInParameterOrder(arguments, matched));
         context.Emitter.Writer.Append(mappingInfo.CudaIntrinsicName);
         using (context.Emitter.Writer.Parentheses())
         {
-            for (var i = 0; i < arguments.Count; i++)
+            for (var i = 0; i < matched.Length; i++)
             {
+                if (matched[i] is not { } argument)
+                {
+                    continue;
+                }
+
                 if (i == 0 && mappingInfo.CastFirstArgumentTo != null)
                 {
                     using (context.Emitter.Writer.Parentheses())
@@ -29,14 +36,32 @@ internal sealed class BclIntrinsicTranspilerRule : IInvocationTranspilerRule
                            ? context.Emitter.Writer.Parentheses()
                            : default)
                 {
-                    sequence.AppendArgument(arguments[i], symbol.FindParameter(arguments, i),
+                    sequence.AppendArgument(argument, symbol.Parameters[i],
                         ref context, convertToParameter: i != 0 || mappingInfo.CastFirstArgumentTo == null);
                 }
 
-                if (i < arguments.Count - 1)
+                if (i < matched.Length - 1)
                 {
                     context.Emitter.Writer.Append(',');
                 }
+            }
+        }
+
+        return true;
+    }
+
+    private static bool IsInParameterOrder(SeparatedSyntaxList<ArgumentSyntax> arguments, ArgumentSyntax?[] matched)
+    {
+        if (arguments.Count != matched.Length)
+        {
+            return false;
+        }
+
+        for (var i = 0; i < matched.Length; i++)
+        {
+            if (matched[i] != arguments[i])
+            {
+                return false;
             }
         }
 
