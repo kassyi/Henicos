@@ -249,7 +249,8 @@ public class GpuBigIntRnsMontgomeryKernelsTests
     }
 
     [Fact]
-    [Trait("Category", "GpuExecution")]
+    [TestTarget(ExecutionTarget.GpuExecution)]
+    [Scenario(TestScenario.Boundary)]
     public void TestExecuteModPowRns_BlockLargerThanKSize_CompletesWithoutBarrierDivergence()
     {
         const int k = 8;
