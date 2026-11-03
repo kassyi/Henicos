@@ -94,6 +94,10 @@ public abstract class DiffBuffer
     public OutputPolicy PolicyOf(int index) =>
         ColumnPolicies is null ? Policy : ColumnPolicies[ColumnOf(index)];
 
+    /// <summary>Returns the <see cref="CellLocation"/> of cell <paramref name="index"/>.</summary>
+    /// <param name="index">The cell index.</param>
+    public CellLocation LocationOf(int index) => new(Name, index, ColumnNameOf(index), ColumnCount);
+
     /// <summary>Returns a copy whose array is a new one with the same contents.</summary>
     public abstract DiffBuffer Clone();
 
@@ -117,42 +121,40 @@ public abstract class DiffBuffer
     public abstract DiffBuffer CreateSortedCopy();
 }
 
+/// <summary>Settings shared across a <see cref="DiffBuffer{T}"/> and its clones.</summary>
+internal readonly record struct BufferSpec<T>(
+    string Name,
+    string[]? Columns,
+    OutputPolicy Policy,
+    bool IsOutput,
+    IElementComparer<T>? CustomComparer = null,
+    OutputPolicy[]? ColumnPolicies = null,
+    Func<T, DiffArrayCloneScope, T>? DeepCloner = null,
+    bool IsReadOnly = false,
+    bool IsNullArray = false,
+    bool Pinned = false
+);
+
 /// <summary>A <see cref="DiffBuffer"/> of <typeparamref name="T"/> elements.</summary>
 /// <typeparam name="T">The element type.</typeparam>
 public sealed class DiffBuffer<T> : DiffBuffer
 {
-    private readonly IElementComparer<T>? _customComparer;
-    private readonly Func<T, DiffArrayCloneScope, T>? _deepCloner;
-    private readonly bool _pinned;
+    private readonly BufferSpec<T> _spec;
     private T[] _data;
 
-    internal DiffBuffer(
-        string name,
-        T[] data,
-        string[]? columns,
-        OutputPolicy policy,
-        bool isOutput,
-        IElementComparer<T>? customComparer = null,
-        OutputPolicy[]? columnPolicies = null,
-        Func<T, DiffArrayCloneScope, T>? deepCloner = null,
-        bool isReadOnly = false,
-        bool isNullArray = false,
-        bool pinned = false
-    )
-        : base(name, columns, policy, isOutput, columnPolicies, isReadOnly, isNullArray)
+    internal DiffBuffer(BufferSpec<T> spec, T[] data)
+        : base(spec.Name, spec.Columns, spec.Policy, spec.IsOutput, spec.ColumnPolicies, spec.IsReadOnly, spec.IsNullArray)
     {
-        var resolvedComparer = customComparer ?? (policy.CustomComparer as IElementComparer<T>);
-        if (RuntimeHelpers.IsReferenceOrContainsReferences<T>() && resolvedComparer is null && policy.Kind != OutputPolicyKind.Ignore)
+        var resolvedComparer = spec.CustomComparer ?? (spec.Policy.CustomComparer as IElementComparer<T>);
+        if (RuntimeHelpers.IsReferenceOrContainsReferences<T>() && resolvedComparer is null && spec.Policy.Kind != OutputPolicyKind.Ignore)
         {
             throw new ArgumentException(
-                $"Buffer '{name}' holds reference-containing type '{typeof(T).Name}' and requires a StructElementComparer<{typeof(T).Name}>.",
-                nameof(customComparer));
+                $"Buffer '{spec.Name}' holds reference-containing type '{typeof(T).Name}' and requires a StructElementComparer<{typeof(T).Name}>.",
+                nameof(spec));
         }
 
+        _spec = spec with { CustomComparer = resolvedComparer };
         _data = data;
-        _customComparer = resolvedComparer;
-        _deepCloner = deepCloner;
-        _pinned = pinned;
     }
 
     /// <summary>Gets the array that the launch and the oracle read and write.</summary>
@@ -165,7 +167,7 @@ public sealed class DiffBuffer<T> : DiffBuffer
     public T[]? NullableData => IsNullArray ? null : _data;
 
     /// <summary>Gets a value indicating whether the underlying array is allocated on the pinned object heap.</summary>
-    public bool IsPinned => _pinned;
+    public bool IsPinned => _spec.Pinned;
 
     /// <inheritdoc/>
     public override int Length => _data.Length;
@@ -199,19 +201,7 @@ public sealed class DiffBuffer<T> : DiffBuffer
     {
         if (IsNullArray)
         {
-            return new DiffBuffer<T>(
-                Name,
-                [],
-                Columns,
-                Policy,
-                IsOutput,
-                _customComparer,
-                ColumnPolicies,
-                _deepCloner,
-                IsReadOnly,
-                isNullArray: true,
-                pinned: false
-            );
+            return new DiffBuffer<T>(_spec with { Pinned = false }, []);
         }
 
         T[] clonedData;
@@ -219,7 +209,7 @@ public sealed class DiffBuffer<T> : DiffBuffer
         {
             clonedData = (T[])existing;
         }
-        else if (_pinned)
+        else if (_spec.Pinned)
         {
             clonedData = GC.AllocateArray<T>(_data.Length, pinned: true);
             _data.AsSpan().CopyTo(clonedData);
@@ -229,29 +219,17 @@ public sealed class DiffBuffer<T> : DiffBuffer
         {
             clonedData = (T[])_data.Clone();
             objectMap.Add(_data, clonedData);
-            if (_deepCloner is not null)
+            if (_spec.DeepCloner is not null)
             {
                 var scope = new DiffArrayCloneScope(objectMap);
                 for (int i = 0; i < clonedData.Length; i++)
                 {
-                    clonedData[i] = _deepCloner(clonedData[i], scope);
+                    clonedData[i] = _spec.DeepCloner(clonedData[i], scope);
                 }
             }
         }
 
-        return new DiffBuffer<T>(
-            Name,
-            clonedData,
-            Columns,
-            Policy,
-            IsOutput,
-            _customComparer,
-            ColumnPolicies,
-            _deepCloner,
-            IsReadOnly,
-            isNullArray: false,
-            pinned: _pinned
-        );
+        return new DiffBuffer<T>(_spec, clonedData);
     }
 
     /// <inheritdoc/>
@@ -272,9 +250,9 @@ public sealed class DiffBuffer<T> : DiffBuffer
             return true;
         }
 
-        if (_customComparer is not null)
+        if (_spec.CustomComparer is not null)
         {
-            return _customComparer.Equals(in expected, in actual, policy);
+            return _spec.CustomComparer.Equals(in expected, in actual, policy);
         }
 
         return policy.Kind switch
@@ -326,19 +304,7 @@ public sealed class DiffBuffer<T> : DiffBuffer
             }
         }
 
-        return new DiffBuffer<T>(
-            Name,
-            sorted,
-            Columns,
-            Policy,
-            IsOutput,
-            _customComparer,
-            ColumnPolicies,
-            _deepCloner,
-            IsReadOnly,
-            isNullArray: false,
-            pinned: false
-        );
+        return new DiffBuffer<T>(_spec with { Pinned = false }, sorted);
     }
 
     private static void SortSpanTotalOrder(Span<T> span)
@@ -409,9 +375,9 @@ public sealed class DiffBuffer<T> : DiffBuffer
             return IsNullArray == otherBuffer.IsNullArray;
         }
 
-        if (_customComparer is not null)
+        if (_spec.CustomComparer is not null)
         {
-            return _customComparer.Equals(in _data[index], in otherBuffer._data[index], OutputPolicy.Exact);
+            return _spec.CustomComparer.Equals(in _data[index], in otherBuffer._data[index], OutputPolicy.Exact);
         }
 
         return BitsEqual(in _data[index], in otherBuffer._data[index]);
@@ -426,9 +392,9 @@ public sealed class DiffBuffer<T> : DiffBuffer
         }
 
         ref readonly var value = ref _data[index];
-        if (_customComparer is not null)
+        if (_spec.CustomComparer is not null)
         {
-            return _customComparer.Format(in value);
+            return _spec.CustomComparer.Format(in value);
         }
 
         return $"{string.Format(CultureInfo.InvariantCulture, "{0}", value)} ({Hex(in value)})";
@@ -581,7 +547,8 @@ public sealed class DiffBuffers
     )
     {
         ArgumentNullException.ThrowIfNull(values);
-        return Add(new DiffBuffer<T>(name, values, null, policy ?? OutputPolicy.Bitwise, isOutput: false, comparer, isReadOnly: readOnly));
+        var spec = new BufferSpec<T>(name, null, policy ?? OutputPolicy.Bitwise, IsOutput: false, CustomComparer: comparer, IsReadOnly: readOnly);
+        return Add(new DiffBuffer<T>(spec, values));
     }
 
     /// <summary>Adds an input with an explicit read-only immutability flag.</summary>
@@ -594,7 +561,8 @@ public sealed class DiffBuffers
     {
         var pinned = GC.AllocateArray<T>(initial.Length, pinned: true);
         initial.CopyTo(pinned);
-        return Add(new DiffBuffer<T>(name, pinned, null, policy ?? OutputPolicy.Exact, isOutput: false, isReadOnly: readOnly, pinned: true));
+        var spec = new BufferSpec<T>(name, null, policy ?? OutputPolicy.Exact, IsOutput: false, IsReadOnly: readOnly, Pinned: true);
+        return Add(new DiffBuffer<T>(spec, pinned));
     }
 
     /// <summary>Adds a GC-pinned input buffer from an existing array, preserving aliasing on <see cref="Clone"/>.</summary>
@@ -602,7 +570,8 @@ public sealed class DiffBuffers
         where T : unmanaged
     {
         ArgumentNullException.ThrowIfNull(values);
-        return Add(new DiffBuffer<T>(name, values, null, policy ?? OutputPolicy.Exact, isOutput: false, isReadOnly: readOnly, pinned: true));
+        var spec = new BufferSpec<T>(name, null, policy ?? OutputPolicy.Exact, IsOutput: false, IsReadOnly: readOnly, Pinned: true);
+        return Add(new DiffBuffer<T>(spec, values));
     }
 
     /// <summary>Adds a zeroed output of <paramref name="rows"/> rows of the named columns.</summary>
@@ -615,7 +584,8 @@ public sealed class DiffBuffers
             throw new ArgumentException($"output {name} repeats a column name", nameof(columns));
         }
 
-        return Add(new DiffBuffer<T>(name, new T[rows * columns.Length], columns, policy, isOutput: true, comparer));
+        var spec = new BufferSpec<T>(name, columns, policy, IsOutput: true, CustomComparer: comparer);
+        return Add(new DiffBuffer<T>(spec, new T[rows * columns.Length]));
     }
 
     /// <summary>Adds a zeroed output of <paramref name="rows"/> rows with a distinct <see cref="OutputPolicy"/> per column.</summary>
@@ -642,14 +612,16 @@ public sealed class DiffBuffers
             throw new ArgumentException($"output {name} repeats a column name", nameof(columns));
         }
 
-        return Add(new DiffBuffer<T>(name, new T[rows * columns.Length], names, policies[0], isOutput: true, comparer, columnPolicies: policies));
+        var spec = new BufferSpec<T>(name, names, policies[0], IsOutput: true, CustomComparer: comparer, ColumnPolicies: policies);
+        return Add(new DiffBuffer<T>(spec, new T[rows * columns.Length]));
     }
 
     /// <summary>Adds a zeroed output of <paramref name="length"/> cells without column names.</summary>
     public DiffBuffers Out<T>(string name, int length, OutputPolicy policy, IElementComparer<T>? comparer = null)
     {
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(length);
-        return Add(new DiffBuffer<T>(name, new T[length], null, policy, isOutput: true, comparer));
+        var spec = new BufferSpec<T>(name, null, policy, IsOutput: true, CustomComparer: comparer);
+        return Add(new DiffBuffer<T>(spec, new T[length]));
     }
 
     /// <summary>Adds a GC-pinned output buffer filled with <paramref name="fill"/>.</summary>
@@ -659,7 +631,8 @@ public sealed class DiffBuffers
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(length);
         var pinned = GC.AllocateArray<T>(length, pinned: true);
         pinned.AsSpan().Fill(fill);
-        return Add(new DiffBuffer<T>(name, pinned, null, policy ?? OutputPolicy.Exact, isOutput: true, pinned: true));
+        var spec = new BufferSpec<T>(name, null, policy ?? OutputPolicy.Exact, IsOutput: true, Pinned: true);
+        return Add(new DiffBuffer<T>(spec, pinned));
     }
 
     /// <summary>Adds a GC-pinned multi-column output buffer.</summary>
@@ -675,7 +648,8 @@ public sealed class DiffBuffers
 
         var pinned = GC.AllocateArray<T>(rows * columns.Length, pinned: true);
         pinned.AsSpan().Fill(fill);
-        return Add(new DiffBuffer<T>(name, pinned, columns, policy, isOutput: true, pinned: true));
+        var spec = new BufferSpec<T>(name, columns, policy, IsOutput: true, Pinned: true);
+        return Add(new DiffBuffer<T>(spec, pinned));
     }
 
     /// <summary>
@@ -695,7 +669,8 @@ public sealed class DiffBuffers
         ArgumentNullException.ThrowIfNull(values);
         ArgumentNullException.ThrowIfNull(cloner);
         ArgumentNullException.ThrowIfNull(comparer);
-        return Add(new DiffBuffer<T>(name, values, null, policy ?? OutputPolicy.Exact, isOutput: false, comparer, deepCloner: cloner, isReadOnly: readOnly));
+        var spec = new BufferSpec<T>(name, null, policy ?? OutputPolicy.Exact, IsOutput: false, CustomComparer: comparer, DeepCloner: cloner, IsReadOnly: readOnly);
+        return Add(new DiffBuffer<T>(spec, values));
     }
 
     /// <summary>
@@ -758,7 +733,8 @@ public sealed class DiffBuffers
     {
         ArgumentNullException.ThrowIfNull(cloner);
         ArgumentNullException.ThrowIfNull(comparer);
-        return Add(new DiffBuffer<T>(name, [initialValue], null, policy ?? OutputPolicy.Exact, isOutput: true, comparer, deepCloner: cloner));
+        var spec = new BufferSpec<T>(name, null, policy ?? OutputPolicy.Exact, IsOutput: true, CustomComparer: comparer, DeepCloner: cloner);
+        return Add(new DiffBuffer<T>(spec, [initialValue]));
     }
 
     /// <summary>Registers a <c>ref</c> struct argument that holds one or more <c>TField[]</c> fields using a <see cref="StructFieldCheckContext"/> callback.</summary>
@@ -784,7 +760,7 @@ public sealed class DiffBuffers
         bool readOnly = false
     ) =>
         values is null
-            ? Add(new DiffBuffer<T>(name, [], null, OutputPolicy.Ignore, isOutput: false, comparer, isReadOnly: readOnly, isNullArray: true))
+            ? Add(new DiffBuffer<T>(new BufferSpec<T>(name, null, OutputPolicy.Ignore, IsOutput: false, CustomComparer: comparer, IsReadOnly: readOnly, IsNullArray: true), []))
             : In(name, values, policy, comparer, readOnly);
 
     /// <summary>Registers a top-level nullable array input (<c>T[]?</c>) with a read-only flag.</summary>
@@ -814,7 +790,7 @@ public sealed class DiffBuffers
 
     /// <summary>Registers a <c>ref</c> scalar parameter as a 1-element output buffer initialized with <paramref name="initialValue"/>.</summary>
     public DiffBuffers RefScalar<T>(string name, T initialValue, OutputPolicy? policy = null, IElementComparer<T>? comparer = null) =>
-        Add(new DiffBuffer<T>(name, [initialValue], null, policy ?? OutputPolicy.Exact, isOutput: true, comparer));
+        Add(new DiffBuffer<T>(new BufferSpec<T>(name, null, policy ?? OutputPolicy.Exact, IsOutput: true, CustomComparer: comparer), [initialValue]));
 
     /// <summary>Registers the automatic return array (<c>__result</c>) for a value-returning kernel.</summary>
     public DiffBuffers OutAutoResult<T>(int length, OutputPolicy? policy = null, IElementComparer<T>? comparer = null) =>
