@@ -155,7 +155,7 @@ public class ConversionDifferentialTests
             gridDimX: s.GridX,
             blockDimX: s.BlockX
         ),
-        Oracle = static b => ConversionDifferentialKernels.ForeachFloatToIntMatrixKernel(
+        Oracle = static (b, _) => ConversionDifferentialKernels.ForeachFloatToIntMatrixKernel(
             b.Get<float>("f"),
             b.Get<double>("d"),
             b.Get<long>("r")
@@ -178,7 +178,7 @@ public class ConversionDifferentialTests
             gridDimX: s.GridX,
             blockDimX: s.BlockX
         ),
-        Oracle = static b => ConversionDifferentialKernels.EnumCastMatrixKernel(
+        Oracle = static (b, _) => ConversionDifferentialKernels.EnumCastMatrixKernel(
             b.Get<float>("f"),
             b.Get<double>("d"),
             b.Get<int>("i"),
@@ -209,7 +209,7 @@ public class ConversionDifferentialTests
             gridDimX: s.GridX,
             blockDimX: s.BlockX
         ),
-        Oracle = static b => ConversionDifferentialKernels.IntToFloatConversionMatrixKernel(
+        Oracle = static (b, _) => ConversionDifferentialKernels.IntToFloatConversionMatrixKernel(
             b.Get<int>("i"),
             b.Get<uint>("u"),
             b.Get<long>("l"),
@@ -241,7 +241,7 @@ public class ConversionDifferentialTests
             gridDimX: s.GridX,
             blockDimX: s.BlockX
         ),
-        Oracle = static b => ConversionDifferentialKernels.IntToDoubleConversionMatrixKernel(
+        Oracle = static (b, _) => ConversionDifferentialKernels.IntToDoubleConversionMatrixKernel(
             b.Get<int>("i"),
             b.Get<uint>("u"),
             b.Get<long>("l"),
@@ -263,7 +263,7 @@ public class ConversionDifferentialTests
             gridDimX: s.GridX,
             blockDimX: s.BlockX
         ),
-        Oracle = static b => ConversionDifferentialKernels.CharScalarArgKernel(
+        Oracle = static (b, _) => ConversionDifferentialKernels.CharScalarArgKernel(
             '\u1234',
             b.Get<char>("cArr"),
             b.Get<int>("r")
