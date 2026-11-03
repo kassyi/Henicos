@@ -80,7 +80,7 @@ In CPU fallback mode (no `GSharpKernelProvider`, or `GpuKernelLoader.IsCpuFallba
 
 ### Far-Apart Exponents
 
-For a result of $n$ words ($p = 32n$ bits), let $H$ be the operand of `Add` with the larger exponent (on a tie, the wider significand) and $L$ the other one, with $w_L$ words. `Add` shifts $H$ left onto $L$ and adds exactly, so the work would grow with $e_H - e_L$. When $e_L + 32 w_L \le e_H - p$, $L$ lies below $2^{e_H - p}$, and every sum $H \pm x$ with $0 < x < 2^{e_H - p}$ rounds to the same $p$ bits: a nonzero $L$ is replaced by the sticky bit $2^{e_H - p - 1}$, and a zero $L$ or $H$ leaves the other operand. The work then depends on the widths only. The exponents are subtracted in `long`, so a difference beyond `int` (up to $2^{32} - 1$) does not wrap around. This is the form of MPFR's `mpfr_add1sp` / `mpfr_sub1sp` for an exponent difference of at least $p$. [`CSharpCpuBigFloatArithmetic`](CSharpCpuBigFloatArithmetic.md) uses the same rule.
+For a result of $n$ words ($p = 32n$ bits), let $H$ be the operand of `Add` with the larger exponent (on a tie, the wider significand) and $L$ the other one, with $w_L$ words. `Add` shifts $H$ left onto $L$ and adds exactly, so the work would grow with $e_H - e_L$. When $e_L + 32 w_L \le e_H - p$, $L$ lies below $2^{e_H - p}$, and every sum $H \pm x$ with $0 < x < 2^{e_H - p}$ rounds to the same $p$ bits: a nonzero $L$ is replaced by the sticky bit $2^{e_H - p - 1}$, and a zero $L$ or $H$ leaves the other operand. The work then depends on the widths only. The exponents are subtracted in `long`, so a difference beyond `int` (up to $2^{32} - 1$) does not wrap around. [`CSharpCpuBigFloatArithmetic`](CSharpCpuBigFloatArithmetic.md) uses the same rule.
 
 ### Wide Divisors and Radicands
 
@@ -90,7 +90,7 @@ For a result of $n$ words ($p = 32n$ bits), `Divide` and `Rsqrt` cut a divisor o
 - When a bit that the rounding to $p$ bits discards is set (one of the low 2 bits of $Q_{hi}$, which has $p + 2$ or $p + 3$ bits; the low word of $x_{hi}$, which has at least $p + 33$ bits), the floor and the value one above it round to the same $p$ bits, and the result is used as it is. Only the low word is read back.
 - Otherwise one product at the full width decides: $Q_{hi} \cdot R > N$ (the scaled dividend), or $x_{hi}^2 \cdot A > 2^{2B}$, means the estimate is one too large. A one-block kernel compares and decrements it on the device, without a read back. The divisor cut by nothing ($R$ of $K$ words or fewer bits) needs no check.
 
-This is the form of MPFR's `mpfr_div` for a divisor longer than the quotient (`src/div.c`), with the check made by one multiplication when the discarded bits leave the result open. The CPU fallback does not truncate.
+The CPU fallback does not truncate.
 
 The cut pays off only when it moves the work out of the slow size range of the GPU division or inverse square root. The division takes about 2 ms for a divisor of up to 32 words and 11 to 17 ms for a wider one; the inverse square root of the cut radicand takes at most 1.7 ms up to $n = 44$ and 24 ms from $n = 45$. So the cut is used only within these widths:
 
@@ -125,7 +125,7 @@ For a divisor of 32 words or fewer, the `Divide` ratios varied between 0.87 and 
 | --- | --- |
 | `Exp` | $x = k \ln 2 + r$, $r \in (0.69, 1.39)$ for either sign (ln 2 from a cached Machin-type constant); the Taylor polynomial of $e^{r/2^s}$ in Paterson–Stockmeyer form with Smith's division order; $s$ squarings; $e^x = e^r \cdot 2^k$. $\lvert x \rvert < 2^{-(p+1)}$ returns 1 or $1 - 2^{-p}$ directly; $\lvert x \rvert \ge 2^{32}$ throws `OverflowException`. |
 | `Log` | $x = m \cdot 2^e$, $m \in [3/4, 3/2)$; $\ln x = e \ln 2 + 2y \cdot T(y^2)$, $y = (m - 1)/(m + 1)$ kept with its own exponent (an argument close to 1 loses no bits); $T$ in Horner form up to `AtanhHornerMaxTerms` terms, Paterson–Stockmeyer otherwise. |
-| `Pow` | The exact check (as MPFR's `mpfr_pow_is_exact`) on the host returns a $p$-bit power such as $2^3$ or $4^{0.5}$ directly. Otherwise $L \approx \ln x$ at the Exp precision plus 64 bits, $y \cdot L$ exactly on the device, its exponential, and the rounding check with the Exp bound plus the error of $L$. |
+| `Pow` | The exact check on the host returns a $p$-bit power such as $2^3$ or $4^{0.5}$ directly. Otherwise $L \approx \ln x$ at the Exp precision plus 64 bits, $y \cdot L$ exactly on the device, its exponential, and the rounding check with the Exp bound plus the error of $L$. |
 
 The parameters $s$, $m$ and the Horner limit can be fixed per workspace through [`GpuBigFloatTranscendentalOptions`](GpuBigFloatTranscendentalOptions.md) (`GpuWorkspace.Transcendental`); they change only the speed.
 

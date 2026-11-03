@@ -13,30 +13,51 @@ namespace Kassyi.GSharp.Tests.Shared.Differential;
 /// <param name="Known">The registry entry that covers the difference, or <see langword="null"/>.</param>
 public sealed record PathCell(DiffPath Path, string Value, bool Differs, KnownDivergence? Known);
 
-/// <summary>A cell where at least one path differs from the oracle.</summary>
-/// <param name="Seed">The seed of the inputs.</param>
+/// <summary>Identifies a cell in a <see cref="DiffBuffer"/> by its buffer name, flat index, column name, and column count per row.</summary>
 /// <param name="Buffer">The buffer name.</param>
 /// <param name="Index">The cell index in the buffer.</param>
-/// <param name="Row">The row (the thread that wrote the cell).</param>
-/// <param name="Column">The column index.</param>
 /// <param name="ColumnName">The column name.</param>
+/// <param name="ColumnCount">The number of columns per row (1 when the buffer has no named columns).</param>
+public readonly record struct CellLocation(string Buffer, int Index, string ColumnName, int ColumnCount = 1)
+{
+    /// <summary>Gets the row (the thread that wrote the cell).</summary>
+    public int Row => Index / Math.Max(1, ColumnCount);
+
+    /// <summary>Gets the column index.</summary>
+    public int Column => Index % Math.Max(1, ColumnCount);
+}
+
+/// <summary>A cell where at least one path differs from the oracle.</summary>
+/// <param name="Seed">The seed of the inputs.</param>
+/// <param name="Location">The cell location in the buffer.</param>
 /// <param name="Inputs">The row's inputs, formatted.</param>
 /// <param name="Expected">The oracle's value, formatted.</param>
 /// <param name="Paths">The value of every path.</param>
 /// <param name="Shape">The launch shape on which the mismatch occurred.</param>
 public sealed record CellMismatch(
     int Seed,
-    string Buffer,
-    int Index,
-    int Row,
-    int Column,
-    string ColumnName,
+    CellLocation Location,
     string Inputs,
     string Expected,
     IReadOnlyList<PathCell> Paths,
     LaunchShape? Shape = null
 )
 {
+    /// <summary>Gets the buffer name.</summary>
+    public string Buffer => Location.Buffer;
+
+    /// <summary>Gets the cell index in the buffer.</summary>
+    public int Index => Location.Index;
+
+    /// <summary>Gets the row (the thread that wrote the cell).</summary>
+    public int Row => Location.Row;
+
+    /// <summary>Gets the column index.</summary>
+    public int Column => Location.Column;
+
+    /// <summary>Gets the column name.</summary>
+    public string ColumnName => Location.ColumnName;
+
     /// <summary>Gets a value indicating whether every differing path is covered by a <see cref="KnownDivergence"/>.</summary>
     public bool IsKnown => Paths.All(static p => !p.Differs || p.Known is not null);
 }
