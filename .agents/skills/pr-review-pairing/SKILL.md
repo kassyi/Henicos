@@ -47,6 +47,7 @@ Start with a map, then go file by file.
    node .agents/skills/pr-review-pairing/scripts/hot-spots.js <file.cs>... [--top <n>] [--min-cases <n>]
    ```
    In the compiler, a big switch whose cases do the work inline is a Facade / Strategy candidate: propose a dispatcher with one line per case (or a switch expression that maps a kind to a descriptor), each case body in its own method or strategy, and the file split by responsibility. Raise it also when the switch predates the PR but sits in a method the PR changes.
+   Also check that each member returning `bool` that the PR adds or renames says in the affirmative what `true` means (`HasX` must not return `true` when there is no X); the whole code base is audited once before a release ([docs/release_checklist.md](../../../docs/release_checklist.md)).
 5. End with the next step ("next: X, shall I continue?").
 
 **Explaining**: conclusion first, every domain term and algorithm explained the first time it appears. When the person says they do not follow, back up and explain the math or background from the start with a small worked example before going on. Keep chat in Japanese; everything posted to GitHub is English.
