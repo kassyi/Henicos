@@ -25,30 +25,6 @@ namespace Kassyi.GSharp.Compiler.Marshaling
 
 namespace Kassyi.GSharp.Tests.Shared.Differential
 {
-    public sealed record KnownDivergence(
-        string Case,
-        string Column,
-        DiffPath Paths,
-        int Issue,
-        DiffHost Hosts = DiffHost.Any,
-        Predicate<LaunchShape>? ShapePredicate = null)
-    {
-        public const string ExceptionColumn = "$exception";
-
-        public bool AppliesToThisHost => (Hosts & (OperatingSystem.IsWindows() ? DiffHost.Windows : DiffHost.Unix)) != 0;
-
-        public bool Covers(string caseName, string column, DiffPath path) =>
-            Case == caseName && Column == column && (Paths & path) != 0 && ShapePredicate is null;
-
-        public bool Covers(string caseName, string column, DiffPath path, LaunchShape shape) =>
-            Case == caseName &&
-            Column == column &&
-            (Paths & path) != 0 &&
-            (ShapePredicate is null || ShapePredicate(shape));
-
-        public override string ToString() => $"\"{Column}\" on {DiffPaths.Format(Paths)} (#{Issue})";
-    }
-
     public static class KnownDivergences
     {
         public static IReadOnlyList<KnownDivergence> All { get; } = [];

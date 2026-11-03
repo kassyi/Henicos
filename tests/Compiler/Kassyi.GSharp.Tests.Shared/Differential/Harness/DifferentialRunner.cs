@@ -13,6 +13,22 @@ namespace Kassyi.GSharp.Tests.Shared.Differential;
 /// </summary>
 public static class DifferentialRunner
 {
+    private readonly record struct CaseRun(
+        DifferentialCase Case,
+        IReadOnlyList<DiffPathRunner> Paths,
+        List<KnownDivergence> Entries,
+        DifferentialReport Report
+    )
+    {
+        public KnownDivergence? FindEntry(string column, DiffPath path, LaunchShape shape)
+        {
+            string caseName = Case.Name;
+            return Entries.FirstOrDefault(k => k.Covers(caseName, column, path, shape));
+        }
+    }
+
+    private readonly record struct ShapeRun(int Seed, int ShapeIndex, LaunchShape Shape, DiffBuffers Initial);
+
     /// <summary>
     /// Runs the case on <see cref="DiffPaths.Available"/> with <paramref name="seeds"/> (by default
     /// <see cref="DifferentialSeeds.For"/> of <c>TEST_SEED</c>) and <see cref="KnownDivergences.All"/>, and fails the
@@ -128,6 +144,56 @@ public static class DifferentialRunner
         bool runPreflight
     )
     {
+        ValidateCase(testCase, seeds, paths);
+
+        if (runPreflight)
+        {
+            foreach (var path in paths)
+            {
+                path.Preflight?.Invoke();
+            }
+        }
+
+        var report = new DifferentialReport(testCase, paths, seeds, testSeed);
+
+        if (CudaTrapSubprocessRunner.TryGetActiveTarget(out var childTarget))
+        {
+            RunChildTarget(testCase, paths, childTarget);
+            return report;
+        }
+
+        var entries = known.Where(k => k.Case == testCase.Name && k.AppliesToThisHost).ToList();
+        var run = new CaseRun(testCase, paths, entries, report);
+        int subprocessCount = 0;
+
+        foreach (int seed in seeds)
+        {
+            var shapesForSeed = testCase.GetShapesForSeed(seed);
+            for (int shapeIndex = 0; shapeIndex < shapesForSeed.Count; shapeIndex++)
+            {
+                var shape = shapesForSeed[shapeIndex];
+                report.AddExecutedShape(shape);
+                var initial = testCase.Inputs(new DiffRandom(seed), shape);
+                initial.Shape = shape;
+                var at = new ShapeRun(seed, shapeIndex, shape, initial);
+
+                if (RunOneShape(in run, in at, allowSubprocess: subprocessCount == 0))
+                {
+                    subprocessCount++;
+                }
+            }
+        }
+
+        if (checkStale)
+        {
+            AddStaleEntries(in run);
+        }
+
+        return report;
+    }
+
+    private static void ValidateCase(DifferentialCase testCase, IReadOnlyList<int> seeds, IReadOnlyList<DiffPathRunner> paths)
+    {
         bool hasOracle = testCase.Oracle is not null;
         bool hasReference = testCase.Reference is not null;
         bool hasVerifier = testCase.Verify is not null || testCase.VerifyAgainstInitial is not null;
@@ -152,159 +218,122 @@ public static class DifferentialRunner
         {
             throw new DifferentialHarnessException($"{testCase.Name}: no launch shape configured");
         }
+    }
 
-        if (runPreflight)
+    private static void RunChildTarget(
+        DifferentialCase testCase,
+        IReadOnlyList<DiffPathRunner> paths,
+        (string CaseName, int ShapeIndex, int Seed) childTarget
+    )
+    {
+        if (!string.Equals(childTarget.CaseName, testCase.Name, StringComparison.Ordinal))
         {
-            foreach (var path in paths)
-            {
-                path.Preflight?.Invoke();
-            }
+            return;
         }
 
-        var report = new DifferentialReport(testCase, paths, seeds, testSeed);
-
-        if (CudaTrapSubprocessRunner.TryGetActiveTarget(out var childTarget))
+        var childShapes = testCase.GetShapesForSeed(childTarget.Seed);
+        if ((uint)childTarget.ShapeIndex >= (uint)childShapes.Count)
         {
-            if (!string.Equals(childTarget.CaseName, testCase.Name, StringComparison.Ordinal))
-            {
-                return report;
-            }
+            throw new DifferentialHarnessException(
+                $"{testCase.Name}: invalid child shape index {childTarget.ShapeIndex} (count={childShapes.Count})"
+            );
+        }
 
-            var childShapes = testCase.GetShapesForSeed(childTarget.Seed);
-            if ((uint)childTarget.ShapeIndex >= (uint)childShapes.Count)
+        var childShape = childShapes[childTarget.ShapeIndex];
+        var childInitial = testCase.Inputs(new DiffRandom(childTarget.Seed), childShape);
+        childInitial.Shape = childShape;
+        var childBuffers = childInitial.Clone();
+        childBuffers.Shape = childShape;
+        var cudaRunner = paths.FirstOrDefault(static p => p.Path == DiffPath.Cuda) ?? paths[0];
+        Exception? childThrown = null;
+        try
+        {
+            cudaRunner.Run(() => testCase.Launch(childBuffers, childShape));
+        }
+        catch (Exception ex)
+        {
+            childThrown = ex;
+        }
+
+        CudaTrapSubprocessRunner.WriteChildResult(childThrown);
+    }
+
+    private static bool RunOneShape(in CaseRun run, in ShapeRun at, bool allowSubprocess)
+    {
+        var testCase = run.Case;
+        bool hasOracle = testCase.Oracle is not null;
+        bool hasReference = testCase.Reference is not null;
+
+        var activeExPolicy = testCase.ExpectedException?.Invoke(new DiffRandom(at.Seed), at.Shape) ?? testCase.ExceptionPolicy;
+        DiffBuffers? expected = null;
+
+        if (activeExPolicy is null)
+        {
+            if (!hasOracle && !hasReference && at.Initial.All.Any(static b => b.IsOutput && b.Policy.Kind != OutputPolicyKind.Ignore))
             {
                 throw new DifferentialHarnessException(
-                    $"{testCase.Name}: invalid child shape index {childTarget.ShapeIndex} (count={childShapes.Count})"
+                    $"{testCase.Name}: when neither Oracle nor Reference is set, all output buffers must use OutputPolicy.Ignore"
                 );
             }
 
-            var childShape = childShapes[childTarget.ShapeIndex];
-            var childInitial = testCase.Inputs(new DiffRandom(childTarget.Seed), childShape);
-            childInitial.Shape = childShape;
-            var childBuffers = childInitial.Clone();
-            childBuffers.Shape = childShape;
-            var cudaRunner = paths.FirstOrDefault(static p => p.Path == DiffPath.Cuda) ?? paths[0];
-            Exception? childThrown = null;
+            if (hasOracle || hasReference)
+            {
+                expected = RunOracle(testCase, at.Initial, at.Shape, at.Seed, out activeExPolicy);
+            }
+        }
+
+        if (activeExPolicy is not null)
+        {
+            return EvaluateExceptionExpectation(in run, in at, activeExPolicy, allowSubprocess);
+        }
+
+        var shape = at.Shape;
+        var actuals = new List<(DiffPathRunner Path, DiffBuffers Buffers, DiffBuffers? PtrBuffers)>();
+        foreach (var path in run.Paths)
+        {
+            var buffers = at.Initial.Clone();
+            buffers.Shape = shape;
             try
             {
-                cudaRunner.Run(() => testCase.Launch(childBuffers, childShape));
+                path.Run(() => testCase.Launch(buffers, shape));
+                DiffBuffers? ptrBuffers = null;
+                if (path.Path == DiffPath.Cuda && testCase.LaunchPtr is { } launchPtr)
+                {
+                    ptrBuffers = at.Initial.Clone();
+                    ptrBuffers.Shape = shape;
+                    path.Run(() => launchPtr(ptrBuffers, shape));
+                }
+
+                actuals.Add((path, buffers, ptrBuffers));
             }
             catch (Exception ex)
             {
-                childThrown = ex;
-            }
-
-            CudaTrapSubprocessRunner.WriteChildResult(childThrown);
-            return report;
-        }
-
-        var entries = known.Where(k => k.Case == testCase.Name && k.AppliesToThisHost).ToList();
-        int cudaSubprocessFaultCount = 0;
-
-        foreach (int seed in seeds)
-        {
-            var shapesForSeed = testCase.GetShapesForSeed(seed);
-            for (int shapeIndex = 0; shapeIndex < shapesForSeed.Count; shapeIndex++)
-            {
-                var shape = shapesForSeed[shapeIndex];
-                report.AddExecutedShape(shape);
-                var initial = testCase.Inputs(new DiffRandom(seed), shape);
-                initial.Shape = shape;
-
-                var explicitExPolicy = testCase.ExpectedException?.Invoke(new DiffRandom(seed), shape) ?? testCase.ExceptionPolicy;
-                ExceptionPolicy? activeExPolicy = explicitExPolicy;
-                DiffBuffers? expected = null;
-
-                if (activeExPolicy is null)
-                {
-                    if (!hasOracle && !hasReference && initial.All.Any(static b => b.IsOutput && b.Policy.Kind != OutputPolicyKind.Ignore))
-                    {
-                        throw new DifferentialHarnessException(
-                            $"{testCase.Name}: when neither Oracle nor Reference is set, all output buffers must use OutputPolicy.Ignore"
-                        );
-                    }
-
-                    if (hasOracle || hasReference)
-                    {
-                        expected = RunOracle(testCase, initial, shape, seed, out activeExPolicy);
-                    }
-                }
-
-                if (activeExPolicy is not null)
-                {
-                    EvaluateExceptionExpectation(
-                        testCase,
-                        seed,
-                        shapeIndex,
-                        shape,
-                        initial,
-                        paths,
-                        activeExPolicy,
-                        entries,
-                        report,
-                        ref cudaSubprocessFaultCount
-                    );
-                    continue;
-                }
-
-                var actuals = new List<(DiffPathRunner Path, DiffBuffers Buffers, DiffBuffers? PtrBuffers)>();
-                foreach (var path in paths)
-                {
-                    var buffers = initial.Clone();
-                    buffers.Shape = shape;
-                    try
-                    {
-                        path.Run(() => testCase.Launch(buffers, shape));
-                        DiffBuffers? ptrBuffers = null;
-                        if (path.Path == DiffPath.Cuda && testCase.LaunchPtr is { } launchPtr)
-                        {
-                            ptrBuffers = initial.Clone();
-                            ptrBuffers.Shape = shape;
-                            path.Run(() => launchPtr(ptrBuffers, shape));
-                        }
-
-                        actuals.Add((path, buffers, ptrBuffers));
-                    }
-                    catch (Exception ex)
-                    {
-                        report.Add(new PathFailure(seed, path.Path, ex, shape));
-                    }
-                }
-
-                if (expected is not null)
-                {
-                    Compare(testCase, seed, shape, initial, expected, actuals, entries, report);
-                }
-
-                RunPropertyChecks(testCase, seed, shape, initial, actuals, report);
+                run.Report.Add(new PathFailure(at.Seed, path.Path, ex, shape));
             }
         }
 
-        if (checkStale)
+        if (expected is not null)
         {
-            AddStaleEntries(paths, entries, report);
+            Compare(in run, in at, expected, actuals);
         }
 
-        return report;
+        RunPropertyChecks(in run, in at, actuals);
+        return false;
     }
 
-    private static void EvaluateExceptionExpectation(
-        DifferentialCase testCase,
-        int seed,
-        int shapeIndex,
-        LaunchShape shape,
-        DiffBuffers initial,
-        IReadOnlyList<DiffPathRunner> paths,
+    private static bool EvaluateExceptionExpectation(
+        in CaseRun run,
+        in ShapeRun at,
         ExceptionPolicy policy,
-        List<KnownDivergence> entries,
-        DifferentialReport report,
-        ref int cudaSubprocessFaultCount
+        bool allowSubprocess
     )
     {
-        var cells = new List<PathCell>(paths.Count);
+        var testCase = run.Case;
+        var cells = new List<PathCell>(run.Paths.Count);
         bool anyDiffers = false;
+        bool launchedSubprocess = false;
 
-        foreach (var path in paths)
+        foreach (var path in run.Paths)
         {
             if ((policy.Paths & path.Path) == 0)
             {
@@ -315,18 +344,17 @@ public static class DifferentialRunner
             Exception? thrown = null;
             bool skippedBySampling = false;
 
-#if GSHARP_CUDA
             if (path.Path == DiffPath.Cuda && ReferenceEquals(path.Run, DiffPaths.DirectRunner))
             {
                 bool shouldRunSubprocess =
                     testCase.CudaTrapSampling == CudaTrapSampling.AllFaults ||
                     CudaTrapSubprocessRunner.IsFullSamplingEnabled ||
-                    cudaSubprocessFaultCount == 0;
+                    allowSubprocess;
 
                 if (shouldRunSubprocess)
                 {
-                    cudaSubprocessFaultCount++;
-                    thrown = CudaTrapSubprocessRunner.RunInSubprocess(testCase.Name, shapeIndex, seed);
+                    launchedSubprocess = true;
+                    thrown = CudaTrapSubprocessRunner.RunInSubprocess(testCase.Name, at.ShapeIndex, at.Seed);
                 }
                 else
                 {
@@ -334,18 +362,16 @@ public static class DifferentialRunner
                 }
             }
             else
-#endif
             {
-                _ = shapeIndex;
-                _ = cudaSubprocessFaultCount;
-                var buffers = initial.Clone();
+                var shape = at.Shape;
+                var buffers = at.Initial.Clone();
                 buffers.Shape = shape;
                 try
                 {
                     path.Run(() => testCase.Launch(buffers, shape));
                     if (path.Path == DiffPath.Cuda && testCase.LaunchPtr is { } launchPtr)
                     {
-                        var ptrBuffers = initial.Clone();
+                        var ptrBuffers = at.Initial.Clone();
                         ptrBuffers.Shape = shape;
                         path.Run(() => launchPtr(ptrBuffers, shape));
                     }
@@ -365,14 +391,14 @@ public static class DifferentialRunner
             if (thrown is null)
             {
                 anyDiffers = true;
-                var entry = entries.FirstOrDefault(k => k.Covers(testCase.Name, KnownDivergence.ExceptionColumn, path.Path, shape));
+                var entry = run.FindEntry(KnownDivergence.ExceptionColumn, path.Path, at.Shape);
                 cells.Add(new PathCell(path.Path, "no exception thrown", Differs: true, entry));
             }
             else if (!policy.Matches(thrown, path.Path, out string? mismatchReason))
             {
                 anyDiffers = true;
                 var actual = ExceptionPolicy.Unwrap(thrown);
-                var entry = entries.FirstOrDefault(k => k.Covers(testCase.Name, KnownDivergence.ExceptionColumn, path.Path, shape));
+                var entry = run.FindEntry(KnownDivergence.ExceptionColumn, path.Path, at.Shape);
                 cells.Add(new PathCell(path.Path, $"{actual.GetType().Name} ({mismatchReason})", Differs: true, entry));
             }
             else
@@ -384,19 +410,17 @@ public static class DifferentialRunner
 
         if (anyDiffers)
         {
-            report.Add(new CellMismatch(
-                seed,
-                KnownDivergence.ExceptionColumn,
-                Index: 0,
-                Row: 0,
-                Column: 0,
-                KnownDivergence.ExceptionColumn,
-                FormatInputs(initial, shape.Rows, 0),
+            run.Report.Add(new CellMismatch(
+                at.Seed,
+                new CellLocation(KnownDivergence.ExceptionColumn, 0, KnownDivergence.ExceptionColumn),
+                FormatInputs(at.Initial, at.Shape.Rows, 0),
                 policy.ToString(),
                 cells,
-                shape
+                at.Shape
             ));
         }
+
+        return launchedSubprocess;
     }
 
     private static DiffBuffers? RunOracle(
@@ -536,19 +560,15 @@ public static class DifferentialRunner
     }
 
     private static void Compare(
-        DifferentialCase testCase,
-        int seed,
-        LaunchShape shape,
-        DiffBuffers initial,
+        in CaseRun run,
+        in ShapeRun at,
         DiffBuffers expected,
-        List<(DiffPathRunner Path, DiffBuffers Buffers, DiffBuffers? PtrBuffers)> actuals,
-        List<KnownDivergence> entries,
-        DifferentialReport report
+        List<(DiffPathRunner Path, DiffBuffers Buffers, DiffBuffers? PtrBuffers)> actuals
     )
     {
         for (int b = 0; b < expected.All.Count; b++)
         {
-            var rawOracle = initial.All[b].IsReadOnly ? initial.All[b] : expected.All[b];
+            var rawOracle = at.Initial.All[b].IsReadOnly ? at.Initial.All[b] : expected.All[b];
             bool isMultiset = rawOracle.Policy.Kind == OutputPolicyKind.Multiset ||
                 (rawOracle.ColumnPolicies is not null && rawOracle.ColumnPolicies.Any(static p => p.Kind == OutputPolicyKind.Multiset));
             var oracle = isMultiset ? rawOracle.CreateSortedCopy() : rawOracle;
@@ -577,35 +597,29 @@ public static class DifferentialRunner
                     bool ptrDiffers = ptr is not null && !oracle.CellsMatch(ptr, i);
                     bool differs = primaryDiffers || ptrDiffers;
                     var displayedBuffer = !primaryDiffers && ptrDiffers && ptr is not null ? ptr : primary;
-                    var entry = differs ? entries.FirstOrDefault(k => k.Covers(testCase.Name, column, path.Path, shape)) : null;
+                    var entry = differs ? run.FindEntry(column, path.Path, at.Shape) : null;
                     cells.Add(new PathCell(path.Path, displayedBuffer.FormatCell(i), differs, entry));
                 }
 
-                report.Add(new CellMismatch(
-                    seed,
-                    oracle.Name,
-                    i,
-                    oracle.RowOf(i),
-                    oracle.ColumnOf(i),
-                    column,
-                    FormatInputs(initial, shape.Rows, oracle.RowOf(i)),
+                run.Report.Add(new CellMismatch(
+                    at.Seed,
+                    oracle.LocationOf(i),
+                    FormatInputs(at.Initial, at.Shape.Rows, oracle.RowOf(i)),
                     oracle.FormatCell(i),
                     cells,
-                    shape
+                    at.Shape
                 ));
             }
         }
     }
 
     private static void RunPropertyChecks(
-        DifferentialCase testCase,
-        int seed,
-        LaunchShape shape,
-        DiffBuffers initial,
-        List<(DiffPathRunner Path, DiffBuffers Buffers, DiffBuffers? PtrBuffers)> actuals,
-        DifferentialReport report
+        in CaseRun run,
+        in ShapeRun at,
+        List<(DiffPathRunner Path, DiffBuffers Buffers, DiffBuffers? PtrBuffers)> actuals
     )
     {
+        var testCase = run.Case;
         if (testCase.Verify is null && testCase.VerifyAgainstInitial is null)
         {
             return;
@@ -615,36 +629,36 @@ public static class DifferentialRunner
         {
             if (testCase.Verify is { } verify)
             {
-                var res = verify(buffers, shape);
+                var res = verify(buffers, at.Shape);
                 if (!res.Success)
                 {
-                    report.Add(new PropertyFailure(seed, path.Path, res.FailureMessage ?? "Verify failed.", shape));
+                    run.Report.Add(new PropertyFailure(at.Seed, path.Path, res.FailureMessage ?? "Verify failed.", at.Shape));
                 }
 
                 if (ptrBuffers is not null)
                 {
-                    var ptrRes = verify(ptrBuffers, shape);
+                    var ptrRes = verify(ptrBuffers, at.Shape);
                     if (!ptrRes.Success)
                     {
-                        report.Add(new PropertyFailure(seed, path.Path, ptrRes.FailureMessage ?? "Verify (LaunchPtr) failed.", shape));
+                        run.Report.Add(new PropertyFailure(at.Seed, path.Path, ptrRes.FailureMessage ?? "Verify (LaunchPtr) failed.", at.Shape));
                     }
                 }
             }
 
             if (testCase.VerifyAgainstInitial is { } verifyAgainstInitial)
             {
-                var res = verifyAgainstInitial(initial, buffers, shape);
+                var res = verifyAgainstInitial(at.Initial, buffers, at.Shape);
                 if (!res.Success)
                 {
-                    report.Add(new PropertyFailure(seed, path.Path, res.FailureMessage ?? "VerifyAgainstInitial failed.", shape));
+                    run.Report.Add(new PropertyFailure(at.Seed, path.Path, res.FailureMessage ?? "VerifyAgainstInitial failed.", at.Shape));
                 }
 
                 if (ptrBuffers is not null)
                 {
-                    var ptrRes = verifyAgainstInitial(initial, ptrBuffers, shape);
+                    var ptrRes = verifyAgainstInitial(at.Initial, ptrBuffers, at.Shape);
                     if (!ptrRes.Success)
                     {
-                        report.Add(new PropertyFailure(seed, path.Path, ptrRes.FailureMessage ?? "VerifyAgainstInitial (LaunchPtr) failed.", shape));
+                        run.Report.Add(new PropertyFailure(at.Seed, path.Path, ptrRes.FailureMessage ?? "VerifyAgainstInitial (LaunchPtr) failed.", at.Shape));
                     }
                 }
             }
@@ -658,16 +672,17 @@ public static class DifferentialRunner
             .Select(b => $"{b.Name}={b.FormatCell(row)}")
         );
 
-    private static void AddStaleEntries(IReadOnlyList<DiffPathRunner> paths, List<KnownDivergence> entries, DifferentialReport report)
+    private static void AddStaleEntries(in CaseRun run)
     {
-        foreach (var entry in entries)
+        var report = run.Report;
+        foreach (var entry in run.Entries)
         {
             if (entry.ShapePredicate is not null && !report.ExecutedShapes.Any(s => entry.ShapePredicate(s)))
             {
                 continue;
             }
 
-            foreach (var path in paths)
+            foreach (var path in run.Paths)
             {
                 if ((entry.Paths & path.Path) == 0 ||
                     report.Failures.Any(f => f.Path == path.Path && (f.Shape is null || entry.ShapePredicate is null || entry.ShapePredicate(f.Shape))))
