@@ -43,8 +43,6 @@ public static class KnownDivergences
         $"{nameof(BarrierAndWarpDifferentialKernels)}.{nameof(BarrierAndWarpDifferentialKernels.GenericStructStaticSharedMemoryKernel)}";
     private const string InterlockedReturnExpression =
         $"{nameof(AtomicsDifferentialKernels)}.{nameof(AtomicsDifferentialKernels.InterlockedReturnExpressionKernel)}";
-    private const string FloatSpecialValuesContention =
-        $"{nameof(AtomicsDifferentialKernels)}.{nameof(AtomicsDifferentialKernels.FloatSpecialValuesContentionKernel)}";
 
     /// <summary>Gets every registered entry.</summary>
     public static IReadOnlyList<KnownDivergence> All { get; } =
@@ -127,9 +125,5 @@ public static class KnownDivergences
         new(InterlockedReturnExpression, "cas64_lt_zero", DiffPath.Native | DiffPath.Cuda, Issue: 1057), // S23: Interlocked.CompareExchange(ref long) returns unsigned long long in C++
         new(InterlockedReturnExpression, "add32_wrap_min", DiffPath.Cuda, Issue: 1058), // S24: __gsharp_atomicAdd(int*, int) performs signed int addition without unsigned cast, triggering C++ signed overflow UB under nvcc
         new(InterlockedReturnExpression, "cas32_named_args_reversed", DiffPath.Native | DiffPath.Cuda, Issue: 1059), // S46: BclIntrinsicTranspilerRule does not reorder named arguments
-
-        // Global float atomic add FTZ on subnormals and NaN canonicalization on CPU paths (#868)
-        new(FloatSpecialValuesContention, "global_subnormal_ftz", DiffPath.Managed | DiffPath.Native, Issue: 868),
-        new(FloatSpecialValuesContention, "global_nan_canonical", DiffPath.Managed | DiffPath.Native, Issue: 868),
     ];
 }
