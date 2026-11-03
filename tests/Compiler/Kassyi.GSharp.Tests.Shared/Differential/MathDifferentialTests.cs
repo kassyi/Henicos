@@ -99,7 +99,6 @@ public class MathDifferentialTests
         {
             var (a, b) = SinglePairs(rng, rows);
             var (min, max) = OrderedBounds(rng, rows, b, DiffValues.SingleBoundaries, DiffValues.NextSingle);
-            QuietSignalingNaNs(a, b, min, max);
             return new DiffBuffers()
                 .In("a", a)
                 .In("b", b)
@@ -132,7 +131,6 @@ public class MathDifferentialTests
         {
             var (a, b) = DoublePairs(rng, rows);
             var (min, max) = OrderedBounds(rng, rows, b, s_doubleBoundaries, NextDouble);
-            QuietSignalingNaNs(a, b, min, max);
             return new DiffBuffers()
                 .In("a", a)
                 .In("b", b)
@@ -329,38 +327,6 @@ public class MathDifferentialTests
         ulong exponent = (ulong)(1023 - 40 + rng.NextBelow(101));
         ulong mantissa = rng.NextUInt64() >> 12;
         return BitConverter.UInt64BitsToDouble(sign | (exponent << 52) | mantissa);
-    }
-
-    // [WHY] C# does not define whether Max, Min and Clamp quiet a signaling NaN: the unoptimized JIT code returns it
-    // unchanged and the optimized code quiets it, so the oracle itself gave 0x7FBDED86 in one thread order and 0x7FFDED86
-    // in the other once the method tiered up. Such an input has no single C# result; quiet NaNs keep their payloads and
-    // are still compared bit for bit
-    private static void QuietSignalingNaNs(params float[][] buffers)
-    {
-        foreach (float[] values in buffers)
-        {
-            for (int i = 0; i < values.Length; i++)
-            {
-                if (float.IsNaN(values[i]))
-                {
-                    values[i] = BitConverter.UInt32BitsToSingle(BitConverter.SingleToUInt32Bits(values[i]) | 0x0040_0000u);
-                }
-            }
-        }
-    }
-
-    private static void QuietSignalingNaNs(params double[][] buffers)
-    {
-        foreach (double[] values in buffers)
-        {
-            for (int i = 0; i < values.Length; i++)
-            {
-                if (double.IsNaN(values[i]))
-                {
-                    values[i] = BitConverter.UInt64BitsToDouble(BitConverter.DoubleToUInt64Bits(values[i]) | 0x0008_0000_0000_0000ul);
-                }
-            }
-        }
     }
 
     private static (float[] Left, float[] Right) SinglePairs(DiffRandom rng, int rows) =>

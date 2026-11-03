@@ -7,6 +7,7 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
+using System.Threading;
 using Kassyi.GSharp.Core;
 using Xunit;
 
@@ -589,6 +590,41 @@ public class HarnessTests
         };
         Assert.False(DifferentialRunner.Evaluate(ignored, [0], s_nativeOnly, s_noEntries).HasFailures);
     }
+
+    [Fact]
+    [TestTarget(ExecutionTarget.CpuExecution)]
+    [Category(TestCategory.Unit)]
+    [Scenario(TestScenario.Boundary)]
+    public void Test_Runner_OracleOrderCheck_AcceptsAnyNaNOnlyForComputedCells()
+    {
+        // The oracle writes a NaN with a new payload on every call, as the JIT does when it quiets a signaling NaN in one
+        // run and not in the other: a computed cell (Bitwise) accepts it, a moved cell (Exact) must keep every bit
+        // mutant: DifferentialRunner.cs CheckOrderIndependence `|| (... Bitwise && CellsMatch)` removed
+        var computed = new DifferentialCase("HarnessTests.NaNPayloadPerCall")
+        {
+            Shape = LaunchShape.ForRows(4, blockX: 4),
+            Inputs = static (_, _) => new DiffBuffers().Out<float>("r", 1, OutputPolicy.Bitwise),
+            Launch = static (b, _) => b.Get<float>("r")[0] = float.NaN,
+            Oracle = static (b, _) => b.Get<float>("r")[0] = NextPayloadNaN(),
+        };
+        Assert.False(DifferentialRunner.Evaluate(computed, [0], s_nativeOnly, s_noEntries).HasFailures);
+
+        // mutant: DiffBuffers.cs CellsMatch lets an Exact cell match any NaN, as it does for Bitwise
+        var moved = new DifferentialCase("HarnessTests.NaNPayloadPerCall")
+        {
+            Shape = computed.Shape,
+            Inputs = static (_, _) => new DiffBuffers().Out<float>("r", 1, OutputPolicy.Exact),
+            Launch = static (_, _) => throw new InvalidOperationException("no path may run after the order check fails"),
+            Oracle = computed.Oracle,
+        };
+        var ex = Assert.Throws<DifferentialHarnessException>(() => DifferentialRunner.Evaluate(moved, [0], s_nativeOnly, s_noEntries));
+        Assert.Contains("kernel output depends on thread order", ex.Message);
+    }
+
+    private static int s_nanPayload;
+
+    private static float NextPayloadNaN() =>
+        BitConverter.UInt32BitsToSingle(0x7FC0_0000u | (uint)(Interlocked.Increment(ref s_nanPayload) & 0x3F_FFFF));
 
     [Fact]
     [TestTarget(ExecutionTarget.CpuExecution)]
