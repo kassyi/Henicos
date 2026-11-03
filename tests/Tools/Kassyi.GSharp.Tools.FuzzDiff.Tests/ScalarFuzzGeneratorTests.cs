@@ -1,926 +1,595 @@
 #nullable enable
-global using System.Linq;
-global using Kassyi.GSharp.Runtime.Aot;
 using System.Collections.Immutable;
-using System.Globalization;
-using System.Reflection;
-using System.Runtime.Loader;
-using System.Text;
-using System.Text.RegularExpressions;
 using Kassyi.GSharp.Compiler;
-using Kassyi.GSharp.Compiler.Diagnostics.Kernel;
-using Kassyi.GSharp.Core;
 using Kassyi.GSharp.Tests.Shared.Differential;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Diagnostics;
 
-namespace Kassyi.GSharp.Compiler.Marshaling
+namespace Kassyi.GSharp.Tools.FuzzDiff.Tests;
+
+/// <summary>
+/// Property and soundness tests for <see cref="ScalarFuzzGenerator"/> and <see cref="KnownIssueFilter"/>.
+/// </summary>
+public class ScalarFuzzGeneratorTests
 {
-    internal static class AotHostNames
+    [Fact]
+    [TestTarget(ExecutionTarget.CpuExecution)]
+    [Category(TestCategory.Unit)]
+    [Scenario(TestScenario.HappyPath)]
+    public void FuzzGenerator_SameSeedAndSwarm_EmitsBitIdenticalSource()
     {
-        public static string ToSafeIdentifier(string name) => name.Replace('.', '_');
+        for (ulong seed = 1UL; seed <= 16UL; seed++)
+        {
+            int size = 1 + (int)((seed - 1UL) % 6UL);
+            var optionsA = new FuzzOptions
+            {
+                FuzzSeed = seed,
+                InputSeed = (int)(seed % 5UL),
+                BatchSize = 4,
+                Size = size,
+            };
+            var optionsB = new FuzzOptions
+            {
+                FuzzSeed = seed,
+                InputSeed = (int)(seed % 5UL),
+                BatchSize = 4,
+                Size = size,
+            };
+
+            var batchA = new ScalarFuzzGenerator(optionsA).GenerateBatch();
+            var batchB = new ScalarFuzzGenerator(optionsB).GenerateBatch();
+
+            // Two independent runs with identical (--fuzz-seed, --input-seed, size, Swarm weights) must produce byte-identical kernel and case sources.
+            // mutant: ScalarFuzzGenerator.GenerateBatch() line 55: var masterRng = new FuzzRandom(_options.FuzzSeed ^ (ulong)GetHashCode());
+            // input: seed = 1UL .. 16UL, InputSeed = (int)(seed % 5UL), BatchSize = 4, Size = 1..6
+            Assert.Equal(batchA.KernelsSource, batchB.KernelsSource);
+            Assert.Equal(batchA.CasesSource, batchB.CasesSource);
+
+            var nextBatch = new ScalarFuzzGenerator(optionsA with { FuzzSeed = seed + 100UL }).GenerateBatch();
+            Assert.NotEqual(batchA.KernelsSource, nextBatch.KernelsSource);
+        }
     }
-}
 
-namespace Kassyi.GSharp.Tests.Shared.Differential
-{
-    public static class KnownDivergences
+    [Fact]
+    [TestTarget(ExecutionTarget.CpuExecution)]
+    [Category(TestCategory.Compiler)]
+    [Scenario(TestScenario.Boundary)]
+    public async Task FuzzGenerator_SwarmSweep100Seeds_ProducesZeroRoslynAndGSharpDiagnostics()
     {
-        public static IReadOnlyList<KnownDivergence> All { get; } = [];
-    }
-}
-
-namespace Kassyi.GSharp.Tools.FuzzDiff.Tests
-{
-    /// <summary>
-    /// In-memory property and soundness tests for the differential kernel fuzzer (<see cref="ScalarFuzzGenerator"/>, <see cref="FuzzReducer"/>, <see cref="FuzzDeduplicator"/>, and <see cref="FuzzPromoter"/>).
-    /// </summary>
-    public class ScalarFuzzGeneratorTests
-    {
-        private static readonly Lazy<IReadOnlyList<MetadataReference>> s_baseReferences = new(CreateBaseReferences);
-        private static readonly CSharpParseOptions s_parseOptions = new(LanguageVersion.Preview);
-
-        private static readonly ImmutableArray<DiagnosticAnalyzer> s_kernelAnalyzers =
-        [
-            new GpuKernelAnalyzer(),
-            new KernelClassAnalyzer(),
-            new BarrierUsageAnalyzer(),
-            new ParallelDependentCallAnalyzer(),
-        ];
-
-        [Fact]
-        [TestTarget(ExecutionTarget.CpuExecution)]
-        [Category(TestCategory.Unit)]
-        [Scenario(TestScenario.HappyPath)]
-        public void FuzzGenerator_SameSeedAndSwarm_EmitsBitIdenticalSource()
+        const string SweepClassName = "FuzzSweep100Kernels";
+        var generator = new ScalarFuzzGenerator(new FuzzOptions
         {
-            for (ulong seed = 1UL; seed <= 16UL; seed++)
-            {
-                int size = 1 + (int)((seed - 1UL) % 6UL);
-                var optionsA = new FuzzOptions
-                {
-                    FuzzSeed = seed,
-                    InputSeed = (int)(seed % 5UL),
-                    BatchSize = 4,
-                    Size = size,
-                };
-                var optionsB = new FuzzOptions
-                {
-                    FuzzSeed = seed,
-                    InputSeed = (int)(seed % 5UL),
-                    BatchSize = 4,
-                    Size = size,
-                };
+            FuzzSeed = 1UL,
+            BatchSize = 1,
+            KernelClassName = SweepClassName,
+        });
 
-                var batchA = new ScalarFuzzGenerator(optionsA).GenerateBatch();
-                var batchB = new ScalarFuzzGenerator(optionsB).GenerateBatch();
+        var methodSources = new List<string>(100);
+        int nestedStatementsInControlFlow = 0;
 
-                // Two independent runs with identical (--fuzz-seed, --input-seed, size) must produce byte-identical kernel and case sources.
-                // mutant: ScalarFuzzGenerator.GenerateBatch() line 48: var masterRng = new FuzzRandom(_options.FuzzSeed ^ (ulong)GetHashCode());
-                // input: seed = 1UL .. 16UL, InputSeed = (int)(seed % 5UL), BatchSize = 4, Size = 1..6
-                Assert.Equal(batchA.KernelsSource, batchB.KernelsSource);
-                Assert.Equal(batchA.CasesSource, batchB.CasesSource);
+        for (ulong seed = 0UL; seed < 100UL; seed++)
+        {
+            int size = 1 + (int)(seed % 8UL);
+            var spec = generator.GenerateSingleKernel($"SweepKernel_{seed:D3}", seed, size);
+            methodSources.Add(spec.KernelMethodSource);
 
-                var nextBatch = new ScalarFuzzGenerator(optionsA with { FuzzSeed = seed + 100UL }).GenerateBatch();
-                Assert.NotEqual(batchA.KernelsSource, nextBatch.KernelsSource);
-            }
+            var root = CSharpSyntaxTree.ParseText($"class __C {{ {spec.KernelMethodSource} }}", FuzzTestCompilationHelper.ParseOptions).GetRoot();
+            nestedStatementsInControlFlow += CountNestedStatementsInControlFlowAndAssertLoopVarSafety(root);
         }
 
-        [Fact]
-        [TestTarget(ExecutionTarget.CpuExecution)]
-        [Category(TestCategory.Compiler)]
-        [Scenario(TestScenario.Boundary)]
-        public async Task FuzzGenerator_SwarmSweep100Seeds_ProducesZeroRoslynAndGSharpDiagnostics()
+        // Control-flow bodies (if/else, switch sections, bounded loops) must contain generated statements up to depth 2 while never mutating loop variables inside loop bodies.
+        // mutant: ScalarFuzzGenerator.EmitNestedStatements() line 159: return immediately when state.ControlFlowDepth >= 0
+        // input: SweepKernel_000 .. SweepKernel_099 (seed = 0UL .. 99UL)
+        Assert.True(nestedStatementsInControlFlow > 0, "Expected random statements to be emitted inside control-flow constructs.");
+
+        string combinedSource = FuzzTestCompilationHelper.RenderKernelCompilationUnit(
+            SweepClassName,
+            generator.DeviceFunctions,
+            methodSources);
+
+        foreach (string dialect in new[] { "Cpu", "Cuda" })
         {
-            var sb = new StringBuilder();
-            sb.AppendLine("#nullable enable");
-            sb.AppendLine("#pragma warning disable CS0162, CS0219, CS1717, CS1718");
-            sb.AppendLine("using System;");
-            sb.AppendLine("using Kassyi.GSharp.Core;");
-            sb.AppendLine();
-            sb.AppendLine("namespace Kassyi.GSharp.Tests.Shared.Differential;");
-            sb.AppendLine();
-            ScalarFuzzGenerator.AppendEnumDeclarations(sb);
-            sb.AppendLine();
-            sb.AppendLine("public static partial class FuzzSweep100Kernels");
-            sb.AppendLine("{");
-
-            var generator = new ScalarFuzzGenerator(new FuzzOptions { FuzzSeed = 1UL, BatchSize = 1 });
-            for (ulong seed = 0UL; seed < 100UL; seed++)
-            {
-                int size = 1 + (int)(seed % 8UL);
-                var spec = generator.GenerateSingleKernel($"SweepKernel_{seed:D3}", seed, size);
-                sb.AppendLine(spec.KernelMethodSource);
-                sb.AppendLine();
-            }
-
-            sb.AppendLine("}");
-            string combinedSource = sb.ToString();
-
-            foreach (string dialect in new[] { "Cpu", "Cuda" })
-            {
-                var tree = CSharpSyntaxTree.ParseText(combinedSource, s_parseOptions, path: $"FuzzSweep100Kernels_{dialect}.cu.cs");
-                var compilation = CSharpCompilation.Create(
-                    $"FuzzSweep100_{dialect}",
-                    [tree],
-                    s_baseReferences.Value,
-                    new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary).WithAllowUnsafe(true));
-
-                var configProvider = new FuzzTestAnalyzerConfigOptionsProvider(dialect);
-                var analyzerOptions = new AnalyzerOptions(ImmutableArray<AdditionalText>.Empty, configProvider);
-                var analyzerDiags = await compilation
-                    .WithAnalyzers(s_kernelAnalyzers, analyzerOptions)
-                    .GetAnalyzerDiagnosticsAsync();
-
-                GeneratorDriver driver = CSharpGeneratorDriver.Create(
-                    generators: [new GpuKernelGenerator().AsSourceGenerator()],
-                    additionalTexts: null,
-                    parseOptions: s_parseOptions,
-                    optionsProvider: configProvider);
-                driver.RunGeneratorsAndUpdateCompilation(compilation, out var outputCompilation, out var generatorDiags);
-
-                var csErrors = outputCompilation
-                    .GetDiagnostics()
-                    .Where(static d => d.Severity == DiagnosticSeverity.Error)
-                    .ToArray();
-                var gshDiags = analyzerDiags
-                    .Concat(generatorDiags)
-                    .Concat(outputCompilation.GetDiagnostics())
-                    .Where(static d => d.Id.StartsWith("GSH", StringComparison.Ordinal) &&
-                                       d.Severity is DiagnosticSeverity.Error or DiagnosticSeverity.Warning)
-                    .ToArray();
-
-                // Generated kernels across all 100 seeds must compile with zero C# errors and zero GSH* errors/warnings.
-                // mutant: ScalarFuzzGenerator.EmitRandomStatement() line 340: state.Statements.Add($"var {newName} = 0;"); (triggers CS0029 on bool local)
-                // input: seed = 0UL .. 99UL, dialect in ["Cpu", "Cuda"]
-                Assert.Empty(csErrors);
-                // mutant: ScalarFuzzGenerator.InitializeLocals() line 166: state.Statements.Add("object v_heap = new object();"); (triggers GSH0001)
-                // input: seed = 0UL .. 99UL, dialect in ["Cpu", "Cuda"]
-                Assert.Empty(gshDiags);
-            }
-        }
-
-        [Fact]
-        [TestTarget(ExecutionTarget.CpuExecution)]
-        [Category(TestCategory.Compiler)]
-        [Scenario(TestScenario.Boundary)]
-        public void FuzzGenerator_DynamicGuards_NeverThrowOrRaceInSequentialAndLockstepOracles()
-        {
-            const int KernelCount = 50;
-            var generator = new ScalarFuzzGenerator(new FuzzOptions { FuzzSeed = 0UL, BatchSize = 1 });
-            var specs = new List<GeneratedKernelSpec>(KernelCount);
-
-            var sb = new StringBuilder();
-            sb.AppendLine("#nullable enable");
-            sb.AppendLine("#pragma warning disable CS0162, CS0219");
-            sb.AppendLine("using System;");
-            sb.AppendLine("using Kassyi.GSharp.Core;");
-            sb.AppendLine("namespace Kassyi.GSharp.Tests.Shared.Differential;");
-            ScalarFuzzGenerator.AppendEnumDeclarations(sb);
-            sb.AppendLine("public static partial class FuzzGuardTestKernels");
-            sb.AppendLine("{");
-
-            for (int i = 0; i < KernelCount; i++)
-            {
-                var spec = generator.GenerateSingleKernel($"GuardKernel_{i:D2}", (ulong)i, size: 1 + (i % 6));
-                specs.Add(spec);
-                sb.AppendLine(spec.KernelMethodSource);
-            }
-
-            sb.AppendLine("}");
-
-            var assembly = CompileToInMemoryAssembly("FuzzGuardTestAssembly", sb.ToString());
-            var kernelType = assembly.GetType("Kassyi.GSharp.Tests.Shared.Differential.FuzzGuardTestKernels")
-                ?? throw new InvalidOperationException("Failed to resolve FuzzGuardTestKernels type.");
-
-            var shape = LaunchShapes.PartialWarp(rows: 64, blockX: 32);
-            int[] seeds = [0, 1, 2, 3, 4];
-
-            foreach (var spec in specs)
-            {
-                var method = kernelType.GetMethod(spec.KernelName, BindingFlags.Public | BindingFlags.Static)
-                    ?? throw new InvalidOperationException($"Missing kernel method {spec.KernelName}.");
-                var action = method.CreateDelegate<Action<int[], int[], int[], ulong[]>>();
-
-                foreach (int seed in seeds)
-                {
-                    var rng = new DiffRandom(seed);
-                    var (inA, inB) = DiffValues.Int32Pairs(rng, shape.Rows);
-                    var inC = DiffValues.Values(rng, shape.Rows, DiffValues.ShiftCounts, DiffValues.NextInt32);
-                    if (seed == 0 && shape.Rows >= 4)
-                    {
-                        // Guarantee direct (int.MinValue, -1) and (int.MinValue, 0) coverage witnesses in the same row.
-                        inA[0] = int.MinValue;
-                        inB[0] = -1;
-                        inA[1] = int.MinValue;
-                        inB[1] = 0;
-                    }
-
-                    ulong[] forwardOut = new ulong[shape.Rows];
-                    ulong[] reverseOut = new ulong[shape.Rows];
-                    ulong[] permutedOut = new ulong[shape.Rows];
-
-                    var forwardException = Record.Exception(() =>
-                        SequentialOracle.Run(shape, ThreadOrder.Forward, () => action(inA, inB, inC, forwardOut)));
-                    var reverseException = Record.Exception(() =>
-                        SequentialOracle.Run(shape, ThreadOrder.Reverse, () => action(inA, inB, inC, reverseOut)));
-                    var permutedException = Record.Exception(() =>
-                        SequentialOracle.Run(shape, ThreadOrder.Permutation(seed), () => action(inA, inB, inC, permutedOut)));
-
-                    // Every generated kernel must complete without DivideByZeroException / OverflowException and produce identical outputs across all thread orders.
-                    // mutant: ScalarFuzzGenerator.BuildGuardedDivisionOrModulo() line 692: remove "|| (({leftExpr}) == int.MinValue && ({rightExpr}) == -1)" from int division guard
-                    // input: GuardKernel_00 .. GuardKernel_49 with seed = 0 (inA[0] = int.MinValue, inB[0] = -1; inA[1] = int.MinValue, inB[1] = 0)
-                    Assert.Null(forwardException);
-                    Assert.Null(reverseException);
-                    Assert.Null(permutedException);
-                    Assert.Equal(forwardOut, reverseOut);
-                    Assert.Equal(forwardOut, permutedOut);
-                }
-            }
-        }
-
-        [Fact]
-        [TestTarget(ExecutionTarget.CpuExecution)]
-        [Category(TestCategory.Compiler)]
-        [Scenario(TestScenario.SadPath)]
-        public void FuzzGenerator_PlantedTranspilerMutants_AreCaughtWithinFixedSeedBudget()
-        {
-            const int SeedBudget = 16;
-            var generator = new ScalarFuzzGenerator(new FuzzOptions { FuzzSeed = 1UL, BatchSize = 1 });
-            var specs = new List<GeneratedKernelSpec>(SeedBudget);
-
-            var sb = new StringBuilder();
-            sb.AppendLine("#nullable enable");
-            sb.AppendLine("#pragma warning disable CS0162, CS0219");
-            sb.AppendLine("using System;");
-            sb.AppendLine("using Kassyi.GSharp.Core;");
-            sb.AppendLine("namespace Kassyi.GSharp.Tests.Shared.Differential;");
-            ScalarFuzzGenerator.AppendEnumDeclarations(sb);
-            sb.AppendLine("public static partial class FuzzMutantProbeKernels");
-            sb.AppendLine("{");
-
-            for (int i = 1; i <= SeedBudget; i++)
-            {
-                var spec = generator.GenerateSingleKernel($"Probe_{i:D2}", (ulong)i, size: 4);
-                specs.Add(spec);
-                sb.AppendLine(spec.KernelMethodSource);
-                sb.AppendLine(MutateDropShiftMask(spec.KernelMethodSource, $"Probe_{i:D2}", $"Probe_{i:D2}_MutShift"));
-                sb.AppendLine(MutateReverseInterferingOperands(spec.KernelMethodSource, $"Probe_{i:D2}", $"Probe_{i:D2}_MutOrder"));
-                sb.AppendLine(MutateCorruptNarrowCompound(spec.KernelMethodSource, $"Probe_{i:D2}", $"Probe_{i:D2}_MutNarrow"));
-            }
-
-            sb.AppendLine("}");
-
-            var assembly = CompileToInMemoryAssembly("FuzzMutantProbeAssembly", sb.ToString());
-            var kernelType = assembly.GetType("Kassyi.GSharp.Tests.Shared.Differential.FuzzMutantProbeKernels")
-                ?? throw new InvalidOperationException("Failed to resolve FuzzMutantProbeKernels.");
-
-            int caughtShiftMutant = 0;
-            int caughtOrderMutant = 0;
-            int caughtNarrowMutant = 0;
-
-            for (int i = 1; i <= SeedBudget; i++)
-            {
-                string baseName = $"Probe_{i:D2}";
-                var oracleDel = CreateKernelDelegate(kernelType, baseName);
-                var shiftDel = CreateKernelDelegate(kernelType, $"{baseName}_MutShift");
-                var orderDel = CreateKernelDelegate(kernelType, $"{baseName}_MutOrder");
-                var narrowDel = CreateKernelDelegate(kernelType, $"{baseName}_MutNarrow");
-
-                if (EvaluatesToMismatch(baseName, oracleDel, shiftDel))
-                {
-                    caughtShiftMutant++;
-                }
-
-                if (EvaluatesToMismatch(baseName, oracleDel, orderDel))
-                {
-                    caughtOrderMutant++;
-                }
-
-                if (EvaluatesToMismatch(baseName, oracleDel, narrowDel))
-                {
-                    caughtNarrowMutant++;
-                }
-            }
-
-            // Within the fixed 16-seed budget, the generated kernels and FNV-1a checksum must catch all three planted transpiler mutants.
-            // mutant: ScalarFuzzGenerator.EmitChecksumFoldSingle() line 747: $"hash = (hash ^ {siteId}UL) * {FnvPrime}UL;" (omitting local value bits from FNV-1a fold)
-            // input: Probe_01 .. Probe_16 (seeds 1..16, size = 4) compared against _MutShift, _MutOrder, and _MutNarrow across DifferentialSeeds.Fixed
-            Assert.True(caughtShiftMutant > 0, "Expected shift-mask mutant to be caught within 16 seeds.");
-            Assert.True(caughtOrderMutant > 0, "Expected operand evaluation-order mutant to be caught within 16 seeds.");
-            Assert.True(caughtNarrowMutant > 0, "Expected narrow compound-assignment mutant to be caught within 16 seeds.");
-        }
-
-        [Fact]
-        [TestTarget(ExecutionTarget.CpuExecution)]
-        [Category(TestCategory.Compiler)]
-        [Scenario(TestScenario.HappyPath)]
-        public void FuzzReducer_Synthetic100LineFailingKernel_ShrinksBelow15StatementsPreservingFailure()
-        {
-            string synthetic100LineSource = BuildSynthetic100StatementMultiFunctionKernel();
-            int initialStatements = FuzzReducer.CountKernelExecutableStatements(synthetic100LineSource);
-            int initialHelpers = FuzzReducer.CountDeviceFunctionMethods(synthetic100LineSource);
-            Assert.True(initialStatements >= 95, $"Expected synthetic kernel to start with >= 95 statements, got {initialStatements}.");
-            Assert.Equal(3, initialHelpers);
-
-            bool IsInteresting(string candidateSource)
-            {
-                if (!CompilesWithZeroDiagnosticsAndSimulateShiftMismatch(candidateSource, out bool mismatchReproduced))
-                {
-                    return false;
-                }
-
-                return mismatchReproduced;
-            }
-
-            // Sanity-check that the initial 100-statement kernel reproduces the planted failure before reduction.
-            Assert.True(IsInteresting(synthetic100LineSource), "Expected initial 100-statement kernel to reproduce the planted shift mismatch.");
-
-            // In-memory reduction: HoistLocalsToDefault + InlineAndPruneDeviceFunctions + CoarseStatementRemover + SimplifyExpressions.
-            var reduction = FuzzReducer.Reduce(synthetic100LineSource, IsInteresting);
-
-            CompilesWithZeroDiagnosticsAndSimulateShiftMismatch(reduction.ReducedSource, out bool reducedStillFails, out var reducedGshDiags);
-
-            // The reduced kernel must preserve the failure, shrink to <= 15 statements and 0 helper [GpuDeviceFunction] methods, and emit 0 GSH* diagnostics.
-            // mutant: FuzzReducer.CoarseRemoveStatementsInMethod() line 533: change `for (int chunkIndex = granularity - 1; chunkIndex >= 0; chunkIndex--)` to `for (int chunkIndex = granularity - 1; chunkIndex >= granularity; chunkIndex--)`
-            // input: Synthetic100StatementKernel (102 statements, 3 [GpuDeviceFunction] helpers HelperStep1 -> HelperStep2 -> HelperLeafShiftBug with planted `a >>> b` bug)
-            Assert.True(reducedStillFails, "Reduced kernel must still reproduce the planted mismatch.");
-            Assert.True(
-                reduction.ReducedStatementCount <= 15,
-                $"Expected reduced kernel to have <= 15 statements, but got {reduction.ReducedStatementCount}.{Environment.NewLine}{reduction.ReducedSource}");
-            Assert.Equal(0, reduction.ReducedDeviceFunctionCount);
-            Assert.Empty(reducedGshDiags);
-
-            // Batched CUDA reduction verification: Speculative 16-candidate batch generator emits 16 valid candidates that compile together and identifies the smallest reproducing candidate.
-            var specBatch = FuzzReducer.GenerateSpeculativeBatchCandidates(
-                synthetic100LineSource,
-                fuzzSeed: 0xBEEFUL,
-                inputSeed: 0,
-                maxCandidates: 16);
-
-            Assert.Equal(16, specBatch.Candidates.Count);
-            var batchAssembly = CompileToInMemoryAssembly("SpeculativeBatch16Assembly", specBatch.KernelsSource);
-            Assert.NotNull(batchAssembly.GetType("Kassyi.GSharp.Tests.Shared.Differential.FuzzBatchKernels"));
-
-            var bestCandidate = FuzzReducer.SelectBestSpeculativeCandidate(
-                specBatch,
-                cand =>
-                {
-                    string singleUnit = ReplaceKernelInSyntheticUnit(synthetic100LineSource, cand.CandidateKernelMethodSource, "SyntheticBugKernel");
-                    return IsInteresting(singleUnit);
-                });
-
-            Assert.NotNull(bestCandidate);
-            Assert.True(bestCandidate.StatementCount < initialStatements);
-        }
-
-        [Fact]
-        [TestTarget(ExecutionTarget.CpuExecution)]
-        [Category(TestCategory.Compiler)]
-        [Scenario(TestScenario.Boundary)]
-        public void FuzzDeduplicator_AlphaRenamedAndDeadCodePaddedKernels_ProduceIdenticalFingerprint()
-        {
-            const string KernelVariantA =
-                """
-                #nullable enable
-                using System;
-                using Kassyi.GSharp.Core;
-
-                namespace Kassyi.GSharp.Tests.Shared.Differential;
-
-                public enum CustomModeA : byte { Zero = 0, One = 1, Mask = 0x55 }
-
-                public static partial class FuzzDedupA
-                {
-                    [GpuDeviceFunction]
-                    public static int UnusedHelperA(int z) => z + 123;
-
-                    [GpuKernel]
-                    public static void KernelAlpha_01(int[] inA, int[] inB, int[] inC, ulong[] checksum)
-                    {
-                        int gid = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
-                        if (gid >= checksum.Length)
-                        {
-                            return;
-                        }
-
-                        ulong hash = 14695981039346656037UL;
-                        int deadBefore = default(int);
-                        deadBefore = inB[gid] + 777;
-                        int v0 = inA[gid];
-                        int v1 = inC[gid];
-                        CustomModeA modeA = (CustomModeA)(byte)inB[gid];
-                        int v2 = ((v0 + 11) >>> v1) ^ (int)modeA;
-                        short deadAfter = default(short);
-                        deadAfter = (short)42;
-                        hash = (hash ^ (((ulong)v2) + 1UL)) * 1099511628211UL;
-                        checksum[gid] = hash;
-                    }
-                }
-                """;
-
-            const string KernelVariantB =
-                """
-                #nullable enable
-                using System;
-                using Kassyi.GSharp.Core;
-
-                namespace Kassyi.GSharp.Tests.Shared.Differential;
-
-                public enum RenamedModeB : byte { Zero = 0, One = 1, Mask = 0x55 }
-
-                public static partial class FuzzDedupB
-                {
-                    [GpuKernel]
-                    public static void DifferentKernelName_99(int[] arrX, int[] arrY, int[] arrZ, ulong[] checksum)
-                    {
-                        int gid = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
-                        if (gid >= checksum.Length)
-                        {
-                            return;
-                        }
-
-                        ulong hash = 14695981039346656037UL;
-                        long unusedTemp = default(long);
-                        int x9 = arrX[gid];
-                        int y8 = arrZ[gid];
-                        RenamedModeB flagB = (RenamedModeB)(byte)arrY[gid];
-                        int w7 = (((x9 + 9999) >>> y8) ^ (int)flagB);
-                        ulong deadTail = default(ulong);
-                        deadTail = 123456UL;
-                        hash = (hash ^ (((ulong)w7) + 99UL)) * 1099511628211UL;
-                        checksum[gid] = hash;
-                    }
-                }
-                """;
-
-            const string StructurallyDifferentKernel =
-                """
-                #nullable enable
-                using System;
-                using Kassyi.GSharp.Core;
-
-                namespace Kassyi.GSharp.Tests.Shared.Differential;
-
-                public enum CustomModeA : byte { Zero = 0, One = 1, Mask = 0x55 }
-
-                public static partial class FuzzDedupC
-                {
-                    [GpuKernel]
-                    public static void KernelGamma(int[] inA, int[] inB, int[] inC, ulong[] checksum)
-                    {
-                        int gid = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
-                        if (gid >= checksum.Length)
-                        {
-                            return;
-                        }
-
-                        ulong hash = 14695981039346656037UL;
-                        int v0 = inA[gid];
-                        int v1 = inC[gid];
-                        CustomModeA modeA = (CustomModeA)(byte)inB[gid];
-                        int v2 = ((v0 * 11) << v1) ^ (int)modeA;
-                        hash = (hash ^ (((ulong)v2) + 1UL)) * 1099511628211UL;
-                        checksum[gid] = hash;
-                    }
-                }
-                """;
-
-            var fpA = FuzzDeduplicator.ComputeFingerprint(KernelVariantA, "Native,Cuda", "CellMismatch");
-            var fpB = FuzzDeduplicator.ComputeFingerprint(KernelVariantB, "Cuda, Native", "CellMismatch");
-            var fpDiffAst = FuzzDeduplicator.ComputeFingerprint(StructurallyDifferentKernel, "Native,Cuda", "CellMismatch");
-            var fpDiffPaths = FuzzDeduplicator.ComputeFingerprint(KernelVariantA, "Cuda", "CellMismatch");
-            var fpDiffKind = FuzzDeduplicator.ComputeFingerprint(KernelVariantA, "Native,Cuda", "RuntimeException:DivideByZeroException");
-
-            // Two kernels with alpha-renamed identifiers, different numeric literal constants, and dead local declarations/stores must produce the exact same fingerprint.
-            // mutant: FuzzDeduplicator.AppendNormalizedMethod() line 271: change `varMap[text] = $"v{varMap.Count}";` to `varMap[text] = text;`
-            // input: KernelVariantA (locals v0, v1, v2; enum CustomModeA; literal 11) vs KernelVariantB (locals x9, y8, w7; enum RenamedModeB; literal 9999)
-            Assert.Equal(fpA.NormalizedAstSkeleton, fpB.NormalizedAstSkeleton);
-            Assert.Equal(fpA.Fingerprint, fpB.Fingerprint);
-
-            // Different AST skeletons, failing path masks, or failure kind tags must produce distinct fingerprints.
-            Assert.NotEqual(fpA.Fingerprint, fpDiffAst.Fingerprint);
-            Assert.NotEqual(fpA.Fingerprint, fpDiffPaths.Fingerprint);
-            Assert.NotEqual(fpA.Fingerprint, fpDiffKind.Fingerprint);
-
-            // Verify FuzzPromoter emits a self-contained Differential/ repro with the required header comment.
-            var promoted = FuzzPromoter.BuildPromotionArtifacts(
-                KernelVariantA,
-                fuzzSeed: 0x1234ABCDUL,
-                inputSeed: 3,
-                failingPaths: "Native,Cuda",
-                failureKind: "CellMismatch");
-
-            Assert.Contains("// Found by the differential fuzzer: fuzz-seed 0x000000001234ABCD, input-seed 3, fingerprint " + fpA.Fingerprint, promoted.ReproKernelFileContent, StringComparison.Ordinal);
-            Assert.Contains("public static DifferentialCase Repro_1234ABCD_Case", promoted.ReproCaseSnippetContent, StringComparison.Ordinal);
-        }
-
-        private static string BuildSynthetic100StatementMultiFunctionKernel()
-        {
-            var sb = new StringBuilder();
-            sb.AppendLine("#nullable enable");
-            sb.AppendLine("#pragma warning disable CS0162, CS0219, CS1717, CS1718");
-            sb.AppendLine("using System;");
-            sb.AppendLine("using Kassyi.GSharp.Core;");
-            sb.AppendLine();
-            sb.AppendLine("namespace Kassyi.GSharp.Tests.Shared.Differential;");
-            sb.AppendLine();
-            sb.AppendLine("public static partial class SyntheticReduceKernels");
-            sb.AppendLine("{");
-            sb.AppendLine("    [GpuDeviceFunction]");
-            sb.AppendLine("    public static int HelperLeafShiftBug(int a, int shiftCount)");
-            sb.AppendLine("    {");
-            sb.AppendLine("        return (a >>> shiftCount);");
-            sb.AppendLine("    }");
-            sb.AppendLine();
-            sb.AppendLine("    [GpuDeviceFunction]");
-            sb.AppendLine("    public static int HelperStep2(int x, int y, int s)");
-            sb.AppendLine("    {");
-            sb.AppendLine("        int t = x ^ y;");
-            sb.AppendLine("        return HelperLeafShiftBug(t, s);");
-            sb.AppendLine("    }");
-            sb.AppendLine();
-            sb.AppendLine("    [GpuDeviceFunction]");
-            sb.AppendLine("    public static int HelperStep1(int a, int b, int c)");
-            sb.AppendLine("    {");
-            sb.AppendLine("        int p = a + 17;");
-            sb.AppendLine("        return HelperStep2(p, b, c);");
-            sb.AppendLine("    }");
-            sb.AppendLine();
-            sb.AppendLine("    [GpuKernel]");
-            sb.AppendLine("    public static void SyntheticBugKernel(int[] inA, int[] inB, int[] inC, ulong[] checksum)");
-            sb.AppendLine("    {");
-            sb.AppendLine("        int gid = BlockIndex.X * BlockDimension.X + ThreadIndex.X;");
-            sb.AppendLine("        if (gid >= checksum.Length)");
-            sb.AppendLine("        {");
-            sb.AppendLine("            return;");
-            sb.AppendLine("        }");
-            sb.AppendLine();
-            sb.AppendLine("        ulong hash = 14695981039346656037UL;");
-            sb.AppendLine("        int acc = inA[gid];");
-
-            // Emit 45 irrelevant noise statements before the bug.
-            for (int i = 0; i < 45; i++)
-            {
-                sb.AppendLine(string.Create(CultureInfo.InvariantCulture, $"        int noisePre_{i} = (inA[gid] + {i * 3 + 1}) ^ inB[gid];"));
-            }
-
-            // Statement with the planted bug inside the 3-level [GpuDeviceFunction] chain:
-            sb.AppendLine("        int bugVal = HelperStep1(inA[gid], inB[gid], inC[gid]);");
-
-            // Emit 48 irrelevant noise statements after the bug.
-            for (int i = 0; i < 48; i++)
-            {
-                sb.AppendLine(string.Create(CultureInfo.InvariantCulture, $"        int noisePost_{i} = (acc ^ {i * 7 + 5}) + inB[gid];"));
-            }
-
-            sb.AppendLine("        hash = (hash ^ (((ulong)bugVal) + 1UL)) * 1099511628211UL;");
-            sb.AppendLine("        checksum[gid] = hash;");
-            sb.AppendLine("    }");
-            sb.AppendLine("}");
-            return sb.ToString();
-        }
-
-        private static string ReplaceKernelInSyntheticUnit(string baseUnit, string candidateMethodSource, string targetKernelName)
-        {
-            var root = (Microsoft.CodeAnalysis.CSharp.Syntax.CompilationUnitSyntax)CSharpSyntaxTree.ParseText(baseUnit, s_parseOptions).GetRoot();
-            var oldKernel = root.DescendantNodes()
-                .OfType<Microsoft.CodeAnalysis.CSharp.Syntax.MethodDeclarationSyntax>()
-                .First(m => m.Identifier.ValueText == targetKernelName);
-            var newKernel = CSharpSyntaxTree.ParseText($"class __W {{ {candidateMethodSource} }}", s_parseOptions)
-                .GetRoot()
-                .DescendantNodes()
-                .OfType<Microsoft.CodeAnalysis.CSharp.Syntax.MethodDeclarationSyntax>()
-                .First()
-                .WithIdentifier(SyntaxFactory.Identifier(targetKernelName));
-            return root.ReplaceNode(oldKernel, newKernel).ToFullString();
-        }
-
-        private static string RewriteUnsignedRightShiftsToUnmasked(string source)
-        {
-            var root = CSharpSyntaxTree.ParseText(source, s_parseOptions).GetRoot();
-            var shifts = root.DescendantNodes()
-                .OfType<Microsoft.CodeAnalysis.CSharp.Syntax.BinaryExpressionSyntax>()
-                .Where(static b => b.IsKind(SyntaxKind.UnsignedRightShiftExpression))
-                .ToList();
-
-            if (shifts.Count == 0)
-            {
-                return source;
-            }
-
-            var updated = root.ReplaceNodes(shifts, static (orig, _) =>
-            {
-                string lhs = orig.Left.WithoutTrivia().ToFullString();
-                string rhs = orig.Right.WithoutTrivia().ToFullString();
-                return SyntaxFactory.ParseExpression($"((uint)({rhs}) >= 32U ? 0 : (({lhs}) >>> ({rhs})))").WithTriviaFrom(orig);
-            });
-            return updated.ToFullString();
-        }
-
-        private static bool CompilesWithZeroDiagnosticsAndSimulateShiftMismatch(string candidateSource, out bool mismatchReproduced) =>
-            CompilesWithZeroDiagnosticsAndSimulateShiftMismatch(candidateSource, out mismatchReproduced, out _);
-
-        private static bool CompilesWithZeroDiagnosticsAndSimulateShiftMismatch(
-            string candidateSource,
-            out bool mismatchReproduced,
-            out Diagnostic[] gshDiagnostics)
-        {
-            mismatchReproduced = false;
-            gshDiagnostics = [];
-
-            // Mutate `>>>` in the simulated "broken transpiler" copy using Roslyn syntax rewriting so any `lhs >>> rhs` expression
-            // (whether inside a helper function or inlined into the kernel) becomes `((uint)(rhs) >= 32U ? 0 : (lhs >>> rhs))`.
-            string brokenVariant = RewriteUnsignedRightShiftsToUnmasked(
-                candidateSource.Replace("void SyntheticBugKernel(", "void SyntheticBugKernel_Broken(", StringComparison.Ordinal)
-                               .Replace("HelperLeafShiftBug(", "HelperLeafShiftBug_Broken(", StringComparison.Ordinal)
-                               .Replace("HelperStep2(", "HelperStep2_Broken(", StringComparison.Ordinal)
-                               .Replace("HelperStep1(", "HelperStep1_Broken(", StringComparison.Ordinal));
-
-            var oracleTree = CSharpSyntaxTree.ParseText(candidateSource, s_parseOptions, path: "ReduceCheck.cu.cs");
+            var tree = CSharpSyntaxTree.ParseText(
+                combinedSource,
+                FuzzTestCompilationHelper.ParseOptions,
+                path: $"FuzzSweep100Kernels_{dialect}.cu.cs");
             var compilation = CSharpCompilation.Create(
-                "ReduceCheckAssembly",
-                [oracleTree],
-                s_baseReferences.Value,
-                new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary)
-                    .WithAllowUnsafe(true)
-                    .WithOptimizationLevel(OptimizationLevel.Debug));
+                $"FuzzSweep100_{dialect}",
+                [tree],
+                FuzzTestCompilationHelper.BaseReferences,
+                new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary).WithAllowUnsafe(true));
 
-            var configProvider = new FuzzTestAnalyzerConfigOptionsProvider("Cpu");
+            var configProvider = new FuzzTestCompilationHelper.FuzzTestAnalyzerConfigOptionsProvider(dialect);
+            var analyzerOptions = new AnalyzerOptions(ImmutableArray<AdditionalText>.Empty, configProvider);
+            var analyzerDiags = await compilation
+                .WithAnalyzers(FuzzTestCompilationHelper.KernelAnalyzers, analyzerOptions)
+                .GetAnalyzerDiagnosticsAsync();
+
             GeneratorDriver driver = CSharpGeneratorDriver.Create(
                 generators: [new GpuKernelGenerator().AsSourceGenerator()],
                 additionalTexts: null,
-                parseOptions: s_parseOptions,
+                parseOptions: FuzzTestCompilationHelper.ParseOptions,
                 optionsProvider: configProvider);
             driver.RunGeneratorsAndUpdateCompilation(compilation, out var outputCompilation, out var generatorDiags);
 
-            var allDiags = outputCompilation.GetDiagnostics().Concat(generatorDiags).ToArray();
-            if (allDiags.Any(static d => d.Severity == DiagnosticSeverity.Error))
+            var csErrors = new List<Diagnostic>();
+            foreach (var d in outputCompilation.GetDiagnostics())
             {
-                return false;
-            }
-
-            gshDiagnostics = allDiags
-                .Where(static d => d.Id.StartsWith("GSH", StringComparison.Ordinal) &&
-                                   d.Severity is DiagnosticSeverity.Error or DiagnosticSeverity.Warning)
-                .ToArray();
-            if (gshDiagnostics.Length > 0)
-            {
-                return false;
-            }
-
-            // Combine oracle and broken variant into a single compilation unit for fast in-memory execution check.
-            string brokenClassAdjusted = brokenVariant
-                .Replace("namespace Kassyi.GSharp.Tests.Shared.Differential;", string.Empty, StringComparison.Ordinal)
-                .Replace("#nullable enable", string.Empty, StringComparison.Ordinal)
-                .Replace("using System;", string.Empty, StringComparison.Ordinal)
-                .Replace("using Kassyi.GSharp.Core;", string.Empty, StringComparison.Ordinal)
-                .Replace("public static partial class SyntheticReduceKernels", "public static partial class SyntheticReduceKernels_Broken", StringComparison.Ordinal);
-            string combined = candidateSource + Environment.NewLine + brokenClassAdjusted;
-            var execTree = CSharpSyntaxTree.ParseText(combined, s_parseOptions, path: "ReduceExec.cu.cs");
-            var execCompilation = CSharpCompilation.Create(
-                "ReduceExecAssembly",
-                [execTree],
-                s_baseReferences.Value,
-                new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary)
-                    .WithAllowUnsafe(true)
-                    .WithOptimizationLevel(OptimizationLevel.Debug));
-
-            using var peStream = new MemoryStream();
-            var emitRes = execCompilation.Emit(peStream);
-            if (!emitRes.Success)
-            {
-                return false;
-            }
-
-            peStream.Position = 0;
-            var alc = new AssemblyLoadContext("ReduceTempAlc", isCollectible: true);
-            try
-            {
-                var asm = alc.LoadFromStream(peStream);
-                var oracleType = asm.GetType("Kassyi.GSharp.Tests.Shared.Differential.SyntheticReduceKernels");
-                var brokenType = asm.GetType("Kassyi.GSharp.Tests.Shared.Differential.SyntheticReduceKernels_Broken");
-                if (oracleType is null || brokenType is null)
+                if (d.Severity == DiagnosticSeverity.Error)
                 {
-                    return false;
+                    csErrors.Add(d);
+                }
+            }
+
+            var gshDiags = new List<Diagnostic>();
+            foreach (var d in analyzerDiags)
+            {
+                if (d.Id.StartsWith("GSH", StringComparison.Ordinal) &&
+                    d.Severity is DiagnosticSeverity.Error or DiagnosticSeverity.Warning)
+                {
+                    gshDiags.Add(d);
+                }
+            }
+
+            foreach (var d in generatorDiags)
+            {
+                if (d.Id.StartsWith("GSH", StringComparison.Ordinal) &&
+                    d.Severity is DiagnosticSeverity.Error or DiagnosticSeverity.Warning)
+                {
+                    gshDiags.Add(d);
+                }
+            }
+
+            foreach (var d in outputCompilation.GetDiagnostics())
+            {
+                if (d.Id.StartsWith("GSH", StringComparison.Ordinal) &&
+                    d.Severity is DiagnosticSeverity.Error or DiagnosticSeverity.Warning)
+                {
+                    gshDiags.Add(d);
+                }
+            }
+
+            // Generated kernels across all 100 seeds (including composite structs, control flow, and [GpuDeviceFunction] DAGs) must compile with zero C# errors and zero GSH* errors/warnings.
+            // mutant: ScalarFuzzGenerator.EmitRandomStatement() line 365: state.Statements.Add($"var {newName} = 0;"); (triggers CS0029 on bool local)
+            // input: seed = 0UL .. 99UL, dialect in ["Cpu", "Cuda"]
+            Assert.Empty(csErrors);
+            // mutant: ScalarFuzzGenerator.InitializeScalarLocals() line 219: state.Statements.Add("object v_heap = new object();"); (triggers GSH0001)
+            // input: seed = 0UL .. 99UL, dialect in ["Cpu", "Cuda"]
+            Assert.Empty(gshDiags);
+        }
+    }
+
+    [Fact]
+    [TestTarget(ExecutionTarget.CpuExecution)]
+    [Category(TestCategory.Compiler)]
+    [Scenario(TestScenario.Boundary)]
+    public void FuzzGenerator_DynamicGuards_NeverThrowOrRaceInSequentialAndLockstepOracles()
+    {
+        const int KernelCount = 50;
+        const string GuardClassName = "FuzzGuardTestKernels";
+        var generator = new ScalarFuzzGenerator(new FuzzOptions
+        {
+            FuzzSeed = 0UL,
+            BatchSize = 1,
+            KernelClassName = GuardClassName,
+        });
+        var specs = new List<GeneratedKernelSpec>(KernelCount);
+        var methodSources = new List<string>(KernelCount);
+
+        for (int i = 0; i < KernelCount; i++)
+        {
+            var spec = generator.GenerateSingleKernel($"GuardKernel_{i:D2}", (ulong)i, size: 1 + (i % 6));
+            specs.Add(spec);
+            methodSources.Add(spec.KernelMethodSource);
+        }
+
+        string combinedSource = FuzzTestCompilationHelper.RenderKernelCompilationUnit(
+            GuardClassName,
+            generator.DeviceFunctions,
+            methodSources);
+
+        var assembly = FuzzTestCompilationHelper.CompileToInMemoryAssembly("FuzzGuardTestAssembly", combinedSource);
+        var kernelType = assembly.GetType($"Kassyi.GSharp.Tests.Shared.Differential.{GuardClassName}")
+            ?? throw new InvalidOperationException($"Failed to resolve {GuardClassName} type.");
+
+        var shape = LaunchShapes.PartialWarp(rows: 64, blockX: 32);
+        int[] seeds = [0, 1, 2, 3, 4];
+
+        foreach (var spec in specs)
+        {
+            var action = FuzzTestCompilationHelper.CreateKernelDelegate(kernelType, spec.KernelName);
+
+            foreach (int seed in seeds)
+            {
+                var rng = new DiffRandom(seed);
+                var (inA, inB) = DiffValues.Int32Pairs(rng, shape.Rows);
+                var inC = DiffValues.Values(rng, shape.Rows, DiffValues.ShiftCounts, DiffValues.NextInt32);
+                if (seed == 0 && shape.Rows >= 4)
+                {
+                    inA[0] = int.MinValue;
+                    inB[0] = -1;
+                    inA[1] = int.MinValue;
+                    inB[1] = 0;
+                    inB[2] = 0;
+                    inB[3] = -1;
                 }
 
-                var oracleDel = CreateKernelDelegate(oracleType, "SyntheticBugKernel");
-                var brokenDel = CreateKernelDelegate(brokenType, "SyntheticBugKernel_Broken");
+                ulong[] forwardOut = new ulong[shape.Rows];
+                ulong[] reverseOut = new ulong[shape.Rows];
+                ulong[] permutedOut = new ulong[shape.Rows];
 
-                var shape = LaunchShapes.PartialWarp(rows: 16, blockX: 16);
-                int[] inA = new int[16];
-                int[] inB = new int[16];
-                int[] inC = new int[16];
-                for (int i = 0; i < 16; i++)
+                var forwardException = Record.Exception(() =>
+                    SequentialOracle.Run(shape, ThreadOrder.Forward, () => action(inA, inB, inC, forwardOut)));
+                var reverseException = Record.Exception(() =>
+                    SequentialOracle.Run(shape, ThreadOrder.Reverse, () => action(inA, inB, inC, reverseOut)));
+                var permutedException = Record.Exception(() =>
+                    SequentialOracle.Run(shape, ThreadOrder.Permutation(seed), () => action(inA, inB, inC, permutedOut)));
+
+                // Every generated kernel (including stackalloc Span<T>, nested control flow, and narrow sbyte/short /= and %= compound assignments) must complete without DivideByZeroException / OverflowException / IndexOutOfRangeException and produce identical outputs across all thread orders.
+                // mutant: FuzzScalarExpressionEmitter.WrapDivisorForCompoundAssignment() line 264: change `(({rawDivisor}) == (sbyte)0) ? (sbyte)3 : ({rawDivisor})` to `({rawDivisor})`
+                // input: GuardKernel_00 .. GuardKernel_49 with seed = 0 (inA[0] = int.MinValue, inB[0] = -1; inA[1] = int.MinValue, inB[1] = 0)
+                Assert.Null(forwardException);
+                Assert.Null(reverseException);
+                Assert.Null(permutedException);
+                Assert.Equal(forwardOut, reverseOut);
+                Assert.Equal(forwardOut, permutedOut);
+            }
+        }
+    }
+
+    [Fact]
+    [TestTarget(ExecutionTarget.CpuExecution)]
+    [Category(TestCategory.Unit)]
+    [Scenario(TestScenario.Boundary)]
+    public void KnownIssueFilter_CatalogAndAvoidanceHandlers_HaveOneToOneMappingAndRejectInvalidJson()
+    {
+        var entries = KnownIssueFilter.LoadEntries();
+        var catalogAvoidIssues = new HashSet<int>();
+        KnownIssueEntry? msvcClassifyEntry = null;
+
+        foreach (var entry in entries)
+        {
+            if (!string.IsNullOrWhiteSpace(entry.AvoidedShape))
+            {
+                catalogAvoidIssues.Add(entry.Issue);
+            }
+
+            if (string.Equals(entry.Kind, "classify", StringComparison.OrdinalIgnoreCase) && entry.Issue == 1078)
+            {
+                msvcClassifyEntry = entry;
+            }
+        }
+
+        // Every "avoid" entry in known-issues.json must have a code avoidance handler in KnownIssueFilter.SupportedAvoidanceIssues, and every code avoidance handler must have an entry in known-issues.json.
+        // mutant: KnownIssueFilter.s_supportedAvoidanceIssues: remove `Issue1101CoalesceAssignValue` from the set
+        // input: KnownIssueFilter.LoadEntries() vs KnownIssueFilter.SupportedAvoidanceIssues
+        Assert.True(
+            catalogAvoidIssues.SetEquals(KnownIssueFilter.SupportedAvoidanceIssues),
+            $"Catalog avoid issues [{string.Join(", ", catalogAvoidIssues)}] must match SupportedAvoidanceIssues [{string.Join(", ", KnownIssueFilter.SupportedAvoidanceIssues)}].");
+
+        Assert.NotNull(msvcClassifyEntry);
+        Assert.Equal(["Native"], msvcClassifyEntry.Paths);
+        Assert.NotNull(msvcClassifyEntry.Shapes);
+        Assert.Equal(3, msvcClassifyEntry.Shapes.Count);
+        Assert.False(string.IsNullOrWhiteSpace(msvcClassifyEntry.RemovalCondition));
+
+        string missingPath = Path.Combine(Path.GetTempPath(), $"missing_known_issues_{Guid.NewGuid():N}.json");
+        Assert.Throws<FileNotFoundException>(() => KnownIssueFilter.LoadEntries(missingPath));
+
+        string corruptPath = Path.Combine(Path.GetTempPath(), $"corrupt_known_issues_{Guid.NewGuid():N}.json");
+        try
+        {
+            File.WriteAllText(corruptPath, "{ not valid json");
+            Assert.ThrowsAny<System.Text.Json.JsonException>(() => KnownIssueFilter.LoadEntries(corruptPath));
+        }
+        finally
+        {
+            if (File.Exists(corruptPath))
+            {
+                File.Delete(corruptPath);
+            }
+        }
+    }
+
+    [Fact]
+    [TestTarget(ExecutionTarget.CpuExecution)]
+    [Category(TestCategory.Compiler)]
+    [Scenario(TestScenario.Boundary)]
+    public void FuzzGenerator_KnownIssueAvoidanceSwitches_ExcludeAvoidedShapesAcross100Seeds()
+    {
+        const int SeedCount = 100;
+
+        var genProfileG = new ScalarFuzzGenerator(new FuzzOptions
+        {
+            FuzzSeed = 1UL,
+            BatchSize = 1,
+            Profile = "G",
+        });
+
+        int narrowIncDecValueAvoided = 0;
+        int mixedWidthCoalesceAvoided = 0;
+        int nullableLocalAvoided = 0;
+        int plainStructMethodAvoided = 0;
+        int coalesceAssignValueAvoided = 0;
+        int complexTupleDeconstructAvoided = 0;
+        int structConversionDefaultAvoided = 0;
+        int msvcNegatedConstDivAvoided = 0;
+
+        for (ulong seed = 0UL; seed < SeedCount; seed++)
+        {
+            var spec = genProfileG.GenerateSingleKernel($"AvoidG_{seed:D3}", seed, size: 4);
+            var root = CSharpSyntaxTree.ParseText($"class __C {{ {spec.KernelMethodSource} }}", FuzzTestCompilationHelper.ParseOptions).GetRoot();
+
+            narrowIncDecValueAvoided += CountNarrowIncDecInValueContext(root);
+            mixedWidthCoalesceAvoided += CountMixedWidthNullCoalesce(root);
+            nullableLocalAvoided += CountNullableLocalDeclarations(root);
+            plainStructMethodAvoided += CountPlainStructInstanceMethodCalls(root);
+            coalesceAssignValueAvoided += CountCoalesceAssignmentInValueContext(root);
+            complexTupleDeconstructAvoided += CountComplexTupleDeconstructions(root);
+            structConversionDefaultAvoided += CountStructWithConversionDefaultExpressions(root);
+            msvcNegatedConstDivAvoided += CountNegatedConstantDivisions(root);
+        }
+
+        // All active known-issue switches (#1079, #998, #984, #645, #1101, #1102, #1103, #1078) must exclude their avoided AST shapes across 100 seeds.
+        // mutant: KnownIssueFilter.AvoidNarrowIncDecValue: change `_avoidedIssues.Contains(Issue1079NarrowIncDecValue)` to `false`
+        // input: Profile = "G", AllowedIssues = [], seed = 0UL .. 99UL
+        Assert.Equal(0, narrowIncDecValueAvoided);
+        Assert.Equal(0, mixedWidthCoalesceAvoided);
+        Assert.Equal(0, nullableLocalAvoided);
+        Assert.Equal(0, plainStructMethodAvoided);
+        Assert.Equal(0, coalesceAssignValueAvoided);
+        Assert.Equal(0, complexTupleDeconstructAvoided);
+        Assert.Equal(0, structConversionDefaultAvoided);
+        Assert.Equal(0, msvcNegatedConstDivAvoided);
+
+        var genAllowedAll = new ScalarFuzzGenerator(new FuzzOptions
+        {
+            FuzzSeed = 1UL,
+            BatchSize = 1,
+            Profile = "G",
+            AllowedIssues = new HashSet<int> { 1079, 998, 984, 645, 1101, 1102, 1103, 1078 },
+        });
+
+        int narrowIncDecValueAllowed = 0;
+        int mixedWidthCoalesceAllowed = 0;
+        int nullableLocalAllowed = 0;
+        int plainStructMethodAllowed = 0;
+        int coalesceAssignValueAllowed = 0;
+        int complexTupleDeconstructAllowed = 0;
+        int structConversionDefaultAllowed = 0;
+        int msvcNegatedConstDivAllowed = 0;
+
+        for (ulong seed = 0UL; seed < 30UL; seed++)
+        {
+            var spec = genAllowedAll.GenerateSingleKernel($"AllowAll_{seed:D3}", seed, size: 4);
+            var root = CSharpSyntaxTree.ParseText($"class __C {{ {spec.KernelMethodSource} }}", FuzzTestCompilationHelper.ParseOptions).GetRoot();
+
+            narrowIncDecValueAllowed += CountNarrowIncDecInValueContext(root);
+            mixedWidthCoalesceAllowed += CountMixedWidthNullCoalesce(root);
+            nullableLocalAllowed += CountNullableLocalDeclarations(root);
+            plainStructMethodAllowed += CountPlainStructInstanceMethodCalls(root);
+            coalesceAssignValueAllowed += CountCoalesceAssignmentInValueContext(root);
+            complexTupleDeconstructAllowed += CountComplexTupleDeconstructions(root);
+            structConversionDefaultAllowed += CountStructWithConversionDefaultExpressions(root);
+            msvcNegatedConstDivAllowed += CountNegatedConstantDivisions(root);
+        }
+
+        Assert.True(narrowIncDecValueAllowed > 0, "Expected --allow-issue 1079 to re-enable narrow ++/-- in value contexts.");
+        Assert.True(mixedWidthCoalesceAllowed > 0, "Expected --allow-issue 998 to re-enable mixed-width Nullable<T> ??.");
+        Assert.True(nullableLocalAllowed > 0, "Expected --allow-issue 984 to re-enable Nullable<T> local variable declarations.");
+        Assert.True(plainStructMethodAllowed > 0, "Expected --allow-issue 645 to re-enable plain struct instance method calls.");
+        Assert.True(coalesceAssignValueAllowed > 0, "Expected --allow-issue 1101 to re-enable ??= in value contexts.");
+        Assert.True(complexTupleDeconstructAllowed > 0, "Expected --allow-issue 1102 to re-enable nested/conditional tuple deconstructions.");
+        Assert.True(structConversionDefaultAllowed > 0, "Expected --allow-issue 1103 to re-enable default(T) on structs with conversion operators.");
+        Assert.True(msvcNegatedConstDivAllowed > 0, "Expected --allow-issue 1078 to re-enable negated dividend constant division.");
+    }
+
+    private static int CountNestedStatementsInControlFlowAndAssertLoopVarSafety(SyntaxNode root)
+    {
+        int nestedCount = 0;
+        foreach (var node in root.DescendantNodes())
+        {
+            if (node is IfStatementSyntax ifStmt &&
+                !FuzzTestCompilationHelper.RenderNode(ifStmt.Condition).Contains("gid", StringComparison.Ordinal))
+            {
+                if (ifStmt.Statement is BlockSyntax thenBlock && thenBlock.Statements.Count > 1)
                 {
-                    inA[i] = unchecked((int)0x87654321U) + i;
-                    inB[i] = 0x11112222 + i;
-                    inC[i] = 35; // >= 32 triggers unmasked shift bug!
+                    nestedCount += thenBlock.Statements.Count - 1;
                 }
-
-                ulong[] oracleOut = new ulong[16];
-                ulong[] brokenOut = new ulong[16];
-                SequentialOracle.Run(shape, ThreadOrder.Forward, () => oracleDel(inA, inB, inC, oracleOut));
-                SequentialOracle.Run(shape, ThreadOrder.Forward, () => brokenDel(inA, inB, inC, brokenOut));
-
-                for (int i = 0; i < 16; i++)
+            }
+            else if (node is ForStatementSyntax forStmt && forStmt.Declaration is not null)
+            {
+                foreach (var v in forStmt.Declaration.Variables)
                 {
-                    if (oracleOut[i] != brokenOut[i])
+                    string loopVar = v.Identifier.ValueText;
+                    foreach (var bodyNode in forStmt.Statement.DescendantNodes())
                     {
-                        mismatchReproduced = true;
+                        if (bodyNode is AssignmentExpressionSyntax { Left: IdentifierNameSyntax leftId })
+                        {
+                            Assert.NotEqual(loopVar, leftId.Identifier.ValueText);
+                        }
+                    }
+                }
+            }
+        }
+
+        return nestedCount;
+    }
+
+    private static int CountNarrowIncDecInValueContext(SyntaxNode root)
+    {
+        var narrowVars = new HashSet<string>(StringComparer.Ordinal);
+        foreach (var node in root.DescendantNodes())
+        {
+            if (node is VariableDeclarationSyntax decl)
+            {
+                string typeName = FuzzTestCompilationHelper.RenderNode(decl.Type.WithoutTrivia());
+                if (typeName is "sbyte" or "byte" or "short" or "ushort" or "char")
+                {
+                    foreach (var v in decl.Variables)
+                    {
+                        narrowVars.Add(v.Identifier.ValueText);
+                    }
+                }
+            }
+        }
+
+        int count = 0;
+        foreach (var node in root.DescendantNodes())
+        {
+            if (node is PrefixUnaryExpressionSyntax pre &&
+                (pre.IsKind(SyntaxKind.PreIncrementExpression) || pre.IsKind(SyntaxKind.PreDecrementExpression)) &&
+                pre.Parent is not ExpressionStatementSyntax &&
+                pre.Operand is IdentifierNameSyntax preId &&
+                narrowVars.Contains(preId.Identifier.ValueText))
+            {
+                count++;
+            }
+            else if (node is PostfixUnaryExpressionSyntax post &&
+                     (post.IsKind(SyntaxKind.PostIncrementExpression) || post.IsKind(SyntaxKind.PostDecrementExpression)) &&
+                     post.Parent is not ExpressionStatementSyntax &&
+                     post.Operand is IdentifierNameSyntax postId &&
+                     narrowVars.Contains(postId.Identifier.ValueText))
+            {
+                count++;
+            }
+        }
+
+        return count;
+    }
+
+    private static int CountMixedWidthNullCoalesce(SyntaxNode root)
+    {
+        int count = 0;
+        foreach (var node in root.DescendantNodes())
+        {
+            if (node is BinaryExpressionSyntax bin &&
+                bin.IsKind(SyntaxKind.CoalesceExpression) &&
+                FuzzTestCompilationHelper.RenderNode(bin.Left).Contains("OptShort0", StringComparison.Ordinal))
+            {
+                count++;
+            }
+        }
+
+        return count;
+    }
+
+    private static int CountNullableLocalDeclarations(SyntaxNode root)
+    {
+        int count = 0;
+        foreach (var node in root.DescendantNodes())
+        {
+            if (node is LocalDeclarationStatementSyntax { Declaration.Type: NullableTypeSyntax })
+            {
+                count++;
+            }
+        }
+
+        return count;
+    }
+
+    private static int CountPlainStructInstanceMethodCalls(SyntaxNode root)
+    {
+        int count = 0;
+        foreach (var node in root.DescendantNodes())
+        {
+            if (node is InvocationExpressionSyntax { Expression: MemberAccessExpressionSyntax ma } &&
+                ma.Name.Identifier.ValueText is "Combine" or "MixWith" or "Project" or "ReadSum" or "ReadWide")
+            {
+                count++;
+            }
+        }
+
+        return count;
+    }
+
+    private static int CountCoalesceAssignmentInValueContext(SyntaxNode root)
+    {
+        int count = 0;
+        foreach (var node in root.DescendantNodes())
+        {
+            if (node is AssignmentExpressionSyntax assign &&
+                assign.IsKind(SyntaxKind.CoalesceAssignmentExpression) &&
+                assign.Parent is not ExpressionStatementSyntax)
+            {
+                count++;
+            }
+        }
+
+        return count;
+    }
+
+    private static int CountComplexTupleDeconstructions(SyntaxNode root)
+    {
+        int count = 0;
+        foreach (var node in root.DescendantNodes())
+        {
+            if (node is AssignmentExpressionSyntax { Left: TupleExpressionSyntax leftTuple } assign)
+            {
+                bool hasNestedLeft = false;
+                foreach (var arg in leftTuple.Arguments)
+                {
+                    if (arg.Expression is TupleExpressionSyntax)
+                    {
+                        hasNestedLeft = true;
                         break;
                     }
                 }
 
-                return true;
-            }
-            finally
-            {
-                alc.Unload();
-            }
-        }
-
-        private static Action<int[], int[], int[], ulong[]> CreateKernelDelegate(Type kernelType, string methodName)
-        {
-            var method = kernelType.GetMethod(methodName, BindingFlags.Public | BindingFlags.Static)
-                ?? throw new InvalidOperationException($"Missing method {methodName}.");
-            return method.CreateDelegate<Action<int[], int[], int[], ulong[]>>();
-        }
-
-        private static bool EvaluatesToMismatch(
-            string caseName,
-            Action<int[], int[], int[], ulong[]> oracleKernel,
-            Action<int[], int[], int[], ulong[]> mutantKernel)
-        {
-            var testCase = new DifferentialCase($"FuzzMutantProbeKernels.{caseName}")
-            {
-                Shape = LaunchShapes.PartialWarp(rows: 32, blockX: 16),
-                Inputs = static (rng, shape) =>
+                if (hasNestedLeft || assign.Right is not TupleExpressionSyntax)
                 {
-                    int rows = shape.Rows;
-                    var (inA, inB) = DiffValues.Int32Pairs(rng, rows);
-                    var inC = DiffValues.Values(rng, rows, DiffValues.ShiftCounts, DiffValues.NextInt32);
-                    return new DiffBuffers()
-                        .In("inA", inA)
-                        .In("inB", inB)
-                        .In("inC", inC)
-                        .Out<ulong>("checksum", rows, ["hash"], OutputPolicy.Exact);
-                },
-                Launch = (b, s) => SequentialOracle.Run(
-                    s,
-                    ThreadOrder.Forward,
-                    () => mutantKernel(b.Get<int>("inA"), b.Get<int>("inB"), b.Get<int>("inC"), b.Get<ulong>("checksum"))),
-                Oracle = (b, _) => oracleKernel(b.Get<int>("inA"), b.Get<int>("inB"), b.Get<int>("inC"), b.Get<ulong>("checksum")),
-            };
-
-            var report = DifferentialRunner.Evaluate(
-                testCase,
-                seeds: [0, 1],
-                paths: [new DiffPathRunner(DiffPath.Native, DiffPaths.DirectRunner)],
-                known: [],
-                checkStale: false);
-
-            return report.UnexpectedMismatches.Count > 0;
-        }
-
-        // Planted mutant 1: simulates C++ undefined/unmasked shift where counts >= 32 or < 0 yield 0 instead of C# `& 31` masking.
-        private static string MutateDropShiftMask(string source, string originalName, string mutatedName)
-        {
-            string renamed = source.Replace($"void {originalName}(", $"void {mutatedName}(", StringComparison.Ordinal);
-            return Regex.Replace(
-                renamed,
-                @"\((?<lhs>v\d+)\s*(?<op><<|>>>|>>)\s*(?<rhs>inC\[gid\]|\(inC\[gid\]\s*\+\s*\d+\))\)",
-                static m =>
-                {
-                    string lhs = m.Groups["lhs"].Value;
-                    string op = m.Groups["op"].Value;
-                    string rhs = m.Groups["rhs"].Value;
-                    return $"((uint)({rhs}) >= 32U ? 0 : ({lhs} {op} {rhs}))";
-                });
-        }
-
-        // Planted mutant 2: reverses evaluation order of interfering binary operands right-to-left.
-        private static string MutateReverseInterferingOperands(string source, string originalName, string mutatedName)
-        {
-            string renamed = source.Replace($"void {originalName}(", $"void {mutatedName}(", StringComparison.Ordinal);
-            return ReverseInterferingLineInCSharp(renamed);
-        }
-
-        private static string ReverseInterferingLineInCSharp(string source)
-        {
-            return Regex.Replace(
-                source,
-                @"(?<target>v\d+)\s*=\s*\(\(\((?<left>v\d+\s*(?:\+=|\*)\s*\(\d+\))\)\s*(?<op>[+\-\^])\s*\((?<right>v\d+\s*(?:\+=|\*)\s*\(\d+\))\)\)\);",
-                static m =>
-                {
-                    string target = m.Groups["target"].Value;
-                    string left = m.Groups["left"].Value;
-                    string op = m.Groups["op"].Value;
-                    string right = m.Groups["right"].Value;
-                    return $"{{ var __r = ({right}); var __l = ({left}); {target} = (__l {op} __r); }}";
-                });
-        }
-
-        // Planted mutant 3: corrupts narrow integer compound assignment by dropping the low-bit contribution on narrowing.
-        private static string MutateCorruptNarrowCompound(string source, string originalName, string mutatedName)
-        {
-            string renamed = source.Replace($"void {originalName}(", $"void {mutatedName}(", StringComparison.Ordinal);
-            return Regex.Replace(
-                renamed,
-                @"(?<target>v\d+)\s*(?<op>\+=|-=|\*=|\^=)\s*\(\((?<type>sbyte|byte|short|ushort)\)\(\((?<ivar>v\d+)\s*\+=\s*5\)\s*\+\s*129\)\);",
-                static m =>
-                {
-                    string target = m.Groups["target"].Value;
-                    string type = m.Groups["type"].Value;
-                    string ivar = m.Groups["ivar"].Value;
-                    return $"{target} = ({type})((({ivar} += 5) + 129) ^ 0x55);";
-                });
-        }
-
-        private static Assembly CompileToInMemoryAssembly(string assemblyName, string source)
-        {
-            var tree = CSharpSyntaxTree.ParseText(source, s_parseOptions, path: $"{assemblyName}.cu.cs");
-            var compilation = CSharpCompilation.Create(
-                assemblyName,
-                [tree],
-                s_baseReferences.Value,
-                new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary)
-                    .WithAllowUnsafe(true)
-                    .WithOptimizationLevel(OptimizationLevel.Release));
-
-            using var peStream = new MemoryStream();
-            var emitResult = compilation.Emit(peStream);
-            if (!emitResult.Success)
-            {
-                string errors = string.Join(
-                    Environment.NewLine,
-                    emitResult.Diagnostics.Where(static d => d.Severity == DiagnosticSeverity.Error));
-                throw new InvalidOperationException($"In-memory compilation failed:{Environment.NewLine}{errors}");
-            }
-
-            peStream.Position = 0;
-            return AssemblyLoadContext.Default.LoadFromStream(peStream);
-        }
-
-        private static IReadOnlyList<MetadataReference> CreateBaseReferences()
-        {
-            string baseDir = AppContext.BaseDirectory;
-            string trusted = AppContext.GetData("TRUSTED_PLATFORM_ASSEMBLIES") as string ?? string.Empty;
-            var list = new List<MetadataReference>();
-            foreach (string path in trusted.Split(Path.PathSeparator, StringSplitOptions.RemoveEmptyEntries))
-            {
-                if (path.StartsWith(baseDir, StringComparison.OrdinalIgnoreCase))
-                {
-                    list.Add(MetadataReference.CreateFromImage(File.ReadAllBytes(path)));
-                }
-                else
-                {
-                    list.Add(MetadataReference.CreateFromFile(path));
-                }
-            }
-
-            string corePath = typeof(Gpu).Assembly.Location;
-            if (!list.Any(r => string.Equals(r.Display, corePath, StringComparison.OrdinalIgnoreCase)))
-            {
-                list.Add(MetadataReference.CreateFromImage(File.ReadAllBytes(corePath)));
-            }
-
-            return list;
-        }
-
-        private sealed class FuzzTestAnalyzerConfigOptionsProvider(string dialect) : AnalyzerConfigOptionsProvider
-        {
-            public override AnalyzerConfigOptions GlobalOptions { get; } = new FuzzTestAnalyzerConfigOptions(dialect);
-
-            public override AnalyzerConfigOptions GetOptions(SyntaxTree tree) => GlobalOptions;
-
-            public override AnalyzerConfigOptions GetOptions(AdditionalText textFile) => GlobalOptions;
-        }
-
-        private sealed class FuzzTestAnalyzerConfigOptions(string dialect) : AnalyzerConfigOptions
-        {
-#pragma warning disable CS8765
-            public override bool TryGetValue(string key, out string? value)
-#pragma warning restore CS8765
-            {
-                switch (key)
-                {
-                    case "build_property.GSharpTargetDialect":
-                        value = dialect;
-                        return true;
-                    case "build_property.GSharpExportDeviceCode":
-                        value = "false";
-                        return true;
-                    case "build_property.GSharpGenerateSnapshotTestCases":
-                        value = "false";
-                        return true;
-                    default:
-                        value = null;
-                        return false;
+                    count++;
                 }
             }
         }
+
+        return count;
+    }
+
+    private static int CountStructWithConversionDefaultExpressions(SyntaxNode root)
+    {
+        int count = 0;
+        foreach (var node in root.DescendantNodes())
+        {
+            if (node is DefaultExpressionSyntax defExpr)
+            {
+                string typeName = FuzzTestCompilationHelper.RenderNode(defExpr.Type.WithoutTrivia());
+                if (typeName is "FuzzWrapInt" or "FuzzStructL3")
+                {
+                    count++;
+                }
+            }
+        }
+
+        return count;
+    }
+
+    private static int CountNegatedConstantDivisions(SyntaxNode root)
+    {
+        int count = 0;
+        foreach (var node in root.DescendantNodes())
+        {
+            if (node is BinaryExpressionSyntax bin &&
+                bin.IsKind(SyntaxKind.DivideExpression) &&
+                UnwrapParens(bin.Left) is PrefixUnaryExpressionSyntax { RawKind: (int)SyntaxKind.UnaryMinusExpression } &&
+                UnwrapParens(bin.Right) is LiteralExpressionSyntax)
+            {
+                count++;
+            }
+        }
+
+        return count;
+    }
+
+    private static ExpressionSyntax UnwrapParens(ExpressionSyntax expr)
+    {
+        while (expr is ParenthesizedExpressionSyntax paren)
+        {
+            expr = paren.Expression;
+        }
+
+        return expr;
     }
 }

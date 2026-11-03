@@ -1,6 +1,6 @@
 using System.Globalization;
-using System.Linq;
 using System.Text;
+using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 
@@ -15,7 +15,9 @@ public sealed record PromotedDifferentialArtifacts(
     string ReproKernelClassName,
     string ReproKernelMethodName,
     string ReproKernelFileContent,
-    string ReproCaseSnippetContent);
+    string ReproCaseSnippetContent,
+    string KnownDivergenceEntry = "",
+    string ReproFileStem = "");
 
 /// <summary>
 /// Emits clean, self-contained C# regression artifacts (<c>Repro_&lt;seed&gt;.cu.cs</c> and <c>DifferentialCase</c> snippet)
@@ -24,11 +26,10 @@ public sealed record PromotedDifferentialArtifacts(
 public static class FuzzPromoter
 {
     private static readonly UTF8Encoding s_utf8NoBom = new(encoderShouldEmitUTF8Identifier: false);
-    private static readonly CSharpParseOptions s_parseOptions = new(LanguageVersion.Preview);
 
     /// <summary>
     /// Formats a reduced kernel source, fuzz seed, input seed, failing paths, and fingerprint into a clean
-    /// <c>Differential/</c> kernel file and companion <c>DifferentialCase</c> snippet.
+    /// <c>Differential/</c> kernel file, companion <c>DifferentialCase</c> snippet, and <c>KnownDivergence</c> entry.
     /// </summary>
     public static PromotedDifferentialArtifacts BuildPromotionArtifacts(
         string reducedKernelSource,
@@ -37,102 +38,70 @@ public static class FuzzPromoter
         string failingPaths = "Native,Cuda",
         string failureKind = "CellMismatch",
         string? explicitFingerprint = null,
-        string? targetKernelName = null)
+        string? targetKernelName = null,
+        string column = "hash")
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(reducedKernelSource);
 
         var fpResult = FuzzDeduplicator.ComputeFingerprint(reducedKernelSource, failingPaths, failureKind);
         string fingerprint = string.IsNullOrWhiteSpace(explicitFingerprint) ? fpResult.Fingerprint : explicitFingerprint;
-        string seedHex = FuzzRandom.FormatSeed(fuzzSeed);
-        string shortSeedHex = string.Create(CultureInfo.InvariantCulture, $"{fuzzSeed:X8}");
+        string normalizedColumn = string.IsNullOrWhiteSpace(column) ? "hash" : column.AsSpan().Trim().ToString();
 
-        var root = (CompilationUnitSyntax)CSharpSyntaxTree.ParseText(reducedKernelSource, s_parseOptions).GetRoot();
-        var kernelMethods = FuzzReducer.GetKernelMethods(root);
-        var selectedMethod = (!string.IsNullOrWhiteSpace(targetKernelName)
-                ? kernelMethods.FirstOrDefault(m => string.Equals(m.Identifier.ValueText, targetKernelName, StringComparison.Ordinal))
-                : null)
-            ?? kernelMethods.FirstOrDefault()
-            ?? root.DescendantNodes().OfType<MethodDeclarationSyntax>().FirstOrDefault()
+        var root = FuzzSyntaxHelpers.ParseRoot(reducedKernelSource);
+        var kernelMethods = FuzzSyntaxHelpers.GetKernelMethods(root);
+        var selectedMethod = SelectKernelMethod(root, kernelMethods, targetKernelName)
             ?? throw new InvalidOperationException("No kernel method found in reducedKernelSource.");
 
-        string reproClassName = $"FuzzRepro_{shortSeedHex}_Kernels";
-        string reproMethodName = $"Repro_{shortSeedHex}";
+        bool hasKernelSeed = TryExtractKernelSeed(selectedMethod, out ulong extractedKernelSeed);
+        ulong effectiveSeed = hasKernelSeed ? extractedKernelSeed : fuzzSeed;
+        string seedHex = FuzzRandom.FormatSeed(effectiveSeed);
+        string shortSeedHex = string.Create(CultureInfo.InvariantCulture, $"{effectiveSeed:X8}");
+
+        bool needsMethodDisambiguator = !hasKernelSeed &&
+            (!string.IsNullOrWhiteSpace(targetKernelName) || kernelMethods.Count > 1);
+        string methodSuffix = needsMethodDisambiguator
+            ? $"_{SanitizeIdentifier(selectedMethod.Identifier.ValueText)}"
+            : string.Empty;
+
+        string reproClassName = $"FuzzRepro_{shortSeedHex}{methodSuffix}_Kernels";
+        string reproMethodName = $"Repro_{shortSeedHex}{methodSuffix}";
+        string reproFileStem = $"Repro_{seedHex}{methodSuffix}";
+
         var renamedMethod = selectedMethod.WithIdentifier(SyntaxFactory.Identifier(reproMethodName));
 
         string headerLine = string.Create(
             CultureInfo.InvariantCulture,
             $"// Found by the differential fuzzer: fuzz-seed {seedHex}, input-seed {inputSeed}, fingerprint {fingerprint} (paths: {fpResult.FailingPathsMask}, kind: {fpResult.FailureKindTag})");
 
-        var kernelFileSb = new StringBuilder();
-        kernelFileSb.AppendLine(headerLine);
-        kernelFileSb.AppendLine("#nullable enable");
-        kernelFileSb.AppendLine("#pragma warning disable CS0162, CS0219, CS1717, CS1718");
-        kernelFileSb.AppendLine("using System;");
-        kernelFileSb.AppendLine("using Kassyi.GSharp.Core;");
-        kernelFileSb.AppendLine();
-        kernelFileSb.AppendLine("namespace Kassyi.GSharp.Tests.Shared.Differential;");
-        kernelFileSb.AppendLine();
+        string knownDivergenceEntry = BuildKnownDivergenceEntry(
+            reproClassName,
+            reproMethodName,
+            normalizedColumn,
+            fpResult.FailingPathsMask);
 
-        // Include any referenced custom enums so the file is self-contained.
-        string methodText = renamedMethod.ToFullString().TrimEnd();
-        if (methodText.Contains("FuzzEnum", StringComparison.Ordinal))
-        {
-            ScalarFuzzGenerator.AppendEnumDeclarations(kernelFileSb);
-            kernelFileSb.AppendLine();
-        }
+        string kernelFileContent = BuildReproKernelFile(root, renamedMethod, reproClassName, headerLine);
+        string caseProperty = FuzzCaseEmitter.RenderDifferentialCaseProperty(
+            reproClassName,
+            reproMethodName,
+            inputSeed,
+            headerLine,
+            normalizedColumn);
+        string caseSnippetContent =
+            $$"""
+            {{caseProperty}}
 
-        kernelFileSb.AppendLine($"public static partial class {reproClassName}");
-        kernelFileSb.AppendLine("{");
-
-        foreach (var helper in FuzzReducer.GetDeviceFunctionMethods(root))
-        {
-            if (methodText.Contains(helper.Identifier.ValueText, StringComparison.Ordinal))
-            {
-                kernelFileSb.AppendLine(IndentMethod(helper.ToFullString().Trim()));
-                kernelFileSb.AppendLine();
-            }
-        }
-
-        kernelFileSb.AppendLine(IndentMethod(methodText.Trim()));
-        kernelFileSb.AppendLine("}");
-
-        var caseSb = new StringBuilder();
-        caseSb.AppendLine(headerLine);
-        caseSb.AppendLine($"public static DifferentialCase {reproMethodName}_Case {{ get; }} = new(\"{reproClassName}.{reproMethodName}\")");
-        caseSb.AppendLine("{");
-        caseSb.AppendLine("    Shape = LaunchShapes.PartialWarp(),");
-        caseSb.AppendLine(string.Create(CultureInfo.InvariantCulture, $"    Seeds = [{inputSeed}],"));
-        caseSb.AppendLine("    Inputs = static (rng, shape) =>");
-        caseSb.AppendLine("    {");
-        caseSb.AppendLine("        int rows = shape.Rows;");
-        caseSb.AppendLine("        var (inA, inB) = DiffValues.Int32Pairs(rng, rows);");
-        caseSb.AppendLine("        var inC = DiffValues.Values(rng, rows, DiffValues.ShiftCounts, DiffValues.NextInt32);");
-        caseSb.AppendLine("        return new DiffBuffers()");
-        caseSb.AppendLine("            .In(\"inA\", inA)");
-        caseSb.AppendLine("            .In(\"inB\", inB)");
-        caseSb.AppendLine("            .In(\"inC\", inC)");
-        caseSb.AppendLine("            .Out<ulong>(\"checksum\", rows, [\"hash\"], OutputPolicy.Exact);");
-        caseSb.AppendLine("    },");
-        caseSb.AppendLine($"    Launch = static (b, s) => {reproClassName}.Launch{reproMethodName}(");
-        caseSb.AppendLine("        b.Get<int>(\"inA\"),");
-        caseSb.AppendLine("        b.Get<int>(\"inB\"),");
-        caseSb.AppendLine("        b.Get<int>(\"inC\"),");
-        caseSb.AppendLine("        b.Get<ulong>(\"checksum\"),");
-        caseSb.AppendLine("        gridDimX: s.GridX,");
-        caseSb.AppendLine("        blockDimX: s.BlockX),");
-        caseSb.AppendLine($"    Oracle = static (b, _) => {reproClassName}.{reproMethodName}(");
-        caseSb.AppendLine("        b.Get<int>(\"inA\"),");
-        caseSb.AppendLine("        b.Get<int>(\"inB\"),");
-        caseSb.AppendLine("        b.Get<int>(\"inC\"),");
-        caseSb.AppendLine("        b.Get<ulong>(\"checksum\")),");
-        caseSb.AppendLine("};");
+            // KnownDivergence entry:
+            {{knownDivergenceEntry}}
+            """;
 
         return new PromotedDifferentialArtifacts(
             fingerprint,
             reproClassName,
             reproMethodName,
-            kernelFileSb.ToString(),
-            caseSb.ToString());
+            kernelFileContent,
+            caseSnippetContent,
+            knownDivergenceEntry,
+            reproFileStem);
     }
 
     /// <summary>
@@ -150,9 +119,11 @@ public static class FuzzPromoter
         string bucketDir = Path.Combine(Path.GetFullPath(findingsDir), safeBucketName);
         Directory.CreateDirectory(bucketDir);
 
-        string seedHex = FuzzRandom.FormatSeed(fuzzSeed);
-        string kernelPath = Path.Combine(bucketDir, $"Repro_{seedHex}.cu.cs");
-        string casePath = Path.Combine(bucketDir, $"Repro_{seedHex}.Case.cs");
+        string fileStem = !string.IsNullOrWhiteSpace(artifacts.ReproFileStem)
+            ? artifacts.ReproFileStem
+            : $"Repro_{FuzzRandom.FormatSeed(fuzzSeed)}";
+        string kernelPath = Path.Combine(bucketDir, $"{fileStem}.cu.cs");
+        string casePath = Path.Combine(bucketDir, $"{fileStem}.Case.cs");
 
         File.WriteAllText(kernelPath, artifacts.ReproKernelFileContent, s_utf8NoBom);
         File.WriteAllText(casePath, artifacts.ReproCaseSnippetContent, s_utf8NoBom);
@@ -161,35 +132,226 @@ public static class FuzzPromoter
 
     /// <summary>Converts a fingerprint like <c>fnv1a64:0123456789abcdef</c> into a filesystem-safe directory name across Windows and Unix.</summary>
     public static string SanitizeDirectoryName(string fingerprint) =>
-        fingerprint.Replace(':', '_').Replace('/', '_').Replace('\\', '_');
-
-    private static string IndentMethod(string methodText)
-    {
-        var lines = methodText.Split(["\r\n", "\n"], StringSplitOptions.None);
-        var sb = new StringBuilder();
-        for (int i = 0; i < lines.Length; i++)
+        string.Create(fingerprint.Length, fingerprint, static (span, src) =>
         {
-            if (i > 0)
+            for (int i = 0; i < src.Length; i++)
             {
-                sb.AppendLine();
+                char c = src[i];
+                span[i] = c is ':' or '/' or '\\' ? '_' : c;
             }
+        });
 
-            string line = lines[i];
-            if (string.IsNullOrWhiteSpace(line))
+    private static MethodDeclarationSyntax? SelectKernelMethod(
+        CompilationUnitSyntax root,
+        IReadOnlyList<MethodDeclarationSyntax> kernelMethods,
+        string? targetKernelName)
+    {
+        if (!string.IsNullOrWhiteSpace(targetKernelName))
+        {
+            foreach (var m in kernelMethods)
+            {
+                if (string.Equals(m.Identifier.ValueText, targetKernelName, StringComparison.Ordinal))
+                {
+                    return m;
+                }
+            }
+        }
+
+        if (kernelMethods.Count > 0)
+        {
+            return kernelMethods[0];
+        }
+
+        foreach (var node in root.DescendantNodes())
+        {
+            if (node is MethodDeclarationSyntax method)
+            {
+                return method;
+            }
+        }
+
+        return null;
+    }
+
+    private static string SanitizeIdentifier(string raw) =>
+        string.Create(raw.Length, raw, static (span, src) =>
+        {
+            for (int i = 0; i < src.Length; i++)
+            {
+                char c = src[i];
+                span[i] = char.IsLetterOrDigit(c) || c == '_' ? c : '_';
+            }
+        });
+
+    private static bool TryExtractKernelSeed(MethodDeclarationSyntax method, out ulong kernelSeed)
+    {
+        kernelSeed = 0UL;
+        foreach (var trivia in method.GetLeadingTrivia())
+        {
+            if (!trivia.IsKind(SyntaxKind.SingleLineCommentTrivia))
             {
                 continue;
             }
 
-            if (line.StartsWith("    ", StringComparison.Ordinal))
+            string text = trivia.ToString();
+            const string Marker = "fuzz-seed:";
+            int idx = text.IndexOf(Marker, StringComparison.OrdinalIgnoreCase);
+            if (idx < 0)
             {
-                sb.Append(line);
+                continue;
             }
-            else
+
+            ReadOnlySpan<char> rest = text.AsSpan(idx + Marker.Length).TrimStart();
+            int end = 0;
+            while (end < rest.Length && (char.IsLetterOrDigit(rest[end]) || rest[end] == '_'))
             {
-                sb.Append("    ").Append(line);
+                end++;
+            }
+
+            if (end > 0 && FuzzRandom.TryParseSeed(rest[..end].ToString(), out kernelSeed))
+            {
+                return true;
             }
         }
 
-        return sb.ToString();
+        return false;
+    }
+
+    private static string BuildKnownDivergenceEntry(
+        string reproClassName,
+        string reproMethodName,
+        string column,
+        string canonicalPathsMask)
+    {
+        var parts = FuzzSyntaxHelpers.SplitNonEmpty(canonicalPathsMask, ",");
+        var flags = new List<string>(parts.Count);
+        foreach (string rawPart in parts)
+        {
+            ReadOnlySpan<char> part = rawPart.AsSpan().Trim();
+            if (part.Equals("Managed", StringComparison.OrdinalIgnoreCase))
+            {
+                flags.Add("DiffPath.Managed");
+            }
+            else if (part.Equals("Native", StringComparison.OrdinalIgnoreCase))
+            {
+                flags.Add("DiffPath.Native");
+            }
+            else if (part.Equals("Cuda", StringComparison.OrdinalIgnoreCase))
+            {
+                flags.Add("DiffPath.Cuda");
+            }
+        }
+
+        string diffPathFlags = flags.Count > 0 ? string.Join(" | ", flags) : "DiffPath.Native | DiffPath.Cuda";
+        return $"new(\"{reproClassName}.{reproMethodName}\", \"{column}\", {diffPathFlags}, Issue: 0),";
+    }
+
+    private static string BuildReproKernelFile(
+        CompilationUnitSyntax root,
+        MethodDeclarationSyntax renamedMethod,
+        string reproClassName,
+        string headerLine)
+    {
+        using var writer = new SourceWriter();
+        FuzzCaseEmitter.AppendKernelsFileHeader(writer, "Kassyi.GSharp.Tests.Shared.Differential", headerLine);
+
+        var rewriter = new BatchClassQualifierRewriter(reproClassName);
+        var rewrittenMethod = (MethodDeclarationSyntax)rewriter.Visit(renamedMethod);
+        string methodText = FuzzSyntaxHelpers.RenderFullNode(rewrittenMethod).AsSpan().TrimEnd().ToString();
+
+        var helperDecls = FuzzSyntaxHelpers.GetDeviceFunctionMethods(root);
+        bool anyHelperUsed = false;
+        foreach (var h in helperDecls)
+        {
+            if (methodText.Contains(h.Identifier.ValueText, StringComparison.Ordinal))
+            {
+                anyHelperUsed = true;
+                break;
+            }
+        }
+
+        var rewrittenHelpers = new List<string>(helperDecls.Count);
+        if (anyHelperUsed)
+        {
+            foreach (var helper in helperDecls)
+            {
+                var rewrittenHelper = (MethodDeclarationSyntax)rewriter.Visit(helper);
+                rewrittenHelpers.Add(FuzzSyntaxHelpers.RenderFullNode(rewrittenHelper).AsSpan().Trim().ToString());
+            }
+        }
+
+        bool usesEnum = methodText.Contains("FuzzEnum", StringComparison.Ordinal) ||
+                        ContainsInAny(rewrittenHelpers, static h => h.Contains("FuzzEnum", StringComparison.Ordinal));
+        if (usesEnum)
+        {
+            ScalarFuzzGenerator.AppendEnumDeclarations(writer);
+            writer.AppendLine();
+        }
+
+        bool usesStruct = ContainsCompositeTypeReference(methodText) ||
+                          ContainsInAny(rewrittenHelpers, ContainsCompositeTypeReference);
+        if (usesStruct)
+        {
+            FuzzCompositeModel.AppendCompositeStructDeclarations(writer);
+            writer.AppendLine();
+        }
+
+        using (writer.Scope($"public static partial class {reproClassName}"))
+        {
+            foreach (string helperText in rewrittenHelpers)
+            {
+                AppendNormalizedLines(writer, helperText);
+                writer.AppendLine();
+            }
+
+            AppendNormalizedLines(writer, methodText);
+        }
+
+        return writer.ToString();
+    }
+
+    private static bool ContainsInAny(IReadOnlyList<string> items, Func<string, bool> predicate)
+    {
+        foreach (string item in items)
+        {
+            if (predicate(item))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private static bool ContainsCompositeTypeReference(string text) =>
+        text.Contains("FuzzStruct", StringComparison.Ordinal) ||
+        text.Contains("FuzzWrapInt", StringComparison.Ordinal) ||
+        text.Contains("FuzzPackedStruct", StringComparison.Ordinal) ||
+        text.Contains("FuzzNullableBag", StringComparison.Ordinal);
+
+    private static void AppendNormalizedLines(SourceWriter writer, string text)
+    {
+        foreach (string line in FuzzSyntaxHelpers.SplitNonEmpty(text, "\r\n"))
+        {
+            ReadOnlySpan<char> trimmed = line.AsSpan().TrimStart();
+            if (!trimmed.IsEmpty)
+            {
+                writer.AppendLine(trimmed.ToString());
+            }
+        }
+    }
+
+    private sealed class BatchClassQualifierRewriter(string targetClassName) : CSharpSyntaxRewriter
+    {
+        public override SyntaxNode? VisitMemberAccessExpression(MemberAccessExpressionSyntax node)
+        {
+            var visited = (MemberAccessExpressionSyntax)base.VisitMemberAccessExpression(node)!;
+            if (visited.Expression is IdentifierNameSyntax { Identifier.ValueText: "FuzzBatchKernels" } id)
+            {
+                return visited.WithExpression(SyntaxFactory.IdentifierName(targetClassName).WithTriviaFrom(id));
+            }
+
+            return visited;
+        }
     }
 }

@@ -1,4 +1,3 @@
-using System.Globalization;
 using System.Text;
 
 namespace Kassyi.GSharp.Tools.FuzzDiff;
@@ -95,42 +94,40 @@ public static class FuzzBatchWorkspaceWriter
 
         namespace Xunit
         {
-            [AttributeUsage(AttributeTargets.Method, AllowMultiple = false)]
-            internal sealed class FactAttribute : Attribute
-            {
-            }
-
-            [AttributeUsage(AttributeTargets.Method, AllowMultiple = false)]
-            internal sealed class TheoryAttribute : Attribute
-            {
-            }
+        [AttributeUsage(AttributeTargets.Method, AllowMultiple = false)]
+        internal sealed class FactAttribute : Attribute
+        {
+        }
+        [AttributeUsage(AttributeTargets.Method, AllowMultiple = false)]
+        internal sealed class TheoryAttribute : Attribute
+        {
+        }
         }
 
         namespace Kassyi.GSharp.Compiler.Marshaling
         {
-            internal static class AotHostNames
-            {
-                public static string ToSafeIdentifier(string name) => name.Replace('.', '_');
-            }
+        internal static class AotHostNames
+        {
+        public static string ToSafeIdentifier(string name) => string.Create(name.Length, name, static (span, src) => { for (int i = 0; i < src.Length; i++) span[i] = src[i] == '.' ? '_' : src[i]; });
+        }
         }
 
         namespace Kassyi.GSharp.Tests.Shared.Differential
         {
-            public static class KnownDivergences
-            {
-                public static System.Collections.Generic.IReadOnlyList<KnownDivergence> All { get; } = [];
-            }
-
-            internal static class CudaCapability
-            {
-                public static void EnsureGpuAvailable()
-                {
-                    if (!GpuKernelLoader.IsDriverAvailable)
-                    {
-                        throw new System.InvalidOperationException("NVIDIA GPU and CUDA Driver are required to run CUDA differential fuzz batches.");
-                    }
-                }
-            }
+        public static class KnownDivergences
+        {
+        public static System.Collections.Generic.IReadOnlyList<KnownDivergence> All { get; } = [];
+        }
+        internal static class CudaCapability
+        {
+        public static void EnsureGpuAvailable()
+        {
+        if (!GpuKernelLoader.IsDriverAvailable)
+        {
+        throw new System.InvalidOperationException("NVIDIA GPU and CUDA Driver are required to run CUDA differential fuzz batches.");
+        }
+        }
+        }
         }
         """;
 
@@ -138,61 +135,69 @@ public static class FuzzBatchWorkspaceWriter
     {
         bool isCuda = string.Equals(dialect, "Cuda", StringComparison.OrdinalIgnoreCase);
         string defineConstant = isCuda ? "GSHARP_CUDA" : "GSHARP_CPU";
-        var sb = new StringBuilder();
-        sb.AppendLine("<Project Sdk=\"Microsoft.NET.Sdk\">");
-        sb.AppendLine("  <PropertyGroup>");
-        sb.AppendLine("    <OutputType>Exe</OutputType>");
-        sb.AppendLine("    <TargetFramework>net10.0</TargetFramework>");
-        sb.AppendLine("    <ImplicitUsings>enable</ImplicitUsings>");
-        sb.AppendLine("    <Nullable>enable</Nullable>");
-        sb.AppendLine("    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>");
-        sb.AppendLine($"    <GSharpTargetDialect>{dialect}</GSharpTargetDialect>");
-        sb.AppendLine("    <GSharpExportDeviceCode>false</GSharpExportDeviceCode>");
-        sb.AppendLine("    <GSharpGenerateSnapshotTestCases>false</GSharpGenerateSnapshotTestCases>");
-        sb.AppendLine($"    <GSharpCompilerTaskAssembly>$(MSBuildThisFileDirectory){relRepo}/src/Compiler/Kassyi.GSharp.Compiler.Tasks/bin/$(GSharpHostOs)/$(Configuration)/netstandard2.0/Kassyi.GSharp.Compiler.Tasks.dll</GSharpCompilerTaskAssembly>");
-        sb.AppendLine($"    <DefineConstants>$(DefineConstants);{defineConstant}</DefineConstants>");
-        sb.AppendLine("    <StartupObject>Kassyi.GSharp.Tests.Shared.Differential.FuzzBatchCases</StartupObject>");
-        if (isCuda && !string.IsNullOrWhiteSpace(cudaArch))
-        {
-            sb.AppendLine($"    <GSharpTargetArchitectures>{cudaArch}</GSharpTargetArchitectures>");
-        }
+        string cudaArchLine = isCuda && !string.IsNullOrWhiteSpace(cudaArch)
+            ? $"\n    <GSharpTargetArchitectures>{cudaArch}</GSharpTargetArchitectures>"
+            : string.Empty;
+        string cpuCompileItems = !isCuda
+            ? $"""
 
-        sb.AppendLine("  </PropertyGroup>");
-        sb.AppendLine();
-        sb.AppendLine("  <ItemGroup>");
-        sb.AppendLine("    <CompilerVisibleProperty Include=\"GSharpTargetDialect\" />");
-        sb.AppendLine("    <CompilerVisibleProperty Include=\"GSharpGenerateSnapshotTestCases\" />");
-        sb.AppendLine($"    <Compile Include=\"{relGen}/FuzzBatchKernels.cu.cs\" />");
-        sb.AppendLine($"    <Compile Include=\"{relGen}/FuzzBatchCases.cs\" />");
-        sb.AppendLine($"    <Compile Include=\"{relGen}/FuzzBatchHarnessStubs.cs\" />");
-        sb.AppendLine($"    <Compile Include=\"{relRepo}/tests/Compiler/Kassyi.GSharp.Tests.Shared/Differential/Harness/*.cs\" Exclude=\"{relRepo}/tests/Compiler/Kassyi.GSharp.Tests.Shared/Differential/Harness/KnownDivergences.cs\" />");
-        if (!isCuda)
-        {
-            sb.AppendLine($"    <Compile Include=\"{relRepo}/tests/Compiler/Kassyi.GSharp.Tests.Shared/Helpers/ManagedKernelRun.cs\" />");
-            sb.AppendLine("    <Using Include=\"Kassyi.GSharp.Tests.Shared.Helpers\" />");
-        }
+                <Compile Include="{relRepo}/tests/Compiler/Kassyi.GSharp.Tests.Shared/Helpers/ManagedKernelRun.cs" />
+                <Using Include="Kassyi.GSharp.Tests.Shared.Helpers" />
+            """
+            : string.Empty;
 
-        sb.AppendLine("  </ItemGroup>");
-        sb.AppendLine();
-        sb.AppendLine("  <ItemGroup>");
-        sb.AppendLine("    <PackageReference Include=\"xunit.assert\" Version=\"2.9.3\" />");
-        sb.AppendLine("  </ItemGroup>");
-        sb.AppendLine();
-        sb.AppendLine("  <ItemGroup>");
-        sb.AppendLine($"    <ProjectReference Include=\"{relRepo}/src/Core/Kassyi.GSharp.Core/Kassyi.GSharp.Core.csproj\" />");
-        sb.AppendLine($"    <ProjectReference Include=\"{relRepo}/src/Runtime/Kassyi.GSharp.Runtime/Kassyi.GSharp.Runtime.csproj\" />");
-        sb.AppendLine($"    <ProjectReference Include=\"{relRepo}/src/Compiler/Kassyi.GSharp.Compiler/Kassyi.GSharp.Compiler.csproj\" OutputItemType=\"Analyzer\" ReferenceOutputAssembly=\"true\" />");
-        sb.AppendLine($"    <ProjectReference Include=\"{relRepo}/src/Compiler/Kassyi.GSharp.Compiler.Tasks/Kassyi.GSharp.Compiler.Tasks.csproj\" ReferenceOutputAssembly=\"false\" />");
-        sb.AppendLine("  </ItemGroup>");
-        sb.AppendLine();
-        sb.AppendLine("  <UsingTask TaskName=\"Kassyi.GSharp.Compiler.Tasks.CompileCudaToFatbinTask\" AssemblyFile=\"$(GSharpCompilerTaskAssembly)\" />");
-        sb.AppendLine("  <UsingTask TaskName=\"Kassyi.GSharp.Compiler.Tasks.CompileCppToNativeTask\" AssemblyFile=\"$(GSharpCompilerTaskAssembly)\" />");
-        sb.AppendLine($"  <Import Project=\"{relRepo}/src/Compiler/Kassyi.GSharp.Compiler/build/Kassyi.GSharp.Compiler.targets\" />");
-        sb.AppendLine("</Project>");
-        return sb.ToString();
+        return $$"""
+            <Project Sdk="Microsoft.NET.Sdk">
+              <PropertyGroup>
+                <OutputType>Exe</OutputType>
+                <TargetFramework>net10.0</TargetFramework>
+                <ImplicitUsings>enable</ImplicitUsings>
+                <Nullable>enable</Nullable>
+                <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+                <GSharpTargetDialect>{{dialect}}</GSharpTargetDialect>
+                <GSharpExportDeviceCode>false</GSharpExportDeviceCode>
+                <GSharpGenerateSnapshotTestCases>false</GSharpGenerateSnapshotTestCases>
+                <GSharpCompilerTaskAssembly>$(MSBuildThisFileDirectory){{relRepo}}/src/Compiler/Kassyi.GSharp.Compiler.Tasks/bin/$(GSharpHostOs)/$(Configuration)/netstandard2.0/Kassyi.GSharp.Compiler.Tasks.dll</GSharpCompilerTaskAssembly>
+                <DefineConstants>$(DefineConstants);{{defineConstant}}</DefineConstants>
+                <StartupObject>Kassyi.GSharp.Tests.Shared.Differential.FuzzBatchCases</StartupObject>{{cudaArchLine}}
+              </PropertyGroup>
+
+              <ItemGroup>
+                <CompilerVisibleProperty Include="GSharpTargetDialect" />
+                <CompilerVisibleProperty Include="GSharpGenerateSnapshotTestCases" />
+                <Compile Include="{{relGen}}/FuzzBatchKernels.cu.cs" />
+                <Compile Include="{{relGen}}/FuzzBatchCases.cs" />
+                <Compile Include="{{relGen}}/FuzzBatchHarnessStubs.cs" />
+                <Compile Include="{{relRepo}}/tests/Compiler/Kassyi.GSharp.Tests.Shared/Differential/Harness/*.cs" Exclude="{{relRepo}}/tests/Compiler/Kassyi.GSharp.Tests.Shared/Differential/Harness/KnownDivergences.cs" />{{cpuCompileItems}}
+              </ItemGroup>
+
+              <ItemGroup>
+                <PackageReference Include="xunit.assert" Version="2.9.3" />
+              </ItemGroup>
+
+              <ItemGroup>
+                <ProjectReference Include="{{relRepo}}/src/Core/Kassyi.GSharp.Core/Kassyi.GSharp.Core.csproj" />
+                <ProjectReference Include="{{relRepo}}/src/Runtime/Kassyi.GSharp.Runtime/Kassyi.GSharp.Runtime.csproj" />
+                <ProjectReference Include="{{relRepo}}/src/Compiler/Kassyi.GSharp.Compiler/Kassyi.GSharp.Compiler.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="true" />
+                <ProjectReference Include="{{relRepo}}/src/Compiler/Kassyi.GSharp.Compiler.Tasks/Kassyi.GSharp.Compiler.Tasks.csproj" ReferenceOutputAssembly="false" />
+              </ItemGroup>
+
+              <UsingTask TaskName="Kassyi.GSharp.Compiler.Tasks.CompileCudaToFatbinTask" AssemblyFile="$(GSharpCompilerTaskAssembly)" />
+              <UsingTask TaskName="Kassyi.GSharp.Compiler.Tasks.CompileCppToNativeTask" AssemblyFile="$(GSharpCompilerTaskAssembly)" />
+              <Import Project="{{relRepo}}/src/Compiler/Kassyi.GSharp.Compiler/build/Kassyi.GSharp.Compiler.targets" />
+            </Project>
+            """;
     }
 
-    private static string NormalizeSlashes(string path) => path.Replace('\\', '/');
+    private static string NormalizeSlashes(string path) =>
+        string.Create(path.Length, path, static (span, src) =>
+        {
+            for (int i = 0; i < src.Length; i++)
+            {
+                char c = src[i];
+                span[i] = c == '\\' ? '/' : c;
+            }
+        });
 
     private static void WriteIfChanged(string path, string content)
     {

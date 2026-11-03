@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
     inputs:
       minutes:
-        description: "Fuzzing duration in minutes per OS"
+        description: "Fuzzing duration in minutes per OS (at most 60; the job stops at 120, which leaves room for the build and one reduction)"
         required: false
         default: "30"
         type: string
@@ -36,6 +36,8 @@ jobs:
       matrix:
         os: [ubuntu-latest, windows-latest]
     runs-on: ${{ matrix.os }}
+    # Expressions have no arithmetic, so the limit is fixed: up to 60 fuzzing minutes, the build, the last batch and one reduction (at most 30 minutes)
+    timeout-minutes: 120
     env:
       GSHARP_TEST_NO_CUDA: "1"
       DiffEngine_Disabled: "true"
@@ -63,15 +65,19 @@ jobs:
 
       - name: Run Differential Fuzzer (Profile C)
         shell: bash
+        env:
+          FUZZ_MINUTES: ${{ inputs.minutes || '30' }}
+          FUZZ_SEED: ${{ inputs.fuzz_seed }}
+          FUZZ_BATCH_SIZE: ${{ inputs.batch_size || '64' }}
         run: |
           SEED_ARG=()
-          if [ -n "${{ inputs.fuzz_seed }}" ]; then
-            SEED_ARG=(--fuzz-seed "${{ inputs.fuzz_seed }}")
+          if [ -n "$FUZZ_SEED" ]; then
+            SEED_ARG=(--fuzz-seed "$FUZZ_SEED")
           fi
           node scripts/human/fuzz-differential.js \
             --profile cpu \
-            --minutes "${{ inputs.minutes || '30' }}" \
-            --batch-size "${{ inputs.batch_size || '64' }}" \
+            --minutes "$FUZZ_MINUTES" \
+            --batch-size "$FUZZ_BATCH_SIZE" \
             "${SEED_ARG[@]}"
 
       - name: Upload differential fuzz findings and summary
