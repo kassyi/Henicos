@@ -250,8 +250,8 @@ public interface IGpuBigFloatArithmetic
     /// <para>
     /// A power that is exactly a <c>p</c>-bit value is found first and returned as it is: <c>x^0 = 1</c>,
     /// <c>1^y = 1</c>, <c>2^3 = 8</c>, <c>4^0.5 = 2</c>, <c>(9/4)^0.5 = 3/2</c>, <c>2^-3 = 1/8</c>, and every other
-    /// dyadic power of at most <c>p</c> significant bits, for an integer <c>y</c> and for <c>y = n / 2^k</c> (the check
-    /// of MPFR's <c>mpfr_pow_is_exact</c>). Every other power is computed as <c>e^(y·L)</c> with <c>L ≈ ln x</c> to the
+    /// dyadic power of at most <c>p</c> significant bits, for an integer <c>y</c> and for <c>y = n / 2^k</c>. Every
+    /// other power is computed as <c>e^(y·L)</c> with <c>L ≈ ln x</c> to the
     /// Exp precision plus 64 bits and <c>y·L</c> formed exactly; the rounding check covers the Exp bound and the error
     /// that <c>L</c> carries into <c>y·L</c>, and retries as for <see cref="Exp"/>. It always ends, because such a power
     /// is never a <c>p</c>-bit value; powers next to one, such as <c>(2 + 2^-200)^3</c> at <c>p = 128</c>, take two

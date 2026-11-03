@@ -55,7 +55,11 @@ public sealed class StructFieldCheckContext
         }
     }
 
-    /// <summary>Compares a scalar or struct field under <paramref name="policy"/> (or the buffer's default policy).</summary>
+    /// <summary>
+    /// Compares a scalar field under <paramref name="policy"/> (or the buffer's default policy).
+    /// Unmanaged values without a custom comparer are compared as raw bytes; for a struct-typed field with padding,
+    /// pass an <see cref="OutputPolicy"/> carrying its own <see cref="OutputPolicy.CustomComparer"/> (such as <see cref="OutputPolicy.ForStruct{T}(Action{StructFieldCheckContext, T, T}, OutputPolicy?)"/>).
+    /// </summary>
     public void Field<TField>(string fieldName, TField expected, TField actual, OutputPolicy? policy = null)
     {
         if (FormatMode)
@@ -75,10 +79,6 @@ public sealed class StructFieldCheckContext
             Fail($"{fieldName}: expected {FormatValue(expected)}, got {FormatValue(actual)}");
         }
     }
-
-    /// <summary>Alias for <see cref="Field{TField}(string, TField, TField, OutputPolicy?)"/>.</summary>
-    public void Check<TField>(string fieldName, TField expected, TField actual, OutputPolicy? policy = null) =>
-        Field(fieldName, expected, actual, policy);
 
     /// <summary>Compares a field using <see cref="EqualityComparer{T}.Default"/>.</summary>
     public void Equal<TField>(string fieldName, TField expected, TField actual)
@@ -279,76 +279,5 @@ public sealed class DiffArrayCloneScope
         var copy = (TArray[])source.Clone();
         _objectMap.Add(source, copy);
         return copy;
-    }
-}
-
-/// <summary>
-/// Deterministic combinatorial table helpers for marshaling and aliasing tests.
-/// </summary>
-public static class CombinatorialCases
-{
-    /// <summary>Returns the Cartesian product of two parameter sets as a deterministic table.</summary>
-    public static IReadOnlyList<(T1, T2)> Table<T1, T2>(ReadOnlySpan<T1> first, ReadOnlySpan<T2> second)
-    {
-        var list = new List<(T1, T2)>(first.Length * second.Length);
-        foreach (var a in first)
-        {
-            foreach (var b in second)
-            {
-                list.Add((a, b));
-            }
-        }
-
-        return list;
-    }
-
-    /// <summary>Returns the Cartesian product of three parameter sets as a deterministic table.</summary>
-    public static IReadOnlyList<(T1, T2, T3)> Table<T1, T2, T3>(ReadOnlySpan<T1> first, ReadOnlySpan<T2> second, ReadOnlySpan<T3> third)
-    {
-        var list = new List<(T1, T2, T3)>(first.Length * second.Length * third.Length);
-        foreach (var a in first)
-        {
-            foreach (var b in second)
-            {
-                foreach (var c in third)
-                {
-                    list.Add((a, b, c));
-                }
-            }
-        }
-
-        return list;
-    }
-
-    /// <summary>Returns a pairwise-covering subset of triples across three parameter sets.</summary>
-    public static IReadOnlyList<(T1, T2, T3)> Pairwise<T1, T2, T3>(ReadOnlySpan<T1> first, ReadOnlySpan<T2> second, ReadOnlySpan<T3> third)
-    {
-        if (first.IsEmpty || second.IsEmpty || third.IsEmpty)
-        {
-            return [];
-        }
-
-        var list = new List<(T1, T2, T3)>();
-        int max = Math.Max(first.Length, Math.Max(second.Length, third.Length));
-        for (int i = 0; i < first.Length; i++)
-        {
-            for (int j = 0; j < second.Length; j++)
-            {
-                var c = third[(i + j) % third.Length];
-                list.Add((first[i], second[j], c));
-            }
-        }
-
-        for (int k = 0; k < third.Length; k++)
-        {
-            var cand = (first[k % first.Length], second[(k * 2) % second.Length], third[k]);
-            if (!list.Contains(cand))
-            {
-                list.Add(cand);
-            }
-        }
-
-        _ = max;
-        return list;
     }
 }
