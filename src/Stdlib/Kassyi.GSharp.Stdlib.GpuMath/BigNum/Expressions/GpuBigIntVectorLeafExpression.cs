@@ -11,6 +11,7 @@ internal class GpuBigIntVectorLeafExpression(GpuBigIntArray array) : IGpuBigIntV
     public GpuBigIntArrayView Evaluate(GpuWorkspace workspace, int elementOffset = 0, int? elementCount = null,
         GpuBigUIntArrayView targetResult = default)
     {
+        DeviceCounted.ThrowIfCpuFallback(workspace);
         var count = elementCount ?? (Length - elementOffset);
 
         // The user's array is lent as a view, never handed out as an owner (design 4.6)
