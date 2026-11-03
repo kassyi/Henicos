@@ -262,7 +262,7 @@ public sealed class MarshalingAliasingDifferentialTests
         DifferentialRunner.Run(new DifferentialCase(
             $"{nameof(MarshalingAliasingDifferentialKernels)}.{nameof(MarshalingAliasingDifferentialKernels.AliasTwoRwArraysKernel)}")
         {
-            Shape = LaunchShapes.Grid1D(n, blockX: 16),
+            Shape = LaunchShapes.Linear(n, blockX: 16),
             Seeds = [0],
             Inputs = static (_, _) =>
             {
@@ -295,7 +295,7 @@ public sealed class MarshalingAliasingDifferentialTests
         DifferentialRunner.Run(new DifferentialCase(
             $"{nameof(MarshalingAliasingDifferentialKernels)}.{nameof(MarshalingAliasingDifferentialKernels.AliasInAndRwArrayKernel)}")
         {
-            Shape = LaunchShapes.Grid1D(n, blockX: 16),
+            Shape = LaunchShapes.Linear(n, blockX: 16),
             Seeds = [0],
             Inputs = static (_, _) =>
             {
@@ -328,7 +328,7 @@ public sealed class MarshalingAliasingDifferentialTests
         DifferentialRunner.Run(new DifferentialCase(
             $"{nameof(MarshalingAliasingDifferentialKernels)}.{nameof(MarshalingAliasingDifferentialKernels.AliasOutAndInArrayKernel)}")
         {
-            Shape = LaunchShapes.Grid1D(n, blockX: 16),
+            Shape = LaunchShapes.Linear(n, blockX: 16),
             Seeds = [0],
             Inputs = static (_, _) =>
             {
@@ -361,7 +361,7 @@ public sealed class MarshalingAliasingDifferentialTests
         DifferentialRunner.Run(new DifferentialCase(
             $"{nameof(MarshalingAliasingDifferentialKernels)}.{nameof(MarshalingAliasingDifferentialKernels.AliasTwoInArraysKernel)}")
         {
-            Shape = LaunchShapes.Grid1D(n, blockX: 16),
+            Shape = LaunchShapes.Linear(n, blockX: 16),
             Seeds = [0],
             Inputs = static (_, _) =>
             {
@@ -676,7 +676,7 @@ public sealed class MarshalingAliasingDifferentialTests
         DifferentialRunner.Run(new DifferentialCase(
             $"{nameof(MarshalingAliasingDifferentialKernels)}.{nameof(MarshalingAliasingDifferentialKernels.OutArrayStridedWriteKernel)}.Full")
         {
-            Shape = LaunchShapes.Grid1D(n, blockX: 32),
+            Shape = LaunchShapes.Linear(n, blockX: 32),
             Seeds = [0],
             Inputs = (_, _) =>
             {
@@ -712,7 +712,7 @@ public sealed class MarshalingAliasingDifferentialTests
         DifferentialRunner.Run(new DifferentialCase(
             $"{nameof(MarshalingAliasingDifferentialKernels)}.{nameof(MarshalingAliasingDifferentialKernels.OutArrayStridedWriteKernel)}.Partial")
         {
-            Shape = LaunchShapes.Grid1D(n, blockX: 32),
+            Shape = LaunchShapes.Linear(n, blockX: 32),
             Seeds = [0],
             Inputs = (_, _) =>
             {
@@ -756,7 +756,7 @@ public sealed class MarshalingAliasingDifferentialTests
         DifferentialRunner.Run(new DifferentialCase(
             $"{nameof(MarshalingAliasingDifferentialKernels)}.{nameof(MarshalingAliasingDifferentialKernels.PtrLengthGuardedScaleKernel)}")
         {
-            Shape = LaunchShapes.Grid1D(n, blockX: 32),
+            Shape = LaunchShapes.Linear(n, blockX: 32),
             Seeds = [0],
             Inputs = static (_, _) =>
             {
@@ -805,7 +805,7 @@ public sealed class MarshalingAliasingDifferentialTests
         DifferentialRunner.Run(new DifferentialCase(
             $"{nameof(MarshalingAliasingDifferentialKernels)}.{nameof(MarshalingAliasingDifferentialKernels.OverloadedPtrKernel)}")
         {
-            Shape = LaunchShapes.Grid1D(n, blockX: 32),
+            Shape = LaunchShapes.Linear(n, blockX: 32),
             Seeds = [0],
             Inputs = static (_, _) =>
             {
@@ -881,7 +881,7 @@ public sealed class MarshalingAliasingDifferentialTests
         DifferentialRunner.Run(new DifferentialCase(
             $"{nameof(MarshalingAliasingDifferentialKernels)}.{nameof(MarshalingAliasingDifferentialKernels.PtrConvertStructAndRefKernel)}")
         {
-            Shape = LaunchShapes.Grid1D(n, blockX: 32),
+            Shape = LaunchShapes.Linear(n, blockX: 32),
             Seeds = [0],
             Inputs = static (_, _) =>
             {
