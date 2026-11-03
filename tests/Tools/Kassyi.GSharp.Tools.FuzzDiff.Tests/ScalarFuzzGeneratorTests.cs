@@ -34,7 +34,7 @@ namespace Kassyi.GSharp.Tests.Shared.Differential
 namespace Kassyi.GSharp.Tools.FuzzDiff.Tests
 {
     /// <summary>
-    /// In-memory property and soundness tests for the differential kernel fuzzer (<see cref="ScalarFuzzGenerator"/>).
+    /// In-memory property and soundness tests for the differential kernel fuzzer (<see cref="ScalarFuzzGenerator"/>, <see cref="FuzzReducer"/>, <see cref="FuzzDeduplicator"/>, and <see cref="FuzzPromoter"/>).
     /// </summary>
     public class ScalarFuzzGeneratorTests
     {
@@ -310,6 +310,436 @@ namespace Kassyi.GSharp.Tools.FuzzDiff.Tests
             Assert.True(caughtShiftMutant > 0, "Expected shift-mask mutant to be caught within 16 seeds.");
             Assert.True(caughtOrderMutant > 0, "Expected operand evaluation-order mutant to be caught within 16 seeds.");
             Assert.True(caughtNarrowMutant > 0, "Expected narrow compound-assignment mutant to be caught within 16 seeds.");
+        }
+
+        [Fact]
+        [TestTarget(ExecutionTarget.CpuExecution)]
+        [Category(TestCategory.Compiler)]
+        [Scenario(TestScenario.HappyPath)]
+        public void FuzzReducer_Synthetic100LineFailingKernel_ShrinksBelow15StatementsPreservingFailure()
+        {
+            string synthetic100LineSource = BuildSynthetic100StatementMultiFunctionKernel();
+            int initialStatements = FuzzReducer.CountKernelExecutableStatements(synthetic100LineSource);
+            int initialHelpers = FuzzReducer.CountDeviceFunctionMethods(synthetic100LineSource);
+            Assert.True(initialStatements >= 95, $"Expected synthetic kernel to start with >= 95 statements, got {initialStatements}.");
+            Assert.Equal(3, initialHelpers);
+
+            bool IsInteresting(string candidateSource)
+            {
+                if (!CompilesWithZeroDiagnosticsAndSimulateShiftMismatch(candidateSource, out bool mismatchReproduced))
+                {
+                    return false;
+                }
+
+                return mismatchReproduced;
+            }
+
+            // Sanity-check that the initial 100-statement kernel reproduces the planted failure before reduction.
+            Assert.True(IsInteresting(synthetic100LineSource), "Expected initial 100-statement kernel to reproduce the planted shift mismatch.");
+
+            // In-memory reduction: HoistLocalsToDefault + InlineAndPruneDeviceFunctions + CoarseStatementRemover + SimplifyExpressions.
+            var reduction = FuzzReducer.Reduce(synthetic100LineSource, IsInteresting);
+
+            CompilesWithZeroDiagnosticsAndSimulateShiftMismatch(reduction.ReducedSource, out bool reducedStillFails, out var reducedGshDiags);
+
+            // The reduced kernel must preserve the failure, shrink to <= 15 statements and 0 helper [GpuDeviceFunction] methods, and emit 0 GSH* diagnostics.
+            // mutant: FuzzReducer.CoarseRemoveStatementsInMethod() line 533: change `for (int chunkIndex = granularity - 1; chunkIndex >= 0; chunkIndex--)` to `for (int chunkIndex = granularity - 1; chunkIndex >= granularity; chunkIndex--)`
+            // input: Synthetic100StatementKernel (102 statements, 3 [GpuDeviceFunction] helpers HelperStep1 -> HelperStep2 -> HelperLeafShiftBug with planted `a >>> b` bug)
+            Assert.True(reducedStillFails, "Reduced kernel must still reproduce the planted mismatch.");
+            Assert.True(
+                reduction.ReducedStatementCount <= 15,
+                $"Expected reduced kernel to have <= 15 statements, but got {reduction.ReducedStatementCount}.{Environment.NewLine}{reduction.ReducedSource}");
+            Assert.Equal(0, reduction.ReducedDeviceFunctionCount);
+            Assert.Empty(reducedGshDiags);
+
+            // Batched CUDA reduction verification: Speculative 16-candidate batch generator emits 16 valid candidates that compile together and identifies the smallest reproducing candidate.
+            var specBatch = FuzzReducer.GenerateSpeculativeBatchCandidates(
+                synthetic100LineSource,
+                fuzzSeed: 0xBEEFUL,
+                inputSeed: 0,
+                maxCandidates: 16);
+
+            Assert.Equal(16, specBatch.Candidates.Count);
+            var batchAssembly = CompileToInMemoryAssembly("SpeculativeBatch16Assembly", specBatch.KernelsSource);
+            Assert.NotNull(batchAssembly.GetType("Kassyi.GSharp.Tests.Shared.Differential.FuzzBatchKernels"));
+
+            var bestCandidate = FuzzReducer.SelectBestSpeculativeCandidate(
+                specBatch,
+                cand =>
+                {
+                    string singleUnit = ReplaceKernelInSyntheticUnit(synthetic100LineSource, cand.CandidateKernelMethodSource, "SyntheticBugKernel");
+                    return IsInteresting(singleUnit);
+                });
+
+            Assert.NotNull(bestCandidate);
+            Assert.True(bestCandidate.StatementCount < initialStatements);
+        }
+
+        [Fact]
+        [TestTarget(ExecutionTarget.CpuExecution)]
+        [Category(TestCategory.Compiler)]
+        [Scenario(TestScenario.Boundary)]
+        public void FuzzDeduplicator_AlphaRenamedAndDeadCodePaddedKernels_ProduceIdenticalFingerprint()
+        {
+            const string KernelVariantA =
+                """
+                #nullable enable
+                using System;
+                using Kassyi.GSharp.Core;
+
+                namespace Kassyi.GSharp.Tests.Shared.Differential;
+
+                public enum CustomModeA : byte { Zero = 0, One = 1, Mask = 0x55 }
+
+                public static partial class FuzzDedupA
+                {
+                    [GpuDeviceFunction]
+                    public static int UnusedHelperA(int z) => z + 123;
+
+                    [GpuKernel]
+                    public static void KernelAlpha_01(int[] inA, int[] inB, int[] inC, ulong[] checksum)
+                    {
+                        int gid = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
+                        if (gid >= checksum.Length)
+                        {
+                            return;
+                        }
+
+                        ulong hash = 14695981039346656037UL;
+                        int deadBefore = default(int);
+                        deadBefore = inB[gid] + 777;
+                        int v0 = inA[gid];
+                        int v1 = inC[gid];
+                        CustomModeA modeA = (CustomModeA)(byte)inB[gid];
+                        int v2 = ((v0 + 11) >>> v1) ^ (int)modeA;
+                        short deadAfter = default(short);
+                        deadAfter = (short)42;
+                        hash = (hash ^ (((ulong)v2) + 1UL)) * 1099511628211UL;
+                        checksum[gid] = hash;
+                    }
+                }
+                """;
+
+            const string KernelVariantB =
+                """
+                #nullable enable
+                using System;
+                using Kassyi.GSharp.Core;
+
+                namespace Kassyi.GSharp.Tests.Shared.Differential;
+
+                public enum RenamedModeB : byte { Zero = 0, One = 1, Mask = 0x55 }
+
+                public static partial class FuzzDedupB
+                {
+                    [GpuKernel]
+                    public static void DifferentKernelName_99(int[] arrX, int[] arrY, int[] arrZ, ulong[] checksum)
+                    {
+                        int gid = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
+                        if (gid >= checksum.Length)
+                        {
+                            return;
+                        }
+
+                        ulong hash = 14695981039346656037UL;
+                        long unusedTemp = default(long);
+                        int x9 = arrX[gid];
+                        int y8 = arrZ[gid];
+                        RenamedModeB flagB = (RenamedModeB)(byte)arrY[gid];
+                        int w7 = (((x9 + 9999) >>> y8) ^ (int)flagB);
+                        ulong deadTail = default(ulong);
+                        deadTail = 123456UL;
+                        hash = (hash ^ (((ulong)w7) + 99UL)) * 1099511628211UL;
+                        checksum[gid] = hash;
+                    }
+                }
+                """;
+
+            const string StructurallyDifferentKernel =
+                """
+                #nullable enable
+                using System;
+                using Kassyi.GSharp.Core;
+
+                namespace Kassyi.GSharp.Tests.Shared.Differential;
+
+                public enum CustomModeA : byte { Zero = 0, One = 1, Mask = 0x55 }
+
+                public static partial class FuzzDedupC
+                {
+                    [GpuKernel]
+                    public static void KernelGamma(int[] inA, int[] inB, int[] inC, ulong[] checksum)
+                    {
+                        int gid = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
+                        if (gid >= checksum.Length)
+                        {
+                            return;
+                        }
+
+                        ulong hash = 14695981039346656037UL;
+                        int v0 = inA[gid];
+                        int v1 = inC[gid];
+                        CustomModeA modeA = (CustomModeA)(byte)inB[gid];
+                        int v2 = ((v0 * 11) << v1) ^ (int)modeA;
+                        hash = (hash ^ (((ulong)v2) + 1UL)) * 1099511628211UL;
+                        checksum[gid] = hash;
+                    }
+                }
+                """;
+
+            var fpA = FuzzDeduplicator.ComputeFingerprint(KernelVariantA, "Native,Cuda", "CellMismatch");
+            var fpB = FuzzDeduplicator.ComputeFingerprint(KernelVariantB, "Cuda, Native", "CellMismatch");
+            var fpDiffAst = FuzzDeduplicator.ComputeFingerprint(StructurallyDifferentKernel, "Native,Cuda", "CellMismatch");
+            var fpDiffPaths = FuzzDeduplicator.ComputeFingerprint(KernelVariantA, "Cuda", "CellMismatch");
+            var fpDiffKind = FuzzDeduplicator.ComputeFingerprint(KernelVariantA, "Native,Cuda", "RuntimeException:DivideByZeroException");
+
+            // Two kernels with alpha-renamed identifiers, different numeric literal constants, and dead local declarations/stores must produce the exact same fingerprint.
+            // mutant: FuzzDeduplicator.AppendNormalizedMethod() line 271: change `varMap[text] = $"v{varMap.Count}";` to `varMap[text] = text;`
+            // input: KernelVariantA (locals v0, v1, v2; enum CustomModeA; literal 11) vs KernelVariantB (locals x9, y8, w7; enum RenamedModeB; literal 9999)
+            Assert.Equal(fpA.NormalizedAstSkeleton, fpB.NormalizedAstSkeleton);
+            Assert.Equal(fpA.Fingerprint, fpB.Fingerprint);
+
+            // Different AST skeletons, failing path masks, or failure kind tags must produce distinct fingerprints.
+            Assert.NotEqual(fpA.Fingerprint, fpDiffAst.Fingerprint);
+            Assert.NotEqual(fpA.Fingerprint, fpDiffPaths.Fingerprint);
+            Assert.NotEqual(fpA.Fingerprint, fpDiffKind.Fingerprint);
+
+            // Verify FuzzPromoter emits a self-contained Differential/ repro with the required header comment.
+            var promoted = FuzzPromoter.BuildPromotionArtifacts(
+                KernelVariantA,
+                fuzzSeed: 0x1234ABCDUL,
+                inputSeed: 3,
+                failingPaths: "Native,Cuda",
+                failureKind: "CellMismatch");
+
+            Assert.Contains("// Found by the differential fuzzer: fuzz-seed 0x000000001234ABCD, input-seed 3, fingerprint " + fpA.Fingerprint, promoted.ReproKernelFileContent, StringComparison.Ordinal);
+            Assert.Contains("public static DifferentialCase Repro_1234ABCD_Case", promoted.ReproCaseSnippetContent, StringComparison.Ordinal);
+        }
+
+        private static string BuildSynthetic100StatementMultiFunctionKernel()
+        {
+            var sb = new StringBuilder();
+            sb.AppendLine("#nullable enable");
+            sb.AppendLine("#pragma warning disable CS0162, CS0219, CS1717, CS1718");
+            sb.AppendLine("using System;");
+            sb.AppendLine("using Kassyi.GSharp.Core;");
+            sb.AppendLine();
+            sb.AppendLine("namespace Kassyi.GSharp.Tests.Shared.Differential;");
+            sb.AppendLine();
+            sb.AppendLine("public static partial class SyntheticReduceKernels");
+            sb.AppendLine("{");
+            sb.AppendLine("    [GpuDeviceFunction]");
+            sb.AppendLine("    public static int HelperLeafShiftBug(int a, int shiftCount)");
+            sb.AppendLine("    {");
+            sb.AppendLine("        return (a >>> shiftCount);");
+            sb.AppendLine("    }");
+            sb.AppendLine();
+            sb.AppendLine("    [GpuDeviceFunction]");
+            sb.AppendLine("    public static int HelperStep2(int x, int y, int s)");
+            sb.AppendLine("    {");
+            sb.AppendLine("        int t = x ^ y;");
+            sb.AppendLine("        return HelperLeafShiftBug(t, s);");
+            sb.AppendLine("    }");
+            sb.AppendLine();
+            sb.AppendLine("    [GpuDeviceFunction]");
+            sb.AppendLine("    public static int HelperStep1(int a, int b, int c)");
+            sb.AppendLine("    {");
+            sb.AppendLine("        int p = a + 17;");
+            sb.AppendLine("        return HelperStep2(p, b, c);");
+            sb.AppendLine("    }");
+            sb.AppendLine();
+            sb.AppendLine("    [GpuKernel]");
+            sb.AppendLine("    public static void SyntheticBugKernel(int[] inA, int[] inB, int[] inC, ulong[] checksum)");
+            sb.AppendLine("    {");
+            sb.AppendLine("        int gid = BlockIndex.X * BlockDimension.X + ThreadIndex.X;");
+            sb.AppendLine("        if (gid >= checksum.Length)");
+            sb.AppendLine("        {");
+            sb.AppendLine("            return;");
+            sb.AppendLine("        }");
+            sb.AppendLine();
+            sb.AppendLine("        ulong hash = 14695981039346656037UL;");
+            sb.AppendLine("        int acc = inA[gid];");
+
+            // Emit 45 irrelevant noise statements before the bug.
+            for (int i = 0; i < 45; i++)
+            {
+                sb.AppendLine(string.Create(CultureInfo.InvariantCulture, $"        int noisePre_{i} = (inA[gid] + {i * 3 + 1}) ^ inB[gid];"));
+            }
+
+            // Statement with the planted bug inside the 3-level [GpuDeviceFunction] chain:
+            sb.AppendLine("        int bugVal = HelperStep1(inA[gid], inB[gid], inC[gid]);");
+
+            // Emit 48 irrelevant noise statements after the bug.
+            for (int i = 0; i < 48; i++)
+            {
+                sb.AppendLine(string.Create(CultureInfo.InvariantCulture, $"        int noisePost_{i} = (acc ^ {i * 7 + 5}) + inB[gid];"));
+            }
+
+            sb.AppendLine("        hash = (hash ^ (((ulong)bugVal) + 1UL)) * 1099511628211UL;");
+            sb.AppendLine("        checksum[gid] = hash;");
+            sb.AppendLine("    }");
+            sb.AppendLine("}");
+            return sb.ToString();
+        }
+
+        private static string ReplaceKernelInSyntheticUnit(string baseUnit, string candidateMethodSource, string targetKernelName)
+        {
+            var root = (Microsoft.CodeAnalysis.CSharp.Syntax.CompilationUnitSyntax)CSharpSyntaxTree.ParseText(baseUnit, s_parseOptions).GetRoot();
+            var oldKernel = root.DescendantNodes()
+                .OfType<Microsoft.CodeAnalysis.CSharp.Syntax.MethodDeclarationSyntax>()
+                .First(m => m.Identifier.ValueText == targetKernelName);
+            var newKernel = CSharpSyntaxTree.ParseText($"class __W {{ {candidateMethodSource} }}", s_parseOptions)
+                .GetRoot()
+                .DescendantNodes()
+                .OfType<Microsoft.CodeAnalysis.CSharp.Syntax.MethodDeclarationSyntax>()
+                .First()
+                .WithIdentifier(SyntaxFactory.Identifier(targetKernelName));
+            return root.ReplaceNode(oldKernel, newKernel).ToFullString();
+        }
+
+        private static string RewriteUnsignedRightShiftsToUnmasked(string source)
+        {
+            var root = CSharpSyntaxTree.ParseText(source, s_parseOptions).GetRoot();
+            var shifts = root.DescendantNodes()
+                .OfType<Microsoft.CodeAnalysis.CSharp.Syntax.BinaryExpressionSyntax>()
+                .Where(static b => b.IsKind(SyntaxKind.UnsignedRightShiftExpression))
+                .ToList();
+
+            if (shifts.Count == 0)
+            {
+                return source;
+            }
+
+            var updated = root.ReplaceNodes(shifts, static (orig, _) =>
+            {
+                string lhs = orig.Left.WithoutTrivia().ToFullString();
+                string rhs = orig.Right.WithoutTrivia().ToFullString();
+                return SyntaxFactory.ParseExpression($"((uint)({rhs}) >= 32U ? 0 : (({lhs}) >>> ({rhs})))").WithTriviaFrom(orig);
+            });
+            return updated.ToFullString();
+        }
+
+        private static bool CompilesWithZeroDiagnosticsAndSimulateShiftMismatch(string candidateSource, out bool mismatchReproduced) =>
+            CompilesWithZeroDiagnosticsAndSimulateShiftMismatch(candidateSource, out mismatchReproduced, out _);
+
+        private static bool CompilesWithZeroDiagnosticsAndSimulateShiftMismatch(
+            string candidateSource,
+            out bool mismatchReproduced,
+            out Diagnostic[] gshDiagnostics)
+        {
+            mismatchReproduced = false;
+            gshDiagnostics = [];
+
+            // Mutate `>>>` in the simulated "broken transpiler" copy using Roslyn syntax rewriting so any `lhs >>> rhs` expression
+            // (whether inside a helper function or inlined into the kernel) becomes `((uint)(rhs) >= 32U ? 0 : (lhs >>> rhs))`.
+            string brokenVariant = RewriteUnsignedRightShiftsToUnmasked(
+                candidateSource.Replace("void SyntheticBugKernel(", "void SyntheticBugKernel_Broken(", StringComparison.Ordinal)
+                               .Replace("HelperLeafShiftBug(", "HelperLeafShiftBug_Broken(", StringComparison.Ordinal)
+                               .Replace("HelperStep2(", "HelperStep2_Broken(", StringComparison.Ordinal)
+                               .Replace("HelperStep1(", "HelperStep1_Broken(", StringComparison.Ordinal));
+
+            var oracleTree = CSharpSyntaxTree.ParseText(candidateSource, s_parseOptions, path: "ReduceCheck.cu.cs");
+            var compilation = CSharpCompilation.Create(
+                "ReduceCheckAssembly",
+                [oracleTree],
+                s_baseReferences.Value,
+                new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary)
+                    .WithAllowUnsafe(true)
+                    .WithOptimizationLevel(OptimizationLevel.Debug));
+
+            var configProvider = new FuzzTestAnalyzerConfigOptionsProvider("Cpu");
+            GeneratorDriver driver = CSharpGeneratorDriver.Create(
+                generators: [new GpuKernelGenerator().AsSourceGenerator()],
+                additionalTexts: null,
+                parseOptions: s_parseOptions,
+                optionsProvider: configProvider);
+            driver.RunGeneratorsAndUpdateCompilation(compilation, out var outputCompilation, out var generatorDiags);
+
+            var allDiags = outputCompilation.GetDiagnostics().Concat(generatorDiags).ToArray();
+            if (allDiags.Any(static d => d.Severity == DiagnosticSeverity.Error))
+            {
+                return false;
+            }
+
+            gshDiagnostics = allDiags
+                .Where(static d => d.Id.StartsWith("GSH", StringComparison.Ordinal) &&
+                                   d.Severity is DiagnosticSeverity.Error or DiagnosticSeverity.Warning)
+                .ToArray();
+            if (gshDiagnostics.Length > 0)
+            {
+                return false;
+            }
+
+            // Combine oracle and broken variant into a single compilation unit for fast in-memory execution check.
+            string brokenClassAdjusted = brokenVariant
+                .Replace("namespace Kassyi.GSharp.Tests.Shared.Differential;", string.Empty, StringComparison.Ordinal)
+                .Replace("#nullable enable", string.Empty, StringComparison.Ordinal)
+                .Replace("using System;", string.Empty, StringComparison.Ordinal)
+                .Replace("using Kassyi.GSharp.Core;", string.Empty, StringComparison.Ordinal)
+                .Replace("public static partial class SyntheticReduceKernels", "public static partial class SyntheticReduceKernels_Broken", StringComparison.Ordinal);
+            string combined = candidateSource + Environment.NewLine + brokenClassAdjusted;
+            var execTree = CSharpSyntaxTree.ParseText(combined, s_parseOptions, path: "ReduceExec.cu.cs");
+            var execCompilation = CSharpCompilation.Create(
+                "ReduceExecAssembly",
+                [execTree],
+                s_baseReferences.Value,
+                new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary)
+                    .WithAllowUnsafe(true)
+                    .WithOptimizationLevel(OptimizationLevel.Debug));
+
+            using var peStream = new MemoryStream();
+            var emitRes = execCompilation.Emit(peStream);
+            if (!emitRes.Success)
+            {
+                return false;
+            }
+
+            peStream.Position = 0;
+            var alc = new AssemblyLoadContext("ReduceTempAlc", isCollectible: true);
+            try
+            {
+                var asm = alc.LoadFromStream(peStream);
+                var oracleType = asm.GetType("Kassyi.GSharp.Tests.Shared.Differential.SyntheticReduceKernels");
+                var brokenType = asm.GetType("Kassyi.GSharp.Tests.Shared.Differential.SyntheticReduceKernels_Broken");
+                if (oracleType is null || brokenType is null)
+                {
+                    return false;
+                }
+
+                var oracleDel = CreateKernelDelegate(oracleType, "SyntheticBugKernel");
+                var brokenDel = CreateKernelDelegate(brokenType, "SyntheticBugKernel_Broken");
+
+                var shape = LaunchShapes.PartialWarp(rows: 16, blockX: 16);
+                int[] inA = new int[16];
+                int[] inB = new int[16];
+                int[] inC = new int[16];
+                for (int i = 0; i < 16; i++)
+                {
+                    inA[i] = unchecked((int)0x87654321U) + i;
+                    inB[i] = 0x11112222 + i;
+                    inC[i] = 35; // >= 32 triggers unmasked shift bug!
+                }
+
+                ulong[] oracleOut = new ulong[16];
+                ulong[] brokenOut = new ulong[16];
+                SequentialOracle.Run(shape, ThreadOrder.Forward, () => oracleDel(inA, inB, inC, oracleOut));
+                SequentialOracle.Run(shape, ThreadOrder.Forward, () => brokenDel(inA, inB, inC, brokenOut));
+
+                for (int i = 0; i < 16; i++)
+                {
+                    if (oracleOut[i] != brokenOut[i])
+                    {
+                        mismatchReproduced = true;
+                        break;
+                    }
+                }
+
+                return true;
+            }
+            finally
+            {
+                alc.Unload();
+            }
         }
 
         private static Action<int[], int[], int[], ulong[]> CreateKernelDelegate(Type kernelType, string methodName)

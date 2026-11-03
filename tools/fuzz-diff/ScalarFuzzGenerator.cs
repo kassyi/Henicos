@@ -1099,7 +1099,7 @@ public sealed class ScalarFuzzGenerator
         return sb.ToString();
     }
 
-    private static void AppendBatchRunnerMain(StringBuilder sb)
+    internal static void AppendBatchRunnerMain(StringBuilder sb)
     {
         sb.AppendLine("    public static int Main(string[] args)");
         sb.AppendLine("    {");
