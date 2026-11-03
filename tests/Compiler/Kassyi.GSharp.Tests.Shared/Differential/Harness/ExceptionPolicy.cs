@@ -153,22 +153,46 @@ public sealed class ExceptionPolicy
             return false;
         }
 
-        if (!string.IsNullOrEmpty(ParamName) && actual is ArgumentException argEx && argEx.ParamName != ParamName)
+        if (!string.IsNullOrEmpty(ParamName))
         {
-            mismatchReason = $"expected ParamName \"{ParamName}\", got \"{argEx.ParamName}\"";
-            return false;
+            string? actualParam = (actual as ArgumentException)?.ParamName;
+            if (actualParam != ParamName)
+            {
+                mismatchReason = $"expected ParamName \"{ParamName}\", got {(actualParam is null ? "none" : $"\"{actualParam}\"")}";
+                return false;
+            }
         }
 
-        if (!string.IsNullOrEmpty(MemberName) &&
-            actual.Data["GSharp.MemberName"] is string actualMember &&
-            !actualMember.Contains(MemberName, StringComparison.Ordinal))
+        if (!string.IsNullOrEmpty(MemberName))
         {
-            mismatchReason = $"expected MemberName containing \"{MemberName}\", got \"{actualMember}\"";
-            return false;
+            if (actual.Data["GSharp.MemberName"] is not string actualMember || string.IsNullOrEmpty(actualMember))
+            {
+                mismatchReason = $"expected MemberName \"{MemberName}\", got none";
+                return false;
+            }
+
+            if (!actualMember.Contains(MemberName, StringComparison.Ordinal))
+            {
+                mismatchReason = $"expected MemberName containing \"{MemberName}\", got \"{actualMember}\"";
+                return false;
+            }
         }
 
-        if (actual.Data["GSharp.SourceLocation"] is string actualLocation)
+        if (!string.IsNullOrEmpty(SourceFile) || Line is not null || Column is not null)
         {
+            if (actual.Data["GSharp.SourceLocation"] is not string actualLocation || string.IsNullOrEmpty(actualLocation))
+            {
+                string expectedDesc = !string.IsNullOrEmpty(SourceFile)
+                    ? $"SourceFile \"{SourceFile}\""
+                    : Line is { } missingLine
+                        ? $"Line {missingLine.ToString(CultureInfo.InvariantCulture)}"
+                        : Column is { } missingCol
+                            ? $"Column {missingCol.ToString(CultureInfo.InvariantCulture)}"
+                            : "SourceLocation";
+                mismatchReason = $"expected {expectedDesc} in SourceLocation, got none";
+                return false;
+            }
+
             if (!string.IsNullOrEmpty(SourceFile) && !actualLocation.Contains(SourceFile, StringComparison.OrdinalIgnoreCase))
             {
                 mismatchReason = $"expected SourceLocation containing \"{SourceFile}\", got \"{actualLocation}\"";
@@ -190,10 +214,15 @@ public sealed class ExceptionPolicy
 
         if (path == DiffPath.Cuda && RequireCudaInnerException)
         {
-            if (actual.InnerException is null || !actual.InnerException.GetType().Name.Contains("CudaException", StringComparison.Ordinal))
+            string? innerName = actual.InnerException switch
             {
-                string innerName = actual.InnerException?.GetType().FullName ?? "null";
-                mismatchReason = $"expected CudaException InnerException on Cuda path, got {innerName}";
+                CudaTrapSubprocessRunner.SubprocessCudaInnerException sub => sub.OriginalTypeName,
+                { } inner => inner.GetType().FullName ?? inner.GetType().Name,
+                null => null,
+            };
+            if (innerName is null || !innerName.Contains("CudaException", StringComparison.Ordinal))
+            {
+                mismatchReason = $"expected CudaException InnerException on Cuda path, got {innerName ?? "null"}";
                 return false;
             }
         }
